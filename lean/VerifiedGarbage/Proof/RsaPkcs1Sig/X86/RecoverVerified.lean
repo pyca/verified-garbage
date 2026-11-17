@@ -896,12 +896,23 @@ theorem recoverFn_ok (v : PublicImpl) (s : State) {g : Geometry} {bs : Fin 4 →
     simp only [recoverStack, VG.Impl.RsaPkcs1Sig.X86.Verify.frameBytes] at *
     omega
   unfold code
-  refine WP.frameKept (rs := savedRegisters) (by decide) (by decide) (by decide) stackFit
-    (inner_noSp v) ?_
+  refine WP.frameLocal (rs := savedRegisters) (by decide) (by decide) (by decide) stackFit
+    (inner_noSp v)
+    (fun _ _ _ ⟨abi, out⟩ fl => ⟨VG.Proof.Dsa.X86.abiPreserved_frame stackFit abi fl, fun p =>
+      VG.Proof.Rsa.written_frame fl (by have := h.context.valid.outputFit; omega)
+        (fun q hq => by rw [List.mem_singleton.mp hq, h.savedBelow]; exact (savedRegion_separate h.context.valid g.outputRegion (by simp [bodyWrites])).symm) (out p)⟩) ?_
   refine WP.seq ?_
-  refine VG.Proof.Dsa.X86.WP.alloc (by decide) allocation (body_noSp v) ?_
-  refine WP.mono (body_ok v (s := entered s) h.context) ?_
-  rintro u ⟨_, frame, rest, result⟩
+  refine VG.Proof.Dsa.X86.WP.alloc (by decide) allocation (body_noSp v) (body_ok v (s := entered s) h.context) ?_
+  rintro u0 mm uu ⟨_, frame0, rest0, result0⟩ fl
+  obtain frame := (frame0.trans (fl.sub fun r hr => ⟨g.innerRegion, by simp [bodyWrites], by
+      rw [List.mem_singleton.mp hr, h.innerBelow]; exact fun _ h => h⟩) :
+    Frame (bodyWrites g) (entered s).mem ({ u0 with mem := mm, unknowns := uu } : State).mem)
+  have rest : Keeps _ (entered s) ({ u0 with mem := mm, unknowns := uu } : State) := rest0
+  obtain result := ((fun p => VG.Proof.Rsa.written_frame fl (by have := h.context.valid.outputFit; omega)
+      (fun q hq => by rw [List.mem_singleton.mp hq, h.innerBelow]; exact (h.context.valid.stackOutput.sub_left h.context.valid.innerSub).symm) (result0 p)) :
+    _ → Spec.Rsa.written ({ u0 with mem := mm, unknowns := uu } : State).mem _ _
+      (({ u0 with mem := mm, unknowns := uu } : State).gpr .eax) _)
+  generalize ({ u0 with mem := mm, unknowns := uu } : State) = u at frame rest result ⊢
   have spU : (freed VG.Impl.RsaPkcs1Sig.X86.Verify.frameBytes u).gpr .esp =
       (pushed savedRegisters s).gpr .esp := by
     rw [freed_esp, rest.1 .esp (by decide)]

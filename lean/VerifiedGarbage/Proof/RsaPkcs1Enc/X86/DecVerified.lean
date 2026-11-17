@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86.DecMem
 public import VerifiedGarbage.Proof.Rsa.X86.PrivImpl
 public import VerifiedGarbage.Proof.Sha256.X86.Variants.Interface
 import VerifiedGarbage.Proof.RsaPkcs1Sig.BytesAt
+import VerifiedGarbage.Proof.Rsa.BytesFrame
 import VerifiedGarbage.Proof.Rsa.X86.PrivStackSafety
 import VerifiedGarbage.Proof.Framework.Contract
 
@@ -50,12 +51,23 @@ theorem code_ok (v : Backend) (c : CrtImpl) {s : State} (h : spec.pre s) :
   have hb := (body_vp (P := ep s) v c).wp _ _ (entered_state h)
   refine WP.mono (wrap_ok (F := frameBytes) (by decide) (body_noSp v c) hsp hfit (W := (ep s).lay.W)
     (Q := fun r m => Res (ep s) (entered frameBytes s) m r) (fun r hr => ?_)
-    (WP.mono hb fun u hu => ⟨hu.1.2.frame, hu.2⟩)) fun t ⟨abi, res⟩ => ⟨abi, ?_⟩
+    (WP.mono hb fun u hu => ⟨hu.1.2.frame, hu.2⟩) (fun r m m' fl hres => ?_)) fun t ⟨abi, res⟩ => ⟨abi, ?_⟩
   · have ok := hin.ok
     rw [ep_lay] at ok hr
     rw [save_eq (argv := (ep s).argv) (ro := (ep s).ro) (rw := (ep s).rw) (C := 3448) hsp,
       ret_eq (argv := (ep s).argv) (ro := (ep s).ro) (rw := (ep s).rw) (C := 3448) hsp]
     exact ⟨ok.save_apart r hr, ok.ret_apart r hr⟩
+  · have ok := hin.ok
+    obtain F' : Frame [(ep s).lay.STK] m m' := release_frame fl
+    obtain hO := VG.Proof.Rsa.rsa_bytes_frame F' (src := ((ep s).out.setWidth 64)) (k := (ep s).K)
+      (by show (arg s 4).toNat < 2 ^ 64; have := (arg s 4).isLt; omega_using [this])
+      (fun q hq => by rw [List.mem_singleton.mp hq]; exact (ok.stk (ep s).OUT (by simp)).symm)
+    obtain hM := VG.Proof.Rsa.wordsAt_frame F' (p := ((ep s).ml.setWidth 64)) (n := 1) (by decide)
+      (fun q hq => by rw [List.mem_singleton.mp hq]; exact (ok.stk (ep s).ML (by simp)).symm)
+    have key : ∀ o, Spec.RsaPkcs1Enc.writtenMsg m ((ep s).out.setWidth 64) ((ep s).ml.setWidth 64) (ep s).K r o →
+        Spec.RsaPkcs1Enc.writtenMsg m' ((ep s).out.setWidth 64) ((ep s).ml.setWidth 64) (ep s).K r o := fun o => by
+      cases o <;> simp only [Spec.RsaPkcs1Enc.writtenMsg] <;> rw [hO, hM] <;> exact id
+    exact key _ hres
   · have ok := hin.ok
     rw [ep_lay] at ok
     have ro := fun {R : Region} (hR : R ∈ (ep s).ro) => entered_ro hsp ok hR

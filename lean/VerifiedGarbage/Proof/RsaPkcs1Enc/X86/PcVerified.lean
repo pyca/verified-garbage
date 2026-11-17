@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.RsaPkcs1Enc.X86.PcTaint
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Vp
 import VerifiedGarbage.Proof.Bignum.X86.CopyRegion
 import VerifiedGarbage.Proof.RsaPkcs1Sig.BytesAt
+import VerifiedGarbage.Proof.Rsa.BytesFrame
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Loops
@@ -1318,12 +1319,18 @@ theorem code_ok (c : Ver.PublicImpl) {s : State} (h : spec.pre s) :
   obtain hb := (body_vp (P := ep s) c).wp _ _ (entered_state h)
   refine WP.mono (wrap_ok (F := frameBytes) (by decide) (body_noSp c) hsp hfit (W := (ep s).lay.W)
     (Q := fun r m => Res (ep s) (entered frameBytes s) m r) (fun r hr => ?_)
-    (WP.mono hb fun u hu => ⟨hu.1.2.frame, hu.2⟩)) fun t ⟨abi, res⟩ => ⟨abi, ?_⟩
+    (WP.mono hb fun u hu => ⟨hu.1.2.frame, hu.2⟩) (fun r m m' fl hres => ?_)) fun t ⟨abi, res⟩ => ⟨abi, ?_⟩
   · have ok := hin.ok
     rw [ep_lay] at ok hr
     rw [save_eq (argv := (ep s).argv) (ro := (ep s).ro) (rw := (ep s).rw) (C := 100) hsp,
       ret_eq (argv := (ep s).argv) (ro := (ep s).ro) (rw := (ep s).rw) (C := 100) hsp]
     exact ⟨ok.save_apart r hr, ok.ret_apart r hr⟩
+  · have ok := hin.ok
+    rw [ep_lay] at ok
+    obtain F' := release_frame (argv := (ep s).argv) (ro := (ep s).ro) (rw := (ep s).rw) (C := 100) fl
+    unfold Res at hres ⊢
+    exact fun nB h1 h2 => VG.Proof.Rsa.written_frame F' (by show (arg s 3).toNat < 2 ^ 64; have := (arg s 3).isLt; omega_using [this])
+      (fun q hq => by rw [List.mem_singleton.mp hq]; exact (ok.stk (ep s).OUT (by simp [layOf])).symm) (hres nB h1 h2)
   · have ok := hin.ok
     rw [ep_lay] at ok
     obtain ro := fun {R : Region} (hR : R ∈ (ep s).ro) => entered_ro hsp ok hR

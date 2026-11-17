@@ -1598,7 +1598,7 @@ theorem code_ok (hok : Sg.OK vs gs) (c : Ver.PublicImpl) {s : State} (hs : (vspe
   refine WP.mono (wrap_ok (F := frameBytes) (by decide) (body_noSp (Sg.fnsSp vs gs) (Sg.hall_of hok) c) hsp hfit4
     (W := ((epw vs gs s s w wg).lay w.h.D).W)
     (Q := fun r _ => Res w.h (epw vs gs s s w wg) (entered frameBytes s) r) (fun r hr => ?_)
-    (WP.mono hb fun u hu => ⟨hu.1.2.frame, hu.2⟩)) fun t ⟨abi, res⟩ => ⟨abi, ?_⟩
+    (WP.mono hb fun u hu => ⟨hu.1.2.frame, hu.2⟩) (fun r m m' fl hres => ?_)) fun t ⟨abi, res⟩ => ⟨abi, ?_⟩
   · have ok := hin.ok
     rw [← hD, ep_lay] at ok hr
     rw [save_eq (argv := (epw vs gs s s w wg).argv (arg s 5).toNat) (ro := (epw vs gs s s w wg).ro (arg s 5).toNat)
@@ -1606,6 +1606,7 @@ theorem code_ok (hok : Sg.OK vs gs) (c : Ver.PublicImpl) {s : State} (hs : (vspe
       ret_eq (argv := (epw vs gs s s w wg).argv (arg s 5).toNat) (ro := (epw vs gs s s w wg).ro (arg s 5).toNat)
         (rw := (epw vs gs s s w wg).rw) (C := 100) hsp]
     exact ⟨ok.save_apart r hr, ok.ret_apart r hr⟩
+  · exact hres
   · have ok := hin.ok
     rw [← hD, ep_lay] at ok
     obtain ro := fun {R : Region} (hR : R ∈ (epw vs gs s s w wg).ro (arg s 5).toNat) => entered_ro hsp ok hR

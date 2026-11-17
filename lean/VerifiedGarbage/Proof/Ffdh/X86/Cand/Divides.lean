@@ -148,11 +148,14 @@ theorem divides_ok (h : In Ex base bytes len args s) {j : Nat} (hj : j ≤ 27) {
     omega_arith
   obtain Fw : ∀ v : BitVec 32, Frame (frameR base (s.gpr .esp) []) s.mem (s.mem.writeW A v) := fun v =>
     (Frame.refl _ _).writeW (List.mem_singleton_self _) v inBelow
-  refine WP.seq (WP.mono (WP.frameAllocKept (bytes := 20) (Q := fun t => t.gpr .esp = s.gpr .esp ∧ t.rd = s.rd ∧
-      t.wr = s.wr ∧ t.mem = s.mem.writeW A (P + BitVec.ofNat 32 (bc len .wide)) ∧
+  refine WP.seq (WP.mono (WP.frameAllocLocal (bytes := 20) (Q := fun t => t.gpr .esp = s.gpr .esp ∧ t.rd = s.rd ∧
+      t.wr = s.wr ∧ Frame (frameR base (s.gpr .esp) []) s.mem t.mem ∧
       t.gpr .eax = BitVec.ofNat 32 (decide (sv s.mem base len .wide j % prime = 0)).toNat ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi, .edi] s t) (by decide) (by decide)
-    (by decide) (by rw [spu]; omega_arith) (NoSp.of_all (by rfl)) ?_) fun t ht => ?_)
+    (by decide) (by rw [spu]; omega_arith) (NoSp.of_all (by rfl))
+    (fun _ _ _ ⟨a, b, c, F, e, K⟩ fl => ⟨a, b, c, F.trans (fl.sub fun r hr => by
+      obtain rfl := List.mem_singleton.mp hr
+      exact ⟨_, List.mem_cons_self .., by rw [spu]; exact below_sub (by decide) (by omega_arith)⟩), e, K⟩) ?_) fun t ht => ?_)
   · -- The body, from the frame's allocation.
     obtain a0 : (allocFrame 20 u).gpr .esp = s.gpr .esp - BitVec.ofNat 32 20 := by rw [allocFrame_esp, spu]
     refine WP.seq (wp_mov fun a₁ U₁ => ?_)
@@ -195,7 +198,7 @@ theorem divides_ok (h : In Ex base bytes len args s) {j : Nat} (hj : j ≤ 27) {
       · rw [freed_esp, Kt.1 _ (by decide), sp₅, BitVec.sub_add_cancel]
       · rw [freed_rd, Kt.2.1, K₅.2.1, allocFrame_rd, Ku.2.1]
       · rw [freed_wr, Kt.2.2, K₅.2.2, allocFrame_wr, List.tail_cons, Ku.2.2]
-      · rw [freed_mem, Mt, m₅]
+      · rw [freed_mem, Mt, m₅]; exact Fw _
       · rw [freed_gpr _ _ (by decide), E, U₅.other _ (by decide), U₄.other _ (by decide), U₃.gpr,
           BitVec.toNat_ofNat, Nat.mod_eq_of_lt pl, m₅, PA, val32_rebase, Nat.add_zero, ← c2]
         rw [frameR_val32 (d := lo len (.slot .wide j)) (k := cwc len .wide) (Fw _) (h.room) nw (by omega_arith)
@@ -208,8 +211,7 @@ theorem divides_ok (h : In Ex base bytes len args s) {j : Nat} (hj : j ≤ 27) {
           rw [freed_esp, Kt.1 _ (by decide), sp₅, BitVec.sub_add_cancel]
         · rw [freed_rd, Kt.2.1, K₅.2.1, allocFrame_rd, Ku.2.1]
         · rw [freed_wr, Kt.2.2, K₅.2.2, allocFrame_wr, List.tail_cons, Ku.2.2]
-  · obtain ⟨spt, rdt, wrt, mt, et, Kt⟩ := ht
-    obtain Ft : Frame (frameR base (s.gpr .esp) []) s.mem t.mem := by rw [mt]; exact Fw _
+  · obtain ⟨spt, rdt, wrt, Ft, et, Kt⟩ := ht
     refine wp_movS (arg_after h (by decide) spt rdt wrt Ft) fun t' U _ => WP.block_nil ?_
     obtain K' : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t' := by
       refine ⟨fun r hr => ?_, U.rd.trans Kt.2.1, U.wr.trans Kt.2.2⟩

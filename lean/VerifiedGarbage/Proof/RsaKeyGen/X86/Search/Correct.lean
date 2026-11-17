@@ -3,9 +3,13 @@ module
 public import VerifiedGarbage.Proof.EntropyRequest
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.Search.Loop
 public import VerifiedGarbage.Proof.Ffdh.X86.ParamInit
+import VerifiedGarbage.Proof.Rsa.BytesFrame
+import VerifiedGarbage.Proof.Mont.X86.Compact.Frame
 import VerifiedGarbage.Proof.Ffdh.X86.KeyInit
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Sig
+meta import VerifiedGarbage.Proof.Rsa.BytesFrame
+meta import VerifiedGarbage.Proof.Mont.X86.Compact.Frame
 meta import VerifiedGarbage.Proof.RsaKeyGen.X86.Search.Loop
 meta import VerifiedGarbage.Proof.Ffdh.X86.ParamInit
 meta import VerifiedGarbage.Proof.Ffdh.X86.KeyInit
@@ -267,9 +271,34 @@ theorem search_correct_ok (c : Cand) {s : State} (h : contract.pre s) :
   unfold primeEntropy at rl
   have rem := hp.remaining_le
   have h1 : 216 ≤ (s.gpr .esp).toNat := A.stackLow
+  have postLocal : ∀ t m (uu : Nat → BitVec 32), abiPreserved s t ∧ contract.post s t →
+      Frame [below (s.gpr .esp) (4 * pushRegs.length)] t.mem m →
+      abiPreserved s { t with mem := m, unknowns := uu } ∧ contract.post s { t with mem := m, unknowns := uu } := by
+    intro t m uu ⟨abi, post⟩ fl
+    refine ⟨VG.Proof.Mont.X86.Compact.abi_frame (by omega_using [h1]) abi fl, ?_⟩
+    have Ps : Region.Sub ⟨low s + BitVec.ofNat 64 200, 16⟩ (lowR s) := low_sub (by decide)
+    rw [show below (s.gpr .esp) (4 * pushRegs.length) = ⟨low s + BitVec.ofNat 64 200, 16⟩ from push_eq hp] at fl
+    sig_post [contract, Proof.RsaKeyGen.primeSearchContract, Proof.RsaKeyGen.primeSearchSig, abi, argSlots, argVal,
+      argBytes, Abi.withConsts, VG.Impl.RsaKeyGen.TrialTable32.consts] at post
+    sig_post [contract, Proof.RsaKeyGen.primeSearchContract, Proof.RsaKeyGen.primeSearchSig, abi, argSlots, argVal,
+      argBytes, Abi.withConsts, VG.Impl.RsaKeyGen.TrialTable32.consts]
+    obtain ⟨q1, q2, q3, req, q4, q5⟩ := post
+    refine ⟨q1, ?_, ?_, req, ?_, q5⟩
+    · rw [VG.Proof.Rsa.rsa_bytes_frame fl ?f1 ?d1]
+      · exact q2
+      · have := (arg s 1).isLt; omega_using [this]
+      · intro r hr; rw [List.mem_singleton.mp hr]; exact (A.lowO.sub_left Ps).symm
+    · rw [VG.Proof.Rsa.wordsAt_frame fl ?f2 ?d2]
+      · exact q3
+      · decide
+      · intro r hr; rw [List.mem_singleton.mp hr]; exact (A.lowU.sub_left Ps).symm
+    · rw [VG.Proof.Rsa.wordsAt_frame fl ?f3 ?d3]
+      · exact q4
+      · decide
+      · intro r hr; rw [List.mem_singleton.mp hr]; exact (A.lowS.sub_left Ps).symm
   unfold code
-  refine WP.frameKept (rs := pushRegs) (r := .ebx) (by decide) (by decide) (by decide)
-    (by simp only [List.length_cons, List.length_nil]; omega_using [h1]) (body_noSp' c) ?_
+  refine WP.frameLocal (rs := pushRegs) (r := .ebx) (by decide) (by decide) (by decide)
+    (by simp only [List.length_cons, List.length_nil]; omega_using [h1]) (body_noSp' c) postLocal ?_
   refine WP.seq (WP.mono (entry_ok hp) fun s1 h1 => ?_)
   refine WP.seq (WP.mono (search_loop c (final := searchResult s) (tr := []) h1 (consume_zero _).symm)
     fun s2 hd => ?_)

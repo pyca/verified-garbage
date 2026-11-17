@@ -337,12 +337,15 @@ theorem sieve_ok (h : In Ex base bytes len args s) {j : Nat} (hj : j ≤ 27) {T 
           by rw [mu', mu]⟩
   refine WP.seq (VG.X86.WP.mono_syms pre fun u' ⟨P, au, eaU, ecU, du', Ku', mU⟩ Su => ?_)
   obtain spU : u'.gpr .esp = s.gpr .esp := Ku'.1 _ (by decide)
-  refine WP.seq (WP.mono (WP.frameAllocKept (bytes := 20) (Q := fun t => t.gpr .esp = s.gpr .esp ∧ t.rd = s.rd ∧
+  refine WP.seq (WP.mono (WP.frameAllocLocal (bytes := 20) (Q := fun t => t.gpr .esp = s.gpr .esp ∧ t.rd = s.rd ∧
       t.wr = s.wr ∧ Frame [below (s.gpr .esp) 96] s.mem t.mem ∧
       t.gpr .eax = BitVec.ofNat 32
         (VG.Proof.RsaKeyGen.trialPrefix (sv s.mem base len .wide j) (sieveCount bits)).toNat ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi, .edi] s t) (by decide) (by decide)
-    (by decide) (by rw [spU]; omega_arith) (NoSp.of_all (by rfl)) ?_) fun t ht => ?_)
+    (by decide) (by rw [spU]; omega_arith) (NoSp.of_all (by rfl))
+    (fun _ _ _ ⟨a, b, c, F, e, K⟩ fl => ⟨a, b, c, F.trans (fl.sub fun r hr => by
+      obtain rfl := List.mem_singleton.mp hr
+      exact ⟨_, List.mem_singleton_self _, by rw [spU]; exact below_sub (by decide) (by omega_arith)⟩), e, K⟩) ?_) fun t ht => ?_)
   · -- The frame's body.
     obtain ⟨v, -⟩ := sieveGeo_valid h hj TT au bits
     refine WP.seq (WP.mono (sieveSetup_ok h hj TT au eaU ecU du' Ku' mU Su) fun c₂ ⟨H, spc, rdc, wrc, Fc⟩ => ?_)

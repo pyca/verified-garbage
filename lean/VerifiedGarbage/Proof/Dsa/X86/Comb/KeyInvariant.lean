@@ -61,11 +61,13 @@ shown disjoint from this context. -/
 def keyInvariant (s : State) (mem : Mem) : Prop :=
   KeyABI s ∧ parameterContext (argumentPointer s 9) (arg s 5).toNat (arg s 6).toNat (rInput s).key mem
 
-theorem keyInvariant_stable : StableScratch keyInvariant := by
-  intro s m m' rs O fits ⟨A,C⟩
+/-- The invariant holds whatever the stack's bytes are. -/
+theorem keyInvariant_frame {s : State} {m m' : Mem} (F : Frame [rStack s] m m') (h : keyInvariant s m) :
+    keyInvariant s m' := by
+  obtain ⟨A,C⟩ := h
   refine ⟨A,?_⟩
   unfold parameterContext at C ⊢
-  apply sampler_context_kept A (samplerFrame O fits) ?_ C
+  apply sampler_context_kept A F ?_ C
   have S := context_fits A.lengths
   have Gen := A.scratchLength
   unfold Spec.Dsa.generationScratchWords at Gen
@@ -77,5 +79,8 @@ theorem keyInvariant_stable : StableScratch keyInvariant := by
     rcases sup with ⟨h,e⟩|⟨h,e⟩|⟨h,e⟩|⟨h,e⟩|⟨h,e⟩ <;> rw [h,e] <;> rfl
   rw [layoutSize]
   omega_using [S, Gen]
+
+theorem keyInvariant_stable : StableScratch keyInvariant :=
+  fun O fits h => keyInvariant_frame (samplerFrame O fits) h
 
 end VG.Proof.Dsa.X86.Comb

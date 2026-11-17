@@ -16,6 +16,7 @@ theorem code_full_ok {body : Prog isa} (noSp : NoSp body)
     (header : 256 ≤ g.L) (length : w32 s.mem g.W 40 = capacity)
     (fit : 136 ≤ (s.gpr .esp).toNat)
     (separate : (s.gpr .esp).toNat ≤ g.W.toNat ∨ g.W.toNat + g.L + 136 ≤ (s.gpr .esp).toNat)
+    (hQ : ∀ t m u, Q t → Frame [below (s.gpr .esp) 28] t.mem m → Q { t with mem := m, unknowns := u })
     (runBody : ∀ a, Scr a g.W g.L → Caller g capacity (privateSp s) a →
       (lengthRegion (privateSp s)).Disjoint (below (privateSp s) 108) →
       Frame [below (s.gpr .esp) 28] s.mem a.mem →
@@ -36,7 +37,8 @@ theorem code_full_ok {body : Prog isa} (noSp : NoSp body)
     rcases hi with rfl | hi
     · rfl
     · exact noSp i hi
-  refine WP.frameAllocKept (by decide) (by decide) (by decide) (by rw [spA]; omega_using [fit]) innerNoSp ?_
+  refine WP.frameAllocLocal (by decide) (by decide) (by decide) (by rw [spA]; omega_using [fit]) innerNoSp
+    (fun t m u q fl => hQ t m u q (by rw [spA] at fl; exact fl)) ?_
   refine WP.seq (WP.mono (slot_ok Sa (by rw [spA]; exact fit)
     (by rw [spA]; exact separate) capA) fun b ⟨Sb, Cb, lenFar, Fb, Kb⟩ => ?_)
   rw [privateA] at Cb lenFar

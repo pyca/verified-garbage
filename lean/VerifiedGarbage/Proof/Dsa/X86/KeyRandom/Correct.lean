@@ -92,11 +92,39 @@ theorem bodyWith_noSp (check derive : Prog isa) (C : NoSp check) (D : NoSp deriv
                 (.of_all (by decide +kernel)))))))))
       (.of_all (by decide +kernel)))))
 
+/-- What the body leaves holds whatever the stack's bytes are and the unknowns. -/
+theorem Finished.release {s₀ u : State} (A : KeyABI s₀) (hF : Finished s₀ u) {m : Mem}
+    (fl : Frame [rStack s₀] u.mem m) (uu : Nat → BitVec 32) :
+    Finished s₀ { u with mem := m, unknowns := uu } := by
+  have hb := A.outBound
+  have hu := A.usedBound
+  obtain slot_eq : ∀ d, d + 4 ≤ 8 →
+      slot m (argumentPointer s₀ 2) d = slot u.mem (argumentPointer s₀ 2) d := fun d hd =>
+    fl.readW (r := ⟨off (argumentPointer s₀ 2) d, 4⟩)
+      (by have := Offset.contains_base (off (argumentPointer s₀ 2) d) (d := 0) (n := 4) (k := 4) (by decide)
+            (by decide)
+          rwa [BitVec.add_zero] at this)
+      (fun r hr => by
+        rw [List.mem_singleton.mp hr]
+        exact (A.stackUsedWide.sub_right (Offset.sub_base _ hd)).symm) (by decide)
+  refine ⟨hF.ready.congr (rs := []) ⟨fun _ _ => rfl, rfl, rfl⟩ fl, hF.eax, hF.ebx, hF.esi, hF.edi, hF.ebp,
+    ?_, ?_, ?_⟩
+  · rw [← hF.out]
+    exact VG.Proof.Dsa.X86.rBytes_frame fl (fun r hr => by rw [List.mem_singleton.mp hr]; exact A.stackOutWide.symm)
+      (by omega_using [])
+  · rw [← hF.usedLo]; exact slot_eq 0 (by decide)
+  · rw [← hF.usedHi]; exact slot_eq 4 (by decide)
+
 theorem codeWith_ok {I : State → Mem → Prop} (C : CheckInvoke I) (D : DeriveInvoke I)
     (stable : StableScratch I) (nc : NoSp C.code) (nd : NoSp D.code) {s₀ : State} (A : KeyABI s₀) :
-    WP isa (codeWith C.code D.code) s₀ fun s' => ∃ u, Finished s₀ u ∧ s' = freed KeyRandom.frameBytes u :=
-  WP.alloc ⟨by decide, by decide, by decide⟩ (by have := A.stackLow; unfold KeyRandom.frameBytes; omega_using [this])
-    (bodyWith_noSp C.code D.code nc nd) (WP.mono (bodyWith_ok C D stable A) fun u hu => ⟨u, hu, rfl⟩)
+    WP isa (codeWith C.code D.code) s₀ fun s' => ∃ u, Finished s₀ u ∧ s' = freed KeyRandom.frameBytes u := by
+  obtain hsub : Region.Sub (below (s₀.gpr .esp) KeyRandom.frameBytes) (rStack s₀) := by
+    show Region.Sub ⟨(s₀.gpr .esp - BitVec.ofNat 32 KeyRandom.frameBytes).setWidth 64, KeyRandom.frameBytes⟩ _
+    rw [alloc_base A, rBase, rLow_off]; exact Offset.sub_base _ (by decide)
+  exact WP.alloc ⟨by decide, by decide, by decide⟩ (by have := A.stackLow; unfold KeyRandom.frameBytes; omega_using [this])
+    (bodyWith_noSp C.code D.code nc nd) (bodyWith_ok C D stable A) fun u m uu hu fl =>
+      ⟨_, hu.release A (fl.sub fun r hr => ⟨rStack s₀, List.mem_singleton_self _, by
+        rw [List.mem_singleton.mp hr]; exact hsub⟩) uu, rfl⟩
 
 theorem freed_esp_eq {s₀ u : State} (A : KeyABI s₀) (h : Ready s₀ u) :
     (freed KeyRandom.frameBytes u).gpr .esp = s₀.gpr .esp := by

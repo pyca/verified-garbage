@@ -11,6 +11,7 @@ public import VerifiedGarbage.Proof.RsaOaep.Encode
 import VerifiedGarbage.Proof.RsaPss.X86.CtBase
 import VerifiedGarbage.Proof.RsaPss.X86.CtHash
 import VerifiedGarbage.Proof.RsaPkcs1Sig.BytesAt
+import VerifiedGarbage.Proof.Rsa.BytesFrame
 public import VerifiedGarbage.Proof.RsaOaep.X86.Mgf
 import VerifiedGarbage.Proof.RsaOaep.X86.LabelT
 import VerifiedGarbage.Proof.RsaPss.X86.CtInit
@@ -1540,7 +1541,7 @@ theorem code_ok (hc : Coh vs) (c : Ver.PublicImpl) {s : State} (hs : (espec vs).
   refine WP.mono (wrap_ok (F := frameBytes) (by decide) (body_noSp ni nu nf c) hsp hfit4
     (W := ((epw (vs := vs) s s w w₁).lay w₁.g.H.D).W)
     (Q := fun r m => Res w₁.g w.g (epw (vs := vs) s s w w₁) (entered frameBytes s) m r) (fun r hr => ?_)
-    (WP.mono hb fun u hu => ⟨hu.1.1.2.frame, hu.1.2⟩)) fun t ⟨abi, res⟩ => ⟨abi, ?_⟩
+    (WP.mono hb fun u hu => ⟨hu.1.1.2.frame, hu.1.2⟩) (fun r m m' fl hres => ?_)) fun t ⟨abi, res⟩ => ⟨abi, ?_⟩
   · have ok := hin.ok
     rw [ep_lay] at ok hr
     rw [save_eq (argv := (epw (vs := vs) s s w w₁).argv) (ro := (epw (vs := vs) s s w w₁).ro w₁.g.H.D)
@@ -1548,6 +1549,12 @@ theorem code_ok (hc : Coh vs) (c : Ver.PublicImpl) {s : State} (hs : (espec vs).
       ret_eq (argv := (epw (vs := vs) s s w w₁).argv) (ro := (epw (vs := vs) s s w w₁).ro w₁.g.H.D)
         (rw := (epw (vs := vs) s s w w₁).rw) (C := 100) hsp]
     exact ⟨ok.save_apart r hr, ok.ret_apart r hr⟩
+  · have ok := hin.ok
+    rw [ep_lay] at ok
+    obtain F' := release_frame (argv := (epw (vs := vs) s s w w₁).argv) (ro := (epw (vs := vs) s s w w₁).ro w₁.g.H.D) (rw := (epw (vs := vs) s s w w₁).rw) (C := 100) fl
+    unfold Res at hres ⊢
+    exact fun h => VG.Proof.Rsa.written_frame F' (by show (arg s 3).toNat < 2 ^ 64; have := (arg s 3).isLt; omega_using [this])
+      (fun q hq => by rw [List.mem_singleton.mp hq]; exact (ok.stk (epw (vs := vs) s s w w₁).OUT (by simp [layOf])).symm) (hres h)
   · have ok := hin.ok
     rw [ep_lay] at ok
     obtain ro := fun {R : Region} (hR : R ∈ (epw (vs := vs) s s w w₁).ro w₁.g.H.D) => entered_ro hsp ok hR

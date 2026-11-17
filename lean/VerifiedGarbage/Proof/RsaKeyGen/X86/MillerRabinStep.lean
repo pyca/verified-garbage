@@ -2002,6 +2002,17 @@ def Result (P : Parameters) (s : State) : Prop :=
   | some (prime, rest) => w32 s.mem P.g.W 168 = (if prime then 1 else 3) ∧
       w32 s.mem P.g.W 152 = P.entropy.length - rest.length
 
+/-- The result, whatever the bytes outside the workspace are. -/
+theorem Result.workspace {P : Parameters} {s t : State} (h : Result P s)
+    (W : VG.Proof.MillerRabin.X86.WorkspaceFrame P.g [] s.mem t.mem) (fit : 172 ≤ P.g.L) : Result P t := by
+  have e168 : w32 t.mem P.g.W 168 = w32 s.mem P.g.W 168 := by
+    rw [w32, w32, W.read32 (by omega_using [fit]) (by intro r mem; nomatch mem)]
+  have e152 : w32 t.mem P.g.W 152 = w32 s.mem P.g.W 152 := by
+    rw [w32, w32, W.read32 (by omega_using [fit]) (by intro r mem; nomatch mem)]
+  unfold Result at h ⊢
+  rw [e168, e152]
+  exact h
+
 theorem count_policy (P : Parameters) (k : Nat) :
     WitnessStatus.status
       (Proof.MillerRabin.Round.round P.candidate (wit P.candidate P.bytes P.entropy (P.start + P.bytes * k)).1)

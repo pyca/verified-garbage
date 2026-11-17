@@ -366,7 +366,14 @@ theorem framed_ok {s : State} (h : contract.pre s) :
   obtain inner : NoSp (.seq VG.Impl.RsaKeyGen.X86.KeyRuntime.body (.block Compact.restoreRegs)) :=
     VG.Proof.RsaKeyGen.X86.KeyNoSp.sequence body_noSp (NoSp.of_all (by rfl))
   unfold VG.Impl.RsaKeyGen.X86.KeyRuntime.code
-  refine WP.frameKept (rs := VG.Proof.Mont.X86.Compact.savedRegisters) (by decide) (by decide) (by decide) savedFit inner ?_
+  refine WP.frameLocal (rs := VG.Proof.Mont.X86.Compact.savedRegisters) (by decide) (by decide) (by decide) savedFit inner
+    (fun t m _ ⟨abi, R⟩ fl => ⟨VG.Proof.Mont.X86.Compact.abi_frame savedFit abi fl,
+      VG.Proof.RsaKeyGen.X86.Key.WrittenCore.frame (t := { t with mem := m, unknowns := _ }) R rfl fl
+        (fun i hi q hq => by
+          rw [List.mem_singleton.mp hq]
+          exact (writes_reserved h _ (List.mem_cons_of_mem _ (List.mem_map.mpr ⟨i, List.mem_range.mpr hi, rfl⟩))).sub_right
+            A.savedSub)
+        (fun i _ => Nat.lt_of_lt_of_le (BitVec.isLt _) (by decide))⟩) ?_
   refine WP.seq (WP.mono (body_ok (call_valid h) I) fun t ⟨_, R, F, K⟩ => ?_)
   obtain sp : t.gpr .esp = callSp s := (K.1 .esp (by unfold bodyClob; decide)).trans I.arguments.sp
   obtain pFit : (callSp s).toNat + 16 ≤ 2 ^ 32 := by

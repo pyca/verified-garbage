@@ -301,7 +301,7 @@ theorem code_okP (hok : OK vs gs) (c : CrtImpl) (cw : CrtPImpl) {s : State} (hs 
   refine WP.mono (wrap_ok (F := frameBytes) (by decide) (body_noSpP (fnsSp vs gs) (hall_of hok) c cw) hsp
     (by omega_using [hfit4]) (W := ((epw vs gs s s w wg).lay w.h.D).W)
     (Q := fun r m => Res w.h wg.g.G (epw vs gs s s w wg) (entered frameBytes s) m r) (fun r hr => ?_)
-    (WP.mono hb fun u hu => ⟨hu.1.1.2.frame, hu.1.2⟩)) fun t ⟨abi, res⟩ => ⟨abi, ?_⟩
+    (WP.mono hb fun u hu => ⟨hu.1.1.2.frame, hu.1.2⟩) (fun r m m' fl hres => ?_)) fun t ⟨abi, res⟩ => ⟨abi, ?_⟩
   · have ok := hin.ok
     rw [← hD, ep_lay] at ok hr
     rw [save_eq (argv := (epw vs gs s s w wg).argv (arg s 17).toNat) (ro := (epw vs gs s s w wg).ro (arg s 17).toNat)
@@ -309,6 +309,12 @@ theorem code_okP (hok : OK vs gs) (c : CrtImpl) (cw : CrtPImpl) {s : State} (hs 
       ret_eq (argv := (epw vs gs s s w wg).argv (arg s 17).toNat) (ro := (epw vs gs s s w wg).ro (arg s 17).toNat)
         (rw := (epw vs gs s s w wg).rw) (C := 3448) hsp]
     exact ⟨ok.save_apart r hr, ok.ret_apart r hr⟩
+  · have ok := hin.ok
+    rw [← hD, ep_lay] at ok
+    obtain F' := release_frame (argv := (epw vs gs s s w wg).argv (arg s 17).toNat) (ro := (epw vs gs s s w wg).ro (arg s 17).toNat) (rw := (epw vs gs s s w wg).rw) (C := 3448) fl
+    unfold Res at hres ⊢
+    exact VG.Proof.Rsa.writtenOutcome_frame F' (by show (arg s 3).toNat < 2 ^ 64; have := (arg s 3).isLt; omega_using [this])
+      (fun q hq => by rw [List.mem_singleton.mp hq]; exact (ok.stk (epw vs gs s s w wg).OUT (by simp [layOf])).symm) hres
   · have ok := hin.ok
     rw [← hD, ep_lay] at ok
     have ro := fun {R : Region} (hR : R ∈ (epw vs gs s s w wg).ro (arg s 17).toNat) => entered_ro hsp ok hR

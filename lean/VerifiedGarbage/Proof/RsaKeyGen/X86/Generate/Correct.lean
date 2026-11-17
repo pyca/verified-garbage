@@ -1,10 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.Generate.Loop
+import VerifiedGarbage.Proof.Mont.X86.Compact.Frame
+import VerifiedGarbage.Proof.Rsa.BytesFrame
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.MlKem.X86.Common
 import VerifiedGarbage.Proof.Ffdh.X86.KeyInit
+meta import VerifiedGarbage.Proof.Mont.X86.Compact.Frame
+meta import VerifiedGarbage.Proof.Rsa.BytesFrame
 meta import VerifiedGarbage.Proof.RsaKeyGen.X86.Generate.Loop
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Sig
@@ -126,9 +130,41 @@ theorem gen_correct_ok (srch : Srch) (key : KeyImpl) {o : State} (h : contract.p
   have A := hp.abi
   have hv := hp.len_valid
   have h1 : 284 ≤ (o.gpr .esp).toNat := A.stackLow
+  have postLocal : ∀ t m (uu : Nat → BitVec 32), abiPreserved o t ∧ contract.post o t →
+      Frame [below (o.gpr .esp) (4 * pushRegs.length)] t.mem m →
+      abiPreserved o { t with mem := m, unknowns := uu } ∧ contract.post o { t with mem := m, unknowns := uu } := by
+    intro t m uu ⟨abi, post⟩ fl
+    refine ⟨VG.Proof.Mont.X86.Compact.abi_frame (by omega_using [h1]) abi fl, ?_⟩
+    have Ps : Region.Sub ⟨low o + BitVec.ofNat 64 268, 16⟩ (lowR o) := low_sub (by decide)
+    have hK := hp.kR_eq ▸ A.lowK
+    rw [show below (o.gpr .esp) (4 * pushRegs.length) = ⟨low o + BitVec.ofNat 64 268, 16⟩ from push_eq hp] at fl
+    sig_post [contract, Spec.RsaKeyGen.keySearchContract, Spec.RsaKeyGen.keySearchSig, abi, argSlots, argVal,
+      argBytes, Abi.withConsts, VG.Impl.RsaKeyGen.TrialTable32.consts] at post
+    sig_post [contract, Spec.RsaKeyGen.keySearchContract, Spec.RsaKeyGen.keySearchSig, abi, argSlots, argVal,
+      argBytes, Abi.withConsts, VG.Impl.RsaKeyGen.TrialTable32.consts]
+    obtain ⟨q1, q2, q3, req, q4, q5, q6⟩ := post
+    refine ⟨q1, ?_, ?_, req, ?_, ?_, q6⟩
+    · rw [VG.Proof.Rsa.rsa_bytes_frame fl ?f1 ?d1]
+      · exact q2
+      · change 9 * p.L < 2 ^ 64; have := hp.kBound'; omega_using [this]
+      · intro r hr; rw [List.mem_singleton.mp hr]; exact (hK.sub_left Ps).symm
+    · rw [VG.Proof.Rsa.wordsAt_frame fl ?f2 ?d2]
+      · exact q3
+      · decide
+      · intro r hr; rw [List.mem_singleton.mp hr]; exact (A.lowU.sub_left Ps).symm
+    · rw [VG.Proof.Rsa.wordsAt_frame fl ?f3 ?d3]
+      · exact q4
+      · decide
+      · intro r hr; rw [List.mem_singleton.mp hr]
+        exact ((A.lowS.sub_right (Region.sub_prefix (by decide))).sub_left Ps).symm
+    · rw [VG.Proof.Rsa.rsa_bytes_frame fl ?f4 ?d4]
+      · exact q5
+      · decide
+      · intro r hr; rw [List.mem_singleton.mp hr]
+        exact ((A.lowS.sub_right (Offset.sub_base (d := 48) (n := 8) (k := 56) _ (by decide))).sub_left Ps).symm
   unfold code
-  refine WP.frameKept (rs := pushRegs) (r := .ebx) (by decide) (by decide) (by decide)
-    (by simp only [List.length_cons, List.length_nil]; omega_using [h1]) (body_noSp' srch key) ?_
+  refine WP.frameLocal (rs := pushRegs) (r := .ebx) (by decide) (by decide) (by decide)
+    (by simp only [List.length_cons, List.length_nil]; omega_using [h1]) (body_noSp' srch key) postLocal ?_
   unfold body
   refine WP.seq (WP.mono (entry_ok hp) fun s1 ⟨f1, hbx1, hm1⟩ => ?_)
   refine WP.seq (WP.mono (clearAround_ok f1 hbx1 ?other) fun s2 h2 => ?_)

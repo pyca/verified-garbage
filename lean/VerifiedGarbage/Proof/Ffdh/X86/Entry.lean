@@ -643,6 +643,7 @@ theorem wrap_syms_ok (A : WrapABI a n s) {body : Prog isa} (hsp : NoSp (.seq (.b
     {Ex : List Region → List Region → Prop} (hx : Ex s.rd (⟨frameAt s, argsFrame⟩ :: s.wr))
     {Out : List Region} (outRet : ∀ r ∈ Out, Region.Disjoint ⟨(s.gpr .esp).setWidth 64, 4⟩ r)
     (outWs : ∀ r ∈ Out, Region.Disjoint ⟨wsBase a s, wsSize a s⟩ r) {P : Mem → BitVec 32 → Prop}
+    (hP : ∀ m m' e, Frame [⟨(s.gpr .esp).setWidth 64 - 172#64, 172⟩] m m' → P m e → P m' e)
     (hb : ∀ f, In Ex (wsBase a s) (wsSize a s) (pLenOf a s) (synth a (arg s)) f →
       f.gpr .esp = s.gpr .esp - BitVec.ofNat 32 argsFrame →
       Frame [⟨wsBase a s, wsSize a s⟩, ⟨frameAt s, argsFrame⟩] s.mem f.mem → f.syms = s.syms →
@@ -672,8 +673,22 @@ theorem wrap_syms_ok (A : WrapABI a n s) {body : Prog isa} (hsp : NoSp (.seq (.b
   let R : State → Prop := fun u => P u.mem (u.gpr .eax) ∧ Scr u (wsBase a s) (wsSize a s) ∧
     Saved u.mem (off (wsBase a s)) s.gpr Impl.Bignum.X86.Crt.savedRegisters ∧ u.gpr .esp = s.gpr .esp ∧
     u.mem.readW ((s.gpr .esp).setWidth 64) 32 = s.mem.readW ((s.gpr .esp).setWidth 64) 32
-  refine WP.seq (WP.mono (Q := R) (WP.frameAllocKept (bytes := argsFrame) (by decide) (by decide) (by decide)
-    (by rw [sp]; omega_using [fb, st', low]) hsp ?_) fun s₂ R₂ => ?_)
+  refine WP.seq (WP.mono (Q := R) (WP.frameAllocLocal (bytes := argsFrame) (Q := R) (by decide) (by decide) (by decide)
+    (by rw [sp]; omega_using [fb, st', low]) hsp (fun t m u ht fl => ?_) ?_) fun s₂ R₂ => ?_)
+  · -- What `R` asks lies apart from the frame.
+    obtain ⟨Pt, St, Svt, et, rt⟩ := ht
+    obtain flA : Frame [⟨frameAt s, argsFrame⟩] t.mem m := by rw [sp] at fl; exact fl
+    obtain frameSub : Region.Sub ⟨frameAt s, argsFrame⟩ ⟨(s.gpr .esp).setWidth 64 - 172#64, 172⟩ := by
+      rw [FA]; exact Offset.sub_below _ (by decide) (by decide)
+    obtain savedSub : Region.Sub ⟨off (wsBase a s) 32, 16⟩ ⟨wsBase a s, wsSize a s⟩ :=
+      Offset.sub_base _ (d := 32) (n := 16) (by omega_using [hz])
+    refine ⟨hP _ _ _ (flA.sub fun r hr => ⟨_, List.mem_singleton_self _, by rw [List.mem_singleton.mp hr]; exact frameSub⟩) Pt,
+      ⟨St.edi, St.wr, St.nowrap, St.stk⟩, saved_keep flA (fun r hr => ?_) Svt, et, ?_⟩
+    · rw [List.mem_singleton.mp hr]; exact ((A.belowScratch.sub_left frameSub).sub_right savedSub).symm
+    · show m.readW _ _ = _
+      rw [flA.readW (r := ⟨(s.gpr .esp).setWidth 64, 4⟩) (Region.contains_self _ _)
+        (fun r hr => by rw [List.mem_singleton.mp hr]; exact retFrame) (by decide)]
+      exact rt
   · rw [show Impl.Ffdh.X86.fill a = Impl.Ffdh.X86.fill a ++ [] from (List.append_nil _).symm]
     refine WP.seq (WP.mono_syms (frameIn_ok A S K O hx (Q := fun f =>
         In Ex (wsBase a s) (wsSize a s) (pLenOf a s) (synth a (arg s)) f ∧
@@ -751,6 +766,7 @@ theorem wrap_ok (A : WrapABI a n s) {body : Prog isa} (hsp : NoSp (.seq (.block 
     {Ex : List Region → List Region → Prop} (hx : Ex s.rd (⟨frameAt s, argsFrame⟩ :: s.wr))
     {Out : List Region} (outRet : ∀ r ∈ Out, Region.Disjoint ⟨(s.gpr .esp).setWidth 64, 4⟩ r)
     (outWs : ∀ r ∈ Out, Region.Disjoint ⟨wsBase a s, wsSize a s⟩ r) {P : Mem → BitVec 32 → Prop}
+    (hP : ∀ m m' e, Frame [⟨(s.gpr .esp).setWidth 64 - 172#64, 172⟩] m m' → P m e → P m' e)
     (hb : ∀ f, In Ex (wsBase a s) (wsSize a s) (pLenOf a s) (synth a (arg s)) f →
       f.gpr .esp = s.gpr .esp - BitVec.ofNat 32 argsFrame →
       Frame [⟨wsBase a s, wsSize a s⟩, ⟨frameAt s, argsFrame⟩] s.mem f.mem →
@@ -758,7 +774,7 @@ theorem wrap_ok (A : WrapABI a n s) {body : Prog isa} (hsp : NoSp (.seq (.block 
         Frame (Out ++ CrtRt.frameR (wsBase a s) (f.gpr .esp) (fR (pLenOf a s))) f.mem t.mem ∧
         Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] f t) :
     WP isa (wrap a body) s fun u => P u.mem (u.gpr .eax) ∧ abiPreserved s u :=
-  wrap_syms_ok A hsp hx outRet outWs fun f I e F _ => hb f I e F
+  wrap_syms_ok A hsp hx outRet outWs hP fun f I e F _ => hb f I e F
 
 end
 

@@ -5,12 +5,14 @@ public import VerifiedGarbage.Proof.Framework.X86.AllocFrame
 public import VerifiedGarbage.Proof.Framework.X86.CallWith
 import VerifiedGarbage.Proof.Framework.X86.Wp
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.OffsetBelow
 import VerifiedGarbage.Proof.Framework.X86.RelCT
 meta import VerifiedGarbage.Impl.RsaPkcs1Sig.X86.Wrap
 meta import VerifiedGarbage.Proof.Framework.X86.AllocFrame
 meta import VerifiedGarbage.Proof.Framework.X86.CallWith
 meta import VerifiedGarbage.Proof.Framework.X86.Wp
 meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.OffsetBelow
 meta import VerifiedGarbage.Proof.Framework.X86.RelCT
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.X86.Call
@@ -106,7 +108,8 @@ theorem WP.rdwrSp {c : Prog isa} (hc : NoSp c) {s : State} {Q : State → Prop} 
 theorem wrap_ok {F : Nat} (hF : FrameOk F) {body : Prog isa} (hbs : NoSp body) {s : State}
     (hsp : 16 + F ≤ (s.gpr .esp).toNat) (hfit : (s.gpr .esp).toNat + 4 ≤ 2 ^ 32)
     {W : List Region} (hW : ∀ r ∈ W, (saveRegion s).Disjoint r ∧ (retRegion s).Disjoint r) {Q : BitVec 32 → Mem → Prop}
-    (hb : WP isa body (entered F s) fun u => Frame W (entered F s).mem u.mem ∧ Q (u.gpr .eax) u.mem) :
+    (hb : WP isa body (entered F s) fun u => Frame W (entered F s).mem u.mem ∧ Q (u.gpr .eax) u.mem)
+    (hQ : ∀ ax m m', Frame [below (s.gpr .esp) (16 + F)] m m' → Q ax m → Q ax m') :
     WP isa (wrap F body) s fun t => abiPreserved s t ∧ Q (t.gpr .eax) t.mem := by
   have h16 : 16 ≤ (s.gpr .esp).toNat := by omega_using [hsp]
   have pE : ((pushed savedRegs s).gpr .esp).toNat = (s.gpr .esp).toNat - 16 := by
@@ -119,12 +122,59 @@ theorem wrap_ok {F : Nat} (hF : FrameOk F) {body : Prog isa} (hbs : NoSp body) {
     · exact hbs i hi
     · rfl
     · exact restore_noSp i hi
+  -- What the releases may change: the frame and the push, `16 + F` bytes below `esp`.
+  have hsub16 : Region.Sub (below (s.gpr .esp) (4 * savedRegs.length)) (below (s.gpr .esp) (16 + F)) :=
+    below_sub (by simp only [savedRegs, List.length_cons, List.length_nil]; omega_using []) hsp
+  have hsubF : Region.Sub (below ((pushed savedRegs s).gpr .esp) F) (below (s.gpr .esp) (16 + F)) := by
+    rw [pushed_esp]; exact below_inner (by simp only [savedRegs, List.length_cons, List.length_nil]; omega_using []) hsp
+  have retBelow : ∀ q ∈ [below (s.gpr .esp) (4 * savedRegs.length)], (retRegion s).Disjoint q := by
+    intro q hq
+    simp only [List.mem_singleton] at hq; subst hq
+    simp only [below, savedRegs, List.length_cons, List.length_nil]
+    rw [Taint.sub_setWidth (by omega_using [hsp])]
+    exact Offset.base_disjoint_below _ (n := 16) (k := 4) (by omega_using [])
   unfold wrap
-  refine WP.frameKept (by decide) pushRegs_noSp (by decide) (by simpa [savedRegs] using h16) hinner ?_
+  refine WP.frameLocal (by decide) pushRegs_noSp (by decide) (by simpa [savedRegs] using h16) hinner
+    (fun t m _ ⟨abi, q⟩ fl => ⟨⟨abi.1, by
+      show m.readW _ _ = _
+      rw [fl.readW (r := retRegion s) (Region.contains_self _ _) retBelow (by decide)]
+      exact abi.2⟩, hQ _ _ _ (fl.sub fun r hr => ⟨_, List.mem_singleton_self _, by
+        rw [List.mem_singleton.mp hr]; exact hsub16⟩) q⟩) ?_
   refine WP.seq ?_
-  refine WP.frameAllocKept hF.1 hF.2.1 hF.2.2 (by omega_using [hsp, pE]) hbs ?_
+  refine WP.frameAlloc hF.1 hF.2.1 hF.2.2 (by omega_using [hsp, pE]) hbs ?_
   refine WP.mono (WP.rdwrSp hbs hb) ?_
-  rintro u ⟨⟨frame, result⟩, rdU, wrU, spU⟩
+  rintro u0 ⟨⟨frame0, result0⟩, rdU, wrU, spU⟩ mm uu fl
+  -- The alloc frame is apart from the push and the return address.
+  have hW' : ∀ r ∈ W ++ [below ((pushed savedRegs s).gpr .esp) F],
+      (saveRegion s).Disjoint r ∧ (retRegion s).Disjoint r := by
+    intro r hr
+    rcases List.mem_append.mp hr with hr | hr
+    · exact hW r hr
+    · rw [List.mem_singleton.mp hr]
+      refine ⟨?_, ?_⟩
+      · rw [pushed_esp]
+        show Region.Disjoint ⟨(s.gpr .esp - BitVec.ofNat 32 16).setWidth 64, 16⟩
+          ⟨((s.gpr .esp - BitVec.ofNat 32 16) - BitVec.ofNat 32 F).setWidth 64, F⟩
+        rw [Taint.sub_setWidth (show F ≤ (s.gpr .esp - BitVec.ofNat 32 16).toNat by
+          rw [sub_toNat h16]; omega_using [hsp])]
+        exact (Offset.below_disjoint _ (by omega_using [hF.2.1])).symm
+      · refine Region.Disjoint.sub_right ?_ hsubF
+        show Region.Disjoint _ ⟨(s.gpr .esp - BitVec.ofNat 32 (16 + F)).setWidth 64, 16 + F⟩
+        rw [Taint.sub_setWidth hsp]
+        exact (Offset.below_disjoint _ (by omega_using [hF.2.1])).symm
+  have frame : Frame (W ++ [below ((pushed savedRegs s).gpr .esp) F]) (entered F s).mem
+      ({ u0 with mem := mm, unknowns := uu } : State).mem :=
+    (frame0.mono fun r hr => List.mem_append_left _ hr).trans
+      (fl.mono fun r hr => List.mem_append_right _ hr)
+  have result : Q (({ u0 with mem := mm, unknowns := uu } : State).gpr .eax)
+      ({ u0 with mem := mm, unknowns := uu } : State).mem :=
+    hQ _ _ _ (fl.sub fun r hr => ⟨_, List.mem_singleton_self _, by
+      rw [List.mem_singleton.mp hr]; exact hsubF⟩) result0
+  replace rdU : ({ u0 with mem := mm, unknowns := uu } : State).rd = _ := rdU
+  replace wrU : ({ u0 with mem := mm, unknowns := uu } : State).wr = _ := wrU
+  replace spU : ({ u0 with mem := mm, unknowns := uu } : State).gpr .esp = _ := spU
+  show WP isa _ (freed F ({ u0 with mem := mm, unknowns := uu } : State)) _
+  generalize ({ u0 with mem := mm, unknowns := uu } : State) = u at frame result rdU wrU spU ⊢
   have spF : (freed F u).gpr .esp = (pushed savedRegs s).gpr .esp := by
     rw [freed_esp, spU, allocFrame_esp]; exact BitVec.sub_add_cancel _ _
   have wrF : (freed F u).wr = (pushed savedRegs s).wr := by
@@ -146,7 +196,7 @@ theorem wrap_ok {F : Nat} (hF : FrameOk F) {body : Prog isa} (hbs : NoSp body) {
     intro d hd _
     rw [topAddr d (by omega_using [hd])]
     exact frame.readW (r := saveRegion s) (Offset.contains_base _ (by omega_arith) (by omega_using [hd]))
-      (fun r hr => (hW r hr).1) (by decide)
+      (fun r hr => (hW' r hr).1) (by decide)
   refine WP.mono (restore_ok (freed F u) read) ?_
   rintro t ⟨edi, esi, ebp, spT, eaxT, memT, -, -⟩
   have words : ∀ i < 4, t.mem.readW (addr (t.gpr .esp) (4 * i)) 32 =
@@ -168,7 +218,7 @@ theorem wrap_ok {F : Nat} (hF : FrameOk F) {body : Prog isa} (hbs : NoSp body) {
         entW 8 (by decide) (by decide)]; exact push_word h16 (i := 2) (by decide)
     · rw [popped_esp, spT, spF, pushed_esp]; exact BitVec.sub_add_cancel _ _
   · rw [popped_mem, memT, freed_mem]
-    rw [frame.readW (r := retRegion s) (Region.contains_self _ _) (fun r hr => (hW r hr).2) (by decide)]
+    rw [frame.readW (r := retRegion s) (Region.contains_self _ _) (fun r hr => (hW' r hr).2) (by decide)]
     rw [entered_mem]
     refine (pushed_frame pushRegs_noSp (by simpa [savedRegs] using h16)).readW
       (r := ⟨(s.gpr .esp).setWidth 64, 4⟩) (Region.contains_self _ _) ?_ (by decide)

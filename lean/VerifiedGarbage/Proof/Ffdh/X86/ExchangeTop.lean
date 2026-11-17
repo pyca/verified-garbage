@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86.CheckPrivate
+import VerifiedGarbage.Proof.Rsa.BytesFrame
 import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Export
 import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Stage
 import VerifiedGarbage.Proof.Framework.Omega
@@ -490,6 +491,8 @@ theorem operation_ok {s : State} (A : ExchangeABI s) :
   exact wrap_ok (wrapABI A) (NoSp.of_all frameBody_all) hx (Out := [outR s])
     (fun r hr => by rw [List.mem_singleton.mp hr]; exact A.retOut)
     (fun r hr => by rw [List.mem_singleton.mp hr]; exact A.outScratch.symm)
-    (P := fun m e => spec s m e) fun f I espf Ft => frame_ok A f I espf Ft
+    (P := fun m e => spec s m e) (hP := fun m m' e F h dv pv =>
+      VG.Proof.Rsa.written_frame F (by have := (arg s 1).isLt; omega_arith) (fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact A.belowOut.symm) (h dv pv))
+    fun f I espf Ft => frame_ok A f I espf Ft
 
 end VG.Proof.Ffdh.X86.Exchange

@@ -7,6 +7,7 @@ meta import VerifiedGarbage.Proof.Rsa.X86.StackTactic
 import VerifiedGarbage.Proof.Framework.X86.CallWith
 import VerifiedGarbage.Proof.Framework.Covers
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Rsa.BytesFrame
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Mont.X86.Sse2.Shape
 public import VerifiedGarbage.Impl.Ffdh.X86.KeyGen
@@ -437,9 +438,30 @@ theorem attempt_ok {p : KPub} {o s : State} {used keys scalars : Nat} (h : Live 
   have S := h.st
   obtain ⟨A, rfl⟩ := h.input
   have h1 : 228 ≤ (o.gpr .esp).toNat := A.stackLow
-  refine WP.frameAllocKept (by decide) (by decide) (by decide) (by rw [S.esp]; unfold argsBytes; omega_using [h1]) body_noSp ?_
-  refine WP.seq (WP.mono (arguments_ok S.alloc) fun t ⟨F, a⟩ => ?_)
-  exact WP.mono (call_ok F hu a) fun u ⟨F', e, out⟩ =>
-    ⟨F'.free, by rw [freed_gpr _ _ (by decide)]; exact e, by rw [freed_mem]; exact out⟩
+  refine WP.frameAllocLocal (by decide) (by decide) (by decide) (by rw [S.esp]; unfold argsBytes; omega_using [h1])
+    body_noSp (fun t m u ⟨St', e, out⟩ fl => ?_) ?_
+  · -- What the attempt leaves lies apart from its frame.
+    have hS := A.sBound
+    obtain fl' : Frame [lowR o] t.mem m := fl.sub fun r hr => by
+      obtain rfl := List.mem_singleton.mp hr
+      refine ⟨_, List.mem_singleton_self _, ?_⟩
+      rw [S.esp]
+      show Region.Sub ⟨(o.gpr .esp - BitVec.ofNat 32 argsBytes).setWidth 64, argsBytes⟩ _
+      rw [sw_sub A (by decide)]; exact low_sub (by decide)
+    obtain hx := VG.Proof.Rsa.rsa_bytes_frame fl' (src := argumentPointer o 0) (k := (arg o 7).toNat)
+      (by have := (arg o 7).isLt; omega_arith) fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; rw [← A.xLen]; exact A.lowX.symm
+    obtain hy := VG.Proof.Rsa.rsa_bytes_frame fl' (src := argumentPointer o 2) (k := (arg o 7).toNat)
+      (by have := (arg o 7).isLt; omega_arith) fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; rw [← A.yLen]; exact A.lowY.symm
+    refine ⟨⟨St'.abi, St'.rd, St'.wr, St'.esp, St'.esi, St'.saved,
+      St'.frame.trans (fl'.mono fun r hr => ?_), St'.words.frame hS (by decide) fl' fun r hr => ?_⟩, e, ?_⟩
+    · simp only [List.mem_singleton] at hr; subst hr; exact List.mem_append_right _ (List.mem_singleton_self _)
+    · simp only [List.mem_singleton] at hr; subst hr; exact A.lowS.symm
+    · show AttemptOut o used m
+      simpa only [AttemptOut, hx, hy] using out
+  · refine WP.seq (WP.mono (arguments_ok S.alloc) fun t ⟨F, a⟩ => ?_)
+    exact WP.mono (call_ok F hu a) fun u ⟨F', e, out⟩ =>
+      ⟨F'.free, by rw [freed_gpr _ _ (by decide)]; exact e, by rw [freed_mem]; exact out⟩
 
 end VG.Proof.Ffdh.X86.Cached.Search

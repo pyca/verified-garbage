@@ -2,12 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.Search.CallPre
 public import VerifiedGarbage.Proof.Framework.Covers
+import VerifiedGarbage.Proof.Rsa.BytesFrame
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.X86.CallWith
 meta import VerifiedGarbage.Proof.RsaKeyGen.X86.Search.CallPre
 meta import VerifiedGarbage.Proof.Framework.Covers
 meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Rsa.BytesFrame
 meta import VerifiedGarbage.Proof.Framework.Sig
 meta import VerifiedGarbage.Proof.Framework.X86.CallWith
 public import VerifiedGarbage.Proof.RsaKeyGen.CandidateContract
@@ -170,13 +172,14 @@ theorem candidateRun_ok (c : Cand) {p : SearchPublic} {o s : State} {used remain
     rw [hb.sp, SearchPublic.S1, hi.sp_eq]; exact VG.X86.sub_toNat (by omega_using [h1])
   unfold candidateRun
   rw [show 4 * callWords = 44 from rfl]
-  refine WP.frameAllocKept (by decide) (by decide) (by decide) (by omega_using [h1, hsn]) (body_noSp c) ?_
+  refine WP.frameAlloc (by decide) (by decide) (by decide) (by omega_using [h1, hsn]) (body_noSp c) ?_
   refine WP.seq (WP.mono (arguments_ok hb.alloc h.esi) fun u ⟨F, a⟩ => ?_)
   obtain ⟨cov, covW⟩ := call_covers F (used := used) (by omega_using [hroom, hv, hpr])
   have hun : (u.gpr .esp).toNat = (o.gpr .esp).toNat - 60 := by
     rw [F.esp, SearchPublic.S2, hi.sp_eq]; exact VG.X86.sub_toNat (by omega_using [h1])
   refine WP.of_syms (WP.call c.verified.1 c.noSp (by have := c.stack; omega_using [h1, hun, this])
     (call_pre hi hroom F.esp a F.syms F.frame) cov covW fun u' hrd hwr hcs hf _ ⟨s₂, hm₂, hg₂, hpost⟩ sy => ?_)
+  intro mm uu fl
   have hp := hpost
   sig_post [VG.Proof.RsaKeyGen.X86.Candidate.contract, Proof.RsaKeyGen.candidateContract,
     Proof.RsaKeyGen.candidateSig, abi, argSlots, argVal, argBytes, Abi.withConsts,
@@ -226,16 +229,37 @@ theorem candidateRun_ok (c : Cand) {p : SearchPublic} {o s : State} {used remain
     · exact A.lowB.sub_left Ps
     · exact Offset.disjoint _ (by omega_using []) (by omega_using []) (by omega_using [])
     · rw [bc]; exact Offset.disjoint _ (by omega_using [hsl]) (by omega_using []) (by omega_using [hsl])) hf F.saved
-  refine ⟨⟨⟨hi, hrd.trans F.rd, ?_, sy.trans F.syms, ?_, sv, F.frame.trans fr⟩, h.used_le, h.remaining_le,
+  have allocEq : below (s.gpr .esp) 44 = frR o := by
+    rw [hb.sp, SearchPublic.S1, hi.sp_eq]
+    change (⟨(o.gpr .esp - BitVec.ofNat 32 16 - BitVec.ofNat 32 44).setWidth 64, 44⟩ : Region) = _
+    rw [BitVec.sub_sub, ← BitVec.ofNat_add]
+    have e := addr_sub A (k := 16 + 44) (d := 0) (by omega_using []) (by omega_using [])
+    simp only [addr, BitVec.add_zero] at e
+    (rw [e]) <;> rfl
+  have fl' : Frame (changes o) u'.mem mm := fl.sub fun r hr => by
+    rw [List.mem_singleton.mp hr, allocEq]
+    exact ⟨below (o.gpr .esp) 216, by simp [changes], by rw [← hi.low_eq]; exact Fs⟩
+  have sv' : Saved mm p.S1 o := saved_frame hi (fun r hr => by
+    rw [List.mem_singleton.mp hr, allocEq]
+    exact Offset.disjoint _ (by omega_using []) (by omega_using []) (by omega_using [])) fl sv
+  have hO' : Spec.Rsa.bytesAt mm (p.op.setWidth 64) p.len = Spec.Rsa.bytesAt u'.mem (p.op.setWidth 64) p.len :=
+    VG.Proof.Rsa.rsa_bytes_frame fl (by rw [hpl]; have := (arg o 1).isLt; omega_using [this])
+      (fun r hr => by rw [List.mem_singleton.mp hr, allocEq, hop, hpl]; exact A.lowO.symm.sub_right Fs)
+  have hW' : Spec.Rsa.wordsAt mm (p.up.setWidth 64) 1 = Spec.Rsa.wordsAt u'.mem (p.up.setWidth 64) 1 :=
+    VG.Proof.Rsa.wordsAt_frame fl (by decide)
+      (fun r hr => by rw [List.mem_singleton.mp hr, allocEq, hup]; exact A.lowU.symm.sub_right Fs)
+  refine ⟨⟨⟨hi, hrd.trans F.rd, ?_, sy.trans F.syms, ?_, sv', (F.frame.trans fr).trans fl'⟩, h.used_le, h.remaining_le,
     (keep .esi (by decide) (by decide)).trans h.esi, (keep .edi (by decide) (by decide)).trans h.edi,
     (keep .ebx (by decide) (by decide)).trans h.ebx⟩, ?_, ?_, ?_⟩
   · change u'.wr.tail = _
     rw [hwr, F.wr]; rfl
-  · rw [freed_esp, hcs .esp (by decide), F.esp, S2_eq p, BitVec.sub_add_cancel]
-  · rw [freed_gpr _ _ (by decide)]; exact hr
-  · change Spec.Rsa.bytesAt u'.mem _ _ = _
-    rw [hop, ← hm₂]; exact hout
-  · change Spec.Rsa.wordsAt u'.mem _ _ = _
-    rw [hup, ← hm₂]; exact hw
+  · show (freed 44 u').gpr .esp = _
+    rw [freed_esp, hcs .esp (by decide), F.esp, S2_eq p, BitVec.sub_add_cancel]
+  · show ((freed 44 u').gpr .eax).toNat = _
+    rw [freed_gpr _ _ (by decide)]; exact hr
+  · change Spec.Rsa.bytesAt mm _ _ = _
+    rw [hO', hop, ← hm₂]; exact hout
+  · change Spec.Rsa.wordsAt mm _ _ = _
+    rw [hW', hup, ← hm₂]; exact hw
 
 end VG.Proof.RsaKeyGen.X86.Search

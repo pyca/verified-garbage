@@ -74,7 +74,7 @@ theorem subtract_ok {g : Geometry} (v : g.Valid) {s : State} {c capacity one : N
   obtain a09 : g.array 0 + 4 * g.words ≤ g.array 10 := g.arrayBefore (by decide)
   obtain a910 : g.array 9 + 4 * g.words ≤ g.array 10 := g.arrayBefore (by decide)
   unfold subtract
-  refine WP.frameAllocKept (by decide) (by decide) (by decide) (by rw [sp]; omega_using [low]) (NoSp.of_all (by rfl)) ?_
+  refine WP.frameAlloc (by decide) (by decide) (by decide) (by rw [sp]; omega_using [low]) (NoSp.of_all (by rfl)) ?_
   obtain St : StackContext (s.gpr .esp - 20#32) (allocFrame 20 s) :=
     VG.Proof.RsaKeyGen.X86.FilterStack.allocated_context (by rw [sp]; omega_using [low])
   obtain Ci : Context g (allocFrame 20 s) :=
@@ -116,7 +116,13 @@ theorem subtract_ok {g : Geometry} (v : g.Valid) {s : State} {c capacity one : N
   rw [Mf] at Oh equation
   obtain Keh : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .edi] e h := Lf.trans Kh
   refine wp_movS ((Se.keep Keh (by decide)).read 0 (by decide)) fun u U _ => WP.block_nil ?_
+  intro mm uu fl
   have Mu : u.mem = h.mem := U.mem
+  have wk : WorkspaceFrame g [] h.mem mm := by
+    rw [← Mu]
+    exact fun i index _ => fl.bytes (R := ⟨g.W, g.L⟩)
+      (by intro r mem; obtain rfl := List.mem_singleton.mp mem; exact apart)
+      (by change g.L ≤ 2 ^ 64; omega_using [nowrap]) index
   obtain restored : u.gpr .edi = (allocFrame 20 s).gpr .edi := by
     rw [U.gpr, stack_read apart fit10 Oh, Me, Mem.readW_writeW_self32]
   obtain Kall : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .edi] (allocFrame 20 s) u :=
@@ -126,17 +132,23 @@ theorem subtract_ok {g : Geometry} (v : g.Valid) {s : State} {c capacity one : N
     by_cases same : r = .edi
     · subst r; exact restored
     · exact Kall.1 r (by cases r <;> simp_all)
-  obtain K : Keeps [.eax, .ebx, .ecx, .edx, .ebp] s (freed 20 u) :=
+  obtain K : Keeps [.eax, .ebx, .ecx, .edx, .ebp] s { freed 20 u with mem := mm, unknowns := uu } :=
     VG.Proof.RsaKeyGen.X86.FilterStack.freed_keeps Kbody (by decide)
-  obtain Ws : WorkspaceFrame g [(g.array 10, 4 * g.words)] s.mem (freed 20 u).mem := by
-    rw [freed_mem, Mu]
-    exact (We.mono fun _ mem => nomatch mem).trans
-      (WorkspaceFrame.of_outs nowrap (Outs.of_outside Oh (List.mem_singleton_self _)))
-  obtain Fs : Frame ([⟨g.W, g.L⟩] ++ [below p 80]) s.mem (freed 20 u).mem := by
-    rw [freed_mem, Mu]
+  obtain Ws : WorkspaceFrame g [(g.array 10, 4 * g.words)] s.mem mm :=
+    ((We.mono fun _ mem => nomatch mem).trans
+      (WorkspaceFrame.of_outs nowrap (Outs.of_outside Oh (List.mem_singleton_self _)))).trans
+      (wk.mono fun _ mem => nomatch mem)
+  obtain Fs0 : Frame ([⟨g.W, g.L⟩] ++ [below p 80]) s.mem h.mem := by
     refine Frame.trans (Fe.sub fun r mem => ?_) ((workspaceGlobalFrame (Outs.of_outside Oh
       (List.mem_singleton_self _)) fun r mem => by obtain rfl := List.mem_singleton.mp mem; exact fit10).mono
       fun r mem => List.mem_append_left _ mem)
+    obtain rfl := List.mem_singleton.mp mem
+    refine ⟨below p 80, List.mem_append_right _ (List.mem_singleton_self _), ?_⟩
+    rw [sp]
+    exact below_sub (sp := p) (a := 20) (b := 80) (by decide) low
+  obtain Fs : Frame ([⟨g.W, g.L⟩] ++ [below p 80]) s.mem mm := by
+    rw [Mu] at fl
+    refine Fs0.trans (fl.sub fun r mem => ?_)
     obtain rfl := List.mem_singleton.mp mem
     refine ⟨below p 80, List.mem_append_right _ (List.mem_singleton_self _), ?_⟩
     rw [sp]
@@ -148,8 +160,10 @@ theorem subtract_ok {g : Geometry} (v : g.Valid) {s : State} {c capacity one : N
   refine ⟨S.keepWorkOf v K (by decide) (by decide) Ws (fun r mem => by
       obtain rfl := List.mem_singleton.mp mem; exact v.arrayHeader _)
       (fun r mem => by obtain rfl := List.mem_singleton.mp mem; exact a09) Fs, ?_, ?_, Ws, Fs, K⟩
-  · rw [freed_mem, Mu, Oh.val32 (Or.inl a910) (by omega_using [nowrap, fit9]), oneE]
-  · rw [freed_mem, Mu]
+  · show val32 mm _ _ _ = _
+    rw [wk.val32 fit9 (fun _ mem => nomatch mem), Oh.val32 (Or.inl a910) (by omega_using [nowrap, fit9]), oneE]
+  · show val32 mm _ _ _ = _
+    rw [wk.val32 fit10 (fun _ mem => nomatch mem)]
     obtain bound := val32_lt h.mem g.W (g.array 10) g.words
     cases borrow <;> simp only [Bool.toNat_false, Bool.toNat_true, Nat.mul_zero, Nat.mul_one, Nat.add_zero]
       at equation <;> omega_arith
@@ -356,7 +370,7 @@ theorem scan_ok {g : Geometry} (v : g.Valid) {c capacity : Nat} {p : BitVec 32} 
   have low := S.caller.low
   have C := S.context
   unfold scan
-  refine WP.frameAllocKept (by decide) (by decide) (by decide) (by rw [sp]; omega_using [low]) (NoSp.of_all (by rfl)) ?_
+  refine WP.frameAlloc (by decide) (by decide) (by decide) (by rw [sp]; omega_using [low]) (NoSp.of_all (by rfl)) ?_
   have St : VG.Proof.RsaKeyGen.X86.Sieve.StackContext (s.gpr .esp - 20#32) (allocFrame 20 s) :=
     VG.Proof.RsaKeyGen.X86.FilterStack.allocated_context (by rw [sp]; omega_using [low])
   have Ci : Context g (allocFrame 20 s) :=
@@ -390,16 +404,19 @@ theorem scan_ok {g : Geometry} (v : g.Valid) {c capacity : Nat} {p : BitVec 32} 
     by_cases same : r = .edi
     · subst r; exact restored
     · exact Kall.1 r (by cases r <;> simp_all)
+  intro m _ fl
   refine ⟨?_, ?_, VG.Proof.RsaKeyGen.X86.FilterStack.freed_keeps Kbody (by decide)⟩
-  · rw [freed_gpr _ _ (by decide), freed_gpr _ _ (by decide), U.other .ebx (by decide), U.other .esi (by decide), V,
+  · show ((freed 20 u).gpr .ebx, (freed 20 u).gpr .esi) = _
+    rw [freed_gpr _ _ (by decide), freed_gpr _ _ (by decide), U.other .ebx (by decide), U.other .esi (by decide), V,
       ebx, esi]
     refine (first_congr _ _ _ fun j index => ?_).symm
     have read (d : Nat) (h : d + 4 ≤ g.L) : a.mem.readW (off g.W d) 32 = s.mem.readW (off g.W d) 32 :=
       W.read32 h fun _ mem => nomatch mem
     simp only [pairAt]
     rw [read _ (by omega_using [fit, index]), read _ (by omega_using [fit, index])]
-  · rw [freed_mem, U.mem, Mb]
-    exact frameA
+  · show Frame _ s.mem m
+    rw [U.mem, Mb, sp] at fl
+    exact frameA.trans fl
 
 end VG.Proof.RsaKeyGen.X86.MrExponentRt
 

@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Steps
 public import VerifiedGarbage.Proof.Framework.X86.AllocFrame
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Rsa.BytesFrame
 import VerifiedGarbage.Proof.Mont.X86.Instr
 public import VerifiedGarbage.Proof.Framework.X86.Call
 public import VerifiedGarbage.Proof.Framework.X86.Inline
@@ -680,9 +681,30 @@ theorem attempt_ok {p : PPub} {o s : State} {used n : Nat} (h : Live p o used n 
   have S := h.st
   obtain ⟨A, rfl⟩ := h.input
   have h1 : 212 ≤ (o.gpr .esp).toNat := A.stackLow
-  refine WP.frameAllocKept (by decide) (by decide) (by decide) (by rw [S.esp]; unfold argsBytes; omega_arith) body_noSp ?_
-  refine WP.seq (WP.mono (arguments_ok S.alloc) fun t ⟨F, a⟩ => ?_)
-  exact WP.mono (call_ok F hu a) fun u ⟨F', e, out, cu⟩ =>
-    ⟨F'.free, by rw [freed_gpr _ _ (by decide)]; exact e, by rw [freed_mem]; exact out, by rw [freed_mem]; exact cu⟩
+  refine WP.frameAllocLocal (by decide) (by decide) (by decide) (by rw [S.esp]; unfold argsBytes; omega_arith) body_noSp
+    (fun t m u ⟨St', e, out, cu⟩ fl => ?_) ?_
+  · -- What the attempt leaves lies apart from its frame.
+    have hS := A.sBound
+    obtain fl' : Frame [lowR o] t.mem m := fl.sub fun r hr => by
+      obtain rfl := List.mem_singleton.mp hr
+      refine ⟨_, List.mem_singleton_self _, ?_⟩
+      rw [S.esp]
+      show Region.Sub ⟨(o.gpr .esp - BitVec.ofNat 32 argsBytes).setWidth 64, argsBytes⟩ _
+      rw [sw_sub A (by decide)]; exact low_sub (by decide)
+    refine ⟨⟨St'.abi, St'.rd, St'.wr, St'.syms, St'.esp, St'.esi, St'.saved,
+      St'.frame.trans (fl'.mono fun r hr => ?_), St'.words.frame hS (by decide) fl' fun r hr => ?_⟩, e, ?_, ?_⟩
+    · simp only [List.mem_singleton] at hr; subst hr; exact List.mem_append_right _ (List.mem_singleton_self _)
+    · simp only [List.mem_singleton] at hr; subst hr; exact A.lowS.symm
+    · show Spec.Rsa.bytesAt m _ _ = _
+      rw [VG.Proof.Rsa.rsa_bytes_frame fl' (by have := (arg o 1).isLt; omega_arith) fun r hr => ?_]
+      · exact out
+      · simp only [List.mem_singleton] at hr; subst hr; exact A.lowO.symm
+    · show m.readW _ _ = _
+      rw [VG.Proof.Ffdh.X86.KeySearch.readW_frame fl' hS (fun r hr => ?_) (by decide)]
+      · exact cu
+      · simp only [List.mem_singleton] at hr; subst hr; exact A.lowS.symm
+  · refine WP.seq (WP.mono (arguments_ok S.alloc) fun t ⟨F, a⟩ => ?_)
+    exact WP.mono (call_ok F hu a) fun u ⟨F', e, out, cu⟩ =>
+      ⟨F'.free, by rw [freed_gpr _ _ (by decide)]; exact e, by rw [freed_mem]; exact out, by rw [freed_mem]; exact cu⟩
 
 end VG.Proof.Ffdh.X86.PSearch

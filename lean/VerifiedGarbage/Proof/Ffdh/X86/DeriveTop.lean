@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Rsa.BytesFrame
 import VerifiedGarbage.Proof.Ffdh.X86.Derive
 public import VerifiedGarbage.Proof.Ffdh.X86.Entry
 public import VerifiedGarbage.Proof.Mont.X86.StaticSquare.Shape
@@ -219,7 +220,12 @@ theorem operation_ok {s : State} (A : DerivePublicABI s) :
   exact wrap_ok (wrapABI A) (NoSp.of_all frameBody_all) hx (Out := [outR s])
     (fun r hr => by rw [List.mem_singleton.mp hr]; exact A.retOut)
     (fun r hr => by rw [List.mem_singleton.mp hr]; exact A.outScratch.symm)
-    (P := fun m e => spec s m e) fun f I espf Ft => frame_ok A f I espf Ft
+    (P := fun m e => spec s m e) (hP := fun m m' e F h => by
+      obtain hb := VG.Proof.Rsa.rsa_bytes_frame F (src := argumentPointer s 0) (k := (arg s 4).toNat)
+        (by have := (arg s 4).isLt; omega_arith) (fun r hr => by
+          obtain rfl := List.mem_singleton.mp hr; rw [← A.outLen]; exact A.belowOut.symm)
+      simpa only [spec, hb] using h)
+    fun f I espf Ft => frame_ok A f I espf Ft
 
 theorem correct (s : State) (h : (Spec.Ffdh.derivePublicContract abi stack).pre s) :
     ∃ trace t, Exec isa Impl.Ffdh.X86.DerivePublic.code s trace t ∧ abiPreserved s t ∧

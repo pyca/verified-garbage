@@ -204,7 +204,7 @@ theorem code_okP (v : Backend) (c : CrtImpl) (w : CrtPImpl) {s : State} (h : spe
   have hb := (bodyP_vp (P := ep s) (pre := arg s 23) (L := (arg s 24).toNat) v c w).wp _ _ (entered_stateP h)
   refine WP.mono (wrap_ok (F := frameBytes) (by decide) (bodyP_noSp v c w) hsp hfit (W := (ep s).lay.W)
     (Q := fun r m => Res (ep s) (entered frameBytes s) m r) (fun r hr => ?_)
-    (WP.mono hb fun u hu => ⟨hu.1.2.frame, hu.2⟩)) fun t ⟨abi, res⟩ => ⟨abi, ?_⟩
+    (WP.mono hb fun u hu => ⟨hu.1.2.frame, hu.2⟩) (fun r m m' fl hres => ?_)) fun t ⟨abi, res⟩ => ⟨abi, ?_⟩
   · have ok := hin.ok
     rw [ep_layP] at ok
     rw [save_eq (argv := (ep s).argvP (arg s 23) (arg s 24).toNat) (ro := (ep s).roP (arg s 23) (arg s 24).toNat)
@@ -212,6 +212,19 @@ theorem code_okP (v : Backend) (c : CrtImpl) (w : CrtPImpl) {s : State} (h : spe
       ret_eq (argv := (ep s).argvP (arg s 23) (arg s 24).toNat) (ro := (ep s).roP (arg s 23) (arg s 24).toNat)
       (rw := (ep s).rw) (C := 3448) hsp]
     exact ⟨ok.save_apart r hr, ok.ret_apart r hr⟩
+  · have ok := hin.ok
+    rw [ep_layP] at ok
+    obtain F' := release_frame (argv := (ep s).argvP (arg s 23) (arg s 24).toNat) (ro := (ep s).roP (arg s 23) (arg s 24).toNat) (rw := (ep s).rw) (C := 3448) fl
+    obtain hO := VG.Proof.Rsa.rsa_bytes_frame F' (src := ((ep s).out.setWidth 64)) (k := (ep s).K)
+      (by show (arg s 4).toNat < 2 ^ 64; have := (arg s 4).isLt; omega_using [this])
+      (fun q hq => by rw [List.mem_singleton.mp hq]; exact (ok.stk (ep s).OUT (by simp [layOf])).symm)
+    obtain hM := VG.Proof.Rsa.wordsAt_frame F' (p := ((ep s).ml.setWidth 64)) (n := 1) (by decide)
+      (fun q hq => by rw [List.mem_singleton.mp hq]; exact (ok.stk (ep s).ML (by simp [layOf])).symm)
+    have key : ∀ o, Spec.RsaPkcs1Enc.writtenMsg m ((ep s).out.setWidth 64) ((ep s).ml.setWidth 64) (ep s).K r o →
+        Spec.RsaPkcs1Enc.writtenMsg m' ((ep s).out.setWidth 64) ((ep s).ml.setWidth 64) (ep s).K r o := fun o => by
+      cases o <;> simp only [Spec.RsaPkcs1Enc.writtenMsg] <;> rw [hO, hM] <;> exact id
+    unfold Res at hres ⊢
+    exact key _ hres
   · have ok := hin.ok
     rw [ep_layP] at ok
     have ro := fun {R : Region} (hR : R ∈ (ep s).roP (arg s 23) (arg s 24).toNat) => entered_ro hsp ok hR

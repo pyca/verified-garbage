@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86.RndAccept
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86.RndReject
 import VerifiedGarbage.Proof.RsaPkcs1Sig.BytesAt
+import VerifiedGarbage.Proof.Rsa.BytesFrame
 import VerifiedGarbage.Proof.Rsa.X86.PrivStackSafety
 import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Wrap
@@ -67,12 +68,32 @@ theorem code_ok (encName : String) (c : Ver.PublicImpl) {s : State} (h : spec.pr
   have hb := (body_vp (P := ep s) encName c).wp _ _ (entered_state h)
   refine WP.mono (wrap_ok (F := frameBytes) (by decide) (body_noSp encName c) hsp hfit (W := (ep s).lay.W)
     (Q := fun r m => Res (ep s) (entered frameBytes s) m r) (fun r hr => ?_)
-    (WP.mono hb fun u hu => ⟨hu.1.2.frame, hu.2⟩)) fun t ⟨abi, res⟩ => ⟨abi, ?_⟩
+    (WP.mono hb fun u hu => ⟨hu.1.2.frame, hu.2⟩) (fun r m m' fl hres => ?_)) fun t ⟨abi, res⟩ => ⟨abi, ?_⟩
   · have ok := hin.ok
     rw [ep_lay] at ok hr
     rw [save_eq (argv := (ep s).argv) (ro := (ep s).ro) (rw := (ep s).rw) (C := roomC) hsp,
       ret_eq (argv := (ep s).argv) (ro := (ep s).ro) (rw := (ep s).rw) (C := roomC) hsp]
     exact ⟨ok.save_apart r hr, ok.ret_apart r hr⟩
+  · have ok := hin.ok
+    rw [ep_lay] at ok
+    obtain F' := release_frame (argv := (ep s).argv) (ro := (ep s).ro) (rw := (ep s).rw) (C := roomC) fl
+    obtain hO := VG.Proof.Rsa.rsa_bytes_frame F' (src := ((ep s).out.setWidth 64)) (k := (ep s).K)
+      (by show (arg s 4).toNat < 2 ^ 64; have := (arg s 4).isLt; omega_using [this])
+      (fun q hq => by rw [List.mem_singleton.mp hq]; exact (ok.stk (ep s).OUT (by simp [layOf])).symm)
+    obtain hT := VG.Proof.Rsa.wordsAt_frame F' (p := ((ep s).tape.setWidth 64)) (n := 2) (by decide)
+      (fun q hq => by rw [List.mem_singleton.mp hq]; exact (ok.stk (ep s).TAPE (by simp [layOf])).symm)
+    have keyR : ∀ o, Spec.RsaPkcs1Enc.writtenRandom m ((ep s).out.setWidth 64) (ep s).K r o →
+        Spec.RsaPkcs1Enc.writtenRandom m' ((ep s).out.setWidth 64) (ep s).K r o := fun o => by
+      cases o <;> simp only [Spec.RsaPkcs1Enc.writtenRandom] <;> rw [hO] <;> exact id
+    unfold Res at hres ⊢
+    obtain ⟨⟨req, hw, hreq⟩, hm⟩ := hres
+    refine ⟨⟨req, by rw [hT]; exact hw, hreq⟩, ?_⟩
+    revert hm
+    generalize (Spec.RsaPkcs1Enc.padSearch (ep s).pl (rB (ep s) (entered frameBytes s))).outcome = o
+    cases o <;> dsimp only <;> intro hm
+    all_goals first
+      | exact fun h => keyR _ (hm h)
+      | exact ⟨hm.1, by rw [hO]; exact hm.2⟩
   · have ok := hin.ok
     rw [ep_lay] at ok
     have ro := fun {R : Region} (hR : R ∈ (ep s).ro) => entered_ro hsp ok hR

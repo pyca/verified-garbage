@@ -178,11 +178,15 @@ theorem mcdt_push {r : Reg} {s : State} (hr : r ≠ .esp) (hn : 12 ≤ (s.gpr .e
   simp only [isa, push, ne_eq, hr, not_false_eq_true, hn, and_self, ite_true]
   rfl
 
-/-- An MCDT frame whose body keeps `esp`, its depth and the saved MXCSR word. -/
+/-- An MCDT frame whose body keeps `esp`, its depth and the saved MXCSR word.
+The postcondition may rely on nothing the frame's 12 bytes hold, nor on the
+unknowns, after the pop (as `WP.frame`'s, `Call.lean`). -/
 theorem WP.mcdtFrame {r : Reg} {body : Prog isa} {s : State} {Q : State → Prop}
     (hr : r ≠ .esp) (hn : 12 ≤ (s.gpr .esp).toNat) (hsp : NoSp body)
     (hb : WP isa body (mcdtPushed r s) fun s₂ => s₂.mcdt = s.mcdt + 1 ∧
-      s₂.mem.readW ((s₂.gpr .esp + 4).setWidth 64) 32 = mcdtSaved s.mcdt s.mxcsr ∧ Q (mcdtPopped s₂)) :
+      s₂.mem.readW ((s₂.gpr .esp + 4).setWidth 64) 32 = mcdtSaved s.mcdt s.mxcsr ∧ ∀ m u,
+        Frame [⟨(s.gpr .esp - 12).setWidth 64, 12⟩] s₂.mem m →
+          Q { mcdtPopped s₂ with mem := m, unknowns := u }) :
     WP isa (.frame (.mcdtEnter r) body .mcdtLeave) s Q := by
   obtain ⟨t, s₂, he, hm, hs, hq⟩ := hb
   obtain ⟨-, hw⟩ := Exec.rdwr he
@@ -193,6 +197,6 @@ theorem WP.mcdtFrame {r : Reg} {body : Prog isa} {s : State} {Q : State → Prop
     refine (ite_eq_left ⟨by omega_using [hm], hp, hw, ?_, ?_⟩).trans rfl
     · rw [mcdtPushed_wr, mcdtPushed_esp r s hr]; rfl
     · rw [hs, hm, hx, mcdtPushed_mxcsr, Nat.add_sub_cancel]
-  exact ⟨_, _, Exec.frame (mcdt_push hr hn) he hpop, hq⟩
+  exact ⟨_, _, Exec.frame (mcdt_push hr hn) he hpop, hq _ _ (Frame.refl _ _)⟩
 
 end VG.Proof.Mont.X86.Sse2

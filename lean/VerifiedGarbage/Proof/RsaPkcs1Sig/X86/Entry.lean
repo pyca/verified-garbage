@@ -183,6 +183,24 @@ end
 section
 variable {F C : Nat} {argv : List (BitVec 32)} {ro rw : List Region} {s : State}
 
+/-- What the releases of the frame and the push may change, the `16 + F`
+bytes below `esp` on entry, is within the layout's stack. -/
+theorem release_stk :
+    Region.Sub (below (s.gpr .esp) (16 + F)) (layOf F argv ro rw s C).STK := by
+  have e : s.gpr .esp - BitVec.ofNat 32 (16 + F) = (layOf F argv ro rw s C).B := by
+    show _ = s.gpr .esp - BitVec.ofNat 32 16 - BitVec.ofNat 32 F
+    rw [BitVec.sub_sub, BitVec.ofNat_add]
+  have := Lay.sub_stk (L := layOf F argv ro rw s C) (d := 0) (n := 16 + F)
+    (by show 0 + (16 + F) ≤ F + 16; omega_using [])
+  simp only [Lay.fr, BitVec.add_zero] at this
+  show Region.Sub ⟨(s.gpr .esp - BitVec.ofNat 32 (16 + F)).setWidth 64, 16 + F⟩ _
+  rw [e]; exact this
+
+/-- `release_stk`, for a frame. -/
+theorem release_frame {m m' : Mem}
+    (fl : Frame [below (s.gpr .esp) (16 + F)] m m') : Frame [(layOf F argv ro rw s C).STK] m m' :=
+  fl.sub fun q hq => ⟨_, List.mem_singleton_self _, by rw [List.mem_singleton.mp hq]; exact release_stk⟩
+
 /-- The push's bytes are the layout's saved registers. -/
 theorem save_eq (hsp : 16 + F ≤ (s.gpr .esp).toNat) : saveRegion s = (layOf F argv ro rw s C).SAVE := by
   have := (s.gpr .esp).isLt

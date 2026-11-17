@@ -134,6 +134,15 @@ theorem setupFrame_stack {g : Geometry} {m m' : Mem} (F : Frame [g.stackRegion] 
   obtain rfl := List.mem_singleton.mp mem
   exact ⟨_, List.mem_cons_self .., fun _ h => h⟩
 
+/-- The frame of 20 bytes the sieve allocates is its stack region. -/
+theorem setupFrame_alloc {g : Geometry} {c : Nat} {s : State} (C : Context g c (allocFrame 20 s)) {m m' : Mem}
+    (F : Frame [below (s.gpr .esp) 20] m m') : Frame (setupWrites g) m m' := by
+  have e : below (s.gpr .esp) 20 = g.stackRegion := by
+    show (⟨(s.gpr .esp - BitVec.ofNat 32 20).setWidth 64, 20⟩ : Region) = ⟨g.sp.setWidth 64, 20⟩
+    rw [← allocFrame_esp, C.stack.sp]
+  rw [e] at F
+  exact setupFrame_stack F
+
 theorem setupFrame_symbol {g : Geometry} {m m' : Mem} (F : Frame [below g.sp 4] m m') :
     Frame (setupWrites g) m m' := by
   apply F.sub
@@ -267,10 +276,11 @@ theorem code_ok {g : Sieve.Geometry} (v : g.Valid) {c : Nat} {s : State}
       Frame (Sieve.setupWrites g) s.mem t.mem ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := by
   unfold code
-  refine WP.frameAllocKept (by decide) (by decide) (by decide) fit (NoSp.of_all (by rfl)) ?_
+  refine WP.frameAlloc (by decide) (by decide) (by decide) fit (NoSp.of_all (by rfl)) ?_
   refine WP.mono (body_ok v C (by rw [allocFrame_gpr _ _ (by decide)]; exact pointer)
-    length symbol low candidateFar tableFar large) fun t ⟨result, F, K⟩ => ?_
-  exact ⟨by rw [freed_gpr _ _ (by decide)]; exact result, F, FilterStack.freed_keeps K (by decide)⟩
+    length symbol low candidateFar tableFar large) fun t ⟨result, F, K⟩ m _ fl => ?_
+  exact ⟨by show (freed 20 t).gpr .eax = _; rw [freed_gpr _ _ (by decide)]; exact result,
+    F.trans (VG.Proof.RsaKeyGen.X86.Sieve.setupFrame_alloc C fl), FilterStack.freed_keeps K (by decide)⟩
 
 end VG.Proof.RsaKeyGen.X86.CandidateSieve
 

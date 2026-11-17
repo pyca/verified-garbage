@@ -896,11 +896,26 @@ theorem Result.keep {s t u : State} (R : Result s t)
   rw [eax, mem]
   exact R
 
+/-- The result, whatever the bytes of the push are and the unknowns. -/
+theorem Result.frame {s t : State} (E : Entry s) (R : Result s t) {m : Mem} {u : Nat → BitVec 32}
+    (fl : Frame [below (s.gpr .esp) 16] t.mem m) : Result s { t with mem := m, unknowns := u } := by
+  have fit : 16 ≤ (s.gpr .esp).toNat := by have := E.stackFit; omega_using [this]
+  have far : (below (s.gpr .esp) 16).Disjoint ⟨wsOf s, lenOf s⟩ := by
+    unfold below
+    rw [Taint.sub_setWidth fit]
+    exact E.stackSeparate.sub_left (Offset.sub_below _ (by decide) (by decide))
+  have wk : WorkspaceFrame (geometry s) [] t.mem m := fun i index _ =>
+    fl.bytes (R := ⟨wsOf s, lenOf s⟩) (fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact far.symm)
+      (by change lenOf s ≤ 2 ^ 64; have := E.bound; omega_using [this]) index
+  exact ⟨R.1, R.2.trans (wk.mono fun _ mem => nomatch mem)⟩
+
 theorem Entry.framed {s : State} (E : Entry s) :
     WP isa (code montName montCode) s fun t => abiPreserved s t ∧ Result s t := by
   unfold code
-  refine WP.frameKept (rs := Compact.savedRegisters) (by decide) (by decide) (by decide)
-    (by change 16 ≤ _; have := E.stackFit; omega_using [this]) inner_noSp ?_
+  have fit16 : 16 ≤ (s.gpr .esp).toNat := by have := E.stackFit; omega_using [this]
+  refine WP.frameLocal (rs := Compact.savedRegisters) (by decide) (by decide) (by decide)
+    (by change 16 ≤ _; have := E.stackFit; omega_using [this]) inner_noSp
+    (fun t m _ ⟨abi, R⟩ fl => ⟨Compact.abi_frame fit16 abi fl, R.frame E fl⟩) ?_
   refine WP.seq (WP.mono E.body fun t ⟨R, K, F⟩ => ?_)
   have sp : t.gpr .esp = (entered s).gpr .esp := K.1 .esp (by decide)
   have fit : ((entered s).gpr .esp).toNat + 16 ≤ 2 ^ 32 := by

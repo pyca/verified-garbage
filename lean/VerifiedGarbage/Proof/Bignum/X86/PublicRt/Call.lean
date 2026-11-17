@@ -125,7 +125,7 @@ theorem mul_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVe
   obtain hsp := (s.gpr .esp).isLt
   have nwr := h.scratch.nowrap
   unfold PublicRt.mul
-  refine WP.frameAllocKept (by decide) (by decide) (by decide) (by omega_arith) (mulBody_noSp o a b) ?_
+  refine WP.frameAlloc (by decide) (by decide) (by decide) (by omega_arith) (mulBody_noSp o a b) ?_
   obtain fEsp : (allocFrame 36 s).gpr .esp = s.gpr .esp - BitVec.ofNat 32 36 := allocFrame_esp _ _
   obtain fEspN : ((allocFrame 36 s).gpr .esp).toNat = (s.gpr .esp).toNat - 36 := by rw [fEsp, sub_toNat (by omega_arith)]
   refine WP.seq (WP.mono (mulArgs_ok (f := allocFrame 36 s) (len := len) (o := o) (a := a) (b := b)
@@ -197,10 +197,19 @@ theorem mul_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVe
   rw [vc _ fa, vc _ fb] at C₂
   obtain e64 : 64 * Spec.Rsa.modulusWords len = 32 * nw len := by simp only [nw]; omega_arith
   rw [e64] at C₂
-  refine ⟨fun r hr => ?_, by rw [freed_rd, rd', Kg.2.1, allocFrame_rd],
-    by rw [freed_wr, wr', Kg.2.2, allocFrame_wr]; rfl, fun x hx => ?_,
-    by rw [freed_mem, ← m₂]; exact L₂, by rw [freed_mem, ← m₂]; exact C₂⟩
-  · by_cases he : r = .esp
+  intro mm uu fl
+  obtain fo0 := (h.fits (j := o) (by omega_arith)).1
+  obtain vo : val32 mm base (numAt len o) (nw len) = val32 s'.mem base (numAt len o) (nw len) := by
+    rw [← read_eq_val32, ← read_eq_val32, fl.read (r := ⟨base, bytes⟩)
+      (Offset.contains_base _ (by rw [← wb_eq]; exact fo0) (by omega_arith))
+      (fun r' hr' => by
+        rw [List.mem_singleton.mp hr']; exact (R.apart40.sub_left (below_sub (by decide) low40)).symm)
+      (by simp only [nw]; omega_arith)]
+  refine ⟨fun r hr => ?_, show (freed 36 s').rd = _ by rw [freed_rd, rd', Kg.2.1, allocFrame_rd],
+    show (freed 36 s').wr = _ by rw [freed_wr, wr', Kg.2.2, allocFrame_wr]; rfl, fun x hx => ?_,
+    show val32 mm _ _ _ < _ by rw [vo, ← m₂]; exact L₂, show val32 mm _ _ _ * _ % _ = _ by rw [vo, ← m₂]; exact C₂⟩
+  · show (freed 36 s').gpr r = _
+    by_cases he : r = .esp
     · subst he
       rw [freed_esp, cs' _ hr, gEsp, BitVec.sub_add_cancel]
     · rw [freed_gpr _ _ he, cs' _ hr, Kg.1 _ (by revert hr; cases r <;> simp [calleeSaved]),
@@ -212,7 +221,9 @@ theorem mul_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVe
     obtain nst : ¬ (below (s.gpr .esp) 40).Contains x 1 := fun hc => nst96 (below_sub (by decide) low96 x hc)
     obtain no5 : ¬ (⟨off base (numAt len 5), 3 * wb len + 56⟩ : Region).Contains x 1 := hx _ (by simp)
     obtain noo : ¬ (⟨off base (numAt len o), wb len⟩ : Region).Contains x 1 := hx _ (by simp)
-    rw [freed_mem]
+    show mm x = _
+    rw [fl x fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact fun hc => nst96 (below_sub (by decide) low96 x hc)]
     by_cases hin : (⟨base, bytes⟩ : Region).Contains x 1
     · have hi := ofs_in hin
       obtain o5 := ofs_out no5

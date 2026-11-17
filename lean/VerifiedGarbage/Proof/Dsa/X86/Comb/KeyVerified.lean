@@ -165,8 +165,14 @@ def checkInvoke : CheckInvoke keyInvariant where
         (Spec.Rsa.bytesAt t.mem (argumentPointer s₀ 3) (arg s₀ 4).toNat) u.mem at Inv
       rw [callKey A R] at Inv
       exact Inv
+    have stackOf : ∀ {m m' : Mem}, Frame [below (t.gpr .esp) 112] m m' → Frame [rStack s₀] m m' := fun F => by
+      rw [invocation_below A R] at F
+      exact F.sub fun r hr => by
+        obtain rfl := List.mem_singleton.mp hr
+        exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by decide)⟩
     refine WP.mono (inlineInvoke_ok (Q := fun mem ax => ax.toNat=(if CheckCall.callResult s₀ t then 1 else 0) ∧
-      (CheckCall.callResult s₀ t=true → keyInvariant s₀ mem)) check_noSp check_depth low reads writes body) fun u ⟨rd,wr,K,F,V,I⟩ => ?_
+      (CheckCall.callResult s₀ t=true → keyInvariant s₀ mem)) check_noSp check_depth low reads writes body
+      fun _ _ _ F ⟨e,I⟩ => ⟨e,fun h => keyInvariant_frame (stackOf F) (I h)⟩) fun u ⟨rd,wr,K,F,V,I⟩ => ?_
     rw [invocation_below A R] at F
     have Frame : VG.Frame (CheckCall.callWrites s₀) t.mem u.mem := F
     refine ⟨R.returned rd wr (K .esp (by simp [calleeSaved])) (checkFrame_outer Frame),Frame,K,?_,I⟩
@@ -353,7 +359,16 @@ def deriveInvoke : DeriveInvoke keyInvariant where
       rw [result] at V B
       simp only [argumentPointer,args 0 (by decide),args 1 (by decide),callVal] at B
       exact ⟨ABI,V,B⟩
-    refine WP.mono (inlineInvoke_ok (Q := Q) derive_noSp derive_depth low reads writes body)
+    have stackOf : ∀ {m m' : Mem}, Frame [below (t.gpr .esp) 112] m m' → Frame [rStack s₀] m m' := fun F => by
+      rw [invocation_below A R] at F
+      exact F.sub fun r hr => by
+        obtain rfl := List.mem_singleton.mp hr
+        exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by decide)⟩
+    refine WP.mono (inlineInvoke_ok (Q := Q) derive_noSp derive_depth low reads writes body
+      fun _ _ _ F ⟨e,B⟩ => ⟨e,by
+        rw [rBytes_frame (stackOf F) (fun r hr => by
+          obtain rfl := List.mem_singleton.mp hr; exact A.stackOutWide.symm) (by have := A.outBound; omega)]
+        exact B⟩)
       fun u ⟨rd,wr,K,F,V,B⟩ => ?_
     rw [invocation_below A R] at F
     have Frame : VG.Frame (callWrites s₀) t.mem u.mem := F

@@ -183,7 +183,7 @@ theorem call_ok {s : State} {base : Addr} {bytes n m inv sc o a b : Nat} {wsLen 
   have hsp := (s.gpr .esp).isLt
   have nwr := scr.nowrap
   unfold callCode
-  refine WP.frameAllocKept (by decide) (by decide) (by decide) (by omega_using [low]) hns ?_
+  refine WP.frameAlloc (by decide) (by decide) (by decide) (by omega_using [low]) hns ?_
   have fEsp : (allocFrame 36 s).gpr .esp = s.gpr .esp - BitVec.ofNat 32 36 := allocFrame_esp _ _
   refine WP.seq (WP.mono hargs fun g ⟨Kg, Fg, Rg⟩ => ?_)
   have gEsp : g.gpr .esp = s.gpr .esp - BitVec.ofNat 32 36 := by rw [Kg.1 _ (by decide), fEsp]
@@ -243,10 +243,18 @@ theorem call_ok {s : State} {base : Addr} {bytes n m inv sc o a b : Nat} {wsLen 
       (fun r' hr' => by rw [List.mem_singleton.mp hr']; exact R.apart40.symm) (by omega_using [w2])]
   rw [vc _ O2] at L₂ C₂
   rw [vc _ O6, vc _ O7] at C₂
-  refine ⟨fun r hr => ?_, by rw [freed_rd, rd', Kg.2.1, allocFrame_rd],
-    by rw [freed_wr, wr', Kg.2.2, allocFrame_wr]; rfl, fun x hx => ?_,
-    by rw [freed_mem, ← m₂]; exact L₂, by rw [freed_mem, ← m₂]; exact C₂⟩
-  · by_cases he : r = .esp
+  intro mm uu fl
+  have vo : val32 mm base o (2 * n) = val32 s'.mem base o (2 * n) := by
+    rw [← read_eq_val32, ← read_eq_val32, fl.read (r := ⟨base, bytes⟩)
+      (Offset.contains_base _ (by rw [← e8]; exact O5) (by omega_using [hbytes, O5]))
+      (fun r' hr' => by
+        rw [List.mem_singleton.mp hr']; exact (R.apart40.sub_left (below_sub (by decide) low40)).symm)
+      (by omega_using [w2])]
+  refine ⟨fun r hr => ?_, show (freed 36 s').rd = _ by rw [freed_rd, rd', Kg.2.1, allocFrame_rd],
+    show (freed 36 s').wr = _ by rw [freed_wr, wr', Kg.2.2, allocFrame_wr]; rfl, fun x hx => ?_,
+    show val32 mm _ _ _ < _ by rw [vo, ← m₂]; exact L₂, show val32 mm _ _ _ * _ % _ = _ by rw [vo, ← m₂]; exact C₂⟩
+  · show (freed 36 s').gpr r = _
+    by_cases he : r = .esp
     · subst he
       rw [freed_esp, cs' _ hr, gEsp, BitVec.sub_add_cancel]
     · rw [freed_gpr _ _ he, cs' _ hr, Kg.1 _ (by revert hr; cases r <;> simp [calleeSaved]),
@@ -255,7 +263,9 @@ theorem call_ok {s : State} {base : Addr} {bytes n m inv sc o a b : Nat} {wsLen 
     have nst : ¬ (below (s.gpr .esp) 40).Contains x 1 := fun hc => nst96 (below_sub (by decide) low96 x hc)
     have nos : ¬ (⟨off base sc, scratchBytes n⟩ : Region).Contains x 1 := hx _ (by simp)
     have noo : ¬ (⟨off base o, 8 * n⟩ : Region).Contains x 1 := hx _ (by simp)
-    rw [freed_mem]
+    show mm x = _
+    rw [fl x fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact fun hc => nst96 (below_sub (by decide) low96 x hc)]
     by_cases hin : (⟨base, bytes⟩ : Region).Contains x 1
     · have hi := ofs_in hin
       have os := ofs_out nos

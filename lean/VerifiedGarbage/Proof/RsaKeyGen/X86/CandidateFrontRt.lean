@@ -311,10 +311,11 @@ theorem sieve_ok {g : Geometry} (v : g.Valid) {c : Nat} {s : State}
       Frame (setupWrites g) s.mem t.mem ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := by
   unfold sieve
-  refine WP.frameAllocKept (by decide) (by decide) (by decide) fit (NoSp.of_all (by rfl)) ?_
+  refine WP.frameAlloc (by decide) (by decide) (by decide) fit (NoSp.of_all (by rfl)) ?_
   refine WP.mono (sieveInner_ok v C lenRead (by rw [allocFrame_gpr _ _ (by decide)]; exact pointer)
-    length symbol low candidateFar tableFar large) fun t ⟨result, F, K⟩ => ?_
-  exact ⟨by rw [freed_gpr _ _ (by decide)]; exact result, F, FilterStack.freed_keeps K (by decide)⟩
+    length symbol low candidateFar tableFar large) fun t ⟨result, F, K⟩ m _ fl => ?_
+  exact ⟨by show (freed 20 t).gpr .eax = _; rw [freed_gpr _ _ (by decide)]; exact result,
+    F.trans (VG.Proof.RsaKeyGen.X86.Sieve.setupFrame_alloc C fl), FilterStack.freed_keeps K (by decide)⟩
 
 /-- In the sieve's frame: the candidate at `edi + 256` and its length at header byte 4. -/
 def SieveIn (g : Geometry) (c : Nat) (s : State) : Prop :=
@@ -1044,7 +1045,7 @@ theorem other_ok {W : Addr} {L w : Nat} {s : State} (S : Space W L w s)
   obtain Sb := Sa.keep Kb (by decide) (by decide) lenB
   obtain Kab : Keeps [.eax, .ebx, .esi, .ecx, .edx] s b := (A.keeps.mono (by decide)).trans Kb
   obtain spB : b.gpr .esp = s.gpr .esp := Kab.1 .esp (by decide)
-  refine WP.frameAllocKept (by decide) (by decide) (by decide) (by rw [spB]; omega_using [fit]) (NoSp.of_all (by rfl)) ?_
+  refine WP.frameAlloc (by decide) (by decide) (by decide) (by rw [spB]; omega_using [fit]) (NoSp.of_all (by rfl)) ?_
   obtain St := FilterStack.allocated_context (s := b) (by rw [spB]; omega_using [fit])
   obtain apartQ : (⟨W, L⟩ : Region).Disjoint ⟨(b.gpr .esp - 20#32).setWidth 64, 20⟩ :=
     FilterStack.allocated_apart (by rw [spB]; omega_using [fit]) nowrap (by rw [spB]; rcases separateStack with h | h; exact Or.inl h; exact Or.inr (by omega_using [h]))
@@ -1067,7 +1068,7 @@ theorem other_ok {W : Addr} {L w : Nat} {s : State} (S : Space W L w s)
       Stc, apartQ, ?_⟩
     rw [Mc, Mem.readW_writeW_self32, allocFrame_gpr _ _ (by decide), ediB]
   refine WP.seq (WP.mono (difference_ok Fcx) fun d ⟨D, Od, Kd, Fd⟩ => ?_)
-  refine WP.mono (near_ok Fd.space) fun t ⟨result, Mt, Kt⟩ => ?_
+  refine WP.mono (near_ok Fd.space) fun t ⟨result, Mt, Kt⟩ m _ fl => ?_
   rw [show 4 * (2 * w) = 8 * w by omega_using []] at Od
   obtain cand : val32 c.mem W (slot w 0) (2 * w) = val32 s.mem W (slot w 0) (2 * w) := by
     rw [Wc.val32 (d := slot w 0) (n := 2 * w) (by change _ ≤ L; omega_using [f0]) (fun _ mem => nomatch mem)]
@@ -1075,10 +1076,12 @@ theorem other_ok {W : Addr} {L w : Nat} {s : State} (S : Space W L w s)
   obtain prime : val32 c.mem W (slot w 4) (2 * w) = Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (p.setWidth 64) (8 * w)) := by
     rw [Wc.val32 (d := slot w 4) (n := 2 * w) (by change _ ≤ L; omega_using [f4]) (fun _ mem => nomatch mem)]
     exact value
+  rw [Mt] at fl
   refine ⟨?_, ?_, ?_, ?_⟩
-  · rw [freed_gpr _ _ (by decide), result, D, cand, prime, show 32 * (2 * w) = 64 * w by omega_using []]
+  · show (freed 20 t).gpr .eax = _
+    rw [freed_gpr _ _ (by decide), result, D, cand, prime, show 32 * (2 * w) = 64 * w by omega_using []]
     rfl
-  · rw [freed_mem, Mt]
+  · show Frame _ s.mem m
     obtain F1 : Frame [⟨W, L⟩, below (s.gpr .esp) 20] s.mem b.mem :=
       Fb.sub fun r mem => by
         obtain rfl := List.mem_singleton.mp mem
@@ -1099,15 +1102,22 @@ theorem other_ok {W : Addr} {L w : Nat} {s : State} (S : Space W L w s)
         · exact f3)).mono fun r mem => by
           obtain rfl := List.mem_singleton.mp mem
           exact List.mem_cons_self
-    exact (F1.trans F2).trans F3
-  · rw [freed_mem, Mt]
+    refine ((F1.trans F2).trans F3).trans (fl.mono fun r mem => ?_)
+    rw [List.mem_singleton.mp mem, spB]
+    exact List.mem_cons_of_mem _ List.mem_cons_self
+  · show WorkspaceFrame _ _ s.mem m
     obtain W1 : WorkspaceFrame ⟨W, L, w⟩ [(slot w 4, 8 * w), (slot w 2, 8 * w), (slot w 3, 8 * w)] s.mem b.mem :=
       WorkspaceFrame.of_outs nowrap (Outs.of_outside Ob List.mem_cons_self)
     obtain W2 : WorkspaceFrame ⟨W, L, w⟩ [(slot w 4, 8 * w), (slot w 2, 8 * w), (slot w 3, 8 * w)] b.mem c.mem := by
       exact Wc.mono fun _ mem => nomatch mem
     obtain W3 : WorkspaceFrame ⟨W, L, w⟩ [(slot w 4, 8 * w), (slot w 2, 8 * w), (slot w 3, 8 * w)] c.mem d.mem :=
       (WorkspaceFrame.of_outs (g := ⟨W, L, w⟩) nowrap Od).mono fun r mem => List.mem_cons_of_mem _ mem
-    exact (W1.trans W2).trans W3
+    obtain W4 : WorkspaceFrame ⟨W, L, w⟩ [(slot w 4, 8 * w), (slot w 2, 8 * w), (slot w 3, 8 * w)] d.mem m :=
+      (VG.Proof.RsaKeyGen.X86.workspace_of_frame (g := ⟨W, L, w⟩) fl nowrap (by
+        intro r mem
+        obtain rfl := List.mem_singleton.mp mem
+        exact apartQ)).mono fun _ mem => nomatch mem
+    exact ((W1.trans W2).trans W3).trans W4
   · have Kin : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] (allocFrame 20 b) t :=
       ((Kc.mono (by decide)).trans Kd).trans (Kt.mono (by decide))
     exact (Kab.mono (by decide)).trans (FilterStack.freed_keeps Kin (by decide))

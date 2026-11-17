@@ -372,12 +372,23 @@ theorem privateFnP_ok (v : CrtImpl) (w : CrtPImpl) (s : State) {g : PrivGeometry
     simp only [stackBytes, VG.Impl.Rsa.X86.PrivChecked.frameBytes] at *
     omega_using [this]
   unfold privCodeP codeP
-  refine WP.frameKept (rs := savedRegisters) (by decide) (by decide) (by decide) stackFit
-    (privateInnerP_noSp v w) ?_
+  refine WP.frameLocal (rs := savedRegisters) (by decide) (by decide) (by decide) stackFit
+    (privateInnerP_noSp v w)
+    (fun _ _ _ ⟨abi, out⟩ fl => ⟨VG.Proof.Dsa.X86.abiPreserved_frame stackFit abi fl,
+      VG.Proof.Rsa.writtenOutcome_frame fl (by have := h.context.valid.outputFit; omega)
+        (fun q hq => by rw [List.mem_singleton.mp hq, h.savedBelow]; exact (savedRegion_separate h.context.valid g.outputRegion (by simp [bodyWrites])).symm) out⟩) ?_
   refine WP.seq ?_
-  refine VG.Proof.Dsa.X86.WP.alloc (by decide) allocation (privateBodyP_noSp v w) ?_
-  refine WP.mono (privateBodyP_ok v w (entered s) h.context H) ?_
-  rintro u ⟨result, _, frame, rest⟩
+  refine VG.Proof.Dsa.X86.WP.alloc (by decide) allocation (privateBodyP_noSp v w) (privateBodyP_ok v w (entered s) h.context H) ?_
+  rintro u0 mm uu ⟨result0, _, frame0, rest0⟩ fl
+  obtain frame := (frame0.trans (fl.sub fun r hr => ⟨g.innerRegion, by simp [bodyWrites], by
+      rw [List.mem_singleton.mp hr, h.innerBelow]; exact fun _ h => h⟩) :
+    Frame (bodyWrites g) (entered s).mem ({ u0 with mem := mm, unknowns := uu } : State).mem)
+  have rest : Keeps _ (entered s) ({ u0 with mem := mm, unknowns := uu } : State) := rest0
+  obtain result := (VG.Proof.Rsa.writtenOutcome_frame fl (by have := h.context.valid.outputFit; omega)
+      (fun q hq => by rw [List.mem_singleton.mp hq, h.innerBelow]; exact (h.context.valid.stackOutput.sub_left h.context.valid.innerSub).symm) result0 :
+    Spec.Rsa.writtenOutcome ({ u0 with mem := mm, unknowns := uu } : State).mem _ _
+      (({ u0 with mem := mm, unknowns := uu } : State).gpr .eax) _)
+  generalize ({ u0 with mem := mm, unknowns := uu } : State) = u at frame rest result ⊢
   obtain spU : (VG.Proof.Dsa.X86.freed VG.Impl.Rsa.X86.PrivChecked.frameBytes u).gpr .esp =
       (pushed savedRegisters s).gpr .esp := by
     rw [VG.Proof.Dsa.X86.freed_esp, rest.1 .esp (by decide)]

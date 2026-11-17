@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Ffdh.X86.Entry
 public import VerifiedGarbage.Proof.Framework.X86.StackScratchConsts
 public import VerifiedGarbage.Spec.Ffdh.CachedKeyGenerationContract
 public import VerifiedGarbage.Proof.Mont.X86.StaticSquare.Shape
+import VerifiedGarbage.Proof.Rsa.BytesFrame
 import VerifiedGarbage.Proof.Ffdh.X86.VettedValidation.Table
 import VerifiedGarbage.Proof.Ffdh.VettedTableFacts
 import VerifiedGarbage.Proof.Rsa.X86.StackTactic
@@ -995,7 +996,10 @@ theorem recScan_ok (h : In Ex base bytes len args s) {dlen : Nat} (G : DomGeo ar
   have elen : (VG.Impl.Ffdh.VettedGroups.groups.flatMap VG.Impl.Ffdh.VettedGroups.Group.bytes).length = 17744 :=
     VG.Proof.Ffdh.VettedTableFacts.tableBytes_length
   obtain p16 : 16 ≤ (s₃.gpr .esp).toNat := by rw [sp₃]; omega_using [low]
-  refine WP.frameAllocKept (by decide) (by decide) (by decide) p16 (NoSp.of_all (by rfl)) ?_
+  refine WP.frameAllocLocal (by decide) (by decide) (by decide) p16 (NoSp.of_all (by rfl))
+    (fun _ _ _ ⟨a, b, c, F, e, K⟩ fl => ⟨a, b, c, F.trans (fl.sub fun r hr => by
+      obtain rfl := List.mem_singleton.mp hr
+      exact ⟨_, List.mem_singleton_self _, by rw [sp₃]; exact below_sub (by decide) (by omega_using [low])⟩), e, K⟩) ?_
   refine WP.seq (WP.mono (scanCtx_ok h G hb40 tfit tread tbytes tws t40 H)
     fun w ⟨C, TA, wrd, wwr, Fw, wesp, wbx⟩ => ?_)
   refine WP.mono (VettedValidation.scan_ok _ 0 w C TA (by rw [elen])) fun t ⟨E, Mt, Kt⟩ => ?_
@@ -1985,6 +1989,9 @@ theorem pc_operation_ok {s : State} (A : PreABI s) (hc : ConstsOk pcConsts stack
     (fun r hr => by obtain rfl := List.mem_singleton.mp hr; rw [ctxE]; exact A.ctxScratch.symm)
     (P := fun m e => e = 1 ∧ Spec.Rsa.wordsAt m (argumentPointer s 0) (arg s 1).toNat =
       generationValues (pLenOf pArgs s) (pcDom s))
+    (hP := fun m m' e F ⟨e1, h⟩ => ⟨e1, by
+      rw [VG.Proof.Rsa.wordsAt_frame F (by have := (arg s 1).isLt; omega_arith) (fun r hr => by obtain rfl := List.mem_singleton.mp hr; rw [Nat.mul_comm]; exact A.belowCtx.symm)]
+      exact h⟩)
     fun f I espf Ft hsy => pc_frame_ok A hc f I espf Ft hsy
 
 theorem pc_correct (s : State) (h : pcContract.pre s) :

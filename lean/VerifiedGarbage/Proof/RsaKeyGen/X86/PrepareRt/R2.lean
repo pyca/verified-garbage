@@ -523,7 +523,7 @@ theorem doubles_ok {g : Geometry} (v : g.Valid) {s : State} {c capacity : Nat} {
       rw [← Nat.pow_succ']; congr 1; omega_using [minW]
     omega_using [odd, top, even]
   unfold doubles
-  refine WP.frameAllocKept (by decide) (by decide) (by decide) (by rw [sp]; omega_using [low]) (NoSp.of_all (by rfl)) ?_
+  refine WP.frameAlloc (by decide) (by decide) (by decide) (by rw [sp]; omega_using [low]) (NoSp.of_all (by rfl)) ?_
   have St : StackContext (s.gpr .esp - 20#32) (allocFrame 20 s) :=
     VG.Proof.RsaKeyGen.X86.FilterStack.allocated_context (by rw [sp]; omega_using [low])
   have Ci : Context g (allocFrame 20 s) :=
@@ -539,10 +539,13 @@ theorem doubles_ok {g : Geometry} (v : g.Valid) {s : State} {c capacity : Nat} {
     have fit6 := (WitnessRt.fits v).1
     rw [Wb.val32 fit6 (fun _ mem => nomatch mem), allocFrame_mem, value, Nat.mod_eq_of_lt seedLt]
   refine WP.mono (loop_ok v Cb Mb Sb saved apart Vb (by omega_using [odd]) count (by omega_using []) (by omega_using [maxW]))
-    fun t ⟨_, _, _, Vt, Ot, Kt⟩ => ?_
+    fun t ⟨_, _, _, Vt, Ot, Kt⟩ mm uu fl => ?_
+  have wk : WorkspaceFrame g [] t.mem mm := fun i index _ => fl.bytes (R := ⟨g.W, g.L⟩)
+    (by intro r mem; obtain rfl := List.mem_singleton.mp mem; exact apart)
+    (by change g.L ≤ 2 ^ 64; omega_using [nowrap]) index
   have Kall : Keeps VG.Proof.Mont.X86.Dynamic.powerClob (allocFrame 20 s) t :=
     (Kb.mono (by decide)).trans (Kt.mono (by decide))
-  have K : Keeps VG.Proof.Mont.X86.Dynamic.powerClob s (freed 20 t) :=
+  have K : Keeps VG.Proof.Mont.X86.Dynamic.powerClob s { freed 20 t with mem := mm, unknowns := uu } :=
     VG.Proof.RsaKeyGen.X86.FilterStack.freed_keeps Kall (by decide)
   have fitR : ∀ r ∈ doubleRanges g, r.1 + r.2 ≤ g.L := fun r mem => by
     obtain ⟨fit6, -, -, -⟩ := WitnessRt.fits v
@@ -550,19 +553,20 @@ theorem doubles_ok {g : Geometry} (v : g.Valid) {s : State} {c capacity : Nat} {
       unfold Geometry.array Geometry.words Proof.Rsa.Mont.arrAt Proof.Rsa.Mont.hdrBytes; omega_using []
     simp only [doubleRanges, List.mem_cons, List.not_mem_nil, or_false] at mem
     rcases mem with rfl | rfl <;> dsimp only <;> omega_arith
-  have W : WorkspaceFrame g (phaseRanges g) s.mem (freed 20 t).mem := by
-    rw [freed_mem]
-    exact (Wb.mono fun _ mem => nomatch mem).trans (doubleRanges_cover (WorkspaceFrame.of_outs nowrap Ot))
-  have F : Frame ([⟨g.W, g.L⟩] ++ [below p 80]) s.mem (freed 20 t).mem := by
-    rw [freed_mem]
-    refine Frame.trans (Fb.sub fun r mem => ?_) ((workspaceGlobalFrame Ot fitR).mono
-      fun r mem => List.mem_append_left _ mem)
-    obtain rfl := List.mem_singleton.mp mem
-    refine ⟨below p 80, List.mem_append_right _ (List.mem_singleton_self _), ?_⟩
-    rw [sp]
-    exact below_sub (sp := p) (a := 20) (b := 80) (by decide) low
+  have W : WorkspaceFrame g (phaseRanges g) s.mem mm :=
+    ((Wb.mono fun _ mem => nomatch mem).trans (doubleRanges_cover (WorkspaceFrame.of_outs nowrap Ot))).trans
+      (wk.mono fun _ mem => nomatch mem)
+  have F : Frame ([⟨g.W, g.L⟩] ++ [below p 80]) s.mem mm := by
+    refine (Frame.trans (Fb.sub fun r mem => ?_) ((workspaceGlobalFrame Ot fitR).mono
+      fun r mem => List.mem_append_left _ mem)).trans (fl.sub fun r mem => ?_)
+    all_goals
+      obtain rfl := List.mem_singleton.mp mem
+      refine ⟨below p 80, List.mem_append_right _ (List.mem_singleton_self _), ?_⟩
+      rw [sp]
+      exact below_sub (sp := p) (a := 20) (b := 80) (by decide) low
   refine ⟨S.keepWork v K (by decide) (by decide) W F, ?_, W, F, K⟩
-  rw [freed_mem, Vt, ← Nat.pow_add, ← Nat.pow_add]
+  show val32 mm _ _ _ = _
+  rw [wk.val32 (WitnessRt.fits v).1 (fun _ mem => nomatch mem), Vt, ← Nat.pow_add, ← Nat.pow_add]
   congr 2
   omega_using [minW]
 

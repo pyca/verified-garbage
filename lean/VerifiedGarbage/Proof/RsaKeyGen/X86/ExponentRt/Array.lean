@@ -10,6 +10,7 @@ public import VerifiedGarbage.Impl.RsaKeyGen.X86.ExponentRt
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Mont.X86.Words
+import VerifiedGarbage.Proof.MillerRabin.X86.WorkspaceFrame
 import VerifiedGarbage.Proof.RsaKeyGen.X86.ExponentRt.Pointer
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Ptr
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.Mod64Array
@@ -604,17 +605,33 @@ theorem framed_ok {base : Addr} {size w candidate exponent : Nat} {s : State}
       rw [baseEq]; exact value
     · change exponentValue s.mem g.base 128 = exponent
       rw [baseEq]; exact eValue
-  refine WP.frameAllocKept (by decide) (by decide) (by decide) (by omega_using [fit]) array_noSp ?_
+  refine WP.frameAlloc (by decide) (by decide) (by decide) (by omega_using [fit]) array_noSp ?_
   · refine WP.mono (array_ok valid C ePositive hw (by rw [allocFrame_mem, baseEq]; exact len))
-      fun t ⟨T, result, O, K⟩ => ?_
-    have Kout := VG.Proof.RsaKeyGen.X86.FilterStack.freed_keeps K (by decide)
+      fun t ⟨T, result, O, K⟩ m uu fl => ?_
+    have Kout : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s { freed 20 t with mem := m, unknowns := uu } :=
+      VG.Proof.RsaKeyGen.X86.FilterStack.freed_keeps K (by decide)
+    have apart : (⟨base, size⟩ : Region).Disjoint ⟨(s.gpr .esp - 20#32).setWidth 64, 20⟩ :=
+      VG.Proof.RsaKeyGen.X86.FilterStack.allocated_apart (by omega_using [fit]) S.nowrap
+        (by rcases separate with h | h; exact Or.inl h; exact Or.inr (by omega_using [h]))
+    have wk : VG.Proof.MillerRabin.X86.WorkspaceFrame ⟨base, size, w⟩ [] t.mem m := fun i index _ =>
+      fl.bytes (R := ⟨base, size⟩) (by intro r mem; obtain rfl := List.mem_singleton.mp mem; exact apart)
+        (by change size ≤ 2 ^ 64; have := S.nowrap; omega_using [this]) index
+    have eE : exponentValue m base 128 = exponentValue t.mem base 128 := by
+      unfold exponentValue
+      rw [wk.read32 (d := 128) (by change 128 + 4 ≤ size; omega_using [space, lo]) (by intro r mem; nomatch mem),
+        wk.read32 (d := 128 + 4) (by change 128 + 4 + 4 ≤ size; omega_using [space, lo]) (by intro r mem; nomatch mem)]
     refine ⟨S.of_keeps Kout (by decide), ?_, ?_, ?_, ?_, Kout⟩
-    · rw [freed_gpr _ _ (by decide), freed_gpr _ _ (by decide)]
+    · show pair ((freed 20 t).gpr .ecx) ((freed 20 t).gpr .ebx) = _
+      rw [freed_gpr _ _ (by decide), freed_gpr _ _ (by decide)]
       exact result
-    · rw [← baseEq]; exact T.candidateValue
-    · rw [← baseEq]; exact T.exponentEq
+    · show val32 m _ _ _ = _
+      rw [wk.val32 (d := slot w 5) (n := 2 * w) (by change _ ≤ size; omega_using [space])
+        (by intro r mem; nomatch mem), ← baseEq]
+      exact T.candidateValue
+    · show exponentValue m _ _ = _
+      rw [eE, ← baseEq]; exact T.exponentEq
     · have F : Frame [g.stackRegion] (allocFrame 20 s).mem t.mem := arrayStackFrame O
       rw [allocFrame_mem] at F
-      exact F
+      exact F.trans fl
 
 end VG.Proof.RsaKeyGen.X86.ExponentRt

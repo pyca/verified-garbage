@@ -740,12 +740,18 @@ theorem verifyFn_ok (v : PublicImpl) (s : State) {g : Geometry} {bs : Fin 5 → 
     simp only [verifyStack, VG.Impl.RsaPkcs1Sig.X86.Verify.frameBytes] at *
     omega
   unfold code
-  refine WP.frameKept (rs := savedRegisters) (by decide) (by decide) (by decide) stackFit
-    (inner_noSp v) ?_
+  refine WP.frameLocal (rs := savedRegisters) (by decide) (by decide) (by decide) stackFit
+    (inner_noSp v)
+    (fun _ _ _ ⟨abi, out⟩ fl => ⟨VG.Proof.Dsa.X86.abiPreserved_frame stackFit abi fl, out⟩) ?_
   refine WP.seq ?_
-  refine VG.Proof.Dsa.X86.WP.alloc (by decide) allocation (body_noSp v) ?_
-  refine WP.mono (body_ok v (s := entered s) h.context) ?_
-  rintro u ⟨_, frame, rest, result⟩
+  refine VG.Proof.Dsa.X86.WP.alloc (by decide) allocation (body_noSp v) (body_ok v (s := entered s) h.context) ?_
+  rintro u0 mm uu ⟨_, frame0, rest0, result0⟩ fl
+  obtain frame := (frame0.trans (fl.sub fun r hr => ⟨g.innerRegion, by simp [bodyWrites], by
+      rw [List.mem_singleton.mp hr, h.innerBelow]; exact fun _ h => h⟩) :
+    Frame (bodyWrites g) (entered s).mem ({ u0 with mem := mm, unknowns := uu } : State).mem)
+  have rest : Keeps _ (entered s) ({ u0 with mem := mm, unknowns := uu } : State) := rest0
+  have result : _ → ({ u0 with mem := mm, unknowns := uu } : State).gpr .eax = _ := result0
+  generalize ({ u0 with mem := mm, unknowns := uu } : State) = u at frame rest result ⊢
   have spU : (freed VG.Impl.RsaPkcs1Sig.X86.Verify.frameBytes u).gpr .esp =
       (pushed savedRegisters s).gpr .esp := by
     rw [freed_esp, rest.1 .esp (by decide)]

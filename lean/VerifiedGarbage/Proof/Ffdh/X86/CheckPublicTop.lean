@@ -155,6 +155,7 @@ theorem operation_ok {s : State} (A : CheckPublicABI s) :
   exact wrap_ok (wrapABI A) (NoSp.of_all frameBody_all) hx (Out := []) (fun _ h => by cases h)
     (fun _ h => by cases h)
     (P := fun _ e => Spec.Ffdh.domainValid (arg s 2).toNat (entryDom s) = true → e.toNat = spec s)
+    (hP := fun _ _ _ _ h => h)
     fun f I espf Ft => frame_ok A f I espf Ft
 
 end VG.Proof.Ffdh.X86.CheckPublic

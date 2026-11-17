@@ -206,7 +206,21 @@ theorem tested_frame_ok {mont round : Prog isa} {montName roundName : String}
       WorkspaceFrame P.g (CandidateTest.ranges P.g) s.mem t.mem ∧
       Frame [⟨P.g.W, P.g.L⟩, below (s.gpr .esp) 136] s.mem t.mem ∧ Keeps WitnessStep.clob s t := by
   refine CandidateFrame.code_full_ok (CandidateNoSp.testBody montNoSp roundNoSp montName roundName) S
-    v.geometry.headerFit capacity fit separate ?_
+    v.geometry.headerFit capacity fit separate 
+    (fun t m u ⟨c, r, w, f, k⟩ fl => by
+      have workspaceFar : (⟨P.g.W, P.g.L⟩ : Region).Disjoint (below (s.gpr .esp) 28) :=
+        FilterStack.allocated_apart (by omega_using [fit]) S.nowrap
+          (by rcases separate with h | h; exact Or.inl h; exact Or.inr (by omega_using [h]))
+      have wk : WorkspaceFrame P.g [] t.mem m := fun i index _ =>
+        fl.bytes (R := ⟨P.g.W, P.g.L⟩)
+          (by intro r mem; obtain rfl := List.mem_singleton.mp mem; exact workspaceFar)
+          (by change P.g.L ≤ 2 ^ 64; have := S.nowrap; omega_using [this]) index
+      refine ⟨?_, r.workspace wk (by have := v.geometry.headerFit; omega_using [this]),
+        w.trans (wk.mono (by intro r mem; nomatch mem)), f.trans (fl.sub ?_), k⟩
+      · show val32 m _ _ _ = _
+        rw [wk.val32 (v.geometry.arrayFit (by decide)) (by intro r mem; nomatch mem)]; exact c
+      · intro r mem; obtain rfl := List.mem_singleton.mp mem
+        exact ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), below_sub (by decide) fit⟩) ?_
   intro a Sa Ca _ Fa Ka
   have workspaceFar : (⟨P.g.W, P.g.L⟩ : Region).Disjoint (below (s.gpr .esp) 28) :=
     FilterStack.allocated_apart (by omega_using [fit]) S.nowrap

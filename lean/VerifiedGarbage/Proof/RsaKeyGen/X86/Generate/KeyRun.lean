@@ -1889,7 +1889,7 @@ theorem search_run (c : Srch) {p : GenPublic} {o s : State} {used : Nat} {st : K
   obtain hph1 : phaseWord st.phase ≤ 1 := by unfold phaseWord; split <;> omega_using []
   unfold searchRun
   rw [show 4 * searchWords = 48 from rfl]
-  refine WP.frameAllocKept (by decide) (by decide) (by decide) (by omega_using [h1, hsn]) (body_noSp c) ?_
+  refine WP.frameAlloc (by decide) (by decide) (by decide) (by omega_using [h1, hsn]) (body_noSp c) ?_
   obtain F0 := hb.alloc (n := 48) (by decide)
   obtain hph : (allocFrame 48 s).mem.readW ((arg o 7).setWidth 64 + BitVec.ofNat 64 32) 32 =
       BitVec.ofNat 32 (phaseWord st.phase) := by
@@ -1905,6 +1905,7 @@ theorem search_run (c : Srch) {p : GenPublic} {o s : State} {used : Nat} {st : K
     rw [F.esp, GenPublic.S1, hi.sp_eq, BitVec.sub_sub, ← BitVec.ofNat_add]; exact VG.X86.sub_toNat (by omega_using [h1])
   refine WP.of_syms (WP.call c.verified.1 c.noSp (by have := c.stack; omega_using [h1, hun, this])
     (search_pre F ha hst h.used_le) cov covW fun u' hrd hwr hcs hf _ ⟨s₂, hm₂, hg₂, hpost⟩ sy' => ?_)
+  intro mm uu fl
   have hp := hpost
   sig_post [VG.Proof.RsaKeyGen.X86.Search.contract, Proof.RsaKeyGen.primeSearchContract,
     Proof.RsaKeyGen.primeSearchSig, abi, argSlots, argVal, argBytes, Abi.withConsts,
@@ -1994,17 +1995,57 @@ theorem search_run (c : Srch) {p : GenPublic} {o s : State} {used : Nat} {st : K
       · exact ⟨⟨p.stp.setWidth 64, 32⟩, by simp [searchChanges], fun _ h => h⟩
       · exact ⟨below (o.gpr .esp) 284, by simp [searchChanges], by rw [← hi.low_eq]; exact Fs⟩
       · exact ⟨below (o.gpr .esp) 284, by simp [searchChanges], by rw [← hi.low_eq]; exact Bs⟩
-  refine ⟨⟨⟨hi, ?_, ?_, sy'.trans F.syms, ?_, sv, F.frame.trans frC⟩, h.used_le,
+  obtain after : AfterSearch p o used st s (freed 48 u') := by
+   refine ⟨⟨⟨hi, ?_, ?_, sy'.trans F.syms, ?_, sv, F.frame.trans frC⟩, h.used_le,
     (keep .ebp (by decide) (by decide) (by decide) (by decide) (by decide)).trans h.ebp,
     (keep .esi (by decide) (by decide) (by decide) (by decide) (by decide)).trans h.esi,
     (keep .edi (by decide) (by decide) (by decide) (by decide) (by decide)).trans h.edi, randT, stT⟩,
     (keep .ebx (by decide) (by decide) (by decide) (by decide) (by decide)).trans h.ebx,
     by rw [freed_gpr _ _ (by decide)]; exact hr, hused, hout, ⟨req, w3, hreq⟩, memT⟩
-  · show u'.rd = o.rd
-    rw [hrd, F.rd]
-  · change u'.wr.tail = _
-    rw [hwr, F.wr]; rfl
-  · rw [freed_esp, hcs .esp (by decide), F.esp, BitVec.sub_add_cancel]
+   · show u'.rd = o.rd
+     rw [hrd, F.rd]
+   · change u'.wr.tail = _
+     rw [hwr, F.wr]; rfl
+   · rw [freed_esp, hcs .esp (by decide), F.esp, BitVec.sub_add_cancel]
+  -- The release of the frame changes only its bytes.
+  obtain allocEq : below (s.gpr .esp) 48 = fR o 48 := by
+    rw [hb.sp, GenPublic.S1, hi.sp_eq]
+    change (⟨(o.gpr .esp - BitVec.ofNat 32 16 - BitVec.ofNat 32 48).setWidth 64, 48⟩ : Region) = _
+    rw [BitVec.sub_sub, ← BitVec.ofNat_add]
+    obtain e := addr_sub A (k := 16 + 48) (d := 0) (by omega_using []) (by omega_using [])
+    simp only [addr, BitVec.add_zero] at e
+    (rw [e]) <;> rfl
+  rw [allocEq] at fl
+  obtain fp : ∀ {R : Region}, R.Disjoint (lowR o) → ∀ r ∈ [fR o 48], R.Disjoint r := fun hR r hr => by
+    rw [List.mem_singleton.mp hr]; exact hR.sub_right Fs
+  obtain stFar : ∀ d, d + 8 ≤ 56 → Region.Disjoint ⟨p.stp.setWidth 64 + BitVec.ofNat 64 d, 8⟩ (lowR o) := fun d hd => by
+    obtain X : Region.Sub ⟨p.stp.setWidth 64 + BitVec.ofNat 64 d, 8⟩ (sR o) := by
+      rw [hi.sR_eq]; exact Offset.sub_base _ hd
+    exact A.lowS.symm.sub_left X
+  obtain ⟨q, hq, hrq⟩ := after.req
+  exact ⟨⟨⟨hi, after.frame.rd, after.frame.wr, after.frame.syms, after.frame.sp,
+      saved_frame hi (fun r hr => by
+        rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inr (by decide)) (by decide) (by decide)) fl
+        after.frame.saved,
+      after.frame.frame.trans (fl.sub fun r hr => by
+        rw [List.mem_singleton.mp hr]
+        exact ⟨below (o.gpr .esp) 284, by simp [changes], by rw [← hi.low_eq]; exact Fs⟩)⟩,
+      after.frame.used_le, after.frame.ebp, after.frame.esi, after.frame.edi,
+      (bytes_keep (R := ⟨p.rp.setWidth 64, p.randLen⟩) fl (fp (by rw [← hi.rR_eq]; exact A.lowRand.symm))
+        (by show p.randLen ≤ 2 ^ 64; rw [hi.randLen_eq]; have := (arg o 4).isLt; omega_using [this])).trans after.frame.random,
+      after.frame.state.frame (R := fR o 48)
+        (by rw [← hi.sR_eq]; exact A.lowS.sub_left (low_sub (by decide))) fl⟩,
+    after.ebx, after.status,
+    (word_keep fl (fp (by
+      show Region.Disjoint ⟨p.up.setWidth 64 + BitVec.ofNat 64 0, 8⟩ _
+      rw [BitVec.add_zero, hi.up_eq]; exact A.lowU.symm))).trans after.usedw,
+    (bytes_keep (R := ⟨outOf p (phaseWord st.phase), p.L⟩) fl (fp (by
+      rw [← eO]; exact (A.lowK.symm.sub_left sO)))
+      (by show p.L ≤ 2 ^ 64; have := hi.kBound'; omega_using [this])).trans after.out,
+    ⟨q, (word_keep fl (fp (stFar 24 (by decide)))).trans hq, hrq⟩,
+    after.mem.trans (fl.sub fun r hr => by
+      rw [List.mem_singleton.mp hr]
+      exact ⟨below (o.gpr .esp) 284, by simp [searchChanges], by rw [← hi.low_eq]; exact Fs⟩)⟩
 
 end VG.Proof.RsaKeyGen.X86.Generate
 
@@ -2470,7 +2511,7 @@ theorem key_run (c : KeyImpl) {p : GenPublic} {o s : State} {used : Nat} {st : K
     rw [hb.sp, GenPublic.S1, hi.sp_eq]; exact VG.X86.sub_toNat (by omega_using [h1])
   unfold keyRun
   rw [show 4 * keyWords = 72 from rfl]
-  refine WP.frameAllocKept (by decide) (by decide) (by decide) (by omega_using [h1, hsn]) (kbody_noSp c) ?_
+  refine WP.frameAlloc (by decide) (by decide) (by decide) (by omega_using [h1, hsn]) (kbody_noSp c) ?_
   obtain F0 := hb.alloc (n := 72) (by decide)
   refine WP.seq (WP.of_syms (WP.mono (keyArgs_ok F0 (by rw [allocFrame_gpr _ _ (by decide)]; exact h.ebp))
     fun u ⟨⟨ha, hfr⟩, k⟩ sy => ?_))
@@ -2480,6 +2521,7 @@ theorem key_run (c : KeyImpl) {p : GenPublic} {o s : State} {used : Nat} {st : K
     rw [F.esp, GenPublic.S1, hi.sp_eq, BitVec.sub_sub, ← BitVec.ofNat_add]; exact VG.X86.sub_toNat (by omega_using [h1])
   refine WP.of_syms (WP.call c.verified.1 c.noSp (by have := c.stack; omega_using [h1, hun, this])
     (key_pre F ha) cov covW fun u' hrd hwr hcs hf _ ⟨s₂, hm₂, hg₂, hpost⟩ sy' => ?_)
+  intro mm uu fl
   have hp := hpost
   sig_post [VG.Proof.RsaKeyGen.X86.Key.contract, Proof.RsaKeyGen.keyContract, Proof.RsaKeyGen.keySig, abi, argSlots,
     argVal, argBytes] at hp
@@ -2579,24 +2621,74 @@ theorem key_run (c : KeyImpl) {p : GenPublic} {o s : State} {used : Nat} {st : K
       · exact ⟨kR o, by simp, hs⟩
       · exact ⟨bR o, by simp, hs⟩
       · exact ⟨below (o.gpr .esp) 284, by simp, by rw [← hi.low_eq]; exact hs⟩
-  refine ⟨⟨⟨hi, ?_, ?_, sy'.trans F.syms, ?_, sv, F.frame.trans frC⟩, h.used_le,
+  obtain after : AfterKey p o used st s (freed 72 u') := by
+   refine ⟨⟨⟨hi, ?_, ?_, sy'.trans F.syms, ?_, sv, F.frame.trans frC⟩, h.used_le,
     (keep .ebp (by decide) (by decide) (by decide) (by decide) (by decide)).trans h.ebp,
     (keep .esi (by decide) (by decide) (by decide) (by decide) (by decide)).trans h.esi,
     (keep .edi (by decide) (by decide) (by decide) (by decide) (by decide)).trans h.edi, randT, stT⟩,
     keep .ebx (by decide) (by decide) (by decide) (by decide) (by decide),
     by rw [freed_gpr _ _ (by decide)]; exact hr, ?_, memT⟩
-  · show u'.rd = o.rd
-    rw [hrd, F.rd]
-  · change u'.wr.tail = _
-    rw [hwr, F.wr]; rfl
-  · rw [freed_esp, hcs .esp (by decide), F.esp, BitVec.sub_add_cancel]
-  · rw [show (freed 72 u').mem = u'.mem from rfl]
-    rw [show keyOp p.L p.eB (Spec.Rsa.bytesAt s.mem (p.slot 4) p.L) (Spec.Rsa.bytesAt s.mem (p.slot 5) p.L) =
-      keyOf p s.mem from rfl] at hout
-    revert hout
-    generalize keyOf p s.mem = k
-    intro hout
-    rcases k with (_ | ys) | _ <;> simpa [keyOutsOf] using hout
+   · show u'.rd = o.rd
+     rw [hrd, F.rd]
+   · change u'.wr.tail = _
+     rw [hwr, F.wr]; rfl
+   · rw [freed_esp, hcs .esp (by decide), F.esp, BitVec.sub_add_cancel]
+   · rw [show (freed 72 u').mem = u'.mem from rfl]
+     rw [show keyOp p.L p.eB (Spec.Rsa.bytesAt s.mem (p.slot 4) p.L) (Spec.Rsa.bytesAt s.mem (p.slot 5) p.L) =
+       keyOf p s.mem from rfl] at hout
+     revert hout
+     generalize keyOf p s.mem = k
+     intro hout
+     rcases k with (_ | ys) | _ <;> simpa [keyOutsOf] using hout
+  -- The release of the frame changes only its bytes.
+  obtain allocEq : below (s.gpr .esp) 72 = fR o 72 := by
+    rw [hb.sp, GenPublic.S1, hi.sp_eq]
+    change (⟨(o.gpr .esp - BitVec.ofNat 32 16 - BitVec.ofNat 32 72).setWidth 64, 72⟩ : Region) = _
+    rw [BitVec.sub_sub, ← BitVec.ofNat_add]
+    obtain e := addr_sub A (k := 16 + 72) (d := 0) (by omega_using []) (by omega_using [])
+    simp only [addr, BitVec.add_zero] at e
+    (rw [e]) <;> rfl
+  rw [allocEq] at fl
+  have hk : ∀ x ∈ keyOutsOf p, Spec.Rsa.bytesAt mm x.1 x.2 = Spec.Rsa.bytesAt u'.mem x.1 x.2 := by
+    intro x hx
+    obtain hsub : Region.Sub ⟨x.1, x.2⟩ ⟨p.kp.setWidth 64, 9 * p.L⟩ := by
+      simp only [keyOutsOf, List.mem_cons, List.not_mem_nil, or_false] at hx
+      rcases hx with rfl | rfl | rfl | rfl | rfl | rfl | rfl
+      · exact Region.sub_prefix (by omega_using [])
+      all_goals exact Offset.sub_base _ (by omega_using [])
+    exact bytes_keep (R := ⟨x.1, x.2⟩) fl (fun q hq => by
+      rw [List.mem_singleton.mp hq]; exact (sK.sub_left Fs).symm.sub_left hsub)
+      (by
+        show x.2 ≤ 2 ^ 64
+        have h2 : x.2 ≤ 2 * p.L := by
+          simp only [keyOutsOf, List.mem_cons, List.not_mem_nil, or_false] at hx
+          rcases hx with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> dsimp only <;> omega_using []
+        have := hi.kBound'
+        omega_using [h2, this])
+  refine ⟨⟨⟨hi, after.frame.rd, after.frame.wr, after.frame.syms, after.frame.sp,
+      saved_frame hi (fun r hr => by
+        rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inr (by decide)) (by decide) (by decide)) fl
+        after.frame.saved,
+      after.frame.frame.trans (fl.sub fun r hr => by
+        rw [List.mem_singleton.mp hr]
+        exact ⟨below (o.gpr .esp) 284, by simp [changes], by rw [← hi.low_eq]; exact Fs⟩)⟩,
+      after.frame.used_le, after.frame.ebp, after.frame.esi, after.frame.edi,
+      (bytes_keep (R := ⟨p.rp.setWidth 64, p.randLen⟩) fl (fun q hq => by
+          rw [List.mem_singleton.mp hq, ← hi.rR_eq]; exact A.lowRand.symm.sub_right Fs)
+        (by show p.randLen ≤ 2 ^ 64; rw [hi.randLen_eq]; have := (arg o 4).isLt; omega_using [this])).trans
+        after.frame.random,
+      after.frame.state.frame (R := fR o 72) (sS.sub_left Fs) fl⟩,
+    after.ebx, after.status, ?_,
+    after.mem.trans (fl.sub fun r hr => by
+      rw [List.mem_singleton.mp hr]
+      exact ⟨below (o.gpr .esp) 284, by simp, by rw [← hi.low_eq]; exact Fs⟩)⟩
+  have aout := after.out
+  revert aout
+  generalize keyOf p s.mem = k
+  rcases k with (_ | ys) | _ <;> dsimp only <;> intro aout
+  · intro x hx; rw [hk x hx]; exact aout x hx
+  · rw [← aout]; exact List.map_congr_left fun x hx => hk x hx
+  · intro x hx; rw [hk x hx]; exact aout x hx
 
 
 end VG.Proof.RsaKeyGen.X86.Generate

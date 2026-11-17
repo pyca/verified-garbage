@@ -21,6 +21,7 @@ public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.RsaOaep.X86.NoSp
 import VerifiedGarbage.Proof.Rsa.X86.PrivStackSafety
 import VerifiedGarbage.Proof.RsaPkcs1Sig.BytesAt
+import VerifiedGarbage.Proof.Rsa.BytesFrame
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.HashTable.X86
 import VerifiedGarbage.Proof.Framework.X86.Syms
@@ -1243,7 +1244,7 @@ theorem code_ok (hc : Coh vs) (v : Proof.Rsa.X86.PrivChecked.CrtImpl) {s : State
   refine WP.mono (wrap_ok (F := frameBytes) (by decide) (body_noSp ni nu nf v) hsp hfit4
     (W := (epw (vs := vs) s w w₁).lay.W)
     (Q := fun r m => Res w₁.g.G w.g.G (epw (vs := vs) s w w₁) (entered frameBytes s) m r) (fun r hr => ?_)
-    (WP.mono hb fun u hu => ⟨hu.1.1.2.frame, hu.1.2⟩)) fun t ⟨abi, res⟩ => ⟨abi, ?_⟩
+    (WP.mono hb fun u hu => ⟨hu.1.1.2.frame, hu.1.2⟩) (fun r m m' fl hres => ?_)) fun t ⟨abi, res⟩ => ⟨abi, ?_⟩
   · have ok := hin.ok
     rw [ep_lay] at ok hr
     rw [save_eq (argv := (epw (vs := vs) s w w₁).argv) (ro := (epw (vs := vs) s w w₁).ro)
@@ -1251,6 +1252,19 @@ theorem code_ok (hc : Coh vs) (v : Proof.Rsa.X86.PrivChecked.CrtImpl) {s : State
       ret_eq (argv := (epw (vs := vs) s w w₁).argv) (ro := (epw (vs := vs) s w w₁).ro)
         (rw := (epw (vs := vs) s w w₁).rw) (C := 3448) hsp]
     exact ⟨ok.save_apart r hr, ok.ret_apart r hr⟩
+  · have ok := hin.ok
+    rw [ep_lay] at ok
+    obtain F' := release_frame (argv := (epw (vs := vs) s w w₁).argv) (ro := (epw (vs := vs) s w w₁).ro) (rw := (epw (vs := vs) s w w₁).rw) (C := 3448) fl
+    obtain hO := VG.Proof.Rsa.rsa_bytes_frame F' (src := ((epw (vs := vs) s w w₁).out.setWidth 64)) (k := (epw (vs := vs) s w w₁).K)
+      (by show (arg s 4).toNat < 2 ^ 64; have := (arg s 4).isLt; omega_using [this])
+      (fun q hq => by rw [List.mem_singleton.mp hq]; exact (ok.stk (epw (vs := vs) s w w₁).OUT (by simp [layOf])).symm)
+    obtain hM : m'.readW ((epw (vs := vs) s w w₁).ml.setWidth 64) 64 = m.readW ((epw (vs := vs) s w w₁).ml.setWidth 64) 64 :=
+      F'.readW (r := (epw (vs := vs) s w w₁).ML) (Region.contains_self _ _) (fun q hq => by rw [List.mem_singleton.mp hq]; exact (ok.stk (epw (vs := vs) s w w₁).ML (by simp [layOf])).symm) (by decide)
+    have key : ∀ o, Spec.RsaOaep.writtenDecrypt m ((epw (vs := vs) s w w₁).out.setWidth 64) ((epw (vs := vs) s w w₁).ml.setWidth 64) (epw (vs := vs) s w w₁).K r o →
+        Spec.RsaOaep.writtenDecrypt m' ((epw (vs := vs) s w w₁).out.setWidth 64) ((epw (vs := vs) s w w₁).ml.setWidth 64) (epw (vs := vs) s w w₁).K r o := fun o => by
+      cases o <;> simp only [Spec.RsaOaep.writtenDecrypt] <;> rw [hO, hM] <;> exact id
+    unfold Res at hres ⊢
+    exact key _ hres
   · have ok := hin.ok
     rw [ep_lay] at ok
     obtain ro := fun {R : Region} (hR : R ∈ (epw (vs := vs) s w w₁).ro) => entered_ro hsp ok hR

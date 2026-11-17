@@ -2,6 +2,8 @@ module
 
 import VerifiedGarbage.Proof.Mont.Words32
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.OffsetBelow
+import VerifiedGarbage.Proof.Framework.X86.Taint
 import VerifiedGarbage.Proof.Framework.X86.CallWith
 import VerifiedGarbage.Proof.Mont.X86.ArgFar
 public import VerifiedGarbage.Proof.Mont.Words
@@ -62,5 +64,19 @@ theorem popped_four_value (s : State) :
   change s.mem.readW ((((s.gpr .esp + 4) + 4) + 4).setWidth 64) 32 = _
   simp only [BitVec.add_assoc]
   rfl
+
+/-- The calling convention's words, whatever the bytes of the push below
+`esp` are and the unknowns. -/
+theorem abi_frame {s t : State} {m : Mem} {u : Nat → BitVec 32} (hn : 16 ≤ (s.gpr .esp).toNat)
+    (h : abiPreserved s t) (fl : Frame [below (s.gpr .esp) (4 * savedRegisters.length)] t.mem m) :
+    abiPreserved s { t with mem := m, unknowns := u } := by
+  refine ⟨h.1, ?_⟩
+  show m.readW _ _ = _
+  rw [fl.readW (Region.contains_self _ _) (fun r hr => by
+    rw [List.mem_singleton.mp hr]
+    show Region.Disjoint _ ⟨(s.gpr .esp - BitVec.ofNat 32 16).setWidth 64, 16⟩
+    rw [Taint.sub_setWidth hn]
+    exact (Offset.below_disjoint _ (by have := (s.gpr .esp).isLt; omega)).symm) (by decide)]
+  exact h.2
 
 end VG.Proof.Mont.X86.Compact

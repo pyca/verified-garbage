@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.Inverse.Entry
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.Inverse.Framed
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.MillerRabin.X86.WorkspaceFrame
 public import VerifiedGarbage.Proof.RsaKeyGen.Contract
 import VerifiedGarbage.Proof.RsaKeyGen.X86.Inverse.ConstantTime
 import VerifiedGarbage.Proof.Framework.Contract
@@ -66,7 +67,32 @@ theorem done_frame {s t : State} (A : Entry s) (D : Done s t) {i : Nat} (hi : i 
 theorem correct (s : State) (h : contract.pre s) :
     ∃ trace t, Exec isa VG.Impl.RsaKeyGen.X86.Inverse.code s trace t ∧ abiPreserved s t ∧ contract.post s t := by
   have A := entry h
-  obtain ⟨trace, t, run, preserved, D⟩ := framed_ok h
+  obtain ⟨trace, t, run, preserved, t₀, D, F⟩ := framed_ok h
+  have fit : 16 ≤ (s.gpr .esp).toNat := by have := A.low; omega_using [this]
+  have frameWs : (below (s.gpr .esp) 16).Disjoint ⟨base s, size s⟩ := by
+    unfold below
+    rw [Taint.sub_setWidth fit]
+    exact A.stackWs.sub_left (Offset.sub_below _ (by decide) (by decide))
+  have wk : VG.Proof.MillerRabin.X86.WorkspaceFrame ⟨base s, size s, 0⟩ [] t₀.mem t.mem := fun i index _ =>
+    F.bytes (R := ⟨base s, size s⟩) (fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact frameWs.symm)
+      (by change size s ≤ 2 ^ 64; have := A.wsFit; unfold size at *; omega_using [this]) index
+  have room := A.room
+  have numEq1 : VG.Proof.Rsa.X86.Keys.num t.mem (base s) (kw (len s)) 1 =
+      VG.Proof.Rsa.X86.Keys.num t₀.mem (base s) (kw (len s)) 1 :=
+    wk.val32 (by
+      change VG.Proof.Rsa.X86.Keys.arr (kw (len s)) 1 + 4 * kw (len s) ≤ size s
+      simp only [VG.Proof.Rsa.X86.Keys.arr, VG.Proof.Rsa.X86.Keys.S, VG.Impl.Rsa.X86.Keys.hdr, kw,
+        Spec.Rsa.modulusWords] at room ⊢
+      unfold Proof.RsaKeyGen.inverseBytes at room
+      omega_using [room]) (fun _ mem => nomatch mem)
+  have numEq3 : VG.Proof.Rsa.X86.Keys.num t.mem (base s) (kw (len s)) 3 =
+      VG.Proof.Rsa.X86.Keys.num t₀.mem (base s) (kw (len s)) 3 :=
+    wk.val32 (by
+      change VG.Proof.Rsa.X86.Keys.arr (kw (len s)) 3 + 4 * kw (len s) ≤ size s
+      simp only [VG.Proof.Rsa.X86.Keys.arr, VG.Proof.Rsa.X86.Keys.S, VG.Impl.Rsa.X86.Keys.hdr, kw,
+        Spec.Rsa.modulusWords] at room ⊢
+      unfold Proof.RsaKeyGen.inverseBytes at room
+      omega_using [room]) (fun _ mem => nomatch mem)
   refine ⟨trace, t, run, preserved, ?_⟩
   sig_post [contract, inverseStack, Proof.RsaKeyGen.inverseContract, Proof.RsaKeyGen.inverseSig,
     abi, argSlots, argVal, argBytes]
@@ -79,7 +105,8 @@ theorem correct (s : State) (h : contract.pre s) :
         Proof.RsaKeyGen.inverseNum t.mem (base s) (len s) 1 ∧
     Proof.RsaKeyGen.inverseNum t.mem (base s) (len s) 3 < Proof.RsaKeyGen.inverseNum s.mem (base s) (len s) 8
   simp only [inverseNum_num]
-  exact ⟨fun i hi hw => done_frame A D hi hw, D.gcd, D.bezout, D.lt⟩
+  rw [numEq1, numEq3]
+  exact ⟨fun i hi hw => (wk i hi (fun _ mem => nomatch mem)).trans (done_frame A D hi hw), D.gcd, D.bezout, D.lt⟩
 
 end VG.Proof.RsaKeyGen.X86.Inverse
 

@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Framework.X86.Wp
 public import VerifiedGarbage.Proof.Mont.X86.Compact.Frame
 import VerifiedGarbage.Proof.Framework.X86.CallWith
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Rsa.BytesFrame
 public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.TCB.X86.Isa
 import VerifiedGarbage.Proof.Framework.Sig
@@ -1160,10 +1161,12 @@ theorem frameWith_ok {inner : Prog isa} (hns : NoSp (.seq inner (.block Compact.
     {Q : Mem → BitVec 32 → Prop} (stackFit : 16 ≤ (s.gpr .esp).toNat) (stackTop : (s.gpr .esp).toNat + 4 ≤ 2 ^ 32)
     (core : WP isa inner (entered s) fun t =>
       (∀ x, (⟨((entered s).gpr .esp).setWidth 64, 20⟩ : Region).Contains x 1 → t.mem x = (entered s).mem x) ∧
-      Q t.mem (t.gpr .eax) ∧ Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi, .edi] (entered s) t) :
+      Q t.mem (t.gpr .eax) ∧ Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi, .edi] (entered s) t)
+    (hQ : ∀ m m' ax, Frame [below (s.gpr .esp) 16] m m' → Q m ax → Q m' ax) :
     WP isa (.frame (.push [.ebx, .ebp, .esi, .edi]) (.seq inner (.block Compact.restoreRegs)) (.pop .ebx 4)) s
       fun t => abiPreserved s t ∧ Q t.mem (t.gpr .eax) := by
-  refine WP.frameKept (rs := savedRegisters) (by decide) (by decide) (by decide) stackFit hns ?_
+  refine WP.frameLocal (rs := savedRegisters) (by decide) (by decide) (by decide) stackFit hns
+    (fun t m _ ⟨abi, q⟩ fl => ⟨VG.Proof.Mont.X86.Compact.abi_frame stackFit abi fl, hQ _ _ _ fl q⟩) ?_
   refine WP.seq (WP.mono core fun t ⟨O, Qt, K⟩ => ?_)
   have sp : t.gpr .esp = (entered s).gpr .esp := K.1 .esp (by decide)
   have eNat : ((entered s).gpr .esp).toNat = (s.gpr .esp).toNat - 16 := by
@@ -1611,8 +1614,22 @@ theorem correct {g1 g2 g3 : Geo} (G1 : GeoOk g1) (G2 : GeoOk g2) (G3 : GeoOk g3)
     (s : State) (h : genContract.pre s) :
     ∃ trace t, Exec isa (code g1 g2 g3) s trace t ∧ abiPreserved s t ∧ genContract.post s t := by
   obtain F := call_facts h
+  obtain sub : Region.Sub (below (s.gpr .esp) 16) (reservedRegion s) := by
+    unfold below reservedRegion
+    rw [Taint.sub_setWidth (by have := F.low; omega_using [this])]
+    exact Offset.sub_below _ (by decide) (by decide)
   obtain ⟨trace, t, run, preserved, Q⟩ := frameWith_ok (Q := genQ s) hns (by have := F.low; omega_using [this])
-    (by have := F.argsFit; omega_using [this]) (body_ok G1 G2 G3 h1 h2 h3 F)
+    (by have := F.argsFit; omega_using [this]) (body_ok G1 G2 G3 h1 h2 h3 F) (fun m m' e fl ⟨q1, q2, q3, req, q4, q5⟩ => by
+      have F' : Frame [reservedRegion s] m m' :=
+        fl.sub fun r hr => ⟨_, List.mem_singleton_self _, by rw [List.mem_singleton.mp hr]; exact sub⟩
+      have hO := VG.Proof.Rsa.rsa_bytes_frame F' (src := (arg s 0).setWidth 64) (k := (arg s 1).toNat)
+        (by have := F.outFit; omega_using [this])
+        (fun r hr => by rw [List.mem_singleton.mp hr]; exact F.stackOut.symm)
+      have hU := VG.Proof.Rsa.wordsAt_frame F' (p := (arg s 2).setWidth 64) (n := 1) (by decide)
+        (fun r hr => by rw [List.mem_singleton.mp hr]; exact F.stackUsed.symm)
+      have hS := VG.Proof.Rsa.wordsAt_frame F' (p := (arg s 7).setWidth 64) (n := 4) (by decide)
+        (fun r hr => by rw [List.mem_singleton.mp hr]; exact F.stackSt.symm)
+      exact ⟨q1, by rw [hO]; exact q2, by rw [hU]; exact q3, req, by rw [hS]; exact q4, q5⟩)
   refine ⟨trace, t, run, preserved, ?_⟩
   sig_post [genContract, Spec.Dsa.parameterSearchContract, Spec.Dsa.parameterSearchSig,
     abi, argSlots, argVal, argBytes, Abi.withConsts, VG.Impl.RsaKeyGen.TrialTable32.consts]

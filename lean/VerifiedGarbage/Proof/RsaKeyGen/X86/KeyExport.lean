@@ -204,6 +204,20 @@ def WrittenCore (g : OutputGeometry) (e p q : Nat) (t : State) : Prop :=
   | .inl (.error _) => (t.gpr .eax).toNat = 0 ∧
       ∀ i, i < 7 → Spec.Rsa.bytesAt t.mem (g.region i).base (g.region i).len = List.replicate (g.length i) 0
 
+/-- What the outputs hold, whatever the bytes apart from them are. -/
+theorem WrittenCore.frame {g : OutputGeometry} {e p q : Nat} {s t : State} (R : WrittenCore g e p q s)
+    (eax : t.gpr .eax = s.gpr .eax) {rs : List Region} (F : Frame rs s.mem t.mem)
+    (sep : ∀ i < 7, ∀ r ∈ rs, (g.region i).Disjoint r) (fit : ∀ i < 7, (g.region i).len < 2 ^ 64) :
+    WrittenCore g e p q t := by
+  have hb : ∀ i < 7, Spec.Rsa.bytesAt t.mem (g.region i).base (g.region i).len =
+      Spec.Rsa.bytesAt s.mem (g.region i).base (g.region i).len := fun i hi =>
+    VG.Proof.Rsa.rsa_bytes_frame F (fit i hi) (sep i hi)
+  unfold WrittenCore at R ⊢
+  revert R
+  generalize Spec.RsaKeyGen.keyFromPrimes (32 * g.n) e p q = k
+  rcases k with (_ | _) | _ <;> dsimp only <;> rintro ⟨r₁, r₂⟩ <;>
+    exact ⟨by rw [eax]; exact r₁, fun i hi => by rw [hb i hi]; exact r₂ i hi⟩
+
 /-- Any code that writes the masked outputs and returns the status writes the specified key. -/
 theorem writeCore_of {g : OutputGeometry} {c : Prog isa} {s : State} {e p q : Nat} {R : State → Prop}
     (run : ∀ accept, slot s.mem g.base kOk = (if accept then 1 else 0) → WP isa c s fun t =>

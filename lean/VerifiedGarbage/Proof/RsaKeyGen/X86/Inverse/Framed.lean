@@ -565,7 +565,8 @@ theorem inner_noSp : NoSp (.seq (.block (VG.Impl.Rsa.X86.KeyRt.restoreEdi VG.Imp
   NoSp.of_all (by decide +kernel)
 
 theorem framed_ok {s : State} (h : contract.pre s) :
-    WP isa VG.Impl.RsaKeyGen.X86.Inverse.code s fun t => abiPreserved s t ∧ Done s t := by
+    WP isa VG.Impl.RsaKeyGen.X86.Inverse.code s fun t => abiPreserved s t ∧
+      ∃ t₀, Done s t₀ ∧ Frame [below (s.gpr .esp) 16] t₀.mem t.mem := by
   obtain A := entry h
   obtain fit : 16 ≤ (s.gpr .esp).toNat := by have := A.low; omega_using [this]
   obtain frameWs : (below (s.gpr .esp) 16).Disjoint ⟨base s, size s⟩ := by
@@ -573,7 +574,7 @@ theorem framed_ok {s : State} (h : contract.pre s) :
     rw [Taint.sub_setWidth fit]
     exact A.stackWs.sub_left (Offset.sub_below _ (by decide) (by decide))
   unfold VG.Impl.RsaKeyGen.X86.Inverse.code
-  refine WP.frameKept (rs := Compact.savedRegisters) (by decide) (by decide) (by decide) fit inner_noSp ?_
+  refine WP.frame (rs := Compact.savedRegisters) (by decide) (by decide) (by decide) fit inner_noSp ?_
   refine WP.seq (WP.mono (start_ok A) fun u ⟨H, mu, Ku⟩ => ?_)
   refine WP.seq (WP.mono (VG.Proof.Rsa.X86.KeyRt.inverse_ok H (by decide)) fun v ⟨Hv, Kv, KRv, res⟩ => ?_)
   have hws := H.ws
@@ -610,15 +611,15 @@ theorem framed_ok {s : State} (h : contract.pre s) :
   refine WP.mono (Compact.restore_ok (read 0 (by decide)) (read 1 (by decide)) (read 2 (by decide))) ?_
   rintro w ⟨edi, esi, ebp, memory, keep⟩
   obtain spW : w.gpr .esp = (Compact.entered s).gpr .esp := (keep.1 .esp (by decide)).trans spV
+  obtain separate : (⟨(s.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint (below (s.gpr .esp) 16) := by
+    unfold below
+    rw [Taint.sub_setWidth fit]
+    exact Offset.base_disjoint_below _ (by decide)
   obtain returnSame : v.mem.readW ((s.gpr .esp).setWidth 64) 32 = s.mem.readW ((s.gpr .esp).setWidth 64) 32 := by
     obtain same := FV.readW (w := 32) (Region.contains_self ((s.gpr .esp).setWidth 64) 4)
       (by intro r hr; obtain rfl := List.mem_singleton.mp hr; exact A.returnWs) (by decide)
     rw [same, mu]
     obtain pushed := pushed_frame (rs := Compact.savedRegisters) (s := s) (by decide) fit
-    obtain separate : (⟨(s.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint (below (s.gpr .esp) 16) := by
-      unfold below
-      rw [Taint.sub_setWidth fit]
-      exact Offset.base_disjoint_below _ (by decide)
     exact pushed.readW (w := 32) (Region.contains_self _ _)
       (by intro r hr; obtain rfl := List.mem_singleton.mp hr; exact separate) (by decide)
   obtain mem0 := A.entered_num (j := 0) (by decide)
@@ -642,8 +643,10 @@ theorem framed_ok {s : State} (h : contract.pre s) :
       rw [A.v, A.x₁, A.x₂])
   rw [mu, mem0, memM] at premises
   obtain ⟨g, b, l⟩ := premises
-  refine ⟨⟨?_, ?_⟩, ⟨?_, ?_, ?_, ?_⟩⟩
+  intro m _ fl
+  refine ⟨⟨?_, ?_⟩, popped .ebx Compact.savedRegisters.length w, ⟨?_, ?_, ?_, ?_⟩, by rw [popped_mem]; exact fl⟩
   · intro r hr
+    show (popped .ebx Compact.savedRegisters.length w).gpr r = _
     simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl
     · rw [show Compact.savedRegisters.length = 4 from rfl, Compact.popped_four_value, spW, memory]
@@ -656,7 +659,9 @@ theorem framed_ok {s : State} (h : contract.pre s) :
       exact ebp
     · rw [popped_esp, spW, Compact.entered, pushed_esp]
       exact BitVec.sub_add_cancel _ _
-  · rw [popped_mem, memory]
+  · show m.readW _ _ = _
+    rw [fl.readW (Region.contains_self _ _) (fun r hr => by
+      obtain rfl := List.mem_singleton.mp hr; exact separate) (by decide), memory]
     exact returnSame
   · rw [popped_mem, memory, ← mu]
     exact Kv

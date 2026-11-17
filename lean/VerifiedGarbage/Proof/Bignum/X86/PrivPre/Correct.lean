@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # `vg_rsa_private_precompute` on x86: correct
 
-The frame around the body (`WP.frameAllocKept`), which writes no `esp`
+The frame around the body (`WP.frameAlloc`), which writes no `esp`
 (`noSp_body`), and the contract's postcondition from `final_post`
 (`correct`).
 -/
@@ -54,26 +54,40 @@ theorem correct {pcName prName : String} {pc : Prog isa}
       (fun t => abiPreserved s t ∧ (Spec.Rsa.privatePrecomputeContract abi stackBytes).post s t) by
     obtain ⟨trace, t, E, P⟩ := W
     exact ⟨trace, t, E, P⟩
-  refine WP.frameAllocKept (by decide) (by decide) (by decide)
+  obtain hsub : Region.Sub (below (s.gpr .esp) Impl.Bignum.X86.PrivPre.frameBytes) (topR s) := by
+    have := below_sub (sp := s.gpr .esp) (a := Impl.Bignum.X86.PrivPre.frameBytes) (b := stackBytes)
+      (by decide) A.stackLow
+    show Region.Sub _ ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 stackBytes, stackBytes⟩
+    rw [← Taint.sub_setWidth A.stackLow]; exact this
+  refine WP.frameAlloc (by decide) (by decide) (by decide)
     (by simp only [Impl.Bignum.X86.PrivPre.frameBytes]; omega_using [l])
-    (noSp_body pns prns) (WP.mono (body_ok pv pst pns prst prns A) fun v ⟨Bv, Kv, Ev, X, m, Pm, Hm⟩ => ?_)
+    (noSp_body pns prns) (WP.mono (body_ok pv pst pns prst prns A) fun v ⟨Bv, Kv, Ev, X, m, Pm, Hm⟩ mm uu fl => ?_)
   refine ⟨⟨fun r hr => ?_, ?_⟩, ?_⟩
-  · by_cases he : r = .esp
+  · show (freed Impl.Bignum.X86.PrivPre.frameBytes v).gpr r = _
+    by_cases he : r = .esp
     · subst he
       rw [freed_esp, Bv.sp, BitVec.sub_add_cancel]
     · have hk : r ∉ [Reg.eax, .ecx, .edx] := by
         simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl | rfl <;> simp_all
       rw [freed_gpr _ _ he, Kv.1 r hk, allocFrame_gpr _ _ he]
-  · rw [freed_mem]
+  · show mm.readW _ _ = _
+    obtain hret : Region.Disjoint ⟨(s.gpr .esp).setWidth 64, 4⟩ (topR s) := by
+      rw [esp_bot A]
+      exact Offset.disjoint_base _ (by simp [stackBytes]) (by decide)
+    rw [fl.readW (Region.contains_self _ _) (fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact hret.sub_right hsub) (by decide)]
     refine Bv.frame.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
     simp only [bodyW, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact A.retPre
     · exact A.retWs
-    · rw [esp_bot A]
-      exact Offset.disjoint_base _ (by simp [stackBytes]) (by decide)
-  · have F := final_post A Pm Hm
+    · exact hret
+  · have F := final_post A Pm (m' := mm) fun i hi => by
+      rw [fl.bytes (R := preR s) (fun r hr => by
+        rw [List.mem_singleton.mp hr]; exact (A.belowPre.sub_left hsub).symm)
+        (by show (arg s 1).toNat * 8 ≤ 2 ^ 64; have := A.preBound; omega_using [this]) hi]
+      exact Hm i hi
     sig_post [Spec.Rsa.privatePrecomputeContract, Spec.Rsa.privatePrecomputeSig, abi, argSlots, argVal, argBytes]
     rw [BitVec.setWidth_append_eq_right, Ev]
     exact F

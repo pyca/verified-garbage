@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Ffdh.CachedGenerateKeyContract
 public import VerifiedGarbage.Proof.Ffdh.X86.KeyGenTop
 public import VerifiedGarbage.Spec.Ffdh.CachedKeyGenerationContract
 public import VerifiedGarbage.Proof.Ffdh.GenerationPrecompute
+import VerifiedGarbage.Proof.Rsa.BytesFrame
 import VerifiedGarbage.Proof.Rsa.X86.StackTactic
 meta import VerifiedGarbage.Proof.Rsa.X86.StackTactic
 import VerifiedGarbage.Proof.Framework.Sig
@@ -725,7 +726,15 @@ theorem operation_ok {s : State} (A : CachedABI s) :
       rcases hr with rfl | rfl
       · exact A.xScratch.symm
       · exact A.yScratch.symm)
-    (P := fun m e => spec s m e) fun f I espf Ft => frame_ok A f I espf Ft
+    (P := fun m e => spec s m e) (hP := fun m m' e F h => by
+      obtain hx := VG.Proof.Rsa.rsa_bytes_frame F (src := argumentPointer s 0) (k := (arg s 6).toNat)
+        (by have := (arg s 6).isLt; omega_arith) (fun r hr => by
+          obtain rfl := List.mem_singleton.mp hr; rw [← A.xLen]; exact A.belowX.symm)
+      obtain hy := VG.Proof.Rsa.rsa_bytes_frame F (src := argumentPointer s 2) (k := (arg s 6).toNat)
+        (by have := (arg s 6).isLt; omega_arith) (fun r hr => by
+          obtain rfl := List.mem_singleton.mp hr; rw [← A.yLen]; exact A.belowY.symm)
+      simpa only [spec, hx, hy] using h)
+    fun f I espf Ft => frame_ok A f I espf Ft
 
 theorem correct (s : State) (h : (Proof.Ffdh.cachedGenerateKeyContract abi stack).pre s) :
     ∃ trace t, Exec isa Impl.Ffdh.X86.Cached.Generate.code s trace t ∧ abiPreserved s t ∧

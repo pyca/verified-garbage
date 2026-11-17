@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Dsa.X86.Generation.TestPre
 public import VerifiedGarbage.Proof.Sha1.X86.Variants.Interface
 public import VerifiedGarbage.Proof.Sha256.X86.Variants.Interface
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Rsa.BytesFrame
 public import VerifiedGarbage.Spec.Dsa
 public import VerifiedGarbage.Proof.MillerRabin.X86.Backend
 public import VerifiedGarbage.Proof.MillerRabin.X86.Baseline
@@ -561,7 +562,21 @@ theorem code_ok {mont round : Prog isa} {montName roundName : String}
       WorkspaceFrame P.g (ranges P.g) s.mem t.mem ∧
       Frame [⟨P.g.W, P.g.L⟩, below (s.gpr .esp) 136] s.mem t.mem ∧ Keeps WitnessStep.clob s t := by
   unfold VG.Impl.RsaKeyGen.X86.CandidateTest.codeWith
-  refine CandidateFrame.code_full_ok (CandidateNoSp.coreWith montNoSp roundNoSp P.seed P.checks P.bytes P.words P.g.w montName roundName) S v.geometry.headerFit capacity fit separate ?_
+  refine CandidateFrame.code_full_ok (CandidateNoSp.coreWith montNoSp roundNoSp P.seed P.checks P.bytes P.words P.g.w montName roundName) S v.geometry.headerFit capacity fit separate 
+    (fun t m u ⟨c, r, w, f, k⟩ fl => by
+      have workspaceFar : (⟨P.g.W, P.g.L⟩ : Region).Disjoint (below (s.gpr .esp) 28) :=
+        FilterStack.allocated_apart (by omega_using [fit]) S.nowrap
+          (by rcases separate with h | h; exact Or.inl h; exact Or.inr (by omega_using [h]))
+      have wk : WorkspaceFrame P.g [] t.mem m := fun i index _ =>
+        fl.bytes (R := ⟨P.g.W, P.g.L⟩)
+          (by intro r mem; obtain rfl := List.mem_singleton.mp mem; exact workspaceFar)
+          (by change P.g.L ≤ 2 ^ 64; have := S.nowrap; omega_using [this]) index
+      refine ⟨?_, r.workspace wk (by have := v.geometry.headerFit; omega_using [this]),
+        w.trans (wk.mono (by intro r mem; nomatch mem)), f.trans (fl.sub ?_), k⟩
+      · show val32 m _ _ _ = _
+        rw [wk.val32 (v.geometry.arrayFit (by decide)) (by intro r mem; nomatch mem)]; exact c
+      · intro r mem; obtain rfl := List.mem_singleton.mp mem
+        exact ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), below_sub (by decide) fit⟩) ?_
   intro a Sa Ca _ Fa Ka
   have workspaceFar : (⟨P.g.W, P.g.L⟩ : Region).Disjoint (below (s.gpr .esp) 28) :=
     FilterStack.allocated_apart (by omega) S.nowrap
@@ -1788,8 +1803,20 @@ theorem framed_ok {mont round : Prog isa} {montName roundName : String}
     intro contains
     have fitW := v.workspaceFit
     exact v.savedFar _ List.mem_cons_self _ (Offset.contains_base E.base (by omega) (by omega)) contains
+  obtain region : below (s.gpr .esp) (4 * Compact.savedRegisters.length) = ⟨E.p.setWidth 64, 16⟩ := by
+    rw [← entrySp, Compact.entered, pushed_esp]
+    rfl
   unfold VG.Impl.Dsa.X86.ProbablePrime.code
-  refine WP.frameKept (rs := Compact.savedRegisters) (by decide) (by decide) (by decide) savedFit inner ?_
+  refine WP.frameLocal (rs := Compact.savedRegisters) (by decide) (by decide) (by decide) savedFit inner
+    (fun t m _ ⟨abi, O, T⟩ fl => ⟨Compact.abi_frame savedFit abi fl,
+      ⟨O.1, fun b rest h => by
+        rw [VG.Proof.Rsa.wordsAt_frame fl (by decide) (fun q hq => by
+          rw [List.mem_singleton.mp hq, region]
+          exact v.savedFar _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self)))]
+        exact O.2 b rest h⟩,
+      T.trans fun i _ hi => fl.bytes (R := E.workspaceRegion) (fun q hq => by
+          rw [List.mem_singleton.mp hq, region]; exact v.savedFar _ List.mem_cons_self)
+        (by change E.size ≤ 2 ^ 64; have := v.workspaceFit; omega) hi⟩) ?_
   refine WP.seq (WP.mono (body_ok montVerified montNoSp montStack roundVerified roundNoSp roundStack v I odd length)
     fun t ⟨R, F, T, K⟩ => ?_)
   obtain sp : t.gpr .esp = E.p := (K.1 .esp (by unfold bodyClob; decide)).trans entrySp

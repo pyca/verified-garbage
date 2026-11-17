@@ -11,6 +11,7 @@ public import VerifiedGarbage.Proof.MillerRabin.Contract
 public import VerifiedGarbage.Proof.Framework.X86.Call
 public import VerifiedGarbage.Proof.Framework.ConstMem
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Rsa.BytesFrame
 public import VerifiedGarbage.Proof.RsaKeyGen.CandidateContract
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateBody
 public import VerifiedGarbage.Proof.Mont.X86.Compact.Frame
@@ -436,6 +437,24 @@ theorem StepOutputs.keep {E : Environment} {entropy : List Byte}
     obtain ⟨candidate, rest⟩ := pr
     cases candidate <;> simpa only [StepOutputs, Outputs, eax, mem] using R
 
+/-- The outputs, whatever the bytes outside `out` and `used` are. -/
+theorem StepOutputs.frame {E : Environment} {entropy : List Byte}
+    {result : Option (Spec.RsaKeyGen.Candidate × Spec.RsaKeyGen.Rand)} {s t : State}
+    (R : StepOutputs E entropy result s) (eax : t.gpr .eax = s.gpr .eax) {rs : List Region}
+    (F : Frame rs s.mem t.mem) (dOut : ∀ q ∈ rs, E.outRegion.Disjoint q)
+    (dUsed : ∀ q ∈ rs, E.usedRegion.Disjoint q) (fit : E.length < 2 ^ 64) :
+    StepOutputs E entropy result t := by
+  have hb : Spec.Rsa.bytesAt t.mem (E.out.setWidth 64) E.length =
+      Spec.Rsa.bytesAt s.mem (E.out.setWidth 64) E.length :=
+    VG.Proof.Rsa.rsa_bytes_frame F fit dOut
+  have hw : t.mem.readW (E.used.setWidth 64) 64 = s.mem.readW (E.used.setWidth 64) 64 :=
+    F.readW (r := E.usedRegion) (Region.contains_self _ _) dUsed (by decide)
+  cases result with
+  | none => simpa only [StepOutputs, Outputs, eax, hb, hw] using R
+  | some pr =>
+    obtain ⟨candidate, rest⟩ := pr
+    cases candidate <;> simpa only [StepOutputs, Outputs, eax, hb, hw] using R
+
 theorem framed_ok {mont round : Prog isa} {montName roundName : String}
     (montVerified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
     (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
@@ -451,8 +470,16 @@ theorem framed_ok {mont round : Prog isa} {montName roundName : String}
   have entrySp := I.arguments.sp
   have inner : NoSp (.seq (VG.Impl.RsaKeyGen.X86.Candidate.body montName mont roundName round) (.block Compact.restoreRegs)) :=
     CandidateNoSp.sequence (CandidateNoSp.body montNoSp roundNoSp montName roundName) (NoSp.of_all (by rfl))
+  have region : below (s.gpr .esp) (4 * VG.Proof.Mont.X86.Compact.savedRegisters.length) = ⟨E.p.setWidth 64, 16⟩ := by
+    rw [← entrySp, VG.Proof.Mont.X86.Compact.entered, pushed_esp]
+    rfl
   unfold VG.Impl.RsaKeyGen.X86.Candidate.code
-  refine WP.frameKept (rs := VG.Proof.Mont.X86.Compact.savedRegisters) (by decide) (by decide) (by decide) savedFit inner ?_
+  refine WP.frameLocal (rs := VG.Proof.Mont.X86.Compact.savedRegisters) (by decide) (by decide) (by decide) savedFit inner
+    (fun t m _ ⟨abi, R⟩ fl => ⟨VG.Proof.Mont.X86.Compact.abi_frame savedFit abi fl,
+      R.frame rfl fl
+        (fun q hq => by rw [List.mem_singleton.mp hq, region]; exact v.savedFar _ (by simp [Environment.writeRegions]))
+        (fun q hq => by rw [List.mem_singleton.mp hq, region]; exact v.savedFar _ (by simp [Environment.writeRegions]))
+        (by have := v.outFit; omega)⟩) ?_
   refine WP.seq (WP.mono (body_ok montVerified montNoSp montStack roundVerified roundNoSp roundStack v I)
     fun t ⟨R, F, K⟩ => ?_)
   have sp : t.gpr .esp = E.p := (K.1 .esp (by unfold bodyClob; decide)).trans entrySp

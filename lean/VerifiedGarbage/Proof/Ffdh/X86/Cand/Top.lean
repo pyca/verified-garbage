@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Rsa.BytesFrame
 import VerifiedGarbage.Proof.Ffdh.X86.Cand.Body
 public import VerifiedGarbage.Proof.Ffdh.X86.Entry
 public import VerifiedGarbage.Spec.Ffdh.SievedContract
@@ -369,7 +370,13 @@ theorem operation_ok {s : State} (A : CandABI s) :
       rcases hr with rfl | rfl
       · exact A.outWs.symm
       · exact A.usedWs.symm)
-    (P := fun m e => spec s m e) fun f I espf Ft syf => frame_ok A f I espf Ft syf
+    (P := fun m e => spec s m e) (hP := fun m m' e F h => by
+      obtain hb := VG.Proof.Rsa.rsa_bytes_frame F (src := argumentPointer s 0) (k := (arg s 1).toNat)
+        (by have := (arg s 1).isLt; omega_arith) (fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact A.belowOut.symm)
+      obtain hw := VG.Proof.Rsa.wordsAt_frame F (p := argumentPointer s 2) (n := 1) (by decide)
+        (fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact A.belowUsed.symm)
+      simpa only [spec, hb, hw] using h)
+    fun f I espf Ft syf => frame_ok A f I espf Ft syf
 
 theorem correct (s : State) (h : contract.pre s) :
     ∃ trace t, Exec isa Impl.Ffdh.X86.Candidate.code s trace t ∧ abiPreserved s t ∧ contract.post s t := by

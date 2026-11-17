@@ -121,6 +121,7 @@ theorem operation_ok {s : State} (A : CheckDomainABI s) :
     rw [A.rd]; exact ⟨_, List.mem_cons_self .., Region.contains_self _ _⟩
   exact wrap_ok (wrapABI A) (NoSp.of_all frameBody_all) hx (Out := []) (fun _ h => by cases h)
     (fun _ h => by cases h) (P := fun _ e => e.toNat = if Spec.Ffdh.domainValid (arg s 2).toNat (entryDom s) then 1 else 0)
+    (hP := fun _ _ _ _ h => h)
     fun f I espf Ft => frame_ok A f I espf Ft
 
 end VG.Proof.Ffdh.X86.CheckDomain
