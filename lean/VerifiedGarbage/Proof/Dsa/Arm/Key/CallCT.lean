@@ -29,6 +29,8 @@ namespace VG.Proof.Dsa.Arm.Key
 
 open VG VG.Arm VG.Proof.Mont VG.Impl.Dsa.Arm VG.Impl.Dsa.Arm.Random VG.Impl.Dsa.Arm.GenerateKey
 
+variable {umaal : Bool}
+
 theorem pub_checkRd {s₁ s₂ : State} (e : pubOf s₁ = pubOf s₂) : checkRd s₁ = checkRd s₂ := by
   simp only [checkRd, rKeyR, pub_r3 e, pub_arg e 0 (by decide), pub_rLow e]
 
@@ -77,7 +79,7 @@ theorem check_pub {s₁ s₂ t₁ t₂ : State} (A₁ : KeyABI s₁) (A₂ : Key
     · rw [cc_a0 A₁ h₁ C₁, cc_a0 A₂ h₂ C₂, pub_arg e 5 (by decide)]
     · rw [cc_a1 A₁ h₁ C₁, cc_a1 A₂ h₂ C₂, pub_arg e 6 (by decide)]
 
-theorem checkCall_ct (name : String) : RelCT isa CheckRel (callWith name Generate.checkParameters)
+theorem checkCall_ct (name : String) : RelCT isa CheckRel (callWith name (Generate.checkParameters umaal))
     fun _ _ => True := by
   unfold callWith
   refine RelCT.frame (fun t₁ t₂ ⟨s₁, s₂, _, _, e, _, h₁, h₂, _⟩ => by rw [h₁.sp, h₂.sp, pub_sp e]) ?_
@@ -130,7 +132,7 @@ theorem derive_pub {s₁ s₂ t₁ t₂ : State} (A₁ : KeyABI s₁) (A₂ : Ke
     · rw [dc_a3 A₁ h₁ C₁, dc_a3 A₂ h₂ C₂, pub_arg e 5 (by decide)]
     · rw [dc_a4 A₁ h₁ C₁, dc_a4 A₂ h₂ C₂, pub_arg e 6 (by decide)]
 
-theorem deriveCall_ct (name : String) : RelCT isa DeriveRel (callWith name Generate.deriveChecked)
+theorem deriveCall_ct (name : String) : RelCT isa DeriveRel (callWith name (Generate.deriveChecked umaal))
     fun _ _ => True := by
   unfold callWith
   refine RelCT.frame (fun t₁ t₂ ⟨s₁, s₂, _, _, e, _, h₁, h₂, _⟩ => by rw [h₁.sp, h₂.sp, pub_sp e]) ?_

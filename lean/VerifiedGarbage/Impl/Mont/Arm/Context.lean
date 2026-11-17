@@ -22,6 +22,8 @@ namespace VG.Impl.Mont.Arm.Dynamic
 
 open VG VG.Arm VG.Impl.Mont VG.Impl.Mont.Arm
 
+variable (umaal : Bool)
+
 /-- The slots' stride: a number and its top word. -/
 def stride (n : Nat) : Nat := 8 * n + 8
 
@@ -94,23 +96,23 @@ def shiftExponent (n expWords : Nat) : List Instr := ptr .r1 (expS n) ++ shiftWo
 /-- The result times the base, kept where the mask is all ones. -/
 def exponentProduct (n : Nat) : Prog isa :=
   .seq (.block (exponentMask n)) <|
-  .seq (mul (contextMod n) invO (accS n) (prodS n) (resS n) (baseS n))
+  .seq (mul umaal (contextMod n) invO (accS n) (prodS n) (resS n) (baseS n))
     (.seq (.block [.ldr .r3 .r12 maskO]) (selectW (2 * n) (resS n) (prodS n) (resS n)))
 
 def exponentBody (n expWords : Nat) : Prog isa :=
-  .seq (exponentProduct n) <|
-  .seq (mul (contextMod n) invO (accS n) (baseS n) (baseS n) (baseS n)) (.block (shiftExponent n expWords))
+  .seq (exponentProduct umaal n) <|
+  .seq (mul umaal (contextMod n) invO (accS n) (baseS n) (baseS n) (baseS n)) (.block (shiftExponent n expWords))
 
 def exponentStep (n expWords : Nat) : Prog isa :=
-  .seq (exponentBody n expWords) (.block [.subs .lr .lr (.imm 1)])
+  .seq (exponentBody umaal n expWords) (.block [.subs .lr .lr (.imm 1)])
 
 /-- `[resS] = [baseS]^[expS] mod m`, the exponent `expWords` words, with a
 public number of iterations; the base and the exponent are consumed. -/
 def exponentiate (n expWords : Nat) : Prog isa :=
-  .seq (mul (contextMod n) invO (accS n) (resS n) (rrS n) (oneS n)) <|
-  .seq (mul (contextMod n) invO (accS n) (baseS n) (baseS n) (rrS n)) <|
+  .seq (mul umaal (contextMod n) invO (accS n) (resS n) (rrS n) (oneS n)) <|
+  .seq (mul umaal (contextMod n) invO (accS n) (baseS n) (baseS n) (rrS n)) <|
   .seq (.block [.movw .lr (BitVec.ofNat 16 (32 * expWords))]) <|
-  .seq (.loop (exponentStep n expWords) .ne)
-    (mul (contextMod n) invO (accS n) (resS n) (resS n) (oneS n))
+  .seq (.loop (exponentStep umaal n expWords) .ne)
+    (mul umaal (contextMod n) invO (accS n) (resS n) (resS n) (oneS n))
 
 end VG.Impl.Mont.Arm.Dynamic

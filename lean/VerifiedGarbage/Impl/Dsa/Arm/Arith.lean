@@ -19,6 +19,8 @@ header, at byte 44, across the lightweight setup.
 namespace VG.Impl.Dsa.Arm.Arith
 open VG VG.Arm VG.Impl.Mont.Arm VG.Impl.Mont.Arm.Dynamic VG.Impl.Dsa.Arm.Pow
 
+variable (umaal : Bool)
+
 /-- The header's word that keeps the bytes' length. -/
 def lenAt : Nat := 44
 
@@ -29,7 +31,7 @@ def reduceBody (n : Nat) : Prog isa :=
   .seq (reduceStream n) (.block restore)
 
 def mulBody (n : Nat) : Prog isa :=
-  .seq (.block save) (.seq (Context.call n) (.seq (ordinaryMul n) (.block restore)))
+  .seq (.block save) (.seq (Context.call n) (.seq (ordinaryMul umaal n) (.block restore)))
 
 def reduceLayout (n : Nat) : Impl.Dsa.ModArith.ReduceLayout where
   n := n
@@ -49,7 +51,7 @@ def mulLayout (n : Nat) : Impl.Dsa.ModArith.MulLayout where
 
 def reduceName (n : Nat) : String := s!"vg_dsa_reduce_{(reduceLayout n).n}"
 
-def mulName (n : Nat) : String := s!"vg_dsa_mulmod_{(mulLayout n).n}"
+def mulName (n : Nat) : String := s!"vg_dsa_mulmod_{(mulLayout n).n}" ++ suffix umaal
 
 /-- The arguments of a call: the working space `r12` and its length, kept in
 `r11` across the call. -/
@@ -62,6 +64,6 @@ def reduceCall (n : Nat) : Prog isa :=
     (.seq (.call (reduceName n) (reduceBody n)) (.block [.mov .r12 (.reg .r11)]))
 
 def mulCall (n : Nat) : Prog isa :=
-  .seq (.block (head n)) (.seq (.call (mulName n) (mulBody n)) (.block [.mov .r12 (.reg .r11)]))
+  .seq (.block (head n)) (.seq (.call (mulName umaal n) (mulBody umaal n)) (.block [.mov .r12 (.reg .r11)]))
 
 end VG.Impl.Dsa.Arm.Arith

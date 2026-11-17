@@ -188,6 +188,8 @@ open VG VG.Arm VG.Impl.Mont.Arm VG.Impl.Mont.Arm.Dynamic VG.Proof.Mont VG.Proof.
 open VG.Impl.Dsa.Arm
 open VG.Proof.Ecdsa.Arm (mask32 mask32_and)
 
+variable {umaal : Bool}
+
 /-- Validation leaves the shared helper's register-save words untouched. -/
 structure ValidationRun (base : Addr) (s t : State) : Prop extends Run base s t where
   saved : ∀ d, 168 ≤ d → d + 4 ≤ 204 →
@@ -313,7 +315,7 @@ theorem subgroup_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G Y : Na
     (Ip : Input s base size (.input .p) pLen P) (Iq : Input s base size (.input .q) qLen Q)
     (Ig : Input s base size (.input .g) pLen G) (Iy : Input s base size (.input .y) pLen Y)
     (hP : 1 < P) (hPo : P % 2 = 1) :
-    WP isa (Validate.subgroup pLen qLen) s fun t =>
+    WP isa (Validate.subgroup umaal pLen qLen) s fun t =>
       maskW base t = maskW base s &&& mask32 (G ^ Q % P = 1 ∧ Y ^ Q % P = 1) ∧
       KeepsLocals base s t scalars.1 scalars.2 ∧ ValidationRun base s t := by
   obtain ⟨q4, qp, p384, q32, pw, qw⟩ := S.lens
@@ -361,7 +363,7 @@ theorem publicKey_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G Y : N
     (Ip : Input s base size (.input .p) pLen P) (Iq : Input s base size (.input .q) qLen Q)
     (Ig : Input s base size (.input .g) pLen G) (Iy : Input s base size (.input .y) pLen Y)
     (hP : 1 < P) (hPo : P % 2 = 1) (hQ : 255 < Q) (hQo : Q % 2 = 1) :
-    WP isa (Validate.publicKey pLen qLen) s fun t =>
+    WP isa (Validate.publicKey umaal pLen qLen) s fun t =>
       maskW base t = maskW base s &&& mask32 (publicChecks P Q G Y) ∧
       localVal base t Impl.Dsa.Layout.qMinusTwo qLen = Q - 2 ∧ ValidationRun base s t := by
   have big := S.big
@@ -383,7 +385,7 @@ theorem privateKey_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G Y X 
     (Ig : Input s base size (.input .g) pLen G) (Iy : Input s base size (.input .y) pLen Y)
     (Ix : Input s base size (.input .x) qLen X) (Ik : Input s base size (.input .nonce) qLen K)
     (hP : 1 < P) (hPo : P % 2 = 1) :
-    WP isa (Validate.privateKey pLen qLen) s fun t =>
+    WP isa (Validate.privateKey umaal pLen qLen) s fun t =>
       maskW base t = maskW base s &&& mask32 (((0 < X ∧ X < Q) ∧ (0 < K ∧ K < Q)) ∧ G ^ X % P = Y) ∧
       KeepsLocals base s t scalars.1 scalars.2 ∧ Run base s t := by
   obtain ⟨q4, qp, p384, q32, pw, qw⟩ := S.lens

@@ -30,117 +30,6 @@ section
 
 section
 
-/-! ### `Mont.Arm.Dyn.Select`, which only this module used -/
-
-section
-
-/-!
-# Runtime-modulus Montgomery arithmetic on 32-bit ARM: selecting words
-
-`selectW k src tmp o` writes `[o] = [tmp]` where the mask `r3` is all ones,
-else `[src]` (`selectW_ok`); `[o]` may be `[src]`.
--/
-
-@[expose] public section
-
-namespace VG.Proof.Mont.Arm.Dyn
-
-open VG VG.Arm VG.Impl.Mont.Arm.Dynamic VG.Proof.Mont VG.Proof.Mont.Arm
-open VG.Proof.X25519.Arm (Rest Upd Mupd Fupd wp_mov wp_str wp_ldr wp_dp op2_imm op2_reg)
-
-theorem selectW_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {k src tmp o : Nat} (b : Bool)
-    (h3 : s.gpr .r3 = if b then BitVec.allOnes 32 else 0) (hk : 0 < k)
-    (hsrc : src + 4 * k ≤ size) (htmp : tmp + 4 * k ≤ size) (hoz : o + 4 * k ≤ size)
-    (h16s : src + 4 * k < 2 ^ 16) (h16t : tmp < 2 ^ 16) (h16o : o < 2 ^ 16)
-    (hos : o = src ∨ o + 4 * k ≤ src ∨ src + 4 * k ≤ o) (hot : o + 4 * k ≤ tmp ∨ tmp + 4 * k ≤ o) :
-    WP isa (selectW k src tmp o) s fun t => Ws t base size ∧
-      (∀ j < k, w32 t.mem base (o + 4 * j) =
-        if b then w32 s.mem base (tmp + 4 * j) else w32 s.mem base (src + 4 * j)) ∧
-      Outside base o (4 * k) s.mem t.mem ∧ Rest [.r1, .r5, .r7, .r8, .r9, .r10] s t := by
-  have hn := hs.nowrap
-  unfold selectW
-  refine WP.seq (wp_ptr (d := .r10) (by decide) (by omega_using [h16s]) fun s₁ u₁ =>
-    wp_ptr (d := .r8) (by decide) (by omega_using [h16t]) fun s₂ u₂ =>
-    wp_ptr (d := .r1) (by decide) (by omega_using [h16o]) fun s₃ u₃ =>
-    wp_ptr (d := .r9) (by decide) (by omega_using [h16s]) fun t u₄ => WP.block_nil ?_)
-  obtain R : Rest [.r1, .r5, .r7, .r8, .r9, .r10] s t :=
-    (((u₁.rest (by simp)).trans (u₂.rest (by simp))).trans (u₃.rest (by simp))).trans (u₄.rest (by simp))
-  obtain wt : Ws t base size := hs.of_rest R (by decide)
-  obtain mt : t.mem = s.mem := by rw [u₄.mem, u₃.mem, u₂.mem, u₁.mem]
-  obtain p10 : t.gpr .r10 = s.gpr .r12 + BitVec.ofNat 32 src := by simp only [u₄.get, u₃.get, u₂.get, u₁.get, reduceCtorEq, ↓reduceIte]
-  obtain p8 : t.gpr .r8 = s.gpr .r12 + BitVec.ofNat 32 tmp := by simp only [u₄.get, u₃.get, u₂.get, u₁.get, reduceCtorEq, ↓reduceIte]
-  obtain p1 : t.gpr .r1 = s.gpr .r12 + BitVec.ofNat 32 o := by simp only [u₄.get, u₃.get, u₂.get, u₁.get, reduceCtorEq, ↓reduceIte]
-  obtain p9 : t.gpr .r9 = s.gpr .r12 + BitVec.ofNat 32 (src + 4 * k) := by simp only [u₄.get, u₃.get, u₂.get, u₁.get, reduceCtorEq, ↓reduceIte]
-  obtain r3 : t.gpr .r3 = s.gpr .r3 := R.gpr _ (by decide)
-  clear u₁ u₂ u₃ u₄
-  refine ptrLoop_ok (A := s.gpr .r12 + BitVec.ofNat 32 src) (step := 4) (k := k)
-    (fun j u => Ws u base size ∧ Rest [.r1, .r5, .r7, .r8, .r9, .r10] s u ∧
-      u.gpr .r8 = s.gpr .r12 + BitVec.ofNat 32 tmp + BitVec.ofNat 32 (4 * j) ∧
-      u.gpr .r1 = s.gpr .r12 + BitVec.ofNat 32 o + BitVec.ofNat 32 (4 * j) ∧
-      (∀ i < j, w32 u.mem base (o + 4 * i) =
-        if b then w32 s.mem base (tmp + 4 * i) else w32 s.mem base (src + 4 * i)) ∧
-      Outside base o (4 * j) s.mem u.mem)
-    (by decide) hk (by omega_using [h16s]) (fun j u u' ⟨a, c, d, e, f, g⟩ F => ⟨a.of_fupd F, c.trans (F.rest _),
-      by rw [F.gpr]; exact d, by rw [F.gpr]; exact e, by rw [F.mem]; exact f, by rw [F.mem]; exact g⟩)
-    ⟨wt, R, by rw [p8]; exact (BitVec.add_zero _).symm, by rw [p1]; exact (BitVec.add_zero _).symm,
-      fun i hi => absurd hi (Nat.not_lt_zero _), by rw [mt]; exact Outside.refl _ _ _ _⟩
-    p10 (by rw [p9, Offset.add_add]) ?_ fun u ⟨a, c, _, _, f, g⟩ _ => ⟨a, f, g, c⟩
-  intro j hj u ⟨wu, Ru, p8u, p1u, Vu, Ou⟩ pu p9u
-  obtain e12 : u.gpr .r12 = s.gpr .r12 := Ru.gpr _ (by decide)
-  obtain r3u : u.gpr .r3 = s.gpr .r3 := Ru.gpr _ (by decide)
-  -- The words read are not yet written.
-  obtain xs : w32 u.mem base (src + 4 * j + 0) = w32 s.mem base (src + 4 * j) :=
-    Ou.w32 (by omega_using [hos, hj]) (by omega_using [h16s, hj])
-  obtain xt : w32 u.mem base (tmp + 4 * j + 0) = w32 s.mem base (tmp + 4 * j) :=
-    Ou.w32 (by omega_using [hot, hj]) (by omega_using [h16s, h16t, hj])
-  refine wp_ldr (by decide) (wu.ea (K := src + 4 * j) (at_ptr pu e12) (by omega_using [hsrc, hj])) (wu.read (d := src + 4 * j + 0) (n := 4) (by omega_using [hsrc, hj]))
-    fun u₁ v₁ => ?_
-  obtain w₁ := wu.of_upd v₁ (by decide)
-  refine wp_ldr (by decide) (w₁.ea (K := tmp + 4 * j) (at_ptr (by rw [v₁.other .r8 (by decide)]; exact p8u)
-    (by rw [v₁.other .r12 (by decide)]; exact e12)) (by omega_using [htmp, hj])) (w₁.read (d := tmp + 4 * j + 0) (n := 4) (by omega_using [htmp, hj]))
-    fun u₂ v₂ => wp_dp (op2_reg _ _) fun u₃ v₃ => wp_dp (op2_reg _ _) fun u₄ v₄ => wp_dp (op2_reg _ _) fun u₅ v₅ => ?_
-  obtain w₅ : Ws u₅ base size := (((w₁.of_upd v₂ (by decide)).of_upd v₃ (by decide)).of_upd v₄ (by decide)).of_upd v₅ (by decide)
-  obtain m5 : u₅.mem = u.mem := by rw [v₅.mem, v₄.mem, v₃.mem, v₂.mem, v₁.mem]
-  refine wp_str (by decide) (w₅.ea (K := o + 4 * j) (at_ptr (by simp only [v₅.get, v₄.get, v₃.get, v₂.get, v₁.get, reduceCtorEq, ↓reduceIte]; exact p1u)
-    (by simp only [v₅.get, v₄.get, v₃.get, v₂.get, v₁.get, reduceCtorEq, ↓reduceIte]; exact e12)) (by omega_using [hoz, hj])) (w₅.write (d := o + 4 * j + 0) (n := 4) (by omega_using [hoz, hj]))
-    fun u₆ m₆ => wp_bump (by decide) fun u₇ v₇ => wp_bump (by decide) fun u₈ v₈ => wp_bump (by decide) fun u₉ v₉ =>
-      WP.block_nil ?_
-  obtain m9 : u₉.mem = u.mem.writeW (off base (o + 4 * j)) (u₅.gpr .r5) := by
-    rw [v₉.mem, v₈.mem, v₇.mem, m₆.mem, m5, Nat.add_zero]
-  obtain val : u₅.gpr .r5 = if b then u.mem.readW (off base (tmp + 4 * j + 0)) 32
-      else u.mem.readW (off base (src + 4 * j + 0)) 32 := by
-    simp only [v₅.get, v₄.get, v₃.get, v₂.get, v₁.get, reduceCtorEq, ↓reduceIte, VG.Proof.X25519.Arm.dpVal, r3u, h3]
-    rw [v₁.mem, select_val]
-  refine ⟨⟨((w₅.of_mupd m₆).of_upd v₇ (by decide) |>.of_upd v₈ (by decide)).of_upd v₉ (by decide),
-    ⟨fun r hr => ?_, ?_, ?_, ?_⟩, ?_, ?_, ?_, ?_⟩, ?_, ?_⟩
-  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-    obtain ⟨h1, h5, h7, h8, h9, h10⟩ := hr
-    simp only [v₉.get, v₈.get, v₇.get, m₆.gpr, v₅.get, v₄.get, v₃.get, v₂.get, v₁.get, h1, h5, h7, h8, h10, ↓reduceIte]; exact Ru.gpr r (by simp [h1, h5, h7, h8, h9, h10])
-  · rw [v₉.rd, v₈.rd, v₇.rd, m₆.rd, v₅.rd, v₄.rd, v₃.rd, v₂.rd, v₁.rd]; exact Ru.rd
-  · rw [v₉.wr, v₈.wr, v₇.wr, m₆.wr, v₅.wr, v₄.wr, v₃.wr, v₂.wr, v₁.wr]; exact Ru.wr
-  · rw [v₉.sp, v₈.sp, v₇.sp, m₆.sp, v₅.sp, v₄.sp, v₃.sp, v₂.sp, v₁.sp]; exact Ru.sp
-  · simp only [v₉.get, v₈.get, v₇.get, m₆.gpr, v₅.get, v₄.get, v₃.get, v₂.get, v₁.get, reduceCtorEq, ↓reduceIte]; exact ptr_step p8u
-  · simp only [v₉.get, v₈.get, v₇.get, m₆.gpr, v₅.get, v₄.get, v₃.get, v₂.get, v₁.get, reduceCtorEq, ↓reduceIte]; exact ptr_step p1u
-  · intro i hi
-    rw [m9]
-    rcases Nat.lt_or_ge i j with h | h
-    · rw [w32_write_lt (by omega_using [hoz, hn, hj]) (by omega_using [h]), Vu i h]
-    · rw [show i = j by omega_using [hi, h], w32_write_self, val]
-      cases b
-      · exact xs
-      · exact xt
-  · rw [m9]
-    exact (Ou.mono (Nat.le_refl _) (by omega_using [])).trans ((writeW32_outside _ _ _ (by omega_using [h16s, h16o, hj])).mono (by omega_using []) (by omega_using []))
-  · simp only [v₉.get, v₈.get, v₇.get, m₆.gpr, v₅.get, v₄.get, v₃.get, v₂.get, v₁.get, reduceCtorEq, ↓reduceIte]; exact ptr_step pu
-  · simp only [v₉.get, v₈.get, v₇.get, m₆.gpr, v₅.get, v₄.get, v₃.get, v₂.get, v₁.get, reduceCtorEq, ↓reduceIte]; exact p9u
-
-end VG.Proof.Mont.Arm.Dyn
-
-end
-
-end
-
-
 /-!
 # Runtime-modulus Montgomery arithmetic on 32-bit ARM: the conditional product
 
@@ -155,6 +44,8 @@ namespace VG.Proof.Mont.Arm.Dyn
 
 open VG VG.Arm VG.Impl.Mont VG.Impl.Mont.Arm VG.Impl.Mont.Arm.Dynamic VG.Proof.Mont VG.Proof.Mont.Arm
 open VG.Proof.X25519.Arm (Rest Upd Mupd Fupd wp_ldr)
+
+variable {umaal : Bool}
 
 /-- A context, after code that changed only header bytes past `m'` and
 registers outside `dclob`'s complement. -/
@@ -176,7 +67,7 @@ def productRanges (n : Nat) : List (Nat × Nat) :=
 theorem exponentProduct_ok {n size m y b : Nat} {base : Addr} {s : State} (h : Context n m base size s)
     (hy : val32 s.mem base (slot n 9) (2 * n) = y * 2 ^ (64 * n) % m)
     (hb : val32 s.mem base (slot n 8) (2 * n) = b * 2 ^ (64 * n) % m) :
-    WP isa (exponentProduct n) s fun t => Context n m base size t ∧
+    WP isa (exponentProduct umaal n) s fun t => Context n m base size t ∧
       val32 t.mem base (slot n 9) (2 * n) =
         (if w32 s.mem base (slot n 11) % 2 = 1 then y * b else y) * 2 ^ (64 * n) % m ∧
       Outs base (productRanges n) s.mem t.mem ∧ Rest dclob s t := by
@@ -275,6 +166,8 @@ namespace VG.Proof.Mont.Arm.Dyn
 open VG VG.Arm VG.Impl.Mont VG.Impl.Mont.Arm VG.Impl.Mont.Arm.Dynamic VG.Proof.Mont VG.Proof.Mont.Arm
 open VG.Proof.X25519.Arm (Rest Upd Mupd Fupd wp_movw wp_subs)
 
+variable {umaal : Bool}
+
 /-- The memory an exponentiation's steps change. -/
 def exponentRanges (n expWords : Nat) : List (Nat × Nat) :=
   productRanges n ++ [(slot n 8, 8 * n), (slot n 11, 4 * expWords)]
@@ -305,7 +198,7 @@ theorem exponentBody_ok {n size m y b expWords : Nat} {base : Addr} {s : State} 
     (he : 0 < expWords) (hen : expWords ≤ 2 * n) (hew : expWords ≤ 1024)
     (hy : val32 s.mem base (slot n 9) (2 * n) = y * 2 ^ (64 * n) % m)
     (hb : val32 s.mem base (slot n 8) (2 * n) = b * 2 ^ (64 * n) % m) :
-    WP isa (exponentBody n expWords) s fun t => Context n m base size t ∧
+    WP isa (exponentBody umaal n expWords) s fun t => Context n m base size t ∧
       val32 t.mem base (slot n 9) (2 * n) =
         (if val32 s.mem base (slot n 11) expWords % 2 = 1 then y * b else y) * 2 ^ (64 * n) % m ∧
       val32 t.mem base (slot n 8) (2 * n) = (b * b) * 2 ^ (64 * n) % m ∧
@@ -389,7 +282,7 @@ theorem exponentStep_ok {n size m y b expWords k : Nat} {base : Addr} {s : State
     (hy : val32 s.mem base (slot n 9) (2 * n) = y * 2 ^ (64 * n) % m)
     (hb : val32 s.mem base (slot n 8) (2 * n) = b * 2 ^ (64 * n) % m)
     (hk : 0 < k) (hk32 : k < 2 ^ 32) (hc : s.gpr .lr = BitVec.ofNat 32 k) :
-    WP isa (exponentStep n expWords) s fun t =>
+    WP isa (exponentStep umaal n expWords) s fun t =>
       t.gpr .lr = BitVec.ofNat 32 (k - 1) ∧ t.z = decide (k = 1) ∧ Context n m base size t ∧
       val32 t.mem base (slot n 9) (2 * n) =
         (if val32 s.mem base (slot n 11) expWords % 2 = 1 then y * b else y) * 2 ^ (64 * n) % m ∧
@@ -425,7 +318,7 @@ theorem exponentLoop_ok {n size m expWords a : Nat} {base : Addr} {s : State}
     (hy : val32 s.mem base (slot n 9) (2 * n) = 2 ^ (64 * n) % m)
     (hb : val32 s.mem base (slot n 8) (2 * n) = a * 2 ^ (64 * n) % m)
     (hc : s.gpr .lr = BitVec.ofNat 32 (32 * expWords)) :
-    WP isa (.loop (exponentStep n expWords) .ne) s
+    WP isa (.loop (exponentStep umaal n expWords) .ne) s
       (ExponentInv n size m expWords (a ^ val32 s.mem base (slot n 11) expWords % m)
         (32 * expWords) (32 * expWords) base s) := by
   let steps := 32 * expWords
@@ -487,7 +380,7 @@ theorem exponentiate_ok {n size m expWords : Nat} {base : Addr} {s : State}
     (h : Context n m base size s) (he : 0 < expWords) (hen : expWords ≤ 2 * n) (hew : expWords ≤ 1024)
     (hone : val32 s.mem base (slot n 6) (2 * n) = 1)
     (hr2 : val32 s.mem base (slot n 7) (2 * n) = 2 ^ (128 * n) % m) :
-    WP isa (exponentiate n expWords) s fun t =>
+    WP isa (exponentiate umaal n expWords) s fun t =>
       Context n m base size t ∧
       val32 t.mem base (slot n 9) (2 * n) =
         val32 s.mem base (slot n 8) (2 * n) ^ val32 s.mem base (slot n 11) expWords % m ∧
@@ -583,7 +476,7 @@ theorem light_relCT (n : Nat) :
     RelCT isa (VG.Arm.Taint.Agree (wsT true false)) (light n)
       (VG.Arm.Taint.Agree (wsT true false)) :=
   erased_relCT (c₀ := .block (setupInverse 0))
-    (VG.Taint.hintOf taint (wsT true false) (.block (setupInverse 0)))
+    (VG.Taint.hintOf taintU (wsT true false) (.block (setupInverse 0)))
     (by kernel_rfl) (wsT_noBase _ _) (by decide)
 
 theorem light_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ n : Nat}
@@ -713,6 +606,8 @@ open VG VG.Arm VG.Impl.Mont.Arm VG.Impl.Mont.Arm.Dynamic VG.Proof.Mont VG.Proof.
 open VG.Impl.Dsa.Arm.Pow
 open VG.Proof.X25519.Arm (Rest Upd Mupd wp_mov wp_str wp_ldr op2_reg)
 
+variable {umaal : Bool}
+
 theorem exponent_scratch {n e : Nat} (he : e ≤ 2 * n) :
     ∀ r ∈ exponentRanges n e, ∃ r' ∈ scratch n, r'.1 ≤ r.1 ∧ r.1 + r.2 ≤ r'.1 + r'.2 :=
   within_scratch (by
@@ -726,7 +621,7 @@ convention keeps are restored. -/
 theorem body_ok {s : State} {base : Addr} {size n e m : Nat} (E : Entry s base size)
     (hz : contextBytes n ≤ size) (hn : 0 < n) (hn48 : n ≤ 48) (he : 0 < e) (hen : e ≤ 2 * n)
     (hv : val32 s.mem base (slot n 0) (2 * n) = m) (hm1 : 1 < m) (hodd : m % 2 = 1) :
-    WP isa (body n e) s fun t =>
+    WP isa (body umaal n e) s fun t =>
       val32 t.mem base (slot n 9) (2 * n) =
         val32 s.mem base (slot n 8) (2 * n) ^ val32 s.mem base (slot n 11) e % m ∧
       Outs base (scratch n) s.mem t.mem ∧ (∀ r ∈ preserved, t.gpr r = s.gpr r) ∧
@@ -803,7 +698,7 @@ def powK (n e : Nat) : Contract isa where
 
 theorem powK_correct {n e : Nat} (hn : 0 < n) (hn48 : n ≤ 48) (he : 0 < e) (hen : e ≤ 2 * n) (s : State)
     (h : (powK n e).pre s) :
-    ∃ tr t, Exec isa (body n e) s tr t ∧ abiPreserved s t ∧ (powK n e).post s t := by
+    ∃ tr t, Exec isa (body umaal n e) s tr t ∧ abiPreserved s t ∧ (powK n e).post s t := by
   obtain ⟨-, hwr, hnw, hz, hodd, hm1⟩ := h
   have E : Entry s (State.addr (s.gpr .r0)) ((s.gpr .r1).toNat * 8) :=
     ⟨rfl, ⟨_, Nat.le_refl _, by omega_arith, by rw [hwr]; exact List.mem_singleton_self _⟩,
@@ -858,7 +753,7 @@ theorem savedSetup_trace {n : Nat} {s₁ s₂ : State} {base : Addr} {size₁ si
     exact BitVec.eq_of_toNat_eq (by rw [C₁.ws.wb_toNat, C₂.ws.wb_toNat]))
 
 theorem powK_ct (n e : Nat) (hn : 0 < n) (hn48 : n ≤ 48) :
-    ConstantTime isa (powK n e).pre (powK n e).pub (body n e) := by
+    ConstantTime isa (powK n e).pre (powK n e).pub (body umaal n e) := by
   refine SameTrace.constantTime fun s₁ s₂ h₁ h₂ Eq => ?_
   have E : ∀ {s : State}, (powK n e).pre s → Entry s (State.addr (s.gpr .r0)) ((s.gpr .r1).toNat * 8) := by
     intro s H

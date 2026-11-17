@@ -45,6 +45,8 @@ open VG.Impl.Dsa.Arm
 open VG.Proof.Ecdsa.Arm (mask32 mask32_and)
 open VG.Proof.X25519.Arm (Rest eval_eq)
 
+variable {umaal : Bool}
+
 /-- What `vg_dsa_sign_prevalidated` needs: `signPre`, and a key whose exact
 bytes validate. -/
 def prevSignPre (s : State) : Prop :=
@@ -61,8 +63,8 @@ theorem signPrevDispatch_ok (widths : List (Nat × Nat))
     (hs : Ws s base size) (hz : 120 ≤ size) (member : (pLen, qLen) ∈ widths)
     (bound : ∀ w ∈ widths, w.1 < 2 ^ 16 ∧ w.2 < 2 ^ 16)
     (hp : (hdr base s 100).toNat = pLen) (hq : (hdr base s 104).toNat = qLen)
-    (body : ∀ t, Rest [.r4, .r5] s t → t.mem = s.mem → WP isa (PrevalidatedSign.sized pLen qLen) t Q) :
-    WP isa (PrevalidatedSign.dispatch widths) s Q := by
+    (body : ∀ t, Rest [.r4, .r5] s t → t.mem = s.mem → WP isa (PrevalidatedSign.sized umaal pLen qLen) t Q) :
+    WP isa (PrevalidatedSign.dispatch umaal widths) s Q := by
   induction widths generalizing s with
   | nil => simp only [List.not_mem_nil] at member
   | cons w rest ih =>
@@ -92,7 +94,7 @@ theorem signPrevCompute_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G
     (Ix : Input s base size (.input .x) qLen X) (Ik : Input s base size (.input .nonce) qLen K)
     (Id : Input s base size (.input .digest) c D) (hc : countValue base s Core.digestPrefix = c)
     (hP : 1 < P) (hPo : P % 2 = 1) (hQ : 255 < Q) (hQo : Q % 2 = 1) :
-    WP isa (PrevalidatedSign.compute pLen qLen) s fun t =>
+    WP isa (PrevalidatedSign.compute umaal pLen qLen) s fun t =>
       maskW base t = maskW base s &&& mask32 (signPrevChecks P Q G X K D) ∧
       localVal base t Impl.Dsa.Layout.r qLen = rValue P Q G K ∧
       localVal base t Impl.Dsa.Layout.s qLen = sValue P Q G X K D ∧ Run base s t := by
@@ -150,7 +152,7 @@ theorem signPrevBody_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G Y 
     (hP : 1 < P) (hPo : P % 2 = 1) (hQ : 255 < Q) (hQo : Q % 2 = 1)
     (hm : maskW base s = BitVec.allOnes 32) (O : Output s base size (2 * qLen))
     (pre : publicChecks P Q G Y ∧ (0 < X ∧ X < Q) ∧ G ^ X % P = Y) :
-    WP isa (PrevalidatedSign.body pLen qLen) s fun t =>
+    WP isa (PrevalidatedSign.body umaal pLen qLen) s fun t =>
       t.gpr .r0 = (if signChecks P Q G Y X K D then 1 else 0) ∧
       Spec.Rsa.bytesAt t.mem (State.addr (pointerValue base s (.input .out))) (2 * qLen) =
         (if signChecks P Q G Y X K D then
@@ -195,7 +197,7 @@ theorem signPrevBody_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G Y 
     exact ((Body.of_run Rn).trans Bdv).trans (Bdw.trans ⟨Rt.mono (by decide), fun x _ _ => by rw [Mt]⟩)
 
 theorem prevSign_correct {s : State} (h : prevSignPre s) :
-    WP isa PrevalidatedSign.sign s fun t => abiPreserved s t ∧ signArm.post s t := by
+    WP isa (PrevalidatedSign.sign umaal) s fun t => abiPreserved s t ∧ signArm.post s t := by
   obtain ⟨h, hval⟩ := h
   obtain ⟨hsp, hrd, hwr, _, _, _, dOS, _, dKS, dNS, dDS, _, fO, fK, fN, fD, fS, hv, hr1, hr3, hsw⟩ := id h
   have v := hv
@@ -293,6 +295,8 @@ open VG.Impl.Dsa.Arm VG.Impl.Dsa.Layout
 open VG.Proof.X25519.Arm (Rest eval_eq)
 open VG.Proof.Ecdsa.Arm (mask32)
 
+variable {umaal : Bool}
+
 theorem signPrevCompute_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : Nat} {ins : List (Pointer × Nat)}
     {val₁ val₂ : Pointer → Nat} {s₁ s₂ : State} (X : Pair base size₁ size₂ pLen qLen nP nQ ins val₁ val₂ s₁ s₂)
     (mp : (.input .p, pLen) ∈ ins) (mq : (.input .q, qLen) ∈ ins) (mg : (.input .g, pLen) ∈ ins)
@@ -300,7 +304,7 @@ theorem signPrevCompute_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c :
     (md : (.input .digest, c) ∈ ins)
     (hc₁ : countValue base s₁ Core.digestPrefix = c) (hc₂ : countValue base s₂ Core.digestPrefix = c)
     (D₁ : DomainOk (val₁ (.input .p)) (val₁ (.input .q))) (D₂ : DomainOk (val₂ (.input .p)) (val₂ (.input .q))) :
-    SameTrace isa (PrevalidatedSign.compute pLen qLen) s₁ s₂ := by
+    SameTrace isa (PrevalidatedSign.compute umaal pLen qLen) s₁ s₂ := by
   obtain ⟨q4, qp, p384, q32, pw, qw⟩ := X.C₁.S.lens
   have b₁ := X.C₁.S.big
   have b₂ := X.C₂.S.big
@@ -374,7 +378,7 @@ theorem signPrevBody_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : Na
     (hm₁ : maskW base s₁ = BitVec.allOnes 32) (hm₂ : maskW base s₂ = BitVec.allOnes 32)
     (O₁ : Output s₁ base size₁ (2 * qLen)) (O₂ : Output s₂ base size₂ (2 * qLen))
     (heo : PtrEq base s₁ s₂ (.input .out)) :
-    SameTrace isa (PrevalidatedSign.body pLen qLen) s₁ s₂ := by
+    SameTrace isa (PrevalidatedSign.body umaal pLen qLen) s₁ s₂ := by
   obtain ⟨q4, qp, p384, q32, pw, qw⟩ := X.C₁.S.lens
   have b₁ := X.C₁.S.big
   have b₂ := X.C₂.S.big
@@ -436,8 +440,8 @@ theorem signPrevDispatch_trace (widths : List (Nat × Nat))
     (hp₁ : (hdr base s₁ 100).toNat = pLen) (hq₁ : (hdr base s₁ 104).toNat = qLen)
     (hp₂ : (hdr base s₂ 100).toNat = pLen) (hq₂ : (hdr base s₂ 104).toNat = qLen)
     (body : ∀ t₁ t₂, Rest [.r4, .r5] s₁ t₁ → t₁.mem = s₁.mem → Rest [.r4, .r5] s₂ t₂ → t₂.mem = s₂.mem →
-      SameTrace isa (.seq (PrevalidatedSign.sized pLen qLen) Tail) t₁ t₂) :
-    SameTrace isa (.seq (PrevalidatedSign.dispatch widths) Tail) s₁ s₂ := by
+      SameTrace isa (.seq (PrevalidatedSign.sized umaal pLen qLen) Tail) t₁ t₂) :
+    SameTrace isa (.seq (PrevalidatedSign.dispatch umaal widths) Tail) s₁ s₂ := by
   induction widths generalizing s₁ s₂ with
   | nil => simp only [List.not_mem_nil] at member
   | cons w rest ih =>
@@ -471,7 +475,7 @@ theorem prevSignPre_checks {s : State} (h : prevSignPre s) (c : Nat) :
     (by simp only [Spec.Rsa.bytesAt, List.length_map, List.length_range]; exact hr3)
     (signKey _ _ (by omega_arith))).symm.trans h.2)).2
 
-theorem prevSign_constantTime : ConstantTime isa prevSignArm.pre prevSignArm.pub PrevalidatedSign.sign := by
+theorem prevSign_constantTime : ConstantTime isa prevSignArm.pre prevSignArm.pub (PrevalidatedSign.sign umaal) := by
   refine SameTrace.constantTime fun s₁ s₂ h₁' h₂' pub => ?_
   have h₁ := h₁'.1
   have h₂ := h₂'.1

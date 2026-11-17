@@ -36,6 +36,8 @@ open VG.Proof.X25519.Arm (Rest Upd Mupd Fupd wp_mov wp_dp wp_cmp op2_imm op2_reg
   ofNat_beq_zero toNat_imm)
 open VG.Arm.FrameStack (armStack belowA)
 
+variable {umaal : Bool}
+
 /-- The words the call pushes, as the callee's stack arguments. -/
 abbrev callPush : List Reg := [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11]
 
@@ -224,11 +226,11 @@ theorem check_covers :
 end
 
 /-- `vg_dsa_check_parameters` uses no stack of its own. -/
-theorem check_armStack : armStack Generate.checkParameters = 0 := by decide +kernel
+theorem check_armStack : armStack (Generate.checkParameters umaal) = 0 := by cases umaal <;> decide +kernel
 
 /-- The call of the domain check, its stack arguments pushed. -/
 theorem callCheck_ok {s₀ u : State} (A : KeyABI s₀) (h : RReady s₀ u) (C : CheckRegs s₀ u) (name : String) :
-    WP isa (callWith name Generate.checkParameters) u fun v => RReady s₀ v ∧
+    WP isa (callWith name (Generate.checkParameters umaal)) u fun v => RReady s₀ v ∧
       Frame (checkWrites s₀) u.mem v.mem ∧
       (∀ r ∈ [Reg.r5, .r6, .r7, .r8, .r9, .r10, .r11], v.gpr r = u.gpr r) ∧
       v.gpr .r0 = (if checkResult s₀ u then 1 else 0) := by
@@ -453,7 +455,7 @@ theorem derive_covers :
 end
 
 /-- `vg_dsa_derive_key_checked` uses no stack of its own. -/
-theorem derive_armStack : armStack Generate.deriveChecked = 0 := by decide +kernel
+theorem derive_armStack : armStack (Generate.deriveChecked umaal) = 0 := by cases umaal <;> decide +kernel
 
 theorem status_lt (r : Option (List Byte)) : Spec.Dsa.signStatus r < 2 := by
   unfold Spec.Dsa.signStatus; split <;> decide
@@ -462,7 +464,7 @@ theorem status_lt (r : Option (List Byte)) : Spec.Dsa.signStatus r < 2 := by
 theorem callDerive_ok {s₀ u : State} (A : KeyABI s₀) (h : RReady s₀ u) (C : DeriveRegs s₀ u) (name : String)
     (hc : Spec.Dsa.checkParametersBytes (stackArg s₀ 1).toNat (stackArg s₀ 2).toNat
       (Spec.Rsa.bytesAt u.mem (State.addr (s₀.gpr .r3)) (stackArg s₀ 0).toNat) = true) :
-    WP isa (callWith name Generate.deriveChecked) u fun v => RReady s₀ v ∧ Frame (deriveWrites s₀) u.mem v.mem ∧
+    WP isa (callWith name (Generate.deriveChecked umaal)) u fun v => RReady s₀ v ∧ Frame (deriveWrites s₀) u.mem v.mem ∧
       (∀ r ∈ [Reg.r5, .r6, .r7, .r8, .r9, .r10, .r11], v.gpr r = u.gpr r) ∧
       v.gpr .r0 = BitVec.ofNat 32 (Spec.Dsa.signStatus (deriveResult s₀ u)) ∧
       Spec.Rsa.bytesAt v.mem (State.addr (s₀.gpr .r0)) (s₀.gpr .r1).toNat =

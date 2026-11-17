@@ -17,6 +17,8 @@ body accumulate a mask. `operation true` and `operation false` are
 namespace VG.Impl.Dsa.Arm.Entry
 open VG VG.Arm VG.Impl.Mont.Arm VG.Impl.Dsa.Layout
 
+variable (umaal : Bool)
+
 /-- The registers saved at `[saved + 4i]`. -/
 def savedRegs : List Reg := [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .lr]
 
@@ -68,7 +70,7 @@ def failure (signing : Bool) : Prog isa :=
 
 def sized (signing : Bool) (pLen qLen : Nat) : Prog isa :=
   .seq (Shape.check pLen qLen)
-    (.ite .eq (failure signing) (if signing then SignVerify.signBody pLen qLen else SignVerify.verifyBody pLen qLen))
+    (.ite .eq (failure signing) (if signing then SignVerify.signBody umaal pLen qLen else SignVerify.verifyBody umaal pLen qLen))
 
 /-- Test both public widths, retaining a single fallback continuation. -/
 def widthMatch (pLen qLen : Nat) : Prog isa :=
@@ -81,11 +83,11 @@ def widthDispatch (signing : Bool) : List (Nat × Nat) → Prog isa
   | [] => failure signing
   | (pLen, qLen) :: rest =>
     .seq (widthMatch pLen qLen)
-      (.ite .eq (sized signing pLen qLen) (widthDispatch signing rest))
+      (.ite .eq (sized umaal signing pLen qLen) (widthDispatch signing rest))
 
 def operation (signing : Bool) : Prog isa := Core.sequence [
   .block (if signing then signEntry else verifyEntry),
-  widthDispatch signing [(128, 20), (256, 28), (256, 32), (384, 32), (256, 20)],
+  widthDispatch umaal signing [(128, 20), (256, 28), (256, 32), (384, 32), (256, 20)],
   .block restore]
 
 end VG.Impl.Dsa.Arm.Entry

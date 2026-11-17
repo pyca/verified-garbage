@@ -27,6 +27,8 @@ open VG VG.Arm VG.Impl.Mont.Arm VG.Impl.Mont.Arm.Dynamic VG.Proof.Mont VG.Proof.
 open VG.Impl.Dsa.Arm VG.Impl.Dsa.Layout
 open VG.Proof.X25519.Arm (Rest)
 
+variable {umaal : Bool}
+
 theorem local_ptrOk (o : Nat) (h : o < 2 ^ 16) : PtrOk (.local o) := h
 
 /-- A product's or reduction's result is below the modulus. -/
@@ -42,7 +44,7 @@ theorem sign_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : Nat} {ins 
     (mx : (.input .x, qLen) ∈ ins) (mk : (.input .nonce, qLen) ∈ ins) (md : (.input .digest, c) ∈ ins)
     (hc₁ : countValue base s₁ Core.digestPrefix = c) (hc₂ : countValue base s₂ Core.digestPrefix = c)
     (D₁ : DomainOk (val₁ (.input .p)) (val₁ (.input .q))) (D₂ : DomainOk (val₂ (.input .p)) (val₂ (.input .q))) :
-    SameTrace isa (Core.sign pLen qLen) s₁ s₂ := by
+    SameTrace isa (Core.sign umaal pLen qLen) s₁ s₂ := by
   obtain ⟨q4, qp, p384, q32, pw, qw⟩ := X.C₁.S.lens
   have b₁ := X.C₁.S.big
   have b₂ := X.C₂.S.big
@@ -201,7 +203,7 @@ theorem verify_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : Nat} {in
     (md : (.input .digest, c) ∈ ins)
     (hc₁ : countValue base s₁ Core.digestPrefix = c) (hc₂ : countValue base s₂ Core.digestPrefix = c)
     (D₁ : DomainOk (val₁ (.input .p)) (val₁ (.input .q))) (D₂ : DomainOk (val₂ (.input .p)) (val₂ (.input .q))) :
-    SameTrace isa (Core.verify pLen qLen) s₁ s₂ := by
+    SameTrace isa (Core.verify umaal pLen qLen) s₁ s₂ := by
   obtain ⟨q4, qp, p384, q32, pw, qw⟩ := X.C₁.S.lens
   have b₁ := X.C₁.S.big
   have b₂ := X.C₂.S.big
@@ -370,11 +372,13 @@ namespace VG.Proof.Dsa.Arm
 open VG VG.Arm VG.Impl.Mont.Arm VG.Impl.Mont.Arm.Dynamic VG.Proof.Mont VG.Proof.Mont.Arm VG.Proof.Mont.Arm.Dyn
 open VG.Impl.Dsa.Arm VG.Impl.Dsa.Layout
 
+variable {umaal : Bool}
+
 theorem signingSubgroup_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ : Nat} {ins : List (Pointer × Nat)}
     {val₁ val₂ : Pointer → Nat} {s₁ s₂ : State} (X : Pair base size₁ size₂ pLen qLen nP nQ ins val₁ val₂ s₁ s₂)
     (mp : (.input .p, pLen) ∈ ins) (mq : (.input .q, qLen) ∈ ins) (mg : (.input .g, pLen) ∈ ins)
     (D₁ : DomainOk (val₁ (.input .p)) (val₁ (.input .q))) (D₂ : DomainOk (val₂ (.input .p)) (val₂ (.input .q))) :
-    SameTrace isa (Validate.signingSubgroup pLen qLen) s₁ s₂ := by
+    SameTrace isa (Validate.signingSubgroup umaal pLen qLen) s₁ s₂ := by
   obtain ⟨q4, qp, p384, q32, pw, qw⟩ := X.C₁.S.lens
   have b₁ := X.C₁.S.big
   have b₂ := X.C₂.S.big
@@ -400,7 +404,7 @@ theorem signingKey_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ : Nat} {
     (mp : (.input .p, pLen) ∈ ins) (mq : (.input .q, qLen) ∈ ins) (mg : (.input .g, pLen) ∈ ins)
     (my : (.input .y, pLen) ∈ ins)
     (D₁ : DomainOk (val₁ (.input .p)) (val₁ (.input .q))) (D₂ : DomainOk (val₂ (.input .p)) (val₂ (.input .q))) :
-    SameTrace isa (Validate.signingKey pLen qLen) s₁ s₂ :=
+    SameTrace isa (Validate.signingKey umaal pLen qLen) s₁ s₂ :=
   SameTrace.seq (domain_trace X mp mq mg my D₁ D₂)
     (domain_ok X.C₁.S (X.C₁.inp mp) (X.C₁.inp mq) (X.C₁.inp mg) (X.C₁.inp my) D₁.hP D₁.hPo D₁.hQ D₁.hQo)
     (domain_ok X.C₂.S (X.C₂.inp mp) (X.C₂.inp mq) (X.C₂.inp mg) (X.C₂.inp my) D₂.hP D₂.hPo D₂.hQ D₂.hQo)
@@ -429,6 +433,8 @@ open VG.Impl.Dsa.Arm VG.Impl.Dsa.Layout
 open VG.Proof.X25519.Arm (Rest Upd wp_ldr wp_dp wp_movw op2_reg dpVal)
 open VG.Proof.Ecdsa.Arm (mask32)
 
+variable {umaal : Bool}
+
 theorem signCompute_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : Nat} {ins : List (Pointer × Nat)}
     {val₁ val₂ : Pointer → Nat} {s₁ s₂ : State} (X : Pair base size₁ size₂ pLen qLen nP nQ ins val₁ val₂ s₁ s₂)
     (mp : (.input .p, pLen) ∈ ins) (mq : (.input .q, qLen) ∈ ins) (mg : (.input .g, pLen) ∈ ins)
@@ -436,7 +442,7 @@ theorem signCompute_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : Nat
     (md : (.input .digest, c) ∈ ins)
     (hc₁ : countValue base s₁ Core.digestPrefix = c) (hc₂ : countValue base s₂ Core.digestPrefix = c)
     (D₁ : DomainOk (val₁ (.input .p)) (val₁ (.input .q))) (D₂ : DomainOk (val₂ (.input .p)) (val₂ (.input .q))) :
-    SameTrace isa (SignVerify.signCompute pLen qLen) s₁ s₂ := by
+    SameTrace isa (SignVerify.signCompute umaal pLen qLen) s₁ s₂ := by
   obtain ⟨q4, qp, p384, q32, pw, qw⟩ := X.C₁.S.lens
   have b₁ := X.C₁.S.big
   have b₂ := X.C₂.S.big
@@ -500,7 +506,7 @@ theorem verifyTail_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : Nat}
     (D₁ : DomainOk (val₁ (.input .p)) (val₁ (.input .q))) (D₂ : DomainOk (val₂ (.input .p)) (val₂ (.input .q))) :
     SameTrace isa (Core.sequence [
       .seq (Validate.range qLen .q (.input .signature)) (Validate.range qLen .q .signatureS),
-      Core.verify pLen qLen,
+      Core.verify umaal pLen qLen,
       Validate.equalValues qLen (.local Impl.Dsa.Layout.u) (.input .signature)]) s₁ s₂ := by
   obtain ⟨q4, qp, p384, q32, pw, qw⟩ := X.C₁.S.lens
   have b₁ := X.C₁.S.big
@@ -608,7 +614,7 @@ theorem signBody_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : Nat} {
     (hm₁ : maskW base s₁ = BitVec.allOnes 32) (hm₂ : maskW base s₂ = BitVec.allOnes 32)
     (O₁ : Output s₁ base size₁ (2 * qLen)) (O₂ : Output s₂ base size₂ (2 * qLen))
     (heo : PtrEq base s₁ s₂ (.input .out)) :
-    SameTrace isa (SignVerify.signBody pLen qLen) s₁ s₂ := by
+    SameTrace isa (SignVerify.signBody umaal pLen qLen) s₁ s₂ := by
   obtain ⟨q4, qp, p384, q32, pw, qw⟩ := X.C₁.S.lens
   have b₁ := X.C₁.S.big
   have b₂ := X.C₂.S.big

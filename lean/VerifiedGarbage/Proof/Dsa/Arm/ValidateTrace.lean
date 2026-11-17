@@ -33,6 +33,8 @@ open VG VG.Arm VG.Impl.Mont.Arm VG.Impl.Mont.Arm.Dynamic VG.Proof.Mont VG.Proof.
 open VG.Impl.Dsa.Arm VG.Impl.Dsa.Layout
 open VG.Proof.X25519.Arm (Rest)
 
+variable {umaal : Bool}
+
 theorem addr_inj {a b : BitVec 32} (h : State.addr a = State.addr b) : a = b :=
   BitVec.eq_of_toNat_eq (by rw [← VG.Proof.X25519.Arm.addr_toNat a, ← VG.Proof.X25519.Arm.addr_toNat b, h])
 
@@ -114,7 +116,7 @@ theorem setup_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ len n m�
     fun u₁ u₂ ⟨w₁, V₁, _⟩ ⟨w₂, V₂, _⟩ => ?_
   obtain ct : RelCT isa (VG.Arm.Taint.Agree T0) (Context.light n) (VG.Arm.Taint.Agree T0) :=
     erased_relCT (c₀ := .block (setupInverse 0))
-      (VG.Taint.hintOf taint T0 (.block (setupInverse 0))) (by kernel_rfl) (wsT_noBase _ _) (by decide)
+      (VG.Taint.hintOf taintU T0 (.block (setupInverse 0))) (by kernel_rfl) (wsT_noBase _ _) (by decide)
   exact SameTrace.of_relCT ct (agree0 w₁ w₂)
 
 /-- After the setup of an operation, its operands' pointers are still the same. -/
@@ -222,7 +224,7 @@ theorem power_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ len expLe
     (Ra₁ : Ready s₁ base a len) (Ra₂ : Ready s₂ base a len) (Rb₁ : Ready s₁ base b expLen)
     (hem : PtrEq base s₁ s₂ (.input modulus)) (hea : PtrEq base s₁ s₂ a) (heb : PtrEq base s₁ s₂ b)
     (Rb₂ : Ready s₂ base b expLen) (he4 : 4 ≤ expLen) (he : expLen ≤ len) (hwe : expLen % 4 = 0) :
-    SameTrace isa (Core.power len expLen modulus a b output) s₁ s₂ := by
+    SameTrace isa (Core.power umaal len expLen modulus a b output) s₁ s₂ := by
   unfold Core.power
   dsimp only
   rw [← P₁.w.n_eq]
@@ -245,7 +247,7 @@ theorem productMod_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ len 
     (Ra₁ : Ready s₁ base a len) (Ra₂ : Ready s₂ base a len) (Rb₁ : Ready s₁ base b len)
     (hem : PtrEq base s₁ s₂ (.input modulus)) (hea : PtrEq base s₁ s₂ a) (heb : PtrEq base s₁ s₂ b)
     (Rb₂ : Ready s₂ base b len) :
-    SameTrace isa (Core.productMod len modulus a b output) s₁ s₂ := by
+    SameTrace isa (Core.productMod umaal len modulus a b output) s₁ s₂ := by
   unfold Core.productMod
   dsimp only
   rw [← P₁.w.n_eq]

@@ -47,6 +47,8 @@ open VG.Impl.Dsa.Arm
 open VG.Proof.Ecdsa.Arm (mask32 mask32_and)
 open VG.Proof.X25519.Arm (Rest Upd Mupd eval_eq wp_mov op2_imm)
 
+variable {umaal : Bool}
+
 /-! ## The contract -/
 
 /-- What `vg_dsa_validate_private_key` needs: `(key = r0, key_len = r1,
@@ -194,7 +196,7 @@ theorem validatePrivIn {s t : State} {base : Addr} {size : Nat} (h : validatePri
 /-! ## Validation -/
 
 theorem validatePriv_correct {s : State} (h : validatePrivPre s) :
-    WP isa PrevalidatedSign.validate s fun t => abiPreserved s t ∧ validatePrivArm.post s t := by
+    WP isa (PrevalidatedSign.validate umaal) s fun t => abiPreserved s t ∧ validatePrivArm.post s t := by
   obtain ⟨hsp, hrd, hwr, _, _, _, hsb, hv, hr1, hsw⟩ := id h
   have v := hv
   unfold Spec.Dsa.lengthsValid at v
@@ -207,7 +209,7 @@ theorem validatePriv_correct {s : State} (h : validatePrivPre s) :
   refine WP.seq (WP.mono (validateEntry_of hsp (by rw [hrd]; simp) hwr hsb hv hsw) fun u I => ?_)
   have E₀ := Env.of_installed I (by omega_arith)
   have fok := privateFields_ok s
-  refine WP.seq (genDispatch_ok PrevalidatedSign.validateSized _ E₀.ws (by omega_arith) (genWidths_mem hv) (by decide)
+  refine WP.seq (genDispatch_ok (PrevalidatedSign.validateSized umaal) _ E₀.ws (by omega_arith) (genWidths_mem hv) (by decide)
     (by rw [E₀.field (d := 100) (v := s.gpr .r2) (by simp)]) (by rw [E₀.field (d := 104) (v := s.gpr .r3) (by simp)])
     fun t₁ R₁ M₁ => ?_)
   have E₁ := E₀.of_mem R₁ (by decide) M₁
@@ -288,6 +290,8 @@ open VG.Impl.Dsa.Arm VG.Impl.Dsa.Layout
 open VG.Proof.X25519.Arm (Rest eval_eq)
 open VG.Proof.Ecdsa.Arm (mask32)
 
+variable {umaal : Bool}
+
 
 /-- The key's operands. -/
 def privIns (pLen qLen : Nat) : List (Pointer × Nat) :=
@@ -366,7 +370,7 @@ theorem priv_bytes {s₁ s₂ : State} (h₁ : validatePrivPre s₁) (hl : valid
   rw [← VG.Proof.Dsa.bytesAt_slice _ _ hol, ← VG.Proof.Dsa.bytesAt_slice _ _ hol, E]
 
 theorem validatePriv_constantTime :
-    ConstantTime isa validatePrivArm.pre validatePrivArm.pub PrevalidatedSign.validate := by
+    ConstantTime isa validatePrivArm.pre validatePrivArm.pub (PrevalidatedSign.validate umaal) := by
   refine SameTrace.constantTime fun s₁ s₂ h₁ h₂ pub => ?_
   obtain ⟨hsp, hl, hr0, hr1, hr2, hr3, ha⟩ := pub
   obtain a0 := ha 0 (by decide)
@@ -394,7 +398,7 @@ theorem validatePriv_constantTime :
       obtain E := Env.of_installed I (by rw [hz₂]; omega_using [hr2, a0, a1, sb₁, hpl, hsw, sb₂, hsw₂, v, hs16, qp, p128, hz₂])
       rwa [hb₂, hz₂] at E)
     fun u₁ u₂ E₁ E₂ => ?_
-  refine genDispatch_trace PrevalidatedSign.validateSized _ E₁.ws E₂.ws (by omega_using [hr2, a0, a1, sb₁, hpl, hsw, sb₂, hsw₂, v, hs16, qp, p128, hz₂]) (by omega_using [hr2, a0, a1, sb₁, hpl, hsw, sb₂, hsw₂, v, hs16, qp, p128, hz₂]) (genWidths_mem hv)
+  refine genDispatch_trace (PrevalidatedSign.validateSized umaal) _ E₁.ws E₂.ws (by omega_using [hr2, a0, a1, sb₁, hpl, hsw, sb₂, hsw₂, v, hs16, qp, p128, hz₂]) (by omega_using [hr2, a0, a1, sb₁, hpl, hsw, sb₂, hsw₂, v, hs16, qp, p128, hz₂]) (genWidths_mem hv)
     (by decide) (by rw [E₁.field (d := 100) (v := s₁.gpr .r2) (by simp)])
     (by rw [E₁.field (d := 104) (v := s₁.gpr .r3) (by simp)])
     (by rw [E₂.field (d := 100) (v := s₂.gpr .r2) (by simp), hr2])

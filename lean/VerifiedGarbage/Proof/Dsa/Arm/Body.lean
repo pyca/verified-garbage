@@ -29,6 +29,8 @@ open VG.Impl.Dsa.Arm
 open VG.Proof.Ecdsa.Arm (mask32 mask32_and)
 open VG.Proof.X25519.Arm (Rest Upd wp_mov wp_str wp_ldr wp_dp wp_movw op2_imm op2_reg dpVal)
 
+variable {umaal : Bool}
+
 /-- The caller's output, of `len` bytes, apart from the working space. -/
 structure Output (s : State) (base : Addr) (size len : Nat) : Prop where
   fits : (pointerValue base s (.input .out)).toNat + len ≤ 2 ^ 32
@@ -210,7 +212,7 @@ theorem signBody_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G Y X K 
     (Id : Input s base size (.input .digest) c D) (hc : countValue base s Core.digestPrefix = c)
     (hP : 1 < P) (hPo : P % 2 = 1) (hQ : 255 < Q) (hQo : Q % 2 = 1)
     (hm : maskW base s = BitVec.allOnes 32) (O : Output s base size (2 * qLen)) :
-    WP isa (SignVerify.signBody pLen qLen) s fun t =>
+    WP isa (SignVerify.signBody umaal pLen qLen) s fun t =>
       t.gpr .r0 = (if signChecks P Q G Y X K D then 1 else 0) ∧
       Spec.Rsa.bytesAt t.mem (State.addr (pointerValue base s (.input .out))) (2 * qLen) =
         (if signChecks P Q G Y X K D then

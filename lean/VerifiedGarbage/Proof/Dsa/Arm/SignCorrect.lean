@@ -25,6 +25,8 @@ open VG.Impl.Dsa.Arm
 open VG.Proof.Ecdsa.Arm (mask32)
 open VG.Proof.X25519.Arm (Rest)
 
+variable {umaal : Bool}
+
 theorem qWidth_of_shape {P Q : Nat} (h : shapeValid P Q) : qWidth Q = Spec.Dsa.bitLength Q / 8 := by
   have S := h.1
   unfold Spec.Dsa.supportedSizes at S
@@ -176,7 +178,7 @@ theorem signOutput {s t : State} {base : Addr} {size : Nat} (h : signPre s) (hb 
   exact ⟨⟨State.addr (s.gpr .r0), (s.gpr .r1).toNat⟩, by simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
 
 theorem sign_correct {s : State} (h : signPre s) :
-    WP isa (Entry.operation true) s fun t => abiPreserved s t ∧ signArm.post s t := by
+    WP isa (Entry.operation umaal true) s fun t => abiPreserved s t ∧ signArm.post s t := by
   obtain ⟨hsp, hrd, hwr, _, _, _, dOS, _, dKS, dNS, dDS, _, fO, fK, fN, fD, fS, hv, hr1, hr3, hsw⟩ := id h
   have v := hv
   unfold Spec.Dsa.lengthsValid at v

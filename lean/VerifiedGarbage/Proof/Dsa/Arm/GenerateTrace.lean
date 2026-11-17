@@ -27,6 +27,8 @@ open VG VG.Arm VG.Impl.Mont.Arm VG.Impl.Mont.Arm.Dynamic VG.Proof.Mont VG.Proof.
 open VG.Impl.Dsa.Arm VG.Impl.Dsa.Layout
 open VG.Proof.X25519.Arm (Rest eval_eq)
 
+variable {umaal : Bool}
+
 theorem genDispatch_trace (sized : Nat → Nat → Prog isa) (widths : List (Nat × Nat))
     {s₁ s₂ : State} {base : Addr} {size₁ size₂ pLen qLen : Nat}
     (h₁ : Ws s₁ base size₁) (h₂ : Ws s₂ base size₂) (hz₁ : 120 ≤ size₁) (hz₂ : 120 ≤ size₂)
@@ -116,7 +118,7 @@ theorem subgroup_gen_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ : Nat}
     {val₁ val₂ : Pointer → Nat} {s₁ s₂ : State} (X : Pair base size₁ size₂ pLen qLen nP nQ ins val₁ val₂ s₁ s₂)
     (mp : (.input .p, pLen) ∈ ins) (mq : (.input .q, qLen) ∈ ins) (mg : (.input .g, pLen) ∈ ins)
     (D₁ : DomainOk (val₁ (.input .p)) (val₁ (.input .q))) (D₂ : DomainOk (val₂ (.input .p)) (val₂ (.input .q))) :
-    SameTrace isa (Generate.subgroup pLen qLen) s₁ s₂ := by
+    SameTrace isa (Generate.subgroup umaal pLen qLen) s₁ s₂ := by
   obtain ⟨q4, qp, p384, q32, pw, qw⟩ := X.C₁.S.lens
   have b₁ := X.C₁.S.big
   have b₂ := X.C₂.S.big
@@ -140,7 +142,7 @@ theorem parameters_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ : Nat} {
     {val₁ val₂ : Pointer → Nat} {s₁ s₂ : State} (X : Pair base size₁ size₂ pLen qLen nP nQ ins val₁ val₂ s₁ s₂)
     (mp : (.input .p, pLen) ∈ ins) (mq : (.input .q, qLen) ∈ ins) (mg : (.input .g, pLen) ∈ ins)
     (D₁ : DomainOk (val₁ (.input .p)) (val₁ (.input .q))) (D₂ : DomainOk (val₂ (.input .p)) (val₂ (.input .q))) :
-    SameTrace isa (Generate.parameters pLen qLen) s₁ s₂ :=
+    SameTrace isa (Generate.parameters umaal pLen qLen) s₁ s₂ :=
   SameTrace.seq (domain_gen_trace X mp mq mg D₁ D₂)
     (domain_gen_ok X.C₁.S (X.C₁.inp mp) (X.C₁.inp mq) (X.C₁.inp mg) D₁.hP D₁.hPo D₁.hQ D₁.hQo)
     (domain_gen_ok X.C₂.S (X.C₂.inp mp) (X.C₂.inp mq) (X.C₂.inp mg) D₂.hP D₂.hPo D₂.hQ D₂.hQo)
@@ -151,7 +153,7 @@ theorem keyCompute_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ : Nat} {
     (mp : (.input .p, pLen) ∈ ins) (mq : (.input .q, qLen) ∈ ins) (mg : (.input .g, pLen) ∈ ins)
     (mx : (.input .nonce, qLen) ∈ ins)
     (D₁ : DomainOk (val₁ (.input .p)) (val₁ (.input .q))) (D₂ : DomainOk (val₂ (.input .p)) (val₂ (.input .q))) :
-    SameTrace isa (Generate.keyCompute pLen qLen) s₁ s₂ := by
+    SameTrace isa (Generate.keyCompute umaal pLen qLen) s₁ s₂ := by
   obtain ⟨q4, qp, p384, q32, pw, qw⟩ := X.C₁.S.lens
   have b₁ := X.C₁.S.big
   have b₂ := X.C₂.S.big
@@ -188,7 +190,7 @@ theorem deriveCompute_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ : Nat
     (mp : (.input .p, pLen) ∈ ins) (mq : (.input .q, qLen) ∈ ins) (mg : (.input .g, pLen) ∈ ins)
     (mx : (.input .nonce, qLen) ∈ ins)
     (D₁ : DomainOk (val₁ (.input .p)) (val₁ (.input .q))) (D₂ : DomainOk (val₂ (.input .p)) (val₂ (.input .q))) :
-    SameTrace isa (Generate.deriveCompute pLen qLen) s₁ s₂ :=
+    SameTrace isa (Generate.deriveCompute umaal pLen qLen) s₁ s₂ :=
   SameTrace.seq (parameters_trace X mp mq mg D₁ D₂)
     (parameters_ok X.C₁.S (X.C₁.inp mp) (X.C₁.inp mq) (X.C₁.inp mg) D₁.hP D₁.hPo D₁.hQ D₁.hQo)
     (parameters_ok X.C₂.S (X.C₂.inp mp) (X.C₂.inp mq) (X.C₂.inp mg) D₂.hP D₂.hPo D₂.hQ D₂.hQo)
@@ -203,7 +205,7 @@ def ComputeTrace (compute : Nat → Nat → Prog isa) : Prop :=
     DomainOk (val₁ (.input .p)) (val₁ (.input .q)) → DomainOk (val₂ (.input .p)) (val₂ (.input .q)) →
     SameTrace isa (compute pLen qLen) s₁ s₂
 
-theorem keyCompute_computeTrace : ComputeTrace Generate.keyCompute := keyCompute_trace
-theorem deriveCompute_computeTrace : ComputeTrace Generate.deriveCompute := deriveCompute_trace
+theorem keyCompute_computeTrace : ComputeTrace (Generate.keyCompute umaal) := keyCompute_trace
+theorem deriveCompute_computeTrace : ComputeTrace (Generate.deriveCompute umaal) := deriveCompute_trace
 
 end VG.Proof.Dsa.Arm

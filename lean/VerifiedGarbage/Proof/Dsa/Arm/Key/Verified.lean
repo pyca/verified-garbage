@@ -34,6 +34,8 @@ namespace VG.Proof.Dsa.Arm.Key
 
 open VG VG.Arm VG.Proof.Mont VG.Impl.Dsa.Arm VG.Impl.Dsa.Arm.Random VG.Impl.Dsa.Arm.GenerateKey
 
+variable {umaal : Bool}
+
 /-- Two entries with the same public data: the same arguments, domain,
 status and trace. -/
 theorem key_public {s t : State} (H : (Spec.Dsa.generateKeyContract Arm.abi 144).pub s t) :
@@ -76,7 +78,7 @@ theorem alloc_push {s₀ : State} (A : KeyABI s₀) :
 theorem generateKey_constantTime (check derive : String) :
     ConstantTime isa (Spec.Dsa.generateKeyContract Arm.abi 144).pre
       (Spec.Dsa.generateKeyContract Arm.abi 144).pub
-      (code check derive Generate.checkParameters Generate.deriveChecked) := by
+      (code check derive (Generate.checkParameters umaal) (Generate.deriveChecked umaal)) := by
   intro s t tsa tsb u w hs ht hpub ea eb
   have As := keyABI_of hs
   have At' := keyABI_of ht
@@ -119,6 +121,8 @@ namespace VG.Proof.Dsa.Arm.Key
 open VG VG.Arm VG.Proof.Mont VG.Impl.Dsa.Arm VG.Impl.Dsa.Arm.Random VG.Impl.Dsa.Arm.GenerateKey
 open VG.Proof.X25519.Arm (toNat_imm)
 
+variable {umaal : Bool}
+
 theorem rResult_used_le {s₀ : State} (A : KeyABI s₀) : (rResult s₀).used ≤ (rInput s₀).rand.length := by
   rw [rResult_eq A]
   split
@@ -129,14 +133,14 @@ theorem rResult_used_le {s₀ : State} (A : KeyABI s₀) : (rResult s₀).used �
   · exact Nat.zero_le _
 
 theorem code_ok (check derive : String) {s₀ : State} (A : KeyABI s₀) :
-    WP isa (code check derive Generate.checkParameters Generate.deriveChecked) s₀ fun s' => ∃ u, Finished s₀ u ∧ s' = freed frameBytes u :=
+    WP isa (code check derive (Generate.checkParameters umaal) (Generate.deriveChecked umaal)) s₀ fun s' => ∃ u, Finished s₀ u ∧ s' = freed frameBytes u :=
   WP.alloc ⟨by decide, by decide, by decide, by decide⟩ (by have := A.stackLow; unfold frameBytes; omega_using [this])
     (WP.mono (body_ok check derive A) fun u hu => ⟨u, hu, rfl⟩)
 
 /-- `vg_dsa_generate_key` meets its contract. -/
 theorem generateKey_correct (check derive : String) (s : State)
     (hpre : (Spec.Dsa.generateKeyContract Arm.abi 144).pre s) :
-    ∃ t s', Exec isa (code check derive Generate.checkParameters Generate.deriveChecked) s t s' ∧
+    ∃ t s', Exec isa (code check derive (Generate.checkParameters umaal) (Generate.deriveChecked umaal)) s t s' ∧
       abiPreserved s s' ∧ (Spec.Dsa.generateKeyContract Arm.abi 144).post s s' := by
   have A := keyABI_of hpre
   obtain ⟨t, s', he, u, hF, rfl⟩ := code_ok check derive A
@@ -181,6 +185,8 @@ namespace VG.Proof.Dsa.Arm.Key
 
 open VG VG.Arm VG.Impl.Dsa.Arm VG.Impl.Dsa.Arm.GenerateKey
 
+variable {umaal : Bool}
+
 /-- A 1024/160 call with an empty tape: the output at `0x1000`, `used` at
 `0x7000`, the domain at `0x2000` and the working space at `0x8000`. -/
 def generateKeySat : State where
@@ -202,15 +208,15 @@ theorem generateKey_satisfiable : ∃ s, (Spec.Dsa.generateKeyContract Arm.abi 1
     [generateKeySat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using generateKeySat
 
 theorem generateKey_verified (check derive : String) :
-    Verified Arm.target (code check derive Generate.checkParameters Generate.deriveChecked)
+    Verified Arm.target (code check derive (Generate.checkParameters umaal) (Generate.deriveChecked umaal))
       (Spec.Dsa.generateKeyContract Arm.abi 144) :=
   ⟨generateKey_correct check derive, generateKey_constantTime check derive, generateKey_satisfiable⟩
 
 /-- Key generation, calling `vg_dsa_check_parameters` and the internal
 `vg_dsa_derive_key_checked`. -/
 theorem generating_verified :
-    Verified Arm.target (code "vg_dsa_check_parameters" "vg_dsa_derive_key_checked"
-      Generate.checkParameters Generate.deriveChecked) (Spec.Dsa.generateKeyContract Arm.abi 144) :=
+    Verified Arm.target (code (Generate.checkName umaal) (Generate.deriveName umaal) (Generate.checkParameters umaal)
+      (Generate.deriveChecked umaal)) (Spec.Dsa.generateKeyContract Arm.abi 144) :=
   generateKey_verified _ _
 
 end VG.Proof.Dsa.Arm.Key

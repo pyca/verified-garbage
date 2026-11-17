@@ -29,6 +29,8 @@ open VG.Impl.Dsa.Arm VG.Impl.Dsa.Layout
 open VG.Proof.X25519.Arm (Rest eval_eq)
 open VG.Proof.Ecdsa.Arm (mask32)
 
+variable {umaal : Bool}
+
 /-- The caller's operands of signing. -/
 def signIns (pLen qLen c : Nat) : List (Pointer × Nat) :=
   [(.input .p, pLen), (.input .q, qLen), (.input .g, pLen), (.input .y, pLen), (.input .x, qLen),
@@ -113,7 +115,7 @@ theorem sign_keyBytes {s₁ s₂ : State} (h₁ : signPre s₁) (hl : signLeak s
       3 * (arg s₁ 0).toNat + (arg s₁ 2).toNat by omega_using [r3]] at E
   rw [← VG.Proof.Dsa.bytesAt_slice _ _ hol, ← VG.Proof.Dsa.bytesAt_slice _ _ hol, E]
 
-theorem sign_constantTime : ConstantTime isa signArm.pre signArm.pub (Entry.operation true) := by
+theorem sign_constantTime : ConstantTime isa signArm.pre signArm.pub (Entry.operation umaal true) := by
   refine SameTrace.constantTime fun s₁ s₂ h₁ h₂ pub => ?_
   obtain ⟨hsp, hl, hr0, _, hr2, hr3, ha⟩ := pub
   obtain a0 := ha 0 (by decide)

@@ -10,6 +10,8 @@ import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Proof.Dsa.Arm.Prime.Verified
 public import VerifiedGarbage.Proof.Dsa.Arm.PowVerified
 public import VerifiedGarbage.Proof.MillerRabin.Arm.Backend
+public import VerifiedGarbage.Proof.Variants.MillerRabin.Arm
+public import VerifiedGarbage.Proof.Variants.DsaArithmetic.Arm
 public import VerifiedGarbage.Impl.Dsa.Arm.Generate
 public import VerifiedGarbage.Impl.Dsa.Arm.ProbablePrime
 public import VerifiedGarbage.Proof.Framework.Arm.CallF
@@ -208,12 +210,14 @@ open VG.Impl.Mont.Arm.Dynamic (modS baseS expS resS contextBytes)
 open VG.Impl.Dsa.Arm.ProbablePrime (keyOff keyWords)
 open VG.Impl.Rsa.Arm.Keys (ptr)
 
+variable {umaal : Bool}
+
 /-- The probable-prime test over the round `v`, which tests q and p. -/
 def primeName (v : RoundImpl) : String :=
   "vg_dsa_probable_prime" ++ v.suffix
 
 /-- The geometry of `(pLen, qLen)`, hashing with `G`, testing with the round `v`. -/
-def geo (pLen qLen : Nat) (G : Hash) (v : RoundImpl) : Geo where
+def geo (umaal : Bool) (pLen qLen : Nat) (G : Hash) (v : RoundImpl) : Geo where
   pLen := pLen
   qLen := qLen
   e := (8 * pLen - 8 * qLen) / 32 + 1
@@ -222,14 +226,14 @@ def geo (pLen qLen : Nat) (G : Hash) (v : RoundImpl) : Geo where
   qCode := Impl.Dsa.Arm.ProbablePrime.code v.name v.code
   pName := primeName v
   pCode := Impl.Dsa.Arm.ProbablePrime.code v.name v.code
-  powName := Impl.Dsa.Arm.Pow.name (pLen / 8) ((8 * pLen - 8 * qLen) / 32 + 1)
-  powCode := Impl.Dsa.Arm.Pow.body (pLen / 8) ((8 * pLen - 8 * qLen) / 32 + 1)
+  powName := Impl.Dsa.Arm.Pow.name umaal (pLen / 8) ((8 * pLen - 8 * qLen) / 32 + 1)
+  powCode := Impl.Dsa.Arm.Pow.body umaal (pLen / 8) ((8 * pLen - 8 * qLen) / 32 + 1)
   powMod := modS (pLen / 8)
   powBase := baseS (pLen / 8)
   powExp := expS (pLen / 8)
   powRes := resS (pLen / 8)
-  checkName := "vg_dsa_check_parameters"
-  checkCode := VG.Impl.Dsa.Arm.Generate.checkParameters
+  checkName := VG.Impl.Dsa.Arm.Generate.checkName umaal
+  checkCode := VG.Impl.Dsa.Arm.Generate.checkParameters umaal
 
 theorem primeOk (v : RoundImpl) (bits : Nat) (hb : bits ∈ Impl.Dsa.Arm.ProbablePrime.sizes := by decide) :
     PrimeOk bits (Impl.Dsa.Arm.ProbablePrime.code v.name v.code) :=
@@ -237,8 +241,8 @@ theorem primeOk (v : RoundImpl) (bits : Nat) (hb : bits ∈ Impl.Dsa.Arm.Probabl
     (VG.Proof.Dsa.Arm.Prime.code_stack v.name v.code).trans (by have := v.stack; omega_using [this]), hb⟩
 
 theorem powOk (n e : Nat) (hn : 0 < n := by decide) (hn48 : n ≤ 48 := by decide) (he : 0 < e := by decide)
-    (hen : e ≤ 2 * n := by decide) (hs : FrameStack.armStack (Impl.Dsa.Arm.Pow.body n e) ≤ 176 := by decide) :
-    PowOk n e (Impl.Dsa.Arm.Pow.body n e) :=
+    (hen : e ≤ 2 * n := by decide) (hs : FrameStack.armStack (Impl.Dsa.Arm.Pow.body umaal n e) ≤ 176 := by decide) :
+    PowOk n e (Impl.Dsa.Arm.Pow.body umaal n e) :=
   ⟨Proof.Dsa.Arm.Pow.powArm_correct hn hn48 he hen, Proof.Dsa.Arm.Pow.powArm_ct n e hn hn48, hs⟩
 
 /-- A geometry's proofs, from its facts that do not depend on the call. -/
@@ -248,15 +252,16 @@ theorem genOk {g : Geo} {HO : HashOk g.G} {n pL qL : Nat} {G : GP} (hex : ∃ σ
     (gq : g.qLen = qL) (hk4 : 4 * g.G.k = qL) (hH : ∀ m, HO.H m = Spec.Dsa.seedHash (8 * qL) m)
     (hsize : keyOff + 8 * keyWords (8 * pL) ≤ wa pL) (hsizeq : keyOff + 8 * keyWords (8 * qL) ≤ wa pL)
     (hb8 : 8 * qL / 8 ≤ wa pL) (hlen : ∀ bs, 8 * (Spec.Dsa.seedHash (8 * qL) bs).length = 8 * qL)
-    (hck : g.checkCode = VG.Impl.Dsa.Arm.Generate.checkParameters) (hn : 8 * n = pL) (hpm : g.powMod = modS n)
+    (hck : g.checkCode = VG.Impl.Dsa.Arm.Generate.checkParameters umaal) (hn : 8 * n = pL) (hpm : g.powMod = modS n)
     (hpb : g.powBase = baseS n) (hpe : g.powExp = expS n) (hpr : g.powRes = resS n)
     (hctx : contextBytes n ≤ wa pL) (he4 : 4 * g.e ≤ 8 * n) (he0 : 0 < g.e)
     (he : 8 * pL - 8 * qL + 1 ≤ 32 * g.e) : GenOk G g HO n := by
   obtain ⟨σ, pre, rfl⟩ := hex
   subst hp hq
   exact {
-    okq, okp, certs, gcerts, pow, hk4, hH, hsize, hsizeq, hb8, hlen, hck, hn, hpm, hpb, hpe, hpr, hctx, he4,
+    okq, okp, certs, gcerts, pow, hk4, hH, hsize, hsizeq, hb8, hlen, hn, hpm, hpb, hpe, hpr, hctx, he4,
     he0, he
+    hck := ⟨_, hck⟩
     hlq := pre.lens
     hp := gp
     hq := gq
@@ -282,11 +287,11 @@ theorem gStepCerts {g : Geo} (pL n e : Nat) (hp : g.pLen = pL) (he : g.e = e) (h
   rw [← hp, ← hm, ← hb, ← hx, ← hr, ← he] at *
   exact ⟨mod, base, exp, res, st⟩
 
-def geo1 (v : RoundImpl) : Geo := geo 128 20 sha1 v
-def geo2 (v : RoundImpl) : Geo := geo 256 32 sha256 v
-def geo3 (v : RoundImpl) : Geo := geo 384 32 sha256 v
+def geo1 (umaal : Bool) (v : RoundImpl) : Geo := geo umaal 128 20 sha1 v
+def geo2 (umaal : Bool) (v : RoundImpl) : Geo := geo umaal 256 32 sha256 v
+def geo3 (umaal : Bool) (v : RoundImpl) : Geo := geo umaal 384 32 sha256 v
 
-theorem certs1 (v : RoundImpl) : GStepCerts (geo1 v) :=
+theorem certs1 (v : RoundImpl) : GStepCerts (geo1 umaal v) :=
   gStepCerts 128 16 28 rfl rfl rfl rfl rfl rfl
     ⟨VG.Taint.hintOfSize VG.Arm.taint 4096 (Taint.ofRegs [.r7, .r8, .r9])
       (copyN (scr 128 .r0 (sA + modS 16)) (ptr .r1 aP) 128), by kernel_rfl⟩
@@ -298,7 +303,7 @@ theorem certs1 (v : RoundImpl) : GStepCerts (geo1 v) :=
       (copyN (ptr .r0 aG) (scr 128 .r1 (sA + resS 16)) 128), by kernel_rfl⟩
     ⟨VG.Taint.hintOfSize VG.Arm.taint 4096 (Taint.ofRegs [.r7, .r8, .r9]) (storeBE 128 aG sG 128), by kernel_rfl⟩
 
-theorem certs2 (v : RoundImpl) : GStepCerts (geo2 v) :=
+theorem certs2 (v : RoundImpl) : GStepCerts (geo2 umaal v) :=
   gStepCerts 256 32 57 rfl rfl rfl rfl rfl rfl
     ⟨VG.Taint.hintOfSize VG.Arm.taint 4096 (Taint.ofRegs [.r7, .r8, .r9])
       (copyN (scr 256 .r0 (sA + modS 32)) (ptr .r1 aP) 256), by kernel_rfl⟩
@@ -310,7 +315,7 @@ theorem certs2 (v : RoundImpl) : GStepCerts (geo2 v) :=
       (copyN (ptr .r0 aG) (scr 256 .r1 (sA + resS 32)) 256), by kernel_rfl⟩
     ⟨VG.Taint.hintOfSize VG.Arm.taint 4096 (Taint.ofRegs [.r7, .r8, .r9]) (storeBE 256 aG sG 256), by kernel_rfl⟩
 
-theorem certs3 (v : RoundImpl) : GStepCerts (geo3 v) :=
+theorem certs3 (v : RoundImpl) : GStepCerts (geo3 umaal v) :=
   gStepCerts 384 48 89 rfl rfl rfl rfl rfl rfl
     ⟨VG.Taint.hintOfSize VG.Arm.taint 4096 (Taint.ofRegs [.r7, .r8, .r9])
       (copyN (scr 384 .r0 (sA + modS 48)) (ptr .r1 aP) 384), by kernel_rfl⟩
@@ -322,10 +327,10 @@ theorem certs3 (v : RoundImpl) : GStepCerts (geo3 v) :=
       (copyN (ptr .r0 aG) (scr 384 .r1 (sA + resS 48)) 384), by kernel_rfl⟩
     ⟨VG.Taint.hintOfSize VG.Arm.taint 4096 (Taint.ofRegs [.r7, .r8, .r9]) (storeBE 384 aG sG 384), by kernel_rfl⟩
 
-def geoOk1 (v : RoundImpl) : GeoOk (geo1 v) 128 20 where
+def geoOk1 (umaal : Bool) (v : RoundImpl) : GeoOk (geo1 umaal v) 128 20 where
   HO := sha1Ok
   n := 16
-  ok _ hex hp hq := genOk hex hp hq (primeOk v 160) (primeOk v 1024) pArithCerts_128 (certs1 v) (powOk 16 28)
+  ok _ hex hp hq := genOk hex hp hq (primeOk v 160) (primeOk v 1024) pArithCerts_128 (certs1 v) (powOk 16 28 (hs := by cases umaal <;> decide))
     rfl rfl rfl (fun _ => rfl) (by decide) (by decide) (by decide) (fun bs => by
       show 8 * (Spec.Sha1.hash bs).length = _; rw [sha1_length]) rfl rfl rfl rfl rfl rfl (by decide)
     (by exact (by decide : 4 * 28 ≤ 8 * 16)) (by exact (by decide : 0 < 28))
@@ -333,10 +338,10 @@ def geoOk1 (v : RoundImpl) : GeoOk (geo1 v) 128 20 where
   hlb := by exact (by decide : Proof.Sha1.md.lenBytes 20 =
     [0, 0, 0, 0, 0, 0, BitVec.ofNat 8 (8 * 20 / 256), BitVec.ofNat 8 (8 * 20 % 256)])
 
-def geoOk2 (v : RoundImpl) : GeoOk (geo2 v) 256 32 where
+def geoOk2 (umaal : Bool) (v : RoundImpl) : GeoOk (geo2 umaal v) 256 32 where
   HO := sha256Ok
   n := 32
-  ok _ hex hp hq := genOk hex hp hq (primeOk v 256) (primeOk v 2048) pArithCerts_256 (certs2 v) (powOk 32 57)
+  ok _ hex hp hq := genOk hex hp hq (primeOk v 256) (primeOk v 2048) pArithCerts_256 (certs2 v) (powOk 32 57 (hs := by cases umaal <;> decide))
     rfl rfl rfl (fun _ => rfl) (by decide) (by decide) (by decide) (fun bs => by
       show 8 * (Spec.Sha256.hash bs).length = _; rw [sha256_length]) rfl rfl rfl rfl rfl rfl (by decide)
     (by exact (by decide : 4 * 57 ≤ 8 * 32)) (by exact (by decide : 0 < 57))
@@ -344,10 +349,10 @@ def geoOk2 (v : RoundImpl) : GeoOk (geo2 v) 256 32 where
   hlb := by exact (by decide : Proof.Sha256.md.lenBytes 32 =
     [0, 0, 0, 0, 0, 0, BitVec.ofNat 8 (8 * 32 / 256), BitVec.ofNat 8 (8 * 32 % 256)])
 
-def geoOk3 (v : RoundImpl) : GeoOk (geo3 v) 384 32 where
+def geoOk3 (umaal : Bool) (v : RoundImpl) : GeoOk (geo3 umaal v) 384 32 where
   HO := sha256Ok
   n := 48
-  ok _ hex hp hq := genOk hex hp hq (primeOk v 256) (primeOk v 3072) pArithCerts_384 (certs3 v) (powOk 48 89)
+  ok _ hex hp hq := genOk hex hp hq (primeOk v 256) (primeOk v 3072) pArithCerts_384 (certs3 v) (powOk 48 89 (hs := by cases umaal <;> decide))
     rfl rfl rfl (fun _ => rfl) (by decide) (by decide) (by decide) (fun bs => by
       show 8 * (Spec.Sha256.hash bs).length = _; rw [sha256_length]) rfl rfl rfl rfl rfl rfl (by decide)
     (by exact (by decide : 4 * 89 ≤ 8 * 48)) (by exact (by decide : 0 < 89))
@@ -355,9 +360,16 @@ def geoOk3 (v : RoundImpl) : GeoOk (geo3 v) 384 32 where
   hlb := by exact (by decide : Proof.Sha256.md.lenBytes 32 =
     [0, 0, 0, 0, 0, 0, BitVec.ofNat 8 (8 * 32 / 256), BitVec.ofNat 8 (8 * 32 % 256)])
 
+/-- The pairs the parameter search is emitted for, best first: the arithmetic and the
+Miller–Rabin round for the same CPUs. Any other pair needs the features of one of these,
+which runs both with them. -/
+def searchPairs : List (Proof.Variants.DsaArithmetic.Arm.Variant × RoundImpl) :=
+  Proof.Variants.DsaArithmetic.Arm.variants.flatMap fun a =>
+    Proof.Variants.MillerRabin.Arm.variants.filterMap fun r => if a.suffix == r.suffix then some (a, r) else none
+
 /-- `vg_dsa_parameter_search` over the round `v` meets its contract. -/
 theorem search_params (v : RoundImpl) :
-    Verified target (code (geo1 v) (geo2 v) (geo3 v)) (Spec.Dsa.parameterSearchContract abi 304) :=
-  search_verified (geoOk1 v) (geoOk2 v) (geoOk3 v)
+    Verified target (code (geo1 umaal v) (geo2 umaal v) (geo3 umaal v)) (Spec.Dsa.parameterSearchContract abi 304) :=
+  search_verified (geoOk1 umaal v) (geoOk2 umaal v) (geoOk3 umaal v)
 
 end VG.Proof.Dsa.Arm.Gen

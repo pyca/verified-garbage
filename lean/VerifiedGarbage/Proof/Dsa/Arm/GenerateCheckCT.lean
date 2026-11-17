@@ -28,6 +28,8 @@ open VG.Impl.Dsa.Arm VG.Impl.Dsa.Layout
 open VG.Proof.X25519.Arm (Rest eval_eq)
 open VG.Proof.Ecdsa.Arm (mask32)
 
+variable {umaal : Bool}
+
 /-- The domain's operands. -/
 def checkIns (pLen qLen : Nat) : List (Pointer × Nat) := [(.input .p, pLen), (.input .q, qLen), (.input .g, pLen)]
 
@@ -83,7 +85,7 @@ theorem check_bytes {s₁ s₂ : State} (hl : (checkParams s₁).map (·.toNat) 
   rw [← hr0, ← hr1] at E
   rw [← VG.Proof.Dsa.bytesAt_slice _ _ hol, ← VG.Proof.Dsa.bytesAt_slice _ _ hol, E]
 
-theorem check_constantTime : ConstantTime isa checkArm.pre checkArm.pub Generate.checkParameters := by
+theorem check_constantTime : ConstantTime isa checkArm.pre checkArm.pub (Generate.checkParameters umaal) := by
   refine SameTrace.constantTime fun s₁ s₂ h₁ h₂ pub => ?_
   obtain ⟨hsp, hl, hr0, hr1, hr2, hr3, ha⟩ := pub
   have a0 := ha 0 (by decide)
@@ -111,7 +113,7 @@ theorem check_constantTime : ConstantTime isa checkArm.pre checkArm.pub Generate
       have E := Env.of_installed I (by rw [hz₂]; omega_arith)
       rwa [hb₂, hz₂] at E)
     fun u₁ u₂ E₁ E₂ => ?_
-  refine genDispatch_trace Generate.checkSized _ E₁.ws E₂.ws (by omega_arith) (by omega_arith) (genWidths_mem hv) (by decide)
+  refine genDispatch_trace (Generate.checkSized umaal) _ E₁.ws E₂.ws (by omega_arith) (by omega_arith) (genWidths_mem hv) (by decide)
     (by rw [E₁.field (d := 100) (v := s₁.gpr .r2) (by simp)]) (by rw [E₁.field (d := 104) (v := s₁.gpr .r3) (by simp)])
     (by rw [E₂.field (d := 100) (v := s₂.gpr .r2) (by simp), hr2])
     (by rw [E₂.field (d := 104) (v := s₂.gpr .r3) (by simp), hr3])

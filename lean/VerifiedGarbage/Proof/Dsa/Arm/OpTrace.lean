@@ -28,6 +28,8 @@ open VG VG.Arm VG.Impl.Mont.Arm VG.Impl.Mont.Arm.Dynamic VG.Proof.Mont VG.Proof.
 open VG.Impl.Dsa.Arm VG.Impl.Dsa.Layout
 open VG.Proof.X25519.Arm (Rest eval_eq)
 
+variable {umaal : Bool}
+
 /-- The operation after the dispatch: the registers restored. -/
 abbrev Tail : Prog isa := .seq (.block Entry.restore) (.block [])
 
@@ -38,7 +40,7 @@ theorem tail_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ : Nat} (h�
 
 /-- An entry: its stack arguments are the same and apart from the writable regions. -/
 theorem entry_relCT (n : Nat) (is : List Instr)
-    (h : (taint.checkBlock (argTaint [] n) is).map (taint.le (argTaint [] n)) = some true) :
+    (h : (taintU.checkBlock (argTaint [] n) is).map (taintU.le (argTaint [] n)) = some true) :
     RelCT isa (VG.Arm.Taint.Agree (argTaint [] n)) (.block is) (fun _ _ => True) :=
   (relCT_of_check (h := .block []) h).mono (fun _ _ h => h) fun _ _ _ => trivial
 
@@ -58,7 +60,7 @@ theorem widthMatch_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ pLen
     SameTrace isa (Entry.widthMatch wp wq) s₁ s₂ := by
   unfold Entry.widthMatch
   refine SameTrace.seq (SameTrace.of_relCT (erased_relCT (σ := T0) (c₀ := .block [.ldr .r4 .r12 0, .movw .r5 0,
-      .cmp .r4 (.reg .r5)]) (VG.Taint.hintOf taint T0 (.block [.ldr .r4 .r12 0, .movw .r5 0, .cmp .r4 (.reg .r5)]))
+      .cmp .r4 (.reg .r5)]) (VG.Taint.hintOf taintU T0 (.block [.ldr .r4 .r12 0, .movw .r5 0, .cmp .r4 (.reg .r5)]))
       (by kernel_rfl) (wsT_noBase _ _) (by kernel_rfl)) (agree0 h₁ h₂))
     (matchOne_ok (d := 100) h₁ (by decide) (by omega_using [hz₁]) bp) (matchOne_ok (d := 100) h₂ (by decide) (by omega_using [hz₂]) bp)
     fun u₁ u₂ ⟨Z₁, R₁, _⟩ ⟨Z₂, R₂, _⟩ => ?_
@@ -66,7 +68,7 @@ theorem widthMatch_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ pLen
   have w₂ := h₂.of_rest R₂ (by decide)
   refine SameTrace.ite (by rw [eval_eq, eval_eq, Z₁, Z₂, hp₁, hp₂]) (fun _ => ?_) (fun _ => ?_)
   · exact SameTrace.of_relCT (erased_relCT (σ := T0) (c₀ := .block [.ldr .r4 .r12 0, .movw .r5 0,
-      .cmp .r4 (.reg .r5)]) (VG.Taint.hintOf taint T0 (.block [.ldr .r4 .r12 0, .movw .r5 0, .cmp .r4 (.reg .r5)]))
+      .cmp .r4 (.reg .r5)]) (VG.Taint.hintOf taintU T0 (.block [.ldr .r4 .r12 0, .movw .r5 0, .cmp .r4 (.reg .r5)]))
       (by kernel_rfl) (wsT_noBase _ _) (by kernel_rfl)) (agree0 w₁ w₂)
   · exact SameTrace.of_relCT (block_relCT_T0 _ rfl) (agree0 w₁ w₂)
 
@@ -77,8 +79,8 @@ theorem widthDispatch_trace (signing : Bool) (widths : List (Nat × Nat))
     (hp₁ : (hdr base s₁ 100).toNat = pLen) (hq₁ : (hdr base s₁ 104).toNat = qLen)
     (hp₂ : (hdr base s₂ 100).toNat = pLen) (hq₂ : (hdr base s₂ 104).toNat = qLen)
     (body : ∀ t₁ t₂, Rest [.r4, .r5] s₁ t₁ → t₁.mem = s₁.mem → Rest [.r4, .r5] s₂ t₂ → t₂.mem = s₂.mem →
-      SameTrace isa (.seq (Entry.sized signing pLen qLen) Tail) t₁ t₂) :
-    SameTrace isa (.seq (Entry.widthDispatch signing widths) Tail) s₁ s₂ := by
+      SameTrace isa (.seq (Entry.sized umaal signing pLen qLen) Tail) t₁ t₂) :
+    SameTrace isa (.seq (Entry.widthDispatch umaal signing widths) Tail) s₁ s₂ := by
   induction widths generalizing s₁ s₂ with
   | nil => simp only [List.not_mem_nil] at member
   | cons w rest ih =>
@@ -132,7 +134,7 @@ theorem failure_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ : Nat} 
   · simp only [Entry.failure, ↓reduceIte, Core.sequence, List.foldr]
     refine SameTrace.assoc_left (SameTrace.seq (SameTrace.of_relCT (block_relCT_T0 _ rfl) (agree0 h₁ h₂))
       (failureHead_ok h₁ hz₁) (failureHead_ok h₂ hz₂) fun u₁ u₂ ⟨A₁, L₁, w₁⟩ ⟨A₂, L₂, w₂⟩ => ?_)
-    exact SameTrace.of_relCT ((relCT_of_check (σ := Taint.ofRegs []) (h := VG.Taint.hintOf taint (wsT true true)
+    exact SameTrace.of_relCT ((relCT_of_check (σ := Taint.ofRegs []) (h := VG.Taint.hintOf taintU (wsT true true)
       (.seq (.seq (.loop (.block [.strb .r4 .r11 0, .dp .add .r11 .r11 (.imm 1), .cmp .r11 (.reg .lr)]) .ne)
         (.seq (.block [.mov .r0 (.imm 0)]) (.block []))) Tail)) (by kernel_rfl)).mono (fun _ _ h => h) fun _ _ _ => trivial)
       (agreeWs true true w₁ w₂ (fun _ => by rw [A₁, A₂, ho rfl]) (fun _ => by rw [L₁, L₂, ho rfl, hq rfl]))

@@ -32,6 +32,8 @@ open VG VG.Arm VG.Proof.Mont VG.Impl.Dsa.Arm VG.Impl.Dsa.Arm.Random VG.Impl.Dsa.
 open VG.Proof.X25519.Arm (Rest Upd Mupd Fupd wp_mov wp_dp wp_cmp wp_str op2_imm op2_reg eval_eq eval_ne
   ofNat_beq_zero toNat_imm)
 
+variable {umaal : Bool}
+
 /-! ## The specification's result -/
 
 /-- The checks of the domain, as the specification makes them. -/
@@ -248,7 +250,7 @@ theorem rResult_key {s₀ : State} (A : KeyABI s₀) : (rResult s₀).status ≠
 /-! ## The body -/
 
 theorem body_ok (check derive : String) {s₀ : State} (A : KeyABI s₀) :
-    WP isa (body check derive Generate.checkParameters Generate.deriveChecked) (allocated frameBytes s₀)
+    WP isa (body check derive (Generate.checkParameters umaal) (Generate.deriveChecked umaal)) (allocated frameBytes s₀)
       fun u => Finished s₀ u := by
   obtain hql := rQBytes_le A
   obtain hqn := rQBytes_length A
@@ -268,7 +270,7 @@ theorem body_ok (check derive : String) {s₀ : State} (A : KeyABI s₀) :
   obtain h₄ := h₃.fupd f₄
   have m₄ : t₄.mem = t₃.mem := f₄.mem
   rw [r0₃] at z₄
-  suffices H : WP isa (.ite .eq (.block []) (generate derive Generate.deriveChecked)) t₄ (RFin s₀) from
+  suffices H : WP isa (.ite .eq (.block []) (generate derive (Generate.deriveChecked umaal))) t₄ (RFin s₀) from
     WP.seq (WP.mono H fun u hu => rfinish_ok A hu (rResult_status_le A) (rResult_key A))
   by_cases hc : rChecked s₀ = true
   · rw [hc] at z₄

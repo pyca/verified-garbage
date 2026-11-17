@@ -42,6 +42,8 @@ open VG.Proof.X25519.Arm (Rest Upd Mupd Fupd wp_mov wp_dp wp_cmp op2_imm op2_reg
   ofNat_beq_zero toNat_imm)
 open VG.Arm.FrameStack (armStack belowA)
 
+variable {umaal : Bool}
+
 /-! ## The frame's saved words -/
 
 /-- The callee-saved registers and the register arguments, in their slots. -/
@@ -345,7 +347,7 @@ theorem callKey {s₀ t : State} (A : RandomABI s₀) (h : RReady s₀ t) :
   · exact A.usedKey.symm
 
 /-- `vg_dsa_sign` uses no stack of its own. -/
-theorem sign_armStack : armStack (Entry.operation true) = 0 := by decide +kernel
+theorem sign_armStack : armStack (Entry.operation umaal true) = 0 := by cases umaal <;> decide +kernel
 
 open VG.Spec.Rsa (bytesAt) in
 /-- `signArm` under an extra precondition `valid` on the exact packed key

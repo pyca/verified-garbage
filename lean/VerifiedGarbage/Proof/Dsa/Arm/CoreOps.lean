@@ -621,6 +621,8 @@ open VG VG.Arm VG.Impl.Mont.Arm VG.Impl.Mont.Arm.Dynamic VG.Proof.Mont VG.Proof.
 open VG.Impl.Dsa.Arm VG.Impl.Dsa.Layout
 open VG.Proof.X25519.Arm (Rest Upd Mupd Fupd wp_mov wp_str wp_ldr wp_dp wp_movw op2_imm op2_reg dpVal)
 
+variable {umaal : Bool}
+
 /-- What an operation keeps: the registers but `coreClob`, and the memory but
 the arithmetic's and the output's. -/
 structure Stage (base : Addr) (s t : State) (output len : Nat) : Prop where
@@ -692,7 +694,7 @@ theorem power_ok {s : State} {base : Addr} {size len expLen n m output : Nat} {a
     (Rq : Ready s base (.input modulus) len) (Ra : Ready s base a len) (Rb : Ready s base b expLen)
     (hm : operand base s (.input modulus) len = m) (hm1 : 1 < m) (hodd : m % 2 = 1)
     (ho : 4960 ≤ output) (ho' : output + len ≤ size) (h16o : output < 2 ^ 16) :
-    WP isa (Core.power len expLen modulus a b output) s fun t =>
+    WP isa (Core.power umaal len expLen modulus a b output) s fun t =>
       Spec.Rsa.bytesAt t.mem (off base output) len =
         Spec.Dsa.encodeBE len (operand base s a len ^ operand base s b expLen % m) ∧
       Stage base s t output len := by
@@ -753,7 +755,7 @@ theorem productMod_ok {s : State} {base : Addr} {size len n m output : Nat} {a b
     (Rq : Ready s base (.input modulus) len) (Ra : Ready s base a len) (Rb : Ready s base b len)
     (hm : operand base s (.input modulus) len = m) (hm1 : 1 < m) (hodd : m % 2 = 1)
     (ho : 4960 ≤ output) (ho' : output + len ≤ size) (h16o : output < 2 ^ 16) :
-    WP isa (Core.productMod len modulus a b output) s fun t =>
+    WP isa (Core.productMod umaal len modulus a b output) s fun t =>
       Spec.Rsa.bytesAt t.mem (off base output) len =
         Spec.Dsa.encodeBE len (operand base s a len * operand base s b len % m) ∧
       Stage base s t output len := by

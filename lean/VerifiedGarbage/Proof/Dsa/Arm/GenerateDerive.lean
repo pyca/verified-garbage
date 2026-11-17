@@ -439,6 +439,8 @@ open VG.Impl.Dsa.Arm
 open VG.Proof.Ecdsa.Arm (mask32)
 open VG.Proof.X25519.Arm (Rest eval_eq wp_mov wp_movw wp_dp op2_imm op2_reg dpVal)
 
+variable {umaal : Bool}
+
 /-- Key derivation, by the checks the code makes. -/
 theorem deriveKeyBytes_iff {pLen qLen : Nat} {params x : List Byte}
     (hl : Spec.Dsa.lengthsValid pLen qLen) (hpl : params.length = 2 * pLen + qLen) (hxl : x.length = qLen) :
@@ -668,7 +670,7 @@ theorem deriveWith_correct {compute : Nat → Nat → Prog isa} {C : Nat → Nat
       · rfl
 
 theorem derive_correct {s : State} (h : derivePre s) :
-    WP isa Generate.deriveKey s fun t => abiPreserved s t ∧ deriveArm.post s t :=
+    WP isa (Generate.deriveKey umaal) s fun t => abiPreserved s t ∧ deriveArm.post s t :=
   deriveWith_correct deriveCompute_computeOk h fun _ => Iff.rfl
 
 /-- A checked domain passes the domain's checks. -/
@@ -686,7 +688,7 @@ theorem deriveDomain_checked {s : State} (h : deriveCheckedArm.pre s) :
 /-- `vg_dsa_derive_key_checked`: the derivation without the domain's checks,
 which its precondition makes. -/
 theorem deriveChecked_correct {s : State} (h : deriveCheckedArm.pre s) :
-    WP isa Generate.deriveChecked s fun t => abiPreserved s t ∧ deriveCheckedArm.post s t :=
+    WP isa (Generate.deriveChecked umaal) s fun t => abiPreserved s t ∧ deriveCheckedArm.post s t :=
   deriveWith_correct keyCompute_computeOk h.1 fun _ =>
     ⟨fun k => ⟨deriveDomain_checked h, k⟩, fun k => k.2⟩
 

@@ -29,6 +29,8 @@ open VG VG.Arm VG.Impl.Mont.Arm VG.Impl.Mont.Arm.Dynamic VG.Proof.Mont VG.Proof.
 open VG.Impl.Dsa.Arm
 open VG.Proof.Ecdsa.Arm (mask32 mask32_and)
 
+variable {umaal : Bool}
+
 theorem countValue_stage {base : Addr} {s t : State} {o l : Nat} (St : Stage base s t o l) (ho : 116 ≤ o) :
     countValue base t Core.digestPrefix = countValue base s Core.digestPrefix :=
   countValue_keep St.mem (fun r hr => by
@@ -49,7 +51,7 @@ theorem sign_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G X K D c : 
     (hc : countValue base s Core.digestPrefix = c)
     (hq2 : localVal base s Impl.Dsa.Layout.qMinusTwo qLen = Q - 2)
     (hP : 1 < P) (hPo : P % 2 = 1) (hQ : 255 < Q) (hQo : Q % 2 = 1) :
-    WP isa (Core.sign pLen qLen) s fun t =>
+    WP isa (Core.sign umaal pLen qLen) s fun t =>
       localVal base t Impl.Dsa.Layout.r qLen = rValue P Q G K ∧
       localVal base t Impl.Dsa.Layout.s qLen = sValue P Q G X K D ∧
       maskW base t = maskW base s ∧ Run base s t := by
@@ -181,6 +183,8 @@ open VG VG.Arm VG.Proof.Mont VG.Proof.Mont.Arm VG.Proof.Mont.Arm.Dyn
 open VG.Impl.Dsa.Arm.PublicValidation
 open VG.Proof.X25519.Arm (Rest wp_mov op2_reg)
 
+variable {umaal : Bool}
+
 theorem slots_fit {size : Nat} (hz : 204 ≤ size) : Pow.Fit size slots := by
   intro x hx
   simp only [slots, List.mem_cons, List.not_mem_nil, or_false] at hx
@@ -220,7 +224,7 @@ theorem body_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G Y : Nat}
     (Ip : Input s base size (.input .p) pLen P) (Iq : Input s base size (.input .q) qLen Q)
     (Ig : Input s base size (.input .g) pLen G) (Iy : Input s base size (.input .y) pLen Y)
     (hP : 1 < P) (hPo : P % 2 = 1) (hQ : 255 < Q) (hQo : Q % 2 = 1) :
-    WP isa (body pLen qLen) s fun t =>
+    WP isa (body umaal pLen qLen) s fun t =>
       maskW base t = maskW base s &&& VG.Proof.Ecdsa.Arm.mask32 (publicChecks P Q G Y) ∧
       localVal base t Impl.Dsa.Layout.qMinusTwo qLen = Q - 2 ∧
       Outs base scratch s.mem t.mem ∧ (∀ r ∈ preserved, t.gpr r = s.gpr r) ∧
@@ -277,6 +281,8 @@ open VG.Impl.Dsa.Arm.PublicValidation
 open VG.Impl.Dsa.Layout
 open VG.Proof.X25519.Arm (wp_mov op2_reg)
 
+variable {umaal : Bool}
+
 theorem save_ok {s : State} {base : Addr} {size : Nat}
     (E : Pow.Entry s base size) (big : 204 ≤ size) :
     WP isa (.block save) s fun t => Ws t base size ∧
@@ -304,7 +310,7 @@ theorem body_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ pLen qLen 
     (PE : ∀ i ∈ inputs pLen qLen, PtrEq base s₁ s₂ i.1)
     (D₁ : DomainOk (val₁ (.input .p)) (val₁ (.input .q)))
     (D₂ : DomainOk (val₂ (.input .p)) (val₂ (.input .q))) :
-    SameTrace isa (body pLen qLen) s₁ s₂ := by
+    SameTrace isa (body umaal pLen qLen) s₁ s₂ := by
   have R0 : s₁.gpr .r0 = s₂.gpr .r0 := by
     apply BitVec.eq_of_toNat_eq
     have H := E₁.wb.trans E₂.wb.symm
@@ -369,6 +375,8 @@ open VG VG.Arm VG.Proof.Mont VG.Proof.Mont.Arm VG.Proof.Mont.Arm.Dyn
 open VG.Impl.Dsa.Arm.PublicValidation
 open VG.Proof.X25519.Arm (Rest wp_mov wp_movw wp_ldr op2_reg)
 
+variable {umaal : Bool}
+
 theorem head_ok {s : State} {base : Addr} {size : Nat} (W : Ws s base size) (big : 68 ≤ size)
     (pLen qLen : Nat) :
     WP isa (.block [.mov .r11 (.reg .r12), .mov .r0 (.reg .r12), .movw .r1 2048,
@@ -389,7 +397,7 @@ theorem call_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G Y : Nat}
     (Ip : Input s base size (.input .p) pLen P) (Iq : Input s base size (.input .q) qLen Q)
     (Ig : Input s base size (.input .g) pLen G) (Iy : Input s base size (.input .y) pLen Y)
     (hP : 1 < P) (hPo : P % 2 = 1) (hQ : 255 < Q) (hQo : Q % 2 = 1) :
-    WP isa (Impl.Dsa.Arm.PublicValidation.call pLen qLen) s fun t =>
+    WP isa (Impl.Dsa.Arm.PublicValidation.call umaal pLen qLen) s fun t =>
       maskW base t = maskW base s &&& VG.Proof.Ecdsa.Arm.mask32 (publicChecks P Q G Y) ∧
       localVal base t Impl.Dsa.Layout.qMinusTwo qLen = Q - 2 ∧ Run base s t := by
   unfold Impl.Dsa.Arm.PublicValidation.call
@@ -426,7 +434,7 @@ theorem call_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ : Nat}
     (mp : (.input .p, pLen) ∈ ins) (mq : (.input .q, qLen) ∈ ins) (mg : (.input .g, pLen) ∈ ins)
     (my : (.input .y, pLen) ∈ ins)
     (D₁ : DomainOk (val₁ (.input .p)) (val₁ (.input .q))) (D₂ : DomainOk (val₂ (.input .p)) (val₂ (.input .q))) :
-    SameTrace isa (Impl.Dsa.Arm.PublicValidation.call pLen qLen) s₁ s₂ := by
+    SameTrace isa (Impl.Dsa.Arm.PublicValidation.call umaal pLen qLen) s₁ s₂ := by
   have w₁ := X.C₁.S.ws
   have w₂ := X.C₂.S.ws
   unfold Impl.Dsa.Arm.PublicValidation.call
@@ -464,7 +472,7 @@ theorem call_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ : Nat}
     have H := X.E i (subset i hi)
     simp only [inputs, List.mem_cons, List.not_mem_nil, or_false] at hi
     rcases hi with rfl | rfl | rfl | rfl <;> simpa only [PtrEq, pointerValue, State.callEntry_mem, M₁, M₂] using H
-  have T := body_trace E₁ E₂ X.C₁.S.big X.C₂.S.big X.C₁.S.wp X.C₁.S.wq X.C₁.S.qp X.C₁.S.q32 I₁ I₂ PE D₁ D₂
+  have T := body_trace (umaal := umaal) E₁ E₂ X.C₁.S.big X.C₂.S.big X.C₁.S.wp X.C₁.S.wq X.C₁.S.qp X.C₁.S.q32 I₁ I₂ PE D₁ D₂
   intro tr₁ tr₂ t₁ t₂ Ex₁ Ex₂
   cases Ex₁ with
   | seq C₁ B₁ =>
@@ -507,6 +515,8 @@ namespace VG.Proof.Dsa.Arm
 open VG VG.Arm VG.Impl.Mont.Arm VG.Impl.Mont.Arm.Dynamic VG.Proof.Mont VG.Proof.Mont.Arm VG.Proof.Mont.Arm.Dyn
 open VG.Impl.Dsa.Arm
 
+variable {umaal : Bool}
+
 /-- The value the verification compares with `r`. -/
 abbrev verifyValue (P Q G Y R S D : Nat) : Nat :=
   (G ^ (D % Q * (S ^ (Q - 2) % Q) % Q) % P * (Y ^ (R * (S ^ (Q - 2) % Q) % Q) % P) % P) % Q
@@ -519,7 +529,7 @@ theorem verify_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G Y R S D 
     (Id : Input s base size (.input .digest) c D) (hc : countValue base s Core.digestPrefix = c)
     (hq2 : localVal base s Impl.Dsa.Layout.qMinusTwo qLen = Q - 2)
     (hP : 1 < P) (hPo : P % 2 = 1) (hQ : 255 < Q) (hQo : Q % 2 = 1) :
-    WP isa (Core.verify pLen qLen) s fun t =>
+    WP isa (Core.verify umaal pLen qLen) s fun t =>
       localVal base t Impl.Dsa.Layout.u qLen = verifyValue P Q G Y R S D ∧
       maskW base t = maskW base s ∧ Run base s t := by
   obtain ⟨q4, qp, p384, q32, pw, qw⟩ := Sc.lens
@@ -656,6 +666,8 @@ open VG VG.Arm VG.Impl.Mont.Arm VG.Impl.Mont.Arm.Dynamic VG.Proof.Mont VG.Proof.
 open VG.Impl.Dsa.Arm
 open VG.Proof.Ecdsa.Arm (mask32 mask32_and)
 
+variable {umaal : Bool}
+
 theorem countValue_run {base : Addr} {s t : State} (Rn : Run base s t) :
     countValue base t Core.digestPrefix = countValue base s Core.digestPrefix :=
   countValue_keep Rn.mem (by decide) (by simp only [CountOk, Core.digestPrefix]; decide)
@@ -672,7 +684,7 @@ theorem signCompute_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G Y X
     (Ix : Input s base size (.input .x) qLen X) (Ik : Input s base size (.input .nonce) qLen K)
     (Id : Input s base size (.input .digest) c D) (hc : countValue base s Core.digestPrefix = c)
     (hP : 1 < P) (hPo : P % 2 = 1) (hQ : 255 < Q) (hQo : Q % 2 = 1) :
-    WP isa (SignVerify.signCompute pLen qLen) s fun t =>
+    WP isa (SignVerify.signCompute umaal pLen qLen) s fun t =>
       maskW base t = maskW base s &&& mask32 (signChecks P Q G Y X K D) ∧
       localVal base t Impl.Dsa.Layout.r qLen = rValue P Q G K ∧
       localVal base t Impl.Dsa.Layout.s qLen = sValue P Q G X K D ∧ Run base s t := by
@@ -735,7 +747,7 @@ theorem verifyTail_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G Y R 
     (hP : 1 < P) (hPo : P % 2 = 1) (hQ : 255 < Q) (hQo : Q % 2 = 1) :
     WP isa (Core.sequence [
       .seq (Validate.range qLen .q (.input .signature)) (Validate.range qLen .q .signatureS),
-      Core.verify pLen qLen,
+      Core.verify umaal pLen qLen,
       Validate.equalValues qLen (.local Impl.Dsa.Layout.u) (.input .signature)]) s fun t =>
       maskW base t = maskW base s &&& mask32 ((0 < R ∧ R < Q) ∧ (0 < S ∧ S < Q) ∧ verifyValue P Q G Y R S D = R) ∧
         Run base s t := by

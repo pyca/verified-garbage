@@ -18,11 +18,6 @@ namespace VG.Proof.Mont.Arm.Dyn
 open VG VG.Arm VG.Impl.Mont VG.Impl.Mont.Arm VG.Impl.Mont.Arm.Dynamic VG.Proof.Mont VG.Proof.Mont.Arm
 open VG.Proof.X25519.Arm (Rest Upd Mupd Fupd wp_mov wp_str wp_ldr wp_dp wp_movw wp_subs op2_imm op2_reg dpVal)
 
-theorem val32_zeros {m : Mem} {base : Addr} {d : Nat} :
-    ∀ {k : Nat}, (∀ j < k, w32 m base (d + 4 * j) = 0) → val32 m base d k = 0
-  | 0, _ => rfl
-  | k + 1, h => by rw [val32_succ, val32_zeros fun j hj => h j (by omega_using [hj]), h k (by omega_using []), Nat.mul_zero]
-
 /-- `[out] = 1`, `2n` words. -/
 theorem one_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {n out : Nat} (hn : 0 < n)
     (hout : out + 8 * n ≤ size) (h16 : out + 8 * n < 2 ^ 16) :

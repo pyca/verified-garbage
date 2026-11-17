@@ -33,6 +33,8 @@ namespace VG.Proof.Dsa.Arm
 
 open VG VG.Arm VG.Impl.Dsa.Arm
 
+variable {umaal : Bool}
+
 /-- A state satisfying the precondition of `vg_dsa_derive_key`: x at
 `0x4000` and the output at `0x1000`. -/
 def deriveSat : State where
@@ -47,7 +49,7 @@ def deriveSat : State where
   rd := [⟨0x2000, 276⟩, ⟨0x4000, 20⟩, ⟨0x20000, 20⟩]
   wr := [⟨0x1000, 424⟩, ⟨0x8000, 16384⟩]
 
-theorem derive_verified : Verified Arm.target Generate.deriveKey (Spec.Dsa.deriveKeyContract Arm.abi 0) :=
+theorem derive_verified : Verified Arm.target (Generate.deriveKey umaal) (Spec.Dsa.deriveKeyContract Arm.abi 0) :=
   Verified.of_correct (fun _ hs => derive_correct hs) derive_constantTime (by
     sig_implies [Spec.Dsa.deriveKeyContract, Spec.Dsa.deriveKeySig, deriveArm, derivePre, deriveRes, deriveLeak,
       deriveParams, deriveX, arg, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr,
@@ -121,7 +123,7 @@ theorem deriveChecked_implies : deriveCheckedArm.Implies (Spec.Dsa.deriveKeyDoma
       sat := deriveCheckedSat_ok }
 
 theorem deriveChecked_verified :
-    Verified Arm.target Generate.deriveChecked (Spec.Dsa.deriveKeyDomainCheckedContract Arm.abi 0) :=
+    Verified Arm.target (Generate.deriveChecked umaal) (Spec.Dsa.deriveKeyDomainCheckedContract Arm.abi 0) :=
   Verified.of_correct (fun _ hs => deriveChecked_correct hs) deriveChecked_constantTime deriveChecked_implies
 
 end VG.Proof.Dsa.Arm
