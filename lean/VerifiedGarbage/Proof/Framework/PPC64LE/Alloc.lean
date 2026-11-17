@@ -52,6 +52,18 @@ theorem WP.alloc {bytes : Nat} {body : Prog isa} {s : State} {Q : State → Prop
     exact ite_eq_left_of_eq_true _ _ (eq_true ⟨hn.1, hn.2.1, hn.2.2, hp, hw, rfl⟩) |>.trans rfl
   exact ⟨_, _, Exec.frame (push_alloc hn hsp) he hf, hq _ _ (Frame.refl _ _)⟩
 
+/-- `WP.alloc`, for a postcondition that holds whatever the frame's bytes
+and the unknowns are once it holds of the state the `free` leads to (`hQ`):
+one that reads only registers, or memory apart from the frame. -/
+theorem WP.allocOf {bytes : Nat} {body : Prog isa} {s : State} {Q : State → Prop}
+    (hn : 32 < bytes ∧ bytes < 4096 ∧ bytes % 16 = 0) (hsp : bytes ≤ s.sp.toNat)
+    (hb : WP isa body (allocated bytes s) fun s₂ => Q (freed bytes s₂))
+    (hQ : ∀ (s₂ : State) m u, Frame [⟨s.sp - BitVec.ofNat 64 bytes, bytes⟩] s₂.mem m →
+      Q (freed bytes s₂) → Q { freed bytes s₂ with mem := m, unknowns := u }
+      := by intro _ _ _ _ h; exact h) :
+    WP isa (.frame (.alloc bytes) body (.free bytes)) s Q :=
+  WP.alloc hn hsp (WP.mono hb fun s₂ hq m u f => hQ s₂ m u f hq)
+
 /-- Superseded by `WP.alloc`, which holds whatever the freed frame's bytes hold: kept
 until the proofs that use it are moved over (see pyca/verified-garbage#5321). A frame of `bytes` bytes: its body runs from `allocated bytes s`, and the
 frame is freed to `freed bytes s₂`. -/

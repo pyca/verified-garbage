@@ -261,6 +261,20 @@ theorem WP.frameRegAny {r : Reg} {main : Prog isa} {s₀ : State} {Q : State →
     intro m u f
     rw [e]; exact hq m u f
 
+/-- `WP.frameRegAny`, for a postcondition that holds whatever the frame's
+bytes and the unknowns are once it holds of the state the pop leads to
+(`hQ`, as `WP.frameRegOf`). -/
+theorem WP.frameRegAnyOf {r : Reg} {main : Prog isa} {s₀ : State} {Q : State → Prop}
+    (hsp : 48 ≤ s₀.sp.toNat) (hd : ∀ R ∈ s₀.wr, Region.Disjoint ⟨s₀.sp - 48 + 32, 16⟩ R)
+    (hmain : WP isa main (framed r s₀) fun s₂ => Q { s₂.write r (s₀.gpr r) with sp := s₀.sp })
+    (hn : sdepth main + 48 < 2 ^ 64)
+    (hQ : ∀ (s₂ : State) m u, Frame [⟨s₀.sp - 48, 48⟩] s₂.mem m →
+      Q { s₂.write r (s₀.gpr r) with sp := s₀.sp } →
+        Q { s₂.write r (s₀.gpr r) with sp := s₀.sp, mem := m, unknowns := u }
+      := by intro _ _ _ _ h; exact h) :
+    WP isa (.frame (.push r) main (.pop r)) s₀ Q :=
+  WP.frameRegAny hsp hd (WP.mono hmain fun s₂ hq m u f => hQ s₂ m u f hq) hn
+
 /-- Superseded by `WP.frameRegAny`, which holds whatever the released frame's bytes hold: kept
 until the proofs that use it are moved over (see pyca/verified-garbage#5321). `WP.frameRegKept` for a body with any frames. -/
 theorem WP.frameRegAnyKept {r : Reg} {main : Prog isa} {s₀ : State} {Q : State → Prop}
