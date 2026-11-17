@@ -45,6 +45,14 @@ registers they change beyond `r0`–`r3`, and never write `r9`–`r11` or `lr`:
 `[o]` is written only after `[a]` and `[b]` are read, so the result may
 overlap either operand.
 
+`vg_<curve>_mul_mod_<p|n>_umaal` (`mulFnU`) is the product's entry and rows
+on packed 32-bit words, with one `umaal` a word (`Packed.rowU`), whose
+accumulator (`2 n` words and a top word, below `2 m`) it then reduces into
+`[o]` as the sum is (`redU`), on words and with no 16-bit digits: the carry
+of the accumulator's words plus `2^(64 n) - m`, or the top word, says
+whether it is at least `m`, and `[o]` is those words plus `2^(64 n) - m`
+times that bit.
+
 The own working space is the `64 n` bytes from `own n = 4096 - 64 n`: the
 accumulator (`32 n + 8` bytes), the temporary area and the modulus (`8 n`
 each), and the saved registers (28 bytes), which fit for `n ≥ 3`. Every
@@ -110,13 +118,6 @@ def mulFn16 (n m : Nat) : Prog isa := fn n m .r4 (mulR (mod n m) (own n) 0 0 0 .
 /-- Larger curves scan packed 32-bit words, preserving the curve calling convention. -/
 def mulFn (n m : Nat) : Prog isa :=
   if n = 6 ∨ n = 8 ∨ n = 9 then fn n m .r4 (Packed.mulR (mod n m) (own n)) else mulFn16 n m
-
-/-- `vg_<curve>_mul_mod_<p|n>_umaal`: the packed words' rows with one `umaal`
-a word (`Packed.rowU`; the CPU feature `umaal`). -/
-def mulFnU (n m : Nat) : Prog isa := fn n m .r4 (Packed.mulR (mod n m) (own n) true)
-
-/-- `mulFn`, or with `u` `mulFnU`. -/
-def mulFnWith (u : Bool) (n m : Nat) : Prog isa := if u then mulFnU n m else mulFn n m
 
 /-- `vg_<curve>_add_mod_<p|n>`. -/
 def addFn (n m : Nat) : Prog isa := fn n m .r2 (.block (addR (mod n m) (own n) 0 0 0 .r1 .r2 .lr))
@@ -193,6 +194,30 @@ def addFnWith (u : Bool) (n m : Nat) : Prog isa := if u then addFnU n m else add
 
 /-- `subFn`, or with `u` `subFnU`. -/
 def subFnWith (u : Bool) (n m : Nat) : Prog isa := if u then subFnU n m else subFn n m
+
+/-! ## The product with `umaal` -/
+
+/-- Word `i` of `[acc] + x`, of which only the carry is kept (`r5`); `r6 = 1`. -/
+def cmpStepU (acc x i : Nat) : List Instr :=
+  ([.ldr .r4 wb (acc + 4 * i)] : List Instr) ++ loadWord .r0 x i ++ ([.umaal .r4 .r5 .r0 .r6] : List Instr)
+
+/-- `[r1] = [acc] mod m` (`r1` an offset), for the number below `2 m` of `w`
+words and a top word, 0 or 1, at `[acc]`, and `x = 2^(32 w) - m`: the carry
+of its `w` words plus `x`, or the top word, says whether it is at least `m`,
+and `[r1]` is its `w` words plus `x` times that bit. -/
+def redU (acc x w : Nat) : List Instr :=
+  ([.mov .r6 (.imm 1), .mov .r5 (.imm 0)] : List Instr) ++ (List.range w).flatMap (cmpStepU acc x) ++
+    ([.ldr .r4 wb (acc + 4 * w), .dp .add .r6 .r5 (.reg .r4)] : List Instr) ++ mulAddU acc x w
+
+/-- `vg_<curve>_mul_mod_<p|n>_umaal`: the packed words' rows with one `umaal`
+a word (`Packed.rowU`; the CPU feature `umaal`), then `redU` with `r1 = o`. -/
+def mulFnU (n m : Nat) : Prog isa := fn n m .r4 <|
+  .seq (.block (zeros (own n) (2 * n + 2) ++ [.mov .r9 (.imm (BitVec.ofNat 32 (2 * n)))])) <|
+  .seq (.loop (.block (Packed.round (mod n m) (own n) true)) .ne) <|
+  .block (.dp .sub .r1 .lr (.reg wb) :: redU (own n) (2 ^ (64 * n) - m) (2 * n))
+
+/-- `mulFn`, or with `u` `mulFnU`. -/
+def mulFnWith (u : Bool) (n m : Nat) : Prog isa := if u then mulFnU n m else mulFn n m
 
 /-! ## Calls of the functions -/
 

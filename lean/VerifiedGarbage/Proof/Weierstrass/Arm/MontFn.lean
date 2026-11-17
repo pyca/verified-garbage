@@ -1741,6 +1741,12 @@ stored (`ModOkW`); then the operation, and the registers restored
 `lr` (`abiPreserved`), and changes the memory only at `[o]` and in its own
 working space (`Kept`).
 
+`mulFnU`, the product with `umaal` (`mulFnU_ok`, which states what
+`mulFn_ok` does), is `fn` of the rows of `Packed.loop_ok` and of `redU_ok`,
+which reduces their accumulator below `2 m` into `[o]`: `cmpStepsU_ok` is the
+carry of its words plus `2^(64 n) - m`, which with the top word is the bit
+(`addU_bit`) whose multiple of `2^(64 n) - m` `mulAddU_ok` adds (`addU_arith`).
+
 `fnU n k op`, the sum and the difference with `umaal` (`addFnU_ok`,
 `subFnU_ok`, which state what `addFn_ok` and `subFn_ok` do), saves only
 `k` registers and stores no modulus (`fnU_ok`): `addU_ok` and `subU_ok` add
@@ -2043,44 +2049,6 @@ theorem mulFn_ok {n m : Nat} (hM : ModOk n m) {s : State} (hp : Pre n m s)
     rw [eq, e.val hM hp.a, e.val hM hp.b] at value
     exact ⟨keep, bound, value⟩
   · exact mulFn16_ok hM hp hb
-
-set_option exponentiation.threshold 1024 in
-/-- `mulFn_ok` for `mulFnU`. -/
-theorem mulFnU_ok {n m : Nat} (hM : ModOk n m) {s : State} (hp : Pre n m s)
-    (hb : wordsVal s.mem (State.addr (s.gpr .r0)) (s.gpr .r3).toNat n < m) :
-    WP isa (mulFnU n m) s fun s' => abiPreserved s s' ∧
-      Kept n (State.addr (s.gpr .r0)) (s.gpr .r1).toNat s.mem s'.mem ∧
-      (wordsVal s'.mem (State.addr (s.gpr .r0)) (s.gpr .r1).toNat n < m ∧
-      wordsVal s'.mem (State.addr (s.gpr .r0)) (s.gpr .r1).toNat n * 2 ^ (64 * n) % m =
-        wordsVal s.mem (State.addr (s.gpr .r0)) (s.gpr .r2).toNat n *
-          wordsVal s.mem (State.addr (s.gpr .r0)) (s.gpr .r3).toNat n % m) ∧
-      s'.gpr .r12 = s.gpr .r0 := by
-  refine fn_ok (R := fun mem => wordsVal mem (State.addr (s.gpr .r0)) (s.gpr .r1).toNat n < m ∧
-    wordsVal mem (State.addr (s.gpr .r0)) (s.gpr .r1).toNat n * 2 ^ (64 * n) % m =
-      wordsVal s.mem (State.addr (s.gpr .r0)) (s.gpr .r2).toNat n *
-        wordsVal s.mem (State.addr (s.gpr .r0)) (s.gpr .r3).toNat n % m)
-    hM (by decide) hp fun s1 e => ?_
-  have := hM.n3; have := hM.n9
-  refine WP.mono (Packed.mulR_ok true e.scr e.mod rfl (by change 0 < n; omega_arith)
-    (by change n < 128; omega_using [this]) (opLay hM hp) e.ra e.rb e.ro
-    (by change wordsVal _ _ _ n < m; rw [e.val hM hp.b]; exact hb)) fun t ⟨keep, bound, value⟩ => ?_
-  have eq : (mod n m).n = n := rfl
-  rw [eq, e.val hM hp.a, e.val hM hp.b] at value
-  exact ⟨keep, bound, value⟩
-
-/-- `mulFn_ok` for `mulFnWith u`. -/
-theorem mulFnWith_ok (u : Bool) {n m : Nat} (hM : ModOk n m) {s : State} (hp : Pre n m s)
-    (hb : wordsVal s.mem (State.addr (s.gpr .r0)) (s.gpr .r3).toNat n < m) :
-    WP isa (mulFnWith u n m) s fun s' => abiPreserved s s' ∧
-      Kept n (State.addr (s.gpr .r0)) (s.gpr .r1).toNat s.mem s'.mem ∧
-      (wordsVal s'.mem (State.addr (s.gpr .r0)) (s.gpr .r1).toNat n < m ∧
-      wordsVal s'.mem (State.addr (s.gpr .r0)) (s.gpr .r1).toNat n * 2 ^ (64 * n) % m =
-        wordsVal s.mem (State.addr (s.gpr .r0)) (s.gpr .r2).toNat n *
-          wordsVal s.mem (State.addr (s.gpr .r0)) (s.gpr .r3).toNat n % m) ∧
-      s'.gpr .r12 = s.gpr .r0 := by
-  cases u
-  · exact mulFn_ok hM hp hb
-  · exact mulFnU_ok hM hp hb
 
 /-- `vg_<curve>_add_mod_<p|n>`: `[o] = [a] + [b] mod m`. -/
 theorem addFn_ok {n m : Nat} (hM : ModOk n m) {s : State} (hp : Pre n m s)
@@ -2787,5 +2755,212 @@ theorem subFnWith_noCalls (u : Bool) (n m : Nat) : (subFnWith u n m).noCalls = t
 theorem addFnWith_noFrames (u : Bool) (n m : Nat) : (addFnWith u n m).noFrames = true := by cases u <;> rfl
 
 theorem subFnWith_noFrames (u : Bool) (n m : Nat) : (subFnWith u n m).noFrames = true := by cases u <;> rfl
+
+/-! ## The product with `umaal` -/
+
+theorem cmpStepU_ok {s : State} {base : Addr} {acc x i : Nat} (hs : Scr s base 4096)
+    (one : s.gpr .r6 = 1) (ht : acc + 4 * i + 4 ≤ 4096)
+    (hk : 0 < i → s.gpr .r0 = BitVec.ofNat 32 (wordAt x (i - 1))) :
+    WP isa (.block (cmpStepU acc x i)) s fun u =>
+      u.mem = s.mem ∧
+      (u.gpr .r4).toNat + 2 ^ 32 * (u.gpr .r5).toNat =
+        w32 s.mem base (acc + 4 * i) + wordAt x i + (s.gpr .r5).toNat ∧
+      u.gpr .r0 = BitVec.ofNat 32 (wordAt x i) ∧ Rest [.r0, .r4, .r5] s u := by
+  simp only [cmpStepU, List.cons_append, List.nil_append]
+  refine wp_ldr (hs.off_lt (by omega_using [ht])) (hs.ea (by omega_using [ht])) (hs.read ht) fun s₁ u₁ => ?_
+  refine VG.Proof.X25519.Arm.WP.append (loadWord_ok s₁ .r0 x i fun h => by
+    rw [u₁.other _ (by decide)]; exact hk h) fun s₂ ⟨k₂, m₂, r₂⟩ => ?_
+  refine wp_umaal (by decide) fun u v₃ f₃ => WP.block_nil ?_
+  refine ⟨by rw [f₃.mem, m₂, u₁.mem], ?_, by rw [f₃.regs .r0 (by simp), k₂],
+    (u₁.rest (by simp)).trans ((r₂.mono (by simp)).trans ((frame_rest f₃).mono (by simp)))⟩
+  rw [v₃, k₂, toNat_wordAt, r₂.gpr .r6 (by simp), u₁.other .r6 (by decide), one, r₂.gpr .r4 (by simp), u₁.gpr,
+    r₂.gpr .r5 (by simp), u₁.other .r5 (by decide), show (1 : BitVec 32).toNat = 1 from rfl]
+  dsimp only [w32]
+  omega_using []
+
+theorem cmpStepsU_ok {s : State} {base : Addr} {acc x w : Nat} (hs : Scr s base 4096)
+    (one : s.gpr .r6 = 1) (ht : acc + 4 * w ≤ 4096) :
+    ∀ k, k ≤ w → WP isa (.block ((List.range k).flatMap (cmpStepU acc x))) s fun u =>
+      u.mem = s.mem ∧
+      (∃ D, D < 2 ^ (32 * k) ∧ D + 2 ^ (32 * k) * (u.gpr .r5).toNat =
+        val32 s.mem base acc k + x % 2 ^ (32 * k) + (s.gpr .r5).toNat) ∧
+      (0 < k → u.gpr .r0 = BitVec.ofNat 32 (wordAt x (k - 1))) ∧ Rest [.r0, .r4, .r5] s u
+  | 0, _ => WP.block_nil ⟨rfl, ⟨0, by simp, by simp [val32, Nat.mod_one]⟩,
+      fun h => absurd h (Nat.lt_irrefl 0), Rest.refl _ _⟩
+  | k + 1, hk => by
+    rw [List.range_succ, List.flatMap_append, List.flatMap_singleton]
+    refine VG.Proof.X25519.Arm.WP.append (cmpStepsU_ok hs one ht k (by omega_using [hk]))
+      fun u ⟨mem, ⟨D, hD, hd⟩, kc, rest⟩ => ?_
+    obtain hu := hs.of_rest rest (by decide)
+    obtain oneu : u.gpr .r6 = 1 := by rw [rest.gpr _ (by decide)]; exact one
+    refine WP.mono (cmpStepU_ok hu oneu (by omega_using [hk, ht]) kc) fun v ⟨mem', sum, kc', keep⟩ => ?_
+    rw [mem] at sum
+    obtain h4 : 2 ^ (32 * k) * (v.gpr .r4).toNat + 2 ^ (32 * k) ≤ 2 ^ (32 * k) * 2 ^ 32 := by
+      have := Nat.mul_le_mul_left (2 ^ (32 * k)) (Nat.succ_le_of_lt (v.gpr .r4).isLt)
+      rwa [Nat.mul_succ] at this
+    refine ⟨by rw [mem', mem], ⟨D + 2 ^ (32 * k) * (v.gpr .r4).toNat, ?_, ?_⟩,
+      fun _ => by rw [Nat.add_sub_cancel]; exact kc', rest.trans keep⟩
+    · rw [pow32_succ]
+      generalize 2 ^ (32 * k) = P at *
+      omega_using [hD, h4]
+    · rw [val32_succ, mod_pow32_succ, pow32_succ]
+      generalize 2 ^ (32 * k) = P at *
+      grind
+
+/-- `[o] = [acc] mod m`, for the number below `2 m` at `[acc]`, of `w` words
+and a top word, `r1 = o` below it, and `x = 2^(32 w) - m`. -/
+theorem redU_ok {s : State} {base : Addr} {acc x m w : Nat} (hs : Scr s base 4096)
+    (ho : (s.gpr .r1).toNat + 4 * w ≤ acc) (ht : acc + 4 * (w + 1) ≤ 4096)
+    (hx : x + m = 2 ^ (32 * w)) (hT : val32 s.mem base acc (w + 1) < 2 * m) :
+    WP isa (.block (redU acc x w)) s fun u =>
+      Rest [.r0, .r1, .r4, .r5, .r6] s u ∧
+      Outside base (s.gpr .r1).toNat (4 * w) s.mem u.mem ∧
+      val32 u.mem base (s.gpr .r1).toNat w = val32 s.mem base acc (w + 1) % m := by
+  have hn := hs.nowrap
+  simp only [redU, List.cons_append, List.nil_append, List.append_assoc]
+  refine wp_mov (op2_imm (by decide)) fun s₁ u₁ => wp_mov (op2_imm (by decide)) fun s₂ u₂ => ?_
+  obtain k₂ : Rest [.r5, .r6] s s₂ := (u₁.rest (by simp)).trans (u₂.rest (by simp))
+  have m₂ : s₂.mem = s.mem := by rw [u₂.mem, u₁.mem]
+  obtain hs₂ := hs.of_rest k₂ (by decide)
+  obtain one₂ : s₂.gpr .r6 = 1 := by rw [u₂.other _ (by decide), u₁.gpr]
+  obtain c₂ : (s₂.gpr .r5).toNat = 0 := by rw [u₂.gpr]; rfl
+  refine VG.Proof.X25519.Arm.WP.append (cmpStepsU_ok (x := x) hs₂ one₂ (by omega_using [ht]) w (Nat.le_refl _))
+    fun s₃ ⟨m₃, ⟨D, hD, hd⟩, _, rest₃⟩ => ?_
+  obtain hxl : x < 2 ^ (32 * w) := by omega_using [hx, hT]
+  rw [m₂, c₂, Nat.add_zero, Nat.mod_eq_of_lt hxl] at hd
+  obtain hs₃ := hs₂.of_rest rest₃ (by decide)
+  refine wp_ldr (hs.off_lt (by omega_using [ht])) (hs₃.ea (by omega_using [ht])) (hs₃.read (by omega_using [ht]))
+    fun s₄ u₄ => ?_
+  refine wp_dp (op2_reg _ _) fun s₅ u₅ => ?_
+  obtain hTl := val32_lt s.mem base acc w
+  obtain top : (s₄.gpr .r4).toNat = w32 s.mem base (acc + 4 * w) := by rw [u₄.gpr, m₃, m₂]
+  rw [val32_succ] at hT ⊢
+  obtain hbit := addU_bit (A := val32 s.mem base acc w + 2 ^ (32 * w) * w32 s.mem base (acc + 4 * w)) (B := 0)
+    (c1 := w32 s.mem base (acc + 4 * w)) hx (by rw [Nat.add_zero]; exact hT) hTl (by rw [Nat.add_zero]) hd
+  obtain k₅ : Rest [.r0, .r4, .r5, .r6] s s₅ :=
+    (k₂.mono (by simp)).trans ((rest₃.mono (by simp)).trans ((u₄.rest (by simp)).trans (u₅.rest (by simp))))
+  obtain hs₅ := hs.of_rest k₅ (by decide)
+  obtain o₅ : s₅.gpr .r1 = s.gpr .r1 := k₅.gpr _ (by decide)
+  have m₅ : s₅.mem = s.mem := by rw [u₅.mem, u₄.mem, m₃, m₂]
+  obtain q₅ : (s₅.gpr .r6).toNat = w32 s.mem base (acc + 4 * w) + (s₃.gpr .r5).toNat := by
+    rw [u₅.gpr, dpVal, toNat_add_lt (by rw [u₄.other .r5 (by decide), top]; omega_using [hbit]),
+      u₄.other .r5 (by decide), top]
+    exact Nat.add_comm _ _
+  refine WP.mono (mulAddU_ok hs₅ (by omega_using [ht]) (by rw [o₅]; exact ho) hxl) fun u ⟨out, val, rest⟩ => ?_
+  rw [o₅] at out val
+  rw [m₅] at out
+  rw [m₅, q₅] at val
+  refine ⟨(k₅.mono (by simp)).trans (rest.mono (by simp)), out, ?_⟩
+  rw [addU_arith (A := val32 s.mem base acc w + 2 ^ (32 * w) * w32 s.mem base (acc + 4 * w)) (B := 0)
+    (c1 := w32 s.mem base (acc + 4 * w)) hx (by rw [Nat.add_zero]; exact hT) hTl (by rw [Nat.add_zero]) hD hd
+    (val32_lt _ _ _ _) val, Nat.add_zero]
+
+/-- A number below `2 m` of `k + 2` words, for `m` of `k` words, has no top word. -/
+theorem val32_top_zero {mem : Mem} {base : Addr} {d k m : Nat} (hm : m < 2 ^ (32 * k))
+    (h : val32 mem base d (k + 2) < 2 * m) : val32 mem base d (k + 2) = val32 mem base d (k + 1) := by
+  rw [val32_succ mem base d (k + 1)] at h ⊢
+  rcases Nat.eq_zero_or_pos (w32 mem base (d + 4 * (k + 1))) with h0 | h0
+  · rw [h0, Nat.mul_zero, Nat.add_zero]
+  · have h1 := Nat.mul_le_mul_left (2 ^ (32 * (k + 1))) h0
+    rw [Nat.mul_one, pow32_succ] at h1
+    rw [pow32_succ] at h
+    generalize 2 ^ (32 * k) = P at *
+    generalize val32 mem base d (k + 1) = V at *
+    generalize 2 ^ 32 * P * w32 mem base (d + 4 * (k + 1)) = W at *
+    omega_using [hm, h, h1]
+
+/-- `vg_<curve>_mul_mod_<p|n>_umaal`: as `mulFn_ok`. -/
+theorem mulFnU_ok {n m : Nat} (hM : ModOk n m) {s : State} (hp : Pre n m s)
+    (hb : wordsVal s.mem (State.addr (s.gpr .r0)) (s.gpr .r3).toNat n < m) :
+    WP isa (mulFnU n m) s fun s' => abiPreserved s s' ∧
+      Kept n (State.addr (s.gpr .r0)) (s.gpr .r1).toNat s.mem s'.mem ∧
+      (wordsVal s'.mem (State.addr (s.gpr .r0)) (s.gpr .r1).toNat n < m ∧
+      wordsVal s'.mem (State.addr (s.gpr .r0)) (s.gpr .r1).toNat n * 2 ^ (64 * n) % m =
+        wordsVal s.mem (State.addr (s.gpr .r0)) (s.gpr .r2).toNat n *
+          wordsVal s.mem (State.addr (s.gpr .r0)) (s.gpr .r3).toNat n % m) ∧
+      s'.gpr .r12 = s.gpr .r0 := by
+  refine fn_ok (R := fun mem => wordsVal mem (State.addr (s.gpr .r0)) (s.gpr .r1).toNat n < m ∧
+    wordsVal mem (State.addr (s.gpr .r0)) (s.gpr .r1).toNat n * 2 ^ (64 * n) % m =
+      wordsVal s.mem (State.addr (s.gpr .r0)) (s.gpr .r2).toNat n *
+        wordsVal s.mem (State.addr (s.gpr .r0)) (s.gpr .r3).toNat n % m)
+    hM (by decide) hp fun s₁ E => ?_
+  have hn3 := hM.n3; have hn9 := hM.n9
+  obtain hown := own_le n hn9
+  have ho := hp.o; have ha := hp.a; have hb' := hp.b
+  have hm := hM.m_lt
+  have nowrap := E.scr.nowrap
+  obtain e64 : 32 * (2 * n) = 64 * n := by omega_using []
+  obtain mpos : 0 < m := by omega_using [hb]
+  obtain hmo : moAt n = own n + 40 * n + 8 := by simp only [moAt, tmpAt]; omega_using []
+  obtain modval : val32 s₁.mem (State.addr (s.gpr .r0)) (moAt n) (2 * n) = m := by
+    have hv := E.mod.val
+    rw [wordsVal_eq_val32] at hv
+    exact hv
+  obtain bval : val32 s₁.mem (State.addr (s.gpr .r0)) (s.gpr .r3).toNat (2 * n) < m := by
+    rw [← wordsVal_eq_val32, E.val hM hp.b]; exact hb
+  refine WP.seq (zeros_ok E.scr (k := 2 * n + 2) (by omega_using [hn3, hown]) fun s₂ out₂ zero₂ keep₂ => ?_)
+  refine wp_mov (op2_imm (words_encodable (M := mod n m) (by change n < 128; omega_using [hn9])))
+    fun s₃ u₃ => WP.block_nil ?_
+  obtain keep₃ : Rest [.r7, .r9] s₁ s₃ := (keep₂.mono (by simp)).trans (u₃.rest (by simp))
+  have mem₃ : s₃.mem = s₂.mem := u₃.mem
+  obtain out₃ : Outside (State.addr (s.gpr .r0)) (own n) (4 * (2 * n + 2)) s₁.mem s₃.mem := by rw [mem₃]; exact out₂
+  obtain ctx₃ := E.scr.of_rest keep₃ (by decide)
+  obtain pa₃ : s₃.gpr .r1 = s₃.gpr .r12 + BitVec.ofNat 32 (s.gpr .r2).toNat := by
+    rw [keep₃.gpr .r1 (by decide), keep₃.gpr .r12 (by decide)]; exact E.ra
+  obtain pb₃ : s₃.gpr .r4 = s₃.gpr .r12 + BitVec.ofNat 32 (s.gpr .r3).toNat := by
+    rw [keep₃.gpr .r4 (by decide), keep₃.gpr .r12 (by decide)]; exact E.rb
+  obtain mod₃ : val32 s₃.mem (State.addr (s.gpr .r0)) (moAt n) (2 * n) = m := by
+    rw [out₃.val32 (by omega_using [hmo]) (by omega_using [hmo, hown])]; exact modval
+  obtain b₃ : val32 s₃.mem (State.addr (s.gpr .r0)) (s.gpr .r3).toNat (2 * n) < m := by
+    rw [out₃.val32 (by omega_using [hb']) (by omega_using [hb', hown])]; exact bval
+  obtain z₃ : val32 s₃.mem (State.addr (s.gpr .r0)) (own n) (2 * n + 2) = 0 := by
+    rw [mem₃]; exact Packed.val32_zeros (2 * n + 2) zero₂
+  refine WP.seq (WP.mono (Packed.loop_ok true ctx₃ (M := mod n m) (n := 2 * n) (acc := own n) rfl
+    (by omega_using [hn3]) (by omega_using [hn9]) pa₃ pb₃ u₃.gpr (by omega_using [ha, hown]) (by omega_using [hb', hown])
+    (by change moAt n + 4 * (2 * n) ≤ 4096; omega_using [hmo, hown, hn3]) (by omega_using [hown, hn3])
+    (by omega_using [ha]) (by omega_using [hb']) (by show own n + 4 * (2 * n + 2) ≤ moAt n ∨ moAt n + 4 * (2 * n) ≤ own n; omega_using [hmo])
+    mod₃ E.mod.inv b₃ z₃) fun s₄ ⟨bound, value, out₄, keep₄⟩ => ?_)
+  obtain keep : Rest Packed.roundClob s₁ s₄ := (keep₃.mono (by simp)).trans keep₄
+  obtain out : Outside (State.addr (s.gpr .r0)) (own n) (4 * (2 * n + 2)) s₁.mem s₄.mem := out₃.trans out₄
+  obtain oldA := out₃.val32 (d := (s.gpr .r2).toNat) (k := 2 * n) (by omega_using [ha]) (by omega_using [ha, hown])
+  obtain oldB := out₃.val32 (d := (s.gpr .r3).toNat) (k := 2 * n) (by omega_using [hb']) (by omega_using [hb', hown])
+  rw [oldA, oldB, ← wordsVal_eq_val32, ← wordsVal_eq_val32, E.val hM hp.a, E.val hM hp.b] at value
+  obtain top := val32_top_zero (k := 2 * n) (by rw [e64]; exact hm) bound
+  rw [top] at bound value
+  obtain h₄ := E.scr.of_rest keep (by decide)
+  refine wp_dp (op2_reg _ _) fun s₅ u₅ => ?_
+  obtain o₅ : s₅.gpr .r1 = s.gpr .r1 := by
+    rw [u₅.gpr, dpVal, keep.gpr .lr (by decide), keep.gpr .r12 (by decide), E.ro, ← sum_reg, BitVec.add_comm,
+      BitVec.add_sub_cancel]
+  obtain h₅ := h₄.of_rest (u₅.rest (ws := [.r1]) (by simp)) (by decide)
+  refine WP.mono (redU_ok (m := m) h₅ (by rw [o₅]; omega_using [ho]) (by omega_using [hown, hn3])
+    (by rw [e64]; omega_using [hm]) (by rw [u₅.mem]; exact bound)) fun t ⟨rest, out₆, val⟩ => ?_
+  rw [o₅] at out₆ val
+  rw [u₅.mem] at out₆ val
+  rw [← wordsVal_eq_val32] at val
+  refine ⟨⟨keep.mono (by simp [clob]) |>.trans ((u₅.rest (ws := clob) (by simp [clob])).trans
+    (rest.mono (by simp [clob]))), ?_⟩, ?_, ?_⟩
+  · have all : Outside (State.addr (s.gpr .r0)) (own n) (accLen (mod n m)) s₁.mem s₄.mem :=
+      out.mono (Nat.le_refl _) (by simp only [accLen, digits, mod]; omega_using [])
+    have res : Outside (State.addr (s.gpr .r0)) (s.gpr .r1).toNat (8 * (mod n m).n) s₄.mem t.mem :=
+      out₆.mono (Nat.le_refl _) (by simp only [mod]; omega_using [])
+    exact (Outs.of_outside all (by simp)).trans (Outs.of_outside res (by simp))
+  · rw [val]; exact Nat.mod_lt _ mpos
+  · rw [val, Nat.mul_comm, Nat.mul_mod, Nat.mod_mod, ← Nat.mul_mod, ← e64]
+    exact value
+
+/-- `mulFn_ok` for `mulFnWith u`. -/
+theorem mulFnWith_ok (u : Bool) {n m : Nat} (hM : ModOk n m) {s : State} (hp : Pre n m s)
+    (hb : wordsVal s.mem (State.addr (s.gpr .r0)) (s.gpr .r3).toNat n < m) :
+    WP isa (mulFnWith u n m) s fun s' => abiPreserved s s' ∧
+      Kept n (State.addr (s.gpr .r0)) (s.gpr .r1).toNat s.mem s'.mem ∧
+      (wordsVal s'.mem (State.addr (s.gpr .r0)) (s.gpr .r1).toNat n < m ∧
+      wordsVal s'.mem (State.addr (s.gpr .r0)) (s.gpr .r1).toNat n * 2 ^ (64 * n) % m =
+        wordsVal s.mem (State.addr (s.gpr .r0)) (s.gpr .r2).toNat n *
+          wordsVal s.mem (State.addr (s.gpr .r0)) (s.gpr .r3).toNat n % m) ∧
+      s'.gpr .r12 = s.gpr .r0 := by
+  cases u
+  · exact mulFn_ok hM hp hb
+  · exact mulFnU_ok hM hp hb
 
 end VG.Proof.Weierstrass.Arm.Mont
