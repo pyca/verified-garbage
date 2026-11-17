@@ -593,7 +593,7 @@ theorem prevSign_constantTime : ConstantTime isa prevSignArm.pre prevSignArm.pub
     obtain X : Pair (State.addr (arg s₁ 5)) ((arg s₁ 6).toNat * 8) ((arg s₁ 6).toNat * 8) (arg s₁ 0).toNat
         (arg s₁ 2).toNat (((arg s₁ 0).toNat + 7) / 8) (((arg s₁ 2).toNat + 7) / 8)
         (signIns (arg s₁ 0).toNat (arg s₁ 2).toNat c) (signVal s₁ c) (signVal s₂ c) v₁ v₂ :=
-      ⟨C₁, C₂, pe G₁ G₂⟩
+      ⟨C₁, C₂, pe G₁ G₂, Vp.symm, Vq.symm⟩
     obtain mp : (.input .p, (arg s₁ 0).toNat) ∈ signIns (arg s₁ 0).toNat (arg s₁ 2).toNat c := by simp [signIns]
     obtain mq : (.input .q, (arg s₁ 2).toNat) ∈ signIns (arg s₁ 0).toNat (arg s₁ 2).toNat c := by simp [signIns]
     obtain mg : (.input .g, (arg s₁ 0).toNat) ∈ signIns (arg s₁ 0).toNat (arg s₁ 2).toNat c := by simp [signIns]

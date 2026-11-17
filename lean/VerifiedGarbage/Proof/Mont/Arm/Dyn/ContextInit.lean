@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Mont.Arm.Dyn.Add
 import VerifiedGarbage.Proof.Dsa.Arithmetic
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-! ### `Mont.Arm.Dyn.ExponentParts`, which this module and modules that import it used -/
 
@@ -457,8 +458,9 @@ section
 /-!
 # Runtime-modulus Montgomery arithmetic on 32-bit ARM: one and powers of two
 
-`one n out` writes 1 (`one_ok`), and `powerTwo` doubles it `bits` times,
-counting in `lr` (`powerTwo_ok`), to `2^bits mod m`.
+`one n out` writes 1 (`one_ok`) and `wordTop n out w` the top bit of word
+`w`, `2^(32 w + 31)` (`wordTop_ok`); `doublings` doubles a number below the
+modulus as many times as `lr` counts (`doublings_ok`).
 -/
 
 @[expose] public section
@@ -466,7 +468,8 @@ counting in `lr` (`powerTwo_ok`), to `2^bits mod m`.
 namespace VG.Proof.Mont.Arm.Dyn
 
 open VG VG.Arm VG.Impl.Mont VG.Impl.Mont.Arm VG.Impl.Mont.Arm.Dynamic VG.Proof.Mont VG.Proof.Mont.Arm
-open VG.Proof.X25519.Arm (Rest Upd Mupd Fupd wp_mov wp_str wp_ldr wp_dp wp_movw wp_subs op2_imm op2_reg dpVal)
+open VG.Proof.X25519.Arm (Rest Upd Mupd Fupd wp_mov wp_str wp_ldr wp_dp wp_movw wp_subs op2_imm op2_reg op2_lsl
+  dpVal)
 
 /-- `[out] = 1`, `2n` words. -/
 theorem one_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {n out : Nat} (hn : 0 < n)
@@ -492,6 +495,39 @@ theorem one_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {n o
     exact O₀.trans ((writeW32_outside _ _ (d := out) _ (by omega_using [h16])).mono (by omega_using []) (by omega_using [hn]))
   · exact (R₀.mono (by decide)).trans ((((u₁.rest (by decide)).trans (u₂.rest (by decide)))).trans (m.rest _))
 
+/-- `[out] = 2^(32 w + 31)`, `2n` words, for a word `w` of theirs. -/
+theorem wordTop_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {n out w : Nat} (hw : w < 2 * n)
+    (hout : out + 8 * n ≤ size) (h16 : out + 8 * n < 2 ^ 16) (h12 : 8 * n ≤ 4096) :
+    WP isa (wordTop n out w) s fun t => Ws t base size ∧ val32 t.mem base out (2 * n) = 2 ^ (32 * w + 31) ∧
+      Outside base out (8 * n) s.mem t.mem ∧ Rest [.r4, .r7, .r9, .r10] s t := by
+  have hnw := hs.nowrap
+  unfold wordTop
+  refine WP.seq (WP.mono (zeros_ok hs (o := out) (k := 2 * n) (by omega_using [hw]) (by omega_using [hout])
+    (by omega_using [h16])) fun t₀ ⟨w₀, Z₀, O₀, R₀⟩ => ?_)
+  refine wp_ptr (d := .r10) (by decide) (by omega_using [h16]) fun t₁ u₁ => wp_mov (op2_imm (by decide)) fun t₂ u₂ =>
+    wp_mov (op2_lsl (by decide)) fun t₃ u₃ => ?_
+  have w₃ := ((w₀.of_upd u₁ (by decide)).of_upd u₂ (by decide)).of_upd u₃ (by decide)
+  refine wp_str (by omega_using [hw, h12]) (w₃.ea (d := 4 * w) (K := out)
+    (by simp only [u₃.get, u₂.get, u₁.get, reduceCtorEq, ↓reduceIte]) (by omega_using [hw, hout]))
+    (w₃.write (d := out + 4 * w) (n := 4) (by omega_using [hw, hout])) fun t m =>
+      WP.block_nil ⟨w₃.of_mupd m, ?_, ?_, ?_⟩
+  · rw [m.mem, u₃.mem, u₂.mem, u₁.mem, show 2 * n = w + ((2 * n - w - 1) + 1) by omega_using [hw], val32_append,
+      val32, w32_write_self, val32_zeros (k := w) fun j hj => ?_,
+      val32_zeros (k := 2 * n - w - 1) fun j hj => ?_]
+    · rw [u₃.gpr, u₂.gpr, Nat.zero_add, Nat.mul_zero, Nat.add_zero,
+        show ((1 : BitVec 32) <<< 31).toNat = 2 ^ 31 from rfl, ← Nat.pow_add]
+    · rw [w32_write_ne (size := size) hnw (by omega_using [hw, hout]) (by omega_using [hw, hout, hj])
+        (.inr (by omega_using [])), show out + 4 * w + 4 + 4 * j = out + 4 * (w + 1 + j) by omega_using [],
+        Z₀ (w + 1 + j) (by omega_using [hj])]
+    · rw [w32_write_ne (size := size) hnw (by omega_using [hw, hout]) (by omega_using [hw, hout, hj])
+        (.inl (by omega_using [hj])), Z₀ j (by omega_using [hj, hw])]
+  · rw [m.mem, u₃.mem, u₂.mem, u₁.mem]
+    rw [show 4 * (2 * n) = 8 * n by omega_using []] at O₀
+    exact O₀.trans ((writeW32_outside _ _ (d := out + 4 * w) _ (by omega_using [h16, hw])).mono
+      (by omega_using []) (by omega_using [hw]))
+  · exact (R₀.mono (by decide)).trans (((((u₁.rest (by decide)).trans (u₂.rest (by decide)))).trans
+      (u₃.rest (by decide))).trans (m.rest _))
+
 /-- A count down by one. -/
 theorem ofNat_sub_one {k : Nat} (h0 : 0 < k) (h : k < 2 ^ 32) :
     BitVec.ofNat 32 k - (1 : BitVec 32) = BitVec.ofNat 32 (k - 1) := by
@@ -499,62 +535,49 @@ theorem ofNat_sub_one {k : Nat} (h0 : 0 < k) (h : k < 2 ^ 32) :
   rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, show (1 : BitVec 32).toNat = 1 from rfl]
   omega
 
-/-- The invariant of `powerTwo` after `j` doublings. -/
-structure PowInv (n m : Nat) (base : Addr) (size o bits : Nat) (s : State) (j : Nat) (u : State) : Prop where
+/-- The invariant of the doublings after `j` of them. -/
+structure DblInv (n m : Nat) (base : Addr) (size o count V : Nat) (s : State) (j : Nat) (u : State) : Prop where
   ctx : Context n m base size u
-  val : val32 u.mem base (slot n o) (2 * n) = 2 ^ j % m
+  val : val32 u.mem base (slot n o) (2 * n) = 2 ^ j * V % m
   mem : Outs base (opRanges n o) s.mem u.mem
   rest : Rest (.lr :: dclob) s u
-  lr : u.gpr .lr = BitVec.ofNat 32 (bits - j)
+  lr : u.gpr .lr = BitVec.ofNat 32 (count - j)
 
-/-- `[slot o] = 2^bits mod m`, for `0 < bits < 2¹⁶`, doubling one. -/
-theorem powerTwo_ok {n m size o bits : Nat} {base : Addr} {s : State} (h : Context n m base size s)
-    (ho : 6 ≤ o ∧ o < 30) (hb : 0 < bits) (hb16 : bits < 2 ^ 16) :
-    WP isa (powerTwo (contextMod n) (accS n) (slot n o) bits) s fun t => Context n m base size t ∧
-      val32 t.mem base (slot n o) (2 * n) = 2 ^ bits % m ∧ Outs base (opRanges n o) s.mem t.mem ∧
+/-- `[slot o]`, below `m`, doubled modulo `m` the `count` times in `lr`. -/
+theorem doublings_ok {n m size o count V : Nat} {base : Addr} {s : State} (h : Context n m base size s)
+    (ho : 6 ≤ o ∧ o < 30) (hc : 0 < count) (hc32 : count < 2 ^ 32) (hlr : s.gpr .lr = BitVec.ofNat 32 count)
+    (hV : val32 s.mem base (slot n o) (2 * n) = V) (hVm : V < m) :
+    WP isa (doublings (contextMod n) (accS n) (slot n o)) s fun t => Context n m base size t ∧
+      val32 t.mem base (slot n o) (2 * n) = 2 ^ count * V % m ∧ Outs base (opRanges n o) s.mem t.mem ∧
       Rest (.lr :: dclob) s t := by
-  have bo := slot_bound (n := n) ho.2
-  have sz := h.size_le
-  have sm := h.small
-  have hm1 := h.gt_one
-  unfold powerTwo
-  refine WP.seq (WP.mono (one_ok h.ws (n := (contextMod n).n) (out := slot n o) h.n0
-    (by simp only [contextMod, stride] at *; omega_using [bo, sz]) (by simp only [contextMod, stride] at *; omega_using [bo, sm]))
-    fun t₀ ⟨w₀, V₀, O₀, R₀⟩ => ?_)
-  have K₀ : OpKeep n base o s t₀ := ⟨R₀.mono (by decide), Outs.of_outside O₀ (by simp [contextMod])⟩
-  have c₀ := h.keep (by omega_using [ho]) w₀ K₀
-  refine WP.seq (wp_movw fun t₁ u₁ => WP.block_nil ?_)
-  have I0 : PowInv n m base size o bits s 0 t₁ := by
-    refine ⟨⟨w₀.of_upd u₁ (by decide), c₀.size_le, c₀.small, c₀.n0, by rw [u₁.mem]; exact c₀.modulus, c₀.gt_one,
-      by rw [u₁.mem]; exact c₀.inverse⟩, ?_, ?_, ?_, ?_⟩
-    · rw [u₁.mem, show (contextMod n).n = n from rfl] at *; rw [V₀, Nat.pow_zero, Nat.mod_eq_of_lt hm1]
-    · rw [u₁.mem]; exact K₀.mem
-    · exact (K₀.rest.mono (by decide)).trans (u₁.rest (by decide))
-    · rw [u₁.gpr, Nat.sub_zero, movw_ofNat hb16]
-  refine WP.loop (M := isa) (fun r u => ∃ j, r = bits - j ∧ j < bits ∧ PowInv n m base size o bits s j u) ?_ bits t₁
-    ⟨0, rfl, hb, I0⟩
+  have hm0 : 0 < m := by omega_using [hVm]
+  have I0 : DblInv n m base size o count V s 0 s :=
+    ⟨h, by rw [hV, Nat.pow_zero, Nat.one_mul, Nat.mod_eq_of_lt hVm], Outs.refl _ _ _, Rest.refl _ _, by rw [hlr, Nat.sub_zero]⟩
+  unfold doublings
+  refine WP.loop (M := isa) (fun r u => ∃ j, r = count - j ∧ j < count ∧ DblInv n m base size o count V s j u) ?_ count s
+    ⟨0, rfl, hc, I0⟩
   rintro r u ⟨j, rfl, hj, I⟩
-  have hv : val32 u.mem base (slot n o) (2 * n) < m := by rw [I.val]; exact Nat.mod_lt _ (by omega_using [hm1])
+  have hv : val32 u.mem base (slot n o) (2 * n) < m := by rw [I.val]; exact Nat.mod_lt _ hm0
   refine WP.seq (WP.mono (context_add_ok I.ctx ho ho ho hv hv) fun u₁ ⟨c₁, K₁, V₁⟩ => ?_)
-  refine wp_subs (VG.Proof.X25519.Arm.op2_imm (encodable_lt (n := 1) (by decide))) fun u₂ v₂ z₂ => WP.block_nil ?_
-  have I' : PowInv n m base size o bits s (j + 1) u₂ := by
+  refine wp_subs (op2_imm (encodable_lt (n := 1) (by decide))) fun u₂ v₂ z₂ => WP.block_nil ?_
+  have I' : DblInv n m base size o count V s (j + 1) u₂ := by
     refine ⟨⟨c₁.ws.of_upd v₂ (by decide), c₁.size_le, c₁.small, c₁.n0, by rw [v₂.mem]; exact c₁.modulus, c₁.gt_one,
       by rw [v₂.mem]; exact c₁.inverse⟩, ?_, ?_, ?_, ?_⟩
-    · rw [v₂.mem, V₁, I.val, ← Nat.add_mod, Nat.pow_succ, Nat.mul_two]
+    · rw [v₂.mem, V₁, I.val, ← Nat.add_mod, Nat.pow_succ, Nat.mul_assoc, Nat.two_mul, Nat.mul_add]
     · rw [v₂.mem]; exact I.mem.trans K₁.mem
     · exact (I.rest.trans (K₁.rest.mono (by decide))).trans (v₂.rest (by decide))
-    · rw [v₂.gpr, K₁.rest.gpr .lr (by decide), I.lr, ofNat_sub_one (by omega_using [hj]) (by omega_using [hb16])]
+    · rw [v₂.gpr, K₁.rest.gpr .lr (by decide), I.lr, ofNat_sub_one (by omega_using [hj]) (by omega_using [hc32])]
       congr 1
-  have hz : u₂.z = decide (j + 1 = bits) := by
-    rw [z₂, K₁.rest.gpr .lr (by decide), I.lr, ofNat_sub_one (by omega_using [hj]) (by omega_using [hb16]),
-      VG.Proof.X25519.Arm.ofNat_beq_zero (by omega_using [hb16])]
+  have hz : u₂.z = decide (j + 1 = count) := by
+    rw [z₂, K₁.rest.gpr .lr (by decide), I.lr, ofNat_sub_one (by omega_using [hj]) (by omega_using [hc32]),
+      VG.Proof.X25519.Arm.ofNat_beq_zero (by omega_using [hc32])]
     simp only [decide_eq_decide]
     omega_using [hj]
-  by_cases hj1 : j + 1 = bits
+  by_cases hj1 : j + 1 = count
   · exact .inl ⟨by rw [VG.Proof.X25519.Arm.eval_ne, hz, decide_eq_true hj1]; rfl,
       I'.ctx, by rw [I'.val, hj1], I'.mem, I'.rest⟩
-  · exact .inr ⟨by rw [VG.Proof.X25519.Arm.eval_ne, hz, decide_eq_false hj1]; rfl, bits - (j + 1), by omega_using [hj],
-      j + 1, rfl, by omega_using [hj, hj1], I'⟩
+  · exact .inr ⟨by rw [VG.Proof.X25519.Arm.eval_ne, hz, decide_eq_false hj1]; rfl, count - (j + 1),
+      by omega_using [hj], j + 1, rfl, by omega_using [hj, hj1], I'⟩
 
 end VG.Proof.Mont.Arm.Dyn
 
@@ -566,9 +589,12 @@ end
 # Runtime-modulus Montgomery arithmetic on 32-bit ARM: setting up the context
 
 `contextSetup umaal n`, for the odd modulus `m > 1` in slot 0, stores `m'`,
-one in slot 6 and `R² mod m` in slot 7 (`contextSetup_ok`): `2ⁿ R` by
-doublings, then six Montgomery squarings, each of which squares the power of
-two beside `R` (`mont_square`, `rSquared_ok`).
+one in slot 6 (`setupHead_ok`) and `R² mod m` in slot 7 (`contextSetup_ok`,
+`rSquared_ok`). The top bits of some of the modulus's words (`topTest_ok`)
+choose what `2ⁿ R` is doubled from (`start_ok`): the first of them that is
+set, which is then below the modulus (`fromTop_ok`); or one, `65 n` times
+(`fromOne_ok`). Six Montgomery squarings follow, each of which squares the
+power of two beside `R` (`mont_square`, `raise_ok`).
 -/
 
 @[expose] public section
@@ -576,7 +602,7 @@ two beside `R` (`mont_square`, `rSquared_ok`).
 namespace VG.Proof.Mont.Arm.Dyn
 
 open VG VG.Arm VG.Impl.Mont VG.Impl.Mont.Arm VG.Impl.Mont.Arm.Dynamic VG.Proof.Mont VG.Proof.Mont.Arm
-open VG.Proof.X25519.Arm (Rest)
+open VG.Proof.X25519.Arm (Rest Upd Fupd wp_mov wp_ldr wp_movw wp_cmp op2_imm op2_lsr toNat_shr)
 
 variable {umaal : Bool}
 
@@ -608,29 +634,163 @@ structure SqInv (n m : Nat) (base : Addr) (size : Nat) (s : State) (i : Nat) (u 
   rest : Rest (.lr :: dclob) s u
   lr : u.gpr .lr = BitVec.ofNat 32 (6 - i)
 
-/-- `[slot 7] = R² mod m`: `2ⁿ R` by doublings, squared six times. -/
-theorem rSquared_ok {n m size : Nat} {base : Addr} {s : State} (h : Context n m base size s)
+/-- A word's top bit, by a shift. -/
+theorem lsr31_beq_zero (x : BitVec 32) :
+    (x >>> 31 - (0 : BitVec 32) == (0 : BitVec 32)) = decide (x.toNat < 2 ^ 31) := by
+  have e : (x >>> 31).toNat = x.toNat / 2 ^ 31 := toNat_shr x 31
+  have z : x >>> 31 - (0 : BitVec 32) = x >>> 31 := BitVec.sub_zero _
+  rw [z, Bool.eq_iff_iff, beq_iff_eq, decide_eq_true_iff]
+  constructor
+  · intro h
+    have := congrArg BitVec.toNat h
+    rw [e, show (0 : BitVec 32).toNat = 0 from rfl] at this
+    omega_using [this]
+  · intro h
+    apply BitVec.eq_of_toNat_eq
+    rw [e, show (0 : BitVec 32).toNat = 0 from rfl]
+    omega_using [h]
+
+/-- The top bit of a number's word `w` is its bit `32 w + 31`. -/
+theorem wordTop_iff (m : Mem) (base : Addr) (d : Nat) {k w : Nat} (hw : w < k) :
+    w32 m base (d + 4 * w) < 2 ^ 31 ↔ val32 m base d k / 2 ^ (32 * w + 31) % 2 = 0 := by
+  have lo := val32_lt m base d w
+  have hx : w32 m base (d + 4 * w) < 2 ^ 32 := (m.readW _ 32).isLt
+  rw [show k = w + ((k - w - 1) + 1) by omega_using [hw], val32_append, val32, Nat.pow_add,
+    ← Nat.div_div_eq_div_mul, Nat.add_mul_div_left _ _ (Nat.pow_pos (by decide)), Nat.div_eq_of_lt lo, Nat.zero_add]
+  generalize w32 m base (d + 4 * w) = x at hx ⊢
+  generalize val32 m base (d + 4 * w + 4) (k - w - 1) = hi
+  omega_using [hx]
+
+/-- `Z` is whether the top bit of the modulus's word `w` is clear. -/
+theorem topTest_ok {n m size w : Nat} {base : Addr} {s : State} (h : Context n m base size s) (hw : w < 2 * n) :
+    WP isa (.block (topTest n w)) s fun t => t.z = decide (m / 2 ^ (32 * w + 31) % 2 = 0) ∧ t.mem = s.mem ∧
+      Rest [.r4] s t := by
+  have sz := h.size_le
+  have sm := h.small
+  have b0 := slot_bound (n := n) (i := 0) (by decide)
+  unfold topTest
+  refine wp_ldr (by simp only [modS, slot, contextBytes, stride] at *; omega_using [sm, hw])
+    (h.ws.ea12 (d := modS n + 4 * w) (by simp only [modS, stride] at *; omega_using [sz, b0, hw]))
+    (h.ws.read (d := modS n + 4 * w) (n := 4) (by simp only [modS, stride] at *; omega_using [sz, b0, hw]))
+    fun t₁ u₁ => wp_mov (op2_lsr (by decide)) fun t₂ u₂ => wp_cmp (op2_imm (by decide)) fun t f z =>
+      WP.block_nil ⟨?_, by rw [f.mem, u₂.mem, u₁.mem], ((u₁.rest (by decide)).trans (u₂.rest (by decide))).trans (f.rest _)⟩
+  rw [z, u₂.gpr, u₁.gpr, lsr31_beq_zero, decide_eq_decide, ← h.modulus]
+  exact wordTop_iff s.mem base (modS n) hw
+
+/-- What the doublings start from: `[slot 7]`, below `m`, and their count in
+`lr`, which make it `2ⁿ R`. -/
+structure Start (n m : Nat) (base : Addr) (size count : Nat) (s t : State) : Prop where
+  ctx : Context n m base size t
+  lt : val32 t.mem base (slot n 7) (2 * n) < m
+  pos : 0 < count
+  small : count < 2 ^ 16
+  lr : t.gpr .lr = BitVec.ofNat 32 count
+  val : 2 ^ count * val32 t.mem base (slot n 7) (2 * n) % m = 2 ^ (65 * n) % m
+  mem : Outs base (opRanges n 7) s.mem t.mem
+  rest : Rest (.lr :: dclob) s t
+
+/-- A start, after a test that changed `r4` and the flags alone. -/
+theorem Start.after {n m size count : Nat} {base : Addr} {s s₀ t : State} (S : Start n m base size count s₀ t)
+    (M : s₀.mem = s.mem) (R : Rest [.r4] s s₀) : Start n m base size count s t :=
+  ⟨S.ctx, S.lt, S.pos, S.small, S.lr, S.val, by rw [← M]; exact S.mem, (R.mono (by decide)).trans S.rest⟩
+
+/-- From the top bit of a word, which is below a modulus that has it set. -/
+theorem fromTop_ok {n m size w : Nat} {base : Addr} {s : State} (h : Context n m base size s)
+    (h128 : 128 * n < 2 ^ 16) (hw : w < 2 * n) (ht : m / 2 ^ (32 * w + 31) % 2 ≠ 0) :
+    WP isa (fromTop n w) s fun t => Start n m base size (65 * n - (32 * w + 31)) s t := by
+  have sz := h.size_le
+  have sm := h.small
+  have b7 := slot_bound (n := n) (i := 7) (by decide)
+  have lt : 2 ^ (32 * w + 31) < m := by
+    have le : 2 ^ (32 * w + 31) ≤ m := by
+      by_contra hlt
+      rw [Nat.div_eq_of_lt (Nat.lt_of_not_le hlt)] at ht
+      exact ht rfl
+    have e : 2 ^ (32 * w + 31) = 2 * 2 ^ (32 * w + 30) := by rw [← Nat.pow_succ']
+    have := h.odd
+    omega_using [e, this, le]
+  unfold fromTop
+  refine WP.seq (WP.mono (wordTop_ok h.ws (n := n) (out := slot n 7) hw (by simp only [stride] at *; omega_using [b7, sz])
+    (by simp only [stride] at *; omega_using [b7, sm]) (by omega_using [h128])) fun t₁ ⟨w₁, V₁, O₁, R₁⟩ => ?_)
+  have c₁ := h.of_slot w₁ O₁ (by decide)
+  refine wp_movw fun t u => WP.block_nil ?_
+  have V : val32 t.mem base (slot n 7) (2 * n) = 2 ^ (32 * w + 31) := by rw [u.mem]; exact V₁
+  refine ⟨⟨c₁.ws.of_upd u (by decide), c₁.size_le, c₁.small, c₁.n0, by rw [u.mem]; exact c₁.modulus, c₁.gt_one,
+    by rw [u.mem]; exact c₁.inverse⟩, by rw [V]; exact lt, by omega_using [hw], by omega_using [h128],
+    by rw [u.gpr, movw_ofNat (by omega_using [h128])], ?_, ?_, ?_⟩
+  · rw [V, ← Nat.pow_add]
+    exact congrArg (2 ^ · % m) (by omega_using [hw])
+  · rw [u.mem]; exact Outs.of_outside O₁ (by simp)
+  · exact (R₁.mono (by decide)).trans (u.rest (by decide))
+
+/-- From one, for any modulus. -/
+theorem fromOne_ok {n m size : Nat} {base : Addr} {s : State} (h : Context n m base size s)
     (h128 : 128 * n < 2 ^ 16) :
-    WP isa (rSquared umaal n) s fun t => Context n m base size t ∧
-      val32 t.mem base (slot n 7) (2 * n) = 2 ^ (128 * n) % m ∧ Outs base (opRanges n 7) s.mem t.mem ∧
-      Rest (.lr :: dclob) s t := by
+    WP isa (fromOne n) s fun t => Start n m base size (65 * n) s t := by
+  have hn := h.n0
+  have sz := h.size_le
+  have sm := h.small
+  have b7 := slot_bound (n := n) (i := 7) (by decide)
+  unfold fromOne
+  refine WP.seq (WP.mono (one_ok h.ws (n := n) (out := slot n 7) hn (by simp only [stride] at *; omega_using [b7, sz])
+    (by simp only [stride] at *; omega_using [b7, sm])) fun t₁ ⟨w₁, V₁, O₁, R₁⟩ => ?_)
+  have c₁ := h.of_slot w₁ O₁ (by decide)
+  refine wp_movw fun t u => WP.block_nil ?_
+  have V : val32 t.mem base (slot n 7) (2 * n) = 1 := by rw [u.mem]; exact V₁
+  refine ⟨⟨c₁.ws.of_upd u (by decide), c₁.size_le, c₁.small, c₁.n0, by rw [u.mem]; exact c₁.modulus, c₁.gt_one,
+    by rw [u.mem]; exact c₁.inverse⟩, by rw [V]; exact h.gt_one, by omega_using [hn], by omega_using [h128],
+    by rw [u.gpr, movw_ofNat (by omega_using [h128])], by rw [V, Nat.mul_one], ?_, ?_⟩
+  · rw [u.mem]; exact Outs.of_outside O₁ (by simp)
+  · exact (R₁.mono (by decide)).trans (u.rest (by decide))
+
+/-- The context, after a test that changed `r4` and the flags alone. -/
+theorem Context.after_test {n m size : Nat} {base : Addr} {s t : State} (h : Context n m base size s)
+    (M : t.mem = s.mem) (R : Rest [.r4] s t) : Context n m base size t :=
+  ⟨h.ws.of_rest R (by decide), h.size_le, h.small, h.n0, by rw [M]; exact h.modulus, h.gt_one,
+    by rw [M]; exact h.inverse⟩
+
+/-- Where the doublings start: at the first of the words that has its top
+bit set, or at one. -/
+theorem start_ok {n m size : Nat} {base : Addr} (h128 : 128 * n < 2 ^ 16) :
+    ∀ (ks : List Nat) {s : State}, (∀ k ∈ ks, 0 < k) → Context n m base size s →
+      WP isa (start n ks) s fun t => ∃ count, Start n m base size count s t
+  | [], _, _, h => WP.mono (fromOne_ok h h128) fun _ S => ⟨_, S⟩
+  | k :: ks, s, hk, h => by
+    have hw : 2 * n - k < 2 * n := by have k0 := hk k List.mem_cons_self; have n0 := h.n0; omega_using [k0, n0]
+    rw [start]
+    refine WP.seq (WP.mono (topTest_ok h hw) fun t₀ ⟨z₀, M₀, R₀⟩ => ?_)
+    have c₀ := h.after_test M₀ R₀
+    refine WP.ite (!t₀.z) (VG.Proof.X25519.Arm.eval_ne t₀) (fun ht => ?_) (fun hf => ?_)
+    · refine WP.mono (fromTop_ok c₀ h128 hw ?_) fun _ S => ⟨_, S.after M₀ R₀⟩
+      rw [z₀] at ht
+      simpa only [Bool.not_eq_true', decide_eq_false_iff_not] using ht
+    · exact WP.mono (start_ok h128 ks (fun k hk' => hk k (List.mem_cons_of_mem _ hk')) c₀)
+        fun _ ⟨count, S⟩ => ⟨count, S.after M₀ R₀⟩
+
+/-- The doublings and the squarings: `[slot 7] = R² mod m`. -/
+theorem raise_ok {n m size count : Nat} {base : Addr} {s₀ s : State} (S : Start n m base size count s₀ s) :
+    WP isa (raise umaal n) s fun t => Context n m base size t ∧
+      val32 t.mem base (slot n 7) (2 * n) = 2 ^ (128 * n) % m ∧ Outs base (opRanges n 7) s₀.mem t.mem ∧
+      Rest (.lr :: dclob) s₀ t := by
+  have h := S.ctx
   have hn := h.n0
   have hm0 : 0 < m := by have := h.gt_one; omega_using [this]
-  unfold rSquared
+  unfold raise
   rw [show squarings = 6 from rfl]
-  refine WP.seq (WP.mono (powerTwo_ok h (o := 7) (by decide) (by omega_using [hn]) (by omega_using [h128]))
+  refine WP.seq (WP.mono (doublings_ok h (o := 7) (by decide) S.pos (by have := S.small; omega_using [this]) S.lr rfl S.lt)
     fun t₀ ⟨c₀, V₀, O₀, R₀⟩ => ?_)
+  rw [S.val] at V₀
   refine WP.seq (VG.Proof.X25519.Arm.wp_mov (VG.Proof.X25519.Arm.op2_imm (encodable_lt (n := 6) (by decide)))
     fun t₁ u₁ => WP.block_nil ?_)
-  have I0 : SqInv n m base size s 0 t₁ := by
+  have I0 : SqInv n m base size s₀ 0 t₁ := by
     refine ⟨⟨c₀.ws.of_upd u₁ (by decide), c₀.size_le, c₀.small, c₀.n0, by rw [u₁.mem]; exact c₀.modulus, c₀.gt_one,
       by rw [u₁.mem]; exact c₀.inverse⟩, ?_, ?_, ?_, ?_⟩
     · rw [u₁.mem, V₀, ← Nat.pow_add]
       exact congrArg (2 ^ · % m) (by omega_using [])
-    · rw [u₁.mem]; exact O₀
-    · exact R₀.trans (u₁.rest (by decide))
+    · rw [u₁.mem]; exact S.mem.trans O₀
+    · exact (S.rest.trans R₀).trans (u₁.rest (by decide))
     · rw [u₁.gpr]
-  refine WP.loop (M := isa) (fun r u => ∃ i, r = 6 - i ∧ i < 6 ∧ SqInv n m base size s i u) ?_
+  refine WP.loop (M := isa) (fun r u => ∃ i, r = 6 - i ∧ i < 6 ∧ SqInv n m base size s₀ i u) ?_
     6 t₁ ⟨0, rfl, by decide, I0⟩
   rintro r u ⟨i, rfl, hi, I⟩
   have hv : val32 u.mem base (slot n 7) (2 * n) < m := by rw [I.val]; exact Nat.mod_lt _ hm0
@@ -638,7 +798,7 @@ theorem rSquared_ok {n m size : Nat} {base : Addr} {s : State} (h : Context n m 
     fun u₁ ⟨c₁, K₁, lt₁, V₁⟩ => ?_)
   refine VG.Proof.X25519.Arm.wp_subs (VG.Proof.X25519.Arm.op2_imm (encodable_lt (n := 1) (by decide)))
     fun u₂ v₂ z₂ => WP.block_nil ?_
-  have I' : SqInv n m base size s (i + 1) u₂ := by
+  have I' : SqInv n m base size s₀ (i + 1) u₂ := by
     refine ⟨⟨c₁.ws.of_upd v₂ (by decide), c₁.size_le, c₁.small, c₁.n0, by rw [v₂.mem]; exact c₁.modulus, c₁.gt_one,
       by rw [v₂.mem]; exact c₁.inverse⟩, ?_, ?_, ?_, ?_⟩
     · rw [v₂.mem, Nat.pow_succ, ← Nat.mul_assoc, Nat.mul_comm _ 2]
@@ -659,17 +819,24 @@ theorem rSquared_ok {n m size : Nat} {base : Addr} {s : State} (h : Context n m 
   · exact .inr ⟨by rw [VG.Proof.X25519.Arm.eval_ne, hz, decide_eq_false hi1]; rfl, 6 - (i + 1),
       by omega_using [hi], i + 1, rfl, by omega_using [hi, hi1], I'⟩
 
-theorem contextSetup_ok {n size m : Nat} {base : Addr} {s : State} (hs : Ws s base size) (hn : 0 < n)
-    (hz : contextBytes n ≤ size) (h16 : contextBytes n < 2 ^ 16) (h128 : 128 * n < 2 ^ 16)
-    (hv : val32 s.mem base (slot n 0) (2 * n) = m) (hm1 : 1 < m) (hodd : m % 2 = 1) :
-    WP isa (contextSetup umaal n) s fun t => Context n m base size t ∧ val32 t.mem base (slot n 6) (2 * n) = 1 ∧
-      val32 t.mem base (slot n 7) (2 * n) = 2 ^ (128 * n) % m ∧ Outs base (setupRanges n) s.mem t.mem ∧
+/-- `[slot 7] = R² mod m`. -/
+theorem rSquared_ok {n m size : Nat} {base : Addr} {s : State} (h : Context n m base size s)
+    (h128 : 128 * n < 2 ^ 16) :
+    WP isa (rSquared umaal n) s fun t => Context n m base size t ∧
+      val32 t.mem base (slot n 7) (2 * n) = 2 ^ (128 * n) % m ∧ Outs base (opRanges n 7) s.mem t.mem ∧
       Rest (.lr :: dclob) s t := by
-  have nw := hs.nowrap
+  unfold rSquared
+  exact WP.seq (WP.mono (start_ok h128 tops (by decide) h) fun _ ⟨_, S⟩ => raise_ok S)
+
+/-- The inverse and one: the context, before `R²`. -/
+theorem setupHead_ok {n size m : Nat} {base : Addr} {s : State} (hs : Ws s base size) (hn : 0 < n)
+    (hz : contextBytes n ≤ size) (h16 : contextBytes n < 2 ^ 16)
+    (hv : val32 s.mem base (slot n 0) (2 * n) = m) (hm1 : 1 < m) (hodd : m % 2 = 1) :
+    WP isa (.seq (.block (setupInverse (modS n))) (one n (oneS n))) s fun t => Context n m base size t ∧
+      val32 t.mem base (slot n 6) (2 * n) = 1 ∧ Outs base (setupRanges n) s.mem t.mem ∧ Rest dclob s t := by
   have b0 := slot_bound (n := n) (i := 0) (by decide)
   have h0 := slot_header n 0
   have low : w32 s.mem base (slot n 0) % 2 ^ 16 = m % 2 ^ 16 := by rw [← hv, val32_mod16 _ _ _ _ (by omega_using [hn])]
-  unfold contextSetup
   refine WP.seq (WP.mono (setupInverse_ok hs (mo := modS n) (by simp only [modS, stride] at *; omega_using [hz, b0])
     (by simp only [modS, stride] at *; omega_using [h16, b0]) (by omega_using [hz, b0, h0]) (by simp only [modS]; omega_using [hodd, low])) fun t₁ ⟨w₁, I₁, O₁, R₁, _⟩ => ?_)
   have c₁ : Context n m base size t₁ := by
@@ -677,17 +844,27 @@ theorem contextSetup_ok {n size m : Nat} {base : Addr} {s : State} (hs : Ws s ba
     · rw [O₁.val32 (by simp only [invO]; omega_using [h0]) (by simp only [stride] at *; omega_using [h16, b0])]; exact hv
     · rw [Nat.add_mod, Nat.mul_mod, ← low, ← Nat.mul_mod, ← Nat.add_mod]; exact I₁
   have b6 := slot_bound (n := n) (i := 6) (by decide)
-  refine WP.seq (WP.mono (one_ok w₁ (n := n) (out := oneS n) hn (by simp only [oneS, stride] at *; omega_using [hz, b6])
-    (by simp only [oneS, stride] at *; omega_using [h16, b6])) fun t₂ ⟨w₂, V₂, O₂, R₂⟩ => ?_)
+  refine WP.mono (one_ok w₁ (n := n) (out := oneS n) hn (by simp only [oneS, stride] at *; omega_using [hz, b6])
+    (by simp only [oneS, stride] at *; omega_using [h16, b6])) fun t₂ ⟨w₂, V₂, O₂, R₂⟩ => ?_
   have K₂ : OpKeep n base 6 t₁ t₂ := ⟨R₂.mono (by decide), Outs.of_outside O₂ (by simp [oneS])⟩
-  have c₂ := c₁.keep (by omega_using []) w₂ K₂
+  exact ⟨c₁.keep (by omega_using []) w₂ K₂, V₂, (Outs.of_outside O₁ (by simp [setupRanges, invO])).trans
+    (Outs.of_outside O₂ (by simp [setupRanges, oneS])), (R₁.mono (by decide)).trans (R₂.mono (by decide))⟩
+
+theorem contextSetup_ok {n size m : Nat} {base : Addr} {s : State} (hs : Ws s base size) (hn : 0 < n)
+    (hz : contextBytes n ≤ size) (h16 : contextBytes n < 2 ^ 16) (h128 : 128 * n < 2 ^ 16)
+    (hv : val32 s.mem base (slot n 0) (2 * n) = m) (hm1 : 1 < m) (hodd : m % 2 = 1) :
+    WP isa (contextSetup umaal n) s fun t => Context n m base size t ∧ val32 t.mem base (slot n 6) (2 * n) = 1 ∧
+      val32 t.mem base (slot n 7) (2 * n) = 2 ^ (128 * n) % m ∧ Outs base (setupRanges n) s.mem t.mem ∧
+      Rest (.lr :: dclob) s t := by
+  have nw := hs.nowrap
+  unfold contextSetup
+  refine WP.assoc (WP.seq (WP.mono (setupHead_ok hs hn hz h16 hv hm1 hodd) fun t₂ ⟨c₂, V₂, O₂, R₂⟩ => ?_))
   refine WP.mono (rSquared_ok c₂ h128) fun t ⟨c, V, O, R⟩ => ⟨c, ?_, V, ?_, ?_⟩
   · have nw' : base.toNat + contextBytes n ≤ 2 ^ 32 := by omega_using [hz, nw]
     rw [slot_val32 O (by decide) (Nat.le_refl _) (by decide) (by decide) (.inl (by decide)) nw']; exact V₂
-  · refine ((Outs.of_outside O₁ (by simp [setupRanges, invO])).trans
-      (Outs.of_outside O₂ (by simp [setupRanges, oneS]))).trans (O.mono ?_)
+  · refine O₂.trans (O.mono ?_)
     intro r hr; simp only [opRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> simp [setupRanges]
-  · exact ((R₁.mono (by decide)).trans (R₂.mono (by decide))).trans R
+  · exact (R₂.mono (by decide)).trans R
 
 end VG.Proof.Mont.Arm.Dyn

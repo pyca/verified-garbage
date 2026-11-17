@@ -9,6 +9,11 @@ Setup leaves the result slot unused. Save r4–r10 and lr in its first 32
 bytes (extending into the product slot for the smallest widths), so nested
 calls preserve the arithmetic helpers' register saves in the header.
 The caller keeps its workspace in r4 across the call; r11 stays untouched.
+
+The setup's time depends on the modulus, some of whose bits choose where
+its doublings start (`rSquared`): DSA's moduli p and q are public, and each
+caller shows that the modulus is the same in two runs (`setupK`,
+Proof/Dsa/Arm/ContextBody.lean).
 -/
 
 @[expose] public section

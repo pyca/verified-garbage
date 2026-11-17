@@ -13,9 +13,9 @@ exponentiation's chosen power), the exponent, the sixteen powers of the
 exponentiation's table, and the second base and exponent of a product of two
 powers. All offsets depend only on the public width.
 
-The counts of the doublings and of the exponent's windows are in `lr`, and
-the table's next entry and the count of a window's squarings in `r11`: the
-arithmetic leaves both alone.
+The counts of the doublings, of the setup's squarings and of the exponent's
+windows are in `lr`, and the table's next entry and the count of a window's
+squarings in `r11`: the arithmetic leaves both alone.
 -/
 
 @[expose] public section
@@ -72,23 +72,61 @@ def setupInverse (mo : Nat) : List Instr :=
 def one (n out : Nat) : Prog isa :=
   .seq (zeros (2 * n) out) (.block (ptr .r10 out ++ [.mov .r4 (.imm 1), .str .r4 .r10 0]))
 
-/-- `2^bits mod m` at `[out]`, for public positive `bits` below `2¹⁶` and
-`m > 1`: doublings of one, counted in `lr`. -/
-def powerTwo (M : Mod) (acc out bits : Nat) : Prog isa :=
-  .seq (one M.n out) <| .seq (.block [.movw .lr (BitVec.ofNat 16 bits)])
-    (.loop (.seq (addD M acc out out out) (.block [.subs .lr .lr (.imm 1)])) .ne)
+/-- `[out] = 2^(32 w + 31)`, `n` 64-bit words: the top bit of their word `w`. -/
+def wordTop (n out w : Nat) : Prog isa :=
+  .seq (zeros (2 * n) out)
+    (.block (ptr .r10 out ++ [.mov .r4 (.imm 1), .mov .r4 (.shifted .r4 .lsl 31), .str .r4 .r10 (4 * w)]))
+
+/-- `[out]`, below `m > 1`, doubled modulo `m` as many times as `lr` counts,
+which is not zero. -/
+def doublings (M : Mod) (acc out : Nat) : Prog isa :=
+  .loop (.seq (addD M acc out out out) (.block [.subs .lr .lr (.imm 1)])) .ne
 
 /-- The Montgomery squarings that take `2ⁿ R` to `R²`: each squares the
 power of two beside `R`, and `n · 2⁶ = 64 n`. -/
 def squarings : Nat := 6
 
-/-- `R² mod m` at `[rrS n]`, `R = 2^(64 n)`: `2^(65 n) = 2ⁿ R` by doublings,
-then `squarings` Montgomery squarings, counted in `lr`. -/
-def rSquared (n : Nat) : Prog isa :=
-  .seq (powerTwo (contextMod n) (accS n) (rrS n) (65 * n)) <|
+/-- `Z` is whether the top bit of word `w` of the modulus is clear. -/
+def topTest (n w : Nat) : List Instr :=
+  [.ldr .r4 .r12 (modS n + 4 * w), .mov .r4 (.shifted .r4 .lsr 31), .cmp .r4 (.imm 0)]
+
+/-- `2^(32 w + 31)` at `[rrS n]`, which is below a modulus that has that bit
+set, and in `lr` the doublings that take it to `2^(65 n) = 2ⁿ R`. -/
+def fromTop (n w : Nat) : Prog isa :=
+  .seq (wordTop n (rrS n) w) (.block [.movw .lr (BitVec.ofNat 16 (65 * n - (32 * w + 31)))])
+
+/-- One at `[rrS n]`, which is below any modulus, and in `lr` the `65 n`
+doublings that take it to `2ⁿ R`. -/
+def fromOne (n : Nat) : Prog isa :=
+  .seq (one n (rrS n)) (.block [.movw .lr (BitVec.ofNat 16 (65 * n))])
+
+/-- The words of the modulus whose top bits the setup tests, counted down
+from the top word, which is 1: a modulus of all its `64 n` bits has that one
+set, as DSA's p has, and with `n = 4` the three are the top bits of q's 256,
+224 and 160 bits (with `n = 3`, the second is that of its 160). -/
+def tops : List Nat := [1, 2, 4]
+
+/-- Where the doublings start, and their count in `lr`: the top bit of the
+first of the modulus's words `2 n - k`, for `k` in `ks`, that has it set,
+or one if none has. -/
+def start (n : Nat) : List Nat → Prog isa
+  | [] => fromOne n
+  | k :: ks => .seq (.block (topTest n (2 * n - k))) (.ite .ne (fromTop n (2 * n - k)) (start n ks))
+
+/-- The doublings that `lr` counts, to `2ⁿ R`, then `squarings` Montgomery
+squarings, counted in `lr`, to `R²`. -/
+def raise (n : Nat) : Prog isa :=
+  .seq (doublings (contextMod n) (accS n) (rrS n)) <|
   .seq (.block [.mov .lr (.imm (BitVec.ofNat 32 squarings))])
     (.loop (.seq (mul umaal (contextMod n) invO (accS n) (rrS n) (rrS n) (rrS n))
       (.block [.subs .lr .lr (.imm 1)])) .ne)
+
+/-- `R² mod m` at `[rrS n]`, `R = 2^(64 n)`: `2^(65 n) = 2ⁿ R` by doublings,
+then the squarings. The doublings start from a power of two below the
+modulus: the highest of the bits `tops` names that the modulus has set, a
+few doublings from `2ⁿ R`, or one, `65 n` of them from it. Those bits of the
+modulus choose, and with them the time this takes: it must be public. -/
+def rSquared (n : Nat) : Prog isa := .seq (start n tops) (raise umaal n)
 
 /-- The inverse, one and `R² mod m`, for the modulus at `[modS n]`. -/
 def contextSetup (n : Nat) : Prog isa :=

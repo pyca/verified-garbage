@@ -21,7 +21,8 @@ proof follows its operation's correctness proof (`CoreOps.lean`) only as far
 as the last pointer it reads, which the correctness of each run keeps the
 same across the parts before it; past it, the analysis of the code alone
 (`Leaves.lean`) shows the rest. An exponentiation's call leaks the same trace
-in both runs by the called function's constant time (`Pow.call_trace`).
+in both runs by the called function's constant time (`Pow.call_trace`), given
+that the modulus, some of whose bits its context's setup tests, is the same.
 -/
 
 @[expose] public section
@@ -222,7 +223,8 @@ theorem power_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ len expLe
     {a b : Pointer} (P₁ : OpPre s₁ base size₁ len n m₁ modulus) (P₂ : OpPre s₂ base size₂ len n m₂ modulus)
     (Ra₁ : Ready s₁ base a len) (Ra₂ : Ready s₂ base a len) (Rb₁ : Ready s₁ base b expLen)
     (hem : PtrEq base s₁ s₂ (.input modulus)) (hea : PtrEq base s₁ s₂ a) (heb : PtrEq base s₁ s₂ b)
-    (Rb₂ : Ready s₂ base b expLen) (he4 : 4 ≤ expLen) (he : expLen ≤ len) (hwe : expLen % 4 = 0) :
+    (Rb₂ : Ready s₂ base b expLen) (he4 : 4 ≤ expLen) (he : expLen ≤ len) (hwe : expLen % 4 = 0)
+    (hm : m₁ = m₂) :
     SameTrace isa (Core.power umaal len expLen modulus a b output) s₁ s₂ := by
   unfold Core.power
   dsimp only
@@ -236,7 +238,8 @@ theorem power_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ len expLe
   have m₁ := P₁.hm1
   have m₂ := P₂.hm1
   refine SameTrace.seq (Pow.call_trace w₁ w₂ (by omega_arith) (by omega_arith) n0 n48 (by omega_arith) ek
-      (by rw [V₁]; exact P₁.hodd) (by rw [V₁]; exact m₁) (by rw [V₂]; exact P₂.hodd) (by rw [V₂]; exact m₂))
+      (by rw [V₁]; exact P₁.hodd) (by rw [V₁]; exact m₁) (by rw [V₂]; exact P₂.hodd) (by rw [V₂]; exact m₂)
+      (by rw [V₁, V₂, hm]))
     (Pow.call_ok w₁ (by omega_arith) n0 n48 (by omega_arith) ek V₁ m₁ P₁.hodd)
     (Pow.call_ok w₂ (by omega_arith) n0 n48 (by omega_arith) ek V₂ m₂ P₂.hodd) fun t₁ t₂ ⟨y₁, _⟩ ⟨y₂, _⟩ => ?_
   exact SameTrace.of_relCT (store_relCT len output) (agree0 y₁ y₂)
@@ -250,7 +253,7 @@ theorem power2_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ len expL
     (Rd₁ : Ready s₁ base b2 expLen) (Rd₂ : Ready s₂ base b2 expLen)
     (hem : PtrEq base s₁ s₂ (.input modulus)) (hea : PtrEq base s₁ s₂ a) (heb : PtrEq base s₁ s₂ b)
     (hec : PtrEq base s₁ s₂ a2) (hed : PtrEq base s₁ s₂ b2)
-    (he4 : 4 ≤ expLen) (he : expLen ≤ len) (hwe : expLen % 4 = 0) :
+    (he4 : 4 ≤ expLen) (he : expLen ≤ len) (hwe : expLen % 4 = 0) (hm : m₁ = m₂) :
     SameTrace isa (Core.power2 umaal len expLen modulus a b a2 b2 output) s₁ s₂ := by
   unfold Core.power2
   dsimp only
@@ -304,7 +307,8 @@ theorem power2_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ len expL
       (by rw [show modS n = slot n 0 from rfl, V₁]; exact P₁.hodd)
       (by rw [show modS n = slot n 0 from rfl, V₁]; exact P₁.hm1)
       (by rw [show modS n = slot n 0 from rfl, V₂]; exact P₂.hodd)
-      (by rw [show modS n = slot n 0 from rfl, V₂]; exact P₂.hm1))
+      (by rw [show modS n = slot n 0 from rfl, V₂]; exact P₂.hm1)
+      (by rw [show modS n = slot n 0 from rfl, V₁, V₂, hm]))
       (Context.call_ok k₁ (by omega_arith) n0 n48 V₁ P₁.hm1 P₁.hodd)
       (Context.call_ok k₂ (by omega_arith) n0 n48 V₂ P₂.hm1 P₂.hodd)
       fun _ _ ⟨c₁, _⟩ ⟨c₂, _⟩ => SameTrace.of_relCT (exponentiate2_relCT n _) (agree0 c₁.ws c₂.ws))
@@ -315,7 +319,7 @@ theorem productMod_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ len 
     {a b : Pointer} (P₁ : OpPre s₁ base size₁ len n m₁ modulus) (P₂ : OpPre s₂ base size₂ len n m₂ modulus)
     (Ra₁ : Ready s₁ base a len) (Ra₂ : Ready s₂ base a len) (Rb₁ : Ready s₁ base b len)
     (hem : PtrEq base s₁ s₂ (.input modulus)) (hea : PtrEq base s₁ s₂ a) (heb : PtrEq base s₁ s₂ b)
-    (Rb₂ : Ready s₂ base b len) :
+    (Rb₂ : Ready s₂ base b len) (hm : m₁ = m₂) :
     SameTrace isa (Core.productMod umaal len modulus a b output) s₁ s₂ := by
   unfold Core.productMod
   dsimp only
@@ -329,7 +333,8 @@ theorem productMod_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ len 
   have m₁ := P₁.hm1
   have m₂ := P₂.hm1
   refine SameTrace.seq (Pow.mulCall_trace w₁ w₂ (by omega_arith) (by omega_arith) n0 n48
-      (by rw [V₁]; exact P₁.hodd) (by rw [V₁]; exact m₁) (by rw [V₂]; exact P₂.hodd) (by rw [V₂]; exact m₂))
+      (by rw [V₁]; exact P₁.hodd) (by rw [V₁]; exact m₁) (by rw [V₂]; exact P₂.hodd) (by rw [V₂]; exact m₂)
+      (by rw [V₁, V₂, hm]))
     (Pow.mulCall_ok w₁ (by omega_arith) n0 n48 V₁ m₁ P₁.hodd)
     (Pow.mulCall_ok w₂ (by omega_arith) n0 n48 V₂ m₂ P₂.hodd) fun t₁ t₂ ⟨y₁, _⟩ ⟨y₂, _⟩ => ?_
   exact SameTrace.of_relCT (store_relCT len output) (agree0 y₁ y₂)

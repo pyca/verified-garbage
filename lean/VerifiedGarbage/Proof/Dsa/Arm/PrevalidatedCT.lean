@@ -533,7 +533,7 @@ theorem validate_constantTime : ConstantTime isa validateArm.pre validateArm.pub
     obtain X : Pair (State.addr (arg s₁ 0)) ((arg s₁ 1).toNat * 8) ((arg s₁ 1).toNat * 8) (s₁.gpr .r2).toNat
         (s₁.gpr .r3).toNat (((s₁.gpr .r2).toNat + 7) / 8) (((s₁.gpr .r3).toNat + 7) / 8)
         (validateIns (s₁.gpr .r2).toNat (s₁.gpr .r3).toNat) (validateVal s₁) (validateVal s₂) v₁ v₂ :=
-      ⟨D₁, D₂, pe G₁ G₂⟩
+      ⟨D₁, D₂, pe G₁ G₂, Vp.symm, Vq.symm⟩
     exact SameTrace.assoc_left (SameTrace.seq (PublicValidation.call_trace X mp mq mg my Dm₁ Dm₂)
       (PublicValidation.call_ok X.C₁.S (X.C₁.inp mp) (X.C₁.inp mq) (X.C₁.inp mg) (X.C₁.inp my)
         Dm₁.hP Dm₁.hPo Dm₁.hQ Dm₁.hQo)
@@ -697,7 +697,7 @@ theorem prevalidated_constantTime : ConstantTime isa prevArm.pre prevArm.pub (Pr
     obtain X : Pair (State.addr (arg s₁ 4)) ((arg s₁ 5).toNat * 8) ((arg s₁ 5).toNat * 8) (s₁.gpr .r2).toNat
         (s₁.gpr .r3).toNat (((s₁.gpr .r2).toNat + 7) / 8) (((s₁.gpr .r3).toNat + 7) / 8)
         (verifyIns (s₁.gpr .r2).toNat (s₁.gpr .r3).toNat c) (verifyVal s₁ c) (verifyVal s₂ c) v₁ v₂ :=
-      ⟨C₁, C₂, pe G₁ G₂⟩
+      ⟨C₁, C₂, pe G₁ G₂, Vp.symm, Vq.symm⟩
     obtain mp : (.input .p, (s₁.gpr .r2).toNat) ∈ verifyIns (s₁.gpr .r2).toNat (s₁.gpr .r3).toNat c := by
       simp [verifyIns]
     obtain mq : (.input .q, (s₁.gpr .r3).toNat) ∈ verifyIns (s₁.gpr .r2).toNat (s₁.gpr .r3).toNat c := by

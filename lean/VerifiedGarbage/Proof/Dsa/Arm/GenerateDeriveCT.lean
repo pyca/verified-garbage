@@ -277,7 +277,7 @@ theorem deriveWith_constantTime {compute : Nat → Nat → Prog isa} {C : Nat �
     obtain X : Pair (State.addr (arg s₁ 3)) ((arg s₁ 4).toNat * 8) ((arg s₁ 4).toNat * 8) (arg s₁ 0).toNat
         (arg s₁ 2).toNat (((arg s₁ 0).toNat + 7) / 8) (((arg s₁ 2).toNat + 7) / 8)
         (deriveIns (arg s₁ 0).toNat (arg s₁ 2).toNat) (deriveVal s₁) (deriveVal s₂) v₁ v₂ :=
-      ⟨D₁, D₂, pe G₁ G₂⟩
+      ⟨D₁, D₂, pe G₁ G₂, Vp.symm, Vq.symm⟩
     refine SameTrace.assoc_left (SameTrace.seq (ht X mp mq mg mx Dm₁ Dm₂)
       (hc X.C₁.S (X.C₁.inp mp) (X.C₁.inp mq) (X.C₁.inp mg) (X.C₁.inp mx) Dm₁.hP Dm₁.hPo Dm₁.hQ Dm₁.hQo)
       (hc X.C₂.S (X.C₂.inp mp) (X.C₂.inp mq) (X.C₂.inp mg) (X.C₂.inp mx) Dm₂.hP Dm₂.hPo Dm₂.hQ Dm₂.hQo)
