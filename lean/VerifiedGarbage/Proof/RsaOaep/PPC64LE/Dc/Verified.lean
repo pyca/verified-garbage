@@ -342,9 +342,18 @@ theorem checks_done {v : State} (A : AfterPriv s v) (hsy : v.syms = s.syms) :
       WP isa (.ite (.nonzero .d .r3) decFail (decMain H f)) v' (Done Hs Gs s) :=
   WP.mono_syms (chk_ok P hH.hD64 A) fun _ ⟨A', r3⟩ y => ite_done hH hG hHh hHl hHv hGh hGl hGv P T TL A' (y.trans hsy) r3
 
+omit hH hG hHh hHl hHv hGh hGl hGv P T TL in
+/-- `writtenDecrypt` reads the memory only in the output and its length. -/
+private theorem writtenDecrypt_lost {m m' : Mem} {out len : Addr} {k : Nat} {r r' : BitVec 32}
+    {o : Spec.Rsa.Outcome} (hr : r' = r) (hb : Spec.Rsa.bytesAt m' out k = Spec.Rsa.bytesAt m out k)
+    (hl : m'.readW len 64 = m.readW len 64) (h : Spec.RsaOaep.writtenDecrypt m out len k r o) :
+    Spec.RsaOaep.writtenDecrypt m' out len k r' o := by
+  subst hr
+  cases o <;> simp only [Spec.RsaOaep.writtenDecrypt, hb, hl] at h ⊢ <;> exact h
+
 theorem code_ok (X : pc = true → PreXD s) (hl : H.D ∈ lens) : WP isa (decryptG pc f) s (Post Hs Gs s) := by
   have hD64 := hH.hD64
-  refine WP.allocKept (by decide) (by have := P.sp1; rw [stackBytes_eq] at this; unfold frameBytes; omega_using [this]) ?_
+  refine WP.alloc (by decide) (by have := P.sp1; rw [stackBytes_eq] at this; unfold frameBytes; omega_using [this]) ?_
   refine WP.seq (WP.mono_syms (entry_ok P) fun t E y₁ => ?_)
   refine WP.seq (WP.mono_syms (priv_ok P X E) fun v A y₂ => ?_)
   -- The label's hash function's digest length to `r3`.
@@ -360,9 +369,23 @@ theorem code_ok (X : pc = true → PreXD s) (hl : H.D ∈ lens) : WP isa (decryp
     hl (fun x hx => (lens_certs x hx).1) v₁ ⟨A.only P o₁, y₃.trans (y₂.trans y₁), e3⟩)
   intro u ⟨A', y', _⟩
   rw [decTail_D (G := ofLen H.D) (G' := H) rfl]
+  -- The `free` loses the frame's bytes, which lie apart from the output and its length.
+  have hsub : Region.Sub ⟨s.sp - BitVec.ofNat 64 frameBytes, frameBytes⟩ (kD s) :=
+    Offset.sub_below _ (by unfold stackBytes; omega_using []) (by unfold stackBytes; omega_using [])
   exact WP.seq (WP.mono (checks_done hH hG hHh hHl hHv hGh hGl hGv P T TL A' y') fun v' h => WP.mono h
-    fun t' ⟨sv, res⟩ => WP.mono (restore_ok sv) fun w ⟨habi, h3, hm⟩ => ⟨habi, by
-      rw [freed_mem, freed_gpr, hm, h3]; exact res⟩)
+    fun t' ⟨sv, res⟩ => WP.mono (restore_ok sv) fun w ⟨habi, h3, hm⟩ mL _ fl => ⟨abiPreserved_lost habi,
+      writtenDecrypt_lost (m := (freed frameBytes w).mem) (r := ((freed frameBytes w).gpr .r3).setWidth 32) rfl
+        (by
+          rw [freed_mem]
+          exact List.map_congr_left fun i hi => lost_byte fl (R := oR s) (P.ko.sub_left hsub).symm
+            (by show i < (s.gpr .r4).toNat; have h₁ : i < (s.gpr .r7).toNat := List.mem_range.mp hi
+                have h₂ := P.ok; omega_using [h₁, h₂]))
+        (by
+          rw [freed_mem]
+          exact fl.readW (r := mlR s) (by simp only [Region.Contains]; rw [BitVec.sub_self]; decide)
+            (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact (P.kml.sub_left hsub).symm)
+            (by decide))
+        (by rw [freed_mem, freed_gpr, hm, h3]; exact res)⟩)
 
 end
 

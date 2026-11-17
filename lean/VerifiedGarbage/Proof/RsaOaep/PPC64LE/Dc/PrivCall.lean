@@ -1202,12 +1202,27 @@ theorem privF_ok (X : pc = true → PreXD s) {t : State} (E : Entered s t) :
       fun w => w.sp = fb s ∧ WP isa (.block [.lsr .w .r20 .r3 0]) w (AfterPriv s) := by
   have hsp : t.sp = fb s := E.sv.sp
   have hk := P.k2
-  refine WP.allocKept ⟨by decide, by decide, by decide⟩ (by
+  refine WP.alloc ⟨by decide, by decide, by decide⟩ (by
     rw [hsp]; have := P.sp1
     rw [fb, Offset.toNat_sub_ofNat, Nat.mod_eq_of_lt (a := frameBytes) (by decide)]
     rw [stackBytes_eq] at this; unfold frameBytes privBytes; omega_using [this]) ?_
   refine WP.seq (WP.mono (privArgsG_ok P E) fun u A => ?_)
-  refine WP.mono (call_priv P X A) fun v ⟨hrd, hwr, hsp', hf, hpres, hpost⟩ => ?_
+  refine WP.mono (call_priv P X A) fun v ⟨hrd, hwr, hsp', hf, hpres, hpost⟩ mL _ fl => ?_
+  -- Whatever the released frame's bytes hold: the saved slots, the scratch and the stack's other
+  -- bytes lie apart from it.
+  obtain fl' : Frame [PB s] v.mem mL := by rw [hsp] at fl; exact fl
+  obtain pbSub : Region.Sub (PB s) (kD s) := by
+    show Region.Sub ⟨pb s, privBytes⟩ _
+    rw [pb_base]
+    exact Offset.sub_base _ (by unfold stackBytes; omega_using [])
+  obtain slotPB : ∀ {d : Nat}, d + 8 ≤ frameBytes →
+      ∀ r ∈ [PB s], Region.Disjoint ⟨fb s + BitVec.ofNat 64 d, 8⟩ r := fun {d} hd r hr => by
+    simp only [List.mem_singleton] at hr; subst hr
+    show Region.Disjoint _ ⟨pb s, privBytes⟩
+    rw [pb_base, fb_base, Offset.add_add]
+    exact Offset.disjoint _ (.inr (by unfold stackBytes; unfold frameBytes privBytes Impl.Rsa.PPC64LE.Priv.frameBytes at *; omega_using []))
+      (by unfold stackBytes; unfold frameBytes privBytes Impl.Rsa.PPC64LE.Priv.frameBytes at *; omega_using [hd])
+      (by unfold privBytes Impl.Rsa.PPC64LE.Priv.frameBytes; omega_using [])
   obtain fsp : (freed privBytes v).sp = fb s := by
     show v.sp + BitVec.ofNat 64 privBytes = fb s
     rw [hsp', A.sp, BitVec.sub_add_cancel]
@@ -1235,7 +1250,7 @@ theorem privF_ok (X : pc = true → PreXD s) {t : State} (E : Entered s t) :
     show v.wr.tail = _; rw [hwr, A.wr]; rfl
   obtain wsp : w.sp = fb s := by rw [ow.sp]; exact fsp
   obtain wg : ∀ r, r ≠ .r20 → w.gpr r = v.gpr r := fun r hr' => ow.gpr r (by simpa using hr')
-  have wm : w.mem = v.mem := ow.mem
+  have wm : w.mem = mL := ow.mem
   obtain pv : ∀ r ∈ preserved, r ≠ .r20 → w.gpr r = u.gpr r := fun r hr' h20 => (wg r h20).trans (hpres r hr')
   obtain r20 : w.gpr .r20 = BitVec.ofNat 64 (rcOf (privO s)) := by
     rw [ew]; show ((v.gpr .r3).setWidth 32 >>> 0).setWidth 64 = _
@@ -1246,6 +1261,7 @@ theorem privF_ok (X : pc = true → PreXD s) {t : State} (E : Entered s t) :
     rw [Nat.mod_eq_of_lt (a := rcOf _) (by omega_using [this]), Nat.mod_eq_of_lt (a := rcOf _) (by omega_using [this])]
   obtain fm : Frame [kD s, scR s] s.mem w.mem := by
     rw [wm]
+    refine Frame.trans ?_ (fl'.sub fun r hr => ⟨kD s, by simp, by simp only [List.mem_singleton] at hr; subst hr; exact pbSub⟩)
     refine (A.mem.mono fun r hr => by simp at hr ⊢; exact .inl hr).trans (hf.sub fun r hr => ?_)
     simp only [callWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
@@ -1257,12 +1273,17 @@ theorem privF_ok (X : pc = true → PreXD s) {t : State} (E : Entered s t) :
       rw [BitVec.add_zero] at this
       simpa only [below, pb_base, BitVec.add_sub_cancel] using this
   obtain svs : Spill.Saved (fb s) s.gpr saved w.mem := by
-    rw [wm]; exact A.sv.frame hf fun p hp r hr =>
-      slot_dis P (by have := saved_offs p hp; unfold oLr frameBytes at *; omega_using [this]) r hr
+    rw [wm]; exact (A.sv.frame hf fun p hp r hr =>
+      slot_dis P (by have := saved_offs p hp; unfold oLr frameBytes at *; omega_using [this]) r hr).frame fl'
+      fun p hp r hr => slotPB (by have := saved_offs p hp; unfold oLr frameBytes at *; omega_using [this]) r hr
   obtain lss : w.mem.readW (fb s + BitVec.ofNat 64 oLr) 64 = s.lr := by
-    rw [wm, hf.readW (Region.contains_self _ _) (slot_dis P (by decide)) (by decide)]; exact A.ls
+    rw [wm, fl'.readW (Region.contains_self _ _) (slotPB (by decide)) (by decide),
+      hf.readW (Region.contains_self _ _) (slot_dis P (by decide)) (by decide)]; exact A.ls
   refine ⟨⟨⟨wsp, by rw [ow.wr]; exact fwr, fun r hr => ?_, svs, lss⟩, by rw [ow.rd]; exact hrd.trans A.rd, ?_, ?_,
-    Frame.refl _ _⟩, fm, by rw [wm, hem]⟩
+    Frame.refl _ _⟩, fm, by
+      rw [wm, ← hem]
+      exact List.map_congr_left fun i hi => lost_byte fl' (R := emR s)
+        ((P.ks.sub_right (em_sub P)).symm.sub_right pbSub) (List.mem_range.mp hi)⟩
   · rw [pv r (by revert r; decide) (by revert r; decide)]; exact A.hi r hr
   · rw [pv .r14 (by decide) (by decide)]; exact A.r14
   · intro r hr

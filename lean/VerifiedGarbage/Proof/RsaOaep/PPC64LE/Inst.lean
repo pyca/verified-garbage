@@ -624,9 +624,17 @@ theorem checks_done {t : State} (E : Entered s t) (hsy : t.syms = s.syms) : WP i
     (by rw [r3'] at hc; simp at hc; omega_arith)) (fun hc => main_done hH hG hHh hHl hGh hGl hGv P T TL E₉
     (y₉.trans (y₃.trans hsy)) (by rw [r3'] at hc; simp at hc; omega_arith))
 
+omit hH hG hHh hHl hGh hGl hGv P T TL in
+/-- `written` reads the memory only in the output. -/
+private theorem written_lost {m m' : Mem} {out : Addr} {k : Nat} {r r' : BitVec 32} {o : Option (List Byte)}
+    (hr : r' = r) (hb : Spec.Rsa.bytesAt m' out k = Spec.Rsa.bytesAt m out k) (h : Spec.Rsa.written m out k r o) :
+    Spec.Rsa.written m' out k r' o := by
+  subst hr
+  cases o <;> simp only [Spec.Rsa.written, hb] at h ⊢ <;> exact h
+
 theorem code_ok (hl : H.D ∈ lens) : WP isa (encrypt f) s (Post Hs Gs s) := by
   have hD64 := hH.hD64
-  refine WP.allocKept (by decide) (by have := P.sp1; unfold frameBytes; omega_arith) ?_
+  refine WP.alloc (by decide) (by have := P.sp1; unfold frameBytes; omega_arith) ?_
   refine WP.seq (WP.mono_syms (entry_ok P) fun t E sy => ?_)
   -- The label's hash function's digest length to `r3`.
   refine WP.seq (WP.of_syms ?_)
@@ -641,8 +649,16 @@ theorem code_ok (hl : H.D ∈ lens) : WP isa (encrypt f) s (Post Hs Gs s) := by
     ⟨entered_only P E o₁, y₁.trans sy, e3⟩)
   intro u ⟨E', y', _⟩
   rw [checks_D (G := ofLen H.D) (G' := H) rfl]
+  -- The `free` loses the frame's bytes, which lie apart from the output.
+  have hsub : Region.Sub ⟨s.sp - BitVec.ofNat 64 frameBytes, frameBytes⟩ (kR s) :=
+    Offset.sub_below _ (by unfold frameBytes; omega_using []) (by unfold frameBytes; omega_using [])
   exact WP.mono (checks_done hH hG hHh hHl hGh hGl hGv P T TL E' y') fun t' ⟨sv, res⟩ =>
-    WP.mono (restore_ok sv) fun w ⟨habi, h3, hm⟩ => ⟨habi, fun hc => by rw [freed_mem, freed_gpr, hm, h3]; exact res hc⟩
+    WP.mono (restore_ok sv) fun w ⟨habi, h3, hm⟩ mL _ fl => ⟨abiPreserved_lost habi, fun hc =>
+      written_lost (m := (freed frameBytes w).mem) (r := ((freed frameBytes w).gpr .r3).setWidth 32) rfl (by
+        rw [freed_mem]
+        exact List.map_congr_left fun i hi => lost_byte fl (R := oR s) (P.ko.sub_left hsub).symm
+          (by show i < (s.gpr .r4).toNat; have h₁ : i < (s.gpr .r6).toNat := List.mem_range.mp hi; have h₂ := P.ok; omega_using [h₁, h₂]))
+        (by rw [freed_mem, freed_gpr, hm, h3]; exact res hc)⟩
 
 end
 
