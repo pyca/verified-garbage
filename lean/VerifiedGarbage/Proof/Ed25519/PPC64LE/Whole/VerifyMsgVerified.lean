@@ -301,12 +301,14 @@ theorem verFrameSat_pre : ∃ s, (Spec.Ed25519.verifyContract (PPC64LE.abi.withC
 /-- In its frame of 224 bytes. -/
 theorem verify_framed :
     Verified PPC64LE.target verifyCode (Spec.Ed25519.verifyContract (PPC64LE.abi.withConsts bConsts) (48 + 224)) :=
-  Verified.stackScratchLCKept (sig := Spec.Ed25519.verifySig) (nm := "frame") (e := .u8) (n := 192)
+  Verified.stackScratchLC (sig := Spec.Ed25519.verifySig) (nm := "frame") (e := .u8) (n := 192)
     (post := Proof.Ed25519.WholeLocal.verifyPost PPC64LE.abi.ptrBits) (wa := true) (stack := 48) (bytes := 224)
     (leak := some (Proof.Ed25519.WholeLocal.verifyLeak PPC64LE.abi.ptrBits)) verify_verified (by decide)
     (by decide)
     (fun vs _ m₂ _ _ _ => (congrFun (Curry.apply_const (fun _ : Mem => True)
       (Spec.Ed25519.verifySig.words PPC64LE.abi.ptrBits) vs) m₂).mpr trivial)
-    (Proof.Ed25519.WholeLocal.verifyPost_local _) (Proof.Ed25519.WholeLocal.verifyLeak_local _) verFrameSat_pre
+    (Proof.Ed25519.WholeLocal.verifyPost_local _)
+    (fun vs m m₁ m₂ r hl _ => Proof.Ed25519.WholeLocal.verifyPostOut_local _ vs m m₁ m₂ r hl)
+    (Proof.Ed25519.WholeLocal.verifyLeak_local _) verFrameSat_pre
 
 end VG.Proof.Ed25519.PPC64LE.Whole

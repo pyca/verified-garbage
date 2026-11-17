@@ -688,6 +688,12 @@ theorem toPost_congr {s u t : State} (hm : t.mem = u.mem) (hg : t.gpr .r3 = u.gp
   rw [hm, hg]
   exact h
 
+/-- `toPost` reads the memory only in the output. -/
+private theorem toPost_lost {s u t : State} (hb : bytesAt t.mem (Dst s) (L s) = bytesAt u.mem (Dst s) (L s))
+    (hg : t.gpr .r3 = u.gpr .r3) (h : toPost s u) : toPost s t := by
+  unfold toPost at h ⊢
+  rw [hb, hg]; exact h
+
 /-- The return address back in the link register, and the frame freed. -/
 theorem ret_wp {s u : State} (h : Lay s) (hu : Done s u) :
     WP isa (.block Impl.AesGcm.PPC64LE.SealGather.ret) u fun y =>
@@ -721,10 +727,14 @@ theorem openTo_wp (hv : SplitOk) {s : State} (hs : ToPre s) :
     WP isa openTo s fun z => abiPreserved s z ∧ toPost s z := by
   obtain h := lay hs
   have w₁ := hs.w₁
-  refine WP.allocKept ⟨by decide, by decide, by decide⟩ (by omega_arith) ?_
+  refine WP.alloc ⟨by decide, by decide, by decide⟩ (by omega_arith) ?_
   refine WP.seq (WP.mono (entered_wp h) fun e he => ?_)
   refine WP.seq (WP.mono (called_wp hv h he) fun z hz => ?_)
   refine WP.seq (WP.mono (after_wp h hz) fun u hu => ?_)
-  exact ret_wp h hu
+  refine WP.mono (ret_wp h hu) fun y ⟨ha, hp⟩ m _ fl => ⟨abiPreserved_lost ha, ?_⟩
+  -- The `free` loses the frame's bytes, the stack the contract reserves, apart from the output.
+  have hD : bytesAt m (Dst s) (L s) = bytesAt y.mem (Dst s) (L s) :=
+    List.map_congr_left fun i hi => lost_byte fl (R := dR s) hs.bd.symm (List.mem_range.mp hi)
+  exact toPost_lost (u := freed 2720 y) (hD.trans (by rw [freed_mem_eq])) (by rw [freed_gpr_eq]) hp
 
 end VG.Proof.AesGcm.PPC64LE.OpenTo

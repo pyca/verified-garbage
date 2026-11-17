@@ -710,4 +710,26 @@ theorem Verified.stackScratchKept {c : Prog isa}
 
 end
 
+/-- A contract's postcondition that reads the memory on return only within the
+function's buffers (`hpostOut`) holds once the bytes of a frame within the
+stack the contract reserves are lost. -/
+theorem post_regs_lost {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)}
+    {post : sig.Post abi.ptrBits} {wa : Bool} {stack : Nat}
+    {leak : Option (Curry (sig.words abi.ptrBits) (Mem → List Nat))}
+    (hk : (sig.words abi.ptrBits).length ≤ 8) (hl : Sig.noLists sig.params = true)
+    (hpostOut : ∀ vs m m₁ m₂ r, vs.length = (sig.words abi.ptrBits).length →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) post vs m m₁ r →
+        Curry.apply (sig.words abi.ptrBits) post vs m m₂ r)
+    {s t : State} (hs : (sig.contract abi pre post wa stack leak).pre s) {F : Region}
+    (hF : F.Sub (below s.sp stack)) (hst : 0 < stack) {m : Mem} {u : Nat → BitVec 64}
+    (fl : Frame [F] t.mem m) (ht : (sig.contract abi pre post wa stack leak).post s t) :
+    (sig.contract abi pre post wa stack leak).post s { t with mem := m, unknowns := u } := by
+  rw [post_regs hk] at ht ⊢
+  have hres := ((pre_regs hk hl).mp hs).2.2.2.2.1
+  have hbelow : below s.sp stack ∈ stackBelow s.sp stack := by rw [stackBelow_pos _ hst]; simp
+  exact hpostOut _ _ _ _ _ (regArgs_length sig s hk) (fun b hb a ha => (fl a fun R hR hc => by
+    simp only [List.mem_singleton] at hR; subst hR
+    exact hres _ hbelow b hb a (hF a hc) ha).symm) ht
+
 end VG.PPC64LE

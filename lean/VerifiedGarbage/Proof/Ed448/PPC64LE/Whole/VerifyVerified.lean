@@ -89,10 +89,12 @@ theorem verFrameSat_pre : ∃ s, (Spec.Ed448.verifyContract PPC64LE.abi (48 + 30
 /-- In its frame of 304 bytes. -/
 theorem verify_framed (hR : Proof.Ed448.RecoverOk) :
     Verified PPC64LE.target verifyCode (Spec.Ed448.verifyContract PPC64LE.abi (48 + 304)) :=
-  Verified.stackScratchLKept (sig := Spec.Ed448.verifySig) (nm := "frame") (e := .u8) (n := 272)
+  Verified.stackScratchL (sig := Spec.Ed448.verifySig) (nm := "frame") (e := .u8) (n := 272)
     (post := Proof.Ed448.WholeLocal.verifyPost PPC64LE.abi.ptrBits) (wa := true) (stack := 48) (bytes := 304)
     (leak := some (Proof.Ed448.WholeLocal.verifyLeak PPC64LE.abi.ptrBits)) (verify_verified hR) (by decide)
     (by decide) (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
-    (Proof.Ed448.WholeLocal.verifyPost_local _) (Proof.Ed448.WholeLocal.verifyLeak_local _) verFrameSat_pre
+    (Proof.Ed448.WholeLocal.verifyPost_local _)
+    (fun vs m m₁ m₂ r hl _ => Proof.Ed448.WholeLocal.verifyPostOut_local _ vs m m₁ m₂ r hl)
+    (Proof.Ed448.WholeLocal.verifyLeak_local _) verFrameSat_pre
 
 end VG.Proof.Ed448.PPC64LE.Whole

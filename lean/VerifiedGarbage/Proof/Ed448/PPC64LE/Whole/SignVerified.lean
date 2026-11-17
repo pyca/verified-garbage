@@ -143,10 +143,12 @@ theorem signFrameSat_pre : ∃ s, (Spec.Ed448.signCachedContract PPC64LE.abi (48
 /-- In its frame of 576 bytes: the frame argument's copy, then the frame. -/
 theorem signCached_framed (hl : Proof.Ed448.BaseLadder2Ok) :
     Verified PPC64LE.target signCachedCode (Spec.Ed448.signCachedContract PPC64LE.abi (48 + 576)) :=
-  Verified.stackScratchArgsKept (sig := Spec.Ed448.signCachedSig) (nm := "frame") (e := .u8) (n := 464)
+  Verified.stackScratchArgs (sig := Spec.Ed448.signCachedSig) (nm := "frame") (e := .u8) (n := 464)
     (pre := Proof.Ed448.WholeLocal.signCachedPre PPC64LE.abi.ptrBits)
     (post := Proof.Ed448.WholeLocal.signCachedPost PPC64LE.abi.ptrBits) (wa := true) (stack := 48) (bytes := 576)
     (m := 0) (signCached_verified hl) (by decide) (by decide) (Proof.Ed448.WholeLocal.signCachedPre_local _)
-    (Proof.Ed448.WholeLocal.signCachedPost_local _) signFrameSat_pre
+    (Proof.Ed448.WholeLocal.signCachedPost_local _)
+    (fun vs m m₁ m₂ r hl _ => Proof.Ed448.WholeLocal.signCachedPostOut_local _ vs m m₁ m₂ r hl)
+    signFrameSat_pre
 
 end VG.Proof.Ed448.PPC64LE.Whole

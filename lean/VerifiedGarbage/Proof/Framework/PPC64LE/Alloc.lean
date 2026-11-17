@@ -25,6 +25,16 @@ frame ends in, `s₂`. -/
 def freed (bytes : Nat) (s : State) : State :=
   { s with sp := s.sp + BitVec.ofNat 64 bytes, wr := s.wr.tail }
 
+theorem freed_mem_eq (bytes : Nat) (s : State) : (freed bytes s).mem = s.mem := rfl
+theorem freed_gpr_eq (bytes : Nat) (s : State) : (freed bytes s).gpr = s.gpr := rfl
+theorem freed_lr_eq (bytes : Nat) (s : State) : (freed bytes s).lr = s.lr := rfl
+theorem freed_sp_eq (bytes : Nat) (s : State) : (freed bytes s).sp = s.sp + BitVec.ofNat 64 bytes := rfl
+
+/-- What the calling convention keeps does not depend on the memory or the
+unknowns: it holds once a released frame's bytes are lost. -/
+theorem abiPreserved_lost {s t : State} {m : Mem} {u : Nat → BitVec 64} (h : abiPreserved s t) :
+    abiPreserved s { t with mem := m, unknowns := u } := h
+
 theorem push_alloc {bytes : Nat} {s : State} (hn : 32 < bytes ∧ bytes < 4096 ∧ bytes % 16 = 0)
     (hsp : bytes ≤ s.sp.toNat) : isa.push (.alloc bytes) s = some (allocated bytes s) := by
   show push (.alloc bytes) s = some (allocated bytes s)

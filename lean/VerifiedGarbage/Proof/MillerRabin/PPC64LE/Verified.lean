@@ -243,6 +243,32 @@ theorem post_local : ∀ vs m₁ m₂ m' r, vs.length = (Proof.MillerRabin.Round
   have hi' : i < 8 * (l : BitVec 64).toNat := hi
   omega_arith
 
+
+/-- `rPost` reads the memory on return only within the working space. -/
+theorem post_out : ∀ vs m m₁ m₂ r, vs.length = (Proof.MillerRabin.Round.roundSig.words abi.ptrBits).length →
+    (∀ b ∈ Sig.bufs Proof.MillerRabin.Round.roundSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (Proof.MillerRabin.Round.roundSig.words abi.ptrBits) rPost vs m m₁ r →
+      Curry.apply (Proof.MillerRabin.Round.roundSig.words abi.ptrBits) rPost vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen hb h
+  rw [words_eq] at hlen
+  match vs, hlen with
+  | [ws, l], _ =>
+  simp only [Proof.MillerRabin.Round.roundSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq,
+    Elem.size] at hb
+  change Curry.apply [ArgWord.addr, .int 64] rPost _ m m₁ r at h
+  change Curry.apply [ArgWord.addr, .int 64] rPost _ m m₂ r
+  dsimp only [Curry.apply, rPost, ArgWord.ofRaw] at h ⊢
+  simp only [BitVec.setWidth_eq] at h ⊢
+  obtain ⟨hr, hk⟩ := h
+  refine ⟨hr, fun i hi hh ha ht => ?_⟩
+  rw [← hk i hi hh ha ht]
+  refine (hb _ ?_).symm
+  show (ws + BitVec.ofNat 64 i - ws).toNat + 1 ≤ l.toNat * 8
+  rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat]
+  have := Nat.mod_le i (2 ^ 64)
+  have hi' : i < 8 * (l : BitVec 64).toNat := hi
+  omega_arith
+
 theorem leak_local : ∀ f, some rLeak = some f → ∀ vs m₁ m₂,
     vs.length = (Proof.MillerRabin.Round.roundSig.words abi.ptrBits).length →
     Curry.apply (Proof.MillerRabin.Round.roundSig.words abi.ptrBits) rPre vs m₂ →
@@ -265,9 +291,9 @@ theorem leak_local : ∀ f, some rLeak = some f → ∀ vs m₁ m₂,
 theorem round_verified : Verified target
     (Impl.StackScratch.PPC64LE.withStackScratch 176 .r5 Impl.MillerRabin.PPC64LE.round)
     (Proof.MillerRabin.Round.roundContract abi compact 176) :=
-  Verified.stackScratchLKept (sig := Proof.MillerRabin.Round.roundSig) (nm := "scratch") (e := .u64) (n := 18)
+  Verified.stackScratchL (sig := Proof.MillerRabin.Round.roundSig) (nm := "scratch") (e := .u64) (n := 18)
     (post := rPost) (wa := false) (stack := 0) (bytes := 176) scratch_verified (by decide)
-    (by decide) pre_local post_local leak_local
+    (by decide) pre_local post_local (fun vs m m₁ m₂ r hl _ => post_out vs m m₁ m₂ r hl) leak_local
     ⟨satState₀, by
       sig_pre [Proof.MillerRabin.Round.roundSig, rPre, rPost, rLeak, abi, argRegs]
       sig_and_intros

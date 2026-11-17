@@ -20,11 +20,11 @@ theorem scratch_wp [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.
     WP isa Impl.AesGcm.PPC64LE.SealSplit.seal s
       (fun t => abiPreserved s t ∧ scratchContract.post s t) := by
   have lay := layout_pre s hs
-  refine WP.allocKept (by decide) lay.spFit.1 ?_
+  refine WP.alloc (by decide) lay.spFit.1 ?_
   refine WP.seq (WP.mono (Prelude.ok (allocated 112 s) (prelude_config s hs)) fun u hu => ?_)
   subst u
-  refine WP.mono (prepared_ok hs) fun t ht => ?_
-  refine ⟨⟨?_,?_,ht.1.2.2⟩,?_⟩
+  refine WP.mono (prepared_ok hs) fun t ht m _ fl => ?_
+  refine ⟨abiPreserved_lost ⟨?_,?_,ht.1.2.2⟩,?_⟩
   · intro r hr
     change t.gpr r=s.gpr r
     rw [ht.1.1 r hr]
@@ -55,6 +55,16 @@ theorem scratch_wp [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.
     sig_eval [scratchContract,Sig.scratchContract,Sig.withScratch,Curry.withScratch,Curry.app,Proof.Gcm.sealSplitSig,
       Proof.Gcm.sealSplitPost,PPC64LE.abi,PPC64LE.argRegs,stackArg,stackArgAddr,List.getD,List.range,List.range.loop]
     intro _ _
-    exact hp
+    -- The `free` loses the frame's bytes, the stack below `s`'s pointer, apart from the outputs.
+    have hD : Spec.Aes.bytesAt m (dataR s).base (dataR s).len = Spec.Aes.bytesAt t.mem (dataR s).base (dataR s).len :=
+      List.map_congr_left fun i hi =>
+        lost_byte fl (R := dataR s) (lay.stackApart (dataR s) (by simp)).symm (List.mem_range.mp hi)
+    have hT : Spec.Aes.bytesAt m (tagR s).base (tagR s).len = Spec.Aes.bytesAt t.mem (tagR s).base (tagR s).len :=
+      List.map_congr_left fun i hi =>
+        lost_byte fl (R := tagR s) (lay.stackApart (tagR s) (by simp)).symm (List.mem_range.mp hi)
+    simp only [dataR, tagR] at hD hT
+    refine hp.trans ?_
+    rw [← hD, ← hT]
+    rfl
 
 end VG.Proof.AesGcm.PPC64LE.SealSplit

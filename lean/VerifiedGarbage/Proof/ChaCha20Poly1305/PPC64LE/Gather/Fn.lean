@@ -723,11 +723,21 @@ theorem ret_wp {s z : State} (h : Lay s) (hz : Called s z) :
 theorem sealGather_wp (hv : SealOk) {s : State} (hs : gatherPre s) :
     WP isa sealGather s fun z => abiPreserved s z ∧ gatherPost s z := by
   obtain h := lay hs
-  refine WP.allocKept ⟨by decide, by decide, by decide⟩ (by have := h.w₁; omega_arith) ?_
+  refine WP.alloc ⟨by decide, by decide, by decide⟩ (by have := h.w₁; omega_arith) ?_
   refine WP.seq (WP.mono (entered_wp h) fun e he => ?_)
   refine WP.seq (WP.mono (gathered_wp h he) fun g hg => ?_)
   refine WP.seq (WP.mono (ready_wp h hg) fun c hc => ?_)
   refine WP.seq (WP.mono (called_wp hv h hc) fun z hz => ?_)
-  exact ret_wp h hz
+  refine WP.mono (ret_wp h hz) fun y ⟨ha, hp⟩ m _ fl => ⟨⟨ha.1, ha.2.1, ha.2.2⟩, ?_⟩
+  -- The `free` loses the frame's bytes, which lie apart from the ciphertext and the tag.
+  have hsub : Region.Sub ⟨s.sp - BitVec.ofNat 64 80, 80⟩ ⟨Bs s, 928⟩ :=
+    Offset.sub_below _ (by omega_using []) (by omega_using [])
+  have hD : bytesAt m (Dst s) (L s) = bytesAt y.mem (Dst s) (L s) :=
+    List.map_congr_left fun i hi => lost_byte fl (R := dR s) (h.bd.sub_left hsub).symm (List.mem_range.mp hi)
+  have hT : bytesAt m (Tg s) 16 = bytesAt y.mem (Tg s) 16 :=
+    List.map_congr_left fun i hi => lost_byte fl (R := tgR s) (h.bt.sub_left hsub).symm (List.mem_range.mp hi)
+  show encrypt _ _ _ _ = (bytesAt m (Dst s) (L s), bytesAt m (Tg s) 16)
+  rw [hD, hT]
+  exact hp
 
 end VG.Proof.ChaCha20Poly1305.PPC64LE.Gather

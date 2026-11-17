@@ -1112,6 +1112,16 @@ theorem hashSat (h66 : I.curve.len ≤ 66) : (I.verifyHashContract abi 112).pre 
     | (refine Region.disjoint_of_le ?_ ?_ ?_ <;> simp only [BitVec.reduceToNat, BitVec.reduceSub] <;> omega_arith)
     | (simp only [BitVec.reduceToNat]; omega_using [h66])
 
+/-- `hPost` does not read the memory on return. -/
+theorem hPost_out : ∀ vs m m₁ m₂ r, vs.length = (I.verifyHashSig.words abi.ptrBits).length →
+    Curry.apply (I.verifyHashSig.words abi.ptrBits) (hPost (I := I)) vs m m₁ r →
+      Curry.apply (I.verifyHashSig.words abi.ptrBits) (hPost (I := I)) vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen h
+  have h5 : vs.length = 5 := by
+    simpa [Spec.Ecdsa.Instance.verifyHashSig, Sig.words, Param.words] using hlen
+  match vs, h5 with
+  | [_, _, _, _, _], _ => exact h
+
 /-- `vg_ecdsa_<curve>_verify`, from the verification of the `len` bytes. -/
 theorem verifyHash_verified {wide : Bool} {core : Prog isa}
     (hL : 8 * I.curve.len = Spec.Ecdsa.nBits I.curve + if wide then 7 else 0) (h66 : I.curve.len ≤ 66)
@@ -1121,10 +1131,10 @@ theorem verifyHash_verified {wide : Bool} {core : Prog isa}
   obtain hk : (I.verifyHashSig.words abi.ptrBits).length < 8 := by rw [hashSig_words]; decide
   obtain hb : 32 < 112 ∧ 112 < 4096 ∧ 112 % 16 = 0 ∧ 80 * Elem.u8.size + 32 ≤ 112 := by decide
   obtain hsat : ∃ s, (I.verifyHashContract abi 112).pre s := ⟨_, hashSat h66⟩
-  exact Verified.stackScratchLKept (sig := I.verifyHashSig) (nm := "buf") (e := .u8) (n := 80)
+  exact Verified.stackScratchL (sig := I.verifyHashSig) (nm := "buf") (e := .u8) (n := 80)
     (pre := Curry.const (fun _ => True) _) (post := hPost (I := I)) (wa := true) (stack := 0) (bytes := 112)
     (hashed_verified hL h66 hcore htc ⟨_, narrow_pre (nm := "buf") hk hb pre_local hsat.choose_spec rfl⟩)
-    hk hb pre_local post_local leak_local hsat rfl
+    hk hb pre_local post_local (fun vs m m₁ m₂ r hl _ _ => hPost_out vs m m₁ m₂ r hl) leak_local hsat rfl
 
 /-- `vg_ecdsa_<curve>_verify`, from the verification of the `len` bytes that
 reads the tables `c₀ :: cs`. -/
@@ -1138,11 +1148,11 @@ theorem verifyHash_verified_cons {wide : Bool} {core : Prog isa} {c₀ : String 
     Verified target (verifyHash I.curve.len wide core) (I.verifyHashContract (abi.withConsts (c₀ :: cs)) 112) := by
   obtain hk : (I.verifyHashSig.words abi.ptrBits).length < 8 := by rw [hashSig_words]; decide
   obtain hb : 32 < 112 ∧ 112 < 4096 ∧ 112 % 16 = 0 ∧ 80 * Elem.u8.size + 32 ≤ 112 := by decide
-  exact Verified.stackScratchLCKept (sig := I.verifyHashSig) (nm := "buf") (e := .u8) (n := 80)
+  exact Verified.stackScratchLC (sig := I.verifyHashSig) (nm := "buf") (e := .u8) (n := 80)
     (pre := Curry.const (fun _ => True) _) (post := hPost (I := I)) (wa := true) (stack := 0) (bytes := 112)
     (hashed_verified_cons hL h66 hcore htc
       ⟨_, narrowK_pre (nm := "buf") (stack := 0) hk hb pre_local rfl hsat.choose_spec⟩)
-    hk hb pre_local post_local leak_local hsat rfl
+    hk hb pre_local post_local (fun vs m m₁ m₂ r hl _ _ => hPost_out vs m m₁ m₂ r hl) leak_local hsat rfl
 
 end
 

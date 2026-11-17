@@ -83,8 +83,22 @@ theorem sealGather_wp (hv : Gather.SealOk) (hs : SplitOk) {s : State} (h : Layou
     WP isa Impl.AesGcm.PPC64LE.GatherSplit.sealGather s
       fun z => abiPreserved s z ∧ gatherPost s z := by
   unfold Impl.AesGcm.PPC64LE.GatherSplit.sealGather Impl.AesGcm.PPC64LE.SealGather.withBody
-  refine WP.allocKept ⟨by decide,by decide,by decide⟩ (by have := h.space; omega_using [this]) ?_
+  refine WP.alloc ⟨by decide,by decide,by decide⟩ (by have := h.space; omega_using [this]) ?_
   refine WP.seq (WP.mono (entered_wp h.base) fun e he => ?_)
-  exact body_wp hv hs h he.1 he.2
+  refine WP.mono (body_wp hv hs h he.1 he.2) fun y ⟨ha, hp⟩ m _ fl => ⟨⟨ha.1, ha.2.1, ha.2.2⟩, ?_⟩
+  -- The `free` loses the frame's bytes, which lie apart from the ciphertext and the tag.
+  have hsub : Region.Sub ⟨s.sp - BitVec.ofNat 64 160, 160⟩ (below s.sp 2960) :=
+    Offset.sub_below _ (by omega_using []) (by omega_using [])
+  have hd : (Gather.dR s).Disjoint ⟨s.sp - BitVec.ofNat 64 160, 160⟩ :=
+    ((h.stack (Gather.dR s) (by simp)).sub_left hsub).symm
+  have ht : (Gather.tgR s).Disjoint ⟨s.sp - BitVec.ofNat 64 160, 160⟩ :=
+    ((h.stack (Gather.tgR s) (by simp)).sub_left hsub).symm
+  have hD : Spec.Aes.bytesAt m (Gather.Dst s) (Gather.L s) = Spec.Aes.bytesAt y.mem (Gather.Dst s) (Gather.L s) :=
+    List.map_congr_left fun i hi => lost_byte fl (R := Gather.dR s) hd (List.mem_range.mp hi)
+  have hT : Spec.Aes.bytesAt m (Gather.Tg s) 16 = Spec.Aes.bytesAt y.mem (Gather.Tg s) 16 :=
+    List.map_congr_left fun i hi => lost_byte fl (R := Gather.tgR s) ht (List.mem_range.mp hi)
+  show _ = (Spec.Aes.bytesAt m (Gather.Dst s) (Gather.L s), Spec.Aes.bytesAt m (Gather.Tg s) 16)
+  rw [hD, hT]
+  exact hp
 
 end VG.Proof.AesGcm.PPC64LE.GatherSplit
