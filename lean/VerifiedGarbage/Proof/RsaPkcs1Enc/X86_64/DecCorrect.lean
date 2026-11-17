@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecResult
+import VerifiedGarbage.Proof.Rsa.BytesFrame
 import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncCorrect
 import VerifiedGarbage.Proof.RsaPkcs1Enc.Decrypt
 import VerifiedGarbage.Proof.Framework.Offset
@@ -138,6 +139,17 @@ theorem ret_frame {s : State} (hp : DPre s) {m : Mem} (h : Frame (wrs s) s.mem m
   · exact hp.dRm
   · exact hp.dRs
 
+/-- `Spec.RsaPkcs1Enc.writtenMsg` of buffers apart from a frame, whatever the
+frame's bytes hold. -/
+theorem writtenMsg_frame {regions : List Region} {m m' : Mem} {out ml : Addr} {n : Nat} {r : BitVec 32}
+    {o : Spec.Rsa.Outcome} (f : Frame regions m m') (fit : n < 2 ^ 64)
+    (sepO : ∀ q ∈ regions, (⟨out, n⟩ : Region).Disjoint q)
+    (sepM : ∀ q ∈ regions, (⟨ml, 8 * 1⟩ : Region).Disjoint q)
+    (h : Spec.RsaPkcs1Enc.writtenMsg m out ml n r o) : Spec.RsaPkcs1Enc.writtenMsg m' out ml n r o := by
+  have hb := Proof.Rsa.rsa_bytes_frame f fit sepO
+  have hw := Proof.Rsa.wordsAt_frame f (n := 1) (by decide) sepM
+  cases o <;> simp only [Spec.RsaPkcs1Enc.writtenMsg] at h ⊢ <;> rw [hb, hw] <;> exact h
+
 /-- The function, with the code `A`, `B` before `rest`, which leave what
 the call of the private-key operation leaves (`hfront`). -/
 theorem decWith_ok (v : Compress) {A : List Instr} {B : Prog isa} {s : State} (hp : DPre s)
@@ -149,7 +161,16 @@ theorem decWith_ok (v : Compress) {A : List Instr} {B : Prog isa} {s : State} (h
   refine wp_alloc (by decide) (by decide) (by decide) (by have := hp.sp1; unfold decStack at this; omega_using [this]) ?_
   refine WP.seq (WP.mono hfront fun t₁ h₁ => WP.seq (WP.mono h₁ fun t₂ ⟨hpost, hcs, hmx₂⟩ => ?_))
   refine WP.mono_mx (rest_mx v) (rest_ok v hp hpost hcs) fun t₃ hF hmx₃ => ?_
-  refine ⟨hF.rsp, by rw [hF.wr]; rfl, ⟨fun r hr => ?_, ret_frame hp hF.mem, ?_⟩, ?_⟩
+  refine ⟨hF.rsp, by rw [hF.wr]; rfl, fun m u fm => ?_⟩
+  have hs := VG.Proof.RsaPkcs1Enc.X86_64.Dec.frame_sub s (d := 0) (n := frameBytes) (by omega_using [])
+  simp only [off, BitVec.add_zero] at hs
+  have sep : ∀ {R : Region}, (stkR s).Disjoint R →
+      ∀ q ∈ [(⟨s.gpr .rsp - BitVec.ofNat 64 frameBytes, frameBytes⟩ : Region)], R.Disjoint q :=
+    fun hd q hq => by
+      simp only [List.mem_singleton] at hq; subst hq
+      exact (hd.sub_left hs).symm
+  refine ⟨⟨fun r hr => ?_, ret_frame hp (hF.mem.trans (fm.sub fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, List.mem_cons_self .., hs⟩)), ?_⟩, ?_⟩
   · by_cases hr' : r = .rsp
     · subst hr'
       show t₃.gpr .rsp + BitVec.ofNat 64 frameBytes = s.gpr .rsp
@@ -162,7 +183,8 @@ theorem decWith_ok (v : Compress) {A : List Instr} {B : Prog isa} {s : State} (h
   · have hAM : (amOf s).length = kOf s := hF.amLen
     have := result_ok hp hpost.res rfl hF hAM
     simp only [decK]
-    rw [freed_mem, freed_rax]
-    exact this
+    have hsi := hp.hsi
+    exact writtenMsg_frame fm (s.gpr .r8).isLt (sep (by have := hp.dKo; rwa [hsi] at this))
+      (sep hp.dKm) this
 
 end VG.Proof.RsaPkcs1Enc.X86_64.Dec

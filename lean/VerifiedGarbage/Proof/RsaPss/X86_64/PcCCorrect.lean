@@ -933,14 +933,16 @@ structure CDone (s t : State) : Prop where
 
 theorem restoreC_ok {s t : State} (D : CDone s t) :
     WP isa (.block restoreRegs) t fun t' => t'.gpr .rsp = fb s ∧ t'.wr = (allocState frameBytes s).wr ∧
-      (∀ r ∈ calleeSaved, (freedF t').gpr r = s.gpr r) ∧ (verifyK tsH tsG).post s (freedF t') := by
+      ∀ m u, Frame [⟨fb s, frameBytes⟩] t'.mem m →
+        (∀ r ∈ calleeSaved, ({ freedF t' with mem := m, unknowns := u } : State).gpr r = s.gpr r) ∧ (verifyK tsH tsG).post s ({ freedF t' with mem := m, unknowns := u } : State) := by
   refine WP.mono (WP.keep [.rbx, .rbp, .r12] (Q := fun t' => t'.mem = t.mem ∧ t'.gpr .rbx = s.gpr .rbx ∧
       t'.gpr .rbp = s.gpr .rbp ∧ t'.gpr .r12 = s.gpr .r12) ?_ rfl) fun t' ⟨⟨hm, h1, h2, h3⟩, k⟩ => ?_
   · xrun [restoreRegs, ea_sp, D.L.rsp, D.L.ld (d := sRbx) (by decide), D.L.ld (d := sRbp) (by decide),
       D.L.ld (d := sR12) (by decide), D.rbx, D.rbp, D.r12]
   obtain hsp : t'.gpr .rsp = fb s := (k.gpr (by decide)).trans D.L.rsp
-  refine ⟨hsp, k.2.2.trans D.wr, fun r hr => ?_, ?_⟩
-  · simp only [freedF, State.setReg]
+  refine ⟨hsp, k.2.2.trans D.wr, fun _ _ _ => ⟨fun r hr => ?_, ?_⟩⟩
+  · show (freedF t').gpr r = s.gpr r
+    simp only [freedF, State.setReg]
     by_cases hr' : r = .rsp
     · subst hr'; simp only [ite_true, hsp, fb]; exact BitVec.sub_add_cancel _ _
     · simp only [hr', ite_false]
@@ -1110,8 +1112,10 @@ theorem codeC_ok {f : MdFns} {g : Impl.Mgf1.X86_64.Table.Fns}
     rw [k3.gpr (by decide), k2'.gpr (by decide), hax2]
   refine WP.seq (WP.mono (Q := fun (t3 : State) => CDone s t3 ∧
       t3.mxcsr.extractLsb' 6 10 = s.mxcsr.extractLsb' 6 10) ?_
-    fun t3 ⟨D, hm⟩ => WP.mono_mx (by decide) (restoreC_ok D) fun t' ⟨a, b, c, d⟩ hm' =>
-      ⟨a, b, c, d, by rw [show (freedF t').mxcsr = t'.mxcsr from rfl, hm']; exact hm⟩)
+    fun t3 ⟨D, hm⟩ => WP.mono_mx (by decide) (restoreC_ok D) fun t' ⟨a, b, c⟩ hm' =>
+      ⟨a, b, fun m u fm => ⟨(c m u fm).1, (c m u fm).2,
+        by rw [show ({ freedF t' with mem := m, unknowns := u } : State).mxcsr = t'.mxcsr from rfl, hm']
+           exact hm⟩⟩)
   -- The modulus as `n₀ ‖ rest`.
   set n₀ := s.mem (s.gpr .rdi) with hn₀
   set rest := Spec.Rsa.bytesAt s.mem (s.gpr .rdi + 1) ((s.gpr .rsi).toNat - 1) with hrest

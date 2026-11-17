@@ -593,8 +593,10 @@ theorem code_correct (v : PublicImpl) (s : State) (h : (encC (tables vs)).pre s)
   refine wp_alloc (by have := hp.sp1; unfold encStack at this; unfold frameBytes; omega_using [this]) ?_
   refine encBodyWith_ok w₁.ok w₁.mgf hp.toEPre (fun t he sy => etabL hp he sy okL hmL hDmL)
     (fun t' he' hw' hb => ?_) fun t he hsy L R hk => ?_
-  · obtain ⟨h1, h2, h3, h4⟩ := encEnd_ok hp.toEPre he' hw'
-    refine ⟨h1, h2, h3, fun _ => ?_⟩
+  · obtain ⟨h1, h2, h3⟩ := encEnd_ok hp.toEPre he' hw'
+    refine ⟨h1, h2, fun m u fm => ?_⟩
+    obtain ⟨h3, h4⟩ := h3 m u fm
+    refine ⟨h3, fun _ => ?_⟩
     show Spec.Rsa.written _ _ _ _ _
     rw [encrypt_none (by rw [hnl, hlen, hml]; omega_using [hb])]; exact h4
   · dsimp only
@@ -602,10 +604,11 @@ theorem code_correct (v : PublicImpl) (s : State) (h : (encC (tables vs)).pre s)
     refine WP.mono (encMain_ok w₁.ok w.ok w₁.mgf w.mgf v hgi hgu hgf hp he hsy okL hmL hDmL ok hm hDm L R
         ArgsW_35 hk)
       fun t' ⟨he', hw'⟩ => ?_
-    obtain ⟨h1, h2, h3⟩ := encEnd_abi hp.toEPre he'
-    refine ⟨h1, h2, h3, fun hq => ?_⟩
+    refine ⟨he'.rsp, by rw [he'.wr, EPre.wr hp.toEPre], fun m u fm => ?_⟩
+    obtain ⟨-, -, h3⟩ := encEnd_abi hp.toEPre (he'.lost (u := u) fm)
+    refine ⟨h3, fun hq => ?_⟩
     show Spec.Rsa.written _ _ _ _ _
-    have hw'' := hw' hq
+    have hw'' := hp.toEPre.written_lost fm (hw' hq)
     rw [encrypt_some (by rw [hsl]) (by rw [hnl, hlen, hml]; omega_using [hk]), hnl, hml, hlen]
     rw [hlen] at hw''
     exact hw''

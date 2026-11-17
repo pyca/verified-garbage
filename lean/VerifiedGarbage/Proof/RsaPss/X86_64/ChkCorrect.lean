@@ -342,14 +342,16 @@ theorem chk_xd : (checkEncoding T.f T.H T.g).x86_64Depth ≤ chkStack := by
 /-- The epilogue: the callee-saved registers restored and the outcome. -/
 theorem restore_ok {Hs : Spec.Mgf1.Hash} {s t : State} (D : CDone (chkOut T.H.D Hs Gs s) s t) :
     WP isa (.block restoreRegs) t fun t' => t'.gpr .rsp = fb s ∧ t'.wr = (allocState frameBytes s).wr ∧
-      (∀ r ∈ calleeSaved, (freedF t').gpr r = s.gpr r) ∧ (chkK T Hs Gs).post s (freedF t') := by
+      ∀ m u, Frame [⟨fb s, frameBytes⟩] t'.mem m →
+        (∀ r ∈ calleeSaved, ({ freedF t' with mem := m, unknowns := u } : State).gpr r = s.gpr r) ∧ (chkK T Hs Gs).post s ({ freedF t' with mem := m, unknowns := u } : State) := by
   refine WP.mono (WP.keep [.rbx, .rbp, .r12] (Q := fun t' => t'.mem = t.mem ∧ t'.gpr .rbx = s.gpr .rbx ∧
       t'.gpr .rbp = s.gpr .rbp ∧ t'.gpr .r12 = s.gpr .r12) ?_ rfl) fun t' ⟨⟨hm, h1, h2, h3⟩, k⟩ => ?_
   · xrun [restoreRegs, ea_sp, D.L.rsp, D.L.ld (d := sRbx) (by decide), D.L.ld (d := sRbp) (by decide),
       D.L.ld (d := sR12) (by decide), D.rbx, D.rbp, D.r12]
   obtain hsp : t'.gpr .rsp = fb s := (k.gpr (by decide)).trans D.L.rsp
-  refine ⟨hsp, k.2.2.trans D.wr, fun r hr => ?_, ?_⟩
-  · simp only [freedF, State.setReg]
+  refine ⟨hsp, k.2.2.trans D.wr, fun _ _ _ => ⟨fun r hr => ?_, ?_⟩⟩
+  · show (freedF t').gpr r = s.gpr r
+    simp only [freedF, State.setReg]
     by_cases hr' : r = .rsp
     · subst hr'; simp only [ite_true, hsp, fb]; exact BitVec.sub_add_cancel _ _
     · simp only [hr', ite_false]
@@ -384,9 +386,11 @@ theorem chk_ok (lk : Pbkdf2.Md.X86_64.MgfLink T.H hH) {s : State} (h : (chkK T l
   have hel := hp.hel
   refine wp_frame (by have := hp.sp1; unfold chkStack frameBytes at *; omega_using [hF]) ?_
   refine WP.mono_mx (safe_mx (chkBody_safe hH hf hg)) (Q := fun s₂ => s₂.gpr .rsp = fb s ∧
-    s₂.wr = (allocState frameBytes s).wr ∧ (∀ r ∈ calleeSaved, (freedF s₂).gpr r = s.gpr r) ∧
-      (chkK T lk.G Gs).post s (freedF s₂)) ?_ fun t ⟨a, b, c, d⟩ hmx =>
-    ⟨a, b, c, d, by rw [show (freedF t).mxcsr = t.mxcsr from rfl, hmx]; rfl⟩
+    s₂.wr = (allocState frameBytes s).wr ∧ ∀ m u, Frame [⟨fb s, frameBytes⟩] s₂.mem m →
+      (∀ r ∈ calleeSaved, ({ freedF s₂ with mem := m, unknowns := u } : State).gpr r = s.gpr r) ∧
+      (chkK T lk.G Gs).post s { freedF s₂ with mem := m, unknowns := u }) ?_ fun t ⟨a, b, c⟩ hmx =>
+    ⟨a, b, fun m u fm => ⟨(c m u fm).1, (c m u fm).2,
+      by rw [show ({ freedF t with mem := m, unknowns := u } : State).mxcsr = t.mxcsr from rfl, hmx]; rfl⟩⟩
   rw [chkBody]
   simp only [seqs]
   -- The prologue, and the tables' words to their slots.
