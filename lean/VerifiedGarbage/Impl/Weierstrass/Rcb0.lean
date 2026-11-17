@@ -6,11 +6,12 @@ public import VerifiedGarbage.Impl.Weierstrass.Slots
 # Complete formulas for `a = 0`, on slots
 
 The complete formulas of Renes, Costello and Batina for a curve
-`y² = x³ + b` (secp256k1's), as field operations on slots: Algorithm 8 adds
-an affine point (11 products and 2 by `3b`, against Algorithm 1's 12, 3 by
-`a` and 2 by `3b`), and Algorithm 9 doubles (6 products and 1 by `3b`, and 2
-squares). Each is in its stated order, with `3b` in the slot `S.b3`; `S.a`
-and `S.t5` are not used, and `o` must be apart from what they read.
+`y² = x³ + b` (secp256k1's), as field operations on slots: Algorithm 7 adds
+(12 products and 2 by `3b`, against Algorithm 1's 12, 3 by `a` and 2 by
+`3b`), Algorithm 8 adds an affine point (11 products and 2 by `3b`), and
+Algorithm 9 doubles (6 products and 1 by `3b`, and 2 squares). Each is in
+its stated order, with `3b` in the slot `S.b3`; `S.a` and `S.t5` are not
+used, and `o` must be apart from what they read.
 
 The ladders' doubling and addition (`ladDblOps`, `ladAddOps`) are these for
 `a0`, else Algorithm 1 (`rcb`).
@@ -22,6 +23,19 @@ The ladders' doubling and addition (`ladDblOps`, `ladAddOps`) are these for
 @[expose] public section
 
 namespace VG.Impl.Weierstrass
+
+/-- `o = p + q` on a curve with `a = 0`: Algorithm 7 (temporaries
+`t0 … t4`). -/
+def rcb0 (S : RcbSlots) (p q o : Pt) : List FOp :=
+  [.mul S.t0 p.x q.x, .mul S.t1 p.y q.y, .mul S.t2 p.z q.z, .add S.t3 p.x p.y,
+    .add S.t4 q.x q.y, .mul S.t3 S.t3 S.t4, .add S.t4 S.t0 S.t1, .sub S.t3 S.t3 S.t4,
+    .add S.t4 p.y p.z, .add o.x q.y q.z, .mul S.t4 S.t4 o.x, .add o.x S.t1 S.t2,
+    .sub S.t4 S.t4 o.x, .add o.x p.x p.z, .add o.y q.x q.z, .mul o.x o.x o.y,
+    .add o.y S.t0 S.t2, .sub o.y o.x o.y, .add o.x S.t0 S.t0, .add S.t0 o.x S.t0,
+    .mul S.t2 S.b3 S.t2, .add o.z S.t1 S.t2, .sub S.t1 S.t1 S.t2, .mul o.y S.b3 o.y,
+    .mul o.x S.t4 o.y, .mul S.t2 S.t3 S.t1, .sub o.x S.t2 o.x, .mul o.y o.y S.t0,
+    .mul S.t1 S.t1 o.z, .add o.y S.t1 o.y, .mul S.t0 S.t0 S.t3, .mul o.z o.z S.t4,
+    .add o.z o.z S.t0]
 
 /-- `o = p + q` for an affine `q` (`(q.x : q.y : 1)`; `q.z` is not read) on a
 curve with `a = 0`: Algorithm 8 (temporaries `t0 … t4`). -/

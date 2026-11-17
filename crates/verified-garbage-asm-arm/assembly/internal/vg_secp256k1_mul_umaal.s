@@ -211,27 +211,20 @@ vg_secp256k1_mul_umaal:
 	mov lr, r10
 	mov r10, lr
 	mov r0, r12
-	movw r1, #864
-	movw r2, #672
-	movw r3, #224
-	bl {vg_secp256k1_mul_mod_p_umaal}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
 	movw r1, #896
-	movw r2, #608
-	movw r3, #640
-	bl {vg_secp256k1_add_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #928
 	movw r2, #512
 	movw r3, #544
 	bl {vg_secp256k1_add_mod_p}
 	mov lr, r10
 	mov r10, lr
 	mov r0, r12
+	movw r1, #928
+	movw r2, #608
+	movw r3, #640
+	bl {vg_secp256k1_add_mod_p}
+	mov lr, r10
+	mov r10, lr
+	mov r0, r12
 	movw r1, #896
 	movw r2, #896
 	movw r3, #928
@@ -254,218 +247,127 @@ vg_secp256k1_mul_umaal:
 	mov r10, lr
 	mov r0, r12
 	movw r1, #928
-	movw r2, #608
-	movw r3, #672
-	bl {vg_secp256k1_add_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #960
-	movw r2, #512
-	movw r3, #224
-	bl {vg_secp256k1_add_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #928
-	movw r2, #928
-	movw r3, #960
-	bl {vg_secp256k1_mul_mod_p_umaal}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #960
-	movw r2, #800
-	movw r3, #864
-	bl {vg_secp256k1_add_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #928
-	movw r2, #928
-	movw r3, #960
-	bl {vg_secp256k1_sub_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #960
-	movw r2, #640
-	movw r3, #672
-	bl {vg_secp256k1_add_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #704
 	movw r2, #544
-	movw r3, #224
-	bl {vg_secp256k1_add_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #960
-	movw r2, #960
-	movw r3, #704
+	movw r3, #672
 	bl {vg_secp256k1_mul_mod_p_umaal}
 	mov lr, r10
 	mov r10, lr
 	mov r0, r12
-	movw r1, #704
-	movw r2, #832
-	movw r3, #864
-	bl {vg_secp256k1_add_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #960
-	movw r2, #960
-	movw r3, #704
-	bl {vg_secp256k1_sub_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #768
-	movw r2, #256
-	movw r3, #928
-	bl {vg_secp256k1_mul_mod_p_umaal}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #704
-	movw r2, #288
-	movw r3, #864
-	bl {vg_secp256k1_mul_mod_p_umaal}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #768
-	movw r2, #704
-	movw r3, #768
-	bl {vg_secp256k1_add_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #704
-	movw r2, #832
-	movw r3, #768
-	bl {vg_secp256k1_sub_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #768
-	movw r2, #832
-	movw r3, #768
+	movw r1, #928
+	movw r2, #928
+	movw r3, #640
 	bl {vg_secp256k1_add_mod_p}
 	mov lr, r10
 	mov r10, lr
 	mov r0, r12
 	movw r1, #736
-	movw r2, #704
-	movw r3, #768
-	bl {vg_secp256k1_mul_mod_p_umaal}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #832
-	movw r2, #800
-	movw r3, #800
-	bl {vg_secp256k1_add_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #832
-	movw r2, #832
-	movw r3, #800
-	bl {vg_secp256k1_add_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #864
-	movw r2, #256
-	movw r3, #864
-	bl {vg_secp256k1_mul_mod_p_umaal}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #928
-	movw r2, #288
-	movw r3, #928
-	bl {vg_secp256k1_mul_mod_p_umaal}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #832
-	movw r2, #832
-	movw r3, #864
-	bl {vg_secp256k1_add_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #864
-	movw r2, #800
-	movw r3, #864
-	bl {vg_secp256k1_sub_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #864
-	movw r2, #256
-	movw r3, #864
-	bl {vg_secp256k1_mul_mod_p_umaal}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #928
-	movw r2, #928
-	movw r3, #864
-	bl {vg_secp256k1_add_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #800
-	movw r2, #832
-	movw r3, #928
+	movw r2, #512
+	movw r3, #672
 	bl {vg_secp256k1_mul_mod_p_umaal}
 	mov lr, r10
 	mov r10, lr
 	mov r0, r12
 	movw r1, #736
 	movw r2, #736
+	movw r3, #608
+	bl {vg_secp256k1_add_mod_p}
+	mov lr, r10
+	mov r10, lr
+	mov r0, r12
+	movw r1, #704
+	movw r2, #800
 	movw r3, #800
 	bl {vg_secp256k1_add_mod_p}
 	mov lr, r10
 	mov r10, lr
 	mov r0, r12
 	movw r1, #800
-	movw r2, #960
-	movw r3, #928
-	bl {vg_secp256k1_mul_mod_p_umaal}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #704
-	movw r2, #896
-	movw r3, #704
-	bl {vg_secp256k1_mul_mod_p_umaal}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #704
 	movw r2, #704
 	movw r3, #800
+	bl {vg_secp256k1_add_mod_p}
+	mov lr, r10
+	mov r10, lr
+	mov r0, r12
+	movw r1, #864
+	movw r2, #288
+	movw r3, #672
+	bl {vg_secp256k1_mul_mod_p_umaal}
+	mov lr, r10
+	mov r10, lr
+	mov r0, r12
+	movw r1, #768
+	movw r2, #832
+	movw r3, #864
+	bl {vg_secp256k1_add_mod_p}
+	mov lr, r10
+	mov r10, lr
+	mov r0, r12
+	movw r1, #832
+	movw r2, #832
+	movw r3, #864
 	bl {vg_secp256k1_sub_mod_p}
 	mov lr, r10
 	mov r10, lr
 	mov r0, r12
-	movw r1, #800
+	movw r1, #736
+	movw r2, #288
+	movw r3, #736
+	bl {vg_secp256k1_mul_mod_p_umaal}
+	mov lr, r10
+	mov r10, lr
+	mov r0, r12
+	movw r1, #704
+	movw r2, #928
+	movw r3, #736
+	bl {vg_secp256k1_mul_mod_p_umaal}
+	mov lr, r10
+	mov r10, lr
+	mov r0, r12
+	movw r1, #864
 	movw r2, #896
 	movw r3, #832
 	bl {vg_secp256k1_mul_mod_p_umaal}
 	mov lr, r10
 	mov r10, lr
 	mov r0, r12
-	movw r1, #768
-	movw r2, #960
+	movw r1, #704
+	movw r2, #864
+	movw r3, #704
+	bl {vg_secp256k1_sub_mod_p}
+	mov lr, r10
+	mov r10, lr
+	mov r0, r12
+	movw r1, #736
+	movw r2, #736
+	movw r3, #800
+	bl {vg_secp256k1_mul_mod_p_umaal}
+	mov lr, r10
+	mov r10, lr
+	mov r0, r12
+	movw r1, #832
+	movw r2, #832
 	movw r3, #768
+	bl {vg_secp256k1_mul_mod_p_umaal}
+	mov lr, r10
+	mov r10, lr
+	mov r0, r12
+	movw r1, #736
+	movw r2, #832
+	movw r3, #736
+	bl {vg_secp256k1_add_mod_p}
+	mov lr, r10
+	mov r10, lr
+	mov r0, r12
+	movw r1, #800
+	movw r2, #800
+	movw r3, #896
+	bl {vg_secp256k1_mul_mod_p_umaal}
+	mov lr, r10
+	mov r10, lr
+	mov r0, r12
+	movw r1, #768
+	movw r2, #768
+	movw r3, #928
 	bl {vg_secp256k1_mul_mod_p_umaal}
 	mov lr, r10
 	mov r10, lr
@@ -1595,41 +1497,6 @@ vg_secp256k1_mul_umaal:
 	mov r10, lr
 	mov r0, r12
 	movw r1, #928
-	movw r2, #512
-	movw r3, #576
-	bl {vg_secp256k1_add_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #960
-	movw r2, #704
-	movw r3, #768
-	bl {vg_secp256k1_add_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #928
-	movw r2, #928
-	movw r3, #960
-	bl {vg_secp256k1_mul_mod_p_umaal}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #960
-	movw r2, #800
-	movw r3, #864
-	bl {vg_secp256k1_add_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #928
-	movw r2, #928
-	movw r3, #960
-	bl {vg_secp256k1_sub_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #960
 	movw r2, #544
 	movw r3, #576
 	bl {vg_secp256k1_add_mod_p}
@@ -1643,170 +1510,156 @@ vg_secp256k1_mul_umaal:
 	mov lr, r10
 	mov r10, lr
 	mov r0, r12
-	movw r1, #960
-	movw r2, #960
-	movw r3, #608
-	bl {vg_secp256k1_mul_mod_p_umaal}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #608
-	movw r2, #832
-	movw r3, #864
-	bl {vg_secp256k1_add_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #960
-	movw r2, #960
-	movw r3, #608
-	bl {vg_secp256k1_sub_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #672
-	movw r2, #256
-	movw r3, #928
-	bl {vg_secp256k1_mul_mod_p_umaal}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #608
-	movw r2, #288
-	movw r3, #864
-	bl {vg_secp256k1_mul_mod_p_umaal}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #672
-	movw r2, #608
-	movw r3, #672
-	bl {vg_secp256k1_add_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #608
-	movw r2, #832
-	movw r3, #672
-	bl {vg_secp256k1_sub_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #672
-	movw r2, #832
-	movw r3, #672
-	bl {vg_secp256k1_add_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #640
-	movw r2, #608
-	movw r3, #672
-	bl {vg_secp256k1_mul_mod_p_umaal}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #832
-	movw r2, #800
-	movw r3, #800
-	bl {vg_secp256k1_add_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #832
-	movw r2, #832
-	movw r3, #800
-	bl {vg_secp256k1_add_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #864
-	movw r2, #256
-	movw r3, #864
-	bl {vg_secp256k1_mul_mod_p_umaal}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
 	movw r1, #928
-	movw r2, #288
-	movw r3, #928
+	movw r2, #928
+	movw r3, #608
 	bl {vg_secp256k1_mul_mod_p_umaal}
 	mov lr, r10
 	mov r10, lr
 	mov r0, r12
-	movw r1, #832
+	movw r1, #608
 	movw r2, #832
 	movw r3, #864
 	bl {vg_secp256k1_add_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #864
-	movw r2, #800
-	movw r3, #864
-	bl {vg_secp256k1_sub_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #864
-	movw r2, #256
-	movw r3, #864
-	bl {vg_secp256k1_mul_mod_p_umaal}
 	mov lr, r10
 	mov r10, lr
 	mov r0, r12
 	movw r1, #928
 	movw r2, #928
-	movw r3, #864
-	bl {vg_secp256k1_add_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #800
-	movw r2, #832
-	movw r3, #928
-	bl {vg_secp256k1_mul_mod_p_umaal}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #640
-	movw r2, #640
-	movw r3, #800
-	bl {vg_secp256k1_add_mod_p}
-	mov lr, r10
-	mov r10, lr
-	mov r0, r12
-	movw r1, #800
-	movw r2, #960
-	movw r3, #928
-	bl {vg_secp256k1_mul_mod_p_umaal}
+	movw r3, #608
+	bl {vg_secp256k1_sub_mod_p}
 	mov lr, r10
 	mov r10, lr
 	mov r0, r12
 	movw r1, #608
-	movw r2, #896
-	movw r3, #608
-	bl {vg_secp256k1_mul_mod_p_umaal}
+	movw r2, #512
+	movw r3, #576
+	bl {vg_secp256k1_add_mod_p}
+	mov lr, r10
+	mov r10, lr
+	mov r0, r12
+	movw r1, #640
+	movw r2, #704
+	movw r3, #768
+	bl {vg_secp256k1_add_mod_p}
 	mov lr, r10
 	mov r10, lr
 	mov r0, r12
 	movw r1, #608
 	movw r2, #608
-	movw r3, #800
+	movw r3, #640
+	bl {vg_secp256k1_mul_mod_p_umaal}
+	mov lr, r10
+	mov r10, lr
+	mov r0, r12
+	movw r1, #640
+	movw r2, #800
+	movw r3, #864
+	bl {vg_secp256k1_add_mod_p}
+	mov lr, r10
+	mov r10, lr
+	mov r0, r12
+	movw r1, #640
+	movw r2, #608
+	movw r3, #640
 	bl {vg_secp256k1_sub_mod_p}
 	mov lr, r10
 	mov r10, lr
 	mov r0, r12
+	movw r1, #608
+	movw r2, #800
+	movw r3, #800
+	bl {vg_secp256k1_add_mod_p}
+	mov lr, r10
+	mov r10, lr
+	mov r0, r12
 	movw r1, #800
+	movw r2, #608
+	movw r3, #800
+	bl {vg_secp256k1_add_mod_p}
+	mov lr, r10
+	mov r10, lr
+	mov r0, r12
+	movw r1, #864
+	movw r2, #288
+	movw r3, #864
+	bl {vg_secp256k1_mul_mod_p_umaal}
+	mov lr, r10
+	mov r10, lr
+	mov r0, r12
+	movw r1, #672
+	movw r2, #832
+	movw r3, #864
+	bl {vg_secp256k1_add_mod_p}
+	mov lr, r10
+	mov r10, lr
+	mov r0, r12
+	movw r1, #832
+	movw r2, #832
+	movw r3, #864
+	bl {vg_secp256k1_sub_mod_p}
+	mov lr, r10
+	mov r10, lr
+	mov r0, r12
+	movw r1, #640
+	movw r2, #288
+	movw r3, #640
+	bl {vg_secp256k1_mul_mod_p_umaal}
+	mov lr, r10
+	mov r10, lr
+	mov r0, r12
+	movw r1, #608
+	movw r2, #928
+	movw r3, #640
+	bl {vg_secp256k1_mul_mod_p_umaal}
+	mov lr, r10
+	mov r10, lr
+	mov r0, r12
+	movw r1, #864
 	movw r2, #896
 	movw r3, #832
 	bl {vg_secp256k1_mul_mod_p_umaal}
 	mov lr, r10
 	mov r10, lr
 	mov r0, r12
-	movw r1, #672
-	movw r2, #960
+	movw r1, #608
+	movw r2, #864
+	movw r3, #608
+	bl {vg_secp256k1_sub_mod_p}
+	mov lr, r10
+	mov r10, lr
+	mov r0, r12
+	movw r1, #640
+	movw r2, #640
+	movw r3, #800
+	bl {vg_secp256k1_mul_mod_p_umaal}
+	mov lr, r10
+	mov r10, lr
+	mov r0, r12
+	movw r1, #832
+	movw r2, #832
 	movw r3, #672
+	bl {vg_secp256k1_mul_mod_p_umaal}
+	mov lr, r10
+	mov r10, lr
+	mov r0, r12
+	movw r1, #640
+	movw r2, #832
+	movw r3, #640
+	bl {vg_secp256k1_add_mod_p}
+	mov lr, r10
+	mov r10, lr
+	mov r0, r12
+	movw r1, #800
+	movw r2, #800
+	movw r3, #896
+	bl {vg_secp256k1_mul_mod_p_umaal}
+	mov lr, r10
+	mov r10, lr
+	mov r0, r12
+	movw r1, #672
+	movw r2, #672
+	movw r3, #928
 	bl {vg_secp256k1_mul_mod_p_umaal}
 	mov lr, r10
 	mov r10, lr

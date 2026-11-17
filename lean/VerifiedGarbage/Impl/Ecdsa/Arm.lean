@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.Weierstrass.Arm.LadderP
 public import VerifiedGarbage.Impl.Weierstrass.Arm.Window
 public import VerifiedGarbage.Impl.Weierstrass.JacMul
 public import VerifiedGarbage.Impl.Weierstrass.JacDblA
+public import VerifiedGarbage.Impl.Weierstrass.Rcb0
 public import VerifiedGarbage.Spec.Weierstrass
 public import VerifiedGarbage.Spec.Ecdsa
 public import VerifiedGarbage.Impl.Weierstrass.Layout.Mul
@@ -317,8 +318,8 @@ first two slots and the number `k` at `K`'s slot, in windows of `winW` bits:
 1. the table of `k`'s bits (table 0);
 2. the table of `[e]Q` for `e < 2^winW`, `24 n` bytes each in projective
    coordinates, past the three tables of bits (`winTbl`): `O = (0 : 1 : 0)`
-   and `Q = (x : y : 1)`, then `[e + 1]Q = [e]Q + Q` by the complete addition,
-   in the slots `D` and `T`;
+   and `Q = (x : y : 1)`, then `[e + 1]Q = [e]Q + Q` by the complete addition
+   of the curve for an affine point (`winAddM`), in the slots `D` and `T`;
 3. from `R = O`, for the windows `j` from `winJ - 1` down to `0`,
    `R = 2^winW R + [k_j]Q`:
    * `R = 2^winW R` (`winQuad`): `R` in Jacobian coordinates, `winW`
@@ -327,7 +328,8 @@ first two slots and the number `k` at `K`'s slot, in windows of `winW` bits:
      `Z = 0`;
    * the window `k_j` from the table of bits (`winDigit`, the comb's code),
      and its entry by a scan of the whole table into `T` (`scan`);
-   * `D = R + T` by the complete addition, copied to `R`.
+   * `D = R + T` by the complete addition of the curve (`winAdd`), copied
+     to `R`.
 
 The counters are `r11` (which the field arithmetic keeps) and, in the scan,
 `r7`; every address is `r12` plus a constant or a multiple of a counter.
@@ -358,6 +360,14 @@ def winTbl : Nat := bitsAt c.n 3
 any `a`. -/
 def winDbl : RcbSlots → Pt → Pt → List FOp :=
   if c.C.a + 3 = c.C.p then dblJMul else if c.C.a = 0 then dblJ0 else dblJa
+
+/-- The windows' complete addition: Algorithm 7 for `a = 0`, else
+Algorithm 1. -/
+def winAdd : RcbSlots → Pt → Pt → Pt → List FOp := if c.C.a = 0 then rcb0 else rcb
+
+/-- The table's complete addition of the point, which is affine: Algorithm 8
+for `a = 0`, else Algorithm 1. -/
+def winAddM : RcbSlots → Pt → Pt → Pt → List FOp := if c.C.a = 0 then rcb0m else rcb
 
 /-- Zero, as a point (`toJ` and `fromJ` add zero to copy). -/
 def zeroPt : Pt := c.pt ZERO ZERO ZERO
@@ -394,13 +404,13 @@ def winQuad : Prog isa :=
 def winStep : Prog isa :=
   .seq (.block [decCounter]) <| .seq c.winQuad <| .seq c.winDigit <|
   .seq (scan (c.sl TX) (6 * c.n) (2 ^ c.winW) c.winTbl) <|
-  .seq (fprog c.SP (rcb c.rcbSlots (c.pt RX RY RZ) (c.pt TX TY TZ) (c.pt DX DY DZ)) c.umaal)
+  .seq (fprog c.SP (c.winAdd c.rcbSlots (c.pt RX RY RZ) (c.pt TX TY TZ) (c.pt DX DY DZ)) c.umaal)
     (.block (Point.copyPt c.n (c.pt RX RY RZ) (c.pt DX DY DZ) ++ [testCounter]))
 
 /-- Entry `r11 + 1` of the table: `T = D + Q`, stored, and `D = T`; then
 `r11 += 1`, and `Z` set once every entry is there. -/
 def winBuildStep : Prog isa :=
-  .seq (fprog c.SP (rcb c.rcbSlots (c.pt DX DY DZ) (c.pt RX RY ONEP) (c.pt TX TY TZ)) c.umaal) <|
+  .seq (fprog c.SP (c.winAddM c.rcbSlots (c.pt DX DY DZ) (c.pt RX RY ONEP) (c.pt TX TY TZ)) c.umaal) <|
   .block (entryPtr (c.winTbl + 24 * c.n) (24 * c.n) ++ storePt c.n 0 (c.pt TX TY TZ) ++
     Point.copyPt c.n (c.pt DX DY DZ) (c.pt TX TY TZ) ++
     ([.dp .add .r11 .r11 (.imm 1), .cmp .r11 (.imm (BitVec.ofNat 32 (2 ^ c.winW - 1)))] : List Instr))
