@@ -426,9 +426,9 @@ theorem seal_wp' (F : MulFacts) {s : State} {K W SP N A D T : Addr} {R al n : Na
         (bytesAt s.mem D n) (bytesAt s.mem A al) = (bytesAt s'.mem D n, bytesAt s'.mem T 16) :=
   seal_wpG F
     (fun L _ E _ _ _ _ _ _ S hA hD => WP.mono (polyval_ok F L E S hA hD) fun _ P =>
-      ⟨P.env, P.rd, P.wr, toL P.frame, P.out⟩)
+      ⟨P.env, P.rd, P.wr, toL P.frame, toLn P.frame, P.out⟩)
     (fun L _ hR _ E _ _ _ _ _ S hD hDw => WP.mono (crypt_ok L hR E S hD hDw) fun _ P =>
-      ⟨P.env, P.rd, P.wr, toLD P.frame, P.data⟩)
+      ⟨P.env, P.rd, P.wr, toLD P.frame, toLDn P.frame, P.data⟩)
     Ar Tb hTw hrT hsp hn hT hW hdi hsi hdx hcx hr8 hr9
 
 /-- `vg_aes_gcm_siv_seal` with the loops, for its arguments. -/
