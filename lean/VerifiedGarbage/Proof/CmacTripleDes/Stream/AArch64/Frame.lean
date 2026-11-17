@@ -1579,7 +1579,7 @@ end
 
 The streaming functions run their code, proved with the working space as an
 argument (`Verified.lean`), in a frame that allocates it
-(`Verified.stackScratchKept`): 640 bytes, and 688 for `absorb`. Their code uses
+(`Verified.stackScratch`): 640 bytes, and 688 for `absorb`. Their code uses
 no other stack: it calls nothing, and the return address stays in `x30`.
 -/
 
@@ -1616,23 +1616,26 @@ theorem finishFrameSat_pre : ∃ s, (Spec.Cmac.tdesFinishContract AArch64.abi 64
 theorem init_framed :
     Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratch 640 .x3 streamInit)
       (Spec.Cmac.tdesStreamInitContract AArch64.abi 640) :=
-  AArch64.Verified.stackScratchKept (sig := Spec.Cmac.tdesStreamInitSig) (nm := "scratch") (e := .u64) (n := 80)
+  AArch64.Verified.stackScratch (sig := Spec.Cmac.tdesStreamInitSig) (nm := "scratch") (e := .u64) (n := 80)
     (pre := Spec.Cmac.tdesStreamInitPre AArch64.abi.ptrBits)
     (post := Spec.Cmac.tdesStreamInitPost AArch64.abi.ptrBits)
-    (wa := false) (stack := 0) (bytes := 640) init_verified (by decide) (by decide) initFrameSat_pre
+    (wa := false) (stack := 0) (bytes := 640) init_verified (by decide) (by decide)
+    (fun vs m m₁ m₂ r hl _ => Proof.CmacTripleDes.Stream.streamInitPostOut_local _ vs m m₁ m₂ r hl) initFrameSat_pre
 
 theorem absorb_framed :
     Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratch 688 .x4 absorb)
       (Spec.Cmac.tdesAbsorbContract AArch64.abi 688) :=
-  AArch64.Verified.stackScratchKept (sig := Spec.Cmac.tdesAbsorbSig) (nm := "scratch") (e := .u64) (n := 86)
+  AArch64.Verified.stackScratch (sig := Spec.Cmac.tdesAbsorbSig) (nm := "scratch") (e := .u64) (n := 86)
     (post := Spec.Cmac.tdesAbsorbPost AArch64.abi.ptrBits)
-    (wa := false) (stack := 0) (bytes := 688) absorb_verified (by decide) (by decide) absorbFrameSat_pre
+    (wa := false) (stack := 0) (bytes := 688) absorb_verified (by decide) (by decide)
+    (fun vs m m₁ m₂ r hl _ => Proof.CmacTripleDes.Stream.absorbPostOut_local _ vs m m₁ m₂ r hl) absorbFrameSat_pre
 
 theorem finish_framed :
     Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratch 640 .x3 finish)
       (Spec.Cmac.tdesFinishContract AArch64.abi 640) :=
-  AArch64.Verified.stackScratchKept (sig := Spec.Cmac.tdesFinishSig) (nm := "scratch") (e := .u64) (n := 80)
+  AArch64.Verified.stackScratch (sig := Spec.Cmac.tdesFinishSig) (nm := "scratch") (e := .u64) (n := 80)
     (post := Spec.Cmac.tdesFinishPost AArch64.abi.ptrBits)
-    (wa := false) (stack := 0) (bytes := 640) finish_verified (by decide) (by decide) finishFrameSat_pre
+    (wa := false) (stack := 0) (bytes := 640) finish_verified (by decide) (by decide)
+    (fun vs m m₁ m₂ r hl _ => Proof.CmacTripleDes.Stream.finishPostOut_local _ vs m m₁ m₂ r hl) finishFrameSat_pre
 
 end VG.Proof.CmacTripleDes.Stream.AArch64
