@@ -72,6 +72,13 @@ abbrev rsR (s : State) : Region := ⟨Ss s + BitVec.ofNat 64 oRsa, ((stackArg s 
 /-- The private operation's frame, below its stack arguments. -/
 abbrev pkR (pc : Bool) (s : State) : Region := ⟨kb pc s, Impl.Rsa.RISCV64.Priv.frameBytes⟩
 
+/-- `writtenOutcome` of a memory with the same octets at `out`. -/
+theorem writtenOutcome_lost {m m' : Mem} {out : Addr} {k : Nat} {r r' : BitVec 32} {o : Spec.Rsa.Outcome}
+    (hr : r' = r) (hb : Spec.Rsa.bytesAt m' out k = Spec.Rsa.bytesAt m out k)
+    (h : Spec.Rsa.writtenOutcome m out k r o) : Spec.Rsa.writtenOutcome m' out k r' o := by
+  subst hr
+  cases o <;> simp only [Spec.Rsa.writtenOutcome, hb] at h ⊢ <;> exact h
+
 section
 variable {pc : Bool} {D : Nat} {s : State} (P : PreS pc D s)
 include P
@@ -883,13 +890,15 @@ theorem priv_ok {t : State} (h : Base Ss vS s t) (sp : Spilled s t.mem)
   have hsp : t.sp = fb s := h.sp
   obtain pr := privBytes_rng pc
   unfold priv
-  refine WP.allocKept (by cases pc <;> exact ⟨by decide, by decide, by decide⟩) (by
+  refine WP.allocLe (by cases pc <;> exact ⟨by decide, by decide, by decide⟩) (by
     rw [hsp]; have := P.sp1
     rw [stackBytes_split] at this
     simp only [fb, BitVec.toNat_sub, BitVec.toNat_ofNat, frameBytes, Impl.Rsa.RISCV64.Priv.frameBytes] at *
     omega_using [this]) ?_
   refine WP.seq (WP.mono (privArgs_ok P h sp hem) fun u A => ?_)
-  refine WP.mono (call_priv P A) fun v ⟨hrd, hwr, hsp', hf, hpost⟩ => ?_
+  refine WP.mono (call_priv P A) fun v ⟨hrd, hwr, hsp', hf, hpost⟩ mL _ fl => ?_
+  -- Whatever the released frame's bytes hold.
+  obtain fl' : Frame [PB pc s] v.mem mL := by rw [hsp] at fl; exact fl
   -- The outcome.
   obtain sa := fun i (hi : i < 12) => callE_stackArg A (i := i) (Nat.lt_of_lt_of_le hi (by cases pc <;> decide))
   obtain s0 : stackArg (callE pc s u) 0 = s.gpr .a6 := sa 0 (by decide)
@@ -920,12 +929,24 @@ theorem priv_ok {t : State} (h : Base Ss vS s t) (sp : Spilled s t.mem)
     rw [hsp', A.sp, BitVec.sub_add_cancel]
   obtain fwr : (freed (privBytes pc) v).wr = fr s :: s.wr := by
     show v.wr.tail = _; rw [hwr, A.wr]; rfl
-  obtain svs : Spill.Saved (fb s) s.gpr saved v.mem :=
-    A.sv.frame_in (lo := Proof.RsaOaep.RISCV64.oSv) (n := frameBytes - Proof.RsaOaep.RISCV64.oSv)
-      (fun p hp => by
-        have := Proof.RsaOaep.RISCV64.saved_offs p hp; unfold frameBytes Proof.RsaOaep.RISCV64.oSv at *; omega_using [this])
-      hf (slots_dis P)
-  exact ⟨⟨fsp, fwr, svs⟩, by show v.rd = _; exact hrd.trans A.rd, hpost⟩
+  obtain svs : Spill.Saved (fb s) s.gpr saved mL := by
+    obtain hl : ∀ p ∈ saved, Proof.RsaOaep.RISCV64.oSv ≤ p.2 ∧
+        p.2 + 8 ≤ Proof.RsaOaep.RISCV64.oSv + (frameBytes - Proof.RsaOaep.RISCV64.oSv) := fun p hp => by
+      have := Proof.RsaOaep.RISCV64.saved_offs p hp; unfold frameBytes Proof.RsaOaep.RISCV64.oSv at *; omega_using [this]
+    refine (A.sv.frame_in hl hf (slots_dis P)).frame_in hl fl' fun r hr => ?_
+    rw [List.mem_singleton.mp hr]
+    show Region.Disjoint _ ⟨pb pc s, privBytes pc⟩
+    rw [pb_kb P, fb_kb P, Offset.add_add]
+    exact Offset.disjoint _ (.inr (by unfold Impl.Rsa.RISCV64.Priv.frameBytes; omega_using []))
+      (by unfold frameBytes Proof.RsaOaep.RISCV64.oSv Impl.Rsa.RISCV64.Priv.frameBytes; omega_using [pr])
+      (by omega_using [pr])
+  refine ⟨⟨fsp, fwr, svs⟩, by show v.rd = _; exact hrd.trans A.rd, ?_⟩
+  obtain hbo : Spec.Rsa.bytesAt mL (s.gpr .a0) (kk s) = Spec.Rsa.bytesAt v.mem (s.gpr .a0) (kk s) :=
+    List.map_congr_left fun i hi => lost_byte fl' (R := ⟨s.gpr .a0, kk s⟩)
+      (by rw [show kk s = (s.gpr .a1).toNat from P.ok.symm]; exact (P.ko.sub_left (PB_sub P)).symm) (List.mem_range.mp hi)
+  show Spec.Rsa.writtenOutcome mL _ _ ((v.gpr .a0).setWidth 32) _
+  have hq : Spec.Rsa.writtenOutcome v.mem (s.gpr .a0) (kk s) ((v.gpr .a0).setWidth 32) (privOut s em) := hpost
+  exact writtenOutcome_lost rfl hbo hq
 
 end
 

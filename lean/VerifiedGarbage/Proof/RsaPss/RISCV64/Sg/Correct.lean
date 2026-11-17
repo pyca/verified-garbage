@@ -92,13 +92,19 @@ theorem checks_done {t : State} (E : Entered s t) (sy : t.syms = s.syms) :
 
 /-- The code for the hash function `H`, in its frame. -/
 theorem code_ok : WP isa (signFor H M.be f g pc) s (Post Hs Gs s) := by
-  refine WP.allocKept (by decide) (by have := P.sp1; have := stackBytes_ge pc; unfold frameBytes; omega_arith) ?_
+  refine WP.allocLe (by decide) (by have := P.sp1; have := stackBytes_ge pc; unfold frameBytes; omega_arith) ?_
   refine WP.seq (WP.mono_syms (pro_ok P) fun t₀ E₀ y₀ => WP.seq (WP.mono_syms (spill_ok P E₀) fun t E y =>
     WP.seq (WP.mono (checks_done P hH hF T hHh hHl hHv hG hGF TG hGh hGl hGv E (y.trans (y₀.trans rfl)))
-      fun t' ⟨sv, res⟩ => WP.mono (restore_ok sv (fb_al8 P)) fun w ⟨habi, h3, hm⟩ => ⟨habi, ?_⟩)))
-  show Spec.Rsa.writtenOutcome w.mem _ _ ((w.gpr .a0).setWidth 32) _
-  rw [hm, h3]
-  exact res
+      fun t' ⟨sv, res⟩ => WP.mono (restore_ok sv (fb_al8 P)) fun w ⟨habi, h3, hm⟩ m _ fl =>
+        ⟨⟨habi.1, habi.2.1, habi.2.2⟩, ?_⟩)))
+  show Spec.Rsa.writtenOutcome m _ _ ((w.gpr .a0).setWidth 32) _
+  have fs : Region.Sub ⟨Proof.RsaOaep.RISCV64.fb s + BitVec.ofNat 64 0, frameBytes⟩ (kS pc s) :=
+    fun a h => kR_sub a (Proof.RsaOaep.RISCV64.frame_sub s (Nat.le_refl _) a h)
+  rw [BitVec.add_zero] at fs
+  refine writtenOutcome_lost (congrArg _ h3) ?_ res
+  rw [← hm]
+  exact List.map_congr_left fun i hi => lost_byte fl (R := ⟨s.gpr .a0, kk s⟩)
+    (by rw [show kk s = (s.gpr .a1).toNat from P.ok.symm]; exact (P.ko.sub_left fs).symm) (List.mem_range.mp hi)
 
 end
 
