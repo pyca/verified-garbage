@@ -407,21 +407,6 @@ theorem WP.frameLocal {rs : List Reg} {r : Reg} {body : Prog isa} {s : State} {Q
   WP.frame hne hrs hr hn hsp (WP.mono hb fun s₂ q m u fl =>
     hQ _ m u q (by show Frame _ (popReg s₂ r rs.length).mem m; rw [(popReg_rest s₂ r rs.length).1]; exact fl))
 
-/-- The previous statement of `WP.frame`, which keeps the frame's bytes:
-kept only until every proof has moved to `WP.frame`. -/
-theorem WP.frameKept {rs : List Reg} {r : Reg} {body : Prog isa} {s : State} {Q : State → Prop}
-    (hne : rs ≠ []) (hrs : .esp ∉ rs) (hr : r ≠ .esp) (hn : 4 * rs.length ≤ (s.gpr .esp).toNat)
-    (hsp : NoSp body) (hb : WP isa body (pushed rs s) fun s₂ => Q (popped r rs.length s₂)) :
-    WP isa (.frame (.push rs) body (.pop r rs.length)) s Q := by
-  obtain ⟨t, s₂, he, hq⟩ := hb
-  obtain ⟨-, hw⟩ := Exec.rdwr he
-  have hp := Exec.gpr hsp he
-  have hpop : isa.pop (.pop r rs.length) (pushed rs s) s₂ = some (popped r rs.length s₂) := by
-    simp only [isa, pop]
-    refine ite_eq_left ⟨by simpa using hne, hr, hp, hw, ?_⟩
-    rw [pushed_wr, pushed_esp]; rfl
-  exact ⟨_, _, Exec.frame (push_pushed hne hrs hn) he hpop, hq⟩
-
 /-- `WP.narrow` for code that never writes `esp` but may call functions and
 push frames: from `s`, it terminates in a state that differs from `s` in
 memory only within `wr` and the `stackUse c` bytes below `esp`. -/

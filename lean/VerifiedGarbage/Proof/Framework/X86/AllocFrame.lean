@@ -87,24 +87,6 @@ theorem WP.frameAllocLocal {bytes : Nat} {body : Prog isa} {s : State} {Q : Stat
     WP isa (.frame (.alloc bytes) body (.free bytes)) s Q :=
   WP.frameAlloc h0 h1 h4 hn hsp (WP.mono hb fun _ q m u fl => hQ _ m u q fl)
 
-/-- The previous statement of `WP.frameAlloc`, which keeps the frame's
-bytes: kept only until every proof has moved to `WP.frameAlloc`. -/
-theorem WP.frameAllocKept {bytes : Nat} {body : Prog isa} {s : State} {Q : State → Prop}
-    (h0 : 0 < bytes) (h1 : bytes < 4096) (h4 : bytes % 4 = 0) (hn : bytes ≤ (s.gpr .esp).toNat)
-    (hsp : NoSp body) (hb : WP isa body (allocFrame bytes s) fun s₂ => Q (freed bytes s₂)) :
-    WP isa (.frame (.alloc bytes) body (.free bytes)) s Q := by
-  obtain ⟨t, s₂, he, hq⟩ := hb
-  obtain ⟨-, hw⟩ := Exec.rdwr he
-  have hp := Exec.gpr hsp he
-  have hpush : isa.push (.alloc bytes) s = some (allocFrame bytes s) := by
-    simp only [isa, push, h0, h1, h4, hn, and_self, ite_true]
-    rfl
-  have hpop : isa.pop (.free bytes) (allocFrame bytes s) s₂ = some (freed bytes s₂) := by
-    simp only [isa, pop]
-    refine ite_eq_left ⟨h0, h1, h4, hp, hw, ?_⟩
-    simp
-  exact ⟨_, _, Exec.frame hpush he hpop, hq⟩
-
 /-- Two runs of a frame of `bytes` bytes leak the same trace when the runs of
 its body, from the states after the allocation, do. -/
 theorem RelCT.frameAlloc {bytes : Nat} {body : Prog isa} {P R : State → State → Prop}
