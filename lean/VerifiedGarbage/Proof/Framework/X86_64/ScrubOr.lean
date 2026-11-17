@@ -498,9 +498,10 @@ def scrubRegF {api : Api} (r : Registration api target) (v : VecLevel) (ks : Lis
     (hw : r.written = []) (hxe : v = .evex → ∀ x, x ∈ xsOf r.code ks) : Registration api target :=
   have main : Verified target (scrub v (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
         (xsOf r.code ks) (psOf ks) (gsOf Taint.clobbers r.code) ks (chunks r.stack) r.code .avx) r.contract ∧
-      NoResidue (scrub v (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
-        (xsOf r.code ks) (psOf ks) (gsOf Taint.clobbers r.code) ks (chunks r.stack) r.code .avx) r.contract
-        (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits) := by
+      (tablesCall r.code r.tables = true →
+        NoResidue (scrub v (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
+          (xsOf r.code ks) (psOf ks) (gsOf Taint.clobbers r.code) ks (chunks r.stack) r.code .avx) r.contract
+          (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)) := by
     obtain ⟨pre, post, leak, e⟩ := r.ofSig
     have hv := r.verified
     have hp := hpost
@@ -508,10 +509,11 @@ def scrubRegF {api : Api} (r : Registration api target) (v : VecLevel) (ks : Lis
     rw [e] at hv hp hr ⊢
     have hrb' := hrb
     rw [← withMode_ptrBits ((abi.withConsts r.consts).withTables api.sig r.tables) api.pubMode] at hrb' hp ⊢
-    exact Verified.scrubM (ScrubAbi.of r.consts api.sig r.tables api.pubMode) hv (SpSafe.of_all r.spSafe) hd
-      (chunks_sum r.stack) hst (chunks_valid h8)
+    have h := Verified.scrubM (f := .avx) (ScrubAbi.of r.consts api.sig r.tables api.pubMode) hv
+      (SpSafe.of_all r.spSafe) hd (chunks_sum r.stack) hst (chunks_valid h8)
       (fun i hi => by simpa using Code.all_instrs hlv i hi) (fun _ => hmx) hrb' hp hr (tailOk_of _ _ _)
       (xs_of _ _) hxe (fun _ _ e => absurd e (by decide)) (gs_of _ _)
+    exact ⟨h.1, fun hic => h.2 (tablesCall_syms hic rfl)⟩
   { suffix := r.suffix
     consts := r.consts
     tables := r.tables
@@ -528,7 +530,8 @@ def scrubRegF {api : Api} (r : Registration api target) (v : VecLevel) (ks : Lis
     extra := r.extra
     vendor := r.vendor
     notWith := r.notWith
-    residue := some ⟨main.2⟩ }
+    -- As `scrubRegE`'s: for code that calls indirectly only its tables' functions.
+    residue := if hic : tablesCall r.code r.tables = true then some ⟨main.2 hic⟩ else none }
 
 /-- The level `scrubRegF` clears the vector registers at for `code`: as
 `levelFor`, or `evex` for code that writes `zmm16`–`zmm31`. -/
