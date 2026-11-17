@@ -522,11 +522,11 @@ def push : Instr → State → Option State
   | _, _ => none
 
 /-- The memory once the `n` bytes at `a`, a released frame, are below the
-stack pointer: the psABI's "Integer Calling Convention" has no red zone
-("Procedures must not rely upon the persistence of stack-allocated data
-whose addresses lie below the stack pointer"), so anything that runs on the
-stack between two instructions (a signal handler) may have written them,
-and the code can assume nothing of them. Each byte either keeps its value or
+stack pointer (psABI, "Integer Calling Convention": "Procedures must not
+rely upon the persistence of stack-allocated data whose addresses lie below
+the stack pointer"): anything that runs on the stack between two
+instructions (a signal handler) may have written them, and the code can
+assume nothing of them. Each byte either keeps its value or
 takes one the model does not know, as the unknowns say: for the doubleword
 `j` of the frame, the bytes of `u (2 * j)` say which of its bytes are
 replaced (those not zero), and the bytes of `u (2 * j + 1)` are what
