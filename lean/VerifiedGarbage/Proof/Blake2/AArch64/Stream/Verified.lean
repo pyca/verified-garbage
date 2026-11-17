@@ -579,9 +579,23 @@ theorem finalizeS_framed : Verified AArch64.target
 
 /-! ## Returning without secret residue
 
-BLAKE2s's `init` leaves a word of its parameters in `x9`: the cleared `init`
-zeroes it before returning (`CT.lean` proves it then leaves nothing secret).
-BLAKE2b's is not cleared yet: Argon2 calls it by name, with its code. -/
+BLAKE2's `init` leaves a byte of the key or a word of its parameters in
+`x9`: the cleared `init` zeroes it before returning (`CT.lean` proves it then
+leaves nothing secret). Argon2 calls BLAKE2b's cleared `init` by name, with
+its code, its correctness (`initB_post`) and its constant time. -/
+
+/-- `init`'s postcondition looks at the final state only through its memory. -/
+theorem initB_post {s₀ u u' : State} (h : (Proof.Blake2.initAArch64 b).post s₀ u)
+    (hm : u'.mem = u.mem) (_ : u'.gpr .x0 = u.gpr .x0) : (Proof.Blake2.initAArch64 b).post s₀ u' := by
+  show Spec.Blake2.Repr _ _ u'.mem _ _
+  rw [hm]
+  exact h
+
+theorem initBCleared_verified :
+    Verified AArch64.target
+      (Impl.Residue.AArch64.withClears [.x9] [] none (Impl.Blake2.AArch64.Stream.init b))
+      (Spec.Blake2.initBContract AArch64.abi) :=
+  Clears.Verified.withClears initB_verified (by decide)
 
 theorem initSCleared_verified :
     Verified AArch64.target

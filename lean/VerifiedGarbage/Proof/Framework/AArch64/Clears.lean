@@ -9,9 +9,11 @@ import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 # Clearing registers keeps a function verified (AArch64)
 
 `Verified.withClears`: code verified against a contract that `Sig.contract`
-derives is still verified after a block of clears (`clearOk`: `movz` of a
-register that is neither preserved nor `x0`, `movi0` of a vector register
-that is not preserved, `tst`), which runs from every state, leaks nothing,
+derives (or any whose postcondition reads only the memory and `x0`,
+`Verified.withClears_of`) is still verified after a block of clears
+(`clearOk`: `movz` of a register that is neither preserved nor `x0`, `movi0`
+of a vector register that is not preserved, `tst`), which runs from every
+state, leaks nothing,
 and changes neither the memory, nor `x0`, nor what the calling convention
 preserves, which is all such a contract's postcondition and the calling
 convention look at (`post_congr`).
@@ -96,32 +98,58 @@ theorem post_congr {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → Pro
   · exact id
   · rw [hm', hx']; exact id
 
+/-- A block of clears after correct code keeps it correct, for a
+postcondition that looks at the final state only through its memory and
+`x0`. -/
+theorem correct_withClears {pre : State → Prop} {post : State → State → Prop} {c : Prog isa}
+    {cl : List Instr}
+    (h : ∀ s, pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ post s s')
+    (hpost : ∀ {s u u'}, post s u → u'.mem = u.mem → u'.gpr .x0 = u.gpr .x0 → post s u')
+    (hcl : cl.all clearOk = true) :
+    ∀ s, pre s → ∃ t s', Exec isa (.seq c (.block cl)) s t s' ∧ abiPreserved s s' ∧ post s s' := by
+  intro s hs
+  obtain ⟨t, s', he, ⟨hg, hsp, hv⟩, hq⟩ := h s hs
+  obtain ⟨s'', hb, hm, hx0, hpr, hsp', hpv⟩ := execBlock_clearOk cl hcl s'
+  refine ⟨t ++ [], s'', .seq he (.block hb), ⟨fun r hr => ?_, hsp'.trans hsp, fun r hr => ?_⟩,
+    hpost hq hm hx0⟩
+  · rw [hpr r hr, hg r hr]
+  · rw [hpv r hr, hv r hr]
+
+/-- A block of clears after constant-time code keeps it constant time: it
+runs from every state and accesses no memory. -/
+theorem ct_withClears {pre : State → Prop} {pub : State → State → Prop} {c : Prog isa}
+    {cl : List Instr} (h : ConstantTime isa pre pub c) (hcl : cl.all clearOk = true) :
+    ConstantTime isa pre pub (.seq c (.block cl)) := by
+  intro s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂
+  cases e₁ with
+  | seq a₁ b₁ =>
+    cases e₂ with
+    | seq a₂ b₂ =>
+      rw [h _ _ _ _ _ _ h₁ h₂ hp a₁ a₂]
+      cases b₁ with
+      | block hb₁ =>
+        cases b₂ with
+        | block hb₂ =>
+          obtain ⟨_, hc₁, -⟩ := execBlock_clearOk cl hcl _
+          obtain ⟨_, hc₂, -⟩ := execBlock_clearOk cl hcl _
+          rw [hc₁] at hb₁; rw [hc₂] at hb₂
+          cases hb₁; cases hb₂; rfl
+
+/-- Code verified against a contract whose postcondition looks at the final
+state only through its memory and `x0` is still verified after a block of
+clears. -/
+theorem Verified.withClears_of {k : Contract isa} {c : Prog isa} {cl : List Instr}
+    (h : Verified target c k)
+    (hpost : ∀ {s u u'}, k.post s u → u'.mem = u.mem → u'.gpr .x0 = u.gpr .x0 → k.post s u')
+    (hcl : cl.all clearOk = true) : Verified target (.seq c (.block cl)) k :=
+  ⟨correct_withClears h.1 hpost hcl, ct_withClears h.2.1 hcl, h.2.2⟩
+
 theorem Verified.withClears {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)}
     {post : sig.Post abi.ptrBits} {wa : Bool} {stack : Nat}
     {leak : Option (Curry (sig.words abi.ptrBits) (Mem → List Nat))} {c : Prog isa}
     {cl : List Instr} (h : Verified target c (sig.contract abi pre post wa stack leak))
     (hcl : cl.all clearOk = true) :
-    Verified target (.seq c (.block cl)) (sig.contract abi pre post wa stack leak) := by
-  obtain ⟨hcor, hct, hsat⟩ := h
-  refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂ => ?_, hsat⟩
-  · obtain ⟨t, s', he, ⟨hg, hsp, hv⟩, hq⟩ := hcor s hs
-    obtain ⟨s'', hb, hm, hx0, hpr, hsp', hpv⟩ := execBlock_clearOk cl hcl s'
-    refine ⟨t ++ [], s'', .seq he (.block hb), ⟨fun r hr => ?_, hsp'.trans hsp, fun r hr => ?_⟩,
-      post_congr hq hm hx0⟩
-    · rw [hpr r hr, hg r hr]
-    · rw [hpv r hr, hv r hr]
-  · cases e₁ with
-    | seq a₁ b₁ =>
-      cases e₂ with
-      | seq a₂ b₂ =>
-        rw [hct _ _ _ _ _ _ h₁ h₂ hp a₁ a₂]
-        cases b₁ with
-        | block hb₁ =>
-          cases b₂ with
-          | block hb₂ =>
-            obtain ⟨_, hc₁, -⟩ := execBlock_clearOk cl hcl _
-            obtain ⟨_, hc₂, -⟩ := execBlock_clearOk cl hcl _
-            rw [hc₁] at hb₁; rw [hc₂] at hb₂
-            cases hb₁; cases hb₂; rfl
+    Verified target (.seq c (.block cl)) (sig.contract abi pre post wa stack leak) :=
+  Verified.withClears_of h (fun hq hm hx => post_congr hq hm hx) hcl
 
 end VG.AArch64.Clears
