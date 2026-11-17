@@ -2,6 +2,7 @@ module
 
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
+import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
 import VerifiedGarbage.Proof.Hmac.Common
 import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Finalize
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.PPC64LE.Block
@@ -581,10 +582,12 @@ theorem correct {s₀ : State} (h : (pbkG hF.hH.SH F.bytes (hF.X + 144)).pre s�
   have hX := hF.hX
   unfold Fns.pbkdf2
   refine WP.seq (VG.Proof.MdStream.PPC64LE.WP.cons exec_mflr (WP.block_nil (WP.seq ?_)))
-  refine WP.frameRegAnyKept hsp (fun R hR => ?_) (WP.mono (main_ok hp) fun s' ⟨hu, hs, hsp', hb⟩ => ?_) (by omega_using [hsd, hX])
+  obtain hfs : Region.Sub ⟨s₀.sp - 48, 48⟩ (stk hF.X s₀) := fun a ha =>
+    below_sub (a := 48) (by omega_using []) (by have := s₀.sp.isLt; omega_using [hX]) a ha
+  refine WP.frameRegAny hsp (fun R hR => ?_) (WP.mono (main_ok hp) fun s' ⟨hu, hs, hsp', hb⟩ m _ fl => ?_)
+    (by omega_using [hsd, hX])
   · have hsub : Region.Sub ⟨s₀.sp - 48 + 32, 16⟩ (stk hF.X s₀) := fun a ha =>
-      below_sub (a := 48) (by omega_using []) (by have := s₀.sp.isLt; omega_using [hX]) a
-        (Proof.MdStream.PPC64LE.frame_sub s₀.sp a ha)
+      hfs a (Proof.MdStream.PPC64LE.frame_sub s₀.sp a ha)
     rw [show (s₀.write .r0 s₀.lr).wr = s₀.wr from rfl, hp.wr] at hR
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hR
     rcases hR with rfl | rfl
@@ -595,8 +598,11 @@ theorem correct {s₀ : State} (h : (pbkG hF.hH.SH F.bytes (hF.X + 144)).pre s�
       simp only [State.write, h0, ite_false]
       exact preserved_of hs hu r hr
     · simp [State.write]
-    · show _ = some (bytesAt s'.mem (out s₀) (ol s₀))
-      rw [hb]
+    · show _ = some (bytesAt m (out s₀) (ol s₀))
+      -- The pop loses the frame's bytes, which lie apart from the output.
+      have e : bytesAt m (out s₀) (ol s₀) = bytesAt s'.mem (out s₀) (ol s₀) := List.map_congr_left fun i hi =>
+        lost_byte fl (R := outR s₀) (hp.b_o.sub_left hfs).symm (List.mem_range.mp hi)
+      rw [e, hb]
       refine Whole.pbkdf2_eq _ _ (by rw [hF.hH.hD]; exact hp.olD) ?_
       rw [hF.hH.hD]
       rfl
