@@ -1086,9 +1086,7 @@ theorem correct {s₀ : State} (hp : UPre s₀) :
   refine WP.frameLost (rs := [.r4, .r5, .r6, .r7]) (r := .r4) rfl (hsp16 hp) (by decide)
     (WP.mono (WP.gpr (body_ok hp) (r := .lr) (noWrite (by decide +kernel)))
       fun s₂ ⟨⟨hsp, h5, h6, h7, h4, hr⟩, hlr⟩ mL uL hfl => ?_)
-  rw [show (⟨State.addr ((s₀.setReg .r12 (uHL s₀)).sp - BitVec.ofNat 32 (4 * [Reg.r4, Reg.r5, Reg.r6, Reg.r7].length)),
-    4 * [Reg.r4, Reg.r5, Reg.r6, Reg.r7].length⟩ : Region) = frameR (s₀.setReg .r12 (uHL s₀)) [.r4, .r5, .r6, .r7]
-    from rfl, hfr hp] at hfl
+  replace hfl : Frame [⟨State.addr s₀.sp - BitVec.ofNat 64 16, 16⟩] s₂.mem mL := by rw [← hfr hp]; exact hfl
   dsimp only
   refine ⟨?_, by rw [popped_gpr (by decide), h5], by rw [popped_gpr (by decide), h6], by rw [popped_gpr (by decide), h7],
     by rw [popped_gpr (by decide), hlr]; rfl, ?_, by rw [popped_gpr (by decide)]; exact upost_frame hp hfl hr⟩
