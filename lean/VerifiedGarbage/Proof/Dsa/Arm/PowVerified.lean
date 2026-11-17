@@ -26,7 +26,9 @@ open VG.Proof.Dsa.ModPow (numAt Keeps)
 
 variable {umaal : Bool}
 
-/-- The contract on ARM, as `Proof.Dsa.ModPow.powContract` states it. -/
+/-- The contract on ARM, as `Proof.Dsa.ModPow.powContract` states it, but that
+its time may also depend on the modulus, some of whose bits choose where its
+context's doublings start (`Impl.Mont.Arm.Dynamic.rSquared`). -/
 def powArm (n e : Nat) : Contract isa where
   pre s :=
     let ws := State.addr (s.gpr .r0)
@@ -38,7 +40,8 @@ def powArm (n e : Nat) : Contract isa where
     numAt t.mem ws (resS n) (8 * n) =
         numAt s.mem ws (baseS n) (8 * n) ^ numAt s.mem ws (expS n) (4 * e) % numAt s.mem ws (modS n) (8 * n) ∧
       Keeps ws (s.gpr .r1).toNat (scratch n) s.mem t.mem
-  pub s t := s.sp = t.sp ∧ s.gpr .r0 = t.gpr .r0 ∧ s.gpr .r1 = t.gpr .r1
+  pub s t := s.sp = t.sp ∧ s.gpr .r0 = t.gpr .r0 ∧ s.gpr .r1 = t.gpr .r1 ∧
+    numAt s.mem (State.addr (s.gpr .r0)) (modS n) (8 * n) = numAt t.mem (State.addr (t.gpr .r0)) (modS n) (8 * n)
 
 theorem powArm_pre {n e : Nat} {s : State} (h : (powArm n e).pre s) : (powK n e).pre s := by
   obtain ⟨hrd, hwr, hnw, hz, hodd, hm1⟩ := h
@@ -57,6 +60,7 @@ theorem powArm_correct {n e : Nat} (hn : 0 < n) (hn48 : n ≤ 48) (he : 0 < e) (
     exact hj r hr
 
 theorem powArm_ct (n e : Nat) (hn : 0 < n) (hn48 : n ≤ 48) : ConstantTime isa (powArm n e).pre (powArm n e).pub (body umaal n e) :=
-  fun _ _ _ _ _ _ h₁ h₂ hp e₁ e₂ => powK_ct n e hn hn48 _ _ _ _ _ _ (powArm_pre h₁) (powArm_pre h₂) hp.2.1 e₁ e₂
+  fun _ _ _ _ _ _ h₁ h₂ hp e₁ e₂ => powK_ct n e hn hn48 _ _ _ _ _ _ (powArm_pre h₁) (powArm_pre h₂)
+    ⟨hp.2.1, by have T := hp.2.2.2; simp only [numAt_eq8] at T; exact T⟩ e₁ e₂
 
 end VG.Proof.Dsa.Arm.Pow

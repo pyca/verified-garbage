@@ -50,22 +50,91 @@ vg_dsa_context_3_umaal:
 	add r10, r12, r10
 	mov r4, #1
 	str r4, [r10, #0]
+	ldr r4, [r12, #276]
+	lsr r4, r4, #31
+	cmp r4, #0
+	bne 21f
+	ldr r4, [r12, #272]
+	lsr r4, r4, #31
+	cmp r4, #0
+	bne 23f
+	ldr r4, [r12, #264]
+	lsr r4, r4, #31
+	cmp r4, #0
+	bne 25f
 	movw r10, #480
 	add r10, r12, r10
 	movw r9, #504
 	add r9, r12, r9
 	mov r7, #0
-21:
+27:
 	str r7, [r10, #0]
 	add r10, r10, #4
 	cmp r10, r9
-	bne 21b
+	bne 27b
 	movw r10, #480
 	add r10, r12, r10
 	mov r4, #1
 	str r4, [r10, #0]
 	movw lr, #195
+	b 26f
+25:
+	movw r10, #480
+	add r10, r12, r10
+	movw r9, #504
+	add r9, r12, r9
+	mov r7, #0
+28:
+	str r7, [r10, #0]
+	add r10, r10, #4
+	cmp r10, r9
+	bne 28b
+	movw r10, #480
+	add r10, r12, r10
+	mov r4, #1
+	lsl r4, r4, #31
+	str r4, [r10, #8]
+	movw lr, #100
+26:
+	b 24f
+23:
+	movw r10, #480
+	add r10, r12, r10
+	movw r9, #504
+	add r9, r12, r9
+	mov r7, #0
+29:
+	str r7, [r10, #0]
+	add r10, r10, #4
+	cmp r10, r9
+	bne 29b
+	movw r10, #480
+	add r10, r12, r10
+	mov r4, #1
+	lsl r4, r4, #31
+	str r4, [r10, #16]
+	movw lr, #36
+24:
+	b 22f
+21:
+	movw r10, #480
+	add r10, r12, r10
+	movw r9, #504
+	add r9, r12, r9
+	mov r7, #0
+210:
+	str r7, [r10, #0]
+	add r10, r10, #4
+	cmp r10, r9
+	bne 210b
+	movw r10, #480
+	add r10, r12, r10
+	mov r4, #1
+	lsl r4, r4, #31
+	str r4, [r10, #20]
+	movw lr, #4
 22:
+211:
 	movw r6, #65535
 	mov r3, #0
 	movw r10, #480
@@ -76,7 +145,7 @@ vg_dsa_context_3_umaal:
 	add r8, r12, r8
 	movw r9, #504
 	add r9, r12, r9
-23:
+212:
 	ldr r7, [r10, #0]
 	ldr r2, [r0, #0]
 	and r4, r7, r6
@@ -97,7 +166,7 @@ vg_dsa_context_3_umaal:
 	add r0, r0, #4
 	add r8, r8, #8
 	cmp r10, r9
-	bne 23b
+	bne 212b
 	str r3, [r8, #0]
 	movw r6, #65535
 	mov r3, #1
@@ -109,7 +178,7 @@ vg_dsa_context_3_umaal:
 	add r8, r12, r8
 	movw r9, #280
 	add r9, r12, r9
-24:
+213:
 	ldr r7, [r1, #0]
 	ldr r5, [r10, #0]
 	and r4, r7, r6
@@ -130,7 +199,7 @@ vg_dsa_context_3_umaal:
 	add r1, r1, #4
 	add r8, r8, #4
 	cmp r1, r9
-	bne 24b
+	bne 213b
 	ldr r5, [r10, #0]
 	add r3, r3, r5
 	mov r4, #0
@@ -143,7 +212,7 @@ vg_dsa_context_3_umaal:
 	add r1, r12, r1
 	movw r9, #312
 	add r9, r12, r9
-25:
+214:
 	ldr r5, [r10, #0]
 	ldr r7, [r10, #4]
 	orr r5, r5, r7, lsl #16
@@ -156,21 +225,21 @@ vg_dsa_context_3_umaal:
 	add r8, r8, #4
 	add r1, r1, #4
 	cmp r8, r9
-	bne 25b
+	bne 214b
 	subs lr, lr, #1
-	bne 22b
+	bne 211b
 	mov lr, #6
-26:
+215:
 	movw r10, #320
 	add r10, r12, r10
 	movw r9, #376
 	add r9, r12, r9
 	mov r7, #0
-27:
+216:
 	str r7, [r10, #0]
 	add r10, r10, #4
 	cmp r10, r9
-	bne 27b
+	bne 216b
 	movw r5, #256
 	add r5, r12, r5
 	ldr r5, [r5, #0]
@@ -183,7 +252,7 @@ vg_dsa_context_3_umaal:
 	add r0, r12, r0
 	movw r1, #480
 	add r1, r12, r1
-28:
+217:
 	ldr r2, [r1, #0]
 	mov r3, #0
 	mov r10, r0
@@ -191,7 +260,7 @@ vg_dsa_context_3_umaal:
 	add r8, r12, r8
 	movw r9, #504
 	add r9, r12, r9
-29:
+218:
 	ldr r7, [r8, #0]
 	ldr r5, [r10, #0]
 	umaal r5, r3, r7, r2
@@ -203,7 +272,7 @@ vg_dsa_context_3_umaal:
 	add r10, r10, #8
 	add r8, r8, #8
 	cmp r8, r9
-	bne 29b
+	bne 218b
 	ldr r5, [r10, #0]
 	umaal r5, r3, r4, r4
 	str r5, [r10, #0]
@@ -218,7 +287,7 @@ vg_dsa_context_3_umaal:
 	add r8, r12, r8
 	movw r9, #280
 	add r9, r12, r9
-210:
+219:
 	ldr r7, [r8, #0]
 	ldr r5, [r10, #0]
 	umaal r5, r3, r7, r2
@@ -230,7 +299,7 @@ vg_dsa_context_3_umaal:
 	add r10, r10, #8
 	add r8, r8, #8
 	cmp r8, r9
-	bne 210b
+	bne 219b
 	ldr r5, [r10, #0]
 	umaal r5, r3, r4, r4
 	str r5, [r10, #0]
@@ -242,7 +311,7 @@ vg_dsa_context_3_umaal:
 	movw r9, #504
 	add r9, r12, r9
 	cmp r1, r9
-	bne 28b
+	bne 217b
 	mov r3, #1
 	mov r2, #1
 	movw r10, #344
@@ -253,7 +322,7 @@ vg_dsa_context_3_umaal:
 	add r8, r12, r8
 	movw r9, #280
 	add r9, r12, r9
-211:
+220:
 	ldr r7, [r1, #0]
 	mvn r7, r7
 	ldr r5, [r10, #0]
@@ -263,7 +332,7 @@ vg_dsa_context_3_umaal:
 	add r1, r1, #4
 	add r8, r8, #4
 	cmp r1, r9
-	bne 211b
+	bne 220b
 	ldr r5, [r10, #0]
 	add r3, r3, r5
 	mov r4, #0
@@ -276,7 +345,7 @@ vg_dsa_context_3_umaal:
 	add r1, r12, r1
 	movw r9, #368
 	add r9, r12, r9
-212:
+221:
 	ldr r5, [r10, #0]
 	ldr r7, [r8, #0]
 	eor r7, r7, r5
@@ -287,9 +356,9 @@ vg_dsa_context_3_umaal:
 	add r8, r8, #4
 	add r1, r1, #4
 	cmp r10, r9
-	bne 212b
+	bne 221b
 	subs lr, lr, #1
-	bne 26b
+	bne 215b
 	ldr r4, [r12, #544]
 	ldr r5, [r12, #548]
 	ldr r6, [r12, #552]

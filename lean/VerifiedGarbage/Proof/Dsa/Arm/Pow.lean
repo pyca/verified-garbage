@@ -970,7 +970,8 @@ theorem call_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ n : Nat}
     (W₁ : Ws s₁ base size₁) (W₂ : Ws s₂ base size₂) (Z₁ : contextBytes n ≤ size₁)
     (Z₂ : contextBytes n ≤ size₂) (hn : 0 < n) (hn48 : n ≤ 48)
     (O₁ : val32 s₁.mem base (modS n) (2 * n) % 2 = 1) (M₁ : 1 < val32 s₁.mem base (modS n) (2 * n))
-    (O₂ : val32 s₂.mem base (modS n) (2 * n) % 2 = 1) (M₂ : 1 < val32 s₂.mem base (modS n) (2 * n)) :
+    (O₂ : val32 s₂.mem base (modS n) (2 * n) % 2 = 1) (M₂ : 1 < val32 s₂.mem base (modS n) (2 * n))
+    (T : val32 s₁.mem base (modS n) (2 * n) = val32 s₂.mem base (modS n) (2 * n)) :
     SameTrace isa (Impl.Dsa.Arm.Context.call umaal n) s₁ s₂ := by
   have nothing : ∀ a b : State, VG.Arm.Taint.Agree (Taint.ofRegs []) a b :=
     fun _ _ => Taint.agree_ofRegs fun _ h => nomatch h
@@ -981,16 +982,20 @@ theorem call_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ n : Nat}
       (.block []) rfl (Taint.noBase_ofRegs _) (by decide)) (nothing _ _))
     (head_ok n) (head_ok n) fun u₁ u₂ ⟨_, h0₁, h1₁, R₁, H₁⟩ ⟨_, h0₂, h1₂, R₂, H₂⟩ => ?_
   refine SameTrace.of_relCT (P := fun a b => a = u₁ ∧ b = u₂) (RelCT.seq
-    (RelCT.call (setupK_correct hn hn48) (setupK_ct n) [] [⟨base, contextBytes n⟩] ?_)
+    (RelCT.call (setupK_correct hn hn48) (setupK_ct n hn hn48) [] [⟨base, contextBytes n⟩] ?_)
     ((relCT_of_check (τ := Taint.ofRegs []) (σ := Taint.ofRegs []) (h := .block []) (by decide)).mono
       (fun _ _ _ => nothing _ _) fun _ _ _ => trivial)) ⟨rfl, rfl⟩
   rintro a b ⟨rfl, rfl⟩
-  refine ⟨entry_pre W₁ Z₁ hn48 h0₁ h1₁ H₁ O₁ M₁, entry_pre W₂ Z₂ hn48 h0₂ h1₂ H₂ O₂ M₂, ?_,
+  have b₁ : State.addr (a.callEntry.gpr .r0) = base := by rw [State.callEntry_gpr _ (by decide), h0₁, W₁.wb]
+  have b₂ : State.addr (b.callEntry.gpr .r0) = base := by rw [State.callEntry_gpr _ (by decide), h0₂, W₂.wb]
+  refine ⟨entry_pre W₁ Z₁ hn48 h0₁ h1₁ H₁ O₁ M₁, entry_pre W₂ Z₂ hn48 h0₂ h1₂ H₂ O₂ M₂, ⟨?_, ?_⟩,
     Covers.right (Pow.covers_ctx (W₁.of_rest R₁ (by decide)) Z₁), Pow.covers_ctx (W₁.of_rest R₁ (by decide)) Z₁,
     Covers.right (Pow.covers_ctx (W₂.of_rest R₂ (by decide)) Z₂), Pow.covers_ctx (W₂.of_rest R₂ (by decide)) Z₂⟩
-  simp only [setupK, State.withRegions_gpr]
-  rw [State.callEntry_gpr _ (by decide), State.callEntry_gpr _ (by decide), h0₁, h0₂]
-  exact BitVec.eq_of_toNat_eq (by rw [W₁.wb_toNat, W₂.wb_toNat])
+  · simp only [State.withRegions_gpr]
+    rw [State.callEntry_gpr _ (by decide), State.callEntry_gpr _ (by decide), h0₁, h0₂]
+    exact BitVec.eq_of_toNat_eq (by rw [W₁.wb_toNat, W₂.wb_toNat])
+  · simp only [State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem, b₁, b₂, H₁, H₂]
+    exact T
 
 end VG.Proof.Dsa.Arm.Context
 
@@ -1090,7 +1095,8 @@ theorem body_ok {s : State} {base : Addr} {size n e m : Nat} (E : Entry s base s
 /-! ## The function -/
 
 /-- The function's contract in this file's terms: the working space at `r0`,
-of `r1` words, and the numbers as `val32` reads them. -/
+of `r1` words, and the numbers as `val32` reads them. Its time may depend on
+the modulus, as its context's does (`Context.setupK`). -/
 def powK (n e : Nat) : Contract isa where
   pre s :=
     let base := State.addr (s.gpr .r0)
@@ -1102,7 +1108,8 @@ def powK (n e : Nat) : Contract isa where
     val32 t.mem base (slot n 9) (2 * n) =
         val32 s.mem base (slot n 8) (2 * n) ^ val32 s.mem base (slot n 11) e % val32 s.mem base (slot n 0) (2 * n) ∧
       Outs base (scratch n) s.mem t.mem
-  pub s t := s.gpr .r0 = t.gpr .r0
+  pub s t := s.gpr .r0 = t.gpr .r0 ∧
+    val32 s.mem (State.addr (s.gpr .r0)) (slot n 0) (2 * n) = val32 t.mem (State.addr (t.gpr .r0)) (slot n 0) (2 * n)
 
 theorem powK_correct {n e : Nat} (hn : 0 < n) (hn48 : n ≤ 48) (he : 0 < e) (hen : e ≤ 2 * n) (s : State)
     (h : (powK n e).pre s) :
@@ -1132,6 +1139,7 @@ theorem savedSetup_trace {n : Nat} {s₁ s₂ : State} {base : Addr} {size₁ si
     (Z₁ : contextBytes n ≤ size₁) (Z₂ : contextBytes n ≤ size₂) (hn : 0 < n) (hn48 : n ≤ 48)
     (O₁ : val32 s₁.mem base (modS n) (2 * n) % 2 = 1) (M₁ : 1 < val32 s₁.mem base (modS n) (2 * n))
     (O₂ : val32 s₂.mem base (modS n) (2 * n) % 2 = 1) (M₂ : 1 < val32 s₂.mem base (modS n) (2 * n))
+    (T : val32 s₁.mem base (modS n) (2 * n) = val32 s₂.mem base (modS n) (2 * n))
     (H : RelCT isa (VG.Arm.Taint.Agree (wsT false false)) rest (fun _ _ => True)) :
     SameTrace isa (.seq (.block save) (.seq (Impl.Dsa.Arm.Context.call umaal n) rest)) s₁ s₂ := by
   have c44 := (contextBytes_bounds hn48).1
@@ -1151,7 +1159,7 @@ theorem savedSetup_trace {n : Nat} {s₁ s₂ : State} {base : Addr} {size₁ si
       have := E₁.nowrap; simp only [modS, contextBytes, slot, stride] at *; omega_arith)
   refine SameTrace.seq (Context.call_trace W₁ W₂ Z₁ Z₂ hn hn48
     (by rw [mod Q₁]; exact O₁) (by rw [mod Q₁]; exact M₁)
-    (by rw [mod Q₂]; exact O₂) (by rw [mod Q₂]; exact M₂))
+    (by rw [mod Q₂]; exact O₂) (by rw [mod Q₂]; exact M₂) (by rw [mod Q₁, mod Q₂]; exact T))
     (Context.call_ok W₁ Z₁ hn hn48 rfl (by rw [mod Q₁]; exact M₁) (by rw [mod Q₁]; exact O₁))
     (Context.call_ok W₂ Z₂ hn hn48 rfl (by rw [mod Q₂]; exact M₂) (by rw [mod Q₂]; exact O₂))
     fun v₁ v₂ ⟨C₁, _⟩ ⟨C₂, _⟩ => ?_
@@ -1162,7 +1170,7 @@ theorem savedSetup_trace {n : Nat} {s₁ s₂ : State} {base : Addr} {size₁ si
 
 theorem powK_ct (n e : Nat) (hn : 0 < n) (hn48 : n ≤ 48) :
     ConstantTime isa (powK n e).pre (powK n e).pub (body umaal n e) := by
-  refine SameTrace.constantTime fun s₁ s₂ h₁ h₂ Eq => ?_
+  refine SameTrace.constantTime fun s₁ s₂ h₁ h₂ ⟨Eq, T⟩ => ?_
   have E : ∀ {s : State}, (powK n e).pre s → Entry s (State.addr (s.gpr .r0)) ((s.gpr .r1).toNat * 8) := by
     intro s H
     exact ⟨rfl, ⟨_, Nat.le_refl _, by have := H.2.2.1; omega_arith, by rw [H.2.1]; simp⟩,
@@ -1170,9 +1178,10 @@ theorem powK_ct (n e : Nat) (hn : 0 < n) (hn48 : n ≤ 48) :
   have E₂ : Entry s₂ (State.addr (s₁.gpr .r0)) ((s₂.gpr .r1).toNat * 8) := by rw [Eq]; exact E h₂
   unfold body
   refine savedSetup_trace (E h₁) E₂ h₁.2.2.2.1 h₂.2.2.2.1 hn hn48
-    h₁.2.2.2.2.1 h₁.2.2.2.2.2 ?_ ?_ ?_
+    h₁.2.2.2.2.1 h₁.2.2.2.2.2 ?_ ?_ ?_ ?_
   · rw [Eq]; exact h₂.2.2.2.2.1
   · rw [Eq]; exact h₂.2.2.2.2.2
+  · rw [← Eq] at T; exact T
   · refine RelCT.seq (exponentiate_relCT n e) ?_
     exact (relCT_of_check (σ := VG.Arm.Taint.ofRegs []) (h := .block []) (by decide)).mono (fun _ _ h => h)
       fun _ _ _ => trivial

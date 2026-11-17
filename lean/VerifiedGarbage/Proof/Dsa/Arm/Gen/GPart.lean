@@ -422,15 +422,23 @@ theorem powCall_vp {L n e : Nat} {name : String} {code : Prog isa} (ok : PowOk n
     · rw [gi.sp]; have := gi.sp176; have := ok.stack; omega_arith
   refine VP.of_ct (fun σ₁ σ₂ => RelCT.call ok.correct ok.ct [] [G.rPow] fun s₁ s₂ ⟨h₁, h₂⟩ => ?_)
     fun σ s hs => ?_
-  · obtain ⟨p₁, c₁, w₁, -, -, -⟩ := facts _ _ h₁
-    obtain ⟨p₂, c₂, w₂, -, -, -⟩ := facts _ _ h₂
-    refine ⟨p₁, p₂, ⟨?_, ?_, ?_⟩, c₁, w₁, c₂, w₂⟩
+  · obtain ⟨p₁, c₁, w₁, -, a₁, -⟩ := facts _ _ h₁
+    obtain ⟨p₂, c₂, w₂, -, a₂, -⟩ := facts _ _ h₂
+    refine ⟨p₁, p₂, ⟨?_, ?_, ?_, ?_⟩, c₁, w₁, c₂, w₂⟩
     · show s₁.sp = s₂.sp
       rw [h₁.1.1.1.gi.sp, h₂.1.1.1.gi.sp]
     · show s₁.callEntry.gpr .r0 = s₂.callEntry.gpr .r0
       rw [State.callEntry_gpr _ (by decide), State.callEntry_gpr _ (by decide), h₁.2.1, h₂.2.1]
     · show s₁.callEntry.gpr .r1 = s₂.callEntry.gpr .r1
       rw [State.callEntry_gpr _ (by decide), State.callEntry_gpr _ (by decide), h₁.2.2, h₂.2.2]
+    · -- The modulus is the same number in both runs.
+      have mv : ∀ {s : State}, State.addr (s.gpr .r0) = G.sa sA → PowIn G n e pv hv ev s.mem →
+          Proof.Dsa.ModPow.numAt (s.callEntry.withRegions [] [G.rPow]).mem
+            (State.addr ((s.callEntry.withRegions [] [G.rPow]).gpr .r0)) (modS n) (8 * n) = pv := fun {s} a pin => by
+        simp only [Proof.Dsa.ModPow.numAt, State.withRegions_mem, State.withRegions_gpr, State.callEntry_mem,
+          State.callEntry_gpr _ (show Reg.r0 ∉ linkRegs by decide)]
+        rw [a, ← pin.1]; simp only [GP.sa]; rw [BitVec.add_assoc, ← BitVec.ofNat_add]
+      exact (mv a₁ h₁.1.2).trans (mv a₂ h₂.1.2).symm
   obtain ⟨pre, hc, hw, hd, a0, r1n⟩ := facts σ s hs
   obtain ⟨⟨⟨h, x⟩, pin⟩, r0, r1⟩ := hs
   refine FrameStack.WP.callF ok.correct pre hc hw hd fun s' hrd hwr hsp f hpres hpost => ?_

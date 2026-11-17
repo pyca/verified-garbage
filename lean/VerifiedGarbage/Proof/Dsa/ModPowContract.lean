@@ -25,7 +25,8 @@ numbers of `8 n` bytes, the exponent of `4 e` bytes, each little-endian.
 The function may change the bytes of its `scratch` ranges, which include
 the result's; every other byte of the working space keeps its value. Its
 timing may depend on the working space's address and length, not on the
-numbers.
+numbers; but on 32-bit ARM also on the modulus, some of whose bits choose
+how its Montgomery context is set up (`Proof/Dsa/Arm/PowVerified.lean`).
 -/
 
 @[expose] public section

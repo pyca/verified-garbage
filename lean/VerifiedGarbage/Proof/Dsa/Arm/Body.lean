@@ -120,7 +120,7 @@ section
 # DSA on 32-bit ARM: the key checks' traces
 
 Two runs of a schedule of operations (`Pair`): each has its schedule and the
-caller's operands (`Ctx`), with the same pointers in both. Each operation's
+caller's operands (`Ctx`), with the same pointers and moduli in both. Each operation's
 correctness in each run keeps them (`Pair.run`), and its trace is the same
 (`ValidateTrace.lean`, `CoreTrace.lean`).
 -/
@@ -151,17 +151,21 @@ theorem Ctx.run {base : Addr} {size pLen qLen nP nQ : Nat} {ins : List (Pointer 
     Ctx base size pLen qLen nP nQ ins val t :=
   ⟨C.S.run Rn, fun i hi => (C.I i hi).run Rn (by have := C.S.big; omega_arith) C.S.fits⟩
 
-/-- Two runs, with the same pointers to the caller's operands. -/
+/-- Two runs, with the same pointers to the caller's operands, and the same
+moduli p and q: they are public, and bits of each choose how its Montgomery
+context is set up (`Context.body_trace`). -/
 structure Pair (base : Addr) (size₁ size₂ pLen qLen nP nQ : Nat) (ins : List (Pointer × Nat))
     (val₁ val₂ : Pointer → Nat) (s₁ s₂ : State) : Prop where
   C₁ : Ctx base size₁ pLen qLen nP nQ ins val₁ s₁
   C₂ : Ctx base size₂ pLen qLen nP nQ ins val₂ s₂
   E : ∀ i ∈ ins, PtrEq base s₁ s₂ i.1
+  P : val₁ (.input .p) = val₂ (.input .p)
+  Q : val₁ (.input .q) = val₂ (.input .q)
 
 theorem Pair.run {base : Addr} {size₁ size₂ pLen qLen nP nQ : Nat} {ins : List (Pointer × Nat)}
     {val₁ val₂ : Pointer → Nat} {s₁ s₂ t₁ t₂ : State} (X : Pair base size₁ size₂ pLen qLen nP nQ ins val₁ val₂ s₁ s₂)
     (Rn₁ : Run base s₁ t₁) (Rn₂ : Run base s₂ t₂) : Pair base size₁ size₂ pLen qLen nP nQ ins val₁ val₂ t₁ t₂ := by
-  refine ⟨X.C₁.run Rn₁, X.C₂.run Rn₂, fun i hi => ?_⟩
+  refine ⟨X.C₁.run Rn₁, X.C₂.run Rn₂, fun i hi => ?_, X.P, X.Q⟩
   obtain hO : ∀ r ∈ runRanges, r.1 + r.2 ≤ 64 ∨ 116 ≤ r.1 := by decide
   unfold PtrEq
   rw [pointerValue_keep (Rn₁.rest.gpr .r12 (by decide)) Rn₁.mem hO (X.C₁.I i hi).ok,
@@ -276,7 +280,7 @@ theorem subgroup_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ : Nat} {in
   refine SameTrace.seq (power_trace (output := Impl.Dsa.Layout.t) (X.C₁.opPre mp X.C₁.S.wp D₁.hP D₁.hPo)
       (X.C₂.opPre mp X.C₁.S.wp D₂.hP D₂.hPo) (X.C₁.inp mg).toReady (X.C₂.inp mg).toReady (X.C₁.inp mq).toReady
       (X.E _ mp) (X.E _ mg) (X.E _ mq)
-      (X.C₂.inp mq).toReady q4 qp qw)
+      (X.C₂.inp mq).toReady q4 qp qw X.P)
     (power_ok (output := Impl.Dsa.Layout.t) X.C₁.S.ws (by omega_arith) X.C₁.S.wp q4 qp qw (X.C₁.inp mp).toReady
       (X.C₁.inp mg).toReady (X.C₁.inp mq).toReady (X.C₁.inp mp).value D₁.hP D₁.hPo ho.1 (by omega_arith) (by decide))
     (power_ok (output := Impl.Dsa.Layout.t) X.C₂.S.ws (by omega_arith) X.C₁.S.wp q4 qp qw (X.C₂.inp mp).toReady
@@ -292,7 +296,7 @@ theorem subgroup_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ : Nat} {in
   refine SameTrace.seq (power_trace (output := Impl.Dsa.Layout.t) (X₂.C₁.opPre mp X.C₁.S.wp D₁.hP D₁.hPo)
       (X₂.C₂.opPre mp X.C₁.S.wp D₂.hP D₂.hPo) (X₂.C₁.inp my).toReady (X₂.C₂.inp my).toReady (X₂.C₁.inp mq).toReady
       (X₂.E _ mp) (X₂.E _ my) (X₂.E _ mq)
-      (X₂.C₂.inp mq).toReady q4 qp qw)
+      (X₂.C₂.inp mq).toReady q4 qp qw X.P)
     (power_ok (output := Impl.Dsa.Layout.t) X₂.C₁.S.ws (by omega_arith) X.C₁.S.wp q4 qp qw (X₂.C₁.inp mp).toReady
       (X₂.C₁.inp my).toReady (X₂.C₁.inp mq).toReady (X₂.C₁.inp mp).value D₁.hP D₁.hPo ho.1 (by omega_arith) (by decide))
     (power_ok (output := Impl.Dsa.Layout.t) X₂.C₂.S.ws (by omega_arith) X.C₁.S.wp q4 qp qw (X₂.C₂.inp mp).toReady
@@ -343,7 +347,7 @@ theorem privateKey_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ : Nat} {
   refine SameTrace.seq (power_trace (output := Impl.Dsa.Layout.t) (X₂.C₁.opPre mp X.C₁.S.wp D₁.hP D₁.hPo)
       (X₂.C₂.opPre mp X.C₁.S.wp D₂.hP D₂.hPo) (X₂.C₁.inp mg).toReady (X₂.C₂.inp mg).toReady (X₂.C₁.inp mx).toReady
       (X₂.E _ mp) (X₂.E _ mg) (X₂.E _ mx)
-      (X₂.C₂.inp mx).toReady q4 qp qw)
+      (X₂.C₂.inp mx).toReady q4 qp qw X.P)
     (power_ok (output := Impl.Dsa.Layout.t) X₂.C₁.S.ws (by omega_arith) X.C₁.S.wp q4 qp qw (X₂.C₁.inp mp).toReady
       (X₂.C₁.inp mg).toReady (X₂.C₁.inp mx).toReady (X₂.C₁.inp mp).value D₁.hP D₁.hPo ho.1 (by omega_arith) (by decide))
     (power_ok (output := Impl.Dsa.Layout.t) X₂.C₂.S.ws (by omega_arith) X.C₁.S.wp q4 qp qw (X₂.C₂.inp mp).toReady
@@ -665,7 +669,8 @@ theorem body_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ pLen qLen 
     (I₂ : ∀ i ∈ inputs pLen qLen, Input s₂ base size₂ i.1 i.2 (val₂ i.1))
     (PE : ∀ i ∈ inputs pLen qLen, PtrEq base s₁ s₂ i.1)
     (D₁ : DomainOk (val₁ (.input .p)) (val₁ (.input .q)))
-    (D₂ : DomainOk (val₂ (.input .p)) (val₂ (.input .q))) :
+    (D₂ : DomainOk (val₂ (.input .p)) (val₂ (.input .q)))
+    (eP : val₁ (.input .p) = val₂ (.input .p)) (eQ : val₁ (.input .q) = val₂ (.input .q)) :
     SameTrace isa (body umaal pLen qLen) s₁ s₂ := by
   have R0 : s₁.gpr .r0 = s₂.gpr .r0 := by
     apply BitVec.eq_of_toNat_eq
@@ -681,7 +686,7 @@ theorem body_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ pLen qLen 
       exact R0))
     (save_ok E₁ (by omega_using [b₁])) (save_ok E₂ (by omega_using [b₂])) fun t₁ t₂ ⟨W₁, P₁, J₁⟩ ⟨W₂, P₂, J₂⟩ => ?_
   have X : Pair base size₁ size₂ pLen qLen nP nQ (inputs pLen qLen) val₁ val₂ t₁ t₂ := by
-    refine ⟨⟨⟨W₁, b₁, wp, wq, qp, q32⟩, ?_⟩, ⟨⟨W₂, b₂, wp, wq, qp, q32⟩, ?_⟩, ?_⟩
+    refine ⟨⟨⟨W₁, b₁, wp, wq, qp, q32⟩, ?_⟩, ⟨⟨W₂, b₂, wp, wq, qp, q32⟩, ?_⟩, ?_, eP, eQ⟩
     · intro i hi
       simp only [inputs, List.mem_cons, List.not_mem_nil, or_false] at hi
       rcases hi with rfl | rfl | rfl | rfl
@@ -829,6 +834,7 @@ theorem call_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ : Nat}
     simp only [inputs, List.mem_cons, List.not_mem_nil, or_false] at hi
     rcases hi with rfl | rfl | rfl | rfl <;> simpa only [PtrEq, pointerValue, State.callEntry_mem, M₁, M₂] using H
   have T := body_trace (umaal := umaal) E₁ E₂ X.C₁.S.big X.C₂.S.big X.C₁.S.wp X.C₁.S.wq X.C₁.S.qp X.C₁.S.q32 I₁ I₂ PE D₁ D₂
+    X.P X.Q
   intro tr₁ tr₂ t₁ t₂ Ex₁ Ex₂
   cases Ex₁ with
   | seq C₁ B₁ =>

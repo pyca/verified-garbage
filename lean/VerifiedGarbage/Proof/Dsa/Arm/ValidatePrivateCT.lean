@@ -465,7 +465,7 @@ theorem validatePriv_constantTime :
     obtain X : Pair (State.addr (arg s₁ 0)) ((arg s₁ 1).toNat * 8) ((arg s₁ 1).toNat * 8) (s₁.gpr .r2).toNat
         (s₁.gpr .r3).toNat (((s₁.gpr .r2).toNat + 7) / 8) (((s₁.gpr .r3).toNat + 7) / 8)
         (privIns (s₁.gpr .r2).toNat (s₁.gpr .r3).toNat) (privVal s₁) (privVal s₂) v₁ v₂ :=
-      ⟨D₁, D₂, pe G₁ G₂⟩
+      ⟨D₁, D₂, pe G₁ G₂, Vp.symm, Vq.symm⟩
     obtain mx : (.input .x, (s₁.gpr .r3).toNat) ∈ privIns (s₁.gpr .r2).toNat (s₁.gpr .r3).toNat := by
       simp [privIns]
     obtain mk : (.input .nonce, (s₁.gpr .r3).toNat) ∈ privIns (s₁.gpr .r2).toNat (s₁.gpr .r3).toNat := by

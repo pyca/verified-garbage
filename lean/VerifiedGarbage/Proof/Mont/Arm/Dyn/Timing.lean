@@ -17,7 +17,8 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 Only the working space's base `r12` is public on entry (`wsT`), and
 optionally `r11` and `lr`, which the arithmetic leaves alone, for its
 callers' loops. Every address is `r12` plus an offset, or a pointer moved by
-public steps, and every branch compares pointers or counts: the analysis
+public steps, and every branch compares pointers or counts, but those of
+the context's setup on bits of the modulus (below): the analysis
 of an operation's code without its offsets and `movw` immediates
 (`Code.eraseOff`) is the analysis of the code itself (`check_eraseOff`),
 and that code is the same for every modulus and layout, so each check below
@@ -95,19 +96,25 @@ theorem selectW_eraseOff (k src tmp o : Nat) :
 
 theorem one_eraseOff (n out : Nat) : Code.eraseOff (one n out) = Code.eraseOff (one 1 0) := rfl
 
-theorem powerTwo_eraseOff (M : Mod) (acc out bits : Nat) :
-    Code.eraseOff (powerTwo M acc out bits) = Code.eraseOff (powerTwo eraseMod 0 0 0) := rfl
+theorem eraseOff_movw (d : Reg) (k : BitVec 16) :
+    Code.eraseOff (@Code.block Instr Cond [.movw d k]) = @Code.block Instr Cond [.movw d 0] := rfl
+
+theorem wordTop_eraseOff (n out w : Nat) : Code.eraseOff (wordTop n out w) = Code.eraseOff (wordTop 1 0 0) := rfl
+
+theorem fromTop_eraseOff (n w : Nat) : Code.eraseOff (fromTop n w) = Code.eraseOff (fromTop 1 0) := by
+  simp only [fromTop, eraseOff_seq, wordTop_eraseOff, eraseOff_movw]
+
+theorem fromOne_eraseOff (n : Nat) : Code.eraseOff (fromOne n) = Code.eraseOff (fromOne 1) := rfl
+
+theorem doublings_eraseOff (M : Mod) (acc out : Nat) :
+    Code.eraseOff (doublings M acc out) = Code.eraseOff (doublings eraseMod 0 0) := rfl
+
+theorem raise_eraseOff (n : Nat) : Code.eraseOff (raise umaal n) = Code.eraseOff (raise umaal 1) := by
+  simp only [raise, eraseOff_seq, eraseOff_loop, doublings_eraseOff, mul_eraseOff]
 
 theorem setupInverse_eraseOff (mo : Nat) :
     Code.eraseOff (@Code.block Instr Cond (setupInverse mo)) =
       Code.eraseOff (@Code.block Instr Cond (setupInverse 0)) := rfl
-
-theorem rSquared_eraseOff (n : Nat) : Code.eraseOff (rSquared umaal n) = Code.eraseOff (rSquared umaal 1) := by
-  simp only [rSquared, eraseOff_seq, eraseOff_loop, powerTwo_eraseOff, mul_eraseOff]
-
-theorem contextSetup_eraseOff (n : Nat) :
-    Code.eraseOff (contextSetup umaal n) = Code.eraseOff (contextSetup umaal 1) := by
-  simp only [contextSetup, eraseOff_seq, setupInverse_eraseOff, one_eraseOff, rSquared_eraseOff]
 
 theorem copyOut_eraseOff (k src : Nat) : Code.eraseOff (copyOut k src) = Code.eraseOff (copyOut 1 0) := rfl
 
@@ -143,6 +150,49 @@ theorem zeros_relCT (p q : Bool) (k o : Nat) :
   obtain ⟨h, H⟩ : ∃ h, (VG.Taint.check taintU (wsT p q) (zeros 1 0) h).map (taintU.le (wsT p q)) = some true := by
     cases p <;> cases q <;> exact ⟨_, by taint_decide⟩
   exact erased_relCT h (zeros_eraseOff ..) (wsT_noBase p q) H
+
+/-! ## The context's setup
+
+The top bits of some of the modulus's words choose where the setup's
+doublings start, and so how many it makes (`rSquared`, `start`), so its code
+is not analysed in one piece: what comes before the tests, each test, and
+what follows them on either side are each analysed from the working space's
+base alone, and the callers show that the tests read the same bits in both
+runs. -/
+
+/-- The inverse and one, before the tests. -/
+theorem setupHead_relCT (n : Nat) :
+    RelCT isa (VG.Arm.Taint.Agree (wsT false false))
+      (.seq (.block (setupInverse (modS n))) (one n (oneS n))) (VG.Arm.Taint.Agree (wsT false false)) := by
+  obtain ⟨h, H⟩ : ∃ h, (VG.Taint.check taintU (wsT false false) (.seq (.block (setupInverse 0)) (one 1 0)) h).map
+      (taintU.le (wsT false false)) = some true := ⟨_, by taint_decide⟩
+  exact erased_relCT h (by rw [eraseOff_seq, eraseOff_seq, setupInverse_eraseOff, one_eraseOff]) (wsT_noBase _ _) H
+
+/-- A test of a word's top bit reads the word at a public address. -/
+theorem topTest_relCT (n w : Nat) :
+    RelCT isa (VG.Arm.Taint.Agree (wsT false false)) (.block (topTest n w)) (VG.Arm.Taint.Agree (wsT false false)) :=
+  erased_relCT (c₀ := .block (topTest 0 0)) (.block []) rfl (wsT_noBase _ _) (by decide)
+
+/-- Where the doublings start, on either side of a test: the number and its
+count in `lr`, which is public. -/
+theorem fromTop_relCT (n w : Nat) :
+    RelCT isa (VG.Arm.Taint.Agree (wsT false false)) (fromTop n w) (VG.Arm.Taint.Agree (wsT false true)) := by
+  obtain ⟨h, H⟩ : ∃ h, (VG.Taint.check taintU (wsT false false) (fromTop 1 0) h).map
+      (taintU.le (wsT false true)) = some true := ⟨_, by taint_decide⟩
+  exact erased_relCT h (fromTop_eraseOff n w) (wsT_noBase _ _) H
+
+theorem fromOne_relCT (n : Nat) :
+    RelCT isa (VG.Arm.Taint.Agree (wsT false false)) (fromOne n) (VG.Arm.Taint.Agree (wsT false true)) := by
+  obtain ⟨h, H⟩ : ∃ h, (VG.Taint.check taintU (wsT false false) (fromOne 1) h).map
+      (taintU.le (wsT false true)) = some true := ⟨_, by taint_decide⟩
+  exact erased_relCT h (fromOne_eraseOff n) (wsT_noBase _ _) H
+
+/-- The doublings that `lr` counts, and the squarings. -/
+theorem raise_relCT (n : Nat) :
+    RelCT isa (VG.Arm.Taint.Agree (wsT false true)) (raise umaal n) (VG.Arm.Taint.Agree (wsT false false)) := by
+  obtain ⟨h, H⟩ : ∃ h, (VG.Taint.check taintU (wsT false true) (raise umaal 1) h).map
+      (taintU.le (wsT false false)) = some true := by cases umaal <;> exact ⟨_, by taint_decide⟩
+  exact erased_relCT h (raise_eraseOff n) (wsT_noBase _ _) H
 
 /-! ## The exponentiation -/
 

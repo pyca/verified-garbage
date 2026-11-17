@@ -63,7 +63,7 @@ theorem sign_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : Nat} {ins 
   refine SameTrace.assoc_left (SameTrace.seq (power_trace (output := Impl.Dsa.Layout.t)
       (X.C₁.opPre mp X.C₁.S.wp D₁.hP D₁.hPo) (X.C₂.opPre mp X.C₁.S.wp D₂.hP D₂.hPo) (X.C₁.inp mg).toReady
       (X.C₂.inp mg).toReady (X.C₁.inp mk).toReady (X.E _ mp) (X.E _ mg) (X.E _ mk)
-      (X.C₂.inp mk).toReady q4 qp qw)
+      (X.C₂.inp mk).toReady q4 qp qw X.P)
     (power_ok (output := Impl.Dsa.Layout.t) X.C₁.S.ws (by omega_arith) X.C₁.S.wp q4 qp qw (X.C₁.inp mp).toReady
       (X.C₁.inp mg).toReady (X.C₁.inp mk).toReady (X.C₁.inp mp).value D₁.hP D₁.hPo (by omega_arith) (by omega_arith) (by omega_arith))
     (power_ok (output := Impl.Dsa.Layout.t) X.C₂.S.ws (by omega_arith) X.C₁.S.wp q4 qp qw (X.C₂.inp mp).toReady
@@ -95,7 +95,7 @@ theorem sign_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : Nat} {ins 
       (X₂.C₁.inp mk).toReady (X₂.C₂.inp mk).toReady
       (localReady (o := Impl.Dsa.Layout.qMinusTwo) X₂.C₁.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
       (X₂.E _ mq) (X₂.E _ mk) (ptrEq_local X₂.C₁.S.ws X₂.C₂.S.ws _)
-      (localReady (o := Impl.Dsa.Layout.qMinusTwo) X₂.C₂.S.ws (by omega_arith) (by omega_arith) (by omega_arith)) q4 (Nat.le_refl _) qw)
+      (localReady (o := Impl.Dsa.Layout.qMinusTwo) X₂.C₂.S.ws (by omega_arith) (by omega_arith) (by omega_arith)) q4 (Nat.le_refl _) qw X.Q)
     (power_ok (output := Impl.Dsa.Layout.inverse) X₂.C₁.S.ws (by omega_arith) X.C₁.S.wq q4 (Nat.le_refl _) qw
       (X₂.C₁.inp mq).toReady (X₂.C₁.inp mk).toReady
       (localReady (o := Impl.Dsa.Layout.qMinusTwo) X₂.C₁.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
@@ -115,7 +115,7 @@ theorem sign_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : Nat} {ins 
       (X₃.C₁.inp mx).toReady (X₃.C₂.inp mx).toReady
       (localReady (o := Impl.Dsa.Layout.r) X₃.C₁.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
       (X₃.E _ mq) (X₃.E _ mx) (ptrEq_local X₃.C₁.S.ws X₃.C₂.S.ws _)
-      (localReady (o := Impl.Dsa.Layout.r) X₃.C₂.S.ws (by omega_arith) (by omega_arith) (by omega_arith)))
+      (localReady (o := Impl.Dsa.Layout.r) X₃.C₂.S.ws (by omega_arith) (by omega_arith) (by omega_arith)) X.Q)
     (productMod_ok (output := Impl.Dsa.Layout.u) X₃.C₁.S.ws (by omega_arith) X.C₁.S.wq (X₃.C₁.inp mq).toReady
       (X₃.C₁.inp mx).toReady (localReady (o := Impl.Dsa.Layout.r) X₃.C₁.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
       (X₃.C₁.inp mq).value (by omega_arith) D₁.hQo (by omega_arith) (by omega_arith) (by omega_arith))
@@ -182,7 +182,7 @@ theorem sign_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : Nat} {ins 
       (localReady (o := Impl.Dsa.Layout.inverse) X₆.C₂.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
       (localReady (o := Impl.Dsa.Layout.v) X₆.C₁.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
       (X₆.E _ mq) (ptrEq_local X₆.C₁.S.ws X₆.C₂.S.ws _) (ptrEq_local X₆.C₁.S.ws X₆.C₂.S.ws _)
-      (localReady (o := Impl.Dsa.Layout.v) X₆.C₂.S.ws (by omega_arith) (by omega_arith) (by omega_arith)))
+      (localReady (o := Impl.Dsa.Layout.v) X₆.C₂.S.ws (by omega_arith) (by omega_arith) (by omega_arith)) X.Q)
     (F₁ := fun _ => True) (F₂ := fun _ => True) (WP.mono (productMod_ok (output := Impl.Dsa.Layout.s) X₆.C₁.S.ws (by omega_arith) X.C₁.S.wq
       (X₆.C₁.inp mq).toReady (localReady (o := Impl.Dsa.Layout.inverse) X₆.C₁.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
       (localReady (o := Impl.Dsa.Layout.v) X₆.C₁.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
@@ -223,7 +223,7 @@ theorem verify_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : Nat} {in
       (X.C₁.inp ms).toReady (X.C₂.inp ms).toReady
       (localReady (o := Impl.Dsa.Layout.qMinusTwo) X.C₁.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
       (X.E _ mq) (X.E _ ms) (ws X.C₁.S.ws X.C₂.S.ws _)
-      (localReady (o := Impl.Dsa.Layout.qMinusTwo) X.C₂.S.ws (by omega_arith) (by omega_arith) (by omega_arith)) q4 (Nat.le_refl _) qw)
+      (localReady (o := Impl.Dsa.Layout.qMinusTwo) X.C₂.S.ws (by omega_arith) (by omega_arith) (by omega_arith)) q4 (Nat.le_refl _) qw X.Q)
     (power_ok (output := Impl.Dsa.Layout.inverse) X.C₁.S.ws (by omega_arith) X.C₁.S.wq q4 (Nat.le_refl _) qw
       (X.C₁.inp mq).toReady (X.C₁.inp ms).toReady
       (localReady (o := Impl.Dsa.Layout.qMinusTwo) X.C₁.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
@@ -261,7 +261,7 @@ theorem verify_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : Nat} {in
       (localReady (o := Impl.Dsa.Layout.z) X₂.C₂.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
       (localReady (o := Impl.Dsa.Layout.inverse) X₂.C₁.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
       (X₂.E _ mq) (ws X₂.C₁.S.ws X₂.C₂.S.ws _) (ws X₂.C₁.S.ws X₂.C₂.S.ws _)
-      (localReady (o := Impl.Dsa.Layout.inverse) X₂.C₂.S.ws (by omega_arith) (by omega_arith) (by omega_arith)))
+      (localReady (o := Impl.Dsa.Layout.inverse) X₂.C₂.S.ws (by omega_arith) (by omega_arith) (by omega_arith)) X.Q)
     (productMod_ok (output := Impl.Dsa.Layout.u) X₂.C₁.S.ws (by omega_arith) X.C₁.S.wq (X₂.C₁.inp mq).toReady
       (localReady (o := Impl.Dsa.Layout.z) X₂.C₁.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
       (localReady (o := Impl.Dsa.Layout.inverse) X₂.C₁.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
@@ -278,7 +278,7 @@ theorem verify_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : Nat} {in
       (X₃.C₁.inp mr).toReady (X₃.C₂.inp mr).toReady
       (localReady (o := Impl.Dsa.Layout.inverse) X₃.C₁.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
       (X₃.E _ mq) (X₃.E _ mr) (ws X₃.C₁.S.ws X₃.C₂.S.ws _)
-      (localReady (o := Impl.Dsa.Layout.inverse) X₃.C₂.S.ws (by omega_arith) (by omega_arith) (by omega_arith)))
+      (localReady (o := Impl.Dsa.Layout.inverse) X₃.C₂.S.ws (by omega_arith) (by omega_arith) (by omega_arith)) X.Q)
     (productMod_ok (output := Impl.Dsa.Layout.v) X₃.C₁.S.ws (by omega_arith) X.C₁.S.wq (X₃.C₁.inp mq).toReady
       (X₃.C₁.inp mr).toReady (localReady (o := Impl.Dsa.Layout.inverse) X₃.C₁.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
       (X₃.C₁.inp mq).value (by omega_arith) D₁.hQo (by omega_arith) (by omega_arith) (by omega_arith))
@@ -297,7 +297,7 @@ theorem verify_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : Nat} {in
       (X₄.C₁.inp my).toReady (X₄.C₂.inp my).toReady
       (localReady (o := Impl.Dsa.Layout.v) X₄.C₁.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
       (localReady (o := Impl.Dsa.Layout.v) X₄.C₂.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
-      (X₄.E _ mp) (X₄.E _ mg) (ws X₄.C₁.S.ws X₄.C₂.S.ws _) (X₄.E _ my) (ws X₄.C₁.S.ws X₄.C₂.S.ws _) q4 qp qw)
+      (X₄.E _ mp) (X₄.E _ mg) (ws X₄.C₁.S.ws X₄.C₂.S.ws _) (X₄.E _ my) (ws X₄.C₁.S.ws X₄.C₂.S.ws _) q4 qp qw X.P)
     (power2_ok (output := Impl.Dsa.Layout.t) X₄.C₁.S.ws (by omega_arith) X.C₁.S.wp q4 qp qw (X₄.C₁.inp mp).toReady
       (X₄.C₁.inp mg).toReady (localReady (o := Impl.Dsa.Layout.u) X₄.C₁.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
       (X₄.C₁.inp my).toReady (localReady (o := Impl.Dsa.Layout.v) X₄.C₁.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
@@ -358,7 +358,7 @@ theorem signingSubgroup_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ : N
   refine SameTrace.seq (power_trace (output := Impl.Dsa.Layout.t) (X.C₁.opPre mp X.C₁.S.wp D₁.hP D₁.hPo)
       (X.C₂.opPre mp X.C₁.S.wp D₂.hP D₂.hPo) (X.C₁.inp mg).toReady (X.C₂.inp mg).toReady (X.C₁.inp mq).toReady
       (X.E _ mp) (X.E _ mg) (X.E _ mq)
-      (X.C₂.inp mq).toReady q4 qp qw)
+      (X.C₂.inp mq).toReady q4 qp qw X.P)
     (power_ok (output := Impl.Dsa.Layout.t) X.C₁.S.ws (by omega_arith) X.C₁.S.wp q4 qp qw (X.C₁.inp mp).toReady
       (X.C₁.inp mg).toReady (X.C₁.inp mq).toReady (X.C₁.inp mp).value D₁.hP D₁.hPo ho.1 (by omega_arith) (by decide))
     (power_ok (output := Impl.Dsa.Layout.t) X.C₂.S.ws (by omega_arith) X.C₁.S.wp q4 qp qw (X.C₂.inp mp).toReady

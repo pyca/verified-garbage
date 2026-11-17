@@ -129,7 +129,7 @@ theorem subgroup_gen_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ : Nat}
   refine SameTrace.seq (power_trace (output := Impl.Dsa.Layout.t) (X.C₁.opPre mp X.C₁.S.wp D₁.hP D₁.hPo)
       (X.C₂.opPre mp X.C₁.S.wp D₂.hP D₂.hPo) (X.C₁.inp mg).toReady (X.C₂.inp mg).toReady (X.C₁.inp mq).toReady
       (X.E _ mp) (X.E _ mg) (X.E _ mq)
-      (X.C₂.inp mq).toReady q4 qp qw)
+      (X.C₂.inp mq).toReady q4 qp qw X.P)
     (power_ok (output := Impl.Dsa.Layout.t) X.C₁.S.ws (by omega_arith) X.C₁.S.wp q4 qp qw (X.C₁.inp mp).toReady
       (X.C₁.inp mg).toReady (X.C₁.inp mq).toReady (X.C₁.inp mp).value D₁.hP D₁.hPo ho.1 (by omega_arith) (by decide))
     (power_ok (output := Impl.Dsa.Layout.t) X.C₂.S.ws (by omega_arith) X.C₁.S.wp q4 qp qw (X.C₂.inp mp).toReady
@@ -169,7 +169,7 @@ theorem keyCompute_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ : Nat} {
   refine SameTrace.seq (power_trace (output := Impl.Dsa.Layout.t2) (X₂.C₁.opPre mp X.C₁.S.wp D₁.hP D₁.hPo)
       (X₂.C₂.opPre mp X.C₁.S.wp D₂.hP D₂.hPo) (X₂.C₁.inp mg).toReady (X₂.C₂.inp mg).toReady (X₂.C₁.inp mx).toReady
       (X₂.E _ mp) (X₂.E _ mg) (X₂.E _ mx)
-      (X₂.C₂.inp mx).toReady q4 qp qw)
+      (X₂.C₂.inp mx).toReady q4 qp qw X.P)
     (power_ok (output := Impl.Dsa.Layout.t2) X₂.C₁.S.ws (by omega_arith) X.C₁.S.wp q4 qp qw (X₂.C₁.inp mp).toReady
       (X₂.C₁.inp mg).toReady (X₂.C₁.inp mx).toReady (X₂.C₁.inp mp).value D₁.hP D₁.hPo ho.1 (by omega_arith) (by decide))
     (power_ok (output := Impl.Dsa.Layout.t2) X₂.C₂.S.ws (by omega_arith) X.C₁.S.wp q4 qp qw (X₂.C₂.inp mp).toReady

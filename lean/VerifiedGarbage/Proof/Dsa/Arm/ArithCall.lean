@@ -40,8 +40,8 @@ A call (`Impl.Dsa.Arm.Pow.call`) of `vg_dsa_pow_{n}_{e}` from code whose
 working space is at `r12`: it passes the context's bytes as the function's
 working space, which its contract (`powK`) narrows the call to, and takes
 `r12` back from `r11` (`call_ok`). Two runs of a call from the same working
-space leak the same trace (`call_trace`), by the function's own constant
-time (`powK_ct`).
+space, with the same modulus, leak the same trace (`call_trace`), by the
+function's own constant time (`powK_ct`).
 -/
 
 @[expose] public section
@@ -122,7 +122,8 @@ theorem call_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ n e : Nat}
     (hs₂ : Ws s₂ base size₂) (hz₁ : contextBytes n ≤ size₁) (hz₂ : contextBytes n ≤ size₂)
     (hn : 0 < n) (hn48 : n ≤ 48) (he : 0 < e) (hen : e ≤ 2 * n)
     (ho₁ : val32 s₁.mem base (slot n 0) (2 * n) % 2 = 1) (hm₁ : 1 < val32 s₁.mem base (slot n 0) (2 * n))
-    (ho₂ : val32 s₂.mem base (slot n 0) (2 * n) % 2 = 1) (hm₂ : 1 < val32 s₂.mem base (slot n 0) (2 * n)) :
+    (ho₂ : val32 s₂.mem base (slot n 0) (2 * n) % 2 = 1) (hm₂ : 1 < val32 s₂.mem base (slot n 0) (2 * n))
+    (T : val32 s₁.mem base (slot n 0) (2 * n) = val32 s₂.mem base (slot n 0) (2 * n)) :
     SameTrace isa (Impl.Dsa.Arm.Pow.call umaal n e) s₁ s₂ := by
   have nothing : ∀ a b : State, VG.Arm.Taint.Agree (VG.Arm.Taint.ofRegs []) a b :=
     fun _ _ => VG.Arm.Taint.agree_ofRegs fun _ h => nomatch h
@@ -138,11 +139,15 @@ theorem call_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ n e : Nat}
     ((relCT_of_check (τ := VG.Arm.Taint.ofRegs []) (σ := VG.Arm.Taint.ofRegs []) (h := .block [])
       (by decide)).mono (fun _ _ _ => nothing _ _) fun _ _ _ => trivial)) ⟨rfl, rfl⟩
   rintro a b ⟨rfl, rfl⟩
-  refine ⟨entry_pre hs₁ hz₁ hn48 h0₁ h1₁ M₁ ho₁ hm₁, entry_pre hs₂ hz₂ hn48 h0₂ h1₂ M₂ ho₂ hm₂, ?_,
+  have b₁ : State.addr (a.callEntry.gpr .r0) = base := by rw [State.callEntry_gpr _ (by decide), h0₁, hs₁.wb]
+  have b₂ : State.addr (b.callEntry.gpr .r0) = base := by rw [State.callEntry_gpr _ (by decide), h0₂, hs₂.wb]
+  refine ⟨entry_pre hs₁ hz₁ hn48 h0₁ h1₁ M₁ ho₁ hm₁, entry_pre hs₂ hz₂ hn48 h0₂ h1₂ M₂ ho₂ hm₂, ⟨?_, ?_⟩,
     Covers.right (covers_ctx w₁ hz₁), covers_ctx w₁ hz₁, Covers.right (covers_ctx w₂ hz₂), covers_ctx w₂ hz₂⟩
-  simp only [powK, State.withRegions_gpr]
-  rw [State.callEntry_gpr _ (by decide), State.callEntry_gpr _ (by decide), h0₁, h0₂]
-  exact BitVec.eq_of_toNat_eq (by rw [hs₁.wb_toNat, hs₂.wb_toNat])
+  · simp only [State.withRegions_gpr]
+    rw [State.callEntry_gpr _ (by decide), State.callEntry_gpr _ (by decide), h0₁, h0₂]
+    exact BitVec.eq_of_toNat_eq (by rw [hs₁.wb_toNat, hs₂.wb_toNat])
+  · simp only [State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem, b₁, b₂, M₁, M₂]
+    exact T
 
 end VG.Proof.Dsa.Arm.Pow
 
@@ -1491,7 +1496,7 @@ def mulK (n : Nat) : Contract isa where
         val32 s.mem base (slot n 8) (2 * n) * val32 s.mem base (slot n 11) (2 * n) %
           val32 s.mem base (slot n 0) (2 * n) ∧
       Outs base (scratch n) s.mem t.mem
-  pub s t := s.gpr .r0 = t.gpr .r0
+  pub := (powK n 1).pub
 
 theorem mulK_correct {n : Nat} (hn : 0 < n) (hn48 : n ≤ 48) (s : State) (h : (mulK n).pre s) :
     ∃ tr t, Exec isa (mulBody umaal n) s tr t ∧ abiPreserved s t ∧ (mulK n).post s t := by
@@ -1504,7 +1509,7 @@ theorem mulK_correct {n : Nat} (hn : 0 < n) (hn48 : n ≤ 48) (s : State) (h : (
 
 theorem mulK_ct (n : Nat) (hn : 0 < n) (hn48 : n ≤ 48) :
     ConstantTime isa (mulK n).pre (mulK n).pub (mulBody umaal n) := by
-  refine SameTrace.constantTime fun s₁ s₂ h₁ h₂ Eq => ?_
+  refine SameTrace.constantTime fun s₁ s₂ h₁ h₂ ⟨Eq, T⟩ => ?_
   have E : ∀ {s : State}, (mulK n).pre s → Entry s (State.addr (s.gpr .r0)) ((s.gpr .r1).toNat * 8) := by
     intro s H
     exact ⟨rfl, ⟨_, Nat.le_refl _, by have := H.2.2.1; omega_arith, by rw [H.2.1]; simp⟩,
@@ -1512,9 +1517,10 @@ theorem mulK_ct (n : Nat) (hn : 0 < n) (hn48 : n ≤ 48) :
   have E₂ : Entry s₂ (State.addr (s₁.gpr .r0)) ((s₂.gpr .r1).toNat * 8) := by rw [Eq]; exact E h₂
   unfold mulBody
   refine savedSetup_trace (E h₁) E₂ h₁.2.2.2.1 h₂.2.2.2.1 hn hn48
-    h₁.2.2.2.2.1 h₁.2.2.2.2.2 ?_ ?_ ?_
+    h₁.2.2.2.2.1 h₁.2.2.2.2.2 ?_ ?_ ?_ ?_
   · rw [Eq]; exact h₂.2.2.2.2.1
   · rw [Eq]; exact h₂.2.2.2.2.2
+  · rw [← Eq] at T; exact T
   · refine RelCT.seq (ordinaryMul_relCT n) ?_
     exact (relCT_of_check (σ := VG.Arm.Taint.ofRegs []) (h := .block []) (by decide)).mono (fun _ _ h => h)
       fun _ _ _ => trivial
@@ -1687,7 +1693,8 @@ theorem mulCall_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ n : Nat
     (hs₂ : Ws s₂ base size₂) (hz₁ : contextBytes n ≤ size₁) (hz₂ : contextBytes n ≤ size₂)
     (hn : 0 < n) (hn48 : n ≤ 48)
     (ho₁ : val32 s₁.mem base (slot n 0) (2 * n) % 2 = 1) (hm₁ : 1 < val32 s₁.mem base (slot n 0) (2 * n))
-    (ho₂ : val32 s₂.mem base (slot n 0) (2 * n) % 2 = 1) (hm₂ : 1 < val32 s₂.mem base (slot n 0) (2 * n)) :
+    (ho₂ : val32 s₂.mem base (slot n 0) (2 * n) % 2 = 1) (hm₂ : 1 < val32 s₂.mem base (slot n 0) (2 * n))
+    (T : val32 s₁.mem base (slot n 0) (2 * n) = val32 s₂.mem base (slot n 0) (2 * n)) :
     SameTrace isa (mulCall umaal n) s₁ s₂ := by
   have nothing : ∀ a b : State, VG.Arm.Taint.Agree (VG.Arm.Taint.ofRegs []) a b :=
     fun _ _ => VG.Arm.Taint.agree_ofRegs fun _ h => nomatch h
@@ -1703,11 +1710,15 @@ theorem mulCall_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ n : Nat
     ((relCT_of_check (τ := VG.Arm.Taint.ofRegs []) (σ := VG.Arm.Taint.ofRegs []) (h := .block [])
       (by decide)).mono (fun _ _ _ => nothing _ _) fun _ _ _ => trivial)) ⟨rfl, rfl⟩
   rintro a b ⟨rfl, rfl⟩
+  have b₁ : State.addr (a.callEntry.gpr .r0) = base := by rw [State.callEntry_gpr _ (by decide), h0₁, hs₁.wb]
+  have b₂ : State.addr (b.callEntry.gpr .r0) = base := by rw [State.callEntry_gpr _ (by decide), h0₂, hs₂.wb]
   refine ⟨entry_pre (e := 1) hs₁ hz₁ hn48 h0₁ h1₁ M₁ ho₁ hm₁, entry_pre (e := 1) hs₂ hz₂ hn48 h0₂ h1₂ M₂ ho₂ hm₂,
-    ?_, Covers.right (covers_ctx w₁ hz₁), covers_ctx w₁ hz₁, Covers.right (covers_ctx w₂ hz₂), covers_ctx w₂ hz₂⟩
-  simp only [mulK, State.withRegions_gpr]
-  rw [State.callEntry_gpr _ (by decide), State.callEntry_gpr _ (by decide), h0₁, h0₂]
-  exact BitVec.eq_of_toNat_eq (by rw [hs₁.wb_toNat, hs₂.wb_toNat])
+    ⟨?_, ?_⟩, Covers.right (covers_ctx w₁ hz₁), covers_ctx w₁ hz₁, Covers.right (covers_ctx w₂ hz₂), covers_ctx w₂ hz₂⟩
+  · simp only [State.withRegions_gpr]
+    rw [State.callEntry_gpr _ (by decide), State.callEntry_gpr _ (by decide), h0₁, h0₂]
+    exact BitVec.eq_of_toNat_eq (by rw [hs₁.wb_toNat, hs₂.wb_toNat])
+  · simp only [State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem, b₁, b₂, M₁, M₂]
+    exact T
 
 /-! ## Reductions -/
 

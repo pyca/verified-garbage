@@ -178,7 +178,7 @@ theorem check_constantTime : ConstantTime isa checkArm.pre checkArm.pub (Generat
     have X : Pair (State.addr (arg s₁ 0)) ((arg s₁ 1).toNat * 8) ((arg s₁ 1).toNat * 8) (s₁.gpr .r2).toNat
         (s₁.gpr .r3).toNat (((s₁.gpr .r2).toNat + 7) / 8) (((s₁.gpr .r3).toNat + 7) / 8)
         (checkIns (s₁.gpr .r2).toNat (s₁.gpr .r3).toNat) (checkVal s₁) (checkVal s₂) v₁ v₂ :=
-      ⟨D₁, D₂, pe G₁ G₂⟩
+      ⟨D₁, D₂, pe G₁ G₂, Vp.symm, Vq.symm⟩
     exact SameTrace.assoc_left (SameTrace.seq (parameters_trace X mp mq mg Dm₁ Dm₂)
       (parameters_ok X.C₁.S (X.C₁.inp mp) (X.C₁.inp mq) (X.C₁.inp mg) Dm₁.hP Dm₁.hPo Dm₁.hQ Dm₁.hQo)
       (parameters_ok X.C₂.S (X.C₂.inp mp) (X.C₂.inp mq) (X.C₂.inp mg) Dm₂.hP Dm₂.hPo Dm₂.hQ Dm₂.hQo)
