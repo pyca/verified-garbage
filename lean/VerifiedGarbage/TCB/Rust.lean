@@ -750,7 +750,7 @@ that code (`checkCalls` computes it once per name, `printsAs`).
 
 A function can be called hundreds of times in one artifact's `calls`, so
 every later call of a name is compared with the first one's code, by equal
-printed code, which `withPtrEq` returns at once if the two are the same value
+printed code, which `ISA.ptrEq` returns at once if the two are the same value
 in memory, as they usually are. -/
 def badCall {M : ISA} (P : Printer M) (first : String → Option Bool)
     (calls : List (String × Prog M)) : Option (String × Bool) := Id.run do
@@ -759,7 +759,7 @@ def badCall {M : ISA} (P : Printer M) (first : String → Option Bool)
   for (n, body) in calls do
     match seen.find? (·.1 == n) with
     | some (_, body₀) =>
-      unless withPtrEq body body₀ (fun _ => P.function body == P.function body₀)
+      unless M.ptrEq body body₀ (fun _ => P.function body == P.function body₀)
           (fun h => by simp [h]) do
         return some (n, true)
     | none =>
@@ -772,55 +772,25 @@ def badCall {M : ISA} (P : Printer M) (first : String → Option Bool)
 /-- A function's code, with the target it is code of. -/
 abbrev Fn := (T : EmitTarget) × Prog T.isa
 
-/-- What a function's printed code is a function of: its model, its printer and
-its code. A target has more, which the documentation is written from
-(`EmitTarget.argAreaDoc`, `reservedDoc`): functions, which are not the same
-value in memory in the artifacts of every registration file, so neither are
-two `Fn`s of the same code. Their `Key`s are, once `files` has shared them
-(`ShareCommon.shareCommon'`, which makes equal values the same value in
-memory): the key of a call of a function is then the same value as the
-function's (`printsAs`). -/
-abbrev Key := (M : ISA) × Printer M × Prog M
+/-- Whether the code `f` prints as `lines`, the printed code of the function
+it calls. It prints `f`: a `Fn` holds its target, whose ISA holds types,
+which the compiled code erases, so two `Fn`s that are the same value in
+memory need not be equal, and the compiler refuses `withPtrEq` at `Fn` (or at
+anything that holds an ISA). -/
+def printsAs (f : Fn) (lines : List Line) : Bool :=
+  f.1.printer.function f.2 == lines
 
-/-- The model, the printer and the code of `f`. -/
-def Fn.key (f : Fn) : Key := ⟨f.1.isa, f.1.printer, f.2⟩
-
-/-- A function's code with its `Key`: what `files` shares of the code of every
-artifact and of every call. -/
-structure Keyed where
-  fn : Fn
-  key : Key
-  key_eq : key = fn.key
-
-def Keyed.of (f : Fn) : Keyed := ⟨f, _, rfl⟩
-
-/-- Whether the code of `f` prints as `lines`, the printed code of the function
-whose key is `g`: at once if `f`'s key and `g` are the same value in memory
-(`withPtrEq`), for then `f` prints as that function does; else by printing
-`f`. -/
-def printsAs (f : Keyed) (g : Key) (lines : List Line) (h : lines = g.2.1.function g.2.2) :
-    Bool :=
-  withPtrEq f.key g (fun _ => f.fn.1.printer.function f.fn.2 == lines)
-    (fun e => by
-      have hl : lines = f.fn.1.printer.function f.fn.2 := by
-        subst h e
-        exact congrArg (fun k : Key => k.2.1.function k.2.2) f.key_eq
-      simp [hl])
-
-/-- An artifact, with its code as a `Fn` and that code's `Key`, and the first
-call of each function its code calls (`firstCalls`), each with its key
-(`Keyed`): what `files` shares before it prepares the artifacts
-(`Prepared`). -/
+/-- An artifact, with its code as a `Fn`, and the first call of each function
+its code calls (`firstCalls`), each as a `Fn`: what `files` shares before it
+prepares the artifacts (`Prepared`). -/
 structure Shared where
   art : Artifact
   fn : Fn
-  key : Key
-  calls : List (String × Keyed)
+  calls : List (String × Fn)
   fn_eq : fn = ⟨art.target, art.code⟩
-  key_eq : key = fn.key
-  calls_eq : calls = (firstCalls art.code.calls).map fun (n, b) => (n, .of ⟨art.target, b⟩)
+  calls_eq : calls = (firstCalls art.code.calls).map fun (n, b) => (n, ⟨art.target, b⟩)
 
-def Shared.of (a : Artifact) : Shared := ⟨a, _, _, _, rfl, rfl, rfl⟩
+def Shared.of (a : Artifact) : Shared := ⟨a, _, _, rfl, rfl⟩
 
 /-- An artifact with what the checks read of it more than once, each computed
 once: its code and its calls as `Fn`s (`Shared`), its printed code
@@ -865,7 +835,7 @@ where
 (`featureCheck`). -/
 def checkFeatures (p : Prepared) : Except String Unit :=
   let a := p.art
-  featureCheck s!"{a.target.name}: {a.name}" a.doc (Code.requiresDedup a.target.isa.requires a.code)
+  featureCheck s!"{a.target.name}: {a.name}" a.doc (Code.requiresDedup a.target.isa a.code)
     a.features
 
 /-- The target's printer can encode every instruction of the code of `p`'s
@@ -985,8 +955,6 @@ constants its instructions carry (`Printer.codeTables`), and the tables its prin
 structure Internal where
   /-- Its target and code, the `Fn` of the first call of it (`Shared.calls`). -/
   fn : Fn
-  /-- That call's key, which a later call's is compared with (`printsAs`). -/
-  key : Key
   name : String
   /-- The module whose file declares the internal function's (`internalOwner`). -/
   owner : String
@@ -994,9 +962,8 @@ structure Internal where
   features : List String
   tables : List (String × List (BitVec 64))
   syms : List String
-  key_eq : key = fn.key
   lines_eq : lines = fn.1.printer.function fn.2
-  features_eq : features = Code.requiresDedup fn.1.isa.requires fn.2
+  features_eq : features = Code.requiresDedup fn.1.isa fn.2
   tables_eq : tables = fn.1.printer.codeTables fn.2
   syms_eq : syms = dedup (lines.filterMap fun | .sym _ _ n => some n | _ => none)
 
@@ -1026,8 +993,8 @@ abbrev Internal.code (h : Internal) : Prog h.target.isa := h.fn.2
 
 /-- The internal function `name` whose target and code are `f`'s, declared by
 the module `owner`. -/
-def Internal.of (name owner : String) (f : Keyed) : Internal :=
-  ⟨f.fn, f.key, name, owner, _, _, _, _, f.key_eq, rfl, rfl, rfl, rfl⟩
+def Internal.of (name owner : String) (f : Fn) : Internal :=
+  ⟨f, name, owner, _, _, _, _, rfl, rfl, rfl, rfl⟩
 
 /-- The target's printer can encode every instruction of the code of the
 internal function `h` as the model describes it (`checkEncodable`). -/
@@ -1051,7 +1018,7 @@ it is of that code. -/
 def internalsOf (ps : List Prepared) : List Internal := Id.run do
   -- Each internal function found so far: its target and name, the code of its
   -- first call, and the modules of the artifacts that call it.
-  let mut found : List (String × String × Keyed) := []
+  let mut found : List (String × String × Fn) := []
   let mut callers : List ((String × String) × List String) := []
   for p in ps do
     let a := p.art
@@ -1144,11 +1111,8 @@ def checkInternalTables (hs : List Internal) (p : Prepared) : Except String Unit
 /-- Every call in the code of `p`'s artifact, and in the code of the functions
 it calls, is of an artifact of `ps` of the same target, or of an internal
 function of `hs` (`internalsOf`), whose printed code is that of the called
-code (`badCall`). The first call of each function is that of `p.calls`,
-whose key `files` shared with that of every artifact and internal function:
-so it is usually the same value in memory as the key of the function it
-calls, and `printsAs` compares it with that function's printed code without
-printing it again. -/
+code (`badCall`). The first call of each function is the `Fn` of `p.calls`,
+which `printsAs` prints and compares with that function's printed code. -/
 def checkCalls (ps : List Prepared) (hs : List Internal) (p : Prepared) : Except String Unit :=
   let a := p.art
   let t := a.target.name
@@ -1157,9 +1121,8 @@ def checkCalls (ps : List Prepared) (hs : List Internal) (p : Prepared) : Except
     | none => none
     | some (_, f) =>
       match ps.find? fun (q : Prepared) => q.art.target.name == t && q.art.name == n with
-      | some q => some (printsAs f q.key q.lines (by rw [q.key_eq]; exact q.lines_eq))
-      | none => (internal? hs t n).map fun h =>
-        printsAs f h.key h.lines (by rw [h.key_eq]; exact h.lines_eq)
+      | some q => some (printsAs f q.lines)
+      | none => (internal? hs t n).map fun h => printsAs f h.lines
   match badCall a.target.printer first a.code.calls with
   | none => pure ()
   | some (n, false) =>
@@ -2273,10 +2236,8 @@ def files (as : List Artifact) :
   -- (`ShareCommon.shareCommon'` returns its argument): the code of every call
   -- of a function in an artifact is then the same value as its first call's,
   -- which `badCall` and `Code.distinctCalls` skip at once. Most calls' code was
-  -- an equal value made again, not the same one. So is each artifact's `Key`
-  -- and that of each first call of a function (`Shared`), with the same model,
-  -- printer and code, which `checkCalls` compares by `printsAs`. First, as
-  -- sharing values that tasks have read takes several times longer.
+  -- an equal value made again, not the same one. First, as sharing values
+  -- that tasks have read takes several times longer.
   let ss := ShareCommon.shareCommon' (as.map Shared.of)
   let as := ss.map (·.art)
   forMPar as checkApi

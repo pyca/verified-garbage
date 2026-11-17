@@ -1015,18 +1015,39 @@ def featureSample : Code String Unit :=
 (`Code.distinctCalls`): the features of `Code.requires` each once.
 `Rust.ownFirstSome?` goes through the code but for its calls. -/
 
+/-- An ISA of instructions named by strings, which require `req`: what the
+functions that go through the code of calls once need of an ISA (its
+`requires`, `ptrEq` and `ptrEqDec`). -/
+abbrev strIsa : ISA where
+  State := Unit
+  Instr := String
+  Cond := Unit
+  exec _ _ := none
+  addrs _ _ := []
+  eval _ _ := none
+  call _ := none
+  callAddrs _ := []
+  ret _ _ := none
+  retAddrs _ := []
+  writesSp _ := false
+  push _ _ := none
+  pop _ _ _ := none
+  requires := req
+  ptrEq := withPtrEq
+  ptrEqDec := withPtrEqDecEq
+
 /-- Calls of `f` and `g` nested in a call of `k`, and a later call of `f`
 whose code requires something else. -/
 def nestedSample : Code String Unit :=
   .seq (.call "k" (.seq (.block ["mov"]) (.call "g" (.call "f" (.block ["sha256rnds2"])))))
     (.seq (.call "f" (.block ["sha256rnds2"])) (.call "f" (.block ["pblendw"])))
 
-#guard Code.requiresDedup req featureSample == ["sha", "sse4.1", "ssse3"]
-#guard Code.requiresDedup req nestedSample == ["sha", "sse4.1"]
-#guard Code.requiresDedup req (Code.block ["mov", "add"] : Code String Unit) == []
+#guard Code.requiresDedup strIsa featureSample == ["sha", "sse4.1", "ssse3"]
+#guard Code.requiresDedup strIsa nestedSample == ["sha", "sse4.1"]
+#guard Code.requiresDedup strIsa (Code.block ["mov", "add"] : Code String Unit) == []
 -- The value of each call's code, but for a later call of a function whose
 -- value is the first call's.
-#guard Code.distinctCalls (Code.ownRequires req []) nestedSample.calls ==
+#guard Code.distinctCalls (M := strIsa) (Code.ownRequires req []) nestedSample.calls ==
   [[], [], ["sha"], ["sse4.1"]]
 
 /-- The instruction `bad`, which a printer cannot encode. -/
