@@ -77,7 +77,7 @@ theorem code_ok {tsH tsG : List FnTable} {s : State} (hp : PreE H.D tsH tsG s)
   have hD : H.D + 2 < 4096 := by have := hH.sizes.DN; have := hH.N_le; omega_arith
   have hk2 := hp.k2
   unfold encode
-  refine WP.allocKept (by decide) (by have := fb_toNat hp; omega_using [this]) ?_
+  refine WP.alloc (by decide) (by have := fb_toNat hp; omega_using [this]) ?_
   unfold encBody seqs seqs seqs
   refine WP.seq ?_
   rw [WP.block_append_iff, WP.block_append_iff]
@@ -88,8 +88,18 @@ theorem code_ok {tsH tsG : List FnTable} {s : State} (hp : PreE H.D tsH tsG s)
     (by rw [hu₀.e.x23, BitVec.ofNat_toNat, BitVec.setWidth_eq]) (by omega_using [hk2])) fun u₁ ⟨O₁, x9₁, x10₁⟩ sy₁ => ?_
   refine WP.seq (WP.mono (body_ok hH hGm hHs hHl hHv hGh hGl hGv hdo hp ht (hu₀.only O₁ sy₁) x9₁ x10₁)
     fun t ⟨m, r⟩ => ?_)
-  exact WP.mono (restore_frame_ok m.sp m.wr m.v m.fr.sv) fun w ⟨habi, hx0, hmem⟩ =>
-    ⟨habi, by rw [hx0, hmem]; exact r⟩
+  refine WP.mono (restore_frame_ok m.sp m.wr m.v m.fr.sv) fun w ⟨habi, hx0, hmem⟩ mm uu fl =>
+    ⟨⟨habi.1, habi.2.1, habi.2.2⟩, ?_⟩
+  -- The encoded message lies apart from the frame, whose bytes the `free` loses.
+  have hb : Spec.Rsa.bytesAt mm (s.gpr .x0) (s.gpr .x1).toNat =
+      Spec.Rsa.bytesAt (freed frameBytes w).mem (s.gpr .x0) (s.gpr .x1).toNat :=
+    List.map_congr_left fun i hi => lost_byte (R := emR s) fl
+      (hp.ke.symm.sub_right (Offset.sub_below s.sp (by unfold stk; omega_arith) (by unfold stk; omega_arith)))
+      (List.mem_range.mp hi)
+  show OutOk _ Hs Gs s mm ((freed frameBytes w).gpr .x0)
+  rw [hx0]
+  unfold OutOk
+  rw [hb, hmem]; exact r
 
 end
 

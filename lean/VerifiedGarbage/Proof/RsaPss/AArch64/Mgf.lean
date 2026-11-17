@@ -466,7 +466,7 @@ theorem mgfXor_ok {H : Hash} {Gs : Spec.Mgf1.Hash} (hGh : ∀ x, Gs.hash x = hG.
   have c7 : oEm = 2560 := rfl
   have hF := E.F288
   unfold mgfXor
-  refine WP.allocKept (by decide) (by rw [L.sp, mgfFrame_eq]; rw [mgfFrame_eq] at hF; omega_using [hF]) ?_
+  refine WP.alloc (by decide) (by rw [L.sp, mgfFrame_eq]; rw [mgfFrame_eq] at hF; omega_using [hF]) ?_
   refine WP.seq ?_
   obtain asp : (allocated mgfFrame t).sp = mF F := by simp [allocated, L.sp, mF]
   refine WP.mono (setup_ok L hd h24 h25 E) fun u ⟨K, hsy, hum, L', R5, T, hMF, hMA⟩ => ?_
@@ -504,14 +504,23 @@ theorem mgfXor_ok {H : Hash} {Gs : Spec.Mgf1.Hash} (hGh : ∀ x, Gs.hash x = hG.
           · exact hc
           · exact fun h => hx2 (sub_retR F x h),
         fr0 x fun r hr => by rw [List.mem_singleton.mp hr]; exact h₁]
+  -- The `free` loses the frame's bytes, below our frame and apart from the working space.
+  intro mm uu fl
+  obtain fl' : Frame [⟨mF F, 272⟩] u'.mem mm := by rw [L.sp] at fl; exact fl
+  obtain hfl : Frame (mgfWr F S) u'.mem mm := Frame.sub fl' fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr
+    exact ⟨below F (mgfFrame + 16), by simp [mgfWr], sub_mF F⟩
   refine ⟨?_, by show u'.rd = t.rd; rw [st.rd, hru], by show u'.wr.tail = t.wr; rw [st.wr, hwu]; rfl, hcs,
-    fun r hr => (st.vec r hr).trans (K.vcs r hr), hfr, by rw [show (freed mgfFrame u').syms = u'.syms from rfl, sy', hsy],
+    fun r hr => (st.vec r hr).trans (K.vcs r hr), hfr.trans hfl,
+    by show (freed mgfFrame u').syms = t.syms; rw [show (freed mgfFrame u').syms = u'.syms from rfl, sy', hsy],
     fun o ho₁ ho₂ => ?_⟩
   · show u'.sp + BitVec.ofNat 64 mgfFrame = t.sp
     rw [hsp', L.sp, mF, BitVec.sub_add_cancel]
-  · show u'.mem (off S o) = _
+  · show mm (off S o) = _
     obtain ho : o - mgfOff < 3072 := by unfold mgfOff; omega_using [c1, ho₂]
     rw [so o (by unfold mgfOff; omega_using [c7, ho₁])]
+    refine (lost_byte (R := ⟨off S mgfOff, 8192⟩) fl' (E.dStk.sub_left (sub_mF F)).symm
+      (show o - mgfOff < 8192 by omega_using [ho])).trans ?_
     refine (R'.scr (o - mgfOff) (by unfold Impl.RsaOaep.AArch64.oRsa; omega_using [ho])).trans
       ((hV' _ (by unfold Impl.RsaOaep.AArch64.oRsa; omega_using [ho]) ((Proof.RsaOaep.AArch64.mOut_iff _).mpr (.inl ho))).trans ?_)
     obtain hv : ∀ q, mgfOff ≤ q → q < oRsa → t.mem (off (off S mgfOff) (q - mgfOff)) = V q := fun q h₁ h₂ => by

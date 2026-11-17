@@ -9,6 +9,8 @@ import VerifiedGarbage.Proof.RsaPss.AArch64.SignFrame
 import VerifiedGarbage.Proof.RsaPss.AArch64.Restore
 import VerifiedGarbage.Proof.RsaPss.Params
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Rsa.BytesFrame
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # RSASSA-PSS signing on AArch64, calling `encode`: correctness
@@ -178,13 +180,22 @@ theorem code_ok {s : State} (hp : PreS tsH tsG K s) {i : Nat} {T : Tabs} {Hs Gs 
     (E : ESel f g tsH tsG s i T Hs Gs) :
     WP isa (signC f g c.name c.code) s (Post Hs Gs s) := by
   unfold signC
-  refine WP.allocKept (by decide) (by have := fb_toNat hp; omega_using [this]) ?_
+  refine WP.alloc (by decide) (by have := fb_toNat hp; omega_using [this]) ?_
   unfold signCBody seqs seqs seqs
   refine WP.seq (WP.mono_syms (prologue_ok hp (by simp [allocated]) (by simp [allocated]) (by simp [allocated])
     (by simp [allocated]) (fun r => by simp [allocated]) (fun r _ => by simp [allocated])) fun u hu sy => ?_)
   refine WP.seq (WP.mono (body_ok c h624 hcK hp E hu (by rw [sy]; simp [allocated])) fun t ⟨m, r⟩ => ?_)
-  exact WP.mono (restore_frame_ok m.sp m.wr m.v m.fr.sv) fun w ⟨habi, hx0, hmem⟩ =>
-    ⟨habi, by rw [hx0, hmem]; exact r⟩
+  refine WP.mono (restore_frame_ok m.sp m.wr m.v m.fr.sv) fun w ⟨habi, hx0, hmem⟩ mm uu fl =>
+    ⟨⟨habi.1, habi.2.1, habi.2.2⟩, ?_⟩
+  -- The output lies apart from the frame, whose bytes the `free` loses.
+  have hb : Spec.Rsa.bytesAt mm (s.gpr .x0) (s.gpr .x3).toNat =
+      Spec.Rsa.bytesAt (freed frameBytes w).mem (s.gpr .x0) (s.gpr .x3).toNat :=
+    List.map_congr_left fun i hi => lost_byte (R := oR s) fl
+      (hp.ko.symm.sub_right (Offset.sub_below s.sp (by unfold stk; omega_arith) (by unfold stk; omega_arith)))
+      (show i < (s.gpr .x1).toNat by rw [hp.ol]; exact List.mem_range.mp hi)
+  refine Proof.Rsa.writtenOutcome_of_bytesAt hb ?_
+  show Spec.Rsa.writtenOutcome (freed frameBytes w).mem _ _ (((freed frameBytes w).gpr .x0).setWidth 32) _
+  rw [hx0, hmem]; exact r
 
 end
 

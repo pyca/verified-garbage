@@ -138,7 +138,7 @@ theorem code_ok {tsH tsG : List FnTable} {s : State} (hp : PreC H.D tsH tsG s)
   have hD : H.D + 2 < 4096 := by have := hH.sizes.DN; have := hH.N_le; omega_arith
   have hk2 := hp.k2
   unfold checkEncoding
-  refine WP.allocKept (by decide) (by have := fb_toNat hp; omega_using [this]) ?_
+  refine WP.alloc (by decide) (by have := fb_toNat hp; omega_using [this]) ?_
   unfold chkBody seqs seqs seqs seqs
   refine WP.seq ?_
   rw [WP.block_append_iff]
@@ -151,8 +151,8 @@ theorem code_ok {tsH tsG : List FnTable} {s : State} (hp : PreC H.D tsH tsG s)
     (by rw [hu₁.x23, BitVec.ofNat_toNat, BitVec.setWidth_eq]) (by omega_using [hk2])) fun u₂ ⟨O₂, x9₂, x10₂⟩ sy₂ => ?_)
   refine WP.seq (WP.mono (body_ok hH hGm hHs hHl hHv hGh hGl hGv hdo hp ht (hu₁'.only O₂ sy₂)
     (fun i hi => by rw [O₂.mem]; exact hem i hi) x9₂ x10₂) fun t ⟨m, r⟩ => ?_)
-  exact WP.mono (restore_frame_ok m.sp m.wr m.v m.fr.sv) fun w ⟨habi, hx0, _⟩ =>
-    ⟨habi, by rw [hx0]; exact r⟩
+  exact WP.mono (restore_frame_ok m.sp m.wr m.v m.fr.sv) fun w ⟨habi, hx0, _⟩ _ _ _ =>
+    ⟨⟨habi.1, habi.2.1, habi.2.2⟩, by dsimp only; rw [hx0]; exact r⟩
 
 end
 
