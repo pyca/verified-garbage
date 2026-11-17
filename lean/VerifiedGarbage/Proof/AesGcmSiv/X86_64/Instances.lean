@@ -982,49 +982,6 @@ theorem openOut (stack : Nat) :
       rw [e]
       exact h key hl hk
 
-/-- A registration over the bitsliced AES, its 3856 bytes of stack wiped
-whole on return, in the chunks `[8, 3848]`; any other as it is. -/
-def scrubSoft {api : Api} (v : GcmImpl) (r : Registration api X86_64.target)
-    (hpost : PostOut r.contract (api.sig.retBits
-      ((X86_64.abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)) : Registration api X86_64.target :=
-  if v.ctr.features = [] then withScrubAllC r hpost [8, 3848] else r
-
-/-- `vg_aes_gcm_siv_seal` over `v`. -/
-def sealReg (v : GcmImpl) : Registration Spec.GcmSiv.sealApi X86_64.target :=
-  scrubSoft v {
-    suffix := v.suffix
-    code := framedSeal v
-    stack := sivStack v
-    verified := Proof.AesGcmSiv.seal_keyed (framedSeal_verified v)
-    spSafe := framedSeal_spSafe v } (sealOut _)
-
-/-- `vg_aes_gcm_siv_open` over `v`. -/
-def openReg (v : GcmImpl) : Registration Spec.GcmSiv.openApi X86_64.target :=
-  scrubSoft v {
-    suffix := v.suffix
-    code := framedOpen v
-    stack := sivStack v
-    verified := Proof.AesGcmSiv.open_keyed (framedOpen_verified v)
-    spSafe := framedOpen_spSafe v } (openOut _)
-
-/-- `vg_aes_gcm_siv_seal` over `v`, with the AVX2 copies. -/
-def wideSealReg (v : GcmImpl) : Registration Spec.GcmSiv.sealApi X86_64.target :=
-  scrubSoft v {
-    suffix := v.suffix ++ "_avx2"
-    code := avx2SealCode v
-    stack := 3856
-    verified := Proof.AesGcmSiv.seal_keyed (avx2Seal_verified v)
-    spSafe := avx2Seal_spSafe v } (sealOut _)
-
-/-- `vg_aes_gcm_siv_open` over `v`, with the AVX2 copies. -/
-def wideOpenReg (v : GcmImpl) : Registration Spec.GcmSiv.openApi X86_64.target :=
-  scrubSoft v {
-    suffix := v.suffix ++ "_avx2"
-    code := avx2OpenCode v
-    stack := 3856
-    verified := Proof.AesGcmSiv.open_keyed (avx2Open_verified v)
-    spSafe := avx2Open_spSafe v } (openOut _)
-
 /-! ### The code in registers: what its frame holds on return
 
 The code in registers writes, of its 784 bytes of stack, the working space
@@ -1122,7 +1079,7 @@ theorem seal_resOk {θ : Nat} {c : Prog isa}
     (hv : Verified X86_64.target c (Proof.AesGcmSiv.sealScratchContract X86_64.abi 93 8))
     (hsp : c.all (fun i => !isa.writesSp i) = true) (hd : c.x86_64Depth ≤ 8)
     (hw : ∀ {s : State}, Proof.AesGcmSivReg.sealPre s → WP isa c s fun s' =>
-      gprPreserved s s' ∧ sealX86_64.post s s' ∧
+      gprPreserved s s' ∧ Proof.AesGcmSivReg.sealX86_64.post s s' ∧
       Frame (⟨Proof.AesGcmSivReg.arg s 1, 16⟩ :: fineR θ (Proof.AesGcmSivReg.arg s 2) (s.gpr .r9) (Proof.AesGcmSivReg.arg s 0).toNat) s.mem s'.mem ∧
       (θ ≤ (Proof.AesGcmSivReg.arg s 0).toNat → ∀ o ∈ zeroOffs, ZeroR ⟨Proof.AesGcmSivReg.arg s 2 + BitVec.ofNat 64 o, 16⟩ s'.mem)) :
     ResOk (withStackArgScratch 776 2 c) (Proof.AesGcmSiv.sealRoundsContract X86_64.abi 784) 784 sivKs
@@ -1204,7 +1161,7 @@ theorem open_resOk {θ : Nat} {c : Prog isa}
     (hv : Verified X86_64.target c (Proof.AesGcmSiv.openScratchContract X86_64.abi 93 8))
     (hsp : c.all (fun i => !isa.writesSp i) = true) (hd : c.x86_64Depth ≤ 8)
     (hw : ∀ {s : State}, Proof.AesGcmSivReg.openPre s → WP isa c s fun s' =>
-      gprPreserved s s' ∧ openX86_64.post s s' ∧
+      gprPreserved s s' ∧ Proof.AesGcmSivReg.openX86_64.post s s' ∧
       Frame (fineR θ (Proof.AesGcmSivReg.arg s 2) (s.gpr .r9) (Proof.AesGcmSivReg.arg s 0).toNat) s.mem s'.mem ∧
       (θ ≤ (Proof.AesGcmSivReg.arg s 0).toNat → ∀ o ∈ zeroOffs, ZeroR ⟨Proof.AesGcmSivReg.arg s 2 + BitVec.ofNat 64 o, 16⟩ s'.mem)) :
     ResOk (withStackArgScratch 776 2 c) (Proof.AesGcmSiv.openRoundsContract X86_64.abi 784) 784 sivKs
@@ -1279,7 +1236,118 @@ theorem open_resOk {θ : Nat} {c : Prog isa}
     rw [k₁, k₂, g₁, g₂]
     exact stack_init_eq (stack := 783) hk hp₁ hout hx
 
+/-- `seal` in registers for `v`, with its loops if it has them, in its frame. -/
+theorem regSeal_framed (v : GcmImpl) :
+    Verified X86_64.target (withStackArgScratch 776 2 (regSeal (loopsOf v)))
+      (Proof.AesGcmSiv.sealRoundsContract X86_64.abi 784) := by
+  cases hl : loopsOf v with
+  | some lp => exact Proof.AesGcmSivReg.X86_64.sealL_framed mulFacts (loopsOf_ok v hl).1 (loopsOf_ok v hl).2 (loopsOf_ct v hl)
+  | none => exact Proof.AesGcmSivReg.X86_64.seal_framed mulFacts
+
+theorem regOpen_framed (v : GcmImpl) :
+    Verified X86_64.target (withStackArgScratch 776 2 (regOpen (loopsOf v)))
+      (Proof.AesGcmSiv.openRoundsContract X86_64.abi 784) := by
+  cases hl : loopsOf v with
+  | some lp => exact Proof.AesGcmSivReg.X86_64.openL_framed mulFacts (loopsOf_ok v hl).1 (loopsOf_ok v hl).2 (loopsOf_ct v hl)
+  | none => exact Proof.AesGcmSivReg.X86_64.open_framed mulFacts
+
+theorem regSeal_sp (v : GcmImpl) :
+    (withStackArgScratch 776 2 (regSeal (loopsOf v))).all (fun i => !X86_64.isa.writesSp i) = true := by
+  cases hl : loopsOf v with
+  | some lp => exact X86_64.withStackArgScratch_spSafe (Proof.AesGcmSivReg.X86_64.sealL_spSafe (loopsOf_ok v hl).2)
+  | none => exact X86_64.withStackArgScratch_spSafe Proof.AesGcmSivReg.X86_64.seal_spSafe
+
+theorem regOpen_sp (v : GcmImpl) :
+    (withStackArgScratch 776 2 (regOpen (loopsOf v))).all (fun i => !X86_64.isa.writesSp i) = true := by
+  cases hl : loopsOf v with
+  | some lp => exact X86_64.withStackArgScratch_spSafe (Proof.AesGcmSivReg.X86_64.openL_spSafe (loopsOf_ok v hl).2)
+  | none => exact X86_64.withStackArgScratch_spSafe Proof.AesGcmSivReg.X86_64.open_spSafe
+
+theorem regSeal_resOk (v : GcmImpl) :
+    ResOk (withStackArgScratch 776 2 (regSeal (loopsOf v))) (Proof.AesGcmSiv.sealRoundsContract X86_64.abi 784) 784
+      sivKs [8, 776] := by
+  cases hl : loopsOf v with
+  | some lp =>
+    exact seal_resOk (θ := 256) (Proof.AesGcmSivReg.X86_64.sealL_verified mulFacts (loopsOf_ok v hl).1 (loopsOf_ok v hl).2 (loopsOf_ct v hl))
+      (Proof.AesGcmSivReg.X86_64.sealL_spSafe (loopsOf_ok v hl).2) (Proof.AesGcmSivReg.X86_64.sealL_xdepth (loopsOf_ok v hl).2)
+      fun h => Proof.AesGcmSivReg.X86_64.sealL_wp mulFacts (loopsOf_ok v hl).1 h
+  | none =>
+    exact seal_resOk (θ := 2 ^ 64) (Proof.AesGcmSivReg.X86_64.seal_verified mulFacts) Proof.AesGcmSivReg.X86_64.seal_spSafe Proof.AesGcmSivReg.X86_64.seal_xdepth fun h => Proof.AesGcmSivReg.X86_64.seal_wp mulFacts h
+
+theorem regOpen_resOk (v : GcmImpl) :
+    ResOk (withStackArgScratch 776 2 (regOpen (loopsOf v))) (Proof.AesGcmSiv.openRoundsContract X86_64.abi 784) 784
+      sivKs [8, 776] := by
+  cases hl : loopsOf v with
+  | some lp =>
+    exact open_resOk (θ := 256) (Proof.AesGcmSivReg.X86_64.openL_verified mulFacts (loopsOf_ok v hl).1 (loopsOf_ok v hl).2 (loopsOf_ct v hl))
+      (Proof.AesGcmSivReg.X86_64.openL_spSafe (loopsOf_ok v hl).2) (Proof.AesGcmSivReg.X86_64.openL_xdepth (loopsOf_ok v hl).2)
+      fun h => Proof.AesGcmSivReg.X86_64.openL_wp mulFacts (loopsOf_ok v hl).1 h
+  | none =>
+    exact open_resOk (θ := 2 ^ 64) (Proof.AesGcmSivReg.X86_64.open_verified mulFacts) Proof.AesGcmSivReg.X86_64.open_spSafe Proof.AesGcmSivReg.X86_64.open_xdepth fun h => Proof.AesGcmSivReg.X86_64.open_wp mulFacts h
+
+/-- `vg_aes_gcm_siv_seal` in registers over `v`, before `scrub`. -/
+def regSealReg (v : GcmImpl) : Registration Spec.GcmSiv.sealApi X86_64.target where
+  suffix := v.suffix
+  code := withStackArgScratch 776 2 (regSeal (loopsOf v))
+  stack := 784
+  verified := Proof.AesGcmSiv.seal_keyed (regSeal_framed v)
+  spSafe := regSeal_sp v
+
+/-- `vg_aes_gcm_siv_open` in registers over `v`, before `scrub`. -/
+def regOpenReg (v : GcmImpl) : Registration Spec.GcmSiv.openApi X86_64.target where
+  suffix := v.suffix
+  code := withStackArgScratch 776 2 (regOpen (loopsOf v))
+  stack := 784
+  verified := Proof.AesGcmSiv.open_keyed (regOpen_framed v)
+  spSafe := regOpen_sp v
+
 end
+
+/-- A registration over the bitsliced AES, its 3856 bytes of stack wiped
+whole on return, in the chunks `[8, 3848]`; any other as it is. -/
+def scrubSoft {api : Api} (v : GcmImpl) (r : Registration api X86_64.target)
+    (hpost : PostOut r.contract (api.sig.retBits
+      ((X86_64.abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)) : Registration api X86_64.target :=
+  if v.ctr.features = [] then withScrubAllC r hpost [8, 3848] else r
+
+/-- `vg_aes_gcm_siv_seal` over `v`: in registers (`sivReg`), with what holds nothing of the keys or the
+data left unwiped (`sivKs`). -/
+def sealReg (v : GcmImpl) : Registration Spec.GcmSiv.sealApi X86_64.target :=
+  if sivReg v then withScrubResC (regSealReg v) (sealOut _) sivKs [8, 776] (regSeal_resOk v)
+  else scrubSoft v {
+    suffix := v.suffix
+    code := framedSeal v
+    stack := sivStack v
+    verified := Proof.AesGcmSiv.seal_keyed (framedSeal_verified v)
+    spSafe := framedSeal_spSafe v } (sealOut _)
+
+/-- `vg_aes_gcm_siv_open` over `v`. -/
+def openReg (v : GcmImpl) : Registration Spec.GcmSiv.openApi X86_64.target :=
+  if sivReg v then withScrubResC (regOpenReg v) (openOut _) sivKs [8, 776] (regOpen_resOk v)
+  else scrubSoft v {
+    suffix := v.suffix
+    code := framedOpen v
+    stack := sivStack v
+    verified := Proof.AesGcmSiv.open_keyed (framedOpen_verified v)
+    spSafe := framedOpen_spSafe v } (openOut _)
+
+/-- `vg_aes_gcm_siv_seal` over `v`, with the AVX2 copies. -/
+def wideSealReg (v : GcmImpl) : Registration Spec.GcmSiv.sealApi X86_64.target :=
+  scrubSoft v {
+    suffix := v.suffix ++ "_avx2"
+    code := avx2SealCode v
+    stack := 3856
+    verified := Proof.AesGcmSiv.seal_keyed (avx2Seal_verified v)
+    spSafe := avx2Seal_spSafe v } (sealOut _)
+
+/-- `vg_aes_gcm_siv_open` over `v`, with the AVX2 copies. -/
+def wideOpenReg (v : GcmImpl) : Registration Spec.GcmSiv.openApi X86_64.target :=
+  scrubSoft v {
+    suffix := v.suffix ++ "_avx2"
+    code := avx2OpenCode v
+    stack := 3856
+    verified := Proof.AesGcmSiv.open_keyed (avx2Open_verified v)
+    spSafe := avx2Open_spSafe v } (openOut _)
 
 end
 

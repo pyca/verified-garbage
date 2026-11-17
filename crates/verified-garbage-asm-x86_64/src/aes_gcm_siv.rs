@@ -12,6 +12,8 @@ pub const VG_AES_GCM_SIV_SEAL_VAES_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu
 ///
 /// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 240 bytes.
@@ -291,7 +293,7 @@ jmp 284f
 283:
 284:
 234:
-.base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIAwAAww=="
+.base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIAwAAxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPhIjaQk+Pz//8X+f4Qk+AEAAMX+f4Qk2AEAAMX+f4QkuAEAAMX+f4QkmAEAAMX+f4QkeAEAAMX+f4QkWAEAAMX+f4QkOAEAAMX+f4QkGAEAAMX+f4Qk+AAAAMX+f4Qk2AAAAMX+f4QkuAAAAPMPf4QkqAAAAMX+f0QkSMX+f0QkKMX+f0QkCEyJHCRIjaQkCAMAAEiNZCQIMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
     )
@@ -305,6 +307,8 @@ pub const VG_AES_GCM_SIV_OPEN_VAES_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu
 /// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
 ///
 /// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -653,7 +657,7 @@ jmp 2111f
 .base64 "80UPbwJmQQ843cDzQQ9/h4AAAABJiwdJM4eAAAAASYtXCEkzl4gAAABICdBIg/gBuAAAAACD0ABJiYfAAAAASYuHwAAAAEiFwA=="
 je 2114f
 2115:
-.base64 "SYuHwAAAAEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIAwAAww=="
+.base64 "SYuHwAAAAEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIAwAAxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPhIjaQk+Pz//8X+f4Qk+AEAAMX+f4Qk2AEAAMX+f4QkuAEAAMX+f4QkmAEAAMX+f4QkeAEAAMX+f4QkWAEAAMX+f4QkOAEAAMX+f4QkGAEAAMX+f4Qk+AAAAMX+f4Qk2AAAAMX+f4QkuAAAAPMPf4QkqAAAAMX+f0QkSMX+f0QkKMX+f0QkCEyJHCRIjaQkCAMAAEiNZCQIicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 2114:
 .base64 "TYun6AAAAEmLr/AAAABBuwAAAABNK5/AAAAAQboAAAAASInpSMHpBEiFyQ=="
 je 2116f
@@ -686,6 +690,8 @@ pub const VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::F
 /// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
 ///
 /// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -958,7 +964,7 @@ jmp 284f
 283:
 284:
 234:
-.base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIAwAAww=="
+.base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIAwAAxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPhIjaQk+Pz//8X+f4Qk+AEAAMX+f4Qk2AEAAMX+f4QkuAEAAMX+f4QkmAEAAMX+f4QkeAEAAMX+f4QkWAEAAMX+f4QkOAEAAMX+f4QkGAEAAMX+f4Qk+AAAAMX+f4Qk2AAAAMX+f4QkuAAAAPMPf4QkqAAAAMX+f0QkSMX+f0QkKMX+f0QkCEyJHCRIjaQkCAMAAEiNZCQIMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
     )
 }
@@ -971,6 +977,8 @@ pub const VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::F
 /// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
 ///
 /// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1313,7 +1321,7 @@ jmp 2111f
 .base64 "80UPbwJmQQ843cDzQQ9/h4AAAABJiwdJM4eAAAAASYtXCEkzl4gAAABICdBIg/gBuAAAAACD0ABJiYfAAAAASYuHwAAAAEiFwA=="
 je 2114f
 2115:
-.base64 "SYuHwAAAAEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIAwAAww=="
+.base64 "SYuHwAAAAEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIAwAAxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPhIjaQk+Pz//8X+f4Qk+AEAAMX+f4Qk2AEAAMX+f4QkuAEAAMX+f4QkmAEAAMX+f4QkeAEAAMX+f4QkWAEAAMX+f4QkOAEAAMX+f4QkGAEAAMX+f4Qk+AAAAMX+f4Qk2AAAAMX+f4QkuAAAAPMPf4QkqAAAAMX+f0QkSMX+f0QkKMX+f0QkCEyJHCRIjaQkCAMAAEiNZCQIicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 2114:
 .base64 "TYun6AAAAEmLr/AAAABBuwAAAABNK5/AAAAAQboAAAAASInpSMHpBEiFyQ=="
 je 2116f
@@ -1345,6 +1353,8 @@ pub const VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::Featu
 /// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
 ///
 /// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1512,7 +1522,7 @@ jne 252b
 jmp 247f
 246:
 247:
-.base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIAwAAww=="
+.base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIAwAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhIjaQk+Pz///MPf4QkCAIAAPMPf4Qk+AEAAPMPf4Qk6AEAAPMPf4Qk2AEAAPMPf4QkyAEAAPMPf4QkuAEAAPMPf4QkqAEAAPMPf4QkmAEAAPMPf4QkiAEAAPMPf4QkeAEAAPMPf4QkaAEAAPMPf4QkWAEAAPMPf4QkSAEAAPMPf4QkOAEAAPMPf4QkKAEAAPMPf4QkGAEAAPMPf4QkCAEAAPMPf4Qk+AAAAPMPf4Qk6AAAAPMPf4Qk2AAAAPMPf4QkyAAAAPMPf4QkuAAAAPMPf4QkqAAAAPMPf0QkWPMPf0QkSPMPf0QkOPMPf0QkKPMPf0QkGPMPf0QkCEyJHCRIjaQkCAMAAEiNZCQIMcAxyTHSMfYx/0UxwEUx0kUx28M="
 .p2align 6"#,
     )
 }
@@ -1525,6 +1535,8 @@ pub const VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::Featu
 /// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
 ///
 /// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1695,7 +1707,7 @@ jmp 250f
 .base64 "80UPbwJmQQ843cDzQQ9/h4AAAABJiwdJM4eAAAAASYtXCEkzl4gAAABICdBIg/gBuAAAAACD0ABJiYfAAAAASYuHwAAAAEiFwA=="
 je 253f
 254:
-.base64 "SYuHwAAAAEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIAwAAww=="
+.base64 "SYuHwAAAAEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIAwAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhIjaQk+Pz///MPf4QkCAIAAPMPf4Qk+AEAAPMPf4Qk6AEAAPMPf4Qk2AEAAPMPf4QkyAEAAPMPf4QkuAEAAPMPf4QkqAEAAPMPf4QkmAEAAPMPf4QkiAEAAPMPf4QkeAEAAPMPf4QkaAEAAPMPf4QkWAEAAPMPf4QkSAEAAPMPf4QkOAEAAPMPf4QkKAEAAPMPf4QkGAEAAPMPf4QkCAEAAPMPf4Qk+AAAAPMPf4Qk6AAAAPMPf4Qk2AAAAPMPf4QkyAAAAPMPf4QkuAAAAPMPf4QkqAAAAPMPf0QkWPMPf0QkSPMPf0QkOPMPf0QkKPMPf0QkGPMPf0QkCEyJHCRIjaQkCAMAAEiNZCQIicAxyTHSMfYx/0UxwEUx0kUx28M="
 253:
 .base64 "TYun6AAAAEmLr/AAAABBuwAAAABNK5/AAAAAQboAAAAASInpSMHpBEiFyQ=="
 je 255f
