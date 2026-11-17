@@ -367,6 +367,17 @@ theorem entered_ro (h : (layOf F A argv ro rw s C).Ok (entered F s)) (hsp : 56 +
 theorem pushRegion_eq (hsp : 56 + F ≤ s.sp.toNat) : pushRegion s = (layOf F A argv ro rw s C).PUSH := by
   rw [layOf_PUSH hsp]
 
+/-- A buffer of the layout's is apart from the frames `wrap` releases. -/
+theorem released_apart (h : (layOf F A argv ro rw s C).Ok (entered F s)) (hsp : 56 + F ≤ s.sp.toNat)
+    {R : Region} (hR : R ∈ ro ∨ R ∈ rw) : ∀ r ∈ released F s, R.Disjoint r := by
+  intro r hr
+  simp only [released, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl
+  · show R.Disjoint ⟨State.addr (s.sp - BitVec.ofNat 32 56), 56⟩
+    rw [← layOf_PUSH (A := A) (C := C) (argv := argv) (ro := ro) (rw := rw) hsp]
+    exact ((h.stk R (List.mem_append.mpr hR)).sub_left (Lay.sub_stk (Nat.le_refl _))).symm
+  · exact ((h.stk R (List.mem_append.mpr hR)).sub_left Lay.FR_stk).symm
+
 end
 
 end VG.Proof.RsaPkcs1Sig.Arm
