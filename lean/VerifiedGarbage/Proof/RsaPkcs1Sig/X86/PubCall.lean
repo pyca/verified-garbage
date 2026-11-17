@@ -105,12 +105,17 @@ theorem pub_pre (h : PubArgs s out pre e inp scr K rl el sl)
     rw [← Taint.sub_setWidth (by omega_using [hsp, e4])]
     exact below_inner (by decide) h.sp
   repeat' apply And.intro
+  -- The alternatives that fail at once come first. On a goal it does not close, `trivial` tries
+  -- `contradiction` and `assumption` among every hypothesis; an `exact` of a fact about other regions unfolds
+  -- them unless reducible; and `wr` fits every pair of regions, so that it fails only when `simp` has not
+  -- found them in the lists.
   all_goals first
-    | omega | rfl | trivial | exact h.kv | exact h.el1 | exact h.elK | exact h.slK | exact h.rlK
-    | exact oS | exact oA | exact sA
-    | (refine wr ?_ ?_ <;> simp <;> fail) | (refine (wr ?_ ?_).symm <;> simp <;> fail)
-    | (refine (lo ?_).sub_left ret; simp <;> fail) | (refine (lo ?_).sub_left low; simp <;> fail)
+    | rfl | exact True.intro | exact h.kv | exact h.el1 | exact h.elK | exact h.slK | exact h.rlK | omega
+    | with_reducible exact oS | with_reducible exact oA | with_reducible exact sA
+    | (with_reducible refine (lo ?_).sub_left ret; simp <;> fail)
+    | (with_reducible refine (lo ?_).sub_left low; simp <;> fail)
     | (refine fi' _ _ ?_; simp <;> fail)
+    | (refine wr ?_ ?_ <;> simp <;> fail) | (refine (wr ?_ ?_).symm <;> simp <;> fail)
     | exact h.kv.1 | exact h.kv.2
 
 theorem pub_pub {s₁ s₂ : State} (h₁ : PubArgs s₁ out pre e inp scr K rl el sl)

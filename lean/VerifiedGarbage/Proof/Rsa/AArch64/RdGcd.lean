@@ -41,12 +41,19 @@ theorem gcd_keep {B : Addr} {v : Nat} {m m' : Mem} (hb : slot v 32 ≤ 2 ^ 64)
   obtain s13 := slot_lt (w := v) (show 13 < 32 by decide)
   obtain e : slot (2 * v + 2) wX = slot v 12 := slot_wide _ _
   obtain e13 : slot v 13 = slot v 12 + 8 * (v + 2) := slot_succ v 12
-  refine ⟨F.wv_eq ?_ (by omega_using [hb, s0]), F.wv_eq ?_ (by omega_using [hb, s1]), F.wv_eq ?_ (by omega_using [hb, s13, e, e13])⟩ <;>
+  -- The narrow arrays by `rd_sep` and the wide one by `wn_sep`, each where it fits: tried on the wide
+  -- array, `rd_sep`'s `omega` fails only after a search.
+  refine ⟨F.wv_eq ?_ (by omega_using [hb, s0]), F.wv_eq ?_ (by omega_using [hb, s1]),
+    F.wv_eq ?_ (by omega_using [hb, s13, e, e13])⟩
   · simp only [ar, List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl | rfl | rfl | rfl | rfl)
-    all_goals first
-      | exact rd_sep (by decide) (by omega_using []) (by omega_using [])
-      | exact wn_sep (by decide) (by decide) (by omega_using []) (by omega_using [])
+    rintro r (rfl | rfl | rfl | rfl | rfl | rfl) <;>
+      exact rd_sep (by decide) (by omega_using []) (by omega_using [])
+  · simp only [ar, List.mem_cons, List.not_mem_nil, or_false]
+    rintro r (rfl | rfl | rfl | rfl | rfl | rfl) <;>
+      exact rd_sep (by decide) (by omega_using []) (by omega_using [])
+  · simp only [ar, List.mem_cons, List.not_mem_nil, or_false]
+    rintro r (rfl | rfl | rfl | rfl | rfl | rfl) <;>
+      exact wn_sep (by decide) (by decide) (by omega_using []) (by omega_using [])
 
 theorem gcd_one_or {U X g : Nat} (h : U = 1 ∨ g = Nat.gcd X U) :
     (if decide (U = 1) then 1 else g) = Nat.gcd U X := by

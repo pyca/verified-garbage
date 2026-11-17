@@ -767,6 +767,12 @@ def DPostC (s s' : State) : Prop :=
     (s'.gpr .a0 = 0 ∧ (¬ ∃ Q, Spec.EcKey.matchesCompressedPublicKey Spec.P256.curve bs Q) ∧
       bytesAt s'.mem (s.gpr .a0) 65 = List.replicate 65 0)
 
+/-- The ring facts `decompress_ok` needs of the root, stated alone: among its hundred hypotheses `grind`
+reads every one before it proves them. -/
+private theorem root_neg_sq (r : Fin W.p) : -r * -r = r * r := by grind
+
+private theorem root_sub_zero (a b : Fin W.p) : a - b = 0 ↔ a = b := by constructor <;> intro h <;> grind
+
 /-- `vg_ec_p256_decompress_public_key` by register. -/
 theorem decompress_ok (hL : VG.Proof.Weierstrass.Law W) {s : State} (hs : DPre s) :
     WP isa decompressP256 s fun s' => abiPreserved s s' ∧ DPostC s s' := by
@@ -861,10 +867,10 @@ theorem decompress_ok (hL : VG.Proof.Weierstrass.Law W) {s : State} (hs : DPre s
       r * r := by
     unfold VG.Impl.EcKey.Compressed.chooseRoot; split
     · rfl
-    · grind
+    · exact root_neg_sq r
   obtain hdif : sv base s₄ DIF = 0 ↔ r * r = rhsF := by
     rw [← toM_eq_zero_iff unit ltd₄, vd₄]
-    constructor <;> intro h <;> grind
+    exact root_sub_zero _ _
   -- The specification's decoding.
   obtain hsplit : bytesAt s.mem (s.gpr .a1) 33 = tag :: bytesAt s.mem (s.gpr .a1 + BitVec.ofNat 64 1) 32 := by
     obtain h1 : bytesAt s.mem (s.gpr .a1) 1 = [tag] := by

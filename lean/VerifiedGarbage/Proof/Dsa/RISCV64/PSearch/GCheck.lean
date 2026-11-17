@@ -306,8 +306,10 @@ theorem gStep_vp {g : Geo} (hg : g.pLen = G.pLen) (hgq : g.qLen = G.qLen) (cert 
     ⟨by decide, by decide⟩ (by simp) (by simp) (by g_simp; exact ite01_le _) (by g_simp; exact ite01_le _)) ?_
   refine VP.ite (fun σ₁ σ₂ s₁ s₂ h₁ h₂ => by rw [h₁.2, h₂.2]) ?_ ?_
   · -- Out of range: nothing more.
-    refine VP.block_nil fun σ s ⟨⟨⟨⟨h, x⟩, _⟩, e⟩, z⟩ => ⟨?_, x⟩
-    rw [e] at z
+    refine VP.block_nil fun σ s hh => ⟨?_, hh.1.1.1.2⟩
+    have h := hh.1.1.1.1
+    have z := hh.2
+    rw [hh.1.2] at z
     obtain nr : ¬(1 < hv ∧ hv < pv - 1) := by
       intro hr; simp only [Option.some.injEq, decide_eq_true_eq] at z
       g_simp at z hOv hMv; simp only [hOv, hMv] at z
@@ -317,8 +319,9 @@ theorem gStep_vp {g : Geo} (hg : g.pLen = G.pLen) (hgq : g.qLen = G.qLen) (cert 
     exact h.back hkls rfl rfl rfl (kc hv)
   · by_cases hr : 1 < hv ∧ hv < pv - 1
     swap
-    · refine VP.of_false fun σ s ⟨⟨_, e⟩, z⟩ => ?_
-      rw [e] at z; simp only [Option.some.injEq, decide_eq_false_iff_not, Decidable.not_not] at z
+    · refine VP.of_false fun σ s hh => ?_
+      have z := hh.2
+      rw [hh.1.2] at z; simp only [Option.some.injEq, decide_eq_false_iff_not, Decidable.not_not] at z
       g_simp at z hOv hMv; simp only [hOv, hMv] at z
       exact hr ⟨(ite01_eq_one _).mp z.1, (ite01_eq_one _).mp z.2⟩
     obtain eq : gOut c G hv pv ev = if 1 < hv ^ ev % pv then
@@ -331,7 +334,7 @@ theorem gStep_vp {g : Geo} (hg : g.pLen = G.pLen) (hgq : g.qLen = G.qLen) (cert 
     -- `g`, back at the stage `c`.
     refine VP.seq ((power_vp (c := c) (X := X) (H := H) (hb := hb) cert hPc hpv hp2
       hpo hEc hev hH hHv (fun x hx => (hcl x hx).1) (src c)).mono
-      (fun σ s ⟨⟨⟨⟨h, x⟩, _⟩, _⟩, _⟩ => ⟨h.back hkls rfl rfl rfl (kc hv), x⟩)
+      (fun σ s hh => ⟨hh.1.1.1.1.back hkls rfl rfl rfl (kc hv), hh.1.1.1.2⟩)
       (G' := fun σ t => St G c X σ t ∧ Env t G.pS (pZ G.pLen) (pw G.pLen) ∧
         wordsVal t.mem G.pS (VG.Proof.Bignum.slot (pw G.pLen) 4) (pw G.pLen) = gv ∧
         (t.gpr .a0 = 0 ↔ 1 < gv ∧ gv < pv))
@@ -683,9 +686,9 @@ theorem gBody_vp {g : Geo} (hg : g.pLen = G.pLen) (hgq : g.qLen = G.qLen) (cert 
   obtain kL : ∀ j, j ≤ M → j * G.pLen ≤ G.win u := fun j hj =>
     Nat.le_trans (Nat.mul_le_mul_right _ hj) (hMM ▸ Nat.div_mul_le_self _ _)
   obtain hWr : G.win u ≤ Spec.Dsa.generatorAttempts * G.pLen := Nat.min_le_right _ _
-  obtain hW64 : G.win u < 2 ^ 64 := by simp only [Spec.Dsa.generatorAttempts] at hWr; omega
+  obtain hW64 : G.win u < 2 ^ 64 := by simp only [Spec.Dsa.generatorAttempts] at hWr; omega_using [hWr, hp]
   obtain hWu : G.win u + u ≤ G.randLen := by
-    have := Nat.min_le_left (G.randLen - u) (Spec.Dsa.generatorAttempts * G.pLen); simp only [GP.win]; omega
+    have := Nat.min_le_left (G.randLen - u) (Spec.Dsa.generatorAttempts * G.pLen); simp only [GP.win]; omega_using [this, hu]
   rw [hg]
   -- Whether a candidate is left.
   refine VP.seq (G := fun σ s => St G (gCfg c G u k) X σ s ∧
@@ -708,7 +711,7 @@ theorem gBody_vp {g : Geo} (hg : g.pLen = G.pLen) (hgq : g.qLen = G.qLen) (cert 
       isa.eval (.ltu .t2 .t3) s = some (decide (G.win u - k * G.pLen < G.pLen)) := fun s a b => by
     rw [eval_ltu, a, b]
     simp only [Option.some.injEq]
-    exact decide_eq_decide.mpr (ofNat_lt_iff (by omega) (by omega))
+    exact decide_eq_decide.mpr (ofNat_lt_iff (by omega_using [hW64]) (by omega_using [hp]))
   rcases Nat.lt_or_ge k M with hkM | hkM
   · -- A candidate: `gStep`, then the next.
     obtain hi : (k + 1) * G.pLen ≤ G.win u := kL (k + 1) hkM
@@ -716,11 +719,11 @@ theorem gBody_vp {g : Geo} (hg : g.pLen = G.pLen) (hgq : g.qLen = G.qLen) (cert 
     obtain notLeft : ∀ σ s, ¬((St G (gCfg c G u k) X σ s ∧
         s.gpr .t2 = BitVec.ofNat 64 (G.win u - k * G.pLen) ∧ s.gpr .t3 = BitVec.ofNat 64 G.pLen) ∧
         isa.eval (.ltu .t2 .t3) s = some true) := fun σ s ⟨⟨_, a, b⟩, z⟩ => by
-      rw [evc s a b] at z; simp only [Option.some.injEq, decide_eq_true_eq] at z; omega
-    obtain ⟨m, hm⟩ : ∃ m, M - k = m + 1 := ⟨M - k - 1, by omega⟩
+      rw [evc s a b] at z; simp only [Option.some.injEq, decide_eq_true_eq] at z; omega_using [z, hi']
+    obtain ⟨m, hm⟩ : ∃ m, M - k = m + 1 := ⟨M - k - 1, by omega_using [hkM]⟩
     rw [hm] at hc; simp only [gCount] at hc
     obtain hlen : G.pLen ≤ ((G.winB u).drop (k * G.pLen)).length := by
-      rw [List.length_drop, hWl]; omega
+      rw [List.length_drop, hWl]; omega_using [hi']
     obtain hstep := VG.Proof.Dsa.Generation.generator_chunks_step (p := pv) (q := qv) hpL hlen
     obtain hcs := VG.Proof.Dsa.Generation.generatorCount_chunks_step (p := pv) (q := qv) hpL hlen
     simp only [VG.Proof.Dsa.powMod_eq, ← hev', List.drop_drop] at hstep hcs
@@ -729,10 +732,10 @@ theorem gBody_vp {g : Geo} (hg : g.pLen = G.pLen) (hgq : g.qLen = G.qLen) (cert 
     obtain stepVP := gStep_vp (c := gCfg c G u k) (X := XE G X) (H := G.hA u + BitVec.ofNat 64 (k * G.pLen))
       (hb := G.hAt u (k * G.pLen)) hg hgq cert R.hM R.hMv R.hO R.hOv R.hZ R.hZv R.hHl R.hTl R.hkls R.hPc R.hpv
       R.hp2 R.hpo R.hEc R.hev R.hcl (by simp) (by simp [upd, fH, fHLeft, fG])
-      (fun σ ⟨_, hσ, hG⟩ => cand_src hσ hG hpL (by omega) (by omega))
+      (fun σ ⟨_, hσ, hG⟩ => cand_src hσ hG hpL (by omega_using [hi, hWu]) (by omega_using [hi, hWr]))
     by_cases hok : gOk G u pv ev (k * G.pLen)
     · -- It gives g: done.
-      obtain r0 : r = 0 := by rw [ite_eq_left_of_eq_true _ _ (eq_true hok)] at hc; omega
+      obtain r0 : r = 0 := by rw [ite_eq_left_of_eq_true _ _ (eq_true hok)] at hc; omega_using [hc, hkk, hr]
       subst r0
       obtain some0 : Spec.Dsa.generator pv qv (G.gList u 0) =
           some (Spec.Dsa.decodeBE (G.hAt u (k * G.pLen)) ^ ev % pv) := by
@@ -756,7 +759,7 @@ theorem gBody_vp {g : Geo} (hg : g.pLen = G.pLen) (hgq : g.qLen = G.qLen) (cert 
         rw [BitVec.add_assoc, ← BitVec.ofNat_add, eD]
       obtain eL : BitVec.ofNat 64 (G.win u - k * G.pLen) - BitVec.ofNat 64 G.pLen =
           BitVec.ofNat 64 (G.win u - (k + 1) * G.pLen) := by
-        rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by omega) (by omega), ← eD, Nat.sub_add_eq]
+        rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by omega_using [hp]) (by omega_using [hi']), ← eD, Nat.sub_add_eq]
       obtain e1 : ((({ gCfg c G u k with cl := (sG, Spec.Rsa.i2osp (Spec.Dsa.decodeBE (G.hAt u (k * G.pLen)) ^ ev % pv)
             G.pLen) :: (gCfg c G u k).cl }).setV fG 1).V fH) = G.hA u + BitVec.ofNat 64 (k * G.pLen) := by
         simp [upd, fH, fHLeft, fG]
@@ -767,8 +770,8 @@ theorem gBody_vp {g : Geo} (hg : g.pLen = G.pLen) (hgq : g.qLen = G.qLen) (cert 
       refine h'.ofV (by simp only [gFin]; ls_sub) (by simp only [gFin]; v_eq) (fun y hy => hy) rfl rfl rfl rfl
     · -- It does not: the next candidate.
       rw [ite_eq_right_of_eq_false _ _ (eq_false hok)] at hc
-      obtain rpos : 0 < r := by have := gCount_gt G u pv ev m (k + 1); omega
-      obtain hNr : N - r = k + 1 := by omega
+      obtain rpos : 0 < r := by have := gCount_gt G u pv ev m (k + 1); omega_using [this, hc, hkk, hr]
+      obtain hNr : N - r = k + 1 := by omega_using [hkk, hr]
       obtain hG1 : gOut (gCfg c G u k) G (Spec.Dsa.decodeBE (G.hAt u (k * G.pLen))) pv ev = gCfg c G u k := by
         rw [gOut, ite_eq_right_of_eq_false _ _ (eq_false hok)]
       rw [hG1] at stepVP
@@ -780,28 +783,29 @@ theorem gBody_vp {g : Geo} (hg : g.pLen = G.pLen) (hgq : g.qLen = G.qLen) (cert 
         rw [BitVec.add_assoc, ← BitVec.ofNat_add, eD]
       obtain eL : BitVec.ofNat 64 (G.win u - k * G.pLen) - BitVec.ofNat 64 G.pLen =
           BitVec.ofNat 64 (G.win u - (k + 1) * G.pLen) := by
-        rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by omega) (by omega), ← eD, Nat.sub_add_eq]
+        rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by omega_using [hp]) (by omega_using [hi']), ← eD, Nat.sub_add_eq]
       obtain e1 : (gCfg c G u k).V fH = G.hA u + BitVec.ofNat 64 (k * G.pLen) := by simp [upd, fH, fHLeft, fG]
       obtain e2 : (gCfg c G u k).V fHLeft = BitVec.ofNat 64 (G.win u - k * G.pLen) := by
         simp [upd, fHLeft, fG]
       refine cmpF_vp (x := BitVec.ofNat 64 4) (fun σ s h => h.1) (by decide) (by decide) (by decide)
         (fun σ s h => (h.1.gi.slotV (by simp)).trans (by simp [upd, fH, fHLeft, fG]))
-        fun σ s t ⟨_, x⟩ h' _ e => ⟨by rw [e]; simp [rpos], fun h0 => absurd h0 (by omega), fun _ => ?_⟩
+        fun σ s t ⟨_, x⟩ h' _ e => ⟨by rw [e]; simp [rpos], fun h0 => absurd h0 (by omega_using [rpos]), fun _ => ?_⟩
       simp only [gInv, hNr]
-      refine ⟨⟨by omega, by omega, by rw [hMM, show M - (k + 1) = m by omega]; exact hc, ?_, ?_⟩, ?_, x⟩
+      refine ⟨⟨by omega_using [hr], by omega_using [hMM, hkM],
+        by rw [hMM, show M - (k + 1) = m by omega_using [hm]]; exact hc, ?_, ?_⟩, ?_, x⟩
       · rw [← hres, GP.gList, GP.gList, hstep, ite_eq_right_of_eq_false _ _ (eq_false hok)]
-      · rw [hcnt, GP.gList, GP.gList, hcs, ite_eq_right_of_eq_false _ _ (eq_false hok)]; omega
+      · rw [hcnt, GP.gList, GP.gList, hcs, ite_eq_right_of_eq_false _ _ (eq_false hok)]; omega_using []
       · rw [e1, e2, eH, eL] at h'
         exact h'.ofV (by ls_sub) (by v_eq) (fun y hy => hy) rfl rfl rfl rfl
   · -- The window is done: `fG` := 2.
-    obtain hkM' : k = M := by omega
+    obtain hkM' : k = M := by omega_using [hk, hkM]
     subst hkM'
-    obtain r0 : r = 0 := by simp only [Nat.sub_self, gCount] at hc; omega
+    obtain r0 : r = 0 := by simp only [Nat.sub_self, gCount] at hc; omega_using [hc, hkk, hr]
     subst r0
     obtain hz : G.win u - k * G.pLen < G.pLen := by
       obtain h1 := Nat.lt_mul_div_succ (G.win u) hpL
       rw [show G.win u / G.pLen = k from hMM, Nat.mul_succ, Nat.mul_comm] at h1
-      omega
+      omega_using [h1, hpL]
     obtain hdone : ((G.winB u).drop (k * G.pLen)).length < G.pLen := by rw [List.length_drop, hWl]; exact hz
     obtain none0 : Spec.Dsa.generator pv qv (G.gList u 0) = none := by
       rw [← hres, GP.gList, VG.Proof.Dsa.Generation.generationChunks_done hdone]; rfl
@@ -811,7 +815,7 @@ theorem gBody_vp {g : Geo} (hg : g.pLen = G.pLen) (hgq : g.qLen = G.qLen) (cert 
       (stImm_vp (c := fun _ => gCfg c G u k) (o := fG) (v := 2) (fun σ s h => h.1.1.1) (by decide)
         varOk_fG fun σ s t h h' _ => ⟨h', h.1.1.2⟩)
       (VP.of_false fun σ s ⟨⟨_, a, b⟩, z⟩ => by
-        rw [evc s a b] at z; simp only [Option.some.injEq, decide_eq_false_iff_not] at z; omega)) ?_
+        rw [evc s a b] at z; simp only [Option.some.injEq, decide_eq_false_iff_not] at z; omega_using [z, hz])) ?_
     refine cmpF_vp (c := fun _ => (gCfg c G u k).setV fG (BitVec.ofNat 64 2)) (x := BitVec.ofNat 64 2)
       (fun σ s h => h.1) (by decide) (by decide) (by decide) (fun σ s h => (h.1.gi.slotV (by simp)).trans (by simp [upd]))
       fun σ s t ⟨_, x⟩ h' _ e => ⟨by rw [e]; rfl, fun _ => ⟨?_, x⟩, fun h0 => absurd h0 (by decide)⟩

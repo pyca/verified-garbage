@@ -242,7 +242,11 @@ theorem frame_facts {s : State} (A : CandABI s) (f : State)
       (A.belowRand.sub_left sub40).symm⟩
   have hT : Spec.Rsa.bytesAt f.mem (byteAddr (synth Impl.Ffdh.X86.Candidate.args (arg s) 2)) (entryRand s).length =
       entryRand s := by
-    rw [Tlen]; exact keep A.randWs A.belowRand.symm (by show (arg s 6).toNat ≤ 2 ^ 64; have := (arg s 6).isLt; omega_arith)
+    rw [Tlen]
+    -- Stated first: with the goal as its expected type, `keep`'s region, which the goal has only as its
+    -- base and length, is looked for by unfolding the bytes read.
+    have h := keep A.randWs A.belowRand.symm (by show (arg s 6).toNat ≤ 2 ^ 64; have := (arg s 6).isLt; omega_arith)
+    exact h
   have Ox : OutAt (synth Impl.Ffdh.X86.Candidate.args (arg s)) (wsBase Impl.Ffdh.X86.Candidate.args s)
       (wsSize Impl.Ffdh.X86.Candidate.args s) (pLenOf Impl.Ffdh.X86.Candidate.args s) 0 (s.gpr .esp - BitVec.ofNat 32 argsFrame) f.wr :=
     ⟨A.outBound, ex.2.1, A.outWs.symm, (A.belowOut.sub_left subF), (A.belowOut.sub_left sub40).symm⟩

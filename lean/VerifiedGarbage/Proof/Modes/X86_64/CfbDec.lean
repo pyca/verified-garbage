@@ -486,7 +486,8 @@ theorem group_wp (cs : BlockSpec c) (hbw : c.bw = 2) {s₀ : State} {B D : Addr}
     have hx : x < 8 * c.bw := by simpa [bytesAt] using h1
     simp only [bytesAt, List.getElem_map, List.getElem_range, blkAddr]
     rw [addr_add, show 8 * c.buf + 8 * c.bw * j + x = 8 * c.buf + (8 * c.bw * j + x) by omega_arith, ← addr_add]
-    have inp := h₃.inputs (8 * c.bw * j + x) (by rw [hbw] at *; have := idx_lt (L := 16) hj; omega_arith)
+    have inp := h₃.inputs (8 * c.bw * j + x) (by
+      have := idx_lt (L := 16) hj; simp only [hbw] at hx ⊢; omega_using [this, hx])
     -- The gathered byte, with the block's length still `8 bw`.
     have inp' : s₃.mem (T + BitVec.ofNat 64 (8 * c.bw * j + x)) =
         if 8 * c.bw * j + x < 8 * c.bw then s.mem (H + BitVec.ofNat 64 (8 * c.bw * j + x))
@@ -528,7 +529,7 @@ theorem group_wp (cs : BlockSpec c) (hbw : c.bw = 2) {s₀ : State} {B D : Addr}
     · obtain ⟨j, rfl⟩ : ∃ j, q = c.G * g + j := ⟨q - c.G * g, by omega_using [hin]⟩
       have hjc : j < cc := by omega_using [hin]
       have hjl := idx_lt (L := 8 * c.bw) hjc
-      have xx := h₇.xored (8 * c.bw * j + r) (by rw [hbw] at *; omega_using [hjl, hr])
+      have xx := h₇.xored (8 * c.bw * j + r) (by simp only [hbw] at hjl hr ⊢; omega_using [hjl, hr])
       have xx' : s₇.mem (A + BitVec.ofNat 64 (8 * c.bw * j + r)) =
           s₆.mem (T + BitVec.ofNat 64 (8 * c.bw * j + r)) ^^^ s₆.mem (A + BitVec.ofNat 64 (8 * c.bw * j + r)) := xx
       rw [Nat.mul_add, Nat.add_assoc, eA, xx', mem₆, dec₄ j hjc r hr, ← eA,
@@ -615,7 +616,7 @@ theorem group_wp (cs : BlockSpec c) (hbw : c.bw = 2) {s₀ : State} {B D : Addr}
     refine .inr ⟨by rw [hz, decide_eq_false hdone], base₈, rsp₈, ready₈, saved₈, ?_, ?_,
       by omega_using [hdone, hg1], ?_, by rw [hg1]; exact hdata, fr, rd₈', wr₈'⟩
     · rw [d₈, rbx₇, addr_add, hg1, Nat.mul_add]
-    · rw [l₈, left₇, r10₇, VG.Offset.ofNat_sub_ofNat (by omega_using []), hg1]; congr 1; omega_using []
+    · rw [l₈, left₇, r10₇, VG.Offset.ofNat_sub_ofNat (by omega_using []), hg1, Nat.sub_add_eq]
     · rw [hg1]; exact chain₈
 
 /-- The data loop. -/

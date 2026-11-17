@@ -9,7 +9,6 @@ import Mathlib.Tactic.NormNum.OfScientific
 import Mathlib.Tactic.NormNum.DivMod
 import Mathlib.Tactic.NormNum.Abs
 import Mathlib.Data.Rat.Cast.Order
-import Mathlib.Tactic.Linarith.Frontend
 import Mathlib.Data.Finset.Attr
 import VerifiedGarbage.Proof.Framework.Omega
 
@@ -95,7 +94,10 @@ theorem batch_inv {N : Nat} (hN : N ≤ 30) {p m x K : Int} (hp : p % 2 = 1) (hp
           exact add_le_add (mul_le_mul_of_nonneg_left a1.le (abs_nonneg _))
             (mul_le_mul_of_nonneg_left b1.le (abs_nonneg _))
     have h30 : (2 : Int) ^ N ≤ 2 ^ 31 := pow_le_pow_right₀ (by norm_num) (by omega_using [hN])
-    nlinarith
+    -- The product stated, not left to `nlinarith`, which multiplies every pair of facts in the interpreter.
+    calc |y * s.a + z * s.b| ≤ |y| * p + |z| * p := this
+      _ = (|y| + |z|) * p := (add_mul _ _ _).symm
+      _ ≤ 2 ^ 31 * p := mul_le_mul_of_nonneg_right (hyz.trans h30) hp0.le
   have rA := mred_range hp0 hm (small t.u t.v bu)
   have rB := mred_range hp0 hm (small t.q t.r bq)
   have cA := mred_cong (p := p) (t := t.u * s.a + t.v * s.b) hm

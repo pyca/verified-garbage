@@ -331,6 +331,25 @@ theorem geBits_xor3 (a b c d : Nat) :
     simp only [h, h', decide_true, decide_false, Bool.cond_true, Bool.cond_false] <;>
     first | (show 0 = _; omega_using [h, h']) | (show 1 = _; omega_using [h, h']) | (show 2 = _; omega_using [h, h'])
 
+/-- A borrow, as the code computes it and as a test: stated once, for any words, rather than by `omega`
+on each `min` among `sub96_nat`'s facts. -/
+private theorem sub96_borrow (a b : Nat) : min (b + 1 - a) 1 = if a ≤ b then 1 else 0 := by
+  split
+  · exact Nat.min_eq_right (by omega)
+  · rw [show b + 1 - a = 0 by omega]; rfl
+
+private theorem sub96_borrow1 (a b : Nat) : 1 - min (b + 1 - a) 1 = if a ≤ b then 0 else 1 := by
+  rw [sub96_borrow]; split <;> rfl
+
+private theorem sub96_borrow2 (a b c d : Nat) :
+    2 - min (b + 1 - a) 1 - min (d + 1 - c) 1 = (if a ≤ b then 0 else 1) + (if c ≤ d then 0 else 1) := by
+  rw [sub96_borrow, sub96_borrow]; split <;> split <;> rfl
+
+/-- A word subtracted, with its borrow. -/
+private theorem sub96_word {a b : Nat} (ha : a < 2 ^ 32) (hb : b < 2 ^ 32) :
+    b + (if a ≤ b then 0 else 1) * 2 ^ 32 = a + (2 ^ 32 - a + b) % 2 ^ 32 := by
+  split <;> omega
+
 /-- `sub96`'s arithmetic: `U - q̂ D` modulo `2^96`, by words with their borrows. -/
 theorem sub96_nat {r0 r3 r4 r10 r11 u0 u2 : Nat} (h0 : r0 < 2 ^ 32) (h3 : r3 < 2 ^ 32) (h4 : r4 < 2 ^ 32)
     (h10 : r10 < 2 ^ 32) (h11 : r11 < 2 ^ 32) (hu0 : u0 < 2 ^ 32) (hu2 : u2 < 2 ^ 32)
@@ -350,26 +369,23 @@ theorem sub96_nat {r0 r3 r4 r10 r11 u0 u2 : Nat} (h0 : r0 < 2 ^ 32) (h3 : r3 < 2
   generalize (r3 + r10) / 2 ^ 32 = c at *
   obtain e3 : (r4 + c) % 2 ^ 32 = r4 + c := Nat.mod_eq_of_lt (by omega_using [hq, e2])
   rw [e3]
-  obtain b0 : 1 - min (u0 + 1 - r0) 1 = if r0 ≤ u0 then 0 else 1 := by split <;> omega_arith
-  obtain bm : 2 - min (r11 + 1 - m) 1 - min ((2 ^ 32 - m + r11) % 2 ^ 32 + 1 - (if r0 ≤ u0 then 0 else 1)) 1 =
-      (if m ≤ r11 then 0 else 1) + (if (if r0 ≤ u0 then 0 else 1) ≤ (2 ^ 32 - m + r11) % 2 ^ 32 then 0 else 1) := by
-    repeat' split
-    all_goals omega_arith
+  obtain b0 := sub96_borrow1 r0 u0
+  obtain bm := sub96_borrow2 m r11 (if r0 ≤ u0 then 0 else 1) ((2 ^ 32 - m + r11) % 2 ^ 32)
   rw [b0, bm]
   -- t0
-  obtain f0 : u0 + (if r0 ≤ u0 then 0 else 1) * 2 ^ 32 = r0 + (2 ^ 32 - r0 + u0) % 2 ^ 32 := by split <;> omega_arith
+  obtain f0 := sub96_word h0 hu0
   obtain g0 := Nat.mod_lt (2 ^ 32 - r0 + u0) (Nat.two_pow_pos 32)
   generalize (2 ^ 32 - r0 + u0) % 2 ^ 32 = t0 at *
   generalize (if r0 ≤ u0 then 0 else 1) = x0 at *
   obtain hx0 : x0 < 2 := by omega_using [b0]
   -- a
-  obtain fa : r11 + (if m ≤ r11 then 0 else 1) * 2 ^ 32 = m + (2 ^ 32 - m + r11) % 2 ^ 32 := by split <;> omega_arith
+  obtain fa := sub96_word b2 h11
   obtain ga := Nat.mod_lt (2 ^ 32 - m + r11) (Nat.two_pow_pos 32)
   generalize (2 ^ 32 - m + r11) % 2 ^ 32 = a at *
   generalize (if m ≤ r11 then 0 else 1) = xa at *
   obtain hxa : xa < 2 := by omega_using [b2, ga, fa]
   -- t1
-  obtain f1 : a + (if x0 ≤ a then 0 else 1) * 2 ^ 32 = x0 + (2 ^ 32 - x0 + a) % 2 ^ 32 := by split <;> omega_arith
+  obtain f1 := sub96_word (a := x0) (Nat.lt_trans hx0 (by decide)) ga
   obtain g1 := Nat.mod_lt (2 ^ 32 - x0 + a) (Nat.two_pow_pos 32)
   generalize (2 ^ 32 - x0 + a) % 2 ^ 32 = t1 at *
   generalize (if x0 ≤ a then 0 else 1) = xb at *

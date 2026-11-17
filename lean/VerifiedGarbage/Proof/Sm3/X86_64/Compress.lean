@@ -2,6 +2,7 @@ module
 
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
 public import VerifiedGarbage.Proof.Sm3.Spec
 public import VerifiedGarbage.Impl.Sm3.X86_64
@@ -26,6 +27,7 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.Bswap
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Sm3.X86_64.Lit
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # SM3 compression function on x86-64: the message expansion and the iterations
@@ -157,7 +159,7 @@ theorem round_ok (t : Nat) (s : State) (v : HashValue) (w w₄ : Word) (scr : Ad
     generalize var t 6 = g at *
     generalize var t 7 = h at *
     simp only [slot, at_, T0, T1,
-      runBlock_cons, runStep_some, runBlock_nil, exec, execAlu32, execShift32, readSrc32, isa,
+      runBlock_cons, runStep_some, runBlock_nil, reduceExec, execAlu32, execShift32, readSrc32, isa,
       State.ea, State.load32, hrcx, hin, hin₄, hw, hw₄,
       State.setReg32, RegUpd.gpr_setReg_self, RegUpd.gpr_setReg_of_ne, RegUpd.mem_setReg,
       RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags,
@@ -199,7 +201,7 @@ theorem expand_ok (i : Nat) (s : State) (M : Block) (bp scr : Addr)
     have hb := hblk hi
     simp only [Impl.Sm3.X86_64.expand, hi, ite_true, slot, at_, T0]
     simp only [runBlock_cons, runStep_some,
-      runBlock_nil, exec, readSrc32, isa, State.ea,
+      runBlock_nil, reduceExec, readSrc32, isa, State.ea,
       State.load32, State.store32, State.setReg32, RegUpd.gpr_setReg_self, RegUpd.gpr_setReg_of_ne,
       RegUpd.mem_setReg, RegUpd.rd_setReg,
       RegUpd.wr_setReg, not_false_eq_true, reduceCtorEq,
@@ -220,7 +222,7 @@ theorem expand_ok (i : Nat) (s : State) (M : Block) (bp scr : Addr)
     rw [show (i - 6) % 16 = (i + 10) % 16 by bdd_omega] at e6
     simp only [Impl.Sm3.X86_64.expand, hi, ite_false, slot, at_, T0, T1, T2]
     simp only [runBlock_cons, runStep_some,
-      runBlock_nil, exec, execAlu32, execShift32, readSrc32,
+      runBlock_nil, reduceExec, execAlu32, execShift32, readSrc32,
       isa, State.ea, State.load32, State.store32, State.setReg32, RegUpd.gpr_setReg_self,
       RegUpd.gpr_setReg_of_ne, RegUpd.mem_setReg, RegUpd.rd_setReg,
       RegUpd.wr_setReg, RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags,
@@ -544,7 +546,7 @@ theorem load_ok {s₀ : State} (hp : Pre s₀) {s : State} (hrdi : s.gpr .rdi = 
   have h3 := hin 3 (by decide); have h4 := hin 4 (by decide); have h5 := hin 5 (by decide)
   have h6 := hin 6 (by decide); have h7 := hin 7 (by decide)
   simp only [vars0, runBlock_cons, runStep_some,
-    runBlock_nil, exec, readSrc32, isa, ea_at,
+    runBlock_nil, reduceExec, readSrc32, isa, ea_at,
     State.load32, State.setReg32, RegUpd.gpr_setReg_self, RegUpd.gpr_setReg_of_ne, RegUpd.mem_setReg,
     RegUpd.rd_setReg, RegUpd.wr_setReg,
     not_false_eq_true, reduceCtorEq, hrdi, h0, h1, h2, h3, h4, h5, h6, h7, ite_true,
@@ -617,7 +619,7 @@ theorem update_ok {s₀ : State} (hp : Pre s₀) {s : State} (V H : HashValue) (
   apply WP.of_runBlock
   rw [update_eq]
   simp only [runBlock_cons, runStep_some,
-    runBlock_nil, exec, execAlu32, execAlu, readSrc32, readSrc,
+    runBlock_nil, reduceExec, execAlu32, execAlu, readSrc32, readSrc,
     isa, ea_at, State.load32, State.store32, State.setReg32, RegUpd.gpr_setReg_self,
     RegUpd.gpr_setReg_of_ne, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg,
     RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags,
@@ -745,7 +747,7 @@ theorem save_ok {s₀ : State} (hp : Pre s₀) :
   · have := saved_bound p hp'
     exact ⟨scrR s₀, by simp [hp.wr], Offset.contains_base _ (by bdd_omega) (by bdd_omega)⟩
   · apply WP.of_runBlock
-    simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, arithFlags,
+    simp only [runBlock_cons, runStep_some, runBlock_nil, reduceExec, execAlu, readSrc, arithFlags,
       State.setFlags, Option.bind_some, Option.some.injEq, exists_eq_left']
     exact ⟨hg, hrd, hwr, hm, by rw [hg]⟩
 

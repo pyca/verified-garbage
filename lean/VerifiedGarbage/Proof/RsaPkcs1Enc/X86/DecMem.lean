@@ -161,23 +161,30 @@ theorem ep_lay (s : State) :
 theorem in_of_pre {s : State} (h : spec.pre s) : In (ep s) (entered frameBytes s) := by
   sig_pre [Spec.RsaPkcs1Enc.decryptContract, Spec.RsaPkcs1Enc.decryptSig, abi, argSlots, argVal, argBytes,
     stackBelow] at h
-  sig_split h
-  rename_i hsp hsa hrd hwr oM oN oE oD oI oP oQ oDP oDQ oQI oS oA mN mE mD mI mP mQ mDP mDQ mQI mS mA nS nA
-    eS eA dS dA iS iA pS pA qS qA dpS dpA dqS dqA qiS qiA sA rO rM rN rE rD rI rP rQ rDP rDQ rQI rS rA kO kM
-    kN kE kD kI kP kQ kDP kDQ kQI kS kA fO fM fN fE fD fI fP fQ fDP fDQ fQI fS kv olk ilk el1 elK dl1 dlK
-    pl1 plK ql1 qlK dpl qil dql
-  have slK := h
-  simp only [stackBytes, frameBytes, Nat.reduceAdd] at hsp kO kM kN kE kD kI kP kQ kDP kDQ kQI kS kA
+  -- The lengths the contract states equal, rewritten in the precondition before it is split: a rewrite
+  -- of a fact among the hundred it splits into replaces the fact in a context of that size.
+  obtain ⟨olk, ilk, dpl, qil, dql⟩ : (arg s 1).toNat = (arg s 4).toNat ∧ (arg s 10).toNat = (arg s 4).toNat ∧
+      (arg s 16).toNat = (arg s 12).toNat ∧ (arg s 20).toNat = (arg s 12).toNat ∧
+      (arg s 18).toNat = (arg s 14).toNat := by
+    sig_split h
+    rename_i hsp hsa hrd hwr oM oN oE oD oI oP oQ oDP oDQ oQI oS oA mN mE mD mI mP mQ mDP mDQ mQI mS mA nS nA
+      eS eA dS dA iS iA pS pA qS qA dpS dpA dqS dqA qiS qiA sA rO rM rN rE rD rI rP rQ rDP rDQ rQI rS rA kO kM
+      kN kE kD kI kP kQ kDP kDQ kQI kS kA fO fM fN fE fD fI fP fQ fDP fDQ fQI fS kv olk ilk el1 elK dl1 dlK
+      pl1 plK ql1 qlK dpl qil dql
+    exact ⟨olk, ilk, dpl, qil, dql⟩
   have a1 : arg s 1 = arg s 4 := BitVec.eq_of_toNat_eq olk
   have a10 : arg s 10 = arg s 4 := BitVec.eq_of_toNat_eq ilk
   have a16 : arg s 16 = arg s 12 := BitVec.eq_of_toNat_eq dpl
   have a20 : arg s 20 = arg s 12 := BitVec.eq_of_toNat_eq qil
   have a18 : arg s 18 = arg s 14 := BitVec.eq_of_toNat_eq dql
-  rw [olk] at hwr oM oN oE oD oI oP oQ oDP oDQ oQI oS oA rO kO fO
-  rw [ilk] at hrd oI mI iS iA rI kI fI
-  rw [dpl] at hrd oDP mDP dpS dpA rDP kDP fDP
-  rw [qil] at hrd oQI mQI qiS qiA rQI kQI fQI
-  rw [dql] at hrd oDQ mDQ dqS dqA rDQ kDQ fDQ
+  rw [olk, ilk, dpl, qil, dql] at h
+  simp only [stackBytes, frameBytes, Nat.reduceAdd] at h
+  sig_split h
+  rename_i hsp hsa hrd hwr oM oN oE oD oI oP oQ oDP oDQ oQI oS oA mN mE mD mI mP mQ mDP mDQ mQI mS mA nS nA
+    eS eA dS dA iS iA pS pA qS qA dpS dpA dqS dqA qiS qiA sA rO rM rN rE rD rI rP rQ rDP rDQ rQI rS rA kO kM
+    kN kE kD kI kP kQ kDP kDQ kQI kS kA fO fM fN fE fD fI fP fQ fDP fDQ fQI fS kv _ _ el1 elK dl1 dlK
+    pl1 plK ql1 qlK _ _ _
+  have slK := h
   have h16 : 4 * Impl.RsaPkcs1Sig.X86.savedRegs.length ≤ (s.gpr .esp).toNat := by
     simp only [Impl.RsaPkcs1Sig.X86.savedRegs, List.length_cons, List.length_nil]; omega_arith
   have hpush : Frame [below (s.gpr .esp) (4 * Impl.RsaPkcs1Sig.X86.savedRegs.length)] s.mem
@@ -238,13 +245,9 @@ theorem in_of_pre {s : State} (h : spec.pre s) : In (ep s) (entered frameBytes s
       | (rw [Nat.mod_eq_of_lt (by have := (arg s 0).isLt; omega_arith)]; omega_arith)
       | (rw [Nat.mod_eq_of_lt (by have := (arg s 2).isLt; omega_arith)]; omega_arith)
       | (rw [Nat.mod_eq_of_lt (by have := (arg s 21).isLt; omega_arith)]; omega_arith)
-  · intro j hj
-    have : j < 23 := hj
-    rcases (by omega_using [this] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 ∨ j = 8 ∨ j = 9 ∨
-        j = 10 ∨ j = 11 ∨ j = 12 ∨ j = 13 ∨ j = 14 ∨ j = 15 ∨ j = 16 ∨ j = 17 ∨ j = 18 ∨ j = 19 ∨
-        j = 20 ∨ j = 21 ∨ j = 22) with
-      rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
-        rfl | rfl | rfl | rfl | rfl <;> simp [ep, a1, a10, a16, a18, a20]
+  · simp only [ep, EP.argv, List.length_cons, List.length_nil, Nat.zero_add, Nat.reduceAdd,
+      Nat.forall_lt_succ_right, Nat.not_lt_zero, false_imp_iff, implies_true, List.getD_cons_zero,
+      List.getD_cons_succ, BitVec.ofNat_toNat, BitVec.setWidth_eq, a1, a10, a16, a18, a20, and_self]
 
 end VG.Proof.RsaPkcs1Enc.X86.Dec
 

@@ -559,28 +559,44 @@ structure LInv (s₀ : State) (i : Nat) (s : State) : Prop extends Common s₀ i
 
 /-! ## One block -/
 
-/-- The low word of a byte-reversed doubleword is its high word, byte-reversed. -/
-theorem rev64_lo (x : BitVec 64) : (rev64 x).setWidth 32 = rev32 (x.extractLsb' 32 32) := by
+/-- A byte of a field of `x` is a byte of `x`. -/
+private theorem byte_extract {w : Nat} (x : BitVec w) (s n k : Nat) (h : k + 8 ≤ n) :
+    (x.extractLsb' s n).extractLsb' k 8 = x.extractLsb' (s + k) 8 := by
   apply BitVec.eq_of_getLsbD_eq
   intro i hi
-  simp only [rev64, rev32, BitVec.getLsbD_setWidth, BitVec.getLsbD_append, BitVec.getLsbD_extractLsb']
-  repeat' split
-  all_goals first
-    | omega
-    | (simp (disch := omega) only [decide_eq_true, Bool.true_and]
-       exact congrArg _ (by omega))
+  simp only [BitVec.getLsbD_extractLsb', Nat.add_assoc]
+  rw [decide_eq_true (show k + i < n by omega), Bool.true_and]
+
+/-- A byte appended is the number shifted by a byte, plus it. -/
+private theorem toNat_append_byte {n : Nat} (a : BitVec n) (b : BitVec 8) :
+    (a ++ b).toNat = a.toNat * 256 + b.toNat := by
+  rw [BitVec.toNat_append, ← Nat.shiftLeft_add_eq_or_of_lt b.isLt, Nat.shiftLeft_eq]
+
+/-- The low and the high four of eight bytes, as numbers: the two halves of `rev64` are stated about the
+bytes' values, eight numbers below 256, rather than bit by bit, which is a case for every byte a bit may be
+in on either side. -/
+private theorem bytes8_halves (b0 b1 b2 b3 b4 b5 b6 b7 : Nat) (h0 : b0 < 256) (h1 : b1 < 256) (h2 : b2 < 256)
+    (h3 : b3 < 256) (h4 : b4 < 256) (h5 : b5 < 256) (h6 : b6 < 256) (h7 : b7 < 256) :
+    (((((((b0 * 256 + b1) * 256 + b2) * 256 + b3) * 256 + b4) * 256 + b5) * 256 + b6) * 256 + b7) % 2 ^ 32 =
+        ((b4 * 256 + b5) * 256 + b6) * 256 + b7 ∧
+      (((((((b0 * 256 + b1) * 256 + b2) * 256 + b3) * 256 + b4) * 256 + b5) * 256 + b6) * 256 + b7) >>> 32 %
+          2 ^ 32 = ((b0 * 256 + b1) * 256 + b2) * 256 + b3 := by
+  omega
+
+/-- The low word of a byte-reversed doubleword is its high word, byte-reversed. -/
+theorem rev64_lo (x : BitVec 64) : (rev64 x).setWidth 32 = rev32 (x.extractLsb' 32 32) := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [rev64, rev32, byte_extract, Nat.reduceAdd, Nat.reduceLeDiff, BitVec.toNat_setWidth, toNat_append_byte]
+  exact (bytes8_halves _ _ _ _ _ _ _ _ (BitVec.isLt _) (BitVec.isLt _) (BitVec.isLt _) (BitVec.isLt _)
+    (BitVec.isLt _) (BitVec.isLt _) (BitVec.isLt _) (BitVec.isLt _)).1
 
 /-- The high word of a byte-reversed doubleword is its low word, byte-reversed. -/
 theorem rev64_hi (x : BitVec 64) : (rev64 x >>> 32).setWidth 32 = rev32 (x.extractLsb' 0 32) := by
-  apply BitVec.eq_of_getLsbD_eq
-  intro i hi
-  simp only [rev64, rev32, BitVec.getLsbD_setWidth, BitVec.getLsbD_ushiftRight, BitVec.getLsbD_append,
-    BitVec.getLsbD_extractLsb']
-  repeat' split
-  all_goals first
-    | omega
-    | (simp (disch := omega) only [decide_eq_true, Bool.true_and]
-       exact congrArg _ (by omega))
+  apply BitVec.eq_of_toNat_eq
+  simp only [rev64, rev32, byte_extract, Nat.reduceAdd, Nat.reduceLeDiff, BitVec.toNat_setWidth,
+    BitVec.toNat_ushiftRight, toNat_append_byte]
+  exact (bytes8_halves _ _ _ _ _ _ _ _ (BitVec.isLt _) (BitVec.isLt _) (BitVec.isLt _) (BitVec.isLt _)
+    (BitVec.isLt _) (BitVec.isLt _) (BitVec.isLt _) (BitVec.isLt _)).2
 
 theorem wX1 (j : Nat) : wreg j ≠ .x1 := fun e =>
   (wregs_ne (wreg_mem j)).2.2.2.1 (by rw [e]; decide)

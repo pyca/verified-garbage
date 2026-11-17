@@ -611,6 +611,12 @@ theorem streamTextS_relS (enc : Bool) (hP : P₀ < 2 ^ 64) (hct : Plain v.callee
       (.ite .e (firstFlushS v.callees) (.block []))) := by plain_tac
   have pc : Plain (.block streamLoad) := Plain.block (by decide)
   have pcs : Plain (.block streamSmall) := Plain.block (by decide)
+  -- Each part once, the heads first: `crypt` and `absorb` hold them, and either direction holds both, so
+  -- that `plain_tac` finds them among the hypotheses rather than walk their code again.
+  have pch : Plain cryptHead := by plain_tac
+  have pah : Plain (absorbHead v.callees 16) := by plain_tac
+  have pcr : Plain (crypt v.callees) := by plain_tac
+  have pab : Plain (absorb v.callees 16) := by plain_tac
   have pj : Plain (partWith enc (crypt v.callees) (absorb v.callees 16)) := by
     unfold partWith; cases enc <;> plain_tac
   have pd : Plain streamHead := by plain_tac

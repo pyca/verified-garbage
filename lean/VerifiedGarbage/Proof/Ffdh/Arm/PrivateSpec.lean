@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.PrivateBody
 import VerifiedGarbage.Proof.Ffdh.Arm.DomainSpec
 import VerifiedGarbage.Proof.Ffdh.Domain
 import VerifiedGarbage.Proof.Bignum.Math
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Ffdh.Arm.Context
 import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicSpec
 
@@ -13,6 +12,28 @@ import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicSpec
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm
 open VG
+
+/-- The flag's nest of tests and the status's, of the tests' outcomes: with a subgroup order and without. -/
+private theorem flag_bool : ∀ a b c d e f : Bool,
+    ((if a = true ∧ b = true then if c = true ∧ d = true then if e = true then if f = true then (1 : BitVec 32)
+        else 0 else 0 else 0 else 2).toNat =
+      if (a && b) = false then 2 else if (c && d && e) = true ∧ f = true then 1 else 0) ∧
+    ((if a = true ∧ b = true then if c = true ∧ d = true then if f = true then (1 : BitVec 32) else 0 else 0
+        else 2).toNat =
+      if (a && b) = false then 2 else if (c && d && true) = true ∧ f = true then 1 else 0) := by
+  decide
+
+/-- `flag_bool`, of the tests: the statuses agree whatever the tests say, so that the proof below does not
+take the seven tests of a key apart (128 cases, each simplified with every hypothesis). -/
+private theorem flag_eq (A B C D E F : Prop) [Decidable A] [Decidable B] [Decidable C] [Decidable D]
+    [Decidable E] [Decidable F] :
+    ((if A ∧ B then if C ∧ D then if E then if F then (1 : BitVec 32) else 0 else 0 else 0 else 2).toNat =
+      if (decide A && decide B) = false then 2 else
+        if (decide C && decide D && decide E) = true ∧ F then 1 else 0) ∧
+    ((if A ∧ B then if C ∧ D then if F then (1 : BitVec 32) else 0 else 0 else 2).toNat =
+      if (decide A && decide B) = false then 2 else
+        if (decide C && decide D && true) = true ∧ F then 1 else 0) := by
+  simpa only [decide_eq_true_eq] using flag_bool (decide A) (decide B) (decide C) (decide D) (decide E) (decide F)
 
 theorem checkedPrivateFlag_spec (p : Inputs) (yb xb : List Byte)
     (valid : Spec.Ffdh.domainValid p.k p.dom = true) :
@@ -28,15 +49,11 @@ theorem checkedPrivateFlag_spec (p : Inputs) (yb xb : List Byte)
   unfold privateMainFlag privatePublicFlag privateTailFlag privateMatchFlag scalarBound
     Spec.Ffdh.privateValid Spec.Ffdh.publicValid
   rw [p.domainP, p.domainG, p.domainQ]
-  by_cases hasQ : p.hasQ = true <;>
-    by_cases scalarLo : 0 < Spec.Rsa.os2ip xb <;>
-    by_cases scalarHi : Spec.Rsa.os2ip xb < (if p.hasQ = true then p.Q else p.P - 1) <;>
-    by_cases publicLo : 1 < Spec.Rsa.os2ip yb <;>
-    by_cases publicHi : Spec.Rsa.os2ip yb < p.P - 1 <;>
-    by_cases member : Spec.Rsa.powMod (Spec.Rsa.os2ip yb) p.Q p.P = 1 <;>
-    by_cases consistent : Spec.Rsa.powMod p.G (Spec.Rsa.os2ip xb) p.P = Spec.Rsa.os2ip yb <;>
-    simp_all [VG.Proof.Bignum.powMod_eq]
-  all_goals split_ifs <;> simp_all <;> omega_arith
+  by_cases hasQ : p.hasQ = true
+  · simp only [hasQ, ↓reduceIte, Option.getD_some, VG.Proof.Bignum.powMod_eq, Bool.beq_eq_decide_eq]
+    exact (flag_eq _ _ _ _ _ _).1
+  · simp only [hasQ, VG.Proof.Bignum.powMod_eq]
+    exact (flag_eq _ _ _ _ True _).2
 
 theorem privateStatus_two_iff (a : Spec.Ffdh.Parameters) (y x : Nat) :
     Spec.Ffdh.privateStatus a y x = 2 ↔ Spec.Ffdh.privateValid a x = false := by

@@ -206,7 +206,7 @@ theorem drawCopy_ok {s : State} {B rp op : Addr} {Z w N drawBytes used : Nat} {m
   · refine ⟨fun r hr => ?_, k.2⟩
     by_cases he : r = .rdi
     · subst r; exact hdit.trans h.good.rdi.symm
-    · exact k.gpr (by cases r <;> simp_all [mmRegs])
+    · exact k.gpr (by revert hr he; cases r <;> decide)
 
 end VG.Proof.Dsa.X86_64.Generation
 

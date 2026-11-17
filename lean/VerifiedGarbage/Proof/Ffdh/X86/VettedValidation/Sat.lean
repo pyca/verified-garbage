@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Framework.ConstMem
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Ffdh.VettedTableFacts
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.KernelRfl
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Spec.Ffdh.Contract
 meta import VerifiedGarbage.TCB.X86.Target
@@ -24,11 +25,18 @@ private def satState (words : List (BitVec 64)) : State :=
 
 private theorem satPre (words : List (BitVec 64)) :
     (Spec.Ffdh.checkDomainContract abi 172).pre (stripConsts [(tableSym, words)] (satState words)) := by
-  have a0 : arg (satState words) 0 = 8192 := by change arg CheckDomain.satState 0 = 8192; decide
-  have a1 : arg (satState words) 1 = 128 := by change arg CheckDomain.satState 1 = 128; decide
-  have a2 : arg (satState words) 2 = 64 := by change arg CheckDomain.satState 2 = 64; decide
-  have a3 : arg (satState words) 3 = 36864 := by change arg CheckDomain.satState 3 = 36864; decide
-  have a4 : arg (satState words) 4 = 1056 := by change arg CheckDomain.satState 4 = 1056; decide
+  -- The arguments are read below the table, where the memory is `CheckDomain.satState`'s: the kernel
+  -- finds that at once, and the elaborator, asked by `change`, in up to a second for each.
+  have a0 : arg (satState words) 0 = 8192 :=
+    (by kernel_rfl : arg (satState words) 0 = arg CheckDomain.satState 0).trans (by decide)
+  have a1 : arg (satState words) 1 = 128 :=
+    (by kernel_rfl : arg (satState words) 1 = arg CheckDomain.satState 1).trans (by decide)
+  have a2 : arg (satState words) 2 = 64 :=
+    (by kernel_rfl : arg (satState words) 2 = arg CheckDomain.satState 2).trans (by decide)
+  have a3 : arg (satState words) 3 = 36864 :=
+    (by kernel_rfl : arg (satState words) 3 = arg CheckDomain.satState 3).trans (by decide)
+  have a4 : arg (satState words) 4 = 1056 :=
+    (by kernel_rfl : arg (satState words) 4 = arg CheckDomain.satState 4).trans (by decide)
   have e : argAddr (satState words) 0 = 0x20004 := by change argAddr CheckDomain.satState 0 = 0x20004; decide
   have stripArg (i : Nat) : arg (stripConsts [(tableSym, words)] (satState words)) i = arg (satState words) i := rfl
   have stripAddr (i : Nat) : argAddr (stripConsts [(tableSym, words)] (satState words)) i = argAddr (satState words) i := rfl

@@ -94,9 +94,16 @@ theorem altEnv_ok (e : Env) (k : Nat) (x1 : Fe) (st : Ladder) (t : Nat) (hg : Go
   have hb := bit_le k t
   unfold Good
   rw [v0, v18, v1, v2, v3, v4, ladderStep_eq, h0, h1, h2, h3, h4, hc, toFe_121666]
-  rcases (by omega_using [hsw] : st.swap = 0 ∨ st.swap = 1) with hs | hs <;>
-    rcases (by omega_using [hb] : bit k t = 0 ∨ bit k t = 1) with hk | hk <;>
-    simp only [hs, hk, Spec.X25519.cswap] <;>
+  -- The step reads `swap` and the bit only as whether they differ: two cases, not four, and each identity
+  -- with nothing in the context for `grind` to read.
+  obtain key : (st.swap ^^^ bit k t = 0 ∧ (st.swap == bit k t) = true) ∨
+      (st.swap ^^^ bit k t = 1 ∧ (st.swap == bit k t) = false) := by
+    rcases (by omega_using [hsw] : st.swap = 0 ∨ st.swap = 1) with hs | hs <;>
+      rcases (by omega_using [hb] : bit k t = 0 ∨ bit k t = 1) with hk | hk <;> rw [hs, hk] <;> decide
+  clear h0 h1 h2 h3 h4 hc v0 v18 v1 v2 v3 v4 hb hsw
+  rcases key with ⟨ks, kz⟩ | ⟨ks, kz⟩ <;>
+    simp only [ks, kz, Spec.X25519.cswap, Nat.reduceEqDiff, Bool.false_eq_true, ↓reduceIte] <;>
+    clear ks kz <;>
     refine ⟨trivial, ?_, ?_, ?_, ?_, trivial⟩ <;> grind
 
 /-! The first iteration's updates (bit 254). -/

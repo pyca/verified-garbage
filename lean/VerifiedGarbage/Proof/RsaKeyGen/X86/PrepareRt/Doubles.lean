@@ -320,7 +320,7 @@ theorem double_ok {g : Geometry} (v : g.Valid) {a : State} {c T k : Nat} {q : Bi
     refine ⟨fun r mem => ?_, Kall.2⟩
     by_cases same : r = .edi
     · subst r; exact ediT
-    · exact Kall.1 r (by cases r <;> simp_all)
+    · exact Kall.1 r (by revert mem same; cases r <;> decide)
   refine ⟨Context.restore C K.2.2 ediT Oat above,
     M.keep v (WorkspaceFrame.of_outs nowrap Oat) (fun r mem => Or.inl (by have := above r mem; omega_using [this]))
       (fun r mem => by

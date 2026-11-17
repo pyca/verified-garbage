@@ -2144,29 +2144,30 @@ theorem redBlock_ok {s : State} {B : Addr} {Z dS dM K q A2 : Nat} (hs : Scr s B 
         t.gpr .r30 = BitVec.ofNat 64 (K - q - 1) ∧ t.gpr .r0 = 0) ∧ Keep redRegs s t := by
   have hnw := hs.nowrap
   unfold redBlock
-  refine WP.seq (WP.mono (redHead_ok (N := 16 * K) (p := 8 * q) hs h0 h10 h7 h11 h9 (by omega) hK' (by omega) hS
-    (by omega) (by omega) hM hm) fun t₁ ⟨⟨e₁, o₁, r7₁, r12₁, r9₁, z₁, _⟩, k₁⟩ => ?_)
+  refine WP.seq (WP.mono (redHead_ok (N := 16 * K) (p := 8 * q) hs h0 h10 h7 h11 h9 (by omega_arith) hK' (by omega_arith) hS
+    (by omega_arith) (by omega_arith) hM hm) fun t₁ ⟨⟨e₁, o₁, r7₁, r12₁, r9₁, z₁, _⟩, k₁⟩ => ?_)
   obtain hs₁ := hs.congr k₁.wr
   refine WP.seq (WP.mono (redChunks_ok (p := 8 * q + 8) (N := 16 * K) (G := K - 1) (dU := dS + 8 * (8 * q)) hs₁ z₁
-    (by rw [r12₁, show dS + 8 * (8 * q) + 64 = dS + 8 * (8 * q + 8) by omega]) r7₁ (by rw [k₁.gpr _ (by decide), h10])
-    r9₁ (by omega) hS (by omega) (by omega) (by omega) (by omega))
+    (by rw [r12₁, show dS + 8 * (8 * q) + 64 = dS + 8 * (8 * q + 8) by omega_arith]) r7₁ (by rw [k₁.gpr _ (by decide), h10])
+    r9₁ (by omega_arith) hS (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith))
     fun t₂ ⟨⟨e₂, o₂, r12₂, r7₂, r9₂, r10₂, z₂⟩, k₂⟩ => ?_)
   obtain hs₂ := hs₁.congr k₂.wr
   obtain g₂ : ∀ r, r ∉ redHeadRegs → r ∉ chunkRegsR → t₂.gpr r = s.gpr r := fun r h1 h2 => by
     rw [k₂.gpr r h2, k₁.gpr r h1]
   refine WP.mono (redTail_ok (p := 8 * q + 8 + 8 * (K - 1)) (N := 16 * K) (dM := dM) (dU := dS + 8 * (8 * q))
-    (w := 8 * K) hs₂ z₂ (by rw [r12₂, show dS + 8 * (8 * q + 8) + 64 * (K - 1) = dS + 8 * (8 * q + 8 + 8 * (K - 1)) by omega])
-    (by rw [r7₂, show dM + 64 + 64 * (K - 1) = dM + 8 * (8 * K) by omega]) (by rw [r10₂, k₁.gpr _ (by decide), h10])
-    (by rw [g₂ _ (by decide) (by decide), h11]) r9₂ (by omega) (by omega) hS (by omega))
-    fun t ⟨⟨e₃, l₃, o₃, r7₃, r10₃, r9₃, r30₃⟩, k₃⟩ => ⟨⟨?_, l₃, ?_, ?_, r7₃, ?_, ?_, ?_⟩, ?_⟩
-  -- The memory: what changed is `S`'s words from `8 q`.
-  all_goals have O : Outside B (dS + 8 * (8 * q)) (8 * (16 * K - 8 * q)) s.mem t.mem :=
-    ((o₁.mono (Nat.le_refl _) (by omega)).trans (o₂.mono (by omega) (by omega))).trans (o₃.mono (by omega) (by omega))
+    (w := 8 * K) hs₂ z₂ (by rw [r12₂, show dS + 8 * (8 * q + 8) + 64 * (K - 1) = dS + 8 * (8 * q + 8 + 8 * (K - 1)) by omega_arith])
+    (by rw [r7₂, show dM + 64 + 64 * (K - 1) = dM + 8 * (8 * K) by omega_arith]) (by rw [r10₂, k₁.gpr _ (by decide), h10])
+    (by rw [g₂ _ (by decide) (by decide), h11]) r9₂ (by omega_arith) (by omega_arith) hS (by omega_arith))
+    fun t ⟨⟨e₃, l₃, o₃, r7₃, r10₃, r9₃, r30₃⟩, k₃⟩ => ?_
+  -- The memory: what changed is `S`'s words from `8 q` (once, before the goals are split).
+  have O : Outside B (dS + 8 * (8 * q)) (8 * (16 * K - 8 * q)) s.mem t.mem :=
+    ((o₁.mono (Nat.le_refl _) (by omega_arith)).trans (o₂.mono (by omega_arith) (by omega_arith))).trans (o₃.mono (by omega_arith) (by omega_arith))
+  refine ⟨⟨?_, l₃, O, ?_, r7₃, ?_, ?_, ?_⟩, ?_⟩
   · have wM : ∀ d k, d + 8 * k ≤ dS → wordsVal t₁.mem B d k = wordsVal s.mem B d k :=
-      fun d k h => o₁.wordsVal (Or.inl (by omega)) (by omega)
+      fun d k h => o₁.wordsVal (Or.inl (by omega_arith)) (by omega_arith)
     obtain hU : wordsVal t.mem B (dS + 8 * (8 * q)) 8 = wordsVal t₁.mem B (dS + 8 * (8 * q)) 8 := by
-      rw [o₃.wordsVal (Or.inl (by omega)) (by omega), o₂.wordsVal (Or.inl (by omega)) (by omega)]
-    obtain pt : 8 * q + 8 + 8 * (K - 1) = 8 * q + 8 * K := by omega
+      rw [o₃.wordsVal (Or.inl (by omega_arith)) (by omega_arith), o₂.wordsVal (Or.inl (by omega_arith)) (by omega_arith)]
+    obtain pt : 8 * q + 8 + 8 * (K - 1) = 8 * q + 8 * K := by omega_arith
     rw [pt] at e₂ e₃
     obtain hP1 : 2 ^ (64 * (8 * q + 8)) = 2 ^ (64 * (8 * q)) * 2 ^ (64 * 8) := by rw [← Nat.pow_add, Nat.mul_add]
     obtain hP2 : 2 ^ (64 * (8 * q + 8 * K)) = 2 ^ (64 * (8 * q)) * 2 ^ (64 * (8 * K)) := by
@@ -2176,17 +2177,16 @@ theorem redBlock_ok {s : State} {B : Addr} {Z dS dM K q A2 : Nat} (hs : Scr s B 
     obtain hM' : wordsVal s.mem B dM (8 * K) = wordsVal s.mem B dM 8 +
         2 ^ (64 * 8) * wordsVal s.mem B (dM + 64) (8 * (K - 1)) := by
       have := fios_wordsVal_append s.mem B dM 8 (8 * (K - 1))
-      rwa [show 8 + 8 * (K - 1) = 8 * K by omega, show dM + 8 * 8 = dM + 64 by omega] at this
+      rwa [show 8 + 8 * (K - 1) = 8 * K by omega_arith, show dM + 8 * 8 = dM + 64 by omega_arith] at this
     obtain hL : wordsVal t.mem B dS (8 * (q + 1)) = wordsVal s.mem B dS (8 * q) +
         2 ^ (64 * (8 * q)) * wordsVal t₁.mem B (dS + 8 * (8 * q)) 8 := by
-      rw [show 8 * (q + 1) = 8 * q + 8 by omega, fios_wordsVal_append, O.wordsVal (Or.inl (by omega)) (by omega), hU]
-    rw [hP1, wM _ _ (by omega)] at e₂
+      rw [show 8 * (q + 1) = 8 * q + 8 by omega_arith, fios_wordsVal_append, O.wordsVal (Or.inl (by omega_arith)) (by omega_arith), hU]
+    rw [hP1, wM _ _ (by omega_arith)] at e₂
     rw [hP3, hP2, g₂ _ (by decide) (by decide)] at e₃
     rw [hP2] at inv
-    rw [show 8 * (q + 1) + 8 * K = 8 * q + 8 * K + 8 by omega, hP3, hL]
+    rw [show 8 * (q + 1) + 8 * K = 8 * q + 8 * K + 8 by omega_arith, hP3, hL]
     exact redBlock_arith e₁ e₂ e₃ inv hM'
-  · exact O
-  · rw [r10₃, show dS + 8 * (8 * q) + 64 = dS + 8 * (8 * (q + 1)) by omega]
+  · rw [r10₃, show dS + 8 * (8 * q) + 64 = dS + 8 * (8 * (q + 1)) by omega_arith]
   · rw [r9₃, show K - q - 1 = K - q - 1 from rfl]
   · rw [r30₃]
   · rw [k₃.gpr _ (by decide), z₂]

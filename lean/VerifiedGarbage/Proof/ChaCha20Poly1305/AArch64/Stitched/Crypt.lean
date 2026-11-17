@@ -83,17 +83,9 @@ theorem bulk_bpre {s₀ : State} (hp : APre e s₀) {Q : Addr} (hq : DstR s₀ Q
     simp only [VG.Proof.ChaCha20.AArch64.Xor.stR, VG.Proof.ChaCha20.AArch64.Xor.dR,
       VG.Proof.ChaCha20.AArch64.Xor.tR, VG.Proof.ChaCha20.AArch64.Xor.bR,
       VG.Proof.ChaCha20.AArch64.Xor.dp, State.withRegions_rd, State.withRegions_wr, e0, e1, e2, e3, e4]
-  all_goals first
-    | rfl
-    | exact hst
-    | exact hsq
-    | exact hsb
-    | exact hdb
-    | exact hqb
-    | exact hal
-    | exact hw
-    | exact hwq
-    | simp only [off, BitVec.add_assoc, ← BitVec.ofNat_add]
+  -- The goals `simp only` leaves, in the order of `BPre`'s fields: each fact where it fits, rather than tried
+  -- on every goal, where an `exact` between two other regions unfolds them before it fails.
+  exacts [hst, hsq, hsb, hdb, hqb, hal, hw, hwq, by simp only [off, BitVec.add_assoc, ← BitVec.ofNat_add]]
 
 /-- The chunks, on the context's regions, from byte `o` of the data to byte `o`
 of the destination `Q`. -/

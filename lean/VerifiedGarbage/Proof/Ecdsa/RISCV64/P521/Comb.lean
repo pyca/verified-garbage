@@ -174,7 +174,7 @@ theorem scanWord_ok {s : State} {base : Addr} (hw : WsReg s base) {q t : Nat} (h
     WP isa (.block (scanWord q)) s fun s' =>
       s'.mem = s.mem.writeW (off base (1288 + 8 * q)) (s.mem.readW (entAddr (s.gpr .a0) q (t % 64)) 64) ∧
       Keep (treeRegs ++ ([.a7] : List Reg)) s s' := by
-  show WP isa (.block (.addi .a7 .a0 0 :: (groups q 3 treeRegs ++ [.store .d .t0 .s0 (1288 + 8 * q)]))) s _
+  rw [scanWord, show c.sl DX = 1288 from rfl]
   refine wp_mv fun s₁ u₁ => ?_
   obtain k₁ := upd_keep u₁
   obtain hm₁ : ∀ c < 6, s₁.gpr (maskReg c) = maskOf (t.testBit c) := fun c hc => by

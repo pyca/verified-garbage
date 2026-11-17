@@ -360,43 +360,43 @@ theorem finishG_ok {s : State} (h : Bx wid s B Z len N n) (hn2 : 2 ≤ n) (hnk :
   have efs : fgSz = 16 := rfl
   obtain hfg : rv (kw len) { arr := fgArr } n = rv (kw len) { arr := 4 } n := rfl
   obtain h41 : rv (kw len) { arr := 14, half := 1 } n = rv (kw len) { arr := 14 } n + 4 * n := by
-    simp only [rv]; omega
+    simp only [rv]; omega_arith
   simp only [seqs]
   -- `[14] = f`, `n + 1` words.
   refine WP.seq (WP.mono (gather_ok h (arr := fgArr) (sz := fgSz) (x := 8) (dst := { arr := 14 }) (by decide)
-    (by rw [hfg, r4, efs]; omega) (by omega) (.inr (by rw [hfg, r4, efs]; omega)))
+    (by rw [hfg, r4, efs]; omega_arith) (by omega_arith) (.inr (by rw [hfg, r4, efs]; omega_arith)))
     fun s₁ ⟨H₁, O₁, V₁, K₁⟩ => ?_)
   obtain hR : -((2 ^ (32 * n) * 2 ^ 31 : Nat) : Int) ≤ f ∧ f < ((2 ^ (32 * n) * 2 ^ 31 : Nat) : Int) := by
     rw [abs_lt] at hb; push_cast
     have : (2 : Int) ^ (32 * n) ≤ 2 ^ (32 * n) * 2 ^ 31 :=
       le_mul_of_one_le_right (Int.le_of_lt (two_pow_pos' _)) (by decide)
-    omega
+    omega_arith
   obtain rep : Rep (2 ^ (32 * n) * 2 ^ 31) (val32 s₁.mem B (rv (kw len) { arr := 14 } n) (n + 1)) f := by
     rw [V₁, ← F]; exact rep_sval (by rw [F]; exact hR.1) (by rw [F]; exact hR.2)
   -- `[12] = 0`.
-  refine WP.seq (WP.mono (VG.Proof.Rsa.X86.KeyRt.zeroWide_ok H₁.ws (j := 12) (by have := H₁.room; omega))
+  refine WP.seq (WP.mono (VG.Proof.Rsa.X86.KeyRt.zeroWide_ok H₁.ws (j := 12) (by have := H₁.room; omega_arith))
     fun s₂ ⟨W₂, k₂, Z₂, K₂⟩ => ?_)
   obtain O₂ := keep_outside k₂
   rw [arr_rv len n] at O₂ Z₂
   simp only [VG.Proof.Rsa.X86.Keys.S] at O₂
-  obtain H₂ : Bx wid s₂ B Z len N n := H₁.keep K₂ (by decide) (by decide) O₂ (by omega) (by omega)
+  obtain H₂ : Bx wid s₂ B Z len N n := H₁.keep K₂ (by decide) (by decide) O₂ (by omega_arith) (by omega_arith)
   obtain Z₂' : val32 s₂.mem B (rv (kw len) { arr := 12 } n) n = 0 := by
     have := val32_append s₂.mem B (rv (kw len) { arr := 12 } n) n (kw len + 1 - n)
-    rw [show n + (kw len + 1 - n) = kw len + 1 by omega, Z₂] at this; omega
+    rw [show n + (kw len + 1 - n) = kw len + 1 by omega_arith, Z₂] at this; omega_arith
   -- `[12] = -[14]`, `n` words.
   refine WP.seq (WP.mono (VG.Proof.Rsa.X86.InvBatchRt.chainSub_ok H₂ (o := { arr := 12 }) (a := { arr := 12 }) (b := { arr := 14 }) (e := 0)
-    (by decide) rfl (by omega) (by omega) (by omega) (.inl (Nat.le_refl _)) (.inl (by omega)))
+    (by decide) rfl (by omega_arith) (by omega_arith) (by omega_arith) (.inl (Nat.le_refl _)) (.inl (by omega_arith)))
     fun s₃ ⟨H₃, O₃, ⟨c, _, V₃⟩, K₃⟩ => ?_)
   simp only [Nat.add_zero] at O₃ V₃
-  rw [Z₂', Nat.zero_add, O₂.val32 (by omega) (by omega)] at V₃
+  rw [Z₂', Nat.zero_add, O₂.val32 (by omega_arith) (by omega_arith)] at V₃
   -- The selection of `[14]` where `f` is not negative.
-  refine WP.seq (VG.Proof.Rsa.X86.InvBatchRt.maskAt_ok H₃ (x := { arr := 14, half := 1 }) (by omega) fun s₄ K₄ m₄ c₄ => ?_)
-  rw [h41, O₃.w32 (by omega) (by omega), O₂.w32 (by omega) (by omega)] at c₄
+  refine WP.seq (VG.Proof.Rsa.X86.InvBatchRt.maskAt_ok H₃ (x := { arr := 14, half := 1 }) (by omega_arith) fun s₄ K₄ m₄ c₄ => ?_)
+  rw [h41, O₃.w32 (by omega_arith) (by omega_arith), O₂.w32 (by omega_arith) (by omega_arith)] at c₄
   refine wp_logicS (.inr rfl) rfl fun s₅ U₅ => WP.block_nil ?_
   obtain K₅ : Keeps [.eax, .ebx, .ecx, .edx] s₃ s₅ := K₄.trans (U₅.keeps.mono (by decide))
   obtain m₅ : s₅.mem = s₃.mem := by rw [U₅.mem, m₄]
   obtain H₅ : Bx wid s₅ B Z len N n := H₃.keep K₅ (by decide) (by decide) (o := 160) (c := 0)
-    (by rw [m₅]; exact Outside.refl _ _ _ _) (Nat.le_refl _) (by omega)
+    (by rw [m₅]; exact Outside.refl _ _ _ _) (Nat.le_refl _) (by omega_arith)
   obtain sign := top_sign rep
   obtain mask : s₅.gpr .ecx = cmask (!decide (f < 0)) := by
     rw [U₅.gpr, ite_eq_right (by decide), c₄]
@@ -404,11 +404,11 @@ theorem finishG_ok {s : State} (h : Bx wid s B Z len N n) (hn2 : 2 ≤ n) (hnk :
     by_cases hf : f < 0
     · rw [ite_eq_left (sign.mpr hf)]; simp only [hf, decide_true, Bool.not_true]; decide
     · rw [ite_eq_right (fun e => hf (sign.mp e))]; simp only [hf, decide_false, Bool.not_false]; decide
-  refine WP.mono (VG.Proof.Rsa.X86.InvBatchRt.selIn_ok H₅ (o := { arr := 12 }) (a := { arr := 14 }) (e := 0) mask (by decide) (by omega)
-    (by omega) (.inl (by omega))) fun z ⟨Hz, Oz, Vz, Kz⟩ => ⟨Hz, ?_, ?_, ?_⟩
+  refine WP.mono (VG.Proof.Rsa.X86.InvBatchRt.selIn_ok H₅ (o := { arr := 12 }) (a := { arr := 14 }) (e := 0) mask (by decide) (by omega_arith)
+    (by omega_arith) (.inl (by omega_arith))) fun z ⟨Hz, Oz, Vz, Kz⟩ => ⟨Hz, ?_, ?_, ?_⟩
   · simp only [Nat.add_zero] at Vz
-    rw [Vz, m₅, O₃.val32 (d := rv (kw len) { arr := 14 } n) (by omega) (by omega),
-      O₂.val32 (d := rv (kw len) { arr := 14 } n) (by omega) (by omega)]
+    rw [Vz, m₅, O₃.val32 (d := rv (kw len) { arr := 14 } n) (by omega_arith) (by omega_arith),
+      O₂.val32 (d := rv (kw len) { arr := 14 } n) (by omega_arith) (by omega_arith)]
     have := VG.Proof.Rsa.Divstep.abs_select (Nat.two_pow_pos _) hb (val32_lt _ _ _ _)
       (by exact_mod_cast rep.low) ⟨c, V₃⟩
     rw [← this]
@@ -420,7 +420,7 @@ theorem finishG_ok {s : State} (h : Bx wid s B Z len N n) (hn2 : 2 ≤ n) (hnk :
     obtain h2 := hx _ (List.mem_cons_of_mem _ (List.mem_singleton_self _))
     simp only at h1 h2
     simp only [Nat.add_zero] at Oz
-    rw [Oz x (by omega), m₅, O₃ x (by omega), O₂ x (by omega), O₁ x (by omega)]
+    rw [Oz x (by omega_arith), m₅, O₃ x (by omega_arith), O₂ x (by omega_arith), O₁ x (by omega_arith)]
 
 
 /-! ## The start -/

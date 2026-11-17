@@ -238,22 +238,28 @@ theorem in_of_pre {hs ts : List FnTable} {s : State} (h : (spec hs ts).pre s) {D
     (hD : (stackArg s 13).toNat = D) (hHT : HT (entered frameBytes s)) (hT : T (entered frameBytes s)) :
     In D (ep s hi hc hdg HT ai au af T) (entered frameBytes s) := by
   sign_pre at h
-  sig_split h
-  rename_i hsp hsa hheld hheld2 hpw hrd hwr oN oE oP oQ oDP oDQ oQI oD oSl oS oTH oT oA nS eS pS qS dpS dqS qiS dS
-    slS sTH sT sA kO kN kE kP kQ kDP kDQ kQI kD kSl kS kTH kT kA fO fN fE fP fQ fDP fDQ fQI fD fSl fS fTH fT kv olk
-    el1 elK pl1 plK ql1 qlK dpl qil dql slK
-  have h3624 : 3624 ≤ s.sp.toNat := hsp
+  -- The lengths the contract states equal, rewritten in the precondition before it is split: a rewrite
+  -- of a fact among the sixty it splits into replaces the fact in a context of that size.
+  obtain ⟨olk, dpl, qil, dql⟩ : (s.gpr .r1).toNat = (s.gpr .r3).toNat ∧
+      (stackArg s 7).toNat = (stackArg s 3).toNat ∧ (stackArg s 11).toNat = (stackArg s 3).toNat ∧
+      (stackArg s 9).toNat = (stackArg s 5).toNat := by
+    sig_split h
+    rename_i hsp hsa hheld hheld2 hpw hrd hwr oN oE oP oQ oDP oDQ oQI oD oSl oS oTH oT oA nS eS pS qS dpS dqS qiS dS
+      slS sTH sT sA kO kN kE kP kQ kDP kDQ kQI kD kSl kS kTH kT kA fO fN fE fP fQ fDP fDQ fQI fD fSl fS fTH fT kv olk
+      el1 elK pl1 plK ql1 qlK dpl qil dql slK
+    exact ⟨olk, dpl, qil, dql⟩
   have r1 : s.gpr .r1 = s.gpr .r3 := BitVec.eq_of_toNat_eq olk
   have a7 : stackArg s 7 = stackArg s 3 := BitVec.eq_of_toNat_eq dpl
   have a11 : stackArg s 11 = stackArg s 3 := BitVec.eq_of_toNat_eq qil
   have a9 : stackArg s 9 = stackArg s 5 := BitVec.eq_of_toNat_eq dql
   have a13 : stackArg s 13 = BitVec.ofNat 32 D := by
     apply BitVec.eq_of_toNat_eq; rw [hD, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by rw [← hD]; exact (stackArg s 13).isLt)]
-  rw [olk] at hwr oN oE oP oQ oDP oDQ oQI oD oSl oS oTH oT oA kO fO
-  rw [dpl] at oDP dpS kDP fDP hrd
-  rw [qil] at oQI qiS kQI fQI hrd
-  rw [dql] at oDQ dqS kDQ fDQ hrd
-  rw [hD] at oD dS kD fD hrd
+  rw [olk, dpl, qil, dql, hD] at h
+  sig_split h
+  rename_i hsp hsa hheld hheld2 hpw hrd hwr oN oE oP oQ oDP oDQ oQI oD oSl oS oTH oT oA nS eS pS qS dpS dqS qiS dS
+    slS sTH sT sA kO kN kE kP kQ kDP kDQ kQI kD kSl kS kTH kT kA fO fN fE fP fQ fDP fDQ fQI fD fSl fS fTH fT kv _
+    el1 elK pl1 plK ql1 qlK _ _ _ slK
+  have h3624 : 3624 ≤ s.sp.toNat := hsp
   have hpush : Frame [FrameStack.belowA s.sp 56] s.mem (entered frameBytes s).mem :=
     FrameStack.pushed_frameA (rs := Impl.RsaPkcs1Sig.Arm.pushRegs) (by show 56 ≤ s.sp.toNat; omega_arith)
   have below : Region.Sub (FrameStack.belowA s.sp 56)
@@ -299,13 +305,8 @@ theorem in_of_pre {hs ts : List FnTable} {s : State} (h : (spec hs ts).pre s) {D
     · simp [regArg, ep, r1]
     · rfl
     · simp [regArg, ep]
-  · intro i hi
-    have : i < 20 := hi
-    rcases (by omega_arith : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨
-        i = 10 ∨ i = 11 ∨ i = 12 ∨ i = 13 ∨ i = 14 ∨ i = 15 ∨ i = 16 ∨ i = 17 ∨ i = 18 ∨ i = 19) with
-      rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
-        rfl <;>
-      simp [ep, a7, a9, a11, a13]
+  · simp only [ep, EP.argv, Nat.reduceDiv, Nat.forall_lt_succ_right, Nat.not_lt_zero, false_imp_iff, implies_true,
+      List.getD_cons_zero, List.getD_cons_succ, BitVec.ofNat_toNat, BitVec.setWidth_eq, a7, a9, a11, a13, and_self]
 
 /-- What the proofs need of the tables, for the hash function `h`, whose
 digest is named `dn`, and MGF1's `g`: an indirect call of `f`'s and `fg`'s
