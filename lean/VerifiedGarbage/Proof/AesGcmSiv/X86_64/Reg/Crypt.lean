@@ -108,8 +108,8 @@ theorem tagIn_run {K W SP : Addr} {R : Nat} (hR : R = 10 ∨ R = 14) {t : State}
   have h15 := E.r15
   have rR := S.rounds
   have rN := S.nonce
-  have rr := E.perm.wR (show 200 + 8 ≤ 488 by decide)
-  have rn := E.perm.wR (show 208 + 8 ≤ 488 by decide)
+  have rr := E.perm.wR (show 200 + 8 ≤ 744 by decide)
+  have rn := E.perm.wR (show 208 + 8 ≤ 744 by decide)
   obtain n₀ : InRegions (t.rd ++ t.wr) N 8 := by
     simpa using in_off (d := 0) (n := 8) hN.rd (by decide) (by decide)
   obtain n₈ := in_off (d := 8) (n := 4) hN.rd (by decide) (by decide)
@@ -500,10 +500,10 @@ theorem ctrInit_run {K W SP : Addr} {R : Nat} (hR : R = 10 ∨ R = 14) {t : Stat
   have rR := S.rounds
   have sD := S.data
   have sL := S.len
-  have rr := E.perm.wR (show 200 + 8 ≤ 488 by decide)
-  have rD := E.perm.wR (show 232 + 8 ≤ 488 by decide)
-  have rL := E.perm.wR (show 240 + 8 ≤ 488 by decide)
-  have rT := E.perm.wR (show 0 + 16 ≤ 488 by decide)
+  have rr := E.perm.wR (show 200 + 8 ≤ 744 by decide)
+  have rD := E.perm.wR (show 232 + 8 ≤ 744 by decide)
+  have rL := E.perm.wR (show 240 + 8 ≤ 744 by decide)
+  have rT := E.perm.wR (show 0 + 16 ≤ 744 by decide)
   obtain rT' : InRegions (t.rd ++ t.wr) W 16 := by simpa using rT
   obtain hand := Proof.AesGcm.X86_64.and15 (BitVec.ofNat 64 n)
   rw [Proof.AesGcm.X86_64.toNat_ofNat_of_lt hn, Proof.AesGcm.X86_64.imm_eq (by decide)] at hand
@@ -645,7 +645,7 @@ theorem cryptTail_ok {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨
   have h15 := E₂.r15
   have h12 : t₂.gpr .r12 = D + BitVec.ofNat 64 (16 * (n / 16)) := by rw [hf.gpr, g₁]; exact I.r12
   have hbp : t₂.gpr .rbp = BitVec.ofNat 64 (n % 16) := by rw [hf.gpr, g₁]; exact I.rbp
-  have ww := E₂.perm.wW (show 128 + 16 ≤ 488 by decide)
+  have ww := E₂.perm.wW (show 128 + 16 ≤ 744 by decide)
   obtain ⟨t₃, run₃, hm₃, rsi₃, rdi₃, rcx₃, hg₃, hrd₃, hwr₃⟩ : ∃ t₃ : State, runBlock isa
       (ptr .rsi .r15 bO ++ ([.movdquStore (at_ .rsi 0) .xmm0, .mov .rdi (.reg .r12),
         .mov .rcx (.reg .rbp)] : List Instr)) t₂ = some t₃ ∧
