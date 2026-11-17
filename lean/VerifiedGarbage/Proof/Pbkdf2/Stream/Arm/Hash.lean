@@ -320,46 +320,28 @@ theorem sep_base_off (b : Addr) {e n k : Nat} (h : n ≤ e) (he : e + k < 2 ^ 32
 theorem contains_off (b : Addr) {len d n : Nat} (h : d + n ≤ len) (hl : len < 2 ^ 64) :
     Region.Contains ⟨b, len⟩ (b + BitVec.ofNat 64 d) n := Offset.contains_base b h (by omega_nat)
 
-/-- After a frame of `rs` of `n` bytes around a call that keeps the regions
-and the stack pointer. -/
+/-- After a frame of `rs` of `n ≤ 16` bytes around a call that keeps the
+regions and the stack pointer, whatever memory `m` that differs from the
+call's only in the released frame, and whatever unknowns `u`, the pop
+leaves. -/
 theorem after_frame {s s₂ : State} {rs : List Reg} {ws : List Region}
-    (fP : Frame [below s] s.mem (pushed rs s).mem)
-    (hrd : s₂.rd = (pushed rs s).rd) (hwr : s₂.wr = (pushed rs s).wr) (hsp : s₂.sp = (pushed rs s).sp)
-    (hf : Frame ws (pushed rs s).mem s₂.mem) (hcs : ∀ r ∈ preserved, r ≠ .lr → s₂.gpr r = (pushed rs s).gpr r) :
-    After s ws (popped .r1 (4 * rs.length) s₂) := by
-  refine ⟨?_, ?_, ?_, fun r hr hl => ?_, ?_⟩
-  · rw [popped_rd, hrd, pushed_rd]
-  · rw [popped_wr, hwr, pushed_wr]; rfl
-  · rw [popped_sp, hsp, pushed_sp]; exact BitVec.sub_add_cancel _ _
-  · have hr1 : r ≠ .r1 := by rintro rfl; simp [preserved] at hr
-    rw [popped_gpr hr1, hcs r hr hl, pushed_gpr]
-  · rw [popped_mem]
-    exact (frame_app (ws' := ws) fP |>.mono fun r hr => by
-        simp only [List.mem_append, List.mem_singleton] at hr ⊢; grind).trans (frame_app (ws' := [below s]) hf)
-
-/-- The `n ≤ 16` bytes a pop releases lie in `below s`. -/
-theorem lost_sub {s : State} {n : Nat} (hn : n ≤ 16) (h16 : 16 ≤ s.sp.toNat) :
-    Region.Sub ⟨State.addr (s.sp - BitVec.ofNat 32 n), n⟩ (below s) := by
-  intro a ha
-  have := s.sp.isLt
-  simp only [Region.Contains, State.addr] at ha ⊢
-  bv_omega_arith
-
-/-- `after_frame`, whatever memory `m` that differs from the call's only in
-the released frame, and whatever unknowns `u`, the pop leaves. -/
-theorem after_frameLost {s s₂ : State} {rs : List Reg} {ws : List Region}
     (fP : Frame [below s] s.mem (pushed rs s).mem)
     (hrd : s₂.rd = (pushed rs s).rd) (hwr : s₂.wr = (pushed rs s).wr) (hsp : s₂.sp = (pushed rs s).sp)
     (hf : Frame ws (pushed rs s).mem s₂.mem) (hcs : ∀ r ∈ preserved, r ≠ .lr → s₂.gpr r = (pushed rs s).gpr r)
     (hn : 4 * rs.length ≤ 16) (h16 : 16 ≤ s.sp.toNat) {m : Mem} {u : Nat → BitVec 32}
     (hfl : Frame [⟨State.addr (s.sp - BitVec.ofNat 32 (4 * rs.length)), 4 * rs.length⟩] s₂.mem m) :
     After s ws { popped .r1 (4 * rs.length) s₂ with mem := m, unknowns := u } := by
-  obtain ⟨a1, a2, a3, a4, a5⟩ := after_frame (ws := ws) fP hrd hwr hsp hf hcs
-  refine ⟨a1, a2, a3, a4, ?_⟩
-  dsimp only
-  rw [popped_mem] at a5
-  exact a5.trans (hfl.sub fun r hr => ⟨below s, List.mem_append_right _ (List.mem_singleton_self _), by
-    rw [List.mem_singleton.mp hr]; exact lost_sub hn h16⟩)
+  refine ⟨?_, ?_, ?_, fun r hr hl => ?_, ?_⟩
+  · dsimp only; rw [popped_rd, hrd, pushed_rd]
+  · dsimp only; rw [popped_wr, hwr, pushed_wr]; rfl
+  · dsimp only; rw [popped_sp, hsp, pushed_sp]; exact BitVec.sub_add_cancel _ _
+  · have hr1 : r ≠ .r1 := by rintro rfl; simp [preserved] at hr
+    dsimp only; rw [popped_gpr hr1, hcs r hr hl, pushed_gpr]
+  · dsimp only
+    exact ((frame_app (ws' := ws) fP |>.mono fun r hr => by
+        simp only [List.mem_append, List.mem_singleton] at hr ⊢; grind).trans (frame_app (ws' := [below s]) hf)).trans
+      (hfl.sub fun r hr => ⟨below s, List.mem_append_right _ (List.mem_singleton_self _), by
+        rw [List.mem_singleton.mp hr]; exact lost_sub hn h16⟩)
 
 /-! ## `finalize`, in its frame -/
 
@@ -484,7 +466,7 @@ theorem fin_frame {s : State} {st o sc : BitVec 32} (h : FinArgs hH s st o sc) {
     simp only [count, State.withRegions_gpr, ce2, ce3, pushed_gpr]
   simp only [finK, State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem, ce0, pushed_gpr, h.r0,
     h.arg0 _ FinArgs.vsp FinArgs.vmem, vc] at hpost
-  refine hQ _ (after_frameLost h.fP hrd hwr hsp hf hcs (by decide) h16 hfl) fun m hr hl hcm => ?_
+  refine hQ _ (after_frame h.fP hrd hwr hsp hf hcs (by decide) h16 hfl) fun m hr hl hcm => ?_
   have hs : ∀ r ∈ [below s], (⟨State.addr st, H.S⟩ : Region).Disjoint r := by
     simp only [List.mem_singleton]; rintro r rfl; exact h.b_st.symm
   have hr' : hH.SH.Repr (pushed fin2 s).mem (State.addr st) m :=

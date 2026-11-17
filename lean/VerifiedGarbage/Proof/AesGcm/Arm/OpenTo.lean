@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.AesGcm.Arm.Verified
 import VerifiedGarbage.Proof.AesGcm.Scratch
 import VerifiedGarbage.Proof.Framework.Arm.StackScratch
+import VerifiedGarbage.Proof.Framework.Arm.ScratchLost
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
@@ -442,6 +443,35 @@ theorem openToPost_local : ∀ vs m₁ m₂ m' r, vs.length = (Spec.Gcm.openToSi
     (agree_of hb.2.2.2.1) (agree_of hb.2.2.2.2.2)]
   exact h hr
 
+/-- `Proof.AesGcm.openToRoundsPost` reads the memory on return only within the buffers. -/
+theorem openToPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (Spec.Gcm.openToSig.words pb).length →
+    Curry.apply (Spec.Gcm.openToSig.words pb) (Spec.Gcm.openToPre pb) vs m →
+    (∀ b ∈ Sig.bufs Spec.Gcm.openToSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (Spec.Gcm.openToSig.words pb) (Proof.AesGcm.openToRoundsPost pb) vs m m₁ r →
+      Curry.apply (Spec.Gcm.openToSig.words pb) (Proof.AesGcm.openToRoundsPost pb) vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen hpre hb h
+  obtain ⟨ctx, rd, nonce, nl, aad, al, src, len, dst, dl, tag, tl, rfl⟩ :=
+    twelve (hlen.trans (openToSig_length pb))
+  simp only [Spec.Gcm.openToSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+    forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
+    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb]
+    (Spec.Gcm.openToPre pb) _ m at hpre
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
+    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb]
+    (Proof.AesGcm.openToRoundsPost pb) _ m m₁ r at h
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
+    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb]
+    (Proof.AesGcm.openToRoundsPost pb) _ m m₂ r
+  dsimp only [Curry.apply, Spec.Gcm.openToPre, ArgWord.ofRaw, IntTy.bits] at hpre
+  dsimp only [Curry.apply, Proof.AesGcm.openToRoundsPost, ArgWord.ofRaw, IntTy.bits] at h ⊢
+  intro hr
+  have := Nat.mod_le dl.toNat (2 ^ pb)
+  rw [Proof.AesGcm.bytesAt_congr (m₁ := m₁) (m₂ := m₂) (p := dst) (n := (len.setWidth pb).toNat) fun i hi =>
+    agree_of hb.2.2.2.2.1 i (by
+      rw [← hpre.2, BitVec.toNat_setWidth] at hi; omega_using [this, hi])]
+  exact h hr
+
 theorem openToLeak_local : ∀ vs m₁ m₂, vs.length = (Spec.Gcm.openToSig.words pb).length →
     (∀ b ∈ Sig.bufs Spec.Gcm.openToSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
     Curry.apply (Spec.Gcm.openToSig.words pb) (Spec.Gcm.openToLeak pb) vs m₁ =
@@ -485,12 +515,12 @@ of its eight words of stack arguments. -/
 theorem openTo_framed [VG.Proof.Gcm.Arm.GhashLaw] :
     Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 2608 8 openTo)
       (Proof.AesGcm.openToRoundsContract Arm.abi 2620) :=
-  Arm.Verified.stackScratch (sig := Spec.Gcm.openToSig) (nm := "work") (e := .u64)
+  Arm.Verified.stackScratchLost (sig := Spec.Gcm.openToSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Gcm.openToPre Arm.abi.ptrBits)
     (post := Proof.AesGcm.openToRoundsPost Arm.abi.ptrBits) (wa := true) (stack := 12)
     (leak := some (Spec.Gcm.openToLeak Arm.abi.ptrBits))
     (m := 8) openTo_verified (by decide) (by decide) (by decide) (by decide)
-    (openToPre_local _) (openToPost_local _) openToFrameSat_pre
+    (openToPre_local _) (openToPost_local _) (openToPostOut_local _) openToFrameSat_pre
     (hleak := openToLeak_local _)
 
 end VG.Proof.AesGcm.Arm
