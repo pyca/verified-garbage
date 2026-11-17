@@ -122,6 +122,23 @@ theorem signCachedPost_local : ∀ vs m₁ m₂ m' r, vs.length = (signCachedSig
       bytesAt_congr (slice_agree pb hb.2.2.2.2.1)]
     exact h
 
+/-- `signCachedPost` reads the memory on return only within the buffers. -/
+theorem signCachedPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (signCachedSig.words pb).length →
+    (∀ b ∈ Sig.bufs signCachedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (signCachedSig.words pb) (signCachedPost pb) vs m m₁ r →
+    Curry.apply (signCachedSig.words pb) (signCachedPost pb) vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen hb h
+  match vs, hlen with
+  | [o, sd, pk, ctx, cl, msg, l, sc], _ =>
+    simp only [signCachedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+      forall_eq, Elem.size, Nat.mul_one] at hb
+    change bytesAt m₁ o 114 = sign (bytesAt m sd 57) (bytesAt m ctx (cl.setWidth pb).toNat)
+      (bytesAt m msg (l.setWidth pb).toNat) at h
+    change bytesAt m₂ o 114 = sign (bytesAt m sd 57) (bytesAt m ctx (cl.setWidth pb).toNat)
+      (bytesAt m msg (l.setWidth pb).toNat)
+    rw [bytesAt_congr hb.1]
+    exact h
+
 /-! ## `vg_ed448_verify` -/
 
 /-- `verifyContract`'s postcondition and leak. -/
@@ -152,6 +169,15 @@ theorem verifyPost_local : ∀ vs m₁ m₂ m' r, vs.length = (verifySig.words p
     rw [bytesAt_congr hb.1, bytesAt_congr (slice_agree pb hb.2.1), bytesAt_congr (slice_agree pb hb.2.2.1),
       bytesAt_congr hb.2.2.2.1]
     exact h
+
+/-- `verifyPost` does not read the memory on return. -/
+theorem verifyPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (verifySig.words pb).length →
+    (∀ b ∈ Sig.bufs verifySig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (verifySig.words pb) (verifyPost pb) vs m m₁ r →
+    Curry.apply (verifySig.words pb) (verifyPost pb) vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen _ h
+  match vs, hlen with
+  | [pk, ctx, cl, msg, l, sg, sc], _ => exact h
 
 theorem verifyLeak_local : ∀ f, some (verifyLeak pb) = some f → ∀ vs m₁ m₂,
     vs.length = (verifySig.words pb).length →

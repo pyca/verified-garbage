@@ -63,6 +63,15 @@ def verifyLeak : Curry (verifySig.words pb) (Mem → List Nat) :=
   fun pk message len signature _scratch m =>
     (bytesAt m pk 32 ++ bytesAt m message len.toNat ++ bytesAt m signature 64).map (·.toNat)
 
+/-- `verifyPost` does not read the memory on return. -/
+theorem verifyPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (verifySig.words pb).length →
+    (∀ b ∈ Sig.bufs verifySig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (verifySig.words pb) (verifyPost pb) vs m m₁ r →
+    Curry.apply (verifySig.words pb) (verifyPost pb) vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen _ h
+  match vs, hlen with
+  | [pk, msg, l, sg, sc], _ => exact h
+
 theorem verifyPost_local : ∀ vs m₁ m₂ m' r, vs.length = (verifySig.words pb).length →
     Curry.apply (verifySig.words pb) (Curry.const (fun _ => True) _) vs m₂ →
     (∀ b ∈ Sig.bufs verifySig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →

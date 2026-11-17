@@ -17,7 +17,7 @@ public import VerifiedGarbage.TCB.RISCV64.Isa
 The code meets `verifyContract` with the frame as one more argument
 (`Sig.scratchContract`) and 1168 bytes of stack for the callees' frames (the
 proof against the contract's facts by register, `verC`), and, in a frame of
-448 bytes (`Verified.stackScratchLKept`), the contract itself. The contract
+448 bytes (`Verified.stackScratchL`), the contract itself. The contract
 declares the inputs public; the proof of constant time needs only the
 registers (`verifyMessage_ct`).
 -/
@@ -89,9 +89,10 @@ theorem verFrameSat_pre : ∃ s, (Spec.Ed448.verifyContract RISCV64.abi (1168 + 
 /-- In its frame of 448 bytes. -/
 theorem verify_framed (hR : Proof.Ed448.RecoverOk) :
     Verified RISCV64.target verifyCode (Spec.Ed448.verifyContract RISCV64.abi (1168 + 448)) :=
-  Verified.stackScratchLKept (sig := Spec.Ed448.verifySig) (nm := "frame") (e := .u64) (n := 56)
+  Verified.stackScratchL (sig := Spec.Ed448.verifySig) (nm := "frame") (e := .u64) (n := 56)
     (post := Proof.Ed448.WholeLocal.verifyPost RISCV64.abi.ptrBits) (wa := true) (stack := 1168) (bytes := 448)
     (leak := some (Proof.Ed448.WholeLocal.verifyLeak RISCV64.abi.ptrBits)) (verify_verified hR) (by decide)
-    (by decide) verFrameSat_pre
+    (by decide) (fun vs m m₁ m₂ r hl _ => Proof.Ed448.WholeLocal.verifyPostOut_local _ vs m m₁ m₂ r hl)
+    verFrameSat_pre
 
 end VG.Proof.Ed448.RISCV64.Whole

@@ -843,6 +843,16 @@ theorem hashed_verified_cons {wide : Bool} {core : Prog isa} {c₀ : String × L
   · obtain ⟨h₁, h₂⟩ := pub_consts.mp h
     exact inner_pub h₁ h₂
 
+/-- `hPost` does not read the memory on return. -/
+theorem hPost_out : ∀ vs m m₁ m₂ r, vs.length = (I.verifyHashSig.words abi.ptrBits).length →
+    Curry.apply (I.verifyHashSig.words abi.ptrBits) (hPost I) vs m m₁ r →
+      Curry.apply (I.verifyHashSig.words abi.ptrBits) (hPost I) vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen h
+  have h5 : vs.length = 5 := by
+    simpa [Spec.Ecdsa.Instance.verifyHashSig, Sig.words, Param.words] using hlen
+  match vs, h5 with
+  | [_, _, _, _, _], _ => exact h
+
 /-- `vg_ecdsa_<curve>_verify` under `abi`, from the verification of the `len` bytes. -/
 theorem verifyHash_verified_nil {wide : Bool} {core : Prog isa}
     (hL : 8 * I.curve.len = Spec.Ecdsa.nBits I.curve + if wide then 7 else 0) (h66 : I.curve.len ≤ 66)
@@ -854,10 +864,10 @@ theorem verifyHash_verified_nil {wide : Bool} {core : Prog isa}
   obtain hk : (I.verifyHashSig.words abi.ptrBits).length < 8 := by
     simp [Spec.Ecdsa.Instance.verifyHashSig, Sig.words, Param.words]
   obtain hb : 0 < 80 ∧ 80 ≤ 4064 ∧ 80 % 16 = 0 ∧ 80 * Elem.u8.size ≤ 80 := by decide
-  exact Verified.stackScratchLKept (sig := I.verifyHashSig) (nm := "buf") (e := .u8) (n := 80)
+  exact Verified.stackScratchL (sig := I.verifyHashSig) (nm := "buf") (e := .u8) (n := 80)
     (pre := Curry.const (fun _ => True) _) (post := hPost I) (wa := true) (stack := 0) (bytes := 80)
     (hashed_verified_nil hL h66 hcore htc ⟨_, narrow_pre (nm := "buf") hk hb (pre_leak.mp h₀) rfl⟩) hk hb
-    ⟨s₀, h₀⟩ rfl
+    (fun vs m m₁ m₂ r hl _ _ => hPost_out vs m m₁ m₂ r hl) ⟨s₀, h₀⟩ rfl
 
 /-- `vg_ecdsa_<curve>_verify` under `abi.withConsts`, from the verification of the `len` bytes. -/
 theorem verifyHash_verified_cons {wide : Bool} {core : Prog isa} {c₀ : String × List (BitVec 64)}
@@ -871,10 +881,10 @@ theorem verifyHash_verified_cons {wide : Bool} {core : Prog isa} {c₀ : String 
   obtain hk : (I.verifyHashSig.words abi.ptrBits).length < 8 := by
     simp [Spec.Ecdsa.Instance.verifyHashSig, Sig.words, Param.words]
   obtain hb : 0 < 80 ∧ 80 ≤ 4064 ∧ 80 % 16 = 0 ∧ 80 * Elem.u8.size ≤ 80 := by decide
-  exact Verified.stackScratchLCKept (sig := I.verifyHashSig) (nm := "buf") (e := .u8) (n := 80)
+  exact Verified.stackScratchLC (sig := I.verifyHashSig) (nm := "buf") (e := .u8) (n := 80)
     (pre := Curry.const (fun _ => True) _) (post := hPost I) (wa := true) (stack := 0) (bytes := 80)
     (hashed_verified_cons hL h66 hcore htc ⟨_, narrowK_pre (nm := "buf") (post := hPost I) hk hb rfl h₀⟩) hk hb
-    ⟨s₀, h₀⟩ rfl
+    (fun vs m m₁ m₂ r hl _ _ => hPost_out vs m m₁ m₂ r hl) ⟨s₀, h₀⟩ rfl
 
 end
 
