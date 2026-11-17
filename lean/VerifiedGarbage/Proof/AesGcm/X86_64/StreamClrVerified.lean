@@ -5,6 +5,8 @@ public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared16.Verified
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Verified
 public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTextS
 import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTextSCT
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 import VerifiedGarbage.Proof.AesGcm.X86_64.VerifiedP
 import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Verified
@@ -306,6 +308,218 @@ theorem clrAfter_mx (v : VecLevel) : (Code.block (clrAfter v) : Prog isa).allIns
 theorem clrAfter_sp (v : VecLevel) : (clrAfter v).all (fun i => !isa.writesSp i) = true := by
   cases v <;> rfl
 
+
+/-! ## Zeroing a working space with 16-byte stores -/
+
+/-- The trace of `zeroXs r o k` from `r = p`. -/
+def zeroXsTr (p : Addr) (o : Nat) : Nat → List Leak
+  | 0 => []
+  | k + 1 => .addr (p + BitVec.ofNat 64 (o + 16 * k)) :: zeroXsTr p o k
+
+/-- The trace of `wipeX r o n` from `r = p`. -/
+def wipeXTr (p : Addr) (o n : Nat) : List Leak :=
+  (if n % 16 = 0 then [] else [.addr (p + BitVec.ofNat 64 (o + n - 16))]) ++ zeroXsTr p o (n / 16)
+
+theorem ea_atX (u : State) (r : Reg) (n : Nat) : u.ea (at_ r n) = u.gpr r + BitVec.ofNat 64 n := by
+  simp [at_, State.ea, BitVec.ofInt_natCast]
+
+/-- One 16-byte store of `xmm0`, zero, within a region it may write. -/
+theorem zeroX_exec (u : State) (r : Reg) (d : Nat)
+    (hin : InRegions u.wr (u.gpr r + BitVec.ofNat 64 d) 16) (hx : u.xmm .xmm0 = 0) :
+    isa.exec (.movdquStore (at_ r d) .xmm0) u =
+        some { u with mem := u.mem.writeW (u.gpr r + BitVec.ofNat 64 d) (0 : BitVec 128) } ∧
+      addrs (.movdquStore (at_ r d) .xmm0) u = [u.gpr r + BitVec.ofNat 64 d] := by
+  refine ⟨?_, ?_⟩
+  · simp only [reduceExec, ea_atX, State.store128, hin, hx, ↓reduceIte]
+  · simp [addrs, ea_atX]
+
+/-- `zeroXs r o k` zeroes the `16 k` bytes at `r + o`, within a region it may
+write, from `xmm0` zero. -/
+theorem zeroXs_run {r : Reg} {o : Nat} {p : Addr} {b : Nat} (hb : b < 2 ^ 64) : ∀ (k : Nat) (u : State),
+    (⟨p, b⟩ : Region) ∈ u.wr → u.gpr r = p → u.xmm .xmm0 = 0 → o + 16 * k ≤ b →
+    ∃ m', execBlock isa (zeroXs r o k) u = some ({ u with mem := m' }, zeroXsTr p o k) ∧
+      ∀ x, m' x = if o ≤ (x - p).toNat ∧ (x - p).toNat < o + 16 * k then 0 else u.mem x
+  | 0, u, _, _, _, _ => ⟨u.mem, rfl, fun x => by rw [ite_f (by omega)]⟩
+  | k + 1, u, hR, hr, hx, hk => by
+    have hin : InRegions u.wr (u.gpr r + BitVec.ofNat 64 (o + 16 * k)) 16 := by
+      refine ⟨_, hR, ?_⟩
+      rw [hr]
+      exact Offset.contains_base (n := 16) _ (by omega) (by omega)
+    obtain ⟨ex, ea⟩ := zeroX_exec u r (o + 16 * k) hin hx
+    obtain ⟨m', he, hm⟩ := zeroXs_run (r := r) (o := o) hb k
+      { u with mem := u.mem.writeW (u.gpr r + BitVec.ofNat 64 (o + 16 * k)) (0 : BitVec 128) } hR hr hx (by omega)
+    refine ⟨m', ?_, fun x => ?_⟩
+    · show execBlock isa (.movdquStore (at_ r (o + 16 * k)) .xmm0 :: zeroXs r o k) u = _
+      rw [execBlock, ex]
+      dsimp only
+      rw [he, ea, hr]
+      rfl
+    · rw [hm x]
+      show (if o ≤ (x - p).toNat ∧ (x - p).toNat < o + 16 * k then 0 else
+        u.mem.writeW (u.gpr r + BitVec.ofNat 64 (o + 16 * k)) (0 : BitVec 128) x) = _
+      rw [writeW_zero128, hr]
+      simp only [off_lt _ _ _ _ (show o + 16 * k + 16 < 2 ^ 64 by omega)]
+      generalize (x - p).toNat = d
+      by_cases h1 : o ≤ d ∧ d < o + 16 * k
+      · rw [ite_t h1, ite_t (by omega)]
+      · rw [ite_f h1]
+        by_cases h2 : o + 16 * k ≤ d ∧ d < o + 16 * k + 16
+        · rw [ite_t h2, ite_t (by omega)]
+        · rw [ite_f h2, ite_f (by omega)]
+
+/-- `wipeX r o n` zeroes the `n` bytes at `r + o`, within a region it may
+write, and changes no register but `xmm0`, which it zeroes. -/
+theorem wipeX_run {r : Reg} {o n : Nat} {p : Addr} {b : Nat} (hb : b < 2 ^ 64) (u : State)
+    (hR : (⟨p, b⟩ : Region) ∈ u.wr) (hr : u.gpr r = p) (hn : o + n ≤ b) (h16 : n % 16 = 0 ∨ 16 ≤ n) :
+    ∃ m', execBlock isa (wipeX r o n) u = some ({ u.setXmm .xmm0 0 with mem := m' }, wipeXTr p o n) ∧
+      ∀ x, m' x = if o ≤ (x - p).toNat ∧ (x - p).toNat < o + n then 0 else u.mem x := by
+  have hx : XOp.exec (.bin .pxor .xmm0 .xmm0) u = u.setXmm .xmm0 0 := by
+    simp [XOp.exec, reduceXBinOpEval]
+  let u₀ := u.setXmm .xmm0 0
+  have hR₀ : (⟨p, b⟩ : Region) ∈ u₀.wr := hR
+  have hr₀ : u₀.gpr r = p := hr
+  have hx₀ : u₀.xmm .xmm0 = 0 := by simp [u₀, State.setXmm]
+  have hdiv := Nat.div_add_mod n 16
+  have hmod := Nat.mod_lt n (show 16 > 0 by decide)
+  by_cases h0 : n % 16 = 0
+  · obtain ⟨m', he, hm⟩ := zeroXs_run (r := r) (o := o) hb (n / 16) u₀ hR₀ hr₀ hx₀ (by omega)
+    refine ⟨m', ?_, fun x => ?_⟩
+    · simp only [wipeX, wipeXTr, h0, ↓reduceIte, List.nil_append]
+      rw [execBlock, show isa.exec (.xop (.bin .pxor .xmm0 .xmm0)) u = some u₀ by
+        simp only [reduceExec, hx]; rfl]
+      dsimp only
+      rw [he]
+      simp [addrs, u₀]
+    · rw [hm x, show 16 * (n / 16) = n by omega]
+      rfl
+  · have h16' : 16 ≤ n := h16.resolve_left h0
+    have hin : InRegions u₀.wr (u₀.gpr r + BitVec.ofNat 64 (o + n - 16)) 16 := by
+      refine ⟨_, hR₀, ?_⟩
+      rw [hr₀]
+      exact Offset.contains_base (n := 16) _ (by omega) (by omega)
+    obtain ⟨ex, ea⟩ := zeroX_exec u₀ r (o + n - 16) hin hx₀
+    obtain ⟨m', he, hm⟩ := zeroXs_run (r := r) (o := o) hb (n / 16)
+      { u₀ with mem := u₀.mem.writeW (u₀.gpr r + BitVec.ofNat 64 (o + n - 16)) (0 : BitVec 128) } hR₀ hr₀ hx₀
+      (by omega)
+    refine ⟨m', ?_, fun x => ?_⟩
+    · simp only [wipeX, wipeXTr, h0, ↓reduceIte, List.cons_append, List.nil_append]
+      rw [execBlock, show isa.exec (.xop (.bin .pxor .xmm0 .xmm0)) u = some u₀ by
+        simp only [reduceExec, hx]; rfl]
+      dsimp only
+      rw [execBlock, ex]
+      dsimp only
+      rw [he, ea, hr₀]
+      simp [addrs, u₀]
+    · rw [hm x]
+      show (if o ≤ (x - p).toNat ∧ (x - p).toNat < o + 16 * (n / 16) then 0 else
+        u₀.mem.writeW (u₀.gpr r + BitVec.ofNat 64 (o + n - 16)) (0 : BitVec 128) x) = _
+      rw [writeW_zero128, hr₀]
+      simp only [off_lt _ _ _ _ (show o + n - 16 + 16 < 2 ^ 64 by omega)]
+      show _ = if o ≤ (x - p).toNat ∧ (x - p).toNat < o + n then 0 else u.mem x
+      generalize (x - p).toNat = d
+      by_cases h1 : o ≤ d ∧ d < o + n
+      · rw [ite_t h1]
+        by_cases h2 : o ≤ d ∧ d < o + 16 * (n / 16)
+        · rw [ite_t h2]
+        · rw [ite_f h2, ite_t (by omega)]
+      · rw [ite_f h1, ite_f (by omega), ite_f (by omega)]
+        rfl
+
+theorem mem_zeroXs {r : Reg} {o : Nat} {i : Instr} : ∀ {k : Nat}, i ∈ zeroXs r o k →
+    ∃ d, i = .movdquStore (at_ r d) .xmm0
+  | 0, h => absurd h (List.not_mem_nil)
+  | k + 1, h => by
+    rcases List.mem_cons.mp h with rfl | h
+    · exact ⟨_, rfl⟩
+    · exact mem_zeroXs h
+
+theorem mem_wipeX {r : Reg} {o n : Nat} {i : Instr} (h : i ∈ wipeX r o n) :
+    i = .xop (.bin .pxor .xmm0 .xmm0) ∨ ∃ d, i = .movdquStore (at_ r d) .xmm0 := by
+  rcases List.mem_cons.mp h with rfl | h
+  · exact .inl rfl
+  rcases List.mem_append.mp h with h | h
+  · split at h
+    · exact absurd h List.not_mem_nil
+    · rcases List.mem_singleton.mp h with rfl; exact .inr ⟨_, rfl⟩
+  · exact .inr (mem_zeroXs h)
+
+theorem wipeX_clobbers {r : Reg} {o n : Nat} (g : Reg) : ∀ i ∈ wipeX r o n, Taint.clobbers i g = false := by
+  intro i hi
+  rcases mem_wipeX hi with rfl | ⟨d, rfl⟩ <;> rfl
+
+theorem wipeX_nosp (r : Reg) (o n : Nat) : ∀ i ∈ wipeX r o n, Taint.clobbers i .rsp = false :=
+  wipeX_clobbers .rsp
+
+theorem wipeX_mx (r : Reg) (o n : Nat) : (Code.block (wipeX r o n) : Prog isa).allInstrs (fun i => !loadsMxcsr i) = true := by
+  rw [Code.allInstrs_eq]
+  exact List.all_eq_true.mpr fun i hi => by rcases mem_wipeX hi with rfl | ⟨d, rfl⟩ <;> rfl
+
+theorem wipeX_sp (r : Reg) (o n : Nat) : (wipeX r o n).all (fun i => !isa.writesSp i) = true :=
+  List.all_eq_true.mpr fun i hi => by rcases mem_wipeX hi with rfl | ⟨d, rfl⟩ <;> rfl
+
+/-- The registers `wipeX` changes: `xmm0` alone. -/
+theorem abiPreserved_wipeX {s u : State} (m : Mem) (h : abiPreserved s u)
+    (hm : m.readW (s.gpr .rsp) 64 = u.mem.readW (s.gpr .rsp) 64) :
+    abiPreserved s { u.setXmm .xmm0 0 with mem := m } :=
+  ⟨fun r hr => h.1 r hr, hm.trans h.2.1, h.2.2⟩
+
+
+/-- What `wipeX r 0 n` leaves, as a frame: it writes only the region of `b`
+bytes at `r`. -/
+theorem wipeX_frame {p : Addr} {n b : Nat} (hn : n ≤ b) {m m' : Mem}
+    (hm : ∀ x, m' x = if 0 ≤ (x - p).toNat ∧ (x - p).toNat < 0 + n then 0 else m x) :
+    Frame [⟨p, b⟩] m m' := fun x hx => by
+  rw [hm x, ite_f]
+  intro hl
+  exact hx _ (List.mem_singleton_self _) (show (x - p).toNat + 1 ≤ b by omega)
+
+/-- Code that never writes `r`, followed by `wipeX r 0 n`, which zeroes the
+first `n` bytes of a region of `b` at `r` it may write, apart from the return
+address: correct if the postcondition holds through writes to that region. -/
+theorem wipeR_ok {c : Prog isa} {r : Reg} {n b : Nat} (hb : b < 2 ^ 64) (hn : n ≤ b) (h16 : n % 16 = 0 ∨ 16 ≤ n)
+    (hr : ∀ i ∈ instrs c, Taint.clobbers i r = false) {pre : State → Prop} {post : State → State → Prop}
+    (hR : ∀ s, pre s → (⟨s.gpr r, b⟩ : Region) ∈ s.wr ∧ (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨s.gpr r, b⟩)
+    (hpost : ∀ s u m, pre s → Frame [⟨s.gpr r, b⟩] u.mem m → post s u →
+      post s { u.setXmm .xmm0 0 with mem := m })
+    (h : ∀ s, pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ post s s') :
+    ∀ s, pre s → ∃ t s', Exec isa (.seq c (.block (wipeX r 0 n))) s t s' ∧ abiPreserved s s' ∧ post s s' := by
+  intro s hs
+  obtain ⟨t, u, e, ha, hq⟩ := h s hs
+  obtain ⟨-, hwr⟩ := Exec.rdwr e
+  obtain hg := Exec.gpr hr e
+  obtain ⟨hin, hd⟩ := hR s hs
+  obtain ⟨m', ew, hm⟩ := wipeX_run (o := 0) hb u (by rw [hwr]; exact hin) hg (by omega) h16
+  obtain hf := wipeX_frame hn hm
+  refine ⟨_, _, .seq e (.block ew), abiPreserved_wipeX m' ha ?_, hpost s u m' hs hf hq⟩
+  exact hf.readW (r := ⟨s.gpr .rsp, 8⟩) (Region.contains_self _ _) (fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr; exact hd) (by decide)
+
+/-- `wipeR_ok`, for constant time: the wipe's trace is a function of `r`,
+which two runs agree on. -/
+theorem wipeR_ct {c : Prog isa} {r : Reg} {n b : Nat} (hb : b < 2 ^ 64) (hn : n ≤ b) (h16 : n % 16 = 0 ∨ 16 ≤ n)
+    (hr : ∀ i ∈ instrs c, Taint.clobbers i r = false) {pre : State → Prop} {pub : State → State → Prop}
+    (hR : ∀ s, pre s → (⟨s.gpr r, b⟩ : Region) ∈ s.wr)
+    (hp : ∀ s₁ s₂, pub s₁ s₂ → s₁.gpr r = s₂.gpr r)
+    (h : ConstantTime isa pre pub c) : ConstantTime isa pre pub (.seq c (.block (wipeX r 0 n))) := by
+  intro s₁ s₂ t₁ t₂ u₁ u₂ h₁ h₂ hq e₁ e₂
+  cases e₁ with
+  | seq a₁ b₁ =>
+    cases e₂ with
+    | seq a₂ b₂ =>
+      cases b₁ with
+      | block w₁ =>
+        cases b₂ with
+        | block w₂ =>
+          obtain ⟨-, hwr₁⟩ := Exec.rdwr a₁
+          obtain ⟨-, hwr₂⟩ := Exec.rdwr a₂
+          obtain ⟨_, ew₁, -⟩ := wipeX_run (o := 0) hb _ (by rw [hwr₁]; exact hR _ h₁) (Exec.gpr hr a₁) (by omega) h16
+          obtain ⟨_, ew₂, -⟩ := wipeX_run (o := 0) hb _ (by rw [hwr₂]; exact hR _ h₂) (Exec.gpr hr a₂) (by omega) h16
+          rw [ew₁] at w₁
+          rw [ew₂] at w₂
+          obtain ⟨-, rfl⟩ := Prod.mk.inj (Option.some.inj w₁)
+          obtain ⟨-, rfl⟩ := Prod.mk.inj (Option.some.inj w₂)
+          rw [h s₁ s₂ _ _ _ _ h₁ h₂ hq a₁ a₂, hp _ _ hq]
+
 end VG.X86_64
 
 namespace VG.Proof.Aes.X86_64
@@ -342,6 +556,60 @@ def Ctr32Impl.wrapC (v : VecLevel) (c : Ctr32Impl) : Ctr32Impl :=
     gcmInitRes := none
     cmacFinishRes := none }
 
+
+/-- `vg_aes_ctr32`, as `vg_aes_ctr32_w`, zeroing the `n` bytes of its
+working space it may write before it returns (`Fn.wipeR`). -/
+def ctr32Wipe (n : Nat) (c : Impl.Aes.X86_64.Ctr32) : Impl.Aes.X86_64.Ctr32 :=
+  { c with name := c.name ++ "_w", code := .seq c.code (.block (wipeX .r9 0 n)) }
+
+/-- `Ctr32Small` of `ctr32Wipe 1480`. -/
+def Ctr32Small.wipe {c : Impl.Aes.X86_64.Ctr32} (h9 : ∀ i ∈ instrs c.code, Taint.clobbers i .r9 = false)
+    (f : Ctr32Small c) : Ctr32Small (ctr32Wipe 1480 c) where
+  ok := wipeR_ok (b := 1480) (by decide) (by decide) (.inr (by decide)) h9
+    (fun s hs => ⟨by rw [hs.2.1]; simp, hs.2.2.2.2.2.2.2.2.2.2.1⟩)
+    (fun s u m hs hf hq => by
+      obtain ⟨-, -, -, -, -, h₁, h₂, h₃, -, -, -, hl, -⟩ := hs
+      simp only [Proof.Aes.ctr32X86_64S, Proof.Aes.ctr32X86_64] at hq ⊢
+      rw [AesGcm.X86_64.blocksAt_frame hf (fun r hr => by
+          simp only [List.mem_singleton] at hr; subst hr; exact h₃) (by omega),
+        AesGcm.X86_64.blockAt_frame hf (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact h₂)]
+      exact hq) f.ok
+  ct := wipeR_ct (b := 1480) (by decide) (by decide) (.inr (by decide)) h9
+    (fun s hs => by rw [hs.2.1]; simp) (fun _ _ h => h.2.2.2.2.2.1) f.ct
+  off := f.off
+
+/-- `c`'s `vg_aes_ctr32`, as `vg_aes_ctr32_w`, zeroing the 1480 bytes of its
+working space it may write before it returns, for an implementation that
+never writes `r9` (`h9`) and uses no more (`f`). -/
+def Ctr32Impl.wipe (c : Ctr32Impl) (h9 : ∀ i ∈ instrs c.callee.code, Taint.clobbers i .r9 = false)
+    (f : Ctr32Small c.callee) : Ctr32Impl :=
+  { c with
+    callee := ctr32Wipe 1480 c.callee
+    depth := by simp only [ctr32Wipe, Code.depth, c.depth]; rfl
+    ok := wipeR_ok (b := 2048) (by decide) (by decide) (.inr (by decide)) h9
+      (fun s hs => ⟨by rw [hs.2.1]; simp, hs.2.2.2.2.2.2.2.2.2.2.1⟩)
+      (fun s u m hs hf hq => by
+        obtain ⟨-, -, -, -, -, h₁, h₂, h₃, -, -, -, hl, -⟩ := hs
+        simp only [Proof.Aes.ctr32X86_64] at hq ⊢
+        rw [AesGcm.X86_64.blocksAt_frame hf (fun r hr => by
+            simp only [List.mem_singleton] at hr; subst hr; exact h₃) (by omega),
+          AesGcm.X86_64.blockAt_frame hf (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact h₂)]
+        exact hq) c.ok
+    ct := wipeR_ct (b := 2048) (by decide) (by decide) (.inr (by decide)) h9
+      (fun s hs => by rw [hs.2.1]; simp) (fun _ _ h => h.2.2.2.2.2.1) c.ct
+    nosp := fun i hi => by
+      rcases List.mem_append.mp hi with hi | hi
+      · exact c.nosp i hi
+      · exact wipeX_nosp .r9 0 1480 i hi
+    mxcsr := by simp only [ctr32Wipe, Code.allInstrs, c.mxcsr, Bool.true_and]; exact wipeX_mx .r9 0 1480
+    spSafe := by simp only [ctr32Wipe, Code.all, c.spSafe, Bool.true_and]; exact wipeX_sp .r9 0 1480
+    noStack := by simp only [ctr32Wipe, Code.x86_64Depth, c.noStack]; rfl
+    free := none
+    small := some (f.wipe h9)
+    scr := nofun
+    gcmInitRes := none
+    cmacFinishRes := none }
+
 end VG.Proof.Aes.X86_64
 
 namespace VG.Proof.AesGcm.X86_64
@@ -364,6 +632,31 @@ def GhashImpl.wrapC (v : VecLevel) (g : GhashImpl) : GhashImpl :=
     mxcsr := wrap_allInstrs v (clrAfter_mx v) g.mxcsr
     spSafe := wrap_all v (clrAfter_sp v) g.spSafe
     free := g.free.map (·.wrapC v) }
+
+
+/-- `g`, as `vg_ghash_w`, zeroing the 256 bytes of its working space before it
+returns (`Fn.wipeR`), for an implementation that never writes `r8` (`h8`). -/
+def GhashImpl.wipe (g : GhashImpl) (h8 : ∀ i ∈ instrs g.fn.code, Taint.clobbers i .r8 = false) : GhashImpl :=
+  { g with
+    fn := g.fn.wipeR .r8 256
+    depth := by simp only [Fn.wipeR, Code.depth, g.depth]; rfl
+    noStack := by simp only [Fn.wipeR, Code.x86_64Depth, g.noStack]; rfl
+    ok := wipeR_ok (b := 256) (by decide) (by decide) (.inl rfl) h8
+      (fun s hs => ⟨by rw [hs.2.1]; simp, hs.2.2.2.2.2.2.2.2⟩)
+      (fun s u m hs hf hq => by
+        obtain ⟨-, -, -, -, -, h₁, -, -, -⟩ := hs
+        simp only [Proof.Gcm.ghashX86_64] at hq ⊢
+        rw [blockAt_frame hf (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact h₁)]
+        exact hq) g.ok
+    ct := wipeR_ct (b := 256) (by decide) (by decide) (.inl rfl) h8
+      (fun s hs => by rw [hs.2.1]; simp) (fun _ _ h => h.2.2.2.2) g.ct
+    nosp := fun i hi => by
+      rcases List.mem_append.mp hi with hi | hi
+      · exact g.nosp i hi
+      · exact wipeX_nosp .r8 0 256 i hi
+    mxcsr := by simp only [Fn.wipeR, Code.allInstrs, g.mxcsr, Bool.true_and]; exact wipeX_mx .r8 0 256
+    spSafe := by simp only [Fn.wipeR, Code.all, g.spSafe, Bool.true_and]; exact wipeX_sp .r8 0 256
+    free := none }
 
 /-- `i`, its `vg_aes_ctr32` and `vg_ghash` clearing the registers before they return. -/
 def GcmImpl.wrapC (v : VecLevel) (i : GcmImpl) : GcmImpl :=

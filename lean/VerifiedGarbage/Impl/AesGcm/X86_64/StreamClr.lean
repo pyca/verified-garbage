@@ -24,6 +24,11 @@ The code is written as `streamTextS` over callees whose code ends in
 just after it: the same instructions run in the same order (the clearing
 touches neither memory nor the stack pointer), and the callees keep their
 own code and names. `streamText`, which SM4-GCM also uses, is unchanged.
+
+The baseline `vg_ghash` and `vg_aes_ctr32` write secrets in their working
+space on the stack. Over them, the streaming functions call copies that zero
+it before they return (`Fn.wipeR`, `wipeX`), and whole-blocks functions that
+zero the working space they give them (`Fn.wipeS`).
 -/
 
 @[expose] public section
@@ -93,6 +98,32 @@ def wipeWin (z : Bool) (add k : Nat) : List Instr :=
 working space of its loops before it returns (`wipeWin z add k`). -/
 def Fn.wipeW (z : Bool) (add k : Nat) (f : Fn) : Fn :=
   ⟨f.name ++ "_w", .seq f.code (.block (wipeWin z add k))⟩
+
+/-- The `k` 16-byte words at `r + o + 16 (k - 1)`, …, `r + o` zeroed from
+`xmm0`, from the top down. -/
+def zeroXs (r : Reg) (o : Nat) : Nat → List Instr
+  | 0 => []
+  | k + 1 => .movdquStore (at_ r (o + 16 * k)) .xmm0 :: zeroXs r o k
+
+/-- The `n` bytes at `r + o` zeroed with 16-byte stores (`movdqu`) of
+`xmm0`, zeroed first: if `n` is not a multiple of 16, its last 16 bytes
+(`n ≥ 16`), then its `⌊n / 16⌋` whole 16-byte words from the top down. -/
+def wipeX (r : Reg) (o n : Nat) : List Instr :=
+  .xop (.bin .pxor .xmm0 .xmm0) ::
+    ((if n % 16 = 0 then [] else [.movdquStore (at_ r (o + n - 16)) .xmm0]) ++ zeroXs r o (n / 16))
+
+/-- `f`, as an internal function of its own (`<name>_w`) that zeroes the `n`
+bytes of its working space at `r` before it returns (`wipeX r 0 n`), for an
+implementation that never writes `r` (`vg_ghash` its `r8`, `vg_aes_ctr32`
+its `r9`). -/
+def Fn.wipeR (r : Reg) (n : Nat) (f : Fn) : Fn := ⟨f.name ++ "_w", .seq f.code (.block (wipeX r 0 n))⟩
+
+/-- `f` (`vg_aes_gcm_encrypt_blocks` or `_decrypt_blocks`), as an internal
+function of its own (`<name>_w`) that zeroes the `n` bytes of the working
+space it gives its callees, from byte 64 of its stack argument `scratch`
+(`[rsp + 8]` as it returns), before it returns. -/
+def Fn.wipeS (n : Nat) (f : Fn) : Fn :=
+  ⟨f.name ++ "_w", .seq f.code (.block (.mov .r11 (.mem (at_ .rsp 8)) :: wipeX .r11 64 n))⟩
 
 variable (c : Callees)
 
