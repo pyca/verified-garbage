@@ -18,13 +18,15 @@ namespace VG.Proof.X448.Arm
 
 open VG VG.Arm VG.Impl.X448.Arm
 
+variable {fv : Bool}
+
 /-- The ladder's loop, from the counter `n ≥ 1` down to 0. -/
 theorem loop_ok {s₀ : State} {base : Addr} {k : Nat} {u : Spec.X448.Fe}
     (hbits : ∀ t < 448, s₀.mem (off base (BITS + t)) = BitVec.ofNat 8 (bit k t)) :
     ∀ n, ∀ s, 1 ≤ n → n ≤ 448 → LInv base k u s₀ s n →
-      WP isa (.loop step .ne) s fun s' => LInv base k u s₀ s' 0 := by
+      WP isa (.loop (step fv) .ne) s fun s' => LInv base k u s₀ s' 0 := by
   intro n s h1 h2 hi
-  refine WP.loop (M := isa) (body := step) (c := .ne)
+  refine WP.loop (M := isa) (body := step fv) (c := .ne)
     (Q := fun s' => LInv base k u s₀ s' 0)
     (fun m (s : State) => 1 ≤ m ∧ m ≤ 448 ∧ LInv base k u s₀ s m) ?_ n s ⟨h1, h2, hi⟩
   intro m s ⟨h1, h2, hi⟩
@@ -41,7 +43,7 @@ theorem ladder_ok {s₀ s : State} {base : Addr} {k : Nat} {u : Spec.X448.Fe}
     (hbits : ∀ t < 448, s₀.mem (off base (BITS + t)) = BitVec.ofNat 8 (bit k t))
     (hi : ∀ s', s'.gpr .r11 = BitVec.ofNat 32 448 → (∀ r, r ≠ .r11 → s'.gpr r = s.gpr r) →
       s'.mem = s.mem → s'.rd = s.rd → s'.wr = s.wr → LInv base k u s₀ s' 448) :
-    WP isa ladder s fun s' => LInv base k u s₀ s' 0 := by
+    WP isa (ladder fv) s fun s' => LInv base k u s₀ s' 0 := by
   refine WP.seq (WP.mono (setCounter_ok s 448 (by decide))
     fun s' ⟨h1, h2, h3, h4, h5⟩ => loop_ok hbits 448 s' (by omega_using []) (by omega_using []) (hi s' h1 h2 h3 h4 h5))
 

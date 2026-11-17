@@ -35,6 +35,8 @@ open VG.Proof.Ed448 (double comb combRow combDigit combPoint comb_row combDigit_
 open VG.Impl.X448.Arm (BITS slot ACC ld st)
 open VG.Proof.X25519.Arm (wp_mov wp_dp wp_movw wp_ldrb wp_cmp op2_imm op2_reg op2_lsl op2_lsr)
 
+variable {fv : Bool}
+
 /-! ## The field programs -/
 
 def doubleFields : List FieldOp := [
@@ -411,7 +413,7 @@ structure CombInv (base : Addr) (k : Nat) (s₀ s : State) (n : Nat) : Prop wher
 theorem combStep_ok {s₀ s : State} {base : Addr} {k n : Nat} (hn : n < 114)
     (hbits : ∀ t < 456, s₀.mem (off base (BITS + t)) = BitVec.ofNat 8 ((k >>> t) &&& 1))
     (hi : CombInv base k s₀ s (n + 1)) :
-    WP isa combStep s fun t => CombInv base k s₀ t n ∧ t.z = decide (n = 0) := by
+    WP isa (combStep fv) s fun t => CombInv base k s₀ t n ∧ t.z = decide (n = 0) := by
   have hs := hi.scr
   have hB : BITS = 3072 := rfl
   have hA : ACC = 3584 := rfl
@@ -462,10 +464,10 @@ theorem combLoop_ok {s₀ s : State} {base : Addr} {k : Nat}
     (hbits : ∀ t < 456, s₀.mem (off base (BITS + t)) = BitVec.ofNat 8 ((k >>> t) &&& 1))
     (hi : ∀ s', s'.gpr .r11 = BitVec.ofNat 32 114 → (∀ r, r ≠ .r11 → s'.gpr r = s.gpr r) →
       s'.mem = s.mem → s'.rd = s.rd → s'.wr = s.wr → CombInv base k s₀ s' 114) :
-    WP isa combLoop s fun s' => CombInv base k s₀ s' 0 := by
+    WP isa (combLoop fv) s fun s' => CombInv base k s₀ s' 0 := by
   unfold combLoop
   refine WP.seq (WP.mono (setCounter_ok s 114 (by decide)) fun s' ⟨h1, h2, h3, h4, h5⟩ => ?_)
-  refine WP.loop (M := isa) (body := combStep) (c := .ne) (Q := fun s' => CombInv base k s₀ s' 0)
+  refine WP.loop (M := isa) (body := combStep fv) (c := .ne) (Q := fun s' => CombInv base k s₀ s' 0)
     (fun m (s : State) => 1 ≤ m ∧ m ≤ 114 ∧ CombInv base k s₀ s m) ?_ 114 s'
     ⟨by decide, by decide, hi s' h1 h2 h3 h4 h5⟩
   intro m s ⟨h1, h2, hi⟩

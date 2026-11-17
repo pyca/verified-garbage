@@ -26,6 +26,8 @@ open VG VG.Arm VG.Impl.Ed448.Arm VG.Proof.X448.Arm
 open VG.Proof.Ed448 (double)
 open VG.Impl.X448.Arm (slot ACC saved ld ops Op)
 
+variable {fv : Bool}
+
 /-- `r1 = (r10 == 0)`. -/
 theorem isZeroR1_ok {s : State} (h12 : (s.gpr .r10).toNat < 65536) :
     WP isa (.block [.dp .sub .r1 .r10 (.imm 1), .mov .r1 (.shifted .r1 .lsr 31)]) s fun t =>
@@ -39,7 +41,7 @@ theorem isZeroR1_ok {s : State} (h12 : (s.gpr .r10).toNat < 65536) :
 theorem ops_seq {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv s.mem base) (xs : List FieldOp)
     {c : Prog isa} {Q : State → Prop}
     (k : ∀ t, Keep base s t → BoundedEnv t.mem base → E t.mem base = applyOps xs (E s.mem base) → WP isa c t Q) :
-    WP isa (.seq (ops (xs.map FieldOp.impl)) c) s Q :=
+    WP isa (.seq (ops fv (xs.map FieldOp.impl)) c) s Q :=
   WP.seq (WP.mono (ops_ok hs hb xs) fun t ⟨kt, bt, et⟩ => k t kt bt et)
 
 theorem ofNat32_beq_zero {k : Nat} (h : k < 2 ^ 32) : (BitVec.ofNat 32 k == 0) = decide (k = 0) := by
@@ -66,7 +68,7 @@ theorem double2_eval (e : Env) :
 /-- `[2]Q` and `[2]R`, a step of `vdouble` with `k + 1` left. -/
 theorem vdoubleStep_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv s.mem base) {k : Nat}
     (hk : k < 2 ^ 16) (he : s.gpr .r11 = BitVec.ofNat 32 (k + 1)) :
-    WP isa (.seq (ops (doubleAt 0 21 2 ++ doubleAt 8 9 10))
+    WP isa (.seq (ops fv (doubleAt 0 21 2 ++ doubleAt 8 9 10))
       (.block [.dp .sub .r11 .r11 (.imm 1), .cmp .r11 (.imm 0)])) s fun t =>
       t.gpr .r11 = BitVec.ofNat 32 k ∧ isa.eval .ne t = some (!decide (k = 0)) ∧
       Keeps (.r11 :: workRegs) s t ∧ Outside2 base 64 2816 ACC 512 s.mem t.mem ∧ BoundedEnv t.mem base ∧
@@ -90,7 +92,7 @@ theorem vdoubleStep_ok {s : State} {base : Addr} (hs : Scr s base) (hb : Bounded
 
 /-- `[4]Q` and `[4]R`. -/
 theorem vdouble_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv s.mem base) :
-    WP isa vdouble s fun t => Keeps (.r11 :: workRegs) s t ∧ Outside2 base 64 2816 ACC 512 s.mem t.mem ∧
+    WP isa (vdouble fv) s fun t => Keeps (.r11 :: workRegs) s t ∧ Outside2 base 64 2816 ACC 512 s.mem t.mem ∧
       BoundedEnv t.mem base ∧ pt (E t.mem base) 0 21 2 = double (double (pt (E s.mem base) 0 21 2)) ∧
       pt (E t.mem base) 8 9 10 = double (double (pt (E s.mem base) 8 9 10)) := by
   unfold vdouble
@@ -152,7 +154,7 @@ theorem vresult_ok {s : State} {base : Addr} (hs : Scr s base)
 times slot 2, ORed into `BAD`; slots 21 and 9 copied into 0 and 8. -/
 theorem vcmp_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv s.mem base) {k : Nat}
     (hk : k < 2) (he : s.gpr .r11 = BitVec.ofNat 32 (k + 1)) :
-    WP isa vcmp s fun t =>
+    WP isa (vcmp fv) s fun t =>
       t.gpr .r11 = BitVec.ofNat 32 k ∧ isa.eval .ne t = some (!decide (k = 0)) ∧
       Keeps (.r10 :: .r11 :: workRegs) s t ∧ Outside2 base 64 2816 ACC 512 s.mem t.mem ∧
       BoundedEnv t.mem base ∧ E t.mem base 0 = E s.mem base 21 ∧ E t.mem base 8 = E s.mem base 9 ∧
@@ -221,7 +223,7 @@ theorem WP.loop2 {M : ISA} {b : Prog M} {c : M.Cond} {s : M.State} {Q : M.State 
 
 theorem vfinish_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv s.mem base)
     {g : Reg → BitVec 32} (hsv : Saved base g s.mem) (h12 : (s.gpr .r10).toNat < 65536) :
-    WP isa vfinish s fun t =>
+    WP isa (vfinish fv) s fun t =>
       t.gpr .r0 = (if s.gpr .r10 = 0 ∧ Spec.Ed448.pointEqual (double (double (pt (E s.mem base) 0 21 2)))
         (double (double (pt (E s.mem base) 8 9 10))) = true then 1 else 0) ∧
       (∀ i < 8, t.gpr (saved[i]!) = g (saved[i]!)) ∧ t.gpr .lr = word s.mem base LR ∧

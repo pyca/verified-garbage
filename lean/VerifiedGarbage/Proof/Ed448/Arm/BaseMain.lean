@@ -31,6 +31,8 @@ open VG.Proof.Ed448 (comb)
 open VG.Impl.X448.Arm (slot BITS ACC saved)
 open VG.Spec.Ed448 (bytesAt decodeLE)
 
+variable {fv : Bool}
+
 /-- The precondition of `vg_ed448_scalar_base`, by name. -/
 structure BasePre (s : State) : Prop where
   rd : s.rd = [⟨State.addr (s.gpr .r1), 57⟩]
@@ -52,7 +54,7 @@ theorem baseEntry_eq : baseEntry =
     ([.mov .r3 (.reg .r2)] : List Instr) ++ setupHead ++ initSlots := rfl
 
 theorem scalarBase_comb {s : State} (h : BasePre s) :
-    WP isa scalarBase s fun t => (∀ r ∈ preserved, t.gpr r = s.gpr r) ∧
+    WP isa (scalarBase fv) s fun t => (∀ r ∈ preserved, t.gpr r = s.gpr r) ∧
       bytesAt t.mem (State.addr (s.gpr .r0)) 57 =
         Spec.Ed448.encodePoint (comb (decodeLE (bytesAt s.mem (State.addr (s.gpr .r1)) 57)) 114) := by
   obtain ⟨base, hbase⟩ : ∃ b, State.addr (s.gpr .r2) = b := ⟨_, rfl⟩

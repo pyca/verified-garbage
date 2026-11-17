@@ -69,15 +69,17 @@ def reduceArgs : List Instr := setup [(.r0, .frame K), (.r1, .frame HASH), (.r2,
 def equationArgs : List Instr :=
   setup [(.r0, .caller 0 0), (.r1, .caller 5 0), (.r2, .frame K), (.r3, scr 0)] []
 
-def body : Prog isa :=
+def body (u : Bool) : Prog isa :=
   .seq (.block hdr) <| .seq hash <|
   .seq (callWith reduceArgs "vg_ed448_scalar_reduce" Impl.Ed448.Arm.scalarReduce)
-    (callWith equationArgs "vg_ed448_verify_equation" Impl.Ed448.Arm.verifyEquation)
+    (callWith equationArgs ("vg_ed448_verify_equation" ++ Impl.X448.Arm.suffix u)
+      (Impl.Ed448.Arm.verifyEquation u))
 
 /-- `ctxlen < 256`: Z set exactly when `ctxlen >> 8 = 0`. -/
 def check : List Instr := [.mov .r12 (.shifted .r2 .lsr 8), .cmp .r12 (.imm 0)]
 
 /-- `vg_ed448_verify`. -/
-def code : Prog isa := .seq (.block check) (.ite .eq (wrap 6 body) (.block [.movw .r0 0]))
+def code (u : Bool) : Prog isa :=
+  .seq (.block check) (.ite .eq (wrap 6 (body u)) (.block [.movw .r0 0]))
 
 end VG.Impl.Ed448.Arm.Verify

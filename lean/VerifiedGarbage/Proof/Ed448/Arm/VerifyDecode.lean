@@ -31,6 +31,8 @@ namespace VG.Proof.Ed448.Arm
 open VG VG.Arm VG.Impl.Ed448.Arm VG.Proof.X448.Arm
 open VG.Impl.X448.Arm (slot X2)
 
+variable {fv : Bool}
+
 /-- The field slots after `root`. -/
 def rootEnv (e : Env) : Env :=
   let e := applyOps [.copy 14 12] e
@@ -63,37 +65,37 @@ def rootEnv (e : Env) : Env :=
   let e := opSqn 1 223 e
   applyOps [.mul 1 1 20] e
 
-theorem root_spec (base : Addr) : ISpec base root rootEnv := by
+theorem root_spec (base : Addr) : ISpec base (root fv) rootEnv := by
   have h : ISpec base _ _ :=
-    (opsI base [.copy 14 12]).seq <|
-    (sqnI base 14 (n := 1) (by decide) (by decide)).seq <|
-    (opsI base [.mul 14 14 12, .copy 15 14]).seq <|
-    (sqnI base 15 (n := 2) (by decide) (by decide)).seq <|
-    (opsI base [.mul 15 15 14, .copy 16 15]).seq <|
-    (sqnI base 16 (n := 4) (by decide) (by decide)).seq <|
-    (opsI base [.mul 16 16 15, .copy 17 16]).seq <|
-    (sqnI base 17 (n := 8) (by decide) (by decide)).seq <|
-    (opsI base [.mul 17 17 16, .copy 18 17]).seq <|
-    (sqnI base 18 (n := 16) (by decide) (by decide)).seq <|
-    (opsI base [.mul 18 18 17, .copy 19 18]).seq <|
-    (sqnI base 19 (n := 32) (by decide) (by decide)).seq <|
-    (opsI base [.mul 19 19 18, .copy 20 19]).seq <|
-    (sqnI base 20 (n := 64) (by decide) (by decide)).seq <|
-    (opsI base [.mul 20 20 19]).seq <|
-    (sqnI base 20 (n := 64) (by decide) (by decide)).seq <|
-    (opsI base [.mul 20 20 19]).seq <|
-    (sqnI base 20 (n := 16) (by decide) (by decide)).seq <|
-    (opsI base [.mul 20 20 17]).seq <|
-    (sqnI base 20 (n := 8) (by decide) (by decide)).seq <|
-    (opsI base [.mul 20 20 16]).seq <|
-    (sqnI base 20 (n := 4) (by decide) (by decide)).seq <|
-    (opsI base [.mul 20 20 15]).seq <|
-    (sqnI base 20 (n := 2) (by decide) (by decide)).seq <|
-    (opsI base [.mul 20 20 14, .copy 1 20]).seq <|
-    (sqnI base 1 (n := 1) (by decide) (by decide)).seq <|
-    (opsI base [.mul 1 1 12]).seq <|
-    (sqnI base 1 (n := 223) (by decide) (by decide)).seq <|
-    (opsI base [.mul 1 1 20])
+    (opsI (fv := fv) base [.copy 14 12]).seq <|
+    (sqnI (fv := fv) base 14 (n := 1) (by decide) (by decide)).seq <|
+    (opsI (fv := fv) base [.mul 14 14 12, .copy 15 14]).seq <|
+    (sqnI (fv := fv) base 15 (n := 2) (by decide) (by decide)).seq <|
+    (opsI (fv := fv) base [.mul 15 15 14, .copy 16 15]).seq <|
+    (sqnI (fv := fv) base 16 (n := 4) (by decide) (by decide)).seq <|
+    (opsI (fv := fv) base [.mul 16 16 15, .copy 17 16]).seq <|
+    (sqnI (fv := fv) base 17 (n := 8) (by decide) (by decide)).seq <|
+    (opsI (fv := fv) base [.mul 17 17 16, .copy 18 17]).seq <|
+    (sqnI (fv := fv) base 18 (n := 16) (by decide) (by decide)).seq <|
+    (opsI (fv := fv) base [.mul 18 18 17, .copy 19 18]).seq <|
+    (sqnI (fv := fv) base 19 (n := 32) (by decide) (by decide)).seq <|
+    (opsI (fv := fv) base [.mul 19 19 18, .copy 20 19]).seq <|
+    (sqnI (fv := fv) base 20 (n := 64) (by decide) (by decide)).seq <|
+    (opsI (fv := fv) base [.mul 20 20 19]).seq <|
+    (sqnI (fv := fv) base 20 (n := 64) (by decide) (by decide)).seq <|
+    (opsI (fv := fv) base [.mul 20 20 19]).seq <|
+    (sqnI (fv := fv) base 20 (n := 16) (by decide) (by decide)).seq <|
+    (opsI (fv := fv) base [.mul 20 20 17]).seq <|
+    (sqnI (fv := fv) base 20 (n := 8) (by decide) (by decide)).seq <|
+    (opsI (fv := fv) base [.mul 20 20 16]).seq <|
+    (sqnI (fv := fv) base 20 (n := 4) (by decide) (by decide)).seq <|
+    (opsI (fv := fv) base [.mul 20 20 15]).seq <|
+    (sqnI (fv := fv) base 20 (n := 2) (by decide) (by decide)).seq <|
+    (opsI (fv := fv) base [.mul 20 20 14, .copy 1 20]).seq <|
+    (sqnI (fv := fv) base 1 (n := 1) (by decide) (by decide)).seq <|
+    (opsI (fv := fv) base [.mul 1 1 12]).seq <|
+    (sqnI (fv := fv) base 1 (n := 223) (by decide) (by decide)).seq <|
+    (opsI (fv := fv) base [.mul 1 1 20])
   exact h
 
 theorem rootEnv_eval (e : Env) : rootEnv e 1 = Proof.Ed448.rootPow (e 12) := by
@@ -116,7 +118,7 @@ theorem rootEnv_keep (e : Env) (i : Index) (hi : i ≠ 1 ∧ (i.val < 14 ∨ 20 
     Function.update_of_ne h19, Function.update_of_ne h20]
 
 theorem root_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv s.mem base) :
-    WP isa root s fun t =>
+    WP isa (root fv) s fun t =>
       IKeep base s t ∧ BoundedEnv t.mem base ∧ E t.mem base = rootEnv (E s.mem base) :=
   root_spec base s hs hb
 
@@ -144,6 +146,8 @@ namespace VG.Proof.Ed448.Arm
 open VG VG.Arm VG.Impl.Ed448.Arm VG.Proof.X448.Arm VG.Proof.X448.Radix16
 open VG.Impl.X448.Arm (slot X2 ACC)
 open VG.Proof.Ed448 (RecoverOk rootPow)
+
+variable {fv : Bool}
 
 /-! ## The field steps -/
 
@@ -209,7 +213,7 @@ theorem decode_ok (hR : RecoverOk) {s : State} {base q : Addr} (hs : Scr s base)
     (hd : ∀ j < 57, 8192 ≤ ofs base (q + BitVec.ofNat 64 j))
     (xo yo : Index) (hxy : xo = 6 ∧ yo = 7 ∨ xo = 8 ∧ yo = 9)
     (h10 : E s.mem base 10 = 1) (h11 : E s.mem base 11 = Spec.Ed448.d) :
-    WP isa (decode p xo.val yo.val) s fun t =>
+    WP isa (decode fv p xo.val yo.val) s fun t =>
       VKeep base s t ∧ BoundedEnv t.mem base ∧
       BadUpd ((Spec.Ed448.decodePoint (Spec.Ed448.bytesAt s.mem q 57)).isSome) (s.gpr .r10) (t.gpr .r10) ∧
       (∀ a, Spec.Ed448.decodePoint (Spec.Ed448.bytesAt s.mem q 57) = some a →

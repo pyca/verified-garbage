@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ed448.Arm.Scrub
 public import VerifiedGarbage.Proof.Ed448.Arm.PublicKey.Verified
 public import VerifiedGarbage.Proof.Ed448.Facts
 public import VerifiedGarbage.Proof.Ed448.CombFacts
@@ -12,6 +13,7 @@ public import Mathlib.Tactic.NormNum.Prime
 import Mathlib.Tactic.Positivity.Finset
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.Proof.Variants.Curve448Field.Arm
 public import VerifiedGarbage.Proof.Ed448.Arm.SignCached.Verified
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Ed448.Arm.Verify.Verified
@@ -73,17 +75,10 @@ public import VerifiedGarbage.Proof.X448.Bytes
 
 namespace VG.Artifacts.Ed448.Arm
 
-def artifacts : List Artifact := [
-  Spec.Ed448.publicKeyApi.artifact Arm.target {
-    code := Impl.Ed448.Arm.PublicKey.code
-    verified := Proof.Ed448.Arm.PublicKey.publicKey_verified Proof.Ed448.baseComb_ok },
-  Spec.Ed448.signCachedApi.artifact Arm.target {
-    code := Impl.Ed448.Arm.SignCached.code
-    verified := Proof.Ed448.Arm.SignCached.signCached_verified Proof.Ed448.baseComb_ok },
-  Spec.Ed448.verifyApi.artifact Arm.target {
-    code := Impl.Ed448.Arm.Verify.code
-    verified := Proof.Ed448.Arm.Verify.verify_verified
-      (Proof.Ed448.Arm.verifyEquation_ok Proof.Ed448.recover_ok Proof.Ed448.verifyEqComb_ok)
-      (Proof.Ed448.Arm.verifyEquation_ct Proof.Ed448.recover_ok) }]
+def artifacts : List Artifact :=
+  VG.Proof.Variants.Curve448Field.Arm.variants.flatMap fun (v : Proof.Variants.Curve448Field.Arm.Variant) => [
+    Spec.Ed448.publicKeyApi.artifact Arm.target (Proof.Ed448.Arm.Scrub.publicKeyReg v.um v.suffix Proof.Ed448.baseComb_ok),
+    Spec.Ed448.signCachedApi.artifact Arm.target (Proof.Ed448.Arm.Scrub.signCachedReg v.um v.suffix Proof.Ed448.baseComb_ok),
+    Spec.Ed448.verifyApi.artifact Arm.target (Proof.Ed448.Arm.Scrub.verifyReg v.um v.suffix Proof.Ed448.recover_ok Proof.Ed448.verifyEqComb_ok)]
 
 end VG.Artifacts.Ed448.Arm

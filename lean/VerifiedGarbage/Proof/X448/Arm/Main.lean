@@ -67,6 +67,8 @@ namespace VG.Proof.X448.Arm
 
 open VG VG.Arm VG.Impl.X448.Arm VG.Proof.X448
 
+variable {fv : Bool}
+
 section
 variable (s₀ : State)
 abbrev outR : Region := ⟨State.addr (s₀.gpr .r0), 56⟩
@@ -131,7 +133,7 @@ theorem afterSetup_ok {s₀ s₁ : State} {base : Addr} {pb : List Byte}
     (out_sc : (outR s₀).Disjoint ⟨base, 8192⟩) (scalar_sc : (scalarR s₀).Disjoint ⟨base, 8192⟩)
     (out_fit : (s₀.gpr .r0).toNat + 56 ≤ 2 ^ 32) (scalar_fit : (s₀.gpr .r1).toNat + 56 ≤ 2 ^ 32)
     (h₁ : SetupPost s₀ base (toFe (Spec.X448.decodeUCoordinate pb)) s₁) :
-    WP isa afterSetup s₁ fun s' => (∀ r ∈ preserved, s'.gpr r = s₀.gpr r) ∧
+    WP isa (afterSetup fv) s₁ fun s' => (∀ r ∈ preserved, s'.gpr r = s₀.gpr r) ∧
       Spec.X448.bytesAt s'.mem (State.addr (s₀.gpr .r0)) 56 =
         Spec.X448.x448 (Spec.X448.bytesAt s₀.mem (State.addr (s₀.gpr .r1)) 56) pb := by
   obtain ⟨hs₁, b₁, savedOut₁, savedLr₁, k₁, o₁, sv₁, x1₁, x2₁, z2₁, x3₁, z3₁, sw₁⟩ := h₁
@@ -210,7 +212,8 @@ theorem afterSetup_ok {s₀ s₁ : State} {base : Addr} {pb : List Byte}
 
 
 theorem correct {s₀ : State} (hp : Pre s₀) :
-    WP isa x448 s₀ fun s' => (∀ r ∈ preserved, s'.gpr r = s₀.gpr r) ∧ Proof.X448.x448Arm.post s₀ s' := by
+    WP isa (x448 fv) s₀ fun s' =>
+      (∀ r ∈ preserved, s'.gpr r = s₀.gpr r) ∧ Proof.X448.x448Arm.post s₀ s' := by
   obtain ⟨base, hbase⟩ : ∃ b, State.addr (s₀.gpr .r3) = b := ⟨_, rfl⟩
   have hn := hp.sc_fit
   have hw₀ : (⟨base, 8192⟩ : Region) ∈ s₀.wr := by rw [hp.wr, ← hbase]; simp

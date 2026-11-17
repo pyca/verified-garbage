@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ed448.Arm.BaseMain
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 import VerifiedGarbage.Proof.Ed448.Arm.BaseLit
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
@@ -10,6 +11,7 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Ed448.Arm.BaseMain
 meta import VerifiedGarbage.Proof.Framework.Arm.Exec
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 meta import VerifiedGarbage.Proof.Ed448.Arm.BaseLit
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
@@ -21,7 +23,8 @@ public import VerifiedGarbage.Spec.Ed448.Contract
 # Ed448 base-point multiplication on ARMv7: `Verified`
 
 Constant time (by taint tracking: the only branches are on the loop counters,
-and every address is an argument plus a constant or a counter), satisfiability,
+and every address is an argument plus a constant or a counter; with `umaal`,
+by `taintU`, on the code itself), satisfiability,
 and the shared contract of `Spec/`, given that the comb the code computes
 encodes as `[k]B` (`Proof.Ed448.BaseCombOk`, proven with the group law in
 `Proof/Ed448/CombFacts.lean`, which only the registration file imports).
@@ -33,6 +36,8 @@ namespace VG.Proof.Ed448.Arm
 
 open VG VG.Arm VG.Impl.Ed448.Arm
 open VG.Proof.Ed448 (BaseCombOk decodeLE_below)
+
+variable {fv : Bool}
 
 /-- `vg_ed448_scalar_base(out = r0, scalar = r1, scratch = r2)`. -/
 def scalarBaseLocal : Contract Arm.isa where
@@ -51,23 +56,27 @@ theorem BasePre.of {s : State} (h : scalarBaseLocal.pre s) : BasePre s :=
   ⟨h.1, h.2.1, h.2.2.1, h.2.2.2.1, h.2.2.2.2.1, h.2.2.2.2.2.1, h.2.2.2.2.2.2⟩
 
 theorem scalarBase_ok (hl : BaseCombOk) (s : State) (hs : scalarBaseLocal.pre s) :
-    ∃ t s', Exec isa scalarBase s t s' ∧ abiPreserved s s' ∧ scalarBaseLocal.post s s' := by
+    ∃ t s', Exec isa (scalarBase fv) s t s' ∧ abiPreserved s s' ∧ scalarBaseLocal.post s s' := by
   obtain ⟨t, s', he, h⟩ := scalarBase_comb (BasePre.of hs)
   refine ⟨t, s', he, ⟨h.1, Exec.sp he⟩, ?_⟩
   change Spec.Ed448.bytesAt s'.mem (State.addr (s.gpr .r0)) 57 =
     Spec.Ed448.encodePoint (Spec.Ed448.pointMul _ Spec.Ed448.basePoint)
   rw [h.2, hl _ (decodeLE_below (by simp [Spec.Ed448.bytesAt]))]
 
-theorem scalarBase_ct : ConstantTime isa scalarBaseLocal.pre scalarBaseLocal.pub scalarBase := by
-  refine Taint.constantTime_eraseOff_of_eq (Taint.ofRegs [.r0, .r1, .r2]) (Taint.noBase_ofRegs _) ?_
-    (c' := scalarBaseErased) rfl (by native_taint_decide)
-  intro s₁ s₂ _ _ ⟨h1, h2, h3, _⟩
-  apply Taint.agree_ofRegs
-  intro r hr
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl
-  · exact h1
-  · exact h2
-  · exact h3
+theorem scalarBase_ct : ConstantTime isa scalarBaseLocal.pre scalarBaseLocal.pub (scalarBase fv) := by
+  obtain ha : ∀ s₁ s₂, scalarBaseLocal.pre s₁ → scalarBaseLocal.pre s₂ → scalarBaseLocal.pub s₁ s₂ →
+      VG.Arm.Taint.Agree (Taint.ofRegs [.r0, .r1, .r2]) s₁ s₂ := by
+    intro s₁ s₂ _ _ ⟨h1, h2, h3, _⟩
+    apply Taint.agree_ofRegs
+    intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact h1
+    · exact h2
+    · exact h3
+  cases fv
+  · exact Taint.constantTime_eraseOff_of_eq (Taint.ofRegs [.r0, .r1, .r2]) (Taint.noBase_ofRegs _) ha
+      (c' := scalarBaseErased) rfl (by native_taint_decide)
+  · exact VG.Taint.constantTime (A := taintU) (Taint.ofRegs [.r0, .r1, .r2]) ha (by taint_decide)
 
 end VG.Proof.Ed448.Arm

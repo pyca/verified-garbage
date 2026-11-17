@@ -47,20 +47,23 @@ open VG VG.Arm VG.Impl.Ed448.Arm.Verify VG.Impl.Ed25519.Arm.Whole
 open VG.Proof.Ed25519.Arm (Whole.Within Whole.FR Whole.call_ok)
 open VG.Proof.Ed448.Arm (verifyEquationLocal scalarReduceLocal scalarReduce_ok)
 
+variable {fv : Bool}
+
 /-- `vg_ed448_verify_equation` meets its contract. -/
-abbrev EqOk : Prop := ∀ s, verifyEquationLocal.pre s →
-  ∃ tr s', Exec isa Impl.Ed448.Arm.verifyEquation s tr s' ∧ abiPreserved s s' ∧ verifyEquationLocal.post s s'
+abbrev EqOk (fv : Bool) : Prop := ∀ s, verifyEquationLocal.pre s →
+  ∃ tr s', Exec isa (Impl.Ed448.Arm.verifyEquation fv) s tr s' ∧ abiPreserved s s' ∧ verifyEquationLocal.post s s'
 
 /-- `vg_ed448_verify_equation` is constant time under its contract. -/
-abbrev EqCT : Prop :=
-  ConstantTime isa verifyEquationLocal.pre verifyEquationLocal.pub Impl.Ed448.Arm.verifyEquation
+abbrev EqCT (fv : Bool) : Prop :=
+  ConstantTime isa verifyEquationLocal.pre verifyEquationLocal.pub (Impl.Ed448.Arm.verifyEquation fv)
 
 variable {L : Lay} {g : Reg → BitVec 32} {m₀ : Mem} {t : State}
 
 /-! ## `vg_ed448_scalar_reduce` -/
 
 theorem reduce_noFrames : Impl.Ed448.Arm.scalarReduce.noFrames = true := by lit_decide
-theorem equation_noFrames : Impl.Ed448.Arm.verifyEquation.noFrames = true := by lit_decide
+theorem equation_noFrames : (Impl.Ed448.Arm.verifyEquation fv).noFrames = true := by
+  cases fv <;> lit_decide
 
 def kReg (L : Lay) : Region := ⟨State.addr L.E + BitVec.ofNat 64 K, 57⟩
 def hReg (L : Lay) : Region := ⟨State.addr L.E + BitVec.ofNat 64 HASH, 114⟩
@@ -161,8 +164,9 @@ theorem equation_writes (L : Lay) : ∀ r ∈ [L.SCR],
 /-- `1` if `b`, else `0`. -/
 def signWord (b : Bool) : BitVec 32 := if b then 1 else 0
 
-theorem equation_step (hv : EqOk) (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : Arguments L m₀) :
-    WP isa (callWith equationArgs "vg_ed448_verify_equation" Impl.Ed448.Arm.verifyEquation) t fun u =>
+theorem equation_step (hv : EqOk fv) (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : Arguments L m₀) :
+    WP isa (callWith equationArgs ("vg_ed448_verify_equation" ++ Impl.X448.Arm.suffix fv)
+        (Impl.Ed448.Arm.verifyEquation fv)) t fun u =>
       Ctx L g m₀ u ∧ u.gpr .r0 = signWord (Spec.Ed448.verifyEquation
         (Spec.Ed448.bytesAt m₀ (State.addr L.pk) 57) (Spec.Ed448.bytesAt m₀ (State.addr L.sig) 114)
         (Spec.Ed448.bytesAt t.mem (State.addr L.E + BitVec.ofNat 64 K) 57)) := by
@@ -206,8 +210,8 @@ theorem verify_of_len {pk ctx msg sig : List Byte} (h : ctx.length ≤ 255) :
   simp only [h, decide_true, Bool.true_and]
 
 /-- The result of verification with a context of fewer than 256 bytes. -/
-theorem body_ok (hv : EqOk) (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : Arguments L m₀) :
-    WP isa body t fun u => Ctx L g m₀ u ∧ u.gpr .r0 = signWord (Spec.Ed448.verify
+theorem body_ok (hv : EqOk fv) (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : Arguments L m₀) :
+    WP isa (body fv) t fun u => Ctx L g m₀ u ∧ u.gpr .r0 = signWord (Spec.Ed448.verify
       (Spec.Ed448.bytesAt m₀ (State.addr L.pk) 57)
       (Spec.Ed448.bytesAt m₀ (State.addr L.ctx) L.ctxLen.toNat)
       (Spec.Ed448.bytesAt m₀ (State.addr L.msg) L.len.toNat)
@@ -220,7 +224,7 @@ theorem body_ok (hv : EqOk) (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : Arguments L 
     simp only [Spec.Ed448.bytesAt, List.length_map, List.length_range]; have := hL.cl; omega_using [this]
   rw [hr, hk, hh2, verify_of_len hl, take57]
 
-theorem body_noFrames : body.noFrames = true := by
+theorem body_noFrames : (body fv).noFrames = true := by
   simp only [Impl.Ed448.Arm.Verify.body, Impl.Ed448.Arm.Verify.hash, Impl.Ed448.Arm.Shake.zeroState,
     Impl.Ed448.Arm.Shake.absorb, Impl.Ed448.Arm.Shake.pad, Impl.Ed448.Arm.Shake.squeeze, callWith,
     Code.noFrames, Bool.and_self]
@@ -256,6 +260,8 @@ open VG.Proof.Ed25519.Arm (Whole.base Whole.base_addr Whole.base_top Whole.stack
   Whole.saved_ctx Whole.saved_words Whole.saved_frame Whole.bodyRd Whole.bodyWr Whole.wrap_ok
   Whole.originalWord Whole.Ctx)
 open VG.Proof.X25519.Arm (op2_lsr op2_imm)
+
+variable {fv : Bool}
 
 /-- `vg_ed448_verify(pk = r0, context = r1, ctxlen = r2, message = r3, len = [sp],
 signature = [sp, #4], scratch = [sp, #8]) -> r0`, with 280 bytes of stack. -/
@@ -398,9 +404,9 @@ theorem entry_input {m : Mem} (hf : Frame [Whole.stack s] s.mem m) {r : Region} 
 end
 
 /-- The frame around the body, for a context of fewer than 256 bytes. -/
-theorem inner_ok (hv : EqOk) {s : State} (h : verifyLocal.pre s) (hl : (s.gpr .r2).toNat < 256) :
-    WP isa (wrap 6 body) s fun u => abiPreserved s u ∧ verifyLocal.post s u := by
-  have hw := Whole.wrap_ok body_noFrames (by decide : 6 ≤ 6) (entry_below h)
+theorem inner_ok (hv : EqOk fv) {s : State} (h : verifyLocal.pre s) (hl : (s.gpr .r2).toNat < 256) :
+    WP isa (wrap 6 (body fv)) s fun u => abiPreserved s u ∧ verifyLocal.post s u := by
+  have hw := Whole.wrap_ok (body_noFrames (fv := fv)) (by decide : 6 ≤ 6) (entry_below h)
     (by have := entry_top h; omega_using [this]) (entry_read h) (entry_writes h)
     (P := fun m _ r => r = signWord (Spec.Ed448.verify
       (Spec.Ed448.bytesAt m (State.addr (s.gpr .r0)) 57)
@@ -457,8 +463,8 @@ theorem shr8_eq_zero {x : BitVec 32} : (x >>> 8 - 0 == 0) = decide (x.toNat < 25
     have := congrArg BitVec.toNat e
     rw [VG.Proof.X25519.Arm.toNat_shr] at this; simp at this; omega_using [h, this]
 
-theorem verify_ok (hv : EqOk) {s : State} (h : verifyLocal.pre s) :
-    WP isa code s fun u => abiPreserved s u ∧ verifyLocal.post s u := by
+theorem verify_ok (hv : EqOk fv) {s : State} (h : verifyLocal.pre s) :
+    WP isa (code fv) s fun u => abiPreserved s u ∧ verifyLocal.post s u := by
   refine WP.seq (WP.mono (check_exec s) fun u hu => ?_)
   subst hu
   refine WP.ite (decide ((s.gpr .r2).toNat < 256))
@@ -516,6 +522,8 @@ open VG.Impl.Ed448.Arm.Shake (firstArgs nextArgs absorb)
 open VG.Proof.Ed25519.Arm (Whole.FR Whole.Within Whole.call_ok Whole.rel_wp Whole.callEx Whole.CallReady)
 open VG.Proof.Ed448.Arm.Shake (Slot valid Kit argVal Two Slots valid_const valid_frame frame_within)
 open VG.Proof.Ed448.Arm (verifyEquationLocal scalarReduceLocal scalarReduce_ok scalarReduce_ct)
+
+variable {fv : Bool}
 
 variable {L : Lay} {g₁ g₂ : Reg → BitVec 32} {m₁ m₂ : Mem}
 
@@ -650,10 +658,11 @@ theorem equation_setup (hL : L.Ok) {g : Reg → BitVec 32} {m : Mem} (ha : Argum
 
 /-- The call of `vg_ed448_verify_equation`: the two runs give it the same signature and the same
 challenge, the hash of the same inputs. -/
-theorem equation_ct (hv : EqOk) (hct : EqCT) (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂)
+theorem equation_ct (hv : EqOk fv) (hct : EqCT fv) (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂)
     (hin : SameIn L m₁ m₂) :
     RelCT isa (fun a b => Reduced L g₁ m₁ a ∧ Reduced L g₂ m₂ b)
-      (callWith equationArgs "vg_ed448_verify_equation" Impl.Ed448.Arm.verifyEquation) (fun _ _ => True) := by
+      (callWith equationArgs ("vg_ed448_verify_equation" ++ Impl.X448.Arm.suffix fv)
+        (Impl.Ed448.Arm.verifyEquation fv)) (fun _ _ => True) := by
   let args : List (Reg × Value) := [(.r0, .caller 0 0), (.r1, .caller 5 0), (.r2, .frame K), (.r3, scr 0)]
   have hs : RelCT isa (fun a b => Reduced L g₁ m₁ a ∧ Reduced L g₂ m₂ b) (.block equationArgs)
       (fun a b => EqReady L g₁ m₁ a ∧ EqReady L g₂ m₂ b) :=
@@ -684,9 +693,9 @@ theorem equation_ct (hv : EqOk) (hct : EqCT) (hL : L.Ok) (ha : Arguments L m₁)
 
 /-! ## The body -/
 
-theorem body_ct (hv : EqOk) (hct : EqCT) (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂)
+theorem body_ct (hv : EqOk fv) (hct : EqCT fv) (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂)
     (hin : SameIn L m₁ m₂) :
-    RelCT isa (T2 L g₁ g₂ m₁ m₂ fun _ => True) body (fun _ _ => True) := by
+    RelCT isa (T2 L g₁ g₂ m₁ m₂ fun _ => True) (body fv) (fun _ _ => True) := by
   have h := hL.kit.hdr_ct (g₁ := g₁) (g₂ := g₂) ha hb (j := 2) (off := HDR) (by decide) hL.cl (by decide)
   have hh : RelCT isa (T2 L g₁ g₂ m₁ m₂ fun s =>
         Spec.Ed448.bytesAt s.mem (State.addr L.E + BitVec.ofNat 64 HDR) 10 = hdrBytes L)
@@ -726,6 +735,8 @@ namespace VG.Proof.Ed448.Arm.Verify
 open VG VG.Arm VG.Impl.Ed448.Arm.Verify VG.Impl.Ed25519.Arm.Whole
 open VG.Proof.Ed25519.Arm (Whole.base Whole.wrap_ct Whole.bodyRd Whole.bodyWr Whole.quiet_block_ct Whole.Saved
   Whole.entered Whole.saved_frame)
+
+variable {fv : Bool}
 
 theorem lay_eq {s t : State} (hp : verifyLocal.pub s t) : lay s = lay t := by
   obtain ⟨sp, h0, h1, h2, h3, a0, a1, a2, _⟩ := hp
@@ -771,8 +782,8 @@ theorem saved_inputs_eq {s t p q : State} (hs : verifyLocal.pre s) (ht : verifyL
   exact ⟨pk, ctx, msg, sig⟩
 
 /-- The frame around the body is constant time, for a context of fewer than 256 bytes. -/
-theorem inner_ct (hv : EqOk) (hct : EqCT) :
-    ConstantTime isa (fun s => verifyLocal.pre s ∧ (s.gpr .r2).toNat < 256) verifyLocal.pub (wrap 6 body) := by
+theorem inner_ct (hv : EqOk fv) (hct : EqCT fv) :
+    ConstantTime isa (fun s => verifyLocal.pre s ∧ (s.gpr .r2).toNat < 256) verifyLocal.pub (wrap 6 (body fv)) := by
   refine Whole.wrap_ct (by decide : 6 ≤ 6) (fun _ _ hp => hp.1) (fun _ hs => entry_below hs.1)
     (fun _ hs => by have := entry_top hs.1; omega_using [this]) (fun _ hs => entry_read hs.1) ?_ ?_
   · intro s hs p hp
@@ -793,7 +804,7 @@ theorem checked_lt {s : State} (h : isa.eval .eq (checked s) = some true) : (s.g
   rw [VG.Proof.X25519.Arm.eval_eq, checked_z, shr8_eq_zero] at h
   exact of_decide_eq_true (Option.some.inj h)
 
-theorem verify_ct (hv : EqOk) (hct : EqCT) : ConstantTime isa verifyLocal.pre verifyLocal.pub code := by
+theorem verify_ct (hv : EqOk fv) (hct : EqCT fv) : ConstantTime isa verifyLocal.pre verifyLocal.pub (code fv) := by
   apply RelCT.constantTime (Q := fun _ _ => True)
   unfold code
   have hblk := ((Whole.quiet_block_ct check (by
@@ -881,8 +892,8 @@ theorem verify_implies : verifyLocal.Implies (Spec.Ed448.verifyContract Arm.abi 
 
 /-- `vg_ed448_verify` on ARMv7, for any code of `vg_ed448_verify_equation`
 meeting its contract. -/
-theorem verify_verified (hv : EqOk) (hct : EqCT) :
-    Verified Arm.target code (Spec.Ed448.verifyContract Arm.abi 280) :=
+theorem verify_verified (hv : EqOk fv) (hct : EqCT fv) :
+    Verified Arm.target (code fv) (Spec.Ed448.verifyContract Arm.abi 280) :=
   Verified.of_implies
     (Verified.of_correct (fun _ h => verify_ok hv h) (verify_ct hv hct) (.refl verify_implies.sat_left))
     verify_implies

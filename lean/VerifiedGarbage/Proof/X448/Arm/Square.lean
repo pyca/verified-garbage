@@ -21,6 +21,8 @@ namespace VG.Proof.X448.Arm
 
 open VG VG.Arm VG.Impl.X448.Arm
 
+variable {fv : Bool}
+
 structure IKeep (base : Addr) (s t : State) : Prop where
   regs : Keeps (.r11 :: workRegs) s t
   mem : Outside2 base 64 2816 ACC 512 s.mem t.mem
@@ -50,7 +52,7 @@ theorem ISpec.seq {base : Addr} {c₁ c₂ : Prog isa} {f g : Env → Env}
     WP.mono (h₂ t (tk.scr hs) tb) fun u ⟨uk, ub, ue⟩ => ⟨tk.trans uk, ub, by rw [ue, te]⟩)
 
 theorem opsI (base : Addr) (xs : List FieldOp) :
-    ISpec base (ops (xs.map FieldOp.impl)) (applyOps xs) := fun _ hs hb =>
+    ISpec base (ops fv (xs.map FieldOp.impl)) (applyOps xs) := fun _ hs hb =>
   WP.mono (ops_ok hs hb xs) fun _ ⟨tk, tb, te⟩ => ⟨tk.ikeep, tb, te⟩
 
 def opSqn (o : Index) (n : Nat) (e : Env) : Env := Function.update e o (Proof.X448.sqn (e o) n)
@@ -60,7 +62,7 @@ theorem opMul_update (o : Index) (e : Env) (v : Spec.X448.Fe) :
   simp only [opMul, Function.update_self, Function.update_idem]
 
 theorem sqnI (base : Addr) (o : Index) {n : Nat} (hn : 1 ≤ n) (hn' : n < 2 ^ 16) :
-    ISpec base (Impl.X448.Arm.sqn (slot o.val) n) (opSqn o n) := by
+    ISpec base (Impl.X448.Arm.sqn fv (slot o.val) n) (opSqn o n) := by
   intro s hs hb
   rw [Impl.X448.Arm.sqn, WP.seq_iff]
   refine WP.mono (setCounter_ok s n hn') fun t ⟨tc, tg, tm, tr, tw⟩ => ?_

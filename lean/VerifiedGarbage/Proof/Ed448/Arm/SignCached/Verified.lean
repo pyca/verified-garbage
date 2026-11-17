@@ -53,6 +53,8 @@ open VG.Proof.Ed448.Arm (scalarReduceLocal scalarReduce_ok scalarReduce_ct scala
   scalarBase_ct scalarMulAddLocal scalarMulAdd_ok scalarMulAdd_ct)
 open VG.Proof.Ed448 (BaseCombOk)
 
+variable {fv : Bool}
+
 variable {L : Lay} {g₁ g₂ : Reg → BitVec 32} {m₁ m₂ : Mem}
 
 abbrev T2 (L : Lay) (g₁ g₂ : Reg → BitVec 32) (m₁ m₂ : Mem) (P : State → Prop) :=
@@ -250,7 +252,7 @@ theorem reduceK_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
 
 theorem base_ct (hl : BaseCombOk) (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
     RelCT isa (T2 L g₁ g₂ m₁ m₂ fun _ => True)
-      (callWith baseArgs "vg_ed448_scalar_base" Impl.Ed448.Arm.scalarBase)
+      (callWith baseArgs ("vg_ed448_scalar_base" ++ Impl.X448.Arm.suffix fv) (Impl.Ed448.Arm.scalarBase fv))
       (T2 L g₁ g₂ m₁ m₂ fun _ => True) := by
   have hk := hL.kit
   let args : List (Reg × Value) := [(.r0, .caller 0 0), (.r1, .caller 0 57), (.r2, .caller SC 0)]
@@ -316,7 +318,7 @@ theorem wipe_ct (hL : L.Ok) : RelCT isa (T2 L g₁ g₂ m₁ m₂ fun _ => True)
 /-! ## The body -/
 
 theorem body_ct (hl : BaseCombOk) (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
-    RelCT isa (T2 L g₁ g₂ m₁ m₂ fun _ => True) body (T2 L g₁ g₂ m₁ m₂ fun _ => True) := by
+    RelCT isa (T2 L g₁ g₂ m₁ m₂ fun _ => True) (body fv) (T2 L g₁ g₂ m₁ m₂ fun _ => True) := by
   obtain h : RelCT isa (T2 L g₁ g₂ m₁ m₂ fun _ => True) (.block (hdrAt 4 HDR)) (T2 L g₁ g₂ m₁ m₂ fun _ => True) :=
     (hL.kit.hdr_ct (g₁ := g₁) (g₂ := g₂) ha hb (j := 4) (off := HDR) (by decide) hL.cl (by decide)).mono
       (fun _ _ h => h) (fun _ _ h => ⟨⟨h.1.1, trivial⟩, ⟨h.2.1, trivial⟩⟩)
@@ -352,6 +354,8 @@ open VG.Proof.Ed25519.Arm (Whole.Ctx Whole.FR Whole.Within)
 open VG.Proof.Ed448.Arm.Shake (Kit Args argVal kWr kArgs hdrBytes frame_bytes)
 open VG.Proof.Ed448 (BaseCombOk)
 
+variable {fv : Bool}
+
 variable {L : Lay} {g : Reg → BitVec 32} {m₀ : Mem} {t : State}
 
 /-- The two halves of a 114-byte region. -/
@@ -382,7 +386,7 @@ theorem keep {D : Region} (h : Away L D) {ex : List Region} (hx : ∀ r ∈ ex, 
 theorem body_ok (hl : BaseCombOk) (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : Arguments L m₀)
     (hpk : Spec.Ed448.bytesAt m₀ (State.addr L.pk) 57 =
       Spec.Ed448.publicKey (Spec.Ed448.bytesAt m₀ (State.addr L.seed) 57)) :
-    WP isa body t fun u => Ctx L g m₀ u ∧
+    WP isa (body fv) t fun u => Ctx L g m₀ u ∧
       Spec.Ed448.bytesAt u.mem (State.addr L.out) 114 =
         Spec.Ed448.sign (Spec.Ed448.bytesAt m₀ (State.addr L.seed) 57)
           (Spec.Ed448.bytesAt m₀ (State.addr L.ctx) L.ctxLen.toNat)
@@ -501,6 +505,8 @@ open VG.Proof.Ed25519.Arm (Whole.base Whole.base_addr Whole.base_top Whole.stack
   Whole.saved_ctx Whole.saved_words Whole.saved_frame Whole.bodyRd Whole.bodyWr Whole.wrap_ok Whole.wrap_ct
   Whole.originalWord Whole.Ctx)
 open VG.Proof.Ed448 (BaseCombOk)
+
+variable {fv : Bool}
 
 /-- `vg_ed448_sign_cached(out = r0, seed = r1, pk = r2, context = r3,
 ctxlen = [sp], message = [sp, #4], len = [sp, #8], scratch = [sp, #12])`, with
@@ -678,7 +684,7 @@ theorem entry_key {p : State} (hp : Whole.Saved (Whole.entered s) 6 p) :
 
 end
 
-theorem body_noFrames : body.noFrames = true := by
+theorem body_noFrames : (body fv).noFrames = true := by
   simp only [body, seedHash, prune, nonceHash, chalHash, Impl.Ed448.Arm.Shake.zeroState,
     Impl.Ed448.Arm.Shake.absorb, Impl.Ed448.Arm.Shake.pad, Impl.Ed448.Arm.Shake.squeeze, callWith,
     Code.noFrames, Bool.and_self]
@@ -687,8 +693,8 @@ theorem body_noFrames : body.noFrames = true := by
   rfl
 
 theorem signCached_ok (hl : BaseCombOk) {s : State} (h : signLocal.pre s) :
-    WP isa code s fun u => abiPreserved s u ∧ signLocal.post s u := by
-  obtain hw := Whole.wrap_ok body_noFrames (by decide : 6 ≤ 6) (entry_below h)
+    WP isa (code fv) s fun u => abiPreserved s u ∧ signLocal.post s u := by
+  obtain hw := Whole.wrap_ok (body_noFrames (fv := fv)) (by decide : 6 ≤ 6) (entry_below h)
     (by have := entry_top h; omega_arith) (entry_read h) (entry_writes h)
     (P := fun m m' _ => Spec.Ed448.bytesAt m' (State.addr (s.gpr .r0)) 114 = Spec.Ed448.sign
       (Spec.Ed448.bytesAt m (State.addr (s.gpr .r1)) 57)
@@ -713,7 +719,7 @@ theorem lay_eq {s t : State} (hp : signLocal.pub s t) : lay s = lay t := by
   obtain ⟨sp, h0, h1, h2, h3, a0, a1, a2, a3⟩ := hp
   simp only [lay, Whole.base, sp, h0, h1, h2, h3, a0, a1, a2, a3]
 
-theorem signCached_ct (hl : BaseCombOk) : ConstantTime isa signLocal.pre signLocal.pub code := by
+theorem signCached_ct (hl : BaseCombOk) : ConstantTime isa signLocal.pre signLocal.pub (code fv) := by
   refine Whole.wrap_ct (by decide : 6 ≤ 6) (fun _ _ hp => hp.1) (fun _ hs => entry_below hs)
     (fun _ hs => by have := entry_top hs; omega_arith) (fun _ hs => entry_read hs) ?_ ?_
   · intro s hs p hp
@@ -819,7 +825,7 @@ theorem sign_implies : signLocal.Implies (Spec.Ed448.signCachedContract Arm.abi 
 /-- `vg_ed448_sign_cached` on ARMv7, given the reference comb's agreement
 with the specification. -/
 theorem signCached_verified (hl : BaseCombOk) :
-    Verified Arm.target code (Spec.Ed448.signCachedContract Arm.abi 280) :=
+    Verified Arm.target (code fv) (Spec.Ed448.signCachedContract Arm.abi 280) :=
   Verified.of_implies
     (Verified.of_correct (fun _ h => signCached_ok hl h) (signCached_ct hl) (.refl sign_implies.sat_left))
     sign_implies

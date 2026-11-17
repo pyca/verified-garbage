@@ -34,6 +34,8 @@ open VG.Proof.Ed25519.Arm (Whole.rel_wp Whole.setup_ct Whole.callEx Whole.CallRe
   Whole.bodyRd Whole.bodyWr Whole.valid)
 open VG.Proof.Ed448 (BaseCombOk)
 
+variable {fv : Bool}
+
 /-! ## Relational frame -/
 
 abbrev Two (L : Lay) (g₁ g₂ : Reg → BitVec 32) (m₁ m₂ : Mem)
@@ -166,7 +168,8 @@ theorem sqz_ct (hL : L.Ok) : RelCT isa (Two L g₁ g₂ m₁ m₂ (Slots L sqzVa
   · simp [sqzValues, linkRegs]
 
 theorem base_ct (hl : BaseCombOk) (hL : L.Ok) : RelCT isa (Two L g₁ g₂ m₁ m₂ (Slots L baseValues []))
-    (.call "vg_ed448_scalar_base" Impl.Ed448.Arm.scalarBase) (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
+    (.call ("vg_ed448_scalar_base" ++ Impl.X448.Arm.suffix fv) (Impl.Ed448.Arm.scalarBase fv))
+    (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
   apply call_ct (scalarBase_ok hl) scalarBase_ct base_noFrames (fun _ _ h => base_ready hL h)
   · intro a b ar aw br bw hsp hg ht
     exact ⟨hg (.r0, .caller 0 0) (by simp [baseValues]), hg (.r1, .frame HASH) (by simp [baseValues]),
@@ -244,7 +247,7 @@ theorem wipe_ct (hL : L.Ok) : RelCT isa (Two L g₁ g₂ m₁ m₂ fun _ => True
 /-! ## The whole function -/
 
 theorem body_ct (hl : BaseCombOk) (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
-    RelCT isa (Two L g₁ g₂ m₁ m₂ fun _ => True) body (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
+    RelCT isa (Two L g₁ g₂ m₁ m₂ fun _ => True) (body fv) (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
   have z := setup_ct (g₁ := g₁) (g₂ := g₂) hL ha hb zeroValues []
     (by decide) (by simp [zeroValues, Whole.valid]) (by simp [zeroValues])
     (by simp [zeroValues, preserved]) (by decide) (by simp) (by simp)
@@ -270,7 +273,7 @@ theorem lay_eq {s t : State} (hp : pkLocal.pub s t) : lay s = lay t := by
   obtain ⟨sp, h0, h1, h2⟩ := hp
   simp only [lay, Whole.base, sp, h0, h1, h2]
 
-theorem publicKey_ct (hl : BaseCombOk) : ConstantTime isa pkLocal.pre pkLocal.pub code := by
+theorem publicKey_ct (hl : BaseCombOk) : ConstantTime isa pkLocal.pre pkLocal.pub (code fv) := by
   refine Whole.wrap_ct (by decide : 3 ≤ 6) (fun _ _ hp => hp.1)
     (fun _ hs => entry_below hs) ?_ (by intro s hs j hj h4; omega) ?_ ?_
   · intro s _
@@ -306,7 +309,7 @@ theorem pk_implies : pkLocal.Implies (Spec.Ed448.publicKeyContract Arm.abi 280) 
 /-- `vg_ed448_public_key` on ARMv7, given the reference comb's agreement
 with the specification. -/
 theorem publicKey_verified (hl : BaseCombOk) :
-    Verified Arm.target code (Spec.Ed448.publicKeyContract Arm.abi 280) :=
+    Verified Arm.target (code fv) (Spec.Ed448.publicKeyContract Arm.abi 280) :=
   Verified.of_implies
     (Verified.of_correct (fun _ h => publicKey_ok hl h) (publicKey_ct hl) (.refl pk_implies.sat_left))
     pk_implies

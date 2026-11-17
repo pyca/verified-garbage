@@ -39,8 +39,8 @@ def zeroTop : List Instr :=
 def uOps : List Op := [.mul Z2 X1 X1, .mul X2 X2 X2]
 
 /-- `vg_x448_base(out = r0, scalar = r1, scratch = r2)`. -/
-def x448Base : Prog isa :=
-  .seq (.block (Impl.Ed448.Arm.baseEntry ++ zeroTop)) <| .seq bits <| .seq Impl.Ed448.Arm.combLoop <|
-  .seq (ops uOps) <| .seq invert finish
+def x448Base (u : Bool) : Prog isa :=
+  .seq (.block (Impl.Ed448.Arm.baseEntry ++ zeroTop)) <| .seq bits <| .seq (Impl.Ed448.Arm.combLoop u) <|
+  .seq (ops u uOps) <| .seq (invert u) (finish u)
 
 end VG.Impl.X448.Arm

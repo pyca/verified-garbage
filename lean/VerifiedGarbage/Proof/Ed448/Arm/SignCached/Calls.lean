@@ -66,6 +66,8 @@ open VG.Proof.Ed448.Arm (scalarReduceLocal scalarReduce_ok scalarBaseLocal scala
   scalarMulAdd_ok)
 open VG.Proof.Ed448 (BaseCombOk)
 
+variable {fv : Bool}
+
 variable {L : Lay} {g : Reg → BitVec 32} {m₀ : Mem} {t : State}
 
 theorem W.call {ex : List Region} {k : Nat} (hk : k ≤ 8) {m1 m2 m3 : Mem}
@@ -161,7 +163,7 @@ theorem reduceR_step (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : Arguments L m₀) :
 
 /-! ## `R` -/
 
-theorem base_noFrames : Impl.Ed448.Arm.scalarBase.noFrames = true := PublicKey.base_noFrames
+theorem base_noFrames : (Impl.Ed448.Arm.scalarBase fv).noFrames = true := PublicKey.base_noFrames
 
 def BaseArgs (L : Lay) (t : State) : Prop :=
   t.gpr .r0 = L.out ∧ t.gpr .r1 = L.out + BitVec.ofNat 32 57 ∧ t.gpr .r2 = L.scr
@@ -193,7 +195,8 @@ theorem base_writes (L : Lay) : ∀ r ∈ [L.R0, L.SCR],
   · exact .inr ⟨L.SCR, scr_in L, scr_within L⟩
 
 theorem base_step (hl : BaseCombOk) (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : Arguments L m₀) :
-    WP isa (callWith baseArgs "vg_ed448_scalar_base" Impl.Ed448.Arm.scalarBase) t fun u =>
+    WP isa (callWith baseArgs ("vg_ed448_scalar_base" ++ Impl.X448.Arm.suffix fv)
+        (Impl.Ed448.Arm.scalarBase fv)) t fun u =>
       Ctx L g m₀ u ∧ Frame (W L [L.R0, L.SCR]) t.mem u.mem ∧
       Spec.Ed448.bytesAt u.mem (State.addr L.out) 57 =
         Spec.Ed448.scalarBase (Spec.Ed448.bytesAt t.mem (State.addr L.out + BitVec.ofNat 64 57) 57) := by

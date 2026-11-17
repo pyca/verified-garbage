@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Ed448.Arm.VerifyLocal
 import VerifiedGarbage.Proof.Ed448.Arm.VerifyLit
 public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTSupport
 public import VerifiedGarbage.Proof.Framework.Arm.TaintErase
+public import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import VerifiedGarbage.Proof.X448.Arm.Counters
 import VerifiedGarbage.Proof.Framework.Offset
@@ -13,6 +14,7 @@ meta import VerifiedGarbage.Proof.Ed448.Arm.VerifyLocal
 meta import VerifiedGarbage.Proof.Ed448.Arm.VerifyLit
 meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTSupport
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
@@ -48,6 +50,8 @@ declares public, so its constant time relates two runs (`RelCT`):
   a test of the counter; its selection scans the whole table), the test of
   `r8` and the addition are constant time by taint tracking, with `r8` and
   the counter public, which the field functions never write.
+
+With `umaal` the taint tracking is `taintU`'s (`ctRegsU`), on the code itself.
 -/
 
 @[expose] public section
@@ -59,12 +63,14 @@ open VG.Proof.Ed448 (RecoverOk VerifyEqCombOk)
 open VG.Proof.Ed25519.Arm (CT ctRegs ctBoth)
 open VG.Spec.Ed448 (bytesAt decodeLE)
 
+variable {fv : Bool}
+
 theorem VerifyPre.of {s : State} (h : verifyEquationLocal.pre s) : VerifyPre s :=
   ⟨h.1, h.2.1, h.2.2.1, h.2.2.2.1, h.2.2.2.2.1, h.2.2.2.2.2.1, h.2.2.2.2.2.2.1, h.2.2.2.2.2.2.2.1,
     h.2.2.2.2.2.2.2.2⟩
 
 theorem verifyEquation_ok (hR : RecoverOk) (hE : VerifyEqCombOk) (s : State) (hs : verifyEquationLocal.pre s) :
-    ∃ t s', Exec isa verifyEquation s t s' ∧ abiPreserved s s' ∧ verifyEquationLocal.post s s' := by
+    ∃ t s', Exec isa (verifyEquation fv) s t s' ∧ abiPreserved s s' ∧ verifyEquationLocal.post s s' := by
   obtain ⟨t, s', he, h⟩ := verifyEquation_main hR hE (VerifyPre.of hs)
   exact ⟨t, s', he, ⟨h.1, Exec.sp he⟩, h.2⟩
 
@@ -97,15 +103,26 @@ theorem ctRegsErased {P : State → State → Prop} {c c' : Prog isa} (rs : List
     CT P c (fun _ _ => True) :=
   ctRegs rs hp (hint := hint) (Taint.check_eraseOff c hint (Taint.noBase_ofRegs rs) ▸ he ▸ hc)
 
+/-- `ctRegs`, by the analysis of code with `umaal` (`taintU`). -/
+theorem ctRegsU {P : State → State → Prop} {c : Prog isa} (rs : List Reg)
+    (hp : ∀ x y, P x y → ∀ r ∈ rs, x.gpr r = y.gpr r)
+    {hint : VG.Taint.Hint taintU.T} (hc : (taintU.check (Taint.ofRegs rs) c hint).isSome = true) :
+    CT P c (fun _ _ => True) :=
+  RelCT.taint (A := taintU) (Taint.ofRegs rs) (fun x y h => Taint.agree_ofRegs (hp x y h)) hc
+
 theorem vbefore_ct :
     CT (fun x y => verifyEquationLocal.pre x ∧ verifyEquationLocal.pre y ∧ verifyEquationLocal.pub x y)
-      vbefore (fun _ _ => True) := by
-  apply ctRegsErased [.r0, .r1, .r2, .r3] _ (c' := vbeforeErased) rfl (by native_taint_decide)
-  intro x y h r hr
-  obtain ⟨h0, h1, h2, h3, _⟩ := h.2.2
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl
-  exacts [h0, h1, h2, h3]
+      (vbefore fv) (fun _ _ => True) := by
+  obtain hp : ∀ x y, verifyEquationLocal.pre x ∧ verifyEquationLocal.pre y ∧ verifyEquationLocal.pub x y →
+      ∀ r ∈ [Reg.r0, .r1, .r2, .r3], x.gpr r = y.gpr r := by
+    intro x y h r hr
+    obtain ⟨h0, h1, h2, h3, _⟩ := h.2.2
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl
+    exacts [h0, h1, h2, h3]
+  cases fv
+  · exact ctRegsErased [.r0, .r1, .r2, .r3] hp (c' := vbeforeErased) rfl (by native_taint_decide)
+  · exact ctRegsU [.r0, .r1, .r2, .r3] hp (by taint_decide)
 
 theorem counter_ct (base : Addr) (S K : Nat) :
     CT (fun x y => Start base S K x ∧ Start base S K y) (.block [.movw .r11 456])
@@ -132,22 +149,26 @@ theorem vload_ct (base : Addr) (S K : Nat) {n : Nat} (hn : n < 456) :
     exact WP.mono (vload_ok hn hb hi) fun u hu => ⟨A, s₀, hb, hu⟩
 
 theorem vdoubleAdd_ct (base : Addr) (S K : Nat) {n : Nat} (hn : n < 456) :
-    CT (fun x y => Loaded base S K n x ∧ Loaded base S K n y) vdoubleAdd
+    CT (fun x y => Loaded base S K n x ∧ Loaded base S K n y) (vdoubleAdd fv)
       (fun x y => (Run base S K n x ∧ x.z = decide (n = 0)) ∧ (Run base S K n y ∧ y.z = decide (n = 0))) := by
   apply ctBoth
-  · apply ctRegs [.r0, .r8, .r11] _ (by native_taint_decide)
-    intro x y h r hr
-    obtain ⟨⟨_, _, _, hx⟩, ⟨_, _, _, hy⟩⟩ := h
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl
-    · exact scr_agree hx.scr hy.scr
-    · exact hx.r8.trans hy.r8.symm
-    · exact hx.r11.trans hy.r11.symm
+  · obtain hp : ∀ x y, Loaded base S K n x ∧ Loaded base S K n y →
+        ∀ r ∈ [Reg.r0, .r8, .r11], x.gpr r = y.gpr r := by
+      intro x y h r hr
+      obtain ⟨⟨_, _, _, hx⟩, ⟨_, _, _, hy⟩⟩ := h
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact scr_agree hx.scr hy.scr
+      · exact hx.r8.trans hy.r8.symm
+      · exact hx.r11.trans hy.r11.symm
+    cases fv
+    · exact ctRegs [.r0, .r8, .r11] hp (by native_taint_decide)
+    · exact ctRegsU [.r0, .r8, .r11] hp (by taint_decide)
   · rintro x ⟨A, s₀, hb, hi⟩
     exact WP.mono (vdoubleAdd_ok hn hb hi) fun u ⟨hu, hz⟩ => ⟨⟨A, s₀, hb, hu⟩, hz⟩
 
 theorem vloop_ct (base : Addr) (S K : Nat) :
-    CT (fun x y => Start base S K x ∧ Start base S K y) vloop
+    CT (fun x y => Start base S K x ∧ Start base S K y) (vloop fv)
       (fun x y => Run base S K 0 x ∧ Run base S K 0 y) := by
   refine RelCT.seq (counter_ct base S K) ?_
   refine (RelCT.loop (M := isa) (Q := fun x y => Run base S K 0 x ∧ Run base S K 0 y)
@@ -178,19 +199,22 @@ theorem vloop_ct (base : Addr) (S K : Nat) :
   · exact RelCT.of_false fun x y h => hn ⟨h.1, h.2.1⟩
 
 theorem vafter_ct (base : Addr) (S K : Nat) :
-    CT (fun x y => Run base S K 0 x ∧ Run base S K 0 y) vafter (fun _ _ => True) := by
-  apply ctRegs [.r0] _ (by native_taint_decide)
-  intro x y h r hr
-  obtain ⟨⟨_, _, _, hx⟩, ⟨_, _, _, hy⟩⟩ := h
-  rw [List.mem_singleton] at hr
-  subst r
-  exact scr_agree hx.scr hy.scr
+    CT (fun x y => Run base S K 0 x ∧ Run base S K 0 y) (vafter fv) (fun _ _ => True) := by
+  obtain hp : ∀ x y, Run base S K 0 x ∧ Run base S K 0 y → ∀ r ∈ [Reg.r0], x.gpr r = y.gpr r := by
+    intro x y h r hr
+    obtain ⟨⟨_, _, _, hx⟩, ⟨_, _, _, hy⟩⟩ := h
+    rw [List.mem_singleton] at hr
+    subst r
+    exact scr_agree hx.scr hy.scr
+  cases fv
+  · exact ctRegs [.r0] hp (by native_taint_decide)
+  · exact ctRegsU [.r0] hp (by taint_decide)
 
 theorem verifyEquation_ct (hR : RecoverOk) :
-    ConstantTime isa verifyEquationLocal.pre verifyEquationLocal.pub verifyEquation := by
+    ConstantTime isa verifyEquationLocal.pre verifyEquationLocal.pub (verifyEquation fv) := by
   apply RelCT.constantTime (Q := fun _ _ => True)
   unfold verifyEquation
-  have hb := vbefore_ct.wpDep
+  have hb := (vbefore_ct (fv := fv)).wpDep
     (F := fun (σ t : State) => VMid σ (State.addr (σ.gpr .r3)) (State.addr (σ.gpr .r0)) (State.addr (σ.gpr .r1))
       (decodeLE (bytesAt σ.mem (State.addr (σ.gpr .r1) + BitVec.ofNat 64 57) 57))
       (decodeLE (bytesAt σ.mem (State.addr (σ.gpr .r2)) 57)) t)

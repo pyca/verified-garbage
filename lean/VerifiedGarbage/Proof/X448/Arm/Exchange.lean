@@ -80,9 +80,11 @@ theorem exchange_verified {c : Prog isa} (name : String)
 theorem check_taint : ∃ hc, (taint.check (Taint.ofRegs [.r1]) (.block (Impl.Xdh.Arm.check 56)) hc).isSome = true :=
   ⟨_, by taint_decide⟩
 
-theorem exchange_baseline :
-    Verified Arm.target (Impl.Xdh.Arm.exchange "vg_x448" Impl.X448.Arm.x448 56)
+/-- `vg_x448_exchange` with the field's multiplication `fv` (`Proof/Variants/Curve448Field/Arm.lean`). -/
+theorem exchange_variant (fv : Bool) :
+    Verified Arm.target
+      (Impl.Xdh.Arm.exchange ("vg_x448" ++ Impl.X448.Arm.suffix fv) (Impl.X448.Arm.x448 fv) 56)
       (Spec.X448.exchangeContract Arm.abi 8) :=
-  exchange_verified _ Proof.X448.Arm.x448_verified (by lit_decide) check_taint
+  exchange_verified _ Proof.X448.Arm.x448_verified (by cases fv <;> lit_decide) check_taint
 
 end VG.Proof.X448.Arm.Exchange

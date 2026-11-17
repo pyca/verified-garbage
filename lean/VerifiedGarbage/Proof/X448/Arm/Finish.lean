@@ -41,6 +41,8 @@ namespace VG.Proof.X448.Arm
 open VG VG.Arm VG.Impl.X448.Arm VG.Proof.X448.Radix16
 open VG.Proof.X25519.Arm (wp_strb wp_mov op2_lsr)
 
+variable {fv : Bool}
+
 def packMem (m : Mem) (p : Addr) (i : Nat) (v : BitVec 32) : Mem :=
   (m.writeW (off p (2 * i)) (v.setWidth 8)).writeW (off p (2 * i + 1)) ((v >>> 8).setWidth 8)
 
@@ -108,6 +110,8 @@ namespace VG.Proof.X448.Arm
 
 open VG VG.Arm VG.Impl.X448.Arm VG.Proof.X448.Radix16
 
+variable {fv : Bool}
+
 /-- Writes to the output preserve a word in the disjoint working space. -/
 theorem output_word {m m' : Mem} {base p : Addr} {n d : Nat} (h : Outside p 0 n m m') (hn : n ≤ 56)
     (hd : d + 4 ≤ 8192) (hfar : ∀ j < 8192, 56 ≤ ofs p (off base j)) :
@@ -172,6 +176,8 @@ namespace VG.Proof.X448.Arm
 
 open VG VG.Arm VG.Impl.X448.Arm
 
+variable {fv : Bool}
+
 theorem Outside.frame {base : Addr} {n : Nat} {m m' : Mem} (h : Outside base 0 n m m') :
     Frame [⟨base, n⟩] m m' := fun x hx => h x (Or.inr (by
   have := hx _ (List.mem_singleton_self _)
@@ -198,7 +204,7 @@ theorem finish_ok {s : State} {base p : Addr} (hs : Scr s base) (hb : BoundedEnv
     (hp : State.addr (s.gpr .r8) = p)
     (hfit : (s.gpr .r8).toNat + 56 ≤ 2 ^ 32) (hw : ∀ j < 56, InRegions s.wr (off p j) 1)
     (hfar : ∀ j < 8192, 56 ≤ ofs p (off base j)) {g : Reg → BitVec 32} (sv : Saved base g s.mem) :
-    WP isa finish s fun t =>
+    WP isa (finish fv) s fun t =>
       (∀ i < 8, t.gpr (saved[i]!) = g (saved[i]!)) ∧ t.gpr .lr = s.gpr .r10 ∧ Keeps finishRegs s t ∧
       Frame [⟨base, 8192⟩, ⟨p, 56⟩] s.mem t.mem ∧
       Spec.X448.bytesAt t.mem p 56 = Spec.X448.encodeUCoordinate (E s.mem base 1 * E s.mem base 21) := by

@@ -10,6 +10,7 @@ public import VerifiedGarbage.Proof.X448.Arm.Field
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Arm.Call
 import VerifiedGarbage.Proof.X448.Arm.MulLoop
+import VerifiedGarbage.Proof.X448.Arm.MulU
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.X448.Arm.Mem
 import VerifiedGarbage.Proof.Framework.Range
@@ -507,7 +508,8 @@ theorem mul_ok {s : State} {base : Addr} (hs : Scr s base) {o a b : Nat}
         fe t.mem base o % Spec.X448.P = fe s.mem base a * fe s.mem base b % Spec.X448.P := by
   let ptr := s.gpr .r0
   have pe : State.addr ptr = base := hs.r0
-  obtain ctx : RowCtx ptr s := ⟨rfl, by change (s.gpr .r0).toNat + 4096 ≤ 2 ^ 32; have := hs.nowrap; omega_using [this],
+  obtain ctx : RowCtx ptr s := ⟨rfl,
+    by change (s.gpr .r0).toNat + 4096 ≤ 2 ^ 32; have := hs.nowrap; omega_using [this],
     by rw [pe]; exact hs.wr⟩
   rw [Impl.X448.Arm.mul, WP.seq_iff]
   refine WP.mono (mulPreF_ok (x := a) (y := b) ctx hs.mask hpa hpb) fun t ht => ?_
@@ -541,6 +543,77 @@ theorem mul_ok {s : State} {base : Addr} (hs : Scr s base) {o a b : Nat}
     rw [wf i hi]
     exact digit_lt _ _
   · rw [show fe w.mem base o = valN (normalized (reduced f)) 28 from valN_congr wf,
+      normalized_mod (reduced_bound fb), reduced_mod, fv]
+
+/-- `mul_ok`, for the multiplication with `umaal`: its rows leave the product's limbs as the
+baseline's do (`Proof/X448/Arm/MulU.lean`), for the same fold and normalization. -/
+theorem mulU_ok {s : State} {base : Addr} (hs : Scr s base) {o a b : Nat}
+    (hpo : Ptr s .r9 o) (hpa : Ptr s .lr a) (hpb : Ptr s .r12 b)
+    (ho : Slot o) (ha : Slot a) (hb : Slot b) (ab : Bounded s.mem base a) (bb : Bounded s.mem base b) :
+    WP isa Impl.X448.Arm.mulU s fun t =>
+      Keeps (.lr :: fclob) s t ∧ OpMem base o s.mem t.mem ∧ Bounded t.mem base o ∧
+        fe t.mem base o % Spec.X448.P = fe s.mem base a * fe s.mem base b % Spec.X448.P := by
+  let ptr := s.gpr .r0
+  have pe : State.addr ptr = base := hs.r0
+  obtain ctx : RowCtx ptr s := ⟨rfl,
+    by change (s.gpr .r0).toNat + 4096 ≤ 2 ^ 32; have := hs.nowrap; omega_using [this],
+    by rw [pe]; exact hs.wr⟩
+  rw [Impl.X448.Arm.mulU, WP.seq_iff]
+  refine WP.mono (mulPreU_ok (x := a) (y := b) ctx hb hpb (by rw [pe]; exact bb)) fun t ht => ?_
+  obtain la : ∀ k < 28, limbs t.mem (State.addr ptr) a k = limbs s.mem (State.addr ptr) a k := fun k hk =>
+    VG.Proof.X25519.Arm.wd_frame ht.frame fun r hr => by
+      rw [List.mem_singleton.mp hr]
+      exact Offset.disjoint _ (.inl (by have : a + 112 ≤ 3584 := ha; simp only [ACC]; omega_using [this, hk]))
+        (by have : a + 112 ≤ 3584 := ha; omega_using [this, hk]) (by simp only [ACC]; omega_arith)
+  rw [WP.seq_iff]
+  refine WP.mono (mulLoopU_ok (x := a) (s0 := t) ha (fun k hk => by rw [la k hk, pe]; exact ab k hk)
+    ⟨ht.ctx, VG.Proof.X25519.Arm.Rest.refl _ _, by rw [ht.r7]; exact (BitVec.add_zero _).symm,
+      by rw [ht.rest.gpr _ (by decide), hpa]; rfl, ht.r5, Frame.refl _ _, by
+        rw [VG.Proof.X25519.Arm.Words.val32_congr (g := fun _ => 0) (fun k hk => ht.zero k hk),
+          VG.Proof.X25519.Arm.Words.val32_zero_fn]
+        exact (Nat.zero_mul _).symm⟩) fun u hu => ?_
+  rw [List.append_assoc, WP.block_append_iff]
+  refine WP.mono (unpackAll_ok hu.ctx (by rw [hu.rest.gpr _ (by decide), ht.rest.gpr _ (by decide)]; exact hs.mask))
+    fun v hv => ?_
+  obtain vk : Keeps (.lr :: fclob) s v :=
+    rest_keeps ((ht.rest.mono (by decide)).trans (hu.rest.trans (hv.rest.mono (by decide))))
+  obtain vs := hs.of_keeps vk (by decide)
+  let f := limbs v.mem base ACC
+  obtain fb : ∀ i < 56, f i < radix := by
+    intro i hi
+    have := hv.lt i hi
+    rw [pe] at this
+    exact this
+  obtain fv : valN f 56 = fe s.mem base a * fe s.mem base b := by
+    have h := hv.val
+    have h2 := hu.val
+    have h14 := ht.bw
+    rw [pe] at h h2 h14
+    obtain eb : VG.Proof.X25519.Arm.Words.val32 (bw t.mem base) 14 = fe s.mem base b := by
+      rw [VG.Proof.X25519.Arm.Words.val32_congr h14, ← valN_pack]
+    refine h.trans (h2.trans ?_)
+    rw [eb, ← valN_pack]
+    exact congrArg (· * fe s.mem base b) (valN_congr fun k hk => by have := la k hk; rw [pe] at this; exact this)
+  obtain vm : Outside base ACC 368 s.mem v.mem := by
+    have hf : Frame [⟨State.addr ptr + BitVec.ofNat 64 ACC, 368⟩] s.mem v.mem :=
+      ht.frame.trans ((hu.frame.sub fun r hr => ⟨_, List.mem_singleton_self _, by
+        rw [List.mem_singleton.mp hr]; exact Offset.sub _ (by decide) (by decide)⟩).trans
+        (hv.frame.sub fun r hr => ⟨_, List.mem_singleton_self _, by
+          rw [List.mem_singleton.mp hr]; exact Offset.sub _ (by decide) (by decide)⟩))
+    rw [pe] at hf
+    exact frame_outside hf (by decide)
+  rw [WP.block_append_iff]
+  refine WP.mono (reduce_ok vs (fun _ _ => rfl) fb) fun w ⟨wf, wm, wk⟩ => ?_
+  obtain ws := vs.of_keeps wk (by decide)
+  obtain wp : Ptr w .r9 o := (hpo.of_keeps vk (by decide) (by decide)).of_keeps wk (by decide) (by decide)
+  refine WP.mono (normalize_ok ws wp ho wf (reduced_bound fb)) fun z ⟨zf, zm, zk⟩ => ?_
+  refine ⟨?_, ?_, ?_, ?_⟩
+  · exact vk.trans ((wk.mono (by decide)).trans (zk.mono (by decide)))
+  · exact (OpMem.work vm (by decide) (by decide)).trans ((OpMem.work wm (by decide) (by decide)).trans zm)
+  · intro i hi
+    rw [zf i hi]
+    exact digit_lt _ _
+  · rw [show fe z.mem base o = valN (normalized (reduced f)) 28 from valN_congr zf,
       normalized_mod (reduced_bound fb), reduced_mod, fv]
 
 end VG.Proof.X448.Arm
@@ -768,7 +841,9 @@ end
 # X448 on ARMv7: calls of the field functions
 
 `mulFn_ok`, `addFn_ok`, `subFn_ok` and `mulA24Fn_ok` are what the field
-functions do (`fn_ok` with their operations). A field operation of the
+functions do (`fn_ok` with their operations; the multiplication for either
+of its implementations, `mul_ok` and `mulU_ok`, so that everything built on
+the calls is proven once for both, `fv`). A field operation of the
 callers is a call (`Op.code`): the offsets are moved into `r1`–`r3` and
 the function is called on the working space at `r0` (`callFn_ok`,
 `mulA24Call_ok`); the call changes only the registers `clob` and the memory
@@ -782,6 +857,8 @@ namespace VG.Proof.X448.Arm
 open VG VG.Arm VG.Impl.X448.Arm VG.Proof.X448.Radix16
 open VG.Proof.X25519.Arm (Rest Upd wp_movw)
 
+variable {fv : Bool}
+
 /-- What a function does, from its entry, for the relation `r` of the result
 and the operands. -/
 abbrev FnPost (s : State) (base : Addr) (o a b : Nat) (r : Nat → Nat → Nat → Prop) (t : State) : Prop :=
@@ -793,10 +870,14 @@ abbrev addRel (x y z : Nat) : Prop := x % Spec.X448.P = (y + z) % Spec.X448.P
 abbrev subRel (x y z : Nat) : Prop := (x + z) % Spec.X448.P = y % Spec.X448.P
 abbrev a24Rel (x y _ : Nat) : Prop := x % Spec.X448.P = 39081 * y % Spec.X448.P
 
-theorem mulFn_ok {s : State} {base : Addr} {o a b : Nat} (h : Entry true s base o a b)
+theorem mulFn_ok {fv : Bool} {s : State} {base : Addr} {o a b : Nat} (h : Entry true s base o a b)
     (ho : Slot o) (ha : Slot a) (hb : Slot b) (ab : Bounded s.mem base a) (bb : Bounded s.mem base b) :
-    WP isa mulFn s (FnPost s base o a b mulRel) :=
-  fn_ok h ho ha hb ab bb fun _ hs po pa pb a₁ b₁ => mul_ok hs po pa (pb rfl) ho ha hb a₁ b₁
+    WP isa (mulFn fv) s (FnPost s base o a b mulRel) := by
+  cases fv
+  · exact fn_ok (op := mul) h ho ha hb ab bb fun _ hs po pa pb a₁ b₁ =>
+      mul_ok hs po pa (pb rfl) ho ha hb a₁ b₁
+  · exact fn_ok (op := mulU) h ho ha hb ab bb fun _ hs po pa pb a₁ b₁ =>
+      mulU_ok hs po pa (pb rfl) ho ha hb a₁ b₁
 
 theorem addFn_ok {s : State} {base : Addr} {o a b : Nat} (h : Entry true s base o a b)
     (ho : Slot o) (ha : Slot a) (hb : Slot b) (ab : Bounded s.mem base a) (bb : Bounded s.mem base b) :
@@ -901,15 +982,16 @@ theorem mulA24Call_ok {s : State} {base : Addr} (hs : Scr s base) {o a : Nat}
 /-- `[o] = [a] [b]`, by a call of `vg_gf448_r16_mul`. -/
 theorem mulCall_ok {s : State} {base : Addr} (hs : Scr s base) {o a b : Nat}
     (ho : Slot o) (ha : Slot a) (hb : Slot b) (ab : Bounded s.mem base a) (bb : Bounded s.mem base b) :
-    WP isa (Op.code (.mul o a b)) s fun t =>
+    WP isa (Op.code fv (.mul o a b)) s fun t =>
       Op base o s t ∧ Bounded t.mem base o ∧ F t.mem base o = F s.mem base a * F s.mem base b :=
-  WP.mono (callFn_ok (by decide +kernel) hs (fun _ he ha' hb' => mulFn_ok he ho ha hb ha' hb') ho ha hb ab bb)
+  WP.mono (callFn_ok (by cases fv <;> decide +kernel) hs (fun _ he ha' hb' => mulFn_ok he ho ha hb ha' hb')
+    ho ha hb ab bb)
     fun _ ⟨op, bo, v⟩ => ⟨op, bo, toFe_mul v⟩
 
 /-- `[o] = [a] + [b]`, by a call of `vg_gf448_r16_add`. -/
 theorem addCall_ok {s : State} {base : Addr} (hs : Scr s base) {o a b : Nat}
     (ho : Slot o) (ha : Slot a) (hb : Slot b) (ab : Bounded s.mem base a) (bb : Bounded s.mem base b) :
-    WP isa (Op.code (.add o a b)) s fun t =>
+    WP isa (Op.code fv (.add o a b)) s fun t =>
       Op base o s t ∧ Bounded t.mem base o ∧ F t.mem base o = F s.mem base a + F s.mem base b :=
   WP.mono (callFn_ok (by decide +kernel) hs (fun _ he ha' hb' => addFn_ok he ho ha hb ha' hb') ho ha hb ab bb)
     fun _ ⟨op, bo, v⟩ => ⟨op, bo, toFe_add v⟩
@@ -917,7 +999,7 @@ theorem addCall_ok {s : State} {base : Addr} (hs : Scr s base) {o a b : Nat}
 /-- `[o] = [a] - [b]`, by a call of `vg_gf448_r16_sub`. -/
 theorem subCall_ok {s : State} {base : Addr} (hs : Scr s base) {o a b : Nat}
     (ho : Slot o) (ha : Slot a) (hb : Slot b) (ab : Bounded s.mem base a) (bb : Bounded s.mem base b) :
-    WP isa (Op.code (.sub o a b)) s fun t =>
+    WP isa (Op.code fv (.sub o a b)) s fun t =>
       Op base o s t ∧ Bounded t.mem base o ∧ F t.mem base o = F s.mem base a - F s.mem base b :=
   WP.mono (callFn_ok (by decide +kernel) hs (fun _ he ha' hb' => subFn_ok he ho ha hb ha' hb') ho ha hb ab bb)
     fun _ ⟨op, bo, v⟩ => ⟨op, bo, toFe_sub v⟩
@@ -925,7 +1007,7 @@ theorem subCall_ok {s : State} {base : Addr} (hs : Scr s base) {o a b : Nat}
 /-- `[o] = a24 [a]`, by a call of `vg_gf448_r16_mul_a24`. -/
 theorem a24Call_ok {s : State} {base : Addr} (hs : Scr s base) {o a : Nat}
     (ho : Slot o) (ha : Slot a) (ab : Bounded s.mem base a) :
-    WP isa (Op.code (.mulSmall o a)) s fun t =>
+    WP isa (Op.code fv (.mulSmall o a)) s fun t =>
       Op base o s t ∧ Bounded t.mem base o ∧ F t.mem base o = Spec.X448.a24 * F s.mem base a :=
   WP.mono (mulA24Call_ok hs ho ha ab) fun _ ⟨op, bo, v⟩ => ⟨op, bo, toFe_a24 v⟩
 
@@ -948,6 +1030,8 @@ decoded bits.
 namespace VG.Proof.X448.Arm
 
 open VG VG.Arm VG.Impl.X448.Arm VG.Proof.X448.Radix16
+
+variable {fv : Bool}
 
 abbrev Index := Fin 22
 abbrev Env := Index → Spec.X448.Fe
@@ -1015,25 +1099,25 @@ def opSwap (x y : Index) (sw : Bool) (e : Env) : Env :=
   Function.update (Function.update e x (if sw then e y else e x)) y (if sw then e x else e y)
 
 theorem mulE {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv s.mem base) (o a b : Index) :
-    WP isa (Op.code (.mul (slot o.val) (slot a.val) (slot b.val))) s fun t =>
+    WP isa (Op.code fv (.mul (slot o.val) (slot a.val) (slot b.val))) s fun t =>
       Keep base s t ∧ BoundedEnv t.mem base ∧ E t.mem base = opMul o a b (E s.mem base) :=
   WP.mono (mulCall_ok hs (slot_bound o) (slot_bound a) (slot_bound b) (hb a) (hb b)) fun _ ⟨h, bo, e⟩ =>
     ⟨h.keep, bounded_update h.mem hb bo, by rw [E_update h.mem, e]; rfl⟩
 
 theorem addE {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv s.mem base) (o a b : Index) :
-    WP isa (Op.code (.add (slot o.val) (slot a.val) (slot b.val))) s fun t =>
+    WP isa (Op.code fv (.add (slot o.val) (slot a.val) (slot b.val))) s fun t =>
       Keep base s t ∧ BoundedEnv t.mem base ∧ E t.mem base = opAdd o a b (E s.mem base) :=
   WP.mono (addCall_ok hs (slot_bound o) (slot_bound a) (slot_bound b) (hb a) (hb b)) fun _ ⟨h, bo, e⟩ =>
     ⟨h.keep, bounded_update h.mem hb bo, by rw [E_update h.mem, e]; rfl⟩
 
 theorem subE {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv s.mem base) (o a b : Index) :
-    WP isa (Op.code (.sub (slot o.val) (slot a.val) (slot b.val))) s fun t =>
+    WP isa (Op.code fv (.sub (slot o.val) (slot a.val) (slot b.val))) s fun t =>
       Keep base s t ∧ BoundedEnv t.mem base ∧ E t.mem base = opSub o a b (E s.mem base) :=
   WP.mono (subCall_ok hs (slot_bound o) (slot_bound a) (slot_bound b) (hb a) (hb b)) fun _ ⟨h, bo, e⟩ =>
     ⟨h.keep, bounded_update h.mem hb bo, by rw [E_update h.mem, e]; rfl⟩
 
 theorem a24E {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv s.mem base) (o a : Index) :
-    WP isa (Op.code (.mulSmall (slot o.val) (slot a.val))) s fun t =>
+    WP isa (Op.code fv (.mulSmall (slot o.val) (slot a.val))) s fun t =>
       Keep base s t ∧ BoundedEnv t.mem base ∧ E t.mem base = opA24 o a (E s.mem base) :=
   WP.mono (a24Call_ok hs (slot_bound o) (slot_bound a) (hb a)) fun _ ⟨h, bo, e⟩ =>
     ⟨h.keep, bounded_update h.mem hb bo, by rw [E_update h.mem, e]; rfl⟩

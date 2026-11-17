@@ -20,6 +20,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Arm.Taint
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.X448.Arm.Main
@@ -42,6 +43,7 @@ meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.Framework.Arm.Exec
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
@@ -59,7 +61,8 @@ of the base point (`Proof.Ed448.BaseCombUOk`, proven with the group law in
 `Proof/Ed448/CombFacts.lean`, which only the registration file imports).
 
 Constant time (by taint tracking: the only branches are on the loop counters,
-and every address is an argument plus a constant or a counter),
+and every address is an argument plus a constant or a counter; with `umaal`,
+by `taintU`, on the code itself),
 satisfiability, and the shared contract of `Spec/`.
 -/
 
@@ -72,6 +75,8 @@ open VG.Proof.Ed448 (BaseCombUOk comb)
 open VG.Proof.Ed448.Arm (CombInv combLoop_ok initSlots_ok initSlots_E initSlots_bounded baseEntry_eq pt
   doubleFields)
 open VG.Proof.X25519.Arm (wp_mov wp_strb op2_imm op2_reg)
+
+variable {fv : Bool}
 
 /-- The bytes of bits 448–455 at `BITS` are zero. -/
 theorem zeroTop_ok {s : State} {base : Addr} (hs : Scr s base) :
@@ -110,7 +115,7 @@ theorem zeroTop_ok {s : State} {base : Addr} (hs : Scr s base) :
 def uFields : List FieldOp := [.mul 2 0 0, .mul 1 1 1]
 
 theorem correctBase (hu : BaseCombUOk) {s₀ : State} (hp : BasePre s₀) :
-    WP isa x448Base s₀ fun s' => (∀ r ∈ preserved, s'.gpr r = s₀.gpr r) ∧
+    WP isa (x448Base fv) s₀ fun s' => (∀ r ∈ preserved, s'.gpr r = s₀.gpr r) ∧
       Proof.X448.x448BaseArm.post s₀ s' := by
   obtain ⟨base, hbase⟩ : ∃ b, State.addr (s₀.gpr .r2) = b := ⟨_, rfl⟩
   have hB : BITS = 3072 := rfl
@@ -247,23 +252,27 @@ def satBaseState : State where
   wr := [⟨0x1000, 56⟩, ⟨0x4000, 8192⟩]
 
 theorem x448Base_ok (hu : BaseCombUOk) (s : State) (hs : Proof.X448.x448BaseArm.pre s) :
-    ∃ t s', Exec isa Impl.X448.Arm.x448Base s t s' ∧ abiPreserved s s' ∧
+    ∃ t s', Exec isa (Impl.X448.Arm.x448Base fv) s t s' ∧ abiPreserved s s' ∧
       Proof.X448.x448BaseArm.post s s' := by
   obtain ⟨t, s', he, h⟩ := correctBase hu (BasePre.of s hs)
   exact ⟨t, s', he, ⟨h.1, Exec.sp he⟩, h.2⟩
 
 theorem x448Base_ct : ConstantTime isa Proof.X448.x448BaseArm.pre Proof.X448.x448BaseArm.pub
-    Impl.X448.Arm.x448Base := by
-  refine Taint.constantTime_eraseOff_of_eq (Taint.ofRegs [.r0, .r1, .r2]) (Taint.noBase_ofRegs _) ?_
-    (c' := x448BaseErased) rfl (by native_taint_decide)
-  intro s₁ s₂ _ _ ⟨h1, h2, h3, _⟩
-  apply Taint.agree_ofRegs
-  intro r hr
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl <;> with_reducible assumption
+    (Impl.X448.Arm.x448Base fv) := by
+  obtain ha : ∀ s₁ s₂, Proof.X448.x448BaseArm.pre s₁ → Proof.X448.x448BaseArm.pre s₂ →
+      Proof.X448.x448BaseArm.pub s₁ s₂ → VG.Arm.Taint.Agree (Taint.ofRegs [.r0, .r1, .r2]) s₁ s₂ := by
+    intro s₁ s₂ _ _ ⟨h1, h2, h3, _⟩
+    apply Taint.agree_ofRegs
+    intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl <;> with_reducible assumption
+  cases fv
+  · exact Taint.constantTime_eraseOff_of_eq (Taint.ofRegs [.r0, .r1, .r2]) (Taint.noBase_ofRegs _) ha
+      (c' := x448BaseErased) rfl (by native_taint_decide)
+  · exact VG.Taint.constantTime (A := taintU) (Taint.ofRegs [.r0, .r1, .r2]) ha (by taint_decide)
 
 theorem x448Base_verified (hu : BaseCombUOk) :
-    Verified Arm.target Impl.X448.Arm.x448Base (Spec.X448.x448BaseContract Arm.abi) :=
+    Verified Arm.target (Impl.X448.Arm.x448Base fv) (Spec.X448.x448BaseContract Arm.abi) :=
   Verified.of_correct (x448Base_ok hu) x448Base_ct (by
     sig_implies [Spec.X448.x448BaseContract, Spec.X448.x448BaseSig, Arm.abi, Arm.argRegs,
       Arm.reduceClassify, Arm.Loc.val, Arm.State.addr, Proof.X448.x448BaseArm]

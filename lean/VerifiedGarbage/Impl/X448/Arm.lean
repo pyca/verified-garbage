@@ -8,7 +8,10 @@ public import VerifiedGarbage.TCB.Arm.Isa
 Field elements are twenty-eight 16-bit limbs in 32-bit words. Each
 multiplication row propagates carries so that every multiply and addition
 fits in a word. Reduction uses `2^448 = 2^224 + 1` modulo the field prime.
-Only baseline instructions are used, including the low-word `mul`.
+Only baseline instructions are used, including the low-word `mul`, but by
+the functions built with `u` (their names end in `_umaal`, `suffix`), whose
+multiplication is by `umaal` on the limbs packed in words (`mulU`); the
+other field operations are the same functions for both.
 
 `r0` holds the working space, `r8` the output pointer, `r10` the link
 register, `r11` the ladder or squaring counter, and `r6` the limb mask.
@@ -135,6 +138,55 @@ def mul : Prog isa :=
   .seq (.loop (.block rowF) .ne) <|
     .block ((List.range 28).flatMap reduceCol ++ normalize)
 
+/-! ## Multiplication with `umaal`
+
+The same operation on the same limbs, for CPUs with `umaal`
+(`hi:lo := n m + hi + lo`, which cannot overflow): the operands' limbs are
+packed in pairs into fourteen 32-bit words, the second operand's in the low
+words of `ACC` (`packB`) and the first's a word a row, and the product is
+accumulated row by row in the twenty-eight words at `TMP`, each product a
+load of the two words, one `umaal` and a store (`rowStepU`), the row's carry
+being its next word. The product's words are then split into the fifty-six
+limbs at `ACC` (`unpack`), which are folded and normalized as the baseline's
+are. -/
+
+/-- Word `j` of the second operand (at `r12`), limbs `2j` and `2j + 1` packed, into word `j`
+of `ACC`. -/
+def packB (j : Nat) : List Instr :=
+  [.ldr .r2 .r12 (4 * (2 * j)), .ldr .r3 .r12 (4 * (2 * j + 1)), .dp .add .r2 .r2 (.shifted .r3 .lsl 16),
+    st .r2 (ACC + 4 * j)]
+
+/-- One product of a row: the row's word of the first operand, in `r1`, times word `j` of the
+second, added to word `j` of the accumulator at `r7` with the carry `r4`. -/
+def rowStepU (j : Nat) : List Instr :=
+  [ld .r2 (ACC + 4 * j), .ldr .r3 .r7 (TMP + 4 * j), .umaal .r3 .r4 .r1 .r2, .str .r3 .r7 (TMP + 4 * j)]
+
+/-- A row: the word of the first operand at `lr`, two limbs packed, times the second operand,
+added to the accumulator at `r7`; then `r7` moves up a word, `lr` two limbs, and `r5` counts the
+rows down. -/
+def rowU : List Instr :=
+  [.ldr .r1 .lr 0, .ldr .r2 .lr 4, .dp .add .r1 .r1 (.shifted .r2 .lsl 16), .mov .r4 (.imm 0)] ++
+    (List.range 14).flatMap rowStepU ++
+    [.str .r4 .r7 (TMP + 56), .dp .add .r7 .r7 (.imm 4), .dp .add .lr .lr (.imm 8),
+      .subs .r5 .r5 (.imm 1)]
+
+/-- The second operand packed, the accumulator's low fourteen words zeroed, and the rows'
+pointer and counter. -/
+def mulPreU : List Instr :=
+  (List.range 14).flatMap packB ++ [.mov .r3 (.imm 0)] ++
+    (List.range 14).flatMap (fun k => [st .r3 (TMP + 4 * k)]) ++ [.mov .r7 (.reg .r0), .mov .r5 (.imm 14)]
+
+/-- Word `k` of the product at `TMP`, as limbs `2k` and `2k + 1` at `ACC`. -/
+def unpack (k : Nat) : List Instr :=
+  [ld .r3 (TMP + 4 * k), .dp .and .r2 .r3 (.reg .r6), st .r2 (ACC + 4 * (2 * k)),
+    .mov .r3 (.shifted .r3 .lsr 16), st .r3 (ACC + 4 * (2 * k + 1))]
+
+/-- `[r9] = [lr] [r12]` with `umaal` (`lr` moves past the first operand). -/
+def mulU : Prog isa :=
+  .seq (.block mulPreU) <|
+  .seq (.loop (.block rowU) .ne) <|
+    .block ((List.range 28).flatMap unpack ++ (List.range 28).flatMap reduceCol ++ normalize)
+
 /-- The low word of limb `i` of twice the prime; its high bit is added separately. -/
 def subK (i : Nat) : BitVec 16 := if i = 14 then 0xfffc else 0xfffe
 
@@ -185,7 +237,12 @@ def entryFn (hasB : Bool) : List Instr :=
 def fn (hasB : Bool) (op : Prog isa) : Prog isa :=
   .seq (.block (entryFn hasB)) <| .seq op (.block restoreFn)
 
-def mulFn : Prog isa := fn true mul
+/-- The suffix of a function's name: `_umaal` for the functions that multiply with `umaal`
+(`u`). -/
+def suffix (u : Bool) : String := if u then "_umaal" else ""
+
+/-- The multiplication: with `umaal` if `u`. -/
+def mulFn (u : Bool) : Prog isa := fn true (if u then mulU else mul)
 def addFn : Prog isa := fn true (.block add)
 def subFn : Prog isa := fn true (.block sub)
 def mulA24Fn : Prog isa := fn false (.block mulSmall)
@@ -214,16 +271,16 @@ inductive Op
   | copy (o a : Nat)
   deriving DecidableEq, Repr
 
-def Op.code : Op → Prog isa
-  | .mul o a b => callFn "vg_gf448_r16_mul" mulFn o a b
+def Op.code (u : Bool) : Op → Prog isa
+  | .mul o a b => callFn ("vg_gf448_r16_mul" ++ suffix u) (mulFn u) o a b
   | .mulSmall o a => mulA24Call o a
   | .add o a b => callFn "vg_gf448_r16_add" addFn o a b
   | .sub o a b => callFn "vg_gf448_r16_sub" subFn o a b
   | .copy o a => .block (Arm.copy o a)
 
-def ops : List Op → Prog isa
+def ops (u : Bool) : List Op → Prog isa
   | [] => .block []
-  | o :: os => .seq o.code (ops os)
+  | o :: os => .seq (o.code u) (ops u os)
 
 def stepOps : List Op :=
   [.add A X2 Z2, .mul AA A A, .sub B X2 Z2, .mul BB B B, .sub E AA BB,
@@ -236,35 +293,35 @@ def stepHead : List Instr :=
     ld .r2 SWAP, .dp .eor .r2 .r2 (.reg .r3), st .r3 SWAP,
     .mov .r5 (.imm 0), .dp .sub .r5 .r5 (.reg .r2)] ++ cswap X2 X3 ++ cswap Z2 Z3
 
-def stepBody : Prog isa := .seq (.block stepHead) (ops stepOps)
+def stepBody (u : Bool) : Prog isa := .seq (.block stepHead) (ops u stepOps)
 
-def step : Prog isa := .seq stepBody (.block [.cmp .r11 (.imm 0)])
+def step (u : Bool) : Prog isa := .seq (stepBody u) (.block [.cmp .r11 (.imm 0)])
 
-def ladder : Prog isa := .seq (.block [.movw .r11 448]) (.loop step .ne)
+def ladder (u : Bool) : Prog isa := .seq (.block [.movw .r11 448]) (.loop (step u) .ne)
 
 def lastSwap : List Instr :=
   [ld .r2 SWAP, .mov .r5 (.imm 0), .dp .sub .r5 .r5 (.reg .r2)] ++ cswap X2 X3 ++ cswap Z2 Z3
 
 /-- Square `n` times in place, for positive `n`. -/
-def sqn (o n : Nat) : Prog isa :=
+def sqn (u : Bool) (o n : Nat) : Prog isa :=
   .seq (.block [.movw .r11 (BitVec.ofNat 16 n)])
-    (.loop (.seq (Op.code (.mul o o o)) (.block [.subs .r11 .r11 (.imm 1)])) .ne)
+    (.loop (.seq (Op.code u (.mul o o o)) (.block [.subs .r11 .r11 (.imm 1)])) .ne)
 
-def invert : Prog isa :=
-  .seq (ops [.copy T0 Z2]) <| .seq (sqn T0 1) <| .seq (ops [.mul T0 T0 Z2, .copy T1 T0]) <|
-  .seq (sqn T1 2) <| .seq (ops [.mul T1 T1 T0, .copy T2 T1]) <|
-  .seq (sqn T2 4) <| .seq (ops [.mul T2 T2 T1, .copy T3 T2]) <|
-  .seq (sqn T3 8) <| .seq (ops [.mul T3 T3 T2, .copy T4 T3]) <|
-  .seq (sqn T4 16) <| .seq (ops [.mul T4 T4 T3, .copy T5 T4]) <|
-  .seq (sqn T5 32) <| .seq (ops [.mul T5 T5 T4, .copy T6 T5]) <|
-  .seq (sqn T6 64) <| .seq (ops [.mul T6 T6 T5]) <|
-  .seq (sqn T6 64) <| .seq (ops [.mul T6 T6 T5]) <|
-  .seq (sqn T6 16) <| .seq (ops [.mul T6 T6 T3]) <|
-  .seq (sqn T6 8) <| .seq (ops [.mul T6 T6 T2]) <|
-  .seq (sqn T6 4) <| .seq (ops [.mul T6 T6 T1]) <|
-  .seq (sqn T6 2) <| .seq (ops [.mul T6 T6 T0, .copy T7 T6]) <|
-  .seq (sqn T7 1) <| .seq (ops [.mul T7 T7 Z2]) <|
-  .seq (sqn T7 225) <| .seq (sqn T6 2) <| ops [.mul T6 T6 Z2, .mul T7 T7 T6]
+def invert (u : Bool) : Prog isa :=
+  .seq (ops u [.copy T0 Z2]) <| .seq (sqn u T0 1) <| .seq (ops u [.mul T0 T0 Z2, .copy T1 T0]) <|
+  .seq (sqn u T1 2) <| .seq (ops u [.mul T1 T1 T0, .copy T2 T1]) <|
+  .seq (sqn u T2 4) <| .seq (ops u [.mul T2 T2 T1, .copy T3 T2]) <|
+  .seq (sqn u T3 8) <| .seq (ops u [.mul T3 T3 T2, .copy T4 T3]) <|
+  .seq (sqn u T4 16) <| .seq (ops u [.mul T4 T4 T3, .copy T5 T4]) <|
+  .seq (sqn u T5 32) <| .seq (ops u [.mul T5 T5 T4, .copy T6 T5]) <|
+  .seq (sqn u T6 64) <| .seq (ops u [.mul T6 T6 T5]) <|
+  .seq (sqn u T6 64) <| .seq (ops u [.mul T6 T6 T5]) <|
+  .seq (sqn u T6 16) <| .seq (ops u [.mul T6 T6 T3]) <|
+  .seq (sqn u T6 8) <| .seq (ops u [.mul T6 T6 T2]) <|
+  .seq (sqn u T6 4) <| .seq (ops u [.mul T6 T6 T1]) <|
+  .seq (sqn u T6 2) <| .seq (ops u [.mul T6 T6 T0, .copy T7 T6]) <|
+  .seq (sqn u T7 1) <| .seq (ops u [.mul T7 T7 Z2]) <|
+  .seq (sqn u T7 225) <| .seq (sqn u T6 2) <| ops u [.mul T6 T6 Z2, .mul T7 T7 T6]
 
 /-- Two byte loads decode a limb without requiring input alignment. -/
 def decodeLimb (i : Nat) : List Instr :=
@@ -313,13 +370,14 @@ def packLimb (i : Nat) : List Instr :=
   [ld .r3 (X2 + 4 * i), .strb .r3 .r8 (2 * i), .mov .r3 (.shifted .r3 .lsr 8),
     .strb .r3 .r8 (2 * i + 1)]
 
-def finish : Prog isa :=
-  .seq (Op.code (.mul X2 X2 T7)) (.block (freeze ++ (List.range 28).flatMap packLimb ++
+def finish (u : Bool) : Prog isa :=
+  .seq (Op.code u (.mul X2 X2 T7)) (.block (freeze ++ (List.range 28).flatMap packLimb ++
     .mov .lr (.reg .r10) :: (List.range 8).map fun i => ld (saved[i]!) (4 * i)))
 
 /-- What follows the setup. -/
-def afterSetup : Prog isa := .seq bits <| .seq ladder <| .seq (.block lastSwap) <| .seq invert finish
+def afterSetup (u : Bool) : Prog isa :=
+  .seq bits <| .seq (ladder u) <| .seq (.block lastSwap) <| .seq (invert u) (finish u)
 
-def x448 : Prog isa := .seq (.block setup) afterSetup
+def x448 (u : Bool) : Prog isa := .seq (.block setup) (afterSetup u)
 
 end VG.Impl.X448.Arm

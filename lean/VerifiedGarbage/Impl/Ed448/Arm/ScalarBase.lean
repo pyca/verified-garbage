@@ -169,12 +169,12 @@ def takeOps : List Op := [.copy (slot 0) (slot 3), .copy (slot 1) (slot 4), .cop
 
 /-- One row `t = r11 - 1`, from the top: `R = 2R`, the table entry of the row's bits selected
 into `Q`, `R = R + Q`, and the counter compared with zero. -/
-def combStep : Prog isa :=
-  .seq (.block [.dp .sub .r11 .r11 (.imm 1)]) <| .seq (ops doubleOps) <|
-  .seq (.block (combDigit ++ combSelect)) <| .seq (ops (addOps ++ takeOps)) (.block [.cmp .r11 (.imm 0)])
+def combStep (u : Bool) : Prog isa :=
+  .seq (.block [.dp .sub .r11 .r11 (.imm 1)]) <| .seq (ops u doubleOps) <|
+  .seq (.block (combDigit ++ combSelect)) <| .seq (ops u (addOps ++ takeOps)) (.block [.cmp .r11 (.imm 0)])
 
 /-- The 114 rows, from 113 down to 0. -/
-def combLoop : Prog isa := .seq (.block [.movw .r11 114]) (.loop combStep .ne)
+def combLoop (u : Bool) : Prog isa := .seq (.block [.movw .r11 114]) (.loop (combStep u) .ne)
 
 /-! ## The encoding -/
 
@@ -186,14 +186,14 @@ def signBit : List Instr :=
 fully reduced and its low bit kept; `y` copied into slot 1, fully reduced and
 written to the output's first 56 bytes, and the bit as the top bit of its
 57th; then the link register and the callee-saved registers restored. -/
-def baseEncode : Prog isa :=
-  .seq invert <| .seq (ops [.mul (slot 4) (slot 1) (slot 21), .mul X2 (slot 0) (slot 21)]) <|
+def baseEncode (u : Bool) : Prog isa :=
+  .seq (invert u) <| .seq (ops u [.mul (slot 4) (slot 1) (slot 21), .mul X2 (slot 0) (slot 21)]) <|
     .block (freeze ++ signBit ++ Impl.X448.Arm.copy X2 (slot 4) ++ freeze ++
       (List.range 28).flatMap packLimb ++ [.strb .r9 .r8 56, .mov .lr (.reg .r10)] ++
       (List.range 8).map fun i => ld (saved[i]!) (4 * i))
 
 /-- `vg_ed448_scalar_base(out = r0, scalar = r1, scratch = r2)`. -/
-def scalarBase : Prog isa :=
-  .seq (.block baseEntry) <| .seq baseBits <| .seq combLoop baseEncode
+def scalarBase (u : Bool) : Prog isa :=
+  .seq (.block baseEntry) <| .seq baseBits <| .seq (combLoop u) (baseEncode u)
 
 end VG.Impl.Ed448.Arm

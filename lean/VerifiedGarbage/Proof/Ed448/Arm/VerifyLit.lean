@@ -34,14 +34,18 @@ from the same taint rather than every copy.
 
 namespace VG
 
-materialize_code Impl.Ed448.Arm.vbefore
-materialize_code Impl.Ed448.Arm.vdoubleAdd
-materialize_code Impl.Ed448.Arm.vafter
-materialize_code Impl.Ed448.Arm.verifyEquation
+materialize_code Proof.Ed448.Arm.vbeforePlain := Impl.Ed448.Arm.vbefore false
+materialize_code Proof.Ed448.Arm.vbeforeUmaal := Impl.Ed448.Arm.vbefore true
+materialize_code Proof.Ed448.Arm.vdoubleAddPlain := Impl.Ed448.Arm.vdoubleAdd false
+materialize_code Proof.Ed448.Arm.vdoubleAddUmaal := Impl.Ed448.Arm.vdoubleAdd true
+materialize_code Proof.Ed448.Arm.vafterPlain := Impl.Ed448.Arm.vafter false
+materialize_code Proof.Ed448.Arm.vafterUmaal := Impl.Ed448.Arm.vafter true
+materialize_code Proof.Ed448.Arm.verifyEquationPlain := Impl.Ed448.Arm.verifyEquation false
+materialize_code Proof.Ed448.Arm.verifyEquationUmaal := Impl.Ed448.Arm.verifyEquation true
 
 /-- `vbefore` without its offsets. -/
 def Proof.Ed448.Arm.vbeforeErased : Prog Arm.isa :=
-  Arm.Code.eraseOff Impl.Ed448.Arm.vbefore
+  Arm.Code.eraseOff (Impl.Ed448.Arm.vbefore false)
 
 materialize_code Proof.Ed448.Arm.vbeforeErased
 

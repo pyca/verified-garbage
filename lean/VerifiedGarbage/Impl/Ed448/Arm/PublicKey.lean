@@ -87,11 +87,12 @@ def baseArgs : List Instr := setup [(.r0, .caller 0 0), (.r1, .frame HASH), (.r2
 /-- The frame from `HASH` on, cleared. -/
 def wipe : List Instr := zeroWords 6 56
 
-def body : Prog isa :=
+def body (u : Bool) : Prog isa :=
   .seq hash <| .seq prune <|
-  .seq (callWith baseArgs "vg_ed448_scalar_base" Impl.Ed448.Arm.scalarBase) (.block wipe)
+  .seq (callWith baseArgs ("vg_ed448_scalar_base" ++ Impl.X448.Arm.suffix u) (Impl.Ed448.Arm.scalarBase u))
+    (.block wipe)
 
 /-- `vg_ed448_public_key`. -/
-def code : Prog isa := wrap 3 body
+def code (u : Bool) : Prog isa := wrap 3 (body u)
 
 end VG.Impl.Ed448.Arm.PublicKey

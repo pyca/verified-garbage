@@ -23,6 +23,7 @@ kernel-evaluated check.
 
 namespace VG
 
-materialize_code Impl.X448.Arm.x448
+materialize_code Proof.X448.Arm.x448Plain := Impl.X448.Arm.x448 false
+materialize_code Proof.X448.Arm.x448Umaal := Impl.X448.Arm.x448 true
 
 end VG

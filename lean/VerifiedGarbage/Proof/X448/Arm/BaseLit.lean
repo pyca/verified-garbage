@@ -31,10 +31,11 @@ once from the same taint rather than every copy.
 
 namespace VG
 
-materialize_code Impl.X448.Arm.x448Base
+materialize_code Proof.X448.Arm.x448BasePlain := Impl.X448.Arm.x448Base false
+materialize_code Proof.X448.Arm.x448BaseUmaal := Impl.X448.Arm.x448Base true
 
 /-- `x448Base` without its offsets. -/
-def Proof.X448.Arm.x448BaseErased : Prog Arm.isa := Arm.Code.eraseOff Impl.X448.Arm.x448Base
+def Proof.X448.Arm.x448BaseErased : Prog Arm.isa := Arm.Code.eraseOff (Impl.X448.Arm.x448Base false)
 
 materialize_code Proof.X448.Arm.x448BaseErased
 

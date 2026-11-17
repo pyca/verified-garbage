@@ -67,6 +67,8 @@ open VG.Proof.X25519.Arm (wp_ldrb wp_strb wp_dp wp_movw op2_imm)
 open VG.Proof.X448.Arm (writeW8_apply)
 open VG.Proof.Ed25519.Arm (Whole.FR)
 
+variable {fv : Bool}
+
 /-! ## The bytes -/
 
 theorem bytesAt_split (m : Mem) (q : Addr) :
@@ -176,6 +178,8 @@ open VG.Proof.Ed25519.Arm (Whole.Within Whole.FR Whole.valid Whole.call_ok Whole
 open VG.Proof.X448.Arm (writeW8_apply off_eq_iff)
 open VG.Proof.Ed448 (BaseCombOk)
 
+variable {fv : Bool}
+
 variable {L : Lay} {g : Reg → BitVec 32} {m₀ : Mem} {t : State}
 
 /-- Where the hash, and then the scalar, is. -/
@@ -272,7 +276,7 @@ theorem prune_step (hc : Ctx L g m₀ t) (hL : L.Ok) :
 
 /-! ## `vg_ed448_scalar_base` -/
 
-theorem base_noFrames : Impl.Ed448.Arm.scalarBase.noFrames = true := by lit_decide
+theorem base_noFrames : (Impl.Ed448.Arm.scalarBase fv).noFrames = true := by cases fv <;> lit_decide
 
 def BaseArgs (L : Lay) (t : State) : Prop :=
   t.gpr .r0 = L.out ∧ t.gpr .r1 = L.E + BitVec.ofNat 32 HASH ∧ t.gpr .r2 = L.scr
@@ -308,7 +312,8 @@ theorem base_writes (L : Lay) : ∀ r ∈ L.outputs,
 def baseValues : List (Reg × Value) := [(.r0, .caller 0 0), (.r1, .frame HASH), (.r2, .caller 2 0)]
 
 theorem base_step (hl : BaseCombOk) (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : Arguments L m₀) :
-    WP isa (callWith baseArgs "vg_ed448_scalar_base" Impl.Ed448.Arm.scalarBase) t fun u =>
+    WP isa (callWith baseArgs ("vg_ed448_scalar_base" ++ Impl.X448.Arm.suffix fv)
+        (Impl.Ed448.Arm.scalarBase fv)) t fun u =>
       Ctx L g m₀ u ∧ Spec.Ed448.bytesAt u.mem (State.addr L.out) 57 =
         Spec.Ed448.scalarBase (Spec.Ed448.bytesAt t.mem (hq L) 57) := by
   refine WP.seq (WP.mono (setup_ok hc hL ha (args := baseValues) (stk := [])
@@ -350,7 +355,7 @@ theorem wipe_step (hc : Ctx L g m₀ t) (hL : L.Ok) :
 /-! ## The body -/
 
 theorem body_ok (hl : BaseCombOk) (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : Arguments L m₀) :
-    WP isa body t fun u => Ctx L g m₀ u ∧
+    WP isa (body fv) t fun u => Ctx L g m₀ u ∧
       Spec.Ed448.bytesAt u.mem (State.addr L.out) 57 =
         Spec.Ed448.publicKey (Spec.Ed448.bytesAt m₀ (State.addr L.seed) 57) := by
   refine WP.seq (WP.mono (hash_ok hc hL ha) fun u ⟨hu, hh⟩ => ?_)
@@ -360,7 +365,7 @@ theorem body_ok (hl : BaseCombOk) (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : Argume
   rw [hm, hp, Spec.Ed448.scalarBase, hs, hh]
   rfl
 
-theorem body_noFrames : body.noFrames = true := by
+theorem body_noFrames : (body fv).noFrames = true := by
   simp only [body, Impl.Ed448.Arm.PublicKey.hash, zeroState, prune, callWith, Code.noFrames, Bool.and_self]
   rw [absorb_noFrames, pad_noFrames, squeeze_noFrames, base_noFrames]
   rfl
@@ -424,8 +429,8 @@ theorem entry_args {s p : State} (hs : 280 ≤ s.sp.toNat) (hp : Whole.Saved (Wh
   rcases he with rfl | rfl | rfl <;> exact hw
 
 theorem publicKey_ok (hl : BaseCombOk) {s : State} (h : pkLocal.pre s) :
-    WP isa code s fun u => abiPreserved s u ∧ pkLocal.post s u := by
-  have hw := Whole.wrap_ok body_noFrames (by decide : 3 ≤ 6) (entry_below h)
+    WP isa (code fv) s fun u => abiPreserved s u ∧ pkLocal.post s u := by
+  have hw := Whole.wrap_ok (body_noFrames (fv := fv)) (by decide : 3 ≤ 6) (entry_below h)
     (by simp only [Nat.reduceSub, Nat.mul_zero, Nat.add_zero]; exact Nat.le_of_lt s.sp.isLt)
     (by intro j hj h4; omega) (entry_writes h)
     (P := fun m m' _ => Spec.Ed448.bytesAt m' (State.addr (s.gpr .r0)) 57 =

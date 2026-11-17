@@ -97,14 +97,15 @@ def mulAddArgs : List Instr :=
 /-- The locals from `HASH` on, cleared. -/
 def wipe : List Instr := zeroWords 2 60
 
-def body : Prog isa :=
+def body (u : Bool) : Prog isa :=
   .seq (.block (hdrAt 4 HDR)) <| .seq seedHash <| .seq prune <| .seq nonceHash <|
   .seq (callWith reduceRArgs "vg_ed448_scalar_reduce" Impl.Ed448.Arm.scalarReduce) <|
-  .seq (callWith baseArgs "vg_ed448_scalar_base" Impl.Ed448.Arm.scalarBase) <| .seq chalHash <|
+  .seq (callWith baseArgs ("vg_ed448_scalar_base" ++ Impl.X448.Arm.suffix u) (Impl.Ed448.Arm.scalarBase u)) <|
+  .seq chalHash <|
   .seq (callWith reduceKArgs "vg_ed448_scalar_reduce" Impl.Ed448.Arm.scalarReduce) <|
   .seq (callWith mulAddArgs "vg_ed448_scalar_mul_add" Impl.Ed448.Arm.scalarMulAdd) (.block wipe)
 
 /-- `vg_ed448_sign_cached`. -/
-def code : Prog isa := wrap 6 body
+def code (u : Bool) : Prog isa := wrap 6 (body u)
 
 end VG.Impl.Ed448.Arm.SignCached

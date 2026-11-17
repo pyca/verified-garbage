@@ -50,6 +50,8 @@ open VG VG.Arm VG.Impl.Ed448.Arm VG.Proof.X448.Arm
 open VG.Spec.Ed448 (bytesAt decodeLE)
 open VG.Proof.X25519.Arm (wp_mov wp_dp wp_ldrb wp_strb wp_cmp op2_imm op2_reg op2_lsl)
 
+variable {fv : Bool}
+
 /-- Bits `t` of two numbers in one byte. -/
 def pair2 (a b t : Nat) : Nat := ((a >>> t) &&& 1) + 2 * ((b >>> t) &&& 1)
 
@@ -310,6 +312,8 @@ open VG VG.Arm VG.Impl.Ed448.Arm VG.Proof.X448.Arm
 open VG.Proof.Ed448 (double vcomb vcombStep vcomb_bit combDigit combDigit_lt bitAt)
 open VG.Impl.X448.Arm (slot ACC)
 
+variable {fv : Bool}
+
 /-! ## The values -/
 
 /-- `T` (slots 3–5) taken into `Q` (slots 0, 21, 2). -/
@@ -493,7 +497,7 @@ theorem vtest_ok (s : State) {a b : Nat} (ha : a < 2) (hb2 : b < 2)
 
 theorem vaddIf_ok {s : State} {base : Addr} (hs : Scr s base) (hbd : BoundedEnv s.mem base) {a b : Nat}
     (ha : a < 2) (hb2 : b < 2) (h8 : s.gpr .r8 = (BitVec.ofNat 8 (a + 2 * b)).setWidth 32) :
-    WP isa (vaddIf 6 7) s fun u => Keep base s u ∧ BoundedEnv u.mem base ∧
+    WP isa (vaddIf fv 6 7) s fun u => Keep base s u ∧ BoundedEnv u.mem base ∧
       E u.mem base = addEnv 6 7 (decide (b = 1)) (E s.mem base) := by
   unfold vaddIf
   refine WP.seq (WP.mono (vtest_ok s ha hb2 h8) fun u ⟨uz, uk, um⟩ => ?_)
@@ -601,7 +605,7 @@ theorem vcombDigit_ok {s : State} {base : Addr} (hs : Scr s base) {S K t : Nat} 
 theorem vcombIf_ok {s : State} {base : Addr} (hs : Scr s base) (hbd : BoundedEnv s.mem base) {S K n : Nat}
     (hn : n < 456) (hb : s.gpr .r11 = BitVec.ofNat 32 n)
     (hbits : ∀ i < 456, s.mem (off base (VBITS + i)) = BitVec.ofNat 8 (pair2 S K i)) :
-    WP isa vcombIf s fun u => Keep base s u ∧ BoundedEnv u.mem base ∧
+    WP isa (vcombIf fv) s fun u => Keep base s u ∧ BoundedEnv u.mem base ∧
       E u.mem base = combEnv (combDigit S n) (decide (n < 114)) (E s.mem base) := by
   unfold vcombIf
   refine WP.seq (WP.mono (vrowTest_ok s hn hb) fun u ⟨uz, uk, um⟩ => ?_)
@@ -625,7 +629,7 @@ theorem vcombIf_ok {s : State} {base : Addr} (hs : Scr s base) (hbd : BoundedEnv
 theorem vdoubleAdd_ok {s₀ s : State} {base : Addr} {S K : Nat} {A : Spec.Ed448.Point} {n : Nat} (hn : n < 456)
     (hbits : ∀ t < 456, s₀.mem (off base (VBITS + t)) = BitVec.ofNat 8 (pair2 S K t))
     (hi : VBit base S K A s₀ s n) :
-    WP isa vdoubleAdd s fun t => VInv base S K A s₀ t n ∧ t.z = decide (n = 0) := by
+    WP isa (vdoubleAdd fv) s fun t => VInv base S K A s₀ t n ∧ t.z = decide (n = 0) := by
   have hs := hi.scr
   have hB : VBITS = 3104 := rfl
   have hA : ACC = 3584 := rfl
@@ -679,17 +683,17 @@ theorem vdoubleAdd_ok {s₀ s : State} {base : Addr} {S K : Nat} {A : Spec.Ed448
 theorem vstep_ok {s₀ s : State} {base : Addr} {S K : Nat} {A : Spec.Ed448.Point} {n : Nat} (hn : n < 456)
     (hbits : ∀ t < 456, s₀.mem (off base (VBITS + t)) = BitVec.ofNat 8 (pair2 S K t))
     (hi : VInv base S K A s₀ s (n + 1)) :
-    WP isa vstep s fun t => VInv base S K A s₀ t n ∧ t.z = decide (n = 0) :=
+    WP isa (vstep fv) s fun t => VInv base S K A s₀ t n ∧ t.z = decide (n = 0) :=
   WP.seq (WP.mono (vload_ok hn hbits hi) fun _ hb => vdoubleAdd_ok hn hbits hb)
 
 theorem vloop_ok {s₀ s : State} {base : Addr} {S K : Nat} {A : Spec.Ed448.Point}
     (hbits : ∀ t < 456, s₀.mem (off base (VBITS + t)) = BitVec.ofNat 8 (pair2 S K t))
     (hi : ∀ s', s'.gpr .r11 = BitVec.ofNat 32 456 → (∀ r, r ≠ .r11 → s'.gpr r = s.gpr r) →
       s'.mem = s.mem → s'.rd = s.rd → s'.wr = s.wr → VInv base S K A s₀ s' 456) :
-    WP isa vloop s fun s' => VInv base S K A s₀ s' 0 := by
+    WP isa (vloop fv) s fun s' => VInv base S K A s₀ s' 0 := by
   unfold vloop
   refine WP.seq (WP.mono (setCounter_ok s 456 (by decide)) fun s' ⟨h1, h2, h3, h4, h5⟩ => ?_)
-  refine WP.loop (M := isa) (body := vstep) (c := .ne) (Q := fun s' => VInv base S K A s₀ s' 0)
+  refine WP.loop (M := isa) (body := vstep fv) (c := .ne) (Q := fun s' => VInv base S K A s₀ s' 0)
     (fun m (s : State) => 1 ≤ m ∧ m ≤ 456 ∧ VInv base S K A s₀ s m) ?_ 456 s'
     ⟨by decide, by decide, hi s' h1 h2 h3 h4 h5⟩
   intro m s ⟨h1, h2, hi⟩
@@ -730,6 +734,8 @@ open VG VG.Arm VG.Impl.Ed448.Arm VG.Proof.X448.Arm VG.Proof.X448.Radix16
 open VG.Proof.Ed448 (RecoverOk VerifyEqCombOk vcomb negPoint double verifyEquation_none)
 open VG.Impl.X448.Arm (slot X2 BITS ACC TMP saved ld copy Op)
 open VG.Spec.Ed448 (bytesAt decodeLE)
+
+variable {fv : Bool}
 
 /-! ## The bytes of the inputs -/
 
@@ -907,7 +913,7 @@ theorem vbefore_ok (hR : RecoverOk) {s : State} (h : VerifyPre s) {base pk sig c
     (hbase : State.addr (s.gpr .r3) = base) (hpk : State.addr (s.gpr .r0) = pk)
     (hsig : State.addr (s.gpr .r1) = sig) (hch : State.addr (s.gpr .r2) = ch) {S K : Nat}
     (hS : decodeLE (bytesAt s.mem (sig + BitVec.ofNat 64 57) 57) = S) (hK : decodeLE (bytesAt s.mem ch 57) = K) :
-    WP isa vbefore s fun t => VMid s base pk sig S K t := by
+    WP isa (vbefore fv) s fun t => VMid s base pk sig S K t := by
   obtain hw₀ : (⟨base, 8192⟩ : Region) ∈ s.wr := by rw [h.wr, hbase]; simp
   obtain rpk : ∀ j < 57, InRegions (s.rd ++ s.wr) (pk + BitVec.ofNat 64 j) 1 := fun j hj =>
     ⟨⟨pk, 57⟩, by rw [h.rd, hpk]; simp, Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])⟩
@@ -1004,7 +1010,7 @@ theorem vbefore_ok (hR : RecoverOk) {s : State} (h : VerifyPre s) {base pk sig c
       lr_kept ((Outside2.widen k3.mem).mono (by decide) (by decide)), o2.word (by decide) (by decide), lr1]
 
 theorem verifyEquation_main (hR : RecoverOk) (hE : VerifyEqCombOk) {s : State} (h : VerifyPre s) :
-    WP isa verifyEquation s fun t => (∀ r ∈ preserved, t.gpr r = s.gpr r) ∧
+    WP isa (verifyEquation fv) s fun t => (∀ r ∈ preserved, t.gpr r = s.gpr r) ∧
       t.gpr .r0 = if Spec.Ed448.verifyEquation (bytesAt s.mem (State.addr (s.gpr .r0)) 57)
         (bytesAt s.mem (State.addr (s.gpr .r1)) 114) (bytesAt s.mem (State.addr (s.gpr .r2)) 57)
         then 1 else 0 := by

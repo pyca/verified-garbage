@@ -26,6 +26,8 @@ namespace VG.Proof.X448.Arm
 
 open VG VG.Arm VG.Impl.X448.Arm
 
+variable {fv : Bool}
+
 def stepPre : List Instr :=
   [.dp .sub .r11 .r11 (.imm 1), .dp .add .r7 .r0 (.reg .r11), .ldrb .r3 .r7 BITS,
     ld .r2 SWAP, .dp .eor .r2 .r2 (.reg .r3), st .r3 SWAP,
@@ -86,6 +88,8 @@ according to `ladderStep`.
 namespace VG.Proof.X448.Arm
 
 open VG VG.Arm VG.Impl.X448.Arm VG.Proof.X448.Radix16
+
+variable {fv : Bool}
 
 def stepEnv (sw : Bool) (e : Env) : Env :=
   applyOps stepFields (opSwap 2 4 sw (opSwap 1 3 sw e))
@@ -152,7 +156,7 @@ theorem ofs_off' (base : Addr) {d : Nat} (h : d < 2 ^ 64) : ofs base (off base d
 theorem stepBody_ok {s₀ s : State} {base : Addr} {k : Nat} {u : Spec.X448.Fe} {n : Nat} (hn : n < 448)
     (hbits : ∀ t < 448, s₀.mem (off base (BITS + t)) = BitVec.ofNat 8 (bit k t))
     (hi : LInv base k u s₀ s (n + 1)) :
-    WP isa stepBody s fun t => LInv base k u s₀ t n ∧ (t.gpr .r11 == 0) = decide (n = 0) := by
+    WP isa (stepBody fv) s fun t => LInv base k u s₀ t n ∧ (t.gpr .r11 == 0) = decide (n = 0) := by
   have hs := hi.scr
   have bitval : s.mem (off base (BITS + n)) = BitVec.ofNat 8 (bit k n) := by
     rw [hi.mem _ (by rw [ofs_off' base (by simp only [BITS]; omega_using [hn])]; simp only [BITS]; omega_using [])
@@ -218,7 +222,7 @@ theorem LInv.of_flags {base : Addr} {k n : Nat} {u : Spec.X448.Fe} {s0 s t : Sta
 theorem step_ok {s0 s : State} {base : Addr} {k : Nat} {u : Spec.X448.Fe} {n : Nat} (hn : n < 448)
     (hbits : ∀ t < 448, s0.mem (off base (BITS + t)) = BitVec.ofNat 8 (bit k t))
     (hi : LInv base k u s0 s (n + 1)) :
-    WP isa step s fun t => LInv base k u s0 t n ∧ t.z = decide (n = 0) := by
+    WP isa (step fv) s fun t => LInv base k u s0 t n ∧ t.z = decide (n = 0) := by
   rw [step, WP.seq_iff]
   refine WP.mono (stepBody_ok hn hbits hi) fun t ⟨ht, hz⟩ => ?_
   refine VG.Proof.X25519.Arm.wp_cmp (VG.Proof.X25519.Arm.op2_imm (by decide))
