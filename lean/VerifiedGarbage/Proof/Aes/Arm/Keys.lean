@@ -186,7 +186,7 @@ structure KSetup (s₀ : State) (b sc : BitVec 32) (R : Nat) (w : List Byte) : P
 abbrev keyAddr (b : BitVec 32) (R i : Nat) : BitVec 32 := b + BitVec.ofNat 32 (lastKey - 32 * (R - i))
 
 /-- The key area of the scratch buffer at `b`. -/
-abbrev keyArea (b : BitVec 32) : Region := ⟨State.addr b + BitVec.ofNat 64 1024, 1024⟩
+abbrev keyArea (b : BitVec 32) : Region := ⟨State.addr b + BitVec.ofNat 64 224, 480⟩
 
 /-- Before bitslicing round key `j` (the loop's counter aside). -/
 structure KInv (s₀ : State) (b sc : BitVec 32) (R : Nat) (w : List Byte) (j : Nat) (s : State) : Prop where
@@ -255,7 +255,7 @@ theorem keyWrites_not (r : Reg) (hr : r ∉ keyWrites) :
 theorem keyAddr_pred (b : BitVec 32) {R j : Nat} (hR : R ≤ 14) (hj : 0 < j) (hjR : j ≤ R) :
     keyAddr b R j - 32 = keyAddr b R (j - 1) := by
   simp only [keyAddr, lastKey]
-  rw [show 2016 - 32 * (R - j) = (2016 - 32 * (R - (j - 1))) + 32 by omega_arith, BitVec.ofNat_add,
+  rw [show 672 - 32 * (R - j) = (672 - 32 * (R - (j - 1))) + 32 by omega_arith, BitVec.ofNat_add,
     ← BitVec.add_assoc]
   exact BitVec.add_sub_cancel _ _
 

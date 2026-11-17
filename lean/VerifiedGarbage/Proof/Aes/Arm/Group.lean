@@ -745,7 +745,7 @@ theorem scr_sub (B : Addr) {x lx : Nat} (h : x + lx ≤ 2048) :
 
 theorem keysAt_frame {m m' : Mem} {b : BitVec 32} (hfit : b.toNat + 2048 ≤ 2 ^ 32) {R : Nat}
     {w : List Byte} {rs : List Region} (hR : R ≤ 14) (hf : Frame rs m m')
-    (hd : ∀ r ∈ rs, Region.Disjoint ⟨State.addr b + 1024, 1024⟩ r)
+    (hd : ∀ r ∈ rs, Region.Disjoint ⟨State.addr b + 224, 480⟩ r)
     (h : KeysAt m (b + BitVec.ofNat 32 (lastKey - 32 * R)) R w) :
     KeysAt m' (b + BitVec.ofNat 32 (lastKey - 32 * R)) R w :=
   fun j hj => keyRel_congr (h j hj) fun k hk => hf.readW (key_contains hfit hR hj hk) hd (by decide)
@@ -814,8 +814,8 @@ theorem slot_disj_regions {b Dp : BitVec 32} {n : Nat}
 theorem keys_disj_regions {b Dp : BitVec 32} {n : Nat}
     (hsep : Region.Disjoint ⟨State.addr Dp, 16 * n⟩ ⟨State.addr b, 2048⟩) :
     ∀ r ∈ gRegions (State.addr b) (State.addr Dp) n,
-      Region.Disjoint ⟨State.addr b + 1024, 1024⟩ r :=
-  slot_disj_regions hsep (x := 1024) (lx := 1024) (by omega_arith) (by omega_arith) (by omega_arith)
+      Region.Disjoint ⟨State.addr b + 224, 480⟩ r :=
+  slot_disj_regions hsep (x := 224) (lx := 480) (by omega_arith) (by omega_arith) (by omega_arith)
 
 /-- One group: from before group `g`, to after the last group or before
 group `g + 1`. -/

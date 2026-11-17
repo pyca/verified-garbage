@@ -15,7 +15,7 @@ vg_aes_decrypt_blocks:
 	str r10, [r12, #152]
 	str r11, [r12, #156]
 	str lr, [r12, #160]
-	add r9, r12, #2016
+	add r9, r12, #672
 	add r12, r0, r1, lsl #4
 	lsl lr, r3, #4
 	add lr, lr, r1
@@ -181,7 +181,7 @@ vg_aes_decrypt_blocks:
 	and r10, r10, r11
 	eor r7, r7, r10
 	eor r3, r3, r10, ror #28
-	add r9, r8, #2016
+	add r9, r8, #672
 	ldr r10, [r9, #0]
 	eor r0, r0, r10
 	ldr r10, [r9, #4]

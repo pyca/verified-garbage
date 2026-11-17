@@ -211,7 +211,8 @@ theorem blocksKeyLoop_ok {s₀ : State} {b sc : BitVec 32} {R N : Nat} {w : List
 theorem correct {crypt2 : Prog isa} {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State}
     (hcr : CryptOk crypt2 f) {s₀ : State} (hp : Pre s₀) :
     WP isa (blocks crypt2) s₀ fun s' =>
-      (∀ i < 9, s'.gpr (sreg i) = s₀.gpr (sreg i)) ∧ (Proof.Aes.blocksArm f).post s₀ s' := by
+      (∀ i < 9, s'.gpr (sreg i) = s₀.gpr (sreg i)) ∧ (Proof.Aes.blocksArm f).post s₀ s' ∧
+        Frame [⟨State.addr (bP s₀), scratchUsed⟩, ⟨State.addr (dP s₀), 16 * nB s₀⟩] s₀.mem s'.mem := by
   obtain hR14 : (s₀.gpr .r1).toNat ≤ 14 := by rcases hp.rounds with h | h | h <;> omega_arith
   have hfit := hp.fitB
   obtain hwS : (⟨State.addr (bP s₀), 2048⟩ : Region) ∈ s₀.wr := by rw [hp.wr]; simp
@@ -422,8 +423,31 @@ theorem correct {crypt2 : Prog isa} {f : Nat → List Byte → Spec.Aes.State �
     exact this
   obtain ⟨s₁₆, h₁₆, rg₁₆, fR⟩ := restore_ok (s₀ := s₀) (by decide)
     (by rw [u₁₅.wr, gd.wr, wr₁₃]; exact hwS) hfit b₁₅ (by rw [u₁₅.mem]; exact sv)
-  refine WP.of_runBlock ⟨s₁₆, h₁₆, rg₁₆, ?_⟩
   rw [u₁₅.mem] at fR
+  -- What is written: the slots and the round keys, and the data.
+  obtain fW : Frame [⟨B, scratchUsed⟩, ⟨D, 16 * n⟩] s₀.mem s₁₆.mem := by
+    obtain hP : ∀ {lx : Nat}, lx ≤ scratchUsed →
+        ∃ r' ∈ [(⟨B, scratchUsed⟩ : Region), ⟨D, 16 * n⟩], Region.Sub ⟨B, lx⟩ r' :=
+      fun h => ⟨_, List.mem_cons_self .., Region.sub_prefix h⟩
+    obtain hO : ∀ {x lx : Nat}, x + lx ≤ scratchUsed →
+        ∃ r' ∈ [(⟨B, scratchUsed⟩ : Region), ⟨D, 16 * n⟩], Region.Sub ⟨B + BitVec.ofNat 64 x, lx⟩ r' :=
+      fun h => ⟨_, List.mem_cons_self .., VG.Offset.sub_base B h⟩
+    obtain f₀₈' : Frame [⟨B, scratchUsed⟩, ⟨D, 16 * n⟩] s₀.mem s₈.mem := by
+      refine (f₀₂.sub fun r hr => ?_).trans (?_ : Frame _ s₂.mem s₈.mem)
+      · simp only [List.mem_singleton] at hr; subst hr; exact hP (by decide)
+      · rw [← m₇]
+        exact d₈.frame.sub fun r hr => by
+          simp only [List.mem_singleton] at hr; subst hr; exact hO (by decide)
+    refine (f₀₈'.trans (?_ : Frame _ s₈.mem s₁₄.mem)).trans (fR.sub fun r hr => ?_)
+    · rw [← m₁₃]
+      refine gd.frame.sub fun r hr => ?_
+      simp only [gRegions, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact hP (by decide)
+      · exact hO (by decide)
+      · exact ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), fun _ h => h⟩
+    · simp only [List.mem_singleton] at hr; subst hr; exact hP (by decide)
+  refine WP.of_runBlock ⟨s₁₆, h₁₆, rg₁₆, ?_, fW⟩
   show Spec.Aes.statesAt s₁₆.mem D n = _
   rw [statesAt_of_ecbInv (ecbInv_frame fR (fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
@@ -434,7 +458,7 @@ theorem correct {crypt2 : Prog isa} {f : Nat → List Byte → Spec.Aes.State �
 theorem blocks_correct {crypt2 : Prog isa} {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State}
     (hcr : CryptOk crypt2 f) (s : State) (hs : (Proof.Aes.blocksArm f).pre s) :
     ∃ t s', Exec isa (blocks crypt2) s t s' ∧ abiPreserved s s' ∧ (Proof.Aes.blocksArm f).post s s' := by
-  obtain ⟨t, s', he, h₁, h₂⟩ := correct hcr (pre_of hs)
+  obtain ⟨t, s', he, h₁, h₂, -⟩ := correct hcr (pre_of hs)
   refine ⟨t, s', he, ⟨fun r hr => ?_, Exec.sp he⟩, h₂⟩
   simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
@@ -447,6 +471,23 @@ theorem blocks_correct {crypt2 : Prog isa} {f : Nat → List Byte → Spec.Aes.S
   · exact h₁ 6 (by omega_arith)
   · exact h₁ 7 (by omega_arith)
   · exact h₁ 8 (by omega_arith)
+
+/-- A run changes no byte of `scratch` from offset `scratchUsed` on: it writes
+only the slots and the round keys there. -/
+theorem blocks_scratch {crypt2 : Prog isa} {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State}
+    (hcr : CryptOk crypt2 f) {s : State} (hs : (Proof.Aes.blocksArm f).pre s) {t : List Leak} {s' : State}
+    (he : Exec isa (blocks crypt2) s t s') {i : Nat} (h1 : scratchUsed ≤ i) (h2 : i < 2048) :
+    s'.mem (State.addr (stackArg s 0) + BitVec.ofNat 64 i) =
+      s.mem (State.addr (stackArg s 0) + BitVec.ofNat 64 i) := by
+  obtain hp := pre_of hs
+  obtain ⟨t', s'', he', -, -, hf⟩ := correct hcr hp
+  obtain ⟨-, rfl⟩ := Exec.det he he'
+  refine hf _ fun r hr hc => ?_
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl
+  · simp only [Region.Contains, VG.Offset.add_sub_cancel_left, BitVec.toNat_ofNat] at hc
+    omega_using [hc, h1, h2]
+  · exact hp.dDS _ hc (VG.Offset.contains_base _ (by omega_using [h2]) (by omega_using [h2]))
 
 /-! ## Constant time -/
 
@@ -519,20 +560,26 @@ def sat : State where
   rd := [⟨0x1000, 240⟩, ⟨0x8000, 4⟩]
   wr := [⟨0x3000, 0⟩, ⟨0, 2048⟩]
 
+theorem encryptBlocks_implies :
+    (Proof.Aes.blocksArm Spec.Aes.cipher).Implies (Proof.Aes.encryptBlocksRoundsContract Arm.abi) := by
+  sig_implies [Proof.Aes.encryptBlocksRoundsContract, Spec.Aes.blocksSig, Proof.Aes.blocksArm, Arm.abi,
+    Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
+    [Proof.Aes.Arm.Ecb.sat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read]
+    using Proof.Aes.Arm.Ecb.sat
+
+theorem decryptBlocks_implies :
+    (Proof.Aes.blocksArm Spec.Aes.invCipher).Implies (Proof.Aes.decryptBlocksRoundsContract Arm.abi) := by
+  sig_implies [Proof.Aes.decryptBlocksRoundsContract, Spec.Aes.blocksSig, Proof.Aes.blocksArm, Arm.abi,
+    Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
+    [Proof.Aes.Arm.Ecb.sat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read]
+    using Proof.Aes.Arm.Ecb.sat
+
 theorem encryptBlocks_verified :
     Verified Arm.target encryptBlocks (Proof.Aes.encryptBlocksRoundsContract Arm.abi) :=
-  Verified.of_correct (blocks_correct encrypt2_cryptOk) encryptBlocks_ct (by
-    sig_implies [Proof.Aes.encryptBlocksRoundsContract, Spec.Aes.blocksSig, Proof.Aes.blocksArm, Arm.abi,
-      Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
-      [Proof.Aes.Arm.Ecb.sat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read]
-      using Proof.Aes.Arm.Ecb.sat)
+  Verified.of_correct (blocks_correct encrypt2_cryptOk) encryptBlocks_ct encryptBlocks_implies
 
 theorem decryptBlocks_verified :
     Verified Arm.target decryptBlocks (Proof.Aes.decryptBlocksRoundsContract Arm.abi) :=
-  Verified.of_correct (blocks_correct decrypt2_cryptOk) decryptBlocks_ct (by
-    sig_implies [Proof.Aes.decryptBlocksRoundsContract, Spec.Aes.blocksSig, Proof.Aes.blocksArm, Arm.abi,
-      Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
-      [Proof.Aes.Arm.Ecb.sat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read]
-      using Proof.Aes.Arm.Ecb.sat)
+  Verified.of_correct (blocks_correct decrypt2_cryptOk) decryptBlocks_ct decryptBlocks_implies
 
 end VG.Proof.Aes.Arm.Ecb
