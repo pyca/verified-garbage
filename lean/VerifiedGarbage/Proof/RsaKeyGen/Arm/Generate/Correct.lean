@@ -20,6 +20,7 @@ import VerifiedGarbage.Proof.Ffdh.Arm.Block
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Arm.Lost
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Search.Loop
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Spec.RsaKeyGen.GenerationAgrees
@@ -1738,12 +1739,25 @@ theorem search_run (name : String) (c : Search.Cand) (h : GenFrame p o used st s
   have room := h.facts.room
   obtain hsp32 : 32 ≤ s.sp.toNat := by rw [h.sp, h.S1_toNat]; omega_using [room]
   unfold searchRun
-  refine WP.alloc (by decide) hsp32 ?_
+  refine WP.allocLost (by decide) hsp32 ?_
   refine WP.seq (WP.mono h.searchArgs_ok fun u ⟨hr, ku⟩ => ?_)
   obtain ⟨cov, covW⟩ := h.search_covers hr
   obtain hS2 : 184 ≤ u.sp.toNat := by rw [hr.sp, h.S2_toNat]; omega_using [room]
   refine FrameStack.WP.callF (Search.search_correct c) (h.callS_pre hr) cov covW
-    (Nat.le_trans (search_stack c) hS2) fun t htr htw htsp hfr hpres hpost => ?_
+    (Nat.le_trans (search_stack c) hS2) fun t htr htw htsp hfr hpres hpost ml ul hfl => ?_
+  change Frame [⟨State.addr (allocated 32 s).sp, 32⟩] t.mem ml at hfl
+  rw [h.alloc_sp] at hfl
+  obtain cf := h.input.cfacts
+  obtain hcs := cf.stack
+  simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hcs
+  obtain ⟨sK, sU, -, sT, -, -⟩ := hcs
+  have apartA {R : Region} (hd : (rA p).Disjoint R) : ∀ r ∈ [rA p], R.Disjoint r := fun r hr => by
+    obtain rfl := List.mem_singleton.mp hr; exact hd.symm
+  have stW {d : Nat} (hd : d + 8 ≤ 56) : ml.readW (off p.st d) 64 = t.mem.readW (off p.st d) 64 :=
+    hfl.readW (r := ⟨off p.st d, 8⟩) (by
+      have := Offset.contains_base (off p.st d) (d := 0) (n := 8) (k := 8) (by decide) (by decide)
+      simpa only [BitVec.add_zero] using this)
+      (apartA ((sT.sub_left h.aStack).sub_right (Offset.sub_base _ hd))) (by decide)
   obtain hres := h.callS_result hr hk
   obtain hlen := h.callS_len hr
   obtain ⟨hst, hout, hused, req, hwords, hreq⟩ := hpost
@@ -1766,30 +1780,40 @@ theorem search_run (name : String) (c : Search.Cand) (h : GenFrame p o used st s
       rcases hr' with rfl | rfl | rfl | rfl <;> simp [callChanges]
     · obtain rfl := List.mem_singleton.mp hr'
       exact ⟨GenFrame.rLow p, by simp [callChanges], by rw [hr.sp]; exact h.lowA (search_stack c)⟩
-  obtain hframe := f0.trans f1
+  obtain hframe : Frame (callChanges p st) s.mem ml :=
+    (f0.trans f1).trans (hfl.mono fun r hr => by
+      obtain rfl := List.mem_singleton.mp hr; simp [callChanges])
   obtain hreg : ∀ r, r ∉ [Reg.r0, .r1, .r2, .r3, .r12, .lr] → t.gpr r = s.gpr r := fun r hr' =>
     (hpres r (callRegs r hr').1 (callRegs r hr').2).trans (ku.gpr r hr')
-  obtain k : Rest [.r0, .r1, .r2, .r3, .r12, .lr] s (freed 32 t) :=
+  obtain k : Rest [.r0, .r1, .r2, .r3, .r12, .lr] s ({ freed 32 t with mem := ml, unknowns := ul } : State) :=
     ⟨hreg, htr.trans (ku.rd.trans rfl), show t.wr.tail = s.wr by rw [htw, ku.wr]; rfl,
       show t.sp + BitVec.ofNat 32 32 = s.sp by rw [htsp, ku.sp]; exact BitVec.sub_add_cancel _ _⟩
   have kept {d n : Nat} (hd : 32 ≤ d) (hdn : d + n ≤ 56) (hn : n ≤ 8) :
-      Spec.Rsa.bytesAt t.mem (off p.st d) n = Spec.Rsa.bytesAt s.mem (off p.st d) n :=
+      Spec.Rsa.bytesAt ml (off p.st d) n = Spec.Rsa.bytesAt s.mem (off p.st d) n :=
     bytes_kept hframe (h.upper_kept hd hdn) (by omega_using [hdn])
   have keptW {d : Nat} (hd : 32 ≤ d) (hdn : d + 8 ≤ 56) :
-      t.mem.readW (off p.st d) 64 = s.mem.readW (off p.st d) 64 :=
+      ml.readW (off p.st d) 64 = s.mem.readW (off p.st d) 64 :=
     hframe.readW (r := ⟨off p.st d, 8⟩) (by
       have := Offset.contains_base (off p.st d) (d := 0) (n := 8) (k := 8) (by decide) (by decide)
       simpa only [BitVec.add_zero] using this) (h.upper_kept hd hdn) (by decide)
-  obtain hst' : StateOk p ⟨st.left, st.phase, (primeOf p.L p.eB st ((genRand o).drop used)).remaining⟩ t.mem :=
+  rw [← stW (d := 0) (by decide)] at w0
+  rw [← stW (d := 8) (by decide)] at w1
+  rw [← stW (d := 16) (by decide)] at w2
+  rw [← stW (d := 24) (by decide)] at w3
+  obtain hst' : StateOk p ⟨st.left, st.phase, (primeOf p.L p.eB st ((genRand o).drop used)).remaining⟩ ml :=
     ⟨by simpa only [off, BitVec.add_zero] using w0, w1, w2, by rw [keptW (by decide) (by decide)]; exact h.state.phase,
       by rw [keptW (by decide) (by decide)]; exact h.state.left,
       by rw [kept (by decide) (by decide) (by decide)]; exact h.state.e,
       Nat.le_trans (KeySearch.primeSearch_remaining_le _ _ _ _ _) h.state.remaining_le, h.state.left_lt⟩
-  refine ⟨h.stepTo k (by decide) hframe h.callChanges_sub h.callChanges_apart hst', ?_, ?_, ?_, hout,
+  have hout' : Spec.Rsa.bytesAt ml (State.addr (p.kp + BitVec.ofNat 32 (outOf p st))) p.L =
+      Spec.Rsa.bytesAt t.mem (State.addr (p.kp + BitVec.ofNat 32 (outOf p st))) p.L :=
+    bytes_kept hfl (apartA (sK.sub_left h.aStack |>.sub_right h.oK)) (by have := (rO p st).base.isLt; omega_using [h.facts.room])
+  refine ⟨h.stepTo k (by decide) hframe h.callChanges_sub h.callChanges_apart hst', ?_, ?_, ?_, hout'.trans hout,
     ⟨req, w3, hreq⟩, hframe⟩
   · exact hreg .r11 (by decide)
   · rw [← hst, BitVec.setWidth_append_eq_right]; rfl
-  · change t.mem.readW _ 64 = _
+  · change ml.readW _ 64 = _
+    rw [hfl.readW (r := cU p) (Region.contains_self _ _) (apartA (sU.sub_left h.aStack)) (by decide)]
     simpa only [BitVec.add_zero] using hused
 
 end GenFrame
