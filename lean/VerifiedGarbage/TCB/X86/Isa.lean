@@ -25,7 +25,8 @@ Modelling choices:
   these 128 bits. All XMM registers are caller-saved in the i386 ABI.
 * Only CF, ZF, SF and OF are modelled. Each is an `Option Bool`; `none` means
   "undefined" (as the SDM specifies for some instructions). Evaluating a
-  branch on an undefined flag faults, so verified code never depends on one.
+  branch on an undefined flag faults, so verified code never depends on one,
+  and returning with one counts as secret residue (`Residue.lean`).
   PF and AF are not modelled, and no modelled instruction reads them.
 * Effective addresses are computed modulo 2³² and zero-extended to the 64-bit
   addresses of `Mem` (segment bases are zero: the flat memory model of every

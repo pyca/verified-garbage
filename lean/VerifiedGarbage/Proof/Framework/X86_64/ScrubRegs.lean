@@ -332,9 +332,9 @@ theorem Verified.scrubXs {c : Prog isa} {xs : List XReg} {gs : List Reg} {cs : L
     obtain ⟨m₂, T₂, f₂, f₂'⟩ := tails s₂ _ _ h₂ a₂
     obtain ⟨-, rfl⟩ := Exec.det b₁ f₁
     obtain ⟨-, rfl⟩ := Exec.det b₂ f₂
-    obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, -, o10, o11, o12, o13, o14, o15⟩ :=
+    obtain ⟨⟨o1, o2, o3, o4, o5, o6, o7, o8, -, o10, o11, o12, o13, o14, o15⟩, of⟩ :=
       ares _ _ _ _ _ _ h₁ h₂ hp ho hun (.seq a₁ f₁') (.seq a₂ f₂')
-    refine ⟨o1, o2, o3, o4, o5, o6, o7, o8, ?_, o10, o11, o12, o13, o14, o15⟩
+    refine ⟨⟨o1, o2, o3, o4, o5, o6, o7, o8, ?_, o10, o11, o12, o13, o14, o15⟩, of⟩
     show (fun x => if x ∈ xs then 0 else u₁.xmm x) = fun x => if x ∈ xs then 0 else u₂.xmm x
     funext x
     by_cases hx : x ∈ xs

@@ -1026,6 +1026,15 @@ theorem finState_other {v : VecLevel} {rb : Nat} {xs : List XReg} {ps gs : List 
   · exact ⟨rfl, k.2.2.2.2.2.1, k.2.2.2.2.2.2.1, hy, hz, rfl, rfl, rfl, rfl, rfl⟩
   · exact ⟨rfl, k.2.2.2.2.2.1, k.2.2.2.2.2.2.1, hy, hz, rfl, rfl, rfl, rfl, rfl⟩
 
+/-- The clearing ends with every flag defined: those of its last `xor`. -/
+theorem finState_flags {v : VecLevel} {rb : Nat} {xs : List XReg} {ps gs : List Reg} {m' : Mem} {u : State}
+    {f : VecLevel} : FlagsDefined (finState v rb xs ps gs m' u f) := by
+  refine ⟨?_, ?_, ?_, ?_⟩
+  · rw [finState_other.2.2.2.2.2.2.1]; exact Option.some_ne_none _
+  · rw [finState_other.2.2.2.2.2.2.2.1]; exact Option.some_ne_none _
+  · rw [finState_other.2.2.2.2.2.2.2.2.1]; exact Option.some_ne_none _
+  · rw [finState_other.2.2.2.2.2.2.2.2.2]; exact Option.some_ne_none _
+
 theorem slot_not_below {sp x : Addr} {n : Nat} (hn : n + 8 < 2 ^ 64)
     (hx : (⟨sp, 8⟩ : Region).Contains x 1) : ¬ (⟨sp - BitVec.ofNat 64 n, n⟩ : Region).Contains x 1 := by
   have := sp.isLt; have := x.isLt
@@ -1208,7 +1217,8 @@ theorem Verified.scrubM {c : Prog isa} {v f : VecLevel} {xs : List XReg} {ps gs 
       simp only [vk0R, Prod.mk.injEq] at k₁ k₂
       rw [k₁.2.2.1, k₂.2.2.1, k₁.2.2.2, k₂.2.2.2, hy, hz]
       exact ⟨rfl, rfl⟩
-    refine ⟨?_, ?_, fun r hr => ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, fun x hx => ?_⟩
+    refine ⟨⟨?_, ?_, fun r hr => ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, fun x hx => ?_⟩,
+      finState_flags⟩
     · rw [finState_other.2.1, finState_other.2.1, rw₁.1, rw₂.1, hrd]
     · rw [finState_other.2.2.1, finState_other.2.2.1, rw₁.2, rw₂.2, hwr]
     · by_cases hs : r ∈ scratchRegs

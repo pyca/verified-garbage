@@ -177,7 +177,7 @@ theorem Verified.scrubU {c : Prog isa} {v : VecLevel} {xs : List XReg} {ps gs : 
     have cs_ : ∀ r : Reg, r ∉ scratchRegs → r ≠ .rax → r ∈ calleeSaved := by intro r; cases r <;> decide
     have upper : ∀ x, ¬ (v ≠ .sse ∧ x ∈ xs) → u₁.ymmHi x = u₂.ymmHi x ∧ u₁.zmmHi x = u₂.zmmHi x :=
       hup _ _ _ _ _ _ h₁ h₂ hp ho' a₁ a₂
-    refine ⟨?_, ?_, fun r hr => ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, fun x hx => ?_⟩
+    refine ⟨⟨?_, ?_, fun r hr => ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, fun x hx => ?_⟩, finState_flags⟩
     · rw [finState_other.2.1, finState_other.2.1, rw₁.1, rw₂.1, hrd]
     · rw [finState_other.2.2.1, finState_other.2.2.1, rw₁.2, rw₂.2, hwr]
     · by_cases hs : r ∈ scratchRegs
