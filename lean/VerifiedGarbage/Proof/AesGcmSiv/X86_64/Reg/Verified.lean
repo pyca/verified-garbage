@@ -70,7 +70,7 @@ theorem seal_ct (F : MulFacts) : ConstantTime isa sealX86_64.pre sealX86_64.pub 
   fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ => (seal_rel F h₁ h₂ hq _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
 
 theorem open_ct (F : MulFacts) : ConstantTime isa openX86_64.pre openX86_64.pub Impl.AesGcmSiv.X86_64Reg.open :=
-  fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ => (open_rel F h₁ h₂ hq.1 _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
+  fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ => (open_rel F h₁ h₂ hq _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
 
 /-- A state satisfying the precondition of `vg_aes_gcm_siv_seal`: no
 additional data, no data, the tag at `0x3000` and `work` at 0. -/
@@ -228,7 +228,7 @@ theorem sealL_mx (hcode : LoopsCode lp) : (sealL lp).allInstrs (fun i => !loadsM
   lit_decide
 
 theorem openL_mx (hcode : LoopsCode lp) : (openL lp).allInstrs (fun i => !loadsMxcsr i) = true := by
-  simp only [openL, decL, decFront, Code.allInstrs, hcode.decMx, Bool.true_and, Bool.and_true]
+  simp only [openL, openHead, decL, decFront, Code.allInstrs, hcode.decMx, Bool.true_and, Bool.and_true]
   lit_decide
 
 theorem sealL_spSafe (hcode : LoopsCode lp) : (sealL lp).all (fun i => !X86_64.isa.writesSp i) = true := by
@@ -237,7 +237,7 @@ theorem sealL_spSafe (hcode : LoopsCode lp) : (sealL lp).all (fun i => !X86_64.i
   decide +kernel
 
 theorem openL_spSafe (hcode : LoopsCode lp) : (openL lp).all (fun i => !X86_64.isa.writesSp i) = true := by
-  simp only [openL, decL, decFront, Code.all, hcode.decSp, Bool.true_and, Bool.and_true]
+  simp only [openL, openHead, decL, decFront, Code.all, hcode.decSp, Bool.true_and, Bool.and_true]
   decide +kernel
 
 theorem sealL_xdepth (hcode : LoopsCode lp) : (sealL lp).x86_64Depth ≤ 8 := by
@@ -245,7 +245,7 @@ theorem sealL_xdepth (hcode : LoopsCode lp) : (sealL lp).x86_64Depth ≤ 8 := by
   lit_decide
 
 theorem openL_xdepth (hcode : LoopsCode lp) : (openL lp).x86_64Depth ≤ 8 := by
-  simp only [openL, decL, decFront, Code.x86_64Depth, hcode.decDepth]
+  simp only [openL, openHead, decL, decFront, Code.x86_64Depth, hcode.decDepth]
   lit_decide
 
 theorem sealL_ct (F : MulFacts) (hlp : LoopsOk lp) (hct : LoopsCT lp) :
@@ -254,7 +254,7 @@ theorem sealL_ct (F : MulFacts) (hlp : LoopsOk lp) (hct : LoopsCT lp) :
 
 theorem openL_ct (F : MulFacts) (hlp : LoopsOk lp) (hct : LoopsCT lp) :
     ConstantTime isa openX86_64.pre openX86_64.pub (openL lp) :=
-  fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ => (openL_rel F hlp hct h₁ h₂ hq.1 _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
+  fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ => (openL_rel F hlp hct h₁ h₂ hq _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
 
 theorem sealL_verified (F : MulFacts) (hlp : LoopsOk lp) (hcode : LoopsCode lp) (hct : LoopsCT lp) :
     Verified X86_64.target (sealL lp) (Proof.AesGcmSiv.sealScratchContract X86_64.abi 93 8) :=

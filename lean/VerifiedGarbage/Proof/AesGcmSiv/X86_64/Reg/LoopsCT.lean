@@ -558,16 +558,17 @@ theorem sealL_rel (F : MulFacts) {lp : Loops} (hlp : Stitch.LoopsOk lp) (hct : L
 /-- `vg_aes_gcm_siv_open` with the loops, in two runs with the same public
 arguments. -/
 theorem openL_rel (F : MulFacts) {lp : Loops} (hlp : Stitch.LoopsOk lp) (hct : LoopsCT lp) {s₀ s₀' : State}
-    (hp : openPre s₀) (hp' : openPre s₀') (hq : onePub s₀ s₀') :
+    (hp : openPre s₀) (hp' : openPre s₀') (hq : openX86_64.pub s₀ s₀') :
     RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') (openL lp) fun _ _ => True := by
   have Ar := (args_of_open hp).1.1
   have hn := Nat.le_of_lt Ar.data.lt
-  refine RelCT.seq (entry_rel (pub_regs hq) (hq.2.2.2.2.2.2.2 2 (by decide)) (argW_in Ar rfl)
-    (argW_in (args_of_open hp').1.1 rfl) (entry_open hp) (entry_open_pub hp' hq)) ?_
-  exact openBody_rel Ar.lay Ar.rounds Ar.data.w hn Ar.retW
-    ((rel_taintC [] Ar.data.w hn (fun t₁ t₂ h => ⟨h.2.1.bufs.one, h.2.2.bufs.one, fun _ h => nomatch h⟩)
-      lenCmp_check).wp fun t₁ t₂ h => ⟨lenCmp_st h.2.1, lenCmp_st h.2.2⟩)
-    (openIte_rel Ar.data.w hn F hlp hct Ar.lay Ar.rounds) fun _ _ h => ⟨h.2.1, h.2.2⟩
+  have hh := RelCT.seq (entry_rel (pub_regs hq.1) (hq.1.2.2.2.2.2.2.2 2 (by decide)) (argW_in Ar rfl)
+    (argW_in (args_of_open hp').1.1 rfl) (entry_open hp) (entry_open_pub hp' hq.1))
+    (openBody_rel Ar.lay Ar.rounds Ar.data.w hn Ar.retW
+      ((rel_taintC [] Ar.data.w hn (fun t₁ t₂ h => ⟨h.2.1.bufs.one, h.2.2.bufs.one, fun _ h => nomatch h⟩)
+        lenCmp_check).wp fun t₁ t₂ h => ⟨lenCmp_st h.2.1, lenCmp_st h.2.2⟩)
+      (openIte_rel Ar.data.w hn F hlp hct Ar.lay Ar.rounds) fun _ _ h => ⟨h.2.1, h.2.2⟩)
+  exact open_relG hp hp' hq (fun h => openL_probe F hlp h) Ar.data.w hn hh
 
 /-! ## The loops, checked -/
 

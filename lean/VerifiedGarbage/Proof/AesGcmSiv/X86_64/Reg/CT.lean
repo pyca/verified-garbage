@@ -14,6 +14,7 @@ import VerifiedGarbage.TCB.X86_64.State
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Narrow
 import VerifiedGarbage.Proof.AesGcmSiv.X86_64.FnCT
+import VerifiedGarbage.Proof.Framework.Cold
 meta import VerifiedGarbage.Proof.Framework.X86_64.Narrow
 meta import VerifiedGarbage.Proof.AesGcmSiv.X86_64.FnCT
 meta import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Reg.Fn
@@ -768,7 +769,15 @@ theorem mask_st {K W SP : Addr} {R : Nat} {N A D T : Addr} {al n : Nat} {t : Sta
       Mk.rd Mk.wr
 
 
-/-- `open` after its entry, in two runs. -/
+theorem okTest_check : ∃ hc, (taint.check (sivT []) (.block okTest) hc).isSome = true := ⟨_, by taint_decide⟩
+
+theorem okTest_st {K W SP : Addr} {R : Nat} {N A D T : Addr} {al n : Nat} {t : State} {v : BitVec 64}
+    (h : StO K W SP R N A D al n T t) (hv : t.mem.readW (W + BitVec.ofNat 64 192) 64 = v) :
+    WP isa (.block okTest) t fun t' => StO K W SP R N A D al n T t' ∧ t'.zf = some (decide (v = 0#64)) := by
+  obtain ⟨t₁, run, zf, gg, m, rd, wr⟩ := okTest_run h.1.bufs.one.env hv (hv ▸ h.2)
+  exact WP.of_runBlock ⟨t₁, run, ⟨h.1.same m gg rd wr, by rw [m]; exact h.2⟩, zf⟩
+
+/-- `open` up to the comparison, after its entry, in two runs. -/
 theorem openBody_rel {m₁ m₂ : Prog isa} {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14)
     {N A D T : Addr} {al n : Nat} (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 744⟩) (hn : n ≤ 2 ^ 64)
     (hret : (⟨SP, 8⟩ : Region).Disjoint ⟨W, 744⟩) {M : State → State → Prop}
@@ -776,10 +785,9 @@ theorem openBody_rel {m₁ m₂ : Prog isa} {K W SP : Addr} (L : Lay K W SP) {R 
     (hm₂ : RelCT isa M m₂ fun t₁ t₂ => True ∧ St K W SP R N A D al n T t₁ ∧ St K W SP R N A D al n T t₂)
     {P : State → State → Prop}
     (hP : ∀ t₁ t₂, P t₁ t₂ → St K W SP R N A D al n T t₁ ∧ St K W SP R N A D al n T t₂) :
-    RelCT isa P (.seq (.block recv) (.seq keys (.seq m₁ (.seq m₂
-      (.seq (tag bO) (.seq (.block Impl.AesGcmSiv.X86_64.cmp) (.seq mask
-        (.block (([.mov .rax (.mem (at_ .r15 okO))] : List Instr) ++ restore)))))))))
-      fun _ _ => True := by
+    RelCT isa P (.seq (.block recv) (.seq keys (.seq (.seq m₁ m₂)
+      (.seq (tag bO) (.block Impl.AesGcmSiv.X86_64.cmp)))))
+      fun t₁ t₂ => True ∧ StO K W SP R N A D al n T t₁ ∧ StO K W SP R N A D al n T t₂ := by
   have r₀ := (rel_loadT (l := recv.tail) (fun t₁ t₂ h =>
       ⟨(hP _ _ h).1.tagIn rfl rfl (Covers.refl _), (hP _ _ h).2.tagIn rfl rfl (Covers.refl _)⟩) recv_check).wp
     (F₁ := St K W SP R N A D al n T) (F₂ := St K W SP R N A D al n T)
@@ -792,23 +800,137 @@ theorem openBody_rel {m₁ m₂ : Prog isa} {K W SP : Addr} (L : Lay K W SP) {R 
     hDW hn (fun t₁ t₂ h => ⟨h.2.1.bufs.one, h.2.2.bufs.one, fun _ h => nomatch h⟩) cmp_check).wp
     (F₁ := StO K W SP R N A D al n T) (F₂ := StO K W SP R N A D al n T)
     fun t₁ t₂ h => ⟨cmp_st L h.2.1, cmp_st L h.2.2⟩
+  rw [recv_split]
+  exact RelCT.seq r₀ (RelCT.seq r₁ (RelCT.seq (RelCT.seq hm₁ hm₂) (RelCT.seq r₄ r₅)))
+
+/-- `open` after the comparison, in two runs with the same outcome `v`:
+both zero the data, or neither does. -/
+theorem openTail_rel {K W SP : Addr} {R : Nat} {N A D T : Addr} {al n : Nat}
+    (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 744⟩) (hn : n ≤ 2 ^ 64) (v : BitVec 64) :
+    RelCT isa (fun t₁ t₂ =>
+        (StO K W SP R N A D al n T t₁ ∧ t₁.mem.readW (W + BitVec.ofNat 64 192) 64 = v) ∧
+        (StO K W SP R N A D al n T t₂ ∧ t₂.mem.readW (W + BitVec.ofNat 64 192) 64 = v))
+      openTail fun _ _ => True := by
+  have r₀ := (rel_taintC [] (P := fun t₁ t₂ =>
+      (StO K W SP R N A D al n T t₁ ∧ t₁.mem.readW (W + BitVec.ofNat 64 192) 64 = v) ∧
+      (StO K W SP R N A D al n T t₂ ∧ t₂.mem.readW (W + BitVec.ofNat 64 192) 64 = v))
+    hDW hn (fun t₁ t₂ h => ⟨h.1.1.1.bufs.one, h.2.1.1.bufs.one, fun _ h => nomatch h⟩) okTest_check).wp
+    (F₁ := fun (t : State) => StO K W SP R N A D al n T t ∧ t.zf = some (decide (v = 0#64)))
+    (F₂ := fun (t : State) => StO K W SP R N A D al n T t ∧ t.zf = some (decide (v = 0#64)))
+    fun t₁ t₂ h => ⟨okTest_st h.1.1 h.1.2, okTest_st h.2.1 h.2.2⟩
   have r₆ := (rel_taintC [] (P := fun t₁ t₂ => True ∧ StO K W SP R N A D al n T t₁ ∧ StO K W SP R N A D al n T t₂)
     hDW hn (fun t₁ t₂ h => ⟨h.2.1.1.bufs.one, h.2.2.1.bufs.one, fun _ h => nomatch h⟩) mask_check).wp
     (F₁ := St K W SP R N A D al n T) (F₂ := St K W SP R N A D al n T)
     fun t₁ t₂ h => ⟨mask_st h.2.1, mask_st h.2.2⟩
+  have i : RelCT isa (fun t₁ t₂ => True ∧
+        (StO K W SP R N A D al n T t₁ ∧ t₁.zf = some (decide (v = 0#64))) ∧
+        (StO K W SP R N A D al n T t₂ ∧ t₂.zf = some (decide (v = 0#64))))
+      (Code.iteCold .e mask (.block []))
+      fun t₁ t₂ => True ∧ St K W SP R N A D al n T t₁ ∧ St K W SP R N A D al n T t₂ :=
+    RelCT.iteCold (RelCT.ite (fun t₁ t₂ h => (h.2.1.2.trans h.2.2.2.symm : t₁.zf = t₂.zf))
+      (r₆.mono (fun _ _ h => ⟨trivial, h.1.2.1.1, h.1.2.2.1⟩) fun _ _ h => h)
+      (RelCT.block_nil fun _ _ h => ⟨trivial, h.1.2.1.1.1, h.1.2.2.1.1⟩))
   have r₇ := rel_taintC [] (P := fun t₁ t₂ => True ∧ St K W SP R N A D al n T t₁ ∧ St K W SP R N A D al n T t₂)
     hDW hn (fun t₁ t₂ h => ⟨h.2.1.bufs.one, h.2.2.bufs.one, fun _ h => nomatch h⟩) fin_check
-  rw [recv_split]
-  exact RelCT.seq r₀ (RelCT.seq r₁ (RelCT.seq hm₁ (RelCT.seq hm₂ (RelCT.seq r₄ (RelCT.seq r₅ (RelCT.seq r₆ r₇))))))
+  exact RelCT.seq (RelCT.seq r₀ i) r₇
 
-/-- `vg_aes_gcm_siv_open`, in two runs with the same public arguments. -/
-theorem open_rel (F : MulFacts) {s₀ s₀' : State} (hp : openPre s₀) (hp' : openPre s₀') (hq : onePub s₀ s₀') :
+/-- After `mask`, at either outcome, `open` returns the comparison's
+outcome. -/
+theorem probe_ax {K W SP : Addr} {R : Nat} {N A D T : Addr} {al n : Nat} {t : State}
+    (h : StO K W SP R N A D al n T t) :
+    WP isa (.seq mask (.block (([.mov .rax (.mem (at_ .r15 okO))] : List Instr) ++ restore))) t fun s' =>
+      s'.gpr .rax = t.mem.readW (W + BitVec.ofNat 64 192) 64 := by
+  have hok : t.mem.readW (W + BitVec.ofNat 64 192) 64 =
+      if t.mem.readW (W + BitVec.ofNat 64 192) 64 = 1#64 then 1#64 else 0#64 := by
+    rcases h.2 with h' | h' <;> rw [h'] <;> decide
+  refine WP.seq (WP.mono (mask_ok h.1.bufs.one.env h.1.bufs.one.sl h.1.bufs.data
+    (by rw [h.1.bufs.one.wr]; exact Proof.AesGcm.X86_64.covers_of_mem (by simp)) hok) fun u Mk => ?_)
+  have h15 := Mk.env.r15
+  obtain rO := Mk.env.perm.wR (show 192 + 8 ≤ 744 by decide)
+  obtain r₁ := Mk.env.perm.wR (show 144 + 8 ≤ 744 by decide)
+  obtain r₂ := Mk.env.perm.wR (show 152 + 8 ≤ 744 by decide)
+  obtain r₃ := Mk.env.perm.wR (show 160 + 8 ≤ 744 by decide)
+  obtain r₄ := Mk.env.perm.wR (show 168 + 8 ≤ 744 by decide)
+  obtain r₅ := Mk.env.perm.wR (show 176 + 8 ≤ 744 by decide)
+  obtain r₆ := Mk.env.perm.wR (show 184 + 8 ≤ 744 by decide)
+  obtain ko : u.mem.readW (W + BitVec.ofNat 64 192) 64 = t.mem.readW (W + BitVec.ofNat 64 192) 64 :=
+    Mk.frame.readW (r := ⟨W + BitVec.ofNat 64 192, 8⟩) (Region.contains_self _ _) (fun q hq => by
+      simp only [List.mem_singleton] at hq; subst hq
+      exact (h.1.bufs.data.w.sub_right (Lay.wSub (by decide))).symm) (by decide)
+  refine WP.of_runBlock ⟨_, by srun [restore, Impl.AesGcmSiv.X86_64.saved, List.map_cons, List.map_nil,
+    List.cons_append, List.nil_append, h15, rO, r₁, r₂, r₃, r₄, r₅, r₆], ?_⟩
+  simp only [gpr_setReg, ite_true, ite_false, reduceCtorEq, ko]
+
+/-- The comparison's outcome, from what `open` returns after it. -/
+theorem ok_of {K W SP : Addr} {R : Nat} {N A D T : Addr} {al n : Nat} {t : State} {r : Option (List Byte)}
+    {D' : Addr} {n' : Nat} (h : StO K W SP R N A D al n T t)
+    (hw : WP isa (.seq mask (.block (([.mov .rax (.mem (at_ .r15 okO))] : List Instr) ++ restore))) t fun s' =>
+      openPost r s' D' n') :
+    t.mem.readW (W + BitVec.ofNat 64 192) 64 = if r.isSome then 1#64 else 0#64 := by
+  obtain ⟨_, s₁, e₁, q₁⟩ := hw
+  obtain ⟨_, s₂, e₂, q₂⟩ := probe_ax h
+  obtain ⟨-, rfl⟩ := e₁.det e₂
+  unfold openPost at q₁
+  rw [← q₂]
+  cases r with
+  | none =>
+    simp only [Option.isSome_none, Bool.false_eq_true, ↓reduceIte]
+    rcases h.2 with h' | h'
+    · rw [q₂, h'] at q₁; exact absurd q₁.1 (by decide)
+    · rw [q₂, h']
+  | some pt =>
+    simp only [Option.isSome_some, ↓reduceIte]
+    rcases h.2 with h' | h'
+    · rw [q₂, h']
+    · rw [q₂, h'] at q₁; exact absurd q₁.1 (by decide)
+
+/-- `open`, from its head in two runs and what it computes in each: the two
+runs' comparisons have the same outcome, which `open` may leak. -/
+theorem open_relG {m₁ m₂ : Prog isa} {s₀ s₀' : State} (hp : openPre s₀) (hp' : openPre s₀')
+    (hq : openX86_64.pub s₀ s₀')
+    (hw : ∀ {s : State}, openPre s → WP isa (.seq (openHead (.seq m₁ m₂))
+      (.seq mask (.block (([.mov .rax (.mem (at_ .r15 okO))] : List Instr) ++ restore)))) s fun s' =>
+      gprPreserved s s' ∧ openX86_64.post s s')
+    {K W SP : Addr} {R : Nat} {N A D T : Addr} {al n : Nat}
+    (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 744⟩) (hn : n ≤ 2 ^ 64)
+    (hh : RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') (openHead (.seq m₁ m₂))
+      fun t₁ t₂ => True ∧ StO K W SP R N A D al n T t₁ ∧ StO K W SP R N A D al n T t₂) :
+    RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') (.seq (openHead (.seq m₁ m₂)) openTail) fun _ _ => True := by
+  intro s₁ s₂ tr₁ tr₂ u₁ u₂ hP e₁ e₂
+  obtain ⟨rfl, rfl⟩ := hP
+  cases e₁ with
+  | seq a₁ b₁ =>
+    cases e₂ with
+    | seq a₂ b₂ =>
+      obtain ⟨rfl, -, st₁, st₂⟩ := hh _ _ _ _ _ _ ⟨rfl, rfl⟩ a₁ a₂
+      obtain ⟨_, _, c₁, w₁⟩ := WP.seq_iff.mp (hw hp)
+      obtain ⟨-, rfl⟩ := c₁.det a₁
+      obtain ⟨_, _, c₂, w₂⟩ := WP.seq_iff.mp (hw hp')
+      obtain ⟨-, rfl⟩ := c₂.det a₂
+      have k₁ := ok_of st₁ (WP.mono w₁ fun _ h => h.2)
+      have k₂ := ok_of st₂ (WP.mono w₂ fun _ h => h.2)
+      have hl := hq.2
+      unfold openLeak at hl
+      have hr : rounds s₁ := (args_of_open hp).1.1.rounds
+      have hr' : rounds s₂ := (args_of_open hp').1.1.rounds
+      simp only [hr, hr', not_true_eq_false, ↓reduceIte] at hl
+      have e : (openResult s₁).isSome = (openResult s₂).isSome := by
+        cases h₁ : (openResult s₁).isSome <;> cases h₂ : (openResult s₂).isSome <;> simp [h₁, h₂] at hl ⊢
+      obtain ⟨rfl, -⟩ := openTail_rel hDW hn _ _ _ _ _ _ _ ⟨⟨st₁, k₁⟩, ⟨st₂, k₂.trans (by rw [e])⟩⟩ b₁ b₂
+      exact ⟨rfl, trivial⟩
+
+/-- `vg_aes_gcm_siv_open`, in two runs with the same public arguments and
+the same outcome. -/
+theorem open_rel (F : MulFacts) {s₀ s₀' : State} (hp : openPre s₀) (hp' : openPre s₀')
+    (hq : openX86_64.pub s₀ s₀') :
     RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') Impl.AesGcmSiv.X86_64Reg.open fun _ _ => True := by
   have Ar := (args_of_open hp).1.1
-  refine RelCT.seq (entry_rel (pub_regs hq) (hq.2.2.2.2.2.2.2 2 (by decide)) (argW_in Ar rfl)
-    (argW_in (args_of_open hp').1.1 rfl) (entry_open hp) (entry_open_pub hp' hq)) ?_
-  exact openBody_rel Ar.lay Ar.rounds Ar.data.w (Nat.le_of_lt Ar.data.lt) Ar.retW
-    (piece_rel Ar.data.w (Nat.le_of_lt Ar.data.lt) crypt_check (fun _ h => crypt_st Ar.lay Ar.rounds h) fun _ _ h => h.2)
-    (polyval_rel Ar.data.w (Nat.le_of_lt Ar.data.lt) F Ar.lay fun _ _ h => h.2) fun _ _ h => ⟨h.2.1, h.2.2⟩
+  have hh := RelCT.seq (entry_rel (pub_regs hq.1) (hq.1.2.2.2.2.2.2.2 2 (by decide)) (argW_in Ar rfl)
+    (argW_in (args_of_open hp').1.1 rfl) (entry_open hp) (entry_open_pub hp' hq.1))
+    (openBody_rel Ar.lay Ar.rounds Ar.data.w (Nat.le_of_lt Ar.data.lt) Ar.retW
+      (piece_rel Ar.data.w (Nat.le_of_lt Ar.data.lt) crypt_check (fun _ h => crypt_st Ar.lay Ar.rounds h)
+        fun _ _ h => h.2)
+      (polyval_rel Ar.data.w (Nat.le_of_lt Ar.data.lt) F Ar.lay fun _ _ h => h.2) fun _ _ h => ⟨h.2.1, h.2.2⟩)
+  exact open_relG hp hp' hq (fun h => open_probe F h) Ar.data.w (Nat.le_of_lt Ar.data.lt) hh
 
 end VG.Proof.AesGcmSivReg.X86_64

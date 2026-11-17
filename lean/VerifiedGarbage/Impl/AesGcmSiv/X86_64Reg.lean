@@ -256,10 +256,26 @@ def crypt : Prog isa := .seq (.block ctrInit) cryptRest
 def «seal» : Prog isa :=
   .seq (.block entry) (.seq keys (.seq polyval (.seq (tag tagO) (.seq crypt (.block (tagOut ++ restore))))))
 
+/-- `ok`, the comparison's outcome, in `rax`, and ZF set if it is 0. -/
+def okTest : List Instr := [.mov .rax (.mem (at_ .r15 okO)), .alu .test .rax (.reg .rax)]
+
+/-- The data zeroed (`mask`, with `ok = 0`) if the tags differ, out of the
+way of the other case, which leaves the plaintext as it is: `open` may leak
+which it is (`Spec.GcmSiv.openLeak`). -/
+def wipeBad : Prog isa := .seq (.block okTest) (Code.iteCold .e mask (.block []))
+
+/-- `open` up to the comparison of the tags, with `mid` deciphering the data
+and absorbing the plaintext. -/
+def openHead (mid : Prog isa) : Prog isa :=
+  .seq (.block entry) (.seq (.block recv) (.seq keys (.seq mid (.seq (tag bO) (.block cmp)))))
+
+/-- `open` after the comparison: the data zeroed if the tags differ, and
+`ok` returned. -/
+def openTail : Prog isa :=
+  .seq wipeBad (.block (([.mov .rax (.mem (at_ .r15 okO))] : List Instr) ++ restore))
+
 /-- `vg_aes_gcm_siv_open`. -/
-def «open» : Prog isa :=
-  .seq (.block entry) (.seq (.block recv) (.seq keys (.seq crypt (.seq polyval (.seq (tag bO)
-    (.seq (.block cmp) (.seq mask (.block (([.mov .rax (.mem (at_ .r15 okO))] : List Instr) ++ restore)))))))))
+def «open» : Prog isa := .seq (openHead (.seq crypt polyval)) openTail
 
 /-! ## With loops on the data's 256-byte groups
 
@@ -374,8 +390,6 @@ def decL (L : Loops) : Prog isa :=
 
 /-- `vg_aes_gcm_siv_open`, with the loops `L` from 256 bytes of data. -/
 def openL (L : Loops) : Prog isa :=
-  .seq (.block entry) (.seq (.block recv) (.seq keys (.seq (.block lenCmp)
-    (.seq (.ite .b (.seq crypt polyval) (decL L)) (.seq (tag bO)
-      (.seq (.block cmp) (.seq mask (.block (([.mov .rax (.mem (at_ .r15 okO))] : List Instr) ++ restore)))))))))
+  .seq (openHead (.seq (.block lenCmp) (.ite .b (.seq crypt polyval) (decL L)))) openTail
 
 end VG.Impl.AesGcmSiv.X86_64Reg

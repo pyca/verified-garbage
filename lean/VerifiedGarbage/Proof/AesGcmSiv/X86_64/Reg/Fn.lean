@@ -14,6 +14,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Interleave
+import VerifiedGarbage.Proof.Framework.Cold
 
 /-!
 # AES-GCM-SIV in registers on x86-64: `vg_aes_gcm_siv_seal` and `vg_aes_gcm_siv_open`
@@ -119,6 +120,36 @@ theorem mask_ok {K W SP : Addr} {t : State} (E : Env K W SP t) {R : Nat} {N A D 
   rw [hl] at e
   rw [M.mem, e, hm₁]
   by_cases hc : c <;> simp [Proof.AesGcm.X86_64.masked, hc, Spec.GcmSiv.zeros]
+
+/-- `okTest`, with `ok` either 1 or 0: ZF set if it is 0. -/
+theorem okTest_run {K W SP : Addr} {t : State} (E : Env K W SP t) {v : BitVec 64}
+    (hv : t.mem.readW (W + BitVec.ofNat 64 192) 64 = v) (h01 : v = 1#64 ∨ v = 0#64) :
+    ∃ t₁ : State, runBlock isa Impl.AesGcmSiv.X86_64Reg.okTest t = some t₁ ∧ t₁.zf = some (decide (v = 0#64)) ∧
+      (∀ r ∈ [Reg.r13, .r15, .rsp], t₁.gpr r = t.gpr r) ∧ t₁.mem = t.mem ∧ t₁.rd = t.rd ∧ t₁.wr = t.wr := by
+  have h15 := E.r15
+  obtain rO := E.perm.wR (show 192 + 8 ≤ 744 by decide)
+  refine ⟨_, by srun [Impl.AesGcmSiv.X86_64Reg.okTest, h15, rO], ?_, ?_, ?_, ?_, ?_⟩
+  · simp only [zf_arithFlags, gpr_setReg, ite_true, hv]
+    rcases h01 with rfl | rfl <;> decide
+  · intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl <;>
+      simp only [gpr_setReg, gpr_arithFlags, gpr_setFlags, ite_true, ite_false, reduceCtorEq]
+  all_goals rfl
+
+/-- `wipeBad` leaves what `mask` does: nothing changed if the tags are equal. -/
+theorem wipeBad_ok {K W SP : Addr} {t : State} (E : Env K W SP t) {R : Nat} {N A D : Addr} {al n : Nat}
+    (S : Slots W R N A D al n t.mem) (hD : Buf K W SP t D n) (hDw : Covers [⟨D, n⟩] t.wr) {c : Prop} [Decidable c]
+    (hok : t.mem.readW (W + BitVec.ofNat 64 192) 64 = if c then 1#64 else 0#64) :
+    WP isa Impl.AesGcmSiv.X86_64Reg.wipeBad t (MaskPost K W SP D n c t) := by
+  obtain ⟨t₁, run₁, hzf₁, hg₁, hm₁, hrd₁, hwr₁⟩ := okTest_run E hok (by by_cases hc : c <;> simp [hc])
+  refine WP.seq (WP.of_runBlock ⟨t₁, run₁, ?_⟩)
+  obtain E₁ : Env K W SP t₁ := E.keep hg₁ hrd₁ hwr₁
+  refine WP.iteCold_iff.mpr (WP.ite _ hzf₁ (fun hb => ?_) (fun hb => WP.block_nil ?_))
+  · refine WP.mono (mask_ok E₁ (by rw [hm₁]; exact S) (hD.of_eq hrd₁ hwr₁) (by rw [hwr₁]; exact hDw)
+      (by rw [hm₁]; exact hok)) fun t₂ Mk => ?_
+    exact ⟨Mk.env, Mk.rd.trans hrd₁, Mk.wr.trans hwr₁, by rw [← hm₁]; exact Mk.frame, by rw [← hm₁]; exact Mk.data⟩
+  · have hc : c := by by_cases hc : c <;> simp [hc] at hb ⊢
+    exact ⟨E₁, hrd₁, hwr₁, by rw [hm₁]; exact Frame.refl _ _, by rw [hm₁]; simp only [hc, ↓reduceIte]⟩
 
 /-! ## The tag's copies -/
 
@@ -434,11 +465,23 @@ theorem seal_wp (F : MulFacts) {s : State} (h : sealPre s) :
 
 /-! ## `vg_aes_gcm_siv_open` -/
 
-theorem open_wpG (F : MulFacts) {mid : Prog isa}
+/-- `open`'s code as its head and its tail (`openHead`, `openTail`). -/
+theorem open_shape {e r k m tg cm tl : Prog isa} {s : State} {Q : State → Prop}
+    (h : WP isa (.seq e (.seq r (.seq k (.seq m (.seq tg (.seq cm tl)))))) s Q) :
+    WP isa (.seq (.seq e (.seq r (.seq k (.seq m (.seq tg cm))))) tl) s Q :=
+  WP.seq (WP.seq (WP.mono (WP.seq_iff.mp h) fun _ h => WP.seq (WP.mono (WP.seq_iff.mp h) fun _ h =>
+    WP.seq (WP.mono (WP.seq_iff.mp h) fun _ h => WP.seq (WP.mono (WP.seq_iff.mp h) fun _ h =>
+      WP.seq (WP.mono (WP.seq_iff.mp h) fun _ h => WP.seq_iff.mp h))))))
+
+theorem open_wpG (F : MulFacts) {mid mk : Prog isa}
     (hmid : ∀ {K W SP : Addr} (_ : Lay K W SP) {R : Nat} (_ : R = 10 ∨ R = 14) {t : State} (_ : Env K W SP t)
       {N A D : Addr} {al n : Nat} (_ : Slots W R N A D al n t.mem) (_ : Buf K W SP t A al) (_ : Buf K W SP t D n)
       (_ : Covers [⟨D, n⟩] t.wr) (_ : (⟨A, al⟩ : Region).Disjoint ⟨D, n⟩),
       WP isa mid t (DecPost K W SP R A D al n t))
+    (hmk : ∀ {K W SP : Addr} {t : State} (_ : Env K W SP t) {R : Nat} {N A D : Addr} {al n : Nat}
+      (_ : Slots W R N A D al n t.mem) (_ : Buf K W SP t D n) (_ : Covers [⟨D, n⟩] t.wr) {c : Prop} [Decidable c]
+      (_ : t.mem.readW (W + BitVec.ofNat 64 192) 64 = if c then 1#64 else 0#64),
+      WP isa mk t (MaskPost K W SP D n c t))
     {s : State} {K W SP N A D T : Addr} {R al n : Nat}
     (Ar : Args s K W SP N A D R al n) (Tb : TagBuf W SP D n T) (hTr : Covers [⟨T, 16⟩] (s.rd ++ s.wr))
     (hsp : s.gpr .rsp = SP)
@@ -448,7 +491,7 @@ theorem open_wpG (F : MulFacts) {mid : Prog isa}
     (hdi : s.gpr .rdi = K) (hsi : s.gpr .rsi = BitVec.ofNat 64 R) (hdx : s.gpr .rdx = N)
     (hcx : s.gpr .rcx = A) (hr8 : s.gpr .r8 = BitVec.ofNat 64 al) (hr9 : s.gpr .r9 = D) :
     WP isa (.seq (.block entry) (.seq (.block recv) (.seq Impl.AesGcmSiv.X86_64Reg.keys (.seq mid
-        (.seq (Impl.AesGcmSiv.X86_64Reg.tag bO) (.seq (.block cmp) (.seq mask
+        (.seq (Impl.AesGcmSiv.X86_64Reg.tag bO) (.seq (.block cmp) (.seq mk
           (.block (([.mov .rax (.mem (at_ .r15 okO))] : List Instr) ++ restore))))))))) s fun s' =>
       gprPreserved s s' ∧
       openPost (Spec.GcmSiv.decryptWith (Spec.GcmSiv.ctxCiph s.mem K R) (Spec.GcmSiv.keyLen R) (bytesAt s.mem N 12)
@@ -559,7 +602,7 @@ theorem open_wpG (F : MulFacts) {mid : Prog isa}
     · simp only [hc, ↓reduceIte]
     · simp only [hc, Ne.symm hc, ↓reduceIte]
   -- The mask.
-  refine WP.seq (WP.mono (mask_ok E₇ S₇ (Ar.data.of_eq (by rw [hrd₇, rd₆]) (by rw [hwr₇, wr₆]))
+  refine WP.seq (WP.mono (hmk E₇ S₇ (Ar.data.of_eq (by rw [hrd₇, rd₆]) (by rw [hwr₇, wr₆]))
     (by rw [hwr₇, wr₆]; exact Ar.dw) hok) fun s₈ Mk => ?_)
   -- `ok` and the restore.
   have h15₈ := Mk.env.r15
@@ -663,10 +706,9 @@ theorem open_wp' (F : MulFacts) {s : State} {K W SP N A D T : Addr} {R al n : Na
       openPost (Spec.GcmSiv.decryptWith (Spec.GcmSiv.ctxCiph s.mem K R) (Spec.GcmSiv.keyLen R) (bytesAt s.mem N 12)
         (bytesAt s.mem D n) (bytesAt s.mem A al) (bytesAt s.mem T 16)) s' D n := by
   have h := open_wpG F (mid := .seq Impl.AesGcmSiv.X86_64Reg.crypt Impl.AesGcmSiv.X86_64Reg.polyval)
-    (fun L _ hR _ E _ _ _ _ _ S hA hD hDw hAD => decS_ok F L hR E S hA hD hDw hAD)
+    (fun L _ hR _ E _ _ _ _ _ S hA hD hDw hAD => decS_ok F L hR E S hA hD hDw hAD) wipeBad_ok
     Ar Tb hTr hsp hn hT hW hdi hsi hdx hcx hr8 hr9
-  exact WP.seq (WP.mono (WP.seq_iff.mp h) fun _ h => WP.seq (WP.mono (WP.seq_iff.mp h) fun _ h =>
-    WP.seq (WP.mono (WP.seq_iff.mp h) fun _ h => Proof.AesGcmSiv.X86_64.seq_assoc h)))
+  exact open_shape h
 
 /-- `vg_aes_gcm_siv_open` with the loops, for its arguments. -/
 theorem openL_wp' (F : MulFacts) {lp : Impl.AesGcmSiv.X86_64Stitch.Loops}
@@ -684,10 +726,31 @@ theorem openL_wp' (F : MulFacts) {lp : Impl.AesGcmSiv.X86_64Stitch.Loops}
   have h := open_wpG F
     (mid := .seq (.block Impl.AesGcmSiv.X86_64Reg.lenCmp) (.ite .b
       (.seq Impl.AesGcmSiv.X86_64Reg.crypt Impl.AesGcmSiv.X86_64Reg.polyval) (Impl.AesGcmSiv.X86_64Reg.decL lp)))
-    (fun L _ hR _ E _ _ _ _ _ S hA hD hDw hAD => decMid_ok F hlp L hR E S hA hD hDw hAD)
+    (fun L _ hR _ E _ _ _ _ _ S hA hD hDw hAD => decMid_ok F hlp L hR E S hA hD hDw hAD) wipeBad_ok
     Ar Tb hTr hsp hn hT hW hdi hsi hdx hcx hr8 hr9
-  exact WP.seq (WP.mono (WP.seq_iff.mp h) fun _ h => WP.seq (WP.mono (WP.seq_iff.mp h) fun _ h =>
-    WP.seq (WP.mono (WP.seq_iff.mp h) fun _ h => Proof.AesGcmSiv.X86_64.seq_assoc h)))
+  exact open_shape h
+
+/-- `open` up to the comparison, then the mask at every outcome: what the
+constant-time proof asks of the comparison's outcome. -/
+theorem openL_probe (F : MulFacts) {lp : Impl.AesGcmSiv.X86_64Stitch.Loops}
+    (hlp : Proof.AesGcmSiv.X86_64.Stitch.LoopsOk lp) {s : State} (h : openPre s) :
+    WP isa (.seq (Impl.AesGcmSiv.X86_64Reg.openHead (.seq (.block Impl.AesGcmSiv.X86_64Reg.lenCmp) (.ite .b
+        (.seq Impl.AesGcmSiv.X86_64Reg.crypt Impl.AesGcmSiv.X86_64Reg.polyval) (Impl.AesGcmSiv.X86_64Reg.decL lp))))
+      (.seq mask (.block (([.mov .rax (.mem (at_ .r15 okO))] : List Instr) ++ restore)))) s fun s' =>
+      gprPreserved s s' ∧ openX86_64.post s s' := by
+  obtain ⟨⟨Ar, Tb⟩, hTr⟩ := args_of_open h
+  exact open_shape (open_wpG F (fun L _ hR _ E _ _ _ _ _ S hA hD hDw hAD => decMid_ok F hlp L hR E S hA hD hDw hAD)
+    mask_ok Ar Tb hTr rfl (ofNat_toNat64 _).symm rfl rfl rfl (ofNat_toNat64 _).symm rfl rfl (ofNat_toNat64 _).symm rfl)
+
+/-- As `openL_probe`, without the loops. -/
+theorem open_probe (F : MulFacts) {s : State} (h : openPre s) :
+    WP isa (.seq (Impl.AesGcmSiv.X86_64Reg.openHead
+        (.seq Impl.AesGcmSiv.X86_64Reg.crypt Impl.AesGcmSiv.X86_64Reg.polyval))
+      (.seq mask (.block (([.mov .rax (.mem (at_ .r15 okO))] : List Instr) ++ restore)))) s fun s' =>
+      gprPreserved s s' ∧ openX86_64.post s s' := by
+  obtain ⟨⟨Ar, Tb⟩, hTr⟩ := args_of_open h
+  exact open_shape (open_wpG F (fun L _ hR _ E _ _ _ _ _ S hA hD hDw hAD => decS_ok F L hR E S hA hD hDw hAD)
+    mask_ok Ar Tb hTr rfl (ofNat_toNat64 _).symm rfl rfl rfl (ofNat_toNat64 _).symm rfl rfl (ofNat_toNat64 _).symm rfl)
 
 /-- `vg_aes_gcm_siv_open` with the loops. -/
 theorem openL_wp (F : MulFacts) {lp : Impl.AesGcmSiv.X86_64Stitch.Loops}
