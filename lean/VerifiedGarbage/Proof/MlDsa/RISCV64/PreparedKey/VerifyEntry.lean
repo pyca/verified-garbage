@@ -415,13 +415,14 @@ theorem signEntry_wp (name : String) {s : State} (h : EPre p q (S + 16) s) :
   have hspl := s.sp.isLt
   have hsk := hF.sk; have hc := hF.c
   unfold signEntry entry
-  refine WP.frameKept (by omega_using [hstk]) ?_
+  refine WP.frame (by omega_using [hstk]) ?_
   refine WP.seq (WP.mono (cacheArgs_ok (by decide) (by decide) hF.sk hF.c q _) fun u hu => ?_)
   obtain ⟨hpre, hcov, hcw⟩ := kernel_call hF h hu
   have gu : ∀ r, r ≠ .a5 → r ≠ .a6 → u.gpr r = s.gpr r := fun r h1 h2 => hu.other r h1 h2
   have usp : u.sp = s.sp - 16 := hu.sp
   have ksub := key_sub hF q s
-  refine WP.callAny hk.1 hpre hcov hcw (fun s' rd' wr' sp' fr' cs' post' => ?_) (by omega_using [hd, hstk])
+  refine WP.callAny hk.1 hpre hcov hcw (fun s' rd' wr' sp' fr' cs' post' mL _ fl => ?_)
+    (by omega_using [hd, hstk])
   have sp₂ : s'.sp = s.sp - 16 := sp'.trans usp
   -- The return address, in the frame's slot, which the kernel does not write.
   have hslot : s'.mem.read (s'.sp + 8) 8 = s.gpr .ra := by
@@ -452,9 +453,13 @@ theorem signEntry_wp (name : String) {s : State} (h : EPre p q (S + 16) s) :
     rw [bytes_pushed (R := ⟨s.gpr .a0, p.skLen⟩) (by omega_using []) (by simp only; omega_using [hsk]) ((h.b_k.sub_right ksub)),
       bytes_pushed (R := ⟨s.gpr .a1, 64⟩) (by omega_using []) (by simp only; omega_using []) h.b_m,
       bytes_pushed (R := ⟨s.gpr .a2, 32⟩) (by omega_using []) (by simp only; omega_using []) h.b_r] at post'
+    -- The pop loses the frame's bytes, which lie apart from the signature.
+    have e : bytesAt mL (s.gpr .a3) p.sigLen = bytesAt s'.mem (s.gpr .a3) p.sigLen :=
+      List.map_congr_left fun i hi => lost_byte fl (R := ⟨s.gpr .a3, p.sigLen⟩)
+        (h.b_g.symm.sub_right (frame_sub (s := s) (N := S + 16) (by omega_using []))) (List.mem_range.mp hi)
     show Outcome _ (((s'.write .ra (s'.mem.read (s'.sp + 8) 8)).gpr .a0).setWidth 32)
-      (bytesAt (s'.write .ra (s'.mem.read (s'.sp + 8) 8)).mem _ _)
-    rw [gpr_write_of_ne _ _ (by decide)]
+      (bytesAt mL (s.gpr .a3) p.sigLen)
+    rw [gpr_write_of_ne _ _ (by decide), e]
     exact post'
 
 
@@ -817,13 +822,14 @@ theorem verifyEntry_wp (name : String) {s : State} (h : VEPre p q (S + 16) s) :
   have hspl := s.sp.isLt
   have hpk := hF.pk; have hc := hF.c
   unfold verifyEntry entry
-  refine WP.frameKept (by omega_using [hstk]) ?_
+  refine WP.frame (by omega_using [hstk]) ?_
   refine WP.seq (WP.mono (cacheArgs_ok (by decide) (by decide) hF.pk hF.c q _) fun u hu => ?_)
   obtain ⟨hpre, hcov, hcw⟩ := vkernel_call hF h hu
   have gu : ∀ r, r ≠ .a4 → r ≠ .a5 → u.gpr r = s.gpr r := fun r h1 h2 => hu.other r h1 h2
   have usp : u.sp = s.sp - 16 := hu.sp
   have ksub := vkey_sub hF q s
-  refine WP.callAny hk.1 hpre hcov hcw (fun s' rd' wr' sp' fr' cs' post' => ?_) (by omega_using [hd, hstk])
+  refine WP.callAny hk.1 hpre hcov hcw (fun s' rd' wr' sp' fr' cs' post' mL _ fl => ?_)
+    (by omega_using [hd, hstk])
   have sp₂ : s'.sp = s.sp - 16 := sp'.trans usp
   have hslot : s'.mem.read (s'.sp + 8) 8 = s.gpr .ra := by
     rw [sp₂, show (8 : Addr) = BitVec.ofNat 64 8 from rfl]

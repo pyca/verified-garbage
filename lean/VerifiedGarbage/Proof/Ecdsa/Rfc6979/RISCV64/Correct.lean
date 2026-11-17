@@ -846,21 +846,26 @@ theorem correct {ns : List String} {s : State} (hp : (rfcRC P.kit.K P.I P.w P.c.
   have hsp : P.N ≤ s.sp.toNat := hp.1.2.2.2.2.2.2.2.2.2.2.1
   obtain p := pre_alloc hp
   unfold Cfg.sign
-  refine WP.allocKept ⟨by omega_using [hfr], by omega_using [hfr], by omega_using [hfr]⟩
+  refine WP.alloc ⟨by omega_using [hfr], by omega_using [hfr], by omega_using [hfr]⟩
     (by have : frB ≤ P.N := by simp only [Rfc.N]; omega_using []
         omega_using [hsp, this])
-    (WP.mono (main_ok p) fun s' ⟨hk, hra, hsp', hwr, i, hi, hf, hl, hres⟩ => ?_)
-  rw [freed_eq hwr hsp']
-  refine ⟨⟨fun r hr => hk r hr, rfl, hra⟩, ?_⟩
+    (WP.mono (main_ok p) fun s' ⟨hk, hra, hsp', hwr, i, hi, hf, hl, hres⟩ mL _ fl => ?_)
+  refine ⟨⟨fun r hr => hk r hr, ?_, hra⟩, ?_⟩
+  · show s'.sp + BitVec.ofNat 64 frB = s.sp
+    rw [hsp']; simp only [allocd, BitVec.sub_add_cancel]
+  -- The `free` loses the frame's bytes, which lie apart from the signature.
+  obtain e : Spec.Ecdsa.bytesAt mL (s.gpr .a0) (2 * P.Q) = Spec.Ecdsa.bytesAt s'.mem (s.gpr .a0) (2 * P.Q) :=
+    List.map_congr_left fun i hi =>
+      lost_byte fl (R := outR P (allocd frB s)) p.f_o.symm (List.mem_range.mp hi)
   obtain hlen : P.I.ecdsa.curve.len = P.Q := by rw [P.hE, P.kit.len]
   obtain hr := result_eq (s₀ := allocd frB s) hi hf hl
   show match (result P.I s.mem (s.gpr .a1) (s.gpr .a2)).1 with
     | some rs => (s'.gpr .a0).setWidth 32 = 1 ∧
-        Spec.Ecdsa.bytesAt s'.mem (s.gpr .a0) (2 * P.I.ecdsa.curve.len) = Spec.Ecdsa.encode P.I.ecdsa.curve rs
+        Spec.Ecdsa.bytesAt mL (s.gpr .a0) (2 * P.I.ecdsa.curve.len) = Spec.Ecdsa.encode P.I.ecdsa.curve rs
     | none => (s'.gpr .a0).setWidth 32 = 0 ∧
-        Spec.Ecdsa.bytesAt s'.mem (s.gpr .a0) (2 * P.I.ecdsa.curve.len) = List.replicate (2 * P.I.ecdsa.curve.len) 0
+        Spec.Ecdsa.bytesAt mL (s.gpr .a0) (2 * P.I.ecdsa.curve.len) = List.replicate (2 * P.I.ecdsa.curve.len) 0
   rw [show s.mem = (allocd frB s).mem from rfl, show s.gpr = (allocd frB s).gpr from rfl, hr, hlen, P.hE]
   unfold ResultIs at hres
-  split at hres <;> exact ⟨by rw [hres.1]; rfl, hres.2⟩
+  split at hres <;> exact ⟨by rw [hres.1]; rfl, e.trans hres.2⟩
 
 end VG.Proof.Ecdsa.Rfc6979.RISCV64
