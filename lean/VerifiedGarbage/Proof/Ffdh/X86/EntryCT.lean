@@ -55,8 +55,9 @@ theorem entry_relCT (a : Args) :
     (checkedProgramChange (τ' := { argumentTaint with regs := .ofList [.esp, .edi, .eax] })
       (hint := .block []) rfl rfl)
 
+/-- The registers after a `free`: the frame's bytes are lost, its registers those of `freed`. -/
 theorem freed_of_pop {bytes : Nat} {s₁ s₂ s₃ : State} (h : isa.pop (.free bytes) s₁ s₂ = some s₃) :
-    s₃ = freed bytes s₂ := by
+    s₃.gpr = (freed bytes s₂).gpr := by
   simp only [isa, pop] at h
   split at h <;> [cases h; cases h]
   rfl
