@@ -35,7 +35,7 @@ theorem scrubCodeMC_noResidue {api : Api} (r : Registration api target) (v : Vec
     (hmx : (mxClass r.code).isSome = true)
     (hrb : api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits ≤ 32 ∨ api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits = 64)
     (hpost : PostOut r.contract (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits))
-    (hres : ResOk r.code r.contract r.stack ks cs) (hne : v ≠ .evex) (hic : icallFree r.code = true) :
+    (hres : ResOk r.code r.contract r.stack ks cs) (hne : v ≠ .evex) (hic : tablesCall r.code r.tables = true) :
     NoResidue (scrub v (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
       (xsOf r.code ks) (psOf ks) (gsOf Taint.clobbers r.code) ks cs r.code) r.contract
       (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits) := by
@@ -49,7 +49,7 @@ theorem scrubCodeMC_noResidue {api : Api} (r : Registration api target) (v : Vec
   exact (Verified.scrubM (ScrubAbi.of r.consts api.sig r.tables api.pubMode) hv (SpSafe.of_all r.spSafe) hd
     hcs hst hcv
     (fun i hi => by simpa using Code.all_instrs hlv i hi) (fun _ => MxSame.of_fun (mxFun_of hmx)) hrb' hp hr
-    (tailOk_of _ _ _) (xs_of _ _) (fun e => absurd e hne) (fun _ _ e => absurd e hne) (gs_of _ _)).2 hic
+    (tailOk_of _ _ _) (xs_of _ _) (fun e => absurd e hne) (fun _ _ e => absurd e hne) (gs_of _ _)).2 (tablesCall_syms hic rfl)
 
 /-- `scrubRegM`, with the stack wiped in the chunks `cs` (`scrubCodeMC_noResidue`). -/
 def scrubRegMC {api : Api} (r : Registration api target) (v : VecLevel) (ks cs : List Nat)
@@ -89,8 +89,8 @@ def scrubRegMC {api : Api} (r : Registration api target) (v : VecLevel) (ks cs :
   extra := r.extra
   vendor := r.vendor
   notWith := r.notWith
-  -- As `scrubRegE`'s: for code without indirect calls.
-  residue := if hic : icallFree r.code = true then
+  -- As `scrubRegE`'s: for code that calls indirectly only its tables' functions.
+  residue := if hic : tablesCall r.code r.tables = true then
     some ⟨scrubCodeMC_noResidue r v ks cs hcs hcv hd hst hlv hmx hrb hpost hres hne hic⟩ else none
 
 end VG.X86_64.Scrub
