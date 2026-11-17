@@ -18,31 +18,39 @@ pub fn bench(c: &mut Criterion) {
         Sha3_224, Sha3_256, Sha3_384, Sha3_512, Shake128, Shake256,
     };
 
-    use crate::hash_group;
-    hash_group(
+    use crate::hash_group_sizes;
+    const SIZES: &[usize] = &[
+        0, 1, 7, 8, 15, 16, 31, 32, 63, 64, 65, 71, 72, 73, 103, 104, 105, 135, 136, 137, 143, 144,
+        145, 1024, 16384,
+    ];
+    hash_group_sizes(
         c,
         "sha3-224",
+        SIZES,
         Sha3_224::digest,
         MessageDigest::sha3_224(),
         None,
     );
-    hash_group(
+    hash_group_sizes(
         c,
         "sha3-256",
+        SIZES,
         Sha3_256::digest,
         MessageDigest::sha3_256(),
         Some(&aws_lc_rs::digest::SHA3_256),
     );
-    hash_group(
+    hash_group_sizes(
         c,
         "sha3-384",
+        SIZES,
         Sha3_384::digest,
         MessageDigest::sha3_384(),
         Some(&aws_lc_rs::digest::SHA3_384),
     );
-    hash_group(
+    hash_group_sizes(
         c,
         "sha3-512",
+        SIZES,
         Sha3_512::digest,
         MessageDigest::sha3_512(),
         Some(&aws_lc_rs::digest::SHA3_512),

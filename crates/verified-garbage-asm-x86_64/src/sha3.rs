@@ -53,6 +53,8 @@ jmp 21f
 ///
 /// Contract: `VG.Spec.Sha3.finalizeContract` for `VG.Spec.Sha3.hashSha3_224`. Constant time: only the pointers and `pos` may affect timing, not the state.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 200 bytes.
@@ -66,12 +68,9 @@ pub(crate) unsafe extern "sysv64" fn vg_sha3_224_finalize(state: *mut [u64; 25],
     core::arch::naked_asm!(
         r#".base64 "SI2kJGj9//9IieFIg8EITImhgAIAAEiJqYgCAABJicxIidVIifK+kAAAALkGAAAATYng"
 call {vg_keccak_pad_scratch}
-.base64 "vpAAAAC6AAAAAEiJ6UG4HAAAAE2J4Q=="
-call {vg_keccak_squeeze_scratch}
-.base64 "SYusJIgCAABNi6QkgAIAAEiNpCSYAgAAww=="
+.base64 "SIsHSIlFAEiLRwhIiUUISItHEEiJRRCLRxiJRRhJi6wkiAIAAE2LpCSAAgAASI2kJJgCAABmD+/ARTHbSI1kJPhMiRwkSI2kJGD9///zD3+EJJACAADzD3+EJIACAADzD3+EJHACAADzD3+EJGACAADzD3+EJFACAADzD3+EJEACAADzD3+EJDACAADzD3+EJCACAADzD3+EJBACAADzD3+EJAACAADzD3+EJPABAADzD3+EJOABAADzD3+EJNABAADzD3+EJMABAADzD3+EJLABAADzD3+EJKABAADzD3+EJJABAADzD3+EJIABAADzD3+EJHABAADzD3+EJGABAADzD3+EJFABAADzD3+EJEABAADzD3+EJDABAADzD3+EJCABAADzD3+EJBABAADzD3+EJAABAADzD3+EJPAAAADzD3+EJOAAAADzD3+EJNAAAADzD3+EJMAAAADzD3+EJLAAAADzD3+EJKAAAADzD3+EJJAAAADzD3+EJIAAAADzD39EJHDzD39EJGDzD39EJFDzD39EJEDzD39EJDDzD39EJCDzD39EJBDzD38EJEiNpCSgAgAASI1kJAgxwDHJMdIx9kUxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
-        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
     )
 }
 
@@ -125,6 +124,8 @@ jmp 21f
 ///
 /// Contract: `VG.Spec.Sha3.finalizeContract` for `VG.Spec.Sha3.hashSha3_256`. Constant time: only the pointers and `pos` may affect timing, not the state.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 200 bytes.
@@ -138,12 +139,9 @@ pub(crate) unsafe extern "sysv64" fn vg_sha3_256_finalize(state: *mut [u64; 25],
     core::arch::naked_asm!(
         r#".base64 "SI2kJGj9//9IieFIg8EITImhgAIAAEiJqYgCAABJicxIidVIifK+iAAAALkGAAAATYng"
 call {vg_keccak_pad_scratch}
-.base64 "vogAAAC6AAAAAEiJ6UG4IAAAAE2J4Q=="
-call {vg_keccak_squeeze_scratch}
-.base64 "SYusJIgCAABNi6QkgAIAAEiNpCSYAgAAww=="
+.base64 "SIsHSIlFAEiLRwhIiUUISItHEEiJRRBIi0cYSIlFGEmLrCSIAgAATYukJIACAABIjaQkmAIAAGYP78BFMdtIjWQk+EyJHCRIjaQkYP3///MPf4QkkAIAAPMPf4QkgAIAAPMPf4QkcAIAAPMPf4QkYAIAAPMPf4QkUAIAAPMPf4QkQAIAAPMPf4QkMAIAAPMPf4QkIAIAAPMPf4QkEAIAAPMPf4QkAAIAAPMPf4Qk8AEAAPMPf4Qk4AEAAPMPf4Qk0AEAAPMPf4QkwAEAAPMPf4QksAEAAPMPf4QkoAEAAPMPf4QkkAEAAPMPf4QkgAEAAPMPf4QkcAEAAPMPf4QkYAEAAPMPf4QkUAEAAPMPf4QkQAEAAPMPf4QkMAEAAPMPf4QkIAEAAPMPf4QkEAEAAPMPf4QkAAEAAPMPf4Qk8AAAAPMPf4Qk4AAAAPMPf4Qk0AAAAPMPf4QkwAAAAPMPf4QksAAAAPMPf4QkoAAAAPMPf4QkkAAAAPMPf4QkgAAAAPMPf0QkcPMPf0QkYPMPf0QkUPMPf0QkQPMPf0QkMPMPf0QkIPMPf0QkEPMPfwQkSI2kJKACAABIjWQkCDHAMckx0jH2RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
-        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
     )
 }
 
@@ -197,6 +195,8 @@ jmp 21f
 ///
 /// Contract: `VG.Spec.Sha3.finalizeContract` for `VG.Spec.Sha3.hashSha3_384`. Constant time: only the pointers and `pos` may affect timing, not the state.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 200 bytes.
@@ -210,12 +210,9 @@ pub(crate) unsafe extern "sysv64" fn vg_sha3_384_finalize(state: *mut [u64; 25],
     core::arch::naked_asm!(
         r#".base64 "SI2kJGj9//9IieFIg8EITImhgAIAAEiJqYgCAABJicxIidVIifK+aAAAALkGAAAATYng"
 call {vg_keccak_pad_scratch}
-.base64 "vmgAAAC6AAAAAEiJ6UG4MAAAAE2J4Q=="
-call {vg_keccak_squeeze_scratch}
-.base64 "SYusJIgCAABNi6QkgAIAAEiNpCSYAgAAww=="
+.base64 "SIsHSIlFAEiLRwhIiUUISItHEEiJRRBIi0cYSIlFGEiLRyBIiUUgSItHKEiJRShJi6wkiAIAAE2LpCSAAgAASI2kJJgCAABmD+/ARTHbSI1kJPhMiRwkSI2kJGD9///zD3+EJJACAADzD3+EJIACAADzD3+EJHACAADzD3+EJGACAADzD3+EJFACAADzD3+EJEACAADzD3+EJDACAADzD3+EJCACAADzD3+EJBACAADzD3+EJAACAADzD3+EJPABAADzD3+EJOABAADzD3+EJNABAADzD3+EJMABAADzD3+EJLABAADzD3+EJKABAADzD3+EJJABAADzD3+EJIABAADzD3+EJHABAADzD3+EJGABAADzD3+EJFABAADzD3+EJEABAADzD3+EJDABAADzD3+EJCABAADzD3+EJBABAADzD3+EJAABAADzD3+EJPAAAADzD3+EJOAAAADzD3+EJNAAAADzD3+EJMAAAADzD3+EJLAAAADzD3+EJKAAAADzD3+EJJAAAADzD3+EJIAAAADzD39EJHDzD39EJGDzD39EJFDzD39EJEDzD39EJDDzD39EJCDzD39EJBDzD38EJEiNpCSgAgAASI1kJAgxwDHJMdIx9kUxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
-        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
     )
 }
 
@@ -269,6 +266,8 @@ jmp 21f
 ///
 /// Contract: `VG.Spec.Sha3.finalizeContract` for `VG.Spec.Sha3.hashSha3_512`. Constant time: only the pointers and `pos` may affect timing, not the state.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 200 bytes.
@@ -282,12 +281,9 @@ pub(crate) unsafe extern "sysv64" fn vg_sha3_512_finalize(state: *mut [u64; 25],
     core::arch::naked_asm!(
         r#".base64 "SI2kJGj9//9IieFIg8EITImhgAIAAEiJqYgCAABJicxIidVIifK+SAAAALkGAAAATYng"
 call {vg_keccak_pad_scratch}
-.base64 "vkgAAAC6AAAAAEiJ6UG4QAAAAE2J4Q=="
-call {vg_keccak_squeeze_scratch}
-.base64 "SYusJIgCAABNi6QkgAIAAEiNpCSYAgAAww=="
+.base64 "SIsHSIlFAEiLRwhIiUUISItHEEiJRRBIi0cYSIlFGEiLRyBIiUUgSItHKEiJRShIi0cwSIlFMEiLRzhIiUU4SYusJIgCAABNi6QkgAIAAEiNpCSYAgAAZg/vwEUx20iNZCT4TIkcJEiNpCRg/f//8w9/hCSQAgAA8w9/hCSAAgAA8w9/hCRwAgAA8w9/hCRgAgAA8w9/hCRQAgAA8w9/hCRAAgAA8w9/hCQwAgAA8w9/hCQgAgAA8w9/hCQQAgAA8w9/hCQAAgAA8w9/hCTwAQAA8w9/hCTgAQAA8w9/hCTQAQAA8w9/hCTAAQAA8w9/hCSwAQAA8w9/hCSgAQAA8w9/hCSQAQAA8w9/hCSAAQAA8w9/hCRwAQAA8w9/hCRgAQAA8w9/hCRQAQAA8w9/hCRAAQAA8w9/hCQwAQAA8w9/hCQgAQAA8w9/hCQQAQAA8w9/hCQAAQAA8w9/hCTwAAAA8w9/hCTgAAAA8w9/hCTQAAAA8w9/hCTAAAAA8w9/hCSwAAAA8w9/hCSgAAAA8w9/hCSQAAAA8w9/hCSAAAAA8w9/RCRw8w9/RCRg8w9/RCRQ8w9/RCRA8w9/RCQw8w9/RCQg8w9/RCQQ8w9/BCRIjaQkoAIAAEiNZCQIMcAxyTHSMfZFMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
-        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
     )
 }
 

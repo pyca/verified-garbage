@@ -22,7 +22,7 @@ rate (and suffix) as constants.
   `update`'s).
 * `finalize rate len (state = rdi, pos = rsi, out = rdx)` (SHA-3) calls
   `pad(state, rate, pos, 0x06, scratch)` (SHA-3's suffix), then
-  `squeeze(state, rate, 0, out, len, scratch)`, with its working space on
+  copies the fixed digest directly from the padded state, with its working space on
   the stack (`withStackScratch`, which passes it in `rcx`): 640 bytes for
   the calls, and two more words, where it saves `r12` and `rbp`, which keep
   `scratch` and `out` across the first call (`rdi`, which the sponge's
@@ -73,11 +73,24 @@ def finSqzArgs (rate len : Nat) : List Instr :=
 /-- Restore `rbp` and `r12`. -/
 def finRestore : List Instr := [.mov .rbp (.mem (at_ .r12 648)), .mov .r12 (.mem (at_ .r12 640))]
 
+/-- Copy the complete lanes of a fixed digest, without a squeezing loop. -/
+def finCopyWords : Nat → List Instr
+  | 0 => []
+  | n + 1 => finCopyWords n ++
+      [.mov .rax (.mem (at_ .rdi (8 * n))), .store (at_ .rbp (8 * n)) .rax]
+
+/-- Copy a SHA-3 digest, including SHA3-224's four-byte final fragment. -/
+def finCopy (len : Nat) : List Instr :=
+  finCopyWords (len / 8) ++
+    if len % 8 = 4 then
+      [.mov32 .rax (.mem (at_ .rdi (8 * (len / 8)))),
+       .store32 (at_ .rbp (8 * (len / 8))) .rax]
+    else []
+
 def finBody (rate len : Nat) : Prog isa :=
   .seq (.block (finPadArgs rate)) <|
   .seq (.call "vg_keccak_pad_scratch" Stream.pad) <|
-  .seq (.block (finSqzArgs rate len)) <|
-  .seq (.call "vg_keccak_squeeze_scratch" Stream.squeeze) (.block finRestore)
+  .seq (.block (finCopy len)) (.block finRestore)
 
 def finalize (rate len : Nat) : Prog isa :=
   StackScratch.X86_64.withStackScratch 664 .rcx (finBody rate len)
