@@ -59,18 +59,18 @@ theorem entry_ok {K W SP : Addr} {s : State} (P : Perm K W s) {R : Nat} {N A D :
   rw [add_ofNat_assoc, show 8 + 0 = 8 from rfl] at a₈
   rw [add_ofNat_assoc] at a₂₄
   simp only [Nat.reduceAdd] at a₂₄
-  have w₁ := P.wW (show 144 + 8 ≤ 488 by decide)
-  have w₂ := P.wW (show 152 + 8 ≤ 488 by decide)
-  have w₃ := P.wW (show 160 + 8 ≤ 488 by decide)
-  have w₄ := P.wW (show 168 + 8 ≤ 488 by decide)
-  have w₅ := P.wW (show 176 + 8 ≤ 488 by decide)
-  have w₆ := P.wW (show 184 + 8 ≤ 488 by decide)
-  have w₇ := P.wW (show 200 + 8 ≤ 488 by decide)
-  have w₈ := P.wW (show 208 + 8 ≤ 488 by decide)
-  have w₉ := P.wW (show 216 + 8 ≤ 488 by decide)
-  have w₁₀ := P.wW (show 224 + 8 ≤ 488 by decide)
-  have w₁₁ := P.wW (show 232 + 8 ≤ 488 by decide)
-  have w₁₂ := P.wW (show 240 + 8 ≤ 488 by decide)
+  have w₁ := P.wW (show 144 + 8 ≤ 744 by decide)
+  have w₂ := P.wW (show 152 + 8 ≤ 744 by decide)
+  have w₃ := P.wW (show 160 + 8 ≤ 744 by decide)
+  have w₄ := P.wW (show 168 + 8 ≤ 744 by decide)
+  have w₅ := P.wW (show 176 + 8 ≤ 744 by decide)
+  have w₆ := P.wW (show 184 + 8 ≤ 744 by decide)
+  have w₇ := P.wW (show 200 + 8 ≤ 744 by decide)
+  have w₈ := P.wW (show 208 + 8 ≤ 744 by decide)
+  have w₉ := P.wW (show 216 + 8 ≤ 744 by decide)
+  have w₁₀ := P.wW (show 224 + 8 ≤ 744 by decide)
+  have w₁₁ := P.wW (show 232 + 8 ≤ 744 by decide)
+  have w₁₂ := P.wW (show 240 + 8 ≤ 744 by decide)
   have cE : ∀ d, 144 ≤ d → d + 8 ≤ 248 → (entryR W).Contains (W + BitVec.ofNat 64 d) (64 / 8) :=
     fun d h₁ h₂ => Offset.contains W h₁ (by omega_using [h₂]) (by decide)
   refine ⟨_, by srun [entry, save, saved, List.map_cons, List.map_nil, hW, hsp, hn, a₈, a₂₄, w₁, w₂, w₃, w₄,
@@ -96,12 +96,12 @@ theorem restore_ok {K W SP : Addr} {s : State} (E : Env K W SP s) {g : Reg → B
     ∃ s', runBlock isa restore s = some s' ∧ (∀ p ∈ saved, s'.gpr p.1 = g p.1) ∧ s'.mem = s.mem ∧
       s'.gpr .rsp = s.gpr .rsp ∧ s'.gpr .rax = s.gpr .rax := by
   have h15 := E.r15
-  have r₁ := E.perm.wR (show 144 + 8 ≤ 488 by decide)
-  have r₂ := E.perm.wR (show 152 + 8 ≤ 488 by decide)
-  have r₃ := E.perm.wR (show 160 + 8 ≤ 488 by decide)
-  have r₄ := E.perm.wR (show 168 + 8 ≤ 488 by decide)
-  have r₅ := E.perm.wR (show 176 + 8 ≤ 488 by decide)
-  have r₆ := E.perm.wR (show 184 + 8 ≤ 488 by decide)
+  have r₁ := E.perm.wR (show 144 + 8 ≤ 744 by decide)
+  have r₂ := E.perm.wR (show 152 + 8 ≤ 744 by decide)
+  have r₃ := E.perm.wR (show 160 + 8 ≤ 744 by decide)
+  have r₄ := E.perm.wR (show 168 + 8 ≤ 744 by decide)
+  have r₅ := E.perm.wR (show 176 + 8 ≤ 744 by decide)
+  have r₆ := E.perm.wR (show 184 + 8 ≤ 744 by decide)
   have v₁ := hs (.rbx, 144) (by decide)
   have v₂ := hs (.rbp, 152) (by decide)
   have v₃ := hs (.r12, 160) (by decide)
@@ -156,17 +156,17 @@ structure Args (s : State) (K W SP N A D : Addr) (R al n : Nat) : Prop where
   dk : (⟨K, 240⟩ : Region).Disjoint ⟨D, n⟩
   nd : (⟨N, 12⟩ : Region).Disjoint ⟨D, n⟩
   ad : (⟨A, al⟩ : Region).Disjoint ⟨D, n⟩
-  retW : (⟨SP, 8⟩ : Region).Disjoint ⟨W, 488⟩
+  retW : (⟨SP, 8⟩ : Region).Disjoint ⟨W, 744⟩
   retD : (⟨SP, 8⟩ : Region).Disjoint ⟨D, n⟩
   args : Covers [⟨SP + BitVec.ofNat 64 8, 24⟩] (s.rd ++ s.wr)
-  argsW : (⟨SP + BitVec.ofNat 64 8, 24⟩ : Region).Disjoint ⟨W, 488⟩
+  argsW : (⟨SP + BitVec.ofNat 64 8, 24⟩ : Region).Disjoint ⟨W, 744⟩
   argsD : (⟨SP + BitVec.ofNat 64 8, 24⟩ : Region).Disjoint ⟨D, n⟩
 
 /-- The tag, the 16 bytes at `T`: apart from the data, `W` and the stack
 below `SP`. -/
 structure TagBuf (W SP D : Addr) (n : Nat) (T : Addr) : Prop where
   d : (⟨T, 16⟩ : Region).Disjoint ⟨D, n⟩
-  w : (⟨T, 16⟩ : Region).Disjoint ⟨W, 488⟩
+  w : (⟨T, 16⟩ : Region).Disjoint ⟨W, 744⟩
   stk : (below SP 8).Disjoint ⟨T, 16⟩
   wrap : T.toNat + 16 ≤ 2 ^ 64
 
@@ -175,7 +175,7 @@ permissions say. -/
 theorem args_of_lay {s : State} (h : oneLay s)
     (hk : Covers [⟨s.gpr .rdi, 240⟩] (s.rd ++ s.wr)) (hN : Covers [⟨s.gpr .rdx, 12⟩] (s.rd ++ s.wr))
     (hA : Covers [⟨s.gpr .rcx, (s.gpr .r8).toNat⟩] (s.rd ++ s.wr)) (ha : Covers [args s 3] (s.rd ++ s.wr))
-    (hD : Covers [⟨s.gpr .r9, (arg s 0).toNat⟩] s.wr) (hW : Covers [⟨arg s 2, 488⟩] s.wr) :
+    (hD : Covers [⟨s.gpr .r9, (arg s 0).toNat⟩] s.wr) (hW : Covers [⟨arg s 2, 744⟩] s.wr) :
     Args s (s.gpr .rdi) (arg s 2) (s.gpr .rsp) (s.gpr .rdx) (s.gpr .rcx) (s.gpr .r9) (s.gpr .rsi).toNat
         (s.gpr .r8).toNat (arg s 0).toNat ∧
       TagBuf (arg s 2) (s.gpr .rsp) (s.gpr .r9) (arg s 0).toNat (arg s 1) := by
@@ -210,7 +210,7 @@ theorem args_of_seal {s : State} (h : sealPre s) :
   have mrd : ∀ r ∈ [(⟨s.gpr .rdi, 240⟩ : Region), ⟨s.gpr .rdx, 12⟩, ⟨s.gpr .rcx, (s.gpr .r8).toNat⟩,
       args s 3], Covers [r] (s.rd ++ s.wr) := fun r hr =>
     covers_of_mem (List.mem_append_left _ (by rw [hrd]; exact hr))
-  have mwr : ∀ r ∈ [(⟨s.gpr .r9, (arg s 0).toNat⟩ : Region), ⟨arg s 1, 16⟩, ⟨arg s 2, 488⟩],
+  have mwr : ∀ r ∈ [(⟨s.gpr .r9, (arg s 0).toNat⟩ : Region), ⟨arg s 1, 16⟩, ⟨arg s 2, 744⟩],
       Covers [r] s.wr := fun r hr => covers_of_mem (by rw [hwr]; exact hr)
   exact ⟨args_of_lay hl (mrd _ (by simp)) (mrd _ (by simp)) (mrd _ (by simp)) (mrd _ (by simp)) (mwr _ (by simp))
     (mwr _ (by simp)), mwr _ (by simp), hrt⟩
@@ -225,7 +225,7 @@ theorem args_of_open {s : State} (h : openPre s) :
   have mrd : ∀ r ∈ [(⟨s.gpr .rdi, 240⟩ : Region), ⟨s.gpr .rdx, 12⟩, ⟨s.gpr .rcx, (s.gpr .r8).toNat⟩,
       ⟨arg s 1, 16⟩, args s 3], Covers [r] (s.rd ++ s.wr) := fun r hr =>
     covers_of_mem (List.mem_append_left _ (by rw [hrd]; exact hr))
-  have mwr : ∀ r ∈ [(⟨s.gpr .r9, (arg s 0).toNat⟩ : Region), ⟨arg s 2, 488⟩], Covers [r] s.wr := fun r hr =>
+  have mwr : ∀ r ∈ [(⟨s.gpr .r9, (arg s 0).toNat⟩ : Region), ⟨arg s 2, 744⟩], Covers [r] s.wr := fun r hr =>
     covers_of_mem (by rw [hwr]; exact hr)
   exact ⟨args_of_lay hl (mrd _ (by simp)) (mrd _ (by simp)) (mrd _ (by simp)) (mrd _ (by simp)) (mwr _ (by simp))
     (mwr _ (by simp)), mrd _ (by simp)⟩
@@ -249,7 +249,7 @@ variable {K W SP N A D : Addr} {R al n : Nat} {m m' : Mem}
 
 /-- The tag's address, at `SP + 16`, misses what the entry and the pieces
 write. -/
-theorem argT_disj (hW : (⟨SP + BitVec.ofNat 64 8, 24⟩ : Region).Disjoint ⟨W, 488⟩)
+theorem argT_disj (hW : (⟨SP + BitVec.ofNat 64 8, 24⟩ : Region).Disjoint ⟨W, 744⟩)
     (hD : (⟨SP + BitVec.ofNat 64 8, 24⟩ : Region).Disjoint ⟨D, n⟩) :
     ∀ r ∈ entryR W :: mutR W SP D n, (⟨SP + BitVec.ofNat 64 16, 8⟩ : Region).Disjoint r := by
   have hs : Region.Sub ⟨SP + BitVec.ofNat 64 16, 8⟩ ⟨SP + BitVec.ofNat 64 8, 24⟩ := by
@@ -267,7 +267,7 @@ theorem argT_disj (hW : (⟨SP + BitVec.ofNat 64 8, 24⟩ : Region).Disjoint ⟨
 
 /-- The tag's address, at `SP + 16`, through the entry and the pieces. -/
 theorem argT_kept (hf : Frame (entryR W :: mutR W SP D n) m m')
-    (hW : (⟨SP + BitVec.ofNat 64 8, 24⟩ : Region).Disjoint ⟨W, 488⟩)
+    (hW : (⟨SP + BitVec.ofNat 64 8, 24⟩ : Region).Disjoint ⟨W, 744⟩)
     (hD : (⟨SP + BitVec.ofNat 64 8, 24⟩ : Region).Disjoint ⟨D, n⟩) :
     m'.readW (SP + BitVec.ofNat 64 16) 64 = m.readW (SP + BitVec.ofNat 64 16) 64 :=
   hf.readW (r := ⟨SP + BitVec.ofNat 64 16, 8⟩) (Region.contains_self _ _) (argT_disj hW hD) (by decide)
@@ -285,7 +285,7 @@ theorem tag_kept {T : Addr} (hT : TagBuf W SP D n T) (hf : Frame (entryR W :: mu
     · exact hT.stk.symm
     · exact hT.d) (by decide)
 
-theorem slots_mut (L : Lay K W SP) (hD : (⟨D, n⟩ : Region).Disjoint ⟨W, 488⟩)
+theorem slots_mut (L : Lay K W SP) (hD : (⟨D, n⟩ : Region).Disjoint ⟨W, 744⟩)
     (hf : Frame (mutR W SP D n) m m') (S : Slots W R N A D al n m) : Slots W R N A D al n m' := by
   have k : ∀ d, (144 ≤ d ∧ d + 8 ≤ 192 ∨ 200 ≤ d ∧ d + 8 ≤ 248) →
       m'.readW (W + BitVec.ofNat 64 d) 64 = m.readW (W + BitVec.ofNat 64 d) 64 := fun d hd =>
@@ -294,7 +294,7 @@ theorem slots_mut (L : Lay K W SP) (hD : (⟨D, n⟩ : Region).Disjoint ⟨W, 48
     by rw [k 216 (by decide)]; exact S.aad, by rw [k 224 (by decide)]; exact S.alen,
     by rw [k 232 (by decide)]; exact S.data, by rw [k 240 (by decide)]; exact S.len⟩
 
-theorem saved_mut (L : Lay K W SP) (hD : (⟨D, n⟩ : Region).Disjoint ⟨W, 488⟩)
+theorem saved_mut (L : Lay K W SP) (hD : (⟨D, n⟩ : Region).Disjoint ⟨W, 744⟩)
     (hf : Frame (mutR W SP D n) m m') {g : Reg → BitVec 64} (S : Saved m W g) : Saved m' W g := by
   intro p hp
   rw [← S p hp]
@@ -326,7 +326,7 @@ namespace VG.Proof.AesGcmSivReg.X86_64
 open VG VG.X86_64
 open VG.Spec.Aes (bytesAt)
 
-theorem toNat_W {W : Addr} (hw : W.toNat + 488 ≤ 2 ^ 64) {d : Nat} (hd : d < 488) :
+theorem toNat_W {W : Addr} (hw : W.toNat + 744 ≤ 2 ^ 64) {d : Nat} (hd : d < 744) :
     (W + BitVec.ofNat 64 d).toNat = W.toNat + d := by
   rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega_using [hd]), Nat.mod_eq_of_lt (by omega_using [hw, hd])]
 

@@ -66,8 +66,8 @@ theorem derInit_ok {K W SP : Addr} {σ : State} (E : Env K W SP σ) {R : Nat} (h
   have h13 := E.r13
   have rR := S.rounds
   have rN := S.nonce
-  have rr := E.perm.wR (show 200 + 8 ≤ 488 by decide)
-  have rn := E.perm.wR (show 208 + 8 ≤ 488 by decide)
+  have rr := E.perm.wR (show 200 + 8 ≤ 744 by decide)
+  have rn := E.perm.wR (show 208 + 8 ≤ 744 by decide)
   obtain ⟨t, run, hm, bx, dx, di, si, r10, hg, hrd, hwr⟩ : ∃ t : State, runBlock isa
       (aesArgs [.mov .rdi (.reg .r13)] ++ [.mov .rdx (.mem (at_ .r15 nonceO)), .mov32 .rbx (imm 0)]) σ = some t ∧
       t.mem = σ.mem ∧ t.gpr .rbx = BitVec.ofNat 64 0 ∧ t.gpr .rdx = N ∧ t.gpr .rdi = K ∧
@@ -309,11 +309,11 @@ structure ExpPost (K W SP : Addr) (R : Nat) (t t' : State) : Prop where
     Spec.GcmSiv.aes (bytesAt t.mem (W + BitVec.ofNat 64 32) (Spec.GcmSiv.keyLen R))
 
 theorem expand_ok {K W SP : Addr} {R : Nat} (hR : R = 10 ∨ R = 14)
-    (hret : (⟨SP, 8⟩ : Region).Disjoint ⟨W, 488⟩) {N A D : Addr} {al n : Nat} {t : State} (E : Env K W SP t)
+    (hret : (⟨SP, 8⟩ : Region).Disjoint ⟨W, 744⟩) {N A D : Addr} {al n : Nat} {t : State} (E : Env K W SP t)
     (S : Slots W R N A D al n t.mem) : WP isa expand t (ExpPost K W SP R t) := by
   have h15 := E.r15
   have rR := S.rounds
-  have rr := E.perm.wR (show 200 + 8 ≤ 488 by decide)
+  have rr := E.perm.wR (show 200 + 8 ≤ 744 by decide)
   have hl : Spec.GcmSiv.keyLen R = 16 ∨ Spec.GcmSiv.keyLen R = 32 := by unfold Spec.GcmSiv.keyLen; omega_arith
   obtain ⟨t₁, run₁, hm₁, rdi, rsi, rdx, hg₁, hrd₁, hwr₁⟩ : ∃ t₁ : State, runBlock isa
       (ptr .rdi .r15 ekO ++ ([.mov .rsi (.mem (at_ .r15 roundsO)), .alu .sub .rsi (imm 6), .alu .add .rsi (.reg .rsi),

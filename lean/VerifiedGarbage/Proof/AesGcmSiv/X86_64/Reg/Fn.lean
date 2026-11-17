@@ -43,11 +43,11 @@ theorem cmp_ok {K W SP : Addr} {t : State} (E : Env K W SP t) :
         (if bytesAt t.mem W 16 = bytesAt t.mem (W + BitVec.ofNat 64 128) 16 then 1#64 else 0#64) ∧
       (∀ r ∈ calleeSaved, t'.gpr r = t.gpr r) ∧ t'.rd = t.rd ∧ t'.wr = t.wr := by
   have h15 := E.r15
-  obtain r₀ : InRegions (t.rd ++ t.wr) W 8 := by simpa using E.perm.wR (show 0 + 8 ≤ 488 by decide)
-  obtain r₈ := E.perm.wR (show 8 + 8 ≤ 488 by decide)
-  obtain u₀ := E.perm.wR (show 128 + 8 ≤ 488 by decide)
-  obtain u₈ := E.perm.wR (show 136 + 8 ≤ 488 by decide)
-  obtain wo := E.perm.wW (show 192 + 8 ≤ 488 by decide)
+  obtain r₀ : InRegions (t.rd ++ t.wr) W 8 := by simpa using E.perm.wR (show 0 + 8 ≤ 744 by decide)
+  obtain r₈ := E.perm.wR (show 8 + 8 ≤ 744 by decide)
+  obtain u₀ := E.perm.wR (show 128 + 8 ≤ 744 by decide)
+  obtain u₈ := E.perm.wR (show 136 + 8 ≤ 744 by decide)
+  obtain wo := E.perm.wW (show 192 + 8 ≤ 744 by decide)
   refine ⟨_, by srun [Impl.AesGcmSiv.X86_64.cmp, h15, r₀, r₈, u₀, u₈, wo], ?_, ?_, ?_, ?_⟩
   · simp only [mem_setReg, mem_arithFlags, mem_setFlags, gpr_setReg, gpr_arithFlags, cf_arithFlags, cf_setReg,
       ite_true, ite_false, reduceCtorEq]
@@ -73,9 +73,9 @@ theorem mask_ok {K W SP : Addr} {t : State} (E : Env K W SP t) {R : Nat} {N A D 
     WP isa mask t (MaskPost K W SP D n c t) := by
   have h15 := E.r15
   have hn := hD.lt
-  obtain rD := E.perm.wR (show 232 + 8 ≤ 488 by decide)
-  obtain rL := E.perm.wR (show 240 + 8 ≤ 488 by decide)
-  obtain rO := E.perm.wR (show 192 + 8 ≤ 488 by decide)
+  obtain rD := E.perm.wR (show 232 + 8 ≤ 744 by decide)
+  obtain rL := E.perm.wR (show 240 + 8 ≤ 744 by decide)
+  obtain rO := E.perm.wR (show 192 + 8 ≤ 744 by decide)
   have sD := S.data
   have sL := S.len
   obtain hok' : t.mem.readW (W + BitVec.ofNat 64 192) 64 = if decide c then 1 else 0 := by
@@ -133,11 +133,11 @@ theorem recv_ok {K W SP T : Addr} {s : State} (E : Env K W SP s)
   have hsp := E.rsp
   obtain t₀ : InRegions (s.rd ++ s.wr) T 8 := by simpa using in_off (d := 0) (n := 8) hB.rd (by decide) (by decide)
   obtain t₈ := in_off (d := 8) (n := 8) hB.rd (by decide) (by decide)
-  obtain w₀ : InRegions s.wr W 8 := by simpa using E.perm.wW (show 0 + 8 ≤ 488 by decide)
-  obtain w₈ := E.perm.wW (show 8 + 8 ≤ 488 by decide)
+  obtain w₀ : InRegions s.wr W 8 := by simpa using E.perm.wW (show 0 + 8 ≤ 744 by decide)
+  obtain w₈ := E.perm.wW (show 8 + 8 ≤ 744 by decide)
   obtain hs : Mem.Sep (T + BitVec.ofNat 64 8) (64 / 8) W (64 / 8) :=
     hB.w.sep (Offset.contains_base T (d := 8) (n := 8) (k := 16) (by decide) (by decide))
-      (by simpa using Offset.contains_base W (d := 0) (n := 8) (k := 488) (by decide) (by decide))
+      (by simpa using Offset.contains_base W (d := 0) (n := 8) (k := 744) (by decide) (by decide))
   refine ⟨_, by srun [recv, h15, hsp, hT, hTa, t₀, t₈, w₀, w₈], ?_, ?_, ?_, ?_, ?_⟩
   · simp only [mem_setReg]; exact Proof.Cmac.frame_store2 _ _ _
   · simp only [mem_setReg]; exact bytesAt_copy2 _ _ _ hs
@@ -149,7 +149,7 @@ theorem recv_ok {K W SP T : Addr} {s : State} (E : Env K W SP s)
 /-- `tagOut`: the tag at `W` copied to `T`, whose address is at `SP + 16`. -/
 theorem tagOut_ok {K W SP T : Addr} {s : State} (E : Env K W SP s)
     (hT : s.mem.readW (SP + BitVec.ofNat 64 16) 64 = T) (hTa : InRegions (s.rd ++ s.wr) (SP + BitVec.ofNat 64 16) 8)
-    (hTw : Covers [⟨T, 16⟩] s.wr) (hTW : (⟨T, 16⟩ : Region).Disjoint ⟨W, 488⟩) :
+    (hTw : Covers [⟨T, 16⟩] s.wr) (hTW : (⟨T, 16⟩ : Region).Disjoint ⟨W, 744⟩) :
     ∃ s', runBlock isa tagOut s = some s' ∧ Frame [⟨T, 16⟩] s.mem s'.mem ∧
       bytesAt s'.mem T 16 = bytesAt s.mem W 16 ∧ (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧
       s'.wr = s.wr := by
@@ -157,10 +157,10 @@ theorem tagOut_ok {K W SP T : Addr} {s : State} (E : Env K W SP s)
   have hsp := E.rsp
   obtain t₀ : InRegions s.wr T 8 := by simpa using in_off (d := 0) (n := 8) hTw (by decide) (by decide)
   obtain t₈ := in_off (d := 8) (n := 8) hTw (by decide) (by decide)
-  obtain w₀ : InRegions (s.rd ++ s.wr) W 8 := by simpa using E.perm.wR (show 0 + 8 ≤ 488 by decide)
-  obtain w₈ := E.perm.wR (show 8 + 8 ≤ 488 by decide)
+  obtain w₀ : InRegions (s.rd ++ s.wr) W 8 := by simpa using E.perm.wR (show 0 + 8 ≤ 744 by decide)
+  obtain w₈ := E.perm.wR (show 8 + 8 ≤ 744 by decide)
   obtain hs : Mem.Sep (W + BitVec.ofNat 64 8) (64 / 8) T (64 / 8) :=
-    hTW.symm.sep (Offset.contains_base W (d := 8) (n := 8) (k := 488) (by decide) (by decide))
+    hTW.symm.sep (Offset.contains_base W (d := 8) (n := 8) (k := 744) (by decide) (by decide))
       (by simpa using Offset.contains_base T (d := 0) (n := 8) (k := 16) (by decide) (by decide))
   refine ⟨_, by srun [tagOut, h15, hsp, hT, hTa, t₀, t₈, w₀, w₈], ?_, ?_, ?_, ?_, ?_⟩
   · simp only [mem_setReg]; exact Proof.Cmac.frame_store2 _ _ _
@@ -202,14 +202,14 @@ theorem buf_mut {s : State} {P : Addr} {len : Nat} (hP : Buf K W SP s P len)
     · exact hPD) (Nat.le_of_lt hP.lt)
 
 /-- A buffer, through a piece that writes only in `W`. -/
-theorem buf_w {s : State} {P : Addr} {len d k : Nat} (hP : Buf K W SP s P len) (h : d + k ≤ 488)
+theorem buf_w {s : State} {P : Addr} {len d k : Nat} (hP : Buf K W SP s P len) (h : d + k ≤ 744)
     (hf : Frame [⟨W + BitVec.ofNat 64 d, k⟩] m m') : bytesAt m' P len = bytesAt m P len :=
   Proof.AesGcm.X86_64.bytesAt_frame hf (fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
     exact hP.w.sub_right (Lay.wSub h)) (Nat.le_of_lt hP.lt)
 
 /-- A part of `W`, through a piece that writes another. -/
-theorem w_keep (L : Lay K W SP) {a l d k : Nat} (h : a + l ≤ d ∨ d + k ≤ a) (ha : a + l ≤ 488) (hd : d + k ≤ 488)
+theorem w_keep (L : Lay K W SP) {a l d k : Nat} (h : a + l ≤ d ∨ d + k ≤ a) (ha : a + l ≤ 744) (hd : d + k ≤ 744)
     (hf : Frame [⟨W + BitVec.ofNat 64 d, k⟩] m m') (hl : l ≤ 2 ^ 64) :
     bytesAt m' (W + BitVec.ofNat 64 a) l = bytesAt m (W + BitVec.ofNat 64 a) l :=
   Proof.AesGcm.X86_64.bytesAt_frame hf (fun r hr => by
@@ -217,7 +217,7 @@ theorem w_keep (L : Lay K W SP) {a l d k : Nat} (h : a + l ≤ d ∨ d + k ≤ a
     exact L.w_w h ha hd) hl
 
 /-- The return address is outside what the entry and the pieces write. -/
-theorem ret_disj (L : Lay K W SP) (hW : (⟨SP, 8⟩ : Region).Disjoint ⟨W, 488⟩)
+theorem ret_disj (L : Lay K W SP) (hW : (⟨SP, 8⟩ : Region).Disjoint ⟨W, 744⟩)
     (hD : (⟨SP, 8⟩ : Region).Disjoint ⟨D, n⟩) :
     ∀ r ∈ entryR W :: mutR W SP D n, (⟨SP, 8⟩ : Region).Disjoint r := by
   intro r hr
@@ -449,7 +449,7 @@ theorem open_wp' (F : MulFacts) {s : State} {K W SP N A D T : Addr} {R al n : Na
     rw [hR₁]; exact tag_kept Tb f₀'
   obtain bN₁ := Ar.nonce.of_eq rd₁ wr₁
   -- A block at `W`, through a piece that writes elsewhere in `W`.
-  obtain w0 : ∀ {m m' : Mem} {d k : Nat}, 16 ≤ d → d + k ≤ 488 → Frame [⟨W + BitVec.ofNat 64 d, k⟩] m m' →
+  obtain w0 : ∀ {m m' : Mem} {d k : Nat}, 16 ≤ d → d + k ≤ 744 → Frame [⟨W + BitVec.ofNat 64 d, k⟩] m m' →
       bytesAt m' W 16 = bytesAt m W 16 := fun h₁ h₂ hf =>
     Proof.AesGcm.X86_64.bytesAt_frame hf (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
@@ -481,14 +481,14 @@ theorem open_wp' (F : MulFacts) {s : State} {K W SP N A D T : Addr} {R al n : Na
   obtain rd₄ : s₄.rd = s.rd := Cr.rd.trans rd₃
   obtain wr₄ : s₄.wr = s.wr := Cr.wr.trans wr₃
   -- What is outside the data, through counter mode.
-  obtain cK : ∀ {P : Addr} {len : Nat}, (⟨P, len⟩ : Region).Disjoint ⟨W, 488⟩ →
+  obtain cK : ∀ {P : Addr} {len : Nat}, (⟨P, len⟩ : Region).Disjoint ⟨W, 744⟩ →
       (⟨P, len⟩ : Region).Disjoint ⟨D, n⟩ → len ≤ 2 ^ 64 → bytesAt s₄.mem P len = bytesAt s₃.mem P len :=
     fun hPW hPD hl => Proof.AesGcm.X86_64.bytesAt_frame Cr.frame (fun q hq => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
       rcases hq with rfl | rfl
       · exact hPW.sub_right (Lay.wSub (by decide))
       · exact hPD) hl
-  obtain wD : ∀ {d k : Nat}, d + k ≤ 488 → (⟨W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint ⟨D, n⟩ :=
+  obtain wD : ∀ {d k : Nat}, d + k ≤ 744 → (⟨W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint ⟨D, n⟩ :=
     fun h => (Ar.data.w.sub_right (Lay.wSub h)).symm
   -- POLYVAL of the plaintext.
   refine WP.seq (WP.mono (polyval_ok F L Cr.env S₄ (Ar.aad.of_eq rd₄ wr₄) (Ar.data.of_eq rd₄ wr₄)) fun s₅ Po => ?_)
@@ -522,7 +522,7 @@ theorem open_wp' (F : MulFacts) {s : State} {K W SP N A D T : Addr} {R al n : Na
     (by rw [hwr₇, wr₆]; exact Ar.dw) hok) fun s₈ Mk => ?_)
   -- `ok` and the restore.
   have h15₈ := Mk.env.r15
-  obtain rO := Mk.env.perm.wR (show 192 + 8 ≤ 488 by decide)
+  obtain rO := Mk.env.perm.wR (show 192 + 8 ≤ 744 by decide)
   obtain ⟨s₉, run₉, hax₉, hm₉, hg₉, hrd₉, hwr₉⟩ : ∃ s₉ : State, runBlock isa [.mov .rax (.mem (at_ .r15 okO))] s₈ =
       some s₉ ∧ s₉.gpr .rax = s₈.mem.readW (W + BitVec.ofNat 64 192) 64 ∧ s₉.mem = s₈.mem ∧
       (∀ r, r ≠ .rax → s₉.gpr r = s₈.gpr r) ∧ s₉.rd = s₈.rd ∧ s₉.wr = s₈.wr := by

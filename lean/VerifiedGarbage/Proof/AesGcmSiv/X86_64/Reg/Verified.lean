@@ -25,10 +25,10 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 
 Untrusted: everything here is checked by Lean. Correctness and constant
 time, states satisfying the preconditions, and the shared contracts of
-`Spec/GcmSiv/Contract.lean` with the working space (61 words) as a last
+`Spec/GcmSiv/Contract.lean` with the working space (93 words) as a last
 argument (`Proof/AesGcmSiv/Scratch.lean`), which the code, calling nothing,
 uses no stack below (the contracts allow it the 8 bytes its layout keeps apart);
-then in a frame of 520 bytes that allocates it.
+then in a frame of 776 bytes that allocates it.
 -/
 
 -- separate module: the contracts, apart from the proofs they are from
@@ -82,10 +82,10 @@ def sealSat : State where
   of := none
   mem a := if a = 0x8011 then 0x30 else 0
   rd := [⟨0x1000, 240⟩, ⟨0x2000, 12⟩, ⟨0x2100, 0⟩, ⟨0x8008, 24⟩]
-  wr := [⟨0, 0⟩, ⟨0x3000, 16⟩, ⟨0, 488⟩]
+  wr := [⟨0, 0⟩, ⟨0x3000, 16⟩, ⟨0, 744⟩]
 
 theorem seal_verified (F : MulFacts) :
-    Verified X86_64.target Impl.AesGcmSiv.X86_64Reg.seal (Proof.AesGcmSiv.sealScratchContract X86_64.abi 61 8) :=
+    Verified X86_64.target Impl.AesGcmSiv.X86_64Reg.seal (Proof.AesGcmSiv.sealScratchContract X86_64.abi 93 8) :=
   Verified.of_correct (seal_correct F) (seal_ct F) (by
     sig_implies [Proof.AesGcmSiv.sealScratchContract, Proof.AesGcmSiv.sealScratchSig, Spec.GcmSiv.sealPre,
       Proof.AesGcmSiv.sealRoundsPost, Proof.AesGcmSivReg.sealX86_64, Proof.AesGcmSivReg.sealPre, Proof.AesGcmSivReg.oneLay,
@@ -97,12 +97,12 @@ theorem seal_verified (F : MulFacts) :
 `sealSat`, with the tag read only. -/
 def openSat : State := { sealSat with
   rd := [⟨0x1000, 240⟩, ⟨0x2000, 12⟩, ⟨0x2100, 0⟩, ⟨0x3000, 16⟩, ⟨0x8008, 24⟩]
-  wr := [⟨0, 0⟩, ⟨0, 488⟩] }
+  wr := [⟨0, 0⟩, ⟨0, 744⟩] }
 
 /-- `open`'s public data include its leak, from which `pub` has whether it
 succeeds. -/
 theorem open_verified (F : MulFacts) :
-    Verified X86_64.target Impl.AesGcmSiv.X86_64Reg.open (Proof.AesGcmSiv.openScratchContract X86_64.abi 61 8) :=
+    Verified X86_64.target Impl.AesGcmSiv.X86_64Reg.open (Proof.AesGcmSiv.openScratchContract X86_64.abi 93 8) :=
   Verified.of_correct (open_correct F) (open_ct F)
     { pre := by sig_implies_pre [Proof.AesGcmSiv.openScratchContract, Proof.AesGcmSiv.openScratchSig,
         Spec.GcmSiv.openPre, Proof.AesGcmSiv.openRoundsPost, Spec.GcmSiv.openLeak, Proof.AesGcmSivReg.openX86_64,
@@ -171,17 +171,17 @@ working space. -/
 def sealFrameSat : State :=
   { sealSat with rd := [⟨0x1000, 240⟩, ⟨0x2000, 12⟩, ⟨0x2100, 0⟩, ⟨0x8008, 16⟩], wr := [⟨0, 0⟩, ⟨0x3000, 16⟩] }
 
-theorem sealFrameSat_pre : ∃ s, (Proof.AesGcmSiv.sealRoundsContract X86_64.abi 528).pre s := by
+theorem sealFrameSat_pre : ∃ s, (Proof.AesGcmSiv.sealRoundsContract X86_64.abi 784).pre s := by
   implies_sat [Proof.AesGcmSiv.sealRoundsContract, Spec.GcmSiv.sealSig, Spec.GcmSiv.sealPre, Proof.AesGcmSiv.sealRoundsPost,
     X86_64.abi, X86_64.argRegs] [sealFrameSat, sealSat] using sealFrameSat
 
 theorem seal_framed (F : MulFacts) :
-    Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 520 2 Impl.AesGcmSiv.X86_64Reg.seal)
-      (Proof.AesGcmSiv.sealRoundsContract X86_64.abi 528) :=
+    Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 776 2 Impl.AesGcmSiv.X86_64Reg.seal)
+      (Proof.AesGcmSiv.sealRoundsContract X86_64.abi 784) :=
   X86_64.Verified.stackArgScratch (sig := Spec.GcmSiv.sealSig) (nm := "work") (e := .u64)
-    (n := 61) (pre := Spec.GcmSiv.sealPre X86_64.abi.ptrBits)
+    (n := 93) (pre := Spec.GcmSiv.sealPre X86_64.abi.ptrBits)
     (post := Proof.AesGcmSiv.sealRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
-    (bytes := 520) (seal_verified F) (by decide) (by decide) (by decide)
+    (bytes := 776) (seal_verified F) (by decide) (by decide) (by decide)
     seal_spSafe seal_xdepth (Proof.AesGcmSiv.sealPre_local _) (Proof.AesGcmSiv.sealPost_local _) sealFrameSat_pre
 
 /-- A state satisfying `vg_aes_gcm_siv_open`'s precondition, without the
@@ -189,17 +189,17 @@ working space. -/
 def openFrameSat : State :=
   { sealSat with rd := [⟨0x1000, 240⟩, ⟨0x2000, 12⟩, ⟨0x2100, 0⟩, ⟨0x3000, 16⟩, ⟨0x8008, 16⟩], wr := [⟨0, 0⟩] }
 
-theorem openFrameSat_pre : ∃ s, (Proof.AesGcmSiv.openRoundsContract X86_64.abi 528).pre s := by
+theorem openFrameSat_pre : ∃ s, (Proof.AesGcmSiv.openRoundsContract X86_64.abi 784).pre s := by
   implies_sat [Proof.AesGcmSiv.openRoundsContract, Spec.GcmSiv.openSig, Spec.GcmSiv.openPre, Proof.AesGcmSiv.openRoundsPost,
     Spec.GcmSiv.openLeak, X86_64.abi, X86_64.argRegs] [openFrameSat, sealSat] using openFrameSat
 
 theorem open_framed (F : MulFacts) :
-    Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 520 2 Impl.AesGcmSiv.X86_64Reg.open)
-      (Proof.AesGcmSiv.openRoundsContract X86_64.abi 528) :=
+    Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 776 2 Impl.AesGcmSiv.X86_64Reg.open)
+      (Proof.AesGcmSiv.openRoundsContract X86_64.abi 784) :=
   X86_64.Verified.stackArgScratch (sig := Spec.GcmSiv.openSig) (nm := "work") (e := .u64)
-    (n := 61) (pre := Spec.GcmSiv.openPre X86_64.abi.ptrBits)
+    (n := 93) (pre := Spec.GcmSiv.openPre X86_64.abi.ptrBits)
     (post := Proof.AesGcmSiv.openRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
-    (leak := some (Spec.GcmSiv.openLeak X86_64.abi.ptrBits)) (bytes := 520)
+    (leak := some (Spec.GcmSiv.openLeak X86_64.abi.ptrBits)) (bytes := 776)
     (Proof.AesGcmSiv.Verified.of_openScratch (open_verified F))
     (by decide) (by decide) (by decide) open_spSafe open_xdepth (Proof.AesGcmSiv.openPre_local _)
     (Proof.AesGcmSiv.openPost_local _) openFrameSat_pre (hleak := Proof.AesGcmSiv.openLeak_local _)
@@ -208,7 +208,7 @@ theorem open_framed (F : MulFacts) :
 /-! ## In the first implementation's frame
 
 The same code in a frame of 3848 bytes, of which it uses the working space's
-first 488, against the contracts with 3856 bytes of stack, as the first
+first 744, against the contracts with 3856 bytes of stack, as the first
 implementation's: to be chosen by the lengths with it. -/
 
 theorem sealFrameSat_preL : ∃ s, (Proof.AesGcmSiv.sealRoundsContract X86_64.abi 3856).pre s := by
@@ -219,7 +219,7 @@ theorem seal_framedL (F : MulFacts) :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 3848 2 Impl.AesGcmSiv.X86_64Reg.seal)
       (Proof.AesGcmSiv.sealRoundsContract X86_64.abi 3856) :=
   X86_64.Verified.stackArgScratch (sig := Spec.GcmSiv.sealSig) (nm := "work") (e := .u64)
-    (n := 61) (pre := Spec.GcmSiv.sealPre X86_64.abi.ptrBits)
+    (n := 93) (pre := Spec.GcmSiv.sealPre X86_64.abi.ptrBits)
     (post := Proof.AesGcmSiv.sealRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
     (bytes := 3848) (seal_verified F) (by decide) (by decide) (by decide)
     seal_spSafe seal_xdepth (Proof.AesGcmSiv.sealPre_local _) (Proof.AesGcmSiv.sealPost_local _) sealFrameSat_preL
@@ -232,7 +232,7 @@ theorem open_framedL (F : MulFacts) :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 3848 2 Impl.AesGcmSiv.X86_64Reg.open)
       (Proof.AesGcmSiv.openRoundsContract X86_64.abi 3856) :=
   X86_64.Verified.stackArgScratch (sig := Spec.GcmSiv.openSig) (nm := "work") (e := .u64)
-    (n := 61) (pre := Spec.GcmSiv.openPre X86_64.abi.ptrBits)
+    (n := 93) (pre := Spec.GcmSiv.openPre X86_64.abi.ptrBits)
     (post := Proof.AesGcmSiv.openRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
     (leak := some (Spec.GcmSiv.openLeak X86_64.abi.ptrBits)) (bytes := 3848)
     (Proof.AesGcmSiv.Verified.of_openScratch (open_verified F))
