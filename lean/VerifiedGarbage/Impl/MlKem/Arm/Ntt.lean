@@ -5,39 +5,53 @@ public import VerifiedGarbage.Impl.MlKem.Arm.Poly
 /-!
 # ML-KEM on 32-bit ARM: the NTT, its inverse and `MultiplyNTTs`
 
-The products of two coefficients (less than `q² < 2²⁴`), and the sums of two
-of them in `MultiplyNTTs` (less than `2q² < 2²⁵`), are reduced with only
-32-bit products (`mul`) by `reduce`: the Barrett reduction `barrett32`
-(`VG.Proof.MlKem.barrett32`), `x - ⌊(x >> 11) · 161270 / 2¹⁸⌋ · q`, with the
-multiplication by `q = 2¹¹ + 2¹⁰ + 2⁸ + 1` as four shifted subtractions,
-leaves a value less than `2q` congruent to `x`, and a conditional
-subtraction of `q` (`subQ`, `fixup`) finishes it. `r8 = 161270`
-throughout (`consts`).
+`-q` is in a register (`r8` in the transforms, `r12` in `MultiplyNTTs`), so
+that a subtraction of a multiple of `q` is an `mla`.
 
-The tables of `ζ^BitRev7(k)` (`zetaTable`) and of the `γᵢ` of
-`MultiplyNTTs` (`gammaTable`) are stored in the first 512 bytes of
-`scratch`, as 128 `u32`s (`table`, through `r12`), and read in order
-through a pointer. The functions use `r4`–`r11`, which they save in
-`scratch[512..544)` and restore (`saveRegs`, `restoreRegs`); they make no
-calls, so `lr` is never written, and they use no stack.
+A product by a zeta `z` is reduced with the zeta's quotient
+`zp = ⌊2¹⁶ z / q⌋` (`zetaQuot`): for `b < 2¹⁶`, `⌊b · zp / 2¹⁶⌋` is
+`⌊b z / q⌋` or one less, so `b z - ⌊b · zp / 2¹⁶⌋ · q` (`mulz`: two `mul`s, a
+shift and an `mla`) is less than `2q` and congruent to `b z`. The table of
+the transforms holds each zeta with its quotient in one word,
+`zp + 2¹⁶ z` (`tableZ`, in the first 512 bytes of `scratch`, as 128 `u32`s,
+through `r12`), which a block unpacks into `r7` and `r9` (`zetaLoad`).
+
+The butterflies are lazy: they reduce only the product, and the
+coefficients between layers are words congruent to the specification's.
 
 * `vg_mlkem_ntt(f = r0, scratch = r1)`: the seven layers of Algorithm 9 as
   three nested loops, with `r0 = f + 1024` (the end of `f`), `r10 = 4 len`
   (from 512, halved, until it is 4), `r1` the next zeta of the table (from
-  `zetas[1]`); for each block, its zeta in `r7`, and `len` butterflies on
-  `r2 = f + 4j` and `r3 = f + 4(j + len)`, counted by `r11`; the next block
-  starts where the butterflies left `r3`, until `r2 = r0`.
+  `zetas[1]`); for each block, its zeta in `r7` and `r9`, and `len`
+  butterflies on `r2 = f + 4j` and `r3 = f + 4(j + len)`, counted by `r11`;
+  the next block starts where the butterflies left `r3`, until `r2 = r0`.
+  A butterfly stores `f[j] + 2q - t` and `f[j] + t` for the product `t`
+  (`2q` in `r12`): a layer adds less than `2q` to the coefficients, which
+  stay less than `15q < 2¹⁶`. A last loop reduces them (`canonBody`): for
+  `v < 15q`, `⌊v · 40318 / 2²⁷⌋` is `⌊v / q⌋`.
 * `vg_mlkem_inv_ntt(f = r0, scratch = r1)`: the same for Algorithm 10, with
-  `r10` from 8 (doubled, until it is 1024), the zetas from `zetas[127]`
-  down, and the inverse butterflies; then every coefficient times 3303.
+  `r10` from 8 (doubled, until it is 1024) and the zetas from `zetas[127]`
+  down. A butterfly stores `x - ⌊x / 2¹²⌋ · q` for the sum `x` (less than
+  `2q` for a sum less than `4q`, as `2¹² - q = 767`), and the product of
+  the zeta and `f[j + len] + 2q - f[j]`: the coefficients stay less than
+  `2q`. Then every coefficient times 3303, reduced (`csub`, with `q` in
+  `r12`).
 * `vg_mlkem_multiply_ntts(h = r0, f = r1, g = r2, scratch = r3)`: for each
   pair `i` (counted by `r11`), `h[2i] = f[2i] g[2i] + (f[2i+1] g[2i+1] mod q) γᵢ`
   and `h[2i+1] = f[2i] g[2i+1] + f[2i+1] g[2i]`, each reduced, with `γᵢ`
-  read through `r3`.
+  read through `r3` (`gammaTable`, stored by `table`). The products of two
+  coefficients (less than `q²`) and the sums (less than `3q² < 2²⁵`) are
+  reduced with the Barrett reduction `barrett32`
+  (`VG.Proof.MlKem.barrett32`), `x - ⌊(x >> 11) · 161270 / 2¹⁸⌋ · q`, which
+  leaves a value less than `2q` congruent to `x` (`barrett`, with `161270`
+  in `r8`), and a conditional subtraction of `q` (`csubN`).
 
-A butterfly stores `f[j + len]` before `f[j]`, and an inverse butterfly
-`f[j]` before `f[j + len]`, the order in which Algorithms 9 and 10 write
-them. Every address and branch depends only on the pointers.
+The functions use `r4`–`r11`, which they save in `scratch[512..544)` and
+restore (`saveRegs`, `restoreRegs`); they make no calls, so `lr` is never
+written, and they use no stack. A butterfly stores `f[j + len]` before
+`f[j]`, and an inverse butterfly `f[j]` before `f[j + len]`, the order in
+which Algorithms 9 and 10 write them. Every address and branch depends only
+on the pointers.
 -/
 
 @[expose] public section
@@ -70,15 +84,32 @@ def gammaTable : List Nat := [
   403, 2926, 1026, 2303, 1143, 2186, 2150, 1179, 2775, 554, 886, 2443, 1722, 1607, 1212, 2117,
   1874, 1455, 1029, 2300, 2110, 1219, 2935, 394, 885, 2444, 2154, 1175]
 
-/-- `d ← d - ⌊(d >> 11) · 161270 / 2¹⁸⌋ · q`, with `161270` in `c` and `t` a
-temporary. -/
-def barrett (d t c : Reg) : List Instr :=
-  [.mov t (.shifted d .lsr 11), .mul t t c, .mov t (.shifted t .lsr 18), .dp .sub d d (.reg t),
-   .dp .sub d d (.shifted t .lsl 8), .dp .sub d d (.shifted t .lsl 10),
-   .dp .sub d d (.shifted t .lsl 11)]
+/-- `⌊2¹⁶ z / q⌋`: the quotient of a zeta. -/
+def zetaQuot (z : Nat) : Nat := z * 65536 / 3329
 
-/-- `d ← d mod q` for `d < 2²⁵`, with `161270` in `c` and `t` a temporary. -/
-def reduce (d t c : Reg) : List Instr := barrett d t c ++ subQ d ++ fixup d t
+/-- `d ← d - ⌊(d >> 11) · 161270 / 2¹⁸⌋ · q`, with `161270` in `c`, `-q` in
+`N` and `t` a temporary. -/
+def barrett (d t c N : Reg) : List Instr :=
+  [.mov t (.shifted d .lsr 11), .mul t t c, .mov t (.shifted t .lsr 18), .mla d t N d]
+
+/-- `d ← d - q` unless that is negative: `d mod q` for `d < 2q`, with `-q` in
+`N` and `t` a temporary, which becomes the sign bit of `d - q + 2³¹`: 1 if
+`d ≥ q`. -/
+def csubN (d t N : Reg) : List Instr :=
+  [.dp .add t d (.reg N), .dp .add t t (.imm 0x80000000), .mov t (.shifted t .lsr 31), .mla d t N d]
+
+/-- `d ← d - q`, plus `q` if that is negative: `d mod q` for `d < 2q`, with
+`q` in `Q` and `t` a temporary. -/
+def csub (d t Q : Reg) : List Instr := [.dp .sub d d (.reg Q), .mov t (.shifted d .lsr 31), .mla d t Q d]
+
+/-- `d ← d mod q` for `d < 2²⁵`, with `161270` in `c`, `-q` in `N` and `t` a
+temporary. -/
+def reduce (d t c N : Reg) : List Instr := barrett d t c N ++ csubN d t N
+
+/-- `acc ← acc · z - ⌊acc · zp / 2¹⁶⌋ · q`, with `-q` in `N` and `t` a
+temporary: less than `2q` and congruent to `acc · z`, for `acc < 2¹⁶`. -/
+def mulz (acc t z zp N : Reg) : List Instr :=
+  [.mul t acc zp, .mov t (.shifted t .lsr 16), .mul acc acc z, .mla acc t N acc]
 
 /-- `r8 = 161270`. -/
 def consts : List Instr := [.movw .r8 0x75F6, .movt .r8 0x2]
@@ -86,6 +117,20 @@ def consts : List Instr := [.movw .r8 0x75F6, .movt .r8 0x2]
 /-- The 128 entries of `T` as `u32`s at `[b]`, through `r12`. -/
 def table (T : List Nat) (b : Reg) : List Instr :=
   (List.range 128).flatMap fun k => [.movw .r12 (BitVec.ofNat 16 (T.getD k 0)), .str .r12 b (4 * k)]
+
+/-- The 128 entries of `T`, each with its quotient, `zp + 2¹⁶ z`, as `u32`s
+at `[b]`, through `r12`. -/
+def tableZ (T : List Nat) (b : Reg) : List Instr :=
+  (List.range 128).flatMap fun k =>
+    [.movw .r12 (BitVec.ofNat 16 (zetaQuot (T.getD k 0))), .movt .r12 (BitVec.ofNat 16 (T.getD k 0)),
+     .str .r12 b (4 * k)]
+
+/-- The zeta at `r1` to `r7`, and its quotient to `r9`. -/
+def zetaLoad : List Instr :=
+  [.ldr .r9 .r1 0, .mov .r7 (.shifted .r9 .lsr 16), .dp .sub .r9 .r9 (.shifted .r7 .lsl 16)]
+
+/-- `r8 = -q = 0xFFFFF2FF`, `r12 = 2q`. -/
+def constsN : List Instr := [.movw .r8 0xF2FF, .movt .r8 0xFFFF, .movw .r12 6658]
 
 /-- The callee-saved registers we use. -/
 def savedRegs : List Reg := [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11]
@@ -100,18 +145,19 @@ def restoreRegs (b : Reg) (off : Nat) : List Instr :=
 
 /-! ## `ntt` -/
 
-/-- The butterfly on `[r2]` and `[r3]` with the zeta `r7`: `t = ζ·f[j + len]`
-in `r5`, then `f[j + len] = f[j] - t` and `f[j] = f[j] + t`. -/
+/-- The butterfly on `[r2]` and `[r3]` with the zeta in `r7` and `r9`:
+`t = ζ·f[j + len]` less a multiple of `q` in `r5`, then
+`f[j + len] = f[j] + 2q - t` and `f[j] = f[j] + t`. -/
 def bflyBody : List Instr :=
-  [.ldr .r4 .r2 0, .ldr .r5 .r3 0, .mul .r5 .r7 .r5] ++ reduce .r5 .r6 .r8 ++
-  [.dp .sub .r6 .r4 (.reg .r5)] ++ fixup .r6 .r12 ++ [.str .r6 .r3 0, .dp .add .r4 .r4 (.reg .r5)] ++
-  subQ .r4 ++ fixup .r4 .r12 ++
-  [.str .r4 .r2 0, .dp .add .r2 .r2 (.imm 4), .dp .add .r3 .r3 (.imm 4), .subs .r11 .r11 (.imm 1)]
+  ([.ldr .r5 .r3 0] : List Instr) ++ mulz .r5 .r6 .r7 .r9 .r8 ++
+  [.ldr .r4 .r2 0, .dp .add .r6 .r4 (.reg .r5), .dp .add .r4 .r4 (.reg .r12), .dp .sub .r4 .r4 (.reg .r5),
+   .str .r4 .r3 0, .str .r6 .r2 0, .dp .add .r2 .r2 (.imm 4), .dp .add .r3 .r3 (.imm 4),
+   .subs .r11 .r11 (.imm 1)]
 
 /-- A block: its zeta, then `len` butterflies. -/
 def nttBlockCode : Prog isa :=
-  .seq (.block [.ldr .r7 .r1 0, .dp .add .r1 .r1 (.imm 4), .dp .add .r3 .r2 (.reg .r10),
-      .mov .r11 (.shifted .r10 .lsr 2)])
+  .seq (.block (zetaLoad ++ ([.dp .add .r1 .r1 (.imm 4), .dp .add .r3 .r2 (.reg .r10),
+      .mov .r11 (.shifted .r10 .lsr 2)] : List Instr)))
     (.seq (.loop (.block bflyBody) .ne) (.block [.mov .r2 (.reg .r3), .cmp .r2 (.reg .r0)]))
 
 /-- A layer: its blocks. -/
@@ -119,25 +165,34 @@ def nttLayerCode : Prog isa :=
   .seq (.block [.dp .sub .r2 .r0 (.imm 1024)])
     (.seq (.loop nttBlockCode .ne) (.block [.mov .r10 (.shifted .r10 .lsr 1), .cmp .r10 (.imm 4)]))
 
+/-- `[r2] ← [r2] mod q`, for a coefficient less than `15q`, with `40318` in
+`r9`, and on to the next. -/
+def canonBody : List Instr :=
+  [.ldr .r4 .r2 0, .mul .r6 .r4 .r9, .mov .r6 (.shifted .r6 .lsr 27), .mla .r4 .r6 .r8 .r4, .str .r4 .r2 0,
+   .dp .add .r2 .r2 (.imm 4), .subs .r11 .r11 (.imm 1)]
+
 def ntt : Prog isa :=
-  .seq (.block (saveRegs .r1 512 ++ table zetaTable .r1 ++ consts ++
+  .seq (.block (saveRegs .r1 512 ++ tableZ zetaTable .r1 ++ constsN ++
       ([.dp .add .r0 .r0 (.imm 1024), .dp .add .r1 .r1 (.imm 4), .mov .r10 (.imm 512)] : List Instr)))
-    (.seq (.loop nttLayerCode .ne) (.block (restoreRegs .r1 0)))
+    (.seq (.loop nttLayerCode .ne)
+    (.seq (.block [.movw .r9 40318, .dp .sub .r2 .r0 (.imm 1024), .mov .r11 (.imm 256)])
+    (.seq (.loop (.block canonBody) .ne) (.block (restoreRegs .r1 0)))))
 
 /-! ## `nttInv` -/
 
-/-- The inverse butterfly on `[r2]` and `[r3]` with the zeta `r7`:
-`f[j] = f[j] + f[j + len]`, then `f[j + len] = ζ·(f[j + len] - f[j])`. -/
+/-- The inverse butterfly on `[r2]` and `[r3]` with the zeta in `r7` and
+`r9`: `f[j] = f[j] + f[j + len]`, less a multiple of `q`, then
+`f[j + len] = ζ·(f[j + len] + 2q - f[j])`. -/
 def ibflyBody : List Instr :=
-  [.ldr .r4 .r2 0, .ldr .r5 .r3 0, .dp .add .r6 .r4 (.reg .r5)] ++ subQ .r6 ++ fixup .r6 .r12 ++
-  [.str .r6 .r2 0, .dp .sub .r5 .r5 (.reg .r4)] ++ fixup .r5 .r12 ++ [.mul .r5 .r7 .r5] ++
-  reduce .r5 .r6 .r8 ++
+  ([.ldr .r4 .r2 0, .ldr .r5 .r3 0, .dp .add .r6 .r4 (.reg .r5), .dp .add .r5 .r5 (.reg .r12),
+    .dp .sub .r5 .r5 (.reg .r4), .mov .r4 (.shifted .r6 .lsr 12), .mla .r6 .r4 .r8 .r6,
+    .str .r6 .r2 0] : List Instr) ++ mulz .r5 .r4 .r7 .r9 .r8 ++
   [.str .r5 .r3 0, .dp .add .r2 .r2 (.imm 4), .dp .add .r3 .r3 (.imm 4), .subs .r11 .r11 (.imm 1)]
 
 /-- A block: its zeta, then `len` inverse butterflies. -/
 def nttInvBlockCode : Prog isa :=
-  .seq (.block [.ldr .r7 .r1 0, .dp .sub .r1 .r1 (.imm 4), .dp .add .r3 .r2 (.reg .r10),
-      .mov .r11 (.shifted .r10 .lsr 2)])
+  .seq (.block (zetaLoad ++ ([.dp .sub .r1 .r1 (.imm 4), .dp .add .r3 .r2 (.reg .r10),
+      .mov .r11 (.shifted .r10 .lsr 2)] : List Instr)))
     (.seq (.loop (.block ibflyBody) .ne) (.block [.mov .r2 (.reg .r3), .cmp .r2 (.reg .r0)]))
 
 /-- A layer: its blocks. -/
@@ -146,34 +201,40 @@ def nttInvLayerCode : Prog isa :=
     (.seq (.loop nttInvBlockCode .ne)
       (.block [.mov .r10 (.shifted .r10 .lsl 1), .cmp .r10 (.imm 1024)]))
 
-/-- `[r2] ← [r2] · r7 mod q`, and on to the next coefficient. -/
+/-- `[r2] ← [r2] · 3303 mod q`, for the zeta in `r7` and `r9` and `q` in
+`r12`, and on to the next coefficient. -/
 def scaleBody : List Instr :=
-  [.ldr .r4 .r2 0, .mul .r4 .r4 .r7] ++ reduce .r4 .r6 .r8 ++
+  ([.ldr .r4 .r2 0] : List Instr) ++ mulz .r4 .r6 .r7 .r9 .r8 ++ csub .r4 .r6 .r12 ++
   [.str .r4 .r2 0, .dp .add .r2 .r2 (.imm 4), .subs .r11 .r11 (.imm 1)]
 
+/-- `3303` and its quotient `65024` in `r7` and `r9`, `q` in `r12`, and the
+pointer and the count. -/
+def scalePre : List Instr :=
+  [.movw .r7 3303, .movw .r9 65024, .movw .r12 3329, .dp .sub .r2 .r0 (.imm 1024), .mov .r11 (.imm 256)]
+
 def nttInv : Prog isa :=
-  .seq (.block (saveRegs .r1 512 ++ table zetaTable .r1 ++ consts ++
+  .seq (.block (saveRegs .r1 512 ++ tableZ zetaTable .r1 ++ constsN ++
       ([.dp .add .r0 .r0 (.imm 1024), .dp .add .r1 .r1 (.imm 508), .mov .r10 (.imm 8)] : List Instr)))
     (.seq (.loop nttInvLayerCode .ne)
-    (.seq (.block [.movw .r7 3303, .dp .sub .r2 .r0 (.imm 1024), .mov .r11 (.imm 256)])
+    (.seq (.block scalePre)
     (.seq (.loop (.block scaleBody) .ne) (.block (restoreRegs .r1 512)))))
 
 /-! ## `multiplyNTTs` -/
 
 /-- The pair `i`: `r4 = f[2i]`, `r5 = f[2i+1]`, `r6 = g[2i]`, `r7 = g[2i+1]`,
-the sums in `r9`, `γᵢ` and the products in `r10`. -/
+the sums in `r9`, `γᵢ` and the quotients in `r10`. -/
 def mulBody : List Instr :=
-  [.ldr .r4 .r1 0, .ldr .r5 .r1 4, .ldr .r6 .r2 0, .ldr .r7 .r2 4, .mul .r9 .r5 .r7] ++
-  reduce .r9 .r10 .r8 ++
-  [.ldr .r10 .r3 0, .mul .r9 .r9 .r10, .mul .r10 .r4 .r6, .dp .add .r9 .r10 (.reg .r9)] ++
-  reduce .r9 .r10 .r8 ++
-  [.str .r9 .r0 0, .mul .r9 .r4 .r7, .mul .r10 .r5 .r6, .dp .add .r9 .r9 (.reg .r10)] ++
-  reduce .r9 .r10 .r8 ++
+  ([.ldr .r5 .r1 4, .ldr .r7 .r2 4, .mul .r9 .r5 .r7] : List Instr) ++ barrett .r9 .r10 .r8 .r12 ++
+  [.ldr .r10 .r3 0, .mul .r9 .r9 .r10, .ldr .r4 .r1 0, .ldr .r6 .r2 0, .mla .r9 .r4 .r6 .r9] ++
+  reduce .r9 .r10 .r8 .r12 ++
+  [.str .r9 .r0 0, .mul .r9 .r4 .r7, .mla .r9 .r5 .r6 .r9] ++
+  reduce .r9 .r10 .r8 .r12 ++
   [.str .r9 .r0 4, .dp .add .r0 .r0 (.imm 8), .dp .add .r1 .r1 (.imm 8), .dp .add .r2 .r2 (.imm 8),
    .dp .add .r3 .r3 (.imm 4), .subs .r11 .r11 (.imm 1)]
 
 def multiplyNTTs : Prog isa :=
-  .seq (.block (saveRegs .r3 512 ++ table gammaTable .r3 ++ consts ++ ([.mov .r11 (.imm 128)] : List Instr)))
+  .seq (.block (saveRegs .r3 512 ++ table gammaTable .r3 ++ consts ++
+      ([.movw .r12 0xF2FF, .movt .r12 0xFFFF, .mov .r11 (.imm 128)] : List Instr)))
     (.seq (.loop (.block mulBody) .ne) (.block (restoreRegs .r3 0)))
 
 end VG.Impl.MlKem.Arm

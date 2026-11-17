@@ -18,7 +18,8 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 The registers saved and the table of the `γᵢ` stored (`setup_ok`); then one
 pair of coefficients per iteration (`multiplyNTTs_even`, `multiplyNTTs_odd`),
-whose body is symbolically executed once for any pointers (`body_ok`); the
+whose body is symbolically executed once for any pointers (`body_ok`) and
+stores the reductions of the sums of products (`even_eq`, `red_mac`); the
 invariant says which coefficients of `h` are written, and that `h` is the only
 memory written since the setup (`Inv`); then the registers restored.
 -/
@@ -33,31 +34,52 @@ open VG.Proof.MlKem.Arm.Add (ptr_succ reduced_zero)
 
 /-! ## Values -/
 
+theorem toNat_mul_zq (x y : Zq) :
+    (BitVec.ofNat 32 x.val * BitVec.ofNat 32 y.val).toNat = x.val * y.val := by
+  have p := mul_lt_q2 (val_lt x) (val_lt y)
+  rw [BitVec.toNat_mul, toNat_zq, toNat_zq]
+  exact Nat.mod_eq_of_lt (by omega_using [p])
+
 theorem red_mac (x y z w : Zq) :
-    red C (BitVec.ofNat 32 x.val * BitVec.ofNat 32 y.val + BitVec.ofNat 32 z.val * BitVec.ofNat 32 w.val) =
+    red (BitVec.ofNat 32 x.val * BitVec.ofNat 32 y.val + BitVec.ofNat 32 z.val * BitVec.ofNat 32 w.val) =
       BitVec.ofNat 32 (x * y + z * w).val := by
-  obtain hx := val_lt x
-  obtain hy := val_lt y
-  obtain hz := val_lt z
-  obtain hw := val_lt w
-  obtain p1 := mul_lt_q2 hx hy
-  obtain p2 := mul_lt_q2 hz hw
+  obtain p1 := mul_lt_q2 (val_lt x) (val_lt y)
+  obtain p2 := mul_lt_q2 (val_lt z) (val_lt w)
   obtain hs : (BitVec.ofNat 32 x.val * BitVec.ofNat 32 y.val + BitVec.ofNat 32 z.val * BitVec.ofNat 32 w.val).toNat =
       x.val * y.val + z.val * w.val := by
-    rw [BitVec.toNat_add, BitVec.toNat_mul, BitVec.toNat_mul, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
-      BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := x.val) (by omega_arith),
-      Nat.mod_eq_of_lt (a := y.val) (by omega_arith), Nat.mod_eq_of_lt (a := z.val) (by omega_arith),
-      Nat.mod_eq_of_lt (a := w.val) (by omega_arith), Nat.mod_eq_of_lt (a := x.val * y.val) (by omega_arith),
-      Nat.mod_eq_of_lt (a := z.val * w.val) (by omega_arith)]
-    exact Nat.mod_eq_of_lt (by omega_arith)
+    rw [BitVec.toNat_add, toNat_mul_zq, toNat_mul_zq]
+    exact Nat.mod_eq_of_lt (by omega_using [p1, p2])
   refine ofNat_val_eq ?_
-  rw [red_toNat (by rw [hs]; omega_arith), hs, val_add', val_mul, val_mul, ← Nat.add_mod]
+  rw [red_toNat (by rw [hs]; omega_using [p1, p2]), hs, val_add', val_mul, val_mul, ← Nat.add_mod]
 
 theorem even_eq (a b c d γ : Zq) :
-    red C (BitVec.ofNat 32 a.val * BitVec.ofNat 32 b.val +
-      red C (BitVec.ofNat 32 c.val * BitVec.ofNat 32 d.val) * BitVec.ofNat 32 γ.val) =
+    red (BitVec.ofNat 32 a.val * BitVec.ofNat 32 b.val +
+      bar (BitVec.ofNat 32 c.val * BitVec.ofNat 32 d.val) * BitVec.ofNat 32 γ.val) =
       BitVec.ofNat 32 (a * b + c * d * γ).val := by
-  rw [red_mul]; exact red_mac a b (c * d) γ
+  obtain p1 := mul_lt_q2 (val_lt a) (val_lt b)
+  obtain p2 := mul_lt_q2 (val_lt c) (val_lt d)
+  have hcd : (BitVec.ofNat 32 c.val * BitVec.ofNat 32 d.val).toNat < 2 ^ 25 := by
+    rw [toNat_mul_zq]; omega_using [p2]
+  have eB := bar_toNat hcd
+  have hB : barrett32 (c.val * d.val) < 2 * 3329 := barrett32_lt (by omega_using [p2])
+  have hBm := barrett32_mod (x := c.val * d.val) (by omega_using [p2])
+  rw [toNat_mul_zq] at eB
+  have hg := val_lt γ
+  have p3 : barrett32 (c.val * d.val) * γ.val ≤ 6657 * 3328 :=
+    Nat.mul_le_mul (by omega_using [hB]) (by omega_using [hg])
+  have hm : (bar (BitVec.ofNat 32 c.val * BitVec.ofNat 32 d.val) * BitVec.ofNat 32 γ.val).toNat =
+      barrett32 (c.val * d.val) * γ.val := by
+    rw [BitVec.toNat_mul, eB, toNat_zq]
+    exact Nat.mod_eq_of_lt (by omega_using [p3])
+  have hs : (BitVec.ofNat 32 a.val * BitVec.ofNat 32 b.val +
+      bar (BitVec.ofNat 32 c.val * BitVec.ofNat 32 d.val) * BitVec.ofNat 32 γ.val).toNat =
+      a.val * b.val + barrett32 (c.val * d.val) * γ.val := by
+    rw [BitVec.toNat_add, toNat_mul_zq, hm]
+    exact Nat.mod_eq_of_lt (by omega_using [p1, p3])
+  refine ofNat_val_eq ?_
+  have e : barrett32 (c.val * d.val) * γ.val % q = c.val * d.val % q * γ.val % q := by
+    rw [Nat.mul_mod, hBm, Nat.mul_mod_mod]
+  rw [red_toNat (by rw [hs]; omega_using [p1, p3]), hs, val_add', val_mul, val_mul, val_mul, Nat.add_mod, e]
 
 /-! ## The loop body -/
 
@@ -65,7 +87,7 @@ section
 variable {s : State} {x0 x1 x2 x3 c : BitVec 32}
 
 theorem body_ok (h0 : s.gpr .r0 = x0) (h1 : s.gpr .r1 = x1) (h2 : s.gpr .r2 = x2) (h3 : s.gpr .r3 = x3)
-    (h8 : s.gpr .r8 = C) (h11 : s.gpr .r11 = c)
+    (h8 : s.gpr .r8 = C) (h11 : s.gpr .r11 = c) (h12 : s.gpr .r12 = Nq)
     (if0 : InRegions (s.rd ++ s.wr) (State.addr (x1 + BitVec.ofNat 32 0)) 4)
     (if1 : InRegions (s.rd ++ s.wr) (State.addr (x1 + BitVec.ofNat 32 4)) 4)
     (ig0 : InRegions (s.rd ++ s.wr) (State.addr (x2 + BitVec.ofNat 32 0)) 4)
@@ -75,21 +97,21 @@ theorem body_ok (h0 : s.gpr .r0 = x0) (h1 : s.gpr .r1 = x1) (h2 : s.gpr .r2 = x2
     (o1 : InRegions s.wr (State.addr (x0 + BitVec.ofNat 32 4)) 4) :
     WP isa (.block mulBody) s fun s' =>
       s'.gpr .r0 = x0 + 8 ∧ s'.gpr .r1 = x1 + 8 ∧ s'.gpr .r2 = x2 + 8 ∧ s'.gpr .r3 = x3 + 4 ∧
-      s'.gpr .r8 = C ∧ s'.gpr .r11 = c - 1 ∧ s'.z = (c - 1 == 0) ∧ s'.gpr .lr = s.gpr .lr ∧
+      s'.gpr .r8 = C ∧ s'.gpr .r11 = c - 1 ∧ s'.gpr .r12 = Nq ∧ s'.z = (c - 1 == 0) ∧ s'.gpr .lr = s.gpr .lr ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧
       s'.mem = (s.mem.writeW (State.addr (x0 + BitVec.ofNat 32 0))
-          (red C (s.mem.readW (State.addr (x1 + BitVec.ofNat 32 0)) 32 *
+          (red (s.mem.readW (State.addr (x1 + BitVec.ofNat 32 0)) 32 *
               s.mem.readW (State.addr (x2 + BitVec.ofNat 32 0)) 32 +
-            red C (s.mem.readW (State.addr (x1 + BitVec.ofNat 32 4)) 32 *
+            bar (s.mem.readW (State.addr (x1 + BitVec.ofNat 32 4)) 32 *
               s.mem.readW (State.addr (x2 + BitVec.ofNat 32 4)) 32) *
             s.mem.readW (State.addr (x3 + BitVec.ofNat 32 0)) 32))).writeW
         (State.addr (x0 + BitVec.ofNat 32 4))
-          (red C (s.mem.readW (State.addr (x1 + BitVec.ofNat 32 0)) 32 *
-              s.mem.readW (State.addr (x2 + BitVec.ofNat 32 4)) 32 +
-            s.mem.readW (State.addr (x1 + BitVec.ofNat 32 4)) 32 *
-              s.mem.readW (State.addr (x2 + BitVec.ofNat 32 0)) 32)) := by
-  run_block [↓RegUpd.gpr_setReg, ↓reduceIte, mulBody, reduce, barrett, subQ, fixup, red, bar, fixq, h0, h1, h2, h3, h8, h11, if0, if1, ig0,
-    ig1, iγ, o0, o1, and_self, and_true]
+          (red (s.mem.readW (State.addr (x1 + BitVec.ofNat 32 4)) 32 *
+              s.mem.readW (State.addr (x2 + BitVec.ofNat 32 0)) 32 +
+            s.mem.readW (State.addr (x1 + BitVec.ofNat 32 0)) 32 *
+              s.mem.readW (State.addr (x2 + BitVec.ofNat 32 4)) 32)) := by
+  run_block [↓RegUpd.gpr_setReg, ↓reduceIte, mulBody, reduce, barrett, csubN, red, bar, csn, h0, h1, h2, h3, h8,
+    h11, h12, if0, if1, ig0, ig1, iγ, o0, o1, and_self, and_true]
 
 end
 
@@ -144,6 +166,7 @@ structure Inv (s₀ : State) (m₁ : Mem) (i : Nat) (s : State) : Prop where
   r3 : s.gpr .r3 = ps s₀ + BitVec.ofNat 32 (4 * i)
   r8 : s.gpr .r8 = C
   r11 : s.gpr .r11 = BitVec.ofNat 32 (1 * (128 - i))
+  r12 : s.gpr .r12 = Nq
   lr : s.gpr .lr = s₀.gpr .lr
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
@@ -160,6 +183,14 @@ theorem out_odd (s₀ : State) {i : Nat} (hi : i < 128) :
     out s₀ (2 * i + 1) = BitVec.ofNat 32 ((fp s₀)[2 * i]! * (gp s₀)[2 * i + 1]! +
       (fp s₀)[2 * i + 1]! * (gp s₀)[2 * i]!).val := by
   rw [out, multiplyNTTs_odd _ _ hi]
+
+/-- The odd coefficient, with its products in the order the code adds them. -/
+theorem out_odd' (s₀ : State) {i : Nat} (hi : i < 128) :
+    out s₀ (2 * i + 1) = BitVec.ofNat 32 ((fp s₀)[2 * i + 1]! * (gp s₀)[2 * i]! +
+      (fp s₀)[2 * i]! * (gp s₀)[2 * i + 1]!).val := by
+  rw [out_odd s₀ hi]
+  refine congrArg (BitVec.ofNat 32) ?_
+  rw [val_add', val_add', Nat.add_comm]
 
 theorem step {s₀ : State} (hp : Pre s₀) {m₁ : Mem} (hm : Setup s₀ m₁) {i : Nat} (hi : i < 128) {s : State}
     (h : Inv s₀ m₁ i s) :
@@ -199,12 +230,12 @@ theorem step {s₀ : State} (hp : Pre s₀) {m₁ : Mem} (hm : Setup s₀ m₁) 
   obtain vS : s.mem.readW (S s₀ + BitVec.ofNat 64 (4 * i + 0)) 32 = BitVec.ofNat 32 (gamma i).val := by
     rw [h.frame.readW cS (fun r hr => by rw [List.mem_singleton] at hr; subst hr; exact hp.hs.symm)
       (by decide), Nat.add_zero, hm.tab i hi, gammaTable_eq, gammas_getD hi]
-  refine WP.mono (body_ok h.r0 h.r1 h.r2 h.r3 h.r8 h.r11
+  refine WP.mono (body_ok h.r0 h.r1 h.r2 h.r3 h.r8 h.r11 h.r12
     (by rw [eF0]; exact iR (by simp [hp.rd]) cF0) (by rw [eF1]; exact iR (by simp [hp.rd]) cF1)
     (by rw [eG0]; exact iR (by simp [hp.rd]) cG0) (by rw [eG1]; exact iR (by simp [hp.rd]) cG1)
     (by rw [eS]; exact iR (by simp [hp.wr]) cS) (by rw [eH0]; exact iW (by simp [hp.wr]) cH0)
     (by rw [eH1]; exact iW (by simp [hp.wr]) cH1))
-    fun s' ⟨r0, r1, r2, r3, r8, r11, z, lr, rd, wr, sp, m⟩ => ⟨⟨?_, ?_, ?_, ?_, r8, ?_, lr.trans h.lr,
+    fun s' ⟨r0, r1, r2, r3, r8, r11, r12, z, lr, rd, wr, sp, m⟩ => ⟨⟨?_, ?_, ?_, ?_, r8, ?_, r12, lr.trans h.lr,
       rd.trans h.rd, wr.trans h.wr, sp.trans h.sp, ?_, ?_⟩, ?_⟩
   · rw [r0]; exact ptr_succ _ 8 i
   · rw [r1]; exact ptr_succ _ 8 i
@@ -216,7 +247,7 @@ theorem step {s₀ : State} (hp : Pre s₀) {m₁ : Mem} (hm : Setup s₀ m₁) 
   · rw [m, eF0, eF1, eG0, eG1, eH0, eH1, eS]
     show ∀ j < 256, coeffAt ((s.mem.writeW (coeffAddr (H s₀) (2 * i)) _).writeW _ _) _ j = _
     rw [← coeffAt_eq, ← coeffAt_eq, ← coeffAt_eq, ← coeffAt_eq, vF _ (by omega_arith), vF _ (by omega_arith),
-      vG _ (by omega_arith), vG _ (by omega_arith), vS, even_eq, red_mac, ← out_even s₀ hi, ← out_odd s₀ hi,
+      vG _ (by omega_arith), vG _ (by omega_arith), vS, even_eq, red_mac, ← out_even s₀ hi, ← out_odd' s₀ hi,
       show 2 * (i + 1) = 2 * i + 1 + 1 by omega_arith]
     exact coeff_one (a := 2 * i + 1) (by omega_arith) (coeff_one (a := 2 * i) (by omega_arith) h.coeff rfl) rfl
   · rw [z]; exact count_z (k := 1) hi (by decide) (by decide)
@@ -224,7 +255,8 @@ theorem step {s₀ : State} (hp : Pre s₀) {m₁ : Mem} (hm : Setup s₀ m₁) 
 /-! ## Setup and the end -/
 
 theorem setup_ok {s₀ : State} (hp : Pre s₀) :
-    WP isa (.block (saveRegs .r3 512 ++ table gammaTable .r3 ++ consts ++ ([.mov .r11 (.imm 128)] : List Instr)))
+    WP isa (.block (saveRegs .r3 512 ++ table gammaTable .r3 ++ consts ++
+      ([.movw .r12 0xF2FF, .movt .r12 0xFFFF, .mov .r11 (.imm 128)] : List Instr)))
       s₀ fun s => Setup s₀ s.mem ∧ Inv s₀ s.mem 0 s := by
   have fS := hp.fitS
   obtain wS : ∀ {o n : Nat}, o + n ≤ 1024 → InRegions s₀.wr (S s₀ + BitVec.ofNat 64 o) n := fun h => by
@@ -265,8 +297,10 @@ theorem setup_ok {s₀ : State} (hp : Pre s₀) :
   obtain e2 := e .r2 (by decide)
   obtain e3 := e .r3 (by decide)
   obtain elr := e .lr (by decide)
-  run_block [↓RegUpd.gpr_setReg, ↓reduceIte, consts, e0, e1, e2, e3, elr, h₂.rd, h₁.rd, h₂.wr, h₁.wr, h₂.sp, h₁.sp, consts_val, hm, true_and]
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, rfl, rfl, rfl, Frame.refl _ _, fun j _ => ?_⟩ <;> simp [e0, e1, e2, e3, elr]
+  run_block [↓RegUpd.gpr_setReg, ↓reduceIte, consts, e0, e1, e2, e3, elr, h₂.rd, h₁.rd, h₂.wr, h₁.wr, h₂.sp, h₁.sp,
+    consts_val, constsN_val, hm, true_and]
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, rfl, rfl, rfl, Frame.refl _ _, fun j _ => ?_⟩ <;>
+    simp [e0, e1, e2, e3, elr]
 
 theorem restore_ok {s₀ : State} (hp : Pre s₀) {m₁ : Mem} (hm : Setup s₀ m₁) {s : State}
     (h : Inv s₀ m₁ 128 s) :
