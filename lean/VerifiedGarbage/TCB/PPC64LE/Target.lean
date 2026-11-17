@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.PPC64LE.Isa
 public import VerifiedGarbage.TCB.Artifact
+public import VerifiedGarbage.TCB.PPC64LE.Residue
 
 /-!
 # The 64-bit little-endian PowerPC target (ELFv2)
@@ -110,5 +111,6 @@ would see one per registration module rather than this one (`Rust.printsAs`). -/
   isa := isa
   abiPreserved := abiPreserved
   abi := abi
+  noResidue := some NoResidue
 
 end VG.PPC64LE

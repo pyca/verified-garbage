@@ -97,8 +97,8 @@ instructions in an ISA model) go in their own PR before either.
    are never stated: `Api.artifact` takes them from its instructions and
    those of the functions it calls (`Code.requiresDedup`, from the ISA
    model's `requires`).
-   On x86-64 a function also proves that it returns without secret residue
-   (`Registration.residue`, `TCB/X86_64/Residue.lean`): build its
+   A function also proves that it returns without secret residue
+   (`Registration.residue`, `TCB/<ISA>/Residue.lean`). On x86-64, build its
    registration in `Proof/` and scrub it with `X86_64.Scrub.scrubReg`,
    whose code clears what the residue analysis (`X86_64.RTaint`) finds may
    hold secrets and which sets `residue`; the registration file binds the

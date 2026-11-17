@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.Arm.Isa
 public import VerifiedGarbage.TCB.Artifact
+public import VerifiedGarbage.TCB.Arm.Residue
 
 /-!
 # The 32-bit ARM target (AAPCS)
@@ -119,5 +120,6 @@ would see one per registration module rather than this one (`Rust.printsAs`). -/
   isa := isa
   abiPreserved := abiPreserved
   abi := abi
+  noResidue := some NoResidue
 
 end VG.Arm

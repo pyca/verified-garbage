@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.RISCV64.Isa
 public import VerifiedGarbage.TCB.Artifact
+public import VerifiedGarbage.TCB.RISCV64.Residue
 
 /-!
 # The 64-bit RISC-V target (LP64 integer calling convention)
@@ -110,5 +111,6 @@ would see one per registration module rather than this one (`Rust.printsAs`). -/
   isa := isa
   abiPreserved := abiPreserved
   abi := abi
+  noResidue := some NoResidue
 
 end VG.RISCV64

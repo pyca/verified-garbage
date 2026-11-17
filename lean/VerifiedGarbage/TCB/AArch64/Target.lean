@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.AArch64.Isa
 public import VerifiedGarbage.TCB.Artifact
+public import VerifiedGarbage.TCB.AArch64.Residue
 
 /-!
 # The AArch64 target (AAPCS64)
@@ -140,5 +141,6 @@ would see one per registration module rather than this one (`Rust.printsAs`). -/
   isa := isa
   abiPreserved := abiPreserved
   abi := abi
+  noResidue := some NoResidue
 
 end VG.AArch64
