@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Sha256.init224Contract`. The streaming state is the hash value followed by a buffered partial block (`VG.Spec.Sha256.ReprFrom`).
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 96 bytes.
@@ -16,7 +18,7 @@ pub(crate) unsafe extern "C" fn vg_sha224_init(state: *mut [u8; 96]) {
     core::arch::naked_asm!(
         r#".option push
 .option arch, +m, +c
-.base64 "t6IFwZuCgu0jAFUAE9OCAKMAZQAT0wIBIwFlABPTggGjAWUAt9J8NpuCclAjAlUAE9OCAKMCZQAT0wIBIwNlABPTggGjA2UAt+JwMJuCctEjBFUAE9OCAKMEZQAT0wIBIwVlABPTggGjBWUAt2IO95uCkpMjBlUAE9OCAKMGZQAT0wIBIwdlABPTggGjB2UAtxLA/5uCErMjCFUAE9OCAKMIZQAT0wIBIwllABPTggGjCWUAtxJYaJuCElEjClUAE9OCAKMKZQAT0wIBIwtlABPTggGjC2UAt5L5ZJuCcvojDFUAE9OCAKMMZQAT0wIBIw1lABPTggGjDWUAt1L6vpuCQvojDlUAE9OCAKMOZQAT0wIBIw9lABPTggGjD2UAgoA="
+.base64 "t6IFwZuCgu0jAFUAE9OCAKMAZQAT0wIBIwFlABPTggGjAWUAt9J8NpuCclAjAlUAE9OCAKMCZQAT0wIBIwNlABPTggGjA2UAt+JwMJuCctEjBFUAE9OCAKMEZQAT0wIBIwVlABPTggGjBWUAt2IO95uCkpMjBlUAE9OCAKMGZQAT0wIBIwdlABPTggGjB2UAtxLA/5uCErMjCFUAE9OCAKMIZQAT0wIBIwllABPTggGjCWUAtxJYaJuCElEjClUAE9OCAKMKZQAT0wIBIwtlABPTggGjC2UAt5L5ZJuCcvojDFUAE9OCAKMMZQAT0wIBIw1lABPTggGjDWUAt1L6vpuCQvojDlUAE9OCAKMOZQAT0wIBIw9lABPTggGjD2UAgUIBRYFFAUaBRgFHgUcBSIFIgUIBQ4FDAU6BTgFPgU+CgA=="
 .option pop"#,
     )
 }
@@ -24,6 +26,8 @@ pub(crate) unsafe extern "C" fn vg_sha224_init(state: *mut [u8; 96]) {
 /// Finishes a SHA-224 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), hashed from the initial hash value of SHA-224 (as `vg_sha224_init` starts it), writes the SHA-224 digest of that message (28 bytes, `VG.Spec.Sha256.sha224`) to `*out`.
 ///
 /// Contract: `VG.Spec.Sha256.finalize224Contract`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -62,7 +66,7 @@ j 27f
 call {vg_sha256_compress}
 .base64 "gUp9Gw=="
 beqz s6, 20b
-.base64 "A8MEAIPDFACiAzNjcwCDwyQAwgMzY3MAg8M0AOIDM2NzAJNTgwEjgHkAk1MDAaOAeQCTU4MAI4F5AJNTAwCjgXkAA8NEAIPDVACiAzNjcwCDw2QAwgMzY3MAg8N0AOIDM2NzAJNTgwEjgnkAk1MDAaOCeQCTU4MAI4N5AJNTAwCjg3kAA8OEAIPDlACiAzNjcwCDw6QAwgMzY3MAg8O0AOIDM2NzAJNTgwEjhHkAk1MDAaOEeQCTU4MAI4V5AJNTAwCjhXkAA8PEAIPD1ACiAzNjcwCDw+QAwgMzY3MAg8P0AOIDM2NzAJNTgwEjhnkAk1MDAaOGeQCTU4MAI4d5AJNTAwCjh3kAA8MEAYPDFAGiAzNjcwCDwyQBwgMzY3MAg8M0AeIDM2NzAJNTgwEjiHkAk1MDAaOIeQCTU4MAI4l5AJNTAwCjiXkAA8NEAYPDVAGiAzNjcwCDw2QBwgMzY3MAg8N0AeIDM2NzAJNTgwEjinkAk1MDAaOKeQCTU4MAI4t5AJNTAwCji3kAA8OEAYPDlAGiAzNjcwCDw6QBwgMzY3MAg8O0AeIDM2NzAJNTgwEjjHkAk1MDAaOMeQCTU4MAI415AJNTAwCjjXkAgzAJBYM0iQWDOYkGAzoJB4M6iQcDOwkIAzkJBklhgoA="
+.base64 "A8MEAIPDFACiAzNjcwCDwyQAwgMzY3MAg8M0AOIDM2NzAJNTgwEjgHkAk1MDAaOAeQCTU4MAI4F5AJNTAwCjgXkAA8NEAIPDVACiAzNjcwCDw2QAwgMzY3MAg8N0AOIDM2NzAJNTgwEjgnkAk1MDAaOCeQCTU4MAI4N5AJNTAwCjg3kAA8OEAIPDlACiAzNjcwCDw6QAwgMzY3MAg8O0AOIDM2NzAJNTgwEjhHkAk1MDAaOEeQCTU4MAI4V5AJNTAwCjhXkAA8PEAIPD1ACiAzNjcwCDw+QAwgMzY3MAg8P0AOIDM2NzAJNTgwEjhnkAk1MDAaOGeQCTU4MAI4d5AJNTAwCjh3kAA8MEAYPDFAGiAzNjcwCDwyQBwgMzY3MAg8M0AeIDM2NzAJNTgwEjiHkAk1MDAaOIeQCTU4MAI4l5AJNTAwCjiXkAA8NEAYPDVAGiAzNjcwCDw2QBwgMzY3MAg8N0AeIDM2NzAJNTgwEjinkAk1MDAaOKeQCTU4MAI4t5AJNTAwCji3kAA8OEAYPDlAGiAzNjcwCDw6QBwgMzY3MAg8O0AeIDM2NzAJNTgwEjjHkAk1MDAaOMeQCTU4MAI415AJNTAwCjjXkAgzAJBYM0iQWDOYkGAzoJB4M6iQcDOwkIAzkJBklhgUJ1cQqDIzBTACM0UwAjOFMAIzxTACMwUwIjNFMCIzhTAiM8UwIjMFMEIzRTBCM4UwQjPFMEIzBTBiM0UwYjOFMGIzxTBiMwUwgjNFMISWEBRYFFAUaBRgFHgUcBSIFIgUIBQ4FDAU6BTgFPgU+CgA=="
 .option pop"#,
         vg_sha256_compress = sym super::sha256::vg_sha256_compress::vg_sha256_compress,
     )
@@ -71,6 +75,8 @@ beqz s6, 20b
 /// Computes the SHA-224 digest of the `len` bytes at `data` (28 bytes, `VG.Spec.Sha256.sha224`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-224 computation with that message.
 ///
 /// Contract: `VG.Spec.Sha256.digestContract` for `VG.Spec.Sha256.sha224`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -84,22 +90,24 @@ pub(crate) unsafe extern "C" fn vg_sha224_digest(data: *const u8, len: usize, ou
         r#".option push
 .option arch, +m, +c
 .base64 "dXGKgiOwEgYjtHIHI7iCByO8kgcjsKIJI7SyCRaMsowqja6NYoU="
-call {vg_sha224_init}
+call {vg_sha224_init_core}
 .base64 "YoWBRWqG7oY="
-call {vg_sha256_update}
+call {vg_sha256_update_core}
 .base64 "YoXuhWaG"
-call {vg_sha224_finalize}
-.base64 "AUMjMGwAIzRsACM4bAAjPGwAIzBsAiM0bAIjOGwCIzxsAiMwbAQjNGwEIzhsBCM8bASDMAwGgzuMBoM8jAcDPQwIgz2MCAM8DAdJYYKA"
+call {vg_sha224_finalize_core}
+.base64 "AUMjMGwAIzRsACM4bAAjPGwAIzBsAiM0bAIjOGwCIzxsAiMwbAQjNGwEIzhsBCM8bASDMAwGgzuMBoM8jAcDPQwIgz2MCAM8DAdJYYFCLXEKgyMwUwAjNFMAIzhTACM8UwAjMFMCIzRTAiM4UwIjPFMCIzBTBCM0UwQjOFMEIzxTBCMwUwYjNFMGIzhTBiM8UwYjMFMIIzRTCCM4UwgjPFMIIzBTCiM0UwojOFMKIzxTCiMwUwwjNFMMIzhTDCM8UwwjMFMOIzRTDiM4Uw4jPFMOIzBTECM0UxAjOFMQIzxTEBVhAUWBRQFGgUYBR4FHAUiBSIFCAUOBQwFOgU4BT4FPgoA="
 .option pop"#,
-        vg_sha224_init = sym super::sha256::vg_sha224_init,
-        vg_sha256_update = sym super::sha256::vg_sha256_update,
-        vg_sha224_finalize = sym super::sha256::vg_sha224_finalize,
+        vg_sha224_init_core = sym super::ecdsa_brainpoolp256r1::vg_sha224_init_core::vg_sha224_init_core,
+        vg_sha256_update_core = sym super::sha256::vg_sha256_update_core::vg_sha256_update_core,
+        vg_sha224_finalize_core = sym super::ecdsa_brainpoolp256r1::vg_sha224_finalize_core::vg_sha224_finalize_core,
     )
 }
 
 /// Starts a SHA-256 computation: makes the streaming state `*state` represent the empty message.
 ///
 /// Contract: `VG.Spec.Sha256.initContract`. The streaming state is the hash value followed by a buffered partial block (`VG.Spec.Sha256.Repr`).
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -110,7 +118,7 @@ pub(crate) unsafe extern "C" fn vg_sha256_init(state: *mut [u8; 96]) {
     core::arch::naked_asm!(
         r#".option push
 .option arch, +m, +c
-.base64 "t+IJapuCcmYjAFUAE9OCAKMAZQAT0wIBIwFlABPTggGjAWUAt7Jnu5uCUugjAlUAE9OCAKMCZQAT0wIBIwNlABPTggGjA2UAt/JuPJuCIjcjBFUAE9OCAKMEZQAT0wIBIwVlABPTggGjBWUAt/JPpZuColMjBlUAE9OCAKMGZQAT0wIBIwdlABPTggGjB2UAt1IOUZuC8icjCFUAE9OCAKMIZQAT0wIBIwllABPTggGjCWUAt3IFm5uCwogjClUAE9OCAKMKZQAT0wIBIwtlABPTggGjC2UAt+KDH5uCspojDFUAE9OCAKMMZQAT0wIBIw1lABPTggGjDWUAt9LgW5uCktEjDlUAE9OCAKMOZQAT0wIBIw9lABPTggGjD2UAgoA="
+.base64 "t+IJapuCcmYjAFUAE9OCAKMAZQAT0wIBIwFlABPTggGjAWUAt7Jnu5uCUugjAlUAE9OCAKMCZQAT0wIBIwNlABPTggGjA2UAt/JuPJuCIjcjBFUAE9OCAKMEZQAT0wIBIwVlABPTggGjBWUAt/JPpZuColMjBlUAE9OCAKMGZQAT0wIBIwdlABPTggGjB2UAt1IOUZuC8icjCFUAE9OCAKMIZQAT0wIBIwllABPTggGjCWUAt3IFm5uCwogjClUAE9OCAKMKZQAT0wIBIwtlABPTggGjC2UAt+KDH5uCspojDFUAE9OCAKMMZQAT0wIBIw1lABPTggGjDWUAt9LgW5uCktEjDlUAE9OCAKMOZQAT0wIBIw9lABPTggGjD2UAgUIBRYFFAUaBRgFHgUcBSIFIgUIBQ4FDAU6BTgFPgU+CgA=="
 .option pop"#,
     )
 }
@@ -118,6 +126,8 @@ pub(crate) unsafe extern "C" fn vg_sha256_init(state: *mut [u8; 96]) {
 /// Absorbs data into a SHA-224 or SHA-256 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), it then represents that message followed by the `len` bytes at `data`.
 ///
 /// Contract: `VG.Spec.Sha256.updateContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -196,7 +206,7 @@ bnez s4, 22b
 j 21f
 20:
 21:
-.base64 "gzAJBYM0iQWDOYkGAzoJB4M6iQcDOwkIAzkJBklhgoA="
+.base64 "gzAJBYM0iQWDOYkGAzoJB4M6iQcDOwkIAzkJBklhgUJ1cQqDIzBTACM0UwAjOFMAIzxTACMwUwIjNFMCIzhTAiM8UwIjMFMEIzRTBCM4UwQjPFMEIzBTBiM0UwYjOFMGIzxTBiMwUwgjNFMISWEBRYFFAUaBRgFHgUcBSIFIgUIBQ4FDAU6BTgFPgU+CgA=="
 .option pop"#,
         vg_sha256_compress = sym super::sha256::vg_sha256_compress::vg_sha256_compress,
     )
@@ -205,6 +215,8 @@ j 21f
 /// Finishes a SHA-224 or SHA-256 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), hashed from an initial hash value, writes the final hash value `H⁽ᴺ⁾` of that message (32 bytes) to `*out`. The SHA-256 digest is all of it; the SHA-224 digest is its first 28 bytes.
 ///
 /// Contract: `VG.Spec.Sha256.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -243,7 +255,7 @@ j 27f
 call {vg_sha256_compress}
 .base64 "gUp9Gw=="
 beqz s6, 20b
-.base64 "A8MEAIPDFACiAzNjcwCDwyQAwgMzY3MAg8M0AOIDM2NzAJNTgwEjgHkAk1MDAaOAeQCTU4MAI4F5AJNTAwCjgXkAA8NEAIPDVACiAzNjcwCDw2QAwgMzY3MAg8N0AOIDM2NzAJNTgwEjgnkAk1MDAaOCeQCTU4MAI4N5AJNTAwCjg3kAA8OEAIPDlACiAzNjcwCDw6QAwgMzY3MAg8O0AOIDM2NzAJNTgwEjhHkAk1MDAaOEeQCTU4MAI4V5AJNTAwCjhXkAA8PEAIPD1ACiAzNjcwCDw+QAwgMzY3MAg8P0AOIDM2NzAJNTgwEjhnkAk1MDAaOGeQCTU4MAI4d5AJNTAwCjh3kAA8MEAYPDFAGiAzNjcwCDwyQBwgMzY3MAg8M0AeIDM2NzAJNTgwEjiHkAk1MDAaOIeQCTU4MAI4l5AJNTAwCjiXkAA8NEAYPDVAGiAzNjcwCDw2QBwgMzY3MAg8N0AeIDM2NzAJNTgwEjinkAk1MDAaOKeQCTU4MAI4t5AJNTAwCji3kAA8OEAYPDlAGiAzNjcwCDw6QBwgMzY3MAg8O0AeIDM2NzAJNTgwEjjHkAk1MDAaOMeQCTU4MAI415AJNTAwCjjXkAA8PEAYPD1AGiAzNjcwCDw+QBwgMzY3MAg8P0AeIDM2NzAJNTgwEjjnkAk1MDAaOOeQCTU4MAI495AJNTAwCjj3kAgzAJBYM0iQWDOYkGAzoJB4M6iQcDOwkIAzkJBklhgoA="
+.base64 "A8MEAIPDFACiAzNjcwCDwyQAwgMzY3MAg8M0AOIDM2NzAJNTgwEjgHkAk1MDAaOAeQCTU4MAI4F5AJNTAwCjgXkAA8NEAIPDVACiAzNjcwCDw2QAwgMzY3MAg8N0AOIDM2NzAJNTgwEjgnkAk1MDAaOCeQCTU4MAI4N5AJNTAwCjg3kAA8OEAIPDlACiAzNjcwCDw6QAwgMzY3MAg8O0AOIDM2NzAJNTgwEjhHkAk1MDAaOEeQCTU4MAI4V5AJNTAwCjhXkAA8PEAIPD1ACiAzNjcwCDw+QAwgMzY3MAg8P0AOIDM2NzAJNTgwEjhnkAk1MDAaOGeQCTU4MAI4d5AJNTAwCjh3kAA8MEAYPDFAGiAzNjcwCDwyQBwgMzY3MAg8M0AeIDM2NzAJNTgwEjiHkAk1MDAaOIeQCTU4MAI4l5AJNTAwCjiXkAA8NEAYPDVAGiAzNjcwCDw2QBwgMzY3MAg8N0AeIDM2NzAJNTgwEjinkAk1MDAaOKeQCTU4MAI4t5AJNTAwCji3kAA8OEAYPDlAGiAzNjcwCDw6QBwgMzY3MAg8O0AeIDM2NzAJNTgwEjjHkAk1MDAaOMeQCTU4MAI415AJNTAwCjjXkAA8PEAYPD1AGiAzNjcwCDw+QBwgMzY3MAg8P0AeIDM2NzAJNTgwEjjnkAk1MDAaOOeQCTU4MAI495AJNTAwCjj3kAgzAJBYM0iQWDOYkGAzoJB4M6iQcDOwkIAzkJBklhgUJ1cQqDIzBTACM0UwAjOFMAIzxTACMwUwIjNFMCIzhTAiM8UwIjMFMEIzRTBCM4UwQjPFMEIzBTBiM0UwYjOFMGIzxTBiMwUwgjNFMISWEBRYFFAUaBRgFHgUcBSIFIgUIBQ4FDAU6BTgFPgU+CgA=="
 .option pop"#,
         vg_sha256_compress = sym super::sha256::vg_sha256_compress::vg_sha256_compress,
     )
@@ -252,6 +264,8 @@ beqz s6, 20b
 /// Computes the SHA-256 digest of the `len` bytes at `data` (32 bytes, `VG.Spec.Sha256.hash`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-256 computation with that message.
 ///
 /// Contract: `VG.Spec.Sha256.digestContract` for `VG.Spec.Sha256.hash`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -265,16 +279,16 @@ pub(crate) unsafe extern "C" fn vg_sha256_digest(data: *const u8, len: usize, ou
         r#".option push
 .option arch, +m, +c
 .base64 "dXGKgiOwEgYjtHIHI7iCByO8kgcjsKIJI7SyCRaMsowqja6NYoU="
-call {vg_sha256_init}
+call {vg_sha256_init_core}
 .base64 "YoWBRWqG7oY="
-call {vg_sha256_update}
+call {vg_sha256_update_core}
 .base64 "YoXuhWaG"
-call {vg_sha256_finalize}
-.base64 "AUMjMGwAIzRsACM4bAAjPGwAIzBsAiM0bAIjOGwCIzxsAiMwbAQjNGwEIzhsBCM8bASDMAwGgzuMBoM8jAcDPQwIgz2MCAM8DAdJYYKA"
+call {vg_sha256_finalize_core}
+.base64 "AUMjMGwAIzRsACM4bAAjPGwAIzBsAiM0bAIjOGwCIzxsAiMwbAQjNGwEIzhsBCM8bASDMAwGgzuMBoM8jAcDPQwIgz2MCAM8DAdJYYFCLXEKgyMwUwAjNFMAIzhTACM8UwAjMFMCIzRTAiM4UwIjPFMCIzBTBCM0UwQjOFMEIzxTBCMwUwYjNFMGIzhTBiM8UwYjMFMIIzRTCCM4UwgjPFMIIzBTCiM0UwojOFMKIzxTCiMwUwwjNFMMIzhTDCM8UwwjMFMOIzRTDiM4Uw4jPFMOIzBTECM0UxAjOFMQIzxTEBVhAUWBRQFGgUYBR4FHAUiBSIFCAUOBQwFOgU4BT4FPgoA="
 .option pop"#,
-        vg_sha256_init = sym super::sha256::vg_sha256_init,
-        vg_sha256_update = sym super::sha256::vg_sha256_update,
-        vg_sha256_finalize = sym super::sha256::vg_sha256_finalize,
+        vg_sha256_init_core = sym super::sha256::vg_sha256_init_core::vg_sha256_init_core,
+        vg_sha256_update_core = sym super::sha256::vg_sha256_update_core::vg_sha256_update_core,
+        vg_sha256_finalize_core = sym super::sha256::vg_sha256_finalize_core::vg_sha256_finalize_core,
     )
 }
 
@@ -283,5 +297,17 @@ call {vg_sha256_finalize}
 pub(crate) mod vg_sha256_compress;
 
 #[rustfmt::skip]
+#[path = "internal/vg_sha256_finalize_core.rs"]
+pub(crate) mod vg_sha256_finalize_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha256_init_core.rs"]
+pub(crate) mod vg_sha256_init_core;
+
+#[rustfmt::skip]
 #[path = "internal/vg_sha256_state_digest.rs"]
 pub(crate) mod vg_sha256_state_digest;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha256_update_core.rs"]
+pub(crate) mod vg_sha256_update_core;
