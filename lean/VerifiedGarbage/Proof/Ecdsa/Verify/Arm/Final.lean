@@ -313,14 +313,21 @@ def GeneratorWP (c : Cfg) (generator : Prog isa) (s₀ : State) (base : Addr) (k
       (∀ x∈[c.sl RX,c.sl RY,c.sl RZ],wordsVal t.mem base x c.n<c.C.p) ∧
       Q 0 (tmv c.C c.n base t (c.sl RX)) (tmv c.C c.n base t (c.sl RY)) (tmv c.C c.n base t (c.sl RZ))
 
-/-- `gen`: the call or the ladder, for an invariant that accepts `O`. -/
-theorem generatorWP_gen {c : Cfg} (hc : CfgOk c) {s₀ : State} {base : Addr} {k : Nat}
-    {Q : Nat → Fe c.C → Fe c.C → Fe c.C → Prop} {symbols : String → BitVec 32} (hO : Q (8 * c.C.len) 0 1 0) :
-    GeneratorWP c c.gen s₀ base k Q symbols c.qA0 := by
-  intro s hs hf F _ hstep _ hrx hry hrz bits hk _ _ _
-  exact qMul_ok hc hs hf F (px := GX) (py := GY) (by decide) (lt_of_eq_of_lt F.gx (Nat.mod_lt _
-    (by have := hc.p_ge; omega_using [this]))) (lt_of_eq_of_lt F.gy (Nat.mod_lt _ (by have := hc.p_ge; omega_using [this])))
-    hrx hry hrz hstep hO hk bits
+/-- `gen`: the call or the ladder, for the invariant that `R` represents
+`[k >>> j]G`. -/
+theorem generatorWP_gen {c : Cfg} (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {base : Addr} {k : Nat}
+    {symbols : String → BitVec 32} (hkl : k < 2 ^ (8 * c.C.len)) :
+    GeneratorWP c c.gen s₀ base k (fun j X Y Z => Rep c.C X Y Z (mul (k >>> j) (G c.C))) symbols c.qA0 := by
+  intro s hs hf F _ _ _ hrx hry hrz bits hk _ _ _
+  have hp := hc.p_ge
+  refine WP.mono (qMul_ok hc hC hs hf F (px := GX) (py := GY) (by decide)
+    (lt_of_eq_of_lt F.gx (Nat.mod_lt _ (by omega_using [hp])))
+    (lt_of_eq_of_lt F.gy (Nat.mod_lt _ (by omega_using [hp]))) hrx hry hrz hc.onG (by
+      show Rep c.C (toM _ _ (wordsVal s.mem base (c.sl GX) c.n)) (toM _ _ (wordsVal s.mem base (c.sl GY) c.n))
+        1 (G c.C)
+      rw [F.gx, F.gy, toM_cmont hc, toM_cmont hc]
+      exact rep_affine' hC _ _) hkl hk bits) fun t ⟨K, U, M, L, R⟩ =>
+    ⟨K, U, M, L, by simpa only [Nat.shiftRight_zero] using R⟩
 
 end VG.Proof.Ecdsa.Verify.Arm
 
@@ -625,12 +632,14 @@ theorem k_ptsW {i : Nat} (hl : i ∉ ptsW) : i ≠ K := fun h => hl (by rw [h]; 
 
 /-- `[u]G + [v]Q`, into `R`. -/
 theorem pointsWith_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State}
-    (hM : Mid c s₀ base s) {generator : Prog isa} {Q₁ Q₂ : Nat → Fe c.C → Fe c.C → Fe c.C → Prop}
+    (hM : Mid c s₀ base s) {generator : Prog isa} {Q₁ : Nat → Fe c.C → Fe c.C → Fe c.C → Prop}
     {a0₁ : Bool} (hMul : GeneratorWP c generator s₀ base (sv c base s U) Q₁ s.syms a0₁)
     (hstep₁ : Step c.ladderCfg c.C base s (sv c base s U) Q₁ a0₁) (hO₁ : Q₁ (8 * c.C.len) 0 1 0)
-    (hstep₂ : Step (Impl.Ecdh.Arm.Cfg.ladderQ c) c.C base s (sv c base s V) Q₂ c.qA0)
-    (hO₂ : Q₂ (8 * c.C.len) 0 1 0) {rest : Prog isa} {Q : State → Prop}
-    (h : ∀ s', Pts c s₀ base Q₁ Q₂ s' → WP isa rest s' Q) :
+    (hC : Law c.C) {P : Point c.C} (hPc : onCurve c.C P = true)
+    (hQP : Rep c.C (tmv c.C c.n base s (c.sl PX)) (tmv c.C c.n base s (c.sl PY)) 1 P)
+    (hv : sv c base s V < 2 ^ (8 * c.C.len)) {rest : Prog isa} {Q : State → Prop}
+    (h : ∀ s', Pts c s₀ base Q₁ (fun j X Y Z => Rep c.C X Y Z (mul (sv c base s V >>> j) P)) s' →
+      WP isa rest s' Q) :
     WP isa (.seq (Impl.Ecdsa.Verify.Arm.Cfg.pointsWith c generator) rest) s Q := by
   have h0 := hc.n0
   have h7 := hc.n10
@@ -712,15 +721,17 @@ theorem pointsWith_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State}
     fun hi hl => by
       show toM _ _ (sv c base s₄ _) = toM _ _ (sv c base s _)
       rw [v₄ hi (k_ptsW hl), W₃ hi hl]
-  refine WP.seq (WP.mono (qMul_ok hc hs₄ hf₄ F₄ (px := PX) (py := PY) (by decide)
+  refine WP.seq (WP.mono (qMul_ok hc hC hs₄ hf₄ F₄ (px := PX) (py := PY) (by decide)
     (by rw [v₄ (by decide) (by decide), W₃ (by decide) (by decide)]; exact hM.px_lt)
     (by rw [v₄ (by decide) (by decide), W₃ (by decide) (by decide)]; exact hM.py_lt)
     (by rw [v₄ (by decide) (by decide), rx₃]) (by rw [v₄ (by decide) (by decide), ry₃])
-    (by rw [v₄ (by decide) (by decide), rz₃])
-    (Step.congr hstep₂ (tv₄ (by decide) (by decide)) (tv₄ (by decide) (by decide))
-      (tv₄ (by decide) (by decide)) (tv₄ (by decide) (by decide)) (tv₄ (by decide) (by decide))) hO₂
+    (by rw [v₄ (by decide) (by decide), rz₃]) hPc
+    (by rw [tv₄ (by decide) (by decide), tv₄ (by decide) (by decide)]; exact hQP) hv
     (fun hm => by rw [kk₄ hm, hV]) (fun hm t ht => by rw [b₄ hm t ht, hV]))
-    fun s₅ ⟨K₅, U₅, M₅, L₅, q₅⟩ => ?_)
+    fun s₅ ⟨K₅, U₅, M₅, L₅, q₅'⟩ => ?_)
+  obtain q₅ : Rep c.C (tmv c.C c.n base s₅ (c.sl RX)) (tmv c.C c.n base s₅ (c.sl RY))
+      (tmv c.C c.n base s₅ (c.sl RZ)) (mul (sv c base s V >>> 0) P) := by
+    rw [Nat.shiftRight_zero]; exact q₅'
   rw [VG.Proof.Weierstrass.Arm.Point.ladWp, ladWx_eq] at U₅
   obtain hs₅ := hs₄.of_rest K₅ (by decide)
   obtain F₅ := F₄.unch h7 hn ((fixedOk_slWkP h7 (by decide)).append (fixedOk_genX h7)) U₅
