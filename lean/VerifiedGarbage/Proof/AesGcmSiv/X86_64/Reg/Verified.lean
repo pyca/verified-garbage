@@ -58,12 +58,12 @@ theorem open_xdepth : Impl.AesGcmSiv.X86_64Reg.open.x86_64Depth ≤ 8 := by lit_
 
 theorem seal_correct (F : MulFacts) (s : State) (hs : sealX86_64.pre s) :
     ∃ t s', Exec isa Impl.AesGcmSiv.X86_64Reg.seal s t s' ∧ abiPreserved s s' ∧ sealX86_64.post s s' := by
-  obtain ⟨t, s', he, hg, hp, -⟩ := seal_wp F hs
+  obtain ⟨t, s', he, hg, hp, -, -⟩ := seal_wp F hs
   exact ⟨t, s', he, abiPreserved_of_exec seal_mx he hg, hp⟩
 
 theorem open_correct (F : MulFacts) (s : State) (hs : openX86_64.pre s) :
     ∃ t s', Exec isa Impl.AesGcmSiv.X86_64Reg.open s t s' ∧ abiPreserved s s' ∧ openX86_64.post s s' := by
-  obtain ⟨t, s', he, hg, hp, -⟩ := open_wp F hs
+  obtain ⟨t, s', he, hg, hp, -, -⟩ := open_wp F hs
   exact ⟨t, s', he, abiPreserved_of_exec open_mx he hg, hp⟩
 
 theorem seal_ct (F : MulFacts) : ConstantTime isa sealX86_64.pre sealX86_64.pub Impl.AesGcmSiv.X86_64Reg.seal :=
@@ -259,14 +259,14 @@ theorem openL_ct (F : MulFacts) (hlp : LoopsOk lp) (hct : LoopsCT lp) :
 theorem sealL_verified (F : MulFacts) (hlp : LoopsOk lp) (hcode : LoopsCode lp) (hct : LoopsCT lp) :
     Verified X86_64.target (sealL lp) (Proof.AesGcmSiv.sealScratchContract X86_64.abi 93 8) :=
   Verified.of_correct (fun s hs => by
-      obtain ⟨t, s', he, hg, hp, -⟩ := sealL_wp F hlp hs
+      obtain ⟨t, s', he, hg, hp, -, -⟩ := sealL_wp F hlp hs
       exact ⟨t, s', he, abiPreserved_of_exec (sealL_mx hcode) he hg, hp⟩)
     (sealL_ct F hlp hct) seal_impl
 
 theorem openL_verified (F : MulFacts) (hlp : LoopsOk lp) (hcode : LoopsCode lp) (hct : LoopsCT lp) :
     Verified X86_64.target (openL lp) (Proof.AesGcmSiv.openScratchContract X86_64.abi 93 8) :=
   Verified.of_correct (fun s hs => by
-      obtain ⟨t, s', he, hg, hp, -⟩ := openL_wp F hlp hs
+      obtain ⟨t, s', he, hg, hp, -, -⟩ := openL_wp F hlp hs
       exact ⟨t, s', he, abiPreserved_of_exec (openL_mx hcode) he hg, hp⟩)
     (openL_ct F hlp hct) open_impl
 

@@ -339,7 +339,8 @@ theorem seal_wpG (F : MulFacts) {θ : Nat} {pv cr : Prog isa}
       gprPreserved s s' ∧
       Spec.GcmSiv.encryptWith (Spec.GcmSiv.ctxCiph s.mem K R) (Spec.GcmSiv.keyLen R) (bytesAt s.mem N 12)
         (bytesAt s.mem D n) (bytesAt s.mem A al) = (bytesAt s'.mem D n, bytesAt s'.mem T 16) ∧
-      Frame (⟨T, 16⟩ :: fineR θ W D n) s.mem s'.mem := by
+      Frame (⟨T, 16⟩ :: fineR θ W D n) s.mem s'.mem ∧
+      (θ ≤ n → ∀ o ∈ Impl.AesGcmSiv.X86_64Reg.zeroOffs, ZeroR ⟨W + BitVec.ofNat 64 o, 16⟩ s'.mem) := by
   have L := Ar.lay
   have hR := Ar.rounds
   obtain hRb : 16 * (R + 1) ≤ 240 := by rcases hR with h | h <;> subst h <;> decide
@@ -420,7 +421,7 @@ theorem seal_wpG (F : MulFacts) {θ : Nat} {pv cr : Prog isa}
     exact fT.readW (r := ⟨W + BitVec.ofNat 64 p.2, 8⟩) (Region.contains_self _ _)
       (fun q hq => dT q hq p hp) (by decide)
   obtain ⟨s₈, run₈, hg₈, hm₈, hsp₈, _⟩ := restore_ok E₇ sv₇
-  refine WP.of_runBlock ⟨s₈, by rw [VG.Interleave.runBlock_append, run₇]; exact run₈, ⟨fun r hr => ?_, ?_⟩, ?_, ?_⟩
+  refine WP.of_runBlock ⟨s₈, by rw [VG.Interleave.runBlock_append, run₇]; exact run₈, ⟨fun r hr => ?_, ?_⟩, ?_, ?_, ?_⟩
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact hg₈ (.rbx, 144) (by decide)
@@ -461,6 +462,11 @@ theorem seal_wpG (F : MulFacts) {θ : Nat} {pv cr : Prog isa}
   · rw [hm₈]
     exact (gall.sub fun r hr => ⟨r, List.mem_cons_of_mem _ hr, fun _ h => h⟩).trans (fT.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, List.mem_cons_self, fun _ h => h⟩)
+  · intro h o ho
+    rw [hm₈]
+    exact (Cr.zero h o ho).frame fT fun q hq => by
+      simp only [List.mem_singleton] at hq; subst hq
+      exact (Tb.w.sub_right (Lay.wSub (zeroOffs_sep o ho).2.2)).symm
 
 /-- `vg_aes_gcm_siv_seal`, for its arguments. -/
 theorem seal_wp' (F : MulFacts) {s : State} {K W SP N A D T : Addr} {R al n : Nat}
@@ -474,12 +480,13 @@ theorem seal_wp' (F : MulFacts) {s : State} {K W SP N A D T : Addr} {R al n : Na
     WP isa Impl.AesGcmSiv.X86_64Reg.seal s fun s' => gprPreserved s s' ∧
       Spec.GcmSiv.encryptWith (Spec.GcmSiv.ctxCiph s.mem K R) (Spec.GcmSiv.keyLen R) (bytesAt s.mem N 12)
         (bytesAt s.mem D n) (bytesAt s.mem A al) = (bytesAt s'.mem D n, bytesAt s'.mem T 16) ∧
-      Frame (⟨T, 16⟩ :: fineR (2 ^ 64) W D n) s.mem s'.mem :=
+      Frame (⟨T, 16⟩ :: fineR (2 ^ 64) W D n) s.mem s'.mem ∧
+      ((2 ^ 64) ≤ n → ∀ o ∈ Impl.AesGcmSiv.X86_64Reg.zeroOffs, ZeroR ⟨W + BitVec.ofNat 64 o, 16⟩ s'.mem) :=
   seal_wpG F
     (fun L _ E _ _ _ _ _ _ S hA hD => WP.mono (polyval_ok F L E S hA hD) fun _ P =>
       ⟨P.env, P.rd, P.wr, toL P.frame, toLn P.frame, P.out⟩)
     (fun L _ hR _ E _ _ _ _ _ S hD hDw => WP.mono (crypt_ok L hR E S hD hDw) fun _ P =>
-      ⟨P.env, P.rd, P.wr, toLD P.frame, toLDn P.frame, P.data⟩)
+      ⟨P.env, P.rd, P.wr, toLD P.frame, toLDn P.frame, P.data, fun h => absurd h (Nat.not_le.mpr hD.lt)⟩)
     Ar Tb hTw hrT hsp hn hT hW hdi hsi hdx hcx hr8 hr9
 
 /-- `vg_aes_gcm_siv_seal` with the loops, for its arguments. -/
@@ -495,7 +502,8 @@ theorem sealL_wp' (F : MulFacts) {lp : Impl.AesGcmSiv.X86_64Stitch.Loops}
     WP isa (Impl.AesGcmSiv.X86_64Reg.sealL lp) s fun s' => gprPreserved s s' ∧
       Spec.GcmSiv.encryptWith (Spec.GcmSiv.ctxCiph s.mem K R) (Spec.GcmSiv.keyLen R) (bytesAt s.mem N 12)
         (bytesAt s.mem D n) (bytesAt s.mem A al) = (bytesAt s'.mem D n, bytesAt s'.mem T 16) ∧
-      Frame (⟨T, 16⟩ :: fineR 256 W D n) s.mem s'.mem :=
+      Frame (⟨T, 16⟩ :: fineR 256 W D n) s.mem s'.mem ∧
+      (256 ≤ n → ∀ o ∈ Impl.AesGcmSiv.X86_64Reg.zeroOffs, ZeroR ⟨W + BitVec.ofNat 64 o, 16⟩ s'.mem) :=
   seal_wpG F (fun L _ E _ _ _ _ _ _ S hA hD => polyvalL_ok F hlp L E S hA hD)
     (fun L _ hR _ E _ _ _ _ _ S hD hDw => cryptL_ok hlp L hR E S hD hDw)
     Ar Tb hTw hrT hsp hn hT hW hdi hsi hdx hcx hr8 hr9
@@ -504,7 +512,8 @@ theorem sealL_wp' (F : MulFacts) {lp : Impl.AesGcmSiv.X86_64Stitch.Loops}
 theorem sealL_wp (F : MulFacts) {lp : Impl.AesGcmSiv.X86_64Stitch.Loops}
     (hlp : Proof.AesGcmSiv.X86_64.Stitch.LoopsOk lp) {s : State} (h : sealPre s) :
     WP isa (Impl.AesGcmSiv.X86_64Reg.sealL lp) s fun s' => gprPreserved s s' ∧ sealX86_64.post s s' ∧
-      Frame (⟨arg s 1, 16⟩ :: fineR 256 (arg s 2) (s.gpr .r9) (arg s 0).toNat) s.mem s'.mem := by
+      Frame (⟨arg s 1, 16⟩ :: fineR 256 (arg s 2) (s.gpr .r9) (arg s 0).toNat) s.mem s'.mem ∧
+      (256 ≤ (arg s 0).toNat → ∀ o ∈ Impl.AesGcmSiv.X86_64Reg.zeroOffs, ZeroR ⟨(arg s 2) + BitVec.ofNat 64 o, 16⟩ s'.mem) := by
   obtain ⟨⟨Ar, Tb⟩, hTw, hrT⟩ := args_of_seal h
   exact sealL_wp' F hlp Ar Tb hTw hrT rfl (ofNat_toNat64 _).symm rfl rfl rfl (ofNat_toNat64 _).symm rfl rfl
     (ofNat_toNat64 _).symm rfl
@@ -512,7 +521,8 @@ theorem sealL_wp (F : MulFacts) {lp : Impl.AesGcmSiv.X86_64Stitch.Loops}
 /-- `vg_aes_gcm_siv_seal`. -/
 theorem seal_wp (F : MulFacts) {s : State} (h : sealPre s) :
     WP isa Impl.AesGcmSiv.X86_64Reg.seal s fun s' => gprPreserved s s' ∧ sealX86_64.post s s' ∧
-      Frame (⟨arg s 1, 16⟩ :: fineR (2 ^ 64) (arg s 2) (s.gpr .r9) (arg s 0).toNat) s.mem s'.mem := by
+      Frame (⟨arg s 1, 16⟩ :: fineR (2 ^ 64) (arg s 2) (s.gpr .r9) (arg s 0).toNat) s.mem s'.mem ∧
+      ((2 ^ 64) ≤ (arg s 0).toNat → ∀ o ∈ Impl.AesGcmSiv.X86_64Reg.zeroOffs, ZeroR ⟨(arg s 2) + BitVec.ofNat 64 o, 16⟩ s'.mem) := by
   obtain ⟨⟨Ar, Tb⟩, hTw, hrT⟩ := args_of_seal h
   exact seal_wp' F Ar Tb hTw hrT rfl (ofNat_toNat64 _).symm rfl rfl rfl (ofNat_toNat64 _).symm rfl rfl
     (ofNat_toNat64 _).symm rfl
@@ -550,7 +560,8 @@ theorem open_wpG (F : MulFacts) {θ : Nat} {mid mk : Prog isa}
       gprPreserved s s' ∧
       openPost (Spec.GcmSiv.decryptWith (Spec.GcmSiv.ctxCiph s.mem K R) (Spec.GcmSiv.keyLen R) (bytesAt s.mem N 12)
         (bytesAt s.mem D n) (bytesAt s.mem A al) (bytesAt s.mem T 16)) s' D n ∧
-      Frame (fineR θ W D n) s.mem s'.mem := by
+      Frame (fineR θ W D n) s.mem s'.mem ∧
+      (θ ≤ n → ∀ o ∈ Impl.AesGcmSiv.X86_64Reg.zeroOffs, ZeroR ⟨W + BitVec.ofNat 64 o, 16⟩ s'.mem) := by
   have L := Ar.lay
   have hR := Ar.rounds
   obtain hRb : 16 * (R + 1) ≤ 240 := by rcases hR with h | h <;> subst h <;> decide
@@ -681,7 +692,7 @@ theorem open_wpG (F : MulFacts) {θ : Nat} {mid mk : Prog isa}
       (Mk.frame.sub fun q hq => ⟨q, by simp only [List.mem_singleton] at hq; subst hq; simp, fun _ h => h⟩)
   obtain ⟨s₁₀, run₁₀, hg₁₀, hm₁₀, hsp₁₀, hax₁₀⟩ :=
     restore_ok E₉ (by rw [hm₉]; exact saved_mut L Ar.data.w (fR'.trans fall) sv₀)
-  refine WP.of_runBlock ⟨s₁₀, by rw [VG.Interleave.runBlock_append, run₉]; exact run₁₀, ⟨fun r hr => ?_, ?_⟩, ?_, ?_⟩
+  refine WP.of_runBlock ⟨s₁₀, by rw [VG.Interleave.runBlock_append, run₉]; exact run₁₀, ⟨fun r hr => ?_, ?_⟩, ?_, ?_, ?_⟩
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact hg₁₀ (.rbx, 144) (by decide)
@@ -755,6 +766,13 @@ theorem open_wpG (F : MulFacts) {θ : Nat} {mid mk : Prog isa}
   · rw [hm₁₀, hm₉]
     exact (fine_e f₀).trans ((fine_w0 fR).trans (((((g₂.trans g₃).trans g₅).trans g₆).trans (fine_o fO)).trans
       (fine_d Mk.frame)))
+  · intro h o ho
+    obtain ⟨h₁, h₂, h₃⟩ := zeroOffs_sep o ho
+    rw [hm₁₀, hm₉]
+    refine (((Dc.zero h o ho).frame Tg.frame fun q hq => ?_).frame fO fun q hq => ?_).frame Mk.frame fun q hq => ?_
+    · simp only [List.mem_singleton] at hq; subst hq; exact L.w_w h₁ h₃ (by decide)
+    · simp only [List.mem_singleton] at hq; subst hq; exact L.w_w h₂ h₃ (by decide)
+    · simp only [List.mem_singleton] at hq; subst hq; exact (Ar.data.w.sub_right (Lay.wSub h₃)).symm
 
 /-- `vg_aes_gcm_siv_open`, for its arguments. -/
 theorem open_wp' (F : MulFacts) {s : State} {K W SP N A D T : Addr} {R al n : Nat}
@@ -768,9 +786,10 @@ theorem open_wp' (F : MulFacts) {s : State} {K W SP N A D T : Addr} {R al n : Na
     WP isa Impl.AesGcmSiv.X86_64Reg.open s fun s' => gprPreserved s s' ∧
       openPost (Spec.GcmSiv.decryptWith (Spec.GcmSiv.ctxCiph s.mem K R) (Spec.GcmSiv.keyLen R) (bytesAt s.mem N 12)
         (bytesAt s.mem D n) (bytesAt s.mem A al) (bytesAt s.mem T 16)) s' D n ∧
-      Frame (fineR (2 ^ 64) W D n) s.mem s'.mem := by
+      Frame (fineR (2 ^ 64) W D n) s.mem s'.mem ∧
+      ((2 ^ 64) ≤ n → ∀ o ∈ Impl.AesGcmSiv.X86_64Reg.zeroOffs, ZeroR ⟨W + BitVec.ofNat 64 o, 16⟩ s'.mem) := by
   have h := open_wpG F (θ := 2 ^ 64) (mid := .seq Impl.AesGcmSiv.X86_64Reg.crypt Impl.AesGcmSiv.X86_64Reg.polyval)
-    (fun L _ hR _ E _ _ _ _ _ S hA hD hDw hAD => decS_ok F L hR E S hA hD hDw hAD) wipeBad_ok
+    (fun L _ hR _ E _ _ _ _ _ S hA hD hDw hAD => decS_ok F L hR E S hA hD hDw hAD hD.lt) wipeBad_ok
     Ar Tb hTr hsp hn hT hW hdi hsi hdx hcx hr8 hr9
   exact open_shape h
 
@@ -787,7 +806,8 @@ theorem openL_wp' (F : MulFacts) {lp : Impl.AesGcmSiv.X86_64Stitch.Loops}
     WP isa (Impl.AesGcmSiv.X86_64Reg.openL lp) s fun s' => gprPreserved s s' ∧
       openPost (Spec.GcmSiv.decryptWith (Spec.GcmSiv.ctxCiph s.mem K R) (Spec.GcmSiv.keyLen R) (bytesAt s.mem N 12)
         (bytesAt s.mem D n) (bytesAt s.mem A al) (bytesAt s.mem T 16)) s' D n ∧
-      Frame (fineR 256 W D n) s.mem s'.mem := by
+      Frame (fineR 256 W D n) s.mem s'.mem ∧
+      (256 ≤ n → ∀ o ∈ Impl.AesGcmSiv.X86_64Reg.zeroOffs, ZeroR ⟨W + BitVec.ofNat 64 o, 16⟩ s'.mem) := by
   have h := open_wpG F
     (mid := .seq (.block Impl.AesGcmSiv.X86_64Reg.lenCmp) (.ite .b
       (.seq Impl.AesGcmSiv.X86_64Reg.crypt Impl.AesGcmSiv.X86_64Reg.polyval) (Impl.AesGcmSiv.X86_64Reg.decL lp)))
@@ -815,7 +835,7 @@ theorem open_probe (F : MulFacts) {s : State} (h : openPre s) :
       (.seq mask (.block (([.mov .rax (.mem (at_ .r15 okO))] : List Instr) ++ restore)))) s fun s' =>
       gprPreserved s s' ∧ openX86_64.post s s' := by
   obtain ⟨⟨Ar, Tb⟩, hTr⟩ := args_of_open h
-  exact WP.mono (open_shape (open_wpG F (θ := 2 ^ 64) (fun L _ hR _ E _ _ _ _ _ S hA hD hDw hAD => decS_ok F L hR E S hA hD hDw hAD)
+  exact WP.mono (open_shape (open_wpG F (θ := 2 ^ 64) (fun L _ hR _ E _ _ _ _ _ S hA hD hDw hAD => decS_ok F L hR E S hA hD hDw hAD hD.lt)
     mask_ok Ar Tb hTr rfl (ofNat_toNat64 _).symm rfl rfl rfl (ofNat_toNat64 _).symm rfl rfl (ofNat_toNat64 _).symm rfl))
     fun _ h => ⟨h.1, h.2.1⟩
 
@@ -823,7 +843,8 @@ theorem open_probe (F : MulFacts) {s : State} (h : openPre s) :
 theorem openL_wp (F : MulFacts) {lp : Impl.AesGcmSiv.X86_64Stitch.Loops}
     (hlp : Proof.AesGcmSiv.X86_64.Stitch.LoopsOk lp) {s : State} (h : openPre s) :
     WP isa (Impl.AesGcmSiv.X86_64Reg.openL lp) s fun s' => gprPreserved s s' ∧ openX86_64.post s s' ∧
-      Frame (fineR 256 (arg s 2) (s.gpr .r9) (arg s 0).toNat) s.mem s'.mem := by
+      Frame (fineR 256 (arg s 2) (s.gpr .r9) (arg s 0).toNat) s.mem s'.mem ∧
+      (256 ≤ (arg s 0).toNat → ∀ o ∈ Impl.AesGcmSiv.X86_64Reg.zeroOffs, ZeroR ⟨(arg s 2) + BitVec.ofNat 64 o, 16⟩ s'.mem) := by
   obtain ⟨⟨Ar, Tb⟩, hTr⟩ := args_of_open h
   exact openL_wp' F hlp Ar Tb hTr rfl (ofNat_toNat64 _).symm rfl rfl rfl (ofNat_toNat64 _).symm rfl rfl
     (ofNat_toNat64 _).symm rfl
@@ -831,7 +852,8 @@ theorem openL_wp (F : MulFacts) {lp : Impl.AesGcmSiv.X86_64Stitch.Loops}
 /-- `vg_aes_gcm_siv_open`. -/
 theorem open_wp (F : MulFacts) {s : State} (h : openPre s) :
     WP isa Impl.AesGcmSiv.X86_64Reg.open s fun s' => gprPreserved s s' ∧ openX86_64.post s s' ∧
-      Frame (fineR (2 ^ 64) (arg s 2) (s.gpr .r9) (arg s 0).toNat) s.mem s'.mem := by
+      Frame (fineR (2 ^ 64) (arg s 2) (s.gpr .r9) (arg s 0).toNat) s.mem s'.mem ∧
+      ((2 ^ 64) ≤ (arg s 0).toNat → ∀ o ∈ Impl.AesGcmSiv.X86_64Reg.zeroOffs, ZeroR ⟨(arg s 2) + BitVec.ofNat 64 o, 16⟩ s'.mem) := by
   obtain ⟨⟨Ar, Tb⟩, hTr⟩ := args_of_open h
   exact open_wp' F Ar Tb hTr rfl (ofNat_toNat64 _).symm rfl rfl rfl (ofNat_toNat64 _).symm rfl rfl
     (ofNat_toNat64 _).symm rfl
