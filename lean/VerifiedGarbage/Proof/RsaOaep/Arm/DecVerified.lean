@@ -207,7 +207,7 @@ theorem entered_state (hc : Coh vs) {s s' : State} (hs : (dspec vs).pre s) {w w�
   exact ⟨⟨hi, ⟨hi.ok, hi.ok.sp, rfl, rfl, Frame.refl _ _⟩⟩, rfl⟩
 
 /-- What `writtenDecrypt` states of buffers apart from a frame survives it. -/
-private theorem writtenDecrypt_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {out len : Addr} {n : Nat}
+theorem writtenDecrypt_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {out len : Addr} {n : Nat}
     (hd : ∀ r ∈ rs, Region.Disjoint ⟨out, n⟩ r) (hl : ∀ r ∈ rs, Region.Disjoint ⟨len, 8⟩ r) (hn : n < 2 ^ 64)
     {r : BitVec 32} {o : Spec.Rsa.Outcome} (h : Spec.RsaOaep.writtenDecrypt m out len n r o) :
     Spec.RsaOaep.writtenDecrypt m' out len n r o := by

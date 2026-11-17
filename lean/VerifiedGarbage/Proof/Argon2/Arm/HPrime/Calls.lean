@@ -408,7 +408,9 @@ theorem update_ok {B SP : BitVec 32} {s : State} (h : Ctx B SP s) {D : BitVec 32
   obtain stR : (stkR SP 32).Disjoint ⟨State.addr B, 192⟩ := h.stk0 (by decide)
   refine frameCall_ok (rs := upd4) (t := .r0) (by decide) (by decide) (by decide) (k := updateArm b)
     update_v.1 (K := 32) (by rw [update_stack]; decide) (by rw [sp₂]; exact hlo) pre cv cw
-    fun t af hpost => ?_
+    fun t mL uL hfl af hpost => ?_
+  obtain hfl' : Frame [stkR SP 32] t.mem mL := hfl.sub fun r hr =>
+    ⟨_, List.mem_singleton_self _, by rw [List.mem_singleton.mp hr, sp₂]; exact stkR_sub (by decide) hlo⟩
   obtain hpush : Frame [stkR SP 32] s₂.mem (pushed upd4 s₂).mem :=
     (pushed_stk hn).sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
@@ -437,8 +439,8 @@ theorem update_ok {B SP : BitVec 32} {s : State} (h : Ctx B SP s) {D : BitVec 32
         exact hDk.symm) (by simp; omega_arith) hi
   have := hpost h0 d reprE countE (by omega_arith)
   rw [dataE] at this
-  refine ⟨by simpa [popped_mem] using this, fun r hr hl => (af.cs r hr hl).trans ?_,
-    af.rd.trans r₂, af.wr.trans w₂, af.sp.trans (by rw [sp₂, h.sp]), ?_⟩
+  refine ⟨repr_frame hfl' (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact stR.symm) this,
+    fun r hr hl => (af.cs r hr hl).trans ?_, af.rd.trans r₂, af.wr.trans w₂, af.sp.trans (by rw [sp₂, h.sp]), ?_⟩
   · have : r ≠ .r0 ∧ r ≠ .r12 := by
       simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
@@ -547,7 +549,9 @@ theorem finalize_ok {B SP : BitVec 32} {s : State} (h : Ctx B SP s)
   obtain stR : (stkR SP 32).Disjoint ⟨State.addr B, 192⟩ := h.stk0 (by decide)
   refine frameCall_ok (rs := fin2) (t := .r0) (by decide) (by decide) (by decide) (k := finalizeArm b)
     finalize_v.1 (K := 32) (by rw [finalize_stack]; decide) (by rw [sp₃]; exact hlo) pre cv cw
-    fun t af hpost => ?_
+    fun t mL uL hfl af hpost => ?_
+  obtain hfl' : Frame [stkR SP 32] t.mem mL := hfl.sub fun r hr =>
+    ⟨_, List.mem_singleton_self _, by rw [List.mem_singleton.mp hr, sp₃]; exact stkR_sub (by decide) hlo⟩
   obtain hpush : Frame [stkR SP 32] s₃.mem (pushed fin2 s₃).mem :=
     (pushed_stk hn).sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
@@ -566,8 +570,15 @@ theorem finalize_ok {B SP : BitVec 32} {s : State} (h : Ctx B SP s)
       State.callEntry_gpr _ (show Reg.r3 ∉ linkRegs by decide), pushed_gpr,
       o₃ .r2 (by decide) (by decide) (by decide), o₃ .r3 (by decide) (by decide) (by decide)]
     exact hc
-  refine ⟨by simpa [popped_mem] using hpost h0 d reprE hlen countE, fun r hr hl => (af.cs r hr hl).trans ?_,
+  refine ⟨?_, fun r hr hl => (af.cs r hr hl).trans ?_,
     af.rd.trans r₃, af.wr.trans w₃, af.sp.trans (by rw [sp₃, h.sp]), ?_⟩
+  · -- The digest is apart from the released frame.
+    dsimp only
+    rw [Proof.Blake2.bytesAt_congr fun i hi => hfl'.bytes (R := ⟨State.addr B + 768, 64⟩)
+      (fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr
+        exact (h.stk.sub_right (Offset.sub_base _ (by decide))).symm) (by show 64 ≤ 2 ^ 64; decide) hi]
+    simpa using hpost h0 d reprE hlen countE
   · have : r ≠ .r0 ∧ r ≠ .r1 ∧ r ≠ .r12 := by
       simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide

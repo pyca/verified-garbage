@@ -579,7 +579,14 @@ theorem code_okP (hc : Coh vs) (v : Proof.Rsa.Arm.CrtImpl) {s : State} (hs : (ds
   obtain hb := (body_vpP w₁.g P w.g (fun _ x => x) (fun _ x => x) (fne_of hw) hP v).wp _ _ st
   refine WP.mono (wrap_ok hF (by rw [Nat.add_comm]; exact hsp') (W := P.lay.W)
     (Q := fun r m => Res w₁.g.G w.g.G P (entered frameBytes s) m r) (fun r hr => ?_)
-    (WP.mono hb fun u hu => ⟨hu.1.1.2.frame, hu.1.2⟩)) fun t ⟨abi, res⟩ => ⟨abi, ?_⟩
+    (WP.mono hb fun u hu => ⟨hu.1.1.2.frame, hu.1.2⟩)
+    (hQ := fun _ m₁ m₂ hf hres => by
+      have fit := hin.ok.fits P.OUT (List.mem_append_right _ List.mem_cons_self)
+      have rel := fun {R : Region} (hR : R ∈ P.lay.rw) =>
+        released_apart (F := frameBytes) (A := 92) (C := 3440) (argv := P.lay.argv) (ro := P.lay.ro)
+          (rw := P.lay.rw) hin.ok hsp' (R := R) (Or.inr hR)
+      exact writtenDecrypt_frame hf (rel (R := P.OUT) (by simp)) (rel (R := P.ML) (by simp))
+        (by change P.OUT.len < 2 ^ 64; omega_using [fit]) hres)) fun t ⟨abi, res⟩ => ⟨abi, ?_⟩
   · rw [pushRegion_eq (F := frameBytes) (A := 92) (C := 3440) (argv := P.lay.argv) (ro := P.lay.ro)
       (rw := P.lay.rw) hsp']
     exact hin.ok.push_apart r hr
