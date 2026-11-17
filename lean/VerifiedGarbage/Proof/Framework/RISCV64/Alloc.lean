@@ -1,8 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.RISCV64.Inline
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Frames that allocate a buffer on the stack (RISC-V)
@@ -58,18 +56,6 @@ theorem WP.alloc {n : Nat} {body : Prog isa} {s : State} {Q : State → Prop}
       Frame [⟨s.sp - BitVec.ofNat 64 n, n⟩] s₂.mem m → Q { freed n s₂ with mem := m, unknowns := u }) :
     WP isa (.frame (.alloc n) body (.free n)) s Q :=
   WP.allocLe ⟨hn.1, by omega_using [hn], hn.2.2⟩ hsp hb
-
-/-- A byte of a region apart from a frame is what it was once the frame's
-bytes are lost. -/
-theorem lost_byte {F R : Region} {m m' : Mem} (f : Frame [F] m m') (hd : R.Disjoint F) {i : Nat}
-    (hi : i < R.len) : m' (R.base + BitVec.ofNat 64 i) = m (R.base + BitVec.ofNat 64 i) := by
-  refine f _ fun r hr hc => ?_
-  simp only [List.mem_singleton] at hr; subst hr
-  refine hd _ ?_ hc
-  simp only [Region.Contains]
-  rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat]
-  have := Nat.mod_le i (2 ^ 64)
-  omega_using [hi, this]
 
 /-- The state after the frame, when its body keeps the permissions and the
 stack pointer: those of `s`. -/

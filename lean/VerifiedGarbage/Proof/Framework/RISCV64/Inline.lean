@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 public import VerifiedGarbage.TCB.RISCV64.Target
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Inlining verified code (RISC-V)
@@ -523,5 +525,17 @@ theorem Verified.widen {c : Prog isa} {k k' : Contract isa} (h : Verified target
     have : (s₁.withRegions s.rd s.wr).withRegions s.rd (wr s) = s₁ := by
       rw [State.withRegions_withRegions, ← hr, ← hw]; rfl
     exact ⟨ha, hpost s _ hs (by rw [this]; exact hq)⟩
+
+/-- A byte of a region apart from a frame is what it was once the frame's
+bytes are lost. -/
+theorem lost_byte {F R : Region} {m m' : Mem} (f : Frame [F] m m') (hd : R.Disjoint F) {i : Nat}
+    (hi : i < R.len) : m' (R.base + BitVec.ofNat 64 i) = m (R.base + BitVec.ofNat 64 i) := by
+  refine f _ fun r hr hc => ?_
+  simp only [List.mem_singleton] at hr; subst hr
+  refine hd _ ?_ hc
+  simp only [Region.Contains]
+  rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat]
+  have := Nat.mod_le i (2 ^ 64)
+  omega_using [hi, this]
 
 end VG.RISCV64
