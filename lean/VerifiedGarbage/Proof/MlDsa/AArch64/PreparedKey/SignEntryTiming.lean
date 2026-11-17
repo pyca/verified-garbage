@@ -2452,9 +2452,9 @@ theorem withCache_correct (v : VG.Proof.Sha3.AArch64.Permutation) {p : Params} (
   obtain main : WP isa (Impl.MlDsa.AArch64.PreparedKey.Sign.withCache v.callee (primsWith v.callee) p) σ
       fun t => abiPreserved σ t ∧ (signWithCacheContract p (abi.withConsts pairedSignRootConsts) 48).post σ t := by
     unfold Impl.MlDsa.AArch64.PreparedKey.Sign.withCache
-    refine WP.frameReg g0.1 g0.2 ?_ (by
+    refine WP.frameRegKept g0.1 g0.2 ?_ (by
       simpa only [Code.aarch64Depth, Instr.frameUnits, Nat.zero_max] using hd.1)
-    refine WP.frameReg g1.1 g1.2 ?_ (by
+    refine WP.frameRegKept g1.1 g1.2 ?_ (by
       simpa only [Code.aarch64Depth, Nat.zero_max] using hd.2)
     refine WP.seq (WP.mono_syms (metadata_setup (signInner σ)) fun s ⟨hs, h21, h22⟩ hy => ?_)
     obtain ⟨hcore, roots, paired, cache, hkey, hmu, hrnd, e3⟩ :=
@@ -3161,9 +3161,9 @@ theorem verify_withCache_correct (v : VG.Proof.Sha3.AArch64.Permutation) {p : Pa
       (VG.Impl.MlDsa.AArch64.KeyGen.primsWith v.callee) p) σ
       fun t => abiPreserved σ t ∧ (verifyWithCacheContract p (Verify.OptimizedSelected.selectedAbi) 48).post σ t := by
     unfold Impl.MlDsa.AArch64.PreparedKey.Verify.withCache
-    refine WP.frameReg g0.1 g0.2 ?_ (by
+    refine WP.frameRegKept g0.1 g0.2 ?_ (by
       simpa only [Code.aarch64Depth, Instr.frameUnits, Nat.zero_max] using hd.1)
-    refine WP.frameReg g1.1 g1.2 ?_ (by
+    refine WP.frameRegKept g1.1 g1.2 ?_ (by
       simpa only [Code.aarch64Depth, Nat.zero_max] using hd.2)
     refine WP.seq (WP.mono_syms (verify_metadata_setup (signInner σ)) fun s ⟨hs, h21, h22⟩ hy => ?_)
     obtain ⟨hcore, hpk, hmu, hsig⟩ := setup_verify_inputs hp hpre hs h21 h22 hy
@@ -4132,7 +4132,7 @@ theorem verify_entry_constants_correct {p : Params} (hp : Sign.Ok3 p) {name : St
   obtain main : WP isa (Impl.MlDsa.AArch64.PreparedKey.Verify.entry name code p prepared) σ
       fun t => abiPreserved σ t ∧ (rawVerifyK p prepared (abi.withConsts signRootConsts)).post σ t := by
     unfold Impl.MlDsa.AArch64.PreparedKey.Verify.entry
-    refine WP.frameReg (Nat.le_trans (by decide) layout.1) guard ?_ (by
+    refine WP.frameRegKept (Nat.le_trans (by decide) layout.1) guard ?_ (by
       simpa only [Code.aarch64Depth, Nat.zero_max] using depth)
     change WP isa (.seq (.block (operationSetup p false prepared)) (.call name code)) (pushState .x30 σ) _
     refine WP.seq (WP.mono_syms (operationSetup_ok p false prepared (pushState .x30 σ)) fun s hs sy => ?_)
@@ -4703,7 +4703,7 @@ theorem sign_entry_correct {p : Params} (hp : Ok3 p) {name : String}
   obtain main : WP isa (Impl.MlDsa.AArch64.PreparedKey.Sign.entry name code p prepared) σ
       fun t => abiPreserved σ t ∧ (rawSignK p prepared (abi.withConsts pairedSignRootConsts)).post σ t := by
     unfold Impl.MlDsa.AArch64.PreparedKey.Sign.entry
-    refine WP.frameReg (Nat.le_trans (by decide) layout.1) guard ?_ (by
+    refine WP.frameRegKept (Nat.le_trans (by decide) layout.1) guard ?_ (by
       simpa only [Code.aarch64Depth, Nat.zero_max] using depth)
     change WP isa (.seq (.block (operationSetup p true prepared)) (.call name code)) (pushState .x30 σ) _
     refine WP.seq (WP.mono_syms (operationSetup_ok p true prepared (pushState .x30 σ)) fun s hs sy => ?_)

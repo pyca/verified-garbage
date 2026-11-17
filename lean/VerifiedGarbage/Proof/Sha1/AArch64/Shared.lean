@@ -19,7 +19,7 @@ contracts of `Spec/Sha1/Contract.lean`, which the artifacts are emitted with.
 `update_of` and `finalize_of` keep the working space in a frame of their
 own: they are `updateScratch_of` and `finalizeScratch_of` (the shared
 contracts with the working space as an argument, which HMAC's and PBKDF2's
-code calls) run in a frame that allocates it (`Verified.stackScratch`).
+code calls) run in a frame that allocates it (`Verified.stackScratchKept`).
 -/
 
 @[expose] public section
@@ -56,7 +56,7 @@ theorem update_of {code : Prog AArch64.isa}
     (hv : Verified AArch64.target code Proof.Sha1.updateAArch64) :
     Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratch 160 .x4 code)
       (Spec.Sha1.updateContract AArch64.abi (16 + 160)) :=
-  AArch64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 20) (stack := 16) (bytes := 160)
+  AArch64.Verified.stackScratchKept (nm := "scratch") (e := .u64) (n := 20) (stack := 16) (bytes := 160)
     (updateScratch_of hv) (by decide) (by decide)
     (AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
@@ -65,7 +65,7 @@ theorem finalize_of {code : Prog AArch64.isa}
     (hv : Verified AArch64.target code Proof.Sha1.finalizeAArch64) :
     Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratch 160 .x3 code)
       (Spec.Sha1.finalizeContract AArch64.abi (16 + 160)) :=
-  AArch64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 20) (stack := 16) (bytes := 160)
+  AArch64.Verified.stackScratchKept (nm := "scratch") (e := .u64) (n := 20) (stack := 16) (bytes := 160)
     (finalizeScratch_of hv) (by decide) (by decide)
     (AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 

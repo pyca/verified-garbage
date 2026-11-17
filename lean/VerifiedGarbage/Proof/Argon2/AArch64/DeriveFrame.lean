@@ -46,7 +46,7 @@ theorem frame_ok (s : State) (rs : List Reg) (body : Prog isa) (Q : State → Pr
     WP isa (Impl.Argon2.AArch64.Derive.frame body rs) s Q := by
   induction rs generalizing s Q with
   | nil =>
-    exact WP.alloc (by decide) (by simpa using space) (run.mono fun _ h => h.2.2)
+    exact WP.allocKept (by decide) (by simpa using space) (run.mono fun _ h => h.2.2)
   | cons r rs ih =>
     have pushedBound : (pushed r s).sp.toNat = s.sp.toNat - 16 := by
       change (s.sp - 16).toNat = s.sp.toNat - 16
@@ -57,7 +57,7 @@ theorem frame_ok (s : State) (rs : List Reg) (body : Prog isa) (Q : State → Pr
       rfl
     have innerSpace : 272 + 16 * rs.length ≤ (pushed r s).sp.toNat := by
       rw [pushedBound]; simp only [List.length_cons] at space; omega_using [space]
-    apply WP.frame (by simp only [List.length_cons] at space; omega_using [space])
+    apply WP.frameKept (by simp only [List.length_cons] at space; omega_using [space])
     apply ih (pushed r s) (fun t => Q (popped r t)) innerSpace
     apply run.mono
     rintro t ⟨sp, wr, result⟩

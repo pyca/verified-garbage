@@ -106,7 +106,7 @@ theorem call_correct {d : Spec.Seed.Direction} {name : String} {c : Prog isa} {N
     ∃ t s', Exec isa (.frame (.push .x30) (.call name c) (.pop .x30)) s₀ t s' ∧ abiPreserved s₀ s' ∧
       (ecbCallAArch64 d N).post s₀ s' := by
   obtain ⟨hsp, hrd, hwr, dKD, dKS, dDS, sK, sD, sS, fitK, fitD, fitS⟩ := hs
-  refine (WP.frameReg (r := .x30) (s₀ := s₀) hsp (fun R hR => ?_) ?_
+  refine (WP.frameRegKept (r := .x30) (s₀ := s₀) hsp (fun R hR => ?_) ?_
     (by rw [fdepth_of_noFrames (show (Code.call name c : Prog isa).noFrames = true from hn)]; decide)).elim
     fun t ⟨s', he, hq⟩ => ⟨t, s', he, hq⟩
   · rw [hwr] at hR

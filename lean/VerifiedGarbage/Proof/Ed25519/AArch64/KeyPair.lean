@@ -517,7 +517,7 @@ theorem keyPair_ok {s : State} (hs : spec.pre s) {dn pn : String} :
       abiPreserved s s' ∧ spec.post s s' := by
   have h := pre_of hs
   have hsp := h.sp
-  refine WP.frame (by omega_using [hsp]) (WP.alloc (by decide) ?_ (WP.mono (body_ok v h) fun u ⟨hu, hE, hO⟩ => ⟨?_, ?_⟩))
+  refine WP.frameKept (by omega_using [hsp]) (WP.allocKept (by decide) ?_ (WP.mono (body_ok v h) fun u ⟨hu, hE, hO⟩ => ⟨?_, ?_⟩))
   · show 32 ≤ (s.sp - 16).toNat
     rw [sp16, K_toNat h (by decide)]; omega_using []
   · have hsp' : (freed 32 u).sp = K s + BitVec.ofNat 64 928 := by

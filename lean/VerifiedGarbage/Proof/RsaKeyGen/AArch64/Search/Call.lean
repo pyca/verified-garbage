@@ -419,7 +419,7 @@ theorem search_candidate_run (c : Cand) {p : SearchPublic} {original s : State} 
       simp only [BitVec.le_def, BitVec.toNat_ofNat]; have := hf.room; omega_using [this])]
     simp only [BitVec.toNat_ofNat]; have := hf.room; omega_using [this]
   unfold candidateRun
-  refine WP.alloc (by decide) hroom ?_
+  refine WP.allocKept (by decide) hroom ?_
   refine WP.seq (WP.mono (search_arguments_ok h) fun u ⟨⟨ha, hm⟩, k⟩ => ?_)
   have hu : u.sp = callSp p := k.sp.trans (alloc_call_sp h)
   refine WP.callV (k := candContract) c.correct (call_cand_pre hf hu ha hm)

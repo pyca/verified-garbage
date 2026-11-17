@@ -204,7 +204,7 @@ theorem openTo_framed (v : GcmImpl) :
     Verified AArch64.target
       (Impl.StackScratch.AArch64.withStackArgScratch 2608 4 (openG v.callees true 4))
       (Proof.AesGcm.openToRoundsContract AArch64.abi 2608) :=
-  AArch64.Verified.stackArgScratch (sig := Spec.Gcm.openToSig) (nm := "work") (e := .u64)
+  AArch64.Verified.stackArgScratchKept (sig := Spec.Gcm.openToSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Gcm.openToPre AArch64.abi.ptrBits)
     (post := Proof.AesGcm.openToRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 2608)
     (leak := some (Spec.Gcm.openToLeak AArch64.abi.ptrBits))

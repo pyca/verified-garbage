@@ -635,7 +635,7 @@ theorem scrypt_ok {s : State} (h : Proof.Scrypt.scryptAArch64.pre s) :
     WP isa (scrypt name pbk) s fun s' => abiPreserved s s' ∧ Proof.Scrypt.scryptAArch64.post s s' := by
   have hL := lay_ok h
   have h96 := h.1
-  refine WP.frame (by omega_arith) (WP.alloc (by decide) ?_ ?_)
+  refine WP.frameKept (by omega_arith) (WP.allocKept (by decide) ?_ ?_)
   · show 64 ≤ (s.sp - 16).toNat
     rw [BitVec.toNat_sub_of_le (by show 16 ≤ s.sp.toNat; omega_arith)]
     show 64 ≤ s.sp.toNat - 16

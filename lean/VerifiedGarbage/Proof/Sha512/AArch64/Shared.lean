@@ -27,7 +27,7 @@ ones (`updateScratch_of`, `finalizeScratch_of`).
 a frame of their own, of the 688 bytes (`scratchBytes + 48`, 86 words) they
 use: they are the same code against the shared contracts with that much
 working space (`updateScratchContractW 86`, …), run in a frame that allocates
-it (`Verified.stackScratch`).
+it (`Verified.stackScratchKept`).
 -/
 
 @[expose] public section
@@ -149,7 +149,7 @@ theorem finalizeScratchW_of {code : Prog isa} (hv : Verified AArch64.target code
 theorem update_of {code : Prog isa} (hv : Verified AArch64.target code Proof.Sha512.updateAArch64) :
     Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratch 688 .x4 code)
       (Spec.Sha512.updateContract AArch64.abi (16 + 688)) :=
-  AArch64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 86) (stack := 16) (bytes := 688)
+  AArch64.Verified.stackScratchKept (nm := "scratch") (e := .u64) (n := 86) (stack := 16) (bytes := 688)
     (updateScratchW_of hv) (by decide) (by decide)
     (AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
@@ -157,7 +157,7 @@ theorem update_of {code : Prog isa} (hv : Verified AArch64.target code Proof.Sha
 theorem finalize_of {code : Prog isa} (hv : Verified AArch64.target code Proof.Sha512.finalizeAArch64) :
     Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratch 688 .x3 code)
       (Spec.Sha512.finalizeContract AArch64.abi (16 + 688)) :=
-  AArch64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 86) (stack := 16) (bytes := 688)
+  AArch64.Verified.stackScratchKept (nm := "scratch") (e := .u64) (n := 86) (stack := 16) (bytes := 688)
     (finalizeScratchW_of hv) (by decide) (by decide)
     (AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
@@ -246,7 +246,7 @@ theorem finalizeDigest_of {code : Prog isa} {o : List Instr} {D : Nat} {iv : Spe
   have hi := finalizeDigestScratchImplies iv digest hD
   have h := (finalizeDigestWide_of hv hdg hi.sat_left).of_implies hi
   rcases hD with rfl | rfl | rfl <;>
-  exact AArch64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 86) (stack := 16) (bytes := 688)
+  exact AArch64.Verified.stackScratchKept (nm := "scratch") (e := .u64) (n := 86) (stack := 16) (bytes := 688)
     h (by decide) (by decide)
     (AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 

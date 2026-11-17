@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 # The SHA-3 sponge on AArch64: `pad`
 
 The same structure as the x86-64 proof (`VG.Proof.Sha3.X86_64.Stream.Pad`),
-inside the frame that saves `x30` (`WP.frameReg`).
+inside the frame that saves `x30` (`WP.frameRegKept`).
 -/
 
 @[expose] public section
@@ -152,7 +152,7 @@ theorem correct (v : Permutation) {s₀ : State} (hp : Pre s₀) (hs : Stack s�
     WP isa (Impl.Sha3.AArch64.Stream.padWith v.callee) s₀ fun s' =>
       abiPreserved s₀ s' ∧ Proof.Sha3.padAArch64.post s₀ s' := by
   have hpi : Pre (inner s₀) := ⟨hp.rd, hp.wr, hp.st_scr, hp.rate, hp.pos_lt⟩
-  refine WP.frameReg (hn := by rw [v.padMain_depth]; decide) hs.sp16 (fun R hR => ?_) (WP.mono ((correctMain v) hpi) fun s' ⟨hk, hsp, hv, hpost⟩ => ?_)
+  refine WP.frameRegKept (hn := by rw [v.padMain_depth]; decide) hs.sp16 (fun R hR => ?_) (WP.mono ((correctMain v) hpi) fun s' ⟨hk, hsp, hv, hpost⟩ => ?_)
   · rw [hp.wr] at hR
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hR
     rcases hR with rfl | rfl

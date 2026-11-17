@@ -254,7 +254,7 @@ theorem update_framed :
     Verified AArch64.target
       (Impl.StackScratch.AArch64.withStackScratch 128 .x4 Impl.Poly1305.AArch64.Vector.update)
       (Spec.Poly1305.updateContract AArch64.abi 128) :=
-  AArch64.Verified.stackScratch (sig := Spec.Poly1305.updateSig) (nm := "scratch") (e := .u64)
+  AArch64.Verified.stackScratchKept (sig := Spec.Poly1305.updateSig) (nm := "scratch") (e := .u64)
     (n := 16) (post := Spec.Poly1305.updatePost AArch64.abi.ptrBits) (wa := false) (stack := 0)
     (bytes := 128) update_verified (by decide) (by decide) Radix64.updateFrameSat_pre
 

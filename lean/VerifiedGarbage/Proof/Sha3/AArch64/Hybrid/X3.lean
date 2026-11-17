@@ -569,7 +569,7 @@ theorem body_ok {s : State} (h : Lay s) :
 
 theorem vector_correct (s : State) (hs : K.pre s) :
     ∃ tr t, Exec isa X3code s tr t ∧ abiPreserved s t ∧ K.post s t :=
-  WP.alloc ⟨by decide, by decide, by decide⟩ (lay hs).sp (body_ok (lay hs))
+  WP.allocKept ⟨by decide, by decide, by decide⟩ (lay hs).sp (body_ok (lay hs))
 
 theorem allocated_gpr (n : Nat) (s : State) : (allocated n s).gpr = s.gpr := rfl
 

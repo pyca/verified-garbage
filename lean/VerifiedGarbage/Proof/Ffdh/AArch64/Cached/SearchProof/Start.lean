@@ -17,7 +17,7 @@ open VG.Proof.Ffdh.AArch64 (Slots)
 open VG.Proof.Ffdh.Control (writeController writeController_frame writeController_word
   controllerValue)
 
-/-- The state the body of the frame saving `x30` starts in (`WP.frameReg`). -/
+/-- The state the body of the frame saving `x30` starts in (`WP.frameRegKept`). -/
 abbrev pushedX30 (t : State) : State :=
   { t with sp := t.sp - 16, mem := t.mem.write (t.sp - 16) 8 (t.gpr .x30) }
 

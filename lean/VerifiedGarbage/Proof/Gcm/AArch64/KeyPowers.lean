@@ -567,7 +567,7 @@ theorem keyPowers_framed :
     Verified AArch64.target
       (Impl.StackScratch.AArch64.withStackScratch 80 .x2 Impl.Gcm.AArch64.keyPowers)
       (Spec.Gcm.storePowersContract AArch64.abi 80) :=
-  AArch64.Verified.stackScratch (sig := Spec.Gcm.storePowersSig) (nm := "scratch") (e := .u64)
+  AArch64.Verified.stackScratchKept (sig := Spec.Gcm.storePowersSig) (nm := "scratch") (e := .u64)
     (n := 10) (pre := Curry.const (fun _ => True) _)
     (post := Spec.Gcm.storePowersPost AArch64.abi.ptrBits) (wa := false) (stack := 0) (bytes := 80)
     keyPowers_verified (by decide) (by decide) framedSat_pre

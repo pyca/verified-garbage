@@ -26,7 +26,7 @@ section
 /-!
 # Streaming BLAKE2 on AArch64: `finalize`
 
-Inside the frame saving `x30` (`WP.frameReg`), `finalize` saves the
+Inside the frame saving `x30` (`WP.frameRegKept`), `finalize` saves the
 callee-saved registers (`prologue_ok`), computes the number of buffered bytes
 (`bufLen_ok`), zeroes the rest of the buffer (`pad_ok`), compresses it as the
 last block (`compressWith_ok`), copies the hash value out (`output_ok`) and
@@ -388,7 +388,7 @@ theorem correct (hP : Ok P) (hf : CalleeOk P (compress P)) {s₀ : State}
   obtain ⟨hp, hs⟩ := pre_of hpre
   have hl := hP.len
   obtain hpi : Pre w (inner s₀) := ⟨hp.rd, hp.wr, hp.st_out, hp.st_scr, hp.out_scr⟩
-  refine WP.frameReg hs.sp16 (fun R hR => ?_) (WP.mono (correctMain hP hf hpi) fun s' ⟨hk, hsp, hpost⟩ => ?_)
+  refine WP.frameRegKept hs.sp16 (fun R hR => ?_) (WP.mono (correctMain hP hf hpi) fun s' ⟨hk, hsp, hpost⟩ => ?_)
     (by rw [fdepth_of_noFrames (noFrames_finalizeMain hf)]; decide)
   · rw [hp.wr] at hR
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hR
@@ -546,34 +546,34 @@ theorem finalizeS_verified :
 
 The theorems above are of the streaming functions with their working space
 as an argument (`update_scratch`, `finalize_scratch`); `update` and
-`finalize` run them in a frame that allocates it (`Verified.stackScratch`).
+`finalize` run them in a frame that allocates it (`Verified.stackScratchKept`).
 -/
 
 theorem updateB_framed : Verified AArch64.target
     (Impl.StackScratch.AArch64.withStackScratch 576 .x4 (Impl.Blake2.AArch64.Stream.update b))
     (Spec.Blake2.updateBContract AArch64.abi (16 + 576)) :=
-  AArch64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 72) (stack := 16) (bytes := 576)
+  AArch64.Verified.stackScratchKept (nm := "scratch") (e := .u64) (n := 72) (stack := 16) (bytes := 576)
     updateB_verified (by decide) (by decide)
     (AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 theorem finalizeB_framed : Verified AArch64.target
     (Impl.StackScratch.AArch64.withStackScratch 576 .x3 (Impl.Blake2.AArch64.Stream.finalize b))
     (Spec.Blake2.finalizeBContract AArch64.abi (16 + 576)) :=
-  AArch64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 72) (stack := 16) (bytes := 576)
+  AArch64.Verified.stackScratchKept (nm := "scratch") (e := .u64) (n := 72) (stack := 16) (bytes := 576)
     finalizeB_verified (by decide) (by decide)
     (AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 theorem updateS_framed : Verified AArch64.target
     (Impl.StackScratch.AArch64.withStackScratch 576 .x4 (Impl.Blake2.AArch64.Stream.update s))
     (Spec.Blake2.updateSContract AArch64.abi (16 + 576)) :=
-  AArch64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 72) (stack := 16) (bytes := 576)
+  AArch64.Verified.stackScratchKept (nm := "scratch") (e := .u64) (n := 72) (stack := 16) (bytes := 576)
     updateS_verified (by decide) (by decide)
     (AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 theorem finalizeS_framed : Verified AArch64.target
     (Impl.StackScratch.AArch64.withStackScratch 576 .x3 (Impl.Blake2.AArch64.Stream.finalize s))
     (Spec.Blake2.finalizeSContract AArch64.abi (16 + 576)) :=
-  AArch64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 72) (stack := 16) (bytes := 576)
+  AArch64.Verified.stackScratchKept (nm := "scratch") (e := .u64) (n := 72) (stack := 16) (bytes := 576)
     finalizeS_verified (by decide) (by decide)
     (AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 

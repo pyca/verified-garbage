@@ -178,7 +178,7 @@ theorem code_ok {s : State} (hp : PreS tsH tsG K s) {i : Nat} {T : Tabs} {Hs Gs 
     (E : ESel f g tsH tsG s i T Hs Gs) :
     WP isa (signC f g c.name c.code) s (Post Hs Gs s) := by
   unfold signC
-  refine WP.alloc (by decide) (by have := fb_toNat hp; omega_using [this]) ?_
+  refine WP.allocKept (by decide) (by have := fb_toNat hp; omega_using [this]) ?_
   unfold signCBody seqs seqs seqs
   refine WP.seq (WP.mono_syms (prologue_ok hp (by simp [allocated]) (by simp [allocated]) (by simp [allocated])
     (by simp [allocated]) (fun r => by simp [allocated]) (fun r _ => by simp [allocated])) fun u hu sy => ?_)

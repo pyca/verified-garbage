@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 The functional correctness of `update`, for either word size and any correct
 compression function (`CalleeOk`). The same structure as the x86-64 proof
 (`VG.Proof.Blake2.X86_64.Stream.Update`), inside the frame saving `x30`
-(`WP.frameReg`).
+(`WP.frameRegKept`).
 -/
 
 @[expose] public section
@@ -741,7 +741,7 @@ theorem correct (hP : Ok P) (hf : CalleeOk P (compress P)) {s₀ : State}
   obtain ⟨hp, hs⟩ := pre_of hpre
   have hl := hP.len
   obtain hpi : Pre w (inner s₀) := ⟨hp.rd, hp.wr, hp.st_scr, hp.d_st, hp.d_scr⟩
-  refine WP.frameReg hs.sp16 (fun R hR => ?_) (WP.mono (correctMain hP hf hpi) fun s' ⟨hk, hsp, hpost⟩ => ?_)
+  refine WP.frameRegKept hs.sp16 (fun R hR => ?_) (WP.mono (correctMain hP hf hpi) fun s' ⟨hk, hsp, hpost⟩ => ?_)
     (by rw [fdepth_of_noFrames (noFrames_updateMain hf)]; decide)
   · rw [hp.wr] at hR
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hR

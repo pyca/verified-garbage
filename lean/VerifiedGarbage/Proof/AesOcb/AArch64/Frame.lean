@@ -161,10 +161,10 @@ end
 Every function runs its code, proved with the working space as its last
 argument (`Verified.lean`), in a frame that allocates it. `init`'s working
 space is in a register (`x3`): its frame holds the 2560 bytes
-(`Verified.stackScratch`). The working space of `seal` and `open` is their
+(`Verified.stackScratchKept`). The working space of `seal` and `open` is their
 third stack argument, after `tag` and `tag_len`, so their frame of 2592
 bytes holds a copy of those two, the address of the working space and the
-working space, at the next 16-byte boundary (`Verified.stackArgScratch`).
+working space, at the next 16-byte boundary (`Verified.stackArgScratchKept`).
 The code itself uses no stack: its calls keep the return address in `x30`.
 `open`'s leak, whether it succeeds, reads only its buffers
 (`openLeak_local`).
@@ -188,7 +188,7 @@ theorem initFrameSat_pre : ∃ s, (Spec.Ocb.initContract AArch64.abi 2560).pre s
 theorem init_framed (v : BlocksImpl) :
     Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratch 2560 .x3 (init (callees v)))
       (Spec.Ocb.initContract AArch64.abi 2560) :=
-  AArch64.Verified.stackScratch (sig := Spec.Ocb.initSig) (nm := "scratch") (e := .u64) (n := 320)
+  AArch64.Verified.stackScratchKept (sig := Spec.Ocb.initSig) (nm := "scratch") (e := .u64) (n := 320)
     (pre := Spec.Ocb.initPre AArch64.abi.ptrBits) (post := Spec.Ocb.initPost AArch64.abi.ptrBits)
     (wa := true) (stack := 0) (bytes := 2560) (init_verified v) (by decide) (by decide)
     initFrameSat_pre
@@ -209,7 +209,7 @@ theorem seal_framed (v : BlocksImpl) :
     Verified AArch64.target
       (Impl.StackScratch.AArch64.withStackArgScratch 2592 2 («seal» (callees v)))
       (Proof.AesOcb.sealRoundsContract AArch64.abi 2592) :=
-  AArch64.Verified.stackArgScratch (sig := Spec.Ocb.sealSig) (nm := "work") (e := .u64)
+  AArch64.Verified.stackArgScratchKept (sig := Spec.Ocb.sealSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Ocb.sealPre AArch64.abi.ptrBits)
     (post := Proof.AesOcb.sealRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 2592)
     (seal_verified v) (by decide) (by decide) (Proof.AesOcb.sealPre_local _) (Proof.AesOcb.sealPost_local _)
@@ -231,7 +231,7 @@ theorem open_framed (v : BlocksImpl) :
     Verified AArch64.target
       (Impl.StackScratch.AArch64.withStackArgScratch 2592 2 («open» (callees v)))
       (Proof.AesOcb.openRoundsContract AArch64.abi 2592) :=
-  AArch64.Verified.stackArgScratch (sig := Spec.Ocb.openSig) (nm := "work") (e := .u64)
+  AArch64.Verified.stackArgScratchKept (sig := Spec.Ocb.openSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Ocb.openPre AArch64.abi.ptrBits)
     (post := Proof.AesOcb.openRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 2592)
     (leak := some (Spec.Ocb.openLeak AArch64.abi.ptrBits))

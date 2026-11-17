@@ -41,15 +41,15 @@ theorem prepareFrame_correct {bytes count : Nat} {body : Prog isa}
   unfold prepareFrame
   simp only [List.foldr_cons, List.foldr_nil]
   have g0 := frame_guards (s := σ) h (offset := 0) (by decide) rfl (by simp)
-  refine WP.frameReg g0.1 g0.2 ?_ (by simpa only [Code.aarch64Depth, Instr.frameUnits, Nat.zero_max] using hd.1)
+  refine WP.frameRegKept g0.1 g0.2 ?_ (by simpa only [Code.aarch64Depth, Instr.frameUnits, Nat.zero_max] using hd.1)
   have g1 := frame_guards (s := pushState .x25 σ) h (offset := 16) (by decide) rfl rfl
-  refine WP.frameReg g1.1 g1.2 ?_ (by simpa only [Code.aarch64Depth, Instr.frameUnits, Nat.zero_max] using hd.2.1)
+  refine WP.frameRegKept g1.1 g1.2 ?_ (by simpa only [Code.aarch64Depth, Instr.frameUnits, Nat.zero_max] using hd.2.1)
   have g2 := frame_guards (s := pushState .x26 (pushState .x25 σ)) h
     (offset := 32) (by decide) rfl (by simp only [pushState, BitVec.sub_sub]; rfl)
-  refine WP.frameReg g2.1 g2.2 ?_ (by simpa only [Code.aarch64Depth, Instr.frameUnits, Nat.zero_max] using hd.2.2.1)
+  refine WP.frameRegKept g2.1 g2.2 ?_ (by simpa only [Code.aarch64Depth, Instr.frameUnits, Nat.zero_max] using hd.2.2.1)
   have g3 := frame_guards (s := pushState .x28 (pushState .x26 (pushState .x25 σ))) h
     (offset := 48) (by decide) rfl (by simp only [pushState, BitVec.sub_sub]; rfl)
-  refine WP.frameReg g3.1 g3.2 ?_ (by simpa only [Code.aarch64Depth, Nat.zero_max] using hd.2.2.2)
+  refine WP.frameRegKept g3.1 g3.2 ?_ (by simpa only [Code.aarch64Depth, Nat.zero_max] using hd.2.2.2)
   refine WP.seq (WP.mono (setup_ok (innerState σ)) fun s ⟨hs, h25, h26, h28⟩ => ?_)
   change s.gpr .x25 = σ.gpr .x0 at h25
   change s.gpr .x26 = σ.gpr .x1 at h26

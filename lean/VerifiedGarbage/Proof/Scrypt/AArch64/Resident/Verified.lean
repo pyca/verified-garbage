@@ -68,7 +68,7 @@ theorem correct
       GprAbi s₀ s' ∧ Proof.Scrypt.blockMixAArch64.post s₀ s' := by
   have hpi : BlockMix.Pre (BlockMix.inner s₀) := ⟨hp.rd, hp.wr, hp.y_s, hp.b_y, hp.b_s, hp.b_nw, hp.y_nw, hp.s_nw,
     hp.x3, hp.pos⟩
-  refine WP.frameReg hs.sp16 (fun R hR => ?_) (WP.mono (correctMain hpi) fun s' ⟨hk, hsp, hpost⟩ => ?_) hd
+  refine WP.frameRegKept hs.sp16 (fun R hR => ?_) (WP.mono (correctMain hpi) fun s' ⟨hk, hsp, hpost⟩ => ?_) hd
   · rw [hp.wr] at hR
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hR
     rcases hR with rfl | rfl

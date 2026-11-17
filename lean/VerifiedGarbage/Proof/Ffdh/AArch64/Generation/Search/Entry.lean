@@ -73,7 +73,7 @@ theorem entry_ok {p : SPub} {s : State} (h : SInput p s) :
   simp only [stackArg, stackArgAddr, Nat.mul_zero, BitVec.add_zero]
   rfl
 
-/-- The state the body of the frame saving `x30` starts in (`WP.frameReg`). -/
+/-- The state the body of the frame saving `x30` starts in (`WP.frameRegKept`). -/
 abbrev pushedX30 (t : State) : State :=
   { t with sp := t.sp - 16, mem := t.mem.write (t.sp - 16) 8 (t.gpr .x30) }
 

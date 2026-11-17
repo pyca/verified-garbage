@@ -112,8 +112,8 @@ theorem codeWith_correct (C : CrtCallee) (v : CrtImpl) (stage : Prog isa) {s : S
   have hL : (layW s X).Ok := (lay_ok h).withX X
   have hst0 : stackBytes ≤ s.sp.toNat := h.1
   have hnB := hL.nB
-  refine WP.frame (by unfold stackBytes at hst0; omega_using [hst0]) ?_
-  refine WP.alloc ⟨by decide, by decide, by decide⟩ (by
+  refine WP.frameKept (by unfold stackBytes at hst0; omega_using [hst0]) ?_
+  refine WP.allocKept ⟨by decide, by decide, by decide⟩ (by
     show frameBytes ≤ (s.sp - 16).toNat
     rw [show (16 : BitVec 64) = BitVec.ofNat 64 16 from rfl, Offset.toNat_sub_ofNat]
     simp only [frameBytes, stackBytes] at hst0 ⊢

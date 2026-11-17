@@ -576,7 +576,7 @@ theorem push_frame (h : GenInput p s) (m : Mem) (v : BitVec 64) :
 
 end GenInput
 
-/-- The state the body of the frame saving `x30` starts in (`WP.frameReg`). -/
+/-- The state the body of the frame saving `x30` starts in (`WP.frameRegKept`). -/
 abbrev pushedX30 (t : State) : State :=
   { t with sp := t.sp - 16, mem := t.mem.write (t.sp - 16) 8 (t.gpr .x30) }
 
@@ -1629,7 +1629,7 @@ theorem search_run (v : RoundImpl) {p : GenPublic} {original s : State} {used : 
       show (BitVec.ofNat 64 176).toNat = 176 from rfl]
     omega_using [hroom]
   unfold searchRun searchCall
-  refine WP.alloc (by decide) hsp32 ?_
+  refine WP.allocKept (by decide) hsp32 ?_
   refine WP.seq (WP.mono (search_args_ok h.toGenFrame) fun u ⟨⟨ha, hm⟩, k⟩ => ?_)
   obtain hu : u.sp = callSp p := k.sp.trans (alloc32_sp h.toGenFrame)
   obtain hd : 16 * (Search.searchCode v).aarch64Depth < 2 ^ 64 := by rw [searchCode_depth]; decide
@@ -2424,7 +2424,7 @@ theorem key_run [Key.KeyProof] {p : GenPublic} {original s : State} {used : Nat}
       show (BitVec.ofNat 64 176).toNat = 176 from rfl]
     omega_using [hroom]
   unfold keyRun keyCall
-  refine WP.alloc (by decide) hsp80 ?_
+  refine WP.allocKept (by decide) hsp80 ?_
   refine WP.seq (WP.mono (key_args_ok h) fun u ⟨⟨ha, hm⟩, k⟩ => ?_)
   obtain hu : u.sp = keySp p := k.sp.trans (alloc80_sp h)
   refine WP.callV (k := Key.keyA) Key.KeyProof.correct (callK_pre h hu ha hm) (key_covers_reads h k.rd k.wr)

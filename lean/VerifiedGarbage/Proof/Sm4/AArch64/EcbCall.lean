@@ -126,7 +126,7 @@ theorem ecbCall_correct (dir : Dir) (s₀ : State) (hs : (ecbCallAArch64 dir).pr
   have spSub : s₀.sp - BitVec.ofNat 64 16 - BitVec.ofNat 64 3168 = s₀.sp - BitVec.ofNat 64 3184 := by
     rw [← Offset.sub_add_eq, BitVec.ofNat_add_ofNat]
   rw [ecbCall_eq]
-  refine (WP.frameReg (r := .x30) (s₀ := s₀) (by omega_using [hsp]) (fun R hR => ?_) ?_ (ecbCall_depth dir)).elim
+  refine (WP.frameRegKept (r := .x30) (s₀ := s₀) (by omega_using [hsp]) (fun R hR => ?_) ?_ (ecbCall_depth dir)).elim
     fun t ⟨s', he, hq⟩ => ⟨t, s', he, hq⟩
   · rw [hwr, List.mem_singleton] at hR; subst hR
     exact dSD.sub_left frameSub

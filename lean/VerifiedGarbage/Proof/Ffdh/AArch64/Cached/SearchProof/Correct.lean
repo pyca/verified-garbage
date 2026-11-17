@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.LaneRestore
 
 /-! # The key-generation controller's correctness (AArch64)
 
-The loop runs in the frame saving `x30` (`WP.frameReg`); `finish` then
+The loop runs in the frame saving `x30` (`WP.frameRegKept`); `finish` then
 stores the octets consumed, returns the status and restores `x19`.
 -/
 
@@ -151,7 +151,7 @@ theorem key_search {p : KeyPublic} {s t : State} (a : Attempt) (h : KeyInput p s
   have hl := key_start h hx hm k
   have hsp : 16 ≤ t.sp.toNat := by rw [k.sp, ← h.sp_eq]; have := h.sp_room; omega_using [this]
   unfold search
-  refine WP.frameReg hsp ?_ ?_ ?_
+  refine WP.frameRegKept hsp ?_ ?_ ?_
   · intro R hR
     rw [k.wr, h.1.2.2.2.1] at hR
     have hd := h.stack_disjoint (r := R) (List.mem_append_left _ hR)

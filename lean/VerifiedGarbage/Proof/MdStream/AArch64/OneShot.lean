@@ -1711,7 +1711,7 @@ theorem correct {P : Params} (hF : Fits P) {H : Md P.B P.N P.L} (hd : Dims P) {D
     (hv : (digest P init name code).allInstrs keepsV = true) {s : State} (hp : Pre P D s) :
     WP isa (digest P init name code) s fun s' => abiPreserved s s' ∧ (oneK H iv D).post s s' := by
   apply WP.withPreservedV (hc := hv)
-  refine WP.alloc (frameBytes_ok hF) hp.sp ?_
+  refine WP.allocKept (frameBytes_ok hF) hp.sp ?_
   unfold body
   refine WP.seq (WP.mono (setup_ok hF rfl) fun t₁ h₁ => ?_)
   refine WP.seq (WP.mono (init_ok hF hi hiw hin h₁) fun t₂ ⟨m₂, g27, hiv⟩ => ?_)

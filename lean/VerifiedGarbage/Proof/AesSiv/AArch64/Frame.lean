@@ -391,7 +391,7 @@ end
 
 `vg_aes_siv_init` runs its code, proved with the working space as an argument
 (`Verified.lean`), in a frame of 2560 bytes that allocates it
-(`Verified.stackScratch`). Its calls keep their return address in `x30`, so
+(`Verified.stackScratchKept`). Its calls keep their return address in `x30`, so
 they use no stack below it.
 
 `encrypt` and `decrypt` run theirs, proved with the working space as their
@@ -419,7 +419,7 @@ theorem init_framed (v : Ctr32Impl) :
     Verified AArch64.target
       (Impl.StackScratch.AArch64.withStackScratch 2560 .x3 (init v.expand v.callee v.suffix))
       (Spec.Siv.initContract AArch64.abi 2560) :=
-  AArch64.Verified.stackScratch (sig := Spec.Siv.initSig) (nm := "scratch") (e := .u64) (n := 320)
+  AArch64.Verified.stackScratchKept (sig := Spec.Siv.initSig) (nm := "scratch") (e := .u64) (n := 320)
     (pre := Spec.Siv.initPre AArch64.abi.ptrBits) (post := Spec.Siv.initPost AArch64.abi.ptrBits)
     (wa := true) (stack := 0) (bytes := 2560) (init_verified v) (by decide) (by decide) initFrameSat_pre
 
@@ -435,7 +435,7 @@ theorem encrypt_framed (v : Proof.CmacAes.AArch64.UpdateImpl) :
     Verified AArch64.target
       (Impl.StackScratch.AArch64.withStackScratch 2576 .x7 (encrypt v.callee v.ctr.callee v.ctr.suffix))
       (Proof.AesSiv.encryptRoundsContract AArch64.abi 2576) :=
-  AArch64.Verified.stackScratch (sig := Spec.Siv.encryptSig) (nm := "work") (e := .u64) (n := 322)
+  AArch64.Verified.stackScratchKept (sig := Spec.Siv.encryptSig) (nm := "work") (e := .u64) (n := 322)
     (pre := Spec.Siv.encryptPre AArch64.abi.ptrBits) (post := Proof.AesSiv.encryptRoundsPost AArch64.abi.ptrBits)
     (wa := true) (stack := 0) (bytes := 2576) (encrypt_verified v) (by decide) (by decide) encFrameSat_pre
 
@@ -451,7 +451,7 @@ theorem decrypt_framed (v : Proof.CmacAes.AArch64.UpdateImpl) :
     Verified AArch64.target
       (Impl.StackScratch.AArch64.withStackScratch 2576 .x7 (decrypt v.callee v.ctr.callee v.ctr.suffix))
       (Proof.AesSiv.decryptRoundsContract AArch64.abi 2576) :=
-  AArch64.Verified.stackScratch (sig := Spec.Siv.decryptSig) (nm := "work") (e := .u64) (n := 322)
+  AArch64.Verified.stackScratchKept (sig := Spec.Siv.decryptSig) (nm := "work") (e := .u64) (n := 322)
     (pre := Spec.Siv.decryptPre AArch64.abi.ptrBits) (post := Proof.AesSiv.decryptRoundsPost AArch64.abi.ptrBits)
     (wa := true) (stack := 0) (bytes := 2576) (leak := some (Spec.Siv.decryptLeak AArch64.abi.ptrBits))
     (decrypt_verified v) (by decide) (by decide) decFrameSat_pre

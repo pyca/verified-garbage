@@ -24,7 +24,7 @@ moved to the shared ones.
 `update_of` and `finalize_of` keep the working space in a frame of their
 own: they are `updateScratch_of` and `finalizeScratch_of` (the shared
 contracts with the working space as an argument, which HMAC's and PBKDF2's
-code calls) run in a frame that allocates it (`Verified.stackScratch`).
+code calls) run in a frame that allocates it (`Verified.stackScratchKept`).
 -/
 
 @[expose] public section
@@ -125,7 +125,7 @@ theorem finalizeScratch_of {code : Prog isa} (hv : Verified AArch64.target code 
 theorem update_of {code : Prog isa} (hv : Verified AArch64.target code Proof.Sha256.updateAArch64) :
     Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratch 608 .x4 code)
       (Spec.Sha256.updateContract AArch64.abi (16 + 608)) :=
-  AArch64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 76) (stack := 16) (bytes := 608)
+  AArch64.Verified.stackScratchKept (nm := "scratch") (e := .u64) (n := 76) (stack := 16) (bytes := 608)
     (updateScratch_of hv) (by decide) (by decide)
     (AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
@@ -133,7 +133,7 @@ theorem update_of {code : Prog isa} (hv : Verified AArch64.target code Proof.Sha
 theorem finalize_of {code : Prog isa} (hv : Verified AArch64.target code Proof.Sha256.finalizeAArch64) :
     Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratch 608 .x3 code)
       (Spec.Sha256.finalizeContract AArch64.abi (16 + 608)) :=
-  AArch64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 76) (stack := 16) (bytes := 608)
+  AArch64.Verified.stackScratchKept (nm := "scratch") (e := .u64) (n := 76) (stack := 16) (bytes := 608)
     (finalizeScratch_of hv) (by decide) (by decide)
     (AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
@@ -192,7 +192,7 @@ theorem finalize224_of {code : Prog isa}
     (hv : Verified AArch64.target code (MdStream.AArch64.finKD (P := Impl.Sha256.AArch64.Stream.params224) md 28)) :
     Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratch 608 .x3 code)
       (Spec.Sha256.finalize224Contract AArch64.abi (16 + 608)) :=
-  AArch64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 76) (stack := 16) (bytes := 608)
+  AArch64.Verified.stackScratchKept (nm := "scratch") (e := .u64) (n := 76) (stack := 16) (bytes := 608)
     (finalize224Scratch_of hv) (by decide) (by decide)
     (AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 

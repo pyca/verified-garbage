@@ -161,7 +161,7 @@ theorem search_correct_ok (c : Cand) {s : State} (h : searchPre s) :
   have hp : SearchInput p s := ⟨h, rfl⟩
   have hroom : 160 ≤ s.sp.toNat := Nat.le_trans (by decide) h.2.1
   unfold code
-  refine WP.alloc (by decide) hroom ?_
+  refine WP.allocKept (by decide) hroom ?_
   refine WP.seq (WP.mono (entry_ok hp) fun t ⟨⟨hx, hm⟩, k⟩ => ?_)
   refine WP.seq (WP.mono (search_body c hp hx hm k) fun u ⟨hd, h30, hsp⟩ => ?_)
   refine WP.mono (search_finish hd) fun q ⟨⟨hr, hg, hmq⟩, kq⟩ => ?_

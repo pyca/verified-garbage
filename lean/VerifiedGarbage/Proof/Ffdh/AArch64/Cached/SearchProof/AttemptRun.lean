@@ -668,7 +668,7 @@ theorem key_attempt_run (a : Attempt) (h : KeyLive p original used keys scalars 
     rw [h.sp, show (p.sp - 16 : Addr) = p.sp - BitVec.ofNat 64 16 from rfl, h16]
     omega_using [this]
   unfold attemptRun
-  refine WP.alloc (by decide) hroom' ?_
+  refine WP.allocKept (by decide) hroom' ?_
   refine WP.seq (WP.mono (key_arguments_ok h) fun u ⟨⟨ha, hm⟩, k⟩ => ?_)
   have hu : u.sp = callSp p := by rw [k.sp]; show s.sp - BitVec.ofNat 64 48 = _; rw [h.sp]
   refine WP.callFV (k := attemptContract) (attempt_callable a.M) (call_attempt_pre h hroom hf hu ha hm)

@@ -1508,7 +1508,7 @@ theorem open_verified (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) :
 theorem seal_framed (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) :
     Verified AArch64.target (Impl.StackScratch.AArch64.withStackArgScratch 3824 0 (Stitch.«seal» e3 v.callees))
       (Proof.AesGcmSiv.sealRoundsContract AArch64.abi 3824) :=
-  AArch64.Verified.stackArgScratch (sig := Spec.GcmSiv.sealSig) (nm := "work") (e := .u64)
+  AArch64.Verified.stackArgScratchKept (sig := Spec.GcmSiv.sealSig) (nm := "work") (e := .u64)
     (n := 476) (pre := Spec.GcmSiv.sealPre AArch64.abi.ptrBits)
     (post := Proof.AesGcmSiv.sealRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 3824)
     (seal_verified hP gh e3 v) (by decide) (by decide) (sealPre_local _) (sealPost_local _) sealFrameSat_pre
@@ -1516,7 +1516,7 @@ theorem seal_framed (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) :
 theorem open_framed (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) :
     Verified AArch64.target (Impl.StackScratch.AArch64.withStackArgScratch 3824 0 (Stitch.«open» e3 v.callees))
       (Proof.AesGcmSiv.openRoundsContract AArch64.abi 3824) :=
-  AArch64.Verified.stackArgScratch (sig := Spec.GcmSiv.openSig) (nm := "work") (e := .u64)
+  AArch64.Verified.stackArgScratchKept (sig := Spec.GcmSiv.openSig) (nm := "work") (e := .u64)
     (n := 476) (pre := Spec.GcmSiv.openPre AArch64.abi.ptrBits)
     (post := Proof.AesGcmSiv.openRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 3824)
     (leak := some (Spec.GcmSiv.openLeak AArch64.abi.ptrBits))

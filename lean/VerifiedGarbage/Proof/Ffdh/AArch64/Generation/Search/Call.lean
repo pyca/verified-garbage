@@ -327,7 +327,7 @@ theorem search_candidate_run (c : Cand) (h : SLive p original used k s) :
     rw [h.sp, show (p.sp - 16 : Addr) = p.sp - BitVec.ofNat 64 16 from rfl, h16]
     omega_arith
   unfold candidateRun
-  refine WP.alloc (by decide) hroom' ?_
+  refine WP.allocKept (by decide) hroom' ?_
   refine WP.seq (WP.mono (search_arguments_ok h) fun u ⟨⟨ha, hm⟩, k⟩ => ?_)
   have hu : u.sp = callSp p := by rw [k.sp]; show s.sp - BitVec.ofNat 64 16 = _; rw [h.sp]
   refine WP.callV (k := ParameterCandidate.pcContract) c.correct (call_candidate_pre hf hu ha hm)

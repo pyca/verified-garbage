@@ -124,7 +124,7 @@ theorem open_verified (v : GcmImpl) :
 
 `seal` and `open` run their code, proved with the working space as their
 last argument (above), in a frame that allocates it
-(`Verified.stackArgScratch`): their working space is their first stack
+(`Verified.stackArgScratchKept`): their working space is their first stack
 argument, as the eight argument registers are taken, so the frame of 3824
 bytes holds the address of the working space and the working space, at the
 next 16-byte boundary. The code itself uses no stack: its calls keep the
@@ -146,7 +146,7 @@ theorem sealFrameSat_pre : ∃ s, (Proof.AesGcmSiv.sealRoundsContract AArch64.ab
 theorem seal_framed (v : GcmImpl) :
     Verified AArch64.target (Impl.StackScratch.AArch64.withStackArgScratch 3824 0 («seal» v.callees))
       (Proof.AesGcmSiv.sealRoundsContract AArch64.abi 3824) :=
-  AArch64.Verified.stackArgScratch (sig := Spec.GcmSiv.sealSig) (nm := "work") (e := .u64)
+  AArch64.Verified.stackArgScratchKept (sig := Spec.GcmSiv.sealSig) (nm := "work") (e := .u64)
     (n := 476) (pre := Spec.GcmSiv.sealPre AArch64.abi.ptrBits)
     (post := Proof.AesGcmSiv.sealRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 3824)
     (seal_verified v) (by decide) (by decide) (sealPre_local _) (sealPost_local _) sealFrameSat_pre
@@ -165,7 +165,7 @@ theorem openFrameSat_pre : ∃ s, (Proof.AesGcmSiv.openRoundsContract AArch64.ab
 theorem open_framed (v : GcmImpl) :
     Verified AArch64.target (Impl.StackScratch.AArch64.withStackArgScratch 3824 0 («open» v.callees))
       (Proof.AesGcmSiv.openRoundsContract AArch64.abi 3824) :=
-  AArch64.Verified.stackArgScratch (sig := Spec.GcmSiv.openSig) (nm := "work") (e := .u64)
+  AArch64.Verified.stackArgScratchKept (sig := Spec.GcmSiv.openSig) (nm := "work") (e := .u64)
     (n := 476) (pre := Spec.GcmSiv.openPre AArch64.abi.ptrBits)
     (post := Proof.AesGcmSiv.openRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 3824)
     (leak := some (Spec.GcmSiv.openLeak AArch64.abi.ptrBits))

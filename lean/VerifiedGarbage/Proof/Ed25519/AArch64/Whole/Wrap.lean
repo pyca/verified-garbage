@@ -162,7 +162,7 @@ theorem wrap_ok {body : Prog isa} (hn : body.aarch64Depth ≤ 1) {s : State}
         Ctx (base s) s.gpr s.v p.mem (bodyRd s) s.wr u ∧ P p.mem u.mem (u.gpr .x0)) :
     WP isa (wrap body) s fun t => abiPreserved s t ∧
       ∃ m, Frame [below s.sp 336] s.mem m ∧ P m t.mem (t.gpr .x0) := by
-  refine WP.frame (by omega_using [hsp]) (WP.alloc (by decide) ?_ ?_)
+  refine WP.frameKept (by omega_using [hsp]) (WP.allocKept (by decide) ?_ ?_)
   · change 320 ≤ (s.sp - 16).toNat
     rw [BitVec.toNat_sub_of_le (by change 16 ≤ s.sp.toNat; omega_using [hsp])]
     change 320 ≤ s.sp.toNat - 16

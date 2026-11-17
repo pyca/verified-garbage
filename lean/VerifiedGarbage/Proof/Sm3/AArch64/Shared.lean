@@ -21,7 +21,7 @@ contracts of `Spec/Sm3/Contract.lean`, which the artifacts are emitted with.
 function's 64 bytes, then the registers the streaming code saves) in a frame
 of their own: they are `updateScratch` and `finalizeScratch` (the shared
 contracts with the working space as an argument, `Proof/Sm3/Scratch.lean`)
-run in a frame that allocates it (`Verified.stackScratch`).
+run in a frame that allocates it (`Verified.stackScratchKept`).
 -/
 
 @[expose] public section
@@ -56,7 +56,7 @@ theorem finalizeScratch (v : Compress) :
 theorem update (v : Compress) : Verified AArch64.target
     (Impl.StackScratch.AArch64.withStackScratch 112 .x4 v.update)
     (Spec.Sm3.updateContract AArch64.abi (16 + 112)) :=
-  AArch64.Verified.stackScratch (sig := Spec.Sm3.updateSig) (nm := "scratch") (e := .u64) (n := 14)
+  AArch64.Verified.stackScratchKept (sig := Spec.Sm3.updateSig) (nm := "scratch") (e := .u64) (n := 14)
     (stack := 16) (bytes := 112)
     (by rw [← Proof.Sm3.updateScratchContract_eq]; exact updateScratch v) (by decide) (by decide)
     (AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
@@ -64,7 +64,7 @@ theorem update (v : Compress) : Verified AArch64.target
 theorem finalize (v : Compress) : Verified AArch64.target
     (Impl.StackScratch.AArch64.withStackScratch 112 .x3 v.finalize)
     (Spec.Sm3.finalizeContract AArch64.abi (16 + 112)) :=
-  AArch64.Verified.stackScratch (sig := Spec.Sm3.finalizeSig) (nm := "scratch") (e := .u64) (n := 14)
+  AArch64.Verified.stackScratchKept (sig := Spec.Sm3.finalizeSig) (nm := "scratch") (e := .u64) (n := 14)
     (stack := 16) (bytes := 112)
     (by rw [← Proof.Sm3.finalizeScratchContract_eq]; exact finalizeScratch v) (by decide) (by decide)
     (AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))

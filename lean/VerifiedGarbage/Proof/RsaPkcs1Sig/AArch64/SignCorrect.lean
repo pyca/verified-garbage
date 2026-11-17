@@ -758,7 +758,7 @@ theorem codeN_ok {K n : Nat} {name : String} {priv : Prog isa} {s : State} (hp :
     (hA : ArgsOk K s (n + 1)) (hn₁ : 12 ≤ n) (hn₂ : n ≤ 14) (hc : CallOk s n name priv) :
     WP isa (codeN n name priv) s (Post s) := by
   unfold codeN
-  refine WP.alloc (by decide) (by have := hp.sp1; unfold stk at this; omega_using [this]) ?_
+  refine WP.allocKept (by decide) (by have := hp.sp1; unfold stk at this; omega_using [this]) ?_
   unfold bodyN
   refine WP.seq (WP.mono (encArgs_ok hp (by simp [allocated]) (by simp [allocated]) (by simp [allocated])
     (by simp [allocated]) (fun r => by simp [allocated]) (fun r _ => by simp [allocated])) fun u hu => ?_)

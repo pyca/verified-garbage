@@ -19,7 +19,7 @@ contracts of `Spec/Md5/Contract.lean`, which the artifacts are emitted with.
 `update` and `finalize` keep their working space in a frame of their own:
 they are `updateScratch` and `finalizeScratch` (the shared contracts with
 the working space as an argument, which HMAC's and PBKDF2's code calls) run
-in a frame that allocates it (`Verified.stackScratch`).
+in a frame that allocates it (`Verified.stackScratchKept`).
 -/
 
 @[expose] public section
@@ -52,14 +52,14 @@ theorem finalizeScratch :
 theorem update : Verified AArch64.target
     (Impl.StackScratch.AArch64.withStackScratch 112 .x4 Impl.Md5.AArch64.Stream.update)
     (Spec.Md5.updateContract AArch64.abi (16 + 112)) :=
-  AArch64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 14) (stack := 16) (bytes := 112)
+  AArch64.Verified.stackScratchKept (nm := "scratch") (e := .u64) (n := 14) (stack := 16) (bytes := 112)
     updateScratch (by decide) (by decide)
     (AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 theorem finalize : Verified AArch64.target
     (Impl.StackScratch.AArch64.withStackScratch 112 .x3 Impl.Md5.AArch64.Stream.finalize)
     (Spec.Md5.finalizeContract AArch64.abi (16 + 112)) :=
-  AArch64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 14) (stack := 16) (bytes := 112)
+  AArch64.Verified.stackScratchKept (nm := "scratch") (e := .u64) (n := 14) (stack := 16) (bytes := 112)
     finalizeScratch (by decide) (by decide)
     (AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 

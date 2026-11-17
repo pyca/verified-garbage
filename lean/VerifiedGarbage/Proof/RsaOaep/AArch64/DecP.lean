@@ -540,7 +540,7 @@ theorem decP_ok {vs : List MdHash} (hc : Coh vs) (c : PrivPChecked) (h16 : 16 �
   obtain hHa := hashAt_tableOf hixL
   obtain hGa := hashAt_tableOf hix
   have hP16 : 16 ≤ (layP c.stack s).P := h16
-  refine WP.frame (by omega_arith) (WP.alloc (by decide) ?_ ?_)
+  refine WP.frameKept (by omega_arith) (WP.allocKept (by decide) ?_ ?_)
   · show 272 ≤ (s.sp - 16).toNat
     rw [BitVec.toNat_sub_of_le (by show 16 ≤ s.sp.toNat; omega_arith)]
     show 272 ≤ s.sp.toNat - 16

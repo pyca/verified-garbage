@@ -976,7 +976,7 @@ theorem search_body (c : Cand) {p : SearchPublic} {s t : State} (h : SearchInput
   obtain hsp : 16 ≤ t.sp.toNat := by
     rw [htsp, hF]; exact Nat.le_sub_of_add_le (Nat.le_trans (by decide) hroom)
   unfold search
-  refine WP.frameReg hsp ?_ ?_ ?_
+  refine WP.frameRegKept hsp ?_ ?_ ?_
   · intro R hR
     rw [k.wr, alloc_wr h] at hR
     rw [htsp]

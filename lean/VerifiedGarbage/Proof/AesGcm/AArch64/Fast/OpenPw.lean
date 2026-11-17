@@ -268,7 +268,7 @@ theorem openPw_framed (v : GcmImpl) (g : GhashWithImpl) (hMK : Proof.Gcm.AArch64
     Verified AArch64.target
       (Impl.StackScratch.AArch64.withStackArgScratch 2592 3 (Impl.AesGcm.AArch64.Fast.openWithPw v.callees g.fn))
       (Proof.AesGcm.openWithPowersRoundsContract AArch64.abi 2592) :=
-  AArch64.Verified.stackArgScratch (sig := Spec.Gcm.openWithPowersSig) (nm := "work") (e := .u64)
+  AArch64.Verified.stackArgScratchKept (sig := Spec.Gcm.openWithPowersSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Gcm.openWithPowersPre AArch64.abi.ptrBits)
     (post := Proof.AesGcm.openWithPowersRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 2592)
     (leak := some (Spec.Gcm.openWithPowersLeak AArch64.abi.ptrBits))

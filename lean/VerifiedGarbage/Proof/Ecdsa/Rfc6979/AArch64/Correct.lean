@@ -869,7 +869,7 @@ theorem sign_ok {ns : List String} {s : State} (h : (rfcP P ns).pre s) :
   have hL := lay_ok rfl h
   have hN : 256 + 8 * 48 ≤ s.sp.toNat := h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
   have hk := hOk_lay P s
-  refine WP.frame (by omega_arith) (WP.alloc (by decide) ?_ ?_)
+  refine WP.frameKept (by omega_arith) (WP.allocKept (by decide) ?_ ?_)
   · show frameBytes ≤ (s.sp - 16).toNat
     rw [BitVec.toNat_sub_of_le (by show 16 ≤ s.sp.toNat; omega_arith)]
     show 608 ≤ s.sp.toNat - 16

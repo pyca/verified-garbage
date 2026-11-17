@@ -121,8 +121,26 @@ theorem push_pushed {r : Reg} {s : State} (h : 16 ≤ s.sp.toNat) :
   exact ite_eq_left_of_eq_true _ _ (eq_true h) |>.trans rfl
 
 /-- A frame: its body runs from `pushed r s`, and the pop leads to
-`popped r' s₂`. -/
+`popped r' s₂`, of which the postcondition may rely on nothing the frame's
+bytes hold, nor on the unknowns: it holds whatever memory `m` that differs
+from the body's only in the frame, and whatever unknowns `u`, the state then
+has. (A frame's bytes are below the stack pointer once it is released, where
+a signal handler may overwrite them.) -/
 theorem WP.frame {r r' : Reg} {body : Prog isa} {s : State} {Q : State → Prop}
+    (hsp : 16 ≤ s.sp.toNat)
+    (hb : WP isa body (pushed r s) fun s₂ => ∀ m u, Frame [⟨s.sp - 16, 16⟩] s₂.mem m →
+      Q { popped r' s₂ with mem := m, unknowns := u }) :
+    WP isa (.frame (.push r) body (.pop r')) s Q := by
+  obtain ⟨t, s₂, he, hq⟩ := hb
+  obtain ⟨-, hw, hp⟩ := Exec.rdwr he
+  have hpop : isa.pop (.pop r') (pushed r s) s₂ = some (popped r' s₂) := by
+    show pop (.pop r') (pushed r s) s₂ = some (popped r' s₂)
+    unfold pop
+    exact ite_eq_left_of_eq_true _ _ (eq_true ⟨hp, hw, rfl⟩) |>.trans rfl
+  exact ⟨_, _, Exec.frame (push_pushed hsp) he hpop, hq _ _ (Frame.refl _ _)⟩
+
+/-- The previous statement of `WP.frame`, kept while proofs move to it. -/
+theorem WP.frameKept {r r' : Reg} {body : Prog isa} {s : State} {Q : State → Prop}
     (hsp : 16 ≤ s.sp.toNat) (hb : WP isa body (pushed r s) fun s₂ => Q (popped r' s₂)) :
     WP isa (.frame (.push r) body (.pop r')) s Q := by
   obtain ⟨t, s₂, he, hq⟩ := hb
@@ -145,8 +163,29 @@ def allocated (bytes : Nat) (s : State) : State :=
 def freed (bytes : Nat) (s : State) : State :=
   { s with sp := s.sp + BitVec.ofNat 64 bytes, wr := s.wr.tail }
 
-/-- A buffer frame preserves stack alignment and cannot wrap on allocation. -/
+/-- A buffer frame preserves stack alignment and cannot wrap on allocation.
+The `free` leads to `freed bytes s₂`, of which the postcondition may rely on
+nothing the frame's bytes hold, nor on the unknowns (as `WP.frame`'s): it
+holds whatever memory `m` that differs from the body's only in the frame,
+and whatever unknowns `u`, the state then has. -/
 theorem WP.alloc {bytes : Nat} {body : Prog isa} {s : State} {Q : State → Prop}
+    (hn : 0 < bytes ∧ bytes < 4096 ∧ bytes % 16 = 0) (hsp : bytes ≤ s.sp.toNat)
+    (hb : WP isa body (allocated bytes s) fun s₂ => ∀ m u,
+      Frame [⟨s.sp - BitVec.ofNat 64 bytes, bytes⟩] s₂.mem m →
+        Q { freed bytes s₂ with mem := m, unknowns := u }) :
+    WP isa (.frame (.alloc bytes) body (.free bytes)) s Q := by
+  obtain ⟨t, s₂, he, hq⟩ := hb
+  obtain ⟨-, hw, hp⟩ := Exec.rdwr he
+  have ha : isa.push (.alloc bytes) s = some (allocated bytes s) := by
+    simp only [isa, push, hn.1, hn.2.1, hn.2.2, hsp, and_self, ite_true]
+    rfl
+  have hf : isa.pop (.free bytes) (allocated bytes s) s₂ = some (freed bytes s₂) := by
+    simp only [freed, isa, pop, hn.1, hn.2.1, hn.2.2, hp, hw, allocated,
+      List.head?_cons, and_self, ite_true]
+  exact ⟨_, _, Exec.frame ha he hf, hq _ _ (Frame.refl _ _)⟩
+
+/-- The previous statement of `WP.alloc`, kept while proofs move to it. -/
+theorem WP.allocKept {bytes : Nat} {body : Prog isa} {s : State} {Q : State → Prop}
     (hn : 0 < bytes ∧ bytes < 4096 ∧ bytes % 16 = 0) (hsp : bytes ≤ s.sp.toNat)
     (hb : WP isa body (allocated bytes s) fun s₂ => Q (freed bytes s₂)) :
     WP isa (.frame (.alloc bytes) body (.free bytes)) s Q := by
@@ -408,14 +447,48 @@ theorem frame_not_below (sp : Addr) {n : Nat} (hn : n + 16 < 2 ^ 64) :
 /-- A frame saving `r` around `main`: `main` runs from `s₀` with the stack
 pointer moved down by 16 and `r` stored there, in the permissions of `s₀`
 (the frame's region must be disjoint from the regions `s₀` may write), and
-the pop restores `r` and the stack pointer. -/
+the pop restores `r` and the stack pointer. As `WP.frame`'s, the
+postcondition holds whatever memory `m` that differs from `main`'s only in
+the frame, and whatever unknowns `u`, the state then has. -/
 theorem WP.frameReg {r : Reg} {main : Prog isa} {s₀ : State} {Q : State → Prop}
+    (hsp : 16 ≤ s₀.sp.toNat) (hd : ∀ R ∈ s₀.wr, Region.Disjoint ⟨s₀.sp - 16, 16⟩ R)
+    (hmain : WP isa main { s₀ with sp := s₀.sp - 16, mem := s₀.mem.write (s₀.sp - 16) 8 (s₀.gpr r) }
+      fun s₂ => ∀ m u, Frame [⟨s₀.sp - 16, 16⟩] s₂.mem m →
+        Q { s₂.write .x r (s₀.gpr r) with sp := s₀.sp, mem := m, unknowns := u })
+    (hn : 16 * main.aarch64Depth + 16 < 2 ^ 64 := by decide +kernel) :
+    WP isa (.frame (.push r) main (.pop r)) s₀ Q := by
+  refine WP.frame hsp (WP.narrowF (rd := s₀.rd) (wr := s₀.wr) hmain ?_ ?_ ?_ (by omega_using [hn]))
+  · intro a n hi
+    exact InRegions_append_cons.mpr (.inr hi)
+  · intro a n hi
+    exact InRegions_append_cons (xs := []).mpr (.inr hi)
+  · intro s' hrd hwr hsp' hf hq m u f
+    have hread : s'.mem.read s'.sp 8 = s₀.gpr r := by
+      rw [hsp', show (pushed r s₀).sp = s₀.sp - 16 from rfl,
+        hf.read (r := ⟨s₀.sp - 16, 16⟩) (by simp [Region.Contains]) (fun R hR => ?_) (by decide)]
+      · exact read_write_self _ _ _
+      · rcases List.mem_append.mp hR with hR | hR
+        · exact hd R hR
+        · simp only [List.mem_singleton] at hR; subst hR
+          exact frame_not_below s₀.sp hn
+    have e : { popped r s' with mem := m, unknowns := u } =
+        { (s'.withRegions s₀.rd s₀.wr).write .x r (s₀.gpr r) with sp := s₀.sp, mem := m, unknowns := u } := by
+      simp only [popped, hread]
+      simp only [hsp', hwr, pushed, List.tail_cons, BitVec.sub_add_cancel]
+      cases s'
+      simp only [pushed] at hrd
+      subst hrd
+      rfl
+    rw [e]; exact hq m u f
+
+/-- The previous statement of `WP.frameReg`, kept while proofs move to it. -/
+theorem WP.frameRegKept {r : Reg} {main : Prog isa} {s₀ : State} {Q : State → Prop}
     (hsp : 16 ≤ s₀.sp.toNat) (hd : ∀ R ∈ s₀.wr, Region.Disjoint ⟨s₀.sp - 16, 16⟩ R)
     (hmain : WP isa main { s₀ with sp := s₀.sp - 16, mem := s₀.mem.write (s₀.sp - 16) 8 (s₀.gpr r) }
       fun s₂ => Q { s₂.write .x r (s₀.gpr r) with sp := s₀.sp })
     (hn : 16 * main.aarch64Depth + 16 < 2 ^ 64 := by decide +kernel) :
     WP isa (.frame (.push r) main (.pop r)) s₀ Q := by
-  refine WP.frame hsp (WP.narrowF (rd := s₀.rd) (wr := s₀.wr) hmain ?_ ?_ ?_ (by omega_using [hn]))
+  refine WP.frameKept hsp (WP.narrowF (rd := s₀.rd) (wr := s₀.wr) hmain ?_ ?_ ?_ (by omega_using [hn]))
   · intro a n hi
     exact InRegions_append_cons.mpr (.inr hi)
   · intro a n hi

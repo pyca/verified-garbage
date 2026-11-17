@@ -734,7 +734,7 @@ theorem correctD (hd : Dims P) (hs : ShapeD H D) {name : String} {code : Prog is
     WP isa (finalize P name code) s₀ fun s' => abiPreserved s₀ s' ∧ (finKD H D).post s₀ s' := by
   apply WP.withPreservedV (hc := finalize_keepsVD hs hf.keepsV)
   obtain hpi : PreD P D (inner s₀) := ⟨hp.rd, hp.wr, hp.st_out, hp.st_scr, hp.out_scr⟩
-  refine WP.frameReg hst.sp16 (fun R hR => ?_)
+  refine WP.frameRegKept hst.sp16 (fun R hR => ?_)
     (WP.mono (correctMain hd hs hf hpi) fun s' ⟨hk, hsp, hpost⟩ => ?_) hn
   · rw [hp.wr] at hR
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hR

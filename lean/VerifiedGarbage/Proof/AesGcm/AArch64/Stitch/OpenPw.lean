@@ -178,7 +178,7 @@ theorem openPwS_framed (v : GcmImpl) (g : GhashWithImpl) (hMK : Proof.Gcm.AArch6
     Verified AArch64.target
       (Impl.StackScratch.AArch64.withStackArgScratch 2592 3 (Impl.AesGcm.AArch64.Stitch.openWithPw v.callees g.fn))
       (Proof.AesGcm.openWithPowersRoundsContract AArch64.abi 2592) :=
-  AArch64.Verified.stackArgScratch (sig := Spec.Gcm.openWithPowersSig) (nm := "work") (e := .u64)
+  AArch64.Verified.stackArgScratchKept (sig := Spec.Gcm.openWithPowersSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Gcm.openWithPowersPre AArch64.abi.ptrBits)
     (post := Proof.AesGcm.openWithPowersRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 2592)
     (leak := some (Spec.Gcm.openWithPowersLeak AArch64.abi.ptrBits))
@@ -407,7 +407,7 @@ theorem openToPwS_framed (v : GcmImpl) (g : GhashWithImpl) (hMK : Proof.Gcm.AArc
     Verified AArch64.target
       (Impl.StackScratch.AArch64.withStackArgScratch 2608 5 (Impl.AesGcm.AArch64.Stitch.openToWithPw v.callees g.fn))
       (Proof.AesGcm.openToWithPowersRoundsContract AArch64.abi 2608) :=
-  AArch64.Verified.stackArgScratch (sig := Spec.Gcm.openToWithPowersSig) (nm := "work") (e := .u64)
+  AArch64.Verified.stackArgScratchKept (sig := Spec.Gcm.openToWithPowersSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Gcm.openToWithPowersPre AArch64.abi.ptrBits)
     (post := Proof.AesGcm.openToWithPowersRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0)
     (bytes := 2608) (leak := some (Spec.Gcm.openToWithPowersLeak AArch64.abi.ptrBits))

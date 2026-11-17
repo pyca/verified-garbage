@@ -77,7 +77,7 @@ theorem code_ok {tsH tsG : List FnTable} {s : State} (hp : PreE H.D tsH tsG s)
   have hD : H.D + 2 < 4096 := by have := hH.sizes.DN; have := hH.N_le; omega_arith
   have hk2 := hp.k2
   unfold encode
-  refine WP.alloc (by decide) (by have := fb_toNat hp; omega_using [this]) ?_
+  refine WP.allocKept (by decide) (by have := fb_toNat hp; omega_using [this]) ?_
   unfold encBody seqs seqs seqs
   refine WP.seq ?_
   rw [WP.block_append_iff, WP.block_append_iff]

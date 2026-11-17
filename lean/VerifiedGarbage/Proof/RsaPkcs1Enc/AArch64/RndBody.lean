@@ -623,7 +623,7 @@ theorem code_ok (c : PdChecked)
     {s : State} (hp : RPre c.stack s) :
     WP isa (code (encName c) (encCode c)) s fun s' => abiPreserved s s' ∧ post s s' := by
   have hQ := Q_toNat hp
-  refine WP.frame (by omega_using [hQ]) (WP.alloc (by decide) ?_ ?_)
+  refine WP.frameKept (by omega_using [hQ]) (WP.allocKept (by decide) ?_ ?_)
   · show 1088 ≤ (s.sp - 16).toNat
     rw [BitVec.toNat_sub_of_le (by show 16 ≤ s.sp.toNat; omega_using [hQ])]
     show 1088 ≤ s.sp.toNat - 16

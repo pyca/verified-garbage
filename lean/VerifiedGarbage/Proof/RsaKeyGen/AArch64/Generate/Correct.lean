@@ -195,7 +195,7 @@ theorem gen_body [Key.KeyProof] (v : RoundImpl) {p : GenPublic} {s t : State} (h
   have hsp : 16 ≤ t.sp.toNat := by
     rw [htsp, hF]; exact Nat.le_sub_of_add_le (Nat.le_trans (by decide) hroom)
   unfold body
-  refine WP.frameReg hsp (push_disjoint h htsp (k.wr.trans (alloc_wr h))) ?_ ?_
+  refine WP.frameRegKept hsp (push_disjoint h htsp (k.wr.trans (alloc_wr h))) ?_ ?_
   · exact WP.mono (gen_inner v h hu hfu) fun d hd => ⟨d, hd, rfl⟩
   · show 16 * (Code.seq clearAround (.loop (iteration (searchCall v) keyCall) (.zero .x .x9))).aarch64Depth + 16 <
       2 ^ 64
@@ -210,7 +210,7 @@ theorem gen_correct_ok [Key.KeyProof] (v : RoundImpl) {s : State} (h : genPre s)
   have hp : GenInput (genOfState s) s := ⟨h, rfl⟩
   have hroom : 160 ≤ s.sp.toNat := Nat.le_trans (by decide) h.1
   unfold genCode code
-  refine WP.alloc (by decide) hroom ?_
+  refine WP.allocKept (by decide) hroom ?_
   simp only [VG.Impl.Bignum.AArch64.seqs]
   refine WP.seq (WP.mono (entry_ok hp) fun t ⟨⟨hx, hm⟩, k⟩ => ?_)
   refine WP.seq (WP.mono (gen_body v hp hx hm k) fun u ⟨d, hd, hu⟩ => ?_)

@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
 
 The streaming functions run their code, proved with the working space as an
 argument (`Verified.lean`), in a frame of 2304 bytes that allocates it
-(`Verified.stackScratch`). Their code uses no other stack: their calls keep
+(`Verified.stackScratchKept`). Their code uses no other stack: their calls keep
 the return address in `x30`, which they save in the working space.
 -/
 
@@ -50,7 +50,7 @@ theorem init_framed (v : Ctr32Impl) :
     Verified AArch64.target
       (Impl.StackScratch.AArch64.withStackScratch 2304 .x3 (init v.expand v.callee v.suffix))
       (Spec.Cmac.aesInitContract AArch64.abi 2304) :=
-  AArch64.Verified.stackScratch (sig := Spec.Cmac.aesInitSig) (nm := "scratch") (e := .u64)
+  AArch64.Verified.stackScratchKept (sig := Spec.Cmac.aesInitSig) (nm := "scratch") (e := .u64)
     (n := 288) (pre := Spec.Cmac.aesInitPre AArch64.abi.ptrBits)
     (post := Spec.Cmac.aesInitPost AArch64.abi.ptrBits) (wa := false) (stack := 0)
     (bytes := 2304) (init_verified v) (by decide) (by decide) initFrameSat_pre
@@ -59,7 +59,7 @@ theorem absorb_framed (v : Proof.CmacAes.AArch64.UpdateImpl) :
     Verified AArch64.target
       (Impl.StackScratch.AArch64.withStackScratch 2304 .x5 (absorb v.callee))
       (Spec.Cmac.aesAbsorbContract AArch64.abi 2304) :=
-  AArch64.Verified.stackScratch (sig := Spec.Cmac.aesAbsorbSig) (nm := "scratch") (e := .u64)
+  AArch64.Verified.stackScratchKept (sig := Spec.Cmac.aesAbsorbSig) (nm := "scratch") (e := .u64)
     (n := 288) (pre := Spec.Cmac.aesAbsorbPre AArch64.abi.ptrBits)
     (post := Spec.Cmac.aesAbsorbPost AArch64.abi.ptrBits) (wa := false) (stack := 0)
     (bytes := 2304) (absorb_verified v) (by decide) (by decide) absorbFrameSat_pre
@@ -68,7 +68,7 @@ theorem finish_framed (v : Ctr32Impl) :
     Verified AArch64.target
       (Impl.StackScratch.AArch64.withStackScratch 2304 .x4 (finish v.callee v.suffix))
       (Spec.Cmac.aesFinishContract AArch64.abi 2304) :=
-  AArch64.Verified.stackScratch (sig := Spec.Cmac.aesFinishSig) (nm := "scratch") (e := .u64)
+  AArch64.Verified.stackScratchKept (sig := Spec.Cmac.aesFinishSig) (nm := "scratch") (e := .u64)
     (n := 288) (pre := Spec.Cmac.aesFinishPre AArch64.abi.ptrBits)
     (post := Spec.Cmac.aesFinishPost AArch64.abi.ptrBits) (wa := false) (stack := 0)
     (bytes := 2304) (finish_verified v) (by decide) (by decide) finishFrameSat_pre

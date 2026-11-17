@@ -147,7 +147,7 @@ theorem decW_ok (v : Compress) {P : Nat} (hP : 16 ≤ P) {s : State} {R₀ X : L
   have hpQ := hL.pQ
   have hsp : P + 240 ≤ s.sp.toNat := spec_sp (s := s.withRegions R₀ s.wr) h
   have hP16 : 16 ≤ (layW P s X pre prl).P := hP
-  refine WP.frame (by omega_using [hsp]) (WP.alloc (by decide) ?_ ?_)
+  refine WP.frameKept (by omega_using [hsp]) (WP.allocKept (by decide) ?_ ?_)
   · show 224 ≤ (s.sp - 16).toNat
     rw [BitVec.toNat_sub_of_le (by show 16 ≤ s.sp.toNat; omega_using [hsp])]
     show 224 ≤ s.sp.toNat - 16

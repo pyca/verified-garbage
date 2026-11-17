@@ -379,7 +379,7 @@ theorem entry_ok {p : SearchPublic} {s : State} (h : SearchInput p s) :
     hs 16 (by decide), hs 24 (by decide), hs 128 (by decide)]
   rfl
 
-/-- The state the body of the frame saving `x30` starts in (`WP.frameReg`). -/
+/-- The state the body of the frame saving `x30` starts in (`WP.frameRegKept`). -/
 abbrev pushedX30 (t : State) : State :=
   { t with sp := t.sp - 16, mem := t.mem.write (t.sp - 16) 8 (t.gpr .x30) }
 

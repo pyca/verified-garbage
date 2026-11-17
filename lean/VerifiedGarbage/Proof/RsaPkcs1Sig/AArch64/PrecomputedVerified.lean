@@ -50,7 +50,7 @@ theorem code_ok (c : PdChecked) {s : State} (hp : PreP c.stack s) :
   have hne := eval_len e₁
   by_cases hsig : stackArg s 0 = s.gpr .x1
   · refine WP.ite false (by rw [hne]; simp [hsig]) (by simp) fun _ => ?_
-    refine WP.alloc (by decide) (by rw [o₁.sp]; have := hv.sp1; unfold stk at this; omega_arith) ?_
+    refine WP.allocKept (by decide) (by rw [o₁.sp]; have := hv.sp1; unfold stk at this; omega_arith) ?_
     unfold body
     refine WP.seq (WP.mono (pubArgs_okP hp (by simp [allocated, o₁.sp]) (by simp [allocated, o₁.rd])
       (by simp [allocated, o₁.sp, o₁.wr]) (by simp [allocated, o₁.mem]) (fun r hr => by

@@ -279,7 +279,7 @@ theorem dec_ok {vs : List MdHash} (hc : Coh vs) (pv : PrivImpl) {s : State}
   have ok := tabOK_of hc hpw hw
   have hHa := hashAt_tableOf hixL
   have hGa := hashAt_tableOf hix
-  refine WP.frame (by omega_arith) (WP.alloc (by decide) ?_ ?_)
+  refine WP.frameKept (by omega_arith) (WP.allocKept (by decide) ?_ ?_)
   · show 272 ≤ (s.sp - 16).toNat
     rw [BitVec.toNat_sub_of_le (by show 16 ≤ s.sp.toNat; omega_arith)]
     show 272 ≤ s.sp.toNat - 16

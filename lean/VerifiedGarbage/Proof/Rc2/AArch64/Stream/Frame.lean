@@ -269,7 +269,7 @@ theorem init_correct (s₀ : State) (hs : initContract.pre s₀) :
     · rw [← hb'']; exact ic
   obtain sp₅ : s₅.sp = s₀.sp := by rw [u₅.sp, u₄.sp, u₃.sp, u₂.sp, u₁.sp]
   obtain mem₅ : s₅.mem = s₀.mem := by rw [u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem]
-  refine WP.frameReg (by rw [sp₅]; exact sp16) (fun R hR => ?_)
+  refine WP.frameRegKept (by rw [sp₅]; exact sp16) (fun R hR => ?_)
     (WP.mono (main_ok hσ) fun s₂ ⟨hk, hr, hs, hiv⟩ => ?_)
     (by rw [fdepth_of_noFrames (by lit_decide : initMain.noFrames = true)]; decide)
   · rw [u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr, hwr] at hR

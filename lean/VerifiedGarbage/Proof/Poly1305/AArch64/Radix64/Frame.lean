@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
 
 `update` and `finalize` run their code, proved with the working space as an
 argument, in a frame of 128 bytes that allocates it
-(`Verified.stackScratch`).
+(`Verified.stackScratchKept`).
 -/
 
 @[expose] public section
@@ -31,7 +31,7 @@ theorem update_framed :
     Verified AArch64.target
       (Impl.StackScratch.AArch64.withStackScratch 128 .x4 Impl.Poly1305.AArch64.Radix64.update)
       (Spec.Poly1305.updateContract AArch64.abi 128) :=
-  AArch64.Verified.stackScratch (sig := Spec.Poly1305.updateSig) (nm := "scratch") (e := .u64)
+  AArch64.Verified.stackScratchKept (sig := Spec.Poly1305.updateSig) (nm := "scratch") (e := .u64)
     (n := 16) (post := Spec.Poly1305.updatePost AArch64.abi.ptrBits) (wa := false) (stack := 0)
     (bytes := 128) update_verified (by decide) (by decide) updateFrameSat_pre
 
@@ -48,7 +48,7 @@ theorem finalize_framed :
     Verified AArch64.target
       (Impl.StackScratch.AArch64.withStackScratch 128 .x3 Impl.Poly1305.AArch64.Radix64.finalize)
       (Spec.Poly1305.finalizeContract AArch64.abi 128) :=
-  AArch64.Verified.stackScratch (sig := Spec.Poly1305.finalizeSig) (nm := "scratch") (e := .u64)
+  AArch64.Verified.stackScratchKept (sig := Spec.Poly1305.finalizeSig) (nm := "scratch") (e := .u64)
     (n := 16) (post := Spec.Poly1305.finalizePost AArch64.abi.ptrBits) (wa := false) (stack := 0)
     (bytes := 128) finalize_verified (by decide) (by decide) finalizeFrameSat_pre
 

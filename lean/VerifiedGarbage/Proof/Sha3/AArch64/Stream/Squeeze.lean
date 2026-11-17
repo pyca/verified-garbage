@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 
 The same structure as the x86-64 proof
 (`VG.Proof.Sha3.X86_64.Stream.Squeeze`), inside the frame that saves `x30`
-(`WP.frameReg`).
+(`WP.frameRegKept`).
 -/
 
 @[expose] public section
@@ -468,7 +468,7 @@ theorem correct (v : Permutation) {s₀ : State} (hp : SPre s₀) (hs : Stack s�
     WP isa (squeezeWith v.callee) s₀ fun s' => abiPreserved s₀ s' ∧ Proof.Sha3.squeezeAArch64.post s₀ s' := by
   have hpi : SPre (inner s₀) := ⟨hp.rd, hp.wr, hp.st_o, hp.st_c, hp.o_c, hp.rate_mem, hp.pos_le⟩
   have e : stateAt (inner s₀).mem (stp s₀) = stateAt s₀.mem (stp s₀) := write_frame_state hs.st
-  refine WP.frameReg (hn := by rw [v.squeezeMain_depth]; decide) hs.sp16 (fun R hR => ?_) (WP.mono ((correctMain v) hpi) fun s' ⟨hk, hsp, hv, hpost⟩ => ?_)
+  refine WP.frameRegKept (hn := by rw [v.squeezeMain_depth]; decide) hs.sp16 (fun R hR => ?_) (WP.mono ((correctMain v) hpi) fun s' ⟨hk, hsp, hv, hpost⟩ => ?_)
   · rw [hp.wr] at hR
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hR
     rcases hR with rfl | rfl | rfl

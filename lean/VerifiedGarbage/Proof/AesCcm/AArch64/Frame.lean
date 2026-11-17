@@ -104,7 +104,7 @@ end
 
 `seal` and `open` run their code, proved with the working space as their
 last argument (`Verified.lean`), in a frame that allocates it
-(`Verified.stackArgScratch`): their working space is their third stack
+(`Verified.stackArgScratchKept`): their working space is their third stack
 argument, after `tag` and `tag_len`, so the frame of 2592 bytes holds a copy
 of those two, the address of the working space and the working space, at the
 next 16-byte boundary. The code itself uses no stack: its calls keep the
@@ -134,7 +134,7 @@ theorem seal_framed (v : Proof.CmacAes.AArch64.UpdateImpl) :
     Verified AArch64.target
       (Impl.StackScratch.AArch64.withStackArgScratch 2592 2 («seal» v.callee v.ctr.callee))
       (Proof.AesCcm.sealRoundsContract AArch64.abi 2592) :=
-  AArch64.Verified.stackArgScratch (sig := Spec.Ccm.sealSig) (nm := "work") (e := .u64)
+  AArch64.Verified.stackArgScratchKept (sig := Spec.Ccm.sealSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Ccm.sealPre AArch64.abi.ptrBits)
     (post := Proof.AesCcm.sealRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 2592)
     (seal_verified v) (by decide) (by decide) (sealPre_local _) (sealPost_local _) sealFrameSat_pre
@@ -155,7 +155,7 @@ theorem open_framed (v : Proof.CmacAes.AArch64.UpdateImpl) :
     Verified AArch64.target
       (Impl.StackScratch.AArch64.withStackArgScratch 2592 2 («open» v.callee v.ctr.callee))
       (Proof.AesCcm.openRoundsContract AArch64.abi 2592) :=
-  AArch64.Verified.stackArgScratch (sig := Spec.Ccm.openSig) (nm := "work") (e := .u64)
+  AArch64.Verified.stackArgScratchKept (sig := Spec.Ccm.openSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Ccm.openPre AArch64.abi.ptrBits)
     (post := Proof.AesCcm.openRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 2592)
     (leak := some (Spec.Ccm.openLeak AArch64.abi.ptrBits))

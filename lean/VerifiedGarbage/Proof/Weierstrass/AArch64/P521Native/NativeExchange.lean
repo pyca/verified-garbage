@@ -1453,7 +1453,7 @@ private theorem epost_keep {c : Cfg} {s t v : State} (h : EPost c s t)
   refine WP.mono (native_prologue_ok s) fun u hu => ?_
   subst u
   apply WP.seq
-  apply WP.alloc (by decide) stack.room
+  apply WP.allocKept (by decide) stack.room
   refine WP.mono (native_body_api_ok hc law ha order entry) fun t ⟨saved,api,rd,wr,sp,g27,g28,v31⟩ => ?_
   apply WP.seq
   refine WP.mono (native_epilogue_ok (freed 3456 t)) fun v hv => ?_
