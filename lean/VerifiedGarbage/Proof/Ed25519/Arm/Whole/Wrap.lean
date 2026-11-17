@@ -310,26 +310,7 @@ end
 namespace VG.Proof.Ed25519.Arm.Whole
 open VG VG.Arm VG.Impl.Ed25519.Arm.Whole
 
-def finish (u : State) : State := popped .lr 4 (popped .r12 4 (freed 24 (freed 248 u)))
-
 attribute [local instance_reducible] freed
-
-theorem finish_mem (u : State) : (finish u).mem = u.mem := rfl
-theorem finish_sp (u : State) : (finish u).sp = u.sp + 280#32 := by
-  change u.sp + 248#32 + 24#32 + 4#32 + 4#32 = _
-  simp only [BitVec.add_assoc]
-  rfl
-
-theorem finish_gpr (u : State) {r : Reg} (h12 : r ≠ .r12) (hl : r ≠ .lr) :
-    (finish u).gpr r = u.gpr r := by
-  rw [finish, popped_gpr hl, popped_gpr h12]
-  rfl
-
-theorem finish_lr (u : State) :
-    (finish u).gpr .lr = u.mem.readW (State.addr (u.sp + 276#32)) 32 := by
-  change u.mem.readW (State.addr (u.sp + 248#32 + 24#32 + 4#32)) 32 = _
-  simp only [BitVec.add_assoc]
-  rfl
 
 /-- What the releases leave, whatever memory and unknowns each leaves. -/
 def finishL (u : State) (m₁ m₂ m₃ m₄ : Mem) (u₁ u₂ u₃ u₄ : Nat → BitVec 32) : State :=
@@ -347,9 +328,11 @@ theorem finishL_sp : (finishL u m₁ m₂ m₃ m₄ u₁ u₂ u₃ u₄).sp = u.
 
 theorem finishL_gpr {r : Reg} (h12 : r ≠ .r12) (hl : r ≠ .lr) :
     (finishL u m₁ m₂ m₃ m₄ u₁ u₂ u₃ u₄).gpr r = u.gpr r := by
-  change (popped .lr 4 _).gpr r = _
+  change (popped .lr 4 { popped .r12 4 { freed 24 { freed 248 u with mem := m₁, unknowns := u₁ }
+    with mem := m₂, unknowns := u₂ } with mem := m₃, unknowns := u₃ }).gpr r = _
   rw [popped_gpr hl]
-  change (popped .r12 4 _).gpr r = _
+  change (popped .r12 4 { freed 24 { freed 248 u with mem := m₁, unknowns := u₁ }
+    with mem := m₂, unknowns := u₂ }).gpr r = _
   rw [popped_gpr h12]
   rfl
 
@@ -456,7 +439,9 @@ theorem wrap_ok {body : Prog isa} (hn : body.noFrames = true) {s : State} {n : N
               rcases hR with hR | rfl
               · exact (hw r hR).sub_left (Offset.sub_base _ (by decide : 276 + 4 ≤ 280))
               · exact Offset.disjoint_base _ (by decide) (by decide)
-          change abiPreserved s (finishL (u.withRegions p.rd p.wr) m₁ m₂ m₃ m₄ u₁ u₂ u₃ u₄) ∧ _
+          change abiPreserved s (finishL (u.withRegions p.rd p.wr) m₁ m₂ m₃ m₄ u₁ u₂ u₃ u₄) ∧
+            ∃ m, Frame [stack s] s.mem m ∧ P m (finishL (u.withRegions p.rd p.wr) m₁ m₂ m₃ m₄ u₁ u₂ u₃ u₄).mem
+              ((finishL (u.withRegions p.rd p.wr) m₁ m₂ m₃ m₄ u₁ u₂ u₃ u₄).gpr .r0)
           refine ⟨⟨?_, ?_⟩, p.mem, saved_frame hsp hp, ?_⟩
           · intro r hR
             by_cases hl : r = .lr
