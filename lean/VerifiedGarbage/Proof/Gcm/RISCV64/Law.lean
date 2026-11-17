@@ -152,13 +152,20 @@ theorem holes_ok (s : State) (off : Nat) (hK : Masks s) (h0 : Rd8 s off) (h1 : R
       .logic .or .t4 .t4 .t6,
       .logic .or .t4 .t4 .s8] : List Instr) from rfl]
   simp only [FP, HA, Z] at *
-  mrun [k0, k1, k2, k3, a0, a1, a2, a3, b0, b1, b2, b3, c0, c1, c2, c3]
-  refine ⟨?_, show Keep _ _ _ from ⟨fun r hr => ?_, rfl, rfl⟩⟩
+  -- `mrun`, with the writes kept folded and read through (`RegUpd`): forty-two instructions.
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, ↓RegUpd.gpr_write, RegUpd.mem_write,
+    RegUpd.rd_write, RegUpd.wr_write, RegUpd.sp_write, addr, State.load, Width.bytes,
+    BitVec.setWidth_eq, read_eight, Option.bind_some, Option.map_some, Option.some.injEq,
+    exists_eq_left', reduceCtorEq, Nat.reduceMul, ↓reduceIte, and_self, and_true, k0, k1, k2, k3,
+    a0, a1, a2, a3, b0, b1, b2, b3, c0, c1, c2, c3]
+  refine ⟨?_, show Keep _ _ _ from ⟨fun r hr => ?_, by simp only [RegUpd.rd_write],
+    by simp only [RegUpd.wr_write]⟩⟩
   · simp only [holes, Holes.zc, fw, FP, Nat.mul_zero, Nat.add_zero, Nat.mul_one, Nat.reduceMul, Nat.reduceAdd,
       Nat.reduceMod]
   · simp only [holesRegs, List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8, h9⟩ := hr
-    simp only [h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, ite_false]
+    simp only [↓RegUpd.gpr_write, h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, ↓reduceIte]
 
 /-- `pm` with its three tables given. -/
 def pmT (x : BitVec 64) (bl bh bm : ℕ → BitVec 64) : BitVec 64 × BitVec 64 :=
@@ -399,9 +406,23 @@ theorem bTail_ok (s : State) (h0 : Rd8 s (slot 36)) (h1 : Rd8 s (slot 37)) (h2 :
   obtain ⟨a3, b3, c3⟩ := h3
   unfold bTail
   simp only [FP, PL, Z, B, T, Y0, Y1, DP, N, slot, fw] at *
-  mrun [a0, a1, a2, a3, b0, b1, b2, b3, c0, c1, c2, c3]
+  -- `mrun`, with the writes kept folded and read through (`RegUpd`): thirty-eight instructions.
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, ↓RegUpd.gpr_write, RegUpd.mem_write,
+    RegUpd.rd_write, RegUpd.wr_write, RegUpd.sp_write, addr, State.load, Width.bytes, imm12,
+    BitVec.setWidth_eq, read_eight, Option.bind_some, Option.map_some, Option.some.injEq,
+    exists_eq_left', reduceCtorEq, Nat.reduceMul, Nat.reduceLT, Nat.reduceAdd, ↓reduceIte, and_self,
+    and_true, Int.reduceLE, Int.reduceLT, Int.reduceNeg, BitVec.ofInt_neg, BitVec.ofInt_ofNat,
+    ← BitVec.sub_eq_add_neg, a0, a1, a2, a3, b0, b1, b2, b3, c0, c1, c2, c3]
   simp only [Holes.reduce, Holes.foldLo, Holes.foldHi, tailRegs]
-  glue_close
+  simp only [Keep]
+  repeat' (first
+    | rfl
+    | exact True.intro
+    | constructor
+    | (intro r hr
+       simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+       simp only [↓RegUpd.gpr_write, hr, ↓reduceIte]))
 
 theorem bXor_ok (s : State) :
     WP isa (.block bXor) s fun t => t.gpr Y0 = s.gpr Y0 ^^^ s.gpr .t0 ∧ t.gpr Y1 = s.gpr Y1 ^^^ s.gpr .t1 ∧

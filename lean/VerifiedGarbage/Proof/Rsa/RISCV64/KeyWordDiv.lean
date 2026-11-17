@@ -300,7 +300,7 @@ theorem divSetup_ok {s : State} {B : Addr} {Z w N a r v Wd : Nat} (h : Ws s B Z 
     refine ⟨rfl, ?_, ?_, sh1, sh2⟩
     · rw [BitVec.add_comm, show off B (arr w a + 8 * (o / 64)) = off B (arr w a) + BitVec.ofNat 64 (8 * (o / 64)) from
         (off_add _ _ _).symm]
-      congr 1
+      refine congrArg (off B (arr w a) + ·) ?_
       apply BitVec.eq_of_toNat_eq
       rw [BitVec.toNat_shiftLeft, BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
         Nat.mod_eq_of_lt (show o < 2 ^ 64 by omega_using [ho]), Nat.shiftRight_eq_div_pow, Nat.shiftLeft_eq,

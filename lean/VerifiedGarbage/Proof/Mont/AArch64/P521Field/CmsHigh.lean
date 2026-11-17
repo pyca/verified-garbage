@@ -203,19 +203,19 @@ theorem cms_low_words (s : State) :
       t.gpr .x1=9 ∧ Keeps cmsLowClob s t := by
   apply WP.of_runBlock
   simp only [cmsLowCode,runBlock_cons,runStep_some,runBlock_nil,reduceExec,read_x,Size.bits,Nat.mul_zero,Nat.reduceLT,
-    RegUpd.gpr_write,RegUpd.gpr_addWithCarry,RegUpd.c_write,RegUpd.c_addWithCarry,
-    BitVec.setWidth_eq,reduceCtorEq,ite_true,ite_false,
+    ↓RegUpd.gpr_write,↓RegUpd.gpr_addWithCarry,↓RegUpd.c_write,↓RegUpd.c_addWithCarry,
+    BitVec.setWidth_eq,reduceCtorEq,↓reduceIte,
     show BitVec.setWidth 64 (9 : BitVec 16) <<< 0=(9 : BitVec 64) from rfl,
     show BitVec.setWidth 64 (0 : BitVec 16) <<< 0=(0 : BitVec 64) from rfl,
     Option.some.injEq,exists_eq_left']
   refine ⟨?_,?_,?_,True.intro,⟨?_,?_,?_,?_,?_⟩⟩
-  · simp only [cmsLowOut,cmsLowIn,List.map_cons,List.map_nil,addWords,addCarry,carryOut,RegUpd.gpr_write,RegUpd.gpr_addWithCarry,
-      BitVec.setWidth_eq,reduceCtorEq,ite_true,ite_false,cms_complement,Size.bits]
+  · simp only [cmsLowOut,cmsLowIn,List.map_cons,List.map_nil,addWords,addCarry,carryOut,↓RegUpd.gpr_write,↓RegUpd.gpr_addWithCarry,
+      BitVec.setWidth_eq,reduceCtorEq,↓reduceIte,cms_complement,Size.bits]
     rfl
   · simp only [cmsLowOut,cmsLowIn,List.map_cons,List.map_nil,addWords,addCarry,carryOut,cms_complement]
     rfl
-  · simp only [cmsLowIn,List.map_cons,List.map_nil,mulHi,RegUpd.gpr_write,RegUpd.gpr_addWithCarry,
-      BitVec.setWidth_eq,reduceCtorEq,ite_true,ite_false,cms_complement]
+  · simp only [cmsLowIn,List.map_cons,List.map_nil,mulHi,↓RegUpd.gpr_write,↓RegUpd.gpr_addWithCarry,
+      BitVec.setWidth_eq,reduceCtorEq,↓reduceIte,cms_complement]
   · dsimp only [cmsLowClob]
     reg_keeps
   · simp only [RegUpd.mem_write,RegUpd.mem_addWithCarry]
