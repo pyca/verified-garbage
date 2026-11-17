@@ -9,6 +9,8 @@ meta import VerifiedGarbage.Proof.MlDsa.Pack.Arith
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
+import VerifiedGarbage.Proof.MlDsa.Arith.Mem
+meta import VerifiedGarbage.Proof.MlDsa.Arith.Mem
 
 /-!
 # ML-DSA on x86 (32-bit): `vg_mldsa_bit_unpack` and `vg_mldsa_unpack_t1`
@@ -168,12 +170,12 @@ def satMem : Mem := fun a =>
 theorem verified : Verified X86.target Impl.MlDsa.X86.Pack.bitUnpack (bitUnpackContract X86.abi 16) := by
   refine Piece.verified ((piece.pre_mono (fun _ h => Pre.of h) fun s s' _ _ h => by
       sig_pub [bitUnpackContract, bitUnpackSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at h
-      exact h).mono (fun _ _ _ h => h) fun s₀ s' _ hq => ?_) ?_
+      exact h).mono (fun _ _ _ h => h) fun s₀ s' h₀ hq => ?_) ?_
   · obtain ⟨habi, -, -, s, hinv, hm, -⟩ := hq
     refine ⟨habi, ?_⟩
     sig_post [bitUnpackContract, bitUnpackSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-    rw [hm]
-    exact hinv.2
+    exact Proof.MlDsa.Arith.polyIs_frame hm (fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact ((Pre.of h₀).lay.leafW _ List.mem_cons_self).1.symm) hinv.2
   · let st := satState satMem [⟨0, 96⟩] [⟨0x400, 1024⟩, ⟨0x5004, 20⟩]
     have a0 : arg st 0 = 0 := by decide
     have a1 : arg st 1 = 96 := by decide
@@ -246,12 +248,12 @@ def satMem : Mem := fun a => if a = 0x5009 then 4 else 0
 theorem verified : Verified X86.target Impl.MlDsa.X86.Pack.unpackT1 (unpackT1Contract X86.abi 16) := by
   refine Piece.verified ((piece.pre_mono (fun _ h => Pre.of h) fun s s' _ _ h => by
       sig_pub [unpackT1Contract, unpackT1Sig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at h
-      exact h).mono (fun _ _ _ h => h) fun s₀ s' _ hq => ?_) ?_
+      exact h).mono (fun _ _ _ h => h) fun s₀ s' h₀ hq => ?_) ?_
   · obtain ⟨habi, -, -, s, hinv, hm, -⟩ := hq
     refine ⟨habi, ?_⟩
     sig_post [unpackT1Contract, unpackT1Sig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-    rw [hm]
-    exact hinv.2
+    exact Proof.MlDsa.Arith.polyIs_frame hm (fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact ((Pre.of h₀).leafW _ List.mem_cons_self).1.symm) hinv.2
   · refine ⟨satState satMem [⟨0, 320⟩] [⟨0x400, 1024⟩, ⟨0x5004, 8⟩], ?_⟩
     sig_sat_check [unpackT1Contract, unpackT1Sig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
 

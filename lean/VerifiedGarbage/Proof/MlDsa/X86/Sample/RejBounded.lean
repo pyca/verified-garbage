@@ -21,6 +21,8 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
+import VerifiedGarbage.Proof.MlDsa.Arith.Mem
+meta import VerifiedGarbage.Proof.MlDsa.Arith.Mem
 
 /-!
 # ML-DSA on x86 (32-bit): `vg_mldsa_rej_bounded_poly`
@@ -506,7 +508,7 @@ def satMem : Mem := fun a => if a = 0x5008 then 2 else if a = 0x500d then 1 else
 theorem verified :
     Verified X86.target Impl.MlDsa.X86.Sample.rejBounded (Proof.MlDsa.rejBoundedContract X86.abi 56) := by
   refine Piece.verified ((piece.pre_mono (fun _ h => BPre.of h) fun s s' _ _ h => ?_).mono
-    (fun _ _ _ h => h) fun s₀ s' _ hq => ?_) ?_
+    (fun _ _ _ h => h) fun s₀ s' h₀ hq => ?_) ?_
   · sig_pub [Proof.MlDsa.rejBoundedContract, Proof.MlDsa.rejBoundedSig, X86.abi, X86.argSlots, X86.argVal,
       X86.argBytes] at h
     obtain ⟨e₁, e₂, e₃, e₄, e₅, e₆⟩ := h
@@ -520,15 +522,17 @@ theorem verified :
     refine ⟨habi, ?_⟩
     sig_post [Proof.MlDsa.rejBoundedContract, Proof.MlDsa.rejBoundedSig, X86.abi, X86.argSlots, X86.argVal,
       X86.argBytes]
-    rw [setWidth_append32, hax, hfin.eax, hm]
+    rw [setWidth_append32, hax, hfin.eax]
     have hl := hfin.len
     by_cases e : (LA s₀ 544).length = 256
     · have hp : Proof.MlDsa.PolyIs s.mem (L.aA s₀) (toPoly (LA s₀ 544)) := stored_polyIs hfin.stored e
       rw [LA_all] at e hp
+      replace hp := Proof.MlDsa.Arith.polyIs_frame hm (fun r hr => by
+        rw [List.mem_singleton.mp hr]; exact ((BPre.of h₀).1.hW _ List.mem_cons_self).1.symm) hp
       rw [LA_all, e]
       refine ⟨fun _ => hp.1, .inl ⟨rfl, { Spec.MlDsa.minBounds with rejBounded := 544 }, ?_⟩⟩
       show (Spec.MlDsa.rejBoundedPoly (η s₀) 544 (L.Msg s₀)).map Spec.MlDsa.toRq =
-        some (Proof.MlDsa.polyAt s.mem (L.aA s₀))
+        some (Proof.MlDsa.polyAt s'.mem (L.aA s₀))
       rw [rejBounded_some _ e, hp.2]
     · rw [Nat.div_eq_of_lt (by omega_using [hl, e])]
       rw [LA_all] at e

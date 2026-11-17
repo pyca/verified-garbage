@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.MlDsa.X86.Pack.HintUnpack
 import VerifiedGarbage.Proof.MlDsa.X86.Pack.HintUnpackMain
 import VerifiedGarbage.Proof.MlDsa.X86.Pack.HintUnpackLoop
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.MlDsa.Verify.Mem
+meta import VerifiedGarbage.Proof.MlDsa.Verify.Mem
 meta import VerifiedGarbage.Proof.MlDsa.X86.Pack.HintUnpack
 meta import VerifiedGarbage.Proof.MlDsa.X86.Pack.HintUnpackMain
 meta import VerifiedGarbage.Proof.MlDsa.X86.Pack.HintUnpackLoop
@@ -349,19 +351,24 @@ def unpackSatMem : Mem := fun a =>
 theorem hintBitUnpack_verified :
     Verified X86.target Impl.MlDsa.X86.Pack.hintBitUnpack (hintBitUnpackContract X86.abi 16) := by
   refine Piece.verified ((Up.piece.pre_mono (fun _ h => Up.Pre.of h)
-    fun _ _ _ _ hq => Up.Pub.of hq).mono (fun _ _ _ h => h) fun s₀ s' _ hq => ?_) ?_
+    fun _ _ _ _ hq => Up.Pub.of hq).mono (fun _ _ _ h => h) fun s₀ s' h₀ hq => ?_) ?_
   · obtain ⟨habi, -, -, s, ⟨hb, hax⟩, hm, hax'⟩ := hq
     refine ⟨habi, ?_⟩
     sig_post [hintBitUnpackContract, hintBitUnpackSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-    rw [setWidth_append32, hax', hax, hm]
+    have hp := Up.Pre.of h₀
+    obtain kH := Proof.MlKem.X86.leaf_keep (r := Up.hR s₀) hm (hp.hW _ List.mem_cons_self).1
+      (by dsimp only; have := hp.w_fit; omega_arith)
+    rw [setWidth_append32, hax', hax]
     show match hintBitUnpack (ω s₀) (Up.K s₀) (bytesAt s₀.mem (rA s₀) (Up.yL s₀)) with
-      | some hint => Up.res s₀ = 1 ∧ HintIs s.mem (wA s₀) (Up.K s₀) hint
+      | some hint => Up.res s₀ = 1 ∧ HintIs s'.mem (wA s₀) (Up.K s₀) hint
       | none => Up.res s₀ = 0
     rw [Up.hintBitUnpack_TS]
     unfold Up.res
     cases e : Up.TS s₀ with
     | none => rfl
-    | some st => exact ⟨rfl, harr_hintIs (hb.sr st (Up.TS_PS e)).2⟩
+    | some st =>
+      exact ⟨rfl, VG.Proof.MlDsa.Verify.hintIs_congr (fun i hi => kH i (by dsimp only; have := hp.hlen; omega_arith))
+        (harr_hintIs (hb.sr st (Up.TS_PS e)).2)⟩
   · refine ⟨satState unpackSatMem [⟨0, 84⟩] [⟨0x1000, 4096⟩, ⟨0x5004, 20⟩], ?_⟩
     sig_sat_check [hintBitUnpackContract, hintBitUnpackSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
 

@@ -179,7 +179,10 @@ theorem signMessage_verified (hK : K.Ok p.skLen) {n : String} {f : Prog isa} (hf
   refine ⟨habi, ?_⟩
   have h₀' := sPre_of h₀
   sig_post [signMessageKContract, signMessageKSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-  rw [Proof.MlKem.X86.setWidth_append32, hax, hm]
+  rw [Proof.MlKem.X86.setWidth_append32, hax, Proof.MlKem.bytesAt_congr (Proof.MlKem.X86.leaf_keep
+    (r := ⟨(arg s₀ 6).setWidth 64, p.sigLen⟩) hm
+    (sign_hW s₀ h₀' _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self))).1
+    (by dsimp only; have := h₀'.nSig; omega_arith))]
   rcases hB with ⟨h8, h2⟩ | ⟨h8, hout⟩
   · rw [formatMessage_none (by rw [Proof.MlKem.bytesAt_length]; exact h8)]; exact h2
   · rw [formatMessage_some (by rw [Proof.MlKem.bytesAt_length]; exact h8)]

@@ -354,7 +354,7 @@ theorem add_verified : Verified X86.target add (addContract X86.abi 16) := by
   · obtain ⟨habi, -, -, s, hinv, hm, -⟩ := hq
     refine ⟨habi, ?_⟩
     sig_post [addContract, accSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-    rw [hm]
+    refine Proof.MlDsa.Arith.polyIs_frame hm (fun r hr => by rw [List.mem_singleton.mp hr]; have hp := AccPre.of_add h₀; rw [← stk_eq hp.sp]; exact hp.stk_f.symm) ?_
     exact map_post (G := (· + ·)) (fun x y => val_add' x y) (AccPre.of_add h₀) hinv
   · refine ⟨accSat, ?_⟩
     sig_apply_check
@@ -377,7 +377,7 @@ theorem sub_verified : Verified X86.target sub (subContract X86.abi 16) := by
   · obtain ⟨habi, -, -, s, hinv, hm, -⟩ := hq
     refine ⟨habi, ?_⟩
     sig_post [subContract, accSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-    rw [hm]
+    refine Proof.MlDsa.Arith.polyIs_frame hm (fun r hr => by rw [List.mem_singleton.mp hr]; have hp := AccPre.of_sub h₀; rw [← stk_eq hp.sp]; exact hp.stk_f.symm) ?_
     exact map_post (G := (· - ·)) sub_val (AccPre.of_sub h₀) hinv
   · refine ⟨accSat, ?_⟩
     sig_apply_check

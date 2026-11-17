@@ -15,6 +15,8 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
+import VerifiedGarbage.Proof.MlDsa.Arith.Mem
+meta import VerifiedGarbage.Proof.MlDsa.Arith.Mem
 
 /-!
 # ML-DSA on x86 (32-bit): `vg_mldsa_power2round`
@@ -269,8 +271,10 @@ theorem power2Round_verified : Verified X86.target power2Round (power2RoundContr
   · obtain ⟨habi, -, -, s, hinv, hm, -⟩ := hq
     refine ⟨habi, ?_⟩
     sig_post [power2RoundContract, power2RoundSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-    rw [hm]
-    exact p2r_post (P2Pre.of h₀) hinv
+    have hp := P2Pre.of h₀
+    obtain ⟨q1, q2⟩ := p2r_post hp hinv
+    exact ⟨Proof.MlDsa.Arith.natPolyIs_frame hm (fun r hr => by rw [List.mem_singleton.mp hr]; rw [← stk_eq hp.sp]; exact hp.stk_1.symm) q1,
+      Proof.MlDsa.Arith.polyIs_frame hm (fun r hr => by rw [List.mem_singleton.mp hr]; rw [← stk_eq hp.sp]; exact hp.stk_0.symm) q2⟩
   · let st := satState p2rSatMem [⟨0x400, 1024⟩] [⟨0, 1024⟩, ⟨0x800, 1024⟩, ⟨0x5004, 12⟩]
     have a0 : arg st 0 = 0x400 := by decide
     have a1 : arg st 1 = 0 := by decide

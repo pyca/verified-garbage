@@ -235,11 +235,13 @@ theorem verified : Verified X86.target Impl.MlDsa.X86.Arith.nttInv (nttInvContra
   refine Piece.verified ((piece.pre_mono (fun _ h => Pre.of (t := VG.Spec.MlDsa.nttInv) h rfl) fun s s' _ _ h => by
       sig_pub [nttInvContract, inPlaceContract, inPlaceSig, X86.abi, X86.argSlots, X86.argVal,
         X86.argBytes] at h
-      exact h).mono (fun _ _ _ h => h) fun s₀ s' _ hq => ?_) ?_
+      exact h).mono (fun _ _ _ h => h) fun s₀ s' h₀ hq => ?_) ?_
   · obtain ⟨habi, -, -, s, hinv, hm, -⟩ := hq
     refine ⟨habi, ?_⟩
     sig_post [nttInvContract, inPlaceContract, inPlaceSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-    rw [hm, nttInv_eq_layers]
+    refine Proof.MlDsa.Arith.polyIs_frame hm
+      (fun r hr => by rw [List.mem_singleton.mp hr]; exact (hW (Pre.of (t := VG.Spec.MlDsa.nttInv) h₀ rfl) _ List.mem_cons_self).1.symm) ?_
+    rw [nttInv_eq_layers]
     refine polyIs_of_toNat fun i hi => ?_
     rw [hinv.f i hi, ite_eq_left hi, map_mul_get _ _ hi]
   · let st := satState satMem [] [⟨0, 1024⟩, ⟨0x400, 1024⟩, ⟨0x5004, 8⟩]

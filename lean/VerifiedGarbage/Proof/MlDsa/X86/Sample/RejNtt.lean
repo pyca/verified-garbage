@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.MlDsa.X86.Sample.Sponge
 public import VerifiedGarbage.Proof.MlDsa.Sample.RejNtt
 public import VerifiedGarbage.Impl.MlDsa.X86.Sample.RejNtt
 import VerifiedGarbage.Proof.MlKem.X86.Common
+import VerifiedGarbage.Proof.MlDsa.Arith.Mem
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import VerifiedGarbage.Proof.MlKem.Bits
 import VerifiedGarbage.Proof.Framework.Contract
@@ -378,7 +379,7 @@ def satMem : Mem := fun a => if a = 0x5009 then 1 else if a = 0x500d then 0x10 e
 
 theorem verified : Verified X86.target Impl.MlDsa.X86.Sample.rejNTT (Proof.MlDsa.rejNTTContract X86.abi 56) := by
   refine Piece.verified ((piece.pre_mono (fun _ h => Pre.of h) fun s s' _ _ h => ?_).mono
-    (fun _ _ _ h => h) fun s₀ s' _ hq => ?_) ?_
+    (fun _ _ _ h => h) fun s₀ s' h₀ hq => ?_) ?_
   · sig_pub [Proof.MlDsa.rejNTTContract, Proof.MlDsa.rejNTTSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at h
     obtain ⟨e₁, e₂, e₃, e₄, e₅⟩ := h
     refine ⟨⟨e₁, fun i hi => ?_⟩, map_toNat_inj e₂⟩
@@ -389,14 +390,15 @@ theorem verified : Verified X86.target Impl.MlDsa.X86.Sample.rejNTT (Proof.MlDsa
   · obtain ⟨habi, -, -, s, hfin, hm, hax⟩ := hq
     refine ⟨habi, ?_⟩
     sig_post [Proof.MlDsa.rejNTTContract, Proof.MlDsa.rejNTTSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-    rw [setWidth_append32, hax, hfin.eax, hm]
+    obtain hd : ∀ r ∈ [frameR s₀], (Proof.MlDsa.Arith.polyRegion ((arg s₀ 1).setWidth 64)).Disjoint r := (fun r hr => by rw [List.mem_singleton.mp hr]; exact ((Pre.of h₀).hW _ List.mem_cons_self).1.symm)
+    rw [setWidth_append32, hax, hfin.eax, Proof.MlDsa.Arith.polyAt_frame hm hd]
     have hl := hfin.len
     by_cases e : (LA (L.Msg s₀) 336).length = 256
     · have hp := poly_eq hfin.toLoop e
       have hf : (rnFold [] (G (L.Msg s₀) 1008)).length = 256 := by
         simp only [LA] at e; rwa [List.take_of_length_le (by rw [X_length])] at e
       rw [e]
-      refine ⟨fun _ => hp.1, .inl ⟨rfl, { Spec.MlDsa.minBounds with rejNTT := 1008 }, ?_⟩⟩
+      refine ⟨fun _ => Proof.MlDsa.Arith.reduced_frame hm hd hp.1, .inl ⟨rfl, { Spec.MlDsa.minBounds with rejNTT := 1008 }, ?_⟩⟩
       show Spec.MlDsa.rejNTTPoly 1008 (L.Msg s₀) = some (Proof.MlDsa.polyAt s.mem (L.aA s₀))
       rw [rejNTT_some hf, hp.2]
     · rw [Nat.div_eq_of_lt (by omega_arith)]

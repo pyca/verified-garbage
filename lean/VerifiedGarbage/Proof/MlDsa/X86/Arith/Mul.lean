@@ -17,6 +17,8 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
+import VerifiedGarbage.Proof.MlDsa.Arith.Mem
+meta import VerifiedGarbage.Proof.MlDsa.Arith.Mem
 
 /-!
 # ML-DSA on x86 (32-bit): `vg_mldsa_multiply_ntt` and `vg_mldsa_multiply_add_ntt`
@@ -402,8 +404,8 @@ theorem mul_verified : Verified X86.target mul (mulContract X86.abi 16) := by
   · obtain ⟨habi, -, -, s, hinv, hm, -⟩ := hq
     refine ⟨habi, ?_⟩
     sig_post [mulContract, mulSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-    rw [hm]
     have hp := MulPre.of_mul h₀
+    refine Proof.MlDsa.Arith.polyIs_frame hm (fun r hr => by rw [List.mem_singleton.mp hr]; rw [← stk_eq hp.sp]; exact hp.stk_h.symm) ?_
     refine polyIs_of_toNat fun i hi => ?_
     rw [hinv.h i hi, ite_eq_left hi, mul_get _ _ hi, val_mul, polyAt_val hp.f_red hi, polyAt_val hp.g_red hi,
       newM, mulV, toNat_ofNat32 (mod_q_lt32 _)]
@@ -428,8 +430,8 @@ theorem mulAdd_verified : Verified X86.target mulAdd (mulAddContract X86.abi 16)
   · obtain ⟨habi, -, -, s, hinv, hm, -⟩ := hq
     refine ⟨habi, ?_⟩
     sig_post [mulAddContract, mulSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-    rw [hm]
     have hp := MulPre.of_mulAdd h₀
+    refine Proof.MlDsa.Arith.polyIs_frame hm (fun r hr => by rw [List.mem_singleton.mp hr]; rw [← stk_eq hp.sp]; exact hp.stk_h.symm) ?_
     have hr := hp.h_red rfl
     refine polyIs_of_toNat fun i hi => ?_
     rw [hinv.h i hi, ite_eq_left hi, add_get _ _ hi, val_add', mul_get _ _ hi, val_mul, polyAt_val hp.f_red hi,

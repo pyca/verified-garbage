@@ -329,10 +329,9 @@ theorem highBits_verified : Verified X86.target highBits (highBitsContract X86.a
   · obtain ⟨habi, -, -, s, hinv, hm, -⟩ := hq
     refine ⟨habi, ?_⟩
     sig_post [highBitsContract, bitsSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-    rw [hm]
     have hp := BitsPre.of_hb h₀
     refine natPolyIs_of_toNat fun i hi => ?_
-    rw [hinv.out i hi, map_get _ _ hi, highBits_eq hp.g2, polyAt_val hp.r_red hi, toNat_ofNat32 (hbV_lt hp.g2 _)]
+    rw [Proof.MlDsa.Arith.coeffAt_frame hm (fun r hr => by rw [List.mem_singleton.mp hr]; rw [← stk_eq hp.sp]; exact hp.stk_o.symm) hi, hinv.out i hi, map_get _ _ hi, highBits_eq hp.g2, polyAt_val hp.r_red hi, toNat_ofNat32 (hbV_lt hp.g2 _)]
     rfl
   · let st := satState bitsSatMem [⟨0x400, 1024⟩] [⟨0, 1024⟩, ⟨0x5004, 12⟩]
     have a0 : arg st 0 = 0x400 := by decide
@@ -356,8 +355,8 @@ theorem lowBits_verified : Verified X86.target lowBits (lowBitsContract X86.abi 
   · obtain ⟨habi, -, -, s, hinv, hm, -⟩ := hq
     refine ⟨habi, ?_⟩
     sig_post [lowBitsContract, bitsSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-    rw [hm]
     have hp := BitsPre.of_lb h₀
+    refine Proof.MlDsa.Arith.polyIs_frame hm (fun r hr => by rw [List.mem_singleton.mp hr]; rw [← stk_eq hp.sp]; exact hp.stk_o.symm) ?_
     refine polyIs_of_toNat fun i hi => ?_
     have ha := hp.r_red i hi
     rw [hinv.out i hi, map_get _ _ hi, lowBits_val hp.g2, polyAt_val hp.r_red hi, toNat_ofNat32 (lbV_lt ha)]

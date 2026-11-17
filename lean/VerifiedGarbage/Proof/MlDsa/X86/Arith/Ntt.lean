@@ -117,12 +117,13 @@ theorem verified : Verified X86.target Impl.MlDsa.X86.Arith.ntt (nttContract X86
   refine Piece.verified ((piece.pre_mono (fun _ h => Pre.of (t := VG.Spec.MlDsa.ntt) h rfl) fun s s' _ _ h => by
       sig_pub [nttContract, inPlaceContract, inPlaceSig, X86.abi, X86.argSlots, X86.argVal,
         X86.argBytes] at h
-      exact h).mono (fun _ _ _ h => h) fun s₀ s' _ hq => ?_) ?_
+      exact h).mono (fun _ _ _ h => h) fun s₀ s' h₀ hq => ?_) ?_
   · obtain ⟨habi, -, -, s, hinv, hm, -⟩ := hq
     refine ⟨habi, ?_⟩
     sig_post [nttContract, inPlaceContract, inPlaceSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-    rw [hm, ntt_eq_layers]
-    exact hinv.mem.poly
+    rw [ntt_eq_layers]
+    exact Proof.MlDsa.Arith.polyIs_frame hm (fun r hr => by rw [List.mem_singleton.mp hr]; exact (hW (Pre.of (t := VG.Spec.MlDsa.ntt) h₀ rfl) _ List.mem_cons_self).1.symm)
+      hinv.mem.poly
   · let st := satState satMem [] [⟨0, 1024⟩, ⟨0x400, 1024⟩, ⟨0x5004, 8⟩]
     refine ⟨st, ?_⟩
     sig_apply_check

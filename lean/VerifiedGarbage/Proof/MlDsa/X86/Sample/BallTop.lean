@@ -17,6 +17,8 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
+import VerifiedGarbage.Proof.MlDsa.Arith.Mem
+meta import VerifiedGarbage.Proof.MlDsa.Arith.Mem
 
 /-!
 # ML-DSA on x86 (32-bit): `vg_mldsa_sample_in_ball`
@@ -98,7 +100,7 @@ def satMem : Mem := fun a =>
 theorem verified :
     Verified X86.target Impl.MlDsa.X86.Sample.sampleInBall (Proof.MlDsa.sampleInBallContract X86.abi 56) := by
   refine Piece.verified ((piece.pre_mono (fun _ h => QPre.of h) fun s s' _ _ h => ?_).mono
-    (fun _ _ _ h => h) fun s₀ s' _ hq => ?_) ?_
+    (fun _ _ _ h => h) fun s₀ s' h₀ hq => ?_) ?_
   · sig_pub [Proof.MlDsa.sampleInBallContract, Proof.MlDsa.sampleInBallSig, X86.abi, X86.argSlots, X86.argVal,
       X86.argBytes] at h
     obtain ⟨e₁, e₂, e₃, e₄, e₅, e₆, e₇⟩ := h
@@ -114,17 +116,19 @@ theorem verified :
     refine ⟨habi, ?_⟩
     sig_post [Proof.MlDsa.sampleInBallContract, Proof.MlDsa.sampleInBallSig, X86.abi, X86.argSlots, X86.argVal,
       X86.argBytes]
-    rw [setWidth_append32, hax, hfin.eax, hm]
+    rw [setWidth_append32, hax, hfin.eax]
     have hl : (S' s₀ 264).2 ≤ 256 := st_le _ _ _
     have hp : Proof.MlDsa.PolyIs s.mem (L.aA s₀) (Spec.MlDsa.toRq (S' s₀ 264).1) :=
       polyIs_of_coeffAt fun i hi => by rw [hfin.poly i (by simp only [n] at hi; omega_using [hi]), toRq_getElem! _ hi]
     rw [S'_all] at hl hp
+    replace hp := Proof.MlDsa.Arith.polyIs_frame hm (fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact ((QPre.of h₀).1.hW _ List.mem_cons_self).1.symm) hp
     rw [S'_all]
     by_cases e : (ballFold (τ s₀) (H (L.Msg s₀) 272)).2 = 256
     · rw [e]
       refine ⟨fun _ => hp.1, .inl ⟨rfl, { Spec.MlDsa.minBounds with ball := 272 }, ?_⟩⟩
       show (Spec.MlDsa.sampleInBall (τ s₀) 272 (L.Msg s₀)).map Spec.MlDsa.toRq =
-        some (Proof.MlDsa.polyAt s.mem (L.aA s₀))
+        some (Proof.MlDsa.polyAt s'.mem (L.aA s₀))
       rw [sampleInBall_some _ (by decide) e, hp.2]
       rfl
     · rw [Nat.div_eq_of_lt (by omega_using [hl, e])]

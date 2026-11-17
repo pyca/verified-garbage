@@ -56,7 +56,9 @@ theorem keyGen_verified {P : Prims} (hP : PrimsOk P) (p : Params)
   · obtain ⟨habi, -, -, s, hd, hm, hax⟩ := hq
     refine ⟨habi, ?_⟩
     sig_post [Spec.MlDsa.keyGenContract, Spec.MlDsa.keyGenSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-    rw [sw_app, hax, hd.eax, hm]
+    rw [sw_app, hax, hd.eax,
+      argKeep (pre_of h₀) hm (k := 1) (l := p.pkLen) (by rcases hp with rfl | rfl | rfl <;> decide),
+      argKeep (pre_of h₀) hm (k := 2) (l := p.skLen) (by rcases hp with rfl | rfl | rfl <;> decide)]
     have r := post hF (pre_of h₀) hd
     simp only [xiOf, addr0] at r
     exact r

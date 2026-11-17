@@ -318,11 +318,12 @@ theorem core_ok (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t) 
     refine sub_trans (below_sub (b := 76) (by change 4 * 5 + _ + 4 ≤ 76; omega_arith) (by rw [hc.esp, hL.FN]; have := hL.e588; omega_arith)) ?_
     rw [hc.esp, hL.below_F]; exact sub_refl _
   obtain eW : coreWr P L = [L.OUT, L.SCR] := by simp only [coreWr, Lay.OUT, hq]
+  obtain hd : 4 * core5.length + stackUse P.R.coreC + 4 ≤ (t.gpr .esp).toNat := by
+    rw [hc.esp, hL.FN]; have := hL.e588; have := P.R.coreStack
+    have := VG.Proof.Ecdsa.X86.Cfg.stk_le P.R.E; change 4 * 5 + _ + 4 ≤ _; omega_arith
   refine WP.of_syms ?_
   refine WP.callWithR (rs := core5) (k := coreK P.R.E) P.R.coreX P.R.coreNs (by decide) (by decide)
-    (by decide) (by
-      rw [hc.esp, hL.FN]; have := hL.e588; have := P.R.coreStack
-      have := VG.Proof.Ecdsa.X86.Cfg.stk_le P.R.E; change 4 * 5 + _ + 4 ≤ _; omega_arith) (core_callPre hL hk hc hr)
+    (by decide) hd (core_callPre hL hk hc hr)
     fun t' hrd hwr hesp hf ⟨s₂, hm, hg₂, hpost⟩ hsy => ?_
   obtain hf' : Frame [L.OUT, L.SCR, ⟨L.B, 76⟩] t.mem t'.mem := hf.sub fun q hq' => by
     simp only [eW, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hq'
@@ -347,9 +348,16 @@ theorem core_ok (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t) 
       obtain h₁ : Region.Disjoint ⟨L.d, P.R.E.C.len⟩ ⟨L.B, 76⟩ :=
         (hL.kd.sub_left (Region.sub_prefix (by omega_arith))).symm.sub_left (Region.sub_prefix (by omega_arith))
       rw [ce_bytesAt hL hc h₁ (by omega_arith), ce_bytesAt hL hc gB (by omega_arith), ce_bytesAt hL hc kB (by omega_arith)]
+    obtain kO : Spec.Sha256.bytesAt t'.mem L.out (2 * P.Q) = Spec.Sha256.bytesAt s₂.mem L.out (2 * P.Q) := by
+      refine bytesAt_frame hm (fun q hq' => ?_) (by omega_arith)
+      simp only [List.mem_singleton] at hq'; subst hq'
+      rw [← hq]
+      exact (hL.ko.sub_left (sub_trans (sub_trans (below_sub (by omega_arith) hd) hsp)
+        (Region.sub_prefix (by omega_arith)))).symm
     have hp := hpost
-    simp only [coreK, a0, a1, a2, a3, dgArg_w hL, kArg_w hL, hs, hm, hg₂ .eax (by decide) (by decide),
+    simp only [coreK, a0, a1, a2, a3, dgArg_w hL, kArg_w hL, hs, hg₂ .eax (by decide) (by decide),
       BitVec.setWidth_append_eq_right] at hp
+    rw [kO]
     exact hp
 
 end VG.Proof.Ecdsa.Rfc6979.X86

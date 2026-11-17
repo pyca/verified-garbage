@@ -153,7 +153,8 @@ theorem verified (F : PrimsOk P) (h3 : Ok3 p) (hsp : NoSp (body P p)) :
   obtain ⟨habi, -, -, s, hd, hm, hax⟩ := hq
   refine ⟨habi, ?_⟩
   sig_post [signCoreContract, signSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-  rw [sw32, hax, hm]
+  obtain hok : (Y p).ok ⟨3, 0, p.sigLen⟩ = true := by ofs
+  rw [sw32, hax, argKeep (core_pre_of h₀).1 hm (k := 3) (l := p.sigLen) hok]
   unfold Done at hd
   simp only [skOf, muOf, rndOf, bSk, bMu, bRnd, bSig, addr0] at hd
   exact hd

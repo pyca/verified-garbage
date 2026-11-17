@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.MlDsa.X86.Verify.Base
 public import VerifiedGarbage.Proof.MlDsa.PreparedKeyContract
 public import VerifiedGarbage.Proof.MlDsa.X86.Sign.Params
 import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Prim
+import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
 import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Inv
 import VerifiedGarbage.Proof.MlDsa.X86.Verify.Prim
 import VerifiedGarbage.Proof.MlKem.X86.TopLocal
@@ -316,11 +317,14 @@ theorem public_verified {P : Prims} (hP : PrimsOk P) (hp3 : p = mlDsa44 ∨ p = 
     refine ⟨habi, ?_⟩
     sig_post [preparePublicKeyContract, preparePublicKeySig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     have e1 : bytesAt s'.mem ((arg s₀ 1).setWidth 64) p.pkLen = bytesAt s₀.mem ((arg s₀ 0).setWidth 64) p.pkLen := by
-      rw [hm]; simpa only [keyOf, paddr0] using hk'
+      rw [argKeep hp hm (k := 1) (l := p.pkLen) (Lay.okW_iff.mp (okP (o := 0) (l := p.pkLen)
+        (by rcases hp3 with rfl | rfl | rfl <;> decide) (by omega_using [hpl]))).1]
+      simpa only [keyOf, paddr0] using hk'
     refine ⟨e1, fun i hi => ?_⟩
     rw [e1, PreparedKey.public_poly p _ hi, ← slot_addr hp (by omega_using [hpl, hi])]
     refine Proof.MlDsa.polyStored_iff.mpr ?_
-    rw [hm]
+    refine Proof.MlDsa.KeyGen.polyIs_congr (Buf.leafKeep hp
+      (Lay.okW_iff.mp (okP (by decide) (by omega_using [hpl, hi]))).1 hm) ?_
     have := hpol i hi
     simp only [keyOf, paddr0] at this
     exact this
@@ -466,11 +470,14 @@ theorem secret_verified {P : Prims} (hP : PrimsOk P) (hp3 : p = mlDsa44 ∨ p = 
     refine ⟨habi, ?_⟩
     sig_post [prepareSecretKeyContract, prepareSecretKeySig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     have e1 : bytesAt s'.mem ((arg s₀ 1).setWidth 64) p.skLen = bytesAt s₀.mem ((arg s₀ 0).setWidth 64) p.skLen := by
-      rw [hm]; simpa only [keyOf, paddr0] using hk'
+      rw [argKeep hp hm (k := 1) (l := p.skLen) (Lay.okW_iff.mp (okP (o := 0) (l := p.skLen)
+        (by rcases hp3 with rfl | rfl | rfl <;> decide) (by omega_using [hpl]))).1]
+      simpa only [keyOf, paddr0] using hk'
     refine ⟨e1, fun i hi => ?_⟩
     rw [e1, ← slot_addr hp (by omega_using [hpl, hi])]
     refine Proof.MlDsa.polyStored_iff.mpr ?_
-    rw [hm]
+    refine Proof.MlDsa.KeyGen.polyIs_congr (Buf.leafKeep hp
+      (Lay.okW_iff.mp (okP (by decide) (by omega_using [hpl, hi]))).1 hm) ?_
     have := hpol i hi
     simp only [keyOf, paddr0] at this
     exact this

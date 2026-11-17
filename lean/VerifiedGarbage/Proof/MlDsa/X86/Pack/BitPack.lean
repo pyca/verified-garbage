@@ -207,11 +207,13 @@ def satMem : Mem := fun a =>
 theorem verified : Verified X86.target Impl.MlDsa.X86.Pack.bitPack (bitPackContract X86.abi 16) := by
   refine Piece.verified ((piece.pre_mono (fun _ h => Pre.of h) fun s s' _ _ h => by
       sig_pub [bitPackContract, bitPackSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at h
-      exact h).mono (fun _ _ _ h => h) fun s₀ s' _ hq => ?_) ?_
+      exact h).mono (fun _ _ _ h => h) fun s₀ s' h₀ hq => ?_) ?_
   · obtain ⟨habi, -, -, s, hinv, hm, -⟩ := hq
     refine ⟨habi, ?_⟩
     sig_post [bitPackContract, bitPackSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-    rw [hm]
+    have hl := (Pre.of h₀).lay
+    rw [Proof.MlKem.bytesAt_congr (Proof.MlKem.X86.leaf_keep (r := outR oP oL s₀) hm
+      (hl.leafW _ List.mem_cons_self).1 (by dsimp only; have := hl.o_fit; omega_arith))]
     exact hinv.2
   · let st := satState satMem [⟨0, 1024⟩] [⟨0x400, 96⟩, ⟨0x5004, 20⟩]
     have a0 : arg st 0 = 0 := by decide

@@ -23,6 +23,8 @@ meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 import VerifiedGarbage.Proof.MlDsa.X86.Sample.RejNtt
 meta import VerifiedGarbage.Proof.MlDsa.X86.Sample.RejNtt
 meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
+import VerifiedGarbage.Proof.MlDsa.Arith.Mem
+meta import VerifiedGarbage.Proof.MlDsa.Arith.Mem
 
 /-!
 # ML-DSA on x86 (32-bit): `vg_mldsa_expand_mask_poly`
@@ -307,7 +309,7 @@ def satMem : Mem := fun a => if a = 0x500a then 2 else if a = 0x500d then 1 else
 theorem verified :
     Verified X86.target Impl.MlDsa.X86.Sample.expandMask (Proof.MlDsa.expandMaskContract X86.abi 56) := by
   refine Piece.verified ((piece.pre_mono (fun _ h => EPre.of h) fun s s' _ _ h => ?_).mono
-    (fun _ _ _ h => h) fun s₀ s' _ hq => ?_) ?_
+    (fun _ _ _ h => h) fun s₀ s' h₀ hq => ?_) ?_
   · sig_pub [Proof.MlDsa.expandMaskContract, Proof.MlDsa.expandMaskSig, X86.abi, X86.argSlots, X86.argVal,
       X86.argBytes] at h
     obtain ⟨e₁, e₂, e₃, e₄, e₅⟩ := h
@@ -321,8 +323,7 @@ theorem verified :
     refine ⟨habi, ?_⟩
     sig_post [Proof.MlDsa.expandMaskContract, Proof.MlDsa.expandMaskSig, X86.abi, X86.argSlots, X86.argVal,
       X86.argBytes]
-    rw [hm]
-    exact hf
+    exact Proof.MlDsa.Arith.polyIs_frame hm (fun r hr => by rw [List.mem_singleton.mp hr]; exact ((EPre.of h₀).1.hW _ List.mem_cons_self).1.symm) hf
   · let st := satState satMem [⟨0, 66⟩] [⟨0x100, 1024⟩, ⟨0x1000, 2048⟩, ⟨0x5004, 16⟩]
     refine ⟨st, ?_⟩
     sig_sat_check [Proof.MlDsa.expandMaskContract, Proof.MlDsa.expandMaskSig, X86.abi, X86.argSlots, X86.argVal,

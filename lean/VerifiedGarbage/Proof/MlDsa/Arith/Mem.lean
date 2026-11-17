@@ -117,4 +117,18 @@ theorem polyIs_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : A
     (hd : ∀ r ∈ rs, (polyRegion p).Disjoint r) (h : PolyIs m p f) : PolyIs m' p f :=
   ⟨reduced_frame hf hd h.1, (polyAt_frame hf hd).trans h.2⟩
 
+theorem natPolyIs_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : Addr} {f : Vector Nat n}
+    (hd : ∀ r ∈ rs, (polyRegion p).Disjoint r) (h : NatPolyIs m p f) : NatPolyIs m' p f := by
+  unfold NatPolyIs natPolyAt at h ⊢
+  rw [← h]
+  exact Vector.ext fun i hi => by simp only [Vector.getElem_ofFn, coeffAt_frame hf hd hi]
+
+theorem hintIs_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : Addr} {h : List (Vector Bool n)}
+    (hd : ∀ r ∈ rs, (polyRegion p).Disjoint r) (H : HintIs m p 1 h) : HintIs m' p 1 h := by
+  refine ⟨H.1, fun i hi j hj => ?_⟩
+  obtain rfl : i = 0 := by omega
+  have := H.2 0 hi j hj
+  simp only [Nat.mul_zero, Nat.zero_add] at this ⊢
+  rw [coeffAt_frame hf hd hj]; exact this
+
 end VG.Proof.MlDsa.Arith

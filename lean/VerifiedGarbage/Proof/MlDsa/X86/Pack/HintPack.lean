@@ -461,11 +461,13 @@ theorem packSat_hint : ∀ t < 256 * 4, coeffAt packSatMem 0 t = 0 := by
 theorem hintBitPack_verified :
     Verified X86.target Impl.MlDsa.X86.Pack.hintBitPack (hintBitPackContract X86.abi 16) := by
   refine Piece.verified ((Pk.piece.pre_mono (fun _ h => Pk.Pre.of h)
-    fun s s' h _ hq => Pk.Pub.of (Pk.Pre.of h) hq).mono (fun _ _ _ h => h) fun s₀ s' _ hq => ?_) ?_
+    fun s s' h _ hq => Pk.Pub.of (Pk.Pre.of h) hq).mono (fun _ _ _ h => h) fun s₀ s' h₀ hq => ?_) ?_
   · obtain ⟨habi, -, -, s, hinv, hm, -⟩ := hq
     refine ⟨habi, ?_⟩
     sig_post [hintBitPackContract, hintBitPackSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-    rw [hm]
+    have hp := Pk.Pre.of h₀
+    rw [Proof.MlKem.bytesAt_congr (Proof.MlKem.X86.leaf_keep (r := ⟨wA s₀, Pk.yL s₀⟩) hm
+      (hp.wW _ List.mem_cons_self).1 (by dsimp only; have := hp.w_fit; omega_arith))]
     exact hinv.y.trans (hintBitPack_hpS _ _ _).symm
   · let st := satState packSatMem [⟨0, 4096⟩] [⟨0x2000, 84⟩, ⟨0x5004, 20⟩]
     have a0 : arg st 0 = 0 := by decide

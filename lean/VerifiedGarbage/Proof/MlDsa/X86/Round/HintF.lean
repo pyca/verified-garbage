@@ -11,6 +11,8 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
+import VerifiedGarbage.Proof.MlDsa.Arith.Mem
+meta import VerifiedGarbage.Proof.MlDsa.Arith.Mem
 
 /-!
 # ML-DSA on x86 (32-bit): `vg_mldsa_make_hint` and `vg_mldsa_use_hint`
@@ -99,8 +101,8 @@ theorem useHint_verified : Verified X86.target useHint (useHintContract X86.abi 
   · obtain ⟨habi, -, -, s, hinv, hm, -⟩ := hq
     refine ⟨habi, ?_⟩
     sig_post [useHintContract, useHintSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-    rw [hm]
-    exact uh_post (HPre.of_uh h₀) hinv
+    exact Proof.MlDsa.Arith.natPolyIs_frame hm (fun r hr => by rw [List.mem_singleton.mp hr]; exact (hW (HPre.of_uh h₀) _ List.mem_cons_self).1.symm)
+      (uh_post (HPre.of_uh h₀) hinv)
   · let st := satState hintSatMem [⟨0x400, 1024⟩, ⟨0x800, 1024⟩] [⟨0, 1024⟩, ⟨0x5004, 16⟩]
     have a0 : arg st 0 = 0x400 := by decide
     have a1 : arg st 1 = 0x800 := by decide
@@ -185,8 +187,8 @@ theorem makeHint_verified : Verified X86.target makeHint (makeHintContract X86.a
     have hp := HPre.of_mh h₀
     have ⟨p1, p2⟩ := mh_post hp hinv
     sig_post [makeHintContract, makeHintSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-    rw [hm, setWidth_append32, hax]
-    exact ⟨p1, p2⟩
+    rw [setWidth_append32, hax]
+    exact ⟨Proof.MlDsa.Arith.hintIs_frame hm (fun r hr => by rw [List.mem_singleton.mp hr]; exact (hW hp _ List.mem_cons_self).1.symm) p1, p2⟩
   · let st := satState hintSatMem [⟨0x400, 1024⟩, ⟨0x800, 1024⟩] [⟨0, 1024⟩, ⟨0x5004, 16⟩]
     have a0 : arg st 0 = 0x400 := by decide
     have a1 : arg st 1 = 0x800 := by decide

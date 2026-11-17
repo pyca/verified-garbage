@@ -153,7 +153,7 @@ theorem pkTr_verified (p : Params) (hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlD
   · obtain ⟨habi, -, -, s, hd, hm, -⟩ := hq
     refine ⟨habi, ?_⟩
     sig_post [Spec.MlDsa.pkTrContract, Spec.MlDsa.pkTrSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-    rw [hm]
+    rw [argKeep (pre_of h₀) hm (k := 1) (l := 64) (by rcases hp with rfl | rfl | rfl <;> decide)]
     have r : Done p s₀ s := hd
     simp only [Done, addr0] at r
     exact r

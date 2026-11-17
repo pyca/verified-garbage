@@ -430,7 +430,11 @@ theorem entry_verified {n : String} {f : Prog isa} (h3 : VG.Proof.MlDsa.X86.Sign
   obtain ⟨habi, -, -, s, hd, hm, hax⟩ := hq
   refine ⟨habi, ?_⟩
   sig_post [signContract, signSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-  rw [sw_app, hax, hm]
+  obtain hsk : 0 < p.skLen := by have := ps.hskLen; omega_using [this]
+  obtain hsig : 0 < p.sigLen := by have := ps.hsigLen; rcases ps.hcLen with h | h | h <;> omega_using [this, h]
+  obtain hscr : 0 < scrBytes p := by simp only [scrBytes, scratchWords]; omega_using []
+  rw [sw_app, hax, argKeep (ePre_of h₀) hm (k := 3) (l := p.sigLen)
+    (Lay.okW_iff.mp (ye_ok (Nat.le_refl _) hsk hsig hscr).2.2.2.1).1]
   unfold CoreDone at hd
   simp only [eSk, eMu, eRnd, eaddr0] at hd
   exact hd
@@ -583,7 +587,11 @@ theorem prepared_verified {n : String} {f : Prog isa} (h3 : VG.Proof.MlDsa.X86.S
   refine ⟨habi, ?_⟩
   sig_post [Proof.MlDsa.preparedSignContract, Proof.MlDsa.preparedSignSig, X86.abi, X86.argSlots, X86.argVal,
     X86.argBytes]
-  rw [sw_app, hax, hm]
+  obtain hsk : 0 < p.skLen := by have := ps.hskLen; omega_using [this]
+  obtain hsig : 0 < p.sigLen := by have := ps.hsigLen; rcases ps.hcLen with h | h | h <;> omega_using [this, h]
+  obtain hscr : 0 < scrBytes p := by simp only [scrBytes, scratchWords]; omega_using []
+  rw [sw_app, hax, argKeep (pPre_of h₀).1 hm (k := 3) (l := p.sigLen)
+    (Lay.okW_iff.mp (ye_ok (by simp only [preparedSecretKeyBytes]; omega_using []) hsk hsig hscr).2.2.2.1).1]
   unfold CoreDone at hd
   simp only [eSk, eMu, eRnd, eaddr0] at hd
   exact hd
