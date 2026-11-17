@@ -3,8 +3,10 @@ module
 public import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 public import VerifiedGarbage.Proof.Framework.X86_64.ForwardCall
 public import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratchWipe
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubPaths
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Framework.X86_64.Scrub
+import VerifiedGarbage.Proof.Framework.X86_64.Frame
 import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 import VerifiedGarbage.Proof.Framework.Offset
 
@@ -19,6 +21,13 @@ leaves there what it leaves from the state it is called in, `narrowS` or
 (`narrowS_args`; `narrowF_facts`). In a frame of `withStackArgScratchWipedX`
 (`framedW_leaves`), it leaves zeros where the frame wipes (`wipeAtX_zero`),
 and elsewhere what it leaves from `narrowS`.
+
+The frame's release then loses its bytes (`lose`), as the unknowns the
+code's run ends with say (`innerU`, a function of the state it runs from,
+runs being deterministic): `loseL` is what the code leaves, through the
+release. Two runs from states that agree on what is public end with the
+same unknowns (`innerU_agree`, from `Scrub.Exec.unknowns_agree`), so what
+`loseL` says depends on what they agree on if what the code leaves does.
 -/
 
 @[expose] public section
@@ -26,6 +35,49 @@ and elsewhere what it leaves from `narrowS`.
 namespace VG.X86_64
 
 open VG.Impl.StackScratch.X86_64 VG.Impl.ForwardCall.X86_64
+
+open Classical in
+/-- The unknowns a run of `c` from `s` ends with: it has at most one
+(`Exec.det`); `s.unknowns` if it has none. -/
+noncomputable def innerU (c : Prog isa) (s : State) : Nat → BitVec 64 :=
+  if h : ∃ t u, Exec isa c s t u then (Classical.choose (Classical.choose_spec h)).unknowns else s.unknowns
+
+theorem innerU_eq {c : Prog isa} {s u : State} {t : List Leak} (he : Exec isa c s t u) : innerU c s = u.unknowns := by
+  have h : ∃ t u, Exec isa c s t u := ⟨t, u, he⟩
+  unfold innerU
+  rw [dite_eq_left_of_eq_true (eq_true h)]
+  exact congrArg State.unknowns (Exec.det (Classical.choose_spec (Classical.choose_spec h)) he).2
+
+/-- Code verified against a contract, from two states its contract relates
+with the same unknowns and the same addresses of the functions it calls
+indirectly, ends its runs with the same unknowns. -/
+theorem innerU_agree {c : Prog isa} {k : Contract isa} (hv : Verified X86_64.target c k) {s₁ s₂ : State}
+    (h₁ : k.pre s₁) (h₂ : k.pre s₂) (hp : k.pub s₁ s₂) (hu : s₁.unknowns = s₂.unknowns)
+    (hsy : ∀ n ∈ UpperLock.inames c, s₁.syms n = s₂.syms n) : innerU c s₁ = innerU c s₂ := by
+  obtain ⟨t₁, u₁, e₁, -⟩ := hv.1 _ h₁
+  obtain ⟨t₂, u₂, e₂, -⟩ := hv.1 _ h₂
+  rw [innerU_eq e₁, innerU_eq e₂]
+  exact (Scrub.Exec.unknowns_agree e₁ [] [] e₂ hsy hu
+    (by rw [List.append_nil, List.append_nil]; exact hv.2.1 _ _ _ _ _ _ h₁ h₂ hp e₁ e₂)).2
+
+/-- What `L` says of a byte, through the release of the `n` bytes at `B`
+with the unknowns `U` (`lose`): the byte that replaces it, or `L`'s. -/
+def loseL (B : Addr) (n : Nat) (U : Nat → BitVec 64) (L : Addr → Option (BitVec 8)) (x : Addr) :
+    Option (BitVec 8) :=
+  let d := (x - B).toNat
+  if d < n ∧ (U (2 * (d / 8))).extractLsb' (8 * (d % 8)) 8 ≠ 0 then
+    some ((U (2 * (d / 8) + 1)).extractLsb' (8 * (d % 8)) 8)
+  else L x
+
+theorem lose_loseL {m : Mem} (B : Addr) (n : Nat) (U : Nat → BitVec 64) {L : Addr → Option (BitVec 8)}
+    {x : Addr} {o : BitVec 8} (h : m x = (L x).getD o) : lose m B n U x = (loseL B n U L x).getD o := by
+  unfold lose loseL
+  dsimp only
+  by_cases h₁ : (x - B).toNat < n
+  · by_cases h₂ : (U (2 * ((x - B).toNat / 8))).extractLsb' (8 * ((x - B).toNat % 8)) 8 = 0
+    · simp only [h₁, h₂, ne_eq, not_true_eq_false, and_false, ↓reduceIte, h]
+    · simp only [h₁, h₂, ne_eq, not_false_eq_true, and_self, ↓reduceIte, Option.getD_some]
+  · simp only [h₁, false_and, ↓reduceIte, h]
 
 /-- What code leaves in its frame of `withStackArgScratch` (`L`, at the
 state `narrowS` it runs from), from what it leaves run by run from the
@@ -47,14 +99,15 @@ theorem framed_leaves {sig : Sig} {nm : String} {e : Elem} {n bytes stack : Nat}
     {s : State} (hs : (sig.contract abi pre post wa (stack + bytes) leak).pre s) {t : List Leak} {u : State}
     (he : Exec isa (withStackArgScratch bytes (nStack sig) c) s t u) :
     ∀ x, (R (narrowS sig e n bytes s)).Contains x 1 →
-      u.mem x = (L (narrowS sig e n bytes s) x).getD ((narrowS sig e n bytes s).mem x) := by
+      u.mem x = (loseL (s.gpr .rsp - BitVec.ofNat 64 bytes) bytes (innerU c (narrowS sig e n bytes s))
+        (L (narrowS sig e n bytes s)) x).getD ((narrowS sig e n bytes s).mem x) := by
   have hn := narrowS_pre (nm := nm) hk hb.1 hb.2.1 (fun vs m₁ m₂ hl hb _ => hpre vs m₁ m₂ hl hb) hs
   obtain ⟨t₃, s₃, he₃, ha, -⟩ := hv.1 _ hn
   obtain ⟨hex, -, hm, -⟩ := withStackArgScratch_runMem hk hb hst (SpSafe.of_all hsp) hd hs he₃ ha
   obtain ⟨-, rfl⟩ := Exec.det he hex
   intro x hx
-  rw [hm]
-  exact hl _ _ _ (hP _ hn) he₃ x hx
+  rw [hm, innerU_eq he₃]
+  exact lose_loseL _ _ _ (hl _ _ _ (hP _ hn) he₃ x hx)
 
 /-- The stores of `wipeStoresAtX off n`, with `xmm0` zero, zero the `16n`
 bytes at `rsp + off` and leave the rest of memory as it was. -/
@@ -124,11 +177,13 @@ theorem framedW_leaves {sig : Sig} {nm : String} {e : Elem} {n bytes stack k : N
     {s : State} (hs : (sig.contract abi pre post wa (stack + bytes) leak).pre s) {t : List Leak} {u : State}
     (he : Exec isa (withStackArgScratchWipedX bytes (nStack sig) k c) s t u) :
     (∀ x, (⟨s.gpr .rsp - BitVec.ofNat 64 bytes + BitVec.ofNat 64 (16 + 8 * nStack sig), 16 * k⟩ : Region).Contains
-        x 1 → u.mem x = 0) ∧
+        x 1 → u.mem x = (loseL (s.gpr .rsp - BitVec.ofNat 64 bytes) bytes (innerU c (narrowS sig e n bytes s))
+          (fun _ => some 0) x).getD 0) ∧
     ∀ x, (R (narrowS sig e n bytes s)).Contains x 1 →
       ¬ (⟨s.gpr .rsp - BitVec.ofNat 64 bytes + BitVec.ofNat 64 (16 + 8 * nStack sig), 16 * k⟩ : Region).Contains
         x 1 →
-      u.mem x = (L (narrowS sig e n bytes s) x).getD ((narrowS sig e n bytes s).mem x) := by
+      u.mem x = (loseL (s.gpr .rsp - BitVec.ofNat 64 bytes) bytes (innerU c (narrowS sig e n bytes s))
+        (L (narrowS sig e n bytes s)) x).getD ((narrowS sig e n bytes s).mem x) := by
   obtain ⟨hb0, hb1, hb2⟩ := hb
   have hn := narrowS_pre (nm := nm) hk hb0 hb1 (fun vs m₁ m₂ hl hb _ => hpre vs m₁ m₂ hl hb) hs
   obtain ⟨t₃, s₃, he₃, ha, -⟩ := hv.1 _ hn
@@ -164,12 +219,14 @@ theorem framedW_leaves {sig : Sig} {nm : String} {e : Elem} {n bytes stack k : N
       (SpSafe.of_all (by simp only [Code.all, hsp, wipeAtX_spSafe, Bool.and_self]))
       (by simp only [Code.x86_64Depth]; omega_using [hd]) hs he' ha'
   obtain ⟨-, rfl⟩ := Exec.det he hex
-  have hm' : (popState bytes s { s₃.setXmm .xmm0 0 with mem := m' }).mem = m' := hm
-  rw [hm']
+  have hm' : (popState bytes s { s₃.setXmm .xmm0 0 with mem := m' }).mem =
+      lose m' (s.gpr .rsp - BitVec.ofNat 64 bytes) bytes s₃.unknowns := hm
+  rw [hm', innerU_eq he₃]
   have hlt := fun x => Scrub.off_lt x (s.gpr .rsp - BitVec.ofNat 64 bytes) (16 + 8 * nStack sig) (16 * k)
     (by omega_using [hw, hb0, hb1])
-  refine ⟨fun x hx => ?_, fun x hx hnw => ?_⟩
+  refine ⟨fun x hx => lose_loseL _ _ _ ?_, fun x hx hnw => lose_loseL _ _ _ ?_⟩
   · rw [hz x, hrsp₃, Scrub.ite_t ((hlt x).1 (by simp only [Region.Contains] at hx; omega_using [hx]))]
+    rfl
   · rw [hz x, hrsp₃, Scrub.ite_f fun h => hnw (by
       simp only [Region.Contains]; have := (hlt x).2 h; omega_using [this])]
     exact hl _ _ _ (hP _ hn) he₃ x hx
@@ -215,13 +272,14 @@ theorem forward_leaves {sig : Sig} {bytes stack : Nat} {name : String}
     {s : State} (hs : (sig.contract abi pre post wa (stack + bytes + 8) leak).pre s) {t : List Leak} {u : State}
     (he : Exec isa (forward bytes (nStack sig) name c) s t u) :
     ∀ x, (R (narrowF sig bytes s)).Contains x 1 →
-      u.mem x = (L (narrowF sig bytes s) x).getD ((narrowF sig bytes s).mem x) := by
+      u.mem x = (loseL (s.gpr .rsp - BitVec.ofNat 64 bytes) bytes (innerU c (narrowF sig bytes s))
+        (L (narrowF sig bytes s)) x).getD ((narrowF sig bytes s).mem x) := by
   have hn := narrowF_pre hk hm hb.1 hb.2.1 hpre hs
   obtain ⟨t₃, s₃, he₃, ha, -⟩ := hv.1 _ hn
   obtain ⟨hex, -, hmem, -⟩ := forward_run hk hm hb hst (SpSafe.of_all hsp) hd hs he₃ ha
   obtain ⟨-, rfl⟩ := Exec.det he hex
   intro x hx
-  rw [hmem]
-  exact hl _ _ _ (hP _ hn) he₃ x hx
+  rw [hmem, innerU_eq he₃]
+  exact lose_loseL _ _ _ (hl _ _ _ (hP _ hn) he₃ x hx)
 
 end VG.X86_64
