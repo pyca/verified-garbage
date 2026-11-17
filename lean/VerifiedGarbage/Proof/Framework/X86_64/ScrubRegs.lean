@@ -149,7 +149,7 @@ theorem resOk_noStack {A : Abi isa} (hA : ScrubAbi A) {sig : Sig}
     {leak : Option (Curry (sig.words A.ptrBits) (Mem → List Nat))} {c : Prog isa} {cs : List Nat}
     (hsp : c.all (fun i => !isa.writesSp i) = true) (hd : c.x86_64Depth = 0) :
     ResOk c (sig.contract A pre post wa stack leak) stack [] cs := by
-  intro s₁ s₂ t₁ t₂ u₁ u₂ h₁ h₂ _ ho _ a₁ a₂ x hb _
+  intro s₁ s₂ t₁ t₂ u₁ u₂ h₁ h₂ _ ho _ _ a₁ a₂ x hb _
   obtain ⟨hrd, hwr, hg, -, -, -, -, -, -, -, -, -, -, -, hm⟩ := ho
   have hst : stack ≠ 0 := by
     rintro rfl; simp [Region.Contains] at hb

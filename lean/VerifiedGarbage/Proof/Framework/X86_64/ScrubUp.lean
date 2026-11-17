@@ -243,7 +243,7 @@ theorem Verified.scrubU {c : Prog isa} {v : VecLevel} {xs : List XReg} {ps gs : 
         exact hx
       by_cases hb : (⟨s₁.gpr .rsp - BitVec.ofNat 64 stack, stack⟩ : Region).Contains x 1
       · rw [ht₁ x, ht₂ x, ← hsp', hU]
-        exact tailMem_congr _ _ _ _ _ x fun hw => hres _ _ _ _ _ _ h₁ h₂ hp ho' hun a₁ a₂ x hb hw
+        exact tailMem_congr _ _ _ _ _ x fun hw => hres _ _ _ _ _ _ h₁ h₂ hp ho' hun (hsy _ _ hp) a₁ a₂ x hb hw
       · have nd : ∀ sp : Addr, sp = s₁.gpr .rsp →
             ¬ (⟨sp - BitVec.ofNat 64 c.x86_64Depth, c.x86_64Depth⟩ : Region).Contains x 1 := by
           rintro sp rfl hc; exact hb (below_sub hd (by omega_using [hst]) x hc)

@@ -717,7 +717,7 @@ theorem resOk_of_check {c : Prog isa} {ks cs : List Nat} {pubs : List (Nat × Na
   simp only [resOkB, Bool.and_eq_true, beq_iff_eq, List.all_eq_true, List.mem_range, Bool.or_eq_true,
     Bool.not_eq_true'] at hb
   obtain ⟨⟨⟨hok, hroom⟩, hdep⟩, hcov⟩ := hb
-  intro s₁ s₂ t₁ t₂ u₁ u₂ h₁ h₂ hp ho hu e₁ e₂ x hx hw
+  intro s₁ s₂ t₁ t₂ u₁ u₂ h₁ h₂ hp ho hu _ e₁ e₂ x hx hw
   obtain ⟨-, ha⟩ := VG.Taint.check_sound (A := rtaint) hτ (init_agree hA hfit hpub h₁ h₂ ho hp hu) e₁ e₂
   have inv := ha hok
   obtain ⟨hcor, -, -⟩ := hv

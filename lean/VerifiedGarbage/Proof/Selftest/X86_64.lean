@@ -172,7 +172,7 @@ theorem leakAdd_all :
     (by decide) rfl (by decide) (by simp) (by decide) (by decide)
     (fun s u u' hs hq _ hr => by
       revert hq; simp only [Sig.contract, X86_64.abi] at hr ⊢; rw [hr]; exact id)
-    (fun _ _ _ _ _ _ _ _ _ _ _ _ _ x hx _ => absurd hx (by simp [Region.Contains]))
+    (fun _ _ _ _ _ _ _ _ _ _ _ _ _ _ x hx _ => absurd hx (by simp [Region.Contains]))
     ⟨fun h => absurd rfl h, fun h => absurd rfl h, by simp, by decide, by simp⟩
     (.inl Scrub.mem_xregs) (fun _ => Scrub.mem_xregs) (fun _ _ e => nomatch e) (by decide)
   -- It calls nothing indirectly.
@@ -202,7 +202,7 @@ theorem leakAddScrubbed_ok :
     (fun s u u' hs hq _ hr => by
       have hr' : u'.gpr .rax = u.gpr .rax := by simpa only [BitVec.setWidth_eq] using hr
       revert hq; simp only [Sig.contract, X86_64.abi, hr']; exact id)
-    (fun _ _ _ _ _ _ _ _ _ _ _ _ _ x hx _ => absurd hx (by simp [Region.Contains])) (by decide)
+    (fun _ _ _ _ _ _ _ _ _ _ _ _ _ _ x hx _ => absurd hx (by simp [Region.Contains])) (by decide)
     (fun _ _ _ _ n hn => by rw [show UpperLock.inames leakAdd = [] from rfl] at hn; cases hn)
     ⟨leakAdd_all.1, fun _ => leakAdd_all.2⟩
   ⟨h.1, h.2 trivial⟩

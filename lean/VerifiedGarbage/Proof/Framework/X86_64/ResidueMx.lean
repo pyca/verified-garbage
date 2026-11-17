@@ -105,7 +105,7 @@ theorem resOk_of_opsCheck {c : Prog isa} {ks cs : List Nat} {pubs : List (Nat ×
   simp only [resOkB, Bool.and_eq_true, beq_iff_eq, List.all_eq_true, List.mem_range, Bool.or_eq_true,
     Bool.not_eq_true'] at hb
   obtain ⟨⟨⟨hok, hroom⟩, hdep⟩, hcov⟩ := hb
-  intro s₁ s₂ t₁ t₂ u₁ u₂ h₁ h₂ hp ho hu e₁ e₂ x hx hw
+  intro s₁ s₂ t₁ t₂ u₁ u₂ h₁ h₂ hp ho hu _ e₁ e₂ x hx hw
   obtain ⟨-, ha⟩ := hsem _ _ _ _ _ _ ⟨init_agree hA hfit hpub h₁ h₂ ho hp hu, ho.2.2.2.2.2.2.2.2.2.2.2.2.2.1⟩
     e₁ e₂
   have inv := ha.1 hok

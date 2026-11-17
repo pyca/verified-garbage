@@ -1456,10 +1456,12 @@ theorem Exec.unknowns_agree {c : Prog isa} {s₁ s₁' : State} {t₁ : List Lea
       rw [ht.1]; exact (hf _ (List.mem_cons_self ..)).symm
 
 /-- Two runs of `c` leave the same bytes in the `stack` bytes below the stack
-pointer on entry but those `wipe ks cs` zeroes. -/
+pointer on entry but those `wipe ks cs` zeroes, from states whose functions
+`c` calls indirectly have the same addresses (as `NoResidue` is asked of
+such code: `Verified.scrub`). -/
 def ResOk (c : Prog isa) (k : Contract isa) (stack : Nat) (ks cs : List Nat) : Prop :=
   ∀ s₁ s₂ t₁ t₂ u₁ u₂, k.pre s₁ → k.pre s₂ → k.pub s₁ s₂ → Outside 0 s₁ s₂ → s₁.unknowns = s₂.unknowns →
-    Exec isa c s₁ t₁ u₁ → Exec isa c s₂ t₂ u₂ →
+    (∀ n ∈ UpperLock.inames c, s₁.syms n = s₂.syms n) → Exec isa c s₁ t₁ u₁ → Exec isa c s₂ t₂ u₂ →
     ∀ x, (⟨s₁.gpr .rsp - BitVec.ofNat 64 stack, stack⟩ : Region).Contains x 1 →
       ¬ WCov ks cs (s₁.gpr .rsp) x → u₁.mem x = u₂.mem x
 
@@ -1697,7 +1699,7 @@ theorem Verified.scrubM {c : Prog isa} {v f : VecLevel} {xs : List XReg} {ps gs 
         exact hx
       by_cases hb : (⟨s₁.gpr .rsp - BitVec.ofNat 64 stack, stack⟩ : Region).Contains x 1
       · rw [ht₁ x, ht₂ x, ← hsp', hU]
-        exact tailMem_congr _ _ _ _ _ x fun hw => hres _ _ _ _ _ _ h₁ h₂ hp ho' hun a₁ a₂ x hb hw
+        exact tailMem_congr _ _ _ _ _ x fun hw => hres _ _ _ _ _ _ h₁ h₂ hp ho' hun (hsy _ _ hp) a₁ a₂ x hb hw
       · have nd : ∀ sp : Addr, sp = s₁.gpr .rsp →
             ¬ (⟨sp - BitVec.ofNat 64 c.x86_64Depth, c.x86_64Depth⟩ : Region).Contains x 1 := by
           rintro sp rfl hc; exact hb (below_sub hd (by omega_using [hst]) x hc)
@@ -1998,7 +2000,7 @@ theorem wcov_all {cs : List Nat} (h8 : ∀ b ∈ cs, b % 8 = 0) {p x : Addr}
 /-- `ResOk`, with every granule wiped. -/
 theorem resOk_all (c : Prog isa) (k : Contract isa) {stack : Nat} (h8 : stack % 8 = 0) :
     ResOk c k stack (allKs (chunks stack)) (chunks stack) := by
-  intro s₁ s₂ t₁ t₂ u₁ u₂ _ _ _ _ _ _ _ x hx hn
+  intro s₁ s₂ t₁ t₂ u₁ u₂ _ _ _ _ _ _ _ _ x hx hn
   exact absurd (wcov_all (fun b hb => (chunks_valid h8 b hb).2.2) (by rw [chunks_sum]; exact hx)) hn
 
 /-- What `c` leaves in the `stack` bytes below the stack pointer on entry,
@@ -2016,9 +2018,13 @@ def StackLeaves (c : Prog isa) (k : Contract isa) (stack : Nat) (ks cs : List Na
 public data and everything outside the buffers on entry (`ResOk`'s
 hypotheses). A constant (`fun _ _ => some 0` for bytes the code zeroes) does;
 so does anything read from the registers, which `Outside 0` makes the same
-but for `rax`, or from the return addresses (`State.unknowns`). -/
-def LeavesPub (k : Contract isa) (V : State → Addr → Option (BitVec 8)) : Prop :=
-  ∀ s₁ s₂, k.pre s₁ → k.pre s₂ → k.pub s₁ s₂ → Outside 0 s₁ s₂ → s₁.unknowns = s₂.unknowns → V s₁ = V s₂
+but for `rax`, or from the return addresses (`State.unknowns`), or what
+the unknowns a run of code from them ends with are (`innerU`), which two
+runs agree on when the functions it calls indirectly, among `N`, have the
+same addresses. -/
+def LeavesPub (k : Contract isa) (N : List String) (V : State → Addr → Option (BitVec 8)) : Prop :=
+  ∀ s₁ s₂, k.pre s₁ → k.pre s₂ → k.pub s₁ s₂ → Outside 0 s₁ s₂ → s₁.unknowns = s₂.unknowns →
+    (∀ n ∈ N, s₁.syms n = s₂.syms n) → V s₁ = V s₂
 
 /-- Code whose stack below `rsp` each run leaves as `V` says (`StackLeaves`),
 where `V` depends only on what two runs agree on (`LeavesPub`), leaves the
@@ -2032,11 +2038,11 @@ theorem resOk_of_leaves {A : Abi isa} (hA : ScrubAbi A) {sig : Sig}
     {leak : Option (Curry (sig.words A.ptrBits) (Mem → List Nat))} {c : Prog isa} {ks cs : List Nat}
     {V : State → Addr → Option (BitVec 8)}
     (hl : StackLeaves c (sig.contract A pre post wa stack leak) stack ks cs V)
-    (hv : LeavesPub (sig.contract A pre post wa stack leak) V) :
+    (hv : LeavesPub (sig.contract A pre post wa stack leak) (UpperLock.inames c) V) :
     ResOk c (sig.contract A pre post wa stack leak) stack ks cs := by
-  intro s₁ s₂ t₁ t₂ u₁ u₂ h₁ h₂ hp ho hu e₁ e₂ x hx hw
+  intro s₁ s₂ t₁ t₂ u₁ u₂ h₁ h₂ hp ho hu hsy e₁ e₂ x hx hw
   have hsp : s₂.gpr .rsp = s₁.gpr .rsp := (ho.2.2.1 .rsp (by decide)).symm
-  rw [hl s₁ t₁ u₁ h₁ e₁ x hx hw, hl s₂ t₂ u₂ h₂ e₂ x (hsp ▸ hx) (hsp ▸ hw), hv s₁ s₂ h₁ h₂ hp ho hu]
+  rw [hl s₁ t₁ u₁ h₁ e₁ x hx hw, hl s₂ t₂ u₂ h₂ e₂ x (hsp ▸ hx) (hsp ▸ hw), hv s₁ s₂ h₁ h₂ hp ho hu hsy]
   cases V s₂ x with
   | some b => rfl
   | none =>

@@ -390,7 +390,7 @@ theorem Verified.scrubPart {c : Prog isa} {v f : VecLevel} {rb : Nat} {xs xs' : 
       by_cases hb : (⟨s₁.gpr .rsp - BitVec.ofNat 64 stack, stack⟩ : Region).Contains x 1
       · rw [hm₁ x, hm₂ x, ← hsp', hU]
         exact tailMem_congr _ _ _ _ _ x fun hw =>
-          hres _ _ _ _ _ _ h₁ h₂ hp ho hun a₁ a₂ x hb fun h' => hw ((wcov_same hcc _ _).mpr h')
+          hres _ _ _ _ _ _ h₁ h₂ hp ho hun (hQ hQq _ _ hp) a₁ a₂ x hb fun h' => hw ((wcov_same hcc _ _).mpr h')
       · have := o15 x (by simpa only [finState_other] using hx)
         rw [finState_other.1, finState_other.1, (hout₁ x hb).2, (hout₂ x (hsp' ▸ hb)).2] at this
         rw [(hout₁ x hb).1, (hout₂ x (hsp' ▸ hb)).1]
@@ -1565,7 +1565,7 @@ theorem Verified.scrubPartH {c : Prog isa} {rb : Nat} {xs xs' : List XReg}
       by_cases hb : (⟨s₁.gpr .rsp - BitVec.ofNat 64 stack, stack⟩ : Region).Contains x 1
       · rw [hm₁ x, hm₂ x, ← hsp', hU]
         exact tailMem_congr _ _ _ _ _ x fun hw =>
-          hres _ _ _ _ _ _ h₁ h₂ hp ho hun a₁ a₂ x hb fun h' => hw ((wcov_same hcc _ _).mpr h')
+          hres _ _ _ _ _ _ h₁ h₂ hp ho hun (hQ hQq _ _ hp) a₁ a₂ x hb fun h' => hw ((wcov_same hcc _ _).mpr h')
       · have := o15 x (by simpa only [finState_other] using hx)
         rw [finState_other.1, finState_other.1, (hout₁ x hb).2, (hout₂ x (hsp' ▸ hb)).2] at this
         rw [(hout₁ x hb).1, (hout₂ x (hsp' ▸ hb)).1]

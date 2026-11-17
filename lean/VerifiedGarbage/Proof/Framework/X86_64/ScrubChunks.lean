@@ -122,7 +122,7 @@ def withScrubResC {api : Api} (r : Registration api target)
 of the stack wiped, `ResOk` asks nothing of the code. -/
 theorem resOk_allC (c : Prog isa) (k : Contract isa) {stack : Nat} {cs : List Nat}
     (h8 : ∀ b ∈ cs, b % 8 = 0) (hs : cs.sum = stack) : ResOk c k stack (allKs cs) cs := by
-  intro s₁ s₂ t₁ t₂ u₁ u₂ _ _ _ _ _ _ _ x hx hn
+  intro s₁ s₂ t₁ t₂ u₁ u₂ _ _ _ _ _ _ _ _ x hx hn
   exact absurd (wcov_all h8 (by rw [hs]; exact hx)) hn
 
 /-- `r` with every granule of its stack wiped, in the chunks `cs` (from the

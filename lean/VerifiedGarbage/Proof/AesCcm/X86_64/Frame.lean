@@ -317,7 +317,7 @@ theorem setup_resOk_check {A : Abi isa} {sig : Sig}
   simp only [resOkB, Bool.and_eq_true, beq_iff_eq, List.all_eq_true, List.mem_range, Bool.or_eq_true,
     Bool.not_eq_true'] at hb
   obtain ⟨⟨⟨hok, hroom⟩, hdep⟩, hcov⟩ := hb
-  intro s₁ s₂ t₁ t₂ u₁ u₂ h₁ h₂ hp ho hu e₁ e₂ x hx hw
+  intro s₁ s₂ t₁ t₂ u₁ u₂ h₁ h₂ hp ho hu _ e₁ e₂ x hx hw
   obtain ⟨-, ha⟩ := VG.Taint.check_sound (A := rtaint) hτ (init_agree hA hfit hpub h₁ h₂ ho hp hu) e₁ e₂
   have inv := ha hok
   have hsp : u₁.gpr .rsp = s₁.gpr .rsp := Exec.rsp hspSafe e₁
@@ -534,7 +534,7 @@ theorem res_of_entry {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → P
     ResOk (Impl.StackScratch.X86_64.withStackArgScratch 2608 4 c) (sig.contract abi pre post true 2624 leak)
       2624 tightKs tightChunks := by
   have hb' : 16 + 8 * X86_64.nStack sig + 320 * Elem.size .u64 ≤ 2608 := by rw [hns]; decide
-  intro s₁ s₂ t₁ t₂ u₁ u₂ h₁ h₂ hp ho hu e₁ e₂ x hx hn
+  intro s₁ s₂ t₁ t₂ u₁ u₂ h₁ h₂ hp ho hu _ e₁ e₂ x hx hn
   obtain ⟨tb₁, ub₁, tp₁, pb₁, eb₁, ep₁, ap₁, hm₁, hf₁⟩ := frame_entry hk hns hpre hbody hc hd hb h₁ e₁
   obtain ⟨tb₂, ub₂, tp₂, pb₂, eb₂, ep₂, ap₂, hm₂, hf₂⟩ := frame_entry hk hns hpre hbody hc hd hb h₂ e₂
   have hsp := ho.2.2.1 .rsp (by decide)
@@ -551,7 +551,8 @@ theorem res_of_entry {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → P
       StackLock.narrowS_unknowns (n := 320) (e := .u64) (stack := 16) hk hb' (by decide) h₂, hu]
   obtain ⟨tq₁, q₁, eq₁, hq₁⟩ := setup_zero hk hns (hz _ h₁) ep₁ ap₁
   obtain ⟨tq₂, q₂, eq₂, hq₂⟩ := setup_zero hk hns (hz _ h₂) ep₂ ap₂
-  have hpb := hset _ _ _ _ _ _ (hz _ h₁) (hz _ h₂) (hzp _ _ hp) ho rfl eq₁ eq₂ x hx (by simp [WCov, cov, covC])
+  have hpb := hset _ _ _ _ _ _ (hz _ h₁) (hz _ h₂) (hzp _ _ hp) ho rfl
+    (fun _ hn => by rw [show UpperLock.inames setupFramed = [] from rfl] at hn; cases hn) eq₁ eq₂ x hx (by simp [WCov, cov, covC])
   rw [hq₁, hq₂] at hpb
   rw [hm₁, hm₂, ← hsp, hU]
   exact lose_congr _ _ _ ((hf₁ x hx hn).trans (hpb.trans
