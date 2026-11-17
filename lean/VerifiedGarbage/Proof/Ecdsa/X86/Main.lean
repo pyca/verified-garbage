@@ -705,18 +705,36 @@ theorem mulCall_ok (hc : CfgOk c) (hsp : SpOk c.mulFn 20) {C : Impl.Weierstrass.
       rcases hr with rfl | rfl
       · exact hA.aw
       · exact hA.as) (by decide), hA.val]
-  obtain m₄ : s₄.mem = s₃.mem := by rw [u₄.mem, m₃]
+  obtain m₄ : s₄.mem = s'.mem := u₄.mem
+  obtain U' : Unch base [Mont.outW] s₃.mem s'.mem :=
+    unch_of_frame8 hs (Frame.below_mono (wr := []) m₃ (by decide) (by omega_arith)) h28 hz
+  have h7 := hc.n10
+  obtain sv' : ∀ {i}, i < 45 → sv c base s' i = sv c base s₃ i := fun hi =>
+    U'.wordsVal (fun w hw => by
+      rw [List.mem_singleton.mp hw]; exact .inl (by have := sl_le c h7 hi; simp only; omega_arith))
+      (by have := sl_le c h7 hi; omega_arith)
+  obtain eX : wordsVal s'.mem base (c.sl RX) c.n = wordsVal s₃.mem base (c.sl RX) c.n := sv' (by decide)
+  obtain eY : wordsVal s'.mem base (c.sl RY) c.n = wordsVal s₃.mem base (c.sl RY) c.n := sv' (by decide)
+  obtain eZ : wordsVal s'.mem base (c.sl RZ) c.n = wordsVal s₃.mem base (c.sl RZ) c.n := sv' (by decide)
   obtain edi₄ : s₄.gpr .edi = s.gpr .edi := by rw [u₄.gpr, hv']
-  refine ⟨⟨fun r hr => ?_, by rw [u₄.rd, rd'], by rw [u₄.wr, wr']⟩, ?_, by rw [m₄]; exact L₃, ?_, ?_⟩
+  refine ⟨⟨fun r hr => ?_, by rw [u₄.rd, rd'], by rw [u₄.wr, wr']⟩, ?_, ?_, ?_, ?_⟩
   · by_cases h : r = .edi
     · subst h; exact edi₄
     · rw [u₄.other _ h]
       exact cs' r (by revert hr h; cases r <;> decide)
-  · rw [m₄]; exact Ut.trans U₃
+  · rw [m₄]
+    exact fun x hx => (U' x fun w hw => hx w (List.mem_append_left _ hw)).trans ((Ut.trans U₃) x hx)
+  · rw [m₄]
+    intro x hx
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
+    rcases hx with rfl | rfl | rfl
+    · rw [eX]; exact L₃ _ (by simp)
+    · rw [eY]; exact L₃ _ (by simp)
+    · rw [eZ]; exact L₃ _ (by simp)
   · show Q 0 (toM _ _ (wordsVal s₄.mem _ _ _)) (toM _ _ (wordsVal s₄.mem _ _ _)) (toM _ _ (wordsVal s₄.mem _ _ _))
-    rw [m₄]; exact R₃
+    rw [m₄, eX, eY, eZ]; exact R₃
   · exact hA.keep (by rw [u₄.other _ (by decide), esp']) edi₄ (by rw [u₄.rd, rd']) (by rw [u₄.wr, wr'])
-      (by rw [m₄, m₃]; exact F₂)
+      (by rw [m₄]; exact F₂)
 
 /-- The call's stack: what `vg_<curve>_mul`'s own calls use, below the push
 and the return address. -/

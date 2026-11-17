@@ -531,7 +531,7 @@ theorem fast_ok {s : State} {base : Addr} {size w candidate : Nat}
     rw [pbase]
     simpa only [off, BitVec.add_assoc, ← BitVec.ofNat_add] using S.read (d := slot w 5 + 4 * i) (n := 4) (by omega_using [space, index])
   unfold fast
-  refine WP.frameAlloc (by decide) (by decide) (by decide) (by omega_using [fit]) (NoSp.of_all (by rfl)) ?_
+  refine WP.frameAllocKept (by decide) (by decide) (by decide) (by omega_using [fit]) (NoSp.of_all (by rfl)) ?_
   let initial := allocFrame 20 s
   obtain C : VG.Proof.RsaKeyGen.X86.Sieve.StackContext (s.gpr .esp - 20#32) initial :=
     VG.Proof.RsaKeyGen.X86.FilterStack.allocated_context (by omega_using [fit])

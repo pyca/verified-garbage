@@ -523,7 +523,7 @@ theorem doubles_ok {g : Geometry} (v : g.Valid) {s : State} {c capacity : Nat} {
       rw [← Nat.pow_succ']; congr 1; omega_using [minW]
     omega_using [odd, top, even]
   unfold doubles
-  refine WP.frameAlloc (by decide) (by decide) (by decide) (by rw [sp]; omega_using [low]) (NoSp.of_all (by rfl)) ?_
+  refine WP.frameAllocKept (by decide) (by decide) (by decide) (by rw [sp]; omega_using [low]) (NoSp.of_all (by rfl)) ?_
   have St : StackContext (s.gpr .esp - 20#32) (allocFrame 20 s) :=
     VG.Proof.RsaKeyGen.X86.FilterStack.allocated_context (by rw [sp]; omega_using [low])
   have Ci : Context g (allocFrame 20 s) :=

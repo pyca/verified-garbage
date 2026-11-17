@@ -559,10 +559,21 @@ theorem call_ok {round : Prog isa} {name : String}
   have sa := fun {i} (hi : i < 2) => entry_arg A (by rw [S.ready.caller.sp]; omega_using [fit]) hi
   obtain ⟨value, keeps⟩ := roundPost ptrBound capBound (sa (by decide)) (sa (by decide)) Mu
     ((F.val32 (v.arrayFit (by decide)) (by simp)).trans witness) post
-  rw [mem] at keeps
   rw [reg] at value
+  -- The pop loses the arguments' frame, below `esp`, apart from the workspace.
+  have L : WorkspaceFrame g [] u.mem t.mem := by
+    intro i index _
+    apply mem.bytes (R := ⟨g.W, g.L⟩)
+    · intro r hr
+      obtain rfl := List.mem_singleton.mp hr
+      rw [S.ready.caller.sp]
+      exact far.sub_right (below_sub (by decide : 8 ≤ 108) fit)
+    · have := S.ready.scratch.nowrap
+      change g.L ≤ 2 ^ 64
+      omega_using [this]
+    · exact index
   have W : WorkspaceFrame g (roundWrites g) s.mem t.mem :=
-    (F.mono (by simp)).trans (reviewed_frame length keeps)
+    ((F.mono (by simp)).trans (reviewed_frame length keeps)).trans (L.mono (by simp))
   have G : Frame ([⟨g.W, g.L⟩] ++ [below p 108]) s.mem t.mem := by
     rw [← S.ready.caller.sp]
     exact VG.X86.Frame.below_mono frame (by change 8 + stackUse round + 4 ≤ 108; omega_using [stack])

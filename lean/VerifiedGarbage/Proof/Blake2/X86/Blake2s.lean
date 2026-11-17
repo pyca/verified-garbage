@@ -171,7 +171,7 @@ theorem update_framed : Verified X86.target
     (Spec.Blake2.updateSContract X86.abi (32 + 604)) :=
   X86.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 72) (stack := 32) (bytes := 604)
     update_verified (by decide) (by lit_decide) (by lit_decide)
-    (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Blake2.updateSPost_local _) (fun vs m m₁ m₂ r hl _ hb => Proof.Blake2.updateSPostOut_local _ vs m m₁ m₂ r hl hb)
+    (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Blake2.updateSPost_local _) (fun vs m m₁ m₂ r hl _ hb => Proof.Blake2.updateSPost_out _ vs m m₁ m₂ r hl hb)
     (by implies_sat [Spec.Blake2.updateSContract, Spec.Blake2.updateSSig, X86.abi, X86.argSlots, X86.argVal,
         X86.argBytes]
       [updateFrameSat, satWith, X86.arg, X86.argAddr, Mem.readW, Mem.read] using updateFrameSat)
@@ -181,7 +181,7 @@ theorem finalize_framed : Verified X86.target
     (Spec.Blake2.finalizeSContract X86.abi (32 + 600)) :=
   X86.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 72) (stack := 32) (bytes := 600)
     finalize_verified (by decide) (by lit_decide) (by lit_decide)
-    (fun _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Blake2.finalizeSPost_local _) (fun vs m m₁ m₂ r hl _ hb => Proof.Blake2.finalizeSPostOut_local _ vs m m₁ m₂ r hl hb)
+    (fun _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Blake2.finalizeSPost_local _) (fun vs m m₁ m₂ r hl _ hb => Proof.Blake2.finalizeSPost_out _ vs m m₁ m₂ r hl hb)
     (by implies_sat [Spec.Blake2.finalizeSContract, Spec.Blake2.finalizeSSig, X86.abi, X86.argSlots,
         X86.argVal, X86.argBytes]
       [finalizeFrameSat, satWith, X86.arg, X86.argAddr, Mem.readW, Mem.read] using finalizeFrameSat)

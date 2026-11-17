@@ -62,8 +62,7 @@ theorem finFramed {I : Spec.Hmac.Instance} {c : Prog isa}
     (hsat : ∃ s, (I.finalizeContract X86.abi (48 + finFrame I)).pre s)
     (hsp : c.allInstrs (fun i => !Taint.clobbers i .esp) = true := by lit_decide)
     (hd : stackUse c ≤ 48 := by lit_decide)
-    (hs : 8 * I.scratch < 4068 := by decide) (hS : I.S.stateBytes < 2 ^ 64 := by decide)
-    (hD : I.S.digestBytes < 2 ^ 64 := by decide) :
+    (hs : 8 * I.scratch < 4068 := by decide) (hS : I.S.stateBytes < 2 ^ 64 := by decide) :
     Verified X86.target (Impl.StackScratch.X86.withStackScratch (finFrame I) 5 c)
       (I.finalizeContract X86.abi (48 + finFrame I)) :=
   X86.Verified.stackScratch (sig := Spec.Hmac.finalizeSig I.S) (nm := "scratch") (e := .u64)
@@ -75,7 +74,7 @@ theorem finFramed {I : Spec.Hmac.Instance} {c : Prog isa}
       simp only [finFrame]; omega_using [])
     hsp hd (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
     (Hmac.finalizePost_local I.S _ hR hS)
-    (fun vs m m₁ m₂ r hl _ hb => Hmac.finalizePostOut_local I.S _ hD vs m m₁ m₂ r hl hb) hsat
+    (fun vs m m₁ m₂ r hl _ hb => Hmac.finalizePostOut_local I.S _ vs m m₁ m₂ r hl hb) hsat
 
 /-- Memory holding the arguments `0x1000, 0x1400, 0x1800, 0` of `init` at
 `0x6004`. -/

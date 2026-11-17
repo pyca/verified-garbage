@@ -44,28 +44,4 @@ theorem initPostOut_local (hR : ReprLocal S) (hS : S.stateBytes < 2 ^ 64) : ∀ 
     fun p hp i hi => (hp _ (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hS, hi]))).symm
   exact ⟨hR (hs _ hb.1) h.1, hR (hs _ hb.2.1) h.2⟩
 
-/-- `finalizePost` reads the memory on return only within the output. -/
-theorem finalizePostOut_local (hD : S.digestBytes < 2 ^ 64) : ∀ vs m m₁ m₂ r,
-    vs.length = ((finalizeSig S).words pb).length →
-    (∀ b ∈ Sig.bufs (finalizeSig S).params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
-    Curry.apply ((finalizeSig S).words pb) (finalizePost S pb) vs m m₁ r →
-      Curry.apply ((finalizeSig S).words pb) (finalizePost S pb) vs m m₂ r := by
-  intro vs m m₁ m₂ r hlen hb h
-  obtain ⟨inn, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 3) hlen
-  replace hlen := Nat.succ.inj hlen
-  obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-  replace hlen := Nat.succ.inj hlen
-  obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-  replace hlen := Nat.succ.inj hlen
-  obtain ⟨out, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-  replace hlen := Nat.succ.inj hlen
-  obtain rfl := List.eq_nil_of_length_eq_zero hlen
-  simp only [finalizeSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
-    forall_eq, Elem.size, Nat.mul_one] at hb
-  intro k0 text h1 h2 hri hc hro
-  rw [← h k0 text h1 h2 hri hc hro]
-  simp only [Spec.Sha256.bytesAt]
-  exact List.map_congr_left fun i hi => (hb.2.2 _ (Offset.contains_base _
-    (by have := List.mem_range.mp hi; omega_using [this]) (by have := List.mem_range.mp hi; omega_using [hD, this]))).symm
-
 end VG.Proof.Hmac

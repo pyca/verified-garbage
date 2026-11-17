@@ -79,8 +79,9 @@ word for `used`, and the stack. -/
 theorem call_chg {E : Env} (v : E.Valid) {bits : Nat} {t w u : State} (hsp : t.gpr .esp = E.sp)
     (Fm : Frame [below E.sp 24] t.mem w.mem)
     {k : Nat} (hk : k ≤ 200) (Fu : Frame (testWr E t ++ [below (t.gpr .esp) k]) t.mem u.mem)
+    {m₂ : Mem} (M : Frame [below E.sp 20] m₂ u.mem)
     (K : Proof.Dsa.ModPow.Keeps (off E.base sPP) ppWords
-      [(0, VG.Impl.Dsa.X86.ProbablePrime.scratchBytes (VG.Impl.Dsa.X86.ProbablePrime.width bits))] w.mem u.mem) :
+      [(0, VG.Impl.Dsa.X86.ProbablePrime.scratchBytes (VG.Impl.Dsa.X86.ProbablePrime.width bits))] w.mem m₂) :
     E.Chg [(sPP, VG.Impl.Dsa.X86.ProbablePrime.scratchBytes (VG.Impl.Dsa.X86.ProbablePrime.width bits)),
       (fUsedOut, 8)] t.mem u.mem := by
   have sz := v.size_ge
@@ -103,7 +104,7 @@ theorem call_chg {E : Env} (v : E.Valid) {bits : Nat} {t w u : State} (hsp : t.g
       simp only [Region.Contains]
       omega_arith)
     rw [← hx] at k
-    rw [k]
+    rw [M x (by intro r hr; simp only [List.mem_singleton] at hr; subst hr; exact hS' 20 (by decide)), k]
     exact Fm x (by intro r hr; simp only [List.mem_singleton] at hr; subst hr; exact hS' 24 (by decide))
   · refine Fu x ?_
     intro r hr
@@ -268,7 +269,7 @@ theorem testCall_ok {bits : Nat} {name : String} {callee : Prog isa}
     exact (wk.sub_left (randAddr_sub hu)).sub_right (below_sub (by decide) (by omega_arith))
   simp only [wsW, uoW, randPtr_wide v hu, lenN, ppN, cw, rw'] at post
   obtain ⟨P1, P2, P3⟩ := post
-  rw [m₂] at P2 P3
+  obtain m₂ : Frame [below E.sp 20] s₂.mem u.mem := by rw [spT] at m₂; exact m₂
   obtain tdi : t.gpr .edi = s.gpr .edi := A.other _ (by decide) (by decide) (by decide) (by decide) (by decide)
   generalize hres : Spec.Dsa.probablePrime (Proof.Dsa.ProbablePrime.candidateAt
     (VG.Impl.Dsa.X86.ProbablePrime.layout bits) s.mem (off E.base sPP)) (E.witT.drop used) = res at P1 P3 ⊢
@@ -279,14 +280,17 @@ theorem testCall_ok {bits : Nat} {name : String} {callee : Prog isa}
     rdu.trans A.rd, wru.trans A.wr, usy.trans A.syms, ?_, ?_⟩
   · rw [hres, ← ax₂]; exact BitVec.eq_of_toNat_eq (by rw [P1, BitVec.toNat_ofNat, Nat.mod_eq_of_lt stLt])
   · rw [← A.mem]
-    exact call_chg v spT Fm (by simp only [List.length_cons, List.length_nil]; omega_arith) Fu P2
+    exact call_chg v spT Fm (by simp only [List.length_cons, List.length_nil]; omega_arith) Fu m₂ P2
   · intro b rest hr
     obtain hr' : res = some (b, rest) := hres.symm.trans hr
     obtain wl : E.witT.length = E.witLen := by rw [← B.wit]; simp [Spec.Rsa.bytesAt]
     obtain restLe : rest.length ≤ E.witLen - used := by
       have := (VG.Proof.Dsa.Generation.probablePrime_suffix hr).length_le
       simp only [List.length_drop, wl] at this; omega_arith
-    rw [readW_low]
+    rw [m₂.readW (r := ⟨off E.base fUsedOut, 4⟩) (Region.contains_self _ _) (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact (v.scratchStack.sub_left (Offset.sub_base _ (by simp only [fUsedOut, hdr]; omega_arith))).sub_right
+        (below_sub (by decide) v.low)) (by decide), readW_low]
     obtain h := P3 b rest hr'
     simp only [Spec.Rsa.wordsAt, List.range_one, List.map_cons, List.map_nil, Nat.mul_zero,
       BitVec.add_zero, List.cons.injEq, and_true] at h

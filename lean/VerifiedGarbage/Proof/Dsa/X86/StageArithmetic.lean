@@ -186,7 +186,7 @@ theorem call_ok {s : State} {base : Addr} {size n m : Nat}
   refine workspaceCall_ok (P := P) (Q := fun mem => wordsVal mem base (slot n 6) n =
       wordsVal s.mem base (slot n 5) n * wordsVal s.mem base (slot n 8) n % m)
     (bytes := contextBytes n) (name := mulName n) hs room hused (body_noSp n)
-    (by rw [body_stackUse]; decide) (Pow.scratch_fits hz) ?_ ?_
+    (by rw [body_stackUse]; decide) (Pow.scratch_fits hz) ?_ ?_ ?_
   · intro mem F
     have vals : ∀ d k, d + 4 * k ≤ size → val32 mem base d k = val32 s.mem base d k :=
       fun _ _ hd => Pow.frame_val32 room hs.nowrap F hd
@@ -200,6 +200,10 @@ theorem call_ok {s : State} {base : Addr} {size n m : Nat}
   · intro v E _ ⟨M, A, B⟩
     exact WP.mono (body_ok E hz hn hn48 M hm1 hodd) fun w ⟨V, O, R, Rd, Wr⟩ =>
       ⟨by rw [V, A, B], Pow.OutsS.of_outs O, R, Rd, Wr⟩
+  · intro mem mem' F h
+    rw [wordsVal_eq_val32, Pow.frame_val32 room hs.nowrap F
+      (by simp only [contextBytes, slot, stride] at hz ⊢; omega_using [hz]), ← wordsVal_eq_val32]
+    exact h
 
 end VG.Proof.Dsa.X86.Mul
 
