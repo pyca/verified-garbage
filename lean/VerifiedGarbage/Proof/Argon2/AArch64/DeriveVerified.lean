@@ -1124,14 +1124,20 @@ theorem BodyDone.whole_frame {s t : State} (h : AbiEnvironment s) (done : BodyDo
       rw [BitVec.sub_sub, ← BitVec.ofNat_add]
       exact Region.sub_prefix (by decide)
 
-theorem return_post {s t : State} (done : BodyDone s t) :
-    (Spec.Argon2.deriveContract AArch64.abi 400).post s (frameEnd t Impl.Argon2.AArch64.Derive.saved) := by
+theorem return_post {s t : State} (done : BodyDone s t) (h : AbiEnvironment s) {m : Mem}
+    {u : Nat → BitVec 64} (f : Frame [below s.sp (272 + 16 * Impl.Argon2.AArch64.Derive.saved.length)] t.mem m) :
+    (Spec.Argon2.deriveContract AArch64.abi 400).post s
+      { frameEnd t Impl.Argon2.AArch64.Derive.saved with mem := m, unknowns := u } := by
+  -- The output lies apart from the frames, whose bytes are lost.
+  have hd : (abiOutput s).Disjoint (below s.sp (272 + 16 * Impl.Argon2.AArch64.Derive.saved.length)) :=
+    ((h.reserved _ (List.mem_singleton_self _) (abiOutput s, true) (by simp [abiBuffers])).sub_left
+      (below_sub (by decide) (by decide))).symm
   have post := done.post
   sig_post [Spec.Argon2.deriveContract, Spec.Argon2.deriveSig, AArch64.abi,
     AArch64.argRegs, AArch64.pairedNarrowStack, AArch64.stackArg, AArch64.stackArgAddr, List.range, List.range.loop] at post
   sig_post [Spec.Argon2.deriveContract, Spec.Argon2.deriveSig, AArch64.abi,
     AArch64.argRegs, AArch64.pairedNarrowStack, AArch64.stackArg, AArch64.stackArgAddr, List.range, List.range.loop]
-  exact post
+  exact Eq.trans (List.map_congr_left fun i hi => lost_byte (R := abiOutput s) f hd (List.mem_range.mp hi)) post
 
 theorem code_wp (v : HPrime.Backend) (name : String) (s : State)
     (pre : (Spec.Argon2.deriveContract AArch64.abi 400).pre s) :
@@ -1144,7 +1150,7 @@ theorem code_wp (v : HPrime.Backend) (name : String) (s : State)
     (by have space := h.stack; change 384 ≤ (s.sp).toNat; omega_using [space])
   refine (body_ok v name s h).mono ?_
   intro t done
-  refine ⟨done.sp, done.wr, return_post done, ?_, ?_, ?_⟩
+  refine ⟨done.sp, done.wr, fun m u f => ⟨return_post done h f, ?_, ?_, ?_⟩⟩
   · have restored := frame_restored s t Impl.Argon2.AArch64.Derive.saved (by decide)
       (by have space := h.stack; change 384 ≤ (s.sp).toNat; omega_using [space]) done.sp
       (fun j hj => done.saved h j hj)
@@ -1157,8 +1163,10 @@ theorem code_wp (v : HPrime.Backend) (name : String) (s : State)
           r ∉ Impl.Argon2.AArch64.Derive.saved := by decide
       exact (frameEnd_reg t _ r (other r hr)).trans (done.unused r hr)
   · exact (frameEnd_metadata s t Impl.Argon2.AArch64.Derive.saved done.sp done.wr).1
-  · rw [frameEnd_mem]
-    exact done.whole_frame h
+  · -- The frames' bytes are lost, in the stack below the stack pointer.
+    exact (done.whole_frame h).trans (Frame.sub f fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨below s.sp 400, by simp [wholeWrites], below_sub (by decide) (by decide)⟩)
 
 end VG.Proof.Argon2.AArch64.Derive
 end
