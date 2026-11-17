@@ -69,10 +69,14 @@ def symState : X86.State :=
       s.mem.readW 4092 32 == 8192 && s.unknowns 0 == 8193 &&
       s.cf == some false && s.zf == some false && s.sf == some false && s.of == some false &&
       s.syms "VG_TABLE" == 12288 && s.wr == [⟨4092, 4⟩] &&
+      -- The release loses the frame's word (`lose`): the mask `8193` (bytes
+      -- 0x01, 0x20, 0, 0) replaces bytes 0 and 1 of `8192` by those of `8194`,
+      -- and bytes 2 and 3 keep theirs; it takes two unknowns, and a byte
+      -- outside the frame keeps its value.
       match X86.pop (.free 4) s s with
       | none => false
       | some t => t.gpr .esp == 4096 && t.gpr .eax == 12288 && t.wr.isEmpty &&
-          t.mem.readW 4092 32 == 8192
+          t.mem.readW 4092 32 == 8194 && t.unknowns 0 == 8195 && t.mem 4096 == 0
 
 -- The ModR/M /0 encoding follows Intel's register encoding, not an
 -- accidental order inferred by the assembler from the instruction text.
