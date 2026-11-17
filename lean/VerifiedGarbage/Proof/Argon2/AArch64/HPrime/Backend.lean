@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Blake2.AArch64.Stream.Verified
 public import VerifiedGarbage.Impl.Argon2.AArch64.HPrime
 public import VerifiedGarbage.Proof.Blake2.AArch64.Stream.CT
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.AArch64.Clears
+public import VerifiedGarbage.Proof.Framework.AArch64.Clears
 public import VerifiedGarbage.Proof.Blake2.Contract
 
 /-! Merged from `Proof.Argon2.AArch64.HPrime.Hash`. -/
