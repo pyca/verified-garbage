@@ -237,6 +237,71 @@ theorem crCallZ_wipe (v : GcmImpl) {c₀ : Prog isa} (hc : v.ctr.callee.code = .
       · simp only [Region.Contains] at hcn; rw [Offset.sub_toNat W a (by omega)] at hcn; omega
       · exact h.stkS _ hcn hS
 
+/-- `wipeR_zero`, for a function that then clears the registers (`clrAfter`). -/
+theorem wipeR_zeroC (lv : VG.Impl.Scrub.X86_64.VecLevel) {nm : String} {c : Prog isa} {r : Reg} {n b : Nat} (hb : b < 2 ^ 64) (hn : n ≤ b)
+    (h16 : n % 16 = 0 ∨ 16 ≤ n) (hr : ∀ i ∈ instrs c, Taint.clobbers i r = false) (hrs : r ≠ .rsp)
+    {s u : State} {t : List Leak}
+    (e : Exec isa (.call nm (.seq (.seq c (.block (wipeX r 0 n))) (.block (clrAfter lv)))) s t u)
+    (hR : Covers [⟨s.gpr r, b⟩] s.wr) :
+    ∀ x, (x - s.gpr r).toNat < n → u.mem x = 0 := by
+  cases e with
+  | call hc hb' hret =>
+    rename_i s₁ s₂
+    cases hb' with
+    | seq a w =>
+      cases w with
+      | block w =>
+        rw [execBlock_clrAfter] at w
+        obtain ⟨rfl, -⟩ := Prod.mk.inj (Option.some.inj w)
+        cases a with
+        | seq a w₁ =>
+          cases w₁ with
+          | block w₁ =>
+            simp only [isa, call, Option.some.injEq] at hc
+            subst hc
+            obtain ⟨-, hwr⟩ := Exec.rdwr a
+            obtain hg := Exec.gpr hr a
+            rw [RegUpd.gpr_setReg_of_ne (h := hrs)] at hg
+            obtain ⟨m', ew, hm⟩ := wipeX_run (o := 0) hb _ (by rw [hwr]; exact hR) hg (by omega) h16
+            rw [ew] at w₁
+            obtain ⟨rfl, -⟩ := Prod.mk.inj (Option.some.inj w₁)
+            simp only [isa, X86_64.ret] at hret
+            split at hret <;> cases hret
+            intro x hx
+            show m' x = 0
+            rw [hm x, Scrub.ite_t ⟨Nat.zero_le _, by omega⟩]
+
+/-- `crCallZ_wipe`, for the function clearing the registers too. -/
+theorem crCallZ_wipeC (lv : VG.Impl.Scrub.X86_64.VecLevel) (v : GcmImpl) {c₀ : Prog isa}
+    (hc : v.ctr.callee.code = .seq (.seq c₀ (.block (wipeX .r9 0 1480))) (.block (clrAfter lv)))
+    (h9 : ∀ i ∈ instrs c₀, Taint.clobbers i .r9 = false) (f : Proof.Aes.X86_64.Ctr32Small v.ctr.callee) :
+    CrCallZ v 1480 (zw 512 1992) := by
+  intro s K C D W R n h
+  obtain ⟨t, u, e, q, fr⟩ := ctr_callS v.ctr f h
+  refine ⟨t, u, e, q, fr, fun d a b => ?_⟩
+  rw [hc] at e
+  obtain hR : Covers [⟨s.gpr .r9, 2048⟩] s.wr := fun a m ⟨r, hr, hcn⟩ => by
+    simp only [List.mem_singleton] at hr; subst hr
+    rw [h.r9] at hcn
+    exact h.writes a m ⟨⟨W + BitVec.ofNat 64 512, 2048⟩, by simp, hcn⟩
+  obtain e9 : s.gpr .r9 = W + BitVec.ofNat 64 512 := h.r9
+  obtain hd : (W + BitVec.ofNat 64 d - s.gpr .r9).toNat = d - 512 := by
+    rw [e9]; exact Offset.sub_toNat W a (by omega)
+  by_cases hz : d < 1992
+  · rw [show zw 512 1992 d = true by simp [zw]; omega, Scrub.ite_t rfl]
+    exact wipeR_zeroC lv (by decide) (by decide) (.inr (by decide)) h9 (by decide) e hR _ (by rw [hd]; omega)
+  · rw [show zw 512 1992 d = false by simp [zw]; omega]
+    exact fr _ fun r hr hcn => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      obtain hS : (⟨W + BitVec.ofNat 64 512, 2048⟩ : Region).Contains (W + BitVec.ofNat 64 d) 1 := by
+        show (W + BitVec.ofNat 64 d - (W + BitVec.ofNat 64 512)).toNat + 1 ≤ 2048
+        rw [Offset.sub_toNat W a (by omega)]; omega
+      rcases hr with rfl | rfl | rfl | rfl
+      · exact h.cs _ hcn hS
+      · exact h.ds _ hcn hS
+      · simp only [Region.Contains] at hcn; rw [Offset.sub_toNat W a (by omega)] at hcn; omega
+      · exact h.stkS _ hcn hS
+
 /-- `vg_aes_ctr32` that needs no working space: it leaves `W + 512` as it was. -/
 theorem crCallZ_free (v : GcmImpl) (cf : Proof.Aes.X86_64.Ctr32Free v.ctr.callee) : CrCallZ v 0 zNo := by
   intro s K C D W R n h
@@ -1573,6 +1638,17 @@ theorem streamFV_congr (Lb : BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64
     (a' := fun i => if i = 0 then stackArg s₂ 0 else s₂.gpr .rsp - BitVec.ofNat 64 2584 + BitVec.ofNat 64 24)
     (fun r h _ => hg r h) rfl rfl x
   simp only [streamFV, hsp, ha, hL]
+
+theorem streamFVZ_congr (z : Nat → Bool) (Lb : BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 →
+      Addr → Addr → Option (BitVec 8)) {s₁ s₂ : State} (hg : ∀ r, r ≠ .rax → s₁.gpr r = s₂.gpr r)
+    (ha : stackArg s₁ 0 = stackArg s₂ 0) : streamFVZ z Lb s₁ = streamFVZ z Lb s₂ := by
+  funext x
+  have hsp := hg .rsp (by decide)
+  have hL := streamLZ_congr z Lb (g := s₁.gpr) (g' := s₂.gpr)
+    (a := fun i => if i = 0 then stackArg s₂ 0 else s₂.gpr .rsp - BitVec.ofNat 64 2584 + BitVec.ofNat 64 24)
+    (a' := fun i => if i = 0 then stackArg s₂ 0 else s₂.gpr .rsp - BitVec.ofNat 64 2584 + BitVec.ofNat 64 24)
+    (fun r h _ => hg r h) rfl rfl x
+  simp only [streamFVZ, hsp, ha, hL]
 
 open VG.Impl.StackScratch.X86_64 in
 /-- The code of `stream_encrypt` or `stream_decrypt` (`c`, verified against the
