@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.MlKem.Mem
 import VerifiedGarbage.Proof.MlDsa.Verify.Mem
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
+import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
 meta import VerifiedGarbage.Proof.MlDsa.PPC64LE.Sign.Output
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 
@@ -484,7 +485,11 @@ theorem withCache_verified {P : Prims} {S : Nat} (hP : SPrimsOk P S) (h48 : 48 �
       (by have := hk.stk; omega_using [this]) (hd96 σ hk) (hn σ hk)
       (R := fun m r => Spec.MlDsa.Outcome (fun b => Spec.MlDsa.signMu p b (skOf p σ) (muOf σ) (rndOf σ))
         (r.setWidth 32) (bytesAt m (sSig σ) p.sigLen))
-      (WP.mono (body σ hk) fun s' ⟨ha, hq⟩ => ⟨ha, ?_⟩)) fun s' ⟨ha, hq⟩ => ⟨ha, ?_⟩
+      (WP.mono (body σ hk) fun s' ⟨ha, hq⟩ => ⟨ha, ?_⟩) (fun m m' _ fl h => by
+        -- The pops lose the frames' bytes, which lie apart from the signature.
+        have e : bytesAt m' (sSig σ) p.sigLen = bytesAt m (sSig σ) p.sigLen := List.map_congr_left fun i hi =>
+          lost_byte fl (R := reg (sSig σ) p.sigLen) (hk.b_g.sub_left hk.b96).symm (List.mem_range.mp hi)
+        rw [e]; exact h)) fun s' ⟨ha, hq⟩ => ⟨ha, ?_⟩
     · generalize hτ : kSt .r8 .r9 σ = τ at hq
       sig_post [Spec.MlDsa.signContract, Spec.MlDsa.signSig, PPC64LE.abi, PPC64LE.argRegs] at hq
       subst hτ

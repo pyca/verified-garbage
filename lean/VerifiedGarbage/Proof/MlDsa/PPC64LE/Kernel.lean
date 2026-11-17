@@ -46,6 +46,12 @@ theorem frame_slot_sub (sp : Addr) {a : Nat} (ha : a = 48 ∨ a = 96) :
     Region.Sub ⟨sp - BitVec.ofNat 64 a + 32, 16⟩ (below sp 96) := by
   rcases ha with rfl | rfl <;> exact fun x hx => by simp only [Region.Contains] at hx ⊢; bv_omega
 
+/-- The frames saving `r14` and `r15` lie in the 96 bytes below the stack
+pointer. -/
+theorem frame_sub96 (sp : Addr) {a : Nat} (ha : a = 48 ∨ a = 96) :
+    Region.Sub ⟨sp - BitVec.ofNat 64 a, 48⟩ (below sp 96) := by
+  rcases ha with rfl | rfl <;> exact fun x hx => by simp only [Region.Contains] at hx ⊢; bv_omega
+
 /-- The state the body starts in. -/
 theorem body_state {s₀ : State} :
     BodyStart s₀ (framed .r15 (framed .r14 s₀)) := by
@@ -70,17 +76,27 @@ theorem saving_ok {body : Prog isa} {s₀ : State} {P : Mem → Prop}
     (hsp : 96 ≤ s₀.sp.toNat) (hd : ∀ R ∈ s₀.wr, (below s₀.sp 96).Disjoint R)
     (hn : sdepth body + 96 < 2 ^ 64)
     (hb : WP isa body (framed .r15 (framed .r14 s₀)) fun s' =>
-      (∀ r ∈ preserved, r ≠ .r14 → r ≠ .r15 → s'.gpr r = s₀.gpr r) ∧ s'.lr = s₀.lr ∧ P s'.mem) :
+      (∀ r ∈ preserved, r ≠ .r14 → r ≠ .r15 → s'.gpr r = s₀.gpr r) ∧ s'.lr = s₀.lr ∧ P s'.mem)
+    (hPf : ∀ m m', Frame [below s₀.sp 96] m m' → P m → P m') :
     WP isa (saving body) s₀ fun s' => (∀ r ∈ preserved, s'.gpr r = s₀.gpr r) ∧ s'.sp = s₀.sp ∧
       s'.lr = s₀.lr ∧ P s'.mem := by
   have hsp1 : 48 ≤ (s₀.sp - 48).toNat := by bv_omega
-  refine WP.frameRegAnyKept (r := .r14) (by omega_using [hsp]) (fun R hR => (hd R hR).sub_left (frame_slot_sub s₀.sp (.inl rfl)))
+  refine WP.frameRegAny (r := .r14) (by omega_using [hsp]) (fun R hR => (hd R hR).sub_left (frame_slot_sub s₀.sp (.inl rfl)))
     ?_ (by simp only [sdepth, Instr.frameBytes]; omega_using [hn])
-  refine WP.frameRegAnyKept (r := .r15) hsp1 (fun R hR => ?_) (WP.mono hb fun s' ⟨hk, hlr, hP⟩ => ?_) (by omega_using [hn])
+  refine WP.frameRegAny (r := .r15) hsp1 (fun R hR => ?_)
+    (WP.mono hb fun s' ⟨hk, hlr, hP⟩ m₂ u₂ f₂ m₁ u₁ f₁ => ?_) (by omega_using [hn])
   · have : (framed .r14 s₀).sp = s₀.sp - 48 := rfl
     rw [this, show s₀.sp - 48 - 48 = s₀.sp - BitVec.ofNat 64 96 by bv_omega]
     exact (hd R hR).sub_left (frame_slot_sub s₀.sp (.inr rfl))
-  · refine ⟨fun r hr => ?_, rfl, hlr, hP⟩
+  · -- The pops lose the frames' bytes, which `P` does not depend on.
+    obtain e : (framed .r14 s₀).sp - 48 = s₀.sp - BitVec.ofNat 64 96 := by
+      show s₀.sp - 48 - 48 = _; bv_omega
+    rw [e] at f₂
+    have hP₁ : P m₁ := hPf _ _ (f₁.sub fun r hr => ⟨_, List.mem_singleton_self _, by
+      rw [List.mem_singleton.mp hr]; exact frame_sub96 s₀.sp (a := 48) (.inl rfl)⟩)
+      (hPf _ _ (f₂.sub fun r hr => ⟨_, List.mem_singleton_self _, by
+        rw [List.mem_singleton.mp hr]; exact frame_sub96 s₀.sp (.inr rfl)⟩) hP)
+    refine ⟨fun r hr => ?_, rfl, hlr, hP₁⟩
     simp only [State.write]
     by_cases h14 : r = .r14
     · subst h14; simp
@@ -188,11 +204,11 @@ include ha hb hb14
 after the frame saving `r14`. -/
 theorem inner_wp {body : Prog isa} {σ₀ : State} {Q : State → Prop}
     (hsp : 96 ≤ σ₀.sp.toNat) (hd : ∀ X ∈ σ₀.wr, (below σ₀.sp 96).Disjoint X) (hn : sdepth body + 96 < 2 ^ 64)
-    (hbody : WP isa body (kSt a b σ₀) fun s' => Q { s'.write .r15 ((framed .r14 σ₀).gpr .r15) with
-      sp := (framed .r14 σ₀).sp }) :
+    (hbody : WP isa body (kSt a b σ₀) fun s' => ∀ m u, Frame [⟨(framed .r14 σ₀).sp - 48, 48⟩] s'.mem m →
+      Q { s'.write .r15 ((framed .r14 σ₀).gpr .r15) with sp := (framed .r14 σ₀).sp, mem := m, unknowns := u }) :
     WP isa (.frame (.push .r15) (.seq (.block (kMovs a b)) body) (.pop .r15)) (framed .r14 σ₀) Q := by
   have hsp1 : 48 ≤ (σ₀.sp - 48).toNat := by bv_omega
-  refine WP.frameRegAnyKept (r := .r15) hsp1 (fun R hR => ?_)
+  refine WP.frameRegAny (r := .r15) hsp1 (fun R hR => ?_)
     (WP.seq (WP.mono (kMovs_ok ha hb hb14 _) fun s e => by subst e; exact hbody))
     (by simp only [sdepth, Nat.zero_max]; omega_using [hn])
   have : (framed .r14 σ₀).sp = σ₀.sp - 48 := rfl
@@ -203,13 +219,15 @@ theorem inner_wp {body : Prog isa} {σ₀ : State} {Q : State → Prop}
 theorem kernel_wp {body : Prog isa} {σ₀ : State} {R : Mem → BitVec 64 → Prop}
     (hsp : 96 ≤ σ₀.sp.toNat) (hd : ∀ X ∈ σ₀.wr, (below σ₀.sp 96).Disjoint X) (hn : sdepth body + 96 < 2 ^ 64)
     (hbody : WP isa body (kSt a b σ₀) fun s' =>
-      PPC64LE.target.abiPreserved (kSt a b σ₀) s' ∧ R s'.mem (s'.gpr .r3)) :
+      PPC64LE.target.abiPreserved (kSt a b σ₀) s' ∧ R s'.mem (s'.gpr .r3))
+    (hRf : ∀ m m' r, Frame [below σ₀.sp 96] m m' → R m r → R m' r) :
     WP isa (saving (.seq (.block (kMovs a b)) body)) σ₀ fun s' =>
       PPC64LE.target.abiPreserved σ₀ s' ∧ R s'.mem (s'.gpr .r3) := by
-  refine WP.frameRegAnyKept (r := .r14) (by omega_using [hsp])
+  refine WP.frameRegAny (r := .r14) (by omega_using [hsp])
     (fun R hR => (hd R hR).sub_left (Arith.frame_slot_sub σ₀.sp (.inl rfl))) ?_
     (by simp only [sdepth, Instr.frameBytes, Nat.zero_max]; omega_using [hn])
-  refine inner_wp ha hb hb14 hsp hd hn (WP.mono hbody fun s' ⟨⟨hk, hsp', hlr⟩, hR⟩ => ⟨⟨fun r hr => ?_, rfl, ?_⟩, ?_⟩)
+  refine inner_wp ha hb hb14 hsp hd hn (WP.mono hbody fun s' ⟨⟨hk, hsp', hlr⟩, hR⟩ m₂ u₂ f₂ m₁ u₁ f₁ =>
+    ⟨⟨fun r hr => ?_, rfl, ?_⟩, ?_⟩)
   · simp only [State.write]
     by_cases h14 : r = .r14
     · subst h14; simp
@@ -219,7 +237,14 @@ theorem kernel_wp {body : Prog isa} {σ₀ : State} {R : Mem → BitVec 64 → P
         rw [hk r hr, kSt_gpr σ₀ h14 h15]
   · show s'.lr = σ₀.lr
     rw [hlr]; rfl
-  · exact hR
+  · -- The pops lose the frames' bytes, which `R` does not depend on.
+    obtain e : (framed .r14 σ₀).sp - 48 = σ₀.sp - BitVec.ofNat 64 96 := by
+      show σ₀.sp - 48 - 48 = _; bv_omega
+    rw [e] at f₂
+    exact hRf _ _ _ (f₁.sub fun r hr => ⟨_, List.mem_singleton_self _, by
+      rw [List.mem_singleton.mp hr]; exact Arith.frame_sub96 σ₀.sp (a := 48) (.inl rfl)⟩)
+      (hRf _ _ _ (f₂.sub fun r hr => ⟨_, List.mem_singleton_self _, by
+        rw [List.mem_singleton.mp hr]; exact Arith.frame_sub96 σ₀.sp (.inr rfl)⟩) hR)
 
 /-- Two runs of a kernel leak the same if the runs of its body do, and the
 body runs from the state each starts in. -/
@@ -232,7 +257,7 @@ theorem kernel_tr {body : Prog isa} {P : State → State → Prop} (hsp : ∀ x 
     RelCT isa P (saving (.seq (.block (kMovs a b)) body)) fun _ _ => True := by
   have hwb : ∀ x, 96 ≤ x.sp.toNat → (∀ X ∈ x.wr, (below x.sp 96).Disjoint X) → (∃ Q, WP isa body (kSt a b x) Q) →
       ∃ Q, WP isa (.frame (.push .r15) (.seq (.block (kMovs a b)) body) (.pop .r15)) (framed .r14 x) Q :=
-    fun x h1 h2 ⟨Q, hq⟩ => ⟨_, inner_wp ha hb hb14 h1 h2 hn (Q := fun _ => True) (WP.mono hq fun _ _ => trivial)⟩
+    fun x h1 h2 ⟨Q, hq⟩ => ⟨_, inner_wp ha hb hb14 h1 h2 hn (Q := fun _ => True) (WP.mono hq fun _ _ _ _ _ => trivial)⟩
   refine relct_frameN hsp (fun x y h => ?_) (relct_frameN (fun u v ⟨x, y, h, eu, ev⟩ => by
     subst eu ev; show x.sp - 48 = y.sp - 48; rw [hsp x y h]) (fun u v ⟨x, y, h, eu, ev⟩ => ?_) ?_)
   · obtain ⟨a1, a2, a3, a4⟩ := hsp' x y h
@@ -313,19 +338,21 @@ theorem entry_wp {s₀ : State} {rd wr : List Region} {R : Mem → BitVec 64 →
     (hpre : k.pre ((F (eSt s₀)).callEntry.withRegions rd wr))
     (hc : Covers (rd ++ wr) (s₀.rd ++ s₀.wr)) (hw : Covers wr s₀.wr)
     (hQ : ∀ s' : State, k.post ((F (eSt s₀)).callEntry.withRegions rd wr) (s'.withRegions rd wr) →
-      R s'.mem (s'.gpr .r3)) :
+      R s'.mem (s'.gpr .r3))
+    (hRf : ∀ m m' r, Frame [below s₀.sp 48] m m' → R m r → R m' r) :
     WP isa (entryCode mv name code) s₀ fun s' => PPC64LE.target.abiPreserved s₀ s' ∧ R s'.mem (s'.gpr .r3) := by
   refine WP.seq (WP.cons exec_mflr (WP.block_nil ?_))
-  refine WP.seq (WP.frameRegAnyKept (r := .r0) hsp hd (WP.mono (entry_inner hv hdc hmv hF hpre hc hw hQ)
-    fun s' ⟨hp, hR⟩ => ?_) (by simp only [sdepth, Nat.zero_max]; omega_using [hdc]))
+  refine WP.seq (WP.frameRegAny (r := .r0) hsp hd (WP.mono (entry_inner hv hdc hmv hF hpre hc hw hQ)
+    fun s' ⟨hp, hR⟩ m _ fl => ?_) (by simp only [sdepth, Nat.zero_max]; omega_using [hdc]))
   refine WP.cons exec_mtlr (WP.block_nil ⟨⟨fun r hr => ?_, rfl, ?_⟩, ?_⟩)
   · show (s'.write .r0 _).gpr r = s₀.gpr r
     rw [RegUpd.gpr_write_of_ne _ _ (fun e => by subst e; simp [preserved] at hr), hp r hr]
   · show (s'.write .r0 ((s₀.write .r0 s₀.lr).gpr .r0)).gpr .r0 = s₀.lr
     rw [RegUpd.gpr_write_self, RegUpd.gpr_write_self]
-  · show R s'.mem ((s'.write .r0 ((s₀.write .r0 s₀.lr).gpr .r0)).gpr .r3)
+  · -- The pop loses the frame's bytes, which `R` does not depend on.
+    show R m ((s'.write .r0 ((s₀.write .r0 s₀.lr).gpr .r0)).gpr .r3)
     simp only [RegUpd.gpr_write, reduceCtorEq, ite_false]
-    exact hR
+    exact hRf _ _ _ fl hR
 
 /-- Two runs of an entry leak the same if the kernel's preconditions and
 public data hold of their calls. -/
@@ -408,18 +435,36 @@ theorem frames3_slots (sp : Addr) (_h : 144 ≤ sp.toNat) :
 theorem frames3_wp {body : Prog isa} {s₀ : State} {R : Mem → Prop}
     (hsp : 144 ≤ s₀.sp.toNat) (hd : ∀ X ∈ s₀.wr, (below s₀.sp 144).Disjoint X) (hn : sdepth body + 144 < 2 ^ 64)
     (hb : WP isa body (f3St s₀) fun s' => (∀ r ∈ preserved, r ≠ .r30 → r ≠ .r31 → s'.gpr r = s₀.gpr r) ∧
-      R s'.mem) :
+      R s'.mem)
+    (hRf : ∀ m m', Frame [below s₀.sp 144] m m' → R m → R m') :
     WP isa (frames3 body) s₀ fun s' => PPC64LE.target.abiPreserved s₀ s' ∧ R s'.mem := by
   obtain ⟨sl1, sl2, sl3⟩ := frames3_slots s₀.sp hsp
   have h1 : 48 ≤ (s₀.sp - 48).toNat := by bv_omega
   have h2 : 48 ≤ (s₀.sp - 48 - 48).toNat := by bv_omega
   refine WP.seq (WP.cons exec_mflr (WP.block_nil ?_))
-  refine WP.seq (WP.frameRegAnyKept (r := .r0) (s₀ := s₀.write .r0 s₀.lr) (by show 48 ≤ s₀.sp.toNat; omega_using [hsp])
+  refine WP.seq (WP.frameRegAny (r := .r0) (s₀ := s₀.write .r0 s₀.lr) (by show 48 ≤ s₀.sp.toNat; omega_using [hsp])
     (fun X hX => (hd X hX).sub_left sl1) ?_ (by simp only [sdepth, Instr.frameBytes]; omega_using [hn]))
-  refine WP.frameRegAnyKept (r := .r30) (by exact h1) (fun X hX => (hd X hX).sub_left sl2) ?_
+  refine WP.frameRegAny (r := .r30) (by exact h1) (fun X hX => (hd X hX).sub_left sl2) ?_
     (by simp only [sdepth, Instr.frameBytes]; omega_using [hn])
-  refine WP.frameRegAnyKept (r := .r31) (by exact h2) (fun X hX => (hd X hX).sub_left sl3) ?_ (by omega_using [hn])
-  refine WP.mono hb fun s' ⟨hk, hR⟩ => WP.cons exec_mtlr (WP.block_nil ⟨⟨fun r hr => ?_, rfl, ?_⟩, hR⟩)
+  refine WP.frameRegAny (r := .r31) (by exact h2) (fun X hX => (hd X hX).sub_left sl3) ?_ (by omega_using [hn])
+  -- The pops lose the frames' bytes, which `R` does not depend on.
+  obtain fs : ∀ a, a = 48 ∨ a = 96 ∨ a = 144 → Region.Sub ⟨s₀.sp - BitVec.ofNat 64 a, 48⟩ (below s₀.sp 144) :=
+    fun a ha => by
+      rcases ha with rfl | rfl | rfl <;> exact fun x hx => by simp only [Region.Contains] at hx ⊢; bv_omega
+  obtain e₂ : (framed .r0 (s₀.write .r0 s₀.lr)).sp - 48 = s₀.sp - BitVec.ofNat 64 96 := by show s₀.sp - 48 - 48 = _; bv_omega
+  obtain e₃ : (framed .r30 (framed .r0 (s₀.write .r0 s₀.lr))).sp - 48 = s₀.sp - BitVec.ofNat 64 144 := by
+    show s₀.sp - 48 - 48 - 48 = _; bv_omega
+  refine WP.mono hb fun s' ⟨hk, hR⟩ m₃ u₃ f₃ m₂ u₂ f₂ m₁ u₁ f₁ =>
+    WP.cons exec_mtlr (WP.block_nil ⟨⟨fun r hr => ?_, rfl, ?_⟩, ?_⟩)
+  rotate_left 2
+  · rw [e₃] at f₃
+    rw [e₂] at f₂
+    exact hRf _ _ (f₁.sub fun r hr => ⟨_, List.mem_singleton_self _, by
+        rw [List.mem_singleton.mp hr]; exact fs 48 (.inl rfl)⟩)
+      (hRf _ _ (f₂.sub fun r hr => ⟨_, List.mem_singleton_self _, by
+        rw [List.mem_singleton.mp hr]; exact fs 96 (.inr (.inl rfl))⟩)
+      (hRf _ _ (f₃.sub fun r hr => ⟨_, List.mem_singleton_self _, by
+        rw [List.mem_singleton.mp hr]; exact fs 144 (.inr (.inr rfl))⟩) hR))
   · simp only [State.write]
     by_cases h0 : r = .r0
     · subst h0; simp [preserved] at hr
@@ -443,15 +488,15 @@ theorem frames3_tr {body : Prog isa} {P : State → State → Prop} (hsp : ∀ x
       ∃ Q, WP isa (.frame (.push .r31) body (.pop .r31)) (framed .r30 (eSt x)) Q := by
     obtain ⟨hsp, hd, Q, hq⟩ := hok x hx
     obtain ⟨-, -, sl3⟩ := frames3_slots x.sp hsp
-    exact ⟨_, WP.frameRegAnyKept (r := .r31) (Q := fun _ => True) (by show 48 ≤ (x.sp - 48 - 48).toNat; bv_omega)
-      (fun X hX => (hd X hX).sub_left sl3) (WP.mono hq fun _ _ => trivial) (by omega_using [hn])⟩
+    exact ⟨_, WP.frameRegAny (r := .r31) (Q := fun _ => True) (by show 48 ≤ (x.sp - 48 - 48).toNat; bv_omega)
+      (fun X hX => (hd X hX).sub_left sl3) (WP.mono hq fun _ _ _ _ _ => trivial) (by omega_using [hn])⟩
   have w30 (x : State) (hx : ∃ y, P x y ∨ P y x) :
       ∃ Q, WP isa (.frame (.push .r30) (.frame (.push .r31) body (.pop .r31)) (.pop .r30)) (eSt x) Q := by
     obtain ⟨hsp, hd, -⟩ := hok x hx
     obtain ⟨-, sl2, -⟩ := frames3_slots x.sp hsp
     obtain ⟨Q, hq⟩ := w31 x hx
-    exact ⟨_, WP.frameRegAnyKept (r := .r30) (Q := fun _ => True) (by show 48 ≤ (x.sp - 48).toNat; bv_omega)
-      (fun X hX => (hd X hX).sub_left sl2) (WP.mono hq fun _ _ => trivial)
+    exact ⟨_, WP.frameRegAny (r := .r30) (Q := fun _ => True) (by show 48 ≤ (x.sp - 48).toNat; bv_omega)
+      (fun X hX => (hd X hX).sub_left sl2) (WP.mono hq fun _ _ _ _ _ => trivial)
       (by simp only [sdepth, Instr.frameBytes]; omega_using [hn])⟩
   refine RelCT.seq (RelCT.wpDep (F := fun (x x1 : State) => x1 = x.write .r0 x.lr)
     (VG.Proof.Sha3.PPC64LE.Pieces.relct_noMem rfl)

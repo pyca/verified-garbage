@@ -632,13 +632,20 @@ theorem body_piece (hK : 240 ≤ K) (hKL : KL % 8 = 0) (h8 : 8 ≤ KL) (hc : KL 
 /-- The frames around the body: its memory, and the registers kept. -/
 theorem frames_wp {n : Nat} {body : Prog isa}
     (hP : KeyGen.Piece (PPre KL PB K) PPub (fun σ s => s = f3St σ) (fun σ s => PI KL PB K vals σ n s) body)
-    (hK : 144 ≤ K) (hn : sdepth body + 144 < 2 ^ 64) {σ : State} (hp : PPre KL PB K σ) :
+    (hK : 144 ≤ K) (hn : sdepth body + 144 < 2 ^ 64) {σ : State} (hp : PPre KL PB K σ)
+    (hnPB : KL + 1024 * n ≤ PB) :
     WP isa (frames3 body) σ fun s' => PPC64LE.target.abiPreserved σ s' ∧
       ∃ s, PI KL PB K vals σ n s ∧ s.mem = s'.mem := by
   have hs := hp.stk
   have b144 : Region.Sub (below σ.sp 144) (below σ.sp K) := below_sub (by omega_using [hK]) (by have := σ.sp.isLt; omega_using [hs])
+  -- The pops lose the frames' bytes, which lie apart from the prepared key.
+  obtain hd : ∀ r ∈ [below σ.sp 144], (reg (σ.gpr .r4) (KL + 1024 * n)).Disjoint r := fun r hr => by
+    rw [List.mem_singleton.mp hr]
+    exact ((hp.b_p.sub_left b144).symm.sub_left (Region.sub_prefix hnPB))
   refine frames3_wp (R := fun m => ∃ s, PI KL PB K vals σ n s ∧ s.mem = m) (by omega_using [hK, hs]) (fun X hX => ?_) hn
     (WP.mono (hP.ok σ _ hp rfl) fun s' h => ⟨h.pres, s', h, rfl⟩)
+    (fun m m' fl ⟨s, h, hm⟩ => ⟨{ s with mem := m' },
+      h.keep ⟨fun _ _ => rfl, rfl, rfl, rfl, by rw [← hm] at fl; exact fl⟩ hd hnPB, rfl⟩)
   rw [hp.wr] at hX
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hX
   rcases hX with rfl | rfl
@@ -824,7 +831,8 @@ theorem prepareSecret_verified :
     Verified PPC64LE.target (prepareSecret p) (prepareSecretKeyContract p PPC64LE.abi 240) := by
   have hn := sdepth_body (KL := p.skLen) (sdepth_secretPoly p) (p.ℓ + 2 * p.k)
   refine ⟨fun σ hs => ?_, fun x y tx ty x' y' hx hy hpub ex ey => ?_, ?_⟩
-  · refine WP.mono (frames_wp (secret_body hp3) (by decide) (by omega_using [hn]) (secret_pre hs))
+  · refine WP.mono (frames_wp (secret_body hp3) (by decide) (by omega_using [hn]) (secret_pre hs)
+      (by show _ ≤ _ + 4 * 256 * _; omega_using []))
       fun s' ⟨ha, s, h, hm⟩ => ⟨ha, ?_⟩
     sig_post [prepareSecretKeyContract, prepareSecretKeySig, PPC64LE.abi, PPC64LE.argRegs]
     rw [← hm]
@@ -838,7 +846,8 @@ theorem preparePublic_verified :
     Verified PPC64LE.target (preparePublic p) (preparePublicKeyContract p PPC64LE.abi 240) := by
   have hn := sdepth_body (KL := p.pkLen) (sdepth_publicPoly p) p.k
   refine ⟨fun σ hs => ?_, fun x y tx ty x' y' hx hy hpub ex ey => ?_, ?_⟩
-  · refine WP.mono (frames_wp (public_body hp3) (by decide) (by omega_using [hn]) (public_pre hs))
+  · refine WP.mono (frames_wp (public_body hp3) (by decide) (by omega_using [hn]) (public_pre hs)
+      (by show _ ≤ _ + 4 * 256 * _; omega_using []))
       fun s' ⟨ha, s, h, hm⟩ => ⟨ha, ?_⟩
     sig_post [preparePublicKeyContract, preparePublicKeySig, PPC64LE.abi, PPC64LE.argRegs]
     rw [← hm]

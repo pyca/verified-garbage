@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.MlDsa.Verify.Mem
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
+import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 
@@ -293,7 +294,13 @@ theorem entryS_wp {σ : State} (h : EPre p L (K + 1 + 48) X σ) :
   refine entry_wp (name := name) (F := eF off len) (R := fun m r => Outcome (fun b => signMu p b (skOf p σ) (muOf σ)
     (rndOf σ)) (r.setWidth 32) (bytesAt m (sSig σ) p.sigLen)) hv.1 (by omega_using [hd, hK]) (eMv_ok ho hl) (eF_ok off len)
     (by have := h.stk; omega_using [this]) h.hd96
-    (kpre_to (cs_kpre h hL hoff (by omega_using [hl]) (by omega_using [ho]) (hc σ h))) cv cw fun s' hq => ?_
+    (kpre_to (cs_kpre h hL hoff (by omega_using [hl]) (by omega_using [ho]) (hc σ h))) cv cw (fun s' hq => ?_)
+    fun m m' _ fl hR => by
+      -- The pop loses the frame's bytes, which lie apart from the signature.
+      obtain hs : Region.Sub (below σ.sp 48) (below σ.sp (K + 1 + 48)) := below_sub (by omega_using []) h.fit
+      have e : bytesAt m' (sSig σ) p.sigLen = bytesAt m (sSig σ) p.sigLen := List.map_congr_left fun i hi =>
+        lost_byte fl (R := reg (sSig σ) p.sigLen) (h.b_g.sub_left hs).symm (List.mem_range.mp hi)
+      rw [e]; exact hR
   have q := hq
   generalize hτ : cs p off len σ = τ at q
   sig_post [Proof.MlDsa.signWithCacheContract, Proof.MlDsa.signWithCacheSig, Spec.MlDsa.signSig, PPC64LE.abi,

@@ -878,7 +878,7 @@ theorem withCache_verified {P : Prims} {S : Nat} (hP : VPrimsOk P S) (h48 : 48 �
       (by have := hk.stk; omega_using [this]) (hd96 σ hk) (hn σ hk)
       (R := fun _ r => (r.setWidth 32 = 1 ∧ ∃ b, vv p σ b = some true) ∨
         (r.setWidth 32 = 0 ∧ vv p σ Spec.MlDsa.minBounds ≠ some true))
-      (WP.mono (body σ hk) fun s' ⟨ha, hq⟩ => ⟨ha, ?_⟩)) fun s' ⟨ha, hq⟩ => ⟨ha, ?_⟩
+      (WP.mono (body σ hk) fun s' ⟨ha, hq⟩ => ⟨ha, ?_⟩) (fun _ _ _ _ h => h)) fun s' ⟨ha, hq⟩ => ⟨ha, ?_⟩
     · generalize hτ : kSt .r7 .r8 σ = τ at hq
       sig_post [Spec.MlDsa.verifyContract, Spec.MlDsa.verifySig, PPC64LE.abi, PPC64LE.argRegs] at hq
       subst hτ
