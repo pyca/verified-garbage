@@ -64,9 +64,13 @@ theorem frameBase_al (s : State) (hal : s.sp.toNat % 16 = 0) (h : 4176 ≤ s.sp.
   omega_using [hal]
 
 /-- The body of `inFrame` runs from `inner s`; if it keeps the permissions
-and the stack pointer, the frame ends with those of `s`. -/
+and the stack pointer, the frame ends with those of `s`, and with the
+frame's bytes holding anything (as `WP.allocLe`'s): the postcondition holds
+whatever memory that differs from the body's only in the frame, and whatever
+unknowns, the state then has. -/
 theorem inFrame_wp {body : Prog isa} {s : State} {Q : State → Prop} (hsp : 4176 ≤ s.sp.toNat)
-    (hb : WP isa body (inner s) fun s₂ => Q { s₂ with sp := s.sp, wr := s.wr }) :
+    (hb : WP isa body (inner s) fun s₂ => ∀ m u, Frame [⟨frameBase s, 4176⟩] s₂.mem m →
+      Q { s₂ with sp := s.sp, wr := s.wr, mem := m, unknowns := u }) :
     WP isa (inFrame body) s Q := by
   unfold inFrame
   refine WP.alloc (by decide) (by omega_using [hsp]) ?_
@@ -78,11 +82,30 @@ theorem inFrame_wp {body : Prog isa} {s : State} {Q : State → Prop} (hsp : 417
     show 112 ≤ (s.sp - BitVec.ofNat 64 2032 - BitVec.ofNat 64 2032).toNat
     simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]
     omega_using [hsp]) ?_
-  refine WP.mono (WP.rdwr hb) fun s₂ ⟨h, _, hwr, hsp₂⟩ => ?_
-  have e : freed 2032 (freed 2032 (freed 112 s₂)) = { s₂ with sp := s.sp, wr := s.wr } := by
-    simp only [freed, hwr, hsp₂, allocd, List.tail_cons, BitVec.sub_add_cancel]
-  rw [e]
-  exact h
+  refine WP.mono (WP.rdwr hb) fun s₂ ⟨h, _, hwr, hsp₂⟩ m₁ u₁ f₁ m₂ u₂ f₂ m₃ u₃ f₃ => ?_
+  have e₂ : s.sp - BitVec.ofNat 64 2032 - BitVec.ofNat 64 2032 = s.sp - BitVec.ofNat 64 4064 := by
+    rw [BitVec.sub_sub, ← BitVec.ofNat_add]
+  have f₁' : Frame [⟨s.sp - BitVec.ofNat 64 4176, 112⟩] s₂.mem m₁ := by
+    rw [← frameBase_eq, ← (show s₂.sp = frameBase s from hsp₂)]; exact f₁
+  have f₂' : Frame [⟨s.sp - BitVec.ofNat 64 4064, 2032⟩] m₁ m₂ := by
+    rw [← e₂]
+    have e : (freed 112 s₂).sp = s.sp - BitVec.ofNat 64 2032 - BitVec.ofNat 64 2032 := by
+      simp only [freed, hsp₂, allocd, BitVec.sub_add_cancel]
+    rw [← e]; exact f₂
+  have f₃' : Frame [⟨s.sp - BitVec.ofNat 64 2032, 2032⟩] m₂ m₃ := by
+    have e : (freed 2032 (freed 112 s₂)).sp = s.sp - BitVec.ofNat 64 2032 := by
+      simp only [freed, hsp₂, allocd, BitVec.sub_add_cancel]
+    rw [← e]; exact f₃
+  have sub : ∀ {a n : Nat}, a ≤ 4176 → 4176 - a + n ≤ 4176 → ∀ r ∈ [(⟨s.sp - BitVec.ofNat 64 a, n⟩ : Region)],
+      ∃ r' ∈ [(⟨frameBase s, 4176⟩ : Region)], Region.Sub r r' := fun ha hn r hr => by
+    simp only [List.mem_singleton] at hr; subst hr
+    exact ⟨_, List.mem_singleton_self _, by rw [frameBase_eq]; exact Offset.sub_below _ ha hn⟩
+  have hq := h m₃ u₃ (Frame.trans (Frame.trans (f₁'.sub (sub (by decide) (by decide)))
+    (f₂'.sub (sub (by decide) (by decide)))) (f₃'.sub (sub (by decide) (by decide))))
+  have e : ∀ x : State, x = { s₂ with sp := s.sp, wr := s.wr, mem := m₃, unknowns := u₃ } → Q x :=
+    fun x hx => hx ▸ hq
+  refine e _ ?_
+  simp only [freed, hwr, hsp₂, allocd, List.tail_cons, BitVec.sub_add_cancel]
 
 /-- The accesses that the frame at `S` allows: `n` bytes at offset `o`,
 within the schedule and a 16-byte aligned chunk. -/
@@ -1274,24 +1297,32 @@ theorem main_wp (up : Bool) {s : State} (h : MainPre s) (hn : 0 < (s.gpr .a2).to
   refine WP.mono (fillLoop_ok (v := .t1) (ptr := .t0) (cnt := .t4) (by decide) (by decide) (by decide) f
     (N := 522) (by decide) (by decide) f4 (by rw [f0]; omega)
     (fun i hi => by rw [fk.2.2, ewr, f0]; exact frame_in s (by omega) (by omega)))
-    fun t ⟨_, tf, _⟩ => ⟨fun b hb => ?_, ?_⟩
+    fun t ⟨_, tf, _⟩ m u fl => ⟨fun b hb => ?_, ?_⟩
   · rw [f0, fm] at tf
-    show blockAt t.mem (wAt D b) = _
-    rw [blockAt_frame tf fun r hr => by
+    show blockAt m (wAt D b) = _
+    -- The `free` loses the frame's bytes, which lie apart from the data.
+    rw [blockAt_frame fl fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr
+        exact ((h.stackData.sub_left (r₁' := ⟨(frameBase s), 4176⟩) (by rw [hF]; exact Region.sub_prefix (by decide))).sub_right
+          (r₂' := ⟨wAt D b, 8⟩) (Offset.sub_base _ (by omega))).symm,
+      blockAt_frame tf fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         exact ((h.stackData.sub_left (r₁' := ⟨(frameBase s), 8 * 522⟩) (by rw [hF]; exact Region.sub_prefix (by decide))).sub_right
           (r₂' := ⟨wAt D b, 8⟩) (Offset.sub_base _ (by omega))).symm,
       E.done b hb, cm, hK, hdata b hb]
   · rw [f0, fm] at tf
     rw [← cm] at cf
-    show Frame _ s.mem t.mem
-    refine ((cf.sub fun r hr => ?_).trans (E.frame.sub fun r hr => ?_)).trans (tf.sub fun r hr => ?_)
+    show Frame _ s.mem m
+    refine (((cf.sub fun r hr => ?_).trans (E.frame.sub fun r hr => ?_)).trans (tf.sub fun r hr => ?_)).trans
+      (fl.sub fun r hr => ?_)
     · simp only [List.mem_singleton] at hr; subst hr
       exact ⟨_, List.mem_cons_self, by rw [← hF]; exact Region.sub_prefix (by decide)⟩
     · simp only [List.mem_singleton] at hr; subst hr
       exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, fun x hx => hx⟩
     · simp only [List.mem_singleton] at hr; subst hr
       exact ⟨_, List.mem_cons_self, by rw [← hF]; exact Region.sub_prefix (by decide)⟩
+    · simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨_, List.mem_cons_self, by rw [← hF]; exact fun x hx => hx⟩
 
 /-! ## The function -/
 

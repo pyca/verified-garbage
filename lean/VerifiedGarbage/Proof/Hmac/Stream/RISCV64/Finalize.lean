@@ -426,10 +426,13 @@ theorem correct {s : State} (hp : (finG hH.SH (H.fbytes + H.F)).pre s) :
   have hfb := hl.fbytes
   obtain hsp : H.fbytes ≤ s.sp.toNat := by have := hp.2.2.2.2.2.2.1; omega_using [this]
   refine WP.alloc ⟨by omega_using [hfb], hfb.2.1, hfb.2.2⟩ hsp
-    (WP.mono (finalizeMain_ok hH (pre_alloc hH hp)) fun s' ⟨hk, hra, hsp', hwr, hmac⟩ => ?_)
+    (WP.mono (finalizeMain_ok hH (pre_alloc hH hp)) fun s' ⟨hk, hra, hsp', hwr, hmac⟩ m u f => ?_)
   rw [freed_eq hwr hsp']
+  -- The `free` loses the frame's bytes, which lie apart from the MAC.
   refine ⟨⟨hk, rfl, hra⟩, fun k0 text hk0 hlt hI hc hO => ?_⟩
   rw [hH.hD]
-  exact hmac k0 text ⟨hk0, hlt, hI, hc, hO⟩
+  refine Eq.trans ?_ (hmac k0 text ⟨hk0, hlt, hI, hc, hO⟩)
+  exact Proof.Sha256.Stream.bytesAt_congr fun i hi =>
+    lost_byte f (R := macR H (allocd H.fbytes s)) (pre_alloc hH hp).f_m.symm hi
 
 end VG.Proof.Hmac.Stream.RISCV64.Finalize

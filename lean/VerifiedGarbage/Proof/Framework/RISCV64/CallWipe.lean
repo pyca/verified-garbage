@@ -753,8 +753,7 @@ theorem cw_wp {name zname : String} {body zcode : Prog isa} {zst : Nat}
   intro m u f
   have hspR : (cwRestore g).sp = s.sp - BitVec.ofNat 64 32 := by
     rw [cwRestore, RegUpd.sp_write, RegUpd.sp_write, cwZ1, RegUpd.sp_write, hspg]
-  have f' : Frame [⟨s.sp - BitVec.ofNat 64 32, 32⟩] (cwRestore g).mem m := by
-    rw [← hspR]; exact f
+  have f' : Frame [⟨s.sp - BitVec.ofNat 64 32, 32⟩] (cwRestore g).mem m := f
   have hfr : ∀ b ∈ Sig.bufs sig.params (regArgs sig s), ∀ x, b.1.Contains x 1 →
       m x = (cwRestore g).mem x := fun b hb x hx => f' x fun R hR hc => by
     simp only [List.mem_singleton] at hR; subst hR

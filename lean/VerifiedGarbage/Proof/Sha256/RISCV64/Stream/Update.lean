@@ -758,9 +758,11 @@ theorem correctMain {s₀ : State} (hp : Pre s₀) :
 theorem correct {s₀ : State} (hp : Pre s₀) :
     WP isa update s₀ fun s' => abiPreserved s₀ s' ∧ Proof.Sha256.updateRISCV64.post s₀ s' := by
   refine WP.alloc (by decide) (by simp only [frameBytes]; exact hp.sp144)
-    (WP.mono (correctMain hp) fun s' ⟨hk, hra, hsp, hwr, hpost⟩ => ?_)
+    (WP.mono (correctMain hp) fun s' ⟨hk, hra, hsp, hwr, hpost⟩ m u f => ?_)
   rw [freed_eq (by rw [hwr]; rfl) (by rw [hsp]; rfl)]
-  exact ⟨⟨hk, rfl, hra⟩, hpost⟩
+  -- The `free` loses the frame's bytes, which lie apart from the state.
+  exact ⟨⟨hk, rfl, hra⟩, fun iv msg hr hc => Proof.Sha256.Stream.reprFrom_congr (fun i hi =>
+    lost_byte f (R := stR s₀) hp.scr_st.symm hi) (hpost iv msg hr hc)⟩
 
 theorem agree₀ {s₁ s₂ : State} (hpub : Proof.Sha256.updateRISCV64.pub s₁ s₂) :
     VG.RISCV64.Taint.Agree (VG.RISCV64.Taint.ofRegs [.a0, .a1, .a2, .a3]) s₁ s₂ := by

@@ -132,7 +132,6 @@ theorem bigFrame_wp {n : Nat} {body : Prog isa} {s : State} {Q : State → Prop}
     refine WP.mono (WP.rdwr (hb _ (FrameAt.single s (by omega_using [h1]) hsp) fun _ _ => by simp [allocd]))
       fun s₂ ⟨h, _, hw, hs⟩ m u f => ?_
     rw [freed_eq hw hs]
-    rw [hs] at f
     exact h m u f
   split
   · rename_i h1 h0

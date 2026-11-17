@@ -901,9 +901,11 @@ theorem correct {o : List Instr} {s₀ : State} (hp : Pre D s₀)
     (hout : ∀ sD, Done s₀ sD → WP isa (.block (o ++ restore)) sD (Post D s₀)) :
     WP isa (finalizeWith o) s₀ fun s' => abiPreserved s₀ s' ∧ (Proof.Sha512.finalizeDRISCV64 D).post s₀ s' := by
   refine WP.alloc (by decide) (by simp only [frameBytes]; exact hp.sp208)
-    (WP.mono (correctMain hp hu hnvo hout) fun s' ⟨hk, hra, hsp, hwr, hpost⟩ => ?_)
+    (WP.mono (correctMain hp hu hnvo hout) fun s' ⟨hk, hra, hsp, hwr, hpost⟩ m u f => ?_)
   rw [freed_eq (by rw [hwr]; rfl) (by rw [hsp]; rfl)]
-  exact ⟨⟨hk, rfl, hra⟩, hpost⟩
+  -- The `free` loses the frame's bytes, which lie apart from the digest.
+  refine ⟨⟨hk, rfl, hra⟩, fun iv msg hr hl hc => Eq.trans ?_ (hpost iv msg hr hl hc)⟩
+  exact bytesAt_congr fun i hi => lost_byte f (R := outR s₀ D) hp.scr_out.symm hi
 
 /-- A property of every instruction of `finalizeMainWith o`: of those of
 `finalizeMainWith []`, checked once, and of `o`'s. -/

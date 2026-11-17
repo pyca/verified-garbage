@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 public import VerifiedGarbage.Proof.Framework.RISCV64.Wp
 public import VerifiedGarbage.Proof.Framework.RISCV64.Alloc
 import VerifiedGarbage.Proof.Sha3.RISCV64.Lit
+import VerifiedGarbage.Proof.Sha3.Stream
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
 import VerifiedGarbage.Proof.Framework.RISCV64.Words64
@@ -737,12 +738,14 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
         (∀ r ∈ untouched, s'.gpr r = s₀.gpr r) ∧ Proof.Sha3.permuteRISCV64.post s₀ s' := by
   have hm := WP.gprs' (main_ok hp) untouched_ok main_noCalls
   refine WP.alloc (n := 608) ⟨by decide, by decide, by decide⟩ hp.sp (WP.mono hm
-    fun s₂ ⟨⟨h0, h1, hsp, hwr, hst⟩, hu⟩ => ?_)
+    fun s₂ ⟨⟨h0, h1, hsp, hwr, hst⟩, hu⟩ m u f => ?_)
   refine ⟨h0, h1, ?_, fun r hr => hu r hr, ?_⟩
   · show s₂.sp + BitVec.ofNat 64 608 = s₀.sp
     rw [hsp, BitVec.sub_add_cancel]
-  · simp only [Proof.Sha3.permuteRISCV64, freed]
-    exact hst
+  · -- The `free` loses the frame's bytes, which lie apart from the state.
+    simp only [Proof.Sha3.permuteRISCV64, freed]
+    refine Eq.trans ?_ hst
+    exact Proof.Sha3.stateAt_congr fun i hi => lost_byte f (R := stR s₀) hp.fr_st.symm hi
 
 theorem preserved_split : ∀ r ∈ preserved, r = .s0 ∨ r = .s1 ∨ r ∈ untouched := by decide
 

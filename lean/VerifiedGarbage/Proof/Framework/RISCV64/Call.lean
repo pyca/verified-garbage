@@ -111,7 +111,7 @@ whatever memory `m` that differs from the body's only in the frame, and
 whatever unknowns `u`, the state then has. -/
 theorem WP.frame {r r' : Reg} {body : Prog isa} {s : State} {Q : State → Prop}
     (hsp : 16 ≤ s.sp.toNat)
-    (hb : WP isa body (pushed r s) fun s₂ => ∀ m u, Frame [⟨s₂.sp, 16⟩] s₂.mem m →
+    (hb : WP isa body (pushed r s) fun s₂ => ∀ m u, Frame [⟨s.sp - 16, 16⟩] s₂.mem m →
       Q { popped r' s₂ with mem := m, unknowns := u }) :
     WP isa (.frame (.push r) body (.pop r')) s Q := by
   obtain ⟨t, s₂, he, hq⟩ := hb
