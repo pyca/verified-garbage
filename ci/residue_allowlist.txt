@@ -1074,8 +1074,6 @@ arm vg_triple_des_ecb_encrypt
 arm vg_triple_des_expand_key
 arm vg_triple_des_ofb
 arm vg_triple_des_ofb_final
-arm vg_x25519_base
-arm vg_x25519_base_umaal
 arm vg_x25519_exchange
 arm vg_x25519_exchange_umaal
 arm vg_zeroize
