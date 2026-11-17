@@ -3,6 +3,7 @@ module
 import VerifiedGarbage.Proof.MillerRabin.Arm.Body
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Arm.Lost
 public import VerifiedGarbage.Proof.MillerRabin.Arm.Contract
 public import VerifiedGarbage.Proof.Bignum.Arm.PcPush
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
@@ -161,7 +162,7 @@ theorem round_ok (h : roundPre s) (fios : Bool := false) : WP isa (code (fios :=
   have spN : (s.sp - BitVec.ofNat 32 56).toNat = s.sp.toNat - 56 := FrameStack.sub_toNat' spLo
   have pre := in_x h
   unfold code
-  refine WP.frame (by decide) spLo (by decide) ?_
+  refine WP.frameLost (by decide) spLo (by decide) ?_
   rw [WP.seq_iff]
   obtain ⟨tr, v, run, done⟩ := (body_vp (fios := fios)).wp (bodyIn s) (bodyIn s) ⟨rfl, pre, rfl⟩
   have cov := h.xCovers
@@ -190,7 +191,7 @@ theorem round_ok (h : roundPre s) (fios : Bool := false) : WP isa (code (fios :=
       (by rw [State.withRegions_wr, pushed_wr]; exact List.mem_cons_self), ?_⟩
     rw [State.withRegions_sp, vsp]; exact Region.contains_self _ _
   refine WP.mono (pc_restore_ok _ s.gpr fit read (by rw [State.withRegions_sp, vsp]; exact saved)) ?_
-  rintro t ⟨restored, memT, restT⟩
+  rintro t ⟨restored, memT, restT⟩ m u hfl
   have ret : t.gpr .r0 = v.gpr .r0 := restT.gpr .r0 (by simp [pcCalleeSaved])
   refine ⟨⟨?_, ?_⟩, ?_, ?_⟩
   · intro r hr
@@ -244,7 +245,10 @@ theorem round_ok (h : roundPre s) (fios : Bool := false) : WP isa (code (fios :=
   · -- What changed.
     have eσ := h.pushedWs
     intro i hi hk hj
-    rw [popped_mem, memT, State.withRegions_mem]
+    dsimp only
+    rw [show m (State.addr (s.gpr .r0) + BitVec.ofNat 64 i) = t.mem (State.addr (s.gpr .r0) + BitVec.ofNat 64 i)
+      from lost_byte hfl (R := ⟨State.addr (s.gpr .r0), 8 * (s.gpr .r1).toNat⟩) h.2.2.2.2.1.symm hi,
+      memT, State.withRegions_mem]
     exact (ks.keepsLite i hi hk hj).trans (eσ i hi)
 
 end
