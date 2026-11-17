@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.Seed.Arm.ModeCore
 public import VerifiedGarbage.Proof.Seed.FbScratch
 public import VerifiedGarbage.Proof.Modes.Arm.SeqCT
+public import VerifiedGarbage.Proof.Modes.Arm.WideCT
+import VerifiedGarbage.Proof.Modes.Arm.WideModes
 public import VerifiedGarbage.Spec.Seed.Cfb
 import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
 import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
@@ -14,6 +16,8 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Seed.Arm.ModeCore
 meta import VerifiedGarbage.Proof.Seed.FbScratch
 meta import VerifiedGarbage.Proof.Modes.Arm.SeqCT
+meta import VerifiedGarbage.Proof.Modes.Arm.WideCT
+meta import VerifiedGarbage.Proof.Modes.Arm.WideModes
 meta import VerifiedGarbage.Spec.Seed.Cfb
 meta import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
 meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
@@ -33,7 +37,9 @@ The generic OFB and CFB one block at a time over SEED's ECB encryption
 (`Proof.Modes.Arm.seq_verified` with `ecbSpec .encrypt`) meet the contracts
 with a scratch buffer of 9 words (`Proof.Seed.fbScratchContract`), with the
 752 bytes of stack the ECB function uses; the `_framed` theorems keep the
-buffer on the stack, zeroed on return: 80 bytes more.
+buffer on the stack, zeroed on return: 80 bytes more. CFB decryption is a
+group of blocks at a time (`Proof.Modes.Arm.seqW_verified`), with the 128
+bytes of the groups' buffer more stack.
 -/
 
 @[expose] public section
@@ -138,8 +144,17 @@ theorem cfbEncrypt_framed :
 theorem cfbDecryptTaint : SeqTaint (ecbCore .encrypt) cfbDec :=
   ⟨⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩⟩
 
-theorem cfbDecrypt_implies : (seqArm (ecbCore .encrypt) (ecbSpec .encrypt) cfbDec).Implies
-    (Proof.Seed.fbScratchContract Arm.abi 9 Proof.Seed.cfbDecPost 752) where
+/-- The taint checks of the code between the calls of the groups. -/
+theorem cfbDecryptWideTaint : WideTaint (ecbCore .encrypt) cfbDecW wideLevels wideBuf :=
+  ⟨fun lg h => by
+      simp only [wideLevels, List.mem_cons, List.not_mem_nil, or_false] at h
+      rcases h with rfl | rfl | rfl <;>
+        exact ⟨⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩⟩,
+    ⟨_, by native_taint_decide⟩⟩
+
+theorem cfbDecrypt_implies :
+    (seqArm (ecbCore .encrypt) ((ecbSpec .encrypt).deeper wideBuf rfl) cfbDec).Implies
+      (Proof.Seed.fbScratchContract Arm.abi 9 Proof.Seed.cfbDecPost 880) where
   pre s h := seqArm_pre_rw rfl (len := (· * 16)) (fun n => rfl) (by
     sig_pre [Proof.Seed.fbScratchContract, Proof.Seed.fbScratchSig, Spec.Seed.ofbSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] at h
     exact h)
@@ -148,7 +163,7 @@ theorem cfbDecrypt_implies : (seqArm (ecbCore .encrypt) (ecbSpec .encrypt) cfbDe
     have e := cfbDec_post h
     obtain ⟨e1, e2, e3, -, -⟩ := args_plain (c := ecbCore .encrypt) rfl s
     simp only [show (ecbCore .encrypt).bs = 16 from rfl, e1, e2, e3] at e
-    simp only [ecbSpec, dirCipher, State.addr, VG.Proof.Modes.blocksOf_16] at e
+    simp only [ecbSpec, CoreSpec.deeper, dirCipher, State.addr, VG.Proof.Modes.blocksOf_16] at e
     exact e
   pub s₁ s₂ _ _ h := by
     sig_pub [Proof.Seed.fbScratchContract, Proof.Seed.fbScratchSig, Spec.Seed.ofbSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] at h
@@ -157,18 +172,19 @@ theorem cfbDecrypt_implies : (seqArm (ecbCore .encrypt) (ecbSpec .encrypt) cfbDe
     sig_implies_sat [Proof.Seed.fbScratchContract, Proof.Seed.fbScratchSig, Spec.Seed.ofbSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
       Arm.State.addr] [fbSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using fbSat 16
 
-theorem cfbDecrypt_verified : Verified Arm.target cfbDecrypt (Proof.Seed.fbScratchContract Arm.abi 9 Proof.Seed.cfbDecPost 752) :=
-  seq_verified (ecbSpec .encrypt) (cfbDec_ok _) cfbDecryptTaint cfbDecrypt_implies
+/-- `cfbDecrypt`, in groups of blocks: the 752 bytes of stack of the ECB function and the 128 of the groups' buffer. -/
+theorem cfbDecrypt_verified : Verified Arm.target cfbDecrypt (Proof.Seed.fbScratchContract Arm.abi 9 Proof.Seed.cfbDecPost 880) :=
+  seqW_verified rfl (ecbSpec .encrypt) (cfbDec_ok _) cfbDecryptTaint wideBuf_ok (cfbDecW_levels rfl) cfbDecryptWideTaint cfbDecrypt_implies
 
-theorem cfbDecryptFrameSat : ∃ s, (Spec.Seed.cfbDecryptContract Arm.abi 832).pre s := by
+theorem cfbDecryptFrameSat : ∃ s, (Spec.Seed.cfbDecryptContract Arm.abi 960).pre s := by
   implies_sat [Spec.Seed.cfbDecryptContract, Spec.Seed.cfbSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
     Arm.State.addr] [fbFrameSat, fbSat] using fbFrameSat 16
 
 /-- `cfbDecrypt`, with its scratch buffer on the stack (zeroed on return). -/
 theorem cfbDecrypt_framed :
-    Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 80 0 18 cfbDecrypt) (Spec.Seed.cfbDecryptContract Arm.abi 832) :=
+    Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 80 0 18 cfbDecrypt) (Spec.Seed.cfbDecryptContract Arm.abi 960) :=
   Arm.Verified.stackScratchWiped (sig := Spec.Seed.cfbSig) (nm := "scratch") (e := .u64) (n := 9)
-    (post := Proof.Seed.cfbDecPost Arm.abi.ptrBits) (wa := true) (stack := 752) (m := 0) (bytes := 80)
+    (post := Proof.Seed.cfbDecPost Arm.abi.ptrBits) (wa := true) (stack := 880) (m := 0) (bytes := 80)
     cfbDecrypt_verified (by decide) (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Seed.cfbDecPost_local _)
     (Proof.Seed.cfbDecPostOut_local _) cfbDecryptFrameSat
