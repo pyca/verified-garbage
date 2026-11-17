@@ -122,20 +122,6 @@ theorem WP.frame {r r' : Reg} {body : Prog isa} {s : State} {Q : State → Prop}
     exact ite_eq_left_of_eq_true _ _ (eq_true ⟨hp, hw, rfl⟩) |>.trans rfl
   exact ⟨_, _, Exec.frame (push_pushed hsp) he hpop, hq _ _ (Frame.refl _ _)⟩
 
-/-- Superseded by `WP.frame`, which holds whatever the released frame's bytes hold: kept
-until the proofs that use it are moved over (see the pull request of pyca/verified-garbage#5321). A frame: its body runs from `pushed r s`, and the pop leads to
-`popped r' s₂`. -/
-theorem WP.frameKept {r r' : Reg} {body : Prog isa} {s : State} {Q : State → Prop}
-    (hsp : 16 ≤ s.sp.toNat) (hb : WP isa body (pushed r s) fun s₂ => Q (popped r' s₂)) :
-    WP isa (.frame (.push r) body (.pop r')) s Q := by
-  obtain ⟨t, s₂, he, hq⟩ := hb
-  obtain ⟨-, hw, hp⟩ := Exec.rdwr he
-  have hpop : isa.pop (.pop r') (pushed r s) s₂ = some (popped r' s₂) := by
-    show pop (.pop r') (pushed r s) s₂ = some (popped r' s₂)
-    unfold pop
-    exact ite_eq_left_of_eq_true _ _ (eq_true ⟨hp, hw, rfl⟩) |>.trans rfl
-  exact ⟨_, _, Exec.frame (push_pushed hsp) he hpop, hq⟩
-
 /-- Running code without frames that was proven on narrower permissions: if,
 from `s` with its permissions narrowed to `rd` and `wr`, the code terminates
 in a state satisfying `P`, then from `s` it terminates in a state that has

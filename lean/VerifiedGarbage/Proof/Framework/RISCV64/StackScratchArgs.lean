@@ -871,65 +871,6 @@ theorem Verified.stackScratchArgs {c : Prog isa}
       hct _ _ _ _ _ _ (narrowA_pre hk hl hb hpre h₁) (narrowA_pre hk hl hb hpre h₂)
         (narrowA_pub hk hl hb h₁ h₂ hp hleak) f₁ f₂]
 
-/-- Superseded by `Verified.stackScratchArgs`, which holds whatever the released frame's bytes hold: kept
-until the proofs that use it are moved over (see the pull request of pyca/verified-garbage#5321). Code verified for a function whose arguments fill `a0`–`a7` and `m`
-doublewords of stack, and whose last argument, after them on the stack, is a
-scratch buffer of `n` elements `e`, with `stack` bytes of stack, is verified
-for the function without it, which allocates the buffer in a frame of
-`bytes` more bytes of stack (`withStackScratchArgs`), if its precondition,
-postcondition and leak read memory only within the function's buffers
-(`hpre`, `hpost`, `hleak`, which holds of no leak). -/
-theorem Verified.stackScratchArgsKept {c : Prog isa}
-    (h : Verified target c (Sig.scratchContract abi sig nm e n pre post wa stack leak))
-    (hk : (sig.words abi.ptrBits).length = 8 + m) (hb : FitsA m bytes e n)
-    (hpre : ∀ vs m₁ m₂, vs.length = (sig.words abi.ptrBits).length →
-      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
-      Curry.apply (sig.words abi.ptrBits) pre vs m₁ → Curry.apply (sig.words abi.ptrBits) pre vs m₂)
-    (hpost : ∀ vs m₁ m₂ m' r, vs.length = (sig.words abi.ptrBits).length →
-      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
-      Curry.apply (sig.words abi.ptrBits) post vs m₁ m' r →
-        Curry.apply (sig.words abi.ptrBits) post vs m₂ m' r)
-    (hsat : ∃ s, (sig.contract abi pre post wa (stack + bytes) leak).pre s)
-    (hl : Sig.noLists sig.params = true := by decide)
-    (hleak : Sig.LeakLocal abi.ptrBits sig leak := by trivial) :
-    Verified target (withStackScratchArgs bytes m c)
-      (sig.contract abi pre post wa (stack + bytes) leak) := by
-  obtain ⟨hcor, hct, -⟩ := h
-  have hk' : ((sig.withScratch nm e n).words abi.ptrBits).length = 8 + (m + 1) := by
-    rw [Sig.words_withScratch, List.length_append, List.length_singleton, hk]; omega_using []
-  have hlen : ∀ s, (stkArgs m s).length = (sig.words abi.ptrBits).length := fun s => by
-    rw [stkArgs_length, hk]
-  -- Every run is the `alloc` and `setArgs`, then the code's run from `narrowA`.
-  have hrun : ∀ s, (sig.contract abi pre post wa (stack + bytes) leak).pre s → ∃ t s₃,
-      Exec isa c (narrowA sig e n bytes m s) t s₃ ∧
-      (Sig.scratchContract abi sig nm e n pre post wa stack leak).post (narrowA sig e n bytes m s) s₃ ∧
-      Exec isa (withStackScratchArgs bytes m c) s
-        (setArgsTrace bytes (s.sp - BitVec.ofNat 64 bytes) m ++ t) (popState bytes s s₃) ∧
-      abiPreserved s (popState bytes s s₃) ∧ (popState bytes s s₃).mem = s₃.mem ∧
-      (popState bytes s s₃).gpr = s₃.gpr := by
-    intro s hs
-    obtain ⟨t, s₃, he, ha, hq⟩ := hcor _ (narrowA_pre hk hl hb hpre hs)
-    obtain ⟨hex, habi, -, hg⟩ := withStackScratchArgs_run hk hl hb hs he ha
-    exact ⟨t, s₃, he, hq, hex, habi, rfl, hg⟩
-  refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂ => ?_, hsat⟩
-  · obtain ⟨t, s₃, -, hq, hex, ha, hm, hg⟩ := hrun s hs
-    refine ⟨_, _, hex, ha, ?_⟩
-    rw [post_stk hk]
-    have hq' := (post_stk (sig := sig.withScratch nm e n) (m := m + 1)
-      (pre := Curry.withScratch abi.ptrBits nm e n sig.params pre)
-      (post := Curry.withScratch abi.ptrBits nm e n sig.params post) hk').mp hq
-    obtain ⟨-, -, hargs, -⟩ := narrowA_facts (e := e) (n := n) hk hl hb hs
-    rw [hargs] at hq'
-    rw [hm, hg]
-    have hq'' := Eq.mp (congrFun (congrFun (congrFun (Curry.apply_withScratch abi.ptrBits nm e n
-      sig.params post _ _ (hlen s)) _) s₃.mem) _) hq'
-    exact hpost _ _ _ _ _ (hlen s) (narrowA_agree hk hl hb hs) hq''
-  · obtain ⟨u₁, r₁, f₁, -, x₁, -⟩ := hrun s₁ h₁
-    obtain ⟨u₂, r₂, f₂, -, x₂, -⟩ := hrun s₂ h₂
-    rw [(Exec.det e₁ x₁).1, (Exec.det e₂ x₂).1, ((pubL_stk hk hl).mp hp).1.1,
-      hct _ _ _ _ _ _ (narrowA_pre hk hl hb hpre h₁) (narrowA_pre hk hl hb hpre h₂)
-        (narrowA_pub hk hl hb h₁ h₂ hp hleak) f₁ f₂]
-
 end
 
 end VG.RISCV64
