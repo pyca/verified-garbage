@@ -17,6 +17,7 @@ import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Prep
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Copy
 import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
 import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Arm.Lost
 
 /-! ### `Ecdsa.Rfc6979.Arm.Loop`, which only this module used -/
 
@@ -295,7 +296,8 @@ theorem core_ok (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t) 
       exact (hL.ko.sub_left (Region.sub_prefix (by omega_arith))).symm
     obtain bO : Spec.Sha256.bytesAt mL (State.addr L.out) (2 * P.Q) =
         Spec.Sha256.bytesAt s₂.mem (State.addr L.out) (2 * P.Q) :=
-      List.map_congr_left fun _ hi => hfl.bytes dO (by omega_arith) (List.mem_range.mp hi)
+      List.map_congr_left fun _ hi => hfl.bytes dO
+      (by show 2 * P.Q ≤ 2 ^ 64; have := P.wsizes.2.2.2.2.2.1; omega_arith) (List.mem_range.mp hi)
     dsimp only
     rw [popped_gpr (by decide), popped_gpr (by decide), bO]
     exact hpost
@@ -1114,10 +1116,20 @@ theorem sign_ok {ns : List String} {s : State} (h : (rfcP P ns).pre s) :
   obtain hL : (layOf P s).Ok := lay_ok h
   have hN : 536 ≤ s.sp.toNat := hL.nB
   obtain hk := coreOk_lay P s
-  refine WP.alloc frameBytes_ok (by show 512 ≤ _; omega_arith) ?_
+  refine WP.allocLost frameBytes_ok (by show 512 ≤ _; omega_arith) ?_
   rw [Cfg.body]
-  refine WP.seq (WP.mono (entry_ok h) fun t hc => WP.mono (body_ok hL hk hc) fun v hv => ?_)
+  refine WP.seq (WP.mono (entry_ok h) fun t hc => WP.mono (body_ok hL hk hc) fun v hv lm lu hfl => ?_)
   obtain ⟨hsp, hs, i, hx⟩ := hv
+  obtain dO : ∀ r ∈ [(⟨State.addr (s.sp - BitVec.ofNat 32 frameBytes), frameBytes⟩ : Region)],
+      (⟨State.addr (layOf P s).out, 2 * P.Q⟩ : Region).Disjoint r := fun r hr => by
+    obtain rfl := List.mem_singleton.mp hr
+    show Region.Disjoint _ ⟨State.addr (layOf P s).fp, 512⟩
+    rw [hL.fpA0, ← (coreOk_lay P s).1]
+    exact (hL.ko.sub_left (Offset.sub_base _ (by decide))).symm
+  obtain bO : Spec.Sha256.bytesAt lm (State.addr (layOf P s).out) (2 * P.Q) =
+      Spec.Sha256.bytesAt v.mem (State.addr (layOf P s).out) (2 * P.Q) :=
+    List.map_congr_left fun _ hi => hfl.bytes dO
+      (by show 2 * P.Q ≤ 2 ^ 64; have := P.wsizes.2.2.2.2.2.1; omega_arith) (List.mem_range.mp hi)
   refine ⟨⟨fun r hr => ?_, ?_⟩, ?_⟩
   · show (freed frameBytes v).gpr r = _
     obtain ⟨p, hp, rfl⟩ := List.mem_map.mp (low_preserved r hr)
@@ -1134,6 +1146,6 @@ theorem sign_ok {ns : List String} {s : State} (h : (rfcP P ns).pre s) :
     unfold ResultIs at hr
     show match sigI P (layOf P s) s.mem i with | some rs => _ | none => _
     cases hsig : sigI P (layOf P s) s.mem i <;> rw [hsig] at hr <;>
-      exact ⟨by rw [low_word]; exact hr.1, hr.2⟩
+      exact ⟨by rw [low_word]; exact hr.1, bO.trans hr.2⟩
 
 end VG.Proof.Ecdsa.Rfc6979.Arm

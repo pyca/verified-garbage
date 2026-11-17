@@ -15,6 +15,7 @@ import VerifiedGarbage.Proof.MlKem.Mem
 import VerifiedGarbage.Proof.MdStream.Arm.Common
 import VerifiedGarbage.Proof.MlKem.Arm.CallF
 import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Call
+import VerifiedGarbage.Proof.Framework.Arm.Lost
 
 /-!
 # ML-DSA verification on 32-bit ARM: the entries of the kernel
