@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.MlDsa.PreparedKeyContract
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Arm.Lost
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Taint
@@ -643,13 +644,13 @@ theorem frameCall_ok {D : Nat} {n : String} {c : Prog isa} {k : Contract isa}
     WP isa (.frame (.push [.r12, .lr]) (.call n c) (.pop .r12 8)) s fun s' =>
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ (∀ r ∈ preserved, r ≠ .lr → s'.gpr r = s.gpr r) ∧
       Frame (wr ++ [belowA s.sp D]) s.mem s'.mem ∧
-      ∃ s₂ : State, s₂.mem = s'.mem ∧ (∀ r, r ≠ .r12 → s₂.gpr r = s'.gpr r) ∧
+      ∃ s₂ : State, Frame [belowA s.sp D] s₂.mem s'.mem ∧ (∀ r, r ≠ .r12 → s₂.gpr r = s'.gpr r) ∧
         k.post ((pushed [.r12, .lr] s).callEntry.withRegions (rd ++ [argR s]) wr)
           (s₂.withRegions (rd ++ [argR s]) wr) := by
   obtain h8 : 8 ≤ s.sp.toNat := by omega_arith
-  refine WP.frame (rs := [.r12, .lr]) (r := .r12) rfl (by simpa using h8) (by decide) ?_
+  refine WP.frameLost (rs := [.r12, .lr]) (r := .r12) rfl (by simpa using h8) (by decide) ?_
   obtain hwp : (pushed [.r12, .lr] s).wr = belowA s.sp 8 :: s.wr := by rw [VG.Arm.pushed_wr, frame8 h8]
-  refine WP.callF hv hpre (fun x m hx => ?_) (fun x m hx => ?_) ?_ fun s₂ hrd hwr hsp₂ hf hcs hpost => ?_
+  refine WP.callF hv hpre (fun x m hx => ?_) (fun x m hx => ?_) ?_ fun s₂ hrd hwr hsp₂ hf hcs hpost mL uL hfl => ?_
   · rw [VG.Arm.pushed_rd, hwp]
     rcases (by simpa only [InRegions, List.mem_append, or_assoc] using hx : ∃ r, (r ∈ rd ∨ r ∈ [argR s] ∨ r ∈ wr) ∧
       r.Contains x m) with ⟨r, (hr | hr | hr), hcr⟩
@@ -670,11 +671,15 @@ theorem frameCall_ok {D : Nat} {n : String} {c : Prog isa} {k : Contract isa}
   · have hsp₂' : s₂.sp = s.sp - BitVec.ofNat 32 8 := by rw [hsp₂, VG.Arm.pushed_sp]; rfl
     obtain f₁ := push2_frame h8
     obtain hsu' : 8 + stackUse c ≤ s.sp.toNat := by omega_arith
+    rw [frame8 h8] at hfl
+    have hflD : Frame [belowA s.sp D] s₂.mem mL := hfl.sub fun r hr => ⟨_, List.mem_singleton_self _, by
+      rw [List.mem_singleton.mp hr]; exact belowA_sub (show 8 ≤ D by omega_arith)⟩
     refine ⟨by simp only [popped_rd, hrd, VG.Arm.pushed_rd], by simp only [popped_wr, hwr, hwp, List.tail_cons],
       by rw [popped_sp, hsp₂']; exact BitVec.sub_add_cancel _ _,
       fun r hr hl => by rw [popped_gpr (ne12_pres r hr hl), hcs r hr hl, VG.Arm.pushed_gpr], ?_,
-      s₂, rfl, fun r hr => (popped_gpr hr _ _).symm, hpost⟩
-    rw [popped_mem]
+      s₂, hflD, fun r hr => (popped_gpr hr 8 s₂).symm, hpost⟩
+    dsimp only
+    refine Frame.trans ?_ (hflD.sub fun r hr => ⟨r, List.mem_append_right _ hr, fun _ h => h⟩)
     rw [VG.Arm.pushed_sp] at hf
     refine (f₁.sub fun r hr => ?_).trans (hf.sub fun r hr => ?_)
     · simp only [List.mem_singleton] at hr; subst hr
@@ -927,8 +932,11 @@ theorem signCall_ok {n : String} {c : Prog isa} (hS : SignFn p prepared c) (hp :
   rw [e0, e1, e2, e3, pm _ _ ((h.stkSk.sub_right (Region.sub_prefix (skLen_le prepared))).symm.sub_right bk)
       (by have := h.nSk; have := skLen_le (p := p) prepared; omega_arith),
     pm _ _ (by rw [mu_eq hL]; exact (k_mu hL).symm.sub_right bk) (by decide),
-    pm _ _ (h.stkRnd.symm.sub_right bk) (by decide), mu_eq hL, hm₂,
+    pm _ _ (h.stkRnd.symm.sub_right bk) (by decide), mu_eq hL,
     hg₂ .r0 (by decide), o.mem] at hpost
+  -- The signature is apart from the released frame.
+  rw [Proof.MlKem.bytesAt_frame hm₂ (fun r hr => by rw [List.mem_singleton.mp hr, hsp1]; exact h.stkSig.symm)
+    (by have := h.nSig; omega_arith)]
   exact hpost
 
 end
