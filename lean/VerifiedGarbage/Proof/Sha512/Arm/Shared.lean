@@ -10,6 +10,7 @@ public import VerifiedGarbage.Proof.Sha512.Arm.Stream.Update
 public import VerifiedGarbage.Spec.Sha512.Contract
 import VerifiedGarbage.Proof.Sha512.Scratch
 public import VerifiedGarbage.Proof.Framework.Arm.StackScratch
+import VerifiedGarbage.Proof.Framework.Arm.ScratchLost
 public import VerifiedGarbage.Proof.Sha512.Digest
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.Sig
@@ -42,7 +43,7 @@ result), then moved to the shared ones.
 `update` and `finalize` keep their working space in a frame of their own:
 they are `updateScratch` and `finalizeScratch` (the shared contracts with
 the working space as an argument, which HMAC's, PBKDF2's and Ed25519's code
-calls) run in a frame that allocates it (`Verified.stackScratch`).
+calls) run in a frame that allocates it (`Verified.stackScratchLost`).
 -/
 
 @[expose] public section
@@ -166,9 +167,10 @@ def updateFrameSat : State :=
 theorem update : Verified Arm.target
     (Impl.StackScratch.Arm.withStackScratch 1392 2 Impl.Sha512.Arm.Stream.update)
     (Spec.Sha512.updateContract Arm.abi 1392) :=
-  Arm.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 172) (stack := 0) (bytes := 1392) (m := 2)
+  Arm.Verified.stackScratchLost (nm := "scratch") (e := .u64) (n := 172) (stack := 0) (bytes := 1392) (m := 2)
     updateScratch (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Sha512.updatePost_local _)
+    (fun vs mm m₁ m₂ r hl _ hb h => Proof.Sha512.updatePostOut_local _ vs mm m₁ m₂ r hl hb h)
     (by implies_sat [Spec.Sha512.updateContract, Spec.Sha512.updateSig, Arm.abi, Arm.argRegs,
         Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       [updateFrameSat, Proof.Sha512.Arm.Stream.Update.sat, Arm.stackArg, Arm.stackArgAddr, Mem.readW,
@@ -181,9 +183,10 @@ def finalizeFrameSat : State :=
 theorem finalize : Verified Arm.target
     (Impl.StackScratch.Arm.withStackScratch 1392 1 Impl.Sha512.Arm.Stream.finalize)
     (Spec.Sha512.finalizeContract Arm.abi 1392) :=
-  Arm.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 172) (stack := 0) (bytes := 1392) (m := 1)
+  Arm.Verified.stackScratchLost (nm := "scratch") (e := .u64) (n := 172) (stack := 0) (bytes := 1392) (m := 1)
     finalizeScratch (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Sha512.finalizePost_local _)
+    (fun vs mm m₁ m₂ r hl _ hb h => Proof.Sha512.finalizePostOut_local _ vs mm m₁ m₂ r hl hb h)
     (by implies_sat [Spec.Sha512.finalizeContract, Spec.Sha512.finalizeSig, Arm.abi, Arm.argRegs,
         Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       [finalizeFrameSat, MdStream.Arm.Finalize.satBase, Arm.stackArg, Arm.stackArgAddr, Mem.readW,
@@ -298,9 +301,10 @@ theorem finalizeDigestStack48 {code : Prog Arm.isa} {iv : Spec.Sha512.HashValue}
     (hv : Verified Arm.target code (finalizeDigestScratchContract Arm.abi iv 48 digest 0)) :
     Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 1392 1 code)
       (Spec.Sha512.finalizeDigestContract Arm.abi iv 48 digest 1392) :=
-  Arm.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 172) (stack := 0) (bytes := 1392) (m := 1)
+  Arm.Verified.stackScratchLost (nm := "scratch") (e := .u64) (n := 172) (stack := 0) (bytes := 1392) (m := 1)
     hv (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Sha512.finalizeDigestPost_local _ _ _ _)
+    (fun vs mm m₁ m₂ r hl _ hb h => Proof.Sha512.finalizeDigestPostOut_local _ _ _ _ vs mm m₁ m₂ r hl hb h)
     (by implies_sat [Spec.Sha512.finalizeDigestContract, Spec.Sha512.finalizeDigestSig, Arm.abi, Arm.argRegs,
         Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       [finalizeDigestFrameSat, MdStream.Arm.Finalize.satBase, Arm.stackArg, Arm.stackArgAddr, Mem.readW,
@@ -311,9 +315,10 @@ theorem finalizeDigestStack32 {code : Prog Arm.isa} {iv : Spec.Sha512.HashValue}
     (hv : Verified Arm.target code (finalizeDigestScratchContract Arm.abi iv 32 digest 0)) :
     Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 1392 1 code)
       (Spec.Sha512.finalizeDigestContract Arm.abi iv 32 digest 1392) :=
-  Arm.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 172) (stack := 0) (bytes := 1392) (m := 1)
+  Arm.Verified.stackScratchLost (nm := "scratch") (e := .u64) (n := 172) (stack := 0) (bytes := 1392) (m := 1)
     hv (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Sha512.finalizeDigestPost_local _ _ _ _)
+    (fun vs mm m₁ m₂ r hl _ hb h => Proof.Sha512.finalizeDigestPostOut_local _ _ _ _ vs mm m₁ m₂ r hl hb h)
     (by implies_sat [Spec.Sha512.finalizeDigestContract, Spec.Sha512.finalizeDigestSig, Arm.abi, Arm.argRegs,
         Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       [finalizeDigestFrameSat, MdStream.Arm.Finalize.satBase, Arm.stackArg, Arm.stackArgAddr, Mem.readW,
@@ -324,9 +329,10 @@ theorem finalizeDigestStack28 {code : Prog Arm.isa} {iv : Spec.Sha512.HashValue}
     (hv : Verified Arm.target code (finalizeDigestScratchContract Arm.abi iv 28 digest 0)) :
     Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 1392 1 code)
       (Spec.Sha512.finalizeDigestContract Arm.abi iv 28 digest 1392) :=
-  Arm.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 172) (stack := 0) (bytes := 1392) (m := 1)
+  Arm.Verified.stackScratchLost (nm := "scratch") (e := .u64) (n := 172) (stack := 0) (bytes := 1392) (m := 1)
     hv (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Sha512.finalizeDigestPost_local _ _ _ _)
+    (fun vs mm m₁ m₂ r hl _ hb h => Proof.Sha512.finalizeDigestPostOut_local _ _ _ _ vs mm m₁ m₂ r hl hb h)
     (by implies_sat [Spec.Sha512.finalizeDigestContract, Spec.Sha512.finalizeDigestSig, Arm.abi, Arm.argRegs,
         Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       [finalizeDigestFrameSat, MdStream.Arm.Finalize.satBase, Arm.stackArg, Arm.stackArgAddr, Mem.readW,

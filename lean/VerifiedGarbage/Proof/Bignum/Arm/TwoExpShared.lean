@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
 import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
 import VerifiedGarbage.Proof.Framework.OffsetBelow
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Arm.Lost
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -163,7 +164,7 @@ theorem montCallOp_ok (name : String) (callee : Prog isa)
     rw [sub_toNat' fit8]; have := s.sp.isLt; omega_using []
   unfold MontCall.op
   rw [WP.seq_iff]
-  apply WP.alloc (by decide) fit8
+  apply WP.allocLost (by decide) fit8
   rw [WP.seq_iff]
   refine WP.mono (montCallArgs_ok A argsWs (by omega_using [size]) h.ptr argsFit argsWrite ho.1 ha.1 hb.1) ?_
   rintro u ⟨ptrU, outU, aU, memU, frameU, restU⟩
@@ -196,29 +197,44 @@ theorem montCallOp_ok (name : String) (callee : Prog isa)
       (by change 8 * len ≤ 2 ^ 64; have := h.workspace.nowrap; omega_using [this]) hi)
   rw [eq.number fits (by decide : 0 < 8)] at bound value
   rw [eq.number fits ha.1, eq.number fits hb.1] at value
-  have freeRest : Rest roundClobbers s (freed 8 v) := by
+  intro ml ul hfl
+  change Frame [belowA s.sp 8] v.mem ml at hfl
+  have lostSub : Region.Sub (belowA s.sp 8) (belowA s.sp 48) := belowA_sub (by decide) cs.fit
+  have lostWs : (belowA s.sp 8).Disjoint ⟨State.addr base, 8 * len⟩ := cs.separate.sub_left lostSub
+  have lostEq := WorkspaceEq.of_frame (by have := h.workspace.nowrap; omega_using [this] : 8 * len < 2 ^ 64)
+    hfl (by intro r hr; have er := List.mem_singleton.mp hr; subst r; exact lostWs.symm)
+  rw [← lostEq.number fits ho.1] at bound value
+  have keepsLost : Keeps (State.addr base) len w o s.mem ml := by
+    intro i hi separate
+    exact (lost_byte hfl (R := ⟨State.addr base, 8 * len⟩) lostWs.symm hi).trans (keepsAll i hi separate)
+  have frameLost : Frame [⟨State.addr base, 8 * len⟩, belowA s.sp 48] s.mem ml :=
+    frame.trans (hfl.sub fun r hr => by
+      have er := List.mem_singleton.mp hr; subst r
+      exact ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), lostSub⟩)
+  have freeRest : Rest roundClobbers s { freed 8 v with mem := ml, unknowns := ul } := by
     refine ⟨by intro r hr; exact False.elim (hr (by cases r <;> simp [roundClobbers])), restUV.rd, ?_, ?_⟩
     · change v.wr.tail = s.wr; rw [restUV.wr]; rfl
     · change v.sp + BitVec.ofNat 32 8 = s.sp
       rw [restUV.sp]; exact BitVec.sub_add_cancel _ _
-  have saved : (freed 8 v).mem.readW (State.addr (freed 8 v).sp) 32 = base := by
+  have saved : ({ freed 8 v with mem := ml, unknowns := ul } : State).mem.readW
+      (State.addr ({ freed 8 v with mem := ml, unknowns := ul } : State).sp) 32 = base := by
     rw [freeRest.sp]
     have sep : Region.Disjoint ⟨State.addr s.sp, 4⟩ (belowA s.sp 48) := by
       rw [belowA, addr_sub' cs.fit]
       exact (Offset.below_disjoint _ (by decide)).symm
-    exact (frame.readW (r := ⟨State.addr s.sp, 4⟩) (Region.contains_self _ _)
+    exact (frameLost.readW (r := ⟨State.addr s.sp, 4⟩) (Region.contains_self _ _)
       (by intro r hr
           rcases List.mem_cons.mp hr with hr | hr
           · subst r; exact h.stackSep
           · have er := List.mem_singleton.mp hr; subst r; exact sep) (by decide)).trans h.saved
-  refine WP.mono (restoreBase_ok (freed 8 v)
+  refine WP.mono (restoreBase_ok { freed 8 v with mem := ml, unknowns := ul }
     (by rw [freeRest.rd, freeRest.wr, freeRest.sp]; exact h.stackRead) saved) ?_
   rintro t ⟨ptrT, memT, restT⟩
-  change t.mem = v.mem at memT
+  change t.mem = ml at memT
   have rest := freeRest.trans (restT.mono (by intro r _; cases r <;> simp [roundClobbers]))
-  rw [← memT] at keepsAll frame bound value
-  obtain ⟨ready, modulus⟩ := h.after_call cs ho0 keepsAll frame rest ptrT
-  exact ⟨ready, cs.of_rest rest, modulus, bound, value, keepsAll, frame, rest⟩
+  rw [← memT] at keepsLost frameLost bound value
+  obtain ⟨ready, modulus⟩ := h.after_call cs ho0 keepsLost frameLost rest ptrT
+  exact ⟨ready, cs.of_rest rest, modulus, bound, value, keepsLost, frameLost, rest⟩
 
 end VG.Proof.Bignum.Arm
 

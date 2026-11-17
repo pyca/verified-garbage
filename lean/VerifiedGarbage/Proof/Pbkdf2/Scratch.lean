@@ -99,4 +99,39 @@ theorem pbkdf2Post_local : ∀ vs m₁ m₂ m' r, vs.length = (pbkdf2Sig.words p
       rw [BitVec.toNat_setWidth] at hi; omega_using [h₂, hi])]
   exact h
 
+/-- `pbkdf2Post` reads the memory on return only within the buffers: the
+output. -/
+theorem pbkdf2PostOut_local : ∀ vs m m₁ m₂ r, vs.length = (pbkdf2Sig.words pb).length →
+    (∀ b ∈ Sig.bufs pbkdf2Sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (pbkdf2Sig.words pb) (pbkdf2Post S pb) vs m m₁ r →
+      Curry.apply (pbkdf2Sig.words pb) (pbkdf2Post S pb) vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen hb h
+  obtain ⟨pw, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 6) hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨pwLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨salt, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨saltLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨c, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨out, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨outLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [pbkdf2Sig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+    forall_eq, Elem.size, Nat.mul_one] at hb
+  have ho := agree_of hb.2.2
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.int 32,
+    ArgWord.addr, ArgWord.int pb] (pbkdf2Post S pb) _ m m₁ r at h
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.int 32,
+    ArgWord.addr, ArgWord.int pb] (pbkdf2Post S pb) _ m m₂ r
+  dsimp only [Curry.apply, pbkdf2Post, ArgWord.ofRaw] at h ⊢
+  have h₃ := Nat.mod_le outLen.toNat (2 ^ pb)
+  rw [bytesAt_congr (n := (outLen.setWidth pb).toNat) fun i hi => ho i (by
+      rw [BitVec.toNat_setWidth] at hi; omega_using [h₃, hi])]
+  exact h
+
 end VG.Proof.Pbkdf2

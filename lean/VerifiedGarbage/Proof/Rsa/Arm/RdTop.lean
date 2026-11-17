@@ -23,6 +23,8 @@ public import VerifiedGarbage.Proof.Rsa.Arm.Stage.Stores
 import VerifiedGarbage.Proof.Framework.Arm.CallF
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Arm.Lost
+import VerifiedGarbage.Proof.Rsa.BytesFrame
 public import VerifiedGarbage.Proof.Framework.Arm.Inline
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.Taint5
 import VerifiedGarbage.Proof.Bignum.Arm.UmaalArithmetic
@@ -448,7 +450,7 @@ theorem rd_ok [InvLaw] (h : CIn s) (he : (stackArg s 3).toNat ≤ 8) :
   have spLo := h.spLo; have spHi := h.spHi
   have spN : (s.sp - BitVec.ofNat 32 56).toNat = s.sp.toNat - 56 := FrameStack.sub_toNat' spLo
   unfold VG.Impl.Rsa.Arm.RecoverDet.code codeWith
-  refine WP.frame (by decide) spLo (by decide) ?_
+  refine WP.frameLost (by decide) spLo (by decide) ?_
   rw [WP.seq_iff]
   refine WP.mono (entry_run h) fun u ⟨usp, urd, uwr, umem, uz⟩ => ?_
   rw [WP.seq_iff]
@@ -480,8 +482,29 @@ theorem rd_ok [InvLaw] (h : CIn s) (he : (stackArg s 3).toNat ≤ 8) :
     refine ⟨_, List.mem_append_right _ m, ?_⟩
     rw [State.withRegions_sp, vsp]; exact Region.contains_self _ _
   refine WP.mono (pc_restore_ok _ s.gpr fit read (by rw [State.withRegions_sp, vsp]; exact saved)) ?_
-  rintro t ⟨restored, memT, restT⟩
+  rintro t ⟨restored, memT, restT⟩ ml ul hfl
   have ret : t.gpr .r0 = v.gpr .r0 := restT.gpr .r0 (by simp [pcCalleeSaved])
+  change Frame [⟨State.addr (s.sp - BitVec.ofNat 32 56), 56⟩] t.mem ml at hfl
+  rw [FrameStack.addr_sub' spLo] at hfl
+  have kFit : (stackArg s 1).toNat < 2 ^ 64 :=
+    Nat.lt_of_lt_of_le (BitVec.isLt _) (by decide)
+  have eqP : Spec.Rsa.bytesAt ml (State.addr (s.gpr .r0)) (stackArg s 1).toNat =
+      Spec.Rsa.bytesAt t.mem (State.addr (s.gpr .r0)) (stackArg s 1).toNat :=
+    VG.Proof.Rsa.rsa_bytes_frame hfl kFit (by
+      intro r hr; simp only [List.mem_singleton] at hr; subst r
+      have := h.Fp.symm; rw [cP, h.pl] at this; exact this)
+  have eqQ : Spec.Rsa.bytesAt ml (State.addr (s.gpr .r2)) (stackArg s 1).toNat =
+      Spec.Rsa.bytesAt t.mem (State.addr (s.gpr .r2)) (stackArg s 1).toNat :=
+    VG.Proof.Rsa.rsa_bytes_frame hfl kFit (by
+      intro r hr; simp only [List.mem_singleton] at hr; subst r
+      have := h.Fq.symm; rw [cQ, h.ql] at this; exact this)
+  have wa : ∀ r o, Spec.Rsa.writtenAll t.mem [(State.addr (s.gpr .r0), (stackArg s 1).toNat),
+      (State.addr (s.gpr .r2), (stackArg s 1).toNat)] r o →
+      Spec.Rsa.writtenAll ml [(State.addr (s.gpr .r0), (stackArg s 1).toNat),
+        (State.addr (s.gpr .r2), (stackArg s 1).toNat)] r o := by
+    intro r o hw
+    cases o <;> simpa only [Spec.Rsa.writtenAll, List.map_cons, List.map_nil, List.mem_cons, List.not_mem_nil,
+      or_false, forall_eq_or_imp, forall_eq, eqP, eqQ] using hw
   refine ⟨⟨?_, ?_⟩, ?_⟩
   · intro r hr
     have ne : r ≠ .r12 := by intro he; subst r; simp [preserved] at hr
@@ -503,7 +526,9 @@ theorem rd_ok [InvLaw] (h : CIn s) (he : (stackArg s 3).toNat ≤ 8) :
         Spec.Rsa.bytesAt s.mem (State.addr (stackArg s 4)) (stackArg s 5).toNat := by
       show Spec.Rsa.bytesAt u.mem _ _ = _
       rw [umem]; exact h.bytes (R := cD s) h.Fd (Nat.le_of_lt (Nat.lt_of_lt_of_le (BitVec.isLt _) (by decide)))
-    simp only [popped_gpr (by decide : Reg.r0 ≠ .r12), popped_mem, memT, ret, State.withRegions_mem]
+    dsimp only
+    refine wa _ _ ?_
+    simp only [popped_gpr (by decide : Reg.r0 ≠ .r12), memT, ret, State.withRegions_mem]
     rw [dEq] at res
     exact res
 

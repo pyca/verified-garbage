@@ -15,6 +15,7 @@ import VerifiedGarbage.Proof.X25519.Arm.Instr
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Arm.Lost
 meta import VerifiedGarbage.Impl.Xdh.Arm
 meta import VerifiedGarbage.Proof.Xdh.Common
 meta import VerifiedGarbage.Proof.Xdh.Rel
@@ -281,12 +282,31 @@ structure Popped (n w : Nat) (f : List Byte → List Byte → List Byte) (s u : 
   wr : u.wr = ⟨B s + BitVec.ofNat 64 4, 4⟩ :: s.wr
   r1 : u.gpr .r1 = s.gpr .r0
 
+/-- The bytes of a region apart from a released frame are what they were. -/
+theorem bytes_lost {F : Region} {m m' : Mem} (hf : Frame [F] m m') {p : Addr} {k : Nat}
+    (hd : (⟨p, k⟩ : Region).Disjoint F) : bytesAt m' p k = bytesAt m p k := by
+  simp only [bytesAt]
+  exact List.map_congr_left fun i hi => lost_byte hf hd (List.mem_range.mp hi)
+
+/-- The output is apart from the frames' two words. -/
+theorem out_apart {n w : Nat} {s : State} (h : ExPre n w s) :
+    (outR n s).Disjoint ⟨B s, 4⟩ ∧ (outR n s).Disjoint ⟨B s + BitVec.ofNat 64 4, 4⟩ :=
+  ⟨(h.2.1.sub_left (Region.sub_prefix (by decide))).symm,
+    (h.2.1.sub_left (Offset.sub_base _ (by decide))).symm⟩
+
 theorem popped_of {n w : Nat} {f : List Byte → List Byte → List Byte} {s z : State} (h : ExPre n w s)
-    (hz : Called n w f s z) : Popped n w f s (popped .r1 4 z) := by
+    (hz : Called n w f s z) {m : Mem} {u : Nat → BitVec 32} (hm : Frame [⟨B s, 4⟩] z.mem m) :
+    Popped n w f s { popped .r1 4 z with mem := m, unknowns := u } := by
   have hread : z.mem.readW (State.addr z.sp) 32 = s.gpr .r0 := by
     rw [hz.sp, addr44 h]
     exact hz.slot
-  refine ⟨hz.out, hz.ra, fun r hr hlr => ?_, ?_, hz.rd, ?_, ?_⟩
+  refine ⟨?_, ?_, fun r hr hlr => ?_, ?_, hz.rd, ?_, ?_⟩ <;> dsimp only
+  · rw [bytes_lost hm (out_apart h).1]; exact hz.out
+  · rw [hm.readW (r := ⟨B s + BitVec.ofNat 64 4, 4⟩) (Region.contains_self _ _)
+      (fun r hr => by
+        simp only [List.mem_singleton] at hr; subst r
+        exact Offset.disjoint_base _ (by decide) (by decide)) (by decide)]
+    exact hz.ra
   · rw [popped_gpr (show r ≠ .r1 by revert r; decide), hz.pres r hr hlr]
   · rw [popped_sp, hz.sp]; exact BitVec.sub_add_cancel _ _
   · rw [popped_wr, hz.wr]; rfl
@@ -356,16 +376,18 @@ theorem checked_wp {n w : Nat} {f : List Byte → List Byte → List Byte} {s u 
 /-! ## The whole function -/
 
 theorem lr_ok {n w : Nat} {f : List Byte → List Byte → List Byte} {s v : State} (h : ExPre n w s)
-    (hv : Checked n w f s v) : abiPreserved s (popped .lr 4 v) ∧ ExPost n f s (popped .lr 4 v) := by
+    (hv : Checked n w f s v) {m : Mem} {u : Nat → BitVec 32} (hm : Frame [⟨B s + BitVec.ofNat 64 4, 4⟩] v.mem m) :
+    abiPreserved s { popped .lr 4 v with mem := m, unknowns := u } ∧
+      ExPost n f s { popped .lr 4 v with mem := m, unknowns := u } := by
   have hra : v.mem.readW (State.addr v.sp) 32 = s.gpr .lr := by
     rw [hv.popped.sp, addr4 h]; exact hv.popped.ra
-  refine ⟨⟨fun r hr => ?_, ?_⟩, ?_, ?_⟩
+  refine ⟨⟨fun r hr => ?_, ?_⟩, ?_, ?_⟩ <;> dsimp only
   · by_cases hlr : r = .lr
     · subst hlr
       simp only [popped, State.setReg, ↓reduceIte, hra]
     · rw [popped_gpr hlr, hv.popped.pres r hr hlr]
   · rw [popped_sp, hv.popped.sp]; exact BitVec.sub_add_cancel _ _
-  · exact hv.popped.out
+  · rw [bytes_lost hm (out_apart h).2]; exact hv.popped.out
   · rw [popped_gpr (r := .lr) (q := .r0) (by decide), BitVec.setWidth_eq, hv.r0]
     exact result_spec _ _ _ _ hv.popped.out
 
@@ -373,13 +395,18 @@ theorem exchange_wp {n w : Nat} {f : List Byte → List Byte → List Byte} {c :
     (hk : Callee n w f c k) {name : String} (hn : n < 4096) {s : State} (h : ExPre n w s) :
     WP isa (exchange name c n) s fun z => abiPreserved s z ∧ ExPost n f s z := by
   have hsp := h.2.2.2.2.2
-  refine WP.frame (rs := [.lr]) (by decide) (by simp only [List.length_singleton]; omega_using [hsp]) (by decide) ?_
-  refine WP.seq (WP.frame (rs := [.r0]) (by decide) ?_ (by decide) ?_)
+  refine WP.frameLost (rs := [.lr]) (by decide) (by simp only [List.length_singleton]; omega_using [hsp]) (by decide) ?_
+  refine WP.seq (WP.frameLost (rs := [.r0]) (by decide) ?_ (by decide) ?_)
   · simp only [pushed_sp, List.length_singleton, Nat.mul_one, BitVec.toNat_sub, BitVec.toNat_ofNat]
     have := s.sp.isLt
     omega_using [hsp]
-  refine WP.mono (called_wp hk h (pushed_pushed h)) fun z hz => ?_
-  exact WP.mono (checked_wp h hn (popped_of h hz)) fun v hv => lr_ok h hv
+  refine WP.mono (called_wp hk h (pushed_pushed h)) fun z hz m u hm => ?_
+  change Frame [⟨State.addr (s.sp - BitVec.ofNat 32 4 - BitVec.ofNat 32 4), 4⟩] z.mem m at hm
+  rw [addr44 h] at hm
+  refine WP.mono (checked_wp h hn (popped_of h hz hm)) fun v hv m' u' hm' => ?_
+  change Frame [⟨State.addr (s.sp - BitVec.ofNat 32 4), 4⟩] v.mem m' at hm'
+  rw [addr4 h] at hm'
+  exact lr_ok h hv hm'
 
 /-! ## Constant time -/
 
@@ -423,14 +450,18 @@ theorem exchange_ct {n w : Nat} {f : List Byte → List Byte → List Byte} {c :
         -- What the inner frame leaves, by the correctness proof and determinism.
         have w₁ : WP isa (.frame (.push [.r0]) (.call name c) (.pop .r1 4)) (pushed [.lr] σ₁)
             (Popped n w f σ₁) := by
-          refine WP.frame (rs := [.r0]) (by decide) ?_ (by decide)
-            (WP.mono (called_wp hk p₁ k₁) fun z hz => popped_of p₁ hz)
+          refine WP.frameLost (rs := [.r0]) (by decide) ?_ (by decide)
+            (WP.mono (called_wp hk p₁ k₁) fun z hz m u hm => popped_of p₁ hz (by
+              change Frame [⟨State.addr (_ - BitVec.ofNat 32 4 - BitVec.ofNat 32 4), 4⟩] z.mem m at hm
+              rw [addr44 p₁] at hm; exact hm))
           simp only [pushed_sp, List.length_singleton, Nat.mul_one, BitVec.toNat_sub, BitVec.toNat_ofNat]
           have := σ₁.sp.isLt; have := p₁.2.2.2.2.2; omega_using [this]
         have w₂ : WP isa (.frame (.push [.r0]) (.call name c) (.pop .r1 4)) (pushed [.lr] σ₂)
             (Popped n w f σ₂) := by
-          refine WP.frame (rs := [.r0]) (by decide) ?_ (by decide)
-            (WP.mono (called_wp hk p₂ k₂) fun z hz => popped_of p₂ hz)
+          refine WP.frameLost (rs := [.r0]) (by decide) ?_ (by decide)
+            (WP.mono (called_wp hk p₂ k₂) fun z hz m u hm => popped_of p₂ hz (by
+              change Frame [⟨State.addr (_ - BitVec.ofNat 32 4 - BitVec.ofNat 32 4), 4⟩] z.mem m at hm
+              rw [addr44 p₂] at hm; exact hm))
           simp only [pushed_sp, List.length_singleton, Nat.mul_one, BitVec.toNat_sub, BitVec.toNat_ofNat]
           have := σ₂.sp.isLt; have := p₂.2.2.2.2.2; omega_using [this]
         obtain ⟨_, y₁, ey₁, hy₁⟩ := w₁

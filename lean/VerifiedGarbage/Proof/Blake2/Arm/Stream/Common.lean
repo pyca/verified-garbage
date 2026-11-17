@@ -10,6 +10,7 @@ public import VerifiedGarbage.Impl.Blake2.Arm.Stream
 public import VerifiedGarbage.Proof.Framework.Arm.Call
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Arm.Lost
 
 @[expose] public section
 
@@ -21,7 +22,7 @@ section
 The streaming functions call any compression function verified against
 `compressArm P` that makes no calls (`CalleeOk`), in a frame that pushes its
 stack arguments (`t` in `r3:r11`, `last` in `r12`, `scratch` in `lr`).
-`call_ok` runs such a frame from the state before its push (`WP.frame`,
+`call_ok` runs such a frame from the state before its push (`WP.frameLost`,
 `WP.call`), and `call_rel` relates two runs of it (`RelCT.frame`,
 `RelCT.call`), as for HMAC's calls of `update`
 (`Proof/Pbkdf2/Stream/Arm/Hash.lean`). The frame writes the 16 bytes below the
@@ -247,23 +248,36 @@ theorem covW : Covers (wr w st scr) (pushed args4 s).wr := by
 
 end CallArgs
 
+/-- The `n ≤ 16` bytes a pop releases lie in `below s`. -/
+theorem lost_sub {s : State} {n : Nat} (hn : n ≤ 16) (h16 : 16 ≤ s.sp.toNat) :
+    Region.Sub ⟨State.addr (s.sp - BitVec.ofNat 32 n), n⟩ (below s) := by
+  intro a ha
+  have := s.sp.isLt
+  simp only [Region.Contains, State.addr] at ha ⊢
+  bv_omega_arith
+
 /-- After a frame of `rs` around a call that keeps the regions and the stack
-pointer. -/
+pointer, whatever memory `m` that differs from the call's only in the
+released frame, and whatever unknowns `u`, the pop leaves. -/
 theorem after_frame {s s₂ : State} {rs : List Reg} {ws : List Region}
     (fP : Frame [below s] s.mem (pushed rs s).mem)
     (hrd : s₂.rd = (pushed rs s).rd) (hwr : s₂.wr = (pushed rs s).wr) (hsp : s₂.sp = (pushed rs s).sp)
     (hf : Frame ws (pushed rs s).mem s₂.mem)
-    (hcs : ∀ r ∈ preserved, r ≠ .lr → s₂.gpr r = (pushed rs s).gpr r) :
-    After s ws (popped .r3 (4 * rs.length) s₂) := by
+    (hcs : ∀ r ∈ preserved, r ≠ .lr → s₂.gpr r = (pushed rs s).gpr r)
+    (hn : 4 * rs.length ≤ 16) (h16 : 16 ≤ s.sp.toNat) {m : Mem} {u : Nat → BitVec 32}
+    (hfl : Frame [⟨State.addr (s.sp - BitVec.ofNat 32 (4 * rs.length)), 4 * rs.length⟩] s₂.mem m) :
+    After s ws { popped .r3 (4 * rs.length) s₂ with mem := m, unknowns := u } := by
   refine ⟨?_, ?_, ?_, fun r hr hl => ?_, ?_⟩
-  · rw [popped_rd, hrd, pushed_rd]
-  · rw [popped_wr, hwr, pushed_wr]; rfl
-  · rw [popped_sp, hsp, pushed_sp]; exact BitVec.sub_add_cancel _ _
+  · dsimp only; rw [popped_rd, hrd, pushed_rd]
+  · dsimp only; rw [popped_wr, hwr, pushed_wr]; rfl
+  · dsimp only; rw [popped_sp, hsp, pushed_sp]; exact BitVec.sub_add_cancel _ _
   · have hr3 : r ≠ .r3 := by rintro rfl; simp [preserved] at hr
-    rw [popped_gpr hr3, hcs r hr hl, pushed_gpr]
-  · rw [popped_mem]
-    exact (frame_app (ws' := ws) fP |>.mono fun r hr => by
-        simp only [List.mem_append, List.mem_singleton] at hr ⊢; grind).trans (frame_app (ws' := [below s]) hf)
+    dsimp only; rw [popped_gpr hr3, hcs r hr hl, pushed_gpr]
+  · dsimp only
+    exact ((frame_app (ws' := ws) fP |>.mono fun r hr => by
+        simp only [List.mem_append, List.mem_singleton] at hr ⊢; grind).trans (frame_app (ws' := [below s]) hf)).trans
+      (hfl.sub fun r hr => ⟨below s, List.mem_append_right _ (List.mem_singleton_self _), by
+        rw [List.mem_singleton.mp hr]; exact lost_sub hn h16⟩)
 
 variable {P : Params w}
 
@@ -279,13 +293,17 @@ theorem call_ok {name : String} {code : Prog isa} (hf : CalleeOk P code) {s : St
           (last != 0) → Q s') :
     WP isa (call name code) s Q := by
   have h16 := h.sp16
-  refine WP.frame (rs := args4) (r := .r3) rfl (by show 16 ≤ s.sp.toNat; exact h16) (by decide) ?_
+  refine WP.frameLost (rs := args4) (r := .r3) rfl (by show 16 ≤ s.sp.toNat; exact h16) (by decide) ?_
   refine WP.call (k := compressArm P) hf.verified.1 h.pre h.cov h.covW ?_ hf.noCalls
-  intro s₂ hrd hwr hsp hfr hcs _ hpost
+  intro s₂ hrd hwr hsp hfr hcs _ hpost mL uL hfl
   simp only [compressArm, tArm, State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem, ce0, ce1,
     ce2, pushed_gpr, h.r0, h.r1, h.r2, h.hn', h.arg0 _ CallArgs.vsp CallArgs.vmem,
     h.arg1 _ CallArgs.vsp CallArgs.vmem, h.arg2 _ CallArgs.vsp CallArgs.vmem, h.t] at hpost
-  refine hQ _ (after_frame h.fP hrd hwr hsp hfr hcs) ?_
+  refine hQ _ (after_frame h.fP hrd hwr hsp hfr hcs (by decide) h16 hfl) ?_
+  have hstL : stateAt w mL (State.addr st) = stateAt w s₂.mem (State.addr st) :=
+    stateAt_congr fun i hi => hfl.bytes (R := ⟨State.addr st, bufOff w⟩)
+      (by simp only [List.mem_singleton]; rintro r rfl; exact h.w_st.symm.sub_right (lost_sub (by decide) h16))
+      (by show bufOff w ≤ 2 ^ 64; have := h.nst; omega_nat) hi
   have hst : stateAt w (pushed args4 s).mem (State.addr st) = stateAt w s.mem (State.addr st) :=
     stateAt_congr fun i hi => h.fP.bytes (R := ⟨State.addr st, bufOff w⟩)
       (by simp only [List.mem_singleton]; rintro r rfl; exact h.w_st.symm)
@@ -297,7 +315,8 @@ theorem call_ok {name : String} {code : Prog isa} (hf : CalleeOk P code) {s : St
     compressBlocks_congr P fun j hj => h.fP.bytes (R := ⟨State.addr blk, blockBytes w * n⟩)
       (by simp only [List.mem_singleton]; rintro r rfl; exact h.w_b.symm)
       (by show blockBytes w * n ≤ 2 ^ 64; have := h.nb; omega_nat) hj
-  rw [popped_mem, hpost, hst, hbl]
+  dsimp only
+  rw [hstL, hpost, hst, hbl]
 
 end
 

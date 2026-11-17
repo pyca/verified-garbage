@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Frame
 import VerifiedGarbage.Proof.Framework.Arm.CallF
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Arm.Lost
 
 /-! # The private CRT's frame around the precomputation's body
 
@@ -102,7 +103,7 @@ theorem pp_crtFrame_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} 
       Frame [FrameStack.belowA s.sp 56, ⟨State.addr g.base, g.size⟩,
         ⟨State.addr g.output, 8 * ppPreWords g⟩] s.mem t.mem := by
   unfold crtFrame
-  refine WP.frame (by decide) h.stackFit (by decide) ?_
+  refine WP.frameLost (by decide) h.stackFit (by decide) ?_
   rw [WP.seq_iff]
   refine WP.mono (crt_entry_ready s h) ?_
   rintro u ⟨ready, frameU, savedU, restU⟩
@@ -139,14 +140,18 @@ theorem pp_crtFrame_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} 
     rw [wrV, spV]
     exact List.mem_cons_self
   refine WP.mono (pc_restore_ok v s.gpr fit read saved) ?_
-  rintro t ⟨_, memT, restT⟩
+  rintro t ⟨_, memT, restT⟩ ml ul hfl
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [popped_gpr (by decide : Reg.r0 ≠ .r12), restT.gpr .r0 (by decide)]; exact r0
-  · rw [popped_mem, memT]; exact words
+  · dsimp only
+    rw [Proof.Rsa.wordsAt_frame hfl (by have := pre.fit; omega_using [this])
+      (fun r hr => by simp only [List.mem_singleton] at hr; subst r; exact pre.below.symm), memT]
+    exact words
   · rw [popped_sp, restT.sp, spV]; exact BitVec.sub_add_cancel _ _
   · rw [popped_wr, restT.wr, wrV]; rfl
   · rw [popped_rd, restT.rd, restV.rd, restU.rd]; rfl
-  · rw [popped_mem, memT]
+  · dsimp only
+    rw [memT] at hfl
     have f2 : Frame [FrameStack.belowA s.sp 56, ⟨State.addr g.base, g.size⟩,
         ⟨State.addr g.output, 8 * ppPreWords g⟩] u.mem v.mem := frameV.sub fun r hr => by
       simp only [crtMutable, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -156,6 +161,7 @@ theorem pp_crtFrame_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} 
       · exact ⟨FrameStack.belowA s.sp 56, by simp, by rw [below]; exact Offset.sub_base _ (by decide)⟩
       · exact ⟨FrameStack.belowA s.sp 56, by simp, by rw [below]; exact Offset.sub_base _ (by decide)⟩
       · exact ⟨⟨State.addr g.output, 8 * ppPreWords g⟩, by simp, fun _ h => h⟩
-    exact (frameU.mono (by simp)).trans f2
+    exact ((frameU.mono (by simp)).trans f2).trans
+      (hfl.mono fun r hr => by simp only [List.mem_singleton] at hr; subst r; exact List.mem_cons_self)
 
 end VG.Proof.Bignum.Arm

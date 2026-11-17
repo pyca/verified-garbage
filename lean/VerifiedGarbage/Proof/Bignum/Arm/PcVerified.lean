@@ -9,6 +9,8 @@ import VerifiedGarbage.Proof.Bignum.Arm.PcEntryReady
 import VerifiedGarbage.Proof.Bignum.Arm.PcBody
 import VerifiedGarbage.Proof.Bignum.Arm.PcDimensions
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Arm.Lost
+import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Bignum.Arm.PcPrepare
 import VerifiedGarbage.Proof.Bignum.Arm.ExportState
 import VerifiedGarbage.Proof.Bignum.Arm.PcPrepareCT
@@ -52,7 +54,7 @@ theorem pcFn_ok (s : State) {base dst src : BitVec 32} {len k : Nat}
       | none => t.gpr .r0 = 0 ∧ Spec.Rsa.wordsAt t.mem (State.addr dst) (2 * Spec.Rsa.modulusWords k) =
           List.replicate (2 * Spec.Rsa.modulusWords k) 0) := by
   unfold PcFn.codeWith
-  refine WP.frame (by decide) h.stackFit (by decide) ?_
+  refine WP.frameLost (by decide) h.stackFit (by decide) ?_
   rw [WP.seq_iff]
   refine WP.mono (pc_entry_ready s h) ?_
   rintro u ⟨ready, frameU, savedU, restU⟩
@@ -86,8 +88,17 @@ theorem pcFn_ok (s : State) {base dst src : BitVec 32} {len k : Nat}
     rw [wrV, spV]
     exact List.mem_cons_self
   refine WP.mono (pc_restore_ok v s.gpr fit read saved) ?_
-  rintro t ⟨restored, memT, restT⟩
+  rintro t ⟨restored, memT, restT⟩ ml ul hfl
   have ret : t.gpr .r0 = v.gpr .r0 := restT.gpr .r0 (by decide)
+  have outEq : Spec.Rsa.wordsAt ml (State.addr dst) (2 * Spec.Rsa.modulusWords k) =
+      Spec.Rsa.wordsAt t.mem (State.addr dst) (2 * Spec.Rsa.modulusWords k) := by
+    simp only [Spec.Rsa.wordsAt]
+    refine List.map_congr_left fun i hi => ?_
+    have hi := List.mem_range.mp hi
+    refine Mem.readW_congr fun j hj => ?_
+    rw [Offset.add_add]
+    exact lost_byte hfl (R := ⟨State.addr dst, 16 * Spec.Rsa.modulusWords k⟩) h.stackOutput.symm
+      (by change 8 * i + j < 16 * Spec.Rsa.modulusWords k; omega_using [hi, hj])
   refine ⟨⟨?_, ?_⟩, ?_⟩
   · intro r hr
     have ne : r ≠ .r12 := by intro he; subst r; simp [preserved] at hr
@@ -105,7 +116,8 @@ theorem pcFn_ok (s : State) {base dst src : BitVec 32} {len k : Nat}
     · exact restored (.lr, 52) (by decide)
   · rw [popped_sp, restT.sp, spV]
     exact BitVec.sub_add_cancel _ _
-  · simp only [popped_gpr (by decide : Reg.r0 ≠ .r12), popped_mem, memT, ret]
+  · dsimp only
+    simp only [popped_gpr (by decide : Reg.r0 ≠ .r12), outEq, memT, ret]
     exact result
 
 end VG.Proof.Bignum.Arm

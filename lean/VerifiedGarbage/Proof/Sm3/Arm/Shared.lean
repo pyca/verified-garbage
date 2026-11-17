@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.MdStream.Arm.Finalize
 public import VerifiedGarbage.Proof.MdStream.Arm.Update
 public import VerifiedGarbage.Impl.StackScratch.Arm
 import VerifiedGarbage.Proof.Framework.Arm.StackScratch
+import VerifiedGarbage.Proof.Framework.Arm.ScratchLost
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.Sm3.Arm.Stream
 import VerifiedGarbage.Proof.Framework.Contract
@@ -24,7 +25,7 @@ contracts of `Spec/Sm3/Contract.lean`, which the artifacts are emitted with.
 function's 104 bytes, then the registers the streaming code saves) in a frame
 of their own: they are `updateScratch` and `finalizeScratch` (the shared
 contracts with the working space as an argument, `Proof/Sm3/Scratch.lean`)
-run in a frame that allocates it (`Verified.stackScratch`).
+run in a frame that allocates it (`Verified.stackScratchLost`).
 -/
 
 @[expose] public section
@@ -67,11 +68,12 @@ def updateFrameSat : Arm.State :=
 theorem update : Verified Arm.target
     (Impl.StackScratch.Arm.withStackScratch 168 2 Impl.Sm3.Arm.Stream.update)
     (Spec.Sm3.updateContract Arm.abi 168) :=
-  Arm.Verified.stackScratch (sig := Spec.Sm3.updateSig) (nm := "scratch") (e := .u64) (n := 19)
+  Arm.Verified.stackScratchLost (sig := Spec.Sm3.updateSig) (nm := "scratch") (e := .u64) (n := 19)
     (stack := 0) (bytes := 168) (m := 2)
     (by rw [← Proof.Sm3.updateScratchContract_eq]; exact updateScratch) (by decide) (by decide)
     (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Sm3.updatePost_local _)
+    (fun vs mm m₁ m₂ r hl _ hb h => Proof.Sm3.updatePostOut_local _ vs mm m₁ m₂ r hl hb h)
     (by implies_sat [Spec.Sm3.updateContract, Spec.Sm3.updateSig, Arm.abi, Arm.argRegs,
         Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       [updateFrameSat, MdStream.Arm.Update.sat, Impl.Sm3.Arm.Stream.params, Arm.stackArg,
@@ -84,11 +86,12 @@ def finalizeFrameSat : Arm.State :=
 theorem finalize : Verified Arm.target
     (Impl.StackScratch.Arm.withStackScratch 168 1 Impl.Sm3.Arm.Stream.finalize)
     (Spec.Sm3.finalizeContract Arm.abi 168) :=
-  Arm.Verified.stackScratch (sig := Spec.Sm3.finalizeSig) (nm := "scratch") (e := .u64) (n := 19)
+  Arm.Verified.stackScratchLost (sig := Spec.Sm3.finalizeSig) (nm := "scratch") (e := .u64) (n := 19)
     (stack := 0) (bytes := 168) (m := 1)
     (by rw [← Proof.Sm3.finalizeScratchContract_eq]; exact finalizeScratch) (by decide) (by decide)
     (by decide) (by decide)
     (fun _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Sm3.finalizePost_local _)
+    (fun vs mm m₁ m₂ r hl _ hb h => Proof.Sm3.finalizePostOut_local _ vs mm m₁ m₂ r hl hb h)
     (by implies_sat [Spec.Sm3.finalizeContract, Spec.Sm3.finalizeSig, Arm.abi, Arm.argRegs,
         Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       [finalizeFrameSat, MdStream.Arm.Finalize.satBase, Arm.stackArg, Arm.stackArgAddr, Mem.readW,

@@ -18,6 +18,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Inline
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Arm.Lost
 
 meta import VerifiedGarbage.Proof.Sha3.Arm.Permute
 meta import VerifiedGarbage.Proof.Sha3.Instances
@@ -37,11 +38,12 @@ meta import VerifiedGarbage.Proof.Framework.Arm.Inline
 meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Block
+meta import VerifiedGarbage.Proof.Framework.Arm.Lost
 
 /-!
 # SHA-3 and SHAKE on ARMv7: the functions of each instance
 
-Each allocates a frame (`WP.alloc`), stores the callee's stack arguments
+Each allocates a frame (`WP.allocLost`), stores the callee's stack arguments
 and `lr` at its base and sets its register arguments (a block run
 instruction by instruction), and calls the sponge function
 (`FrameStack.WP.callF`), whose precondition holds of the arguments stored,
@@ -396,7 +398,7 @@ theorem update_correct {rate : Nat} (hr : rate ∈ rates) (hre : encodable (BitV
   obtain hE : (s.sp - BitVec.ofNat 32 16).toNat = s.sp.toNat - 16 := FrameStack.sub_toNat' (by omega_using [e16])
   obtain hfb := frame_eq (x := s.sp) (B := 16) (by omega_using [e16])
   unfold update
-  refine WP.alloc ⟨by decide, by decide, by decide, by decide⟩ (by omega_using [e16]) ?_
+  refine WP.allocLost ⟨by decide, by decide, by decide, by decide⟩ (by omega_using [e16]) ?_
   refine WP.seq (WP.mono (upd_args hre hs) fun t hI => ?_)
   obtain ⟨hpre, hc, hw⟩ := upd_pre hr hs hI
   refine WP.seq (FrameStack.WP.callF (k := Proof.Sha3.absorbArm) Stream.Absorb.absorb_verified.1 hpre hc hw
@@ -431,14 +433,22 @@ theorem update_correct {rate : Nat} (hr : rate ∈ rates) (hre : encodable (BitV
     exact hI.w0
   obtain hrate : (BitVec.ofNat 32 rate).toNat = rate := toNat_ofNat32 (by have := rate_lt hr; omega_using [this])
   rw [g0, g1, g2, g3, a0, hrate, State.callEntry_mem] at hpost
+  intro mL uL hfl
   refine ⟨⟨fun r hr => ?_, ?_⟩, fun msg hm hp => ?_, ?_⟩
-  · simp only [freed, RegUpd.gpr_setReg]
+  · dsimp only
+    simp only [freed, RegUpd.gpr_setReg]
     by_cases hl : r = .lr
     · subst hl; simp
     · simp only [hl, ite_false]
       rw [vpr r hr hl, hI.pr r hr hl]
-  · simp only [freed, RegUpd.sp_setReg]; rw [vsp, hI.sp]; exact BitVec.sub_add_cancel _ _
-  · have hst : stateAt t.mem (State.addr (s.gpr .r0)) = stateAt s.mem (State.addr (s.gpr .r0)) :=
+  · dsimp only
+    simp only [freed, RegUpd.sp_setReg]; rw [vsp, hI.sp]; exact BitVec.sub_add_cancel _ _
+  · have hstL : stateAt mL (State.addr (s.gpr .r0)) = stateAt (freed 16 _).mem (State.addr (s.gpr .r0)) :=
+      stateAt_frame hfl fun r hr => by rw [List.mem_singleton.mp hr, hfb]; exact d6.symm
+    dsimp only
+    unfold Spec.Sha3.Repr
+    rw [hstL]
+    have hst : stateAt t.mem (State.addr (s.gpr .r0)) = stateAt s.mem (State.addr (s.gpr .r0)) :=
       stateAt_frame hI.frame fun r hr => by
         rw [List.mem_singleton.mp hr, hfb]; exact d6.symm
     obtain hd : bytesAt t.mem (State.addr (s.gpr .r2)) (s.gpr .r3).toNat =
@@ -447,8 +457,10 @@ theorem update_correct {rate : Nat} (hr : rate ∈ rates) (hre : encodable (BitV
         (by have := (s.gpr .r3).isLt; omega_using [])
     have := hpost.1 msg (by unfold Spec.Sha3.Repr; rw [hst]; exact hm) hp
     rw [hd] at this
+    unfold Spec.Sha3.Repr at this
     simpa only [freed, RegUpd.mem_setReg] using this
-  · simp only [freed, RegUpd.gpr_setReg, reduceCtorEq, ite_false]
+  · dsimp only
+    simp only [freed, RegUpd.gpr_setReg, reduceCtorEq, ite_false]
     exact hpost.2
 
 theorem upd_entry {rate : Nat} {s t : State} (hI : UpdAt rate s t) :
@@ -680,7 +692,7 @@ theorem xof_correct {X : Xof} (hX : xofSponge X) (hr : X.rate ∈ rates)
   have hsp := s.sp.isLt
   obtain hfb := frame_eq (x := s.sp) (B := 648) (by omega_using [e648])
   unfold xofFinalize
-  refine WP.alloc ⟨by decide, by decide, by decide, by decide⟩ (by omega_using [e648]) ?_
+  refine WP.allocLost ⟨by decide, by decide, by decide, by decide⟩ (by omega_using [e648]) ?_
   refine WP.seq (WP.mono (xp_args hre hs) fun t hI => ?_)
   obtain ⟨hpre, hc, hw⟩ := xp_pre hr hs hI
   refine WP.seq (FrameStack.WP.callF (k := Proof.Sha3.padArm) Stream.Pad.pad_verified.1 hpre hc hw
@@ -711,18 +723,26 @@ theorem xof_correct {X : Xof} (hX : xofSponge X) (hr : X.rate ∈ rates)
   obtain hrate : (BitVec.ofNat 32 X.rate).toNat = X.rate := toNat_ofNat32 (by have := rate_lt hr; omega_using [this])
   obtain hsuf : (BitVec.ofNat 32 0x1f).setWidth 8 = Spec.Sha3.shakeSuffix := by decide
   rw [g0, g1, g2, g3, hrate, hsuf, State.callEntry_mem] at hpost
+  intro mL uL hfl
   refine ⟨⟨fun r hr => ?_, ?_⟩, fun msg hm hp => ?_⟩
-  · simp only [freed, RegUpd.gpr_setReg]
+  · dsimp only
+    simp only [freed, RegUpd.gpr_setReg]
     by_cases hl : r = .lr
     · subst hl; simp
     · simp only [hl, ite_false]
       rw [vpr r hr hl, hI.pr r hr hl]
-  · simp only [freed, RegUpd.sp_setReg]; rw [vsp, hI.sp]; exact BitVec.sub_add_cancel _ _
-  · have hst : stateAt t.mem (State.addr (s.gpr .r0)) = stateAt s.mem (State.addr (s.gpr .r0)) :=
+  · dsimp only
+    simp only [freed, RegUpd.sp_setReg]; rw [vsp, hI.sp]; exact BitVec.sub_add_cancel _ _
+  · have hstL : stateAt mL (State.addr (s.gpr .r0)) = stateAt (freed 648 _).mem (State.addr (s.gpr .r0)) :=
+      stateAt_frame hfl fun r hr => by rw [List.mem_singleton.mp hr, hfb]; exact d1.symm
+    have hst : stateAt t.mem (State.addr (s.gpr .r0)) = stateAt s.mem (State.addr (s.gpr .r0)) :=
       stateAt_frame hI.frame fun r hr => by
         rw [List.mem_singleton.mp hr, hfb]; exact d1.symm
     have := hpost msg (by unfold Spec.Sha3.Repr; rw [hst]; exact hm) hp
-    simpa only [freed, RegUpd.mem_setReg] using xofRepr_pad hX this
+    dsimp only
+    refine xofRepr_pad hX ?_
+    rw [hstL]
+    simpa only [freed, RegUpd.mem_setReg] using this
 
 theorem xp_call {X : Xof} (hr : X.rate ∈ rates) {s t : State} (hs : (xofFinArm X).pre s)
     (hI : XpAt X.rate s t) :
@@ -960,7 +980,7 @@ theorem xs_correct {X : Xof} (hr : X.rate ∈ rates) (hre : encodable (BitVec.of
   have hsp := s.sp.isLt
   obtain hfb := frame_eq (x := s.sp) (B := 656) (by omega_using [e656])
   unfold xofSqueeze
-  refine WP.alloc ⟨by decide, by decide, by decide, by decide⟩ (by omega_using [e656]) ?_
+  refine WP.allocLost ⟨by decide, by decide, by decide, by decide⟩ (by omega_using [e656]) ?_
   refine WP.seq (WP.mono (xs_args hre hs) fun t hI => ?_)
   obtain ⟨hpre, hc, hw⟩ := xs_pre hr hs hI
   refine WP.seq (FrameStack.WP.callF (k := Proof.Sha3.squeezeArm) Stream.Squeeze.squeeze_verified.1 hpre
@@ -996,16 +1016,29 @@ theorem xs_correct {X : Xof} (hr : X.rate ∈ rates) (hre : encodable (BitVec.of
     stackArg_withRegions] at hpost
   rw [g0, g1, g2, g3, a0, hrate, State.callEntry_mem, hst] at hpost
   obtain ⟨h1, h2, h3⟩ := hpost
+  intro mL uL hfl
   refine ⟨⟨fun r hr => ?_, ?_⟩, fun msg n hR => ?_, ?_⟩
-  · simp only [freed, RegUpd.gpr_setReg]
+  · dsimp only
+    simp only [freed, RegUpd.gpr_setReg]
     by_cases hl : r = .lr
     · subst hl; simp
     · simp only [hl, ite_false]
       rw [vpr r hr hl, hI.pr r hr hl]
-  · simp only [freed, RegUpd.sp_setReg]; rw [vsp, hI.sp]; exact BitVec.sub_add_cancel _ _
-  · simpa only [freed, RegUpd.mem_setReg, RegUpd.gpr_setReg, reduceCtorEq, ite_false] using
-      xofRepr_squeeze hR h1 h3
-  · simpa only [freed, RegUpd.gpr_setReg, reduceCtorEq, ite_false] using h2
+  · dsimp only
+    simp only [freed, RegUpd.sp_setReg]; rw [vsp, hI.sp]; exact BitVec.sub_add_cancel _ _
+  · have hstL : stateAt mL (State.addr (s.gpr .r0)) = stateAt (freed 656 _).mem (State.addr (s.gpr .r0)) :=
+      stateAt_frame hfl fun r hr => by rw [List.mem_singleton.mp hr, hfb]; exact d2.symm
+    have hoL : bytesAt mL (State.addr (s.gpr .r2)) (s.gpr .r3).toNat =
+        bytesAt (freed 656 _).mem (State.addr (s.gpr .r2)) (s.gpr .r3).toNat :=
+      bytesAt_frame hfl (fun r hr => by rw [List.mem_singleton.mp hr, hfb]; exact d3.symm)
+        (by have := (s.gpr .r3).isLt; omega_using [])
+    have := xofRepr_squeeze hR h1 h3
+    dsimp only
+    unfold Spec.Sha3.XofRepr at this ⊢
+    rw [hstL, hoL]
+    simpa only [freed, RegUpd.mem_setReg, RegUpd.gpr_setReg, reduceCtorEq, ite_false] using this
+  · dsimp only
+    simpa only [freed, RegUpd.gpr_setReg, reduceCtorEq, ite_false] using h2
 
 theorem xs_call {X : Xof} (hr : X.rate ∈ rates) {s t : State} (hs : (xofSqzArm X).pre s)
     (hI : XsAt X.rate s t) :
@@ -1442,7 +1475,7 @@ theorem fin_correct {H : Spec.Sha3.HashFn} (hH : hashSponge H) (hr : H.rate ∈ 
   have hsp := s.sp.isLt
   obtain hfb := frame_eq (x := s.sp) (B := 664) (by omega_using [e664])
   unfold finalize
-  refine WP.alloc ⟨by decide, by decide, by decide, by decide⟩ (by omega_using [e664]) ?_
+  refine WP.allocLost ⟨by decide, by decide, by decide, by decide⟩ (by omega_using [e664]) ?_
   refine WP.seq (WP.mono (fp_args hre hs) fun t hI => ?_)
   refine WP.seq (WP.mono (fp_call hr hs hI) fun v hA => ?_)
   refine WP.seq (WP.mono (fs_args hre hle hs hA) fun t₂ hF => ?_)
@@ -1485,14 +1518,20 @@ theorem fin_correct {H : Spec.Sha3.HashFn} (hH : hashSponge H) (hr : H.rate ∈ 
   simp only [Proof.Sha3.squeezeArm, State.withRegions_gpr, State.withRegions_mem,
     stackArg_withRegions] at hpost
   rw [g0, g1, g2, g3, a0, hrate, hlen, State.callEntry_mem, hst] at hpost
+  intro mL uL hfl
   refine ⟨⟨fun r hr => ?_, ?_⟩, fun msg hm hp => ?_⟩
-  · simp only [freed, RegUpd.gpr_setReg]
+  · dsimp only
+    simp only [freed, RegUpd.gpr_setReg]
     by_cases hl : r = .lr
     · subst hl; simp
     · simp only [hl, ite_false]
       rw [wpr r hr hl, hF.pr r hr hl, hA.pr r hr hl]
-  · simp only [freed, RegUpd.sp_setReg]; rw [wsp, hF.sp]; exact BitVec.sub_add_cancel _ _
-  · simp only [freed, RegUpd.mem_setReg]
+  · dsimp only
+    simp only [freed, RegUpd.sp_setReg]; rw [wsp, hF.sp]; exact BitVec.sub_add_cancel _ _
+  · dsimp only
+    rw [bytesAt_frame hfl (fun r hr => by rw [List.mem_singleton.mp hr, hfb]; exact d3.symm)
+      (by omega_using [hl])]
+    simp only [RegUpd.mem_setReg]
     rw [hpost.1, hA.pad msg hm hp]
     exact digest_of_pad hH rfl
 

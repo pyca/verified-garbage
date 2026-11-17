@@ -79,4 +79,27 @@ theorem finalize224Post_local (pb : Nat) :
   intro msg hr hc
   exact h msg (reprFrom_congr (fun i hi => (hs i hi).symm) hr) hc
 
+/-- `finalize224Post` reads the memory on return only within the buffers. -/
+theorem finalize224PostOut_local (pb : Nat) :
+    ∀ vs m m₁ m₂ r, vs.length = (Spec.Sha256.finalize224Sig.words pb).length →
+      (∀ b ∈ Sig.bufs Spec.Sha256.finalize224Sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (Spec.Sha256.finalize224Sig.words pb) (Spec.Sha256.finalize224Post pb) vs m m₁ r →
+        Curry.apply (Spec.Sha256.finalize224Sig.words pb) (Spec.Sha256.finalize224Post pb) vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen hb h
+  obtain ⟨st, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 2) hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨ct, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨ot, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [Spec.Sha256.finalize224Sig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+    forall_eq_or_imp, forall_eq] at hb
+  have ho : ∀ i < 28, m₂ (ot + BitVec.ofNat 64 i) = m₁ (ot + BitVec.ofNat 64 i) := fun i hi =>
+    (hb.2 _ (Offset.contains_base _ (by simp only [Elem.size]; omega_using [hi]) (by omega_using [hi]))).symm
+  intro msg hr hc
+  show Spec.Sha256.bytesAt m₂ ot 28 = _
+  rw [Stream.bytesAt_congr ho]
+  exact h msg hr hc
+
 end VG.Proof.Sha256

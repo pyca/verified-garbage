@@ -15,6 +15,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Arm.Lost
 
 /-!
 # HMAC and PBKDF2-HMAC over any streaming hash function: the 32-bit ARM contracts
@@ -195,7 +196,7 @@ representation of its streaming state is determined by the state's bytes, and
 its sizes are small.
 
 `init` is called with `WP.callCalls`. `update` and `finalize` are called in
-a frame that pushes their stack arguments (`WP.frame`), then sets the count
+a frame that pushes their stack arguments (`WP.frameLost`), then sets the count
 in `r2:r3`: `fin_frame` runs such a frame, from the state before its push.
 A frame writes the 16 bytes below the stack pointer, which `After` lets
 change. `init_rel` and `fin_rel` relate two runs of `init` and `finalize`
@@ -336,6 +337,30 @@ theorem after_frame {s s₂ : State} {rs : List Reg} {ws : List Region}
     exact (frame_app (ws' := ws) fP |>.mono fun r hr => by
         simp only [List.mem_append, List.mem_singleton] at hr ⊢; grind).trans (frame_app (ws' := [below s]) hf)
 
+/-- The `n ≤ 16` bytes a pop releases lie in `below s`. -/
+theorem lost_sub {s : State} {n : Nat} (hn : n ≤ 16) (h16 : 16 ≤ s.sp.toNat) :
+    Region.Sub ⟨State.addr (s.sp - BitVec.ofNat 32 n), n⟩ (below s) := by
+  intro a ha
+  have := s.sp.isLt
+  simp only [Region.Contains, State.addr] at ha ⊢
+  bv_omega_arith
+
+/-- `after_frame`, whatever memory `m` that differs from the call's only in
+the released frame, and whatever unknowns `u`, the pop leaves. -/
+theorem after_frameLost {s s₂ : State} {rs : List Reg} {ws : List Region}
+    (fP : Frame [below s] s.mem (pushed rs s).mem)
+    (hrd : s₂.rd = (pushed rs s).rd) (hwr : s₂.wr = (pushed rs s).wr) (hsp : s₂.sp = (pushed rs s).sp)
+    (hf : Frame ws (pushed rs s).mem s₂.mem) (hcs : ∀ r ∈ preserved, r ≠ .lr → s₂.gpr r = (pushed rs s).gpr r)
+    (hn : 4 * rs.length ≤ 16) (h16 : 16 ≤ s.sp.toNat) {m : Mem} {u : Nat → BitVec 32}
+    (hfl : Frame [⟨State.addr (s.sp - BitVec.ofNat 32 (4 * rs.length)), 4 * rs.length⟩] s₂.mem m) :
+    After s ws { popped .r1 (4 * rs.length) s₂ with mem := m, unknowns := u } := by
+  obtain ⟨a1, a2, a3, a4, a5⟩ := after_frame (ws := ws) fP hrd hwr hsp hf hcs
+  refine ⟨a1, a2, a3, a4, ?_⟩
+  dsimp only
+  rw [popped_mem] at a5
+  exact a5.trans (hfl.sub fun r hr => ⟨below s, List.mem_append_right _ (List.mem_singleton_self _), by
+    rw [List.mem_singleton.mp hr]; exact lost_sub hn h16⟩)
+
 /-! ## `finalize`, in its frame -/
 
 /-- What a framed call of `finalize` needs of the state before its push:
@@ -452,20 +477,28 @@ theorem fin_frame {s : State} {st o sc : BitVec 32} (h : FinArgs hH s st o sc) {
         (bytesAt s'.mem (State.addr o) H.F).take H.D = hH.SH.H.hash m) → Q s') :
     WP isa (.frame (.push fin2) (.call H.finN H.finC) (.pop .r1 8)) s Q := by
   have h16 := h.sp16
-  refine WP.frame (rs := fin2) (r := .r1) rfl (by show 8 ≤ s.sp.toNat; omega_nat) (by decide) ?_
+  refine WP.frameLost (rs := fin2) (r := .r1) rfl (by show 8 ≤ s.sp.toNat; omega_nat) (by decide) ?_
   refine WP.callCalls (k := finK H.S hH.Wb H.F H.D hH.SH.Repr hH.SH.H.hash) hH.fin.1 h.pre h.cov h.covW ?_ hH.finNF
-  intro s₂ hrd hwr hsp hf hcs _ hpost
+  intro s₂ hrd hwr hsp hf hcs _ hpost mL uL hfl
   have vc : count ((pushed fin2 s).callEntry.withRegions (FinArgs.rd s.sp) (FinArgs.wr hH st o sc)) = count s := by
     simp only [count, State.withRegions_gpr, ce2, ce3, pushed_gpr]
   simp only [finK, State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem, ce0, pushed_gpr, h.r0,
     h.arg0 _ FinArgs.vsp FinArgs.vmem, vc] at hpost
-  refine hQ _ (after_frame h.fP hrd hwr hsp hf hcs) fun m hr hl hcm => ?_
+  refine hQ _ (after_frameLost h.fP hrd hwr hsp hf hcs (by decide) h16 hfl) fun m hr hl hcm => ?_
   have hs : ∀ r ∈ [below s], (⟨State.addr st, H.S⟩ : Region).Disjoint r := by
     simp only [List.mem_singleton]; rintro r rfl; exact h.b_st.symm
   have hr' : hH.SH.Repr (pushed fin2 s).mem (State.addr st) m :=
     hH.repr _ _ _ _ _ (fun i hi => h.fP.bytes (R := ⟨State.addr st, H.S⟩) hs
       (by show H.S ≤ 2 ^ 64; have := hH.hSB; omega_nat) hi) hr
-  rw [popped_mem]
+  have ho : bytesAt mL (State.addr o) H.F = bytesAt s₂.mem (State.addr o) H.F := by
+    simp only [bytesAt]
+    apply List.map_congr_left
+    intro i hi
+    exact hfl.bytes (R := ⟨State.addr o, H.F⟩)
+      (by simp only [List.mem_singleton]; rintro r rfl; exact h.b_o.symm.sub_right (lost_sub (by decide) h16))
+      (by show H.F ≤ 2 ^ 64; have := h.no; omega_nat) (List.mem_range.mp hi)
+  dsimp only
+  rw [ho]
   exact hpost m hr' hl hcm
 
 /-! ## The calls in two runs

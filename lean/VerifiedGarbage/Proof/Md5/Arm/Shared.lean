@@ -10,6 +10,7 @@ public import VerifiedGarbage.Impl.Md5.Arm.Stream
 public import VerifiedGarbage.Impl.StackScratch.Arm
 import VerifiedGarbage.Proof.Md5.Scratch
 import VerifiedGarbage.Proof.Framework.Arm.StackScratch
+import VerifiedGarbage.Proof.Framework.Arm.ScratchLost
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 
@@ -23,7 +24,7 @@ contracts of `Spec/Md5/Contract.lean`, which the artifacts are emitted with.
 `update` and `finalize` keep their working space in a frame of their own:
 they are `updateScratch` and `finalizeScratch` (the shared contracts with
 the working space as an argument, which HMAC's and PBKDF2's code calls) run
-in a frame that allocates it (`Verified.stackScratch`).
+in a frame that allocates it (`Verified.stackScratchLost`).
 -/
 
 @[expose] public section
@@ -71,9 +72,10 @@ def updateFrameSat : Arm.State :=
 theorem update : Verified Arm.target
     (Impl.StackScratch.Arm.withStackScratch 128 2 Impl.Md5.Arm.Stream.update)
     (Spec.Md5.updateContract Arm.abi 128) :=
-  Arm.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 14) (stack := 0) (bytes := 128) (m := 2)
+  Arm.Verified.stackScratchLost (nm := "scratch") (e := .u64) (n := 14) (stack := 0) (bytes := 128) (m := 2)
     updateScratch (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Md5.updatePost_local _)
+    (fun vs mm m₁ m₂ r hl _ hb h => Proof.Md5.updatePostOut_local _ vs mm m₁ m₂ r hl hb h)
     (by implies_sat [Spec.Md5.updateContract, Spec.Md5.updateSig, Arm.abi, Arm.argRegs,
         Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       [updateFrameSat, MdStream.Arm.Update.sat, Impl.Md5.Arm.Stream.params, Arm.stackArg,
@@ -86,9 +88,10 @@ def finalizeFrameSat : Arm.State :=
 theorem finalize : Verified Arm.target
     (Impl.StackScratch.Arm.withStackScratch 128 1 Impl.Md5.Arm.Stream.finalize)
     (Spec.Md5.finalizeContract Arm.abi 128) :=
-  Arm.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 14) (stack := 0) (bytes := 128) (m := 1)
+  Arm.Verified.stackScratchLost (nm := "scratch") (e := .u64) (n := 14) (stack := 0) (bytes := 128) (m := 1)
     finalizeScratch (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Md5.finalizePost_local _)
+    (fun vs mm m₁ m₂ r hl _ hb h => Proof.Md5.finalizePostOut_local _ vs mm m₁ m₂ r hl hb h)
     (by implies_sat [Spec.Md5.finalizeContract, Spec.Md5.finalizeSig, Arm.abi, Arm.argRegs,
         Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       [finalizeFrameSat, MdStream.Arm.Finalize.satBase, Arm.stackArg, Arm.stackArgAddr, Mem.readW,
