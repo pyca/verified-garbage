@@ -259,9 +259,9 @@ theorem core_ok (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t) 
   obtain eW : coreWr P L = [L.OUT, L.SCR] := by simp only [coreWr, Lay.OUT, hq]
   refine frame2_ok (ra := .r12) (rb := .lr) (t := .r12) rfl (by decide) P.R.coreX
     (by show armStack P.R.coreC ≤ 16; rw [P.R.coreStack]; omega_arith) h24 (core_pre hL hk hc hr)
-    (core_cov hL hk hc) (core_covW hq hc) fun s₂ ha hpost syEnd => ?_
+    (core_cov hL hk hc) (core_covW hq hc) fun s₂ mL uL hfl ha hpost syEnd => ?_
   rw [eW] at ha
-  obtain hf : Frame [L.OUT, L.SCR, ⟨L.B, 24⟩] t.mem (popped .r12 8 s₂).mem := ha.frame.sub fun q hq' => by
+  obtain hf : Frame [L.OUT, L.SCR, ⟨L.B, 24⟩] t.mem mL := ha.frame.sub fun q hq' => by
     rw [hst] at hq'
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hq'
     rcases hq' with rfl | rfl | rfl
@@ -289,8 +289,9 @@ theorem core_ok (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t) 
       rw [p2_bytes h24 d1 (by omega_arith), p2_bytes h24 d2 (by omega_arith), p2_bytes h24 d3 (by omega_arith)]
     simp only [coreK, State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem, ce0,
       ce1, ce2, ce3, pushed_gpr, hr.r0, hr.r1, hr.r2, hr.r3, dgArg_w hL, kArg_w hL, hs] at hpost
-    rw [popped_gpr (by decide), popped_gpr (by decide), popped_mem]
-    exact hpost
+    dsimp only
+    rw [popped_gpr (by decide), popped_gpr (by decide)]
+    done
 
 end VG.Proof.Ecdsa.Rfc6979.Arm
 

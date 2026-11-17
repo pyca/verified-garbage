@@ -1687,6 +1687,18 @@ def Res (P : EP) (σ : State) (m : Mem) (r : BitVec 32) : Prop :=
   Spec.RsaPkcs1Enc.writtenMsg m (State.addr P.out) (State.addr P.ml) P.K r
     (Spec.RsaPkcs1Enc.decrypt P.nB P.eB (dB P σ) (pB P σ) (qB P σ) (dpB P σ) (dqB P σ) (qiB P σ) (cB P σ))
 
+/-- What `Res` states of the output and its length apart from a frame survives it. -/
+theorem Res_frame {P : EP} {σ : State} {rs : List Region} {m m' : Mem} (hf : Frame rs m m')
+    (ho : ∀ r ∈ rs, P.OUT.Disjoint r) (hm : ∀ r ∈ rs, P.ML.Disjoint r) (hK : P.K ≤ 2 ^ 64)
+    {r : BitVec 32} (h : Res P σ m r) : Res P σ m' r := by
+  unfold Res at h ⊢
+  obtain eb := bytesAt_frame hf ho hK
+  obtain ew := wordsAt_frame hf (n := 1) hm (by decide)
+  revert h
+  generalize Spec.RsaPkcs1Enc.decrypt _ _ _ _ _ _ _ _ _ = o
+  intro h
+  cases o <;> exact ⟨h.1, eb.trans h.2.1, ew.trans h.2.2⟩
+
 /-- The end of the body. -/
 def Fin (P : EP) (σ s : State) : Prop := S P σ s ∧ Res P σ s.mem (s.gpr .r0)
 
@@ -1896,7 +1908,14 @@ theorem code_ok (v : Proof.Rsa.Arm.CrtImpl) {s : State} (h : spec.pre s) :
   have hb := (body_vp (P := ep s) v).wp _ _ st
   refine WP.mono (wrap_ok hF (by rw [Nat.add_comm]; exact hsp) (W := (ep s).lay.W)
     (Q := fun r m => Res (ep s) (entered frameBytes s) m r) (fun r hr => ?_)
-    (WP.mono hb fun u hu => ⟨hu.1.2.frame, hu.2⟩)) fun t ⟨abi, res⟩ => ⟨abi, ?_⟩
+    (WP.mono hb fun u hu => ⟨hu.1.2.frame, hu.2⟩)
+    (hQ := fun _ m₁ m₂ hf hres => by
+      have ap := fun {R : Region} (hR : R ∈ [(ep s).OUT, (ep s).ML, (ep s).SCR]) =>
+        released_apart (F := frameBytes) (A := 76) (C := 3440) (argv := (ep s).argv)
+          (ro := [(ep s).N, (ep s).E, (ep s).D, (ep s).INP, (ep s).PP, (ep s).QQ, (ep s).DP, (ep s).DQ, (ep s).QI])
+          hin.ok hsp (Or.inr hR)
+      exact Res_frame hf (ap (by simp)) (ap (by simp))
+        (by have := hin.out_fit; omega_using [this]) hres)) fun t ⟨abi, res⟩ => ⟨abi, ?_⟩
   · rw [pushRegion_eq (F := frameBytes) (A := 76) (C := 3440) (argv := (ep s).argv)
       (ro := [(ep s).N, (ep s).E, (ep s).D, (ep s).INP, (ep s).PP, (ep s).QQ, (ep s).DP, (ep s).DQ, (ep s).QI])
       (rw := [(ep s).OUT, (ep s).ML, (ep s).SCR]) hsp]

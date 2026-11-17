@@ -8,6 +8,8 @@ import VerifiedGarbage.Proof.Argon2.Arm.Derive.Reduce
 import VerifiedGarbage.Proof.Argon2.Arm.Derive.FillLoops
 import VerifiedGarbage.Proof.Argon2.Arm.Derive.MemoryInit
 import VerifiedGarbage.Proof.Argon2.Arm.Derive.Initial
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Argon2.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
 
@@ -54,9 +56,17 @@ theorem body_ok : WP isa Impl.Argon2.Arm.Derive.body (entry s₀) fun t => BodyD
   rfl
 
 theorem correct : WP isa Impl.Argon2.Arm.Derive.derive s₀ fun t => abiPreserved s₀ t ∧ deriveArm.post s₀ t :=
-  frames_ok (by have := hp.sp_lo; omega_using [this]) (body_ok hp) fun t u q m => by
+  frames_ok (by have := hp.sp_lo; omega_using [this]) (body_ok hp) fun t u q f => by
     show bytesAt u.mem _ _ = _
-    rw [m]; exact q
+    have sub : Region.Sub (Proof.Argon2.Arm.stkR (E0 s₀) 200) (stkR0 s₀) :=
+      Offset.sub_below _ (by decide) (by decide)
+    have hd : ∀ r ∈ [Proof.Argon2.Arm.stkR (E0 s₀) 200], (outR s₀).Disjoint r := fun r hr => by
+      obtain rfl := List.mem_singleton.mp hr
+      exact (hp.stk_all (outR s₀) (by simp)).symm.sub_right sub
+    have fit : (outR s₀).len ≤ 2 ^ 64 := by
+      have := hp.out_fits; change outL s₀ ≤ _; omega_using [this]
+    refine Eq.trans (List.map_congr_left fun _ hi => ?_) q
+    exact f.bytes hd fit (List.mem_range.mp hi)
 
 end
 

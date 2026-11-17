@@ -238,7 +238,13 @@ theorem code_okP (v : Proof.Rsa.Arm.CrtImpl) {s : State} (h : specP.pre s) :
   have hb := (body_vp (P := ep s true) v).wp _ _ st
   refine WP.mono (wrap_ok hF (by rw [Nat.add_comm]; exact hsp) (W := (ep s true).lay.W)
     (Q := fun r m => Res (ep s true) (entered frameBytes s) m r) (fun r hr => ?_)
-    (WP.mono hb fun u hu => ⟨hu.1.2.frame, hu.2⟩)) fun t ⟨abi, res⟩ => ⟨abi, ?_⟩
+    (WP.mono hb fun u hu => ⟨hu.1.2.frame, hu.2⟩)
+    (hQ := fun _ m₁ m₂ hf hres => by
+      have ap := fun {R : Region} (hR : R ∈ [(ep s true).OUT, (ep s true).ML, (ep s true).SCR]) =>
+        released_apart (F := frameBytes) (A := 84) (C := 3440) (argv := (ep s true).argv)
+          (ro := (ep s true).ro) hin.ok hsp (Or.inr hR)
+      exact Res_frame hf (ap (by simp)) (ap (by simp))
+        (by have := hin.out_fit; omega_using [this]) hres)) fun t ⟨abi, res⟩ => ⟨abi, ?_⟩
   · rw [pushRegion_eq (F := frameBytes) (A := 84) (C := 3440) (argv := (ep s true).argv)
       (ro := (ep s true).ro) (rw := [(ep s true).OUT, (ep s true).ML, (ep s true).SCR]) hsp]
     exact hin.ok.push_apart r hr
