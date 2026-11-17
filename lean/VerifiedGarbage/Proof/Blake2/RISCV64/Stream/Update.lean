@@ -757,7 +757,7 @@ theorem correctFramed (hP : Ok P) (hf : CalleeOk P (compress P)) {s₀ : State}
     (hpre : (updateFramedRISCV64 P).pre s₀) :
     WP isa (update P) s₀ fun s' => abiPreserved s₀ s' ∧ (updateFramedRISCV64 P).post s₀ s' := by
   obtain ⟨hrd, hwr, hds, -, hsp, hks, hkd⟩ := hpre
-  refine WP.allocKept (by decide) hsp ?_
+  refine WP.alloc (by decide) hsp ?_
   refine WP.seq (Wp.wp_addSp (imm := 0) (by decide) fun s₁ u₁ => WP.block_nil ?_)
   let F : Region := ⟨s₀.sp - BitVec.ofNat 64 576, 576⟩
   obtain ha4 : s₁.gpr .a4 = s₀.sp - BitVec.ofNat 64 576 := by
@@ -780,7 +780,7 @@ theorem correctFramed (hP : Ok P) (hf : CalleeOk P (compress P)) {s₀ : State}
     · simp only [scR, dR, dp, len, scr, σ, State.withRegions_gpr, g₁ .a2 (by decide),
         g₁ .a3 (by decide), ha4]
       exact hkd.symm
-  refine WP.narrow (correctMain hP hf hpσ) ?_ ?_ (fun s' hrd' hwr' hsp' _ hpost => ?_)
+  refine WP.narrow (correctMain hP hf hpσ) ?_ ?_ (fun s' hrd' hwr' hsp' _ hpost m _ fl => ?_)
     (noFrames_updateMain hf .a4)
   · rw [hrd₁, hwr₁, hrd, hwr]
     apply Covers.of_sub
@@ -809,7 +809,7 @@ theorem correctFramed (hP : Ok P) (hf : CalleeOk P (compress P)) {s₀ : State}
   · have := hpost h0 d
     simp only [State.withRegions_mem, State.withRegions_gpr, u₁.mem,
       g₁ .a0 (by decide), g₁ .a1 (by decide), g₁ .a2 (by decide), g₁ .a3 (by decide)] at this
-    simp only [freed]
-    exact this hr hc hl
+    -- The `free` loses the frame's bytes, which lie apart from the state.
+    exact repr_congr hP (fun i hi => lost_byte fl (R := stR s₀ w) hks.symm hi) (this hr hc hl)
 
 end VG.Proof.Blake2.RISCV64.Stream.Update

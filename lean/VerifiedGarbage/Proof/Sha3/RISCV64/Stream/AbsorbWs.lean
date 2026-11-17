@@ -988,7 +988,7 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
   obtain hl := len_lt s₀
   have ⟨hr₀, _⟩ := hp.rt_pos
   unfold absorb withLoop frameBytes
-  refine WP.allocKept ⟨by decide, by decide, by decide⟩ (by have := hk.sp; omega_using [this]) ?_
+  refine WP.alloc ⟨by decide, by decide, by decide⟩ (by have := hk.sp; omega_using [this]) ?_
   refine WP.seq (WP.mono (prologue_ok hp) fun s₁ hI => ?_)
   refine WP.seq (WP.mono (Q := Inv s₀ (len s₀)) ?_ fun s₂ hI₂ => ?_)
   · refine WP.ite (decide (len s₀ = 0))
@@ -1014,7 +1014,7 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
       (fun d hd₁ hd₂ => by
         rw [hI₂.rd, hI₂.wr, hI₂.sp]
         exact ⟨BR s₀, by simp, Offset.contains_base _ (by omega_using [hd₂]) (by omega_using [hd₂])⟩)
-      (by rw [hI₂.sp]; exact hI₂.saved) fun s' h0 hsv hother hm hrd hwr hsp => ?_
+      (by rw [hI₂.sp]; exact hI₂.saved) fun s' h0 hsv hother hm hrd hwr hsp mL _ fl => ?_
     refine ⟨⟨fun r hr => ?_, ?_, ?_⟩, fun msg hR hpm => ?_, ?_⟩
     · show s'.gpr r = _
       rcases preserved_split r hr with h | h
@@ -1025,8 +1025,9 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
     · show s'.sp + BitVec.ofNat 64 560 = s₀.sp
       rw [hsp, hI₂.sp, BitVec.sub_add_cancel]
     · exact hsv (.ra, 512) (by decide)
-    · simp only [freed]
-      rw [Proof.Sha3.repr_iff, hm]
+    · -- The `free` loses the frame's bytes, which lie apart from the state.
+      rw [Proof.Sha3.repr_iff, Proof.Sha3.stateAt_congr (m := s'.mem) fun i hi =>
+        lost_byte fl (R := stR s₀) (hp.k_st.symm.sub_right (Offset.sub_below _ (by decide) (by decide))) hi, hm]
       exact hI₂.repr msg ⟨hR, hpm⟩
     · simp only [freed]
       rw [h0, hI₂.s4, toNat_ofNat_lt (by have := Nat.mod_lt (pos s₀ + len s₀) hr₀; omega_arith)]

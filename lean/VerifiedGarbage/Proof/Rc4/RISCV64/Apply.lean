@@ -1,6 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.Rc4.Memory
+import VerifiedGarbage.Proof.Rc4.Scratch
 public import VerifiedGarbage.Proof.Rc4.RISCV64.Lookup
 public import VerifiedGarbage.Spec.Rc4
 public import VerifiedGarbage.Proof.Framework.RISCV64.Keep
@@ -670,6 +671,16 @@ theorem apply_end (s : State) (hal : (s.gpr .a7).toNat % 8 = 0)
     rw [frame_byte tf hx', vm, write_byte, ite_eq_right h2, write_byte, ite_eq_right h1,
       frame_byte uf (by simp only; omega_using [hx])]
 
+/-- A byte apart from a frame is what it was once the frame's bytes are lost. -/
+theorem lost_sep {a b : Addr} {n k : Nat} {m m' : Mem} (f : Frame [⟨a, n⟩] m m') (hs : Mem.Sep a n b k)
+    {i : Nat} (hi : i < k) : m' (b + BitVec.ofNat 64 i) = m (b + BitVec.ofNat 64 i) := by
+  refine f _ fun r hr hc => ?_
+  simp only [List.mem_singleton] at hr; subst hr
+  refine hs (b + BitVec.ofNat 64 i) (by simp only [Region.Contains] at hc; omega_using [hc]) ?_
+  rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat]
+  have := Nat.mod_le i (2 ^ 64)
+  omega_using [hi, this]
+
 /-- `applyMain`, with its frame at the stack pointer, from the PRGA indices
 loaded. -/
 theorem apply_main (s : State) (n : Nat) (hbound : n + 1 < 2 ^ 64)
@@ -771,7 +782,7 @@ theorem apply_ok (s : State) (hal : s.sp.toNat % 16 = 0) (hsp : 256 ≤ s.sp.toN
     rw [hnEq] at hd hs hFd
     obtain hF : (s.sp - 256#64).toNat = s.sp.toNat - 256 := by
       rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, BitVec.toNat_ofNat]; omega_using [hsp])]; rfl
-    refine WP.allocKept (n := frameBytes) (by decide) (by rw [hasp]; exact hsp) ?_
+    refine WP.alloc (n := frameBytes) (by decide) (by rw [hasp]; exact hsp) ?_
     obtain hsp' : (allocd frameBytes a).sp = s.sp - 256#64 := by
       show a.sp - BitVec.ofNat 64 256 = _
       rw [hasp]
@@ -791,8 +802,11 @@ theorem apply_ok (s : State) (hal : s.sp.toNat % 16 = 0) (hsp : 256 ≤ s.sp.toN
       (by obtain ⟨r, hr, hc⟩ := hp; exact ⟨r, hwr r hr, by rw [hg, ha0]; exact hc⟩)
       (by obtain ⟨r, hr, hc⟩ := hd; exact ⟨r, hwr r hr, by rw [hg, ha1]; exact hc⟩)
       (by rw [hg, ha0, ha1]; exact hs) (by rw [hsp', hg, ha0]; exact hFc)
-      (by rw [hsp', hg, ha1]; exact hFd)) fun u hu => ?_
+      (by rw [hsp', hg, ha1]; exact hFd)) fun u hu m _ fl => ?_
     rw [hg, hm, ha0, ha1, ham] at hu
-    exact hu
+    -- The `free` loses the frame's bytes, which lie apart from the context and the data.
+    have fl' : Frame [⟨s.sp - 256#64, 256⟩] u.mem m := by rw [← hasp]; exact fl
+    exact ⟨(Proof.Rc4.contextAt_congr fun i hi => lost_sep fl' hFc hi).trans hu.1,
+      (List.map_congr_left fun i hi => lost_sep fl' hFd (List.mem_range.mp hi)).trans hu.2⟩
 
 end VG.Proof.Rc4.RISCV64

@@ -116,7 +116,7 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
   have hpl := hp.pos_lt
   have hB := hp.B_eq
   unfold Impl.Sha3.RISCV64.Stream.pad padBytes
-  refine WP.allocKept ⟨by decide, by decide, by decide⟩ (by have := hp.sp; omega_using [this]) ?_
+  refine WP.alloc ⟨by decide, by decide, by decide⟩ (by have := hp.sp; omega_using [this]) ?_
   -- In the frame.
   let s := allocd 528 s₀
   have hsp : s.sp = B s₀ := rfl
@@ -248,6 +248,7 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
     (by rw [u₁₃.rd, u₁₃.wr, rd', wr', rd₁₂, wr₁₂]
         exact ⟨_, List.mem_cons_self .., Offset.contains_base _ (by omega_using []) (by omega_using [])⟩)
     fun s₁₄ u₁₄ => WP.block_nil ?_
+  intro mL _ fl
   refine ⟨⟨fun r hr => ?_, ?_, ?_⟩, fun msg hR hm => ?_⟩
   · have ne := keep_ne r hr
     obtain hra : r ≠ .ra := by revert r; decide
@@ -257,8 +258,11 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
     rw [u₁₄.sp, u₁₃.sp, sp', sp₁₂, BitVec.sub_add_cancel]
   · show s₁₄.gpr .ra = _
     rw [u₁₄.gpr, u₁₃.mem, hf']
-  · simp only [freed]
-    rw [u₁₄.mem, u₁₃.mem, e', hS, absorb_pad (by omega_using [hr]) (by omega_using [hr]), ← hm,
+  · -- The `free` loses the frame's bytes, which lie apart from the state.
+    show stateAt mL (st s₀) = _
+    rw [Proof.Sha3.stateAt_congr (m := s₁₄.mem) fun i hi =>
+        lost_byte fl (R := stR s₀) (hp.stk.symm.sub_right (Offset.sub_below _ (by decide) (by decide))) hi,
+      u₁₄.mem, u₁₃.mem, e', hS, absorb_pad (by omega_using [hr]) (by omega_using [hr]), ← hm,
       show Rep ((s₀.gpr .a1).toNat) msg = stateAt s₀.mem (st s₀) from hR.symm]
 
 end VG.Proof.Sha3.RISCV64.Stream.Pad
@@ -648,7 +652,7 @@ theorem correct {s₀ : State} (hp : SPre s₀) :
   obtain hn := outn_lt s₀
   have ⟨hr0, hr200⟩ := hp.rate_pos
   unfold squeeze withLoop frameBytes
-  refine WP.allocKept ⟨by decide, by decide, by decide⟩ (by have := hk.sp; omega_using [this]) ?_
+  refine WP.alloc ⟨by decide, by decide, by decide⟩ (by have := hk.sp; omega_using [this]) ?_
   refine WP.seq (WP.mono (prologue_ok hp) fun s₁ hI => ?_)
   refine WP.seq (WP.mono (Q := fun s => ∃ k pos, Inv s₀ (outn s₀) k pos s) ?_
     fun s₂ ⟨k, pos, hI₂⟩ => ?_)
@@ -676,8 +680,13 @@ theorem correct {s₀ : State} (hp : SPre s₀) :
       (fun d hd₁ hd₂ => by
         rw [hI₂.rd, hI₂.wr, hI₂.sp]
         exact ⟨BR s₀, by simp, Offset.contains_base _ (by omega_using [hd₂]) (by omega_using [hd₂])⟩)
-      (by rw [hI₂.sp]; exact hI₂.saved) fun s' h0 hsv hother hm hrd hwr hsp => ?_
+      (by rw [hI₂.sp]; exact hI₂.saved) fun s' h0 hsv hother hm hrd hwr hsp mL _ fl => ?_
     obtain hx0 : s'.gpr .a0 = BitVec.ofNat 64 pos := by rw [h0, hI₂.s4]
+    -- The `free` loses the frame's bytes, which lie apart from the state and the output.
+    obtain dS : (SR s₀).Disjoint ⟨s₀.sp - BitVec.ofNat 64 560, 560⟩ :=
+      hp.k_st.symm.sub_right (Offset.sub_below _ (by decide) (by decide))
+    obtain dO : (OR s₀).Disjoint ⟨s₀.sp - BitVec.ofNat 64 560, 560⟩ :=
+      hp.k_o.symm.sub_right (Offset.sub_below _ (by decide) (by decide))
     refine ⟨⟨fun r hr => ?_, ?_, ?_⟩, ?_, ?_, fun d => ?_⟩
     · show s'.gpr r = _
       rcases preserved_split r hr with h | h
@@ -688,9 +697,9 @@ theorem correct {s₀ : State} (hp : SPre s₀) :
     · show s'.sp + BitVec.ofNat 64 560 = s₀.sp
       rw [hsp, hI₂.sp, BitVec.sub_add_cancel]
     · exact hsv (.ra, 512) (by decide)
-    · simp only [freed]
-      show bytesAt s'.mem (outp s₀) (outn s₀) = Spec.Sha3.squeezeFrom (rate s₀) (S₀ s₀) (pos₀ s₀) (outn s₀)
-      rw [hm]
+    · show bytesAt mL (outp s₀) (outn s₀) = Spec.Sha3.squeezeFrom (rate s₀) (S₀ s₀) (pos₀ s₀) (outn s₀)
+      rw [show bytesAt mL (outp s₀) (outn s₀) = bytesAt s'.mem (outp s₀) (outn s₀) from
+        List.map_congr_left fun i hi => lost_byte fl (R := OR s₀) dO (List.mem_range.mp hi), hm]
       refine List.ext_getElem (by rw [length_squeezeFrom hr0 hr200]; simp [bytesAt]) fun j h₁ _ => ?_
       obtain hj : j < outn s₀ := by simpa [bytesAt] using h₁
       rw [squeezeFrom_getElem hr0 hr200 _ hj]
@@ -698,10 +707,9 @@ theorem correct {s₀ : State} (hp : SPre s₀) :
       exact hI₂.out j hj
     · simp only [freed]
       rw [hx0, toNat_ofNat_lt (by omega_using [hr200, hpl])]; exact hpl
-    · simp only [freed]
-      show Spec.Sha3.squeezeFrom (rate s₀) (stateAt s'.mem (stp s₀)) (s'.gpr .a0).toNat d =
+    · show Spec.Sha3.squeezeFrom (rate s₀) (stateAt mL (stp s₀)) (s'.gpr .a0).toNat d =
         Spec.Sha3.squeezeFrom (rate s₀) (S₀ s₀) (pos₀ s₀ + outn s₀) d
-      rw [hm, hI₂.state, hx0, toNat_ofNat_lt (by omega_using [hr200, hpl]), squeezeFrom_iterF hr0 hr200, ← hI₂.hi]
+      rw [Proof.Sha3.stateAt_congr (m := s'.mem) fun i hi => lost_byte fl (R := SR s₀) dS hi, hm, hI₂.state, hx0, toNat_ofNat_lt (by omega_using [hr200, hpl]), squeezeFrom_iterF hr0 hr200, ← hI₂.hi]
 
 end VG.Proof.Sha3.RISCV64.Stream.Squeeze
 
