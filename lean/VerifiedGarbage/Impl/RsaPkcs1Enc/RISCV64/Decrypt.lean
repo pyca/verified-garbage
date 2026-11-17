@@ -82,17 +82,18 @@ def sCL : Nat := 272
 def sAM : Nat := 528
 def sD : Nat := 1552
 
-/-- SHA-256's streaming functions, as HMAC calls them. -/
+/-- SHA-256's streaming functions, as HMAC calls them: as the internal
+`vg_sha256_init_core`, …, whose exported functions also clear what they leave. -/
 def sha256 : Hash where
   b := 6
   N := 32
   D := 32
   F := 144
-  initN := Spec.Sha256.initApi.name
+  initN := Spec.Sha256.initApi.name ++ "_core"
   initC := Impl.Sha256.RISCV64.Stream.init
-  updN := Spec.Sha256.updateApi.name
+  updN := Spec.Sha256.updateApi.name ++ "_core"
   updC := Impl.Sha256.RISCV64.Stream.update
-  finN := Spec.Sha256.finalizeApi.name
+  finN := Spec.Sha256.finalizeApi.name ++ "_core"
   finC := Impl.Sha256.RISCV64.Stream.finalize
 
 /-- `vg_rsa_private_checked`, or with `pc` `vg_rsa_private_checked_precomputed`. -/

@@ -1771,13 +1771,6 @@ riscv64 vg_sha1_digest
 riscv64 vg_sha1_finalize
 riscv64 vg_sha1_init
 riscv64 vg_sha1_update
-riscv64 vg_sha224_digest
-riscv64 vg_sha224_finalize
-riscv64 vg_sha224_init
-riscv64 vg_sha256_digest
-riscv64 vg_sha256_finalize
-riscv64 vg_sha256_init
-riscv64 vg_sha256_update
 riscv64 vg_sha384_digest
 riscv64 vg_sha384_finalize
 riscv64 vg_sha384_init
