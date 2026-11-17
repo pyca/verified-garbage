@@ -1063,7 +1063,7 @@ structure Compress where
   /-- It never writes the stack pointer. -/
   spSafe : callee.code.all (fun i => !isa.writesSp i) = true
   /-- It uses no stack, so that the streaming functions calling it can keep
-  their working space in a frame of their own (`Verified.stackScratch`). -/
+  their working space in a frame of their own (`Verified.stackScratchKept`). -/
   noStack : callee.code.x86_64Depth = 0 := by lit_decide
   /-- What the names of its callers' instances end with (e.g. `_shani`;
   nothing for the baseline implementation). -/
@@ -1368,7 +1368,7 @@ theorem hmacShortF_of (hsI : ∃ s, (Proof.Hmac.initScratchContract I.S (initWor
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratch (initFrame H) .r8 H.hmacInit)
       (I.initContract X86_64.abi (16 + initFrame H)) :=
   have : initWords H < 263 := by rw [initWords_eq]; have := hH.hso; omega_using [this]
-  X86_64.Verified.stackScratch (sig := Spec.Hmac.initSig I.S) (nm := "scratch") (e := .u64)
+  X86_64.Verified.stackScratchKept (sig := Spec.Hmac.initSig I.S) (nm := "scratch") (e := .u64)
     (n := initWords H) (pre := Spec.Hmac.initPre I.S X86_64.abi.ptrBits)
     (post := Spec.Hmac.initPost I.S X86_64.abi.ptrBits) (wa := true) (stack := 16)
     (bytes := initFrame H) (hmacInitW_of hH C K hSH hsI) (by exact (by decide : 4 < 6))
@@ -1408,7 +1408,7 @@ theorem hmacFinF_of (hsF : ∃ s, (Proof.Hmac.finalizeScratchContract I.S H.W X8
     (hs : H.W < 511) (hsat : ∃ s, (I.finalizeContract X86_64.abi (16 + hmacFrame H)).pre s) :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratch (hmacFrame H) .r8 H.hmacFin)
       (I.finalizeContract X86_64.abi (16 + hmacFrame H)) :=
-  X86_64.Verified.stackScratch (sig := Spec.Hmac.finalizeSig I.S) (nm := "scratch") (e := .u64)
+  X86_64.Verified.stackScratchKept (sig := Spec.Hmac.finalizeSig I.S) (nm := "scratch") (e := .u64)
     (n := H.W) (post := Spec.Hmac.finalizePost I.S X86_64.abi.ptrBits) (wa := true) (stack := 16)
     (bytes := hmacFrame H) (hmacFin_of hH C K hSH hsF) (by exact (by decide : 4 < 6))
     (by simp only [hmacFrame, Elem.size]; omega_arith) (by simp only [hmacFrame]; omega_arith) (hmacFin_sp C K)
@@ -1422,7 +1422,7 @@ theorem pbkdf2F_of (hsI : ∃ s, (Proof.Hmac.initScratchContract I.S H.W X86_64.
     (hsat : ∃ s, (I.pbkdf2Contract X86_64.abi (24 + pbkdf2Frame H)).pre s) :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch (pbkdf2Frame H) 1 H.pbkdf2)
       (I.pbkdf2Contract X86_64.abi (24 + pbkdf2Frame H)) :=
-  X86_64.Verified.stackArgScratch (sig := Spec.Pbkdf2.pbkdf2Sig) (nm := "scratch") (e := .u64)
+  X86_64.Verified.stackArgScratchKept (sig := Spec.Pbkdf2.pbkdf2Sig) (nm := "scratch") (e := .u64)
     (n := H.W + H.S) (pre := Spec.Pbkdf2.pbkdf2Pre I.S X86_64.abi.ptrBits)
     (post := Spec.Pbkdf2.pbkdf2Post I.S X86_64.abi.ptrBits) (wa := true) (stack := 24)
     (bytes := pbkdf2Frame H) (pbkdf2_of hH C K hSH hsI hsF hsT hsP) (by decide)

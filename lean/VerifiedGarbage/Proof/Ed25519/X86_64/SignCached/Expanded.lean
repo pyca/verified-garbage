@@ -149,7 +149,7 @@ theorem signE_ok (v : Compress) {s : State} (h : signLocalE.pre s) :
   have hL := lay_ok h (by decide)
   have hc := push_ctx h
   obtain ⟨seed, -, hE, hpk⟩ := expanded_key h
-  refine WP.frame (rs := pushRs) (by decide) (by decide) (by decide) (by show 8 * 31 ≤ _; have := h.1; omega_using [this])
+  refine WP.frameKept (rs := pushRs) (by decide) (by decide) (by decide) (by show 8 * 31 ≤ _; have := h.1; omega_using [this])
     (WP.mono (bodyFrom_ok v hL (copy_ok hL rfl hc) hL.message_bound hE hpk)
       fun u ⟨hu, ho⟩ => ⟨hu.rsp.trans hc.rsp.symm, hu.wr.trans hc.wr.symm, ?_, ?_⟩)
   · have hrsp : (popped .rax pushRs.length u).gpr .rsp = s.gpr .rsp := by

@@ -494,7 +494,7 @@ theorem frame_wp {n w : Nat} {f : List Byte → List Byte → List Byte} {c : Pr
     (hk : Callee n w f c k) {name : String} {s : State} (h : Pre n w 24 s) :
     WP isa (.frame (.push [.rdi]) (.call name c) (.pop .rdx 1)) s (Popped n f s) := by
   have hstk := h.stk
-  refine WP.frame (by simp) (by decide) (by decide) (by simp only [List.length_singleton]; omega_using [hstk]) ?_
+  refine WP.frameKept (by simp) (by decide) (by decide) (by simp only [List.length_singleton]; omega_using [hstk]) ?_
   exact WP.mono (called_wp hk h) fun z hz =>
     ⟨by rw [hz.rsp, pushed_rsp'], by rw [hz.wr, pushed_wr]; rfl, popped_of hz⟩
 

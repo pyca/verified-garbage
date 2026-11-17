@@ -22,7 +22,7 @@ argument (`Proof/AesOcb/Scratch.lean`), with the 8 bytes of stack of the
 functions over the AES block functions, which the preconditions they share
 include (this code calls nothing). In a frame that allocates the working space (`seal_framed`,
 `open_framed`: the working space and the 48 bytes of
-`Verified.stackArgScratch`), which holds the offsets, the checksum, the
+`Verified.stackArgScratchKept`), which holds the offsets, the checksum, the
 table `C`, the blocks of the data XORed with offsets and, for `open`, the
 round keys through `aesimc`, so it is wiped whole on return (`sealReg`,
 `openReg`).
@@ -181,7 +181,7 @@ theorem seal_framed :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 688 4 Impl.AesOcb.X86_64AesNi.seal)
       (Proof.AesOcb.sealRoundsContract X86_64.abi 696) :=
-  X86_64.Verified.stackArgScratch (sig := Spec.Ocb.sealSig) (nm := "work") (e := .u64)
+  X86_64.Verified.stackArgScratchKept (sig := Spec.Ocb.sealSig) (nm := "work") (e := .u64)
     (n := 80) (pre := Spec.Ocb.sealPre X86_64.abi.ptrBits)
     (post := Proof.AesOcb.sealRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
     (bytes := 688) seal_verified (by decide) (by decide) (by decide)
@@ -195,7 +195,7 @@ theorem open_framed :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 896 4 Impl.AesOcb.X86_64AesNi.open)
       (Proof.AesOcb.openRoundsContract X86_64.abi 904) :=
-  X86_64.Verified.stackArgScratch (sig := Spec.Ocb.openSig) (nm := "work") (e := .u64)
+  X86_64.Verified.stackArgScratchKept (sig := Spec.Ocb.openSig) (nm := "work") (e := .u64)
     (n := 106) (pre := Spec.Ocb.openPre X86_64.abi.ptrBits)
     (post := Proof.AesOcb.openRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
     (leak := some (Spec.Ocb.openLeak X86_64.abi.ptrBits)) (bytes := 896) open_verified

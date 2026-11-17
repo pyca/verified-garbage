@@ -217,7 +217,7 @@ theorem encCall_ok (E : EncFn M) {o n : Nat} (hn : o + n ≤ L s) {st : State}
   obtain eD : bytesAt (pushed [.r10] st).callEntry.mem (Dst s + BitVec.ofNat 64 o) (n) =
       bytesAt st.mem (Dst s + BitVec.ofNat 64 o) (n) :=
     bytesAt_frame fS (outT (hp.b_d.symm.sub_left dsq)) (by omega_arith)
-  refine WP.frame (by simp) (by decide) (by decide) hn8 (WP.call_sp_mx (k := encK M)
+  refine WP.frameKept (by simp) (by decide) (by decide) hn8 (WP.call_sp_mx (k := encK M)
     E.ok E.sp (by have := E.xd; omega_arith) hpre cr cw fun s' hrd' hwr' hcs hfr _ ⟨s₂, hm₂, _, hpost⟩ _ => ?_)
   obtain r₃ := hcs _ (by decide : Reg.rsp ∈ calleeSaved)
   simp only [encK, Proof.AesGcm.streamEncryptX86_64, Proof.AesGcm.arg, a0, State.withRegions_mem,

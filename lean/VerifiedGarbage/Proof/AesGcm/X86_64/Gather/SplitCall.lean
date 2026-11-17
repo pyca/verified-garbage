@@ -1258,7 +1258,7 @@ theorem splitCall_ok (S : SplitFn M) {st : State} (h : SCBase s st) (g : SplitRe
     rw [hsp] at hpf; exact hpf
   obtain hPw : (pushed [.rax, .r10, .r11, .rdi, .rsi] st).wr = ⟨SP s - BitVec.ofNat 64 40, 40⟩ :: st.wr := by
     rw [pushed_wr, hsp]; rfl
-  refine WP.frame (by simp) (by decide) (by decide) hn8 (WP.seq (WP.mono_mx (by decide)
+  refine WP.frameKept (by simp) (by decide) (by decide) hn8 (WP.seq (WP.mono_mx (by decide)
     (splitCtx_ok hp h hP (pushed_rd _ _) hPw hpf') fun q ⟨q_di, q_si, q_g, q_m, q_rd, q_wr⟩ q_mx => ?_))
   obtain ⟨hpre, cr, cw, a0, a1, a2, a3, a4⟩ := splitCallEntry hp h g
     ⟨q_di, q_si, q_g, q_m, q_rd, q_wr, q_mx.trans (pushed_mxcsr _ _)⟩

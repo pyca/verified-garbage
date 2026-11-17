@@ -478,7 +478,7 @@ theorem called_wp (F : SealFn) {s c : State} (h : Lay s) (hc : Ready s c) :
   have hBn := h.hBn
   have hdep := F.depth
   have hx (r : Reg) (hr : r ≠ .rsp) : (xS s c).gpr r = c.gpr r := xgpr_eq hr
-  refine WP.frame (by simp) (by decide) (by decide) (hc.hn h) (WP.call_sp_mx (k := F.contractE) F.exec F.sp
+  refine WP.frameKept (by simp) (by decide) (by decide) (hc.hn h) (WP.call_sp_mx (k := F.contractE) F.exec F.sp
     (by omega_arith) (sealSpec_pre hcp) hcov hw fun s' rd' wr' cs' fr' _ ⟨s₂, m₂, _, post', hE⟩ mx' => ?_)
   have rsp' : s'.gpr .rsp = (qS c).gpr .rsp := cs' .rsp (by decide)
   refine ⟨rsp', wr', ?_⟩
@@ -565,7 +565,7 @@ theorem sealGather_wp (w : Width) (F : SealFn) {s : State} (hs : gatherPre s) :
     WP isa (sealGatherWhole w F.name F.code) s fun z => abiPreserved s z ∧ gatherPost s z := by
   have h := lay hs
   have hn : 8 * saved.length ≤ (s.gpr .rsp).toNat := by have := h.w₁; simp only [List.length_cons, List.length_nil]; omega_arith
-  refine WP.frame (by simp) (by decide) (by decide) hn (WP.mono (frameBody_wp w F h) fun z hz => ?_)
+  refine WP.frameKept (by simp) (by decide) (by decide) hn (WP.mono (frameBody_wp w F h) fun z hz => ?_)
   refine ⟨by rw [hz.rsp, hP s], by rw [hz.wr, hPwr s], ⟨fun r hr => ?_, ?_, ?_⟩, ?_⟩
   · by_cases hsp : r = .rsp
     · subst hsp
@@ -584,7 +584,7 @@ theorem sealGather_wpE (w : Width) (F : SealFn) {s : State} (hs : gatherPre s) :
     WP isa (sealGatherWhole w F.name F.code) s fun z => ∃ c, Ready s c ∧ F.E (xS s c) z.mem := by
   have h := lay hs
   have hn : 8 * saved.length ≤ (s.gpr .rsp).toNat := by have := h.w₁; simp only [List.length_cons, List.length_nil]; omega_arith
-  refine WP.frame (by simp) (by decide) (by decide) hn (WP.mono (frameBody_wp w F h) fun z hz =>
+  refine WP.frameKept (by simp) (by decide) (by decide) hn (WP.mono (frameBody_wp w F h) fun z hz =>
     ⟨by rw [hz.rsp, hP s], by rw [hz.wr, hPwr s], ?_⟩)
   simp only [popped_mem]
   exact hz.ext

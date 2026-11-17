@@ -130,7 +130,8 @@ theorem Verified.stackScratchWiped {c : Prog isa}
         (t ++ wipeTrace (s.gpr .rsp - BitVec.ofNat 64 bytes) words)
         (popState bytes s { s₃.setReg32 .r11 0 with mem := m' }) ∧
       abiPreserved s (popState bytes s { s₃.setReg32 .r11 0 with mem := m' }) ∧
-      (popState bytes s { s₃.setReg32 .r11 0 with mem := m' }).mem = m' ∧
+      Frame [⟨s.gpr .rsp - BitVec.ofNat 64 bytes, bytes⟩] m'
+        (popState bytes s { s₃.setReg32 .r11 0 with mem := m' }).mem ∧
       (popState bytes s { s₃.setReg32 .r11 0 with mem := m' }).gpr .rax = s₃.gpr .rax := by
     intro s hs
     obtain ⟨t, s₃, he, ha, hq⟩ := hcor _ (narrow_pre hk hb hst hs hl)
@@ -178,13 +179,17 @@ theorem Verified.stackScratchWiped {c : Prog isa}
       (post := Curry.withScratch abi.ptrBits nm e n sig.params post)
       (by rw [Sig.words_withScratch, List.length_append, List.length_singleton]; omega_using [hk])).mp hq
     rw [narrow_regArgs hk] at hq'
-    rw [hm, hrax]
+    rw [hrax]
     have h₃ := Eq.mp (congrFun (congrFun (congrFun (Curry.apply_withScratch abi.ptrBits nm e n sig.params
       post _ _ (hlen s (by omega_using [hk]))) s.mem) s₃.mem) _) hq'
     refine hpost _ _ _ _ _ (hlen s (by omega_using [hk])) (fun b hb' a ha' => ?_) h₃
-    exact (hfr a fun r hr => by
+    -- The memory on return: after the wipe, which writes only the buffer,
+    -- and the `free`, which loses only the frame.
+    exact ((hm a fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact hdisj s hs b hb' a ha').symm
+      exact frame_disjoint (post := post) hk hb.1 hl hs b hb' a ha').trans (hfr a fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact hdisj s hs b hb' a ha')).symm
   · obtain ⟨u₁, _, _, f₁, _, _, x₁, _⟩ := hrun s₁ h₁
     obtain ⟨u₂, _, _, f₂, _, _, x₂, _⟩ := hrun s₂ h₂
     rw [(Exec.det e₁ x₁).1, (Exec.det e₂ x₂).1]

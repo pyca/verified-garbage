@@ -215,12 +215,12 @@ end
 Every function runs its code, proved with the working space as its last
 argument (`Verified.lean`), in a frame that allocates it. `init`'s working
 space is in a register (`rcx`): its frame of 2568 bytes holds the 2560
-bytes and 8 more to keep `rsp` aligned (`Verified.stackScratch`). The
+bytes and 8 more to keep `rsp` aligned (`Verified.stackScratchKept`). The
 working space of `seal` and `open` is passed on the stack after the six
 argument registers and four other stack arguments (`data`, `len`, `tag` and
 `tag_len`), so their frame of 3632 bytes holds the 3584 bytes of working
 space, a copy of those four arguments, the word that stands for the return
-address and the address of the working space (`Verified.stackArgScratch`).
+address and the address of the working space (`Verified.stackArgScratchKept`).
 The code's own calls use 8 bytes below the frame, the return address, as
 `vg_aes_encrypt_blocks`, `vg_aes_decrypt_blocks` and `vg_aes_expand_key_scratch` use
 no stack. `open`'s leak, whether it succeeds, reads only its buffers
@@ -265,7 +265,7 @@ theorem initFrameSat_pre : ∃ s, (Spec.Ocb.initContract X86_64.abi 2576).pre s 
 theorem init_framed :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratch 2568 .rcx (init (callees v)))
       (Spec.Ocb.initContract X86_64.abi 2576) :=
-  X86_64.Verified.stackScratch (sig := Spec.Ocb.initSig) (nm := "scratch") (e := .u64) (n := 320)
+  X86_64.Verified.stackScratchKept (sig := Spec.Ocb.initSig) (nm := "scratch") (e := .u64) (n := 320)
     (pre := Spec.Ocb.initPre X86_64.abi.ptrBits) (post := Spec.Ocb.initPost X86_64.abi.ptrBits)
     (wa := true) (stack := 8) (bytes := 2568) (init_verified v) (by decide) (by decide)
     (by decide) (init_spSafe v) (init_xdepth v) initFrameSat_pre
@@ -280,7 +280,7 @@ address. -/
 theorem initF_framed (f : Proof.Aes.X86_64.BlocksFree v.enc v.expand) :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratch 32 .rcx (init (callees v)))
       (Spec.Ocb.initContract X86_64.abi 40) :=
-  X86_64.Verified.stackScratch (sig := Spec.Ocb.initSig) (nm := "scratch") (e := .u64) (n := 3)
+  X86_64.Verified.stackScratchKept (sig := Spec.Ocb.initSig) (nm := "scratch") (e := .u64) (n := 3)
     (pre := Spec.Ocb.initPre X86_64.abi.ptrBits) (post := Spec.Ocb.initPost X86_64.abi.ptrBits)
     (wa := true) (stack := 8) (bytes := 32) (initF_verified v f) (by decide) (by decide)
     (by decide) (init_spSafe v) (init_xdepth v) initFrameSatF_pre
@@ -298,7 +298,7 @@ theorem seal_framed :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 3632 4 («seal» (callees v)))
       (Proof.AesOcb.sealRoundsContract X86_64.abi 3640) :=
-  X86_64.Verified.stackArgScratch (sig := Spec.Ocb.sealSig) (nm := "work") (e := .u64)
+  X86_64.Verified.stackArgScratchKept (sig := Spec.Ocb.sealSig) (nm := "work") (e := .u64)
     (n := 448) (pre := Spec.Ocb.sealPre X86_64.abi.ptrBits)
     (post := Proof.AesOcb.sealRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
     (bytes := 3632) (seal_verified v) (by decide) (by decide) (by decide)
@@ -317,7 +317,7 @@ theorem open_framed :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 3632 4 («open» (callees v)))
       (Proof.AesOcb.openRoundsContract X86_64.abi 3640) :=
-  X86_64.Verified.stackArgScratch (sig := Spec.Ocb.openSig) (nm := "work") (e := .u64)
+  X86_64.Verified.stackArgScratchKept (sig := Spec.Ocb.openSig) (nm := "work") (e := .u64)
     (n := 448) (pre := Spec.Ocb.openPre X86_64.abi.ptrBits)
     (post := Proof.AesOcb.openRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
     (leak := some (Spec.Ocb.openLeak X86_64.abi.ptrBits)) (bytes := 3632) (open_verified v)

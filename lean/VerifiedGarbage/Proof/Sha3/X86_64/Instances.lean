@@ -294,7 +294,7 @@ theorem xofFinalize_verified {X : Xof} (hX : xofSponge X) (hr : X.rate ∈ rates
       lit_decide) :
     Verified X86_64.target (xofFinalize X.rate) (Spec.Sha3.xofFinalizeContract X86_64.abi X 656) := by
   obtain h0 : 0 < X.rate := by simp [rates] at hr; omega_using [hr]
-  refine X86_64.Verified.stackScratch (sig := Spec.Sha3.xofFinalizeSig) (nm := "scratch") (e := .u64)
+  refine X86_64.Verified.stackScratchKept (sig := Spec.Sha3.xofFinalizeSig) (nm := "scratch") (e := .u64)
     (n := 80) (pre := Spec.Sha3.xofFinalizePre X X86_64.abi.ptrBits)
     (post := Spec.Sha3.xofFinalizePost X X86_64.abi.ptrBits) (wa := true) (stack := 8)
     (bytes := 648) (xofPad_verified hX hr) (by decide) (by decide) (by decide) hsp hd
@@ -412,7 +412,7 @@ theorem xofSqueeze_verified {X : Xof} (hr : X.rate ∈ rates)
     (hd : (Code.seq (.block (updateArgs X.rate)) Impl.Sha3.X86_64.Stream.squeeze).x86_64Depth ≤ 8 :=
       by lit_decide) :
     Verified X86_64.target (xofSqueeze X.rate) (Spec.Sha3.xofSqueezeContract X86_64.abi X 656) := by
-  refine X86_64.Verified.stackScratch (sig := Spec.Sha3.xofSqueezeSig) (nm := "scratch") (e := .u64)
+  refine X86_64.Verified.stackScratchKept (sig := Spec.Sha3.xofSqueezeSig) (nm := "scratch") (e := .u64)
     (n := 80) (pre := Spec.Sha3.xofSqueezePre X X86_64.abi.ptrBits)
     (post := Spec.Sha3.xofSqueezePost X X86_64.abi.ptrBits) (wa := true) (stack := 8)
     (bytes := 648) (xofSqueezeS_verified hr) (by decide) (by decide) (by decide) hsp hd
@@ -1165,7 +1165,7 @@ theorem finalize_verified {H : Spec.Sha3.HashFn} (hH : hashSponge H) (hr : H.rat
     (hd : (finBody H.rate H.len).x86_64Depth ≤ 16)
     (hsat'' : ∃ s, (Spec.Sha3.finalizeContract X86_64.abi H 680).pre s) :
     Verified X86_64.target (finalize H.rate H.len) (Spec.Sha3.finalizeContract X86_64.abi H 680) :=
-  X86_64.Verified.stackScratch (sig := Spec.Sha3.finalizeSig H.len) (nm := "scratch") (e := .u64)
+  X86_64.Verified.stackScratchKept (sig := Spec.Sha3.finalizeSig H.len) (nm := "scratch") (e := .u64)
     (n := 82) (pre := Spec.Sha3.finalizePre H X86_64.abi.ptrBits)
     (post := Spec.Sha3.finalizePost H X86_64.abi.ptrBits) (wa := true) (stack := 16)
     (bytes := 664) (finBody_verified hH hr hl hlen hmod hmx hct hsat hsat') (by exact (by decide : 3 < 6))

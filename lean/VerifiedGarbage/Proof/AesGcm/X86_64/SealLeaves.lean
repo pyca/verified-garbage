@@ -221,7 +221,7 @@ theorem obFrameE_okL {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) {Lb : BitVec 
   obtain hn8 : 8 * [Reg.rax].length ≤ (s.gpr .rsp).toNat := by rw [hsp]; have := h.sp24; simp; omega_arith
   obtain ⟨hfp, -⟩ := pushRegs_mem s [.rax] (by decide) hn8
   obtain hfp' : Frame [below SP 8] s.mem (pushed [.rax] s).mem := by rw [← hsp]; exact hfp
-  refine WP.frame (by simp) (by decide) (by decide) hn8 (WP.mono (blkE_callL B hL (ObIn.call L h))
+  refine WP.frameKept (by simp) (by decide) (by decide) hn8 (WP.mono (blkE_callL B hL (ObIn.call L h))
     fun s₃ ⟨bp, o⟩ => ?_)
   obtain ⟨r₃, w₃, cs, rd, wr, fr⟩ := ObIn.popped L h bp
   refine ⟨r₃, w₃, cs, rd, wr, fr, fun x hx => ?_⟩

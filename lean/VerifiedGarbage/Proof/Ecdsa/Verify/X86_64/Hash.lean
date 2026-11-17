@@ -1115,7 +1115,7 @@ end
 
 /-! ## The frame, with a leak
 
-`Verified.stackScratch` and `narrow_pub` (`Proof/Framework/X86_64/StackScratch.lean`)
+`Verified.stackScratchKept` and `narrow_pub` (`Proof/Framework/X86_64/StackScratch.lean`)
 for a contract with a leak, as on RISC-V: `narrow` keeps the memory, so the
 leak is the same. -/
 
@@ -1174,7 +1174,7 @@ theorem narrow_pubL (hk : (sig.words abi.ptrBits).length < 6) {s₁ s₂ : State
       Curry.apply_withScratch abi.ptrBits nm e n sig.params f _ _ l₂]
     exact hlk
 
-/-- `Verified.stackScratch`, with any leak. -/
+/-- `Verified.stackScratchKept`, with any leak. -/
 theorem stackScratchL {c : Prog isa} {leak : Option (Curry (sig.words abi.ptrBits) (Mem → List Nat))}
     (h : Verified target c (Sig.scratchContract abi sig nm e n pre post wa stack leak))
     (hk : (sig.words abi.ptrBits).length < 6)
@@ -1197,7 +1197,7 @@ theorem stackScratchL {c : Prog isa} {leak : Option (Curry (sig.words abi.ptrBit
       (popState bytes s s₃).gpr .rax = s₃.gpr .rax := by
     intro s hs
     obtain ⟨t, s₃, he, ha, hq⟩ := hcor _ (narrow_pre hk hb hst hs hl)
-    exact ⟨t, s₃, he, hq, withStackScratch_run hk hb hst hsafe hd hs he ha hl⟩
+    exact ⟨t, s₃, he, hq, withStackScratch_runKept hk hb hst hsafe hd hs he ha hl⟩
   refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂ => ?_, hsat⟩
   · obtain ⟨t, s₃, -, hq, hex, ha, hm, hrax⟩ := hrun s hs
     refine ⟨t, _, hex, ha, ?_⟩

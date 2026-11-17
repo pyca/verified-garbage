@@ -264,7 +264,7 @@ theorem toCall_ok (T : ToFn M) {ap : BitVec 64} {i : Nat} (hi : i < Cnt s) {st :
     rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega_arith)
   obtain eS : bytesAt (pushed [.rax, .r10, .rax] st).callEntry.mem (sb s i) (sl s i) = bytesAt s.mem (sb s i) (sl s i) :=
     slice_eq hp fU hi
-  refine WP.frame (by simp) (by decide) (by decide) hn8 (WP.call_sp_mx (k := toK M)
+  refine WP.frameKept (by simp) (by decide) (by decide) hn8 (WP.call_sp_mx (k := toK M)
     T.ok T.sp (by have := T.xd; omega_arith) hpre cr cw fun s' hrd' hwr' hcs hfr _ ⟨s₂, hm₂, _, hpost⟩ _ => ?_)
   obtain r₃ := hcs _ (by decide : Reg.rsp ∈ calleeSaved)
   simp only [toK, Proof.AesGcm.streamToPost, Proof.AesGcm.arg, a0, a1, State.withRegions_mem,

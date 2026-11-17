@@ -152,7 +152,7 @@ theorem update {f : Callee} (hf : MdStream.X86_64.CalleeOk (P := Stream.params) 
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackScratch 1384 .r8 (Impl.Sha512.X86_64.Stream.update f))
       (Spec.Sha512.updateContract X86_64.abi (8 + 1384)) :=
-  X86_64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 172) (stack := 8) (bytes := 1384)
+  X86_64.Verified.stackScratchKept (nm := "scratch") (e := .u64) (n := 172) (stack := 8) (bytes := 1384)
     (updateScratch hf hm) (by decide) (by decide) (by decide) (update_spSafe hs) (update_depth hd)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
@@ -164,7 +164,7 @@ theorem finalize {f : Callee} (hf : MdStream.X86_64.CalleeOk (P := Stream.params
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackScratch 1384 .rcx (Impl.Sha512.X86_64.Stream.finalize f))
       (Spec.Sha512.finalizeContract X86_64.abi (8 + 1384)) :=
-  X86_64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 172) (stack := 8) (bytes := 1384)
+  X86_64.Verified.stackScratchKept (nm := "scratch") (e := .u64) (n := 172) (stack := 8) (bytes := 1384)
     (finalizeScratch hf hm) (by decide) (by decide) (by decide) (finalize_spSafe hs) (finalize_depth hd)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
@@ -250,7 +250,7 @@ theorem finalizeDigestStack {o : List Instr} {D : Nat} (c : DigestCode o D)
   have hsp := c.spSafe f hs
   have hdp := c.depth f hd
   rcases c.hD with rfl | rfl | rfl <;>
-  exact X86_64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 172) (stack := 8) (bytes := 1384)
+  exact X86_64.Verified.stackScratchKept (nm := "scratch") (e := .u64) (n := 172) (stack := 8) (bytes := 1384)
     h (by decide) (by decide) (by decide) hsp hdp
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
@@ -405,7 +405,7 @@ theorem updateS :
   have sp := updateS_spSafe h hs
   have dp := updateS_depth h hd
   rcases h with rfl | rfl <;>
-  exact X86_64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := _) (stack := 8) (bytes := _)
+  exact X86_64.Verified.stackScratchKept (nm := "scratch") (e := .u64) (n := _) (stack := 8) (bytes := _)
     v (by decide) (by decide) (by decide) sp dp
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
@@ -418,7 +418,7 @@ theorem finalizeS :
   have sp := finalizeS_spSafe h hs
   have dp := finalizeS_depth h hd
   rcases h with rfl | rfl <;>
-  exact X86_64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := _) (stack := 8) (bytes := _)
+  exact X86_64.Verified.stackScratchKept (nm := "scratch") (e := .u64) (n := _) (stack := 8) (bytes := _)
     v (by decide) (by decide) (by decide) sp dp
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
@@ -493,7 +493,7 @@ theorem finalizeDigestStackS {so : Nat} {o : List Instr} {D : Nat} (c : DigestCo
   have hsp := c.spSafe f hs
   have hdp := c.depth f hd
   rcases c.hso with rfl | rfl <;> rcases c.hD with rfl | rfl | rfl <;>
-  exact X86_64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := _) (stack := 8) (bytes := _)
+  exact X86_64.Verified.stackScratchKept (nm := "scratch") (e := .u64) (n := _) (stack := 8) (bytes := _)
     h (by decide) (by decide) (by decide) hsp hdp
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 

@@ -532,7 +532,7 @@ theorem call_ok (B : BlkFn M) {q : Nat} {st : State} (h : MidD s q q st) (hlt : 
     blocksAt_frame hpf' (one (by rw [Nat.mul_comm]; exact hp.b_d.sub_right ds)) (by omega_arith)
   obtain eH : blockAt (pushed [.rax] st).mem (K s + 240) = blockAt st.mem (K s + 240) :=
     blockAt_frame hpf' (one (hp.b_k.sub_right (Offset.sub_base (d := 240) _ (by have := M.ge; omega_arith))))
-  refine WP.frame (by simp) (by decide) (by decide) hn8
+  refine WP.frameKept (by simp) (by decide) (by decide) hn8
     (WP.mono (blkD_call B (blkCall_of hp h hlt h_di h_si h_dx h_cx h_8 h_9 h_ax)) fun s₃ ⟨bp, o₁, o₂, o₃⟩ => ?_)
   obtain psp : (pushed [.rax] st).gpr .rsp = SP s - BitVec.ofNat 64 8 := by rw [pushed_rsp, hsp]; rfl
   obtain r₃ := bp.saved _ (by decide : Reg.rsp ∈ calleeSaved)

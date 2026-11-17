@@ -21,7 +21,7 @@ function.
 `update` and `finalize` keep their working space in a frame of their own:
 they are `updateScratch` and `finalizeScratch` (the shared contracts with
 the working space as an argument, which HMAC's and PBKDF2's code calls) run
-in a frame that allocates it (`Verified.stackScratch`), for an `f` that uses
+in a frame that allocates it (`Verified.stackScratchKept`), for an `f` that uses
 no stack.
 -/
 
@@ -114,7 +114,7 @@ theorem update {f : Callee} (hf : MdStream.X86_64.CalleeOk (P := Stream.params) 
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackScratch 168 .r8 (Impl.Sha1.X86_64.Stream.update f))
       (Spec.Sha1.updateContract X86_64.abi (8 + 168)) :=
-  X86_64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 20) (stack := 8) (bytes := 168)
+  X86_64.Verified.stackScratchKept (nm := "scratch") (e := .u64) (n := 20) (stack := 8) (bytes := 168)
     (updateScratch hf hm) (by decide) (by decide) (by decide) (update_spSafe hs) (update_depth hd)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
@@ -126,7 +126,7 @@ theorem finalize {f : Callee} (hf : MdStream.X86_64.CalleeOk (P := Stream.params
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackScratch 168 .rcx (Impl.Sha1.X86_64.Stream.finalize f))
       (Spec.Sha1.finalizeContract X86_64.abi (8 + 168)) :=
-  X86_64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 20) (stack := 8) (bytes := 168)
+  X86_64.Verified.stackScratchKept (nm := "scratch") (e := .u64) (n := 20) (stack := 8) (bytes := 168)
     (finalizeScratch hf hm) (by decide) (by decide) (by decide) (finalize_spSafe hs) (finalize_depth hd)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
@@ -209,7 +209,7 @@ theorem update0 :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackScratch 56 .r8 (Impl.MdStream.X86_64.update params0 f.name f.code))
       (Spec.Sha1.updateContract X86_64.abi (8 + 56)) :=
-  X86_64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 6) (stack := 8) (bytes := 56)
+  X86_64.Verified.stackScratchKept (nm := "scratch") (e := .u64) (n := 6) (stack := 8) (bytes := 56)
     (updateScratch0 hf hm) (by decide) (by decide) (by decide) (update0_spSafe hs) (update0_depth hd)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
@@ -218,7 +218,7 @@ theorem finalize0 :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackScratch 56 .rcx (Impl.MdStream.X86_64.finalize params0 f.name f.code))
       (Spec.Sha1.finalizeContract X86_64.abi (8 + 56)) :=
-  X86_64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 6) (stack := 8) (bytes := 56)
+  X86_64.Verified.stackScratchKept (nm := "scratch") (e := .u64) (n := 6) (stack := 8) (bytes := 56)
     (finalizeScratch0 hf hm) (by decide) (by decide) (by decide) (finalize0_spSafe hs) (finalize0_depth hd)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 

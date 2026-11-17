@@ -1095,7 +1095,7 @@ theorem cryptFinal_framed (v : Ctr32Impl) :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 80 0 (cryptFinal v.callee v.suffix))
       (finalRoundsContract X86_64.abi 96) :=
-  X86_64.Verified.stackArgScratch (sig := Spec.Ctr.aesFinalSig) (nm := "save") (e := .u64) (n := 8)
+  X86_64.Verified.stackArgScratchKept (sig := Spec.Ctr.aesFinalSig) (nm := "save") (e := .u64) (n := 8)
     (pre := finalPre X86_64.abi.ptrBits) (post := finalPost X86_64.abi.ptrBits) (wa := false)
     (leak := some (finalLeak X86_64.abi.ptrBits))
     (stack := 16) (bytes := 80) (cryptFinal_verified v) (by decide) (by decide) (by decide)

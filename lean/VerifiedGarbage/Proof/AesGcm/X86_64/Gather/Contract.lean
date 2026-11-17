@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 # AES-GCM one-shot encryption out of place, from a list of slices, x86-64: the contracts
 
 Untrusted: everything here is checked by Lean. `vg_aes_gcm_seal_gather`
-keeps its working space in a frame of its own (`Verified.stackArgScratchL`),
+keeps its working space in a frame of its own (`Verified.stackArgScratchLKept`),
 around code proved with the working space as its last argument:
 `sealGatherScratchContract` is the shared contract with a 184-byte `scratch`
 buffer appended, whatever it holds, which the contract the proof is written

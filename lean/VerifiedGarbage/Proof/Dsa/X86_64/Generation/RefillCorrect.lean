@@ -348,11 +348,11 @@ theorem inner_ok {G1 G256 : Impl.Pbkdf2.Md.X86_64.Stream} {sq : Prog isa} {mul :
   have ursp : u.gpr .rsp = s₀.gpr .rsp - BitVec.ofNat 64 48 := by rw [hg]; rfl
   have u48 : (u.gpr .rsp).toNat = (s₀.gpr .rsp).toNat - 48 := by rw [ursp, toNat_sub_k (by omega_using [lower])]
   have r1 : 32 ≤ (u.gpr .rsp).toNat := by omega_using [lower, u48]
-  apply alloc_frame_ok (by decide) r1
+  apply alloc_frame_okKept (by decide) r1
   have r2 : 296 ≤ ((allocState 32 u).gpr .rsp).toNat := by
     change 296 ≤ (u.gpr .rsp - BitVec.ofNat 64 32).toNat
     rw [toNat_sub_k (by omega_using [r1])]; omega_using [lower, u48]
-  apply alloc_frame_ok (by decide) r2
+  apply alloc_frame_okKept (by decide) r2
   have a : RefillAllocated h (allocState 296 (allocState 32 u)) :=
     { rsp := by
         change u.gpr .rsp - BitVec.ofNat 64 32 - BitVec.ofNat 64 296 = _
@@ -390,7 +390,7 @@ theorem run_ok {G1 G256 : Impl.Pbkdf2.Md.X86_64.Stream} {sq : Prog isa} {mul : N
     WP isa (Impl.Dsa.X86_64.Generation.Refill.code (checkName := checkName) G1 G256 sq mul prime pBytes qBytes) s₀
       fun t => RefillRes h t ∧ (∀ r ∈ calleeSaved, t.gpr r = s₀.gpr r) ∧ t.rd = s₀.rd ∧ t.wr = s₀.wr := by
   unfold Impl.Dsa.X86_64.Generation.Refill.code
-  apply alloc_frame_ok (by decide) (by have hl : 568 ≤ (s₀.gpr .rsp).toNat := h.stackLower; omega_using [hl])
+  apply alloc_frame_okKept (by decide) (by have hl : 568 ≤ (s₀.gpr .rsp).toNat := h.stackLower; omega_using [hl])
   refine WP.seq (WP.mono (entrySave_ok (s := allocState 48 s₀) (List.mem_cons_self ..)) ?_)
   intro u ⟨hg, hr, hw, saved, hf⟩
   have saved' : Saved u.mem ((allocState 48 s₀).gpr .rsp) s₀.gpr spillSlots := by

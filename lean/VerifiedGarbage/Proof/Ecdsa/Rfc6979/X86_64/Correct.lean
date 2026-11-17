@@ -977,7 +977,7 @@ theorem sign_ok {ns : List String} {s : State} (h : (rfcP P ns).pre s) :
   have hL := lay_ok rfl h
   have hc := push_ctx rfl h
   rw [sign_eq]
-  refine WP.frame (rs := pushRs 48) (by simp [pushRs]) (by simp [pushRs]) (by decide)
+  refine WP.frameKept (rs := pushRs 48) (by simp [pushRs]) (by simp [pushRs]) (by decide)
     (by rw [pushRs_length (by decide)]; have := h.1; omega_using [this])
     (WP.mono (body_ok hL (coreOk_lay P s) hc) fun u ⟨hu, i, hx⟩ =>
       ⟨hu.rsp.trans hc.rsp.symm, hu.wr.trans hc.wr.symm, ?_, ?_⟩)

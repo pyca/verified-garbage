@@ -355,7 +355,7 @@ theorem sealPCode_framed {c : Prog isa}
     (hsp : c.all (fun i => !X86_64.isa.writesSp i) = true) (hxd : c.x86_64Depth ≤ 24) :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 2600 3 c)
       (Proof.AesGcm.sealPrecomputedRoundsContract X86_64.abi 2624) :=
-  X86_64.Verified.stackArgScratch (sig := Proof.Gcm.sealPrecomputedSig) (nm := "work") (e := .u64)
+  X86_64.Verified.stackArgScratchKept (sig := Proof.Gcm.sealPrecomputedSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Proof.Gcm.sealPrecomputedPre X86_64.abi.ptrBits)
     (post := Proof.AesGcm.sealRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 24)
     (bytes := 2600) hv (by decide) (by decide) (by decide)
@@ -391,7 +391,7 @@ theorem openPCode_framed {c : Prog isa}
     (hsp : c.all (fun i => !X86_64.isa.writesSp i) = true) (hxd : c.x86_64Depth ≤ 24) :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 2608 4 c)
       (Proof.AesGcm.openPrecomputedRoundsContract X86_64.abi 2632) :=
-  X86_64.Verified.stackArgScratch (sig := Proof.Gcm.openPrecomputedSig) (nm := "work") (e := .u64)
+  X86_64.Verified.stackArgScratchKept (sig := Proof.Gcm.openPrecomputedSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Proof.Gcm.openPrecomputedPre X86_64.abi.ptrBits)
     (post := Proof.AesGcm.openRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 24)
     (leak := some (Spec.Gcm.openLeak X86_64.abi.ptrBits)) (bytes := 2608) hv
@@ -425,7 +425,7 @@ theorem streamEncryptP_framed :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (streamEncrypt (v.withBlk v.blkP)))
       (Proof.AesGcm.streamEncryptPrecomputedRoundsContract X86_64.abi 2608) :=
-  X86_64.Verified.stackArgScratch (sig := Proof.Gcm.streamCryptPrecomputedSig) (nm := "scratch") (e := .u64)
+  X86_64.Verified.stackArgScratchKept (sig := Proof.Gcm.streamCryptPrecomputedSig) (nm := "scratch") (e := .u64)
     (n := 320) (pre := Proof.Gcm.streamTextPrecomputedPre X86_64.abi.ptrBits)
     (post := Proof.AesGcm.streamEncryptRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 24)
     (bytes := 2584) (streamEncryptP_verified v) (by decide) (by decide) (by decide)
@@ -448,7 +448,7 @@ theorem streamDecryptP_framed :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (streamDecrypt (v.withBlk v.blkP)))
       (Proof.AesGcm.streamDecryptPrecomputedRoundsContract X86_64.abi 2608) :=
-  X86_64.Verified.stackArgScratch (sig := Proof.Gcm.streamCryptPrecomputedSig) (nm := "scratch") (e := .u64)
+  X86_64.Verified.stackArgScratchKept (sig := Proof.Gcm.streamCryptPrecomputedSig) (nm := "scratch") (e := .u64)
     (n := 320) (pre := Proof.Gcm.streamTextPrecomputedPre X86_64.abi.ptrBits)
     (post := Proof.AesGcm.streamDecryptRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 24)
     (bytes := 2584) (streamDecryptP_verified v) (by decide) (by decide) (by decide)
@@ -521,7 +521,7 @@ omit B in
 theorem initP_framed :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratch 2568 .rcx (initPrecomputed v.callees))
       (Proof.Gcm.initPrecomputedContract X86_64.abi 2576) :=
-  X86_64.Verified.stackScratch (sig := Proof.Gcm.initPrecomputedSig) (nm := "scratch") (e := .u64) (n := 320)
+  X86_64.Verified.stackScratchKept (sig := Proof.Gcm.initPrecomputedSig) (nm := "scratch") (e := .u64) (n := 320)
     (pre := Spec.Gcm.initPre X86_64.abi.ptrBits) (post := Proof.Gcm.initPrecomputedPost X86_64.abi.ptrBits)
     (wa := true) (stack := 8) (bytes := 2568) (initP_verified v) (by decide) (by decide)
     (by decide) (initP_spSafe v) (initP_xdepth v) initFrameSatP_pre

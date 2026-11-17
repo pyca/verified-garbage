@@ -23,8 +23,8 @@ theorem round_frames {s : State} {body : Prog isa} {Q : State → Prop}
     rw [pushed_rsp, hn, toNat_sub_ofNat (by omega_arith : 8 * 13 ≤ (s.gpr .rsp).toNat)]
     simp only [List.length_cons, List.length_nil]
     omega_arith
-  apply WP.frame (by decide +kernel) (by decide +kernel) (by decide) h104
-  apply WP.frame (by decide) (by decide) (by decide) hi
+  apply WP.frameKept (by decide +kernel) (by decide +kernel) (by decide) h104
+  apply WP.frameKept (by decide) (by decide) (by decide) hi
   refine WP.mono hb ?_
   rintro t ⟨hsp, hw, hq⟩
   refine ⟨hsp, hw, ?_, ?_, ?_⟩

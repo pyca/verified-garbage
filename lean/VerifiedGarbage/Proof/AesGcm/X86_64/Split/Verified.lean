@@ -126,7 +126,7 @@ its return address and its stack), so it preserves what the ABI says; it
 meets the shared contracts with a `work` buffer appended
 (`sealSplitScratchContract`, …), and the shared contracts of
 `Spec/Gcm/OutOfPlace.lean` and `Spec/Gcm/Prepared.lean` in a frame of 2616
-bytes holding the working space (`Verified.stackArgScratch`): its 2560
+bytes holding the working space (`Verified.stackArgScratchKept`): its 2560
 bytes, a copy of the five other stack arguments, and 16 more, for 2672 bytes
 of stack in all; for the key contexts of `vg_aes_gcm_init`,
 `vg_aes_gcm_init_precomputed` and `vg_aes_gcm_prepare`.
@@ -400,7 +400,7 @@ include hF
 theorem sealSplit_framed (B : BlkFn CtxMode.base) (T : BlkToFn CtxMode.base) :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 2616 5 (SealSplit.«seal» (v.splitMid (v.withBlk B) T.fn)))
       (Proof.Gcm.sealSplitContract X86_64.abi 2672) :=
-  X86_64.Verified.stackArgScratch (sig := Proof.Gcm.sealSplitSig) (nm := "work") (e := .u64)
+  X86_64.Verified.stackArgScratchKept (sig := Proof.Gcm.sealSplitSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Proof.Gcm.sealSplitPre X86_64.abi.ptrBits)
     (post := Proof.Gcm.sealSplitPost X86_64.abi.ptrBits) (wa := true) (stack := 56)
     (bytes := 2616) (sealSplit_core v hF B T) (by decide) (by decide) (by decide)
@@ -410,7 +410,7 @@ theorem sealSplit_framed (B : BlkFn CtxMode.base) (T : BlkToFn CtxMode.base) :
 theorem sealSplitP_framed (B : BlkFn CtxMode.powers) (T : BlkToFn CtxMode.powers) :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 2616 5 (SealSplit.«seal» (v.splitMid (v.withBlk B) T.fn)))
       (Proof.Gcm.sealSplitPrecomputedContract X86_64.abi 2672) :=
-  X86_64.Verified.stackArgScratch (sig := Proof.Gcm.sealSplitPrecomputedSig) (nm := "work") (e := .u64)
+  X86_64.Verified.stackArgScratchKept (sig := Proof.Gcm.sealSplitPrecomputedSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Proof.Gcm.sealSplitPrecomputedPre X86_64.abi.ptrBits)
     (post := Proof.Gcm.sealSplitPost X86_64.abi.ptrBits) (wa := true) (stack := 56)
     (bytes := 2616) (sealSplitP_core v hF B T) (by decide) (by decide) (by decide)

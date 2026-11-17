@@ -152,7 +152,7 @@ function.
 `update` and `finalize` keep their working space in a frame of their own:
 they are `updateScratch` and `finalizeScratch` (the shared contracts with
 the working space as an argument, which HMAC's, PBKDF2's and ECDSA's code
-calls) run in a frame that allocates it (`Verified.stackScratch`), for an
+calls) run in a frame that allocates it (`Verified.stackScratchKept`), for an
 `f` that uses no stack.
 -/
 
@@ -245,7 +245,7 @@ theorem update {f : Callee} (hf : f.Ok)
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackScratch 616 .r8 (Impl.Sha256.X86_64.Stream.update f))
       (Spec.Sha256.updateContract X86_64.abi (8 + 616)) :=
-  X86_64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 76) (stack := 8) (bytes := 616)
+  X86_64.Verified.stackScratchKept (nm := "scratch") (e := .u64) (n := 76) (stack := 8) (bytes := 616)
     (updateScratch hf hm) (by decide) (by decide) (by decide) (update_spSafe hs) (update_depth hd)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
@@ -257,7 +257,7 @@ theorem finalize {f : Callee} (hf : f.Ok)
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackScratch 616 .rcx (Impl.Sha256.X86_64.Stream.finalize f))
       (Spec.Sha256.finalizeContract X86_64.abi (8 + 616)) :=
-  X86_64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 76) (stack := 8) (bytes := 616)
+  X86_64.Verified.stackScratchKept (nm := "scratch") (e := .u64) (n := 76) (stack := 8) (bytes := 616)
     (finalizeScratch hf hm) (by decide) (by decide) (by decide) (finalize_spSafe hs) (finalize_depth hd)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
@@ -307,7 +307,7 @@ theorem finalize224Stack {f : Callee} (hf : f.Ok)
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackScratch 616 .rcx (finalize224 f))
       (Spec.Sha256.finalize224Contract X86_64.abi (8 + 616)) :=
-  X86_64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 76) (stack := 8) (bytes := 616)
+  X86_64.Verified.stackScratchKept (nm := "scratch") (e := .u64) (n := 76) (stack := 8) (bytes := 616)
     (finalize224Scratch hf hm) (by decide) (by decide) (by decide) (finalize224_spSafe hs) (finalize224_depth hd)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
@@ -439,7 +439,7 @@ theorem updateS :
   have sp := updateS_spSafe h hs
   have dp := updateS_depth h hd
   rcases h with rfl | rfl <;>
-  exact X86_64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := _) (stack := 8) (bytes := _)
+  exact X86_64.Verified.stackScratchKept (nm := "scratch") (e := .u64) (n := _) (stack := 8) (bytes := _)
     v (by decide) (by decide) (by decide) sp dp
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
@@ -452,7 +452,7 @@ theorem finalizeS :
   have sp := finalizeS_spSafe h hs
   have dp := finalizeS_depth h hd
   rcases h with rfl | rfl <;>
-  exact X86_64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := _) (stack := 8) (bytes := _)
+  exact X86_64.Verified.stackScratchKept (nm := "scratch") (e := .u64) (n := _) (stack := 8) (bytes := _)
     v (by decide) (by decide) (by decide) sp dp
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
@@ -465,7 +465,7 @@ theorem finalize224S :
   have sp := finalize224S_spSafe h hs
   have dp := finalize224S_depth h hd
   rcases h with rfl | rfl <;>
-  exact X86_64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := _) (stack := 8) (bytes := _)
+  exact X86_64.Verified.stackScratchKept (nm := "scratch") (e := .u64) (n := _) (stack := 8) (bytes := _)
     v (by decide) (by decide) (by decide) sp dp
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 

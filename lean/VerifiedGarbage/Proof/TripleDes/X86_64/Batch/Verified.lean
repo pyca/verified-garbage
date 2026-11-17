@@ -1375,7 +1375,7 @@ theorem cbc_framed (v : EcbImpl) :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratch 2128 .r8
         (decrypt false (v.name .decrypt) (v.code .decrypt)))
       (Spec.TripleDes.cbcDecryptChainedContract X86_64.abi 3176) :=
-  X86_64.Verified.stackScratch (sig := Spec.TripleDes.cbcChainedSig) (nm := "scratch") (e := .u64)
+  X86_64.Verified.stackScratchKept (sig := Spec.TripleDes.cbcChainedSig) (nm := "scratch") (e := .u64)
     (n := W) (post := Proof.TripleDes.cbcDecChainedPost X86_64.abi.ptrBits) (wa := true) (stack := 1048)
     (bytes := 2128) (cbc_verified v) (by decide) (by decide) (by decide) (decrypt_sp v false)
     (decrypt_depth v false)
@@ -1386,7 +1386,7 @@ theorem cfb_framed (v : EcbImpl) :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratch 2128 .r8
         (decrypt true (v.name .encrypt) (v.code .encrypt)))
       (Spec.TripleDes.cfbDecryptContract X86_64.abi 3176) :=
-  X86_64.Verified.stackScratch (sig := Spec.TripleDes.cfbSig) (nm := "scratch") (e := .u64)
+  X86_64.Verified.stackScratchKept (sig := Spec.TripleDes.cfbSig) (nm := "scratch") (e := .u64)
     (n := W) (post := Proof.TripleDes.cfbDecPost X86_64.abi.ptrBits) (wa := true) (stack := 1048)
     (bytes := 2128) (cfb_verified v) (by decide) (by decide) (by decide) (decrypt_sp v true)
     (decrypt_depth v true)

@@ -252,7 +252,7 @@ theorem sealSplitPrepared_framed (hF : ShortFacts) :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 2616 5 (SealSplit.«seal» (v.splitMidR (v.withBlk B) T.fn)))
       (Proof.Gcm.sealSplitPreparedContract X86_64.abi 2672) :=
-  X86_64.Verified.stackArgScratch (sig := Proof.Gcm.sealSplitPreparedSig) (nm := "work") (e := .u64)
+  X86_64.Verified.stackArgScratchKept (sig := Proof.Gcm.sealSplitPreparedSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Proof.Gcm.sealSplitPreparedPre X86_64.abi.ptrBits)
     (post := Proof.Gcm.sealSplitPost X86_64.abi.ptrBits) (wa := true) (stack := 56)
     (bytes := 2616) (sealSplitPrepared_core v B T hF) (by decide) (by decide) (by decide)

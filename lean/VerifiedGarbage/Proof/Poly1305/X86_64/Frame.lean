@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Lit
 # Streaming Poly1305 on x86-64, with its working space on the stack
 
 `update` and `finalize` run their code, proved with the working space as an
-argument, in a frame of 136 bytes that allocates it (`Verified.stackScratch`):
+argument, in a frame of 136 bytes that allocates it (`Verified.stackScratchKept`):
 the 128 bytes of working space, and 8 more to keep `rsp` aligned. `update`'s
 call of `vg_poly1305_blocks` uses 24 bytes below it, as before.
 -/
@@ -47,7 +47,7 @@ theorem update_framed (v : BlocksImpl) :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackScratch 136 .r8 (Impl.Poly1305.X86_64.update v.name v.code))
       (Spec.Poly1305.updateContract X86_64.abi 160) :=
-  X86_64.Verified.stackScratch (sig := Spec.Poly1305.updateSig) (nm := "scratch") (e := .u64)
+  X86_64.Verified.stackScratchKept (sig := Spec.Poly1305.updateSig) (nm := "scratch") (e := .u64)
     (n := 16) (post := Spec.Poly1305.updatePost X86_64.abi.ptrBits) (wa := false) (stack := 24)
     (bytes := 136) (update_verified v) (by decide) (by decide) (by decide) (update_spSafe v)
     (update_xdepth v) updateFrameSat_pre
@@ -65,7 +65,7 @@ theorem finalize_framed :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackScratch 136 .rcx Impl.Poly1305.X86_64.finalize)
       (Spec.Poly1305.finalizeContract X86_64.abi 136) :=
-  X86_64.Verified.stackScratch (sig := Spec.Poly1305.finalizeSig) (nm := "scratch") (e := .u64)
+  X86_64.Verified.stackScratchKept (sig := Spec.Poly1305.finalizeSig) (nm := "scratch") (e := .u64)
     (n := 16) (post := Spec.Poly1305.finalizePost X86_64.abi.ptrBits) (wa := false) (stack := 0)
     (bytes := 136) finalize_verified (by decide) (by decide) (by decide)
     (Code.all_of_spTest (by lit_decide)) (by lit_decide) finalizeFrameSat_pre

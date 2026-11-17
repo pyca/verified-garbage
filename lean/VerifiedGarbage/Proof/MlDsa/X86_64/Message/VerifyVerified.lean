@@ -103,7 +103,7 @@ theorem verifyMessage_wp {p : Params} {prep : Bool} {n : String} {c : Prog isa} 
       rw [hg2 _ (by decide), vlay_B]
     have hn : 8 * verifyRegs.length ≤ (s2.gpr .rsp).toNat := by
       rw [hg2 _ (by decide)]; have := h.sp; simp only [verifyRegs, List.length_cons, List.length_nil]; omega_using [this]
-    refine WP.frame (by decide) (by decide) (by decide) hn ?_
+    refine WP.frameKept (by decide) (by decide) (by decide) hn ?_
     refine WP.seq (WP.mono (entry_ok hL rfl (by decide) hsp2 (k2.2.1.trans hrd1) (k2.2.2.trans hwr1)
       (verifyRegs_vals hg2 h11 h10 hax) (hg2 _ (by decide)))
       fun t ⟨hc, htw, htsp⟩ => ?_)

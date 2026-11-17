@@ -228,7 +228,7 @@ theorem signMessage_wp {p : Params} {prep : Bool} {n : String} {c : Prog isa} (h
       rw [hg2 _ (by decide), slay_B]
     have hn : 8 * signRegs.length ≤ (s2.gpr .rsp).toNat := by
       rw [hg2 _ (by decide)]; have := h.sp; simp only [signRegs, List.length_cons, List.length_nil]; omega_using [this]
-    refine WP.frame (by decide) (by decide) (by decide) hn ?_
+    refine WP.frameKept (by decide) (by decide) (by decide) hn ?_
     refine WP.seq (WP.mono (entry_ok hL rfl (by decide) hsp2 (k2.2.1.trans hrd1) (k2.2.2.trans hwr1)
       (signRegs_vals hg2 h10 h11 hax) (hg2 _ (by decide)))
       fun t ⟨hc, htw, htsp⟩ => ?_)

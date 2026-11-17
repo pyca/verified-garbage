@@ -527,7 +527,7 @@ theorem keyPair_ok {s : State} (hs : spec.pre s) {dn pn : String} :
       abiPreserved s s' ∧ spec.post s s' := by
   have h := pre_of hs
   have hc₀ := push_ctx h
-  refine WP.frame (rs := pushRs) (by decide) (by decide) (by decide)
+  refine WP.frameKept (rs := pushRs) (by decide) (by decide) (by decide)
     (by show 24 ≤ _; have := h.sp; omega_using [this])
     (WP.mono (body_ok c bs fs h) fun u ⟨hu, hE, hO⟩ => ⟨hu.rsp.trans hc₀.rsp.symm, hu.wr.trans hc₀.wr.symm, ?_, ?_⟩)
   · have hrsp : (popped .rax pushRs.length u).gpr .rsp = s.gpr .rsp := by

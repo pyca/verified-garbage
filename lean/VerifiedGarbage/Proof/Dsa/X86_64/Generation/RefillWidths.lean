@@ -18,7 +18,7 @@ import VerifiedGarbage.Proof.Framework.Sig
 
 `ParameterSearch.widths` (`Impl/Dsa/X86_64/ParameterSearch.lean`) loads
 `state[1]`, the modulus's width, and calls the function for that width,
-forwarding its arguments (`Verified.forward`, two of them on the stack): it is
+forwarding its arguments (`Verified.forwardKept`, two of them on the stack): it is
 verified against the search's contract from its width functions'
 (`Refill.contract`, the search's contract with the width fixed), by choosing
 on entry (`Verified.entryBranch`), as `Generation.Widths` does for
@@ -80,7 +80,7 @@ theorem forward_refill (p S : Nat) (hS : S + 72 ≤ 2 ^ 64) {name : String} {bod
     (hsp : body.all (fun i => !isa.writesSp i) = true) (hd : body.x86_64Depth ≤ S)
     (hsat : ∃ s, (Refill.contract p abi (S + 64)).pre s) :
     Verified target (Impl.Dsa.X86_64.ParameterSearch.width name body) (Refill.contract p abi (S + 64)) := by
-  refine Verified.forward (sig := Spec.Dsa.parameterSearchSig) (bytes := 56) h (by decide) (by decide)
+  refine Verified.forwardKept (sig := Spec.Dsa.parameterSearchSig) (bytes := 56) h (by decide) (by decide)
     (by decide) (by omega_arith) hsp hd ?_ ?_ hsat ?_
   · intro vs m₁ m₂ hl hb _ hpr
     obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 7) hl

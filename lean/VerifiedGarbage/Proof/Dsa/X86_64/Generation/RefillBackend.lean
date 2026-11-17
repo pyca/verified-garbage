@@ -155,7 +155,7 @@ theorem correct (M : Mont) (K : Kernel)
   have hwl : witness + len (s.gpr .r9).toNat ≤ domainCheck := by
     rcases hb with h | h | h | h | h <;> rw [h] <;> decide
   have hl : 56 ≤ (s.gpr .rsp).toNat := by have : 184 ≤ (s.gpr .rsp).toNat := A.stackLower; omega_using [this]
-  obtain ⟨trace, f, he, hsp, hpost⟩ := alloc_frame_ok (bytes := 56) (by decide) hl
+  obtain ⟨trace, f, he, hsp, hpost⟩ := alloc_frame_okKept (bytes := 56) (by decide) hl
     (Q := fun f => f.gpr .rsp = s.gpr .rsp ∧ BodyPost (s.gpr .r9).toNat s f)
     (WP.mono (body_ok M K hb A) fun t ⟨h1, h2, _, hp⟩ => ⟨h1, h2, freeState_rsp h1, by
       obtain ⟨hr, hu, hm, hg⟩ := hp

@@ -305,7 +305,7 @@ theorem ifma_ok (hl : MrOk l) {s : State} (h : roundPre s)
     simp only [arr, VG.Proof.Bignum.slot, aE] at hsz ⊢; omega_arith))) (by
     simp only [arr, VG.Proof.Bignum.slot, aE] at hsz ⊢; omega_arith)
   unfold ifma
-  refine WP.frame (by decide) (by decide) (by decide) h48 ?_
+  refine WP.frameKept (by decide) (by decide) (by decide) h48 ?_
   refine WP.mono (mid_ok hl (pushed_gpr _ _ (by decide)) (by rw [wr₁]; simp [Nat.mul_comm]) hn8 hsz hc₁ h3 hodd
     hinv₁ hr1₁ hx₁ hE₁ (by rw [sp₁, rd₁, wr₁]; exact frame_head) (by rw [sp₁, rd₁, wr₁]; exact frame_at 8 (by decide))
     (by rw [sp₁, rd₁, wr₁]; exact frame_at 16 (by decide)) (by rw [sp₁, rd₁, wr₁]; exact frame_at 24 (by decide))

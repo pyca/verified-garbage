@@ -600,7 +600,7 @@ theorem cw_wp {name zname : String} {body zcode : Prog isa} {zst : Nat}
   have hsb := cw_sp hk hl hs
   have hret := cw_ret hk hl hs
   have hout' := cw_out hk hl hs
-  refine alloc_frame_ok (by decide) (by omega_using [hsb]) ?_
+  refine alloc_frame_okKept (by decide) (by omega_using [hsb]) ?_
   refine WP.seq (WP.block ⟨_, saveArg_run hr s, ?_⟩)
   refine WP.seq (WP.mono (cw_body_wp h hk hl hsp hd hst hpre hpost hs) fun c hc => ?_)
   have hcrsp : c.gpr .rsp = s.gpr .rsp - BitVec.ofNat 64 16 := by

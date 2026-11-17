@@ -25,7 +25,7 @@ of `vg_aes_gcm_seal_gather` calling any `vg_aes_gcm_stream_init`,
 `mxcsr`, `rsp` written only in frames, 4888 bytes of stack), the shared
 contracts with a `scratch` buffer appended (`sealGatherScratchContract`),
 and the shared contracts of `Spec/Gcm/OutOfPlace.lean` in a frame of 240
-bytes holding the working space (`Verified.stackArgScratchL`): its 184
+bytes holding the working space (`Verified.stackArgScratchLKept`): its 184
 bytes, a copy of the five other stack arguments, and 16 more, for 5128
 bytes of stack in all; for the key contexts of `vg_aes_gcm_init` and
 `vg_aes_gcm_init_precomputed`.
@@ -453,7 +453,7 @@ theorem sealGather_framed (Sh : ShortFn CtxMode.base) (I : InitFn) (A : AadFn)
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 240 5 (sealGather Sh.quick Sh.fast Sh.test Sh.code I.fn A.fn T.fn F.fn))
       (Proof.AesGcm.sealGatherRoundsContract X86_64.abi 5128) :=
-  X86_64.Verified.stackArgScratchL (sig := Spec.Gcm.sealGatherSig) (nm := "scratch") (e := .u64) (n := 23)
+  X86_64.Verified.stackArgScratchLKept (sig := Spec.Gcm.sealGatherSig) (nm := "scratch") (e := .u64) (n := 23)
     (pre := Spec.Gcm.sealGatherPre X86_64.abi.ptrBits) (post := Proof.AesGcm.sealGatherRoundsPost X86_64.abi.ptrBits)
     (wa := true) (stack := 4888) (bytes := 240) (sealGather_core Sh I A T F) (by decide) (by decide) (by decide)
     (sealGather_spAll Sh I A T F) (sealGather_xdepth Sh I A T F) (Proof.AesGcm.sealGatherPre_local _)
@@ -480,7 +480,7 @@ theorem sealGatherP_framed (Sh : ShortFn CtxMode.powers) (I : InitFn) (A : AadFn
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 240 5 (sealGather Sh.quick Sh.fast Sh.test Sh.code I.fn A.fn T.fn F.fn))
       (Proof.AesGcm.sealGatherPrecomputedRoundsContract X86_64.abi 5128) :=
-  X86_64.Verified.stackArgScratchL (sig := Proof.Gcm.sealGatherPrecomputedSig) (nm := "scratch") (e := .u64)
+  X86_64.Verified.stackArgScratchLKept (sig := Proof.Gcm.sealGatherPrecomputedSig) (nm := "scratch") (e := .u64)
     (n := 23) (pre := Proof.Gcm.sealGatherPrecomputedPre X86_64.abi.ptrBits)
     (post := Proof.AesGcm.sealGatherRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 4888) (bytes := 240)
     (sealGatherP_core Sh I A T F) (by decide) (by decide) (by decide) (sealGather_spAll Sh I A T F)

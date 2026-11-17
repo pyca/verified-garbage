@@ -296,7 +296,7 @@ theorem verify_wp (hv : EqOk v) {s : State} (hpre : (Spec.Ed448.verifyContract X
       rw [hg2 _ (by decide), vlay_B]
     have hn : 8 * regs.length ≤ (s2.gpr .rsp).toNat := by
       rw [hg2 _ (by decide), regs_length]; have := h.sp; omega_using [this]
-    refine WP.frame (by decide) (by decide) (by decide) hn ?_
+    refine WP.frameKept (by decide) (by decide) (by decide) hn ?_
     have hc := entry_ctx hL hsp2 (k2.2.1.trans hrd1) (k2.2.2.trans hwr1) h11 (hg2 _ (by decide))
       (hg2 _ (by decide)) (hg2 _ (by decide)) (hg2 _ (by decide)) (hg2 _ (by decide)) (hg2 _ (by decide))
     refine WP.mono (body_ok hv hL hc) fun s' ⟨hc', hr⟩ => ⟨by rw [hc'.rsp, hc.rsp], by rw [hc'.wr, hc.wr], ?_, ?_⟩

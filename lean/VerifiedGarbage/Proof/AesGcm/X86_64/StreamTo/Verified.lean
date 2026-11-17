@@ -34,7 +34,7 @@ section
 # AES-GCM streaming encryption out of place: the conditions read only the buffers
 
 Untrusted: everything here is checked by Lean. A frame that copies the
-arguments passed on the stack (`Verified.stackArgScratch`) needs the pre-
+arguments passed on the stack (`Verified.stackArgScratchKept`) needs the pre-
 and postconditions of `vg_aes_gcm_stream_encrypt_to` and
 `vg_aes_gcm_stream_encrypt_to_precomputed` to read the memory on entry only
 within their buffers: the key context, the streaming state (through
@@ -218,7 +218,7 @@ static facts (no load of `mxcsr`, `rsp` written only in frames, 2624 bytes
 of stack), the shared contracts with a `scratch` buffer appended
 (`streamEncryptToScratchContract`), and the shared contracts of
 `Spec/Gcm/OutOfPlace.lean` in a frame of 2232 bytes holding the working
-space (`Verified.stackArgScratch`): its 2192 bytes, a copy of the three
+space (`Verified.stackArgScratchKept`): its 2192 bytes, a copy of the three
 other stack arguments, and 16 more, for 4856 bytes of stack in all; for the
 key contexts of `vg_aes_gcm_init` and `vg_aes_gcm_init_precomputed`.
 -/
@@ -376,7 +376,7 @@ theorem streamToFrameSat_pre : ∃ s, (Proof.Gcm.streamEncryptToContract X86_64.
 theorem streamEncryptTo_framed (T : BlkToFn CtxMode.base) (E : EncFn CtxMode.base) :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 2232 3 (encrypt T.fn E.fn))
       (Proof.Gcm.streamEncryptToContract X86_64.abi 4856) :=
-  X86_64.Verified.stackArgScratch (sig := Proof.Gcm.streamEncryptToSig) (nm := "scratch") (e := .u64)
+  X86_64.Verified.stackArgScratchKept (sig := Proof.Gcm.streamEncryptToSig) (nm := "scratch") (e := .u64)
     (n := 274) (pre := Proof.Gcm.streamEncryptToPre X86_64.abi.ptrBits)
     (post := Proof.Gcm.streamEncryptToPost X86_64.abi.ptrBits) (wa := true) (stack := 2624)
     (bytes := 2232) (streamEncryptTo_core T E) (by decide) (by decide) (by decide)
@@ -401,7 +401,7 @@ theorem streamToFrameSatP_pre : ∃ s, (Proof.Gcm.streamEncryptToPrecomputedCont
 theorem streamEncryptToP_framed (T : BlkToFn CtxMode.powers) (E : EncFn CtxMode.powers) :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 2232 3 (encrypt T.fn E.fn))
       (Proof.Gcm.streamEncryptToPrecomputedContract X86_64.abi 4856) :=
-  X86_64.Verified.stackArgScratch (sig := Proof.Gcm.streamEncryptToPrecomputedSig) (nm := "scratch")
+  X86_64.Verified.stackArgScratchKept (sig := Proof.Gcm.streamEncryptToPrecomputedSig) (nm := "scratch")
     (e := .u64) (n := 274) (pre := Proof.Gcm.streamEncryptToPrecomputedPre X86_64.abi.ptrBits)
     (post := Proof.Gcm.streamEncryptToPost X86_64.abi.ptrBits) (wa := true) (stack := 2624)
     (bytes := 2232) (streamEncryptToP_core T E) (by decide) (by decide) (by decide)

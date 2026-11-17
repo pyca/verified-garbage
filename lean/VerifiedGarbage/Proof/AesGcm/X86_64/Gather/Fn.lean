@@ -596,7 +596,7 @@ theorem sealCall_ok (S : SealFn M) {st : State} (h : SBase s st) (g : SealRegs s
     rcases hr with rfl | rfl
     · exact hp.b_d.symm.sub_right (stk_sub (s := s) (by decide) (by decide))
     · exact hp.b_d.symm.sub_right (stk_sub (s := s) (by decide) (by decide))
-  refine WP.frame (by simp) (by decide) (by decide) hn8 (WP.call_sp_mx (k := sealK M)
+  refine WP.frameKept (by simp) (by decide) (by decide) hn8 (WP.call_sp_mx (k := sealK M)
     S.ok S.sp (by have := S.xd; omega_arith) hpre cr cw fun s' hrd' hwr' hcs hfr _ ⟨s₂, hm₂, _, hpost⟩ _ => ?_)
   obtain r₃ := hcs _ (by decide : Reg.rsp ∈ calleeSaved)
   simp only [sealK, Proof.AesGcm.sealX86_64, Proof.AesGcm.arg, a0, a1, a2, State.withRegions_mem,

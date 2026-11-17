@@ -345,7 +345,7 @@ theorem obFrameE_ok {M : CtxMode} (B : BlkFn M) {R : Nat} {D : Addr} {n q : Nat}
   have hsp := h.env.rsp
   obtain hn8 : 8 * [Reg.rax].length ≤ (s.gpr .rsp).toNat := by rw [hsp]; have := h.sp24; simp; omega_arith
   obtain ⟨-, eK, eC, eY, eD, eH⟩ := ObIn.push_eqs L h
-  refine WP.frame (by simp) (by decide) (by decide) hn8 (WP.mono (blkE_call B (ObIn.call L h)) fun s₃ ⟨bp, o₁, o₂, o₃⟩ => ?_)
+  refine WP.frameKept (by simp) (by decide) (by decide) hn8 (WP.mono (blkE_call B (ObIn.call L h)) fun s₃ ⟨bp, o₁, o₂, o₃⟩ => ?_)
   obtain ⟨r₃, w₃, cs, rd, wr, fr⟩ := ObIn.popped L h bp
   rw [eK, eC, eD] at o₁
   rw [eC] at o₂
@@ -367,7 +367,7 @@ theorem obFrameD_ok {M : CtxMode} (B : BlkFn M) {R : Nat} {D : Addr} {n q : Nat}
   have hsp := h.env.rsp
   obtain hn8 : 8 * [Reg.rax].length ≤ (s.gpr .rsp).toNat := by rw [hsp]; have := h.sp24; simp; omega_arith
   obtain ⟨-, eK, eC, eY, eD, eH⟩ := ObIn.push_eqs L h
-  refine WP.frame (by simp) (by decide) (by decide) hn8 (WP.mono (blkD_call B (ObIn.call L h)) fun s₃ ⟨bp, o₁, o₂, o₃⟩ => ?_)
+  refine WP.frameKept (by simp) (by decide) (by decide) hn8 (WP.mono (blkD_call B (ObIn.call L h)) fun s₃ ⟨bp, o₁, o₂, o₃⟩ => ?_)
   obtain ⟨r₃, w₃, cs, rd, wr, fr⟩ := ObIn.popped L h bp
   rw [eK, eC, eD] at o₁
   rw [eC] at o₂

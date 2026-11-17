@@ -340,7 +340,7 @@ theorem body_ok (B : BlkFn M) {fin : Prog isa} (hfin : FinOk M fin) {R : Nat} {D
       (Offset.sub_base (W + BitVec.ofNat 64 16) (d := 32) (k := 80) (by omega_arith) a hc)))) (by omega_arith)]
     exact habs.2
   obtain hc : ciphOf (pushed [.rax] s).mem Ctx R = ciphOf s.mem Ctx R := ciph_frame f₀ (one kc) hR.2
-  refine WP.frame (by simp) (by decide) (by decide) hn8 (WP.mono (inner_ok L' B hfin (al := al) (N := N) hu hH' hcb'
+  refine WP.frameKept (by simp) (by decide) (by decide) hn8 (WP.mono (inner_ok L' B hfin (al := al) (N := N) hu hH' hcb'
     (by rw [rW 184 (by decide)]; exact hal) habs' (by rw [rW 216 (by decide)]; exact haux) hN)
     fun s₂ ⟨e₂, rd₂, wr₂, f₂, hC, hT⟩ => ⟨by rw [e₂.rsp, psp], by rw [wr₂], ?_⟩)
   obtain prd : (popped .rax 1 s₂).rd = s.rd := by rw [popped_rd, rd₂, pushed_rd]

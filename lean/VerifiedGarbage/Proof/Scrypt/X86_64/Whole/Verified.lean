@@ -365,7 +365,7 @@ theorem scrypt_ok {s : State} (h : Proof.Scrypt.scryptX86_64.pre s) :
   have hL := lay_ok h
   have hc := push_ctx h
   have he := push_entry s
-  refine WP.frame (rs := pushRs) (by decide) (by decide) (by decide)
+  refine WP.frameKept (rs := pushRs) (by decide) (by decide) (by decide)
     (by show 8 * 7 ≤ _; have := h.1; omega_arith)
     (WP.mono (body_scrypt_ok hv hsp hd name hL hc he) fun u ⟨hu, ho⟩ =>
       ⟨hu.rsp.trans hc.rsp.symm, hu.wr.trans hc.wr.symm, ?_, ?_⟩)

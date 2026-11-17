@@ -17,7 +17,7 @@ section
 # IDEA ECB with its working space as an argument
 
 `vg_idea_ecb` keeps its working space in a frame of its own
-(`Verified.stackScratch`), around code proved with the working space as an
+(`Verified.stackScratchKept`), around code proved with the working space as an
 argument: `ecbScratchContract` is the shared contract with the `scratch`
 buffer appended, whatever it holds.
 -/
@@ -90,7 +90,7 @@ theorem ecb_verified : Verified target ecb (Proof.Idea.ecbScratchContract abi) :
 theorem ecb_framed :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratch 24 .rcx ecb)
       (Spec.Idea.ecbContract X86_64.abi 24) :=
-  X86_64.Verified.stackScratch (sig := Spec.Idea.ecbSig) (nm := "scratch") (e := .u64) (n := 2)
+  X86_64.Verified.stackScratchKept (sig := Spec.Idea.ecbSig) (nm := "scratch") (e := .u64) (n := 2)
     (post := Spec.Idea.ecbPost X86_64.abi.ptrBits) (wa := false) (stack := 0) (bytes := 24)
     ecb_verified (by decide) (by decide) (by decide) (Code.all_of_spTest (by lit_decide))
     (by lit_decide)

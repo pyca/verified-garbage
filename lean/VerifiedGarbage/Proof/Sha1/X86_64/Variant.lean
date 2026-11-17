@@ -41,7 +41,7 @@ structure Compress where
   /-- It never writes the stack pointer. -/
   spSafe : callee.code.all (fun i => !isa.writesSp i) = true
   /-- It uses no stack, so that the streaming functions calling it can keep
-  their working space in a frame of their own (`Verified.stackScratch`). -/
+  their working space in a frame of their own (`Verified.stackScratchKept`). -/
   noStack : callee.code.x86_64Depth = 0 := by lit_decide
   /-- What the names of its callers' instances end with (e.g. `_shani`;
   nothing for the baseline implementation). -/

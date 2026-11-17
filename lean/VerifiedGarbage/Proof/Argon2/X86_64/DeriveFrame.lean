@@ -43,7 +43,7 @@ theorem frame_ok (s : State) (rs : List Reg) (body : Prog isa) (Q : State → Pr
     WP isa (Impl.Argon2.X86_64.Derive.frame body rs) s Q := by
   induction rs generalizing s Q with
   | nil =>
-    exact WP.frame (by decide) (by decide) (by decide) (by simpa using space) run
+    exact WP.frameKept (by decide) (by decide) (by decide) (by simpa using space) run
   | cons r rs ih =>
     simp only [List.mem_cons, not_or] at notSp
     have pushedBound : ((pushed [r] s).gpr .rsp).toNat = (s.gpr .rsp).toNat - 8 := by
@@ -52,7 +52,7 @@ theorem frame_ok (s : State) (rs : List Reg) (body : Prog isa) (Q : State → Pr
       exact toNat_sub_ofNat (by simp only [List.length_cons] at space; omega_using [space])
     have innerSpace : 272 + 8 * rs.length ≤ ((pushed [r] s).gpr .rsp).toNat := by
       rw [pushedBound]; simp only [List.length_cons] at space; omega_using [space]
-    apply WP.frame (by simp) (by simpa using notSp.1) (Ne.symm notSp.1)
+    apply WP.frameKept (by simp) (by simpa using notSp.1) (Ne.symm notSp.1)
       (by simp only [List.length_cons] at space; simp only [List.length_singleton, Nat.mul_one]; omega_using [space])
     apply ih (pushed [r] s) (fun t => t.gpr .rsp = (pushed [r] s).gpr .rsp ∧
       t.wr = (pushed [r] s).wr ∧ Q (popped r 1 t)) notSp.2 innerSpace

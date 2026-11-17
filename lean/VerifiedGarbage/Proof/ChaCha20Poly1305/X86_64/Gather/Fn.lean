@@ -786,7 +786,7 @@ theorem called_wp (F : SealSplitFn) {s c : State} (h : Lay s) (hc : Ready s c) :
   have hx (r : Reg) (hr : r ≠ .rsp) : (xS s c).gpr r = c.gpr r := xgpr_eq hr
   obtain hl : ((xS s c).gpr .r9).toNat ≤ (stackArg (xS s c) 1).toNat := by
     rw [hx _ (by decide), hc.r9, hc.xa1 h]; show L0 s ≤ L s; omega_arith
-  refine WP.frame (by simp) (by decide) (by decide) (hc.hn h) (WP.call_sp_mx (k := F.contractE) F.exec F.sp
+  refine WP.frameKept (by simp) (by decide) (by decide) (hc.hn h) (WP.call_sp_mx (k := F.contractE) F.exec F.sp
     (by omega_arith) (sealSplitSpec_pre hcp) hcov hw fun s' rd' wr' cs' fr' _ ⟨s₂, m₂, _, post', hE⟩ mx' => ?_)
   obtain rsp' : s'.gpr .rsp = (qS c).gpr .rsp := cs' .rsp (by decide)
   refine ⟨rsp', wr', ?_⟩
@@ -884,7 +884,7 @@ theorem sealGather_wp (w : Width) (F : SealSplitFn) {s : State} (hs : gatherPre 
     WP isa (sealGather w F.name F.code) s fun z => abiPreserved s z ∧ gatherPost s z := by
   obtain h := lay hs
   obtain hn : 8 * saved.length ≤ (s.gpr .rsp).toNat := by have := h.w₁; simp only [List.length_cons, List.length_nil]; omega_arith
-  refine WP.frame (by simp) (by decide) (by decide) hn (WP.mono (frameBody_wp w F h) fun z hz => ?_)
+  refine WP.frameKept (by simp) (by decide) (by decide) hn (WP.mono (frameBody_wp w F h) fun z hz => ?_)
   refine ⟨by rw [hz.rsp, hP s], by rw [hz.wr, hPwr s], ⟨fun r hr => ?_, ?_, ?_⟩, ?_⟩
   · by_cases hsp : r = .rsp
     · subst hsp
@@ -903,7 +903,7 @@ theorem sealGather_wpE (w : Width) (F : SealSplitFn) {s : State} (hs : gatherPre
     WP isa (sealGather w F.name F.code) s fun z => ∃ c, Ready s c ∧ F.E (xS s c) z.mem := by
   obtain h := lay hs
   obtain hn : 8 * saved.length ≤ (s.gpr .rsp).toNat := by have := h.w₁; simp only [List.length_cons, List.length_nil]; omega_arith
-  refine WP.frame (by simp) (by decide) (by decide) hn (WP.mono (frameBody_wp w F h) fun z hz =>
+  refine WP.frameKept (by simp) (by decide) (by decide) hn (WP.mono (frameBody_wp w F h) fun z hz =>
     ⟨by rw [hz.rsp, hP s], by rw [hz.wr, hPwr s], ?_⟩)
   simp only [popped_mem]
   exact hz.ext

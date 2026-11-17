@@ -179,7 +179,7 @@ theorem enter_wp (s : State) (hS : 8 ≤ (s.gpr .rsp).toNat) :
   obtain ⟨pf, -⟩ := pushRegs_mem s [.rax] (by decide) (by rw [hSdef]; simpa using hS)
   rw [hSdef] at pf
   unfold enter
-  refine WP.frame (by decide) (by decide) (by decide) (by rw [hSdef]; simpa using hS) ?_
+  refine WP.frameKept (by decide) (by decide) (by decide) (by rw [hSdef]; simpa using hS) ?_
   refine WP.mono (body_ok hF h0 h8) fun t ⟨⟨hmx, hax, hm⟩, hk⟩ => ?_
   have tsp : t.gpr .rsp = S - 8 := by rw [hk.gpr (by decide), s1sp]
   refine ⟨by rw [tsp, s1sp], by rw [hk.2.2], ?_⟩
@@ -215,7 +215,7 @@ theorem enter_wpX (s : State) (hS : 8 ≤ (s.gpr .rsp).toNat) :
   have h0 : F.Contains ((pushed [.rax] s).gpr .rsp) 4 := by rw [s1sp]; exact h0'
   have h8 : F.Contains ((pushed [.rax] s).gpr .rsp) 8 := by rw [s1sp]; exact h8'
   unfold enter
-  refine WP.frame (by decide) (by decide) (by decide) (by rw [hSdef]; simpa using hS) ?_
+  refine WP.frameKept (by decide) (by decide) (by decide) (by rw [hSdef]; simpa using hS) ?_
   refine WP.mono (body_ok hF h0 h8) fun t ⟨⟨hmx, hax, hm⟩, hk⟩ => ?_
   have tsp : t.gpr .rsp = S - 8 := by rw [hk.gpr (by decide), s1sp]
   refine ⟨by rw [tsp, s1sp], by rw [hk.2.2], ?_⟩

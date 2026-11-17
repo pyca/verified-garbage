@@ -167,7 +167,7 @@ theorem callOr0_ok (inl : Bool) {k : Contract isa} {d : Nat} (F : CallFn k d) (h
       exact ⟨r, by rw [pushed_wr]; exact List.mem_cons_of_mem _ hr, hcr⟩
     have hf₀ := enter_keep (inl := true) hsp h8 rd wr
     rw [State.withRegions_mem] at hf₀
-    refine WP.frame (by simp) (by decide) (by decide) (by rw [hsp]; simpa using h8) ?_
+    refine WP.frameKept (by simp) (by decide) (by decide) (by rw [hsp]; simpa using h8) ?_
     refine WP.inlineF F.ok F.sp (by have := F.xd; omega_arith) hpre hc' hw'
       fun s' hrd hwr habi hfr _ hpost => ⟨by rw [habi.1 _ (by decide)], hwr, ?_⟩
     have hsp' : s'.gpr .rsp = SP s - BitVec.ofNat 64 8 := by rw [habi.1 _ (by decide), hP]

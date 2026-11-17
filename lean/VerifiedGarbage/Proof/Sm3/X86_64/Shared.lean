@@ -23,7 +23,7 @@ contracts of `Spec/Sm3/Contract.lean`, which the artifacts are emitted with.
 function's 112 bytes, then our caller's callee-saved registers) in a frame of
 their own: they are `updateScratch` and `finalizeScratch` (the shared
 contracts with the working space as an argument, `Proof/Sm3/Scratch.lean`)
-run in a frame that allocates it (`Verified.stackScratch`).
+run in a frame that allocates it (`Verified.stackScratchKept`).
 -/
 
 @[expose] public section
@@ -56,7 +56,7 @@ theorem finalizeScratch :
 theorem update : Verified X86_64.target
     (Impl.StackScratch.X86_64.withStackScratch 168 .r8 Impl.Sm3.X86_64.Stream.update)
     (Spec.Sm3.updateContract X86_64.abi (8 + 168)) :=
-  X86_64.Verified.stackScratch (sig := Spec.Sm3.updateSig) (nm := "scratch") (e := .u64) (n := 20)
+  X86_64.Verified.stackScratchKept (sig := Spec.Sm3.updateSig) (nm := "scratch") (e := .u64) (n := 20)
     (stack := 8) (bytes := 168)
     (by rw [← Proof.Sm3.updateScratchContract_eq]; exact updateScratch) (by decide) (by decide)
     (by decide) (Code.all_of_spTest (by lit_decide)) (by lit_decide)
@@ -65,7 +65,7 @@ theorem update : Verified X86_64.target
 theorem finalize : Verified X86_64.target
     (Impl.StackScratch.X86_64.withStackScratch 168 .rcx Impl.Sm3.X86_64.Stream.finalize)
     (Spec.Sm3.finalizeContract X86_64.abi (8 + 168)) :=
-  X86_64.Verified.stackScratch (sig := Spec.Sm3.finalizeSig) (nm := "scratch") (e := .u64) (n := 20)
+  X86_64.Verified.stackScratchKept (sig := Spec.Sm3.finalizeSig) (nm := "scratch") (e := .u64) (n := 20)
     (stack := 8) (bytes := 168)
     (by rw [← Proof.Sm3.finalizeScratchContract_eq]; exact finalizeScratch) (by decide) (by decide)
     (by decide) (Code.all_of_spTest (by lit_decide)) (by lit_decide)

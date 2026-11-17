@@ -161,7 +161,7 @@ theorem publicKeyExpanded_ok {s : State} (h : pkLocalE.pre s) :
   have hL := lay_ok h (by decide)
   have hc := push_ctx h
   obtain ⟨seed, -, hE⟩ := expanded_seed h
-  refine WP.frame (rs := pushRs) (by decide) (by decide) (by decide) (by show 8 * 7 ≤ _; have := h.1; omega_using [this])
+  refine WP.frameKept (rs := pushRs) (by decide) (by decide) (by decide) (by show 8 * 7 ≤ _; have := h.1; omega_using [this])
     (WP.mono (bodyFrom_ok hL (copy_ok hL rfl hc) hE)
       fun u ⟨hu, ho⟩ => ⟨hu.rsp.trans hc.rsp.symm, hu.wr.trans hc.wr.symm, ?_, ?_⟩)
   · have hrsp : (popped .rax pushRs.length u).gpr .rsp = s.gpr .rsp := by

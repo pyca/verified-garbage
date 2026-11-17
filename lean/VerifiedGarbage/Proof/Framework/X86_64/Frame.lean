@@ -5,6 +5,8 @@ public import VerifiedGarbage.TCB.X86_64.Isa
 import VerifiedGarbage.Proof.Framework.X86_64.Inline
 import VerifiedGarbage.Proof.Framework.X86_64.Abi
 import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Frames (x86-64)
@@ -132,8 +134,30 @@ theorem pushRegs_mem (s : State) (rs : List Reg) (hrs : .rsp ∉ rs)
 
 /-- A frame: its body runs from `pushed rs s`, ends with `rsp` and the
 writable regions as the push left them, and the pop of the `rs.length`
-words leads to `popped r rs.length s₂`. -/
+words leads to `popped r rs.length s₂`, of which the postcondition may rely
+on nothing the frame's bytes hold, nor on the unknowns: it holds whatever
+memory `m` that differs from the body's only in the frame, and whatever
+unknowns `u`, the state then has. (A frame's bytes are below `rsp` once it
+is released, where a signal handler may overwrite them.) -/
 theorem WP.frame {rs : List Reg} {r : Reg} {body : Prog isa} {s : State} {Q : State → Prop}
+    (hne : rs ≠ []) (hrs : .rsp ∉ rs) (hr : r ≠ .rsp) (hn : 8 * rs.length ≤ (s.gpr .rsp).toNat)
+    (hb : WP isa body (pushed rs s) fun s₂ => s₂.gpr .rsp = (pushed rs s).gpr .rsp ∧
+      s₂.wr = (pushed rs s).wr ∧ ∀ m u,
+        Frame [⟨s.gpr .rsp - BitVec.ofNat 64 (8 * rs.length), 8 * rs.length⟩] s₂.mem m →
+        Q { popped r rs.length s₂ with mem := m, unknowns := u }) :
+    WP isa (.frame (.push rs) body (.pop r rs.length)) s Q := by
+  obtain ⟨t, s₂, he, hsp, hw, hq⟩ := hb
+  have hpop : isa.pop (.pop r rs.length) (pushed rs s) s₂ = some (popped r rs.length s₂) := by
+    simp only [isa, pop]
+    refine ite_eq_left ⟨by simpa using hne, hr, hsp, hw, ?_⟩
+    rw [pushed_wr, pushed_rsp]; rfl
+  exact ⟨_, _, Exec.frame (push_pushed hne hrs hn) he hpop,
+    hq _ (popped r rs.length s₂).unknowns (by rw [popReg_mem]; exact Frame.refl _ _)⟩
+
+/-- The previous `WP.frame`, kept until every proof is moved off it. A frame: its body runs from `pushed rs s`, ends with `rsp` and the
+writable regions as the push left them, and the pop of the `rs.length`
+words leads to `popped r rs.length s₂`. -/
+theorem WP.frameKept {rs : List Reg} {r : Reg} {body : Prog isa} {s : State} {Q : State → Prop}
     (hne : rs ≠ []) (hrs : .rsp ∉ rs) (hr : r ≠ .rsp) (hn : 8 * rs.length ≤ (s.gpr .rsp).toNat)
     (hb : WP isa body (pushed rs s) fun s₂ => s₂.gpr .rsp = (pushed rs s).gpr .rsp ∧
       s₂.wr = (pushed rs s).wr ∧ Q (popped r rs.length s₂)) :
@@ -144,6 +168,18 @@ theorem WP.frame {rs : List Reg} {r : Reg} {body : Prog isa} {s : State} {Q : St
     refine ite_eq_left ⟨by simpa using hne, hr, hsp, hw, ?_⟩
     rw [pushed_wr, pushed_rsp]; rfl
   exact ⟨_, _, Exec.frame (push_pushed hne hrs hn) he hpop, hq⟩
+
+/-- A byte of a region apart from a frame is what it was once the frame's
+bytes are lost. -/
+theorem lost_byte {F R : Region} {m m' : Mem} (f : Frame [F] m m') (hd : R.Disjoint F) {i : Nat}
+    (hi : i < R.len) : m' (R.base + BitVec.ofNat 64 i) = m (R.base + BitVec.ofNat 64 i) := by
+  refine f _ fun r hr hc => ?_
+  simp only [List.mem_singleton] at hr; subst hr
+  refine hd _ ?_ hc
+  simp only [Region.Contains]
+  rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat]
+  have := Nat.mod_le i (2 ^ 64)
+  omega_using [hi, this]
 
 /-- Two runs of a frame leak the same trace when `rsp` agrees and the runs of
 its body, from the states after the push, do. -/

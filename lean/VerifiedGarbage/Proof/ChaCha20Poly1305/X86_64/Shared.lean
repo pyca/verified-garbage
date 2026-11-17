@@ -121,7 +121,7 @@ theorem call_depth (v : XorImpl) : (bodyCall v.callee v.poly).x86_64Depth ≤ 17
   exact Nat.add_le_add_right (Nat.add_le_add_right (body_depth v) 8) 8
 
 theorem call_verified (v : XorImpl) : Verified target (bodyCall v.callee v.poly) (contract true 1768) :=
-  Verified.forward (sig := Spec.ChaCha20Poly1305.sealSig) (bytes := 8) (leak := none)
+  Verified.forwardKept (sig := Spec.ChaCha20Poly1305.sealSig) (bytes := 8) (leak := none)
     (show Verified target _ (Spec.ChaCha20Poly1305.sealContract abi 1752) from body_verified v)
     (by decide) (by decide) (by decide) (by decide) (body_sp v) (body_depth v)
     (fun vs m₁ m₂ hl hb _ hp => pre_local _ _ vs m₁ m₂ hl hb hp)

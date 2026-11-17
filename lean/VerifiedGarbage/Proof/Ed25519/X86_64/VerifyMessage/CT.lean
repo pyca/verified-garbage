@@ -780,7 +780,7 @@ theorem verifyMessage_ok (hq : EqCode fld win) (v : Compress) {s : State} (h : v
     WP isa (code fld win fs v.callee v.suffix) s fun s' => abiPreserved s s' ∧ verifyMessageLocal.post s s' := by
   have hL := lay_ok h
   have hc := push_ctx h
-  refine WP.frame (rs := pushRs) (by decide) (by decide) (by decide)
+  refine WP.frameKept (rs := pushRs) (by decide) (by decide) (by decide)
     (by show 8 * 21 ≤ _; have := h.1; omega_arith)
     (WP.mono (body_ok hq v hL hc hL.message_bound)
       fun u ⟨hu, ho⟩ => ⟨hu.rsp.trans hc.rsp.symm, hu.wr.trans hc.wr.symm, ?_, ?_⟩)

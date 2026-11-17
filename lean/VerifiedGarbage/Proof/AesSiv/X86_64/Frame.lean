@@ -16,7 +16,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 
 `vg_aes_siv_init` runs its code, proved with the working space as an argument
 (`Verified.lean`), in a frame of 2568 bytes that allocates it
-(`Verified.stackScratch`): the 2560 bytes of working space, and 8 more to
+(`Verified.stackScratchKept`): the 2560 bytes of working space, and 8 more to
 keep `rsp` aligned. Its own calls use 16 bytes below it: two return
 addresses, as `vg_aes_ctr32` and `vg_aes_expand_key_scratch` use no stack.
 Over the bitsliced AES given its working space 512 bytes into
@@ -28,7 +28,7 @@ only 72 bytes of it, in a frame of 88 (`initF_framed`), which
 
 `encrypt` and `decrypt` run their code, proved with the working space as
 their last argument, in a frame that allocates it
-(`Verified.stackArgScratchL`): their working space is passed on the stack
+(`Verified.stackArgScratchLKept`): their working space is passed on the stack
 after `siv`, so the frame of 2600 bytes holds the 2576 bytes of working
 space, a copy of `siv`, the word that stands for the return address and the
 address of the working space. The code's own calls use 16 bytes below it.
@@ -87,7 +87,7 @@ theorem init_framed (v : Ctr32Impl) :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackScratch 2568 .rcx (init v.expand v.callee v.suffix))
       (Spec.Siv.initContract X86_64.abi 2584) :=
-  X86_64.Verified.stackScratch (sig := Spec.Siv.initSig) (nm := "scratch") (e := .u64) (n := 320)
+  X86_64.Verified.stackScratchKept (sig := Spec.Siv.initSig) (nm := "scratch") (e := .u64) (n := 320)
     (pre := Spec.Siv.initPre X86_64.abi.ptrBits) (post := Spec.Siv.initPost X86_64.abi.ptrBits)
     (wa := true) (stack := 16) (bytes := 2568) (init_verified v) (by decide) (by decide) (by decide)
     (init_spSafe v) (init_xdepth v) initFrameSat_pre
@@ -108,7 +108,7 @@ theorem initS_framed (v : Ctr32Impl) (g : Proof.Aes.X86_64.Ctr32Small v.callee) 
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackScratch 1928 .rcx (initS v.expand v.callee v.suffix))
       (Spec.Siv.initContract X86_64.abi 1944) :=
-  X86_64.Verified.stackScratch (sig := Spec.Siv.initSig) (nm := "scratch") (e := .u64) (n := 240)
+  X86_64.Verified.stackScratchKept (sig := Spec.Siv.initSig) (nm := "scratch") (e := .u64) (n := 240)
     (pre := Spec.Siv.initPre X86_64.abi.ptrBits) (post := Spec.Siv.initPost X86_64.abi.ptrBits)
     (wa := true) (stack := 16) (bytes := 1928) (initS_verified v g) (by decide) (by decide) (by decide)
     (initS_spSafe v) (initS_xdepth v) initFrameSatS_pre
@@ -124,7 +124,7 @@ theorem initF_framed (v : Ctr32Impl) (f : Proof.Aes.X86_64.Ctr32Free v.callee) :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackScratch 88 .rcx (initF ekF v.callee v.suffix))
       (Spec.Siv.initContract X86_64.abi 104) :=
-  X86_64.Verified.stackScratch (sig := Spec.Siv.initSig) (nm := "scratch") (e := .u64) (n := 9)
+  X86_64.Verified.stackScratchKept (sig := Spec.Siv.initSig) (nm := "scratch") (e := .u64) (n := 9)
     (pre := Spec.Siv.initPre X86_64.abi.ptrBits) (post := Spec.Siv.initPost X86_64.abi.ptrBits)
     (wa := true) (stack := 16) (bytes := 88) (initF_verified v f) (by decide) (by decide) (by decide)
     (initF_spSafe v) (initF_xdepth v) initFrameSatF_pre
@@ -169,7 +169,7 @@ theorem encrypt_framed (v : UpdateImpl) :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 2600 1 (encrypt csImm dOff v.callee v.ctr.callee v.ctr.suffix))
       (Proof.AesSiv.encryptRoundsContract X86_64.abi 2616) :=
-  X86_64.Verified.stackArgScratchL (sig := Spec.Siv.encryptSig) (nm := "work") (e := .u64) (n := 322)
+  X86_64.Verified.stackArgScratchLKept (sig := Spec.Siv.encryptSig) (nm := "work") (e := .u64) (n := 322)
     (pre := Spec.Siv.encryptPre X86_64.abi.ptrBits) (post := Proof.AesSiv.encryptRoundsPost X86_64.abi.ptrBits)
     (wa := true) (stack := 16) (bytes := 2600) (encrypt_verified v) (by decide) (by decide) (by decide)
     (encrypt_spSafe (.inl rfl) v) (encrypt_xdepth (.inl rfl) v) (Proof.AesSiv.encryptPre_local _)
@@ -189,7 +189,7 @@ theorem encryptF_framed (v : UpdateImpl) (f : Proof.CmacAes.X86_64.UpdateFree v.
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 312 1 (encrypt csImmF dOffF v.callee v.ctr.callee v.ctr.suffix))
       (Proof.AesSiv.encryptRoundsContract X86_64.abi 328) :=
-  X86_64.Verified.stackArgScratchL (sig := Spec.Siv.encryptSig) (nm := "work") (e := .u64) (n := 36)
+  X86_64.Verified.stackArgScratchLKept (sig := Spec.Siv.encryptSig) (nm := "work") (e := .u64) (n := 36)
     (pre := Spec.Siv.encryptPre X86_64.abi.ptrBits) (post := Proof.AesSiv.encryptRoundsPost X86_64.abi.ptrBits)
     (wa := true) (stack := 16) (bytes := 312) (encryptF_verified v f fc) (by decide) (by decide) (by decide)
     (encrypt_spSafe (.inr (.inl rfl)) v) (encrypt_xdepth (.inr (.inl rfl)) v) (Proof.AesSiv.encryptPre_local _)
@@ -210,7 +210,7 @@ theorem encryptS_framed (v : UpdateImpl) (f : Proof.CmacAes.X86_64.UpdateSmall v
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 1960 1 (encrypt csImmS dOffS v.callee v.ctr.callee v.ctr.suffix))
       (Proof.AesSiv.encryptRoundsContract X86_64.abi 1976) :=
-  X86_64.Verified.stackArgScratchL (sig := Spec.Siv.encryptSig) (nm := "work") (e := .u64) (n := 242)
+  X86_64.Verified.stackArgScratchLKept (sig := Spec.Siv.encryptSig) (nm := "work") (e := .u64) (n := 242)
     (pre := Spec.Siv.encryptPre X86_64.abi.ptrBits) (post := Proof.AesSiv.encryptRoundsPost X86_64.abi.ptrBits)
     (wa := true) (stack := 16) (bytes := 1960) (encryptS_verified v f fc) (by decide) (by decide) (by decide)
     (encrypt_spSafe (.inr (.inr rfl)) v) (encrypt_xdepth (.inr (.inr rfl)) v) (Proof.AesSiv.encryptPre_local _)
@@ -230,7 +230,7 @@ theorem decrypt_framed (v : UpdateImpl) :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 2600 1 (decrypt csImm dOff v.callee v.ctr.callee v.ctr.suffix))
       (Proof.AesSiv.decryptRoundsContract X86_64.abi 2616) :=
-  X86_64.Verified.stackArgScratchL (sig := Spec.Siv.decryptSig) (nm := "work") (e := .u64) (n := 322)
+  X86_64.Verified.stackArgScratchLKept (sig := Spec.Siv.decryptSig) (nm := "work") (e := .u64) (n := 322)
     (pre := Spec.Siv.decryptPre X86_64.abi.ptrBits) (post := Proof.AesSiv.decryptRoundsPost X86_64.abi.ptrBits)
     (wa := true) (stack := 16) (bytes := 2600) (leak := some (Spec.Siv.decryptLeak X86_64.abi.ptrBits))
     (decrypt_verified v) (by decide) (by decide) (by decide) (decrypt_spSafe (.inl rfl) v)
@@ -248,7 +248,7 @@ theorem decryptF_framed (v : UpdateImpl) (f : Proof.CmacAes.X86_64.UpdateFree v.
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 312 1 (decrypt csImmF dOffF v.callee v.ctr.callee v.ctr.suffix))
       (Proof.AesSiv.decryptRoundsContract X86_64.abi 328) :=
-  X86_64.Verified.stackArgScratchL (sig := Spec.Siv.decryptSig) (nm := "work") (e := .u64) (n := 36)
+  X86_64.Verified.stackArgScratchLKept (sig := Spec.Siv.decryptSig) (nm := "work") (e := .u64) (n := 36)
     (pre := Spec.Siv.decryptPre X86_64.abi.ptrBits) (post := Proof.AesSiv.decryptRoundsPost X86_64.abi.ptrBits)
     (wa := true) (stack := 16) (bytes := 312) (leak := some (Spec.Siv.decryptLeak X86_64.abi.ptrBits))
     (decryptF_verified v f fc) (by decide) (by decide) (by decide) (decrypt_spSafe (.inr (.inl rfl)) v)
@@ -266,7 +266,7 @@ theorem decryptS_framed (v : UpdateImpl) (f : Proof.CmacAes.X86_64.UpdateSmall v
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 1960 1 (decrypt csImmS dOffS v.callee v.ctr.callee v.ctr.suffix))
       (Proof.AesSiv.decryptRoundsContract X86_64.abi 1976) :=
-  X86_64.Verified.stackArgScratchL (sig := Spec.Siv.decryptSig) (nm := "work") (e := .u64) (n := 242)
+  X86_64.Verified.stackArgScratchLKept (sig := Spec.Siv.decryptSig) (nm := "work") (e := .u64) (n := 242)
     (pre := Spec.Siv.decryptPre X86_64.abi.ptrBits) (post := Proof.AesSiv.decryptRoundsPost X86_64.abi.ptrBits)
     (wa := true) (stack := 16) (bytes := 1960) (leak := some (Spec.Siv.decryptLeak X86_64.abi.ptrBits))
     (decryptS_verified v f fc) (by decide) (by decide) (by decide) (decrypt_spSafe (.inr (.inr rfl)) v)

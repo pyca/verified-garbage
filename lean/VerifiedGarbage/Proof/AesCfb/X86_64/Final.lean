@@ -77,7 +77,7 @@ Constant time (`final_rel`): the blocks by the taint analysis, the calls by
 their contracts' constant time (`RelCT.callEx`, `blk_rel`), every address
 and branch from the pointers and `len`, which agree in both runs.
 `encryptFinal_framed` runs the code with `save` in a frame of 64 bytes on
-the stack (`Verified.stackArgScratch`), which the scrub after it zeroes.
+the stack (`Verified.stackArgScratchKept`), which the scrub after it zeroes.
 -/
 
 @[expose] public section
@@ -1122,7 +1122,7 @@ theorem encryptFinal_framed (v : BlocksImpl) :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 64 0 (encryptFinal v.enc v.suffix))
       (encryptFinalRoundsContract X86_64.abi 80) :=
-  X86_64.Verified.stackArgScratch (sig := Spec.Cfb.aesFinalSig) (nm := "save") (e := .u64) (n := 6)
+  X86_64.Verified.stackArgScratchKept (sig := Spec.Cfb.aesFinalSig) (nm := "save") (e := .u64) (n := 6)
     (pre := finalPre X86_64.abi.ptrBits) (post := encryptFinalPost X86_64.abi.ptrBits) (wa := false)
     (stack := 16) (bytes := 64) (encryptFinal_verified v) (by decide) (by decide) (by decide)
     (encryptFinal_spSafe v) (encryptFinal_xdepth v) (finalPre_local _) (encryptFinalPost_local _) encFrameSat_pre
@@ -1131,7 +1131,7 @@ theorem decryptFinal_framed (v : BlocksImpl) :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 64 0 (decryptFinal v.enc v.suffix))
       (decryptFinalRoundsContract X86_64.abi 80) :=
-  X86_64.Verified.stackArgScratch (sig := Spec.Cfb.aesFinalSig) (nm := "save") (e := .u64) (n := 6)
+  X86_64.Verified.stackArgScratchKept (sig := Spec.Cfb.aesFinalSig) (nm := "save") (e := .u64) (n := 6)
     (pre := finalPre X86_64.abi.ptrBits) (post := decryptFinalPost X86_64.abi.ptrBits) (wa := false)
     (stack := 16) (bytes := 64) (decryptFinal_verified v) (by decide) (by decide) (by decide)
     (decryptFinal_spSafe v) (decryptFinal_xdepth v) (finalPre_local _) (decryptFinalPost_local _) decFrameSat_pre

@@ -744,7 +744,7 @@ theorem openToSplit_wp {M : CtxMode} (F : OpenSplitFn M) {s : State} (hs : ToPre
   have h := lay hs
   have hn : 8 * frameRegs.length ≤ (s.gpr .rsp).toNat := by
     have := hs.w₁; simp only [List.length_cons, List.length_nil]; omega_using [this]
-  refine WP.frame (by simp) (by decide) (by decide) hn (WP.mono (body_wp F h) fun d hd => ?_)
+  refine WP.frameKept (by simp) (by decide) (by decide) hn (WP.mono (body_wp F h) fun d hd => ?_)
   refine ⟨by rw [hd.rsp, hP s], by rw [hd.wr, hPwr s], ⟨fun r hr => ?_, ?_, ?_⟩, ?_⟩
   · by_cases hsp : r = .rsp
     · subst hsp

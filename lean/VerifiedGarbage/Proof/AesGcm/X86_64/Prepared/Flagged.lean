@@ -588,7 +588,7 @@ theorem streamToFrameSatFlagged_pre {t : Nat} (ht : t ≤ 48) : ∃ s, (Proof.Ae
 theorem streamEncryptToFlagged_framed {t : Nat} (ht : t ≤ 48) (T : BlkToFn (CtxMode.flaggedT t)) (E : EncFn (CtxMode.flaggedT t)) :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 2232 3 (encrypt T.fn E.fn))
       (Proof.AesGcm.Flag.streamEncryptToFlaggedContract t X86_64.abi 4856) :=
-  X86_64.Verified.stackArgScratch (sig := Proof.AesGcm.Flag.streamEncryptToFlaggedSig) (nm := "scratch")
+  X86_64.Verified.stackArgScratchKept (sig := Proof.AesGcm.Flag.streamEncryptToFlaggedSig) (nm := "scratch")
     (e := .u64) (n := 274) (pre := Proof.AesGcm.Flag.streamEncryptToFlaggedPre t X86_64.abi.ptrBits)
     (post := Proof.Gcm.streamEncryptToPost X86_64.abi.ptrBits) (wa := true) (stack := 2624)
     (bytes := 2232) (streamEncryptToFlagged_core ht T E) (by decide) (by decide) (by decide)
@@ -708,7 +708,7 @@ theorem sealGatherFlagged_framed {t : Nat} (ht : t ≤ 48) (Sh : ShortFn (CtxMod
       (Impl.StackScratch.X86_64.withStackArgScratch 240 5
         (withFront long Sp.fn (sealGather Sh.quick Sh.fast Sh.test Sh.code I.fn A.fn T.fn F.fn inl)))
       (Proof.AesGcm.Flag.sealGatherFlaggedRoundsContract t X86_64.abi 5128) :=
-  X86_64.Verified.stackArgScratchL (sig := Spec.Gcm.sealGatherPreparedSig) (nm := "scratch") (e := .u64)
+  X86_64.Verified.stackArgScratchLKept (sig := Spec.Gcm.sealGatherPreparedSig) (nm := "scratch") (e := .u64)
     (n := 23) (pre := Proof.AesGcm.Flag.sealGatherFlaggedPre t X86_64.abi.ptrBits)
     (post := Proof.AesGcm.sealGatherRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 4888) (bytes := 240)
     (sealGatherFlagged_core ht Sh I A T F Sp long inl) (by decide) (by decide) (by decide)

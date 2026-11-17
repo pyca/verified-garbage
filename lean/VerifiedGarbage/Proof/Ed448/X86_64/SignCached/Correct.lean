@@ -669,7 +669,7 @@ theorem signCached_wp (hb : BaseOk v) {s : State} (hpre : (Spec.Ed448.signCached
   obtain hsp2 : s2.gpr .rsp = (slay s).B + BitVec.ofNat 64 464 := by rw [hg2 _ (by decide), slay_B]
   obtain hn : 8 * regs.length ≤ (s2.gpr .rsp).toNat := by
     rw [hg2 _ (by decide), regs_length]; have := h.sp; omega_arith
-  refine WP.frame (by decide) (by decide) (by decide) hn ?_
+  refine WP.frameKept (by decide) (by decide) (by decide) hn ?_
   obtain hc := entry_ctx hL hsp2 k2.2.1 k2.2.2 h11 (hg2 _ (by decide)) h10 (hg2 _ (by decide)) (hg2 _ (by decide))
     (hg2 _ (by decide)) (hg2 _ (by decide)) (hg2 _ (by decide))
   obtain hpk : Spec.Ed448.bytesAt s2.mem (slay s).pk 57 =

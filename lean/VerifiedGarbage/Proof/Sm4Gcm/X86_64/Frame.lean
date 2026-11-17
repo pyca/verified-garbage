@@ -696,10 +696,10 @@ bytes that a call of `vg_sm4_ctr32` takes. The working space is 2560 bytes for
 `init`, `seal` and `open`, and the 768 the streaming functions use for them
 (`vg_ghash`'s 256 at 512 the last). `init` and `stream_finish`, whose
 working space is their last argument in a register, have a frame of it and
-8 more bytes to keep `rsp` aligned (`Verified.stackScratch`): 2568 and 776.
+8 more bytes to keep `rsp` aligned (`Verified.stackScratchKept`): 2568 and 776.
 The working space of the others is their last argument, passed on the stack
 after the six argument registers and their other stack arguments: their
-frames (`Verified.stackArgScratch`) also hold a copy of those, 784 bytes for
+frames (`Verified.stackArgScratchKept`) also hold a copy of those, 784 bytes for
 `stream_encrypt`, `stream_decrypt` and `stream_verify` (none), 2592 for
 `seal` (two) and 2600 for `open` (three,
 and a leak, whether it succeeds, which reads only its buffers:
@@ -726,7 +726,7 @@ theorem initFrameSat_pre : ∃ s, (Spec.Sm4.Gcm.initContract X86_64.abi 5792).pr
 theorem init_framed :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratch 2568 .rdx init)
       (Spec.Sm4.Gcm.initContract X86_64.abi 5792) :=
-  X86_64.Verified.stackScratch (sig := Spec.Sm4.Gcm.initSig) (nm := "scratch") (e := .u64) (n := 320)
+  X86_64.Verified.stackScratchKept (sig := Spec.Sm4.Gcm.initSig) (nm := "scratch") (e := .u64) (n := 320)
     (post := Spec.Sm4.Gcm.initPost X86_64.abi.ptrBits) (wa := true) (stack := stkN) (bytes := 2568)
     init_verified (by decide) (by decide) (by decide) init_spSafe init_xdepth initFrameSat_pre
 
@@ -743,7 +743,7 @@ theorem streamEncrypt_framed :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 784 0 (streamEncrypt v.callees))
       (Spec.Sm4.Gcm.streamEncryptContract X86_64.abi 4008) :=
-  X86_64.Verified.stackArgScratch (sig := Spec.Sm4.Gcm.streamCryptSig) (nm := "scratch") (e := .u64)
+  X86_64.Verified.stackArgScratchKept (sig := Spec.Sm4.Gcm.streamCryptSig) (nm := "scratch") (e := .u64)
     (n := 96) (post := Spec.Sm4.Gcm.streamEncryptPost X86_64.abi.ptrBits) (wa := true)
     (stack := stkN) (bytes := 784) (streamEncrypt_verified v) (by decide) (by decide) (by decide)
     (streamEncrypt_spSafe v) (streamEncrypt_xdepth v) (Proof.Sm4Gcm.pre_local _ _)
@@ -758,7 +758,7 @@ theorem streamDecrypt_framed :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 784 0 (streamDecrypt v.callees))
       (Spec.Sm4.Gcm.streamDecryptContract X86_64.abi 4008) :=
-  X86_64.Verified.stackArgScratch (sig := Spec.Sm4.Gcm.streamCryptSig) (nm := "scratch") (e := .u64)
+  X86_64.Verified.stackArgScratchKept (sig := Spec.Sm4.Gcm.streamCryptSig) (nm := "scratch") (e := .u64)
     (n := 96) (post := Spec.Sm4.Gcm.streamDecryptPost X86_64.abi.ptrBits) (wa := true)
     (stack := stkN) (bytes := 784) (streamDecrypt_verified v) (by decide) (by decide) (by decide)
     (streamDecrypt_spSafe v) (streamDecrypt_xdepth v) (Proof.Sm4Gcm.pre_local _ _)
@@ -776,7 +776,7 @@ theorem streamFinish_framed :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackScratch 776 .r9 (streamFinish v.callees))
       (Spec.Sm4.Gcm.streamFinishContract X86_64.abi 4000) :=
-  X86_64.Verified.stackScratch (sig := Spec.Sm4.Gcm.streamFinishSig) (nm := "work") (e := .u64)
+  X86_64.Verified.stackScratchKept (sig := Spec.Sm4.Gcm.streamFinishSig) (nm := "work") (e := .u64)
     (n := 96) (post := Spec.Sm4.Gcm.streamFinishPost X86_64.abi.ptrBits) (wa := true)
     (stack := stkN) (bytes := 776) (streamFinish_verified v) (by decide) (by decide) (by decide)
     (streamFinish_spSafe v) (streamFinish_xdepth v) finFrameSat_pre
@@ -793,7 +793,7 @@ theorem streamVerify_framed :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 784 0 (streamVerify v.callees))
       (Spec.Sm4.Gcm.streamVerifyContract X86_64.abi 4008) :=
-  X86_64.Verified.stackArgScratch (sig := Spec.Sm4.Gcm.streamVerifySig) (nm := "work") (e := .u64)
+  X86_64.Verified.stackArgScratchKept (sig := Spec.Sm4.Gcm.streamVerifySig) (nm := "work") (e := .u64)
     (n := 96) (post := Spec.Sm4.Gcm.streamVerifyPost X86_64.abi.ptrBits) (wa := true)
     (stack := stkN) (bytes := 784) (streamVerify_verified v) (by decide) (by decide) (by decide)
     (streamVerify_spSafe v) (streamVerify_xdepth v) (Proof.Sm4Gcm.pre_local _ _)
@@ -813,7 +813,7 @@ theorem seal_framed :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 2592 2 («seal» v.callees))
       (Spec.Sm4.Gcm.sealContract X86_64.abi 5816) :=
-  X86_64.Verified.stackArgScratch (sig := Spec.Sm4.Gcm.sealSig) (nm := "work") (e := .u64)
+  X86_64.Verified.stackArgScratchKept (sig := Spec.Sm4.Gcm.sealSig) (nm := "work") (e := .u64)
     (n := 320) (post := Spec.Sm4.Gcm.sealPost X86_64.abi.ptrBits) (wa := true)
     (stack := stkN) (bytes := 2592) (seal_verified v) (by decide) (by decide) (by decide)
     (seal_spSafe v) (seal_xdepth v) (Proof.Sm4Gcm.pre_local _ _) (Proof.Sm4Gcm.sealPost_local _)
@@ -833,7 +833,7 @@ theorem open_framed :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 2600 3 («open» v.callees))
       (Spec.Sm4.Gcm.openContract X86_64.abi 5824) :=
-  X86_64.Verified.stackArgScratch (sig := Spec.Sm4.Gcm.openSig) (nm := "work") (e := .u64)
+  X86_64.Verified.stackArgScratchKept (sig := Spec.Sm4.Gcm.openSig) (nm := "work") (e := .u64)
     (n := 320) (post := Spec.Sm4.Gcm.openPost X86_64.abi.ptrBits) (wa := true)
     (stack := stkN) (leak := some (Spec.Sm4.Gcm.openLeak X86_64.abi.ptrBits)) (bytes := 2600)
     (open_verified v) (by decide) (by decide) (by decide) (open_spSafe v) (open_xdepth v)

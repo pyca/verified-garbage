@@ -1360,7 +1360,7 @@ end
 
 The streaming functions run their code, proved with the working space as an
 argument (`Verified.lean`), in a frame that allocates it
-(`Verified.stackScratch`): 8 bytes standing for the return address, then
+(`Verified.stackScratchKept`): 8 bytes standing for the return address, then
 the working space (120 bytes, and 160 for `absorb`).
 -/
 
@@ -1396,7 +1396,7 @@ theorem finishFrameSat_pre : ∃ s, (Spec.Cmac.tdesFinishContract X86_64.abi 128
 
 theorem init_framed : Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratch 128 .rcx streamInit)
     (Spec.Cmac.tdesStreamInitContract X86_64.abi 128) :=
-  X86_64.Verified.stackScratch (sig := Spec.Cmac.tdesStreamInitSig) (nm := "scratch") (e := .u64) (n := 15)
+  X86_64.Verified.stackScratchKept (sig := Spec.Cmac.tdesStreamInitSig) (nm := "scratch") (e := .u64) (n := 15)
     (pre := Spec.Cmac.tdesStreamInitPre X86_64.abi.ptrBits)
     (post := Spec.Cmac.tdesStreamInitPost X86_64.abi.ptrBits)
     (wa := false) (stack := 0) (bytes := 128) init_verified (by decide) (by decide) (by decide)
@@ -1404,14 +1404,14 @@ theorem init_framed : Verified X86_64.target (Impl.StackScratch.X86_64.withStack
 
 theorem absorb_framed : Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratch 168 .r8 absorb)
     (Spec.Cmac.tdesAbsorbContract X86_64.abi 168) :=
-  X86_64.Verified.stackScratch (sig := Spec.Cmac.tdesAbsorbSig) (nm := "scratch") (e := .u64) (n := 20)
+  X86_64.Verified.stackScratchKept (sig := Spec.Cmac.tdesAbsorbSig) (nm := "scratch") (e := .u64) (n := 20)
     (post := Spec.Cmac.tdesAbsorbPost X86_64.abi.ptrBits)
     (wa := false) (stack := 0) (bytes := 168) absorb_verified (by decide) (by decide) (by decide)
     (Code.all_of_spTest (by lit_decide)) (by lit_decide) absorbFrameSat_pre
 
 theorem finish_framed : Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratch 128 .rcx finish)
     (Spec.Cmac.tdesFinishContract X86_64.abi 128) :=
-  X86_64.Verified.stackScratch (sig := Spec.Cmac.tdesFinishSig) (nm := "scratch") (e := .u64) (n := 15)
+  X86_64.Verified.stackScratchKept (sig := Spec.Cmac.tdesFinishSig) (nm := "scratch") (e := .u64) (n := 15)
     (post := Spec.Cmac.tdesFinishPost X86_64.abi.ptrBits)
     (wa := false) (stack := 0) (bytes := 128) finish_verified (by decide) (by decide) (by decide)
     (Code.all_of_spTest (by lit_decide)) (by lit_decide) finishFrameSat_pre

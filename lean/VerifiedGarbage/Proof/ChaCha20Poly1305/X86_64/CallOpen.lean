@@ -617,7 +617,7 @@ theorem callOpen_ok (v : XorImpl) {h : State} (hs : CPre h) :
   have hB' := hs.hB_lt
   have hd := inner_xdepth v
   rw [callOpen_eq]
-  refine WP.frame (by decide) (by decide) (by decide) hn ?_
+  refine WP.frameKept (by decide) (by decide) (by decide) hn ?_
   refine WP.callF (k := sharedK) (inner_ok v) (SpSafe.of_all (inner_spSafe v)) (by omega_using [hd]) (hu.spre hs)
     (Covers.append_left (hu.rd_cov hs) (hu.wr_cov hs).right) (hu.wr_cov hs)
     fun s' rd' wr' cs' f' ⟨s₂, m₂, g₂, post₂⟩ mx' => ?_
@@ -664,7 +664,7 @@ theorem callOpen_okK (v : XorImpl) {h : State} (hs : CPre h) :
   have hB' := hs.hB_lt
   have hd := inner_xdepth v
   rw [callOpen_eq]
-  refine WP.frame (by decide) (by decide) (by decide) hn ?_
+  refine WP.frameKept (by decide) (by decide) (by decide) hn ?_
   refine WP.callF (k := sharedKL v) (inner_okL v) (SpSafe.of_all (inner_spSafe v)) (by omega_using [hd]) (hu.spre hs)
     (Covers.append_left (hu.rd_cov hs) (hu.wr_cov hs).right) (hu.wr_cov hs)
     fun s' rd' wr' cs' f' ⟨s₂, m₂, g₂, ⟨post₂, ks₂⟩⟩ mx' => ?_

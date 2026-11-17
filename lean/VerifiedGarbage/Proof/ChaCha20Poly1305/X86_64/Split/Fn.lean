@@ -934,7 +934,7 @@ theorem framed_ok {whole : Bool} {c : Prog isa} {k : Contract isa}
     hh.keep _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
   have hB := hs.fB_lt
   obtain hn : 8 * frameRegs.length ≤ (h.gpr .rsp).toNat := by rw [hsp']; have := hs.sp_lo; simp; omega_using [this]
-  refine WP.frame (by decide) (by decide) (by decide) hn ?_
+  refine WP.frameKept (by decide) (by decide) (by decide) hn ?_
   refine WP.seq (WP.mono (body_ok hs hh) fun u hu => ?_)
   refine WP.inlineF hv hsp (by omega_using [hd]) (hpre u hu)
     (Covers.append_left (Covers.append_left (hu.rdB_cov hs) (hmore u hu)) (hu.wrB_cov hs).right)
