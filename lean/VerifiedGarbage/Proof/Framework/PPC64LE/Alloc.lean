@@ -74,21 +74,6 @@ theorem WP.allocOf {bytes : Nat} {body : Prog isa} {s : State} {Q : State → Pr
     WP isa (.frame (.alloc bytes) body (.free bytes)) s Q :=
   WP.alloc hn hsp (WP.mono hb fun s₂ hq m u f => hQ s₂ m u f hq)
 
-/-- Superseded by `WP.alloc`, which holds whatever the freed frame's bytes hold: kept
-until the proofs that use it are moved over (see pyca/verified-garbage#5321). A frame of `bytes` bytes: its body runs from `allocated bytes s`, and the
-frame is freed to `freed bytes s₂`. -/
-theorem WP.allocKept {bytes : Nat} {body : Prog isa} {s : State} {Q : State → Prop}
-    (hn : 32 < bytes ∧ bytes < 4096 ∧ bytes % 16 = 0) (hsp : bytes ≤ s.sp.toNat)
-    (hb : WP isa body (allocated bytes s) fun s₂ => Q (freed bytes s₂)) :
-    WP isa (.frame (.alloc bytes) body (.free bytes)) s Q := by
-  obtain ⟨t, s₂, he, hq⟩ := hb
-  obtain ⟨-, hw, hp⟩ := Exec.rdwr he
-  have hf : isa.pop (.free bytes) (allocated bytes s) s₂ = some (freed bytes s₂) := by
-    show pop (.free bytes) (allocated bytes s) s₂ = some (freed bytes s₂)
-    unfold pop
-    exact ite_eq_left_of_eq_true _ _ (eq_true ⟨hn.1, hn.2.1, hn.2.2, hp, hw, rfl⟩) |>.trans rfl
-  exact ⟨_, _, Exec.frame (push_alloc hn hsp) he hf, hq⟩
-
 /-- Allocating and freeing a frame leaks the stack pointer, which the two
 runs agree on. -/
 theorem RelCT.alloc {bytes : Nat} {body : Prog isa} {P R : State → State → Prop}

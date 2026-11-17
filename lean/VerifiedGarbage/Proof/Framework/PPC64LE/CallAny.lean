@@ -261,48 +261,4 @@ theorem WP.frameRegAny {r : Reg} {main : Prog isa} {s₀ : State} {Q : State →
     intro m u f
     rw [e]; exact hq m u f
 
-/-- `WP.frameRegAny`, for a postcondition that holds whatever the frame's
-bytes and the unknowns are once it holds of the state the pop leads to
-(`hQ`, as `WP.frameRegOf`). -/
-theorem WP.frameRegAnyOf {r : Reg} {main : Prog isa} {s₀ : State} {Q : State → Prop}
-    (hsp : 48 ≤ s₀.sp.toNat) (hd : ∀ R ∈ s₀.wr, Region.Disjoint ⟨s₀.sp - 48 + 32, 16⟩ R)
-    (hmain : WP isa main (framed r s₀) fun s₂ => Q { s₂.write r (s₀.gpr r) with sp := s₀.sp })
-    (hn : sdepth main + 48 < 2 ^ 64)
-    (hQ : ∀ (s₂ : State) m u, Frame [⟨s₀.sp - 48, 48⟩] s₂.mem m →
-      Q { s₂.write r (s₀.gpr r) with sp := s₀.sp } →
-        Q { s₂.write r (s₀.gpr r) with sp := s₀.sp, mem := m, unknowns := u }
-      := by intro _ _ _ _ h; exact h) :
-    WP isa (.frame (.push r) main (.pop r)) s₀ Q :=
-  WP.frameRegAny hsp hd (WP.mono hmain fun s₂ hq m u f => hQ s₂ m u f hq) hn
-
-/-- Superseded by `WP.frameRegAny`, which holds whatever the released frame's bytes hold: kept
-until the proofs that use it are moved over (see pyca/verified-garbage#5321). `WP.frameRegKept` for a body with any frames. -/
-theorem WP.frameRegAnyKept {r : Reg} {main : Prog isa} {s₀ : State} {Q : State → Prop}
-    (hsp : 48 ≤ s₀.sp.toNat) (hd : ∀ R ∈ s₀.wr, Region.Disjoint ⟨s₀.sp - 48 + 32, 16⟩ R)
-    (hmain : WP isa main (framed r s₀) fun s₂ => Q { s₂.write r (s₀.gpr r) with sp := s₀.sp })
-    (hn : sdepth main + 48 < 2 ^ 64) :
-    WP isa (.frame (.push r) main (.pop r)) s₀ Q := by
-  refine WP.frameKept hsp (WP.narrowAny (rd := s₀.rd) (wr := s₀.wr) hmain ?_ ?_ ?_ (by omega_using [hn]))
-  · intro a n hi
-    exact InRegions_append_cons.mpr (.inr hi)
-  · intro a n hi
-    exact InRegions_append_cons (xs := []).mpr (.inr hi)
-  · intro s' hrd hwr hsp' hf hq
-    have hread : s'.mem.read (s'.sp + 32) 8 = s₀.gpr r := by
-      rw [hsp', show (pushed r s₀).sp = s₀.sp - 48 from rfl,
-        hf.read (r := ⟨s₀.sp - 48 + 32, 16⟩) (by simp [Region.Contains]) (fun R hR => ?_) (by decide)]
-      · exact read_write_self _ _ _
-      · rcases List.mem_append.mp hR with hR | hR
-        · exact hd R hR
-        · simp only [List.mem_singleton] at hR; subst hR
-          exact frame_not_below s₀.sp hn
-    have e : popped r s' = { (s'.withRegions s₀.rd s₀.wr).write r (s₀.gpr r) with sp := s₀.sp } := by
-      simp only [popped, hread]
-      simp only [hsp', hwr, pushed, List.tail_cons, BitVec.sub_add_cancel]
-      cases s'
-      simp only [pushed] at hrd
-      subst hrd
-      rfl
-    rw [e]; exact hq
-
 end VG.PPC64LE

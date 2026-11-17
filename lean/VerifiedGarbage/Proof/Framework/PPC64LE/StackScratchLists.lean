@@ -408,67 +408,6 @@ theorem Verified.stackScratchLists {c : Prog isa}
       hct _ _ _ _ _ _ (narrow_preLists hk hb hpre h₁) (narrow_preLists hk hb hpre h₂)
         (narrow_pubLists hk hb.1 h₁ h₂ hp hleak) f₁ f₂]
 
-/-- Superseded by `Verified.stackScratchLists`, which holds whatever the released frame's bytes hold: kept
-until the proofs that use it are moved over (see pyca/verified-garbage#5321). Code verified for a function whose last argument, in a register, is a
-scratch buffer of `n` elements `e`, with `stack` bytes of stack, is verified
-for the function without it, which allocates the buffer in a frame of
-`bytes` more bytes of stack (`withStackScratch`), with any leak, if its
-precondition, postcondition and leak read memory only within the function's
-buffers and its lists of slices (`hpre`, `hpost`, `hleak`, which holds of no
-leak). The signature may have lists of slices. -/
-theorem Verified.stackScratchListsKept {c : Prog isa}
-    (h : Verified target c (Sig.scratchContract abi sig nm e n pre post wa stack leak))
-    (hk : (sig.words abi.ptrBits).length < 8)
-    (hb : 32 < bytes ∧ bytes < 4096 ∧ bytes % 16 = 0 ∧ n * e.size + 32 ≤ bytes)
-    (hpre : ∀ vs m₁ m₂, vs.length = (sig.words abi.ptrBits).length →
-      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
-      (∀ r ∈ Sig.lists abi.ptrBits m₁ sig.params vs, ∀ a, r.Contains a 1 → m₁ a = m₂ a) →
-      Curry.apply (sig.words abi.ptrBits) pre vs m₁ → Curry.apply (sig.words abi.ptrBits) pre vs m₂)
-    (hpost : ∀ vs m₁ m₂ m' r, vs.length = (sig.words abi.ptrBits).length →
-      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
-      (∀ r ∈ Sig.lists abi.ptrBits m₁ sig.params vs, ∀ a, r.Contains a 1 → m₁ a = m₂ a) →
-      Curry.apply (sig.words abi.ptrBits) post vs m₁ m' r →
-        Curry.apply (sig.words abi.ptrBits) post vs m₂ m' r)
-    (hsat : ∃ s, (sig.contract abi pre post wa (stack + bytes)).pre s)
-    (hleak : Sig.LeakLocalL abi.ptrBits sig leak := by trivial) :
-    Verified target (withStackScratch bytes (argRegs.getD (sig.words abi.ptrBits).length .r3) c)
-      (sig.contract abi pre post wa (stack + bytes) leak) := by
-  obtain ⟨hcor, hct, -⟩ := h
-  have hlen := regArgs_length sig
-  have hrun : ∀ s, (sig.contract abi pre post wa (stack + bytes) leak).pre s → ∃ t s₃,
-      Exec isa c (narrow sig e n bytes s) t s₃ ∧
-      (Sig.scratchContract abi sig nm e n pre post wa stack leak).post (narrow sig e n bytes s) s₃ ∧
-      Exec isa (withStackScratch bytes (argRegs.getD (sig.words abi.ptrBits).length .r3) c) s
-        (.addr (s.sp - BitVec.ofNat 64 bytes) :: t) (popState bytes s s₃) ∧
-      abiPreserved s (popState bytes s s₃) ∧ (popState bytes s s₃).mem = s₃.mem ∧
-      (popState bytes s s₃).gpr = s₃.gpr := by
-    intro s hs
-    obtain ⟨t, s₃, he, ha, hq⟩ := hcor _ (narrow_preLists hk hb hpre hs)
-    obtain ⟨hex, habi, -, hg⟩ := withStackScratch_runLists hk hb hs he ha
-    exact ⟨t, s₃, he, hq, hex, habi, rfl, hg⟩
-  refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂ => ?_, hsat⟩
-  · obtain ⟨t, s₃, -, hq, hex, ha, hm, hg⟩ := hrun s hs
-    refine ⟨_, _, hex, ha, ?_⟩
-    rw [post_regs (by omega_arith)]
-    have hq' := (post_regs (sig := sig.withScratch nm e n)
-      (pre := Curry.withScratch abi.ptrBits nm e n sig.params pre)
-      (post := Curry.withScratch abi.ptrBits nm e n sig.params post)
-      (by rw [Sig.words_withScratch, List.length_append, List.length_singleton]; omega_arith)).mp hq
-    rw [narrow_regArgs hk] at hq'
-    rw [hm, hg]
-    have hq'' := Eq.mp (congrFun (congrFun (congrFun (Curry.apply_withScratch abi.ptrBits nm e n sig.params
-      post _ _ (hlen s (by omega_arith))) _) s₃.mem) _) hq'
-    have hag := narrow_agreeLists (e := e) (n := n) hk hb.1 hs
-    exact hpost _ _ _ _ _ (hlen s (by omega_arith))
-      (fun b hb' a ha => (hag b (List.mem_append_left _ hb') a ha).symm)
-      (fun r hr a ha => (hag (r, false) (List.mem_append_right _
-        (List.mem_map.mpr ⟨r, (narrow_listsL hk hb.1 hs) ▸ hr, rfl⟩)) a ha).symm) hq''
-  · obtain ⟨u₁, r₁, f₁, -, x₁, -⟩ := hrun s₁ h₁
-    obtain ⟨u₂, r₂, f₂, -, x₂, -⟩ := hrun s₂ h₂
-    rw [(Exec.det e₁ x₁).1, (Exec.det e₂ x₂).1, ((pub_regsLists (by omega_arith)).mp hp).1.1,
-      hct _ _ _ _ _ _ (narrow_preLists hk hb hpre h₁) (narrow_preLists hk hb hpre h₂)
-        (narrow_pubLists hk hb.1 h₁ h₂ hp hleak) f₁ f₂]
-
 end
 
 end VG.PPC64LE
