@@ -34,24 +34,6 @@ runs, checks every artifact and every file.
 
 open System
 
-/-- A shared library of the trusted base, as the lakefile names it
-(`libName`; see `Emit.lean`). -/
-def sharedLib (name : String) : FilePath :=
-  ".lake" / "build" / "lib" /
-    if System.Platform.isWindows then s!"{name}.dll"
-    else s!"lib{name}.{if System.Platform.isOSX then "dylib" else "so"}"
-
-/-- The libraries of the trusted base the driver loads for the named
-registration files and groups, each named after its target last: `NativeTCB`
-(what no target owns, which the others link) first, then each of their
-targets' (`NativeTCB<Target>`), with their shared libraries' paths. -/
-def nativeTCB (names : List String) : List (String × FilePath) :=
-  let targets := names.foldl (init := ([] : List String)) fun ts n =>
-    let t := (n.splitOn ".").getLastD ""
-    if ts.contains t then ts else ts ++ [t]
-  ("NativeTCB", sharedLib "VerifiedGarbage_NativeTCB") ::
-    targets.map fun t => (s!"NativeTCB{t}", sharedLib s!"VerifiedGarbage_NativeTCB{t}")
-
 def usage : String := "usage: lake env lean --run EmitOne.lean [--check] <Alg>.<Target> …"
 
 /-- The lines of a generated file that are not indented: its items, but not
@@ -89,6 +71,26 @@ def unreadFns (text : String) : Bool :=
   (fnNames text).length != ((topLines text).filter fun l =>
     l.contains "fn vg_" || l.contains "use self::vg_" || l.contains "pub use crate::").length
 
+/-- Lake's log `log` without its `info:` and `trace:` entries (each a line
+that starts with its level, and the lines after it that start with none)
+and the modules it replayed (`ℹ`), which `lake setup-file` reports when it
+fails to build a module, whatever `--log-level`: the profile each module
+records, and the command. -/
+def withoutInfo (log : String) : String := Id.run do
+  let levels := ["info:", "trace:", "warning:", "error:"]
+  let mut keep := true
+  let mut out := #[]
+  for line in log.splitOn "\n" do
+    if let some l := levels.find? (fun (l : String) => line.startsWith l) then
+      keep := l != "info:" && l != "trace:"
+    -- Lake's own lines: a module it replayed, or built, and the summary of a
+    -- failure. Any other line belongs to the entry before it.
+    else if line.startsWith "ℹ" then keep := false
+    else if ["✖", "⚠", "✔", "Some ", "- ", "Failed "].any (fun (p : String) => line.startsWith p) then
+      keep := true
+    if keep then out := out.push line
+  return "\n".intercalate out.toList
+
 /-- Runs a process, inheriting its output; its exit code. -/
 def runProc (cmd : String) (args : Array String) : IO UInt32 := do
   let child ← IO.Process.spawn { cmd, args }
@@ -112,26 +114,20 @@ def main (args : List String) : IO UInt32 := do
     unless regs.contains s!"VerifiedGarbage.Artifacts.{n}" do
       IO.eprintln s!"{n}: no registration file VerifiedGarbage/Artifacts/{n.replace "." "/"}.lean"
       return 2
-  -- Build what the driver imports, and the trusted base's shared libraries
-  -- (what no target owns, and their targets'); reporting warnings and
-  -- errors, not the profile every module records (`lakefile.toml`), which
-  -- Lake replays for each one it finds built.
-  let mods := regs
-  let libs := nativeTCB names
-  let code ← runProc "lake"
-    (#["build", "--log-level=warning"] ++ (libs.map fun (l, _) => s!"{l}:shared").toArray ++
-      (mods.map ("+" ++ ·)).toArray)
-  unless code == 0 do return code
   let driver : FilePath := ".lake" / "emit" / "One.lean"
   let out : FilePath := ".lake" / "emit" / "one"
   IO.FS.createDirAll ".lake/emit"
   if ← out.pathExists then IO.FS.removeDirAll out
   IO.FS.writeFile driver (VG.Emit.driver regs)
-  -- A module, run with Lake's setup for it (`Emit.lean`'s `main` says why).
+  -- A module, run with Lake's setup for it (`Emit.lean`'s `main` says why),
+  -- which builds what it imports: the registration files, what they import,
+  -- and the trusted base's shared libraries, which it loads (what no target
+  -- owns, and their targets'). On a failure, it reports the warnings and
+  -- errors, not the profile every module records (`lakefile.toml`).
   let setup : FilePath := ".lake" / "emit" / "One.json"
   let r ← IO.Process.output { cmd := "lake", args := #["setup-file", driver.toString] }
   unless r.exitCode == 0 do
-    IO.eprint r.stderr
+    IO.eprint (withoutInfo r.stderr)
     return r.exitCode
   IO.FS.writeFile setup r.stdout
   let code ← runProc (← IO.appPath).toString
