@@ -2948,11 +2948,3 @@ pub(crate) mod vg_p256_mul;
 #[rustfmt::skip]
 #[path = "internal/vg_p256_mul_umaal.rs"]
 pub(crate) mod vg_p256_mul_umaal;
-
-#[rustfmt::skip]
-#[path = "internal/vg_p256_point_double.rs"]
-pub(crate) mod vg_p256_point_double;
-
-#[rustfmt::skip]
-#[path = "internal/vg_p256_point_double_umaal.rs"]
-pub(crate) mod vg_p256_point_double_umaal;

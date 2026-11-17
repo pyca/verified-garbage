@@ -99,10 +99,8 @@ theorem verifyWith_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {extra : List
       rw [F₂.gx, F₂.gy, toM_cmont hc, toM_cmont hc, show toM c.C.p (2 ^ (64 * c.n))
         (wordsVal s₂.mem (ptr s₀ .r3) (c.sl ONEP) c.n) = 1 from h1]
       exact rep_affine' hC _ _
-    have hQ : Rep c.C (tmv c.C c.n (ptr s₀ .r3) s₂ (c.sl PX)) (tmv c.C c.n (ptr s₀ .r3) s₂ (c.sl PY))
-        (tmv c.C c.n (ptr s₀ .r3) s₂ (c.sl ONEP)) P := by
-      rw [h1]
-      exact peerPt_rep hC _ _ _ hM.px hM.py
+    have hQ : Rep c.C (tmv c.C c.n (ptr s₀ .r3) s₂ (c.sl PX)) (tmv c.C c.n (ptr s₀ .r3) s₂ (c.sl PY)) 1 P :=
+      peerPt_rep hC _ _ _ hM.px hM.py
     have hu : sv c (ptr s₀ .r3) s₂ U < 2 ^ (8 * c.C.len) := Nat.lt_trans hM.u_lt hc.n_enc
     have hv : sv c (ptr s₀ .r3) s₂ V < 2 ^ (8 * c.C.len) := Nat.lt_trans hM.v_lt hc.n_enc
     have h0 : c.qA0 = true → (Fin.ofNat c.C.p c.C.a : Fe c.C) = 0 ∧
@@ -110,12 +108,10 @@ theorem verifyWith_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {extra : List
       ⟨by simp only [Impl.Ecdsa.Arm.Cfg.qA0, Bool.and_eq_true, beq_iff_eq] at h; rw [h.2.1]; rfl, h1⟩
     refine pointsWith_ok hc hM
       (Q₁ := fun j X Y Z => Rep c.C X Y Z (mul (sv c (ptr s₀ .r3) s₂ U >>> j) (G c.C)))
-      (Q₂ := fun j X Y Z => Rep c.C X Y Z (mul (sv c (ptr s₀ .r3) s₂ V >>> j) P))
       (hMul s₂ hM syms₂)
       (step_rep' (L := c.ladderCfg) (base := ptr s₀ .r3) (s := s₂) hC hc.onG ha hb hG fun h => h0 (ha₁ h))
       (by rw [shiftRight_eq_zero hu, mul_zero_pt]; exact rep_infinity' hC)
-      (step_rep' (L := Impl.Ecdh.Arm.Cfg.ladderQ c) (base := ptr s₀ .r3) (s := s₂) hC hPc ha hb hQ h0)
-      (by rw [shiftRight_eq_zero hv, mul_zero_pt]; exact rep_infinity' hC)
+      hC hPc hQ hv
       fun s₃ hP => ?_
     refine WP.mono (vtail_ok hc hP) fun s' ⟨saved, sp, frame, xo, hxo, hx, ret⟩ =>
       ⟨⟨saved, sp, frame⟩, ?_⟩
@@ -172,7 +168,6 @@ theorem verifyWith_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {extra : List
 /-- The existing implementation is an instance of the generic verification pipeline. -/
 theorem verify_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : VPre c s₀) :
     WP isa (Impl.Ecdsa.Verify.Arm.Cfg.verify c) s₀ fun s' => VKeep s₀ s' ∧ VPost c s₀ s' :=
-  verifyWith_ok hc hC hp id (fun _ M _ => generatorWP_gen hc (by
-    rw [shiftRight_eq_zero (Nat.lt_trans M.u_lt hc.n_enc), mul_zero_pt]; exact rep_infinity' hC))
+  verifyWith_ok hc hC hp id (fun _ M _ => generatorWP_gen hc hC (Nat.lt_trans M.u_lt hc.n_enc))
 
 end VG.Proof.Ecdsa.Verify.Arm

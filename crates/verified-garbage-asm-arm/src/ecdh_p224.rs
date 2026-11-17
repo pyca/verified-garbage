@@ -2930,11 +2930,3 @@ pub(crate) mod vg_p224_mul;
 #[rustfmt::skip]
 #[path = "internal/vg_p224_mul_umaal.rs"]
 pub(crate) mod vg_p224_mul_umaal;
-
-#[rustfmt::skip]
-#[path = "internal/vg_p224_point_double.rs"]
-pub(crate) mod vg_p224_point_double;
-
-#[rustfmt::skip]
-#[path = "internal/vg_p224_point_double_umaal.rs"]
-pub(crate) mod vg_p224_point_double_umaal;

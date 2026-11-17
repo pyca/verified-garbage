@@ -322,9 +322,9 @@ theorem validate_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base si
 /-!
 ## `[d]P` and `Z^(p-2)`
 
-The signature's ladder with its point at `PX`, `PY`, `ONEP` (`ladderQ`),
-then the signature's power (`ladPow_ok`, as `stage₂`), for any invariant of
-the ladder: `Main.lean` gives the one of the group law, that `R` represents `[k >>> j]P`.
+`[k]P` for the point at `PX`, `PY` (`qMul`: by `vg_<curve>_mul`'s windows,
+or the signature's ladder with its point there, `ladderQ`), then the
+signature's power (`ladPow_ok`, as `stage₂`): `R` represents `[k]P`.
 -/
 
 /-- What the ladder and the power leave: `Q 0` accepts what `R` holds. -/
@@ -340,19 +340,21 @@ structure LadPost (c : Cfg) (base : Addr) (Q : Nat → Fe c.C → Fe c.C → Fe 
   rz_lt : sv c base s' RZ < c.C.p
 
 /-- `R = [k]P` (`qMul`: by the call or the ladder), from `R = O`, then
-`Z^(p-2)`, for any invariant `Q` that an iteration of the ladder keeps and
-that `Q (8 len)` accepts `O`, for the scalar `k` at `K`'s slot (the call) or
-whose bits are the table (the ladder). -/
-theorem ladPow_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size) (hf : Far s base 8192)
-    {g : Reg → BitVec 32}
-    (F : Fixed c base g s.mem) {k : Nat} {Q : Nat → Fe c.C → Fe c.C → Fe c.C → Prop}
-    (hstep : Step (Impl.Ecdh.Arm.Cfg.ladderQ c) c.C base s k Q c.qA0) (hO : Q (8 * c.C.len) 0 1 0)
+`Z^(p-2)`, for the affine point `P` of the curve at `PX`, `PY` and the scalar
+`k < 2^(8 len)` at `K`'s slot (the call) or whose bits are the table (the
+ladder). -/
+theorem ladPow_ok (hc : CfgOk c) (hC : Law c.C) {base : Addr} {s : State} (hs : Scr s base size)
+    (hf : Far s base 8192) {g : Reg → BitVec 32}
+    (F : Fixed c base g s.mem) {k : Nat} {P : Point c.C} (hP : onCurve c.C P = true)
+    (hG : Rep c.C (tmv c.C c.n base s (c.sl PX)) (tmv c.C c.n base s (c.sl PY)) 1 P)
+    (hkl : k < 2 ^ (8 * c.C.len))
     (hpx : sv c base s PX < c.C.p) (hpy : sv c base s PY < c.C.p)
     (hrx : sv c base s RX = 0) (hry : sv c base s RY = c.mont 1) (hrz : sv c base s RZ = 0)
     (hk : c.mul.isSome → sv c base s K = k)
     (ht₀ : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 0 + t)) = if k.testBit t then 1 else 0)
     (ht₁ : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 1 + t)) = if (c.C.p - 2).testBit t then 1 else 0)
-    {rest : Prog isa} {R : State → Prop} (h : ∀ s', LadPost c base Q s s' → WP isa rest s' R) :
+    {rest : Prog isa} {R : State → Prop}
+    (h : ∀ s', LadPost c base (fun j X Y Z => Rep c.C X Y Z (mul (k >>> j) P)) s s' → WP isa rest s' R) :
     WP isa (.seq (c.qMul PX PY) (.seq (pow c.powP c.SP c.umaal) rest)) s R := by
   have h0 := hc.n0
   have h7 := hc.n10
@@ -363,8 +365,8 @@ theorem ladPow_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size
   obtain henc : encodable (BitVec.ofNat 32 (64 * c.n)) = true := by
     have : ∀ n < 10, encodable (BitVec.ofNat 32 (64 * n)) = true := by decide
     exact this _ h7
-  refine WP.seq (WP.mono (qMul_ok hc hs hf F (px := PX) (py := PY) (by decide) hpx hpy hrx hry hrz hstep
-    hO hk (fun _ => ht₀))
+  refine WP.seq (WP.mono (qMul_ok hc hC hs hf F (px := PX) (py := PY) (by decide) hpx hpy hrx hry hrz hP
+    hG hkl hk (fun _ => ht₀))
     fun s₅ ⟨K₅, U₅, M₅, L₅, R₅⟩ => ?_)
   rw [VG.Proof.Weierstrass.Arm.Point.ladWp, ladWx_eq] at U₅
   obtain hs₅ := hs.of_rest K₅ (by decide)
@@ -384,9 +386,10 @@ theorem ladPow_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size
   obtain r₆ : ∀ {i}, i < 45 → i ∉ [ACC, PT, TMP] → sv c base s₆ i = sv c base s₅ i := fun hi h₁ =>
     sv_unch U₆ h7 hn hi (apart_slWk h7 hi h₁)
   refine ⟨hs₅.of_rest K₆ (by decide), K₅.trans K₆, U₅.trans U₆, ?_, lt₆, ?_, ?_⟩
-  · show Q 0 (toM _ _ (sv c base s₆ RX)) (toM _ _ (sv c base s₆ RY)) (toM _ _ (sv c base s₆ RZ))
+  · show Rep c.C (toM _ _ (sv c base s₆ RX)) (toM _ _ (sv c base s₆ RY)) (toM _ _ (sv c base s₆ RZ))
+      (mul (k >>> 0) P)
     rw [r₆ (i := RX) (by decide) (by decide), r₆ (i := RY) (by decide) (by decide),
-      r₆ (i := RZ) (by decide) (by decide)]
+      r₆ (i := RZ) (by decide) (by decide), Nat.shiftRight_zero]
     exact R₅
   · show _ = toM _ _ (sv c base s₆ RZ) ^ _
     rw [r₆ (i := RZ) (by decide) (by decide)]

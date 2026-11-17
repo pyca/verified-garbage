@@ -1,6 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.Weierstrass.Arm.LadderP
+public import VerifiedGarbage.Impl.Weierstrass.Arm.Window
+public import VerifiedGarbage.Impl.Weierstrass.JacMul
+public import VerifiedGarbage.Impl.Weierstrass.JacDblA
 public import VerifiedGarbage.Spec.Weierstrass
 public import VerifiedGarbage.Spec.Ecdsa
 public import VerifiedGarbage.Impl.Weierstrass.Layout.Mul
@@ -23,8 +26,9 @@ words; `n = 4` for the 256-bit curves), from the code of
    `R² mod n`, and the exponents `p - 2` and `n - 2`) are stored as
    immediates;
 2. the bits of `k`, `p - 2` and `n - 2` are expanded into tables;
-3. `R = [k]G` by the ladder from `R = O = (0 : 1 : 0)` (`ladderP`: by calls of
-   the point functions for coordinates of at most 6 words), then
+3. `R = [k]G` (`gen`: by `vg_<curve>_mul`'s windows for a curve that has the
+   function, else by the ladder from `R = O = (0 : 1 : 0)`, `ladderP`: by calls
+   of the point functions for coordinates of at most 6 words), then
    `x = X Z^(p-2)` (Montgomery's form left by a multiplication by 1) and
    `r = x mod n` (a conditional subtraction, as `x < p < 2n`);
 4. `s = k^(n-2) (e + r d) mod n`, in Montgomery form modulo `n`, then left;
@@ -307,33 +311,116 @@ def signWith (generator : Prog isa) : Prog isa :=
 /-! ## `vg_<curve>_mul`
 
 `[k]Q` (`Proof/Weierstrass/MulContract.lean`) as a function, which the signature,
-the public key, ECDH and verification call: the ladder of `ladderP`, its
-point at `ACC`, `PT`, `ONEP` (a copy of `Q`, which the contract has in
-`R`'s first two slots), over the bits of `k` at `K`'s slot; it keeps the
-callee-saved registers `r4`–`r9`, `r11` and `lr` past the numbered slots
-(slot 45's place, the start of the contract's tail, below the point
-functions' slots and the field arithmetic's own working space), and `r10`
-in `lr`, which the ladder keeps through its calls in registers alone (so a
-public `r10`, such as a caller's `out`, stays known to be public through the
-stores of secrets in memory); it returns with `r12` the working space. -/
+the public key, ECDH and verification call, for the affine point `Q` in `R`'s
+first two slots and the number `k` at `K`'s slot, in windows of `winW` bits:
 
-/-- The ladder of `vg_<curve>_mul`: the signature's, from the point at `ACC`,
-`PT`, `ONEP`. -/
-def mulLadder : LadderCfg := { c.ladderCfg with G := c.pt ACC PT ONEP }
+1. the table of `k`'s bits (table 0);
+2. the table of `[e]Q` for `e < 2^winW`, `24 n` bytes each in projective
+   coordinates, past the three tables of bits (`winTbl`): `O = (0 : 1 : 0)`
+   and `Q = (x : y : 1)`, then `[e + 1]Q = [e]Q + Q` by the complete addition,
+   in the slots `D` and `T`;
+3. from `R = O`, for the windows `j` from `winJ - 1` down to `0`,
+   `R = 2^winW R + [k_j]Q`:
+   * `R = 2^winW R` (`winQuad`): `R` in Jacobian coordinates, `winW`
+     doublings by the Jacobian formulas for the curve's `a` (`winDbl`)
+     between `D` and `T`, back in projective coordinates, and `Y = 1` where
+     `Z = 0`;
+   * the window `k_j` from the table of bits (`winDigit`, the comb's code),
+     and its entry by a scan of the whole table into `T` (`scan`);
+   * `D = R + T` by the complete addition, copied to `R`.
+
+The counters are `r11` (which the field arithmetic keeps) and, in the scan,
+`r7`; every address is `r12` plus a constant or a multiple of a counter.
+The function keeps the callee-saved registers `r4`–`r9`, `r11` and `lr`
+past the numbered slots (slot 45's place, the start of the contract's tail,
+below the field arithmetic's own working space), and `r10` in `lr`, which
+the calls of the field arithmetic keep in registers alone (so a public
+`r10`, such as a caller's `out`, stays known to be public through the stores
+of secrets in memory); it returns with `r12` the working space. -/
 
 /-- Where `vg_<curve>_mul` keeps the callee-saved registers but `r10`: past
 the numbered slots. -/
 def mulSaved : List (Reg × Nat) := (saved.filter (·.1 != .r10)).map fun (r, d) => (r, c.sl nslots + d)
 
-/-- `vg_<curve>_mul`'s body: the table of `k`'s bits, `Q` (in `R`'s first
-two slots) copied to `ACC` and `PT`, `R = O = (0 : 1 : 0)` (from zero and
-one), then `R = [k]Q` by the ladder. -/
+/-- The bits of a window: four, or three for coordinates of more than six
+words, whose sixteen multiples would not fit the working space past the
+tables of bits. -/
+def winW : Nat := if c.n ≤ 6 then 4 else 3
+
+/-- The windows of an encoded scalar's `8 len` bits. -/
+def winJ : Nat := (8 * c.C.len + c.winW - 1) / c.winW
+
+/-- Where the table of the point's multiples is: past the three tables of
+bits. -/
+def winTbl : Nat := bitsAt c.n 3
+
+/-- The Jacobian doubling of the curve: for `a = -3`, for `a = 0`, or for
+any `a`. -/
+def winDbl : RcbSlots → Pt → Pt → List FOp :=
+  if c.C.a + 3 = c.C.p then dblJMul else if c.C.a = 0 then dblJ0 else dblJa
+
+/-- Zero, as a point (`toJ` and `fromJ` add zero to copy). -/
+def zeroPt : Pt := c.pt ZERO ZERO ZERO
+
+/-- The comb whose code of a window's index and bits (`TCombCfg.windowIndex`,
+`lastTest`, `horner`) reads the windows of `winW` bits of table 0: only its
+`w`, `J` and table of bits are read. -/
+def winK : TCombCfg :=
+  { L := c.ladderCfg, F := c.SP, w := c.winW, J := c.winJ, tsym := "", start := (0, 0), one := c.sl ONEP,
+    zero := c.sl ZERO, neg := c.sl TMP, u := c.umaal }
+
+/-- The window `r11` of the scalar, into `r9`: of the bits it has, for the
+last one. -/
+def winDigit : Prog isa :=
+  .seq (.block c.winK.windowIndex) <| .seq (.block c.winK.lastTest) <|
+    .ite .eq (.block (c.winK.horner c.winK.topBits)) (.block (c.winK.horner c.winW))
+
+/-- `k` doublings from the Jacobian `p` (alternately into `q` and back), then
+`R` = the result in projective coordinates. -/
+def winDbls : Nat → Pt → Pt → Prog isa
+  | 0, p, _ => fprog c.SP (fromJ c.rcbSlots p c.zeroPt (c.pt RX RY RZ)) c.umaal
+  | k + 1, p, q => .seq (fprog c.SP (c.winDbl c.rcbSlots p q) c.umaal) (winDbls k q p)
+
+/-- `R = 2^winW R`: to Jacobian coordinates in `D`, the doublings between `D`
+and `T`, back to `R`, then `Y = 1` where `Z` is zero. -/
+def winQuad : Prog isa :=
+  .seq (fprog c.SP (toJ c.rcbSlots (c.pt RX RY RZ) c.zeroPt (c.pt DX DY DZ)) c.umaal) <|
+  .seq (c.winDbls c.winW (c.pt DX DY DZ) (c.pt TX TY TZ))
+    (.block (c.nonzero (c.sl RZ) ++ ([.mov .r10 (.reg .r5)] : List Instr) ++
+      sel (2 * c.n) (c.sl RY) (c.sl ONEP) (c.sl RY)))
+
+/-- One window: `r11 -= 1`, `R = 2^winW R`, the entry `T` of the window, and
+`R = R + T`. -/
+def winStep : Prog isa :=
+  .seq (.block [decCounter]) <| .seq c.winQuad <| .seq c.winDigit <|
+  .seq (scan (c.sl TX) (6 * c.n) (2 ^ c.winW) c.winTbl) <|
+  .seq (fprog c.SP (rcb c.rcbSlots (c.pt RX RY RZ) (c.pt TX TY TZ) (c.pt DX DY DZ)) c.umaal)
+    (.block (Point.copyPt c.n (c.pt RX RY RZ) (c.pt DX DY DZ) ++ [testCounter]))
+
+/-- Entry `r11 + 1` of the table: `T = D + Q`, stored, and `D = T`; then
+`r11 += 1`, and `Z` set once every entry is there. -/
+def winBuildStep : Prog isa :=
+  .seq (fprog c.SP (rcb c.rcbSlots (c.pt DX DY DZ) (c.pt RX RY ONEP) (c.pt TX TY TZ)) c.umaal) <|
+  .block (entryPtr (c.winTbl + 24 * c.n) (24 * c.n) ++ storePt c.n 0 (c.pt TX TY TZ) ++
+    Point.copyPt c.n (c.pt DX DY DZ) (c.pt TX TY TZ) ++
+    ([.dp .add .r11 .r11 (.imm 1), .cmp .r11 (.imm (BitVec.ofNat 32 (2 ^ c.winW - 1)))] : List Instr))
+
+/-- The table: `O`, `Q`, then `[e]Q` for `e` from 2. -/
+def winBuild : Prog isa :=
+  .seq (.block (farPtr .r5 c.winTbl ++ storePt c.n 0 (c.pt ZERO ONEP ZERO) ++
+    storePt c.n (24 * c.n) (c.pt RX RY ONEP) ++ Point.copyPt c.n (c.pt DX DY DZ) (c.pt RX RY ONEP) ++
+    ([.mov .r11 (.imm 1)] : List Instr)))
+    (.loop c.winBuildStep .ne)
+
+/-- `vg_<curve>_mul`'s body: the table of `k`'s bits, the table of the
+multiples of `Q` (in `R`'s first two slots), `R = O`, then `R = [k]Q` by the
+windows. -/
 def mulBody : Prog isa :=
   .seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) <|
-  .seq (.block (copy (2 * c.n) (c.sl ACC) (c.sl RX) ++ copy (2 * c.n) (c.sl PT) (c.sl RY) ++
-    copy (2 * c.n) (c.sl RX) (c.sl ZERO) ++ copy (2 * c.n) (c.sl RY) (c.sl ONEP) ++
-    copy (2 * c.n) (c.sl RZ) (c.sl ZERO)))
-    (Point.ladderP c.mulLadder c.SP false c.umaal)
+  .seq c.winBuild <|
+  .seq (.block (Point.copyPt c.n (c.pt RX RY RZ) (c.pt ZERO ONEP ZERO) ++
+    ([.mov .r11 (.imm (BitVec.ofNat 32 c.winJ))] : List Instr)))
+    (.loop c.winStep .ne)
 
 /-- `vg_<curve>_mul`: the working space from `r0` to `r12`, the callee-saved
 registers kept around the body (`mulSaved`, and `r10` in `lr`). -/
