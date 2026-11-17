@@ -68,11 +68,6 @@ theorem frameStart_frame (s : State) (rs : List Reg) (notSp : .rsp ∉ rs)
         show 8 + (272 + 8 * rs.length) = 272 + 8 * (rs.length + 1) by omega_using []]
       exact Region.sub_prefix (by omega_using [])
 
-theorem frameEnd_mem (s : State) (rs : List Reg) : (frameEnd s rs).mem = s.mem := by
-  induction rs with
-  | nil => exact popped_mem ..
-  | cons r rs ih => exact (popped_mem ..).trans ih
-
 end VG.Proof.Argon2.X86_64.Derive
 end
 

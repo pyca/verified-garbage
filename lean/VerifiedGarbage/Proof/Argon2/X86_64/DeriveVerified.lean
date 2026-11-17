@@ -1125,6 +1125,27 @@ theorem return_post {s t : State} (done : BodyDone s t) :
     X86_64.argRegs, X86_64.stackArg, X86_64.stackArgAddr, List.range, List.range.loop]
   exact post
 
+/-- `return_post`, whatever the released frame's bytes hold: the output lies
+outside it. -/
+theorem return_post_lost {s t : State} (h : AbiEnvironment s) (done : BodyDone s t) {m : Mem}
+    {u : Nat → BitVec 64} (fm : Frame [below (s.gpr .rsp) 320] t.mem m) :
+    (Spec.Argon2.deriveContract X86_64.abi 344).post s
+      { frameEnd t Impl.Argon2.X86_64.Derive.saved with mem := m, unknowns := u } := by
+  have mem : (abiOutput s, true) ∈ abiBuffers s ++ [(abiArguments s, false)] :=
+    List.mem_append_left _ (List.mem_append_right _
+      (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _))))
+  have hd : (abiOutput s).Disjoint (below (s.gpr .rsp) 320) := fun x h₁ h₂ =>
+    h.reserved _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)) _ mem x
+      (below_sub (by decide) (by decide) x h₂) h₁
+  have post := done.post
+  sig_post [Spec.Argon2.deriveContract, Spec.Argon2.deriveSig, X86_64.abi,
+    X86_64.argRegs, X86_64.stackArg, X86_64.stackArgAddr, List.range, List.range.loop] at post
+  sig_post [Spec.Argon2.deriveContract, Spec.Argon2.deriveSig, X86_64.abi,
+    X86_64.argRegs, X86_64.stackArg, X86_64.stackArgAddr, List.range, List.range.loop]
+  rw [← post]
+  simp only [Spec.Blake2.bytesAt]
+  exact List.map_congr_left fun i hi => lost_byte fm hd (List.mem_range.mp hi)
+
 theorem code_wp [CompressImpl] (v : Proof.Blake2.X86_64.Backend) (name : String) (s : State)
     (pre : (Spec.Argon2.deriveContract X86_64.abi 344).pre s) :
     WP isa (Impl.Argon2.X86_64.Derive.code name (HPrime.hash v)) s fun t =>
@@ -1136,7 +1157,7 @@ theorem code_wp [CompressImpl] (v : Proof.Blake2.X86_64.Backend) (name : String)
     (by have space := h.stack; change 320 ≤ (s.gpr .rsp).toNat; omega_using [space])
   refine (body_ok v name s h).mono ?_
   intro t done
-  refine ⟨done.sp, done.wr, return_post done, ?_, ?_⟩
+  refine ⟨done.sp, done.wr, fun m u fm => ⟨return_post_lost h done fm, ?_, ?_⟩⟩
   · have restored := frame_restored s t Impl.Argon2.X86_64.Derive.saved (by decide) (by decide)
       (by have space := h.stack; change 320 ≤ (s.gpr .rsp).toNat; omega_using [space]) done.sp
       (fun j hj => done.saved h j hj)
@@ -1146,8 +1167,10 @@ theorem code_wp [CompressImpl] (v : Proof.Blake2.X86_64.Backend) (name : String)
     rcases member r hr with rfl | hr
     · exact stack
     · exact restored r hr
-  · rw [frameEnd_mem]
-    exact done.whole_frame h
+  · refine (done.whole_frame h).trans (fm.sub ?_)
+    intro r hr
+    simp only [List.mem_singleton] at hr; subst r
+    exact ⟨below (s.gpr .rsp) 344, by simp [wholeWrites], below_sub (by decide) (by decide)⟩
 
 end VG.Proof.Argon2.X86_64.Derive
 end
