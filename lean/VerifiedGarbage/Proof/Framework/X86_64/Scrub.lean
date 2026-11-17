@@ -7,12 +7,16 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Depth
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueKeep
 public import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
 public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubPaths
 import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.X86_64.Inline
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Framework.X86_64.Frame
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.Proof.Framework.X86_64.UpperLock
+import VerifiedGarbage.Proof.Framework.X86_64.CallInline
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
@@ -1206,20 +1210,11 @@ theorem slot_not_below {sp x : Addr} {n : Nat} (hn : n + 8 < 2 ^ 64)
 
 /-! ## The unknowns two runs use
 
-Two runs of code without indirect calls (`icallFree`) along the same trace,
-from the same unknowns, end with the same unknowns: each call and each
-frame's release uses a number of unknowns its instruction fixes, and the
-trace says which way each branch went (`Exec.unknowns_agree`). -/
-
-/-- Code without indirect calls (`Code.icall`). -/
-def icallFree : Prog isa → Bool
-  | .block _ => true
-  | .seq a b => icallFree a && icallFree b
-  | .ite _ t e => icallFree t && icallFree e
-  | .loop b _ => icallFree b
-  | .call _ b => icallFree b
-  | .frame _ b _ => icallFree b
-  | .icall .. => false
+Two runs along the same trace, from the same unknowns, whose functions
+called indirectly have the same addresses, end with the same unknowns:
+each call and each frame's release uses a number of unknowns its
+instruction fixes, the trace says which way each branch went, and which
+function each indirect call called (`Exec.unknowns_agree`). -/
 
 local macro "uk_leaf" : tactic => `(tactic| first
   | exact Pres.none'
@@ -1256,14 +1251,6 @@ private theorem exec_unknowns_pres (i : Instr) (s : State) :
 
 private theorem exec_unknowns {i : Instr} {s s' : State} (h : exec i s = some s') : s'.unknowns = s.unknowns :=
   exec_unknowns_pres i s s' h
-
-theorem srcAddrs_length (s s' : State) (src : Src) : (srcAddrs s src).length = (srcAddrs s' src).length := by
-  cases src <;> rfl
-
-/-- Every run of an instruction makes the same number of observations. -/
-theorem addrs_length (i : Instr) (s s' : State) : (addrs i s).length = (addrs i s').length := by
-  cases i <;> simp only [addrs, List.length_cons, List.length_nil, List.length_map, List.length_range]
-  all_goals first | rfl | exact srcAddrs_length _ _ _
 
 theorem execBlock_unknowns : ∀ {is : List Instr} {s₁ s₂ a b : State} {t₁ t₂ : List Leak},
     execBlock isa is s₁ = some (a, t₁) → execBlock isa is s₂ = some (b, t₂) →
@@ -1317,76 +1304,76 @@ theorem ret_unknowns {s₁ s₂ s' : State} (h : isa.ret s₁ s₂ = some s') : 
 theorem branch_ne {r₁ r₂ : List Leak} : Leak.branch true :: r₁ ≠ Leak.branch false :: r₂ := by
   intro h; cases h
 
-/-- Two runs of code without indirect calls from the same unknowns, one of
-whose traces is a prefix of the other's continued, have the same trace and
-end with the same unknowns. -/
+/-- Two runs of code from the same unknowns, whose functions called
+indirectly have the same addresses (`UpperLock.inames`), one of whose
+traces is a prefix of the other's continued, have the same trace and end
+with the same unknowns. -/
 theorem Exec.unknowns_agree {c : Prog isa} {s₁ s₁' : State} {t₁ : List Leak} (e₁ : Exec isa c s₁ t₁ s₁') :
-    icallFree c = true → ∀ {s₂ s₂' : State} {t₂ : List Leak} (r₁ r₂ : List Leak), Exec isa c s₂ t₂ s₂' →
+    ∀ {s₂ s₂' : State} {t₂ : List Leak} (r₁ r₂ : List Leak), Exec isa c s₂ t₂ s₂' →
+      (∀ n ∈ UpperLock.inames c, s₁.syms n = s₂.syms n) →
       s₁.unknowns = s₂.unknowns → t₁ ++ r₁ = t₂ ++ r₂ → t₁ = t₂ ∧ s₁'.unknowns = s₂'.unknowns := by
   induction e₁ with
   | block h₁ =>
-    intro _ _ _ _ r₁ r₂ e₂ hu ht
+    intro _ _ _ r₁ r₂ e₂ _ hu ht
     cases e₂ with
     | block h₂ =>
       obtain ⟨hl, ha, hb⟩ := execBlock_unknowns h₁ h₂
       exact ⟨(List.append_inj ht hl).1, ha.trans (hu.trans hb.symm)⟩
-  | seq _ _ ih₁ ih₂ =>
-    intro hc _ _ _ r₁ r₂ e₂ hu ht
-    simp only [icallFree, Bool.and_eq_true] at hc
+  | seq x₁ _ ih₁ ih₂ =>
+    intro _ _ _ r₁ r₂ e₂ hf hu ht
+    simp only [UpperLock.inames, List.mem_append] at hf
     cases e₂ with
     | seq a₂ b₂ =>
       rw [List.append_assoc, List.append_assoc] at ht
-      obtain ⟨rfl, hu'⟩ := ih₁ hc.1 _ _ a₂ hu ht
-      obtain ⟨rfl, hu''⟩ := ih₂ hc.2 _ _ b₂ hu' (List.append_cancel_left ht)
+      obtain ⟨rfl, hu'⟩ := ih₁ _ _ a₂ (fun n hn => hf n (.inl hn)) hu ht
+      obtain ⟨rfl, hu''⟩ := ih₂ _ _ b₂ (fun n hn => by rw [Exec.syms x₁, Exec.syms a₂]; exact hf n (.inr hn))
+        hu' (List.append_cancel_left ht)
       exact ⟨rfl, hu''⟩
   | iteT _ _ ih =>
-    intro hc _ _ _ r₁ r₂ e₂ hu ht
-    simp only [icallFree, Bool.and_eq_true] at hc
+    intro _ _ _ r₁ r₂ e₂ hf hu ht
+    simp only [UpperLock.inames, List.mem_append] at hf
     cases e₂ with
     | iteT _ a₂ =>
       simp only [List.cons_append, List.cons.injEq, true_and] at ht
-      obtain ⟨rfl, hu'⟩ := ih hc.1 _ _ a₂ hu ht
+      obtain ⟨rfl, hu'⟩ := ih _ _ a₂ (fun n hn => hf n (.inl hn)) hu ht
       exact ⟨rfl, hu'⟩
     | iteF _ _ => exact absurd ht branch_ne
   | iteF _ _ ih =>
-    intro hc _ _ _ r₁ r₂ e₂ hu ht
-    simp only [icallFree, Bool.and_eq_true] at hc
+    intro _ _ _ r₁ r₂ e₂ hf hu ht
+    simp only [UpperLock.inames, List.mem_append] at hf
     cases e₂ with
     | iteT _ _ => exact absurd ht.symm branch_ne
     | iteF _ a₂ =>
       simp only [List.cons_append, List.cons.injEq, true_and] at ht
-      obtain ⟨rfl, hu'⟩ := ih hc.2 _ _ a₂ hu ht
+      obtain ⟨rfl, hu'⟩ := ih _ _ a₂ (fun n hn => hf n (.inr hn)) hu ht
       exact ⟨rfl, hu'⟩
   | loopExit _ _ ih =>
-    intro hc _ _ _ r₁ r₂ e₂ hu ht
-    simp only [icallFree] at hc
+    intro _ _ _ r₁ r₂ e₂ hf hu ht
     cases e₂ with
     | loopExit b₂ _ =>
       rw [List.append_assoc, List.append_assoc] at ht
-      obtain ⟨rfl, hu'⟩ := ih hc _ _ b₂ hu ht
+      obtain ⟨rfl, hu'⟩ := ih ([.branch false] ++ r₁) ([.branch false] ++ r₂) b₂ hf hu ht
       exact ⟨rfl, hu'⟩
     | loopNext b₂ _ _ =>
       rw [List.append_assoc, List.append_assoc] at ht
-      obtain ⟨rfl, -⟩ := ih hc _ _ b₂ hu ht
+      obtain ⟨rfl, -⟩ := ih _ _ b₂ hf hu ht
       exact absurd (List.append_cancel_left ht).symm branch_ne
-  | loopNext _ _ _ ih₁ ih₂ =>
-    intro hc _ _ _ r₁ r₂ e₂ hu ht
-    simp only [icallFree] at hc
+  | loopNext x₁ _ _ ih₁ ih₂ =>
+    intro _ _ _ r₁ r₂ e₂ hf hu ht
     cases e₂ with
     | loopExit b₂ _ =>
       rw [List.append_assoc, List.append_assoc] at ht
-      obtain ⟨rfl, -⟩ := ih₁ hc _ _ b₂ hu ht
+      obtain ⟨rfl, -⟩ := ih₁ _ _ b₂ hf hu ht
       exact absurd (List.append_cancel_left ht) branch_ne
     | loopNext b₂ _ n₂ =>
       rw [List.append_assoc, List.append_assoc] at ht
-      obtain ⟨rfl, hu'⟩ := ih₁ hc _ _ b₂ hu ht
+      obtain ⟨rfl, hu'⟩ := ih₁ _ _ b₂ hf hu ht
       have ht' := List.append_cancel_left ht
       simp only [List.cons_append, List.cons.injEq, true_and] at ht'
-      obtain ⟨rfl, hu''⟩ := ih₂ hc _ _ n₂ hu' ht'
+      obtain ⟨rfl, hu''⟩ := ih₂ _ _ n₂ (fun n hn => by rw [Exec.syms x₁, Exec.syms b₂]; exact hf n hn) hu' ht'
       exact ⟨rfl, hu''⟩
   | @call _ _ s₀ _ s₂ _ _ hc₁ _ hr ih =>
-    intro hc s₀' _ _ r₁ r₂ e₂ hu ht
-    simp only [icallFree] at hc
+    intro s₀' _ _ r₁ r₂ e₂ hf hu ht
     cases e₂ with
     | @call _ _ _ _ s₂' _ _ hc₂ b₂ hr₂ =>
       rw [List.append_assoc, List.append_assoc, List.append_assoc, List.append_assoc] at ht
@@ -1394,7 +1381,9 @@ theorem Exec.unknowns_agree {c : Prog isa} {s₁ s₁' : State} {t₁ : List Lea
           (List.map Leak.addr (isa.callAddrs s₀')).length := by
         simp only [List.length_map]; rfl
       obtain ⟨h₀, ht'⟩ := List.append_inj ht hl
-      obtain ⟨rfl, hu'⟩ := ih hc _ _ b₂ (by rw [call_unknowns hc₁, call_unknowns hc₂, hu]) ht'
+      obtain ⟨rfl, hu'⟩ := ih _ _ b₂ (fun n hn => by
+        rw [UpperLock.call_syms hc₁, UpperLock.call_syms hc₂]; exact hf n hn)
+        (by rw [call_unknowns hc₁, call_unknowns hc₂, hu]) ht'
       have hl' : (List.map Leak.addr (isa.retAddrs s₂)).length =
           (List.map Leak.addr (isa.retAddrs s₂')).length := by
         simp only [List.length_map]; rfl
@@ -1402,22 +1391,69 @@ theorem Exec.unknowns_agree {c : Prog isa} {s₁ s₁' : State} {t₁ : List Lea
       refine ⟨by rw [h₀, h₃], ?_⟩
       rw [ret_unknowns hr, ret_unknowns hr₂, hu']
   | @frame i j _ s₀ _ s₂ _ _ hp _ hq ih =>
-    intro hc s₀' _ _ r₁ r₂ e₂ hu ht
-    simp only [icallFree] at hc
+    intro s₀' _ _ r₁ r₂ e₂ hf hu ht
     cases e₂ with
     | @frame _ _ _ _ _ s₂' _ _ hp₂ b₂ hq₂ =>
       rw [List.append_assoc, List.append_assoc, List.append_assoc, List.append_assoc] at ht
       have hl : (List.map Leak.addr (isa.addrs i s₀)).length = (List.map Leak.addr (isa.addrs i s₀')).length := by
         simp only [List.length_map]; exact addrs_length i s₀ s₀'
       obtain ⟨h₀, ht'⟩ := List.append_inj ht hl
-      obtain ⟨rfl, hu'⟩ := ih hc _ _ b₂ (by rw [push_unknowns hp, push_unknowns hp₂, hu]) ht'
+      obtain ⟨rfl, hu'⟩ := ih _ _ b₂ (fun n hn => by rw [push_syms hp, push_syms hp₂]; exact hf n hn)
+        (by rw [push_unknowns hp, push_unknowns hp₂, hu]) ht'
       have hl' : (List.map Leak.addr (isa.addrs j s₂)).length = (List.map Leak.addr (isa.addrs j s₂')).length := by
         simp only [List.length_map]; exact addrs_length j s₂ s₂'
       have h₃ := (List.append_inj (List.append_cancel_left ht') hl').1
       refine ⟨by rw [h₀, h₃], ?_⟩
       rw [pop_unknowns hq, pop_unknowns hq₂, hu']
-  | icall => intro hc; simp [icallFree] at hc
-  | icallNext => intro hc; simp [icallFree] at hc
+  | @icall i _ _ _ s₀ _ s₂ _ _ hi₁ hc₁ _ hr₁ ih =>
+    intro s₀' _ _ r₁ r₂ e₂ hf hu ht
+    have hn := hf _ (List.mem_cons_self ..)
+    cases e₂ with
+    | @icall _ _ _ _ _ _ s₂' _ _ hi₂ hc₂ x₂ hr₂ =>
+      simp only [List.append_assoc, List.cons_append] at ht
+      have hl : (List.map Leak.addr (isa.addrs i s₀)).length = (List.map Leak.addr (isa.addrs i s₀')).length := by
+        simp only [List.length_map]; exact addrs_length i s₀ s₀'
+      obtain ⟨h₀, ht'⟩ := List.append_inj ht hl
+      simp only [List.cons.injEq] at ht'
+      obtain ⟨ha, ht'⟩ := ht'
+      have hl₂ : (List.map Leak.addr (isa.callAddrs s₀)).length =
+          (List.map Leak.addr (isa.callAddrs s₀')).length := by
+        simp only [List.length_map]; rfl
+      obtain ⟨h₁, ht''⟩ := List.append_inj ht' hl₂
+      obtain ⟨rfl, hu'⟩ := ih _ _ x₂ (fun m hm => by
+        rw [UpperLock.call_syms hc₁, UpperLock.call_syms hc₂]; exact hf m (by simp [UpperLock.inames, hm]))
+        (by rw [call_unknowns hc₁, call_unknowns hc₂, hu]) ht''
+      have hl' : (List.map Leak.addr (isa.retAddrs s₂)).length =
+          (List.map Leak.addr (isa.retAddrs s₂')).length := by
+        simp only [List.length_map]; rfl
+      have h₃ := (List.append_inj (List.append_cancel_left ht'') hl').1
+      refine ⟨by rw [h₀, ha, h₁, h₃], ?_⟩
+      rw [ret_unknowns hr₁, ret_unknowns hr₂, hu']
+    | icallNext hi₂ hne₂ x₂ =>
+      exfalso
+      obtain ⟨a₂, rest, hi₂', ht₂⟩ := UpperLock.icall_trace x₂
+      rw [hi₂] at hi₂'; cases hi₂'
+      rw [ht₂] at ht
+      simp only [List.append_assoc, List.cons_append] at ht
+      obtain ⟨-, ht⟩ := UpperLock.append_cancel (by simp only [List.length_map]; exact addrs_length _ _ _) ht
+      simp only [List.cons.injEq, Leak.addr.injEq] at ht
+      apply hne₂
+      rw [← ht.1, hn]
+  | icallNext hi₁ hne₁ x₁ ih =>
+    intro _ _ _ r₁ r₂ e₂ hf hu ht
+    cases e₂ with
+    | icallNext hi₂ hne₂ x₂ =>
+      exact ih _ _ x₂ (fun m hm => hf m (List.mem_cons_of_mem _ (List.mem_append_right _ hm))) hu ht
+    | icall hi₂ hc₂ x₂ hr₂ =>
+      exfalso
+      obtain ⟨a₁, rest, hi₁', ht₁⟩ := UpperLock.icall_trace x₁
+      rw [hi₁] at hi₁'; cases hi₁'
+      rw [ht₁] at ht
+      simp only [List.append_assoc, List.cons_append] at ht
+      obtain ⟨-, ht⟩ := UpperLock.append_cancel (by simp only [List.length_map]; exact addrs_length _ _ _) ht
+      simp only [List.cons.injEq, Leak.addr.injEq] at ht
+      apply hne₁
+      rw [ht.1]; exact (hf _ (List.mem_cons_self ..)).symm
 
 /-- Two runs of `c` leave the same bytes in the `stack` bytes below the stack
 pointer on entry but those `wipe ks cs` zeroes. -/
@@ -1464,7 +1500,8 @@ theorem Verified.scrubM {c : Prog isa} {v f : VecLevel} {xs : List XReg} {ps gs 
     (hgk : ∀ r ∈ scratchRegs, r ∉ gs → r ∉ ps → ∀ i ∈ instrs c, Taint.clobbers i r = false) :
     Verified target (Impl.Scrub.X86_64.scrub v (sig.retBits A.ptrBits) xs ps gs ks cs c f)
         (sig.contract A pre post wa stack leak) ∧
-      (icallFree c = true → NoResidue (Impl.Scrub.X86_64.scrub v (sig.retBits A.ptrBits) xs ps gs ks cs c f)
+      ((∀ s₁ s₂, (sig.contract A pre post wa stack leak).pub s₁ s₂ → ∀ n ∈ UpperLock.inames c, s₁.syms n = s₂.syms n) →
+        NoResidue (Impl.Scrub.X86_64.scrub v (sig.retBits A.ptrBits) xs ps gs ks cs c f)
         (sig.contract A pre post wa stack leak) (sig.retBits A.ptrBits)) := by
   have hnps : ∀ r, r ∉ scratchRegs → r ∉ ps := fun r h h' => h (ht.psOk r h')
   have hngs : ∀ r, r ∉ scratchRegs → r ∉ gs := fun r h h' => h (ht.gsOk r h')
@@ -1507,7 +1544,7 @@ theorem Verified.scrubM {c : Prog isa} {v f : VecLevel} {xs : List XReg} {ps gs 
     · subst h0; simp [Region.Contains] at hb
     · exact ((contract_pre_scrub hA hs).2 r hr).2 h0 x hb hx
   refine ⟨⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂ => ?_, hsat⟩,
-    fun hic s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp ho hun e₁ e₂ => ?_⟩
+    fun hsy s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp ho hun e₁ e₂ => ?_⟩
   · -- Correctness.
     obtain ⟨t, u, he, -⟩ := hcor s hs
     obtain ⟨ha, hq, hr, hl⟩ := run s t u hs he
@@ -1550,7 +1587,7 @@ theorem Verified.scrubM {c : Prog isa} {v f : VecLevel} {xs : List XReg} {ps gs 
     obtain ⟨m₁, -, rfl, hmo₁, ht₁⟩ := tail s₁ _ _ _ _ h₁ a₁ b₁
     obtain ⟨m₂, -, rfl, hmo₂, ht₂⟩ := tail s₂ _ _ _ _ h₂ a₂ b₂
     -- The two runs of `c` have the same trace, so they end with the same unknowns.
-    obtain ⟨-, hU⟩ := Exec.unknowns_agree a₁ hic [] [] a₂ hun
+    obtain ⟨-, hU⟩ := Exec.unknowns_agree a₁ [] [] a₂ (hsy _ _ hp) hun
       (by rw [List.append_nil, List.append_nil]; exact hct _ _ _ _ _ _ h₁ h₂ hp a₁ a₂)
     obtain ⟨ha₁, -, -, -⟩ := run s₁ _ _ h₁ a₁
     obtain ⟨ha₂, -, -, -⟩ := run s₂ _ _ h₂ a₂
@@ -1697,7 +1734,8 @@ theorem Verified.scrub {c : Prog isa} {v : VecLevel} {xs : List XReg} {ps gs : L
     (hgk : ∀ r ∈ scratchRegs, r ∉ gs → r ∉ ps → ∀ i ∈ instrs c, Taint.clobbers i r = false) :
     Verified target (Impl.Scrub.X86_64.scrub v (sig.retBits A.ptrBits) xs ps gs ks cs c)
         (sig.contract A pre post wa stack leak) ∧
-      (icallFree c = true → NoResidue (Impl.Scrub.X86_64.scrub v (sig.retBits A.ptrBits) xs ps gs ks cs c)
+      ((∀ s₁ s₂, (sig.contract A pre post wa stack leak).pub s₁ s₂ → ∀ n ∈ UpperLock.inames c, s₁.syms n = s₂.syms n) →
+        NoResidue (Impl.Scrub.X86_64.scrub v (sig.retBits A.ptrBits) xs ps gs ks cs c)
         (sig.contract A pre post wa stack leak) (sig.retBits A.ptrBits)) :=
   Verified.scrubM hA h hsp hd hcs hst hv (fun i hi => Nat.le_trans (vecLevelR_le i) (hlv i hi))
     (fun hne => MxSame.of_fun ⟨id, fun _ _ _ he => Exec.mxcsr (fun i hi => noLoad_of_vecLevel (by
@@ -2044,6 +2082,50 @@ theorem evexReg_all {c : Prog isa} {v : VecLevel} {stack : Nat} (h8 : stack % 8 
   · exact evexOk_all v (fun b hb => (chunks_valid h8 b hb).2.2) (by rw [chunks_sum]; exact (hev e).1)
       (by rw [chunks_sum]; omega_using [hst]) hp e
 
+/-- The functions the tables `ts` name. -/
+def tableFns (ts : List (String × List FnTable)) : List String := ts.flatMap fun t => t.2.flatMap (·.fns)
+
+theorem contract_pub {A : Abi isa} {sig : Sig} {pre : Curry (sig.words A.ptrBits) (Mem → Prop)}
+    {post : sig.Post A.ptrBits} {wa : Bool} {stack : Nat}
+    {leak : Option (Curry (sig.words A.ptrBits) (Mem → List Nat))} {s₁ s₂ : State}
+    (h : (sig.contract A pre post wa stack leak).pub s₁ s₂) : A.pub s₁ s₂ := by
+  simp only [Sig.contract] at h
+  split at h
+  · exact h.elim
+  · cases leak with
+    | none => exact h.1
+    | some f => exact h.1.1
+
+/-- The functions of the tables have the same addresses in two runs that agree on what is public. -/
+theorem tables_pub_syms {A : Abi isa} {sig : Sig} {ts : List (String × List FnTable)} {pm : Bool}
+    {s₁ s₂ : State} (h : ((A.withTables sig ts).withMode pm).pub s₁ s₂) :
+    ∀ f ∈ tableFns ts, s₁.syms f = s₂.syms f := by
+  have h' : (A.withTables sig ts).pub s₁ s₂ := by
+    cases pm
+    · exact h
+    · exact h.1
+  intro f hf
+  cases ts with
+  | nil => simp [tableFns] at hf
+  | cons t ts => exact h'.2.1 f hf
+
+/-- The code calls indirectly only the functions of the tables `ts`, whose
+addresses two runs agree on (`tables_pub_syms`). -/
+def tablesCall (c : Prog isa) (ts : List (String × List FnTable)) : Bool :=
+  (UpperLock.inames c).all fun f => decide (f ∈ tableFns ts)
+
+theorem tablesCall_syms {api : Api} {r : Registration api target} (h : tablesCall r.code r.tables = true)
+    {A : Abi isa} {pre : Curry (api.sig.words A.ptrBits) (Mem → Prop)} {post : api.sig.Post A.ptrBits}
+    {wa : Bool} {stack : Nat} {leak : Option (Curry (api.sig.words A.ptrBits) (Mem → List Nat))}
+    (hA : A = ((abi.withConsts r.consts).withTables api.sig r.tables).withMode api.pubMode) :
+    ∀ s₁ s₂, (api.sig.contract A pre post wa stack leak).pub s₁ s₂ →
+      ∀ n ∈ UpperLock.inames r.code, s₁.syms n = s₂.syms n := by
+  subst hA
+  intro s₁ s₂ hp n hn
+  have := List.all_eq_true.mp h n hn
+  simp only [decide_eq_true_eq] at this
+  exact tables_pub_syms (contract_pub hp) n this
+
 /-- `r`'s code, scrubbed as `scrubRegE` does, returns without secret residue. -/
 theorem scrubCodeE_noResidue {api : Api} (r : Registration api target) (v : VecLevel) (ks : List Nat)
     (hd : r.code.x86_64Depth ≤ r.stack) (hst : r.stack + 8 < 2 ^ 64) (h8 : r.stack % 8 = 0)
@@ -2052,7 +2134,7 @@ theorem scrubCodeE_noResidue {api : Api} (r : Registration api target) (v : VecL
     (hrb : api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits ≤ 32 ∨ api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits = 64)
     (hpost : PostOut r.contract (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits))
     (hres : ResOk r.code r.contract r.stack ks (chunks r.stack)) (he : EvexReg r.code v ks r.stack)
-    (hic : icallFree r.code = true) :
+    (hic : tablesCall r.code r.tables = true) :
     NoResidue (scrub v (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
       (xsOf r.code ks) (psOf ks) (gsOf Taint.clobbers r.code) ks (chunks r.stack) r.code) r.contract
       (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits) := by
@@ -2066,7 +2148,7 @@ theorem scrubCodeE_noResidue {api : Api} (r : Registration api target) (v : VecL
   exact (Verified.scrubM (ScrubAbi.of r.consts api.sig r.tables api.pubMode) hv (SpSafe.of_all r.spSafe) hd
     (chunks_sum r.stack) hst (chunks_valid h8)
     (fun i hi => by simpa using Code.all_instrs hlv i hi) (fun hne => MxSame.of_fun (mxFun_of (hmx hne))) hrb' hp hr (tailOk_of _ _ _) (xs_of _ _) he.1 he.2
-    (gs_of _ _)).2 hic
+    (gs_of _ _)).2 (tablesCall_syms hic rfl)
 
 /-- `r`, scrubbed: its code followed by the clearing (`scrub`), at level `v`,
 with the granules `ks` of `r.stack` bytes of stack wiped. -/
@@ -2106,9 +2188,10 @@ def scrubRegE {api : Api} (r : Registration api target) (v : VecLevel) (ks : Lis
   extra := r.extra
   vendor := r.vendor
   notWith := r.notWith
-  -- Without residue for code without indirect calls, whose two runs use the
-  -- same unknowns (`Exec.unknowns_agree`); the emitter refuses any other.
-  residue := if hic : icallFree r.code = true then
+  -- Without residue for code that calls indirectly only its tables' functions,
+  -- whose two runs use the same unknowns (`Exec.unknowns_agree`); the emitter
+  -- refuses any other.
+  residue := if hic : tablesCall r.code r.tables = true then
     some ⟨scrubCodeE_noResidue r v ks hd hst h8 hlv hmx hrb hpost hres he hic⟩ else none
 
 /-- `Code.all p` implies `Code.all q` if `p` implies `q`. -/
@@ -2162,7 +2245,7 @@ theorem scrubReg_noResidue {api : Api} (r : Registration api target) (v : VecLev
     (hrb : api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits ≤ 32 ∨ api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits = 64)
     (hpost : PostOut r.contract (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits))
     (hres : ResOk r.code r.contract r.stack ks (chunks r.stack)) (hw : r.written = [])
-    (hne : v ≠ .evex := by decide) (hic : icallFree r.code = true) :
+    (hne : v ≠ .evex := by decide) (hic : tablesCall r.code r.tables = true) :
     NoResidue (scrubReg r v ks hd hst h8 hlv hrb hpost hres hw hne).code r.contract (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits) :=
   scrubCodeE_noResidue r v ks hd hst h8 (allR_of_all hlv) (mxOk_of_all hlv) hrb hpost hres (evexReg_of_ne hne) hic
 
