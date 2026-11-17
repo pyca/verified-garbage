@@ -861,7 +861,7 @@ theorem withStackArgScratch_run {c : Prog isa} (hA : ArgsOk sig)
   have hex := Exec.frame hpush (Exec.seq (Exec.block hrun) hw) hpop
   simp only [isa, addrs, List.map_nil, List.nil_append, List.append_nil] at hex
   have hP : ∀ q ∈ preserved, q ≠ .x16 ∧ q ≠ .x17 := by decide
-  refine ⟨hex, ⟨fun q hq => ?_, rfl, fun q hq => ?_⟩, Frame.refl _ _, rfl⟩
+  refine ⟨hex, ⟨fun q hq => ?_, rfl, fun q hq => ?_⟩, lose_frame _ _ _ _, rfl⟩
   · show s₃.gpr q = s.gpr q
     rw [ha.1 q hq]
     exact hg q (hP q hq).1 (hP q hq).2

@@ -133,11 +133,14 @@ theorem WP.frame {r r' : Reg} {body : Prog isa} {s : State} {Q : State → Prop}
     WP isa (.frame (.push r) body (.pop r')) s Q := by
   obtain ⟨t, s₂, he, hq⟩ := hb
   obtain ⟨-, hw, hp⟩ := Exec.rdwr he
-  have hpop : isa.pop (.pop r') (pushed r s) s₂ = some (popped r' s₂) := by
-    show pop (.pop r') (pushed r s) s₂ = some (popped r' s₂)
+  have hpop : isa.pop (.pop r') (pushed r s) s₂ = some { popped r' s₂ with
+      mem := lose s₂.mem s₂.sp 16 s₂.unknowns, unknowns := fun k => s₂.unknowns (k + 4) } := by
+    show pop (.pop r') (pushed r s) s₂ = _
     unfold pop
     exact ite_eq_left_of_eq_true _ _ (eq_true ⟨hp, hw, rfl⟩) |>.trans rfl
-  exact ⟨_, _, Exec.frame (push_pushed hsp) he hpop, hq _ _ (Frame.refl _ _)⟩
+  have hl : Frame [⟨s.sp - 16, 16⟩] s₂.mem (lose s₂.mem s₂.sp 16 s₂.unknowns) := by
+    rw [show s.sp - 16 = s₂.sp from hp.symm]; exact lose_frame _ _ _ _
+  exact ⟨_, _, Exec.frame (push_pushed hsp) he hpop, hq _ _ hl⟩
 
 /-- State after reserving a contiguous stack buffer. Its contents are unspecified. -/
 def allocated (bytes : Nat) (s : State) : State :=
@@ -167,10 +170,13 @@ theorem WP.alloc {bytes : Nat} {body : Prog isa} {s : State} {Q : State → Prop
   have ha : isa.push (.alloc bytes) s = some (allocated bytes s) := by
     simp only [isa, push, hn.1, hn.2.1, hn.2.2, hsp, and_self, ite_true]
     rfl
-  have hf : isa.pop (.free bytes) (allocated bytes s) s₂ = some (freed bytes s₂) := by
+  have hf : isa.pop (.free bytes) (allocated bytes s) s₂ = some { freed bytes s₂ with
+      mem := lose s₂.mem s₂.sp bytes s₂.unknowns, unknowns := fun k => s₂.unknowns (k + bytes / 4) } := by
     simp only [freed, isa, pop, hn.1, hn.2.1, hn.2.2, hp, hw, allocated,
       List.head?_cons, and_self, ite_true]
-  exact ⟨_, _, Exec.frame ha he hf, hq _ _ (Frame.refl _ _)⟩
+  have hl : Frame [⟨s.sp - BitVec.ofNat 64 bytes, bytes⟩] s₂.mem (lose s₂.mem s₂.sp bytes s₂.unknowns) := by
+    rw [show s.sp - BitVec.ofNat 64 bytes = s₂.sp from hp.symm]; exact lose_frame _ _ _ _
+  exact ⟨_, _, Exec.frame ha he hf, hq _ _ hl⟩
 
 /-- Running code without frames that was proven on narrower permissions: if,
 from `s` with its permissions narrowed to `rd` and `wr`, the code terminates
@@ -243,10 +249,14 @@ theorem push_mem {r : Reg} {s s₁ : State} (h : isa.push (.push r) s = some s�
   simp only [isa, push] at h
   split at h <;> cases h; exact ⟨_, rfl, rfl, rfl⟩
 
-theorem pop_mem {j : Instr} {s₁ s₂ s' : State} (h : isa.pop j s₁ s₂ = some s') : s'.mem = s₂.mem := by
+/-- The memory after a pop differs from the body's only in the frame it
+releases, the head of the regions the push left. -/
+theorem pop_mem {j : Instr} {s₁ s₂ s' : State} (h : isa.pop j s₁ s₂ = some s') :
+    ∃ n, s₁.wr.head? = some ⟨s₁.sp, n⟩ ∧ Frame [⟨s₁.sp, n⟩] s₂.mem s'.mem := by
   cases j <;> simp only [isa, pop, reduceCtorEq] at h
   all_goals split at h <;> cases h
-  all_goals rfl
+  · next hc => exact ⟨_, hc.2.2.2.2.2, hc.2.2.2.1 ▸ lose_frame _ _ _ _⟩
+  · next hc => exact ⟨16, hc.2.2, hc.1 ▸ lose_frame _ _ _ _⟩
 
 /-- Code changes memory only within the regions it may write and within
 `16 * aarch64Depth` bytes below the stack pointer (its frames). -/
@@ -299,19 +309,23 @@ theorem Exec.frameSp {c : Prog isa} {s s' : State} {t : List Leak} (h : Exec isa
       simp only [Code.aarch64Depth, Instr.frameUnits] at hd ⊢
       rw [show 16 * (b.aarch64Depth + 1) = 16 * b.aarch64Depth + 16 by omega_using []] at hd ⊢
       obtain ⟨v, m₁, w₁, p₁⟩ := push_mem hp
-      rw [pop_mem hq]
+      obtain ⟨n, hn, f₂⟩ := pop_mem hq
+      rw [w₁, p₁, List.head?_cons, Option.some.injEq, Region.mk.injEq] at hn
+      rw [p₁, ← hn.2] at f₂
       have f₁ := ih (by omega_using [hd])
       rw [w₁, p₁, m₁] at f₁
       have f₀ : Frame (s₀.wr ++ [below s₀.sp (16 * b.aarch64Depth + 16)]) s₀.mem
           (s₀.mem.write (s₀.sp - 16) 8 v) :=
         Frame.write (Frame.refl _ _) (List.mem_append_right _ (List.mem_singleton_self _)) _
           (below_frame_contains s₀.sp _ hd)
-      refine Frame.trans f₀ (Frame.sub f₁ fun r hr => ?_)
-      simp only [List.cons_append, List.mem_cons, List.mem_append, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | hr | rfl
-      · exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), below_frame s₀.sp _ hd⟩
-      · exact ⟨r, List.mem_append_left _ hr, fun _ h => h⟩
-      · exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), below_body s₀.sp _⟩
+      refine Frame.trans (Frame.trans f₀ (Frame.sub f₁ fun r hr => ?_)) (Frame.sub f₂ fun r hr => ?_)
+      · simp only [List.cons_append, List.mem_cons, List.mem_append, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | hr | rfl
+        · exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), below_frame s₀.sp _ hd⟩
+        · exact ⟨r, List.mem_append_left _ hr, fun _ h => h⟩
+        · exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), below_body s₀.sp _⟩
+      · simp only [List.mem_singleton] at hr; subst hr
+        exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), below_frame s₀.sp _ hd⟩
 
     case alloc bytes =>
       simp only [isa, push] at hp
@@ -320,20 +334,25 @@ theorem Exec.frameSp {c : Prog isa} {s s' : State} {t : List Leak} (h : Exec isa
       cases hp
       have heq : 16 * (bytes / 16) = bytes := by omega_using [hc]
       simp only [Code.aarch64Depth, Instr.frameUnits, Nat.mul_add, heq] at hd ⊢
-      rw [pop_mem hq]
+      obtain ⟨n, hn, f₂⟩ := pop_mem hq
+      simp only [List.head?_cons, Option.some.injEq, Region.mk.injEq] at hn
+      rw [← hn.2] at f₂
       have f₁ := ih (by omega_using [hd])
-      refine Frame.sub f₁ fun r hr => ?_
-      simp only [List.cons_append, List.mem_cons, List.mem_append,
-        List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | hr | rfl
-      · exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _),
+      refine Frame.trans (Frame.sub f₁ fun r hr => ?_) (Frame.sub f₂ fun r hr => ?_)
+      · simp only [List.cons_append, List.mem_cons, List.mem_append,
+          List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | hr | rfl
+        · exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _),
+            below_sub (by omega_using []) hd⟩
+        · exact ⟨r, List.mem_append_left _ hr, fun _ h => h⟩
+        · refine ⟨_, List.mem_append_right _ (List.mem_singleton_self _), ?_⟩
+          intro x hx
+          simp only [Region.Contains] at hx ⊢
+          rw [BitVec.sub_sub, ← BitVec.ofNat_add, Nat.add_comm bytes] at hx
+          omega_using [hx]
+      · simp only [List.mem_singleton] at hr; subst hr
+        exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _),
           below_sub (by omega_using []) hd⟩
-      · exact ⟨r, List.mem_append_left _ hr, fun _ h => h⟩
-      · refine ⟨_, List.mem_append_right _ (List.mem_singleton_self _), ?_⟩
-        intro x hx
-        simp only [Region.Contains] at hx ⊢
-        rw [BitVec.sub_sub, ← BitVec.ofNat_add, Nat.add_comm bytes] at hx
-        omega_using [hx]
 
 /-- Calling verified code that may have frames: as `WP.call`, but the
 callee may also change the `16 * aarch64Depth` bytes below the stack pointer.
