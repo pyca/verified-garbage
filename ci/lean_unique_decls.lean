@@ -7,9 +7,9 @@ declare the same name in a way Lean refuses ("environment already contains").
   lake env lean --run ../ci/lean_unique_decls.lean .lake/build/lib/lean
 
 Run from `lean/` after a full build. Reads the `.olean` of every module under
-the directory, prints one line `NAME MODULE MODULE` for each name that two of
-them declare and that `importModules` would reject, and fails if there is
-one.
+the directory whose source file is still there, prints one line
+`NAME MODULE MODULE` for each name that two of them declare and that
+`importModules` would reject, and fails if there is one.
 
 Lean accepts a name that two modules declare only as the same theorem, with
 the same statement and universe parameters (`subsumesInfo` in
@@ -37,20 +37,25 @@ def compatible (a b : ConstantInfo) : Bool :=
     | .axiomInfo x, .axiomInfo y => x.isUnsafe == y.isUnsafe
     | _, _ => false
 
-/-- The module whose `.olean` is `f`, under `root`. -/
-def moduleOf (root f : System.FilePath) : Name :=
+/-- The path of `f`'s module under `root`, without its extension: that of its
+source file under `lean/`. -/
+def stemOf (root f : System.FilePath) : String :=
   let rel := (f.toString.drop (root.toString.length + 1)).toString
-  (rel.dropEnd ".olean".length).toString.splitOn "/" |>.foldl Name.str .anonymous
+  (rel.dropEnd ".olean".length).toString
 
 unsafe def main (args : List String) : IO UInt32 := do
   let [dir] := args | throw <| .userError "usage: lean_unique_decls.lean DIR"
   let root : System.FilePath := dir
   let files ← root.walkDir
   let oleans := (files.filter (·.toString.endsWith ".olean")).qsort (·.toString < ·.toString)
+  -- Only modules that still exist: a build restored from the cache keeps the
+  -- outputs of modules deleted since, which a pull request's build does not
+  -- prune (`lean_shards.py prune`).
+  let oleans ← oleans.filterM fun f => (System.FilePath.mk (stemOf root f ++ ".lean")).pathExists
   let mut seen : Std.HashMap Name (ConstantInfo × Name) := {}
   let mut clashes := 0
   for f in oleans do
-    let m := moduleOf root f
+    let m := (stemOf root f).splitOn "/" |>.foldl Name.str .anonymous
     -- The regions stay mapped: the constants read from them are kept.
     let (md, _) ← readModuleData f
     for c in md.constants do
