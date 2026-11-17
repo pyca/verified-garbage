@@ -117,7 +117,49 @@ def WinDblOk (C : Curve) (dbl : RcbSlots → Pt → Pt → List FOp) : Prop :=
       InvJ C (e 11) (e 12) (e 13) Q →
       InvJ C (runOps N e 6) (runOps N e 7) (runOps N e 8) (Spec.Weierstrass.add Q Q)
 
+/-- `add` adds two points of `C`: the same numbered field operations `N`
+(`ofN`) wherever it runs, which, from representatives of two points of `C` in
+`p` (`11`–`13`) and `q` (`14`–`16`), `q`'s `Z` being one if `affine`, and the
+curve's `a` and `3b` in their slots (`9`, `10`), leave one of the points' sum
+in `o` (`6`–`8`). -/
+def WinAddOk (C : Curve) (affine : Bool) (add : RcbSlots → Pt → Pt → Pt → List FOp) : Prop :=
+  ∃ N : List FOp, NumOk N ∧ (∀ S p q o, add S p q o = ofN N S p q o) ∧
+    ∀ (e : Nat → Fe C) {P Q : Point C}, onCurve C P = true → onCurve C Q = true →
+      e 9 = Fin.ofNat C.p C.a → e 10 = Fin.ofNat C.p (3 * C.b) → (affine = true → e 16 = 1) →
+      Rep C (e 11) (e 12) (e 13) P → Rep C (e 14) (e 15) (e 16) Q →
+      Rep C (runOps N e 6) (runOps N e 7) (runOps N e 8) (Spec.Weierstrass.add P Q)
+
+theorem rcb_ofN (S : RcbSlots) (p q o : Pt) : rcb S p q o = ofN rcbN S p q o := rfl
+
+/-- Algorithm 1 adds, whatever the second point's `Z`. -/
+theorem winAddOk_rcb (hC : Law C) (affine : Bool) : WinAddOk C affine rcb :=
+  ⟨rcbN, rcbN_ok, rcb_ofN, fun e _ _ hP hQ ha hb _ h1 h2 => hC.add hP hQ h1 h2 (by
+    show rcbAdd (Fin.ofNat C.p C.a) (Fin.ofNat C.p (3 * C.b)) _ _ _ _ _ _ = _
+    rw [← ha, ← hb]; exact (rcbN_run e).symm)⟩
+
 end
+
+/-- The windows' complete addition adds. -/
+theorem winAdd_ok (hC : Law c.C) : WinAddOk c.C false c.winAdd := by
+  unfold Cfg.winAdd
+  split
+  · have ha : (Fin.ofNat c.C.p c.C.a : Fe c.C) = 0 := by rw [‹c.C.a = 0›]; rfl
+    exact ⟨rcb0N, rcb0N_ok, rcb0_eq, fun e _ _ hP hQ _ hb _ h1 h2 => hC.add hP hQ h1 h2 (by
+      show rcbAdd (Fin.ofNat c.C.p c.C.a) (Fin.ofNat c.C.p (3 * c.C.b)) _ _ _ _ _ _ = _
+      rw [ha, ← hb, ← rcbAdd0_eq]; exact (rcb0N_run e).symm)⟩
+  · exact winAddOk_rcb hC false
+
+/-- The table's complete addition adds an affine point. -/
+theorem winAddM_ok (hC : Law c.C) : WinAddOk c.C true c.winAddM := by
+  unfold Cfg.winAddM
+  split
+  · have ha : (Fin.ofNat c.C.p c.C.a : Fe c.C) = 0 := by rw [‹c.C.a = 0›]; rfl
+    refine ⟨rcb0mN, rcb0mN_ok, rcb0m_eq, fun e _ Q hP hQ _ hb hz h1 h2 => ?_⟩
+    have h2' : Rep c.C (e 14) (e 15) 1 Q := by rw [← hz rfl]; exact h2
+    refine hC.add hP hQ h1 h2' ?_
+    show rcbAdd (Fin.ofNat c.C.p c.C.a) (Fin.ofNat c.C.p (3 * c.C.b)) _ _ _ _ _ _ = _
+    rw [ha, ← hb, ← rcbAdd0m_eq]; exact (rcb0mN_run e).symm
+  · exact winAddOk_rcb hC true
 
 /-- The curve's Jacobian doubling doubles. -/
 theorem winDbl_ok (hC : Law c.C) : WinDblOk c.C c.winDbl := by
@@ -749,7 +791,6 @@ theorem winScan_ok (hc : CfgOk c) {base : Addr} {kk : Nat} {s : State} (ctx : Wi
 
 /-! ## A window -/
 
-theorem rcb_ofN (S : RcbSlots) (p q o : Pt) : rcb S p q o = ofN rcbN S p q o := rfl
 
 /-- Code that keeps `r12` and the memory keeps what the windows keep. -/
 theorem WinCtx.same {base : Addr} {k : Nat} {s s' : State} (h : WinCtx c base k s) (hc : CfgOk c)
@@ -837,18 +878,19 @@ theorem winStep_ok (hc : CfgOk c) (hC : Law c.C) {base : Addr} {P : Point c.C} (
     show Rep _ (toM _ _ (sv c base s₄ TX)) (toM _ _ (sv c base s₄ TY)) (toM _ _ (sv c base s₄ TZ)) _
     rw [ex₄, ey₄, ez₄]; exact tr
   -- `D = R + T`.
-  rw [rcb_ofN]
-  refine WP.seq (WP.mono (ptOp_ok hc rcbN_ok (p₁ := RX) (p₂ := RY) (p₃ := RZ) (q₁ := TX) (q₂ := TY)
+  obtain ⟨N, hN, eN, hadd⟩ := winAdd_ok (c := c) hC
+  rw [eN]
+  refine WP.seq (WP.mono (ptOp_ok hc hN (p₁ := RX) (p₂ := RY) (p₃ := RZ) (q₁ := TX) (q₂ := TY)
     (q₃ := TZ) (o₁ := DX) (o₂ := DY) (o₃ := DZ) (by decide) (by decide) (by decide) ctx₄.scr ctx₄.far
     ctx₄.mp (ctx₄.lt8 hc ltR₄ ltT₄)) fun s₅ ⟨K₅, U₅, L₅, V₅⟩ => ?_)
   obtain ctx₅ := ctx₄.next hc K₅ (by decide) U₅ (winW_pW h7 (by decide))
-  obtain h₅ : rcbAdd (fv c base s₄ AP) (fv c base s₄ B3P) (fv c base s₄ RX) (fv c base s₄ RY)
-      (fv c base s₄ RZ) (fv c base s₄ TX) (fv c base s₄ TY) (fv c base s₄ TZ) =
-      (fv c base s₅ DX, fv c base s₅ DY, fv c base s₅ DZ) := (V₅.trans (rcbN_run _)).symm
-  rw [ctx₄.fv_ap hc, ctx₄.fv_b3p hc] at h₅
   obtain repD₅ : Rep c.C (fv c base s₅ DX) (fv c base s₅ DY) (fv c base s₅ DZ) (mul (k / 2 ^ (c.winW * i)) P) := by
     rw [← win_pt hC hP c.winW k i]
-    exact hC.add (onCurve_dblPt hC _ hQ) (hC.onCurve_mul hP _) repR₄ repT₄ h₅
+    have := hadd (fun y => tmv c.C c.n base s₄ (rcbσ c.rcbSlots (c.pt RX RY RZ) (c.pt TX TY TZ)
+      (c.pt DX DY DZ) y)) (onCurve_dblPt hC _ hQ) (hC.onCurve_mul hP _) (ctx₄.fv_ap hc) (ctx₄.fv_b3p hc)
+      nofun repR₄ repT₄
+    simp only [Prod.mk.injEq] at V₅
+    rw [V₅.1, V₅.2.1, V₅.2.2]; exact this
   -- `R = D`.
   refine VG.Proof.X25519.Arm.WP.append (copySlots_ok hc ctx₅.scr (o₁ := RX) (o₂ := RY) (o₃ := RZ)
     (a₁ := DX) (a₂ := DY) (a₃ := DZ) (by decide) (by decide) (by decide))
@@ -996,19 +1038,20 @@ theorem winBuildStep_ok (hc : CfgOk c) (hC : Law c.C) {base : Addr} {P : Point c
     rw [I.ctx.fv_onep hc]
     show Rep _ (toM _ _ (sv c base s RX)) (toM _ _ (sv c base s RY)) _ _
     rw [I.q RX (by decide), I.q RY (by decide)]; exact hG
-  rw [Cfg.winBuildStep, rcb_ofN]
+  obtain ⟨N, hN, eN, hadd⟩ := winAddM_ok (c := c) hC
+  rw [Cfg.winBuildStep, eN]
   -- `T = D + Q`.
-  refine WP.seq (WP.mono (ptOp_ok hc rcbN_ok (p₁ := DX) (p₂ := DY) (p₃ := DZ) (q₁ := RX) (q₂ := RY)
+  refine WP.seq (WP.mono (ptOp_ok hc hN (p₁ := DX) (p₂ := DY) (p₃ := DZ) (q₁ := RX) (q₂ := RY)
     (q₃ := ONEP) (o₁ := TX) (o₂ := TY) (o₃ := TZ) (by decide) (by decide) (by decide) I.ctx.scr I.ctx.far
     I.ctx.mp (I.ctx.lt8 hc I.lt ltQ)) fun s₁ ⟨K₁, U₁, L₁, V₁⟩ => ?_)
   obtain ctx₁ := I.ctx.next hc K₁ (by decide) U₁ (winW_pW h7 (by decide))
-  obtain h₁ : rcbAdd (fv c base s AP) (fv c base s B3P) (fv c base s DX) (fv c base s DY)
-      (fv c base s DZ) (fv c base s RX) (fv c base s RY) (fv c base s ONEP) =
-      (fv c base s₁ TX, fv c base s₁ TY, fv c base s₁ TZ) := (V₁.trans (rcbN_run _)).symm
-  rw [I.ctx.fv_ap hc, I.ctx.fv_b3p hc] at h₁
   obtain repT₁ : Rep c.C (fv c base s₁ TX) (fv c base s₁ TY) (fv c base s₁ TZ) (mul (e + 1) P) := by
     rw [← mul_succ_pt hC hP e]
-    exact hC.add (hC.onCurve_mul hP _) hP I.rep repQ h₁
+    have := hadd (fun y => tmv c.C c.n base s (rcbσ c.rcbSlots (c.pt DX DY DZ) (c.pt RX RY ONEP)
+      (c.pt TX TY TZ) y)) (hC.onCurve_mul hP _) hP (I.ctx.fv_ap hc) (I.ctx.fv_b3p hc)
+      (fun _ => I.ctx.fv_onep hc) I.rep repQ
+    simp only [Prod.mk.injEq] at V₁
+    rw [V₁.1, V₁.2.1, V₁.2.2]; exact this
   obtain g₁ : s₁.gpr .r11 = BitVec.ofNat 32 e := by rw [K₁.gpr _ r11_not_clob, I.r11]
   -- The entry, stored.
   simp only [List.append_assoc]
