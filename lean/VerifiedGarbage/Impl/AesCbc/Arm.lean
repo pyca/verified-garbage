@@ -9,8 +9,10 @@ public import VerifiedGarbage.Impl.Aes.Arm.Blocks
 `vg_aes_cbc_encrypt(schedule = r0, rounds = r1, iv = r2, data = r3, n = [sp], scratch = [sp + 4])`
 and `vg_aes_cbc_decrypt` with the same arguments (see
 `VG.Spec.Cbc.aesEncryptContract` and `aesDecryptContract`), composed of calls
-of the verified `vg_aes_encrypt_blocks` or `vg_aes_decrypt_blocks` on one
-block at a time, in place.
+of the verified `vg_aes_encrypt_blocks` or `vg_aes_decrypt_blocks`, in place:
+encryption on one block at a time, and decryption (`decryptG`,
+`Arm/Groups.lean`) on groups of blocks, then on the blocks left one at a
+time (`decBody`).
 
 They are built from AES-CMAC's pieces (`Impl/CmacAes/Arm.lean`), whose
 arguments are in the same places: `save` saves our caller's `r4`–`r10` and
@@ -27,11 +29,12 @@ functions use 8 bytes of stack.
 
 The scratch buffer (2176 bytes): `[0, 2048)` is the working space of the
 block function, `[2048, 2064)` the ciphertext block that decryption keeps
-across the call, and `[2064, 2096)` our caller's registers.
+across the call, `[2064, 2096)` our caller's registers, and `[2096, 2176)`
+the blocks of a group (`Arm/Groups.lean`).
 
 * `encrypt`, each block: `Pⱼ ⊕ Cⱼ₋₁` in place, enciphered in place, and
   copied to the chaining value.
-* `decrypt`, each block: `Cⱼ` saved in the scratch buffer, deciphered in
+* `decBody`, each block: `Cⱼ` saved in the scratch buffer, deciphered in
   place, XORed with the chaining value `Cⱼ₋₁`, and the saved `Cⱼ` copied to
   the chaining value.
 
@@ -84,7 +87,7 @@ def encBody : Prog isa := .seq (.block encPre) (.seq encFrame (.block encPost))
 
 def encrypt : Prog isa := whole encBody
 
-/-! ## `vg_aes_cbc_decrypt` -/
+/-! ## `vg_aes_cbc_decrypt`, one block at a time -/
 
 /-- `Cⱼ` saved in the scratch buffer, and the arguments of the call. -/
 def decPre : List Instr := zero4 .r10 cOff ++ xor4 .r10 .r7 .r10 cOff 0 cOff ++ callArgs
@@ -97,7 +100,5 @@ def decPost : List Instr :=
 /-- One block: `Cⱼ` saved, deciphered, XORed with `Cⱼ₋₁`, and the saved `Cⱼ`
 the chaining value. -/
 def decBody : Prog isa := .seq (.block decPre) (.seq decFrame (.block decPost))
-
-def decrypt : Prog isa := whole decBody
 
 end VG.Impl.AesCbc.Arm

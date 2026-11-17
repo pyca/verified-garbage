@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.AesOfb.Arm
+public import VerifiedGarbage.Impl.AesCbc.Arm.Groups
 
 /-!
 # AES-CFB128: 32-bit ARM implementation
@@ -8,7 +9,8 @@ public import VerifiedGarbage.Impl.AesOfb.Arm
 `vg_aes_cfb128_encrypt(schedule = r0, rounds = r1, iv = r2, data = r3, n = [sp], scratch = [sp + 4])`
 and `vg_aes_cfb128_decrypt` with the same arguments (see
 `VG.Spec.Cfb.aesEncryptContract` and `aesDecryptContract`), composed of
-calls of the verified `vg_aes_encrypt_blocks` on one block at a time.
+calls of the verified `vg_aes_encrypt_blocks`: on one block at a time, but
+for decryption's groups (below).
 
 They are built from AES-OFB's pieces (`Impl/AesOfb/Arm.lean`), whose
 arguments are the same: each block, the block at `iv` (`r6`) is enciphered
@@ -20,6 +22,10 @@ and the block at `iv` then becomes the ciphertext block:
 * `decrypt`: the data block, now `Pⱼ = Cⱼ ⊕ Oⱼ`, XORed into `iv`, which
   holds `Oⱼ`, leaving `Cⱼ` there.
 
+Decryption's input blocks are ciphertext blocks, so it first takes the blocks
+in groups of 4 and of 2, each one call of the block function (`cfbDecG`,
+`Impl/AesCbc/Arm/Groups.lean`), and the blocks left one at a time.
+
 Only the pointers, `rounds` and `n` can affect timing: the only branches are
 on `n`.
 -/
@@ -30,7 +36,7 @@ namespace VG.Impl.AesCfb.Arm
 
 open VG.Arm
 open VG.Impl.CmacAes.Arm (advance xor4)
-open VG.Impl.AesCbc.Arm (whole encFrame zero4)
+open VG.Impl.AesCbc.Arm (whole wholeG cfbDecG groupLevels encFrame zero4)
 open VG.Impl.AesOfb.Arm (ivArgs)
 
 /-- One block: the block at `iv` enciphered in place, and `post`. -/
@@ -44,6 +50,6 @@ def decPost : List Instr := xor4 .r7 .r6 .r7 0 0 0 ++ xor4 .r6 .r7 .r6 0 0 0 ++ 
 
 def encrypt : Prog isa := whole (body encPost)
 
-def decrypt : Prog isa := whole (body decPost)
+def decrypt : Prog isa := wholeG encFrame cfbDecG groupLevels (body decPost)
 
 end VG.Impl.AesCfb.Arm

@@ -1167,7 +1167,8 @@ theorem encrypt_stack : armStack encrypt = 8 := by
   decide
 
 theorem decrypt_stack : armStack decrypt = 8 := by
-  simp only [decrypt, Impl.AesCbc.Arm.whole, body, Impl.AesCbc.Arm.encFrame, armStack, encBlocks_stack]
+  simp only [decrypt, Impl.AesCbc.Arm.wholeG, Impl.AesCbc.Arm.groupLevels, Impl.AesCbc.Arm.gLevels,
+    Impl.AesCbc.Arm.gLevel, Impl.AesCbc.Arm.gBody, body, Impl.AesCbc.Arm.encFrame, armStack, encBlocks_stack]
   decide
 
 theorem encryptFinal_verified : Verified Arm.target encryptFinal (finalScratchContract true) :=
@@ -1177,9 +1178,8 @@ theorem encryptFinal_verified : Verified Arm.target encryptFinal (finalScratchCo
     (final_implies true)
 
 theorem decryptFinal_verified : Verified Arm.target decryptFinal (finalScratchContract false) :=
-  Verified.of_correct (final_correct (fun _ hs => AesCbc.Arm.whole_wp decBody_ok hs) decrypt_stack)
-    (final_ct (enc := false) (fun _ hs => AesCbc.Arm.whole_wp decBody_ok hs)
-      (AesCbc.Arm.whole_ct decBody_ok decBody_ct) decrypt_stack)
+  Verified.of_correct (final_correct (fun _ hs => decrypt_wp hs) decrypt_stack)
+    (final_ct (enc := false) (fun _ hs => decrypt_wp hs) decrypt_ct decrypt_stack)
     (final_implies false)
 
 /-! ## With `save` on the stack
