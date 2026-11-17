@@ -372,12 +372,13 @@ theorem ctrs4_run {icb : List Byte} {d : BitVec 128} {j : Nat} {t : State} (x9 :
   have e₃ : t₃.xmm .xmm9 = ctrX icb d (j + 3) := by rw [n₃, e₂, t₂₀, ctrX_succ]
   have t₃₀ : t₃.xmm .xmm10 = (0 : BitVec 64) ++ BitVec.ofNat 64 1 := by rw [o₃ _ (by decide) (by decide), t₂₀]
   refine ⟨t₄, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · show runBlock isa (ctrs [.xmm0] ++ (ctrs [.xmm1] ++ (ctrs [.xmm2] ++ ctrs [.xmm3]))) t = _
-    rw [VG.Interleave.runBlock_append, r₁]
-    show runBlock isa (ctrs [.xmm1] ++ (ctrs [.xmm2] ++ ctrs [.xmm3])) t₁ = _
-    rw [VG.Interleave.runBlock_append, r₂]
-    show runBlock isa (ctrs [.xmm2] ++ ctrs [.xmm3]) t₂ = _
-    rw [VG.Interleave.runBlock_append, r₃]
+  · -- The four blocks' code as an append, by an equation between code, and each `bind` of a block that
+    -- has run by `Option.bind_some`: a `show` of the run of what is left has the kernel compare the two
+    -- runs, which it does by executing the instructions on the symbolic state (98 s).
+    have hc : ctrs [.xmm0, .xmm1, .xmm2, .xmm3] =
+        ctrs [.xmm0] ++ (ctrs [.xmm1] ++ (ctrs [.xmm2] ++ ctrs [.xmm3])) := rfl
+    rw [hc, VG.Interleave.runBlock_append, r₁, Option.bind_some, VG.Interleave.runBlock_append, r₂,
+      Option.bind_some, VG.Interleave.runBlock_append, r₃, Option.bind_some]
     exact r₄
   · rw [o₄ _ (by decide) (by decide), o₃ _ (by decide) (by decide), o₂ _ (by decide) (by decide), a₁, x9]
   · rw [o₄ _ (by decide) (by decide), o₃ _ (by decide) (by decide), a₂, e₁]
