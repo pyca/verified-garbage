@@ -29,9 +29,55 @@ def verifyCombine : Prog isa :=
   .seq copyPointToQ (.seq (.block (pointTableRead 7904))
     (.seq Point16.addCall (.seq copyPointToQ (.block (pointTableRead 8032)))))
 
+/-! ## `[k]A` on `k`'s bits, which are public
+
+Double-and-add from the top bit: the sum (slots 0–3) is doubled for every bit, and `A`
+(slots 4–7) is added only where the bit is set. The bits are the challenge's, which
+verification may leak, so the branch is on public data. `r11` counts the bytes of `k` left and
+`r10` holds the byte in hand in its top byte, shifted left once a bit: neither is written by the point
+functions. -/
+
+/-- The address of the next byte of `k` down (`k`'s pointer at word 52, the byte's index in
+`r11`) into `r3`. -/
+def bitsAddr : List Instr :=
+  [.dp .sub .r11 .r11 (.imm 1), .ldr .r3 .r0 52, .dp .add .r3 .r3 (.reg .r11)]
+
+/-- The byte at `r3` into the top byte of `r10`. -/
+def bitsByte : List Instr := [.ldrb .r10 .r3 0, .mov .r10 (.shifted .r10 .lsl 24)]
+
+/-- The next byte of `k` down into the top byte of `r10`. -/
+def bitsLoad : List Instr := bitsAddr ++ bitsByte
+
+/-- Z clear if the top bit of `r10` is set. -/
+def bitTest : List Instr := [.mov .r9 (.shifted .r10 .lsr 31), .cmp .r9 (.imm 0)]
+
+/-- One bit, the top one of the byte in `r10`: the sum doubled, `A` added if the bit is set,
+and `r10` shifted. -/
+def bitStep : Prog isa :=
+  .seq Point16.doubleCall (.seq (.block bitTest)
+    (.seq (.ite .ne Point16.addCall (.block [])) (.block [.mov .r10 (.shifted .r10 .lsl 1)])))
+
+/-- `c`, `n` times, then `k`. -/
+def repeatThen : Nat → Prog isa → Prog isa → Prog isa
+  | 0, _, k => k
+  | n + 1, c, k => .seq c (repeatThen n c k)
+
+/-- A byte of `k`: its eight bits from the top. Z is set after byte 0. -/
+def byteStep : Prog isa := .seq (.block bitsLoad) (repeatThen 8 bitStep (.block [.cmp .r11 (.imm 0)]))
+
+/-- `k`'s pointer (`r12`) saved, `A` from slots 0–3 to slots 4–7, `d` in slot 16, the sum at
+the identity, and 32 bytes to go. -/
+def publicMulInit : Prog isa :=
+  .seq (.block [.str .r12 .r0 52])
+    (.seq (fieldCode (copyPointToQOps ++ [.const 16 Spec.Ed25519.d] ++ constPointOps Spec.Ed25519.identity))
+      (.block [.mov .r11 (.imm 32)]))
+
+/-- `[k]A` into slots 0–3, for `A` in slots 0–3 and the 32 bytes of `k` at `r12`. -/
+def publicMul : Prog isa := .seq publicMulInit (.loop byteStep .ne)
+
 def verifyRhs : Prog isa :=
   .seq (.block (pointTableRead 7776 ++ loadHeader 8168))
-    (.seq (pointFromScalar 16) (.seq verifyCombine pointEqual))
+    (.seq publicMul (.seq verifyCombine pointEqual))
 
 def verifyEquationPoints : Prog isa := .seq verifyLhs verifyRhs
 /-! ## Decoding `A` and `R` -/
