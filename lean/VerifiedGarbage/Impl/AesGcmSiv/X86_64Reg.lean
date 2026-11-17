@@ -319,22 +319,29 @@ def polyvalL (L : Loops) : Prog isa :=
           (.seq (.ite .b (.block []) (.seq (.block hashArgs) (.seq L.hash (.block back))))
             (.seq (absorb true) (.block lens))))))
 
-/-- The counter block, from `xmm9`, at `W + 96`, and the loops' pointers
-and count. -/
+/-- The groups' count, the counter block, from `xmm9`, at `W + 96`, and the
+loops' pointers. -/
 def ctrPtrs : List Instr :=
-  ([.movdquStore (at_ .r15 cmO) .xmm9] : List Instr) ++ ptr .rdx .r15 cmO ++ ptr .rcx .r15 yO ++
-  ptr .r8 .r15 hO ++ ptr .r11 .r15 pO ++ groups
+  groups ++ (([.movdquStore (at_ .r15 cmO) .xmm9] : List Instr) ++ ptr .rdx .r15 cmO ++ ptr .rcx .r15 yO ++
+    ptr .r8 .r15 hO ++ ptr .r11 .r15 pO)
 
 /-- `ctr`'s and `dec`'s arguments, but `Y` and `H`: the counter block, from
 the tag at `W`, at `W + 96`. -/
 def ctrArgs : List Instr := ctrInit ++ ctrPtrs
 
+/-- The counter block from `W + 96`, its increment, and `aes`'s arguments. -/
+def ctrLoad : List Instr :=
+  ([.movdquLoad .xmm9 (at_ .r15 cmO), .mov32 .rax (imm 1), .xop (.movq .xmm10 .rax)] : List Instr) ++
+  aesArgs (ptr .rdi .r15 skO)
+
+/-- The whole blocks of the `rbp` bytes counted in `rbx`, the last bytes in
+`rbp`. -/
+def split16 : List Instr :=
+  [.mov .rbx (.reg .rbp), .shift .shr .rbx 4, .alu .and .rbp (imm 15), .alu .test .rbx (.reg .rbx)]
+
 /-- Counter mode's registers again after a loop, the counter block from
 where the loop left it, and the rest of the data, as `ctrInit` leaves them. -/
-def ctrBack : List Instr :=
-  ([.movdquLoad .xmm9 (at_ .r15 cmO), .mov32 .rax (imm 1), .xop (.movq .xmm10 .rax)] : List Instr) ++
-  aesArgs (ptr .rdi .r15 skO) ++ restLoad ++
-  ([.mov .rbx (.reg .rbp), .shift .shr .rbx 4, .alu .and .rbp (imm 15), .alu .test .rbx (.reg .rbx)] : List Instr)
+def ctrBack : List Instr := ctrLoad ++ (restLoad ++ split16)
 
 /-- Counter mode, as `crypt`, the data's 256-byte groups with `L.ctr`. -/
 def cryptL (L : Loops) : Prog isa :=
