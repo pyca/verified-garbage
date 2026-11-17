@@ -25,6 +25,30 @@ ldr r7, [sp, #0]
 cmp r7, #0
 beq 20f
 22:
+sub r12, r4, r5
+mvn r3, #0
+subs r2, r7, r12
+adc r3, r3, #0
+and r2, r2, r3
+add r2, r12, r2
+lsr lr, r2, #2
+cmp lr, #0
+beq 23f
+sub r7, r7, lr, lsl #2
+add r3, r0, r5
+add r5, r5, lr, lsl #2
+25:
+ldr r2, [r6, #0]
+ldr r12, [r3, #0]
+eor r2, r2, r12
+str r2, [r3, #0]
+add r6, r6, #4
+add r3, r3, #4
+subs lr, lr, #1
+bne 25b
+cmp r5, r4
+b 24f
+23:
 ldrb r2, [r6, #0]
 add r3, r0, r5
 ldrb r12, [r3, #0]
@@ -34,12 +58,13 @@ add r6, r6, #1
 add r5, r5, #1
 sub r7, r7, #1
 cmp r5, r4
-beq 23f
-b 24f
-23:
+24:
+beq 26f
+b 27f
+26:
 mov r5, #0
 bl {vg_keccak_f1600}
-24:
+27:
 cmp r7, #0
 bne 22b
 b 21f

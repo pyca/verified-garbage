@@ -1027,6 +1027,87 @@ theorem ofNat_toNat32 (x : BitVec 32) : BitVec.ofNat 32 x.toNat = x := by simp
 
 theorem sub_imm0 (a : BitVec 32) : a - 0 = a := by simp
 
+theorem shl2_ofNat32 (k : Nat) : BitVec.ofNat 32 k <<< 2 = BitVec.ofNat 32 (4 * k) := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
+  omega_using []
+
+/-- A byte of a word stored. -/
+theorem writeW32_apply (m : Mem) (a : Addr) (v : BitVec 32) (x : Addr) :
+    m.writeW a v x = if (x - a).toNat < 4 then v.extractLsb' (8 * (x - a).toNat) 8 else m x := by
+  change (if (x - a).toNat < 4 then (v.setWidth 32).extractLsb' (8 * (x - a).toNat) 8 else m x) = _
+  rw [BitVec.setWidth_eq]
+
+/-! ## The words left of the data and of the block -/
+
+section
+variable {is : List Instr} {s : State} {Q : State → Prop}
+
+theorem wp_mvn {d : Reg} {o : Op2} {v : BitVec 32} (ho : o.eval s = some v)
+    (k : ∀ s', VG.Proof.MdStream.Arm.Upd s s' d (~~~v) → WP isa (.block is) s' Q) :
+    WP isa (.block (.mvn d o :: is)) s Q :=
+  VG.Proof.MdStream.Arm.WP.cons (s' := s.setReg d (~~~v)) (by simp [exec, ho])
+    (k _ (VG.Proof.MdStream.Arm.Upd.setReg _ _ _))
+
+/-- `subs`, with its carry: set when the subtraction does not borrow. -/
+theorem wp_subsC {d n : Reg} {o : Op2} {y : BitVec 32} (ho : o.eval s = some y)
+    (k : ∀ s', VG.Proof.MdStream.Arm.Upd s s' d (s.gpr n - y) →
+      s'.c = decide (y.toNat ≤ (s.gpr n).toNat) → WP isa (.block is) s' Q) :
+    WP isa (.block (.subs d n o :: is)) s Q :=
+  VG.Proof.MdStream.Arm.WP.cons (s' := (subFlags s (s.gpr n) y).setReg d (s.gpr n - y)) (by simp [exec, ho])
+    (k _ (VG.Proof.MdStream.Arm.Upd.subs _ _ _ _ _) rfl)
+
+end
+
+/-- `words`, from `r7 = l` bytes left of the data or the output, the position
+`r5 = j` and the rate `r4 = rt`: `lr` is the number of whole words among the
+bytes left of both, and Z is set if there is none. It changes only `r2`,
+`r3`, `r12`, `lr` and the flags. -/
+theorem words_ok {s : State} {l j rt : Nat} (h7 : s.gpr .r7 = BitVec.ofNat 32 l)
+    (h5 : s.gpr .r5 = BitVec.ofNat 32 j) (h4 : s.gpr .r4 = BitVec.ofNat 32 rt) (hl : l < 2 ^ 32)
+    (hj : j ≤ rt) (hrt : rt < 2 ^ 32) :
+    WP isa (.block Impl.Sha3.Arm.Stream.words) s fun s' =>
+      (∀ r, r ∉ [Reg.r2, .r3, .r12, .lr] → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧
+      s'.wr = s.wr ∧ s'.sp = s.sp ∧ s'.gpr .lr = BitVec.ofNat 32 (min l (rt - j) / 4) ∧
+      s'.z = decide (min l (rt - j) / 4 = 0) := by
+  open VG.Proof.MdStream.Arm in
+  unfold Impl.Sha3.Arm.Stream.words
+  refine wp_sub (op2_reg _ _) fun s₁ u₁ => wp_mvn (op2_imm (by decide)) fun s₂ u₂ =>
+    wp_subsC (op2_reg _ _) fun s₃ u₃ hc => VG.Proof.Sha512.Arm.wp_adc (op2_imm (by decide)) fun s₄ u₄ =>
+    wp_and (op2_reg _ _) fun s₅ u₅ => wp_add (op2_reg _ _) fun s₆ u₆ =>
+    wp_mov (op2_lsr (by decide)) fun s₇ u₇ => wp_cmp (op2_imm (by decide)) fun s₈ u₈ hz => WP.block_nil ?_
+  have e12 : s₁.gpr .r12 = BitVec.ofNat 32 (rt - j) := by rw [u₁.gpr, h4, h5, sub_ofNat32 hj]
+  have e7 : s₂.gpr .r7 = BitVec.ofNat 32 l := by rw [u₂.other _ (by decide), u₁.other _ (by decide), h7]
+  have e12' : s₂.gpr .r12 = BitVec.ofNat 32 (rt - j) := by rw [u₂.other _ (by decide), e12]
+  have hc' : s₃.c = decide (rt - j ≤ l) := by
+    rw [hc, e7, e12', BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hl,
+      Nat.mod_eq_of_lt (by omega_using [hrt])]
+  have e2 : s₆.gpr .r2 = BitVec.ofNat 32 (min l (rt - j)) := by
+    have a12 : s₅.gpr .r12 = BitVec.ofNat 32 (rt - j) := by
+      rw [u₅.other .r12 (by decide), u₄.other .r12 (by decide), u₃.other .r12 (by decide), e12']
+    have a2 : s₄.gpr .r2 = BitVec.ofNat 32 l - BitVec.ofNat 32 (rt - j) := by
+      rw [u₄.other .r2 (by decide), u₃.gpr, e7, e12']
+    have a3 : s₄.gpr .r3 = ~~~0 + 0 + (if s₃.c then 1 else 0) := by
+      rw [u₄.gpr, u₃.other .r3 (by decide), u₂.gpr]
+    rw [u₆.gpr, a12, u₅.gpr, a2, a3, hc']
+    by_cases h : rt - j ≤ l
+    · rw [decide_eq_true h, Nat.min_eq_right h, ite_eq_left rfl,
+        show (~~~(0 : BitVec 32)) + 0 + 1 = 0#32 by decide, BitVec.and_zero, BitVec.add_zero]
+    · rw [decide_eq_false h, Nat.min_eq_left (by omega_using [h]), ite_eq_right (by decide),
+        show (~~~(0 : BitVec 32)) + 0 + 0 = BitVec.allOnes 32 by decide, BitVec.and_allOnes,
+        BitVec.add_comm, BitVec.sub_add_cancel]
+  have elr : s₇.gpr .lr = BitVec.ofNat 32 (min l (rt - j) / 4) := by
+    rw [u₇.gpr, e2, ofNat_shr (by omega_using [hl])]
+  refine ⟨fun r hr => ?_, by rw [u₈.mem, u₇.mem, u₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem],
+    by rw [u₈.rd, u₇.rd, u₆.rd, u₅.rd, u₄.rd, u₃.rd, u₂.rd, u₁.rd],
+    by rw [u₈.wr, u₇.wr, u₆.wr, u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr],
+    by rw [u₈.sp, u₇.sp, u₆.sp, u₅.sp, u₄.sp, u₃.sp, u₂.sp, u₁.sp], by rw [u₈.gpr, elr], ?_⟩
+  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    obtain ⟨a, b, c, d⟩ := hr
+    rw [u₈.gpr, u₇.other r d, u₆.other r a, u₅.other r a, u₄.other r b, u₃.other r a, u₂.other r b,
+      u₁.other r c]
+  · rw [hz, elr, sub_imm0, ofNat32_beq_zero (by omega_using [hl])]
+
 /-! ## The arguments on the stack -/
 
 theorem arg_in {s : State} {n : Nat} (hsp : s.sp.toNat + 4 * n ≤ 2 ^ 32) {k : Nat} (hk : k < n) :
