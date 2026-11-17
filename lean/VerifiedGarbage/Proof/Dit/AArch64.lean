@@ -12,6 +12,8 @@ public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import VerifiedGarbage.Proof.Framework.AArch64.Residue
+meta import VerifiedGarbage.Proof.Framework.AArch64.Residue
 public import VerifiedGarbage.Proof.Framework.Block
 meta import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Framework.Contract
@@ -210,5 +212,22 @@ theorem clear_verified : Verified target clear (Spec.Dit.clearContract abi) := b
       post := fun _ _ _ _ => trivial
       pub := by sig_implies_pub [Spec.Dit.clearContract, Spec.Dit.clearSig, contract, abi, argRegs]
       sat := by sig_implies_sat [Spec.Dit.clearContract, Spec.Dit.clearSig, contract, abi, argRegs] [sat] using sat }
+
+/-! ## Returning without secret residue
+
+The functions read no memory, so what they leave is a function of the
+registers and PSTATE.DIT on entry (`Residue.noResidue_of_blind`). -/
+
+theorem enter_noResidue (k : Contract isa) (r : Nat) : NoResidue enter k r :=
+  Residue.noResidue_of_blind (by decide) k r
+
+theorem enterDsb_noResidue (k : Contract isa) (r : Nat) : NoResidue enterDsb k r :=
+  Residue.noResidue_of_blind (by decide) k r
+
+theorem enterSb_noResidue (k : Contract isa) (r : Nat) : NoResidue enterSb k r :=
+  Residue.noResidue_of_blind (by decide) k r
+
+theorem clear_noResidue (k : Contract isa) (r : Nat) : NoResidue clear k r :=
+  Residue.noResidue_of_blind (by decide) k r
 
 end VG.Proof.Dit.AArch64

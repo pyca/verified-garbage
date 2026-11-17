@@ -243,14 +243,9 @@ aarch64 vg_cmac_triple_des_absorb
 aarch64 vg_cmac_triple_des_finish
 aarch64 vg_cmac_triple_des_stream_init
 aarch64 vg_ct_eq
-aarch64 vg_dit_clear
-aarch64 vg_dit_enter
-aarch64 vg_dit_enter_dsb
-aarch64 vg_dit_enter_sb
 aarch64 vg_dsa_derive_key
 aarch64 vg_dsa_generate_key
 aarch64 vg_dsa_parameter_search
-aarch64 vg_dsa_parameter_search_init
 aarch64 vg_dsa_parameter_search_sha1_sha2_sha256_sha2
 aarch64 vg_dsa_sign_random_prevalidated
 aarch64 vg_dsa_validate_private_key
@@ -330,8 +325,6 @@ aarch64 vg_ffdh_exchange
 aarch64 vg_ffdh_generate_key_precompute
 aarch64 vg_ffdh_generate_key_search_cached
 aarch64 vg_ffdh_generate_parameters
-aarch64 vg_ffdh_key_generation_init
-aarch64 vg_ffdh_parameter_generation_init
 aarch64 vg_hmac_md5_finalize
 aarch64 vg_hmac_md5_init
 aarch64 vg_hmac_sha1_finalize
@@ -374,7 +367,6 @@ aarch64 vg_idea_invert_key
 aarch64 vg_idea_ofb
 aarch64 vg_idea_ofb_final
 aarch64 vg_md5_finalize
-aarch64 vg_md5_init
 aarch64 vg_md5_update
 aarch64 vg_mldsa44_keygen
 aarch64 vg_mldsa44_keygen_sha3
@@ -526,7 +518,6 @@ aarch64 vg_sha1_digest
 aarch64 vg_sha1_digest_sha2
 aarch64 vg_sha1_finalize
 aarch64 vg_sha1_finalize_sha2
-aarch64 vg_sha1_init
 aarch64 vg_sha1_update
 aarch64 vg_sha1_update_sha2
 aarch64 vg_sha224_digest
@@ -545,7 +536,6 @@ aarch64 vg_sha384_digest
 aarch64 vg_sha384_digest_sha512
 aarch64 vg_sha384_finalize
 aarch64 vg_sha384_finalize_sha512
-aarch64 vg_sha384_init
 aarch64 vg_sha3_224_finalize
 aarch64 vg_sha3_224_finalize_sha3
 aarch64 vg_sha3_224_update
@@ -566,17 +556,14 @@ aarch64 vg_sha512_224_digest
 aarch64 vg_sha512_224_digest_sha512
 aarch64 vg_sha512_224_finalize
 aarch64 vg_sha512_224_finalize_sha512
-aarch64 vg_sha512_224_init
 aarch64 vg_sha512_256_digest
 aarch64 vg_sha512_256_digest_sha512
 aarch64 vg_sha512_256_finalize
 aarch64 vg_sha512_256_finalize_sha512
-aarch64 vg_sha512_256_init
 aarch64 vg_sha512_digest
 aarch64 vg_sha512_digest_sha512
 aarch64 vg_sha512_finalize
 aarch64 vg_sha512_finalize_sha512
-aarch64 vg_sha512_init
 aarch64 vg_sha512_update
 aarch64 vg_sha512_update_sha512
 aarch64 vg_shake128_finalize
@@ -591,7 +578,6 @@ aarch64 vg_shake256_squeeze
 aarch64 vg_shake256_squeeze_sha3
 aarch64 vg_sm3_finalize
 aarch64 vg_sm3_finalize_sm3
-aarch64 vg_sm3_init
 aarch64 vg_sm3_update
 aarch64 vg_sm3_update_sm3
 aarch64 vg_sm4_cbc_decrypt_chained
@@ -675,7 +661,6 @@ aarch64 vg_x25519_base
 aarch64 vg_x25519_exchange
 aarch64 vg_x448_base
 aarch64 vg_x448_exchange
-aarch64 vg_zeroize
 arm vg_aes_cbc_decrypt
 arm vg_aes_cbc_encrypt
 arm vg_aes_ccm_open

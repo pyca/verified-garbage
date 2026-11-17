@@ -13,6 +13,8 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import VerifiedGarbage.Proof.Framework.AArch64.Residue
+meta import VerifiedGarbage.Proof.Framework.AArch64.Residue
 
 @[expose] public section
 
@@ -183,4 +185,10 @@ theorem wideVerified : Verified target zeroizeWide (Spec.Zeroize.zeroizeContract
     · exact h.1
     · exact h.2.1
   · sig_implies [Spec.Zeroize.zeroizeContract, Spec.Zeroize.zeroizeSig, contract, abi, argRegs] [sat] using sat
+
+/-- `vg_zeroize` returns without secret residue: it reads no memory, so what
+it leaves is a function of its arguments (`Residue.noResidue_of_blind`). -/
+theorem wide_noResidue (k : Contract isa) (r : Nat) : NoResidue zeroizeWide k r :=
+  Residue.noResidue_of_blind (by decide) k r
+
 end VG.Proof.Zeroize.AArch64

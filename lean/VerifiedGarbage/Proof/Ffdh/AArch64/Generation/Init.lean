@@ -25,6 +25,8 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.Residue
+meta import VerifiedGarbage.Proof.Framework.AArch64.Residue
 
 /-! # Native FFDH parameter-generation initialization on AArch64: correctness, constant time -/
 
@@ -260,5 +262,10 @@ theorem init_verified : Verified target init (Spec.Ffdh.parameterInitContract ab
     exact init_constantTime s₁ s₂ tr₁ tr₂ t₁ t₂ trivial trivial hp h₁ h₂
   · sig_implies [Spec.Ffdh.parameterInitContract, Spec.Ffdh.parameterInitSig,
       initContract, initPre, initPost, initPub, abi, argRegs] [initSat] using initSat
+
+/-- `vg_ffdh_parameter_generation_init` returns without secret residue: it reads no memory, so what it
+leaves is a function of its arguments (`Residue.noResidue_of_blind`). -/
+theorem init_noResidue (k : Contract isa) (r : Nat) : NoResidue init k r :=
+  Residue.noResidue_of_blind (by decide) k r
 
 end VG.Proof.Ffdh.AArch64.Generation
