@@ -9,6 +9,7 @@ public import VerifiedGarbage.Proof.Framework.PPC64LE.Alloc
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
+import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
@@ -24,6 +25,7 @@ meta import VerifiedGarbage.Proof.Framework.PPC64LE.Alloc
 meta import VerifiedGarbage.Proof.Framework.Sig
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
@@ -498,13 +500,20 @@ theorem body_ok {s : State} (h : Pre s) {dn pn : String} :
 theorem keyPair_ok {s : State} (hs : spec.pre s) {dn pn : String} :
     WP isa (keyPair dn dgCode pn pkCode) s fun s' => abiPreserved s s' ∧ spec.post s s' := by
   have h := pre_of hs
-  refine WP.allocKept (by decide) (by have := h.sp; omega_using [this]) (WP.mono (body_ok h) fun u ⟨hsp, hcs, hlr, hE, hO⟩ =>
-    ⟨⟨hcs, ?_, hlr⟩, ?_⟩)
+  refine WP.alloc (by decide) (by have := h.sp; omega_using [this]) (WP.mono (body_ok h)
+    fun u ⟨hsp, hcs, hlr, hE, hO⟩ m _ f => ⟨⟨hcs, ?_, hlr⟩, ?_⟩)
   · show u.sp + BitVec.ofNat 64 64 = s.sp
     rw [hsp, add_add, sp_eq s]
   · sig_post [Spec.Ed25519.keyPairContract, Spec.Ed25519.keyPairSig, Spec.Ed25519.scratchWords, PPC64LE.abi,
       PPC64LE.argRegs, combConsts_eq, Abi.withConsts]
-    exact ⟨hE, hO⟩
+    -- The `free` loses the frame's bytes, which lie apart from the outputs.
+    have hsub : Region.Sub ⟨s.sp - BitVec.ofNat 64 64, 64⟩ (STK s) :=
+      Offset.sub_below _ (by omega_using []) (by omega_using [])
+    have lost : ∀ R : Region, (STK s).Disjoint R → ∀ n ≤ R.len,
+        Spec.Ed25519.bytesAt m R.base n = Spec.Ed25519.bytesAt u.mem R.base n := fun R hR n hn =>
+      List.map_congr_left fun i hi => lost_byte f (hR.sub_left hsub).symm
+        (by have := List.mem_range.mp hi; omega_using [this, hn])
+    exact ⟨(lost (EXP s) h.ke 64 (Nat.le_refl _)).trans hE, (lost (OUT s) h.ko 32 (Nat.le_refl _)).trans hO⟩
 
 /-! ## Constant time -/
 
