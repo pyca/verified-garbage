@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Spec.Sha3.Instances
 import VerifiedGarbage.Proof.Sha3.Stream
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
@@ -169,6 +170,33 @@ theorem finalizePost_local (H : HashFn) : ∀ vs m₁ m₂ m' r,
   refine h msg ?_ hp
   unfold Spec.Sha3.Repr at hr ⊢
   rw [← hr]; exact (stateAt_agree hb.1).symm
+
+/-- `finalizePost` reads the memory on return only within the buffers. -/
+theorem finalizePostOut_local (H : HashFn) : ∀ vs m m₁ m₂ r,
+    vs.length = ((finalizeSig H.len).words pb).length →
+    (∀ b ∈ Sig.bufs (finalizeSig H.len).params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply ((finalizeSig H.len).words pb) (finalizePost H pb) vs m m₁ r →
+      Curry.apply ((finalizeSig H.len).words pb) (finalizePost H pb) vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen hb h
+  obtain ⟨st, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 2) hlen
+  replace hlen := Nat.succ.inj hlen
+  iterate 2
+    obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [finalizeSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+    forall_eq, Elem.size] at hb
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr] (finalizePost H pb) _ m m₁ r at h
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr] (finalizePost H pb) _ m m₂ r
+  dsimp only [Curry.apply, finalizePost, ArgWord.ofRaw] at h ⊢
+  intro msg hr hp
+  refine Eq.trans ?_ (h msg hr hp)
+  refine List.map_congr_left fun i hi => (hb.2 _ ?_).symm
+  simp only [Region.Contains]
+  rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat]
+  have := Nat.mod_le i (2 ^ 64)
+  have := List.mem_range.mp hi
+  omega
 
 theorem xofFinalizePre_local (X : Xof) : ∀ vs m₁ m₂, vs.length = (xofFinalizeSig.words pb).length →
     (∀ b ∈ Sig.bufs xofFinalizeSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →

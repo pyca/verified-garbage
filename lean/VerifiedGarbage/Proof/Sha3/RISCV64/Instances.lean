@@ -824,11 +824,12 @@ theorem finalize_verified {H : Spec.Sha3.HashFn} (hH : hashSponge H) (hr : H.rat
     (hsat : ∃ s, (finRISCV64 H).pre s) (hsat' : ∃ s, (finScratchContract RISCV64.abi H 4 1168).pre s)
     (hsat'' : ∃ s, (Spec.Sha3.finalizeContract RISCV64.abi H (1168 + 32)).pre s) :
     Verified RISCV64.target (finalize H.rate H.len) (Spec.Sha3.finalizeContract RISCV64.abi H (1168 + 32)) :=
-  RISCV64.Verified.stackScratchLKept (sig := Spec.Sha3.finalizeSig H.len) (nm := "scratch") (e := .u64)
+  RISCV64.Verified.stackScratchL (sig := Spec.Sha3.finalizeSig H.len) (nm := "scratch") (e := .u64)
     (n := 4) (pre := Spec.Sha3.finalizePre H RISCV64.abi.ptrBits)
     (post := Spec.Sha3.finalizePost H RISCV64.abi.ptrBits) (wa := true) (stack := 1168)
     (bytes := 32) (finBody_verified hH hr hl hct hsat hsat') (by exact (by decide : 3 < 8))
-    (by decide) hsat'' rfl
+    (by decide) (fun vs m m₁ m₂ r hl _ => VG.Proof.Sha3.Instances.finalizePostOut_local _ H vs m m₁ m₂ r hl)
+    hsat'' rfl
 
 /-- A state satisfying `finRISCV64`'s precondition. -/
 def finSat (len : Nat) : State :=

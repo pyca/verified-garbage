@@ -33,7 +33,7 @@ section
 # The SHA-3 sponge on RISC-V: `pad`
 
 As on PPC64LE (`Proof/Sha3/PPC64LE/Stream/Pad.lean`), in a frame on the
-stack (`WP.allocKept`) that holds the permutation's scratch space and the saved
+stack (`WP.alloc`) that holds the permutation's scratch space and the saved
 return address.
 -/
 

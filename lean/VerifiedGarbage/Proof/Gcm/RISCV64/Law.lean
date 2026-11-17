@@ -1305,7 +1305,7 @@ theorem ghash_ok (s : State) (hp : ghashX.pre s) :
      List.mem_cons_self⟩
   obtain P : Pre s := ⟨hrd, hwr, hsh, hsy, hsd, hfd, hF⟩
   unfold frameBytes
-  refine WP.allocLeKept ⟨by decide, by decide, by decide⟩ hsp ?_
+  refine WP.allocLe ⟨by decide, by decide, by decide⟩ hsp ?_
   unfold body
   refine WP.seq (WP.mono (head_ok s P) fun sY hH => ?_)
   refine WP.seq (WP.mono (blocks_loop hH.loop (s.gpr .a3).isLt hpos hH.inv) fun sL hBL => ?_)
@@ -1327,11 +1327,13 @@ theorem ghash_ok (s : State) (hp : ghashX.pre s) :
   obtain hwrL : sL.wr = (allocd 2048 s).wr := by rw [hBL.keep.2.2, hH.wr]
   obtain hspL : sL.sp = (allocd 2048 s).sp := by rw [hBL.sp, hH.sp]
   obtain T := tail_ok s P sL hBL.y hyp hwrL hspL hslot
-  refine WP.mono T fun t h => ?_
+  refine WP.mono T fun t h mL _ fl => ?_
   refine ⟨?_, fun r hr => h.2.1 r hr⟩
   have h1 := h.1
-  simp only [ghashX, freed]
-  exact h1
+  simp only [ghashX] at h1 ⊢
+  -- The `free` loses the frame's bytes, which lie apart from `Y`.
+  exact Eq.trans (Proof.Gcm.blockAt_congr fun i hi =>
+    lost_byte fl (R := ⟨s.gpr .a1, 16⟩) hsy.symm hi) h1
 
 end VG.Proof.Gcm.RISCV64
 
