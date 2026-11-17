@@ -37,6 +37,12 @@ open VG.Spec.Aes (bytesAt)
 def Saved (m : Mem) (W : Addr) (g : Reg → BitVec 64) : Prop :=
   ∀ p ∈ saved, m.readW (W + BitVec.ofNat 64 p.2) 64 = g p.1
 
+/-- The public values `seal` and `open` leave in `W`: our caller's
+registers, as on entry (`g`), and the slots. -/
+structure KeptW (W : Addr) (R : Nat) (N A D : Addr) (al n : Nat) (g : Reg → BitVec 64) (m : Mem) : Prop where
+  saved : Saved m W g
+  slots : Slots W R N A D al n m
+
 /-- The save area and the slots, which `entry` writes. -/
 abbrev entryR (W : Addr) : Region := ⟨W + BitVec.ofNat 64 144, 104⟩
 
