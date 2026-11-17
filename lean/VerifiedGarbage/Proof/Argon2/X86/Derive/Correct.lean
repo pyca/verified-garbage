@@ -298,9 +298,14 @@ theorem body_ok : WP isa Impl.Argon2.X86.Derive.body (entry s₀) fun t => BodyD
   rfl
 
 theorem correct : WP isa Impl.Argon2.X86.Derive.derive s₀ fun t => abiPreserved s₀ t ∧ deriveX86.post s₀ t :=
-  frames_ok (by have := hp.esp_lo; omega_using [this]) body_nosp (body_ok hp) fun t u q m => by
+  frames_ok (by have := hp.esp_lo; omega_using [this]) body_nosp (body_ok hp) fun t u q f => by
     show bytesAt u.mem _ _ = _
-    rw [m]; exact q
+    rw [Proof.Blake2.bytesAt_congr fun i hi => f.bytes (R := outR s₀) (fun r hr => by
+      rw [List.mem_singleton] at hr; subst hr
+      exact ((hp.stk_all _ (by simp)).sub_left
+        (below_sub (by decide) (by have := hp.esp_lo; omega_using [this]))).symm)
+      (by show outL s₀ ≤ 2 ^ 64; have := hp.out_fits; omega_using [this]) hi]
+    exact q
 
 end
 

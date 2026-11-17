@@ -278,9 +278,11 @@ theorem call_wp (d : Spec.Seed.Direction) {s₀ : State} (hp : (callX86 d).pre s
     cases d
     · exact NoSp.of_all (by lit_decide)
     · exact NoSp.of_all (by lit_decide)
-  refine WP.frameKept (rs := [.ebx]) (r := .ebx) (by decide) (by decide) (by decide) (by simp; omega_using [hE']) hbody ?_
+  obtain hsub : Region.Sub (below (s₀.gpr .esp) (4 * [Reg.ebx].length)) (below E 24) := by
+    rw [hEd]; exact below_sub (by simp) hE
+  refine WP.frame (rs := [.ebx]) (r := .ebx) (by decide) (by decide) (by decide) (by simp; omega_using [hE']) hbody ?_
   obtain ⟨s₂, e₂, hl⟩ := argLoads_ok hEd hE fitE (by rw [hrd]; simp)
-  refine WP.seq (WP.of_runBlock ⟨s₂, e₂, WP.mono (inner_wp d hc hl) fun s' ⟨rd', wr', cs, f, post⟩ => ?_⟩)
+  refine WP.seq (WP.of_runBlock ⟨s₂, e₂, WP.mono (inner_wp d hc hl) fun s' ⟨rd', wr', cs, f, post⟩ m u fl => ?_⟩)
   obtain esp' : s'.gpr .esp = E - BitVec.ofNat 32 4 := by rw [cs .esp (by decide), hl.esp]
   obtain hb4 : Region.Sub ⟨(E - BitVec.ofNat 32 4).setWidth 64, 4⟩ (below E 24) :=
     below_sub (a := 4) (by decide) hE
@@ -315,6 +317,11 @@ theorem call_wp (d : Spec.Seed.Direction) {s₀ : State} (hp : (callX86 d).pre s
     · simp only [List.mem_singleton] at hr; subst hr
       exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), by
         rw [hl.esp]; exact below_inner (by decide) hE⟩
+  obtain fr₁ : Frame ([(⟨(arg s₀ 1).setWidth 64, 16 * (arg s₀ 2).toNat⟩ : Region),
+      ⟨(arg s₀ 3).setWidth 64, 4 * wsSlots⟩] ++ [below E 24]) s₀.mem m :=
+    fr₀.trans (fl.sub fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), hsub⟩)
   refine ⟨⟨fun r hr => ?_, ?_⟩, ?_⟩
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl
@@ -327,15 +334,18 @@ theorem call_wp (d : Spec.Seed.Direction) {s₀ : State} (hp : (callX86 d).pre s
     · rw [popped_gpr _ _ _ (by decide) (by decide), cs _ (by decide)]
       exact hl.keep _ (by decide) (by decide) (by decide) (by decide) (by decide)
     · rw [popped_esp, esp', hEd]; exact BitVec.sub_add_cancel _ _
-  · rw [popped_mem]
-    refine fr₀.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
+  · refine fr₁.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact dRD
     · exact dRS
     · rw [hEd, stk_eq hE]; exact VG.Offset.base_disjoint_below _ (by omega_using [])
-  · show Spec.Seed.blocksAt (popped .ebx 1 s').mem _ _ = _
-    rw [popped_mem]; exact post
+  · show Spec.Seed.blocksAt m _ _ = _
+    rw [Proof.Seed.blocksAt_frame fl (p := (arg s₀ 1).setWidth 64) (n := (arg s₀ 2).toNat)
+      (fun r hr => by
+        rw [List.mem_singleton] at hr; subst hr; rw [Nat.mul_comm]; exact (sD.sub_left hsub).symm)
+      (by omega_using [])]
+    exact post
 
 /-! ## Constant time and the contract -/
 

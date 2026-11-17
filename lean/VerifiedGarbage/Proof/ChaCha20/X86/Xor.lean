@@ -38,7 +38,7 @@ loop over four blocks (`body4_ok`, with the setup, rounds and output of
 `Quad.lean`), which ends with the data done or at most 64 bytes left; those
 are the block function's output XORed with the source into the destination
 (`tail_ok`). The call runs in a frame holding its two arguments
-(`WP.frameKept`), and the block function's own `Verified` proof gives its effect
+(`WP.frame`), and the block function's own `Verified` proof gives its effect
 (`WP.call`); the frame and the return address are in the 12 bytes of stack
 below `esp` that the contract reserves.
 
@@ -636,17 +636,23 @@ theorem call_ok {s₀ : State} (hp : XPre s₀) {j : Nat} {s : State} (h : CInv 
   obtain hd : stackUse Impl.ChaCha20.X86.block + 4 ≤ ((pushed [.edi, .eax] s).gpr .esp).toNat := by
     rw [block_stackUse, pushed_esp, sub_toNat hn, h.esp]
     simp only [List.length_cons, List.length_nil]; omega_using [hlo]
-  refine WP.frameKept (rs := [.edi, .eax]) (r := .eax) (by simp) (by decide) (by decide) hn block_nosp ?_
+  obtain hS : Region.Sub (below (s.gpr .esp) (4 * [Reg.edi, .eax].length)) (stackR s₀) := by
+    rw [stackR_eq hp, h.esp]; exact below_sub (by decide) hlo
+  refine WP.frame (rs := [.edi, .eax]) (r := .eax) (by simp) (by decide) (by decide) hn block_nosp ?_
   refine WP.call (k := Proof.ChaCha20.blockX86) block_correct block_nosp hd (rd := rdC s₀)
     (wr := wrC s₀) (entry_pre hp h.esp h.eax h.edi) hc hw
-    fun s' hrd hwr hcs hf _ ⟨s₂, hm₂, _, hpost⟩ => ?_
+    fun s' hrd hwr hcs hf _ ⟨s₂, hm₂, _, hpost⟩ m u fl => ?_
   obtain hsp : s'.gpr .esp = (pushed [.edi, .eax] s).gpr .esp := hcs .esp (by simp [calleeSaved])
   -- The frame, the return address and the block function's writes.
-  obtain hF : Frame [b256 s₀, stackR s₀] s.mem s'.mem := by
-    rw [stackR_eq hp]
-    refine (Frame.sub (pushed_frame (by decide) hn) fun r hr => ?_).trans (Frame.sub hf fun r hr => ?_)
+  obtain hF : Frame [b256 s₀, stackR s₀] s.mem m := by
+    refine ((Frame.sub (pushed_frame (by decide) hn) fun r hr => ?_).trans (Frame.sub hf fun r hr => ?_)).trans
+      (fl.sub fun r hr => ?_)
     · simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨below (E s₀) 12, by simp, by rw [h.esp]; exact below_sub (by decide) hlo⟩
+      exact ⟨stackR s₀, by simp, hS⟩
+    rotate_left
+    · simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨stackR s₀, by simp, hS⟩
+    rw [stackR_eq hp]
     · simp only [wrC, block_stackUse, List.cons_append, List.nil_append, List.mem_cons,
         List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
@@ -659,14 +665,17 @@ theorem call_ok {s₀ : State} (hp : XPre s₀) {j : Nat} {s : State} (h : CInv 
     intro R h₁ h₂ r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl <;> with_reducible assumption
-  obtain hst : stateAt s'.mem (st s₀) = stateAt s.mem (st s₀) :=
+  obtain hst : stateAt m (st s₀) = stateAt s.mem (st s₀) :=
     stateAt_frame hF (hd _ (hp.st_b.sub_right (b256_sub s₀)) hp.stk_st.symm)
   obtain g : ∀ r ∈ calleeSaved, r ≠ .esp → r ≠ .eax → (popped .eax [Reg.edi, .eax].length s').gpr r = s.gpr r := by
     intro r hr h₁ h₂
     rw [popped_gpr _ _ _ h₁ h₂, hcs r hr, pushed_gpr _ _ h₁]
   obtain e0 : arg ((entry s).withRegions (rdC s₀) (wrC s₀)) 0 = ST s₀ := entry_arg0 (s := s) hp h.esp h.eax
   obtain e1 : arg ((entry s).withRegions (rdC s₀) (wrC s₀)) 1 = BP s₀ := entry_arg1 (s := s) hp h.esp h.edi
-  obtain hpost' : stateAt s'.mem (bp s₀) = Spec.ChaCha20.block (ctr (S0 s₀) j) := by
+  obtain hpost' : stateAt m (bp s₀) = Spec.ChaCha20.block (ctr (S0 s₀) j) := by
+    rw [stateAt_frame fl fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact ((hp.stk_b.sub_left hS).sub_right (Region.sub_prefix (by decide))).symm]
     have := (show stateAt s₂.mem ((arg ((entry s).withRegions (rdC s₀) (wrC s₀)) 1).setWidth 64) =
       Spec.ChaCha20.block (stateAt ((entry s).withRegions (rdC s₀) (wrC s₀)).mem
         ((arg ((entry s).withRegions (rdC s₀) (wrC s₀)) 0).setWidth 64)) from hpost)
@@ -679,21 +688,20 @@ theorem call_ok {s₀ : State} (hp : XPre s₀) {j : Nat} {s : State} (h : CInv 
     by rw [g .ebp (by simp [calleeSaved]) (by decide) (by decide), h.ebp],
     ?_, by rw [popped_rd, hrd, pushed_rd, h.rd],
     by rw [popped_wr, hwr, pushed_wr_eq hp h.esp, List.tail_cons, h.wr],
-    by rw [popped_mem]; exact h.data.frame hF (hd _ (hp.d_b.sub_right (b256_sub s₀)) hp.stk_d.symm),
-    by rw [popped_mem]; exact h.src.frame hF (hd _ (hp.s_b.sub_right (b256_sub s₀)) hp.stk_s.symm),
+    by exact h.data.frame hF (hd _ (hp.d_b.sub_right (b256_sub s₀)) hp.stk_d.symm),
+    by exact h.src.frame hF (hd _ (hp.s_b.sub_right (b256_sub s₀)) hp.stk_s.symm),
     ?_, ?_, fun t ht => ?_⟩
   · rw [popped_esp, hsp, pushed_esp, h.esp]
     simp only [List.length_cons, List.length_nil]
     exact BitVec.sub_add_cancel _ _
-  · rw [popped_mem]
-    exact h.saved.frame hF (hd _ (savR_b256 s₀) (hp.stk_b.symm.sub_left (savR_sub s₀)))
-  · rw [popped_mem]
-    exact h.frame.trans (hF.sub fun r hr => by
+  · exact h.saved.frame hF (hd _ (savR_b256 s₀) (hp.stk_b.symm.sub_left (savR_sub s₀)))
+  · exact h.frame.trans (hF.sub fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact ⟨bR s₀, by simp, b256_sub s₀⟩
       · exact ⟨stackR s₀, by simp, fun _ h => h⟩)
-  · rw [popped_mem, ← serialize_stateAt s'.mem (bp s₀) ht, hpost']
+  · show m _ = _
+    rw [← serialize_stateAt m (bp s₀) ht, hpost']
 
 theorem P_le (s₀ : State) (j : Nat) : P s₀ j ≤ L s₀ := Nat.min_le_right _ _
 

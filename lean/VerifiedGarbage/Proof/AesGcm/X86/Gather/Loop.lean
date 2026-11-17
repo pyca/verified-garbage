@@ -679,10 +679,13 @@ def allocated (bytes : Nat) (s : State) : State :=
 def freed (bytes : Nat) (s : State) : State :=
   { s.setReg .esp (s.gpr .esp + BitVec.ofNat 32 bytes) with wr := s.wr.tail }
 
-/-- A frame of `bytes` bytes of stack around a body that never writes `esp`. -/
+/-- A frame of `bytes` bytes of stack around a body that never writes `esp`:
+the postcondition holds whatever the frame's bytes and the unknowns are after
+the release. -/
 theorem WP.alloc {bytes : Nat} {body : Prog isa} {s : State} {Q : State → Prop}
     (hn : 0 < bytes ∧ bytes < 4096 ∧ bytes % 4 = 0) (hsp : bytes ≤ (s.gpr .esp).toNat) (hb : NoSp body)
-    (h : WP isa body (allocated bytes s) fun s₂ => Q (freed bytes s₂)) :
+    (h : WP isa body (allocated bytes s) fun s₂ => ∀ m u,
+      Frame [below (s.gpr .esp) bytes] s₂.mem m → Q { freed bytes s₂ with mem := m, unknowns := u }) :
     WP isa (.frame (.alloc bytes) body (.free bytes)) s Q := by
   obtain ⟨t, s₂, he, hq⟩ := h
   obtain ⟨-, hw⟩ := Exec.rdwr he
@@ -694,7 +697,7 @@ theorem WP.alloc {bytes : Nat} {body : Prog isa} {s : State} {Q : State → Prop
     simp only [isa, pop]
     refine ite_eq_left ⟨hn.1, hn.2.1, hn.2.2, hp, hw, ?_⟩
     rfl
-  exact ⟨_, _, Exec.frame ha he hf, hq⟩
+  exact ⟨_, _, Exec.frame ha he hf, hq _ _ (Frame.refl _ _)⟩
 
 @[simp] theorem allocated_esp (n : Nat) (s : State) : (allocated n s).gpr .esp = s.gpr .esp - BitVec.ofNat 32 n := by
   simp [allocated, gpr_setReg]

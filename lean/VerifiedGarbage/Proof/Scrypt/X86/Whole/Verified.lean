@@ -402,20 +402,35 @@ theorem scrypt_ok {s : State} (h : Proof.Scrypt.scryptX86.pre s) :
   have hL := lay_ok h
   have hc := push_ctx h
   have hnB := hL.nB
-  refine WP.frameKept (rs := pushRs) (r := .eax) (by decide) (by decide) (by decide)
-    (by show 4 * 9 ≤ _; have := h.1; omega_arith) (body_nosp hsp name)
-    (WP.mono (body_scrypt_ok hv hsp hst name hL hc) fun u ⟨hu, ho⟩ => ⟨⟨fun r hr => ?_, ?_⟩, ?_⟩)
+  have h116 := h.1
+  have hfr : below (s.gpr .esp) (4 * pushRs.length) = (lay s).FR := by
+    show (⟨(s.gpr .esp - BitVec.ofNat 32 (4 * 9)).setWidth 64, 36⟩ : Region) = _
+    rw [sub36, show s.gpr .esp - BitVec.ofNat 32 116 = (lay s).B from rfl, addr_B (by omega_arith)]
+  refine WP.frame (rs := pushRs) (r := .eax) (by decide) (by decide) (by decide)
+    (by show 4 * 9 ≤ _; omega_arith) (body_nosp hsp name)
+    (WP.mono (body_scrypt_ok hv hsp hst name hL hc) fun u ⟨hu, ho⟩ m v fl => ?_)
+  rw [hfr] at fl
+  refine ⟨⟨fun r hr => ?_, ?_⟩, ?_⟩
   · by_cases hr' : r = .esp
     · subst hr'
       rw [popped_esp, hu.esp, show pushRs.length = 9 from rfl, pop_esp, lay_esp]
     · rw [popped_gpr _ _ _ hr' (ne_cs hr (by decide)), hu.cs r hr hr']
-  · rw [popped_mem]
+  · show m.readW _ _ = _
+    rw [fl.readW (r := (lay s).RET) (by rw [Lay.RET, lay_ret h.1 h.2.1]; exact Region.contains_self _ _)
+      (fun r hr => by
+        rw [List.mem_singleton] at hr; subst hr
+        exact Offset.disjoint _ (.inr (by decide)) (by omega_arith) (by omega_arith)) (by decide)]
     refine hu.frame.readW (r := (lay s).RET) ?_ ?_ (by decide)
     · rw [Lay.RET, lay_ret h.1 h.2.1]; exact Region.contains_self _ _
     · simp only [List.mem_cons, List.not_mem_nil, or_false]
       rintro r (rfl | rfl | rfl | rfl | rfl)
       exacts [hL.rb, hL.rv, hL.rc, hL.ro, Offset.disjoint_base _ (by omega_arith) (by omega_arith)]
-  · simp only [Proof.Scrypt.scryptX86, popped_mem]
+  · simp only [Proof.Scrypt.scryptX86]
+    rw [show (bytesAt m ((arg s 11).setWidth 64) (arg s 12).toNat) =
+        bytesAt u.mem ((arg s 11).setWidth 64) (arg s 12).toNat from
+      Memory.frame_bytesAt fl (fun r hr => by
+        rw [List.mem_singleton] at hr; subst hr
+        exact (hL.ko.sub_left (Offset.sub_base _ (by decide))).symm) (by omega_arith)]
     exact ho
 
 end

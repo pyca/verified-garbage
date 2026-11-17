@@ -579,12 +579,19 @@ theorem called_wp (F : SealFn) {s g : State} (h : Lay s) (hg : Gathered s g) :
 
 /-- Our caller's registers back from the frame, and the frame freed. -/
 theorem ret_wp {s z : State} (h : Lay s) (hz : Called s z) :
-    WP isa (.block restore) z fun z' => abiPreserved s (freed 48 z') ∧ gatherPost s (freed 48 z') := by
+    WP isa (.block restore) z fun z' => ∀ m u, Frame [below (s.gpr .esp) 48] z'.mem m →
+      abiPreserved s { freed 48 z' with mem := m, unknowns := u } ∧
+        gatherPost s { freed 48 z' with mem := m, unknowns := u } := by
   have hr (d : Nat) (hd : d + 4 ≤ 48) : InRegions (z.rd ++ z.wr) (w64 (z.gpr .esp + BitVec.ofNat 32 d)) 4 := by
     rw [hz.esp, hz.wr]
     obtain ⟨r, hr, hc⟩ := h.inFr d hd s.wr
     exact ⟨r, List.mem_append_right _ hr, hc⟩
-  refine WP.of_runBlock ⟨_, by xrun [restore, sp, hr 36 (by decide), hr 40 (by decide), hr 44 (by decide)], ?_⟩
+  refine WP.of_runBlock ⟨_, by xrun [restore, sp, hr 36 (by decide), hr 40 (by decide), hr 44 (by decide)],
+    fun m u fl => ?_⟩
+  obtain hfr : ∀ {r : Region}, (stkR s).Disjoint r → ∀ r' ∈ [below (s.gpr .esp) 48], r.Disjoint r' :=
+    fun h₁ r' hr' => by
+      rw [List.mem_singleton] at hr'; subst hr'
+      exact h₁.symm.sub_right h.fr_sub
   refine ⟨⟨fun r hr => ?_, ?_⟩, ?_⟩
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     simp only [freed]
@@ -594,8 +601,15 @@ theorem ret_wp {s z : State} (h : Lay s) (hz : Called s z) :
     · simp [gpr_setReg, hz.esp, hz.edi]
     · simp [gpr_setReg, hz.ebp]
     · simp [gpr_setReg, hz.esp]; exact BitVec.sub_add_cancel _ _
-  · simp only [freed, mem_setReg]; exact hz.ret
+  · show m.readW _ _ = _
+    rw [fl.readW (Region.contains_self _ _) (fun r hr => by
+      rw [List.mem_singleton] at hr; subst hr
+      show Region.Disjoint ⟨w64 (s.gpr .esp), 4⟩ ⟨w64 (Pf s), 48⟩
+      rw [h.hE, h.hA0]; exact Offset.disjoint _ (.inr (by decide)) (by decide) (by omega_arith)) (by decide)]
+    simp only [freed, mem_setReg]; exact hz.ret
   · -- The ciphertext and the tag.
+    show encrypt _ _ _ _ = (bytesAt m (w64 (Dst s)) (L s), bytesAt m (w64 (Tg s)) 16)
+    rw [bytesAt_frame fl (hfr h.bd) (by have := h.od; omega_arith), bytesAt_frame fl (hfr h.bt) (by decide)]
     show encrypt _ _ _ _ = (bytesAt z.mem (w64 (Dst s)) (L s), bytesAt z.mem (w64 (Tg s)) 16)
     have hfc : Frame [FR s, dR s] s.mem (gM s) :=
       (h.eM_frame.mono (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; simp)).trans

@@ -253,10 +253,10 @@ theorem correct (s : State) (hp : contract.pre s) :
   have noSp : NoSp body := by intro i hi; have h : body.allInstrs (fun i => !Taint.clobbers i .esp)=true := by decide +kernel
                               rw [Code.allInstrs_eq] at h
                               simpa only [Bool.not_eq_true'] using List.all_eq_true.mp h i hi
-  apply WP.frameKept (rs := [.ebx]) (by decide) (by decide) (by decide) hp.2.2.2.2.1 noSp
+  apply WP.frame (rs := [.ebx]) (by decide) (by decide) (by decide) hp.2.2.2.2.1 noSp
   obtain ⟨tr,t,he,⟨hm,ho⟩,hk⟩ := WP.keep [.eax,.ecx,.edx,.ebx] (body_ok (pushed [.ebx] s) (pushed_pre s hp)) (by rfl)
   have hsp := hk.gpr (r := .esp) (by decide)
-  refine ⟨tr,t,he,⟨?_,?_⟩,?_⟩
+  refine ⟨tr,t,he,fun m u fl => ⟨⟨?_,?_⟩,?_⟩⟩
   · intro r hr
     by_cases hb : r=.ebx
     · subst r
@@ -273,8 +273,12 @@ theorem correct (s : State) (hp : contract.pre s) :
         exact BitVec.sub_add_cancel _ _
       · change (popReg t .ebx 1).gpr r=s.gpr r
         rw [(popReg_eq t .ebx 1).2.2.2 r hs hb,hk.gpr (by cases r <;> simp_all [calleeSaved]),pushed_gpr _ _ hs]
-  · change (popReg t .ebx 1).mem.readW ((s.gpr .esp).setWidth 64) 32 = _
-    rw [(popReg_rest t .ebx 1).1,hm]
+  · change m.readW ((s.gpr .esp).setWidth 64) 32 = _
+    rw [fl.readW (Region.contains_self _ _) (fun r hr => by
+      obtain rfl := List.mem_singleton.mp hr
+      show Region.Disjoint _ ⟨(s.gpr .esp - BitVec.ofNat 32 4).setWidth 64, 4⟩
+      rw [Taint.sub_setWidth hp.2.2.2.2.1]
+      exact Offset.base_disjoint_below _ (by decide)) (by decide), hm]
     apply (frame_mem s hp.2.2.2.2.1).readW (Region.contains_self _ _) ?_ (by decide)
     intro r hr
     obtain rfl := List.mem_singleton.mp hr

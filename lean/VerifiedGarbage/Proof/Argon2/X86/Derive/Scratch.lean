@@ -294,9 +294,64 @@ theorem E_sub (k : Nat) (hk : k ≤ 160) :
     Nat.mod_eq_of_lt (a := k) (by omega_arith)]
   omega_arith
 
+/-- `E s₀ + a`, widened, is the 64-bit `E s₀` plus `a`. -/
+theorem E_add_setWidth {a : Nat} (ha : a ≤ 160) :
+    (E s₀ + BitVec.ofNat 32 a).setWidth 64 = (E s₀).setWidth 64 + BitVec.ofNat 64 a := by
+  have hE := (E0 s₀).isLt
+  have hEt : (E s₀).toNat = (E0 s₀).toNat - 160 := sub_toNat hlo
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_ofNat]
+  rw [hEt]
+  omega_arith
+
+/-- The `n` bytes below `E s₀ + a` lie in the `b ≥ a` bytes from `E s₀`. -/
+theorem below_loc {x : BitVec 32} {a n b : Nat} (hx : x = E s₀ + BitVec.ofNat 32 a) (hn : n ≤ a)
+    (hb : a ≤ b) (hb' : b ≤ 160) : Region.Sub (below x n) ⟨(E s₀).setWidth 64, b⟩ := by
+  subst hx
+  have hE := (E0 s₀).isLt
+  obtain e : E s₀ + BitVec.ofNat 32 a - BitVec.ofNat 32 n = E s₀ + BitVec.ofNat 32 (a - n) := by
+    apply BitVec.eq_of_toNat_eq
+    simp only [BitVec.toNat_add, BitVec.toNat_sub, BitVec.toNat_ofNat]
+    omega_arith
+  show Region.Sub ⟨(E s₀ + BitVec.ofNat 32 a - BitVec.ofNat 32 n).setWidth 64, n⟩ _
+  rw [e, E_add_setWidth hlo (by omega_arith)]
+  exact Offset.sub_base _ (by omega_arith)
+
+/-- A saved word is apart from the bytes from `E s₀` below it. -/
+theorem keep_slot {m m' : Mem} {b : Nat} (f : Frame [⟨(E s₀).setWidth 64, b⟩] m m') {j : Nat}
+    (hj : j < 4) (hb : b ≤ 144 + 4 * j) : m'.readW (slot s₀ j) 32 = m.readW (slot s₀ j) 32 := by
+  rw [slot, E_add_setWidth hlo (by omega_arith)]
+  exact f.readW (Region.contains_self _ _) (fun r hr => by
+    rw [List.mem_singleton] at hr; subst hr
+    exact Offset.disjoint_base _ hb (by omega_arith)) (by decide)
+
+/-- The return address is apart from the 160 bytes below it. -/
+theorem keep_ret {m m' : Mem} (f : Frame [⟨(E s₀).setWidth 64, 160⟩] m m') :
+    m'.readW ((E0 s₀).setWidth 64) 32 = m.readW ((E0 s₀).setWidth 64) 32 := by
+  rw [show E0 s₀ = E s₀ + BitVec.ofNat 32 160 by rw [E_sub hlo 160 (by decide)]; simp,
+    E_add_setWidth hlo (by decide)]
+  exact f.readW (Region.contains_self _ _) (fun r hr => by
+    rw [List.mem_singleton] at hr; subst hr
+    exact Offset.disjoint_base _ (Nat.le_refl _) (by omega_arith)) (by decide)
+
+/-- A frame of the region below `x`, widened to the `b` bytes from `E s₀`. -/
+theorem frame_loc {m m' : Mem} {x : BitVec 32} {a n b : Nat} (f : Frame [below x n] m m')
+    (hx : x = E s₀ + BitVec.ofNat 32 a) (hn : n ≤ a) (hb : a ≤ b) (hb' : b ≤ 160) :
+    Frame [⟨(E s₀).setWidth 64, b⟩] m m' :=
+  f.sub fun r hr => by
+    rw [List.mem_singleton] at hr; subst hr
+    exact ⟨_, List.mem_singleton_self _, below_loc hlo hx hn hb hb'⟩
+
+omit hlo in
+theorem frame_widen {m m' : Mem} {a b : Nat} (f : Frame [⟨(E s₀).setWidth 64, a⟩] m m') (h : a ≤ b) :
+    Frame [⟨(E s₀).setWidth 64, b⟩] m m' :=
+  f.sub fun r hr => by
+    rw [List.mem_singleton] at hr; subst hr
+    exact ⟨_, List.mem_singleton_self _, Region.sub_prefix h⟩
+
 theorem frames_ok {Q : State → Prop} (hsp : NoSp body)
     (hb : WP isa body (entry s₀) fun t => BodyDone s₀ t ∧ Q t)
-    (hQ : ∀ t u, Q t → u.mem = t.mem → Q u) :
+    (hQ : ∀ t u, Q t → Frame [below (E0 s₀) 160] t.mem u.mem → Q u) :
     WP isa derive s₀ fun u => abiPreserved s₀ u ∧ Q u := by
   obtain hE := (E0 s₀).isLt
   have hlo' : 160 ≤ (s₀.gpr .esp).toNat := hlo
@@ -316,70 +371,91 @@ theorem frames_ok {Q : State → Prop} (hsp : NoSp body)
   obtain e4 : ((pushed [.ebx] (pushed [.esi] (pushed [.edi] (pushed [.ebp] s₀)))).gpr .esp).toNat =
       (E0 s₀).toNat - 16 := by
     rw [pushed_esp, sub_toNat (by simp only [List.length_singleton]; omega_arith), e3]; rfl
+  obtain x4 : (pushed [.ebx] (pushed [.esi] (pushed [.edi] (pushed [.ebp] s₀)))).gpr .esp =
+      E s₀ + BitVec.ofNat 32 144 := by
+    apply BitVec.eq_of_toNat_eq; rw [e4, E_sub hlo 144 (by decide), sub_toNat (by omega_arith)]
+  obtain x3 : (pushed [.esi] (pushed [.edi] (pushed [.ebp] s₀))).gpr .esp = E s₀ + BitVec.ofNat 32 148 := by
+    apply BitVec.eq_of_toNat_eq; rw [e3, E_sub hlo 148 (by decide), sub_toNat (by omega_arith)]
+  obtain x2 : (pushed [.edi] (pushed [.ebp] s₀)).gpr .esp = E s₀ + BitVec.ofNat 32 152 := by
+    apply BitVec.eq_of_toNat_eq; rw [e2, E_sub hlo 152 (by decide), sub_toNat (by omega_arith)]
+  obtain x1 : (pushed [.ebp] s₀).gpr .esp = E s₀ + BitVec.ofNat 32 156 := by
+    apply BitVec.eq_of_toNat_eq; rw [e1, E_sub hlo 156 (by decide), sub_toNat (by omega_arith)]
+  obtain x0 : s₀.gpr .esp = E s₀ + BitVec.ofNat 32 160 := by
+    rw [E_sub hlo 160 (by decide)]; simp
   simp only [derive, saved, frames]
-  refine WP.frameKept (by simp) (by decide) (by decide) (by simp only [List.length_singleton]; omega_arith)
+  refine WP.frame (by simp) (by decide) (by decide) (by simp only [List.length_singleton]; omega_arith)
     (nf (by decide) (nf (by decide) (nf (by decide) (nf (by decide) hsp)))) ?_
-  refine WP.frameKept (by simp) (by decide) (by decide) (by simp only [List.length_singleton]; omega_arith)
+  refine WP.frame (by simp) (by decide) (by decide) (by simp only [List.length_singleton]; omega_arith)
     (nf (by decide) (nf (by decide) (nf (by decide) hsp))) ?_
-  refine WP.frameKept (by simp) (by decide) (by decide) (by simp only [List.length_singleton]; omega_arith)
+  refine WP.frame (by simp) (by decide) (by decide) (by simp only [List.length_singleton]; omega_arith)
     (nf (by decide) (nf (by decide) hsp)) ?_
-  refine WP.frameKept (by simp) (by decide) (by decide) (by simp only [List.length_singleton]; omega_arith)
+  refine WP.frame (by simp) (by decide) (by decide) (by simp only [List.length_singleton]; omega_arith)
     (nf (by decide) hsp) ?_
-  refine WP.frameKept (by simp [locals]) (by decide) (by decide)
-    (by simp only [List.length_replicate, locals]; omega_arith) hsp (hb.mono fun t ⟨d, q⟩ => ?_)
-  -- The pops.
+  refine WP.frame (by simp [locals]) (by decide) (by decide)
+    (by simp only [List.length_replicate, locals]; omega_arith) hsp
+    (hb.mono fun t ⟨d, q⟩ m₁ v₁ f₁ m₂ v₂ f₂ m₃ v₃ f₃ m₄ v₄ f₄ m₅ v₅ f₅ => ?_)
+  -- The pops: each restores a register from its slot, which the frames below it miss.
   obtain add4 : ∀ a : Nat, E s₀ + BitVec.ofNat 32 a + BitVec.ofNat 32 (4 * 1) =
       E s₀ + BitVec.ofNat 32 (a + 4) := fun a => by rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-  let t₁ := popped .eax (List.replicate (locals / 4) Reg.eax).length t
-  try rewrite [show popped .eax (List.replicate (locals / 4) Reg.eax).length t = t₁ from rfl] at *
-  have ht₁ : t₁ = popped .eax (List.replicate (locals / 4) Reg.eax).length t := rfl
+  let t₁ : State := { popped .eax (List.replicate (locals / 4) Reg.eax).length t with mem := m₁, unknowns := v₁ }
+  let t₂ : State := { popped .ebx [Reg.ebx].length t₁ with mem := m₂, unknowns := v₂ }
+  let t₃ : State := { popped .esi [Reg.esi].length t₂ with mem := m₃, unknowns := v₃ }
+  let t₄ : State := { popped .edi [Reg.edi].length t₃ with mem := m₄, unknowns := v₄ }
+  obtain F₁ : Frame [⟨(E s₀).setWidth 64, 144⟩] t.mem m₁ :=
+    frame_loc hlo f₁ x4 (by simp only [List.length_replicate, locals]; omega_arith) (Nat.le_refl _) (by decide)
+  obtain F₂ : Frame [⟨(E s₀).setWidth 64, 148⟩] t.mem m₂ :=
+    (frame_widen F₁ (by decide)).trans (frame_loc hlo f₂ x3 (by simp) (Nat.le_refl _) (by decide))
+  obtain F₃ : Frame [⟨(E s₀).setWidth 64, 152⟩] t.mem m₃ :=
+    (frame_widen F₂ (by decide)).trans (frame_loc hlo f₃ x2 (by simp) (Nat.le_refl _) (by decide))
+  obtain F₄ : Frame [⟨(E s₀).setWidth 64, 156⟩] t.mem m₄ :=
+    (frame_widen F₃ (by decide)).trans (frame_loc hlo f₄ x1 (by simp) (Nat.le_refl _) (by decide))
+  obtain F₅ : Frame [⟨(E s₀).setWidth 64, 160⟩] t.mem m₅ :=
+    (frame_widen F₄ (by decide)).trans (frame_loc hlo f₅ x0 (by simp) (Nat.le_refl _) (by decide))
   obtain sp₁ : t₁.gpr .esp = E s₀ + BitVec.ofNat 32 144 := by
-    rw [ht₁, popped_esp, d.esp]; simp [locals]
-  let t₂ := popped .ebx [Reg.ebx].length t₁
-  try rewrite [show popped .ebx [Reg.ebx].length t₁ = t₂ from rfl] at *
-  have ht₂ : t₂ = popped .ebx [Reg.ebx].length t₁ := rfl
+    show (popped .eax (List.replicate (locals / 4) Reg.eax).length t).gpr .esp = _
+    rw [popped_esp, d.esp]; simp [locals]
   obtain sp₂ : t₂.gpr .esp = E s₀ + BitVec.ofNat 32 148 := by
-    rw [ht₂, popped_esp, sp₁]; exact add4 144
-  let t₃ := popped .esi [Reg.esi].length t₂
-  try rewrite [show popped .esi [Reg.esi].length t₂ = t₃ from rfl] at *
-  have ht₃ : t₃ = popped .esi [Reg.esi].length t₂ := rfl
+    show (popped .ebx [Reg.ebx].length t₁).gpr .esp = _
+    rw [popped_esp, sp₁]; exact add4 144
   obtain sp₃ : t₃.gpr .esp = E s₀ + BitVec.ofNat 32 152 := by
-    rw [ht₃, popped_esp, sp₂]; exact add4 148
-  let t₄ := popped .edi [Reg.edi].length t₃
-  try rewrite [show popped .edi [Reg.edi].length t₃ = t₄ from rfl] at *
-  have ht₄ : t₄ = popped .edi [Reg.edi].length t₃ := rfl
+    show (popped .esi [Reg.esi].length t₂).gpr .esp = _
+    rw [popped_esp, sp₂]; exact add4 148
   obtain sp₄ : t₄.gpr .esp = E s₀ + BitVec.ofNat 32 156 := by
-    rw [ht₄, popped_esp, sp₃]; exact add4 152
-  let u := popped .ebp [Reg.ebp].length t₄
-  try rewrite [show popped .ebp [Reg.ebp].length t₄ = u from rfl] at *
-  have hu : u = popped .ebp [Reg.ebp].length t₄ := rfl
-  obtain spu : u.gpr .esp = E0 s₀ := by
-    rw [hu, popped_esp, sp₄, List.length_singleton, add4 156, E_sub hlo 160 (by decide)]; simp
-  obtain mu : u.mem = t.mem := by simp [hu, ht₄, ht₃, ht₂, ht₁]
+    show (popped .edi [Reg.edi].length t₃).gpr .esp = _
+    rw [popped_esp, sp₃]; exact add4 152
   obtain b₂ : t₂.gpr .ebx = s₀.gpr .ebx := by
-    rw [ht₂, List.length_singleton, popped_one_self _ _ (by decide), sp₁, ht₁, popped_mem]
-    exact d.saved 0 (by decide)
+    show (popped .ebx 1 t₁).gpr .ebx = _
+    rw [popped_one_self _ _ (by decide), sp₁]
+    exact (keep_slot hlo F₁ (j := 0) (by decide) (by decide)).trans (d.saved 0 (by decide))
   obtain b₃ : t₃.gpr .esi = s₀.gpr .esi := by
-    rw [ht₃, List.length_singleton, popped_one_self _ _ (by decide), sp₂, ht₂, popped_mem, ht₁,
-      popped_mem]
-    exact d.saved 1 (by decide)
+    show (popped .esi 1 t₂).gpr .esi = _
+    rw [popped_one_self _ _ (by decide), sp₂]
+    exact (keep_slot hlo F₂ (j := 1) (by decide) (by decide)).trans (d.saved 1 (by decide))
   obtain b₄ : t₄.gpr .edi = s₀.gpr .edi := by
-    rw [ht₄, List.length_singleton, popped_one_self _ _ (by decide), sp₃, ht₃, popped_mem, ht₂,
-      popped_mem, ht₁, popped_mem]
-    exact d.saved 2 (by decide)
-  obtain b₅ : u.gpr .ebp = s₀.gpr .ebp := by
-    rw [hu, List.length_singleton, popped_one_self _ _ (by decide), sp₄, ht₄, popped_mem, ht₃,
-      popped_mem, ht₂, popped_mem, ht₁, popped_mem]
-    exact d.saved 3 (by decide)
-  refine ⟨⟨fun r hr => ?_, by rw [mu]; exact d.ret⟩, hQ t u q mu⟩
+    show (popped .edi 1 t₃).gpr .edi = _
+    rw [popped_one_self _ _ (by decide), sp₃]
+    exact (keep_slot hlo F₃ (j := 2) (by decide) (by decide)).trans (d.saved 2 (by decide))
+  obtain b₅ : (popped .ebp [Reg.ebp].length t₄).gpr .ebp = s₀.gpr .ebp := by
+    show (popped .ebp 1 t₄).gpr .ebp = _
+    rw [popped_one_self _ _ (by decide), sp₄]
+    exact (keep_slot hlo F₄ (j := 3) (by decide) (by decide)).trans (d.saved 3 (by decide))
+  obtain spu : (popped .ebp [Reg.ebp].length t₄).gpr .esp = E0 s₀ := by
+    rw [popped_esp, sp₄, List.length_singleton, add4 156, E_sub hlo 160 (by decide)]; simp
+  refine ⟨⟨fun r hr => ?_, (keep_ret hlo F₅).trans d.ret⟩, hQ t _ q F₅⟩
+  show (popped .ebp [Reg.ebp].length t₄).gpr r = s₀.gpr r
   simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl
-  · rw [hu, popped_gpr _ _ _ (by decide) (by decide), ht₄, popped_gpr _ _ _ (by decide) (by decide),
-      ht₃, popped_gpr _ _ _ (by decide) (by decide)]
+  · rw [popped_gpr _ _ _ (by decide) (by decide)]
+    show (popped .edi [Reg.edi].length t₃).gpr .ebx = _
+    rw [popped_gpr _ _ _ (by decide) (by decide)]
+    show (popped .esi [Reg.esi].length t₂).gpr .ebx = _
+    rw [popped_gpr _ _ _ (by decide) (by decide)]
     exact b₂
-  · rw [hu, popped_gpr _ _ _ (by decide) (by decide), ht₄, popped_gpr _ _ _ (by decide) (by decide)]
+  · rw [popped_gpr _ _ _ (by decide) (by decide)]
+    show (popped .edi [Reg.edi].length t₃).gpr .esi = _
+    rw [popped_gpr _ _ _ (by decide) (by decide)]
     exact b₃
-  · rw [hu, popped_gpr _ _ _ (by decide) (by decide)]
+  · rw [popped_gpr _ _ _ (by decide) (by decide)]
     exact b₄
   · exact b₅
   · exact spu
