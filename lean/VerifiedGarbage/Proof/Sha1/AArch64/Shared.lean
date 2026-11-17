@@ -8,6 +8,7 @@ public import VerifiedGarbage.Spec.Sha1.Contract
 public import VerifiedGarbage.Impl.StackScratch.AArch64
 public import VerifiedGarbage.Impl.Sha1.AArch64.Stream
 import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
+import VerifiedGarbage.Proof.Sha1.Scratch
 
 /-!
 # Sha1 on AArch64: the shared contracts
@@ -19,7 +20,7 @@ contracts of `Spec/Sha1/Contract.lean`, which the artifacts are emitted with.
 `update_of` and `finalize_of` keep the working space in a frame of their
 own: they are `updateScratch_of` and `finalizeScratch_of` (the shared
 contracts with the working space as an argument, which HMAC's and PBKDF2's
-code calls) run in a frame that allocates it (`Verified.stackScratchKept`).
+code calls) run in a frame that allocates it (`Verified.stackScratch`).
 -/
 
 @[expose] public section
@@ -56,8 +57,9 @@ theorem update_of {code : Prog AArch64.isa}
     (hv : Verified AArch64.target code Proof.Sha1.updateAArch64) :
     Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratch 160 .x4 code)
       (Spec.Sha1.updateContract AArch64.abi (16 + 160)) :=
-  AArch64.Verified.stackScratchKept (nm := "scratch") (e := .u64) (n := 20) (stack := 16) (bytes := 160)
+  AArch64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 20) (stack := 16) (bytes := 160)
     (updateScratch_of hv) (by decide) (by decide)
+    (fun vs m m₁ m₂ r hl _ => Proof.Sha1.updatePostOut_local _ vs m m₁ m₂ r hl)
     (AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 /-- `finalize`: `finalizeScratch_of` with its working space in a frame of its own. -/
@@ -65,8 +67,9 @@ theorem finalize_of {code : Prog AArch64.isa}
     (hv : Verified AArch64.target code Proof.Sha1.finalizeAArch64) :
     Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratch 160 .x3 code)
       (Spec.Sha1.finalizeContract AArch64.abi (16 + 160)) :=
-  AArch64.Verified.stackScratchKept (nm := "scratch") (e := .u64) (n := 20) (stack := 16) (bytes := 160)
+  AArch64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 20) (stack := 16) (bytes := 160)
     (finalizeScratch_of hv) (by decide) (by decide)
+    (fun vs m m₁ m₂ r hl _ => Proof.Sha1.finalizePostOut_local _ vs m m₁ m₂ r hl)
     (AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 end VG.Proof.Sha1.AArch64.Shared
