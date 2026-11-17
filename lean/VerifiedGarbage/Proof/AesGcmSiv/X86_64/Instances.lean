@@ -981,12 +981,15 @@ theorem openOut (stack : Nat) :
       rw [e]
       exact h key hl hk
 
-/-- A registration over the bitsliced AES, its 3856 bytes of stack wiped
-whole on return, in the chunks `[8, 3848]`; any other as it is. -/
+/-- A registration with its stack wiped whole on return: the 784 bytes of
+the code in registers (`sivReg`) in the chunks `[8, 776]`, the 3856 bytes of
+the code over the bitsliced AES in the chunks `[8, 3848]`; any other as it
+is. -/
 def scrubSoft {api : Api} (v : GcmImpl) (r : Registration api X86_64.target)
     (hpost : PostOut r.contract (api.sig.retBits
       ((X86_64.abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)) : Registration api X86_64.target :=
-  if v.ctr.features = [] then withScrubAllC r hpost [8, 3848] else r
+  if sivReg v then withScrubAllC r hpost [8, 776]
+  else if v.ctr.features = [] then withScrubAllC r hpost [8, 3848] else r
 
 /-- `vg_aes_gcm_siv_seal` over `v`. -/
 def sealReg (v : GcmImpl) : Registration Spec.GcmSiv.sealApi X86_64.target :=
