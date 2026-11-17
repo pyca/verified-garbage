@@ -71,7 +71,102 @@ jne 23b
 jmp 22f
 21:
 22:
-.base64 "SYuZgAEAAEmLqYgBAABNi6GQAQAATYupmAEAAE2LsaABAABNi7moAQAAZg/vwPNBD3+BuAUAAPNBD3+BsAUAAPNBD3+BoAUAAPNBD3+BkAUAAPNBD3+BgAUAAPNBD3+BcAUAAPNBD3+BYAUAAPNBD3+BUAUAAPNBD3+BQAUAAPNBD3+BMAUAAPNBD3+BIAUAAPNBD3+BEAUAAPNBD3+BAAUAAPNBD3+B8AQAAPNBD3+B4AQAAPNBD3+B0AQAAPNBD3+BwAQAAPNBD3+BsAQAAPNBD3+BoAQAAPNBD3+BkAQAAPNBD3+BgAQAAPNBD3+BcAQAAPNBD3+BYAQAAPNBD3+BUAQAAPNBD3+BQAQAAPNBD3+BMAQAAPNBD3+BIAQAAPNBD3+BEAQAAPNBD3+BAAQAAPNBD3+B8AMAAPNBD3+B4AMAAPNBD3+B0AMAAPNBD3+BwAMAAPNBD3+BsAMAAPNBD3+BoAMAAPNBD3+BkAMAAPNBD3+BgAMAAPNBD3+BcAMAAPNBD3+BYAMAAPNBD3+BUAMAAPNBD3+BQAMAAPNBD3+BMAMAAPNBD3+BIAMAAPNBD3+BEAMAAPNBD3+BAAMAAPNBD3+B8AIAAPNBD3+B4AIAAPNBD3+B0AIAAPNBD3+BwAIAAPNBD3+BsAIAAPNBD3+BoAIAAPNBD3+BkAIAAPNBD3+BgAIAAPNBD3+BcAIAAPNBD3+BYAIAAPNBD3+BUAIAAPNBD3+BQAIAAPNBD3+BMAIAAPNBD3+BIAIAAPNBD3+BEAIAAPNBD3+BAAIAAPNBD3+B8AEAAPNBD3+B4AEAAPNBD3+B0AEAAPNBD3+BwAEAAPNBD3+BsAEAAPNBD3+BoAEAAPNBD3+BkAEAAPNBD3+BgAEAAPNBD3+BcAEAAPNBD3+BYAEAAPNBD3+BUAEAAPNBD3+BQAEAAPNBD3+BMAEAAPNBD3+BIAEAAPNBD3+BEAEAAPNBD3+BAAEAAPNBD3+B8AAAAPNBD3+B4AAAAPNBD3+B0AAAAPNBD3+BwAAAAPNBD3+BsAAAAPNBD3+BoAAAAPNBD3+BkAAAAPNBD3+BgAAAAPNBD39BcPNBD39BYPNBD39BUPNBD39BQPNBD39BMPNBD39BIPNBD39BEPNBD38Bww=="
+.base64 "SYuZgAEAAEmLqYgBAABNi6GQAQAATYupmAEAAE2LsaABAABNi7moAQAA"
+pxor xmm0, xmm0
+movq qword ptr [r9+0], xmm0
+movdqa xmmword ptr [r9+8], xmm0
+movdqa xmmword ptr [r9+24], xmm0
+movdqa xmmword ptr [r9+40], xmm0
+movdqa xmmword ptr [r9+56], xmm0
+movdqa xmmword ptr [r9+72], xmm0
+movdqa xmmword ptr [r9+88], xmm0
+movdqa xmmword ptr [r9+104], xmm0
+movdqa xmmword ptr [r9+120], xmm0
+movdqa xmmword ptr [r9+136], xmm0
+movdqa xmmword ptr [r9+152], xmm0
+movdqa xmmword ptr [r9+168], xmm0
+movdqa xmmword ptr [r9+184], xmm0
+movdqa xmmword ptr [r9+200], xmm0
+movdqa xmmword ptr [r9+216], xmm0
+movdqa xmmword ptr [r9+232], xmm0
+movdqa xmmword ptr [r9+248], xmm0
+movdqa xmmword ptr [r9+264], xmm0
+movdqa xmmword ptr [r9+280], xmm0
+movdqa xmmword ptr [r9+296], xmm0
+movdqa xmmword ptr [r9+312], xmm0
+movdqa xmmword ptr [r9+328], xmm0
+movdqa xmmword ptr [r9+344], xmm0
+movdqa xmmword ptr [r9+360], xmm0
+movdqa xmmword ptr [r9+376], xmm0
+movdqa xmmword ptr [r9+392], xmm0
+movdqa xmmword ptr [r9+408], xmm0
+movdqa xmmword ptr [r9+424], xmm0
+movdqa xmmword ptr [r9+440], xmm0
+movdqa xmmword ptr [r9+456], xmm0
+movdqa xmmword ptr [r9+472], xmm0
+movdqa xmmword ptr [r9+488], xmm0
+movdqa xmmword ptr [r9+504], xmm0
+movdqa xmmword ptr [r9+520], xmm0
+movdqa xmmword ptr [r9+536], xmm0
+movdqa xmmword ptr [r9+552], xmm0
+movdqa xmmword ptr [r9+568], xmm0
+movdqa xmmword ptr [r9+584], xmm0
+movdqa xmmword ptr [r9+600], xmm0
+movdqa xmmword ptr [r9+616], xmm0
+movdqa xmmword ptr [r9+632], xmm0
+movdqa xmmword ptr [r9+648], xmm0
+movdqa xmmword ptr [r9+664], xmm0
+movdqa xmmword ptr [r9+680], xmm0
+movdqa xmmword ptr [r9+696], xmm0
+movdqa xmmword ptr [r9+712], xmm0
+movdqa xmmword ptr [r9+728], xmm0
+movdqa xmmword ptr [r9+744], xmm0
+movdqa xmmword ptr [r9+760], xmm0
+movdqa xmmword ptr [r9+776], xmm0
+movdqa xmmword ptr [r9+792], xmm0
+movdqa xmmword ptr [r9+808], xmm0
+movdqa xmmword ptr [r9+824], xmm0
+movdqa xmmword ptr [r9+840], xmm0
+movdqa xmmword ptr [r9+856], xmm0
+movdqa xmmword ptr [r9+872], xmm0
+movdqa xmmword ptr [r9+888], xmm0
+movdqa xmmword ptr [r9+904], xmm0
+movdqa xmmword ptr [r9+920], xmm0
+movdqa xmmword ptr [r9+936], xmm0
+movdqa xmmword ptr [r9+952], xmm0
+movdqa xmmword ptr [r9+968], xmm0
+movdqa xmmword ptr [r9+984], xmm0
+movdqa xmmword ptr [r9+1000], xmm0
+movdqa xmmword ptr [r9+1016], xmm0
+movdqa xmmword ptr [r9+1032], xmm0
+movdqa xmmword ptr [r9+1048], xmm0
+movdqa xmmword ptr [r9+1064], xmm0
+movdqa xmmword ptr [r9+1080], xmm0
+movdqa xmmword ptr [r9+1096], xmm0
+movdqa xmmword ptr [r9+1112], xmm0
+movdqa xmmword ptr [r9+1128], xmm0
+movdqa xmmword ptr [r9+1144], xmm0
+movdqa xmmword ptr [r9+1160], xmm0
+movdqa xmmword ptr [r9+1176], xmm0
+movdqa xmmword ptr [r9+1192], xmm0
+movdqa xmmword ptr [r9+1208], xmm0
+movdqa xmmword ptr [r9+1224], xmm0
+movdqa xmmword ptr [r9+1240], xmm0
+movdqa xmmword ptr [r9+1256], xmm0
+movdqa xmmword ptr [r9+1272], xmm0
+movdqa xmmword ptr [r9+1288], xmm0
+movdqa xmmword ptr [r9+1304], xmm0
+movdqa xmmword ptr [r9+1320], xmm0
+movdqa xmmword ptr [r9+1336], xmm0
+movdqa xmmword ptr [r9+1352], xmm0
+movdqa xmmword ptr [r9+1368], xmm0
+movdqa xmmword ptr [r9+1384], xmm0
+movdqa xmmword ptr [r9+1400], xmm0
+movdqa xmmword ptr [r9+1416], xmm0
+movdqa xmmword ptr [r9+1432], xmm0
+movdqa xmmword ptr [r9+1448], xmm0
+movdqa xmmword ptr [r9+1464], xmm0
+ret
 .p2align 6"#,
     )
 }

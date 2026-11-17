@@ -19,7 +19,26 @@ jne 22b
 jmp 21f
 20:
 21:
-.base64 "SYsYSYtoCE2LYBBNi2gYTYtwIE2LeChmD+/A80EPf4DwAAAA80EPf4DgAAAA80EPf4DQAAAA80EPf4DAAAAA80EPf4CwAAAA80EPf4CgAAAA80EPf4CQAAAA80EPf4CAAAAA80EPf0Bw80EPf0Bg80EPf0BQ80EPf0BA80EPf0Aw80EPf0Ag80EPf0AQ80EPfwDD"
+.base64 "SYsYSYtoCE2LYBBNi2gYTYtwIE2LeCg="
+pxor xmm0, xmm0
+movq qword ptr [r8+0], xmm0
+movdqa xmmword ptr [r8+8], xmm0
+movdqa xmmword ptr [r8+24], xmm0
+movdqa xmmword ptr [r8+40], xmm0
+movdqa xmmword ptr [r8+56], xmm0
+movdqa xmmword ptr [r8+72], xmm0
+movdqa xmmword ptr [r8+88], xmm0
+movdqa xmmword ptr [r8+104], xmm0
+movdqa xmmword ptr [r8+120], xmm0
+movdqa xmmword ptr [r8+136], xmm0
+movdqa xmmword ptr [r8+152], xmm0
+movdqa xmmword ptr [r8+168], xmm0
+movdqa xmmword ptr [r8+184], xmm0
+movdqa xmmword ptr [r8+200], xmm0
+movdqa xmmword ptr [r8+216], xmm0
+movdqa xmmword ptr [r8+232], xmm0
+movq qword ptr [r8+248], xmm0
+ret
 .p2align 6"#,
     )
 }

@@ -20,7 +20,26 @@ call {vg_aes_ctr32_aesni}
 jmp 21f
 20:
 21:
-.base64 "TItcJAhmD+/A80EPf4MwAQAA80EPf4MgAQAA80EPf4MQAQAA80EPf4MAAQAA80EPf4PwAAAA80EPf4PgAAAA80EPf4PQAAAA80EPf4PAAAAA80EPf4OwAAAA80EPf4OgAAAA80EPf4OQAAAA80EPf4OAAAAA80EPf0Nw80EPf0Ng80EPf0NQ80EPf0NAww=="
+.base64 "TItcJAg="
+pxor xmm0, xmm0
+movq qword ptr [r11+64], xmm0
+movdqa xmmword ptr [r11+72], xmm0
+movdqa xmmword ptr [r11+88], xmm0
+movdqa xmmword ptr [r11+104], xmm0
+movdqa xmmword ptr [r11+120], xmm0
+movdqa xmmword ptr [r11+136], xmm0
+movdqa xmmword ptr [r11+152], xmm0
+movdqa xmmword ptr [r11+168], xmm0
+movdqa xmmword ptr [r11+184], xmm0
+movdqa xmmword ptr [r11+200], xmm0
+movdqa xmmword ptr [r11+216], xmm0
+movdqa xmmword ptr [r11+232], xmm0
+movdqa xmmword ptr [r11+248], xmm0
+movdqa xmmword ptr [r11+264], xmm0
+movdqa xmmword ptr [r11+280], xmm0
+movdqa xmmword ptr [r11+296], xmm0
+movq qword ptr [r11+312], xmm0
+ret
 .p2align 6"#,
         vg_ghash = sym crate::aes_gcm_siv::vg_ghash::vg_ghash,
         vg_aes_ctr32_aesni = sym crate::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,

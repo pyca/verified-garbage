@@ -20,7 +20,102 @@ call {vg_aes_ctr32}
 jmp 21f
 20:
 21:
-.base64 "TItcJAhmD+/A80EPf4P4BQAA80EPf4PwBQAA80EPf4PgBQAA80EPf4PQBQAA80EPf4PABQAA80EPf4OwBQAA80EPf4OgBQAA80EPf4OQBQAA80EPf4OABQAA80EPf4NwBQAA80EPf4NgBQAA80EPf4NQBQAA80EPf4NABQAA80EPf4MwBQAA80EPf4MgBQAA80EPf4MQBQAA80EPf4MABQAA80EPf4PwBAAA80EPf4PgBAAA80EPf4PQBAAA80EPf4PABAAA80EPf4OwBAAA80EPf4OgBAAA80EPf4OQBAAA80EPf4OABAAA80EPf4NwBAAA80EPf4NgBAAA80EPf4NQBAAA80EPf4NABAAA80EPf4MwBAAA80EPf4MgBAAA80EPf4MQBAAA80EPf4MABAAA80EPf4PwAwAA80EPf4PgAwAA80EPf4PQAwAA80EPf4PAAwAA80EPf4OwAwAA80EPf4OgAwAA80EPf4OQAwAA80EPf4OAAwAA80EPf4NwAwAA80EPf4NgAwAA80EPf4NQAwAA80EPf4NAAwAA80EPf4MwAwAA80EPf4MgAwAA80EPf4MQAwAA80EPf4MAAwAA80EPf4PwAgAA80EPf4PgAgAA80EPf4PQAgAA80EPf4PAAgAA80EPf4OwAgAA80EPf4OgAgAA80EPf4OQAgAA80EPf4OAAgAA80EPf4NwAgAA80EPf4NgAgAA80EPf4NQAgAA80EPf4NAAgAA80EPf4MwAgAA80EPf4MgAgAA80EPf4MQAgAA80EPf4MAAgAA80EPf4PwAQAA80EPf4PgAQAA80EPf4PQAQAA80EPf4PAAQAA80EPf4OwAQAA80EPf4OgAQAA80EPf4OQAQAA80EPf4OAAQAA80EPf4NwAQAA80EPf4NgAQAA80EPf4NQAQAA80EPf4NAAQAA80EPf4MwAQAA80EPf4MgAQAA80EPf4MQAQAA80EPf4MAAQAA80EPf4PwAAAA80EPf4PgAAAA80EPf4PQAAAA80EPf4PAAAAA80EPf4OwAAAA80EPf4OgAAAA80EPf4OQAAAA80EPf4OAAAAA80EPf0Nw80EPf0Ng80EPf0NQ80EPf0NAww=="
+.base64 "TItcJAg="
+pxor xmm0, xmm0
+movq qword ptr [r11+64], xmm0
+movdqa xmmword ptr [r11+72], xmm0
+movdqa xmmword ptr [r11+88], xmm0
+movdqa xmmword ptr [r11+104], xmm0
+movdqa xmmword ptr [r11+120], xmm0
+movdqa xmmword ptr [r11+136], xmm0
+movdqa xmmword ptr [r11+152], xmm0
+movdqa xmmword ptr [r11+168], xmm0
+movdqa xmmword ptr [r11+184], xmm0
+movdqa xmmword ptr [r11+200], xmm0
+movdqa xmmword ptr [r11+216], xmm0
+movdqa xmmword ptr [r11+232], xmm0
+movdqa xmmword ptr [r11+248], xmm0
+movdqa xmmword ptr [r11+264], xmm0
+movdqa xmmword ptr [r11+280], xmm0
+movdqa xmmword ptr [r11+296], xmm0
+movdqa xmmword ptr [r11+312], xmm0
+movdqa xmmword ptr [r11+328], xmm0
+movdqa xmmword ptr [r11+344], xmm0
+movdqa xmmword ptr [r11+360], xmm0
+movdqa xmmword ptr [r11+376], xmm0
+movdqa xmmword ptr [r11+392], xmm0
+movdqa xmmword ptr [r11+408], xmm0
+movdqa xmmword ptr [r11+424], xmm0
+movdqa xmmword ptr [r11+440], xmm0
+movdqa xmmword ptr [r11+456], xmm0
+movdqa xmmword ptr [r11+472], xmm0
+movdqa xmmword ptr [r11+488], xmm0
+movdqa xmmword ptr [r11+504], xmm0
+movdqa xmmword ptr [r11+520], xmm0
+movdqa xmmword ptr [r11+536], xmm0
+movdqa xmmword ptr [r11+552], xmm0
+movdqa xmmword ptr [r11+568], xmm0
+movdqa xmmword ptr [r11+584], xmm0
+movdqa xmmword ptr [r11+600], xmm0
+movdqa xmmword ptr [r11+616], xmm0
+movdqa xmmword ptr [r11+632], xmm0
+movdqa xmmword ptr [r11+648], xmm0
+movdqa xmmword ptr [r11+664], xmm0
+movdqa xmmword ptr [r11+680], xmm0
+movdqa xmmword ptr [r11+696], xmm0
+movdqa xmmword ptr [r11+712], xmm0
+movdqa xmmword ptr [r11+728], xmm0
+movdqa xmmword ptr [r11+744], xmm0
+movdqa xmmword ptr [r11+760], xmm0
+movdqa xmmword ptr [r11+776], xmm0
+movdqa xmmword ptr [r11+792], xmm0
+movdqa xmmword ptr [r11+808], xmm0
+movdqa xmmword ptr [r11+824], xmm0
+movdqa xmmword ptr [r11+840], xmm0
+movdqa xmmword ptr [r11+856], xmm0
+movdqa xmmword ptr [r11+872], xmm0
+movdqa xmmword ptr [r11+888], xmm0
+movdqa xmmword ptr [r11+904], xmm0
+movdqa xmmword ptr [r11+920], xmm0
+movdqa xmmword ptr [r11+936], xmm0
+movdqa xmmword ptr [r11+952], xmm0
+movdqa xmmword ptr [r11+968], xmm0
+movdqa xmmword ptr [r11+984], xmm0
+movdqa xmmword ptr [r11+1000], xmm0
+movdqa xmmword ptr [r11+1016], xmm0
+movdqa xmmword ptr [r11+1032], xmm0
+movdqa xmmword ptr [r11+1048], xmm0
+movdqa xmmword ptr [r11+1064], xmm0
+movdqa xmmword ptr [r11+1080], xmm0
+movdqa xmmword ptr [r11+1096], xmm0
+movdqa xmmword ptr [r11+1112], xmm0
+movdqa xmmword ptr [r11+1128], xmm0
+movdqa xmmword ptr [r11+1144], xmm0
+movdqa xmmword ptr [r11+1160], xmm0
+movdqa xmmword ptr [r11+1176], xmm0
+movdqa xmmword ptr [r11+1192], xmm0
+movdqa xmmword ptr [r11+1208], xmm0
+movdqa xmmword ptr [r11+1224], xmm0
+movdqa xmmword ptr [r11+1240], xmm0
+movdqa xmmword ptr [r11+1256], xmm0
+movdqa xmmword ptr [r11+1272], xmm0
+movdqa xmmword ptr [r11+1288], xmm0
+movdqa xmmword ptr [r11+1304], xmm0
+movdqa xmmword ptr [r11+1320], xmm0
+movdqa xmmword ptr [r11+1336], xmm0
+movdqa xmmword ptr [r11+1352], xmm0
+movdqa xmmword ptr [r11+1368], xmm0
+movdqa xmmword ptr [r11+1384], xmm0
+movdqa xmmword ptr [r11+1400], xmm0
+movdqa xmmword ptr [r11+1416], xmm0
+movdqa xmmword ptr [r11+1432], xmm0
+movdqa xmmword ptr [r11+1448], xmm0
+movdqa xmmword ptr [r11+1464], xmm0
+movdqa xmmword ptr [r11+1480], xmm0
+movdqa xmmword ptr [r11+1496], xmm0
+movdqa xmmword ptr [r11+1512], xmm0
+movdqa xmmword ptr [r11+1528], xmm0
+ret
 .p2align 6"#,
         vg_ghash = sym crate::aes_gcm_siv::vg_ghash::vg_ghash,
         vg_aes_ctr32 = sym crate::aes::vg_aes_ctr32::vg_aes_ctr32,
