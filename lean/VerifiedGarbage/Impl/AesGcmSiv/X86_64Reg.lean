@@ -310,13 +310,16 @@ def hashArgs : List Instr := putYH ++ hashPtrs
 /-- The data's length compared with 256. -/
 def lenCmp : List Instr := [.mov .rax (.mem (at_ .r15 lenO)), .alu .cmp .rax (imm 256)]
 
+/-- The data's groups absorbed by `L.hash`. -/
+def hashFront (L : Loops) : Prog isa := .seq (.block hashArgs) (.seq L.hash (.block back))
+
 /-- POLYVAL, as `polyval`, the data's 256-byte groups with `L.hash`. -/
 def polyvalL (L : Loops) : Prog isa :=
   .seq (.block (hkey ++ ([.mov .r12 (.mem (at_ .r15 aadO)), .mov .rbp (.mem (at_ .r15 alenO))] : List Instr)))
     (.seq (absorb false)
       (.seq (.block [.mov .r12 (.mem (at_ .r15 dataO)), .mov .rbp (.mem (at_ .r15 lenO))])
         (.seq (.block lenCmp)
-          (.seq (.ite .b (.block []) (.seq (.block hashArgs) (.seq L.hash (.block back))))
+          (.seq (.ite .b (.block []) (hashFront L))
             (.seq (absorb true) (.block lens))))))
 
 /-- The groups' count, the counter block, from `xmm9`, at `W + 96`, and the
@@ -343,26 +346,31 @@ def split16 : List Instr :=
 where the loop left it, and the rest of the data, as `ctrInit` leaves them. -/
 def ctrBack : List Instr := ctrLoad ++ (restLoad ++ split16)
 
+/-- The data's groups enciphered by `L.ctr`, then the rest. -/
+def ctrFront (L : Loops) : Prog isa :=
+  .seq (.block ctrArgs) (.seq L.ctr (.seq (.block ctrBack) cryptRest))
+
 /-- Counter mode, as `crypt`, the data's 256-byte groups with `L.ctr`. -/
 def cryptL (L : Loops) : Prog isa :=
   .seq (.block lenCmp)
-    (.ite .b crypt (.seq (.block ctrArgs) (.seq L.ctr (.seq (.block ctrBack) cryptRest))))
+    (.ite .b crypt (ctrFront L))
 
 /-- `vg_aes_gcm_siv_seal`, with the loops `L` from 256 bytes of data. -/
 def sealL (L : Loops) : Prog isa :=
   .seq (.block entry) (.seq keys (.seq (polyvalL L) (.seq (tag tagO) (.seq (cryptL L) (.block (tagOut ++ restore))))))
 
+/-- The data's groups deciphered and absorbed by `L.dec`, then the rest
+deciphered. -/
+def decFront (L : Loops) : Prog isa :=
+  .seq (.block (putYH ++ ctrArgs)) (.seq L.dec (.seq (.block ctrBack) cryptRest))
+
 /-- With 256 bytes of data or more: POLYVAL of the additional data, the
-data's groups deciphered and absorbed by `L.dec`, then the rest of the data
-deciphered and absorbed, and the lengths. -/
+data deciphered and its groups absorbed (`decFront`), then the rest of the
+plaintext absorbed, and the lengths. -/
 def decL (L : Loops) : Prog isa :=
   .seq (.block (hkey ++ ([.mov .r12 (.mem (at_ .r15 aadO)), .mov .rbp (.mem (at_ .r15 alenO))] : List Instr)))
     (.seq (absorb false)
-      (.seq (.block (putYH ++ ctrArgs))
-        (.seq L.dec
-          (.seq (.block ctrBack)
-            (.seq cryptRest
-              (.seq (.block back) (.seq (absorb true) (.block lens))))))))
+      (.seq (decFront L) (.seq (.block back) (.seq (absorb true) (.block lens)))))
 
 /-- `vg_aes_gcm_siv_open`, with the loops `L` from 256 bytes of data. -/
 def openL (L : Loops) : Prog isa :=
