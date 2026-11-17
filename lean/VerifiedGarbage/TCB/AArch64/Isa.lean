@@ -1472,11 +1472,12 @@ then 8 bytes it does not write) become a writable region, at the head of
 The model grants 16 bytes but writes only the first 8, so `[sp, #8]` then
 holds what memory held there before the push. That memory was below the
 stack pointer, where on hardware a signal handler may change it at any
-time, while the model keeps it until a store. This is harmless: the
-contract says nothing of those bytes (they are in the stack below the
-caller's stack pointer, `Abi.reserved`, which no buffer overlaps), so a
-proof holds whatever they contain and learns nothing from reading them;
-it could only rely on two reads agreeing. `ldrSp` and `strSp` can read
+time, while the model keeps it until a store. This is harmless: those bytes
+are either in the stack below the caller's stack pointer, of which the
+contract says nothing (`Abi.reserved`, which no buffer overlaps), or those
+of a frame the function released, which are `lose`'s; so a proof holds
+whatever they contain and learns nothing from reading them; it could only
+rely on two reads agreeing. `ldrSp` and `strSp` can read
 and write the frame directly, and `addSp` can form a pointer to it. None
 grants permission below the currently allocated stack: `strSp` stores
 through `State.store`, which faults outside the writable regions, so it

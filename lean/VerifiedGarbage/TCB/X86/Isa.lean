@@ -444,9 +444,10 @@ Address", with a 32-bit operand size and address size: `DEST :=
 EffectiveAddress(SRC)`, the address computed modulo 2³²; "Flags Affected:
 None". The `bytes` bytes below `esp` become a writable region, at the head
 of `wr`, which it does not write: they hold what memory held there, as the
-bytes a call or a push stores below `esp` before it does (and a contract
-says nothing of them: they are in the stack below the caller's stack
-pointer, `Abi.reserved`). Faults unless `0 < bytes < 4096` and `bytes` is a
+bytes a call or a push stores below `esp` before it does: bytes in the stack
+below the caller's stack pointer, of which a contract says nothing
+(`Abi.reserved`), or those of a frame the function released, which are
+`lose`'s, so a proof cannot know them either. Faults unless `0 < bytes < 4096` and `bytes` is a
 multiple of 4, or if the frame would wrap around the address space.
 
 Or the push of an MMX frame (`mmxEnter`, no instruction): a frame of no

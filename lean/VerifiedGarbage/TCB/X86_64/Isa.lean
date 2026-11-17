@@ -1020,9 +1020,10 @@ Address", with a 64-bit operand size and address size: `DEST :=
 EffectiveAddress(SRC)`, the address computed modulo 2⁶⁴; "Flags Affected:
 None". The `bytes` bytes below `rsp` become a writable region, at the head
 of `wr`, which it does not write: they hold what memory held there, as the
-bytes a call or a push stores below `rsp` before it does (and a contract
-says nothing of them: they are in the stack below the caller's stack
-pointer, `Abi.reserved`). Faults unless `0 < bytes < 4096` and `bytes` is a
+bytes a call or a push stores below `rsp` before it does: bytes in the stack
+below the caller's stack pointer, of which a contract says nothing
+(`Abi.reserved`), or those of a frame the function released, which are
+`lose`'s, so a proof cannot know them either. Faults unless `0 < bytes < 4096` and `bytes` is a
 multiple of 8, or if the frame would wrap around the address space. -/
 def push : Instr → State → Option State
   | .alloc bytes, s =>

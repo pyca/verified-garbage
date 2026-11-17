@@ -583,8 +583,9 @@ would wrap around the address space (`sp < 48`).
 new stack pointer, and the `bytes - 32` bytes above the header become a
 writable region, at the head of `wr`, which it does not write: like the 8
 bytes of `push`'s local variable space that it does not write, they hold
-what memory held there before, below the stack pointer, where the contract
-says nothing of them (`Abi.reserved`). Faults unless `bytes` is a multiple
+what memory held there before, below the stack pointer: bytes of which the
+contract says nothing (`Abi.reserved`), or those of a frame the function
+released, which are `lose`'s, so a proof cannot know them either. Faults unless `bytes` is a multiple
 of 16 with `32 < bytes < 4096`, or if the frame would wrap around the
 address space (`sp < bytes`). -/
 def push : Instr → State → Option State
