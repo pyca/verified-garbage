@@ -515,7 +515,8 @@ theorem slideStart_ct (a : Spec.Ed25519.Point) (D : Nat → Nat) (b : BitVec 32)
   exact WP.mono (slideStart_ok h.1.1.1 h.1.1.2.1.1 h.1.1.2.1.2.1 h.1.1.2.1.2.2 h.1.1.2.2 h.1.2 h.2 (hD p₀))
     fun _ ht => ht.2
 
-/-- After the doubling for digit `p`: the digit, the same in both runs, and Z set if it is zero. -/
+/-- After the doubling of `X : Y : Z` for digit `p`: the digit, the same in both runs, and Z set
+if it is zero. -/
 def HeadRun (a : Spec.Ed25519.Point) (D : Nat → Nat) (b : BitVec 32) (p₀ p : Nat) (s : State) : Prop :=
   HeadAt a D b p₀ p s ∧ s.z = decide (D p = 0)
 
@@ -535,9 +536,11 @@ theorem slideHead_ct (a : Spec.Ed25519.Point) (D : Nat → Nat) (b : BitVec 32) 
   · intro s h
     exact WP.mono (slideHead_ok h hp hD) fun t ⟨_, th, tz⟩ => ⟨th, tz⟩
 
-/-- The addition of the digit's entry: its address is the digit's, the same in both runs. -/
-theorem addEntry_ct (a : Spec.Ed25519.Point) (D : Nat → Nat) (b : BitVec 32) (p₀ p : Nat) :
-    CT (fun x y => HeadAt a D b p₀ p x ∧ HeadAt a D b p₀ p y) (addEntry umaal) (fun _ _ => True) := by
+/-- The sum's `T` and the addition of the digit's entry: its address is the digit's, the same in
+both runs. -/
+theorem addDigit_ct (a : Spec.Ed25519.Point) (D : Nat → Nat) (b : BitVec 32) (p₀ p : Nat) :
+    CT (fun x y => HeadAt a D b p₀ p x ∧ HeadAt a D b p₀ p y)
+      (.seq (fieldCode umaal doubleTOps) (addEntry umaal)) (fun _ _ => True) := by
   cases umaal <;>
     [apply ctRegsS [.r0, .r10] _ (by taint_decide_sum [addSum]); apply ctRegsU [.r0, .r10] _ (by taint_decide)]
   all_goals
@@ -547,6 +550,20 @@ theorem addEntry_ct (a : Spec.Ed25519.Point) (D : Nat → Nat) (b : BitVec 32) (
     · exact h.1.ctx.r0.trans h.2.ctx.r0.symm
     · exact h.1.r10.trans h.2.r10.symm
 
+/-- A digit that is zero: the sum's `T` after digit 0, a branch on the position. -/
+theorem lastT_ct (a : Spec.Ed25519.Point) (D : Nat → Nat) (b : BitVec 32) (p₀ p : Nat) :
+    CT (fun x y => HeadAt a D b p₀ p x ∧ HeadAt a D b p₀ p y)
+      (.seq (.block [.cmp .r11 (.imm 0)]) (.ite .eq (fieldCode umaal doubleTOps) (.block [])))
+      (fun _ _ => True) := by
+  cases umaal <;>
+    [apply ctRegs [.r0, .r11] _ (by native_taint_decide); apply ctRegsU [.r0, .r11] _ (by taint_decide)]
+  all_goals
+    intro x y h r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact h.1.ctx.r0.trans h.2.ctx.r0.symm
+    · exact h.1.r11.trans h.2.r11.symm
+
 theorem slideStep_ct (a : Spec.Ed25519.Point) (D : Nat → Nat) (b : BitVec 32) {p₀ p : Nat} (hp₀ : p < p₀)
     (hp : p < 256) (hD : ∀ q, D q = 0 ∨ (D q % 2 = 1 ∧ D q < 16)) :
     CT (fun x y => SlideAt a D b p₀ (p + 1) x ∧ SlideAt a D b p₀ (p + 1) y) (slideStep umaal)
@@ -554,15 +571,14 @@ theorem slideStep_ct (a : Spec.Ed25519.Point) (D : Nat → Nat) (b : BitVec 32) 
         (SlideAt a D b p₀ p y ∧ y.z = decide (p = 0))) := by
   obtain hDp : D p < 16 := by rcases hD p with e | e <;> omega_using [e]
   have tail : CT (fun x y => HeadRun a D b p₀ p x ∧ HeadRun a D b p₀ p y)
-      (.seq (.ite .ne (addEntry umaal) (.block [])) (.block [.cmp .r11 (.imm 0)])) (fun _ _ => True) := by
+      (.seq (slideTail umaal) (.block [.cmp .r11 (.imm 0)])) (fun _ _ => True) := by
+    rw [slideTail]
     refine RelCT.seq (R := fun _ _ => True) (RelCT.ite ?_ ?_ ?_) ?_
     · intro x y h
       show some (!x.z) = some (!y.z)
       rw [h.1.2, h.2.2]
-    · exact (addEntry_ct a D b p₀ p).mono (fun _ _ h => ⟨h.1.1.1, h.1.2.1⟩) fun _ _ h => h
-    · apply ctRegs [] _ (by native_taint_decide)
-      intro _ _ _ r h
-      exact (List.not_mem_nil h).elim
+    · exact (addDigit_ct a D b p₀ p).mono (fun _ _ h => ⟨h.1.1.1, h.1.2.1⟩) fun _ _ h => h
+    · exact (lastT_ct a D b p₀ p).mono (fun _ _ h => ⟨h.1.1.1, h.1.2.1⟩) fun _ _ h => h
     · apply ctRegs [] _ (by native_taint_decide)
       intro _ _ _ r h
       exact (List.not_mem_nil h).elim

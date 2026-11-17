@@ -24,6 +24,7 @@ import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTMul
 import VerifiedGarbage.Proof.Ed25519.Arm.Points
 import VerifiedGarbage.Proof.Ed25519.Arm.FnCall
 import VerifiedGarbage.Proof.Ed25519.Group.Decode
+import VerifiedGarbage.Proof.Ed25519.Group.Double
 import VerifiedGarbage.Proof.Ed25519.ScalarBytes
 public import VerifiedGarbage.Proof.Ed25519.Arm.CombLoop
 public import VerifiedGarbage.Proof.Ed25519.SlidingDigits
@@ -362,7 +363,8 @@ section
 /-! `[k]A` with a sliding window on `k`, which is public: `k`'s digits (`recode`), the table of
 `A`'s odd multiples (`oddTable`), and the sum, from the top digit's multiple (`topDigit`,
 `slideStart`), doubled for each digit below it, with the digit's multiple added where the digit
-is not zero (`slideStep`). -/
+is not zero (`slideStep`). The doubling is the dedicated one (`Proof.Ed25519.dblPoint`), of
+`X : Y : Z` (`dblXYZ`): its `T` is computed where an addition reads it (`doubleT_ok`). -/
 namespace VG.Proof.Ed25519.Arm
 open VG VG.Arm VG.Impl.Ed25519.Arm VG.Proof.X25519.Arm
 
@@ -432,28 +434,32 @@ theorem repeatThen_wp {c k : Prog isa} {I : Nat → State → Prop} {Q : State �
 
 /-! ### What the code computes -/
 
-/-- `[2m + 1]a`, as the table's entries are computed: `a`, and `[2]a` added to the entry before. -/
+/-- `[2m + 1]a`, as the table's entries are computed: `a`, and `[2]a`, by the dedicated doubling,
+added to the entry before. -/
 def oddMul (a : Spec.Ed25519.Point) : Nat → Spec.Ed25519.Point
   | 0 => a
-  | m + 1 => Spec.Ed25519.pointAdd (oddMul a m) (Spec.Ed25519.pointAdd a a)
+  | m + 1 => Spec.Ed25519.pointAdd (oddMul a m) (Proof.Ed25519.dblPoint a)
 
 theorem oddMul_rep {a : Spec.Ed25519.Point} {A : Edwards.EPoint Proof.Ed25519.dZ} (ha : Proof.Ed25519.Rep a A) :
     ∀ m, Proof.Ed25519.Rep (oddMul a m) ((2 * m + 1) • A)
   | 0 => by simpa only [oddMul, Nat.mul_zero, Nat.zero_add, one_nsmul] using ha
   | m + 1 => by
-    have h := Proof.Ed25519.pointAdd_rep (oddMul_rep ha m) (Proof.Ed25519.pointAdd_rep ha ha)
+    have h := Proof.Ed25519.pointAdd_rep (oddMul_rep ha m) (Proof.Ed25519.dblPoint_rep ha.proj)
     rw [show 2 * (m + 1) + 1 = (2 * m + 1) + 1 + 1 by omega_arith, add_nsmul, add_nsmul, one_nsmul, add_assoc]
     exact h
 
 /-- The sum over the digits `D` from position `p₀ - n` up to the top one's, `p₀`, as the code
 computes it: the top digit's entry (the identity if that digit is zero), and then, for each digit
-below, the sum doubled and the digit's entry added to it where the digit is not zero. -/
+below, the sum doubled and the digit's entry added to it where the digit is not zero. The
+doubling is of `X : Y : Z` (`dblXYZ`), with its `T` (`dblPoint`) before an addition and after
+digit 0. -/
 def slideVal (a : Spec.Ed25519.Point) (D : Nat → Nat) (p₀ : Nat) : Nat → Spec.Ed25519.Point
   | 0 => if D p₀ = 0 then Spec.Ed25519.identity else oddMul a ((D p₀ - 1) / 2)
   | n + 1 =>
-    if D (p₀ - 1 - n) = 0 then Spec.Ed25519.pointAdd (slideVal a D p₀ n) (slideVal a D p₀ n)
+    if D (p₀ - 1 - n) = 0 then
+      if p₀ - 1 - n = 0 then Proof.Ed25519.dblPoint (slideVal a D p₀ n) else dblXYZ (slideVal a D p₀ n)
     else Spec.Ed25519.pointAdd (oddMul a ((D (p₀ - 1 - n) - 1) / 2))
-      (Spec.Ed25519.pointAdd (slideVal a D p₀ n) (slideVal a D p₀ n))
+      (Proof.Ed25519.dblPoint (slideVal a D p₀ n))
 
 theorem slideVal_zero (a : Spec.Ed25519.Point) (D : Nat → Nat) (p₀ : Nat) :
     slideVal a D p₀ 0 = if D p₀ = 0 then Spec.Ed25519.identity else oddMul a ((D p₀ - 1) / 2) := rfl
@@ -462,24 +468,35 @@ theorem slideVal_zero (a : Spec.Ed25519.Point) (D : Nat → Nat) (p₀ : Nat) :
 theorem slideVal_at (a : Spec.Ed25519.Point) (D : Nat → Nat) {p₀ p : Nat} (hp : p < p₀) :
     slideVal a D p₀ (p₀ - p) =
       if D p = 0 then
-        Spec.Ed25519.pointAdd (slideVal a D p₀ (p₀ - (p + 1))) (slideVal a D p₀ (p₀ - (p + 1)))
+        if p = 0 then Proof.Ed25519.dblPoint (slideVal a D p₀ (p₀ - (p + 1)))
+        else dblXYZ (slideVal a D p₀ (p₀ - (p + 1)))
       else Spec.Ed25519.pointAdd (oddMul a ((D p - 1) / 2))
-        (Spec.Ed25519.pointAdd (slideVal a D p₀ (p₀ - (p + 1))) (slideVal a D p₀ (p₀ - (p + 1)))) := by
+        (Proof.Ed25519.dblPoint (slideVal a D p₀ (p₀ - (p + 1)))) := by
   obtain ⟨n, hn⟩ : ∃ n, p₀ - (p + 1) = n := ⟨_, rfl⟩
   rw [show p₀ - p = n + 1 by omega_using [hp, hn], hn, slideVal, show p₀ - 1 - n = p by omega_using [hp, hn]]
 
-/-- The sum represents the multiple by the digits taken, if those above the top one's position
-`p₀` are zero. -/
-theorem slideVal_rep {a : Spec.Ed25519.Point} {A : Edwards.EPoint Proof.Ed25519.dZ} (ha : Proof.Ed25519.Rep a A)
+/-- The doubling of `X : Y : Z` represents the double, but for `T`. -/
+private theorem dblXYZ_repP {p : Spec.Ed25519.Point} {A : Edwards.EPoint Proof.Ed25519.dZ}
+    (h : Proof.Ed25519.RepP p A) : Proof.Ed25519.RepP (dblXYZ p) (A + A) :=
+  have r := (Proof.Ed25519.dblPoint_rep h).proj
+  ⟨r.z, r.x, r.y⟩
+
+/-- The sum's `X : Y : Z` represent the multiple by the digits taken, if those above the top
+one's position `p₀` are zero. -/
+private theorem slideVal_repP {a : Spec.Ed25519.Point} {A : Edwards.EPoint Proof.Ed25519.dZ} (ha : Proof.Ed25519.Rep a A)
     {D : Nat → Nat} (hD : ∀ q, D q = 0 ∨ (D q % 2 = 1 ∧ D q < 16)) {p₀ : Nat} (hp : p₀ < 256)
     (hz : ∀ q, p₀ < q → q < 256 → D q = 0) :
-    ∀ n ≤ p₀, Proof.Ed25519.Rep (slideVal a D p₀ n)
-      (Proof.Ed25519.Slide.wsum D (p₀ - n) (256 - (p₀ - n)) • A)
+    ∀ n ≤ p₀, (Proof.Ed25519.RepP (slideVal a D p₀ n)
+        (Proof.Ed25519.Slide.wsum D (p₀ - n) (256 - (p₀ - n)) • A)) ∧
+      (n = p₀ → Proof.Ed25519.Rep (slideVal a D p₀ n)
+        (Proof.Ed25519.Slide.wsum D (p₀ - n) (256 - (p₀ - n)) • A))
   | 0, _ => by
     rw [slideVal, Nat.sub_zero, show 256 - p₀ = (255 - p₀) + 1 by omega_using [hp],
       Proof.Ed25519.Slide.wsum_succ,
       Proof.Ed25519.Slide.wsum_eq_zero (fun j h1 h2 => hz j (by omega_using [h1]) (by omega_using [h2, hp])),
       Nat.mul_zero, Nat.add_zero]
+    suffices h : Proof.Ed25519.Rep (if D p₀ = 0 then Spec.Ed25519.identity else oddMul a ((D p₀ - 1) / 2))
+        (D p₀ • A) from ⟨h.proj, fun _ => h⟩
     rcases hD p₀ with h0 | ⟨h1, _⟩
     · rw [ite_eq_left h0, h0, zero_nsmul]
       exact Proof.Ed25519.identity_rep
@@ -487,8 +504,8 @@ theorem slideVal_rep {a : Spec.Ed25519.Point} {A : Edwards.EPoint Proof.Ed25519.
       have hm := oddMul_rep ha ((D p₀ - 1) / 2)
       rwa [show 2 * ((D p₀ - 1) / 2) + 1 = D p₀ by omega_using [h1]] at hm
   | n + 1, hn => by
-    have ih := slideVal_rep ha hD hp hz n (by omega_using [hn])
-    have hd := Proof.Ed25519.pointAdd_rep ih ih
+    have ih := (slideVal_repP ha hD hp hz n (by omega_using [hn])).1
+    have hd := Proof.Ed25519.dblPoint_rep ih
     obtain ⟨p, hpe⟩ : ∃ p, p₀ - 1 - n = p := ⟨_, rfl⟩
     rw [show p₀ - n = p + 1 by omega_using [hn, hpe], show 256 - (p + 1) = 255 - p by omega_using []] at ih hd
     rw [show p₀ - (n + 1) = p by omega_using [hn, hpe], show 256 - p = (255 - p) + 1 by omega_using [hn, hpe, hp],
@@ -497,24 +514,28 @@ theorem slideVal_rep {a : Spec.Ed25519.Point} {A : Edwards.EPoint Proof.Ed25519.
     rw [slideVal, hpe]
     rcases hD p with h0 | ⟨h1, _⟩
     · rw [ite_eq_left h0, h0, Nat.zero_add, two_mul, add_nsmul]
-      exact hd
+      by_cases hp0 : p = 0
+      · rw [ite_eq_left hp0]
+        exact ⟨hd.proj, fun _ => hd⟩
+      · rw [ite_eq_right hp0]
+        exact ⟨dblXYZ_repP ih, fun e => absurd (by omega_using [e, hpe] : p = 0) hp0⟩
     · rw [ite_eq_right (by omega_using [h1])]
       have hm := oddMul_rep ha ((D p - 1) / 2)
       rw [show 2 * ((D p - 1) / 2) + 1 = D p by omega_using [h1]] at hm
       rw [add_nsmul, two_mul, add_nsmul]
-      exact Proof.Ed25519.pointAdd_rep hm hd
+      exact ⟨(Proof.Ed25519.pointAdd_rep hm hd).proj, fun _ => Proof.Ed25519.pointAdd_rep hm hd⟩
 
 /-- `[K]a` as `publicMul` computes it, on the digits of `K` from the top one that is not zero. -/
 def slide (a : Spec.Ed25519.Point) (K : Nat) : Spec.Ed25519.Point :=
   slideVal a (Proof.Ed25519.Slide.digits K) (Proof.Ed25519.Slide.topPos (Proof.Ed25519.Slide.digits K) 256)
     (Proof.Ed25519.Slide.topPos (Proof.Ed25519.Slide.digits K) 256)
 
-/-- The whole sum represents `[K]A`. -/
+/-- The whole sum represents `[K]A`, with its `T`. -/
 theorem slide_rep {a : Spec.Ed25519.Point} {A : Edwards.EPoint Proof.Ed25519.dZ} (ha : Proof.Ed25519.Rep a A)
     {K : Nat} (hK : K < 2 ^ 256) : Proof.Ed25519.Rep (slide a K) (K • A) := by
-  have h := slideVal_rep ha (Proof.Ed25519.Slide.digits_odd K)
+  have h := (slideVal_repP ha (Proof.Ed25519.Slide.digits_odd K)
     (Proof.Ed25519.Slide.topPos_lt _ (by decide : 0 < 256))
-    (fun q h1 h2 => Proof.Ed25519.Slide.topPos_zero _ _ _ h1 h2) _ (Nat.le_refl _)
+    (fun q h1 h2 => Proof.Ed25519.Slide.topPos_zero _ _ _ h1 h2) _ (Nat.le_refl _)).2 rfl
   rwa [Nat.sub_self, Nat.sub_zero, Proof.Ed25519.Slide.digits_sum hK] at h
 
 /-! ### The digits -/
@@ -903,13 +924,27 @@ theorem TabDone.digits {a : Spec.Ed25519.Point} {b : BitVec 32} {m m' : Mem} (h 
       (by decide)]
   exact h.2.2 j hj
 
+/-- The doubling's `T` (`doubleTOps`), after the doubling of `X : Y : Z` of `p`
+(`vg_ed25519_r16_point_double`), which left `E` and `H` in slots 11 and 14. -/
+theorem doubleT_ok {b : BitVec 32} {s : State} (hc : Ctx b s) (hl : AllLim s.mem b) {p : Spec.Ed25519.Point}
+    (hp : point (env s.mem b) 0 1 2 3 = dblXYZ p)
+    (ht : env s.mem b 11 * env s.mem b 14 = (Proof.Ed25519.dblPoint p).T) :
+    WP isa (fieldCode umaal doubleTOps) s fun t => Keep b s t ∧ AllLim t.mem b ∧
+      point (env t.mem b) 0 1 2 3 = Proof.Ed25519.dblPoint p ∧
+      ∀ i : Slot, i ≠ 3 → env t.mem b i = env s.mem b i := by
+  refine WP.mono (fieldCode_ok _ hc hl) fun t ⟨tk, tl, te⟩ => ⟨tk, tl, ?_, fun i hi => ?_⟩
+  · rw [te, ← dblXYZ_t p, ← hp, ← ht]
+    rfl
+  · rw [te]
+    exact Function.update_of_ne hi _ _
+
 /-- Before entry `m` of the table: the entries below it, the entry before it in slots 0–3 and
 `[2]A` in slots 4–7. -/
 structure TabAt (a : Spec.Ed25519.Point) (b : BitVec 32) (m : Nat) (s : State) : Prop where
   ctx : Ctx b s
   lim : AllLim s.mem b
   d : env s.mem b 16 = Spec.Ed25519.d
-  q : point (env s.mem b) 4 5 6 7 = Spec.Ed25519.pointAdd a a
+  q : point (env s.mem b) 4 5 6 7 = Proof.Ed25519.dblPoint a
   acc : point (env s.mem b) 0 1 2 3 = oddMul a (m - 1)
   r11 : s.gpr .r11 = BitVec.ofNat 32 m
   tab : ∀ j < m, tablePoint s.mem b (TBA + 128 * j) = oddMul a j
@@ -926,25 +961,29 @@ theorem oddTableInit_ok {b : BitVec 32} {s : State} (hc : Ctx b s) (hl : AllLim 
   obtain cv := vk.ctx cu
   obtain vd : env v.mem b 16 = Spec.Ed25519.d := by rw [ve]; exact ud
   refine WP.seq (WP.mono (doubleCall_ok cv vl) fun w ⟨wk, wl, we⟩ => ?_)
-  obtain cw := wk.ctx cv
-  obtain wp : point (env w.mem b) 0 1 2 3 =
-      Spec.Ed25519.pointAdd (point (env s.mem b) 0 1 2 3) (point (env s.mem b) 0 1 2 3) := by
-    rw [we, pointDouble_eval _ vd, ve, up]
-  obtain wd : env w.mem b 16 = Spec.Ed25519.d := by rw [we, pointDouble_high _ _ (by decide)]; exact vd
-  refine WP.seq (WP.mono (fieldCode_ok copyPointToQOps cw wl) fun x ⟨xk, xl, xe⟩ => ?_)
+  obtain cw₀ := wk.ctx cv
+  obtain wp₀ : point (env w.mem b) 0 1 2 3 = dblXYZ (point (env s.mem b) 0 1 2 3) := by
+    rw [we, pointDouble_eval, ve, up]
+  obtain wt₀ : env w.mem b 11 * env w.mem b 14 = (Proof.Ed25519.dblPoint (point (env s.mem b) 0 1 2 3)).T := by
+    rw [we, pointDouble_t, ve, up]
+  obtain wd₀ : env w.mem b 16 = Spec.Ed25519.d := by rw [we, pointDouble_high _ _ (by decide)]; exact vd
+  refine WP.seq (WP.mono (doubleT_ok cw₀ wl wp₀ wt₀) fun w' ⟨tk, tl, wp, wo⟩ => ?_)
+  obtain cw := tk.ctx cw₀
+  obtain wd : env w'.mem b 16 = Spec.Ed25519.d := (wo 16 (by decide)).trans wd₀
+  refine WP.seq (WP.mono (fieldCode_ok copyPointToQOps cw tl) fun x ⟨xk, xl, xe⟩ => ?_)
   obtain cx := xk.ctx cw
   obtain xq := ((congrArg (fun e => point e 4 5 6 7) xe).trans (copyPointToQ_eval _)).trans wp
   obtain xd : env x.mem b 16 = Spec.Ed25519.d := by rw [xe, copyPointToQ_d]; exact wd
   obtain xt : tablePoint x.mem b TBA = point (env s.mem b) 0 1 2 3 := by
-    rw [workspace_tablePoint xk.frame (by decide) (by decide), workspace_tablePoint wk.frame (by decide) (by decide),
-      vt, up]
+    rw [workspace_tablePoint xk.frame (by decide) (by decide), workspace_tablePoint tk.frame (by decide) (by decide),
+      workspace_tablePoint wk.frame (by decide) (by decide), vt, up]
   rw [WP.block_append_iff]
   refine WP.mono (pointTableRead_ok cx xl TBA (by decide) (by decide)) fun y ⟨yk, yl, yp, yh⟩ => ?_
   refine wp_mov (op2_imm (by decide)) fun t ut => WP.block_nil ?_
   obtain kt : MulKeep b 1632 6144 y t := MulKeep.of_rest (ut.rest (ws := [.r11]) (by decide)) (by decide) ut.mem
   refine ⟨(MulKeep.of_powers (PowersKeep.of_keep uk)).trans ((MulKeep.of_powers (vk.mono (by decide) (by decide))).trans
-    ((MulKeep.of_powers (PowersKeep.of_keep wk)).trans ((MulKeep.of_powers (PowersKeep.of_keep xk)).trans
-    ((MulKeep.of_powers (PowersKeep.of_acc yk)).trans kt)))),
+    ((MulKeep.of_powers (PowersKeep.of_keep wk)).trans ((MulKeep.of_powers (PowersKeep.of_keep tk)).trans
+    ((MulKeep.of_powers (PowersKeep.of_keep xk)).trans ((MulKeep.of_powers (PowersKeep.of_acc yk)).trans kt))))),
     ⟨kt.ctx (yk.ctx cx), by rw [ut.mem]; exact yl, by rw [ut.mem, yh 16 (by decide)]; exact xd, ?_, ?_, ut.gpr,
       fun j hj => ?_⟩⟩
   · rw [ut.mem, point_congr _ _ _ _ (yh 4 (by decide)) (yh 5 (by decide)) (yh 6 (by decide)) (yh 7 (by decide))]
@@ -963,7 +1002,7 @@ theorem oddTableStep_ok {a : Spec.Ed25519.Point} {b : BitVec 32} {m : Nat} {s : 
   refine WP.seq (WP.mono (addCall_ok h.ctx h.lim) fun u ⟨uk, ul, ue⟩ => ?_)
   obtain cu := uk.ctx h.ctx
   obtain ud : env u.mem b 16 = Spec.Ed25519.d := by rw [ue, pointAdd_high _ _ (by decide)]; exact h.d
-  obtain uq : point (env u.mem b) 4 5 6 7 = Spec.Ed25519.pointAdd a a := by rw [ue, pointAdd_q]; exact h.q
+  obtain uq : point (env u.mem b) 4 5 6 7 = Proof.Ed25519.dblPoint a := by rw [ue, pointAdd_q]; exact h.q
   obtain up : point (env u.mem b) 0 1 2 3 = oddMul a m := by
     rw [ue, pointAdd_eval _ h.d, h.acc, h.q]
     obtain ⟨k, rfl⟩ : ∃ k, m = k + 1 := ⟨m - 1, by omega_using [h1]⟩
@@ -1032,13 +1071,14 @@ structure SlideAt (a : Spec.Ed25519.Point) (D : Nat → Nat) (b : BitVec 32) (p�
   tab : ∀ j < 8, tablePoint s.mem b (TBA + 128 * j) = oddMul a j
   dig : ∀ q < 256, s.mem (State.addr b + BitVec.ofNat 64 (DIG + q)) = BitVec.ofNat 8 (D q)
 
-/-- After the doubling for digit `p`, which is in `r10`. -/
+/-- After the doubling of `X : Y : Z` for digit `p`, which is in `r10`: the doubling's `E` and `H`
+are in slots 11 and 14. -/
 structure HeadAt (a : Spec.Ed25519.Point) (D : Nat → Nat) (b : BitVec 32) (p₀ p : Nat) (s : State) : Prop where
   ctx : Ctx b s
   lim : AllLim s.mem b
   d : env s.mem b 16 = Spec.Ed25519.d
-  acc : point (env s.mem b) 0 1 2 3 =
-    Spec.Ed25519.pointAdd (slideVal a D p₀ (p₀ - (p + 1))) (slideVal a D p₀ (p₀ - (p + 1)))
+  acc : point (env s.mem b) 0 1 2 3 = dblXYZ (slideVal a D p₀ (p₀ - (p + 1)))
+  eh : env s.mem b 11 * env s.mem b 14 = (Proof.Ed25519.dblPoint (slideVal a D p₀ (p₀ - (p + 1)))).T
   r11 : s.gpr .r11 = BitVec.ofNat 32 p
   r10 : s.gpr .r10 = BitVec.ofNat 32 (D p)
   tab : ∀ j < 8, tablePoint s.mem b (TBA + 128 * j) = oddMul a j
@@ -1091,42 +1131,46 @@ theorem slideHead_ok {a : Spec.Ed25519.Point} {D : Nat → Nat} {b : BitVec 32} 
   obtain vd : env v.mem b 16 = Spec.Ed25519.d := by
     rw [ve, pointDouble_high _ _ (by decide), uu.mem]
     exact h.d
-  obtain vp : point (env v.mem b) 0 1 2 3 =
-      Spec.Ed25519.pointAdd (slideVal a D p₀ (p₀ - (p + 1))) (slideVal a D p₀ (p₀ - (p + 1))) := by
-    rw [ve, pointDouble_eval _ (by rw [uu.mem]; exact h.d), uu.mem, h.acc]
+  obtain vp : point (env v.mem b) 0 1 2 3 = dblXYZ (slideVal a D p₀ (p₀ - (p + 1))) := by
+    rw [ve, pointDouble_eval, uu.mem, h.acc]
+  obtain vt : env v.mem b 11 * env v.mem b 14 =
+      (Proof.Ed25519.dblPoint (slideVal a D p₀ (p₀ - (p + 1)))).T := by
+    rw [ve, pointDouble_t, uu.mem, h.acc]
   refine WP.mono (digitLoad_ok cv hp ((vk.rest.gpr _ (by decide)).trans u11)
     ((dig_keep fv hp).trans (h.dig p hp)) hD) fun t ⟨rt, mt, t10, tz⟩ => ?_
   refine ⟨(MulKeep.of_rest ru (by decide) uu.mem).trans ((MulKeep.of_powers (PowersKeep.of_keep vk)).trans
       (MulKeep.of_rest rt (by decide) mt)),
-    ⟨cv.of_rest rt (by decide), by rw [mt]; exact vl, by rw [mt]; exact vd, by rw [mt]; exact vp, ?_, t10,
+    ⟨cv.of_rest rt (by decide), by rw [mt]; exact vl, by rw [mt]; exact vd, by rw [mt]; exact vp,
+      by rw [mt]; exact vt, ?_, t10,
       fun j hj => by rw [mt, tab_keep fv hj]; exact h.tab j hj,
       fun q hq => by rw [mt, dig_keep fv hq]; exact h.dig q hq⟩, tz⟩
   rw [rt.gpr _ (by decide), vk.rest.gpr _ (by decide)]
   exact u11
 
-theorem addEntry_ok {a : Spec.Ed25519.Point} {D : Nat → Nat} {b : BitVec 32} {p₀ p : Nat} {s : State}
-    (h : HeadAt a D b p₀ p s) (ho : D p % 2 = 1) (hD : D p < 16) :
+/-- The entry of the digit `d` in `r10` added to the sum `q`, which has its `T`. -/
+theorem addEntry_ok {a q : Spec.Ed25519.Point} {b : BitVec 32} {d : Nat} {s : State} (hc : Ctx b s)
+    (hl : AllLim s.mem b) (hd : env s.mem b 16 = Spec.Ed25519.d) (hq : point (env s.mem b) 0 1 2 3 = q)
+    (h10 : s.gpr .r10 = BitVec.ofNat 32 d)
+    (ht : ∀ j < 8, tablePoint s.mem b (TBA + 128 * j) = oddMul a j) (ho : d % 2 = 1) (hD : d < 16) :
     WP isa (addEntry umaal) s fun t => AccKeep b s t ∧ AllLim t.mem b ∧ env t.mem b 16 = Spec.Ed25519.d ∧
-      point (env t.mem b) 0 1 2 3 = Spec.Ed25519.pointAdd (oddMul a ((D p - 1) / 2))
-        (Spec.Ed25519.pointAdd (slideVal a D p₀ (p₀ - (p + 1))) (slideVal a D p₀ (p₀ - (p + 1)))) := by
+      point (env t.mem b) 0 1 2 3 = Spec.Ed25519.pointAdd (oddMul a ((d - 1) / 2)) q := by
   rw [addEntry]
-  refine WP.seq (WP.mono (fieldCode_ok copyPointToQOps h.ctx h.lim) fun u ⟨uk, ul, ue⟩ => ?_)
-  obtain cu := uk.ctx h.ctx
-  obtain uq := ((congrArg (fun e => point e 4 5 6 7) ue).trans (copyPointToQ_eval _)).trans h.acc
-  obtain ud : env u.mem b 16 = Spec.Ed25519.d := by rw [ue, copyPointToQ_d]; exact h.d
+  refine WP.seq (WP.mono (fieldCode_ok copyPointToQOps hc hl) fun u ⟨uk, ul, ue⟩ => ?_)
+  obtain cu := uk.ctx hc
+  obtain uq := ((congrArg (fun e => point e 4 5 6 7) ue).trans (copyPointToQ_eval _)).trans hq
+  obtain ud : env u.mem b 16 = Spec.Ed25519.d := by rw [ue, copyPointToQ_d]; exact hd
   refine WP.seq ?_
   rw [WP.block_append_iff]
-  refine WP.mono (digitAddr_ok cu hD ho ((uk.rest.gpr _ (by decide)).trans h.r10)) fun v ⟨vr, vm, vp⟩ => ?_
+  refine WP.mono (digitAddr_ok cu hD ho ((uk.rest.gpr _ (by decide)).trans h10)) fun v ⟨vr, vm, vp⟩ => ?_
   obtain cv := cu.of_rest vr (by decide)
-  obtain hj : (D p - 1) / 2 < 8 := by omega_using [hD]
+  obtain hj : (d - 1) / 2 < 8 := by omega_using [hD]
   refine WP.mono (pointFromTable_ok cv (by rw [vm]; exact ul) vp (by simp only [TBA]; omega_using [])
     (by simp only [TBA]; omega_using [hj])) fun w ⟨wp, wl, wk⟩ => ?_
   obtain cw := wk.ctx cv
-  obtain wp' : point (env w.mem b) 0 1 2 3 = oddMul a ((D p - 1) / 2) := by
+  obtain wp' : point (env w.mem b) 0 1 2 3 = oddMul a ((d - 1) / 2) := by
     rw [wp, vm, tab_keep uk.frame hj]
-    exact h.tab _ hj
-  obtain wq : point (env w.mem b) 4 5 6 7 =
-      Spec.Ed25519.pointAdd (slideVal a D p₀ (p₀ - (p + 1))) (slideVal a D p₀ (p₀ - (p + 1))) := by
+    exact ht _ hj
+  obtain wq : point (env w.mem b) 4 5 6 7 = q := by
     rw [point_congr _ _ _ _ (wk.high 4 (by decide)) (wk.high 5 (by decide)) (wk.high 6 (by decide))
       (wk.high 7 (by decide)), vm]
     exact uq
@@ -1137,6 +1181,44 @@ theorem addEntry_ok {a : Spec.Ed25519.Point} {D : Nat → Nat} {b : BitVec 32} {
     by rw [te, pointAdd_high _ _ (by decide)]; exact wd, ?_⟩
   rw [te, pointAdd_eval _ wd, wp', wq]
 
+/-- After the doubling, by the digit: the doubling's `T` and the digit's entry added, the `T`
+alone after digit 0, or nothing. -/
+theorem slideTail_ok {a : Spec.Ed25519.Point} {D : Nat → Nat} {b : BitVec 32} {p₀ p : Nat} {s : State}
+    (h : HeadAt a D b p₀ p s) (hz : s.z = decide (D p = 0)) (hp₀ : p < p₀) (hp : p < 256)
+    (hD : ∀ q, D q = 0 ∨ (D q % 2 = 1 ∧ D q < 16)) :
+    WP isa (slideTail umaal) s fun t => AccKeep b s t ∧ AllLim t.mem b ∧ env t.mem b 16 = Spec.Ed25519.d ∧
+      point (env t.mem b) 0 1 2 3 = slideVal a D p₀ (p₀ - p) := by
+  obtain hDp : D p < 16 := by rcases hD p with e | e <;> omega_using [e]
+  rw [slideTail]
+  apply WP.ite (!decide (D p = 0)) (by show some (!s.z) = _; rw [hz])
+  · intro hb
+    obtain hne : D p ≠ 0 := by simpa using hb
+    obtain ⟨ho, _⟩ := (hD p).resolve_left hne
+    refine WP.seq (WP.mono (doubleT_ok h.ctx h.lim h.acc h.eh) fun u ⟨uk, ul, up, uo⟩ => ?_)
+    refine WP.mono (addEntry_ok (a := a) (uk.ctx h.ctx) ul ((uo 16 (by decide)).trans h.d) up
+      ((uk.rest.gpr _ (by decide)).trans h.r10) (fun j hj => by rw [tab_keep uk.frame hj]; exact h.tab j hj) ho hDp)
+      fun t ⟨tk, tl, td, tp⟩ => ⟨(AccKeep.of_keep uk).trans tk, tl, td, ?_⟩
+    rw [tp, slideVal_at a D hp₀, ite_eq_right hne]
+  · intro hb
+    obtain h0 : D p = 0 := by simpa using hb
+    refine WP.seq (wp_cmp (op2_imm (by decide)) fun u fu zu => WP.block_nil ?_)
+    obtain ku : AccKeep b s u := AccKeep.of_rest (fu.rest []) (by decide) fu.mem
+    obtain ez : isa.eval .eq u = some (decide (p = 0)) := by
+      rw [eval_eq, zu, h.r11]
+      show some (BitVec.ofNat 32 p - 0#32 == 0#32) = _
+      rw [BitVec.sub_zero]
+      exact congrArg some (ofNat_beq_zero (by omega_using [hp]))
+    apply WP.ite (decide (p = 0)) ez
+    · intro hp0
+      refine WP.mono (doubleT_ok (p := slideVal a D p₀ (p₀ - (p + 1))) (ku.ctx h.ctx) (by rw [fu.mem]; exact h.lim)
+        (by rw [fu.mem]; exact h.acc)
+        (by rw [fu.mem]; exact h.eh)) fun t ⟨tk, tl, tp, tu⟩ =>
+        ⟨ku.trans (AccKeep.of_keep tk), tl, by rw [tu 16 (by decide), fu.mem]; exact h.d, ?_⟩
+      rw [tp, slideVal_at a D hp₀, ite_eq_left h0, ite_eq_left (of_decide_eq_true hp0)]
+    · intro hp0
+      refine WP.block_nil ⟨ku, by rw [fu.mem]; exact h.lim, by rw [fu.mem]; exact h.d, ?_⟩
+      rw [fu.mem, h.acc, slideVal_at a D hp₀, ite_eq_left h0, ite_eq_right (of_decide_eq_false hp0)]
+
 theorem slideStep_ok {a : Spec.Ed25519.Point} {D : Nat → Nat} {b : BitVec 32} {p₀ p : Nat} {s : State}
     (h : SlideAt a D b p₀ (p + 1) s) (hp₀ : p < p₀) (hp : p < 256)
     (hD : ∀ q, D q = 0 ∨ (D q % 2 = 1 ∧ D q < 16)) :
@@ -1145,19 +1227,7 @@ theorem slideStep_ok {a : Spec.Ed25519.Point} {D : Nat → Nat} {b : BitVec 32} 
   obtain hDp : D p < 16 := by rcases hD p with e | e <;> omega_using [e]
   rw [slideStep]
   refine WP.seq (WP.mono (slideHead_ok h hp hDp) fun u ⟨uk, uh, uz⟩ => ?_)
-  have mid : WP isa (.ite .ne (addEntry umaal) (.block [])) u fun x => AccKeep b u x ∧ AllLim x.mem b ∧
-      env x.mem b 16 = Spec.Ed25519.d ∧ point (env x.mem b) 0 1 2 3 = slideVal a D p₀ (p₀ - p) := by
-    apply WP.ite (!decide (D p = 0)) (by show some (!u.z) = _; rw [uz])
-    · intro hb
-      obtain hne : D p ≠ 0 := by simpa using hb
-      obtain ⟨ho, _⟩ := (hD p).resolve_left hne
-      refine WP.mono (addEntry_ok uh ho hDp) fun x ⟨xk, xl, xd, xp⟩ => ⟨xk, xl, xd, ?_⟩
-      rw [xp, slideVal_at a D hp₀, ite_eq_right hne]
-    · intro hb
-      obtain h0 : D p = 0 := by simpa using hb
-      refine WP.block_nil ⟨⟨Rest.refl _ _, Frame.refl _ _⟩, uh.lim, uh.d, ?_⟩
-      rw [uh.acc, slideVal_at a D hp₀, ite_eq_left h0]
-  refine WP.seq (WP.mono mid fun x ⟨xk, xl, xd, xp⟩ => ?_)
+  refine WP.seq (WP.mono (slideTail_ok uh uz hp₀ hp hD) fun x ⟨xk, xl, xd, xp⟩ => ?_)
   obtain x11 : x.gpr .r11 = BitVec.ofNat 32 p := (xk.rest.gpr _ (by decide)).trans uh.r11
   refine wp_cmp (op2_imm (by decide)) fun t ft zt => WP.block_nil
     ⟨uk.trans ((MulKeep.of_powers (PowersKeep.of_acc xk)).trans (MulKeep.of_rest (ft.rest []) (by decide) ft.mem)),
