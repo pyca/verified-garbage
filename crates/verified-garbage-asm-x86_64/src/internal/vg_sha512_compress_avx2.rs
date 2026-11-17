@@ -11,7 +11,10 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha512_compress_avx2() {
     core::arch::naked_asm!(
-        r#".base64 "SImZAAUAAEiJqQgFAABMiaEQBQAATImpGAUAAEyJsegEAABMibnwBAAASLgHBgUEAwIBAMRh+W7gSLgPDg0MCwoJCMRh+W7oxEEZbOXEQx045AFI98IBAAAA"
+        r#"jmp 2f
+.skip 30, 0xcc
+2:
+.base64 "SImZAAUAAEiJqQgFAABMiaEQBQAATImpGAUAAEyJsegEAABMibnwBAAASLgHBgUEAwIBAMRh+W7gSLgPDg0MCwoJCMRh+W7oxEEZbOXEQx045AFI98IBAAAA"
 jne 20f
 jmp 21f
 20:
