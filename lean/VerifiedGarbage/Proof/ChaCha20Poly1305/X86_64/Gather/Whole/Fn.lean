@@ -459,6 +459,17 @@ theorem Ready.call : callPre (xS s c) ∧ Covers (rdC s ++ wrC s) ((qS c).rd ++ 
 
 end
 
+/-- `gatherPost` reads the memory on return only within `dst` and the tag,
+apart from the stack below `rsp`: a frame there loses its bytes harmlessly. -/
+theorem gatherPost_frame {s z z' : State} (hs : gatherPre s) {R : Region} (hR : R.Sub (stkR s))
+    (hz : Frame [R] z.mem z'.mem) (hp : gatherPost s z) : gatherPost s z' := by
+  obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, bd, bt, -, -, -, -, -, od, -⟩ := hs
+  unfold gatherPost at hp ⊢
+  rw [bytesAt_frame hz (fun r hr => by rw [List.mem_singleton.mp hr]; exact bd.symm.sub_right hR)
+      (by omega_arith),
+    bytesAt_frame hz (fun r hr => by rw [List.mem_singleton.mp hr]; exact bt.symm.sub_right hR) (by decide)]
+  exact hp
+
 /-- After the call, and the pop of `tag`. -/
 structure Called (F : SealFn) (s z : State) : Prop where
   out : gatherPost s z
@@ -468,8 +479,6 @@ structure Called (F : SealFn) (s z : State) : Prop where
   rd : z.rd = s.rd
   wr : z.wr = FR s :: s.wr
   mx : z.mxcsr.extractLsb' 6 10 = s.mxcsr.extractLsb' 6 10
-  /-- What else the callee leaves (`SealFn.E`), from the state it was called in. -/
-  ext : ∃ c, Ready s c ∧ F.E (xS s c) z.mem
 
 theorem called_wp (F : SealFn) {s c : State} (h : Lay s) (hc : Ready s c) :
     WP isa (.frame (.push [.rax]) (.call F.name F.code) (.pop .rax 1)) c (Called F s) := by
@@ -478,10 +487,14 @@ theorem called_wp (F : SealFn) {s c : State} (h : Lay s) (hc : Ready s c) :
   have hBn := h.hBn
   have hdep := F.depth
   have hx (r : Reg) (hr : r ≠ .rsp) : (xS s c).gpr r = c.gpr r := xgpr_eq hr
-  refine WP.frameKept (by simp) (by decide) (by decide) (hc.hn h) (WP.call_sp_mx (k := F.contractE) F.exec F.sp
-    (by omega_arith) (sealSpec_pre hcp) hcov hw fun s' rd' wr' cs' fr' _ ⟨s₂, m₂, _, post', hE⟩ mx' => ?_)
+  refine WP.frame (by simp) (by decide) (by decide) (hc.hn h) (WP.call_sp_mx (k := F.contractE) F.exec F.sp
+    (by omega_arith) (sealSpec_pre hcp) hcov hw fun s' rd' wr' cs' fr' _ ⟨s₂, m₂, _, post', _⟩ mx' => ?_)
   have rsp' : s'.gpr .rsp = (qS c).gpr .rsp := cs' .rsp (by decide)
-  refine ⟨rsp', wr', ?_⟩
+  refine ⟨rsp', wr', fun m u fm => ?_⟩
+  -- The pop of `tag` loses the 8 bytes it was in.
+  rw [show c.gpr .rsp - BitVec.ofNat 64 (8 * [Reg.rax].length) = Bs s + BitVec.ofNat 64 1776 from
+    (pushed_rsp _ _).symm.trans hc.qsp] at fm
+  replace fm : Frame [⟨Bs s + BitVec.ofNat 64 1776, 8⟩] s'.mem m := fm
   have hpost := sealSpec_post post'
   simp only [hx .rdi (by decide), hx .rsi (by decide), hx .rdx (by decide), hx .rcx (by decide),
     hx .r8 (by decide), hx .r9 (by decide), hc.rdi, hc.rsi, hc.rdx, hc.rcx, hc.r8, hc.r9, hc.xtag h, m₂] at hpost
@@ -516,8 +529,9 @@ theorem called_wp (F : SealFn) {s c : State} (h : Lay s) (hc : Ready s c) :
     rw [← h.hlen]
     exact bytesAt_writeBytes_self _ _ _ (by rw [h.hlen]; exact (stackArg s 1).isLt)
   rw [hd] at hpost
-  refine ⟨by simp only [gatherPost, popped_mem]; exact hpost, ?_, fun r hr hsp => ?_, ?_, ?_, ?_, ?_,
-    ⟨c, hc, by rw [popped_mem, ← m₂]; exact hE⟩⟩
+  dsimp only
+  refine ⟨gatherPost_frame h.pre (stk_sub s 1776 8 (by decide)) (z := popped .rax 1 s') fm
+    (by simp only [gatherPost, popped_mem]; exact hpost), ?_, fun r hr hsp => ?_, ?_, ?_, ?_, ?_⟩
   · -- The return address: neither the push, nor the copy, nor the call wrote it.
     have hsp' : (qS c).gpr .rsp = Bs s + BitVec.ofNat 64 1776 := hc.qsp
     have hbelow : below ((qS c).gpr .rsp) (F.code.x86_64Depth + 8) =
@@ -525,7 +539,9 @@ theorem called_wp (F : SealFn) {s c : State} (h : Lay s) (hc : Ready s c) :
       rw [hsp']; simp only [below]
       rw [add_ofNat_sub_ofNat _ (by omega_arith), show 1776 - (F.code.x86_64Depth + 8) = 1768 - F.code.x86_64Depth by omega_arith]
     have e : s.gpr .rsp = Bs s + BitVec.ofNat 64 1832 := h.hB
-    rw [popped_mem, e]
+    rw [e, Frame.readW fm (Region.contains_self _ _) (fun r hr => by
+      rw [List.mem_singleton.mp hr]
+      exact Offset.disjoint _ (.inr (by omega_arith)) (by omega_arith) (by omega_arith)) (by decide)]
     have r₁ : s'.mem.readW (Bs s + BitVec.ofNat 64 1832) 64 = (qS c).mem.readW (Bs s + BitVec.ofNat 64 1832) 64 := by
       refine Frame.readW fr' (Region.contains_self _ _) (fun r hr => ?_) (by decide)
       simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false, hbelow] at hr
@@ -552,6 +568,33 @@ theorem called_wp (F : SealFn) {s c : State} (h : Lay s) (hc : Ready s c) :
   · rw [popped_wr, wr', hc.qwr]; rfl
   · rw [popped_mxcsr, mx', pushed_mxcsr, hc.mx]
 
+/-- What else the callee leaves (`SealFn.E`), from the state it was called
+in, in the memory the pop of `tag` leaves, which the model does not change:
+what the residue proof (`Scrub.lean`) asks of each run. -/
+theorem called_wpE (F : SealFn) {s c : State} (h : Lay s) (hc : Ready s c) :
+    WP isa (.frame (.push [.rax]) (.call F.name F.code) (.pop .rax 1)) c
+      fun z => z.gpr .rsp = Bs s + BitVec.ofNat 64 1784 ∧ z.wr = FR s :: s.wr ∧
+        ∃ c, Ready s c ∧ F.E (xS s c) z.mem := by
+  obtain ⟨hcp, hcov, hw⟩ := hc.call h
+  have hdep := F.depth
+  refine WP.frameKept (by simp) (by decide) (by decide) (hc.hn h) (WP.call_sp_mx (k := F.contractE) F.exec F.sp
+    (by omega_arith) (sealSpec_pre hcp) hcov hw fun s' _ wr' cs' _ _ ⟨s₂, m₂, _, _, hE⟩ _ => ?_)
+  have rsp' : s'.gpr .rsp = (qS c).gpr .rsp := cs' .rsp (by decide)
+  refine ⟨rsp', wr', ?_, ?_, c, hc, by rw [popped_mem, ← m₂]; exact hE⟩
+  · rw [popped_rsp, rsp', hc.qsp, Offset.add_ofNat_add_ofNat]; rfl
+  · rw [popped_wr, wr', hc.qwr]; rfl
+
+/-- The body of our frame, as `called_wpE` sees its call. -/
+theorem frameBody_wpE (w : Width) (F : SealFn) {s : State} (h : Lay s) :
+    WP isa (.seq (.block entry) (.seq (gather w) (.seq (.block callArgsWhole)
+      (.frame (.push [.rax]) (.call F.name F.code) (.pop .rax 1))))) (pushed saved s)
+      fun z => z.gpr .rsp = Bs s + BitVec.ofNat 64 1784 ∧ z.wr = FR s :: s.wr ∧
+        ∃ c, Ready s c ∧ F.E (xS s c) z.mem := by
+  refine WP.seq (WP.mono (entered_wp h) fun e he => ?_)
+  refine WP.seq (WP.mono (gathered_wp w h he) fun g hg => ?_)
+  refine WP.seq (WP.mono (ready_wp h hg) fun c hc => ?_)
+  exact called_wpE F h hc
+
 /-- The body of our frame. -/
 theorem frameBody_wp (w : Width) (F : SealFn) {s : State} (h : Lay s) :
     WP isa (.seq (.block entry) (.seq (gather w) (.seq (.block callArgsWhole)
@@ -565,18 +608,26 @@ theorem sealGather_wp (w : Width) (F : SealFn) {s : State} (hs : gatherPre s) :
     WP isa (sealGatherWhole w F.name F.code) s fun z => abiPreserved s z ∧ gatherPost s z := by
   have h := lay hs
   have hn : 8 * saved.length ≤ (s.gpr .rsp).toNat := by have := h.w₁; simp only [List.length_cons, List.length_nil]; omega_arith
-  refine WP.frameKept (by simp) (by decide) (by decide) hn (WP.mono (frameBody_wp w F h) fun z hz => ?_)
-  refine ⟨by rw [hz.rsp, hP s], by rw [hz.wr, hPwr s], ⟨fun r hr => ?_, ?_, ?_⟩, ?_⟩
+  refine WP.frame (by simp) (by decide) (by decide) hn (WP.mono (frameBody_wp w F h) fun z hz => ?_)
+  refine ⟨by rw [hz.rsp, hP s], by rw [hz.wr, hPwr s], fun m u fm => ?_⟩
+  -- The pop of the saved registers loses their 48 bytes, `FR s`.
+  rw [show s.gpr .rsp - BitVec.ofNat 64 (8 * saved.length) = Bs s + BitVec.ofNat 64 1784 from
+    (pushed_rsp _ _).symm.trans (hP s)] at fm
+  replace fm : Frame [FR s] z.mem m := fm
+  dsimp only
+  refine ⟨⟨fun r hr => ?_, ?_, ?_⟩, ?_⟩
   · by_cases hsp : r = .rsp
     · subst hsp
       rw [popped_rsp, hz.rsp, Offset.add_ofNat_add_ofNat, h.hB]; rfl
     · have hra : r ≠ .rax := fun e => by subst e; simp [calleeSaved] at hr
       rw [popped_gpr _ _ _ hsp hra, hz.cs r hr hsp]
-  · rw [popped_mem]; exact hz.ret
+  · rw [Frame.readW fm (Region.contains_self _ _) (fun r hr => by
+      rw [List.mem_singleton.mp hr, h.hB]
+      exact Offset.disjoint _ (.inr (by omega_arith)) (by omega_arith) (by omega_arith)) (by decide)]
+    exact hz.ret
   · rw [popped_mxcsr]; exact hz.mx
-  · have := hz.out
-    simp only [gatherPost, popped_mem] at this ⊢
-    exact this
+  · exact gatherPost_frame hs (fr_sub s) (z := popped .rax saved.length z) fm
+      (by simp only [gatherPost, popped_mem]; exact hz.out)
 
 /-- What else the callee leaves (`SealFn.E`), from the state it was called
 in, in the memory `seal_gather` returns with. -/
@@ -584,9 +635,9 @@ theorem sealGather_wpE (w : Width) (F : SealFn) {s : State} (hs : gatherPre s) :
     WP isa (sealGatherWhole w F.name F.code) s fun z => ∃ c, Ready s c ∧ F.E (xS s c) z.mem := by
   have h := lay hs
   have hn : 8 * saved.length ≤ (s.gpr .rsp).toNat := by have := h.w₁; simp only [List.length_cons, List.length_nil]; omega_arith
-  refine WP.frameKept (by simp) (by decide) (by decide) hn (WP.mono (frameBody_wp w F h) fun z hz =>
-    ⟨by rw [hz.rsp, hP s], by rw [hz.wr, hPwr s], ?_⟩)
+  refine WP.frameKept (by simp) (by decide) (by decide) hn (WP.mono (frameBody_wpE w F h) fun z hz =>
+    ⟨by rw [hz.1, hP s], by rw [hz.2.1, hPwr s], ?_⟩)
   simp only [popped_mem]
-  exact hz.ext
+  exact hz.2.2
 
 end VG.Proof.ChaCha20Poly1305.X86_64.Gather.Whole
