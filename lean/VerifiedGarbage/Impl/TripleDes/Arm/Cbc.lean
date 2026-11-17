@@ -8,11 +8,11 @@ public import VerifiedGarbage.Spec.TripleDes.Contract
 /-!
 # Triple DES-CBC on ARMv7
 
-`vg_triple_des_cbc_encrypt_chained` and `vg_triple_des_cbc_decrypt_chained`
-are the generic modes one block at a time (`Impl/Modes/Arm/Seq.lean`,
-`CbcChained.lean`) over Triple DES's ECB
-functions, `vg_triple_des_ecb_encrypt` and `vg_triple_des_ecb_decrypt`,
-which they call once per 8-byte block (`ecbCore`).
+`vg_triple_des_cbc_encrypt_chained` is the generic mode one block at a time
+(`Impl/Modes/Arm/Seq.lean`, `CbcChained.lean`) over Triple DES's ECB
+encryption, `vg_triple_des_ecb_encrypt`, which it calls once per 8-byte
+block (`ecbCore`). `vg_triple_des_cbc_decrypt_chained`, whose blocks are
+deciphered independently, is `Wide.lean`'s, a batch of blocks at a time.
 -/
 
 @[expose] public section
@@ -37,8 +37,5 @@ def ecbCore (d : Spec.TripleDes.Direction) : Core where
 
 /-- `vg_triple_des_cbc_encrypt_chained`. -/
 def cbcEncryptChained : Prog isa := (ecbCore .encrypt).seq cbcEncChained
-
-/-- `vg_triple_des_cbc_decrypt_chained`. -/
-def cbcDecryptChained : Prog isa := (ecbCore .decrypt).seq cbcDecChained
 
 end VG.Impl.TripleDes.Arm

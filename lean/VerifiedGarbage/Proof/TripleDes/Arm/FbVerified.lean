@@ -35,7 +35,8 @@ encryption (`Proof.Modes.Arm.seq_verified` with `ecbSpec .encrypt`) meet the
 contracts with a scratch buffer of 7 words (`Proof.TripleDes.fbScratchContract`,
 `cfb8ScratchContract`), with the 1024 bytes of stack the ECB function uses;
 the `_framed` theorems keep the buffer on the stack, zeroed on return: 64
-bytes more.
+bytes more. CFB64 decryption is
+`Bitsliced/WideVerified.lean`'s.
 -/
 
 @[expose] public section
@@ -138,45 +139,6 @@ theorem cfbEncrypt_framed :
     cfbEncrypt_verified (by decide) (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.TripleDes.cfbEncPost_local _)
     (Proof.TripleDes.cfbEncPostOut_local _) cfbEncryptFrameSat
-
-theorem cfbDecryptTaint : SeqTaint (ecbCore .encrypt) cfbDec :=
-  ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
-
-theorem cfbDecrypt_implies : (seqArm (ecbCore .encrypt) (ecbSpec .encrypt) cfbDec).Implies
-    (Proof.TripleDes.fbScratchContract Arm.abi 7 Proof.TripleDes.cfbDecPost 1024) where
-  pre s h := seqArm_pre_rw rfl (len := (· * 8)) (fun n => rfl) (by
-    sig_pre [Proof.TripleDes.fbScratchContract, Proof.TripleDes.fbScratchSig, Spec.TripleDes.ofbSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] at h
-    exact h)
-  post s s' _ h := by
-    sig_post [Proof.TripleDes.fbScratchContract, Proof.TripleDes.fbScratchSig, Proof.TripleDes.cfbDecPost, Spec.TripleDes.ofbSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
-    have e := cfbDec_post h
-    obtain ⟨e1, e2, e3, -, -⟩ := args_plain (c := ecbCore .encrypt) rfl s
-    simp only [e1, e2, e3] at e
-    rw [show (ecbCore .encrypt).bs = 8 from rfl] at e
-    simp only [ecbSpec, dirCipher, State.addr, blocksOf_eq] at e
-    exact e
-  pub s₁ s₂ _ _ h := by
-    sig_pub [Proof.TripleDes.fbScratchContract, Proof.TripleDes.fbScratchSig, Spec.TripleDes.ofbSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] at h
-    exact seqArm_pub rfl h
-  sat := by
-    sig_implies_sat [Proof.TripleDes.fbScratchContract, Proof.TripleDes.fbScratchSig, Spec.TripleDes.ofbSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
-      Arm.State.addr] [fbSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using fbSat 8
-
-theorem cfbDecrypt_verified : Verified Arm.target cfbDecrypt (Proof.TripleDes.fbScratchContract Arm.abi 7 Proof.TripleDes.cfbDecPost 1024) :=
-  seq_verified (ecbSpec .encrypt) (cfbDec_ok _) cfbDecryptTaint cfbDecrypt_implies
-
-theorem cfbDecryptFrameSat : ∃ s, (Spec.TripleDes.cfbDecryptContract Arm.abi 1088).pre s := by
-  implies_sat [Spec.TripleDes.cfbDecryptContract, Spec.TripleDes.cfbSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
-    Arm.State.addr] [fbFrameSat, fbSat] using fbFrameSat 8
-
-/-- `cfbDecrypt`, with its scratch buffer on the stack (zeroed on return). -/
-theorem cfbDecrypt_framed :
-    Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 cfbDecrypt) (Spec.TripleDes.cfbDecryptContract Arm.abi 1088) :=
-  Arm.Verified.stackScratchWiped (sig := Spec.TripleDes.cfbSig) (nm := "scratch") (e := .u64) (n := 7)
-    (post := Proof.TripleDes.cfbDecPost Arm.abi.ptrBits) (wa := true) (stack := 1024) (m := 0) (bytes := 64)
-    cfbDecrypt_verified (by decide) (by decide) (by decide) (by decide) (by decide)
-    (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.TripleDes.cfbDecPost_local _)
-    (Proof.TripleDes.cfbDecPostOut_local _) cfbDecryptFrameSat
 
 theorem cfb8EncryptTaint : SeqTaint (ecbCore .encrypt) cfb8Enc :=
   ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩

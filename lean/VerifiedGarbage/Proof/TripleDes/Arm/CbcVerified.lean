@@ -26,13 +26,13 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 /-!
 # Triple DES-CBC on ARMv7 meets its contracts
 
-`cbcEncryptChained_verified`, `cbcDecryptChained_verified`: the generic CBC
-encryption and decryption one block at a time, which return the chaining
-value in the IV (`Impl/Modes/Arm/CbcChained.lean`), over Triple DES's ECB
-functions (`Proof.Modes.Arm.seq_verified` with `ecbSpec`) meet the chained
-contracts with a scratch buffer, as OFB and CFB do (`FbVerified.lean`), whose
-IV is also read and written; the `_framed` theorems keep the buffer on the
-stack, zeroed on return.
+`cbcEncryptChained_verified`: the generic CBC encryption one block at a
+time, which returns the chaining value in the IV
+(`Impl/Modes/Arm/CbcChained.lean`), over Triple DES's ECB encryption
+(`Proof.Modes.Arm.seq_verified` with `ecbSpec`) meets the chained contract
+with a scratch buffer, as OFB and CFB do (`FbVerified.lean`), whose IV is
+also read and written; `cbcEncryptChained_framed` keeps the buffer on the
+stack, zeroed on return. Decryption is `Bitsliced/WideVerified.lean`'s.
 -/
 
 @[expose] public section
@@ -96,44 +96,5 @@ theorem cbcEncryptChained_framed :
     cbcEncryptChained_verified (by decide) (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.TripleDes.cbcEncChainedPost_local _)
     (Proof.TripleDes.cbcEncChainedPostOut_local _) cbcEncryptChainedFrameSat
-
-theorem cbcDecryptChainedTaint : SeqTaint (ecbCore .decrypt) cbcDecChained :=
-  ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
-
-theorem cbcDecryptChained_implies : (seqArm (ecbCore .decrypt) (ecbSpec .decrypt) cbcDecChained).Implies
-    (Proof.TripleDes.cbcDecChainedScratchContract Arm.abi 7 1024) where
-  pre s h := seqArm_pre_rw rfl (len := (· * 8)) (fun n => rfl) (by
-    sig_pre [Proof.TripleDes.cbcDecChainedScratchContract, Proof.TripleDes.cbcChainedScratchSig, Spec.TripleDes.cbcChainedSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] at h
-    exact h)
-  post s s' _ h := by
-    sig_post [Proof.TripleDes.cbcDecChainedScratchContract, Proof.TripleDes.cbcChainedScratchSig, Proof.TripleDes.cbcDecChainedPost, Spec.TripleDes.cbcChainedSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
-    have e := cbcDecChained_post h
-    obtain ⟨e1, e2, e3, -, -⟩ := args_plain (c := ecbCore .decrypt) rfl s
-    simp only [e1, e2, e3] at e
-    rw [show (ecbCore .decrypt).bs = 8 from rfl] at e
-    simp only [ecbSpec, dirCipher, State.addr, blocksOf_eq] at e
-    exact e
-  pub s₁ s₂ _ _ h := by
-    sig_pub [Proof.TripleDes.cbcDecChainedScratchContract, Proof.TripleDes.cbcChainedScratchSig, Spec.TripleDes.cbcChainedSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] at h
-    exact seqArm_pub rfl h
-  sat := by
-    sig_implies_sat [Proof.TripleDes.cbcDecChainedScratchContract, Proof.TripleDes.cbcChainedScratchSig, Spec.TripleDes.cbcChainedSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
-      Arm.State.addr] [cbcSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using cbcSat 8
-
-theorem cbcDecryptChained_verified : Verified Arm.target cbcDecryptChained (Proof.TripleDes.cbcDecChainedScratchContract Arm.abi 7 1024) :=
-  seq_verified (ecbSpec .decrypt) (cbcDecChained_ok _) cbcDecryptChainedTaint cbcDecryptChained_implies
-
-theorem cbcDecryptChainedFrameSat : ∃ s, (Spec.TripleDes.cbcDecryptChainedContract Arm.abi 1088).pre s := by
-  implies_sat [Spec.TripleDes.cbcDecryptChainedContract, Spec.TripleDes.cbcChainedSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
-    Arm.State.addr] [cbcFrameSat, cbcSat] using cbcFrameSat 8
-
-/-- `cbcDecryptChained`, with its scratch buffer on the stack (zeroed on return). -/
-theorem cbcDecryptChained_framed :
-    Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 cbcDecryptChained) (Spec.TripleDes.cbcDecryptChainedContract Arm.abi 1088) :=
-  Arm.Verified.stackScratchWiped (sig := Spec.TripleDes.cbcChainedSig) (nm := "scratch") (e := .u64) (n := 7)
-    (post := Proof.TripleDes.cbcDecChainedPost Arm.abi.ptrBits) (wa := true) (stack := 1024) (m := 0) (bytes := 64)
-    cbcDecryptChained_verified (by decide) (by decide) (by decide) (by decide) (by decide)
-    (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.TripleDes.cbcDecChainedPost_local _)
-    (Proof.TripleDes.cbcDecChainedPostOut_local _) cbcDecryptChainedFrameSat
 
 end VG.Proof.TripleDes.Arm

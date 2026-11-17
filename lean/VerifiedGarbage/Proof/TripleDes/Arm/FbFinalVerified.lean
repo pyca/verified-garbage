@@ -90,7 +90,7 @@ theorem cfbEncryptFinal_verified : Verified Arm.target cfbEncryptFinal
     cfbEncryptFinal_implies
 
 theorem cfbDecryptFinalTaint : FinalTaint (ecbCore .encrypt) cfbDecF :=
-  ⟨cfbDecryptTaint.pro, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, cfbDecryptTaint.epi⟩
+  ⟨cfbEncryptTaint.pro, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
 
 theorem cfbDecryptFinal_implies : (seqFinalArm (ecbCore .encrypt) (ecbSpec .encrypt) cfbDecF).Implies
     (Sig.scratchContract Arm.abi finalSig "scratch" .u64 7 (Curry.const (fun _ => True) _)

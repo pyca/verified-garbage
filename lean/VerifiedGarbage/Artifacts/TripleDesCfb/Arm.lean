@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.Arm.FbVerified
+public import VerifiedGarbage.Proof.TripleDes.Arm.Bitsliced.WideVerified
 public import VerifiedGarbage.Proof.TripleDes.Arm.FbFinalVerified
 public import VerifiedGarbage.Impl.TripleDes.Arm.FbFinal
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -17,8 +18,8 @@ def artifacts : List Artifact := [
     code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.TripleDes.Arm.cfbEncrypt
     verified := Proof.TripleDes.Arm.cfbEncrypt_framed },
   Spec.TripleDes.cfbDecryptApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.TripleDes.Arm.cfbDecrypt
-    verified := Proof.TripleDes.Arm.cfbDecrypt_framed },
+    code := Impl.StackScratch.Arm.withStackScratchWiped 1040 0 256 Impl.TripleDes.Arm.Wide.cfbDecrypt
+    verified := Proof.TripleDes.Arm.Bitsliced.cfbDecrypt_framed },
   Spec.TripleDes.cfbEncryptFinalApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.TripleDes.Arm.cfbEncryptFinal
     verified := Proof.TripleDes.Arm.cfbEncryptFinal_framed },

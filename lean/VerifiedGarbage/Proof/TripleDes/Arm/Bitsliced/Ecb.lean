@@ -791,7 +791,7 @@ theorem advance_ok {s : State} :
     ∃ s', runBlock isa advance s = some s' ∧ s'.gpr .r1 = s.gpr .r1 + s.gpr .r12 <<< 3 ∧
       s'.gpr .r2 = s.gpr .r2 - s.gpr .r12 ∧ s'.z = (s.gpr .r2 - s.gpr .r12 == 0) ∧
       s'.gpr .r0 = s.gpr .r0 ∧ s'.gpr .r3 = s.gpr .r3 ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧
-      s'.wr = s.wr := by
+      s'.wr = s.wr ∧ (∀ r, r ≠ .r1 → r ≠ .r2 → s'.gpr r = s.gpr r) := by
   have e₁ := exec_dp (s := s) (op := .add) (d := .r1) (n := .r1) (o := .shifted .r12 .lsl 3)
     (op2_lsl (by decide))
   let s₁ := s.setReg .r1 (dpVal .add (s.gpr .r1) (s.gpr .r12 <<< 3))
@@ -801,7 +801,7 @@ theorem advance_ok {s : State} :
       ((subFlags s₁ (s₁.gpr .r2) (s₁.gpr .r12)).setReg .r2 (s₁.gpr .r2 - s₁.gpr .r12)).gpr r = s₁.gpr r :=
     fun r hr => RegUpd.gpr_setReg_of_ne _ _ hr
   refine ⟨(subFlags s₁ (s₁.gpr .r2) (s₁.gpr .r12)).setReg .r2 (s₁.gpr .r2 - s₁.gpr .r12), ?_, ?_, ?_,
-    ?_, ?_, ?_, rfl, rfl, rfl⟩
+    ?_, ?_, ?_, rfl, rfl, rfl, fun r h1 h2 => (kt r h2).trans (k₁ r h1)⟩
   · rw [advance, runBlock_cons, e₁, runStep_some, runBlock_cons, e₂, runStep_some, runBlock_nil]
   · exact (kt _ (by decide)).trans (RegUpd.gpr_setReg_self _ _ _)
   · rw [RegUpd.gpr_setReg_self, k₁ _ (by decide), k₁ _ (by decide)]
@@ -953,7 +953,7 @@ theorem batch_ok (d : Direction) {s : State} {Sb D : BitVec 32} {n : Nat} (h : B
   apply WP.seq
   refine WP.mono (copyOut_ok h₇ d₇ c1 c12 hk1 hk32) fun s₈ I₈ => ?_
   -- past the batch
-  obtain ⟨s₉, run₉, n1, n2, nz, n0, n3, m₉, rd₉, wr₉⟩ := advance_ok (s := s₈)
+  obtain ⟨s₉, run₉, n1, n2, nz, n0, n3, m₉, rd₉, wr₉, _⟩ := advance_ok (s := s₈)
   refine WP.of_runBlock ⟨s₉, run₉, ?_⟩
   have e12 : s₈.gpr .r12 = BitVec.ofNat 32 k := (I₈.keep _ (by decide)).trans c12
   have e2 : s₈.gpr .r2 = BitVec.ofNat 32 n := (I₈.keep _ (by decide)).trans c2
