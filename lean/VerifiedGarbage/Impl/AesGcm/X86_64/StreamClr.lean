@@ -60,21 +60,35 @@ def hoist (k : List Instr) : Prog isa → Prog isa
   | .frame i b j => .frame i (hoist k b) j
   | .icall i n b nx => .icall i n b nx
 
-/-- The 32-byte words at `r11 + 32 (k - 1)`, …, `r11 + 32`, `r11` zeroed
-from `ymm0`, from the top down. -/
-def zeroYs : Nat → List Instr
+/-- The bytes a store of `zeroAt z` writes: 64 (`zmm0`, AVX-512) if `z`,
+else 32 (`ymm0`, AVX). -/
+def wbytes : Bool → Nat
+  | false => 32
+  | true => 64
+
+/-- A store of `ymm0` (`vmovdqu`), or of `zmm0` (`vmovdqu32`) if `z`, at
+`r11 + d`. -/
+def zeroAt : Bool → Nat → Instr
+  | false, d => .vmovdquStore .l256 (at_ .r11 d) .xmm0
+  | true, d => .vmovdqu32Store (at_ .r11 d) .xmm0
+
+/-- The `k` words of `wbytes z` bytes at `r11 + wbytes z (k - 1)`, …,
+`r11 + wbytes z`, `r11` zeroed (`zeroAt z`), from the top down. -/
+def zeroWs (z : Bool) : Nat → List Instr
   | 0 => []
-  | k + 1 => .vmovdquStore .l256 (at_ .r11 (32 * k)) .xmm0 :: zeroYs k
+  | k + 1 => zeroAt z (wbytes z * k) :: zeroWs z k
 
 /-- The 2112 bytes of the scratch of `vg_aes_gcm_encrypt_blocks` or
 `_decrypt_blocks` (its stack argument, `[rsp + 8]` as it returns) zeroed,
-with 66 stores of `ymm0` (AVX), then `vzeroupper`. -/
-def wipeScr : List Instr :=
-  [.mov .r11 (.mem (at_ .rsp 8)), .vop (.vbin .vpxor .l128 .xmm0 .xmm0 .xmm0)] ++ zeroYs 66 ++ [.vop .vzeroupper]
+with `2112 / wbytes z` stores (`zeroWs z`: 66 of `ymm0`, or with AVX-512
+33 of `zmm0`), then `vzeroupper`. -/
+def wipeScr (z : Bool) : List Instr :=
+  [.mov .r11 (.mem (at_ .rsp 8)), .vop (.vbin .vpxor .l128 .xmm0 .xmm0 .xmm0)] ++ zeroWs z (2112 / wbytes z) ++
+    [.vop .vzeroupper]
 
 /-- `f`, as an internal function of its own (`<name>_w`) that zeroes its
-scratch before it returns (`wipeScr`). -/
-def Fn.wipe (f : Fn) : Fn := ⟨f.name ++ "_w", .seq f.code (.block wipeScr)⟩
+scratch before it returns (`wipeScr z`). -/
+def Fn.wipe (z : Bool) (f : Fn) : Fn := ⟨f.name ++ "_w", .seq f.code (.block (wipeScr z))⟩
 
 variable (c : Callees)
 

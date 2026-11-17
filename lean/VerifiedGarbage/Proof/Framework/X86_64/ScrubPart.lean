@@ -451,6 +451,79 @@ def scrubRegMCR {api : Api} (r : Registration api target) (v : VecLevel) (ks cs 
   notWith := r.notWith
   residue := some ⟨(scrubCodeMCR_ok r v ks cs xs gs hcs hcv hd hst hlv hmx hrb hpost hres hw hne ht hregs).2⟩
 
+/-- `scrubCodeMCR_ok` at any level, `evex` too, without `mxFix` (`scrub`'s
+`f` is `avx`), for code that leaves the same MXCSR in two runs along the same
+trace (`hmx`): at the level `evex` the clearing zeroes `zmm16`–`zmm31`
+(`clearHigh`), which `RegsOk` says nothing of, whatever `xs` says. -/
+theorem scrubCodeMCRF_ok {api : Api} (r : Registration api target) (v : VecLevel) (ks cs : List Nat)
+    (xs : List XReg) (gs : List Reg)
+    (hcs : cs.sum = r.stack) (hcv : ∀ b ∈ cs, 0 < b ∧ b < 4096 ∧ b % 8 = 0)
+    (hd : r.code.x86_64Depth ≤ r.stack) (hst : r.stack + 8 < 2 ^ 64)
+    (hlv : r.code.all (fun i => decide (i.vecLevelR ≤ v.level)) = true)
+    (hmx : MxSame r.code)
+    (hrb : api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits ≤ 32 ∨ api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits = 64)
+    (hpost : PostOut r.contract (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits))
+    (hres : ResOk r.code r.contract r.stack ks cs) (hxe : v = .evex → ∀ x, x ∈ xsOf r.code ks)
+    (ht : TailOk (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits) xs (psOf ks) gs ks)
+    (hregs : RegsOk r.code r.contract xs (psOf ks) gs) :
+    Verified target (scrub v (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
+        xs (psOf ks) gs ks (wipeCs ks cs) r.code .avx) r.contract ∧
+      NoResidue (scrub v (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
+        xs (psOf ks) gs ks (wipeCs ks cs) r.code .avx) r.contract
+        (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits) := by
+  have hall : Verified target (scrub v (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
+        (xsOf r.code ks) (psOf ks) (gsOf Taint.clobbers r.code) ks cs r.code .avx) r.contract ∧
+      NoResidue (scrub v (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
+        (xsOf r.code ks) (psOf ks) (gsOf Taint.clobbers r.code) ks cs r.code .avx) r.contract
+        (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits) := by
+    obtain ⟨pre, post, leak, e⟩ := r.ofSig
+    have hv := r.verified
+    have hp := hpost
+    have hr := hres
+    rw [e] at hv hp hr ⊢
+    have hrb' := hrb
+    rw [← withMode_ptrBits ((abi.withConsts r.consts).withTables api.sig r.tables) api.pubMode] at hrb' hp ⊢
+    exact Verified.scrubM (ScrubAbi.of r.consts api.sig r.tables api.pubMode) hv (SpSafe.of_all r.spSafe) hd
+      hcs hst hcv (fun i hi => by simpa using Code.all_instrs hlv i hi) (fun _ => hmx) hrb' hp hr (tailOk_of _ _ _)
+      (xs_of _ _) hxe (fun _ _ e => absurd e (by decide)) (gs_of _ _)
+  obtain ⟨pre, post, leak, e⟩ := r.ofSig
+  have hv := r.verified
+  rw [e] at hv hall hregs ⊢
+  exact Verified.scrubPart (ScrubAbi.of r.consts api.sig r.tables api.pubMode) hv
+    (by rw [← hcs]; exact wipeCs_sum ks cs) (wipeCs_valid hcv) (fun _ _ h => absurd h (by decide))
+    (Nat.le_of_eq hcs) hcv (fun _ _ h => absurd h (by decide)) (wipeCs_same ks cs) ht (tailOk_of _ _ _) hregs hall
+
+/-- `scrubRegMCR`, at any level, without `mxFix` (`scrubCodeMCRF_ok`). -/
+def scrubRegMCRF {api : Api} (r : Registration api target) (v : VecLevel) (ks cs : List Nat)
+    (xs : List XReg) (gs : List Reg)
+    (hcs : cs.sum = r.stack) (hcv : ∀ b ∈ cs, 0 < b ∧ b < 4096 ∧ b % 8 = 0)
+    (hd : r.code.x86_64Depth ≤ r.stack) (hst : r.stack + 8 < 2 ^ 64)
+    (hlv : r.code.all (fun i => decide (i.vecLevelR ≤ v.level)) = true)
+    (hmx : MxSame r.code)
+    (hrb : api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits ≤ 32 ∨ api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits = 64)
+    (hpost : PostOut r.contract (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits))
+    (hres : ResOk r.code r.contract r.stack ks cs) (hw : r.written = []) (hxe : v = .evex → ∀ x, x ∈ xsOf r.code ks)
+    (ht : TailOk (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits) xs (psOf ks) gs ks)
+    (hregs : RegsOk r.code r.contract xs (psOf ks) gs) : Registration api target where
+  suffix := r.suffix
+  consts := r.consts
+  tables := r.tables
+  stack := r.stack
+  code := scrub v (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
+    xs (psOf ks) gs ks (wipeCs ks cs) r.code .avx
+  contract := r.contract
+  verified := (scrubCodeMCRF_ok r v ks cs xs gs hcs hcv hd hst hlv hmx hrb hpost hres hxe ht hregs).1
+  ofApi := r.ofApi
+  ofSig := r.ofSig
+  spSafe := scrub_spSafe v _ _ _ _ _ _ ht.psOk ht.gsOk r.spSafe
+  written := r.written
+  writtenOk := by
+    rw [hw]; exact fun _ _ _ _ _ => True.intro
+  extra := r.extra
+  vendor := r.vendor
+  notWith := r.notWith
+  residue := some ⟨(scrubCodeMCRF_ok r v ks cs xs gs hcs hcv hd hst hlv hmx hrb hpost hres hxe ht hregs).2⟩
+
 end VG.X86_64.Scrub
 
 /-! ## Return addresses, in two runs along the same path -/
@@ -1153,5 +1226,33 @@ def withScrubResCR {api : Api} (r : Registration api target)
       ((Code.allOnce_eq _ r.code).symm.trans hlv) (mxClassOnce_eq r.code ▸ hmx) hrb hpost hres hw (levelFor_ne _)
       (tailOk_ofB _ ht) hregs
   else r else r else r else r else r else r else r else r else r
+
+/-- `withScrubResCR` at the level `v` given, `evex` too, without `mxFix`,
+for code whose every `ldmxcsr` restores what it saved (`mxClass`), so that it
+leaves the same MXCSR in two runs along the same trace: at the level `evex`
+for code that writes `zmm16`–`zmm31`, which the clearing then zeroes too
+(`clearHigh`), if the clearing needs no CPU feature the code does not.
+`r` itself where a side condition fails. -/
+def withScrubResCRF {api : Api} (r : Registration api target) (v : VecLevel)
+    (hpost : PostOut r.contract (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits))
+    (ks cs : List Nat) (hres : ResOk r.code r.contract r.stack ks cs)
+    (xs : List XReg) (gs : List Reg) (hregs : RegsOk r.code r.contract xs (psOf ks) gs) : Registration api target :=
+  if hcs : cs.sum = r.stack then
+  if hcv : cs.all (fun b => decide (0 < b ∧ b < 4096 ∧ b % 8 = 0)) = true then
+  if hd : r.code.x86_64Depth ≤ r.stack then
+  if hst : r.stack + 8 < 2 ^ 64 then
+  if hlv : r.code.allOnce (fun i => decide (i.vecLevelR ≤ v.level)) = true then
+  if hmx : (mxClassOnce r.code).isSome = true then
+  if hrb : api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits ≤ 32 ∨
+      api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits = 64 then
+  if hw : r.written = [] then
+  if ht : tailOkB xs gs ks = true then
+  if hx : v = .evex → r.code.all (fun i => !writesVec i) = false then
+    let r' := scrubRegMCRF r v ks cs xs gs hcs (fun b hb => of_decide_eq_true (List.all_eq_true.mp hcv b hb)) hd hst
+      ((Code.allOnce_eq _ r.code).symm.trans hlv) (MxSame.of_fun (mxFun_of (mxClassOnce_eq r.code ▸ hmx))) hrb hpost
+      hres hw (fun e x => by unfold xsOf; rw [hx e]; exact mem_xregs x) (tailOk_ofB _ ht) hregs
+    if (Code.requiresDedup isa.requires r'.code).all
+        (fun f => (Code.requiresDedup isa.requires r.code).contains f) then r' else r
+  else r else r else r else r else r else r else r else r else r else r
 
 end VG.X86_64.RScrub
