@@ -24,8 +24,10 @@ which needs none either, in a frame of only the 176 bytes it writes itself
 (`initF_framed`), followed by `Impl.Scrub.X86_64.scrubTail`
 (`X86_64.Scrub.withScrub`) where the implementation gives its residue
 analysis (`Aes.X86_64.Ctr32Impl.gcmInitRes`, on `Aes.X86_64.gcmInitCodeF`).
-Over the others, as before, in a frame of 2.5 KB, of which the analysis
-cannot tell what may hold secrets. Its postcondition reads the memory on
+Over the others, in a frame of 2.5 KB, of which the analysis cannot tell
+what may hold secrets, followed by the clearing of that whole frame, in
+chunks whose 16-byte stores are aligned (`X86_64.RScrub.withScrubAllC`). Its
+postcondition reads the memory on
 return only within the key context, for a key of the lengths the
 precondition allows (`X86_64.Scrub.PostOut`). `vg_aes_gcm_stream_init` and
 `vg_aes_gcm_stream_aad` are not here, though the analysis handles them:
@@ -110,7 +112,8 @@ theorem initCodeF_eq (c : Ctr32Impl) :
 
 open VG.X86_64.RScrub in
 /-- `vg_aes_gcm_init` over `c`: with no working space for an implementation
-that needs none, and without secret residue where the analysis handles it. -/
+that needs none, and without secret residue where the analysis handles it;
+over the others, in 2576 bytes, all cleared. -/
 def initReg (c : Ctr32Impl) : Registration Spec.Gcm.initApi X86_64.target :=
   match c.free with
   | some fc =>
@@ -121,12 +124,14 @@ def initReg (c : Ctr32Impl) : Registration Spec.Gcm.initApi X86_64.target :=
       verified := initCodeF_eq c ▸ initF_framed (gcmOfF c) KeyImpl.aesniFree fc
       spSafe := initCodeF_eq c ▸ VG.X86_64.withStackScratch_spSafe_of (init_spSafe (gcmOfF c)) }
       (initOut _) [] (pubOk_nil _) c.gcmInitRes
-  | none => {
+  | none =>
+    withScrubAllC {
       suffix := c.suffix
       code := Impl.StackScratch.X86_64.withStackScratch 2568 .rcx (Impl.AesGcm.X86_64.init (gcmOf c).callees)
       stack := 2576
       verified := init_framed (gcmOf c)
       spSafe := VG.X86_64.withStackScratch_spSafe_of (init_spSafe (gcmOf c)) }
+      (initOut _) [8, 2568]
 
 /-! ## `vg_aes_gcm_stream_init` and `vg_aes_gcm_stream_aad`
 

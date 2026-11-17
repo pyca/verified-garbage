@@ -100,21 +100,10 @@ key context. -/
 def artifactsW (v : GcmVariant) : List Artifact := [
   Spec.Gcm.sealPreparedApi.artifact X86_64.target (sealWReg v),
   Spec.Gcm.openPreparedApi.artifact X86_64.target (openWReg v),
-  Spec.Gcm.openToPreparedApi.artifact X86_64.target {
-    suffix := v.impl.suffix
-    code := openToCode v
-    verified := VG.Proof.AesGcm.Flag.openTo_keyed (openToCode_keyed v)
-    spSafe := openToCode_spAll v },
+  Spec.Gcm.openToPreparedApi.artifact X86_64.target (openToWReg v),
   Spec.Gcm.streamEncryptPreparedApi.artifact X86_64.target (streamEncryptWReg v),
   Spec.Gcm.streamDecryptPreparedApi.artifact X86_64.target (streamDecryptWReg v),
-  Spec.Gcm.sealGatherPreparedApi.artifact X86_64.target {
-    suffix := v.impl.suffix
-    code := Impl.StackScratch.X86_64.withStackArgScratch 240 5
-        (Impl.AesGcm.X86_64.SealGather.sealGather (shortFn v).quick (shortFn v).fast (shortFn v).test
-          (shortFn v).code (initFn v.impl).fn (aadFn v.impl).fn (toFn v).fn (finFn v.impl).fn)
-    verified := VG.Proof.AesGcm.Flag.sealGather_keyed (Flag.sealGather_of_base (Gather.sealGather_framed (shortFn v) (initFn v.impl) (aadFn v.impl) (toFn v) (finFn v.impl)))
-    spSafe := X86_64.withStackArgScratch_spSafe
-        (Gather.sealGather_spAll (shortFn v) (initFn v.impl) (aadFn v.impl) (toFn v) (finFn v.impl)) }]
+  Spec.Gcm.sealGatherPreparedApi.artifact X86_64.target (sealGatherWReg v)]
 
 /-- The prepared artifacts of the implementations `v` whose loops read 16
 prepared powers: by the count, those or the ones on the key context. -/
