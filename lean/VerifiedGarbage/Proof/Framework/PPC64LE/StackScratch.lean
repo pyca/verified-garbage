@@ -451,7 +451,9 @@ theorem narrow_pubL (hk : (sig.words abi.ptrBits).length < 8) {s₁ s₂ : State
 `s₃` its code ends in (with the permissions of `narrow`) when it starts in
 `s`. -/
 def popState (bytes : Nat) (s s₃ : State) : State :=
-  { s₃.withRegions s.rd (frameR bytes s :: s.wr) with sp := s.sp, wr := s.wr }
+  { s₃.withRegions s.rd (frameR bytes s :: s.wr) with
+    sp := s.sp, wr := s.wr, mem := lose s₃.mem (s.sp - BitVec.ofNat 64 bytes) bytes s₃.unknowns,
+    unknowns := fun k => s₃.unknowns (k + bytes / 4) }
 
 /-- A run of the code from `narrow s` is a run of `withStackScratch` from
 `s`, whose trace adds the address of the push, which keeps what the calling
@@ -498,7 +500,7 @@ theorem withStackScratch_run {c : Prog isa} (hk : (sig.words abi.ptrBits).length
   have hex := Exec.frame hpush (Exec.seq hblk hw) hpop
   simp only [isa, addrs, List.map_cons, List.map_nil, List.nil_append, List.append_nil,
     List.cons_append] at hex
-  refine ⟨hex, ⟨fun q hq => ?_, rfl, ?_⟩, Frame.refl _ _, rfl⟩
+  refine ⟨hex, ⟨fun q hq => ?_, rfl, ?_⟩, lose_frame _ _ _ _, rfl⟩
   · have hqr : q ≠ argRegs.getD (sig.words abi.ptrBits).length .r3 := fun h => hr2 (h ▸ hq)
     show s₃.gpr q = s.gpr q
     rw [ha.1 q hq, narrow_gpr]

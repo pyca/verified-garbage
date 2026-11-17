@@ -39,7 +39,11 @@ buffers) is taken as given: a secret the caller passed in a register, or
 left in one, is the caller's. So are the return addresses the code's calls
 and `adrSym`s leave in `LR` and what linkage code may leave in `r0`, `r11`
 and `r12` (`State.unknowns`), which the two runs share: they are where the
-code is, not data.
+code is, not data. So is what replaces the bytes of a frame the function
+released (`lose`, `TCB/PPC64LE/Isa.lean`): the unknowns say which bytes are
+replaced and by what, the same in both runs, so a byte that is not replaced
+is compared as the function left it, and a frame that held a secret must
+still be wiped.
 
 A result the Power ISA leaves undefined, the low doubleword of `mtvsrd XT,
 RA`'s target (Book I §3.3.18: "The contents of doubleword element 1 of

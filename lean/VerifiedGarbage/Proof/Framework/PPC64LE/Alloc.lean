@@ -56,11 +56,14 @@ theorem WP.alloc {bytes : Nat} {body : Prog isa} {s : State} {Q : State → Prop
     WP isa (.frame (.alloc bytes) body (.free bytes)) s Q := by
   obtain ⟨t, s₂, he, hq⟩ := hb
   obtain ⟨-, hw, hp⟩ := Exec.rdwr he
-  have hf : isa.pop (.free bytes) (allocated bytes s) s₂ = some (freed bytes s₂) := by
-    show pop (.free bytes) (allocated bytes s) s₂ = some (freed bytes s₂)
+  have hf : isa.pop (.free bytes) (allocated bytes s) s₂ = some { freed bytes s₂ with
+      mem := lose s₂.mem s₂.sp bytes s₂.unknowns, unknowns := fun k => s₂.unknowns (k + bytes / 4) } := by
+    show pop (.free bytes) (allocated bytes s) s₂ = _
     unfold pop
     exact ite_eq_left_of_eq_true _ _ (eq_true ⟨hn.1, hn.2.1, hn.2.2, hp, hw, rfl⟩) |>.trans rfl
-  exact ⟨_, _, Exec.frame (push_alloc hn hsp) he hf, hq _ _ (Frame.refl _ _)⟩
+  have hl : Frame [⟨s.sp - BitVec.ofNat 64 bytes, bytes⟩] s₂.mem (lose s₂.mem s₂.sp bytes s₂.unknowns) := by
+    rw [show s.sp - BitVec.ofNat 64 bytes = s₂.sp from hp.symm]; exact lose_frame _ _ _ _
+  exact ⟨_, _, Exec.frame (push_alloc hn hsp) he hf, hq _ _ hl⟩
 
 /-- `WP.alloc`, for a postcondition that holds whatever the frame's bytes
 and the unknowns are once it holds of the state the `free` leads to (`hQ`):

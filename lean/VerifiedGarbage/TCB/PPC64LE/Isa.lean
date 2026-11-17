@@ -175,8 +175,9 @@ structure State where
   wr : List Region
   /-- Values the model does not know, used in order: the return address each
   call stores, what linkage code may leave in `r0`, `r11` and `r12` (see
-  `TCB/Code.lean`), the address each `adrSym` leaves in `LR`, and which
-  undefined result each `mtvsrd` leaves (the first argument of `undef`). -/
+  `TCB/Code.lean`), the address each `adrSym` leaves in `LR`, which
+  undefined result each `mtvsrd` leaves (the first argument of `undef`),
+  and what a released frame's bytes hold (`lose`). -/
   unknowns : Nat → BitVec 64 := fun _ => 0
   /-- What an instruction leaves where the Power ISA says its result is
   undefined: the low doubleword of `mtvsrd XT, RA`'s target (Book I
@@ -600,21 +601,57 @@ def push : Instr → State → Option State
     else none
   | _, _ => none
 
+/-- The memory once the `n` bytes at `a`, a released frame, are below the
+stack pointer. The ELFv2 ABI (OpenPOWER, Revision 1.5, §2.2.3.4, "Protected
+Zone"): "The 288 bytes below the stack pointer are available as volatile
+program storage that is not preserved across function calls. Interrupt
+handlers and any other functions that might run without an explicit call
+must take care to preserve a protected zone, also referred to as the red
+zone, of 512 bytes". So code that runs on the stack between two instructions
+(a signal handler) may write the bytes more than 512 below the stack
+pointer, and any function the caller calls may write all of them. A byte
+that keeps its value is one of the outcomes here, so the model holds of the
+protected zone too, and it lets no proof use it (the code may access only
+its regions, none of which is below the stack pointer). Each byte either
+keeps its value or takes one the model does not know, as the unknowns say:
+for the doubleword `j` of the frame, the bytes of `u (2 * j)` say which of
+its bytes are replaced (those not zero), and the bytes of `u (2 * j + 1)`
+are what replaces them. A byte may keep its value, so what a function
+leaves in a frame it releases may be left there (`NoResidue`, whose two
+runs share their unknowns, still tells apart a frame that holds a
+secret). -/
+def lose (m : Mem) (a : Addr) (n : Nat) (u : Nat → BitVec 64) : Mem :=
+  fun x =>
+    let d := (x - a).toNat
+    if d < n then
+      if (u (2 * (d / 8))).extractLsb' (8 * (d % 8)) 8 = 0 then m x
+      else (u (2 * (d / 8) + 1)).extractLsb' (8 * (d % 8)) 8
+    else m x
+
 /-- The pop of a frame: Book I §3.3.2, "Load Doubleword" (`ld RT, 32(r1)`:
 `RT ← MEM((r1) + 32, 8)`), then "Add Immediate" (`addi r1, r1, 48`). Faults
 unless the stack pointer and the writable regions are those the push left
 (`s₁`), whose head is the frame's local variable space; it removes that
 region. `free bytes` is "Add Immediate" alone (`addi r1, r1, bytes`: `RT ←
-(RA) + EXTS(SI)`), likewise for the frame of `alloc bytes`. -/
+(RA) + EXTS(SI)`), likewise for the frame of `alloc bytes`. The whole
+released frame, its header too, is then below the stack pointer, and its
+bytes are `lose`'s: the next of the state's `unknowns`, two for each
+doubleword of the frame, say what each holds. The load reads the frame
+before it is released. -/
 def pop : Instr → State → State → Option State
   | .pop r, s₁, s₂ =>
     if s₂.sp = s₁.sp ∧ s₂.wr = s₁.wr ∧ s₁.wr.head? = some ⟨s₁.sp + 32, 16⟩ then
-      some { s₂.write r (s₂.mem.read (s₂.sp + 32) 8) with sp := s₂.sp + 48, wr := s₂.wr.tail }
+      some { s₂.write r (s₂.mem.read (s₂.sp + 32) 8) with
+        sp := s₂.sp + 48, wr := s₂.wr.tail, mem := lose s₂.mem s₂.sp 48 s₂.unknowns,
+        unknowns := fun n => s₂.unknowns (n + 12) }
     else none
   | .free bytes, s₁, s₂ =>
     if 32 < bytes ∧ bytes < 4096 ∧ bytes % 16 = 0 ∧
         s₂.sp = s₁.sp ∧ s₂.wr = s₁.wr ∧ s₁.wr.head? = some ⟨s₁.sp + 32, bytes - 32⟩ then
-      some { s₂ with sp := s₂.sp + BitVec.ofNat 64 bytes, wr := s₂.wr.tail }
+      some { s₂ with
+        sp := s₂.sp + BitVec.ofNat 64 bytes, wr := s₂.wr.tail,
+        mem := lose s₂.mem s₂.sp bytes s₂.unknowns,
+        unknowns := fun n => s₂.unknowns (n + bytes / 4) }
     else none
   | _, _, _ => none
 
