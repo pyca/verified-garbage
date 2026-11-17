@@ -180,15 +180,15 @@ emits them once per backend through `MdHash`; the other members call them:
 own. -/
 def stream (v : Compress) : List StreamFn := [
   { api := Spec.Sha512.updateApi
-    code := Impl.StackScratch.AArch64.withStackScratch 1376 .x4 v.update
-    contract := Spec.Sha512.updateContract AArch64.abi (16 + 1376)
-    stack := 16 + 1376
+    code := Impl.StackScratch.AArch64.withStackScratch 688 .x4 v.update
+    contract := Spec.Sha512.updateContract AArch64.abi (16 + 688)
+    stack := 16 + 688
     verified := Proof.Sha512.AArch64.Shared.update_of v.update_verified
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { api := Spec.Sha512.finalizeApi
-    code := Impl.StackScratch.AArch64.withStackScratch 1376 .x3 v.finalize
-    contract := Spec.Sha512.finalizeContract AArch64.abi (16 + 1376)
-    stack := 16 + 1376
+    code := Impl.StackScratch.AArch64.withStackScratch 688 .x3 v.finalize
+    contract := Spec.Sha512.finalizeContract AArch64.abi (16 + 688)
+    stack := 16 + 688
     verified := Proof.Sha512.AArch64.Shared.finalize_of v.finalize_verified
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { api := Spec.Sha512.digest512Api
@@ -202,10 +202,10 @@ def stream (v : Compress) : List StreamFn := [
 /-- SHA-384's `finalize` made with `v`, which writes its digest (`finalizeDigestWith`). -/
 def stream384 (v : Compress) : List StreamFn := [
   { api := Spec.Sha512.finalize384Api
-    code := Impl.StackScratch.AArch64.withStackScratch 1376 .x3
+    code := Impl.StackScratch.AArch64.withStackScratch 688 .x3
       (Impl.Sha512.AArch64.Stream.finalizeDigestWith Impl.Sha512.AArch64.Stream.params384 v.suffix v.code)
-    contract := Spec.Sha512.finalizeDigestContract AArch64.abi H0_384 48 Spec.Sha512.sha384 (16 + 1376)
-    stack := 16 + 1376
+    contract := Spec.Sha512.finalizeDigestContract AArch64.abi H0_384 48 Spec.Sha512.sha384 (16 + 688)
+    stack := 16 + 688
     verified := Proof.Sha512.AArch64.Shared.finalizeDigest_of (.inl rfl)
       (v.finalizeDigest_verified Proof.Sha512.AArch64.Stream.shape384 v.digest384) (fun _ => rfl)
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
@@ -219,10 +219,10 @@ def stream384 (v : Compress) : List StreamFn := [
 /-- SHA-512/256's `finalize` made with `v`, which writes its digest (`finalizeDigestWith`). -/
 def stream512_256 (v : Compress) : List StreamFn := [
   { api := Spec.Sha512.finalize512_256Api
-    code := Impl.StackScratch.AArch64.withStackScratch 1376 .x3
+    code := Impl.StackScratch.AArch64.withStackScratch 688 .x3
       (Impl.Sha512.AArch64.Stream.finalizeDigestWith Impl.Sha512.AArch64.Stream.params512_256 v.suffix v.code)
-    contract := Spec.Sha512.finalizeDigestContract AArch64.abi H0_512_256 32 Spec.Sha512.sha512_256 (16 + 1376)
-    stack := 16 + 1376
+    contract := Spec.Sha512.finalizeDigestContract AArch64.abi H0_512_256 32 Spec.Sha512.sha512_256 (16 + 688)
+    stack := 16 + 688
     verified := Proof.Sha512.AArch64.Shared.finalizeDigest_of (.inr (.inl rfl))
       (v.finalizeDigest_verified Proof.Sha512.AArch64.Stream.shape512_256 v.digest512_256) (fun _ => rfl)
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
@@ -237,10 +237,10 @@ def stream512_256 (v : Compress) : List StreamFn := [
 /-- SHA-512/224's `finalize` made with `v`, which writes its digest (`finalizeDigestWith`). -/
 def stream512_224 (v : Compress) : List StreamFn := [
   { api := Spec.Sha512.finalize512_224Api
-    code := Impl.StackScratch.AArch64.withStackScratch 1376 .x3
+    code := Impl.StackScratch.AArch64.withStackScratch 688 .x3
       (Impl.Sha512.AArch64.Stream.finalizeDigestWith Impl.Sha512.AArch64.Stream.params512_224 v.suffix v.code)
-    contract := Spec.Sha512.finalizeDigestContract AArch64.abi H0_512_224 28 Spec.Sha512.sha512_224 (16 + 1376)
-    stack := 16 + 1376
+    contract := Spec.Sha512.finalizeDigestContract AArch64.abi H0_512_224 28 Spec.Sha512.sha512_224 (16 + 688)
+    stack := 16 + 688
     verified := Proof.Sha512.AArch64.Shared.finalizeDigest_of (.inr (.inr rfl))
       (v.finalizeDigest_verified Proof.Sha512.AArch64.Stream.shape512_224 v.digest512_224) (fun _ => rfl)
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
