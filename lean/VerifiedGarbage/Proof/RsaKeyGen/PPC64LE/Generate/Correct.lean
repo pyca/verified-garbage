@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Bignum.Layout
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
+import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 import VerifiedGarbage.Proof.Framework.Omega
@@ -85,7 +86,8 @@ theorem phase_word_if (ph : KeyPhase) :
 theorem done_post {p : GenPublic} {s d t : State} (hp : GenInput p s)
     (h : GenDone p s (genResult s) d)
     (hax : t.gpr .r3 = BitVec.ofNat 64 (genResult s).keyStatus)
-    (hm : t.mem = d.mem.writeW (p.up + BitVec.ofNat 64 0) (BitVec.ofNat 64 (genResult s).used)) :
+    (hfr : Frame [rU p, ⟨s.sp - BitVec.ofNat 64 144, 144⟩] d.mem t.mem)
+    (hu : t.mem.readW (p.up + BitVec.ofNat 64 0) 64 = BitVec.ofNat 64 (genResult s).used) :
     genPost s t := by
   obtain ⟨g, -, hkey, req, hreq, hr⟩ := h
   have hf := hp.cfacts
@@ -95,21 +97,32 @@ theorem done_post {p : GenPublic} {s d t : State} (hp : GenInput p s)
   have hstp : s.gpr .r10 = p.stp := by rw [← hp.2]; rfl
   have hL : genLen s = p.L := by rw [← hp.2]; rfl
   have heB : genE s = p.eB := by rw [← hp.2]; rfl
-  have hfr : Frame [rU p] d.mem t.mem := by
-    rw [hm]
-    exact Frame.writeW (Frame.refl _ _) (List.mem_singleton_self _) _
-      (by rw [BitVec.add_zero]; exact Region.contains_self _ _)
+  -- The allocated frame lies in the stack, apart from the key and the state.
+  obtain hA : Region.Sub ⟨s.sp - BitVec.ofNat 64 144, 144⟩ (below s.sp stackUse) :=
+    Offset.sub_below s.sp (a := 144) (b := 1088) (by decide) (by decide)
+  obtain dS : (cS p).Disjoint ⟨s.sp - BitVec.ofNat 64 144, 144⟩ := by
+    have := ((hp.stack_disjoint (r := inState s) (by simp [inWrites])).sub_left hA).symm
+    rw [hp.state_eq] at this; exact this
+  obtain dK : (cK p).Disjoint ⟨s.sp - BitVec.ofNat 64 144, 144⟩ := by
+    have := ((hp.stack_disjoint (r := inKey s) (by simp [inWrites])).sub_left hA).symm
+    rw [g.key_region] at this; exact this
   have hword (j : Nat) (hj : j < 7) : word t.mem p.stp (8 * j) = word d.mem p.stp (8 * j) :=
     hfr.readW (r := cS p) (Offset.contains_base _ (by omega_using [hj]) (by have := hf.nT; omega_using [hj]))
-      (fun q hq => by obtain rfl := List.mem_singleton.mp hq; exact hf.uT.symm) (by decide)
+      (fun q hq => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
+        rcases hq with rfl | rfl
+        exacts [hf.uT.symm, dS]) (by decide)
   have hbytes {R : Region} (hR : Region.Sub R (cK p) ∨ Region.Sub R (cS p)) (hn : R.len ≤ 2 ^ 64) :
       Spec.Rsa.bytesAt t.mem R.base R.len = Spec.Rsa.bytesAt d.mem R.base R.len := by
     simp only [Spec.Rsa.bytesAt]
     refine List.map_congr_left fun i hi => ?_
     refine hfr.bytes (fun q hq => ?_) hn (List.mem_range.mp hi)
-    obtain rfl := List.mem_singleton.mp hq
-    rcases hR with hR | hR
-    exacts [(hf.kU.sub_left hR), (hf.uT.symm.sub_left hR)]
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
+    rcases hq with rfl | rfl
+    · rcases hR with hR | hR
+      exacts [(hf.kU.sub_left hR), (hf.uT.symm.sub_left hR)]
+    · rcases hR with hR | hR
+      exacts [dK.sub_left hR, dS.sub_left hR]
   refine ⟨?_, ?_, ?_, req, ?_, ?_, ?_⟩
   · have := keyStatus_lt (genResult s)
     rw [hax, BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [this]), Nat.mod_eq_of_lt (by omega_using [this])]
@@ -117,7 +130,7 @@ theorem done_post {p : GenPublic} {s d t : State} (hp : GenInput p s)
     exact hbytes (R := ⟨p.kp, 9 * p.L⟩) (.inl fun _ h => h) (by show 9 * p.L ≤ 2 ^ 64; have := hf.nK; omega_using [this])
   · rw [hup]
     show [t.mem.readW (p.up + BitVec.ofNat 64 (8 * 0)) 64] = _
-    rw [Nat.mul_zero, hm, Mem.readW_writeW_self64]
+    rw [Nat.mul_zero, hu]
   · rw [hstp, hL]
     show [word t.mem p.stp (8 * 0), word t.mem p.stp (8 * 1), word t.mem p.stp (8 * 2), word t.mem p.stp (8 * 3),
       word t.mem p.stp (8 * 4), word t.mem p.stp (8 * 5)] = _
@@ -165,6 +178,26 @@ theorem gen_body_ok [InvLaw] (v : RoundImpl) {s t' : State} (hp : GenInput (genO
     ⟨0, genProgress s, rfl, hw, [], by rw [consume_zero]; rfl⟩
   exact gen_loop v hinv
 
+/-- A finished key search, whatever a region of the stack apart from the
+frame, the key and the state holds. -/
+theorem GenDone.lost {p : GenPublic} {original d : State} {final : KeySearchResult}
+    (g : GenDone p original final d) {L : Region} {m : Mem} (u : Nat → BitVec 64) (fl : Frame [L] d.mem m)
+    (hc : ∃ q ∈ GenInput.callChanges original, Region.Sub L q) (hF : p.frame.Disjoint L)
+    (hK : (cK p).Disjoint L) (hS : (cS p).Disjoint L) :
+    GenDone p original final { d with mem := m, unknowns := u } := by
+  obtain ⟨g, hst, hkey, req, hreq, hr⟩ := g
+  obtain hwS : ∀ e, e + 8 ≤ 56 → word m p.stp e = word d.mem p.stp e := fun e he =>
+    fl.readW (r := cS p) (Offset.contains_base _ he (by omega_using [he]))
+      (fun r hr => by rw [List.mem_singleton.mp hr]; exact hS) (by decide)
+  refine ⟨g.restore (st' := final.progress) rfl rfl rfl rfl (fun _ _ => rfl)
+      (fl.sub fun r hr => by rw [List.mem_singleton.mp hr]; exact hc)
+      ((hwS 0 (by decide)).trans g.state.remaining) ((hwS 8 (by decide)).trans g.state.len)
+      ((hwS 16 (by decide)).trans g.state.cap) (.inl rfl) rfl g.state.remaining_le, ?_, ?_, req,
+    (hwS 24 (by decide)).trans hreq, hr⟩
+  · exact (fl.readW (r := p.frame) (Offset.contains_base _ (show 80 + 8 ≤ 112 by decide) (by decide))
+      (fun r hr => by rw [List.mem_singleton.mp hr]; exact hF) (by decide)).trans hst
+  · exact Eq.trans (List.map_congr_left fun i hi => lost_byte fl (R := cK p) hK (List.mem_range.mp hi)) hkey
+
 /-- The frame saving the link register, around the body. -/
 theorem gen_frame_ok [InvLaw] (v : RoundImpl) {s t' : State} (hp : GenInput (genOfState s) s)
     (kk : Keep entryRegs (allocated 144 s) t')
@@ -181,11 +214,8 @@ theorem gen_frame_ok [InvLaw] (v : RoundImpl) {s t' : State} (hp : GenInput (gen
   have hsp48 : 48 ≤ t'.sp.toNat := by
     rw [htsp, BitVec.toNat_sub_of_le (by simp only [BitVec.le_def, BitVec.toNat_ofNat]; omega_using [hsu, hroom'])]
     simp only [BitVec.toNat_ofNat]; omega_using [hsu, hroom']
-  refine WP.frameRegAnyKept hsp48 ?_ ?_ (by
-    have := iteration_sdepth v
-    simp only [sdepth, clearAround_sdepth]
-    omega_using [this])
-  · intro R hR
+  obtain hdis : ∀ R ∈ t'.wr, Region.Disjoint ⟨t'.sp - 48 + 32, 16⟩ R := by
+    intro R hR
     rw [kk.wr, alloc_wr hp] at hR
     rw [htsp, sp_160]
     rcases List.mem_cons.mp hR with rfl | hR
@@ -197,7 +227,33 @@ theorem gen_frame_ok [InvLaw] (v : RoundImpl) {s t' : State} (hp : GenInput (gen
     · rw [hp.wr_eq] at hR
       have hd := hp.stack_disjoint (r := R) (List.mem_append_left _ hR)
       exact hd.sub_left (Offset.sub_below s.sp (a := 160) (b := stackUse) (by decide) (by decide))
-  exact WP.mono (gen_body_ok v hp hl hfb) fun d hd => ⟨d, hd, rfl⟩
+  -- Whatever the released frame's bytes hold: the frame, the key and the
+  -- state lie apart from it.
+  obtain eL : t'.sp - 48 = s.sp - BitVec.ofNat 64 192 := by rw [htsp, BitVec.sub_sub]; rfl
+  obtain hA : Region.Sub ⟨s.sp - BitVec.ofNat 64 192, 48⟩ (below s.sp stackUse) :=
+    Offset.sub_below s.sp (a := 192) (b := 1088) (by decide) (by decide)
+  obtain hK : (cK (genOfState s)).Disjoint ⟨s.sp - BitVec.ofNat 64 192, 48⟩ := by
+    have := ((hp.stack_disjoint (r := inKey s) (by simp [inWrites])).sub_left hA).symm
+    rw [hl.key_region] at this; exact this
+  obtain hS : (cS (genOfState s)).Disjoint ⟨s.sp - BitVec.ofNat 64 192, 48⟩ := by
+    have := ((hp.stack_disjoint (r := inState s) (by simp [inWrites])).sub_left hA).symm
+    rw [hp.state_eq] at this; exact this
+  obtain hF : (genOfState s).frame.Disjoint ⟨s.sp - BitVec.ofNat 64 192, 48⟩ := by
+    show Region.Disjoint ⟨(genOfState s).sp - BitVec.ofNat 64 112, 112⟩ _
+    rw [hsp0]
+    obtain hs := Offset.sep_below s.sp 1088 (a := 112) (n := 112) (b := 192) (k := 48) (by decide) (by decide)
+      (Or.inr (by decide)) (by decide) (by decide)
+    exact fun x hx hy => hs x (Nat.lt_of_succ_le (by simpa only [Region.Contains] using hx))
+      (Nat.lt_of_succ_le (by simpa only [Region.Contains] using hy))
+  refine WP.frameRegAny hsp48 hdis (WP.mono (gen_body_ok v hp hl hfb) fun d hd m u fl => ?_) (by
+    have := iteration_sdepth v
+    simp only [sdepth, clearAround_sdepth]
+    omega_using [this])
+  rw [eL] at fl
+  exact ⟨{ d with mem := m, unknowns := u }, hd.lost u fl
+    ⟨⟨s.sp - BitVec.ofNat 64 stackUse, 944⟩, by simp [GenInput.callChanges],
+      Offset.sub_below s.sp (a := 192) (b := 1088) (n := 48) (m := 944) (by decide) (by decide)⟩
+    hF hK hS, rfl⟩
 
 theorem gen_correct_ok [InvLaw] (v : RoundImpl) {s : State} (h : genPre s) :
     WP isa (genCode v) s fun t => genPost s t ∧ abiPreserved s t := by
@@ -208,7 +264,7 @@ theorem gen_correct_ok [InvLaw] (v : RoundImpl) {s : State} (h : genPre s) :
   have hsu : stackUse = 1088 := rfl
   have hroom' : stackUse ≤ s.sp.toNat := by rw [← hsp0]; exact hroom
   unfold genCode code
-  refine WP.allocKept (by decide) (alloc_room hroom') ?_
+  refine WP.alloc (by decide) (alloc_room hroom') ?_
   simp only [seqs]
   refine WP.seq (WP.block_append_iff.mpr (VG.PPC64LE.WP.mono_syms (entryHead_ok hp) fun u ⟨⟨hx, hmu⟩, ku⟩ hyu =>
     VG.PPC64LE.WP.mono_syms (entryWords_ok hp hx hmu ku) fun t ⟨hmt, kt⟩ hyt => ?_))
@@ -231,8 +287,24 @@ theorem gen_correct_ok [InvLaw] (v : RoundImpl) {s : State} (h : genPre s) :
   refine WP.mono (finish_ok hd rfl rfl (by
     show (d.write .r0 (t'.gpr .r0)).gpr .r31 = _
     rw [RegUpd.gpr_write, ite_eq_right (by decide)]; exact hd.1.r31))
-    fun z ⟨⟨⟨hax, h31, hmz⟩, kz⟩, _⟩ => ?_
-  refine ⟨done_post hp hd hax hmz, ?_, ?_, ?_⟩
+    fun z ⟨⟨⟨hax, h31, hmz⟩, kz⟩, _⟩ mL _ fl => ?_
+  -- Whatever the released frame's bytes hold.
+  have fl' : Frame [⟨s.sp - BitVec.ofNat 64 144, 144⟩] z.mem mL := fl
+  obtain hfr : Frame [rU (genOfState s), ⟨s.sp - BitVec.ofNat 64 144, 144⟩] d.mem mL := by
+    refine Frame.trans (m₂ := z.mem) ?_ (fl'.sub fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), fun _ h => h⟩)
+    rw [hmz]
+    exact Frame.writeW (Frame.refl _ _) (List.mem_cons_self ..) _
+      (by rw [BitVec.add_zero]; exact Region.contains_self _ _)
+  obtain hu : mL.readW ((genOfState s).up + BitVec.ofNat 64 0) 64 = BitVec.ofNat 64 (genResult s).used := by
+    rw [fl'.readW (r := rU (genOfState s)) (by rw [BitVec.add_zero]; exact Region.contains_self _ _)
+      (fun r hr => by
+        rw [List.mem_singleton.mp hr]
+        have := ((hp.stack_disjoint (r := inUsed s) (by simp [inWrites])).sub_left
+          (Offset.sub_below s.sp (a := 144) (b := 1088) (n := 144) (m := 1088) (by decide) (by decide))).symm
+        rw [hd.1.used_region] at this; exact this) (by decide), hmz]
+    exact Mem.readW_writeW_self64 _ _ _
+  refine ⟨done_post hp hd hax hfr hu, ?_, ?_, ?_⟩
   · intro r hr
     show z.gpr r = s.gpr r
     by_cases h31' : r = .r31

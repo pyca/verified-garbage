@@ -157,28 +157,45 @@ theorem search_correct_ok (c : Cand) {s : State} (h : searchPre s) :
   have hp : SearchInput p s := ⟨h, rfl⟩
   have hroom : 192 ≤ s.sp.toNat := alloc_room h.1.2.1
   unfold code
-  refine WP.allocKept (by decide) hroom ?_
+  refine WP.alloc (by decide) hroom ?_
   refine WP.seq (VG.PPC64LE.WP.mono_syms (entrySave_ok hp) fun u ⟨⟨hx, hmu⟩, ku⟩ hyu => ?_)
   refine WP.seq (VG.PPC64LE.WP.mono_syms (entryLoad_ok hp hx hmu ku) fun t ⟨hmt, kt⟩ hyt => ?_)
   have hx' : t.gpr .r31 = p.F := (kt.gpr .r31 (by decide)).trans hx
   have hm : t.mem = writeFrame (allocated 192 s).mem p.F (entryValues s) := by
     rw [hmt, hmu, entryValues, writeFrame_append]
   refine WP.seq (WP.mono (search_body c hp hx' hm (ku.trans kt) (hyt.trans hyu)) fun u ⟨hd, hlr, hsp⟩ => ?_)
-  refine WP.mono (search_finish hd) fun q ⟨⟨hr, hg, hmq⟩, kq⟩ => ?_
+  refine WP.mono (search_finish hd) fun q ⟨⟨hr, hg, hmq⟩, kq⟩ mL _ fl => ?_
+  -- Whatever the released frame's bytes hold: the outputs lie apart from it.
+  have fl' : Frame [⟨s.sp - BitVec.ofNat 64 192, 192⟩] q.mem mL := fl
+  obtain hD : ∀ R ∈ inWrites s, R.Disjoint ⟨s.sp - BitVec.ofNat 64 192, 192⟩ := fun R hR =>
+    ((hp.stack_disjoint (r := R) (List.mem_append_left _ hR)).sub_left
+      (Offset.sub_below s.sp (a := 192) (b := 768) (by decide) (by decide))).symm
+  obtain hbytes : Spec.Rsa.bytesAt mL p.op p.len = Spec.Rsa.bytesAt q.mem p.op p.len :=
+    List.map_congr_left fun i hi => lost_byte fl' (R := inOut s) (hD _ (by simp [inWrites])) (List.mem_range.mp hi)
+  obtain hused : Spec.Rsa.wordsAt mL p.up 1 = Spec.Rsa.wordsAt q.mem p.up 1 :=
+    List.map_congr_left fun i hi => fl'.readW (r := inUsed s)
+      (Offset.contains_base _ (by have := List.mem_range.mp hi; omega_using [this])
+        (by have := List.mem_range.mp hi; omega_using [this]))
+      (fun r hr => by rw [List.mem_singleton.mp hr]; exact hD _ (by simp [inWrites])) (by decide)
+  obtain hstate : Spec.Rsa.wordsAt mL p.stp 4 = Spec.Rsa.wordsAt q.mem p.stp 4 :=
+    List.map_congr_left fun i hi => fl'.readW (r := inState s)
+      (Offset.contains_base _ (by have := List.mem_range.mp hi; omega_using [this])
+        (by have := List.mem_range.mp hi; omega_using [this]))
+      (fun r hr => by rw [List.mem_singleton.mp hr]; exact hD _ (by simp [inWrites])) (by decide)
   have hst : (searchResult s).status < 4 := by
     unfold Spec.Entropy.Result.status Spec.Entropy.Outcome.status; split <;> decide
   refine ⟨⟨?_, ?_, ?_, ?_⟩, ?_, ?_, ?_⟩
   · change ((q.gpr .r3).setWidth 32).toNat = _
     rw [hr, BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hst]), Nat.mod_eq_of_lt (by omega_using [hst])]
-  · change Spec.Rsa.bytesAt q.mem p.op p.len = _
-    rw [hmq, finished_bytes hp]
+  · change Spec.Rsa.bytesAt mL p.op p.len = _
+    rw [hbytes, hmq, finished_bytes hp]
     exact hd.output
-  · change Spec.Rsa.wordsAt q.mem p.up 1 = _
-    rw [hmq, finished_used]
+  · change Spec.Rsa.wordsAt mL p.up 1 = _
+    rw [hused, hmq, finished_used]
   · refine ⟨_, ?_, Search.search_requests (searchLen s) (searchE s) (searchP s)
       (searchRemaining s) (searchRand s)⟩
-    change Spec.Rsa.wordsAt q.mem p.stp 4 = _
-    rw [hmq, finished_state hp]
+    change Spec.Rsa.wordsAt mL p.stp 4 = _
+    rw [hstate, hmq, finished_state hp]
     rfl
   · intro reg hreg
     change q.gpr reg = s.gpr reg

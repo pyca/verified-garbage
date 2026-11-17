@@ -1014,6 +1014,22 @@ theorem SearchDone.of_eq {p : SearchPublic} {original s t : State} {r : PrimeSea
   all_goals rw [hm]
   exacts [h.savedR31, h.usedPtr, h.stp, h.len, h.cap, h.remaining, h.request, h.used, h.status, h.output]
 
+/-- A finished search, whatever a region apart from its frame and its output
+holds. -/
+theorem SearchDone.of_frame {p : SearchPublic} {original s t : State} {r : PrimeSearchResult}
+    (h : SearchDone p original r s) {L : Region} (hf : Frame [L] s.mem t.mem) (hF : p.frame.Disjoint L)
+    (hO : Region.Disjoint ⟨p.op, p.len⟩ L) (hg : ∀ reg ∈ preserved, t.gpr reg = s.gpr reg)
+    (hrd : t.rd = s.rd) (hwr : t.wr = s.wr) : SearchDone p original r t := by
+  obtain hw : ∀ j < 20, word t.mem p.F (8 * j) = word s.mem p.F (8 * j) := fun j hj =>
+    hf.readW (r := p.frame) (Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj]))
+      (fun R hR => by rw [List.mem_singleton.mp hR]; exact hF) (by decide)
+  exact ⟨h.input, hrd.trans h.rd, hwr.trans h.wr, (hg .r31 (by decide)).trans h.r31,
+    fun reg hr h31 => (hg reg hr).trans (h.saved reg hr h31), (hw 4 (by decide)).trans h.savedR31,
+    (hw 7 (by decide)).trans h.usedPtr, (hw 18 (by decide)).trans h.stp, (hw 1 (by decide)).trans h.len,
+    (hw 2 (by decide)).trans h.cap, (hw 0 (by decide)).trans h.remaining, (hw 3 (by decide)).trans h.request,
+    (hw 16 (by decide)).trans h.used, (hw 17 (by decide)).trans h.status,
+    Eq.trans (List.map_congr_left fun i hi => lost_byte hf (R := ⟨p.op, p.len⟩) hO (List.mem_range.mp hi)) h.output⟩
+
 theorem search_body (c : Cand) {p : SearchPublic} {s t : State} (h : SearchInput p s)
     (hx : t.gpr .r31 = p.F) (hm : t.mem = writeFrame (allocated 192 s).mem p.F (entryValues s))
     (k : Keep (saveRegs ++ loadRegs) (allocated 192 s) t) (hy : t.syms = s.syms) :
@@ -1031,7 +1047,7 @@ theorem search_body (c : Cand) {p : SearchPublic} {s t : State} (h : SearchInput
   obtain hsp : 48 ≤ t'.sp.toNat := by
     rw [htsp, BitVec.toNat_sub_of_le (by simp only [BitVec.le_def, BitVec.toNat_ofNat]; omega_using [hroom, h768])]
     simp only [BitVec.toNat_ofNat]; omega_using [hroom, h768]
-  refine WP.seq (WP.frameRegAnyKept hsp ?_ ?_
+  refine WP.seq (WP.frameRegAny hsp ?_ ?_
     (by have := iteration_sdepth c; show sdepth (iteration c.call) + 48 < 2 ^ 64; omega_using [this]))
   · intro R hR
     rw [kk.wr, alloc_wr h] at hR
@@ -1045,12 +1061,29 @@ theorem search_body (c : Cand) {p : SearchPublic} {s t : State} (h : SearchInput
     · rw [h.wr_eq] at hR
       obtain hd := h.stack_disjoint (r := R) (List.mem_append_left _ hR)
       exact hd.sub_left (Offset.sub_below s.sp (a := 208) (b := 768) (by decide) (by decide))
-  · refine WP.mono (search_loop c (search_initial h hl)) fun u hu => ?_
-    obtain hd : SearchDone p s (searchResult s) { u.write .r0 (t'.gpr .r0) with sp := t'.sp } :=
-      hu.of_eq (fun reg hr => by
+  · refine WP.mono (search_loop c (search_initial h hl)) fun u hu m uu fl => ?_
+    -- Whatever the released frame's bytes hold: the search's frame and the
+    -- output lie apart from it.
+    obtain eL : t'.sp - 48 = s.sp - BitVec.ofNat 64 240 := by rw [htsp, BitVec.sub_sub]; rfl
+    rw [eL] at fl
+    obtain hpf : p.frame = ⟨s.sp - BitVec.ofNat 64 160, 160⟩ := by rw [← h.sp_eq]
+    obtain hF : p.frame.Disjoint ⟨s.sp - BitVec.ofNat 64 240, 48⟩ := by
+      rw [hpf]
+      obtain hs := Offset.sep_below s.sp 768 (a := 160) (n := 160) (b := 240) (k := 48) (by decide) (by decide)
+        (Or.inr (by decide)) (by decide) (by decide)
+      exact fun x hx hy => hs x (Nat.lt_of_succ_le (by simpa only [Region.Contains] using hx))
+        (Nat.lt_of_succ_le (by simpa only [Region.Contains] using hy))
+    obtain eo : (⟨p.op, p.len⟩ : Region) = inOut s := by rw [← h.2]; rfl
+    obtain hO : Region.Disjoint ⟨p.op, p.len⟩ ⟨s.sp - BitVec.ofNat 64 240, 48⟩ := by
+      rw [eo]
+      exact ((h.stack_disjoint (r := inOut s) (by simp [inWrites])).sub_left
+        (Offset.sub_below s.sp (a := 240) (b := 768) (by decide) (by decide))).symm
+    obtain hd : SearchDone p s (searchResult s)
+        { u.write .r0 (t'.gpr .r0) with sp := t'.sp, mem := m, unknowns := uu } :=
+      hu.of_frame fl hF hO (fun reg hr => by
         show (u.write .r0 (t'.gpr .r0)).gpr reg = _
-        rw [RegUpd.gpr_write, ite_eq_right (by revert reg hr; decide)]) rfl rfl rfl
-    refine WP.of_runBlock ⟨{ { u.write .r0 (t'.gpr .r0) with sp := t'.sp } with
+        rw [RegUpd.gpr_write, ite_eq_right (by revert reg hr; decide)]) rfl rfl
+    refine WP.of_runBlock ⟨{ { u.write .r0 (t'.gpr .r0) with sp := t'.sp, mem := m, unknowns := uu } with
       lr := (u.write .r0 (t'.gpr .r0)).gpr .r0 }, by
         simp only [runBlock_cons, runStep_some, runBlock_nil, exec_mtlr], ?_⟩
     refine ⟨hd.of_eq (fun _ _ => rfl) rfl rfl rfl, ?_, htsp⟩

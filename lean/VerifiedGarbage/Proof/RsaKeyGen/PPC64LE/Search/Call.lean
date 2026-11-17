@@ -104,6 +104,8 @@ structure CallFacts (p : SearchPublic) (used : Nat) : Prop where
   len64 : p.len < 2 ^ 64
   plen64 : p.plen < 2 ^ 64
   rand64 : p.randLen < 2 ^ 64
+  oC : (rO p).Disjoint ⟨callSp p, 128⟩
+  uC : (rU p).Disjoint ⟨callSp p, 128⟩
 
 private theorem sub_tape {r : Addr} {n used : Nat} (hu : used ≤ n) :
     Region.Sub ⟨r + BitVec.ofNat 64 used, n - used⟩ ⟨r, n⟩ :=
@@ -137,12 +139,14 @@ theorem SearchLive.callFacts {p : SearchPublic} {original s : State} {used remai
   have hA := rA_sub (searchOfState original)
   have hF := rF_sub (searchOfState original)
   have hsp' : (searchOfState original).sp = original.sp := rfl
-  rw [hsp'] at hA hF
+  obtain hC : Region.Sub ⟨callSp (searchOfState original), 128⟩ (below (searchOfState original).sp stackUse) :=
+    Offset.sub_below _ (by decide) (by decide)
+  rw [hsp'] at hA hF hC
   refine ⟨hsp, by simp only [stripConsts_sp] at htop; show original.sp.toNat + 128 ≤ _; omega_using [htop], pou, woe, wop, wor.sub_right hR, pos, bo.symm.sub_right hA,
     wue, wup, wur.sub_right hR, pus, bu.symm.sub_right hA, wse.symm, wsp.symm, (wsr.sub_right hR).symm,
     bs.symm.sub_right hA, bo.sub_left hF, bu.sub_left hF, be.sub_left hF, bp.sub_left hF,
     (br.sub_left hF).sub_right hR, bs.sub_left hF, no, nu, ne, np, nowrap_tape nr hu, ns, hlen, he1, he8,
-    hpl, ?_, ?_, BitVec.isLt _, BitVec.isLt _, BitVec.isLt _⟩
+    hpl, ?_, ?_, BitVec.isLt _, BitVec.isLt _, BitVec.isLt _, bo.symm.sub_right hC, bu.symm.sub_right hC⟩
   · simp only [searchOfState, Nat.mul_div_cancel _ (by decide : 0 < 8)]
     exact hscr
   · simp only [searchOfState, Nat.mul_div_cancel _ (by decide : 0 < 8)]
@@ -573,7 +577,7 @@ theorem search_candidate_run (c : Cand) {p : SearchPublic} {original s : State} 
       simp only [BitVec.le_def]; have := hf.room; show 240 ≤ _; omega_using [h768, this])]
     have := hf.room; show 128 ≤ _ - 240; omega_using [h768, this]
   unfold candidateRun
-  refine WP.allocKept (by decide) hroom ?_
+  refine WP.alloc (by decide) hroom ?_
   refine WP.seq (VG.PPC64LE.WP.mono_syms (search_stack_arguments_ok h) fun u ⟨hm, ku⟩ hyu => ?_)
   refine WP.seq (VG.PPC64LE.WP.mono_syms (search_arguments_ok h hm ku) fun v ⟨⟨ha, hmv⟩, kv⟩ hyv => ?_)
   have hu : v.sp = callSp p := kv.sp.trans (ku.sp.trans (alloc_call_sp h))
@@ -584,7 +588,11 @@ theorem search_candidate_run (c : Cand) {p : SearchPublic} {original s : State} 
   refine VG.PPC64LE.WP.of_syms (WP.callAny (k := candK) (fun s' ⟨h₁, h₂⟩ => c.correct s' h₁ h₂)
     ⟨call_cin hf hu ha hm', call_tab h hm' hy hu ha⟩
     (call_covers_reads h krd kwr) (call_covers_writes h kwr) ?_ (by have := c.stack; omega_using [this]))
-  intro t hrd hwr hsp hfr hcs hpost hyt
+  intro t hrd hwr hsp hfr hcs hpost hyt mL _ fl
+  -- Whatever the released frame's bytes hold.
+  rw [h.sp, callSp_eq] at fl
+  obtain hC : Region.Sub ⟨callSp p, 128⟩ ⟨original.sp - BitVec.ofNat 64 stackUse, 576⟩ := by
+    rw [← h.input.sp_eq]; exact Offset.sub_below p.sp (a := 368) (b := 768) (by decide) (by decide)
   have hfr' : Frame (callWrites p ++ [rF p]) v.mem t.mem := by
     rw [hu] at hfr
     exact hfr.sub fun r hr => by
@@ -597,7 +605,9 @@ theorem search_candidate_run (c : Cand) {p : SearchPublic} {original s : State} 
   · refine h.restore (show (freed 128 t).rd = s.rd from hrd.trans (krd.trans rfl))
       (show (freed 128 t).wr = s.wr from by change t.wr.tail = s.wr; rw [hwr, kwr]; rfl) ?_
       (hyt.trans (hyv.trans hyu)) (fun r hr => (hcs r hr).trans ((kv.gpr r (by revert r hr; decide)).trans
-        (ku.gpr r (by revert r hr; decide)))) (call_frame h hm' hfr')
+        (ku.gpr r (by revert r hr; decide))))
+      ((call_frame h hm' hfr').trans (fl.sub fun r hr => by
+        rw [List.mem_singleton.mp hr]; exact ⟨_, (callChanges_mem original).2.2.2, hC⟩))
     change t.sp + BitVec.ofNat 64 128 = s.sp
     rw [hsp, hu, ← callSp_eq, ← h.sp]
     exact BitVec.sub_add_cancel _ _
@@ -620,7 +630,15 @@ theorem search_candidate_run (c : Cand) {p : SearchPublic} {original s : State} 
       call_gpr (by decide : Reg.r3 ∉ linkRegs), call_gpr (by decide : Reg.r4 ∉ linkRegs),
       call_gpr (by decide : Reg.r5 ∉ linkRegs), r3, r4, r5, tl, State.withRegions_gpr,
       State.withRegions_mem] at q1 q2 q3
-    refine ⟨?_, q2, q3⟩
+    refine ⟨?_, ?_, ?_⟩
+    rotate_left
+    · refine Eq.trans ?_ q2
+      exact List.map_congr_left fun i hi => lost_byte fl (R := rO p) hf.oC (List.mem_range.mp hi)
+    · simp only [Spec.Rsa.wordsAt, List.range_one, List.map_cons, List.map_nil, Nat.mul_zero, BitVec.add_zero]
+        at q3 ⊢
+      refine Eq.trans (congrArg (fun x => [x]) ?_) q3
+      exact fl.readW (r := rU p) (Region.contains_self _ _)
+        (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hf.uC) (by decide)
     change ((t.gpr .r3).setWidth 32).toNat = _
     rw [BitVec.toNat_setWidth, q1, Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le (status_small _) (by decide))]
 

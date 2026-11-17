@@ -22,6 +22,7 @@ import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Search.Implies
 public import VerifiedGarbage.Proof.Framework.Covers
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
 import VerifiedGarbage.Proof.RsaKeyGen.TrialTable32
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.RsaKeyGen.InitWords
@@ -2133,7 +2134,7 @@ theorem search_run (v : RoundImpl) {p : GenPublic} {original s : State} {used : 
     omega_using []
   obtain hroom : 128 ≤ s.sp.toNat := by have := hf.room; have hsu : stackUse = 1088 := rfl; omega_using [hspn, this, hsu]
   unfold searchRun searchCall
-  refine WP.allocKept (by decide) hroom ?_
+  refine WP.alloc (by decide) hroom ?_
   refine WP.seq (WP.mono (search_stack_ok h.toGenFrame) fun u ⟨⟨hm, ku⟩, hyu⟩ => ?_)
   refine WP.seq (WP.mono (search_args_ok h.toGenFrame hm ku) fun w ⟨⟨⟨ha, hmw⟩, kw⟩, hyw⟩ => ?_)
   obtain hu : w.sp = callSp p := kw.sp.trans (ku.sp.trans (alloc_call_sp h.toGenFrame))
@@ -2151,7 +2152,17 @@ theorem search_run (v : RoundImpl) {p : GenPublic} {original s : State} {used : 
   refine VG.PPC64LE.WP.of_syms (WP.callAny (k := Search.searchContract)
     (Search.search_correct (Search.Cand.ofRound v)) (callS_pre h hu ha hm' hT htab)
     (search_covers_reads h.toGenFrame krd kwr) (search_covers_writes h.toGenFrame kwr) ?_ (by omega_using [hd]))
-  intro t htr htw hsp hfr hcs hpost hyt
+  intro t htr htw hsp hfr hcs hpost hyt mL _ fl
+  -- Whatever the released frame's bytes hold: the outputs lie apart from the stack.
+  have fl' : Frame [⟨callSp p, 128⟩] t.mem mL := by rw [← alloc_call_sp h.toGenFrame]; exact fl
+  obtain hA : Region.Sub ⟨callSp p, 128⟩ (cStack p) :=
+    Offset.sub_below p.sp (a := 320) (b := 1088) (n := 128) (m := 1088) (by decide) (by decide)
+  obtain hD : ∀ r ∈ [cK p, rU p, rS p, cS p, cR p], r.Disjoint ⟨callSp p, 128⟩ :=
+    fun r hr => (hf.stack r hr).sub_right hA
+  obtain hwd : ∀ (R : Region) (d : Nat), R ∈ [cK p, rU p, rS p, cS p, cR p] → d + 8 ≤ R.len → d < 2 ^ 64 →
+      word mL R.base d = word t.mem R.base d := fun R d hR hd hd' =>
+    fl'.readW (r := R) (Offset.contains_base _ hd hd')
+      (fun r hr => by rw [List.mem_singleton.mp hr]; exact hD R hR) (by decide)
   obtain hres := callS_result h hu ha hm'
   obtain ⟨a0, a1, a2, a3⟩ := callS_args (st := st) hu hm'
   obtain hlen : Search.searchLen (callS p used st w) = p.L := by
@@ -2180,14 +2191,24 @@ theorem search_run (v : RoundImpl) {p : GenPublic} {original s : State} {used : 
       rcases hr with rfl | rfl | rfl | rfl <;> simp
     · obtain rfl := List.mem_singleton.mp hr
       exact ⟨rStk p, by simp [searchChanges], by rw [hu]; exact below_call_sub _ hd⟩
-  obtain hframe := f₀.trans f₁
+  obtain f₂ : Frame (searchChanges p st) t.mem mL := fl'.sub fun r hr => by
+    obtain rfl := List.mem_singleton.mp hr
+    exact ⟨rStk p, by simp [searchChanges],
+      Offset.sub_below p.sp (a := 320) (b := 1088) (n := 128) (m := 896) (by decide) (by decide)⟩
+  obtain hframe := (f₀.trans f₁).trans f₂
   obtain hrem := KeySearch.primeSearch_remaining_le p.L p.eB st.phase.other st.remaining ((genRand original).drop used)
   have hle := h.state.remaining_le
   refine ⟨h.toGenFrame.restore (show t.rd = s.rd from htr.trans krd)
       (show t.wr.tail = s.wr by rw [htw, kwr]; rfl) ?_ (hyt.trans (hyw.trans hyu))
       (fun r hr => (hcs r hr).trans ((kw.gpr r (by revert r hr; decide)).trans (ku.gpr r (by revert r hr; decide))))
-      (hframe.sub (searchChanges_sub h.toGenFrame)) w0 w1 w2 (.inl rfl) rfl (Nat.le_trans hrem hle),
-    ?_, hused, hout, ⟨req, w3, hreq⟩, hframe⟩
+      (hframe.sub (searchChanges_sub h.toGenFrame))
+      ((hwd (cS p) 0 (by simp) (show 0 + 8 ≤ 56 by decide) (by decide)).trans w0)
+      ((hwd (cS p) 8 (by simp) (show 8 + 8 ≤ 56 by decide) (by decide)).trans w1)
+      ((hwd (cS p) 16 (by simp) (show 16 + 8 ≤ 56 by decide) (by decide)).trans w2) (.inl rfl) rfl (Nat.le_trans hrem hle),
+    ?_, (hwd (rU p) 0 (by simp) (show 0 + 8 ≤ 8 by decide) (by decide)).trans hused,
+    Eq.trans (List.map_congr_left fun i hi => lost_byte fl' (R := rO p st)
+      ((hD (cK p) (by simp)).sub_left (rO_sub hf)) (List.mem_range.mp hi)) hout,
+    ⟨req, (hwd (cS p) 24 (by simp) (show 24 + 8 ≤ 56 by decide) (by decide)).trans w3, hreq⟩, hframe⟩
   · show t.sp + BitVec.ofNat 64 128 = s.sp
     rw [hsp, hu, ← alloc_call_sp h.toGenFrame]
     exact BitVec.sub_add_cancel _ _

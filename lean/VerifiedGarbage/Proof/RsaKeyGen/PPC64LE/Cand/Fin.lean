@@ -635,7 +635,8 @@ theorem wp_seq3 {a b c d : Prog isa} {s : State} {P Q : State → Prop} (h : WP 
 restore does. -/
 theorem code_ok {s0 : State} (h : CIn s0) {trial round : Prog isa} {name : String} {Q : BitVec 64 → Mem → Prop}
     (hm : ∀ s, Bx s0 s → Regs s0 s → s.syms = s0.syms →
-      WP isa (mid trial name round) s fun u => Bx s0 u ∧ Q (u.gpr .r3) u.mem) :
+      WP isa (mid trial name round) s fun u => Bx s0 u ∧ Q (u.gpr .r3) u.mem)
+    (hQ : ∀ r m m', Frame [cF s0] m m' → Q r m → Q r m') :
     WP isa (VG.Impl.RsaKeyGen.PPC64LE.Candidate.code trial name round) s0
       fun t => abiPreserved s0 t ∧ Q (t.gpr .r3) t.mem := by
   obtain st := started_ok h
@@ -644,24 +645,36 @@ theorem code_ok {s0 : State} (h : CIn s0) {trial round : Prog isa} {name : Strin
   unfold VG.Impl.RsaKeyGen.PPC64LE.Candidate.code
   refine WP.seq (WP.of_runBlock ⟨s0.write .r0 s0.lr,
     (by simp only [runBlock_cons, runStep_some, runBlock_nil, exec_mflr]), ?_⟩)
-  refine WP.seq (WP.frameKept (by show 48 ≤ s0.sp.toNat; omega_using [hlo]) (WP.allocKept (by decide)
+  refine WP.seq (WP.frame (by show 48 ≤ s0.sp.toNat; omega_using [hlo]) (WP.alloc (by decide)
     (by show 176 ≤ (s0.sp - 48).toNat
         rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def]; show 48 ≤ s0.sp.toNat; omega_using [hlo])]
         show 176 ≤ s0.sp.toNat - 48; omega_using [hlo]) ?_))
   show WP isa (.seq (.block VG.Impl.RsaKeyGen.PPC64LE.Candidate.entry) (.seq _ (.seq _ (.seq _ _)))) (started s0) _
   refine WP.seq (WP.mono_syms (entry_ok st) fun s ⟨bs, rs⟩ sy => ?_)
   refine wp_seq3 (hm s bs rs sy) fun u ⟨bu, qu⟩ => ?_
-  refine WP.mono (restore_ok bu) fun v ⟨sv, vm, v3, v2, vsp, _, _, _⟩ => ?_
-  -- The frames' pops and `mtlr`.
-  refine WP.of_runBlock ⟨_, (by simp only [runBlock_cons, runStep_some, runBlock_nil, exec_mtlr]; rfl), ?_⟩
+  refine WP.mono (restore_ok bu) fun v ⟨sv, vm, v3, v2, vsp, _, _, _⟩ m₁ u₁ f₁ m₂ u₂ f₂ => ?_
+  -- The frames: the allocated one at `cB + 176`, the pushed one at `cB + 352`.
+  obtain eI : (pushed .r0 (s0.write .r0 s0.lr)).sp - BitVec.ofNat 64 frameBytes = off (cB s0) 176 := by
+    show s0.sp - 48 - BitVec.ofNat 64 176 = _; simp only [off, cB]; bv_omega
+  obtain eO : (s0.write .r0 s0.lr).sp - 48 = off (cB s0) 352 := by
+    show s0.sp - 48 = _; simp only [off, cB]; bv_omega
+  rw [eI] at f₁
+  simp only [frameBytes] at f₁
+  rw [eO] at f₂
   obtain spv : v.sp = off (cB s0) 176 := vsp.trans bu.sp
-  obtain e1 : (freed 176 v).sp = off (cB s0) 352 := by
-    show v.sp + BitVec.ofNat 64 176 = _; rw [spv, off_add]
+  generalize hw : ({ freed frameBytes v with mem := m₁, unknowns := u₁ } : State) = w at f₂ ⊢
+  obtain hwm : w.mem = m₁ := by rw [← hw]
+  obtain hwg : w.gpr = v.gpr := by rw [← hw, freed_gpr_eq]
+  obtain e1 : w.sp = off (cB s0) 352 := by
+    rw [← hw, freed_sp_eq, spv, off_add]; rfl
+  rw [hwm] at f₂
+  -- The pops and `mtlr`.
+  refine WP.of_runBlock ⟨_, (by simp only [runBlock_cons, runStep_some, runBlock_nil, exec_mtlr]; rfl), ?_⟩
   refine ⟨⟨fun r hr => ?_, ?_, ?_⟩, ?_⟩
   · have h0 : r ≠ .r0 := fun e => by subst e; exact absurd hr (by decide)
-    show ((freed 176 v).write .r0 _).gpr r = _
+    show (w.write .r0 _).gpr r = _
     simp only [State.write, h0, ↓reduceIte]
-    show v.gpr r = s0.gpr r
+    rw [hwg]
     simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
       rfl | rfl | rfl | rfl
@@ -672,15 +685,25 @@ theorem code_ok {s0 : State} (h : CIn s0) {trial round : Prog isa} {name : Strin
       | exact sv 8 (by decide) | exact sv 9 (by decide) | exact sv 10 (by decide) | exact sv 11 (by decide)
       | exact sv 12 (by decide) | exact sv 13 (by decide) | exact sv 14 (by decide) | exact sv 15 (by decide)
       | exact sv 16 (by decide) | exact sv 17 (by decide)
-  · show (freed 176 v).sp + 48 = s0.sp
+  · show w.sp + 48 = s0.sp
     rw [e1]; simp only [off, cB]; bv_omega
-  · show (freed 176 v).mem.read ((freed 176 v).sp + 32) 8 = s0.lr
-    rw [e1, show off (cB s0) 352 + 32 = off (cB s0) 384 from off_add _ _ 32, read8]
-    show v.mem.readW _ 64 = _
+  · -- The saved return address lies apart from the allocated frame.
+    show w.mem.read (w.sp + 32) 8 = s0.lr
+    rw [e1, show off (cB s0) 352 + 32 = off (cB s0) 384 from off_add _ _ 32, read8, hwm,
+      f₁.readW (r := ⟨off (cB s0) 384, 8⟩) (Region.contains_self _ _)
+        (fun r hr => by
+          simp only [List.mem_singleton] at hr; subst hr
+          exact Offset.disjoint _ (.inr (by omega_using [])) (by omega_using [hf]) (by omega_using [hf]))
+        (by omega_using [])]
     rw [vm]; exact bu.lr
-  · show Q (((freed 176 v).write .r0 ((freed 176 v).mem.read ((freed 176 v).sp + 32) 8)).gpr .r3) (freed 176 v).mem
+  · show Q ((w.write .r0 (w.mem.read (w.sp + 32) 8)).gpr .r3) m₂
     simp only [State.write, show Reg.r3 ≠ Reg.r0 by decide, ↓reduceIte]
-    show Q (v.gpr .r3) v.mem
+    rw [hwg]
+    -- Both frames lie in `cF`.
+    refine hQ _ _ _ (f₂.sub fun r hr => ⟨cF s0, List.mem_singleton_self _, by
+      simp only [List.mem_singleton] at hr; subst hr; exact Offset.sub_base _ (by omega_using [])⟩) ?_
+    refine hQ _ _ _ (f₁.sub fun r hr => ⟨cF s0, List.mem_singleton_self _, by
+      simp only [List.mem_singleton] at hr; subst hr; exact Offset.sub_base _ (by omega_using [])⟩) ?_
     rw [vm, v3]; exact qu
 
 end VG.Proof.RsaKeyGen.PPC64LE.Cand

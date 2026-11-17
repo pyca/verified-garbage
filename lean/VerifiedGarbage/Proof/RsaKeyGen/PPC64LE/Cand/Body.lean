@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.RsaKeyGen.CandSpec
 import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Search.GeFlag
 import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
+import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
@@ -126,6 +127,13 @@ theorem code_correct {trial : Prog isa} (D : DivOk trial) (R : RoundImpl) {s0 : 
     (hT : TabOk s0) :
     WP isa (VG.Impl.RsaKeyGen.PPC64LE.Candidate.code trial R.name R.code) s0
       fun t => abiPreserved s0 t ∧ CQ s0 (t.gpr .r3) t.mem :=
-  code_ok h fun _ hb hr sy => bodyMid_ok D R hT hb hr sy
+  code_ok h (fun _ hb hr sy => bodyMid_ok D R hT hb hr sy) fun r m m' fl ⟨hr, hb, hw⟩ => by
+    -- `out` and `used` lie apart from the frame.
+    refine ⟨hr, ?_, ?_⟩
+    · rw [← hb]
+      exact List.map_congr_left fun i hi => lost_byte fl (R := cO s0) h.Fo.symm (List.mem_range.mp hi)
+    · simp only [Spec.Rsa.wordsAt, List.range_one, List.map_cons, List.map_nil, Nat.mul_zero, BitVec.add_zero] at hw ⊢
+      rw [← hw, fl.readW (r := cU s0) (Region.contains_self _ _)
+        (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact h.Fu.symm) (by decide)]
 
 end VG.Proof.RsaKeyGen.PPC64LE.Cand
