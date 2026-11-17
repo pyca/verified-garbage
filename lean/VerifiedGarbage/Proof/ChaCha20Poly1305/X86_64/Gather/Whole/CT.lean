@@ -66,6 +66,33 @@ theorem rel_frame {rs : List Reg} {r : Reg} {k : Nat} {body : Prog isa} {σ₁ �
   RelCT.frame (fun _ _ h => by obtain ⟨rfl, rfl⟩ := h; exact hsp)
     (hb.mono (fun _ _ ⟨s₁, s₂, ⟨e₁, e₂⟩, hx, hy⟩ => by subst e₁ e₂; exact ⟨hx, hy⟩) fun _ _ h => h)
 
+/-- The callee's public data, in two runs ready for the call with the same
+public arguments: what its contract relates them by. -/
+theorem callee_pub {σ₁ σ₂ c₁ c₂ : State} (h₁ : Lay σ₁) (h₂ : Lay σ₂) (hc₁ : Ready σ₁ c₁)
+    (hc₂ : Ready σ₂ c₂) (hrd : rdC σ₂ = rdC σ₁) (hwr : wrC σ₂ = wrC σ₁) (hB : Bs σ₁ = Bs σ₂)
+    (hk : K σ₁ = K σ₂) (hn : Nn σ₁ = Nn σ₂) (ha : Ad σ₁ = Ad σ₂) (hal : σ₁.gpr .rcx = σ₂.gpr .rcx)
+    (hd : Dst σ₁ = Dst σ₂) (hl : stackArg σ₁ 1 = stackArg σ₂ 1) (ht : Tg σ₁ = Tg σ₂)
+    (hm : c₁.mxcsr = c₂.mxcsr) :
+    (Spec.ChaCha20Poly1305.sealContract X86_64.abi 1768).pub (xS σ₁ c₁) (xS σ₂ c₂) := by
+  have hx₂ : xS σ₂ c₂ = (qS c₂).callEntry.withRegions (rdC σ₁) (wrC σ₁) := by rw [← hrd, ← hwr]
+  have g₁ (r : Reg) (hr : r ≠ .rsp) : (xS σ₁ c₁).gpr r = c₁.gpr r := xgpr_eq hr
+  have g₂ (r : Reg) (hr : r ≠ .rsp) : ((qS c₂).callEntry.withRegions (rdC σ₁) (wrC σ₁)).gpr r = c₂.gpr r :=
+    xgpr_eq (s := σ₁) hr
+  have t₂ : stackArg ((qS c₂).callEntry.withRegions (rdC σ₁) (wrC σ₁)) 0 = Tg σ₂ := by
+    rw [← hx₂]; exact hc₂.xtag h₂
+  rw [hx₂]
+  refine sealSpec_pub ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · rw [g₁ _ (by decide), g₂ _ (by decide), hc₁.rdi, hc₂.rdi, hk]
+  · rw [g₁ _ (by decide), g₂ _ (by decide), hc₁.rsi, hc₂.rsi, hn]
+  · rw [g₁ _ (by decide), g₂ _ (by decide), hc₁.rdx, hc₂.rdx, ha]
+  · rw [g₁ _ (by decide), g₂ _ (by decide), hc₁.rcx, hc₂.rcx, hal]
+  · rw [g₁ _ (by decide), g₂ _ (by decide), hc₁.r8, hc₂.r8, hd]
+  · rw [g₁ _ (by decide), g₂ _ (by decide), hc₁.r9, hc₂.r9, hl]
+  · rw [State.withRegions_gpr, State.withRegions_gpr, State.callEntry_rsp, State.callEntry_rsp, hc₁.qsp,
+      hc₂.qsp, hB]
+  · rw [hc₁.xtag h₁, t₂, ht]
+  · simp only [State.withRegions_mxcsr, State.callEntry_mxcsr, pushed_mxcsr, hm]
+
 /-- The call, in two runs ready for it with the same public arguments. -/
 theorem call_rel (F : SealFn) {σ₁ σ₂ c₁ c₂ : State} (h₁ : Lay σ₁) (h₂ : Lay σ₂) (hc₁ : Ready σ₁ c₁)
     (hc₂ : Ready σ₂ c₂) (hrd : rdC σ₂ = rdC σ₁) (hwr : wrC σ₂ = wrC σ₁) (hB : Bs σ₁ = Bs σ₂)
@@ -80,26 +107,35 @@ theorem call_rel (F : SealFn) {σ₁ σ₂ c₁ c₂ : State} (h₁ : Lay σ₁)
   rw [hx₂] at cp₂
   rw [hrd, hwr] at cv₂
   rw [hwr] at cw₂
-  have g₁ (r : Reg) (hr : r ≠ .rsp) : (xS σ₁ c₁).gpr r = c₁.gpr r := xgpr_eq hr
-  have g₂ (r : Reg) (hr : r ≠ .rsp) : ((qS c₂).callEntry.withRegions (rdC σ₁) (wrC σ₁)).gpr r = c₂.gpr r :=
-    xgpr_eq (s := σ₁) hr
-  have t₂ : stackArg ((qS c₂).callEntry.withRegions (rdC σ₁) (wrC σ₁)) 0 = Tg σ₂ := by
-    rw [← hx₂]; exact hc₂.xtag h₂
   refine (RelCT.call F.verified.1 F.verified.2.1 (rdC σ₁) (wrC σ₁) fun x y ⟨e₁, e₂⟩ => ?_).mono
     (fun a b h => h) fun _ _ h => h
   subst e₁ e₂
-  refine ⟨sealSpec_pre cp₁, sealSpec_pre cp₂, sealSpec_pub ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, cv₁, cw₁, cv₂, cw₂,
-    by rw [hc₁.qsp, hc₂.qsp, hB]⟩
-  · rw [g₁ _ (by decide), g₂ _ (by decide), hc₁.rdi, hc₂.rdi, hk]
-  · rw [g₁ _ (by decide), g₂ _ (by decide), hc₁.rsi, hc₂.rsi, hn]
-  · rw [g₁ _ (by decide), g₂ _ (by decide), hc₁.rdx, hc₂.rdx, ha]
-  · rw [g₁ _ (by decide), g₂ _ (by decide), hc₁.rcx, hc₂.rcx, hal]
-  · rw [g₁ _ (by decide), g₂ _ (by decide), hc₁.r8, hc₂.r8, hd]
-  · rw [g₁ _ (by decide), g₂ _ (by decide), hc₁.r9, hc₂.r9, hl]
-  · rw [State.withRegions_gpr, State.withRegions_gpr, State.callEntry_rsp, State.callEntry_rsp, hc₁.qsp,
-      hc₂.qsp, hB]
-  · rw [hc₁.xtag h₁, t₂, ht]
-  · simp only [State.withRegions_mxcsr, State.callEntry_mxcsr, pushed_mxcsr, hm]
+  refine ⟨sealSpec_pre cp₁, sealSpec_pre cp₂, by
+      rw [← hx₂]; exact callee_pub h₁ h₂ hc₁ hc₂ hrd hwr hB hk hn ha hal hd hl ht hm,
+    cv₁, cw₁, cv₂, cw₂, by rw [hc₁.qsp, hc₂.qsp, hB]⟩
+
+/-- What two runs from states `seal_gather`'s contract relates agree on, of
+what the call's public arguments are made of. -/
+theorem pub_facts {σ₁ σ₂ : State} (hq : gatherPub σ₁ σ₂) :
+    rdC σ₂ = rdC σ₁ ∧ wrC σ₂ = wrC σ₁ ∧ Bs σ₁ = Bs σ₂ ∧ K σ₁ = K σ₂ ∧ Nn σ₁ = Nn σ₂ ∧ Ad σ₁ = Ad σ₂ ∧
+      σ₁.gpr .rcx = σ₂.gpr .rcx ∧ Dst σ₁ = Dst σ₂ ∧ stackArg σ₁ 1 = stackArg σ₂ 1 ∧ Tg σ₁ = Tg σ₂ ∧
+      σ₁.mxcsr = σ₂.mxcsr := by
+  obtain ⟨qdi, qsi, qdx, qcx, -, -, qsp, qmx, a0, a1, a2, -⟩ := hq
+  have hB : Bs σ₁ = Bs σ₂ := by simp only [Bs, qsp]
+  have hrd : rdC σ₂ = rdC σ₁ := by
+    simp only [rdC, kR, nR, aR, K, Nn, Ad, AL, Bs, qdi, qsi, qdx, qcx, qsp]
+  have hwr : wrC σ₂ = wrC σ₁ := by
+    simp only [wrC, dR, tgR, Dst, L, Tg, a0, a1, a2]
+  exact ⟨hrd, hwr, hB, qdi, qsi, qdx, qcx, a0, a1, a2, qmx⟩
+
+/-- The callee's public data, in two runs from states `seal_gather`'s contract
+relates. -/
+theorem callee_pub_of {σ₁ σ₂ c₁ c₂ : State} (p₁ : gatherPre σ₁) (p₂ : gatherPre σ₂) (hq : gatherPub σ₁ σ₂)
+    (hc₁ : Ready σ₁ c₁) (hc₂ : Ready σ₂ c₂) :
+    (Spec.ChaCha20Poly1305.sealContract X86_64.abi 1768).pub (xS σ₁ c₁) (xS σ₂ c₂) := by
+  obtain ⟨hrd, hwr, hB, hk, hn, ha, hal, hd, hl, ht, hm⟩ := pub_facts hq
+  exact callee_pub (lay p₁) (lay p₂) hc₁ hc₂ hrd hwr hB hk hn ha hal hd hl ht
+    (hc₁.mx.trans (hm.trans hc₂.mx.symm))
 
 theorem sealGather_ct (w : Width) (F : SealFn) :
     ConstantTime isa gatherPre gatherPub (sealGatherWhole w F.name F.code) := by

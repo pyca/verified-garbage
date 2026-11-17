@@ -572,16 +572,17 @@ theorem called_wp (F : SealFn) {s c : State} (h : Lay s) (hc : Ready s c) :
 in, in the memory the pop of `tag` leaves: a memory that differs from
 it only in that frame, whose bytes the pop loses. What the residue proof
 (`Scrub.lean`) asks of each run. -/
-theorem called_wpE (F : SealFn) {s c : State} (h : Lay s) (hc : Ready s c) :
+theorem called_wpE (F : SealFn) {s c : State} (h : Lay s) (hc : Ready s c) (hu : c.unknowns = s.unknowns)
+    (hy : c.syms = s.syms) :
     WP isa (.frame (.push [.rax]) (.call F.name F.code) (.pop .rax 1)) c
       fun z => z.gpr .rsp = Bs s + BitVec.ofNat 64 1784 ∧ z.wr = FR s :: s.wr ∧
-        ∃ c m, Ready s c ∧ F.E (xS s c) m ∧ Frame [(⟨Bs s + BitVec.ofNat 64 1776, 8⟩ : Region)] m z.mem := by
+        ∃ c m, Ready s c ∧ c.unknowns = s.unknowns ∧ c.syms = s.syms ∧ F.E (xS s c) m ∧ Frame [(⟨Bs s + BitVec.ofNat 64 1776, 8⟩ : Region)] m z.mem := by
   obtain ⟨hcp, hcov, hw⟩ := hc.call h
   have hdep := F.depth
   refine WP.frame (by simp) (by decide) (by decide) (hc.hn h) (WP.call_sp_mx (k := F.contractE) F.exec F.sp
     (by omega_arith) (sealSpec_pre hcp) hcov hw fun s' _ wr' cs' _ _ ⟨s₂, m₂, _, _, hE⟩ _ => ?_)
   obtain rsp' : s'.gpr .rsp = (qS c).gpr .rsp := cs' .rsp (by decide)
-  refine ⟨rsp', wr', fun m _ fm => ⟨?_, ?_, c, s'.mem, hc, by rw [← m₂]; exact hE, ?_⟩⟩
+  refine ⟨rsp', wr', fun m _ fm => ⟨?_, ?_, c, s'.mem, hc, hu, hy, by rw [← m₂]; exact hE, ?_⟩⟩
   · show (popped .rax 1 s').gpr .rsp = _
     rw [popped_rsp, rsp', hc.qsp, Offset.add_ofNat_add_ofNat]
   · show (popped .rax 1 s').wr = _
@@ -595,11 +596,11 @@ theorem frameBody_wpE (w : Width) (F : SealFn) {s : State} (h : Lay s) :
     WP isa (.seq (.block entry) (.seq (gather w) (.seq (.block callArgsWhole)
       (.frame (.push [.rax]) (.call F.name F.code) (.pop .rax 1))))) (pushed saved s)
       fun z => z.gpr .rsp = Bs s + BitVec.ofNat 64 1784 ∧ z.wr = FR s :: s.wr ∧
-        ∃ c m, Ready s c ∧ F.E (xS s c) m ∧ Frame [(⟨Bs s + BitVec.ofNat 64 1776, 8⟩ : Region)] m z.mem := by
-  refine WP.seq (WP.mono (entered_wp h) fun e he => ?_)
-  refine WP.seq (WP.mono (gathered_wp w h he) fun g hg => ?_)
-  refine WP.seq (WP.mono (ready_wp h hg) fun c hc => ?_)
-  exact called_wpE F h hc
+        ∃ c m, Ready s c ∧ c.unknowns = s.unknowns ∧ c.syms = s.syms ∧ F.E (xS s c) m ∧ Frame [(⟨Bs s + BitVec.ofNat 64 1776, 8⟩ : Region)] m z.mem := by
+  refine WP.seq (WP.mono_flat (entered_wp h) rfl fun e he ue ye => ?_)
+  refine WP.seq (WP.mono_flat (gathered_wp w h he) (gather_flat w) fun g hg ug yg => ?_)
+  refine WP.seq (WP.mono_flat (ready_wp h hg) rfl fun c hc uc yc => ?_)
+  exact called_wpE F h hc (by rw [uc, ug, ue, pushed_unknowns]) (by rw [yc, yg, ye, pushed_syms])
 
 /-- The body of our frame. -/
 theorem frameBody_wp (w : Width) (F : SealFn) {s : State} (h : Lay s) :
@@ -639,7 +640,7 @@ theorem sealGather_wp (w : Width) (F : SealFn) {s : State} (hs : gatherPre s) :
 in, in a memory that differs from the one `seal_gather` returns with only in the
 frames it releases: the call's and its own, whose bytes are lost. -/
 theorem sealGather_wpE (w : Width) (F : SealFn) {s : State} (hs : gatherPre s) :
-    WP isa (sealGatherWhole w F.name F.code) s fun z => ∃ c m, Ready s c ∧ F.E (xS s c) m ∧
+    WP isa (sealGatherWhole w F.name F.code) s fun z => ∃ c m, Ready s c ∧ c.unknowns = s.unknowns ∧ c.syms = s.syms ∧ F.E (xS s c) m ∧
       Frame [(⟨Bs s + BitVec.ofNat 64 1776, 8⟩ : Region), FR s] m z.mem := by
   have h := lay hs
   have hn : 8 * saved.length ≤ (s.gpr .rsp).toNat := by have := h.w₁; simp only [List.length_cons, List.length_nil]; omega_arith
@@ -648,8 +649,8 @@ theorem sealGather_wpE (w : Width) (F : SealFn) {s : State} (hs : gatherPre s) :
   rw [show s.gpr .rsp - BitVec.ofNat 64 (8 * saved.length) = Bs s + BitVec.ofNat 64 1784 from
     (pushed_rsp _ _).symm.trans (hP s)] at fm
   replace fm : Frame [FR s] z.mem m := fm
-  obtain ⟨c, m', hc, hE, hf⟩ := hz.2.2
-  exact ⟨c, m', hc, hE, (hf.mono fun r hr => by simp only [List.mem_singleton] at hr; simp [hr]).trans
+  obtain ⟨c, m', hc, hu, hy, hE, hf⟩ := hz.2.2
+  exact ⟨c, m', hc, hu, hy, hE, (hf.mono fun r hr => by simp only [List.mem_singleton] at hr; simp [hr]).trans
     (fm.mono fun r hr => by simp only [List.mem_singleton] at hr; simp [hr])⟩
 
 end VG.Proof.ChaCha20Poly1305.X86_64.Gather.Whole

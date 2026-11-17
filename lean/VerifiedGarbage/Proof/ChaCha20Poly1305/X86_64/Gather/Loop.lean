@@ -14,6 +14,9 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.ResidueTaintSound
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
+public import VerifiedGarbage.Proof.Framework.X86_64.Frame
 
 /-!
 # ChaCha20-Poly1305 encryption out of place, from a list of slices, x86-64: gathering the slices
@@ -309,5 +312,62 @@ theorem gather_wp (w : Width) (t : State) {Src Dst : Addr} {cnt L : Nat} (h : Ga
   · have h0 : cnt ≠ 0 := by simpa using hf
     refine WP.mono (gatherLoop_wp w t₁ h' (by omega_using [h0])) fun t' ⟨m', k'⟩ => ⟨?_, kp.trans k'⟩
     rw [m', m₁]
+
+/-! ## What the code before the call keeps -/
+
+theorem execBlock_unknowns_eq : ∀ {is : List Instr} {s s' : State} {t : List Leak},
+    execBlock isa is s = some (s', t) → s'.unknowns = s.unknowns
+  | [], _, _, _, h => by simp only [execBlock, Option.some.injEq, Prod.mk.injEq] at h; rw [h.1]
+  | i :: is, s, s', t, h => by
+    simp only [execBlock] at h
+    split at h
+    · cases h
+    · rename_i s₁ e
+      obtain ⟨⟨s₂, t₂⟩, h₂, e₂⟩ := Option.map_eq_some_iff.mp h
+      cases e₂
+      exact (execBlock_unknowns_eq h₂).trans (RTaint.exec_unknowns e)
+
+/-- Code of blocks, branches and loops only, with no call, frame or indirect
+call: its runs keep the unknowns (`Exec.unknowns_of_flat`), as the code
+before `seal_gather`'s call is. -/
+def flatCode : Prog isa → Bool
+  | .block _ => true
+  | .seq a b => flatCode a && flatCode b
+  | .ite _ a b => flatCode a && flatCode b
+  | .loop b _ => flatCode b
+  | _ => false
+
+theorem Exec.unknowns_of_flat {c : Prog isa} {s u : State} {t : List Leak} (he : Exec isa c s t u) :
+    flatCode c = true → u.unknowns = s.unknowns := by
+  induction he with
+  | block h => exact fun _ => execBlock_unknowns_eq h
+  | seq _ _ ih₁ ih₂ =>
+    intro hc; simp only [flatCode, Bool.and_eq_true] at hc; rw [ih₂ hc.2, ih₁ hc.1]
+  | iteT _ _ ih => intro hc; simp only [flatCode, Bool.and_eq_true] at hc; exact ih hc.1
+  | iteF _ _ ih => intro hc; simp only [flatCode, Bool.and_eq_true] at hc; exact ih hc.2
+  | loopExit _ _ ih => exact ih
+  | loopNext _ _ _ ih₁ ih₂ => intro hc; rw [ih₂ hc, ih₁ hc]
+  | call => intro hc; cases hc
+  | frame => intro hc; cases hc
+  | icall => intro hc; cases hc
+  | icallNext => intro hc; cases hc
+
+/-- `Q` of the state after flat code, which may assume it has the unknowns
+and the addresses of statics it had before. -/
+theorem WP.mono_flat {c : Prog isa} {s : State} {Q R : State → Prop} (h : WP isa c s Q)
+    (hc : flatCode c = true) (k : ∀ u, Q u → u.unknowns = s.unknowns → u.syms = s.syms → R u) :
+    WP isa c s R := by
+  obtain ⟨t, u, he, hq⟩ := h
+  exact ⟨t, u, he, k u hq (Exec.unknowns_of_flat he hc) (Exec.syms he)⟩
+
+theorem gather_flat (w : Width) : flatCode (gather w) = true := by cases w <;> rfl
+
+theorem pushed_unknowns (rs : List Reg) (s : State) : (pushed rs s).unknowns = s.unknowns := by
+  show (pushRegs s rs).unknowns = s.unknowns
+  induction rs generalizing s with
+  | nil => rfl
+  | cons r rs ih => exact (ih _).trans rfl
+
+theorem pushed_syms (rs : List Reg) (s : State) : (pushed rs s).syms = s.syms := pushRegs_syms s rs
 
 end VG.Proof.ChaCha20Poly1305.X86_64.Gather

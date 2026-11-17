@@ -40,6 +40,41 @@ theorem rel_frame {rs : List Reg} {r : Reg} {k : Nat} {body : Prog isa} {σ₁ �
   RelCT.frame (fun _ _ h => by obtain ⟨rfl, rfl⟩ := h; exact hsp)
     (hb.mono (fun _ _ ⟨s₁, s₂, ⟨e₁, e₂⟩, hx, hy⟩ => by subst e₁ e₂; exact ⟨hx, hy⟩) fun _ _ h => h)
 
+/-- The callee's public data, in two runs ready for the call with the same
+public arguments: what its contract relates them by. -/
+theorem callee_pub {σ₁ σ₂ c₁ c₂ : State} (h₁ : Lay σ₁) (h₂ : Lay σ₂) (hc₁ : Ready σ₁ c₁)
+    (hc₂ : Ready σ₂ c₂) (hrd : rdC σ₂ = rdC σ₁) (hwr : wrC σ₂ = wrC σ₁) (hB : Bs σ₁ = Bs σ₂)
+    (hk : K σ₁ = K σ₂) (hn : Nn σ₁ = Nn σ₂) (ha : Ad σ₁ = Ad σ₂) (hal : σ₁.gpr .rcx = σ₂.gpr .rcx)
+    (hs : S0 σ₁ = S0 σ₂) (hsl : L0 σ₁ = L0 σ₂)
+    (hd : Dst σ₁ = Dst σ₂) (hl : stackArg σ₁ 1 = stackArg σ₂ 1) (ht : Tg σ₁ = Tg σ₂)
+    (hm : c₁.mxcsr = c₂.mxcsr) :
+    (Proof.ChaCha20Poly1305.sealSplitContract X86_64.abi 1800).pub (xS σ₁ c₁) (xS σ₂ c₂) := by
+  have hx₂ : xS σ₂ c₂ = (qS c₂).callEntry.withRegions (rdC σ₁) (wrC σ₁) := by rw [← hrd, ← hwr]
+  have g₁ (r : Reg) (hr : r ≠ .rsp) : (xS σ₁ c₁).gpr r = c₁.gpr r := xgpr_eq hr
+  have g₂ (r : Reg) (hr : r ≠ .rsp) : ((qS c₂).callEntry.withRegions (rdC σ₁) (wrC σ₁)).gpr r = c₂.gpr r :=
+    xgpr_eq (s := σ₁) hr
+  have t₀ : stackArg ((qS c₂).callEntry.withRegions (rdC σ₁) (wrC σ₁)) 0 = Dst σ₂ := by
+    rw [← hx₂]; exact hc₂.xa0 h₂
+  have t₁ : stackArg ((qS c₂).callEntry.withRegions (rdC σ₁) (wrC σ₁)) 1 = stackArg σ₂ 1 := by
+    rw [← hx₂]; exact hc₂.xa1 h₂
+  have t₂ : stackArg ((qS c₂).callEntry.withRegions (rdC σ₁) (wrC σ₁)) 2 = Tg σ₂ := by
+    rw [← hx₂]; exact hc₂.xa2 h₂
+  rw [hx₂]
+  refine sealSplitSpec_pub ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · rw [g₁ _ (by decide), g₂ _ (by decide), hc₁.rdi, hc₂.rdi, hk]
+  · rw [g₁ _ (by decide), g₂ _ (by decide), hc₁.rsi, hc₂.rsi, hn]
+  · rw [g₁ _ (by decide), g₂ _ (by decide), hc₁.rdx, hc₂.rdx, ha]
+  · rw [g₁ _ (by decide), g₂ _ (by decide), hc₁.rcx, hc₂.rcx, hal]
+  · rw [g₁ _ (by decide), g₂ _ (by decide), hc₁.r8, hc₂.r8, hs]
+  · rw [g₁ _ (by decide), g₂ _ (by decide)]
+    exact BitVec.eq_of_toNat_eq (by rw [hc₁.r9, hc₂.r9, hsl])
+  · rw [State.withRegions_gpr, State.withRegions_gpr, State.callEntry_rsp, State.callEntry_rsp, hc₁.qsp,
+      hc₂.qsp, hB]
+  · rw [hc₁.xa0 h₁, t₀, hd]
+  · rw [hc₁.xa1 h₁, t₁, hl]
+  · rw [hc₁.xa2 h₁, t₂, ht]
+  · simp only [State.withRegions_mxcsr, State.callEntry_mxcsr, pushed_mxcsr, hm]
+
 /-- The call, in two runs ready for it with the same public arguments. -/
 theorem call_rel (F : SealSplitFn) {σ₁ σ₂ c₁ c₂ : State} (h₁ : Lay σ₁) (h₂ : Lay σ₂) (hc₁ : Ready σ₁ c₁)
     (hc₂ : Ready σ₂ c₂) (hrd : rdC σ₂ = rdC σ₁) (hwr : wrC σ₂ = wrC σ₁) (hB : Bs σ₁ = Bs σ₂)
@@ -55,34 +90,62 @@ theorem call_rel (F : SealSplitFn) {σ₁ σ₂ c₁ c₂ : State} (h₁ : Lay �
   rw [hx₂] at cp₂
   rw [hrd, hwr] at cv₂
   rw [hwr] at cw₂
-  have g₁ (r : Reg) (hr : r ≠ .rsp) : (xS σ₁ c₁).gpr r = c₁.gpr r := xgpr_eq hr
-  have g₂ (r : Reg) (hr : r ≠ .rsp) : ((qS c₂).callEntry.withRegions (rdC σ₁) (wrC σ₁)).gpr r = c₂.gpr r :=
-    xgpr_eq (s := σ₁) hr
-  have t₀ : stackArg ((qS c₂).callEntry.withRegions (rdC σ₁) (wrC σ₁)) 0 = Dst σ₂ := by
-    rw [← hx₂]; exact hc₂.xa0 h₂
-  have t₁ : stackArg ((qS c₂).callEntry.withRegions (rdC σ₁) (wrC σ₁)) 1 = stackArg σ₂ 1 := by
-    rw [← hx₂]; exact hc₂.xa1 h₂
-  have t₂ : stackArg ((qS c₂).callEntry.withRegions (rdC σ₁) (wrC σ₁)) 2 = Tg σ₂ := by
-    rw [← hx₂]; exact hc₂.xa2 h₂
   refine (RelCT.call F.verified.1 F.verified.2.1 (rdC σ₁) (wrC σ₁) fun x y ⟨e₁, e₂⟩ => ?_).mono
     (fun a b h => h) fun _ _ h => h
   subst e₁ e₂
-  refine ⟨sealSplitSpec_pre cp₁, sealSplitSpec_pre cp₂,
-    sealSplitSpec_pub ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, cv₁, cw₁, cv₂, cw₂,
-    by rw [hc₁.qsp, hc₂.qsp, hB]⟩
-  · rw [g₁ _ (by decide), g₂ _ (by decide), hc₁.rdi, hc₂.rdi, hk]
-  · rw [g₁ _ (by decide), g₂ _ (by decide), hc₁.rsi, hc₂.rsi, hn]
-  · rw [g₁ _ (by decide), g₂ _ (by decide), hc₁.rdx, hc₂.rdx, ha]
-  · rw [g₁ _ (by decide), g₂ _ (by decide), hc₁.rcx, hc₂.rcx, hal]
-  · rw [g₁ _ (by decide), g₂ _ (by decide), hc₁.r8, hc₂.r8, hs]
-  · rw [g₁ _ (by decide), g₂ _ (by decide)]
-    exact BitVec.eq_of_toNat_eq (by rw [hc₁.r9, hc₂.r9, hsl])
-  · rw [State.withRegions_gpr, State.withRegions_gpr, State.callEntry_rsp, State.callEntry_rsp, hc₁.qsp,
-      hc₂.qsp, hB]
-  · rw [hc₁.xa0 h₁, t₀, hd]
-  · rw [hc₁.xa1 h₁, t₁, hl]
-  · rw [hc₁.xa2 h₁, t₂, ht]
-  · simp only [State.withRegions_mxcsr, State.callEntry_mxcsr, pushed_mxcsr, hm]
+  refine ⟨sealSplitSpec_pre cp₁, sealSplitSpec_pre cp₂, by
+      rw [← hx₂]; exact callee_pub h₁ h₂ hc₁ hc₂ hrd hwr hB hk hn ha hal hs hsl hd hl ht hm,
+    cv₁, cw₁, cv₂, cw₂, by rw [hc₁.qsp, hc₂.qsp, hB]⟩
+
+/-- What two runs from states `seal_gather`'s contract relates agree on, of
+what the call's public arguments are made of. -/
+theorem pub_facts {σ₁ σ₂ : State} (p₁ : gatherPre σ₁) (p₂ : gatherPre σ₂) (hq : gatherPub σ₁ σ₂) :
+    rdC σ₂ = rdC σ₁ ∧ wrC σ₂ = wrC σ₁ ∧ Bs σ₁ = Bs σ₂ ∧ K σ₁ = K σ₂ ∧ Nn σ₁ = Nn σ₂ ∧ Ad σ₁ = Ad σ₂ ∧
+      σ₁.gpr .rcx = σ₂.gpr .rcx ∧ S0 σ₁ = S0 σ₂ ∧ L0 σ₁ = L0 σ₂ ∧ Dst σ₁ = Dst σ₂ ∧
+      stackArg σ₁ 1 = stackArg σ₂ 1 ∧ Tg σ₁ = Tg σ₂ ∧ σ₁.mxcsr = σ₂.mxcsr := by
+  have h₁ := lay p₁
+  have h₂ := lay p₂
+  obtain ⟨qdi, qsi, qdx, qcx, q8, q9, qsp, qmx, a0, a1, a2, hdesc⟩ := hq
+  have hB : Bs σ₁ = Bs σ₂ := by simp only [Bs, qsp]
+  have hS : Src σ₂ = Src σ₁ := q8.symm
+  have hC : Cnt σ₂ = Cnt σ₁ := congrArg BitVec.toNat q9.symm
+  obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, bds₁, -, -, -, -, -, -, ods₁, -⟩ := p₁
+  obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, bds₂, -⟩ := p₂
+  have hdE : ∀ j < Cnt σ₁ * 16,
+      eM σ₁ (Src σ₁ + BitVec.ofNat 64 j) = eM σ₂ (Src σ₁ + BitVec.ofNat 64 j) := by
+    intro j hj
+    have hx : (dsR σ₁).Contains (Src σ₁ + BitVec.ofNat 64 j) 1 :=
+      Offset.contains_base _ hj (by omega_using [ods₁, hj])
+    have hx₂ : (dsR σ₂).Contains (Src σ₁ + BitVec.ofNat 64 j) 1 := by
+      simp only [dsR, Src, Cnt, ← q8, ← q9]; exact hx
+    rw [h₁.keepE bds₁.symm hx, h₂.keepE bds₂.symm hx₂]
+    exact hdesc j hj
+  have hL0 : L0 σ₂ = L0 σ₁ := by
+    simp only [L0, hC]
+    split
+    · rfl
+    · rename_i h0
+      rw [hS]; exact (sl_agree hdE (by omega_using [h0])).symm
+  have hS0 : S0 σ₂ = S0 σ₁ := by
+    simp only [S0, hC]
+    split
+    · exact hS
+    · rename_i h0
+      rw [hS]; exact (sb_agree hdE (by omega_using [h0])).symm
+  have hrd : rdC σ₂ = rdC σ₁ := by
+    simp only [rdC, kR, nR, aR, sR, K, Nn, Ad, AL, Bs, qdi, qsi, qdx, qcx, qsp, hS0, hL0]
+  have hwr : wrC σ₂ = wrC σ₁ := by
+    simp only [wrC, dR, tgR, Dst, L, Tg, a0, a1, a2]
+  exact ⟨hrd, hwr, hB, qdi, qsi, qdx, qcx, hS0.symm, hL0.symm, a0, a1, a2, qmx⟩
+
+/-- The callee's public data, in two runs from states `seal_gather`'s contract
+relates. -/
+theorem callee_pub_of {σ₁ σ₂ c₁ c₂ : State} (p₁ : gatherPre σ₁) (p₂ : gatherPre σ₂) (hq : gatherPub σ₁ σ₂)
+    (hc₁ : Ready σ₁ c₁) (hc₂ : Ready σ₂ c₂) :
+    (Proof.ChaCha20Poly1305.sealSplitContract X86_64.abi 1800).pub (xS σ₁ c₁) (xS σ₂ c₂) := by
+  obtain ⟨hrd, hwr, hB, hk, hn, ha, hal, hs, hsl, hd, hl, ht, hm⟩ := pub_facts p₁ p₂ hq
+  exact callee_pub (lay p₁) (lay p₂) hc₁ hc₂ hrd hwr hB hk hn ha hal hs hsl hd hl ht
+    (hc₁.mx.trans (hm.trans hc₂.mx.symm))
 
 theorem sealGather_ct (w : Width) (F : SealSplitFn) :
     ConstantTime isa gatherPre gatherPub (sealGather w F.name F.code) := by
