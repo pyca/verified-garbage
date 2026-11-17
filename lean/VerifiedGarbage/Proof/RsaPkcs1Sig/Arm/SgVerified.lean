@@ -43,7 +43,13 @@ theorem code_ok (v : Proof.Rsa.Arm.CrtImpl) {s : State} (h : spec.pre s) :
   have hb := (body_vp (P := ep s) v).wp _ _ st
   refine WP.mono (wrap_ok hF (by rw [Nat.add_comm]; exact hsp) (W := (ep s).lay.W)
     (Q := fun r m => Res (ep s) (entered frameBytes s) m r) (fun r hr => ?_)
-    (WP.mono hb fun u hu => ⟨hu.1.2.frame, hu.2⟩)) fun t ⟨abi, res⟩ => ⟨abi, ?_⟩
+    (WP.mono hb fun u hu => ⟨hu.1.2.frame, hu.2⟩)
+    (hQ := fun _ m₁ m₂ hf hres => by
+      have ok : (layOf frameBytes 68 (ep s).argv [(ep s).N, (ep s).E, (ep s).DIG, (ep s).PP, (ep s).QQ, (ep s).DP, (ep s).DQ, (ep s).QI] [(ep s).OUT, (ep s).SCR] s 3440).Ok (entered frameBytes s) := by
+        rw [← ep_lay]; exact hin.ok
+      have fit := ok.fits (ep s).OUT (List.mem_append_right _ List.mem_cons_self)
+      exact writtenOutcome_frame hf (released_apart ok hsp (R := (ep s).OUT) (Or.inr (by simp)))
+        (by change (ep s).OUT.len ≤ 2 ^ 64; omega_using [fit]) hres)) fun t ⟨abi, res⟩ => ⟨abi, ?_⟩
   · rw [pushRegion_eq (F := frameBytes) (A := 68) (C := 3440) (argv := (ep s).argv)
       (ro := [(ep s).N, (ep s).E, (ep s).DIG, (ep s).PP, (ep s).QQ, (ep s).DP, (ep s).DQ, (ep s).QI])
       (rw := [(ep s).OUT, (ep s).SCR]) hsp]

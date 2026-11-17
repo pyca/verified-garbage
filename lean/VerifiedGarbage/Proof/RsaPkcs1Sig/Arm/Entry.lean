@@ -367,6 +367,18 @@ theorem entered_ro (h : (layOf F A argv ro rw s C).Ok (entered F s)) (hsp : 56 +
 theorem pushRegion_eq (hsp : 56 + F ≤ s.sp.toNat) : pushRegion s = (layOf F A argv ro rw s C).PUSH := by
   rw [layOf_PUSH hsp]
 
+/-- What `written` states of a buffer apart from a frame survives it. -/
+theorem written_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : Addr} {n : Nat}
+    (hd : ∀ r ∈ rs, Region.Disjoint ⟨p, n⟩ r) (hn : n ≤ 2 ^ 64) {r : BitVec 32} {o : Option (List Byte)}
+    (h : Spec.Rsa.written m p n r o) : Spec.Rsa.written m' p n r o := by
+  cases o <;> exact ⟨h.1, (bytesAt_frame hf hd hn).trans h.2⟩
+
+/-- What `writtenOutcome` states of a buffer apart from a frame survives it. -/
+theorem writtenOutcome_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : Addr} {n : Nat}
+    (hd : ∀ r ∈ rs, Region.Disjoint ⟨p, n⟩ r) (hn : n ≤ 2 ^ 64) {r : BitVec 32} {o : Spec.Rsa.Outcome}
+    (h : Spec.Rsa.writtenOutcome m p n r o) : Spec.Rsa.writtenOutcome m' p n r o := by
+  cases o <;> exact ⟨h.1, (bytesAt_frame hf hd hn).trans h.2⟩
+
 /-- A buffer of the layout's is apart from the frames `wrap` releases. -/
 theorem released_apart (h : (layOf F A argv ro rw s C).Ok (entered F s)) (hsp : 56 + F ≤ s.sp.toNat)
     {R : Region} (hR : R ∈ ro ∨ R ∈ rw) : ∀ r ∈ released F s, R.Disjoint r := by

@@ -1291,7 +1291,7 @@ variable {sig : Sig} {nm : String} {e : Elem} {n : Nat} {c₀ : String × List (
   {post : sig.Post abi.ptrBits} {wa : Bool} {stack bytes m : Nat}
   {leak : Option (Curry (sig.words abi.ptrBits) (Mem → List Nat))}
 
-/-- `Verified.stackScratchL` under `abi.withConsts (c₀ :: cs)`, for a
+/-- `Verified.stackScratchLLost` under `abi.withConsts (c₀ :: cs)`, for a
 signature without lists of slices: as `Verified.stackScratchWipedC`, without
 the wipe. `_hpostOut` (the postcondition reads the memory on return only
 within the buffers) is what it will need once a released frame loses its

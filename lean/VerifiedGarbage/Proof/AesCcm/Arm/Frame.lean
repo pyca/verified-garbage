@@ -17,6 +17,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Spec.Ccm.Contract
 public import VerifiedGarbage.Impl.StackScratch.Arm
 import VerifiedGarbage.Proof.Framework.Arm.StackScratch
+import VerifiedGarbage.Proof.Framework.Arm.ScratchLost
 
 /-! ### `AesCcm.Arm.Verified`, which only this module used -/
 
@@ -447,7 +448,7 @@ end
 
 `seal` and `open` run their code, proved with the working space as their
 last argument (`Verified.lean`), in a frame that allocates it
-(`Verified.stackScratch`): their working space is their seventh stack
+(`Verified.stackScratchLost`): their working space is their seventh stack
 argument, after `aad`, `aad_len`, `data`, `len`, `tag` and `tag_len`, so the
 frame of 2592 bytes holds a copy of those six words, the address of the
 working space, the saved `lr` and the working space. The copies are read
@@ -476,11 +477,11 @@ theorem sealFrameSat_pre : ∃ s, (Proof.AesCcm.sealRoundsContract Arm.abi 2608)
 theorem seal_framed :
     Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 2592 6 «seal»)
       (Proof.AesCcm.sealRoundsContract Arm.abi 2608) :=
-  Arm.Verified.stackScratch (sig := Spec.Ccm.sealSig) (nm := "work") (e := .u64)
+  Arm.Verified.stackScratchLost (sig := Spec.Ccm.sealSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Ccm.sealPre Arm.abi.ptrBits)
     (post := Proof.AesCcm.sealRoundsPost Arm.abi.ptrBits) (wa := true) (stack := 16)
     (m := 6) seal_verified (by decide) (by decide) (by decide) (by decide)
-    (sealPre_local _) (sealPost_local _) sealFrameSat_pre
+    (sealPre_local _) (sealPost_local _) (sealPostOut_local _) sealFrameSat_pre
 
 /-- A state satisfying `vg_aes_ccm_open`'s precondition, without the working
 space: its six words of stack arguments at `0x8000`. -/
@@ -497,12 +498,12 @@ theorem openFrameSat_pre : ∃ s, (Proof.AesCcm.openRoundsContract Arm.abi 2608)
 theorem open_framed :
     Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 2592 6 «open»)
       (Proof.AesCcm.openRoundsContract Arm.abi 2608) :=
-  Arm.Verified.stackScratch (sig := Spec.Ccm.openSig) (nm := "work") (e := .u64)
+  Arm.Verified.stackScratchLost (sig := Spec.Ccm.openSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Ccm.openPre Arm.abi.ptrBits)
     (post := Proof.AesCcm.openRoundsPost Arm.abi.ptrBits) (wa := true) (stack := 16)
     (leak := some (Spec.Ccm.openLeak Arm.abi.ptrBits))
     (m := 6) open_verified (by decide) (by decide) (by decide) (by decide)
-    (openPre_local _) (openPost_local _) openFrameSat_pre
+    (openPre_local _) (openPost_local _) (openPostOut_local _) openFrameSat_pre
     (hleak := openLeak_local _)
 
 end VG.Proof.AesCcm.Arm

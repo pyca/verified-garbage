@@ -23,6 +23,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Inline
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Lost
 meta import VerifiedGarbage.Impl.Camellia.Arm.CtrFinal
 meta import VerifiedGarbage.Proof.Camellia.CtrFinal
 meta import VerifiedGarbage.Proof.Camellia.CtrScratch
@@ -272,11 +273,12 @@ end WCall
 theorem w_call {s : State} {W R C D : BitVec 32} {n : Nat} (h : WCall s W R C D n) :
     WP isa ctrCall s (WPost s W R C D n) := by
   have hs8 := h.hsp8
-  refine WP.frame (rs := [.r12, .lr]) (r := .r12) rfl (by simpa using hs8) (by simp) ?_
+  refine WP.frameLost (rs := [.r12, .lr]) (r := .r12) rfl (by simpa using hs8) (by simp) ?_
   refine FrameStack.WP.callF (k := Proof.Camellia.ctrContractSk Arm.abi 3032) ctrFramed_sk.1 (rd := wRd s.sp W)
     (wr := wWr C D n) h.pre h.cov h.covW
     (by rw [pushed_sp8, hspA hs8]; have := h.hsp; have := ctr_stack; omega_arith) ?_
-  intro s₂ hrd₂ hwr₂ hsp₂ hf hcs hpost
+  intro s₂ hrd₂ hwr₂ hsp₂ hf hcs hpost ml ul hfl
+  obtain hfl' : Frame [below s.sp] s₂.mem ml := by rw [Proof.AesGcm.Arm.e8, hA hs8] at hfl; exact hfl
   obtain hn := toNat_ofNat32 h.n_lt
   obtain fA' := fA (s := s) hs8
   obtain b8 := below_stk s.sp
@@ -308,13 +310,12 @@ theorem w_call {s : State} {W R C D : BitVec 32} {n : Nat} (h : WCall s W R C D 
   have fB : Frame (wWr C D n ++ [belowA (pushed [.r12, .lr] s).sp (armStack ctrFramed)])
       (pushed [.r12, .lr] s).mem s₂.mem := hf
   rw [pushed_sp8] at fB
-  refine ⟨?_, ?_, ?_, fun r hr hlr => ?_, ?_, ?_, ?_⟩
+  refine ⟨?_, ?_, ?_, fun r hr hlr => ?_, ?_, ?_, ?_⟩ <;> dsimp only
   · rw [popped_rd, hrd₂, pushed_rd]
   · rw [popped_wr, hwr₂, pushed_wr]; rfl
   · rw [popped_sp, hsp₂, pushed_sp8]; exact BitVec.sub_add_cancel _ _
   · rw [popped_gpr (by rintro rfl; simp [preserved] at hr), hcs r hr hlr, pushed_gpr]
-  · rw [popped_mem]
-    refine (fA'.sub fun r hr => ?_).trans (fB.sub fun r hr => ?_)
+  · refine ((fA'.sub fun r hr => ?_).trans (fB.sub fun r hr => ?_)).trans (hfl'.sub fun r hr => ?_)
     · simp only [List.mem_singleton] at hr; subst hr
       exact ⟨stk s.sp, by simp, b8⟩
     · simp only [wWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -322,8 +323,14 @@ theorem w_call {s : State} {W R C D : BitVec 32} {n : Nat} (h : WCall s W R C D 
       · exact ⟨_, by simp, fun _ h => h⟩
       · exact ⟨⟨State.addr D, 16 * n⟩, by simp, fun _ hx => by rwa [Nat.mul_comm] at hx⟩
       · exact ⟨stk s.sp, by simp, belowA_stk ctr_stack h.hsp⟩
-  · rw [popped_mem]; exact hdata'
-  · rw [popped_mem]; exact hctr'
+    · simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨stk s.sp, by simp, b8⟩
+  · rw [blocksAt_frame' hfl' fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact (h.bd.sub_left b8).symm]
+    exact hdata'
+  · rw [Proof.Cmac.bytesAt_frame hfl' (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact (h.bc.sub_left b8).symm) (by decide)]
+    exact hctr'
 
 /-- Calls of `vg_camellia_ctr` with the same arguments and stack pointer in
 both runs are constant time. -/

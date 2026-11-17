@@ -11,6 +11,7 @@ public import VerifiedGarbage.Proof.Argon2.Arm.Push
 public import VerifiedGarbage.Spec.Argon2.Contract
 import VerifiedGarbage.Proof.Argon2.Dimensions
 import VerifiedGarbage.Proof.Argon2.Arm.CompressLit
+import VerifiedGarbage.Proof.Framework.Arm.Lost
 
 /-! ### `Argon2.Arm.Derive.Body`, which this module and modules that import it used -/
 
@@ -266,20 +267,41 @@ theorem restoreSp_ok {rest : List Instr} (l : List (Reg × Nat)) :
     · simp only [List.map_cons, List.mem_cons, not_or] at hr
       rw [ho r hr.2, u₁.other _ hr.1]
 
+/-- The frames and the locals, released: their 200 bytes below the stack
+pointer on entry may hold anything once the derivation returns, so `Q` must
+hold whatever they hold (`hQ`). -/
 theorem frames_ok {s₀ : State} (hlo : 240 ≤ (E0 s₀).toNat) {Q : State → Prop}
     (hb : WP isa body (entry s₀) fun t => BodyDone s₀ t ∧ t.wr = (entry s₀).wr ∧ Q t)
-    (hQ : ∀ t u, Q t → u.mem = t.mem → Q u) :
+    (hQ : ∀ t u, Q t → Frame [stkR (E0 s₀) 200] t.mem u.mem → Q u) :
     WP isa derive s₀ fun u => abiPreserved s₀ u ∧ Q u := by
   have hE := (E0 s₀).isLt
   have e0 : (E0 s₀).toNat = s₀.sp.toNat := rfl
   have h1 := sp1 (s₀ := s₀) (by omega_arith)
   have h2 := sp2 (s₀ := s₀) (by omega_arith)
+  -- The three released regions are in the 200 bytes below `sp`.
+  have hR1 : Region.Sub ⟨State.addr (s₀.sp - BitVec.ofNat 32 (4 * argRegs.length)), 4 * argRegs.length⟩
+      (stkR (E0 s₀) 200) := by
+    rw [addr_sub' (by simp only [List.length_cons, List.length_nil]; omega_arith)]
+    exact Proof.Argon2.Arm.stkR_sub (by decide) (by omega_arith)
+  have hR2 : Region.Sub ⟨State.addr ((pushed argRegs s₀).sp - BitVec.ofNat 32 (4 * savedRegs.length)),
+      4 * savedRegs.length⟩ (stkR (E0 s₀) 200) := by
+    rw [addr_sub' (by rw [h1]; simp only [List.length_cons, List.length_nil]; omega_arith), pushed_sp]
+    exact Proof.Argon2.Arm.stkR_inner (by decide) (by omega_arith)
+  have hR3 : Region.Sub ⟨State.addr ((pushed savedRegs (pushed argRegs s₀)).sp - BitVec.ofNat 32 144), 144⟩
+      (stkR (E0 s₀) 200) := by
+    rw [addr_sub' (by rw [h2]; omega_arith), pushed_sp]
+    refine fun x hx => Proof.Argon2.Arm.stkR_inner (sp := s₀.sp) (a := 184) (k := 4 * argRegs.length)
+      (by decide) (by omega_arith) x ?_
+    rw [pushed_sp] at hx
+    exact Proof.Argon2.Arm.stkR_inner (sp := s₀.sp - BitVec.ofNat 32 (4 * argRegs.length)) (a := 144)
+      (k := 4 * savedRegs.length) (by decide) (by rw [← pushed_sp, h1]; omega_arith) x hx
   unfold derive
-  refine WP.frame (rs := argRegs) (r := .r0) (by decide) (by simp only [List.length_cons, List.length_nil]; omega_arith)
+  refine WP.frameLost (rs := argRegs) (r := .r0) (by decide) (by simp only [List.length_cons, List.length_nil]; omega_arith)
     (by decide) ?_
-  refine WP.frame (rs := savedRegs) (r := .r3) (by decide)
+  refine WP.frameLost (rs := savedRegs) (r := .r3) (by decide)
     (by rw [h1]; simp only [List.length_cons, List.length_nil]; omega_arith) (by decide) ?_
-  refine WP.seq (WP.alloc (by decide) (by rw [h2]; show 144 ≤ _; omega_arith) (hb.mono fun t ⟨d, w, q⟩ => ?_))
+  refine WP.seq (WP.allocLost (by decide) (by rw [h2]; show 144 ≤ _; omega_arith)
+    (hb.mono fun t ⟨d, w, q⟩ mA uA hA => ?_))
   -- The restores.
   let S2 := pushed savedRegs (pushed argRegs s₀)
   try rewrite [show pushed savedRegs (pushed argRegs s₀) = S2 from rfl] at *
@@ -305,7 +327,8 @@ theorem frames_ok {s₀ : State} (hlo : 240 ≤ (E0 s₀).toNat) {Q : State → 
     have hw : ⟨State.addr S2.sp, 40⟩ ∈ S2.wr := by simp [hS2, pushed]
     rw [wS2, spS2, addr_add (by rw [S2sp]; omega_arith)]
     exact ⟨⟨State.addr S2.sp, 40⟩, List.mem_append_right _ hw, Offset.contains_base _ hd (by omega_arith)⟩
-  show WP isa (.block (Impl.Argon2.Arm.Derive.savedSlots.map fun p => Instr.ldrSp p.1 p.2)) (freed 144 t) _
+  show WP isa (.block (Impl.Argon2.Arm.Derive.savedSlots.map fun p => Instr.ldrSp p.1 p.2))
+    { freed 144 t with mem := mA, unknowns := uA } _
   rw [← List.append_nil (List.map _ _)]
   refine restoreSp_ok _ _ _ (by decide) (fun p hpm => ⟨?_, inS2 p.2 ?_⟩) fun u hu ho hm hrd hwr hsp => WP.block_nil ?_
   · simp only [Impl.Argon2.Arm.Derive.savedSlots, List.mem_cons, List.not_mem_nil, or_false] at hpm
@@ -325,9 +348,16 @@ theorem frames_ok {s₀ : State} (hlo : 240 ≤ (E0 s₀).toNat) {Q : State → 
     rw [key j hj]; exact d.saved j hj
   have hv : ∀ p ∈ Impl.Argon2.Arm.Derive.savedSlots, u.gpr p.1 = s₀.gpr p.1 := by
     intro p hpm
-    rw [hu p hpm, spS2]
-    have hm' : (freed 144 t).mem = t.mem := rfl
-    rw [hm']
+    rw [hu p hpm]
+    dsimp only
+    rw [spS2]
+    have hd : p.2 + 4 ≤ 40 := by
+      simp only [Impl.Argon2.Arm.Derive.savedSlots, List.mem_cons, List.not_mem_nil, or_false] at hpm
+      rcases hpm with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+    have hlc : locals = 144 := rfl
+    rw [hA.readW (r := ⟨State.addr (S2.sp + BitVec.ofNat 32 p.2), 4⟩) (Region.contains_self _ _) (fun r hr => by
+      rw [List.mem_singleton.mp hr, addr_add (by rw [S2sp]; omega_arith), hlc, addr_sub' (by rw [S2sp]; omega_arith)]
+      exact Offset.disjoint_below _ (by omega_arith)) (by decide)]
     simp only [Impl.Argon2.Arm.Derive.savedSlots, List.mem_cons, List.not_mem_nil, or_false] at hpm
     rcases hpm with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact tv 0 (by decide)
@@ -339,16 +369,27 @@ theorem frames_ok {s₀ : State} (hlo : 240 ≤ (E0 s₀).toNat) {Q : State → 
     · exact tv 6 (by decide)
     · exact tv 7 (by decide)
     · exact tv 8 (by decide)
-  refine ⟨⟨fun r hr => ?_, ?_⟩, hQ t _ q (by rw [popped_mem, popped_mem, hm]; rfl)⟩
+  intro m₂ u₂ f₂ m₁ u₁ f₁
+  refine ⟨⟨fun r hr => ?_, ?_⟩, hQ t _ q ?_⟩
+  rotate_left 2
+  · -- The memory: what the body left, but in the three released regions.
+    dsimp only
+    dsimp only at f₁
+    rw [hm] at f₂
+    exact ((hA.sub fun r hr => ⟨_, List.mem_singleton_self _, by rw [List.mem_singleton.mp hr]; exact hR3⟩).trans
+      (f₂.sub fun r hr => ⟨_, List.mem_singleton_self _, by rw [List.mem_singleton.mp hr]; exact hR2⟩)).trans
+      (f₁.sub fun r hr => ⟨_, List.mem_singleton_self _, by rw [List.mem_singleton.mp hr]; exact hR1⟩)
   · have hr0 : r ≠ .r0 := by rintro rfl; simp [preserved] at hr
     have hr3 : r ≠ .r3 := by rintro rfl; simp [preserved] at hr
+    dsimp only
     rw [popped_gpr hr0, popped_gpr hr3]
     simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     exacts [hv (.r4, 4) (by decide), hv (.r5, 8) (by decide), hv (.r6, 12) (by decide), hv (.r7, 16) (by decide),
       hv (.r8, 20) (by decide), hv (.r9, 24) (by decide), hv (.r10, 28) (by decide), hv (.r11, 32) (by decide),
       hv (.lr, 36) (by decide)]
-  · simp only [popped_sp, hsp, spS2, hS2, pushed_sp, List.length_cons, List.length_nil]
+  · dsimp only
+    simp only [popped_sp, hsp, spS2, hS2, pushed_sp, List.length_cons, List.length_nil]
     rw [BitVec.sub_add_cancel, BitVec.sub_add_cancel]
 
 end VG.Proof.Argon2.Arm.Derive
