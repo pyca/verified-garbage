@@ -1,6 +1,8 @@
 module
 
 import VerifiedGarbage.Proof.Ecdsa.Arm.Main
+import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP256r1.MulLit
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP256r1.MulLit
 public import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP256r1.Contract
 import VerifiedGarbage.Proof.BrainpoolP256r1.Point
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
@@ -87,7 +89,7 @@ theorem brainpoolp256r1_ok : CfgOk brainpoolp256r1 where
   sh := by rw [brainpoolp256r1_sh]; decide
   fp := ⟨rfl, rfl, Mont.brainpoolp256r1p_ok, rfl⟩
   fn := ⟨rfl, rfl, Mont.brainpoolp256r1n_ok, rfl⟩
-  mulNf := fun _ h => nomatch h
+  mulNf := fun _ _ => Impl.Ecdsa.Arm.mulBrainpoolP256r1_noFrames
 
 
 /-- brainpoolp256r1 with its field multiplications by `vg_brainpoolp256r1_mul_mod_<p|n>_umaal`:
@@ -112,7 +114,7 @@ theorem brainpoolp256r1u_ok : CfgOk (brainpoolp256r1With true) where
   sh := brainpoolp256r1_ok.sh
   fp := brainpoolp256r1_ok.fp
   fn := brainpoolp256r1_ok.fn
-  mulNf := fun _ h => nomatch h
+  mulNf := fun _ _ => Impl.Ecdsa.Arm.mulBrainpoolP256r1U_noFrames
 
 /-- Either configuration. -/
 theorem brainpoolp256r1With_ok (u : Bool) : CfgOk (brainpoolp256r1With u) := by

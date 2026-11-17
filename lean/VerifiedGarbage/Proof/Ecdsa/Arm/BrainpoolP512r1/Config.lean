@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP512r1.Arm
+import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP512r1.MulLit
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Layout
 import VerifiedGarbage.Proof.Weierstrass.Arm.MontBrainpoolP512r1
 import VerifiedGarbage.Proof.BrainpoolP512r1.Point
@@ -49,7 +50,7 @@ theorem brainpoolp512r1_ok : CfgOk brainpoolp512r1 where
   sh := by rw [brainpoolp512r1_sh]; decide
   fp := ⟨rfl, rfl, Mont.brainpoolp512r1p_ok, rfl⟩
   fn := ⟨rfl, rfl, Mont.brainpoolp512r1n_ok, rfl⟩
-  mulNf := fun _ h => nomatch h
+  mulNf := fun _ _ => Impl.Ecdsa.Arm.mulBrainpoolP512r1_noFrames
 
 
 /-- brainpoolp512r1 with its field multiplications by `vg_brainpoolp512r1_mul_mod_<p|n>_umaal`:
@@ -76,7 +77,7 @@ theorem brainpoolp512r1u_ok : CfgOk (brainpoolp512r1With true) where
     rw [show (brainpoolp512r1With true).sh = 0 from Nat.sub_eq_zero_of_le h]; decide
   fp := ⟨rfl, rfl, Mont.brainpoolp512r1p_ok, rfl⟩
   fn := ⟨rfl, rfl, Mont.brainpoolp512r1n_ok, rfl⟩
-  mulNf := fun _ h => nomatch h
+  mulNf := fun _ _ => Impl.Ecdsa.Arm.mulBrainpoolP512r1U_noFrames
 
 /-- Either configuration. -/
 theorem brainpoolp512r1With_ok (u : Bool) : CfgOk (brainpoolp512r1With u) := by

@@ -1,6 +1,8 @@
 module
 
 import VerifiedGarbage.Proof.Ecdsa.Arm.Main
+import VerifiedGarbage.Proof.Ecdsa.Arm.Secp256k1.MulLit
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.Secp256k1.MulLit
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Secp256k1.Contract
 import VerifiedGarbage.Proof.Secp256k1.Point
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
@@ -87,7 +89,7 @@ theorem secp256k1_ok : CfgOk secp256k1 where
   sh := by rw [secp256k1_sh]; decide
   fp := ⟨rfl, rfl, Mont.secp256k1p_ok, rfl⟩
   fn := ⟨rfl, rfl, Mont.secp256k1n_ok, rfl⟩
-  mulNf := fun _ h => nomatch h
+  mulNf := fun _ _ => Impl.Ecdsa.Arm.mulSecp256k1_noFrames
 
 /-- secp256k1 with its field multiplications by `vg_secp256k1_mul_mod_<p|n>_umaal`:
 what `secp256k1_ok` states. -/
@@ -111,7 +113,7 @@ theorem secp256k1u_ok : CfgOk (secp256k1With true) where
   sh := secp256k1_ok.sh
   fp := secp256k1_ok.fp
   fn := secp256k1_ok.fn
-  mulNf := fun _ h => nomatch h
+  mulNf := fun _ _ => Impl.Ecdsa.Arm.mulSecp256k1U_noFrames
 
 /-- Either configuration. -/
 theorem secp256k1With_ok (u : Bool) : CfgOk (secp256k1With u) := by
