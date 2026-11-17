@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecoverCorrect
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyCorrect
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Verify
+import VerifiedGarbage.Proof.Rsa.BytesFrame
 
 /-! ### `RsaPkcs1Sig.AArch64.SignCall`, which only this module used -/
 
@@ -758,13 +759,22 @@ theorem codeN_ok {K n : Nat} {name : String} {priv : Prog isa} {s : State} (hp :
     (hA : ArgsOk K s (n + 1)) (hn₁ : 12 ≤ n) (hn₂ : n ≤ 14) (hc : CallOk s n name priv) :
     WP isa (codeN n name priv) s (Post s) := by
   unfold codeN
-  refine WP.allocKept (by decide) (by have := hp.sp1; unfold stk at this; omega_using [this]) ?_
+  refine WP.alloc (by decide) (by have := hp.sp1; unfold stk at this; omega_using [this]) ?_
   unfold bodyN
   refine WP.seq (WP.mono (encArgs_ok hp (by simp [allocated]) (by simp [allocated]) (by simp [allocated])
     (by simp [allocated]) (fun r => by simp [allocated]) (fun r _ => by simp [allocated])) fun u hu => ?_)
   refine WP.seq (WP.mono (enc_ok hp hu) fun w ⟨hK, hout⟩ => ?_)
   refine WP.seq (WP.mono (afterEncN_ok hp hA hn₁ hn₂ hc hu hK hout) fun t ⟨m, r⟩ => ?_)
-  exact WP.mono (restore_ok m) fun w ⟨habi, hx0, hmem⟩ => ⟨habi, by rw [hx0, hmem]; exact r⟩
+  refine WP.mono (restore_ok m) fun w ⟨habi, hx0, hmem⟩ mm uu fl => ⟨⟨habi.1, habi.2.1, habi.2.2⟩, ?_⟩
+  -- The output lies apart from the frame, whose bytes the `free` loses.
+  have hb : Spec.Rsa.bytesAt mm (s.gpr .x0) (s.gpr .x3).toNat =
+      Spec.Rsa.bytesAt (freed frameBytes w).mem (s.gpr .x0) (s.gpr .x3).toNat :=
+    List.map_congr_left fun i hi => lost_byte (R := oR s) fl
+      (hp.ko.symm.sub_right (Offset.sub_below s.sp (by unfold stk; omega_arith) (by unfold stk; omega_arith)))
+      (show i < (s.gpr .x1).toNat by rw [hp.ol]; exact List.mem_range.mp hi)
+  refine Proof.Rsa.writtenOutcome_of_bytesAt hb ?_
+  show Spec.Rsa.writtenOutcome (freed frameBytes w).mem _ _ (((freed frameBytes w).gpr .x0).setWidth 32) _
+  rw [hx0, hmem]; exact r
 
 theorem code_ok (c : PrivChecked) {s : State} (hp : PreS c.stack s) :
     WP isa (code c.name c.code) s (Post s) :=

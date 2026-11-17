@@ -2,6 +2,8 @@ module
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecPcCall
 
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecPcTail
+import VerifiedGarbage.Proof.Rsa.BytesFrame
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # `vg_rsa_pkcs1_recover_precomputed` on AArch64: correctness
@@ -42,7 +44,7 @@ theorem code_ok (c : PdChecked) {s : State} (hp : PrePR c.stack s) :
   have hne := Rec.eval_len e₁
   by_cases hsig : stackArg s 0 = s.gpr .x3
   · refine WP.ite false (by rw [hne]; simp [hsig]) (by simp) fun _ => ?_
-    refine WP.allocKept (by decide) (by rw [o₁.sp]; have := hv.sp1; unfold stk at this; omega_using [this]) ?_
+    refine WP.alloc (by decide) (by rw [o₁.sp]; have := hv.sp1; unfold stk at this; omega_using [this]) ?_
     unfold body
     refine WP.seq (WP.mono (pubArgs_okP hp (by simp [allocated, o₁.sp]) (by simp [allocated, o₁.rd])
       (by simp [allocated, o₁.sp, o₁.wr]) (by simp [allocated, o₁.mem]) (fun r hr => by
@@ -50,7 +52,15 @@ theorem code_ok (c : PdChecked) {s : State} (hp : PrePR c.stack s) :
       fun t₂ h₂ => ?_)
     refine WP.seq (WP.mono (callP_ok c hp h₂ hsig) fun t₃ h₃ => ?_)
     refine WP.seq (WP.mono (afterPub_ok hv hh hol h₃) fun t₄ ⟨m₄, r₄⟩ => ?_)
-    refine WP.mono (Rec.restore_ok m₄) fun w ⟨habi, hx0, hmem⟩ => ⟨habi, fun hq h' e => ?_⟩
+    refine WP.mono (Rec.restore_ok m₄) fun w ⟨habi, hx0, hmem⟩ mm uu fl =>
+      ⟨⟨habi.1, habi.2.1, habi.2.2⟩, fun hq h' e => ?_⟩
+    -- The output lies apart from the frame, whose bytes the `free` loses.
+    rw [o₁.sp] at fl
+    refine Proof.Rsa.written_of_bytesAt (m := (freed frameBytes w).mem) (List.map_congr_left fun i hi =>
+      lost_byte (R := ⟨s.gpr .x0, (s.gpr .x1).toNat⟩) fl
+        (hv.ko.symm.sub_right (Offset.sub_below s.sp (by unfold stk; omega_arith) (by unfold stk; omega_arith)))
+        (List.mem_range.mp hi)) ?_
+    show Spec.Rsa.written (freed frameBytes w).mem _ _ (((freed frameBytes w).gpr .x0).setWidth 32) _
     rw [hof h' e, Rec.recover_eq h hsig, hx0, hmem]; exact r₄ hq
   · refine WP.ite true (by rw [hne]; simp [hsig]) (fun _ => WP.mono (Rec.zeroArgs_ok hv o₁) fun w ⟨o, r⟩ =>
       ⟨⟨fun r hr => ?_, ?_, fun r hr => ?_⟩, fun _ h' _ => ?_⟩) (by simp)

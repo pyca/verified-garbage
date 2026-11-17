@@ -50,7 +50,7 @@ theorem code_ok (c : PdChecked) {s : State} (hp : PreP c.stack s) :
   have hne := eval_len e₁
   by_cases hsig : stackArg s 0 = s.gpr .x1
   · refine WP.ite false (by rw [hne]; simp [hsig]) (by simp) fun _ => ?_
-    refine WP.allocKept (by decide) (by rw [o₁.sp]; have := hv.sp1; unfold stk at this; omega_arith) ?_
+    refine WP.alloc (by decide) (by rw [o₁.sp]; have := hv.sp1; unfold stk at this; omega_arith) ?_
     unfold body
     refine WP.seq (WP.mono (pubArgs_okP hp (by simp [allocated, o₁.sp]) (by simp [allocated, o₁.rd])
       (by simp [allocated, o₁.sp, o₁.wr]) (by simp [allocated, o₁.mem]) (fun r hr => by
@@ -58,7 +58,9 @@ theorem code_ok (c : PdChecked) {s : State} (hp : PreP c.stack s) :
       fun t₂ h₂ => ?_)
     refine WP.seq (WP.mono (callP_ok c hp h₂ hsig) fun t₃ h₃ => ?_)
     refine WP.seq (WP.mono (afterPubP_ok hp hsig h₃) fun t₄ ⟨m₄, r₄⟩ => ?_)
-    exact WP.mono (restore_ok m₄) fun w ⟨habi, hx0⟩ => ⟨habi, fun hc => by rw [hx0]; exact r₄ hc⟩
+    exact WP.mono (restore_ok m₄) fun w ⟨habi, hx0⟩ _ _ _ => ⟨⟨habi.1, habi.2.1, habi.2.2⟩, fun hc => by
+      show ((freed frameBytes w).gpr .x0).setWidth 32 = _
+      rw [hx0]; exact r₄ hc⟩
   · refine WP.ite true (by rw [hne]; simp [hsig]) (fun _ => WP.mono (ret0_ok t₁) fun w ⟨o, e⟩ =>
       ⟨⟨fun r hr => ?_, ?_, fun r hr => ?_⟩, fun _ => ?_⟩) (by simp)
     · have h8 : r ∉ [Reg.x8] ++ [Reg.x0] := by
