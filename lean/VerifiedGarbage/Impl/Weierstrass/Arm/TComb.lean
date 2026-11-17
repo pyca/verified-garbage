@@ -22,7 +22,7 @@ structure TCombCfg where
  one : Nat
  zero : Nat
  neg : Nat
- /-- Whether the point functions called are the `_umaal` variants. -/
+ /-- Whether the point functions and the subtraction called are the `_umaal` variants. -/
  u : Bool := false
  /-- Where the entry is selected to: the point functions' `Q`, for curves
  whose coordinates fit them, else three slots of the inlined addition
@@ -96,7 +96,7 @@ def signMask : Prog isa :=
 /-- A selected signed table entry; arithmetic is shared with the ladder. -/
 def entry : Prog isa :=
  .seq K.digit <| .seq K.select <|
- .seq (Mont.subCall K.F K.neg K.zero K.Q.y) <|
+ .seq (Mont.subCall K.F K.neg K.zero K.Q.y K.u) <|
  .seq K.signMask (.block (sel (2*K.L.M.n) K.Q.y K.Q.y K.neg))
 
 /-- Add the selected entry through the existing point function. -/

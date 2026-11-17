@@ -2345,21 +2345,21 @@ vg_ec_p192_compress_public_key_umaal:
 	movw r1, #976
 	movw r2, #1072
 	movw r3, #1048
-	bl {vg_p192_add_mod_p}
+	bl {vg_p192_add_mod_p_umaal}
 	mov lr, r10
 	mov r10, lr
 	mov r0, r12
 	movw r1, #1072
 	movw r2, #976
 	movw r3, #1024
-	bl {vg_p192_add_mod_p}
+	bl {vg_p192_add_mod_p_umaal}
 	mov lr, r10
 	mov r10, lr
 	mov r0, r12
 	movw r1, #1048
 	movw r2, #952
 	movw r3, #1072
-	bl {vg_p192_sub_mod_p}
+	bl {vg_p192_sub_mod_p_umaal}
 	mov lr, r10
 	ldr r5, [r12, #1048]
 	ldr r4, [r12, #1052]
@@ -3045,14 +3045,14 @@ vg_ec_p192_decompress_public_key_umaal:
 	movw r1, #976
 	movw r2, #1072
 	movw r3, #1048
-	bl {vg_p192_add_mod_p}
+	bl {vg_p192_add_mod_p_umaal}
 	mov lr, r10
 	mov r10, lr
 	mov r0, r12
 	movw r1, #1072
 	movw r2, #976
 	movw r3, #1024
-	bl {vg_p192_add_mod_p}
+	bl {vg_p192_add_mod_p_umaal}
 	mov lr, r10
 	movw r4, #0
 	movt r4, #0
@@ -3188,7 +3188,7 @@ vg_ec_p192_decompress_public_key_umaal:
 	movw r1, #952
 	movw r2, #136
 	movw r3, #928
-	bl {vg_p192_sub_mod_p}
+	bl {vg_p192_sub_mod_p_umaal}
 	mov lr, r10
 	ldr r4, [r12, #928]
 	ldr r5, [r12, #832]
@@ -3251,7 +3251,7 @@ vg_ec_p192_decompress_public_key_umaal:
 	movw r1, #976
 	movw r2, #1048
 	movw r3, #1072
-	bl {vg_p192_sub_mod_p}
+	bl {vg_p192_sub_mod_p_umaal}
 	mov lr, r10
 	ldr r5, [r12, #976]
 	ldr r4, [r12, #980]

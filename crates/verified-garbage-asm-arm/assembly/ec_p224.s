@@ -2657,7 +2657,7 @@ vg_ec_p224_public_key_umaal:
 	movw r1, #704
 	movw r2, #160
 	movw r3, #3456
-	bl {vg_p224_sub_mod_p}
+	bl {vg_p224_sub_mod_p_umaal}
 	mov lr, r10
 	mov r4, #7
 	mul r4, r4, r11

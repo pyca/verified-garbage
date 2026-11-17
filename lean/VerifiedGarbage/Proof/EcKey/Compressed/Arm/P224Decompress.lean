@@ -50,8 +50,8 @@ abbrev root (a : Spec.Weierstrass.Fe Spec.P224.curve) :=
 /-! The functions modulo `p` as literals, for their summaries (the kernel would otherwise build
 their instructions once for the analysis and once for the frame). -/
 materialize_code mulModP := Impl.Weierstrass.Arm.Mont.mulFnWith false p224.SP.k p224.SP.m
-materialize_code addModP := Impl.Weierstrass.Arm.Mont.addFn p224.SP.k p224.SP.m
-materialize_code subModP := Impl.Weierstrass.Arm.Mont.subFn p224.SP.k p224.SP.m
+materialize_code addModP := Impl.Weierstrass.Arm.Mont.addFnWith false p224.SP.k p224.SP.m
+materialize_code subModP := Impl.Weierstrass.Arm.Mont.subFnWith false p224.SP.k p224.SP.m
 
 /-! The constant-time analyses of the calls of the functions modulo `p`, from their arguments,
 each done once for the six checks of `ct` (`taint_decide_sum`), which would each analyse the
@@ -63,10 +63,12 @@ taint_summary mulPSum : taintS (Taint.ofRegs [.r0, .r1, .r2, .r3])
     (Impl.Weierstrass.Arm.Mont.mulFnWith false p224.SP.k p224.SP.m))
   keeping (Taint.ofRegs [.r10, .r11])
 taint_summary addPSum : taintS (Taint.ofRegs [.r0, .r1, .r2, .r3])
-  (.call (p224.SP.fn "add") (Impl.Weierstrass.Arm.Mont.addFn p224.SP.k p224.SP.m))
+  (.call (Impl.Weierstrass.Arm.Mont.addName false p224.SP)
+    (Impl.Weierstrass.Arm.Mont.addFnWith false p224.SP.k p224.SP.m))
   keeping (Taint.ofRegs [.r10, .r11])
 taint_summary subPSum : taintS (Taint.ofRegs [.r0, .r1, .r2, .r3])
-  (.call (p224.SP.fn "sub") (Impl.Weierstrass.Arm.Mont.subFn p224.SP.k p224.SP.m))
+  (.call (Impl.Weierstrass.Arm.Mont.subName false p224.SP)
+    (Impl.Weierstrass.Arm.Mont.subFnWith false p224.SP.k p224.SP.m))
   keeping (Taint.ofRegs [.r10, .r11])
 
 theorem ct : ConstantTime isa (decompressContract Spec.P224.curve root).pre

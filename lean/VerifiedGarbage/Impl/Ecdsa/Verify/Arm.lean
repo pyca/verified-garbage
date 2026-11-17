@@ -125,7 +125,7 @@ def final : Prog isa :=
   progs [Mont.mulCall c.SP (c.sl XM) (c.sl RX) (c.sl ACC) c.umaal,
     Mont.mulCall c.SP (c.sl X) (c.sl XM) (c.sl ONE) c.umaal,
     Mont.mulCall c.SN (c.sl XN) (c.sl X) (c.sl R2N) c.umaal,
-    Mont.subCall c.SN (c.sl W) (c.sl XN) (c.sl RM'),
+    Mont.subCall c.SN (c.sl W) (c.sl XN) (c.sl RM') c.umaal,
     .block (c.checkNonzero (c.sl RZ) ++ Impl.Ecdh.Arm.Cfg.checkZero c (c.sl W) ++ finish c)]
 
 /-- The scalar at slot `i` to where the multiplications read it: `K`'s slot,

@@ -4316,21 +4316,21 @@ mov r0, r12
 movw r1, #1888
 movw r2, #2080
 movw r3, #2032
-bl {vg_brainpoolp384r1_add_mod_p}
+bl {vg_brainpoolp384r1_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #2080
 movw r2, #1888
 movw r3, #1984
-bl {vg_brainpoolp384r1_add_mod_p}
+bl {vg_brainpoolp384r1_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #2032
 movw r2, #1840
 movw r3, #2080
-bl {vg_brainpoolp384r1_sub_mod_p}
+bl {vg_brainpoolp384r1_sub_mod_p_umaal}
 mov lr, r10
 ldr r5, [r12, #2032]
 ldr r4, [r12, #2036]
@@ -4578,8 +4578,8 @@ ldr r11, [r12, #28]
 ldr lr, [r12, #32]
 bx lr",
         vg_brainpoolp384r1_mul_mod_p_umaal = sym super::ec_brainpoolp384r1::vg_brainpoolp384r1_mul_mod_p_umaal::vg_brainpoolp384r1_mul_mod_p_umaal,
-        vg_brainpoolp384r1_add_mod_p = sym super::ec_brainpoolp384r1::vg_brainpoolp384r1_add_mod_p::vg_brainpoolp384r1_add_mod_p,
-        vg_brainpoolp384r1_sub_mod_p = sym super::ec_brainpoolp384r1::vg_brainpoolp384r1_sub_mod_p::vg_brainpoolp384r1_sub_mod_p,
+        vg_brainpoolp384r1_add_mod_p_umaal = sym super::ec_brainpoolp384r1::vg_brainpoolp384r1_add_mod_p_umaal::vg_brainpoolp384r1_add_mod_p_umaal,
+        vg_brainpoolp384r1_sub_mod_p_umaal = sym super::ec_brainpoolp384r1::vg_brainpoolp384r1_sub_mod_p_umaal::vg_brainpoolp384r1_sub_mod_p_umaal,
     )
 }
 
@@ -5629,14 +5629,14 @@ mov r0, r12
 movw r1, #1888
 movw r2, #2080
 movw r3, #2032
-bl {vg_brainpoolp384r1_add_mod_p}
+bl {vg_brainpoolp384r1_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #2080
 movw r2, #1888
 movw r3, #1984
-bl {vg_brainpoolp384r1_add_mod_p}
+bl {vg_brainpoolp384r1_add_mod_p_umaal}
 mov lr, r10
 movw r4, #64277
 movt r4, #52289
@@ -5838,7 +5838,7 @@ mov r0, r12
 movw r1, #1840
 movw r2, #208
 movw r3, #1792
-bl {vg_brainpoolp384r1_sub_mod_p}
+bl {vg_brainpoolp384r1_sub_mod_p_umaal}
 mov lr, r10
 ldr r4, [r12, #1792]
 ldr r5, [r12, #1600]
@@ -5937,7 +5937,7 @@ mov r0, r12
 movw r1, #1888
 movw r2, #2032
 movw r3, #2080
-bl {vg_brainpoolp384r1_sub_mod_p}
+bl {vg_brainpoolp384r1_sub_mod_p_umaal}
 mov lr, r10
 ldr r5, [r12, #1888]
 ldr r4, [r12, #1892]
@@ -6098,7 +6098,7 @@ ldr r11, [r12, #28]
 ldr lr, [r12, #32]
 bx lr",
         vg_brainpoolp384r1_mul_mod_p_umaal = sym super::ec_brainpoolp384r1::vg_brainpoolp384r1_mul_mod_p_umaal::vg_brainpoolp384r1_mul_mod_p_umaal,
-        vg_brainpoolp384r1_add_mod_p = sym super::ec_brainpoolp384r1::vg_brainpoolp384r1_add_mod_p::vg_brainpoolp384r1_add_mod_p,
-        vg_brainpoolp384r1_sub_mod_p = sym super::ec_brainpoolp384r1::vg_brainpoolp384r1_sub_mod_p::vg_brainpoolp384r1_sub_mod_p,
+        vg_brainpoolp384r1_add_mod_p_umaal = sym super::ec_brainpoolp384r1::vg_brainpoolp384r1_add_mod_p_umaal::vg_brainpoolp384r1_add_mod_p_umaal,
+        vg_brainpoolp384r1_sub_mod_p_umaal = sym super::ec_brainpoolp384r1::vg_brainpoolp384r1_sub_mod_p_umaal::vg_brainpoolp384r1_sub_mod_p_umaal,
     )
 }

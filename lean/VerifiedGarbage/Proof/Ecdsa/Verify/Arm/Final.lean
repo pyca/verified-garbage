@@ -898,7 +898,7 @@ theorem final_eq (c : Cfg) : Impl.Ecdsa.Verify.Arm.Cfg.final c =
     .seq (Mont.mulCall c.SP (c.sl XM) (c.sl RX) (c.sl ACC) c.umaal)
     (.seq (Mont.mulCall c.SP (c.sl X) (c.sl XM) (c.sl ONE) c.umaal)
     (.seq (Mont.mulCall c.SN (c.sl XN) (c.sl X) (c.sl R2N) c.umaal)
-    (.seq (Mont.subCall c.SN (c.sl W) (c.sl XN) (c.sl RM'))
+    (.seq (Mont.subCall c.SN (c.sl W) (c.sl XN) (c.sl RM') c.umaal)
       (.block (c.checkNonzero (c.sl RZ) ++ (Impl.Ecdh.Arm.Cfg.checkZero c (c.sl W) ++
         Impl.Ecdsa.Verify.Arm.Cfg.finish c)))))) := by
   simp only [Impl.Ecdsa.Verify.Arm.Cfg.final, progs, List.append_assoc]

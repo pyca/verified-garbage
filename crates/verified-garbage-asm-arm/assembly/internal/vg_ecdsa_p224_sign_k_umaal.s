@@ -1075,7 +1075,7 @@ vg_ecdsa_p224_sign_k_umaal:
 	movw r1, #704
 	movw r2, #160
 	movw r3, #3456
-	bl {vg_p224_sub_mod_p}
+	bl {vg_p224_sub_mod_p_umaal}
 	mov lr, r10
 	mov r4, #7
 	mul r4, r4, r11
@@ -1340,7 +1340,7 @@ vg_ecdsa_p224_sign_k_umaal:
 	movw r1, #1216
 	movw r2, #1184
 	movw r3, #160
-	bl {vg_p224_add_mod_n}
+	bl {vg_p224_add_mod_n_umaal}
 	mov lr, r10
 	mov r10, lr
 	mov r0, r12
@@ -1776,7 +1776,7 @@ vg_ecdsa_p224_sign_k_umaal:
 	movw r1, #1376
 	movw r2, #1376
 	movw r3, #1344
-	bl {vg_p224_add_mod_n}
+	bl {vg_p224_add_mod_n_umaal}
 	mov lr, r10
 	mov r10, lr
 	mov r0, r12

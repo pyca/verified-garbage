@@ -1031,7 +1031,7 @@ theorem negate_ok (K : TCombCfg) {s : State} {base : Addr} {m : Nat} (positive :
       Unch base [(K.neg,8*K.L.M.n),(VG.Impl.Weierstrass.Arm.Mont.own K.L.M.n,64*K.L.M.n)] s.mem u.mem →
       WP isa K.signMask u fun v =>
         v.gpr .r10=(if positive then 0 else BitVec.allOnes 32) ∧ RegOnly [.r4,.r10] u v) :
-    WP isa (.seq (VG.Impl.Weierstrass.Arm.Mont.subCall K.F K.neg K.zero K.Q.y)
+    WP isa (.seq (VG.Impl.Weierstrass.Arm.Mont.subCall K.F K.neg K.zero K.Q.y K.u)
       (.seq K.signMask (.block (sel (2*K.L.M.n) K.Q.y K.Q.y K.neg)))) s fun t =>
       Rest VG.Proof.Weierstrass.Arm.Mont.callClob s t ∧
       Unch base (loopWrites K) s.mem t.mem ∧

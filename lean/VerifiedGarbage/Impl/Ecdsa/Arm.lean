@@ -147,9 +147,9 @@ structure Cfg where
   `[k]Q` (`mulFn`), which the signature, the public key, ECDH and
   verification call (`gen`, `qMul`), if any; else they run the ladder inline. -/
   mul : Option Impl.Weierstrass.Mul.Curve
-  /-- Whether the field multiplications are calls of the `_umaal` variants
-  of `vg_<curve>_mul_mod_<p|n>` (`Impl/Weierstrass/Arm/Mont.lean`), and so
-  the point functions and `vg_<curve>_mul` called too. -/
+  /-- Whether the field operations are calls of the `_umaal` variants
+  of `vg_<curve>_{mul,add,sub}_mod_<p|n>` (`Impl/Weierstrass/Arm/Mont.lean`),
+  and so the point functions and `vg_<curve>_mul` called too. -/
   umaal : Bool := false
 
 namespace Cfg
@@ -272,7 +272,7 @@ def checkNonzero (a : Nat) : List Instr := c.nonzero a ++ c.andFlag
 def middle : Prog isa :=
   progs [Mont.mulCall c.SP (c.sl XM) (c.sl RX) (c.sl ACC) c.umaal,
     Mont.mulCall c.SP (c.sl X) (c.sl XM) (c.sl ONE) c.umaal,
-    Mont.addCall c.SN (c.sl RR) (c.sl X) (c.sl ZERO),
+    Mont.addCall c.SN (c.sl RR) (c.sl X) (c.sl ZERO) c.umaal,
     Mont.mulCall c.SN (c.sl KM) (c.sl K) (c.sl R2N) c.umaal,
     .block (c.checkRange (c.sl D) ++ c.checkRange (c.sl K) ++ c.checkNonzero (c.sl RR))]
 
@@ -292,7 +292,7 @@ def scalar : Prog isa :=
     Mont.mulCall c.SN (c.sl DM) (c.sl D) (c.sl R2N) c.umaal,
     Mont.mulCall c.SN (c.sl EM) (c.sl E) (c.sl R2N) c.umaal,
     Mont.mulCall c.SN (c.sl TT) (c.sl RM) (c.sl DM) c.umaal,
-    Mont.addCall c.SN (c.sl TT) (c.sl TT) (c.sl EM),
+    Mont.addCall c.SN (c.sl TT) (c.sl TT) (c.sl EM) c.umaal,
     Mont.mulCall c.SN (c.sl SM) (c.sl ACC) (c.sl TT) c.umaal,
     Mont.mulCall c.SN (c.sl SS) (c.sl SM) (c.sl ONE) c.umaal,
     .block (c.checkNonzero (c.sl SS) ++ c.finish)]

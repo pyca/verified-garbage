@@ -74,8 +74,8 @@ theorem slMul_ok {M : Mod} {S : Impl.Weierstrass.Mont.Modulus} {m : Nat} (hF : F
 theorem slAdd_ok {M : Mod} {S : Impl.Weierstrass.Mont.Modulus} {m : Nat} (hF : FnOk M c.wk S m)
     (hMn : M.n = c.n) (h7 : c.n < 10) {base : Addr} {s : State} (hs : Scr s base size)
     (hf : Far s base 8192) {o a b : Nat} (ho : o < 45) (ha : a < 45) (hb : b < 45)
-    (hAB : sv c base s a + sv c base s b < 2 * m) :
-    WP isa (Mont.addCall S (c.sl o) (c.sl a) (c.sl b)) s fun s' => ProgKeep M base c.wk [c.sl o] s s' ∧
+    (hAB : sv c base s a + sv c base s b < 2 * m) {u : Bool} :
+    WP isa (Mont.addCall S (c.sl o) (c.sl a) (c.sl b) u) s fun s' => ProgKeep M base c.wk [c.sl o] s s' ∧
       sv c base s' o = (sv c base s a + sv c base s b) % m := by
   refine WP.mono (Mont.addCall_ok hF.ok hs hf (slFits hF hMn h7 ho) (slFits hF hMn h7 ha) (slFits hF hMn h7 hb)
     (by rw [hF.k, hF.m, hMn]; exact hAB)) fun s' ⟨K, e⟩ => ?_
@@ -86,8 +86,8 @@ theorem slAdd_ok {M : Mod} {S : Impl.Weierstrass.Mont.Modulus} {m : Nat} (hF : F
 theorem slSub_ok {M : Mod} {S : Impl.Weierstrass.Mont.Modulus} {m : Nat} (hF : FnOk M c.wk S m)
     (hMn : M.n = c.n) (h7 : c.n < 10) {base : Addr} {s : State} (hs : Scr s base size)
     (hf : Far s base 8192) {o a b : Nat} (ho : o < 45) (ha : a < 45) (hb : b < 45)
-    (hA : sv c base s a < m) (hB : sv c base s b < m) :
-    WP isa (Mont.subCall S (c.sl o) (c.sl a) (c.sl b)) s fun s' => ProgKeep M base c.wk [c.sl o] s s' ∧
+    (hA : sv c base s a < m) (hB : sv c base s b < m) {u : Bool} :
+    WP isa (Mont.subCall S (c.sl o) (c.sl a) (c.sl b) u) s fun s' => ProgKeep M base c.wk [c.sl o] s s' ∧
       sv c base s' o = (sv c base s a + m - sv c base s b) % m := by
   refine WP.mono (Mont.subCall_ok hF.ok hs hf (slFits hF hMn h7 ho) (slFits hF hMn h7 ha) (slFits hF hMn h7 hb)
     (by rw [hF.k, hF.m, hMn]; exact hA) (by rw [hF.k, hF.m, hMn]; exact hB)) fun s' ⟨K, e⟩ => ?_

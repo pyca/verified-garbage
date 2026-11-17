@@ -3752,7 +3752,7 @@ vg_ec_p384_public_key_umaal:
 	movw r1, #1024
 	movw r2, #208
 	movw r3, #3168
-	bl {vg_p384_sub_mod_p}
+	bl {vg_p384_sub_mod_p_umaal}
 	mov lr, r10
 	cmp r11, #54
 	beq 27f

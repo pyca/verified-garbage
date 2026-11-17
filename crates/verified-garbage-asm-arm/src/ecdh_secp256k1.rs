@@ -2447,21 +2447,21 @@ mov r0, r12
 movw r1, #1280
 movw r2, #1408
 movw r3, #1376
-bl {vg_secp256k1_add_mod_p}
+bl {vg_secp256k1_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #1408
 movw r2, #1280
 movw r3, #1344
-bl {vg_secp256k1_add_mod_p}
+bl {vg_secp256k1_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #1376
 movw r2, #1248
 movw r3, #1408
-bl {vg_secp256k1_sub_mod_p}
+bl {vg_secp256k1_sub_mod_p_umaal}
 mov lr, r10
 ldr r5, [r12, #1376]
 ldr r4, [r12, #1380]
@@ -2935,8 +2935,8 @@ ldr r11, [r12, #28]
 ldr lr, [r12, #32]
 bx lr",
         vg_secp256k1_mul_mod_p_umaal = sym super::ec_secp256k1::vg_secp256k1_mul_mod_p_umaal::vg_secp256k1_mul_mod_p_umaal,
-        vg_secp256k1_add_mod_p = sym super::ec_secp256k1::vg_secp256k1_add_mod_p::vg_secp256k1_add_mod_p,
-        vg_secp256k1_sub_mod_p = sym super::ec_secp256k1::vg_secp256k1_sub_mod_p::vg_secp256k1_sub_mod_p,
+        vg_secp256k1_add_mod_p_umaal = sym super::ec_secp256k1::vg_secp256k1_add_mod_p_umaal::vg_secp256k1_add_mod_p_umaal,
+        vg_secp256k1_sub_mod_p_umaal = sym super::ec_secp256k1::vg_secp256k1_sub_mod_p_umaal::vg_secp256k1_sub_mod_p_umaal,
         vg_secp256k1_mul_umaal = sym super::ecdh_secp256k1::vg_secp256k1_mul_umaal::vg_secp256k1_mul_umaal,
     )
 }

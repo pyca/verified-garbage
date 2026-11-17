@@ -23,17 +23,17 @@ namespace Proof.Ecdsa.Arm.P521.CombLit
 open Impl.Ecdsa.Arm Impl.Weierstrass.Arm
 
 materialize_code mulP := Mont.mulFnWith (p521With false).umaal (p521With false).SP.k (p521With false).SP.m
-materialize_code addP := Mont.addFn (p521With false).SP.k (p521With false).SP.m
-materialize_code subP := Mont.subFn (p521With false).SP.k (p521With false).SP.m
+materialize_code addP := Mont.addFnWith (p521With false).umaal (p521With false).SP.k (p521With false).SP.m
+materialize_code subP := Mont.subFnWith (p521With false).umaal (p521With false).SP.k (p521With false).SP.m
 materialize_code mulN := Mont.mulFnWith (p521With false).umaal (p521With false).SN.k (p521With false).SN.m
-materialize_code addN := Mont.addFn (p521With false).SN.k (p521With false).SN.m
-materialize_code subN := Mont.subFn (p521With false).SN.k (p521With false).SN.m
+materialize_code addN := Mont.addFnWith (p521With false).umaal (p521With false).SN.k (p521With false).SN.m
+materialize_code subN := Mont.subFnWith (p521With false).umaal (p521With false).SN.k (p521With false).SN.m
 materialize_code mulPU := Mont.mulFnWith (p521With true).umaal (p521With true).SP.k (p521With true).SP.m
-materialize_code addPU := Mont.addFn (p521With true).SP.k (p521With true).SP.m
-materialize_code subPU := Mont.subFn (p521With true).SP.k (p521With true).SP.m
+materialize_code addPU := Mont.addFnWith (p521With true).umaal (p521With true).SP.k (p521With true).SP.m
+materialize_code subPU := Mont.subFnWith (p521With true).umaal (p521With true).SP.k (p521With true).SP.m
 materialize_code mulNU := Mont.mulFnWith (p521With true).umaal (p521With true).SN.k (p521With true).SN.m
-materialize_code addNU := Mont.addFn (p521With true).SN.k (p521With true).SN.m
-materialize_code subNU := Mont.subFn (p521With true).SN.k (p521With true).SN.m
+materialize_code addNU := Mont.addFnWith (p521With true).umaal (p521With true).SN.k (p521With true).SN.m
+materialize_code subNU := Mont.subFnWith (p521With true).umaal (p521With true).SN.k (p521With true).SN.m
 materialize_code comb := mulGeneratorP521With false
 materialize_code combU := mulGeneratorP521With true
 

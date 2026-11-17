@@ -2660,7 +2660,7 @@ vg_ec_secp256k1_public_key_umaal:
 	movw r1, #704
 	movw r2, #160
 	movw r3, #3456
-	bl {vg_secp256k1_sub_mod_p}
+	bl {vg_secp256k1_sub_mod_p_umaal}
 	mov lr, r10
 	cmp r11, #36
 	beq 27f

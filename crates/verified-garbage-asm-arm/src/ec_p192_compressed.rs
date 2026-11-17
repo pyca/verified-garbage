@@ -2402,21 +2402,21 @@ mov r0, r12
 movw r1, #976
 movw r2, #1072
 movw r3, #1048
-bl {vg_p192_add_mod_p}
+bl {vg_p192_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #1072
 movw r2, #976
 movw r3, #1024
-bl {vg_p192_add_mod_p}
+bl {vg_p192_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #1048
 movw r2, #952
 movw r3, #1072
-bl {vg_p192_sub_mod_p}
+bl {vg_p192_sub_mod_p_umaal}
 mov lr, r10
 ldr r5, [r12, #1048]
 ldr r4, [r12, #1052]
@@ -2556,8 +2556,8 @@ ldr r11, [r12, #28]
 ldr lr, [r12, #32]
 bx lr",
         vg_p192_mul_mod_p_umaal = sym super::ec_p192::vg_p192_mul_mod_p_umaal::vg_p192_mul_mod_p_umaal,
-        vg_p192_add_mod_p = sym super::ec_p192::vg_p192_add_mod_p::vg_p192_add_mod_p,
-        vg_p192_sub_mod_p = sym super::ec_p192::vg_p192_sub_mod_p::vg_p192_sub_mod_p,
+        vg_p192_add_mod_p_umaal = sym super::ec_p192::vg_p192_add_mod_p_umaal::vg_p192_add_mod_p_umaal,
+        vg_p192_sub_mod_p_umaal = sym super::ec_p192::vg_p192_sub_mod_p_umaal::vg_p192_sub_mod_p_umaal,
     )
 }
 
@@ -3127,14 +3127,14 @@ mov r0, r12
 movw r1, #976
 movw r2, #1072
 movw r3, #1048
-bl {vg_p192_add_mod_p}
+bl {vg_p192_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #1072
 movw r2, #976
 movw r3, #1024
-bl {vg_p192_add_mod_p}
+bl {vg_p192_add_mod_p_umaal}
 mov lr, r10
 movw r4, #0
 movt r4, #0
@@ -3270,7 +3270,7 @@ mov r0, r12
 movw r1, #952
 movw r2, #136
 movw r3, #928
-bl {vg_p192_sub_mod_p}
+bl {vg_p192_sub_mod_p_umaal}
 mov lr, r10
 ldr r4, [r12, #928]
 ldr r5, [r12, #832]
@@ -3333,7 +3333,7 @@ mov r0, r12
 movw r1, #976
 movw r2, #1048
 movw r3, #1072
-bl {vg_p192_sub_mod_p}
+bl {vg_p192_sub_mod_p_umaal}
 mov lr, r10
 ldr r5, [r12, #976]
 ldr r4, [r12, #980]
@@ -3434,7 +3434,7 @@ ldr r11, [r12, #28]
 ldr lr, [r12, #32]
 bx lr",
         vg_p192_mul_mod_p_umaal = sym super::ec_p192::vg_p192_mul_mod_p_umaal::vg_p192_mul_mod_p_umaal,
-        vg_p192_add_mod_p = sym super::ec_p192::vg_p192_add_mod_p::vg_p192_add_mod_p,
-        vg_p192_sub_mod_p = sym super::ec_p192::vg_p192_sub_mod_p::vg_p192_sub_mod_p,
+        vg_p192_add_mod_p_umaal = sym super::ec_p192::vg_p192_add_mod_p_umaal::vg_p192_add_mod_p_umaal,
+        vg_p192_sub_mod_p_umaal = sym super::ec_p192::vg_p192_sub_mod_p_umaal::vg_p192_sub_mod_p_umaal,
     )
 }

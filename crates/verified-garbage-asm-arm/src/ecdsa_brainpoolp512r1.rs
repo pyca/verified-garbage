@@ -7368,21 +7368,21 @@ mov r0, r12
 movw r1, #2496
 movw r2, #2752
 movw r3, #2688
-bl {vg_brainpoolp512r1_add_mod_p}
+bl {vg_brainpoolp512r1_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #2752
 movw r2, #2496
 movw r3, #2624
-bl {vg_brainpoolp512r1_add_mod_p}
+bl {vg_brainpoolp512r1_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #2688
 movw r2, #2432
 movw r3, #2752
-bl {vg_brainpoolp512r1_sub_mod_p}
+bl {vg_brainpoolp512r1_sub_mod_p_umaal}
 mov lr, r10
 ldr r5, [r12, #2688]
 ldr r4, [r12, #2692]
@@ -9168,7 +9168,7 @@ mov r0, r12
 movw r1, #1152
 movw r2, #256
 movw r3, #1408
-bl {vg_brainpoolp512r1_sub_mod_p}
+bl {vg_brainpoolp512r1_sub_mod_p_umaal}
 mov lr, r10
 cmp r11, #73
 beq 214f
@@ -9305,14 +9305,14 @@ mov r0, r12
 movw r1, #1728
 movw r2, #960
 movw r3, #1024
-bl {vg_brainpoolp512r1_add_mod_p}
+bl {vg_brainpoolp512r1_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #1792
 movw r2, #1344
 movw r3, #1408
-bl {vg_brainpoolp512r1_add_mod_p}
+bl {vg_brainpoolp512r1_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
@@ -9326,28 +9326,28 @@ mov r0, r12
 movw r1, #1792
 movw r2, #1536
 movw r3, #1600
-bl {vg_brainpoolp512r1_add_mod_p}
+bl {vg_brainpoolp512r1_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #1728
 movw r2, #1728
 movw r3, #1792
-bl {vg_brainpoolp512r1_sub_mod_p}
+bl {vg_brainpoolp512r1_sub_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #1792
 movw r2, #960
 movw r3, #1088
-bl {vg_brainpoolp512r1_add_mod_p}
+bl {vg_brainpoolp512r1_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #1856
 movw r2, #1344
 movw r3, #1472
-bl {vg_brainpoolp512r1_add_mod_p}
+bl {vg_brainpoolp512r1_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
@@ -9361,28 +9361,28 @@ mov r0, r12
 movw r1, #1856
 movw r2, #1536
 movw r3, #1664
-bl {vg_brainpoolp512r1_add_mod_p}
+bl {vg_brainpoolp512r1_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #1792
 movw r2, #1792
 movw r3, #1856
-bl {vg_brainpoolp512r1_sub_mod_p}
+bl {vg_brainpoolp512r1_sub_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #1856
 movw r2, #1024
 movw r3, #1088
-bl {vg_brainpoolp512r1_add_mod_p}
+bl {vg_brainpoolp512r1_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #1152
 movw r2, #1408
 movw r3, #1472
-bl {vg_brainpoolp512r1_add_mod_p}
+bl {vg_brainpoolp512r1_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
@@ -9396,14 +9396,14 @@ mov r0, r12
 movw r1, #1152
 movw r2, #1600
 movw r3, #1664
-bl {vg_brainpoolp512r1_add_mod_p}
+bl {vg_brainpoolp512r1_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #1856
 movw r2, #1856
 movw r3, #1152
-bl {vg_brainpoolp512r1_sub_mod_p}
+bl {vg_brainpoolp512r1_sub_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
@@ -9424,21 +9424,21 @@ mov r0, r12
 movw r1, #1280
 movw r2, #1152
 movw r3, #1280
-bl {vg_brainpoolp512r1_add_mod_p}
+bl {vg_brainpoolp512r1_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #1152
 movw r2, #1600
 movw r3, #1280
-bl {vg_brainpoolp512r1_sub_mod_p}
+bl {vg_brainpoolp512r1_sub_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #1280
 movw r2, #1600
 movw r3, #1280
-bl {vg_brainpoolp512r1_add_mod_p}
+bl {vg_brainpoolp512r1_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
@@ -9452,14 +9452,14 @@ mov r0, r12
 movw r1, #1600
 movw r2, #1536
 movw r3, #1536
-bl {vg_brainpoolp512r1_add_mod_p}
+bl {vg_brainpoolp512r1_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #1600
 movw r2, #1600
 movw r3, #1536
-bl {vg_brainpoolp512r1_add_mod_p}
+bl {vg_brainpoolp512r1_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
@@ -9480,14 +9480,14 @@ mov r0, r12
 movw r1, #1600
 movw r2, #1600
 movw r3, #1664
-bl {vg_brainpoolp512r1_add_mod_p}
+bl {vg_brainpoolp512r1_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #1664
 movw r2, #1536
 movw r3, #1664
-bl {vg_brainpoolp512r1_sub_mod_p}
+bl {vg_brainpoolp512r1_sub_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
@@ -9501,7 +9501,7 @@ mov r0, r12
 movw r1, #1792
 movw r2, #1792
 movw r3, #1664
-bl {vg_brainpoolp512r1_add_mod_p}
+bl {vg_brainpoolp512r1_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
@@ -9515,7 +9515,7 @@ mov r0, r12
 movw r1, #1216
 movw r2, #1216
 movw r3, #1536
-bl {vg_brainpoolp512r1_add_mod_p}
+bl {vg_brainpoolp512r1_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
@@ -9536,7 +9536,7 @@ mov r0, r12
 movw r1, #1152
 movw r2, #1152
 movw r3, #1536
-bl {vg_brainpoolp512r1_sub_mod_p}
+bl {vg_brainpoolp512r1_sub_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
@@ -9557,7 +9557,7 @@ mov r0, r12
 movw r1, #1280
 movw r2, #1280
 movw r3, #1536
-bl {vg_brainpoolp512r1_add_mod_p}
+bl {vg_brainpoolp512r1_add_mod_p_umaal}
 mov lr, r10
 ldr r4, [r12, #1152]
 str r4, [r12, #960]
@@ -10023,14 +10023,14 @@ mov r0, r12
 movw r1, #1728
 movw r2, #2688
 movw r3, #2752
-bl {vg_brainpoolp512r1_add_mod_p}
+bl {vg_brainpoolp512r1_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #1792
 movw r2, #960
 movw r3, #1024
-bl {vg_brainpoolp512r1_add_mod_p}
+bl {vg_brainpoolp512r1_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
@@ -10044,28 +10044,28 @@ mov r0, r12
 movw r1, #1792
 movw r2, #1536
 movw r3, #1600
-bl {vg_brainpoolp512r1_add_mod_p}
+bl {vg_brainpoolp512r1_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #1728
 movw r2, #1728
 movw r3, #1792
-bl {vg_brainpoolp512r1_sub_mod_p}
+bl {vg_brainpoolp512r1_sub_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #1792
 movw r2, #2688
 movw r3, #2432
-bl {vg_brainpoolp512r1_add_mod_p}
+bl {vg_brainpoolp512r1_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #1856
 movw r2, #960
 movw r3, #1088
-bl {vg_brainpoolp512r1_add_mod_p}
+bl {vg_brainpoolp512r1_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
@@ -10079,28 +10079,28 @@ mov r0, r12
 movw r1, #1856
 movw r2, #1536
 movw r3, #1664
-bl {vg_brainpoolp512r1_add_mod_p}
+bl {vg_brainpoolp512r1_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #1792
 movw r2, #1792
 movw r3, #1856
-bl {vg_brainpoolp512r1_sub_mod_p}
+bl {vg_brainpoolp512r1_sub_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #1856
 movw r2, #2752
 movw r3, #2432
-bl {vg_brainpoolp512r1_add_mod_p}
+bl {vg_brainpoolp512r1_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #1152
 movw r2, #1024
 movw r3, #1088
-bl {vg_brainpoolp512r1_add_mod_p}
+bl {vg_brainpoolp512r1_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
@@ -10114,14 +10114,14 @@ mov r0, r12
 movw r1, #1152
 movw r2, #1600
 movw r3, #1664
-bl {vg_brainpoolp512r1_add_mod_p}
+bl {vg_brainpoolp512r1_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #1856
 movw r2, #1856
 movw r3, #1152
-bl {vg_brainpoolp512r1_sub_mod_p}
+bl {vg_brainpoolp512r1_sub_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
@@ -10142,21 +10142,21 @@ mov r0, r12
 movw r1, #1280
 movw r2, #1152
 movw r3, #1280
-bl {vg_brainpoolp512r1_add_mod_p}
+bl {vg_brainpoolp512r1_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #1152
 movw r2, #1600
 movw r3, #1280
-bl {vg_brainpoolp512r1_sub_mod_p}
+bl {vg_brainpoolp512r1_sub_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #1280
 movw r2, #1600
 movw r3, #1280
-bl {vg_brainpoolp512r1_add_mod_p}
+bl {vg_brainpoolp512r1_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
@@ -10170,14 +10170,14 @@ mov r0, r12
 movw r1, #1600
 movw r2, #1536
 movw r3, #1536
-bl {vg_brainpoolp512r1_add_mod_p}
+bl {vg_brainpoolp512r1_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #1600
 movw r2, #1600
 movw r3, #1536
-bl {vg_brainpoolp512r1_add_mod_p}
+bl {vg_brainpoolp512r1_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
@@ -10198,14 +10198,14 @@ mov r0, r12
 movw r1, #1600
 movw r2, #1600
 movw r3, #1664
-bl {vg_brainpoolp512r1_add_mod_p}
+bl {vg_brainpoolp512r1_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #1664
 movw r2, #1536
 movw r3, #1664
-bl {vg_brainpoolp512r1_sub_mod_p}
+bl {vg_brainpoolp512r1_sub_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
@@ -10219,7 +10219,7 @@ mov r0, r12
 movw r1, #1792
 movw r2, #1792
 movw r3, #1664
-bl {vg_brainpoolp512r1_add_mod_p}
+bl {vg_brainpoolp512r1_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
@@ -10233,7 +10233,7 @@ mov r0, r12
 movw r1, #1216
 movw r2, #1216
 movw r3, #1536
-bl {vg_brainpoolp512r1_add_mod_p}
+bl {vg_brainpoolp512r1_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
@@ -10254,7 +10254,7 @@ mov r0, r12
 movw r1, #1152
 movw r2, #1152
 movw r3, #1536
-bl {vg_brainpoolp512r1_sub_mod_p}
+bl {vg_brainpoolp512r1_sub_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
@@ -10275,7 +10275,7 @@ mov r0, r12
 movw r1, #1280
 movw r2, #1280
 movw r3, #1536
-bl {vg_brainpoolp512r1_add_mod_p}
+bl {vg_brainpoolp512r1_add_mod_p_umaal}
 mov lr, r10
 ldr r4, [r12, #1152]
 str r4, [r12, #960]
@@ -10551,7 +10551,7 @@ mov r0, r12
 movw r1, #2624
 movw r2, #2496
 movw r3, #2560
-bl {vg_brainpoolp512r1_sub_mod_n}
+bl {vg_brainpoolp512r1_sub_mod_n_umaal}
 mov lr, r10
 ldr r5, [r12, #1088]
 ldr r4, [r12, #1092]
@@ -10650,11 +10650,11 @@ ldr lr, [r12, #32]
 add sp, sp, #96
 bx lr",
         vg_brainpoolp512r1_mul_mod_p_umaal = sym super::ec_brainpoolp512r1::vg_brainpoolp512r1_mul_mod_p_umaal::vg_brainpoolp512r1_mul_mod_p_umaal,
-        vg_brainpoolp512r1_add_mod_p = sym super::ec_brainpoolp512r1::vg_brainpoolp512r1_add_mod_p::vg_brainpoolp512r1_add_mod_p,
-        vg_brainpoolp512r1_sub_mod_p = sym super::ec_brainpoolp512r1::vg_brainpoolp512r1_sub_mod_p::vg_brainpoolp512r1_sub_mod_p,
+        vg_brainpoolp512r1_add_mod_p_umaal = sym super::ec_brainpoolp512r1::vg_brainpoolp512r1_add_mod_p_umaal::vg_brainpoolp512r1_add_mod_p_umaal,
+        vg_brainpoolp512r1_sub_mod_p_umaal = sym super::ec_brainpoolp512r1::vg_brainpoolp512r1_sub_mod_p_umaal::vg_brainpoolp512r1_sub_mod_p_umaal,
         vg_brainpoolp512r1_mul_mod_n_umaal = sym super::ecdsa_brainpoolp512r1::vg_brainpoolp512r1_mul_mod_n_umaal::vg_brainpoolp512r1_mul_mod_n_umaal,
         vg_brainpoolp512r1_mul_umaal = sym super::ecdh_brainpoolp512r1::vg_brainpoolp512r1_mul_umaal::vg_brainpoolp512r1_mul_umaal,
-        vg_brainpoolp512r1_sub_mod_n = sym super::ecdsa_brainpoolp512r1::vg_brainpoolp512r1_sub_mod_n::vg_brainpoolp512r1_sub_mod_n,
+        vg_brainpoolp512r1_sub_mod_n_umaal = sym super::ecdsa_brainpoolp512r1::vg_brainpoolp512r1_sub_mod_n_umaal::vg_brainpoolp512r1_sub_mod_n_umaal,
         VG_BRAINPOOLP512R1_COMB = sym super::consts::VG_BRAINPOOLP512R1_COMB,
     )
 }
@@ -12860,6 +12860,10 @@ bx lr",
 pub(crate) mod vg_brainpoolp512r1_add_mod_n;
 
 #[rustfmt::skip]
+#[path = "internal/vg_brainpoolp512r1_add_mod_n_umaal.rs"]
+pub(crate) mod vg_brainpoolp512r1_add_mod_n_umaal;
+
+#[rustfmt::skip]
 #[path = "internal/vg_brainpoolp512r1_mul_mod_n.rs"]
 pub(crate) mod vg_brainpoolp512r1_mul_mod_n;
 
@@ -12870,6 +12874,10 @@ pub(crate) mod vg_brainpoolp512r1_mul_mod_n_umaal;
 #[rustfmt::skip]
 #[path = "internal/vg_brainpoolp512r1_sub_mod_n.rs"]
 pub(crate) mod vg_brainpoolp512r1_sub_mod_n;
+
+#[rustfmt::skip]
+#[path = "internal/vg_brainpoolp512r1_sub_mod_n_umaal.rs"]
+pub(crate) mod vg_brainpoolp512r1_sub_mod_n_umaal;
 
 #[rustfmt::skip]
 #[path = "internal/vg_ecdsa_brainpoolp512r1_sign_k.rs"]

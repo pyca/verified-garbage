@@ -4342,21 +4342,21 @@ vg_ecdh_brainpoolp512r1_umaal:
 	movw r1, #2496
 	movw r2, #2752
 	movw r3, #2688
-	bl {vg_brainpoolp512r1_add_mod_p}
+	bl {vg_brainpoolp512r1_add_mod_p_umaal}
 	mov lr, r10
 	mov r10, lr
 	mov r0, r12
 	movw r1, #2752
 	movw r2, #2496
 	movw r3, #2624
-	bl {vg_brainpoolp512r1_add_mod_p}
+	bl {vg_brainpoolp512r1_add_mod_p_umaal}
 	mov lr, r10
 	mov r10, lr
 	mov r0, r12
 	movw r1, #2688
 	movw r2, #2432
 	movw r3, #2752
-	bl {vg_brainpoolp512r1_sub_mod_p}
+	bl {vg_brainpoolp512r1_sub_mod_p_umaal}
 	mov lr, r10
 	ldr r5, [r12, #2688]
 	ldr r4, [r12, #2692]

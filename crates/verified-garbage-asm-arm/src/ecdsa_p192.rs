@@ -3545,21 +3545,21 @@ mov r0, r12
 movw r1, #976
 movw r2, #1072
 movw r3, #1048
-bl {vg_p192_add_mod_p}
+bl {vg_p192_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #1072
 movw r2, #976
 movw r3, #1024
-bl {vg_p192_add_mod_p}
+bl {vg_p192_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #1048
 movw r2, #952
 movw r3, #1072
-bl {vg_p192_sub_mod_p}
+bl {vg_p192_sub_mod_p_umaal}
 mov lr, r10
 ldr r5, [r12, #1048]
 ldr r4, [r12, #1052]
@@ -4431,7 +4431,7 @@ mov r0, r12
 movw r1, #544
 movw r2, #136
 movw r3, #3600
-bl {vg_p192_sub_mod_p}
+bl {vg_p192_sub_mod_p_umaal}
 mov lr, r10
 cmp r11, #27
 beq 214f
@@ -4716,14 +4716,14 @@ mov r0, r12
 movw r1, #688
 movw r2, #1048
 movw r3, #1072
-bl {vg_p192_add_mod_p}
+bl {vg_p192_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #712
 movw r2, #400
 movw r3, #424
-bl {vg_p192_add_mod_p}
+bl {vg_p192_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
@@ -4737,28 +4737,28 @@ mov r0, r12
 movw r1, #712
 movw r2, #616
 movw r3, #640
-bl {vg_p192_add_mod_p}
+bl {vg_p192_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #688
 movw r2, #688
 movw r3, #712
-bl {vg_p192_sub_mod_p}
+bl {vg_p192_sub_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #712
 movw r2, #1048
 movw r3, #952
-bl {vg_p192_add_mod_p}
+bl {vg_p192_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #736
 movw r2, #400
 movw r3, #448
-bl {vg_p192_add_mod_p}
+bl {vg_p192_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
@@ -4772,28 +4772,28 @@ mov r0, r12
 movw r1, #736
 movw r2, #616
 movw r3, #664
-bl {vg_p192_add_mod_p}
+bl {vg_p192_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #712
 movw r2, #712
 movw r3, #736
-bl {vg_p192_sub_mod_p}
+bl {vg_p192_sub_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #736
 movw r2, #1072
 movw r3, #952
-bl {vg_p192_add_mod_p}
+bl {vg_p192_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #472
 movw r2, #424
 movw r3, #448
-bl {vg_p192_add_mod_p}
+bl {vg_p192_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
@@ -4807,14 +4807,14 @@ mov r0, r12
 movw r1, #472
 movw r2, #640
 movw r3, #664
-bl {vg_p192_add_mod_p}
+bl {vg_p192_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #736
 movw r2, #736
 movw r3, #472
-bl {vg_p192_sub_mod_p}
+bl {vg_p192_sub_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
@@ -4835,21 +4835,21 @@ mov r0, r12
 movw r1, #520
 movw r2, #472
 movw r3, #520
-bl {vg_p192_add_mod_p}
+bl {vg_p192_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #472
 movw r2, #640
 movw r3, #520
-bl {vg_p192_sub_mod_p}
+bl {vg_p192_sub_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #520
 movw r2, #640
 movw r3, #520
-bl {vg_p192_add_mod_p}
+bl {vg_p192_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
@@ -4863,14 +4863,14 @@ mov r0, r12
 movw r1, #640
 movw r2, #616
 movw r3, #616
-bl {vg_p192_add_mod_p}
+bl {vg_p192_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #640
 movw r2, #640
 movw r3, #616
-bl {vg_p192_add_mod_p}
+bl {vg_p192_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
@@ -4891,14 +4891,14 @@ mov r0, r12
 movw r1, #640
 movw r2, #640
 movw r3, #664
-bl {vg_p192_add_mod_p}
+bl {vg_p192_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #664
 movw r2, #616
 movw r3, #664
-bl {vg_p192_sub_mod_p}
+bl {vg_p192_sub_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
@@ -4912,7 +4912,7 @@ mov r0, r12
 movw r1, #712
 movw r2, #712
 movw r3, #664
-bl {vg_p192_add_mod_p}
+bl {vg_p192_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
@@ -4926,7 +4926,7 @@ mov r0, r12
 movw r1, #496
 movw r2, #496
 movw r3, #616
-bl {vg_p192_add_mod_p}
+bl {vg_p192_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
@@ -4947,7 +4947,7 @@ mov r0, r12
 movw r1, #472
 movw r2, #472
 movw r3, #616
-bl {vg_p192_sub_mod_p}
+bl {vg_p192_sub_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
@@ -4968,7 +4968,7 @@ mov r0, r12
 movw r1, #520
 movw r2, #520
 movw r3, #616
-bl {vg_p192_add_mod_p}
+bl {vg_p192_add_mod_p_umaal}
 mov lr, r10
 ldr r4, [r12, #472]
 str r4, [r12, #400]
@@ -5104,7 +5104,7 @@ mov r0, r12
 movw r1, #1024
 movw r2, #976
 movw r3, #1000
-bl {vg_p192_sub_mod_n}
+bl {vg_p192_sub_mod_n_umaal}
 mov lr, r10
 ldr r5, [r12, #448]
 ldr r4, [r12, #452]
@@ -5163,12 +5163,12 @@ ldr lr, [r12, #32]
 add sp, sp, #96
 bx lr",
         vg_p192_mul_mod_p_umaal = sym super::ec_p192::vg_p192_mul_mod_p_umaal::vg_p192_mul_mod_p_umaal,
-        vg_p192_add_mod_p = sym super::ec_p192::vg_p192_add_mod_p::vg_p192_add_mod_p,
-        vg_p192_sub_mod_p = sym super::ec_p192::vg_p192_sub_mod_p::vg_p192_sub_mod_p,
+        vg_p192_add_mod_p_umaal = sym super::ec_p192::vg_p192_add_mod_p_umaal::vg_p192_add_mod_p_umaal,
+        vg_p192_sub_mod_p_umaal = sym super::ec_p192::vg_p192_sub_mod_p_umaal::vg_p192_sub_mod_p_umaal,
         vg_p192_mul_mod_n_umaal = sym super::ecdsa_p192::vg_p192_mul_mod_n_umaal::vg_p192_mul_mod_n_umaal,
         vg_p192_point_add_umaal = sym super::ec_p192::vg_p192_point_add_umaal::vg_p192_point_add_umaal,
         vg_p192_mul_umaal = sym super::ecdh_p192::vg_p192_mul_umaal::vg_p192_mul_umaal,
-        vg_p192_sub_mod_n = sym super::ecdsa_p192::vg_p192_sub_mod_n::vg_p192_sub_mod_n,
+        vg_p192_sub_mod_n_umaal = sym super::ecdsa_p192::vg_p192_sub_mod_n_umaal::vg_p192_sub_mod_n_umaal,
         VG_P192_COMB = sym super::consts::VG_P192_COMB,
     )
 }
@@ -6662,6 +6662,10 @@ pub(crate) mod vg_ecdsa_p192_sign_k_umaal;
 pub(crate) mod vg_p192_add_mod_n;
 
 #[rustfmt::skip]
+#[path = "internal/vg_p192_add_mod_n_umaal.rs"]
+pub(crate) mod vg_p192_add_mod_n_umaal;
+
+#[rustfmt::skip]
 #[path = "internal/vg_p192_mul_mod_n.rs"]
 pub(crate) mod vg_p192_mul_mod_n;
 
@@ -6672,3 +6676,7 @@ pub(crate) mod vg_p192_mul_mod_n_umaal;
 #[rustfmt::skip]
 #[path = "internal/vg_p192_sub_mod_n.rs"]
 pub(crate) mod vg_p192_sub_mod_n;
+
+#[rustfmt::skip]
+#[path = "internal/vg_p192_sub_mod_n_umaal.rs"]
+pub(crate) mod vg_p192_sub_mod_n_umaal;

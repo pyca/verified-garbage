@@ -51,7 +51,7 @@ def zeroMask (c : Cfg) (a : Nat) : List Instr :=
   c.nonzero a ++ [.mov .r4 (.imm 0), .dp .sub .r5 .r4 (.reg .r5), .dp .sub .r5 .r5 (.imm 1)]
 
 def descentChoose (c : Cfg) : Prog isa :=
-  .seq (Mont.subCall c.SP (c.sl W0) (c.sl T3) (c.sl ONEP))
+  .seq (Mont.subCall c.SP (c.sl W0) (c.sl T3) (c.sl ONEP) c.umaal)
     (.block (zeroMask c (c.sl W0) ++ [.mov .r10 (.reg .r5)] ++
       sel (2 * c.n) (c.sl T4) (c.sl T1) (c.sl ONEP)))
 
@@ -84,7 +84,7 @@ def parityMask (c : Cfg) : List Instr :=
 
 def selectRoot (c : Cfg) : Prog isa :=
   progs [Mont.mulCall c.SP (c.sl QY) (c.sl ACC) (c.sl ONE) c.umaal,
-    Mont.subCall c.SP (c.sl W0) (c.sl ZERO) (c.sl QY),
+    Mont.subCall c.SP (c.sl W0) (c.sl ZERO) (c.sl QY) c.umaal,
     .block (parityMask c ++ sel (2 * c.n) (c.sl QY) (c.sl QY) (c.sl W0))]
 
 def checkRootOps (c : Cfg) : List FOp :=

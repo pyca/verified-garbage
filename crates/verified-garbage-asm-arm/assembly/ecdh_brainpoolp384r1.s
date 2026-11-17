@@ -3374,21 +3374,21 @@ vg_ecdh_brainpoolp384r1_umaal:
 	movw r1, #1888
 	movw r2, #2080
 	movw r3, #2032
-	bl {vg_brainpoolp384r1_add_mod_p}
+	bl {vg_brainpoolp384r1_add_mod_p_umaal}
 	mov lr, r10
 	mov r10, lr
 	mov r0, r12
 	movw r1, #2080
 	movw r2, #1888
 	movw r3, #1984
-	bl {vg_brainpoolp384r1_add_mod_p}
+	bl {vg_brainpoolp384r1_add_mod_p_umaal}
 	mov lr, r10
 	mov r10, lr
 	mov r0, r12
 	movw r1, #2032
 	movw r2, #1840
 	movw r3, #2080
-	bl {vg_brainpoolp384r1_sub_mod_p}
+	bl {vg_brainpoolp384r1_sub_mod_p_umaal}
 	mov lr, r10
 	ldr r5, [r12, #2032]
 	ldr r4, [r12, #2036]

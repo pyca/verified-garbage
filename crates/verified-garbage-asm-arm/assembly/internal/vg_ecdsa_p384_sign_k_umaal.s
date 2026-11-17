@@ -1511,7 +1511,7 @@ vg_ecdsa_p384_sign_k_umaal:
 	movw r1, #1024
 	movw r2, #208
 	movw r3, #3168
-	bl {vg_p384_sub_mod_p}
+	bl {vg_p384_sub_mod_p_umaal}
 	mov lr, r10
 	cmp r11, #54
 	beq 27f
@@ -1887,7 +1887,7 @@ vg_ecdsa_p384_sign_k_umaal:
 	movw r1, #1792
 	movw r2, #1744
 	movw r3, #208
-	bl {vg_p384_add_mod_n}
+	bl {vg_p384_add_mod_n_umaal}
 	mov lr, r10
 	mov r10, lr
 	mov r0, r12
@@ -2491,7 +2491,7 @@ vg_ecdsa_p384_sign_k_umaal:
 	movw r1, #2032
 	movw r2, #2032
 	movw r3, #1984
-	bl {vg_p384_add_mod_n}
+	bl {vg_p384_add_mod_n_umaal}
 	mov lr, r10
 	mov r10, lr
 	mov r0, r12

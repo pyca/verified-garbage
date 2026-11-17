@@ -67,7 +67,7 @@ theorem scalar_eq (c : Cfg) : c.scalar =
     (.seq (Mont.mulCall c.SN (c.sl DM) (c.sl D) (c.sl R2N) c.umaal)
     (.seq (Mont.mulCall c.SN (c.sl EM) (c.sl E) (c.sl R2N) c.umaal)
     (.seq (Mont.mulCall c.SN (c.sl TT) (c.sl RM) (c.sl DM) c.umaal)
-    (.seq (Mont.addCall c.SN (c.sl TT) (c.sl TT) (c.sl EM))
+    (.seq (Mont.addCall c.SN (c.sl TT) (c.sl TT) (c.sl EM) c.umaal)
     (.seq (Mont.mulCall c.SN (c.sl SM) (c.sl ACC) (c.sl TT) c.umaal)
     (.seq (Mont.mulCall c.SN (c.sl SS) (c.sl SM) (c.sl ONE) c.umaal)
     (.block (c.checkNonzero (c.sl SS) ++ c.finish)))))))) := rfl
@@ -136,7 +136,7 @@ theorem scalarOut_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base s
           toM c.C.n (2 ^ (64 * c.n)) (sv c base s EM)) →
       WP isa rest s' Q) :
     WP isa (.seq ((Mont.mulCall c.SN (c.sl TT) (c.sl RM) (c.sl DM) c.umaal))
-      (.seq (Mont.addCall c.SN (c.sl TT) (c.sl TT) (c.sl EM))
+      (.seq (Mont.addCall c.SN (c.sl TT) (c.sl TT) (c.sl EM) c.umaal)
       (.seq ((Mont.mulCall c.SN (c.sl SM) (c.sl ACC) (c.sl TT) c.umaal))
       (.seq ((Mont.mulCall c.SN (c.sl SS) (c.sl SM) (c.sl ONE) c.umaal)) rest)))) s Q := by
   have h7 := hc.n10

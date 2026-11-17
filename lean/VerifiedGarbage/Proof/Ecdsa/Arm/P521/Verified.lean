@@ -154,8 +154,8 @@ theorem argByte_eq (s : State) (k : Nat) :
 /-! The functions modulo `p` as literals, for their summaries (the kernel would otherwise build
 their instructions once for the analysis and once for the frame). -/
 materialize_code mulModP := Mont.mulFnWith false p521.SP.k p521.SP.m
-materialize_code addModP := Mont.addFn p521.SP.k p521.SP.m
-materialize_code subModP := Mont.subFn p521.SP.k p521.SP.m
+materialize_code addModP := Mont.addFnWith false p521.SP.k p521.SP.m
+materialize_code subModP := Mont.subFnWith false p521.SP.k p521.SP.m
 
 /-! The constant-time analyses of the calls of the functions modulo `p`, from their arguments,
 each done once for every check of code that calls them (`taint_decide_sum`: signing, ECDH, the
@@ -166,10 +166,10 @@ taint_summary mulPSum : taintS (Taint.ofRegs [.r0, .r1, .r2, .r3])
   (.call (Mont.mulName false p521.SP) (Mont.mulFnWith false p521.SP.k p521.SP.m))
   keeping (Taint.ofRegs [.r10, .r11])
 taint_summary addPSum : taintS (Taint.ofRegs [.r0, .r1, .r2, .r3])
-  (.call (p521.SP.fn "add") (Mont.addFn p521.SP.k p521.SP.m))
+  (.call (Mont.addName false p521.SP) (Mont.addFnWith false p521.SP.k p521.SP.m))
   keeping (Taint.ofRegs [.r10, .r11])
 taint_summary subPSum : taintS (Taint.ofRegs [.r0, .r1, .r2, .r3])
-  (.call (p521.SP.fn "sub") (Mont.subFn p521.SP.k p521.SP.m))
+  (.call (Mont.subName false p521.SP) (Mont.subFnWith false p521.SP.k p521.SP.m))
   keeping (Taint.ofRegs [.r10, .r11])
 
 /-! The constant-time analysis of the call of `vg_p521_mul` from its argument and `r10`, done

@@ -3040,21 +3040,21 @@ mov r0, r12
 movw r1, #1280
 movw r2, #1408
 movw r3, #1376
-bl {vg_p256_add_mod_p}
+bl {vg_p256_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #1408
 movw r2, #1280
 movw r3, #1344
-bl {vg_p256_add_mod_p}
+bl {vg_p256_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #1376
 movw r2, #1248
 movw r3, #1408
-bl {vg_p256_sub_mod_p}
+bl {vg_p256_sub_mod_p_umaal}
 mov lr, r10
 ldr r5, [r12, #1376]
 ldr r4, [r12, #1380]
@@ -3230,8 +3230,8 @@ ldr r11, [r12, #28]
 ldr lr, [r12, #32]
 bx lr",
         vg_p256_mul_mod_p_umaal = sym super::ec_p256::vg_p256_mul_mod_p_umaal::vg_p256_mul_mod_p_umaal,
-        vg_p256_add_mod_p = sym super::ec_p256::vg_p256_add_mod_p::vg_p256_add_mod_p,
-        vg_p256_sub_mod_p = sym super::ec_p256::vg_p256_sub_mod_p::vg_p256_sub_mod_p,
+        vg_p256_add_mod_p_umaal = sym super::ec_p256::vg_p256_add_mod_p_umaal::vg_p256_add_mod_p_umaal,
+        vg_p256_sub_mod_p_umaal = sym super::ec_p256::vg_p256_sub_mod_p_umaal::vg_p256_sub_mod_p_umaal,
     )
 }
 
@@ -3961,14 +3961,14 @@ mov r0, r12
 movw r1, #1280
 movw r2, #1408
 movw r3, #1376
-bl {vg_p256_add_mod_p}
+bl {vg_p256_add_mod_p_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #1408
 movw r2, #1280
 movw r3, #1344
-bl {vg_p256_add_mod_p}
+bl {vg_p256_add_mod_p_umaal}
 mov lr, r10
 movw r4, #0
 movt r4, #0
@@ -4126,7 +4126,7 @@ mov r0, r12
 movw r1, #1248
 movw r2, #160
 movw r3, #1216
-bl {vg_p256_sub_mod_p}
+bl {vg_p256_sub_mod_p_umaal}
 mov lr, r10
 ldr r4, [r12, #1216]
 ldr r5, [r12, #1088]
@@ -4201,7 +4201,7 @@ mov r0, r12
 movw r1, #1280
 movw r2, #1376
 movw r3, #1408
-bl {vg_p256_sub_mod_p}
+bl {vg_p256_sub_mod_p_umaal}
 mov lr, r10
 ldr r5, [r12, #1280]
 ldr r4, [r12, #1284]
@@ -4322,7 +4322,7 @@ ldr r11, [r12, #28]
 ldr lr, [r12, #32]
 bx lr",
         vg_p256_mul_mod_p_umaal = sym super::ec_p256::vg_p256_mul_mod_p_umaal::vg_p256_mul_mod_p_umaal,
-        vg_p256_add_mod_p = sym super::ec_p256::vg_p256_add_mod_p::vg_p256_add_mod_p,
-        vg_p256_sub_mod_p = sym super::ec_p256::vg_p256_sub_mod_p::vg_p256_sub_mod_p,
+        vg_p256_add_mod_p_umaal = sym super::ec_p256::vg_p256_add_mod_p_umaal::vg_p256_add_mod_p_umaal,
+        vg_p256_sub_mod_p_umaal = sym super::ec_p256::vg_p256_sub_mod_p_umaal::vg_p256_sub_mod_p_umaal,
     )
 }

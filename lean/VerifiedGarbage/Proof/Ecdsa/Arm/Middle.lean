@@ -27,7 +27,7 @@ variable {c : Cfg}
 
 theorem middle_eq (c : Cfg) : c.middle = .seq (Mont.mulCall c.SP (c.sl XM) (c.sl RX) (c.sl ACC) c.umaal)
     (.seq (Mont.mulCall c.SP (c.sl X) (c.sl XM) (c.sl ONE) c.umaal)
-    (.seq (Mont.addCall c.SN (c.sl RR) (c.sl X) (c.sl ZERO))
+    (.seq (Mont.addCall c.SN (c.sl RR) (c.sl X) (c.sl ZERO) c.umaal)
     (.seq (Mont.mulCall c.SN (c.sl KM) (c.sl K) (c.sl R2N) c.umaal)
     (.block (c.checkRange (c.sl D) ++ c.checkRange (c.sl K) ++ c.checkNonzero (c.sl RR)))))) := rfl
 
@@ -63,7 +63,7 @@ theorem midOps_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size
     {Q : State → Prop} (h : ∀ s', MidPost c base s s' → WP isa rest s' Q) :
     WP isa (.seq (Mont.mulCall c.SP (c.sl XM) (c.sl RX) (c.sl ACC) c.umaal)
       (.seq (Mont.mulCall c.SP (c.sl X) (c.sl XM) (c.sl ONE) c.umaal)
-      (.seq (Mont.addCall c.SN (c.sl RR) (c.sl X) (c.sl ZERO))
+      (.seq (Mont.addCall c.SN (c.sl RR) (c.sl X) (c.sl ZERO) c.umaal)
       (.seq (Mont.mulCall c.SN (c.sl KM) (c.sl K) (c.sl R2N) c.umaal) rest)))) s Q := by
   have h7 := hc.n10
   have hn := hs.nowrap

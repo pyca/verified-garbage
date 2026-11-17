@@ -1069,7 +1069,7 @@ vg_ecdsa_secp256k1_sign_k_umaal:
 	movw r1, #704
 	movw r2, #160
 	movw r3, #3456
-	bl {vg_secp256k1_sub_mod_p}
+	bl {vg_secp256k1_sub_mod_p_umaal}
 	mov lr, r10
 	cmp r11, #36
 	beq 27f
@@ -1341,7 +1341,7 @@ vg_ecdsa_secp256k1_sign_k_umaal:
 	movw r1, #1216
 	movw r2, #1184
 	movw r3, #160
-	bl {vg_secp256k1_add_mod_n}
+	bl {vg_secp256k1_add_mod_n_umaal}
 	mov lr, r10
 	mov r10, lr
 	mov r0, r12
@@ -1777,7 +1777,7 @@ vg_ecdsa_secp256k1_sign_k_umaal:
 	movw r1, #1376
 	movw r2, #1376
 	movw r3, #1344
-	bl {vg_secp256k1_add_mod_n}
+	bl {vg_secp256k1_add_mod_n_umaal}
 	mov lr, r10
 	mov r10, lr
 	mov r0, r12

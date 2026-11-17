@@ -3791,7 +3791,7 @@ mov r0, r12
 movw r1, #1024
 movw r2, #208
 movw r3, #3168
-bl {vg_brainpoolp384r1_sub_mod_p}
+bl {vg_brainpoolp384r1_sub_mod_p_umaal}
 mov lr, r10
 cmp r11, #54
 beq 27f
@@ -4524,7 +4524,7 @@ ldr r10, [r12, #24]
 ldr r11, [r12, #28]
 ldr lr, [r12, #32]
 bx lr",
-        vg_brainpoolp384r1_sub_mod_p = sym super::ec_brainpoolp384r1::vg_brainpoolp384r1_sub_mod_p::vg_brainpoolp384r1_sub_mod_p,
+        vg_brainpoolp384r1_sub_mod_p_umaal = sym super::ec_brainpoolp384r1::vg_brainpoolp384r1_sub_mod_p_umaal::vg_brainpoolp384r1_sub_mod_p_umaal,
         vg_brainpoolp384r1_point_add_umaal = sym super::ec_brainpoolp384r1::vg_brainpoolp384r1_point_add_umaal::vg_brainpoolp384r1_point_add_umaal,
         vg_brainpoolp384r1_mul_mod_p_umaal = sym super::ec_brainpoolp384r1::vg_brainpoolp384r1_mul_mod_p_umaal::vg_brainpoolp384r1_mul_mod_p_umaal,
         VG_BRAINPOOLP384R1_COMB = sym super::consts::VG_BRAINPOOLP384R1_COMB,
@@ -4534,6 +4534,10 @@ bx lr",
 #[rustfmt::skip]
 #[path = "internal/vg_brainpoolp384r1_add_mod_p.rs"]
 pub(crate) mod vg_brainpoolp384r1_add_mod_p;
+
+#[rustfmt::skip]
+#[path = "internal/vg_brainpoolp384r1_add_mod_p_umaal.rs"]
+pub(crate) mod vg_brainpoolp384r1_add_mod_p_umaal;
 
 #[rustfmt::skip]
 #[path = "internal/vg_brainpoolp384r1_mul_mod_p.rs"]
@@ -4554,3 +4558,7 @@ pub(crate) mod vg_brainpoolp384r1_point_add_umaal;
 #[rustfmt::skip]
 #[path = "internal/vg_brainpoolp384r1_sub_mod_p.rs"]
 pub(crate) mod vg_brainpoolp384r1_sub_mod_p;
+
+#[rustfmt::skip]
+#[path = "internal/vg_brainpoolp384r1_sub_mod_p_umaal.rs"]
+pub(crate) mod vg_brainpoolp384r1_sub_mod_p_umaal;

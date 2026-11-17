@@ -46,8 +46,8 @@ def callR (enc : Nat → Nat) (f : String) (body : Prog isa) (o a b : Nat) : Pro
 /-- The code of a field operation modulo `S` on the slots `enc` gives. -/
 def opCodeR (enc : Nat → Nat) (S : Impl.Weierstrass.Mont.Modulus) (u : Bool := false) : FOp → Prog isa
   | .mul o a b => callR enc (Mont.mulName u S) (Mont.mulFnWith u S.k S.m) o a b
-  | .add o a b => callR enc (S.fn "add") (Mont.addFn S.k S.m) o a b
-  | .sub o a b => callR enc (S.fn "sub") (Mont.subFn S.k S.m) o a b
+  | .add o a b => callR enc (Mont.addName u S) (Mont.addFnWith u S.k S.m) o a b
+  | .sub o a b => callR enc (Mont.subName u S) (Mont.subFnWith u S.k S.m) o a b
 
 /-- A straight-line sequence of field operations on the slots `enc` gives. -/
 def fprogR (enc : Nat → Nat) (S : Impl.Weierstrass.Mont.Modulus) (ops : List FOp) (u : Bool := false) :
