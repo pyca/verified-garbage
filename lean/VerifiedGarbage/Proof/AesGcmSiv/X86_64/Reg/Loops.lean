@@ -398,11 +398,12 @@ theorem elems_split (m : Mem) (D : Addr) (n : Nat) :
     show 256 * (n / 256) = 16 * (16 * (n / 256)) by omega_arith, GcmSiv.elems_bytesAt]
 
 /-- What the pieces write with the loops, by the data's length: below 256
-bytes the loops do not run, and only the block at `W + 128` is written. -/
-def lRn (W : Addr) (n : Nat) : List Region := if 256 ≤ n then lR W else [⟨W + BitVec.ofNat 64 128, 16⟩]
+bytes (`θ`: with no loops, more than any length) the loops do not run, and
+only the block at `W + 128` is written. -/
+def lRn (θ : Nat) (W : Addr) (n : Nat) : List Region := if θ ≤ n then lR W else [⟨W + BitVec.ofNat 64 128, 16⟩]
 
-theorem toLn {W : Addr} {n : Nat} {m m' : Mem} (h : Frame [⟨W + BitVec.ofNat 64 128, 16⟩] m m') :
-    Frame (lRn W n) m m' := by
+theorem toLn {θ : Nat} {W : Addr} {n : Nat} {m m' : Mem} (h : Frame [⟨W + BitVec.ofNat 64 128, 16⟩] m m') :
+    Frame (lRn θ W n) m m' := by
   unfold lRn
   split
   · exact h.sub fun q hq => by
@@ -410,12 +411,12 @@ theorem toLn {W : Addr} {n : Nat} {m m' : Mem} (h : Frame [⟨W + BitVec.ofNat 6
       exact ⟨⟨W + BitVec.ofNat 64 64, 80⟩, by simp, Offset.sub W (by decide) (by decide)⟩
   · exact h
 
-theorem lRn_long {W : Addr} {n : Nat} {m m' : Mem} (h256 : 256 ≤ n) (h : Frame (lR W) m m') :
-    Frame (lRn W n) m m' := by
+theorem lRn_long {θ : Nat} {W : Addr} {n : Nat} {m m' : Mem} (h256 : θ ≤ n) (h : Frame (lR W) m m') :
+    Frame (lRn θ W n) m m' := by
   unfold lRn; simp only [h256, ↓reduceIte]; exact h
 
-theorem toLDn {W D : Addr} {n : Nat} {m m' : Mem} (h : Frame [⟨W + BitVec.ofNat 64 128, 16⟩, ⟨D, n⟩] m m') :
-    Frame (lRn W n ++ [⟨D, n⟩]) m m' := by
+theorem toLDn {θ : Nat} {W D : Addr} {n : Nat} {m m' : Mem} (h : Frame [⟨W + BitVec.ofNat 64 128, 16⟩, ⟨D, n⟩] m m') :
+    Frame (lRn θ W n ++ [⟨D, n⟩]) m m' := by
   unfold lRn
   split
   · exact h.sub fun q hq => by
@@ -425,18 +426,18 @@ theorem toLDn {W D : Addr} {n : Nat} {m m' : Mem} (h : Frame [⟨W + BitVec.ofNa
       · exact ⟨⟨D, n⟩, by simp, fun _ h => h⟩
   · exact h
 
-theorem lRDn_long {W D : Addr} {n : Nat} {m m' : Mem} (h256 : 256 ≤ n) (h : Frame (lR W ++ [⟨D, n⟩]) m m') :
-    Frame (lRn W n ++ [⟨D, n⟩]) m m' := by
+theorem lRDn_long {θ : Nat} {W D : Addr} {n : Nat} {m m' : Mem} (h256 : θ ≤ n) (h : Frame (lR W ++ [⟨D, n⟩]) m m') :
+    Frame (lRn θ W n ++ [⟨D, n⟩]) m m' := by
   unfold lRn; simp only [h256, ↓reduceIte]; exact h
 
 /-- What POLYVAL leaves, with the loop: as `PolyPost`, the loop's parts of
 `W` written too. -/
-structure PolyPostL (K W SP : Addr) (A D : Addr) (al n : Nat) (t t' : State) : Prop where
+structure PolyPostL (θ : Nat) (K W SP : Addr) (A D : Addr) (al n : Nat) (t t' : State) : Prop where
   env : Env K W SP t'
   rd : t'.rd = t.rd
   wr : t'.wr = t.wr
   frame : Frame (lR W) t.mem t'.mem
-  fine : Frame (lRn W n) t.mem t'.mem
+  fine : Frame (lRn θ W n) t.mem t'.mem
   out : t'.xmm .xmm2 = ghashFrom (hOf t.mem W) 0
     (Spec.GcmSiv.elems (Spec.GcmSiv.pad16 (bytesAt t.mem A al)) ++
       Spec.GcmSiv.elems (Spec.GcmSiv.pad16 (bytesAt t.mem D n)) ++
@@ -466,7 +467,7 @@ theorem hOf_lR {K W SP : Addr} (L : Lay K W SP) {m m' : Mem} (h : Frame (lR W) m
 theorem polyvalL_ok (F : MulFacts) {lp : Impl.AesGcmSiv.X86_64Stitch.Loops} (hlp : Stitch.LoopsOk lp)
     {K W SP : Addr} (L : Lay K W SP) {t : State} (E : Env K W SP t) {R : Nat} {N A D : Addr}
     {al n : Nat} (S : Slots W R N A D al n t.mem) (hA : Buf K W SP t A al) (hD : Buf K W SP t D n) :
-    WP isa (polyvalL lp) t (PolyPostL K W SP A D al n t) := by
+    WP isa (polyvalL lp) t (PolyPostL 256 K W SP A D al n t) := by
   have hw := L.ww
   have hn := hD.lt
   simp only [polyvalL]
@@ -488,7 +489,7 @@ theorem polyvalL_ok (F : MulFacts) {lp : Impl.AesGcmSiv.X86_64Stitch.Loops} (hlp
   refine WP.seq (WP.mono (absorb_ok false L E₂ ⟨by rw [x₂]; exact g₁.c, by rw [x₂]; exact g₁.h⟩
     (hA.of_eq (rd₂.trans rd₁) (wr₂.trans wr₁)) r12₂ rbp₂) fun t₃ P₃ => ?_)
   have fr₃ : Frame (lR W) t.mem t₃.mem := toL (mem₂ ▸ P₃.frame)
-  have fn₃ : Frame (lRn W n) t.mem t₃.mem := toLn (mem₂ ▸ P₃.frame)
+  have fn₃ : Frame (lRn 256 W n) t.mem t₃.mem := toLn (mem₂ ▸ P₃.frame)
   have S₃ := S.of_frame fr₃ (slots_lR L)
   obtain ⟨t₄, run₄, r12₄, rbp₄, g₄, x₄, m₄, rd₄, wr₄⟩ := ld2_run (o := 232) (P := D) (k := n) P₃.env (by decide)
     (by decide) S₃.data S₃.len
@@ -515,7 +516,7 @@ theorem polyvalL_ok (F : MulFacts) {lp : Impl.AesGcmSiv.X86_64Stitch.Loops} (hlp
       Env K W SP u ∧ u.rd = t.rd ∧ u.wr = t.wr ∧ GReg F (hOf t.mem W) u ∧
       u.xmm .xmm2 = ghashFrom (hOf t.mem W) (t₃.xmm .xmm2) ((List.range (16 * (n / 256))).map (xel t.mem D)) ∧
       u.gpr .r12 = D + BitVec.ofNat 64 (256 * (n / 256)) ∧ u.gpr .rbp = BitVec.ofNat 64 (n % 256) ∧
-      Frame (lR W) t.mem u.mem ∧ Frame (lRn W n) t.mem u.mem := by
+      Frame (lR W) t.mem u.mem ∧ Frame (lRn 256 W n) t.mem u.mem := by
     refine WP.ite (decide (n < 256)) (eval_b cf₅) (fun h => WP.block_nil ?_) (fun h => ?_)
     · have h' : n < 256 := by simpa using h
       have e0 : n / 256 = 0 := Nat.div_eq_of_lt h'
@@ -736,12 +737,12 @@ theorem afterLoop_ok {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨
 
 /-- What counter mode leaves, with the loop: as `CryptPost`, the loop's
 parts of `W` written too. -/
-structure CryptPostL (K W SP : Addr) (R : Nat) (D : Addr) (n : Nat) (t t' : State) : Prop where
+structure CryptPostL (θ : Nat) (K W SP : Addr) (R : Nat) (D : Addr) (n : Nat) (t t' : State) : Prop where
   env : Env K W SP t'
   rd : t'.rd = t.rd
   wr : t'.wr = t.wr
   frame : Frame (lR W ++ [⟨D, n⟩]) t.mem t'.mem
-  fine : Frame (lRn W n ++ [⟨D, n⟩]) t.mem t'.mem
+  fine : Frame (lRn θ W n ++ [⟨D, n⟩]) t.mem t'.mem
   data : bytesAt t'.mem D n = Spec.GcmSiv.ctr (Spec.GcmSiv.ctxCiph t.mem (W + BitVec.ofNat 64 248) R)
     (Spec.GcmSiv.initialCounter (bytesAt t.mem W 16)) (bytesAt t.mem D n)
 
@@ -767,7 +768,7 @@ theorem slots_lRD {K W SP : Addr} (L : Lay K W SP) {s : State} {D : Addr} {n : N
 theorem ctrLoop_ok {lp : Impl.AesGcmSiv.X86_64Stitch.Loops} (hlp : Stitch.LoopsOk lp) {K W SP : Addr}
     (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14) {t : State} (E : Env K W SP t) {N A D : Addr} {al n : Nat}
     (S : Slots W R N A D al n t.mem) (hD : Buf K W SP t D n) (hDw : Covers [⟨D, n⟩] t.wr) (h256 : 256 ≤ n) :
-    WP isa (ctrFront lp) t (CryptPostL K W SP R D n t) := by
+    WP isa (ctrFront lp) t (CryptPostL 256 K W SP R D n t) := by
   have hn := hD.lt
   obtain hRb : 16 * (R + 1) ≤ 240 := by rcases hR with h | h <;> subst h <;> decide
   obtain hcl : ∀ y, (Spec.GcmSiv.ctxCiph t.mem (W + BitVec.ofNat 64 248) R y).length = 16 :=
@@ -880,7 +881,7 @@ theorem ctrLoop_ok {lp : Impl.AesGcmSiv.X86_64Stitch.Loops} (hlp : Stitch.LoopsO
 theorem cryptL_ok {lp : Impl.AesGcmSiv.X86_64Stitch.Loops} (hlp : Stitch.LoopsOk lp) {K W SP : Addr}
     (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14) {t : State} (E : Env K W SP t) {N A D : Addr} {al n : Nat}
     (S : Slots W R N A D al n t.mem) (hD : Buf K W SP t D n) (hDw : Covers [⟨D, n⟩] t.wr) :
-    WP isa (cryptL lp) t (CryptPostL K W SP R D n t) := by
+    WP isa (cryptL lp) t (CryptPostL 256 K W SP R D n t) := by
   have hn := hD.lt
   obtain ⟨t₁, run₁, cf₁, g₁, x₁, m₁, rd₁, wr₁⟩ := lenCmp_run E S hn
   refine WP.seq (WP.of_runBlock ⟨t₁, run₁, ?_⟩)
@@ -957,12 +958,12 @@ end
 /-- What `open` leaves of the data: it deciphered, in counter mode from the
 tag at `W`, and POLYVAL of the additional data, the plaintext and the
 lengths. -/
-structure DecPost (K W SP : Addr) (R : Nat) (A D : Addr) (al n : Nat) (t t' : State) : Prop where
+structure DecPost (θ : Nat) (K W SP : Addr) (R : Nat) (A D : Addr) (al n : Nat) (t t' : State) : Prop where
   env : Env K W SP t'
   rd : t'.rd = t.rd
   wr : t'.wr = t.wr
   frame : Frame (lR W ++ [⟨D, n⟩]) t.mem t'.mem
-  fine : Frame (lRn W n ++ [⟨D, n⟩]) t.mem t'.mem
+  fine : Frame (lRn θ W n ++ [⟨D, n⟩]) t.mem t'.mem
   data : bytesAt t'.mem D n = Spec.GcmSiv.ctr (Spec.GcmSiv.ctxCiph t.mem (W + BitVec.ofNat 64 248) R)
     (Spec.GcmSiv.initialCounter (bytesAt t.mem W 16)) (bytesAt t.mem D n)
   out : t'.xmm .xmm2 = ghashFrom (hOf t.mem W) 0
@@ -987,10 +988,10 @@ theorem prefix_keep {ciph : Spec.GcmSiv.Cipher} {icb x : List Byte} {m m' : Mem}
   simp only [hp, hpn, ↓reduceIte]
 
 /-- With less than 256 bytes of data: counter mode, then POLYVAL. -/
-theorem decS_ok (F : MulFacts) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14) {t : State}
+theorem decS_ok (F : MulFacts) {θ : Nat} {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14) {t : State}
     (E : Env K W SP t) {N A D : Addr} {al n : Nat} (S : Slots W R N A D al n t.mem) (hA : Buf K W SP t A al)
     (hD : Buf K W SP t D n) (hDw : Covers [⟨D, n⟩] t.wr) (hAD : (⟨A, al⟩ : Region).Disjoint ⟨D, n⟩) :
-    WP isa (.seq crypt polyval) t (DecPost K W SP R A D al n t) := by
+    WP isa (.seq crypt polyval) t (DecPost θ K W SP R A D al n t) := by
   refine WP.seq (WP.mono (crypt_ok L hR E S hD hDw) fun t₁ Cr => ?_)
   have f₁ : Frame (lR W ++ [⟨D, n⟩]) t.mem t₁.mem := Cr.frame.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -1209,7 +1210,7 @@ theorem decL_ok (F : MulFacts) {lp : Impl.AesGcmSiv.X86_64Stitch.Loops} (hlp : S
     (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14) {t : State} (E : Env K W SP t) {N A D : Addr} {al n : Nat}
     (S : Slots W R N A D al n t.mem) (hA : Buf K W SP t A al) (hD : Buf K W SP t D n)
     (hDw : Covers [⟨D, n⟩] t.wr) (h256 : 256 ≤ n) :
-    WP isa (decL lp) t (DecPost K W SP R A D al n t) := by
+    WP isa (decL lp) t (DecPost 256 K W SP R A D al n t) := by
   have hn := hD.lt
   obtain hRb : 16 * (R + 1) ≤ 240 := by rcases hR with h | h <;> subst h <;> decide
   simp only [decL]
@@ -1293,13 +1294,13 @@ theorem decMid_ok (F : MulFacts) {lp : Impl.AesGcmSiv.X86_64Stitch.Loops} (hlp :
     (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14) {t : State} (E : Env K W SP t) {N A D : Addr} {al n : Nat}
     (S : Slots W R N A D al n t.mem) (hA : Buf K W SP t A al) (hD : Buf K W SP t D n)
     (hDw : Covers [⟨D, n⟩] t.wr) (hAD : (⟨A, al⟩ : Region).Disjoint ⟨D, n⟩) :
-    WP isa (.seq (.block lenCmp) (.ite .b (.seq crypt polyval) (decL lp))) t (DecPost K W SP R A D al n t) := by
+    WP isa (.seq (.block lenCmp) (.ite .b (.seq crypt polyval) (decL lp))) t (DecPost 256 K W SP R A D al n t) := by
   have hn := hD.lt
   obtain ⟨t₁, run₁, cf₁, g₁, x₁, m₁, rd₁, wr₁⟩ := lenCmp_run E S hn
   refine WP.seq (WP.of_runBlock ⟨t₁, run₁, ?_⟩)
   have E₁ : Env K W SP t₁ := E.keep (fun r hr => g₁ r (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl <;> decide)) rd₁ wr₁
-  have cast : ∀ t', DecPost K W SP R A D al n t₁ t' → DecPost K W SP R A D al n t t' := fun t' P =>
+  have cast : ∀ t', DecPost 256 K W SP R A D al n t₁ t' → DecPost 256 K W SP R A D al n t t' := fun t' P =>
     ⟨P.env, P.rd.trans rd₁, P.wr.trans wr₁, m₁ ▸ P.frame, m₁ ▸ P.fine, by rw [P.data, m₁], by rw [P.out, m₁]⟩
   refine WP.ite (decide (n < 256)) (eval_b cf₁) (fun _ => ?_) (fun h => ?_)
   · exact WP.mono (decS_ok F L hR E₁ (m₁ ▸ S) (hA.of_eq rd₁ wr₁) (hD.of_eq rd₁ wr₁) (by rw [wr₁]; exact hDw) hAD) cast
