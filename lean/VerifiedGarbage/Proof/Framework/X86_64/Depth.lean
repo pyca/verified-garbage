@@ -110,11 +110,25 @@ theorem push_frame {i : Instr} {s s₁ : State} (h : isa.push i s = some s₁) :
     rename_i hc
     refine ⟨?_, ?_, hc.2.2.2, Frame.refl _ _⟩ <;> simp [State.setReg, Instr.frameBytes]
 
-/-- A frame's pop changes no memory. -/
-theorem pop_mem {j : Instr} {s₁ s₂ s' : State} (h : isa.pop j s₁ s₂ = some s') : s'.mem = s₂.mem := by
+/-- A frame's pop changes memory only in the frame it releases, the head of
+the push's writable regions (`lose`). -/
+theorem pop_frame {j : Instr} {s₁ s₂ s' : State} (h : isa.pop j s₁ s₂ = some s') :
+    Frame s₁.wr s₂.mem s'.mem := by
   cases j <;> simp only [isa, pop, reduceCtorEq] at h
-  case pop => split at h <;> cases h; exact popReg_mem _ _ _
-  case free => split at h <;> cases h; rfl
+  case pop r k =>
+    split at h <;> cases h
+    rename_i hc
+    refine (lose_frame _ _ _ _).mono fun x hx => ?_
+    simp only [List.mem_singleton] at hx; subst hx
+    rw [hc.2.2.1]
+    exact List.mem_of_mem_head? hc.2.2.2.2
+  case free bytes =>
+    split at h <;> cases h
+    rename_i hc
+    refine (lose_frame _ _ _ _).mono fun x hx => ?_
+    simp only [List.mem_singleton] at hx; subst hx
+    rw [hc.2.2.2.1]
+    exact List.mem_of_mem_head? hc.2.2.2.2.2
 
 /-- The stack below `sp - a`, within the stack below `sp`. -/
 theorem below_below (sp : Addr) (a n : Nat) : Region.Sub (below (sp - BitVec.ofNat 64 a) n) (below sp (n + a)) := by
@@ -161,8 +175,10 @@ theorem Exec.stackFrame {c : Prog isa} (hc : SpSafe c) {s s' : State} {t : List 
     obtain ⟨e₁, w₁, -, f₀⟩ := push_frame hp
     have f₁ := ih hb (by omega_using [hd])
     rw [w₁, e₁] at f₁
-    rw [pop_mem hq]
-    refine Frame.trans (Frame.sub f₀ fun r hr => ?_) (Frame.sub f₁ fun r hr => ?_)
+    have f₂ := pop_frame hq
+    rw [w₁, e₁] at f₂
+    refine Frame.trans (Frame.trans (Frame.sub f₀ fun r hr => ?_) (Frame.sub f₁ fun r hr => ?_))
+      (Frame.sub f₂ fun r hr => ?_)
     · simp only [List.mem_singleton] at hr; subst hr
       exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), below_sub (by omega_using []) (by omega_using [hd])⟩
     · simp only [List.cons_append, List.mem_cons, List.mem_append, List.not_mem_nil, or_false] at hr
@@ -170,6 +186,10 @@ theorem Exec.stackFrame {c : Prog isa} (hc : SpSafe c) {s s' : State} {t : List 
       · exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), below_sub (by omega_using []) (by omega_using [hd])⟩
       · exact ⟨r, List.mem_append_left _ hr, fun _ h => h⟩
       · exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), below_below _ _ _⟩
+    · simp only [List.mem_cons] at hr
+      rcases hr with rfl | hr
+      · exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), below_sub (by omega_using []) (by omega_using [hd])⟩
+      · exact ⟨r, List.mem_append_left _ hr, fun _ h => h⟩
   | @call _ b s₀ s₁ s₂ s₃ _ hc₁ hb hr ih =>
     simp only [Code.x86_64Depth] at hd ⊢
     have e₁ : s₁ = s₀.callEntry := (Option.some.inj ((call_callEntry s₀).symm.trans hc₁)).symm

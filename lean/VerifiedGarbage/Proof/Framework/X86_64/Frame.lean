@@ -132,6 +132,32 @@ theorem pushRegs_mem (s : State) (rs : List Reg) (hrs : .rsp ∉ rs)
         congr 1
         bv_omega_arith
 
+/-- The memory a release leaves, `lose`, differs from the frame's only in the
+frame. -/
+theorem lose_frame (m : Mem) (a : Addr) (n : Nat) (u : Nat → BitVec 64) :
+    Frame [⟨a, n⟩] m (lose m a n u) := by
+  intro x hx
+  have h := hx _ (List.mem_singleton_self _)
+  simp only [Region.Contains] at h
+  simp only [lose]
+  split
+  · omega
+  · rfl
+
+/-- The state a frame's pop leaves: `popped`, with the released frame's
+bytes `lose`'s and the unknowns it used gone. -/
+def released (r : Reg) (k : Nat) (s : State) : State :=
+  { popped r k s with
+    mem := lose s.mem (s.gpr .rsp) (8 * k) s.unknowns
+    unknowns := fun n => s.unknowns (n + 2 * k) }
+
+theorem pop_released {rs : List Reg} {r : Reg} {s s₂ : State} (hne : rs ≠ []) (hr : r ≠ .rsp)
+    (hsp : s₂.gpr .rsp = (pushed rs s).gpr .rsp) (hw : s₂.wr = (pushed rs s).wr) :
+    isa.pop (.pop r rs.length) (pushed rs s) s₂ = some (released r rs.length s₂) := by
+  simp only [isa, pop]
+  refine ite_eq_left ⟨by simpa using hne, hr, hsp, hw, ?_⟩
+  rw [pushed_wr, pushed_rsp]; rfl
+
 /-- A frame: its body runs from `pushed rs s`, ends with `rsp` and the
 writable regions as the push left them, and the pop of the `rs.length`
 words leads to `popped r rs.length s₂`, of which the postcondition may rely
@@ -147,29 +173,21 @@ theorem WP.frame {rs : List Reg} {r : Reg} {body : Prog isa} {s : State} {Q : St
         Q { popped r rs.length s₂ with mem := m, unknowns := u }) :
     WP isa (.frame (.push rs) body (.pop r rs.length)) s Q := by
   obtain ⟨t, s₂, he, hsp, hw, hq⟩ := hb
-  have hpop : isa.pop (.pop r rs.length) (pushed rs s) s₂ = some (popped r rs.length s₂) := by
-    simp only [isa, pop]
-    refine ite_eq_left ⟨by simpa using hne, hr, hsp, hw, ?_⟩
-    rw [pushed_wr, pushed_rsp]; rfl
-  exact ⟨_, _, Exec.frame (push_pushed hne hrs hn) he hpop,
-    hq _ (popped r rs.length s₂).unknowns (by rw [popReg_mem]; exact Frame.refl _ _)⟩
+  refine ⟨_, _, Exec.frame (push_pushed hne hrs hn) he (pop_released hne hr hsp hw), hq _ _ ?_⟩
+  rw [hsp, pushed_rsp]
+  exact lose_frame _ _ _ _
 
-/-- `WP.frame` with the memory of the body's run: the pop leads to
-`popped r rs.length s₂` itself. Only the residue lemmas use it, which state
+/-- `WP.frame` with the state the pop leaves, `released r rs.length s₂`. Only the residue lemmas use it, which state
 per run what a released frame holds (ChaCha20's gathered seal, MCDT's
 entry); every other proof uses `WP.frame`, whose postcondition holds
 whatever the frame's bytes. -/
 theorem WP.frameMem {rs : List Reg} {r : Reg} {body : Prog isa} {s : State} {Q : State → Prop}
     (hne : rs ≠ []) (hrs : .rsp ∉ rs) (hr : r ≠ .rsp) (hn : 8 * rs.length ≤ (s.gpr .rsp).toNat)
     (hb : WP isa body (pushed rs s) fun s₂ => s₂.gpr .rsp = (pushed rs s).gpr .rsp ∧
-      s₂.wr = (pushed rs s).wr ∧ Q (popped r rs.length s₂)) :
+      s₂.wr = (pushed rs s).wr ∧ Q (released r rs.length s₂)) :
     WP isa (.frame (.push rs) body (.pop r rs.length)) s Q := by
   obtain ⟨t, s₂, he, hsp, hw, hq⟩ := hb
-  have hpop : isa.pop (.pop r rs.length) (pushed rs s) s₂ = some (popped r rs.length s₂) := by
-    simp only [isa, pop]
-    refine ite_eq_left ⟨by simpa using hne, hr, hsp, hw, ?_⟩
-    rw [pushed_wr, pushed_rsp]; rfl
-  exact ⟨_, _, Exec.frame (push_pushed hne hrs hn) he hpop, hq⟩
+  exact ⟨_, _, Exec.frame (push_pushed hne hrs hn) he (pop_released hne hr hsp hw), hq⟩
 
 /-- A frame's pop from memory `m` that agrees with `s`'s on the `k` words it
 reads loads what it loads from `s`: with that memory (and any unknowns) it

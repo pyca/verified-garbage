@@ -16,6 +16,19 @@ namespace VG.X86_64
 def freeState (bytes : Nat) (s : State) : State :=
   { s.setReg .rsp (s.gpr .rsp + BitVec.ofNat 64 bytes) with wr := s.wr.tail }
 
+/-- The state a `free` leaves: `freeState`, with the released frame's bytes
+`lose`'s and the unknowns it used gone. -/
+def freeLost (bytes : Nat) (s : State) : State :=
+  { freeState bytes s with
+    mem := lose s.mem (s.gpr .rsp) bytes s.unknowns
+    unknowns := fun n => s.unknowns (n + bytes / 4) }
+
+theorem free_lost {bytes : Nat} (hb : 0 < bytes ∧ bytes < 4096 ∧ bytes % 8 = 0) {s t : State}
+    (hsp : t.gpr .rsp = (allocState bytes s).gpr .rsp) (hwr : t.wr = (allocState bytes s).wr) :
+    isa.pop (.free bytes) (allocState bytes s) t = some (freeLost bytes t) := by
+  simp only [isa, pop]
+  exact ite_eq_left ⟨hb.1, hb.2.1, hb.2.2, hsp, hwr, rfl⟩
+
 /-- A frame of `bytes` bytes: its body runs from `allocState bytes s`, ends
 with the frame's `rsp` and permissions, and the `free` leads to
 `freeState bytes t`, of which the postcondition may rely on nothing the
@@ -33,28 +46,23 @@ theorem alloc_frame_ok {bytes : Nat} (hb : 0 < bytes ∧ bytes < 4096 ∧ bytes 
   have ha : isa.push (.alloc bytes) s = some (allocState bytes s) := by
     simp only [isa, push, allocState]
     exact ite_eq_left ⟨hb.1, hb.2.1, hb.2.2, hl⟩
-  have hf : isa.pop (.free bytes) (allocState bytes s) t = some (freeState bytes t) := by
-    simp only [isa, pop]
-    exact ite_eq_left ⟨hb.1, hb.2.1, hb.2.2, hsp, hwr, rfl⟩
-  exact ⟨_, _, Exec.frame ha he hf, hq _ t.unknowns (Frame.refl _ _)⟩
+  refine ⟨_, _, Exec.frame ha he (free_lost hb hsp hwr), hq _ _ ?_⟩
+  rw [hsp]
+  exact lose_frame _ _ _ _
 
-/-- `alloc_frame_ok` with the memory of the body's run: the `free` leads to
-`freeState bytes t` itself. Only the residue lemmas use it, which state per
+/-- `alloc_frame_ok` with the state the `free` leaves, `freeLost bytes t`. Only the residue lemmas use it, which state per
 run what a released frame holds (MCDT's exit); every other proof uses
 `alloc_frame_ok`. -/
 theorem alloc_frame_okMem {bytes : Nat} (hb : 0 < bytes ∧ bytes < 4096 ∧ bytes % 8 = 0)
     {s : State} (hl : bytes ≤ (s.gpr .rsp).toNat) {body : Prog isa} {Q : State → Prop}
     (run : WP isa body (allocState bytes s) fun t =>
-      t.gpr .rsp = (allocState bytes s).gpr .rsp ∧ t.wr = (allocState bytes s).wr ∧ Q (freeState bytes t)) :
+      t.gpr .rsp = (allocState bytes s).gpr .rsp ∧ t.wr = (allocState bytes s).wr ∧ Q (freeLost bytes t)) :
     WP isa (.frame (.alloc bytes) body (.free bytes)) s Q := by
   obtain ⟨trace, t, he, hsp, hwr, hq⟩ := run
   have ha : isa.push (.alloc bytes) s = some (allocState bytes s) := by
     simp only [isa, push, allocState]
     exact ite_eq_left ⟨hb.1, hb.2.1, hb.2.2, hl⟩
-  have hf : isa.pop (.free bytes) (allocState bytes s) t = some (freeState bytes t) := by
-    simp only [isa, pop]
-    exact ite_eq_left ⟨hb.1, hb.2.1, hb.2.2, hsp, hwr, rfl⟩
-  exact ⟨_, _, Exec.frame ha he hf, hq⟩
+  exact ⟨_, _, Exec.frame ha he (free_lost hb hsp hwr), hq⟩
 
 theorem freeState_rsp {bytes : Nat} {s t : State}
     (hsp : t.gpr .rsp = (allocState bytes s).gpr .rsp) :
