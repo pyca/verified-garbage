@@ -527,13 +527,13 @@ private theorem slideVal_repP {a : Spec.Ed25519.Point} {A : Edwards.EPoint Proof
 
 /-- `[K]a` as `publicMul` computes it, on the digits of `K` from the top one that is not zero. -/
 def slide (a : Spec.Ed25519.Point) (K : Nat) : Spec.Ed25519.Point :=
-  slideVal a (Proof.Ed25519.Slide.digits K) (Proof.Ed25519.Slide.topPos (Proof.Ed25519.Slide.digits K) 256)
-    (Proof.Ed25519.Slide.topPos (Proof.Ed25519.Slide.digits K) 256)
+  slideVal a (Proof.Ed25519.Slide.digits 256 K) (Proof.Ed25519.Slide.topPos (Proof.Ed25519.Slide.digits 256 K) 256)
+    (Proof.Ed25519.Slide.topPos (Proof.Ed25519.Slide.digits 256 K) 256)
 
 /-- The whole sum represents `[K]A`, with its `T`. -/
 theorem slide_rep {a : Spec.Ed25519.Point} {A : Edwards.EPoint Proof.Ed25519.dZ} (ha : Proof.Ed25519.Rep a A)
     {K : Nat} (hK : K < 2 ^ 256) : Proof.Ed25519.Rep (slide a K) (K • A) := by
-  have h := (slideVal_repP ha (Proof.Ed25519.Slide.digits_odd K)
+  have h := (slideVal_repP ha (Proof.Ed25519.Slide.digits_odd 256 K)
     (Proof.Ed25519.Slide.topPos_lt _ (by decide : 0 < 256))
     (fun q h1 h2 => Proof.Ed25519.Slide.topPos_zero _ _ _ h1 h2) _ (Nat.le_refl _)).2 rfl
   rwa [Nat.sub_self, Nat.sub_zero, Proof.Ed25519.Slide.digits_sum hK] at h
@@ -825,7 +825,7 @@ theorem recode_ok {b ptr : BitVec 32} {s : State} (hc : Ctx b s) (hp : lw s.mem 
     (hin : VerifyInput b ptr 32 s) :
     WP isa recode s fun t => Rest recClob s t ∧ Frame [digR b] s.mem t.mem ∧
       ∀ q < 256, t.mem (State.addr b + BitVec.ofNat 64 (DIG + q)) = BitVec.ofNat 8
-        (Proof.Ed25519.Slide.digits (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (State.addr ptr) 32)) q) := by
+        (Proof.Ed25519.Slide.digits 256 (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (State.addr ptr) 32)) q) := by
   generalize hK : Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (State.addr ptr) 32) = K
   rw [recode]
   refine WP.seq (wp_mov (op2_imm (by decide)) fun s₁ u₁ => wp_mov (op2_imm (by decide)) fun s₂ u₂ =>
@@ -1435,7 +1435,7 @@ theorem publicMul_ok {s : State} {b ptr : BitVec 32} (hc : Ctx b s) (hl : AllLim
   obtain kw : PointKeep b v w := PointKeep.of_small wr (by decide) wf (by decide) (by decide)
   obtain cw := kw.ctx vt.ctx
   obtain tw : TabDone (point (env s.mem b) 0 1 2 3) b w.mem := TabDone.digits ⟨vt.lim, vt.d, vt.tab⟩ wf
-  obtain hD := Proof.Ed25519.Slide.digits_odd
+  obtain hD := Proof.Ed25519.Slide.digits_odd 256
     (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (State.addr ptr) 32))
   refine WP.seq (WP.mono (topDigit_ok cw wd fun q => by rcases hD q with e | e <;> omega_using [e])
     fun x ⟨xr, xm, x11, x10⟩ => ?_)

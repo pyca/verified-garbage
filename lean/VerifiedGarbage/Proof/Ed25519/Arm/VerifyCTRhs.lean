@@ -633,9 +633,9 @@ theorem slideRest_ct (a : Spec.Ed25519.Point) (D : Nat → Nat) (b : BitVec 32) 
 
 theorem publicMul_ct (ks : List Byte) (a : Spec.Ed25519.Point) (b ptr : BitVec 32) :
     CT (fun x y => PubMulPre ks a b ptr x ∧ PubMulPre ks a b ptr y) (publicMul umaal) (fun _ _ => True) := by
-  obtain hD := Proof.Ed25519.Slide.digits_odd (Spec.Ed25519.decodeLE ks)
+  obtain hD := Proof.Ed25519.Slide.digits_odd 256 (Spec.Ed25519.decodeLE ks)
   have pre (s : State) (h : RecRun ks a b ptr 256 s) :
-      SumPre a (Proof.Ed25519.Slide.digits (Spec.Ed25519.decodeLE ks)) b s :=
+      SumPre a (Proof.Ed25519.Slide.digits 256 (Spec.Ed25519.decodeLE ks)) b s :=
     ⟨h.1.ctx, h.2.2.2, fun q hq => by rw [Proof.Ed25519.Slide.digits_eq]; exact h.1.dig q hq⟩
   rw [publicMul]
   exact RelCT.seq (savePtr_ct ks a b ptr) (RelCT.seq (oddTable_ct ks a b ptr) (RelCT.seq (recode_ct ks a b ptr)

@@ -5,7 +5,7 @@ import VerifiedGarbage.Proof.Ed448.Comb
 import VerifiedGarbage.Proof.Ed448.Group.Projective
 import VerifiedGarbage.Proof.Ed448.Group.Decode
 import VerifiedGarbage.Proof.Ed448.VerifyEq
-import VerifiedGarbage.Proof.Ed448.Facts
+import VerifiedGarbage.Proof.Ed25519.SlidingDigits
 import VerifiedGarbage.Proof.X448.BaseAdd
 import VerifiedGarbage.Proof.X448.Bytes
 import VerifiedGarbage.Proof.Framework.Omega
@@ -20,8 +20,10 @@ over `ZMod p`. `baseComb_ok`: after the rows above `t`, `comb` represents
 and the scalar's arithmetic, `Comb.accScalar_step`), so the whole comb
 encodes `[k]B`; and `baseCombU_ok`, X448 of the base point as its
 u-coordinate (`Proof/X448/BaseAdd.lean`). `verifyEqComb_ok`: `vcomb` represents
-`[accScalar S t]B + [k >> t]a` the same way (the scalar of the comb is zero
-above its rows), and the equation follows (`verifyEquation_some`).
+`[accScalar S t]B + [∑ j, 2^j D (t + j)]a` the same way, for `k`'s digits `D`
+(the scalar of the comb is zero above its rows; a digit's multiple is the
+table's, `oddMul_rep`; the digits sum to `k`, `Slide.digits_sum`), and the
+equation follows (`verifyEquation_some`).
 
 Only registration files import this module.
 -/
@@ -89,60 +91,75 @@ private theorem accScalar_high (k : Nat) {n : Nat} (hn : 114 ≤ n) : accScalar 
       (Nat.pow_le_pow_right (by decide) hn))
   simp only [accScalar, h, Nat.zero_mul, Nat.add_zero]
 
-/-- One bit: `Q` for `[accScalar S (t + 1)]B + [k >> (t + 1)]a` becomes `Q` for
-`[accScalar S t]B + [k >> t]a`. -/
-private theorem vcombStep_rep {q a' : Point} {S K t : Nat} {a : EPoint dZ}
-    (hr : Rep q (accScalar S (t + 1) • baseAff + (K >>> (t + 1)) • a)) (ha : Rep a' a) :
-    Rep (vcombStep S (bitAt K t) t a' q) (accScalar S t • baseAff + (K >>> t) • a) := by
+/-- A table's entry `m` represents `[2m + 1]a`. -/
+private theorem oddMul_rep {a' : Point} {a : EPoint dZ} (ha : Rep a' a) :
+    ∀ m, Rep (oddMul a' m) ((2 * m + 1) • a)
+  | 0 => by simpa only [oddMul, Nat.mul_zero, Nat.zero_add, one_nsmul] using ha
+  | m + 1 => by
+    have h := pointAdd_rep (oddMul_rep ha m) (double_rep ha)
+    rw [show 2 * (m + 1) + 1 = (2 * m + 1) + 1 + 1 by omega_arith, add_nsmul, add_nsmul, one_nsmul, add_assoc]
+    exact h
+
+/-- One bit: `Q` for `[accScalar S (t + 1)]B + [x]a` becomes `Q` for `[accScalar S t]B + [d + 2x]a`,
+for the digit `d` at `t`, zero or odd. -/
+private theorem vcombStep_rep {q a' : Point} {S d x t : Nat} {a : EPoint dZ}
+    (hr : Rep q (accScalar S (t + 1) • baseAff + x • a)) (ha : Rep a' a) (hd : d = 0 ∨ d % 2 = 1) :
+    Rep (vcombStep S d t a' q) (accScalar S t • baseAff + (d + 2 * x) • a) := by
   have h2 := double_rep hr
-  have hk : (K >>> t) • a = (K >>> (t + 1)) • a + (K >>> (t + 1)) • a + ((K >>> t) &&& 1) • a := by
-    conv => lhs; rw [shift_step K t]
+  have hk : (d + 2 * x) • a = x • a + x • a + d • a := by
     rw [add_nsmul, two_mul, add_nsmul]
+    abel
+  have hm := oddMul_rep ha ((d - 1) / 2)
   unfold vcombStep
   by_cases hrow : t < 114
   · have h3 := pointAdd_rep h2 (Comb.entry_rep _ (Comb.digit_lt S t))
-    have e1 : accScalar S t • baseAff + (K >>> t) • a =
-        (accScalar S (t + 1) • baseAff + (K >>> (t + 1)) • a) +
-          (accScalar S (t + 1) • baseAff + (K >>> (t + 1)) • a) +
-          Impl.Ed448.Comb.weight (digit S t) • baseAff + ((K >>> t) &&& 1) • a := by
+    have e1 : accScalar S t • baseAff + (d + 2 * x) • a =
+        (accScalar S (t + 1) • baseAff + x • a) + (accScalar S (t + 1) • baseAff + x • a) +
+          Impl.Ed448.Comb.weight (digit S t) • baseAff + d • a := by
       rw [hk, Comb.accScalar_step S t hrow, add_nsmul, two_mul, add_nsmul]
       abel
     rw [e1]
-    rcases bit_cases K t with ⟨hb, bk⟩ | ⟨hb, bk⟩ <;>
-      simp only [hrow, hb, bk, combDigit_eq, zero_nsmul, add_zero, one_nsmul, Bool.false_eq_true, ite_true,
-        ite_false]
-    · exact h3
-    · exact pointAdd_rep h3 ha
-  · have e1 : accScalar S t • baseAff + (K >>> t) • a =
-        (accScalar S (t + 1) • baseAff + (K >>> (t + 1)) • a) +
-          (accScalar S (t + 1) • baseAff + (K >>> (t + 1)) • a) + ((K >>> t) &&& 1) • a := by
+    rcases hd with rfl | h1
+    · simp only [hrow, combDigit_eq, zero_nsmul, add_zero, ite_true]
+      exact h3
+    · rw [show 2 * ((d - 1) / 2) + 1 = d by omega_using [h1]] at hm
+      simp only [hrow, combDigit_eq, ite_true, show d ≠ 0 by omega_using [h1], ite_false]
+      exact pointAdd_rep h3 hm
+  · have e1 : accScalar S t • baseAff + (d + 2 * x) • a =
+        (accScalar S (t + 1) • baseAff + x • a) + (accScalar S (t + 1) • baseAff + x • a) + d • a := by
       rw [hk, accScalar_high S (n := t) (by omega_using [hrow]), accScalar_high S (n := t + 1) (by omega_using [hrow]),
         zero_nsmul, zero_add, zero_add]
     rw [e1]
-    rcases bit_cases K t with ⟨hb, bk⟩ | ⟨hb, bk⟩ <;>
-      simp only [hrow, hb, bk, zero_nsmul, add_zero, one_nsmul, Bool.false_eq_true, ite_true, ite_false]
-    · exact h2
-    · exact pointAdd_rep h2 ha
+    rcases hd with rfl | h1
+    · simp only [hrow, zero_nsmul, add_zero, ite_true, ite_false]
+      exact h2
+    · rw [show 2 * ((d - 1) / 2) + 1 = d by omega_using [h1]] at hm
+      simp only [hrow, show d ≠ 0 by omega_using [h1], ite_false]
+      exact pointAdd_rep h2 hm
 
-private theorem vcomb_rep {S K : Nat} (hK : Below456 K) {a' : Point} {a : EPoint dZ} (ha : Rep a' a) :
-    ∀ m ≤ 456, Rep (vcomb S K a' m) (accScalar S (456 - m) • baseAff + (K >>> (456 - m)) • a)
+private theorem vcomb_rep (S K : Nat) {a' : Point} {a : EPoint dZ} (ha : Rep a' a) :
+    ∀ m ≤ 456, Rep (vcomb S K a' m)
+      (accScalar S (456 - m) • baseAff + Proof.Ed25519.Slide.wsum (vdigits K) (456 - m) m • a)
   | 0, _ => by
-    rw [Nat.sub_zero, accScalar_high S (by decide), shift_456 hK, zero_nsmul, zero_nsmul, add_zero]
+    rw [Nat.sub_zero, accScalar_high S (by decide), Proof.Ed25519.Slide.wsum_zero, zero_nsmul, zero_nsmul, add_zero]
     exact identity_rep
   | m + 1, hm => by
     have h := vcombStep_rep (S := S) (t := 455 - m) (show Rep (vcomb S K a' m)
-      (accScalar S (455 - m + 1) • baseAff + (K >>> (455 - m + 1)) • a) by
-      rw [show 455 - m + 1 = 456 - m by omega_arith]; exact vcomb_rep hK ha m (by omega_arith)) ha
-    rw [show 456 - (m + 1) = 455 - m by omega_arith]
+      (accScalar S (455 - m + 1) • baseAff + Proof.Ed25519.Slide.wsum (vdigits K) (455 - m + 1) m • a) by
+      rw [show 455 - m + 1 = 456 - m by omega_arith]; exact vcomb_rep S K ha m (by omega_arith)) ha
+      (d := vdigits K (455 - m))
+      ((Proof.Ed25519.Slide.digits_odd 456 K (455 - m)).imp id fun h => h.1)
+    rw [show 456 - (m + 1) = 455 - m by omega_arith, Proof.Ed25519.Slide.wsum_succ]
     exact h
 
 theorem verifyEqComb_ok : VerifyEqCombOk := by
   intro pk sig ch a r hl hs hc ha hr
   have hva := decodePoint_valid ha
   have hS := decodeLE_below (bs := sig.drop 57) (by rw [List.length_drop, hs])
-  have hQ := vcomb_rep (S := Spec.Ed448.decodeLE (sig.drop 57)) (decodeLE_below hc)
+  have hQ := vcomb_rep (Spec.Ed448.decodeLE (sig.drop 57)) (Spec.Ed448.decodeLE ch)
     (rep_toAffine (valid_negPoint hva)) 456 (Nat.le_refl _)
-  rw [Nat.sub_self, Nat.shiftRight_zero, Comb.accScalar_total _ hS, toAffine_negPoint hva] at hQ
+  rw [Nat.sub_self, Proof.Ed25519.Slide.digits_sum (decodeLE_below hc), Comb.accScalar_total _ hS,
+    toAffine_negPoint hva] at hQ
   exact verifyEquation_some hl hs hc ha hr hQ (rep_toAffine (decodePoint_valid hr))
 
 end VG.Proof.Ed448
