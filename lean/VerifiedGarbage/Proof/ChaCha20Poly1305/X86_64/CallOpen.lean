@@ -609,6 +609,15 @@ theorem pushed_frame {h : State} (hs : CPre h) :
   rw [sub_hB h (by decide)] at pf
   exact pf
 
+/-- The destination keeps its bytes when the frame loses its own. -/
+theorem dst_lost {h : State} (hs : CPre h) {m m' : Mem} (hf : Frame [⟨hB h + BitVec.ofNat 64 32, 24⟩] m m') :
+    bytesAt m' (hD h) (hL h) = bytesAt m (hD h) (hL h) := by
+  simp only [bytesAt]
+  refine List.map_congr_left fun i hi => hf.bytes (R := hdR h) (fun r hr => ?_) (Nat.le_of_lt (h.gpr .r9).isLt)
+    (List.mem_range.mp hi)
+  rw [List.mem_singleton.mp hr]
+  exact (CPre.stk_disj hs.b_d (d := 32) (n := 24) (by decide)).symm
+
 /-- The call, from a state satisfying `CPre`. -/
 theorem callOpen_ok (v : XorImpl) {h : State} (hs : CPre h) :
     WP isa (callOpen v.callee v.poly) h (COut h) := by
@@ -623,8 +632,14 @@ theorem callOpen_ok (v : XorImpl) {h : State} (hs : CPre h) :
     fun s' rd' wr' cs' f' ⟨s₂, m₂, g₂, post₂⟩ mx' => ?_
   have prsp : (pushed frameRegs h).gpr .rsp = hB h + BitVec.ofNat 64 32 := by
     rw [pushed_rsp, sub_hB h (by decide)]; rfl
-  refine ⟨cs' _ calleeSaved_rsp, wr', ⟨fun r hr => ?_, by rw [popped_rd, rd', pushed_rd],
-    by rw [popped_wr, wr', pushed_wr]; rfl, ?_, ?_, ?_⟩⟩
+  refine ⟨cs' _ calleeSaved_rsp, wr', fun m uk fm => ?_⟩
+  -- The pop of `r11`, `rax` and `r10` loses their 24 bytes, in the stack.
+  rw [show h.gpr .rsp - BitVec.ofNat 64 (8 * frameRegs.length) = hB h + BitVec.ofNat 64 32 from
+    (pushed_rsp _ _).symm.trans prsp] at fm
+  replace fm : Frame [⟨hB h + BitVec.ofNat 64 32, 24⟩] s'.mem m := fm
+  dsimp only
+  refine ⟨fun r hr => ?_, by rw [popped_rd, rd', pushed_rd],
+    by rw [popped_wr, wr', pushed_wr]; rfl, ?_, ?_, ?_⟩
   · by_cases hr' : r = .rsp
     · subst hr'
       rw [popped_rsp, cs' _ calleeSaved_rsp, prsp, Offset.add_ofNat_add_ofNat, rsp_eq h]
@@ -633,11 +648,14 @@ theorem callOpen_ok (v : XorImpl) {h : State} (hs : CPre h) :
       rw [popped_gpr _ _ _ hr' hra, cs' r hr, pushed_gpr _ _ hr']
   · -- The pushes, the return address and the callee: within the stack, the
     -- destination and `work`.
-    rw [popped_mem]
     have f₂ := Frame.below_mono f' (b := 32) (by omega_using [hd]) (by decide)
     rw [prsp, show wrB (eS h) = [hdR h, hwR h] by show [dR (eS h), ctxR (eS h)] = _; rw [hu.ed, hu.ec]] at f₂
     simp only [below, BitVec.add_sub_cancel] at f₂
-    refine Frame.trans (Frame.sub (pushed_frame hs) fun r hr => ?_) (Frame.sub f₂ fun r hr => ?_)
+    refine Frame.trans (Frame.trans (Frame.sub (pushed_frame hs) fun r hr => ?_) (Frame.sub f₂ fun r hr => ?_))
+      (fm.sub fun r hr => ?_)
+    rotate_left 2
+    · rw [List.mem_singleton.mp hr]
+      exact ⟨hstk h, by simp only [List.mem_cons, true_or, or_true], Offset.sub_base _ (by decide)⟩
     · simp only [List.mem_singleton] at hr; subst hr
       exact ⟨hstk h, by simp only [List.mem_cons, true_or, or_true],
         Offset.sub_base _ (by decide)⟩
@@ -652,7 +670,7 @@ theorem callOpen_ok (v : XorImpl) {h : State} (hs : CPre h) :
       (popped_gpr _ _ _ (by decide) (by decide)).trans (g₂ .rax (by decide)).symm
     have hp := hu.post hs post₂
     unfold hPost at hp ⊢
-    rw [popped_mem, ← m₂, e]
+    rw [e, dst_lost hs fm, ← m₂]
     exact hp
 
 /-- `callOpen_ok`, and what the call leaves in the keystream area of `work`
@@ -670,8 +688,14 @@ theorem callOpen_okK (v : XorImpl) {h : State} (hs : CPre h) :
     fun s' rd' wr' cs' f' ⟨s₂, m₂, g₂, ⟨post₂, ks₂⟩⟩ mx' => ?_
   have prsp : (pushed frameRegs h).gpr .rsp = hB h + BitVec.ofNat 64 32 := by
     rw [pushed_rsp, sub_hB h (by decide)]; rfl
-  refine ⟨cs' _ calleeSaved_rsp, wr', ⟨⟨fun r hr => ?_, by rw [popped_rd, rd', pushed_rd],
-    by rw [popped_wr, wr', pushed_wr]; rfl, ?_, ?_, ?_⟩, ?_⟩⟩
+  refine ⟨cs' _ calleeSaved_rsp, wr', fun m uk fm => ?_⟩
+  -- The pop of `r11`, `rax` and `r10` loses their 24 bytes, in the stack.
+  rw [show h.gpr .rsp - BitVec.ofNat 64 (8 * frameRegs.length) = hB h + BitVec.ofNat 64 32 from
+    (pushed_rsp _ _).symm.trans prsp] at fm
+  replace fm : Frame [⟨hB h + BitVec.ofNat 64 32, 24⟩] s'.mem m := fm
+  dsimp only
+  refine ⟨⟨fun r hr => ?_, by rw [popped_rd, rd', pushed_rd],
+    by rw [popped_wr, wr', pushed_wr]; rfl, ?_, ?_, ?_⟩, ?_⟩
   · by_cases hr' : r = .rsp
     · subst hr'
       rw [popped_rsp, cs' _ calleeSaved_rsp, prsp, Offset.add_ofNat_add_ofNat, rsp_eq h]
@@ -680,11 +704,14 @@ theorem callOpen_okK (v : XorImpl) {h : State} (hs : CPre h) :
       rw [popped_gpr _ _ _ hr' hra, cs' r hr, pushed_gpr _ _ hr']
   · -- The pushes, the return address and the callee: within the stack, the
     -- destination and `work`.
-    rw [popped_mem]
     have f₂ := Frame.below_mono f' (b := 32) (by omega_using [hd]) (by decide)
     rw [prsp, show wrB (eS h) = [hdR h, hwR h] by show [dR (eS h), ctxR (eS h)] = _; rw [hu.ed, hu.ec]] at f₂
     simp only [below, BitVec.add_sub_cancel] at f₂
-    refine Frame.trans (Frame.sub (pushed_frame hs) fun r hr => ?_) (Frame.sub f₂ fun r hr => ?_)
+    refine Frame.trans (Frame.trans (Frame.sub (pushed_frame hs) fun r hr => ?_) (Frame.sub f₂ fun r hr => ?_))
+      (fm.sub fun r hr => ?_)
+    rotate_left 2
+    · rw [List.mem_singleton.mp hr]
+      exact ⟨hstk h, by simp only [List.mem_cons, true_or, or_true], Offset.sub_base _ (by decide)⟩
     · simp only [List.mem_singleton] at hr; subst hr
       exact ⟨hstk h, by simp only [List.mem_cons, true_or, or_true],
         Offset.sub_base _ (by decide)⟩
@@ -699,7 +726,7 @@ theorem callOpen_okK (v : XorImpl) {h : State} (hs : CPre h) :
       (popped_gpr _ _ _ (by decide) (by decide)).trans (g₂ .rax (by decide)).symm
     have hp := hu.post hs post₂
     unfold hPost at hp ⊢
-    rw [popped_mem, ← m₂, e]
+    rw [e, dst_lost hs fm, ← m₂]
     exact hp
   · -- The keystream area: as the callee left it, from `work` as the call found it.
     have ec : cx ((eS h).withRegions (rdB (eS h) ++ [srcR (eS h)]) (wrB (eS h))) = hW h :=
@@ -708,8 +735,12 @@ theorem callOpen_okK (v : XorImpl) {h : State} (hs : CPre h) :
       show ((eS h).gpr .r9).toNat = _; rw [hu.gpr _ (by decide)]
     have k₂ := ks₂
     simp only [ec, eL, State.withRegions_mem] at k₂
-    rw [popped_mem, ← m₂]
-    refine k₂.frame (rs := []) (Frame.refl _ _) (fun _ _ _ hr => by simp at hr) hu.mem fun k hk r hr => ?_
+    rw [← m₂] at fm
+    refine k₂.frame (rs := [⟨hB h + BitVec.ofNat 64 32, 24⟩]) fm (fun k hk r hr hc => ?_) hu.mem fun k hk r hr => ?_
+    · -- The frame's lost bytes are on the stack, apart from `work`.
+      rw [List.mem_singleton.mp hr] at hc
+      refine CPre.stk_disj hs.b_w (d := 32) (n := 24) (by decide) _ hc ?_
+      rw [off_eq]; exact Offset.contains_base _ (by omega_using [hk]) (by have := hs.o_w; omega_using [this, hk])
     simp only [List.mem_singleton] at hr; subst hr
     intro hc
     refine CPre.stk_disj hs.b_w (d := 24) (n := 32) (by decide) _ hc ?_

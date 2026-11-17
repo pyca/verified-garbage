@@ -14,6 +14,7 @@ import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Verified
 import VerifiedGarbage.Proof.Framework.TaintSum
 import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
 import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
+import VerifiedGarbage.Proof.Sha512.Scratch
 
 /-!
 # Sha512 on X86_64: the shared contracts
@@ -154,6 +155,7 @@ theorem update {f : Callee} (hf : MdStream.X86_64.CalleeOk (P := Stream.params) 
       (Spec.Sha512.updateContract X86_64.abi (8 + 1384)) :=
   X86_64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 172) (stack := 8) (bytes := 1384)
     (updateScratch hf hm) (by decide) (by decide) (by decide) (update_spSafe hs) (update_depth hd)
+    (Proof.Sha512.updatePostOut_local _)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 open VG.Impl.Sha512.X86_64.Stream (Callee) in
@@ -166,6 +168,7 @@ theorem finalize {f : Callee} (hf : MdStream.X86_64.CalleeOk (P := Stream.params
       (Spec.Sha512.finalizeContract X86_64.abi (8 + 1384)) :=
   X86_64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 172) (stack := 8) (bytes := 1384)
     (finalizeScratch hf hm) (by decide) (by decide) (by decide) (finalize_spSafe hs) (finalize_depth hd)
+    (Proof.Sha512.finalizePostOut_local _)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 end VG.Proof.Sha512.X86_64.Shared
@@ -252,6 +255,7 @@ theorem finalizeDigestStack {o : List Instr} {D : Nat} (c : DigestCode o D)
   rcases c.hD with rfl | rfl | rfl <;>
   exact X86_64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 172) (stack := 8) (bytes := 1384)
     h (by decide) (by decide) (by decide) hsp hdp
+    (Proof.Sha512.finalizeDigestPostOut_local _ _ _ _)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 theorem digest384 : DigestCode (Impl.MdStream.X86_64.out64 6) 48 where
@@ -407,6 +411,7 @@ theorem updateS :
   rcases h with rfl | rfl <;>
   exact X86_64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := _) (stack := 8) (bytes := _)
     v (by decide) (by decide) (by decide) sp dp
+    (Proof.Sha512.updatePostOut_local _)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 /-- `finalize` made with `so` bytes for the compression function, likewise. -/
@@ -420,6 +425,7 @@ theorem finalizeS :
   rcases h with rfl | rfl <;>
   exact X86_64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := _) (stack := 8) (bytes := _)
     v (by decide) (by decide) (by decide) sp dp
+    (Proof.Sha512.finalizePostOut_local _)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 end S
@@ -495,6 +501,7 @@ theorem finalizeDigestStackS {so : Nat} {o : List Instr} {D : Nat} (c : DigestCo
   rcases c.hso with rfl | rfl <;> rcases c.hD with rfl | rfl | rfl <;>
   exact X86_64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := _) (stack := 8) (bytes := _)
     h (by decide) (by decide) (by decide) hsp hdp
+    (Proof.Sha512.finalizeDigestPostOut_local _ _ _ _)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 theorem digest384S {so : Nat} (h : so = 0 ∨ so = 192) : DigestCodeS so (Impl.MdStream.X86_64.out64 6) 48 where

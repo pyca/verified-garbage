@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.SearchProof.Layout
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.MillerRabin.X86_64.Contract
+import VerifiedGarbage.Proof.Rsa.BytesFrame
 
 /-! # One attempt of the key-generation controller
 
@@ -40,6 +41,34 @@ theorem AttemptPost.keep {p : KeyPublic} {rand : List Byte} {used : Nat} {s t : 
     (hr : (t.gpr .rax).setWidth 32 = (s.gpr .rax).setWidth 32) : AttemptPost p rand used t := by
   unfold AttemptPost at h ⊢
   rw [hm, hr]
+  exact h
+
+/-- `AttemptPost` holds whatever the bytes of a frame on the search's stack
+hold once released: the key pair's buffers lie apart from it. -/
+theorem AttemptPost.lost {p : KeyPublic} {original : State} {rand : List Byte} {used : Nat} {t t' : State}
+    (hi : KeyInput p original) (h : AttemptPost p rand used t) (hr : t'.gpr .rax = t.gpr .rax)
+    {R : Region} (fm : Frame [R] t.mem t'.mem) (hR : R.Sub (below (original.gpr .rsp) stackUse)) :
+    AttemptPost p rand used t' := by
+  have hd := hi.1.2.2.2.2.2.2.2.1
+  have hrsi := hi.1.2.2.2.2.2.2.2.2.2.2.1
+  have hrcx := hi.1.2.2.2.2.2.2.2.2.2.2.2.1
+  have sep : ∀ {B : Region}, (below (original.gpr .rsp) stackUse).Disjoint B → ∀ q ∈ [R], B.Disjoint q :=
+    fun hB q hq => by
+      simp only [List.mem_singleton] at hq; subst hq
+      exact fun x h₁ h₂ => hB x (hR x h₂) h₁
+  have hX : (below (original.gpr .rsp) stackUse).Disjoint ⟨p.xp, p.len⟩ := by
+    have := (hd (inX original) (by simp [inWrites])).2
+    cases hi.2
+    simp only [inX, hrsi] at this
+    exact this
+  have hY : (below (original.gpr .rsp) stackUse).Disjoint ⟨p.yp, p.len⟩ := by
+    have := (hd (inY original) (by simp [inWrites])).2
+    cases hi.2
+    simp only [inY, hrcx] at this
+    exact this
+  have fit : p.len < 2 ^ 64 := by cases hi.2; exact (stackArg original 1).isLt
+  unfold AttemptPost at h ⊢
+  rw [hr, Proof.Rsa.rsa_bytes_frame fm fit (sep hX), Proof.Rsa.rsa_bytes_frame fm fit (sep hY)]
   exact h
 
 section

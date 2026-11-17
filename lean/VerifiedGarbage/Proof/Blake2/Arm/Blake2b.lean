@@ -63,7 +63,7 @@ theorem updateB_framed : Verified Arm.target
   Arm.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 72) (stack := 16) (bytes := 592) (m := 2)
     updateB_verified (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Blake2.updateBPost_local _)
-    (fun vs mm m₁ m₂ r hl _ hb h => Proof.Blake2.updateBPostOut_local _ vs mm m₁ m₂ r hl hb h)
+    (fun vs mm m₁ m₂ r hl _ hb h => Proof.Blake2.updateBPost_out _ vs mm m₁ m₂ r hl hb h)
     (by implies_sat [Spec.Blake2.updateBContract, Spec.Blake2.updateBSig, Arm.abi, Arm.argRegs,
         Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       [updateFrameSat, Proof.Blake2.Arm.Stream.updateSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW,
@@ -79,7 +79,7 @@ theorem finalizeB_framed : Verified Arm.target
   Arm.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 72) (stack := 16) (bytes := 592) (m := 1)
     finalizeB_verified (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Blake2.finalizeBPost_local _)
-    (fun vs mm m₁ m₂ r hl _ hb h => Proof.Blake2.finalizeBPostOut_local _ vs mm m₁ m₂ r hl hb h)
+    (fun vs mm m₁ m₂ r hl _ hb h => Proof.Blake2.finalizeBPost_out _ vs mm m₁ m₂ r hl hb h)
     (by implies_sat [Spec.Blake2.finalizeBContract, Spec.Blake2.finalizeBSig, Arm.abi, Arm.argRegs,
         Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       [finalizeFrameSat, Proof.Blake2.Arm.Stream.finalizeSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW,

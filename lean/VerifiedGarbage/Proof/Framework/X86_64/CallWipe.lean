@@ -614,7 +614,7 @@ theorem cw_wp {name zname : String} {body zcode : Prog isa} {zst : Nat}
     by rw [hgrsp]; simp [Region.Contains]⟩, ?_⟩
   refine ⟨by rw [RegUpd.gpr_setReg_of_ne _ _ (by decide), hgrsp, allocState16_rsp],
     by rw [RegUpd.wr_setReg, hwr]; rfl,
-    ⟨fun q hq => ?_, ?_, ?_⟩, ?_, ?_⟩
+    fun m u fm => ⟨⟨fun q hq => ?_, ?_, ?_⟩, ?_, ?_⟩⟩
   · -- The callee-saved registers.
     by_cases hq' : q = .rsp
     · subst hq'
@@ -623,7 +623,10 @@ theorem cw_wp {name zname : String} {body zcode : Prog isa} {zst : Nat}
       simp only [freeState, State.setReg, hq', hqa, ite_false]
       rw [hcs q hq, allocState16_gpr s hq']
   · -- The return address: memory changes only within the writable regions and below `rsp`.
-    show g.mem.readW (s.gpr .rsp) 64 = s.mem.readW (s.gpr .rsp) 64
+    show m.readW (s.gpr .rsp) 64 = s.mem.readW (s.gpr .rsp) 64
+    refine (fm.readW (r := ⟨s.gpr .rsp, 8⟩) (Region.contains_self _ _) (fun x hx => ?_) (by decide)).trans ?_
+    · simp only [List.mem_singleton] at hx; subst hx
+      exact Offset.base_disjoint_below _ (by decide)
     refine hfs.readW (r := ⟨s.gpr .rsp, 8⟩) (Region.contains_self _ _) (fun x hx => ?_) (by decide)
     rcases List.mem_append.mp hx with hx | hx
     · exact hret x hx
@@ -637,12 +640,19 @@ theorem cw_wp {name zname : String} {body zcode : Prog isa} {zst : Nat}
       rw [hgrsp, hrax']
     rw [hrax]
     refine hout c'.mem _ _ (fun b hb x hx hnx => ?_) hc'.2.2.2.2.2.1
-    refine (hfc x fun R hR hc => ?_).symm
-    rcases List.mem_cons.mp hR with rfl | hR
-    · exact hnx hc
+    refine (hfc x fun R hR hc => ?_).symm.trans (fm x fun R hR hc => ?_).symm
+    · rcases List.mem_cons.mp hR with rfl | hR
+      · exact hnx hc
+      · simp only [List.mem_singleton] at hR; subst hR
+        exact hout' b hb (stack + 24) (stack + 24) (Nat.le_refl _) (Nat.le_refl _) x hx hc
     · simp only [List.mem_singleton] at hR; subst hR
-      exact hout' b hb (stack + 24) (stack + 24) (Nat.le_refl _) (Nat.le_refl _) x hx hc
-  · exact hz0
+      exact hout' b hb 16 16 (Nat.le_refl _) (by omega_using []) x hx hc
+  · -- The array's bytes, apart from the frame.
+    have hd : (⟨s.gpr r, n⟩ : Region).Disjoint ⟨s.gpr .rsp - BitVec.ofNat 64 16, 16⟩ :=
+      (hout' _ harr 16 16 (Nat.le_refl _) (by omega_using [])).sub_left (Region.sub_prefix hn)
+    show Spec.Zeroize.bytesAt m (s.gpr r) n = _
+    rw [← hz0]
+    exact List.map_congr_left fun i hi => lost_byte fm hd (List.mem_range.mp hi)
 
 /-- Two runs of a block, whose traces agree. -/
 theorem RelCT.block_of {P Q : State → State → Prop} {l : List Instr}

@@ -980,15 +980,27 @@ theorem sign_ok {ns : List String} {s : State} (h : (rfcP P ns).pre s) :
   refine WP.frame (rs := pushRs 48) (by simp [pushRs]) (by simp [pushRs]) (by decide)
     (by rw [pushRs_length (by decide)]; have := h.1; omega_using [this])
     (WP.mono (body_ok hL (coreOk_lay P s) hc) fun u ⟨hu, i, hx⟩ =>
-      ⟨hu.rsp.trans hc.rsp.symm, hu.wr.trans hc.wr.symm, ?_, ?_⟩)
-  · have hrsp : (popped .rcx (pushRs 48).length u).gpr .rsp = s.gpr .rsp := by
-      rw [popped_rsp, hu.rsp, pushRs_length (by decide), pop_rsp]
+      ⟨hu.rsp.trans hc.rsp.symm, hu.wr.trans hc.wr.symm, fun m uu fm => ?_⟩)
+  rw [pushRs_length (by decide)] at fm
+  generalize hX : ({ popped .rcx (pushRs 48).length u with mem := m, unknowns := uu } : State) = X
+  have hXg : X.gpr = (popped .rcx (pushRs 48).length u).gpr := by rw [← hX]
+  have hXm : X.mem = m := by rw [← hX]
+  have hsub : Region.Sub ⟨s.gpr .rsp - BitVec.ofNat 64 (8 * (28 + 48)), 8 * (28 + 48)⟩
+      ⟨s.gpr .rsp - BitVec.ofNat 64 (248 + 8 * 48), 248 + 8 * 48⟩ :=
+    Offset.sub_below _ (by decide) (by decide)
+  refine ⟨?_, ?_⟩
+  · have hrsp : X.gpr .rsp = s.gpr .rsp := by
+      rw [hXg, popped_rsp, hu.rsp, pushRs_length (by decide), pop_rsp]
       exact lay_ret _ _ _ rfl _ _ _ _
     refine ⟨fun r hr => ?_, ?_⟩
     · by_cases hr' : r = .rsp
       · subst hr'; exact hrsp
-      · rw [popped_gpr _ _ _ hr' (ne_cs hr (by decide)), hu.cs r hr hr']
-    · rw [popped_mem]
+      · rw [hXg, popped_gpr _ _ _ hr' (ne_cs hr (by decide)), hu.cs r hr hr']
+    · rw [hXm]
+      refine (fm.readW (r := ⟨s.gpr .rsp, 8⟩) (Region.contains_self _ _) ?_ (by decide)).trans ?_
+      · simp only [List.mem_singleton]
+        rintro r rfl
+        exact Offset.base_disjoint_below _ (by decide)
       refine hu.frame.readW (r := (layOf P s).RET) ?_ ?_ (by decide)
       · show (⟨_ + BitVec.ofNat 64 (248 + 8 * 48), 8⟩ : Region).Contains (s.gpr .rsp) 8
         rw [lay_ret]; exact Region.contains_self _ _
@@ -1000,12 +1012,19 @@ theorem sign_ok {ns : List String} {s : State} (h : (rfcP P ns).pre s) :
         · have h₁ : (lay P.I.hashLen P.I.ecdsa.curve.len 48 rfl P.R.E.combConsts P.H P.f s).e = 48 := rfl
           have h₂ : (layOf P s).e = 48 := rfl
           exact Offset.disjoint_base _ (by omega_using [h₁, h₂]) (by omega_using [h₂])
-  · show match (result P.I s.mem (layOf P s).d (layOf P s).dg).1 with
+  · have hko : (⟨(layOf P s).out, 2 * P.I.ecdsa.curve.len⟩ : Region).Disjoint
+        ⟨s.gpr .rsp - BitVec.ofNat 64 (8 * (28 + 48)), 8 * (28 + 48)⟩ :=
+      fun x h₁ h₂ => hL.ko x (hsub x h₂) h₁
+    rw [P.curveLen] at hko
+    show match (result P.I s.mem (layOf P s).d (layOf P s).dg).1 with
       | some rs => _ | none => _
     rw [result_eq hx]
     have e₁ : 2 * P.I.ecdsa.curve.len = 2 * P.Q := by rw [P.curveLen]
     have e₂ : P.I.ecdsa.curve = P.R.E.C := by rw [P.ecdsa, P.R.curve]
     rw [e₁, e₂]
-    exact hx.res.keep (popped_gpr _ _ _ (by decide) (by decide)) (by rw [popped_mem])
+    refine hx.res.keep (by rw [hXg]; exact popped_gpr _ _ _ (by decide) (by decide)) ?_
+    rw [hXm]
+    simp only [Spec.Sha256.bytesAt]
+    exact List.map_congr_left fun i hi => lost_byte fm hko (List.mem_range.mp hi)
 
 end VG.Proof.Ecdsa.Rfc6979.X86_64

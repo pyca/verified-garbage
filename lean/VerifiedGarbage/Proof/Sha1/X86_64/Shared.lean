@@ -8,6 +8,7 @@ public import VerifiedGarbage.Spec.Sha1.Contract
 public import VerifiedGarbage.Impl.StackScratch.X86_64
 public import VerifiedGarbage.Proof.Framework.X86_64.Depth
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+import VerifiedGarbage.Proof.Sha1.Scratch
 
 /-!
 # Sha1 on X86_64: the shared contracts
@@ -116,6 +117,7 @@ theorem update {f : Callee} (hf : MdStream.X86_64.CalleeOk (P := Stream.params) 
       (Spec.Sha1.updateContract X86_64.abi (8 + 168)) :=
   X86_64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 20) (stack := 8) (bytes := 168)
     (updateScratch hf hm) (by decide) (by decide) (by decide) (update_spSafe hs) (update_depth hd)
+    (Proof.Sha1.updatePostOut_local _)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 open VG.Impl.Sha1.X86_64.Stream (Callee) in
@@ -128,6 +130,7 @@ theorem finalize {f : Callee} (hf : MdStream.X86_64.CalleeOk (P := Stream.params
       (Spec.Sha1.finalizeContract X86_64.abi (8 + 168)) :=
   X86_64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 20) (stack := 8) (bytes := 168)
     (finalizeScratch hf hm) (by decide) (by decide) (by decide) (finalize_spSafe hs) (finalize_depth hd)
+    (Proof.Sha1.finalizePostOut_local _)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 /-! ## With no working space for the compression function
@@ -211,6 +214,7 @@ theorem update0 :
       (Spec.Sha1.updateContract X86_64.abi (8 + 56)) :=
   X86_64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 6) (stack := 8) (bytes := 56)
     (updateScratch0 hf hm) (by decide) (by decide) (by decide) (update0_spSafe hs) (update0_depth hd)
+    (Proof.Sha1.updatePostOut_local _)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 /-- `finalize` made with no working space for the compression function, likewise. -/
@@ -220,6 +224,7 @@ theorem finalize0 :
       (Spec.Sha1.finalizeContract X86_64.abi (8 + 56)) :=
   X86_64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 6) (stack := 8) (bytes := 56)
     (finalizeScratch0 hf hm) (by decide) (by decide) (by decide) (finalize0_spSafe hs) (finalize0_depth hd)
+    (Proof.Sha1.finalizePostOut_local _)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 end Zero

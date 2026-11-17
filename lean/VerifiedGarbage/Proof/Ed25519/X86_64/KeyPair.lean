@@ -522,6 +522,13 @@ theorem body_ok {s : State} (h : Pre s) {dn pn : String} :
   refine WP.seq (WP.mono (pkArgs_ok hc) fun t' ⟨hc', hm, hdi, hsi, hdx⟩ => ?_)
   exact pk_ok bs fs h hc' hdi hsi hdx (by rw [hm]; exact hE)
 
+/-- The bytes of a region apart from a frame are what they were once the
+frame's bytes are lost. -/
+private theorem bytes_lost {F R : Region} {m m' : Mem} (f : Frame [F] m m') (hd : R.Disjoint F) :
+    Spec.Ed25519.bytesAt m' R.base R.len = Spec.Ed25519.bytesAt m R.base R.len := by
+  simp only [Spec.Ed25519.bytesAt]
+  exact List.map_congr_left fun i hi => lost_byte f hd (List.mem_range.mp hi)
+
 theorem keyPair_ok {s : State} (hs : spec.pre s) {dn pn : String} :
     WP isa (keyPair dn (dgCode c) pn (publicKeyExpanded bs fs)) s fun s' =>
       abiPreserved s s' ∧ spec.post s s' := by
@@ -529,7 +536,17 @@ theorem keyPair_ok {s : State} (hs : spec.pre s) {dn pn : String} :
   have hc₀ := push_ctx h
   refine WP.frame (rs := pushRs) (by decide) (by decide) (by decide)
     (by show 24 ≤ _; have := h.sp; omega_using [this])
-    (WP.mono (body_ok c bs fs h) fun u ⟨hu, hE, hO⟩ => ⟨hu.rsp.trans hc₀.rsp.symm, hu.wr.trans hc₀.wr.symm, ?_, ?_⟩)
+    (WP.mono (body_ok c bs fs h) fun u ⟨hu, hE, hO⟩ => ⟨hu.rsp.trans hc₀.rsp.symm, hu.wr.trans hc₀.wr.symm,
+      fun m uk fm => ?_⟩)
+  -- The pop loses the frame's 24 bytes, in the stack below `rsp`, apart from
+  -- the outputs and the return address.
+  replace fm : Frame [⟨s.gpr .rsp - BitVec.ofNat 64 24, 24⟩] u.mem m := fm
+  obtain hF : Region.Sub ⟨s.gpr .rsp - BitVec.ofNat 64 24, 24⟩ (STK s) := by
+    exact Offset.sub_below _ (by decide) (by decide)
+  replace hE := (bytes_lost (R := EXP s) fm (h.ke.symm.sub_right hF)).trans hE
+  replace hO := (bytes_lost (R := OUT s) fm (h.ko.symm.sub_right hF)).trans hO
+  dsimp only
+  refine ⟨?_, ?_⟩
   · have hrsp : (popped .rax pushRs.length u).gpr .rsp = s.gpr .rsp := by
       rw [popped_rsp, hu.rsp, sp_eq s]
       exact add_add _ _ _
@@ -537,7 +554,8 @@ theorem keyPair_ok {s : State} (hs : spec.pre s) {dn pn : String} :
     · by_cases hr' : r = .rsp
       · subst hr'; exact hrsp
       · rw [popped_gpr _ _ _ hr' (PublicKey.ne_cs hr (by decide)), hu.cs r hr hr']
-    · rw [popped_mem]
+    · rw [fm.readW (r := ⟨s.gpr .rsp, 8⟩) (Region.contains_self _ _) (fun r hr => by
+        rw [List.mem_singleton.mp hr]; exact Offset.base_disjoint_below _ (by decide)) (by decide)]
       refine hu.frame.readW (r := ⟨s.gpr .rsp, 8⟩) (Region.contains_self _ _) (fun r hr => ?_) (by decide)
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl

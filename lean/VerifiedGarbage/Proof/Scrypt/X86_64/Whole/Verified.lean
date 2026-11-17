@@ -368,22 +368,35 @@ theorem scrypt_ok {s : State} (h : Proof.Scrypt.scryptX86_64.pre s) :
   refine WP.frame (rs := pushRs) (by decide) (by decide) (by decide)
     (by show 8 * 7 ≤ _; have := h.1; omega_arith)
     (WP.mono (body_scrypt_ok hv hsp hd name hL hc he) fun u ⟨hu, ho⟩ =>
-      ⟨hu.rsp.trans hc.rsp.symm, hu.wr.trans hc.wr.symm, ?_, ?_⟩)
+      ⟨hu.rsp.trans hc.rsp.symm, hu.wr.trans hc.wr.symm, fun m _ fm => ?_⟩)
+  replace fm : Frame [⟨s.gpr .rsp - BitVec.ofNat 64 56, 56⟩] u.mem m := fm
+  have hsk : Region.Sub ⟨s.gpr .rsp - BitVec.ofNat 64 56, 56⟩ (lay s).STK :=
+    Offset.sub_below _ (by decide) (by decide)
+  dsimp only
+  refine ⟨?_, ?_⟩
   · have hrsp : (popped .rax pushRs.length u).gpr .rsp = s.gpr .rsp := by
       rw [popped_rsp, hu.rsp, show pushRs.length = 7 from rfl, pop_rsp, lay_ret]
     refine ⟨fun r hr => ?_, ?_⟩
     · by_cases hr' : r = .rsp
       · subst hr'; exact hrsp
       · rw [popped_gpr _ _ _ hr' (ne_cs hr (by decide)), hu.cs r hr hr']
-    · rw [popped_mem]
-      have hnB := hL.nB
+    · have hnB := hL.nB
+      have hret : (lay s).RET = ⟨s.gpr .rsp, 8⟩ := by rw [Lay.RET, lay_ret]
+      refine (fm.readW (r := (lay s).RET) ?_ ?_ (by decide)).trans ?_
+      · rw [hret]; exact Region.contains_self _ _
+      · simp only [List.mem_singleton]
+        rintro r rfl
+        rw [hret]
+        exact Offset.base_disjoint_below _ (by decide)
       refine hu.frame.readW (r := (lay s).RET) ?_ ?_ (by decide)
-      · rw [Lay.RET, lay_ret]; exact Region.contains_self _ _
+      · rw [hret]; exact Region.contains_self _ _
       · simp only [List.mem_cons, List.not_mem_nil, or_false]
         rintro r (rfl | rfl | rfl | rfl | rfl)
         exacts [hL.rb, hL.rv, hL.rc, hL.ro, Offset.disjoint_base _ (by omega_arith) (by omega_arith)]
-  · simp only [Proof.Scrypt.scryptX86_64, popped_mem]
-    exact ho
+  · refine ho.trans (congrArg some ?_)
+    simp only [bytesAt]
+    refine List.map_congr_left fun i hi => (lost_byte fm (R := (lay s).OUT) ?_ (List.mem_range.mp hi)).symm
+    exact fun x h₁ h₂ => hL.ko x (hsk x h₂) h₁
 
 /-- `vg_scrypt` meets `scryptX86_64` and the calling convention, if no
 instruction (of it or the functions it calls) loads MXCSR. -/

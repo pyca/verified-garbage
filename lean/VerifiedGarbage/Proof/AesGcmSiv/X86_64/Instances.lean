@@ -255,7 +255,7 @@ theorem sealFrameSat_pre : ∃ s, (Proof.AesGcmSiv.sealRoundsContract X86_64.abi
 theorem seal_framed :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 3848 2 («seal» v.callees ⟨eb.enc.name, eb.enc.code⟩ wide))
       (Proof.AesGcmSiv.sealRoundsContract X86_64.abi 3856) :=
-  X86_64.Verified.stackArgScratch (sig := Spec.GcmSiv.sealSig) (nm := "work") (e := .u64)
+  X86_64.Verified.stackArgScratch (hpostOut := sealPostOut_local _) (sig := Spec.GcmSiv.sealSig) (nm := "work") (e := .u64)
     (n := 477) (pre := Spec.GcmSiv.sealPre X86_64.abi.ptrBits)
     (post := Proof.AesGcmSiv.sealRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
     (bytes := 3848) (seal_verified v eb wide) (by decide) (by decide) (by decide)
@@ -273,7 +273,7 @@ theorem openFrameSat_pre : ∃ s, (Proof.AesGcmSiv.openRoundsContract X86_64.abi
 theorem open_framed :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 3848 2 («open» v.callees ⟨eb.enc.name, eb.enc.code⟩ wide))
       (Proof.AesGcmSiv.openRoundsContract X86_64.abi 3856) :=
-  X86_64.Verified.stackArgScratch (sig := Spec.GcmSiv.openSig) (nm := "work") (e := .u64)
+  X86_64.Verified.stackArgScratch (hpostOut := openPostOut_local _) (sig := Spec.GcmSiv.openSig) (nm := "work") (e := .u64)
     (n := 477) (pre := Spec.GcmSiv.openPre X86_64.abi.ptrBits)
     (post := Proof.AesGcmSiv.openRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
     (leak := some (Spec.GcmSiv.openLeak X86_64.abi.ptrBits)) (bytes := 3848)
@@ -421,7 +421,7 @@ theorem openS_xdepth {lp : Impl.AesGcmSiv.X86_64Stitch.Loops} (hcode : Stitch.Lo
 theorem openS_framed {lp : Impl.AesGcmSiv.X86_64Stitch.Loops} (hlp : Stitch.LoopsOk lp) (hcode : Stitch.LoopsCode lp) :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 3848 2 (X86_64Stitch.«open» lp v.callees ⟨eb.enc.name, eb.enc.code⟩ wide))
       (Proof.AesGcmSiv.openRoundsContract X86_64.abi 3856) :=
-  X86_64.Verified.stackArgScratch (sig := Spec.GcmSiv.openSig) (nm := "work") (e := .u64)
+  X86_64.Verified.stackArgScratch (hpostOut := openPostOut_local _) (sig := Spec.GcmSiv.openSig) (nm := "work") (e := .u64)
     (n := 477) (pre := Spec.GcmSiv.openPre X86_64.abi.ptrBits)
     (post := Proof.AesGcmSiv.openRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
     (leak := some (Spec.GcmSiv.openLeak X86_64.abi.ptrBits)) (bytes := 3848)
@@ -486,7 +486,7 @@ theorem sealS_xdepth {lp : Impl.AesGcmSiv.X86_64Stitch.Loops} (hcode : Stitch.Lo
 theorem sealS_framed {lp : Impl.AesGcmSiv.X86_64Stitch.Loops} (hlp : Stitch.LoopsOk lp) (hcode : Stitch.LoopsCode lp) :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 3848 2 (X86_64Stitch.«seal» lp v.callees ⟨eb.enc.name, eb.enc.code⟩ wide))
       (Proof.AesGcmSiv.sealRoundsContract X86_64.abi 3856) :=
-  X86_64.Verified.stackArgScratch (sig := Spec.GcmSiv.sealSig) (nm := "work") (e := .u64)
+  X86_64.Verified.stackArgScratch (hpostOut := sealPostOut_local _) (sig := Spec.GcmSiv.sealSig) (nm := "work") (e := .u64)
     (n := 477) (pre := Spec.GcmSiv.sealPre X86_64.abi.ptrBits)
     (post := Proof.AesGcmSiv.sealRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
     (bytes := 3848) (sealS_verified v eb wide hlp hcode) (by decide) (by decide) (by decide)
@@ -1143,7 +1143,7 @@ theorem inner_run {sig : Sig} {nm : String} {e : Elem} {n : Nat}
       Exec isa c (narrowS sig e n bytes s) t₃ s₃ ∧ s'.mem = s₃.mem := by
   have hp := narrowS_pre (nm := nm) hk hb.1 hb.2.1 hpre hs
   obtain ⟨t₃, s₃, he, ha, -⟩ := h.1 _ hp
-  obtain ⟨hex, -, hm, -⟩ := withStackArgScratch_run hk hb hst (SpSafe.of_all hsp) hd hs he ha
+  obtain ⟨hex, -, hm, -⟩ := withStackArgScratch_runMem hk hb hst (SpSafe.of_all hsp) hd hs he ha
   obtain ⟨-, rfl⟩ := ex.det hex
   exact ⟨t₃, s₃, hp, he, hm⟩
 

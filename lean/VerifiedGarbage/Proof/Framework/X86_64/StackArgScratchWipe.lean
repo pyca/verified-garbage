@@ -231,7 +231,8 @@ theorem Verified.stackArgScratchWipedByPre (w : Wiper) {c : Prog isa}
         (setArgsTrace bytes (s.gpr .rsp - BitVec.ofNat 64 bytes) (nStack sig) ++
           (t ++ w.trace (s.gpr .rsp - BitVec.ofNat 64 bytes) (16 + 8 * nStack sig)))
         (popState bytes s u) ∧
-      abiPreserved s (popState bytes s u) ∧ (popState bytes s u).mem = u.mem ∧
+      abiPreserved s (popState bytes s u) ∧
+      Frame [⟨s.gpr .rsp - BitVec.ofNat 64 bytes, bytes⟩] u.mem (popState bytes s u).mem ∧
       (popState bytes s u).gpr .rax = s₃.gpr .rax := by
     intro s hs
     obtain ⟨t, s₃, he, ha, hq⟩ := hcor _ (narrowS_pre hk hb0 hb1 (fun vs m₁ m₂ hl hb _ => hpre vs m₁ m₂ hl hb) hs)
@@ -273,15 +274,20 @@ theorem Verified.stackArgScratchWipedByPre (w : Wiper) {c : Prog isa}
       (post := Curry.withScratch abi.ptrBits nm e n sig.params post) hk').mp hq
     obtain ⟨-, -, -, hargs, -⟩ := narrowS_facts (nm := nm) hk hb0 hb1 hs
     rw [hargs] at hq'
-    rw [hm, hrax]
+    rw [hrax]
     have h₃ := Eq.mp (congrFun (congrFun (congrFun (Curry.apply_withScratch abi.ptrBits nm e n
       sig.params post _ _ (allArgs_length sig s hk)) _) s₃.mem) _) hq'
     have h₄ := hpost _ _ _ _ _ (allArgs_length sig s hk) (narrowS_agree hk hb0 hb1 hs) h₃
     refine hpostOut _ _ _ _ _ (allArgs_length sig s hk) ((pre_args hk).mp hs).2.2.2.2.2.2
       (fun b hb' a ha' => ?_) h₄
-    exact (hfr a fun r hr => by
+    -- The memory on return: after the wipe, which writes only the buffer,
+    -- and the `free`, which loses only the frame.
+    exact ((hm a fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact hdisj s hs b hb' a ha').symm
+      exact frameArg_disjoint hk (by omega_using [hb0]) hs b (List.mem_append_left _ hb') a ha').trans
+      (hfr a fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact hdisj s hs b hb' a ha')).symm
   · obtain ⟨u₁, _, _, f₁, _, _, x₁, _⟩ := hrun s₁ h₁
     obtain ⟨u₂, _, _, f₂, _, _, x₂, _⟩ := hrun s₂ h₂
     rw [(Exec.det e₁ x₁).1, (Exec.det e₂ x₂).1]

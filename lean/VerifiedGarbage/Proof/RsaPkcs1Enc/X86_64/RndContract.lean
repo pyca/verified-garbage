@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.RndCorrect
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncCorrect
+import VerifiedGarbage.Proof.Rsa.BytesFrame
 import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncFrame
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
@@ -276,6 +277,35 @@ theorem body_ok (v : PublicImpl) {s : State} (hp : RPre s) :
       ⟨hfin, hpost, fun r hr hr' => (hcs r hr).trans (cs r hr hr'), ?_⟩
     rw [hmx, hmx₃, hmx₂, hmx₁]
 
+/-- `post`, whatever the bytes of a region of the stack hold. -/
+theorem post_lost {s : State} (hp : RPre s) {u u' : State} (hg : u'.gpr = u.gpr) {R : Region}
+    (f : Frame [R] u.mem u'.mem) (hR : R.Sub (stkR s)) (h : post s u) : post s u' := by
+  have sep : ∀ {B : Region}, (stkR s).Disjoint B → ∀ q ∈ [R], B.Disjoint q := fun hd q hq => by
+    simp only [List.mem_singleton] at hq; subst hq
+    exact (hd.sub_left hR).symm
+  have hsi := hp.hsi
+  have hb : Spec.Rsa.bytesAt u'.mem (s.gpr .rdi) (kOf s) = Spec.Rsa.bytesAt u.mem (s.gpr .rdi) (kOf s) :=
+    Proof.Rsa.rsa_bytes_frame f (s.gpr .r8).isLt (sep (by
+      have := hp.dKo; simp only [outR, hsi] at this; exact this))
+  have ht : ∀ d, d + 8 ≤ 16 → u'.mem.readW (s.gpr .rdx + BitVec.ofNat 64 d) 64 =
+      u.mem.readW (s.gpr .rdx + BitVec.ofNat 64 d) 64 := fun d hd =>
+    f.readW (r := tapeR s) (Offset.contains_base _ (by omega_using [hd]) (by omega_using [hd]))
+      (sep hp.dKt) (by decide)
+  have h0 := ht 0 (by decide)
+  rw [BitVec.add_zero] at h0
+  have hax : u'.gpr .rax = u.gpr .rax := by rw [hg]
+  obtain ⟨⟨req, h1, h2, h3⟩, h4⟩ := h
+  refine ⟨⟨req, by rw [h0]; exact h1, by rw [ht 8 (by decide)]; exact h2, h3⟩, ?_⟩
+  revert h4
+  cases (Spec.RsaPkcs1Enc.padSearch (psLen s) (randB s)).outcome
+  case accepted ps =>
+    intro h4 hpc
+    have h5 := h4 hpc
+    revert h5
+    cases Spec.RsaPkcs1Enc.encrypt (nB s) (eB s) (msgB s) ps <;>
+      simp only [Spec.RsaPkcs1Enc.writtenRandom] <;> rw [hb, hax] <;> exact id
+  all_goals intro h4; rw [hb, hax]; exact h4
+
 theorem code_correct (v : PublicImpl) (s : State)
     (h : (Spec.RsaPkcs1Enc.encryptRandomContract abi rndStack).pre s) :
     ∃ t s', Exec isa (code (encName v) (encCode v)) s t s' ∧ abiPreserved s s' ∧ post s s' := by
@@ -284,8 +314,12 @@ theorem code_correct (v : PublicImpl) (s : State)
     obtain ⟨t, s', he, hq⟩ := hw
     exact ⟨t, s', he, hq⟩
   refine wp_alloc (by decide) (by decide) (by decide) (by have := hp.sp1; unfold rndStack at this; omega_using [this]) ?_
-  refine WP.mono (body_ok v hp) fun x ⟨hfin, hpost, hcs, hmx⟩ => ⟨hfin.rsp, by rw [hfin.wr]; rfl, ?_, hpost⟩
-  refine ⟨fun r hr => ?_, ret_apart hp hfin.fr, hmx⟩
+  have hs := VG.Proof.RsaPkcs1Enc.X86_64.Rnd.frame_sub s (d := 0) (n := frameBytes) (by omega_using [])
+  simp only [off, BitVec.add_zero] at hs
+  refine WP.mono (body_ok v hp) fun x ⟨hfin, hpost, hcs, hmx⟩ => ⟨hfin.rsp, by rw [hfin.wr]; rfl,
+    fun m u fm => ⟨?_, post_lost hp (u := freed frameBytes x) rfl fm hs hpost⟩⟩
+  refine ⟨fun r hr => ?_, ret_apart hp (hfin.fr.trans (fm.sub fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, List.mem_cons_self .., hs⟩)), hmx⟩
   by_cases hr' : r = .rsp
   · subst hr'
     show x.gpr .rsp + BitVec.ofNat 64 frameBytes = s.gpr .rsp

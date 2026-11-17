@@ -149,9 +149,11 @@ theorem callOr0_ok (inl : Bool) {k : Contract isa} {d : Nat} (F : CallFn k d) (h
     WP isa (Impl.AesGcm.X86_64.SealGather.callOr inl F.fn) st fun st' =>
       (∀ r ∈ calleeSaved, st'.gpr r = st.gpr r) ∧ st'.rd = st.rd ∧ st'.wr = st.wr ∧
       Frame (wr ++ [tR s]) st.mem st'.mem ∧
-      ∃ s₂ : State, s₂.mem = st'.mem ∧ k.post ((enter inl st).withRegions rd wr) s₂ := by
+      ∃ s₂ : State, Frame [tR s] s₂.mem st'.mem ∧ k.post ((enter inl st).withRegions rd wr) s₂ := by
   cases inl
-  · rw [enter_false] at hpre ⊢; exact call0_ok F hd hsp hpre hc hw
+  · rw [enter_false] at hpre ⊢
+    exact (call0_ok F hd hsp hpre hc hw).mono fun _ ⟨hcs, hrd, hwr, hf, s₂, hm, hpost⟩ =>
+      ⟨hcs, hrd, hwr, hf, s₂, by rw [hm]; exact Frame.refl _ _, hpost⟩
   · rw [enter_true] at hpre ⊢
     show WP isa (.frame (.push [.rax]) F.fn.code (.pop .rax [Reg.rax].length)) st _
     have hP : (pushed [.rax] st).gpr .rsp = SP s - BitVec.ofNat 64 8 := by rw [pushed_rsp, hsp]; rfl
@@ -169,10 +171,15 @@ theorem callOr0_ok (inl : Bool) {k : Contract isa} {d : Nat} (F : CallFn k d) (h
     rw [State.withRegions_mem] at hf₀
     refine WP.frame (by simp) (by decide) (by decide) (by rw [hsp]; simpa using h8) ?_
     refine WP.inlineF F.ok F.sp (by have := F.xd; omega_arith) hpre hc' hw'
-      fun s' hrd hwr habi hfr _ hpost => ⟨by rw [habi.1 _ (by decide)], hwr, ?_⟩
+      fun s' hrd hwr habi hfr _ hpost => ⟨by rw [habi.1 _ (by decide)], hwr, fun m _ fm => ?_⟩
     have hsp' : s'.gpr .rsp = SP s - BitVec.ofNat 64 8 := by rw [habi.1 _ (by decide), hP]
+    replace fm : Frame [⟨SP s - BitVec.ofNat 64 8, 8⟩] s'.mem m := by rw [← hsp]; exact fm
+    have fmT : Frame [tR s] s'.mem m := fm.sub fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨tR s, by simp, Offset.sub_below _ (by decide) (by decide)⟩
+    dsimp only
     refine ⟨fun r hr => ?_, by rw [popped_rd, hrd, pushed_rd], by rw [popped_wr, hwr, pushed_wr]; rfl, ?_,
-      s'.withRegions rd wr, by rw [State.withRegions_mem, popped_mem], hpost⟩
+      s'.withRegions rd wr, by rw [State.withRegions_mem]; exact fmT, hpost⟩
     · by_cases hs : r = .rsp
       · subst hs
         rw [popped_rsp, hsp', hsp]
@@ -181,9 +188,8 @@ theorem callOr0_ok (inl : Bool) {k : Contract isa} {d : Nat} (F : CallFn k d) (h
       · have hra : r ≠ .rax := by
           intro h; subst h; simp [calleeSaved] at hr
         rw [popped_gpr _ _ _ hs hra, habi.1 r hr, pushed_gpr _ _ hs]
-    · rw [popped_mem]
-      rw [enter_true] at hf₀
-      refine (hf₀.sub fun r hr => ?_).trans (hfr.sub fun r hr => ?_)
+    · rw [enter_true] at hf₀
+      refine ((hf₀.sub fun r hr => ?_).trans (hfr.sub fun r hr => ?_)).trans (fmT.sub fun r hr => ?_)
       · simp only [List.mem_singleton] at hr; subst hr
         exact ⟨tR s, by simp, fun _ h => h⟩
       · rcases List.mem_append.mp hr with hr | hr
@@ -192,6 +198,8 @@ theorem callOr0_ok (inl : Bool) {k : Contract isa} {d : Nat} (F : CallFn k d) (h
           refine ⟨tR s, by simp, ?_⟩
           rw [hP]
           exact fun a h => stk_sub' (s := s) hd a (below_sub (by have := F.xd; exact this) (by omega_arith) a h)
+      · simp only [List.mem_singleton] at hr; subst hr
+        exact ⟨tR s, by simp, fun _ h => h⟩
 
 end
 
@@ -267,12 +275,14 @@ theorem initCall_ok (inl : Bool) (F : InitFn) {st : State} (h : Base s (AL s) 0 
   simp only [initK, Proof.AesGcm.streamInitX86_64, State.withRegions_mem,
     enter_gpr _ _ (by decide : Reg.rdi ≠ .rsp), enter_gpr _ _ (by decide : Reg.rsi ≠ .rsp),
     enter_gpr _ _ (by decide : Reg.rdx ≠ .rsp), enter_gpr _ _ (by decide : Reg.rcx ≠ .rsp), h_di, h_si, h_dx, h_cx,
-    hk_eq hp fU, hm] at hpost
+    hk_eq hp fU] at hpost
   rw [show (s.gpr .rcx).toNat = NL s from rfl, iv_eq hp fU] at hpost
   have hB := h.after hp hcs hrd hwr hmx' hf st_sub fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact kpR_stR
   refine ⟨hB, Nat.zero_le _, ?_, ?_⟩
-  · rw [ct_zero]; exact hpost _
+  · rw [ct_zero]
+    exact streamRepr_frame hm (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact hp.b_w.symm.sub_left stR_sub) (hpost _)
   · rw [gl_zero, ct_zero]; rfl
 
 /-! ## `vg_aes_gcm_stream_aad` -/
@@ -337,7 +347,7 @@ theorem aadCall_ok (inl : Bool) (F : AadFn) {ap : BitVec 64} {A : List Byte} {D 
   simp only [aadK, Proof.AesGcm.streamAadX86_64, State.withRegions_mem,
     enter_gpr _ _ (by decide : Reg.rdi ≠ .rsp), enter_gpr _ _ (by decide : Reg.rsi ≠ .rsp),
     enter_gpr _ _ (by decide : Reg.rdx ≠ .rsp), enter_gpr _ _ (by decide : Reg.rcx ≠ .rsp),
-    enter_gpr _ _ (by decide : Reg.r8 ≠ .rsp), h_di, h_si, h_dx, h_cx, h_8, hn, hk_eq hp fU, hm] at hpost
+    enter_gpr _ _ (by decide : Reg.r8 ≠ .rsp), h_di, h_si, h_dx, h_cx, h_8, hn, hk_eq hp fU] at hpost
   have sr₀ : StreamRepr (enter inl st).mem (St s) (ciph s) (hk s) (iv s) A [] := by
     have := h.sr; rw [ct_zero] at this
     exact streamRepr_frame fK (fun r hr => by
@@ -347,7 +357,11 @@ theorem aadCall_ok (inl : Bool) (F : AadFn) {ap : BitVec 64} {A : List Byte} {D 
     at sr₁
   have hB := h.after hp hcs hrd hwr hmx' hf st_sub fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact kpR_stR
-  refine ⟨hB, Nat.zero_le _, by rw [ct_zero]; exact sr₁, by rw [gl_zero, ct_zero]; rfl⟩
+  refine ⟨hB, Nat.zero_le _, by
+    rw [ct_zero]
+    exact streamRepr_frame hm (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact hp.b_w.symm.sub_left stR_sub) sr₁,
+    by rw [gl_zero, ct_zero]; rfl⟩
 
 /-! ## `vg_aes_gcm_stream_finish` -/
 
@@ -408,7 +422,7 @@ theorem finCall_ok (inl : Bool) (F : FinFn) {ap : BitVec 64} {i : Nat} {C : List
     enter_gpr _ _ (by decide : Reg.rdi ≠ .rsp), enter_gpr _ _ (by decide : Reg.rsi ≠ .rsp),
     enter_gpr _ _ (by decide : Reg.rdx ≠ .rsp), enter_gpr _ _ (by decide : Reg.rcx ≠ .rsp),
     enter_gpr _ _ (by decide : Reg.r8 ≠ .rsp), enter_gpr _ _ (by decide : Reg.r9 ≠ .rsp), h_di, h_si, h_dx, h_cx,
-    h_8, h_9, ciph_eq hp fU, hk_eq hp fU, hm] at hpost
+    h_8, h_9, ciph_eq hp fU, hk_eq hp fU] at hpost
   have sr₀ : StreamRepr (enter inl st).mem (St s) (ciph s) (hk s) (iv s) (ad s) C :=
     streamRepr_frame fK (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact hp.b_w.symm.sub_left stR_sub) hsr
@@ -422,7 +436,10 @@ theorem finCall_ok (inl : Bool) (F : FinFn) {ap : BitVec 64} {i : Nat} {C : List
       rcases hr with rfl | rfl
       · exact kpR_stR
       · exact hp.t_w.symm.sub_left kpR_sub
-  exact ⟨hB, hf, hpost (iv s) (ad s) C sr₀ (by rw [Cmac.bytesAt_length, ofNat_toNat]) (by rw [hC])⟩
+  refine ⟨hB, hf, ?_⟩
+  rw [bytesAt_frame hm (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hp.b_t.symm)
+    (by decide)]
+  exact hpost (iv s) (ad s) C sr₀ (by rw [Cmac.bytesAt_length, ofNat_toNat]) (by rw [hC])
 
 end
 

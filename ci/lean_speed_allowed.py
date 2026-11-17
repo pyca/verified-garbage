@@ -51,7 +51,6 @@ DECIDE_SIMP_ALLOWED = {
     "VerifiedGarbage/Proof/ChaCha20/AArch64/Rows6/Setup.lean": 2,
     "VerifiedGarbage/Proof/ChaCha20/AArch64/Stream/Apply.lean": 5,
     "VerifiedGarbage/Proof/ChaCha20/AArch64/Stream/Init.lean": 4,
-    "VerifiedGarbage/Proof/ChaCha20/Arm/Block.lean": 3,
     "VerifiedGarbage/Proof/ChaCha20/Arm/Stream/Apply.lean": 8,
     "VerifiedGarbage/Proof/ChaCha20/Arm/Stream/Init.lean": 2,
     "VerifiedGarbage/Proof/ChaCha20/X86/Bytes.lean": 4,

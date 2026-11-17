@@ -110,8 +110,8 @@ theorem finalizeSPost_local (pb : Nat) :
     exact h h0 d (repr_congr' (by decide)
       (fun i hi => (hs i (by simp only [bufOff, blockBytes] at hi; omega_arith)).symm) hr) hl hc
 
-/-- `updateBPost` reads the memory on return only within the buffers. -/
-theorem updateBPostOut_local (pb : Nat) : ∀ vs m m₁ m₂ r, vs.length = (updateBSig.words pb).length →
+/-- `updateBPost` reads the memory on return only within the state. -/
+theorem updateBPost_out (pb : Nat) : ∀ vs m m₁ m₂ r, vs.length = (updateBSig.words pb).length →
     (∀ b ∈ Sig.bufs updateBSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
     Curry.apply (updateBSig.words pb) (updateBPost pb) vs m m₁ r →
       Curry.apply (updateBSig.words pb) (updateBPost pb) vs m m₂ r
@@ -124,8 +124,7 @@ theorem updateBPostOut_local (pb : Nat) : ∀ vs m m₁ m₂ r, vs.length = (upd
     exact repr_congr' (by decide)
       (fun i hi => hs i (by simp only [bufOff, blockBytes] at hi; omega_arith)) (h h0 d hr hc hl)
 
-/-- `finalizeBPost` reads the memory on return only within the buffers. -/
-theorem finalizeBPostOut_local (pb : Nat) :
+theorem finalizeBPost_out (pb : Nat) :
     ∀ vs m m₁ m₂ r, vs.length = (finalizeBSig.words pb).length →
       (∀ b ∈ Sig.bufs finalizeBSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
       Curry.apply (finalizeBSig.words pb) (finalizeBPost pb) vs m m₁ r →
@@ -140,8 +139,7 @@ theorem finalizeBPostOut_local (pb : Nat) :
     rw [bytesAt_congr ho]
     exact h h0 d hr hl hc
 
-/-- `updateSPost` reads the memory on return only within the buffers. -/
-theorem updateSPostOut_local (pb : Nat) : ∀ vs m m₁ m₂ r, vs.length = (updateSSig.words pb).length →
+theorem updateSPost_out (pb : Nat) : ∀ vs m m₁ m₂ r, vs.length = (updateSSig.words pb).length →
     (∀ b ∈ Sig.bufs updateSSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
     Curry.apply (updateSSig.words pb) (updateSPost pb) vs m m₁ r →
       Curry.apply (updateSSig.words pb) (updateSPost pb) vs m m₂ r
@@ -154,8 +152,7 @@ theorem updateSPostOut_local (pb : Nat) : ∀ vs m m₁ m₂ r, vs.length = (upd
     exact repr_congr' (by decide)
       (fun i hi => hs i (by simp only [bufOff, blockBytes] at hi; omega_arith)) (h h0 d hr hc hl)
 
-/-- `finalizeSPost` reads the memory on return only within the buffers. -/
-theorem finalizeSPostOut_local (pb : Nat) :
+theorem finalizeSPost_out (pb : Nat) :
     ∀ vs m m₁ m₂ r, vs.length = (finalizeSSig.words pb).length →
       (∀ b ∈ Sig.bufs finalizeSSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
       Curry.apply (finalizeSSig.words pb) (finalizeSPost pb) vs m m₁ r →
@@ -169,5 +166,6 @@ theorem finalizeSPostOut_local (pb : Nat) :
     show bytesAt m₂ ot 32 = _
     rw [bytesAt_congr ho]
     exact h h0 d hr hl hc
+
 
 end VG.Proof.Blake2

@@ -173,8 +173,12 @@ theorem code_correct (v : PublicImpl) (s : State) (h : (verifyPrecomputedContrac
       fun t₂ ⟨he₂, hw, hcs₂, hmx₂⟩ => ?_)
     refine WP.mono_mx (by decide +kernel) (WP.keep [.rax, .rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11]
       (after_ok hp he₂ hw) (by decide +kernel)) fun t₃ ⟨⟨he₃, hax⟩, k₃⟩ hmx₃ => ?_
-    refine ⟨he₃.rsp.trans hfb.symm, by rw [he₃.wr]; simp only [allocState, hsp₀, k₀.2.2],
-      ⟨fun r hr => ?_, ret_frame hp.toPreV he₃.mem, ?_⟩, ?_⟩
+    refine ⟨he₃.rsp.trans hfb.symm, by rw [he₃.wr]; simp only [allocState, hsp₀, k₀.2.2], fun m uu fm => ?_⟩
+    rw [hfb] at fm
+    have hs := VG.Proof.RsaPkcs1Sig.X86_64.Ver.frame_sub s (d := 0) (n := frameBytes) (by omega_using [])
+    simp only [off, BitVec.add_zero] at hs
+    refine ⟨⟨fun r hr => ?_, ret_frame hp.toPreV (he₃.mem.trans (fm.sub fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, List.mem_cons_self .., hs⟩)), ?_⟩, ?_⟩
     · by_cases hr' : r = .rsp
       · subst hr'
         show t₃.gpr .rsp + BitVec.ofNat 64 frameBytes = s.gpr .rsp

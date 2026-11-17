@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaPss.X86_64.Safe
 public import VerifiedGarbage.Proof.RsaPss.X86_64.Loops
+import VerifiedGarbage.Proof.Rsa.BytesFrame
 import VerifiedGarbage.Proof.RsaPss.MgfBytes
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.RsaPss.X86_64.SignCorrect
@@ -712,16 +713,18 @@ theorem enc_xd : (encode T.f T.H T.g).x86_64Depth ≤ encStack := by
   omega_using [this]
 
 /-- The epilogue: the callee-saved registers restored and the outcome. -/
-theorem restore_ok {Hs : Spec.Mgf1.Hash} {s t : State} (D : EDone T.H.D Hs Gs s t) :
+theorem restore_ok {Hs : Spec.Mgf1.Hash} {s t : State} (hp : Pre T s) (D : EDone T.H.D Hs Gs s t) :
     WP isa (.block restoreRegs) t fun t' => t'.gpr .rsp = fb s ∧ t'.wr = (allocState frameBytes s).wr ∧
-      (∀ r ∈ calleeSaved, (freedF t').gpr r = s.gpr r) ∧ (encK T Hs Gs).post s (freedF t') := by
+      ∀ m u, Frame [⟨fb s, frameBytes⟩] t'.mem m →
+        (∀ r ∈ calleeSaved, ({ freedF t' with mem := m, unknowns := u } : State).gpr r = s.gpr r) ∧ (encK T Hs Gs).post s ({ freedF t' with mem := m, unknowns := u } : State) := by
   refine WP.mono (WP.keep [.rbx, .rbp, .r12] (Q := fun t' => t'.mem = t.mem ∧ t'.gpr .rbx = s.gpr .rbx ∧
       t'.gpr .rbp = s.gpr .rbp ∧ t'.gpr .r12 = s.gpr .r12) ?_ rfl) fun t' ⟨⟨hm, h1, h2, h3⟩, k⟩ => ?_
   · xrun [restoreRegs, ea_sp, D.L.rsp, D.L.ld (d := sRbx) (by decide), D.L.ld (d := sRbp) (by decide),
       D.L.ld (d := sR12) (by decide), D.rbx, D.rbp, D.r12]
   obtain hsp : t'.gpr .rsp = fb s := (k.gpr (by decide)).trans D.L.rsp
-  refine ⟨hsp, k.2.2.trans D.wr, fun r hr => ?_, ?_⟩
-  · simp only [freedF, State.setReg]
+  refine ⟨hsp, k.2.2.trans D.wr, fun m u fm => ⟨fun r hr => ?_, ?_⟩⟩
+  · show (freedF t').gpr r = s.gpr r
+    simp only [freedF, State.setReg]
     by_cases hr' : r = .rsp
     · subst hr'; simp only [ite_true, hsp, fb]; exact BitVec.sub_add_cancel _ _
     · simp only [hr', ite_false]
@@ -737,10 +740,16 @@ theorem restore_ok {Hs : Spec.Mgf1.Hash} {s t : State} (D : EDone T.H.D Hs Gs s 
   · have hax : (freedF t').gpr .rax = t.gpr .rax := by
       show (if Reg.rax = Reg.rsp then t'.gpr .rsp + BitVec.ofNat 64 frameBytes else t'.gpr .rax) = _
       rw [ifn (by decide), k.gpr (by decide)]
-    have hmem : (freedF t').mem = t.mem := hm
+    have hb : Spec.Rsa.bytesAt m (s.gpr .rdi) (s.gpr .rsi).toNat =
+        Spec.Rsa.bytesAt t.mem (s.gpr .rdi) (s.gpr .rsi).toNat := by
+      rw [← hm]
+      exact Proof.Rsa.rsa_bytes_frame fm (s.gpr .rsi).isLt (fun q hq => by
+        simp only [List.mem_singleton] at hq; subst hq
+        exact (hp.dKo.sub_left (frame_sub s)).symm)
     have hout := D.out
     simp only [OutOk, encOut] at hout
-    simp only [encK, hax, hmem]
+    simp only [encK, hax]
+    rw [hb]
     exact hout
 
 include hH K hG hGh hGl hGv hf hg hdk in
@@ -756,9 +765,11 @@ theorem enc_ok (lk : Pbkdf2.Md.X86_64.MgfLink T.H hH) {s : State} (h : (encK T l
   have hGl' : lk.G.len = T.H.D := lk.len
   refine wp_frame (by have := hp.sp1; unfold encStack frameBytes at *; omega_using [hF]) ?_
   refine WP.mono_mx (safe_mx (encBody_safe hH hf hg)) (Q := fun s₂ => s₂.gpr .rsp = fb s ∧
-    s₂.wr = (allocState frameBytes s).wr ∧ (∀ r ∈ calleeSaved, (freedF s₂).gpr r = s.gpr r) ∧
-      (encK T lk.G Gs).post s (freedF s₂)) ?_ fun t ⟨a, b, c, d⟩ hmx =>
-    ⟨a, b, c, d, by rw [show (freedF t).mxcsr = t.mxcsr from rfl, hmx]; rfl⟩
+    s₂.wr = (allocState frameBytes s).wr ∧ ∀ m u, Frame [⟨fb s, frameBytes⟩] s₂.mem m →
+      (∀ r ∈ calleeSaved, ({ freedF s₂ with mem := m, unknowns := u } : State).gpr r = s.gpr r) ∧
+      (encK T lk.G Gs).post s { freedF s₂ with mem := m, unknowns := u }) ?_ fun t ⟨a, b, c⟩ hmx =>
+    ⟨a, b, fun m u fm => ⟨(c m u fm).1, (c m u fm).2,
+      by rw [show ({ freedF t with mem := m, unknowns := u } : State).mxcsr = t.mxcsr from rfl, hmx]; rfl⟩⟩
   rw [encBody]
   simp only [seqs]
   -- The prologue, and the tables' words to their slots.
@@ -786,7 +797,7 @@ theorem enc_ok (lk : Pbkdf2.Md.X86_64.MgfLink T.H hH) {s : State} (h : (encK T l
     rw [k4.gpr this.1, k3.gpr this.1, k2.gpr this.2.2.1, k1'.gpr this.2.2.2, k1.gpr this.2.1]
     simp only [allocState_gpr']; rw [ifn (by simp at hr; rcases hr with rfl | rfl | rfl <;> simp)]
   obtain sy4 : t4.syms = s.syms := s4.trans sy3
-  refine WP.seq (WP.mono (Q := EDone T.H.D lk.G Gs s) ?_ fun t3 D => restore_ok D)
+  refine WP.seq (WP.mono (Q := EDone T.H.D lk.G Gs s) ?_ fun t3 D => restore_ok hp D)
   obtain hsl : (Spec.Rsa.bytesAt s.mem (s.gpr .rcx) (s.gpr .r8).toNat).length = (s.gpr .r8).toNat := by
     simp [Spec.Rsa.bytesAt]
   have hel := hp.hel

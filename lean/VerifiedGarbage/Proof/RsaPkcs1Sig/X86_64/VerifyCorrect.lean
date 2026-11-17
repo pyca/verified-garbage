@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCall
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.Encode
+import VerifiedGarbage.Proof.Framework.X86_64.FrameAlloc
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.Compare
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Verify
 import VerifiedGarbage.Proof.Framework.Offset
@@ -13,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 After the call (`afterPub_checked`): the encoding of the hash value into
 `EM₂` (`encode_ok`) and the comparison with `EM₁` (`compare_ok`), which is
 RFC 8017 §8.2.2's verification (`verify`). And the length check
-(`lenCheck_ok`), the frame's push and pop (`wp_alloc`) and the return
+(`lenCheck_ok`), the frame's push and pop (`wp_alloc`, whose bytes then hold whatever they hold) and the return
 address (`ret_frame`).
 -/
 
@@ -328,19 +329,14 @@ def freed (bytes : Nat) (s₂ : State) : State :=
   { s₂.setReg .rsp (s₂.gpr .rsp + BitVec.ofNat 64 bytes) with wr := s₂.wr.tail }
 
 /-- The frame: its body runs from `allocState frameBytes s` and ends with
-`rsp` and the writable regions as the push left them. -/
+`rsp` and the writable regions as the push left them; the frame's bytes
+then hold whatever they hold once released (`alloc_frame_ok`). -/
 theorem wp_alloc {body : Prog isa} {s : State} {Q : State → Prop} (hsp : frameBytes ≤ (s.gpr .rsp).toNat)
     (hb : WP isa body (allocState frameBytes s) fun s₂ => s₂.gpr .rsp = fb s ∧
-      s₂.wr = (allocState frameBytes s).wr ∧ Q (freed frameBytes s₂)) :
-    WP isa (.frame (.alloc frameBytes) body (.free frameBytes)) s Q := by
-  obtain ⟨t, s₂, he, hsp₂, hw, hq⟩ := hb
-  obtain ha : isa.push (.alloc frameBytes) s = some (allocState frameBytes s) := by
-    simp only [isa, push, allocState]
-    exact ite_eq_left ⟨by decide, by decide, by decide, hsp⟩
-  obtain hf : isa.pop (.free frameBytes) (allocState frameBytes s) s₂ = some (freed frameBytes s₂) := by
-    simp only [isa, pop]
-    exact ite_eq_left ⟨by decide, by decide, by decide, hsp₂, hw, rfl⟩
-  exact ⟨_, _, Exec.frame ha he hf, hq⟩
+      s₂.wr = (allocState frameBytes s).wr ∧ ∀ m u, Frame [⟨fb s, frameBytes⟩] s₂.mem m →
+        Q { freed frameBytes s₂ with mem := m, unknowns := u }) :
+    WP isa (.frame (.alloc frameBytes) body (.free frameBytes)) s Q :=
+  alloc_frame_ok (by decide) hsp hb
 
 /-- The return address is outside everything the function writes. -/
 theorem ret_frame {s : State} (hp : PreV s) {m : Mem} (h : Frame [stkR s, scrR s] s.mem m) :

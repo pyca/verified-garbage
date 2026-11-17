@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.RsaOaep.X86_64.LabelT
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Good
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Rsa.BytesFrame
 import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
@@ -219,7 +220,7 @@ theorem decAfterTab_ok {s ta : State} (hp : DPre s) (htab : DTabs (tables vs) s)
       fun t3 ⟨he3, hw3⟩ => fin t3 _ _ hHa hGa he3 hw3
 
 /-- What `decEnd_ok` gives at the end, for the tables' hash functions. -/
-theorem decFin {s s₂ : State} (hp : DPre s) {H G : Spec.Mgf1.Hash}
+theorem decFinAt {s s₂ : State} (hp : DPre s) {H G : Spec.Mgf1.Hash}
     (hH : Spec.MdHashTable.hashAt 64 s.mem (stackArg s 17) = some H)
     (hG : Spec.MdHashTable.hashAt 64 s.mem (stackArg s 18) = some G) (he : EnvD s s₂)
     (hw : Spec.RsaOaep.writtenDecrypt s₂.mem (s.gpr .rdi) (s.gpr .rdx) (s.gpr .r8).toNat ((s₂.gpr .rax).setWidth 32)
@@ -235,5 +236,39 @@ theorem decFin {s s₂ : State} (hp : DPre s) {H G : Spec.Mgf1.Hash}
   obtain rfl := Option.some.inj hH'
   obtain rfl := Option.some.inj hG'
   rw [decrypt_eq hct]; exact d
+
+/-- `EnvD`, whatever the frame's bytes hold once released. -/
+theorem EnvD.lost {s s₂ : State} (he : EnvD s s₂) {m : Mem} {u : Nat → BitVec 64}
+    (fm : Frame [⟨fb s, frameBytes⟩] s₂.mem m) : EnvD s { s₂ with mem := m, unknowns := u } :=
+  he.step rfl rfl rfl (fun _ _ _ => rfl) rfl (fm.mono fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr; rw [he.wr]; simp)
+
+/-- What `out` and `*msg_len` hold, whatever the frame's bytes hold once released. -/
+theorem DPre.written_lost {s : State} (hp : DPre s) {m₁ m₂ : Mem}
+    (fm : Frame [⟨fb s, frameBytes⟩] m₁ m₂) {r : BitVec 32} {o : Spec.Rsa.Outcome}
+    (hw : Spec.RsaOaep.writtenDecrypt m₁ (s.gpr .rdi) (s.gpr .rdx) (s.gpr .r8).toNat r o) :
+    Spec.RsaOaep.writtenDecrypt m₂ (s.gpr .rdi) (s.gpr .rdx) (s.gpr .r8).toNat r o := by
+  have hsi := hp.hsi
+  have hb := Proof.Rsa.rsa_bytes_frame fm (s.gpr .r8).isLt (fun q hq => by
+    simp only [List.mem_singleton] at hq; subst hq
+    have := (hp.dKO.sub_left (frame_subD s)).symm
+    rwa [hsi] at this)
+  have hr : m₂.readW (s.gpr .rdx) 64 = m₁.readW (s.gpr .rdx) 64 :=
+    fm.readW (r := mlR s) (Region.contains_self _ _) (fun q hq => by
+      simp only [List.mem_singleton] at hq; subst hq
+      exact (hp.dKM.sub_left (frame_subD s)).symm) (by decide)
+  cases o <;> simp only [Spec.RsaOaep.writtenDecrypt] at hw ⊢ <;> rw [hb, hr] <;> exact hw
+
+/-- `decFinAt`, whatever the frame's bytes hold once released. -/
+theorem decFin {s s₂ : State} (hp : DPre s) {H G : Spec.Mgf1.Hash}
+    (hH : Spec.MdHashTable.hashAt 64 s.mem (stackArg s 17) = some H)
+    (hG : Spec.MdHashTable.hashAt 64 s.mem (stackArg s 18) = some G) (he : EnvD s s₂)
+    (hw : Spec.RsaOaep.writtenDecrypt s₂.mem (s.gpr .rdi) (s.gpr .rdx) (s.gpr .r8).toNat ((s₂.gpr .rax).setWidth 32)
+      (decOut H G (Spec.Rsa.bytesAt s.mem (stackArg s 11) (stackArg s 12).toNat) (privOutD s))) :
+    s₂.gpr .rsp = fb s ∧ s₂.wr = (allocState frameBytes s).wr ∧ ∀ m u, Frame [⟨fb s, frameBytes⟩] s₂.mem m →
+      abiPreserved s { freed frameBytes s₂ with mem := m, unknowns := u } ∧
+        (decK (tables vs)).post s { freed frameBytes s₂ with mem := m, unknowns := u } := by
+  refine ⟨he.rsp, by rw [he.wr, hp.wr], fun m u fm => ?_⟩
+  exact (decFinAt hp hH hG (he.lost (u := u) fm) (hp.written_lost fm hw)).2.2
 
 end VG.Proof.RsaOaep.X86_64

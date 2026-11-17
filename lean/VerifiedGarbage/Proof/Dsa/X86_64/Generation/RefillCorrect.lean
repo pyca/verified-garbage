@@ -14,6 +14,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
 import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
 import VerifiedGarbage.Proof.Dsa.Generation.Memory
 import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Rsa.BytesFrame
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Stack
 public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Entry
@@ -27,6 +28,7 @@ import VerifiedGarbage.Proof.RsaKeyGen.Table
 import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
 import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
 import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! ### `Dsa.X86_64.Generation.EntrySave`, which this module and modules that import it used -/
 
@@ -332,6 +334,27 @@ theorem RefillRes.congr {t t' : State} (r : RefillRes h t) (hr : t'.gpr .rax = t
   obtain ⟨a, b, c, d⟩ := r
   exact ⟨hr.trans a, hm ▸ b, hm ▸ c, hm ▸ d⟩
 
+/-- `RefillRes` holds whatever the bytes of a frame on the stack hold once
+released: the results are apart from the stack. -/
+theorem RefillRes.lost {t t' : State} (r : RefillRes h t) (hr : t'.gpr .rax = t.gpr .rax) {R : Region}
+    (fm : Frame [R] t.mem t'.mem) (hR : R.Sub (below (s₀.gpr .rsp) Refill.refillStack)) : RefillRes h t' := by
+  obtain ⟨a, b, c, d⟩ := r
+  have sep : ∀ {B : Region}, (below (s₀.gpr .rsp) Refill.refillStack).Disjoint B → ∀ {B' : Region}, B'.Sub B →
+      ∀ q ∈ [R], B'.Disjoint q := fun hB _ hs q hq => by
+    simp only [List.mem_singleton] at hq; subst hq
+    exact fun x h₁ h₂ => hB x (hR x h₂) (hs x h₁)
+  have e : (s₀.gpr .rsi).toNat = 2 * pBytes + Spec.Dsa.generationQLen pBytes := by
+    rw [h.outLength, h.width]
+  have fit : 2 * pBytes + Spec.Dsa.generationQLen pBytes < 2 ^ 64 := by
+    rw [← e]; exact (s₀.gpr .rsi).isLt
+  refine ⟨hr.trans a, ?_, ?_, ?_⟩
+  · rw [Proof.Rsa.rsa_bytes_frame fm fit (sep h.stackOut fun x hx => by simp only [Refill.inOut, e]; exact hx)]
+    exact b
+  · rw [Proof.Rsa.wordsAt_frame fm (by decide) (sep h.stackUsed fun x hx => hx)]
+    exact c
+  · rw [Proof.Rsa.wordsAt_frame fm (by decide) (sep h.stackState fun x hx => hx)]
+    exact d
+
 theorem inner_ok {G1 G256 : Impl.Pbkdf2.Md.X86_64.Stream} {sq : Prog isa} {mul : Nat → Nat → Nat → Prog isa}
     {prime : Prog isa} {qBytes : Nat} (hq : qBytes = Spec.Dsa.generationQLen pBytes)
     (hA : AttemptOk h (Impl.Dsa.X86_64.Generation.Refill.refillAttempt (checkName := checkName) G1 G256 sq mul prime
@@ -372,16 +395,38 @@ theorem inner_ok {G1 G256 : Impl.Pbkdf2.Md.X86_64.Stream} {sq : Prog isa} {mul :
       mem := by
         change Frame _ s₀.mem u.mem
         rw [show off (low s₀) 520 = (allocState 48 s₀).gpr .rsp from (saved_alloc _).symm]; exact hf }
-  refine WP.mono (body_ok h hq hA a) fun t ⟨rax, bytes, uw, sw, fr, sp, rd, wr⟩ => ⟨sp, wr, ?_, ?_, ?_⟩
+  refine WP.mono (body_ok h hq hA a) fun t ⟨rax, bytes, uw, sw, fr, sp, rd, wr⟩ =>
+    ⟨sp, wr, fun m₁ u₁ fm₁ => ⟨?_, ?_, fun m₂ u₂ fm₂ => ?_⟩⟩
   · change (freeState 296 t).gpr .rsp = _; exact freeState_rsp sp
   · exact freeState_wr wr
-  refine ⟨RefillRes.congr h ⟨rax, bytes, uw, sw⟩ (by simp [freeState, State.setReg]) rfl, ?_,
+  replace fm₁ : Frame [⟨off (low s₀) 192, 296⟩] t.mem m₁ := by
+    have e : (allocState 32 u).gpr .rsp - BitVec.ofNat 64 296 = off (low s₀) 192 := by
+      change u.gpr .rsp - BitVec.ofNat 64 32 - BitVec.ofNat 64 296 = _
+      rw [ursp, rsp_alloc]; rfl
+    rw [e] at fm₁; exact fm₁
+  replace fm₂ : Frame [⟨off (low s₀) 488, 32⟩] m₁ m₂ := by
+    have e : u.gpr .rsp - BitVec.ofNat 64 32 = off (low s₀) 488 := by
+      rw [ursp, ctl_alloc]; simp only [off]; rw [Offset.add_add]; rfl
+    rw [e] at fm₂; exact fm₂
+  have r₁ := RefillRes.lost h (t' := { freeState 296 t with mem := m₁, unknowns := u₁ }) ⟨rax, bytes, uw, sw⟩
+    (by simp [freeState, State.setReg]) fm₁ (low_sub s₀ (by decide))
+  have saved₀ : Saved t.mem ((allocState 48 s₀).gpr .rsp) s₀.gpr spillSlots := by
+    apply saved.frame (rs := bodyRegions h) fr
+    intro p hp r hr
+    refine (saved_body h r hr).sub_left ?_
+    rw [savedRegion, show off (low s₀) 520 = (allocState 48 s₀).gpr .rsp from (saved_alloc _).symm]
+    exact Offset.sub_base _ (spillSlots_fit p hp)
+  have slot : ∀ {d n : Nat}, d + n ≤ 520 → ∀ p ∈ spillSlots, ∀ r ∈ [(⟨off (low s₀) d, n⟩ : Region)],
+      Region.Disjoint ⟨Spill.slot ((allocState 48 s₀).gpr .rsp) p.2, 8⟩ r := by
+    intro d n hdn p hp r hr
+    simp only [List.mem_singleton] at hr; subst hr
+    refine Region.Disjoint.sub_left (r₁ := savedRegion (s₀ := s₀))
+      (Offset.disjoint (low s₀) (Or.inr (by omega_using [hdn])) (by decide) (by omega_using [hdn])) ?_
+    rw [savedRegion, show off (low s₀) 520 = (allocState 48 s₀).gpr .rsp from (saved_alloc _).symm]
+    exact Offset.sub_base _ (spillSlots_fit p hp)
+  refine ⟨RefillRes.lost h r₁ (by simp [freeState, State.setReg]) fm₂ (low_sub s₀ (by decide)),
+    (saved₀.frame fm₁ (slot (by decide))).frame fm₂ (slot (by decide)),
     freeState_rsp (freeState_rsp sp), rd, freeState_wr (freeState_wr wr)⟩
-  apply saved.frame (rs := bodyRegions h) fr
-  intro p hp r hr
-  refine (saved_body h r hr).sub_left ?_
-  rw [savedRegion, show off (low s₀) 520 = (allocState 48 s₀).gpr .rsp from (saved_alloc _).symm]
-  exact Offset.sub_base _ (spillSlots_fit p hp)
 
 theorem run_ok {G1 G256 : Impl.Pbkdf2.Md.X86_64.Stream} {sq : Prog isa} {mul : Nat → Nat → Nat → Prog isa}
     {prime : Prog isa} {qBytes : Nat} (hq : qBytes = Spec.Dsa.generationQLen pBytes)
@@ -413,8 +458,9 @@ theorem run_ok {G1 G256 : Impl.Pbkdf2.Md.X86_64.Stream} {sq : Prog isa} {mul : N
   intro t ⟨restore, rax, sp, mem, rd, wr⟩
   have tsp : t.gpr .rsp = (allocState 48 s₀).gpr .rsp := by rw [sp, vsp]
   have twr : t.wr = (allocState 48 s₀).wr := wr.trans (wrv.trans hw)
-  refine ⟨tsp, twr, RefillRes.congr h (result.congr h rax mem) (by simp [freeState, State.setReg]) rfl, ?_,
-    rd.trans (rdv.trans hr), freeState_wr twr⟩
+  refine ⟨tsp, twr, fun m u fm => ⟨RefillRes.lost h (t' := { freeState 48 t with mem := m, unknowns := u })
+    (result.congr h rax mem) (by simp [freeState, State.setReg]) fm (Offset.sub_below _ (by decide) (by decide)), ?_,
+    rd.trans (rdv.trans hr), freeState_wr twr⟩⟩
   intro r hr
   by_cases hs : r = .rsp
   · subst r; exact freeState_rsp tsp

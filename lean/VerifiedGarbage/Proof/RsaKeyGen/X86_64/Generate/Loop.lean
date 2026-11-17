@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.RsaKeyGen.InitWords
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Spec.RsaKeyGen.GenerationAgrees
+import VerifiedGarbage.Proof.Rsa.BytesFrame
 
 /-! # The controller's key and loop
 
@@ -584,8 +585,27 @@ theorem key_run [Key.KeyProof] {p : GenPublic} {original s : State} {used : Nat}
       refine ⟨_, mT, ?_⟩
       rw [hu, keyCode_depth]
       exact hbelow
-  obtain hframe := f₀.trans f₁
-  have hword (d : Nat) (hd : d + 8 ≤ 56) : word t.mem p.stp d = word s.mem p.stp d := by
+  obtain htsp : t.gpr .rsp = (allocated 96 s).gpr .rsp := by rw [hg _ (by decide), k.gpr (by decide)]
+  refine ⟨htsp, htw.trans k.2.2, fun m uu fm => ?_⟩
+  obtain hR : Region.Sub ⟨s.gpr .rsp - BitVec.ofNat 64 96, 96⟩ ⟨p.sp - BitVec.ofNat 64 552, 392⟩ := by
+    rw [h.rsp, F_96]
+    exact Offset.sub_below _ (by decide) (by decide)
+  obtain hframe : Frame [cK p, rS p, ⟨p.sp - BitVec.ofNat 64 552, 392⟩] s.mem m :=
+    (f₀.trans f₁).trans (fm.sub fun r hr => by
+      obtain rfl := List.mem_singleton.mp hr
+      exact ⟨_, mT, hR⟩)
+  have hbm : ∀ o ∈ keyOutsOf p, Spec.Rsa.bytesAt m o.1 o.2 = Spec.Rsa.bytesAt t.mem o.1 o.2 := by
+    intro o ho
+    obtain ⟨hsub, hlen⟩ : Region.Sub ⟨o.1, o.2⟩ (cK p) ∧ o.2 < 2 ^ 64 := by
+      simp only [keyOutsOf, List.mem_cons, List.not_mem_nil, or_false] at ho
+      rcases ho with rfl | rfl | rfl | rfl | rfl | rfl | rfl
+      · exact ⟨kN_sub, by omega_using [hL2]⟩
+      all_goals exact ⟨kSlot_sub (by omega_using []), by omega_using [hL2]⟩
+    refine Proof.Rsa.rsa_bytes_frame fm hlen fun q hq => ?_
+    obtain rfl := List.mem_singleton.mp hq
+    exact fun x h₁ h₂ => sK x (hsub x h₁) (Offset.sub_below (p.sp) (a := 256) (b := 552) (n := 96) (m := 552)
+      (by decide) (by decide) x (by rw [← F_96, ← h.rsp]; exact h₂))
+  have hword (d : Nat) (hd : d + 8 ≤ 56) : word m p.stp d = word s.mem p.stp d := by
     refine hframe.readW (r := cS p) (Offset.contains_base _ hd (by have := hf.nT; omega_using [hd])) (fun q hq => ?_)
       (by decide)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
@@ -593,8 +613,7 @@ theorem key_run [Key.KeyProof] {p : GenPublic} {original s : State} {used : Nat}
     · exact hf.kT.symm
     · exact hf.sT.symm
     · exact sT.sub_right (Region.sub_prefix (by decide))
-  obtain htsp : t.gpr .rsp = (allocated 96 s).gpr .rsp := by rw [hg _ (by decide), k.gpr (by decide)]
-  refine ⟨htsp, htw.trans k.2.2, h.restore (htr.trans k.2.1) (show t.wr.tail = s.wr by rw [htw, k.2.2]; rfl)
+  refine ⟨h.restore (t := { freed 96 t with mem := m, unknowns := uu }) (htr.trans k.2.1) (show t.wr.tail = s.wr by rw [htw, k.2.2]; rfl)
       (fun r hr => ?_) (hframe.sub (key_frame_sub h)) ((hword 0 (by decide)).trans h.state.remaining)
       ((hword 8 (by decide)).trans h.state.len) ((hword 16 (by decide)).trans h.state.cap) (.inl rfl) rfl
       h.state.remaining_le, ?_, ?_, hframe⟩
@@ -605,7 +624,19 @@ theorem key_run [Key.KeyProof] {p : GenPublic} {original s : State} {used : Nat}
       exact BitVec.sub_add_cancel _ _
     · rw [freed_reg _ _ _ he, hg r hr, k.gpr hnot, allocated_reg _ _ _ he]
   · rw [freed_reg _ _ _ (by decide), ← hg₂ _ (by decide)]; exact hstat
-  · rw [freed_mem, ← hm₂]; exact hout
+  · have hout' := hout
+    rw [hm₂] at hout'
+    show match keyOf p s.mem with
+      | .inl (.ok ys) => (keyOutsOf p).map (fun o => Spec.Rsa.bytesAt m o.1 o.2) = ys
+      | _ => ∀ o ∈ keyOutsOf p, Spec.Rsa.bytesAt m o.1 o.2 = List.replicate o.2 0
+    split
+    · rename_i ys heq
+      rw [heq] at hout'
+      exact (List.map_congr_left hbm).trans hout'
+    · rename_i hne
+      split at hout'
+      · rename_i ys heq; exact absurd heq (hne ys)
+      · exact fun o ho => (hbm o ho).trans (hout' o ho)
 
 end VG.Proof.RsaKeyGen.X86_64.Generate
 

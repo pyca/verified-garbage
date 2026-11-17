@@ -299,7 +299,13 @@ theorem verify_wp (hv : EqOk v) {s : State} (hpre : (Spec.Ed448.verifyContract X
     refine WP.frame (by decide) (by decide) (by decide) hn ?_
     have hc := entry_ctx hL hsp2 (k2.2.1.trans hrd1) (k2.2.2.trans hwr1) h11 (hg2 _ (by decide))
       (hg2 _ (by decide)) (hg2 _ (by decide)) (hg2 _ (by decide)) (hg2 _ (by decide)) (hg2 _ (by decide))
-    refine WP.mono (body_ok hv hL hc) fun s' ⟨hc', hr⟩ => ⟨by rw [hc'.rsp, hc.rsp], by rw [hc'.wr, hc.wr], ?_, ?_⟩
+    refine WP.mono (body_ok hv hL hc) fun s' ⟨hc', hr⟩ => ⟨by rw [hc'.rsp, hc.rsp], by rw [hc'.wr, hc.wr],
+      fun m uk fm => ?_⟩
+    -- The pop loses the frame's bytes, in the stack below `rsp`, apart from
+    -- the return address.
+    rw [hg2 .rsp (by decide)] at fm
+    dsimp only
+    refine ⟨?_, ?_⟩
     · -- The calling convention.
       refine ⟨fun r hr => ?_, ?_, ?_⟩
       · by_cases hr' : r = .rsp
@@ -307,7 +313,10 @@ theorem verify_wp (hv : EqOk v) {s : State} (hpre : (Spec.Ed448.verifyContract X
           rw [popped_rsp, hc'.rsp, Lay.SP, add_add, regs_length, vlay_B]
         · rw [popped_gpr _ _ _ hr' (cs_r11 r hr), hc'.cs r hr hr', hg2 r (cs_tmp r hr)]
       · have eR : vRet s = ⟨(vlay s).B + BitVec.ofNat 64 272, 8⟩ := by rw [vlay_B]
-        rw [popped_mem, hc'.frame.readW (r := vRet s) (Region.contains_self _ _) (fun r hr => by
+        rw [fm.readW (r := vRet s) (Region.contains_self _ _) (fun r hr => by
+            rw [List.mem_singleton.mp hr, regs_length]
+            exact Offset.base_disjoint_below (s.gpr .rsp) (by omega_using [])) (by decide),
+          hc'.frame.readW (r := vRet s) (Region.contains_self _ _) (fun r hr => by
             simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
             rcases hr with rfl | rfl
             · exact h.retScr

@@ -80,7 +80,7 @@ theorem streamToFrameSatPrepared_pre : ∃ s, (Proof.Gcm.streamEncryptToPrepared
 theorem streamEncryptToPrepared_framed (T : BlkToFn CtxMode.prepared) (E : EncFn CtxMode.prepared) :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 2232 3 (encrypt T.fn E.fn))
       (Proof.Gcm.streamEncryptToPreparedContract X86_64.abi 4856) :=
-  X86_64.Verified.stackArgScratch (sig := Proof.Gcm.streamEncryptToPreparedSig) (nm := "scratch")
+  X86_64.Verified.stackArgScratchPre (hpostOut := Proof.AesGcm.streamEncryptToPrecomputedPostOut_local _ _ (fun _ _ _ _ _ _ _ _ _ _ h => h.2.1)) (sig := Proof.Gcm.streamEncryptToPreparedSig) (nm := "scratch")
     (e := .u64) (n := 274) (pre := Proof.Gcm.streamEncryptToPreparedPre X86_64.abi.ptrBits)
     (post := Proof.Gcm.streamEncryptToPost X86_64.abi.ptrBits) (wa := true) (stack := 2624)
     (bytes := 2232) (streamEncryptToPrepared_core T E) (by decide) (by decide) (by decide)

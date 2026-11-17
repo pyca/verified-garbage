@@ -21,6 +21,7 @@ import VerifiedGarbage.Proof.RsaKeyGen.InitWords
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Bignum.X86_64.WordIOBytes
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Rsa.BytesFrame
 
 /-! # The controller from its entry to the blocks after a prime's search
 
@@ -1903,20 +1904,47 @@ theorem search_run (v : RoundImpl) {p : GenPublic} {original s : State} {used : 
   obtain hrem := KeySearch.primeSearch_remaining_le p.L p.eB st.phase.other st.remaining ((genRand original).drop used)
   have hle := h.state.remaining_le
   obtain htsp : t.gpr .rsp = (allocated 48 s).gpr .rsp := by rw [hg _ (by decide), k.gpr (by decide)]
-  refine ⟨htsp, htw.trans k.2.2, h.toGenFrame.restore (htr.trans k.2.1) (show t.wr.tail = s.wr by rw [htw, k.2.2]; rfl)
-      (fun r hr => ?_) (hframe.sub (searchChanges_sub h)) ?_ w1 w2 (.inl rfl) rfl (Nat.le_trans hrem hle), ?_, ?_, ?_,
-      ⟨req, ?_, hreq⟩, hframe⟩
+  refine ⟨htsp, htw.trans k.2.2, fun m uu fm => ?_⟩
+  -- The frame's bytes, once released, hold anything: everything read lies apart from them.
+  obtain hR : Region.Sub ⟨s.gpr .rsp - BitVec.ofNat 64 48, 48⟩ ⟨p.sp - BitVec.ofNat 64 552, 392⟩ := by
+    rw [h.rsp, F_48]; exact Offset.sub_below _ (by decide) (by decide)
+  obtain hRS : Region.Sub ⟨s.gpr .rsp - BitVec.ofNat 64 48, 48⟩ (cStack p) := by
+    rw [h.rsp, F_48]; exact Offset.sub_below _ (by decide) (by decide)
+  have sep : ∀ {B : Region}, B.Disjoint (cStack p) →
+      ∀ q ∈ [(⟨s.gpr .rsp - BitVec.ofNat 64 48, 48⟩ : Region)], B.Disjoint q := fun hB q hq => by
+    obtain rfl := List.mem_singleton.mp hq
+    exact fun x h₁ h₂ => hB x h₁ (hRS x h₂)
+  have hstk := hf.stack
+  simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hstk
+  obtain ⟨sK, sU, -, sT, -⟩ := hstk
+  have hwS (d : Nat) (hd : d + 8 ≤ 56) : word m p.stp d = word t.mem p.stp d :=
+    fm.readW (r := cS p) (Offset.contains_base _ hd (by have := hf.nT; omega_using [hd])) (sep sT) (by decide)
+  have hwU : word m p.up 0 = word t.mem p.up 0 :=
+    fm.readW (r := rU p) (Offset.contains_base _ (d := 0) (n := 8) (k := 8) (by decide) (by have := hf.nU; omega_using [this]))
+      (sep sU) (by decide)
+  have hbO : Spec.Rsa.bytesAt m (outOf p st) p.L = Spec.Rsa.bytesAt t.mem (outOf p st) p.L :=
+    Proof.Rsa.rsa_bytes_frame fm (by have := hf.len.2.1; omega_using [this]) (sep (sK.sub_left (rO_sub hf)))
+  obtain hframe' : Frame (searchChanges p st) s.mem m :=
+    hframe.trans (fm.sub fun r hr => by
+      obtain rfl := List.mem_singleton.mp hr
+      exact ⟨_, stack_mem p st, hR⟩)
+  refine ⟨h.toGenFrame.restore (t := { freed 48 t with mem := m, unknowns := uu }) (htr.trans k.2.1)
+      (show t.wr.tail = s.wr by rw [htw, k.2.2]; rfl)
+      (fun r hr => ?_) (hframe'.sub (searchChanges_sub h)) ?_ ((hwS 8 (by decide)).trans w1)
+      ((hwS 16 (by decide)).trans w2) (.inl rfl) rfl (Nat.le_trans hrem hle), ?_, ?_, ?_,
+      ⟨req, ?_, hreq⟩, hframe'⟩
   · have hnot : r ∉ [Reg.rax, .rdi, .rsi, .rdx, .rcx, .r8, .r9, .r10, .r11] := by revert r; decide
     by_cases he : r = .rsp
     · subst he
       rw [freed_rsp, htsp, allocated_rsp]
       exact BitVec.sub_add_cancel _ _
     · rw [freed_reg _ _ _ he, hg r hr, k.gpr hnot, allocated_reg _ _ _ he]
-  · exact w0
-  · rw [freed_reg _ _ _ (by decide), ← hg₂ _ (by decide)]; exact hst
-  · exact hused
-  · exact hout
-  · exact w3
+  · exact (hwS 0 (by decide)).trans w0
+  · show ((t.gpr .rax).setWidth 32).toNat = _
+    rw [← hg₂ _ (by decide)]; exact hst
+  · exact hwU.trans hused
+  · exact hbO.trans hout
+  · exact (hwS 24 (by decide)).trans w3
 
 end VG.Proof.RsaKeyGen.X86_64.Generate
 

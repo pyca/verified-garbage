@@ -5,6 +5,8 @@ public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Search.Correct
 import VerifiedGarbage.Proof.Bignum.Layout
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Rsa.BytesFrame
+import VerifiedGarbage.Proof.Framework.X86_64.Frame
 
 /-! # RSA key generation's controller on x86-64: correctness
 
@@ -118,6 +120,38 @@ theorem done_post {p : GenPublic} {s d t : State} (hp : GenInput p s)
     exact this.trans hst.e
   · rw [hL]; exact hr
 
+/-- `genPost` holds whatever the bytes of a frame on the controller's stack
+hold once released: the key, the used count and the state lie apart from it. -/
+theorem genPost_lost {p : GenPublic} {s t t' : State} (hp : GenInput p s) (h : genPost s t)
+    (hr : t'.gpr .rax = t.gpr .rax) {R : Region} (fm : Frame [R] t.mem t'.mem) (hR : R.Sub (cStack p)) :
+    genPost s t' := by
+  have hf := hp.cfacts
+  have hstk := hf.stack
+  simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hstk
+  obtain ⟨sK, sU, -, sT, -⟩ := hstk
+  have hd : ∀ {B : Region}, B.Disjoint (cStack p) → B.Disjoint R := fun hB x h₁ h₂ => hB x h₁ (hR x h₂)
+  have hb : ∀ {B : Region}, B.Disjoint (cStack p) →
+      Spec.Rsa.bytesAt t'.mem B.base B.len = Spec.Rsa.bytesAt t.mem B.base B.len := fun hB =>
+    List.map_congr_left fun i hi => lost_byte fm (hd hB) (List.mem_range.mp hi)
+  have hkp : s.gpr .rdi = p.kp := by rw [← hp.2]; rfl
+  have hup : s.gpr .rdx = p.up := by rw [← hp.2]; rfl
+  have hstp : stackArg s 1 = p.stp := by rw [← hp.2]; rfl
+  have hL : genLen s = p.L := by rw [← hp.2]; rfl
+  obtain ⟨a, b, c, req, d, e, f⟩ := h
+  refine ⟨by rw [hr]; exact a, ?_, ?_, req, ?_, ?_, f⟩
+  · rw [hkp, hL] at b ⊢
+    exact (hb (B := cK p) sK).trans b
+  · rw [hup] at c ⊢
+    rw [Proof.Rsa.wordsAt_frame (p := p.up) (n := 1) fm (by decide) fun q hq => by
+      obtain rfl := List.mem_singleton.mp hq; exact hd sU]
+    exact c
+  · rw [hstp] at d ⊢
+    rw [Proof.Rsa.wordsAt_frame (p := p.stp) (n := 6) fm (by decide) fun q hq => by
+      obtain rfl := List.mem_singleton.mp hq; exact hd (sT.sub_left (Region.sub_prefix (by decide)))]
+    exact d
+  · rw [hstp] at e ⊢
+    exact (hb (B := rE p) (sT.sub_left rE_sub)).trans e
+
 theorem gen_correct_ok [Key.KeyProof] (v : RoundImpl) {s : State} (h : genPre s) :
     WP isa (genCode v) s fun t => genPost s t ∧
       (∀ reg ∈ calleeSaved, t.gpr reg = s.gpr reg) ∧ t.rd = s.rd ∧ t.wr = s.wr := by
@@ -144,10 +178,15 @@ theorem gen_correct_ok [Key.KeyProof] (v : RoundImpl) {s : State} (h : genPre s)
   refine WP.mono (finish_ok hd) fun x ⟨⟨hax, hr12, hmx⟩, k⟩ => ?_
   have g := hd.1
   have hxs : x.gpr .rsp = (genOfState s).F := by rw [k.gpr (by decide)]; exact g.rsp
+  have hR : Region.Sub ⟨s.gpr .rsp - BitVec.ofNat 64 160, 160⟩ (cStack (genOfState s)) := by
+    rw [← hp.sp_eq]; exact Offset.sub_below _ (by decide) (by decide)
   refine ⟨by rw [hxs]; exact (alloc_rsp hp).symm, by rw [k.2.2, g.wr]; exact (alloc_wr hp).symm,
-    done_post hp hd (by rw [freed_reg _ _ _ (by decide)]; exact hax) (by rw [freed_mem]; exact hmx),
-    fun r hr => ?_, ?_, ?_⟩
-  · have hnot : r ≠ .r12 → r ∉ [Reg.rax, .rcx, .r12] := by revert r; decide
+    fun m uu fm => ⟨genPost_lost hp (t := freed 160 x)
+      (done_post hp hd (by rw [freed_reg _ _ _ (by decide)]; exact hax) (by rw [freed_mem]; exact hmx))
+      (freed_reg 160 x .rax (by decide)) fm hR,
+    fun r hr => ?_, ?_, ?_⟩⟩
+  · show (freed 160 x).gpr r = s.gpr r
+    have hnot : r ≠ .r12 → r ∉ [Reg.rax, .rcx, .r12] := by revert r; decide
     by_cases hsp : r = .rsp
     · subst hsp
       rw [freed_rsp, hxs, ← hp.sp_eq]

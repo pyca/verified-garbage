@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncTail
+import VerifiedGarbage.Proof.Rsa.BytesFrame
 import Mathlib.Data.Int.GCD
 public import VerifiedGarbage.Impl.RsaPkcs1Sig.X86_64.RecoverPrecomputed
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverCorrect
@@ -718,8 +719,16 @@ theorem code_correct (v : PublicImpl) (s : State)
     refine WP.seq (WP.mono (call_ok v hp hj) fun t₂ ⟨he₂, hw, hcs₂, hmx₂⟩ => ?_)
     refine WP.mono_mx (by decide +kernel) (WP.keep [.rax, .rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11]
       (afterPub_ok hp.toPreR he₂ hid) (by decide +kernel)) fun t₃ ⟨⟨he₃, hwu⟩, k₃⟩ hmx₃ => ?_
-    refine ⟨he₃.rsp.trans hfb.symm, by rw [he₃.wr]; simp only [allocState, hsp₀, k₀.2.2],
-      ⟨fun r hr => ?_, ret_frame hp.toPreR he₃.mem, ?_⟩, fun hq => hpost _ _ hwu ?_⟩
+    refine ⟨he₃.rsp.trans hfb.symm, by rw [he₃.wr]; simp only [allocState, hsp₀, k₀.2.2], fun m uu fm => ?_⟩
+    rw [hfb] at fm
+    have hs := VG.Proof.RsaPkcs1Sig.X86_64.Ver.frame_sub s (d := 0) (n := frameBytes) (by omega_using [])
+    simp only [off, BitVec.add_zero] at hs
+    have hwu' := Proof.Rsa.written_frame fm (s.gpr .rsi).isLt (fun q hq => by
+      simp only [List.mem_singleton] at hq; subst hq
+      exact (hp.toPreR.dKo.sub_left hs).symm) hwu
+    refine ⟨⟨fun r hr => ?_, ret_frame hp.toPreR (he₃.mem.trans (fm.sub fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, List.mem_cons_self .., hs⟩)), ?_⟩,
+      fun hq => hpost { freed frameBytes t₃ with mem := m, unknowns := uu } _ hwu' ?_⟩
     · by_cases hr' : r = .rsp
       · subst hr'
         show t₃.gpr .rsp + BitVec.ofNat 64 frameBytes = s.gpr .rsp

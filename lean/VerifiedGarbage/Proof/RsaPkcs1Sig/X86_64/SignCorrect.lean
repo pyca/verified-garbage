@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.SignCall
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCorrect
+import VerifiedGarbage.Proof.Rsa.BytesFrame
+import VerifiedGarbage.Proof.Framework.X86_64.FrameAlloc
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Verify
 import VerifiedGarbage.Proof.Framework.Offset
@@ -96,19 +98,14 @@ theorem afterEncWith_ok {args : List Instr} {privName : String} {priv : Prog isa
     · rw [hmxu, hmx₅, hmx₃]
 
 /-- The frame: its body runs from `allocState frameBytes s` and ends with
-`rsp` and the writable regions as the push left them. -/
+`rsp` and the writable regions as the push left them; the frame's bytes
+then hold whatever they hold once released (`alloc_frame_ok`). -/
 theorem wp_alloc {body : Prog isa} {s : State} {Q : State → Prop} (hsp : frameBytes ≤ (s.gpr .rsp).toNat)
     (hb : WP isa body (allocState frameBytes s) fun s₂ => s₂.gpr .rsp = fb s ∧
-      s₂.wr = (allocState frameBytes s).wr ∧ Q (freed frameBytes s₂)) :
-    WP isa (.frame (.alloc frameBytes) body (.free frameBytes)) s Q := by
-  obtain ⟨t, s₂, he, hsp₂, hw, hq⟩ := hb
-  have ha : isa.push (.alloc frameBytes) s = some (allocState frameBytes s) := by
-    simp only [isa, push, allocState]
-    exact ite_eq_left ⟨by decide, by decide, by decide, hsp⟩
-  have hf : isa.pop (.free frameBytes) (allocState frameBytes s) s₂ = some (freed frameBytes s₂) := by
-    simp only [isa, pop]
-    exact ite_eq_left ⟨by decide, by decide, by decide, hsp₂, hw, rfl⟩
-  exact ⟨_, _, Exec.frame ha he hf, hq⟩
+      s₂.wr = (allocState frameBytes s).wr ∧ ∀ m u, Frame [⟨fb s, frameBytes⟩] s₂.mem m →
+        Q { freed frameBytes s₂ with mem := m, unknowns := u }) :
+    WP isa (.frame (.alloc frameBytes) body (.free frameBytes)) s Q :=
+  alloc_frame_ok (by decide) hsp hb
 
 /-- The return address is outside everything the function writes. -/
 theorem ret_frame {s : State} (hp : PreS s) {m : Mem} (h : Frame [stkR s, outR s, scrR s] s.mem m) :
@@ -154,7 +151,11 @@ theorem codeWith_ok {ae : Prog isa} {s : State} (hp : PreS s)
   refine WP.seq (WP.mono_mx (by decide +kernel) (encode_ok (encPre hp he₁ h8₁ hcx₁ hdx₁ hsi₁ h9₁))
     fun t₂ ⟨hK₂, hout₂⟩ hmx₂ => ?_)
   refine WP.mono (hae he₁ h8₁ hK₂ (fun em h' => encodeId_length h') hout₂)
-    fun u ⟨heu, hwu, hcsu, hmxu⟩ => ⟨heu.rsp, by rw [heu.wr]; rfl, ⟨fun r hr => ?_, ret_frame hp heu.mem, ?_⟩, ?_⟩
+    fun u ⟨heu, hwu, hcsu, hmxu⟩ => ⟨heu.rsp, by rw [heu.wr]; rfl, fun m uu fm => ?_⟩
+  have hs := VG.Proof.RsaPkcs1Sig.X86_64.Sgn.frame_sub s (d := 0) (n := frameBytes) (by omega_using [])
+  simp only [off, BitVec.add_zero] at hs
+  refine ⟨⟨fun r hr => ?_, ret_frame hp (heu.mem.trans (fm.sub fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, List.mem_cons_self .., hs⟩)), ?_⟩, ?_⟩
   · by_cases hr' : r = .rsp
     · subst hr'
       show u.gpr .rsp + BitVec.ofNat 64 frameBytes = s.gpr .rsp
@@ -165,12 +166,16 @@ theorem codeWith_ok {ae : Prog isa} {s : State} (hp : PreS s)
         hcs₁ r hr hr']
   · show u.mxcsr.extractLsb' 6 10 = s.mxcsr.extractLsb' 6 10
     rw [hmxu, hmx₂, hmx₁]; rfl
-  · show Spec.Rsa.writtenOutcome u.mem _ _ _ _
+  · show Spec.Rsa.writtenOutcome m _ _ _ _
     have hH : Spec.Rsa.bytesAt t₁.mem (t₁.gpr .rsi) (t₁.gpr .r9).toNat =
         Spec.Rsa.bytesAt s.mem (stackArg s 1) (stackArg s 2).toNat := by
       rw [hsi₁, h9₁]
       exact bytes_of_frame he₁.mem hp.dKd hp.dOd hp.dds.symm (by have := hp.wD; omega_using [])
     rw [signId_eq, bytesAt_length, ← hH]
-    exact hwu
+    have hsi := hp.hsi
+    exact Proof.Rsa.writtenOutcome_frame fm (s.gpr .rcx).isLt (fun q hq => by
+      simp only [List.mem_singleton] at hq; subst hq
+      have := (hp.dKo.sub_left hs).symm
+      rwa [hsi] at this) hwu
 
 end VG.Proof.RsaPkcs1Sig.X86_64.Sgn

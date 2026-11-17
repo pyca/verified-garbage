@@ -6,6 +6,8 @@ import VerifiedGarbage.Proof.RsaOaep.X86_64.LabelT
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Good
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.FrameAlloc
+import VerifiedGarbage.Proof.Rsa.BytesFrame
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.Pub
 
 /-!
@@ -34,24 +36,20 @@ open VG.Proof.RsaPkcs1Sig.X86_64 (pubChecked)
 def freed (bytes : Nat) (s₂ : State) : State :=
   { s₂.setReg .rsp (s₂.gpr .rsp + BitVec.ofNat 64 bytes) with wr := s₂.wr.tail }
 
+/-- The frame, whose bytes hold whatever they hold once released
+(`alloc_frame_ok`). -/
 theorem wp_alloc {body : Prog isa} {s : State} {Q : State → Prop} (hsp : frameBytes ≤ (s.gpr .rsp).toNat)
     (hb : WP isa body (allocState frameBytes s) fun s₂ => s₂.gpr .rsp = fb s ∧
-      s₂.wr = (allocState frameBytes s).wr ∧ Q (freed frameBytes s₂)) :
-    WP isa (.frame (.alloc frameBytes) body (.free frameBytes)) s Q := by
-  obtain ⟨t, s₂, he, hsp₂, hw, hq⟩ := hb
-  have ha : isa.push (.alloc frameBytes) s = some (allocState frameBytes s) := by
-    simp only [isa, push, allocState]
-    exact ite_eq_left ⟨by decide, by decide, by decide, hsp⟩
-  have hf : isa.pop (.free frameBytes) (allocState frameBytes s) s₂ = some (freed frameBytes s₂) := by
-    simp only [isa, pop]
-    exact ite_eq_left ⟨by decide, by decide, by decide, hsp₂, hw, rfl⟩
-  exact ⟨_, _, Exec.frame ha he hf, hq⟩
+      s₂.wr = (allocState frameBytes s).wr ∧ ∀ m u, Frame [⟨fb s, frameBytes⟩] s₂.mem m →
+        Q { freed frameBytes s₂ with mem := m, unknowns := u }) :
+    WP isa (.frame (.alloc frameBytes) body (.free frameBytes)) s Q :=
+  alloc_frame_ok (by decide) hsp hb
 
 /-! ## The end -/
 
 /-- What the function's caller sees: from a state in the frame with `out`
 written as `o` says. -/
-theorem encEnd_ok {H : Spec.Mgf1.Hash} {s s₂ : State} (hp : EPre H s) (he : EnvE s s₂) {o : Option (List Byte)}
+theorem encEnd_at {H : Spec.Mgf1.Hash} {s s₂ : State} (hp : EPre H s) (he : EnvE s s₂) {o : Option (List Byte)}
     (hw : Spec.Rsa.written s₂.mem (s.gpr .rdi) (s.gpr .rcx).toNat ((s₂.gpr .rax).setWidth 32) o) :
     s₂.gpr .rsp = fb s ∧ s₂.wr = (allocState frameBytes s).wr ∧
       (abiPreserved s (freed frameBytes s₂) ∧
@@ -73,6 +71,32 @@ theorem encEnd_ok {H : Spec.Mgf1.Hash} {s s₂ : State} (hp : EPre H s) (he : En
       simpa only [stkR, BitVec.ofNat_eq_ofNat, BitVec.add_zero] using this
     · exact hp.d_ret_out
     · exact hp.d_ret_scr
+
+/-- `EnvE`, whatever the frame's bytes hold once released. -/
+theorem EnvE.lost {s s₂ : State} (he : EnvE s s₂) {m : Mem} {u : Nat → BitVec 64}
+    (fm : Frame [⟨fb s, frameBytes⟩] s₂.mem m) : EnvE s { s₂ with mem := m, unknowns := u } :=
+  he.step rfl rfl rfl (fun _ _ _ => rfl) rfl (fm.mono fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr; rw [he.wr]; simp)
+
+/-- What `out` holds, whatever the frame's bytes hold once released. -/
+theorem EPre.written_lost {H : Spec.Mgf1.Hash} {s : State} (hp : EPre H s) {m₁ m₂ : Mem}
+    (fm : Frame [⟨fb s, frameBytes⟩] m₁ m₂) {r : BitVec 32} {o : Option (List Byte)}
+    (hw : Spec.Rsa.written m₁ (s.gpr .rdi) (s.gpr .rcx).toNat r o) :
+    Spec.Rsa.written m₂ (s.gpr .rdi) (s.gpr .rcx).toNat r o := by
+  have hsi := hp.hsi
+  have hout : (⟨s.gpr .rdi, (s.gpr .rcx).toNat⟩ : Region) = outR s := by simp [outR, hsi]
+  exact Proof.Rsa.written_frame fm (s.gpr .rcx).isLt (fun q hq => by
+    simp only [List.mem_singleton] at hq; subst hq
+    rw [hout]; exact (hp.d_stk_out.sub_left (frame_sub s)).symm) hw
+
+/-- `encEnd_at`, whatever the frame's bytes hold once released. -/
+theorem encEnd_ok {H : Spec.Mgf1.Hash} {s s₂ : State} (hp : EPre H s) (he : EnvE s s₂) {o : Option (List Byte)}
+    (hw : Spec.Rsa.written s₂.mem (s.gpr .rdi) (s.gpr .rcx).toNat ((s₂.gpr .rax).setWidth 32) o) :
+    s₂.gpr .rsp = fb s ∧ s₂.wr = (allocState frameBytes s).wr ∧ ∀ m u, Frame [⟨fb s, frameBytes⟩] s₂.mem m →
+      abiPreserved s { freed frameBytes s₂ with mem := m, unknowns := u } ∧
+        Spec.Rsa.written m (s.gpr .rdi) (s.gpr .rcx).toNat (((freed frameBytes s₂).gpr .rax).setWidth 32) o := by
+  refine ⟨he.rsp, by rw [he.wr, EPre.wr hp], fun m u fm => ?_⟩
+  exact (encEnd_at hp (he.lost (u := u) fm) (hp.written_lost fm hw)).2.2
 
 /-- Zeros to `out` and 0, from a state in the frame. -/
 theorem encFail_ok {H : Spec.Mgf1.Hash} {s t : State} (hp : EPre H s) (he : EnvE s t) (L : Lay t (fb s) (stackArg s 6))
