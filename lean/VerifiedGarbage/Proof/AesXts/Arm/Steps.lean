@@ -25,6 +25,7 @@ shifted-register operands, `sub`, `and`, `eor` and `orr`.
 namespace VG.Proof.AesXts.Arm
 
 open VG VG.Arm VG.Arm.RegUpd VG.Impl.AesXts.Arm
+open VG.Impl.AesCbc.Arm (mulA)
 open VG.Spec.Aes (bytesAt)
 
 /-- The memory after `mulA` on the tweak at `Q`. -/

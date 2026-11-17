@@ -1,12 +1,12 @@
 module
 
 import VerifiedGarbage.Proof.AesXts.Arm.Steps
-public import VerifiedGarbage.Proof.AesCbc.Arm.CT
+public import VerifiedGarbage.Proof.AesCbc.Arm.GroupsCT
 public import VerifiedGarbage.Proof.AesXts.Spec
 public import VerifiedGarbage.Impl.AesXts.Arm
 import VerifiedGarbage.Proof.Framework.TacticTemplate
 meta import VerifiedGarbage.Proof.AesXts.Arm.Steps
-meta import VerifiedGarbage.Proof.AesCbc.Arm.CT
+meta import VerifiedGarbage.Proof.AesCbc.Arm.GroupsCT
 meta import VerifiedGarbage.Proof.AesXts.Spec
 meta import VerifiedGarbage.Impl.AesXts.Arm
 meta import VerifiedGarbage.Proof.Framework.TacticTemplate
@@ -26,6 +26,12 @@ decryption). The tweak is XORed into the data block (`preA_wp`), which is
 enciphered in place, the tweak is XORed in again, and the tweak is
 multiplied by `α` (`Steps.lean`). `body_ct'`: it is constant time, by the
 shared framework, with the call on the data block.
+
+`encrypt_wp`, `decrypt_wp`, `encrypt_ct`, `decrypt_ct`: the whole-block
+functions, which first take the blocks in groups
+(`Proof/AesCbc/Arm/Groups.lean`, `GroupsCT.lean`): a group of `xtsG` leaves
+the data and the tweak as XTS of its blocks does (`xtsG_sim`), which
+evaluating both on any blocks shows.
 -/
 
 @[expose] public section
@@ -33,7 +39,7 @@ shared framework, with the call on the data block.
 namespace VG.Proof.AesXts.Arm
 
 open VG VG.Arm VG.Impl.AesXts.Arm
-open VG.Impl.AesCbc.Arm (callArgs encFrame decFrame)
+open VG.Impl.AesCbc.Arm (callArgs encFrame decFrame mulA wholeG xtsG groupLevels)
 open VG.Impl.CmacAes.Arm (advance xor4)
 open VG.Proof.CmacAes.Arm (W R Dp N S schR dataR scrR argsR belowR savedMem add0)
 open VG.Proof.AesOcb.Arm (BlkFn BlkCall BlkPost blkFrame blk_call encF decF)
@@ -186,5 +192,86 @@ theorem decBody_ct : BodyCt (AesXts.xtsMode false) (.seq (.block pre) (.seq decF
     rw [decFrame_eq]
     exact body_ct decF (fun hq k => pub_D32 hq k) pre_taint post_taint
       (@fun _ hp _ hk _ h => WP.mono (preA_wp hp hk h) fun _ a => Mid.of h a) hp hp' hq k
+
+/-! ## In groups -/
+
+theorem crypt_append (ciph : Spec.Cbc.Cipher) (t : List Byte) (xs ys : List (List Byte)) :
+    Spec.Xts.crypt ciph t (xs ++ ys) =
+      Spec.Xts.crypt ciph t xs ++ Spec.Xts.crypt ciph (Spec.Xts.next t xs.length) ys := by
+  induction xs generalizing t with
+  | nil => rfl
+  | cons x xs ih =>
+    have e : ∀ zs : List (List Byte), Spec.Xts.crypt ciph t (x :: zs) =
+        Spec.Xts.block ciph t x :: Spec.Xts.crypt ciph (Spec.Xts.mulAlpha t) zs := fun zs => rfl
+    rw [List.cons_append, e, e, ih, List.length_cons, AesXts.next_succ', List.cons_append]
+
+theorem next_add (t : List Byte) (a b : Nat) :
+    Spec.Xts.next t (a + b) = Spec.Xts.next (Spec.Xts.next t a) b := by
+  induction b with
+  | zero => rfl
+  | succ b ih => rw [← Nat.add_assoc, AesXts.next_succ, ih, ← AesXts.next_succ]
+
+/-- A group of `xtsG` computes XTS of its blocks, in either direction. -/
+theorem xtsG_sim (enc : Bool) : ∀ lg ∈ groupLevels, GSim (AesXts.xtsMode enc) (ciphOf enc) xtsG (2 ^ lg) := by
+  intro lg h R w iv xs ys b hy hiv hd
+  simp only [groupLevels, List.mem_cons, List.not_mem_nil, or_false] at h
+  simp only [AesXts.xtsMode, crypt_append, List.length_append, next_add, hy] at hiv ⊢
+  rcases h with rfl | rfl
+  · match ys, hy with
+    | [y0, y1, y2, y3], _ =>
+      have h0 := hd 0 (by decide)
+      have h1 := hd 1 (by decide)
+      have h2 := hd 2 (by decide)
+      have h3 := hd 3 (by decide)
+      simp only [List.getElem?_cons_zero, List.getElem?_cons_succ, Option.some.injEq] at h0 h1 h2 h3
+      simp [gstep, xtsG, grunOps, grunOp, gset, gciph, gtgt, List.range_succ, Spec.Xts.crypt, Spec.Xts.tweaks,
+        Spec.Xts.block, Spec.Xts.next, Nat.repeat, ← h0, ← h1, ← h2, ← h3, hiv]
+  · match ys, hy with
+    | [y0, y1], _ =>
+      have h0 := hd 0 (by decide)
+      have h1 := hd 1 (by decide)
+      simp only [List.getElem?_cons_zero, List.getElem?_cons_succ, Option.some.injEq] at h0 h1
+      simp [gstep, xtsG, grunOps, grunOp, gset, gciph, gtgt, List.range_succ, Spec.Xts.crypt, Spec.Xts.tweaks,
+        Spec.Xts.block, Spec.Xts.next, Nat.repeat, ← h0, ← h1, hiv]
+
+theorem xtsG_levels (enc : Bool) (F : BlkFn)
+    (hf : ∀ R w m p, (F.f R w (Spec.Aes.stateAt m p)).toList = ciphOf enc R w (bytesAt m p 16)) :
+    ∀ lg ∈ groupLevels, LevelOk (AesXts.xtsMode enc) F (ciphOf enc) xtsG lg :=
+  levels_of (by decide) (by decide) (xtsG_sim enc) hf
+
+theorem xtsG_taint : ∀ lg ∈ groupLevels, LevelTaint xtsG lg := by
+  intro lg h
+  simp only [groupLevels, List.mem_cons, List.not_mem_nil, or_false] at h
+  rcases h with rfl | rfl <;> exact ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+
+theorem encrypt_eq :
+    encrypt = wholeG (blkFrame encF) xtsG groupLevels (.seq (.block pre) (.seq encFrame (.block post))) := rfl
+
+theorem decrypt_eq :
+    decrypt = wholeG (blkFrame decF) xtsG groupLevels (.seq (.block pre) (.seq decFrame (.block post))) := rfl
+
+/-- `vg_aes_xts_encrypt`, in groups, meets `whole`'s contract. -/
+theorem encrypt_wp {s₀ : State} (h0 : (modeArm (AesXts.xtsMode true)).pre s₀) :
+    WP isa encrypt s₀ fun s' => abiPreserved s₀ s' ∧ (modeArm (AesXts.xtsMode true)).post s₀ s' := by
+  rw [encrypt_eq]
+  exact wholeG_wp (xtsG_levels true encF fun _ _ _ _ => (aesWith_state _ _ _ _).symm) encBody_ok h0
+
+/-- `vg_aes_xts_decrypt`, likewise. -/
+theorem decrypt_wp {s₀ : State} (h0 : (modeArm (AesXts.xtsMode false)).pre s₀) :
+    WP isa decrypt s₀ fun s' => abiPreserved s₀ s' ∧ (modeArm (AesXts.xtsMode false)).post s₀ s' := by
+  rw [decrypt_eq]
+  exact wholeG_wp (xtsG_levels false decF fun _ _ _ _ => (aesInvWith_state _ _ _ _).symm) decBody_ok h0
+
+theorem encrypt_ct :
+    ConstantTime isa (modeArm (AesXts.xtsMode true)).pre (modeArm (AesXts.xtsMode true)).pub encrypt := by
+  rw [encrypt_eq]
+  exact wholeG_ct (xtsG_levels true encF fun _ _ _ _ => (aesWith_state _ _ _ _).symm) xtsG_taint encBody_ok
+    encBody_ct
+
+theorem decrypt_ct :
+    ConstantTime isa (modeArm (AesXts.xtsMode false)).pre (modeArm (AesXts.xtsMode false)).pub decrypt := by
+  rw [decrypt_eq]
+  exact wholeG_ct (xtsG_levels false decF fun _ _ _ _ => (aesInvWith_state _ _ _ _).symm) xtsG_taint decBody_ok
+    decBody_ct
 
 end VG.Proof.AesXts.Arm

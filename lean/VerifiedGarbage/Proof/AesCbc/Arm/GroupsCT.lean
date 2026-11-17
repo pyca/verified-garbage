@@ -107,9 +107,9 @@ theorem gpre_mid {M : Mode} {F : BlkFn} {C : Nat → List Byte → Spec.Cbc.Ciph
   refine WP.mono (opsCode_wp lay h.regs.r7 h.regs.r10 h.regs.r6
     (b := fun x => Spec.Aes.bytesAt s.mem (gaddr (D32 s₀ k) (S s₀) (Iv s₀) x) 16) (fun _ _ => rfl) hl.pre)
     fun s₁ i₁ => ?_
-  refine WP.mono (gArgs_wp hp hG hl.g5 hk hl.encG (h.regs.of i₁.regs i₁.sp i₁.rd i₁.wr) gm.onW) fun s₂ a => ?_
+  refine WP.mono (gArgs_wp hp hG hl.g5 hk hl.encG (h.regs.ofOps i₁.regs i₁.sp i₁.rd i₁.wr) gm.onW) fun s₂ a => ?_
   have g : ∀ r, r ≠ .r0 → r ≠ .r1 → r ≠ .r2 → r ≠ .r3 → r ≠ .r12 → r ≠ .lr → s₂.gpr r = s.gpr r :=
-    fun r h0 h1 h2 h3 h12 hlr => by rw [a.keep r h0 h1 h2 h3 h12, i₁.regs r h12 hlr]
+    fun r h0 h1 h2 h3 h12 hlr => by rw [a.keep r h0 h1 h2 h3 h12, i₁.regs r h0 h1 h2 h3 h12 hlr]
   exact ⟨a.pre, ⟨by rw [g _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), h.regs.r6],
     by rw [g _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), h.regs.r7],
     by rw [g _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), h.r8],

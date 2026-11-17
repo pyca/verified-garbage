@@ -627,14 +627,17 @@ theorem gBody_ok {M : Mode} {F : BlkFn} {C : Nat → List Byte → Spec.Cbc.Ciph
   refine WP.seq ?_
   rw [WP.block_append_iff]
   refine WP.mono (opsCode_wp lay h.regs.r7 h.regs.r10 h.regs.r6 hb₀ hl.pre) fun s₁ i₁ => ?_
-  obtain rg₁ := h.regs.of i₁.regs i₁.sp i₁.rd i₁.wr
+  obtain rg₁ := h.regs.ofOps i₁.regs i₁.sp i₁.rd i₁.wr
   refine WP.mono (gArgs_wp hp hG hG5 hk hl.encG rg₁ gm.onW) fun s₂ a => ?_
   refine WP.seq (WP.mono (blk_call F a.pre) fun s₃ c => ?_)
   -- The registers the call keeps.
   have sv : ∀ r ∈ preserved, r ≠ .lr → s₃.gpr r = s.gpr r := fun r hr hlr => by
+    have h0 : r ≠ .r0 := by rintro rfl; simp [preserved] at hr
+    have h1 : r ≠ .r1 := by rintro rfl; simp [preserved] at hr
+    have h2 : r ≠ .r2 := by rintro rfl; simp [preserved] at hr
+    have h3 : r ≠ .r3 := by rintro rfl; simp [preserved] at hr
     have h12 : r ≠ .r12 := by rintro rfl; simp [preserved] at hr
-    rw [c.saved r hr hlr, a.keep r (by rintro rfl; simp [preserved] at hr) (by rintro rfl; simp [preserved] at hr)
-      (by rintro rfl; simp [preserved] at hr) (by rintro rfl; simp [preserved] at hr) h12, i₁.regs r h12 hlr]
+    rw [c.saved r hr hlr, a.keep r h0 h1 h2 h3 h12, i₁.regs r h0 h1 h2 h3 h12 hlr]
   obtain rg₃ : Regs s₀ k s₃ :=
     ⟨by rw [sv _ (by simp [preserved]) (by decide), h.regs.r4], by rw [sv _ (by simp [preserved]) (by decide), h.regs.r5],
       by rw [sv _ (by simp [preserved]) (by decide), h.regs.r6], by rw [sv _ (by simp [preserved]) (by decide), h.regs.r7],
@@ -662,13 +665,15 @@ theorem gBody_ok {M : Mode} {F : BlkFn} {C : Nat → List Byte → Spec.Cbc.Ciph
   obtain lay₃ : GLay (2 ^ lg) (D32 s₀ k) (S s₀) (Iv s₀) s₃.wr := by rw [rg₃.wr]; exact hp.glay hG hG5 hk
   rw [WP.block_append_iff]
   refine WP.mono (opsCode_wp lay₃ rg₃.r7 rg₃.r10 rg₃.r6 hb₃ hl.post) fun s₄ i₄ => ?_
-  obtain rg₄ := rg₃.of i₄.regs i₄.sp i₄.rd i₄.wr
+  obtain rg₄ := rg₃.ofOps i₄.regs i₄.sp i₄.rd i₄.wr
   obtain f₄ : Frame (gStep s₀ k (2 ^ lg)) s.mem s₄.mem :=
     (f₁.trans f₃).trans (i₄.frame.sub (hp.gRegions_step hG hG5 hk))
   obtain r8₄ : s₄.gpr .r8 = BitVec.ofNat 32 (N s₀ - k) := by
-    rw [i₄.regs _ (by decide) (by decide), sv _ (by simp [preserved]) (by decide), h.r8]
+    rw [i₄.regs _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide),
+      sv _ (by simp [preserved]) (by decide), h.r8]
   obtain r11₄ : s₄.gpr .r11 = s₀.gpr .r11 := by
-    rw [i₄.regs _ (by decide) (by decide), sv _ (by simp [preserved]) (by decide), h.r11]
+    rw [i₄.regs _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide),
+      sv _ (by simp [preserved]) (by decide), h.r11]
   -- What the group computed.
   obtain hys : (((blks s₀).drop k).take (2 ^ lg)).length = 2 ^ lg := by
     rw [List.length_take, List.length_drop, length_blocksAt]; omega_using [hk]

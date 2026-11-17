@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.AesCbc.Arm.Body
 public import VerifiedGarbage.Impl.AesCbc.Arm.Groups
+public import VerifiedGarbage.Spec.Xts
+import VerifiedGarbage.Proof.AesXts.Arm.Steps
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -16,8 +18,8 @@ blocks (at `r7`), the `G` blocks of the buffer in the scratch buffer (at
 `r10 + wOff`) and the chaining value (at `r6`): `GBlks` holds their
 contents, `grunOp` is what an operation does to them, and `opsCode_wp` says
 that the code of a list of operations (`opsCode`) leaves them as `grunOps`
-says, changing only them, `r12` and `lr` (`GBlkMem`, with the blocks where
-`GLay` puts them). `UPre.glay`: the blocks of the group after `k` blocks are
+says, changing only them, `r0`–`r3`, `r12` and `lr` (`GBlkMem`, with the
+blocks where `GLay` puts them). `UPre.glay`: the blocks of the group after `k` blocks are
 laid out so.
 -/
 
@@ -48,6 +50,7 @@ theorem gset_of_ne (b : GBlks) {x y : GBlk} (v : List Byte) (h : y ≠ x) : gset
 def grunOp : GOp → GBlks → GBlks
   | .copy x y, b => gset b x (b y)
   | .xor x y, b => gset b x (Spec.Cbc.xor (b x) (b y))
+  | .mulA, b => gset b .iv (Spec.Xts.mulAlpha (b .iv))
 
 /-- The operations, in order. -/
 def grunOps (ops : List GOp) (b : GBlks) : GBlks := ops.foldl (fun b op => grunOp op b) b
@@ -62,6 +65,7 @@ def _root_.VG.Impl.AesCbc.Arm.GBlk.ok (G : Nat) : GBlk → Bool
 def gopOk (G : Nat) : GOp → Bool
   | .copy x y => x != y && x.ok G && y.ok G
   | .xor x y => x != y && x.ok G && y.ok G
+  | .mulA => true
 
 /-! ## Where the blocks are -/
 
@@ -127,7 +131,7 @@ theorem gsub {G : Nat} (hG : G ≤ 5) {D Sb I : BitVec 32} {x : GBlk} (hx : x.ok
 
 /-- What the code of operations from `s` keeps. -/
 structure GOpsInv (G : Nat) (D Sb I : BitVec 32) (s : State) (b : GBlks) (s' : State) : Prop where
-  regs : ∀ r, r ≠ .r12 → r ≠ .lr → s'.gpr r = s.gpr r
+  regs : ∀ r, r ≠ .r0 → r ≠ .r1 → r ≠ .r2 → r ≠ .r3 → r ≠ .r12 → r ≠ .lr → s'.gpr r = s.gpr r
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
   sp : s'.sp = s.sp
@@ -136,11 +140,12 @@ structure GOpsInv (G : Nat) (D Sb I : BitVec 32) (s : State) (b : GBlks) (s' : S
 
 theorem GOpsInv.refl {G : Nat} {D Sb I : BitVec 32} {s : State} {b : GBlks} (hb : GBlkMem G D Sb I s.mem b) :
     GOpsInv G D Sb I s b s :=
-  ⟨fun _ _ _ => rfl, rfl, rfl, rfl, Frame.refl _ _, hb⟩
+  ⟨fun _ _ _ _ _ _ _ => rfl, rfl, rfl, rfl, Frame.refl _ _, hb⟩
 
 theorem GOpsInv.trans {G : Nat} {D Sb I : BitVec 32} {s s₁ s₂ : State} {b b' : GBlks}
     (h₁ : GOpsInv G D Sb I s b s₁) (h₂ : GOpsInv G D Sb I s₁ b' s₂) : GOpsInv G D Sb I s b' s₂ :=
-  ⟨fun x h12 hlr => by rw [h₂.regs x h12 hlr, h₁.regs x h12 hlr], by rw [h₂.rd, h₁.rd], by rw [h₂.wr, h₁.wr],
+  ⟨fun x h0 h1 h2 h3 h12 hlr => by rw [h₂.regs x h0 h1 h2 h3 h12 hlr, h₁.regs x h0 h1 h2 h3 h12 hlr],
+    by rw [h₂.rd, h₁.rd], by rw [h₂.wr, h₁.wr],
     by rw [h₂.sp, h₁.sp], h₁.frame.trans h₂.frame, h₂.blks⟩
 
 /-- The blocks after block `x` was written, the others as they were. -/
@@ -186,7 +191,7 @@ theorem gopCode_wp {G : Nat} {D Sb I : BitVec 32} {s : State} (h : GLay G D Sb I
     obtain m' : s'.mem = copy4Mem s.mem (gaddr D Sb I x) (gaddr D Sb I y) := by rw [g.mem, ex, ey]; rfl
     obtain f := copy4Mem_frame s.mem (gaddr D Sb I x) (gaddr D Sb I y)
     rw [← m'] at f
-    refine ⟨g.gpr, g.rd, g.wr, g.sp, gframe_one h.g5 hx f, gblkMem_set h hb hx f ?_⟩
+    refine ⟨fun r _ _ _ _ => g.gpr r, g.rd, g.wr, g.sp, gframe_one h.g5 hx f, gblkMem_set h hb hx f ?_⟩
     rw [m', copy4Mem_bytes _ (h.sep x y hx hy hxy), hb y hy]
   | xor x y =>
     obtain ⟨hxy, hx, hy⟩ : x ≠ y ∧ x.ok G = true ∧ y.ok G = true := by
@@ -201,8 +206,23 @@ theorem gopCode_wp {G : Nat} {D Sb I : BitVec 32} {s : State} (h : GLay G D Sb I
       rw [g.mem, ex, ey]; rfl
     obtain f := Proof.Cmac.xor4Mem_frame s.mem (gaddr D Sb I x) (gaddr D Sb I x) (gaddr D Sb I y)
     rw [← m'] at f
-    refine ⟨g.gpr, g.rd, g.wr, g.sp, gframe_one h.g5 hx f, gblkMem_set h hb hx f ?_⟩
+    refine ⟨fun r _ _ _ _ => g.gpr r, g.rd, g.wr, g.sp, gframe_one h.g5 hx f, gblkMem_set h hb hx f ?_⟩
     rw [m', xorIn4_bytes _ (h.sep x y hx hy hxy), hb x hx, hb y hy]
+  | mulA =>
+    have hiv : GBlk.ok G .iv = true := rfl
+    obtain a0 : gaddr D Sb I .iv = State.addr I := add0 _
+    obtain w := h.cov .iv hiv
+    have inW (d n : Nat) (hd : d + n ≤ 16) : InRegions s.wr (State.addr I + BitVec.ofNat 64 d) n :=
+      w _ _ ⟨_, List.mem_singleton_self _, by rw [a0]; exact Offset.contains_base _ hd (by omega_using [hd])⟩
+    obtain ⟨s', he, hg, hsp, hm, hrd, hwr⟩ := Proof.AesXts.Arm.mulA_ok s (Q := State.addr I) (by rw [h6])
+      (by have := h.fit .iv hiv; rw [h6]; exact this)
+      (fun d n hd => by
+        obtain ⟨r, hr, hc⟩ := inW d n hd
+        exact ⟨r, List.mem_append_right _ hr, hc⟩) inW
+    obtain f : Frame [⟨gaddr D Sb I .iv, 16⟩] s.mem s'.mem := by
+      rw [hm, a0]; exact Proof.AesXts.Arm.alphaMem_frame _ _
+    refine WP.of_runBlock ⟨s', he, hg, hrd, hwr, hsp, gframe_one h.g5 hiv f, gblkMem_set h hb hiv f ?_⟩
+    rw [hm, a0, Proof.AesXts.Arm.alphaMem_bytes, ← a0, hb .iv hiv]
 
 /-- The code of a list of operations. -/
 theorem opsCode_wp {G : Nat} {D Sb I : BitVec 32} {s : State} (h : GLay G D Sb I s.wr)
@@ -215,10 +235,24 @@ theorem opsCode_wp {G : Nat} {D Sb I : BitVec 32} {s : State} (h : GLay G D Sb I
     simp only [List.all_cons, Bool.and_eq_true] at hok
     rw [opsCode, List.flatMap_cons, WP.block_append_iff]
     refine WP.mono (gopCode_wp h h7 h10 h6 hb hok.1) fun s₁ h₁ => ?_
-    obtain h7' : s₁.gpr .r7 = D := by rw [h₁.regs _ (by decide) (by decide), h7]
-    obtain h10' : s₁.gpr .r10 = Sb := by rw [h₁.regs _ (by decide) (by decide), h10]
-    obtain h6' : s₁.gpr .r6 = I := by rw [h₁.regs _ (by decide) (by decide), h6]
+    obtain h7' : s₁.gpr .r7 = D := by
+      rw [h₁.regs _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), h7]
+    obtain h10' : s₁.gpr .r10 = Sb := by
+      rw [h₁.regs _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), h10]
+    obtain h6' : s₁.gpr .r6 = I := by
+      rw [h₁.regs _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), h6]
     exact WP.mono (ih (h₁.wr ▸ h) h7' h10' h6' h₁.blks hok.2) fun s₂ h₂ => h₁.trans h₂
+
+/-- The registers the invariant pins, after operations. -/
+theorem Regs.ofOps {s₀ : State} {k : Nat} {s s' : State} (h : Regs s₀ k s)
+    (g : ∀ r, r ≠ .r0 → r ≠ .r1 → r ≠ .r2 → r ≠ .r3 → r ≠ .r12 → r ≠ .lr → s'.gpr r = s.gpr r)
+    (sp : s'.sp = s.sp) (rd : s'.rd = s.rd) (wr : s'.wr = s.wr) : Regs s₀ k s' :=
+  ⟨by rw [g _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), h.r4],
+    by rw [g _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), h.r5],
+    by rw [g _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), h.r6],
+    by rw [g _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), h.r7],
+    by rw [g _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), h.r10], by rw [sp, h.sp],
+    by rw [rd, h.rd], by rw [wr, h.wr]⟩
 
 /-! ## The blocks of the group after `k` blocks -/
 

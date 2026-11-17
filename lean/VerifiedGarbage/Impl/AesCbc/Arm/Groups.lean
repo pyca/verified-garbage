@@ -23,13 +23,17 @@ keeps there (at `r10 + wOff`: the buffer has room for five), and on the
 chaining value `IV` (at `r6`): the mode's operations on them before the call
 (`GMode.pre`), the call of the block function on the `G` blocks of the buffer
 or of the data (`GMode.onW`), and the operations after it (`GMode.post`). The
-operations move blocks as `whole`'s bodies do, through `r12` and `lr`. A
-mode's groups leave the data and the chaining value as `G` runs of its body
-do:
+operations move blocks as `whole`'s bodies do, through `r12` and `lr`, or
+multiply the chaining value by `α` (`mulA`, through `r0`–`r3` too). A mode's
+groups leave the data and the chaining value as `G` runs of its body do:
 
 * `cbcDecG`: `Wⱼ := Dⱼ` (the ciphertext blocks); the inverse cipher on `D`;
   then `D₀ ⊕= IV`, `Dⱼ ⊕= Wⱼ₋₁`, and `IV := W_{G-1}`.
 * `cfbDecG`: `W₀ := IV`, `Wⱼ := Dⱼ₋₁`, `IV := D_{G-1}`; the cipher on `W`;
+  then `Dⱼ ⊕= Wⱼ`.
+* `xtsG` (XTS, whose chaining value is the tweak): `Wⱼ := IV`, `IV := IV ⊗ α`
+  and `Dⱼ ⊕= Wⱼ` for each `j`, so that `W` holds the tweaks of the group's
+  blocks before they are enciphered; the cipher, or its inverse, on `D`;
   then `Dⱼ ⊕= Wⱼ`.
 
 The registers are `whole`'s, and the stack: a group uses the 8 bytes its
@@ -59,17 +63,33 @@ def GBlk.base : GBlk → Reg × Nat
   | .iv => (.r6, 0)
 
 /-- A block operation of a group: `copy x y` stores block `y` in block `x`,
-`xor x y` XORs block `y` into block `x`. -/
+`xor x y` XORs block `y` into block `x`, and `mulA` multiplies the chaining
+value, an XTS tweak, by `α`. -/
 inductive GOp
   | copy (x y : GBlk)
   | xor (x y : GBlk)
+  | mulA
   deriving DecidableEq, Repr
+
+/-- The tweak at `r6` times `α` (IEEE Std 1619 §5.2): its four words,
+little-endian, loaded, each stored shifted left by one bit with the top bit
+of the word before it shifted in (`lsl #1`, `orr` with `lsr #31`), and the
+first XORed with `0x87` if the last word's top bit was set (a mask from
+`0 − (w₃ lsr #31)`). -/
+def mulA : List Instr :=
+  [.ldr .r0 .r6 0, .ldr .r1 .r6 4, .ldr .r2 .r6 8, .ldr .r3 .r6 12,
+   .mov .r12 (.imm 0), .dp .sub .r12 .r12 (.shifted .r3 .lsr 31), .dp .and .r12 .r12 (.imm 0x87),
+   .mov .lr (.shifted .r0 .lsl 1), .dp .eor .lr .lr (.reg .r12), .str .lr .r6 0,
+   .mov .lr (.shifted .r1 .lsl 1), .dp .orr .lr .lr (.shifted .r0 .lsr 31), .str .lr .r6 4,
+   .mov .lr (.shifted .r2 .lsl 1), .dp .orr .lr .lr (.shifted .r1 .lsr 31), .str .lr .r6 8,
+   .mov .lr (.shifted .r3 .lsl 1), .dp .orr .lr .lr (.shifted .r2 .lsr 31), .str .lr .r6 12]
 
 /-- A block operation, a word at a time: a copy is a zeroed block XORed with
 the source. -/
 def GOp.code : GOp → List Instr
   | .copy x y => zero4 x.base.1 x.base.2 ++ xor4 x.base.1 y.base.1 x.base.1 x.base.2 y.base.2 x.base.2
   | .xor x y => xor4 x.base.1 y.base.1 x.base.1 x.base.2 y.base.2 x.base.2
+  | .mulA => VG.Impl.AesCbc.Arm.mulA
 
 /-- A list of block operations. -/
 def opsCode (ops : List GOp) : List Instr := ops.flatMap GOp.code
@@ -137,6 +157,12 @@ def cfbDecG : GMode where
   pre G := .copy (.w 0) .iv :: (List.range (G - 1)).map (fun j => .copy (.w (j + 1)) (.d j)) ++
     [.copy .iv (.d (G - 1))]
   onW := true
+  post G := (List.range G).map fun j => .xor (.d j) (.w j)
+
+/-- XTS (`Impl/AesXts/Arm.lean`), in either direction, a group at a time. -/
+def xtsG : GMode where
+  pre G := (List.range G).flatMap fun j => [.copy (.w j) .iv, .mulA, .xor (.d j) (.w j)]
+  onW := false
   post G := (List.range G).map fun j => .xor (.d j) (.w j)
 
 /-- `vg_aes_cbc_decrypt`: the groups, then `decBody` for the blocks left. -/
