@@ -332,15 +332,19 @@ theorem narrow_pub (hk : (sig.words abi.ptrBits).length < 6) {s₁ s₂ : State}
 
 /-- The state after the pop of `withStackScratch`'s frame, from the state
 `s₃` its code ends in (with the permissions of `narrow`) when it starts in
-`s`. -/
+`s`: the frame's bytes are `lose`'s. -/
 def popState (bytes : Nat) (s s₃ : State) : State :=
   { (s₃.withRegions s.rd (⟨s.gpr .rsp - BitVec.ofNat 64 bytes, bytes⟩ :: s.wr)).setReg .rsp
-      (s₃.gpr .rsp + BitVec.ofNat 64 bytes) with wr := s.wr }
+      (s₃.gpr .rsp + BitVec.ofNat 64 bytes) with
+    wr := s.wr
+    mem := lose s₃.mem (s₃.gpr .rsp) bytes s₃.unknowns
+    unknowns := fun n => s₃.unknowns (n + bytes / 4) }
 
 /-- A run of the code from `narrow s` is a run of `withStackScratch` from
 `s`, with the same trace, which keeps what the calling convention requires,
-and whose memory and `rax` are those of the code's run: the step of
-`withStackScratch_run`, which states the memory up to the frame's bytes. -/
+whose memory is the code's run's with the frame's bytes lost, and whose `rax`
+is the code's run's: the step of `withStackScratch_run`, which states the
+memory up to the frame's bytes. -/
 theorem withStackScratch_runMem {c : Prog isa} (hk : (sig.words abi.ptrBits).length < 6)
     (hb : 0 < bytes ∧ bytes < 4096 ∧ bytes % 8 = 0 ∧ 8 + n * e.size ≤ bytes)
     (hst : stack + bytes + 8 ≤ 2 ^ 64) (hsafe : SpSafe c) (hd : c.x86_64Depth ≤ stack) {s : State}
@@ -349,7 +353,8 @@ theorem withStackScratch_runMem {c : Prog isa} (hk : (sig.words abi.ptrBits).len
     (hl : Sig.noLists sig.params = true) :
     Exec isa (withStackScratch bytes (argRegs.getD (sig.words abi.ptrBits).length .rax) c) s t
         (popState bytes s s₃) ∧
-      abiPreserved s (popState bytes s s₃) ∧ (popState bytes s s₃).mem = s₃.mem ∧
+      abiPreserved s (popState bytes s s₃) ∧
+      (popState bytes s s₃).mem = lose s₃.mem (s₃.gpr .rsp) bytes s₃.unknowns ∧
       (popState bytes s s₃).gpr .rax = s₃.gpr .rax := by
   obtain ⟨hb0, hb1, hb2, hb3⟩ := hb
   obtain ⟨hr1, hr2, -⟩ := argRegs_scratch _ hk
@@ -395,7 +400,12 @@ theorem withStackScratch_runMem {c : Prog isa} (hk : (sig.words abi.ptrBits).len
   · -- The return address: the code writes only its buffers and below `rsp`.
     have hf := Exec.stackFrame hsafe he (by omega_using [hd, hsb])
     simp only [narrow_wr, narrow_mem, narrow_rsp hk] at hf
-    show s₃.mem.readW (s.gpr .rsp) 64 = s.mem.readW (s.gpr .rsp) 64
+    show (lose s₃.mem (s₃.gpr .rsp) bytes s₃.unknowns).readW (s.gpr .rsp) 64 = s.mem.readW (s.gpr .rsp) 64
+    refine ((lose_frame _ _ _ _).readW (r := ⟨s.gpr .rsp, 8⟩) (Region.contains_self _ _) (fun r' hr' => ?_)
+      (by decide)).trans ?_
+    · simp only [List.mem_singleton] at hr'; subst hr'
+      rw [hrsp₃]
+      exact Offset.base_disjoint_below _ (by omega_using [hsb, hb1])
     refine hf.readW (r := ⟨s.gpr .rsp, 8⟩) (Region.contains_self _ _) (fun r' hr' => ?_) (by decide)
     rcases List.mem_append.mp hr' with hr' | hr'
     · rcases List.mem_append.mp hr' with hr' | hr'
@@ -436,7 +446,9 @@ theorem withStackScratch_run {c : Prog isa} (hk : (sig.words abi.ptrBits).length
       Frame [⟨s.gpr .rsp - BitVec.ofNat 64 bytes, bytes⟩] s₃.mem (popState bytes s s₃).mem ∧
       (popState bytes s s₃).gpr .rax = s₃.gpr .rax := by
   obtain ⟨hex, ha', hm, hr⟩ := withStackScratch_runMem hk hb hst hsafe hd hs he ha hl
-  exact ⟨hex, ha', by rw [hm]; exact Frame.refl _ _, hr⟩
+  refine ⟨hex, ha', ?_, hr⟩
+  rw [hm, (ha.1 .rsp (by simp [calleeSaved])).trans (narrow_rsp hk s)]
+  exact lose_frame _ _ _ _
 
 /-- The frame is apart from the function's buffers: it is in the stack below
 `rsp` that the contract without the buffer reserves. -/
