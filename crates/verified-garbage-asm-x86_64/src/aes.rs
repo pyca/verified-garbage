@@ -200,12 +200,20 @@ pub(crate) mod vg_aes_gcm_decrypt_blocks_aesni_pclmul;
 pub(crate) mod vg_aes_gcm_decrypt_blocks_aesni_pclmul_avx;
 
 #[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_decrypt_blocks_aesni_pclmul_avx_w.rs"]
+pub(crate) mod vg_aes_gcm_decrypt_blocks_aesni_pclmul_avx_w;
+
+#[rustfmt::skip]
 #[path = "internal/vg_aes_gcm_decrypt_blocks_pclmul.rs"]
 pub(crate) mod vg_aes_gcm_decrypt_blocks_pclmul;
 
 #[rustfmt::skip]
 #[path = "internal/vg_aes_gcm_decrypt_blocks_prepared16_aesni_pclmul_avx.rs"]
 pub(crate) mod vg_aes_gcm_decrypt_blocks_prepared16_aesni_pclmul_avx;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_decrypt_blocks_prepared16_aesni_pclmul_avx_w.rs"]
+pub(crate) mod vg_aes_gcm_decrypt_blocks_prepared16_aesni_pclmul_avx_w;
 
 #[rustfmt::skip]
 #[path = "internal/vg_aes_gcm_decrypt_blocks_prepared16_vaes_vpclmul.rs"]
@@ -280,12 +288,20 @@ pub(crate) mod vg_aes_gcm_encrypt_blocks_aesni_pclmul;
 pub(crate) mod vg_aes_gcm_encrypt_blocks_aesni_pclmul_avx;
 
 #[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_encrypt_blocks_aesni_pclmul_avx_w.rs"]
+pub(crate) mod vg_aes_gcm_encrypt_blocks_aesni_pclmul_avx_w;
+
+#[rustfmt::skip]
 #[path = "internal/vg_aes_gcm_encrypt_blocks_pclmul.rs"]
 pub(crate) mod vg_aes_gcm_encrypt_blocks_pclmul;
 
 #[rustfmt::skip]
 #[path = "internal/vg_aes_gcm_encrypt_blocks_prepared16_aesni_pclmul_avx.rs"]
 pub(crate) mod vg_aes_gcm_encrypt_blocks_prepared16_aesni_pclmul_avx;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_encrypt_blocks_prepared16_aesni_pclmul_avx_w.rs"]
+pub(crate) mod vg_aes_gcm_encrypt_blocks_prepared16_aesni_pclmul_avx_w;
 
 #[rustfmt::skip]
 #[path = "internal/vg_aes_gcm_encrypt_blocks_prepared16_vaes_vpclmul.rs"]
@@ -486,6 +502,10 @@ pub(crate) mod vg_aes_gcm_stream_encrypt_aesni_pclmul_avx;
 #[rustfmt::skip]
 #[path = "internal/vg_aes_gcm_stream_encrypt_pclmul.rs"]
 pub(crate) mod vg_aes_gcm_stream_encrypt_pclmul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_stream_encrypt_prepared_aesni_pclmul_avx_core.rs"]
+pub(crate) mod vg_aes_gcm_stream_encrypt_prepared_aesni_pclmul_avx_core;
 
 #[rustfmt::skip]
 #[path = "internal/vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul_core.rs"]

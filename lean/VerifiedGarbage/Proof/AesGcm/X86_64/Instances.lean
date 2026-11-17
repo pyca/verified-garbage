@@ -3051,13 +3051,24 @@ theorem streamEncryptCodeF16S_mx (v : GcmVariant) :
     rfl
   · exact streamEncryptCodeF16_mx v
 
+/-- Whether `vg_aes_gcm_stream_encrypt_prepared` of a variant whose loops read
+16 powers calls whole-blocks functions that zero their working space before
+they return (`BlkFn.wipe`), and clears only the scratch registers on return,
+as the variant on AES-NI and PCLMULQDQ in `VEX.128` does, whose loops leave
+the powers and the keystream there. -/
+def GcmVariant.streamF16Wipe (v : GcmVariant) : Bool :=
+  v.stitch.any fun p => match p.name with
+    | .aesniAvx => true
+    | _ => false
+
 /-- The instance of `vg_aes_gcm_stream_encrypt_prepared` of a variant whose
 loops read 16 powers; where that function is followed by the clearing of the
-scratch registers (`GcmVariant.streamF16Clr`), as an internal function of its
-own, `vg_aes_gcm_stream_encrypt_prepared<suffix>_core`, with the code as it
-was. -/
+scratch registers (`GcmVariant.streamF16Clr`, `GcmVariant.streamF16Wipe`), as
+an internal function of its own,
+`vg_aes_gcm_stream_encrypt_prepared<suffix>_core`, with the code as it was. -/
 def encFnF16 (v : GcmVariant) : StreamTo.EncFn (Proof.Gcm.X86_64.Stitch.CtxMode.flaggedT 16) :=
-  .ofFlagged ⟨Spec.Gcm.streamEncryptPreparedApi.name ++ v.impl.suffix ++ (if v.streamF16Clr then "_core" else ""),
+  .ofFlagged ⟨Spec.Gcm.streamEncryptPreparedApi.name ++ v.impl.suffix ++
+        (if v.streamF16Clr || v.streamF16Wipe then "_core" else ""),
       streamEncryptCodeF16S v⟩
     (streamEncryptCodeF16S_verified v) (streamEncryptCodeF16S_spAll v) (streamEncryptCodeF16S_xdepth v)
     (streamEncryptCodeF16S_mx v)

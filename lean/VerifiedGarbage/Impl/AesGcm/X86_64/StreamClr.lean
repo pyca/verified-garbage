@@ -60,6 +60,22 @@ def hoist (k : List Instr) : Prog isa → Prog isa
   | .frame i b j => .frame i (hoist k b) j
   | .icall i n b nx => .icall i n b nx
 
+/-- The 32-byte words at `r11 + 32 (k - 1)`, …, `r11 + 32`, `r11` zeroed
+from `ymm0`, from the top down. -/
+def zeroYs : Nat → List Instr
+  | 0 => []
+  | k + 1 => .vmovdquStore .l256 (at_ .r11 (32 * k)) .xmm0 :: zeroYs k
+
+/-- The 2112 bytes of the scratch of `vg_aes_gcm_encrypt_blocks` or
+`_decrypt_blocks` (its stack argument, `[rsp + 8]` as it returns) zeroed,
+with 66 stores of `ymm0` (AVX), then `vzeroupper`. -/
+def wipeScr : List Instr :=
+  [.mov .r11 (.mem (at_ .rsp 8)), .vop (.vbin .vpxor .l128 .xmm0 .xmm0 .xmm0)] ++ zeroYs 66 ++ [.vop .vzeroupper]
+
+/-- `f`, as an internal function of its own (`<name>_w`) that zeroes its
+scratch before it returns (`wipeScr`). -/
+def Fn.wipe (f : Fn) : Fn := ⟨f.name ++ "_w", .seq f.code (.block wipeScr)⟩
+
 variable (c : Callees)
 
 /-- The `rbx` buffered bytes, padded with zeros in the keystream block of
