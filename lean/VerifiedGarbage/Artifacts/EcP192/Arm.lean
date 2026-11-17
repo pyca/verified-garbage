@@ -56,6 +56,18 @@ def artifacts : List Artifact := [
     verified := Proof.EcKey.Compressed.Arm.P192Decompress.verified hasLaw.law },
   Spec.EcKey.P192.publicKeyApi.artifact Arm.target {
     code := Impl.EcKey.Arm.publicKeyP192
-    verified := Proof.EcKey.Arm.P192.pk_verified hasLaw.law }]
+    verified := Proof.EcKey.Arm.P192.pk_verified hasLaw.law },
+  Spec.EcKey.P192.inst.compressPublicKeyApi.artifact Arm.target {
+    suffix := "_umaal"
+    code := Proof.EcKey.Compressed.Arm.P192.codeU
+    verified := Proof.EcKey.Compressed.Arm.P192.verifiedU },
+  Spec.EcKey.P192.inst.decompressPublicKeyApi.artifact Arm.target {
+    suffix := "_umaal"
+    code := Proof.EcKey.Compressed.Arm.P192Decompress.codeU
+    verified := Proof.EcKey.Compressed.Arm.P192Decompress.verifiedU hasLaw.law },
+  Spec.EcKey.P192.publicKeyApi.artifact Arm.target {
+    suffix := "_umaal"
+    code := Impl.EcKey.Arm.publicKeyP192U
+    verified := Proof.EcKey.Arm.P192.pkU_verified hasLaw.law }]
 
 end VG.Artifacts.EcP192.Arm

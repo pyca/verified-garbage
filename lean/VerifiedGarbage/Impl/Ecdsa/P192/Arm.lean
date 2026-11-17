@@ -10,10 +10,21 @@ namespace VG.Impl.Ecdsa.Arm
 
 open VG.Arm
 
+/-- P-192 as the code has it, its field multiplications by
+`vg_p192_mul_mod_<p|n>_umaal` if `u`. -/
+def p192With (u : Bool) : Cfg :=
+  ⟨3, Spec.P192.curve, Impl.Weierstrass.Mont.p192p, Impl.Weierstrass.Mont.p192n, none, u⟩
+
 /-- P-192 as the code has it. -/
-def p192 : Cfg := ⟨3, Spec.P192.curve, Impl.Weierstrass.Mont.p192p, Impl.Weierstrass.Mont.p192n, none, false⟩
+def p192 : Cfg := p192With false
+
+/-- `vg_ecdsa_p192_sign`, or with `u` `vg_ecdsa_p192_sign_umaal`. -/
+def signP192With (u : Bool) : Prog isa := (p192With u).sign
 
 /-- `vg_ecdsa_p192_sign`. -/
-def signP192 : Prog isa := p192.sign
+def signP192 : Prog isa := signP192With false
+
+/-- `vg_ecdsa_p192_sign_umaal`. -/
+def signP192U : Prog isa := signP192With true
 
 end VG.Impl.Ecdsa.Arm

@@ -51,6 +51,10 @@ open VG.Proof.P192.Arm (hasLaw)
 def artifacts : List Artifact := [
   Spec.Ecdh.P192.exchangeApi.artifact Arm.target {
     code := Impl.Ecdh.Arm.exchangeP192
-    verified := Proof.Ecdh.Arm.P192.ecdh_verified hasLaw.law }]
+    verified := Proof.Ecdh.Arm.P192.ecdh_verified hasLaw.law },
+  Spec.Ecdh.P192.exchangeApi.artifact Arm.target {
+    suffix := "_umaal"
+    code := Impl.Ecdh.Arm.exchangeP192U
+    verified := Proof.Ecdh.Arm.P192.ecdhU_verified hasLaw.law }]
 
 end VG.Artifacts.EcdhP192.Arm

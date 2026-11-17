@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.EcKey.Arm.Main
 public import VerifiedGarbage.Proof.EcKey.Arm.P192.Contract
 import VerifiedGarbage.Proof.EcKey.Arm.P192.Lit
 import VerifiedGarbage.Proof.Ecdsa.Arm.P192.Verified
+import VerifiedGarbage.Proof.Ecdsa.Arm.P192.Umaal
+import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 public import VerifiedGarbage.Impl.EcKey.P192.Arm
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Spec.EcKey.P192
@@ -17,6 +19,7 @@ meta import VerifiedGarbage.Proof.EcKey.Arm.Main
 meta import VerifiedGarbage.Proof.EcKey.Arm.P192.Contract
 meta import VerifiedGarbage.Proof.EcKey.Arm.P192.Lit
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.P192.Verified
+meta import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 meta import VerifiedGarbage.Impl.EcKey.P192.Arm
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Spec.EcKey.P192
@@ -46,11 +49,11 @@ namespace VG.Proof.EcKey.Arm.P192
 
 open VG VG.Arm VG.Impl.Ecdsa.Arm VG.Proof.Ecdsa.Arm VG.Proof.Ecdsa.Arm.P192 Spec.Weierstrass
 
-theorem pre_of {s : State} (h : pkArm.pre s) : PkPre p192 s := by
+theorem pre_of {u : Bool} {s : State} (h : pkArm.pre s) : PkPre (p192With u) s := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, h7⟩
 
-theorem post_of {s s' : State} (h : PkPost p192 s s') : pkArm.post s s' := by
+theorem post_of {u : Bool} {s s' : State} (h : PkPost (p192With u) s s') : pkArm.post s s' := by
   unfold PkPost at h
   show match pk s.mem (State.addr (s.gpr .r1)) with
     | some (.affine x y) => BitVec.setWidth 32 (s'.gpr .r1 ++ s'.gpr .r0) = 1 ∧
@@ -60,13 +63,13 @@ theorem post_of {s s' : State} (h : PkPost p192 s s') : pkArm.post s s' := by
   rw [BitVec.setWidth_append_eq_right]
   revert h
   generalize hq : pk s.mem (State.addr (s.gpr .r1)) = q
-  rw [show Spec.EcKey.publicKey p192.C (dk p192 s) = pk s.mem (State.addr (s.gpr .r1)) from rfl, hq]
+  rw [show Spec.EcKey.publicKey (p192With u).C (dk (p192With u) s) = pk s.mem (State.addr (s.gpr .r1)) from rfl, hq]
   rcases q with _ | _ | ⟨x, y⟩ <;> exact id
 
-theorem pk_arm (hL : Weierstrass.Law Spec.P192.curve) (s : State) (hs : pkArm.pre s) :
-    ∃ t s', Exec isa Impl.EcKey.Arm.publicKeyP192 s t s' ∧ abiPreserved s s' ∧ pkArm.post s s' := by
-  have hp := pre_of hs
-  obtain ⟨t, s', he, K, hpost⟩ := publicKey_ok p192_ok hL hp
+theorem pk_arm (hL : Weierstrass.Law Spec.P192.curve) (u : Bool) (s : State) (hs : pkArm.pre s) :
+    ∃ t s', Exec isa (Impl.EcKey.Arm.publicKeyP192With u) s t s' ∧ abiPreserved s s' ∧ pkArm.post s s' := by
+  have hp := pre_of (u := u) hs
+  obtain ⟨t, s', he, K, hpost⟩ := publicKey_ok (p192With_ok u) hL hp
   refine ⟨t, s', he, ⟨fun r hr => ?_, K.sp⟩, post_of hpost⟩
   simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
@@ -83,9 +86,9 @@ theorem pk_arm (hL : Weierstrass.Law Spec.P192.curve) (s : State) (hs : pkArm.pr
 /-- The taint analysis starts with the arguments' registers public. -/
 def τ₀ : VG.Arm.Taint.T := { regs := .ofList [.r0, .r1, .r2], flags := false }
 
-theorem pk_ct : ConstantTime isa pkArm.pre pkArm.pub Impl.EcKey.Arm.publicKeyP192 := by
-  refine VG.Taint.constantTime (A := taint) τ₀ ?_ (by native_taint_decide)
-  intro s t _ _ ⟨_, h0, h1, h2⟩
+/-- The taint analysis's start agrees in the two states. -/
+theorem agree_τ₀ {s t : State} (h : pkArm.pub s t) : VG.Arm.Taint.Agree τ₀ s t := by
+  obtain ⟨_, h0, h1, h2⟩ := h
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun h => absurd rfl h,
     ⟨fun h => absurd rfl h, fun _ h => (List.not_mem_nil h).elim, fun h => absurd h (by decide),
       fun _ h => (List.not_mem_nil h).elim⟩,
@@ -98,6 +101,12 @@ theorem pk_ct : ConstantTime isa pkArm.pre pkArm.pub Impl.EcKey.Arm.publicKeyP19
   · exact h0
   · exact h1
   · exact h2
+
+theorem pk_ct : ConstantTime isa pkArm.pre pkArm.pub Impl.EcKey.Arm.publicKeyP192 :=
+  VG.Taint.constantTime (A := taint) τ₀ (fun _ _ _ _ h => agree_τ₀ h) (by native_taint_decide)
+
+theorem pkU_ct : ConstantTime isa pkArm.pre pkArm.pub Impl.EcKey.Arm.publicKeyP192U :=
+  VG.Taint.constantTime (A := taintU) τ₀ (fun _ _ _ _ h => agree_τ₀ h) (by taint_decide)
 
 /-- A state satisfying the precondition. -/
 def satState : State where
@@ -112,9 +121,10 @@ def satState : State where
   rd := [⟨0x2000, 24⟩]
   wr := [⟨0x1000, 49⟩, ⟨0x8000, 8192⟩]
 
-theorem pk_verified (hL : Weierstrass.Law Spec.P192.curve) :
-    Verified Arm.target Impl.EcKey.Arm.publicKeyP192 (Spec.EcKey.P192.inst.publicKeyContract Arm.abi) :=
-  Verified.of_correct (pk_arm hL) pk_ct
+theorem pkWith_verified (hL : Weierstrass.Law Spec.P192.curve) (u : Bool)
+    (hct : ConstantTime isa pkArm.pre pkArm.pub (Impl.EcKey.Arm.publicKeyP192With u)) :
+    Verified Arm.target (Impl.EcKey.Arm.publicKeyP192With u) (Spec.EcKey.P192.inst.publicKeyContract Arm.abi) :=
+  Verified.of_correct (pk_arm hL u) hct
     { pre := by
         sig_implies_pre [Spec.EcKey.P192.inst, Spec.EcKey.Instance.publicKeyContract,
           Spec.EcKey.Instance.publicKeySig, Spec.P192.curve, Spec.EcKey.scratchWords, pkArm, pk, Arm.abi,
@@ -137,5 +147,13 @@ theorem pk_verified (hL : Weierstrass.Law Spec.P192.curve) :
           Spec.EcKey.Instance.publicKeySig, Spec.P192.curve, Spec.EcKey.scratchWords, pkArm, pk, Arm.abi,
           Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
           [satState, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using satState }
+
+theorem pk_verified (hL : Weierstrass.Law Spec.P192.curve) :
+    Verified Arm.target Impl.EcKey.Arm.publicKeyP192 (Spec.EcKey.P192.inst.publicKeyContract Arm.abi) :=
+  pkWith_verified hL false pk_ct
+
+theorem pkU_verified (hL : Weierstrass.Law Spec.P192.curve) :
+    Verified Arm.target Impl.EcKey.Arm.publicKeyP192U (Spec.EcKey.P192.inst.publicKeyContract Arm.abi) :=
+  pkWith_verified hL true pkU_ct
 
 end VG.Proof.EcKey.Arm.P192

@@ -3,6 +3,9 @@ module
 import VerifiedGarbage.Proof.EcKey.Compressed.Arm.DecompressMain
 public import VerifiedGarbage.Spec.EcKey.P192
 import VerifiedGarbage.Proof.Ecdsa.Arm.P192.Verified
+import VerifiedGarbage.Proof.Ecdsa.Arm.P192.Umaal
+import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
+meta import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 import VerifiedGarbage.Proof.Weierstrass.Sqrt
 import VerifiedGarbage.Proof.Framework.LitShare
 import VerifiedGarbage.Proof.Framework.Arm.Lit
@@ -30,11 +33,16 @@ abbrev code : Prog isa := Impl.EcKey.Compressed.Arm.decompress p192
 
 materialize_shared baseline := code
 
+/-- The function with `umaal`. -/
+abbrev codeU : Prog isa := Impl.EcKey.Compressed.Arm.decompress (p192With true)
+
+materialize_shared umaal := codeU
+
 def τ₀ : VG.Arm.Taint.T := { regs := .ofList [.r0, .r1, .r2], flags := false }
 
-theorem ct : ConstantTime isa (decompressContract Spec.P192.curve Impl.EcKey.Compressed.rootThreeModFour).pre (decompressContract Spec.P192.curve Impl.EcKey.Compressed.rootThreeModFour).pub code := by
-  refine VG.Taint.constantTime (A := taint) τ₀ ?_ (by taint_decide)
-  intro s t _ _ ⟨_, h0, h1, h2⟩
+/-- The taint analysis's start agrees in the two states. -/
+theorem agree_τ₀ {s t : State} (h : (decompressContract Spec.P192.curve Impl.EcKey.Compressed.rootThreeModFour).pub s t) : VG.Arm.Taint.Agree τ₀ s t := by
+  obtain ⟨_, h0, h1, h2⟩ := h
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun h => absurd rfl h,
     ⟨fun h => absurd rfl h, fun _ h => (List.not_mem_nil h).elim, fun h => absurd h (by decide),
       fun _ h => (List.not_mem_nil h).elim⟩,
@@ -48,6 +56,12 @@ theorem ct : ConstantTime isa (decompressContract Spec.P192.curve Impl.EcKey.Com
   · exact h1
   · exact h2
 
+theorem ct : ConstantTime isa (decompressContract Spec.P192.curve Impl.EcKey.Compressed.rootThreeModFour).pre (decompressContract Spec.P192.curve Impl.EcKey.Compressed.rootThreeModFour).pub code :=
+  VG.Taint.constantTime (A := taint) τ₀ (fun _ _ _ _ h => agree_τ₀ h) (by taint_decide)
+
+theorem ctU : ConstantTime isa (decompressContract Spec.P192.curve Impl.EcKey.Compressed.rootThreeModFour).pre (decompressContract Spec.P192.curve Impl.EcKey.Compressed.rootThreeModFour).pub codeU :=
+  VG.Taint.constantTime (A := taintU) τ₀ (fun _ _ _ _ h => agree_τ₀ h) (by taint_decide)
+
 theorem sat : ∃ s, (Spec.EcKey.P192.inst.decompressPublicKeyContract abi 0).pre s := by
   have hlen : Spec.P192.curve.len = 24 := rfl
   sig_implies_sat [Spec.EcKey.P192.inst, Spec.EcKey.Instance.decompressPublicKeyContract,
@@ -57,6 +71,12 @@ theorem sat : ∃ s, (Spec.EcKey.P192.inst.decompressPublicKeyContract abi 0).pr
 theorem verified (hL : Proof.Weierstrass.Law Spec.P192.curve) :
     Verified target code (Spec.EcKey.P192.inst.decompressPublicKeyContract abi 0) :=
   Verified.of_correct (decompress_correct p192 p192_ok _ (candidateThree_correct p192_ok (by decide +kernel))) ct
+    (decompress_implies Spec.EcKey.P192.inst _
+      (Proof.Weierstrass.rootFacts_three_mod_four hL (by decide +kernel)) sat)
+
+theorem verifiedU (hL : Proof.Weierstrass.Law Spec.P192.curve) :
+    Verified target codeU (Spec.EcKey.P192.inst.decompressPublicKeyContract abi 0) :=
+  Verified.of_correct (decompress_correct (p192With true) p192u_ok _ (candidateThree_correct p192u_ok (by decide +kernel))) ctU
     (decompress_implies Spec.EcKey.P192.inst _
       (Proof.Weierstrass.rootFacts_three_mod_four hL (by decide +kernel)) sat)
 

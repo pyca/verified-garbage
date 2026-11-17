@@ -11,7 +11,13 @@ namespace VG.Impl.Ecdh.Arm
 
 open VG.Arm
 
+/-- `vg_ecdh_p192`, or with `u` `vg_ecdh_p192_umaal`. -/
+def exchangeP192With (u : Bool) : Prog isa := Cfg.exchange (Impl.Ecdsa.Arm.p192With u)
+
 /-- `vg_ecdh_p192`. -/
-def exchangeP192 : Prog isa := Cfg.exchange Impl.Ecdsa.Arm.p192
+def exchangeP192 : Prog isa := exchangeP192With false
+
+/-- `vg_ecdh_p192_umaal`. -/
+def exchangeP192U : Prog isa := exchangeP192With true
 
 end VG.Impl.Ecdh.Arm

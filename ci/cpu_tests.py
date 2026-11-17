@@ -240,6 +240,15 @@ GROUPS = {
         "lib": [],
         "tests": ["acvp::mlkem1024", "acvp::mlkem768", "wycheproof::mlkem1024", "wycheproof::mlkem768"],
     },
+    "p192": {
+        "lib": ["ec::validate::tests::p192", "ec::compressed::tests::p192"],
+        "tests": [
+            "cavp::ecdh_p192",
+            "rfc6979::p192",
+            "wycheproof::ec_compressed::p192",
+            "wycheproof::ecdsa_p192",
+        ],
+    },
     "p224": {
         "lib": ["ec::validate::tests::p224", "ec::compressed::tests::p224"],
         "tests": [

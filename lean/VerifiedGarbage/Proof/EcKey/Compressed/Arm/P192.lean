@@ -3,6 +3,9 @@ module
 import VerifiedGarbage.Proof.EcKey.Compressed.Arm.Main
 public import VerifiedGarbage.Spec.EcKey.P192
 import VerifiedGarbage.Proof.Ecdsa.Arm.P192.Verified
+import VerifiedGarbage.Proof.Ecdsa.Arm.P192.Umaal
+import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
+meta import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 import VerifiedGarbage.Proof.Framework.LitShare
 import VerifiedGarbage.Proof.Framework.Arm.Lit
 meta import VerifiedGarbage.Proof.Framework.LitShare
@@ -29,11 +32,16 @@ abbrev code : Prog isa := Impl.EcKey.Compressed.Arm.compress p192
 
 materialize_shared baseline := code
 
+/-- The function with `umaal`. -/
+abbrev codeU : Prog isa := Impl.EcKey.Compressed.Arm.compress (p192With true)
+
+materialize_shared umaal := codeU
+
 def τ₀ : VG.Arm.Taint.T := { regs := .ofList [.r0, .r1, .r2], flags := false }
 
-theorem ct : ConstantTime isa (compressContract Spec.P192.curve).pre (compressContract Spec.P192.curve).pub code := by
-  refine VG.Taint.constantTime (A := taint) τ₀ ?_ (by taint_decide)
-  intro s t _ _ ⟨_, h0, h1, h2⟩
+/-- The taint analysis's start agrees in the two states. -/
+theorem agree_τ₀ {s t : State} (h : (compressContract Spec.P192.curve).pub s t) : VG.Arm.Taint.Agree τ₀ s t := by
+  obtain ⟨_, h0, h1, h2⟩ := h
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun h => absurd rfl h,
     ⟨fun h => absurd rfl h, fun _ h => (List.not_mem_nil h).elim, fun h => absurd h (by decide),
       fun _ h => (List.not_mem_nil h).elim⟩,
@@ -47,6 +55,12 @@ theorem ct : ConstantTime isa (compressContract Spec.P192.curve).pre (compressCo
   · exact h1
   · exact h2
 
+theorem ct : ConstantTime isa (compressContract Spec.P192.curve).pre (compressContract Spec.P192.curve).pub code :=
+  VG.Taint.constantTime (A := taint) τ₀ (fun _ _ _ _ h => agree_τ₀ h) (by taint_decide)
+
+theorem ctU : ConstantTime isa (compressContract Spec.P192.curve).pre (compressContract Spec.P192.curve).pub codeU :=
+  VG.Taint.constantTime (A := taintU) τ₀ (fun _ _ _ _ h => agree_τ₀ h) (by taint_decide)
+
 theorem sat : ∃ s, (Spec.EcKey.P192.inst.compressPublicKeyContract abi 0).pre s := by
   have hlen : Spec.P192.curve.len = 24 := rfl
   sig_implies_sat [Spec.EcKey.P192.inst, Spec.EcKey.Instance.compressPublicKeyContract,
@@ -55,5 +69,8 @@ theorem sat : ∃ s, (Spec.EcKey.P192.inst.compressPublicKeyContract abi 0).pre 
 
 theorem verified : Verified target code (Spec.EcKey.P192.inst.compressPublicKeyContract abi 0) :=
   Verified.of_correct (compress_correct p192 p192_ok) ct (compress_implies _ sat)
+
+theorem verifiedU : Verified target codeU (Spec.EcKey.P192.inst.compressPublicKeyContract abi 0) :=
+  Verified.of_correct (compress_correct (p192With true) p192u_ok) ctU (compress_implies _ sat)
 
 end VG.Proof.EcKey.Compressed.Arm.P192

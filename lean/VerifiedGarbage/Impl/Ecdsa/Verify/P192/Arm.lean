@@ -11,7 +11,13 @@ namespace VG.Impl.Ecdsa.Verify.Arm
 
 open VG.Arm
 
+/-- `vg_ecdsa_p192_verify`, or with `u` `vg_ecdsa_p192_verify_umaal`. -/
+def verifyP192With (u : Bool) : Prog isa := Cfg.verify (Impl.Ecdsa.Arm.p192With u)
+
 /-- `vg_ecdsa_p192_verify`. -/
-def verifyP192 : Prog isa := Cfg.verify Impl.Ecdsa.Arm.p192
+def verifyP192 : Prog isa := verifyP192With false
+
+/-- `vg_ecdsa_p192_verify_umaal`. -/
+def verifyP192U : Prog isa := verifyP192With true
 
 end VG.Impl.Ecdsa.Verify.Arm
