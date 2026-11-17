@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.SharedWindow
 public import VerifiedGarbage.Proof.Bignum.Arm.TwoExpMontgomery
-public import VerifiedGarbage.Proof.Bignum.Arm.ExpPhaseInput
 public import VerifiedGarbage.Proof.Bignum.Arm.WindowPhase
 import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
 import VerifiedGarbage.Proof.Framework.Block
@@ -13,7 +12,6 @@ import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.CallLay
 public import VerifiedGarbage.Proof.Bignum.Arm.WindowBytes
 import VerifiedGarbage.Proof.Bignum.Layout
-public import VerifiedGarbage.Proof.Bignum.Arm.WindowBit
 import VerifiedGarbage.Proof.Bignum.Arm.WindowScan
 import VerifiedGarbage.Proof.Bignum.Arm.WindowCtl
 import VerifiedGarbage.Proof.Bignum.Math

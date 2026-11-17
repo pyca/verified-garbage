@@ -4,7 +4,6 @@ import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRedcStep
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareWideRow
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonalStep
 import VerifiedGarbage.Proof.Bignum.X86_64.Row
 
 /-! A complete row of Montgomery reduction, retaining its pending carry. -/

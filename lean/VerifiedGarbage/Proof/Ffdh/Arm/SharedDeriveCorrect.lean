@@ -17,8 +17,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Ffdh.Arm.SharedDeriveTail
-public import VerifiedGarbage.Proof.Ffdh.Arm.ScalarUpper
-import VerifiedGarbage.Proof.Ffdh.Arm.ScalarRange
+public import VerifiedGarbage.Proof.Ffdh.Arm.ScalarRange
 import VerifiedGarbage.Proof.Ffdh.Arm.DomainNormalizedPrepareAt
 import VerifiedGarbage.Proof.Ffdh.Arm.ImportAt
 import VerifiedGarbage.Proof.Ffdh.Arm.Branch

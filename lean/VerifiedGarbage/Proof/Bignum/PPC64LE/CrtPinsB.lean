@@ -16,7 +16,7 @@ import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtPowerA
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtCTBase
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.Reach
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtPre
-import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtLoadX
+import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtPhaseA
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreCheck
 
 /-! ### `Bignum.PPC64LE.CrtPinsA`, which this module and modules that import it used -/

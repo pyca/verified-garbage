@@ -6,14 +6,13 @@ import VerifiedGarbage.Proof.Bignum.X86.CopyRegion
 import VerifiedGarbage.Proof.RsaPkcs1Sig.BytesAt
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Instr
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Loops
 public import VerifiedGarbage.Impl.Bignum.X86.CopyBytes
 public import VerifiedGarbage.Impl.RsaPkcs1Enc.X86.Precomputed
 public import VerifiedGarbage.Proof.Bignum.X86.ReverseBytes
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.PubCall
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyPublicCall
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Loops
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
 public import VerifiedGarbage.TCB.X86.Isa
 import VerifiedGarbage.Proof.Rsa.X86.PrivStackSafety

@@ -34,10 +34,10 @@ meta import VerifiedGarbage.Proof.Framework.ConstMem
 import VerifiedGarbage.Proof.Secp256k1.PPC64LE.Comb
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Secp256k1.Window
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Stages
-import VerifiedGarbage.Proof.Ecdsa.PPC64LE.MulFn
+import VerifiedGarbage.Proof.Ecdsa.PPC64LE.LadPow
 import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Keep
-import VerifiedGarbage.Proof.Ecdh.PPC64LE.Validate
+import VerifiedGarbage.Proof.Ecdh.PPC64LE.Main
 
 /-!
 # ECDSA verification over secp256k1 on PPC64LE: `Verified`

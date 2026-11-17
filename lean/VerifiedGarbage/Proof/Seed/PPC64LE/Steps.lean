@@ -224,7 +224,7 @@ end
 /-!
 # The arrays of 32-bit words in the scratch buffer
 
-As on x86-64 (`Proof/Seed/X86_64/Steps.lean`): the ECB code keeps sixteen
+As on x86-64 (`Proof/Seed/X86_64/Round.lean`): the ECB code keeps sixteen
 lanes of each of its arrays (`G`'s words, `a`, `c`, `d` and the blocks'
 words) in the scratch buffer at `r8`: lane `b` of the array at slot `k` is
 the 32-bit word at `r8 + 8k + 4b` (`laneA`, `lv`). This file has the 32-bit

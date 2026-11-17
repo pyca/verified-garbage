@@ -1,12 +1,11 @@
 module
 
-import VerifiedGarbage.Proof.Ffdh.Arm.ExchangePre
+public import VerifiedGarbage.Proof.Ffdh.Arm.ExchangePre
 import VerifiedGarbage.Proof.Ffdh.Arm.ExchangeSpec
 import VerifiedGarbage.Proof.Ffdh.Domain
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Ffdh.Arm.ExchangeFn
 public import VerifiedGarbage.Proof.Ffdh.Arm.Context
 public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicSpec

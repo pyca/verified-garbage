@@ -6,8 +6,7 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Context
 public import VerifiedGarbage.Proof.MillerRabin.AArch64.Kernel
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeTest
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ContextFrame
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SubgroupState
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ContextFrame
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Subgroup
 import VerifiedGarbage.Proof.Dsa.Generation.QCandidate
 import VerifiedGarbage.Proof.Dsa.Arithmetic

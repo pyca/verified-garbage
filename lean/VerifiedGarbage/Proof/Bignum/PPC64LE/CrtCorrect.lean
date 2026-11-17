@@ -26,7 +26,6 @@ public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Spec.Rsa
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtPhaseA
 import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtPhaseP
-import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtLoadX
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtPowerA
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubLoad
 import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtCopy

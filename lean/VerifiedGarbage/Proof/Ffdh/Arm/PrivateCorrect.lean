@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Ffdh.Arm.PrivateSpec
+public import VerifiedGarbage.Proof.Ffdh.Arm.PrivateSpec
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
@@ -12,7 +12,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 public import Init.Data.BitVec.BasicAux
 public import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.TCB.Arm.Target
-public import VerifiedGarbage.Proof.Ffdh.Arm.PrivateBody
 public import VerifiedGarbage.Proof.Ffdh.Arm.Frame
 public import VerifiedGarbage.Proof.Ffdh.Arm.IncomingWord
 import VerifiedGarbage.Proof.Ffdh.Arm.Block

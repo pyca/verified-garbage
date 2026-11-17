@@ -2,12 +2,11 @@ module
 
 public import VerifiedGarbage.Impl.Rsa.AArch64.WindowShared
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTable
-public import VerifiedGarbage.Proof.Bignum.AArch64.WindowRawTriangle
+public import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedStep
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedLoop
 import VerifiedGarbage.Proof.Bignum.CrtWindowRelation
-import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedStep
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorBody
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowCore
 

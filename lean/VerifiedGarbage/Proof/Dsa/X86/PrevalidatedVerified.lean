@@ -41,7 +41,6 @@ import VerifiedGarbage.Proof.Dsa.X86.WriteSignature
 import VerifiedGarbage.Proof.Dsa.X86.Result
 import VerifiedGarbage.Proof.Dsa.X86.Layout
 import VerifiedGarbage.Proof.Dsa.OutputBytes
-import VerifiedGarbage.Proof.Dsa.X86.Failure
 import VerifiedGarbage.Proof.Dsa.X86.ABIResources
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Semantics

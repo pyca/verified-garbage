@@ -10,22 +10,122 @@ import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Rsa.X86_64.CallMont
 public import VerifiedGarbage.Proof.Dsa.X86_64.ValidateCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.PrevalidatedCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingABIPre
 import VerifiedGarbage.Proof.Dsa.X86_64.ParametersVerified
 import VerifiedGarbage.Proof.Dsa.X86_64.ABIRegions
 public import VerifiedGarbage.Proof.Dsa.Validation
 import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
 import VerifiedGarbage.Proof.Bignum.X86_64.CallPost
-import VerifiedGarbage.Proof.Bignum.Octets
+public import VerifiedGarbage.Proof.Bignum.Octets
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 public import VerifiedGarbage.Impl.Dsa.X86_64.SignVerify
 public import VerifiedGarbage.Spec.Dsa.SignVerify
-public import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingABI
-public import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingReturn
+public import VerifiedGarbage.Proof.Dsa.X86_64.Prevalidated
 import VerifiedGarbage.Proof.Dsa.X86_64.Sequences
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Dsa.X86_64.PublicSlices
 import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingPublic
+public import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingInput
+
+/-! ### `Dsa.X86_64.VerifyingABIPre`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Dsa.X86_64.VerifyingABI`, which this module and modules that import it used -/
+
+section
+
+/-! # The shared verification contract as machine-level resources -/
+
+@[expose] public section
+
+namespace VG.Proof.Dsa.X86_64
+open VG VG.X86_64 VG.Impl.Bignum.X86_64
+open VG.Impl.Dsa.Layout VG.Impl.Dsa.X86_64
+open VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
+
+theorem stackArgs_four (s : State) : List.map (stackArg s) (List.range 4) =
+    [stackArg s 0, stackArg s 1, stackArg s 2, stackArg s 3] := rfl
+
+structure VerifyingABI (s : State) : Prop where
+  stackBound : (s.gpr .rsp).toNat + 40 ≤ 2 ^ 64
+  rd : s.rd = [⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩, ⟨s.gpr .r8, (s.gpr .r9).toNat⟩,
+    ⟨stackArg s 0, (stackArg s 1).toNat⟩, ⟨stackArgAddr s 0, 32⟩]
+  wr : s.wr = [⟨stackArg s 2, (stackArg s 3).toNat * 8⟩]
+  keyScratch : (⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩ : Region).Disjoint ⟨stackArg s 2, (stackArg s 3).toNat * 8⟩
+  signatureScratch : (⟨s.gpr .r8, (s.gpr .r9).toNat⟩ : Region).Disjoint ⟨stackArg s 2, (stackArg s 3).toNat * 8⟩
+  digestScratch : (⟨stackArg s 0, (stackArg s 1).toNat⟩ : Region).Disjoint ⟨stackArg s 2, (stackArg s 3).toNat * 8⟩
+  scratchArgs : (⟨stackArg s 2, (stackArg s 3).toNat * 8⟩ : Region).Disjoint ⟨stackArgAddr s 0, 32⟩
+  retScratch : (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨stackArg s 2, (stackArg s 3).toNat * 8⟩
+  keyBound : (s.gpr .rdi).toNat + (s.gpr .rsi).toNat ≤ 2 ^ 64
+  signatureBound : (s.gpr .r8).toNat + (s.gpr .r9).toNat ≤ 2 ^ 64
+  digestBound : (stackArg s 0).toNat + (stackArg s 1).toNat ≤ 2 ^ 64
+  scratchBound : (stackArg s 2).toNat + (stackArg s 3).toNat * 8 ≤ 2 ^ 64
+  lengths : Spec.Dsa.lengthsValid (s.gpr .rdx).toNat (s.gpr .rcx).toNat
+  keyLength : (s.gpr .rsi).toNat = 3 * (s.gpr .rdx).toNat + (s.gpr .rcx).toNat
+  signatureLength : (s.gpr .r9).toNat = 2 * (s.gpr .rcx).toNat
+  scratchLength : Spec.Dsa.scratchWords (s.gpr .rdx).toNat ≤ (stackArg s 3).toNat
+
+def VerifyingABI.input {s : State} (h : VerifyingABI s) : VerifyingInput where
+  base := stackArg s 2
+  digestPointer := stackArg s 0
+  pLen := (s.gpr .rdx).toNat
+  qLen := (s.gpr .rcx).toNat
+  key := Spec.Rsa.bytesAt s.mem (s.gpr .rdi) (s.gpr .rsi).toNat
+  signature := Spec.Rsa.bytesAt s.mem (s.gpr .r8) (s.gpr .r9).toNat
+  digest := Spec.Rsa.bytesAt s.mem (stackArg s 0) (stackArg s 1).toNat
+  lengths := h.lengths
+  keyLength := (bytesAt_length _ _ _).trans h.keyLength
+  signatureLength := (bytesAt_length _ _ _).trans h.signatureLength
+  digestBound := by rw [bytesAt_length]; exact (stackArg s 1).isLt
+
+theorem VerifyingABI.used {s : State} (h : VerifyingABI s) : usedBytes ≤ (stackArg s 3).toNat * 8 := by
+  have hl := h.lengths
+  have hs := h.scratchLength
+  unfold Spec.Dsa.lengthsValid at hl
+  unfold Spec.Dsa.scratchWords at hs
+  change 15712 ≤ _
+  omega_using [hl, hs]
+
+end VG.Proof.Dsa.X86_64
+
+end
+
+end
+
+/-! # Buffer and stack resources for a complete verification call -/
+
+@[expose] public section
+
+namespace VG.Proof.Dsa.X86_64
+open VG VG.X86_64 VG.Impl.Bignum.X86_64
+open VG.Impl.Dsa.Layout VG.Impl.Dsa.X86_64
+open VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
+
+theorem VerifyingABI.pre {s : State} (h : VerifyingABI s) : VerifyingPre h.input s := by
+  have hs : Scr s (stackArg s 2) ((stackArg s 3).toNat * 8) := Scr.of_mem (by rw [h.wr]; simp) h.scratchBound
+  have hargs : (⟨stackArgAddr s 0, 32⟩ : Region) ∈ s.rd ++ s.wr := by rw [h.rd]; simp
+  refine ⟨scratch_prefix hs h.used (by decide), ?_, ?_, ?_, ?_, rfl, ?_, rfl, ?_, ?_, ?_⟩
+  · exact (ofNat_toNat64 _).symm
+  · intro j hj hb
+    exact stackWord_read (count := 4) hargs hj (by omega_using [hb]) (by decide)
+  · intro j hj hb i hi
+    exact Nat.le_trans h.used (stackWord_separate (count := 4) h.scratchArgs hj (by omega_using [hb]) (by decide) i hi)
+  · exact (ofNat_toNat64 _).symm
+  · change stackArg s 1 = BitVec.ofNat 64 (Spec.Rsa.bytesAt s.mem (stackArg s 0) (stackArg s 1).toNat).length
+    rw [bytesAt_length, ofNat_toNat64]
+  · exact source_shrink (src_of_region (by rw [h.rd]; simp) (Nat.le_of_lt (s.gpr .rsi).isLt) h.keyScratch) h.used
+  · exact source_shrink (src_of_region (by rw [h.rd]; simp) (Nat.le_of_lt (s.gpr .r9).isLt) h.signatureScratch) h.used
+  · exact source_shrink (src_of_region (p := stackArg s 0) (by rw [h.rd]; simp)
+      (Nat.le_of_lt (stackArg s 1).isLt) h.digestScratch) h.used
+
+def VerifyingABI.call {s : State} (h : VerifyingABI s) : VerifyingCall := ⟨h.input, s, h.pre⟩
+
+end VG.Proof.Dsa.X86_64
+
+end
+
+end
 
 /-! ### `Dsa.X86_64.VerifyingVerified`, which this module and modules that import it used -/
 

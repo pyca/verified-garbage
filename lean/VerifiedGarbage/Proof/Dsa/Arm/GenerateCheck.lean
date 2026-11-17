@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.Arm.GenerateCompute
 import VerifiedGarbage.Proof.Dsa.Arm.Dispatch
-import VerifiedGarbage.Proof.Dsa.Arm.SignCorrect
+public import VerifiedGarbage.Proof.Dsa.Arm.SignCorrect
 import VerifiedGarbage.Proof.Dsa.Derive
 import VerifiedGarbage.Proof.Dsa.PackedBytes
 import VerifiedGarbage.Proof.Dsa.Arithmetic
@@ -12,10 +12,8 @@ public import VerifiedGarbage.Proof.Dsa.Arm.PublicKey
 public import VerifiedGarbage.Proof.Dsa.Arm.Shape
 import Mathlib.Logic.Function.Basic
 import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.Dsa.Arm.Env
 public import VerifiedGarbage.Impl.Dsa.Arm.Generate
 import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Dsa.Arm.Contract
 public import VerifiedGarbage.Spec.Dsa.Derive
 public import VerifiedGarbage.Proof.Dsa.Contract
 

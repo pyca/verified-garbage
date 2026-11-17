@@ -31,7 +31,7 @@ import VerifiedGarbage.Proof.Bignum.X86.ExponentCheckTiming
 import VerifiedGarbage.Proof.Bignum.X86.PublicArgs
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Bignum.Octets
-import VerifiedGarbage.Proof.Bignum.X86.PublicExponentArgs
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Top
 import VerifiedGarbage.Proof.Framework.X86.RelCT
 public import VerifiedGarbage.Spec.RsaKeyGen
 public import VerifiedGarbage.Impl.Rsa.X86.KeyCheck

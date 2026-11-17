@@ -14,7 +14,7 @@ public import VerifiedGarbage.Proof.Weierstrass.Booth
 public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
 public import VerifiedGarbage.Proof.Weierstrass.WindowJA
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinQuad
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinLoop
 
 /-!
 # Windows in Jacobian coordinates on x86-64: an iteration

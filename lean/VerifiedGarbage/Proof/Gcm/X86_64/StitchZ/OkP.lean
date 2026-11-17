@@ -4,7 +4,7 @@ public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZHTo
 public import VerifiedGarbage.Proof.Aes.X86_64.VaesZH.Rounds
 public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Context
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Cvt
-public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Gh48
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Loop48
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.Loop
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Loop48To
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchZC.Loop
@@ -29,7 +29,6 @@ import VerifiedGarbage.Proof.Gcm.X86_64.Vpclmul.Ghash
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.OnePass
 public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.PhaseOne
-public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Loop48
 public import VerifiedGarbage.Proof.Gcm.Poly
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Group
 

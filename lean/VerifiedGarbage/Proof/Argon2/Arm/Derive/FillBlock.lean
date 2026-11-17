@@ -6,12 +6,11 @@ import VerifiedGarbage.Proof.Argon2.FillPositions
 import VerifiedGarbage.Proof.Argon2.Arm.Derive.FillPtr
 import VerifiedGarbage.Proof.Argon2.Arm.Derive.FillCache
 import VerifiedGarbage.Proof.Argon2.Arm.Derive.FillInput
-import VerifiedGarbage.Proof.Argon2.Arm.Derive.MemoryInit
+public import VerifiedGarbage.Proof.Argon2.Arm.Derive.MemoryInit
 import VerifiedGarbage.Proof.Argon2.Arm.Derive.Initial
 import VerifiedGarbage.Proof.Argon2.Arm.Derive.Locals
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Argon2.Contract
-public import VerifiedGarbage.Proof.Argon2.Arm.Derive.Clear
 public import VerifiedGarbage.Proof.Argon2.Matrix
 import VerifiedGarbage.Proof.Argon2.Arm.Derive.Scratch
 import VerifiedGarbage.Proof.Framework.Arm.Exec

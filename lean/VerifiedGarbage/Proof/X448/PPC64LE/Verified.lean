@@ -1,19 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.X448.Contract
-public import VerifiedGarbage.Proof.X448.PPC64LE.Ladder
+public import VerifiedGarbage.Proof.X448.PPC64LE.Invert
 public import VerifiedGarbage.Spec.X448.Contract
 import VerifiedGarbage.Proof.X448.Bytes
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.WriteBytes
-import VerifiedGarbage.Proof.X448.PPC64LE.Invert
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.TCB.PPC64LE.Target
-public import VerifiedGarbage.Proof.X448.PPC64LE.Setup
-import VerifiedGarbage.Proof.X448.PPC64LE.Mul
-import VerifiedGarbage.Proof.X448.PPC64LE.Freeze
+public import VerifiedGarbage.Proof.X448.PPC64LE.Freeze
+import VerifiedGarbage.Proof.X448.PPC64LE.Slots
 import VerifiedGarbage.Proof.Framework.PPC64LE.Spill
 import VerifiedGarbage.Proof.X448.PPC64LE.CT
 import VerifiedGarbage.Proof.Framework.Contract

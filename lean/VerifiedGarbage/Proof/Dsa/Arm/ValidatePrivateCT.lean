@@ -1,14 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.Arm.KeyTrace
+public import VerifiedGarbage.Proof.Dsa.Arm.Body
 public import VerifiedGarbage.Proof.Dsa.Arm.PrevalidatedCT
 import VerifiedGarbage.Proof.Dsa.Arm.GenerateTrace
 public import VerifiedGarbage.Proof.Dsa.Arm.GenerateCheck
 import VerifiedGarbage.Proof.Dsa.Arm.BodyTrace
-import VerifiedGarbage.Proof.Dsa.Arm.SigningKey
 import VerifiedGarbage.Proof.Dsa.Arm.PublicKey
 import VerifiedGarbage.Proof.Dsa.Arm.ValidateTrace
-import VerifiedGarbage.Proof.Dsa.Arm.SignCorrect
+public import VerifiedGarbage.Proof.Dsa.Arm.SignCorrect
 import VerifiedGarbage.Proof.Dsa.Arm.ShapeTrace
 import VerifiedGarbage.Proof.Dsa.Arm.OpTrace
 import VerifiedGarbage.Proof.Dsa.Arm.Leaves
@@ -18,10 +17,6 @@ import VerifiedGarbage.Proof.Dsa.PackedBytes
 import VerifiedGarbage.Proof.Dsa.OutputBytes
 public import VerifiedGarbage.Impl.Dsa.Arm.PrevalidatedSign
 public import VerifiedGarbage.Spec.Dsa.PrevalidatedSign
-public import VerifiedGarbage.Proof.Dsa.Arm.Contract
-public import VerifiedGarbage.Proof.Dsa.Arm.Env
-import VerifiedGarbage.Proof.Dsa.Arm.Prevalidated
-import VerifiedGarbage.Proof.Dsa.Arm.Body
 import VerifiedGarbage.Proof.Dsa.Arm.Shape
 import VerifiedGarbage.Proof.Dsa.PrivateKeyWitness
 

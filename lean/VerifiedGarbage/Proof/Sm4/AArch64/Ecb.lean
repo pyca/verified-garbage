@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Sm4.AArch64.LayersLit
 public import VerifiedGarbage.Proof.Sm4.AArch64.Prologue
 public import VerifiedGarbage.Proof.Sm4.Common
-public import VerifiedGarbage.Proof.Sm4.AArch64.Core
 import VerifiedGarbage.Proof.Sm4.Layout
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec

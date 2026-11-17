@@ -21,7 +21,6 @@ public import VerifiedGarbage.Impl.Ed25519.X86.VerifyWindow
 import VerifiedGarbage.Proof.Ed25519.X86.PrepareAdd
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Ed25519.WindowConstants
-public import VerifiedGarbage.Proof.Ed25519.X86.VerifyTbl
 public import VerifiedGarbage.Proof.Ed25519.Group.Extended
 public import VerifiedGarbage.Proof.Ed25519.X86.ScalarBody
 import VerifiedGarbage.Proof.Framework.X86.SymFrame

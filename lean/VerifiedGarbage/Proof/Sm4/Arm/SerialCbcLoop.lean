@@ -15,7 +15,6 @@ public import VerifiedGarbage.Proof.Sm4.Prepared
 import VerifiedGarbage.Proof.Sm4.Arm.SerialCfbHead
 import VerifiedGarbage.Proof.Sm4.Arm.SerialOfbGroup
 import VerifiedGarbage.Proof.Sm4.Arm.Group
-public import VerifiedGarbage.Proof.Sm4.Arm.BatchFill
 public import VerifiedGarbage.Proof.Sm4.Arm.CfbFill
 import VerifiedGarbage.Proof.Modes.Arm.Cbc
 

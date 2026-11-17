@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.DecapsStart
 public import VerifiedGarbage.Impl.MlKem.AArch64.Kem
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Semantics
-public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Step
+public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.LoopState
 public import VerifiedGarbage.Proof.MlKem.AArch64.KemB
 public import VerifiedGarbage.Proof.MlKem.AArch64.KemEnc
 public import VerifiedGarbage.Proof.MlKem.AArch64.KemOps

@@ -2,10 +2,9 @@ module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.ParameterSearch
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.RefillContract
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CodeSafety
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeCall
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CodeDepth
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Hashes
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeTest
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
 public import VerifiedGarbage.Proof.Variants.MillerRabin.X86_64.Base
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq

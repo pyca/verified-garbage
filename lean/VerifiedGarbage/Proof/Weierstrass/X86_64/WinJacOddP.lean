@@ -16,7 +16,6 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacOddBuild
 public import VerifiedGarbage.Proof.Weierstrass.JacAdd
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacLay
 public import VerifiedGarbage.Proof.Weierstrass.Unch
-import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacSelect
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelect
 import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd

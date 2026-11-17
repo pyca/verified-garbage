@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacIter
 import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacEntry
 public import VerifiedGarbage.Proof.Weierstrass.Window5
-import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacSelect
 import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacBuild
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TComb
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelectY

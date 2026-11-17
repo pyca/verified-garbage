@@ -19,7 +19,7 @@ import VerifiedGarbage.Proof.Bignum.Octets
 /-!
 # DSA sampling on RISC-V: a draw
 
-As on PPC64LE (`Proof/Dsa/PPC64LE/Random/Copy.lean`, `Range.lean` and
+As on PPC64LE (`Proof/Dsa/PPC64LE/Random/Q.lean`, `Range.lean` and
 `Draw.lean`):
 
 * `copy_ok`: a draw of `W` octets from the tape at `used` into the nonce's

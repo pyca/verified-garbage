@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.Calls
 import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.Common
 import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.Prune
 public import VerifiedGarbage.Proof.Ed448.Ref
-public import VerifiedGarbage.Proof.X448.PPC64LE.Ladder
+public import VerifiedGarbage.Proof.X448.PPC64LE.Invert
 
 /-!
 # `vg_ed448_verify` on PPC64LE, with its frame as an argument

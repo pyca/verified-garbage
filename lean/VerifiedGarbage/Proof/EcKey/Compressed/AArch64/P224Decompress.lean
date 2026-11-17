@@ -23,7 +23,7 @@ public import VerifiedGarbage.Proof.Weierstrass.InverseContract
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Pow
 import VerifiedGarbage.Proof.Weierstrass.Law
 import VerifiedGarbage.Proof.Ecdh.AArch64.Validate
-import VerifiedGarbage.Proof.Weierstrass.RootPowers
+import VerifiedGarbage.Proof.Weierstrass.Sqrt
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
 import VerifiedGarbage.Spec.Weierstrass
 import VerifiedGarbage.Proof.Weierstrass.RootTonelli

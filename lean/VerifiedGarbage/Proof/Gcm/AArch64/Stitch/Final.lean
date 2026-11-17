@@ -1,6 +1,6 @@
 module
-public import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.Base
 
+public import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.Steps
 import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.Ok
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.CallLay

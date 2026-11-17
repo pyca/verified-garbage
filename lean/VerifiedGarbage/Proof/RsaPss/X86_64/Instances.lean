@@ -18,7 +18,6 @@ import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyBody
 import VerifiedGarbage.Proof.RsaPss.X86_64.SignCall
 import VerifiedGarbage.Proof.RsaPss.Params
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-import VerifiedGarbage.Proof.RsaPss.X86_64.SignCCall
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
 public import VerifiedGarbage.Proof.RsaPss.X86_64.TabCall
 public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyFrame

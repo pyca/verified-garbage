@@ -9,7 +9,6 @@ public import VerifiedGarbage.Impl.Weierstrass.AArch64
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.P521Double
 public import VerifiedGarbage.Impl.Weierstrass.JacMul
 public import VerifiedGarbage.Proof.Weierstrass.CheckPointContract
-import VerifiedGarbage.Proof.Weierstrass.AArch64.WinJNorm
 import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Double
 
 /-! # Scheduled doublings retain the existing Jacobian formula -/

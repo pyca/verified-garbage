@@ -15,7 +15,7 @@ public import VerifiedGarbage.Proof.Framework.AArch64.Call
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrSq
 public import VerifiedGarbage.Impl.MillerRabin.AArch64.Round
 import VerifiedGarbage.Proof.MillerRabin.AArch64.CallerContext
-import VerifiedGarbage.Proof.MillerRabin.AArch64.CallerKept
+import VerifiedGarbage.Proof.MillerRabin.AArch64.CallerCall
 
 /-! ### `MillerRabin.AArch64.CallerStages`, which only this module used -/
 

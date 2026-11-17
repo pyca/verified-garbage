@@ -1,15 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.GenerateKeyCheck
+public import VerifiedGarbage.Proof.Dsa.X86_64.GenerateKeySample
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Dsa.X86_64.GenerateKeyCheckStep
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignFinish
-import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignPublishValue
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignFinishResult
 import VerifiedGarbage.Proof.Dsa.Derive
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
-public import VerifiedGarbage.Proof.Dsa.X86_64.GenerateKeySample
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignBody
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomSample
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomMemory

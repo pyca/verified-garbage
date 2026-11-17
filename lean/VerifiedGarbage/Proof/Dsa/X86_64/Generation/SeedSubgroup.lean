@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Hashes
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Context
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextSeed
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeTest
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeCall
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextFrame
 import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Subgroup

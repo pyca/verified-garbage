@@ -5,10 +5,141 @@ import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.X448.X86.Field
-public import VerifiedGarbage.Proof.X448.X86.Args
-import VerifiedGarbage.Proof.X448.X86.RowPass
 import VerifiedGarbage.Proof.X448.X86.Carry
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.X448.X86.Instr
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.X448.X86.Mem
+import VerifiedGarbage.Proof.X448.X86.Step
+
+/-! ### `X448.X86.RowPass`, which this module and modules that import it used -/
+
+section
+
+/-!
+# X448 on x86 (32-bit): multiplication-row carry propagation
+
+A pass stores one digit at a time and preserves the remaining coefficients for
+the next step.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.X448.X86
+
+open VG VG.X86 VG.Impl.X448.X86 VG.Proof.X448.Radix16
+
+structure CarryInv (base : Addr) (o : Nat) (s0 : State) (c : Nat → Nat) (k : Nat) (s : State) : Prop where
+  regs : Keeps [.eax, .ebx, .edx] s0 s
+  carry : (s.gpr .ebx).toNat = Radix16.carry c k
+  mem : Outside base o (4 * k) s0.mem s.mem
+  outs : ∀ j < k, limbs s.mem base o j = digit c j
+
+theorem carryPass_ok {base : Addr} {o d : Nat} {rb : Reg} {src : Nat → List Instr} {s0 : State}
+    {c : Nat → Nat} (hrb : rb ∉ [.eax, .ebx, .edx]) (ho : o + 112 ≤ 8192)
+    (hea : ∀ k < 28, s0.ea (at_ rb (d + 4 * k)) = off base (o + 4 * k))
+    (hw : ∀ k < 28, InRegions s0.wr (off base (o + 4 * k)) 4)
+    (hzero : (s0.gpr .ebx).toNat = 0) (hc : ∀ k < 28, c k ≤ 2 ^ 32 - radix)
+    (hsrc : ∀ k < 28, ∀ s, CarryInv base o s0 c k s →
+      WP isa (.block (src k)) s fun t =>
+        (t.gpr .eax).toNat = c k ∧ Keeps [.eax, .edx] s t ∧ t.mem = s.mem) :
+    WP isa (.block (carryPass rb d src)) s0 (CarryInv base o s0 c 28) := by
+  refine wp_range_flatMap (M := isa) (CarryInv base o s0 c) (fun k s hk h => ?_) 28 (Nat.le_refl _) s0
+    ⟨Keeps.refl _ _, hzero, Outside.refl _ _ _ _, fun j hj => by omega⟩
+  rw [WP.block_append_iff]
+  refine WP.mono (hsrc k hk s h) fun t ⟨tv, tk, tm⟩ => ?_
+  have tb : t.gpr .ebx = s.gpr .ebx := tk.1 _ (by decide)
+  have tk' : Keeps [.eax, .ebx, .edx] s t := tk.mono (by decide)
+  have trb : t.gpr rb = s0.gpr rb := (tk'.1 rb hrb).trans (h.regs.1 rb hrb)
+  have ea : t.ea (at_ rb (d + 4 * k)) = off base (o + 4 * k) := by
+    simpa only [State.ea, at_, trb] using hea k hk
+  have bound : c k + Radix16.carry c k < 2 ^ 32 := by
+    have a := hc k hk
+    have b := carry_bound (n := k) (fun j hj => hc j (by omega_using [hk, hj]))
+    simp only [radix] at a
+    omega_using [a, b]
+  refine WP.mono (carryRaw_ok hrb ea (by rw [tk.2.2, h.regs.2.2]; exact hw k hk)
+    (by rw [tv, tb, h.carry]; exact bound)) fun u ⟨uc, um, uk⟩ => ?_
+  rw [tv, tb, h.carry] at uc um
+  rw [tm] at um
+  refine ⟨h.regs.trans ((tk.mono (by decide)).trans uk), uc, ?_, ?_⟩
+  · rw [um]
+    exact (h.mem.mono (by omega_using []) (by omega_using [])).trans
+      ((writeW_outside _ _ _ (by omega_using [ho, hk])).mono (by omega_using []) (by omega_using []))
+  · intro j hj
+    change (word u.mem base (o + 4 * j)).toNat = _
+    rw [um, word_write s.mem base (by omega_using [ho, hk]) (by omega_using [ho, hk, hj])]
+    by_cases he : j = k
+    · rw [ite_eq_left he, he, BitVec.toNat_ofNat]
+      exact Nat.mod_eq_of_lt (Nat.lt_trans (digit_lt c k) (by decide : radix < 2 ^ 32))
+    · rw [ite_eq_right he]; exact h.outs j (by omega_using [hj, he])
+
+end VG.Proof.X448.X86
+
+end
+
+end
+
+/-! ### `X448.X86.Args`, which this module and modules that import it used -/
+
+section
+
+/-!
+# X448 on x86 (32-bit): the field functions' arguments
+
+A field function (`vg_gf448_r16_*`, `Impl/X448/X86.lean`) reads its
+arguments from the stack: the working space and the offsets. `ArgArea s base
+n` says what it knows of the first `n` of them on entry: they are readable
+and lie outside the working space at `base`, so that what the function
+writes there leaves them alone (`ArgArea.keep`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.X448.X86
+
+open VG VG.X86 VG.Impl.X448.X86
+
+/-- The first `n` arguments: readable, and outside the working space at `base`. -/
+structure ArgArea (s : State) (base : Addr) (n : Nat) : Prop where
+  read : ∀ i < n, InRegions (s.rd ++ s.wr) (argAddr s i) 4
+  out : ∀ i < n, ∀ k < 4, 8192 ≤ ofs base (argAddr s i + BitVec.ofNat 64 k)
+
+theorem argOp_ea (s : State) (i : Nat) : s.ea (argOp i) = argAddr s i := rfl
+
+/-- The arguments stay readable and unchanged while the code changes only
+registers but `esp`, and memory in the working space. -/
+theorem ArgArea.keep {s t : State} {base : Addr} {n : Nat} (h : ArgArea s base n)
+    (hsp : t.gpr .esp = s.gpr .esp) (hrd : t.rd = s.rd) (hwr : t.wr = s.wr)
+    (hm : Outside base 0 8192 s.mem t.mem) :
+    ArgArea t base n ∧ ∀ i < n, arg t i = arg s i := by
+  have ea : ∀ i, argAddr t i = argAddr s i := fun i => by simp only [argAddr, hsp]
+  refine ⟨⟨fun i hi => by rw [ea, hrd, hwr]; exact h.read i hi,
+    fun i hi k hk => by rw [ea]; exact h.out i hi k hk⟩, fun i hi => ?_⟩
+  simp only [arg, ea]
+  exact (Mem.readW_congr fun k hk => (hm _ (Or.inr (h.out i hi k hk))).symm).symm
+
+/-- Loading argument `i`. -/
+theorem ArgArea.load {s : State} {base : Addr} {n : Nat} (h : ArgArea s base n) {i : Nat} (hi : i < n)
+    {r : Reg} {is : List Instr} {Q : State → Prop}
+    (k : ∀ t, Upd s t r (arg s i) → WP isa (.block is) t Q) :
+    WP isa (.block (.mov r (.mem (argOp i)) :: is)) s Q :=
+  wp_load (argOp_ea s i) (h.read i hi) k
+
+/-- The address `[r + k]`, for `r` pointing `d` bytes into the working space. -/
+theorem Scr.ea_ptr {s : State} {base : Addr} (hs : Scr s base) {r : Reg} {d k : Nat}
+    (hr : s.gpr r = s.gpr .edi + BitVec.ofNat 32 d) (hdk : d + k < 8192) :
+    s.ea (at_ r k) = off base (d + k) := by
+  change (s.gpr r + BitVec.ofNat 32 k).setWidth 64 = _
+  rw [hr, Offset.add_add]
+  exact hs.ea hdk
+
+end VG.Proof.X448.X86
+
+end
+
+end
 
 /-! ### `X448.X86.Normalize`, which this module and modules that import it used -/
 

@@ -17,7 +17,6 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchDone
 public import VerifiedGarbage.Impl.Ffdh.X86_64.Generation.Search
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Depth
-import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchCandidate
 import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchClassify
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchShort
 import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchGuards

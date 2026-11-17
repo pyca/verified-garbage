@@ -11,7 +11,6 @@ public import VerifiedGarbage.Proof.Argon2.Contract
 import VerifiedGarbage.Proof.Argon2.X86_64.Taint
 import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Sym
-public import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Gb
 public import VerifiedGarbage.Impl.Argon2.X86_64.CompressAvx512
 public import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.X86_64.Avx512

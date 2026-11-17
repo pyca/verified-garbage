@@ -6,9 +6,8 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Depth
 public import VerifiedGarbage.Proof.Seed.X86_64.ConstantTime
 public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Impl.Seed.X86_64.ExpandKey
-public import VerifiedGarbage.Proof.Seed.X86_64.Steps
+public import VerifiedGarbage.Proof.Seed.X86_64.Round
 import VerifiedGarbage.Proof.Seed.X86_64.Ecb
-import VerifiedGarbage.Proof.Seed.X86_64.Round
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Exec

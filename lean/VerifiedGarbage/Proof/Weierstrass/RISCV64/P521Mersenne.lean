@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Weierstrass.RISCV64.P256Field.Words
-import VerifiedGarbage.Proof.X448.RISCV64.R64.Macc
+import VerifiedGarbage.Proof.X448.RISCV64.R64.Carry
 import VerifiedGarbage.Proof.X448.RISCV64.R64.Reduce
 public import VerifiedGarbage.Proof.X448.RISCV64.R64.Mul
 

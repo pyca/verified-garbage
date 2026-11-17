@@ -3,15 +3,13 @@ module
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Workspace
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.StackRange
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyPrepare
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyReady
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyStageFrame
 public import VerifiedGarbage.Proof.Framework.Semantics
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.InverseKeeps
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Primes
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.ArrayDivision
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Ops
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.ScalarKey
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Constant
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.OddModulus
 import VerifiedGarbage.Proof.Rsa.InverseArithmetic
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Address
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Inverse
@@ -23,10 +21,7 @@ import VerifiedGarbage.Proof.Rsa.WordRanges
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyDivision
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyInverseBridge
 import VerifiedGarbage.Proof.RsaKeyGen.WordBounds32
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Small
 import VerifiedGarbage.Proof.Mont.X86.WordOps
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Widen
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyDivisionGeometry
 import VerifiedGarbage.Proof.Rsa.X86.DivLoop
 import Mathlib.Data.Nat.Init
 import Mathlib.Logic.Function.Basic
@@ -46,14 +41,11 @@ public import VerifiedGarbage.Proof.Mont.Words32
 import VerifiedGarbage.Proof.Rsa.KeyWorkspace
 import VerifiedGarbage.Proof.RsaKeyGen.OddInverseQuotient
 import VerifiedGarbage.Proof.RsaKeyGen.KeyMath
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.OddModulus
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Scalar
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyEvenFrame
 public import VerifiedGarbage.Spec.Rsa.Contract
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyLcmFrame
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyStageCover
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Twos
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyGcdFrame
 import VerifiedGarbage.Proof.RsaKeyGen.HalveBounds
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyEven
 import VerifiedGarbage.Proof.Mont.X86.Instr
@@ -62,6 +54,182 @@ import VerifiedGarbage.Impl.Rsa.X86.Inverse
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.OddSecond
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Scalar
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Copy
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyInverseFrame
+public import VerifiedGarbage.Proof.Rsa.X86.InvLoop
+
+/-! ### `RsaKeyGen.X86.KeyRuntime.InverseKeeps`, which this module and modules that import it used -/
+
+section
+
+/-! # What a call of `vg_rsa_keygen_inverse` leaves in the workspace
+
+The numbers and header words the inverse keeps (`Ws.inverse_num`, `Ws.inverse_slot`), for
+the frame of a call (`OutsS`): the stack it writes is beyond the workspace. -/
+
+@[expose] public section
+namespace VG.Proof.RsaKeyGen.X86.KeyRuntime
+open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Rsa.X86.Keys
+open VG.Impl.Rsa.X86.Keys hiding slot
+open VG.Proof.RsaKeyGen.X86.Key (inverseRanges)
+
+/-- A number in the workspace keeps its value. -/
+theorem OutsS.val32_eq {B : Addr} {sp : BitVec 32} {rs : List (Nat × Nat)} {m m' : Mem} {Z : Nat}
+    (h : OutsS B sp rs m m') (D : VG.Proof.RsaKeyGen.X86.KeyArgs.DeepStk sp B Z)
+    (nowrap : B.toNat + Z ≤ 2 ^ 32) {d k : Nat} (hd : ∀ r ∈ rs, d + 4 * k ≤ r.1 ∨ r.1 + r.2 ≤ d)
+    (hs : d + 4 * k ≤ Z) : val32 m' B d k = val32 m B d k := by
+  apply (h.outs D nowrap).val32 _ (by omega_using [nowrap, hs])
+  intro r hr
+  rcases List.mem_append.mp hr with hr | hr
+  · exact hd r hr
+  · obtain rfl := List.mem_singleton.mp hr
+    exact Or.inl hs
+
+/-- The memory with the stack below `sp` as in `m₁`, the rest as in `m₂`: what `OutsS` changes as
+`Outs` would. -/
+def hyb (sp : BitVec 32) (m₁ m₂ : Mem) : Mem := fun x => if (below sp 52).Contains x 1 then m₁ x else m₂ x
+
+theorem OutsS.outs_hyb {B : Addr} {sp : BitVec 32} {rs : List (Nat × Nat)} {m₁ m₂ : Mem}
+    (h : OutsS B sp rs m₁ m₂) : Outs B rs m₁ (hyb sp m₁ m₂) := by
+  intro x hx
+  unfold hyb
+  by_cases hz : (below sp 52).Contains x 1
+  · simp only [hz, ↓reduceIte]
+  · simp only [hz, ↓reduceIte]
+    exact h x hx hz
+
+/-- A number in the workspace changes as `Outs` lets it. -/
+theorem OutsS.read {B : Addr} {sp : BitVec 32} {rs : List (Nat × Nat)} {m₁ m₂ : Mem} {Z : Nat}
+    (h : OutsS B sp rs m₁ m₂) (D : VG.Proof.RsaKeyGen.X86.KeyArgs.DeepStk sp B Z)
+    (nowrap : B.toNat + Z ≤ 2 ^ 32) {d k : Nat} (fit : d + 4 * k ≤ Z)
+    (old : Outs B rs m₁ (hyb sp m₁ m₂) → val32 (hyb sp m₁ m₂) B d k = val32 m₁ B d k) :
+    val32 m₂ B d k = val32 m₁ B d k := by
+  rw [← old h.outs_hyb]
+  have far := stack_far D nowrap
+  have size : (stackRange B sp).2 = 52 := rfl
+  refine val32_congr fun j hj => congrArg BitVec.toNat (Mem.readW_congr fun i hi => ?_)
+  unfold hyb
+  have notStack : ¬ (below sp 52).Contains (off B (d + 4 * j) + BitVec.ofNat 64 i) 1 := by
+    intro c
+    have H := (stack_contains D nowrap _).mp c
+    rw [ofs_off B (by omega_using [nowrap, fit, hj, hi])] at H
+    omega_using [fit, far, hj, hi, H]
+  simp only [notStack, ↓reduceIte]
+
+theorem Ws.read_num {s : State} {B : Addr} {Z n N j : Nat} (W : Ws s B Z n N) (hj : j < N)
+    {rs : List (Nat × Nat)} {m₁ m₂ : Mem} (h : OutsS B (s.gpr .esp) rs m₁ m₂)
+    (old : Outs B rs m₁ (hyb (s.gpr .esp) m₁ m₂) → num (hyb (s.gpr .esp) m₁ m₂) B n j = num m₁ B n j) :
+    num m₂ B n j = num m₁ B n j :=
+  h.read W.deep W.old.workspace.nowrap (by have := W.arr_fit hj; unfold S at this; omega_using [this]) old
+
+theorem Ws.read_val32 {s : State} {B : Addr} {Z n N d k : Nat} (W : Ws s B Z n N) (fit : d + 4 * k ≤ hdr)
+    {rs : List (Nat × Nat)} {m₁ m₂ : Mem} (h : OutsS B (s.gpr .esp) rs m₁ m₂)
+    (old : Outs B rs m₁ (hyb (s.gpr .esp) m₁ m₂) → val32 (hyb (s.gpr .esp) m₁ m₂) B d k = val32 m₁ B d k) :
+    val32 m₂ B d k = val32 m₁ B d k :=
+  h.read W.deep W.old.workspace.nowrap (Nat.le_trans fit W.hdr_le) old
+
+theorem Ws.inverse_num {s : State} {B : Addr} {Z n N k j : Nat} {m m' : Mem} (h : Ws s B Z n N)
+    (width : k ≤ n) (persistent : 15 ≤ j) (hj : j < N)
+    (changed : OutsS B (s.gpr .esp) (inverseRanges k invSlots) m m') : num m' B n j = num m B n j := by
+  have fit := h.arr_fit hj
+  apply changed.val32_eq h.deep h.old.workspace.nowrap _ (by unfold S at fit; omega_using [fit])
+  intro r hr
+  simp only [inverseRanges, invSlots, List.map_cons, List.map_nil,
+    List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl
+  · have endBound := VG.Proof.RsaKeyGen.X86.Key.inverse_end_le width persistent
+    have endEq : arr k 15 = hdr + 4 * (15 * (k + 2)) := by unfold arr S; omega_using []
+    rw [endEq] at endBound
+    exact Or.inr endBound
+  all_goals have lower : hdr ≤ arr n j := Nat.le_add_right ..
+  all_goals simp only [sOdd, sB, sC, hdr] at lower ⊢
+  all_goals omega_using [lower]
+
+theorem Ws.inverse_slot {s : State} {B : Addr} {Z n N k d : Nat} {m m' : Mem} (h : Ws s B Z n N)
+    (bound : d + 4 ≤ 100) (changed : OutsS B (s.gpr .esp) (inverseRanges k invSlots) m m') :
+    slot m' B d = slot m B d := by
+  have header := h.hdr_le
+  have value : val32 m' B d 1 = val32 m B d 1 := by
+    apply changed.val32_eq h.deep h.old.workspace.nowrap _ (by unfold hdr at header; omega_using [bound, header])
+    intro r hr
+    simp only [inverseRanges, invSlots, List.map_cons, List.map_nil,
+      List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl
+    all_goals simp only [sOdd, sB, sC, hdr]
+    all_goals omega_using [bound]
+  simpa only [val32, Nat.mul_zero, Nat.add_zero] using value
+
+end VG.Proof.RsaKeyGen.X86.KeyRuntime
+
+end
+
+end
+
+/-! ### `RsaKeyGen.X86.KeyRuntime.Widen`, which this module and modules that import it used -/
+
+section
+
+/-! # Widening between banks reuses the shared clear and copy operations -/
+
+@[expose] public section
+namespace VG.Proof.RsaKeyGen.X86.KeyRuntime
+open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86
+open VG.Impl.RsaKeyGen.X86.KeyRuntime
+
+theorem widenTo_ok {s : State} {B : Addr} {Z n N : Nat} (h : Ws s B Z n N)
+    (target w : Width) (out src : Loc) (width : w.words n ≤ target.words n)
+    (fit : out.offset n + 4 * (target.words n + 2) ≤ Z) (sourceBound : src.offset n + 4 * w.words n ≤ Z)
+    (separate : src.offset n + 4 * w.words n ≤ out.offset n ∨
+      out.offset n + 4 * (target.words n + 2) ≤ src.offset n) :
+    WP isa (widenTo target w out src) s fun t => Ws t B Z n N ∧
+      Outside B (out.offset n) (4 * (target.words n + 2)) s.mem t.mem ∧
+      val32 t.mem B (out.offset n) (target.words n + 2) = val32 s.mem B (src.offset n) (w.words n) ∧
+      val32 t.mem B (out.offset n) (target.words n) = val32 s.mem B (src.offset n) (w.words n) ∧
+      Keeps [.eax, .ebx, .ecx, .edx, .ebp] s t := by
+  have nowrap := h.old.workspace.nowrap
+  unfold widenTo
+  refine WP.seq (WP.mono (zero_ok h target out fit) fun u ⟨hu, Ou, zero, Ku⟩ => ?_)
+  change Outside B (out.offset n) (4 * (target.words n + 2)) s.mem u.mem at Ou
+  change val32 u.mem B (out.offset n) (target.words n + 2) = 0 at zero
+  have source : val32 u.mem B (src.offset n) (w.words n) =
+      val32 s.mem B (src.offset n) (w.words n) := Ou.val32 separate (by omega_using [sourceBound, nowrap])
+  have high : val32 u.mem B (out.offset n + 4 * w.words n) (target.words n + 2 - w.words n) = 0 :=
+    VG.Proof.Rsa.KeyWorkspace.val32_zero_part zero (by change _ ≤ target.words n + 2; omega_using [width])
+  refine WP.mono (copy_loc_ok hu w out src (by omega_using [width, fit]) sourceBound (by omega_using [width, separate]))
+    fun t ⟨ht, Ot, copied, Kt⟩ => ?_
+  have highT : val32 t.mem B (out.offset n + 4 * w.words n) (target.words n + 2 - w.words n) = 0 := by
+    rw [Ot.val32 (Or.inr (Nat.le_refl _)) (by omega_using [width, fit, nowrap]), high]
+  have full : val32 t.mem B (out.offset n) (target.words n + 2) = val32 s.mem B (src.offset n) (w.words n) := by
+    have append := val32_append t.mem B (out.offset n) (w.words n) (target.words n + 2 - w.words n)
+    rw [show w.words n + (target.words n + 2 - w.words n) = target.words n + 2 by omega_using [width],
+      highT, Nat.mul_zero, Nat.add_zero, copied, source] at append
+    exact append
+  have bound : val32 t.mem B (out.offset n) (target.words n + 2) < 2 ^ (32 * target.words n) := by
+    rw [full]
+    exact Nat.lt_of_lt_of_le (val32_lt s.mem B (src.offset n) (w.words n))
+      (Nat.pow_le_pow_right (by decide) (by omega_using [width]))
+  exact ⟨ht, Ou.trans (Ot.mono (Nat.le_refl _) (by omega_using [width])), full,
+    (VG.Proof.RsaKeyGen.WordBounds32.low_eq (by omega_using [] : target.words n ≤ target.words n + 2) bound).trans full,
+    (Ku.mono (by decide)).trans Kt⟩
+
+
+theorem widen_ok {s : State} {B : Addr} {Z n N : Nat} (h : Ws s B Z n N)
+    (w : Width) (out src : Loc) (width : w.words n ≤ n)
+    (fit : out.offset n + 4 * (n + 2) ≤ Z) (sourceBound : src.offset n + 4 * w.words n ≤ Z)
+    (separate : src.offset n + 4 * w.words n ≤ out.offset n ∨
+      out.offset n + 4 * (n + 2) ≤ src.offset n) :
+    WP isa (widen w out src) s fun t => Ws t B Z n N ∧
+      Outside B (out.offset n) (4 * (n + 2)) s.mem t.mem ∧
+      val32 t.mem B (out.offset n) (n + 2) = val32 s.mem B (src.offset n) (w.words n) ∧
+      val32 t.mem B (out.offset n) n = val32 s.mem B (src.offset n) (w.words n) ∧
+      Keeps [.eax, .ebx, .ecx, .edx, .ebp] s t :=
+  widenTo_ok h .modulus w out src width fit sourceBound separate
+
+end VG.Proof.RsaKeyGen.X86.KeyRuntime
+
+end
+
+end
 
 /-! ### `RsaKeyGen.X86.KeyRuntime.CorrectionGeometry`, which only this module used -/
 

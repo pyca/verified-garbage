@@ -15,7 +15,6 @@ import VerifiedGarbage.Proof.Rc4.X86.Lookup
 public import VerifiedGarbage.Impl.Rc4.X86
 public import VerifiedGarbage.Proof.MlDsa.X86.Pack.Run
 public import VerifiedGarbage.Proof.Rc4.Memory
-import VerifiedGarbage.Proof.Rc4.X86.Replace
 public import VerifiedGarbage.Spec.Rc4
 public import VerifiedGarbage.Proof.Rc4.X86.Contract
 public import VerifiedGarbage.Proof.Framework.Semantics

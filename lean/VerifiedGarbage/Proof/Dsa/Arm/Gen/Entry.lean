@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.Arm.Gen.St
+public import VerifiedGarbage.Proof.Dsa.Arm.Gen.Bytes
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.VP
 public import VerifiedGarbage.Proof.Framework.Arm.Call
 import VerifiedGarbage.Proof.Dsa.Arm.Gen.Test

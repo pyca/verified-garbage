@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.RoundsVL
 import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Setup
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Taint
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Finish
 import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Pad
 import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Tail
 import VerifiedGarbage.Proof.Framework.AddrArith

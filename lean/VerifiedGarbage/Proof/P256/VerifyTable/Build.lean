@@ -16,7 +16,7 @@ public import VerifiedGarbage.Proof.Weierstrass.InverseContract
 public import VerifiedGarbage.Proof.P256.EcdhTable.Dblu
 public import VerifiedGarbage.Proof.P256.EcdhTable.Zaddu
 import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedState
-public import VerifiedGarbage.Proof.P256.EcdhJac.TableMath
+public import VerifiedGarbage.Proof.P256.EcdhJac.Dblu
 import VerifiedGarbage.Proof.P256.VerifySparse.Fprog
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 public import VerifiedGarbage.Proof.Weierstrass.CheckPointContract

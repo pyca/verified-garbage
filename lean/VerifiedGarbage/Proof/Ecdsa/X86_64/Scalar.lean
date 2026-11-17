@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.Layout
 import VerifiedGarbage.Proof.Ecdsa.X86_64.SharedSlots
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Unch
-import VerifiedGarbage.Proof.Ecdsa.X86_64.SlotOps
 
 /-! ### `Ecdsa.X86_64.Middle`, which this module and modules that import it used -/
 

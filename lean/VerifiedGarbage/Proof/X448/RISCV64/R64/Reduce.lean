@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Impl.X448.RISCV64.R64
 public import VerifiedGarbage.Proof.Framework.RISCV64.Wide
-import VerifiedGarbage.Proof.X448.RISCV64.R64.Macc
 public import VerifiedGarbage.Proof.X448.RISCV64.R64.Basic
 
 /-! ### `X448.RISCV64.R64.Product`, which this module and modules that import it used -/

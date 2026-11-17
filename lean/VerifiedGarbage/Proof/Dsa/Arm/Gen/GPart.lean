@@ -12,7 +12,6 @@ import VerifiedGarbage.Proof.Dsa.Encoding
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import Mathlib.Tactic.ClearExcept
-import VerifiedGarbage.Proof.Dsa.Arm.Gen.KSStore
 public import VerifiedGarbage.Proof.Dsa.Arm.PowVerified
 public import VerifiedGarbage.Proof.Framework.Arm.CallF
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
@@ -20,12 +19,11 @@ public import VerifiedGarbage.Proof.Rsa.Arm.CvLoad
 public import VerifiedGarbage.Proof.Rsa.Arm.DivContext
 public import VerifiedGarbage.Proof.Rsa.Arm.KeyBits
 import VerifiedGarbage.Proof.Dsa.Arm.Gen.Bytes
-import VerifiedGarbage.Proof.Dsa.Arm.Gen.Frame
 public import VerifiedGarbage.Proof.Rsa.Arm.Stage.VP
 import VerifiedGarbage.Proof.Bignum.Arm.CopyBuffer
 import VerifiedGarbage.Proof.Rsa.Arm.CvStore
 import VerifiedGarbage.Proof.Bignum.ByteWords
-public import VerifiedGarbage.Proof.Dsa.Arm.Gen.KSOps
+public import VerifiedGarbage.Proof.Dsa.Arm.Gen.KSLoad
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.TCB.Arm.Isa
 public import VerifiedGarbage.Proof.Rsa.BoolNat

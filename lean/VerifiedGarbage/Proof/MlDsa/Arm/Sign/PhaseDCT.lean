@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Rel
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseD
-import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PrimsD
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.MlDsa.Arm.Sign.CopyTr

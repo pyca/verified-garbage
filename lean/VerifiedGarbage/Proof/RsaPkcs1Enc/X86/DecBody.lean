@@ -21,7 +21,6 @@ import VerifiedGarbage.Proof.Hmac.Generic.Common
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.Steps
 import VerifiedGarbage.Proof.Hmac.Common
 import VerifiedGarbage.Proof.Sha256.Md
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Instr
 import VerifiedGarbage.Proof.RsaPkcs1Enc.Decrypt
 import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.Select

@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Impl.Dsa.PPC64LE.Generation
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.Bytes
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.Test
 public import VerifiedGarbage.Proof.Framework.Inline
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Mont.Words32
@@ -23,7 +23,6 @@ public import VerifiedGarbage.Spec.Rsa.Contract
 import VerifiedGarbage.Proof.Dsa.Arithmetic
 import VerifiedGarbage.Proof.Rsa.Octets
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.Test
 import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! ### `Dsa.PPC64LE.Gen.Power`, which only this module used -/

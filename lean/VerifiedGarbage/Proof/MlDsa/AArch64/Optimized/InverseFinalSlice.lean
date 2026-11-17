@@ -9,9 +9,197 @@ import VerifiedGarbage.Proof.Framework.AArch64.Simd
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Slice
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFinalRoots
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseScale
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InversePackedRun
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
+
+/-! ### `MlDsa.AArch64.Optimized.InverseScale`, which this module and modules that import it used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.AArch64.Optimized.Inverse
+open VG VG.AArch64
+open VG.Proof.MlKem.AArch64 (VChg wp_vop)
+
+def scalePairs : List (VReg × VReg) := (List.finRange 4).map fun j => ((regs 7)[j.val],VG.Impl.MlDsa.AArch64.Optimized.Inverse.qt j.val)
+def scaleLoad : List Instr := [.vop (.dupE .s4 .v20 .v30 0),.vop (.dupE .s4 .v21 .v30 1)]
+def scaleCode : List Instr := scaleLoad ++ multiplyCode scalePairs
+
+def scaleValues (v : Vector (BitVec 128) 8) : Vector (BitVec 128) 8 :=
+  Vector.ofFn fun j => if j.val<4 then fastVector v[j.val] (fun _ => 16382) else v[j.val]
+
+def ScaleRoots (s : State) : Prop :=
+  vword (s.v .v30) 0=BitVec.ofInt 32 16382 ∧
+  vword (s.v .v30) 1=BitVec.ofInt 32 (reciprocal 16382)
+
+theorem scaleLoad_ok {s : State} {rest : List Instr} {Q : State → Prop} (h : ScaleRoots s)
+    (k : ∀ t, VChg [.v20,.v21] s t →
+      (∀ e<4, vword (t.v .v20) e=BitVec.ofInt 32 16382) →
+      (∀ e<4, vword (t.v .v21) e=BitVec.ofInt 32 (reciprocal 16382)) → WP isa (.block rest) t Q) :
+    WP isa (.block (scaleLoad ++ rest)) s Q := by
+  refine wp_vop (d := .v20) rfl fun s₁ h₁ => wp_vop (d := .v21) rfl fun t h₂ => ?_
+  refine k t (h₁.chg.trans h₂.chg) ?_ ?_
+  · intro e he
+    rw [h₂.get .v20,h₁.v,VG.AArch64.vword_map2 _ _ _ he]
+    exact h.1
+  · intro e he
+    rw [h₂.v,VG.AArch64.vword_map2 _ _ _ he,h₁.get .v30]
+    exact h.2
+
+theorem scale_geometry :
+    (scalePairs.map Prod.fst).Nodup ∧ (scalePairs.map Prod.snd).Nodup ∧
+    (∀ p∈scalePairs, p.1∉scalePairs.map Prod.snd) ∧
+    (∀ p∈scalePairs, p.2∉scalePairs.map Prod.fst) ∧
+    .v20∉scalePairs.map Prod.fst ∧ .v20∉scalePairs.map Prod.snd ∧
+    .v21∉scalePairs.map Prod.snd ∧ .v31∉scalePairs.map Prod.fst ∧ .v31∉scalePairs.map Prod.snd := by decide +kernel
+
+theorem scale_index (j : Fin 8) :
+    (j.val<4 → ∃ tmp, ((regs 7)[j.val],tmp)∈scalePairs) ∧
+    (¬j.val<4 → (regs 7)[j.val]∉scalePairs.map Prod.snd++scalePairs.map Prod.fst) := by
+  have h : ∀ j : Fin 8,
+      (j.val<4 → ((regs 7)[j.val],VG.Impl.MlDsa.AArch64.Optimized.Inverse.qt j.val)∈scalePairs) ∧
+      (¬j.val<4 → (regs 7)[j.val]∉scalePairs.map Prod.snd++scalePairs.map Prod.fst) := by decide +kernel
+  exact ⟨fun hj => ⟨_,(h j).1 hj⟩,(h j).2⟩
+
+theorem scale_ok {s : State} {rest : List Instr} {Q : State → Prop} {v : Vector (BitVec 128) 8}
+    (hb : Bank s (regs 7) v) (hs : ScaleRoots s)
+    (hq : ∀ e<4, vword (s.v .v31) e=8380417#32)
+    (k : ∀ t, VChg runRegs s t → Bank t (regs 7) (scaleValues v) → WP isa (.block rest) t Q) :
+    WP isa (.block (scaleCode ++ rest)) s Q := by
+  unfold scaleCode
+  rw [List.append_assoc]
+  refine scaleLoad_ok hs fun s₁ hc₁ hz₁ hb₁ => ?_
+  obtain ⟨hd,ht,hdt,htd,hzd,hzt,hbt,hqd,hqt⟩ := scale_geometry
+  have bank₁ : Bank s₁ (regs 7) v := by
+    intro j
+    rw [hc₁.get _ ((show ∀ j : Fin 8, (regs 7)[j.val]∉[.v20,.v21] by decide +kernel) j)]
+    exact hb j
+  have hq₁ : ∀ e<4, vword (s₁.v .v31) e=8380417#32 := by
+    intro e he
+    rw [hc₁.get .v31 (by decide)]
+    exact hq e he
+  have heq : multiplyCode scalePairs=
+      scalePairs.map (fun p => Instr.vop (.sqdmulh p.2 p.1 .v21)) ++
+      (scalePairs.map Prod.fst).map (fun d => Instr.vop (.mul d d .v20)) ++
+      scalePairs.map (fun p => Instr.vop (.mls p.1 p.2 .v31)) := by
+    simp only [multiplyCode,List.map_map,Function.comp_def]
+  rw [heq]
+  refine multiply_batch_ok scalePairs .v20 .v21 .v31 hd ht hdt htd hzd hzt hbt hqd hqt
+    (z := fun _ => 16382) (by intro e he; decide) hz₁ hb₁ hq₁ fun t hc₂ hv => ?_
+  refine k t (VChg.mono (hc₁.trans hc₂) (by decide +kernel)) ?_
+  intro j
+  simp only [scaleValues,Vector.getElem_ofFn]
+  by_cases hj : j.val<4
+  · rw [ite_eq_left hj]
+    obtain ⟨tmp,htmp⟩ := (scale_index j).1 hj
+    apply VG.AArch64.vec_ext
+    intro e he
+    rw [hv _ htmp e he,bank₁ j,fastVector_word _ _ he]
+  · rw [ite_eq_right hj,hc₂.get _ ((scale_index j).2 hj)]
+    exact bank₁ j
+
+end VG.Proof.MlDsa.AArch64.Optimized.Inverse
+
+end
+
+end
+
+/-! ### `MlDsa.AArch64.Optimized.InverseFinalRoots`, which this module and modules that import it used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.AArch64.Optimized.Inverse
+open VG VG.AArch64
+open VG.Proof.MlKem.AArch64 (VChg)
+
+def finalValue (i : Nat) : Nat :=
+  if i<4 then VG.Impl.MlDsa.AArch64.Optimized.Inverse.z (7-i)
+  else if i<6 then VG.Impl.MlDsa.AArch64.Optimized.Inverse.z (3-(i-4))
+  else (VG.Impl.MlDsa.AArch64.Optimized.Inverse.z 1*16382)%8380417
+
+def finalZ (i : Nat) (_e : Nat) : Int := finalValue i
+
+def finalRootReg (i : Nat) : VReg := if i<4 then .v22 else if i<6 then .v23 else .v30
+def finalRecipReg (i : Nat) : VReg := if i<4 then .v28 else if i<6 then .v29 else .v30
+def finalRootLane (i : Nat) : Nat := if i<4 then i else if i<6 then i-4 else 2
+def finalRecipLane (i : Nat) : Nat := if i<4 then i else if i<6 then i-4 else 3
+
+def finalLoad (i : Nat) : List Instr :=
+  [.vop (.dupE .s4 .v20 (finalRootReg i) (finalRootLane i)),
+   .vop (.dupE .s4 .v21 (finalRecipReg i) (finalRecipLane i))]
+
+structure FinalRoots (s : State) : Prop where
+  root : ∀ i : Fin 7, vword (s.v (finalRootReg i.val)) (finalRootLane i.val)=BitVec.ofInt 32 (finalZ i.val 0)
+  recip : ∀ i : Fin 7, vword (s.v (finalRecipReg i.val)) (finalRecipLane i.val)=BitVec.ofInt 32 (reciprocal (finalZ i.val 0))
+  q : ∀ e<4, vword (s.v .v31) e=8380417#32
+
+def finalConstants : List VReg := [.v22,.v23,.v28,.v29,.v30,.v31]
+
+theorem FinalRoots.frame {s t : State} {vs : List VReg} (h : FinalRoots s)
+    (hc : VChg vs s t) (hv : ∀ r∈finalConstants, r∉vs) : FinalRoots t := by
+  refine ⟨?_,?_,?_⟩
+  · intro i
+    rw [hc.get _ (hv _ ((show ∀ i : Fin 7, finalRootReg i.val∈finalConstants by decide +kernel) i))]
+    exact h.root i
+  · intro i
+    rw [hc.get _ (hv _ ((show ∀ i : Fin 7, finalRecipReg i.val∈finalConstants by decide +kernel) i))]
+    exact h.recip i
+  · intro e he
+    rw [hc.get _ (hv _ (by decide))]
+    exact h.q e he
+
+theorem finalZ_range (i e : Nat) : 0≤finalZ i e ∧ finalZ i e<8380417 := by
+  have hz (j : Nat) : VG.Impl.MlDsa.AArch64.Optimized.Inverse.z j<8380417 := Nat.mod_lt _ (by decide)
+  have hv : finalValue i<8380417 := by
+    unfold finalValue
+    repeat' split
+    · exact hz _
+    · exact hz _
+    · exact Nat.mod_lt _ (by decide)
+  exact ⟨Int.natCast_nonneg _,Int.ofNat_lt.mpr hv⟩
+
+theorem finalLoad_ok (i : Fin 7) {s : State} {rest : List Instr} {Q : State → Prop}
+    (h : FinalRoots s)
+    (k : ∀ t, VChg [.v20,.v21] s t → FinalRoots t →
+      (∀ e<4, vword (t.v .v20) e=BitVec.ofInt 32 (finalZ i.val e)) →
+      (∀ e<4, vword (t.v .v21) e=BitVec.ofInt 32 (reciprocal (finalZ i.val e))) →
+      WP isa (.block rest) t Q) :
+    WP isa (.block (finalLoad i.val ++ rest)) s Q := by
+  have hi : finalRootLane i.val<4 ∧ finalRecipLane i.val<4 ∧ finalRecipReg i.val≠.v20 :=
+    (show ∀ i : Fin 7, finalRootLane i.val<4 ∧ finalRecipLane i.val<4 ∧ finalRecipReg i.val≠.v20 by decide +kernel) i
+  unfold finalLoad
+  simp only [List.cons_append,List.nil_append]
+  have he (t : State) (d a : VReg) (j : Nat) (hj : j<4) :
+      (VOp.dupE .s4 d a j).eval t=some (d,
+        VArr.s4.map2 (fun w _ _ => (t.v a).extractLsb' (w*j) w) 0 0) := by
+    simp only [reduceVOpEval,VArr.esize,show 128/32=4 by decide,hj,ite_true]
+  refine VG.Proof.MlKem.AArch64.wp_vop (he s .v20 _ _ hi.1) fun s₁ h₁ =>
+    VG.Proof.MlKem.AArch64.wp_vop (he s₁ .v21 _ _ hi.2.1) fun t h₂ => ?_
+  have hc' : VChg [.v20,.v21] s t := h₁.chg.trans h₂.chg
+  refine k t hc' (h.frame hc' (by decide)) ?_ ?_
+  · intro e he
+    rw [h₂.get .v20,h₁.v,VG.AArch64.vword_map2 _ _ _ he]
+    exact h.root i
+  · intro e he
+    rw [h₂.v,VG.AArch64.vword_map2 _ _ _ he,h₁.get _ hi.2.2]
+    exact h.recip i
+
+def finalPlan : RootPlan where
+  load := finalLoad
+  value := finalZ
+  invariant := FinalRoots
+  range i e _ := finalZ_range i.val e
+  stable i _ _ hc hs := hs.frame hc ((show ∀ i : Fin 7, ∀ r∈finalConstants, r∉stageClobs i.val by decide +kernel) i)
+  load_ok i _ _ _ hs k := finalLoad_ok i hs fun t hc ht hz hb => k t hc ht hz hb ht.q
+
+end VG.Proof.MlDsa.AArch64.Optimized.Inverse
+
+end
+
+end
 
 /-! ### `MlDsa.AArch64.Optimized.InverseFinalStore`, which only this module used -/
 

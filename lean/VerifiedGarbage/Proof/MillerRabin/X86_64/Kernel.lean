@@ -7,9 +7,6 @@ import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 public import VerifiedGarbage.Proof.MillerRabin.Keeps
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.Backend
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerSave
-import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerRound
-import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerKept
-import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerContext
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-! ### `MillerRabin.X86_64.CallerCall`, which only this module used -/

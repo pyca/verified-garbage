@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.Candidate
 public import VerifiedGarbage.Impl.EcKey.Compressed.Root
-public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.RootPow
 import VerifiedGarbage.Proof.EcKey.Compressed.Arm.Frame
 public import VerifiedGarbage.Proof.Weierstrass.Arm.Ladder
 import VerifiedGarbage.Proof.Weierstrass.RootTonelli
@@ -21,7 +20,7 @@ import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
 import VerifiedGarbage.Proof.Ecdsa.Arm.Lays
 import VerifiedGarbage.Proof.Mont.Words
 import VerifiedGarbage.Spec.Weierstrass
-import VerifiedGarbage.Proof.Weierstrass.RootPowers
+import VerifiedGarbage.Proof.Weierstrass.Sqrt
 public import VerifiedGarbage.Impl.Ecdsa.Arm
 public import VerifiedGarbage.Proof.Mont.Arm.Words
 public import VerifiedGarbage.Proof.Weierstrass.Env

@@ -10,11 +10,10 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Dsa.Arm.Gen.Bytes
+public import VerifiedGarbage.Proof.Dsa.Arm.Gen.Bytes
 public import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.ShapeOctets
 import VerifiedGarbage.Proof.Dsa.Generation.QShapeMemory
 import VerifiedGarbage.Proof.Framework.WriteBytes
-public import VerifiedGarbage.Proof.Dsa.Arm.Gen.St
 public import VerifiedGarbage.Proof.Rsa.Arm.Stage.VP
 import VerifiedGarbage.Proof.Dsa.Generation.QCandidate
 import VerifiedGarbage.Proof.Dsa.Generation.Memory

@@ -1,14 +1,13 @@
 module
 
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeometryWork
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeometryWork
 import Mathlib.Data.Nat.Basic
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Context
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeometryPrime
 import VerifiedGarbage.Proof.Framework.OmegaLit
 import VerifiedGarbage.Proof.Framework.TaintBatch
 import VerifiedGarbage.TCB.Registration
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.BufferSeparate
 import VerifiedGarbage.Proof.Bignum.Octets
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeState
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeCall

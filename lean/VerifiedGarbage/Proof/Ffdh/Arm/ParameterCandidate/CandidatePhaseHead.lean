@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.Arm.Workspace
-public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.PhaseState
 public import VerifiedGarbage.Proof.X25519.Arm.Instr
 public import Batteries.Tactic.Init
 public import Batteries.Tactic.PermuteGoals

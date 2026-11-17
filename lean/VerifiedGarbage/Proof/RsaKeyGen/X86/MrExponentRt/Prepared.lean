@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.RsaKeyGen.RandMemory
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Ptr
 import VerifiedGarbage.Proof.Mont.X86.Instr
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.MrExponentRt
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.ExponentReady
 public import VerifiedGarbage.Proof.MillerRabin.X86.WorkspaceFrame
 public import VerifiedGarbage.Proof.MillerRabin.Contract
 public import VerifiedGarbage.Proof.Mont.X86.WordOps
@@ -31,7 +30,6 @@ import VerifiedGarbage.Proof.MillerRabin.X86.Caller
 import VerifiedGarbage.Proof.Mont.RangeCover
 import VerifiedGarbage.Proof.Rc2.PairMem
 import VerifiedGarbage.Proof.Framework.AddrArith
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.LowPairScan
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.PreparedR2State
 import VerifiedGarbage.Proof.RsaKeyGen.X86.FilterStack
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.SieveStack
@@ -39,8 +37,6 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.WorkspaceDisjoint
 import VerifiedGarbage.Proof.Bignum.MemoryFrame
 import VerifiedGarbage.Proof.Framework.X86.AllocFrame
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.PrepareRt
-import VerifiedGarbage.Proof.RsaKeyGen.X86.PrepareRt.Zero
-import VerifiedGarbage.Proof.RsaKeyGen.X86.PrepareRt.Doubles
 import VerifiedGarbage.Proof.RsaKeyGen.X86.PreparedCopy
 import VerifiedGarbage.Proof.RsaKeyGen.X86.WitnessRt.Blocks
 import VerifiedGarbage.Proof.MillerRabin.X86.Multiply

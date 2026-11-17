@@ -28,7 +28,6 @@ import VerifiedGarbage.Proof.Dsa.AArch64.Prepare
 import VerifiedGarbage.Proof.Dsa.AArch64.ZeroHead
 import VerifiedGarbage.Proof.Dsa.AArch64.OneScan
 public import VerifiedGarbage.Proof.Dsa.AArch64.CallHeader
-public import VerifiedGarbage.Proof.Dsa.AArch64.Return
 
 /-! ### `Dsa.AArch64.CheckCall`, which this module and modules that import it used -/
 

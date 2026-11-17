@@ -8,7 +8,7 @@ public import VerifiedGarbage.Proof.Framework.Contract
 import Mathlib.Tactic.IntervalCases
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyCallGeometry
 public import VerifiedGarbage.Proof.Mont.X86.Compact.Frame
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeySized
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyBody
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyFrameResult
@@ -24,14 +24,12 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyExport
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyGeometry
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.WriteOutputs
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyArgContext
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyEnvironment
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyOutcome
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyScratchFrame
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyInput
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.StackRange
 import VerifiedGarbage.Proof.Framework.X86.Call
 import VerifiedGarbage.Proof.Rsa.X86.KeyWs
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyBody
 import VerifiedGarbage.Impl.RsaKeyGen.X86.Key
 import VerifiedGarbage.Proof.Mont.X86.Words
 import Mathlib.Algebra.Group.Nat.Defs
@@ -45,7 +43,6 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.ContextArgument
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Address
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Ops
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Zero
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyDSelectTiming
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyOutputMap
 import VerifiedGarbage.Proof.Rsa.KeyWorkspace
 import VerifiedGarbage.Proof.Bignum.MemoryFrame

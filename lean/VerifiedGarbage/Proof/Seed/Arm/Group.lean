@@ -31,7 +31,7 @@ section
 /-!
 # The steps of a round, lane by lane
 
-As on AArch64 (`Proof/Seed/AArch64/Steps.lean`): each step of the round
+As on AArch64 (`Proof/Seed/AArch64/Round.lean`): each step of the round
 (`step1` … `step4`) on one lane meets its `LaneSpec` (`LaneOk`); `lanes_ok`
 then gives it on all eight. The halves `L` and `R` are at `l` and `r`, the
 arrays of `L0`/`R0`, whose second words are 8 slots on.

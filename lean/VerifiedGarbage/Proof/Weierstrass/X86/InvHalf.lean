@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Weierstrass.X86.InvRedMath
 import VerifiedGarbage.Proof.Mont.X86.Ops
 import VerifiedGarbage.Proof.Weierstrass.X86.InvShift
 public import VerifiedGarbage.Proof.Weierstrass.X86.InvLinear
-import VerifiedGarbage.Proof.Divstep.Tc32Words
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
 public import Mathlib.Algebra.Order.Group.Unbundled.Abs

@@ -1,12 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPss.X86_64.ChkFrame
-public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyBlocks
+public import VerifiedGarbage.Proof.RsaPss.X86_64.PrefixCheck
 public import VerifiedGarbage.Proof.RsaPss.X86_64.Safe
 public import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
 import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyBody
-import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyMain
-import VerifiedGarbage.Proof.RsaPss.X86_64.PrefixCheck
 import VerifiedGarbage.Proof.RsaPss.X86_64.SignCall
 import VerifiedGarbage.Proof.RsaPss.X86_64.Loops
 import VerifiedGarbage.Proof.RsaPss.EncBytes

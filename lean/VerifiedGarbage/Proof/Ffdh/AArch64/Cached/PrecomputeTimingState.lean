@@ -33,7 +33,6 @@ import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.InverseUnique
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PolicyRecognizeTimingState
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.TableTiming
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.DomainFacts
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PolicyRecognize
 public import VerifiedGarbage.Proof.Ffdh.KeyScalar
 public import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup
 public import VerifiedGarbage.Proof.Bignum.AArch64.PubR2

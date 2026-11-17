@@ -10,7 +10,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.CrtStages
 import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowEnterCT
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowCopyCT
 import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowCopy
-import VerifiedGarbage.Proof.Bignum.Arm.CrtSavedSources
 import VerifiedGarbage.Proof.Bignum.Arm.SavedOperandLayout
 import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowEnter
 import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedWorkspace

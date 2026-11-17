@@ -1,9 +1,8 @@
 module
+
 public import VerifiedGarbage.Impl.Rsa.AArch64.WindowShared
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTable
-public import VerifiedGarbage.Proof.Bignum.AArch64.WindowRawTriangle
-
-import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedStep
+public import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedStep
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.WindowShared

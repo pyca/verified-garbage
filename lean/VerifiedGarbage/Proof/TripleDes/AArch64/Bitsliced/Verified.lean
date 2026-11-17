@@ -28,7 +28,6 @@ import Batteries.Tactic.Init
 import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Proof.TripleDes.Bitslice.Pass
 import VerifiedGarbage.Proof.Framework.AArch64.StraightV
-import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Pass
 
 /-! ### `TripleDes.AArch64.Bitsliced.Loop`, which only this module used -/
 

@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.RsaKeyGen.X86.PreparedR2State
 public import VerifiedGarbage.Proof.MillerRabin.X86.TimingBase
 public import VerifiedGarbage.Impl.Rsa.X86.KeyWs
 public import VerifiedGarbage.Proof.Framework.X86.Call
-
 import VerifiedGarbage.Proof.RsaKeyGen.X86.PreparedR2Doubles
 import VerifiedGarbage.Proof.MillerRabin.X86.TimingCopy
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
@@ -13,9 +12,9 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.PreparedContext
 import VerifiedGarbage.Proof.MillerRabin.X86.TimingMultiply
 import VerifiedGarbage.Proof.RsaKeyGen.X86.FastR2Square
 import VerifiedGarbage.Impl.RsaKeyGen.X86.FastR2
-import VerifiedGarbage.Proof.MillerRabin.X86.TimingBlocks
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.KernelRfl
+
 /-! # Complete fast prepared R² setup has a candidate-independent trace -/
 
 -- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/PreparedR2TimingSquares.lean`, which only this module imported.

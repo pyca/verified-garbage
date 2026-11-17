@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Dsa.X86.RandomTwo
 meta import VerifiedGarbage.Proof.Ffdh.X86.Cached.Search.Classify
 meta import VerifiedGarbage.Proof.Dsa.X86.RandomTwo
 meta import VerifiedGarbage.Proof.Ffdh.X86.Cached.Search.Entry
-public import VerifiedGarbage.Proof.Ffdh.X86.Cached.Search.Steps
+public import VerifiedGarbage.Proof.Ffdh.X86.Cached.Search.Frame
 public import VerifiedGarbage.Proof.Framework.X86.AllocFrame
 public import VerifiedGarbage.Proof.Framework.X86.RelCT
 meta import VerifiedGarbage.Proof.Mont.X86.Instr

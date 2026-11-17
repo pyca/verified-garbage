@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.GeneratorStep
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
-public import VerifiedGarbage.Proof.Dsa.X86_64.Return
+public import VerifiedGarbage.Proof.Dsa.X86_64.CallHeader
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorPlan
 public import VerifiedGarbage.Spec.Dsa.Generate
 import VerifiedGarbage.Proof.Framework.Omega

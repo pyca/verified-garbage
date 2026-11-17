@@ -1,9 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.Arm.Words
-public import VerifiedGarbage.Proof.Argon2.Arm.Derive.Clear
+public import VerifiedGarbage.Proof.Argon2.Arm.Derive.MemoryInit
 public import VerifiedGarbage.Proof.Argon2.Matrix
-import VerifiedGarbage.Proof.Argon2.Arm.Derive.MemoryInit
 import VerifiedGarbage.Proof.Argon2.Arm.Derive.Locals
 import VerifiedGarbage.Proof.Blake2.Arm.Stream.Common
 import VerifiedGarbage.Proof.Argon2.FillStep

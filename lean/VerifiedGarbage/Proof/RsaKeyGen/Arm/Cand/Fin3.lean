@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Mr11
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Mont7
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Mont5
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Seqs
-import VerifiedGarbage.Proof.MillerRabin.Arm.Words
+import VerifiedGarbage.Proof.MillerRabin.Arm.Body
 
 /-! # A candidate on ARMv7: Miller–Rabin's result (`mrPart_vp`)
 

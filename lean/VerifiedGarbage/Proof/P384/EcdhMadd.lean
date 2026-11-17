@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Impl.P384.EcdhMadd
 import VerifiedGarbage.Proof.P384.Ops
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.WinJStep
-import VerifiedGarbage.Proof.Weierstrass.AArch64.WinJNorm
 import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
 
 /-!

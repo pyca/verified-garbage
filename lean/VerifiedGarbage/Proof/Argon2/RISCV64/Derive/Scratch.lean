@@ -5,9 +5,8 @@ public import VerifiedGarbage.Proof.Argon2.RISCV64.HPrime.Frame
 import VerifiedGarbage.Proof.Blake2.Scratch
 import VerifiedGarbage.Proof.Argon2.HPrime
 import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Body
+public import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Locals
 public import VerifiedGarbage.Proof.Argon2.RISCV64.Ops
-import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Locals
 
 /-!
 # Argon2 on RISC-V: `scratch` in the derivation

@@ -14,7 +14,7 @@ public import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.X25519.PPC64LE.Pass
-import VerifiedGarbage.Proof.X448.PPC64LE.Mul
+import VerifiedGarbage.Proof.X448.PPC64LE.Slots
 import VerifiedGarbage.Proof.Framework.PPC64LE.Spill
 import VerifiedGarbage.Proof.Framework.AddrArith
 

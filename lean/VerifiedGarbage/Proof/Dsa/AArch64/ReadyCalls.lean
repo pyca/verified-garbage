@@ -11,7 +11,6 @@ import VerifiedGarbage.Proof.Dsa.AArch64.Reduce
 import VerifiedGarbage.Proof.Dsa.AArch64.Add
 public import VerifiedGarbage.Proof.Dsa.AArch64.Execution
 import VerifiedGarbage.Proof.Dsa.Layout
-public import VerifiedGarbage.Proof.Dsa.AArch64.Arguments
 
 /-! ### `Dsa.AArch64.Arguments2`, which this module and modules that import it used -/
 

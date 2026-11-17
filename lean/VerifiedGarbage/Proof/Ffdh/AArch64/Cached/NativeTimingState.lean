@@ -22,10 +22,9 @@ public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.SourceEncoding
 public import VerifiedGarbage.Proof.Ffdh.Domain
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.SourceSlices
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.MemoryState
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.OutputFrame
+public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.Finish
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.SampleMask
 public import VerifiedGarbage.Proof.Ffdh.VettedPolicy
-public import VerifiedGarbage.Proof.Ffdh.AArch64.GenerateKey.Cut
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.WorkspaceState
 public import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.GetElem
@@ -38,7 +37,6 @@ public import VerifiedGarbage.Spec.Ffdh.CachedKeyGenerationContract
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.Frame
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.RangeFrame
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.Comb
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.Finish
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.Clear
 public import VerifiedGarbage.Proof.Ffdh.KeyScalar
 public import VerifiedGarbage.Proof.Ffdh.Power

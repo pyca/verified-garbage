@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Table
 
 /-! ### `MlDsa.AArch64.Arith.Neon.PackedTable`, which this module and modules that import it used -/
 

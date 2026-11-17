@@ -5,9 +5,8 @@ import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseDCT
 import VerifiedGarbage.Proof.MlDsa.Arm.Sign.CopyTr
 import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseCCT
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseK
-public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PrimsD
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseD
 import VerifiedGarbage.Proof.MlDsa.Round.Decompose
-public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseL
 import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
 
 /-! ### `MlDsa.Arm.Sign.Correct`, which this module and modules that import it used -/

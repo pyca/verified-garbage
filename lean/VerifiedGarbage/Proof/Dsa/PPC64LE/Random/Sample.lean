@@ -5,7 +5,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Random.Q
 public import VerifiedGarbage.Proof.Dsa.RandomResult
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.Random.Copy
 import VerifiedGarbage.Proof.Bignum.Octets
 public import VerifiedGarbage.Proof.Dsa.RandomRange
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreLoad

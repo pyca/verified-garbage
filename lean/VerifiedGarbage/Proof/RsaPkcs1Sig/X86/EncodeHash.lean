@@ -2,13 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.EncodeDispatch
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.EncodeChecks
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.EncodeWrite
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.EncodeWrite
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.EncodeCopy
 import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! ### `RsaPkcs1Sig.X86.EncodeContext`, which this module and modules that import it used -/

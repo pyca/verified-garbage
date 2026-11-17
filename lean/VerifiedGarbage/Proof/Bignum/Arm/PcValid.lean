@@ -13,7 +13,6 @@ import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeCT
 public import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeState
 public import VerifiedGarbage.Proof.Framework.RelCT
-public import VerifiedGarbage.Proof.Bignum.Arm.R2Kernel
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 
 /-! ### `Bignum.Arm.PublicPrecomputeKernel`, which this module and modules that import it used -/

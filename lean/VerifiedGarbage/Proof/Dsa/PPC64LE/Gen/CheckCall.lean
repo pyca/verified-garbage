@@ -1,13 +1,12 @@
 module
 
-import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.Test
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.Test
 public import VerifiedGarbage.Spec.Dsa.Derive
 public import VerifiedGarbage.Proof.Dsa.Contract
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.Bytes
 public import VerifiedGarbage.Proof.Framework.Covers
 public import VerifiedGarbage.Proof.Framework.Inline
 public import VerifiedGarbage.Proof.Framework.PPC64LE.CallAny

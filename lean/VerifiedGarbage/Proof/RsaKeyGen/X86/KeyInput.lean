@@ -1,7 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyGeometry
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyEnvironment
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyGeometry
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyStageFrame
 import VerifiedGarbage.Proof.Framework.Omega
 

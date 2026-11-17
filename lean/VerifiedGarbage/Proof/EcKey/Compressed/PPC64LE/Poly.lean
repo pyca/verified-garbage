@@ -15,7 +15,7 @@ public import VerifiedGarbage.Proof.Weierstrass.Unch
 
 `ops_core`: a field program on the signature's slots (`fprog` of named
 slots), from a state holding its inputs below `m`, as ECDH's `curve_core`
-(`Proof/Ecdh/PPC64LE/Validate.lean`) for any program. `rhs_ok`: `rhsOps`
+(`Proof/Ecdh/PPC64LE/Main.lean`) for any program. `rhs_ok`: `rhsOps`
 computes `x³ + a x + b` to `W2`, in Montgomery form; `checkPoly_ok`:
 `checkRootOps` computes `y² - rhs` to `W3`.
 -/

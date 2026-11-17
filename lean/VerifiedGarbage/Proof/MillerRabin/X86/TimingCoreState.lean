@@ -3,11 +3,9 @@ module
 public import VerifiedGarbage.Proof.MillerRabin.X86.TimingSquares
 public import VerifiedGarbage.Proof.MillerRabin.X86.RoundFrame
 public import VerifiedGarbage.Proof.RsaKeyGen.MrWindow
-public import VerifiedGarbage.Proof.MillerRabin.X86.TimingPrivate
 public import VerifiedGarbage.Proof.MillerRabin.X86.Stage
-public import VerifiedGarbage.Proof.MillerRabin.X86.WindowState
-public import VerifiedGarbage.Proof.MillerRabin.X86.TimingMultiply
 public import VerifiedGarbage.Proof.MillerRabin.X86.StageLoadWord
+public import VerifiedGarbage.Proof.MillerRabin.X86.TimingMultiply
 public import VerifiedGarbage.Impl.MillerRabin.X86.Round
 public import VerifiedGarbage.Proof.MillerRabin.X86.Context
 public import VerifiedGarbage.Proof.MillerRabin.X86.TimingCopy
@@ -16,36 +14,200 @@ import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.MillerRabin.X86.TimingPointers
 import VerifiedGarbage.Proof.Framework.KernelRfl
-import VerifiedGarbage.Proof.MillerRabin.X86.MaskMath
-import VerifiedGarbage.Proof.MillerRabin.X86.Scalar
+import VerifiedGarbage.Proof.MillerRabin.X86.DataSquareControl
 public import VerifiedGarbage.Impl.MillerRabin.X86.Layout
 import VerifiedGarbage.Proof.Mont.Words
 import VerifiedGarbage.Proof.MillerRabin.X86.TimingBase
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.X86.Call
-import VerifiedGarbage.Proof.MillerRabin.X86.StageCopy
-import VerifiedGarbage.Proof.MillerRabin.X86.RoundArrayFrame
 public import VerifiedGarbage.Proof.MillerRabin.X86.TableMath
 import VerifiedGarbage.Proof.MillerRabin.X86.DataScalar
 import VerifiedGarbage.Proof.MillerRabin.X86.StageSlots
 import VerifiedGarbage.Proof.MillerRabin.X86.RoundScalarFrame
 import VerifiedGarbage.Proof.MillerRabin.X86.Copy
-import VerifiedGarbage.Proof.MillerRabin.X86.StageLiteral
 public import VerifiedGarbage.Impl.MillerRabin.X86.Ops
-import VerifiedGarbage.Proof.MillerRabin.X86.StageMultiply
 public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Loops
 public import VerifiedGarbage.Proof.MillerRabin.ExponentWords32
-import VerifiedGarbage.Proof.MillerRabin.X86.SquareStep
-public import VerifiedGarbage.Proof.MillerRabin.X86.SquareState
 public import VerifiedGarbage.Proof.Mont.Words32
 import VerifiedGarbage.Proof.MillerRabin.X86.Data
 import VerifiedGarbage.Proof.MillerRabin.X86.WorkspaceFrame
-import VerifiedGarbage.Proof.MillerRabin.X86.MarkerPointer
 public import VerifiedGarbage.TCB.Code
 public import VerifiedGarbage.Proof.Mont.X86.Rt.Base
 public import VerifiedGarbage.Proof.MillerRabin.Word32
+import VerifiedGarbage.Proof.MillerRabin.X86.ModulusKeep
+
+/-! ### `MillerRabin.X86.MarkerPointer`, which only this module used -/
+
+section
+
+/-! # The exponent marker is addressed using only the prepared public width -/
+
+@[expose] public section
+namespace VG.Proof.MillerRabin.X86
+open VG VG.X86 VG.X86.Wp VG.Impl.MillerRabin.X86
+open VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt
+
+theorem Geometry.Valid.markerFit {g : Geometry} (v : g.Valid) :
+    g.array aExponent + 4 * g.words + 8 ≤ g.L := by
+  have fit := v.arraysFit
+  unfold Geometry.array Geometry.words aExponent Proof.Rsa.Mont.arrAt Proof.Rsa.Mont.hdrBytes at *
+  omega_using [fit]
+
+theorem markerPointer_ok {g : Geometry} (v : g.Valid) {s : State} (C : Context g s) :
+    WP isa (.block markerPointer) s fun t =>
+      PtrAt t g.W .ebp (g.array aExponent + 4 * g.words) ∧
+      t.mem = s.mem ∧ Keeps [.eax, .edx, .ebp, .esi] s t := by
+  unfold markerPointer
+  rw [List.append_assoc]
+  refine WP.block_append (WP.mono (C.ptr v aExponent (by decide) .ebp (by decide) (by decide))
+    fun a ⟨P, Ma, Ka⟩ => ?_)
+  have Ca := C.keepMem Ka (by decide) Ma
+  refine WP.block_append (WP.mono (words_ok v Ca) fun b ⟨Count, Mb, Kb⟩ => ?_)
+  refine wp_movS rfl fun c D _ => wp_addS rfl fun d H _ => wp_addS rfl fun e I _ => ?_
+  have Ke : Keeps [.eax, .edx, .ebp, .esi] s e :=
+    (((((Ka.mono (by decide)).trans (Kb.mono (by decide))).widen D.keeps).widen H.keeps).widen I.keeps)
+  have bp : PtrAt e g.W .ebp (g.array aExponent) := by
+    rw [PtrAt, I.other .ebp (by decide), H.other .ebp (by decide), D.other .ebp (by decide),
+      Kb.1 .ebp (by decide)]; exact P
+  have width : (e.gpr .eax).toNat = 4 * g.words := by
+    rw [I.gpr, H.gpr, D.gpr]
+    simp only [BitVec.toNat_add, Count]
+    have bound := v.maxWidth
+    unfold Geometry.words
+    omega_using [bound]
+  refine wp_addS rfl fun t T _ => WP.block_nil ?_
+  refine ⟨?_, ?_, Ke.widen T.keeps⟩
+  · rw [PtrAt, T.gpr, ptr_add bp, width]
+  · rw [T.mem, I.mem, H.mem, D.mem, Mb, Ma]
+
+end VG.Proof.MillerRabin.X86
+
+end
+
+end
+
+/-! ### `MillerRabin.X86.StageLiteral`, which only this module used -/
+
+section
+
+/-! # Initialize a public counter without disturbing prepared round data -/
+
+@[expose] public section
+namespace VG.Proof.MillerRabin.X86
+open VG VG.X86 VG.X86.Wp VG.Impl.MillerRabin.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt
+
+theorem Stage.literal {g : Geometry} (v : g.Valid) {capacity c : Nat} {p : BitVec 32}
+    {A : Nat → Nat} {Js : List Nat} {V : Nat → BitVec 32} {Ds : List Nat} {s : State}
+    (S : Stage g capacity c p A Js V Ds s) (d : Nat) (scratch : scratchWord d) (value : BitVec 32) :
+    WP isa (.block [.mov .eax (.imm value), .store (slot d) .eax]) s fun t =>
+      Stage g capacity c p A Js (setAt V d value) (d :: Ds) t ∧
+      WorkspaceFrame g (roundWrites g) s.mem t.mem ∧ Keeps [.eax] s t := by
+  have fit : d + 4 ≤ g.L := Nat.le_trans (scratch_fit scratch) v.headerFit
+  refine wp_movS rfl fun a A₁ _ => ?_
+  have Ca := S.data.context.keepMem A₁.keeps (by decide) A₁.mem
+  refine wp_storeS (ea_ptr Ca.ws Ca.base (d := d) (by omega_using [fit]))
+    (ws_write Ca.ws (y := 0 + d) (n := 4) (by omega_using [fit])) fun t T => WP.block_nil ?_
+  have O : Outside g.W d 4 s.mem t.mem := by
+    rw [T.mem, Nat.zero_add, A₁.mem]
+    exact writeW32_outside _ _ _ (by have := S.data.context.ws.nowrap; omega_using [fit, this])
+  have K : Keeps [.eax] s t := A₁.keeps.widen (T.keeps [])
+  have C := S.data.context.keepScalar K (by decide) O scratch
+  have stored : t.mem.readW (off g.W d) 32 = value := by
+    rw [T.mem, Nat.zero_add, Mem.readW_writeW_self32, A₁.gpr]
+  have D := S.data.afterScalar v C d scratch value O stored
+  have outs := Outs.of_outside O (rs := slotWrites [d]) (List.mem_singleton_self _)
+  exact ⟨S.afterSlots v D [d] (by intro e mem; obtain rfl := List.mem_singleton.mp mem; exact scratch)
+    outs K (by decide), scalar_roundFrame S.data.context.ws.nowrap (rs := [d])
+      (by intro e mem; obtain rfl := List.mem_singleton.mp mem; exact scratch) outs, K⟩
+
+end VG.Proof.MillerRabin.X86
+
+end
+
+end
+
+/-! ### `MillerRabin.X86.StageCopy`, which only this module used -/
+
+section
+
+/-! # Array copies preserve all invariants needed by the next prepared product -/
+
+-- Formerly `VerifiedGarbage/Proof/MillerRabin/X86/DataCopy.lean`, which only this module imported.
+section
+
+/-! # Copying a prepared array as a value-state transition -/
+
+section
+namespace VG.Proof.MillerRabin.X86
+open VG VG.X86 VG.Impl.MillerRabin.X86 VG.Proof.Mont VG.Proof.Mont.X86
+
+theorem Data.copy {g : Geometry} (v : g.Valid) {A : Nat → Nat} {Js : List Nat}
+    {V : Nat → BitVec 32} {Ds : List Nat} {s : State} (D : Data g A Js V Ds s)
+    (dst src : Nat) (dstIndex : dst < 28) (srcKnown : src ∈ Js) :
+    WP isa (copy dst src) s fun t =>
+      Data g (setAt A dst (A src)) (dst :: Js) V Ds t ∧
+      Outside g.W (g.array dst) (4 * g.words) s.mem t.mem ∧
+      Keeps [.eax, .ebx, .edx, .ebp, .esi] s t := by
+  have source := D.arrayValues src srcKnown
+  refine WP.mono (copy_ok v D.context dst src dstIndex source.1) fun t ⟨Value, O, K, C⟩ => ?_
+  refine ⟨⟨C, ?_, ?_⟩, O, K⟩
+  · intro j known
+    by_cases same : j = dst
+    · subst j
+      exact ⟨dstIndex, by rw [setAt_self, Value, source.2]⟩
+    · have old : j ∈ Js := by
+        rcases List.mem_cons.mp known with bad | old
+        · exact False.elim (same bad)
+        · exact old
+      obtain ⟨index, read⟩ := D.arrayValues j old
+      have sep := (g.arraysApart dst j).resolve_left (g.array_ne (fun eq => same eq.symm))
+      refine ⟨index, ?_⟩
+      rw [O.val32 (by omega) (by have := v.arrayFit index; have := C.ws.nowrap; omega), read,
+        setAt_other A (A src) same]
+  · intro d known
+    obtain ⟨scratch, read⟩ := D.slotValues d known
+    refine ⟨scratch, ?_⟩
+    have header := v.arrayHeader dst
+    have bound := scratch_fit scratch
+    have unchanged := BitVec.eq_of_toNat_eq (O.w32 (d := d) (by omega) (by omega))
+    exact unchanged.trans read
+
+end VG.Proof.MillerRabin.X86
+end
+
+end
+
+@[expose] public section
+namespace VG.Proof.MillerRabin.X86
+open VG VG.X86 VG.Impl.MillerRabin.X86 VG.Proof.Mont VG.Proof.Mont.X86
+
+theorem Stage.copy {g : Geometry} (v : g.Valid) {capacity c : Nat} {p : BitVec 32}
+    {A : Nat → Nat} {Js : List Nat} {V : Nat → BitVec 32} {Ds : List Nat} {s : State}
+    (S : Stage g capacity c p A Js V Ds s)
+    (dst src : Nat) (index : dst < 28) (notMod : 0 < dst) (notScratch : dst ≠ 2 ∧ dst ≠ 3)
+    (source : src ∈ Js) :
+    WP isa (copy dst src) s fun t =>
+      Stage g capacity c p (setAt A dst (A src)) (dst :: Js) V Ds t ∧
+      Outside g.W (g.array dst) (4 * g.words) s.mem t.mem ∧
+      Keeps [.eax, .ebx, .edx, .ebp, .esi] s t := by
+  refine WP.mono (S.data.copy v dst src index source) fun t ⟨D, O, K⟩ => ?_
+  refine ⟨⟨D, S.modulus.keepArray v S.data.context.ws.nowrap notMod O, ?_, ?_⟩, O, K⟩
+  · exact S.caller.keepOuts K (by decide) (Outs.of_outside O (List.mem_singleton_self _)) (by
+      intro r mem
+      obtain rfl := List.mem_singleton.mp mem
+      exact v.arrayFit index)
+  · intro j mem
+    rcases List.mem_cons.mp mem with rfl | mem
+    · exact notScratch
+    · exact S.noScratch j mem
+
+end VG.Proof.MillerRabin.X86
+
+end
+
+end
 
 /-! ### `MillerRabin.X86.TimingSquareLoop`, which this module and modules that import it used -/
 

@@ -4,19 +4,17 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterBackend
 public import VerifiedGarbage.Impl.Ffdh.Arm.ParameterSearch
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CTCallState
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CTArguments
-public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CallLayout
+public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CallPost
 public import VerifiedGarbage.Spec.Ffdh.Contract
 public import VerifiedGarbage.Proof.Ffdh.Contract
 public import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CallFacts
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.ArgumentWords
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Call
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Bounds
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 public import VerifiedGarbage.Spec.Ffdh.SievedContract
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Tape
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CallParams
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTFrames
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
 public import VerifiedGarbage.TCB.Code

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeyConstants
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeyBackend
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Contract
 
 /-! The selected controller contract adds exactly its policy's public tables. -/

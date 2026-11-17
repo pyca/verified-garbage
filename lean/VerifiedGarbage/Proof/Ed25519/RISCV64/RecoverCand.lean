@@ -25,7 +25,6 @@ public import VerifiedGarbage.TCB.Artifact
 public import VerifiedGarbage.TCB.RISCV64.Isa
 public import VerifiedGarbage.Impl.Ed25519.RISCV64.FieldMemory
 public import VerifiedGarbage.Spec.Ed25519
-public import VerifiedGarbage.Proof.Ed25519.RISCV64.FieldProg
 import VerifiedGarbage.Proof.Ed25519.RISCV64.Base
 public import VerifiedGarbage.Impl.Ed25519.RISCV64.Freeze
 public import VerifiedGarbage.Proof.Ed25519.RISCV64.Field

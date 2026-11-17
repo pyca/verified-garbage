@@ -1,9 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.ModulusPolicyCT
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PhaseRounds
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.ModulusPolicy
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.LinkCT
-import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.ModulusPolicy
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.LeavePhase
 import VerifiedGarbage.Proof.Framework.Omega
 

@@ -4,7 +4,6 @@ public import VerifiedGarbage.Impl.Ed448.PPC64LE.ScalarBase
 public import VerifiedGarbage.Proof.X448.PPC64LE.Field
 public import VerifiedGarbage.Proof.X448.PPC64LE.Slots
 import VerifiedGarbage.Proof.X25519.PPC64LE.Freeze
-import VerifiedGarbage.Proof.X448.PPC64LE.Mul
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset

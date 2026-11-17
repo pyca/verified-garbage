@@ -8,7 +8,7 @@ public import VerifiedGarbage.Impl.Ffdh.Arm.SharedCheckPublic
 public import VerifiedGarbage.Proof.Ffdh.Arm.PowerAtCT
 public import VerifiedGarbage.Proof.Bignum.Arm.TwoExpMontgomeryCT
 public import VerifiedGarbage.Proof.Bignum.Arm.TwoExpMontgomery
-import VerifiedGarbage.Proof.Ffdh.Arm.PublicPowerInput
+import VerifiedGarbage.Proof.Ffdh.Arm.Subgroup
 import VerifiedGarbage.Proof.Ffdh.Arm.PublicScanCT
 import VerifiedGarbage.Proof.Ffdh.Arm.KeyPowerCT
 import VerifiedGarbage.Proof.Ffdh.Arm.PowerArgs
@@ -51,7 +51,7 @@ import VerifiedGarbage.Proof.Ffdh.Arm.Block
 import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicEntryCT
 import VerifiedGarbage.Proof.Ffdh.Arm.FrameCT
 import VerifiedGarbage.Proof.Ffdh.Arm.Entered
-public import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicFn
+public import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicPre
 import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicSpec
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
@@ -60,7 +60,6 @@ import Init.Data.BitVec.Basic
 public import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.Framework.Lit
 import Batteries.Logic
-import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicPre
 import VerifiedGarbage.Proof.Framework.OffsetBelow
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Arm.Exec

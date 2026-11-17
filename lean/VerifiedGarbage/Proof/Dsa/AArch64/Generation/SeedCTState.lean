@@ -11,7 +11,6 @@ import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SourceFrame
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.QBuild
 import VerifiedGarbage.Proof.Dsa.Arithmetic
 import VerifiedGarbage.Proof.Dsa.Generation.QCandidate
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SubgroupState
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeCallCT
 
 /-! ### `Dsa.AArch64.Generation.SubgroupCTState`, which only this module used -/

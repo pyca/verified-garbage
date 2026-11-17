@@ -10,7 +10,6 @@ public import VerifiedGarbage.Impl.EcKey.Compressed.Root
 public import VerifiedGarbage.Proof.EcKey.Compressed.RISCV64.P224.Root
 import VerifiedGarbage.Proof.Weierstrass.Sqrt
 import VerifiedGarbage.Proof.P224.SqrtTable
-import VerifiedGarbage.Proof.Weierstrass.RootPowers
 import VerifiedGarbage.Proof.Ecdh.RISCV64.P224.PublicKey
 import VerifiedGarbage.Proof.EcKey.Compressed.Parity
 import VerifiedGarbage.Proof.Ecdh.RISCV64.P224.CheckLit

@@ -2,13 +2,102 @@ module
 
 public import VerifiedGarbage.Proof.MillerRabin.X86.Data
 public import VerifiedGarbage.Impl.MillerRabin.X86.Round
-
 import VerifiedGarbage.Proof.MillerRabin.X86.DataSlots
-import VerifiedGarbage.Proof.MillerRabin.X86.Context
-import VerifiedGarbage.Proof.MillerRabin.X86.Scalar
-import VerifiedGarbage.Proof.MillerRabin.X86.FlagMath
+public import VerifiedGarbage.Proof.MillerRabin.X86.Context
 import VerifiedGarbage.Proof.Mont.Words32
 import VerifiedGarbage.Proof.Mont.X86.Rt.Step
+public import VerifiedGarbage.Impl.MillerRabin.X86.Layout
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.X86.Words
+import VerifiedGarbage.Proof.MillerRabin.Word32
+
+/-! ### `MillerRabin.X86.FlagMath`, which this module and modules that import it used -/
+
+section
+
+/-! # Secret square thresholds and window flag updates use only bit operations -/
+
+@[expose] public section
+namespace VG.Proof.MillerRabin.X86
+open VG.Proof.MillerRabin.Word32
+
+theorem squareFlag_value {r q : Nat} (rBound : r < 2 ^ 31) (qBound : q < 2 ^ 31) (E F : Bool) :
+    ((BitVec.ofNat 32 F.toNat) ||| ((BitVec.ofNat 32 E.toNat) &&&
+      ((BitVec.ofNat 32 r - BitVec.ofNat 32 q) >>> 31))).toNat =
+      (F || (E && decide (r < q))).toNat := by
+  have bit : ((BitVec.ofNat 32 r - BitVec.ofNat 32 q) >>> 31) =
+      BitVec.ofNat 32 (decide (r < q)).toNat := by
+    apply BitVec.eq_of_toNat_eq
+    rw [mask_lt rBound qBound]
+    cases decide (r < q) <;> rfl
+  rw [bit]
+  cases F <;> cases E <;> cases decide (r < q) <;> rfl
+
+theorem windowFlag_value {d : Nat} (digit : d < 16) (E1 E2 F : Bool) :
+    let z := (BitVec.ofNat 32 d - 1) >>> 31
+    (((BitVec.ofNat 32 E1.toNat ||| BitVec.ofNat 32 E2.toNat) &&& (z ^^^ 1)) |||
+      (z &&& BitVec.ofNat 32 F.toNat)).toNat =
+      (if d = 0 then F else E1 || E2).toNat := by
+  have bit : ((BitVec.ofNat 32 d - 1) >>> 31) = BitVec.ofNat 32 (decide (d = 0)).toNat := by
+    apply BitVec.eq_of_toNat_eq
+    rw [mask_zero d digit]
+    cases decide (d = 0) <;> rfl
+  dsimp only
+  rw [bit, BitVec.and_comm (BitVec.ofNat 32 (decide (d = 0)).toNat), flag_bits]
+  by_cases zero : d = 0 <;> simp only [zero, decide_true, decide_false, Bool.false_eq_true, ↓reduceIte]
+
+end VG.Proof.MillerRabin.X86
+
+end
+
+end
+
+/-! ### `MillerRabin.X86.Scalar`, which this module and modules that import it used -/
+
+section
+
+/-! # Reads and stores of the round's permitted scratch header words -/
+
+@[expose] public section
+namespace VG.Proof.MillerRabin.X86
+open VG VG.X86 VG.X86.Wp VG.Impl.MillerRabin.X86
+open VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt
+
+theorem Context.readScalar {g : Geometry} {s : State} (C : Context g s)
+    (d : Nat) (fit : d + 4 ≤ g.L) :
+    readSrc s (.mem (slot d)) = some (s.mem.readW (off g.W d) 32) := by
+  simpa only [slot, VG.Impl.MillerRabin.X86.at_, VG.Impl.Mont.X86.at_, Nat.zero_add] using readSrc_ptr C.ws C.base (d := d) (by omega_using [fit])
+
+theorem Context.readScalarAfter {g : Geometry} {s t : State} (C : Context g s)
+    {rs : List Reg} (K : Keeps rs s t) (base : .edi ∉ rs) (mem : t.mem = s.mem)
+    (d : Nat) (fit : d + 4 ≤ g.L) :
+    readSrc t (.mem (slot d)) = some (s.mem.readW (off g.W d) 32) := by
+  have Ct := C.keepMem K base mem
+  simpa only [mem] using Ct.readScalar d fit
+
+theorem scalarStore_ok {g : Geometry} (v : g.Valid) {s : State} (C : Context g s)
+    (d : Nat) (scratch : scratchWord d) (r : Reg) :
+    WP isa (.block [.store (slot d) r]) s fun t =>
+      t.mem.readW (off g.W d) 32 = s.gpr r ∧
+      Outside g.W d 4 s.mem t.mem ∧ Keeps [] s t ∧ Context g t := by
+  have bound : d + 4 ≤ g.L := by
+    have := v.headerFit
+    unfold scratchWord at scratch
+    omega_using [scratch, this]
+  refine wp_storeS (ea_ptr C.ws C.base (d := d) (by omega_using [bound]))
+    (ws_write C.ws (y := 0 + d) (n := 4) (by omega_using [bound])) fun t T => WP.block_nil ?_
+  have O : Outside g.W d 4 s.mem t.mem := by
+    rw [T.mem, Nat.zero_add]
+    exact writeW32_outside _ _ _ (by have := C.ws.nowrap; omega_using [bound, this])
+  refine ⟨?_, O, T.keeps [], C.keepScalar (T.keeps []) (by decide) O scratch⟩
+  rw [T.mem, Nat.zero_add, Mem.readW_writeW_self32]
+
+end VG.Proof.MillerRabin.X86
+
+end
+
+end
+
 /-! # A square's flag update as a known-value transition -/
 
 -- Formerly `VerifiedGarbage/Proof/MillerRabin/X86/SquareBits.lean`, which only this module imported.

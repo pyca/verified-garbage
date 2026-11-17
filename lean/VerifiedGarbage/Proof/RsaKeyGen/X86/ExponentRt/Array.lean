@@ -4,14 +4,13 @@ public import VerifiedGarbage.Proof.Framework.X86.Call
 public import VerifiedGarbage.Proof.Framework.X86.AllocFrame
 public import VerifiedGarbage.Proof.Mont.Words32
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.Mod64
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.Mod64ArrayContext
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.FilterStack
 public import VerifiedGarbage.Impl.Bignum.X86.PublicContext
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.ExponentRt
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Mont.X86.Words
 import VerifiedGarbage.Proof.RsaKeyGen.X86.ExponentRt.Pointer
-import VerifiedGarbage.Proof.RsaKeyGen.X86.FilterStack
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Ptr
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.Mod64Array
 import VerifiedGarbage.Proof.MillerRabin.ExponentWords32

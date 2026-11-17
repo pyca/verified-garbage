@@ -16,10 +16,8 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Slice
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductBank
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFirstLoop
-import VerifiedGarbage.Proof.Framework.AArch64.Simd
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseCore
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFinalLoop
+import VerifiedGarbage.Proof.Framework.AArch64.Simd
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
@@ -32,9 +30,7 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseMemoryCorrect
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InnerBank
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.InverseTable
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseBankField
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductMemory
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseSliceComposition
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversalCorrect
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotField
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Representation
@@ -42,7 +38,6 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.SliceFrame
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductBatch
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductLoad
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Dot
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotWord
 import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Word

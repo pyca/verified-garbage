@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Ed25519.RISCV64.Freeze
 public import VerifiedGarbage.Proof.X25519.RISCV64.Field
-public import VerifiedGarbage.Proof.Ed25519.RISCV64.FieldProg
+public import VerifiedGarbage.Proof.Ed25519.RISCV64.PointTable
 import VerifiedGarbage.Proof.Ed25519.RISCV64.PointPowers
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Ed25519.RISCV64.Freeze

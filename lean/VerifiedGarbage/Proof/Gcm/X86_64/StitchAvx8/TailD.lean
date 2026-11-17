@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemLoopOneD
+public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemLoopOneD
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -19,7 +19,6 @@ import Mathlib.Tactic.NormNum.Pow
 import Mathlib.Data.Finset.Attr
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx.Reduction
-public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemLoopOne
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Aes
 public import VerifiedGarbage.Proof.Framework.X86_64.Lane0
 public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Rounds

@@ -1,11 +1,10 @@
 module
 
 -- separate module: its proofs (about 5 s, a digit's entry and addition) are not checked again when `VLoop` changes
-
 public import VerifiedGarbage.Impl.P256.X86_64.Ifma.Loop
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafCache
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafDigitRead
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafAddress
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableIO
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedEntryW
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedLoad
 import VerifiedGarbage.Proof.Framework.X86_64.Inline

@@ -22,9 +22,8 @@ import VerifiedGarbage.Proof.Ffdh.Arm.CachedSamplePolicy
 public import VerifiedGarbage.Impl.Ffdh.Arm.CombPrecompute
 public import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeCore
 public import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeTableState
-import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeBasis
+public import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeBasis
 public import VerifiedGarbage.Proof.Ffdh.Arm.Context
-public import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeProductState
 import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeControlCT
 import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeProductLoadCT
 import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeSquaresCT

@@ -1,13 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.Arm.KeyTrace
+public import VerifiedGarbage.Proof.Dsa.Arm.Body
 public import VerifiedGarbage.Proof.Dsa.Arm.SignCT
-import VerifiedGarbage.Proof.Dsa.Arm.SignCorrect
+public import VerifiedGarbage.Proof.Dsa.Arm.SignCorrect
 import VerifiedGarbage.Proof.Dsa.Arm.BodyTrace
 import VerifiedGarbage.Proof.Dsa.Arm.ShapeTrace
 public import VerifiedGarbage.Proof.Dsa.Arm.OpTrace
 import VerifiedGarbage.Proof.Dsa.Arm.ValidateTrace
-public import VerifiedGarbage.Proof.Dsa.Arm.Compute
 import VerifiedGarbage.Proof.Dsa.Arm.ValidateOps
 import VerifiedGarbage.Proof.Dsa.Arm.Dispatch
 import VerifiedGarbage.Proof.Framework.Omega
@@ -17,9 +16,6 @@ import VerifiedGarbage.Proof.Dsa.PackedBytes
 import VerifiedGarbage.Proof.Dsa.PrivateKeyWitness
 public import VerifiedGarbage.Impl.Dsa.Arm.PrevalidatedSign
 public import VerifiedGarbage.Spec.Dsa.PrevalidatedSign
-public import VerifiedGarbage.Proof.Dsa.Arm.Contract
-public import VerifiedGarbage.Proof.Dsa.Arm.Env
-public import VerifiedGarbage.Proof.Dsa.Arm.Body
 import VerifiedGarbage.Proof.Dsa.Arm.Shape
 
 /-! ### `Dsa.Arm.PrevalidatedSign`, which this module and modules that import it used -/

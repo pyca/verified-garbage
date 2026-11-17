@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Native.NativeExchange
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Native.TimingFront
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Native.NativeWindow
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Framework.RelCTAssoc

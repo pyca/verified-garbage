@@ -12,12 +12,11 @@ import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.MemoryInit
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Copy
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.FillCall
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Scratch
-import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Locals
+public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Locals
 public import VerifiedGarbage.Proof.Argon2.Contract
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.FillInput
 public import VerifiedGarbage.Proof.Argon2.Matrix
 import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Body
 
 /-! ### `Argon2.PPC64LE.Derive.FillWrite`, which this module and modules that import it used -/
 

@@ -1,14 +1,13 @@
 module
+
 public import VerifiedGarbage.Proof.Argon2.X86_64.Memory
 public import VerifiedGarbage.Proof.Framework.X86_64.Avx512
 public import VerifiedGarbage.Impl.Argon2.X86_64.CompressAvx512
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Sym
-
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Taint
-import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Gb
 import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Rows
 
 /-!

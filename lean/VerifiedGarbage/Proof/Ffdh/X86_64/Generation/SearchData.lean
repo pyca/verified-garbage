@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Start
 public import VerifiedGarbage.Proof.Framework.X86_64.Call
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Contract
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Context
 public import VerifiedGarbage.Spec.Ffdh.SievedGeneration
 import VerifiedGarbage.Proof.Bignum.Words
 import VerifiedGarbage.TCB.X86_64.Isa

@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Impl.EcKey.Compressed.RootTable
 public import VerifiedGarbage.Proof.Weierstrass.Law
 import VerifiedGarbage.Proof.Weierstrass.Sqrt
-import VerifiedGarbage.Proof.Weierstrass.RootPowers
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!

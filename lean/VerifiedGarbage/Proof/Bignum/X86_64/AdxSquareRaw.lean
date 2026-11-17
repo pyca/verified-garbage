@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 public import VerifiedGarbage.Proof.Bignum.Square
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonalStep
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareWideRow
 
 /-! ### `Bignum.X86_64.AdxSquareDiagonalChoice`, which this module and modules that import it used -/
 

@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.X86.Cached.Digit
 import VerifiedGarbage.Proof.Mont.X86.WindowSelect
-import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Num
 import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Frame
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Power
 import VerifiedGarbage.Proof.Bignum.ByteWords

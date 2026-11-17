@@ -2,8 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.Message.HashMu
 public import VerifiedGarbage.Proof.MlDsa.Arm.Message.HashCT
-public import VerifiedGarbage.Proof.MlDsa.Arm.Message.SignCall
-import VerifiedGarbage.Proof.MlDsa.Arm.Message.SignCorrect
+public import VerifiedGarbage.Proof.MlDsa.Arm.Message.SignCorrect
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.MlKem.Mem

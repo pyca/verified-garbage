@@ -15,7 +15,6 @@ import VerifiedGarbage.Proof.Dsa.Random
 import VerifiedGarbage.Proof.Dsa.RandomSignResult
 import VerifiedGarbage.Proof.Bignum.Octets
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Random.Sample
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.RandomSign.Sampler
 public import VerifiedGarbage.Proof.Dsa.RandomSignRemaining
 import VerifiedGarbage.Proof.Dsa.PackedBytes
 import VerifiedGarbage.Proof.Dsa.Encoding

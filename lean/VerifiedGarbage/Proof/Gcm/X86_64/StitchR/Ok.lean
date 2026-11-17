@@ -15,7 +15,6 @@ public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Setup
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-public import VerifiedGarbage.Proof.Gcm.X86_64.StitchR.Rem
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchR.RemPairE
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemD
 public import VerifiedGarbage.Proof.Gcm.Poly

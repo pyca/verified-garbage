@@ -5,7 +5,7 @@ public import VerifiedGarbage.Spec.RsaPss
 import VerifiedGarbage.Proof.RsaPss.X86.CtLen
 import VerifiedGarbage.Proof.RsaPss.Params
 import all Init.Data.Nat.Bitwise.Basic
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Instr
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Loops
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-!

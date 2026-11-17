@@ -1,17 +1,45 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.R2Kernel
 public import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.Impl.Bignum.Arm.Precompute
 public import VerifiedGarbage.Proof.Bignum.Arm.DoubleLoopState
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
 public import VerifiedGarbage.Proof.Rsa.MontContract
-
 import VerifiedGarbage.Proof.Bignum.Arm.ImportModulus
 import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeInverse
-import VerifiedGarbage.Proof.Bignum.Arm.R2
+public import VerifiedGarbage.Proof.Bignum.Arm.R2
 import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
 import VerifiedGarbage.Proof.Framework.Block
+
+/-! ### `Bignum.Arm.R2Kernel`, which this module and modules that import it used -/
+
+section
+
+/-! One correctness interface for the existing and normalized R-squared calculations. -/
+
+@[expose] public section
+namespace VG.Proof.Bignum.Arm
+open VG VG.Arm VG.Impl.Bignum.Arm
+open VG.Proof.Rsa.Mont (numAt)
+open VG.Proof.X25519.Arm (Rest)
+
+structure R2Kernel where
+  code : Prog isa
+  correct : ∀ (s : State) {base : BitVec 32} {len w : Nat},
+    ArithmeticReady base len w s → 128 * w < 2 ^ 32 →
+    WP isa code s fun t => DoubleLoopReady base len w 0 t ∧
+      numAt t.mem (State.addr base) w 4 = 2 ^ (128 * w) % numAt s.mem (State.addr base) w 0 ∧
+      numAt t.mem (State.addr base) w 0 = numAt s.mem (State.addr base) w 0 ∧
+      Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t
+
+def baselineR2Kernel : R2Kernel := ⟨r2, r2_ok⟩
+
+end VG.Proof.Bignum.Arm
+
+end
+
+end
+
 /-! # RSA precomputation from modulus bytes, entirely in proved ARMv7 code -/
 
 -- Formerly `VerifiedGarbage/Proof/Bignum/Arm/PrecomputeLaw.lean`, which only this module imported.

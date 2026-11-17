@@ -5,7 +5,6 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.Geo
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.HashCT
 import VerifiedGarbage.Proof.Dsa.X86.Generation.Base
-public import VerifiedGarbage.Proof.Dsa.X86.Generation.Attempt
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.GPart
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.PAttempt
 import VerifiedGarbage.Proof.Dsa.BitLengthBounds
@@ -13,10 +12,8 @@ import VerifiedGarbage.Proof.Dsa.Encoding
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86.Syms
-import VerifiedGarbage.Proof.Dsa.X86.Generation.AddBE
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.Q
 import VerifiedGarbage.Proof.Dsa.X86.Generation.Words
-import VerifiedGarbage.Proof.Dsa.X86.Generation.Flags
 import VerifiedGarbage.Proof.Framework.X86.Wp
 import VerifiedGarbage.Proof.Dsa.X86.PowCallTiming
 import VerifiedGarbage.Proof.Framework.Sig
@@ -26,7 +23,6 @@ import VerifiedGarbage.Proof.Dsa.Generation.QCandidate
 import VerifiedGarbage.Proof.Dsa.Generation.Memory
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.KernelRfl
-import VerifiedGarbage.Proof.Dsa.X86.Generation.TestCall
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.TestPre
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Impl.Dsa.X86.Generation

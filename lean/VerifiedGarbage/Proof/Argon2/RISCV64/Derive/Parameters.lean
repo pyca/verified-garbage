@@ -1,7 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Locals
-public import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Body
+public import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Locals
 public import VerifiedGarbage.Impl.Argon2.RISCV64.Divide
 import VerifiedGarbage.Proof.Argon2.Divide
 import VerifiedGarbage.Proof.Argon2.RISCV64.Ops

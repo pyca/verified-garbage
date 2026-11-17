@@ -7,22 +7,21 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.ContextArgument
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyOutputReady
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyRuntime
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyEnvironment
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyScratchFrame
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyGeometry
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyScratchFrame
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyInput
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyLoadPrime
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyLoadExponent
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyStageCover
 import VerifiedGarbage.Proof.Rsa.WordRanges
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Clear
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Small
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Inverse
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.OddModulus
 import VerifiedGarbage.Proof.RsaKeyGen.WordBounds32
 import VerifiedGarbage.Proof.Rsa.KeyWorkspace
 public import VerifiedGarbage.Proof.Bignum.X86.PublicCall
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Address
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Widen
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Prepare
 import VerifiedGarbage.Proof.RsaKeyGen.X86.ImportWorkspace
 import VerifiedGarbage.Proof.RsaKeyGen.X86.ImportLoop
 import VerifiedGarbage.Proof.RsaKeyGen.X86.ImportEncoding
@@ -33,9 +32,8 @@ import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Bignum.X86.LoadBE
 import VerifiedGarbage.Proof.MillerRabin.X86.MontFrame
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateParameters
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyReady
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyPrepare
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Public
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Prepare
 import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.DOddTiming
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.DEvenTiming
@@ -43,14 +41,12 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.DOnePublic
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.ScalarPublic
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.ScalarKey
 import VerifiedGarbage.Proof.Framework.KernelRfl
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyPrepare
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Primes
 import Mathlib.Algebra.Group.Nat.Defs
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Rsa.X86.KeyWs
 import VerifiedGarbage.Impl.Rsa.X86.Inverse
 import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyWorkspace
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.InverseKeeps
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.PrimesPublic
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.LcmTiming
 public import VerifiedGarbage.Proof.Framework.RelCT
@@ -59,10 +55,7 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.KeyPartTiming
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.StackRange
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyDerive
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyOutcome
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Inverse
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyStageFrame
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyQinv
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.OddModulus
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Scalar
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyInverseBridge
 public import VerifiedGarbage.Spec.Rsa
@@ -72,13 +65,11 @@ import Mathlib.Logic.Function.Basic
 import Mathlib.Tactic.Set
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Ops
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Constant
 import VerifiedGarbage.Proof.Rsa.InverseArithmetic
 public import VerifiedGarbage.Spec.Rsa.Contract
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.DivisionFrame
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.ArrayDivision
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyFinal
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyFinalExponent
 import VerifiedGarbage.Proof.Rsa.X86.KeyBits
 public import VerifiedGarbage.Proof.Mont.Words32
 import VerifiedGarbage.Proof.Rsa.X86.KeyScalar

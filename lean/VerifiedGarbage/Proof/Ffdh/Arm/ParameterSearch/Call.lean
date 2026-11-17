@@ -4,10 +4,9 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterBackend
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CallPost
 public import VerifiedGarbage.Impl.Ffdh.Arm.ParameterSearch
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CallGeometry
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Tape
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CallParams
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Arm.Exec
-public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CallLayout
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CallPreserves
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Arguments
 import VerifiedGarbage.Proof.Framework.Offset
@@ -15,12 +14,9 @@ import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.State
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Bounds
 import VerifiedGarbage.Proof.Bignum.Arm.PcDimensions
-public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.ArgumentWords
-public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CallFacts
 public import VerifiedGarbage.Spec.Ffdh.Contract
 public import VerifiedGarbage.Proof.Ffdh.Contract
 public import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CallParams
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Spec.Ffdh.SievedContract

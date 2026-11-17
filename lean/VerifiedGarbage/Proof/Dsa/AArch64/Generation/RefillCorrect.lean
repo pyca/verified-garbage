@@ -18,7 +18,7 @@ import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Bignum.Words
 public import VerifiedGarbage.Proof.Framework.AArch64.Spill
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Entry
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.RefillABI
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.RefillEntry
 public import VerifiedGarbage.Proof.Framework.AArch64.LaneRestore
 import VerifiedGarbage.Proof.Framework.AArch64.StackStore
 import VerifiedGarbage.Proof.Framework.Contract

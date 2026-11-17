@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.RsaPss.X86.CtBase
 import VerifiedGarbage.Proof.RsaPss.X86.CtInit
 public import VerifiedGarbage.Proof.RsaPss.X86.CtLen
 import VerifiedGarbage.Proof.RsaPss.X86.Taint
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Instr
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Loops
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Proof.RsaPss.X86.CtComp

@@ -7,7 +7,6 @@ public import VerifiedGarbage.Proof.Mont.Arm.Dyn.Ws
 public import VerifiedGarbage.Proof.Mont.Arm.Words
 import VerifiedGarbage.Proof.Mont.Arm.Csub
 import VerifiedGarbage.Proof.Mont.Arm.Step
-import VerifiedGarbage.Proof.Mont.Arm.Dyn.Zeros
 import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! ### `Mont.Arm.Dyn.Mul`, which this module and modules that import it used -/

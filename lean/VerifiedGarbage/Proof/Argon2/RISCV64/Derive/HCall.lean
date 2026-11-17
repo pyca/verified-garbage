@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Covers
 meta import VerifiedGarbage.Proof.Argon2.RISCV64.CompressLit
 meta import VerifiedGarbage.Proof.Framework.Lit
-public import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Body
+public import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Locals
 public import VerifiedGarbage.Proof.Framework.RISCV64.Call
 public import VerifiedGarbage.Proof.Framework.RISCV64.Inline
 import VerifiedGarbage.Proof.Blake2.Stream

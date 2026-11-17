@@ -1,14 +1,127 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowVec
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackMath
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseVec
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowMath
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentUnpackWord
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseMath
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Butterfly
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Response
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseWord
+public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
+import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseVec
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseWord
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Arith
+import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
+import VerifiedGarbage.Proof.Framework.GetElem
+
+/-! ### `MlDsa.AArch64.Optimized.ResponseLowMath`, which this module and modules that import it used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.AArch64.Optimized.Response
+open VG VG.AArch64 VG.Spec.MlDsa
+open VG.Proof.MlDsa.Round
+open VG.Proof.MlDsa.AArch64.Round
+
+/-- The wrapped high-bit case is precisely the large positive remainder. -/
+theorem lowBits_centered {g : Nat} (hg : IsG g) (r : Zq) :
+    let a : Int := (r.val:Int)-(hbF g r.val%hbM g)*(2*g)
+    lowBits g r=a-(if 4190208<a then 8380417 else 0) := by
+  rw [lowBits_eq (mem_of_isG hg)]
+  have hr := r.isLt
+  rcases hg with rfl | rfl <;>
+    simp only [hbF,hbM,q,Impl.MlDsa.AArch64.Round.g32,Impl.MlDsa.AArch64.Round.g88] at * <;> omega_using []
+
+theorem lowBits_bounds {g : Nat} (hg : IsG g) (r : Zq) :
+    -(g:Int)≤lowBits g r ∧ lowBits g r≤(g:Int) := by
+  rw [lowBits_eq (mem_of_isG hg)]
+  have hr := r.isLt
+  rcases hg with rfl | rfl <;>
+    simp only [hbF,hbM,q,Impl.MlDsa.AArch64.Round.g32,Impl.MlDsa.AArch64.Round.g88] at * <;> omega_using []
+
+/-- The first conditional addition canonicalizes a reduced signed difference. -/
+theorem reduce_signCorrected {x : BitVec 32} (hl : -2*8380417<x.toInt) (hh : x.toInt<3*8380417) :
+    (Inverse.signCorrected (reduceWord x)).toNat=(ofInt x.toInt).val := by
+  have h := reduce32_bounds hl hh
+  have hi := reduceWord_int x hl hh
+  have he := Inverse.signCorrected_int (reduceWord x) (by omega_using [h, hi]) (by omega_using [h, hi])
+  have ht := BitVec.toInt_eq_toNat_cond (Inverse.signCorrected (reduceWord x))
+  have hm := reduce32_mod x.toInt
+  have hv := VG.Proof.MlDsa.KeyGen.ofInt_val x.toInt
+  rw [hi] at he
+  split at he <;> omega
+
+end VG.Proof.MlDsa.AArch64.Optimized.Response
+
+end
+
+end
+
+/-! ### `MlDsa.AArch64.Optimized.ResponseLowVec`, which this module and modules that import it used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.AArch64.Optimized.Response
+open VG VG.AArch64
+open VG.Proof.MlKem.AArch64 (VChg wp_vop vword_mapWords3)
+
+theorem cadd_ok {d : VReg} (hd : d≠.v7) {s : State} {rest : List Instr} {Q : State → Prop}
+    (hq : ∀e<4,vword (s.v .v16) e=8380417#32)
+    (k : ∀t,VChg [.v7,d] s t →
+      (∀e<4,vword (t.v d) e=Inverse.signCorrected (vword (s.v d) e)) → WP isa (.block rest) t Q) :
+    WP isa (.block (Impl.MlDsa.AArch64.Optimized.Response.cadd d++rest)) s Q := by
+  refine wp_vop (d:=.v7) rfl fun a ha => wp_vop (d:=.v7) rfl fun b hb =>
+    wp_vop (d:=d) rfl fun t ht => ?_
+  refine k t (((ha.chg.trans hb.chg).trans ht.chg).mono ?_) ?_
+  · intro r hr
+    simp only [List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at *
+    grind only
+  · intro e he
+    rw [ht.v,VG.AArch64.vword_map2 _ _ _ he,hb.get d hd,ha.get d hd,hb.v,Inverse.word_and,
+      ha.v,VG.AArch64.vword_map2 _ _ _ he,ha.get .v16 (by decide),hq e he]
+    rfl
+
+def lowCorrection : List Instr :=
+  [.vop (.mls .v0 .v1 .v21),.vop (.sub .s4 .v6 .v26 .v0),
+    .vop (.shift .sshr .s4 .v6 .v6 31),.vop (.logic .and .v6 .v6 .v16),
+    .vop (.sub .s4 .v0 .v0 .v6)]
+
+def lowWord (a h twoG : BitVec 32) : BitVec 32 :=
+  let l := a-h*twoG
+  l-((4190208#32-l).sshiftRight 31 &&& 8380417#32)
+
+theorem lowCorrection_ok {s : State} {rest : List Instr} {Q : State → Prop}
+    (hq : ∀e<4,vword (s.v .v16) e=8380417#32)
+    (hh : ∀e<4,vword (s.v .v26) e=4190208#32)
+    (k : ∀t,VChg [.v0,.v6] s t → (∀e<4,vword (t.v .v0) e=
+      lowWord (vword (s.v .v0) e) (vword (s.v .v1) e) (vword (s.v .v21) e)) →
+      WP isa (.block rest) t Q) : WP isa (.block (lowCorrection++rest)) s Q := by
+  refine wp_vop (d:=.v0) rfl fun a ha => wp_vop (d:=.v6) rfl fun b hb =>
+    wp_vop (d:=.v6) rfl fun c hc => wp_vop (d:=.v6) rfl fun d hd =>
+    wp_vop (d:=.v0) rfl fun t ht => ?_
+  have hk : VChg [.v0,.v6] s t :=
+    ((((ha.chg.trans hb.chg).trans hc.chg).trans hd.chg).trans ht.chg).mono (by decide)
+  refine k t hk ?_
+  intro e he
+  rw [ht.v,VG.AArch64.vword_map2 _ _ _ he,hd.get .v0 (by decide),hc.get .v0 (by decide),
+    hb.get .v0 (by decide),hd.v,Inverse.word_and,hc.v,VG.AArch64.vword_map2 _ _ _ he,
+    hb.v,VG.AArch64.vword_map2 _ _ _ he,ha.get .v26 (by decide),hh e he,
+    hc.get .v16 (by decide),hb.get .v16 (by decide),ha.get .v16 (by decide),hq e he,
+    ha.v,vword_mapWords3 _ _ _ _ he]
+  rfl
+
+end VG.Proof.MlDsa.AArch64.Optimized.Response
+
+end
+
+end
 
 @[expose] public section
 

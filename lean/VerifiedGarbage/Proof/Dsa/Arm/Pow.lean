@@ -8,19 +8,17 @@ import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Dsa.Arm.ContextBody
 public import VerifiedGarbage.Proof.Framework.Arm.Call
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
-import VerifiedGarbage.Proof.Mont.Arm.Dyn.ContextInit
+public import VerifiedGarbage.Proof.Mont.Arm.Dyn.ContextInit
 import VerifiedGarbage.Proof.Mont.Arm.Dyn.Inverse
 import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Proof.Mont.Arm.Dyn.Context
-public import VerifiedGarbage.Proof.Mont.Arm.Dyn.ExponentParts
 import VerifiedGarbage.Proof.Dsa.Arithmetic
 public import VerifiedGarbage.Proof.Mont.Arm.Dyn.Ws
 public import VerifiedGarbage.Proof.Mont.Words32
-import VerifiedGarbage.Proof.Mont.Arm.Dyn.Zeros
+import VerifiedGarbage.Proof.Mont.Arm.Dyn.Add
 import VerifiedGarbage.Proof.Mont.Arm.Csub
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.PlainSimp
-import VerifiedGarbage.Proof.Mont.Arm.Dyn.PowerTwo
 
 /-! ### `Mont.Arm.Dyn.Exponent`, which this module and modules that import it used -/
 

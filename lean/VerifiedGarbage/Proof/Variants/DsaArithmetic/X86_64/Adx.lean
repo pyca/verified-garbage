@@ -29,12 +29,10 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Tail
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8TileEdges
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Core
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareBackend
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRow
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareWideRow
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRaw
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonalStep
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareMont
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareCross
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareWideRow
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledCounter
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRawCT
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRow
@@ -54,9 +52,7 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.MontFnLazyCT
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontFnLazyVerified
 public import VerifiedGarbage.Proof.Dsa.X86_64.DeriveMainCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.ParametersVerified
-public import VerifiedGarbage.Proof.Dsa.X86_64.SigningABIPre
 public import VerifiedGarbage.Proof.Dsa.X86_64.PrevalidatedVerified
-public import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingABIPre
 public import VerifiedGarbage.Proof.Dsa.X86_64.ValidatePrivateVerified
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 public import VerifiedGarbage.Proof.Framework.X86_64.Frame

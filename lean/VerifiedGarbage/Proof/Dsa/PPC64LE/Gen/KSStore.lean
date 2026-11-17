@@ -15,7 +15,6 @@ import VerifiedGarbage.Proof.Bignum.PPC64LE.MontFinish
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.Test
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.Bytes
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.KeyWs
 public import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
 public import VerifiedGarbage.Proof.Framework.Covers

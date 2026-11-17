@@ -27,8 +27,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.Poly
 import VerifiedGarbage.Proof.EcKey.Compressed.Decode
 import VerifiedGarbage.Proof.EcKey.PPC64LE.Finish
-import VerifiedGarbage.Proof.Ecdh.PPC64LE.Validate
-import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Finish
+import VerifiedGarbage.Proof.Ecdh.PPC64LE.Main
 import VerifiedGarbage.Proof.Weierstrass.Law
 import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Mont.PPC64LE.Const

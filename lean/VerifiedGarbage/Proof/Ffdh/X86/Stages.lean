@@ -5,7 +5,7 @@ import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Import
 public import VerifiedGarbage.Proof.Framework.RelCTChain
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Num
+public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Frame
 
 /-!
 # FFDH on i686: the stages on the wide slots

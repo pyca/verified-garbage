@@ -12,9 +12,8 @@ import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.MlKem.Mem
-public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PrimsD
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseD
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Blocks
-public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PrimsB
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Top
 public import VerifiedGarbage.Impl.MlDsa.Arm.PreparedKey
 public import VerifiedGarbage.Proof.MlDsa.PreparedKey.Values

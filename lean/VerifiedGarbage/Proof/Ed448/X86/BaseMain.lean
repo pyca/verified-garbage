@@ -17,7 +17,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Impl.X25519.X86
 public import VerifiedGarbage.Proof.X448.X86.Env
-import VerifiedGarbage.Proof.X448.X86.RowMem
+import VerifiedGarbage.Proof.X448.X86.FnContract
 public import VerifiedGarbage.Proof.X448.X86.Bits
 import VerifiedGarbage.Proof.Ed448.Scalar
 public import VerifiedGarbage.Spec.Ed448.Contract

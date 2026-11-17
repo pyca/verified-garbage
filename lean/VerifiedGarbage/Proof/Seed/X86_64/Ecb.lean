@@ -6,9 +6,8 @@ import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-public import VerifiedGarbage.Proof.Seed.X86_64.Steps
-import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Seed.X86_64.Round
+import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Seed.Rounds
 
 /-! ### `Seed.X86_64.Batch`, which this module and modules that import it used -/

@@ -34,10 +34,10 @@ meta import VerifiedGarbage.Proof.Framework.ConstMem
 import VerifiedGarbage.Proof.P521.PPC64LE.Comb
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.P521.Window
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Stages
-import VerifiedGarbage.Proof.Ecdsa.PPC64LE.MulFn
+import VerifiedGarbage.Proof.Ecdsa.PPC64LE.LadPow
 import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Keep
-import VerifiedGarbage.Proof.Ecdh.PPC64LE.Validate
+import VerifiedGarbage.Proof.Ecdh.PPC64LE.Main
 import VerifiedGarbage.Proof.Framework.PowLit
 
 /-!

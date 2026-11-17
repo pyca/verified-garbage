@@ -23,7 +23,6 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.DeriveMainCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.DeriveCT
 import VerifiedGarbage.Proof.Dsa.X86_64.ABIRegions
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingABI
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.MdStream.Spec
 import VerifiedGarbage.Proof.Sha256.Stream

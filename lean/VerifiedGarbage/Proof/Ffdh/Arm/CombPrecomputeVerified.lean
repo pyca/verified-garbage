@@ -21,12 +21,11 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeInput
 import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputePrefix
 import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeMontgomeryOut
 public import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeCore
-import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeBasis
+public import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeBasis
 import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeInitialStore
 import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeTableInit
 import VerifiedGarbage.Proof.Rsa.FixedBaseCombTable
 import VerifiedGarbage.Proof.Framework.Block
-public import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeProductState
 import VerifiedGarbage.Proof.Ffdh.Arm.CachedSamplePolicy
 import VerifiedGarbage.Proof.Ffdh.Arm.Branch
 import VerifiedGarbage.Proof.Ffdh.Domain

@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.Encode
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Spec.RsaPkcs1Sig.Precomputed
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyFrame
 
 /-! ### `RsaPkcs1Sig.X86_64.PrecomputedCtx`, which this module and modules that import it used -/
 

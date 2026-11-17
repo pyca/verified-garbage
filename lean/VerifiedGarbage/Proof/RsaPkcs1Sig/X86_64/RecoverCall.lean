@@ -9,7 +9,6 @@ import VerifiedGarbage.TCB.X86_64.Isa
 import VerifiedGarbage.TCB.X86_64.State
 import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.Bignum.X86_64.Words
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyFrame
 public import VerifiedGarbage.Impl.RsaPkcs1Sig.X86_64.Recover
 import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 

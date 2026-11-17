@@ -8,7 +8,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.PcPush
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.VP
-import VerifiedGarbage.Proof.MillerRabin.Arm.Words
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.KS
 
 /-! ### `MillerRabin.Arm.Top`, which this module and modules that import it used -/

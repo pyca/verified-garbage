@@ -19,7 +19,7 @@ meta import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.SignChallenge
 meta import VerifiedGarbage.Proof.Ed448.Ref
 public import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.SignNonce
 public import VerifiedGarbage.Proof.Ed448.Ref
-public import VerifiedGarbage.Proof.X448.PPC64LE.Ladder
+public import VerifiedGarbage.Proof.X448.PPC64LE.Invert
 
 /-!
 # `vg_ed448_sign_cached` on PPC64LE in constant time

@@ -3,7 +3,7 @@ module
 import VerifiedGarbage.Proof.Framework.Arm.Syms
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Cand
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Hmac
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Prep
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Regs
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -13,8 +13,6 @@ public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Search
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Blocks
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Layout
 import VerifiedGarbage.Proof.Framework.Arm.Call
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Prep
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Copy
 import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 

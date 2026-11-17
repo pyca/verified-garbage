@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Sized
-public import VerifiedGarbage.Proof.Bignum.X86.PublicExponentArgs
 public import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
 public import VerifiedGarbage.Proof.Bignum.X86.ModulusCheck
 public import VerifiedGarbage.Proof.Bignum.X86.PublicReturn
@@ -41,6 +40,32 @@ public import VerifiedGarbage.Proof.Bignum.X86.PublicArgs
 public import VerifiedGarbage.Proof.Bignum.ExponentWords
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Bignum.X86.ExponentCheck
+
+/-! ### `Bignum.X86.PublicExponentArgs`, which this module and modules that import it used -/
+
+section
+
+/-! # Scan the public exponent supplied through the cdecl argument slots -/
+
+@[expose] public section
+namespace VG.Proof.Bignum.X86
+open VG VG.X86 VG.X86.Wp VG.Impl.Bignum.X86 VG.Proof.Mont.X86
+
+theorem exponentFlag_ok {s : State} (b : Bool)
+    (value : s.gpr .eax = BitVec.ofNat 32 b.toNat) :
+    WP isa (.block [.alu .cmp .eax (.imm 0)]) s fun t =>
+      t.zf = some (!b) ∧ t.mem = s.mem ∧ Keeps [] s t := by
+  refine wp_cmpS rfl fun t F Z => WP.block_nil ?_
+  refine ⟨?_, F.mem, F.keeps []⟩
+  rw [Z, value]
+  cases b <;> rfl
+
+end VG.Proof.Bignum.X86
+
+end
+
+end
 
 /-! ### `Bignum.X86.PublicControls`, which this module and modules that import it used -/
 
