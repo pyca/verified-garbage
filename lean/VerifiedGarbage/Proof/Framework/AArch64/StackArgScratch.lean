@@ -953,58 +953,6 @@ theorem Verified.stackArgScratch {c : Prog isa}
       hct _ _ _ _ _ _ (narrowS_pre hA hk hb hpre h₁ hl) (narrowS_pre hA hk hb hpre h₂ hl)
         (narrowS_pub hA hk hb h₁ h₂ hp hl hleak) f₁ f₂]
 
-/-- The previous statement of `Verified.stackArgScratch`, kept while proofs move to it. -/
-theorem Verified.stackArgScratchKept {c : Prog isa}
-    (h : Verified target c (Sig.scratchContract abi sig nm e n pre post wa stack leak))
-    (hk : 8 ≤ (sig.words abi.ptrBits).length) (hb : ArgFits (nStack sig) bytes e n)
-    (hpre : ∀ vs m₁ m₂, vs.length = (sig.words abi.ptrBits).length →
-      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
-      Curry.apply (sig.words abi.ptrBits) pre vs m₁ → Curry.apply (sig.words abi.ptrBits) pre vs m₂)
-    (hpost : ∀ vs m₁ m₂ m' r, vs.length = (sig.words abi.ptrBits).length →
-      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
-      Curry.apply (sig.words abi.ptrBits) post vs m₁ m' r →
-        Curry.apply (sig.words abi.ptrBits) post vs m₂ m' r)
-    (hsat : ∃ s, (sig.contract abi pre post wa (stack + bytes)).pre s)
-    (hl : Sig.noLists sig.params = true := by decide)
-    (hleak : Sig.LeakLocal abi.ptrBits sig leak := by trivial) :
-    Verified target (withStackArgScratch bytes (nStack sig) c)
-      (sig.contract abi pre post wa (stack + bytes) leak) := by
-  obtain ⟨hcor, hct, -⟩ := h
-  have hA : ArgsOk sig := let ⟨_, hs⟩ := hsat; argsOk_of_pre hs
-  -- Every run is `setArgs`, then the code's run from `narrowS`.
-  have hrun : ∀ s, (sig.contract abi pre post wa (stack + bytes) leak).pre s → ∃ t s₃,
-      Exec isa c (narrowS sig e n bytes s) t s₃ ∧
-      (Sig.scratchContract abi sig nm e n pre post wa stack leak).post (narrowS sig e n bytes s) s₃ ∧
-      Exec isa (withStackArgScratch bytes (nStack sig) c) s
-        (setArgsTrace bytes (s.sp - BitVec.ofNat 64 bytes) (nStack sig) ++ t)
-        (popState bytes s s₃) ∧
-      abiPreserved s (popState bytes s s₃) ∧
-      Frame [⟨s.sp - BitVec.ofNat 64 bytes, bytes⟩] s₃.mem (popState bytes s s₃).mem ∧
-      (popState bytes s s₃).gpr = s₃.gpr := by
-    intro s hs
-    obtain ⟨t, s₃, he, ha, hq⟩ := hcor _ (narrowS_pre hA hk hb hpre hs hl)
-    exact ⟨t, s₃, he, hq, withStackArgScratch_run hA hk hb hs he ha hl⟩
-  refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂ => ?_, hsat⟩
-  · obtain ⟨t, s₃, -, hq, hex, ha, hm, hg⟩ := hrun s hs
-    refine ⟨_, _, hex, ha, ?_⟩
-    rw [post_args hA]
-    have hq' := (post_args (sig := sig.withScratch nm e n)
-      (pre := Curry.withScratch abi.ptrBits nm e n sig.params pre)
-      (post := Curry.withScratch abi.ptrBits nm e n sig.params post)
-      (leak := leak.map (Curry.withScratch abi.ptrBits nm e n sig.params))
-      (argsOk_withScratch nm e n hk hA)).mp hq
-    obtain ⟨-, -, -, hargs, -⟩ := narrowS_facts (nm := nm) hA hk hb hs hl
-    rw [hargs] at hq'
-    rw [show (popState bytes s s₃).mem = s₃.mem from rfl, hg]
-    have hq'' := Eq.mp (congrFun (congrFun (congrFun (Curry.apply_withScratch abi.ptrBits nm e n
-      sig.params post _ _ (allArgs_length sig s)) _) s₃.mem) _) hq'
-    exact hpost _ _ _ _ _ (allArgs_length sig s) (narrowS_agree hA hk hb hs hl) hq''
-  · obtain ⟨u₁, r₁, f₁, -, x₁, -⟩ := hrun s₁ h₁
-    obtain ⟨u₂, r₂, f₂, -, x₂, -⟩ := hrun s₂ h₂
-    rw [(Exec.det e₁ x₁).1, (Exec.det e₂ x₂).1, ((pub_args hA hl).mp hp).1.1.1,
-      hct _ _ _ _ _ _ (narrowS_pre hA hk hb hpre h₁ hl) (narrowS_pre hA hk hb hpre h₂ hl)
-        (narrowS_pub hA hk hb h₁ h₂ hp hl hleak) f₁ f₂]
-
 /-- `Verified.stackArgScratch`, for `withStackArgScratchWiped`, which zeroes
 the first `words` doublewords of the buffer after the code: the wipe stores
 only into the buffer (`wipeAt_run`), whose trace depends only on the stack

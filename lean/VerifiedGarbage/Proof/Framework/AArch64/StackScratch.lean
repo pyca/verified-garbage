@@ -465,45 +465,6 @@ theorem Verified.stackScratch {c : Prog isa}
     rw [(Exec.det e₁ x₁).1, (Exec.det e₂ x₂).1]
     exact hct _ _ _ _ _ _ (narrow_pre hk hb h₁) (narrow_pre hk hb h₂) (narrow_pub hk hp) f₁ f₂
 
-/-- The previous statement of `Verified.stackScratch`, kept while proofs move to it. -/
-theorem Verified.stackScratchKept {c : Prog isa}
-    {leak : Option (Curry (sig.words abi.ptrBits) (Mem → List Nat))}
-    (h : Verified target c (Sig.scratchContract abi sig nm e n pre post wa stack leak))
-    (hk : (sig.words abi.ptrBits).length < 8)
-    (hb : 0 < bytes ∧ bytes < 4096 ∧ bytes % 16 = 0 ∧ n * e.size ≤ bytes)
-    (hsat : ∃ s, (sig.contract abi pre post wa (stack + bytes) leak).pre s) :
-    Verified target (withStackScratch bytes (argRegs.getD (sig.words abi.ptrBits).length .x0) c)
-      (sig.contract abi pre post wa (stack + bytes) leak) := by
-  obtain ⟨hcor, hct, -⟩ := h
-  have hlen := regArgs_length sig
-  have hrun : ∀ s, (sig.contract abi pre post wa (stack + bytes) leak).pre s → ∃ t s₃,
-      Exec isa c (narrow sig e n bytes s) t s₃ ∧
-      (Sig.scratchContract abi sig nm e n pre post wa stack leak).post (narrow sig e n bytes s) s₃ ∧
-      Exec isa (withStackScratch bytes (argRegs.getD (sig.words abi.ptrBits).length .x0) c) s t
-        (popState bytes s s₃) ∧
-      abiPreserved s (popState bytes s s₃) ∧
-      Frame [⟨s.sp - BitVec.ofNat 64 bytes, bytes⟩] s₃.mem (popState bytes s s₃).mem ∧
-      (popState bytes s s₃).gpr = s₃.gpr := by
-    intro s hs
-    obtain ⟨t, s₃, he, ha, hq⟩ := hcor _ (narrow_pre hk hb hs)
-    exact ⟨t, s₃, he, hq, withStackScratch_run hk hb hs he ha⟩
-  refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂ => ?_, hsat⟩
-  · obtain ⟨t, s₃, -, hq, hex, ha, hm, hg⟩ := hrun s hs
-    refine ⟨t, _, hex, ha, ?_⟩
-    rw [post_regs (by omega_using [hk])]
-    have hq' := (post_regs (sig := sig.withScratch nm e n)
-      (pre := Curry.withScratch abi.ptrBits nm e n sig.params pre)
-      (post := Curry.withScratch abi.ptrBits nm e n sig.params post)
-      (by rw [Sig.words_withScratch, List.length_append, List.length_singleton]; omega_using [hk])).mp hq
-    rw [narrow_regArgs hk] at hq'
-    rw [show (popState bytes s s₃).mem = s₃.mem from rfl, hg]
-    exact Eq.mp (congrFun (congrFun (congrFun (Curry.apply_withScratch abi.ptrBits nm e n sig.params post
-      _ _ (hlen s (by omega_using [hk]))) s.mem) s₃.mem) _) hq'
-  · obtain ⟨u₁, r₁, f₁, -, x₁, -⟩ := hrun s₁ h₁
-    obtain ⟨u₂, r₂, f₂, -, x₂, -⟩ := hrun s₂ h₂
-    rw [(Exec.det e₁ x₁).1, (Exec.det e₂ x₂).1]
-    exact hct _ _ _ _ _ _ (narrow_pre hk hb h₁) (narrow_pre hk hb h₂) (narrow_pub hk hp) f₁ f₂
-
 end
 
 end VG.AArch64

@@ -90,7 +90,7 @@ theorem prepareFrame_correct {bytes count : Nat} {body : Prog isa}
     rw [Proof.MlKem.bytesAt_frame F (fun R hR => by
       simp only [List.mem_singleton] at hR; subst hR
       exact (h.so.sub_left (below_sub (by decide) (by decide))).symm.sub_left
-        (Region.sub_prefix (by omega_using []))) (by omega_using [hb])]
+        (Region.sub_prefix (Nat.le_add_right _ _))) (Nat.le_of_lt (Nat.lt_trans hb (by decide)))]
     exact hout
   · change B m0 (σ.gpr .x1)
     exact hBf _ _ F (by simpa only [pa, h26, BitVec.add_zero] using hB)
