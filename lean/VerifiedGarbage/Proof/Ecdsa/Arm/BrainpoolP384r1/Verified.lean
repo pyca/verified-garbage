@@ -1,6 +1,8 @@
 module
 
 import VerifiedGarbage.Proof.Ecdsa.Arm.Main
+import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP384r1.MulLit
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP384r1.MulLit
 import VerifiedGarbage.Proof.Weierstrass.Arm.MontBrainpoolP384r1
 public import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP384r1.Contract
 import VerifiedGarbage.Proof.BrainpoolP384r1.Point
@@ -84,7 +86,7 @@ theorem brainpoolp384r1_ok : CfgOk brainpoolp384r1 where
   sh := by rw [brainpoolp384r1_sh]; decide
   fp := ⟨rfl, rfl, Mont.brainpoolp384r1p_ok, rfl⟩
   fn := ⟨rfl, rfl, Mont.brainpoolp384r1n_ok, rfl⟩
-  mulNf := fun _ h => nomatch h
+  mulNf := fun _ _ => Impl.Ecdsa.Arm.mulBrainpoolP384r1_noFrames
 
 
 set_option exponentiation.threshold 512 in
@@ -110,7 +112,7 @@ theorem brainpoolp384r1u_ok : CfgOk (brainpoolp384r1With true) where
   sh := brainpoolp384r1_ok.sh
   fp := brainpoolp384r1_ok.fp
   fn := brainpoolp384r1_ok.fn
-  mulNf := fun _ h => nomatch h
+  mulNf := fun _ _ => Impl.Ecdsa.Arm.mulBrainpoolP384r1U_noFrames
 
 /-- Either configuration. -/
 theorem brainpoolp384r1With_ok (u : Bool) : CfgOk (brainpoolp384r1With u) := by

@@ -53,8 +53,14 @@ def publicKeyP192Comb : Prog VG.Arm.isa := publicKeyP192CombWith false
 
 def publicKeyP192CombU : Prog VG.Arm.isa := publicKeyP192CombWith true
 
+/-- Verification's `[u]G`: `u` is in `K`'s slot, where `vg_p192_mul` reads it
+(`Verify.Arm.Cfg.scalarAt`), so the table of its bits that the comb reads
+is made from it first. -/
+def verifyGeneratorP192With (u : Bool) : Prog VG.Arm.isa :=
+  .seq (Weierstrass.Arm.bits (p192.sl K) (bitsAt p192.n 0) (8 * p192.n)) (Weierstrass.Arm.mulGeneratorP192With u)
+
 def verifyP192CombWith (u : Bool) : Prog VG.Arm.isa :=
-  Verify.Arm.Cfg.verifyWith (p192With u) (Weierstrass.Arm.mulGeneratorP192With u)
+  Verify.Arm.Cfg.verifyWith (p192With u) (verifyGeneratorP192With u)
 
 def verifyP192Comb : Prog VG.Arm.isa := verifyP192CombWith false
 

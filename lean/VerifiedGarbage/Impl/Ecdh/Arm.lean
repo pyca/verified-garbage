@@ -18,9 +18,12 @@ uses, as on x86 (`Impl/Ecdh/X86.lean`):
    the masks of the peer's first byte being `04`, `x < p` and `y < p`;
 3. `x` and `y` into Montgomery's form, and the mask of `y² = x³ + a x + b`
    into the flag;
-4. the peer's point, or `G` if the flag is clear (so the ladder always runs
-   on a point of the curve), to the slots the ladder takes its point from;
-5. `[d]P` by the signature's ladder, and `Z^(p-2)` by its power;
+4. the peer's point, or `G` if the flag is clear (so the multiplication
+   always runs on a point of the curve), to the slots the multiplication
+   takes its point from;
+5. `[d]P` by the signature's multiplication of a point (`Cfg.qMul`: a call
+   of `vg_<curve>_mul`, by windows, for a curve that has the function), and
+   `Z^(p-2)` by its power;
 6. `x = X Z^(p-2)`, out of Montgomery's form, and the masks of `d` in
    `[1, n-1]` and `Z ≠ 0` into the flag, which selects `x` or zeros for
    `out` (big-endian, through `lr`, where the setup keeps it) and is
@@ -55,7 +58,7 @@ def W0 : Nat := KM
 def W1 : Nat := TT
 def W2 : Nat := SM
 def W3 : Nat := RM
-/-- The point the ladder multiplies: the peer's, or `G`. -/
+/-- The point that is multiplied: the peer's, or `G`. -/
 def PX : Nat := RM
 def PY : Nat := SS
 
@@ -112,14 +115,14 @@ def curveOps : List FOp :=
     .add (c.sl W3) (c.sl W2) (c.sl W1), .add (c.sl W2) (c.sl W3) (c.sl BP),
     .sub (c.sl W1) (c.sl W0) (c.sl W2)]
 
-/-- The point to the ladder's slots: the peer's if the flag is set, else
+/-- The point to the multiplication's slots: the peer's if the flag is set, else
 `G` (the flag is the mask `r10`). -/
 def select : List Instr :=
   ([.ldr .r10 wb (c.sl FLAG)] : List Instr) ++
   sel (2 * c.n) (c.sl PX) (c.sl GX) (c.sl QXM) ++ sel (2 * c.n) (c.sl PY) (c.sl GY) (c.sl QYM)
 
 /-- `x` and `y` into Montgomery's form, the check that the point is on the
-curve, and the point the ladder multiplies. -/
+curve, and the point that is multiplied. -/
 def validate : Prog isa :=
   .seq (Mont.mulCall c.SP (c.sl QXM) (c.sl E) (c.sl R2P) c.umaal) <|
   .seq (Mont.mulCall c.SP (c.sl QYM) (c.sl QY) (c.sl R2P) c.umaal) <|

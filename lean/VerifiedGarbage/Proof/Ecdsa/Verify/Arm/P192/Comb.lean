@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
 public import VerifiedGarbage.Impl.Ecdsa.Arm.VerifyHash
+import VerifiedGarbage.Proof.Framework.Arm.Syms
+meta import VerifiedGarbage.Proof.Framework.Arm.Syms
 import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Hash
 import VerifiedGarbage.Proof.Ecdsa.Verify.Curves
 import VerifiedGarbage.Proof.Framework.Arm.Taint
@@ -100,15 +102,35 @@ theorem combVerify_ok (hC : Law Spec.P192.curve) {um : Bool} {s₀ : State} (hp 
     (show (⟨ptr s₀ .r3,8192⟩ : Region)∈s₀.wr by rw [hp.1.wr]; simp)
   apply verifyWith_ok (p192With_ok um) hC hp.1 (a0₁ := false) nofun
   intro s M syms
-  intro u hs hf F _ _ _ _ _ _ bits _ keep unch syu
+  intro u hs hf F _ _ _ _ _ _ _ kv keep unch syu
   have frame : Frame [⟨ptr s₀ .r3,8192⟩] s₀.mem u.mem := outside_frame
     (unch.outside (o := 0) (n := 8192) (by simp)) (Nat.le_refl _)
   have hu := ht.of_frame (by rw [keep.rd,keep.wr]) frame
     (by simpa only [List.mem_singleton,forall_eq] using hd)
-  have mul := comb_generator_ok hC hs hf F hu (by rw [syu,syms]; rfl)
+  have k_eq : sv (p192With um) (ptr s₀ .r3) u K=sv (p192With um) (ptr s₀ .r3) s U := kv rfl
+  -- The table of `u`'s bits, from `K`'s slot.
+  refine WP.seq (WP.mono_syms (tbl_bits_ok (p192With_ok um) hs hf (i := K) (j := 0) (by decide) (by decide))
+    fun u₂ ⟨b₂,k₂,O₂⟩ sy₂ => ?_)
+  have hs₂ := hs.of_rest k₂ (by decide)
+  have hf₂ := hf.of_rest k₂
+  have F₂ := F.unch (p192With_ok um).n10 hs.nowrap (W := [(bitsAt (p192With um).n 0,64*(p192With um).n)])
+    (fun w hw => Or.inr (by rw [List.mem_singleton.mp hw]; exact Nat.le_of_ble_eq_true rfl)) O₂.unch
+  have hu₂ := hu.of_frame (by rw [k₂.rd,k₂.wr]) (outside_frame O₂ (size := 8192) (Nat.le_of_ble_eq_true rfl))
+    (by simpa only [List.mem_singleton,forall_eq] using hd)
+  have bits : ∀ i<192,u₂.mem (off (ptr s₀ .r3) (bitsAt (p192With um).n 0+i))=
+      if (sv (p192With um) (ptr s₀ .r3) s U).testBit i then 1 else 0 := fun i hi => by
+    rw [b₂ i hi]
+    simp only [sv] at k_eq
+    rw [k_eq]
+  have mul := comb_generator_ok hC hs₂ hf₂ F₂ hu₂ (by rw [sy₂,syu,syms]; rfl)
     (hd.sub_right (Region.sub_prefix (by decide))) (k := sv (p192With um) (ptr s₀ .r3) s U)
-    (VG.Proof.Mont.wordsVal_lt _ _ _ _) (bits rfl)
-  exact WP.mono mul fun _ post => by simpa only [GeneratorPost,Nat.shiftRight_zero] using post
+    (VG.Proof.Mont.wordsVal_lt _ _ _ _) bits
+  refine WP.mono mul fun t ⟨R,U',Mo,L,Rp⟩ => ⟨(k₂.mono (by decide)).trans R,
+    (O₂.unch.trans U').mono fun w hw => ?_,Mo,L,by simpa only [Nat.shiftRight_zero] using Rp⟩
+  rcases List.mem_append.mp hw with h|h
+  · rw [List.mem_singleton.mp h]
+    exact List.mem_append_right _ (by simp [genX])
+  · exact h
 
 def combVerifyPub (s t : State) : Prop := verifyArm.pub s t ∧ s.syms p192Comb.tsym=t.syms p192Comb.tsym
 

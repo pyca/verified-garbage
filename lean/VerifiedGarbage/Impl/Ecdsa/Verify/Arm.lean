@@ -20,14 +20,15 @@ x86 (`Impl/Ecdsa/Verify/X86.lean`):
 2. ECDH's checks of the key (`peerAt .r0`, `validate`): its `x` into the
    hash's slot, its first byte, `x < p`, `y < p` and the curve's equation,
    into the flag, and the key's point, or `G` if the flag is clear, to the
-   slots of ECDH's ladder;
+   slots of ECDH's multiplication;
 3. the masks of `r` and `s` in `[1, n-1]` into the flag, and
    `w = s^(n-2)`, in Montgomery form modulo `n`;
 4. `u = e w` and `v = r w` modulo `n`, out of Montgomery's form;
-5. `[u]G` by the signature's ladder (from the table of `u`'s bits), saved
-   to `U`, and `R` reset to `O`; then `[v]Q` by ECDH's ladder (from the
-   table of `v`'s bits) and `[u]G + [v]Q` by the complete addition, into
-   `R`;
+5. `[u]G` by the generator's multiplication (the signature's, or a curve's
+   comb), saved to `U`, and `R` reset to `O`; then `[v]Q` by ECDH's
+   multiplication (`Cfg.qMul`: a call of `vg_<curve>_mul`, by windows, for a
+   curve that has the function) and `[u]G + [v]Q` by the complete addition,
+   into `R`;
 6. `Z^(p-2)` by the signature's power, `x = X Z^(p-2)` out of Montgomery's
    form, and the masks of `Z ≠ 0` and `x R ≡ r R` modulo `n` into the
    flag, which is returned as 0 or 1.
