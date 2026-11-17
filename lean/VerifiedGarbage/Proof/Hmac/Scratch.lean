@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Sha1.Stream
 import VerifiedGarbage.Proof.Sha256.Scratch
 import VerifiedGarbage.Proof.Sha512.Stream
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Sha256.Stream
 import VerifiedGarbage.Proof.Framework.InstancePriority
 public import VerifiedGarbage.Proof.Framework.PowLit
