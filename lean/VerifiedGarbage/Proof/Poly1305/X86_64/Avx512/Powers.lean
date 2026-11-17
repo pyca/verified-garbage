@@ -1,6 +1,7 @@
 module
 
 import Mathlib.Tactic.Ring
+import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Load
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Powers
 
@@ -204,13 +205,21 @@ def spY (E : Env) (i k : Nat) : Nat :=
 
 theorem spS_h (E : Env) : ∀ i < 5, ∀ k < 8, (spS.reg (xi (hreg i))).natw E k = spH E i k := by
   intro i hi k hk
-  rcases cases5 hi with rfl | rfl | rfl | rfl | rfl <;>
-    rcases cases8 hk with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
+  -- Every case in one equation, which the kernel checks with `spS` evaluated once.
+  obtain h : ((List.range 5).map fun i => (List.range 8).map fun k => (spS.reg (xi (hreg i))).natw E k) =
+      (List.range 5).map fun i => (List.range 8).map fun k => spH E i k := by kernel_rfl
+  have h' := congrArg (fun l : List (List Nat) => l[i]?.bind (·[k]?)) h
+  simpa only [List.getElem?_map, List.getElem?_range hi, List.getElem?_range hk, Option.map_some,
+    Option.bind_some, Option.some.injEq] using h'
 
 theorem spS_y (E : Env) : ∀ i < 5, ∀ k < 8, (spS.reg (xi (yreg i))).natw E k = spY E i k := by
   intro i hi k hk
-  rcases cases5 hi with rfl | rfl | rfl | rfl | rfl <;>
-    rcases cases8 hk with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
+  -- Every case in one equation, which the kernel checks with `spS` evaluated once.
+  obtain h : ((List.range 5).map fun i => (List.range 8).map fun k => (spS.reg (xi (yreg i))).natw E k) =
+      (List.range 5).map fun i => (List.range 8).map fun k => spY E i k := by kernel_rfl
+  have h' := congrArg (fun l : List (List Nat) => l[i]?.bind (·[k]?)) h
+  simpa only [List.getElem?_map, List.getElem?_range hi, List.getElem?_range hk, Option.map_some,
+    Option.bind_some, Option.some.injEq] using h'
 
 /-- The limbs of 1. -/
 def one (i : Nat) : Nat := if i = 0 then 1 else 0

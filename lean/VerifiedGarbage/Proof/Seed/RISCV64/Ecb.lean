@@ -119,7 +119,7 @@ theorem rounds_ok (d : Spec.Seed.Direction) {s : State} (h : Room s) (hm : Masks
       have hd : ∀ r ∈ [workR s], Region.Disjoint ⟨kp d (s.gpr .a0) (16 - m), 8⟩ r := by
         intro r hr; simp only [List.mem_singleton] at hr; subst hr
         exact hdis.sub_right (Region.sub_prefix (by unfold scratchSlots; omega_arith))
-      congr 1
+      refine congr (congrArg Prod.mk ?_) ?_
       · exact inv.frame.readW (contains_prefix (by decide)) hd (by decide)
       · rw [show (4 : BitVec 64) = BitVec.ofNat 64 4 from rfl]
         exact inv.frame.readW (Offset.contains_base _ (d := 4) (n := 4) (k := 8) (by omega_arith) (by omega_arith))
@@ -998,7 +998,7 @@ theorem batch_ok (d : Spec.Seed.Direction) {s : State} (h : BatchPre d s) :
       intro r hr; simp only [List.mem_singleton] at hr; subst hr
       exact hdis.sub_right (arraysR_sub_scratch s)
     simp only [keysAt]
-    congr 1
+    refine congr (congrArg Prod.mk ?_) ?_
     · exact f₃.readW (contains_prefix (by decide)) hd (by decide)
     · rw [show (4 : BitVec 64) = BitVec.ofNat 64 4 from rfl]
       exact f₃.readW (Offset.contains_base _ (d := 4) (n := 4) (k := 8) (by omega_using []) (by omega_using [])) hd (by decide)
@@ -1359,7 +1359,7 @@ theorem blockAt_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : 
 theorem keysAt_frame {d : Spec.Seed.Direction} {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : Addr}
     {j : Nat} (hd : ∀ r ∈ rs, (⟨kp d p j, 8⟩ : Region).Disjoint r) : keysAt d m' p j = keysAt d m p j := by
   simp only [keysAt]
-  congr 1
+  refine congr (congrArg Prod.mk ?_) ?_
   · exact hf.readW (contains_prefix (by decide)) hd (by decide)
   · rw [show (4 : BitVec 64) = BitVec.ofNat 64 4 from rfl]
     exact hf.readW (Offset.contains_base _ (d := 4) (n := 4) (k := 8) (by omega_arith) (by omega_arith)) hd (by decide)

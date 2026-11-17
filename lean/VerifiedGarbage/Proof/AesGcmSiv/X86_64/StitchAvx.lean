@@ -218,9 +218,8 @@ theorem red_ok (s : State)
     WP isa (.block red) s fun s' =>
       s'.lane .xmm2 0 = reduceB (prod (s.proj 0)) ∧ YFrame redRegs s s' := by
   refine liftPure _ redSse _ rfl rfl ?_ _ s (redSse_ok (s.proj 0) hin hc)
-  intro r hr
-  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-  simp [red, vdst, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2]
+  intro r
+  cases r <;> decide
 
 /-! ## Eight blocks -/
 

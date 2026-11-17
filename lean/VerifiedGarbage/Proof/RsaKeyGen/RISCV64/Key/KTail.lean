@@ -167,8 +167,8 @@ theorem crtPart_ok (e : KE s0 V F s) (one : V aOne = 1) (zero : V aZero = 0) :
   refine WP.mono (crtOf_ok e1 (o := aDQ) (j := aQm) (one := by rw [o1 _ (by decide) (by decide), one])
     (zero := by rw [o1 _ (by decide) (by decide), zero])) fun t ⟨V2, F2, e2, o2, p2, v2⟩ => ?_
   refine ⟨V2, F2, e2, fun k hk hn => ?_, fun d a => by rw [p2 d a, p1 d a], ?_, ?_⟩
-  · rw [o2 k hk (fun m => hn (by simp only [crtArrs] at m; simp only [crtPartArrs]; simp_all)),
-      o1 k hk (fun m => hn (by simp only [crtArrs] at m; simp only [crtPartArrs]; simp_all))]
+  · rw [o2 k hk (fun m => hn ((by decide : ∀ x ∈ crtArrs aDQ, x ∈ crtPartArrs) k m)),
+      o1 k hk (fun m => hn ((by decide : ∀ x ∈ crtArrs aDP, x ∈ crtPartArrs) k m))]
   · rw [o2 aDP (by decide) (by decide), v1]
   · rw [v2, o1 aD (by decide) (by decide), o1 aQm (by decide) (by decide)]
 

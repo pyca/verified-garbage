@@ -50,10 +50,14 @@ theorem fastShift_ok (s : State) {w : Nat} (hw : w=1 ∨ w=5 ∨ w=7 ∨ w=9) :
   have hw1 : 1≤64-w ∧ 64-w≤63 := by omega_using [hw]
   have hw2 : ¬(64-w=1) := by omega_using [hw]
   apply WP.of_runBlock
+  -- `nafVal5` behind a variable: `reduceCtorEq` would evaluate both sides of its equation.
+  obtain ⟨N, hN⟩ : ∃ N, N = nafVal5 := ⟨_, rfl⟩
+  rw [← hN]
   simp only [FastNaf.shift,runBlock_cons,runStep_some,runBlock_nil,exec,execAlu,execShift,
     readSrc,Option.map_some,Option.bind_some,
-    RegUpd.gpr_setReg,RegUpd.gpr_setFlags,RegUpd.gpr_arithFlags,
-    ite_true,ite_false,and_self,reduceCtorEq,hw0,hw1,hw2,Option.some.injEq,exists_eq_left']
+    ↓RegUpd.gpr_setReg,↓RegUpd.gpr_setFlags,↓RegUpd.gpr_arithFlags,
+    ↓reduceIte,and_self,reduceCtorEq,hw0,hw1,hw2,Option.some.injEq,exists_eq_left']
+  subst hN
   refine ⟨fastShift5_value _ _ _ _ _ hw,fun r hr => ?_,rfl,rfl,rfl⟩
   simp only [List.mem_cons,List.not_mem_nil,or_false,not_or] at hr
   simp only [RegUpd.gpr_setReg,RegUpd.gpr_setFlags,RegUpd.gpr_arithFlags,
@@ -87,10 +91,14 @@ theorem fastShift7_ok (s : State) {w : Nat} (hw : w=1 ∨ w=5 ∨ w=7 ∨ w=9) :
   have hw1 : 1≤64-w ∧ 64-w≤63 := by omega_using [hw]
   have hw2 : ¬(64-w=1) := by omega_using [hw]
   apply WP.of_runBlock
+  -- `nafVal7` behind a variable: `reduceCtorEq` would evaluate both sides of its equation.
+  obtain ⟨N, hN⟩ : ∃ N, N = nafVal7 := ⟨_, rfl⟩
+  rw [← hN]
   simp only [shiftN_six,runBlock_cons,runStep_some,runBlock_nil,exec,execAlu,execShift,
     readSrc,Option.map_some,Option.bind_some,
-    RegUpd.gpr_setReg,RegUpd.gpr_setFlags,RegUpd.gpr_arithFlags,
-    ite_true,ite_false,and_self,reduceCtorEq,hw0,hw1,hw2,Option.some.injEq,exists_eq_left']
+    ↓RegUpd.gpr_setReg,↓RegUpd.gpr_setFlags,↓RegUpd.gpr_arithFlags,
+    ↓reduceIte,and_self,reduceCtorEq,hw0,hw1,hw2,Option.some.injEq,exists_eq_left']
+  subst hN
   refine ⟨fastShift7_value _ _ _ _ _ _ _ hw,fun r hr => ?_,rfl,rfl,rfl⟩
   simp only [List.mem_cons,List.not_mem_nil,or_false,not_or] at hr
   simp only [RegUpd.gpr_setReg,RegUpd.gpr_setFlags,RegUpd.gpr_arithFlags,
@@ -123,10 +131,14 @@ theorem fastShift10_ok (s : State) {w : Nat} (hw : w=1 ∨ w=5 ∨ w=7 ∨ w=9) 
   have hw1 : 1≤64-w ∧ 64-w≤63 := by omega_using [hw]
   have hw2 : ¬(64-w=1) := by omega_using [hw]
   apply WP.of_runBlock
+  -- `nafVal10` behind a variable: `reduceCtorEq` would evaluate both sides of its equation.
+  obtain ⟨N, hN⟩ : ∃ N, N = nafVal10 := ⟨_, rfl⟩
+  rw [← hN]
   simp only [shiftN_nine,runBlock_cons,runStep_some,runBlock_nil,exec,execAlu,execShift,
     readSrc,Option.map_some,Option.bind_some,
-    RegUpd.gpr_setReg,RegUpd.gpr_setFlags,RegUpd.gpr_arithFlags,
-    ite_true,ite_false,and_self,reduceCtorEq,hw0,hw1,hw2,Option.some.injEq,exists_eq_left']
+    ↓RegUpd.gpr_setReg,↓RegUpd.gpr_setFlags,↓RegUpd.gpr_arithFlags,
+    ↓reduceIte,and_self,reduceCtorEq,hw0,hw1,hw2,Option.some.injEq,exists_eq_left']
+  subst hN
   refine ⟨fastShift10_value _ _ _ _ _ _ _ _ _ _ hw,fun r hr => ?_,rfl,rfl,rfl⟩
   simp only [List.mem_cons,List.not_mem_nil,or_false,not_or] at hr
   simp only [RegUpd.gpr_setReg,RegUpd.gpr_setFlags,RegUpd.gpr_arithFlags,
@@ -163,10 +175,14 @@ theorem fastShiftV5_ok (s : State) {w : Nat} (hw : w=1 ∨ w=5 ∨ w=7 ∨ w=9)
   have e1 : (BitVec.ofNat 64 w).toNat%64=w := by rcases hw with rfl|rfl|rfl|rfl <;> rfl
   have e2 : (BitVec.ofNat 64 (64-w)).toNat%64=64-w := by rcases hw with rfl|rfl|rfl|rfl <;> rfl
   apply WP.of_runBlock
+  -- `nafVal5` behind a variable: `reduceCtorEq` would evaluate both sides of its equation.
+  obtain ⟨N, hN⟩ : ∃ N, N = nafVal5 := ⟨_, rfl⟩
+  rw [← hN]
   simp only [shiftV_four,runBlock_cons,runStep_some,runBlock_nil,exec,execAlu,execShiftx,ShiftxOp.var,
     VarShiftOp.eval,readSrc,Option.bind_some,
-    RegUpd.gpr_setReg,RegUpd.gpr_arithFlags,
-    ite_true,ite_false,reduceCtorEq,hd,hc,e1,e2,Option.some.injEq,exists_eq_left']
+    ↓RegUpd.gpr_setReg,↓RegUpd.gpr_arithFlags,
+    ↓reduceIte,reduceCtorEq,hd,hc,e1,e2,Option.some.injEq,exists_eq_left']
+  subst hN
   refine ⟨fastShift5_value _ _ _ _ _ hw,fun r hr => ?_,rfl,rfl,rfl⟩
   simp only [List.mem_cons,List.not_mem_nil,or_false,not_or] at hr
   simp only [RegUpd.gpr_setReg,RegUpd.gpr_arithFlags,
@@ -190,10 +206,14 @@ theorem fastShiftV7_ok (s : State) {w : Nat} (hw : w=1 ∨ w=5 ∨ w=7 ∨ w=9)
   have e1 : (BitVec.ofNat 64 w).toNat%64=w := by rcases hw with rfl|rfl|rfl|rfl <;> rfl
   have e2 : (BitVec.ofNat 64 (64-w)).toNat%64=64-w := by rcases hw with rfl|rfl|rfl|rfl <;> rfl
   apply WP.of_runBlock
+  -- `nafVal7` behind a variable: `reduceCtorEq` would evaluate both sides of its equation.
+  obtain ⟨N, hN⟩ : ∃ N, N = nafVal7 := ⟨_, rfl⟩
+  rw [← hN]
   simp only [shiftV_six,runBlock_cons,runStep_some,runBlock_nil,exec,execAlu,execShiftx,ShiftxOp.var,
     VarShiftOp.eval,readSrc,Option.bind_some,
-    RegUpd.gpr_setReg,RegUpd.gpr_arithFlags,
-    ite_true,ite_false,reduceCtorEq,hd,hc,e1,e2,Option.some.injEq,exists_eq_left']
+    ↓RegUpd.gpr_setReg,↓RegUpd.gpr_arithFlags,
+    ↓reduceIte,reduceCtorEq,hd,hc,e1,e2,Option.some.injEq,exists_eq_left']
+  subst hN
   refine ⟨fastShift7_value _ _ _ _ _ _ _ hw,fun r hr => ?_,rfl,rfl,rfl⟩
   simp only [List.mem_cons,List.not_mem_nil,or_false,not_or] at hr
   simp only [RegUpd.gpr_setReg,RegUpd.gpr_arithFlags,
@@ -220,10 +240,14 @@ theorem fastShiftV10_ok (s : State) {w : Nat} (hw : w=1 ∨ w=5 ∨ w=7 ∨ w=9)
   have e1 : (BitVec.ofNat 64 w).toNat%64=w := by rcases hw with rfl|rfl|rfl|rfl <;> rfl
   have e2 : (BitVec.ofNat 64 (64-w)).toNat%64=64-w := by rcases hw with rfl|rfl|rfl|rfl <;> rfl
   apply WP.of_runBlock
+  -- `nafVal10` behind a variable: `reduceCtorEq` would evaluate both sides of its equation.
+  obtain ⟨N, hN⟩ : ∃ N, N = nafVal10 := ⟨_, rfl⟩
+  rw [← hN]
   simp only [shiftV_nine,runBlock_cons,runStep_some,runBlock_nil,exec,execAlu,execShiftx,ShiftxOp.var,
     VarShiftOp.eval,readSrc,Option.bind_some,
-    RegUpd.gpr_setReg,RegUpd.gpr_arithFlags,
-    ite_true,ite_false,reduceCtorEq,hd,hc,e1,e2,Option.some.injEq,exists_eq_left']
+    ↓RegUpd.gpr_setReg,↓RegUpd.gpr_arithFlags,
+    ↓reduceIte,reduceCtorEq,hd,hc,e1,e2,Option.some.injEq,exists_eq_left']
+  subst hN
   refine ⟨fastShift10_value _ _ _ _ _ _ _ _ _ _ hw,fun r hr => ?_,rfl,rfl,rfl⟩
   simp only [List.mem_cons,List.not_mem_nil,or_false,not_or] at hr
   simp only [RegUpd.gpr_setReg,RegUpd.gpr_arithFlags,

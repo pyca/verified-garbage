@@ -30,6 +30,11 @@ namespace VG.Proof.Ffdh.X86_64.Generation
 
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
 
+/-- A callee-saved register is none of the registers the search's blocks write. -/
+private theorem saved_not_scratch {r : Reg} (hr : r ∈ calleeSaved) :
+    r ∉ ([.rsi, .rcx, .rax] : List Reg) ∧ r ∉ ([.rax, .rcx] : List Reg) := by
+  revert hr; cases r <;> decide
+
 theorem search_clear {p : SearchPublic} {original s : State} {used remaining : Nat}
     (h : SearchLive p original used remaining s) (hdi : s.gpr .rdi = p.control) :
     WP isa (VG.Impl.Rsa.X86_64.Keys.zeroOut 5 6) s fun t =>
@@ -54,7 +59,7 @@ theorem search_clear {p : SearchPublic} {original s : State} {used remaining : N
     apply ha _ (List.mem_append_left _ hr)
     rw [he]
     exact contains_byte _ (by omega_using [hi]) (by omega_using [hi, h.input.length_lt])
-  refine ⟨h.restore k.2.1 k.2.2 (fun r hr => k.gpr (by cases r <;> simp_all [calleeSaved])) hframe,
+  refine ⟨h.restore k.2.1 k.2.2 (fun r hr => k.gpr (saved_not_scratch hr).1) hframe,
     ?_, h.input.control_frame hframe, k⟩
   refine List.eq_replicate_iff.mpr ⟨by simp only [Spec.Rsa.bytesAt, List.length_map, List.length_range], ?_⟩
   intro b hb
@@ -298,7 +303,7 @@ theorem search_request_done {p : SearchPublic} {original s : State} {used remain
   have h12 : word s.mem p.control 96 = BitVec.ofNat 64 used :=
     h.headers (12, BitVec.ofNat 64 used) (by simp [SearchPublic.headers])
   refine done_update h values hb hkeep hm k.2.1 k.2.2
-    (fun reg hr => k.gpr (by cases reg <;> simp_all [calleeSaved])) ?_ ?_ ?_ hout
+    (fun reg hr => k.gpr (saved_not_scratch hr).2) ?_ ?_ ?_ hout
   · rw [hm]
     change word (writeController s.mem p.control values) p.control (8 * 12) = _
     rw [writeController_word _ _ _ hb 12 (by decide)]

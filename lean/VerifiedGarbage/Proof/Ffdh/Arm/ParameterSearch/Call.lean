@@ -197,6 +197,12 @@ namespace VG.Proof.Ffdh.Arm.ParameterSearch
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.X25519.Arm
 open VG.Proof.Ffdh.Arm.KeySearch (Controller)
 
+/-- A register the search keeps is one the callee preserves, and none of the
+arguments' registers. -/
+private theorem searchKept {r : Reg} (hr : r ∉ searchClobbers) :
+    r ∈ preserved ∧ r ≠ .lr ∧ r ∉ ([.r0, .r1, .r2, .r3, .r9, .r12] : List Reg) := by
+  revert hr; cases r <;> decide
+
 theorem candidateRun_ok (backend : VG.Proof.Ffdh.Arm.ParameterBackend)
     {p : SearchParams} {used remaining : Nat} {s : State}
     (h : SearchLive p used remaining s) (room : used + p.c.length ≤ p.c.bytes.length) :
@@ -234,8 +240,9 @@ theorem candidateRun_ok (backend : VG.Proof.Ffdh.Arm.ParameterBackend)
     refine ⟨?_, rd.trans rest.rd, ?_, ?_⟩
     · intro r hr
       change t.gpr r = s.gpr r
-      rw [kept r (by cases r <;> simp_all [searchClobbers, preserved]) (by cases r <;> simp_all [searchClobbers, preserved])]
-      exact rest.gpr r (by cases r <;> simp_all [searchClobbers, preserved])
+      obtain ⟨k₁, k₂, k₃⟩ := searchKept hr
+      rw [kept r k₁ k₂]
+      exact rest.gpr r k₃
     · change t.wr.tail = s.wr
       rw [wr, rest.wr]
       rfl

@@ -79,9 +79,10 @@ theorem splitSpec_pre {s : State} (h : splitPreK CtxMode.base s) :
   sig_reduce [Proof.Gcm.sealSplitContract, Proof.Gcm.sealSplitSig, Proof.Gcm.sealSplitPre, X86_64.abi, X86_64.argRegs,
     Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret, X86_64.stackArg, X86_64.stackArgAddr, List.getD,
     List.range, List.range.loop, VG.X86_64.below]
-  sig_and_intros
-  all_goals simp only [Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret, X86_64.stackArg,
+  -- Once, before the goal is split: not every hypothesis again for each conjunct.
+  simp only [Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret, X86_64.stackArg,
     X86_64.stackArgAddr, VG.X86_64.below, Nat.mul_one, Proof.AesGcm.rounds, CtxMode.base, BitVec.setWidth_eq] at *
+  sig_and_intros
   all_goals first
     | with_reducible assumption
     | omega
@@ -97,9 +98,10 @@ theorem splitSpecP_pre {s : State} (h : splitPreK CtxMode.powers s) :
     Proof.Gcm.sealSplitPrecomputedPre, X86_64.abi, X86_64.argRegs, Proof.AesGcm.arg, Proof.AesGcm.args,
     Proof.AesGcm.ret, X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop,
     VG.X86_64.below]
-  sig_and_intros
-  all_goals simp only [Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret, X86_64.stackArg,
+  -- Once, before the goal is split: not every hypothesis again for each conjunct.
+  simp only [Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret, X86_64.stackArg,
     X86_64.stackArgAddr, VG.X86_64.below, Nat.mul_one, Proof.AesGcm.rounds, CtxMode.powers, BitVec.setWidth_eq] at *
+  sig_and_intros
   all_goals first
     | with_reducible assumption
     | omega

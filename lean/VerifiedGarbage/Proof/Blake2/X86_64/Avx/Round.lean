@@ -95,13 +95,26 @@ theorem G_getP (v : Work w) {a c d e : Fin 16} (hab : a.1 ≠ c.1) (hac : a.1 �
 theorem columns_eqP (x y : Nat → BitVec w) (v : Work w) :
     G P (G P (G P (G P v 0 4 8 12 (x 0) (y 0)) 1 5 9 13 (x 1) (y 1)) 2 6 10 14 (x 2) (y 2))
       3 7 11 15 (x 3) (y 3) = mixColsP P x y v := by
+  -- The side conditions of `G_getP` once for each `G`, not at every rewrite of every case.
+  obtain g0 := (fun (v : Work w) (x y : BitVec w) (k : Nat) (hk : k < 16) =>
+      G_getP P v (a := 0) (c := 4) (d := 8) (e := 12) (by decide) (by decide) (by decide) (by decide) (by decide)
+        (by decide) x y k hk)
+  obtain g1 := (fun (v : Work w) (x y : BitVec w) (k : Nat) (hk : k < 16) =>
+      G_getP P v (a := 1) (c := 5) (d := 9) (e := 13) (by decide) (by decide) (by decide) (by decide) (by decide)
+        (by decide) x y k hk)
+  obtain g2 := (fun (v : Work w) (x y : BitVec w) (k : Nat) (hk : k < 16) =>
+      G_getP P v (a := 2) (c := 6) (d := 10) (e := 14) (by decide) (by decide) (by decide) (by decide) (by decide)
+        (by decide) x y k hk)
+  obtain g3 := (fun (v : Work w) (x y : BitVec w) (k : Nat) (hk : k < 16) =>
+      G_getP P v (a := 3) (c := 7) (d := 11) (e := 15) (by decide) (by decide) (by decide) (by decide) (by decide)
+        (by decide) x y k hk)
   apply Vector.ext
   intro j hj
   simp only [mixColsP_get]
   obtain rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
     rfl := cases16' hj
   all_goals
-    simp (disch := decide) only [G_getP, val_lit16, Nat.reduceMod, Nat.reduceDiv, Nat.reduceAdd,
+    simp only [g0, g1, g2, g3, val_lit16, Nat.reduceMod, Nat.reduceDiv, Nat.reduceAdd,
       Nat.reduceEqDiff, ↓reduceIte, pick4]
 
 /-- The four diagonal `G`s of a round, with the message words `x i` and `y i`
@@ -110,13 +123,26 @@ theorem diagonals_eqP (x y : Nat → BitVec w) (v : Work w) :
     G P (G P (G P (G P v 0 5 10 15 (x 0) (y 0)) 1 6 11 12 (x 1) (y 1)) 2 7 8 13 (x 2) (y 2))
       3 4 9 14 (x 3) (y 3) =
       rotOutP (mixColsP P (fun q => x ((q + 3) % 4)) (fun q => y ((q + 3) % 4)) (rotInP v)) := by
+  -- The side conditions of `G_getP` once for each `G`, not at every rewrite of every case.
+  obtain g0 := (fun (v : Work w) (x y : BitVec w) (k : Nat) (hk : k < 16) =>
+      G_getP P v (a := 0) (c := 5) (d := 10) (e := 15) (by decide) (by decide) (by decide) (by decide) (by decide)
+        (by decide) x y k hk)
+  obtain g1 := (fun (v : Work w) (x y : BitVec w) (k : Nat) (hk : k < 16) =>
+      G_getP P v (a := 1) (c := 6) (d := 11) (e := 12) (by decide) (by decide) (by decide) (by decide) (by decide)
+        (by decide) x y k hk)
+  obtain g2 := (fun (v : Work w) (x y : BitVec w) (k : Nat) (hk : k < 16) =>
+      G_getP P v (a := 2) (c := 7) (d := 8) (e := 13) (by decide) (by decide) (by decide) (by decide) (by decide)
+        (by decide) x y k hk)
+  obtain g3 := (fun (v : Work w) (x y : BitVec w) (k : Nat) (hk : k < 16) =>
+      G_getP P v (a := 3) (c := 4) (d := 9) (e := 14) (by decide) (by decide) (by decide) (by decide) (by decide)
+        (by decide) x y k hk)
   apply Vector.ext
   intro j hj
   simp only [rotOutP_get, rotInP_get, mixColsP_get]
   obtain rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
     rfl := cases16' hj
   all_goals
-    simp (disch := decide) only [G_getP, val_lit16, Nat.reduceMod, Nat.reduceDiv, Nat.reduceAdd,
+    simp only [g0, g1, g2, g3, val_lit16, Nat.reduceMod, Nat.reduceDiv, Nat.reduceAdd,
       Nat.reduceMul, Nat.reduceEqDiff, ↓reduceIte, pick4]
 
 /-- Round `r` on four columns: the column `G`s, then the diagonal ones. -/
