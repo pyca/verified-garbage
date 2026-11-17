@@ -503,15 +503,41 @@ def push : Instr → State → Option State
     else none
   | _, _ => none
 
+/-- The memory once the `n` bytes at `a`, a released frame, are below the
+stack pointer. The System V i386 psABI (version 1.2, §2.2.2 "The Stack
+Frame") has "The stack pointer, %esp, always points to the end of the
+latest allocated stack frame", and no red zone (removed in 2015): bytes
+below `esp` belong to no frame, anything that runs on the stack between two
+instructions (a signal handler) may write them, and the code can assume
+nothing of them. Each byte either keeps its value or takes one the model
+does not know, as the unknowns say: for the word `j` of the frame, the
+bytes of `u (2 * j)` say which of its bytes are replaced (those not zero),
+and the bytes of `u (2 * j + 1)` are what replaces them. A byte may keep its
+value, so what a function leaves in a frame it releases may be left there
+(`NoResidue`, whose two runs share their unknowns, still tells apart a
+frame that holds a secret). -/
+def lose (m : Mem) (a : Addr) (n : Nat) (u : Nat → BitVec 32) : Mem :=
+  fun x =>
+    let d := (x - a).toNat
+    if d < n then
+      if (u (2 * (d / 4))).extractLsb' (8 * (d % 4)) 8 = 0 then m x
+      else (u (2 * (d / 4) + 1)).extractLsb' (8 * (d % 4)) 8
+    else m x
+
 /-- The pop of a frame: `pop r`, `k` times (`popReg`), so that `r` holds the
 last word of the frame. Faults if `k = 0` or `r` is `esp`, and unless `esp`
 and the writable regions are those the push left (`s₁`), and the frame, the
 region at their head, has `4 * k` bytes; it removes the frame.
 
+Whatever the pop, the frame's bytes are then below `esp`, and are
+`lose`'s: the next of the state's `unknowns`, two for each word of the
+frame, say what each holds (none for `emms`, whose frame is empty; the 12
+bytes `mcdtEnter` moved `esp` by for `mcdtLeave`).
+
 Or `lea esp, [esp + bytes]` (`free`, "LEA" as for `alloc`), with the same
 conditions on `bytes` as `alloc` and on `esp` and the writable regions as
-`pop`, the frame having `bytes` bytes; it changes neither memory nor any
-other register.
+`pop`, the frame having `bytes` bytes; it changes no other register, and
+memory only as `lose` says.
 
 Or `emms`, the pop of an MMX frame: SDM Vol. 2, "EMMS": `x87FPUTagWord :=
 FFFFH` (the x87 stack empty); "Flags Affected: None". It leaves the frame,
@@ -526,7 +552,7 @@ closes the frame, faulting unless one is open, `esp` and the writable
 regions are those the push left (`s₁`) with the frame's region of 9 bytes
 at their head, which it removes, and the word at `esp + 4` is the value
 MXCSR had before the push (`mcdtSaved`); it changes no other register, no
-memory and no flags (SDM Vol. 2, "LDMXCSR", "LFENCE", "LEA"). -/
+memory but as `lose` says, and no flags (SDM Vol. 2, "LDMXCSR", "LFENCE", "LEA"). -/
 def pop : Instr → State → State → Option State
   | .emms, s₁, s₂ =>
     if s₂.mmx ∧ s₂.gpr .esp = s₁.gpr .esp ∧ s₂.wr = s₁.wr ∧
@@ -537,17 +563,27 @@ def pop : Instr → State → State → Option State
     if 0 < s₂.mcdt ∧ s₂.gpr .esp = s₁.gpr .esp ∧ s₂.wr = s₁.wr ∧
         s₁.wr.head? = some ⟨(s₁.gpr .esp).setWidth 64, 9⟩ ∧
         s₂.mem.readW ((s₂.gpr .esp + 4).setWidth 64) 32 = mcdtSaved (s₂.mcdt - 1) s₂.mxcsr then
-      some { s₂.setReg .esp (s₂.gpr .esp + 12) with mcdt := s₂.mcdt - 1, wr := s₂.wr.tail }
+      some { s₂.setReg .esp (s₂.gpr .esp + 12) with
+        mcdt := s₂.mcdt - 1
+        wr := s₂.wr.tail
+        mem := lose s₂.mem ((s₂.gpr .esp).setWidth 64) 12 s₂.unknowns
+        unknowns := fun n => s₂.unknowns (n + 6) }
     else none
   | .free bytes, s₁, s₂ =>
     if 0 < bytes ∧ bytes < 4096 ∧ bytes % 4 = 0 ∧ s₂.gpr .esp = s₁.gpr .esp ∧ s₂.wr = s₁.wr ∧
         s₁.wr.head? = some ⟨(s₁.gpr .esp).setWidth 64, bytes⟩ then
-      some { s₂.setReg .esp (s₂.gpr .esp + BitVec.ofNat 32 bytes) with wr := s₂.wr.tail }
+      some { s₂.setReg .esp (s₂.gpr .esp + BitVec.ofNat 32 bytes) with
+        wr := s₂.wr.tail
+        mem := lose s₂.mem ((s₂.gpr .esp).setWidth 64) bytes s₂.unknowns
+        unknowns := fun n => s₂.unknowns (n + bytes / 2) }
     else none
   | .pop r k, s₁, s₂ =>
     if k ≠ 0 ∧ r ≠ .esp ∧ s₂.gpr .esp = s₁.gpr .esp ∧ s₂.wr = s₁.wr ∧
         s₁.wr.head? = some ⟨(s₁.gpr .esp).setWidth 64, 4 * k⟩ then
-      some { popReg s₂ r k with wr := s₂.wr.tail }
+      some { popReg s₂ r k with
+        wr := s₂.wr.tail
+        mem := lose s₂.mem ((s₂.gpr .esp).setWidth 64) (4 * k) s₂.unknowns
+        unknowns := fun n => s₂.unknowns (n + 2 * k) }
     else none
   | _, _, _ => none
 

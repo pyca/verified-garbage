@@ -396,7 +396,7 @@ theorem withStackScratchC_run {c : Prog isa}
     rfl
   have hex := Exec.frame hpush (Exec.seq hset hw) hpop
   simp only [isa, addrs, List.map_nil, List.nil_append, List.append_nil, allocState_esp] at hex
-  refine ⟨hex, ⟨fun q hq => ?_, ?_⟩, Frame.refl _ _, ?_, ?_⟩
+  refine ⟨hex, ⟨fun q hq => ?_, ?_⟩, lose_frame _ _ _ _, ?_, ?_⟩
   · simp only [popState, State.setReg, State.withRegions_gpr]
     by_cases hqs : q = .esp
     · subst hqs; simp only [ite_true]
@@ -413,7 +413,13 @@ theorem withStackScratchC_run {c : Prog isa}
           ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 x, k⟩ := fun hx hk =>
       (Offset.base_disjoint_below _ (n := stack + bytes) (k := 4) (by omega_using [hst])).sub_right
         (below_sub' _ hx hk)
-    show s₃.mem.readW ((s.gpr .esp).setWidth 64) 32 = s.mem.readW ((s.gpr .esp).setWidth 64) 32
+    rw [show (popState bytes s s₃).mem.readW ((s.gpr .esp).setWidth 64) 32 =
+        s₃.mem.readW ((s.gpr .esp).setWidth 64) 32 from
+      (lose_frame _ _ _ _).readW (r := ⟨(s.gpr .esp).setWidth 64, 4⟩) (Region.contains_self _ _)
+        (fun r hr => by
+          simp only [List.mem_singleton] at hr; subst hr
+          rw [hsp64]; exact hR (by omega_using []) (by omega_using []))
+        (by decide)]
     rw [hfs.readW (r := ⟨(s.gpr .esp).setWidth 64, 4⟩) (Region.contains_self _ _) ?_ (by decide),
       narrowC_mem]
     · exact hf.readW (Region.contains_self _ _) (fun r hr => by

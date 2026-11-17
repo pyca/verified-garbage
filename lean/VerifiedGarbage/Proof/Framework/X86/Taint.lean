@@ -1866,12 +1866,39 @@ def popStep (τ : T) : Instr → Option T
     | _ => none
   | _ => none
 
+/-- A byte of a region other than the first, which a pop releases, is outside it. -/
+theorem not_in_region0 {τ : T} {s : State} (hw : Wf τ s) {j k : Nat} (hk : k < τ.lens.getD j 0)
+    (hj : j ≠ 0) (h0 : 0 < s.wr.length) : ¬ (region s 0).Contains (byteAddr s j k) 1 := by
+  have hne := lens_ne (τ := τ) (i := j) (n := k + 1) (by omega_using []) (by omega_using [hk])
+  obtain ⟨-, hdisj, -⟩ := hw.lens hne
+  obtain ⟨hj', hrj⟩ := region_mem hw hne (i := j) (by omega_using [hk])
+  have hlj := region_len hw hne j
+  have hbj := region_bound hw (i := j) (by omega_using [hk])
+  have hX : (region s j).Contains (byteAddr s j k) 1 := by
+    simp only [Region.Contains, byteAddr]
+    rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hk, hbj])]
+    omega_using [hk, hlj]
+  have hr0 : region s 0 = s.wr[0] := by
+    simp only [region, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem h0, Option.getD_some]
+  rw [List.pairwise_iff_getElem] at hdisj
+  intro h
+  exact hdisj 0 j h0 hj' (Nat.pos_of_ne_zero hj) _ (hr0 ▸ h) (hrj ▸ hX)
+
+/-- A byte `d + i ≥ n` above `x` is outside the `n` bytes at `x`. -/
+theorem not_in_frame {x : BitVec 32} {n d i : Nat} (hn : n ≤ d) (hd : x.toNat + d + i < 2 ^ 32) :
+    ¬ (⟨addr x 0, n⟩ : Region).Contains (addr x d + BitVec.ofNat 64 i) 1 := by
+  rw [addr_eq (k := d) (by omega_using [hd]), addr_eq (k := 0) (by omega_using [hd])]
+  simp only [Region.Contains, BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
+  have := x.isLt
+  omega_using [hn, hd, this]
+
 theorem region_tail (s s' : State) (h : s'.wr = s.wr.tail) (i : Nat) :
     region s' i = region s (i + 1) := by
   simp only [region, h, List.getD_eq_getElem?_getD, List.getElem?_tail]
 
 theorem Wf.pop {τ : T} {n : Nat} {stk : List (Option Nat)} (hstk : τ.stk = some n :: stk) {r : Reg}
-    {s s' : State} (hw : Wf τ s) (hwr : s'.wr = s.wr.tail) (hm : s'.mem = s.mem)
+    {s s' : State} (hw : Wf τ s) (hwr : s'.wr = s.wr.tail)
+    (hm : ∀ x, ¬ (region s 0).Contains x 1 → s'.mem x = s.mem x)
     (hsp : (s'.gpr .esp).toNat = (s.gpr .esp).toNat + n)
     (hg : ∀ q, q ≠ .esp → q ≠ r → s'.gpr q = s.gpr q) :
     Wf { τ with
@@ -1887,6 +1914,14 @@ theorem Wf.pop {τ : T} {n : Nat} {stk : List (Option Nat)} (hstk : τ.stk = som
   have hE : (s'.gpr .esp).toNat + depth stk = (s.gpr .esp).toNat + depth τ.stk := by
     rw [hsp, hstk, depth, itemSize]; omega_using []
   have hrt := region_tail s s' hwr
+  have hf0 := hw.frames (0, 0, n) (by rw [hstk]; exact List.mem_cons_self ..)
+  simp only at hf0
+  obtain h0 : 0 < s.wr.length := by
+    rcases Nat.eq_zero_or_pos s.wr.length with e | e
+    · rw [List.getElem?_eq_none (by omega_using [e])] at hf0; cases hf0
+    · exact e
+  obtain hr0 : region s 0 = ⟨addr (s.gpr .esp) 0, n⟩ := by
+    simp only [region, List.getD_eq_getElem?_getD, hf0, Option.getD_some]
   have hframes : ∀ p ∈ frameList stk 0 0, s'.wr[p.1]? = some ⟨addr (s'.gpr .esp) p.2.1, p.2.2⟩ := by
     intro p hp
     have : (p.1 + 1, p.2.1 + n, p.2.2) ∈ frameList τ.stk 0 0 := by
@@ -1920,8 +1955,14 @@ theorem Wf.pop {τ : T} {n : Nat} {stk : List (Option Nat)} (hstk : τ.stk = som
       simp only [List.getD_eq_getElem?_getD, List.getElem?_tail] at hb ⊢
       rw [Nat.sub_add_cancel (by omega_using [h₁])]; exact hb
     refine ⟨hb', ?_⟩
-    simp only [byteAddr, hrt, hm, Nat.sub_add_cancel (Nat.pos_of_ne_zero h₁),
+    obtain hR : s'.mem.readW (byteAddr s q.1 q.2.1) 32 = s.mem.readW (byteAddr s q.1 q.2.1) 32 :=
+      Mem.readW_congr fun i hi => by
+        rw [byteAddr_add]
+        exact hm _ (not_in_region0 hw (k := q.2.1 + i) (by omega_using [hb, hi]) h₁ h0)
+    simp only [byteAddr] at hR
+    simp only [byteAddr, hrt, Nat.sub_add_cancel (Nat.pos_of_ne_zero h₁),
       Nat.sub_add_cancel (Nat.pos_of_ne_zero h₂)]
+    rw [hR]
     exact hv
   · obtain ⟨h₁, h₂⟩ := hw.args hpos
     refine ⟨by simp only; omega_using [hE, h₁], fun q hq => ?_⟩
@@ -1934,7 +1975,13 @@ theorem Wf.pop {τ : T} {n : Nat} {stk : List (Option Nat)} (hstk : τ.stk = som
     obtain ⟨hb, hv⟩ := hw.argBases q hq
     refine ⟨hb, ?_⟩
     simp only
-    rw [addr_move hE, hm, hrt, Nat.sub_add_cancel (Nat.pos_of_ne_zero h₁)]
+    obtain ⟨hA, -⟩ := hw.args (by omega_using [hb])
+    obtain hR : s'.mem.readW (addr (s.gpr .esp) (depth τ.stk + q.1)) 32 =
+        s.mem.readW (addr (s.gpr .esp) (depth τ.stk + q.1)) 32 :=
+      Mem.readW_congr fun i hi => hm _ (by
+        rw [hr0]
+        exact not_in_frame (by rw [hstk, depth, itemSize]; omega_using []) (by omega_using [hA, hb, hi]))
+    rw [addr_move hE, hR, hrt, Nat.sub_add_cancel (Nat.pos_of_ne_zero h₁)]
     exact hv
   · simp only; rw [hE]; exact hw.stk
   · obtain ⟨h₁, h₂⟩ := hw.room hpos
@@ -1944,6 +1991,13 @@ theorem Wf.pop {τ : T} {n : Nat} {stk : List (Option Nat)} (hstk : τ.stk = som
     refine h₂ q ?_
     rw [hstk, nframes, ← List.drop_tail, ← hwr]
     exact hq
+
+/-- The state after `pop r k` from `b`, the frame's bytes lost. -/
+def popLost (b : State) (r : Reg) (k : Nat) : State :=
+  { popReg b r k with
+    wr := b.wr.tail
+    mem := lose b.mem ((b.gpr .esp).setWidth 64) (4 * k) b.unknowns
+    unknowns := fun n => b.unknowns (n + 2 * k) }
 
 theorem pop_sound {τ τ' : T} {j : Instr} {a₁ a₂ b₁ b₂ c₁ c₂ : State} (ha : Agree τ b₁ b₂)
     (hs : popStep τ j = some τ') (e₁ : isa.pop j a₁ b₁ = some c₁) (e₂ : isa.pop j a₂ b₂ = some c₂) :
@@ -1967,6 +2021,22 @@ theorem pop_sound {τ τ' : T} {j : Instr} {a₁ a₂ b₁ b₂ c₁ c₂ : Stat
     simp only [Option.some.injEq, Region.mk.injEq] at h
     exact h.2.symm
   have hn₁ := hn ha.wf₁ hc₁
+  -- The frame is region 0 of the state before the pop.
+  have hR0 : ∀ {a b : State}, (k ≠ 0 ∧ r ≠ .esp ∧ b.gpr .esp = a.gpr .esp ∧ b.wr = a.wr ∧
+      a.wr.head? = some ⟨(a.gpr .esp).setWidth 64, 4 * k⟩) →
+      region b 0 = ⟨(b.gpr .esp).setWidth 64, 4 * k⟩ := by
+    intro a b hc
+    simp only [region, hc.2.2.2.1, List.getD_eq_getElem?_getD, ← List.head?_eq_getElem?, hc.2.2.2.2,
+      Option.getD_some, hc.2.2.1]
+  have hl0 : ∀ {a b : State}, (k ≠ 0 ∧ r ≠ .esp ∧ b.gpr .esp = a.gpr .esp ∧ b.wr = a.wr ∧
+      a.wr.head? = some ⟨(a.gpr .esp).setWidth 64, 4 * k⟩) → 0 < b.wr.length := by
+    intro a b hc
+    rw [hc.2.2.2.1]
+    have h := hc.2.2.2.2
+    rcases e : a.wr with _ | ⟨x, xs⟩
+    · rw [e] at h; cases h
+    · simp
+  change _ ∧ Agree _ (popLost b₁ r k) (popLost b₂ r k)
   have hsp' : ∀ {a b : State}, Wf τ b → (k ≠ 0 ∧ r ≠ .esp ∧ b.gpr .esp = a.gpr .esp ∧ b.wr = a.wr ∧
       a.wr.head? = some ⟨(a.gpr .esp).setWidth 64, 4 * k⟩) →
       ((popReg b r k).gpr .esp).toNat = (b.gpr .esp).toNat + n := by
@@ -1976,13 +2046,15 @@ theorem pop_sound {τ τ' : T} {j : Instr} {a₁ a₂ b₁ b₂ c₁ c₂ : Stat
     rw [(popReg_eq b r k).2.2.1, Offset.toNat_add_ofNat]
     omega_using [hn₁, this]
   have hg : ∀ {b : State} (q : Reg), q ≠ .esp → q ≠ r →
-      ({ popReg b r k with wr := b.wr.tail } : State).gpr q = b.gpr q :=
+      (popLost b r k).gpr q = b.gpr q :=
     fun q h₁ h₂ => (popReg_eq _ r k).2.2.2 q h₁ h₂
-  have w₁ := ha.wf₁.pop hstk (s' := { popReg b₁ r k with wr := b₁.wr.tail }) rfl (popReg_rest b₁ r k).1
+  have w₁ := ha.wf₁.pop hstk (s' := popLost b₁ r k) rfl
+    (fun _ hx => lose_out (by rw [hR0 hc₁] at hx; exact hx))
     (hsp' ha.wf₁ hc₁) hg
-  have w₂ := ha.wf₂.pop hstk (s' := { popReg b₂ r k with wr := b₂.wr.tail }) rfl (popReg_rest b₂ r k).1
+  have w₂ := ha.wf₂.pop hstk (s' := popLost b₂ r k) rfl
+    (fun _ hx => lose_out (by rw [hR0 hc₂] at hx; exact hx))
     (hsp' ha.wf₂ hc₂) hg
-  have hE : ∀ {b : State}, (({ popReg b r k with wr := b.wr.tail } : State).gpr .esp) =
+  have hE : ∀ {b : State}, ((popLost b r k).gpr .esp) =
       b.gpr .esp + BitVec.ofNat 32 (4 * k) := (popReg_eq _ r k).2.2.1
   refine ⟨by simp [addrs, hsp], ⟨⟨fun q hq => ?_, fun hf => ?_⟩, fun hne => ?_, w₁, w₂, fun i t hsl => ?_,
     fun i t hsl => ?_, fun _ => by rw [hE, hE, hsp], fun t h4 ht => ?_⟩⟩
@@ -2004,19 +2076,31 @@ theorem pop_sound {τ τ' : T} {j : Instr} {a₁ a₂ b₁ b₂ c₁ c₂ : Stat
     exact this
   · rw [Slots.has_pop] at hsl
     have e : ∀ b : State,
-        byteAddr ({ popReg b r k with wr := b.wr.tail } : State) i t = byteAddr b (i + 1) t :=
+        byteAddr (popLost b r k) i t = byteAddr b (i + 1) t :=
       fun b => by simp only [byteAddr]; rw [region_tail b _ rfl]
-    show (popReg b₁ r k).mem (byteAddr _ i t) = (popReg b₂ r k).mem (byteAddr _ i t)
-    rw [e, e, (popReg_rest _ r k).1, (popReg_rest _ r k).1]
+    show lose b₁.mem ((b₁.gpr .esp).setWidth 64) (4 * k) b₁.unknowns (byteAddr _ i t) =
+      lose b₂.mem ((b₂.gpr .esp).setWidth 64) (4 * k) b₂.unknowns (byteAddr _ i t)
+    have hok := ha.ok (i + 1) t hsl
+    rw [e, e, lose_out (by rw [← hR0 hc₁]; exact not_in_region0 ha.wf₁ hok (by omega_using []) (hl0 hc₁)),
+      lose_out (by rw [← hR0 hc₂]; exact not_in_region0 ha.wf₂ hok (by omega_using []) (hl0 hc₂))]
     exact ha.slots (i + 1) t hsl
-  · have e₁ : ((({ popReg b₁ r k with wr := b₁.wr.tail } : State).gpr .esp)).toNat + depth stk =
+  · have e₁ : (((popLost b₁ r k).gpr .esp)).toNat + depth stk =
         (b₁.gpr .esp).toNat + depth τ.stk := by
+      show ((popReg b₁ r k).gpr .esp).toNat + depth stk = _
       rw [hsp' ha.wf₁ hc₁, hstk, depth, itemSize]; omega_using []
-    have e₂ : ((({ popReg b₂ r k with wr := b₂.wr.tail } : State).gpr .esp)).toNat + depth stk =
+    have e₂ : (((popLost b₂ r k).gpr .esp)).toNat + depth stk =
         (b₂.gpr .esp).toNat + depth τ.stk := by
+      show ((popReg b₂ r k).gpr .esp).toNat + depth stk = _
       rw [hsp' ha.wf₂ hc₂, hstk, depth, itemSize]; omega_using []
     simp only at ht ⊢
-    rw [argByte_move e₁, argByte_move e₂, (popReg_rest _ r k).1, (popReg_rest _ r k).1]
+    rw [argByte_move e₁, argByte_move e₂]
+    obtain ⟨hA₁, -⟩ := ha.wf₁.args (by omega_using [ht])
+    obtain ⟨hA₂, -⟩ := ha.wf₂.args (by omega_using [ht])
+    obtain hd : 4 * k ≤ depth τ.stk + t := by rw [hstk, depth, itemSize]; omega_using [hn₁]
+    show lose b₁.mem ((b₁.gpr .esp).setWidth 64) (4 * k) b₁.unknowns (argByte b₁ _) =
+      lose b₂.mem ((b₂.gpr .esp).setWidth 64) (4 * k) b₂.unknowns (argByte b₂ _)
+    rw [lose_out (x := argByte b₁ _) (not_contains_above hd (by omega_using [hA₁, ht])),
+      lose_out (x := argByte b₂ _) (not_contains_above hd (by omega_using [hA₂, ht]))]
     exact ha.argMem t h4 ht
 
 /-- The public slots of a frame's push `push rs`, the first register at `o - 4`. -/

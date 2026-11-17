@@ -29,6 +29,24 @@ theorem addr_eq {x : BitVec 32} {k : Nat} (h : x.toNat + k < 2 ^ 32) :
     Nat.mod_eq_of_lt (a := k) (by omega_using [h]), Nat.mod_eq_of_lt (a := x.toNat) (by omega_using []),
     Nat.mod_eq_of_lt (a := x.toNat + k) (by omega_using [h])]
 
+/-- A byte outside a released frame is what it was. -/
+theorem lose_out {m : Mem} {a : Addr} {n : Nat} {u : Nat → BitVec 32} {x : Addr}
+    (h : ¬ (⟨a, n⟩ : Region).Contains x 1) : lose m a n u x = m x := by
+  simp only [Region.Contains] at h
+  have h' : ¬ (x - a).toNat < n := by omega_using [h]
+  simp only [lose, h', ite_false]
+
+/-- The bytes a frame loses when it is released differ only within the frame. -/
+theorem lose_frame (m : Mem) (a : Addr) (n : Nat) (u : Nat → BitVec 32) :
+    Frame [⟨a, n⟩] m (lose m a n u) := fun _ hx => lose_out (hx _ (List.mem_singleton_self _))
+
+/-- A byte `d ≥ n` bytes above `a` is outside the `n` bytes at `a`. -/
+theorem not_contains_above {a : Addr} {n d : Nat} (hn : n ≤ d) (hd : d < 2 ^ 64) :
+    ¬ (⟨a, n⟩ : Region).Contains (a + BitVec.ofNat 64 d) 1 := by
+  simp only [Region.Contains]
+  rw [BitVec.add_comm a, BitVec.add_sub_cancel, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hd]
+  omega_using [hn]
+
 theorem bswap_readW (m : Mem) (a : Addr) :
     bswap (m.readW a 32) = (m a ++ m (a + 1) ++ m (a + 1 + 1) ++ m (a + 1 + 1 + 1) : BitVec 32) :=
   byteRev32_readW m a

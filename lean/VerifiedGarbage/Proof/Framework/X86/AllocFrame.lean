@@ -71,11 +71,13 @@ theorem WP.frameAlloc {bytes : Nat} {body : Prog isa} {s : State} {Q : State →
   have hpush : isa.push (.alloc bytes) s = some (allocFrame bytes s) := by
     simp only [isa, push, h0, h1, h4, hn, and_self, ite_true]
     rfl
-  have hpop : isa.pop (.free bytes) (allocFrame bytes s) s₂ = some (freed bytes s₂) := by
+  have hpop : isa.pop (.free bytes) (allocFrame bytes s) s₂ = some { freed bytes s₂ with
+      mem := lose s₂.mem ((s₂.gpr .esp).setWidth 64) bytes s₂.unknowns
+      unknowns := fun n => s₂.unknowns (n + bytes / 2) } := by
     simp only [isa, pop]
     refine ite_eq_left ⟨h0, h1, h4, hp, hw, ?_⟩
     simp
-  exact ⟨_, _, Exec.frame hpush he hpop, hq _ _ (Frame.refl _ _)⟩
+  exact ⟨_, _, Exec.frame hpush he hpop, hq _ _ (by rw [hp, allocFrame_esp]; exact lose_frame _ _ _ _)⟩
 
 /-- `WP.frameAlloc` for a postcondition that holds whatever the frame's
 bytes below `esp` and the unknowns are once it holds for the freed state. -/

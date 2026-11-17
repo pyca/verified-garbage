@@ -21,9 +21,14 @@ def symPushed (name : String) (s : State) : State :=
     unknowns := fun n => s.unknowns (n+1)
     wr := below (s.gpr .esp) 4 :: s.wr }
 
-/-- The saved EIP is discarded into ECX, leaving the static address in EAX. -/
+/-- The saved EIP is discarded into ECX, leaving the static address in EAX;
+the frame's word is then lost (`lose`). -/
 def symPopped (name : String) (s : State) : State :=
-  { popReg (symPushed name s) .ecx 1 with wr := s.wr }
+  { popReg (symPushed name s) .ecx 1 with
+    wr := s.wr
+    mem := lose (symPushed name s).mem (((symPushed name s).gpr .esp).setWidth 64) 4
+      (symPushed name s).unknowns
+    unknowns := fun n => (symPushed name s).unknowns (n + 2) }
 
 /-- The address result, preserved calling convention, and four-byte write. -/
 structure SymAddrPost (name : String) (s t : State) : Prop where
@@ -81,8 +86,14 @@ theorem symFrame_ok (name : String) (s : State) (hsp : 4 ≤ (s.gpr .esp).toNat)
     by_cases h : r = .esp
     · subst r; simp [symPopped, popReg, symPushed, State.setReg, State.setFlags, arithFlags, BitVec.sub_add_cancel]
     · simp [symPopped, popReg, symPushed, State.setReg, State.setFlags, arithFlags, hr.1, hr.2, h]
-  · exact Frame.writeW (Frame.refl _ _) (List.mem_singleton_self _) _
-      (below_top (Nat.le_refl 4) hsp (by decide))
+  · have f₀ : Frame [below (s.gpr .esp) 4] s.mem (symPushed name s).mem :=
+      Frame.writeW (Frame.refl _ _) (List.mem_singleton_self _) _ (below_top (Nat.le_refl 4) hsp (by decide))
+    refine f₀.trans ?_
+    have e : ((symPushed name s).gpr .esp).setWidth 64 = (below (s.gpr .esp) 4).base := by
+      simp [symPushed, State.setReg, arithFlags, below]
+    show Frame _ (symPushed name s).mem (lose (symPushed name s).mem _ 4 _)
+    rw [e]
+    exact lose_frame _ _ _ _
 
 /-- The balanced address prefix accesses only the word below public ESP. -/
 theorem symFrame_trace {name : String} {s s' : State} {tr : List Leak}

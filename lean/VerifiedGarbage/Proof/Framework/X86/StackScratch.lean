@@ -836,7 +836,10 @@ theorem frame_disj (hb : 8 + 4 * slots sig + n * e.size ≤ bytes) {s : State}
 `s₃` its code ends in when it starts in `s`. -/
 def popState (bytes : Nat) (s s₃ : State) : State :=
   { (s₃.withRegions s.rd (⟨(s.gpr .esp - BitVec.ofNat 32 bytes).setWidth 64, bytes⟩ :: s.wr)).setReg
-      .esp (s.gpr .esp) with wr := s.wr }
+      .esp (s.gpr .esp) with
+    wr := s.wr
+    mem := lose s₃.mem ((s.gpr .esp - BitVec.ofNat 32 bytes).setWidth 64) bytes s₃.unknowns
+    unknowns := fun n => s₃.unknowns (n + bytes / 2) }
 
 /-- A run of the code from `narrow s` is a run of `withStackScratch` from
 `s`, after `setArgs`'s accesses, which keeps what the calling convention
@@ -939,7 +942,7 @@ theorem withStackScratch_run {c : Prog isa}
     rfl
   have hex := Exec.frame hpush (Exec.seq (Exec.block hrun) hw) hpop
   simp only [isa, addrs, List.map_nil, List.nil_append, List.append_nil, allocState_esp] at hex
-  refine ⟨hex, ⟨fun q hq => ?_, ?_⟩, Frame.refl _ _, ?_, ?_⟩
+  refine ⟨hex, ⟨fun q hq => ?_, ?_⟩, lose_frame _ _ _ _, ?_, ?_⟩
   · simp only [popState, State.setReg, State.withRegions_gpr]
     by_cases hqs : q = .esp
     · subst hqs; simp only [ite_true]
@@ -953,7 +956,13 @@ theorem withStackScratch_run {c : Prog isa}
           ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 x, k⟩ := fun hx hk =>
       (Offset.base_disjoint_below _ (n := stack + bytes) (k := 4) (by omega_using [hst])).sub_right
         (below_sub' _ hx hk)
-    show s₃.mem.readW ((s.gpr .esp).setWidth 64) 32 = s.mem.readW ((s.gpr .esp).setWidth 64) 32
+    rw [show (popState bytes s s₃).mem.readW ((s.gpr .esp).setWidth 64) 32 =
+        s₃.mem.readW ((s.gpr .esp).setWidth 64) 32 from
+      (lose_frame _ _ _ _).readW (r := ⟨(s.gpr .esp).setWidth 64, 4⟩) (Region.contains_self _ _)
+        (fun r hr => by
+          simp only [List.mem_singleton] at hr; subst hr
+          rw [hsp64]; exact hR (by omega_using []) (by omega_using []))
+        (by decide)]
     rw [hfs.readW (r := ⟨(s.gpr .esp).setWidth 64, 4⟩) (Region.contains_self _ _) ?_ (by decide)]
     · exact hf.readW (Region.contains_self _ _) (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact hR (by omega_using []) (by omega_using [hb])) (by decide)
