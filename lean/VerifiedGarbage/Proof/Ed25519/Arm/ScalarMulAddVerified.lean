@@ -4,15 +4,13 @@ public import VerifiedGarbage.Proof.X25519.Arm.Mul
 public import VerifiedGarbage.Impl.Ed25519.Arm.ScalarMulAdd
 import VerifiedGarbage.Proof.X25519.Arm.AddSub
 import VerifiedGarbage.Proof.Ed25519.Arm.ScalarCodec
-import VerifiedGarbage.Proof.Ed25519.Arm.ScalarLoop
+import VerifiedGarbage.Proof.Ed25519.Arm.ScalarFold
 public import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.Ed25519.Arm.UnpackField
 public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarFinish
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Proof.X25519.Arm.Pass
 import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Proof.Ed25519.Arm.PackField
-import VerifiedGarbage.Proof.Ed25519.Bytes
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import VerifiedGarbage.Proof.Framework.Offset
@@ -24,15 +22,13 @@ meta import VerifiedGarbage.Proof.X25519.Arm.Mul
 meta import VerifiedGarbage.Impl.Ed25519.Arm.ScalarMulAdd
 meta import VerifiedGarbage.Proof.X25519.Arm.AddSub
 meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarCodec
-meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarLoop
+meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarFold
 meta import VerifiedGarbage.TCB.Arm.Target
 meta import VerifiedGarbage.Proof.Ed25519.Arm.UnpackField
 meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarFinish
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.X25519.Arm.Pass
 meta import VerifiedGarbage.Proof.Framework.Range
-meta import VerifiedGarbage.Proof.Ed25519.Arm.PackField
-meta import VerifiedGarbage.Proof.Ed25519.Bytes
 meta import VerifiedGarbage.Proof.Framework.Arm.Exec
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Framework.Offset
@@ -130,36 +126,12 @@ theorem scalarCarryPass_ok {x : Nat} (hx : x + 64 ≤ 4096)
   refine WP.mono (ldSrc_ok (hc.of_rest ht.rest (by decide)) (by omega_arith)) fun u ⟨e, ku, mu⟩ => ?_
   exact ⟨e.trans (wd_pass hc ht.frame (Or.inr (by omega_arith)) (by omega_arith) (by omega_arith)), ku.mono (by decide), mu⟩
 
-theorem scalarPass_result {x : Nat} {s t : State} {f : Nat → Nat} {cin : Nat}
-    (hc : Ctx b s) (hp : PassInv .r0 x s f cin 16 t) :
-    Frame [⟨State.addr b + BitVec.ofNat 64 x, 64⟩] s.mem t.mem ∧
-    Lim t.mem (State.addr b) x ∧
-    V t.mem (State.addr b) x + 2 ^ 256 * (t.gpr .r5).toNat = val16 f 16 + cin := by
-  obtain outs : ∀ k < 16, limb t.mem (State.addr b) x k = out f cin k := by
-    intro k hk; have he := hp.outs k hk; rwa [hc.r0] at he
-  refine ⟨by have hf := hp.frame; rwa [hc.r0] at hf,
-    fun k hk => by rw [outs k hk]; exact out_lt _ _ _, ?_⟩
-  change val16 _ _ + _ = _
-  rw [val16_congr outs, hp.r5]
-  exact chain_val f cin 16
-
 end VG.Proof.Ed25519.Arm
 end
 
 /-! Add the 256-bit scalar to all 512 product bits, carrying across both halves. -/
 namespace VG.Proof.Ed25519.Arm
 open VG VG.Arm VG.Impl.Ed25519.Arm VG.Proof.X25519.Arm
-
-theorem scalarWide_split (m : Mem) (b : BitVec 32) :
-    val16 (accw ACC m (State.addr b)) 32 = V m (State.addr b) ACC + 2 ^ 256 * V m (State.addr b) (ACC + 64) := by
-  rw [show (32 : Nat) = 16 + 16 from rfl, val16_append]
-  obtain he : val16 (fun k => accw ACC m (State.addr b) (16 + k)) 16 = V m (State.addr b) (ACC + 64) := by
-    apply val16_congr
-    intro k _
-    unfold accw limb
-    rw [show ACC + 4 * (16 + k) = ACC + 64 + 4 * k by omega_arith]
-  rw [he]
-  rfl
 
 theorem scalarWideAdd_ok {b : BitVec 32} {r : Nat} (hr : r + 64 ≤ ACC) {s : State}
     (hc : Ctx b s) (lr : Lim s.mem (State.addr b) r)
@@ -227,84 +199,13 @@ theorem scalarWideAdd_ok {b : BitVec 32} {r : Nat} (hr : r + 64 ≤ ACC) {s : St
     change V s3.mem (State.addr b) ACC + _ = V s.mem (State.addr b) ACC + V s.mem (State.addr b) r at v3
     change V t.mem (State.addr b) (ACC + 64) + _ = V s3.mem (State.addr b) (ACC + 64) + _ at vt
     rw [hi3] at vt
-    rw [scalarWide_split, scalarWide_split, vlo]
+    rw [wide_split, wide_split, vlo]
     omega_arith
 
 end VG.Proof.Ed25519.Arm
 end
 
-/-! Merged from `Proof.Ed25519.Arm.ScalarPackWide`. -/
-section
-/-! Serialize all 512 product bits for the same checked reduction engine. -/
-namespace VG.Proof.Ed25519.Arm
-open VG VG.Arm VG.Impl.Ed25519.Arm VG.Proof.X25519.Arm
-
-theorem scalarPackWide_ok {b : BitVec 32} {s : State} (hc : Ctx b s)
-    (la : ∀ k < 32, accw ACC s.mem (State.addr b) k < 65536) :
-    WP isa (.block scalarPackWide) s fun t =>
-      Rest [.r3, .r12] s t ∧ Frame [⟨State.addr b + BitVec.ofNat 64 512, 64⟩] s.mem t.mem ∧
-      t.gpr .r12 = b + BitVec.ofNat 32 512 ∧
-      Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt t.mem (State.addr b + BitVec.ofNat 64 512) 64) =
-        val16 (accw ACC s.mem (State.addr b)) 32 := by
-  have hA : ACC = 1472 := rfl
-  obtain ll : Lim s.mem (State.addr b) ACC := fun k hk => la k (by omega_arith)
-  obtain lh : Lim s.mem (State.addr b) (ACC + 64) := by
-    intro k hk
-    change wd s.mem (State.addr b) (ACC + 64 + 4 * k) < _
-    rw [show ACC + 64 + 4 * k = ACC + 4 * (16 + k) by omega_arith]
-    exact la _ (by omega_arith)
-  have afit := hc.fit
-  obtain ep : State.addr (b + BitVec.ofNat 32 512) = State.addr b + BitVec.ofNat 64 512 :=
-    addr_add (by omega_arith)
-  obtain pf : (b + BitVec.ofNat 32 512).toNat = b.toNat + 512 := by
-    rw [toNat_add_lt (by rw [toNat_imm (by decide)]; omega_arith), toNat_imm (by decide)]
-  rw [scalarPackWide, List.append_assoc]
-  simp only [List.cons_append, List.nil_append]
-  refine wp_dp (op2_imm (by decide)) fun u hu => ?_
-  obtain hcu := hc.of_rest (hu.rest (ws := [.r12]) (by decide)) (by decide)
-  obtain pu : u.gpr .r12 = b + BitVec.ofNat 32 512 := by rw [hu.gpr]; change s.gpr .r0 + _ = _; rw [hc.r0]; rfl
-  refine WP.append (packField_ok (p := b + BitVec.ofNat 32 512) (a := ACC) (dst := 0) hcu
-    (by decide) (hu.mem ▸ ll) (by decide) pu (by rw [pf]; omega_arith)
-    (fun i hi => by rw [ep, Offset.add_add]; exact hcu.inW (by omega_arith))
-    (by rw [ep, BitVec.add_zero]; exact Offset.disjoint _ (Or.inr (by decide)) (by decide) (by decide)))
-    fun v ⟨kv, fv, vv⟩ => ?_
-  obtain hcv := hcu.of_rest kv (by decide)
-  obtain fv' : Frame [⟨State.addr b + BitVec.ofNat 64 512, 32⟩] s.mem v.mem := by
-    simpa only [ep, BitVec.add_zero, hu.mem] using fv
-  obtain hvh : ∀ k < 16, limb v.mem (State.addr b) (ACC + 64) k = limb s.mem (State.addr b) (ACC + 64) k :=
-    limb_frame fv' fun r hr k hk => by
-      rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (Or.inr (by omega_arith)) (by omega_arith) (by decide)
-  obtain lvh : Lim v.mem (State.addr b) (ACC + 64) := fun k hk => by rw [hvh k hk]; exact lh k hk
-  refine WP.mono (packField_ok (p := b + BitVec.ofNat 32 512) (a := ACC + 64) (dst := 32) hcv
-    (by decide) lvh (by decide) ((kv.gpr _ (by decide)).trans pu) (by rw [pf]; omega_arith)
-    (fun i hi => by rw [ep, Offset.add_add]; exact hcv.inW (by omega_arith))
-    (by rw [ep, Offset.add_add]; exact Offset.disjoint _ (Or.inr (by decide)) (by decide) (by decide)))
-    fun t ⟨kt, ft, vt⟩ => ?_
-  obtain ft' : Frame [⟨State.addr b + BitVec.ofNat 64 544, 32⟩] v.mem t.mem := by
-    simpa only [ep, Offset.add_add] using ft
-  obtain vlo : packedV t.mem (State.addr b + BitVec.ofNat 64 512) = V s.mem (State.addr b) ACC := by
-    rw [packedV_frame ft' (fun r hr => by
-      rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (Or.inl (by decide)) (by decide) (by decide))]
-    simpa only [ep, BitVec.add_zero, hu.mem] using vv
-  obtain vhi : packedV t.mem (State.addr b + BitVec.ofNat 64 544) = V s.mem (State.addr b) (ACC + 64) := by
-    obtain ve : V v.mem (State.addr b) (ACC + 64) = V s.mem (State.addr b) (ACC + 64) := val16_congr hvh
-    simpa only [ep, Offset.add_add, ve] using vt
-  refine ⟨(hu.rest (by decide)).trans ((kv.mono (by decide)).trans (kt.mono (by decide))), ?_,
-    (kt.gpr _ (by decide)).trans ((kv.gpr _ (by decide)).trans pu), ?_⟩
-  · exact (fv'.sub fun r hr => ⟨_, List.mem_singleton_self _, by
-      rw [List.mem_singleton.mp hr]; exact Region.sub_prefix (by decide)⟩).trans
-      (ft'.sub fun r hr => ⟨_, List.mem_singleton_self _, by
-        rw [List.mem_singleton.mp hr]; exact Offset.sub _ (by decide) (by decide)⟩)
-  · change Spec.Ed25519.decodeLE (Spec.X25519.bytesAt t.mem _ (32 + 32)) = _
-    rw [VG.Proof.X25519.bytesAt_add, decodeLE_append, VG.Proof.X25519.length_bytesAt]
-    change Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt t.mem _ 32) +
-      256 ^ 32 * Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt t.mem _ 32) = _
-    rw [scalar_packed_decode, scalar_packed_decode, Offset.add_add, vlo, vhi, scalarWide_split]
-
-end VG.Proof.Ed25519.Arm
-end
-
-/-! Full-width product plus addend, serialized and reduced modulo L. -/
+/-! Full-width product plus addend, reduced modulo L. -/
 namespace VG.Proof.Ed25519.Arm
 open VG VG.Arm VG.Impl.Ed25519.Arm VG.Proof.X25519.Arm
 
@@ -341,7 +242,7 @@ theorem scalarMulAddEngine_ok {b : BitVec 32} {s : State} (hc : Ctx b s)
     limb_frame fu fun z hz k hk => by
       rw [List.mem_singleton.mp hz]; exact Offset.disjoint _ (.inl (by omega_arith)) (by omega_arith) (by decide)
   obtain lru : Lim u.mem (State.addr b) 64 := fun k hk => by rw [ur k hk]; exact lr k hk
-  refine WP.seq (WP.append (scalarWideAdd_ok (by decide) hcu lru lu) fun v ⟨kv, fv, lv, vv⟩ => ?_)
+  refine WP.seq (WP.mono (scalarWideAdd_ok (by decide) hcu lru lu) fun v ⟨kv, fv, lv, vv⟩ => ?_)
   obtain hcv := hcu.of_rest kv (by decide)
   obtain vr : V u.mem (State.addr b) 64 = V s.mem (State.addr b) 64 := val16_congr ur
   obtain sum : val16 (accw ACC v.mem (State.addr b)) 32 =
@@ -353,40 +254,24 @@ theorem scalarMulAddEngine_ok {b : BitVec 32} {s : State} (hc : Ctx b s)
       · exact hz
       · have := Nat.le_mul_of_pos_right (2 ^ 512) hp; omega_arith
     exact scalar_zero_carry vv zero
-  refine WP.mono (scalarPackWide_ok hcv lv) fun w ⟨kw, fw, pw, vw⟩ => ?_
-  obtain kr : Rest scalarEngineClob s w :=
-    (ku.mono (by decide)).trans ((kv.mono (by decide)).trans (kw.mono (by decide)))
-  obtain hcw := hc.of_rest kr (by decide)
-  obtain pf : (b + BitVec.ofNat 32 512).toNat + 64 ≤ 2 ^ 32 := by
-    rw [toNat_add_lt (by rw [toNat_imm (by decide)]; have := hc.fit; omega_arith), toNat_imm (by decide)]
-    have := hc.fit; omega_arith
-  obtain ep : State.addr (b + BitVec.ofNat 32 512) = State.addr b + BitVec.ofNat 64 512 :=
-    addr_add (by have := hc.fit; omega_arith)
   refine WP.seq ?_
   refine wp_mov (op2_reg _ _) fun x hx => WP.block_nil ?_
-  obtain hcx := hcw.of_rest (hx.rest (ws := [.r8]) (by decide)) (by decide)
-  refine WP.mono (scalarReduceEngine_ok hcx ((hx.other _ (by decide)).trans pw) pf
-    (fun n hn => by rw [ep, Offset.add_add]; exact hcx.inR (by omega_arith))
-    (fun z hz => by
-      rw [ep]
-      simp only [scalarRegions, List.mem_cons, List.not_mem_nil, or_false] at hz
-      rcases hz with rfl | rfl <;> exact Offset.disjoint _ (.inr (by decide)) (by decide) (by decide)))
-    fun t ⟨kt, lt, vt⟩ => ?_
-  refine ⟨kr.trans ((hx.rest (by decide)).trans (kt.rest.mono (by decide))), ?_, lt, ?_, ?_⟩
+  obtain kr : Rest scalarEngineClob s x :=
+    (ku.mono (by decide)).trans ((kv.mono (by decide)).trans (hx.rest (by decide)))
+  obtain hcx := hc.of_rest kr (by decide)
+  refine WP.mono (scalarFold_ok hcx (hx.mem ▸ lv)) fun t ⟨kt, ft, lt, vt⟩ => ?_
+  refine ⟨kr.trans (kt.mono (by decide)), ?_, lt, ?_, ?_⟩
   · have fu' : Frame [scalarWork b] s.mem u.mem := fu.sub fun z hz => ⟨_, List.mem_singleton_self _, by
       rw [List.mem_singleton.mp hz]; exact scalarWork_sub (by decide) (by decide)⟩
     obtain fv' : Frame [scalarWork b] u.mem v.mem := fv.sub fun z hz => ⟨_, List.mem_singleton_self _, by
       rw [List.mem_singleton.mp hz]; exact scalarWork_sub (by decide) (by decide)⟩
-    obtain fw' : Frame [scalarWork b] v.mem w.mem := fw.sub fun z hz => ⟨_, List.mem_singleton_self _, by
-      rw [List.mem_singleton.mp hz]; exact scalarWork_sub (by decide) (by decide)⟩
-    obtain ft' : Frame [scalarWork b] w.mem t.mem := by
+    obtain ft' : Frame [scalarWork b] v.mem t.mem := by
       rw [← hx.mem]
-      exact kt.frame.sub fun z hz => ⟨_, List.mem_singleton_self _, by
-        simp only [scalarRegions, List.mem_cons, List.not_mem_nil, or_false] at hz
-        rcases hz with rfl | rfl <;> exact scalarWork_sub (by decide) (by decide)⟩
-    exact fu'.trans (fv'.trans (fw'.trans ft'))
-  · rw [vt, ep, hx.mem, vw, sum, Nat.add_comm]
-  · rw [kt.rest.gpr _ (by decide), hx.gpr, kw.gpr _ (by decide), kv.gpr _ (by decide), ku.gpr _ (by decide)]
+      exact ft.sub fun z hz => ⟨_, List.mem_singleton_self _, by
+        rw [List.mem_singleton.mp hz]; exact scalarWork_sub (by decide) (by decide)⟩
+    exact fu'.trans (fv'.trans ft')
+  · rw [vt, hx.mem, sum, Nat.add_comm]
+  · rw [kt.gpr _ (by decide), hx.gpr, kv.gpr _ (by decide), ku.gpr _ (by decide)]
 
 end VG.Proof.Ed25519.Arm
 end
@@ -582,47 +467,6 @@ theorem scalarMulAddInputs_ok {b q : BitVec 32} {s : State} (hc : Ctx b s)
 end VG.Proof.Ed25519.Arm
 end
 
-/-! Merged from `Proof.Ed25519.Arm.ScalarMulAddFinish`. -/
-section
-/-! Encode the scalar using the output pointer kept public across arithmetic. -/
-namespace VG.Proof.Ed25519.Arm
-open VG VG.Arm VG.Impl.Ed25519.Arm VG.Proof.X25519.Arm
-
-theorem scalarMulAddFinish_ok {b p : BitVec 32} {s : State} (hc : Ctx b s)
-    (hl : Lim s.mem (State.addr b) SR) (hp : s.gpr .r8 = p)
-    (hfit : p.toNat + 32 ≤ 2 ^ 32) (hw : (⟨State.addr p, 32⟩ : Region) ∈ s.wr)
-    (hsep : (⟨State.addr p, 32⟩ : Region).Disjoint ⟨State.addr b, 8192⟩)
-    {g : Reg → BitVec 32} (hs : ScalarSaved (State.addr b) g s.mem) :
-    WP isa (.block scalarMulAddFinish) s fun t =>
-      (∀ i < 8, t.gpr (scalarSavedReg i) = g (scalarSavedReg i)) ∧ Rest scalarFinishClob s t ∧
-      Frame [⟨State.addr p, 32⟩] s.mem t.mem ∧
-      Spec.Ed25519.bytesAt t.mem (State.addr p) 32 = Spec.Ed25519.encodeLE 32 (V s.mem (State.addr b) SR) := by
-  rw [scalarMulAddFinish, List.append_assoc]
-  simp only [List.cons_append, List.nil_append]
-  refine wp_mov (op2_reg _ _) fun u hu => ?_
-  obtain hcu := hc.of_rest (hu.rest (ws := [.r12]) (by decide)) (by decide)
-  refine WP.append (packField_ok (p := p) (a := SR) (dst := 0) hcu (by decide) (hu.mem ▸ hl) (by decide)
-    (hu.gpr.trans hp) (by omega_arith)
-    (fun i hi => by rw [hu.wr]; simpa only [Nat.zero_add] using in_base hw (by omega_arith) (by omega_arith))
-    (by simpa only [BitVec.add_zero] using
-      hsep.symm.sub_left (Offset.sub_base _ (by decide : SR + 64 ≤ 8192))))
-    fun v ⟨kv, fv, vv⟩ => ?_
-  obtain hcv := hcu.of_rest kv (by decide)
-  obtain hs' : ScalarSaved (State.addr b) g v.mem :=
-    (hu.mem ▸ hs).frame fv fun r hr i hi => by
-      rw [List.mem_singleton.mp hr, BitVec.add_zero]
-      exact hsep.symm.sub_left (Offset.sub_base _ (by omega_arith))
-  refine WP.mono (scalarRestore_ok hcv hs') fun t ⟨saved, kt, mt⟩ => ?_
-  refine ⟨saved, (hu.rest (by decide)).trans ((kv.mono (by decide)).trans (kt.mono (by decide))), ?_, ?_⟩
-  · rw [mt, ← hu.mem]; simpa only [BitVec.add_zero] using fv
-  · rw [mt, scalar_packed_encode, ← hu.mem]
-    obtain e : packedV v.mem (State.addr p) = V u.mem (State.addr b) SR := by
-      simpa only [BitVec.add_zero] using vv
-    exact congrArg (Spec.Ed25519.encodeLE 32) e
-
-end VG.Proof.Ed25519.Arm
-end
-
 /-! Merged from `Proof.Ed25519.Arm.ScalarMulAddContract`. -/
 section
 /-! A local contract for the five-argument scalar multiply-add ABI. -/
@@ -714,7 +558,7 @@ theorem scalarMulAdd_correct {s : State} (h : ScalarMulAddPre s) :
       fw fun r hr i hi => by
         rw [List.mem_singleton.mp hr]
         exact Offset.disjoint _ (.inl (by omega_arith)) (by omega_arith) (by decide)
-  refine WP.mono (scalarMulAddFinish_ok (hcv.of_rest kw (by decide)) lw (ow.trans ov) h.f0
+  refine WP.mono (scalarFinish_ok (hcv.of_rest kw (by decide)) lw (ow.trans ov) h.f0
     (by rw [kw.wr, kv.wr, ku.wr, h.wr]; simp) h.out_ws sw) fun t ⟨gt, kt, _, bt⟩ => ?_
   refine ⟨⟨fun r hr => ?_, by rw [kt.sp, kw.sp, kv.sp, ku.sp]⟩, ?_⟩
   · simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr

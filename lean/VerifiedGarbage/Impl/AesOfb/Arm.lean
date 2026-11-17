@@ -7,7 +7,8 @@ public import VerifiedGarbage.Impl.AesCbc.Arm
 
 `vg_aes_ofb(schedule = r0, rounds = r1, iv = r2, data = r3, n = [sp], scratch = [sp + 4])`
 (see `VG.Spec.Ofb.aesContract`), composed of calls of the verified
-`vg_aes_encrypt_blocks` on one block at a time.
+`vg_aes_encrypt_blocks_keyed` on one block at a time, from round keys
+`vg_aes_blocks_keys` bitslices once (`Impl.AesCbc.Arm.wholeK`).
 
 It is built from AES-CBC's pieces (`Impl/AesCbc/Arm.lean`), whose arguments
 are the same: the registers saved in the scratch buffer, the arguments kept
@@ -27,7 +28,8 @@ namespace VG.Impl.AesOfb.Arm
 
 open VG.Arm
 open VG.Impl.CmacAes.Arm (mov advance xor4)
-open VG.Impl.AesCbc.Arm (whole encFrame)
+open VG.Impl.AesCbc.Arm (wholeK)
+open VG.Impl.Aes.Arm (keyedFrame)
 
 /-- The arguments of the block function for the block at `r6`: the
 schedule, the rounds, the block, `n = 1`, and the working space. -/
@@ -38,8 +40,8 @@ def post : List Instr := xor4 .r7 .r6 .r7 0 0 0 ++ advance
 
 /-- One block: the output block `Oⱼ = CIPH_K(Oⱼ₋₁)` in place, XORed into the
 data block. -/
-def body : Prog isa := .seq (.block ivArgs) (.seq encFrame (.block post))
+def body : Prog isa := .seq (.block ivArgs) (.seq keyedFrame (.block post))
 
-def crypt : Prog isa := whole body
+def crypt : Prog isa := wholeK body
 
 end VG.Impl.AesOfb.Arm

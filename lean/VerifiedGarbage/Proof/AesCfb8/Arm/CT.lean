@@ -2,9 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.AesCfb8.Arm.Body
 public import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+import VerifiedGarbage.Proof.AesCbc.Arm.CT
 import VerifiedGarbage.Proof.Framework.TacticTemplate
 meta import VerifiedGarbage.Proof.AesCfb8.Arm.Body
 meta import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+meta import VerifiedGarbage.Proof.AesCbc.Arm.CT
 meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
@@ -14,9 +16,11 @@ AES-CBC's argument (`Proof/AesCbc/Arm/CT.lean`) for the CFB8 loop: two runs
 from states that agree on the public arguments are related piece by piece
 (`RelCT`): the taint analysis covers the code between the calls, from the
 public arguments for the prologue and from the registers the correctness
-proof pins to them (`LInv`) afterwards, and each call of a block function, in
-its frame, is constant time by its own proof (`Proof.AesOcb.Arm.blk_rel`).
-`whole_ct`: if one run of `body` is (`BodyCt`), `whole body` is.
+proof pins to them (`LInv`) afterwards, and the call that bitslices the
+round keys and each call of the block function from them, in its frame, are
+constant time by their own proofs (`Proof.Aes.Arm.keysCall_rel`,
+`kblk_rel`), both runs having the round keys in the working space.
+`whole_ct`: if one run of `body` is (`BodyCt`), `wholeK body` is.
 -/
 
 @[expose] public section
@@ -24,11 +28,14 @@ its frame, is constant time by its own proof (`Proof.AesOcb.Arm.blk_rel`).
 namespace VG.Proof.AesCfb8.Arm
 
 open VG VG.Arm VG.Impl.AesCfb8.Arm
-open VG.Impl.AesCbc.Arm (whole encFrame)
+open VG.Impl.AesCbc.Arm (wholeK)
+open VG.Impl.Aes.Arm (keyedFrame keysCall)
 open VG.Impl.CmacAes.Arm (save setup restore)
-open VG.Proof.AesCbc.Arm (Iv encFrame_eq)
+open VG.Proof.AesCbc.Arm (Iv Keys loop_ct_of)
+open VG.Proof.Aes (KeysIn)
+open VG.Proof.Aes.Arm (schedAt kblk_call kblk_rel)
 open VG.Proof.CmacAes.Arm (W R Dp N S argsR)
-open VG.Proof.AesOcb.Arm (BlkFn BlkCall BlkPost blkFrame blk_call blk_rel encF decF)
+open VG.Proof.AesOcb.Arm (BlkFn BlkCall BlkPost encF)
 open VG.Proof.MdStream.Arm (eval_eq eval_ne)
 
 /-- The registers holding our variables in the loop. -/
@@ -67,9 +74,10 @@ theorem LInv.agree {k : Nat} {s₁ s₂ : State} (h₁ : LInv enc s₀ k s₁) (
 
 end
 
-/-- The relation before a block, in two runs. -/
+/-- The relation before a block, in two runs, with the round keys in the
+working space. -/
 def BRel (enc : Bool) (s₀ s₀' : State) (k : Nat) (s₁ s₂ : State) : Prop :=
-  (k < N s₀ ∧ LInv enc s₀ k s₁) ∧ (k < N s₀' ∧ LInv enc s₀' k s₂)
+  (k < N s₀ ∧ LInv enc s₀ k s₁ ∧ Keys s₀ s₁.mem) ∧ (k < N s₀' ∧ LInv enc s₀' k s₂ ∧ Keys s₀' s₂.mem)
 
 /-- One run of `body` from `k` bytes is constant time. -/
 def BodyCt (enc : Bool) (body : Prog isa) : Prop :=
@@ -91,14 +99,15 @@ block at `D`. -/
 structure Mid (s₀ : State) (k : Nat) (D : BitVec 32) (s : State) : Prop where
   pre : BlkCall s (W s₀) D (S s₀) (R s₀) 1
   after : After s₀ k s
+  keys : KeysIn s.mem (S s₀) (R s₀) (schedAt s.mem (W s₀) (R s₀))
 
-theorem Mid.of {enc : Bool} {s₀ : State} {k : Nat} {s s₁ : State} (h : LInv enc s₀ k s)
-    (a : PreA s₀ s s₁) : Mid s₀ k (Sv32 s₀) s₁ :=
+theorem Mid.of {enc : Bool} {s₀ : State} (hp : UPre s₀) {k : Nat} {s s₁ : State} (h : LInv enc s₀ k s)
+    (a : PreA s₀ s s₁) (hkeys : Keys s₀ s.mem) : Mid s₀ k (Sv32 s₀) s₁ :=
   ⟨a.pre, ⟨by rw [a.keep _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), h.r6],
     by rw [a.keep _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), h.r7],
     by rw [a.keep _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), h.r8],
     by rw [a.keep _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), h.r10],
-    by rw [a.sp, h.sp]⟩⟩
+    by rw [a.sp, h.sp]⟩, (a.keys hp h hkeys).2⟩
 
 theorem After.of {F : BlkFn} {s₀ : State} {k : Nat} {D : BitVec 32} {s s' : State} (h : Mid s₀ k D s)
     (c : BlkPost F s (W s₀) D (S s₀) (R s₀) 1 s') : After s₀ k s' :=
@@ -107,29 +116,32 @@ theorem After.of {F : BlkFn} {s₀ : State} {k : Nat} {D : BitVec 32} {s s' : St
     by rw [c.saved .r8 (by simp [preserved]) (by decide), h.after.r8],
     by rw [c.saved .r10 (by simp [preserved]) (by decide), h.after.r10], by rw [c.sp, h.after.sp]⟩
 
-/-- A body: code before the call (`pre`), the call of `F` in its frame on the
-block at `D s₀ k` (public), and code after it (`post`), constant time when
-`pre`'s addresses and branches depend only on the registers the invariant
-pins and `post`'s on `r6`, `r7`, `r8` and `r10`. -/
-theorem body_ct {enc : Bool} (F : BlkFn) {pre post : List Instr} {D : State → Nat → BitVec 32}
+/-- A body: code before the call (`pre`), the call of
+`vg_aes_encrypt_blocks_keyed` in its frame on the block at `D s₀ k` (public),
+and code after it (`post`), constant time when `pre`'s addresses and
+branches depend only on the registers the invariant pins and `post`'s on
+`r6`, `r7`, `r8` and `r10`. -/
+theorem body_ct {enc : Bool} {pre post : List Instr} {D : State → Nat → BitVec 32}
     (pubD : ∀ {s₀ s₀' : State}, (cfb8Arm enc).pub s₀ s₀' → ∀ k, D s₀ k = D s₀' k)
     (hA : ∃ h, (taint.check (Taint.ofRegs vars) (.block pre) h).isSome = true)
     (hB : ∃ h, (taint.check (Taint.ofRegs postVars) (.block post) h).isSome = true)
-    (wpA : ∀ {s₀ : State}, UPre s₀ → ∀ {k : Nat}, k < N s₀ → ∀ {s : State}, LInv enc s₀ k s →
+    (wpA : ∀ {s₀ : State}, UPre s₀ → ∀ {k : Nat}, k < N s₀ → ∀ {s : State}, LInv enc s₀ k s → Keys s₀ s.mem →
       WP isa (.block pre) s (Mid s₀ k (D s₀ k)))
     {s₀ s₀' : State} (hp : UPre s₀) (hp' : UPre s₀') (hq : (cfb8Arm enc).pub s₀ s₀') (k : Nat) :
-    RelCT isa (BRel enc s₀ s₀' k) (.seq (.block pre) (.seq (blkFrame F) (.block post))) fun _ _ => True := by
+    RelCT isa (BRel enc s₀ s₀' k) (.seq (.block pre) (.seq keyedFrame (.block post))) fun _ _ => True := by
   obtain ⟨_, hB⟩ := hB
-  have a := rel_agree (F := fun s => k < N s₀ ∧ LInv enc s₀ k s) (F' := fun s => k < N s₀' ∧ LInv enc s₀' k s)
+  have a := rel_agree (F := fun s => k < N s₀ ∧ LInv enc s₀ k s ∧ Keys s₀ s.mem)
+    (F' := fun s => k < N s₀' ∧ LInv enc s₀' k s ∧ Keys s₀' s.mem)
     (G := Mid s₀ k (D s₀ k)) (G' := Mid s₀' k (D s₀' k)) (Taint.ofRegs vars)
-    (fun _ _ h h' => Taint.agree_ofRegs (LInv.agree hq h.2 h'.2)) hA
-    (fun _ h => wpA hp h.1 h.2) (fun _ h => wpA hp' h.1 h.2)
+    (fun _ _ h h' => Taint.agree_ofRegs (LInv.agree hq h.2.1 h'.2.1)) hA
+    (fun _ h => wpA hp h.1 h.2.1 h.2.2) (fun _ h => wpA hp' h.1 h.2.1 h.2.2)
   have c := rel_wp (F := Mid s₀ k (D s₀ k)) (F' := Mid s₀' k (D s₀' k)) (G := After s₀ k) (G' := After s₀' k)
-    (blk_rel F fun s₁ s₂ h => ⟨W s₀, D s₀ k, S s₀, R s₀, 1, h.1.pre,
+    (kblk_rel fun s₁ s₂ h => ⟨W s₀, D s₀ k, S s₀, R s₀, 1, h.1.pre,
       by rw [pub_W hq, pubD hq k, pub_S hq, pub_R hq]; exact h.2.pre,
-      by rw [h.1.after.sp, h.2.after.sp, pub_sp hq]⟩)
-    (fun _ h => WP.mono (blk_call F h.pre) fun _ hc => After.of h hc)
-    (fun _ h => WP.mono (blk_call F h.pre) fun _ hc => After.of h hc)
+      by rw [h.1.after.sp, h.2.after.sp, pub_sp hq], h.1.keys,
+      by rw [pub_W hq, pub_S hq, pub_R hq]; exact h.2.keys⟩)
+    (fun _ h => WP.mono (kblk_call h.pre h.keys) fun _ hc => After.of h hc.1)
+    (fun _ h => WP.mono (kblk_call h.pre h.keys) fun _ hc => After.of h hc.1)
   have b := RelCT.taint (A := taint) (P := fun s₁ s₂ => After s₀ k s₁ ∧ After s₀' k s₂) (Taint.ofRegs postVars)
     (fun s₁ s₂ h => Taint.agree_ofRegs fun r hr => by
       simp only [postVars, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -151,14 +163,14 @@ theorem decPost_taint : ∃ h, (taint.check (Taint.ofRegs postVars) (.block decP
   ⟨_, by taint_decide⟩
 
 theorem encBody_ct : BodyCt true (body encPost) := fun hp hp' hq k => by
-  rw [body, encFrame_eq]
-  exact body_ct encF (D := fun s₀ _ => Sv32 s₀) (fun hq _ => pub_Sv32 hq) pre_taint encPost_taint
-    (@fun _ hp _ _ _ h => WP.mono (pre_wp hp h) fun _ a => Mid.of h a) hp hp' hq k
+  rw [body]
+  exact body_ct (D := fun s₀ _ => Sv32 s₀) (fun hq _ => pub_Sv32 hq) pre_taint encPost_taint
+    (@fun _ hp _ _ _ h hkeys => WP.mono (pre_wp hp h) fun _ a => Mid.of hp h a hkeys) hp hp' hq k
 
 theorem decBody_ct : BodyCt false (body decPost) := fun hp hp' hq k => by
-  rw [body, encFrame_eq]
-  exact body_ct encF (D := fun s₀ _ => Sv32 s₀) (fun hq _ => pub_Sv32 hq) pre_taint decPost_taint
-    (@fun _ hp _ _ _ h => WP.mono (pre_wp hp h) fun _ a => Mid.of h a) hp hp' hq k
+  rw [body]
+  exact body_ct (D := fun s₀ _ => Sv32 s₀) (fun hq _ => pub_Sv32 hq) pre_taint decPost_taint
+    (@fun _ hp _ _ _ h hkeys => WP.mono (pre_wp hp h) fun _ a => Mid.of hp h a hkeys) hp hp' hq k
 
 /-! ## The loop -/
 
@@ -170,31 +182,14 @@ theorem loop_ct {enc : Bool} {body : Prog isa} (hb : BodyOk enc body) (hc : Body
     {s₀ s₀' : State} (hp : UPre s₀) (hp' : UPre s₀') (hq : (cfb8Arm enc).pub s₀ s₀') (n : Nat) :
     RelCT isa (LRel enc s₀ s₀' n) (.loop body .ne)
       fun s₁ s₂ => LInv enc s₀ (N s₀) s₁ ∧ LInv enc s₀' (N s₀') s₂ := by
-  refine RelCT.loop (M := isa) (LRel enc s₀ s₀') (fun n => ?_) n
   have hN := pub_N hq
-  refine (RelCT.exists_ fun k => ?_).mono (fun s₁ s₂ (h : LRel enc s₀ s₀' n s₁ s₂) => h) fun _ _ h => h
-  by_cases hn : n = N s₀ - k
-  swap
-  · exact RelCT.of_false fun _ _ h => hn h.1
-  subst hn
-  have ct := (hc hp hp' hq k).wp
-    (F₁ := fun (s : State) => (LInv enc s₀ (k + 1) s ∧ s.z = decide (N s₀ - (k + 1) = 0)) ∧ k < N s₀)
-    (F₂ := fun (s : State) => LInv enc s₀' (k + 1) s ∧ s.z = decide (N s₀' - (k + 1) = 0))
-    fun _ _ h => ⟨WP.mono (hb hp h.1.1 h.1.2) fun _ r => ⟨r, h.1.1⟩, hb hp' h.2.1 h.2.2⟩
-  refine ct.mono (fun _ _ h => h.2) fun s₁ s₂ ⟨_, ⟨⟨l₁, z₁⟩, hk⟩, ⟨l₂, z₂⟩⟩ => ?_
-  have e₁ : isa.eval .ne s₁ = some !decide (N s₀ - (k + 1) = 0) := by
-    show VG.Arm.eval .ne s₁ = _; rw [eval_ne, z₁]
-  have e₂ : isa.eval .ne s₂ = some !decide (N s₀ - (k + 1) = 0) := by
-    show VG.Arm.eval .ne s₂ = _; rw [eval_ne, z₂, ← hN]
-  refine ⟨by rw [e₁, e₂], fun hf => ?_, fun ht => ?_⟩
-  · rw [e₁] at hf
-    have h0 : N s₀ = k + 1 := by
-      have : N s₀ - (k + 1) = 0 := by simpa using hf
-      omega_using [hk, this]
-    exact ⟨h0 ▸ l₁, by rw [← hN, h0]; exact l₂⟩
-  · rw [e₁] at ht
-    have h0 : N s₀ - (k + 1) ≠ 0 := by simpa using ht
-    exact ⟨N s₀ - (k + 1), by omega_using [hk], k + 1, rfl, ⟨by omega_using [h0], l₁⟩, ⟨by omega_using [hN, h0], l₂⟩⟩
+  refine (loop_ct_of (J₁ := fun k s => LInv enc s₀ k s ∧ Keys s₀ s.mem)
+    (J₂ := fun k s => LInv enc s₀' k s ∧ Keys s₀' s.mem) (n := N s₀)
+    (fun k => (hc hp hp' hq k).mono (fun _ _ h => ⟨h.1, hN ▸ h.2.1, h.2.2⟩) fun _ _ h => h)
+    (fun _ _ hk h => WP.mono (hb hp hk h.1 h.2) fun _ h' => ⟨⟨h'.1.1, h'.2⟩, h'.1.2⟩)
+    (fun k _ hk h => by
+      rw [hN] at hk ⊢; exact WP.mono (hb hp' hk h.1 h.2) fun _ h' => ⟨⟨h'.1.1, h'.2⟩, h'.1.2⟩) n).mono
+    (fun _ _ ⟨k, e, h₁, h₂⟩ => ⟨k, e, h₁, hN ▸ h₂.1, h₂.2⟩) fun _ _ h => ⟨h.1.1, hN ▸ h.2.1⟩
 
 /-! ## The whole function -/
 
@@ -209,7 +204,7 @@ theorem nil_taint : ∃ h, (taint.check (Taint.ofRegs []) (.block []) h).isSome 
 theorem whole_rel {enc : Bool} {body : Prog isa} (hb : BodyOk enc body) (hc : BodyCt enc body)
     {s₀ s₀' : State} (h0 : (cfb8Arm enc).pre s₀) (h0' : (cfb8Arm enc).pre s₀')
     (hq : (cfb8Arm enc).pub s₀ s₀') :
-    RelCT isa (fun a b => a = s₀ ∧ b = s₀') (whole body) fun _ _ => True := by
+    RelCT isa (fun a b => a = s₀ ∧ b = s₀') (wholeK body) fun _ _ => True := by
   have hp := UPre.of h0
   have hp' := UPre.of h0'
   obtain ⟨_, hepi⟩ := epilogue_taint
@@ -254,19 +249,26 @@ theorem whole_rel {enc : Bool} {body : Prog isa} (hb : BodyOk enc body) (hc : Bo
     (Taint.ofRegs []) (fun _ _ _ => Taint.agree_ofRegs fun r hr => by simp at hr) hnil
   have mid : RelCT isa (fun a b => (LInv enc s₀ 0 a ∧ a.z = decide (N s₀ = 0)) ∧
       (LInv enc s₀' 0 b ∧ b.z = decide (N s₀' = 0)))
-      (.ite .eq (.block []) (.loop body .ne)) (fun a b => LInv enc s₀ (N s₀) a ∧ LInv enc s₀' (N s₀') b) := by
+      (.ite .eq (.block []) (.seq keysCall (.loop body .ne)))
+      (fun a b => LInv enc s₀ (N s₀) a ∧ LInv enc s₀' (N s₀') b) := by
     refine RelCT.ite (fun a b h => by rw [ev h.1.2, ev' h.2.2]) ?_ ?_
     · refine (nil.wp (F₁ := LInv enc s₀ (N s₀)) (F₂ := LInv enc s₀' (N s₀')) fun a b h => ?_).mono
         (fun _ _ h => h) fun _ _ h => h.2
       have h0 : N s₀ = 0 := by
         have := h.2; rw [ev h.1.1.2] at this; simpa using this
       exact ⟨WP.block_nil (h0 ▸ h.1.1.1), WP.block_nil (by rw [← hN, h0]; exact h.1.2.1)⟩
-    · refine (loop_ct hb hc hp hp' hq (N s₀ - 0)).mono (fun a b h => ⟨0, rfl, ⟨?_, h.1.1.1⟩, ⟨?_, h.1.2.1⟩⟩)
-        fun _ _ h => h
-      all_goals
-        have := h.2; rw [ev h.1.1.2] at this
-        have : N s₀ ≠ 0 := by simpa using this
-        omega
+    · have keys := rel_wp (F := fun a => (LInv enc s₀ 0 a ∧ a.z = decide (N s₀ = 0)) ∧ N s₀ ≠ 0)
+        (F' := fun b => LInv enc s₀' 0 b)
+        (G := fun a => (LInv enc s₀ 0 a ∧ Keys s₀ a.mem) ∧ N s₀ ≠ 0) (G' := fun b => LInv enc s₀' 0 b ∧ Keys s₀' b.mem)
+        (Proof.Aes.Arm.keysCall_rel fun _ _ h => ⟨W s₀, S s₀, R s₀, h.1.1.1.keysArgs hp,
+          by rw [pub_W hq, pub_S hq, pub_R hq]; exact h.2.keysArgs hp'⟩)
+        (fun _ h => WP.mono (keysCall_wp hp h.1.1) fun _ h' => ⟨h', h.2⟩) (fun _ h => keysCall_wp hp' h)
+      refine (keys.seq ((loop_ct hb hc hp hp' hq (N s₀ - 0)).mono
+        (fun a b h => ⟨0, rfl, ⟨by have := h.1.2; omega, h.1.1.1, h.1.1.2⟩,
+          ⟨by have := h.1.2; omega, h.2.1, h.2.2⟩⟩) fun _ _ h => h)).mono
+        (fun a b h => ⟨⟨h.1.1, ?_⟩, h.1.2.1⟩) fun _ _ h => h
+      have := h.2; rw [ev h.1.1.2] at this
+      simpa using this
   have epi := RelCT.taint (A := taint) (P := fun a b => LInv enc s₀ (N s₀) a ∧ LInv enc s₀' (N s₀') b)
     (Taint.ofRegs [.r10]) (fun a b h => Taint.agree_ofRegs fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -274,7 +276,7 @@ theorem whole_rel {enc : Bool} {body : Prog isa} (hb : BodyOk enc body) (hc : Bo
   exact (pro.mono (fun _ _ h => h) fun _ _ h => h).seq (mid.seq epi)
 
 theorem whole_ct {enc : Bool} {body : Prog isa} (hb : BodyOk enc body) (hc : BodyCt enc body) :
-    ConstantTime isa (cfb8Arm enc).pre (cfb8Arm enc).pub (whole body) :=
+    ConstantTime isa (cfb8Arm enc).pre (cfb8Arm enc).pub (wholeK body) :=
   fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ => (whole_rel hb hc h₁ h₂ hq _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
 
 end VG.Proof.AesCfb8.Arm

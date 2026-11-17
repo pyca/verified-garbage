@@ -1177,8 +1177,15 @@ theorem encBlocks_stack : armStack Impl.Aes.Arm.encryptBlocks = 0 :=
 
 /-- The whole-block functions' frames: 8 bytes around each call of the
 block function. -/
+theorem keyedBlocks_stack : armStack Impl.Aes.Arm.encryptBlocksKeyed = 0 :=
+  armStack_noFrames _ (Code.noFrames_of_noCalls Proof.Aes.Arm.keyed_noCalls)
+
+theorem blocksKeys_stack : armStack Impl.Aes.Arm.blocksKeys = 0 :=
+  armStack_noFrames _ (Code.noFrames_of_noCalls Proof.Aes.Arm.keys_noCalls)
+
 theorem encrypt_stack : armStack encrypt = 8 := by
-  simp only [encrypt, Impl.AesCbc.Arm.whole, body, Impl.AesCbc.Arm.encFrame, armStack, encBlocks_stack]
+  simp only [encrypt, Impl.AesCbc.Arm.wholeK, body, Impl.Aes.Arm.keyedFrame, Impl.Aes.Arm.keysCall, armStack,
+    keyedBlocks_stack, blocksKeys_stack]
   decide
 
 theorem decrypt_stack : armStack decrypt = 8 := by
@@ -1187,9 +1194,9 @@ theorem decrypt_stack : armStack decrypt = 8 := by
   decide
 
 theorem encryptFinal_verified : Verified Arm.target encryptFinal (finalScratchContract true) :=
-  Verified.of_correct (final_correct (fun _ hs => AesCbc.Arm.whole_wp encBody_ok hs) encrypt_stack)
-    (final_ct (enc := true) (fun _ hs => AesCbc.Arm.whole_wp encBody_ok hs)
-      (AesCbc.Arm.whole_ct encBody_ok encBody_ct) encrypt_stack)
+  Verified.of_correct (final_correct (fun _ hs => AesCbc.Arm.wholeK_wp encBody_ok hs) encrypt_stack)
+    (final_ct (enc := true) (fun _ hs => AesCbc.Arm.wholeK_wp encBody_ok hs)
+      (AesCbc.Arm.wholeK_ct encBody_ok encBody_ct) encrypt_stack)
     (final_implies true)
 
 theorem decryptFinal_verified : Verified Arm.target decryptFinal (finalScratchContract false) :=

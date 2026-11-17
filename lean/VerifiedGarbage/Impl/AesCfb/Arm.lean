@@ -10,7 +10,9 @@ public import VerifiedGarbage.Impl.AesCbc.Arm.Groups
 and `vg_aes_cfb128_decrypt` with the same arguments (see
 `VG.Spec.Cfb.aesEncryptContract` and `aesDecryptContract`), composed of
 calls of the verified `vg_aes_encrypt_blocks`: on one block at a time, but
-for decryption's groups (below).
+for decryption's groups (below). Encryption, whose every block needs the one
+before, bitslices the round keys once (`Impl.AesCbc.Arm.wholeK`:
+`vg_aes_blocks_keys`) and calls `vg_aes_encrypt_blocks_keyed` on each block.
 
 They are built from AES-OFB's pieces (`Impl/AesOfb/Arm.lean`), whose
 arguments are the same: each block, the block at `iv` (`r6`) is enciphered
@@ -36,11 +38,13 @@ namespace VG.Impl.AesCfb.Arm
 
 open VG.Arm
 open VG.Impl.CmacAes.Arm (advance xor4)
-open VG.Impl.AesCbc.Arm (whole wholeG cfbDecG groupLevels encFrame zero4)
+open VG.Impl.AesCbc.Arm (wholeK wholeG cfbDecG groupLevels encFrame zero4)
 open VG.Impl.AesOfb.Arm (ivArgs)
+open VG.Impl.Aes.Arm (keyedFrame)
 
-/-- One block: the block at `iv` enciphered in place, and `post`. -/
-def body (post : List Instr) : Prog isa := .seq (.block ivArgs) (.seq encFrame (.block post))
+/-- One block: the block at `iv` enciphered in place by the call `fr`, and
+`post`. -/
+def body (fr : Prog isa) (post : List Instr) : Prog isa := .seq (.block ivArgs) (.seq fr (.block post))
 
 /-- `Cⱼ = Pⱼ ⊕ CIPH_K(Cⱼ₋₁)`, and `Cⱼ` the block to continue from. -/
 def encPost : List Instr := xor4 .r7 .r6 .r7 0 0 0 ++ zero4 .r6 0 ++ xor4 .r6 .r7 .r6 0 0 0 ++ advance
@@ -48,8 +52,8 @@ def encPost : List Instr := xor4 .r7 .r6 .r7 0 0 0 ++ zero4 .r6 0 ++ xor4 .r6 .r
 /-- `Pⱼ = Cⱼ ⊕ CIPH_K(Cⱼ₋₁)`, and `Cⱼ` the block to continue from. -/
 def decPost : List Instr := xor4 .r7 .r6 .r7 0 0 0 ++ xor4 .r6 .r7 .r6 0 0 0 ++ advance
 
-def encrypt : Prog isa := whole (body encPost)
+def encrypt : Prog isa := wholeK (body keyedFrame encPost)
 
-def decrypt : Prog isa := wholeG encFrame cfbDecG groupLevels (body decPost)
+def decrypt : Prog isa := wholeG encFrame cfbDecG groupLevels (body encFrame decPost)
 
 end VG.Impl.AesCfb.Arm

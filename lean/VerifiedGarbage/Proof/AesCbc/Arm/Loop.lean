@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.CmacAes.Arm.UpdateCorrect
 public import VerifiedGarbage.Impl.AesCbc.Arm
 public import VerifiedGarbage.Proof.AesCbc.Spec
 public import VerifiedGarbage.Proof.CmacAes.Arm.UpdateLoop
+public import VerifiedGarbage.Proof.Aes.Arm.KeyedCall
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
@@ -32,9 +33,15 @@ of the first `k` blocks on entry and the rest are unchanged, and the
 chaining value is the mode's after them (`Mode.chain`). CBC is `cbcMode`;
 other modes' functions with the same arguments reuse the loop.
 
-`whole_wp`: if one run of `body` takes the invariant from `k` to `k + 1`
-blocks and sets Z when none are left (`BodyOk`), `whole body` meets the
-contract.
+`loop_ok`: if one run of `body` takes the invariant from `k` to `k + 1`
+blocks and sets Z when none are left (`BodyOk`), the loop over the blocks
+takes it to all of them, and the prologue and the epilogue around it meet
+the contract (`ends_wp`).
+
+`wholeK_wp`: `wholeK body` meets the contract, for a `body` that enciphers
+its block from the round keys in the working space, which a call bitslices
+there before the first block (`keysCall_wp`): `body` may count on them, and
+leaves them (`BodyOkK`, with `Keys`).
 -/
 
 @[expose] public section
@@ -47,6 +54,9 @@ open VG.Proof.CmacAes.Arm (W R Dp N S schR dataR scrR argsR belowR savedMem save
   saved_bound saved_ne_r12 saved_eq add0)
 open VG.Proof.MdStream.Arm (Upd op2_imm op2_reg wp_mov wp_cmp wp_ldrSp cmp0 eval_eq eval_ne)
 open VG.Spec.Aes (bytesAt)
+open VG.Impl.Aes.Arm (keysCall)
+open VG.Proof.Aes (KeysIn)
+open VG.Proof.Aes.Arm (KeysArgs KeysPost)
 
 /-- `vg_aes_cbc_encrypt` (`enc`) or `vg_aes_cbc_decrypt`
 `(schedule = r0, rounds = r1, iv = r2, data = r3, n = [sp], scratch = [sp + 4])`. -/
@@ -342,32 +352,43 @@ def BodyOk (M : Mode) (body : Prog isa) : Prop :=
   ∀ {s₀ : State}, UPre s₀ → ∀ {k : Nat}, k < N s₀ → ∀ {s : State}, LInv M s₀ k s →
     WP isa body s fun s' => LInv M s₀ (k + 1) s' ∧ s'.z = decide (N s₀ - (k + 1) = 0)
 
-theorem loop_ok {M : Mode} {body : Prog isa} (hb : BodyOk M body) {s₀ : State} (hp : UPre s₀) {k : Nat}
-    (hk : k < N s₀) {s : State} (h : LInv M s₀ k s) : WP isa (.loop body .ne) s (LInv M s₀ (N s₀)) := by
-  refine WP.loop (M := isa) (body := body) (c := .ne) (Q := LInv M s₀ (N s₀))
-    (fun (n : Nat) (t : State) => ∃ j, n = N s₀ - j ∧ j < N s₀ ∧ LInv M s₀ j t) ?_ (N s₀ - k) s
+/-- The loop over `n` blocks, for any invariant `J` that one run of `body`
+takes from `k` blocks to `k + 1`, setting Z if none are left. -/
+theorem loop_of {J : Nat → State → Prop} {body : Prog isa} {n : Nat}
+    (hb : ∀ (k : Nat) (s : State), k < n → J k s →
+      WP isa body s fun s' => J (k + 1) s' ∧ s'.z = decide (n - (k + 1) = 0))
+    {k : Nat} (hk : k < n) {s : State} (h : J k s) : WP isa (.loop body .ne) s (J n) := by
+  refine WP.loop (M := isa) (body := body) (c := .ne) (Q := J n)
+    (fun (m : Nat) (t : State) => ∃ j, m = n - j ∧ j < n ∧ J j t) ?_ (n - k) s
     ⟨k, rfl, hk, h⟩
-  rintro n s ⟨k, rfl, hk, h⟩
-  refine WP.mono (hb hp hk h) fun s' ⟨h', hz⟩ => ?_
-  have ev : isa.eval .ne s' = some !decide (N s₀ - (k + 1) = 0) := by
+  rintro m s ⟨k, rfl, hk, h⟩
+  refine WP.mono (hb k s hk h) fun s' ⟨h', hz⟩ => ?_
+  have ev : isa.eval .ne s' = some !decide (n - (k + 1) = 0) := by
     show VG.Arm.eval .ne s' = _; rw [eval_ne, hz]
-  by_cases hz' : N s₀ - (k + 1) = 0
+  by_cases hz' : n - (k + 1) = 0
   · left
     refine ⟨by rw [ev]; simp [hz'], ?_⟩
-    rwa [show N s₀ = k + 1 by omega_using [hk, hz']]
+    rwa [show n = k + 1 by omega_using [hk, hz']]
   · right
-    refine ⟨by rw [ev]; simp [hz'], N s₀ - (k + 1), by omega_using [hk], k + 1, rfl, by omega_using [hz'], h'⟩
+    refine ⟨by rw [ev]; simp [hz'], n - (k + 1), by omega_using [hk], k + 1, rfl, by omega_using [hz'], h'⟩
 
-theorem mid_wp {M : Mode} {body : Prog isa} (hb : BodyOk M body) {s₀ : State} (hp : UPre s₀) {s₁ : State}
+theorem loop_ok {M : Mode} {body : Prog isa} (hb : BodyOk M body) {s₀ : State} (hp : UPre s₀) {k : Nat}
+    (hk : k < N s₀) {s : State} (h : LInv M s₀ k s) : WP isa (.loop body .ne) s (LInv M s₀ (N s₀)) :=
+  loop_of (J := LInv M s₀) (fun _ _ hk h => hb hp hk h) hk h
+
+/-- The blocks, if there are any, by any code `L` that takes the invariant
+from no blocks to all of them. -/
+theorem mid_of {M : Mode} {L : Prog isa} {s₀ : State} {s₁ : State}
+    (hl : 0 < N s₀ → WP isa L s₁ (LInv M s₀ (N s₀)))
     (h : LInv M s₀ 0 s₁) (hz : s₁.z = decide (N s₀ = 0)) :
-    WP isa (.ite .eq (.block []) (.loop body .ne)) s₁ (LInv M s₀ (N s₀)) := by
+    WP isa (.ite .eq (.block []) L) s₁ (LInv M s₀ (N s₀)) := by
   have ev : isa.eval .eq s₁ = some (decide (N s₀ = 0)) := by
     show VG.Arm.eval .eq s₁ = _; rw [eval_eq, hz]
   by_cases hn : N s₀ = 0
   · refine WP.ite true (by rw [ev]; simp [hn]) (fun _ => WP.block_nil ?_) (fun h => by cases h)
     rw [hn]; exact h
   · refine WP.ite false (by rw [ev]; simp [hn]) (fun h => by cases h) fun _ => ?_
-    exact loop_ok hb hp (by omega_using [hn]) h
+    exact hl (by omega_using [hn])
 
 /-! ## The epilogue -/
 
@@ -413,10 +434,119 @@ theorem epilogue_wp {M : Mode} {s₀ : State} (hp : UPre s₀) {s : State} (h : 
   · show bytesAt s₂.mem (State.addr (Iv s₀)) 16 = _
     rw [m₁, h.iv]; simp only [chainK, hall]
 
-theorem whole_wp {M : Mode} {body : Prog isa} (hb : BodyOk M body) {s₀ : State} (h0 : (modeArm M).pre s₀) :
-    WP isa (whole body) s₀ fun s' => abiPreserved s₀ s' ∧ (modeArm M).post s₀ s' := by
+/-- The prologue, the blocks by any code `L` that takes the invariant from
+no blocks to all of them, and the epilogue, meet the contract. -/
+theorem ends_wp {M : Mode} {L : Prog isa} {s₀ : State} (h0 : (modeArm M).pre s₀)
+    (hl : UPre s₀ → 0 < N s₀ → ∀ {s : State}, LInv M s₀ 0 s → WP isa L s (LInv M s₀ (N s₀))) :
+    WP isa (.seq (.block (save ++ setup)) (.seq (.ite .eq (.block []) L) (.block restore))) s₀
+      fun s' => abiPreserved s₀ s' ∧ (modeArm M).post s₀ s' := by
   have hp := UPre.of h0
   exact WP.seq (WP.mono (prologue_wp hp) fun s₁ ⟨h₁, hz⟩ =>
-    WP.seq (WP.mono (mid_wp hb hp h₁ hz) fun _ h₂ => epilogue_wp hp h₂))
+    WP.seq (WP.mono (mid_of (fun hn => hl hp hn h₁) h₁ hz) fun _ h₂ => epilogue_wp hp h₂))
+
+/-! ## The round keys bitsliced once -/
+
+/-- The round keys of the key schedule on entry are in the working space. -/
+abbrev Keys (s₀ : State) (m : Mem) : Prop := KeysIn m (S s₀) (R s₀) (wK s₀)
+
+theorem UPre.rounds_le {s₀ : State} (hp : UPre s₀) : R s₀ ≤ 14 := by
+  rcases hp.rounds with h | h | h <;> omega_using [h]
+
+theorem UPre.work_fit {s₀ : State} (hp : UPre s₀) : (S s₀).toNat + 2048 ≤ 2 ^ 32 := by
+  have := hp.scr_fit; omega_using [this]
+
+/-- The round keys stay where the memory changes only apart from the working
+space. -/
+theorem Keys.frame {s₀ : State} (hp : UPre s₀) {m m' : Mem} {rs : List Region} (hf : Frame rs m m')
+    (hd : ∀ r ∈ rs, (⟨State.addr (S s₀), 2048⟩ : Region).Disjoint r) (h : Keys s₀ m) : Keys s₀ m' :=
+  Proof.Aes.Arm.Ecb.keysIn_frame hp.work_fit hp.rounds_le hf hd h
+
+/-- The working space is apart from the chaining value, and from a block of
+the data. -/
+theorem UPre.work_iv {s₀ : State} (hp : UPre s₀) :
+    ∀ r ∈ [ivR s₀], (⟨State.addr (S s₀), 2048⟩ : Region).Disjoint r := fun r hr => by
+  simp only [List.mem_singleton] at hr; subst hr
+  exact (hp.iv_scr.sub_right (Region.sub_prefix (by decide))).symm
+
+theorem UPre.work_blk {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k < N s₀) :
+    ∀ r ∈ [(⟨blk s₀ k, 16⟩ : Region)], (⟨State.addr (S s₀), 2048⟩ : Region).Disjoint r := fun r hr => by
+  simp only [List.mem_singleton] at hr; subst hr
+  exact ((hp.data_scr.sub_left (UPre.data_sub hk)).sub_right (Region.sub_prefix (by decide))).symm
+
+/-- The round keys at a call: those of the key schedule as the memory then
+holds it, which is as on entry. -/
+theorem Keys.call {s₀ : State} (hp : UPre s₀) {m : Mem} (hf : Frame (Big s₀) s₀.mem m) (h : Keys s₀ m) :
+    KeysIn m (S s₀) (R s₀) (Proof.Aes.Arm.schedAt m (W s₀) (R s₀)) := by
+  rw [show Proof.Aes.Arm.schedAt m (W s₀) (R s₀) = wK s₀ from hp.sched_bytes hf]; exact h
+
+/-- The round keys a call leaves are those of the key schedule on entry. -/
+theorem Keys.of_call {s₀ : State} (hp : UPre s₀) {m m' : Mem} (hf : Frame (Big s₀) s₀.mem m)
+    (h : KeysIn m' (S s₀) (R s₀) (Proof.Aes.Arm.schedAt m (W s₀) (R s₀))) : Keys s₀ m' := by
+  rw [show Proof.Aes.Arm.schedAt m (W s₀) (R s₀) = wK s₀ from hp.sched_bytes hf] at h; exact h
+
+/-- One run of `body` takes the invariant from `k` blocks to `k + 1`, and
+sets Z if no blocks are left, with the round keys in the working space
+before and after. -/
+def BodyOkK (M : Mode) (body : Prog isa) : Prop :=
+  ∀ {s₀ : State}, UPre s₀ → ∀ {k : Nat}, k < N s₀ → ∀ {s : State}, LInv M s₀ k s → Keys s₀ s.mem →
+    WP isa body s fun s' => (LInv M s₀ (k + 1) s' ∧ s'.z = decide (N s₀ - (k + 1) = 0)) ∧ Keys s₀ s'.mem
+
+theorem loopK_ok {M : Mode} {body : Prog isa} (hb : BodyOkK M body) {s₀ : State} (hp : UPre s₀) {k : Nat}
+    (hk : k < N s₀) {s : State} (h : LInv M s₀ k s) (hkeys : Keys s₀ s.mem) :
+    WP isa (.loop body .ne) s (LInv M s₀ (N s₀)) :=
+  WP.mono (loop_of (J := fun k s => LInv M s₀ k s ∧ Keys s₀ s.mem)
+    (fun _ _ hk h => WP.mono (hb hp hk h.1 h.2) fun _ h' => ⟨⟨h'.1.1, h'.2⟩, h'.1.2⟩) hk ⟨h, hkeys⟩)
+    fun _ h => h.1
+
+/-- The blocks of the data are as they were where the memory changes only
+apart from them. -/
+theorem UPre.blocksAt_frame {s₀ : State} {m m' : Mem} {rs : List Region} (hf : Frame rs m m')
+    (hd : ∀ r ∈ rs, (dataR s₀).Disjoint r) :
+    Spec.Cbc.blocksAt m' (State.addr (Dp s₀)) (N s₀) = Spec.Cbc.blocksAt m (State.addr (Dp s₀)) (N s₀) := by
+  simp only [Spec.Cbc.blocksAt]
+  refine List.map_congr_left fun j hj => Proof.Cmac.bytesAt_frame hf (fun r hr => ?_) (by decide)
+  exact (hd r hr).sub_left (UPre.data_sub (List.mem_range.mp hj))
+
+/-- The arguments of the call that bitslices the round keys, from the
+invariant. -/
+theorem LInv.keysArgs {M : Mode} {s₀ : State} (hp : UPre s₀) {k : Nat} {s : State} (h : LInv M s₀ k s) :
+    KeysArgs s (W s₀) (S s₀) (R s₀) := by
+  refine ⟨h.r4, by rw [h.r5]; simp [R], h.r10, hp.rounds, hp.sch_fit, hp.work_fit,
+    hp.sch_scr.sub_right (Region.sub_prefix (by decide)), ?_, ?_⟩
+  · rw [h.rd, h.wr, hp.rd, hp.wr]
+    exact Covers.of_sub fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨schR s₀, by simp, 0, by simp, by simp⟩
+  · rw [h.wr, hp.wr]
+    exact Covers.of_sub fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨scrR s₀, by simp, 0, by simp, by simp⟩
+
+/-- The call that bitslices the round keys keeps the invariant, and leaves
+them in the working space. -/
+theorem keysCall_wp {M : Mode} {s₀ : State} (hp : UPre s₀) {k : Nat} {s : State} (h : LInv M s₀ k s) :
+    WP isa keysCall s fun s' => LInv M s₀ k s' ∧ Keys s₀ s'.mem := by
+  refine WP.mono (Proof.Aes.Arm.keysCall_wp (h.keysArgs hp)) fun s₂ c => ?_
+  obtain g : ∀ r ∈ preserved, r ≠ .lr → s₂.gpr r = s.gpr r := c.saved
+  obtain work : ∀ {x : Region}, x.Disjoint ⟨State.addr (S s₀), 2048⟩ →
+      ∀ r ∈ [(⟨State.addr (S s₀), 2048⟩ : Region)], x.Disjoint r := fun hx r hr => by
+    simp only [List.mem_singleton] at hr; subst hr; exact hx
+  refine ⟨⟨by rw [g _ (by simp [preserved]) (by decide), h.r4], by rw [g _ (by simp [preserved]) (by decide), h.r5],
+    by rw [g _ (by simp [preserved]) (by decide), h.r6], by rw [g _ (by simp [preserved]) (by decide), h.r7],
+    by rw [g _ (by simp [preserved]) (by decide), h.r8], by rw [g _ (by simp [preserved]) (by decide), h.r10],
+    by rw [g _ (by simp [preserved]) (by decide), h.r11],
+    by rw [c.sp, h.sp], by rw [c.rd, h.rd], by rw [c.wr, h.wr], ?_, ?_, ?_⟩, ?_⟩
+  · exact h.frame.trans (c.frame.sub fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨⟨State.addr (S s₀), 2064⟩, by simp, Region.sub_prefix (by decide)⟩)
+  · rw [UPre.blocksAt_frame c.frame (work (hp.data_scr.sub_right (Region.sub_prefix (by decide)))), h.data]
+  · rw [Proof.Cmac.bytesAt_frame c.frame (work (hp.iv_scr.sub_right (Region.sub_prefix (by decide))))
+      (by decide), h.iv]
+  · exact Keys.of_call hp (UPre.big_of h.frame) c.keys
+
+theorem wholeK_wp {M : Mode} {body : Prog isa} (hb : BodyOkK M body) {s₀ : State} (h0 : (modeArm M).pre s₀) :
+    WP isa (wholeK body) s₀ fun s' => abiPreserved s₀ s' ∧ (modeArm M).post s₀ s' :=
+  ends_wp h0 fun hp hn _ h =>
+    WP.seq (WP.mono (keysCall_wp hp h) fun _ h' => loopK_ok hb hp hn h'.1 h'.2)
 
 end VG.Proof.AesCbc.Arm
