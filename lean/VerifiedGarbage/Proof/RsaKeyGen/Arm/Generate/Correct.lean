@@ -21,6 +21,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Arm.Lost
+import VerifiedGarbage.Proof.Rsa.BytesFrame
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Search.Loop
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Spec.RsaKeyGen.GenerationAgrees
@@ -2335,12 +2336,14 @@ theorem key_run (name : String) {kc : Prog isa} (hv : Verified target kc (Proof.
   have hL := h.L_le
   obtain hsp56 : 56 ≤ s.sp.toNat := by rw [h.sp, h.S1_toNat]; omega_using [room]
   unfold keyRun
-  refine WP.alloc (by decide) hsp56 ?_
+  refine WP.allocLost (by decide) hsp56 ?_
   refine WP.seq (WP.mono h.keyArgs_ok fun u ⟨hr, ku⟩ => ?_)
   obtain ⟨cov, covW⟩ := h.key_covers hr
   obtain hS3 : 56 ≤ u.sp.toNat := by rw [hr.sp, h.S3_toNat]; omega_using [room]
   refine FrameStack.WP.callF hv.1 (pre_of_cin (h.callK_cin hr)) cov covW
-    (Nat.le_trans hks hS3) fun t htr htw htsp hfr hpres hpost => ?_
+    (Nat.le_trans hks hS3) fun t htr htw htsp hfr hpres hpost ml ul hfl => ?_
+  change Frame [⟨State.addr (allocated 56 s).sp, 56⟩] t.mem ml at hfl
+  rw [h.alloc56_sp] at hfl
   sig_post [Proof.RsaKeyGen.keyContract, Proof.RsaKeyGen.keySig, abi, argRegs, reduceClassify, Loc.val] at hpost
   obtain a0 : stackArg (callK p u) 0 = p.kp + BitVec.ofNat 32 (4 * p.L) := h.kArg hr (by decide)
   obtain a1 : stackArg (callK p u) 1 = BitVec.ofNat 32 p.L := h.kArg hr (by decide)
@@ -2400,19 +2403,47 @@ theorem key_run (name : String) {kc : Prog isa} (hv : Verified target kc (Proof.
       rw [FrameStack.addr_sub' (by rw [h.S3_toNat]; omega_using [hks, room]), rF3,
         show (56#64 : BitVec 64) = BitVec.ofNat 64 56 from rfl]
       exact Offset.sub_below _ hks (by omega_using [hks])
-  obtain hframe := f0.trans f1
+  obtain hframe : Frame (keyChanges p) s.mem ml :=
+    (f0.trans f1).trans (hfl.mono fun r hr => by
+      obtain rfl := List.mem_singleton.mp hr; simp [keyChanges])
+  have outsL : ∀ o' ∈ keyOutsOf p, Spec.Rsa.bytesAt ml o'.1 o'.2 = Spec.Rsa.bytesAt t.mem o'.1 o'.2 := by
+    intro o' ho
+    have sub : Region.Sub ⟨o'.1, o'.2⟩ (cK p) ∧ o'.2 ≤ 2 ^ 64 := by
+      simp only [keyOutsOf, List.mem_cons, List.not_mem_nil, or_false] at ho
+      rcases ho with rfl | rfl | rfl | rfl | rfl | rfl | rfl
+      · exact ⟨Region.sub_prefix (by omega_using []), by omega_using [hL]⟩
+      · exact ⟨kSubK (d := 2 * p.L) (by omega_using []), by omega_using [hL]⟩
+      · exact ⟨kSubK (d := 4 * p.L) (by omega_using []), by omega_using [hL]⟩
+      · exact ⟨kSubK (d := 5 * p.L) (by omega_using []), by omega_using [hL]⟩
+      · exact ⟨kSubK (d := 6 * p.L) (by omega_using []), by omega_using [hL]⟩
+      · exact ⟨kSubK (d := 7 * p.L) (by omega_using []), by omega_using [hL]⟩
+      · exact ⟨kSubK (d := 8 * p.L) (by omega_using []), by omega_using [hL]⟩
+    exact bytes_kept hfl (fun r hr => by
+      obtain rfl := List.mem_singleton.mp hr; exact (sK.sub_left h.a3Stack).symm.sub_left sub.1) sub.2
   obtain hreg : ∀ r, r ∉ [Reg.r0, .r1, .r2, .r3, .r12, .lr] → t.gpr r = s.gpr r := fun r hr' =>
     (hpres r (callRegs r hr').1 (callRegs r hr').2).trans (ku.gpr r hr')
-  obtain k : Rest [.r0, .r1, .r2, .r3, .r12, .lr] s (freed 56 t) :=
+  obtain k : Rest [.r0, .r1, .r2, .r3, .r12, .lr] s ({ freed 56 t with mem := ml, unknowns := ul } : State) :=
     ⟨hreg, htr.trans (ku.rd.trans rfl), show t.wr.tail = s.wr by rw [htw, ku.wr]; rfl,
       show t.sp + BitVec.ofNat 32 56 = s.sp by rw [htsp, ku.sp]; exact BitVec.sub_add_cancel _ _⟩
-  obtain hstk : StateOk p st t.mem := h.state.frame hframe fun r hr' => by
+  obtain hstk : StateOk p st ml := h.state.frame hframe fun r hr' => by
     have := h.state_apartK (d := 0) (n := 56) (by decide) r hr'
     simpa only [off, BitVec.add_zero] using this
   refine ⟨h.stepTo k (by decide) hframe h.keyChanges_sub h.keyChanges_apart hstk, hreg .r11 (by decide), ?_, ?_,
     hframe⟩
   · rw [← hstat, BitVec.setWidth_append_eq_right]; rfl
-  · revert hout
+  · suffices key : match keyOf p s.mem with
+        | .inl (.ok ys) => (keyOutsOf p).map (fun o => Spec.Rsa.bytesAt t.mem o.1 o.2) = ys
+        | _ => ∀ o ∈ keyOutsOf p, Spec.Rsa.bytesAt t.mem o.1 o.2 = List.replicate o.2 0 by
+      change match keyOf p s.mem with
+        | .inl (.ok ys) => (keyOutsOf p).map (fun o => Spec.Rsa.bytesAt ml o.1 o.2) = ys
+        | _ => ∀ o ∈ keyOutsOf p, Spec.Rsa.bytesAt ml o.1 o.2 = List.replicate o.2 0
+      revert key
+      generalize keyOf p s.mem = res
+      rcases res with (f | ys) | u' <;> dsimp only <;> intro key
+      · intro o' ho; rw [outsL o' ho]; exact key o' ho
+      · rw [List.map_congr_left outsL]; exact key
+      · intro o' ho; rw [outsL o' ho]; exact key o' ho
+    revert hout
     dsimp only [keyOf]
     generalize keyOp p.L p.eB (Spec.Rsa.bytesAt s.mem (p.slot 4) p.L) (Spec.Rsa.bytesAt s.mem (p.slot 5) p.L) = res
     rcases res with (f | ys) | u'
@@ -3654,13 +3685,13 @@ theorem gen_correct_ok (sname : String) (c : Search.Cand) (name : String) {kc : 
   have room : 256 ≤ s.sp.toNat := hpre.1
   unfold code body
   rw [show pushBytes = 4 * pushRegs.length from rfl]
-  refine WP.frame (rs := pushRegs) (r := .r4) (by decide) (by simp; omega_using [room]) (by decide) ?_
+  refine WP.frameLost (rs := pushRegs) (r := .r4) (by decide) (by simp; omega_using [room]) (by decide) ?_
   refine WP.seq (WP.mono (entry_ok hp) fun s1 ⟨g1, h11, hm1⟩ => ?_)
   obtain hroom : 40 ≤ s.sp.toNat := by omega_using [room]
   have cf := hp.cfacts
   have hst := cf.stack
   simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hst
-  obtain ⟨sK, -, -, -, -, -⟩ := hst
+  obtain ⟨sK, sU, -, sT, -, -⟩ := hst
   obtain hL : 32 ≤ p.L ∧ p.L ≤ 512 := by have hv := f.valid; unfold primeLenValid at hv; omega_using [hv]
   obtain hother : ∀ pB, (genProgress s).phase = .q pB → Spec.Rsa.bytesAt s1.mem (p.slot 4) p.L = pB := by
     intro pB hpB
@@ -3700,7 +3731,13 @@ theorem gen_correct_ok (sname : String) (c : Search.Cand) (name : String) {kc : 
       (fun r hr => by
         obtain rfl := List.mem_singleton.mp hr
         exact (g3.push_apart (inUsed s) (by simp [inWrites])).sub_right (by rw [g3.eU]; exact fun _ h => h)) hst4
-  refine WP.mono (restore_ok g4) fun s5 ⟨⟨hr5, hm5⟩, k5⟩ => ?_
+  refine WP.mono (restore_ok g4) fun s5 ⟨⟨hr5, hm5⟩, k5⟩ ml ul hfl => ?_
+  change Frame [FrameStack.belowA s.sp 40] s5.mem ml at hfl
+  obtain hsubL : Region.Sub (FrameStack.belowA s.sp 40) (cStack p) := by
+    change Region.Sub ⟨State.addr (s.sp - BitVec.ofNat 32 40), 40⟩ _
+    rw [FrameStack.addr_sub' hroom]; exact Offset.sub_below _ (by decide) (by decide)
+  have apartL {R : Region} (hd : (cStack p).Disjoint R) : ∀ r ∈ [FrameStack.belowA s.sp 40], R.Disjoint r :=
+    fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact (hd.sub_left hsubL).symm
   obtain sp5 : s5.sp = p.S1 := k5.sp.trans g4.sp
   obtain hu32 : (genResult s).used < 2 ^ 32 := by have := g3.used_le; have := g3.randLen_lt; omega_arith
 
@@ -3719,19 +3756,22 @@ theorem gen_correct_ok (sname : String) (c : Search.Cand) (name : String) {kc : 
     exact g4.saved (.r4, 0) (by simp)
   obtain hlt := keyStatus_lt' (genResult s)
   refine ⟨⟨?_, ?_, ?_, ⟨req, ?_, ?_, hreqs⟩⟩, fun r hr' => ?_, ?_⟩
-  · rw [BitVec.setWidth_append_eq_right, g0, toNat_small (by omega_using [hlt])]
-  · change Spec.Rsa.bytesAt _ (State.addr p.kp) (9 * p.L) = keySearchBytes p.L (genResult s)
-    rw [popped_mem, hm5, bytes_kept hf4 (fun r hr => by
+  · dsimp only
+    rw [BitVec.setWidth_append_eq_right, g0, toNat_small (by omega_using [hlt])]
+  · change Spec.Rsa.bytesAt ml (State.addr p.kp) (9 * p.L) = keySearchBytes p.L (genResult s)
+    rw [bytes_kept hfl (apartL sK) (by have := f.nK; omega_using [hL]), hm5, bytes_kept hf4 (fun r hr => by
       obtain rfl := List.mem_singleton.mp hr; exact cf.kU) (by have := f.nK; omega_using [hL]), hkey]
-  · change Spec.Rsa.wordsAt _ (State.addr p.up) 1 = [BitVec.ofNat 64 (genResult s).used]
+  · change Spec.Rsa.wordsAt ml (State.addr p.up) 1 = [BitVec.ofNat 64 (genResult s).used]
+    rw [VG.Proof.Rsa.wordsAt_frame hfl (by decide) (apartL sU)]
     simp only [Spec.Rsa.wordsAt, List.range_one, List.map_cons, List.map_nil, Nat.mul_zero, BitVec.add_zero,
-      popped_mem, hm5, hm4, List.cons.injEq, and_true]
+      hm5, hm4, List.cons.injEq, and_true]
     refine word_of_halves (by omega_using [hu32]) ?_ ?_
     · rw [Mem.readW_writeW_sep (Offset.sep_base _ (n := 32 / 8) (k := 32 / 8) (by decide) (by decide)) (by decide),
         Mem.readW_writeW_self32, Nat.mod_eq_of_lt hu32]
     · rw [show State.addr p.up + BitVec.ofNat 64 4 = off (State.addr p.up) 4 from rfl, Mem.readW_writeW_self32,
         Nat.div_eq_of_lt hu32]; rfl
-  · change Spec.Rsa.wordsAt _ p.st 6 = _
+  · change Spec.Rsa.wordsAt ml p.st 6 = _
+    rw [VG.Proof.Rsa.wordsAt_frame hfl (by decide) (apartL (sT.sub_right (Region.sub_prefix (by decide))))]
     obtain e0 := (hw 0 (by decide)).trans g3.state.remaining
     obtain e8 := (hw 8 (by decide)).trans g3.state.len
     obtain e16 := (hw 16 (by decide)).trans g3.state.cap
@@ -3739,17 +3779,17 @@ theorem gen_correct_ok (sname : String) (c : Search.Cand) (name : String) {kc : 
     obtain e32 := (hw 32 (by decide)).trans g3.state.phase
     obtain e40 := (hw 40 (by decide)).trans g3.state.left
     simp only [Spec.Rsa.wordsAt, show List.range 6 = [0, 1, 2, 3, 4, 5] from rfl, List.map_cons, List.map_nil,
-      Nat.reduceMul, popped_mem]
+      Nat.reduceMul]
     simp only [off] at e0 e8 e16 e24 e32 e40
     rw [e0, e8, e16, e24, e32, e40, phaseWord_eq]
     rfl
-  · change Spec.Rsa.bytesAt _ (off p.st 48) 8 = p.eB
-    rw [popped_mem]
+  · change Spec.Rsa.bytesAt ml (off p.st 48) 8 = p.eB
+    rw [bytes_kept hfl (apartL (sT.sub_right (Offset.sub_base _ (by decide)))) (by decide)]
     exact hst5.e
   · simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr'
     rcases hr' with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact g4r
-    all_goals rw [popped_gpr (by decide)]; exact hr5 _ (by simp)
+    all_goals dsimp only; rw [popped_gpr (by decide)]; exact hr5 _ (by simp)
   · change s5.sp + BitVec.ofNat 32 (4 * pushRegs.length) = s.sp
     rw [sp5, GenPublic.S1, show 4 * pushRegs.length = 40 from rfl, BitVec.sub_add_cancel]
     rfl

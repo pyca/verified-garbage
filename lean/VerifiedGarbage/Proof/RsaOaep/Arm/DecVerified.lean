@@ -14,6 +14,7 @@ import VerifiedGarbage.Proof.RsaOaep.Arm.Calls
 import VerifiedGarbage.Proof.RsaPss.Arm.Step
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Rsa.BytesFrame
 meta import VerifiedGarbage.Impl.RsaOaep.Arm
 
 /-!
@@ -205,6 +206,15 @@ theorem entered_state (hc : Coh vs) {s s' : State} (hs : (dspec vs).pre s) {w w�
     (aiL := s'.syms w₁.g.H.initN) (auL := s'.syms w₁.g.H.updN) (afL := s'.syms w₁.g.H.finN) hs tf tfL
   exact ⟨⟨hi, ⟨hi.ok, hi.ok.sp, rfl, rfl, Frame.refl _ _⟩⟩, rfl⟩
 
+/-- What `writtenDecrypt` states of buffers apart from a frame survives it. -/
+private theorem writtenDecrypt_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {out len : Addr} {n : Nat}
+    (hd : ∀ r ∈ rs, Region.Disjoint ⟨out, n⟩ r) (hl : ∀ r ∈ rs, Region.Disjoint ⟨len, 8⟩ r) (hn : n < 2 ^ 64)
+    {r : BitVec 32} {o : Spec.Rsa.Outcome} (h : Spec.RsaOaep.writtenDecrypt m out len n r o) :
+    Spec.RsaOaep.writtenDecrypt m' out len n r o := by
+  have b := VG.Proof.Rsa.rsa_bytes_frame hf hn hd
+  have w : m'.readW len 64 = m.readW len 64 := hf.readW (r := ⟨len, 8⟩) (Region.contains_self _ _) hl (by decide)
+  cases o <;> exact ⟨h.1, b.trans h.2.1, w.trans h.2.2⟩
+
 theorem code_ok (hc : Coh vs) (v : Proof.Rsa.Arm.CrtImpl) {s : State} (hs : (dspec vs).pre s) :
     WP isa (decCode vs v) s fun t => abiPreserved s t ∧ (dspec vs).post s t := by
   obtain ⟨⟨T₁, hT₁, hhL⟩, ⟨T, hT, hh⟩, -, hfitL, hfit⟩ := spec_tab hs
@@ -220,7 +230,16 @@ theorem code_ok (hc : Coh vs) (v : Proof.Rsa.Arm.CrtImpl) {s : State} (hs : (dsp
   have hb := (body_vp w₁.g (epw (vs := vs) s s w w₁) w.g (fun _ x => x) (fun _ x => x) (fne_of hw) v).wp _ _ st
   refine WP.mono (wrap_ok hF (by rw [Nat.add_comm]; exact hsp') (W := (epw (vs := vs) s s w w₁).lay.W)
     (Q := fun r m => Res w₁.g.G w.g.G (epw (vs := vs) s s w w₁) (entered frameBytes s) m r) (fun r hr => ?_)
-    (WP.mono hb fun u hu => ⟨hu.1.1.2.frame, hu.1.2⟩)) fun t ⟨abi, res⟩ => ⟨abi, ?_⟩
+    (WP.mono hb fun u hu => ⟨hu.1.1.2.frame, hu.1.2⟩)
+    (hQ := fun _ m₁ m₂ hf hres => by
+      have fit := hin.ok.fits (epw (vs := vs) s s w w₁).OUT (List.mem_append_right _ List.mem_cons_self)
+      have rel := fun {R : Region} (hR : R ∈ (epw (vs := vs) s s w w₁).lay.rw) =>
+        released_apart (F := frameBytes) (A := 84) (C := 3440) (argv := (epw (vs := vs) s s w w₁).argv)
+          (ro := (epw (vs := vs) s s w w₁).lay.ro) (rw := (epw (vs := vs) s s w w₁).lay.rw) hin.ok hsp' (R := R)
+          (Or.inr hR)
+      exact writtenDecrypt_frame hf (rel (R := (epw (vs := vs) s s w w₁).OUT) (by simp))
+        (rel (R := (epw (vs := vs) s s w w₁).ML) (by simp))
+        (by change (epw (vs := vs) s s w w₁).OUT.len < 2 ^ 64; omega_using [fit]) hres)) fun t ⟨abi, res⟩ => ⟨abi, ?_⟩
   · rw [pushRegion_eq (F := frameBytes) (A := 84) (C := 3440) (argv := (epw (vs := vs) s s w w₁).argv)
       (ro := (epw (vs := vs) s s w w₁).lay.ro) (rw := (epw (vs := vs) s s w w₁).lay.rw) hsp']
     exact hin.ok.push_apart r hr

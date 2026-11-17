@@ -457,8 +457,10 @@ theorem bpAt_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wbs s)
   have ep := En.poly i1
   clear_value E
   sig_post [bitPackContract, bitPackSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] at hq
-  simp only [g0, g1, g2, g3, av, hm₂, toNat32 ha', toNat32 hb', toNat32 hl', L.w i1 (by decide), L.w i2 hl0,
+  simp only [g0, g1, g2, g3, av, toNat32 ha', toNat32 hb', toNat32 hl', L.w i1 (by decide), L.w i2 hl0,
     Arg.val, ep] at hq
+  rw [Proof.MlKem.bytesAt_frame hm₂ (fun r hr => by rw [List.mem_singleton.mp hr]; exact (L.stkD i2).symm)
+    (by omega_arith)]
   exact hq
 
 theorem bpAt_tr {P : Prims} (hP : PrimsOk P D) {f out : Ptr} {a b len : Nat}
@@ -570,9 +572,9 @@ theorem bupAt_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wbs s
   have eb := En.bytes i1
   clear_value E
   sig_post [bitUnpackContract, bitUnpackSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] at hq
-  simp only [g0, g1, g2, g3, av, hm₂, toNat32 ha', toNat32 hb', toNat32 hl', L.w i1 hl0, L.w i2 (by decide),
+  simp only [g0, g1, g2, g3, av, toNat32 ha', toNat32 hb', toNat32 hl', L.w i1 hl0, L.w i2 (by decide),
     Arg.val, eb] at hq
-  exact hq
+  exact polyIs_frame hm₂ (fun r hr => by rw [List.mem_singleton.mp hr]; exact (L.stkD i2).symm) hq
 
 theorem bupAt_tr {P : Prims} (hP : PrimsOk P D) {v f : Ptr} {a b len : Nat}
     (hp : (a, b) ∈ bitPackParams) (hl : len = 32 * bitlen (a + b)) (hc : rwChk (rbs ++ wbs) wbs v len f 1024 = true) :
@@ -694,8 +696,10 @@ theorem hbpAt_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wbs s
   have eh := En.hint i1'
   clear_value E
   sig_post [hintBitPackContract, hintBitPackSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] at hq
-  simp only [g0, g2, g3, av, hm₂, toNat32 h1, toNat32 h2, ek, L.w i1 (by omega_arith), L.w i2 (by omega_arith), Arg.val,
+  simp only [g0, g2, g3, av, toNat32 h1, toNat32 h2, ek, L.w i1 (by omega_arith), L.w i2 (by omega_arith), Arg.val,
     eh] at hq
+  rw [Proof.MlKem.bytesAt_frame hm₂ (fun r hr => by rw [List.mem_singleton.mp hr]; exact (L.stkD i2).symm)
+    (by omega_arith)]
   exact hq
 
 /-- Two runs leak the same when their hints (as the `u32`s at `h`) agree. -/
