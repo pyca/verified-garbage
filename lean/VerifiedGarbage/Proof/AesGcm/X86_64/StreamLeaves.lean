@@ -1065,6 +1065,102 @@ theorem streamL_of {Lb : BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 →
       rw [not_or] at h448
       exact hb d (by omega_arith) hlt h448.2
 
+
+/-- Where `streamTextS` over a `vg_aes_ctr32` that zeroes where `z` says leaves
+zeros at `W + d` (`streamTextS_leavesZ`), of its argument registers `g` and
+stack arguments `a`. -/
+def zfin (z : Nat → Bool) (g : Reg → BitVec 64) (a : Nat → BitVec 64) (d : Nat) : Bool :=
+  decide (512 ≤ d) && zIf (decide (crHead ((g .r8).toNat + stJ (g .r8).toNat (a 0).toNat)
+    ((a 0).toNat - stJ (g .r8).toNat (a 0).toNat) < (a 0).toNat - stJ (g .r8).toNat (a 0).toNat)) z d
+
+/-- `streamL`, with zeros where `zfin` says. -/
+def streamLZ (z : Nat → Bool) (Lb : BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → Addr →
+      Addr → Option (BitVec 8)) (g : Reg → BitVec 64) (a : Nat → BitVec 64) (x : Addr) : Option (BitVec 8) :=
+  if (x - a 1).toNat < 2560 ∧ zfin z g a (x - a 1).toNat = true then some 0 else streamL Lb g a x
+
+theorem off_W (W : Addr) {d : Nat} (hd : d < 2 ^ 64) : (W + BitVec.ofNat 64 d - W).toNat = d :=
+  Mem.sub_ofNat_toNat W hd
+
+/-- `streamL_of` for `streamLZ`: the bytes where `zfin` says are zero, and the
+others as `streamL_of` needs. -/
+theorem streamLZ_of {z : Nat → Bool} {Lb : BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 →
+      Addr → Addr → Option (BitVec 8)} {g : Reg → BitVec 64} {a : Nat → BitVec 64} {m m' : Mem} {W : Addr}
+    (hW : a 1 = W)
+    (hz : ∀ d, d < 2560 → zfin z g a d = true → m' (W + BitVec.ofNat 64 d) = 0)
+    (hw : ∀ j, 16 ≤ j → j < 28 → ∀ w, streamWord g a j = some w → m'.readW (W + BitVec.ofNat 64 (8 * j)) 64 = w)
+    (hn : ∀ d, d < 2560 → zfin z g a d = false → (d < 224 → streamWord g a (d / 8) = none) →
+      (224 ≤ d → d < 448 ∨ (a 0).toNat < 256) → m' (W + BitVec.ofNat 64 d) = m (W + BitVec.ofNat 64 d))
+    (hb : ∀ d, 448 ≤ d → d < 2560 → zfin z g a d = false → ¬ (a 0).toNat < 256 →
+      m' (W + BitVec.ofNat 64 d) = (Lb (g .rdi) (BitVec.ofNat 64 (g .rsi).toNat) (g .rdx + BitVec.ofNat 64 48)
+        (g .rdx + BitVec.ofNat 64 16) (g .r9 + BitVec.ofNat 64 (headLen (g .r8).toNat (a 0).toNat))
+        (BitVec.ofNat 64 (((a 0).toNat - headLen (g .r8).toNat (a 0).toNat) / 16)) (W + BitVec.ofNat 64 448)
+        (W + BitVec.ofNat 64 d)).getD (m (W + BitVec.ofNat 64 d))) :
+    ∀ x, (⟨W, 2560⟩ : Region).Contains x 1 → m' x = (streamLZ z Lb g a x).getD (m x) := by
+  let zone : Addr → Prop := fun y => (y - W).toNat < 2560 ∧ zfin z g a (y - W).toNat = true
+  let m'' : Mem := fun y => if zone y then (streamL Lb g a y).getD (m y) else m' y
+  have e₁ : ∀ d, d < 2560 → zfin z g a d = false → m'' (W + BitVec.ofNat 64 d) = m' (W + BitVec.ofNat 64 d) :=
+    fun d hd hf => by
+      show (if zone _ then _ else _) = _
+      rw [Scrub.ite_f]; simp only [zone, off_W W (show d < 2 ^ 64 by omega), hf]; simp
+  have e₂ : ∀ d, d < 2560 → zfin z g a d = true →
+      m'' (W + BitVec.ofNat 64 d) = (streamL Lb g a (W + BitVec.ofNat 64 d)).getD (m (W + BitVec.ofNat 64 d)) :=
+    fun d hd ht => by
+      show (if zone _ then _ else _) = _
+      rw [Scrub.ite_t]; simp only [zone, off_W W (show d < 2 ^ 64 by omega), ht]; exact ⟨hd, trivial⟩
+  have z512 : ∀ d, zfin z g a d = true → 512 ≤ d := fun d h => by
+    simp only [zfin, Bool.and_eq_true, decide_eq_true_eq] at h; exact h.1
+  have sL : ∀ d, d < 2560 → 512 ≤ d → streamL Lb g a (W + BitVec.ofNat 64 d) =
+      if (a 0).toNat < 256 then none else Lb (g .rdi) (BitVec.ofNat 64 (g .rsi).toNat) (g .rdx + BitVec.ofNat 64 48)
+        (g .rdx + BitVec.ofNat 64 16) (g .r9 + BitVec.ofNat 64 (headLen (g .r8).toNat (a 0).toNat))
+        (BitVec.ofNat 64 (((a 0).toNat - headLen (g .r8).toNat (a 0).toNat) / 16)) (W + BitVec.ofNat 64 448)
+        (W + BitVec.ofNat 64 d) := fun d hd h5 => by
+    simp only [streamL, hW, off_W W (show d < 2 ^ 64 by omega)]
+    rw [Scrub.ite_f (by omega)]
+    by_cases h : (a 0).toNat < 256
+    · simp [h]
+    · simp [h, show ¬ d < 448 by omega]
+  have key := streamL_of (Lb := Lb) (g := g) (a := a) (m := m) (m' := m'') hW
+    (fun j h₁ h₂ w hj => by
+      have f : Frame [⟨W + BitVec.ofNat 64 512, 2048⟩] m' m'' := fun y hy => by
+        show (if zone y then _ else _) = _
+        rw [Scrub.ite_f]
+        intro ⟨hl, hzz⟩
+        apply hy _ (List.mem_singleton_self _)
+        show (y - (W + BitVec.ofNat 64 512)).toNat + 1 ≤ 2048
+        have h5 := z512 _ hzz
+        have : y = W + BitVec.ofNat 64 (y - W).toNat := by
+          rw [BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel]
+        rw [this, Offset.sub_toNat W h5 (by omega)]; omega
+      rw [f.readW (r := ⟨W + BitVec.ofNat 64 (8 * j), 8⟩) (Region.contains_self _ _) (fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr
+        exact Offset.disjoint W (.inl (by omega)) (by omega) (by omega)) (by decide)]
+      exact hw j h₁ h₂ w hj)
+    (fun d hd h1 h2 => by
+      cases hzd : zfin z g a d
+      · rw [e₁ d hd hzd]; exact hn d hd hzd h1 h2
+      · rw [e₂ d hd hzd, sL d hd (z512 d hzd)]
+        have h5 := z512 d hzd
+        rcases h2 (by omega) with h | h
+        · omega
+        · simp [h])
+    (fun d h4 hd h256 => by
+      cases hzd : zfin z g a d
+      · rw [e₁ d hd hzd]; exact hb d h4 hd hzd h256
+      · rw [e₂ d hd hzd, sL d hd (z512 d hzd)]; simp [h256])
+  intro x hx
+  have hk := key x hx
+  obtain hlt : (x - W).toNat < 2560 := by simp only [Region.Contains] at hx; omega
+  simp only [streamLZ, hW]
+  by_cases hzx : zfin z g a (x - W).toNat = true
+  · rw [Scrub.ite_t ⟨hlt, hzx⟩]
+    have : x = W + BitVec.ofNat 64 (x - W).toNat := by
+      rw [BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel]
+    rw [this]; exact hz _ hlt hzx
+  · rw [Scrub.ite_f (fun h => hzx h.2)]
+    rw [← hk]
+    show m' x = if zone x then _ else m' x
+    rw [Scrub.ite_f (fun h => hzx h.2)]
+
 /-- What `stream_encrypt`'s precondition says of `St`, `W` and the stack
 arguments, beyond `CryptCtx`. -/
 theorem streamCryptPre_more {cl : Nat} {s : State} (hp : Proof.AesGcm.streamCryptPre cl s) :
@@ -1242,6 +1338,182 @@ theorem streamS_leaves (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn 
       · exact Offset.disjoint_below SP (n := 24) (d := 8) (k := 16) (by decide)
 
 
+/-- One run of `stream_encrypt` (`enc`) or `stream_decrypt`, with callees that
+never touch their working space and a blocks function that leaves `Lb` in
+its `scratch`: it leaves `W` as `streamL` says, and its return address and
+stack arguments as they were. -/
+theorem streamS_leavesZ (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M)
+    (gf : GhashFree v.gh.fn.code) {sc : Nat} {z : Nat → Bool} (hsc : sc ≤ 2048) (CZ : CrCallZ v sc z) (enc : Bool)
+    {Lb : BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → Addr → Addr → Option (BitVec 8)}
+    (hL : BlkLeft Lb (if enc then B.enc else B.dec).code M) {s : State}
+    (hp : Proof.AesGcm.streamCryptPre M.len s) (hok : M.ok s.mem (s.gpr .rdi)) :
+    WP isa (.seq (.block cryptEntry) (.seq (streamTextS (v.withBlk B) enc) (.block restore))) s fun s' =>
+      (∀ x, (⟨stackArg s 1, 2560⟩ : Region).Contains x 1 →
+        s'.mem x = (streamLZ z Lb s.gpr (fun i => stackArg s i) x).getD (s.mem x)) ∧
+      ∀ x, (⟨s.gpr .rsp, 24⟩ : Region).Contains x 1 → s'.mem x = s.mem x := by
+  have C := CryptCtx.of hp M.ge
+  have X := CtxExt.ofCrypt hp hok
+  have hR := C.rounds
+  obtain ⟨dSW, dSA, dDA⟩ := streamCryptPre_more hp
+  have hP : (s.gpr .r8).toNat < 2 ^ 64 := (s.gpr .r8).isLt
+  generalize hc₀ : List.replicate (s.gpr .r8).toNat (0 : Byte) = c₀
+  obtain hT : (s.gpr .r8).toNat = c₀.length := by rw [← hc₀, List.length_replicate]
+  rw [hT] at hP
+  generalize hCtx : s.gpr .rdi = Ctx at *
+  generalize hSt : s.gpr .rdx = St at *
+  generalize hW : stackArg s 1 = W at *
+  generalize hSP : s.gpr .rsp = SP at *
+  generalize hD : s.gpr .r9 = D at *
+  generalize hn : (stackArg s 0).toNat = n at *
+  have L := C.lay
+  generalize hR' : (s.gpr .rsi).toNat = R at *
+  refine WP.seq (WP.mono (cryptEntry_ok hCtx hSt hD hSP hW hn C.perm C.ww C.args C.dA (by rw [hR']; exact hR))
+    fun s₁ E => ?_)
+  have hRo : RoundsAt s₁.mem W R := hR' ▸ E.rounds
+  have dCE : ∀ r ∈ [entryR W], (⟨Ctx, 256⟩ : Region).Disjoint r := by
+    intro r hr; simp only [List.mem_singleton] at hr; subst hr; exact L.cw'.sub_right (Lay.wSub (by decide))
+  have K : SCtx M Ctx St W SP R (blockAt s₁.mem (Ctx + BitVec.ofNat 64 240)) D n s₁.mem := ⟨L, hRo, rfl, C.t_c,
+    C.t_s, C.t_w, C.t_d, C.sp24, X.w, X.cs, X.cw, X.cd, X.ct, M.frame E.frame (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact X.cw.sub_right (Lay.wSub (by decide))) X.w X.ok⟩
+  have htl : s₁.mem.readW (W + BitVec.ofNat 64 192) 64 = BitVec.ofNat 64 c₀.length := by
+    rw [E.tlen, ← hT, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+  have hal : s₁.mem.readW (W + BitVec.ofNat 64 184) 64 =
+      BitVec.ofNat 64 (List.replicate (s.gpr .rcx).toNat (0 : Byte)).length := by
+    rw [E.alen, List.length_replicate, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+  refine WP.seq (WP.mono (wp_both
+    (streamTextS_ok v B K enc (Hyp := False) (icb := 0) E.env rfl (C.data.of_eq E.rd E.wr)
+      (by rw [E.rd, E.wr]; exact X.cov) E.rbp hP hal htl E.dat E.len (fun h => h.elim) (fun h => h.elim))
+    (streamTextS_leavesZ v gf hsc CZ B K enc (Hyp := False) (icb := 0) hL E.env rfl (C.data.of_eq E.rd E.wr)
+      (by rw [E.rd, E.wr]; exact X.cov) E.rbp hP hal htl E.dat E.len (fun h => h.elim) (fun h => h.elim)))
+    fun s₂ ⟨⟨he₂, _, _, f₂, _⟩, l192, l200, l208, l216, lW⟩ => ?_)
+  have hsv₂ : SavedAt s₂.mem W s := E.saved.frame f₂ (w_stFrame L C.data.ok.w C.t_w (by decide) (by decide))
+  have hret : s₂.mem.readW SP 64 = s.mem.readW SP 64 := by
+    rw [ret_kept f₂ (ret_stFrame C.rS C.rD C.rW), ret_kept E.frame (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact C.rW.sub_right (Lay.wSub (by decide)))]
+  refine WP.mono (exit_ok he₂.r15 (by rw [he₂.rsp, hSP]) (covers_left he₂.perm.w) hsv₂ (by rw [hSP, hret]))
+    fun s' ⟨_, hm, _⟩ => ⟨?_, ?_⟩
+  · -- `W`.
+    have fE : ∀ d, d < 128 ∨ 216 ≤ d → d < 2560 → s₁.mem (W + BitVec.ofNat 64 d) = s.mem (W + BitVec.ofNat 64 d) := by
+      intro d h₁ h₂
+      refine frame_at E.frame (fun r hr => ?_) (Region.contains_self _ _)
+      simp only [List.mem_singleton] at hr; subst hr
+      rcases h₁ with h₁ | h₁
+      · exact L.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)
+      · exact L.w_w (.inr (by omega_arith)) (by omega_arith) (by decide)
+    have f2 : ∀ d, d < 192 ∨ (224 ≤ d ∧ d < 448) →
+        s₂.mem (W + BitVec.ofNat 64 d) = s₁.mem (W + BitVec.ofNat 64 d) := by
+      intro d h₁
+      have hdl : d + 1 ≤ 2560 := by omega_arith
+      refine frame_at f₂ (fun r hr => ?_) (Region.contains_self _ _)
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
+      · exact ((dSW.sub_left (Lay.stSub (by decide))).sub_right (Lay.wSub hdl)).symm
+      · exact (C.dE.sub_right (Lay.wSub hdl)).symm
+      · simp only [tReg, Bool.false_eq_true, ↓reduceIte]; exact Lay.disj_empty
+      · rcases h₁ with h₁ | h₁
+        · exact L.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)
+        · exact L.w_w (.inr (by omega_arith)) (by omega_arith) (by decide)
+      · exact L.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)
+      · exact (C.t_w.sub_right (Lay.wSub hdl)).symm
+    have rW : ∀ d, 128 ≤ d → d + 8 ≤ 192 →
+        s₂.mem.readW (W + BitVec.ofNat 64 d) 64 = s₁.mem.readW (W + BitVec.ofNat 64 d) 64 := fun d h₁ h₂ =>
+      f₂.readW (r := ⟨W + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _)
+        (w_stFrame L C.data.ok.w C.t_w h₁ h₂) (by decide)
+    have zf : ∀ d, zfin z s.gpr (fun i => stackArg s i) d =
+        (decide (512 ≤ d) && zIf (decide (crHead (c₀.length + stJ c₀.length n) (n - stJ c₀.length n) <
+          n - stJ c₀.length n)) z d) := fun d => by simp only [zfin, hT, hn]
+    refine streamLZ_of (z := z) (W := W) (m := s.mem) (m' := s'.mem) hW (fun d hd hz => ?_)
+      (fun j h₁ h₂ w hj => ?_) (fun d hd hzf h224 h448 => ?_) (fun d h₁ hd hzf hnot => ?_)
+    · rw [zf, Bool.and_eq_true, decide_eq_true_eq] at hz
+      rw [hm, lW d (by have := hz.1; omega) hd, Scrub.ite_t hz]
+    · rw [hm]
+      rcases (by omega_arith : j = 16 ∨ j = 17 ∨ j = 18 ∨ j = 19 ∨ j = 20 ∨ j = 21 ∨ j = 22 ∨ j = 23 ∨ j = 24 ∨
+        j = 25 ∨ j = 26 ∨ j = 27) with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+      · obtain rfl := Option.some.inj hj; exact hsv₂ (.rbx, 128) (by simp [saved])
+      · obtain rfl := Option.some.inj hj; exact hsv₂ (.rbp, 136) (by simp [saved])
+      · obtain rfl := Option.some.inj hj; exact hsv₂ (.r12, 144) (by simp [saved])
+      · obtain rfl := Option.some.inj hj; exact hsv₂ (.r13, 152) (by simp [saved])
+      · obtain rfl := Option.some.inj hj; exact hsv₂ (.r14, 160) (by simp [saved])
+      · obtain rfl := Option.some.inj hj; exact hsv₂ (.r15, 168) (by simp [saved])
+      · obtain rfl := Option.some.inj hj
+        rw [show 8 * 22 = 176 from rfl, rW 176 (by decide) (by decide), hRo.1, ← hR', BitVec.ofNat_toNat,
+          BitVec.setWidth_eq]
+      · obtain rfl := Option.some.inj hj
+        rw [show 8 * 23 = 184 from rfl, rW 184 (by decide) (by decide), E.alen]
+      · simp only [streamWord, hT, hn] at hj
+        obtain rfl := Option.some.inj hj; exact l192
+      · simp only [streamWord, hT, hn, hD] at hj
+        obtain rfl := Option.some.inj hj; exact l200
+      · simp only [streamWord, hT, hn] at hj
+        obtain rfl := Option.some.inj hj; exact l208
+      · simp only [streamWord, hn] at hj
+        by_cases h256 : n < 256
+        · simp [h256] at hj
+        · simp only [h256, ↓reduceIte, Option.some.injEq] at hj
+          subst hj
+          rw [show 8 * 27 = 216 from rfl, l216]; simp [h256]
+    · rw [hm]
+      by_cases h128 : d < 128
+      · rw [f2 d (.inl (by omega_arith)), fE d (.inl h128) hd]
+      by_cases h2 : d < 224
+      · -- Only the whole length, if no blocks: as on entry.
+        obtain hw := h224 h2
+        obtain ⟨h27, h256⟩ : d / 8 = 27 ∧ n < 256 := by
+          rcases (by omega_arith : d / 8 = 16 ∨ d / 8 = 17 ∨ d / 8 = 18 ∨ d / 8 = 19 ∨ d / 8 = 20 ∨ d / 8 = 21 ∨
+            d / 8 = 22 ∨ d / 8 = 23 ∨ d / 8 = 24 ∨ d / 8 = 25 ∨ d / 8 = 26 ∨ d / 8 = 27) with
+            e | e | e | e | e | e | e | e | e | e | e | e <;> rw [e] at hw <;> simp [streamWord, hn] at hw
+          exact ⟨e, hw⟩
+        obtain ed : W + BitVec.ofNat 64 d = W + BitVec.ofNat 64 216 + BitVec.ofNat 64 (d % 8) :=
+          (Offset.add_add_eq W (show 216 + d % 8 = d by omega_arith)).symm
+        rw [ed, byte_readW64' s₂.mem (W + BitVec.ofNat 64 216) (j := d % 8) (by omega_arith), l216]
+        simp only [h256, ↓reduceIte]
+        rw [← byte_readW64' s₁.mem (W + BitVec.ofNat 64 216) (j := d % 8) (by omega_arith), ← ed]
+        exact fE d (.inr (by omega_arith)) hd
+      · rcases h448 (by omega_arith) with h | h
+        · rw [f2 d (.inr ⟨by omega_arith, h⟩), fE d (.inr (by omega_arith)) hd]
+        · by_cases h4 : d < 448
+          · rw [f2 d (.inr ⟨by omega_arith, h4⟩), fE d (.inr (by omega_arith)) hd]
+          · rw [hn] at h
+            rw [zf, Bool.and_eq_false_iff, decide_eq_false_iff_not] at hzf
+            rw [lW d (by omega_arith) hd, Scrub.ite_f (fun h' => by
+              rcases hzf with hzf | hzf
+              · exact hzf h'.1
+              · rw [hzf] at h'; exact absurd h'.2 (by decide))]
+            simp only [h, ↓reduceIte, Option.getD_none]
+            exact fE d (.inr (by omega_arith)) hd
+    · rw [hn] at hnot
+      rw [zf, Bool.and_eq_false_iff, decide_eq_false_iff_not] at hzf
+      rw [hm, lW d h₁ hd, Scrub.ite_f (fun h' => by
+        rcases hzf with hzf | hzf
+        · exact hzf h'.1
+        · rw [hzf] at h'; exact absurd h'.2 (by decide))]
+      simp only [hnot, ↓reduceIte, hCtx, hR', hSt, hD, hT, hn]
+      rw [fE d (.inr (by omega_arith)) hd]
+  · -- The return address and the stack arguments.
+    intro x hx
+    rw [hm]
+    have hsplit : (⟨SP, 8⟩ : Region).Contains x 1 ∨ (⟨SP + BitVec.ofNat 64 8, 16⟩ : Region).Contains x 1 := by
+      by_cases h8 : (x - SP).toNat < 8
+      · exact .inl (by simp only [Region.Contains] at hx ⊢; omega_using [h8])
+      · refine .inr ?_
+        have := (Offset.lt_iff x SP (d := 8) (n := 16) (by decide)).2
+          ⟨by omega_arith, by simp only [Region.Contains] at hx; omega_using [hx]⟩
+        simp only [Region.Contains]; omega_using [this]
+    rcases hsplit with h | h
+    · rw [frame_at f₂ (ret_stFrame C.rS C.rD C.rW) h, frame_at E.frame (fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; exact C.rW.sub_right (Lay.wSub (by decide))) h]
+    · refine (frame_at f₂ (fun r hr => ?_) h).trans (frame_at E.frame (fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; exact C.dA.sub_right (Lay.wSub (by decide))) h)
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
+      · exact (dSA.sub_left (Lay.stSub (by decide))).symm
+      · exact dDA.symm
+      · simp only [tReg, Bool.false_eq_true, ↓reduceIte]; exact Lay.disj_empty
+      · exact C.dA.sub_right (Lay.wSub (by decide))
+      · exact C.dA.sub_right (Lay.wSub (by decide))
+      · exact Offset.disjoint_below SP (n := 24) (d := 8) (k := 16) (by decide)
+
+
 theorem streamWord_congr {g g' : Reg → BitVec 64} {a a' : Nat → BitVec 64}
     (hg : ∀ r, r ≠ .rax → r ≠ .rsp → g r = g' r) (ha : a 0 = a' 0) (j : Nat) :
     streamWord g a j = streamWord g' a' j := by
@@ -1258,6 +1530,13 @@ theorem streamL_congr (Lb : BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 
     hg .rsi (by decide) (by decide), hg .rdx (by decide) (by decide), hg .r8 (by decide) (by decide),
     hg .r9 (by decide) (by decide)]
 
+theorem streamLZ_congr (z : Nat → Bool) (Lb : BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 →
+      Addr → Addr → Option (BitVec 8)) {g g' : Reg → BitVec 64} {a a' : Nat → BitVec 64}
+    (hg : ∀ r, r ≠ .rax → r ≠ .rsp → g r = g' r) (ha₀ : a 0 = a' 0) (ha₁ : a 1 = a' 1) (x : Addr) :
+    streamLZ z Lb g a x = streamLZ z Lb g' a' x := by
+  unfold streamLZ zfin
+  rw [ha₀, ha₁, hg .r8 (by decide) (by decide), streamL_congr Lb hg ha₀ ha₁ x]
+
 /-- What the code of `stream_encrypt` or `stream_decrypt` leaves at `x` in its
 frame of `withStackArgScratch 2584 1` from `s`, at `A = rsp - 2584`: its
 first 8 bytes as they were, then the copies of the length and of `W`'s
@@ -1270,6 +1549,19 @@ def streamFV (Lb : BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVe
       else s.gpr .rsp - BitVec.ofNat 64 2584 + BitVec.ofNat 64 24).extractLsb'
         (8 * ((x - (s.gpr .rsp - BitVec.ofNat 64 2584)).toNat % 8)) 8)
   else streamL Lb s.gpr (fun i => if i = 0 then stackArg s 0 else s.gpr .rsp - BitVec.ofNat 64 2584 + BitVec.ofNat 64 24) x
+
+/-- What the code of `stream_encrypt` or `stream_decrypt` leaves at `x` in its
+frame of `withStackArgScratch 2584 1` from `s`, at `A = rsp - 2584`: its
+first 8 bytes as they were, then the copies of the length and of `W`'s
+address, `A + 24`, and in `W` what `streamL` says. -/
+def streamFVZ (z : Nat → Bool) (Lb : BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → Addr → Addr →
+      Option (BitVec 8)) (s : State) (x : Addr) : Option (BitVec 8) :=
+  if (x - (s.gpr .rsp - BitVec.ofNat 64 2584)).toNat < 8 then none
+  else if (x - (s.gpr .rsp - BitVec.ofNat 64 2584)).toNat < 24 then
+    some ((if (x - (s.gpr .rsp - BitVec.ofNat 64 2584)).toNat < 16 then stackArg s 0
+      else s.gpr .rsp - BitVec.ofNat 64 2584 + BitVec.ofNat 64 24).extractLsb'
+        (8 * ((x - (s.gpr .rsp - BitVec.ofNat 64 2584)).toNat % 8)) 8)
+  else streamLZ z Lb s.gpr (fun i => if i = 0 then stackArg s 0 else s.gpr .rsp - BitVec.ofNat 64 2584 + BitVec.ofNat 64 24) x
 
 theorem streamFV_congr (Lb : BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → Addr → Addr →
       Option (BitVec 8)) {s₁ s₂ : State} (hg : ∀ r, r ≠ .rax → s₁.gpr r = s₂.gpr r)
@@ -1372,6 +1664,96 @@ theorem framedS_leaves {sig : Sig} {nm : String} {e : Elem} {n : Nat}
 
 open VG.Impl.Scrub.X86_64 (VecLevel)
 
+open VG.Impl.StackScratch.X86_64 in
+/-- The code of `stream_encrypt` or `stream_decrypt` (`c`, verified against the
+contract with `scratch` that `withStackArgScratch 2584 1` gives it), which
+leaves `W` as `streamL` says and its return address and stack arguments as
+they were (`hl`), in that frame: what `streamFV` says. -/
+theorem framedS_leavesZ {sig : Sig} {nm : String} {e : Elem} {n : Nat}
+    {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)} {post : sig.Post abi.ptrBits} {wa : Bool}
+    {leak : Option (Curry (sig.words abi.ptrBits) (Mem → List Nat))} {c : Prog isa} {P : State → Prop} {z : Nat → Bool}
+    {Lb : BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → Addr → Addr → Option (BitVec 8)}
+    (hv : Verified X86_64.target c (Sig.scratchContract abi sig nm e n pre post wa 24 leak))
+    (hP : ∀ s, (Sig.scratchContract abi sig nm e n pre post wa 24 leak).pre s → P s)
+    (hl : ∀ s t s', P s → Exec isa c s t s' →
+      (∀ x, (⟨stackArg s 1, 2560⟩ : Region).Contains x 1 →
+        s'.mem x = (streamLZ z Lb s.gpr (fun i => stackArg s i) x).getD (s.mem x)) ∧
+      ∀ x, (⟨s.gpr .rsp, 24⟩ : Region).Contains x 1 → s'.mem x = s.mem x)
+    (h1 : nStack sig = 1) (hk : 6 ≤ (sig.words abi.ptrBits).length) (hb : 16 + 8 * nStack sig + n * e.size ≤ 2584)
+    (hsp : c.all (fun i => !isa.writesSp i) = true) (hd : c.x86_64Depth ≤ 24)
+    (hpre : ∀ vs m₁ m₂, vs.length = (sig.words abi.ptrBits).length →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) pre vs m₁ → Curry.apply (sig.words abi.ptrBits) pre vs m₂)
+    {s : State} (hs : (sig.contract abi pre post wa (24 + 2584) leak).pre s) {t : List Leak} {u : State}
+    (he : Exec isa (withStackArgScratch 2584 (nStack sig) c) s t u) :
+    ∀ x, (⟨s.gpr .rsp - BitVec.ofNat 64 2584, 2584⟩ : Region).Contains x 1 →
+      u.mem x = (streamFVZ z Lb s x).getD (s.mem x) := by
+  have hb' : 16 + 8 * nStack sig + n * e.size ≤ 2584 ∧ 2584 < 4096 ∧ 2584 % 8 = 0 := ⟨hb, by decide, by decide⟩
+  have hW := framed_leaves (R := fun s => ⟨stackArg s 1, 2560⟩)
+    (L := fun s x => streamLZ z Lb s.gpr (fun i => stackArg s i) x) hv hP (fun s t s' hp he => (hl s t s' hp he).1)
+    hk hb' (by decide) hsp hd hpre hs he
+  have hH := framed_leaves (R := fun s => ⟨s.gpr .rsp, 24⟩) (L := fun _ _ => none) hv hP
+    (fun s t s' hp he x hx => (hl s t s' hp he).2 x hx) hk hb' (by decide) hsp hd hpre hs he
+  obtain ⟨hg, ha, hlst, hf⟩ := narrowS_args hk hb (by decide) hs
+  obtain ⟨hrsp, -⟩ := narrowS_facts (nm := "") hk hb (by decide) hs
+  rw [h1] at ha hlst hf
+  generalize hA : s.gpr .rsp - BitVec.ofNat 64 2584 = A at hrsp hlst hf ⊢
+  have hW' : stackArg (narrowS sig e n 2584 s) 1 = A + BitVec.ofNat 64 24 := hlst
+  have ha0 : stackArg (narrowS sig e n 2584 s) 0 = stackArg s 0 := ha 0 (by decide)
+  rw [hW'] at hW
+  rw [hrsp] at hH
+  intro x hx
+  have hlt : (x - A).toNat < 2584 := by simp only [Region.Contains] at hx; omega_using [hx]
+  generalize hdx : (x - A).toNat = d at hlt
+  have ex : x = A + BitVec.ofNat 64 d := by
+    rw [← hdx, BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel]
+  subst ex
+  unfold streamFVZ
+  rw [hA]
+  simp only [hdx]
+  by_cases h8 : d < 8
+  · simp only [h8, ↓reduceIte, Option.getD_none]
+    rw [hH _ (Offset.contains_base A (by omega_arith) (by omega_arith))]
+    simp only [Option.getD_none]
+    refine hf _ fun r hr hc => ?_
+    simp only [List.mem_singleton] at hr; subst hr
+    have := (Offset.lt_iff (A + BitVec.ofNat 64 d) A (d := 8) (n := 8 * (1 + 1)) (by decide)).1
+      (by simp only [Region.Contains] at hc; rw [show (8 : Addr) = BitVec.ofNat 64 8 from rfl] at hc; omega_using [hc])
+    rw [Mem.sub_ofNat_toNat A (show d < 2 ^ 64 by omega_arith)] at this
+    omega_using [this, h8]
+  · by_cases h24 : d < 24
+    · simp only [h8, h24, ↓reduceIte, Option.getD_some]
+      rw [hH _ (Offset.contains_base A (by omega_arith) (by omega_arith)), Option.getD_none]
+      have ex' : A + BitVec.ofNat 64 d = A + BitVec.ofNat 64 (8 * (d / 8)) + BitVec.ofNat 64 (d % 8) := by
+        rw [Offset.add_add_eq _ (show 8 * (d / 8) + d % 8 = d by omega_arith)]
+      rw [ex', byte_readW64' (narrowS sig e n 2584 s).mem (A + BitVec.ofNat 64 (8 * (d / 8))) (show d % 8 < 8 by omega_arith)]
+      refine congrArg (BitVec.extractLsb' (8 * (d % 8)) 8) ?_
+      by_cases h16 : d < 16
+      · simp only [h16, ↓reduceIte]
+        rw [← ha0, show 8 * (d / 8) = 8 * (0 + 1) by omega_arith]
+        unfold stackArg stackArgAddr
+        rw [hrsp]
+      · simp only [h16, ↓reduceIte]
+        rw [← hW', show 8 * (d / 8) = 8 * (1 + 1) by omega_arith]
+        unfold stackArg stackArgAddr
+        rw [hrsp]
+    · simp only [h8, h24, ↓reduceIte]
+      have hxW : (⟨A + BitVec.ofNat 64 24, 2560⟩ : Region).Contains (A + BitVec.ofNat 64 d) 1 :=
+        Offset.contains A (by omega_arith) (by omega_arith) (by decide)
+      rw [hW _ hxW, streamLZ_congr z Lb (g' := s.gpr) (a' := fun i => if i = 0 then stackArg s 0 else A + BitVec.ofNat 64 24)
+        (fun r h₁ h₂ => hg r h₁ h₂) (by simp [ha0]) (by simp [hW'])]
+      refine congrArg (Option.getD _) ?_
+      refine hf _ fun r hr hc => ?_
+      simp only [List.mem_singleton] at hr; subst hr
+      have := (Offset.lt_iff (A + BitVec.ofNat 64 d) A (d := 8) (n := 8 * (1 + 1)) (by decide)).1
+        (by simp only [Region.Contains] at hc; rw [show (8 : Addr) = BitVec.ofNat 64 8 from rfl] at hc; omega_using [hc])
+      rw [Mem.sub_ofNat_toNat A (show d < 2 ^ 64 by omega_arith)] at this
+      omega_using [this, h24]
+
+/-! ## Clearing the registers on the paths that call -/
+
+open VG.Impl.Scrub.X86_64 (VecLevel)
+
 /-- A blocks function that leaves `Lb` in its `scratch` does, clearing the
 registers before it returns. -/
 theorem BlkLeft.wrapC (lv : VecLevel) {M : Gcm.X86_64.Stitch.CtxMode} {c : Prog isa}
@@ -1431,6 +1813,56 @@ theorem streamDecryptClrB_leaves (B : BlkFn CtxMode.base)
     (Verified.hoist lv (streamDecryptSB_verified (v.wrapC lv) (B.wrapC lv))) (fun s h => streamDecryptS_implies.pre s h)
     (fun s t s' hp he => by
       obtain ⟨t', s'', e', q⟩ := streamS_leaves (v.wrapC lv) (B.wrapC lv) (gf.wrapC lv) (cf.wrapC lv) false
+        (hL.wrapC lv) (M := CtxMode.base) hp trivial
+      obtain ⟨-, rfl⟩ := Exec.det ((exec_hoist lv _ _ _ _).mp he) e'
+      exact q)
+    rfl (by decide) (by decide) hsp hd (streamTextPre_local _) hs he
+
+omit cf in
+/-- `vg_aes_gcm_stream_encrypt` clearing the registers after each call, with
+callees that never touch their working space and a blocks function that
+leaves `Lb` in its `scratch`: what it leaves in its frame (`streamFV`). -/
+theorem streamEncryptClrB_leavesZ (B : BlkFn CtxMode.base) {sc : Nat} {z : Nat → Bool} (hsc : sc ≤ 2048) (CZ : CrCallZ (v.wrapC lv) sc z)
+    {Lb : BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → Addr → Addr → Option (BitVec 8)}
+    (hL : BlkLeft Lb B.enc.code CtxMode.base) {s : State}
+    (hs : (Proof.AesGcm.streamEncryptRoundsContract X86_64.abi 2608).pre s) {t : List Leak} {u : State}
+    (he : Exec isa (withStackArgScratch 2584 1 (streamEncryptClr (v.withBlk B) lv)) s t u) :
+    ∀ x, (⟨s.gpr .rsp - BitVec.ofNat 64 2584, 2584⟩ : Region).Contains x 1 →
+      u.mem x = (streamFVZ z Lb s x).getD (s.mem x) := by
+  have hsp := streamEncryptSM_spSafe (v.wrapC lv) (B.wrapC lv)
+  rw [← hoist_all lv] at hsp
+  have hd := streamEncryptSM_xdepth (v.wrapC lv) (B.wrapC lv)
+  rw [← hoist_x86_64Depth lv] at hd
+  exact framedS_leavesZ (sig := Spec.Gcm.streamCryptSig) (nm := "scratch") (e := .u64) (n := 320)
+    (pre := Spec.Gcm.streamTextPre X86_64.abi.ptrBits) (post := Proof.AesGcm.streamEncryptRoundsPost X86_64.abi.ptrBits)
+    (wa := true) (leak := none) (P := Proof.AesGcm.streamEncryptX86_64.pre)
+    (Verified.hoist lv (streamEncryptSB_verified (v.wrapC lv) (B.wrapC lv))) (fun s h => streamEncryptS_implies.pre s h)
+    (fun s t s' hp he => by
+      obtain ⟨t', s'', e', q⟩ := streamS_leavesZ (v.wrapC lv) (B.wrapC lv) (gf.wrapC lv) hsc CZ true
+        (hL.wrapC lv) (M := CtxMode.base) hp trivial
+      obtain ⟨-, rfl⟩ := Exec.det ((exec_hoist lv _ _ _ _).mp he) e'
+      exact q)
+    rfl (by decide) (by decide) hsp hd (streamTextPre_local _) hs he
+
+omit cf in
+/-- `streamEncryptClrB_leavesZ` for `vg_aes_gcm_stream_decrypt`. -/
+theorem streamDecryptClrB_leavesZ (B : BlkFn CtxMode.base) {sc : Nat} {z : Nat → Bool} (hsc : sc ≤ 2048) (CZ : CrCallZ (v.wrapC lv) sc z)
+    {Lb : BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → Addr → Addr → Option (BitVec 8)}
+    (hL : BlkLeft Lb B.dec.code CtxMode.base) {s : State}
+    (hs : (Proof.AesGcm.streamDecryptRoundsContract X86_64.abi 2608).pre s) {t : List Leak} {u : State}
+    (he : Exec isa (withStackArgScratch 2584 1 (streamDecryptClr (v.withBlk B) lv)) s t u) :
+    ∀ x, (⟨s.gpr .rsp - BitVec.ofNat 64 2584, 2584⟩ : Region).Contains x 1 →
+      u.mem x = (streamFVZ z Lb s x).getD (s.mem x) := by
+  have hsp := streamDecryptSM_spSafe (v.wrapC lv) (B.wrapC lv)
+  rw [← hoist_all lv] at hsp
+  have hd := streamDecryptSM_xdepth (v.wrapC lv) (B.wrapC lv)
+  rw [← hoist_x86_64Depth lv] at hd
+  exact framedS_leavesZ (sig := Spec.Gcm.streamCryptSig) (nm := "scratch") (e := .u64) (n := 320)
+    (pre := Spec.Gcm.streamTextPre X86_64.abi.ptrBits) (post := Proof.AesGcm.streamDecryptRoundsPost X86_64.abi.ptrBits)
+    (wa := true) (leak := none) (P := Proof.AesGcm.streamDecryptX86_64.pre)
+    (Verified.hoist lv (streamDecryptSB_verified (v.wrapC lv) (B.wrapC lv))) (fun s h => streamDecryptS_implies.pre s h)
+    (fun s t s' hp he => by
+      obtain ⟨t', s'', e', q⟩ := streamS_leavesZ (v.wrapC lv) (B.wrapC lv) (gf.wrapC lv) hsc CZ false
         (hL.wrapC lv) (M := CtxMode.base) hp trivial
       obtain ⟨-, rfl⟩ := Exec.det ((exec_hoist lv _ _ _ _).mp he) e'
       exact q)
