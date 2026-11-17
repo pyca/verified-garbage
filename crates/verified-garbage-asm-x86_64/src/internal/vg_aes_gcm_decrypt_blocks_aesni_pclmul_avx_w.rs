@@ -47,7 +47,45 @@ call {vg_aes_ctr32_aesni}
 jmp 210f
 29:
 210:
-.base64 "TItcJAjF+e/AxMF+f4MgCAAAxMF+f4MACAAAxMF+f4PgBwAAxMF+f4PABwAAxMF+f4OgBwAAxMF+f4OABwAAxMF+f4NgBwAAxMF+f4NABwAAxMF+f4MgBwAAxMF+f4MABwAAxMF+f4PgBgAAxMF+f4PABgAAxMF+f4OgBgAAxMF+f4OABgAAxMF+f4NgBgAAxMF+f4NABgAAxMF+f4MgBgAAxMF+f4MABgAAxMF+f4PgBQAAxMF+f4PABQAAxMF+f4OgBQAAxMF+f4OABQAAxMF+f4NgBQAAxMF+f4NABQAAxMF+f4MgBQAAxMF+f4MABQAAxMF+f4PgBAAAxMF+f4PABAAAxMF+f4OgBAAAxMF+f4OABAAAxMF+f4NgBAAAxMF+f4NABAAAxMF+f4MgBAAAxMF+f4MABAAAxMF+f4PgAwAAxMF+f4PAAwAAxMF+f4OgAwAAxMF+f4OAAwAAxMF+f4NgAwAAxMF+f4NAAwAAxMF+f4MgAwAAxMF+f4MAAwAAxMF+f4PgAgAAxMF+f4PAAgAAxMF+f4OgAgAAxMF+f4OAAgAAxMF+f4NgAgAAxMF+f4NAAgAAxMF+f4MgAgAAxMF+f4MAAgAAxMF+f4PgAQAAxMF+f4PAAQAAxMF+f4OgAQAAxMF+f4OAAQAAxMF+f4NgAQAAxMF+f4NAAQAAxMF+f4MgAQAAxMF+f4MAAQAAxMF+f4PgAAAAxMF+f4PAAAAAxMF+f4OgAAAAxMF+f4OAAAAAxMF+f0NgxMF+f0NAxMF+f0MgxMF+fwPF+HfD"
+mov r11, qword ptr [rsp+8]
+add r11, 64
+and r11, -32
+vpxor xmm0, xmm0, xmm0
+vmovdqa ymmword ptr [r11+1024], ymm0
+vmovdqa ymmword ptr [r11+992], ymm0
+vmovdqa ymmword ptr [r11+960], ymm0
+vmovdqa ymmword ptr [r11+928], ymm0
+vmovdqa ymmword ptr [r11+896], ymm0
+vmovdqa ymmword ptr [r11+864], ymm0
+vmovdqa ymmword ptr [r11+832], ymm0
+vmovdqa ymmword ptr [r11+800], ymm0
+vmovdqa ymmword ptr [r11+768], ymm0
+vmovdqa ymmword ptr [r11+736], ymm0
+vmovdqa ymmword ptr [r11+704], ymm0
+vmovdqa ymmword ptr [r11+672], ymm0
+vmovdqa ymmword ptr [r11+640], ymm0
+vmovdqa ymmword ptr [r11+608], ymm0
+vmovdqa ymmword ptr [r11+576], ymm0
+vmovdqa ymmword ptr [r11+544], ymm0
+vmovdqa ymmword ptr [r11+512], ymm0
+vmovdqa ymmword ptr [r11+480], ymm0
+vmovdqa ymmword ptr [r11+448], ymm0
+vmovdqa ymmword ptr [r11+416], ymm0
+vmovdqa ymmword ptr [r11+384], ymm0
+vmovdqa ymmword ptr [r11+352], ymm0
+vmovdqa ymmword ptr [r11+320], ymm0
+vmovdqa ymmword ptr [r11+288], ymm0
+vmovdqa ymmword ptr [r11+256], ymm0
+vmovdqa ymmword ptr [r11+224], ymm0
+vmovdqa ymmword ptr [r11+192], ymm0
+vmovdqa ymmword ptr [r11+160], ymm0
+vmovdqa ymmword ptr [r11+128], ymm0
+vmovdqa ymmword ptr [r11+96], ymm0
+vmovdqa ymmword ptr [r11+64], ymm0
+vmovdqa ymmword ptr [r11+32], ymm0
+vmovdqa ymmword ptr [r11+0], ymm0
+vzeroupper
+ret
 .p2align 6"#,
         vg_ghash_pclmul = sym crate::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
         vg_aes_ctr32_aesni = sym crate::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
