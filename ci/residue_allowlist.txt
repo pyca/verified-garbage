@@ -586,7 +586,6 @@ aarch64 vg_sm4_ecb_decrypt_sm4
 aarch64 vg_sm4_ecb_encrypt
 aarch64 vg_sm4_ecb_encrypt_sm4
 aarch64 vg_sm4_expand_key
-aarch64 vg_sm4_expand_key_sm4
 aarch64 vg_sm4_gcm_init
 aarch64 vg_sm4_gcm_init_ctr32_sm4
 aarch64 vg_sm4_gcm_open

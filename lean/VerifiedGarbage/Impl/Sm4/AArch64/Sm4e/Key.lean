@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.AArch64.Isa
 public import VerifiedGarbage.Spec.Sm4
+public import VerifiedGarbage.Impl.Residue.AArch64
 
 /-!
 # The SM4 key schedule with the Armv8 SM4 instructions
@@ -25,7 +26,9 @@ writes it as a `static`).
 
 `x0`, `x1` and `x9` hold public values; every address depends only on them,
 and there is no branch. It uses no stack, writes no callee-saved register,
-and no memory but the schedule.
+and no memory but the schedule. Before it returns it clears `v0`, which holds
+the last round keys, and `x9`, the table's address (`withClears`), so that it
+leaves nothing secret in a register: `v1` holds constants of the table.
 -/
 
 @[expose] public section
@@ -56,7 +59,10 @@ def keyStart : List Instr :=
 schedule. -/
 def keyGroup (i : Nat) : List Instr := [kld (i + 1), .vop (.sm4ekey .v0 .v0 .v1), .strq .v0 .x1 (16 * i)]
 
-/-- `vg_sm4_expand_key_sm4`. -/
-def expandKey : Prog isa := .block (keyStart ++ (List.range 8).flatMap keyGroup)
+/-- The key schedule. -/
+def expandKeyBody : Prog isa := .block (keyStart ++ (List.range 8).flatMap keyGroup)
+
+/-- `vg_sm4_expand_key_sm4`: `expandKeyBody`, then `v0` and `x9` cleared. -/
+def expandKey : Prog isa := Residue.AArch64.withClears [.x9] [.v0] none expandKeyBody
 
 end VG.Impl.Sm4.AArch64.Sm4e
