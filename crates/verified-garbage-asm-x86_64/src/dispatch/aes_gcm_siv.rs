@@ -8,7 +8,7 @@
 ///
 /// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
 ///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_siv_seal_vaes_vpclmul_avx512` if the CPU supports its features (`VG_AES_GCM_SIV_SEAL_VAES_VPCLMUL_AVX512_FEATURES`); `vg_aes_gcm_siv_seal_aesni_pclmul_avx_avx2` if the CPU supports its features (`VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_AVX_AVX2_FEATURES`); `vg_aes_gcm_siv_seal_aesni_pclmul_avx` if the CPU supports its features (`VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_AVX_FEATURES`); `vg_aes_gcm_siv_seal_aesni_pclmul` if the CPU supports its features (`VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_FEATURES`); `vg_aes_gcm_siv_seal_aesni_avx2` if the CPU supports its features (`VG_AES_GCM_SIV_SEAL_AESNI_AVX2_FEATURES`); `vg_aes_gcm_siv_seal_aesni` if the CPU supports its features (`VG_AES_GCM_SIV_SEAL_AESNI_FEATURES`); `vg_aes_gcm_siv_seal_pclmul_avx2` if the CPU supports its features (`VG_AES_GCM_SIV_SEAL_PCLMUL_AVX2_FEATURES`); `vg_aes_gcm_siv_seal_pclmul` if the CPU supports its features (`VG_AES_GCM_SIV_SEAL_PCLMUL_FEATURES`); `vg_aes_gcm_siv_seal_avx2` if the CPU supports its features (`VG_AES_GCM_SIV_SEAL_AVX2_FEATURES`); or else `vg_aes_gcm_siv_seal`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_siv_seal_vaes_vpclmul_avx512` if the CPU supports its features (`VG_AES_GCM_SIV_SEAL_VAES_VPCLMUL_AVX512_FEATURES`); `vg_aes_gcm_siv_seal_aesni_pclmul_avx` if the CPU supports its features (`VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_AVX_FEATURES`); `vg_aes_gcm_siv_seal_aesni_pclmul` if the CPU supports its features (`VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_FEATURES`); `vg_aes_gcm_siv_seal_aesni_avx2` if the CPU supports its features (`VG_AES_GCM_SIV_SEAL_AESNI_AVX2_FEATURES`); `vg_aes_gcm_siv_seal_aesni` if the CPU supports its features (`VG_AES_GCM_SIV_SEAL_AESNI_FEATURES`); `vg_aes_gcm_siv_seal_pclmul_avx2` if the CPU supports its features (`VG_AES_GCM_SIV_SEAL_PCLMUL_AVX2_FEATURES`); `vg_aes_gcm_siv_seal_pclmul` if the CPU supports its features (`VG_AES_GCM_SIV_SEAL_PCLMUL_FEATURES`); `vg_aes_gcm_siv_seal_avx2` if the CPU supports its features (`VG_AES_GCM_SIV_SEAL_AVX2_FEATURES`); or else `vg_aes_gcm_siv_seal`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -34,11 +34,6 @@ pub unsafe fn vg_aes_gcm_siv_seal_auto(_dit: verified_garbage_cpu::Dit<'_>, sche
             || cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_VAES_VPCLMUL_AVX512_FEATURES)
         {
             return crate::aes_gcm_siv::vg_aes_gcm_siv_seal_vaes_vpclmul_avx512;
-        }
-        if const { verified_garbage_cpu::target_contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_AVX_AVX2_FEATURES) }
-            || cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_AVX_AVX2_FEATURES)
-        {
-            return crate::aes_gcm_siv::vg_aes_gcm_siv_seal_aesni_pclmul_avx_avx2;
         }
         if const { verified_garbage_cpu::target_contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_AVX_FEATURES) }
             || cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_AVX_FEATURES)
@@ -102,7 +97,7 @@ pub unsafe fn vg_aes_gcm_siv_seal_auto(_dit: verified_garbage_cpu::Dit<'_>, sche
 ///
 /// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
 ///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_siv_open_vaes_vpclmul_avx512` if the CPU supports its features (`VG_AES_GCM_SIV_OPEN_VAES_VPCLMUL_AVX512_FEATURES`); `vg_aes_gcm_siv_open_aesni_pclmul_avx_avx2` if the CPU supports its features (`VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_AVX_AVX2_FEATURES`); `vg_aes_gcm_siv_open_aesni_pclmul_avx` if the CPU supports its features (`VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_AVX_FEATURES`); `vg_aes_gcm_siv_open_aesni_pclmul` if the CPU supports its features (`VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_FEATURES`); `vg_aes_gcm_siv_open_aesni_avx2` if the CPU supports its features (`VG_AES_GCM_SIV_OPEN_AESNI_AVX2_FEATURES`); `vg_aes_gcm_siv_open_aesni` if the CPU supports its features (`VG_AES_GCM_SIV_OPEN_AESNI_FEATURES`); `vg_aes_gcm_siv_open_pclmul_avx2` if the CPU supports its features (`VG_AES_GCM_SIV_OPEN_PCLMUL_AVX2_FEATURES`); `vg_aes_gcm_siv_open_pclmul` if the CPU supports its features (`VG_AES_GCM_SIV_OPEN_PCLMUL_FEATURES`); `vg_aes_gcm_siv_open_avx2` if the CPU supports its features (`VG_AES_GCM_SIV_OPEN_AVX2_FEATURES`); or else `vg_aes_gcm_siv_open`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_siv_open_vaes_vpclmul_avx512` if the CPU supports its features (`VG_AES_GCM_SIV_OPEN_VAES_VPCLMUL_AVX512_FEATURES`); `vg_aes_gcm_siv_open_aesni_pclmul_avx` if the CPU supports its features (`VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_AVX_FEATURES`); `vg_aes_gcm_siv_open_aesni_pclmul` if the CPU supports its features (`VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_FEATURES`); `vg_aes_gcm_siv_open_aesni_avx2` if the CPU supports its features (`VG_AES_GCM_SIV_OPEN_AESNI_AVX2_FEATURES`); `vg_aes_gcm_siv_open_aesni` if the CPU supports its features (`VG_AES_GCM_SIV_OPEN_AESNI_FEATURES`); `vg_aes_gcm_siv_open_pclmul_avx2` if the CPU supports its features (`VG_AES_GCM_SIV_OPEN_PCLMUL_AVX2_FEATURES`); `vg_aes_gcm_siv_open_pclmul` if the CPU supports its features (`VG_AES_GCM_SIV_OPEN_PCLMUL_FEATURES`); `vg_aes_gcm_siv_open_avx2` if the CPU supports its features (`VG_AES_GCM_SIV_OPEN_AVX2_FEATURES`); or else `vg_aes_gcm_siv_open`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -128,11 +123,6 @@ pub unsafe fn vg_aes_gcm_siv_open_auto(_dit: verified_garbage_cpu::Dit<'_>, sche
             || cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_VAES_VPCLMUL_AVX512_FEATURES)
         {
             return crate::aes_gcm_siv::vg_aes_gcm_siv_open_vaes_vpclmul_avx512;
-        }
-        if const { verified_garbage_cpu::target_contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_AVX_AVX2_FEATURES) }
-            || cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_AVX_AVX2_FEATURES)
-        {
-            return crate::aes_gcm_siv::vg_aes_gcm_siv_open_aesni_pclmul_avx_avx2;
         }
         if const { verified_garbage_cpu::target_contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_AVX_FEATURES) }
             || cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_AVX_FEATURES)

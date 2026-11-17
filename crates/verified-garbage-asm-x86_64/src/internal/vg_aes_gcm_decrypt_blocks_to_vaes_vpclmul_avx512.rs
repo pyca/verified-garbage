@@ -22,7 +22,7 @@ jmp 21f
 21:
 .base64 "ww=="
 .p2align 6"#,
-        vg_ghash_vpclmul = sym crate::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
+        vg_ghash_vpclmul = sym crate::gcm::vg_ghash_vpclmul::vg_ghash_vpclmul,
         vg_aes_ctr32_to_vaes = sym crate::aes::vg_aes_ctr32_to_vaes::vg_aes_ctr32_to_vaes,
     )
 }
