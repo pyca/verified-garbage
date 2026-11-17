@@ -86,17 +86,10 @@ theorem prime_ok (v : RoundImpl) (h : CIn bits s) :
       simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, List.mem_singleton_self _, cF_sub (by decide)⟩).trans
     (h₂.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, List.mem_singleton_self _, cF_sub (by decide)⟩)
-  have keepsL : Proof.Dsa.ModPow.Keeps (State.addr (s.gpr .r0)) (s.gpr .r1).toNat [(keyOff, 8 * keyWords bits)]
-      s.mem m₂ := by
-    have k := keeps h o bk
-    rw [← m'] at k
-    intro i hi hr
-    exact (lost_byte lostF (R := cW s) h.FW.symm (by change i < (s.gpr .r1).toNat * 8; omega_using [hi])).trans
-      (k i hi hr)
   have usedL : Spec.Rsa.wordsAt m₂ (State.addr (stackArg s 0)) 1 = Spec.Rsa.wordsAt t'.mem (State.addr (stackArg s 0)) 1 :=
     Proof.Rsa.wordsAt_frame lostF (by decide) fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact h.FU.symm
-  refine ⟨⟨fun r hr => ?_, ?_⟩, ?_, keepsL, fun b rst hr => ?_⟩
+  refine ⟨⟨fun r hr => ?_, ?_⟩, ?_, ?_, fun b rst hr => ?_⟩
   · have ne : r ≠ .r12 := by intro he; subst r; simp [preserved] at hr
     show (popped .r12 56 t').gpr r = _
     rw [popped_gpr ne]
@@ -118,6 +111,12 @@ theorem prime_ok (v : RoundImpl) (h : CIn bits s) :
   · show ((popped .r12 56 t').gpr .r0).toNat = _
     rw [popped_gpr (by decide), restT.gpr .r0 (by simp [pcCalleeSaved]), State.withRegions_gpr, r0]
     unfold statD; rw [rc]
+  · show Proof.Dsa.ModPow.Keeps _ _ _ s.mem m₂
+    have k := keeps h o bk
+    rw [← m'] at k
+    intro i hi hr
+    exact (lost_byte lostF (R := cW s) h.FW.symm (by change i < (s.gpr .r1).toNat * 8; omega_using [hi])).trans
+      (k i hi hr)
   · show Spec.Rsa.wordsAt m₂ _ 1 = _
     rw [usedL, m']
     refine used.trans ?_

@@ -110,7 +110,9 @@ theorem upd_call {s : State} {W C D S : BitVec 32} {R n : Nat} (h : UArgs s W C 
   simp only [Proof.CmacAes.Arm.updateArm, Proof.CmacAes.Arm.ciphAt, view_arg0 h.hsp,
     view_gpr .r0 (by decide), view_gpr .r1 (by decide), view_gpr .r2 (by decide), view_gpr .r3 (by decide),
     h.r0, h.r1, h.r2, h.r3, h.r12, hR, hN, State.withRegions_mem, State.callEntry_mem] at hpost
-  rw [hm, hpost, keep (h.bw.sub_right (Region.sub_prefix hRb)) (by omega_using [hR]), keep h.bc (by decide)]
+  rw [Proof.Cmac.bytesAt_frame hm (fun r hr => by
+      rw [List.mem_singleton] at hr; subst hr; exact h.bc.symm) (by decide),
+    hpost, keep (h.bw.sub_right (Region.sub_prefix hRb)) (by omega_using [hR]), keep h.bc (by decide)]
   congr 1
   simp only [Spec.Cmac.blocksAt]
   refine List.map_congr_left fun i hi => keep (h.bd.sub_right (Offset.sub_base _ ?_)) (by decide)
