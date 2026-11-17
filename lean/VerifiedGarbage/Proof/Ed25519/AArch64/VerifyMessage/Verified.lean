@@ -436,6 +436,7 @@ theorem verifyMessage_ok (backend : Whole.Backend) {s : State} (h : verifyMessag
       (Spec.Ed25519.bytesAt m (s.gpr .x0) 32)
       (Spec.Ed25519.bytesAt m (s.gpr .x1) (s.gpr .x2).toNat)
       (Spec.Ed25519.bytesAt m (s.gpr .x3) 64)))
+    (hP := fun _ _ _ _ _ hq => hq)
     (fun p hp => WP.mono (body_ok backend (entry_ctx h hp) (lay_ok h) (entry_args h hp)
       (entry_syms hp))
       fun u ⟨hu,ho⟩ => ⟨by

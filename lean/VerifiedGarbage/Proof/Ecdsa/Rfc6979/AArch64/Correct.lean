@@ -869,7 +869,7 @@ theorem sign_ok {ns : List String} {s : State} (h : (rfcP P ns).pre s) :
   have hL := lay_ok rfl h
   have hN : 256 + 8 * 48 ≤ s.sp.toNat := h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
   have hk := hOk_lay P s
-  refine WP.frameKept (by omega_arith) (WP.allocKept (by decide) ?_ ?_)
+  refine WP.frameAlloc (by omega_arith) (by decide) ?_ ?_
   · show frameBytes ≤ (s.sp - 16).toNat
     rw [BitVec.toNat_sub_of_le (by show 16 ≤ s.sp.toNat; omega_arith)]
     show 608 ≤ s.sp.toNat - 16
@@ -877,17 +877,19 @@ theorem sign_ok {ns : List String} {s : State} (h : (rfcP P ns).pre s) :
   · show WP isa (cfgOf P).body (entered s) _
     rw [Cfg.body]
     refine WP.seq (WP.mono (save_ctx h) fun t hc => ?_)
-    refine WP.mono (rest_ok hL hk hc) fun u ⟨hu, i, hx⟩ => ?_
+    refine WP.mono (rest_ok hL hk hc) fun u ⟨hu, i, hx⟩ mm uu fl => ?_
     have lr : u.mem.read (u.sp + BitVec.ofNat 64 frameBytes) 8 = s.gpr .x30 := by
       rw [hu.sp, Offset.add_add, read8]; exact hu.lr
     refine ⟨⟨fun r hr => ?_, ?_⟩, ?_⟩
-    · simp only [popped, freed, RegUpd.gpr_write]
+    · show (popped .x30 (freed frameBytes u)).gpr r = s.gpr r
+      simp only [popped, freed, RegUpd.gpr_write]
       rw [lr]
       by_cases h30 : r = .x30
       · subst r; simp only [ite_true, BitVec.setWidth_eq]
       · simp only [h30, ite_false]
         exact hu.cs r hr h30
-    · simp only [popped, freed]
+    · show (popped .x30 (freed frameBytes u)).sp = s.sp
+      simp only [popped, freed]
       rw [hu.sp, Offset.add_add, show (16 : BitVec 64) = BitVec.ofNat 64 16 from rfl, Offset.add_add,
         show 16 + frameBytes + 16 = 256 + 8 * 48 from rfl]
       exact lay_top _ _ _ _ _ _ _ s
@@ -896,8 +898,15 @@ theorem sign_ok {ns : List String} {s : State} (h : (rfcP P ns).pre s) :
       have e₁ : 2 * P.I.ecdsa.curve.len = 2 * P.Q := by rw [P.curveLen]
       have e₂ : Spec.Ecdsa.encode P.I.ecdsa.curve = Spec.Ecdsa.encode P.R.E.C := by rw [P.ecdsa, P.R.curve]
       rw [result_eq hx, e₁, e₂]
+      -- The output lies apart from the stack, whose frames' bytes are lost.
+      have hS : Region.Sub (below s.sp (frameBytes + 16)) (layOf P s).STK :=
+        Offset.sub_below s.sp (a := frameBytes + 16) (n := frameBytes + 16) (b := 256 + 8 * 48)
+          (m := 256 + 8 * 48) (by decide) (by decide)
       exact hx.res.keep (by
+        show (popped .x30 (freed frameBytes u)).gpr .x0 = _
         simp only [popped, freed]
-        exact RegUpd.gpr_write_of_ne _ _ _ (by decide)) (by simp only [popped, freed, RegUpd.mem_write])
+        exact RegUpd.gpr_write_of_ne _ _ _ (by decide))
+        (List.map_congr_left fun i hi => lost_byte (R := (layOf P s).OUT) fl (hL.ko.symm.sub_right hS)
+          (show i < 2 * (layOf P s).q by rw [hk.1]; exact List.mem_range.mp hi))
 
 end VG.Proof.Ecdsa.Rfc6979.AArch64

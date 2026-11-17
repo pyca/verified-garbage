@@ -190,7 +190,8 @@ theorem verify_ok (v : Proof.Sha3.AArch64.Permutation) (hQ : Proof.Ed448.AArch64
         rw [hpre.2.1] at hr; simp only [List.mem_singleton] at hr; subst hr; exact hpre.2.2.2.2.2.2.2.2.2.2.1)
       (P := fun m _ x0 => x0 = if Spec.Ed448.verifyEquation (Spec.Ed448.bytesAt m (t.gpr .x0) 57)
         (Spec.Ed448.bytesAt m (t.gpr .x5) 114) (Spec.Ed448.scalarReduce
-          (Spec.Sha3.shake256 (hashIn (lay t) m) 114)) then 1 else 0) fun p hp => ?_)
+          (Spec.Sha3.shake256 (hashIn (lay t) m) 114)) then 1 else 0)
+      (hP := fun _ _ _ _ _ hq => hq) fun p hp => ?_)
       fun u ⟨hu, m, hf, hx⟩ => ⟨habi u hu, hpost u ?_⟩
     · refine WP.mono (body_ok v hQ hL (entry_ctx hpre hp) (entry_args hpre hp) (entry_x6 hp) (entry_syms hp))
         fun u ⟨hu, hx⟩ => ⟨body_ctx hpre hu, hx⟩

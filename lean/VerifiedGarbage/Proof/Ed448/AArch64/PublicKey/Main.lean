@@ -131,6 +131,9 @@ theorem publicKey_ok (v : Proof.Sha3.AArch64.Permutation) (hb : Proof.Ed448.AArc
   have hw := VG.Proof.Ed25519.AArch64.Whole.wrap_ok (body_depth v) (entry_below h) (entry_writes h)
     (P := fun m m' _ => Spec.Ed448.bytesAt m' (s.gpr .x0) 57 =
       Spec.Ed448.publicKey (Spec.Ed448.bytesAt m (s.gpr .x1) 57))
+    (hP := fun _ _ _ _ f hq => (List.map_congr_left fun i hi => VG.AArch64.lost_byte f
+      ((entry_writes h ⟨s.gpr .x0, 57⟩ (by rw [h.2.1]; simp)).symm.sub_right
+        (VG.AArch64.below_sub (by decide) (by decide))) (List.mem_range.mp hi)).trans hq)
     (fun p hp => WP.mono (body_ok v hb (entry_ctx h hp) (lay_ok h) (entry_args h hp) (entry_syms hp))
       fun u ⟨hu, ho⟩ => ⟨by
       simpa only [VG.Proof.Ed25519.AArch64.Whole.bodyRd, h.1, Ctx, Lay.inputs, Lay.outputs, Lay.SEED,

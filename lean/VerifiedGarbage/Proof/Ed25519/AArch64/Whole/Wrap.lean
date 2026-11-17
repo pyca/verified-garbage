@@ -152,17 +152,19 @@ attribute [local instance_reducible] freed
 
 /-- The complete operations share one LR save and a 320-byte allocation.
 Their body sees writable locals and readonly saved arguments, and its
-callees' frames take 16 more bytes below them. -/
+callees' frames take 16 more bytes below them. The postcondition `P` must
+hold whatever the two frames' bytes hold once they are released (`hP`). -/
 theorem wrap_ok {body : Prog isa} (hn : body.aarch64Depth ≤ 1) {s : State}
     (hsp : 352 ≤ s.sp.toNat)
     (hw : ∀ r ∈ s.wr, (below s.sp 352).Disjoint r)
     {P : Mem → Mem → BitVec 64 → Prop}
     (hb : ∀ p, Saved (entered s) 6 p →
       WP isa body (p.withRegions (bodyRd s) (bodyWr s)) fun u =>
-        Ctx (base s) s.gpr s.v p.mem (bodyRd s) s.wr u ∧ P p.mem u.mem (u.gpr .x0)) :
+        Ctx (base s) s.gpr s.v p.mem (bodyRd s) s.wr u ∧ P p.mem u.mem (u.gpr .x0))
+    (hP : ∀ m₀ m₁ m₂ x, Frame [below s.sp 336] m₁ m₂ → P m₀ m₁ x → P m₀ m₂ x) :
     WP isa (wrap body) s fun t => abiPreserved s t ∧
       ∃ m, Frame [below s.sp 336] s.mem m ∧ P m t.mem (t.gpr .x0) := by
-  refine WP.frameKept (by omega_using [hsp]) (WP.allocKept (by decide) ?_ ?_)
+  refine WP.frameAlloc (by omega_using [hsp]) (by decide) ?_ ?_
   · change 320 ≤ (s.sp - 16).toNat
     rw [BitVec.toNat_sub_of_le (by change 16 ≤ s.sp.toNat; omega_using [hsp])]
     change 320 ≤ s.sp.toNat - 16
@@ -183,7 +185,7 @@ theorem wrap_ok {body : Prog isa} (hn : body.aarch64Depth ≤ 1) {s : State}
       rcases hr with rfl | hr
       · exact ⟨⟨base s, 320⟩, List.mem_cons_self, 0, by simp⟩
       · exact ⟨r, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hr), 0, by simp⟩
-    · intro u _ _ hsu hf ⟨hc, ho⟩
+    · intro u _ _ hsu hf ⟨hc, ho⟩ mm uu fl
       have usp : u.sp = base s := hc.sp
       have lr_sep : ∀ r ∈ bodyWr s ++ [below p.sp (16 * body.aarch64Depth)],
           (⟨s.sp - 16, 16⟩ : Region).Disjoint r := by
@@ -220,9 +222,9 @@ theorem wrap_ok {body : Prog isa} (hn : body.aarch64Depth ≤ 1) {s : State}
         change (((freed 320 u).write .x .x30 (u.mem.read (u.sp + 320#64) 8)).v r).extractLsb' 0 64 = _
         rw [RegUpd.v_write]
         exact hc.vs r hr
-      · change P p.mem ((freed 320 u).write .x .x30 (u.mem.read (u.sp + 320#64) 8)).mem
-          (((freed 320 u).write .x .x30 (u.mem.read (u.sp + 320#64) 8)).gpr .x0)
-        rw [RegUpd.mem_write, RegUpd.gpr_write_of_ne _ _ _ (by decide)]
-        exact ho
+      · -- The frames' bytes are lost.
+        change P p.mem mm (((freed 320 u).write .x .x30 (u.mem.read (u.sp + 320#64) 8)).gpr .x0)
+        rw [RegUpd.gpr_write_of_ne _ _ _ (by decide)]
+        exact hP _ _ _ _ fl ho
 
 end VG.Proof.Ed25519.AArch64.Whole

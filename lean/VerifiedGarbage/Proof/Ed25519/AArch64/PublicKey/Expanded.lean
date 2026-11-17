@@ -108,6 +108,9 @@ theorem pkE_ok [VG.Proof.Ed25519.AArch64.Divstep.Sound] {s : State} (h : pkLocal
     (P := fun m m' _ => Spec.Ed25519.bytesAt m' (s.gpr .x0) 32 = Spec.Ed25519.encodePoint
       (Spec.Ed25519.pointMul (Spec.Ed25519.prune (Spec.Ed25519.bytesAt m (s.gpr .x1) 64))
         Spec.Ed25519.basePoint))
+    (hP := fun _ _ _ _ f hq => (List.map_congr_left fun i hi => VG.AArch64.lost_byte f
+      ((entry_writes h ⟨s.gpr .x0, 32⟩ (by rw [h.2.1]; simp)).symm.sub_right
+        (VG.AArch64.below_sub (by decide) (by decide))) (List.mem_range.mp hi)).trans hq)
     (fun p hp => by
       have hc : Ctx (lay 64 s) s.gpr s.v p.mem _ := entry_ctx h hp
       have hL : (lay 64 s).Ok := lay_ok h
