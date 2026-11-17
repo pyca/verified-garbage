@@ -14,6 +14,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Spec.RsaKeyGen.GenerationAgrees
+import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
 
 /-! # RSA key generation's controller on PPC64LE: the key's call and the loop -/
 

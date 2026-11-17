@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
+import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # The parameter search's correctness (PPC64LE)
@@ -141,6 +142,34 @@ theorem SDone.popped {p : SPub} {original s : State} {r : ParameterSearchResult}
     rw [RegUpd.gpr_write_of_ne _ _ (fun e => by subst e; exact absurd hr (by decide))]
     exact h.saved reg hr h31
 
+/-- A finished search, whatever a region of the stack holds: the control
+block and `out` lie apart from the stack. -/
+theorem SDone.lost {p : SPub} {original s : State} {r : ParameterSearchResult}
+    (h : SDone p original r s) {L : Region} {m : Mem} (u : Nat → BitVec 64) (fl : Frame [L] s.mem m)
+    (hL : Region.Sub L (below original.sp stackUse)) :
+    SDone p original r { s with mem := m, unknowns := u } := by
+  have hi := h.input
+  obtain hf : Frame (SInput.callChanges original) s.mem m :=
+    fl.sub fun q hq => by rw [List.mem_singleton.mp hq]; exact ⟨_, by simp [SInput.callChanges], hL⟩
+  obtain hc : ∀ j < 16, word m p.control (8 * j) = word s.mem p.control (8 * j) :=
+    fun j hj => hi.control_frame hf j hj
+  obtain hbo : Spec.Rsa.bytesAt m p.op p.len = Spec.Rsa.bytesAt s.mem p.op p.len :=
+    List.map_congr_left fun i hi' => lost_byte fl (R := ⟨p.op, p.len⟩)
+      (by rw [← hi.out_eq]; exact ((hi.stack_disjoint (r := inOut original) (by simp [inWrites])).sub_left hL).symm)
+      (List.mem_range.mp hi')
+  obtain he : Spec.Rsa.wordsAt m p.control 4 = Spec.Rsa.wordsAt s.mem p.control 4 := by
+    change [word m p.control (8 * 0), word m p.control (8 * 1), word m p.control (8 * 2),
+      word m p.control (8 * 3)] = [word s.mem p.control (8 * 0), word s.mem p.control (8 * 1),
+      word s.mem p.control (8 * 2), word s.mem p.control (8 * 3)]
+    rw [hc 0 (by decide), hc 1 (by decide), hc 2 (by decide), hc 3 (by decide)]
+  refine ⟨hi, h.rd, h.wr, h.r31, h.saved, (hc 4 (by decide)).trans h.savedR31,
+    (hc 7 (by decide)).trans h.usedPtr, (hc 12 (by decide)).trans h.used, (hc 14 (by decide)).trans h.status,
+    he.trans h.policy, ?_⟩
+  show SOutput p r m
+  unfold SOutput
+  rw [hbo]
+  exact h.output
+
 theorem SInput.tail_eq {p : SPub} {s : State} (h : SInput p s) : searchResult s = p.tail 0 p.attempts := by
   cases h.2
   simp only [searchResult, SPub.tail, sOfState, List.drop_zero, Proof.Ffdh.Generation.consume_zero]
@@ -157,7 +186,7 @@ theorem search_body {p : SPub} {s t : State} (c : Cand) (h : SInput p s)
   have k' : Keep entryRegs s t₁ := k.trans' (k₁.mono (by decide))
   have hl := search_start h (by rw [k₁.gpr _ (by decide)]; exact hx) (hm₁.trans hm) k' (hy₁.trans hy)
   have hsp : 48 ≤ t₁.sp.toNat := by rw [k'.sp, ← h.sp_eq]; have := h.sp_room; omega_using [this]
-  refine WP.seq (WP.mono (WP.frameRegAnyKept (r := .r0)
+  refine WP.seq (WP.mono (WP.frameRegAny (r := .r0)
     (Q := fun u => SDone p s (searchResult s) u ∧ u.gpr .r0 = s.lr ∧ u.sp = s.sp) hsp ?_ ?_ ?_)
     fun u ⟨hd, h0', hsp'⟩ => ?_)
   · intro R hR
@@ -167,7 +196,8 @@ theorem search_body {p : SPub} {s t : State} (c : Cand) (h : SInput p s)
     rw [k'.sp, show s.sp - 48 + 32 = s.sp - BitVec.ofNat 64 16 by bv_omega]
     exact Offset.sub_below s.sp (a := 16) (b := 336) (by decide) (by decide)
   · refine WP.mono (search_loop c (expected := searchResult s) (n := p.attempts + 1)
-      ⟨0, p.attempts, rfl, hl, h.tail_eq⟩) fun u hu => ⟨hu.popped _ _, ?_, k'.sp⟩
+      ⟨0, p.attempts, rfl, hl, h.tail_eq⟩) fun u hu m uu fl => ⟨(hu.lost uu fl (by
+        rw [k'.sp]; exact Offset.sub_below s.sp (a := 48) (b := 336) (by decide) (by decide))).popped _ _, ?_, k'.sp⟩
     show (u.write .r0 (t₁.gpr .r0)).gpr .r0 = _
     rw [RegUpd.gpr_write_self, h0, k.lr]
   · have := iteration_depth c

@@ -15,6 +15,7 @@ import VerifiedGarbage.Proof.Ffdh.PPC64LE.Cached.SearchProof.Outputs
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Bignum.Layout
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.Cached.SearchProof.Entry
+import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
 
 /-! # One attempt of the cached key-generation controller (PPC64LE)
 
@@ -86,6 +87,8 @@ structure CallFacts (p : KeyPublic) (used : Nat) : Prop where
   z8 : p.Z / 8 * 8 = p.Z
   len64 : p.len < 2 ^ 64
   dlen64 : p.dlen < 2 ^ 64
+  xC : (rX p).Disjoint ⟨callSp p, 144⟩
+  yC : (rY p).Disjoint ⟨callSp p, 144⟩
 
 private theorem sub_tape {r : Addr} {n used len : Nat}
     (hu : used + len ≤ n) : Region.Sub ⟨r + BitVec.ofNat 64 used, len⟩ ⟨r, n⟩ :=
@@ -130,15 +133,18 @@ theorem KeyLive.callFacts {p : KeyPublic} {original s : State} {used keys scalar
   obtain hR : Region.Sub (rR (keyOfState original) used) (inRand original) :=
     sub_tape hroom
   obtain hA := rA_sub (keyOfState original)
+  obtain hC : Region.Sub ⟨callSp (keyOfState original), 144⟩ (below (keyOfState original).sp stackUse) := by
+    rw [callSp_eq]; exact Offset.sub_below _ (by decide) (by decide)
   have hsp' : (keyOfState original).sp = original.sp := rfl
-  rw [hsp'] at hA
+  rw [hsp'] at hA hC
   rw [← hX] at pxy pxs wxd wxr bx nx
   rw [← hY] at pxy pys wyd wyr by' ny
   rw [← hD] at wxd wyd wsd bd nd
   rw [← hS] at pxs pys wsd wsr bs ns
   refine ⟨by rw [hsp']; exact hsp, pxy, wxd, wxr.sub_right hR, pxs, (bx.symm.sub_right hA),
     wyd, wyr.sub_right hR, pys, by'.symm.sub_right hA, wsd.symm, (wsr.sub_right hR).symm,
-    bs.symm.sub_right hA, nx, ny, nd, nowrap_tape nr hroom, ns, hlen, hdlen, ?_, ?_, ?_, ?_⟩
+    bs.symm.sub_right hA, nx, ny, nd, nowrap_tape nr hroom, ns, hlen, hdlen, ?_, ?_, ?_, ?_,
+    bx.symm.sub_right hC, by'.symm.sub_right hC⟩
   · simp only [keyOfState, Nat.mul_div_cancel _ (by decide : 0 < 8)]
     exact hscr
   · simp only [keyOfState, Nat.mul_div_cancel _ (by decide : 0 < 8)]
@@ -612,22 +618,28 @@ theorem key_attempt_run (a : Attempt) (h : KeyLive p original used keys scalars 
     rw [h.sp, h48]
     omega_using [this]
   unfold attemptRun
-  refine WP.allocKept (by decide) hroom' ?_
+  refine WP.alloc (by decide) hroom' ?_
   refine WP.seq (WP.mono (key_arguments_ok h) fun u ⟨⟨ha, hm⟩, k⟩ => ?_)
   obtain hu : u.sp = callSp p := k.sp.trans e0
   refine WP.callAny (k := cgContract) a.correct (call_attempt_pre h hroom hf hu ha hm)
     (call_covers_reads h hroom k.rd k.wr) (call_covers_writes h k.wr) ?_ (by rw [a.stack]; decide)
-  intro t hrd hwr hsp hfr hcs hpost
+  intro t hrd hwr hsp hfr hcs hpost mL _ fl
+  -- Whatever the released frame's bytes hold: the outputs lie apart from it.
+  rw [e0] at fl
+  obtain hC : Region.Sub ⟨callSp p, 144⟩ (below original.sp stackUse) := by
+    rw [callSp_eq, ← h.input.sp_eq]; exact Offset.sub_below _ (by decide) (by decide)
   refine ⟨?_, ?_⟩
   · -- The loop state, after the frame.
-    apply h.restore (show (freed 144 t).rd = s.rd from hrd.trans k.rd)
-      (show (freed 144 t).wr = s.wr from by change t.wr.tail = s.wr; rw [hwr, k.wr]; rfl)
+    refine h.restore ?_ ?_ ?_ ?_ ?_
+    · exact hrd.trans k.rd
+    · change t.wr.tail = s.wr; rw [hwr, k.wr]; rfl
     · change t.sp + BitVec.ofNat 64 144 = s.sp
       rw [hsp, k.sp]
       exact BitVec.sub_add_cancel _ _
     · intro r hr
       exact (hcs r hr).trans (k.gpr r (by revert r hr; decide))
-    · exact attempt_frame h hm hfr a.stack
+    · exact (attempt_frame h hm hfr a.stack).trans (fl.sub fun r hr => by
+        rw [List.mem_singleton.mp hr]; exact ⟨_, by simp [KeyInput.callChanges], hC⟩)
   · -- The attempt's status and outputs.
     obtain ⟨hdom, hrand, h9⟩ := call_inputs h hroom hf hm hu ha
     have hp := hpost
@@ -635,8 +647,15 @@ theorem key_attempt_run (a : Attempt) (h : KeyLive p original used keys scalars 
     obtain ⟨hst, hout⟩ := hp
     simp only [call_gpr (by decide : Reg.r3 ∉ linkRegs), call_gpr (by decide : Reg.r5 ∉ linkRegs),
       ha.1, ha.2.2.1, State.withRegions_gpr, State.withRegions_mem] at hst hout
+    obtain hbx : Spec.Rsa.bytesAt mL p.xp p.len = Spec.Rsa.bytesAt t.mem p.xp p.len :=
+      List.map_congr_left fun i hi => lost_byte fl (R := rX p) hf.xC (List.mem_range.mp hi)
+    obtain hby : Spec.Rsa.bytesAt mL p.yp p.len = Spec.Rsa.bytesAt t.mem p.yp p.len :=
+      List.map_congr_left fun i hi => lost_byte fl (R := rY p) hf.yC (List.mem_range.mp hi)
     unfold AttemptPost
-    exact ⟨hst, hout⟩
+    refine ⟨hst, ?_⟩
+    dsimp only
+    rw [hbx, hby]
+    exact hout
 
 end
 
