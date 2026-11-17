@@ -63,10 +63,11 @@ theorem restore_ok {s₀ : State} (hp : DPre s₀) {s : State} (h : Inv s₀ s) 
   · exact ut.gpr (.ra, Impl.Argon2.RISCV64.Derive.raOff) (by decide)
 
 theorem frames_ok {s₀ : State} (hp : DPre s₀) {Q : Mem → Prop}
+    (hQ : ∀ m m', Frame [below s₀.sp 320] m m' → Q m → Q m')
     (hb : WP isa Impl.Argon2.RISCV64.Derive.body (entry s₀) fun t => BodyDone s₀ t ∧ Q t.mem) :
     WP isa Impl.Argon2.RISCV64.Derive.derive s₀ fun u => abiPreserved s₀ u ∧ Q u.mem := by
-  refine WP.allocKept (by decide) hp.sp_lo (hb.mono fun t ⟨d, q⟩ => ?_)
-  refine ⟨⟨d.regs, ?_, d.ra⟩, q⟩
+  refine WP.alloc (by decide) hp.sp_lo (hb.mono fun t ⟨d, q⟩ m _ fl => ?_)
+  refine ⟨⟨d.regs, ?_, d.ra⟩, hQ _ _ fl q⟩
   show t.sp + BitVec.ofNat 64 320 = _
   rw [d.sp, BitVec.sub_add_cancel]
 
@@ -104,7 +105,11 @@ theorem body_ok : WP isa Impl.Argon2.RISCV64.Derive.body (entry s₀) fun t => B
 theorem correct :
     WP isa Impl.Argon2.RISCV64.Derive.derive s₀ fun t => abiPreserved s₀ t ∧ deriveRV.post s₀ t :=
   frames_ok hp (Q := fun m => bytesAt m (outP s₀) (outL s₀) =
-    Spec.Argon2.derive (prm s₀) (pwB s₀) (saltB s₀) (secB s₀) (adB s₀)) (body_ok hp)
+    Spec.Argon2.derive (prm s₀) (pwB s₀) (saltB s₀) (secB s₀) (adB s₀))
+    -- The `free` loses the frame's bytes, which lie apart from the output.
+    (fun _ _ f q => Eq.trans (List.map_congr_left fun i hi =>
+      lost_byte f (R := outR s₀) (hp.stk_all _ (by simp)).symm (List.mem_range.mp hi)) q)
+    (body_ok hp)
 
 end
 

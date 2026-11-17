@@ -169,7 +169,7 @@ theorem fn_correct (hcore : CoreOk) (s : State) (hpre : (roundContract RISCV64.a
   have sl : ∀ j < 28, slot w j + 8 * (w + 2) ≤ Z := fun j hj => Nat.le_trans (slot_lt hj) hZ
   -- the frame
   unfold Impl.MillerRabin.RISCV64.round Impl.StackScratch.RISCV64.withStackScratch
-  refine WP.allocKept ⟨by decide, by decide, by decide⟩ h.sp1 ?_
+  refine WP.alloc ⟨by decide, by decide, by decide⟩ h.sp1 ?_
   refine WP.seq (WP.block_cons_iff.mpr ⟨_, exec_addSp (imm := 0) (by decide), WP.block_nil ?_⟩)
   generalize hs0 : (allocd frameBytes s).write .t2 ((allocd frameBytes s).sp + BitVec.ofNat 64 0) = s₀
   have g0 : ∀ r, r ≠ .t2 → s₀.gpr r = s.gpr r := fun r hr => by
@@ -265,7 +265,7 @@ theorem fn_correct (hcore : CoreOk) (s : State) (hpre : (roundContract RISCV64.a
       rw [rd_write, wr_write, wrt]
       exact ⟨kR s, List.mem_append_right _ (List.mem_cons_self ..), Offset.contains_base _ (savedL_le p hp)
         (by have := savedL_le p hp; unfold frameBytes at this; omega_arith)⟩)
-    (by rw [mem_write]; exact hsv)) fun u R => ?_
+    (by rw [mem_write]; exact hsv)) fun u R mL _ fl => ?_
   have uother : ∀ r, r ∉ savedL.map Prod.fst → r ≠ .t2 → u.gpr r = t₃.gpr r := fun r hr h2 => by
     rw [R.other r hr, gpr_write_of_ne _ _ h2]
   have usp : u.sp = fb s := by rw [R.sp, sp_write, spt]
@@ -286,12 +286,20 @@ theorem fn_correct (hcore : CoreOk) (s : State) (hpre : (roundContract RISCV64.a
     rw [hBd, hwd, hcd] at hb'
     rw [hBd, hwd, hcd, VG.Proof.MillerRabin.round_eq_of_mont (b' := b') (by omega_arith) hR (hb.symm.trans hb')]
   · intro i hi hh ha ht
-    show u.mem _ = _
+    show mL _ = _
     simp only [hBd, hwd] at ha ht ⊢
     have hi' : i < Z := by rw [← hZd]; omega_arith
     have hofs : VG.Proof.Bignum.ofs B (B + BitVec.ofNat 64 i) = i := by
       show (B + BitVec.ofNat 64 i - B).toNat = i
       rw [Mem.sub_ofNat_toNat _ (by omega_arith)]
+    -- The `free` loses the frame's bytes, which lie apart from the working space.
+    refine Eq.trans (fl _ fun r hr hc => ?_) ?_
+    · simp only [List.mem_singleton] at hr
+      subst hr
+      exact h.kw _ hc (by
+        simp only [Region.Contains, hBd, hZd]
+        rw [Mem.sub_ofNat_toNat _ (by omega_arith)]
+        omega_arith)
     rw [um, m3, tmut _ fun j hj => ?_, m2]
     · refine f1 _ fun r hr hc => ?_
       simp only [List.mem_singleton] at hr

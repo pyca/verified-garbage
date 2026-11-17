@@ -526,13 +526,19 @@ theorem body_ok {s : State} (h : Pre s) {dn pn : String} :
 theorem keyPair_ok {s : State} (hs : spec.pre s) {dn pn : String} :
     WP isa (keyPair dn dgCode pn pkCode) s fun s' => abiPreserved s s' ∧ spec.post s s' := by
   have h := pre_of hs
-  refine WP.allocKept (by decide) (by have := h.sp; omega_using [this]) (WP.mono (body_ok h) fun u ⟨hsp, hcs, hlr, hE, hO⟩ =>
-    ⟨⟨hcs, ?_, hlr⟩, ?_⟩)
+  refine WP.alloc (by decide) (by have := h.sp; omega_using [this]) (WP.mono (body_ok h)
+    fun u ⟨hsp, hcs, hlr, hE, hO⟩ m _ fl => ⟨⟨hcs, ?_, hlr⟩, ?_⟩)
   · show u.sp + BitVec.ofNat 64 32 = s.sp
     rw [hsp, add_add, sp_eq s]
   · sig_post [Spec.Ed25519.keyPairContract, Spec.Ed25519.keyPairSig, Spec.Ed25519.scratchWords, RISCV64.abi,
       RISCV64.argRegs, combConsts_eq, Abi.withConsts]
-    exact ⟨hE, hO⟩
+    -- The `free` loses the frame's bytes, which lie apart from the two outputs.
+    have sub : Region.Sub ⟨s.sp - BitVec.ofNat 64 32, 32⟩ (STK s) :=
+      Offset.sub_below _ (by decide) (by decide)
+    exact ⟨Eq.trans (List.map_congr_left fun i hi =>
+        lost_byte fl (R := EXP s) (h.ke.symm.sub_right sub) (List.mem_range.mp hi)) hE,
+      Eq.trans (List.map_congr_left fun i hi =>
+        lost_byte fl (R := OUT s) (h.ko.symm.sub_right sub) (List.mem_range.mp hi)) hO⟩
 
 /-! ## Constant time -/
 
