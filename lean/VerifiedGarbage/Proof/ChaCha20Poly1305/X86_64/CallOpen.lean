@@ -219,14 +219,16 @@ theorem inner_xdepth (v : XorImpl) : (inner v).x86_64Depth ≤ 24 := by
       xorTail, xorKs, callX, Bool.cond_true, Impl.ChaCha20.X86_64.Xor.callTo, absorbLengths, finalizeTo,
       finalizeWith, Code.x86_64Depth, xorBufTo_xdepth, xorTail_xdepth, foldM_xdepth, wipeL_xdepth,
       init_xdepth, finalize_xdepth, bulkO_xdepth, wholeO_xdepth, twoKs_xdepth, fourKs_xdepth,
-      Nat.max_le] at hc ha ⊢ <;>
+      Nat.max_le, Nat.zero_max, Nat.max_zero, Nat.max_self, Nat.zero_le, true_and, and_true,
+      and_self] at hc ha ⊢ <;>
     omega_arith
   · rw [inner_shared v hv]
     simp only [Impl.ChaCha20.X86_64.Callee.inPlace, openShared, openBody, openTail, zeroData, prologue,
       prologueA, prologueB, zeroKs, macPad, macPadLengths, Code.iteCold, wholeBlocks, padRest, padCopy,
       padTail, crypt, cryptBig, cryptPre, xorKs, callX, Bool.cond_true, Impl.ChaCha20.X86_64.Xor.callTo,
       absorbLengths, finalizeTo, finalizeWith, Code.x86_64Depth, xorBufTo_xdepth, foldM_xdepth, init_xdepth,
-      finalize_xdepth, Nat.max_le] at hc ha ⊢
+      finalize_xdepth, Nat.max_le, Nat.zero_max, Nat.max_zero, Nat.max_self, Nat.zero_le, true_and, and_true,
+      and_self] at hc ha ⊢
     omega_using [hx, hb, hc, ha]
 
 theorem callOpen_eq (v : XorImpl) : callOpen v.callee v.poly =

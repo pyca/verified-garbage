@@ -40,7 +40,7 @@ theorem lowChain_ok {s : State} {B : Addr} {Z eN : Nat}
   refine WP.keep (VG.Impl.Bignum.AArch64.BlockedRedc.aa ++ VG.Impl.Bignum.AArch64.BlockedRedc.tt) ?_ (by decide) (by decide) (by decide +kernel)
   have h4 : List.range 4 = [0, 1, 2, 3] := rfl
   have h8 : List.range 8 = [0, 1, 2, 3, 4, 5, 6, 7] := rfl
-  brun [h4, h8, List.flatMap_cons, List.flatMap_nil, List.append_nil, List.cons_append, List.nil_append, VG.Impl.Bignum.AArch64.BlockedRedc.lowChain, VG.Impl.Bignum.AArch64.BlockedRedc.product, VG.Impl.Bignum.AArch64.BlockedRedc.aa, VG.Impl.Bignum.AArch64.BlockedRedc.nn, VG.Impl.Bignum.AArch64.BlockedRedc.tt, h17, hs.ld hN]
+  brun [↓RegUpd.gpr_write, ↓reduceIte, h4, h8, List.flatMap_cons, List.flatMap_nil, List.append_nil, List.cons_append, List.nil_append, VG.Impl.Bignum.AArch64.BlockedRedc.lowChain, VG.Impl.Bignum.AArch64.BlockedRedc.product, VG.Impl.Bignum.AArch64.BlockedRedc.aa, VG.Impl.Bignum.AArch64.BlockedRedc.nn, VG.Impl.Bignum.AArch64.BlockedRedc.tt, h17, hs.ld hN]
   refine ⟨?_, ?_, ?_⟩
   · rfl
   · intro i hi
@@ -74,7 +74,7 @@ theorem highChain_ok (s : State) :
   refine WP.keep (VG.Impl.Bignum.AArch64.BlockedRedc.aa ++
     VG.Impl.Bignum.AArch64.BlockedRedc.tt) ?_ (by decide) (by decide) (by decide +kernel)
   have h8 : List.range 8 = [0, 1, 2, 3, 4, 5, 6, 7] := rfl
-  brun [h8, List.flatMap_cons, List.flatMap_nil, List.append_nil, List.cons_append, List.nil_append,
+  brun [↓RegUpd.gpr_write, ↓reduceIte, h8, List.flatMap_cons, List.flatMap_nil, List.append_nil, List.cons_append, List.nil_append,
     VG.Impl.Bignum.AArch64.BlockedRedc.highChain, VG.Impl.Bignum.AArch64.BlockedRedc.product,
     VG.Impl.Bignum.AArch64.BlockedRedc.aa, VG.Impl.Bignum.AArch64.BlockedRedc.nn,
     VG.Impl.Bignum.AArch64.BlockedRedc.tt]

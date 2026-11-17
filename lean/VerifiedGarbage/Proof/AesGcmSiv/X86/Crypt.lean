@@ -136,7 +136,6 @@ theorem tagArgs_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {o : Nat} (ho
         (w64 p.W + BitVec.ofNat 64 124) (t.mem.readW (w64 p.W + BitVec.ofNat 64 108) 32)) =
         copyMem t.mem (w64 p.W) := by
       simp only [copyMem, Proof.Cmac.store4, add_ofNat_assoc, Nat.reduceAdd]
-    rcases ho with rfl | rfl | rfl <;>
     refine ⟨_, by simp only [copy16, zero4, ctrArgs]; grun [E.ebp, L.aW, E.perm.wW, E.perm.wR, hcp, hz, rR'],
       ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
       first

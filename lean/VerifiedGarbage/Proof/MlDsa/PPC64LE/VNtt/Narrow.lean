@@ -80,18 +80,18 @@ theorem transpose_run (s : State) (h16 : s.vpr .v16 = caC) (h17 : s.vpr .v17 = c
     by simp only [mem_writeV], by simp only [rd_writeV], by simp only [wr_writeV], by simp only [sp_writeV],
     by simp only [lr_writeV]⟩, by simp only [syms_writeV]⟩
   · rw [h16, h17, h18, h19]
+    -- the bounds once, not in each of the sixteen cases
+    have d0 : (0 : Nat) < 4 := by decide
+    have d1 : (1 : Nat) < 4 := by decide
+    have d2 : (2 : Nat) < 4 := by decide
+    have d3 : (3 : Nat) < 4 := by decide
     rcases (by omega_using [hk] : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl <;>
     rcases (by omega_using [hr] : r = 0 ∨ r = 1 ∨ r = 2 ∨ r = 3) with rfl | rfl | rfl | rfl <;>
-    simp only [tv, vpr_writeV, reduceCtorEq, ite_true, ite_false, vword_cc _ _ (show (0 : Nat) < 4 by decide),
-      vword_cc _ _ (show (1 : Nat) < 4 by decide), vword_cc _ _ (show (2 : Nat) < 4 by decide),
-      vword_cc _ _ (show (3 : Nat) < 4 by decide), vword_cd _ _ (show (0 : Nat) < 4 by decide),
-      vword_cd _ _ (show (1 : Nat) < 4 by decide), vword_cd _ _ (show (2 : Nat) < 4 by decide),
-      vword_cd _ _ (show (3 : Nat) < 4 by decide), vword_ca _ _ (show (0 : Nat) < 4 by decide),
-      vword_ca _ _ (show (1 : Nat) < 4 by decide), vword_cb _ _ (show (0 : Nat) < 4 by decide),
-      vword_cb _ _ (show (1 : Nat) < 4 by decide), vword_ca _ _ (show (2 : Nat) < 4 by decide),
-      vword_ca _ _ (show (3 : Nat) < 4 by decide), vword_cb _ _ (show (2 : Nat) < 4 by decide),
-      vword_cb _ _ (show (3 : Nat) < 4 by decide), Nat.reduceMod, Nat.reduceDiv, Nat.reduceSub,
-      Nat.reduceAdd, Nat.reduceLT, ↓reduceIte, Nat.lt_irrefl]
+    simp only [tv, vpr_writeV, reduceCtorEq, ite_true, ite_false, vword_cc _ _ d0, vword_cc _ _ d1, vword_cc _ _ d2,
+      vword_cc _ _ d3, vword_cd _ _ d0, vword_cd _ _ d1, vword_cd _ _ d2, vword_cd _ _ d3, vword_ca _ _ d0,
+      vword_ca _ _ d1, vword_cb _ _ d0, vword_cb _ _ d1, vword_ca _ _ d2, vword_ca _ _ d3, vword_cb _ _ d2,
+      vword_cb _ _ d3, Nat.reduceMod, Nat.reduceDiv, Nat.reduceSub, Nat.reduceAdd, Nat.reduceLT, ↓reduceIte,
+      Nat.lt_irrefl]
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr'
     obtain ⟨r8, r9, r10, r11, r12, r13, r14, r15⟩ := hr'
     simp only [vpr_writeV, r8, r9, r10, r11, r12, r13, r14, r15, ite_false]

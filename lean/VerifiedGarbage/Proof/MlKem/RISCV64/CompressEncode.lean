@@ -200,7 +200,7 @@ theorem body10_ok (h3 : s.gpr .a0 = x) (h5 : s.gpr .a2 = y) (h11 : s.gpr .t1 = c
   obtain j2 := aa 2 (by decide)
   obtain j3 := aa 3 (by decide)
   simp only [Nat.reduceMul, BitVec.add_zero] at i0 i1 i2 i3 o0 j0 j1 j2 j3
-  crun [ce10Body, ce10Coeff, compressAt, Keep, V10, A, fld, cmpV, h3, h5, h11, h9, h10, i0, i1, i2, i3,
+  cerunw [ce10Body, ce10Coeff, compressAt, Keep, V10, A, fld, cmpV, h3, h5, h11, h9, h10, i0, i1, i2, i3,
     j0, j1, j2, j3,
     o0, o1, o2, o3, o4, preserved, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, List.cons_append,
     List.nil_append]

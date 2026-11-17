@@ -234,9 +234,9 @@ theorem negateI_ok (K : TCombCfg) {s : State} {base : Addr} {m : Nat} (positive 
     intro x hx
     rw [mv]
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
-    apply ou.wordsVal _ (by rcases hx with rfl | rfl | rfl <;> omega_arith)
+    apply ou.wordsVal _ (by rcases hx with rfl | rfl | rfl <;> omega_using [hown, qx, qy, qz])
     simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
-    rcases hx with rfl | rfl | rfl <;> exact ⟨by omega_arith, .inl (by omega_arith)⟩
+    rcases hx with rfl | rfl | rfl <;> exact ⟨by omega_using [hqy, hqz, qng], .inl (by omega_using [qx, qy, qz])⟩
   refine ⟨(ku.rk).trans ((kv.rk (by decide)).trans (kt.rk (by decide))), ?_, ?_, ?_, ?_, ?_⟩
   · have ov : Unch base [(K.neg, 8 * K.L.M.n), (own K.L.M.n, 64 * K.L.M.n)] s.mem v.mem := by rw [mv]; exact ou
     exact ov.trans ot.unch

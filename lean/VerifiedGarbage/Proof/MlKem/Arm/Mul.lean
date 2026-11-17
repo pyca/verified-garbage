@@ -88,7 +88,7 @@ theorem body_ok (h0 : s.gpr .r0 = x0) (h1 : s.gpr .r1 = x1) (h2 : s.gpr .r2 = x2
               s.mem.readW (State.addr (x2 + BitVec.ofNat 32 4)) 32 +
             s.mem.readW (State.addr (x1 + BitVec.ofNat 32 4)) 32 *
               s.mem.readW (State.addr (x2 + BitVec.ofNat 32 0)) 32)) := by
-  run_block [mulBody, reduce, barrett, subQ, fixup, red, bar, fixq, h0, h1, h2, h3, h8, h11, if0, if1, ig0,
+  run_block [↓RegUpd.gpr_setReg, ↓reduceIte, mulBody, reduce, barrett, subQ, fixup, red, bar, fixq, h0, h1, h2, h3, h8, h11, if0, if1, ig0,
     ig1, iγ, o0, o1, and_self, and_true]
 
 end
@@ -265,7 +265,7 @@ theorem setup_ok {s₀ : State} (hp : Pre s₀) :
   obtain e2 := e .r2 (by decide)
   obtain e3 := e .r3 (by decide)
   obtain elr := e .lr (by decide)
-  run_block [consts, e0, e1, e2, e3, elr, h₂.rd, h₁.rd, h₂.wr, h₁.wr, h₂.sp, h₁.sp, consts_val, hm, true_and]
+  run_block [↓RegUpd.gpr_setReg, ↓reduceIte, consts, e0, e1, e2, e3, elr, h₂.rd, h₁.rd, h₂.wr, h₁.wr, h₂.sp, h₁.sp, consts_val, hm, true_and]
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, rfl, rfl, rfl, Frame.refl _ _, fun j _ => ?_⟩ <;> simp [e0, e1, e2, e3, elr]
 
 theorem restore_ok {s₀ : State} (hp : Pre s₀) {m₁ : Mem} (hm : Setup s₀ m₁) {s : State}

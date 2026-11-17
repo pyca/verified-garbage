@@ -192,10 +192,10 @@ theorem sub_ok {s : State} {base : Addr} (hs : Scr s base) {o a b : Nat}
     (fun i hi u us ⟨h0, h2⟩ hm => WP.mono (subStep_ok us hi ho ha hb ho8 ha8 hb8 h0 h2)
       fun w ⟨wm, wk⟩ => ⟨fun o' ho' => by
           simp only [List.mem_cons, List.not_mem_nil, or_false] at ho'; subst ho'
-          rw [wm, word, Mem.readW_writeW_self64, away_word hm (by omega_arith) (by simp; omega_arith),
-            away_word hm (by omega_arith) (by simp; omega_arith)],
+          rw [wm, word, Mem.readW_writeW_self64, away_word hm (by omega_arith) (by simp; omega_using [hi, hoa]),
+            away_word hm (by omega_arith) (by simp; omega_using [hi, hob])],
         fun x hx => by rw [wm]; exact writeW_frame _ (by omega_arith) _ x (hx o (by simp)), wk⟩)
-    (by simp; omega_arith) (by simp) ts ⟨t0, t2⟩
+    (by simp; omega_using [ho]) (by simp) ts ⟨t0, t2⟩
   refine WP.mono this fun u ⟨uv, um, uk⟩ => ⟨fun i hi => by rw [uv o (by simp) i hi, tm], fun x hx => by
     rw [um x hx, tm], (tk.mono (by decide)).trans (uk.mono (by decide))⟩
 
@@ -252,8 +252,8 @@ theorem addSub_ok {s : State} {base : Addr} (hs : Scr s base) {o₁ o₂ a b : N
       else word t.mem base (a + 8 * i) + twoPW i - word t.mem base (b + 8 * i)) t
     (fun i hi u us ⟨h0, h2⟩ hm => WP.mono (addSubStep_ok us hi ho₁ ho₂ ha hb ho₁8 ho₂8 ha8 hb8 h0 h2)
       fun w ⟨wm, wk⟩ => ⟨fun o' ho' => by
-          have ea := away_word hm (d := a + 8 * i) (by omega_arith) (by simp; omega_arith)
-          have eb := away_word hm (d := b + 8 * i) (by omega_arith) (by simp; omega_arith)
+          have ea := away_word hm (d := a + 8 * i) (by omega_arith) (by simp; omega_using [hi, h1a, h2a])
+          have eb := away_word hm (d := b + 8 * i) (by omega_arith) (by simp; omega_using [hi, h1b, h2b])
           simp only [List.mem_cons, List.not_mem_nil, or_false] at ho'
           rcases ho' with rfl | rfl
           · rw [wm, VG.Proof.Curve448.AArch64.Fast.word_writeW _ _ (by omega_arith) (by omega_arith) (by omega_arith),
@@ -262,7 +262,7 @@ theorem addSub_ok {s : State} {base : Addr} (hs : Scr s base) {o₁ o₂ a b : N
         fun x hx => by
           rw [wm, writeW_frame _ (by omega_arith) _ x (hx o₂ (by simp)),
             writeW_frame _ (by omega_arith) _ x (hx o₁ (by simp))], wk⟩)
-    (by simp; omega_arith) (by simp; omega_arith) ts ⟨t0, t2⟩
+    (by simp; omega_using [ho₁, ho₂]) (by simp; omega_using [h12]) ts ⟨t0, t2⟩
   refine WP.mono this fun u ⟨uv, um, uk⟩ => ⟨fun i hi => ?_, fun i hi => ?_, fun x hx => by
     rw [um x hx, tm], (tk.mono (by decide)).trans (uk.mono (by decide))⟩
   · rw [uv o₁ (by simp) i hi, ite_eq_left rfl, tm]
@@ -423,7 +423,8 @@ theorem butterfly_ok {s : State} {base : Addr} (hs : Scr s base) {x2 z2 x3 z3 a 
       rw [word_w4 _ _ _ _ _ _ (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
         (by omega_arith) (by omega_arith)]
       simp only [bflyV, e x2 (by simp), e z2 (by simp), e x3 (by simp), e z3 (by simp)]
-    all_goals split_ifs <;> first | (exfalso; omega_arith) | rfl
+    all_goals simp only [Nat.add_right_cancel_iff, hab, hac, had, hbc, hbd, hcd, hab.symm, hac.symm, had.symm,
+      hbc.symm, hbd.symm, hcd.symm, ↓reduceIte]
   · rw [wm]
     simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hx
     rw [writeW_frame _ (by omega_arith) _ x hx.2.2.2, writeW_frame _ (by omega_arith) _ x hx.2.2.1,
