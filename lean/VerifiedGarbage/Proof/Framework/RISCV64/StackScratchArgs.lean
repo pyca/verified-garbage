@@ -791,7 +791,7 @@ theorem withStackScratchArgs_run {c : Prog isa} (hk : (sig.words abi.ptrBits).le
     rfl
   have hex := Exec.frame hpush (Exec.seq (Exec.block hrun) hw) hpop
   simp only [isa, addrs, List.map_nil, List.nil_append, List.append_nil] at hex
-  refine ⟨hex, ⟨fun q hq => ?_, rfl, ?_⟩, Frame.refl _ _, rfl⟩
+  refine ⟨hex, ⟨fun q hq => ?_, rfl, ?_⟩, lose_frame _ _ _ _, rfl⟩
   · have h0 : q ≠ .t0 := fun h => by subst h; simp [preserved] at hq
     have h1 : q ≠ .t1 := fun h => by subst h; simp [preserved] at hq
     show s₃.gpr q = s.gpr q
