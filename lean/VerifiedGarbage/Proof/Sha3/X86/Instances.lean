@@ -43,7 +43,7 @@ meta import VerifiedGarbage.Proof.Framework.Block
 /-!
 # SHA-3 and SHAKE on x86 (32-bit): the functions of each instance
 
-Each allocates a frame of `B` bytes (`WP.frameAllocKept`), stores the callee's
+Each allocates a frame of `B` bytes (`WP.frameAlloc`), stores the callee's
 arguments at its base (`ArgInv`, one word at a time: `copy_step`,
 `const_step`, `buf_step`), and calls the sponge function (`WP.call`), whose
 precondition holds of the arguments stored (`entry_arg`), and whose buffers,
@@ -418,7 +418,7 @@ theorem update_correct {rate : Nat} (hr : rate ∈ rates) {s : State} (hs : (upd
   obtain ⟨-, -, -, -, -, -, -, -, d7, -, d9, d10, d11, -, -, -, -, e40, -, -⟩ := hs'
   obtain hrt := rate_lt hr
   unfold update
-  refine WP.frameAllocKept (by decide) (by decide) (by decide) (by omega_using [e40])
+  refine WP.frameAlloc (by decide) (by decide) (by decide) (by omega_using [e40])
     (nosp_seq (updateArgs_nosp rate) (nosp_call absorb_nosp)) ?_
   refine WP.seq (WP.mono (update_args hs) fun t hI => ?_)
   obtain ⟨a0, a1, a2, a3, a4, -⟩ := update_entry hs hI
@@ -450,13 +450,19 @@ theorem update_correct {rate : Nat} (hr : rate ∈ rates) {s : State} (hs : (upd
       exact below_inner (by decide) (by omega_using [e40])
   obtain ef := entry_frame (S := 40) hI rfl (by decide) (by omega_using [e40])
   rw [allocFrame_mem] at ef
+  intro mm vv fl
+  change Frame [⟨(s.gpr .esp - BitVec.ofNat 32 24).setWidth 64, 24⟩] s'.mem mm at fl
+  rw [hfb] at fl
   refine ⟨⟨fun r hr => ?_, ?_⟩, fun msg hm hp => ?_, ?_⟩
-  · by_cases h : r = .esp
+  · show (freed 24 s').gpr r = s.gpr r
+    by_cases h : r = .esp
     · subst h
       rw [freed_esp, hcs .esp (by simp [calleeSaved]), hI.esp]; exact BitVec.sub_add_cancel _ _
     · have hne : r ≠ .eax := by rintro rfl; simp [calleeSaved] at hr
       rw [freed_gpr _ _ h, hcs r hr, hI.gpr r hne, allocFrame_gpr _ _ h]
-  · rw [freed_mem]
+  · show mm.readW _ 32 = _
+    rw [fl.readW (r := ⟨(s.gpr .esp).setWidth 64, 4⟩) (Region.contains_self _ _) (fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact Offset.base_disjoint_below _ (by decide)) (by decide)]
     refine fall.readW (r := ⟨(s.gpr .esp).setWidth 64, 4⟩) (Region.contains_self _ _) (fun r hr => ?_)
       (by decide)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -474,8 +480,13 @@ theorem update_correct {rate : Nat} (hr : rate ∈ rates) {s : State} (hs : (upd
         (by have := (arg s 3).isLt; omega_using [])
     have := hpost.1 msg (by unfold Spec.Sha3.Repr; rw [hst]; exact hm) hp
     rw [hd, hm₂] at this
-    rw [freed_mem]; exact this
+    show Spec.Sha3.Repr mm _ _ _
+    unfold Spec.Sha3.Repr
+    rw [stateAt_frame fl fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact (d10.sub_left sA).symm]
+    exact this
   · simp only [Proof.Sha3.absorbX86, arg_withRegions, a0, a1, a2, a3, a4, hrate] at hpost
+    show ((freed 24 s').gpr .eax).toNat = _
     rw [freed_gpr _ _ (by decide), ← hg₂ .eax (by decide)]
     exact hpost.2
 
@@ -753,7 +764,7 @@ theorem xof_correct {X : Xof} (hX : xofSponge X) (hr : X.rate ∈ rates) {s : St
   obtain ⟨-, -, -, d2, d3, -, e676, efit, -⟩ := hs'
   obtain hrt := rate_lt hr
   unfold xofFinalize
-  refine WP.frameAllocKept (by decide) (by decide) (by decide) (by omega_using [e676])
+  refine WP.frameAlloc (by decide) (by decide) (by decide) (by omega_using [e676])
     (nosp_seq (xofPadArgs_nosp _) (nosp_call pad_nosp)) ?_
   refine WP.seq (WP.mono (xof_args hs) fun t hI => ?_)
   obtain ⟨a0, a1, a2, a3, -⟩ := xof_entry e676 efit hI
@@ -789,13 +800,19 @@ theorem xof_correct {X : Xof} (hX : xofSponge X) (hr : X.rate ∈ rates) {s : St
   obtain ef := entry_frame (S := 676) hI rfl (by decide) (by omega_using [e676])
   rw [allocFrame_mem] at ef
   obtain hsuf : (BitVec.ofNat 32 0x1f).setWidth 8 = Spec.Sha3.shakeSuffix := by decide
+  intro mm vv fl
+  change Frame [⟨(s.gpr .esp - BitVec.ofNat 32 660).setWidth 64, 660⟩] s'.mem mm at fl
+  rw [hfb] at fl
   refine ⟨⟨fun r hr => ?_, ?_⟩, fun msg hm hp => ?_⟩
-  · by_cases h : r = .esp
+  · show (freed 660 s').gpr r = s.gpr r
+    by_cases h : r = .esp
     · subst h
       rw [freed_esp, hcs .esp (by simp [calleeSaved]), hI.esp]; exact BitVec.sub_add_cancel _ _
     · have hne : r ≠ .eax := by rintro rfl; simp [calleeSaved] at hr
       rw [freed_gpr _ _ h, hcs r hr, hI.gpr r hne, allocFrame_gpr _ _ h]
-  · rw [freed_mem]
+  · show mm.readW _ 32 = _
+    rw [fl.readW (r := ⟨(s.gpr .esp).setWidth 64, 4⟩) (Region.contains_self _ _) (fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact Offset.base_disjoint_below _ (by decide)) (by decide)]
     refine fall.readW (r := ⟨(s.gpr .esp).setWidth 64, 4⟩) (Region.contains_self _ _) (fun r hr => ?_)
       (by decide)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -808,7 +825,11 @@ theorem xof_correct {X : Xof} (hX : xofSponge X) (hr : X.rate ∈ rates) {s : St
       stateAt_frame ef fun r hr => by rw [List.mem_singleton.mp hr]; exact d3.symm
     have := hpost msg (by unfold Spec.Sha3.Repr; rw [hst]; exact hm) hp
     rw [hm₂] at this
-    rw [freed_mem]; exact xofRepr_pad hX this
+    show XofRepr mm _ _ _ _ _ _
+    unfold XofRepr
+    rw [stateAt_frame fl fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact (d3.sub_left sF).symm]
+    exact xofRepr_pad hX this
 
 theorem xof_ct {X : Xof} (hr : X.rate ∈ rates) {h : VG.Taint.Hint VG.X86.Taint.T}
     (hb : (taint.check (τr [.esp]) (.block (xofPadArgs X.rate)) h).isSome = true) :
@@ -1049,7 +1070,7 @@ theorem xs_correct {X : Xof} (hr : X.rate ∈ rates) {s : State} (hs : (xofSqzX8
   obtain ⟨-, -, -, -, -, d4, -, d6, d7, -, -, e680, efit, -⟩ := hs'
   obtain hrt := rate_lt hr
   unfold xofSqueeze
-  refine WP.frameAllocKept (by decide) (by decide) (by decide) (by omega_using [e680])
+  refine WP.frameAlloc (by decide) (by decide) (by decide) (by omega_using [e680])
     (nosp_seq (xofSqueezeArgs_nosp _) (nosp_call squeeze_nosp)) ?_
   refine WP.seq (WP.mono (xs_args hs) fun t hI => ?_)
   obtain ⟨a0, a1, a2, a3, a4, -⟩ := xs_entry e680 efit hI
@@ -1093,13 +1114,19 @@ theorem xs_correct {X : Xof} (hr : X.rate ∈ rates) {s : State} (hs : (xofSqzX8
   obtain ⟨h1, h2, h3⟩ := hpost
   rw [hm₂] at h1 h3
   rw [hg₂ .eax (by decide)] at h2 h3
+  intro mm vv fl
+  change Frame [⟨(s.gpr .esp - BitVec.ofNat 32 664).setWidth 64, 664⟩] s'.mem mm at fl
+  rw [hfb] at fl
   refine ⟨⟨fun r hr => ?_, ?_⟩, fun msg n hR => ?_, ?_⟩
-  · by_cases h : r = .esp
+  · show (freed 664 s').gpr r = s.gpr r
+    by_cases h : r = .esp
     · subst h
       rw [freed_esp, hcs .esp (by simp [calleeSaved]), hI.esp]; exact BitVec.sub_add_cancel _ _
     · have hne : r ≠ .eax := by rintro rfl; simp [calleeSaved] at hr
       rw [freed_gpr _ _ h, hcs r hr, hI.gpr r hne, allocFrame_gpr _ _ h]
-  · rw [freed_mem]
+  · show mm.readW _ 32 = _
+    rw [fl.readW (r := ⟨(s.gpr .esp).setWidth 64, 4⟩) (Region.contains_self _ _) (fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact Offset.base_disjoint_below _ (by decide)) (by decide)]
     refine fall.readW (r := ⟨(s.gpr .esp).setWidth 64, 4⟩) (Region.contains_self _ _) (fun r hr => ?_)
       (by decide)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -1107,9 +1134,16 @@ theorem xs_correct {X : Xof} (hr : X.rate ∈ rates) {s : State} (hs : (xofSqzX8
     · exact d4
     · exact hs.2.2.2.2.2.2.1
     · exact Offset.base_disjoint_below _ (by decide)
-  · rw [freed_mem, freed_gpr _ _ (by decide)]
+  · show bytesAt mm _ _ = _ ∧ XofRepr mm _ _ ((freed 664 s').gpr .eax).toNat _ _ _
+    rw [freed_gpr _ _ (by decide), bytesAt_frame fl (fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact (d7.sub_left sF).symm)
+      (by have := (arg s 3).isLt; omega_using [])]
+    unfold XofRepr
+    rw [stateAt_frame fl fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact (d6.sub_left sF).symm]
     exact xofRepr_squeeze hR h1 h3
-  · rw [freed_gpr _ _ (by decide)]; exact h2
+  · show ((freed 664 s').gpr .eax).toNat ≤ _
+    rw [freed_gpr _ _ (by decide)]; exact h2
 
 theorem xs_ct {X : Xof} (hr : X.rate ∈ rates) {h : VG.Taint.Hint VG.X86.Taint.T}
     (hb : (taint.check (τr [.esp]) (.block (xofSqueezeArgs X.rate)) h).isSome = true) :
@@ -1545,7 +1579,7 @@ theorem fin_correct {H : Spec.Sha3.HashFn} (hH : hashSponge H) (hr : H.rate ∈ 
   obtain ⟨-, -, -, -, -, d4, d5, d6, d7, -, -, e680, efit, -⟩ := hs'
   obtain hrt := rate_lt hr
   unfold finalize
-  refine WP.frameAllocKept (by decide) (by decide) (by decide) (by omega_using [e680]) (finalize_nosp _ _) ?_
+  refine WP.frameAlloc (by decide) (by decide) (by decide) (by omega_using [e680]) (finalize_nosp _ _) ?_
   refine WP.seq (WP.mono (fp_args hs) fun t hI => ?_)
   refine WP.seq (WP.mono (fp_call hr hs hI) fun u hA => ?_)
   refine WP.seq (WP.mono (fs_args hs hA) fun t₂ hI₂ => ?_)
@@ -1586,13 +1620,19 @@ theorem fin_correct {H : Spec.Sha3.HashFn} (hH : hashSponge H) (hr : H.rate ∈ 
       rw [squeeze_stack, hI₂.esp, stk]
       exact below_inner (by decide) (by omega_using [e680])
   obtain ef := entry_frame (S := 680) hI₂ rfl (by decide) (by omega_using [e680])
+  intro mm vv fl
+  change Frame [⟨(s.gpr .esp - BitVec.ofNat 32 664).setWidth 64, 664⟩] s'.mem mm at fl
+  rw [hfb] at fl
   refine ⟨⟨fun r hr => ?_, ?_⟩, fun msg hm hp => ?_⟩
-  · by_cases h : r = .esp
+  · show (freed 664 s').gpr r = s.gpr r
+    by_cases h : r = .esp
     · subst h
       rw [freed_esp, hcs .esp (by simp [calleeSaved]), hI₂.esp]; exact BitVec.sub_add_cancel _ _
     · have hne : r ≠ .eax := by rintro rfl; simp [calleeSaved] at hr
       rw [freed_gpr _ _ h, hcs r hr, hI₂.gpr r hne, hA.gpr r hr h]
-  · rw [freed_mem]
+  · show mm.readW _ 32 = _
+    rw [fl.readW (r := ⟨(s.gpr .esp).setWidth 64, 4⟩) (Region.contains_self _ _) (fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact Offset.base_disjoint_below _ (by decide)) (by decide)]
     refine fall.readW (r := ⟨(s.gpr .esp).setWidth 64, 4⟩) (Region.contains_self _ _) (fun r hr => ?_)
       (by decide)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -1604,7 +1644,10 @@ theorem fin_correct {H : Spec.Sha3.HashFn} (hH : hashSponge H) (hr : H.rate ∈ 
       hrate, hlen] at hpost
     obtain hst : stateAt t₂.callEntry.mem ((arg s 0).setWidth 64) = stateAt u.mem ((arg s 0).setWidth 64) :=
       stateAt_frame ef fun r hr => by rw [List.mem_singleton.mp hr]; exact d6.symm
-    rw [freed_mem, ← hm₂, hpost.1, hst, hA.pad msg hm hp]
+    show bytesAt mm _ _ = _
+    rw [bytesAt_frame fl (fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact (d7.sub_left sF).symm) (by omega_using [hl]),
+      ← hm₂, hpost.1, hst, hA.pad msg hm hp]
     exact digest_of_pad hH rfl
 
 theorem fin_ct {H : Spec.Sha3.HashFn} (hr : H.rate ∈ rates) (hl : H.len < 2 ^ 15)

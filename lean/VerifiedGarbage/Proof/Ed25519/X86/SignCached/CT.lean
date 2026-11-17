@@ -870,16 +870,25 @@ theorem frame_ok {first : Prog isa} {s : State} (h : (signLocalWith n key post).
       fun t => abiPreserved s t ∧ post s t := by
   have hL := lay_ok h sl
   have hb' := entry_bounds h
-  refine WP.frameKept (rs := List.replicate 64 .eax) (by simp) (by simp) (by decide)
+  refine WP.frame (rs := List.replicate 64 .eax) (by simp) (by simp) (by decide)
     (by simp only [List.length_replicate]; omega_using [hb']) (bodyFrom_nosp hn)
-    (WP.mono hb fun u ⟨hu, ho⟩ => ?_)
+    (WP.mono hb fun u ⟨hu, ho⟩ m v fl => ?_)
+  simp only [List.length_replicate] at fl
+  obtain hb256 : 256 ≤ (s.gpr .esp).toNat := by omega_using [hb']
   refine ⟨⟨fun r hr => ?_, ?_⟩, hp _ ?_⟩
-  · by_cases he : r = .esp
+  · show (popped Reg.eax (List.replicate 64 Reg.eax).length u).gpr r = s.gpr r
+    by_cases he : r = .esp
     · subst r
       rw [popped_esp, hu.esp, List.length_replicate]
       exact BitVec.sub_add_cancel _ _
     · rw [popped_gpr _ _ _ he (by intro e; subst r; simp [calleeSaved] at hr), hu.cs r hr he]
-  · rw [popped_mem]
+  · show m.readW _ 32 = _
+    rw [fl.readW (r := (lay n s).RET) (by rw [lay_ret h]; exact Region.contains_self _ _) (fun r hr => by
+      rw [List.mem_singleton.mp hr, lay_ret h]
+      change Region.Disjoint ⟨(s.gpr .esp).setWidth 64, 4⟩
+        ⟨(s.gpr .esp - BitVec.ofNat 32 256).setWidth 64, 256⟩
+      rw [Taint.sub_setWidth hb256]
+      exact (Offset.below_disjoint _ (by decide)).symm) (by decide)]
     refine hu.frame.readW (r := (lay n s).RET) ?_ ?_ (by decide)
     · rw [lay_ret h]; exact Region.contains_self _ _
     · simp only [Lay.outputs, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false]
@@ -889,7 +898,16 @@ theorem frame_ok {first : Prog isa} {s : State} (h : (signLocalWith n key post).
       · change (lay n s).RET.Disjoint (lay n s).STK
         rw [lay_ret h, lay_stack h]
         exact (Offset.below_disjoint _ (by decide)).symm
-  · rw [popped_mem]
+  · show Spec.Ed25519.bytesAt m _ 64 = sig
+    have hko := hL.ko
+    rw [lay_stack h] at hko
+    refine Eq.trans (List.map_congr_left fun _ hi => fl.bytes (R := (lay n s).OUT) (fun r hr => by
+      rw [List.mem_singleton.mp hr]
+      refine (hko.sub_left ?_).symm
+      change Region.Sub ⟨(s.gpr .esp - BitVec.ofNat 32 256).setWidth 64, 256⟩ _
+      rw [Taint.sub_setWidth hb256]
+      exact Taint.below_sub (by decide) (by decide))
+      (by show 64 ≤ 2 ^ 64; decide) (List.mem_range.mp hi)) ?_
     exact ho
 
 end VG.Proof.Ed25519.X86.SignCached

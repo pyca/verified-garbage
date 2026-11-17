@@ -559,6 +559,35 @@ theorem freed_of {n : Nat} {f : List Byte → List Byte → List Byte} {s z : St
   · subst h; rw [freed_esp, hz.esp]; exact BitVec.sub_add_cancel _ _
   · rw [freed_gpr _ _ h, hz.saved r hr h]
 
+/-- `Freed` whatever the frame's bytes: what it states lies apart from the
+16 bytes below `esp`. -/
+theorem freed_frame {n w cs : Nat} {f : List Byte → List Byte → List Byte} {s t : State} {m : Mem}
+    (h : Pre n w (20 + cs) s) (ht : Freed n f s t) (fl : Frame [below (s.gpr .esp) 16] t.mem m)
+    (u : Nat → BitVec 32) : Freed n f s { t with mem := m, unknowns := u } := by
+  change Frame [⟨F s, 16⟩] t.mem m at fl
+  obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, ko, -, -, -, -, b0, -, -, -, -, -⟩ := id h
+  have hs := h.stk
+  have hF := F_toNat h
+  obtain hsub : Region.Sub ⟨F s, 16⟩ (stkR s (20 + cs)) :=
+    in_stk h (by show _ ≤ (F s).toNat; omega_using [hF]) (by show (F s).toNat + 16 ≤ _; omega_using [hF, hs])
+  refine ⟨?_, ?_, ?_, ht.saved, ht.rd, ht.wr⟩
+  · show bytesAt m _ n = _
+    rw [bytes_keep fl (ko.sub_left hsub) (w64_bound b0)]
+    exact ht.out
+  · show m.readW _ 32 = _
+    rw [fl.readW (r := argR s) (argR_word h (by decide)) (fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact (frR_args h).symm) (by decide)]
+    exact ht.arg0
+  · show m.readW _ 32 = _
+    rw [fl.readW (r := retR s) (Region.contains_self _ _) (fun r hr => by
+      rw [List.mem_singleton.mp hr]
+      refine (Offset.disjoint_of_le ?_ ?_).symm
+      · show (F s).toNat + 16 ≤ ((s.gpr .esp).setWidth 64).toNat
+        rw [hF, w64_toNat]; omega_using [hs]
+      · show ((s.gpr .esp).setWidth 64).toNat + 4 ≤ 2 ^ 64
+        rw [w64_toNat]; have := (s.gpr .esp).isLt; omega_using [this]) (by decide)]
+    exact ht.ret
+
 /-- After the check. -/
 structure Checked (n : Nat) (f : List Byte → List Byte → List Byte) (s v : State) : Prop where
   freed : Freed n f s v
@@ -607,7 +636,8 @@ theorem frame_wp {n w cs : Nat} {f : List Byte → List Byte → List Byte} {c :
     (hk : Callee n w cs f c k) {name : String} {s : State} (h : Pre n w (20 + cs) s) :
     WP isa (.frame (.alloc 16) (.seq (.block copyArgs) (.call name c)) (.free 16)) s (Freed n f s) := by
   have hstk := h.stk
-  refine WP.frameAllocKept (by decide) (by decide) (by decide) (by omega_using [hstk]) ?_ ?_
+  refine WP.frameAllocLocal (by decide) (by decide) (by decide) (by omega_using [hstk]) ?_
+    (fun t m u ht fl => freed_frame h ht fl u) ?_
   · intro i hi
     rcases List.mem_append.mp hi with hi | hi
     · exact (by decide : ∀ i ∈ copyArgs, Taint.clobbers i .esp = false) i hi

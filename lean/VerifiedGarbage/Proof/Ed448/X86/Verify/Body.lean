@@ -566,17 +566,18 @@ theorem framed_ok {eq : Prog isa} (hE : CalleeOk Proof.Ed448.X86.verifyEquationL
   have c0 := push_ctx (s := t) (hrd.trans hp.1) (hwr.trans hp.2.1) hb
   rw [eb] at c0
   have ha : Shake.Args (base s) 7 (arg s) t.mem := by rw [hm]; exact args_val s 7
-  refine WP.frameKept (rs := List.replicate 64 .eax) (by simp) (by simp) (by decide)
+  refine WP.frame (rs := List.replicate 64 .eax) (by simp) (by simp) (by decide)
     (by simp only [List.length_replicate]; omega_using [hb]) (body_nosp hE)
-    (WP.mono (body_ok hE h c0 ha hcl) fun u ⟨hu, ho⟩ => ⟨?_, ?_⟩)
+    (WP.mono (body_ok hE h c0 ha hcl) fun u ⟨hu, ho⟩ m v fl => ⟨?_, ?_⟩)
   · have hu' : VG.Proof.Ed25519.X86.Whole.Ctx (base t) t.gpr t.mem (vfRd s) (vfWr s) u := by
       rw [eb]; exact hu
     refine Shake.abi_of (s' := t) (fun r hr => hg r (by rintro rfl; simp [calleeSaved] at hr)) hm
-      (pop_abi (by decide) hb hu' fun R hR => ?_)
+      (pop_abi (by decide) hb hu' (fun R hR => ?_) fl v)
     have := ret_out h R hR
     simp only [RET, he]
     exact this
-  · rw [popped_gpr _ _ _ (by decide) (by decide), ho, hm]
+  · dsimp only
+    rw [popped_gpr _ _ _ (by decide) (by decide), ho, hm]
 
 theorem verify_ok {eq : Prog isa} (hE : CalleeOk Proof.Ed448.X86.verifyEquationLocal eq) {s : State}
     (hp : vfLocal.pre s) : WP isa (code eq) s fun t => abiPreserved s t ∧ vfLocal.post s t := by

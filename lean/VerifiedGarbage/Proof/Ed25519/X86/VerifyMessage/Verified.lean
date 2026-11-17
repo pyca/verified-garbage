@@ -735,18 +735,27 @@ theorem verifyMessage_ok {s : State} (h : verifyMessageLocal.pre s) :
     WP isa code s fun t => abiPreserved s t ∧ verifyMessageLocal.post s t := by
   have hL := lay_ok h
   have hb := entry_bounds h
-  refine WP.frameKept (rs := List.replicate 64 .eax) (by simp) (by simp) (by decide)
+  refine WP.frame (rs := List.replicate 64 .eax) (by simp) (by simp) (by decide)
     (by simp only [List.length_replicate]; omega_using [hb]) body_nosp
     (WP.mono (body_ok (push_ctx h) hL (lay_arguments h) (entry_tbl h).1
       (by rw [show (pushed (List.replicate 64 .eax) s).syms = s.syms from pushRegs_syms s _]; rfl))
-      fun u ⟨hu, ho⟩ => ?_)
+      fun u ⟨hu, ho⟩ m v fl => ?_)
+  simp only [List.length_replicate] at fl
+  obtain hb256 : 256 ≤ (s.gpr .esp).toNat := by omega_using [hb]
   refine ⟨⟨fun r hr => ?_, ?_⟩, ?_⟩
-  · by_cases he : r = .esp
+  · show (popped Reg.edx (List.replicate 64 Reg.eax).length u).gpr r = s.gpr r
+    by_cases he : r = .esp
     · subst r
       rw [popped_esp, hu.esp, List.length_replicate]
       exact BitVec.sub_add_cancel _ _
     · rw [popped_gpr _ _ _ he (by intro e; subst r; simp [calleeSaved] at hr), hu.cs r hr he]
-  · rw [popped_mem]
+  · show m.readW _ 32 = _
+    rw [fl.readW (r := (lay s).RET) (by rw [lay_ret h]; exact Region.contains_self _ _) (fun r hr => by
+      rw [List.mem_singleton.mp hr, lay_ret h]
+      change Region.Disjoint ⟨(s.gpr .esp).setWidth 64, 4⟩
+        ⟨(s.gpr .esp - BitVec.ofNat 32 256).setWidth 64, 256⟩
+      rw [Taint.sub_setWidth hb256]
+      exact (Offset.below_disjoint _ (by decide)).symm) (by decide)]
     refine hu.frame.readW (r := (lay s).RET) ?_ ?_ (by decide)
     · rw [lay_ret h]; exact Region.contains_self _ _
     · simp only [Lay.outputs, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false]
@@ -755,7 +764,8 @@ theorem verifyMessage_ok {s : State} (h : verifyMessageLocal.pre s) :
       · change (lay s).RET.Disjoint (lay s).STK
         rw [lay_ret h, lay_stack h]
         exact (Offset.below_disjoint _ (by decide)).symm
-  · change (popped .edx (List.replicate 64 .eax).length u).gpr .eax = _
+  · unfold verifyMessageLocal
+    dsimp only
     rw [popped_gpr _ _ _ (by decide) (by decide)]
     exact ho
 

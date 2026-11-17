@@ -432,7 +432,7 @@ theorem correctBase {s : State} (hp : BPre s) :
   have rd2 : t2.rd = s.rd := u2.rd.trans u1.rd
   have wr2 : t2.wr = s.wr := u2.wr.trans u1.wr
   have hn2 : 4 * baseFrame.length ≤ (t2.gpr .esp).toNat := by rw [baseFrame_length, esp2]; omega_using [hn]
-  refine WP.frameKept (by decide) baseFrame_esp (by decide) hn2 (NoSp.of_all (by lit_decide)) ?_
+  refine WP.frame (by decide) baseFrame_esp (by decide) hn2 (NoSp.of_all (by lit_decide)) ?_
   -- The frame: the base point, below the caller's `ebx`.
   have pesp : (pushed baseFrame t2).gpr .esp = s.gpr .esp - BitVec.ofNat 32 60 := by
     rw [pushed_esp60, esp2]
@@ -534,8 +534,11 @@ theorem correctBase {s : State} (hp : BPre s) :
         (Spec.X448.bytesAt (pushed callRegs q).callEntry.mem
           ((arg (pushed callRegs q).callEntry 2).setWidth 64) 56) at this
     rwa [a0, a1, a2, kb, pb] at this
-  refine ⟨⟨fun r hr => ?_, by rw [popped_mem]; exact retw⟩, ?_⟩
-  · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
+  intro mm vv fl
+  rw [esp2, baseFrame_length] at fl
+  refine ⟨⟨fun r hr => ?_, ?_⟩, ?_⟩
+  · show (popped .ebx baseFrame.length s').gpr r = s.gpr r
+    simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     have qsave : ∀ r, r ∈ calleeSaved → r ≠ .eax → r ≠ .ebx → r ≠ .ecx → r ≠ .edx → r ≠ .esp →
         (popped .ebx baseFrame.length s').gpr r = s.gpr r := fun r hc h0 h1 h2 h3 h4 => by
       rw [popped_gpr _ _ _ h4 h1, cs' r hc, qg r h0 h1 h2 h3, pushed_gpr _ _ h4, g2 r h3 h0]
@@ -548,10 +551,18 @@ theorem correctBase {s : State} (hp : BPre s) :
     · exact qsave _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     · rw [popped_esp, cs' .esp (by decide), hq.esp]
       exact BitVec.sub_add_cancel _ _
-  · show Spec.X448.bytesAt (popped .ebx 15 s').mem ((arg s 0).setWidth 64) 56 = _
-    rw [popped_mem, ← p2, hq.esp] at *
+  · show mm.readW _ 32 = _
+    rw [fl.readW (r := retR s) (Region.contains_self _ _) (fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact hp.ret_below (by omega_using [])) (by decide)]
+    exact retw
+  · show Spec.X448.bytesAt mm ((arg s 0).setWidth 64) 56 = _
+    rw [← p2, hq.esp] at *
     simp only [Spec.X448.bytesAt]
-    refine List.map_congr_left fun i hi => m₂.bytes (R := outR s) (fun r hr => ?_)
+    refine List.map_congr_left fun i hi => ?_
+    rw [fl.bytes (R := outR s) (fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact (hp.top_out (by omega_using [])).symm)
+      (by show 56 ≤ 2 ^ 64; omega_using []) (by simpa using hi)]
+    refine m₂.bytes (R := outR s) (fun r hr => ?_)
       (by show 56 ≤ 2 ^ 64; omega_using []) (by simpa using hi)
     rw [List.mem_singleton.mp hr]
     exact (hp.below_out (by simp only [List.length_cons, List.length_nil]; omega_using [])).symm
