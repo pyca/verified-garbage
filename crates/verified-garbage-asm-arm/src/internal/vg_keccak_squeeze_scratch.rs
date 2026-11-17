@@ -32,12 +32,35 @@ b 24f
 mov r5, #0
 bl {vg_keccak_f1600}
 24:
+sub r12, r4, r5
+mvn r3, #0
+subs r2, r7, r12
+adc r3, r3, #0
+and r2, r2, r3
+add r2, r12, r2
+lsr lr, r2, #2
+cmp lr, #0
+beq 25f
+sub r7, r7, lr, lsl #2
+add r3, r0, r5
+add r5, r5, lr, lsl #2
+27:
+ldr r2, [r3, #0]
+str r2, [r6, #0]
+add r6, r6, #4
+add r3, r3, #4
+subs lr, lr, #1
+bne 27b
+b 26f
+25:
 add r3, r0, r5
 ldrb r2, [r3, #0]
 strb r2, [r6, #0]
 add r6, r6, #1
 add r5, r5, #1
-subs r7, r7, #1
+sub r7, r7, #1
+26:
+cmp r7, #0
 bne 22b
 b 21f
 20:
