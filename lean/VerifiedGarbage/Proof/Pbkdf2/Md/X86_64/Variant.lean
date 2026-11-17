@@ -1427,7 +1427,8 @@ theorem pbkdf2F_of (hsI : ∃ s, (Proof.Hmac.initScratchContract I.S H.W X86_64.
     (hsat : ∃ s, (I.pbkdf2Contract X86_64.abi (24 + pbkdf2Frame H)).pre s) :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch (pbkdf2Frame H) 1 H.pbkdf2)
       (I.pbkdf2Contract X86_64.abi (24 + pbkdf2Frame H)) :=
-  X86_64.Verified.stackArgScratchKept (sig := Spec.Pbkdf2.pbkdf2Sig) (nm := "scratch") (e := .u64)
+  X86_64.Verified.stackArgScratch (sig := Spec.Pbkdf2.pbkdf2Sig) (nm := "scratch") (e := .u64)
+    (hpostOut := Proof.Pbkdf2.pbkdf2PostOut_local I.S _)
     (n := H.W + H.S) (pre := Spec.Pbkdf2.pbkdf2Pre I.S X86_64.abi.ptrBits)
     (post := Spec.Pbkdf2.pbkdf2Post I.S X86_64.abi.ptrBits) (wa := true) (stack := 24)
     (bytes := pbkdf2Frame H) (pbkdf2_of hH C K hSH hsI hsF hsT hsP) (by decide)
