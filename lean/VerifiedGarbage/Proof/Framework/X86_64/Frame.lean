@@ -144,6 +144,26 @@ theorem lose_frame (m : Mem) (a : Addr) (n : Nat) (u : Nat → BitVec 64) :
   · omega
   · rfl
 
+/-- Two memories that agree at a byte agree there once the same release, with
+the same unknowns, loses it: the residue of two runs that share their
+unknowns. -/
+theorem lose_congr {m₁ m₂ : Mem} (a : Addr) (n : Nat) (u : Nat → BitVec 64) {x : Addr}
+    (h : m₁ x = m₂ x) : lose m₁ a n u x = lose m₂ a n u x := by
+  simp only [lose]
+  split
+  · split
+    · exact h
+    · rfl
+  · exact h
+
+/-- A byte outside the released frame keeps its value. -/
+theorem lose_out {m : Mem} {a : Addr} {n : Nat} {u : Nat → BitVec 64} {x : Addr}
+    (h : n ≤ (x - a).toNat) : lose m a n u x = m x := by
+  simp only [lose]
+  split
+  · omega
+  · rfl
+
 /-- The state a frame's pop leaves: `popped`, with the released frame's
 bytes `lose`'s and the unknowns it used gone. -/
 def released (r : Reg) (k : Nat) (s : State) : State :=
