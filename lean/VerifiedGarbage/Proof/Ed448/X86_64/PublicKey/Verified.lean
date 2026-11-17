@@ -85,20 +85,35 @@ theorem body_ok (hb : Proof.Ed448.BaseLadderOk) (hL : L.Ok) {t : State} (hc : Ct
 theorem pop_rsp (B : Addr) : B + BitVec.ofNat 64 16 + BitVec.ofNat 64 (8 * 11) = B + BitVec.ofNat 64 104 := by
   rw [add_add]
 
+/-- The bytes of a region apart from a frame are what they were once the
+frame's bytes are lost. -/
+private theorem bytes_lost {F : Region} {m m' : Mem} (f : Frame [F] m m') {p : Addr} {n : Nat}
+    (hd : (⟨p, n⟩ : Region).Disjoint F) : Spec.Ed448.bytesAt m' p n = Spec.Ed448.bytesAt m p n := by
+  simp only [Spec.Ed448.bytesAt]
+  exact List.map_congr_left fun i hi => lost_byte f hd (List.mem_range.mp hi)
+
 /-- `vg_ed448_public_key` meets `pkLocal` and the ABI. -/
 theorem publicKey_ok (hb : Proof.Ed448.BaseLadderOk) {s : State} (h : pkLocal.pre s) :
     WP isa (publicKeyFor v) s fun s' => abiPreserved s s' ∧ pkLocal.post s s' := by
   have hL := lay_ok h
   have hc := push_ctx h
-  refine WP.frameKept (rs := pushRs) (by decide) (by decide) (by decide) (by show 8 * 11 ≤ _; have := h.1; omega_using [this])
-    (WP.mono (body_ok hb hL hc) fun u ⟨hu, ho⟩ => ⟨hu.rsp.trans hc.rsp.symm, hu.wr.trans hc.wr.symm, ?_, ?_⟩)
+  refine WP.frame (rs := pushRs) (by decide) (by decide) (by decide) (by show 8 * 11 ≤ _; have := h.1; omega_using [this])
+    (WP.mono (body_ok hb hL hc) fun u ⟨hu, ho⟩ => ⟨hu.rsp.trans hc.rsp.symm, hu.wr.trans hc.wr.symm,
+      fun m uk fm => ?_⟩)
+  -- The pop loses the frame's 88 bytes, in the stack below `rsp`.
+  obtain hF : Region.Sub ⟨s.gpr .rsp - BitVec.ofNat 64 (8 * pushRs.length), 8 * pushRs.length⟩ (lay s).STK :=
+    Offset.sub_below _ (by decide) (by decide)
+  dsimp only
+  refine ⟨?_, ?_⟩
   · have hrsp : (popped .rax pushRs.length u).gpr .rsp = s.gpr .rsp := by
       rw [popped_rsp, hu.rsp, show pushRs.length = 11 from rfl, pop_rsp, lay_ret]
     refine ⟨fun r hr => ?_, ?_, by rw [popped_mxcsr, hu.mx]⟩
     · by_cases hr' : r = .rsp
       · subst hr'; exact hrsp
       · rw [popped_gpr _ _ _ hr' (ne_cs hr (by decide)), hu.cs r hr hr']
-    · rw [popped_mem]
+    · rw [fm.readW (r := (lay s).RET) (by rw [Lay.RET, lay_ret]; exact Region.contains_self _ _) (fun r hr => by
+        rw [List.mem_singleton.mp hr, Lay.RET, lay_ret]
+        exact (Offset.base_disjoint_below (s.gpr .rsp) (n := 104) (k := 8) (by decide)).sub_right hF) (by decide)]
       refine hu.frame.readW (r := (lay s).RET) ?_ ?_ (by decide)
       · rw [Lay.RET, lay_ret]; exact Region.contains_self _ _
       · intro r hr
@@ -107,8 +122,8 @@ theorem publicKey_ok (hb : Proof.Ed448.BaseLadderOk) {s : State} (h : pkLocal.pr
         · exact hL.ro
         · exact hL.rc
         · exact Offset.disjoint_base _ (by omega_using []) (by omega_using [])
-  · show Spec.Ed448.bytesAt (popped .rax pushRs.length u).mem (lay s).out 57 = _
-    rw [popped_mem, ho]
+  · show Spec.Ed448.bytesAt m (lay s).out 57 = _
+    rw [bytes_lost fm (hL.ko.symm.sub_right hF), ho]
     rfl
 
 /-! ## Constant time -/
