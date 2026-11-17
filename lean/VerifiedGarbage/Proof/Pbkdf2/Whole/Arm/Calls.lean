@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.Arm.Lost
+import VerifiedGarbage.Proof.Framework.Arm.Frame
 
 /-!
 # PBKDF2-HMAC on 32-bit ARM, the whole derivation: the calls of HMAC's functions and of `iterate`
@@ -21,7 +21,7 @@ As on x86 (`Proof/Pbkdf2/Whole/X86/Calls.lean`): `pbkdf2` calls HMAC's `init`
 and `finalize` and PBKDF2's `iterate`, each verified against its shared
 contract with 16 bytes of stack; what a caller uses of such a proof is
 `Sound`. Each call is in a frame of two words, its stack arguments
-(`frame2_ok`, with `WP.frameLost` and `WP.callF`, as the callees have frames of their own):
+(`frame2_ok`, with `WP.frame` and `WP.callF`, as the callees have frames of their own):
 `hi_frame`, `hf_frame` and `it_frame` run one, from the state before its push,
 given the registers (`HiArgs`, `HfArgs`, `ItArgs`), which give the callee's
 precondition (evaluated with `sig_pre`); `hi_rel`, `hf_rel` and `it_rel`
@@ -164,7 +164,7 @@ theorem frame2_ok {ra rb t : Reg} (hrs : regList [ra, rb] = true) (ht : t ∉ pr
         Q { popped t 8 s₂ with mem := m, unknowns := u }) :
     WP isa (.frame (.push [ra, rb]) (.call n c) (.pop t 8)) s Q := by
   have h8 : (s.sp - BitVec.ofNat 32 8).toNat = s.sp.toNat - 8 := sub_toNat' (by omega_using [h24])
-  refine WP.frameLost (rs := [ra, rb]) (r := t) hrs (by simp only [List.length_cons, List.length_nil]; omega_using [h24])
+  refine WP.frame (rs := [ra, rb]) (r := t) hrs (by simp only [List.length_cons, List.length_nil]; omega_using [h24])
     (by simp only [List.length_cons, List.length_nil]; omega_using []) ?_
   refine WP.callF hv hpre hc hw (by rw [p2_sp, h8]; omega_using [hst, h24])
     fun s₂ hrd hwr hsp hf hcs hpost mL uL hfl => ?_

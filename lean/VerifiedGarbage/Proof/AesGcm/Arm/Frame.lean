@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.AesGcm.Rounds
 public import VerifiedGarbage.Proof.AesGcm.Arm.Verified
 public import VerifiedGarbage.Impl.StackScratch.Arm
 import VerifiedGarbage.Proof.Framework.Arm.RegScratch
-import VerifiedGarbage.Proof.Framework.Arm.ScratchLost
+import VerifiedGarbage.Proof.Framework.Arm.StackScratch
 
 /-!
 # AES-GCM on ARMv7, with its working space on the stack
@@ -12,11 +12,11 @@ import VerifiedGarbage.Proof.Framework.Arm.ScratchLost
 Each function runs its code, proved with the working space as an argument
 (`Verified.lean`), in a frame that allocates it.
 `init`'s working space is its fourth argument, in `r3`: its frame is the 2560
-bytes of working space (`Verified.regScratchLost`). That of `stream_init` and
+bytes of working space (`Verified.regScratch`). That of `stream_init` and
 `stream_aad` is passed on the stack: their frames of 2576 bytes hold the
 copies of the other arguments passed on the stack (none for `stream_init`,
 `data` and `len` for `stream_aad`), the buffer's address and the saved `lr`
-too (`Verified.stackScratchLost`); so do the frames of 2592 bytes of
+too (`Verified.stackScratch`); so do the frames of 2592 bytes of
 `stream_encrypt` and `stream_decrypt`, with copies of their six words of
 stack arguments (`aad_len`, `text_len`, `data` and `len`), and those of
 `stream_finish` and `seal` (five words) and of `stream_verify` and `open`
@@ -43,7 +43,7 @@ theorem initFrameSat_pre : ∃ s, (Spec.Gcm.initContract Arm.abi 2568).pre s := 
 
 theorem init_framed : Verified Arm.target (Impl.StackScratch.Arm.withRegScratch 2560 .r3 init)
     (Spec.Gcm.initContract Arm.abi 2568) :=
-  Arm.Verified.regScratchLost (sig := Spec.Gcm.initSig) (nm := "scratch") (e := .u64) (n := 320)
+  Arm.Verified.regScratch (sig := Spec.Gcm.initSig) (nm := "scratch") (e := .u64) (n := 320)
     (pre := Spec.Gcm.initPre Arm.abi.ptrBits) (post := Spec.Gcm.initPost Arm.abi.ptrBits)
     (wa := true) (stack := 8) init_verified (by decide) (by decide) (by decide)
     (initPostOut_local _) initFrameSat_pre
@@ -62,7 +62,7 @@ theorem streamInitFrameSat_pre : ∃ s, (Spec.Gcm.streamInitContract Arm.abi 258
 theorem streamInit_framed [VG.Proof.Gcm.Arm.GhashLaw] :
     Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 2576 0 streamInit)
       (Spec.Gcm.streamInitContract Arm.abi 2584) :=
-  Arm.Verified.stackScratchLost (sig := Spec.Gcm.streamInitSig) (nm := "scratch") (e := .u64)
+  Arm.Verified.stackScratch (sig := Spec.Gcm.streamInitSig) (nm := "scratch") (e := .u64)
     (n := 320) (post := Spec.Gcm.streamInitPost Arm.abi.ptrBits) (wa := true) (stack := 8)
     (m := 0) streamInit_verified (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (streamInitPost_local _)
@@ -84,7 +84,7 @@ theorem streamAadFrameSat_pre : ∃ s, (Spec.Gcm.streamAadContract Arm.abi 2584)
 theorem streamAad_framed [VG.Proof.Gcm.Arm.GhashLaw] :
     Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 2576 2 streamAad)
       (Spec.Gcm.streamAadContract Arm.abi 2584) :=
-  Arm.Verified.stackScratchLost (sig := Spec.Gcm.streamAadSig) (nm := "scratch") (e := .u64)
+  Arm.Verified.stackScratch (sig := Spec.Gcm.streamAadSig) (nm := "scratch") (e := .u64)
     (n := 320) (post := Spec.Gcm.streamAadPost Arm.abi.ptrBits) (wa := true) (stack := 8)
     (m := 2) streamAad_verified (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (streamAadPost_local _)
@@ -107,7 +107,7 @@ theorem streamEncryptFrameSat_pre : ∃ s, (Proof.AesGcm.streamEncryptRoundsCont
 theorem streamEncrypt_framed [VG.Proof.Gcm.Arm.GhashLaw] :
     Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 2592 6 streamEncrypt)
       (Proof.AesGcm.streamEncryptRoundsContract Arm.abi 2600) :=
-  Arm.Verified.stackScratchLost (sig := Spec.Gcm.streamCryptSig) (nm := "scratch") (e := .u64)
+  Arm.Verified.stackScratch (sig := Spec.Gcm.streamCryptSig) (nm := "scratch") (e := .u64)
     (n := 320) (pre := Spec.Gcm.streamTextPre Arm.abi.ptrBits)
     (post := Proof.AesGcm.streamEncryptRoundsPost Arm.abi.ptrBits) (wa := true) (stack := 8)
     (m := 6) streamEncrypt_verified (by decide) (by decide) (by decide) (by decide)
@@ -123,7 +123,7 @@ theorem streamDecryptFrameSat_pre : ∃ s, (Proof.AesGcm.streamDecryptRoundsCont
 theorem streamDecrypt_framed [VG.Proof.Gcm.Arm.GhashLaw] :
     Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 2592 6 streamDecrypt)
       (Proof.AesGcm.streamDecryptRoundsContract Arm.abi 2600) :=
-  Arm.Verified.stackScratchLost (sig := Spec.Gcm.streamCryptSig) (nm := "scratch") (e := .u64)
+  Arm.Verified.stackScratch (sig := Spec.Gcm.streamCryptSig) (nm := "scratch") (e := .u64)
     (n := 320) (pre := Spec.Gcm.streamTextPre Arm.abi.ptrBits)
     (post := Proof.AesGcm.streamDecryptRoundsPost Arm.abi.ptrBits) (wa := true) (stack := 8)
     (m := 6) streamDecrypt_verified (by decide) (by decide) (by decide) (by decide)
@@ -145,7 +145,7 @@ theorem finFrameSat_pre : ∃ s, (Proof.AesGcm.streamFinishRoundsContract Arm.ab
 theorem streamFinish_framed [VG.Proof.Gcm.Arm.GhashLaw] :
     Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 2592 5 streamFinish)
       (Proof.AesGcm.streamFinishRoundsContract Arm.abi 2600) :=
-  Arm.Verified.stackScratchLost (sig := Spec.Gcm.streamFinishSig) (nm := "work") (e := .u64)
+  Arm.Verified.stackScratch (sig := Spec.Gcm.streamFinishSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Gcm.streamFinishPre Arm.abi.ptrBits)
     (post := Proof.AesGcm.streamFinishRoundsPost Arm.abi.ptrBits) (wa := true) (stack := 8)
     (m := 5) streamFinish_verified (by decide) (by decide) (by decide) (by decide)
@@ -167,7 +167,7 @@ theorem verFrameSat_pre : ∃ s, (Proof.AesGcm.streamVerifyRoundsContract Arm.ab
 theorem streamVerify_framed [VG.Proof.Gcm.Arm.GhashLaw] :
     Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 2592 6 streamVerify)
       (Proof.AesGcm.streamVerifyRoundsContract Arm.abi 2600) :=
-  Arm.Verified.stackScratchLost (sig := Spec.Gcm.streamVerifySig) (nm := "work") (e := .u64)
+  Arm.Verified.stackScratch (sig := Spec.Gcm.streamVerifySig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Gcm.streamVerifyPre Arm.abi.ptrBits)
     (post := Proof.AesGcm.streamVerifyRoundsPost Arm.abi.ptrBits) (wa := true) (stack := 8)
     (m := 6) streamVerify_verified (by decide) (by decide) (by decide) (by decide)
@@ -189,7 +189,7 @@ theorem sealFrameSat_pre : ∃ s, (Proof.AesGcm.sealRoundsContract Arm.abi 2600)
 theorem seal_framed [VG.Proof.Gcm.Arm.GhashLaw] :
     Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 2592 5 «seal»)
       (Proof.AesGcm.sealRoundsContract Arm.abi 2600) :=
-  Arm.Verified.stackScratchLost (sig := Spec.Gcm.sealSig) (nm := "work") (e := .u64)
+  Arm.Verified.stackScratch (sig := Spec.Gcm.sealSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Gcm.sealPre Arm.abi.ptrBits)
     (post := Proof.AesGcm.sealRoundsPost Arm.abi.ptrBits) (wa := true) (stack := 8)
     (m := 5) seal_verified (by decide) (by decide) (by decide) (by decide)
@@ -211,7 +211,7 @@ theorem openFrameSat_pre : ∃ s, (Proof.AesGcm.openRoundsContract Arm.abi 2600)
 theorem open_framed [VG.Proof.Gcm.Arm.GhashLaw] :
     Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 2592 6 «open»)
       (Proof.AesGcm.openRoundsContract Arm.abi 2600) :=
-  Arm.Verified.stackScratchLost (sig := Spec.Gcm.openSig) (nm := "work") (e := .u64)
+  Arm.Verified.stackScratch (sig := Spec.Gcm.openSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Gcm.openPre Arm.abi.ptrBits)
     (post := Proof.AesGcm.openRoundsPost Arm.abi.ptrBits) (wa := true) (stack := 8)
     (leak := some (Spec.Gcm.openLeak Arm.abi.ptrBits))

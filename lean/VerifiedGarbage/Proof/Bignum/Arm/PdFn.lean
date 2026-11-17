@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.PublicSaved
 import VerifiedGarbage.Proof.Bignum.Arm.PdBody
 import VerifiedGarbage.Proof.Bignum.Arm.PdEntryReady
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Framework.Arm.Lost
+import VerifiedGarbage.Proof.Framework.Arm.Frame
 import VerifiedGarbage.Proof.Bignum.Arm.PcDimensions
 
 /-! # Callable ARMv7 checked public RSA preserves AAPCS and implements the shared result -/
@@ -22,7 +22,7 @@ theorem pdFn_ok (s : State) {base dst np ep xp : BitVec 32} {len k eLen N R : Na
       (if Spec.Rsa.exponentValid (Spec.Rsa.os2ip eb) then PdOutput dst k N R eb xb t
        else t.gpr .r0 = 0 ∧ Spec.Rsa.bytesAt t.mem (State.addr dst) k = List.replicate k 0) := by
   unfold PdFn.code
-  refine WP.frameLost (by decide) h.stackFit (by decide) ?_
+  refine WP.frame (by decide) h.stackFit (by decide) ?_
   rw [WP.seq_iff]
   refine WP.mono (pd_entry_ready s h) ?_
   rintro u ⟨ready, _, savedU, restU⟩

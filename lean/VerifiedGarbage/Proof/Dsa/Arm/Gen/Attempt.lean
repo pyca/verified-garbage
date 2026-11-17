@@ -28,7 +28,6 @@ public import VerifiedGarbage.Impl.Dsa.Arm.Generate
 import VerifiedGarbage.Proof.Dsa.Arm.GenerateCheckCT
 import VerifiedGarbage.Proof.Dsa.Arm.Key.Call
 import VerifiedGarbage.Proof.Framework.Arm.Frame
-import VerifiedGarbage.Proof.Framework.Arm.Lost
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
 
 /-! ### `Dsa.Arm.Gen.CheckPart`, which only this module used -/
@@ -207,7 +206,7 @@ theorem SS.checkCall_ok (h : SS G σ c s) {name : String} (regs : CArgs G s)
   have sp : s.sp = G.sp := gi.sp
   have big := gi.scrBig
   unfold callWith
-  refine WP.frameLost (rs := callPush) (r := .r4) (by decide) (by rw [sp]; show 4 * 8 ≤ G.sp.toNat; omega_arith) (by decide) ?_
+  refine WP.frame (rs := callPush) (r := .r4) (by decide) (by rw [sp]; show 4 * 8 ≤ G.sp.toNat; omega_arith) (by decide) ?_
   refine FrameStack.WP.callF (k := checkArm) (fun s hs => by
       obtain ⟨t, s', e, ha, hp⟩ := VG.Proof.Dsa.Arm.check_correct hs; exact ⟨t, s', e, ha, hp⟩) pre hc hw
     (by rw [VG.Proof.Dsa.Arm.Key.check_armStack]; exact Nat.zero_le _)

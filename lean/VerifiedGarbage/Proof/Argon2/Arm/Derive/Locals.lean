@@ -11,7 +11,8 @@ public import VerifiedGarbage.Proof.Argon2.Arm.Push
 public import VerifiedGarbage.Spec.Argon2.Contract
 import VerifiedGarbage.Proof.Argon2.Dimensions
 import VerifiedGarbage.Proof.Argon2.Arm.CompressLit
-import VerifiedGarbage.Proof.Framework.Arm.Lost
+import VerifiedGarbage.Proof.Framework.Arm.Call
+import VerifiedGarbage.Proof.Framework.Arm.Frame
 
 /-! ### `Argon2.Arm.Derive.Body`, which this module and modules that import it used -/
 
@@ -296,11 +297,11 @@ theorem frames_ok {s₀ : State} (hlo : 240 ≤ (E0 s₀).toNat) {Q : State → 
     exact Proof.Argon2.Arm.stkR_inner (sp := s₀.sp - BitVec.ofNat 32 (4 * argRegs.length)) (a := 144)
       (k := 4 * savedRegs.length) (by decide) (by rw [← pushed_sp, h1]; omega_arith) x hx
   unfold derive
-  refine WP.frameLost (rs := argRegs) (r := .r0) (by decide) (by simp only [List.length_cons, List.length_nil]; omega_arith)
+  refine WP.frame (rs := argRegs) (r := .r0) (by decide) (by simp only [List.length_cons, List.length_nil]; omega_arith)
     (by decide) ?_
-  refine WP.frameLost (rs := savedRegs) (r := .r3) (by decide)
+  refine WP.frame (rs := savedRegs) (r := .r3) (by decide)
     (by rw [h1]; simp only [List.length_cons, List.length_nil]; omega_arith) (by decide) ?_
-  refine WP.seq (WP.allocLost (by decide) (by rw [h2]; show 144 ≤ _; omega_arith)
+  refine WP.seq (WP.alloc (by decide) (by rw [h2]; show 144 ≤ _; omega_arith)
     (hb.mono fun t ⟨d, w, q⟩ mA uA hA => ?_))
   -- The restores.
   let S2 := pushed savedRegs (pushed argRegs s₀)

@@ -15,7 +15,6 @@ import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.Arm.Lost
 
 /-!
 # HMAC and PBKDF2-HMAC over any streaming hash function: the 32-bit ARM contracts
@@ -196,7 +195,7 @@ representation of its streaming state is determined by the state's bytes, and
 its sizes are small.
 
 `init` is called with `WP.callCalls`. `update` and `finalize` are called in
-a frame that pushes their stack arguments (`WP.frameLost`), then sets the count
+a frame that pushes their stack arguments (`WP.frame`), then sets the count
 in `r2:r3`: `fin_frame` runs such a frame, from the state before its push.
 A frame writes the 16 bytes below the stack pointer, which `After` lets
 change. `init_rel` and `fin_rel` relate two runs of `init` and `finalize`
@@ -467,7 +466,7 @@ theorem fin_frame {s : State} {st o sc : BitVec 32} (h : FinArgs hH s st o sc) {
         (bytesAt s'.mem (State.addr o) H.F).take H.D = hH.SH.H.hash m) → Q s') :
     WP isa (.frame (.push fin2) (.call H.finN H.finC) (.pop .r1 8)) s Q := by
   have h16 := h.sp16
-  refine WP.frameLost (rs := fin2) (r := .r1) rfl (by show 8 ≤ s.sp.toNat; omega_nat) (by decide) ?_
+  refine WP.frame (rs := fin2) (r := .r1) rfl (by show 8 ≤ s.sp.toNat; omega_nat) (by decide) ?_
   refine WP.callCalls (k := finK H.S hH.Wb H.F H.D hH.SH.Repr hH.SH.H.hash) hH.fin.1 h.pre h.cov h.covW ?_ hH.finNF
   intro s₂ hrd hwr hsp hf hcs _ hpost mL uL hfl
   have vc : count ((pushed fin2 s).callEntry.withRegions (FinArgs.rd s.sp) (FinArgs.wr hH st o sc)) = count s := by

@@ -10,14 +10,13 @@ public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.AesSiv.Arm.Verified
 import VerifiedGarbage.Proof.Framework.Arm.StackScratch
-import VerifiedGarbage.Proof.Framework.Arm.ScratchLost
 
 /-!
 # AES-SIV on ARMv7, with the working space on the stack
 
 `encrypt` and `decrypt` run their code, proved with the working space as
 their last argument (`Verified.lean`), in a frame that allocates it
-(`Verified.stackScratchLLost`): their working space is their fourth stack
+(`Verified.stackScratchL`): their working space is their fourth stack
 argument, after `data`, `len` and `siv`, so the frame holds a copy of those
 three words, the address of the working space, the saved `lr` and the 2576
 bytes of the working space, 2608 bytes in all (2596 rounded up to a multiple
@@ -42,7 +41,7 @@ theorem encFrameSat_pre : ∃ s, (Proof.AesSiv.encryptRoundsContract Arm.abi 262
 theorem encrypt_framed :
     Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 2608 3 encrypt)
       (Proof.AesSiv.encryptRoundsContract Arm.abi 2624) :=
-  Arm.Verified.stackScratchLLost (sig := Spec.Siv.encryptSig) (nm := "work") (e := .u64)
+  Arm.Verified.stackScratchL (sig := Spec.Siv.encryptSig) (nm := "work") (e := .u64)
     (n := 322) (pre := Spec.Siv.encryptPre Arm.abi.ptrBits)
     (post := Proof.AesSiv.encryptRoundsPost Arm.abi.ptrBits) (wa := true) (stack := 16)
     (m := 3) encrypt_verified (by decide) (by decide) (by decide) (by decide)
@@ -58,7 +57,7 @@ theorem decFrameSat_pre : ∃ s, (Proof.AesSiv.decryptRoundsContract Arm.abi 262
 theorem decrypt_framed :
     Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 2608 3 decrypt)
       (Proof.AesSiv.decryptRoundsContract Arm.abi 2624) :=
-  Arm.Verified.stackScratchLLost (sig := Spec.Siv.decryptSig) (nm := "work") (e := .u64)
+  Arm.Verified.stackScratchL (sig := Spec.Siv.decryptSig) (nm := "work") (e := .u64)
     (n := 322) (pre := Spec.Siv.decryptPre Arm.abi.ptrBits)
     (post := Proof.AesSiv.decryptRoundsPost Arm.abi.ptrBits) (wa := true) (stack := 16)
     (leak := some (Spec.Siv.decryptLeak Arm.abi.ptrBits))

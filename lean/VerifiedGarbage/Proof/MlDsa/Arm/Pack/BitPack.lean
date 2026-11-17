@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.Arm.Lost
+import VerifiedGarbage.Proof.Framework.Arm.Frame
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.MlDsa.Arm.Pack.Contracts
 meta import VerifiedGarbage.Proof.MlDsa.Arm.Pack.Loop
@@ -19,7 +19,7 @@ meta import VerifiedGarbage.Proof.MlDsa.Arm.Pack.SimpleBitPack
 meta import VerifiedGarbage.Proof.MlDsa.Pack.Arith
 meta import VerifiedGarbage.Proof.MlKem.Arm.Common
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
-meta import VerifiedGarbage.Proof.Framework.Arm.Lost
+meta import VerifiedGarbage.Proof.Framework.Arm.Frame
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
@@ -114,7 +114,7 @@ theorem bp_wp {s₀ : State} (hp : BpPre s₀) : WP isa Impl.MlDsa.Arm.Pack.bitP
   have hco : ∀ i < 256, coeffAt (pushed [.r4] s₀).mem (State.addr (s₀.gpr .r0)) i =
       coeffAt s₀.mem (State.addr (s₀.gpr .r0)) i := fun i hi => coeffAt_frame (pushed4_frame hsp) hbF hi
   unfold Impl.MlDsa.Arm.Pack.bitPack
-  refine WP.frameLost (rs := [.r4]) (r := .r4) rfl (by simpa using hsp) (by decide) ?_
+  refine WP.frame (rs := [.r4]) (r := .r4) rfl (by simpa using hsp) (by decide) ?_
   refine WP.seq (WP.mono (bpPro_ok _) fun s₁ ⟨⟨g12, g2, gm⟩, k₁⟩ => ?_)
   have ab := mem_bitPackParams hp.ab
   have go : ∀ {d c nb B : Nat}, Shape d c nb → (s₀.gpr .r2).toNat = B → B ≤ 2 ^ 19 →

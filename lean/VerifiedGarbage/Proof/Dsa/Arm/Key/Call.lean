@@ -11,7 +11,7 @@ public import VerifiedGarbage.Proof.Dsa.Arm.Key.Saved
 import VerifiedGarbage.Proof.Dsa.Arm.GenerateDerive
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Arm.Exec
-import VerifiedGarbage.Proof.Framework.Arm.Lost
+import VerifiedGarbage.Proof.Framework.Arm.Frame
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
@@ -237,7 +237,7 @@ theorem callCheck_ok {s₀ u : State} (A : KeyABI s₀) (h : RReady s₀ u) (C :
       v.gpr .r0 = (if checkResult s₀ u then 1 else 0) := by
   obtain ⟨hc, hcw⟩ := check_covers A h
   unfold callWith
-  refine WP.frameLost (rs := callPush) (r := .r4) (by decide) (call_sp_le A h) (by decide) ?_
+  refine WP.frame (rs := callPush) (r := .r4) (by decide) (call_sp_le A h) (by decide) ?_
   refine FrameStack.WP.callF (k := checkArm) (fun s hs => ?_) (check_call_pre A h C) hc hcw
     (by rw [check_armStack]; exact Nat.zero_le _) fun s' hrd hwr hsp hf hpres hpost => ?_
   · obtain ⟨t, s', e, ha, hp⟩ := check_correct hs
@@ -477,7 +477,7 @@ theorem callDerive_ok {s₀ u : State} (A : KeyABI s₀) (h : RReady s₀ u) (C 
         (deriveResult s₀ u).getD (List.replicate (s₀.gpr .r1).toNat 0) := by
   obtain ⟨hcv, hcw⟩ := derive_covers A h
   unfold callWith
-  refine WP.frameLost (rs := callPush) (r := .r4) (by decide) (call_sp_le A h) (by decide) ?_
+  refine WP.frame (rs := callPush) (r := .r4) (by decide) (call_sp_le A h) (by decide) ?_
   refine FrameStack.WP.callF (k := deriveCheckedArm) (fun s hs => ?_) (derive_call_checked A h C hc) hcv hcw
     (by rw [derive_armStack]; exact Nat.zero_le _) fun s' hrd hwr hsp hf hpres hpost => ?_
   · obtain ⟨t, s', e, ha, hp⟩ := deriveChecked_correct hs

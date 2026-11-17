@@ -23,7 +23,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Inline
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-import VerifiedGarbage.Proof.Framework.Arm.Lost
+import VerifiedGarbage.Proof.Framework.Arm.Frame
 meta import VerifiedGarbage.Impl.Camellia.Arm.CtrFinal
 meta import VerifiedGarbage.Proof.Camellia.CtrFinal
 meta import VerifiedGarbage.Proof.Camellia.CtrScratch
@@ -273,7 +273,7 @@ end WCall
 theorem w_call {s : State} {W R C D : BitVec 32} {n : Nat} (h : WCall s W R C D n) :
     WP isa ctrCall s (WPost s W R C D n) := by
   have hs8 := h.hsp8
-  refine WP.frameLost (rs := [.r12, .lr]) (r := .r12) rfl (by simpa using hs8) (by simp) ?_
+  refine WP.frame (rs := [.r12, .lr]) (r := .r12) rfl (by simpa using hs8) (by simp) ?_
   refine FrameStack.WP.callF (k := Proof.Camellia.ctrContractSk Arm.abi 3032) ctrFramed_sk.1 (rd := wRd s.sp W)
     (wr := wWr C D n) h.pre h.cov h.covW
     (by rw [pushed_sp8, hspA hs8]; have := h.hsp; have := ctr_stack; omega_arith) ?_

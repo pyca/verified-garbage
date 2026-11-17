@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.Arm.Lost
+import VerifiedGarbage.Proof.Framework.Arm.Frame
 
 /-! ### `MlDsa.Arm.Pack.HintUnpackLoops`, which only this module used -/
 
@@ -1083,7 +1083,7 @@ theorem correct {s₀ : State} (hp : UPre s₀) :
   refine WP.seq (WP.mono (entry_ok (s := s₀) (by
     rw [hp.rd]; exact ⟨uargR s₀, by simp, Region.contains_self _ _⟩)) fun s₁ e₁ => ?_)
   subst e₁
-  refine WP.frameLost (rs := [.r4, .r5, .r6, .r7]) (r := .r4) rfl (hsp16 hp) (by decide)
+  refine WP.frame (rs := [.r4, .r5, .r6, .r7]) (r := .r4) rfl (hsp16 hp) (by decide)
     (WP.mono (WP.gpr (body_ok hp) (r := .lr) (noWrite (by decide +kernel)))
       fun s₂ ⟨⟨hsp, h5, h6, h7, h4, hr⟩, hlr⟩ mL uL hfl => ?_)
   replace hfl : Frame [⟨State.addr s₀.sp - BitVec.ofNat 64 16, 16⟩] s₂.mem mL := by rw [← hfr hp]; exact hfl

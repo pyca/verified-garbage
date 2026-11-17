@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Arm.CallF
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Arm.Lost
+import VerifiedGarbage.Proof.Framework.Arm.Frame
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 
@@ -39,9 +39,9 @@ theorem framed_ok (body : Prog isa) (s : State) (stackFit : 128 ≤ s.sp.toNat)
   obtain ⟨tr, u, run, frame, result⟩ := body_ok
   have perms := VG.Arm.Exec.rdwr run
   unfold VG.Impl.Ffdh.Arm.framed
-  refine WP.frameLost (by decide) pushFit (by decide) ?_
+  refine WP.frame (by decide) pushFit (by decide) ?_
   rw [WP.seq_iff]
-  refine WP.allocLost (by decide) allocFit ?_
+  refine WP.alloc (by decide) allocFit ?_
   refine ⟨tr, u, run, ?_⟩
   intro m₁ u₁ hfl₁
   generalize ha : ({ freed 72 u with mem := m₁, unknowns := u₁ } : State) = a

@@ -21,7 +21,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Inline
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-import VerifiedGarbage.Proof.Framework.Arm.Lost
+import VerifiedGarbage.Proof.Framework.Arm.Frame
 meta import VerifiedGarbage.Impl.AesCtr.Arm.Final
 meta import VerifiedGarbage.Proof.AesCtr.Final
 meta import VerifiedGarbage.Proof.AesCtr.Spec
@@ -503,7 +503,7 @@ end WCall
 theorem w_call {s : State} {W R C D S : BitVec 32} {n : Nat} (h : WCall s W R C D S n) :
     WP isa (wholeFrame "vg_aes_ctr" Impl.AesCtr.Arm.crypt) s (WPost s W R C D S n) := by
   have hs8 := h.hsp8
-  refine WP.frameLost (rs := [.r12, .lr]) (r := .r12) rfl (by simpa using hs8) (by simp) ?_
+  refine WP.frame (rs := [.r12, .lr]) (r := .r12) rfl (by simpa using hs8) (by simp) ?_
   refine FrameStack.WP.callF (k := modeArm AesCtr.ctrMode) crypt_correct (rd := wRd s.sp W)
     (wr := wWr C D S n) h.pre h.cov h.covW (by rw [crypt_stack, pushed_sp8, hspA hs8]; have := h.hsp; omega_using [this]) ?_
   intro s₂ hrd₂ hwr₂ hsp₂ hf hcs hpost ml ul hfl

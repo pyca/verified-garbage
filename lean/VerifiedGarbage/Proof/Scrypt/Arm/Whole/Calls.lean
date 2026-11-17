@@ -17,7 +17,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.OmegaLit
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.Arm.Lost
+import VerifiedGarbage.Proof.Framework.Arm.Frame
 
 @[expose] public section
 
@@ -946,7 +946,7 @@ theorem frame4_ok {n : String} {c : Prog isa} {k : Contract isa}
         Q { popped .r12 16 s₂ with mem := m, unknowns := u }) :
     WP isa (.frame (.push fr4) (.call n c) (.pop .r12 16)) s Q := by
   obtain h16 : (s.sp - BitVec.ofNat 32 16).toNat = s.sp.toNat - 16 := sub_toNat' (by omega_arith)
-  refine WP.frameLost (rs := fr4) (r := .r12) (by decide) (by simp only [List.length_cons, List.length_nil]; omega_arith)
+  refine WP.frame (rs := fr4) (r := .r12) (by decide) (by simp only [List.length_cons, List.length_nil]; omega_arith)
     (by simp only [List.length_cons, List.length_nil]; omega_arith) ?_
   refine WP.callF hv hpre hc hw (by rw [p4_sp, h16]; omega_arith) fun s₂ hrd hwr hsp hf hcs hpost mL uL hfl => ?_
   obtain hflS : Frame [belowA s.sp 40] s₂.mem mL := hfl.sub fun r hr => ⟨_, List.mem_singleton_self _, by

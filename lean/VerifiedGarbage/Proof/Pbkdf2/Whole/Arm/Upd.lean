@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.Arm.Lost
+import VerifiedGarbage.Proof.Framework.Arm.Frame
 
 /-!
 # PBKDF2-HMAC on 32-bit ARM, the whole derivation: `update`, in its frame, of any length
@@ -173,7 +173,7 @@ theorem upd_frame {s : State} {st d sc : BitVec 32} {len : Nat} (h : UpdL hH s s
         hH.SH.Repr s'.mem (State.addr st) (m ++ bytesAt s.mem (State.addr d) len)) → Q s') :
     WP isa (.frame (.push upd4) (.call H.updN H.updC) (.pop .r1 16)) s Q := by
   have h16 := h.sp16
-  refine WP.frameLost (rs := upd4) (r := .r1) rfl (by show 16 ≤ s.sp.toNat; exact h16) (by decide) ?_
+  refine WP.frame (rs := upd4) (r := .r1) rfl (by show 16 ≤ s.sp.toNat; exact h16) (by decide) ?_
   refine WP.callCalls (k := updK H.S hH.Wb hH.SH.Repr) hH.upd.1 h.pre h.cov h.covW ?_ hH.updNF
   intro s₂ hrd hwr hsp hf hcs _ hpost mL uL hfl
   have vc : count ((pushed upd4 s).callEntry.withRegions (UpdL.rd s.sp d len) (UpdL.wr hH st sc)) = count s := by

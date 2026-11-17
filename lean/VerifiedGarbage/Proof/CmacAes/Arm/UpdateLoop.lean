@@ -15,7 +15,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.Arm.Lost
 
 /-! ### `CmacAes.Arm.Call`, which only this module used -/
 
@@ -202,7 +201,7 @@ theorem ctr_noCalls : Impl.Aes.Arm.ctr32.noCalls = true := by decide +kernel
 
 theorem ctr_call {s : State} {W C D S : BitVec 32} {R : Nat} {ra rb : Reg} (h : CallPre s W C D S R ra rb) :
     WP isa (ctrCall ra rb) s (CallPost s W C D S R) := by
-  refine WP.frameLost (rs := [ra, rb]) (r := ra) h.regs (by simpa using h.hsp) (by simp) ?_
+  refine WP.frame (rs := [ra, rb]) (r := ra) h.regs (by simpa using h.hsp) (by simp) ?_
   refine WP.call (k := Proof.Aes.ctr32Arm) Proof.Aes.Arm.ctr32_correct
     (rd := ctrRd s W) (wr := ctrWr C D S) h.pre h.cov h.covW ?_ ctr_noCalls
   intro s₂ hrd₂ hwr₂ hsp₂ hf hcs _ hpost ml ul hfl

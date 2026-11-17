@@ -7,7 +7,7 @@ public import VerifiedGarbage.Proof.MlKem.Arm.Prims
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.Arm.Lost
+import VerifiedGarbage.Proof.Framework.Arm.Frame
 public import VerifiedGarbage.Proof.MlKem.Arm.Calls
 
 /-! ### `MlDsa.Arm.KeyGen.Base`, which only this module used -/
@@ -250,7 +250,7 @@ theorem callVS {name : String} {c : Prog isa} {k : Contract isa}
   subst e
   have hsp1 := glueSt_sp s (as ++ [(.r12, st)])
   have hs4 : 4 ≤ s.sp.toNat := by omega_using [hsu]
-  refine WP.frameLost (rs := [.r12]) (r := .r12) rfl (by simp only [List.length_cons, List.length_nil, hsp1]; omega_using [hsu])
+  refine WP.frame (rs := [.r12]) (r := .r12) rfl (by simp only [List.length_cons, List.length_nil, hsp1]; omega_using [hsu])
     (by decide) ?_
   have hsp2 : (pushed [.r12] (glueSt s (as ++ [(.r12, st)]))).sp = s.sp - BitVec.ofNat 32 4 := by
     rw [pushed_sp, hsp1]; rfl

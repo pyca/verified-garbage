@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Body
 import VerifiedGarbage.Proof.Framework.Arm.CallF
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Framework.Arm.Lost
+import VerifiedGarbage.Proof.Framework.Arm.Frame
 import VerifiedGarbage.Proof.Rsa.BytesFrame
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Top1
 public import VerifiedGarbage.Proof.Bignum.Arm.PcPush
@@ -235,7 +235,7 @@ theorem key_ok [VG.Proof.Rsa.Arm.Keys.InvLaw] (h : CIn s) : WP isa code s fun t 
   have spLo := h.spLo; have spHi := h.spHi
   have spN : (s.sp - BitVec.ofNat 32 56).toNat = s.sp.toNat - 56 := FrameStack.sub_toNat' spLo
   unfold code
-  refine WP.frameLost (by decide) spLo (by decide) ?_
+  refine WP.frame (by decide) spLo (by decide) ?_
   rw [WP.seq_iff]
   have pre := in_k h
   obtain ⟨tr, v, -, run', ⟨bo, r0, outs⟩⟩ := body_wide h

@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.Sig
-import VerifiedGarbage.Proof.Framework.Arm.Lost
+import VerifiedGarbage.Proof.Framework.Arm.Frame
 
 /-!
 # A call that wipes part of a buffer afterwards (ARMv7)
@@ -640,7 +640,7 @@ theorem cw_wp {name zname : String} {body zcode : Prog isa} {zst : Nat}
   have hres := cw_res hN hl hs
   have hslots := cw_slots hN hl hs
   have h16 : 16 ≤ s.sp.toNat := by omega_using [hsb]
-  refine WP.frameLost (by decide) (by show 16 ≤ s.sp.toNat; exact h16) (by decide) ?_
+  refine WP.frame (by decide) (by show 16 ≤ s.sp.toNat; exact h16) (by decide) ?_
   refine WP.seq (WP.block ⟨_, saveArg_run r s, ?_⟩)
   refine WP.seq (WP.mono (cw_body_wp h hN hloc hl hd hpre hpost hs) fun c hc => ?_)
   refine WP.seq (WP.block ⟨_, zeroArgs_run hn32 c, ?_⟩)

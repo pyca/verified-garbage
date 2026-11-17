@@ -8,7 +8,7 @@ public import VerifiedGarbage.Impl.Modes.Arm.Seq
 import VerifiedGarbage.Proof.Modes.Addr
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.Arm.Lost
+import VerifiedGarbage.Proof.Framework.Arm.Frame
 
 /-! ### `Modes.Arm.Push`, which only this module used -/
 
@@ -503,7 +503,7 @@ theorem callScr_wp (S : CoreSpec c) (h : CallPre c S s K R B C) (hs : c.stackScr
   have h8 := h.sp8 hs
   have dS := S.depthS hs
   have hst := h.stk
-  refine WP.frameLost (rs := [.r12, .lr]) (r := .r12) rfl (by simpa using h8) (by simp) ?_
+  refine WP.frame (rs := [.r12, .lr]) (r := .r12) rfl (by simpa using h8) (by simp) ?_
   have hsp' : (pushed [.r12, .lr] s).sp = s.sp - BitVec.ofNat 32 8 := rfl
   have hspN : (pushed [.r12, .lr] s).sp.toNat = s.sp.toNat - 8 := by rw [hsp']; exact sub_toNat' h8
   refine WP.callF S.correct (rd := [⟨State.addr K, S.keyLen⟩, Push.argR s] ++ tabRegs S.consts s)

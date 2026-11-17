@@ -3,7 +3,8 @@ module
 public import VerifiedGarbage.Proof.Bignum.Arm.MontCallEntry
 import VerifiedGarbage.Proof.Bignum.Arm.MontCallArithmetic
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Framework.Arm.Lost
+import VerifiedGarbage.Proof.Framework.Arm.Frame
+import VerifiedGarbage.Proof.Framework.Arm.Inline
 import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Callable Montgomery multiplication preserves the ARM procedure-call ABI -/
@@ -26,7 +27,7 @@ theorem montCallFn_ok (s : State) {base : BitVec 32} {len w o a b : Nat}
   have eq := h.pushed_eq
   have framePush := FrameStack.pushed_frameA (rs := MontCall.savedRegs) h.stackFit
   unfold MontCall.code
-  refine WP.frameLost (by decide) h.stackFit (by decide) ?_
+  refine WP.frame (by decide) h.stackFit (by decide) ?_
   rw [WP.seq_iff]
   refine WP.mono (call_entry_ok s h hb.1) ?_
   rintro u ⟨ready, memU, restU⟩

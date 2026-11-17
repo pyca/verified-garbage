@@ -15,7 +15,6 @@ import VerifiedGarbage.Proof.Framework.Arm.RelCT
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.MlKem.Mem
-import VerifiedGarbage.Proof.Framework.Arm.Lost
 import VerifiedGarbage.Proof.MdStream.Arm.Common
 import VerifiedGarbage.Proof.MlDsa.Arith.Mem
 
@@ -369,7 +368,7 @@ theorem entry_correct {p : Params} (h3 : Ok3 p) (prepared : Bool) (σ : State)
   have hσ : entryStack ≤ σ.sp.toNat := hsp
   obtain h16 : 16 ≤ σ.sp.toNat := by simp only [entryStack] at hσ; omega_arith
   unfold signEntry entry
-  refine (WP.frameLost (rs := [.r4, .lr]) (r := .r4) (by decide)
+  refine (WP.frame (rs := [.r4, .lr]) (r := .r4) (by decide)
     (by simp only [List.length_cons, List.length_nil]; omega_using [h16]) (by decide) ?_).elim
     fun t ⟨s', he, hq⟩ => ⟨t, s', he, hq⟩
   refine WP.seq (WP.mono (blockA_ok hpre (by decide)) fun s₁ hm => ?_)

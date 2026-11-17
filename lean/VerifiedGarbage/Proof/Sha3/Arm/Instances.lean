@@ -18,7 +18,6 @@ import VerifiedGarbage.Proof.Framework.Arm.Inline
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Framework.Arm.Lost
 
 meta import VerifiedGarbage.Proof.Sha3.Arm.Permute
 meta import VerifiedGarbage.Proof.Sha3.Instances
@@ -38,12 +37,11 @@ meta import VerifiedGarbage.Proof.Framework.Arm.Inline
 meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Block
-meta import VerifiedGarbage.Proof.Framework.Arm.Lost
 
 /-!
 # SHA-3 and SHAKE on ARMv7: the functions of each instance
 
-Each allocates a frame (`WP.allocLost`), stores the callee's stack arguments
+Each allocates a frame (`WP.alloc`), stores the callee's stack arguments
 and `lr` at its base and sets its register arguments (a block run
 instruction by instruction), and calls the sponge function
 (`FrameStack.WP.callF`), whose precondition holds of the arguments stored,
@@ -398,7 +396,7 @@ theorem update_correct {rate : Nat} (hr : rate ∈ rates) (hre : encodable (BitV
   obtain hE : (s.sp - BitVec.ofNat 32 16).toNat = s.sp.toNat - 16 := FrameStack.sub_toNat' (by omega_using [e16])
   obtain hfb := frame_eq (x := s.sp) (B := 16) (by omega_using [e16])
   unfold update
-  refine WP.allocLost ⟨by decide, by decide, by decide, by decide⟩ (by omega_using [e16]) ?_
+  refine WP.alloc ⟨by decide, by decide, by decide, by decide⟩ (by omega_using [e16]) ?_
   refine WP.seq (WP.mono (upd_args hre hs) fun t hI => ?_)
   obtain ⟨hpre, hc, hw⟩ := upd_pre hr hs hI
   refine WP.seq (FrameStack.WP.callF (k := Proof.Sha3.absorbArm) Stream.Absorb.absorb_verified.1 hpre hc hw
@@ -692,7 +690,7 @@ theorem xof_correct {X : Xof} (hX : xofSponge X) (hr : X.rate ∈ rates)
   have hsp := s.sp.isLt
   obtain hfb := frame_eq (x := s.sp) (B := 648) (by omega_using [e648])
   unfold xofFinalize
-  refine WP.allocLost ⟨by decide, by decide, by decide, by decide⟩ (by omega_using [e648]) ?_
+  refine WP.alloc ⟨by decide, by decide, by decide, by decide⟩ (by omega_using [e648]) ?_
   refine WP.seq (WP.mono (xp_args hre hs) fun t hI => ?_)
   obtain ⟨hpre, hc, hw⟩ := xp_pre hr hs hI
   refine WP.seq (FrameStack.WP.callF (k := Proof.Sha3.padArm) Stream.Pad.pad_verified.1 hpre hc hw
@@ -980,7 +978,7 @@ theorem xs_correct {X : Xof} (hr : X.rate ∈ rates) (hre : encodable (BitVec.of
   have hsp := s.sp.isLt
   obtain hfb := frame_eq (x := s.sp) (B := 656) (by omega_using [e656])
   unfold xofSqueeze
-  refine WP.allocLost ⟨by decide, by decide, by decide, by decide⟩ (by omega_using [e656]) ?_
+  refine WP.alloc ⟨by decide, by decide, by decide, by decide⟩ (by omega_using [e656]) ?_
   refine WP.seq (WP.mono (xs_args hre hs) fun t hI => ?_)
   obtain ⟨hpre, hc, hw⟩ := xs_pre hr hs hI
   refine WP.seq (FrameStack.WP.callF (k := Proof.Sha3.squeezeArm) Stream.Squeeze.squeeze_verified.1 hpre
@@ -1475,7 +1473,7 @@ theorem fin_correct {H : Spec.Sha3.HashFn} (hH : hashSponge H) (hr : H.rate ∈ 
   have hsp := s.sp.isLt
   obtain hfb := frame_eq (x := s.sp) (B := 664) (by omega_using [e664])
   unfold finalize
-  refine WP.allocLost ⟨by decide, by decide, by decide, by decide⟩ (by omega_using [e664]) ?_
+  refine WP.alloc ⟨by decide, by decide, by decide, by decide⟩ (by omega_using [e664]) ?_
   refine WP.seq (WP.mono (fp_args hre hs) fun t hI => ?_)
   refine WP.seq (WP.mono (fp_call hr hs hI) fun v hA => ?_)
   refine WP.seq (WP.mono (fs_args hre hle hs hA) fun t₂ hF => ?_)

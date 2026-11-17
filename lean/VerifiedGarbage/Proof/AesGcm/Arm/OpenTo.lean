@@ -13,7 +13,6 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.AesGcm.Arm.Verified
 import VerifiedGarbage.Proof.AesGcm.Scratch
 import VerifiedGarbage.Proof.Framework.Arm.StackScratch
-import VerifiedGarbage.Proof.Framework.Arm.ScratchLost
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
@@ -515,7 +514,7 @@ of its eight words of stack arguments. -/
 theorem openTo_framed [VG.Proof.Gcm.Arm.GhashLaw] :
     Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 2608 8 openTo)
       (Proof.AesGcm.openToRoundsContract Arm.abi 2620) :=
-  Arm.Verified.stackScratchLost (sig := Spec.Gcm.openToSig) (nm := "work") (e := .u64)
+  Arm.Verified.stackScratch (sig := Spec.Gcm.openToSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Gcm.openToPre Arm.abi.ptrBits)
     (post := Proof.AesGcm.openToRoundsPost Arm.abi.ptrBits) (wa := true) (stack := 12)
     (leak := some (Spec.Gcm.openToLeak Arm.abi.ptrBits))

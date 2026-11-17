@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.MillerRabin.Arm.Run
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Trial
-import VerifiedGarbage.Proof.Framework.Arm.Lost
+import VerifiedGarbage.Proof.Framework.Arm.Frame
 import VerifiedGarbage.Proof.Rsa.BytesFrame
 
 /-! # A candidate on ARMv7: a call's result (`cand_ok`)
@@ -110,7 +110,7 @@ theorem cand_ok [VG.Proof.Rsa.Arm.Keys.InvLaw] (v : RoundImpl) (h : CIn s) :
   have spLo := h.spLo; have spHi := h.spHi
   have spN : (s.sp - BitVec.ofNat 32 56).toNat = s.sp.toNat - 56 := FrameStack.sub_toNat' (by omega_using [spLo])
   unfold code
-  refine WP.frameLost (by decide) (by simp only [List.length_cons, List.length_nil]; omega_using [spLo]) (by decide) ?_
+  refine WP.frame (by decide) (by simp only [List.length_cons, List.length_nil]; omega_using [spLo]) (by decide) ?_
   rw [WP.seq_iff]
   obtain ⟨tr, w, t, run', -, pre, st, mt, ⟨_, bk, r0, outs, used⟩⟩ := body_wide v h
   refine WP.mono (Q := fun x => x = w.withRegions s.rd (pcPushed s).wr) ⟨tr, _, run', rfl⟩ ?_

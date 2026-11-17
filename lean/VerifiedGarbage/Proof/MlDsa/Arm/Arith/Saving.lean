@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.MlKem.Arm.CallF
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Impl.MlDsa.Arm.Arith.Common
-import VerifiedGarbage.Proof.Framework.Arm.Lost
+import VerifiedGarbage.Proof.Framework.Arm.Frame
 
 /-!
 # ML-DSA on 32-bit ARM: registers saved in frames
@@ -87,7 +87,7 @@ theorem wp_saving (rs : List Reg) (body : Prog isa) {W : List Region} :
     have hsub4 : Region.Sub ⟨State.addr (s.sp - 4), 4⟩ (belowA s.sp (4 * rs.length + 4)) := fun x hx => hwd.byte (by
       simp only [Region.Contains] at hx ⊢
       omega_using [hx])
-    refine WP.frameLost (rs := [r]) (r := r) rfl (by simp; omega_using [hsp]) (by simp) ?_
+    refine WP.frame (rs := [r]) (r := r) rfl (by simp; omega_using [hsp]) (by simp) ?_
     have ih' := ih (fun s₂ => Q s₂ ∧ s₂.mem.readW (State.addr (s.sp - 4)) 32 = s.gpr r) (pushed [r] s)
       (by rw [pushed_sp, ← e4, hsp']; omega_using [hsp])
       (fun R hR => (hW R hR).sub_left (by rw [pushed_sp, ← e4]; exact hsub))

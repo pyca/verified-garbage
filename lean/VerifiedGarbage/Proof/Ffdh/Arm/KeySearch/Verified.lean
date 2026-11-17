@@ -39,7 +39,7 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.LoopState
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Exit
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Live
-import VerifiedGarbage.Proof.Framework.Arm.Lost
+import VerifiedGarbage.Proof.Framework.Arm.Frame
 
 /-! ### `Ffdh.Arm.KeySearch.Correct`, which only this module used -/
 
@@ -694,7 +694,7 @@ theorem function_ok (backend : VG.Proof.Ffdh.Arm.KeyBackend sampling) {p : KeyPu
     have min := stackUse_min sampling
     omega_using [fits, min]
   unfold VG.Impl.Ffdh.Arm.KeySearch.codeFor
-  refine WP.frameLost (by decide) fit (by decide) ?_
+  refine WP.frame (by decide) fit (by decide) ?_
   rw [WP.seq_iff]
   refine WP.mono (start_ok h) ?_
   intro u live

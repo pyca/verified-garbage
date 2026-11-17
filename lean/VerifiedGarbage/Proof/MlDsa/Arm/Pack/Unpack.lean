@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.Arm.Lost
+import VerifiedGarbage.Proof.Framework.Arm.Frame
 meta import VerifiedGarbage.Proof.MlDsa.Arm.Pack.BitPack
 meta import VerifiedGarbage.Proof.MlKem.Arm.Add
 meta import VerifiedGarbage.Proof.MlDsa.Pack.Arith
@@ -17,7 +17,7 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Framework.Arm.Lost
+meta import VerifiedGarbage.Proof.Framework.Arm.Frame
 meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
 
 /-!
@@ -123,7 +123,7 @@ theorem bu_wp {s₀ : State} (hp : BuPre s₀) : WP isa Impl.MlDsa.Arm.Pack.bitU
   have sp₁ : s₁.sp = s₀.sp := k₁.2.2.2
   have hsp : 4 ≤ s₁.sp.toNat := by rw [sp₁]; exact hp.sp4
   have eb : below4 s₁ = below4 s₀ := by rw [below4, below4, sp₁]
-  refine WP.frameLost (rs := [.r4]) (r := .r4) rfl (by simpa using hsp) (by decide) ?_
+  refine WP.frame (rs := [.r4]) (r := .r4) rfl (by simpa using hsp) (by decide) ?_
   refine WP.seq (WP.mono (buPro_ok _) fun s₂ ⟨⟨g₂, m₂⟩, k₂⟩ => ?_)
   have ab := mem_bitPackParams hp.ab
   have g0 : ∀ r, r ≠ .r12 → r ≠ .r1 → s₂.gpr r = s₀.gpr r := fun r h12 h1 => by

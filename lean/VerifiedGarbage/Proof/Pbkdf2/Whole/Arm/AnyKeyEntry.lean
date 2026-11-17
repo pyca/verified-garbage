@@ -18,7 +18,6 @@ import VerifiedGarbage.Proof.Hmac.Common
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.OmegaLit
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.Arm.ScratchLost
 
 /-! ### `Pbkdf2.Whole.Arm.AnyKeyCT`, which only this module used -/
 
@@ -1222,7 +1221,7 @@ section
 
 `init` and `finalize` run their `_scratch` forms (`Instances.lean`,
 `Sha256.lean`, `Sha224.lean`) in a frame that allocates the working space and
-copies the arguments passed on the stack (`Verified.stackScratchLost`):
+copies the arguments passed on the stack (`Verified.stackScratch`):
 `initFramed` and `finFramed`, for any instance, from the locality of HMAC's
 pre- and postconditions (`Proof/Hmac/Scratch.lean`). `init` has no arguments
 on the stack, `finalize` one (`out`). Both frames are `frame I` bytes: the
@@ -1250,7 +1249,7 @@ theorem initFramed {I : Spec.Hmac.Instance} {c : Prog isa} {bytes : Nat}
     (hb : Fits 0 bytes .u64 I.scratch := by decide) (hS : I.S.stateBytes < 2 ^ 64 := by decide) :
     Verified Arm.target (Impl.StackScratch.Arm.withStackScratch bytes 0 c)
       (I.initContract Arm.abi (16 + bytes)) :=
-  Arm.Verified.stackScratchLost (sig := Spec.Hmac.initSig I.S) (nm := "scratch") (e := .u64)
+  Arm.Verified.stackScratch (sig := Spec.Hmac.initSig I.S) (nm := "scratch") (e := .u64)
     (n := I.scratch) (pre := Spec.Hmac.initPre I.S Arm.abi.ptrBits)
     (post := Spec.Hmac.initPost I.S Arm.abi.ptrBits) (wa := true) (stack := 16) (m := 0) h
     rfl rfl rfl hb
@@ -1264,7 +1263,7 @@ theorem finFramed {I : Spec.Hmac.Instance} {c : Prog isa} {bytes : Nat}
     (hb : Fits 1 bytes .u64 I.scratch := by decide) (hS : I.S.stateBytes < 2 ^ 64 := by decide) :
     Verified Arm.target (Impl.StackScratch.Arm.withStackScratch bytes 1 c)
       (I.finalizeContract Arm.abi (16 + bytes)) :=
-  Arm.Verified.stackScratchLost (sig := Spec.Hmac.finalizeSig I.S) (nm := "scratch") (e := .u64)
+  Arm.Verified.stackScratch (sig := Spec.Hmac.finalizeSig I.S) (nm := "scratch") (e := .u64)
     (n := I.scratch) (post := Spec.Hmac.finalizePost I.S Arm.abi.ptrBits) (wa := true)
     (stack := 16) (m := 1) h
     rfl rfl rfl hb

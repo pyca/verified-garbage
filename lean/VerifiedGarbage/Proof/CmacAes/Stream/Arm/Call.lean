@@ -16,7 +16,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.Arm.Lost
+import VerifiedGarbage.Proof.Framework.Arm.Frame
 
 @[expose] public section
 
@@ -232,7 +232,7 @@ theorem WP.frameCallF {ra rb : Reg} {name : String} {c : Prog isa} {k : Contract
       Frame [blw16 s] s₂.mem s'.mem → k.post (view ra rb s rd wr) (s₂.withRegions rd wr) → Q s') :
     WP isa (.frame (.push [ra, rb]) (.call name c) (.pop ra 8)) s Q := by
   have hspA := spA hsp
-  refine WP.frameLost (rs := [ra, rb]) (r := ra) hregs (by simp only [List.length_cons, List.length_nil]; omega_arith)
+  refine WP.frame (rs := [ra, rb]) (r := ra) hregs (by simp only [List.length_cons, List.length_nil]; omega_arith)
     (by simp) ?_
   refine WP.callF hv hpre hc hw (by rw [hsu, pushed_sp, e8, hspA]; omega_arith)
     fun s₂ hrd₂ hwr₂ hsp₂ hf hcs hpost ml ul hfl => ?_

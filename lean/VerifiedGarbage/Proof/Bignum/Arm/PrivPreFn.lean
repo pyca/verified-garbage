@@ -21,7 +21,6 @@ import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Framework.Arm.Lost
 meta import VerifiedGarbage.Proof.Framework.Sig
 
 /-! # The callable private precomputation
@@ -701,7 +700,7 @@ theorem ppFn_ok (s : State) (h : PpFnInput s) :
   have wsD := L.wsD
   have stackSub := L.stackSub
   unfold code
-  refine WP.frameLost (by decide) (by show 56 ≤ _; omega_using [stackFit]) (by decide) ?_
+  refine WP.frame (by decide) (by show 56 ≤ _; omega_using [stackFit]) (by decide) ?_
   rw [WP.seq_iff]
   refine WP.mono (pp_zeroArgs_ok s L) fun v hv => ?_
   rw [WP.seq_iff]
@@ -711,7 +710,7 @@ theorem ppFn_ok (s : State) (h : PpFnInput s) :
   obtain spX : x.sp = s.sp - BitVec.ofNat 32 56 := by rw [hx.rest.sp]; rfl
   rw [WP.seq_iff]
   unfold argsFrame
-  refine WP.frameLost (by decide) (by show 56 ≤ _; rw [spX, FrameStack.sub_toNat' (by omega_using [stackFit])]; omega_using [stackFit]) (by decide) ?_
+  refine WP.frame (by decide) (by show 56 ≤ _; rw [spX, FrameStack.sub_toNat' (by omega_using [stackFit])]; omega_using [stackFit]) (by decide) ?_
   change WP isa _ (pcPushed x) _
   rw [WP.seq_iff]
   refine WP.mono (pp_call_ok s h L x hx) fun y hy => ?_

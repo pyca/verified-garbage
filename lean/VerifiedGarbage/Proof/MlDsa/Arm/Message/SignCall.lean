@@ -7,7 +7,7 @@ public import VerifiedGarbage.Proof.MlDsa.PreparedKeyContract
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.Arm.Lost
+import VerifiedGarbage.Proof.Framework.Arm.Frame
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Taint
@@ -648,7 +648,7 @@ theorem frameCall_ok {D : Nat} {n : String} {c : Prog isa} {k : Contract isa}
         k.post ((pushed [.r12, .lr] s).callEntry.withRegions (rd ++ [argR s]) wr)
           (s₂.withRegions (rd ++ [argR s]) wr) := by
   obtain h8 : 8 ≤ s.sp.toNat := by omega_arith
-  refine WP.frameLost (rs := [.r12, .lr]) (r := .r12) rfl (by simpa using h8) (by decide) ?_
+  refine WP.frame (rs := [.r12, .lr]) (r := .r12) rfl (by simpa using h8) (by decide) ?_
   obtain hwp : (pushed [.r12, .lr] s).wr = belowA s.sp 8 :: s.wr := by rw [VG.Arm.pushed_wr, frame8 h8]
   refine WP.callF hv hpre (fun x m hx => ?_) (fun x m hx => ?_) ?_ fun s₂ hrd hwr hsp₂ hf hcs hpost mL uL hfl => ?_
   · rw [VG.Arm.pushed_rd, hwp]

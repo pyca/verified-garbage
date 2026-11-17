@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.Arm.Lost
+import VerifiedGarbage.Proof.Framework.Arm.Frame
 
 /-!
 # AES-OCB on ARMv7: the functions called
@@ -158,7 +158,7 @@ end BlkCall
 
 theorem blk_call (F : BlkFn) {s : State} {K D S : BitVec 32} {R n : Nat} (h : BlkCall s K D S R n) :
     WP isa (blkFrame F) s (BlkPost F s K D S R n) := by
-  refine WP.frameLost (rs := [.r12, .lr]) (r := .r12) rfl (by simpa using h.hsp) (by simp) ?_
+  refine WP.frame (rs := [.r12, .lr]) (r := .r12) rfl (by simpa using h.hsp) (by simp) ?_
   refine WP.call (k := Proof.Aes.blocksArm F.f) F.correct
     (rd := blkRd s.sp K) (wr := blkWr D S n) (h.pre F.f) h.cov h.covW ?_ F.noCalls
   intro s₂ hrd₂ hwr₂ hsp₂ hf hcs _ hpost ml ul hfl

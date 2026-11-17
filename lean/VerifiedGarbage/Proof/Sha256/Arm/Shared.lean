@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Sha256.Arm.Stream.Init
 public import VerifiedGarbage.Proof.Sha256.Arm.Stream.Digest
 import VerifiedGarbage.Proof.Sha256.Scratch
 import VerifiedGarbage.Proof.Framework.Arm.StackScratch
-import VerifiedGarbage.Proof.Framework.Arm.ScratchLost
 public import VerifiedGarbage.Proof.Sha256.Digest
 public import VerifiedGarbage.Proof.Sha256.Arm.Lit
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
@@ -33,7 +32,7 @@ moved to the shared ones.
 `update` and `finalize` keep their working space in a frame of their own:
 they are `updateScratch` and `finalizeScratch` (the shared contracts with
 the working space as an argument, which HMAC's and PBKDF2's code calls) run
-in a frame that allocates it (`Verified.stackScratchLost`).
+in a frame that allocates it (`Verified.stackScratch`).
 -/
 
 @[expose] public section
@@ -174,7 +173,7 @@ def updateFrameSat : State :=
 theorem update : Verified Arm.target
     (Impl.StackScratch.Arm.withStackScratch 624 2 Impl.Sha256.Arm.Stream.update)
     (Spec.Sha256.updateContract Arm.abi 624) :=
-  Arm.Verified.stackScratchLost (nm := "scratch") (e := .u64) (n := 76) (stack := 0) (bytes := 624) (m := 2)
+  Arm.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 76) (stack := 0) (bytes := 624) (m := 2)
     updateScratch (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Sha256.updatePost_local _)
     (fun vs mm m₁ m₂ r hl _ hb h => Proof.Sha256.updatePostOut_local _ vs mm m₁ m₂ r hl hb h)
@@ -190,7 +189,7 @@ def finalizeFrameSat : State :=
 theorem finalize : Verified Arm.target
     (Impl.StackScratch.Arm.withStackScratch 624 1 Impl.Sha256.Arm.Stream.finalize)
     (Spec.Sha256.finalizeContract Arm.abi 624) :=
-  Arm.Verified.stackScratchLost (nm := "scratch") (e := .u64) (n := 76) (stack := 0) (bytes := 624) (m := 1)
+  Arm.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 76) (stack := 0) (bytes := 624) (m := 1)
     finalizeScratch (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Sha256.finalizePost_local _)
     (fun vs mm m₁ m₂ r hl _ hb h => Proof.Sha256.finalizePostOut_local _ vs mm m₁ m₂ r hl hb h)
@@ -279,7 +278,7 @@ def finalize224FrameSat : State :=
 theorem finalize224 : Verified Arm.target
     (Impl.StackScratch.Arm.withStackScratch 624 1 Impl.Sha256.Arm.Stream.finalize224)
     (Spec.Sha256.finalize224Contract Arm.abi 624) :=
-  Arm.Verified.stackScratchLost (nm := "scratch") (e := .u64) (n := 76) (stack := 0) (bytes := 624) (m := 1)
+  Arm.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 76) (stack := 0) (bytes := 624) (m := 1)
     finalize224Scratch (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Sha256.finalize224Post_local _)
     (fun vs mm m₁ m₂ r hl _ hb h => Proof.Sha256.finalize224PostOut_local _ vs mm m₁ m₂ r hl hb h)

@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.MlKem.Arm.Common
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.Arm.Lost
+import VerifiedGarbage.Proof.Framework.Arm.Frame
 import VerifiedGarbage.Proof.MlDsa.Sign.Mem
 
 /-!
@@ -303,7 +303,7 @@ theorem callS_ok {D : Nat} {n : String} {c : Prog isa} {k : Contract isa}
   have h8 : 8 ≤ s.sp.toNat := by omega_using [hsu, hsp]
   refine WP.seq (WP.mono (setArgs_ok as ha s) fun s1 ⟨hA, k1⟩ => ?_)
   have h8' : 8 ≤ s1.sp.toNat := by rw [k1.sp]; exact h8
-  refine WP.frameLost (rs := [.r12, .lr]) (r := .r12) rfl (by simpa using h8') (by decide) ?_
+  refine WP.frame (rs := [.r12, .lr]) (r := .r12) rfl (by simpa using h8') (by decide) ?_
   have hwp : (pushed [.r12, .lr] s1).wr = belowA s.sp 8 :: s.wr := by
     rw [VG.Arm.pushed_wr, frame8 h8', k1.wr, k1.sp]
   refine WP.callF hv (hpre s1 hA k1) (fun x m hx => ?_) (fun x m hx => ?_) ?_ fun s₂ hrd hwr hsp₂ hf hcs hpost mL uL hfl => ?_

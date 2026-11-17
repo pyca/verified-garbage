@@ -14,7 +14,6 @@ import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Arm.Lost
 
 /-!
 # The modes a group of blocks at a time on ARMv7: the groups and the whole function
@@ -1001,7 +1000,7 @@ theorem wide_wp (h0 : c.stackScratch = 0) (hp : UPre c S M s₀) (hd : Deep S₀
     (h : LInv c S M s₀ k s) :
     WP isa (c.wide wm lgs wb) s fun s' => ∃ k', k' ≤ N c s₀ ∧ LInv c S M s₀ k' s' := by
   unfold Core.wide
-  refine WP.allocLost hwb (by rw [h.sp]; exact hp.wb_le hd) ?_
+  refine WP.alloc hwb (by rw [h.sp]; exact hp.wb_le hd) ?_
   refine WP.seq (WP.mono (wlevels_ok h0 hp hd (Nat.le_of_lt hwb.2.1) hl hk h.toW) fun s₁ ⟨k₁, hk₁, h₁⟩ => ?_)
   refine WP.mono (wwipe_wp hp hd hwb.2.1 h₁) fun s₂ h₂ ml ul hfl => ⟨k₁, hk₁, ?_⟩
   rw [h.sp] at hfl

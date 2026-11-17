@@ -9,7 +9,8 @@ import VerifiedGarbage.Proof.Bignum.Arm.PcEntryReady
 import VerifiedGarbage.Proof.Bignum.Arm.PcBody
 import VerifiedGarbage.Proof.Bignum.Arm.PcDimensions
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Framework.Arm.Lost
+import VerifiedGarbage.Proof.Framework.Arm.Frame
+import VerifiedGarbage.Proof.Framework.Arm.Inline
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Bignum.Arm.PcPrepare
 import VerifiedGarbage.Proof.Bignum.Arm.ExportState
@@ -54,7 +55,7 @@ theorem pcFn_ok (s : State) {base dst src : BitVec 32} {len k : Nat}
       | none => t.gpr .r0 = 0 ∧ Spec.Rsa.wordsAt t.mem (State.addr dst) (2 * Spec.Rsa.modulusWords k) =
           List.replicate (2 * Spec.Rsa.modulusWords k) 0) := by
   unfold PcFn.codeWith
-  refine WP.frameLost (by decide) h.stackFit (by decide) ?_
+  refine WP.frame (by decide) h.stackFit (by decide) ?_
   rw [WP.seq_iff]
   refine WP.mono (pc_entry_ready s h) ?_
   rintro u ⟨ready, frameU, savedU, restU⟩

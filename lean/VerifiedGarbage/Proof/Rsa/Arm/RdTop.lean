@@ -23,7 +23,7 @@ public import VerifiedGarbage.Proof.Rsa.Arm.Stage.Stores
 import VerifiedGarbage.Proof.Framework.Arm.CallF
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Framework.Arm.Lost
+import VerifiedGarbage.Proof.Framework.Arm.Frame
 import VerifiedGarbage.Proof.Rsa.BytesFrame
 public import VerifiedGarbage.Proof.Framework.Arm.Inline
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.Taint5
@@ -450,7 +450,7 @@ theorem rd_ok [InvLaw] (h : CIn s) (he : (stackArg s 3).toNat ≤ 8) :
   have spLo := h.spLo; have spHi := h.spHi
   have spN : (s.sp - BitVec.ofNat 32 56).toNat = s.sp.toNat - 56 := FrameStack.sub_toNat' spLo
   unfold VG.Impl.Rsa.Arm.RecoverDet.code codeWith
-  refine WP.frameLost (by decide) spLo (by decide) ?_
+  refine WP.frame (by decide) spLo (by decide) ?_
   rw [WP.seq_iff]
   refine WP.mono (entry_run h) fun u ⟨usp, urd, uwr, umem, uz⟩ => ?_
   rw [WP.seq_iff]

@@ -23,7 +23,6 @@ import VerifiedGarbage.Proof.ChaCha20Poly1305.Arm.Lit
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.Arm.Lost
 
 @[expose] public section
 
@@ -834,7 +833,7 @@ theorem finalize_ok {s : State} {P O Sc : BitVec 32} (h : FinArgs s P O Sc) {Q :
         Proof.Poly1305.countArm s = BitVec.ofNat 64 msg.length →
         bytesAt s'.mem (State.addr O) 16 = mac key msg) → Q s') :
     WP isa Impl.ChaCha20Poly1305.Arm.finalize s Q := by
-  refine WP.frameLost (rs := [.r1, .r12]) (r := .r1) rfl (by simpa using h.hsp) (by decide) ?_
+  refine WP.frame (rs := [.r1, .r12]) (r := .r1) rfl (by simpa using h.hsp) (by decide) ?_
   obtain hbw : ∀ r ∈ [⟨State.addr s.sp - 8, 8⟩], (⟨State.addr P, 128⟩ : Region).Disjoint r := by
     intro r hr; simp only [List.mem_singleton] at hr; subst hr; exact h.hbP.symm
   refine WP.call (k := Proof.Poly1305.finalizeArm) Proof.Poly1305.Arm.Fin.finalize_ok

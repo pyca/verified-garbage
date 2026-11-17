@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Arm.Frame
-import VerifiedGarbage.Proof.Framework.Arm.Lost
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Syms
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
@@ -504,9 +503,9 @@ theorem keyPair_ok {s : State} (hs : spec.pre s) {dn pn : String} :
       ⟨K s + BitVec.ofNat 64 584, 12⟩ := by
     rw [show 4 * [Reg.lr].length = 4 from rfl, show 4 * [Reg.r0, .r1, .r3].length = 12 from rfl, sub_sub',
       addrK h (by decide)]
-  refine WP.frameLost (rs := [.lr]) (r := .lr) (by decide)
+  refine WP.frame (rs := [.lr]) (r := .lr) (by decide)
     (by simp only [List.length_cons, List.length_nil]; omega_using [hsp]) (by decide) ?_
-  refine WP.frameLost (rs := [.r0, .r1, .r3]) (r := .r3) (by decide)
+  refine WP.frame (rs := [.r0, .r1, .r3]) (r := .r3) (by decide)
     (by show 12 ≤ (s.sp - BitVec.ofNat 32 4).toNat; rw [sub_toNat' (by omega_using [hsp])]; omega_using [hsp]) (by decide)
     (WP.mono (body_ok h) fun u ⟨hu, hE, hO⟩ m₁ u₁ h₁ m₂ u₂ h₂ => ?_)
   rw [pushed_sp, innerR] at h₁

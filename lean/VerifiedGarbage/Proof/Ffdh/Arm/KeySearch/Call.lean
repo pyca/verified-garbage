@@ -20,7 +20,7 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Regions
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.CallF
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Memory
-import VerifiedGarbage.Proof.Framework.Arm.Lost
+import VerifiedGarbage.Proof.Framework.Arm.Call
 
 /-! ### `Ffdh.Arm.KeySearch.CallConsts`, which this module and modules that import it used -/
 
@@ -306,7 +306,7 @@ theorem attemptRun_ok (backend : VG.Proof.Ffdh.Arm.KeyBackend sampling) : Attemp
       (arguments_sub h.input.bounds.stackFits)).symm
   unfold VG.Impl.Ffdh.Arm.KeySearch.attemptRunFor
   change WP isa (.frame (.alloc sampling.argumentBytes) (.seq (.block (VG.Impl.Ffdh.Arm.KeySearch.argumentsFor sampling.cachedContext)) (.call backend.keyName backend.generateKey)) (.free sampling.argumentBytes)) s _
-  refine WP.allocLost (by cases sampling <;> decide) outerFit ?_
+  refine WP.alloc (by cases sampling <;> decide) outerFit ?_
   rw [WP.seq_iff]
   refine WP.mono_syms (arguments_ok (allocated sampling.argumentBytes s) control stack separate h.headers h.cachedSlots) ?_
   rintro u ⟨⟨args, mem⟩, rest⟩ symsU

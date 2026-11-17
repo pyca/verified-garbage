@@ -16,7 +16,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.Arm.Lost
+import VerifiedGarbage.Proof.Framework.Arm.Call
 
 /-!
 # ChaCha20-Poly1305 encryption out of place, from a list of slices, ARMv7: the function
@@ -529,7 +529,7 @@ theorem sealGather_wp (F : SealFn) {s : State} (hs : gatherPre s) :
     WP isa (sealGather F.name F.code) s fun z => abiPreserved s z ∧ gatherPost s z := by
   have h := lay hs
   have w₁ := h.w₁
-  refine WP.allocLost ⟨by decide, by decide, by decide, by decide⟩ (by omega_arith) ?_
+  refine WP.alloc ⟨by decide, by decide, by decide, by decide⟩ (by omega_arith) ?_
   refine WP.seq (WP.mono (entered_wp h) fun e he => ?_)
   refine WP.seq (WP.mono (gathered_wp h he) fun g hg => ?_)
   refine WP.seq (WP.mono (ready_wp h hg) fun c hc => ?_)

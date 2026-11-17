@@ -8,7 +8,6 @@ public import VerifiedGarbage.Proof.Framework.Arm.Call
 public import VerifiedGarbage.Proof.Dsa.SignContractWith
 import VerifiedGarbage.Proof.Dsa.Arm.RandomBodyCT
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.Arm.Lost
 import VerifiedGarbage.Proof.Framework.Arm.CallF
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.Contract
@@ -141,7 +140,7 @@ theorem code_ok (S : Signer) (name : String) {s₀ : State} (A : RandomABI s₀)
     WP isa (code name S.code) s₀ fun s' =>
       ∃ u m un, Finished s₀ u ∧ Frame [⟨State.addr (s₀.sp - BitVec.ofNat 32 frameBytes), frameBytes⟩] u.mem m ∧
         s' = { freed frameBytes u with mem := m, unknowns := un } :=
-  WP.allocLost ⟨by decide, by decide, by decide, by decide⟩ (by have := A.stackLow; unfold frameBytes; omega_using [this])
+  WP.alloc ⟨by decide, by decide, by decide, by decide⟩ (by have := A.stackLow; unfold frameBytes; omega_using [this])
     (WP.mono (body_ok S name A V) fun u hu m un hfl => ⟨u, m, un, hu, hfl, rfl⟩)
 
 /-- `vg_dsa_sign_random` meets its contract. -/

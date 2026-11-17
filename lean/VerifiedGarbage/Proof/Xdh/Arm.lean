@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.X25519.Arm.Instr
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Arm.Lost
+import VerifiedGarbage.Proof.Framework.Arm.Inline
 meta import VerifiedGarbage.Impl.Xdh.Arm
 meta import VerifiedGarbage.Proof.Xdh.Common
 meta import VerifiedGarbage.Proof.Xdh.Rel
@@ -395,8 +395,8 @@ theorem exchange_wp {n w : Nat} {f : List Byte → List Byte → List Byte} {c :
     (hk : Callee n w f c k) {name : String} (hn : n < 4096) {s : State} (h : ExPre n w s) :
     WP isa (exchange name c n) s fun z => abiPreserved s z ∧ ExPost n f s z := by
   have hsp := h.2.2.2.2.2
-  refine WP.frameLost (rs := [.lr]) (by decide) (by simp only [List.length_singleton]; omega_using [hsp]) (by decide) ?_
-  refine WP.seq (WP.frameLost (rs := [.r0]) (by decide) ?_ (by decide) ?_)
+  refine WP.frame (rs := [.lr]) (by decide) (by simp only [List.length_singleton]; omega_using [hsp]) (by decide) ?_
+  refine WP.seq (WP.frame (rs := [.r0]) (by decide) ?_ (by decide) ?_)
   · simp only [pushed_sp, List.length_singleton, Nat.mul_one, BitVec.toNat_sub, BitVec.toNat_ofNat]
     have := s.sp.isLt
     omega_using [hsp]
@@ -450,7 +450,7 @@ theorem exchange_ct {n w : Nat} {f : List Byte → List Byte → List Byte} {c :
         -- What the inner frame leaves, by the correctness proof and determinism.
         have w₁ : WP isa (.frame (.push [.r0]) (.call name c) (.pop .r1 4)) (pushed [.lr] σ₁)
             (Popped n w f σ₁) := by
-          refine WP.frameLost (rs := [.r0]) (by decide) ?_ (by decide)
+          refine WP.frame (rs := [.r0]) (by decide) ?_ (by decide)
             (WP.mono (called_wp hk p₁ k₁) fun z hz m u hm => popped_of p₁ hz (by
               change Frame [⟨State.addr (_ - BitVec.ofNat 32 4 - BitVec.ofNat 32 4), 4⟩] z.mem m at hm
               rw [addr44 p₁] at hm; exact hm))
@@ -458,7 +458,7 @@ theorem exchange_ct {n w : Nat} {f : List Byte → List Byte → List Byte} {c :
           have := σ₁.sp.isLt; have := p₁.2.2.2.2.2; omega_using [this]
         have w₂ : WP isa (.frame (.push [.r0]) (.call name c) (.pop .r1 4)) (pushed [.lr] σ₂)
             (Popped n w f σ₂) := by
-          refine WP.frameLost (rs := [.r0]) (by decide) ?_ (by decide)
+          refine WP.frame (rs := [.r0]) (by decide) ?_ (by decide)
             (WP.mono (called_wp hk p₂ k₂) fun z hz m u hm => popped_of p₂ hz (by
               change Frame [⟨State.addr (_ - BitVec.ofNat 32 4 - BitVec.ofNat 32 4), 4⟩] z.mem m at hm
               rw [addr44 p₂] at hm; exact hm))

@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.Ffdh.Arm.Block
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Arm.Lost
+import VerifiedGarbage.Proof.Framework.Arm.Frame
 import VerifiedGarbage.Proof.Rsa.BytesFrame
 
 /-! # The whole search (ARMv7): its results stored, and the contract -/
@@ -184,7 +184,7 @@ theorem search_correct_ok (c : Cand) {s : State} (h : searchPre s) :
   unfold primeEntropy at rl
   have rem := hp.remaining_le
   unfold code body
-  refine WP.frameLost (rs := pushRegs) (r := .r4) (by decide) (by simp; omega_using [room]) (by decide) ?_
+  refine WP.frame (rs := pushRegs) (r := .r4) (by decide) (by simp; omega_using [room]) (by decide) ?_
   refine WP.seq (WP.mono (entry_ok hp) fun s1 h1 => ?_)
   refine WP.seq (WP.mono (search_loop c (final := searchResult s) (tr := []) h1 (consume_zero _).symm) fun s2 hd => ?_)
   unfold finish

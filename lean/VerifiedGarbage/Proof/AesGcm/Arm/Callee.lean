@@ -15,7 +15,6 @@ import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.Arm.Lost
 
 /-!
 # AES-GCM on ARMv7: the functions called
@@ -275,7 +274,7 @@ end CtrCall
 
 theorem ctr_call {s : State} {K C D S : BitVec 32} {R n : Nat} (h : CtrCall s K C D S R n) :
     WP isa ctrFrame s (CtrPost s K C D S R n) := by
-  refine WP.frameLost (rs := [.r12, .lr]) (r := .r12) rfl (by simpa using h.hsp) (by simp) ?_
+  refine WP.frame (rs := [.r12, .lr]) (r := .r12) rfl (by simpa using h.hsp) (by simp) ?_
   refine WP.call (k := Proof.Aes.ctr32Arm) Proof.Aes.Arm.ctr32_correct
     (rd := ctrRd s.sp K) (wr := ctrWr C D S n) h.pre h.cov h.covW ?_ ctr_noCalls
   intro s₂ hrd₂ hwr₂ hsp₂ hf hcs _ hpost ml ul hfl
@@ -587,7 +586,7 @@ end CtrToCall
 
 theorem ctrTo_call {s : State} {K C D T S : BitVec 32} {R n : Nat} (h : CtrToCall s K C D T S R n) :
     WP isa ctrToFrame s (CtrToPost s K C D T S R n) := by
-  refine WP.frameLost (rs := [.r0, .r1, .r2]) (r := .r12) rfl (by simpa using h.hsp) (by simp) ?_
+  refine WP.frame (rs := [.r0, .r1, .r2]) (r := .r12) rfl (by simpa using h.hsp) (by simp) ?_
   refine WP.seq (WP.of_runBlock ⟨_, toArgs_run s, ?_⟩)
   refine WP.call (k := Proof.Aes.ctr32ToArm) Proof.Aes.Arm.ctr32To_correct
     (rd := ctrToRd s.sp K D n) (wr := ctrToWr C T S n) h.pre h.cov h.covW ?_ ctrTo_noCalls
@@ -766,7 +765,7 @@ end GhCall
 
 theorem gh_call [VG.Proof.Gcm.Arm.GhashLaw] {s : State} {H Y D S : BitVec 32} {n : Nat} (h : GhCall s H Y D S n) :
     WP isa ghFrame s (GhPost s H Y D S n) := by
-  refine WP.frameLost (rs := [.r12, .lr]) (r := .r12) rfl (by simpa using h.hsp) (by simp) ?_
+  refine WP.frame (rs := [.r12, .lr]) (r := .r12) rfl (by simpa using h.hsp) (by simp) ?_
   refine WP.call (k := Proof.Gcm.ghashArm) Proof.Gcm.Arm.ghash_correct
     (rd := ghRd s.sp H D n) (wr := ghWr Y S) h.pre h.cov h.covW ?_ gh_noCalls
   intro s₂ hrd₂ hwr₂ hsp₂ hf hcs _ hpost ml ul hfl

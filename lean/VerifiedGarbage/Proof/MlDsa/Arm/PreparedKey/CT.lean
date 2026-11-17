@@ -3,7 +3,6 @@ module
 import VerifiedGarbage.Proof.MlDsa.Arm.Sign.CopyTr
 import VerifiedGarbage.Proof.MlDsa.Arm.Sign.SignCT
 import VerifiedGarbage.Proof.Framework.RelCT
-import VerifiedGarbage.Proof.Framework.Arm.Lost
 import VerifiedGarbage.Proof.Framework.Arm.Frame
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
 import VerifiedGarbage.Proof.Framework.Arm.Inline
@@ -638,7 +637,7 @@ theorem entry_correct {body : Prog isa} {bytes count : Nat} {B : Mem → Addr �
       B s'.mem (State.addr (σ.gpr .r1)) := by
   have h16 := h16 h
   unfold entry
-  refine WP.frameLost (rs := saved) (r := .r4) (by decide) (by simp only [List.length_cons, List.length_nil]; omega_using [h16])
+  refine WP.frame (rs := saved) (r := .r4) (by decide) (by simp only [List.length_cons, List.length_nil]; omega_using [h16])
     (by decide) ?_
   refine WP.seq (WP.mono (movs_ok _) fun u ⟨g4, g8, g7, g, gm, grd, gwr, gsp⟩ => ?_)
   have u4 : u.gpr .r4 = σ.gpr .r0 := by rw [g4, pushed_gpr]

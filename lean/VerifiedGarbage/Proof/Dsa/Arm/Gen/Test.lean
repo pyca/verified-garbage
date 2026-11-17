@@ -24,7 +24,6 @@ import VerifiedGarbage.Proof.Dsa.Generation.RandomSuffix
 public import VerifiedGarbage.Proof.Rsa.Arm.Stage.VP
 import VerifiedGarbage.Proof.Bignum.Arm.CopyBuffer
 import VerifiedGarbage.Proof.Framework.KernelRfl
-import VerifiedGarbage.Proof.Framework.Arm.Lost
 
 /-! ### `Dsa.Arm.Gen.Tape`, which this module and modules that import it used -/
 
@@ -646,7 +645,7 @@ theorem SS.primeCall_ok (h : SS G σ c s) {L u bits : Nat} {name : String} {code
   have sp : s.sp = G.sp := gi.sp
   have big := gi.scrBig
   unfold callWith
-  refine WP.frameLost (rs := callPush) (r := .r4) (by decide) (by rw [sp]; show 4 * 8 ≤ G.sp.toNat; omega_arith) (by decide) ?_
+  refine WP.frame (rs := callPush) (r := .r4) (by decide) (by rw [sp]; show 4 * 8 ≤ G.sp.toNat; omega_arith) (by decide) ?_
   refine FrameStack.WP.callF ok.verified.1 (pre_of_pin pin) hc hw
     (by rw [pushed_sp, sp, FrameStack.sub_toNat' (by show 4 * 8 ≤ G.sp.toNat; omega_arith)]; have := ok.stack
         show armStack code ≤ G.sp.toNat - 4 * 8; omega_arith)

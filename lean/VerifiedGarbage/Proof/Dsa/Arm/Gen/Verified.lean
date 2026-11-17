@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.Framework.ReadHalves
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Slots
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.Arm.Lost
+import VerifiedGarbage.Proof.Framework.Arm.Call
 import VerifiedGarbage.Proof.Framework.Arm.CallF
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Rsa.BytesFrame
@@ -62,7 +62,7 @@ theorem code_ok (K1 : GeoOk g1 128 20) (K2 : GeoOk g2 256 32) (K3 : GeoOk g3 384
     WP isa (code g1 g2 g3) s fun t => abiPreserved s t ∧ (Spec.Dsa.parameterSearchContract abi 304).post s t := by
   have hpre := cin_of_pre s hs
   have spLo := hpre.spLo
-  refine WP.allocLost ⟨by decide, by decide, by decide, by decide⟩ (by simp only [F]; omega_using [spLo])
+  refine WP.alloc ⟨by decide, by decide, by decide, by decide⟩ (by simp only [F]; omega_using [spLo])
     (WP.mono ((body_vp (G := mkG s) K1 K2 K3).wp s _ ⟨rfl, hpre, rfl⟩) fun u hu lm lu hfl => ?_)
   have hfl' : Frame [⟨State.addr s.sp - 304#64, 304⟩] u.mem lm := by
     refine hfl.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩

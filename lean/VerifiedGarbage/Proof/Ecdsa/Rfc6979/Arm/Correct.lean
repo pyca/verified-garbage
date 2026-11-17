@@ -17,7 +17,6 @@ import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Prep
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Copy
 import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
 import VerifiedGarbage.Proof.Framework.Arm.Exec
-import VerifiedGarbage.Proof.Framework.Arm.Lost
 
 /-! ### `Ecdsa.Rfc6979.Arm.Loop`, which only this module used -/
 
@@ -1116,7 +1115,7 @@ theorem sign_ok {ns : List String} {s : State} (h : (rfcP P ns).pre s) :
   obtain hL : (layOf P s).Ok := lay_ok h
   have hN : 536 ≤ s.sp.toNat := hL.nB
   obtain hk := coreOk_lay P s
-  refine WP.allocLost frameBytes_ok (by show 512 ≤ _; omega_arith) ?_
+  refine WP.alloc frameBytes_ok (by show 512 ≤ _; omega_arith) ?_
   rw [Cfg.body]
   refine WP.seq (WP.mono (entry_ok h) fun t hc => WP.mono (body_ok hL hk hc) fun v hv lm lu hfl => ?_)
   obtain ⟨hsp, hs, i, hx⟩ := hv

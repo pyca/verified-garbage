@@ -18,7 +18,6 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TaintSum
 import VerifiedGarbage.Proof.Rc2.Arm.Lit
 import VerifiedGarbage.Proof.Rc2.Memory
-import VerifiedGarbage.Proof.Framework.Arm.Lost
 
 @[expose] public section
 
@@ -255,7 +254,7 @@ theorem key_noCalls : expandKey.noCalls = true := by decide +kernel
 
 theorem key_call {s : State} {K KL E O S : BitVec 32} (h : KeyPre s K KL E O S) :
     WP isa Stream.keyCall s (KeyPost s K KL E O S) := by
-  refine WP.frameLost (rs := [.r12, .lr]) (r := .r12) rfl (by simpa using h.hsp) (by simp) ?_
+  refine WP.frame (rs := [.r12, .lr]) (r := .r12) rfl (by simpa using h.hsp) (by simp) ?_
   refine WP.call (k := keyContractC) key_correct (rd := keyRdC s K KL) (wr := keyWr O S) h.pre
     (covC h) (covW h.writes) ?_ key_noCalls
   intro s₂ hrd₂ hwr₂ hsp₂ hf hcs _ hpost ml ul hfl

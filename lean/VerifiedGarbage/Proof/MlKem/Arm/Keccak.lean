@@ -4,7 +4,6 @@ import VerifiedGarbage.Proof.Sha3.Arm.Stream.Absorb
 import VerifiedGarbage.Proof.Sha3.Arm.Stream.Pad
 import VerifiedGarbage.Proof.Sha3.Arm.Stream.Squeeze
 public import VerifiedGarbage.Proof.Framework.Arm.Frame
-import VerifiedGarbage.Proof.Framework.Arm.Lost
 public import VerifiedGarbage.Impl.MlKem.Arm.Sample
 public import VerifiedGarbage.Proof.Framework.Arm.Call
 public import VerifiedGarbage.Proof.Sha3.Arm.Permute
@@ -196,7 +195,7 @@ theorem absorb_ok {s : State} {st scr data : BitVec 32} {rate pos len : Nat}
         Repr s'.mem (State.addr st) rate (msg ++ Spec.Sha3.bytesAt s.mem (State.addr data) len)) →
       (s'.gpr .r0).toNat = (pos + len) % rate → Q s') :
     WP isa absorbCall s Q := by
-  refine WP.frameLost (rs := [.r12, .lr]) (r := .r12) rfl (by simpa using h.sp) (by decide) ?_
+  refine WP.frame (rs := [.r12, .lr]) (r := .r12) rfl (by simpa using h.sp) (by decide) ?_
   obtain ⟨a0, a1, a2⟩ := push2_arg (t := absorbView s st scr data len) h.sp (push2_sp s) rfl
   have hr := rates_lt h.hrate
   have hp := h.hpos
@@ -377,7 +376,7 @@ theorem pad_ok {s : State} {st scr : BitVec 32} {rate pos : Nat} {suffix : BitVe
         stateAt s'.mem (State.addr st) = Spec.Sha3.absorb rate (Spec.Sha3.pad rate (suffix.setWidth 8) msg)) →
       Q s') :
     WP isa padCall s Q := by
-  refine WP.frameLost (rs := [.lr]) (r := .r12) rfl (by simpa using (show 4 ≤ s.sp.toNat by have := h.sp; omega_using [this]))
+  refine WP.frame (rs := [.lr]) (r := .r12) rfl (by simpa using (show 4 ≤ s.sp.toNat by have := h.sp; omega_using [this]))
     (by decide) ?_
   have hr := rates_lt h.hrate
   have hp := h.hpos
@@ -513,7 +512,7 @@ theorem squeeze_ok {s : State} {st scr out : BitVec 32} {rate pos len : Nat}
       (∀ d, squeezeFrom rate (stateAt s'.mem (State.addr st)) (s'.gpr .r0).toNat d =
         squeezeFrom rate (stateAt s.mem (State.addr st)) (pos + len) d) → Q s') :
     WP isa squeezeCall s Q := by
-  refine WP.frameLost (rs := [.r12, .lr]) (r := .r12) rfl (by simpa using h.sp) (by decide) ?_
+  refine WP.frame (rs := [.r12, .lr]) (r := .r12) rfl (by simpa using h.sp) (by decide) ?_
   obtain ⟨a0, a1, a2⟩ := push2_arg (t := squeezeView s st scr out len) h.sp (push2_sp s) rfl
   have hr := rates_lt h.hrate
   have hp := h.hpos

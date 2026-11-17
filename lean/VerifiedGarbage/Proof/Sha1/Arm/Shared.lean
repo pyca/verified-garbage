@@ -10,7 +10,6 @@ public import VerifiedGarbage.Proof.MdStream.Arm.Update
 public import VerifiedGarbage.Impl.StackScratch.Arm
 import VerifiedGarbage.Proof.Sha1.Scratch
 import VerifiedGarbage.Proof.Framework.Arm.StackScratch
-import VerifiedGarbage.Proof.Framework.Arm.ScratchLost
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 
@@ -24,7 +23,7 @@ contracts of `Spec/Sha1/Contract.lean`, which the artifacts are emitted with.
 `update` and `finalize` keep their working space in a frame of their own:
 they are `updateScratch` and `finalizeScratch` (the shared contracts with
 the working space as an argument, which HMAC's and PBKDF2's code calls) run
-in a frame that allocates it (`Verified.stackScratchLost`).
+in a frame that allocates it (`Verified.stackScratch`).
 -/
 
 @[expose] public section
@@ -64,7 +63,7 @@ def updateFrameSat : Arm.State :=
 theorem update : Verified Arm.target
     (Impl.StackScratch.Arm.withStackScratch 176 2 Impl.Sha1.Arm.Stream.update)
     (Spec.Sha1.updateContract Arm.abi 176) :=
-  Arm.Verified.stackScratchLost (nm := "scratch") (e := .u64) (n := 20) (stack := 0) (bytes := 176) (m := 2)
+  Arm.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 20) (stack := 0) (bytes := 176) (m := 2)
     updateScratch (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Sha1.updatePost_local _)
     (fun vs mm m₁ m₂ r hl _ hb h => Proof.Sha1.updatePostOut_local _ vs mm m₁ m₂ r hl hb h)
@@ -80,7 +79,7 @@ def finalizeFrameSat : Arm.State :=
 theorem finalize : Verified Arm.target
     (Impl.StackScratch.Arm.withStackScratch 176 1 Impl.Sha1.Arm.Stream.finalize)
     (Spec.Sha1.finalizeContract Arm.abi 176) :=
-  Arm.Verified.stackScratchLost (nm := "scratch") (e := .u64) (n := 20) (stack := 0) (bytes := 176) (m := 1)
+  Arm.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 20) (stack := 0) (bytes := 176) (m := 1)
     finalizeScratch (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Sha1.finalizePost_local _)
     (fun vs mm m₁ m₂ r hl _ hb h => Proof.Sha1.finalizePostOut_local _ vs mm m₁ m₂ r hl hb h)

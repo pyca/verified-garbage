@@ -3,7 +3,8 @@ module
 import VerifiedGarbage.Proof.MillerRabin.Arm.Body
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 import VerifiedGarbage.Proof.Framework.Arm.Exec
-import VerifiedGarbage.Proof.Framework.Arm.Lost
+import VerifiedGarbage.Proof.Framework.Arm.Frame
+import VerifiedGarbage.Proof.Framework.Arm.Inline
 public import VerifiedGarbage.Proof.MillerRabin.Arm.Contract
 public import VerifiedGarbage.Proof.Bignum.Arm.PcPush
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
@@ -162,7 +163,7 @@ theorem round_ok (h : roundPre s) (fios : Bool := false) : WP isa (code (fios :=
   have spN : (s.sp - BitVec.ofNat 32 56).toNat = s.sp.toNat - 56 := FrameStack.sub_toNat' spLo
   have pre := in_x h
   unfold code
-  refine WP.frameLost (by decide) spLo (by decide) ?_
+  refine WP.frame (by decide) spLo (by decide) ?_
   rw [WP.seq_iff]
   obtain ⟨tr, v, run, done⟩ := (body_vp (fios := fios)).wp (bodyIn s) (bodyIn s) ⟨rfl, pre, rfl⟩
   have cov := h.xCovers

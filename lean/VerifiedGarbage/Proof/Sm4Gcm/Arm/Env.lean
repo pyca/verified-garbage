@@ -23,7 +23,6 @@ public import VerifiedGarbage.Impl.Sm4.Arm.ExpandKey
 public import VerifiedGarbage.Impl.StackScratch.Arm
 public import VerifiedGarbage.Proof.Framework.Arm.Inline
 public import VerifiedGarbage.Proof.Framework.Arm.Linear
-import VerifiedGarbage.Proof.Framework.Arm.Lost
 public import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Sm4.Arm.Batch32Body
@@ -452,7 +451,7 @@ end GhCall
 
 theorem gh_call [VG.Proof.Gcm.Arm.GhashLaw] {s : State} {H Y D S : BitVec 32} {n : Nat} (h : GhCall s H Y D S n) :
     WP isa ghFrame s (GhPost s H Y D S n) := by
-  refine WP.frameLost (rs := [.r12, .lr]) (r := .r12) rfl (by simpa using h.hsp) (by simp) ?_
+  refine WP.frame (rs := [.r12, .lr]) (r := .r12) rfl (by simpa using h.hsp) (by simp) ?_
   refine WP.call (k := Proof.Gcm.ghashArm) Proof.Gcm.Arm.ghash_correct
     (rd := ghRd s.sp H D n) (wr := ghWr Y S) h.pre h.cov h.covW ?_ gh_noCalls
   intro s₂ hrd₂ hwr₂ hsp₂ hf hcs _ hpost ml ul hfl

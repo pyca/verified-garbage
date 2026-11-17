@@ -11,7 +11,8 @@ import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
 import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
 import VerifiedGarbage.Proof.Framework.OffsetBelow
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Framework.Arm.Lost
+import VerifiedGarbage.Proof.Framework.Arm.Call
+import VerifiedGarbage.Proof.Framework.Arm.Inline
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -164,7 +165,7 @@ theorem montCallOp_ok (name : String) (callee : Prog isa)
     rw [sub_toNat' fit8]; have := s.sp.isLt; omega_using []
   unfold MontCall.op
   rw [WP.seq_iff]
-  apply WP.allocLost (by decide) fit8
+  apply WP.alloc (by decide) fit8
   rw [WP.seq_iff]
   refine WP.mono (montCallArgs_ok A argsWs (by omega_using [size]) h.ptr argsFit argsWrite ho.1 ha.1 hb.1) ?_
   rintro u ⟨ptrU, outU, aU, memU, frameU, restU⟩
@@ -207,7 +208,7 @@ theorem montCallOp_ok (name : String) (callee : Prog isa)
   have keepsLost : Keeps (State.addr base) len w o s.mem ml := by
     intro i hi separate
     exact (lost_byte hfl (R := ⟨State.addr base, 8 * len⟩) lostWs.symm hi).trans (keepsAll i hi separate)
-  have frameLost : Frame [⟨State.addr base, 8 * len⟩, belowA s.sp 48] s.mem ml :=
+  have frame : Frame [⟨State.addr base, 8 * len⟩, belowA s.sp 48] s.mem ml :=
     frame.trans (hfl.sub fun r hr => by
       have er := List.mem_singleton.mp hr; subst r
       exact ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), lostSub⟩)
@@ -222,7 +223,7 @@ theorem montCallOp_ok (name : String) (callee : Prog isa)
     have sep : Region.Disjoint ⟨State.addr s.sp, 4⟩ (belowA s.sp 48) := by
       rw [belowA, addr_sub' cs.fit]
       exact (Offset.below_disjoint _ (by decide)).symm
-    exact (frameLost.readW (r := ⟨State.addr s.sp, 4⟩) (Region.contains_self _ _)
+    exact (frame.readW (r := ⟨State.addr s.sp, 4⟩) (Region.contains_self _ _)
       (by intro r hr
           rcases List.mem_cons.mp hr with hr | hr
           · subst r; exact h.stackSep
@@ -232,9 +233,9 @@ theorem montCallOp_ok (name : String) (callee : Prog isa)
   rintro t ⟨ptrT, memT, restT⟩
   change t.mem = ml at memT
   have rest := freeRest.trans (restT.mono (by intro r _; cases r <;> simp [roundClobbers]))
-  rw [← memT] at keepsLost frameLost bound value
-  obtain ⟨ready, modulus⟩ := h.after_call cs ho0 keepsLost frameLost rest ptrT
-  exact ⟨ready, cs.of_rest rest, modulus, bound, value, keepsLost, frameLost, rest⟩
+  rw [← memT] at keepsLost frame bound value
+  obtain ⟨ready, modulus⟩ := h.after_call cs ho0 keepsLost frame rest ptrT
+  exact ⟨ready, cs.of_rest rest, modulus, bound, value, keepsLost, frame, rest⟩
 
 end VG.Proof.Bignum.Arm
 

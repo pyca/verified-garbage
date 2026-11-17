@@ -11,7 +11,8 @@ import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Arm.Lost
+import VerifiedGarbage.Proof.Framework.Arm.Call
+import VerifiedGarbage.Proof.Framework.Arm.Frame
 
 /-! ### `RsaPkcs1Sig.Arm.Wrap`, which only this module used -/
 
@@ -73,9 +74,9 @@ theorem wrap_ok {F : Nat} (hF : FrameOk F) {body : Prog isa} {s : State} (hsp : 
     rw [FrameStack.sub_toNat' fit56]
     omega_using [hsp]
   unfold wrap
-  refine WP.frameLost (by decide) fit56 (by decide) ?_
+  refine WP.frame (by decide) fit56 (by decide) ?_
   rw [WP.seq_iff]
-  refine WP.allocLost hF allocation ?_
+  refine WP.alloc hF allocation ?_
   refine WP.mono (WP.rdwr hb) ?_
   rintro u ⟨⟨frame, result⟩, -, wrU, spU⟩ m₁ u₁ h₁
   change Frame [⟨State.addr (entered F s).sp, F⟩] u.mem m₁ at h₁

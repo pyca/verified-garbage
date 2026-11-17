@@ -3,7 +3,8 @@ module
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivFnInput
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivBody
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Framework.Arm.Lost
+import VerifiedGarbage.Proof.Framework.Arm.Call
+import VerifiedGarbage.Proof.Framework.Arm.Frame
 import VerifiedGarbage.Proof.Rsa.BytesFrame
 import VerifiedGarbage.Proof.Rsa.Arm.PrivRegions
 import VerifiedGarbage.Proof.Rsa.PrivCheck
@@ -30,9 +31,9 @@ theorem codeWith_ok (s : State) {g : PrivGeometry} {bs : Fin 8 → List Byte} {Q
     simp only [stackBytes, frameBytes] at *
     omega_using [this]
   unfold codeWith
-  refine WP.frameLost (by decide) stackFit (by decide) ?_
+  refine WP.frame (by decide) stackFit (by decide) ?_
   rw [WP.seq_iff]
-  refine WP.allocLost (by decide) allocation ?_
+  refine WP.alloc (by decide) allocation ?_
   refine WP.mono (hb (entered s) h.context h.output h.modulus h.count q) ?_
   rintro u ⟨result, _, frame, rest⟩ ml ul hfl
   change Frame [⟨State.addr (entered s).sp, frameBytes⟩] u.mem ml at hfl

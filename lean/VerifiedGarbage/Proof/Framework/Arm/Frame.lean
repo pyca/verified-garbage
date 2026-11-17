@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.Mem
 A frame `push {rs}; body; ldr r, [sp], #n` stores the registers `rs` below
 the stack pointer, which becomes a writable region (`pushed`), runs `body`,
 and loads `r` from the frame as it removes it (`popped`). `WP.frame` runs
-one; `RelCT.frame` relates two runs of one: the push and the pop leak only
+one, whose postcondition holds whatever the released frame's bytes then hold; `RelCT.frame` relates two runs of one: the push and the pop leak only
 addresses computed from the stack pointer, so if it is the same in both
 runs, the frame leaks what its body does. (The taint analysis does not
 analyse frames.)
@@ -54,10 +54,18 @@ theorem push_pushed {rs : List Reg} {s : State} (hrs : regList rs = true)
 theorem popped_gpr {r q : Reg} (h : q ≠ r) (n : Nat) (s : State) : (popped r n s).gpr q = s.gpr q := by
   simp [popped, State.setReg, h]
 
-/-- A frame of the words `rs`, popped into `r`: its body runs from `pushed rs s`. -/
+/-- A frame of the words `rs`, popped into `r`: its body runs from
+`pushed rs s`, and the pop leads to `popped r (4 * rs.length) s₂`, of which
+the postcondition may rely on nothing the frame's bytes hold, nor on the
+unknowns: it holds whatever memory `m` that differs from the body's only in
+the frame, and whatever unknowns `u`, the state then has. (A frame's bytes
+are below the stack pointer once it is released, where a signal handler may
+overwrite them.) -/
 theorem WP.frame {rs : List Reg} {r : Reg} {body : Prog isa} {s : State} {Q : State → Prop}
     (hrs : regList rs = true) (hn : 4 * rs.length ≤ s.sp.toNat) (hlt : 4 * rs.length < 256)
-    (hb : WP isa body (pushed rs s) fun s₂ => Q (popped r (4 * rs.length) s₂)) :
+    (hb : WP isa body (pushed rs s) fun s₂ => ∀ m u,
+      Frame [⟨State.addr (s.sp - BitVec.ofNat 32 (4 * rs.length)), 4 * rs.length⟩] s₂.mem m →
+        Q { popped r (4 * rs.length) s₂ with mem := m, unknowns := u }) :
     WP isa (.frame (.push rs) body (.pop r (4 * rs.length))) s Q := by
   obtain ⟨t, s₂, he, hq⟩ := hb
   obtain ⟨-, hw, hsp⟩ := Exec.rdwr he
@@ -70,7 +78,7 @@ theorem WP.frame {rs : List Reg} {r : Reg} {body : Prog isa} {s : State} {Q : St
     split
     · rfl
     · exact absurd hc ‹_›
-  exact ⟨_, _, Exec.frame (push_pushed hrs hn) he hpop, hq⟩
+  exact ⟨_, _, Exec.frame (push_pushed hrs hn) he hpop, hq _ _ (Frame.refl _ _)⟩
 
 theorem push_push_sp {rs : List Reg} {s a : State} (h : isa.push (.push rs) s = some a) :
     a.sp = s.sp - BitVec.ofNat 32 (4 * rs.length) := by

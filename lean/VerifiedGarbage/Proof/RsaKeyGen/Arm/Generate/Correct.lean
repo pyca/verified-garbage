@@ -20,7 +20,7 @@ import VerifiedGarbage.Proof.Ffdh.Arm.Block
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Arm.Lost
+import VerifiedGarbage.Proof.Framework.Arm.Call
 import VerifiedGarbage.Proof.Rsa.BytesFrame
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Search.Loop
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -1740,7 +1740,7 @@ theorem search_run (name : String) (c : Search.Cand) (h : GenFrame p o used st s
   have room := h.facts.room
   obtain hsp32 : 32 ≤ s.sp.toNat := by rw [h.sp, h.S1_toNat]; omega_using [room]
   unfold searchRun
-  refine WP.allocLost (by decide) hsp32 ?_
+  refine WP.alloc (by decide) hsp32 ?_
   refine WP.seq (WP.mono h.searchArgs_ok fun u ⟨hr, ku⟩ => ?_)
   obtain ⟨cov, covW⟩ := h.search_covers hr
   obtain hS2 : 184 ≤ u.sp.toNat := by rw [hr.sp, h.S2_toNat]; omega_using [room]
@@ -2336,7 +2336,7 @@ theorem key_run (name : String) {kc : Prog isa} (hv : Verified target kc (Proof.
   have hL := h.L_le
   obtain hsp56 : 56 ≤ s.sp.toNat := by rw [h.sp, h.S1_toNat]; omega_using [room]
   unfold keyRun
-  refine WP.allocLost (by decide) hsp56 ?_
+  refine WP.alloc (by decide) hsp56 ?_
   refine WP.seq (WP.mono h.keyArgs_ok fun u ⟨hr, ku⟩ => ?_)
   obtain ⟨cov, covW⟩ := h.key_covers hr
   obtain hS3 : 56 ≤ u.sp.toNat := by rw [hr.sp, h.S3_toNat]; omega_using [room]
@@ -3685,7 +3685,7 @@ theorem gen_correct_ok (sname : String) (c : Search.Cand) (name : String) {kc : 
   have room : 256 ≤ s.sp.toNat := hpre.1
   unfold code body
   rw [show pushBytes = 4 * pushRegs.length from rfl]
-  refine WP.frameLost (rs := pushRegs) (r := .r4) (by decide) (by simp; omega_using [room]) (by decide) ?_
+  refine WP.frame (rs := pushRegs) (r := .r4) (by decide) (by simp; omega_using [room]) (by decide) ?_
   refine WP.seq (WP.mono (entry_ok hp) fun s1 ⟨g1, h11, hm1⟩ => ?_)
   obtain hroom : 40 ≤ s.sp.toNat := by omega_using [room]
   have cf := hp.cfacts

@@ -21,7 +21,6 @@ public import VerifiedGarbage.Proof.Framework.Arm.Frame
 import VerifiedGarbage.Proof.CmacTripleDes.Arm.Lit
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.Arm.Lost
 
 /-! ### `CmacTripleDes.Arm.FinalizeCorrect`, which only this module used -/
 
@@ -303,7 +302,7 @@ theorem WP.frameInline {ra : Reg} {c : Prog isa} {k : Contract isa}
       Frame (wr ++ [blw4 s]) s.mem s'.mem → (∀ r ∈ preserved, s'.gpr r = s.gpr r) →
       Frame [blw4 s] s₂.mem s'.mem → k.post (view ra s rd wr) (s₂.withRegions rd wr) → Q s') :
     WP isa (.frame (.push [ra]) c (.pop ra 4)) s Q := by
-  refine WP.frameLost (rs := [ra]) (r := ra) rfl (by simpa using hsp) (by simp) ?_
+  refine WP.frame (rs := [ra]) (r := ra) rfl (by simpa using hsp) (by simp) ?_
   refine WP.inline (k := k) hv hpre hc hw (fun s₂ hrd₂ hwr₂ ha hf _ hpost ml ul hfl => ?_) hn
   have hfl' : Frame [blw4 s] s₂.mem ml := by rw [e4, hA hsp] at hfl; exact hfl
   have hsp₂ : s₂.sp = s.sp - 4 := ha.2

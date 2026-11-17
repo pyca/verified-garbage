@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Framework.Arm.CallF
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Arm.Lost
+import VerifiedGarbage.Proof.Framework.Arm.Frame
 
 /-!
 # Argon2 on ARMv7: calls in frames of their stack arguments
@@ -133,7 +133,7 @@ theorem frameCall_ok {rs : List Reg} {t : Reg} (hrs : regList rs = true) (ht : t
       Q { popped t (4 * rs.length) s₂ with mem := m, unknowns := u }) :
     WP isa (.frame (.push rs) (.call n c) (.pop t (4 * rs.length))) s Q := by
   have hn : 4 * rs.length ≤ s.sp.toNat := by omega_using [hst, hK]
-  refine WP.frameLost (rs := rs) (r := t) hrs hn hlt ?_
+  refine WP.frame (rs := rs) (r := t) hrs hn hlt ?_
   refine WP.callF hv hpre hc hw (by rw [pushed_sp, sub_toNat' hn]; omega_using [hst, hK])
     fun s₂ hrd hwr hsp hf hcs hpost mL uL hfl => ?_
   rw [addr_sub' hn] at hfl

@@ -11,7 +11,8 @@ import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Arm.Lost
+import VerifiedGarbage.Proof.Framework.Arm.Call
+import VerifiedGarbage.Proof.Framework.Arm.Inline
 import VerifiedGarbage.Proof.Rsa.BytesFrame
 public import VerifiedGarbage.Proof.RsaKeyGen.CandidateContract
 
@@ -231,7 +232,7 @@ theorem candidateRun_ok (c : Cand) {p : SearchPublic} {o s : State} {used remain
   have room := f.room
   have hsp : s.sp.toNat = p.sp.toNat - 40 := by rw [h.sp]; exact FrameStack.sub_toNat' (by omega_using [room])
   unfold candidateRun
-  refine WP.allocLost (by decide) (by omega_using [room, hsp]) ?_
+  refine WP.alloc (by decide) (by omega_using [room, hsp]) ?_
   refine WP.seq (WP.mono (arguments_ok h) fun u ⟨hd, ku⟩ => ?_)
   have hu : used ≤ p.randLen := by omega_using [hroom]
   obtain ⟨cov, covW⟩ := call_covers h rfl hd (by omega_using [hroom, hl])

@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.Framework.Arm.Frame
 import VerifiedGarbage.Proof.Framework.Arm.CallF
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Framework.Arm.Lost
 
 /-! # The private CRT's frame around the precomputation's body
 
@@ -103,7 +102,7 @@ theorem pp_crtFrame_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} 
       Frame [FrameStack.belowA s.sp 56, ⟨State.addr g.base, g.size⟩,
         ⟨State.addr g.output, 8 * ppPreWords g⟩] s.mem t.mem := by
   unfold crtFrame
-  refine WP.frameLost (by decide) h.stackFit (by decide) ?_
+  refine WP.frame (by decide) h.stackFit (by decide) ?_
   rw [WP.seq_iff]
   refine WP.mono (crt_entry_ready s h) ?_
   rintro u ⟨ready, frameU, savedU, restU⟩

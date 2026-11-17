@@ -8,7 +8,6 @@ public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.AesGcmSiv.Arm.Fn
 public import VerifiedGarbage.Impl.StackScratch.Arm
 import VerifiedGarbage.Proof.Framework.Arm.StackScratch
-import VerifiedGarbage.Proof.Framework.Arm.ScratchLost
 
 /-!
 # AES-GCM-SIV on ARMv7: `Verified`
@@ -99,7 +98,7 @@ theorem open_verified [VG.Proof.Gcm.Arm.GhashLaw] : Verified Arm.target «open»
 
 `seal` and `open` run their code, proved with the working space as their
 last argument (above), in a frame that allocates it
-(`Verified.stackScratchLost`): their working space is their fifth stack
+(`Verified.stackScratch`): their working space is their fifth stack
 argument, after `aad_len`, `data`, `len` and `tag`, so the frame of 3792
 bytes holds a copy of those four words, the address of the working space,
 the saved `lr` and the working space (3784 bytes, rounded up to an
@@ -123,7 +122,7 @@ theorem sealFrameSat_pre : ∃ s, (Proof.AesGcmSiv.sealRoundsContract Arm.abi 38
 theorem seal_framed [VG.Proof.Gcm.Arm.GhashLaw] :
     Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 3792 4 «seal»)
       (Proof.AesGcmSiv.sealRoundsContract Arm.abi 3800) :=
-  Arm.Verified.stackScratchLost (sig := Spec.GcmSiv.sealSig) (nm := "work") (e := .u64)
+  Arm.Verified.stackScratch (sig := Spec.GcmSiv.sealSig) (nm := "work") (e := .u64)
     (n := 470) (pre := Spec.GcmSiv.sealPre Arm.abi.ptrBits)
     (post := Proof.AesGcmSiv.sealRoundsPost Arm.abi.ptrBits) (wa := true) (stack := 8)
     (m := 4) seal_verified (by decide) (by decide) (by decide) (by decide)
@@ -145,7 +144,7 @@ theorem openFrameSat_pre : ∃ s, (Proof.AesGcmSiv.openRoundsContract Arm.abi 38
 theorem open_framed [VG.Proof.Gcm.Arm.GhashLaw] :
     Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 3792 4 «open»)
       (Proof.AesGcmSiv.openRoundsContract Arm.abi 3800) :=
-  Arm.Verified.stackScratchLost (sig := Spec.GcmSiv.openSig) (nm := "work") (e := .u64)
+  Arm.Verified.stackScratch (sig := Spec.GcmSiv.openSig) (nm := "work") (e := .u64)
     (n := 470) (pre := Spec.GcmSiv.openPre Arm.abi.ptrBits)
     (post := Proof.AesGcmSiv.openRoundsPost Arm.abi.ptrBits) (wa := true) (stack := 8)
     (leak := some (Spec.GcmSiv.openLeak Arm.abi.ptrBits))

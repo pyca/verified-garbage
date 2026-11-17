@@ -26,7 +26,7 @@ import VerifiedGarbage.Proof.AesOfb.Arm.Body
 import VerifiedGarbage.Proof.AesCfb.Arm.Body
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-import VerifiedGarbage.Proof.Framework.Arm.Lost
+import VerifiedGarbage.Proof.Framework.Arm.Frame
 meta import VerifiedGarbage.Impl.AesCfb.Arm.Final
 meta import VerifiedGarbage.Proof.AesCfb.Final
 meta import VerifiedGarbage.Proof.AesCfb.Spec
@@ -587,7 +587,7 @@ theorem whole_wp {M : Mode} {name : String} {whole : Prog isa}
       rcases hr with rfl | rfl
       · exact hp.data_sv.sub_left (blk_sub s₀)
       · exact hp.stk_data.symm.sub_left (blk_sub s₀))
-  refine WP.frameLost (rs := [.r12, .lr]) (r := .r12) rfl (by simpa using hsp) (by simp) ?_
+  refine WP.frame (rs := [.r12, .lr]) (r := .r12) rfl (by simpa using hsp) (by simp) ?_
   refine FrameStack.WP.callF (k := modeArm M) hv (rd := wRd s₀) (wr := wWr s₀) (whole_pre hp h) hc hw
     (by rw [hd, pushed_sp8, hspA hsp, h.sp]; have := hp.sp_lo; omega_using [this]) ?_
   intro s₂ hrd₂ hwr₂ hsp₂ hf hcs hpost ml ul hfl

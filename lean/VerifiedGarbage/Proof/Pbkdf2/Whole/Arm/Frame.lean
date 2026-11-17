@@ -2,7 +2,6 @@ module
 
 import VerifiedGarbage.Proof.Pbkdf2.Scratch
 public import VerifiedGarbage.Proof.Framework.Arm.StackScratch
-import VerifiedGarbage.Proof.Framework.Arm.ScratchLost
 public import VerifiedGarbage.Proof.Pbkdf2.Contract
 public import VerifiedGarbage.Spec.Pbkdf2.Generic
 import VerifiedGarbage.Proof.Framework.Contract
@@ -14,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 `vg_pbkdf2_hmac_<hash>` runs its `_scratch` form (`Instances.lean`,
 `Sha256.lean`, `Sha224.lean`) in a frame that allocates the working space and
 copies its three arguments passed on the stack (`c`, `out`, `out_len`)
-(`Verified.stackScratchLost`): `pbkFramed`, for any instance, from the locality
+(`Verified.stackScratch`): `pbkFramed`, for any instance, from the locality
 of PBKDF2's pre- and postcondition (`Proof/Pbkdf2/Scratch.lean`). The frame
 is `pbkFrame I` bytes: the working space, the copied arguments and the saved
 registers, rounded up to a multiple of 32 bytes, which an ARM immediate
@@ -38,7 +37,7 @@ theorem pbkFramed {I : Spec.Hmac.Instance} {c : Prog isa} {bytes : Nat}
     (hb : Fits 3 bytes .u64 I.pbkdf2Scratch := by decide) :
     Verified Arm.target (Impl.StackScratch.Arm.withStackScratch bytes 3 c)
       (I.pbkdf2Contract Arm.abi (24 + bytes)) :=
-  Arm.Verified.stackScratchLost (sig := Spec.Pbkdf2.pbkdf2Sig) (nm := "scratch") (e := .u64)
+  Arm.Verified.stackScratch (sig := Spec.Pbkdf2.pbkdf2Sig) (nm := "scratch") (e := .u64)
     (n := I.pbkdf2Scratch) (pre := Spec.Pbkdf2.pbkdf2Pre I.S Arm.abi.ptrBits)
     (post := Spec.Pbkdf2.pbkdf2Post I.S Arm.abi.ptrBits) (wa := true) (stack := 24) (m := 3) h
     rfl rfl rfl hb

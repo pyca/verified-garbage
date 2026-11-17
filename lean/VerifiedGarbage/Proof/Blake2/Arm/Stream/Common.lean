@@ -10,7 +10,6 @@ public import VerifiedGarbage.Impl.Blake2.Arm.Stream
 public import VerifiedGarbage.Proof.Framework.Arm.Call
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Arm.Lost
 
 @[expose] public section
 
@@ -22,7 +21,7 @@ section
 The streaming functions call any compression function verified against
 `compressArm P` that makes no calls (`CalleeOk`), in a frame that pushes its
 stack arguments (`t` in `r3:r11`, `last` in `r12`, `scratch` in `lr`).
-`call_ok` runs such a frame from the state before its push (`WP.frameLost`,
+`call_ok` runs such a frame from the state before its push (`WP.frame`,
 `WP.call`), and `call_rel` relates two runs of it (`RelCT.frame`,
 `RelCT.call`), as for HMAC's calls of `update`
 (`Proof/Pbkdf2/Stream/Arm/Hash.lean`). The frame writes the 16 bytes below the
@@ -293,7 +292,7 @@ theorem call_ok {name : String} {code : Prog isa} (hf : CalleeOk P code) {s : St
           (last != 0) → Q s') :
     WP isa (call name code) s Q := by
   have h16 := h.sp16
-  refine WP.frameLost (rs := args4) (r := .r3) rfl (by show 16 ≤ s.sp.toNat; exact h16) (by decide) ?_
+  refine WP.frame (rs := args4) (r := .r3) rfl (by show 16 ≤ s.sp.toNat; exact h16) (by decide) ?_
   refine WP.call (k := compressArm P) hf.verified.1 h.pre h.cov h.covW ?_ hf.noCalls
   intro s₂ hrd hwr hsp hfr hcs _ hpost mL uL hfl
   simp only [compressArm, tArm, State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem, ce0, ce1,

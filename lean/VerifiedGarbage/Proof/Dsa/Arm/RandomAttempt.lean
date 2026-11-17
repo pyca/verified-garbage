@@ -17,7 +17,7 @@ public import VerifiedGarbage.Proof.Dsa.Arm.Contract
 public import VerifiedGarbage.Proof.Weierstrass.PointContract
 public import VerifiedGarbage.Proof.Dsa.Arm.RandomFrame
 import VerifiedGarbage.Proof.Framework.Arm.Exec
-import VerifiedGarbage.Proof.Framework.Arm.Lost
+import VerifiedGarbage.Proof.Framework.Arm.Frame
 
 /-! ### `Dsa.Arm.RandomCall`, which this module and modules that import it used -/
 
@@ -407,7 +407,7 @@ theorem callSigner_ok (S : Signer) {s₀ u : State} (A : RandomABI s₀) (h : RR
         (callResult s₀ u).getD (List.replicate (s₀.gpr .r1).toNat 0) := by
   obtain ⟨hc, hcw⟩ := call_covers A h
   unfold callSigner
-  refine WP.frameLost (rs := callPush) (r := .r4) (by decide) (call_sp_le A h) (by decide) ?_
+  refine WP.frame (rs := callPush) (r := .r4) (by decide) (call_sp_le A h) (by decide) ?_
   refine FrameStack.WP.callF (k := signArmWith S.valid) (fun s hs => S.correct s hs) (call_pre_with S A h C V)
     hc hcw (by rw [S.stack]; exact Nat.zero_le _) fun s' hrd hwr hsp hf hpres hpost => ?_
   rw [S.stack] at hf

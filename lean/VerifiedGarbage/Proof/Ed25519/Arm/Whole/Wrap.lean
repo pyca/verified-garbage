@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Layout
 public import VerifiedGarbage.Proof.Framework.Arm.Frame
-import VerifiedGarbage.Proof.Framework.Arm.Lost
+import VerifiedGarbage.Proof.Framework.Arm.Call
 
 /-! ### `Ed25519.Arm.Whole.Entry`, which only this module used -/
 
@@ -367,20 +367,20 @@ theorem wrap_ok {body : Prog isa} (hn : body.noFrames = true) {s : State} {n : N
     (hP : ∀ m m₁ m₂ r, Frame [stack s] m₁ m₂ → P m m₁ r → P m m₂ r) :
     WP isa (wrap n body) s fun t => abiPreserved s t ∧
       ∃ m, Frame [stack s] s.mem m ∧ P m t.mem (t.gpr .r0) := by
-  refine WP.frameLost (by decide) (by change 4 ≤ s.sp.toNat; omega_using [hsp]) (by decide) ?_
-  refine WP.frameLost (by decide) ?_ (by decide) ?_
+  refine WP.frame (by decide) (by change 4 ≤ s.sp.toNat; omega_using [hsp]) (by decide) ?_
+  refine WP.frame (by decide) ?_ (by decide) ?_
   · change 4 ≤ (s.sp - 4#32).toNat
     rw [BitVec.toNat_sub_of_le (by change 4 ≤ s.sp.toNat; omega_using [hsp])]
     change 4 ≤ s.sp.toNat - 4
     omega_using [hsp]
-  · refine WP.allocLost (by decide) ?_ ?_
+  · refine WP.alloc (by decide) ?_ ?_
     · change 24 ≤ (s.sp - 4#32 - 4#32).toNat
       rw [BitVec.sub_sub]
       change 24 ≤ (s.sp - 8#32).toNat
       rw [BitVec.toNat_sub_of_le (by change 8 ≤ s.sp.toNat; omega_using [hsp])]
       change 24 ≤ s.sp.toNat - 8
       omega_using [hsp]
-    · refine WP.allocLost (by decide) ?_ ?_
+    · refine WP.alloc (by decide) ?_ ?_
       · change 248 ≤ (s.sp - 4#32 - 4#32 - 24#32).toNat
         simp only [BitVec.sub_sub]
         change 248 ≤ (s.sp - 32#32).toNat

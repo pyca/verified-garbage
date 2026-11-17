@@ -33,7 +33,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Framework.Arm.Bytes
-import VerifiedGarbage.Proof.Framework.Arm.ScratchLost
 
 /-!
 # ECDSA verification of the hash function's output on 32-bit ARM
@@ -54,7 +53,7 @@ Untrusted: everything here is checked by Lean. As on RISC-V
   constant time for the rest;
 * `verifyHash_verified_nil`, `verifyHash_verified_cons`: under the contracts
   of `Spec/`, with the buffer in a frame on the stack
-  (`Verified.stackScratchLLost`, and `Verified.stackScratchC` for a verification
+  (`Verified.stackScratchL`, and `Verified.stackScratchC` for a verification
   with tables), from a state satisfying the verification's precondition
   (`hashSat_nil`, `hashSat_cons`).
 -/
@@ -1277,7 +1276,7 @@ theorem verifyHash_verified_nil {I : Spec.Ecdsa.Instance} {wide : Bool} {core : 
     (hsat : ∃ s, (I.verifyHashContract abi 96).pre s) :
     Verified target (verifyHash I.curve.len wide core) (I.verifyHashContract abi 96) := by
   obtain ⟨s₀, h₀⟩ := hsat
-  exact Verified.stackScratchLLost (sig := I.verifyHashSig) (nm := "buf") (e := .u8) (n := 80) (m := 1)
+  exact Verified.stackScratchL (sig := I.verifyHashSig) (nm := "buf") (e := .u8) (n := 80) (m := 1)
     (bytes := frameBytes) (pre := Curry.const (fun _ => True) _) (post := hPost I) (wa := true) (stack := 0)
     (hashed_verified_nil hL h66 hcore htc ⟨_, narrow_pre (hash_scratchOnStack I) (hash_nsaa I) (hash_locs I)
       hash_fits (pre_local I) h₀⟩)
@@ -1291,7 +1290,7 @@ variable {sig : Sig} {nm : String} {e : Elem} {n : Nat} {c₀ : String × List (
   {post : sig.Post abi.ptrBits} {wa : Bool} {stack bytes m : Nat}
   {leak : Option (Curry (sig.words abi.ptrBits) (Mem → List Nat))}
 
-/-- `Verified.stackScratchLLost` under `abi.withConsts (c₀ :: cs)`, for a
+/-- `Verified.stackScratchL` under `abi.withConsts (c₀ :: cs)`, for a
 signature without lists of slices: as `Verified.stackScratchWipedC`, without
 the wipe, if the postcondition reads the memory on return only within the
 buffers (`hpostOut`): the frame's `free` loses its bytes. -/

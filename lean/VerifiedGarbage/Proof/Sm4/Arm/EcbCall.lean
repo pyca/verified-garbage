@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Sm4.Arm.LayersLit
 import VerifiedGarbage.Proof.Sm4.Arm.Lit
-import VerifiedGarbage.Proof.Framework.Arm.Lost
+import VerifiedGarbage.Proof.Framework.Arm.Frame
 meta import VerifiedGarbage.Proof.Sm4.Arm.EcbAny
 meta import VerifiedGarbage.Impl.Sm4.Arm.Cbc
 meta import VerifiedGarbage.Proof.Framework.Arm.CallF
@@ -147,7 +147,7 @@ theorem ecbCall_correct (d : Dir) (s₀ : State) (hs : (ecbCallArm d).pre s₀) 
       simpa [State.addr] using (sD.sub_left frSub).symm) hfit
   rw [ecbCall_eq]
   have hn8 : 4 * [Reg.r4, .lr].length ≤ s₀.sp.toNat := by simp; omega_arith
-  refine (WP.frameLost (rs := [.r4, .lr]) (r := .r4) (by decide) hn8 (by decide) ?_).elim
+  refine (WP.frame (rs := [.r4, .lr]) (r := .r4) (by decide) hn8 (by decide) ?_).elim
     fun t ⟨s', he, hq⟩ => ⟨t, s', he, hq⟩
   refine WP.seq (WP.mono (movs_wp d s₀) fun σ₃ e => ?_)
   have ⟨pre₃, cov₃⟩ := And.intro (entry_pre ⟨hsp, hrd, hwr, dKD, sK, sD, fitK, fitD⟩ e) (entry_covers e)

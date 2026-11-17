@@ -26,7 +26,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.CrtCallStack
 import VerifiedGarbage.Proof.Bignum.Arm.PcPush
 import VerifiedGarbage.Proof.Bignum.Words
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Framework.Arm.Lost
+import VerifiedGarbage.Proof.Framework.Arm.Frame
 import VerifiedGarbage.Proof.Bignum.Arm.PcDimensions
 import VerifiedGarbage.Proof.Bignum.Arm.CrtGiven
 import VerifiedGarbage.Proof.Bignum.Arm.CrtGivenCT
@@ -509,7 +509,7 @@ theorem crtFn_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} (h : C
       Spec.Rsa.written t.mem (State.addr g.output) g.length (t.gpr .r0)
         (Spec.Rsa.privateCrt (bs 0) (bs 1) (bs 2) (bs 3) (bs 4) (bs 5) (bs 6)) := by
   unfold CrtFn.codeOf
-  refine WP.frameLost (by decide) h.stackFit (by decide) ?_
+  refine WP.frame (by decide) h.stackFit (by decide) ?_
   rw [WP.seq_iff]
   refine WP.mono (crt_entry_ready s h) ?_
   rintro u ⟨ready, _, savedU, restU⟩
