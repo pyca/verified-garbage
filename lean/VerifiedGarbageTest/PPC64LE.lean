@@ -207,11 +207,18 @@ def cryptoExpected : List (BitVec 128) := [
   (exec (.vop (.sha512 .v3 .v0 true six)) sVec).isNone
 #guard (exec (.vop (.sldoi .v3 .v0 .v1 16)) sVec).isNone
 
--- The high doubleword of MT VSR is defined, the low one is arbitrary.
--- Check with a nonzero unknown, so a spurious zero-fill cannot pass.
-def sVU : State := { sVec with unknowns := fun i => BitVec.ofNat 64 (i + 123) }
+-- The high doubleword of MT VSR is defined, the low one is undefined: what
+-- `undef` makes of the next unknown, of RA and of what XT held. Check with
+-- a function that depends on all three, so that neither a zero-fill nor a
+-- value that ignores an operand can pass.
+def sVU : State := { sVec with
+  unknowns := fun i => BitVec.ofNat 64 (i + 123)
+  undef := fun u ra xt => u + 3 * ra + 5 * xt.setWidth 64 + 7 * (xt >>> 64).setWidth 64 }
 #guard (exec (.mtvsrd .v3 .r4) sVU).map (·.vpr .v3) ==
-  some 0x80000001f0000001000000000000007b
+  some (sVU.gpr .r4 ++ (123 + 3 * sVU.gpr .r4 + 5 * (sVU.vpr .v3).setWidth 64 +
+    7 * (sVU.vpr .v3 >>> 64).setWidth 64))
+#guard (exec (.mtvsrd .v3 .r4) sVU).map (fun s => vdword (s.vpr .v3) 0) == some 0x80000001f0000001
+#guard (exec (.mtvsrd .v3 .r4) sVU).map (fun s => s.undef 1 2 3) == some (sVU.undef 1 2 3)
 #guard (exec (.mtvsrd .v3 .r4) sVU).map (fun s => s.unknowns 0) == some 124
 #guard (exec (.mfvsrd .r7 .v0) sVec).map (·.gpr .r7) == some 0x0011223344556677
 
