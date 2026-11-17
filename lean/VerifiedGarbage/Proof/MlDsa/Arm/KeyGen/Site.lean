@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.MlKem.Arm.Prims
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Arm.Lost
 public import VerifiedGarbage.Proof.MlKem.Arm.Calls
 
 /-! ### `MlDsa.Arm.KeyGen.Base`, which only this module used -/
@@ -236,7 +237,7 @@ theorem callVS {name : String} {c : Prog isa} {k : Contract isa}
     (hc : Covers (rd ++ wr) (s.rd ++ s.wr)) (hw : Covers wr s.wr) (hsu : 4 + stackUse c ≤ s.sp.toNat)
     {Q : State → Prop}
     (hQ : ∀ s', Kept (wr ++ [below s (4 + stackUse c)]) s s' →
-      (∃ s₃ : State, s₃.mem = s'.mem ∧ (∀ r, r ≠ .r12 → s₃.gpr r = s'.gpr r) ∧
+      (∃ s₃ : State, Frame [below s (4 + stackUse c)] s₃.mem s'.mem ∧ (∀ r, r ≠ .r12 → s₃.gpr r = s'.gpr r) ∧
         k.post (view (pushed [.r12] (glueSt s (as ++ [(.r12, st)])))
           (rd ++ [⟨State.addr (s.sp - BitVec.ofNat 32 4), 4⟩]) wr)
           (s₃.withRegions (rd ++ [⟨State.addr (s.sp - BitVec.ofNat 32 4), 4⟩]) wr)) → Q s') :
@@ -249,7 +250,7 @@ theorem callVS {name : String} {c : Prog isa} {k : Contract isa}
   subst e
   have hsp1 := glueSt_sp s (as ++ [(.r12, st)])
   have hs4 : 4 ≤ s.sp.toNat := by omega_using [hsu]
-  refine WP.frame (rs := [.r12]) (r := .r12) rfl (by simp only [List.length_cons, List.length_nil, hsp1]; omega_using [hsu])
+  refine WP.frameLost (rs := [.r12]) (r := .r12) rfl (by simp only [List.length_cons, List.length_nil, hsp1]; omega_using [hsu])
     (by decide) ?_
   have hsp2 : (pushed [.r12] (glueSt s (as ++ [(.r12, st)]))).sp = s.sp - BitVec.ofNat 32 4 := by
     rw [pushed_sp, hsp1]; rfl
@@ -260,8 +261,13 @@ theorem callVS {name : String} {c : Prog isa} {k : Contract isa}
     rw [pushed_wr, hsp1, glueSt_wr]; rfl
   have hrd2 : (pushed [.r12] (glueSt s (as ++ [(.r12, st)]))).rd = s.rd := by
     rw [pushed_rd, glueSt_rd]
-  refine WP.callF hv hpre ?_ ?_ (by rw [hsp2']; omega_using [hsu]) fun s3 hrd hwr hsp hf hcs hp => hQ _ ⟨fun r hr hl => ?_,
-    ?_, ?_, ?_, ?_⟩ ⟨s3, rfl, fun r hr => (popped_gpr hr _ _).symm, hp⟩
+  refine WP.callF hv hpre ?_ ?_ (by rw [hsp2']; omega_using [hsu]) fun s3 hrd hwr hsp hf hcs hp mL uL hfl =>
+    have hflB : Frame [below s (4 + stackUse c)] s3.mem mL := hfl.sub fun r hr => ⟨_, List.mem_singleton_self _, by
+      rw [List.mem_singleton] at hr; subst hr
+      simp only [List.length_singleton, Nat.mul_one, hsp1]
+      rw [addr_sub hs4]
+      exact belowA_sub (by omega_using [])⟩
+    hQ _ ⟨fun r hr hl => ?_, ?_, ?_, ?_, ?_⟩ ⟨s3, hflB, fun r hr => (popped_gpr hr 4 s3).symm, hp⟩
   · rw [hrd2, hwr2]
     intro a n ⟨r, hr, hc'⟩
     simp only [List.mem_append, List.mem_singleton] at hr
@@ -281,11 +287,12 @@ theorem callVS {name : String} {c : Prog isa} {k : Contract isa}
     intro a n ⟨r, hr, hc'⟩
     obtain ⟨r', hr', hc''⟩ := hw a n ⟨r, hr, hc'⟩
     exact ⟨r', List.mem_cons_of_mem _ hr', hc''⟩
-  · rw [popped_gpr (by revert r; decide) _ _, hcs r hr hl, pushed_gpr, glueSt_pres s hg r hr]
-  · rw [popped_sp, hsp, hsp2]; exact BitVec.sub_add_cancel _ _
-  · rw [popped_rd, hrd, hrd2]
-  · rw [popped_wr, hwr, hwr2]; rfl
-  · rw [popped_mem]
+  · dsimp only; rw [popped_gpr (by revert r; decide) _ _, hcs r hr hl, pushed_gpr, glueSt_pres s hg r hr]
+  · dsimp only; rw [popped_sp, hsp, hsp2]; exact BitVec.sub_add_cancel _ _
+  · dsimp only; rw [popped_rd, hrd, hrd2]
+  · dsimp only; rw [popped_wr, hwr, hwr2]; rfl
+  · dsimp only
+    refine Frame.trans ?_ (hflB.sub fun r hr => ⟨r, List.mem_append_right _ hr, fun _ h => h⟩)
     have f₀ : Frame [belowA s.sp 4] s.mem (pushed [.r12] (glueSt s (as ++ [(.r12, st)]))).mem := by
       have := pushed12_frame (glueSt s (as ++ [(.r12, st)])) (by rw [hsp1]; exact hs4)
       rwa [glueSt_mem, below, hsp1] at this

@@ -8,6 +8,8 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Arm.CallF
 import VerifiedGarbage.Proof.Framework.Arm.Frame
+import VerifiedGarbage.Proof.Framework.Arm.Lost
+import VerifiedGarbage.Proof.Rsa.BytesFrame
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Loads
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Rsa.Arm.PrivSetupCT
@@ -43,13 +45,13 @@ theorem prime_ok (v : RoundImpl) (h : CIn bits s) :
   have hb := h.sized
   have spLo := h.spLo; have spHi := h.spHi
   unfold Impl.Dsa.Arm.ProbablePrime.code
-  refine WP.alloc (by decide) (by omega_using [spLo]) ?_
+  refine WP.allocLost (by decide) (by omega_using [spLo]) ?_
   rw [WP.seq_iff]
   refine WP.mono (pre_ok hb spLo spHi h.argsIn h.arg) fun t ⟨rest, fr, vals, r1, r2⟩ => ?_
   have o : PreOut bits s t := ⟨rest, fr, vals, r1, r2⟩
   have tspN : t.sp.toNat = s.sp.toNat - 32 := by
     rw [rest.sp]; exact sub_toNat' (by omega_using [spLo])
-  refine WP.frame (by decide) (by simp only [List.length_cons, List.length_nil]; omega_using [spLo, tspN]) (by decide) ?_
+  refine WP.frameLost (by decide) (by simp only [List.length_cons, List.length_nil]; omega_using [spLo, tspN]) (by decide) ?_
   rw [WP.seq_iff]
   obtain ⟨tr, w, -, run', ⟨-, bk, r0, used⟩⟩ := body_wide v hb h o
   refine WP.mono (Q := fun x => x = w.withRegions s.rd (pcPushed t).wr) ⟨tr, _, run', rfl⟩ ?_
@@ -72,10 +74,29 @@ theorem prime_ok (v : RoundImpl) (h : CIn bits s) :
       rw [show t.sp - BitVec.ofNat 32 56 = (mkP bits s).sp from pushed_sp o]; exact List.mem_cons_self
     · rw [State.withRegions_sp, wsp]; exact Region.contains_self _ _
   refine WP.mono (pc_restore_ok _ t.gpr fit read (by rw [State.withRegions_sp, wsp]; exact saved)) ?_
-  rintro t' ⟨restored, memT, restT⟩
+  rintro t' ⟨restored, memT, restT⟩ m₁ u₁ h₁ m₂ u₂ h₂
   have rc := res_c pre
   have m' : t'.mem = w.mem := memT
-  refine ⟨⟨fun r hr => ?_, ?_⟩, ?_, by show Proof.Dsa.ModPow.Keeps _ _ _ s.mem t'.mem; rw [m']; exact keeps h o bk, fun b rst hr => ?_⟩
+  change Frame [⟨State.addr (t.sp - BitVec.ofNat 32 56), 56⟩] t'.mem m₁ at h₁
+  rw [show t.sp - BitVec.ofNat 32 56 = (mkP bits s).sp from pushed_sp o, spP h] at h₁
+  change Frame [⟨aA s, 32⟩] m₁ m₂ at h₂
+  rw [aA_eq h] at h₂
+  have lostF : Frame [cF s] t'.mem m₂ :=
+    (h₁.sub fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, List.mem_singleton_self _, cF_sub (by decide)⟩).trans
+    (h₂.sub fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, List.mem_singleton_self _, cF_sub (by decide)⟩)
+  have keepsL : Proof.Dsa.ModPow.Keeps (State.addr (s.gpr .r0)) (s.gpr .r1).toNat [(keyOff, 8 * keyWords bits)]
+      s.mem m₂ := by
+    have k := keeps h o bk
+    rw [← m'] at k
+    intro i hi hr
+    exact (lost_byte lostF (R := cW s) h.FW.symm (by change i < (s.gpr .r1).toNat * 8; omega_using [hi])).trans
+      (k i hi hr)
+  have usedL : Spec.Rsa.wordsAt m₂ (State.addr (stackArg s 0)) 1 = Spec.Rsa.wordsAt t'.mem (State.addr (stackArg s 0)) 1 :=
+    Proof.Rsa.wordsAt_frame lostF (by decide) fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact h.FU.symm
+  refine ⟨⟨fun r hr => ?_, ?_⟩, ?_, keepsL, fun b rst hr => ?_⟩
   · have ne : r ≠ .r12 := by intro he; subst r; simp [preserved] at hr
     show (popped .r12 56 t').gpr r = _
     rw [popped_gpr ne]
@@ -97,8 +118,8 @@ theorem prime_ok (v : RoundImpl) (h : CIn bits s) :
   · show ((popped .r12 56 t').gpr .r0).toNat = _
     rw [popped_gpr (by decide), restT.gpr .r0 (by simp [pcCalleeSaved]), State.withRegions_gpr, r0]
     unfold statD; rw [rc]
-  · show Spec.Rsa.wordsAt t'.mem _ 1 = _
-    rw [m']
+  · show Spec.Rsa.wordsAt m₂ _ 1 = _
+    rw [usedL, m']
     refine used.trans ?_
     unfold usedD; rw [rc, hr]; rfl
 

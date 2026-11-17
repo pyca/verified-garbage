@@ -7,6 +7,10 @@ import VerifiedGarbage.Proof.Framework.ReadHalves
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Slots
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Arm.Lost
+import VerifiedGarbage.Proof.Framework.Arm.CallF
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Rsa.BytesFrame
 
 /-! # DSA parameter generation over refillable tapes on ARMv7 meets its contract
 
@@ -43,13 +47,29 @@ theorem outBytes_eq (G : GP) (o : COut) :
     · rw [ite_eq_left_of_eq_true _ _ (eq_true hb)]
     · rw [ite_eq_right_of_eq_false _ _ (eq_false hb)]
 
+private theorem wordsAt_lost {m m' : Mem} {rs : List Region} (frame : Frame rs m m') {a : Addr} {n : Nat}
+    (hd : ∀ w ∈ rs, (⟨a, 8 * n⟩ : Region).Disjoint w) (fit : 8 * n < 2 ^ 64) :
+    Spec.Rsa.wordsAt m' a n = Spec.Rsa.wordsAt m a n := by
+  unfold Spec.Rsa.wordsAt
+  apply List.map_congr_left
+  intro j hj
+  have bound : j < n := List.mem_range.mp hj
+  exact frame.readW (r := ⟨a, 8 * n⟩) (Offset.contains_base _ (by omega_using [bound]) (by omega_using [bound, fit]))
+    hd (by decide)
+
 theorem code_ok (K1 : GeoOk g1 128 20) (K2 : GeoOk g2 256 32) (K3 : GeoOk g3 384 32) {s : State}
     (hs : (Spec.Dsa.parameterSearchContract abi 304).pre s) :
     WP isa (code g1 g2 g3) s fun t => abiPreserved s t ∧ (Spec.Dsa.parameterSearchContract abi 304).post s t := by
   have hpre := cin_of_pre s hs
   have spLo := hpre.spLo
-  refine WP.alloc ⟨by decide, by decide, by decide, by decide⟩ (by simp only [F]; omega_using [spLo])
-    (WP.mono ((body_vp (G := mkG s) K1 K2 K3).wp s _ ⟨rfl, hpre, rfl⟩) fun u hu => ?_)
+  refine WP.allocLost ⟨by decide, by decide, by decide, by decide⟩ (by simp only [F]; omega_using [spLo])
+    (WP.mono ((body_vp (G := mkG s) K1 K2 K3).wp s _ ⟨rfl, hpre, rfl⟩) fun u hu lm lu hfl => ?_)
+  have hfl' : Frame [⟨State.addr s.sp - 304#64, 304⟩] u.mem lm := by
+    refine hfl.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩
+    obtain rfl := List.mem_singleton.mp hr
+    rw [FrameStack.addr_sub' (by simp only [F]; omega_using [spLo])]
+    exact Offset.sub_below _ (by simp only [F]; omega_using []) (by simp only [F]; omega_using [])
+  dsimp only
   refine ⟨⟨fun r hr => ?_, ?_⟩, ?_⟩
   · obtain ⟨p, hp, rfl⟩ := List.mem_map.mp (pre_preserved r hr)
     exact hu.regs p hp
@@ -129,14 +149,20 @@ theorem code_ok (K1 : GeoOk g1 128 20) (K2 : GeoOk g2 256 32) (K3 : GeoOk g3 384
     rw [BitVec.setWidth_append_eq_right]
     show (u.gpr .r0).toNat = _
     rw [r0, fo.r0, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hst])]
-  · rw [m]; exact fo.out.trans (outBytes_eq _ _)
-  · rw [m]
+  · rw [show Spec.Rsa.bytesAt lm (BitVec.setWidth 64 (s.gpr .r0)) (s.gpr .r1).toNat =
+        Spec.Rsa.bytesAt u.mem (BitVec.setWidth 64 (s.gpr .r0)) (s.gpr .r1).toNat from
+      VG.Proof.Rsa.rsa_bytes_frame hfl' (by have := (s.gpr .r1).isLt; omega_using [])
+        fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact hpre.fO.symm, m]
+    exact fo.out.trans (outBytes_eq _ _)
+  · rw [wordsAt_lost (n := 1) hfl' (fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact hpre.fU.symm)
+      (by decide), m]
     show [v.mem.readW (State.addr (s.gpr .r2) + BitVec.ofNat 64 (8 * 0)) 64] = _
     rw [VG.Proof.RsaKeyGen.Arm.pair_word]
     have e0 : slot v.mem (State.addr (s.gpr .r2)) (2 * 0) = BitVec.ofNat 32 (cRes (mkG s) o).used := fo.u0
     have e1 : slot v.mem (State.addr (s.gpr .r2)) (2 * 0 + 1) = 0#32 := fo.u1
     rw [e0, e1, VG.Proof.RsaKeyGen.Arm.pair_ofNat hU]
-  · rw [m]
+  · rw [wordsAt_lost (n := 4) hfl' (fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact hpre.fS.symm)
+      (by decide), m]
     have k : ∀ j, 2 ≤ j → j < 6 → slot v.mem (BitVec.setWidth 64 (stackArg s 3)) j =
         slot s.mem (BitVec.setWidth 64 (stackArg s 3)) j := fo.s25
     refine VG.Proof.RsaKeyGen.Arm.wordsAt_slots v.mem _ hR hp32 hB hQ fo.s0 fo.s1 ?_ ?_ ?_ ?_ fo.s6 fo.s7

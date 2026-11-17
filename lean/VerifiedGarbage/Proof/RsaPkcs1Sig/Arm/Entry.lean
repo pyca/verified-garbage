@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Arm.Lost
 
 /-! ### `RsaPkcs1Sig.Arm.Wrap`, which only this module used -/
 
@@ -57,9 +58,14 @@ theorem WP.rdwr {c : Prog isa} {s : State} {Q : State → Prop} (h : WP isa c s 
   obtain ⟨tr, t, he, hq⟩ := h
   exact ⟨tr, t, he, hq, Exec.rdwr he⟩
 
+/-- The two frames `wrap` releases: the saved registers' and the locals'. -/
+abbrev released (F : Nat) (s : State) : List Region :=
+  [⟨State.addr (pcPushed s).sp, 56⟩, ⟨State.addr (entered F s).sp, F⟩]
+
 theorem wrap_ok {F : Nat} (hF : FrameOk F) {body : Prog isa} {s : State} (hsp : F + 56 ≤ s.sp.toNat)
     {W : List Region} (hW : ∀ r ∈ W, (pushRegion s).Disjoint r) {Q : BitVec 32 → Mem → Prop}
-    (hb : WP isa body (entered F s) fun u => Frame W (entered F s).mem u.mem ∧ Q (u.gpr .r0) u.mem) :
+    (hb : WP isa body (entered F s) fun u => Frame W (entered F s).mem u.mem ∧ Q (u.gpr .r0) u.mem)
+    (hQ : ∀ v m₁ m₂, Frame (released F s) m₁ m₂ → Q v m₁ → Q v m₂ := by intro _ _ _ _ h; exact h) :
     WP isa (wrap F body) s fun t => abiPreserved s t ∧ Q (t.gpr .r0) t.mem := by
   have fit56 : 56 ≤ s.sp.toNat := by omega_using [hsp]
   have allocation : F ≤ (pcPushed s).sp.toNat := by
@@ -67,37 +73,52 @@ theorem wrap_ok {F : Nat} (hF : FrameOk F) {body : Prog isa} {s : State} (hsp : 
     rw [FrameStack.sub_toNat' fit56]
     omega_using [hsp]
   unfold wrap
-  refine WP.frame (by decide) fit56 (by decide) ?_
+  refine WP.frameLost (by decide) fit56 (by decide) ?_
   rw [WP.seq_iff]
-  refine WP.alloc hF allocation ?_
+  refine WP.allocLost hF allocation ?_
   refine WP.mono (WP.rdwr hb) ?_
-  rintro u ⟨⟨frame, result⟩, -, wrU, spU⟩
-  have spF : (freed F u).sp = (pcPushed s).sp := by
+  rintro u ⟨⟨frame, result⟩, -, wrU, spU⟩ m₁ u₁ h₁
+  change Frame [⟨State.addr (entered F s).sp, F⟩] u.mem m₁ at h₁
+  have pushAlloc : (⟨State.addr (s.sp - BitVec.ofNat 32 56), 56⟩ : Region).Disjoint
+      ⟨State.addr (entered F s).sp, F⟩ := by
+    have e : State.addr (s.sp - BitVec.ofNat 32 56) = State.addr (entered F s).sp + BitVec.ofNat 64 F := by
+      change _ = State.addr (s.sp - BitVec.ofNat 32 56 - BitVec.ofNat 32 F) + _
+      rw [FrameStack.addr_sub' (x := s.sp - BitVec.ofNat 32 56) (k := F) allocation]
+      exact (BitVec.sub_add_cancel _ _).symm
+    rw [e]
+    exact Offset.disjoint_base _ (Nat.le_refl _) (by have := hF.2.1; omega_using [this])
+  have spF : ({ freed F u with mem := m₁, unknowns := u₁ } : State).sp = (pcPushed s).sp := by
     change u.sp + BitVec.ofNat 32 F = _
     rw [spU]
     exact BitVec.sub_add_cancel _ _
-  have wrF : (freed F u).wr = (pcPushed s).wr := by
+  have wrF : ({ freed F u with mem := m₁, unknowns := u₁ } : State).wr = (pcPushed s).wr := by
     change u.wr.tail = _
     rw [wrU]; rfl
-  have fit : (freed F u).sp.toNat + 56 ≤ 2 ^ 32 := by
+  have fit : ({ freed F u with mem := m₁, unknowns := u₁ } : State).sp.toNat + 56 ≤ 2 ^ 32 := by
     rw [spF]
     change (s.sp - BitVec.ofNat 32 56).toNat + 56 ≤ 2 ^ 32
     rw [FrameStack.sub_toNat' fit56]
     have := s.sp.isLt
     omega_using []
-  have saved : Spill.Saved (freed F u).mem (State.addr (freed F u).sp) s.gpr pcCalleeSaved := by
+  have saved : Spill.Saved ({ freed F u with mem := m₁, unknowns := u₁ } : State).mem (State.addr ({ freed F u with mem := m₁, unknowns := u₁ } : State).sp) s.gpr pcCalleeSaved := by
     rw [spF]
     have initial := pc_push_callee_saved s fit56
-    refine initial.frame (lo := 0) (hi := 56) (by decide) frame fun r hr => ?_
+    refine initial.frame (lo := 0) (hi := 56) (by decide)
+      (rs := W ++ [⟨State.addr (entered F s).sp, F⟩])
+      ((frame.mono fun r hr => List.mem_append_left _ hr).trans
+        (h₁.mono fun r hr => List.mem_append_right _ hr)) fun r hr => ?_
     change (⟨State.addr (s.sp - 56) + BitVec.ofNat 64 0, 56 - 0⟩ : Region).Disjoint r
     simp only [BitVec.add_zero, Nat.sub_zero]
-    exact hW r hr
-  have read : InRegions ((freed F u).rd ++ (freed F u).wr) (State.addr (freed F u).sp) 56 := by
-    refine ⟨⟨State.addr (freed F u).sp, 56⟩, List.mem_append_right _ ?_, Region.contains_self _ _⟩
+    rcases List.mem_append.mp hr with hr | hr
+    · exact hW r hr
+    · simp only [List.mem_singleton] at hr; subst hr; exact pushAlloc
+  have read : InRegions (({ freed F u with mem := m₁, unknowns := u₁ } : State).rd ++ ({ freed F u with mem := m₁, unknowns := u₁ } : State).wr) (State.addr ({ freed F u with mem := m₁, unknowns := u₁ } : State).sp) 56 := by
+    refine ⟨⟨State.addr ({ freed F u with mem := m₁, unknowns := u₁ } : State).sp, 56⟩, List.mem_append_right _ ?_, Region.contains_self _ _⟩
     rw [wrF, spF]
     exact List.mem_cons_self
-  refine WP.mono (pc_restore_ok (freed F u) s.gpr fit read saved) ?_
-  rintro t ⟨restored, memT, restT⟩
+  refine WP.mono (pc_restore_ok ({ freed F u with mem := m₁, unknowns := u₁ } : State) s.gpr fit read saved) ?_
+  rintro t ⟨restored, memT, restT⟩ m₂ u₂ h₂
+  change Frame [⟨State.addr (pcPushed s).sp, 56⟩] t.mem m₂ at h₂
   have ret : t.gpr .r0 = u.gpr .r0 := restT.gpr .r0 (by simp [pcCalleeSaved])
   refine ⟨⟨?_, ?_⟩, ?_⟩
   · intro r hr
@@ -116,8 +137,12 @@ theorem wrap_ok {F : Nat} (hF : FrameOk F) {body : Prog isa} {s : State} (hsp : 
     · exact restored (.lr, 52) (by simp [pcCalleeSaved])
   · rw [popped_sp, restT.sp, spF]
     exact BitVec.sub_add_cancel _ _
-  · simp only [popped_gpr (by decide : Reg.r0 ≠ .r12), popped_mem, memT, ret]
-    exact result
+  · dsimp only
+    rw [popped_gpr (by decide : Reg.r0 ≠ .r12), ret]
+    rw [memT] at h₂
+    refine hQ _ u.mem m₂ ((h₁.mono fun r hr => ?_).trans (h₂.mono fun r hr => ?_)) result
+    · simp only [List.mem_singleton] at hr; subst hr; exact List.mem_cons_of_mem _ List.mem_cons_self
+    · simp only [List.mem_singleton] at hr; subst hr; exact List.mem_cons_self
 
 /-- Two runs of the frames leak the same trace if they have the same stack
 pointer, room for the frames, and the body's runs from the entered states
