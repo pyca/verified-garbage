@@ -149,11 +149,32 @@ open VG VG.AArch64
 
 /-! ## The machine's accessors -/
 
-theorem vi_inj {r r' : VReg} : vi r = vi r' ↔ r = r' := by
-  cases r <;> cases r' <;> decide
+/-- The register of an index: `vi` has it for a left inverse, so the 32 cases of one register show
+that `vi` is injective, not the 1024 of two. -/
+private def viInv : Nat → VReg
+  | 0 => .v0 | 1 => .v1 | 2 => .v2 | 3 => .v3 | 4 => .v4 | 5 => .v5 | 6 => .v6 | 7 => .v7 | 8 => .v8
+  | 9 => .v9 | 10 => .v10 | 11 => .v11 | 12 => .v12 | 13 => .v13 | 14 => .v14 | 15 => .v15 | 16 => .v16
+  | 17 => .v17 | 18 => .v18 | 19 => .v19 | 20 => .v20 | 21 => .v21 | 22 => .v22 | 23 => .v23 | 24 => .v24
+  | 25 => .v25 | 26 => .v26 | 27 => .v27 | 28 => .v28 | 29 => .v29 | 30 => .v30
+  | _ => .v31
 
-theorem gi_inj {r r' : Reg} : gi r = gi r' ↔ r = r' := by
-  cases r <;> cases r' <;> decide
+private theorem viInv_vi (r : VReg) : viInv (vi r) = r := by cases r <;> rfl
+
+theorem vi_inj {r r' : VReg} : vi r = vi r' ↔ r = r' :=
+  ⟨fun h => (viInv_vi r).symm.trans ((congrArg viInv h).trans (viInv_vi r')), fun h => congrArg vi h⟩
+
+/-- The register of an index, for `gi`. -/
+private def giInv : Nat → Reg
+  | 0 => .x0 | 1 => .x1 | 2 => .x2 | 3 => .x3 | 4 => .x4 | 5 => .x5 | 6 => .x6 | 7 => .x7 | 8 => .x8
+  | 9 => .x9 | 10 => .x10 | 11 => .x11 | 12 => .x12 | 13 => .x13 | 14 => .x14 | 15 => .x15 | 16 => .x16
+  | 17 => .x17 | 19 => .x19 | 20 => .x20 | 21 => .x21 | 22 => .x22 | 23 => .x23 | 24 => .x24 | 25 => .x25
+  | 26 => .x26 | 27 => .x27 | 28 => .x28
+  | _ => .x30
+
+private theorem giInv_gi (r : Reg) : giInv (gi r) = r := by cases r <;> rfl
+
+theorem gi_inj {r r' : Reg} : gi r = gi r' ↔ r = r' :=
+  ⟨fun h => (giInv_gi r).symm.trans ((congrArg giInv h).trans (giInv_gi r')), fun h => congrArg gi h⟩
 
 theorem vreg_setV (σ : St) (d r : VReg) {y : Nat} (hy : y < 2 ^ yw) :
     (σ.setV d y).vreg r = if r = d then y else σ.vreg r := by

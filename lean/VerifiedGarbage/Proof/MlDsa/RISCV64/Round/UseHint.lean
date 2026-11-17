@@ -132,10 +132,10 @@ theorem uh_val {g : Nat} (hg : g ∈ gamma2s) {a w : BitVec 64} (ha : a.toNat < 
   by_cases hw0 : w.toNat = 0 <;> by_cases hs : P.toNat < a.toNat <;>
     simp only [hw0, hs, ite_true, ite_false, decide_true, decide_false, ne_eq, not_true_eq_false,
       not_false_eq_true, Bool.false_eq_true]
-  · exact fixk2_mod m64 m1 (by omega_using [hF]) (Or.inl (by bv_omega))
-  · exact fixk2_mod m64 m1 (by omega_using [hF]) (Or.inl (by bv_omega))
-  · exact fixk2_mod m64 m1 (by omega_using [hF]) (Or.inl (by bv_omega))
-  · exact fixk2_mod m64 m1 (by omega_using [hF]) (by bv_omega)
+  · exact fixk2_mod m64 m1 (by omega_using [hF]) (Or.inl (by bv_omega_using [hF, hF44, m1, m64]))
+  · exact fixk2_mod m64 m1 (by omega_using [hF]) (Or.inl (by bv_omega_using [hF, hF44, m1, m64]))
+  · exact fixk2_mod m64 m1 (by omega_using [hF]) (Or.inl (by bv_omega_using [hF, hF44, m1, m64]))
+  · exact fixk2_mod m64 m1 (by omega_using [hF]) (by bv_omega_using [hF, hF44, m1, m64])
 
 /-! ## The loop body -/
 

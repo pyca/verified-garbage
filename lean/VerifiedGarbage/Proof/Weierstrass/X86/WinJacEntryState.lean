@@ -47,8 +47,8 @@ theorem dbluN_run {F : Type _} [Lean.Grind.CommRing F] (e : Nat → F) (h20 : e 
       runOps dbluN e 3 * (1 * 1) = e 18 * (runOps dbluN e 14 * runOps dbluN e 14) ∧
       runOps dbluN e 2 * (1 * 1 * 1) =
         e 19 * (runOps dbluN e 14 * runOps dbluN e 14 * runOps dbluN e 14) := by
-  simp only [dbluN, runOps, List.foldl_cons, List.foldl_nil, FOp.run, Function.update_apply]
-  simp only [Nat.reduceEqDiff, ite_true, ite_false, h20, dblJF, Prod.mk.injEq]
+  simp only [dbluN, runOps, List.foldl_cons, List.foldl_nil, FOp.run, Function.update_apply,
+    Nat.reduceEqDiff, ↓reduceIte, h20, dblJF, Prod.mk.injEq]
   refine ⟨⟨?_, ?_, ?_⟩, trivial, trivial, ?_, ?_⟩ <;> grind
 
 /-- ZADDU of `D = (X1, Y1)` and `T = (X2, Y2)` sharing `Z`, with `T`'s powers. -/
@@ -57,8 +57,8 @@ theorem zadduN_run {F : Type _} [Lean.Grind.CommRing F] (e : Nat → F) :
         zadduF (e 9) (e 10) (e 12) (e 13) (e 14) ∧
       (e 15 = e 14 * e 14 → runOps zadduN e 15 = runOps zadduN e 14 * runOps zadduN e 14) ∧
       runOps zadduN e 16 = runOps zadduN e 15 * runOps zadduN e 14 := by
-  simp only [zadduN, runOps, List.foldl_cons, List.foldl_nil, FOp.run, Function.update_apply]
-  simp only [Nat.reduceEqDiff, ite_true, ite_false, zadduF]
+  simp only [zadduN, runOps, List.foldl_cons, List.foldl_nil, FOp.run, Function.update_apply,
+    Nat.reduceEqDiff, ↓reduceIte, zadduF]
   refine ⟨?_, fun h => ?_, ?_⟩ <;> first | trivial | grind
 
 
@@ -253,8 +253,8 @@ theorem dblN_out : ∀ op∈dblN,op.out<9 := by decide
 
 theorem dblN_run {F : Type _} [Lean.Grind.CommRing F] (e : Nat → F) :
     (runOps dblN e 6,runOps dblN e 7,runOps dblN e 8)=dblJF (e 6) (e 7) (e 8) := by
-  dsimp only [dblN,dblJMul,runOps,List.foldl,FOp.run,Function.update]
-  simp only [dblJF,Prod.mk.injEq]
+  simp only [dblN, dblJMul, runOps, List.foldl_cons, List.foldl_nil, FOp.run, Function.update_apply, Nat.reduceEqDiff,
+    ↓reduceIte, dblJF, Prod.mk.injEq]
   constructor
   · grind
   constructor <;> grind

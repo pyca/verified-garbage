@@ -212,8 +212,8 @@ theorem sat_base : (primeSearchContract abi stackUse).pre (stripConsts tables sa
   sig_reduce [primeSearchSig, abi, argRegs, stackArgs_four, List.append_eq, a0, a1, a2, a3, w0, w8, w16]
   sig_and_intros
   all_goals first
-    | trivial
     | decide +kernel
+    | trivial
 
 theorem sat_consts : ConstsOk tables stackUse satState := by
   have hl := packed_length'

@@ -443,7 +443,8 @@ theorem mulProd_ok {s : State} {base : Addr} (hs : Scr s base) {a b : Nat} (ha :
           2 ^ 256 * val4 (s'.gpr .r12) (s'.gpr .r13) (s'.gpr .r14) (s'.gpr .r15) =
         fe s.mem base a * fe s.mem base b ∧ Keeps clob s s' := by
   have hz : (0 : BitVec 64).toNat = 0 := rfl
-  simp only [mulProd, List.append_assoc]
+  delta mulProd
+  simp only [List.append_assoc]
   rw [WP.block_append_iff]
   refine WP.mono (loads_ok hs hb (by decide)) fun s₁ ⟨b0, b1, b2, b3, k1⟩ => ?_
   have hs₁ := hs.of_keeps k1 (by decide)

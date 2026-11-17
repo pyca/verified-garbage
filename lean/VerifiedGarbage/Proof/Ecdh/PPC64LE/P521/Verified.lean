@@ -82,10 +82,8 @@ theorem win_mulPowOk (hL : Weierstrass.Law Spec.P521.curve) (s₀ : State) :
     intro i hi hr w hw
     have hi' : i < 14 ∨ 29 ≤ i := by
       refine Classical.byContradiction fun hc => hr ?_
-      have : i = 14 ∨ i = 15 ∨ i = 16 ∨ i = 17 ∨ i = 18 ∨ i = 19 ∨ i = 20 ∨ i = 21 ∨ i = 22 ∨ i = 23 ∨
-        i = 24 ∨ i = 25 ∨ i = 26 ∨ i = 27 ∨ i = 28 := by omega_using [hc]
-      rcases this with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-        decide
+      exact (by decide : ∀ i < 29, 14 ≤ i → i ∈ ACC :: PT :: Proof.Ecdsa.PPC64LE.ladIx) i
+        (by omega_using [hc]) (by omega_using [hc])
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
     rcases hw with rfl | rfl | rfl <;> simp only [Cfg.sl, slot, p521] <;> omega_arith
   have e₅ : ∀ {i}, i < 45 → i ∉ ACC :: PT :: Proof.Ecdsa.PPC64LE.ladIx → sv p521 base s₅ i = sv p521 base s i :=
@@ -122,10 +120,8 @@ theorem win_mulPowOk (hL : Weierstrass.Law Spec.P521.curve) (s₀ : State) :
     by rw [e₆ (by decide) (by decide) (by decide)]; exact lx₅,
     by rw [e₆ (by decide) (by decide) (by decide)]; exact ly₅,
     by rw [e₆ (by decide) (by decide) (by decide)]; exact lz₅, lt₆, ?_⟩
-  · rw [e₆ hi (by intro h; subst h; simp at hl) (by
-      simp only [List.mem_cons, Proof.Ecdsa.PPC64LE.ladIx, not_or] at hl
-      simp only [DX, T2, DY, DZ, TX, TY, TZ, T0, T1] at hl ⊢
-      omega), e₅ hi hl]
+  · rw [e₆ hi (by intro h; subst h; simp at hl)
+      ((by decide : ∀ i < 45, i ∉ ACC :: PT :: Proof.Ecdsa.PPC64LE.ladIx → i < DX ∨ T2 < i) _ hi hl), e₅ hi hl]
   · rw [flagW, (U₅.trans U₆).word apF (by decide), ← flagW]
   · intro t ht
     rw [tbl_unch U₆ h7 (j := 2) (by decide) ht (tbl_apart_chainW h7 2 t),

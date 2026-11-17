@@ -107,12 +107,19 @@ theorem key_result {g : Geo} {nb eb db pb qb dPb dQb qIb : List Byte} {c : Bool}
     rw [this, hv]
     rfl
 
+/-- Values below `P` stay so when one below `P` is put among them. -/
+private theorem upd_lt {A : Nat → Nat} {P : Nat} (hA : ∀ i, A i < P) (j : Nat) {x : Nat} (hx : x < P) :
+    ∀ i, upd A j x i < P := by
+  intro i
+  show (if i = j then x else A i) < P
+  split
+  · exact hx
+  · exact hA i
+
 theorem vals_lt {v : Vals} {P : Nat} (h0 : 0 < P) (hn : v.n < P) (he : v.e < P) (hp : v.p < P)
-    (hq : v.q < P) (hdP : v.dP < P) (hdQ : v.dQ < P) (hqI : v.qI < P) (hd : v.d < P) : ∀ j, vals v j < P := by
-  intro j
-  simp only [vals, upd]
-  repeat' split
-  all_goals assumption
+    (hq : v.q < P) (hdP : v.dP < P) (hdQ : v.dQ < P) (hqI : v.qI < P) (hd : v.d < P) : ∀ j, vals v j < P :=
+  upd_lt (upd_lt (upd_lt (upd_lt (upd_lt (upd_lt (upd_lt (upd_lt (fun _ => h0) aE he) aD hd) aP hp) aQ hq) aDP hdP)
+    aDQ hdQ) aQI hqI) aN hn
 
 /-- A number of at most `K` bytes, in `w` words. -/
 theorem os2ip_lt_words {bs : List Byte} {w : Nat} (h : bs.length ≤ 4 * w) :
