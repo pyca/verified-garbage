@@ -1876,6 +1876,71 @@ def BlkFn.wipeS (n : Nat) (hn : 64 + n ≤ 2112) (h16 : n % 16 = 0 ∨ 16 ≤ n)
   encXd := by simp only [Fn.wipeS, Code.x86_64Depth, Nat.max_le]; exact ⟨B.encXd, Nat.zero_le _⟩
   decXd := by simp only [Fn.wipeS, Code.x86_64Depth, Nat.max_le]; exact ⟨B.decXd, Nat.zero_le _⟩
 
+
+/-- What `B.wipeS n` leaves at `x` in `scratch` at `S`: zero in the `n` bytes
+from byte 64, and elsewhere the arguments kept, or what it found. -/
+def leavesS (n : Nat) (rdi rsi rdx rcx r8 r9 : BitVec 64) (S x : Addr) : Option (BitVec 8) :=
+  if 64 ≤ (x - S).toNat ∧ (x - S).toNat < 64 + n then some 0
+  else leavesL (fun _ => 0) (fun _ _ _ => false) rdi rsi rdx rcx r8 r9 S x
+
+/-- After code leaving `ScrW` (outside `Wn`), what `wipeS` leaves, if it zeroes
+`Wn` (`hcov`). -/
+theorem wipeS_leaves_of {M : CtxMode} {c : Prog isa} (hc : NoSp c) (hd : c.depth = 1) {n : Nat}
+    (hn : 64 + n ≤ 2112) (h16 : n % 16 = 0 ∨ 16 ≤ n) {Wn : Nat → Bool}
+    (hcov : ∀ d, Wn d = true → 64 ≤ d ∧ d < 64 + n)
+    {s s' : State} {t : List Leak} (hpre : Proof.AesGcm.blocksPreM M s)
+    (hW : WP isa c s fun s' => Blocks.ScrW s 0 Wn s'.mem)
+    (he : Exec isa (.seq c (.block (.mov .r11 (.mem (at_ .rsp 8)) :: wipeX .r11 64 n))) s t s') :
+    ∀ x, (⟨stackArg s 0, 2112⟩ : Region).Contains x 1 →
+      s'.mem x = (leavesS n (s.gpr .rdi) (s.gpr .rsi) (s.gpr .rdx) (s.gpr .rcx) (s.gpr .r8)
+        (s.gpr .r9) (stackArg s 0) x).getD (s.mem x) := by
+  intro x hx
+  cases he with
+  | seq a b =>
+    cases b with
+    | block w =>
+      obtain hp := Blocks.BP.ofM hpre
+      obtain ⟨_, v', ea, hS⟩ := hW
+      obtain ⟨_, rfl⟩ := Exec.det a ea
+      obtain ⟨u, ew, hm, -⟩ := wipeS_after hn h16 hp (blk_mid hc hd hp a)
+      rw [ew] at w
+      obtain ⟨rfl, -⟩ := Prod.mk.inj (Option.some.inj w)
+      obtain ⟨d, hd, rfl⟩ : ∃ d, d < 2112 ∧ x = stackArg s 0 + BitVec.ofNat 64 d :=
+        ⟨(x - stackArg s 0).toNat, hx, by
+          rw [BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel]⟩
+      rw [hm]
+      simp only [leavesS, leavesL, Mem.sub_ofNat_toNat _ (show d < 2 ^ 64 by omega)]
+      by_cases hw : 64 ≤ d ∧ d < 64 + n
+      · simp only [hw, and_self, ↓reduceIte, Option.getD_some]
+      · simp only [hw, ↓reduceIte]
+        by_cases h48 : d < 48
+        · simp only [h48, ↓reduceIte, Option.getD_some]
+          rw [← kept_words hS.kept (d / 8) (by omega), ← Blocks.byte_readW64 _ _ (by omega),
+            Offset.add_add_eq _ (by omega : 8 * (d / 8) + d % 8 = d)]
+        · simp only [h48, ↓reduceIte, Bool.false_eq_true, Option.getD_none]
+          exact hS.rest d (by omega) hd (by
+            cases h' : Wn d
+            · rfl
+            · exact absurd (hcov d h') hw)
+
+theorem BlkFn.wipeS_leaves (n : Nat) (hn : 64 + n ≤ 2112) (h16 : n % 16 = 0 ∨ 16 ≤ n) {M : CtxMode} (B : BlkFn M)
+    {Wn : Nat → Bool} (hcov : ∀ d, Wn d = true → 64 ≤ d ∧ d < 64 + n)
+    (hW : ∀ s, (Proof.AesGcm.encryptBlocksX86_64M M).pre s → WP isa B.enc.code s fun s' => Blocks.ScrW s 0 Wn s'.mem) :
+    BlkLeaves (B.wipeS n hn h16) :=
+  ⟨leavesS n, fun _ _ _ hpre he => wipeS_leaves_of B.encNosp B.encDepth hn h16 hcov hpre (hW _ hpre) he⟩
+
+theorem BlkFn.wipeS_leavesD (n : Nat) (hn : 64 + n ≤ 2112) (h16 : n % 16 = 0 ∨ 16 ≤ n) {M : CtxMode} (B : BlkFn M)
+    {Wn : Nat → Bool} (hcov : ∀ d, Wn d = true → 64 ≤ d ∧ d < 64 + n)
+    (hW : ∀ s, (Proof.AesGcm.decryptBlocksX86_64M M).pre s → WP isa B.dec.code s fun s' => Blocks.ScrW s 0 Wn s'.mem) :
+    BlkLeavesD (B.wipeS n hn h16) :=
+  ⟨leavesS n, fun _ _ _ hpre he => wipeS_leaves_of B.decNosp B.decDepth hn h16 hcov hpre (hW _ hpre) he⟩
+
+/-- `vg_aes_ctr32` through its contract with 1480 bytes, as a whole-blocks
+function calls it. -/
+theorem CtrW.small (ctr : VG.Proof.Aes.X86_64.Ctr32Impl) (f : VG.Proof.Aes.X86_64.Ctr32Small ctr.callee) :
+    Blocks.CtrW ⟨ctr.callee.name, ctr.callee.code⟩ 1480 :=
+  fun h => WP.mono (ctr_callS ctr f h) fun _ ⟨g, fr⟩ => ⟨g.saved, g.rd, g.wr, fr⟩
+
 /-- What `B.wipeW` leaves at `x` in `scratch` at `S`: zero in the bytes
 `wipeWin` zeroes (`len` from `winOff add`), and elsewhere what `leavesL`
 says of loops that write only their working space. -/

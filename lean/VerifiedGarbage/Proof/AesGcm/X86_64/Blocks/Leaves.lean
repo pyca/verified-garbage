@@ -335,6 +335,7 @@ theorem decryptN_leaves (ctr : Ctr32Impl) (cf : Ctr32Free ctr.callee) (gh : Ghas
   WP.seq (WP.mono (entry_ok hp) fun _ ⟨_, hg, hk, hf, hrd, hwr⟩ =>
     WP.seq (WP.block_nil (tailD_ok hp ctr cf gh gf (mid_entry hp hg hk hf hrd hwr) (Scr.entry hk hf))))
 
+
 /-! ## Loops that take the first `16 ⌊n / 16⌋` blocks -/
 
 /-- `stitchPart` of loops that also leave `Gcm.X86_64.Stitch.PieceL ℓ zf`, from the state after
@@ -591,6 +592,174 @@ theorem ScrW.slots {s : State} {k k' : Nat} {W : Nat → Bool} {m m' : Mem} (h :
 theorem ScrW.mono {s : State} {k : Nat} {W W' : Nat → Bool} {m : Mem} (h : ScrW s k W m)
     (e : ∀ d, W d = true → W' d = true) : ScrW s k W' m :=
   ⟨h.kept, fun d h1 h2 hw => h.rest d h1 h2 (by cases h' : W d; rfl; rw [e d h'] at hw; exact hw)⟩
+
+/-! ## Without interleaved loops, with calls that need working space -/
+
+/-- How a whole-blocks function calls `vg_aes_ctr32` `ctr`, with working
+space at `S + 64` of which it writes the first `cw` bytes. -/
+def CtrW (ctr : Fn) (cw : Nat) : Prop :=
+  ∀ {st : State} {K C D S' : Addr} {R q : Nat}, CtrCall st K C D S' R q → WP isa (.call ctr.name ctr.code) st fun st' =>
+    (∀ r ∈ calleeSaved, st'.gpr r = st.gpr r) ∧ st'.rd = st.rd ∧ st'.wr = st.wr ∧
+      Frame [⟨C, 16⟩, ⟨D, 16 * q⟩, ⟨S', cw⟩, below (st.gpr .rsp) 8] st.mem st'.mem
+
+/-- How a whole-blocks function calls `vg_ghash` `gh`, with working space at
+`S + 64` of which it writes the first `gw` bytes. -/
+def GhW (gh : Fn) (gw : Nat) : Prop :=
+  ∀ {st : State} {H Y D S' : Addr} {q : Nat}, GhCall st H Y D S' q → WP isa (.call gh.name gh.code) st fun st' =>
+    (∀ r ∈ calleeSaved, st'.gpr r = st.gpr r) ∧ st'.rd = st.rd ∧ st'.wr = st.wr ∧
+      Frame [⟨Y, 16⟩, ⟨S', gw⟩, below (st.gpr .rsp) 8] st.mem st'.mem
+
+theorem CtrW.free (ctr : Ctr32Impl) (cf : Ctr32Free ctr.callee) : CtrW ⟨ctr.callee.name, ctr.callee.code⟩ 0 :=
+  fun h => WP.mono (ctr_callF ctr cf (CtrCall.toF h)) fun _ g => ⟨g.saved, g.rd, g.wr, g.frame.sub fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl <;> exact ⟨_, by simp, fun _ h => h⟩⟩
+
+theorem GhW.free (gh : GhashImpl) (gf : GhashFree gh.fn.code) : GhW gh.fn 0 :=
+  fun h => WP.mono (gh_callF gh gf (GhCall.toF h)) fun _ g => ⟨g.saved, g.rd, g.wr, g.frame.sub fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl <;> exact ⟨_, by simp, fun _ h => h⟩⟩
+
+theorem GhW.base (gh : GhashImpl) : GhW gh.fn 256 :=
+  fun h => WP.mono (gh_call gh h) fun _ g => ⟨g.saved, g.rd, g.wr, g.frame⟩
+
+/-- Through writes apart from `scratch` but the first `w` bytes at `S + 64`,
+which `W` covers. -/
+theorem ScrW.frameS {s : State} {k : Nat} {W : Nat → Bool} {m m' : Mem} (h : ScrW s k W m) {rs : List Region}
+    {w : Nat} (hw : w ≤ 2048) (hf : Frame (rs ++ [⟨S5 s, w⟩]) m m') (hd : ∀ r ∈ rs, (sR s).Disjoint r)
+    (hW : ∀ d, 64 ≤ d → d < 64 + w → W d = true) : ScrW s k W m' :=
+  ⟨h.kept.frame hf fun r hr => by
+      rcases List.mem_append.mp hr with hr | hr
+      · exact (hd r hr).sub_left kR'_sub
+      · simp only [List.mem_singleton] at hr; subst hr
+        exact Offset.base_disjoint (S s) (e := 64) (n := w) (k := 48) (by decide) (by omega),
+    fun d h1 h2 hwd => by
+      rw [hf _ fun r hr hc => by
+        rcases List.mem_append.mp hr with hr | hr
+        · exact hd r hr _ (contains_S s h2) hc
+        · simp only [List.mem_singleton] at hr; subst hr
+          change (S s + BitVec.ofNat 64 d - (S s + BitVec.ofNat 64 64)).toNat + 1 ≤ w at hc
+          by_cases h64 : 64 ≤ d
+          · rw [Offset.sub_toNat _ h64 (by omega)] at hc
+            rw [hW d h64 (by omega)] at hwd; exact absurd hwd (by decide)
+          · rw [Offset.sub_toNat' _ (by decide) (by omega)] at hc
+            simp only [h64, ↓reduceIte] at hc
+            omega]
+      exact h.rest d h1 h2 hwd⟩
+
+section
+variable {M : CtxMode} {s : State} (hp : BP M s)
+include hp
+
+/-- What the calls of the encryption's `tail` write, with calls that write the
+first `cw` and `gw` bytes of their working space at `S + 64`. -/
+theorem callsS (ctr gh : Fn) {cw gw : Nat} (hcw : cw ≤ 2048) (_hgw : gw ≤ 256) (hc : CtrW ctr cw) (hg : GhW gh gw)
+    {q : Nat} {ys : List Block} {st₁ : State} (M : Mid s q q ys st₁) (hlt : q < n s) :
+    WP isa (.seq (ctrCall ctr) (ghCall gh)) st₁ fun st =>
+      Frame ([cR s, ⟨dq s q, 16 * (n s - q)⟩, below (SP s) 8, yR s] ++ [⟨S5 s, max cw gw⟩]) st₁.mem st.mem := by
+  have hq := M.q_le
+  refine WP.seq (WP.seq (WP.mono (ctrArgs_ok hp (M.ready hp) hlt) fun st₂ ⟨hcc, R₂, _, m₂⟩ =>
+    WP.mono (hc hcc) fun st₃ ⟨gs, grd, gwr, f₃⟩ => ?_))
+  rw [R₂.rsp] at f₃
+  obtain R₃ : Ready s q st₃ := R₂.frame f₃ (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl
+      · exact (apart_kR' hp hq).c
+      · exact (apart_kR' hp hq).d
+      · exact (apart_kR' hp hq).s5.sub_right (Region.sub_prefix hcw)
+      · exact (apart_kR' hp hq).t)
+    (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl
+      · exact (apart_a hp hq).c
+      · exact (apart_a hp hq).d
+      · exact (apart_a hp hq).s5.sub_right (Region.sub_prefix hcw)
+      · exact (apart_a hp hq).t) (gs _ (by decide)) grd gwr
+  refine WP.seq (WP.mono (ghArgs_ok hp R₃ hlt) fun st₄ ⟨hgc, R₄, _, m₄⟩ =>
+    WP.mono (hg hgc) fun st₅ ⟨_, _, _, f₅⟩ => ?_)
+  rw [R₄.rsp] at f₅
+  rw [m₄] at f₅
+  rw [m₂] at f₃
+  exact (f₃.sub fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl
+      exacts [⟨cR s, by simp, fun _ h => h⟩, ⟨_, by simp, fun _ h => h⟩,
+        ⟨⟨S5 s, max cw gw⟩, by simp, Region.sub_prefix (Nat.le_max_left _ _)⟩, ⟨below (SP s) 8, by simp, fun _ h => h⟩]).trans
+    (f₅.sub fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      exacts [⟨yR s, by simp, fun _ h => h⟩, ⟨⟨S5 s, max cw gw⟩, by simp, Region.sub_prefix (Nat.le_max_right _ _)⟩,
+        ⟨below (SP s) 8, by simp, fun _ h => h⟩])
+
+/-- `callsS` for the decryption, the other way round. -/
+theorem callsDS (ctr gh : Fn) {cw gw : Nat} (_hcw : cw ≤ 2048) (hgw : gw ≤ 256) (hc : CtrW ctr cw) (hg : GhW gh gw)
+    {q : Nat} {ys : List Block} {st₁ : State} (M : Mid s q q ys st₁) (hlt : q < n s) :
+    WP isa (.seq (ghCall gh) (ctrCall ctr)) st₁ fun st =>
+      Frame ([cR s, ⟨dq s q, 16 * (n s - q)⟩, below (SP s) 8, yR s] ++ [⟨S5 s, max cw gw⟩]) st₁.mem st.mem := by
+  have hq := M.q_le
+  refine WP.seq (WP.seq (WP.mono (ghArgs_ok hp (M.ready hp) hlt) fun st₂ ⟨hgc, R₂, _, m₂⟩ =>
+    WP.mono (hg hgc) fun st₃ ⟨gs, grd, gwr, f₃⟩ => ?_))
+  rw [R₂.rsp] at f₃
+  obtain R₃ : Ready s q st₃ := R₂.frame f₃ (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact (apart_kR' hp hq).y
+      · exact (apart_kR' hp hq).s5.sub_right (Region.sub_prefix (by omega))
+      · exact (apart_kR' hp hq).t)
+    (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact (apart_a hp hq).y
+      · exact (apart_a hp hq).s5.sub_right (Region.sub_prefix (by omega))
+      · exact (apart_a hp hq).t) (gs _ (by decide)) grd gwr
+  refine WP.seq (WP.mono (ctrArgs_ok hp R₃ hlt) fun st₄ ⟨hcc, R₄, _, m₄⟩ =>
+    WP.mono (hc hcc) fun st₅ ⟨_, _, _, f₅⟩ => ?_)
+  rw [R₄.rsp] at f₅
+  rw [m₄] at f₅
+  rw [m₂] at f₃
+  exact (f₃.sub fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      exacts [⟨yR s, by simp, fun _ h => h⟩, ⟨⟨S5 s, max cw gw⟩, by simp, Region.sub_prefix (Nat.le_max_right _ _)⟩,
+        ⟨below (SP s) 8, by simp, fun _ h => h⟩]).trans
+    (f₅.sub fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl
+      exacts [⟨cR s, by simp, fun _ h => h⟩, ⟨_, by simp, fun _ h => h⟩,
+        ⟨⟨S5 s, max cw gw⟩, by simp, Region.sub_prefix (Nat.le_max_left _ _)⟩, ⟨below (SP s) 8, by simp, fun _ h => h⟩])
+
+/-- `vg_aes_gcm_encrypt_blocks` without interleaved loops, with calls that
+write the first `cw` and `gw` bytes of their working space at `S + 64`:
+`scratch` holds the arguments kept, and outside `W`, which covers those
+bytes, nothing else written. -/
+theorem encryptS_leaves (ctr gh : Fn) {cw gw : Nat} (hcw : cw ≤ 2048) (hgw : gw ≤ 256) (hc : CtrW ctr cw)
+    (hg : GhW gh gw) {W : Nat → Bool} (hW : ∀ d, 64 ≤ d → d < 64 + max cw gw → W d = true) :
+    WP isa (encrypt ctr gh none) s fun s' => ScrW s 0 W s'.mem := by
+  refine WP.seq (WP.mono (entry_ok hp) fun _ ⟨_, hg', hk, hf, hrd, hwr⟩ => WP.seq (WP.block_nil ?_))
+  obtain M := mid_entry hp hg' hk hf hrd hwr
+  obtain hS := (Scr.entry hk hf).toW (fun _ => rfl) W
+  refine WP.seq (WP.mono (tailHeadL_ok hp M) fun st₁ ⟨⟨M₁, hz⟩, hm⟩ => ?_)
+  rw [← hm] at hS
+  refine WP.ite (decide (n s - 0 = 0)) (by simp only [eval, hz]) (fun _ => WP.block_nil hS) (fun e => ?_)
+  obtain hlt : 0 < n s := by simp at e; omega_using [e]
+  exact WP.mono (callsS hp ctr gh hcw hgw hc hg M₁ hlt) fun st' hf' =>
+    hS.frameS (Nat.le_trans (Nat.max_le.mpr ⟨hcw, by omega⟩) (Nat.le_refl _)) hf' (sR_calls hp M₁.q_le) hW
+
+/-- `encryptS_leaves` for the decryption. -/
+theorem decryptS_leaves (ctr gh : Fn) {cw gw : Nat} (hcw : cw ≤ 2048) (hgw : gw ≤ 256) (hc : CtrW ctr cw)
+    (hg : GhW gh gw) {W : Nat → Bool} (hW : ∀ d, 64 ≤ d → d < 64 + max cw gw → W d = true) :
+    WP isa (decrypt ctr gh none) s fun s' => ScrW s 0 W s'.mem := by
+  refine WP.seq (WP.mono (entry_ok hp) fun _ ⟨_, hg', hk, hf, hrd, hwr⟩ => WP.seq (WP.block_nil ?_))
+  obtain M := mid_entry hp hg' hk hf hrd hwr
+  obtain hS := (Scr.entry hk hf).toW (fun _ => rfl) W
+  refine WP.seq (WP.mono (tailHeadL_ok hp M) fun st₁ ⟨⟨M₁, hz⟩, hm⟩ => ?_)
+  rw [← hm] at hS
+  refine WP.ite (decide (n s - 0 = 0)) (by simp only [eval, hz]) (fun _ => WP.block_nil hS) (fun e => ?_)
+  obtain hlt : 0 < n s := by simp at e; omega_using [e]
+  exact WP.mono (callsDS hp ctr gh hcw hgw hc hg M₁ hlt) fun st' hf' =>
+    hS.frameS (Nat.le_trans (Nat.max_le.mpr ⟨hcw, by omega⟩) (Nat.le_refl _)) hf' (sR_calls hp M₁.q_le) hW
+
+
+end
 
 /-- Through interleaved loops whose working space is the 1024 bytes at
 `S + o`, which write only it in `scratch`. -/
