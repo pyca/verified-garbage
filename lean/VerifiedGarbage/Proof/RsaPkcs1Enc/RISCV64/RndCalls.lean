@@ -520,17 +520,54 @@ theorem entry_arg {s w : State} {i : Nat} {ps : List Byte} (hw : Args s w i ps) 
 
 theorem svR_sub (s : State) : Region.Sub (svR s) (kR s) := frame_sub s (d := oSave) (n := 40) (by decide)
 
+/-- `AfterCall` holds whatever the bytes of the call's frame hold once it is
+freed: the slots, the tape and the output lie apart from it. -/
+theorem AfterCall.lost {s u : State} (hp : RPre s) {i : Nat} {ps : List Byte} (A : AfterCall s u i ps)
+    {m : Mem} (x : Nat → BitVec 64) (fl : Frame [cR s] u.mem m) :
+    AfterCall s { u with mem := m, unknowns := x } i ps := by
+  obtain hW : ∀ r ∈ [cR s], Wok s r := fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr
+    exact ⟨⟨lowR s, by simp, cR_sub⟩, ((kR_lowR hp).sub_left (svR_sub s)).sub_right cR_sub⟩
+  obtain tD : ∀ r ∈ [cR s], (tR s).Disjoint r := fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr
+    exact ((low_dis hp.kt).sub_left cR_sub).symm
+  obtain hb : Spec.Rsa.bytesAt m (s.gpr .a0) (s.gpr .a4).toNat =
+      Spec.Rsa.bytesAt u.mem (s.gpr .a0) (s.gpr .a4).toNat :=
+    List.map_congr_left fun j hj => lost_byte fl (R := oR' s)
+      (o'_dis hp ((low_dis hp.ko).sub_left cR_sub).symm) (List.mem_range.mp hj)
+  exact {
+    sp := A.sp
+    rd := A.rd
+    wr := A.wr
+    hi := A.hi
+    sv := A.sv.frame_in saved_offs fl fun r hr => (hW r hr).2
+    fr := A.fr.trans (fl.sub fun r hr => (hW r hr).1)
+    s1 := A.s1
+    tape0 := by
+      show m.readW _ 64 = _
+      rw [fl.readW (tR_contains0 s) tD (by decide)]; exact A.tape0
+    tape1 := by
+      show m.readW _ 64 = _
+      rw [fl.readW (tR_contains s (d := 8) (by decide)) tD (by decide)]; exact A.tape1
+    res := fun hq => by
+      have h := A.res hq
+      show Spec.Rsa.written m _ _ _ _
+      generalize Spec.RsaPkcs1Enc.encrypt (nB s) (eB s) (msgB s) ps = o at h ⊢
+      cases o <;> simp only [Spec.Rsa.written, hb] at h ⊢ <;> exact h }
+
 theorem call_ok {s z : State} (hp : RPre s) {i : Nat} {ps : List Byte} (hz : Pre s z i ps) :
     WP isa Impl.RsaPkcs1Enc.RISCV64.Random.call z fun u => AfterCall s u i ps := by
   obtain hP := psLen_le hp
   obtain hfg := fb_ge hp
   unfold Impl.RsaPkcs1Enc.RISCV64.Random.call
-  refine WP.allocLeKept (by decide) (by rw [hz.sp]; omega_using [hfg]) ?_
+  refine WP.allocLe (by decide) (by rw [hz.sp]; omega_using [hfg]) ?_
   refine WP.seq (WP.mono (stack_ok hp hz) fun w hw => ?_)
   obtain ⟨hc, hcw⟩ := call_covers hp hw
   refine WP.callAny (k := Proof.RsaPkcs1Enc.encryptPrecomputedContract abi frameBytes) Enc.code_correct
     (rd := callRd s) (wr := callWr s) (encPre_of (preE_c hp hw)) hc hcw
-    (fun s' hrd hwr hsp hf hpres hpost => ?_) (by rw [enc_sdepth]; decide)
+    (fun s' hrd hwr hsp hf hpres hpost mL uL fl => ?_) (by rw [enc_sdepth]; decide)
+  rw [hz.sp] at fl
+  refine AfterCall.lost (u := freed 48 s') hp ?_ uL fl
   rw [enc_sdepth, hw.sp] at hf
   simp only [below, fb_sub48, low_eq] at hf
   have hf' : Frame [oR' s, scR s, ckR s] w.mem s'.mem := hf
