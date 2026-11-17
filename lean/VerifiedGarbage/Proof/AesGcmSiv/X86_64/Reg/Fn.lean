@@ -259,6 +259,24 @@ theorem fine_l (f : Frame (lRn θ W n) m m') : Frame (fineR θ W D n) m m' :=
 theorem fine_d (f : Frame [⟨D, n⟩] m m') : Frame (fineR θ W D n) m m' :=
   fine_ld (f.sub fun q hq => ⟨q, List.mem_append_right _ hq, fun _ h => h⟩)
 
+/-- Below the length from which the loops run, `seal` and `open` write none
+of what `zeroL` zeroes. -/
+theorem fineR_kept (L : Lay K W SP) (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 744⟩) (hn : n < θ) {o : Nat}
+    (ho : o ∈ Impl.AesGcmSiv.X86_64Reg.zeroOffs) :
+    ∀ q ∈ fineR θ W D n, (⟨W + BitVec.ofNat 64 o, 16⟩ : Region).Disjoint q := by
+  obtain ⟨h₁, h₂, h₃⟩ := zeroOffs_sep o ho
+  obtain ⟨h₄, h₅, h₆⟩ := zeroOffs_sep' o ho
+  intro q hq
+  simp only [fineR, lRn, Nat.not_le.mpr hn, ↓reduceIte, List.mem_cons, List.mem_append, List.not_mem_nil,
+    or_false] at hq
+  rcases hq with rfl | rfl | rfl | rfl | rfl | rfl
+  · exact L.w_w h₄ h₃ (by decide)
+  · simpa using L.w_w (a := o) (n := 16) (d := 0) (k := 64) (.inr h₅) h₃ (by decide)
+  · exact L.w_w h₂ h₃ (by decide)
+  · exact L.w_w h₆ h₃ (by decide)
+  · exact L.w_w h₁ h₃ (by decide)
+  · exact (hDW.sub_right (Lay.wSub h₃)).symm
+
 /-- A buffer, through pieces that write only what `mutR` lists. -/
 theorem buf_mut {s : State} {P : Addr} {len : Nat} (hP : Buf K W SP s P len)
     (hPD : (⟨P, len⟩ : Region).Disjoint ⟨D, n⟩) (hf : Frame (mutR W SP D n) m m') :

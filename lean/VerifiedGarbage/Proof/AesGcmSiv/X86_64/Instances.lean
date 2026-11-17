@@ -31,6 +31,7 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Registration
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubChunks
 import VerifiedGarbage.Proof.AesSiv.Scratch
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! ### `AesGcmSiv.X86_64.Verified`, which only this module used -/
 
@@ -1023,6 +1024,98 @@ def wideOpenReg (v : GcmImpl) : Registration Spec.GcmSiv.openApi X86_64.target :
     stack := 3856
     verified := Proof.AesGcmSiv.open_keyed (avx2Open_verified v)
     spSafe := avx2Open_spSafe v } (openOut _)
+
+/-! ### The code in registers: what its frame holds on return
+
+The code in registers writes, of its 784 bytes of stack, the working space
+`W` (at 40 bytes from their start). What only the loops write of `W`, 64
+bytes at `W + 64` and 248 from `W + 496`, it either leaves as it found it
+(below the length from which the loops run) or zeroes (`zeroL`): which, the
+data's length decides, so two runs leave the same bytes there, and `scrub`
+need not wipe them (`sivKs`). -/
+
+section
+open VG VG.X86_64
+open VG.Proof.AesGcmSivReg (sealX86_64 openX86_64 arg)
+open VG.Proof.AesGcmSivReg.X86_64 (fineR ZeroR fineR_kept zeroOffs_sep args_of_seal args_of_open)
+open VG.Impl.AesGcmSiv.X86_64Reg (zeroOffs)
+open VG.Impl.StackScratch.X86_64 (withStackArgScratch)
+
+/-- The granules `scrub` wipes of the 784 bytes: all but those of
+`zeroOffs`. -/
+def sivKs : List Nat :=
+  (allKs [8, 776]).filter fun k => !(776 :: (zeroOffs.dropLast.map (· + 40))).contains k
+
+theorem sivKs_cov : ∀ i < 784, cov sivKs [8, 776] i = false →
+    zeroOffs.any (fun o => decide (40 + o ≤ i ∧ i < 40 + o + 16)) = true := by decide +kernel
+
+/-- A byte of the 784 that `scrub` does not wipe is one that `zeroL` zeroes. -/
+theorem unwiped {p x : Addr} (hx : (⟨p - BitVec.ofNat 64 784, 784⟩ : Region).Contains x 1)
+    (hn : ¬ WCov sivKs [8, 776] p x) :
+    ∃ o ∈ zeroOffs, (⟨p - BitVec.ofNat 64 776 + BitVec.ofNat 64 32 + BitVec.ofNat 64 o, 16⟩ : Region).Contains x 1 := by
+  have hi : (x - (p - BitVec.ofNat 64 784)).toNat < 784 := by
+    simp only [Region.Contains] at hx; omega_using [hx]
+  have hc : cov sivKs [8, 776] (x - (p - BitVec.ofNat 64 784)).toNat = false := by
+    cases h : cov sivKs [8, 776] (x - (p - BitVec.ofNat 64 784)).toNat with
+    | false => rfl
+    | true => exact absurd ⟨hx, h⟩ hn
+  obtain ⟨o, ho, hb⟩ := List.any_eq_true.mp (sivKs_cov _ hi hc)
+  obtain ⟨hb₁, hb₂⟩ := of_decide_eq_true hb
+  refine ⟨o, ho, ?_⟩
+  have e : p - BitVec.ofNat 64 776 + BitVec.ofNat 64 32 + BitVec.ofNat 64 o =
+      p - BitVec.ofNat 64 784 + BitVec.ofNat 64 (40 + o) := by
+    rw [sub_add_ofNat p (b := 776) (d := 32) (by decide), ← BitVec.ofNat_add_ofNat, ← BitVec.add_assoc,
+      sub_add_ofNat p (b := 784) (d := 40) (by decide)]
+  have ex : p - BitVec.ofNat 64 784 + BitVec.ofNat 64 (x - (p - BitVec.ofNat 64 784)).toNat = x := by
+    rw [BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel]
+  have := VG.Offset.contains (p - BitVec.ofNat 64 784) (n := 1) hb₁ (by omega_using [hb₂] : _ ≤ 40 + o + 16)
+    (by omega_using [hb₁, hi])
+  rw [ex] at this
+  rw [e]; exact this
+
+/-- A run of code in a frame of `withStackArgScratch` is its run from
+`narrowS`, which leaves the memory the frame's run does. -/
+theorem inner_run {sig : Sig} {nm : String} {e : Elem} {n : Nat}
+    {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)} {post : sig.Post abi.ptrBits} {wa : Bool}
+    {stack bytes : Nat} {leak : Option (Curry (sig.words abi.ptrBits) (Mem → List Nat))} {c : Prog isa}
+    (h : Verified X86_64.target c (Sig.scratchContract abi sig nm e n pre post wa stack leak))
+    (hk : 6 ≤ (sig.words abi.ptrBits).length)
+    (hb : 16 + 8 * X86_64.nStack sig + n * e.size ≤ bytes ∧ bytes < 4096 ∧ bytes % 8 = 0)
+    (hst : stack + bytes + 8 ≤ 2 ^ 64)
+    (hsp : c.all (fun i => !isa.writesSp i) = true) (hd : c.x86_64Depth ≤ stack)
+    (hpre : ∀ vs m₁ m₂, vs.length = (sig.words abi.ptrBits).length →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      (∀ r ∈ Sig.lists abi.ptrBits m₁ sig.params vs, ∀ a, r.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) pre vs m₁ → Curry.apply (sig.words abi.ptrBits) pre vs m₂)
+    {s s' : State} {t : List Leak} (hs : (sig.contract abi pre post wa (stack + bytes) leak).pre s)
+    (ex : Exec isa (withStackArgScratch bytes (X86_64.nStack sig) c) s t s') :
+    ∃ t₃ s₃, (Sig.scratchContract abi sig nm e n pre post wa stack leak).pre (narrowS sig e n bytes s) ∧
+      Exec isa c (narrowS sig e n bytes s) t₃ s₃ ∧ s'.mem = s₃.mem := by
+  have hp := narrowS_pre (nm := nm) hk hb.1 hb.2.1 hpre hs
+  obtain ⟨t₃, s₃, he, ha, -⟩ := h.1 _ hp
+  obtain ⟨hex, -, hm, -⟩ := withStackArgScratch_run hk hb hst (SpSafe.of_all hsp) hd hs he ha
+  obtain ⟨-, rfl⟩ := ex.det hex
+  exact ⟨t₃, s₃, hp, he, hm⟩
+
+/-- Two runs agree, on entry, on the stack below the stack pointer. -/
+theorem stack_init_eq {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)}
+    {post : sig.Post abi.ptrBits} {wa : Bool} {stack : Nat}
+    {leak : Option (Curry (sig.words abi.ptrBits) (Mem → List Nat))} (hk : 6 ≤ (sig.words abi.ptrBits).length)
+    {s₁ s₂ : State} (h₁ : (sig.contract abi pre post wa (stack + 1) leak).pre s₁) (ho : Outside 0 s₁ s₂)
+    {x : Addr} (hx : (⟨s₁.gpr .rsp - BitVec.ofNat 64 (stack + 1), stack + 1⟩ : Region).Contains x 1) :
+    s₁.mem x = s₂.mem x := by
+  rw [pre_args hk] at h₁
+  obtain ⟨-, hrd, hwr, -, hres, -⟩ := h₁
+  refine ho.2.2.2.2.2.2.2.2.2.2.2.2.2.2 x fun r hr hc => ?_
+  have hm : ∃ a ∈ allRegions sig s₁, a.1 = r := by
+    rw [hrd, hwr] at hr
+    rcases List.mem_append.mp hr with h | h
+    · obtain ⟨a, ha, rfl⟩ := List.mem_map.mp h; exact ⟨a, (List.mem_filter.mp ha).1, rfl⟩
+    · obtain ⟨a, ha, rfl⟩ := List.mem_map.mp h; exact ⟨a, (List.mem_filter.mp ha).1, rfl⟩
+  obtain ⟨a, ha, rfl⟩ := hm
+  exact hres _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)) a ha x hx hc
+
+end
 
 end
 

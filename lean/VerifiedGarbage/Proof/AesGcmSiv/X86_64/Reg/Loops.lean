@@ -474,6 +474,9 @@ theorem zeroOffs_in : ∀ o ∈ zeroOffs, (64 ≤ o ∧ o + 16 ≤ 64 + 80) ∨ 
 theorem zeroOffs_sep : ∀ o ∈ zeroOffs, (o + 16 ≤ 128 ∨ 128 + 16 ≤ o) ∧ (o + 16 ≤ 192 ∨ 192 + 8 ≤ o) ∧
     o + 16 ≤ 744 := by decide
 
+theorem zeroOffs_sep' : ∀ o ∈ zeroOffs, (o + 16 ≤ 144 ∨ 144 + 104 ≤ o) ∧ 0 + 64 ≤ o ∧
+    (o + 16 ≤ 248 ∨ 248 + 240 ≤ o) := by decide
+
 /-- The stores of `zeroL` are within what the loops write. -/
 theorem zm_lR (W : Addr) (m : Mem) : Frame (lR W) m (zm W m zeroOffs) := fun x hx =>
   zm_frame W zeroOffs m x fun o ho hc => by
