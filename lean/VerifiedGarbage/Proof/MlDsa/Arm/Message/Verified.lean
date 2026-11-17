@@ -16,6 +16,7 @@ import VerifiedGarbage.Proof.MlDsa.Arm.Message.SignCorrect
 import VerifiedGarbage.Proof.MlDsa.Arm.Message.SignCT
 import VerifiedGarbage.Proof.MlDsa.Verify.Bounds
 import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.Framework.Arm.Scrub
 
 /-!
 # ML-DSA on ARMv7, `sign_message` and `verify_message_cached`: verified
@@ -24,9 +25,10 @@ Untrusted: everything here is checked by Lean. `signMessage n c p` and
 `verifyMessageCached n c p`, for any functions on `μ` `c` they can call
 (`SignFn`, `VerifyFn`), are verified against `signMessageContract p Arm.abi
 52` and `verifyMessageCachedContract p Arm.abi 52`; `vg_mldsa*_sign` and
-`vg_mldsa*_verify` are such functions (`sign44Fn`, …), and
-`verifyMessageCached44_verified`, … are the cached verifications of
-`vg_mldsa*_verify`.
+`vg_mldsa*_verify` are such functions (`sign44Fn`, …). The preconditions
+are satisfiable with 56 bytes of stack (48 for `sign_prepared`), the frame
+sizes of the model the functions are registered with
+(`Proof/MlDsa/Arm/Scrub.lean`), so with less (`Arm.Scrub.sat_stack_le`).
 -/
 
 @[expose] public section
@@ -52,7 +54,7 @@ def signSat (p : Params) : State where
   rd := [⟨0x1000, p.skLen⟩, ⟨0x3000, 0⟩, ⟨0x3100, 0⟩, ⟨0x3200, 32⟩, ⟨0x80000, 16⟩]
   wr := [⟨0x4000, p.sigLen⟩, ⟨0x10000, mScrLen p⟩]
 
-theorem signMessage_sat {p : Params} (hp : p ∈ params) : ∃ s, (signMessageContract p Arm.abi 52).pre s := by
+theorem signMessage_sat {p : Params} (hp : p ∈ params) : ∃ s, (signMessageContract p Arm.abi 56).pre s := by
   simp only [params, List.mem_cons, List.not_mem_nil, or_false] at hp
   rcases hp with rfl | rfl | rfl
   · sig_implies_sat [signMessageContract, signMessageSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
@@ -66,7 +68,7 @@ theorem signMessage_verified {p : Params} {n : String} {c : Prog isa} (hS : Sign
     Verified Arm.target (signMessage n c p) (signMessageContract p Arm.abi 52) :=
   ⟨fun _ h => let ⟨t, s', he, ha, hq⟩ := signMessage_wp hS hp (sPre_of h); ⟨t, s', he, ha, hq⟩,
     fun _ _ _ _ _ _ h₁ h₂ hp' e₁ e₂ => signMessage_ct hS hp _ _ _ _ _ _ (sPre_of h₁) (sPre_of h₂) (sPub_of hp') e₁ e₂,
-    signMessage_sat hp⟩
+    Arm.Scrub.sat_stack_le (by decide) (signMessage_sat hp)⟩
 
 /-- The memory of a state satisfying the precondition of verification with a
 cached `tr`: `ctx_len = 0`, `sig`, `scratch` and `tr` on the stack, and `tr`
@@ -124,7 +126,7 @@ theorem cachedSat_tr {p : Params} (hp : p.pkLen < 0x7000)
   exact cachedSatMem_digest hp
 
 theorem verifyMessageCached_sat {p : Params} (hp : p ∈ params) :
-    ∃ s, (verifyMessageCachedContract p Arm.abi 52).pre s := by
+    ∃ s, (verifyMessageCachedContract p Arm.abi 56).pre s := by
   refine ⟨cachedSat p, ?_⟩
   simp only [params, List.mem_cons, List.not_mem_nil, or_false] at hp
   rcases hp with rfl | rfl | rfl <;>
@@ -142,7 +144,7 @@ theorem verifyMessageCached_verified {p : Params} {n : String} {c : Prog isa} (h
   ⟨fun _ h => let ⟨t, s', he, ha, hq⟩ := verifyMessageCached_wp hV hp (cPre_of h); ⟨t, s', he, ha, hq⟩,
     fun _ _ _ _ _ _ h₁ h₂ hp' e₁ e₂ =>
       verifyMessageCached_ct hV hp _ _ _ _ _ _ (cPre_of h₁) (cPre_of h₂) (cPub_of hp') e₁ e₂,
-    verifyMessageCached_sat hp⟩
+    Arm.Scrub.sat_stack_le (by decide) (verifyMessageCached_sat hp)⟩
 
 /-! ## The functions on `μ` -/
 
@@ -159,19 +161,6 @@ theorem verify65Fn : VerifyFn mlDsa65 false Impl.MlDsa.Arm.Verify.verify65 :=
   ⟨(Verify.verifyE_verified (.inr (.inl rfl))).1, (Verify.verifyE_verified (.inr (.inl rfl))).2.1, by decide +kernel⟩
 theorem verify87Fn : VerifyFn mlDsa87 false Impl.MlDsa.Arm.Verify.verify87 :=
   ⟨(Verify.verifyE_verified (.inr (.inr rfl))).1, (Verify.verifyE_verified (.inr (.inr rfl))).2.1, by decide +kernel⟩
-
-theorem verifyMessageCached44_verified :
-    Verified Arm.target (verifyMessageCached verify44Api.name Impl.MlDsa.Arm.Verify.verify44 mlDsa44)
-      (verifyMessageCachedContract mlDsa44 Arm.abi 52) :=
-  verifyMessageCached_verified verify44Fn (List.mem_cons_self ..)
-theorem verifyMessageCached65_verified :
-    Verified Arm.target (verifyMessageCached verify65Api.name Impl.MlDsa.Arm.Verify.verify65 mlDsa65)
-      (verifyMessageCachedContract mlDsa65 Arm.abi 52) :=
-  verifyMessageCached_verified verify65Fn (List.mem_cons_of_mem _ (List.mem_cons_self ..))
-theorem verifyMessageCached87_verified :
-    Verified Arm.target (verifyMessageCached verify87Api.name Impl.MlDsa.Arm.Verify.verify87 mlDsa87)
-      (verifyMessageCachedContract mlDsa87 Arm.abi 52) :=
-  verifyMessageCached_verified verify87Fn (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)))
 
 /-! ## Prepared keys -/
 
@@ -223,7 +212,7 @@ theorem preparedSignSat_arg {p : Params} {m : Mem} {i : Nat} (hi : i < 4) :
   stackArg_eq_of rfl rfl hi fun a h₁ h₂ => by simp only [preparedSignSat, h₁, h₂, and_self, ite_true]
 
 theorem preparedSignSat_pre {p : Params} (hp : p ∈ params) {m : Mem} (hk : PreparedSecretKey p m 0x200000) :
-    (preparedSignMessageContract p Arm.abi 52).pre (preparedSignSat p m) := by
+    (preparedSignMessageContract p Arm.abi 56).pre (preparedSignSat p m) := by
   have hk' : PreparedSecretKey p (preparedSignSat p m).mem 0x200000 :=
     PreparedKey.preparedSecretKey_of_bytes (key_bytes (by
       simp only [params, List.mem_cons, List.not_mem_nil, or_false] at hp
@@ -244,7 +233,7 @@ theorem preparedSignSat_pre {p : Params} (hp : p ∈ params) {m : Mem} (hk : Pre
     | exact Region.disjoint_of_sep (by decide)
 
 theorem preparedSignMessage_sat {p : Params} (hp : p ∈ params) :
-    ∃ s, (preparedSignMessageContract p Arm.abi 52).pre s := by
+    ∃ s, (preparedSignMessageContract p Arm.abi 56).pre s := by
   have h3 : PreparedKey.Ok3 p := by
     simp only [params, List.mem_cons, List.not_mem_nil, or_false] at hp; exact hp
   obtain ⟨m, hk⟩ := PreparedKey.prepared_secret_mem h3
@@ -255,7 +244,7 @@ theorem preparedSignMessage_verified {p : Params} {n : String} {c : Prog isa} (h
     Verified Arm.target (signMessage n c p) (preparedSignMessageContract p Arm.abi 52) := by
   refine ⟨fun s h => ?_, fun _ _ _ _ _ _ h₁ h₂ hp' e₁ e₂ =>
     signMessage_ct hS hp _ _ _ _ _ _ (sPre_of_prepared h₁) (sPre_of_prepared h₂) (sPub_of_prepared hp') e₁ e₂,
-    preparedSignMessage_sat hp⟩
+    Arm.Scrub.sat_stack_le (by decide) (preparedSignMessage_sat hp)⟩
   obtain ⟨t, s', he, ha, hq⟩ := signMessage_wp hS hp (sPre_of_prepared h)
   refine ⟨t, s', he, ha, ?_⟩
   sig_post [signMessageContract, signMessageSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] at hq
@@ -319,7 +308,7 @@ theorem preparedCachedSat_arg {p : Params} {m : Mem} {i : Nat} (hi : i < 4) :
 
 theorem preparedCachedSat_pre {p : Params} (hp : p ∈ params) {m : Mem}
     (hm : bytesAt m 0x200000 p.pkLen = bytesAt (fun _ => 0) 0x1000 p.pkLen) (hk : PreparedPublicKey p m 0x200000) :
-    (preparedVerifyMessageContract p Arm.abi 52).pre (preparedCachedSat p m) := by
+    (preparedVerifyMessageContract p Arm.abi 56).pre (preparedCachedSat p m) := by
   have hl : preparedPublicKeyBytes p < 0x100000 ∧ p.pkLen < 0x7000 := by
     simp only [params, List.mem_cons, List.not_mem_nil, or_false] at hp
     rcases hp with rfl | rfl | rfl <;> decide
@@ -346,7 +335,7 @@ theorem preparedCachedSat_pre {p : Params} (hp : p ∈ params) {m : Mem}
     | rfl
 
 theorem preparedVerifyMessage_sat {p : Params} (hp : p ∈ params) :
-    ∃ s, (preparedVerifyMessageContract p Arm.abi 52).pre s := by
+    ∃ s, (preparedVerifyMessageContract p Arm.abi 56).pre s := by
   have h3 : PreparedKey.Ok3 p := by
     simp only [params, List.mem_cons, List.not_mem_nil, or_false] at hp; exact hp
   obtain ⟨m, hm, hk⟩ := PreparedKey.prepared_public_mem h3
@@ -357,7 +346,7 @@ theorem preparedVerifyMessage_verified {p : Params} {n : String} {c : Prog isa} 
     Verified Arm.target (verifyMessageCached n c p) (preparedVerifyMessageContract p Arm.abi 52) := by
   refine ⟨fun s h => ?_, fun _ _ _ _ _ _ h₁ h₂ hp' e₁ e₂ =>
     verifyMessageCached_ct hV hp _ _ _ _ _ _ (cPre_of_prepared h₁) (cPre_of_prepared h₂) (cPub_of_prepared hp') e₁ e₂,
-    preparedVerifyMessage_sat hp⟩
+    Arm.Scrub.sat_stack_le (by decide) (preparedVerifyMessage_sat hp)⟩
   obtain ⟨t, s', he, ha, hq⟩ := verifyMessageCached_wp hV hp (cPre_of_prepared h)
   refine ⟨t, s', he, ha, ?_⟩
   sig_post [verifyMessageCachedContract, verifyMessageCachedSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
@@ -385,7 +374,7 @@ def externalSignSat (p : Params) (m : Mem) : State :=
     rd := [⟨0x200000, preparedSecretKeyBytes p⟩, ⟨0x3000, 64⟩, ⟨0x3100, 32⟩, ⟨0x80000, 4⟩] }
 
 theorem externalSign_sat {p : Params} (hp : p ∈ params) :
-    ∃ s, (preparedSignContract p Arm.abi 44).pre s := by
+    ∃ s, (preparedSignContract p Arm.abi 48).pre s := by
   have h3 : PreparedKey.Ok3 p := by
     simp only [params, List.mem_cons, List.not_mem_nil, or_false] at hp; exact hp
   obtain ⟨m, hk⟩ := PreparedKey.prepared_secret_mem h3
@@ -409,7 +398,7 @@ theorem externalSign_verified {p : Params} (hp : p ∈ params) :
   have h3 : Sign.Ok3 p := by
     simp only [params, List.mem_cons, List.not_mem_nil, or_false] at hp; exact hp
   refine Verified.of_correct (Sign.entry_correct h3 true) (Sign.entry_ct h3 true) ?_
-  refine { pre := ?_, post := ?_, pub := ?_, sat := externalSign_sat hp }
+  refine { pre := ?_, post := ?_, pub := ?_, sat := Arm.Scrub.sat_stack_le (by decide) (externalSign_sat hp) }
   · intro s h
     sig_pre [preparedSignContract, preparedSignSig, Sign.signE, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] at h
     obtain ⟨hsp, hsp4, hrd, hwr, d1, d2, d3, d4, d5, d6, d7, d8, d9, k1, k2, k3, k4, k5, -, n1, n2, n3, n4, n5, hk⟩ := h
@@ -432,7 +421,7 @@ def externalVerifySat (p : Params) (m : Mem) : State :=
     rd := [⟨0x200000, preparedPublicKeyBytes p⟩, ⟨0x2000, 64⟩, ⟨0x3000, p.sigLen⟩] }
 
 theorem externalVerify_sat {p : Params} (hp : p ∈ params) :
-    ∃ s, (preparedVerifyContract p Arm.abi 52).pre s := by
+    ∃ s, (preparedVerifyContract p Arm.abi 56).pre s := by
   have h3 : PreparedKey.Ok3 p := by
     simp only [params, List.mem_cons, List.not_mem_nil, or_false] at hp; exact hp
   obtain ⟨m, _, hk⟩ := PreparedKey.prepared_public_mem h3
@@ -448,7 +437,7 @@ theorem externalVerify_verified {p : Params} (hp : p ∈ params) :
   have h3 : Verify.Ok3 p := by
     simp only [params, List.mem_cons, List.not_mem_nil, or_false] at hp; exact hp
   refine Verified.of_correct (Verify.entry_correct h3 true) (Verify.entry_ct h3 true) ?_
-  refine { pre := ?_, post := ?_, pub := ?_, sat := externalVerify_sat hp }
+  refine { pre := ?_, post := ?_, pub := ?_, sat := Arm.Scrub.sat_stack_le (by decide) (externalVerify_sat hp) }
   · intro s h
     sig_pre [preparedVerifyContract, preparedVerifySig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] at h
     obtain ⟨h0, -, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, hk⟩ := h

@@ -446,6 +446,10 @@ is what it was. The frame is apart from the buffers (the contract reserves
 it), so a postcondition that reads the memory on return only within the
 buffers (`PostOut`) still holds.
 
+The frame's size is one the model accepts (`FrameOk`: a multiple of 8
+bytes). Code whose contract reserves another number of bytes meets it with
+more (`Verified.stack_le`), and is registered with the next such size.
+
 What the release then leaves in those bytes is the model's (`pop`), which a
 proof may not read back: two releases leave the same bytes where they held
 the same bytes, at the same stack pointer and with the same unknowns
@@ -503,6 +507,59 @@ theorem contract_pub_sp {A : Abi isa} (hA : ScrubAbi A) {sig : Sig}
   · cases leak with
     | none => exact hA.pub _ _ h.1
     | some f => exact hA.pub _ _ h.1.1
+
+/-- `Sig.contract`'s precondition with `n'` bytes of stack gives it with
+fewer: the stack it reserves is then within the `n'` bytes. -/
+theorem contract_pre_stack_le {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)}
+    {post : sig.Post abi.ptrBits} {wa : Bool} {n n' : Nat}
+    {leak : Option (Curry (sig.words abi.ptrBits) (Mem → List Nat))} {s : State} (hn : n ≤ n')
+    (h : (sig.contract abi pre post wa n' leak).pre s) : (sig.contract abi pre post wa n leak).pre s := by
+  simp only [Sig.contract] at h ⊢
+  revert h
+  cases abi.args ((sig.words abi.ptrBits).map (·.bits abi.ptrBits)) with
+  | none => exact id
+  | some vals =>
+    intro h
+    simp only at h ⊢
+    obtain ⟨hwf, hrd, hwr, hpw, hres, rest⟩ := h
+    cases n with
+    | zero =>
+      refine ⟨?_, hrd, hwr, hpw, fun r hr => absurd hr List.not_mem_nil, rest⟩
+      cases n' with
+      | zero => exact hwf
+      | succ m => exact hwf.2
+    | succ k =>
+      obtain ⟨m, rfl⟩ : ∃ m, n' = m + 1 := ⟨n' - 1, by omega⟩
+      obtain ⟨hsp, hfit⟩ : m + 1 ≤ s.sp.toNat ∧ _ := hwf
+      refine ⟨⟨Nat.le_trans hn hsp, hfit⟩, hrd, hwr, hpw, fun r hr a ha => ?_, rest⟩
+      obtain rfl : r = ⟨State.addr s.sp - BitVec.ofNat 64 (k + 1), k + 1⟩ := by
+        simpa [abi, stackBelow] using hr
+      have hsub := belowA_sub hn hsp
+      rw [belowA, belowA, addr_sub' (Nat.le_trans hn hsp), addr_sub' hsp] at hsub
+      exact (hres _ (by simp [abi, stackBelow]) a ha).sub_left hsub
+
+/-- `Sig.contract`'s precondition is satisfiable with `n` bytes of stack if
+it is with more. -/
+theorem sat_stack_le {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)}
+    {post : sig.Post abi.ptrBits} {wa : Bool} {n n' : Nat}
+    {leak : Option (Curry (sig.words abi.ptrBits) (Mem → List Nat))} (hn : n ≤ n')
+    (h : ∃ s, (sig.contract abi pre post wa n' leak).pre s) : ∃ s, (sig.contract abi pre post wa n leak).pre s :=
+  h.imp fun _ => contract_pre_stack_le hn
+
+/-- Code that meets a contract `Sig.contract` with `n` bytes of stack meets
+it with more, `n'`, if its precondition is then still satisfiable: so a
+function whose frames use a number of bytes that is no frame size of the
+model (`FrameOk`) is registered with the next one, and `scrubRegF` wipes
+that. -/
+theorem Verified.stack_le {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)}
+    {post : sig.Post abi.ptrBits} {wa : Bool} {n n' : Nat}
+    {leak : Option (Curry (sig.words abi.ptrBits) (Mem → List Nat))} {c : Prog isa} (hn : n ≤ n')
+    (hv : Verified target c (sig.contract abi pre post wa n leak))
+    (hsat : ∃ s, (sig.contract abi pre post wa n' leak).pre s) :
+    Verified target c (sig.contract abi pre post wa n' leak) :=
+  ⟨fun s hs => hv.1 s (contract_pre_stack_le hn hs),
+    fun s₁ s₂ t₁ t₂ u₁ u₂ p₁ p₂ hp e₁ e₂ =>
+      hv.2.1 s₁ s₂ t₁ t₂ u₁ u₂ (contract_pre_stack_le hn p₁) (contract_pre_stack_le hn p₂) hp e₁ e₂, hsat⟩
 
 /-- A postcondition that reads the memory on return only within the
 buffers, and of the result only its `rb` bits (`Verified.scrubF`'s `hpost`). -/

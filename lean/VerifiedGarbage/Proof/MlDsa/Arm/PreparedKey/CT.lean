@@ -471,8 +471,10 @@ open VG.Spec.Sha3 (bytesAt)
 /-- The stack of the calls of the body. -/
 abbrev callStack : Nat := 28
 
-/-- The stack of the preparations: their frame (16 bytes) and that of the calls. -/
-abbrev prepStack : Nat := 44
+/-- The stack of the preparations: their frame (16 bytes) and that of the calls,
+44 bytes, to the next frame size of the model (which a function that returns
+without secret residue wipes: `Arm.Scrub.scrubRegF`). -/
+abbrev prepStack : Nat := 48
 
 /-- The precondition of `preparePublicKeyContract` and `prepareSecretKeyContract`,
 for a key of `bytes` bytes and `count` polynomials. -/

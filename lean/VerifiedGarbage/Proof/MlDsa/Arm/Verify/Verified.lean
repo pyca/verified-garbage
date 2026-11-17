@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Entry
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.MlKem.Arm.Common
 import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.Framework.Arm.Scrub
 meta import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Entry
 meta import VerifiedGarbage.Proof.Framework.Contract
 
@@ -57,11 +58,16 @@ theorem verifyE_implies_of {p : Params} (hsat : ∃ s, (verifyContract p Arm.abi
     exact ⟨hsp, h0, h1, h2, h3, e1, e2, e3⟩
   sat := hsat
 
-theorem verifyE_implies {p : Params} (h3 : Ok3 p) :
-    (verifyE p false entryStack).Implies (verifyContract p Arm.abi entryStack) := by
-  refine verifyE_implies_of ⟨verifySat p, ?_⟩
+/-- `verifyContract`'s precondition is satisfiable with 56 bytes of stack, the
+frame size of the model after the entry's 52. -/
+theorem verify_sat {p : Params} (h3 : Ok3 p) : ∃ s, (verifyContract p Arm.abi 56).pre s := by
+  refine ⟨verifySat p, ?_⟩
   rcases h3 with rfl | rfl | rfl <;>
   sig_sat_check [verifyContract, verifySig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, verifySat]
+
+theorem verifyE_implies {p : Params} (h3 : Ok3 p) :
+    (verifyE p false entryStack).Implies (verifyContract p Arm.abi entryStack) :=
+  verifyE_implies_of (Arm.Scrub.sat_stack_le (by decide) (verify_sat h3))
 
 /-- `vg_mldsa*_verify` against the contract `verify_message` calls it with. -/
 theorem verifyE_verified {p : Params} (h3 : Ok3 p) :
@@ -71,14 +77,5 @@ theorem verifyE_verified {p : Params} (h3 : Ok3 p) :
 theorem verify_verified {p : Params} (h3 : Ok3 p) :
     Verified Arm.target (verify prims p) (verifyContract p Arm.abi entryStack) :=
   Verified.of_correct (entry_correct h3 false) (entry_ct h3 false) (verifyE_implies h3)
-
-theorem verify44_verified : Verified Arm.target verify44 (verifyContract mlDsa44 Arm.abi 52) :=
-  verify_verified (.inl rfl)
-
-theorem verify65_verified : Verified Arm.target verify65 (verifyContract mlDsa65 Arm.abi 52) :=
-  verify_verified (.inr (.inl rfl))
-
-theorem verify87_verified : Verified Arm.target verify87 (verifyContract mlDsa87 Arm.abi 52) :=
-  verify_verified (.inr (.inr rfl))
 
 end VG.Proof.MlDsa.Arm.Verify

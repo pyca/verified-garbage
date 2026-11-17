@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.MlDsa.keyGenContract`. Constant time but for `ρ` and rejections: timing may depend on the pointers, on `ρ` (the first 32 bytes of the public key), and on which half-bytes of the SHAKE256 outputs `RejBoundedPoly` rejects (`rejBoundedLeak`, which is independent of the coefficients it samples), but not on anything else of the seed or the keys.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `seed` must be valid for reads of 32 bytes.
@@ -16,7 +18,7 @@
 /// * `seed` must be random bytes from an approved RBG (FIPS 204 §3.6.1), or a seed so generated before.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `pk`, `sk` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
-/// * None of `seed`, `pk`, `sk` and `scratch` may overlap the 36 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `seed`, `pk`, `sk` and `scratch` may overlap the 40 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa44_keygen(seed: *const [u8; 32], pk: *mut [u8; 1312], sk: *mut [u8; 2560], scratch: *mut [u64; 9728]) -> u32 {
     core::arch::naked_asm!(
@@ -1444,6 +1446,25 @@ ldr r9, [r3, #860]
 ldr r10, [r3, #864]
 ldr r11, [r3, #868]
 ldr lr, [r3, #872]
+sub sp, sp, #40
+add r12, sp, #0
+mov r2, #0
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+str r2, [r12, #32]
+str r2, [r12, #36]
+add sp, sp, #40
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
@@ -1464,6 +1485,8 @@ bx lr",
 /// ML-DSA-44 public-key hash: writes `tr = H(pk, 64)` (FIPS 204 Algorithm 8, line 6), SHAKE256 of the public key `*pk` to 64 bytes, to `*tr`, the digest `vg_mldsa44_verify_message_cached` takes.
 ///
 /// Contract: `VG.Spec.MlDsa.pkTrContract`. Constant time: only the pointers may affect timing, not the key, the digest or the working space.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1577,6 +1600,18 @@ ldr r9, [r3, #860]
 ldr r10, [r3, #864]
 ldr r11, [r3, #868]
 ldr lr, [r3, #872]
+sub sp, sp, #8
+add r12, sp, #0
+mov r2, #0
+str r2, [r12, #0]
+str r2, [r12, #4]
+add sp, sp, #8
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
@@ -1588,6 +1623,8 @@ bx lr",
 ///
 /// Contract: `VG.Spec.MlDsa.preparePublicKeyContract`. Constant time.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `pk` must be valid for reads of 1312 bytes.
@@ -1595,7 +1632,7 @@ bx lr",
 /// * `scratch` must be valid for reads and writes of 1024 bytes.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `prepared` and `scratch` must not overlap each other or `pk` (distinct Rust objects never do).
-/// * None of `pk`, `prepared` and `scratch` may overlap the 44 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `pk`, `prepared` and `scratch` may overlap the 48 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa44_prepare_verifying_key(pk: *const [u8; 1312], prepared: *mut [u8; 5408], scratch: *mut [u64; 128]) {
     core::arch::naked_asm!(
@@ -1678,6 +1715,28 @@ ldr r7, [sp, #4]
 ldr r8, [sp, #8]
 ldr lr, [sp, #12]
 ldr r4, [sp], #16
+sub sp, sp, #48
+add r12, sp, #0
+mov r2, #0
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+str r2, [r12, #32]
+str r2, [r12, #36]
+str r2, [r12, #40]
+str r2, [r12, #44]
+add sp, sp, #48
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_mldsa_unpack_t1 = sym super::mldsa44::vg_mldsa_unpack_t1::vg_mldsa_unpack_t1,
         vg_mldsa_ntt = sym super::mldsa44::vg_mldsa_ntt::vg_mldsa_ntt,
@@ -1688,6 +1747,8 @@ bx lr",
 ///
 /// Contract: `VG.Spec.MlDsa.prepareSecretKeyContract`. Constant time.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `sk` must be valid for reads of 2560 bytes.
@@ -1696,7 +1757,7 @@ bx lr",
 /// * `*prepared` holds private key material, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `prepared` and `scratch` must not overlap each other or `sk` (distinct Rust objects never do).
-/// * None of `sk`, `prepared` and `scratch` may overlap the 44 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `sk`, `prepared` and `scratch` may overlap the 48 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa44_prepare_signing_key(sk: *const [u8; 2560], prepared: *mut [u8; 14848], scratch: *mut [u64; 128]) {
     core::arch::naked_asm!(
@@ -1987,6 +2048,28 @@ ldr r7, [sp, #4]
 ldr r8, [sp, #8]
 ldr lr, [sp, #12]
 ldr r4, [sp], #16
+sub sp, sp, #48
+add r12, sp, #0
+mov r2, #0
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+str r2, [r12, #32]
+str r2, [r12, #36]
+str r2, [r12, #40]
+str r2, [r12, #44]
+add sp, sp, #48
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_mldsa_bit_unpack = sym super::mldsa44::vg_mldsa_bit_unpack::vg_mldsa_bit_unpack,
         vg_mldsa_ntt = sym super::mldsa44::vg_mldsa_ntt::vg_mldsa_ntt,
@@ -1996,6 +2079,8 @@ bx lr",
 /// ML-DSA-44 signing of a message representative, `ML-DSA.Sign_internal(sk, M′, rnd)` (FIPS 204 Algorithm 7) with `μ` computed by the caller: with the private key `*sk`, the 64-byte message representative `μ = H(tr ‖ M′, 64)` at `mu` (for the public key hash `tr`, bytes 64–127 of `*sk`) and the randomness `*rnd`, writes the signature to `*sig`. Returns 1 on success. Returns 0 if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlDsa.signContract`. Constant time but for `ρ` and the rejection sampling: timing may depend on the pointers, on `ρ` (the first 32 bytes of `*sk`), on the number of iterations of the signing loop, the commitment hash of each and which validity check rejected it, and on the hint of the signature (`signLeak`), but not on anything else of the key, the message representative or the randomness.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -2008,7 +2093,7 @@ bx lr",
 /// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `sig` and `scratch` must not overlap each other, `sk`, `mu`, `rnd` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `sk`, `mu`, `rnd`, `sig` and `scratch` may overlap the 44 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `sk`, `mu`, `rnd`, `sig` and `scratch` may overlap the 48 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa44_sign(sk: *const [u8; 2560], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 2420], scratch: *mut [u64; 9728]) -> u32 {
     core::arch::naked_asm!(
@@ -2022,6 +2107,27 @@ bl {vg_mldsa44_sign_with_cache}
 ldr r12, [sp], #8
 mov lr, r4
 ldr r4, [sp], #8
+sub sp, sp, #48
+add r12, sp, #0
+mov r2, #0
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+str r2, [r12, #32]
+str r2, [r12, #36]
+str r2, [r12, #40]
+str r2, [r12, #44]
+add sp, sp, #48
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_mldsa44_sign_with_cache = sym super::mldsa44::vg_mldsa44_sign_with_cache::vg_mldsa44_sign_with_cache,
     )
@@ -2030,6 +2136,8 @@ bx lr",
 /// ML-DSA-44 signing of an external 64-byte message representative `*mu` with a prepared private key: `vg_mldsa44_sign` (with its results, timing and leakage) of the private key that `*sk` begins with.
 ///
 /// Contract: `VG.Spec.MlDsa.preparedSignContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -2043,7 +2151,7 @@ bx lr",
 /// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `sig` and `scratch` must not overlap each other, `sk`, `mu`, `rnd` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `sk`, `mu`, `rnd`, `sig` and `scratch` may overlap the 44 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `sk`, `mu`, `rnd`, `sig` and `scratch` may overlap the 48 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa44_sign_prepared(sk: *const [u8; 14848], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 2420], scratch: *mut [u64; 9728]) -> u32 {
     core::arch::naked_asm!(
@@ -2058,6 +2166,27 @@ bl {vg_mldsa44_sign_with_cache}
 ldr r12, [sp], #8
 mov lr, r4
 ldr r4, [sp], #8
+sub sp, sp, #48
+add r12, sp, #0
+mov r2, #0
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+str r2, [r12, #32]
+str r2, [r12, #36]
+str r2, [r12, #40]
+str r2, [r12, #44]
+add sp, sp, #48
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_mldsa44_sign_with_cache = sym super::mldsa44::vg_mldsa44_sign_with_cache::vg_mldsa44_sign_with_cache,
     )
@@ -2066,6 +2195,8 @@ bx lr",
 /// ML-DSA-44 signing, `ML-DSA.Sign(sk, M, ctx)` (FIPS 204 Algorithm 2) on the randomness `*rnd` (line 5): with the private key `*sk`, the `msg_len` bytes of the message at `msg` and the `ctx_len` bytes of the context string at `ctx`, writes the signature of the formatted message `M′ = 0 ‖ ctx_len ‖ ctx ‖ M` (line 10), `ML-DSA.Sign_internal(sk, M′, rnd)` (Algorithm 7), to `*sig`. Returns 1 on success. Returns 0 if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed. Returns 2 if `ctx_len` is greater than 255 (FIPS 204 returns the error indication `⊥`): `*sig` is then unspecified.
 ///
 /// Contract: `VG.Spec.MlDsa.signMessageContract`. Constant time but for `ρ` and the rejection sampling: timing may depend on the pointers, on `msg_len` and `ctx_len`, on `ρ` (the first 32 bytes of `*sk`), on the number of iterations of the signing loop, the commitment hash of each and which validity check rejected it, and on the hint of the signature (`signMessageLeak`), but not on anything else of the key, the message, the context string or the randomness.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -2079,7 +2210,7 @@ bx lr",
 /// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `sig` and `scratch` must not overlap each other, `sk`, `msg`, `ctx`, `rnd` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the 52 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the 56 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa44_sign_message(sk: *const [u8; 2560], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 2420], scratch: *mut [u64; 9856]) -> u32 {
     core::arch::naked_asm!(
@@ -2236,7 +2367,7 @@ ldr r2, [r7, #932]
 ldr r3, [r7, #936]
 ldr r12, [r7, #940]
 push {{r12, lr}}
-bl {vg_mldsa44_sign}
+bl {vg_mldsa44_sign_entry}
 ldr r12, [sp], #8
 ldr lr, [r7, #908]
 ldr r7, [r7, #904]
@@ -2244,17 +2375,42 @@ b 21f
 20:
 mov r0, #2
 21:
+sub sp, sp, #56
+add r12, sp, #0
+mov r2, #0
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+str r2, [r12, #32]
+str r2, [r12, #36]
+str r2, [r12, #40]
+str r2, [r12, #44]
+str r2, [r12, #48]
+str r2, [r12, #52]
+add sp, sp, #56
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
-        vg_mldsa44_sign = sym super::mldsa44::vg_mldsa44_sign,
+        vg_mldsa44_sign_entry = sym super::mldsa44::vg_mldsa44_sign_entry::vg_mldsa44_sign_entry,
     )
 }
 
 /// ML-DSA-44 signing with a prepared private key: `vg_mldsa44_sign_message` (with its results, timing and leakage) of the private key that `*sk` begins with.
 ///
 /// Contract: `VG.Spec.MlDsa.preparedSignMessageContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -2269,7 +2425,7 @@ bx lr",
 /// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `sig` and `scratch` must not overlap each other, `sk`, `msg`, `ctx`, `rnd` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the 52 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the 56 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa44_sign_message_prepared(sk: *const [u8; 14848], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 2420], scratch: *mut [u64; 9856]) -> u32 {
     core::arch::naked_asm!(
@@ -2426,7 +2582,7 @@ ldr r2, [r7, #932]
 ldr r3, [r7, #936]
 ldr r12, [r7, #940]
 push {{r12, lr}}
-bl {vg_mldsa44_sign_prepared}
+bl {vg_mldsa44_sign_prepared_entry}
 ldr r12, [sp], #8
 ldr lr, [r7, #908]
 ldr r7, [r7, #904]
@@ -2434,17 +2590,42 @@ b 21f
 20:
 mov r0, #2
 21:
+sub sp, sp, #56
+add r12, sp, #0
+mov r2, #0
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+str r2, [r12, #32]
+str r2, [r12, #36]
+str r2, [r12, #40]
+str r2, [r12, #44]
+str r2, [r12, #48]
+str r2, [r12, #52]
+add sp, sp, #56
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
-        vg_mldsa44_sign_prepared = sym super::mldsa44::vg_mldsa44_sign_prepared,
+        vg_mldsa44_sign_prepared_entry = sym super::mldsa44::vg_mldsa44_sign_prepared_entry::vg_mldsa44_sign_prepared_entry,
     )
 }
 
 /// ML-DSA-44 verification of a signature of a message representative, `ML-DSA.Verify_internal(pk, M′, σ)` (FIPS 204 Algorithm 8) with `μ` computed by the caller: with the public key `*pk`, the 64-byte message representative `μ = H(H(pk, 64) ‖ M′, 64)` at `mu` and the signature `*sig`, returns 1 if the signature is valid, and 0 if it is not or if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less).
 ///
 /// Contract: `VG.Spec.MlDsa.verifyContract`. Not constant time: timing may depend on the public key, the message representative and the signature.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -2454,7 +2635,7 @@ bx lr",
 /// * `scratch` must be valid for reads and writes of 77824 bytes.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `scratch` must not overlap `pk`, `mu` or `sig` (distinct Rust objects never do).
-/// * None of `pk`, `mu`, `sig` and `scratch` may overlap the 52 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `pk`, `mu`, `sig` and `scratch` may overlap the 56 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa44_verify(pk: *const [u8; 1312], mu: *const [u8; 64], sig: *const [u8; 2420], scratch: *mut [u64; 9728]) -> u32 {
     core::arch::naked_asm!(
@@ -2467,6 +2648,29 @@ bl {vg_mldsa44_verify_with_cache}
 ldr r12, [sp], #8
 mov lr, r4
 ldr r4, [sp], #8
+sub sp, sp, #56
+add r12, sp, #0
+mov r2, #0
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+str r2, [r12, #32]
+str r2, [r12, #36]
+str r2, [r12, #40]
+str r2, [r12, #44]
+str r2, [r12, #48]
+str r2, [r12, #52]
+add sp, sp, #56
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_mldsa44_verify_with_cache = sym super::mldsa44::vg_mldsa44_verify_with_cache::vg_mldsa44_verify_with_cache,
     )
@@ -2475,6 +2679,8 @@ bx lr",
 /// ML-DSA-44 verification of an external 64-byte message representative `*mu` with a prepared public key: `vg_mldsa44_verify` (with its results, timing and leakage) of the public key that `*pk` begins with.
 ///
 /// Contract: `VG.Spec.MlDsa.preparedVerifyContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -2485,7 +2691,7 @@ bx lr",
 /// * `pk` must have been written by `vg_mldsa44_prepare_verifying_key`, and not changed since.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `scratch` must not overlap `pk`, `mu` or `sig` (distinct Rust objects never do).
-/// * None of `pk`, `mu`, `sig` and `scratch` may overlap the 52 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `pk`, `mu`, `sig` and `scratch` may overlap the 56 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa44_verify_prepared(pk: *const [u8; 5408], mu: *const [u8; 64], sig: *const [u8; 2420], scratch: *mut [u64; 9728]) -> u32 {
     core::arch::naked_asm!(
@@ -2499,6 +2705,29 @@ bl {vg_mldsa44_verify_with_cache}
 ldr r12, [sp], #8
 mov lr, r4
 ldr r4, [sp], #8
+sub sp, sp, #56
+add r12, sp, #0
+mov r2, #0
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+str r2, [r12, #32]
+str r2, [r12, #36]
+str r2, [r12, #40]
+str r2, [r12, #44]
+str r2, [r12, #48]
+str r2, [r12, #52]
+add sp, sp, #56
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_mldsa44_verify_with_cache = sym super::mldsa44::vg_mldsa44_verify_with_cache::vg_mldsa44_verify_with_cache,
     )
@@ -2507,6 +2736,8 @@ bx lr",
 /// ML-DSA-44 message verification with a cached public-key digest. Returns 1 for a valid signature, 0 for an invalid signature or exhausted sampling bound, and 2 if the context exceeds 255 bytes. It is `ML-DSA.Verify(pk, M, σ, ctx)` (FIPS 204 Algorithm 3) with `H(pk, 64)` read from `*tr`: with the public key `*pk`, the `msg_len` bytes of the message at `msg`, the `ctx_len` bytes of the context string at `ctx` and the signature `*sig`, it formats the message `M′ = 0 ‖ ctx_len ‖ ctx ‖ M` (line 5), computes `μ = H(tr ‖ M′, 64)`, and verifies `*sig` on `μ` with `*pk`, `ML-DSA.Verify_internal(pk, M′, σ)` (Algorithm 8).
 ///
 /// Contract: `VG.Spec.MlDsa.verifyMessageCachedContract`. Timing may depend on the public key, message, context string and signature, and on argument addresses and lengths.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -2519,7 +2750,7 @@ bx lr",
 /// * `*tr` must equal SHAKE256(`*pk`, 64 bytes).
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `scratch` must not overlap `pk`, `msg`, `ctx`, `sig`, `tr` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the 52 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the 56 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa44_verify_message_cached(pk: *const [u8; 1312], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 2420], scratch: *mut [u64; 9856], tr: *const [u8; 64]) -> u32 {
     core::arch::naked_asm!(
@@ -2673,24 +2904,49 @@ movw r1, #840
 add r1, r7, r1
 ldr r2, [r7, #936]
 ldr r3, [r7, #940]
-bl {vg_mldsa44_verify}
+bl {vg_mldsa44_verify_entry}
 ldr lr, [r7, #908]
 ldr r7, [r7, #904]
 b 21f
 20:
 mov r0, #2
 21:
+sub sp, sp, #56
+add r12, sp, #0
+mov r2, #0
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+str r2, [r12, #32]
+str r2, [r12, #36]
+str r2, [r12, #40]
+str r2, [r12, #44]
+str r2, [r12, #48]
+str r2, [r12, #52]
+add sp, sp, #56
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
-        vg_mldsa44_verify = sym super::mldsa44::vg_mldsa44_verify,
+        vg_mldsa44_verify_entry = sym super::mldsa44::vg_mldsa44_verify_entry::vg_mldsa44_verify_entry,
     )
 }
 
 /// ML-DSA-44 verification with a prepared public key: `vg_mldsa44_verify_message_cached` (with its results, timing and leakage) of the public key that `*pk` begins with.
 ///
 /// Contract: `VG.Spec.MlDsa.preparedVerifyMessageContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -2704,7 +2960,7 @@ bx lr",
 /// * `*tr` must equal SHAKE256 of the public key that `*pk` begins with, 64 bytes.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `scratch` must not overlap `pk`, `msg`, `ctx`, `sig`, `tr` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the 52 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the 56 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa44_verify_message_prepared(pk: *const [u8; 5408], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 2420], scratch: *mut [u64; 9856], tr: *const [u8; 64]) -> u32 {
     core::arch::naked_asm!(
@@ -2858,24 +3114,63 @@ movw r1, #840
 add r1, r7, r1
 ldr r2, [r7, #936]
 ldr r3, [r7, #940]
-bl {vg_mldsa44_verify_prepared}
+bl {vg_mldsa44_verify_prepared_entry}
 ldr lr, [r7, #908]
 ldr r7, [r7, #904]
 b 21f
 20:
 mov r0, #2
 21:
+sub sp, sp, #56
+add r12, sp, #0
+mov r2, #0
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+str r2, [r12, #32]
+str r2, [r12, #36]
+str r2, [r12, #40]
+str r2, [r12, #44]
+str r2, [r12, #48]
+str r2, [r12, #52]
+add sp, sp, #56
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
-        vg_mldsa44_verify_prepared = sym super::mldsa44::vg_mldsa44_verify_prepared,
+        vg_mldsa44_verify_prepared_entry = sym super::mldsa44::vg_mldsa44_verify_prepared_entry::vg_mldsa44_verify_prepared_entry,
     )
 }
 
 #[rustfmt::skip]
+#[path = "internal/vg_mldsa44_sign_entry.rs"]
+pub(crate) mod vg_mldsa44_sign_entry;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa44_sign_prepared_entry.rs"]
+pub(crate) mod vg_mldsa44_sign_prepared_entry;
+
+#[rustfmt::skip]
 #[path = "internal/vg_mldsa44_sign_with_cache.rs"]
 pub(crate) mod vg_mldsa44_sign_with_cache;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa44_verify_entry.rs"]
+pub(crate) mod vg_mldsa44_verify_entry;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa44_verify_prepared_entry.rs"]
+pub(crate) mod vg_mldsa44_verify_prepared_entry;
 
 #[rustfmt::skip]
 #[path = "internal/vg_mldsa44_verify_with_cache.rs"]

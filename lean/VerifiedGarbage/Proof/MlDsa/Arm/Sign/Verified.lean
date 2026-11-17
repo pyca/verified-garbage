@@ -17,6 +17,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.MlKem.Mem
 import VerifiedGarbage.Proof.MdStream.Arm.Common
 import VerifiedGarbage.Proof.MlDsa.Arith.Mem
+import VerifiedGarbage.Proof.Framework.Arm.Scrub
 
 /-! ### `MlDsa.Arm.Sign.Entry`, which this module and modules that import it used -/
 
@@ -578,9 +579,9 @@ theorem signE_implies_of {p : Params} (hsat : ∃ s, (signContract p Arm.abi ent
     exact ⟨h0, h1, h2, h3, h4, hsp, hb⟩
   sat := hsat
 
-theorem signE_implies {p : Params} (h3 : Ok3 p) :
-    (signE p false entryStack).Implies (signContract p Arm.abi entryStack) := by
-  refine signE_implies_of ?_
+/-- `signContract`'s precondition is satisfiable with 48 bytes of stack, the
+frame size of the model after the entry's 44. -/
+theorem sign_sat {p : Params} (h3 : Ok3 p) : ∃ s, (signContract p Arm.abi 48).pre s := by
   rcases h3 with rfl | rfl | rfl
   · sig_implies_sat [signContract, signSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] [signSat]
       using signSat mlDsa44
@@ -588,6 +589,10 @@ theorem signE_implies {p : Params} (h3 : Ok3 p) :
       using signSat mlDsa65
   · sig_implies_sat [signContract, signSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] [signSat]
       using signSat mlDsa87
+
+theorem signE_implies {p : Params} (h3 : Ok3 p) :
+    (signE p false entryStack).Implies (signContract p Arm.abi entryStack) :=
+  signE_implies_of (Arm.Scrub.sat_stack_le (by decide) (sign_sat h3))
 
 /-- `vg_mldsa*_sign` against the contract `sign_message` calls it with. -/
 theorem signE_verified {p : Params} (h3 : Ok3 p) :
@@ -597,17 +602,5 @@ theorem signE_verified {p : Params} (h3 : Ok3 p) :
 theorem sign_verified {p : Params} (h3 : Ok3 p) :
     Verified Arm.target (Impl.MlDsa.Arm.Sign.sign prims p) (signContract p Arm.abi entryStack) :=
   Verified.of_correct (entry_correct h3 false) (entry_ct h3 false) (signE_implies h3)
-
-theorem sign44_verified' :
-    Verified Arm.target (Impl.MlDsa.Arm.Sign.sign prims mlDsa44) (signContract mlDsa44 Arm.abi entryStack) :=
-  sign_verified (.inl rfl)
-
-theorem sign65_verified' :
-    Verified Arm.target (Impl.MlDsa.Arm.Sign.sign prims mlDsa65) (signContract mlDsa65 Arm.abi entryStack) :=
-  sign_verified (.inr (.inl rfl))
-
-theorem sign87_verified' :
-    Verified Arm.target (Impl.MlDsa.Arm.Sign.sign prims mlDsa87) (signContract mlDsa87 Arm.abi entryStack) :=
-  sign_verified (.inr (.inr rfl))
 
 end VG.Proof.MlDsa.Arm.Sign

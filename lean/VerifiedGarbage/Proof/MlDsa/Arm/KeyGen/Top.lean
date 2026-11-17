@@ -248,18 +248,20 @@ open VG VG.Arm
 open VG.Impl.MlDsa.Arm.KeyGen (Prims keyGen)
 
 /-- `vg_mldsa*_keygen` of the parameter set `p` meets its contract with
-36 bytes of stack, for any verified implementations `P` of the primitives
-it calls with at most 28 bytes of stack. -/
+40 bytes of stack (a frame size of the model, which a function that returns
+without secret residue wipes: `Arm.Scrub.scrubRegF`), for any verified
+implementations `P` of the primitives it calls with at most 28 bytes of
+stack. -/
 theorem keyGen_verified {P : Prims} (hP : PrimsOk P 28) (p : Spec.MlDsa.Params)
     (hp : p = Spec.MlDsa.mlDsa44 ∨ p = Spec.MlDsa.mlDsa65 ∨ p = Spec.MlDsa.mlDsa87) :
-    Verified Arm.target (keyGen P p) (Spec.MlDsa.keyGenContract p Arm.abi 36) := by
+    Verified Arm.target (keyGen P p) (Spec.MlDsa.keyGenContract p Arm.abi 40) := by
   have hF := pfacts hp
-  have hk := keyGen_piece hP hF (Nat.le_refl _)
-  refine ⟨fun s hs => hk.ok s s (pre_of (n := 35) hs) rfl, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => ?_, ?_⟩
+  have hk := keyGen_piece hP hF (STK := 40) (by decide)
+  refine ⟨fun s hs => hk.ok s s (pre_of (n := 39) hs) rfl, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => ?_, ?_⟩
   · sig_pub [Spec.MlDsa.keyGenContract, Spec.MlDsa.keyGenSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
       Arm.Loc.val] at hpub
     obtain ⟨hsp, hl, h0, h1, h2, h3⟩ := hpub
-    exact relStart hk.tr s₁ s₂ t₁ t₂ s₁' s₂' (pre_of (n := 35) h₁) (pre_of (n := 35) h₂)
+    exact relStart hk.tr s₁ s₂ t₁ t₂ s₁' s₂' (pre_of (n := 39) h₁) (pre_of (n := 39) h₂)
       ⟨hsp, h0, h1, h2, h3, hl⟩ e₁ e₂
   · refine ⟨keyGenSat p, ?_⟩
     rcases hp with rfl | rfl | rfl <;>

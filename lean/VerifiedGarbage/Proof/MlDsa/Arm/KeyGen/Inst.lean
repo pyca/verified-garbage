@@ -16,7 +16,7 @@ import VerifiedGarbage.Proof.MlDsa.Arm.Pack.BitPack
 
 The ARM implementations of the primitives (`prims`) are verified with at most
 28 bytes of stack, and their frames use no more (`prims_ok`), so key
-generation with them is verified with 36 (`keyGen44_verified`, …).
+generation with them is verified with 40 (`keyGen_verified`).
 -/
 
 @[expose] public section
@@ -37,17 +37,5 @@ theorem prims_ok : PrimsOk prims 28 where
   power2Round := ⟨⟨4, by decide, Round.P2R.verified⟩, by decide +kernel⟩
   simpleBitPack := ⟨⟨0, by decide, Pack.simpleBitPack_verified⟩, by decide +kernel⟩
   bitPack := ⟨⟨4, by decide, Pack.bitPack_verified⟩, by decide +kernel⟩
-
-theorem keyGen44_verified :
-    Verified Arm.target keyGen44 (Spec.MlDsa.keyGenContract Spec.MlDsa.mlDsa44 Arm.abi 36) :=
-  keyGen_verified prims_ok _ (.inl rfl)
-
-theorem keyGen65_verified :
-    Verified Arm.target keyGen65 (Spec.MlDsa.keyGenContract Spec.MlDsa.mlDsa65 Arm.abi 36) :=
-  keyGen_verified prims_ok _ (.inr (.inl rfl))
-
-theorem keyGen87_verified :
-    Verified Arm.target keyGen87 (Spec.MlDsa.keyGenContract Spec.MlDsa.mlDsa87 Arm.abi 36) :=
-  keyGen_verified prims_ok _ (.inr (.inr rfl))
 
 end VG.Proof.MlDsa.Arm.KeyGen

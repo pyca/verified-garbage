@@ -1429,6 +1429,25 @@ vg_mldsa44_keygen:
 	ldr r10, [r3, #864]
 	ldr r11, [r3, #868]
 	ldr lr, [r3, #872]
+	sub sp, sp, #40
+	add r12, sp, #0
+	mov r2, #0
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	str r2, [r12, #32]
+	str r2, [r12, #36]
+	add sp, sp, #40
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_mldsa44_pk_tr:
@@ -1533,6 +1552,18 @@ vg_mldsa44_pk_tr:
 	ldr r10, [r3, #864]
 	ldr r11, [r3, #868]
 	ldr lr, [r3, #872]
+	sub sp, sp, #8
+	add r12, sp, #0
+	mov r2, #0
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	add sp, sp, #8
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_mldsa44_prepare_verifying_key:
@@ -1615,6 +1646,28 @@ vg_mldsa44_prepare_verifying_key:
 	ldr r8, [sp, #8]
 	ldr lr, [sp, #12]
 	ldr r4, [sp], #16
+	sub sp, sp, #48
+	add r12, sp, #0
+	mov r2, #0
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	str r2, [r12, #32]
+	str r2, [r12, #36]
+	str r2, [r12, #40]
+	str r2, [r12, #44]
+	add sp, sp, #48
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_mldsa44_prepare_signing_key:
@@ -1905,6 +1958,28 @@ vg_mldsa44_prepare_signing_key:
 	ldr r8, [sp, #8]
 	ldr lr, [sp, #12]
 	ldr r4, [sp], #16
+	sub sp, sp, #48
+	add r12, sp, #0
+	mov r2, #0
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	str r2, [r12, #32]
+	str r2, [r12, #36]
+	str r2, [r12, #40]
+	str r2, [r12, #44]
+	add sp, sp, #48
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_mldsa44_sign:
@@ -1918,6 +1993,27 @@ vg_mldsa44_sign:
 	ldr r12, [sp], #8
 	mov lr, r4
 	ldr r4, [sp], #8
+	sub sp, sp, #48
+	add r12, sp, #0
+	mov r2, #0
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	str r2, [r12, #32]
+	str r2, [r12, #36]
+	str r2, [r12, #40]
+	str r2, [r12, #44]
+	add sp, sp, #48
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_mldsa44_sign_prepared:
@@ -1932,6 +2028,27 @@ vg_mldsa44_sign_prepared:
 	ldr r12, [sp], #8
 	mov lr, r4
 	ldr r4, [sp], #8
+	sub sp, sp, #48
+	add r12, sp, #0
+	mov r2, #0
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	str r2, [r12, #32]
+	str r2, [r12, #36]
+	str r2, [r12, #40]
+	str r2, [r12, #44]
+	add sp, sp, #48
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_mldsa44_sign_message:
@@ -2088,7 +2205,7 @@ vg_mldsa44_sign_message:
 	ldr r3, [r7, #936]
 	ldr r12, [r7, #940]
 	push {r12, lr}
-	bl {vg_mldsa44_sign}
+	bl {vg_mldsa44_sign_entry}
 	ldr r12, [sp], #8
 	ldr lr, [r7, #908]
 	ldr r7, [r7, #904]
@@ -2096,6 +2213,29 @@ vg_mldsa44_sign_message:
 20:
 	mov r0, #2
 21:
+	sub sp, sp, #56
+	add r12, sp, #0
+	mov r2, #0
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	str r2, [r12, #32]
+	str r2, [r12, #36]
+	str r2, [r12, #40]
+	str r2, [r12, #44]
+	str r2, [r12, #48]
+	str r2, [r12, #52]
+	add sp, sp, #56
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_mldsa44_sign_message_prepared:
@@ -2252,7 +2392,7 @@ vg_mldsa44_sign_message_prepared:
 	ldr r3, [r7, #936]
 	ldr r12, [r7, #940]
 	push {r12, lr}
-	bl {vg_mldsa44_sign_prepared}
+	bl {vg_mldsa44_sign_prepared_entry}
 	ldr r12, [sp], #8
 	ldr lr, [r7, #908]
 	ldr r7, [r7, #904]
@@ -2260,6 +2400,29 @@ vg_mldsa44_sign_message_prepared:
 20:
 	mov r0, #2
 21:
+	sub sp, sp, #56
+	add r12, sp, #0
+	mov r2, #0
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	str r2, [r12, #32]
+	str r2, [r12, #36]
+	str r2, [r12, #40]
+	str r2, [r12, #44]
+	str r2, [r12, #48]
+	str r2, [r12, #52]
+	add sp, sp, #56
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_mldsa44_verify:
@@ -2272,6 +2435,29 @@ vg_mldsa44_verify:
 	ldr r12, [sp], #8
 	mov lr, r4
 	ldr r4, [sp], #8
+	sub sp, sp, #56
+	add r12, sp, #0
+	mov r2, #0
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	str r2, [r12, #32]
+	str r2, [r12, #36]
+	str r2, [r12, #40]
+	str r2, [r12, #44]
+	str r2, [r12, #48]
+	str r2, [r12, #52]
+	add sp, sp, #56
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_mldsa44_verify_prepared:
@@ -2285,6 +2471,29 @@ vg_mldsa44_verify_prepared:
 	ldr r12, [sp], #8
 	mov lr, r4
 	ldr r4, [sp], #8
+	sub sp, sp, #56
+	add r12, sp, #0
+	mov r2, #0
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	str r2, [r12, #32]
+	str r2, [r12, #36]
+	str r2, [r12, #40]
+	str r2, [r12, #44]
+	str r2, [r12, #48]
+	str r2, [r12, #52]
+	add sp, sp, #56
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_mldsa44_verify_message_cached:
@@ -2438,13 +2647,36 @@ vg_mldsa44_verify_message_cached:
 	add r1, r7, r1
 	ldr r2, [r7, #936]
 	ldr r3, [r7, #940]
-	bl {vg_mldsa44_verify}
+	bl {vg_mldsa44_verify_entry}
 	ldr lr, [r7, #908]
 	ldr r7, [r7, #904]
 	b 21f
 20:
 	mov r0, #2
 21:
+	sub sp, sp, #56
+	add r12, sp, #0
+	mov r2, #0
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	str r2, [r12, #32]
+	str r2, [r12, #36]
+	str r2, [r12, #40]
+	str r2, [r12, #44]
+	str r2, [r12, #48]
+	str r2, [r12, #52]
+	add sp, sp, #56
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_mldsa44_verify_message_prepared:
@@ -2598,11 +2830,34 @@ vg_mldsa44_verify_message_prepared:
 	add r1, r7, r1
 	ldr r2, [r7, #936]
 	ldr r3, [r7, #940]
-	bl {vg_mldsa44_verify_prepared}
+	bl {vg_mldsa44_verify_prepared_entry}
 	ldr lr, [r7, #908]
 	ldr r7, [r7, #904]
 	b 21f
 20:
 	mov r0, #2
 21:
+	sub sp, sp, #56
+	add r12, sp, #0
+	mov r2, #0
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	str r2, [r12, #32]
+	str r2, [r12, #36]
+	str r2, [r12, #40]
+	str r2, [r12, #44]
+	str r2, [r12, #48]
+	str r2, [r12, #52]
+	add sp, sp, #56
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr

@@ -382,11 +382,4 @@ theorem pkTr_verified (p : Params) (hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlD
     sig_sat_check [Spec.MlDsa.pkTrContract, Spec.MlDsa.pkTrSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
       Arm.Loc.val, pkTrSat]
 
-theorem pkTr44_verified : Verified Arm.target (pkTr mlDsa44) (Spec.MlDsa.pkTrContract mlDsa44 Arm.abi 8) :=
-  pkTr_verified _ (.inl rfl)
-theorem pkTr65_verified : Verified Arm.target (pkTr mlDsa65) (Spec.MlDsa.pkTrContract mlDsa65 Arm.abi 8) :=
-  pkTr_verified _ (.inr (.inl rfl))
-theorem pkTr87_verified : Verified Arm.target (pkTr mlDsa87) (Spec.MlDsa.pkTrContract mlDsa87 Arm.abi 8) :=
-  pkTr_verified _ (.inr (.inr rfl))
-
 end VG.Proof.MlDsa.Arm.PkTr

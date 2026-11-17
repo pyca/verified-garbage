@@ -13,7 +13,7 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 
 `vg_mldsa*_prepare_verifying_key` and `vg_mldsa*_prepare_signing_key`, with
 the ARM implementations of the primitives, are verified against
-`preparePublicKeyContract` and `prepareSecretKeyContract` with 44 bytes of
+`preparePublicKeyContract` and `prepareSecretKeyContract` with 48 bytes of
 stack.
 -/
 
