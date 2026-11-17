@@ -5,7 +5,9 @@ public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.OpenTo
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Instance
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Whole.Fn
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Contract
-import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Fn
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Fn
+import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.CT
+import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Whole.CT
 import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.By
 import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Verified
 import VerifiedGarbage.Proof.ChaCha20Poly1305.OpenToScratch
@@ -1159,23 +1161,23 @@ def sealFnL (v : XorImpl) : Gather.Whole.SealFn :=
 
 open Gather.Whole in
 /-- `seal_gather` gathering the whole data before its call of `seal` leaves
-`sR` of its callee's stack, at `rsp - 64`, as `sealVA` says. -/
+`sR` of its callee's stack, at `rsp - 64`, as `sealV` says from the state its
+callee starts in, called from a state with the entry's unknowns and
+addresses of statics. -/
 theorem gatherW_leaves (v : XorImpl) (s : State) (t : List Leak) (u : State) (hp : Gather.Whole.gatherPre s)
     (he : Exec isa (Impl.ChaCha20Poly1305.X86_64.SealGather.sealGatherWhole (Gather.width v)
       (sealFnL v).name (sealFnL v).code) s t u)
     (x : Addr) (hx : (sR (s.gpr .rsp - BitVec.ofNat 64 64)).Contains x 1) :
-    u.mem x = (sealVA v (s.gpr .rsp - BitVec.ofNat 64 64) (stackArg s 1) x).getD (s.mem x) := by
+    ∃ c, Gather.Whole.Ready s c ∧ c.unknowns = s.unknowns ∧ c.syms = s.syms ∧
+      u.mem x = (sealV v (Gather.Whole.xS s c) x).getD (s.mem x) := by
   have h := lay hp
-  obtain ⟨t', u', he', c, hc, hE⟩ := sealGather_wpE (Gather.width v) (sealFnL v) hp
+  obtain ⟨t', u', he', c, m, hc, hcu, hcy, hE, hfr⟩ := sealGather_wpE (Gather.width v) (sealFnL v) hp
   obtain ⟨-, rfl⟩ := Exec.det he he'
   obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, bd, -⟩ := h.pre
   have hsp : (xS s c).gpr .rsp = s.gpr .rsp - BitVec.ofNat 64 64 := by
     rw [hc.xsp]; exact sub_add_ofNat _ (show 1768 ≤ 1832 by decide)
-  have hr9 : (xS s c).gpr .r9 = stackArg s 1 := by rw [xgpr_eq (by decide), hc.r9]
   have hE' := hE x (by rw [hsp]; exact hx)
-  simp only [sealV, hsp, hr9] at hE'
-  rw [hE']
-  congr 1
+  refine ⟨c, hc, hcu, hcy, ?_⟩
   -- The callee's memory on entry: ours, with the pushes and the slices gathered elsewhere.
   have hBs : s.gpr .rsp - BitVec.ofNat 64 64 - BitVec.ofNat 64 1704 = Bs s + BitVec.ofNat 64 64 := by
     rw [BitVec.sub_sub, ← BitVec.ofNat_add]; exact (sub_add_ofNat _ (show 64 ≤ 1832 by decide)).symm
@@ -1196,7 +1198,13 @@ theorem gatherW_leaves (v : XorImpl) (s : State) (t : List Leak) (u : State) (hp
   have x₄ : gM s x = eM s x := h.frame_gM x fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
     exact bd x (by show (x - Bs s).toNat + 1 ≤ 1832; omega_using [hxB])
-  rw [x₁, x₂, hc.mem, x₄, x₃]
+  -- The frames released after the call are apart from `sR`.
+  have x₅ : u.mem x = m x := hfr x fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact nb (by decide) (by decide)
+    · exact nb (by decide) (by decide)
+  rw [x₅, hE', x₁, x₂, hc.mem, x₄, x₃]
 
 /-- `seal_split`'s code, of the instances with the AVX-512 implementations of
 `vg_poly1305_blocks`, leaves the keystream area of `work` as `ksL` says. -/
@@ -1291,9 +1299,10 @@ theorem gatherS_leaves (v : XorImpl) (hv : v.poly = .avx512 ∨ v.poly = .ifma) 
     (he : Exec isa (Impl.ChaCha20Poly1305.X86_64.SealGather.sealGather (Gather.width v)
       (sealSplitFnL v hv).name (sealSplitFnL v hv).code) s t u)
     (x : Addr) (hx : (sR (s.gpr .rsp - BitVec.ofNat 64 64)).Contains x 1) :
-    u.mem x = (ctxL v (s.gpr .rsp - BitVec.ofNat 64 1776) (stackArg s 1).toNat x).getD (s.mem x) := by
+    ∃ c, Gather.Ready s c ∧ c.unknowns = s.unknowns ∧ c.syms = s.syms ∧
+      u.mem x = (ctxS v (Gather.xS s c) x).getD (s.mem x) := by
   have h := Gather.lay hp
-  obtain ⟨t', u', he', c, hc, hE⟩ := Gather.sealGather_wpE (Gather.width v) (sealSplitFnL v hv) hp
+  obtain ⟨t', u', he', c, m, hc, hcu, hcy, hE, hfr⟩ := Gather.sealGather_wpE (Gather.width v) (sealSplitFnL v hv) hp
   obtain ⟨-, rfl⟩ := Exec.det he he'
   obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, bd, -⟩ := h.pre
   have hC : (Gather.xS s c).gpr .rsp - BitVec.ofNat 64 1736 + BitVec.ofNat 64 40 = s.gpr .rsp - BitVec.ofNat 64 1776 := by
@@ -1310,9 +1319,7 @@ theorem gatherS_leaves (v : XorImpl) (hv : v.poly = .avx512 ∨ v.poly = .ifma) 
     have := (Offset.lt_iff x (Gather.Bs s) (d := 104) (n := 1696) (by decide)).2 ⟨by omega_using [hxB], by omega_using [hxB]⟩
     omega_using [this]
   have hE' := hE x (by rw [hC]; exact hctx)
-  rw [hC, hc.xa1 h] at hE'
-  rw [hE']
-  congr 1
+  refine ⟨c, hc, hcu, hcy, ?_⟩
   -- The callee's memory on entry: ours, with the pushes and the slices gathered elsewhere.
   have hBn := h.hBn
   have nb : ∀ {d n : Nat}, (d + n ≤ 112 ∨ 1792 ≤ d) → d + n ≤ 1880 →
@@ -1335,7 +1342,13 @@ theorem gatherS_leaves (v : XorImpl) (hv : v.poly = .avx512 ∨ v.poly = .ifma) 
     exact bd x (by show (x - Gather.Bs s).toNat + 1 ≤ 1880; omega_using [hxB])
   have x₃ : Gather.eM s x = s.mem x := h.frame_eM x fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact nb (by decide) (by decide)
-  rw [x₁, x₂, x₃]
+  -- The frames released after the call are apart from `sR`.
+  have x₅ : u.mem x = m x := hfr x fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact nb (by decide) (by decide)
+    · exact nb (by decide) (by decide)
+  rw [x₅, hE', x₁, x₂, x₃]
 
 /-- `seal_gather`'s postcondition reads the memory on return only within
 `dst` and `tag`. -/
@@ -1384,21 +1397,109 @@ theorem gatherWindow {R x : Addr} (hx : (⟨R - BitVec.ofNat 64 1880, 1880⟩ : 
     ⟨by omega_using [hm], by omega_using [hm]⟩
   omega_using [this]
 
-/-- What `seal_gather` leaves below the stack pointer, run by run: what its
-callee leaves of its context, `seal` by `sealVA`, or `seal_split` by `ctxL`. -/
-def gatherV (v : XorImpl) (s : State) : Addr → Option (BitVec 8) :=
-  if v.poly = .avx512 ∨ v.poly = .ifma then
-    if (stackArg s 1).toNat < Impl.ChaCha20Poly1305.X86_64.SealGather.byLim v.poly then
-      sealVA v (s.gpr .rsp - BitVec.ofNat 64 64) (stackArg s 1)
-    else ctxL v (s.gpr .rsp - BitVec.ofNat 64 1776) (stackArg s 1).toNat
-  else sealVA v (s.gpr .rsp - BitVec.ofNat 64 64) (stackArg s 1)
+theorem xSW_unknowns {s c : State} : (Gather.Whole.xS s c).unknowns = fun n => c.unknowns (n + 1) := by
+  have e : (Gather.Whole.xS s c).unknowns = fun n => (Gather.Whole.qS c).unknowns (n + 1) := rfl
+  rw [e]; simp only [Gather.Whole.qS, Gather.pushed_unknowns]
 
-/-- What `seal_gather` leaves in `sR (rsp - 64)`: as `gatherV` says. -/
-theorem gatherCode_leaves (v : XorImpl) (s : State) (t : List Leak) (u : State)
-    (hs : (Spec.ChaCha20Poly1305.sealGatherContract abi 1880).pre s) (he : Exec isa (Gather.gatherCode v) s t u)
-    (x : Addr) (hx : (sR (s.gpr .rsp - BitVec.ofNat 64 64)).Contains x 1) :
-    u.mem x = (gatherV v s x).getD (s.mem x) := by
-  have hp : Gather.gatherPre s := Gather.gather_implies.pre s hs
+theorem xSW_syms {s c : State} : (Gather.Whole.xS s c).syms = c.syms := by
+  have e : (Gather.Whole.xS s c).syms = (Gather.Whole.qS c).syms := rfl
+  rw [e]; simp only [Gather.Whole.qS, Gather.pushed_syms]
+
+theorem xS_unknowns {s c : State} : (Gather.xS s c).unknowns = fun n => c.unknowns (n + 1) := by
+  have e : (Gather.xS s c).unknowns = fun n => (Gather.qS c).unknowns (n + 1) := rfl
+  rw [e]; simp only [Gather.qS, Gather.pushed_unknowns]
+
+theorem xS_syms {s c : State} : (Gather.xS s c).syms = c.syms := by
+  have e : (Gather.xS s c).syms = (Gather.qS c).syms := rfl
+  rw [e]; simp only [Gather.qS, Gather.pushed_syms]
+
+/-- What `seal` leaves, called by `seal_gather` gathering the whole data, is
+the same in two runs `seal_gather`'s contract relates, from states with the
+same unknowns, calling it with the unknowns they were entered with. -/
+theorem whole_agree (v : XorImpl) {f₁ f₂ c₁ c₂ : State} (p₁ : Gather.Whole.gatherPre f₁)
+    (p₂ : Gather.Whole.gatherPre f₂) (hq : Gather.Whole.gatherPub f₁ f₂) (r₁ : Gather.Whole.Ready f₁ c₁)
+    (r₂ : Gather.Whole.Ready f₂ c₂) (cu₁ : c₁.unknowns = f₁.unknowns) (cu₂ : c₂.unknowns = f₂.unknowns)
+    (cy₁ : c₁.syms = f₁.syms) (cy₂ : c₂.syms = f₂.syms) (hu : f₁.unknowns = f₂.unknowns)
+    (hsy : ∀ n ∈ UpperLock.inames (sealCode v.callee v.poly), f₁.syms n = f₂.syms n) :
+    sealV v (Gather.Whole.xS f₁ c₁) = sealV v (Gather.Whole.xS f₂ c₂) := by
+  obtain ⟨-, -, hB, -, -, -, -, -, hl, -, -⟩ := Gather.Whole.pub_facts hq
+  refine sealV_pub v (Gather.Whole.sealSpec_pre (r₁.call (Gather.Whole.lay p₁)).1)
+    (Gather.Whole.sealSpec_pre (r₂.call (Gather.Whole.lay p₂)).1) (Gather.Whole.callee_pub_of p₁ p₂ hq r₁ r₂)
+    (by rw [r₁.xsp, r₂.xsp, hB])
+    (by rw [Gather.Whole.xgpr_eq (by decide), Gather.Whole.xgpr_eq (by decide), r₁.r9, r₂.r9, hl])
+    (by rw [xSW_unknowns, xSW_unknowns, cu₁, cu₂, hu]) fun n hn => ?_
+  rw [xSW_syms, xSW_syms, cy₁, cy₂]; exact hsy n hn
+
+/-- What `seal_split`'s frame leaves is the same in two runs its contract
+relates with the same stack pointer, length and unknowns. -/
+theorem ctxS_pub (v : XorImpl) {s₁ s₂ : State} (h₁ : (Proof.ChaCha20Poly1305.sealSplitContract X86_64.abi 1800).pre s₁)
+    (h₂ : (Proof.ChaCha20Poly1305.sealSplitContract X86_64.abi 1800).pre s₂)
+    (hp : (Proof.ChaCha20Poly1305.sealSplitContract X86_64.abi 1800).pub s₁ s₂) (hsp : s₁.gpr .rsp = s₂.gpr .rsp)
+    (ha : stackArg s₁ 1 = stackArg s₂ 1) (hu : s₁.unknowns = s₂.unknowns)
+    (hsy : ∀ n ∈ UpperLock.inames (Impl.ChaCha20Poly1305.X86_64.SealSplit.sealSplitFor v.callee v.poly),
+      s₁.syms n = s₂.syms n) : ctxS v s₁ = ctxS v s₂ := by
+  unfold ctxS uS
+  rw [framed_innerU_agree (sig := Proof.ChaCha20Poly1305.sealSplitSig) (nm := "work") (e := .u64) (n := 212)
+    (bytes := 1736) (stack := 64) (Split.sealSplit_verified v) (by decide) (by decide) (by decide)
+    (sealSplitPre_local _) h₁ h₂ hp hu hsy, hsp, ha]
+
+/-- What `seal_split` leaves, called by `seal_gather`, is the same in two runs
+`seal_gather`'s contract relates, as `whole_agree`. -/
+theorem split_agree (v : XorImpl) {f₁ f₂ c₁ c₂ : State} (p₁ : Gather.gatherPre f₁) (p₂ : Gather.gatherPre f₂)
+    (hq : Gather.gatherPub f₁ f₂) (r₁ : Gather.Ready f₁ c₁) (r₂ : Gather.Ready f₂ c₂)
+    (cu₁ : c₁.unknowns = f₁.unknowns) (cu₂ : c₂.unknowns = f₂.unknowns)
+    (cy₁ : c₁.syms = f₁.syms) (cy₂ : c₂.syms = f₂.syms) (hu : f₁.unknowns = f₂.unknowns)
+    (hsy : ∀ n ∈ UpperLock.inames (Impl.ChaCha20Poly1305.X86_64.SealSplit.sealSplitFor v.callee v.poly),
+      f₁.syms n = f₂.syms n) :
+    ctxS v (Gather.xS f₁ c₁) = ctxS v (Gather.xS f₂ c₂) := by
+  obtain ⟨-, -, hB, -, -, -, -, -, -, -, hl, -, -⟩ := Gather.pub_facts p₁ p₂ hq
+  refine ctxS_pub v (Gather.sealSplitSpec_pre (r₁.call (Gather.lay p₁)).1)
+    (Gather.sealSplitSpec_pre (r₂.call (Gather.lay p₂)).1) (Gather.callee_pub_of p₁ p₂ hq r₁ r₂)
+    (by rw [r₁.xsp, r₂.xsp, hB]) (by rw [r₁.xa1 (Gather.lay p₁), r₂.xa1 (Gather.lay p₂), hl])
+    (by rw [xS_unknowns, xS_unknowns, cu₁, cu₂, hu]) fun n hn => ?_
+  rw [xS_syms, xS_syms, cy₁, cy₂]; exact hsy n hn
+
+/-- Two runs of `seal_gather` leave the same bytes in their stack but the
+granules `gatherKs`: what its callee leaves in `sR (rsp - 64)` depends only
+on what they agree on (`whole_agree`, `split_agree`). -/
+theorem gather_resOk (v : XorImpl) :
+    ResOk (Gather.gatherCode v) (Spec.ChaCha20Poly1305.sealGatherContract abi 1880) 1880 gatherKs
+      (chunks 1880) := by
+  intro s₁ s₂ t₁ t₂ u₁ u₂ h₁ h₂ hp ho hu hsy e₁ e₂ x hx hw
+  have hx₁ := gatherWindow hx hw
+  have hsp : s₂.gpr .rsp = s₁.gpr .rsp := (ho.2.2.1 .rsp (by decide)).symm
+  have hx₂ : (sR (s₂.gpr .rsp - BitVec.ofNat 64 64)).Contains x 1 := by rw [hsp]; exact hx₁
+  -- The bytes the callee leaves as it found them were the same on entry, outside the buffers.
+  have hout : s₁.mem x = s₂.mem x := by
+    have h₁' : (Spec.ChaCha20Poly1305.sealGatherSig.contract abi (Spec.ChaCha20Poly1305.sealGatherPre abi.ptrBits)
+        (Spec.ChaCha20Poly1305.sealGatherPost abi.ptrBits) false 1880 none).pre s₁ := h₁
+    refine ho.2.2.2.2.2.2.2.2.2.2.2.2.2.2 x fun r hr => ?_
+    exact (contract_pre_scrub ScrubAbi.plain h₁').2 r hr |>.2 (by decide) x hx
+  have fin : ∀ {V₁ V₂ : Addr → Option (BitVec 8)}, V₁ = V₂ → u₁.mem x = (V₁ x).getD (s₁.mem x) →
+      u₂.mem x = (V₂ x).getD (s₂.mem x) → u₁.mem x = u₂.mem x := fun hV a b => by rw [a, b, hV, hout]
+  have p₁ : Gather.gatherPre s₁ := Gather.gather_implies.pre s₁ h₁
+  have p₂ : Gather.gatherPre s₂ := Gather.gather_implies.pre s₂ h₂
+  have hq : Gather.gatherPub s₁ s₂ := Gather.gather_implies.pub s₁ s₂ h₁ h₂ hp
+  have same (s : State) : Gather.CmpSame s s := ⟨fun _ _ => rfl, rfl, rfl, rfl, rfl⟩
+  -- The whole data gathered, from states after a comparison that keeps the unknowns.
+  have whole : ∀ {f₁ f₂ : State} {t₁ t₂ : List Leak}, Gather.CmpSame s₁ f₁ → Gather.CmpSame s₂ f₂ →
+      f₁.unknowns = f₂.unknowns → f₁.syms = s₁.syms → f₂.syms = s₂.syms →
+      (∀ n ∈ UpperLock.inames (sealCode v.callee v.poly), s₁.syms n = s₂.syms n) →
+      Exec isa (Impl.ChaCha20Poly1305.X86_64.SealGather.sealGatherWhole (Gather.width v) (sealFnL v).name
+        (sealFnL v).code) f₁ t₁ u₁ →
+      Exec isa (Impl.ChaCha20Poly1305.X86_64.SealGather.sealGatherWhole (Gather.width v) (sealFnL v).name
+        (sealFnL v).code) f₂ t₂ u₂ → u₁.mem x = u₂.mem x := by
+    intro f₁ f₂ t₁ t₂ hf₁ hf₂ fu fy₁ fy₂ hs th₁ th₂
+    have wp₁ := Gather.whole_pre hf₁ p₁
+    have wp₂ := Gather.whole_pre hf₂ p₂
+    obtain ⟨c₁, r₁, cu₁, cy₁, m₁⟩ := gatherW_leaves v f₁ _ u₁ wp₁ th₁ x
+      (by rw [hf₁.gpr .rsp (by decide)]; exact hx₁)
+    obtain ⟨c₂, r₂, cu₂, cy₂, m₂⟩ := gatherW_leaves v f₂ _ u₂ wp₂ th₂ x
+      (by rw [hf₂.gpr .rsp (by decide)]; exact hx₂)
+    rw [hf₁.mem] at m₁
+    rw [hf₂.mem] at m₂
+    exact fin (whole_agree v wp₁ wp₂ (Gather.whole_pub hf₁ hf₂ hq) r₁ r₂ cu₁ cu₂ cy₁ cy₂ fu
+      fun n hn => by rw [fy₁, fy₂]; exact hs n hn) m₁ m₂
   by_cases hb : v.poly = .avx512 ∨ v.poly = .ifma
   · have hgc : Gather.gatherCode v = Impl.ChaCha20Poly1305.X86_64.SealGather.sealGatherBy
         (Impl.ChaCha20Poly1305.X86_64.SealGather.byLim v.poly) (Gather.width v) (sealFnL v).name (sealFnL v).code
@@ -1409,61 +1510,61 @@ theorem gatherCode_leaves (v : XorImpl) (s : State) (t : List Leak) (u : State)
       · next h₁ h₂ => rcases hb with hb | hb
                       · exact absurd hb h₁
                       · exact absurd hb h₂
-    rw [hgc] at he
-    unfold Impl.ChaCha20Poly1305.X86_64.SealGather.sealGatherBy at he
-    obtain ⟨t₁, e, e₁, hq, hf⟩ := Gather.lenCmp_ok (lim := Impl.ChaCha20Poly1305.X86_64.SealGather.byLim v.poly)
-      (by rcases Gather.byLim_cases v with h | h <;> rw [h] <;> decide) s (Gather.len_in hp)
-    have hsp : e.gpr .rsp = s.gpr .rsp := hf.gpr .rsp (by decide)
-    have ha1 : stackArg e 1 = stackArg s 1 := hf.arg 1
-    have hx' : (sR (e.gpr .rsp - BitVec.ofNat 64 64)).Contains x 1 := by rw [hsp]; exact hx
-    cases he with
-    | @seq _ _ _ e' _ _ _ h₁ h₂ =>
-      have ee : e' = e := (Exec.det h₁ e₁).2
-      subst ee
-      simp only [gatherV, hb, ↓reduceIte]
-      cases h₂ with
-      | iteT hev hth =>
-        have hpt : (stackArg s 1).toNat < Impl.ChaCha20Poly1305.X86_64.SealGather.byLim v.poly := by
-          rw [hq] at hev; exact of_decide_eq_true (Option.some.inj hev)
-        simp only [hpt, ↓reduceIte]
-        have h := gatherW_leaves v e' _ u (Gather.whole_pre hf hp) hth x hx'
-        rw [hsp, ha1, hf.mem] at h
-        exact h
-      | iteF hev hel =>
-        have hpf : ¬ (stackArg s 1).toNat < Impl.ChaCha20Poly1305.X86_64.SealGather.byLim v.poly := by
-          rw [hq] at hev; exact of_decide_eq_false (Option.some.inj hev)
-        simp only [hpf, ↓reduceIte]
-        have h := gatherS_leaves v hb e' _ u (Gather.pre_same hf hp) hel x hx'
-        rw [hsp, ha1, hf.mem] at h
-        exact h
+    rw [hgc] at e₁ e₂ hsy
+    unfold Impl.ChaCha20Poly1305.X86_64.SealGather.sealGatherBy at e₁ e₂ hsy
+    have hlim : Impl.ChaCha20Poly1305.X86_64.SealGather.byLim v.poly < 2 ^ 31 := by
+      rcases Gather.byLim_cases v with h | h <;> rw [h] <;> decide
+    obtain ⟨_, f₁, b₁, hq₁, hf₁⟩ := Gather.lenCmp_ok hlim s₁ (Gather.len_in p₁)
+    obtain ⟨_, f₂, b₂, hq₂, hf₂⟩ := Gather.lenCmp_ok hlim s₂ (Gather.len_in p₂)
+    have hL : Gather.L s₁ = Gather.L s₂ := by
+      obtain ⟨-, -, -, -, -, -, -, -, -, a1, -, -⟩ := hq; exact congrArg BitVec.toNat a1
+    obtain ⟨fu₁, fy₁⟩ : f₁.unknowns = s₁.unknowns ∧ f₁.syms = s₁.syms := by
+      cases b₁ with | block h => exact ⟨(Scrub.execBlock_unknowns h h).2.1, execBlock_syms h⟩
+    obtain ⟨fu₂, fy₂⟩ : f₂.unknowns = s₂.unknowns ∧ f₂.syms = s₂.syms := by
+      cases b₂ with | block h => exact ⟨(Scrub.execBlock_unknowns h h).2.1, execBlock_syms h⟩
+    have fu : f₁.unknowns = f₂.unknowns := by rw [fu₁, fu₂, hu]
+    cases e₁ with
+    | @seq _ _ _ g₁ _ _ _ k₁ l₁ =>
+      cases e₂ with
+      | @seq _ _ _ g₂ _ _ _ k₂ l₂ =>
+        obtain rfl := (Exec.det k₁ b₁).2
+        obtain rfl := (Exec.det k₂ b₂).2
+        cases l₁ with
+        | iteT v₁ th₁ =>
+          cases l₂ with
+          | iteT v₂ th₂ =>
+            exact whole hf₁ hf₂ fu fy₁ fy₂ (fun n hn => hsy n (by simp [UpperLock.inames,
+              Impl.ChaCha20Poly1305.X86_64.SealGather.sealGatherWhole, sealFnL, Gather.Whole.sealFn, hn])) th₁ th₂
+          | iteF v₂ _ =>
+            rw [hq₁] at v₁; rw [hq₂, ← hL, v₁] at v₂; cases v₂
+        | iteF v₁ el₁ =>
+          cases l₂ with
+          | iteT v₂ _ =>
+            rw [hq₁] at v₁; rw [hq₂, ← hL, v₁] at v₂; cases v₂
+          | iteF v₂ el₂ =>
+            have pp₁ := Gather.pre_same hf₁ p₁
+            have pp₂ := Gather.pre_same hf₂ p₂
+            obtain ⟨c₁, r₁, cu₁, cy₁, m₁⟩ := gatherS_leaves v hb g₁ _ u₁ pp₁ el₁ x
+              (by rw [hf₁.gpr .rsp (by decide)]; exact hx₁)
+            obtain ⟨c₂, r₂, cu₂, cy₂, m₂⟩ := gatherS_leaves v hb g₂ _ u₂ pp₂ el₂ x
+              (by rw [hf₂.gpr .rsp (by decide)]; exact hx₂)
+            rw [hf₁.mem] at m₁
+            rw [hf₂.mem] at m₂
+            exact fin (split_agree v pp₁ pp₂ (Gather.pub_same hf₁ hf₂ hq) r₁ r₂ cu₁ cu₂ cy₁ cy₂ fu
+              fun n hn => by
+                rw [fy₁, fy₂]
+                exact hsy n (by simp [UpperLock.inames, Impl.ChaCha20Poly1305.X86_64.SealGather.sealGather,
+                  sealSplitFnL, Gather.sealSplitFn, Impl.StackScratch.X86_64.withStackArgScratchWipedX,
+                  Impl.StackScratch.X86_64.withStackArgScratch, hn])) m₁ m₂
   · have hgc : Gather.gatherCode v = Impl.ChaCha20Poly1305.X86_64.SealGather.sealGatherWhole (Gather.width v)
         (sealFnL v).name (sealFnL v).code := by
       unfold Gather.gatherCode; split
       · next h => exact absurd (.inl h) hb
       · next h => exact absurd (.inr h) hb
       · rfl
-    rw [hgc] at he
-    simp only [gatherV, hb, ↓reduceIte]
-    exact gatherW_leaves v s t u
-      (Gather.whole_pre (s := s) (e := s) ⟨fun _ _ => rfl, rfl, rfl, rfl, rfl⟩ hp) he x hx
-
-theorem gather_resOk (v : XorImpl) :
-    ResOk (Gather.gatherCode v) (Spec.ChaCha20Poly1305.sealGatherContract abi 1880) 1880 gatherKs
-      (chunks 1880) := by
-  unfold Spec.ChaCha20Poly1305.sealGatherContract
-  refine resOk_of_leaves (V := gatherV v) ScrubAbi.plain ?_ ?_
-  · intro s t u hs he x hx hw
-    exact gatherCode_leaves v s t u hs he x (gatherWindow hx hw)
-  · intro s₁ s₂ _ _ hp ho _
-    obtain ⟨-, hpubs, -⟩ := (pubL_args (sig := Spec.ChaCha20Poly1305.sealGatherSig) (by decide)).mp hp
-    have hg : ∀ r, r ≠ .rax → s₁.gpr r = s₂.gpr r := ho.2.2.1
-    have hl : stackArg s₁ 1 = stackArg s₂ 1 := by
-      have := hpubs 7 (by decide)
-      have e : ∀ s : State, (allArgs Spec.ChaCha20Poly1305.sealGatherSig s).getD 7 0 = stackArg s 1 := fun _ => rfl
-      rw [e, e, show ((Spec.ChaCha20Poly1305.sealGatherSig.words abi.ptrBits).map (·.bits abi.ptrBits)).getD 7 64 = 64
-        from rfl, BitVec.setWidth_eq, BitVec.setWidth_eq] at this
-      exact this
-    simp only [gatherV, hg .rsp (by decide), hl]
+    rw [hgc] at e₁ e₂ hsy
+    exact whole (same s₁) (same s₂) hu rfl rfl (fun n hn => hsy n (by simp [UpperLock.inames,
+      Impl.ChaCha20Poly1305.X86_64.SealGather.sealGatherWhole, sealFnL, Gather.Whole.sealFn, hn])) e₁ e₂
 
 theorem gatherOut (stack : Nat) :
     PostOut (Spec.ChaCha20Poly1305.sealGatherContract abi stack)
