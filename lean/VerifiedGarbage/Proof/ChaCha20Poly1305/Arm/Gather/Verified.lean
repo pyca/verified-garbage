@@ -2,6 +2,7 @@ module
 
 import VerifiedGarbage.Proof.ChaCha20Poly1305.Arm.Gather.CT
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.Arm.Verified
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.Arm.Scrub
 public import VerifiedGarbage.Impl.ChaCha20Poly1305.Arm.SealGather
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.Arm.Gather.Callee
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.Arm.Gather.Contract
@@ -10,6 +11,7 @@ public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Poly1305.Arm.Lit
+import VerifiedGarbage.Proof.ChaCha20Poly1305.Arm.Lit
 
 /-!
 # ChaCha20-Poly1305 encryption out of place, from a list of slices, ARMv7: `Verified`
@@ -109,16 +111,66 @@ theorem sealGather_verified (F : SealFn) :
     Verified Arm.target (sealGather F.name F.code) (Spec.ChaCha20Poly1305.sealGatherContract Arm.abi 696) :=
   Verified.of_correct (k := gatherArm) (sealGather_correct F) (sealGather_ct F) gather_implies
 
-/-- The frames of `vg_chacha20_poly1305_seal`, with its working space, use at
-most the 664 bytes of stack its contract gives it. -/
-theorem seal_stack :
-    armStack (Impl.StackScratch.Arm.withStackScratchWiped 656 3 158 Impl.ChaCha20Poly1305.Arm.«seal») ≤ 664 := by
-  decide +kernel
+/-- `vg_chacha20_poly1305_seal`, with either arithmetic of Poly1305, by its
+shared contract: the code its registration emits (`Scrub.sealReg`), whose
+frames use at most the 664 bytes of stack its contract gives it. -/
+def sealFn (umaal : Bool) : SealFn :=
+  ⟨sealName umaal, Scrub.sealCode umaal, Scrub.sealCode_verified umaal, Scrub.sealCode_armStack umaal⟩
 
-/-- `vg_chacha20_poly1305_seal`, by its shared contract. -/
-def sealFn : SealFn :=
-  ⟨Spec.ChaCha20Poly1305.sealApi.name,
-    Impl.StackScratch.Arm.withStackScratchWiped 656 3 158 Impl.ChaCha20Poly1305.Arm.«seal»,
-    Proof.ChaCha20Poly1305.Arm.seal_framed, seal_stack⟩
+/-! ## Without secret residue -/
+
+open VG.Arm.Scrub in
+/-- `seal_gather`'s postcondition reads the memory on return only within
+`dst` and `tag`. -/
+theorem sealGatherPost_out (pb : Nat) : ∀ vs m m₁ m₂ r,
+    vs.length = (Spec.ChaCha20Poly1305.sealGatherSig.words pb).length →
+    (∀ b ∈ Sig.bufs Spec.ChaCha20Poly1305.sealGatherSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (Spec.ChaCha20Poly1305.sealGatherSig.words pb) (Spec.ChaCha20Poly1305.sealGatherPost pb) vs m m₁ r →
+      Curry.apply (Spec.ChaCha20Poly1305.sealGatherSig.words pb) (Spec.ChaCha20Poly1305.sealGatherPost pb)
+        vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen hb h
+  obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 8) hlen
+  replace hlen := Nat.succ.inj hlen
+  iterate 5
+    obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+  obtain ⟨dst, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨tag, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [Spec.ChaCha20Poly1305.sealGatherSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+    forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+  change Curry.apply [ArgWord.addr, ArgWord.addr, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
+    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr] (Spec.ChaCha20Poly1305.sealGatherPost pb) _ m m₁ r at h
+  change Curry.apply [ArgWord.addr, ArgWord.addr, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
+    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr] (Spec.ChaCha20Poly1305.sealGatherPost pb) _ m m₂ r
+  dsimp only [Curry.apply, Spec.ChaCha20Poly1305.sealGatherPost, ArgWord.ofRaw] at h ⊢
+  intro h₁ h₂
+  rw [bytesAt_congr_len (p := dst) (agree_of hb.2.2.2.1), bytesAt_congr (p := tag) (agree_of hb.2.2.2.2)]
+  exact h h₁ h₂
+
+theorem gatherOut (stack : Nat) :
+    VG.Arm.Scrub.PostOut (Spec.ChaCha20Poly1305.sealGatherContract Arm.abi stack)
+      (Spec.ChaCha20Poly1305.sealGatherSig.retBits 32) :=
+  VG.Arm.Scrub.postOut_of_local VG.Arm.Scrub.ScrubAbi.plain (sealGatherPost_out _)
+
+theorem frameOk_696 : VG.Arm.Scrub.FrameOk 696 := by decide
+
+theorem gather_armStack (umaal : Bool) :
+    armStack (sealGather (sealFn umaal).name (sealFn umaal).code) ≤ 696 := by
+  cases umaal <;> lit_decide
+
+/-- `seal_gather`, calling `seal` with either arithmetic of Poly1305, followed
+by a wipe of the stack its contract reserves, and by instructions that set
+the registers a callee may change and the flags to constants. -/
+def gatherReg (umaal : Bool) (suffix : String) : Registration Spec.ChaCha20Poly1305.sealGatherApi Arm.target :=
+  VG.Arm.Scrub.scrubRegF {
+      suffix := suffix
+      code := sealGather (sealFn umaal).name (sealFn umaal).code
+      verified := sealGather_verified (sealFn umaal) }
+    (gather_armStack umaal) frameOk_696 (gatherOut _) rfl
 
 end VG.Proof.ChaCha20Poly1305.Arm.Gather

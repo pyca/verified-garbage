@@ -43,9 +43,610 @@ bx lr",
     )
 }
 
+/// The CPU features `vg_poly1305_update_umaal` requires (`Artifact.features`).
+#[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
+pub const VG_POLY1305_UPDATE_UMAAL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::UMAAL);
+
 /// Absorbs data into a Poly1305 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴) under a key, it then represents that message followed by the `len` bytes at `data`, under the same key.
 ///
 /// Contract: `VG.Spec.Poly1305.updateContract`. The streaming state is the accumulator, the key and the message's last bytes that do not fill a block (`VG.Spec.Poly1305.Buffered`). Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 128 bytes.
+/// * `data` must be valid for reads of `len` bytes.
+/// * `state` must not overlap `data` or the arguments on the stack (distinct Rust objects never do).
+/// * Neither `state` nor `data` may overlap the 144 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `umaal` target feature.
+#[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_poly1305_update_umaal(state: *mut [u64; 16], count: u64, data: *const u8, len: usize) {
+    core::arch::naked_asm!(
+        r"sub sp, sp, #144
+add r12, sp, #0
+str lr, [r12, #12]
+ldr lr, [sp, #144]
+str lr, [r12, #0]
+ldr lr, [sp, #148]
+str lr, [r12, #4]
+add lr, sp, #16
+str lr, [r12, #8]
+ldr lr, [sp, #12]
+ldr r12, [sp, #8]
+str r4, [r12, #0]
+str r5, [r12, #4]
+str r6, [r12, #8]
+str r7, [r12, #12]
+str r8, [r12, #16]
+str r9, [r12, #20]
+str r10, [r12, #24]
+str r11, [r12, #28]
+and r4, r2, #15
+ldr r5, [sp, #0]
+ldr r6, [sp, #4]
+cmp r4, #0
+beq 20f
+mov r8, #16
+sub r8, r8, r4
+lsr r12, r6, #4
+cmp r12, #0
+beq 22f
+b 23f
+22:
+add r12, r6, r4
+lsr r12, r12, #4
+cmp r12, #0
+beq 24f
+b 25f
+24:
+mov r8, r6
+25:
+23:
+sub r6, r6, r8
+add r1, r0, r4
+add r4, r4, r8
+cmp r8, #0
+beq 26f
+28:
+ldrb r12, [r5, #0]
+strb r12, [r1, #56]
+add r5, r5, #1
+add r1, r1, #1
+subs r8, r8, #1
+bne 28b
+b 27f
+26:
+27:
+b 21f
+20:
+21:
+lsr r1, r6, #4
+str r5, [r0, #124]
+str r6, [r0, #76]
+str r1, [r0, #20]
+str r4, [r0, #72]
+movw r2, #65535
+movt r2, #4095
+ldr r1, [r0, #24]
+and r1, r1, r2
+str r1, [r0, #88]
+movw r2, #65532
+movt r2, #4095
+ldr r1, [r0, #28]
+and r1, r1, r2
+str r1, [r0, #92]
+ldr r1, [r0, #32]
+and r1, r1, r2
+str r1, [r0, #96]
+ldr r1, [r0, #36]
+and r1, r1, r2
+str r1, [r0, #100]
+ldr r1, [r0, #92]
+add r1, r1, r1, lsr #2
+str r1, [r0, #104]
+ldr r1, [r0, #96]
+add r1, r1, r1, lsr #2
+str r1, [r0, #108]
+ldr r1, [r0, #100]
+add r1, r1, r1, lsr #2
+str r1, [r0, #112]
+ldr r3, [r0, #0]
+ldr r5, [r0, #4]
+ldr r7, [r0, #8]
+ldr r10, [r0, #12]
+ldr r11, [r0, #16]
+and r11, r11, #3
+ldr r1, [r0, #72]
+cmp r1, #16
+beq 29f
+b 210f
+29:
+add r1, r0, #56
+ldr r4, [r1, #0]
+ldr r6, [r1, #4]
+ldr r8, [r1, #8]
+ldr r9, [r1, #12]
+lsr r1, r11, #2
+add r1, r1, r1, lsl #2
+and r12, r11, #3
+mov r2, #1
+umaal r4, r1, r3, r2
+umaal r6, r1, r5, r2
+umaal r8, r1, r7, r2
+umaal r9, r1, r10, r2
+add r12, r12, r1
+add r12, r12, #1
+ldr r2, [r0, #104]
+mul r7, r12, r2
+ldr r2, [r0, #108]
+mul r10, r12, r2
+ldr r2, [r0, #112]
+mul r11, r12, r2
+mov r3, #0
+mov r5, #0
+ldr r2, [r0, #88]
+umaal r3, r5, r4, r2
+umaal r5, r7, r6, r2
+umaal r7, r10, r8, r2
+umaal r10, r11, r9, r2
+mla r11, r12, r2, r11
+mov r1, #0
+ldr r2, [r0, #104]
+umaal r3, r1, r9, r2
+ldr r2, [r0, #92]
+umaal r5, r1, r4, r2
+umaal r7, r1, r6, r2
+umaal r10, r1, r8, r2
+add r11, r11, r1
+mov r1, #0
+ldr r2, [r0, #108]
+umaal r3, r1, r8, r2
+umaal r5, r1, r9, r2
+ldr r2, [r0, #96]
+umaal r7, r1, r4, r2
+umaal r10, r1, r6, r2
+add r11, r11, r1
+mov r1, #0
+ldr r2, [r0, #112]
+umaal r3, r1, r6, r2
+umaal r5, r1, r8, r2
+umaal r7, r1, r9, r2
+ldr r2, [r0, #100]
+umaal r10, r1, r4, r2
+add r11, r11, r1
+210:
+ldr r1, [r0, #20]
+cmp r1, #0
+beq 211f
+213:
+ldr r1, [r0, #124]
+add r2, r1, #16
+str r2, [r0, #124]
+ldr r4, [r1, #0]
+ldr r6, [r1, #4]
+ldr r8, [r1, #8]
+ldr r9, [r1, #12]
+lsr r1, r11, #2
+add r1, r1, r1, lsl #2
+and r12, r11, #3
+mov r2, #1
+umaal r4, r1, r3, r2
+umaal r6, r1, r5, r2
+umaal r8, r1, r7, r2
+umaal r9, r1, r10, r2
+add r12, r12, r1
+add r12, r12, #1
+ldr r2, [r0, #104]
+mul r7, r12, r2
+ldr r2, [r0, #108]
+mul r10, r12, r2
+ldr r2, [r0, #112]
+mul r11, r12, r2
+mov r3, #0
+mov r5, #0
+ldr r2, [r0, #88]
+umaal r3, r5, r4, r2
+umaal r5, r7, r6, r2
+umaal r7, r10, r8, r2
+umaal r10, r11, r9, r2
+mla r11, r12, r2, r11
+mov r1, #0
+ldr r2, [r0, #104]
+umaal r3, r1, r9, r2
+ldr r2, [r0, #92]
+umaal r5, r1, r4, r2
+umaal r7, r1, r6, r2
+umaal r10, r1, r8, r2
+add r11, r11, r1
+mov r1, #0
+ldr r2, [r0, #108]
+umaal r3, r1, r8, r2
+umaal r5, r1, r9, r2
+ldr r2, [r0, #96]
+umaal r7, r1, r4, r2
+umaal r10, r1, r6, r2
+add r11, r11, r1
+mov r1, #0
+ldr r2, [r0, #112]
+umaal r3, r1, r6, r2
+umaal r5, r1, r8, r2
+umaal r7, r1, r9, r2
+ldr r2, [r0, #100]
+umaal r10, r1, r4, r2
+add r11, r11, r1
+ldr r1, [r0, #20]
+subs r1, r1, #1
+str r1, [r0, #20]
+bne 213b
+b 212f
+211:
+212:
+lsr r1, r11, #2
+add r1, r1, r1, lsl #2
+and r11, r11, #3
+mov r2, #0
+umaal r3, r1, r2, r2
+umaal r5, r1, r2, r2
+umaal r7, r1, r2, r2
+umaal r10, r1, r2, r2
+add r11, r11, r1
+mov r1, #5
+mov r4, r3
+umaal r4, r1, r2, r2
+mov r4, r5
+umaal r4, r1, r2, r2
+mov r4, r7
+umaal r4, r1, r2, r2
+mov r4, r10
+umaal r4, r1, r2, r2
+add r1, r1, r11
+lsr r1, r1, #2
+add r1, r1, r1, lsl #2
+umaal r3, r1, r2, r2
+umaal r5, r1, r2, r2
+umaal r7, r1, r2, r2
+umaal r10, r1, r2, r2
+add r11, r11, r1
+and r1, r11, #3
+str r3, [r0, #0]
+str r5, [r0, #4]
+str r7, [r0, #8]
+str r10, [r0, #12]
+str r1, [r0, #16]
+mov r2, #0
+str r2, [r0, #20]
+ldr r8, [r0, #76]
+and r8, r8, #15
+ldr r5, [r0, #124]
+mov r1, r0
+cmp r8, #0
+beq 214f
+216:
+ldrb r12, [r5, #0]
+strb r12, [r1, #56]
+add r5, r5, #1
+add r1, r1, #1
+subs r8, r8, #1
+bne 216b
+b 215f
+214:
+215:
+ldr r12, [sp, #8]
+ldr r4, [r12, #0]
+ldr r5, [r12, #4]
+ldr r6, [r12, #8]
+ldr r7, [r12, #12]
+ldr r8, [r12, #16]
+ldr r9, [r12, #20]
+ldr r10, [r12, #24]
+ldr r11, [r12, #28]
+add sp, sp, #144
+sub sp, sp, #144
+add r12, sp, #0
+mov r2, #0
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+str r2, [r12, #32]
+str r2, [r12, #36]
+str r2, [r12, #40]
+str r2, [r12, #44]
+str r2, [r12, #48]
+str r2, [r12, #52]
+str r2, [r12, #56]
+str r2, [r12, #60]
+str r2, [r12, #64]
+str r2, [r12, #68]
+str r2, [r12, #72]
+str r2, [r12, #76]
+str r2, [r12, #80]
+str r2, [r12, #84]
+str r2, [r12, #88]
+str r2, [r12, #92]
+str r2, [r12, #96]
+str r2, [r12, #100]
+str r2, [r12, #104]
+str r2, [r12, #108]
+str r2, [r12, #112]
+str r2, [r12, #116]
+str r2, [r12, #120]
+str r2, [r12, #124]
+str r2, [r12, #128]
+str r2, [r12, #132]
+str r2, [r12, #136]
+str r2, [r12, #140]
+add sp, sp, #144
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
+bx lr",
+    )
+}
+
+/// The CPU features `vg_poly1305_finalize_umaal` requires (`Artifact.features`).
+#[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
+pub const VG_POLY1305_FINALIZE_UMAAL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::UMAAL);
+
+/// Finishes a Poly1305 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴) under a key, writes the tag of that message, under that key, to `*out`.
+///
+/// Contract: `VG.Spec.Poly1305.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 128 bytes.
+/// * `out` must be valid for reads and writes of 16 bytes.
+/// * The contents of `state` on return are unspecified.
+/// * `state` and `out` must not overlap each other or the arguments on the stack (distinct Rust objects never do).
+/// * Neither `state` nor `out` may overlap the 144 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `umaal` target feature.
+#[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_poly1305_finalize_umaal(state: *mut [u64; 16], count: u64, out: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        r"sub sp, sp, #144
+add r12, sp, #0
+str lr, [r12, #8]
+ldr lr, [sp, #144]
+str lr, [r12, #0]
+add lr, sp, #12
+str lr, [r12, #4]
+ldr lr, [sp, #8]
+ldr r12, [sp, #4]
+str r4, [r12, #0]
+str r5, [r12, #4]
+str r6, [r12, #8]
+str r7, [r12, #12]
+str r8, [r12, #16]
+str r9, [r12, #20]
+str r10, [r12, #24]
+str r11, [r12, #28]
+and r4, r2, #15
+cmp r4, #0
+beq 20f
+mov r12, #0
+add r1, r0, r4
+mov r5, #16
+sub r5, r5, r4
+22:
+strb r12, [r1, #56]
+add r1, r1, #1
+subs r5, r5, #1
+bne 22b
+mov r12, #1
+add r1, r0, r4
+strb r12, [r1, #56]
+b 21f
+20:
+21:
+str r4, [r0, #124]
+movw r2, #65535
+movt r2, #4095
+ldr r1, [r0, #24]
+and r1, r1, r2
+str r1, [r0, #88]
+movw r2, #65532
+movt r2, #4095
+ldr r1, [r0, #28]
+and r1, r1, r2
+str r1, [r0, #92]
+ldr r1, [r0, #32]
+and r1, r1, r2
+str r1, [r0, #96]
+ldr r1, [r0, #36]
+and r1, r1, r2
+str r1, [r0, #100]
+ldr r1, [r0, #92]
+add r1, r1, r1, lsr #2
+str r1, [r0, #104]
+ldr r1, [r0, #96]
+add r1, r1, r1, lsr #2
+str r1, [r0, #108]
+ldr r1, [r0, #100]
+add r1, r1, r1, lsr #2
+str r1, [r0, #112]
+ldr r3, [r0, #0]
+ldr r5, [r0, #4]
+ldr r7, [r0, #8]
+ldr r10, [r0, #12]
+ldr r11, [r0, #16]
+and r11, r11, #3
+ldr r1, [r0, #124]
+cmp r1, #0
+beq 23f
+add r1, r0, #56
+ldr r4, [r1, #0]
+ldr r6, [r1, #4]
+ldr r8, [r1, #8]
+ldr r9, [r1, #12]
+lsr r1, r11, #2
+add r1, r1, r1, lsl #2
+and r12, r11, #3
+mov r2, #1
+umaal r4, r1, r3, r2
+umaal r6, r1, r5, r2
+umaal r8, r1, r7, r2
+umaal r9, r1, r10, r2
+add r12, r12, r1
+ldr r2, [r0, #104]
+mul r7, r12, r2
+ldr r2, [r0, #108]
+mul r10, r12, r2
+ldr r2, [r0, #112]
+mul r11, r12, r2
+mov r3, #0
+mov r5, #0
+ldr r2, [r0, #88]
+umaal r3, r5, r4, r2
+umaal r5, r7, r6, r2
+umaal r7, r10, r8, r2
+umaal r10, r11, r9, r2
+mla r11, r12, r2, r11
+mov r1, #0
+ldr r2, [r0, #104]
+umaal r3, r1, r9, r2
+ldr r2, [r0, #92]
+umaal r5, r1, r4, r2
+umaal r7, r1, r6, r2
+umaal r10, r1, r8, r2
+add r11, r11, r1
+mov r1, #0
+ldr r2, [r0, #108]
+umaal r3, r1, r8, r2
+umaal r5, r1, r9, r2
+ldr r2, [r0, #96]
+umaal r7, r1, r4, r2
+umaal r10, r1, r6, r2
+add r11, r11, r1
+mov r1, #0
+ldr r2, [r0, #112]
+umaal r3, r1, r6, r2
+umaal r5, r1, r8, r2
+umaal r7, r1, r9, r2
+ldr r2, [r0, #100]
+umaal r10, r1, r4, r2
+add r11, r11, r1
+b 24f
+23:
+24:
+lsr r1, r11, #2
+add r1, r1, r1, lsl #2
+and r11, r11, #3
+mov r2, #0
+umaal r3, r1, r2, r2
+umaal r5, r1, r2, r2
+umaal r7, r1, r2, r2
+umaal r10, r1, r2, r2
+add r11, r11, r1
+mov r1, #5
+mov r4, r3
+umaal r4, r1, r2, r2
+mov r4, r5
+umaal r4, r1, r2, r2
+mov r4, r7
+umaal r4, r1, r2, r2
+mov r4, r10
+umaal r4, r1, r2, r2
+add r1, r1, r11
+lsr r1, r1, #2
+add r1, r1, r1, lsl #2
+umaal r3, r1, r2, r2
+umaal r5, r1, r2, r2
+umaal r7, r1, r2, r2
+umaal r10, r1, r2, r2
+add r11, r11, r1
+and r1, r11, #3
+mov r1, #0
+mov r2, #1
+ldr r4, [r0, #40]
+umaal r3, r1, r4, r2
+ldr r4, [r0, #44]
+umaal r5, r1, r4, r2
+ldr r4, [r0, #48]
+umaal r7, r1, r4, r2
+ldr r4, [r0, #52]
+umaal r10, r1, r4, r2
+ldr r2, [sp, #0]
+str r3, [r2, #0]
+str r5, [r2, #4]
+str r7, [r2, #8]
+str r10, [r2, #12]
+ldr r12, [sp, #4]
+ldr r4, [r12, #0]
+ldr r5, [r12, #4]
+ldr r6, [r12, #8]
+ldr r7, [r12, #12]
+ldr r8, [r12, #16]
+ldr r9, [r12, #20]
+ldr r10, [r12, #24]
+ldr r11, [r12, #28]
+add sp, sp, #144
+sub sp, sp, #144
+add r12, sp, #0
+mov r2, #0
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+str r2, [r12, #32]
+str r2, [r12, #36]
+str r2, [r12, #40]
+str r2, [r12, #44]
+str r2, [r12, #48]
+str r2, [r12, #52]
+str r2, [r12, #56]
+str r2, [r12, #60]
+str r2, [r12, #64]
+str r2, [r12, #68]
+str r2, [r12, #72]
+str r2, [r12, #76]
+str r2, [r12, #80]
+str r2, [r12, #84]
+str r2, [r12, #88]
+str r2, [r12, #92]
+str r2, [r12, #96]
+str r2, [r12, #100]
+str r2, [r12, #104]
+str r2, [r12, #108]
+str r2, [r12, #112]
+str r2, [r12, #116]
+str r2, [r12, #120]
+str r2, [r12, #124]
+str r2, [r12, #128]
+str r2, [r12, #132]
+str r2, [r12, #136]
+str r2, [r12, #140]
+add sp, sp, #144
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
+bx lr",
+    )
+}
+
+/// Absorbs data into a Poly1305 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴) under a key, it then represents that message followed by the `len` bytes at `data`, under the same key.
+///
+/// Contract: `VG.Spec.Poly1305.updateContract`. The streaming state is the accumulator, the key and the message's last bytes that do not fill a block (`VG.Spec.Poly1305.Buffered`). Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1178,6 +1779,52 @@ ldr r9, [r12, #20]
 ldr r10, [r12, #24]
 ldr r11, [r12, #28]
 add sp, sp, #144
+sub sp, sp, #144
+add r12, sp, #0
+mov r2, #0
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+str r2, [r12, #32]
+str r2, [r12, #36]
+str r2, [r12, #40]
+str r2, [r12, #44]
+str r2, [r12, #48]
+str r2, [r12, #52]
+str r2, [r12, #56]
+str r2, [r12, #60]
+str r2, [r12, #64]
+str r2, [r12, #68]
+str r2, [r12, #72]
+str r2, [r12, #76]
+str r2, [r12, #80]
+str r2, [r12, #84]
+str r2, [r12, #88]
+str r2, [r12, #92]
+str r2, [r12, #96]
+str r2, [r12, #100]
+str r2, [r12, #104]
+str r2, [r12, #108]
+str r2, [r12, #112]
+str r2, [r12, #116]
+str r2, [r12, #120]
+str r2, [r12, #124]
+str r2, [r12, #128]
+str r2, [r12, #132]
+str r2, [r12, #136]
+str r2, [r12, #140]
+add sp, sp, #144
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
     )
 }
@@ -1185,6 +1832,8 @@ bx lr",
 /// Finishes a Poly1305 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴) under a key, writes the tag of that message, under that key, to `*out`.
 ///
 /// Contract: `VG.Spec.Poly1305.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1898,6 +2547,52 @@ ldr r9, [r12, #20]
 ldr r10, [r12, #24]
 ldr r11, [r12, #28]
 add sp, sp, #144
+sub sp, sp, #144
+add r12, sp, #0
+mov r2, #0
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+str r2, [r12, #32]
+str r2, [r12, #36]
+str r2, [r12, #40]
+str r2, [r12, #44]
+str r2, [r12, #48]
+str r2, [r12, #52]
+str r2, [r12, #56]
+str r2, [r12, #60]
+str r2, [r12, #64]
+str r2, [r12, #68]
+str r2, [r12, #72]
+str r2, [r12, #76]
+str r2, [r12, #80]
+str r2, [r12, #84]
+str r2, [r12, #88]
+str r2, [r12, #92]
+str r2, [r12, #96]
+str r2, [r12, #100]
+str r2, [r12, #104]
+str r2, [r12, #108]
+str r2, [r12, #112]
+str r2, [r12, #116]
+str r2, [r12, #120]
+str r2, [r12, #124]
+str r2, [r12, #128]
+str r2, [r12, #132]
+str r2, [r12, #136]
+str r2, [r12, #140]
+add sp, sp, #144
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
     )
 }
@@ -1907,5 +2602,13 @@ bx lr",
 pub(crate) mod vg_poly1305_blocks;
 
 #[rustfmt::skip]
+#[path = "internal/vg_poly1305_blocks_umaal.rs"]
+pub(crate) mod vg_poly1305_blocks_umaal;
+
+#[rustfmt::skip]
 #[path = "internal/vg_poly1305_finalize_scratch.rs"]
 pub(crate) mod vg_poly1305_finalize_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_poly1305_finalize_scratch_umaal.rs"]
+pub(crate) mod vg_poly1305_finalize_scratch_umaal;

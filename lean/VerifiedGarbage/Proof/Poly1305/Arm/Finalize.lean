@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Poly1305.Arm.Steps
 public import VerifiedGarbage.Proof.Poly1305.Contract
 import VerifiedGarbage.Proof.Poly1305.Arm.Lit
+import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 import VerifiedGarbage.Proof.Poly1305.Stream
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Contract
@@ -11,6 +12,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Poly1305.Arm.Steps
 meta import VerifiedGarbage.Proof.Poly1305.Arm.Lit
+meta import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 meta import VerifiedGarbage.Proof.Poly1305.Stream
 meta import VerifiedGarbage.Proof.Framework.Arm.Exec
 meta import VerifiedGarbage.Proof.Framework.Contract
@@ -24,10 +26,11 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 After saving the registers in `scratch` (`prologue_ok`), a non-empty buffer is
 padded in place with `0x01` and zeros (`pad_ok`); its length is stored, the
 limbs of `r` computed and the accumulator loaded (`mid_ok`); the padded buffer
-is absorbed (`last_ok`); then the columns are reduced fully, `s` is added, and
-the sum is carried and stored modulo `2¹²⁸` in `out` (`tag_ok`). Until then
-(`FC`), only the state's working space, the buffer, the accumulator and
-`scratch` change.
+is absorbed (`last_ok`); then the accumulator is reduced fully and `s` is
+added, modulo `2¹²⁸` (`tagI_ok`: the baseline's columns by `tagB_ok`, and
+`umaal`'s words by `tagU_wacc`), and the sum is stored in `out` (`tag_ok`).
+Until then (`FC`), only the state's working space, the buffer, the
+accumulator and `scratch` change.
 -/
 
 @[expose] public section
@@ -36,6 +39,8 @@ namespace VG.Proof.Poly1305.Arm.Fin
 
 open VG VG.Arm VG.Impl.Poly1305.Arm VG.Proof.Poly1305.Arm
 open VG.Spec.Poly1305 (P clamp leNum bytesAt accumulate Repr Buffered leBytes mac)
+
+variable {umaal : Bool}
 
 /-! ## The precondition -/
 
@@ -399,8 +404,8 @@ theorem sfr_word {s₀ : State} (hp : FPre s₀) {m : Mem}
       exact hp.st_scr' (by omega_using [hd])) (by decide)
 
 /-- After computing the limbs of `r` and loading the accumulator. -/
-structure F3 (s₀ s : State) : Prop extends FC s₀ s where
-  acc : Acc (s₀.gpr .r0) (Rl s₀) (A0 s₀) [] s
+structure F3 (umaal : Bool) (s₀ s : State) : Prop extends FC s₀ s where
+  acc : Acc umaal (s₀.gpr .r0) (Rl s₀) (A0 s₀) [] s
   buf : 0 < kb s₀ → BufHas s.mem (stB s₀) (padded s₀)
   z : s.z = decide (kb s₀ = 0)
 
@@ -415,8 +420,8 @@ theorem BufHas.frame {s₀ : State} {m m' : Mem} (h : BufHas m (stB s₀) (padde
     (by rw [← off_add]; exact contains_off (by omega_using [hk]) (by omega_using [hk])) hc
 
 theorem mid_ok {s₀ : State} (hp : FPre s₀) {s : State} (h : F2 s₀ s) :
-    WP isa (.block (.str .r4 .r0 ptrOff :: setupR ++ loadAcc ++ ([.ldr .r1 .r0 ptrOff, .cmp .r1 (.imm 0)] : List Instr))) s
-      (F3 s₀) := by
+    WP isa (.block (.str .r4 .r0 ptrOff :: setup umaal ++ ([.ldr .r1 .r0 ptrOff, .cmp .r1 (.imm 0)] : List Instr))) s
+      (F3 umaal s₀) := by
   have hfit := hp.st_fit
   obtain hk := kb_lt s₀
   obtain hw := hp.stW h.wr
@@ -429,7 +434,7 @@ theorem mid_ok {s₀ : State} (hp : FPre s₀) {s : State} (h : F2 s₀ s) :
       (by decide) _ rfl
   obtain fc₁ : FC s₀ s₁ := h.toFC.keepsF hp (ws := []) ⟨fun r _ => by rw [u₁.gpr], f₁, u₁.rd, u₁.wr, u₁.sp⟩
     (by decide) (by decide) (by decide)
-  refine WP.append (setupAcc_ok hfit fc₁.r0 (hp.stW fc₁.wr)) fun s₂ ⟨hr₂, hc₂, k₂⟩ => ?_
+  refine WP.append (setupAcc_ok hfit fc₁.r0 (hp.stW fc₁.wr)) fun s₂ ⟨ha₂, k₂⟩ => ?_
   obtain fc₂ : FC s₀ s₂ := fc₁.keepsF hp k₂ (by decide) (by decide) (by decide)
   refine wp_ldr (a := stB s₀ + BitVec.ofNat 64 124) (by decide)
     (by rw [fc₂.r0]; exact ea hfit (off := 124) (by decide)) (inSt (hp.stW fc₂.wr) (off := 124) (n := 4) (by decide))
@@ -442,13 +447,12 @@ theorem mid_ok {s₀ : State} (hp : FPre s₀) {s : State} (h : F2 s₀ s) :
     exact sfr_word hp h.sfr (by omega_using [hd])
   obtain hRl : rlimb s₁.mem (stB s₀) = Rl s₀ := rlimb_frame fun i hi => hw₁ _ (by omega_using [hi])
   obtain hA : accD s₁.mem (stB s₀) = accD s₀.mem (stB s₀) := accD_of_words fun i hi => hw₁ _ (by omega_using [hi])
-  refine ⟨(fc₂.upd u₃ (by decide)).flags u₄, ⟨by rw [u₄.gpr, u₃.other _ (by decide), fc₂.r0],
-    hp.stW (by rw [u₄.wr, u₃.wr, fc₂.wr]), fun k hk => ?_, accD s₀.mem (stB s₀), ⟨fun k hk => ?_, ?_⟩,
-    fun k _ => by have := accD_lt s₀.mem (stB s₀) k; omega_using [this], by rw [Poly1305.absorbAll_nil]⟩, fun hpos => ?_, ?_⟩
-  · rw [m₄, hr₂ k hk, hRl]
-  · have := yr_ne k hk
-    rw [u₄.gpr, u₃.other _ this.2.1, ← hA]; exact hc₂.1 k hk
-  · rw [m₄, ← hA]; exact hc₂.2
+  rw [hRl, hA] at ha₂
+  obtain k₂₄ : KeepsF [.r1] (offR (stB s₀) []) s₂ s₄ :=
+    ((u₃.keeps (ws := [.r1]) (by simp)).trans ⟨fun r _ => by rw [u₄.gpr], u₄.mem, u₄.rd, u₄.wr, u₄.sp⟩).keepsF _
+  refine ⟨(fc₂.upd u₃ (by decide)).flags u₄,
+    (Acc.mk fc₂.r0 (hp.stW fc₂.wr) (by rw [Poly1305.absorbAll_nil]; exact ha₂)).keep k₂₄ (by decide) (by decide)
+      (by decide), fun hpos => ?_, ?_⟩
   · rw [m₄]
     exact ((h.buf hpos).frame f₁ (by decide) (by decide)).frame k₂.frame (by decide) (by decide)
   · rw [hz, u₃.gpr, k₂.frame.word (by decide) (by decide) (by decide), u₁.mem, Mem.readW_writeW_self32, h.r4,
@@ -457,11 +461,11 @@ theorem mid_ok {s₀ : State} (hp : FPre s₀) {s : State} (h : F2 s₀ s) :
 /-! ## The last block -/
 
 /-- After absorbing the padded buffer, if any. -/
-structure F4 (s₀ s : State) : Prop extends FC s₀ s where
-  acc : Acc (s₀.gpr .r0) (Rl s₀) (A0 s₀) (Bf s₀) s
+structure F4 (umaal : Bool) (s₀ s : State) : Prop extends FC s₀ s where
+  acc : Acc umaal (s₀.gpr .r0) (Rl s₀) (A0 s₀) (Bf s₀) s
 
-theorem last_ok {s₀ : State} (hp : FPre s₀) {s : State} (h : F3 s₀ s) :
-    WP isa (.ite .eq (.block []) (.block (.dp .add .r1 .r0 (.imm 56) :: absorb false))) s (F4 s₀) := by
+theorem last_ok {s₀ : State} (hp : FPre s₀) {s : State} (h : F3 umaal s₀ s) :
+    WP isa (.ite .eq (.block []) (.block (.dp .add .r1 .r0 (.imm 56) :: absorbV umaal false))) s (F4 umaal s₀) := by
   have hfit := hp.st_fit
   obtain hk := kb_lt s₀
   refine WP.ite s.z (eval_eq _) (fun hb => WP.block_nil ?_) (fun hb => ?_)
@@ -471,18 +475,17 @@ theorem last_ok {s₀ : State} (hp : FPre s₀) {s : State} (h : F3 s₀ s) :
     rw [this]; exact h.acc
   · have hpos : 0 < kb s₀ := by rw [h.z] at hb; simp only [decide_eq_false_iff_not] at hb; omega_using [hk, hb]
     refine wp_add (op2_imm (by decide)) fun s₁ u₁ => ?_
-    obtain ⟨D, hcD, hDb, hDv⟩ := h.acc.acc
     obtain hr1 : s₁.gpr .r1 = s₀.gpr .r0 + 56 := by rw [u₁.gpr, h.r0]
     obtain ha : ∀ j < 4, State.addr (s₁.gpr .r1 + BitVec.ofNat 32 (4 * j)) =
         stB s₀ + BitVec.ofNat 64 56 + BitVec.ofNat 64 (4 * j) := fun j hj => by
       rw [hr1, BitVec.add_assoc, show (56 : BitVec 32) = BitVec.ofNat 32 56 from rfl, ← BitVec.ofNat_add,
         ea hfit (by omega_using [hj]), off_add]
-    refine WP.mono (absorb_ok hfit false (R := Rl s₀) (D := D) (fun i _ => rlimb_lt _ _ i) hDb
-      (by rw [u₁.other _ (by decide), h.r0]) (by rw [u₁.wr]; exact hp.stW h.wr)
-      (fun k hk => by rw [u₁.mem]; exact h.acc.r k hk)
-      ⟨fun k hk => by rw [u₁.other _ (yr_ne k hk).2.1]; exact hcD.1 k hk, by rw [u₁.mem]; exact hcD.2⟩
+    obtain hA₁ : Acc umaal (s₀.gpr .r0) (Rl s₀) (A0 s₀) [] s₁ :=
+      h.acc.keep ((u₁.keeps (ws := [.r1]) (by simp)).keepsF (offR (stB s₀) [])) (by decide) (by decide)
+        (by decide)
+    refine WP.mono (absorbI_ok hfit false (R := Rl s₀) (fun i _ => rlimb_lt _ _ i) hA₁.r0 hA₁.wr hA₁.inv
       (fun j hj => by rw [ha j hj, off_add, u₁.rd, u₁.wr]; exact inSt (hp.stW h.wr) (by omega_using [hj])))
-      fun s₂ ⟨D', hc₂, hb₂, hv₂, k₂⟩ => ?_
+      fun s₂ ⟨hi₂, k₂⟩ => ?_
     obtain f₂ : Frame (offR (stB s₀) [(0, 20)]) s₁.mem s₂.mem := by rw [← accR_offR]; exact k₂.frame
     obtain k₂' : KeepsF work (offR (stB s₀) [(0, 20)]) s₁ s₂ := ⟨k₂.gpr, f₂, k₂.rd, k₂.wr, k₂.sp⟩
     obtain fc₂ := (h.toFC.upd u₁ (by decide)).keepsF hp k₂' (by decide) (by decide) (by decide)
@@ -491,12 +494,10 @@ theorem last_ok {s₀ : State} (hp : FPre s₀) {s : State} (h : F3 s₀ s) :
       simp only [msgVal, word]
       rw [ha 0 (by decide), ha 1 (by decide), ha 2 (by decide), ha 3 (by decide)]
     obtain hl : (Bf s₀).length = kb s₀ := Poly1305.length_bytesAt _ _ _
-    refine ⟨fc₂, fc₂.r0, hp.stW fc₂.wr, fun k hk => ?_, D', hc₂, hb₂, ?_⟩
-    · rw [rval_frame k₂.frame hk, u₁.mem]; exact h.acc.r k hk
-    · rw [hv₂, hmsg, Poly1305.absorbAll_block (by omega_using [hk, hpos, hl]) (by omega_using [hk, hpos, hl]), iteF (show ¬(false = true) by simp),
-        Nat.add_zero]
-      rw [Poly1305.absorbAll_nil] at hDv
-      exact mod_step hDv
+    refine ⟨fc₂, fc₂.r0, hp.stW fc₂.wr, hi₂.congr ?_⟩
+    rw [hmsg, Poly1305.absorbAll_nil,
+      Poly1305.absorbAll_block (b := Bf s₀) (by omega_using [hk, hpos, hl]) (by omega_using [hk, hpos, hl]),
+      iteF (show ¬(false = true) by simp), Nat.add_zero, Nat.mod_mod, Nat.mul_comm (val (Rl s₀))]
 
 /-! ## The tag -/
 
@@ -511,53 +512,54 @@ theorem cnt_mod (s₀ : State) : (Proof.Poly1305.countArm s₀).toNat % 16 = kb 
   rw [BitVec.toNat_append, ← Nat.shiftLeft_add_eq_or_of_lt (s₀.gpr .r2).isLt, Nat.shiftLeft_eq]
   omega_using []
 
-theorem tag_ok {s₀ : State} (hp : FPre s₀) {s : State} (h : F4 s₀ s) :
-    WP isa (.block (reduce ++ ([.str .r1 .r0 d9Off, .dp .add .r1 .r0 (.imm 40)] : List Instr) ++ addWords ++ addTop false ++
-      mask :: (List.range 9).flatMap carryStep ++ toWords ++
-      ([.ldrSp .r2 0, .str .r3 .r2 0, .str .r5 .r2 4, .str .r7 .r2 8, .str .r10 .r2 12, .ldrSp .r12 4] : List Instr) ++
-      restoreScr)) s fun s' => abiPreserved s₀ s' ∧ Proof.Poly1305.finalizeArm.post s₀ s' := by
-  have hfit := hp.st_fit
-  obtain ⟨D, hcD, hDb, hDv⟩ := h.acc.acc
-  have hs0 : s.gpr .r0 = s₀.gpr .r0 := h.r0
-  obtain hw : stR (s₀.gpr .r0) ∈ s.wr := hp.stW h.wr
+/-- The key's second half, `s`, in the state at `B`, as a number. -/
+abbrev sKey (m : Mem) (B : Addr) : Nat :=
+  (m.readW (B + BitVec.ofNat 64 40) 32).toNat + 2 ^ 32 * (m.readW (B + BitVec.ofNat 64 44) 32).toNat +
+    2 ^ 64 * (m.readW (B + BitVec.ofNat 64 48) 32).toNat + 2 ^ 96 * (m.readW (B + BitVec.ofNat 64 52) 32).toNat
+
+section
+variable {st : BitVec 32} (hfit : st.toNat + 128 ≤ 2 ^ 32)
+include hfit
+
+/-- The baseline's tag: the columns reduced fully, `s` added, and the sum
+carried, as words. -/
+theorem tagB_ok {D : Nat → Nat} {s : State} (hs0 : s.gpr .r0 = st) (hw : stR st ∈ s.wr)
+    (hDb : ∀ k < 10, D k ≤ 3564723200) (hcD : ColsD D (State.addr st) s) :
+    WP isa (.block (reduce ++ ([.str .r1 .r0 d9Off, .dp .add .r1 .r0 (.imm 40)] : List Instr) ++ addWords ++
+      addTop false ++ mask :: (List.range 9).flatMap carryStep ++ toWords)) s fun s' => ∃ t0 t1 t2 t3,
+      ((s'.gpr .r3).toNat = t0 ∧ (s'.gpr .r5).toNat = t1 ∧ (s'.gpr .r7).toNat = t2 ∧ (s'.gpr .r10).toNat = t3) ∧
+      t0 + 2 ^ 32 * t1 + 2 ^ 64 * t2 + 2 ^ 96 * t3 = (val D % P + sKey s.mem (State.addr st)) % 2 ^ 128 ∧
+      KeepsF work (offR (State.addr st) [(16, 4)]) s s' := by
   obtain hE : ∀ j < 10, D j < 2 ^ 32 - 2 ^ 19 := fun j hj => by have := hDb j hj; omega_using [this]
   obtain ⟨-, -, -, hvL, hlL⟩ := red_facts D hE
   simp only [List.append_assoc, List.cons_append, List.nil_append]
   refine WP.append (reduce_ok hfit hDb hs0 hw hcD) fun s₁ ⟨hc₁, k₁⟩ => ?_
-  obtain hs₁0 : s₁.gpr .r0 = s₀.gpr .r0 := by rw [k₁.gpr _ (by decide), hs0]
-  obtain hw₁ : stR (s₀.gpr .r0) ∈ s₁.wr := by rw [k₁.wr]; exact hw
-  refine wp_str (a := stB s₀ + BitVec.ofNat 64 16) (by decide) (by rw [hs₁0]; exact ea hfit (off := 16) (by decide))
+  obtain hs₁0 : s₁.gpr .r0 = st := by rw [k₁.gpr _ (by decide), hs0]
+  obtain hw₁ : stR st ∈ s₁.wr := by rw [k₁.wr]; exact hw
+  refine wp_str (a := State.addr st + BitVec.ofNat 64 16) (by decide) (by rw [hs₁0]; exact ea hfit (off := 16) (by decide))
     (outSt hw₁ (off := 16) (n := 4) (by decide)) fun s₂ u₂ => ?_
   refine wp_add (op2_imm (by decide)) fun s₃ u₃ => ?_
-  obtain hr1 : s₃.gpr .r1 = s₀.gpr .r0 + 40 := by rw [u₃.gpr, u₂.gpr, hs₁0]
-  obtain hw₃ : stR (s₀.gpr .r0) ∈ s₃.wr := by rw [u₃.wr, u₂.wr]; exact hw₁
-  obtain hsA : ∀ i < 4, State.addr (s₃.gpr .r1 + BitVec.ofNat 32 (4 * i)) = stB s₀ + BitVec.ofNat 64 (40 + 4 * i) :=
-    fun i hi => by
-      rw [hr1, BitVec.add_assoc, show (40 : BitVec 32) = BitVec.ofNat 32 40 from rfl, ← BitVec.ofNat_add]
-      exact ea hfit (by omega_using [hi])
+  obtain hr1 : s₃.gpr .r1 = st + 40 := by rw [u₃.gpr, u₂.gpr, hs₁0]
+  obtain hw₃ : stR st ∈ s₃.wr := by rw [u₃.wr, u₂.wr]; exact hw₁
+  obtain hsA : ∀ i < 4, State.addr (s₃.gpr .r1 + BitVec.ofNat 32 (4 * i)) =
+      State.addr st + BitVec.ofNat 64 (40 + 4 * i) := fun i hi => by
+    rw [hr1, BitVec.add_assoc, show (40 : BitVec 32) = BitVec.ofNat 32 40 from rfl, ← BitVec.ofNat_add]
+    exact ea hfit (by omega_using [hi])
   refine WP.append (addWords_ok fun i hi => by rw [hsA i hi]; exact inSt hw₃ (by omega_using [hi])) fun s₄ ⟨hc₄, hr₄, k₄⟩ => ?_
   -- The words of `s`.
-  let w : Nat → Nat := fun i => (s₀.mem.readW (stB s₀ + BitVec.ofNat 64 (40 + 4 * i)) 32).toNat
-  obtain m₃ : s₃.mem = s₁.mem.writeW (stB s₀ + BitVec.ofNat 64 16) (s₁.gpr .r1) := by rw [u₃.mem, u₂.mem]
-  obtain hf₀₃ : Frame (fF s₀) s₀.mem s₃.mem := by
-    rw [m₃, k₁.mem]
-    exact Frame.writeW h.frame (List.mem_append_left _ (List.mem_map.mpr ⟨(0, 24), by decide, rfl⟩)) _
-      (contains_sub _ (by decide) (by decide) (by decide))
+  let w : Nat → Nat := fun i => (s.mem.readW (State.addr st + BitVec.ofNat 64 (40 + 4 * i)) 32).toNat
+  obtain m₃ : s₃.mem = s.mem.writeW (State.addr st + BitVec.ofNat 64 16) (s₁.gpr .r1) := by
+    rw [u₃.mem, u₂.mem, k₁.mem]
   obtain hword : ∀ i < 4, (word s₃ i).toNat = w i := fun i hi => by
     simp only [word, w]
-    rw [hsA i hi, hf₀₃.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)]
-    rcases List.mem_append.mp hr with hr | hr
-    · exact (dj_offR _ (d := 24) (n := 32) (by decide) (by decide) (by decide) r hr).sub_left
-        (sub_sub _ (by omega_using [hi]) (by omega_using [hi]) (by decide))
-    · simp only [List.mem_singleton] at hr; subst hr
-      exact hp.st_scr' (by omega_using [hi])
+    rw [hsA i hi, m₃, readW_writeW_off _ _ _ (by omega_using [hi]) (by decide) (by omega_using [hi])]
   obtain hw4 : ∀ i, w i < 2 ^ 32 := fun i => BitVec.isLt _
   obtain hml := fun k => mlimb_lt (hw4 0) (hw4 1) (hw4 2) (hw4 3) k
   -- `addTop false`: the top column.
   simp only [addTop, Bool.false_eq_true, ite_false, List.append_nil, List.cons_append, List.nil_append]
-  obtain hs₄0 : s₄.gpr .r0 = s₀.gpr .r0 := by rw [k₄.gpr _ (by decide), u₃.other _ (by decide), u₂.gpr, hs₁0]
-  obtain hw₄ : stR (s₀.gpr .r0) ∈ s₄.wr := by rw [k₄.wr]; exact hw₃
-  refine wp_ldr (a := stB s₀ + BitVec.ofNat 64 16) (by decide) (by rw [hs₄0]; exact ea hfit (off := 16) (by decide))
+  obtain hs₄0 : s₄.gpr .r0 = st := by rw [k₄.gpr _ (by decide), u₃.other _ (by decide), u₂.gpr, hs₁0]
+  obtain hw₄ : stR st ∈ s₄.wr := by rw [k₄.wr]; exact hw₃
+  refine wp_ldr (a := State.addr st + BitVec.ofNat 64 16) (by decide) (by rw [hs₄0]; exact ea hfit (off := 16) (by decide))
     (inSt hw₄ (off := 16) (n := 4) (by decide)) fun s₅ u₅ => wp_add (op2_lsr (by decide)) fun s₆ u₆ => ?_
   refine wp_movw fun s₇ u₇ => ?_
   obtain hL9 := hlL 9 (by decide)
@@ -583,32 +585,74 @@ theorem tag_ok {s₀ : State} (hp : FPre s₀) {s : State} (h : F4 s₀ s) :
     have := hlL j hj; have := hml j; simp only [sumL]; omega_arith
   refine WP.append (carries_ok 0 9 (by decide) hfb hcols u₇.gpr) fun s₈ ⟨hc₈, k₈⟩ => ?_
   obtain hL : ∀ j < 9, carryN (sumL D w) 0 9 j < 2 ^ 13 := fun j hj => carryN_lt _ 0 9 j (by omega_using [hj]) (by omega_using [hj])
-  refine WP.append (toWords_ok hc₈ hL) fun s₉ ⟨e3, e5, e7, e10, _, k₉⟩ => ?_
-  -- The stores into `out`.
+  refine WP.mono (toWords_ok hc₈ hL) fun s₉ ⟨e3, e5, e7, e10, _, k₉⟩ => ?_
   obtain m₉ : s₉.mem = s₃.mem := by
     rw [k₉.mem, k₈.mem, u₇.mem, u₆.mem, u₅.mem, k₄.mem]
-  obtain g₉ : ∀ r, r ∉ [Reg.r1, .r2, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12] → s₉.gpr r = s.gpr r := by
-    intro r hr
-    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-    obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12⟩ := hr
+  refine ⟨_, _, _, _, ⟨e3, e5, e7, e10⟩, ?_, ⟨fun r hr => ?_, ?_, ?_, ?_, ?_⟩⟩
+  · obtain hv : val (carryN (sumL D w) 0 9) = tw0 (carryN (sumL D w) 0 9) + 2 ^ 32 * tw1 (carryN (sumL D w) 0 9) +
+        2 ^ 64 * tw2 (carryN (sumL D w) 0 9) + 2 ^ 96 * tw3 (carryN (sumL D w) 0 9) +
+        2 ^ 128 * (carryN (sumL D w) 0 9 9 / 2 ^ 11) := by
+      rw [val_toWords hL]; rfl
+    obtain hvs : val (carryN (sumL D w) 0 9) = val (redL D) + (w 0 + 2 ^ 32 * w 1 + 2 ^ 64 * w 2 + 2 ^ 96 * w 3) := by
+      rw [val_carryN _ 0 9 (by decide), ← val_mlimb (hw4 0) (hw4 1) (hw4 2) (hw4 3)]
+      unfold sumL; rw [val_add]
+    rw [hvL] at hvs
+    obtain b0 := (s₉.gpr .r3).isLt; have b1 := (s₉.gpr .r5).isLt; have b2 := (s₉.gpr .r7).isLt
+    obtain b3 := (s₉.gpr .r10).isLt
+    rw [e3] at b0; rw [e5] at b1; rw [e7] at b2; rw [e10] at b3
+    show _ = (val D % P + (w 0 + 2 ^ 32 * w 1 + 2 ^ 64 * w 2 + 2 ^ 96 * w 3)) % 2 ^ 128
+    omega_using [hv, hvs, b0, b1, b2, b3]
+  · have hr' : r ∉ [Reg.r1, .r2, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12] := hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr'
+    obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12⟩ := hr'
     rw [k₉.gpr _ (by simp [h1, h3, h5, h7, h10]), k₈.gpr _ (by simp [cregs, yregs, h1, h3, h4, h5, h6, h7, h8, h9,
       h10, h11]), u₇.other _ h2, u₆.other _ h1, u₅.other _ h1, k₄.gpr _ (by simp [yregs, h2, h12, h3, h4, h5, h6,
       h7, h8, h9, h10, h11]), u₃.other _ h1, u₂.gpr, k₁.gpr _ (by simp [cregs, yregs, h1, h2, h12, h3, h4, h5, h6,
       h7, h8, h9, h10, h11])]
-  obtain hrd₉ : s₉.rd = s₀.rd := by
-    rw [k₉.rd, k₈.rd, u₇.rd, u₆.rd, u₅.rd, k₄.rd, u₃.rd, u₂.rd, k₁.rd, h.rd]
-  obtain hwr₉ : s₉.wr = s₀.wr := by
-    rw [k₉.wr, k₈.wr, u₇.wr, u₆.wr, u₅.wr, k₄.wr, u₃.wr, u₂.wr, k₁.wr, h.wr]
-  obtain hsp₉ : s₉.sp = s₀.sp := by
-    rw [k₉.sp, k₈.sp, u₇.sp, u₆.sp, u₅.sp, k₄.sp, u₃.sp, u₂.sp, k₁.sp, h.sp]
-  obtain F₃ : Frame (offR (stB s₀) wkL ++ [oR s₀, scrR (sc s₀)]) s₀.mem s₃.mem :=
-    hf₀₃.mono fun r hr => by
+  · rw [m₉, m₃]
+    exact Frame.writeOff (Frame.refl _ _) (a := 16) (len := 4) (List.mem_singleton_self _) (Nat.le_refl _)
+      (Nat.le_refl _) (by decide) _ rfl
+  · rw [k₉.rd, k₈.rd, u₇.rd, u₆.rd, u₅.rd, k₄.rd, u₃.rd, u₂.rd, k₁.rd]
+  · rw [k₉.wr, k₈.wr, u₇.wr, u₆.wr, u₅.wr, k₄.wr, u₃.wr, u₂.wr, k₁.wr]
+  · rw [k₉.sp, k₈.sp, u₇.sp, u₆.sp, u₅.sp, k₄.sp, u₃.sp, u₂.sp, k₁.sp]
+
+/-- The tag's words, for either arithmetic: the accumulator reduced fully
+plus `s`, modulo `2¹²⁸`. -/
+theorem tagI_ok {R : Nat → Nat} {v : Nat} {s : State} (hs0 : s.gpr .r0 = st) (hw : stR st ∈ s.wr)
+    (h : AccI umaal (State.addr st) R v s) :
+    WP isa (.block (tagV umaal)) s fun s' => ∃ t0 t1 t2 t3,
+      ((s'.gpr .r3).toNat = t0 ∧ (s'.gpr .r5).toNat = t1 ∧ (s'.gpr .r7).toNat = t2 ∧ (s'.gpr .r10).toNat = t3) ∧
+      t0 + 2 ^ 32 * t1 + 2 ^ 64 * t2 + 2 ^ 96 * t3 = (v % P + sKey s.mem (State.addr st)) % 2 ^ 128 ∧
+      KeepsF work (offR (State.addr st) [(16, 4)]) s s' := by
+  cases umaal
+  · obtain ⟨-, D, hcD, hDb, hDv⟩ := h
+    rw [show tagV false = reduce ++ ([.str .r1 .r0 d9Off, .dp .add .r1 .r0 (.imm 40)] : List Instr) ++ addWords ++
+      addTop false ++ mask :: (List.range 9).flatMap carryStep ++ toWords from rfl, ← hDv]
+    exact tagB_ok hfit hs0 hw hDb hcD
+  · rw [show tagV true = reduceU ++ addKey from rfl]
+    exact WP.mono (tagU_wacc hfit hs0 hw h) fun s' ⟨t0, t1, t2, t3, hT, ht, k⟩ =>
+      ⟨t0, t1, t2, t3, hT, ht, k.keepsF _⟩
+
+end
+
+theorem tag_ok {s₀ : State} (hp : FPre s₀) {s : State} (h : F4 umaal s₀ s) :
+    WP isa (.block (tagV umaal ++
+      ([.ldrSp .r2 0, .str .r3 .r2 0, .str .r5 .r2 4, .str .r7 .r2 8, .str .r10 .r2 12, .ldrSp .r12 4] : List Instr) ++
+      restoreScr)) s fun s' => abiPreserved s₀ s' ∧ Proof.Poly1305.finalizeArm.post s₀ s' := by
+  have hfit := hp.st_fit
+  rw [List.append_assoc]
+  refine WP.append (tagI_ok hfit h.acc.r0 h.acc.wr h.acc.inv) fun s₉ ⟨t0, t1, t2, t3, ⟨e3, e5, e7, e10⟩, hT, k₉⟩ => ?_
+  simp only [List.cons_append, List.nil_append]
+  obtain fc₉ : FC s₀ s₉ := h.toFC.keepsF hp k₉ (by decide) (by decide) (by decide)
+  -- The stores into `out`.
+  obtain F₃ : Frame (offR (stB s₀) wkL ++ [oR s₀, scrR (sc s₀)]) s₀.mem s₉.mem :=
+    fc₉.frame.mono fun r hr => by
       rcases List.mem_append.mp hr with hr | hr
       · exact List.mem_append_left _ hr
       · simp only [List.mem_singleton] at hr; subst hr
         exact List.mem_append_right _ (List.mem_cons_of_mem _ (List.mem_singleton_self _))
-  refine wp_arg hp (i := 0) hsp₉ hrd₉ (by decide) (by rw [m₉]; exact hp.arg F₃ (by decide)) fun t₁ v₁ => ?_
-  obtain hoW : oR s₀ ∈ t₁.wr := hp.oW (by rw [v₁.wr, hwr₉])
+  refine wp_arg hp (i := 0) fc₉.sp fc₉.rd (by decide) (hp.arg F₃ (by decide)) fun t₁ v₁ => ?_
+  obtain hoW : oR s₀ ∈ t₁.wr := hp.oW (by rw [v₁.wr, fc₉.wr])
   refine WP.append (stores_ok .r2 hp.o_fit rfl tagList t₁ v₁.gpr hoW (by decide) (by decide))
     fun t₂ ⟨hs₂, hf₂, hg₂, hrd₂, hwr₂, hsp₂⟩ => ?_
   obtain hfo : Frame [oR s₀] t₁.mem t₂.mem := hf₂.sub fun r hr => by
@@ -617,26 +661,24 @@ theorem tag_ok {s₀ : State} (hp : FPre s₀) {s : State} (h : F4 s₀ s) :
     exact ⟨_, List.mem_singleton_self _, sub_base _ (hb x hx) (by decide)⟩
   obtain F₂ : Frame (offR (stB s₀) wkL ++ [oR s₀, scrR (sc s₀)]) s₀.mem t₂.mem := by
     refine F₃.trans ?_
-    rw [← m₉, ← v₁.mem]
+    rw [← v₁.mem]
     exact hfo.mono fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact List.mem_append_right _ List.mem_cons_self
-  refine wp_arg hp (i := 1) (by rw [hsp₂, v₁.sp, hsp₉]) (by rw [hrd₂, v₁.rd, hrd₉]) (by decide) (hp.arg F₂ (by decide))
+  refine wp_arg hp (i := 1) (by rw [hsp₂, v₁.sp, fc₉.sp]) (by rw [hrd₂, v₁.rd, fc₉.rd]) (by decide) (hp.arg F₂ (by decide))
     fun t₃ v₃ => ?_
   obtain hsv : SavedS (State.addr (sc s₀)) s₀.gpr t₃.mem := by
     intro i hi
     rw [v₃.mem, hfo.readW (Region.contains_self _ _) (by
       simp only [List.mem_singleton, forall_eq]
-      exact hp.o_scr.symm.sub_left (sub_base _ (by omega_using [hi]) (by decide))) (by decide), v₁.mem, m₉, m₃,
-      Mem.readW_writeW_sep (hp.st_scr.symm.sep (contains_off (by omega_using [hi]) (by omega_using [hi]))
-        (contains_off (by decide) (by decide))) (by decide), k₁.mem]
-    exact h.saved i hi
-  refine WP.mono (restoreScr_ok (g := s₀.gpr) hp.sc_fit v₃.gpr (hp.scW (by rw [v₃.wr, hwr₂, v₁.wr, hwr₉])) hsv)
+      exact hp.o_scr.symm.sub_left (sub_base _ (by omega_using [hi]) (by decide))) (by decide), v₁.mem]
+    exact fc₉.saved i hi
+  refine WP.mono (restoreScr_ok (g := s₀.gpr) hp.sc_fit v₃.gpr (hp.scW (by rw [v₃.wr, hwr₂, v₁.wr, fc₉.wr])) hsv)
     fun s' ⟨hr', k'⟩ => ⟨⟨fun r hr => ?_, ?_⟩, ?_⟩
   · rcases preserved_cases r hr with rfl | ⟨i, hi, rfl⟩
-    · rw [k'.gpr _ (by decide), v₃.other _ (by decide), hg₂, v₁.other _ (by decide), g₉ _ (by decide), h.lr]
+    · rw [k'.gpr _ (by decide), v₃.other _ (by decide), hg₂, v₁.other _ (by decide), fc₉.lr]
     · exact hr' i hi
-  · rw [k'.sp, v₃.sp, hsp₂, v₁.sp, hsp₉]
+  · rw [k'.sp, v₃.sp, hsp₂, v₁.sp, fc₉.sp]
   · intro key msg hbuf hcnt
     obtain ⟨msg, b, rfl, hrep, hbl, hbb⟩ := Proof.Poly1305.Buffered.split hbuf
     obtain hkb : (msg ++ b).length % 16 = kb s₀ := by
@@ -661,44 +703,36 @@ theorem tag_ok {s₀ : State} (hp : FPre s₀) {s : State} (h : F4 s₀ s) :
     obtain e12 := wd _ (by decide : (Reg.r10, 12, false) ∈ tagList) 12 rfl rfl
     simp only at e0 e4 e8 e12
     rw [e3] at e0; rw [e5] at e4; rw [e7] at e8; rw [e10] at e12
-    obtain hv : val (carryN (sumL D w) 0 9) = tw0 (carryN (sumL D w) 0 9) + 2 ^ 32 * tw1 (carryN (sumL D w) 0 9) +
-        2 ^ 64 * tw2 (carryN (sumL D w) 0 9) + 2 ^ 96 * tw3 (carryN (sumL D w) 0 9) +
-        2 ^ 128 * (carryN (sumL D w) 0 9 9 / 2 ^ 11) := by
-      rw [val_toWords hL]; rfl
-    obtain hvs : val (carryN (sumL D w) 0 9) = val (redL D) + (w 0 + 2 ^ 32 * w 1 + 2 ^ 64 * w 2 + 2 ^ 96 * w 3) := by
-      rw [val_carryN _ 0 9 (by decide), ← val_mlimb (hw4 0) (hw4 1) (hw4 2) (hw4 3)]
-      unfold sumL; rw [val_add]
     -- The key.
     rw [← hkey, take_bytesAt _ _ (by decide), ← val_rlimb] at hacc
     obtain hlt : leNum (bytesAt s₀.mem (stB s₀) 24) < P := by rw [hacc]; exact Poly1305.accumulate_lt _ _
     obtain hA : accumulate (Rn s₀) msg = A0 s₀ := by rw [A0, val_accD_eq hlt]; exact hacc.symm
     obtain hlt' := Poly1305.absorbAll_lt (r := Rn s₀) (a := A0 s₀) (by rw [← hA]; exact Poly1305.accumulate_lt _ _)
       (Bf s₀)
-    obtain hS : leNum (((bytesAt s₀.mem (stB s₀ + 24) 32).drop 16).take 16) =
-        w 0 + 2 ^ 32 * w 1 + 2 ^ 64 * w 2 + 2 ^ 96 * w 3 := by
+    obtain hkw : ∀ d, 24 ≤ d → d + 4 ≤ 56 →
+        s.mem.readW (stB s₀ + BitVec.ofNat 64 d) 32 = s₀.mem.readW (stB s₀ + BitVec.ofNat 64 d) 32 := fun d h1 h2 =>
+      h.frame.readW (Region.contains_self _ _) (fun r hr => by
+        rcases List.mem_append.mp hr with hr | hr
+        · exact (dj_offR _ (d := 24) (n := 32) (by decide) (by decide) (by decide) r hr).sub_left
+            (sub_sub _ h1 (by omega_using [h2]) (by decide))
+        · simp only [List.mem_singleton] at hr; subst hr
+          exact hp.st_scr' (by omega_using [h2])) (by decide)
+    obtain hS : leNum (((bytesAt s₀.mem (stB s₀ + 24) 32).drop 16).take 16) = sKey s.mem (stB s₀) := by
       rw [(drop_bytesAt s₀.mem (stB s₀ + 24) 16 16 : (bytesAt s₀.mem (stB s₀ + 24) 32).drop 16 = _),
         take_bytesAt _ _ (Nat.le_refl _), leNum_bytesAt_16, show (24 : Addr) = BitVec.ofNat 64 24 from rfl, off_add, off_add,
         off_add, off_add, off_add]
+      simp only [sKey]
+      rw [hkw 40 (by decide) (by decide), hkw 44 (by decide) (by decide), hkw 48 (by decide) (by decide),
+        hkw 52 (by decide) (by decide)]
     simp only [Spec.Poly1305.mac]
     rw [← hkey, take_bytesAt _ _ (by decide), ← val_rlimb, Poly1305.accumulate_append hlen, hA, hS,
       Poly1305.bytesAt_leBytes, ← Poly1305.leNum_bytesAt_read, leNum_bytesAt_16]
-    rw [e0, e4, e8, e12]
-    obtain key : tw0 (carryN (sumL D w) 0 9) + 2 ^ 32 * tw1 (carryN (sumL D w) 0 9) +
-        2 ^ 64 * tw2 (carryN (sumL D w) 0 9) + 2 ^ 96 * tw3 (carryN (sumL D w) 0 9) =
-        (Poly1305.absorbAll (Rn s₀) (A0 s₀) (Bf s₀) + (w 0 + 2 ^ 32 * w 1 + 2 ^ 64 * w 2 + 2 ^ 96 * w 3)) %
-          256 ^ 16 := by
-      rw [hvL, hDv, Nat.mod_eq_of_lt hlt'] at hvs
-      rw [show (256 : Nat) ^ 16 = 2 ^ 128 from rfl]
-      obtain b0 := (s₉.gpr .r3).isLt; have b1 := (s₉.gpr .r5).isLt; have b2 := (s₉.gpr .r7).isLt
-      obtain b3 := (s₉.gpr .r10).isLt
-      rw [e3] at b0; rw [e5] at b1; rw [e7] at b2; rw [e10] at b3
-      omega_using [hv, hvs, b0, b1, b2, b3]
-    rw [key, Poly1305.leBytes_mod]
+    rw [e0, e4, e8, e12, hT, Nat.mod_eq_of_lt hlt', show (2 : Nat) ^ 128 = 256 ^ 16 from rfl, Poly1305.leBytes_mod]
 
 /-! ## The whole function -/
 
 theorem finalize_correct {s₀ : State} (hp : FPre s₀) :
-    WP isa finalize s₀ fun s' => abiPreserved s₀ s' ∧ Proof.Poly1305.finalizeArm.post s₀ s' := by
+    WP isa (finalize umaal) s₀ fun s' => abiPreserved s₀ s' ∧ Proof.Poly1305.finalizeArm.post s₀ s' := by
   refine WP.seq (WP.mono (prologue_ok hp) fun s₁ h₁ => ?_)
   refine WP.seq (WP.mono (pad_ok hp h₁) fun s₂ h₂ => ?_)
   refine WP.seq (WP.mono (mid_ok hp h₂) fun s₃ h₃ => ?_)
@@ -773,16 +807,19 @@ def finalizeSat : State where
   wr := [⟨0x1000, 128⟩, ⟨0x2000, 16⟩, ⟨0x3000, 128⟩]
 
 theorem finalize_ok (s : State) (hs : Proof.Poly1305.finalizeArm.pre s) :
-    ∃ t s', Exec isa finalize s t s' ∧ abiPreserved s s' ∧ Proof.Poly1305.finalizeArm.post s s' :=
+    ∃ t s', Exec isa (finalize umaal) s t s' ∧ abiPreserved s s' ∧ Proof.Poly1305.finalizeArm.post s s' :=
   finalize_correct (FPre.of s hs)
 
 theorem finalize_ct : ConstantTime isa Proof.Poly1305.finalizeArm.pre Proof.Poly1305.finalizeArm.pub
-    finalize := by
-  exact VG.Taint.constantTime (A := taint) τf (fun _ _ h₁ h₂ hp => agreef h₁ h₂ hp) (by
+    (finalize umaal) := by
+  cases umaal
+  · exact VG.Taint.constantTime (A := taint) τf (fun _ _ h₁ h₂ hp => agreef h₁ h₂ hp) (by
+      taint_decide)
+  · exact VG.Taint.constantTime (A := taintU) τf (fun _ _ h₁ h₂ hp => agreef h₁ h₂ hp) (by
       taint_decide)
 
 theorem finalize_verified :
-    Verified Arm.target Impl.Poly1305.Arm.finalize (Proof.Poly1305.finalizeScratchContract Arm.abi) :=
+    Verified Arm.target (Impl.Poly1305.Arm.finalize umaal) (Proof.Poly1305.finalizeScratchContract Arm.abi) :=
   Verified.of_correct finalize_ok finalize_ct (by
     sig_implies [Proof.Poly1305.finalizeScratchContract, Proof.Poly1305.finalizeScratchSig, Spec.Poly1305.finalizePost,
       Proof.Poly1305.finalizeArm, Proof.Poly1305.countArm, Arm.abi, Arm.argRegs, Arm.reduceClassify,

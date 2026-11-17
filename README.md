@@ -541,7 +541,7 @@ yours to keep:
 
 <td>✅ NEON</td>
 
-<td>✅</td>
+<td>✅ umaal</td>
 
 <td>✅</td>
 
@@ -1533,7 +1533,7 @@ yours to keep:
 
 <td>✅ SVE2, NEON</td>
 
-<td>✅</td>
+<td>✅ umaal</td>
 
 <td>✅ SSSE3</td>
 

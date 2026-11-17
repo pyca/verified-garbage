@@ -724,10 +724,6 @@ arm vg_cast5_ofb
 arm vg_cast5_ofb_final
 arm vg_chacha20_apply
 arm vg_chacha20_init
-arm vg_chacha20_poly1305_open
-arm vg_chacha20_poly1305_open_to
-arm vg_chacha20_poly1305_seal
-arm vg_chacha20_poly1305_seal_gather
 arm vg_chacha20_set_nonce
 arm vg_cmac_aes_absorb
 arm vg_cmac_aes_finish
@@ -948,9 +944,7 @@ arm vg_pbkdf2_hmac_sha384
 arm vg_pbkdf2_hmac_sha512
 arm vg_pbkdf2_hmac_sha512_224
 arm vg_pbkdf2_hmac_sha512_256
-arm vg_poly1305_finalize
 arm vg_poly1305_init
-arm vg_poly1305_update
 arm vg_rc2_cbc_decrypt_chained
 arm vg_rc2_cbc_encrypt_chained
 arm vg_rc2_cbc_init
