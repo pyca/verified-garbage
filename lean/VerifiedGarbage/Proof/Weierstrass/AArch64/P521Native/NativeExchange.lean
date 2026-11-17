@@ -1436,7 +1436,8 @@ open VG.Proof.Ecdh.AArch64 VG.Proof.Ed25519.AArch64
 open VG.Impl.Weierstrass.AArch64.P521Native (config body exchange outerBlock000 outerBlock172)
 
 private theorem epost_keep {c : Cfg} {s t v : State} (h : EPost c s t)
-    (mem : v.mem=t.mem) (reg : v.gpr .x0=t.gpr .x0) : EPost c s v := by
+    (mem : Spec.Ecdsa.bytesAt v.mem (s.gpr .x0) c.C.len=Spec.Ecdsa.bytesAt t.mem (s.gpr .x0) c.C.len)
+    (reg : v.gpr .x0=t.gpr .x0) : EPost c s v := by
   unfold EPost at h ⊢
   rw [mem,reg]
   exact h
@@ -1453,18 +1454,20 @@ private theorem epost_keep {c : Cfg} {s t v : State} (h : EPost c s t)
   refine WP.mono (native_prologue_ok s) fun u hu => ?_
   subst u
   apply WP.seq
-  apply WP.allocKept (by decide) stack.room
-  refine WP.mono (native_body_api_ok hc law ha order entry) fun t ⟨saved,api,rd,wr,sp,g27,g28,v31⟩ => ?_
+  apply WP.alloc (by decide) stack.room
+  refine WP.mono (native_body_api_ok hc law ha order entry) fun t ⟨saved,api,rd,wr,sp,g27,g28,v31⟩ mm uu f => ?_
   apply WP.seq
-  refine WP.mono (native_epilogue_ok (freed 3456 t)) fun v hv => ?_
+  refine WP.mono (native_epilogue_ok { freed 3456 t with mem := mm, unknowns := uu }) fun v hv => ?_
   obtain ⟨g26,keep,_⟩ := hv
   apply WP.block_nil
   have reg r (hr : r≠Reg.x26) : v.gpr r=t.gpr r := keep.gpr r (by simpa using hr)
   refine ⟨?_,?_,?_,?_,?_⟩
   · change EPost config s v
     change EPost config s t at api
-    obtain mem : v.mem=t.mem := by simpa only [freed] using keep.mem
-    exact epost_keep api mem (reg .x0 (by decide))
+    obtain mem : v.mem=mm := keep.mem
+    refine epost_keep api ?_ (reg .x0 (by decide))
+    rw [mem]
+    exact List.map_congr_left fun i hi => lost_byte f stack.table_out.symm (List.mem_range.mp hi)
   · intro r hr
     by_cases eq26 : r=Reg.x26
     · subst r
