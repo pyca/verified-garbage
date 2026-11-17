@@ -288,7 +288,7 @@ theorem codeG_correct (s : State) (h : DPre pc s) (X : pc = true → PreX s) :
   show WP isa (codeG pc) s fun t => abiPreserved s t ∧ fnPost s t
   have hk := h.k2
   unfold codeG
-  refine WP.allocLeKept ⟨by decide, by decide, by decide⟩ (by have := h.sp1; unfold stackBytes at this; omega_using [this]) ?_
+  refine WP.allocLe ⟨by decide, by decide, by decide⟩ (by have := h.sp1; unfold stackBytes at this; omega_using [this]) ?_
   unfold body
   refine WP.seq (WP.mono (setup_ok h) fun t₁ A => ?_)
   refine WP.seq (call_ok h X A fun t₂ A₂ => ?_)
@@ -300,13 +300,17 @@ theorem codeG_correct (s : State) (h : DPre pc s) (X : pc = true → PreX s) :
   refine WP.seq (WP.mono (maskPart_ok h h₇) fun t₈ h₈ => ?_)
   refine WP.seq (WP.mono (alPart_ok h h₈) fun t₉ h₉ => ?_)
   refine WP.seq (WP.mono (scanPart_ok h h₉) fun t₁₀ h₁₀ => ?_)
-  refine WP.mono (selPart_ok h h₁₀ (zx_lt _)) fun u hu => ⟨hu.abi, ?_⟩
+  refine WP.mono (selPart_ok h h₁₀ (zx_lt _)) fun u hu m _ fl => ⟨⟨hu.abi.1, hu.abi.2.1, hu.abi.2.2⟩, ?_⟩
+  have fl' : Frame [frR s] u.mem m := fl
   have hAM : (amOf s (Spec.RsaPkcs1Enc.kdk (s.gpr .a4).toNat (dBytes s) (cOf s))).length = (s.gpr .a4).toNat := by
     show (Spec.RsaPkcs1Enc.irprf _ _ _).length = _
     rw [← h₇.am]; exact Proof.Rsa.bytesAt_length' _ _ _
-  simp only [freed]
-  refine result_ok h rfl ?_ hu.a0 hu.out hu.ml hAM
-  exact A₂.out
+  refine result_ok h rfl A₂.out hu.a0 (fun i hi => ?_) ?_ hAM
+  · exact (lost_byte fl' (R := ⟨s.gpr .a0, (s.gpr .a4).toNat⟩)
+      (by rw [← h.h1]; exact (h.ko.sub_left (frR_sub s)).symm) hi).trans (hu.out i hi)
+  · exact (fl'.readW (r := mlR s) (by simp only [Region.Contains]; rw [BitVec.sub_self]; decide)
+      (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact (h.km.sub_left (frR_sub s)).symm)
+      (by decide)).trans hu.ml
 
 theorem code_correct (s : State) (hpre : (Spec.RsaPkcs1Enc.decryptContract RISCV64.abi stackBytes).pre s) :
     ∃ tr t, Exec isa code s tr t ∧ abiPreserved s t ∧ fnPost s t :=
