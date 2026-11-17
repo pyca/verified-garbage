@@ -307,6 +307,19 @@ structure Slots (W : Addr) (R : Nat) (N A D : Addr) (al n : Nat) (m : Mem) : Pro
   data : m.readW (W + BitVec.ofNat 64 232) 64 = D
   len : m.readW (W + BitVec.ofNat 64 240) 64 = BitVec.ofNat 64 n
 
+/-- The slots, after code that writes only parts of `W` apart from them, the
+stack below `SP` and a buffer apart from `W`. -/
+theorem Slots.of_frame {W : Addr} {R : Nat} {N A D : Addr} {al n : Nat} {m m' : Mem}
+    {rs : List Region} (S : Slots W R N A D al n m) (hf : Frame rs m m')
+    (hd : ∀ r ∈ rs, (⟨W + BitVec.ofNat 64 200, 48⟩ : Region).Disjoint r) : Slots W R N A D al n m' := by
+  have k (d : Nat) (hd' : 200 ≤ d ∧ d + 8 ≤ 248) :
+      m'.readW (W + BitVec.ofNat 64 d) 64 = m.readW (W + BitVec.ofNat 64 d) 64 :=
+    hf.readW (Region.contains_self _ _)
+      (fun r hr => (hd r hr).sub_left (Offset.sub W (by omega_arith) (by omega_arith))) (by decide)
+  exact ⟨by rw [k 200 (by decide)]; exact S.rounds, by rw [k 208 (by decide)]; exact S.nonce,
+    by rw [k 216 (by decide)]; exact S.aad, by rw [k 224 (by decide)]; exact S.alen,
+    by rw [k 232 (by decide)]; exact S.data, by rw [k 240 (by decide)]; exact S.len⟩
+
 /-- The parts of `W` the pieces write: the blocks at `[0, 144)`, `ok` at
 `[192, 200)` and `[248, 744)`. -/
 abbrev wA (W : Addr) : Region := ⟨W, 144⟩

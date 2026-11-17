@@ -299,10 +299,13 @@ def back : List Instr :=
 /-- The groups' blocks, counted in `r9`. -/
 def groups : List Instr := [.mov .r9 (.mem (at_ .r15 lenO)), .shift .shr .r9 8, .shift .shl .r9 4]
 
-/-- `hash`'s arguments. -/
-def hashArgs : List Instr :=
-  putYH ++ ptr .rcx .r15 yO ++ ptr .r8 .r15 hO ++ ptr .r11 .r15 pO ++
+/-- `hash`'s arguments, but `Y` and `H`. -/
+def hashPtrs : List Instr :=
+  ptr .rcx .r15 yO ++ ptr .r8 .r15 hO ++ ptr .r11 .r15 pO ++
   ([.mov .rdx (.mem (at_ .r15 dataO))] : List Instr) ++ groups
+
+/-- `hash`'s arguments. -/
+def hashArgs : List Instr := putYH ++ hashPtrs
 
 /-- The data's length compared with 256. -/
 def lenCmp : List Instr := [.mov .rax (.mem (at_ .r15 lenO)), .alu .cmp .rax (imm 256)]
@@ -311,15 +314,20 @@ def lenCmp : List Instr := [.mov .rax (.mem (at_ .r15 lenO)), .alu .cmp .rax (im
 def polyvalL (L : Loops) : Prog isa :=
   .seq (.block (hkey ++ ([.mov .r12 (.mem (at_ .r15 aadO)), .mov .rbp (.mem (at_ .r15 alenO))] : List Instr)))
     (.seq (absorb false)
-      (.seq (.block ([.mov .r12 (.mem (at_ .r15 dataO)), .mov .rbp (.mem (at_ .r15 lenO))] ++ lenCmp))
-        (.seq (.ite .b (.block []) (.seq (.block hashArgs) (.seq L.hash (.block back))))
-          (.seq (absorb true) (.block lens)))))
+      (.seq (.block [.mov .r12 (.mem (at_ .r15 dataO)), .mov .rbp (.mem (at_ .r15 lenO))])
+        (.seq (.block lenCmp)
+          (.seq (.ite .b (.block []) (.seq (.block hashArgs) (.seq L.hash (.block back))))
+            (.seq (absorb true) (.block lens))))))
 
-/-- `ctr`'s and `dec`'s arguments: the counter block, from the tag at `W`,
-at `W + 96`. -/
-def ctrArgs : List Instr :=
-  ctrInit ++ ([.movdquStore (at_ .r15 cmO) .xmm9] : List Instr) ++ ptr .rdx .r15 cmO ++ ptr .rcx .r15 yO ++
+/-- The counter block, from `xmm9`, at `W + 96`, and the loops' pointers
+and count. -/
+def ctrPtrs : List Instr :=
+  ([.movdquStore (at_ .r15 cmO) .xmm9] : List Instr) ++ ptr .rdx .r15 cmO ++ ptr .rcx .r15 yO ++
   ptr .r8 .r15 hO ++ ptr .r11 .r15 pO ++ groups
+
+/-- `ctr`'s and `dec`'s arguments, but `Y` and `H`: the counter block, from
+the tag at `W`, at `W + 96`. -/
+def ctrArgs : List Instr := ctrInit ++ ctrPtrs
 
 /-- Counter mode's registers again after a loop, the counter block from
 where the loop left it, and the rest of the data, as `ctrInit` leaves them. -/
