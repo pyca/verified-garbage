@@ -17,6 +17,8 @@ import VerifiedGarbage.Proof.AesGcmSiv.X86_64.FnCT
 meta import VerifiedGarbage.Proof.Framework.X86_64.Narrow
 meta import VerifiedGarbage.Proof.AesGcmSiv.X86_64.FnCT
 meta import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Reg.CT
+public import VerifiedGarbage.Impl.AesGcmSiv.X86_64StitchAvx
+meta import VerifiedGarbage.Impl.AesGcmSiv.X86_64StitchAvx
 meta import VerifiedGarbage.Proof.AesGcmSiv.X86_64.CryptCT
 meta import VerifiedGarbage.Proof.Cmac.Frame
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
@@ -566,5 +568,13 @@ theorem openL_rel (F : MulFacts) {lp : Loops} (hlp : Stitch.LoopsOk lp) (hct : L
     ((rel_taintC [] Ar.data.w hn (fun t₁ t₂ h => ⟨h.2.1.bufs.one, h.2.2.bufs.one, fun _ h => nomatch h⟩)
       lenCmp_check).wp fun t₁ t₂ h => ⟨lenCmp_st h.2.1, lenCmp_st h.2.2⟩)
     (openIte_rel Ar.data.w hn F hlp hct Ar.lay Ar.rounds) fun _ _ h => ⟨h.2.1, h.2.2⟩
+
+/-! ## The loops, checked -/
+
+theorem vaesLoops_ct : LoopsCT Impl.AesGcmSiv.X86_64Stitch.vaesLoops :=
+  ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+
+theorem avxLoops_ct : LoopsCT Impl.AesGcmSiv.X86_64StitchAvx.loops :=
+  ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
 
 end VG.Proof.AesGcmSivReg.X86_64
