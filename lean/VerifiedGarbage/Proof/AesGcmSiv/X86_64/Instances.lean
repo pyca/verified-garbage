@@ -31,6 +31,9 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubChunks
 import VerifiedGarbage.Proof.AesSiv.Scratch
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Frame
+import VerifiedGarbage.Proof.Framework.X86_64.Leaves
+import VerifiedGarbage.Proof.Framework.X86_64.ScrubPart
 
 /-! ### `AesGcmSiv.X86_64.Verified`, which only this module used -/
 
@@ -1124,7 +1127,8 @@ theorem tag_args {n : State} (q : (Proof.AesGcmSiv.sealScratchContract X86_64.ab
   exact hd
 
 /-- A run of code in a frame of `withStackArgScratch` is its run from
-`narrowS`, which leaves the memory the frame's run does. -/
+`narrowS`, which leaves the memory the frame's run does, with the frame's
+bytes lost. -/
 theorem inner_run {sig : Sig} {nm : String} {e : Elem} {n : Nat}
     {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)} {post : sig.Post abi.ptrBits} {wa : Bool}
     {stack bytes : Nat} {leak : Option (Curry (sig.words abi.ptrBits) (Mem → List Nat))} {c : Prog isa}
@@ -1140,7 +1144,8 @@ theorem inner_run {sig : Sig} {nm : String} {e : Elem} {n : Nat}
     {s s' : State} {t : List Leak} (hs : (sig.contract abi pre post wa (stack + bytes) leak).pre s)
     (ex : Exec isa (withStackArgScratch bytes (X86_64.nStack sig) c) s t s') :
     ∃ t₃ s₃, (Sig.scratchContract abi sig nm e n pre post wa stack leak).pre (narrowS sig e n bytes s) ∧
-      Exec isa c (narrowS sig e n bytes s) t₃ s₃ ∧ s'.mem = s₃.mem := by
+      Exec isa c (narrowS sig e n bytes s) t₃ s₃ ∧
+        s'.mem = lose s₃.mem (s.gpr .rsp - BitVec.ofNat 64 bytes) bytes s₃.unknowns := by
   have hp := narrowS_pre (nm := nm) hk hb.1 hb.2.1 hpre hs
   obtain ⟨t₃, s₃, he, ha, -⟩ := h.1 _ hp
   obtain ⟨hex, -, hm, -⟩ := withStackArgScratch_runMem hk hb hst (SpSafe.of_all hsp) hd hs he ha
@@ -1179,12 +1184,13 @@ theorem seal_resOk {θ : Nat} {c : Prog isa}
         (s.gpr .r9) (s.gpr .r8).toNat (Proof.AesGcmSivReg.arg s 0).toNat s.gpr s'.mem) :
     ResOk (withStackArgScratch 776 2 c) (Proof.AesGcmSiv.sealRoundsContract X86_64.abi 784) 784 sivKs
       [8, 776] := by
-  intro s₁ s₂ t₁ t₂ u₁ u₂ hp₁ hp₂ hpub hout _ e₁ e₂ x hx hnc
+  intro s₁ s₂ t₁ t₂ u₁ u₂ hp₁ hp₂ hpub hout hu hsy e₁ e₂ x hx hnc
   have hk : 6 ≤ (Spec.GcmSiv.sealSig.words abi.ptrBits).length := by decide
   have run : ∀ {s u : State} {t : List Leak}, (Proof.AesGcmSiv.sealRoundsContract X86_64.abi 784).pre s →
       Exec isa (withStackArgScratch 776 2 c) s t u →
       (Proof.AesGcmSiv.sealScratchContract X86_64.abi 93 8).pre (narrowS Spec.GcmSiv.sealSig .u64 93 776 s) ∧
-      ∃ b : State, u.mem = b.mem ∧
+      ∃ b : State, u.mem = lose b.mem (s.gpr .rsp - BitVec.ofNat 64 776) 776 b.unknowns ∧
+        b.unknowns = innerU c (narrowS Spec.GcmSiv.sealSig .u64 93 776 s) ∧
         Frame (⟨Proof.AesGcmSivReg.arg (narrowS Spec.GcmSiv.sealSig .u64 93 776 s) 1, 16⟩ ::
           fineR θ (Proof.AesGcmSivReg.arg (narrowS Spec.GcmSiv.sealSig .u64 93 776 s) 2)
             ((narrowS Spec.GcmSiv.sealSig .u64 93 776 s).gpr .r9)
@@ -1201,9 +1207,16 @@ theorem seal_resOk {θ : Nat} {c : Prog isa}
       (fun vs m₁ m₂ hl hb _ => Proof.AesGcmSiv.sealPre_local _ vs m₁ m₂ hl hb) hs ex
     obtain ⟨_, b', j, -, -, fr, z, kp⟩ := hw (Proof.AesGcmSivReg.X86_64.seal_impl.pre _ q)
     obtain ⟨-, rfl⟩ := i.det j
-    exact ⟨q, b, m, fr, z, kp⟩
-  obtain ⟨q₁, b₁, m₁, fr₁, z₁, kp₁⟩ := run hp₁ e₁
-  obtain ⟨q₂, b₂, m₂, fr₂, z₂, kp₂⟩ := run hp₂ e₂
+    exact ⟨q, b, m, (innerU_eq i).symm, fr, z, kp⟩
+  obtain ⟨q₁, b₁, m₁, iu₁, fr₁, z₁, kp₁⟩ := run hp₁ e₁
+  obtain ⟨q₂, b₂, m₂, iu₂, fr₂, z₂, kp₂⟩ := run hp₂ e₂
+  have hU : b₁.unknowns = b₂.unknowns := by
+    rw [iu₁, iu₂]
+    exact innerU_agree hv q₁ q₂ (narrowS_pub (nm := "work") (e := .u64) (n := 93) (stack := 8) (bytes := 776) hk
+      (by decide) (by decide) hp₁ hp₂ hpub)
+      (by rw [StackLock.narrowS_unknowns (e := .u64) (n := 93) (bytes := 776) hk (by decide) (by decide) hp₁,
+        StackLock.narrowS_unknowns (e := .u64) (n := 93) (bytes := 776) hk (by decide) (by decide) hp₂]; exact hu)
+      (fun n hn => by rw [narrowS_syms, narrowS_syms]; exact hsy n (List.mem_append_right _ hn))
   generalize hn₁ : narrowS Spec.GcmSiv.sealSig .u64 93 776 s₁ = n₁ at q₁ fr₁ z₁ kp₁
   generalize hn₂ : narrowS Spec.GcmSiv.sealSig .u64 93 776 s₂ = n₂ at q₂ fr₂ z₂ kp₂
   have P₁ : Proof.AesGcmSivReg.sealPre n₁ := Proof.AesGcmSivReg.X86_64.seal_impl.pre _ q₁
@@ -1233,7 +1246,8 @@ theorem seal_resOk {θ : Nat} {c : Prog isa}
     have l₃ : X86_64.nStack Spec.GcmSiv.sealSig = 2 := by decide
     have h := congrArg (fun l => l.getD 8 0) ha₁
     simpa [allArgs, argRegs, l₁, l₂, l₃, List.range, List.range.loop] using h
-  rw [m₁, m₂]
+  rw [m₁, m₂, ← hout.2.2.1 .rsp (by decide), ← hU]
+  refine lose_congr _ _ _ ?_
   rcases unwiped hx hnc with ⟨o, ho, hc⟩ | ⟨d, hd, hc⟩ | hc | ⟨hca, k, hk3, hc⟩
   rotate_left
   · rw [← hW] at hc
@@ -1309,12 +1323,13 @@ theorem open_resOk {θ : Nat} {c : Prog isa}
         (s.gpr .r9) (s.gpr .r8).toNat (Proof.AesGcmSivReg.arg s 0).toNat s.gpr s'.mem) :
     ResOk (withStackArgScratch 776 2 c) (Proof.AesGcmSiv.openRoundsContract X86_64.abi 784) 784 sivKs
       [8, 776] := by
-  intro s₁ s₂ t₁ t₂ u₁ u₂ hp₁ hp₂ hpub hout _ e₁ e₂ x hx hnc
+  intro s₁ s₂ t₁ t₂ u₁ u₂ hp₁ hp₂ hpub hout hu hsy e₁ e₂ x hx hnc
   have hk : 6 ≤ (Spec.GcmSiv.openSig.words abi.ptrBits).length := by decide
   have run : ∀ {s u : State} {t : List Leak}, (Proof.AesGcmSiv.openRoundsContract X86_64.abi 784).pre s →
       Exec isa (withStackArgScratch 776 2 c) s t u →
       (Proof.AesGcmSiv.openScratchContract X86_64.abi 93 8).pre (narrowS Spec.GcmSiv.openSig .u64 93 776 s) ∧
-      ∃ b : State, u.mem = b.mem ∧
+      ∃ b : State, u.mem = lose b.mem (s.gpr .rsp - BitVec.ofNat 64 776) 776 b.unknowns ∧
+        b.unknowns = innerU c (narrowS Spec.GcmSiv.openSig .u64 93 776 s) ∧
         Frame (
           fineR θ (Proof.AesGcmSivReg.arg (narrowS Spec.GcmSiv.openSig .u64 93 776 s) 2)
             ((narrowS Spec.GcmSiv.openSig .u64 93 776 s).gpr .r9)
@@ -1332,9 +1347,18 @@ theorem open_resOk {θ : Nat} {c : Prog isa}
       (fun vs m₁ m₂ hl hb _ => Proof.AesGcmSiv.openPre_local _ vs m₁ m₂ hl hb) hs ex
     obtain ⟨_, b', j, -, -, fr, z, kp⟩ := hw (Proof.AesGcmSivReg.X86_64.open_impl.pre _ q)
     obtain ⟨-, rfl⟩ := i.det j
-    exact ⟨q, b, m, fr, z, kp⟩
-  obtain ⟨q₁, b₁, m₁, fr₁, z₁, kp₁⟩ := run hp₁ e₁
-  obtain ⟨q₂, b₂, m₂, fr₂, z₂, kp₂⟩ := run hp₂ e₂
+    exact ⟨q, b, m, (innerU_eq i).symm, fr, z, kp⟩
+  obtain ⟨q₁, b₁, m₁, iu₁, fr₁, z₁, kp₁⟩ := run hp₁ e₁
+  obtain ⟨q₂, b₂, m₂, iu₂, fr₂, z₂, kp₂⟩ := run hp₂ e₂
+  have hU : b₁.unknowns = b₂.unknowns := by
+    rw [iu₁, iu₂]
+    exact innerU_agree (Proof.AesGcmSiv.Verified.of_openScratch hv) q₁ q₂
+      (narrowS_pub (nm := "work") (e := .u64) (n := 93) (stack := 8) (bytes := 776) hk (by decide) (by decide)
+        hp₁ hp₂ hpub (Sig.LeakLocal.toL (sig := Spec.GcmSiv.openSig)
+          (leak := some (Spec.GcmSiv.openLeak X86_64.abi.ptrBits)) (Proof.AesGcmSiv.openLeak_local _)))
+      (by rw [StackLock.narrowS_unknowns (e := .u64) (n := 93) (bytes := 776) hk (by decide) (by decide) hp₁,
+        StackLock.narrowS_unknowns (e := .u64) (n := 93) (bytes := 776) hk (by decide) (by decide) hp₂]; exact hu)
+      (fun n hn => by rw [narrowS_syms, narrowS_syms]; exact hsy n (List.mem_append_right _ hn))
   generalize hn₁ : narrowS Spec.GcmSiv.openSig .u64 93 776 s₁ = n₁ at q₁ fr₁ z₁ kp₁
   generalize hn₂ : narrowS Spec.GcmSiv.openSig .u64 93 776 s₂ = n₂ at q₂ fr₂ z₂ kp₂
   have P₁ : Proof.AesGcmSivReg.openPre n₁ := Proof.AesGcmSivReg.X86_64.open_impl.pre _ q₁
@@ -1365,7 +1389,8 @@ theorem open_resOk {θ : Nat} {c : Prog isa}
     have l₃ : X86_64.nStack Spec.GcmSiv.openSig = 2 := by decide
     have h := congrArg (fun l => l.getD 8 0) ha₁
     simpa [allArgs, argRegs, l₁, l₂, l₃, List.range, List.range.loop] using h
-  rw [m₁, m₂]
+  rw [m₁, m₂, ← hout.2.2.1 .rsp (by decide), ← hU]
+  refine lose_congr _ _ _ ?_
   rcases unwiped hx hnc with ⟨o, ho, hc⟩ | ⟨d, hd, hc⟩ | hc | ⟨hca, k, hk3, hc⟩
   rotate_left
   · rw [← hW] at hc
