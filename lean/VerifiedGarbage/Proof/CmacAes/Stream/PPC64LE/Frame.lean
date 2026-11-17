@@ -50,28 +50,31 @@ theorem finishFrameSat_pre : ∃ s, (Spec.Cmac.aesFinishContract PPC64LE.abi 233
 theorem init_framed :
     Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratch 2336 .r6 init)
       (Spec.Cmac.aesInitContract PPC64LE.abi 2336) :=
-  PPC64LE.Verified.stackScratchKept (sig := Spec.Cmac.aesInitSig) (nm := "scratch") (e := .u64)
+  PPC64LE.Verified.stackScratch (sig := Spec.Cmac.aesInitSig) (nm := "scratch") (e := .u64)
     (n := 288) (pre := Spec.Cmac.aesInitPre PPC64LE.abi.ptrBits)
     (post := Spec.Cmac.aesInitPost PPC64LE.abi.ptrBits) (wa := false) (stack := 0)
     (bytes := 2336) init_verified (by decide) (by decide) (initPre_local _) (initPost_local _)
+    (fun vs m m₁ m₂ r hl _ hb h => initPostOut_local _ vs m m₁ m₂ r hl hb h)
     initFrameSat_pre
 
 theorem absorb_framed :
     Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratch 2336 .r8 absorb)
       (Spec.Cmac.aesAbsorbContract PPC64LE.abi 2336) :=
-  PPC64LE.Verified.stackScratchKept (sig := Spec.Cmac.aesAbsorbSig) (nm := "scratch") (e := .u64)
+  PPC64LE.Verified.stackScratch (sig := Spec.Cmac.aesAbsorbSig) (nm := "scratch") (e := .u64)
     (n := 288) (pre := Spec.Cmac.aesAbsorbPre PPC64LE.abi.ptrBits)
     (post := Spec.Cmac.aesAbsorbPost PPC64LE.abi.ptrBits) (wa := false) (stack := 0)
     (bytes := 2336) absorb_verified (by decide) (by decide) (absorbPre_local _) (absorbPost_local _)
+    (fun vs m m₁ m₂ r hl _ hb h => absorbPostOut_local _ vs m m₁ m₂ r hl hb h)
     absorbFrameSat_pre
 
 theorem finish_framed :
     Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratch 2336 .r7 finish)
       (Spec.Cmac.aesFinishContract PPC64LE.abi 2336) :=
-  PPC64LE.Verified.stackScratchKept (sig := Spec.Cmac.aesFinishSig) (nm := "scratch") (e := .u64)
+  PPC64LE.Verified.stackScratch (sig := Spec.Cmac.aesFinishSig) (nm := "scratch") (e := .u64)
     (n := 288) (pre := Spec.Cmac.aesFinishPre PPC64LE.abi.ptrBits)
     (post := Spec.Cmac.aesFinishPost PPC64LE.abi.ptrBits) (wa := false) (stack := 0)
     (bytes := 2336) finish_verified (by decide) (by decide) (finishPre_local _) (finishPost_local _)
+    (fun vs m m₁ m₂ r hl _ hb h => finishPostOut_local _ vs m m₁ m₂ r hl hb h)
     finishFrameSat_pre
 
 end VG.Proof.CmacAes.Stream.PPC64LE
