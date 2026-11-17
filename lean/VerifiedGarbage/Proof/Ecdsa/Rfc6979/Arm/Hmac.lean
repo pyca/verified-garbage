@@ -257,6 +257,9 @@ theorem initA (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) (h0 : u.gpr .r0 = L.
       nk := by rw [fp_toNat hL (by omega_arith)]; anums
       nsc := by rw [scr_toNat hL (by decide)]; anums }
 
+theorem reprOK : Proof.Pbkdf2.Whole.Arm.ReprOK P.ok.hH.SH := fun m m' p q msg hb =>
+  P.ok.hH.repr m m' p q msg (fun i hi => hb i (by rw [P.ok.hH.hS]; exact hi))
+
 /-- HMAC's states for the key `K`, by the table's `init`. -/
 theorem init_step (hL : L.Ok) (hT : TabL P L) {t : State} (hc : Ctx L g m₀ t) :
     WP isa (cfgOf P).initK t (St P L g m₀ t []) := by
@@ -266,7 +269,7 @@ theorem init_step (hL : L.Ok) (hT : TabL P L) {t : State} (hc : Ctx L g m₀ t) 
     (by rw [show 4 * 0 = 0 from rfl, ← hT.1]; exact hcu.tabMem.1) hok.i
     fun u₁ c₁ m₁ y₁ k₁ => ?_
   apply WP.of_syms
-  refine hi_frame P.ok.hi P.ok.hiSt (initA hL c₁ (by rw [k₁ _ (by decide)]; exact h0)
+  refine hi_frame reprOK (by anums) P.ok.hi P.ok.hiSt (initA hL c₁ (by rw [k₁ _ (by decide)]; exact h0)
     (by rw [k₁ _ (by decide)]; exact h1) (by rw [k₁ _ (by decide)]; exact h2)
     (by rw [k₁ _ (by decide)]; exact h3) (by rw [k₁ _ (by decide)]; exact h12)) fun u' ha hi ho sy => ?_
   obtain ek : Spec.Sha256.bytesAt u₁.mem (State.addr (L.fp + BitVec.ofNat 32 0)) P.F.H.D = keyOf P L t.mem := by
@@ -552,9 +555,6 @@ theorem finA (hL : L.Ok) {w : State} (hcw : Ctx L g m₀ w) {dst : Nat} (hdst : 
       nu := by rw [scr_toNat hL (by decide)]; anums
       no := by rw [fp_toNat hL (by omega_arith)]; anums
       nsc := by rw [scr_toNat hL (by decide)]; anums }
-
-theorem reprOK : Proof.Pbkdf2.Whole.Arm.ReprOK P.ok.hH.SH := fun m m' p q msg hb =>
-  P.ok.hH.repr m m' p q msg (fun i hi => hb i (by rw [P.ok.hH.hS]; exact hi))
 
 /-- `HMAC(K₀, text)` to the frame at `dst`, for a text of `D + len` bytes. -/
 theorem fin_step (hL : L.Ok) (hT : TabL P L) {t u : State} {text : List Byte} {len dst : Nat}

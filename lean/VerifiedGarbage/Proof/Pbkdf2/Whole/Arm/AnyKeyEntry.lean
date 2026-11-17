@@ -810,9 +810,10 @@ theorem call_ok {s : State} (h : Keyed hF s₀ s) (h0 : s.gpr .r0 = inn s₀) (h
     WP isa (.frame (.push [.r12, .lr]) (.call F.hiN F.hiC) (.pop .r12 8)) s fun t => KR F s₀ t ∧
       hF.hH.SH.Repr t.mem (State.addr (inn s₀)) (xorPad (K0 hF s₀) ipad) ∧
       hF.hH.SH.Repr t.mem (State.addr (out s₀)) (xorPad (K0 hF s₀) opad) := by
-  have hl := layout (F := F); have he := end_le hz; have := hz.S; have := hz.D; have := hz.W
+  have hl := layout (F := F); have he := end_le hz; have hz_S := hz.S; have := hz.D; have := hz.W
   have := hF.hWi; have hS := hF.hH.hS
-  refine hi_frame hF.hi hF.hiSt (call_args hp hz hF h h0 h1 h12) fun s' a r0 r1 => ⟨?_, ?_, ?_⟩
+  refine hi_frame (FnsOK.reprOK hF) (by rw [hS]; omega_using [hz_S]) hF.hi hF.hiSt (call_args hp hz hF h h0 h1 h12)
+    fun s' a r0 r1 => ⟨?_, ?_, ?_⟩
   · refine h.kr.call hp hz a fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl

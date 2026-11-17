@@ -3,6 +3,7 @@ module
 import VerifiedGarbage.Proof.MlDsa.Arm.Sign.CopyTr
 import VerifiedGarbage.Proof.MlDsa.Arm.Sign.SignCT
 import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Framework.Arm.Lost
 import VerifiedGarbage.Proof.Framework.Arm.Frame
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
 import VerifiedGarbage.Proof.Framework.Arm.Inline
@@ -630,13 +631,14 @@ theorem entry_correct {body : Prog isa} {bytes count : Nat} {B : Mem → Addr �
     (hbody : ∀ u, Lay callStack (input bytes) (output bytes count) u → WP isa body u fun t =>
       PostB callStack u t (W u) ∧ CS u t ∧
       bytesAt t.mem (pa t (.r8, 0)) bytes = bytesAt u.mem (pa u (.r4, 0)) bytes ∧ B t.mem (pa t (.r8, 0)))
+    (hBl : ∀ m m' a, bytesAt m' a (bytes + 1024 * count) = bytesAt m a (bytes + 1024 * count) → B m a → B m' a)
     {σ : State} (h : EntryPre bytes count σ) :
     WP isa (entry body) σ fun s' => abiPreserved σ s' ∧
       bytesAt s'.mem (State.addr (σ.gpr .r1)) bytes = bytesAt σ.mem (State.addr (σ.gpr .r0)) bytes ∧
       B s'.mem (State.addr (σ.gpr .r1)) := by
   have h16 := h16 h
   unfold entry
-  refine WP.frame (rs := saved) (r := .r4) (by decide) (by simp only [List.length_cons, List.length_nil]; omega_using [h16])
+  refine WP.frameLost (rs := saved) (r := .r4) (by decide) (by simp only [List.length_cons, List.length_nil]; omega_using [h16])
     (by decide) ?_
   refine WP.seq (WP.mono (movs_ok _) fun u ⟨g4, g8, g7, g, gm, grd, gwr, gsp⟩ => ?_)
   have u4 : u.gpr .r4 = σ.gpr .r0 := by rw [g4, pushed_gpr]
@@ -677,6 +679,22 @@ theorem entry_correct {body : Prog isa} {bytes count : Nat} {B : Mem → Addr �
   subst e₂
   refine WP.mono (ldrSp_ok .lr (off := 4 * 3) (by decide) _ (inF _ 3 (by decide) tsp twr)) fun t₃ e₃ => ?_
   subst e₃
+  intro mL uL hfl
+  -- The prepared key is apart from the released frame.
+  rw [FrameStack.addr_sub' (by simp only [List.length_cons, List.length_nil]; omega_using [h16])] at hfl
+  have hdo : ∀ R ∈ [Argon2.Arm.stkR σ.sp (4 * saved.length)],
+      Region.Disjoint ⟨State.addr (σ.gpr .r1), bytes + 1024 * count⟩ R := fun R hR => by
+    simp only [List.mem_singleton] at hR; subst hR
+    have := (buf_disj h u4 u8 u7) (.r8, bytes + 1024 * count) (by simp)
+    rw [u8] at this
+    exact (this.sub_left (frame_sub h)).symm
+  have hLo : bytesAt mL (State.addr (σ.gpr .r1)) (bytes + 1024 * count) =
+      bytesAt t.mem (State.addr (σ.gpr .r1)) (bytes + 1024 * count) :=
+    VG.Proof.MlKem.bytesAt_frame hfl hdo (by omega_using [ho])
+  have hLb : bytesAt mL (State.addr (σ.gpr .r1)) bytes = bytesAt t.mem (State.addr (σ.gpr .r1)) bytes :=
+    VG.Proof.MlKem.bytesAt_frame hfl (fun R hR => (hdo R hR).sub_left (Region.sub_prefix (by omega_using [])))
+      (by omega_using [hb])
+  dsimp only
   have w0 := word 0 (by decide)
   have w1 := word 1 (by decide)
   have w2 := word 2 (by decide)
@@ -687,7 +705,7 @@ theorem entry_correct {body : Prog isa} {bytes count : Nat} {B : Mem → Addr �
   rw [w1, w2, w3]
   have e8 : t.gpr .r8 = σ.gpr .r1 := (hP.bs .r8 (by decide)).trans u8
   refine ⟨⟨fun r hr => ?_, ?_⟩, ?_, ?_⟩
-  all_goals simp only [popped, RegUpd.sp_setReg, RegUpd.mem_setReg]
+  all_goals try simp only [popped, RegUpd.sp_setReg, RegUpd.mem_setReg]
   · simp only [RegUpd.gpr_setReg]
     by_cases e4 : r = .r4
     · subst e4; simp only [↓reduceIte]; rw [tsp, w0]
@@ -706,8 +724,8 @@ theorem entry_correct {body : Prog isa} {bytes count : Nat} {B : Mem → Addr �
         (by simp only [List.length_cons, List.length_nil]; omega_using [h16])) (fun R hR => by
           simp only [List.mem_singleton] at hR; subst hR; exact (h.si.sub_left (frame_sub h)).symm) (by omega_using [hb])
     simp only [pa, BitVec.add_zero, e8, u4] at henc
-    rw [henc, ek]
-  · simp only [pa, BitVec.add_zero, e8] at hB; exact hB
+    rw [hLb, henc, ek]
+  · simp only [pa, BitVec.add_zero, e8] at hB; exact hBl _ _ _ hLo hB
 
 end VG.Proof.MlDsa.Arm.PreparedKey
 

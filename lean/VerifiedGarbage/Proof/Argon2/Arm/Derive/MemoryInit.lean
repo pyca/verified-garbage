@@ -227,7 +227,7 @@ theorem hcall_ok {s : State} (h : Inv s₀ s) (hdx : s.gpr .r12 = scrP s₀)
   unfold Impl.Argon2.Arm.Derive.hPrimeCall
   refine frameCall_ok (rs := hregs) (t := .r12) (by decide) (by decide) (by decide) (k := HPrime.hPrimeArm)
     HPrime.hPrime_verified.1 (K := 40) (by rw [hPrime_stack]; decide) (by rw [sp]; omega_arith) pre cv cw
-    fun t af post => ?_
+    fun t mL uL hfl af post => ?_
   simp only [HPrime.hPrimeArm, State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem,
     State.callEntry_gpr _ (show Reg.r0 ∉ linkRegs by decide), State.callEntry_gpr _ (show Reg.r1 ∉ linkRegs by decide),
     State.callEntry_gpr _ (show Reg.r2 ∉ linkRegs by decide), State.callEntry_gpr _ (show Reg.r3 ∉ linkRegs by decide),
@@ -240,8 +240,18 @@ theorem hcall_ok {s : State} (h : Inv s₀ s) (hdx : s.gpr .r12 = scrP s₀)
       exact I_call.sub_right (by rw [sp]; exact stkR_sub (by decide) (by omega_arith)))
     (Nat.le_of_lt (Nat.lt_trans (s.gpr .r1).isLt (by decide)))
   rw [bk] at post
-  have f₁ : Frame [⟨State.addr (s.gpr .r2), (s.gpr .r3).toNat⟩, scrR s₀, callR s₀] s.mem
-      (popped .r12 (4 * hregs.length) t).mem :=
+  have O_call : Region.Disjoint ⟨State.addr (s.gpr .r2), (s.gpr .r3).toNat⟩ (callR s₀) := by
+    refine (call_disj hp (R := RO) ?_).symm.sub_left sO
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hRO ⊢
+    rcases hRO with rfl | rfl <;> simp
+  have bo : bytesAt mL (State.addr (s.gpr .r2)) (s.gpr .r3).toNat =
+      bytesAt t.mem (State.addr (s.gpr .r2)) (s.gpr .r3).toNat :=
+    bytes_keep hfl
+    (fun q hq => by
+      simp only [List.mem_singleton] at hq; subst hq
+      exact O_call.sub_right (by rw [sp]; exact stkR_sub (by decide) (by omega_arith)))
+    (Nat.le_of_lt (Nat.lt_trans (s.gpr .r3).isLt (by decide)))
+  have f₁ : Frame [⟨State.addr (s.gpr .r2), (s.gpr .r3).toNat⟩, scrR s₀, callR s₀] s.mem mL :=
     af.frame.sub fun q hq => by
       simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hq
       rcases hq with rfl | rfl | rfl
@@ -249,7 +259,7 @@ theorem hcall_ok {s : State} (h : Inv s₀ s) (hdx : s.gpr .r12 = scrP s₀)
       · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, fun _ h => h⟩
       · exact ⟨callR s₀, by simp, by rw [sp]; exact fun _ h => h⟩
   refine k _ (h.step af.sp (af.cs .r11 (by decide) (by decide)) af.rd af.wr (f₁.sub fun q hq => ?_))
-    (fun q hq hl => af.cs q hq hl) f₁ (by simpa [popped_mem] using post)
+    (fun q hq hl => af.cs q hq hl) f₁ (by rw [bo]; simpa using post)
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
   rcases hq with rfl | rfl | rfl
   · refine ⟨RO, ?_, sO⟩
