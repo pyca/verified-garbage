@@ -8,6 +8,8 @@ import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 import VerifiedGarbage.Proof.Framework.X86_64.Frame
 import VerifiedGarbage.Proof.Framework.X86_64.Reduce
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
+import VerifiedGarbage.Proof.Framework.X86_64.ScrubPart
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
@@ -281,5 +283,85 @@ theorem forward_leaves {sig : Sig} {bytes stack : Nat} {name : String}
   intro x hx
   rw [hmem, innerU_eq he₃]
   exact lose_loseL _ _ _ (hl _ _ _ (hP _ hn) he₃ x hx)
+
+/-- Outside the released bytes, `loseL` is what the code leaves. -/
+theorem loseL_out {B : Addr} {n : Nat} {U : Nat → BitVec 64} {L : Addr → Option (BitVec 8)} {x : Addr}
+    (h : ¬ (x - B).toNat < n) : loseL B n U L x = L x := by
+  unfold loseL; dsimp only; exact Scrub.ite_f fun h' => h h'.1
+
+/-- A byte the release replaces is replaced whatever the code leaves. -/
+theorem loseL_cases (B : Addr) (n : Nat) (U : Nat → BitVec 64) (x : Addr) :
+    (∀ L, loseL B n U L x = L x) ∨ ∃ w, ∀ L, loseL B n U L x = some w := by
+  unfold loseL; dsimp only
+  by_cases h : (x - B).toNat < n ∧ (U (2 * ((x - B).toNat / 8))).extractLsb' (8 * ((x - B).toNat % 8)) 8 ≠ 0
+  · exact .inr ⟨_, fun _ => Scrub.ite_t h⟩
+  · exact .inl fun _ => Scrub.ite_f h
+
+section
+variable {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)} {post : sig.Post abi.ptrBits}
+  {wa : Bool} {stack bytes : Nat} {leak : Option (Curry (sig.words abi.ptrBits) (Mem → List Nat))}
+
+theorem narrowS_syms (sig : Sig) (e : Elem) (n bytes : Nat) (s : State) :
+    (narrowS sig e n bytes s).syms = s.syms := by
+  unfold narrowS setArgsState
+  cases h : execBlock isa (setArgs bytes (nStack sig)) (allocState bytes s) with
+  | none => rfl
+  | some p => exact (execBlock_syms (s' := p.1) (t := p.2) h).trans rfl
+
+theorem narrowF_syms {s : State} (hs : (sig.contract abi pre post wa (stack + bytes + 8) leak).pre s)
+    (hk : 6 ≤ (sig.words abi.ptrBits).length) (hb : 8 * nStack sig ≤ bytes) (hb1 : bytes < 4096) :
+    (narrowF sig bytes s).syms = s.syms :=
+  (execBlock_syms (fwdState_run hs hk hb hb1).1).trans rfl
+
+theorem narrowF_unknowns {s : State} (hs : (sig.contract abi pre post wa (stack + bytes + 8) leak).pre s)
+    (hk : 6 ≤ (sig.words abi.ptrBits).length) (hb : 8 * nStack sig ≤ bytes) (hb1 : bytes < 4096) :
+    (narrowF sig bytes s).unknowns = fun n => s.unknowns (n + 1) := by
+  show (fun n => (fwdState sig bytes s).unknowns (n + 1)) = _
+  rw [(fwdState_run hs hk hb hb1).2.2.2.2.1]
+
+/-- Code in a frame of `withStackArgScratch` ends its runs from two states
+of the frame's entry that the contract relates with the same unknowns, and
+the same addresses of the functions it calls indirectly, with the same
+unknowns: `innerU` of `framed_leaves` and `framedW_leaves` is a function of
+what two runs agree on. -/
+theorem framed_innerU_agree {nm : String} {e : Elem} {n : Nat} {c : Prog isa}
+    (hv : Verified X86_64.target c (Sig.scratchContract abi sig nm e n pre post wa stack leak))
+    (hk : 6 ≤ (sig.words abi.ptrBits).length) (hb : 16 + 8 * nStack sig + n * e.size ≤ bytes) (hb1 : bytes < 4096)
+    (hpre : ∀ vs m₁ m₂, vs.length = (sig.words abi.ptrBits).length →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) pre vs m₁ → Curry.apply (sig.words abi.ptrBits) pre vs m₂)
+    {s₁ s₂ : State} (h₁ : (sig.contract abi pre post wa (stack + bytes) leak).pre s₁)
+    (h₂ : (sig.contract abi pre post wa (stack + bytes) leak).pre s₂)
+    (hp : (sig.contract abi pre post wa (stack + bytes) leak).pub s₁ s₂) (hu : s₁.unknowns = s₂.unknowns)
+    (hsy : ∀ x ∈ UpperLock.inames c, s₁.syms x = s₂.syms x)
+    (hleak : Sig.LeakLocalL abi.ptrBits sig leak := by trivial) :
+    innerU c (narrowS sig e n bytes s₁) = innerU c (narrowS sig e n bytes s₂) :=
+  innerU_agree hv (narrowS_pre (nm := nm) hk hb hb1 (fun vs m₁ m₂ hl hb _ => hpre vs m₁ m₂ hl hb) h₁)
+    (narrowS_pre (nm := nm) hk hb hb1 (fun vs m₁ m₂ hl hb _ => hpre vs m₁ m₂ hl hb) h₂)
+    (narrowS_pub hk hb hb1 h₁ h₂ hp hleak)
+    (by rw [StackLock.narrowS_unknowns hk hb hb1 h₁, StackLock.narrowS_unknowns hk hb hb1 h₂, hu])
+    (by simp only [narrowS_syms]; exact hsy)
+
+/-- `framed_innerU_agree` for `forward`. -/
+theorem forward_innerU_agree {c : Prog isa}
+    (hv : Verified X86_64.target c (sig.contract abi pre post wa stack leak))
+    (hk : 6 ≤ (sig.words abi.ptrBits).length) (hm : 0 < nStack sig) (hb : 8 * nStack sig ≤ bytes)
+    (hb1 : bytes < 4096)
+    (hpre : ∀ vs m₁ m₂, vs.length = (sig.words abi.ptrBits).length →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      (∀ r ∈ Sig.lists abi.ptrBits m₁ sig.params vs, ∀ a, r.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) pre vs m₁ → Curry.apply (sig.words abi.ptrBits) pre vs m₂)
+    {s₁ s₂ : State} (h₁ : (sig.contract abi pre post wa (stack + bytes + 8) leak).pre s₁)
+    (h₂ : (sig.contract abi pre post wa (stack + bytes + 8) leak).pre s₂)
+    (hp : (sig.contract abi pre post wa (stack + bytes + 8) leak).pub s₁ s₂) (hu : s₁.unknowns = s₂.unknowns)
+    (hsy : ∀ x ∈ UpperLock.inames c, s₁.syms x = s₂.syms x)
+    (hleak : Sig.LeakLocalL abi.ptrBits sig leak := by trivial) :
+    innerU c (narrowF sig bytes s₁) = innerU c (narrowF sig bytes s₂) :=
+  innerU_agree hv (narrowF_pre hk hm hb hb1 hpre h₁) (narrowF_pre hk hm hb hb1 hpre h₂)
+    (narrowF_pub hk hb hb1 h₁ h₂ hp hleak)
+    (by rw [narrowF_unknowns h₁ hk hb hb1, narrowF_unknowns h₂ hk hb hb1, hu])
+    (by rw [narrowF_syms h₁ hk hb hb1, narrowF_syms h₂ hk hb hb1]; exact hsy)
+
+end
 
 end VG.X86_64
