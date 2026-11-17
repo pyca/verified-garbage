@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.AbiCorrect
 import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchCallLayout
 import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.Inline
 import Mathlib.Algebra.Group.Nat.Defs
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! ### `Ffdh.X86_64.Generation.SearchCandidate`, which this module and modules that import it used -/
 
@@ -51,10 +52,15 @@ theorem search_candidate_run (v : RoundImpl)
     (SpSafe.of_all (candidateCode_sp v)) (candidateCode_depth v) (by decide) hp
     (hr.append_left hw.right) hw) fun t ⟨htr, htw, habi, hf, hpost⟩ => ?_
   have htsp : t.gpr .rsp = u.gpr .rsp := habi.1 .rsp (by decide)
-  refine ⟨?_, htw.trans k.2.2, ?_⟩
+  refine ⟨?_, htw.trans k.2.2, fun m uu fm => ?_⟩
   · exact htsp.trans (k.gpr (by decide))
-  · have hframe := (arguments_frame h hm).trans (call_frame h (by
-      simpa only [hsp, h.rsp] using hf))
+  · have he : s.gpr .rsp = original.gpr .rsp := by cases h.input.2; exact h.rsp
+    have hR : Region.Sub ⟨s.gpr .rsp - BitVec.ofNat 64 32, 32⟩ (below (original.gpr .rsp) 160) := by
+      rw [he]; exact Offset.sub_below _ (by decide) (by decide)
+    have hframe := ((arguments_frame h hm).trans (call_frame h (by
+      simpa only [hsp, h.rsp] using hf))).trans (fm.sub fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr
+        exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), hR⟩)
     have hg : ∀ r ∈ calleeSaved, (freed 32 t).gpr r = s.gpr r := by
       intro r hr
       by_cases he : r = .rsp
@@ -63,7 +69,8 @@ theorem search_candidate_run (v : RoundImpl)
         exact BitVec.sub_add_cancel _ _
       · rw [freed_reg _ _ _ he, habi.1 r hr, k.gpr (by cases r <;> simp_all [calleeSaved]),
           allocated_reg _ _ _ he]
-    have hlive := h.restore (show (freed 32 t).rd = s.rd from htr.trans k.2.1)
+    have hlive := h.restore (t := { freed 32 t with mem := m, unknowns := uu })
+      (show (freed 32 t).rd = s.rd from htr.trans k.2.1)
       (show (freed 32 t).wr = s.wr from by change t.wr.tail = s.wr; rw [htw, k.2.2]; rfl) hg hframe
     have hrand := search_call_random h ha hm hsp
     have hlen : p.c.rand.length < 2 ^ 64 := by
@@ -75,7 +82,7 @@ theorem search_candidate_run (v : RoundImpl)
     have hl : (stackArg u 0).toNat = p.c.rand.length - used := by
       rw [ha0, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hlen])]
     have hout : SearchCandidatePost p used t := search_candidate_post h.input ha hrand hl hpost
-    exact ⟨hlive, hout.freed⟩
+    exact ⟨hlive, SearchCandidatePost.lost h.input hout (freed_reg 32 t .rax (by decide)) fm hR⟩
 
 end VG.Proof.Ffdh.X86_64.Generation
 

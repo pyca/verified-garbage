@@ -13,6 +13,7 @@ public import VerifiedGarbage.Proof.Dsa.SignContractWith
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+import VerifiedGarbage.Proof.Framework.X86_64.FrameAlloc
 
 /-! ### `Dsa.X86_64.RandomSignABI`, which this module and modules that import it used -/
 
@@ -150,19 +151,16 @@ theorem random_incoming_read {extra : Nat} {s : State} (h : RandomSignABI extra 
   · exact hj 5 (by decide)
   · exact hj 6 (by decide)
 
+/-- The frame (`alloc_frame_ok`): the postcondition holds whatever the
+frame's bytes hold once released, and whatever the unknowns. -/
 theorem random_frame_ok {extra : Nat} {s : State} (h : RandomSignABI extra s)
     {body : Prog isa} {Q : State → Prop}
     (hb : WP isa body (allocState Random.frameBytes s) fun t =>
-      t.gpr .rsp = randomBase s ∧ t.wr = (allocState Random.frameBytes s).wr ∧ Q (randomFreed t)) :
+      t.gpr .rsp = randomBase s ∧ t.wr = (allocState Random.frameBytes s).wr ∧ ∀ m u,
+        Frame [⟨s.gpr .rsp - BitVec.ofNat 64 Random.frameBytes, Random.frameBytes⟩] t.mem m →
+        Q { randomFreed t with mem := m, unknowns := u }) :
     WP isa (.frame (.alloc Random.frameBytes) body (.free Random.frameBytes)) s Q := by
-  obtain ⟨trace, t, he, htsp, htwr, hq⟩ := hb
   have hl := h.stackLower
-  have ha : isa.push (.alloc Random.frameBytes) s = some (allocState Random.frameBytes s) := by
-    simp only [isa, push, allocState]
-    exact ite_eq_left ⟨by decide, by decide, by decide, by unfold Random.frameBytes; omega_using [hl]⟩
-  have hf : isa.pop (.free Random.frameBytes) (allocState Random.frameBytes s) t = some (randomFreed t) := by
-    simp only [isa, pop]
-    exact ite_eq_left ⟨by decide, by decide, by decide, htsp, htwr, rfl⟩
-  exact ⟨_, _, Exec.frame ha he hf, hq⟩
+  exact alloc_frame_ok (by decide) (by unfold Random.frameBytes; omega_using [hl]) hb
 
 end VG.Proof.Dsa.X86_64

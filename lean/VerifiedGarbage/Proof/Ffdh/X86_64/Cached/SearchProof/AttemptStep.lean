@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.PackedBytes
 import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.SearchProof.Live
 import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # The attempt, from the controller's loop state -/
 
@@ -91,9 +92,12 @@ theorem key_attempt_run (v : RoundImpl) {p : KeyPublic} {original s : State} {us
     (by omega_using [hd]) hpre (call_covers_reads h hroom k.2.1 k.2.2) (call_covers_writes h k.2.2) ?_
   intro t hrd hwr hcs hfr ⟨s₂, hm₂, hg₂, hpost⟩ _
   have htsp : t.gpr .rsp = u.gpr .rsp := hcs .rsp (by decide)
-  refine ⟨htsp.trans (k.gpr (by decide)), hwr.trans k.2.2, ?_, ?_⟩
+  have hR : Region.Sub ⟨s.gpr .rsp - BitVec.ofNat 64 56, 56⟩ (below (original.gpr .rsp) stackUse) := by
+    rw [show s.gpr .rsp = original.gpr .rsp by rw [h.rsp, ← h.input.2]; rfl]
+    exact Offset.sub_below _ (by decide) (by decide)
+  refine ⟨htsp.trans (k.gpr (by decide)), hwr.trans k.2.2, fun m uu fm => ⟨?_, ?_⟩⟩
   · -- The loop state, after the frame.
-    apply h.restore (show (freed 56 t).rd = s.rd from hrd.trans k.2.1)
+    apply h.restore (t := { freed 56 t with mem := m, unknowns := uu }) (show (freed 56 t).rd = s.rd from hrd.trans k.2.1)
       (show (freed 56 t).wr = s.wr from by change t.wr.tail = s.wr; rw [hwr, k.2.2]; rfl)
     · intro r hr
       by_cases he : r = .rsp
@@ -104,8 +108,11 @@ theorem key_attempt_run (v : RoundImpl) {p : KeyPublic} {original s : State} {us
         simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide),
           allocated_reg _ _ _ he]
-    · exact attempt_frame h hm hu hd hfr
+    · exact (attempt_frame h hm hu hd hfr).trans (fm.sub fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr
+        exact ⟨_, by simp [KeyInput.callChanges], hR⟩)
   · -- The attempt's status and outputs.
+    refine AttemptPost.lost (t := freed 56 t) h.input ?_ (freed_reg 56 t .rax (by decide)) fm hR
     have hp := hpost
     simp only [attemptContract, cgPost, cgA, cgS, hdom, hrand, h0] at hp
     obtain ⟨hst, hout⟩ := hp
