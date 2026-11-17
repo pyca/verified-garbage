@@ -148,7 +148,7 @@ theorem divides_ok (h : In Ex base bytes len args s) {j : Nat} (hj : j ≤ 27) {
     omega_arith
   obtain Fw : ∀ v : BitVec 32, Frame (frameR base (s.gpr .esp) []) s.mem (s.mem.writeW A v) := fun v =>
     (Frame.refl _ _).writeW (List.mem_singleton_self _) v inBelow
-  refine WP.seq (WP.mono (WP.frameAlloc (bytes := 20) (Q := fun t => t.gpr .esp = s.gpr .esp ∧ t.rd = s.rd ∧
+  refine WP.seq (WP.mono (WP.frameAllocKept (bytes := 20) (Q := fun t => t.gpr .esp = s.gpr .esp ∧ t.rd = s.rd ∧
       t.wr = s.wr ∧ t.mem = s.mem.writeW A (P + BitVec.ofNat 32 (bc len .wide)) ∧
       t.gpr .eax = BitVec.ofNat 32 (decide (sv s.mem base len .wide j % prime = 0)).toNat ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi, .edi] s t) (by decide) (by decide)

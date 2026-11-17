@@ -182,8 +182,11 @@ theorem cryptCall_wp {d : Dir} {s : State} {B : BitVec 32} {R : Nat} {ws : List 
     exact hHC
   have hE := post.1 ws (specDir d) hHC'
   have hK := post.2
-  simp only [arg_withRegions, a0, a1, a2, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hR32, State.withRegions_mem,
-    m₂] at hE hK
+  simp only [arg_withRegions, a0, a1, a2, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hR32, State.withRegions_mem]
+    at hE hK
+  -- The pop loses the arguments' frame, below `esp`, apart from the working space.
+  have fL : Frame ([] ++ [below (s.gpr .esp) 16]) s₂.mem s'.mem := by
+    rw [esp₃] at m₂; exact Frame.below_mono (wr := []) m₂ (by decide) hesp
   rw [show wsWords % 2 ^ 32 = wsWords from rfl] at hK
   have fS : Frame [⟨B.setWidth 64, 4 * slots⟩, below (s.gpr .esp) 16] s.mem s'.mem := by
     rw [← mem₃]
@@ -196,7 +199,8 @@ theorem cryptCall_wp {d : Dir} {s : State} {B : BitVec 32} {R : Nat} {ws : List 
   -- The bytes of the frame, outside the call's.
   have hK' : Proof.Camellia.Prepared.Keeps (B.setWidth 64) wsWords layout.cryptScratch s.mem s'.mem :=
     fun i hi hout => by
-      rw [hK i hi hout]
+      rw [byte_below fL (fun _ h => (List.not_mem_nil h).elim) hst2 (by rw [slots_eq] at hfit'; omega_using [hfit'])
+        (by simp only [wsWords, slots_eq] at hi; omega_using [hi]), hK i hi hout]
       exact byte_below cE' (fun _ h => (List.not_mem_nil h).elim) hst2 (by rw [slots_eq] at hfit'; omega_using [hfit'])
         (by simp only [wsWords, slots_eq] at hi; omega_using [hi])
   refine ⟨by rw [show sb = .edi from rfl, cs .edi (by decide), g₃ _ (by decide) (by decide) (by decide)]; exact hB,
@@ -215,7 +219,13 @@ theorem cryptCall_wp {d : Dir} {s : State} {B : BitVec 32} {R : Nat} {ws : List 
       simp only [Spec.Camellia.blockAt, Vector.getElem_ofFn, VG.Offset.add_add]
       exact byte_below hm (fun _ h => (List.not_mem_nil h).elim) hst hfit'
         (by rw [slots_eq, tailSlot_eq]; omega_using [hj, hi])
-  rw [← VG.Offset.add_add, hb, hblk _ cE']
+  have hblk₂ : Spec.Camellia.blockAt s'.mem (B.setWidth 64 + BitVec.ofNat 64 (4 * tailSlot) + BitVec.ofNat 64 (16 * j)) =
+      Spec.Camellia.blockAt s₂.mem (B.setWidth 64 + BitVec.ofNat 64 (4 * tailSlot) + BitVec.ofNat 64 (16 * j)) := by
+    apply Vector.ext; intro i hi
+    simp only [Spec.Camellia.blockAt, Vector.getElem_ofFn, VG.Offset.add_add]
+    exact byte_below fL (fun _ h => (List.not_mem_nil h).elim) hst hfit'
+      (by rw [slots_eq, tailSlot_eq]; omega_using [hj, hi])
+  rw [← VG.Offset.add_add, hblk₂, hb, hblk _ cE']
 
 end VG.Proof.Camellia.X86
 

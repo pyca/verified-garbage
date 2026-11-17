@@ -1603,9 +1603,13 @@ theorem permuteCall_ok {st scr : Reg} (hst : st ≠ .esp) (hscr : scr ≠ .esp) 
     obtain hsE : Frame [below E 12] s.mem (pushed [scr, st] s).callEntry.mem := by
       have := callEntry_frame fit hrs
       rw [hesp] at this; exact this
-    simp only [Proof.Sha3.permuteX86, arg_withRegions, State.withRegions_mem, a0, m₂] at post
+    simp only [Proof.Sha3.permuteX86, arg_withRegions, State.withRegions_mem, a0] at post
     refine hQ s' rd' wr' cs' f' ?_
-    rw [post]
+    -- The pop loses the arguments' frame, below `esp`, apart from the state.
+    obtain fL : Frame [below E 12] s₂.mem s'.mem := by
+      rw [hesp] at m₂; exact Frame.below_mono (wr := []) m₂ (by simp) hE
+    rw [Proof.Sha3.stateAt_congr fun i hi =>
+      fL.bytes (R := reg32 S 200) (by simpa using dS.symm) (by simp) hi, post]
     refine congrArg keccakF (Proof.Sha3.stateAt_congr fun i hi => ?_)
     exact hsE.bytes (R := reg32 S 200) (by simpa using dS.symm) (by simp) hi
 

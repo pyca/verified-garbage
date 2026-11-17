@@ -183,7 +183,7 @@ theorem call_ok {s : State} {base : Addr} {bytes n m inv sc o a b : Nat} {wsLen 
   have hsp := (s.gpr .esp).isLt
   have nwr := scr.nowrap
   unfold callCode
-  refine WP.frameAlloc (by decide) (by decide) (by decide) (by omega_using [low]) hns ?_
+  refine WP.frameAllocKept (by decide) (by decide) (by decide) (by omega_using [low]) hns ?_
   have fEsp : (allocFrame 36 s).gpr .esp = s.gpr .esp - BitVec.ofNat 32 36 := allocFrame_esp _ _
   refine WP.seq (WP.mono hargs fun g ⟨Kg, Fg, Rg⟩ => ?_)
   have gEsp : g.gpr .esp = s.gpr .esp - BitVec.ofNat 32 36 := by rw [Kg.1 _ (by decide), fEsp]

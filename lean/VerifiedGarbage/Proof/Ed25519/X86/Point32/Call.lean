@@ -363,11 +363,20 @@ theorem callOf_ok {ops : List FieldOp} (hd : DestsOk ops) (hsp : NoSp (fnOf ops)
       exact hdis.sub_left (by
         rw [scR_eq]; exact sub_sub hfit (Nat.zero_le _) (by simp only [offset]; omega_using [hk])
           (by simp only [offset]; omega_using [hk])))
+  -- The pop loses the argument's frame, below `esp`, apart from the slots.
+  have fP : Frame [callStk s] s₂.mem s'.mem := hm2.sub fun r hr => by
+    rw [List.mem_singleton.mp hr]; exact ⟨callStk s, List.mem_singleton_self _, below_sub (by decide) hE⟩
+  have fenv₂ : env s'.mem x = env s₂.mem x := funext fun i =>
+    congrArg VG.Proof.X25519.toFe (fe_frame fun k hk => wd_frame fP fun r hr => by
+      rw [List.mem_singleton.mp hr]
+      exact hdis.sub_left (by
+        rw [scR_eq]; exact sub_sub hfit (Nat.zero_le _) (by simp only [offset]; omega_using [hk])
+          (by simp only [offset]; omega_using [hk])))
   refine ⟨⟨hcs .esi (by decide), hcs .edi (by decide), hcs .esp (by decide), hrd, hwr⟩, ?_, ?_⟩
-  · rw [← hm2]
-    exact (fs.mono fun r hr => by
-      rw [List.mem_singleton.mp hr]; simp) |>.trans (hf2.mono fun r hr => List.mem_append_left _ hr)
-  · rw [← hm2, hv, fenv]
+  · exact ((fs.mono fun r hr => by
+      rw [List.mem_singleton.mp hr]; simp) |>.trans (hf2.mono fun r hr => List.mem_append_left _ hr)).trans
+      (fP.mono fun r hr => by rw [List.mem_singleton.mp hr]; simp)
+  · rw [fenv₂, hv, fenv]
 
 theorem addCall_ok {x : BitVec 32} {s : State} (hc : Ctx x s) :
     WP isa addCall s fun t => Keep s t ∧ Frame (addW x ++ [callStk s]) s.mem t.mem ∧

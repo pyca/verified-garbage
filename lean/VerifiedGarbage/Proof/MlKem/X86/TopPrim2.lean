@@ -129,8 +129,9 @@ theorem acc_call {op : Poly → Poly → Poly} {nm : String} {c : Prog isa}
     generalize he : (pushed [.ecx, .eax] s).callEntry = e at post
     sig_post [accSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at post
     subst he
-    simp only [arg_withRegions, a0, a1, m₂] at post
+    simp only [arg_withRegions, a0, a1] at post
     rw [polyAt_congr (ek h0'), polyAt_congr (ek h1')] at post
+    replace post := polyIs_congr (lost_keep hp h (k := 2) (by omega_arith) m₂ h0') post
     exact hQ s₀ s s' hp ha h' e₃ (fr_conv hp (a := 8) (N := 28) (by omega_arith) (by omega_arith)
       (by rw [hst] at fr; exact fr)) post
 
@@ -221,8 +222,9 @@ theorem cbd2_call (ba bo fa fo : Nat)
     generalize he : (pushed [.ecx, .eax] s).callEntry = e at post
     sig_post [cbd2Contract, cbd2Sig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at post
     subst he
-    simp only [arg_withRegions, a0, a1, m₂] at post
+    simp only [arg_withRegions, a0, a1] at post
     rw [bytesAt_congr (ek h0')] at post
+    replace post := polyIs_congr (lost_keep hp h (k := 2) (by omega_arith) m₂ h1') post
     exact hQ s₀ s s' hp ha h' e₃ (fr_conv hp (a := 8) (N := 28) (by omega_arith) (by omega_arith)
       (by rw [cbd2_stack] at fr; exact fr)) post
 
@@ -313,8 +315,9 @@ theorem encode12_call (fa fo oa oo : Nat)
     generalize he : (pushed [.ecx, .eax] s).callEntry = e at post
     sig_post [encode12Contract, encode12Sig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at post
     subst he
-    simp only [arg_withRegions, a0, a1, m₂] at post
+    simp only [arg_withRegions, a0, a1] at post
     rw [polyAt_congr (ek h0')] at post
+    replace post := (bytesAt_congr (lost_keep hp h (k := 2) (by omega_arith) m₂ h1')).trans post
     exact hQ s₀ s s' hp ha h' e₃ (fr_conv hp (a := 8) (N := 28) (by omega_arith) (by omega_arith)
       (by rw [encode12_stack] at fr; exact fr)) post
 
@@ -405,8 +408,9 @@ theorem decode12_call (ba bo fa fo : Nat)
     generalize he : (pushed [.ecx, .eax] s).callEntry = e at post
     sig_post [decode12Contract, decode12Sig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at post
     subst he
-    simp only [arg_withRegions, a0, a1, m₂] at post
+    simp only [arg_withRegions, a0, a1] at post
     rw [bytesAt_congr (ek h0')] at post
+    replace post := polyIs_congr (lost_keep hp h (k := 2) (by omega_arith) m₂ h1') post
     exact hQ s₀ s s' hp ha h' e₃ (fr_conv hp (a := 8) (N := 28) (by omega_arith) (by omega_arith)
       (by rw [decode12_stack] at fr; exact fr)) post
 

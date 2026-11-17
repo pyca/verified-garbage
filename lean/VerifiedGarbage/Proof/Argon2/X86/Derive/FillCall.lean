@@ -254,7 +254,14 @@ theorem ccall_ok {s : State} (h : Inv s₀ s) (hdx : s.gpr .edx = scrP s₀) {o 
   simp only [List.length_cons, List.length_nil, Nat.reduceAdd, Nat.reduceMul, Nat.zero_add] at cf
   rw [compress_stack] at f'
   simp only [List.length_cons, List.length_nil, Nat.reduceAdd, Nat.reduceMul, Nat.zero_add] at f'
-  rw [m₂, blockAt_keep cf (fun q hq => by
+  obtain m₂ : Frame [below (s.gpr .esp) 20] s₂.mem t.mem :=
+    Frame.below_mono (wr := []) m₂ (by simp only [List.length_cons, List.length_nil]; omega_using [])
+      (by rw [esp]; omega_arith)
+  rw [← blockAt_keep m₂ (p := (scrP s₀ + BitVec.ofNat 32 o).setWidth 64) (fun q hq => by
+      simp only [List.mem_singleton] at hq; subst hq
+      rw [show (scrP s₀ + BitVec.ofNat 32 o).setWidth 64 = addr (scrP s₀) o from rfl, addr_eq (by omega_arith)]
+      exact O_call.sub_right cB),
+    blockAt_keep cf (fun q hq => by
       simp only [List.mem_singleton] at hq; subst hq; exact X_call.sub_right cB),
     blockAt_keep cf (fun q hq => by
       simp only [List.mem_singleton] at hq; subst hq; exact Y_call.sub_right cB),

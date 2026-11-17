@@ -679,8 +679,14 @@ theorem block_call {s₀ s : State} (hp : APre e s₀) (h : At s₀ s) (hecx : s
     obtain a1 : arg (pushed [.edx, .ecx] s).callEntry 1 = C32 s₀ 128 := by
       rw [callEntry_arg fit (by decide) (by decide)]; exact hedx
     simp only [Proof.ChaCha20.blockX86, arg_withRegions, State.withRegions_mem, a0, a1,
-      hp.c64 (k := 64) (by lit_omega), hp.c64 (k := 128) (by lit_omega), m₂] at post
-    rw [post, VG.Proof.ChaCha20.X86.Xor.stateAt_frame (h.entry_frame hp hk (by decide)) (by
+      hp.c64 (k := 64) (by lit_omega), hp.c64 (k := 128) (by lit_omega)] at post
+    -- The pop loses the arguments' frame, below `esp`, apart from the buffers.
+    have fL : Frame [stkR s₀] s₂.mem s'.mem := m₂.sub fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨stkR s₀, by simp, by rw [h.esp]; exact below_sub (by lit_omega) hp.sp_lo⟩
+    rw [VG.Proof.ChaCha20.X86.Xor.stateAt_frame fL (by
+      simp only [List.mem_singleton, forall_eq]; exact (hp.stk_sub (by lit_omega)).symm), post,
+      VG.Proof.ChaCha20.X86.Xor.stateAt_frame (h.entry_frame hp hk (by decide)) (by
       simp only [List.mem_singleton, forall_eq]; exact (hp.stk_sub (by lit_omega)).symm)]
 
 /-! ## `vg_poly1305_init` -/
@@ -744,9 +750,15 @@ theorem init_call {s₀ s : State} (hp : APre e s₀) (h : At s₀ s) (hecx : s.
     obtain a1 : arg (pushed [.ecx, .edx] s).callEntry 1 = C32 s₀ 128 := by
       rw [callEntry_arg fit (by decide) (by decide)]; exact hecx
     simp only [Proof.Poly1305.initX86, arg_withRegions, State.withRegions_mem, a0, a1,
-      hp.c64 (k := 448) (by lit_omega), hp.c64 (k := 128) (by lit_omega), m₂] at post
-    rwa [bytesAt_frame (h.entry_frame hp hk (by decide)) (by
+      hp.c64 (k := 448) (by lit_omega), hp.c64 (k := 128) (by lit_omega)] at post
+    -- The pop loses the arguments' frame, below `esp`, apart from the buffers.
+    have fL : Frame [stkR s₀] s₂.mem s'.mem := m₂.sub fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨stkR s₀, by simp, by rw [h.esp]; exact below_sub (by lit_omega) hp.sp_lo⟩
+    rw [bytesAt_frame (h.entry_frame hp hk (by decide)) (by
       simp only [List.mem_singleton, forall_eq]; exact (hp.stk_sub (by lit_omega)).symm) (by lit_omega)] at post
+    exact Repr.frame fL (by
+      simp only [List.mem_singleton, forall_eq]; exact (hp.stk_sub (by lit_omega)).symm) post
 
 /-! ## `vg_poly1305_blocks` -/
 
@@ -836,12 +848,18 @@ theorem blocks_call {s₀ s : State} (hp : APre e s₀) (h : At s₀ s) {rn rp r
       show (s.gpr rn).toNat = n
       rw [hn, toNat_ofNat32 (by lit_omega)]
     simp only [Proof.Poly1305.blocksX86, arg_withRegions, State.withRegions_mem, a0, a1, a2,
-      hp.c64 (k := 448) (by lit_omega), m₂] at post
+      hp.c64 (k := 448) (by lit_omega)] at post
+    -- The pop loses the arguments' frame, below `esp`, apart from the buffers.
+    have fL : Frame [stkR s₀] s₂.mem s'.mem := m₂.sub fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨stkR s₀, by simp, by rw [h.esp]; exact below_sub (by lit_omega) hp.sp_lo⟩
     obtain ef := h.entry_frame hp hk hesp
     have := post key msg (Repr.frame ef (by
       simp only [List.mem_singleton, forall_eq]; exact (hp.stk_sub (by lit_omega)).symm) hr)
-    rwa [bytesAt_frame ef (by simp only [List.mem_singleton, forall_eq]; exact hs.stk.symm)
+    rw [bytesAt_frame ef (by simp only [List.mem_singleton, forall_eq]; exact hs.stk.symm)
       (by lit_omega)] at this
+    exact Repr.frame fL (by
+      simp only [List.mem_singleton, forall_eq]; exact (hp.stk_sub (by lit_omega)).symm) this
 
 /-! ## `vg_chacha20_xor` -/
 
@@ -1030,7 +1048,12 @@ theorem finalize_call {Q : State → Prop}
     · exact ⟨stkR s₀, by simp, below_sub (by lit_omega) hp.sp_lo⟩
   · obtain ⟨a0, a1, a2, a3, -⟩ := fin_args hp h hebx hecx heax hesi (O := O)
     simp only [Proof.Poly1305.finalizeX86, Proof.Poly1305.countX86, arg_withRegions, State.withRegions_mem,
-      a0, a1, a2, a3, hp.c64 (k := 448) (by lit_omega), m₂] at post
+      a0, a1, a2, a3, hp.c64 (k := 448) (by lit_omega)] at post
+    -- The pop loses the arguments' frame, below `esp`, apart from the buffers.
+    have fL : Frame [stkR s₀] s₂.mem s'.mem := m₂.sub fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨stkR s₀, by simp, by rw [h.esp]; exact below_sub (by lit_omega) hp.sp_lo⟩
+    rw [bytesAt_frame fL (by simp only [List.mem_singleton, forall_eq]; exact ho.stk.symm) (by decide)]
     exact post key msg (Proof.Poly1305.Repr.buffered (Repr.frame (h.entry_frame hp hk (by decide)) (by
       simp only [List.mem_singleton, forall_eq]; exact (hp.stk_sub (by lit_omega)).symm) hr))
       (by rw [hr.1]; rfl)

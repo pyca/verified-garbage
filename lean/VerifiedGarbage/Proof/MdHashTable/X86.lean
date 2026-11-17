@@ -160,7 +160,11 @@ theorem dig_frame (ho : Proof.Pbkdf2.Md.X86.OutOk H out) (hsp : NoSp (digest out
       (by simp only [List.mem_singleton]; rintro q rfl; exact h.b_v.symm)
       (by show N ≤ 2 ^ 64; have := h.nv; omega_using [this]) hj
   have hi' : (BitVec.ofNat 64 i).toNat = i := by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := h.no; omega_using [hi, this])]
-  rw [← m₂, post', ← e₁]
+  have fL : Frame [stk s] s₂.mem s'.mem := m₂.sub fun q hq => by
+    simp only [List.mem_singleton] at hq; subst hq
+    exact ⟨_, List.mem_singleton_self _, below_sub (by simp only [List.length_cons, List.length_nil]; omega_using []) h.sp48⟩
+  rw [fL.bytes (R := ⟨o.setWidth 64, N⟩) (by simp only [List.mem_singleton]; rintro q rfl; exact h.b_o.symm)
+    (by show N ≤ 2 ^ 64; have := h.no; omega_using [this]) hi, post', ← e₁]
   simp only [VG.WriteBytes.writeBytes]
   rw [BitVec.add_comm, BitVec.add_sub_cancel, hi', hl, ite_eq_left hi]
 

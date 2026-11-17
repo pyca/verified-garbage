@@ -300,7 +300,7 @@ theorem encrypt_framed :
   X86.Verified.stackScratchL (sig := Spec.Siv.encryptSig) (nm := "work") (e := .u64) (n := 322)
     (pre := Spec.Siv.encryptPre X86.abi.ptrBits) (post := Proof.AesSiv.encryptRoundsPost X86.abi.ptrBits)
     (wa := true) (stack := 60) (bytes := 2612) (encrypt_verified v) (by decide) (encrypt_noEsp v)
-    (encrypt_stackUse v) (Proof.AesSiv.encryptPre_local _) (Proof.AesSiv.encryptPost_local _) encFrameSat_pre
+    (encrypt_stackUse v) (Proof.AesSiv.encryptPre_local _) (Proof.AesSiv.encryptPost_local _) (fun vs m m₁ m₂ r hl _ => Proof.AesSiv.encryptPostOut_local _ vs m m₁ m₂ r hl) encFrameSat_pre
 
 /-- `decrypt` in a frame of 2612 bytes, as `encrypt`. -/
 theorem decrypt_framed :
@@ -310,7 +310,7 @@ theorem decrypt_framed :
     (pre := Spec.Siv.decryptPre X86.abi.ptrBits) (post := Proof.AesSiv.decryptRoundsPost X86.abi.ptrBits)
     (wa := true) (stack := 60) (leak := some (Spec.Siv.decryptLeak X86.abi.ptrBits)) (bytes := 2612)
     (decrypt_verified v) (by decide) (decrypt_noEsp v) (decrypt_stackUse v) (Proof.AesSiv.decryptPre_local _)
-    (Proof.AesSiv.decryptPost_local _) decFrameSat_pre (hleak := Proof.AesSiv.decryptLeak_local _)
+    (Proof.AesSiv.decryptPost_local _) (fun vs m m₁ m₂ r hl _ => Proof.AesSiv.decryptPostOut_local _ vs m m₁ m₂ r hl) decFrameSat_pre (hleak := Proof.AesSiv.decryptLeak_local _)
 
 /-! ## `vg_aes_siv_init` -/
 
@@ -408,7 +408,7 @@ theorem init_framed :
   X86.Verified.stackScratch (sig := Spec.Siv.initSig) (nm := "scratch") (e := .u64) (n := 320)
     (pre := Spec.Siv.initPre X86.abi.ptrBits) (post := Spec.Siv.initPost X86.abi.ptrBits)
     (wa := true) (stack := 52) (bytes := 2580) (init_verified v) (by decide) (init_noEsp v)
-    (init_stackUse v) (Proof.AesSiv.initPre_local _) (Proof.AesSiv.initPost_local _) initFrameSat_pre
+    (init_stackUse v) (Proof.AesSiv.initPre_local _) (Proof.AesSiv.initPost_local _) (fun vs m m₁ m₂ r hl _ => Proof.AesSiv.initPostOut_local _ vs m m₁ m₂ r hl) initFrameSat_pre
 
 /-! ## The stack pointer -/
 

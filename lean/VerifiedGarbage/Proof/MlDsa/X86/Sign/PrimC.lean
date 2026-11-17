@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.MlDsa.Contract
 public import VerifiedGarbage.Proof.MlDsa.X86.Sign.Prims
 public import VerifiedGarbage.Proof.MlKem.X86.TopKeep
 import VerifiedGarbage.Proof.MlDsa.Sign.Mem
+import VerifiedGarbage.Proof.MlDsa.Verify.Mem
 import VerifiedGarbage.Proof.MlKem.X86.TopCall
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Contract
@@ -107,9 +108,10 @@ theorem hb_piece {nm : String} {c : Prog isa} (hv : Verified X86.target c (highB
     generalize he : (pushed (argPush 3) s₁).callEntry = e at a0 a1 a2 post
     sig_post [highBitsContract, bitsSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at post
     subst he
-    simp only [arg_withRegions, a0, a1, a2, m₂, gl] at post
+    simp only [arg_withRegions, a0, a1, a2, gl] at post
     rw [polyAt_congr (ent_bytes hp h (n := 3) (by decide) hR), m] at post
-    exact hQ s₀ s s' hp ha h' (fr80 (by decide) (by have := ok.stk; omega_arith) hp (m ▸ fr)) post
+    exact hQ s₀ s s' hp ha h' (fr80 (by decide) (by have := ok.stk; omega_arith) hp (m ▸ fr))
+      ((natPolyAt_congr (lost_bytes hp (n := 3) (by decide) m₂ hO')).trans post)
 
 /-- `out ← LowBits(r)`, in `R_q`. -/
 theorem lb_piece {nm : String} {c : Prog isa} (hv : Verified X86.target c (lowBitsContract X86.abi 16))
@@ -182,9 +184,10 @@ theorem lb_piece {nm : String} {c : Prog isa} (hv : Verified X86.target c (lowBi
     generalize he : (pushed (argPush 3) s₁).callEntry = e at a0 a1 a2 post
     sig_post [lowBitsContract, bitsSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at post
     subst he
-    simp only [arg_withRegions, a0, a1, a2, m₂, gl] at post
+    simp only [arg_withRegions, a0, a1, a2, gl] at post
     rw [polyAt_congr (ent_bytes hp h (n := 3) (by decide) hR), m] at post
-    exact hQ s₀ s s' hp ha h' (fr80 (by decide) (by have := ok.stk; omega_arith) hp (m ▸ fr)) post
+    exact hQ s₀ s s' hp ha h' (fr80 (by decide) (by have := ok.stk; omega_arith) hp (m ▸ fr))
+      (polyIs_congr (lost_bytes hp (n := 3) (by decide) m₂ hO') post)
 
 /-- `eax ← ‖f‖∞ < bound`. -/
 theorem norm_piece {nm : String} {c : Prog isa} (hv : Verified X86.target c (normLtContract X86.abi 16))
@@ -328,9 +331,10 @@ theorem hint_piece {nm : String} {c : Prog isa} (hv : Verified X86.target c (mak
     generalize he : (pushed (argPush 4) s₁).callEntry = e at a0 a1 a2 a3 post
     sig_post [makeHintContract, makeHintSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at post
     subst he
-    simp only [arg_withRegions, a0, a1, a2, a3, m₂, sw32, g₂, gl] at post
+    simp only [arg_withRegions, a0, a1, a2, a3, sw32, g₂, gl] at post
     rw [polyAt_congr (ent_bytes hp h (n := 4) (by decide) hZ), polyAt_congr (ent_bytes hp h (n := 4) (by decide) hR),
       m] at post
-    exact hQ s₀ s s' hp ha h' (fr80 (by decide) (by have := ok.stk; omega_arith) hp (m ▸ fr)) post.1 post.2
+    exact hQ s₀ s s' hp ha h' (fr80 (by decide) (by have := ok.stk; omega_arith) hp (m ▸ fr))
+      (VG.Proof.MlDsa.Verify.hintIs_congr (lost_bytes hp (n := 4) (by decide) m₂ hH') post.1) post.2
 
 end VG.Proof.MlDsa.X86.Sign

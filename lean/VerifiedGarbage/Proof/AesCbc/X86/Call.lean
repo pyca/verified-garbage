@@ -186,11 +186,18 @@ theorem blk_call {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {
     fun hd hk hn => Proof.Cmac.bytesAt_frame fE (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact (hd.sub_right (Region.sub_prefix hk)).symm) (by omega_using [hk, hn])
+  -- The pop loses the arguments' frame, below `esp`, apart from the buffers.
+  have lost : ∀ {p : BitVec 32} {n k : Nat}, (below (s.gpr .esp) 24).Disjoint ⟨p.setWidth 64, n⟩ → k ≤ n →
+      n ≤ 240 → bytesAt s'.mem (p.setWidth 64) k = bytesAt s₂.mem (p.setWidth 64) k :=
+    fun hd hk hn => Proof.Cmac.bytesAt_frame m₂ (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact ((hd.sub_left (below_sub (by decide) h.esp)).sub_right (Region.sub_prefix hk)).symm)
+      (by omega_using [hk, hn])
   simp only [Proof.Aes.blocksX86, arg_withRegions, State.withRegions_mem, a0, a1, a2, a3, hR,
-    show (1 : BitVec 32).toNat = 1 from rfl, m₂] at post
+    show (1 : BitVec 32).toNat = 1 from rfl] at post
   refine ⟨rd', wr', cs', ?_, ?_⟩
   · exact f'.mono fun r hr => by simp only [List.cons_append, List.nil_append] at hr; simpa using hr
-  · rw [bytesAt_of_statesAt post, keep h.bw hR' (Nat.le_refl _), ← ofFn_bytesAt,
+  · rw [lost h.bd (Nat.le_refl _) (by decide), bytesAt_of_statesAt post, keep h.bw hR' (Nat.le_refl _), ← ofFn_bytesAt,
       keep h.bd (Nat.le_refl _) (by decide), ofFn_bytesAt]
 
 /-- The block functions' contract, with the bytes of the working space at
@@ -231,13 +238,20 @@ theorem blk_call_tail {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.Sta
     fun hd hk hn => Proof.Cmac.bytesAt_frame fE (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact (hd.sub_right (Region.sub_prefix hk)).symm) (by omega_using [hk, hn])
+  -- The pop loses the arguments' frame, below `esp`, apart from the buffers.
+  have lost : ∀ {p : BitVec 32} {n k : Nat}, (below (s.gpr .esp) 24).Disjoint ⟨p.setWidth 64, n⟩ → k ≤ n →
+      n ≤ 240 → bytesAt s'.mem (p.setWidth 64) k = bytesAt s₂.mem (p.setWidth 64) k :=
+    fun hd hk hn => Proof.Cmac.bytesAt_frame m₂ (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact ((hd.sub_left (below_sub (by decide) h.esp)).sub_right (Region.sub_prefix hk)).symm)
+      (by omega_using [hk, hn])
   simp only [Proof.Aes.blocksX86, arg_withRegions, State.withRegions_mem, a0, a1, a2, a3, hR,
-    show (1 : BitVec 32).toNat = 1 from rfl, m₂] at post
-  simp only [arg_withRegions, State.withRegions_mem, a4, m₂] at tail
+    show (1 : BitVec 32).toNat = 1 from rfl] at post
+  simp only [arg_withRegions, State.withRegions_mem, a4] at tail
   have hS := h.hS
   refine ⟨⟨rd', wr', cs', ?_, ?_⟩, fun x hx => ?_⟩
   · exact f'.mono fun r hr => by simp only [List.cons_append, List.nil_append] at hr; simpa using hr
-  · rw [bytesAt_of_statesAt post, keep h.bw hR' (Nat.le_refl _), ← ofFn_bytesAt,
+  · rw [lost h.bd (Nat.le_refl _) (by decide), bytesAt_of_statesAt post, keep h.bw hR' (Nat.le_refl _), ← ofFn_bytesAt,
       keep h.bd (Nat.le_refl _) (by decide), ofFn_bytesAt]
   · by_cases hc : (⟨S.setWidth 64, 2048⟩ : Region).Contains x 1
     · have hi : (x - S.setWidth 64).toNat < 2048 := by simp only [Region.Contains] at hc; omega_using [hc]
@@ -249,7 +263,9 @@ theorem blk_call_tail {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.Sta
         omega_using [this]
       have t := tail _ hw hi
       rw [ex] at t
-      rw [t]
+      rw [m₂ x fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr
+        exact fun hb => h.bs x (below_sub (by decide) h.esp x hb) hc, t]
       exact fE x fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         exact fun hb => h.bs x hb hc

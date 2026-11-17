@@ -800,7 +800,7 @@ theorem call_ok {s : State} (h : Keyed hF s₀ s) (hdi : s.gpr .edi = inn s₀) 
       hF.hH.SH.Repr t.mem ((out s₀).setWidth 64) (xorPad (K0 hF s₀) opad) := by
   have hl := layout (F := F); have he := end_le hz; have := hz.S; have := hz.D; have := hz.W
   have := hF.hWi; have hS := hF.hH.hS
-  refine hi_frame hF.hi hF.hiSp hF.hiSU (call_args hp hz hF h hdi hsi) fun s' a r0 r1 => ⟨?_, ?_, ?_⟩
+  refine hi_frame (FnsOK.reprOK hF) hF.hi hF.hiSp hF.hiSU (call_args hp hz hF h hdi hsi) fun s' a r0 r1 => ⟨?_, ?_, ?_⟩
   · refine h.kr.call hp hz a fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl

@@ -284,7 +284,7 @@ theorem signFnP_ok (v : CrtImpl) (w : CrtPImpl) (s : State) {g : Geometry} {bs :
     simp only [sigStack, VG.Impl.RsaPkcs1Sig.X86.Sign.frameBytes] at *
     omega_using [this]
   unfold code
-  refine WP.frame (rs := savedRegisters) (by decide) (by decide) (by decide) stackFit
+  refine WP.frameKept (rs := savedRegisters) (by decide) (by decide) (by decide) stackFit
     (innerP_noSp v w) ?_
   refine WP.seq ?_
   refine VG.Proof.Dsa.X86.WP.alloc (by decide) allocation (bodyP_noSp v w) ?_

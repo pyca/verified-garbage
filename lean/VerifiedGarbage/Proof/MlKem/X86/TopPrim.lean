@@ -125,10 +125,11 @@ theorem inPlace_call {t : Poly → Poly} {nm : String} {c : Prog isa}
     generalize he : (pushed [.ecx, .eax] s).callEntry = e at post
     sig_post [inPlaceContract, inPlaceSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at post
     subst he
-    simp only [arg_withRegions, a0, m₂] at post
+    simp only [arg_withRegions, a0] at post
     rw [polyAt_frame (callEntry_frame fit (by decide)) (fun r hr => by
       rw [List.mem_singleton] at hr; subst hr; rw [h.esp]
       exact (bF.sub_left (below_sub (by simp) hE')).symm)] at post
+    replace post := polyIs_congr (lost_keep hp h (k := 2) (by omega_arith) m₂ hF') post
     refine hQ s₀ s s' hp ha h' e₃ (fr.sub fun r hr => ?_) post
     rw [hst] at hr
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -254,8 +255,9 @@ theorem mul_call (oa oo fa fo ga go sa so : Nat)
     generalize he : (pushed [.edi, .edx, .ecx, .eax] s).callEntry = e at post
     sig_post [mulContract, mulSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at post
     subst he
-    simp only [arg_withRegions, a0, a1, a2, m₂] at post
+    simp only [arg_withRegions, a0, a1, a2] at post
     rw [polyAt_congr (ek hF'), polyAt_congr (ek hG')] at post
+    replace post := polyIs_congr (lost_keep hp h (k := 4) (by omega_arith) m₂ hH') post
     exact hQ s₀ s s' hp ha h' e₃ (fr_conv hp (a := 16) (N := 36) (by omega_arith) (by omega_arith)
       (by rw [mul_stack] at fr; exact fr)) post
 

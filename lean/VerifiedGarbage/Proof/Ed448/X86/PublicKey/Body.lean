@@ -284,7 +284,7 @@ theorem body_nosp {base' : Prog isa} (hB : CalleeOk scalarBaseLocal base') : NoS
 theorem publicKey_ok {base' : Prog isa} (hB : CalleeOk scalarBaseLocal base') {s : State} (hp : pkLocal.pre s) :
     WP isa (code base') s fun t => abiPreserved s t ∧ pkLocal.post s t := by
   have h := facts hp
-  refine WP.frame (rs := List.replicate 64 .eax) (by simp) (by simp) (by decide)
+  refine WP.frameKept (rs := List.replicate 64 .eax) (by simp) (by simp) (by decide)
     (by simp only [List.length_replicate]; have := h.below; omega_using [this]) (body_nosp hB)
     (WP.mono (body_ok hB h (push_ctx hp.1 hp.2.1 h.below) (args_val s 3)) fun u ⟨hu, ho⟩ =>
       ⟨pop_abi (by decide) h.below hu (ret_out h), ?_⟩)

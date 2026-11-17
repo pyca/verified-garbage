@@ -96,7 +96,7 @@ theorem init_framed :
   X86.Verified.stackScratch (sig := Spec.Cmac.aesInitSig) (nm := "scratch") (e := .u64) (n := 288)
     (pre := Spec.Cmac.aesInitPre X86.abi.ptrBits) (post := Spec.Cmac.aesInitPost X86.abi.ptrBits)
     (wa := false) (stack := 52) (bytes := 2324) (init_verified v) (by decide) (init_noEsp v)
-    (init_stackUse v) (initPre_local _) (initPost_local _) initFrameSat_pre
+    (init_stackUse v) (initPre_local _) (initPost_local _) (fun vs m m₁ m₂ r hl _ => initPostOut_local _ vs m m₁ m₂ r hl) initFrameSat_pre
 
 theorem absorb_framed :
     Verified X86.target (Impl.StackScratch.X86.withStackScratch 2336 6 (absorb v.callee v.suffix))
@@ -104,7 +104,7 @@ theorem absorb_framed :
   X86.Verified.stackScratch (sig := Spec.Cmac.aesAbsorbSig) (nm := "scratch") (e := .u64) (n := 288)
     (pre := Spec.Cmac.aesAbsorbPre X86.abi.ptrBits) (post := Spec.Cmac.aesAbsorbPost X86.abi.ptrBits)
     (wa := false) (stack := 60) (bytes := 2336) (absorb_verified v) (by decide) (absorb_noEsp v)
-    (absorb_stackUse v) (absorbPre_local _) (absorbPost_local _) absorbFrameSat_pre
+    (absorb_stackUse v) (absorbPre_local _) (absorbPost_local _) (fun vs m m₁ m₂ r hl _ => absorbPostOut_local _ vs m m₁ m₂ r hl) absorbFrameSat_pre
 
 theorem finish_framed :
     Verified X86.target (Impl.StackScratch.X86.withStackScratch 2332 5 (finish v.callee v.suffix))
@@ -112,7 +112,7 @@ theorem finish_framed :
   X86.Verified.stackScratch (sig := Spec.Cmac.aesFinishSig) (nm := "scratch") (e := .u64) (n := 288)
     (pre := Spec.Cmac.aesFinishPre X86.abi.ptrBits) (post := Spec.Cmac.aesFinishPost X86.abi.ptrBits)
     (wa := false) (stack := 60) (bytes := 2332) (finish_verified v) (by decide) (finish_noEsp v)
-    (finish_stackUse v) (finishPre_local _) (finishPost_local _) finishFrameSat_pre
+    (finish_stackUse v) (finishPre_local _) (finishPost_local _) (fun vs m m₁ m₂ r hl _ => finishPostOut_local _ vs m m₁ m₂ r hl) finishFrameSat_pre
 
 end VG.Proof.CmacAes.Stream.X86
 

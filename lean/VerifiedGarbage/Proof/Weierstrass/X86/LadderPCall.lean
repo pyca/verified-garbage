@@ -121,7 +121,7 @@ theorem callB_ok {enc : Nat → Nat} {f : String} {body : Prog isa} (hsp : NoSp 
       (arg t 3).toNat = enc b → Frame [below (s.gpr .esp) 20] s.mem t.mem →
       WP isa body t fun t' => abiPreserved t t' ∧ Outs base (outs k t) t.mem t'.mem ∧ V t.mem t'.mem) :
     WP isa (callB enc f body o a b) s fun s' => CallKeepB k base (enc o) s s' ∧
-      ∃ m, Frame [below (s.gpr .esp) 20] s.mem m ∧ V m s'.mem := by
+      ∃ m m', Frame [below (s.gpr .esp) 20] s.mem m ∧ V m m' ∧ Frame [below (s.gpr .esp) 20] m' s'.mem := by
   obtain hown := (saveAt_le hk0 hk9).2
   have hn := hs.nowrap
   obtain ⟨h20, hz⟩ := hs.stk
@@ -199,8 +199,9 @@ theorem callB_ok {enc : Nat → Nat} {f : String} {body : Prog isa} (hsp : NoSp 
   · exact Covers.of_mem fun r hr => by rw [List.mem_singleton.mp hr, wr₃]; exact List.mem_cons_of_mem _ hs.wr
   intro s' rd' wr' cs' F' ⟨s₂, m₂, O₂, V₂⟩
   rw [hst, esp₃] at F'
-  refine ⟨⟨fun r hr => ?_, by rw [rd', rd₃], by rw [wr', wr₃], fun x hx => ?_, ?_⟩, t.mem, fr,
-    by rw [← m₂]; exact V₂⟩
+  obtain m₂ : Frame [below (s.gpr .esp) 20] s₂.mem s'.mem := by
+    rw [esp₃] at m₂; exact Frame.below_mono (wr := []) m₂ (by decide) h20
+  refine ⟨⟨fun r hr => ?_, by rw [rd', rd₃], by rw [wr', wr₃], fun x hx => ?_, ?_⟩, t.mem, s₂.mem, fr, V₂, m₂⟩
   · rw [← g r hr]
     refine cs' r ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
@@ -221,7 +222,7 @@ theorem callB_ok {enc : Nat → Nat} {f : String} {body : Prog isa} (hsp : NoSp 
       obtain h3 : ofs base x < 2 ^ 64 := (x - base).isLt
       simp only at h2
       omega_arith
-    · rw [← m₂, O₂ x fun r hr => ?_]
+    · rw [m₂ x (fun r hr => by rw [List.mem_singleton.mp hr]; exact hzx), O₂ x fun r hr => ?_]
       · exact fr x fun r hr => by rw [List.mem_singleton.mp hr]; exact hzx
       simp only [outs, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
@@ -279,14 +280,16 @@ theorem mulCallB_ok (hB : wordsVal s.mem base (enc b) S.k < S.m) :
     (V := fun m m' => val32 m' base (enc o) (2 * S.k) < S.m ∧
       val32 m' base (enc o) (2 * S.k) * 2 ^ (64 * S.k) % S.m =
         val32 m base (enc a) (2 * S.k) * val32 m base (enc b) (2 * S.k) % S.m)
-    fun t hp hws h1 h2 h3 hfr => ?_) fun s' ⟨K, m, hm, V₁, V₂⟩ => ?_
+    fun t hp hws h1 h2 h3 hfr => ?_) fun s' ⟨K, m, m', hm, ⟨V₁, V₂⟩, hm'⟩ => ?_
   · refine WP.mono (mulFn_ok hF.mul hp (by
       rw [hws, h3, frame_val32P hs hfr (by omega_arith), ← wordsVal_eq_val32]; exact hB))
       fun t' ⟨A, O, L, C⟩ => ⟨A, hws ▸ O, ?_⟩
     rw [hws, h1] at L
     rw [hws, h1, h2, h3] at C
     exact ⟨L, C⟩
-  · rw [frame_val32P hs hm (by omega_arith), frame_val32P hs hm (by omega_arith)] at V₂
+  · rw [frame_val32P hs hm (by omega_arith), frame_val32P hs hm (by omega_arith),
+      ← frame_val32P hs hm' (by omega_arith)] at V₂
+    rw [← frame_val32P hs hm' (by omega_arith)] at V₁
     refine ⟨K, ?_, ?_⟩
     · rw [wordsVal_eq_val32]; exact V₁
     · rw [wordsVal_eq_val32, wordsVal_eq_val32, wordsVal_eq_val32]; exact V₂
@@ -300,14 +303,15 @@ theorem addCallB_ok (hAB : wordsVal s.mem base (enc a) S.k + wordsVal s.mem base
   refine WP.mono (callB_ok hF.nsAdd rfl hF.mul.k0 hF.k9 hs ho ha hb
     (V := fun m m' => val32 m' base (enc o) (2 * S.k) =
       (val32 m base (enc a) (2 * S.k) + val32 m base (enc b) (2 * S.k)) % S.m)
-    fun t hp hws h1 h2 h3 hfr => ?_) fun s' ⟨K, m, hm, V⟩ => ?_
+    fun t hp hws h1 h2 h3 hfr => ?_) fun s' ⟨K, m, m', hm, V, hm'⟩ => ?_
   · refine WP.mono (addFn_ok hF.mul hp (by
       rw [hws, h2, h3, frame_val32P hs hfr (by omega_arith), frame_val32P hs hfr (by omega_arith), ← wordsVal_eq_val32,
         ← wordsVal_eq_val32]; exact hAB))
       fun t' ⟨A, O, L⟩ => ⟨A, hws ▸ O, ?_⟩
     rw [hws, h1, h2, h3] at L
     exact L
-  · rw [frame_val32P hs hm (by omega_arith), frame_val32P hs hm (by omega_arith)] at V
+  · rw [frame_val32P hs hm (by omega_arith), frame_val32P hs hm (by omega_arith),
+      ← frame_val32P hs hm' (by omega_arith)] at V
     refine ⟨K, ?_⟩
     rw [wordsVal_eq_val32, wordsVal_eq_val32, wordsVal_eq_val32]; exact V
 
@@ -320,14 +324,15 @@ theorem subCallB_ok (hA : wordsVal s.mem base (enc a) S.k < S.m) (hB : wordsVal 
   refine WP.mono (callB_ok hF.nsSub rfl hF.mul.k0 hF.k9 hs ho ha hb
     (V := fun m m' => val32 m' base (enc o) (2 * S.k) =
       (val32 m base (enc a) (2 * S.k) + S.m - val32 m base (enc b) (2 * S.k)) % S.m)
-    fun t hp hws h1 h2 h3 hfr => ?_) fun s' ⟨K, m, hm, V⟩ => ?_
+    fun t hp hws h1 h2 h3 hfr => ?_) fun s' ⟨K, m, m', hm, V, hm'⟩ => ?_
   · refine WP.mono (subFn_ok hF.mul hp
       (by rw [hws, h2, frame_val32P hs hfr (by omega_arith), ← wordsVal_eq_val32]; exact hA)
       (by rw [hws, h3, frame_val32P hs hfr (by omega_arith), ← wordsVal_eq_val32]; exact hB))
       fun t' ⟨A, O, L⟩ => ⟨A, hws ▸ O, ?_⟩
     rw [hws, h1, h2, h3] at L
     exact L
-  · rw [frame_val32P hs hm (by omega_arith), frame_val32P hs hm (by omega_arith)] at V
+  · rw [frame_val32P hs hm (by omega_arith), frame_val32P hs hm (by omega_arith),
+      ← frame_val32P hs hm' (by omega_arith)] at V
     refine ⟨K, ?_⟩
     rw [wordsVal_eq_val32, wordsVal_eq_val32, wordsVal_eq_val32]; exact V
 
@@ -624,6 +629,13 @@ theorem enc_rIds {k : Nat} (hk3 : 3 ≤ k) (hk6 : k ≤ 6) (dbl : Bool) :
   simp only [rIds, List.mem_cons, List.not_mem_nil, or_false] at hx
   cases dbl <;> rcases hx with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
     simp only [enc, Nat.reduceLT, Nat.reduceEqDiff, ↓reduceIte, Nat.reduceSub, Nat.mul_zero, Nat.mul_one, Nat.add_zero, Bool.false_eq_true] <;> omega_using [this]
+
+/-- The outputs of a point function lie in the working space. -/
+theorem enc_out {k : Nat} (hk3 : 3 ≤ k) (hk6 : k ≤ 6) (dbl : Bool) {j : Nat} (hj : j < 3) :
+    enc k dbl j + 8 * k ≤ 8192 := by
+  obtain rfl | rfl | rfl : j = 0 ∨ j = 1 ∨ j = 2 := by omega_using [hj]
+  all_goals obtain rfl | rfl | rfl | rfl : k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 := by omega_using [hk3, hk6]
+  all_goals cases dbl <;> decide
 
 /-- The slots `enc` gives are laid out as the program needs, and those it
 writes lie apart from the saved `lr` and within `O` or the own working
@@ -1086,8 +1098,13 @@ theorem ptCall_ok {S : Impl.Weierstrass.Mont.Modulus} {m k : Nat} [NeZero m] (hF
       exact hr
   obtain esp' : s'.gpr .esp = s.gpr .esp := cs' .esp (by decide)
   obtain edi' : s'.gpr .edi = s.gpr .edi := cs' .edi (by decide)
-  rw [hws, m₂] at O₂ L₂
-  simp only [hws, m₂] at E₂
+  obtain m₂ : Frame [below (s.gpr .esp) 8] s₂.mem s'.mem := Frame.below_mono (wr := []) m₂ (by decide) (by omega_arith)
+  obtain v₂ : ∀ x, x + 8 * k' ≤ 8192 → wordsVal s'.mem base x k' = wordsVal s₂.mem base x k' := fun x hx => by
+    rw [wordsVal_eq_val32, wordsVal_eq_val32, frame_val32P' hs m₂ h28 hz (h := by omega_arith)]
+  rw [hws] at O₂ L₂
+  simp only [hws] at E₂
+  rw [← v₂ _ (enc_out hk3 hk6 dbl (j := 0) (by decide)), ← v₂ _ (enc_out hk3 hk6 dbl (j := 1) (by decide)),
+    ← v₂ _ (enc_out hk3 hk6 dbl (j := 2) (by decide))] at E₂
   refine wp_ldm (b := .esp) esp' (by rw [rd', wr']; exact hrd) fun s₃ u₃ => WP.block_nil ?_
   obtain hv : s'.mem.readW (addr (s.gpr .esp) ao) 32 = s.gpr .edi := by
     rw [F₂.readW (r := ⟨addr (s.gpr .esp) ao, 4⟩) (Region.contains_self _ _) (fun r hr => by
@@ -1107,18 +1124,19 @@ theorem ptCall_ok {S : Impl.Weierstrass.Mont.Modulus} {m k : Nat} [NeZero m] (hF
       simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
       exact cs' r (by revert hr; cases r <;> decide)
   · rw [m₃]
-    refine fun x hx => (O₂ x hx).trans ?_
+    refine fun x hx => ?_
     by_cases hzx : ofs base x < 8192
-    · exact fr x fun r hr hc => by
+    · have nz : ∀ r ∈ [below (s.gpr .esp) 8], ¬ r.Contains x 1 := fun r hr hc => by
         rw [List.mem_singleton.mp hr] at hc
         have := zone8 hs h28 hz hc
         omega_arith
+      exact (m₂ x nz).trans ((O₂ x hx).trans (fr x nz))
     · have h2 := hx outW (by simp)
       obtain h3 : ofs base x < 2 ^ 64 := (x - base).isLt
       simp only at h2
       omega_arith
   · rw [m₃]; exact F₂
-  · rw [m₃]; exact L₂ j hj
+  · rw [m₃, v₂ _ (enc_out hk3 hk6 dbl hj)]; exact L₂ j hj
   · simp only [Eb]
     rw [m₃]
     obtain e : ∀ x, x ∈ rIds →

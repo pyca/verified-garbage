@@ -373,7 +373,7 @@ theorem call_ok {a : Nat} {u : State} (C : CallAt B Z len a u) :
   obtain lenE : VG.Proof.RsaKeyGen.X86.Inverse.len (invEntry B (8 * invWords a) u) = a := by
     unfold VG.Proof.RsaKeyGen.X86.Inverse.len
     rw [arg2, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := C.lenLe; omega_using [this])]
-  simp only [baseE, sizeE, lenE, hka, mem₂] at inside gcd bezout lt
+  simp only [baseE, sizeE, lenE, hka] at inside gcd bezout lt
   obtain FE := invEntry_frame (B := B) (L := 8 * invWords a) fit16
   obtain farU : (⟨B, Z⟩ : Region).Disjoint (below (u.gpr .esp) 16) :=
     far.sub_right (below_sub (by decide) lowSp)
@@ -383,6 +383,13 @@ theorem call_ok {a : Nat} {u : State} (C : CallAt B Z len a u) :
       (Nat.le_trans (VG.Proof.Rsa.X86.Keys.arr_end hj) (by have := C.fits; rwa [hka] at this))
   rw [entryNum (j := 0) (by decide), entryNum (j := 8) (by decide)] at gcd bezout
   rw [entryNum (j := 8) (by decide)] at lt
+  obtain mem₂ : Frame [below (u.gpr .esp) 16] e₂.mem t.mem :=
+    Frame.below_mono (wr := []) mem₂ (by decide) fit16
+  have backNum {j : Nat} (hj : j < 15) : num t.mem B (kw len) j = num e₂.mem B (kw len) j :=
+    VG.Proof.RsaKeyGen.X86.KeyRuntime.frame_num mem₂ farU nowrap
+      (Nat.le_trans (VG.Proof.Rsa.X86.Keys.arr_end hj) (by have := C.fits; rwa [hka] at this))
+  rw [← backNum (j := 1) (by decide)] at gcd bezout
+  rw [← backNum (j := 3) (by decide)] at bezout lt
   obtain Kt : Keeps [.eax, .ecx, .edx] u t := by
     refine ⟨?_, rdT, wrT⟩
     intro r hr
@@ -411,7 +418,9 @@ theorem call_ok {a : Nat} {u : State} (C : CallAt B Z len a u) :
       rw [BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm]
       exact BitVec.sub_add_cancel x B
     rw [back] at changed
-    rw [changed]
+    rw [mem₂ x (fun r hr => by
+      obtain rfl := List.mem_singleton.mp hr
+      exact farU x (Region.sub_prefix size x hin)), changed]
     apply FE x
     intro r hr
     obtain rfl := List.mem_singleton.mp hr

@@ -300,7 +300,13 @@ theorem hcall_ok {s : State} (h : Inv s₀ s) {r : Reg} (hr : r ≠ .esp)
       simp only [List.mem_singleton] at hq; subst hq
       exact I_call.sub_right cB)
     (Nat.le_of_lt (Nat.lt_trans (s.gpr .eax).isLt (by decide)))
-  rw [m₂, bk] at post
+  obtain m₂ : Frame [below (s.gpr .esp) 24] s₂.mem t.mem :=
+    Frame.below_mono (wr := []) m₂ (by simp only [List.length_cons, List.length_nil]; omega_using [])
+      (by rw [esp]; omega_using [hE, hlo])
+  rw [bk, ← bytes_keep m₂ (fun q hq => by
+      simp only [List.mem_singleton] at hq; subst hq
+      exact O_call.sub_right cB)
+    (Nat.le_of_lt (Nat.lt_trans (s.gpr .ecx).isLt (by decide)))] at post
   obtain f₁ : Frame [⟨(s.gpr .edi).setWidth 64, (s.gpr .ecx).toNat⟩, scrR s₀, callR s₀] s.mem t.mem :=
     f'.sub fun q hq => by
       simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hq

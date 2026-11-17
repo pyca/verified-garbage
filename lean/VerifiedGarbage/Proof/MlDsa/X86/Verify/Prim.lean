@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.MlDsa.Contract
 
 import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Prim
 import VerifiedGarbage.Proof.MlDsa.Pack.Hint2
+import VerifiedGarbage.Proof.MlDsa.Verify.Mem
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Contract
@@ -111,10 +112,12 @@ theorem ball_piece {c : Prog isa} (hc : Callee c fun stk => Proof.MlDsa.sampleIn
     generalize e = e' at *
     sig_post [Proof.MlDsa.sampleInBallContract, Proof.MlDsa.sampleInBallSig, X86.abi, X86.argSlots, X86.argVal,
       X86.argBytes] at post
-    simp only [arg_withRegions, a₀, a₁, a₂, a₃, List.getElem_cons_zero, List.getElem_cons_succ, Arg.val, m₂, g₂,
+    simp only [arg_withRegions, a₀, a₁, a₂, a₃, List.getElem_cons_zero, List.getElem_cons_succ, Arg.val, g₂,
       sw_app, eL, eτ] at post
     rw [Proof.MlKem.bytesAt_congr (he.mem _ hD)] at post
-    exact hQ s₀ s s' hp ha h' fr post.1 post.2
+    obtain kA := (lostK hp h' (by simp) hN m₂ hA₁)
+    exact hQ s₀ s s' hp ha h' fr (fun e => Proof.MlDsa.KeyGen.reduced_congr kA (post.1 e))
+      (by rw [Proof.MlDsa.KeyGen.polyAt_congr kA]; exact post.2)
 
 /-! ## `vg_mldsa_use_hint` -/
 
@@ -178,11 +181,11 @@ theorem useHint_piece {c : Prog isa} (hc : Callee c fun stk => Proof.MlDsa.useHi
     generalize e = e' at *
     sig_post [Proof.MlDsa.useHintContract, Proof.MlDsa.useHintSig, X86.abi, X86.argSlots, X86.argVal,
       X86.argBytes] at post
-    simp only [arg_withRegions, a₀, a₁, a₂, a₃, List.getElem_cons_zero, List.getElem_cons_succ, Arg.val, m₂,
+    simp only [arg_withRegions, a₀, a₁, a₂, a₃, List.getElem_cons_zero, List.getElem_cons_succ, Arg.val,
       eg] at post
     rw [ent_polyAt he hR, Proof.MlDsa.Pack.hintAt_congr (fun t ht =>
       Proof.MlDsa.KeyGen.coeffAt_congr (he.mem _ hH) (by simp only [Spec.MlDsa.n]; omega_using [ht]))] at post
-    exact hQ s₀ s s' hp ha h' fr post
+    exact hQ s₀ s s' hp ha h' fr ((Proof.MlDsa.KeyGen.natPolyAt_congr (lostK hp h' (by simp) hN m₂ hO)).trans post)
 
 /-! ## `vg_mldsa_bit_unpack`, `vg_mldsa_unpack_t1` -/
 
@@ -249,10 +252,10 @@ theorem bu_piece {c : Prog isa} (hc : Callee c fun stk => Proof.MlDsa.bitUnpackC
     generalize e = e' at *
     sig_post [Proof.MlDsa.bitUnpackContract, Proof.MlDsa.bitUnpackSig, X86.abi, X86.argSlots, X86.argVal,
       X86.argBytes] at post
-    simp only [arg_withRegions, a₀, a₁, a₂, a₃, a₄, List.getElem_cons_zero, List.getElem_cons_succ, Arg.val, m₂,
+    simp only [arg_withRegions, a₀, a₁, a₂, a₃, a₄, List.getElem_cons_zero, List.getElem_cons_succ, Arg.val,
       ea, eb, eL] at post
     rw [Proof.MlKem.bytesAt_congr (he.mem _ hV)] at post
-    exact hQ s₀ s s' hp ha h' fr post
+    exact hQ s₀ s s' hp ha h' fr (Proof.MlDsa.KeyGen.polyIs_congr (lostK hp h' (by simp) hN m₂ hF) post)
 
 theorem t1_piece {c : Prog isa} (hc : Callee c fun stk => Proof.MlDsa.unpackT1Contract X86.abi stk)
     (va vo fa fo : Nat)
@@ -300,9 +303,9 @@ theorem t1_piece {c : Prog isa} (hc : Callee c fun stk => Proof.MlDsa.unpackT1Co
     generalize e = e' at *
     sig_post [Proof.MlDsa.unpackT1Contract, Proof.MlDsa.unpackT1Sig, X86.abi, X86.argSlots, X86.argVal,
       X86.argBytes] at post
-    simp only [arg_withRegions, a₀, a₁, List.getElem_cons_zero, List.getElem_cons_succ, Arg.val, m₂] at post
+    simp only [arg_withRegions, a₀, a₁, List.getElem_cons_zero, List.getElem_cons_succ, Arg.val] at post
     rw [Proof.MlKem.bytesAt_congr (he.mem _ hV)] at post
-    exact hQ s₀ s s' hp ha h' fr post
+    exact hQ s₀ s s' hp ha h' fr (Proof.MlDsa.KeyGen.polyIs_congr (lostK hp h' (by simp) hN m₂ hF) post)
 
 /-! ## `vg_mldsa_hint_bit_unpack` -/
 
@@ -382,10 +385,17 @@ theorem hu_piece {c : Prog isa} (hc : Callee c fun stk => Proof.MlDsa.hintBitUnp
     generalize e = e' at *
     sig_post [Proof.MlDsa.hintBitUnpackContract, Proof.MlDsa.hintBitUnpackSig, X86.abi, X86.argSlots, X86.argVal,
       X86.argBytes] at post
-    simp only [arg_withRegions, a₀, a₁, a₂, a₃, List.getElem_cons_zero, List.getElem_cons_succ, Arg.val, m₂, g₂,
+    simp only [arg_withRegions, a₀, a₁, a₂, a₃, List.getElem_cons_zero, List.getElem_cons_succ, Arg.val, g₂,
       sw_app, e1, e2, e4] at post
     rw [Proof.MlKem.bytesAt_congr (he.mem _ hYb)] at post
-    exact hQ s₀ s s' hp ha h' fr post
+    obtain kH := (lostK hp h' (by simp) hN m₂ hH)
+    refine hQ s₀ s s' hp ha h' fr ?_
+    generalize Spec.MlDsa.hintBitUnpack ω k (Spec.Sha3.bytesAt s.mem (Buf.addr s₀ ⟨ya, yo, ω + k⟩) (ω + k)) = hb
+      at post ⊢
+    cases hb with
+    | none => exact post
+    | some hint =>
+      exact ⟨post.1, VG.Proof.MlDsa.Verify.hintIs_congr (fun i hi => kH i (by simp only; omega_arith)) post.2⟩
 
 /-! ## `vg_mldsa_norm_lt` -/
 

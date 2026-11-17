@@ -922,13 +922,13 @@ theorem body_ok {s : State} {params : List Instr} {W : Addr} {L N S mo inv o a b
   obtain hs16 : (s.gpr .esp - 16).toNat = (s.gpr .esp).toNat - 16 := by
     rw [BitVec.toNat_sub, show (16 : BitVec 32).toNat = 16 from rfl]; omega_arith
   unfold body
-  refine WP.frame (rs := rs4) (r := .ebx) (by decide) (by decide) (by decide)
+  refine WP.frameKept (rs := rs4) (r := .ebx) (by decide) (by decide) (by decide)
     (by simp only [List.length_cons, List.length_nil]; omega_arith) hns ?_
   simp only [seqs]
   refine WP.seq (WP.mono hp fun t1 ⟨PV, esp1, m1, rd1, wr1⟩ => ?_)
   obtain hn7 : 4 * rs7.length ≤ (t1.gpr .esp).toNat := by
     rw [esp1, hs16]; simp only [List.length_cons, List.length_nil]; omega_arith
-  refine WP.seq (WP.frame (rs := rs7) (r := .eax) (by decide) (by decide) (by decide) hn7 kernel_noSp ?_)
+  refine WP.seq (WP.frameKept (rs := rs7) (r := .eax) (by decide) (by decide) (by decide) hn7 kernel_noSp ?_)
   obtain h16 : 4 * rs4.length ≤ (s.gpr .esp).toNat := by simp only [List.length_cons, List.length_nil]; omega_arith
   obtain F1 := pushed_frame (rs := rs4) (s := s) (by decide) h16
   rw [show 4 * rs4.length = 16 from rfl, ← m1] at F1

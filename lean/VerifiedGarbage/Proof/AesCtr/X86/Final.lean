@@ -560,9 +560,21 @@ theorem whole_wp {M : Mode} {name : String} {whole : Prog isa}
     (hp.callPre h) fun s' rd' wr' cs' f' ⟨s₂, m₂, post₂⟩ => ?_
   rw [hst, h.esp, h.mem] at f'
   simp only [modeX86, State.withRegions_mem, arg_withRegions, a0, a1, a2, a3, a4, h.eax, h.ecx, h.edx, h.ebx,
-    h.esi, toNat_n, m₂, eW, eIv, eB] at post₂
-  exact ⟨by rw [cs' .esp (by simp [calleeSaved]), h.esp], by rw [rd', h.rd], by rw [wr', h.wr], f', post₂.1,
-    post₂.2⟩
+    h.esi, toNat_n, eW, eIv, eB] at post₂
+  obtain m₂ : Frame [fStk s₀] s₂.mem s'.mem := m₂.sub fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr
+    exact ⟨fStk s₀, by simp, by rw [h.esp]; exact below_sub (by decide) hp.esp52⟩
+  obtain bB : Spec.Cbc.blocksAt s'.mem ((fD s₀).setWidth 64) (fN s₀) =
+      Spec.Cbc.blocksAt s₂.mem ((fD s₀).setWidth 64) (fN s₀) :=
+    AesCfb.X86.blocksAt_frame' m₂ (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact hp.stk_data.symm.sub_left (AesCfb.X86.blk_sub s₀))
+  obtain bI : bytesAt s'.mem ((fIv s₀).setWidth 64) 16 = bytesAt s₂.mem ((fIv s₀).setWidth 64) 16 :=
+    Proof.Cmac.bytesAt_frame m₂ (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact hp.stk_iv.symm) (by decide)
+  exact ⟨by rw [cs' .esp (by simp [calleeSaved]), h.esp], by rw [rd', h.rd], by rw [wr', h.wr], f',
+    by rw [bB]; exact post₂.1, by rw [bI]; exact post₂.2⟩
 
 theorem whole_cW {M : Mode} {s₀ s : State} (h : Whole M s₀ s) : Frame (cW s₀) (svMem s₀) s.mem :=
   cW1_cW (whole_cW1 h)
@@ -781,13 +793,23 @@ theorem tail_call_wp {name : String} {whole : Prog isa}
     (hp.tailPre h) fun s' rd' wr' cs' f' ⟨s₂, m₂, post₂⟩ => ?_
   rw [hst, h.esp] at f'
   simp only [modeX86, State.withRegions_mem, arg_withRegions, a0, a1, a2, a3, a4, h.eax, h.ecx, h.edx, h.ebx,
-    h.esi, hp.cBk_addr, one_toNat, m₂, eW, eT, AesCtr.ctrMode_out, AesCtr.ctrMode_chain,
+    h.esi, hp.cBk_addr, one_toNat, eW, eT, AesCtr.ctrMode_out, AesCtr.ctrMode_chain,
     AesCbc.length_blocksAt] at post₂
+  obtain m₂ : Frame [fStk s₀] s₂.mem s'.mem := m₂.sub fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr
+    exact ⟨fStk s₀, by simp, by rw [h.esp]; exact below_sub (by decide) hp.esp52⟩
+  obtain bI : bytesAt s'.mem ((fIv s₀).setWidth 64) 16 = bytesAt s₂.mem ((fIv s₀).setWidth 64) 16 :=
+    Proof.Cmac.bytesAt_frame m₂ (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact hp.stk_iv.symm) (by decide)
+  obtain bC : Spec.Cbc.blocksAt s'.mem (cBlk s₀).base 1 = Spec.Cbc.blocksAt s₂.mem (cBlk s₀).base 1 :=
+    AesCfb.X86.blocksAt_frame' m₂ (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact hp.stk_sv.symm.sub_left (blk_sv_sub s₀))
   obtain fc : Frame (cW1 s₀) s.mem s'.mem := f'.mono fun r hr => by
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
     rcases hr with h | h | h | h <;> simp [h]
   refine ⟨by rw [cs' .esp (by simp [calleeSaved]), h.esp], by rw [rd', h.rd], by rw [wr', h.wr],
-    h.frame.trans fc, ?_, post₂.2, ?_⟩
+    h.frame.trans fc, ?_, by rw [bI]; exact post₂.2, ?_⟩
   · rw [AesCfb.X86.blocksAt_frame' f' fun r hr => by
       simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl
@@ -796,7 +818,7 @@ theorem tail_call_wp {name : String} {whole : Prog isa}
       · exact hp.data_scr.sub_left (AesCfb.X86.blk_sub s₀)
       · exact hp.stk_data.symm.sub_left (AesCfb.X86.blk_sub s₀)]
     exact h.blocks
-  · exact Modes.CtrFinal.bytesAt_of_blocksAt_one (aesWith_length _ _) eZ post₂.1
+  · exact Modes.CtrFinal.bytesAt_of_blocksAt_one (aesWith_length _ _) eZ (bC.trans post₂.1)
 
 /-! ## The partial last block: the bytes XORed -/
 

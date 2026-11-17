@@ -38,7 +38,7 @@ loop over four blocks (`body4_ok`, with the setup, rounds and output of
 `Quad.lean`), which ends with the data done or at most 64 bytes left; those
 are the block function's output XORed with the source into the destination
 (`tail_ok`). The call runs in a frame holding its two arguments
-(`WP.frame`), and the block function's own `Verified` proof gives its effect
+(`WP.frameKept`), and the block function's own `Verified` proof gives its effect
 (`WP.call`); the frame and the return address are in the 12 bytes of stack
 below `esp` that the contract reserves.
 
@@ -636,7 +636,7 @@ theorem call_ok {s₀ : State} (hp : XPre s₀) {j : Nat} {s : State} (h : CInv 
   obtain hd : stackUse Impl.ChaCha20.X86.block + 4 ≤ ((pushed [.edi, .eax] s).gpr .esp).toNat := by
     rw [block_stackUse, pushed_esp, sub_toNat hn, h.esp]
     simp only [List.length_cons, List.length_nil]; omega_using [hlo]
-  refine WP.frame (rs := [.edi, .eax]) (r := .eax) (by simp) (by decide) (by decide) hn block_nosp ?_
+  refine WP.frameKept (rs := [.edi, .eax]) (r := .eax) (by simp) (by decide) (by decide) hn block_nosp ?_
   refine WP.call (k := Proof.ChaCha20.blockX86) block_correct block_nosp hd (rd := rdC s₀)
     (wr := wrC s₀) (entry_pre hp h.esp h.eax h.edi) hc hw
     fun s' hrd hwr hcs hf _ ⟨s₂, hm₂, _, hpost⟩ => ?_

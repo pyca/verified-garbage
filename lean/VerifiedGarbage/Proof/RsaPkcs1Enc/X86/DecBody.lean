@@ -638,7 +638,8 @@ theorem macInit {inn ou k sc : BitVec 32} {kl : Nat}
     VP F (.frame (.push hi5) (.call v.F.hiN v.F.hiC) (.pop .eax 5)) G :=
   of_ct (fun _ _ => hi_rel (sha256OKF v).hi (sp := sp) fun _ _ h =>
       ⟨(hA _ _ h.1).1, (hA _ _ h.2).1, (hA _ _ h.1).2, (hA _ _ h.2).2⟩)
-    fun σ s h => hi_frame (sha256OKF v).hi (sha256OKF v).hiSp (sha256OKF v).hiSU (hA σ s h).1 (hG σ s h)
+    fun σ s h => hi_frame (fun m m' p q msg hb => (sha256OKF v).hH.repr m m' p q msg (fun i hi => hb i (by rw [(sha256OKF v).hH.hS]; exact hi)))
+    (sha256OKF v).hi (sha256OKF v).hiSp (sha256OKF v).hiSU (hA σ s h).1 (hG σ s h)
 
 /-- HMAC's `finalize` of the states at `inn` and `ou`, at the count
 `hi ++ lo`, to `o`, with the working space at `sc`. -/

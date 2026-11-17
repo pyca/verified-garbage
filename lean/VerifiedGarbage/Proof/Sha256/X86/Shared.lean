@@ -541,7 +541,7 @@ theorem update_frame {code : Prog isa}
       (Spec.Sha256.updateContract X86.abi (20 + 636)) :=
   X86.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 76) (stack := 20) (bytes := 636)
     h (by decide) hsp hd (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
-    (Proof.Sha256.updatePost_local _) updateFrameSat_pre
+    (Proof.Sha256.updatePost_local _) (fun vs m m₁ m₂ r hl _ hb => Proof.Sha256.updatePostOut_local _ vs m m₁ m₂ r hl hb) updateFrameSat_pre
 
 /-- A state satisfying `finalize`'s precondition. -/
 def finalizeFrameSat : State :=
@@ -562,6 +562,6 @@ theorem finalize_frame {code : Prog isa}
       (Spec.Sha256.finalizeContract X86.abi (20 + 632)) :=
   X86.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 76) (stack := 20) (bytes := 632)
     h (by decide) hsp hd (fun _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
-    (Proof.Sha256.finalizePost_local _) finalizeFrameSat_pre
+    (Proof.Sha256.finalizePost_local _) (fun vs m m₁ m₂ r hl _ hb => Proof.Sha256.finalizePostOut_local _ vs m m₁ m₂ r hl hb) finalizeFrameSat_pre
 
 end VG.Proof.Sha256.X86.Shared

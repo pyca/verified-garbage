@@ -210,9 +210,20 @@ theorem xts_call (enc : Bool) {n : String} {c : Prog isa} (ok : XtsOk enc c) (no
       simp only [List.mem_singleton] at hr; subst hr
       exact (h.bd.sub_left b28).symm) (by have := h.fitD; omega_using [hN])
   simp only [modeX86, AesXts.xtsMode, arg_withRegions, State.withRegions_mem, a0, a1, a2, a3, a4, hR, hN,
-    m₂, Proof.AesXts.Unit.length_blocksAt] at post
+    Proof.AesXts.Unit.length_blocksAt] at post
   rw [eW, eT, eD] at post
-  refine ⟨rd', wr', cs', ?_, post.1, post.2⟩
+  obtain b24 : Region.Sub (below (s.gpr .esp) (4 * xRegs.length)) (below (s.gpr .esp) 52) :=
+    below_sub (by simp only [List.length_cons, List.length_nil]; omega_using []) h.esp52
+  obtain eD' : Spec.Cbc.blocksAt s'.mem (D.setWidth 64) N = Spec.Cbc.blocksAt s₂.mem (D.setWidth 64) N :=
+    blocksAt_frame m₂ (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact (h.bd.sub_left b24).symm) (by have := h.fitD; omega_using [hN])
+  obtain eT' : bytesAt s'.mem (T.setWidth 64) 16 = bytesAt s₂.mem (T.setWidth 64) 16 :=
+    Proof.Cmac.bytesAt_frame m₂ (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact (h.bt.sub_left b24).symm) (by decide)
+  rw [← eD'] at post
+  refine ⟨rd', wr', cs', ?_, post.1, by rw [eT']; exact post.2⟩
   obtain f'' := Frame.below_mono f' (b := 52) (by simp only [List.length_cons, List.length_nil]; omega_using [stack]) h.esp52
   exact f''.mono fun r hr => by simp only [List.cons_append, List.nil_append] at hr; simpa using hr
 

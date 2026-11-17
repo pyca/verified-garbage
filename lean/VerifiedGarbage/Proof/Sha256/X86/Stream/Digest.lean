@@ -139,7 +139,7 @@ theorem finalize224_frame {code : Prog X86.isa}
       (Spec.Sha256.finalize224Contract X86.abi (20 + 632)) :=
   X86.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 76) (stack := 20) (bytes := 632)
     h (by decide) hsp hd (fun _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
-    (Proof.Sha256.finalize224Post_local _)
+    (Proof.Sha256.finalize224Post_local _) (fun vs m m₁ m₂ r hl _ hb => Proof.Sha256.finalize224PostOut_local _ vs m m₁ m₂ r hl hb)
     (by implies_sat [Spec.Sha256.finalize224Contract, Spec.Sha256.finalize224Sig, X86.abi, X86.argSlots,
         X86.argVal, X86.argBytes]
       [finalize224FrameSat, MdStream.X86.Finalize.sat₀, MdStream.X86.Finalize.satMem, X86.arg,

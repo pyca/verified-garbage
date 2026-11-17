@@ -280,11 +280,14 @@ theorem cryptCall_ok (d : Direction) (s : State) (hp : CallPre s) : WP isa (cryp
   · intro s' rd wr cs frame ⟨s₂, mem₂, gpr₂, post⟩
     rw [Ecb.block_stack] at frame
     change (blockContract d).post (sE.withRegions _ _) s₂ at post
-    simp only [blockContract, State.withRegions_mem, arg_withRegions, a0, a1, mem₂] at post
+    simp only [blockContract, State.withRegions_mem, arg_withRegions, a0, a1] at post
     obtain stackFrame := callEntry_frame fit hrs
     change Frame [below (s.gpr .esp) 16] s.mem sE.mem at stackFrame
+    obtain m16 : Frame [below (s.gpr .esp) 16] s₂.mem s'.mem :=
+      Frame.below_mono (wr := []) mem₂ (by decide) hp.stackLo
     refine ⟨cs, rd, wr, frame, ?_⟩
-    rw [post,
+    rw [VG.Proof.TripleDes.blockAt_eq_of_frame (p := addr32 (s.gpr .ecx)) m16
+        (by intro r hr; obtain rfl := List.mem_singleton.mp hr; exact hp.stackData.symm), post,
       VG.Proof.TripleDes.scheduleAt_eq_of_frame (p := addr32 (s.gpr .edx)) stackFrame
         (by intro r hr; obtain rfl := List.mem_singleton.mp hr; exact hp.stackKey.symm),
       VG.Proof.TripleDes.blockAt_eq_of_frame (p := addr32 (s.gpr .ecx)) stackFrame

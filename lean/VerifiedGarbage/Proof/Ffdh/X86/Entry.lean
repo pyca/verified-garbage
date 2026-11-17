@@ -672,7 +672,7 @@ theorem wrap_syms_ok (A : WrapABI a n s) {body : Prog isa} (hsp : NoSp (.seq (.b
   let R : State → Prop := fun u => P u.mem (u.gpr .eax) ∧ Scr u (wsBase a s) (wsSize a s) ∧
     Saved u.mem (off (wsBase a s)) s.gpr Impl.Bignum.X86.Crt.savedRegisters ∧ u.gpr .esp = s.gpr .esp ∧
     u.mem.readW ((s.gpr .esp).setWidth 64) 32 = s.mem.readW ((s.gpr .esp).setWidth 64) 32
-  refine WP.seq (WP.mono (Q := R) (WP.frameAlloc (bytes := argsFrame) (by decide) (by decide) (by decide)
+  refine WP.seq (WP.mono (Q := R) (WP.frameAllocKept (bytes := argsFrame) (by decide) (by decide) (by decide)
     (by rw [sp]; omega_using [fb, st', low]) hsp ?_) fun s₂ R₂ => ?_)
   · rw [show Impl.Ffdh.X86.fill a = Impl.Ffdh.X86.fill a ++ [] from (List.append_nil _).symm]
     refine WP.seq (WP.mono_syms (frameIn_ok A S K O hx (Q := fun f =>

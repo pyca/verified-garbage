@@ -573,7 +573,7 @@ theorem framed_ok {s : State} (h : contract.pre s) :
     rw [Taint.sub_setWidth fit]
     exact A.stackWs.sub_left (Offset.sub_below _ (by decide) (by decide))
   unfold VG.Impl.RsaKeyGen.X86.Inverse.code
-  refine WP.frame (rs := Compact.savedRegisters) (by decide) (by decide) (by decide) fit inner_noSp ?_
+  refine WP.frameKept (rs := Compact.savedRegisters) (by decide) (by decide) (by decide) fit inner_noSp ?_
   refine WP.seq (WP.mono (start_ok A) fun u ⟨H, mu, Ku⟩ => ?_)
   refine WP.seq (WP.mono (VG.Proof.Rsa.X86.KeyRt.inverse_ok H (by decide)) fun v ⟨Hv, Kv, KRv, res⟩ => ?_)
   have hws := H.ws

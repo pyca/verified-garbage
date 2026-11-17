@@ -31,7 +31,7 @@ theorem call_ok {s : State} {base : Addr} {size n e m : Nat}
   refine workspaceCall_ok (P := P) (Q := fun mem => wordsVal mem base (slot n 6) n=
       wordsVal s.mem base (slot n 5) n^val32 s.mem base (slot n 8) e%m)
     (bytes := contextBytes n) (name := name n e) hs room hused (body_noSp n e) (body_stackUse n e)
-    (scratch_fits hz) ?_ ?_
+    (scratch_fits hz) ?_ ?_ ?_
   · intro mem F
     have vals : ∀ d k, d+4*k≤size → val32 mem base d k=val32 s.mem base d k :=
       fun _ _ hd => frame_val32 room hs.nowrap F hd
@@ -43,5 +43,9 @@ theorem call_ok {s : State} {base : Addr} {size n e m : Nat}
   · intro v E C ⟨M,G,X⟩
     exact WP.mono (body_ok E C hz hn hn48 he hen M hm1 hodd) fun w ⟨V,O,R,Rd,Wr⟩ =>
       ⟨by rw [V,G,X],O,R,Rd,Wr⟩
+  · intro mem mem' F h
+    rw [wordsVal_eq_val32, frame_val32 room hs.nowrap F
+      (by simp only [contextBytes,slot,stride] at hz ⊢; omega_using [hz]), ← wordsVal_eq_val32]
+    exact h
 
 end VG.Proof.Dsa.X86.Pow

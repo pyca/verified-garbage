@@ -437,7 +437,7 @@ theorem attempt_ok {p : KPub} {o s : State} {used keys scalars : Nat} (h : Live 
   have S := h.st
   obtain ⟨A, rfl⟩ := h.input
   have h1 : 228 ≤ (o.gpr .esp).toNat := A.stackLow
-  refine WP.frameAlloc (by decide) (by decide) (by decide) (by rw [S.esp]; unfold argsBytes; omega_using [h1]) body_noSp ?_
+  refine WP.frameAllocKept (by decide) (by decide) (by decide) (by rw [S.esp]; unfold argsBytes; omega_using [h1]) body_noSp ?_
   refine WP.seq (WP.mono (arguments_ok S.alloc) fun t ⟨F, a⟩ => ?_)
   exact WP.mono (call_ok F hu a) fun u ⟨F', e, out⟩ =>
     ⟨F'.free, by rw [freed_gpr _ _ (by decide)]; exact e, by rw [freed_mem]; exact out⟩

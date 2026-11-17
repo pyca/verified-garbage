@@ -234,7 +234,7 @@ theorem seal_framed :
   X86.Verified.stackScratch (sig := Spec.Ccm.sealSig) (nm := "work") (e := .u64) (n := 320)
     (pre := Spec.Ccm.sealPre X86.abi.ptrBits) (post := Proof.AesCcm.sealRoundsPost X86.abi.ptrBits)
     (wa := true) (stack := 60) (bytes := 2608) (seal_verified v) (by decide) (seal_noEsp v)
-    (seal_stackUse v) (sealPre_local _) (sealPost_local _) sealFrameSat_pre
+    (seal_stackUse v) (sealPre_local _) (sealPost_local _) (sealPostOut_local _) sealFrameSat_pre
 
 theorem open_framed :
     Verified X86.target (Impl.StackScratch.X86.withStackScratch 2608 10 («open» v.callee v.suffix))
@@ -242,7 +242,7 @@ theorem open_framed :
   X86.Verified.stackScratch (sig := Spec.Ccm.openSig) (nm := "work") (e := .u64) (n := 320)
     (pre := Spec.Ccm.openPre X86.abi.ptrBits) (post := Proof.AesCcm.openRoundsPost X86.abi.ptrBits)
     (wa := true) (stack := 60) (leak := some (Spec.Ccm.openLeak X86.abi.ptrBits)) (bytes := 2608)
-    (open_verified v) (by decide) (open_noEsp v) (open_stackUse v) (openPre_local _) (openPost_local _)
+    (open_verified v) (by decide) (open_noEsp v) (open_stackUse v) (openPre_local _) (openPost_local _) (openPostOut_local _)
     openFrameSat_pre (hleak := openLeak_local _)
 
 end VG.Proof.AesCcm.X86

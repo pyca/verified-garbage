@@ -311,9 +311,13 @@ theorem salsaSpec : SalsaSpec Impl.Scrypt.X86.salsa := by
     have hsE' := callEntry_frame fit hrs
     rw [show 4 * [Reg.eax, dR].length + 4 = 12 from rfl, ← hsE] at hsE'
     rw [← hsE] at post
-    simp only [Proof.Scrypt.salsaX86, arg_withRegions, State.withRegions_mem, a0, m₂] at post
+    simp only [Proof.Scrypt.salsaX86, arg_withRegions, State.withRegions_mem, a0] at post
     refine hQ s' rd' wr' cs' (f'.mono fun r hr => by simpa using hr) ?_
-    rw [post]
+    -- The pop loses the arguments' frame, below `esp`, apart from the block.
+    have fL : Frame [below E 12] s₂.mem s'.mem := Frame.below_mono (wr := []) m₂ (by simp) hlo
+    rw [Proof.Scrypt.Memory.frame_bytesAt fL (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact hsd.symm) (by omega_using []), post]
     congr 1
     refine Proof.Scrypt.Memory.frame_bytesAt hsE' (fun r hr => ?_) (by omega_using [])
     simp only [List.mem_singleton] at hr; subst hr

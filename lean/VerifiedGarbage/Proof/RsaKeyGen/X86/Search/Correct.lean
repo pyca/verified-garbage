@@ -268,7 +268,7 @@ theorem search_correct_ok (c : Cand) {s : State} (h : contract.pre s) :
   have rem := hp.remaining_le
   have h1 : 216 ≤ (s.gpr .esp).toNat := A.stackLow
   unfold code
-  refine WP.frame (rs := pushRegs) (r := .ebx) (by decide) (by decide) (by decide)
+  refine WP.frameKept (rs := pushRegs) (r := .ebx) (by decide) (by decide) (by decide)
     (by simp only [List.length_cons, List.length_nil]; omega_using [h1]) (body_noSp' c) ?_
   refine WP.seq (WP.mono (entry_ok hp) fun s1 h1 => ?_)
   refine WP.seq (WP.mono (search_loop c (final := searchResult s) (tr := []) h1 (consume_zero _).symm)

@@ -488,7 +488,8 @@ theorem ksqz_piece (hpub : ∀ s₀ s₀', Pre s₀ → Pre s₀' → Pub s₀ s
       · rw [regKS hL]; exact ⟨_, by simp, fun _ h => h⟩
       · exact ⟨_, by simp, kb_stk hL (by omega_using [])⟩
       · exact ⟨_, by simp, b40 hL⟩
-    · have := (squeeze_post hsp a hE (by decide) (by decide) (by decide) (kbufs hL).bS ⟨s₂, m₂, post⟩).1
+    · have := (squeeze_post hsp a hE (by decide) (by decide) (by decide) (kbufs hL).bS
+      (by rw [regMU hL]; exact (k_mu hL).sub_left (b40 hL)) ⟨s₂, m₂, post⟩).1
       rw [mu_eq hL, hs.2.mem] at this
       exact this
 

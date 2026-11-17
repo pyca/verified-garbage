@@ -208,7 +208,11 @@ theorem ctrTo_call (v : GcmImpl) {s : State} {K C D S T : BitVec 32} {R n : Nat}
   obtain fE := callEntry_frame h.fit ctrToRegs_esp
   rw [show 4 * ctrToRegs.length + 4 = 28 from rfl] at fE
   obtain ⟨hdata, hctr⟩ := post
-  simp only [arg_withRegions, State.withRegions_mem, a0, a1, a2, a3, a4, a6, hR, hn, m₂] at hdata hctr
+  simp only [arg_withRegions, State.withRegions_mem, a0, a1, a2, a3, a4, a6, hR, hn] at hdata hctr
+  -- The pop loses the arguments' frame, below `esp`, apart from the buffers.
+  have fL : Frame [below (s.gpr .esp) 28] s₂.mem s'.mem := Frame.below_mono (wr := []) m₂ (by decide) h.esp
+  rw [← blocksAt_frame fL (one_disj h.bt) (by have := h.fT; omega_using [hn])] at hdata
+  rw [← blockAt_frame fL (one_disj h.bc)] at hctr
   obtain eK := bytesAt_frame fE (p := w64 K) (n := 16 * (R + 1))
     (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr

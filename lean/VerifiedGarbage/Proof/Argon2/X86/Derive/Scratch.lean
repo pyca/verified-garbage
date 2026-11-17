@@ -317,15 +317,15 @@ theorem frames_ok {Q : State → Prop} (hsp : NoSp body)
       (E0 s₀).toNat - 16 := by
     rw [pushed_esp, sub_toNat (by simp only [List.length_singleton]; omega_arith), e3]; rfl
   simp only [derive, saved, frames]
-  refine WP.frame (by simp) (by decide) (by decide) (by simp only [List.length_singleton]; omega_arith)
+  refine WP.frameKept (by simp) (by decide) (by decide) (by simp only [List.length_singleton]; omega_arith)
     (nf (by decide) (nf (by decide) (nf (by decide) (nf (by decide) hsp)))) ?_
-  refine WP.frame (by simp) (by decide) (by decide) (by simp only [List.length_singleton]; omega_arith)
+  refine WP.frameKept (by simp) (by decide) (by decide) (by simp only [List.length_singleton]; omega_arith)
     (nf (by decide) (nf (by decide) (nf (by decide) hsp))) ?_
-  refine WP.frame (by simp) (by decide) (by decide) (by simp only [List.length_singleton]; omega_arith)
+  refine WP.frameKept (by simp) (by decide) (by decide) (by simp only [List.length_singleton]; omega_arith)
     (nf (by decide) (nf (by decide) hsp)) ?_
-  refine WP.frame (by simp) (by decide) (by decide) (by simp only [List.length_singleton]; omega_arith)
+  refine WP.frameKept (by simp) (by decide) (by decide) (by simp only [List.length_singleton]; omega_arith)
     (nf (by decide) hsp) ?_
-  refine WP.frame (by simp [locals]) (by decide) (by decide)
+  refine WP.frameKept (by simp [locals]) (by decide) (by decide)
     (by simp only [List.length_replicate, locals]; omega_arith) hsp (hb.mono fun t ⟨d, q⟩ => ?_)
   -- The pops.
   obtain add4 : ∀ a : Nat, E s₀ + BitVec.ofNat 32 a + BitVec.ofNat 32 (4 * 1) =

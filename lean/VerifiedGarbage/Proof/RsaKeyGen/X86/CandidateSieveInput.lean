@@ -267,7 +267,7 @@ theorem code_ok {g : Sieve.Geometry} (v : g.Valid) {c : Nat} {s : State}
       Frame (Sieve.setupWrites g) s.mem t.mem ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := by
   unfold code
-  refine WP.frameAlloc (by decide) (by decide) (by decide) fit (NoSp.of_all (by rfl)) ?_
+  refine WP.frameAllocKept (by decide) (by decide) (by decide) fit (NoSp.of_all (by rfl)) ?_
   refine WP.mono (body_ok v C (by rw [allocFrame_gpr _ _ (by decide)]; exact pointer)
     length symbol low candidateFar tableFar large) fun t ⟨result, F, K⟩ => ?_
   exact ⟨by rw [freed_gpr _ _ (by decide)]; exact result, F, FilterStack.freed_keeps K (by decide)⟩

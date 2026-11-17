@@ -207,10 +207,12 @@ theorem blockMixSpec : BlockMixSpec Impl.Scrypt.X86.blockMix := by
   rw [e36] at f'
   have hsE := callEntry_frame fit hrs
   rw [show 4 * bmRegs.length + 4 = 24 from rfl] at hsE
-  simp only [Proof.Scrypt.blockMixX86, arg_withRegions, State.withRegions_mem, a0, a1, a2, m₂, tr]
+  simp only [Proof.Scrypt.blockMixX86, arg_withRegions, State.withRegions_mem, a0, a1, a2, tr]
     at post
   refine hQ s' rd' wr' cs' (f'.mono fun R hR => by simpa [bmWr, c128] using hR) ?_
-  rw [post]
+  rw [frame_bytesAt m₂ (fun R hR => by
+    simp only [List.mem_singleton] at hR; subst hR
+    exact (ddst.sub_left (below_sub (by omega_arith) hlo)).symm) (by omega_arith), post]
   congr 1
   refine frame_bytesAt hsE (fun R hR => ?_) (by omega_arith)
   simp only [List.mem_singleton] at hR; subst hR

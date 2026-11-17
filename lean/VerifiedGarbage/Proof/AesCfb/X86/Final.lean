@@ -645,10 +645,26 @@ theorem whole_wp {M : Mode} {name : String} {whole : Prog isa}
     (by rw [hst, h.esp]; have := hp.esp52; simp only [List.length_cons, List.length_nil]; omega_using [this])
     (h.callPre hp) fun s' rd' wr' cs' f' ⟨s₂, m₂, post₂⟩ => ?_
   rw [hst, h.esp, h.mem] at f'
-  simp only [modeX86, State.withRegions_mem, arg_withRegions, a0, a1, a2, a3, a4, toNat_n, m₂, eW, eIv,
+  simp only [modeX86, State.withRegions_mem, arg_withRegions, a0, a1, a2, a3, a4, toNat_n, eW, eIv,
     eB] at post₂
-  exact ⟨by rw [cs' .esp (by simp [calleeSaved]), h.esp], by rw [rd', h.rd], by rw [wr', h.wr], f', post₂.1,
-    post₂.2⟩
+  obtain m₂ : Frame [fSv s₀, fStk s₀] s₂.mem s'.mem := m₂.sub fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr
+    exact ⟨fStk s₀, by simp, by rw [h.esp]; exact below_sub (by decide) hp.esp52⟩
+  obtain bB : Spec.Cbc.blocksAt s'.mem ((fD s₀).setWidth 64) (fN s₀) =
+      Spec.Cbc.blocksAt s₂.mem ((fD s₀).setWidth 64) (fN s₀) :=
+    blocksAt_frame' m₂ (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact hp.data_sv.sub_left (blk_sub s₀)
+      · exact hp.stk_data.symm.sub_left (blk_sub s₀))
+  obtain bI : bytesAt s'.mem ((fIv s₀).setWidth 64) 16 = bytesAt s₂.mem ((fIv s₀).setWidth 64) 16 :=
+    Proof.Cmac.bytesAt_frame m₂ (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact hp.iv_sv
+      · exact hp.stk_iv.symm) (by decide)
+  exact ⟨by rw [cs' .esp (by simp [calleeSaved]), h.esp], by rw [rd', h.rd], by rw [wr', h.wr], f',
+    by rw [bB]; exact post₂.1, by rw [bI]; exact post₂.2⟩
 
 theorem Whole.of_eq {M : Mode} {s₀ s s' : State} (h : Whole M s₀ s) (esp : s'.gpr .esp = s.gpr .esp)
     (mem : s'.mem = s.mem) (rd : s'.rd = s.rd) (wr : s'.wr = s.wr) : Whole M s₀ s' :=

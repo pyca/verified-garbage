@@ -1207,14 +1207,17 @@ theorem call_ok (d : Spec.TripleDes.Direction) (s : State) (hp : CallPre s) :
     rw [block_stack] at frame
     change (blockContract d).post (sE.withRegions _ _) s₂ at post
     simp only [blockContract, State.withRegions_mem, arg_withRegions,
-      a0, a1, mem₂] at post
+      a0, a1] at post
     obtain stackFrame := callEntry_frame fit hrs
     change Frame [below (s.gpr .esp) 16] s.mem sE.mem at stackFrame
+    obtain m16 : Frame [below (s.gpr .esp) 16] s₂.mem s'.mem :=
+      Frame.below_mono (wr := []) mem₂ (by decide) hp.stackLo
     refine ⟨?_, cs, rd, wr, frame, ?_⟩
     · intro r hr
       obtain fact : ∀ r ∈ kept, r ∈ calleeSaved := by decide
       exact cs r (fact r hr)
-    · rw [post,
+    · rw [VG.Proof.TripleDes.blockAt_eq_of_frame (p := addr32 (s.gpr .esi)) m16
+          (by intro r hr; obtain rfl := List.mem_singleton.mp hr; exact hp.stackData.symm), post,
         VG.Proof.TripleDes.scheduleAt_eq_of_frame (p := addr32 (s.gpr .ebx)) stackFrame
           (by intro r hr; obtain rfl := List.mem_singleton.mp hr; exact hp.stackKey.symm),
         VG.Proof.TripleDes.blockAt_eq_of_frame (p := addr32 (s.gpr .esi)) stackFrame

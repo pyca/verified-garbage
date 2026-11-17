@@ -1889,7 +1889,7 @@ theorem search_run (c : Srch) {p : GenPublic} {o s : State} {used : Nat} {st : K
   obtain hph1 : phaseWord st.phase ≤ 1 := by unfold phaseWord; split <;> omega_using []
   unfold searchRun
   rw [show 4 * searchWords = 48 from rfl]
-  refine WP.frameAlloc (by decide) (by decide) (by decide) (by omega_using [h1, hsn]) (body_noSp c) ?_
+  refine WP.frameAllocKept (by decide) (by decide) (by decide) (by omega_using [h1, hsn]) (body_noSp c) ?_
   obtain F0 := hb.alloc (n := 48) (by decide)
   obtain hph : (allocFrame 48 s).mem.readW ((arg o 7).setWidth 64 + BitVec.ofNat 64 32) 32 =
       BitVec.ofNat 32 (phaseWord st.phase) := by
@@ -2470,7 +2470,7 @@ theorem key_run (c : KeyImpl) {p : GenPublic} {o s : State} {used : Nat} {st : K
     rw [hb.sp, GenPublic.S1, hi.sp_eq]; exact VG.X86.sub_toNat (by omega_using [h1])
   unfold keyRun
   rw [show 4 * keyWords = 72 from rfl]
-  refine WP.frameAlloc (by decide) (by decide) (by decide) (by omega_using [h1, hsn]) (kbody_noSp c) ?_
+  refine WP.frameAllocKept (by decide) (by decide) (by decide) (by omega_using [h1, hsn]) (kbody_noSp c) ?_
   obtain F0 := hb.alloc (n := 72) (by decide)
   refine WP.seq (WP.of_syms (WP.mono (keyArgs_ok F0 (by rw [allocFrame_gpr _ _ (by decide)]; exact h.ebp))
     fun u ⟨⟨ha, hfr⟩, k⟩ sy => ?_))

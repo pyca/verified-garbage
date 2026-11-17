@@ -273,7 +273,7 @@ theorem WP.frameInline {rs : List Reg} {c : Prog isa} {k : Contract isa}
       Frame (wr ++ [below (s.gpr .esp) (4 * rs.length)]) s.mem s'.mem →
       (∃ s₂ : State, s₂.mem = s'.mem ∧ k.post ((pushed rs s).withRegions rd wr) s₂) → Q s') :
     WP isa (.frame (.push rs) c (.pop .eax rs.length)) s Q := by
-  refine WP.frame hne hrs (by decide) hd hsp ?_
+  refine WP.frameKept hne hrs (by decide) hd hsp ?_
   refine WP.inline (k := k) hv hpre (by rw [pushed_rd, pushed_wr]; exact hc) (by rw [pushed_wr]; exact hw)
     (fun s₂ rd₂ wr₂ ha f₂ _ post₂ => ?_) hn
   refine hQ _ (by rw [popped_rd, rd₂, pushed_rd]) (by rw [popped_wr, wr₂, pushed_wr]; rfl) (fun r hr => ?_) ?_

@@ -735,7 +735,7 @@ theorem verifyMessage_ok {s : State} (h : verifyMessageLocal.pre s) :
     WP isa code s fun t => abiPreserved s t ∧ verifyMessageLocal.post s t := by
   have hL := lay_ok h
   have hb := entry_bounds h
-  refine WP.frame (rs := List.replicate 64 .eax) (by simp) (by simp) (by decide)
+  refine WP.frameKept (rs := List.replicate 64 .eax) (by simp) (by simp) (by decide)
     (by simp only [List.length_replicate]; omega_using [hb]) body_nosp
     (WP.mono (body_ok (push_ctx h) hL (lay_arguments h) (entry_tbl h).1
       (by rw [show (pushed (List.replicate 64 .eax) s).syms = s.syms from pushRegs_syms s _]; rfl))

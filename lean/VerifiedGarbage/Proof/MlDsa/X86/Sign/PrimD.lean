@@ -111,9 +111,10 @@ theorem sbp_piece {nm : String} {c : Prog isa} (hv : Verified X86.target c (simp
     generalize he : (pushed (argPush 4) s₁).callEntry = e at a0 a1 a2 a3 post
     sig_post [simpleBitPackContract, simpleBitPackSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at post
     subst he
-    simp only [arg_withRegions, a0, a1, a2, a3, m₂, bl, ll] at post
+    simp only [arg_withRegions, a0, a1, a2, a3, bl, ll] at post
     rw [natPolyAt_congr₂ (ent_bytes hp h (n := 4) (by decide) hF), m] at post
-    exact hQ s₀ s s' hp ha h' (fr80 (by decide) (by have := ok.stk; omega_arith) hp (m ▸ fr)) post
+    exact hQ s₀ s s' hp ha h' (fr80 (by decide) (by have := ok.stk; omega_arith) hp (m ▸ fr))
+      (by rw [Proof.MlKem.bytesAt_congr (lost_bytes hp (n := 4) (by decide) m₂ hO')]; exact post)
 
 /-- `out ← BitPack(f mod± q, a, b)`, `len` bytes. -/
 theorem bp_piece {nm : String} {c : Prog isa} (hv : Verified X86.target c (bitPackContract X86.abi 16))
@@ -200,9 +201,10 @@ theorem bp_piece {nm : String} {c : Prog isa} (hv : Verified X86.target c (bitPa
     generalize he : (pushed (argPush 5) s₁).callEntry = e at a0 a1 a2 a3 a4 post
     sig_post [bitPackContract, bitPackSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at post
     subst he
-    simp only [arg_withRegions, a0, a1, a2, a3, a4, m₂, al, bl, ll] at post
+    simp only [arg_withRegions, a0, a1, a2, a3, a4, al, bl, ll] at post
     rw [polyAt_congr (ent_bytes hp h (n := 5) (by decide) hF), m] at post
-    exact hQ s₀ s s' hp ha h' (fr80 (by decide) (by have := ok.stk; omega_arith) hp (m ▸ fr)) post
+    exact hQ s₀ s s' hp ha h' (fr80 (by decide) (by have := ok.stk; omega_arith) hp (m ▸ fr))
+      (by rw [Proof.MlKem.bytesAt_congr (lost_bytes hp (n := 5) (by decide) m₂ hO')]; exact post)
 
 /-- `f ← BitUnpack(v, a, b)`, of the `len` bytes `v`. -/
 theorem bu_piece {nm : String} {c : Prog isa} (hv : Verified X86.target c (bitUnpackContract X86.abi 16))
@@ -287,9 +289,10 @@ theorem bu_piece {nm : String} {c : Prog isa} (hv : Verified X86.target c (bitUn
     generalize he : (pushed (argPush 5) s₁).callEntry = e at a0 a1 a2 a3 a4 post
     sig_post [bitUnpackContract, bitUnpackSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at post
     subst he
-    simp only [arg_withRegions, a0, a1, a2, a3, a4, m₂, al, bl, ll] at post
+    simp only [arg_withRegions, a0, a1, a2, a3, a4, al, bl, ll] at post
     rw [b₁] at post
-    exact hQ s₀ s s' hp ha h' (fr80 (by decide) (by have := ok.stk; omega_arith) hp (m ▸ fr)) post
+    exact hQ s₀ s s' hp ha h' (fr80 (by decide) (by have := ok.stk; omega_arith) hp (m ▸ fr))
+      (polyIs_congr (lost_bytes hp (n := 5) (by decide) m₂ hF') post)
 
 /-- `y ← HintBitPack(h)`, of the hint of `k` polynomials `h`. -/
 theorem hbp_piece {nm : String} {c : Prog isa} (hv : Verified X86.target c (hintBitPackContract X86.abi 16))
@@ -387,8 +390,9 @@ theorem hbp_piece {nm : String} {c : Prog isa} (hv : Verified X86.target c (hint
     generalize he : (pushed (argPush 5) s₁).callEntry = e at a0 a1 a2 a3 a4 post
     sig_post [hintBitPackContract, hintBitPackSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at post
     subst he
-    simp only [arg_withRegions, a0, a2, a3, a4, m₂, wl, ll, ek] at post
+    simp only [arg_withRegions, a0, a2, a3, a4, wl, ll, ek] at post
     rw [hintAt_congr (ent_bytes hp h (n := 5) (by decide) hH), m] at post
-    exact hQ s₀ s s' hp ha h' (fr80 (by decide) (by have := ok.stk; omega_arith) hp (m ▸ fr)) post
+    exact hQ s₀ s s' hp ha h' (fr80 (by decide) (by have := ok.stk; omega_arith) hp (m ▸ fr))
+      (by rw [Proof.MlKem.bytesAt_congr (lost_bytes hp (n := 5) (by decide) m₂ hO')]; exact post)
 
 end VG.Proof.MlDsa.X86.Sign

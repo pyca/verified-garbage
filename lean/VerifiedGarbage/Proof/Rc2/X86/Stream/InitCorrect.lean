@@ -566,7 +566,12 @@ theorem keyCall_ok {s₀ s : State} (hp : Pre s₀) (hk : 1 ≤ kl s₀ ∧ kl s
   · have ce := callEntry_frame fit hrs
     obtain kE : Region.Sub (below (s.gpr .esp) (4 * rs5.length + 4)) (stkR s₀) := by
       rw [hesp]; exact fun _ h => h
-    simp only [keyContract, arg_withRegions, State.withRegions_mem, a0, a1, a2, a3, m₂, addr32] at post
+    simp only [keyContract, arg_withRegions, State.withRegions_mem, a0, a1, a2, a3, addr32] at post
+    -- The pop loses the arguments' frame, below `esp`, apart from the schedule.
+    have fL : Frame [stkR s₀] s₂.mem s'.mem := m₂.sub fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨stkR s₀, List.mem_singleton_self _, by rw [hesp]; exact below_sub (by decide) hlo⟩
+    rw [← Proof.Rc2.scheduleAt_frame fL _ (sing ((hp.t_c.sub_right sch_sub).symm))] at post
     rw [Proof.Rc2.bytesAt_frame ce _ _ (by omega_using [hk]) (sing ((hp.t_k.sub_left kE).symm)),
       Proof.Rc2.bytesAt_frame hc.frame _ _ (by omega_using [hk]) (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

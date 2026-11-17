@@ -102,7 +102,7 @@ theorem init_framed :
   X86.Verified.stackScratch (sig := Spec.Gcm.initSig) (nm := "scratch") (e := .u64) (n := 320)
     (pre := Spec.Gcm.initPre X86.abi.ptrBits) (post := Spec.Gcm.initPost X86.abi.ptrBits)
     (wa := true) (stack := 32) (bytes := 2580) (init_verified (vg := vg)) (by decide)
-    (init_noEsp vg) (init_stackUse vg) (initPre_local _) (initPost_local _) initFrameSat_pre
+    (init_noEsp vg) (init_stackUse vg) (initPre_local _) (initPost_local _) (initPostOut_local _) initFrameSat_pre
 
 /-- A state satisfying `vg_aes_gcm_stream_init`'s precondition, without the
 working space. -/
@@ -121,7 +121,7 @@ theorem streamInit_framed :
     (n := 320) (post := Spec.Gcm.streamInitPost X86.abi.ptrBits) (wa := true) (stack := 24)
     (bytes := 2584) (streamInit_verified (vg := vg)) (by decide) (streamInit_noEsp vg)
     (streamInit_stackUse vg) (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
-    (streamInitPost_local _) streamInitFrameSat_pre
+    (streamInitPost_local _) (fun vs m m₁ m₂ r hl _ => streamInitPostOut_local _ vs m m₁ m₂ r hl) streamInitFrameSat_pre
 
 /-- A state satisfying `vg_aes_gcm_stream_aad`'s precondition, without the
 working space. -/
@@ -140,7 +140,7 @@ theorem streamAad_framed :
     (n := 320) (post := Spec.Gcm.streamAadPost X86.abi.ptrBits) (wa := true) (stack := 24)
     (bytes := 2592) (streamAad_verified (vg := vg)) (by decide) (streamAad_noEsp vg)
     (streamAad_stackUse vg) (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
-    (streamAadPost_local _) streamAadFrameSat_pre
+    (streamAadPost_local _) (fun vs m m₁ m₂ r hl _ => streamAadPostOut_local _ vs m m₁ m₂ r hl) streamAadFrameSat_pre
 
 theorem streamEncrypt_noEsp :
     (streamEncrypt vg.callees).allInstrs (fun i => !Taint.clobbers i .esp) = true := by
@@ -184,7 +184,7 @@ theorem streamEncrypt_framed :
     (n := 320) (pre := Spec.Gcm.streamTextPre X86.abi.ptrBits)
     (post := Proof.AesGcm.streamEncryptRoundsPost X86.abi.ptrBits) (wa := true) (stack := 32)
     (bytes := 2604) (streamEncrypt_verified (vg := vg)) (by decide) (streamEncrypt_noEsp vg)
-    (streamEncrypt_stackUse vg) (streamTextPre_local _) (streamEncryptPost_local _)
+    (streamEncrypt_stackUse vg) (streamTextPre_local _) (streamEncryptPost_local _) (fun vs m m₁ m₂ r hl _ => streamEncryptPostOut_local _ vs m m₁ m₂ r hl)
     streamEncryptFrameSat_pre
 
 theorem streamDecryptFrameSat_pre : ∃ s, (Proof.AesGcm.streamDecryptRoundsContract X86.abi 2636).pre s := by
@@ -199,7 +199,7 @@ theorem streamDecrypt_framed :
     (n := 320) (pre := Spec.Gcm.streamTextPre X86.abi.ptrBits)
     (post := Proof.AesGcm.streamDecryptRoundsPost X86.abi.ptrBits) (wa := true) (stack := 32)
     (bytes := 2604) (streamDecrypt_verified (vg := vg)) (by decide) (streamDecrypt_noEsp vg)
-    (streamDecrypt_stackUse vg) (streamTextPre_local _) (streamDecryptPost_local _)
+    (streamDecrypt_stackUse vg) (streamTextPre_local _) (streamDecryptPost_local _) (fun vs m m₁ m₂ r hl _ => streamDecryptPostOut_local _ vs m m₁ m₂ r hl)
     streamDecryptFrameSat_pre
 
 theorem streamFinish_noEsp :
@@ -301,7 +301,7 @@ theorem streamFinish_framed :
     (n := 320) (pre := Spec.Gcm.streamFinishPre X86.abi.ptrBits)
     (post := Proof.AesGcm.streamFinishRoundsPost X86.abi.ptrBits) (wa := true) (stack := 32)
     (bytes := 2600) (streamFinish_verified (vg := vg)) (by decide) (streamFinish_noEsp vg)
-    (streamFinish_stackUse vg) (streamFinishPre_local _) (streamFinishPost_local _)
+    (streamFinish_stackUse vg) (streamFinishPre_local _) (streamFinishPost_local _) (fun vs m m₁ m₂ r hl _ => streamFinishPostOut_local _ vs m m₁ m₂ r hl)
     finFrameSat_pre
 
 /-- A state satisfying `vg_aes_gcm_stream_verify`'s precondition, without
@@ -321,7 +321,7 @@ theorem streamVerify_framed :
     (n := 320) (pre := Spec.Gcm.streamVerifyPre X86.abi.ptrBits)
     (post := Proof.AesGcm.streamVerifyRoundsPost X86.abi.ptrBits) (wa := true) (stack := 32)
     (bytes := 2604) (streamVerify_verified (vg := vg)) (by decide) (streamVerify_noEsp vg)
-    (streamVerify_stackUse vg) (streamVerifyPre_local _) (streamVerifyPost_local _)
+    (streamVerify_stackUse vg) (streamVerifyPre_local _) (streamVerifyPost_local _) (fun vs m m₁ m₂ r hl _ => streamVerifyPostOut_local _ vs m m₁ m₂ r hl)
     verFrameSat_pre
 
 /-- A state satisfying `vg_aes_gcm_seal`'s precondition, without the working
@@ -341,7 +341,7 @@ theorem seal_framed :
     (n := 320) (pre := Spec.Gcm.sealPre X86.abi.ptrBits)
     (post := Proof.AesGcm.sealRoundsPost X86.abi.ptrBits) (wa := true) (stack := 32)
     (bytes := 2604) (seal_verified (vg := vg)) (by decide) (seal_noEsp vg)
-    (seal_stackUse vg) (sealPre_local _) (sealPost_local _) sealFrameSat_pre
+    (seal_stackUse vg) (sealPre_local _) (sealPost_local _) (fun vs m m₁ m₂ r hl _ => sealPostOut_local _ vs m m₁ m₂ r hl) sealFrameSat_pre
 
 /-- A state satisfying `vg_aes_gcm_open`'s precondition, without the working
 space: its ten argument slots at `0x8004`. -/
@@ -361,7 +361,7 @@ theorem open_framed :
     (post := Proof.AesGcm.openRoundsPost X86.abi.ptrBits) (wa := true) (stack := 32)
     (leak := some (Spec.Gcm.openLeak X86.abi.ptrBits))
     (bytes := 2608) (open_verified (vg := vg)) (by decide) (open_noEsp vg)
-    (open_stackUse vg) (openPre_local _) (openPost_local _) openFrameSat_pre
+    (open_stackUse vg) (openPre_local _) (openPost_local _) (fun vs m m₁ m₂ r hl _ => openPostOut_local _ vs m m₁ m₂ r hl) openFrameSat_pre
     (hleak := openLeak_local _)
 
 end VG.Proof.AesGcm.X86

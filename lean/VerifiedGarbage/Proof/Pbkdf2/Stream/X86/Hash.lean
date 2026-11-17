@@ -474,7 +474,15 @@ theorem init_frame {s : State} {r : Reg} {st : BitVec 32} (h : InitArgs (H := H)
     (by simp only [List.length_cons, List.length_nil]; omega_nat) (h.callPre hH) fun s' rd' wr' cs' f' ⟨s₂, m₂, post⟩ => ?_
   refine hQ s' (after_of e (by simp only [List.length_cons, List.length_nil]; omega_nat) rd' wr' cs' f') ?_
   simp only [initK, arg_withRegions, h.a0] at post
-  rw [← m₂]; exact post
+  -- The pop loses the arguments' frame, below `esp`, apart from the buffers.
+  have fL : Frame [stk s] s₂.mem s'.mem := m₂.sub fun q hq => by
+    simp only [List.mem_singleton] at hq; subst hq
+    exact ⟨_, List.mem_singleton_self _, below_sub (by simp only [List.length_cons, List.length_nil]; omega_nat) h.sp48⟩
+  have kS : ∀ i < H.S, s'.mem (st.setWidth 64 + BitVec.ofNat 64 i) = s₂.mem (st.setWidth 64 + BitVec.ofNat 64 i) :=
+    fun i hi => fL.bytes (R := ⟨st.setWidth 64, H.S⟩)
+      (by simp only [List.mem_singleton]; rintro q rfl; exact h.b_st.symm)
+      (by show H.S ≤ 2 ^ 64; have := hH.hSB; omega_nat) hi
+  exact hH.repr _ _ _ _ _ kS post
 
 /-! ## `update`, in a frame of its arguments -/
 
@@ -608,8 +616,16 @@ theorem upd_frame {s : State} {lo r : Reg} {st d sc c : BitVec 32} {len : Nat}
     exact fE.bytes (R := ⟨d.setWidth 64, len⟩)
       (by simp only [List.mem_singleton]; rintro q rfl; exact h.b_d.symm) (by show len ≤ 2 ^ 64; have := h.hlen; omega_nat)
       (List.mem_range.mp hi)
-  rw [← m₂, ← hd]
-  exact post m hr' (by rw [count_withRegions, h.count_eq]; exact hc)
+  -- The pop loses the arguments' frame, below `esp`, apart from the buffers.
+  have fL : Frame [stk s] s₂.mem s'.mem := m₂.sub fun q hq => by
+    simp only [List.mem_singleton] at hq; subst hq
+    exact ⟨_, List.mem_singleton_self _, below_sub (by simp only [List.length_cons, List.length_nil]; omega_nat) h.sp48⟩
+  have kS : ∀ i < H.S, s'.mem (st.setWidth 64 + BitVec.ofNat 64 i) = s₂.mem (st.setWidth 64 + BitVec.ofNat 64 i) :=
+    fun i hi => fL.bytes (R := ⟨st.setWidth 64, H.S⟩)
+      (by simp only [List.mem_singleton]; rintro q rfl; exact h.b_st.symm)
+      (by show H.S ≤ 2 ^ 64; have := hH.hSB; omega_nat) hi
+  rw [← hd]
+  exact hH.repr _ _ _ _ _ kS (post m hr' (by rw [count_withRegions, h.count_eq]; exact hc))
 
 /-! ## `finalize`, in a frame of its arguments -/
 
@@ -742,7 +758,18 @@ theorem fin_frame {s : State} {r : Reg} {st o sc lo hi : BitVec 32} (h : FinArgs
   have hr' : hH.SH.Repr (pushed (fin5 r) s).callEntry.mem (st.setWidth 64) m :=
     hH.repr _ _ _ _ _ (fun i hi => fE.bytes (R := ⟨st.setWidth 64, H.S⟩) hs
       (by show H.S ≤ 2 ^ 64; have := hH.hSB; omega_nat) hi) hr
-  rw [← m₂]
+  -- The pop loses the arguments' frame, below `esp`, apart from the output.
+  have fL : Frame [stk s] s₂.mem s'.mem := m₂.sub fun q hq => by
+    simp only [List.mem_singleton] at hq; subst hq
+    exact ⟨_, List.mem_singleton_self _, below_sub (by simp only [List.length_cons, List.length_nil]; omega_nat) h.sp48⟩
+  have kO : bytesAt s'.mem (o.setWidth 64) H.F = bytesAt s₂.mem (o.setWidth 64) H.F := by
+    simp only [bytesAt]
+    apply List.map_congr_left
+    intro i hi
+    exact fL.bytes (R := ⟨o.setWidth 64, H.F⟩)
+      (by simp only [List.mem_singleton]; rintro q rfl; exact h.b_o.symm) (by show H.F ≤ 2 ^ 64; have := h.no; omega_nat)
+      (List.mem_range.mp hi)
+  rw [kO]
   exact post m hr' hl (by rw [count_withRegions, h.count_eq]; exact hc)
 
 /-! ## The calls in two runs

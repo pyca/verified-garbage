@@ -115,13 +115,16 @@ theorem argAddr_pushed {rs : List Reg} {s : State} (hE : 20 ≤ (s.gpr .esp).toN
   exact addr_eq (by rw [sub_toNat (by omega_arith)]; have := (s.gpr .esp).isLt; omega_arith)
 
 /-- A call of a field function whose code is `body`, with `rs` pushed as its
-arguments, the first of which (pushed last) is the working space. -/
+arguments, the first of which (pushed last) is the working space, for a
+relation `Q` of the memory before and after that reads the memory after only
+within the working space (`hQ`): the frame of arguments is lost. -/
 theorem callFrame_ok {name : String} {body : Prog isa} (hn : NoSp body) (h0 : stackUse body = 0)
     {rs : List Reg} (hrs : .esp ∉ rs) (hl3 : 3 ≤ rs.length) (hl4 : rs.length ≤ 4)
     {s : State} {base : Addr} (hs : Scr s base) (hc : CallCtx s base) {o a : Nat} (ho : Slot o)
     (ha : Slot a) {v : Nat → BitVec 32}
     (hv : ∀ i < rs.length, arg (pushed rs s).callEntry i = v i) (h0v : v 0 = s.gpr .edi)
     (h1v : v 1 = BitVec.ofNat 32 o) (h2v : v 2 = BitVec.ofNat 32 a) {Q : Mem → Mem → Prop}
+    (hQ : ∀ m m₁ m₂, WsEq base m₁ m₂ → Q m m₁ → Q m m₂)
     (hok : ∀ t, FnEntry t base rs.length o a → (∀ i < rs.length, arg t i = v i) →
       WsEq base s.mem t.mem → t.wr = [⟨base, 8192⟩] →
       WP isa body t fun t' => FnOut base o t t' ∧ Q t.mem t'.mem) :
@@ -178,18 +181,22 @@ theorem callFrame_ok {name : String} {body : Prog isa} (hn : NoSp body) (h0 : st
     · rw [List.mem_singleton.mp hr]; exact List.mem_append_right _ List.mem_cons_self
     · rw [List.mem_singleton.mp hr]; exact List.mem_append_right _ (List.mem_cons_of_mem _ hs.wr)
   · rw [List.mem_singleton.mp hr]; exact List.mem_cons_of_mem _ hs.wr
-  refine ⟨⟨⟨fun r hr => ?_, hrd, hwr⟩, ?_, ?_⟩, ?_, e.mem, weq, by rw [← hm2]; exact hq⟩
+  -- The pop loses the arguments' frame, below `esp`, apart from the working space.
+  have wL : WsEq base s₂.mem s'.mem := WsEq.of_frame hc (hm2.sub fun r hr => by
+    rw [List.mem_singleton.mp hr]
+    exact ⟨callStk s, List.mem_singleton_self _, below_sub (by omega_arith) hE⟩)
+  refine ⟨⟨⟨fun r hr => ?_, hrd, hwr⟩, ?_, ?_⟩, ?_, e.mem, weq, hQ _ _ _ wL hq⟩
   · have : r ∈ calleeSaved := by
       cases r <;> first | decide | exact absurd (by decide) hr
     exact hcs r this
-  · rw [← hm2]; exact weq.field hpost.mem
+  · exact fun x h8 hx hw => (wL x h8).trans (weq.field hpost.mem x h8 hx hw)
   · rw [h0] at hfr
     refine hfr.sub fun r hr => ?_
     rcases List.mem_append.mp hr with hr | hr
     · exact ⟨r, by rw [List.mem_singleton.mp hr]; exact List.mem_cons_self, fun _ h => h⟩
     · rw [List.mem_singleton.mp hr]
       exact ⟨callStk s, by simp, below_sub (by omega_arith) hE⟩
-  · rw [← hm2]; exact hpost.bounded
+  · exact wL.bounded (by omega_arith) hpost.bounded
 
 theorem COp.of_movs {base : Addr} {o : Nat} {s s₁ t : State} (k : Keeps [.eax, .ecx, .edx] s s₁)
     (hm : s₁.mem = s.mem) (h : COp base o s₁ t) : COp base o s t := by
@@ -225,6 +232,8 @@ theorem call3_ok {name : String} {body : Prog isa} (hn : NoSp body) (h0 : stackU
     (by decide) hs₃ hc₃ ho ha (v := fun i => arg (pushed [.edx, .ecx, .eax, .edi] s₃).callEntry i)
     (fun _ _ => rfl) (av 0 (by decide)) ((av 1 (by decide)).trans v1) ((av 2 (by decide)).trans v2)
     (Q := fun m m' => F m' base o = op (F m base a) (F m base b))
+    (fun _ _ _ hw h => by
+      simp only [F] at h ⊢; rw [hw.fe (by have : o + 112 ≤ 3584 := ho; omega_arith)]; exact h)
     fun t he hav hw _ => hok t he (by rw [hav 3 (by decide), av 3 (by decide)]; exact u₃.gpr)
       (hw.bounded (by omega_arith) (m₃ ▸ ab)) (hw.bounded (by omega_arith) (m₃ ▸ bb)))
     fun t ⟨hop, hbd, m, hm, hq⟩ => ⟨hop.of_movs k₃ m₃, hbd, ?_⟩
@@ -254,6 +263,8 @@ theorem call2_ok {name : String} {body : Prog isa} (hn : NoSp body) (h0 : stackU
     (fun _ _ => rfl) (av 0 (by decide)) ((av 1 (by decide)).trans ((u₂.other _ (by decide)).trans u₁.gpr))
     ((av 2 (by decide)).trans u₂.gpr)
     (Q := fun m m' => F m' base o = op (F m base a))
+    (fun _ _ _ hw h => by
+      simp only [F] at h ⊢; rw [hw.fe (by have : o + 112 ≤ 3584 := ho; omega_arith)]; exact h)
     fun t he _ hw _ => hok t he (hw.bounded (by omega_arith) (m₂ ▸ ab)))
     fun t ⟨hop, hbd, m, hm, hq⟩ => ⟨hop.of_movs k₂ m₂, hbd, ?_⟩
   rw [hq, F, F, hm.fe (by omega_arith), m₂]

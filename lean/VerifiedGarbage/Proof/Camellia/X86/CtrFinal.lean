@@ -428,7 +428,14 @@ theorem ctr_call {s : State} {W R C D : BitVec 32} {n : Nat} (h : CCall s W R C 
       exact ⟨_, List.mem_singleton_self _, VG.X86.below_sub (by decide) h.esp⟩
   have hR := h.rounds
   obtain ⟨hdata, hctr⟩ := calleeK_post post (by simp only [arg_withRegions, a1]; exact hR)
-  simp only [arg_withRegions, State.withRegions_mem, a0, a1, a2, a3, a4, hn, m₂] at hdata hctr
+  simp only [arg_withRegions, State.withRegions_mem, a0, a1, a2, a3, a4, hn] at hdata hctr
+  obtain m₂ : Frame [below (s.gpr .esp) 2796] s₂.mem s'.mem :=
+    m₂.sub fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨_, List.mem_singleton_self _,
+        VG.X86.below_sub (by simp only [List.length_cons, List.length_nil]; omega_using []) h.esp⟩
+  rw [← AesCfb.X86.blocksAt_frame' m₂ (one_disj h.bd)] at hdata
+  rw [← Proof.Cmac.bytesAt_frame m₂ (one_disj h.bc) (by decide)] at hctr
   rw [Proof.Cmac.bytesAt_frame fE' (one_disj h.bc) (by decide), AesCfb.X86.blocksAt_frame' fE' (one_disj h.bd),
     subkeysAt_frame fE' hR (one_disj h.bw)] at hdata
   rw [Proof.Cmac.bytesAt_frame fE' (one_disj h.bc) (by decide)] at hctr

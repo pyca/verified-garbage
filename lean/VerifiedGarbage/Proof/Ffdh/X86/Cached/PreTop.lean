@@ -995,7 +995,7 @@ theorem recScan_ok (h : In Ex base bytes len args s) {dlen : Nat} (G : DomGeo ar
   have elen : (VG.Impl.Ffdh.VettedGroups.groups.flatMap VG.Impl.Ffdh.VettedGroups.Group.bytes).length = 17744 :=
     VG.Proof.Ffdh.VettedTableFacts.tableBytes_length
   obtain p16 : 16 ≤ (s₃.gpr .esp).toNat := by rw [sp₃]; omega_using [low]
-  refine WP.frameAlloc (by decide) (by decide) (by decide) p16 (NoSp.of_all (by rfl)) ?_
+  refine WP.frameAllocKept (by decide) (by decide) (by decide) p16 (NoSp.of_all (by rfl)) ?_
   refine WP.seq (WP.mono (scanCtx_ok h G hb40 tfit tread tbytes tws t40 H)
     fun w ⟨C, TA, wrd, wwr, Fw, wesp, wbx⟩ => ?_)
   refine WP.mono (VettedValidation.scan_ok _ 0 w C TA (by rw [elen])) fun t ⟨E, Mt, Kt⟩ => ?_

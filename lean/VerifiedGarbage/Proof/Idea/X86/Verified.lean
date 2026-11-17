@@ -155,6 +155,7 @@ theorem invertKey_framed :
     (post := Spec.Idea.invertKeyPost X86.abi.ptrBits) (wa := false) (stack := 0) (bytes := 32)
     invertKey_verified (by decide) (by lit_decide) (by lit_decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
-    (Proof.Idea.invertKeyPost_local _) invertFrameSat_pre
+    (Proof.Idea.invertKeyPost_local _)
+    (fun vs m m₁ m₂ r hl _ hb => Proof.Idea.invertKeyPostOut_local _ vs m m₁ m₂ r hl hb) invertFrameSat_pre
 
 end VG.Proof.Idea.X86

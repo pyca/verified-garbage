@@ -74,7 +74,7 @@ theorem subtract_ok {g : Geometry} (v : g.Valid) {s : State} {c capacity one : N
   obtain a09 : g.array 0 + 4 * g.words ≤ g.array 10 := g.arrayBefore (by decide)
   obtain a910 : g.array 9 + 4 * g.words ≤ g.array 10 := g.arrayBefore (by decide)
   unfold subtract
-  refine WP.frameAlloc (by decide) (by decide) (by decide) (by rw [sp]; omega_using [low]) (NoSp.of_all (by rfl)) ?_
+  refine WP.frameAllocKept (by decide) (by decide) (by decide) (by rw [sp]; omega_using [low]) (NoSp.of_all (by rfl)) ?_
   obtain St : StackContext (s.gpr .esp - 20#32) (allocFrame 20 s) :=
     VG.Proof.RsaKeyGen.X86.FilterStack.allocated_context (by rw [sp]; omega_using [low])
   obtain Ci : Context g (allocFrame 20 s) :=
@@ -356,7 +356,7 @@ theorem scan_ok {g : Geometry} (v : g.Valid) {c capacity : Nat} {p : BitVec 32} 
   have low := S.caller.low
   have C := S.context
   unfold scan
-  refine WP.frameAlloc (by decide) (by decide) (by decide) (by rw [sp]; omega_using [low]) (NoSp.of_all (by rfl)) ?_
+  refine WP.frameAllocKept (by decide) (by decide) (by decide) (by rw [sp]; omega_using [low]) (NoSp.of_all (by rfl)) ?_
   have St : VG.Proof.RsaKeyGen.X86.Sieve.StackContext (s.gpr .esp - 20#32) (allocFrame 20 s) :=
     VG.Proof.RsaKeyGen.X86.FilterStack.allocated_context (by rw [sp]; omega_using [low])
   have Ci : Context g (allocFrame 20 s) :=

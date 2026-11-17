@@ -330,7 +330,8 @@ theorem init_step (hL : L.Ok) (hT : TabL P L) {t : State} (hc : Ctx L g m₀ t) 
   obtain a := initA (P := P) hL hc' ((hk0 _ (by simp)).trans hdi) ((hk0 _ (by simp)).trans hsi)
     ((hk0 _ (by simp)).trans hdx) ((hk0 _ (by simp)).trans hcx) ((hk0 _ (by simp)).trans hbp)
   have hS := P.ok.hH.hS
-  refine WP.of_syms (hi_frame P.ok.hi P.ok.hiSp P.ok.hiSU a fun v af hi ho hsy => ?_)
+  refine WP.of_syms (hi_frame (fun m m' p q msg hb => P.ok.hH.repr m m' p q msg (fun i hi => hb i (by rw [P.ok.hH.hS]; exact hi)))
+    P.ok.hi P.ok.hiSp P.ok.hiSU a fun v af hi ho hsy => ?_)
   obtain hsafe : ∀ r ∈ [(⟨(L.sc + BitVec.ofNat 32 0).setWidth 64, P.ok.hH.SH.stateBytes⟩ : Region),
       ⟨(L.sc + BitVec.ofNat 32 192).setWidth 64, P.ok.hH.SH.stateBytes⟩,
       ⟨(L.sc + BitVec.ofNat 32 384).setWidth 64, P.ok.Wi * 8⟩], Region.Sub r ⟨L.scr, 2256⟩ := by

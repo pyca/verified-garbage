@@ -607,7 +607,7 @@ theorem frame_wp {n w cs : Nat} {f : List Byte → List Byte → List Byte} {c :
     (hk : Callee n w cs f c k) {name : String} {s : State} (h : Pre n w (20 + cs) s) :
     WP isa (.frame (.alloc 16) (.seq (.block copyArgs) (.call name c)) (.free 16)) s (Freed n f s) := by
   have hstk := h.stk
-  refine WP.frameAlloc (by decide) (by decide) (by decide) (by omega_using [hstk]) ?_ ?_
+  refine WP.frameAllocKept (by decide) (by decide) (by decide) (by omega_using [hstk]) ?_ ?_
   · intro i hi
     rcases List.mem_append.mp hi with hi | hi
     · exact (by decide : ∀ i ∈ copyArgs, Taint.clobbers i .esp = false) i hi

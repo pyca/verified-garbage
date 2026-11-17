@@ -170,7 +170,7 @@ theorem candidateRun_ok (c : Cand) {p : SearchPublic} {o s : State} {used remain
     rw [hb.sp, SearchPublic.S1, hi.sp_eq]; exact VG.X86.sub_toNat (by omega_using [h1])
   unfold candidateRun
   rw [show 4 * callWords = 44 from rfl]
-  refine WP.frameAlloc (by decide) (by decide) (by decide) (by omega_using [h1, hsn]) (body_noSp c) ?_
+  refine WP.frameAllocKept (by decide) (by decide) (by decide) (by omega_using [h1, hsn]) (body_noSp c) ?_
   refine WP.seq (WP.mono (arguments_ok hb.alloc h.esi) fun u ⟨F, a⟩ => ?_)
   obtain ⟨cov, covW⟩ := call_covers F (used := used) (by omega_using [hroom, hv, hpr])
   have hun : (u.gpr .esp).toNat = (o.gpr .esp).toNat - 60 := by

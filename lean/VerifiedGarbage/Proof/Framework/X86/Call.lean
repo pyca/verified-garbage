@@ -374,8 +374,42 @@ theorem WP.call {n : String} {c : Prog isa} {k : Contract isa}
     · rw [hkeep r hrs, Exec.gpr h he', State.callEntry_gpr _ hrs]
 
 /-- A frame: its body, which never writes `esp`, runs from `pushed rs s`,
-and the pop of the `rs.length` words leads to `popped r rs.length s₂`. -/
+and the pop of the `rs.length` words leads to `popped r rs.length s₂`, of
+which the postcondition may rely on nothing the frame's bytes hold, nor on
+the unknowns: it holds whatever memory `m` that differs from the body's only
+in the frame, and whatever unknowns `u`, the state then has. (A frame's
+bytes are below `esp` once it is released, where a signal handler may
+overwrite them.) -/
 theorem WP.frame {rs : List Reg} {r : Reg} {body : Prog isa} {s : State} {Q : State → Prop}
+    (hne : rs ≠ []) (hrs : .esp ∉ rs) (hr : r ≠ .esp) (hn : 4 * rs.length ≤ (s.gpr .esp).toNat)
+    (hsp : NoSp body) (hb : WP isa body (pushed rs s) fun s₂ => ∀ m u,
+      Frame [below (s.gpr .esp) (4 * rs.length)] s₂.mem m →
+        Q { popped r rs.length s₂ with mem := m, unknowns := u }) :
+    WP isa (.frame (.push rs) body (.pop r rs.length)) s Q := by
+  obtain ⟨t, s₂, he, hq⟩ := hb
+  obtain ⟨-, hw⟩ := Exec.rdwr he
+  have hp := Exec.gpr hsp he
+  have hpop : isa.pop (.pop r rs.length) (pushed rs s) s₂ = some (popped r rs.length s₂) := by
+    simp only [isa, pop]
+    refine ite_eq_left ⟨by simpa using hne, hr, hp, hw, ?_⟩
+    rw [pushed_wr, pushed_esp]; rfl
+  exact ⟨_, _, Exec.frame (push_pushed hne hrs hn) he hpop,
+    hq _ _ (by rw [(popReg_rest s₂ r rs.length).1]; exact Frame.refl _ _)⟩
+
+/-- `WP.frame` for a postcondition that holds whatever the frame's bytes
+below `esp` and the unknowns are once it holds for the popped state. -/
+theorem WP.frameLocal {rs : List Reg} {r : Reg} {body : Prog isa} {s : State} {Q : State → Prop}
+    (hne : rs ≠ []) (hrs : .esp ∉ rs) (hr : r ≠ .esp) (hn : 4 * rs.length ≤ (s.gpr .esp).toNat)
+    (hsp : NoSp body)
+    (hQ : ∀ t m u, Q t → Frame [below (s.gpr .esp) (4 * rs.length)] t.mem m → Q { t with mem := m, unknowns := u })
+    (hb : WP isa body (pushed rs s) fun s₂ => Q (popped r rs.length s₂)) :
+    WP isa (.frame (.push rs) body (.pop r rs.length)) s Q :=
+  WP.frame hne hrs hr hn hsp (WP.mono hb fun s₂ q m u fl =>
+    hQ _ m u q (by show Frame _ (popReg s₂ r rs.length).mem m; rw [(popReg_rest s₂ r rs.length).1]; exact fl))
+
+/-- The previous statement of `WP.frame`, which keeps the frame's bytes:
+kept only until every proof has moved to `WP.frame`. -/
+theorem WP.frameKept {rs : List Reg} {r : Reg} {body : Prog isa} {s : State} {Q : State → Prop}
     (hne : rs ≠ []) (hrs : .esp ∉ rs) (hr : r ≠ .esp) (hn : 4 * rs.length ≤ (s.gpr .esp).toNat)
     (hsp : NoSp body) (hb : WP isa body (pushed rs s) fun s₂ => Q (popped r rs.length s₂)) :
     WP isa (.frame (.push rs) body (.pop r rs.length)) s Q := by

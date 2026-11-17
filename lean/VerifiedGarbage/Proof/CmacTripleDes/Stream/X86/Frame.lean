@@ -65,20 +65,20 @@ theorem init_framed : Verified X86.target (Impl.StackScratch.X86.withStackScratc
   X86.Verified.stackScratch (sig := Spec.Cmac.tdesStreamInitSig) (nm := "scratch") (e := .u64) (n := 80)
     (pre := Spec.Cmac.tdesStreamInitPre X86.abi.ptrBits) (post := Spec.Cmac.tdesStreamInitPost X86.abi.ptrBits)
     (wa := false) (stack := 20) (bytes := 660) init_verified (by decide) (by lit_decide) (by lit_decide)
-    (streamInitPre_local _) (streamInitPost_local _) initFrameSat_pre
+    (streamInitPre_local _) (streamInitPost_local _) (fun vs m m₁ m₂ r hl _ => streamInitPostOut_local _ vs m m₁ m₂ r hl) initFrameSat_pre
 
 theorem absorb_framed : Verified X86.target (Impl.StackScratch.X86.withStackScratch 716 5 absorb)
     (Spec.Cmac.tdesAbsorbContract X86.abi 740) :=
   X86.Verified.stackScratch (sig := Spec.Cmac.tdesAbsorbSig) (nm := "scratch") (e := .u64) (n := 86)
     (post := Spec.Cmac.tdesAbsorbPost X86.abi.ptrBits)
     (wa := false) (stack := 24) (bytes := 716) absorb_verified (by decide) (by lit_decide) (by lit_decide)
-    (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (absorbPost_local _) absorbFrameSat_pre
+    (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (absorbPost_local _) (fun vs m m₁ m₂ r hl _ => absorbPostOut_local _ vs m m₁ m₂ r hl) absorbFrameSat_pre
 
 theorem finish_framed : Verified X86.target (Impl.StackScratch.X86.withStackScratch 712 4 finish)
     (Spec.Cmac.tdesFinishContract X86.abi 736) :=
   X86.Verified.stackScratch (sig := Spec.Cmac.tdesFinishSig) (nm := "scratch") (e := .u64) (n := 86)
     (post := Spec.Cmac.tdesFinishPost X86.abi.ptrBits)
     (wa := false) (stack := 24) (bytes := 712) finish_verified (by decide) (by lit_decide) (by lit_decide)
-    (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (finishPost_local _) finishFrameSat_pre
+    (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (finishPost_local _) (fun vs m m₁ m₂ r hl _ => finishPostOut_local _ vs m m₁ m₂ r hl) finishFrameSat_pre
 
 end VG.Proof.CmacTripleDes.Stream.X86

@@ -1043,7 +1043,7 @@ theorem su2_ok {s : State} (h : Keyed hF s₀ s) (hdi : s.gpr .edi = dO s₀ F.s
   have := hF.hWi; have hS := hF.hH.hS
   have e0 := dO_addr hp (o := F.st0O) (hz.st0O_lt)
   have e1 := dO_addr hp (o := F.st1O) (hz.st1O_lt)
-  refine hi_frame hF.hi hF.hiSp hF.hiSU (su2_args hp hz hF h hdi hsi) fun s' a r0 r1 => ⟨?_, ?_, ?_⟩
+  refine hi_frame (fun m m' p q msg hb => hF.hH.repr m m' p q msg (fun i hi => hb i (by rw [hF.hH.hS]; exact hi))) hF.hi hF.hiSp hF.hiSU (su2_args hp hz hF h hdi hsi) fun s' a r0 r1 => ⟨?_, ?_, ?_⟩
   · refine h.kr.call hp hz a fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl

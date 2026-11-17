@@ -432,7 +432,7 @@ theorem correctBase {s : State} (hp : BPre s) :
   have rd2 : t2.rd = s.rd := u2.rd.trans u1.rd
   have wr2 : t2.wr = s.wr := u2.wr.trans u1.wr
   have hn2 : 4 * baseFrame.length ≤ (t2.gpr .esp).toNat := by rw [baseFrame_length, esp2]; omega_using [hn]
-  refine WP.frame (by decide) baseFrame_esp (by decide) hn2 (NoSp.of_all (by lit_decide)) ?_
+  refine WP.frameKept (by decide) baseFrame_esp (by decide) hn2 (NoSp.of_all (by lit_decide)) ?_
   -- The frame: the base point, below the caller's `ebx`.
   have pesp : (pushed baseFrame t2).gpr .esp = s.gpr .esp - BitVec.ofNat 32 60 := by
     rw [pushed_esp60, esp2]
@@ -549,7 +549,12 @@ theorem correctBase {s : State} (hp : BPre s) :
     · rw [popped_esp, cs' .esp (by decide), hq.esp]
       exact BitVec.sub_add_cancel _ _
   · show Spec.X448.bytesAt (popped .ebx 15 s').mem ((arg s 0).setWidth 64) 56 = _
-    rw [popped_mem, ← m₂]; exact p2
+    rw [popped_mem, ← p2, hq.esp] at *
+    simp only [Spec.X448.bytesAt]
+    refine List.map_congr_left fun i hi => m₂.bytes (R := outR s) (fun r hr => ?_)
+      (by show 56 ≤ 2 ^ 64; omega_using []) (by simpa using hi)
+    rw [List.mem_singleton.mp hr]
+    exact (hp.below_out (by simp only [List.length_cons, List.length_nil]; omega_using [])).symm
 
 /-! ## Constant time -/
 

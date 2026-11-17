@@ -448,7 +448,7 @@ theorem seal_framed :
   X86.Verified.stackScratch (sig := Spec.Ocb.sealSig) (nm := "work") (e := .u64) (n := 320)
     (pre := Spec.Ocb.sealPre X86.abi.ptrBits) (post := Proof.AesOcb.sealRoundsPost X86.abi.ptrBits)
     (wa := true) (stack := 24) (bytes := 2608) (seal_verified v) (by decide) (seal_noEsp v)
-    (seal_stackUse v) (sealPre_local _) (sealPost_local _) sealFrameSat_pre
+    (seal_stackUse v) (sealPre_local _) (sealPost_local _) (sealPostOut_local _) sealFrameSat_pre
 
 theorem open_framed :
     Verified X86.target (Impl.StackScratch.X86.withStackScratch 2608 10 («open» (callees v)))
@@ -456,7 +456,7 @@ theorem open_framed :
   X86.Verified.stackScratch (sig := Spec.Ocb.openSig) (nm := "work") (e := .u64) (n := 320)
     (pre := Spec.Ocb.openPre X86.abi.ptrBits) (post := Proof.AesOcb.openRoundsPost X86.abi.ptrBits)
     (wa := true) (stack := 24) (leak := some (Spec.Ocb.openLeak X86.abi.ptrBits)) (bytes := 2608)
-    (open_verified v) (by decide) (open_noEsp v) (open_stackUse v) (openPre_local _) (openPost_local _)
+    (open_verified v) (by decide) (open_noEsp v) (open_stackUse v) (openPre_local _) (openPost_local _) (openPostOut_local _)
     openFrameSat_pre (hleak := openLeak_local _)
 
 theorem init_framed :
@@ -465,6 +465,6 @@ theorem init_framed :
   X86.Verified.stackScratch (sig := Spec.Ocb.initSig) (nm := "scratch") (e := .u64) (n := 320)
     (pre := Spec.Ocb.initPre X86.abi.ptrBits) (post := Spec.Ocb.initPost X86.abi.ptrBits)
     (wa := true) (stack := 24) (bytes := 2580) (init_verified v) (by decide) (init_noEsp v)
-    (init_stackUse v) (initPre_local _) (initPost_local _) initFrameSat_pre
+    (init_stackUse v) (initPre_local _) (initPost_local _) (initPostOut_local _) initFrameSat_pre
 
 end VG.Proof.AesOcb.X86

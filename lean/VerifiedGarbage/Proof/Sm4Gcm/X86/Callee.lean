@@ -238,7 +238,11 @@ theorem ctr_call {s : State} {K C D : BitVec 32} {n : Nat} (h : CtrCall s K C D 
       simp only [List.mem_singleton] at hr; subst hr
       exact ⟨_, List.mem_singleton_self _, VG.X86.below_sub (by decide) h.esp⟩
   obtain ⟨hdata, hctr⟩ := ctrK_post post
-  simp only [arg_withRegions, State.withRegions_mem, a0, a1, a2, a3, hn, m₂] at hdata hctr
+  simp only [arg_withRegions, State.withRegions_mem, a0, a1, a2, a3, hn] at hdata hctr
+  -- The pop loses the arguments' frame, below `esp`, apart from the buffers.
+  have fL : Frame [below (s.gpr .esp) 1536] s₂.mem s'.mem := Frame.below_mono (wr := []) m₂ (by decide) h.esp
+  rw [← blocksAt_frame fL (one_disj h.bd) (by have := h.fD; omega_using [hn])] at hdata
+  rw [← blockAt_frame fL (one_disj h.bc)] at hctr
   rw [blockAt_frame fE' (one_disj h.bc), blocksAt_frame fE' (one_disj h.bd) (by have := h.fD; omega_using [hn]),
     scheduleAt_frame fE' (one_disj h.bk)] at hdata
   rw [blockAt_frame fE' (one_disj h.bc)] at hctr
@@ -420,7 +424,10 @@ theorem key_call {s : State} {K C : BitVec 32} (h : KeyCall s K C) :
       simp only [List.mem_singleton] at hr; subst hr
       exact ⟨_, List.mem_singleton_self _, VG.X86.below_sub (by decide) h.esp⟩
   have hout := keyK_post post
-  simp only [arg_withRegions, State.withRegions_mem, a0, a1, m₂] at hout
+  simp only [arg_withRegions, State.withRegions_mem, a0, a1] at hout
+  -- The pop loses the arguments' frame, below `esp`, apart from the schedule.
+  have fL : Frame [below (s.gpr .esp) 1460] s₂.mem s'.mem := Frame.below_mono (wr := []) m₂ (by decide) h.esp
+  rw [← scheduleAt_frame fL (one_disj h.bc)] at hout
   rw [sm4BlockAt_frame fE' (one_disj h.bk)] at hout
   refine ⟨rd', wr', cs', ?_, hout⟩
   refine f'.sub fun r hr => ?_

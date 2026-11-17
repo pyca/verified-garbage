@@ -144,7 +144,7 @@ theorem update : Verified X86.target
     (Spec.Md5.updateContract X86.abi (20 + 140)) :=
   X86.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 14) (stack := 20) (bytes := 140)
     updateScratch (by decide) (by lit_decide) (by lit_decide)
-    (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Md5.updatePost_local _)
+    (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Md5.updatePost_local _) (fun vs m m₁ m₂ r hl _ hb => Proof.Md5.updatePostOut_local _ vs m m₁ m₂ r hl hb)
     (by implies_sat [Spec.Md5.updateContract, Spec.Md5.updateSig, X86.abi, X86.argSlots, X86.argVal,
         X86.argBytes]
       [updateFrameSat, MdStream.X86.Update.sat₀, MdStream.X86.Update.satMem, X86.arg, X86.argAddr,
@@ -159,7 +159,7 @@ theorem finalize : Verified X86.target
     (Spec.Md5.finalizeContract X86.abi (20 + 136)) :=
   X86.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 14) (stack := 20) (bytes := 136)
     finalizeScratch (by decide) (by lit_decide) (by lit_decide)
-    (fun _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Md5.finalizePost_local _)
+    (fun _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Md5.finalizePost_local _) (fun vs m m₁ m₂ r hl _ hb => Proof.Md5.finalizePostOut_local _ vs m m₁ m₂ r hl hb)
     (by implies_sat [Spec.Md5.finalizeContract, Spec.Md5.finalizeSig, X86.abi, X86.argSlots,
         X86.argVal, X86.argBytes]
       [finalizeFrameSat, MdStream.X86.Finalize.sat₀, MdStream.X86.Finalize.satMem, X86.arg,

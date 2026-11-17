@@ -294,7 +294,8 @@ theorem withStackScratchC_run {c : Prog isa}
     (ha : abiPreserved (narrowC sig e n bytes wa (c₀ :: cs) s) s₃) :
     Exec isa (withStackScratch bytes (slots sig) c) s
         (setArgsTrace bytes (s.gpr .esp - BitVec.ofNat 32 bytes) (slots sig) ++ t) (popState bytes s s₃) ∧
-      abiPreserved s (popState bytes s s₃) ∧ (popState bytes s s₃).mem = s₃.mem ∧
+      abiPreserved s (popState bytes s s₃) ∧
+      Frame [below (s.gpr .esp) bytes] s₃.mem (popState bytes s s₃).mem ∧
       (popState bytes s s₃).gpr .eax = s₃.gpr .eax ∧ (popState bytes s s₃).gpr .edx = s₃.gpr .edx := by
   obtain ⟨hb, hb1, hb2⟩ := hb
   obtain ⟨hs', hdrop, -, -, -⟩ := pre_consts.mp hs
@@ -395,7 +396,7 @@ theorem withStackScratchC_run {c : Prog isa}
     rfl
   have hex := Exec.frame hpush (Exec.seq hset hw) hpop
   simp only [isa, addrs, List.map_nil, List.nil_append, List.append_nil, allocState_esp] at hex
-  refine ⟨hex, ⟨fun q hq => ?_, ?_⟩, rfl, ?_, ?_⟩
+  refine ⟨hex, ⟨fun q hq => ?_, ?_⟩, Frame.refl _ _, ?_, ?_⟩
   · simp only [popState, State.setReg, State.withRegions_gpr]
     by_cases hqs : q = .esp
     · subst hqs; simp only [ite_true]
@@ -508,6 +509,19 @@ theorem Verified.stackScratchWipedC {c : Prog isa}
     obtain ⟨-, -, -, -, hres, -, -⟩ := hs'
     exact (Region.Disjoint.symm (hres _ (reserved_below (by omega_using [hb]) s) b (List.mem_append_left _ hb'))).sub_right
       (below_sub' _ (by omega_using []) (by omega_using [hb]))
+  -- So is the whole frame, whose bytes the `free` loses.
+  have hdisjF : ∀ s, (sig.contract (abi.withConsts (c₀ :: cs)) pre post wa (stack + bytes) leak).pre s →
+      ∀ b ∈ Sig.bufs sig.params (stackArgs sig s), b.1.Disjoint (below (s.gpr .esp) bytes) := by
+    intro s hs b hb'
+    have h0 := (hR s hs).2
+    have hs' := (pre_consts.mp hs).1
+    rw [pre_stack hl] at hs'
+    obtain ⟨-, -, -, -, hres, -, -⟩ := hs'
+    have e : below (s.gpr .esp) bytes = ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 bytes, bytes⟩ := by
+      simp only [below]; rw [Taint.sub_setWidth (by omega_using [h0])]
+    rw [e]
+    exact (Region.Disjoint.symm (hres _ (reserved_below (by omega_using [hb]) s) b (List.mem_append_left _ hb'))).sub_right
+      (below_sub' _ (by omega_using []) (by omega_using []))
   -- Every run is `setArgs`, then the code's run from `narrowC`, then the wipe.
   have hrun : ∀ s, (sig.contract (abi.withConsts (c₀ :: cs)) pre post wa (stack + bytes) leak).pre s →
       ∃ t s₃ s₄,
@@ -521,7 +535,8 @@ theorem Verified.stackScratchWipedC {c : Prog isa}
         (setArgsTrace bytes (s.gpr .esp - BitVec.ofNat 32 bytes) (slots sig) ++
           (t ++ wipeTrace (s₃.gpr .esp) (8 + 4 * slots sig) words))
         (popState bytes s s₄) ∧
-      abiPreserved s (popState bytes s s₄) ∧ (popState bytes s s₄).mem = s₄.mem ∧
+      abiPreserved s (popState bytes s s₄) ∧
+      Frame [below (s.gpr .esp) bytes] s₄.mem (popState bytes s s₄).mem ∧
       (popState bytes s s₄).gpr .eax = s₃.gpr .eax ∧ (popState bytes s s₄).gpr .edx = s₃.gpr .edx := by
     intro s hs
     obtain ⟨hR64, h0⟩ := hR s hs
@@ -583,17 +598,21 @@ theorem Verified.stackScratchWipedC {c : Prog isa}
     obtain ⟨-, -, hargs, -⟩ := narrow_facts (nm := nm) (e := e) (n := n) hb.1 (pre_consts.mp hs).1
     simp only [stackArgs_stripConsts, stripConsts_gpr] at hargs
     rw [stackArgs_narrowC, hargs] at hq'
-    rw [hm, heax, hedx]
+    rw [heax, hedx]
     have hq'' := Eq.mp (congrFun (congrFun (congrFun (Curry.apply_withScratch abi.ptrBits nm e n sig.params
       post _ _ (stackArgs_length sig s)) _) s₃.mem) _) hq'
     have hag := narrow_agree (e := e) (n := n) hb.1 (pre_consts.mp hs).1
     simp only [stackArgs_stripConsts, stripConsts_mem] at hag
     rw [narrowC_mem] at hq''
     have h₃ := hpost _ _ _ _ _ (stackArgs_length sig s) hag hq''
+    -- The memory on return: after the wipe, which writes only the buffer,
+    -- and the `free`, which loses only the frame.
     refine hpostOut _ _ _ _ _ (stackArgs_length sig s) (fun b hb' a ha' => ?_) h₃
-    exact (hfr a fun r hr => by
+    exact ((hm a fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact hdisj s hs b hb' a ha').symm
+      exact hdisjF s hs b hb' a ha').trans (hfr a fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact hdisj s hs b hb' a ha')).symm
   · obtain ⟨u₁, _, _, f₁, _, _, p₁, x₁, _⟩ := hrun s₁ h₁
     obtain ⟨u₂, _, _, f₂, _, _, p₂, x₂, _⟩ := hrun s₂ h₂
     rw [(Exec.det e₁ x₁).1, (Exec.det e₂ x₂).1, p₁, p₂, ((pubL_stack hl).mp (pub_consts.mp hp).1).1.1,

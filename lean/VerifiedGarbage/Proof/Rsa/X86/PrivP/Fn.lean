@@ -372,7 +372,7 @@ theorem privateFnP_ok (v : CrtImpl) (w : CrtPImpl) (s : State) {g : PrivGeometry
     simp only [stackBytes, VG.Impl.Rsa.X86.PrivChecked.frameBytes] at *
     omega_using [this]
   unfold privCodeP codeP
-  refine WP.frame (rs := savedRegisters) (by decide) (by decide) (by decide) stackFit
+  refine WP.frameKept (rs := savedRegisters) (by decide) (by decide) (by decide) stackFit
     (privateInnerP_noSp v w) ?_
   refine WP.seq ?_
   refine VG.Proof.Dsa.X86.WP.alloc (by decide) allocation (privateBodyP_noSp v w) ?_

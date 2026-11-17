@@ -29,7 +29,7 @@ namespace VG.Proof.AesSiv.X86
 open VG VG.X86
 open VG.Proof.Aes.X86 (Ctr32Impl)
 open VG.Proof.CmacAes.X86
-open VG.Proof.CmacAes.Stream.X86 (FArgs rs6 hrs6 fin_nosp fin_stack entry_bytes eq_ofNat fRd fWr)
+open VG.Proof.CmacAes.Stream.X86 (FArgs rs6 hrs6 fin_nosp fin_stack entry_bytes back_bytes eq_ofNat fRd fWr)
 open VG.Impl.CmacAes.X86 (finalize finPre saved)
 
 /-- What `vg_cmac_aes_finalize`'s code computes, from any subkeys. -/
@@ -144,8 +144,9 @@ theorem finr_call (v : Ctr32Impl) {s : State} {K St P S : BitVec 32} {L R : Nat}
   have keep : ∀ {p : Addr} {k : Nat}, (below (s.gpr .esp) 60).Disjoint ⟨p, k⟩ → k ≤ 2 ^ 64 →
       Spec.Aes.bytesAt (pushed rs6 s).callEntry.mem p k = Spec.Aes.bytesAt s.mem p k :=
     fun hd hk => entry_bytes h.fit hrs6 (by simp) he hd hk
-  simp only [finalizeRawX86, mn, W, Dp, N, arg_withRegions, State.withRegions_mem, a0, a1, a2, a3, a4, hR, hL,
-    m₂] at post
+  simp only [finalizeRawX86, mn, W, Dp, N, arg_withRegions, State.withRegions_mem, a0, a1, a2, a3, a4, hR, hL]
+    at post
+  rw [← back_bytes (rs := rs6) (by simp) he m₂ h.bSt (by decide)] at post
   have eK := keep (h.bK.sub_right (Region.sub_prefix hRb)) (by omega_using [hR])
   have eK1 := keep (p := K.setWidth 64 + BitVec.ofNat 64 240) (k := 16)
     (h.bK.sub_right (Offset.sub_base (K.setWidth 64) (d := 240) (n := 16) (by decide))) (by decide)

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.X86.Sign.Prims
 import VerifiedGarbage.Proof.MlKem.X86.TopCall
+import VerifiedGarbage.Proof.MlDsa.Sign.Mem
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Contract
 import Mathlib.Tactic.Set
@@ -118,9 +119,11 @@ theorem rej_piece {F : List Byte → Bool} {nm : String} {c : Prog isa} (hv : Ve
     generalize he : (pushed (argPush 3) s₁).callEntry = e at a0 a1 post
     sig_post [rejK, withRet, rejNTTContract, rejNTTSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at post
     subst he
-    simp only [arg_withRegions, a0, a1, m₂, sw32, g₂] at post
+    simp only [arg_withRegions, a0, a1, sw32, g₂] at post
     rw [b₁] at post
-    exact hQ s₀ s s' hp ha h' (fr80 (by decide) (by have := ok.stk; omega_arith) hp (m ▸ fr)) post.2.2 post.1 post.2.1
+    exact hQ s₀ s s' hp ha h' (fr80 (by decide) (by have := ok.stk; omega_arith) hp (m ▸ fr))
+      post.2.2 (fun e => reduced_congr (lost_bytes hp (n := 3) (by decide) m₂ hR') (post.1 e))
+      (by rw [polyAt_congr (lost_bytes hp (n := 3) (by decide) m₂ hR')]; exact post.2.1)
 
 /-- `a ←` a polynomial of `ExpandMask`, from the 66 bytes `seed`. -/
 theorem mask_piece {nm : String} {c : Prog isa} (hv : Verified X86.target c (expandMaskContract X86.abi 56))
@@ -207,9 +210,10 @@ theorem mask_piece {nm : String} {c : Prog isa} (hv : Verified X86.target c (exp
     generalize he : (pushed (argPush 4) s₁).callEntry = e at a0 a1 a2 post
     sig_post [expandMaskContract, expandMaskSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at post
     subst he
-    simp only [arg_withRegions, a0, a1, a2, m₂, g1l] at post
+    simp only [arg_withRegions, a0, a1, a2, g1l] at post
     rw [b₁] at post
-    exact hQ s₀ s s' hp ha h' (fr80 (by decide) (by have := ok.stk; omega_arith) hp (m ▸ fr)) post
+    exact hQ s₀ s s' hp ha h' (fr80 (by decide) (by have := ok.stk; omega_arith) hp (m ▸ fr))
+      (polyIs_congr (lost_bytes hp (n := 4) (by decide) m₂ hR') post)
 
 /-- `c ← SampleInBall(c̃)`, returning 1 or 0 in `eax`, with the `len` bytes `c̃`. -/
 theorem ball_piece {F : Nat → List Byte → Bool} {nm : String} {c : Prog isa} (hv : Verified X86.target c (ballK F))
@@ -311,8 +315,10 @@ theorem ball_piece {F : Nat → List Byte → Bool} {nm : String} {c : Prog isa}
     generalize he : (pushed (argPush 5) s₁).callEntry = e at a0 a1 a2 a3 post
     sig_post [ballK, withRet, sampleInBallContract, sampleInBallSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at post
     subst he
-    simp only [arg_withRegions, a0, a1, a2, a3, m₂, sw32, g₂, ll, tl] at post
+    simp only [arg_withRegions, a0, a1, a2, a3, sw32, g₂, ll, tl] at post
     rw [b₁] at post
-    exact hQ s₀ s s' hp ha h' (fr80 (by decide) (by have := ok.stk; omega_arith) hp (m ▸ fr)) post.2.2 post.1 post.2.1
+    exact hQ s₀ s s' hp ha h' (fr80 (by decide) (by have := ok.stk; omega_arith) hp (m ▸ fr))
+      post.2.2 (fun e => reduced_congr (lost_bytes hp (n := 5) (by decide) m₂ hR') (post.1 e))
+      (by rw [polyAt_congr (lost_bytes hp (n := 5) (by decide) m₂ hR')]; exact post.2.1)
 
 end VG.Proof.MlDsa.X86.Sign

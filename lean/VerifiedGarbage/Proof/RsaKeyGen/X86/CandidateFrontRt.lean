@@ -311,7 +311,7 @@ theorem sieve_ok {g : Geometry} (v : g.Valid) {c : Nat} {s : State}
       Frame (setupWrites g) s.mem t.mem ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := by
   unfold sieve
-  refine WP.frameAlloc (by decide) (by decide) (by decide) fit (NoSp.of_all (by rfl)) ?_
+  refine WP.frameAllocKept (by decide) (by decide) (by decide) fit (NoSp.of_all (by rfl)) ?_
   refine WP.mono (sieveInner_ok v C lenRead (by rw [allocFrame_gpr _ _ (by decide)]; exact pointer)
     length symbol low candidateFar tableFar large) fun t ⟨result, F, K⟩ => ?_
   exact ⟨by rw [freed_gpr _ _ (by decide)]; exact result, F, FilterStack.freed_keeps K (by decide)⟩
@@ -1044,7 +1044,7 @@ theorem other_ok {W : Addr} {L w : Nat} {s : State} (S : Space W L w s)
   obtain Sb := Sa.keep Kb (by decide) (by decide) lenB
   obtain Kab : Keeps [.eax, .ebx, .esi, .ecx, .edx] s b := (A.keeps.mono (by decide)).trans Kb
   obtain spB : b.gpr .esp = s.gpr .esp := Kab.1 .esp (by decide)
-  refine WP.frameAlloc (by decide) (by decide) (by decide) (by rw [spB]; omega_using [fit]) (NoSp.of_all (by rfl)) ?_
+  refine WP.frameAllocKept (by decide) (by decide) (by decide) (by rw [spB]; omega_using [fit]) (NoSp.of_all (by rfl)) ?_
   obtain St := FilterStack.allocated_context (s := b) (by rw [spB]; omega_using [fit])
   obtain apartQ : (⟨W, L⟩ : Region).Disjoint ⟨(b.gpr .esp - 20#32).setWidth 64, 20⟩ :=
     FilterStack.allocated_apart (by rw [spB]; omega_using [fit]) nowrap (by rw [spB]; rcases separateStack with h | h; exact Or.inl h; exact Or.inr (by omega_using [h]))

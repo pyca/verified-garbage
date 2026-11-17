@@ -127,7 +127,7 @@ theorem gen_correct_ok (srch : Srch) (key : KeyImpl) {o : State} (h : contract.p
   have hv := hp.len_valid
   have h1 : 284 ≤ (o.gpr .esp).toNat := A.stackLow
   unfold code
-  refine WP.frame (rs := pushRegs) (r := .ebx) (by decide) (by decide) (by decide)
+  refine WP.frameKept (rs := pushRegs) (r := .ebx) (by decide) (by decide) (by decide)
     (by simp only [List.length_cons, List.length_nil]; omega_using [h1]) (body_noSp' srch key) ?_
   unfold body
   refine WP.seq (WP.mono (entry_ok hp) fun s1 ⟨f1, hbx1, hm1⟩ => ?_)

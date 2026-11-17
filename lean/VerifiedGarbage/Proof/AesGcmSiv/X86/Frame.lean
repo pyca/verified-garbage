@@ -247,7 +247,7 @@ theorem seal_framed (hti : TagInputEq) :
   X86.Verified.stackScratch (sig := Spec.GcmSiv.sealSig) (nm := "work") (e := .u64) (n := 352)
     (pre := Spec.GcmSiv.sealPre X86.abi.ptrBits) (post := Proof.AesGcmSiv.sealRoundsPost X86.abi.ptrBits)
     (wa := true) (stack := 32) (bytes := 2856) (seal_verified v hti) (by decide) (seal_noEsp v)
-    (seal_stackUse v) (Proof.AesGcmSiv.sealPre_local _) (Proof.AesGcmSiv.sealPost_local _) sealFrameSat_pre
+    (seal_stackUse v) (Proof.AesGcmSiv.sealPre_local _) (Proof.AesGcmSiv.sealPost_local _) (fun vs m m₁ m₂ r hl _ => Proof.AesGcmSiv.sealPostOut_local _ vs m m₁ m₂ r hl) sealFrameSat_pre
 
 theorem open_framed (hti : TagInputEq) :
     Verified X86.target (Impl.StackScratch.X86.withStackScratch 2856 8 («open» v.callees))
@@ -257,6 +257,6 @@ theorem open_framed (hti : TagInputEq) :
     (wa := true) (stack := 32) (leak := some (Spec.GcmSiv.openLeak X86.abi.ptrBits)) (bytes := 2856)
     (Proof.AesGcmSiv.Verified.of_openScratch (open_verified v hti)) (by decide) (open_noEsp v)
     (open_stackUse v) (Proof.AesGcmSiv.openPre_local _)
-    (Proof.AesGcmSiv.openPost_local _) openFrameSat_pre (hleak := Proof.AesGcmSiv.openLeak_local _)
+    (Proof.AesGcmSiv.openPost_local _) (fun vs m m₁ m₂ r hl _ => Proof.AesGcmSiv.openPostOut_local _ vs m m₁ m₂ r hl) openFrameSat_pre (hleak := Proof.AesGcmSiv.openLeak_local _)
 
 end VG.Proof.AesGcmSiv.X86

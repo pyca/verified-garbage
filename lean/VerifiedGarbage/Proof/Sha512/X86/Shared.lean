@@ -189,7 +189,7 @@ theorem update : Verified X86.target
     (Spec.Sha512.updateContract X86.abi (20 + 1404)) :=
   X86.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 172) (stack := 20) (bytes := 1404)
     updateScratch (by decide) (by lit_decide) (by lit_decide)
-    (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Sha512.updatePost_local _)
+    (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Sha512.updatePost_local _) (fun vs m m₁ m₂ r hl _ hb => Proof.Sha512.updatePostOut_local _ vs m m₁ m₂ r hl hb)
     (by implies_sat [Spec.Sha512.updateContract, Spec.Sha512.updateSig, X86.abi, X86.argSlots, X86.argVal,
         X86.argBytes]
       [updateFrameSat, MdStream.X86.Update.sat₀, MdStream.X86.Update.satMem, X86.arg, X86.argAddr,
@@ -204,7 +204,7 @@ theorem finalize : Verified X86.target
     (Spec.Sha512.finalizeContract X86.abi (20 + 1400)) :=
   X86.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 172) (stack := 20) (bytes := 1400)
     finalizeScratch (by decide) (by lit_decide) (by lit_decide)
-    (fun _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Sha512.finalizePost_local _)
+    (fun _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Sha512.finalizePost_local _) (fun vs m m₁ m₂ r hl _ hb => Proof.Sha512.finalizePostOut_local _ vs m m₁ m₂ r hl hb)
     (by implies_sat [Spec.Sha512.finalizeContract, Spec.Sha512.finalizeSig, X86.abi, X86.argSlots,
         X86.argVal, X86.argBytes]
       [finalizeFrameSat, MdStream.X86.Finalize.sat₀, MdStream.X86.Finalize.satMem, X86.arg,
@@ -323,7 +323,7 @@ theorem finalizeDigestStack48 {code : Prog X86.isa} {iv : Spec.Sha512.HashValue}
       (Spec.Sha512.finalizeDigestContract X86.abi iv 48 digest (20 + 1400)) :=
   X86.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 172) (stack := 20) (bytes := 1400)
     hv (by decide) hsp hd (fun _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
-    (Proof.Sha512.finalizeDigestPost_local _ _ _ _)
+    (Proof.Sha512.finalizeDigestPost_local _ _ _ _) (fun vs m m₁ m₂ r hl _ hb => Proof.Sha512.finalizeDigestPostOut_local _ _ _ _ vs m m₁ m₂ r hl hb)
     (by implies_sat [Spec.Sha512.finalizeDigestContract, Spec.Sha512.finalizeDigestSig, X86.abi, X86.argSlots,
         X86.argVal, X86.argBytes]
       [finalizeDigestFrameSat, MdStream.X86.Finalize.sat₀, MdStream.X86.Finalize.satMem, X86.arg,
@@ -337,7 +337,7 @@ theorem finalizeDigestStack32 {code : Prog X86.isa} {iv : Spec.Sha512.HashValue}
       (Spec.Sha512.finalizeDigestContract X86.abi iv 32 digest (20 + 1400)) :=
   X86.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 172) (stack := 20) (bytes := 1400)
     hv (by decide) hsp hd (fun _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
-    (Proof.Sha512.finalizeDigestPost_local _ _ _ _)
+    (Proof.Sha512.finalizeDigestPost_local _ _ _ _) (fun vs m m₁ m₂ r hl _ hb => Proof.Sha512.finalizeDigestPostOut_local _ _ _ _ vs m m₁ m₂ r hl hb)
     (by implies_sat [Spec.Sha512.finalizeDigestContract, Spec.Sha512.finalizeDigestSig, X86.abi, X86.argSlots,
         X86.argVal, X86.argBytes]
       [finalizeDigestFrameSat, MdStream.X86.Finalize.sat₀, MdStream.X86.Finalize.satMem, X86.arg,
@@ -351,7 +351,7 @@ theorem finalizeDigestStack28 {code : Prog X86.isa} {iv : Spec.Sha512.HashValue}
       (Spec.Sha512.finalizeDigestContract X86.abi iv 28 digest (20 + 1400)) :=
   X86.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 172) (stack := 20) (bytes := 1400)
     hv (by decide) hsp hd (fun _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
-    (Proof.Sha512.finalizeDigestPost_local _ _ _ _)
+    (Proof.Sha512.finalizeDigestPost_local _ _ _ _) (fun vs m m₁ m₂ r hl _ hb => Proof.Sha512.finalizeDigestPostOut_local _ _ _ _ vs m m₁ m₂ r hl hb)
     (by implies_sat [Spec.Sha512.finalizeDigestContract, Spec.Sha512.finalizeDigestSig, X86.abi, X86.argSlots,
         X86.argVal, X86.argBytes]
       [finalizeDigestFrameSat, MdStream.X86.Finalize.sat₀, MdStream.X86.Finalize.satMem, X86.arg,

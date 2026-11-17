@@ -73,13 +73,15 @@ theorem frame_val32 (hs : Scr s base 8192) {m m' : Mem} (hF : Frame [below (s.gp
 /-- A call of `body`, which from the working space at `edi` and the offsets
 `o`, `a` and `b` as its arguments changes only `[o]` and its own working
 space, preserves the callee-saved registers, and relates the memory before
-and after by `V`. -/
+and after by `V`, which does not read the call's stack once it returns
+(`hV`): its frame of arguments is lost. -/
 theorem callOp_ok {f : String} {body : Prog isa} (hsp : NoSp body) (hst : stackUse body = 0) {k : Nat}
     (hk0 : 0 < k) (hk9 : k ≤ 9) (hs : Scr s base 8192) {o a b : Nat} (ho : o + 8 * k ≤ own k)
     (ha : a + 8 * k ≤ own k) (hb : b + 8 * k ≤ own k) {V : Mem → Mem → Prop}
     (hbody : ∀ t, Pre k t → wsOf t = base → (arg t 1).toNat = o → (arg t 2).toNat = a →
       (arg t 3).toNat = b → Frame [below (s.gpr .esp) 20] s.mem t.mem →
-      WP isa body t fun t' => abiPreserved t t' ∧ Outs base (outs k t) t.mem t'.mem ∧ V t.mem t'.mem) :
+      WP isa body t fun t' => abiPreserved t t' ∧ Outs base (outs k t) t.mem t'.mem ∧ V t.mem t'.mem)
+    (hV : ∀ m m₁ m₂, Frame [below (s.gpr .esp) 20] m₁ m₂ → V m m₁ → V m m₂) :
     WP isa (callOp f body o a b) s fun s' => CallKeep k base o s s' ∧
       ∃ m, Frame [below (s.gpr .esp) 20] s.mem m ∧ V m s'.mem := by
   obtain hown := (saveAt_le hk0 hk9).2
@@ -153,7 +155,10 @@ theorem callOp_ok {f : String} {body : Prog isa} (hsp : NoSp body) (hst : stackU
     · rw [List.mem_singleton.mp hr, wr₃]; exact List.mem_append_right _ (List.mem_cons_of_mem _ hs.wr)
   · exact Covers.of_mem fun r hr => by rw [List.mem_singleton.mp hr, wr₃]; exact List.mem_cons_of_mem _ hs.wr
   intro s' rd' wr' cs' _ ⟨s₂, m₂, O₂, V₂⟩
-  refine ⟨⟨fun r hr => ?_, by rw [rd', rd₃], by rw [wr', wr₃], fun x hx => ?_⟩, t.mem, fr, by rw [← m₂]; exact V₂⟩
+  -- The pop loses the arguments' frame, below `esp`.
+  obtain fL : Frame [below (s.gpr .esp) 20] s₂.mem s'.mem := by
+    rw [esp₃] at m₂; exact Frame.below_mono (wr := []) m₂ (by decide) h20
+  refine ⟨⟨fun r hr => ?_, by rw [rd', rd₃], by rw [wr', wr₃], fun x hx => ?_⟩, t.mem, fr, hV _ _ _ fL V₂⟩
   · rw [← g r hr]
     refine cs' r ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
@@ -165,7 +170,7 @@ theorem callOp_ok {f : String} {body : Prog isa} (hsp : NoSp body) (hst : stackU
       obtain h3 : ofs base x < 2 ^ 64 := (x - base).isLt
       simp only at h2
       omega_arith
-    · rw [← m₂, O₂ x fun r hr => ?_]
+    · rw [fL x fun r hr => by rw [List.mem_singleton.mp hr]; exact hzx, O₂ x fun r hr => ?_]
       · exact fr x fun r hr => by rw [List.mem_singleton.mp hr]; exact hzx
       simp only [outs, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
@@ -196,7 +201,8 @@ theorem mulCall_ok {S : Impl.Weierstrass.Mont.Modulus} (hF : FnOk S) (hs : Scr s
     (V := fun m m' => val32 m' base o (2 * S.k) < S.m ∧
       val32 m' base o (2 * S.k) * 2 ^ (64 * S.k) % S.m =
         val32 m base a (2 * S.k) * val32 m base b (2 * S.k) % S.m)
-    fun t hp hws h1 h2 h3 hfr => ?_) fun s' ⟨K, m, hm, V₁, V₂⟩ => ?_
+    (fun t hp hws h1 h2 h3 hfr => ?_)
+    (fun m m₁ m₂ hF h => by rw [frame_val32 hs hF (by omega_arith)]; exact h)) fun s' ⟨K, m, hm, V₁, V₂⟩ => ?_
   · refine WP.mono (mulFn_ok hF.mul hp (by
       rw [hws, h3, frame_val32 hs hfr (by omega_arith), ← wordsVal_eq_val32]; exact hB))
       fun t' ⟨A, O, L, C⟩ => ⟨A, hws ▸ O, ?_⟩
@@ -217,7 +223,8 @@ theorem addCall_ok {S : Impl.Weierstrass.Mont.Modulus} (hF : FnOk S) (hs : Scr s
   obtain hown := (saveAt_le hF.mul.k0 hF.k9).2
   refine WP.mono (callOp_ok hF.nsAdd rfl hF.mul.k0 hF.k9 hs ho ha hb
     (V := fun m m' => val32 m' base o (2 * S.k) = (val32 m base a (2 * S.k) + val32 m base b (2 * S.k)) % S.m)
-    fun t hp hws h1 h2 h3 hfr => ?_) fun s' ⟨K, m, hm, V⟩ => ?_
+    (fun t hp hws h1 h2 h3 hfr => ?_)
+    (fun m m₁ m₂ hF h => by rw [frame_val32 hs hF (by omega_arith)]; exact h)) fun s' ⟨K, m, hm, V⟩ => ?_
   · refine WP.mono (addFn_ok hF.mul hp (by
       rw [hws, h2, h3, frame_val32 hs hfr (by omega_arith), frame_val32 hs hfr (by omega_arith), ← wordsVal_eq_val32,
         ← wordsVal_eq_val32]; exact hAB))
@@ -238,7 +245,8 @@ theorem subCall_ok {S : Impl.Weierstrass.Mont.Modulus} (hF : FnOk S) (hs : Scr s
   refine WP.mono (callOp_ok hF.nsSub rfl hF.mul.k0 hF.k9 hs ho ha hb
     (V := fun m m' => val32 m' base o (2 * S.k) =
       (val32 m base a (2 * S.k) + S.m - val32 m base b (2 * S.k)) % S.m)
-    fun t hp hws h1 h2 h3 hfr => ?_) fun s' ⟨K, m, hm, V⟩ => ?_
+    (fun t hp hws h1 h2 h3 hfr => ?_)
+    (fun m m₁ m₂ hF h => by rw [frame_val32 hs hF (by omega_arith)]; exact h)) fun s' ⟨K, m, hm, V⟩ => ?_
   · refine WP.mono (subFn_ok hF.mul hp
       (by rw [hws, h2, frame_val32 hs hfr (by omega_arith), ← wordsVal_eq_val32]; exact hA)
       (by rw [hws, h3, frame_val32 hs hfr (by omega_arith), ← wordsVal_eq_val32]; exact hB))

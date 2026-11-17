@@ -125,7 +125,7 @@ theorem mul_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVe
   obtain hsp := (s.gpr .esp).isLt
   have nwr := h.scratch.nowrap
   unfold PublicRt.mul
-  refine WP.frameAlloc (by decide) (by decide) (by decide) (by omega_arith) (mulBody_noSp o a b) ?_
+  refine WP.frameAllocKept (by decide) (by decide) (by decide) (by omega_arith) (mulBody_noSp o a b) ?_
   obtain fEsp : (allocFrame 36 s).gpr .esp = s.gpr .esp - BitVec.ofNat 32 36 := allocFrame_esp _ _
   obtain fEspN : ((allocFrame 36 s).gpr .esp).toNat = (s.gpr .esp).toNat - 36 := by rw [fEsp, sub_toNat (by omega_arith)]
   refine WP.seq (WP.mono (mulArgs_ok (f := allocFrame 36 s) (len := len) (o := o) (a := a) (b := b)

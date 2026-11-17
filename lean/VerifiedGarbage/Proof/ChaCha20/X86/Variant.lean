@@ -225,7 +225,12 @@ theorem call_to (v : XorImpl) (h : XorCall s rb rn rx rt E St S D B n) {Q : Stat
   · obtain ⟨a0, a1, a2, -⟩ := h.args
     have hn : (BitVec.ofNat 32 n).toNat = n := by rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt h.n_lt
     simp only [Proof.ChaCha20.xorX86, arg_withRegions, State.withRegions_mem, State.withRegions_gpr, a0, a1, a2,
-      h.esi', hn, m₂] at post
+      h.esi', hn] at post
+    -- The pop loses the arguments' frame, below `esp`, apart from the destination.
+    rw [h.esp] at m₂
+    rw [xor_bytesAt_frame m₂ (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact (h.stk_d.sub_left (below_sub (by simp) hlo)).symm) (by have := h.n_lt; omega_using [this])]
     have ef : Frame [below E 32] s.mem (pushed [rb, rn, rx, rt] s).callEntry.mem :=
       (callEntry_frame h.fit h.regs).sub fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr

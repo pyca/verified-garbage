@@ -1163,7 +1163,7 @@ theorem frameWith_ok {inner : Prog isa} (hns : NoSp (.seq inner (.block Compact.
       Q t.mem (t.gpr .eax) ∧ Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi, .edi] (entered s) t) :
     WP isa (.frame (.push [.ebx, .ebp, .esi, .edi]) (.seq inner (.block Compact.restoreRegs)) (.pop .ebx 4)) s
       fun t => abiPreserved s t ∧ Q t.mem (t.gpr .eax) := by
-  refine WP.frame (rs := savedRegisters) (by decide) (by decide) (by decide) stackFit hns ?_
+  refine WP.frameKept (rs := savedRegisters) (by decide) (by decide) (by decide) stackFit hns ?_
   refine WP.seq (WP.mono core fun t ⟨O, Qt, K⟩ => ?_)
   have sp : t.gpr .esp = (entered s).gpr .esp := K.1 .esp (by decide)
   have eNat : ((entered s).gpr .esp).toNat = (s.gpr .esp).toNat - 16 := by

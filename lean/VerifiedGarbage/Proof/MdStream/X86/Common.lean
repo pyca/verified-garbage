@@ -636,8 +636,14 @@ theorem compressFrame_ok {name : String} {code : Prog isa} (hf : CalleeOk H code
       have := callEntry_frame fit hrs
       rw [hesp] at this; exact this
     rw [← hsE] at post
-    simp only [compressK, arg_withRegions, State.withRegions_mem, a0, a1, a2, m₂] at post
+    simp only [compressK, arg_withRegions, State.withRegions_mem, a0, a1, a2] at post
     refine hQ s' rd' wr' cs' f' ?_
+    -- The pop loses the arguments' frame, below `esp`, apart from the state.
+    have fL : Frame [below E 20] s₂.mem s'.mem := by
+      rw [hesp] at m₂; exact Frame.below_mono (wr := []) m₂ (by simp) hE
+    have e₀ : H.stateAt s'.mem (st.setWidth 64) = H.stateAt s₂.mem (st.setWidth 64) :=
+      H.stateAt_congr fun i hi =>
+        fL.bytes (R := ⟨st.setWidth 64, P.N⟩) (by simpa using dS.symm) (by simp; omega_arith) hi
     have e₁ : H.stateAt sE.mem (st.setWidth 64) = H.stateAt s.mem (st.setWidth 64) :=
       H.stateAt_congr fun i hi =>
         hsE'.bytes (R := ⟨st.setWidth 64, P.N⟩) (by simpa using dS.symm) (by simp; omega_arith) hi
@@ -645,7 +651,7 @@ theorem compressFrame_ok {name : String} {code : Prog isa} (hf : CalleeOk H code
         H.compressBlocks (H.stateAt s.mem (st.setWidth 64)) s.mem (blk.setWidth 64) k :=
       H.compressBlocks_congr fun j hj =>
         hsE'.bytes (R := ⟨blk.setWidth 64, P.B * k⟩) (by simpa using dB.symm) (by simp; omega_arith) hj
-    rw [post, e₁, e₂]
+    rw [e₀, post, e₁, e₂]
 
 /-- Compressing the block at `eax` (`blk`) into the hash value at `st` (in
 register `sr`), with the scratch space at `scr` (in register `cr`): a call of

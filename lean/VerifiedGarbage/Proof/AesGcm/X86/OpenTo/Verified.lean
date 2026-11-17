@@ -505,9 +505,14 @@ allocation. -/
 theorem Pc.frameAlloc {α : Sort _} {P Q : α → State → Prop} {bytes : Nat} {body : Prog isa}
     (h0 : 0 < bytes) (h1 : bytes < 4096) (h4 : bytes % 4 = 0) (hn : ∀ a s, P a s → bytes ≤ (s.gpr .esp).toNat)
     (hsp : NoSp body)
-    (hb : Pc (fun a s₁ => ∃ s, P a s ∧ s₁ = allocFrame bytes s) body fun a s₂ => Q a (freed bytes s₂)) :
+    (hb : Pc (fun a s₁ => ∃ s, P a s ∧ s₁ = allocFrame bytes s) body fun a s₂ => ∀ m u,
+      Frame [⟨(s₂.gpr .esp).setWidth 64, bytes⟩] s₂.mem m → Q a { freed bytes s₂ with mem := m, unknowns := u }) :
     Pc P (.frame (.alloc bytes) body (.free bytes)) Q := by
-  refine ⟨fun a s hs => WP.frameAlloc h0 h1 h4 (hn a s hs) hsp (hb.wp a _ ⟨s, hs, rfl⟩), ?_⟩
+  refine ⟨fun a s hs => WP.frameAlloc h0 h1 h4 (hn a s hs) hsp ?_, ?_⟩
+  · obtain ⟨t, s₂, he, hq⟩ := hb.wp a _ ⟨s, hs, rfl⟩
+    refine ⟨t, s₂, he, fun m u f => hq m u ?_⟩
+    rw [Exec.gpr hsp he, allocFrame_esp]
+    exact f
   exact RelCT.frameAlloc (RelCT.mono hb.ct (fun _ _ ⟨s₁, s₂, ⟨⟨a, h₁⟩, ⟨b, h₂⟩⟩, e₁, e₂⟩ =>
     ⟨⟨a, s₁, h₁, e₁⟩, ⟨b, s₂, h₂, e₂⟩⟩) fun _ _ _ => trivial)
 
@@ -579,7 +584,7 @@ theorem openTo_pc (q : OQ) :
         body_stackUse vg
       rw [hs]; omega_arith)
       (fun _ e => e) fun a e ⟨ha, hq, he⟩ => ⟨he.bodyTo (TP.of ha), ?_, rfl⟩) (fun _ _ h => h)
-    fun a s₂ ⟨e, ⟨ha, hq, he⟩, ⟨⟨abi, hx, hpost⟩, x, ⟨_, _, hxe⟩, hfr⟩, _, _⟩ => ?_
+    fun a s₂ ⟨e, ⟨ha, hq, he⟩, ⟨⟨abi, hx, hpost⟩, x, ⟨_, _, hxe⟩, hfr⟩, _, _⟩ mm u fl => ?_
   swap
   · rw [← hq, he.pub_eq, show (toMode vg).x e = dstOf e from rfl, he.dst_eq, he.res (TP.of ha)]
   subst hq
@@ -606,8 +611,25 @@ theorem openTo_pc (q : OQ) :
     · rw [he.esp]
       exact (ret_below (k := 80) T.sp).sub_right (region_sub_trans
         (below_sub (body_stackUse vg) (by rw [T.pN]; have := T.sp; omega_using [this])) T.stk_sub)
-  refine ⟨⟨fun r hr => ?_, by rw [freed_mem, ret₂, ret₁]⟩, ?_⟩
-  · simp only [calleeSaved, List.mem_cons, List.mem_singleton, List.not_mem_nil, or_false] at hr
+  -- The `free` loses the frame's bytes, which lie apart from the return
+  -- address and the plaintext.
+  obtain hs₂ : s₂.gpr .esp = Pf a := by rw [abi.1 _ (by decide), he.esp]
+  rw [hs₂] at fl
+  obtain ret₃ : mm.readW (w64 (a.gpr .esp)) 32 = s₂.mem.readW (w64 (a.gpr .esp)) 32 :=
+    fl.readW (Region.contains_self _ _) (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact rF) (by decide)
+  obtain hdst : bytesAt mm ((arg a 8).setWidth 64) (arg a 7).toNat =
+      bytesAt s₂.mem ((arg a 8).setWidth 64) (arg a 7).toNat :=
+    Proof.AesGcm.bytesAt_congr fun i hi => fl.bytes (R := ⟨w64 (arg a 8), (arg a 7).toNat⟩)
+      (fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr
+        exact (T.k_t.sub_left (below_sub (by decide) T.sp)).symm)
+      (show (arg a 7).toNat ≤ 2 ^ 64 by have := T.ft; omega_using [this]) hi
+  refine ⟨⟨fun r hr => ?_, by
+    show mm.readW _ 32 = _
+    rw [ret₃, ret₂, ret₁]⟩, ?_⟩
+  · show (freed 48 s₂).gpr r = a.gpr r
+    simp only [calleeSaved, List.mem_cons, List.mem_singleton, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl
     · rw [freed_gpr _ _ (by decide), abi.1 _ (by decide), he.gpr _ (by decide) (by decide)]
     · rw [freed_gpr _ _ (by decide), abi.1 _ (by decide), he.gpr _ (by decide) (by decide)]
@@ -617,7 +639,13 @@ theorem openTo_pc (q : OQ) :
   · have hres : oRes (idx a).1.1 e = toRes a := by rw [← openRes_eq hx.pub, he.res T]
     unfold PostO at hpost
     rw [hres] at hpost
-    simp only [toX86, ret32_eq, freed_mem, freed_gpr _ _ (show Reg.eax ≠ .esp by decide)]
+    show (match toRes a with
+      | some pt => ((freed 48 s₂).gpr .edx ++ (freed 48 s₂).gpr .eax).setWidth 32 = 1 ∧
+          bytesAt mm ((arg a 8).setWidth 64) (arg a 7).toNat = pt
+      | none => ((freed 48 s₂).gpr .edx ++ (freed 48 s₂).gpr .eax).setWidth 32 = 0 ∧
+          bytesAt mm ((arg a 8).setWidth 64) (arg a 7).toNat = List.replicate (arg a 7).toNat 0)
+    rw [hdst]
+    simp only [ret32_eq, freed_gpr _ _ (show Reg.eax ≠ .esp by decide)]
     split
     · next pt hpt => rw [hpt] at hpost; exact hpost
     · next hpt => rw [hpt] at hpost; exact hpost
@@ -805,6 +833,55 @@ theorem openToRoundsPost_local : ∀ vs m₁ m₂ m' r, vs.length = (Spec.Gcm.op
     (agree_of hb.2.2.2.2.2)]
   exact h hr
 
+/-- `Proof.AesGcm.openToRoundsPost` reads the memory on return only within the buffers. -/
+theorem openToPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (Spec.Gcm.openToSig.words pb).length →
+    Curry.apply (Spec.Gcm.openToSig.words pb) (Spec.Gcm.openToPre pb) vs m →
+    (∀ b ∈ Sig.bufs Spec.Gcm.openToSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (Spec.Gcm.openToSig.words pb) (Proof.AesGcm.openToRoundsPost pb) vs m m₁ r →
+      Curry.apply (Spec.Gcm.openToSig.words pb) (Proof.AesGcm.openToRoundsPost pb) vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen hpre hb h
+  obtain ⟨ctx, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 11) hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨rd, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨nonce, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨nl, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨aad, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨al, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨src, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨len, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨dst, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨dl, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨tag, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨tgl, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [Spec.Gcm.openToSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+    forall_eq, Elem.size, Nat.mul_one] at hb
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb]
+    (Spec.Gcm.openToPre pb) _ m at hpre
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb]
+    (Proof.AesGcm.openToRoundsPost pb) _ m m₁ r at h
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb]
+    (Proof.AesGcm.openToRoundsPost pb) _ m m₂ r
+  dsimp only [Curry.apply, Spec.Gcm.openToPre, ArgWord.ofRaw, IntTy.bits] at hpre
+  dsimp only [Curry.apply, Proof.AesGcm.openToRoundsPost, ArgWord.ofRaw, IntTy.bits] at h ⊢
+  intro hr
+  have := Nat.mod_le dl.toNat (2 ^ pb)
+  rw [Proof.AesGcm.bytesAt_congr (m₁ := m₁) (m₂ := m₂) (p := dst) (n := (len.setWidth pb).toNat) fun i hi =>
+    agree_of hb.2.2.2.2.1 i (by
+      rw [← hpre.2, BitVec.toNat_setWidth] at hi; omega_using [this, hi])]
+  exact h hr
+
 theorem openToLeak_local : ∀ vs m₁ m₂, vs.length = (Spec.Gcm.openToSig.words pb).length →
     (∀ b ∈ Sig.bufs Spec.Gcm.openToSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
     Curry.apply (Spec.Gcm.openToSig.words pb) (Spec.Gcm.openToLeak pb) vs m₁ =
@@ -884,7 +961,7 @@ theorem openTo_framed :
     (pre := Spec.Gcm.openToPre X86.abi.ptrBits) (post := Proof.AesGcm.openToRoundsPost X86.abi.ptrBits)
     (wa := true) (stack := 80) (leak := some (Spec.Gcm.openToLeak X86.abi.ptrBits)) (bytes := 2616)
     (openTo_verified vg) (by decide) (openTo_noEsp vg) (openTo_stackUse vg) (openToPre_local _)
-    (openToRoundsPost_local _) toFrameSat_pre (hleak := openToLeak_local _)
+    (openToRoundsPost_local _) (openToPostOut_local _) toFrameSat_pre (hleak := openToLeak_local _)
 
 theorem body_spSafe :
     (openBody vg.callees wipe wipe (decTo vg.callees (toFn vg))).all (fun i => !X86.isa.writesSp i) = true := by

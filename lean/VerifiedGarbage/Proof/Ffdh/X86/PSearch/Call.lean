@@ -680,7 +680,7 @@ theorem attempt_ok {p : PPub} {o s : State} {used n : Nat} (h : Live p o used n 
   have S := h.st
   obtain ⟨A, rfl⟩ := h.input
   have h1 : 212 ≤ (o.gpr .esp).toNat := A.stackLow
-  refine WP.frameAlloc (by decide) (by decide) (by decide) (by rw [S.esp]; unfold argsBytes; omega_arith) body_noSp ?_
+  refine WP.frameAllocKept (by decide) (by decide) (by decide) (by rw [S.esp]; unfold argsBytes; omega_arith) body_noSp ?_
   refine WP.seq (WP.mono (arguments_ok S.alloc) fun t ⟨F, a⟩ => ?_)
   exact WP.mono (call_ok F hu a) fun u ⟨F', e, out, cu⟩ =>
     ⟨F'.free, by rw [freed_gpr _ _ (by decide)]; exact e, by rw [freed_mem]; exact out, by rw [freed_mem]; exact cu⟩

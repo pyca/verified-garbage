@@ -495,13 +495,20 @@ theorem pow250Call_ok' {W : Nat} {x : BitVec 32} {s : State} (hc : Ctx W x s) (h
     congrArg VG.Proof.X25519.toFe (fe_frame fun k hk => wd_frame fs fun r hr => by
       rw [List.mem_singleton.mp hr]
       exact dis4.sub_left (by rw [scR_eq]; exact sub_sub hfit (Nat.zero_le _) (by omega_using [hq, hk]) (by omega_using [hq, hk])))
+  -- The pop loses the argument's frame, below `esp`, apart from the slots.
+  have fP : Frame [callStk s] s₂.mem s'.mem := hm2.sub fun r hr => by
+    rw [List.mem_singleton.mp hr]; exact ⟨callStk s, List.mem_singleton_self _, below_sub (by decide) hE⟩
+  have flost : ∀ q, q + 32 ≤ 4096 → F s'.mem x q = F s₂.mem x q := fun q hq =>
+    congrArg VG.Proof.X25519.toFe (fe_frame fun k hk => wd_frame fP fun r hr => by
+      rw [List.mem_singleton.mp hr]
+      exact dis4.sub_left (by rw [scR_eq]; exact sub_sub hfit (Nat.zero_le _) (by omega_using [hq, hk]) (by omega_using [hq, hk])))
   refine ⟨⟨hcs .esi (by decide), hcs .edi (by decide), hcs .esp (by decide), hrd, hwr⟩, ?_, ?_, ?_⟩
-  · rw [← hm2]
-    exact (fs.mono fun r hr => by
+  · exact ((fs.mono fun r hr => by
       rw [List.mem_singleton.mp hr]; simp) |>.trans (hf2.mono fun r hr => by
-      rw [List.mem_singleton.mp hr]; exact List.mem_cons_self ..)
-  · rw [← hm2, h1, fstk _ (by decide)]
-  · rw [← hm2, h0, fstk _ (by decide)]
+      rw [List.mem_singleton.mp hr]; exact List.mem_cons_self ..)).trans
+      (fP.mono fun r hr => by rw [List.mem_singleton.mp hr]; simp)
+  · rw [flost _ (by decide), h1, fstk _ (by decide)]
+  · rw [flost _ (by decide), h0, fstk _ (by decide)]
 
 theorem pow250Call_ok {x : BitVec 32} {s : State} (hc : Ctx 8192 x s) :
     WP isa pow250Call s fun t => Keep s t ∧ Frame [sub x 512 512, callStk s] s.mem t.mem ∧

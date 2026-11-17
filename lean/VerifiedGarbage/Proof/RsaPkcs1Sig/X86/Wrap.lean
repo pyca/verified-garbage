@@ -120,9 +120,9 @@ theorem wrap_ok {F : Nat} (hF : FrameOk F) {body : Prog isa} (hbs : NoSp body) {
     · rfl
     · exact restore_noSp i hi
   unfold wrap
-  refine WP.frame (by decide) pushRegs_noSp (by decide) (by simpa [savedRegs] using h16) hinner ?_
+  refine WP.frameKept (by decide) pushRegs_noSp (by decide) (by simpa [savedRegs] using h16) hinner ?_
   refine WP.seq ?_
-  refine WP.frameAlloc hF.1 hF.2.1 hF.2.2 (by omega_using [hsp, pE]) hbs ?_
+  refine WP.frameAllocKept hF.1 hF.2.1 hF.2.2 (by omega_using [hsp, pE]) hbs ?_
   refine WP.mono (WP.rdwrSp hbs hb) ?_
   rintro u ⟨⟨frame, result⟩, rdU, wrU, spU⟩
   have spF : (freed F u).gpr .esp = (pushed savedRegs s).gpr .esp := by

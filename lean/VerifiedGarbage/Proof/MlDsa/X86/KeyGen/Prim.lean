@@ -100,9 +100,9 @@ theorem inPlace_piece {t : Poly → Poly} {nm : String} {c : Prog isa}
   · have a₀ := he.arg 0 (by simp)
     generalize e = e' at *
     sig_post [Proof.MlDsa.inPlaceContract, Proof.MlDsa.inPlaceSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at post
-    simp only [arg_withRegions, a₀, List.getElem_cons_zero, Arg.val, m₂] at post
+    simp only [arg_withRegions, a₀, List.getElem_cons_zero, Arg.val] at post
     rw [ent_polyAt he hF'] at post
-    exact hQ s₀ s s' hp ha h' fr post
+    exact hQ s₀ s s' hp ha h' fr (Proof.MlDsa.KeyGen.polyIs_congr (lostK hp h' (by simp) hN m₂ hF') post)
 
 theorem toNat_ofNat32 {v : Nat} (h : v < 2 ^ 32) : (BitVec.ofNat 32 v).toNat = v := by
   rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt h]
@@ -170,9 +170,11 @@ theorem rejNtt_piece {c : Prog isa} (hc : Callee c fun stk => Proof.MlDsa.rejNTT
     obtain a₁ := he.arg 1 (by simp)
     generalize e = e' at *
     sig_post [Proof.MlDsa.rejNTTContract, Proof.MlDsa.rejNTTSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at post
-    simp only [arg_withRegions, a₀, a₁, List.getElem_cons_zero, List.getElem_cons_succ, Arg.val, m₂, g₂, sw_app] at post
+    simp only [arg_withRegions, a₀, a₁, List.getElem_cons_zero, List.getElem_cons_succ, Arg.val, g₂, sw_app] at post
     rw [Proof.MlKem.bytesAt_congr (he.mem _ hD)] at post
-    exact hQ s₀ s s' hp ha h' fr post.1 post.2
+    obtain kA := (lostK hp h' (by simp) hN m₂ hA₁)
+    exact hQ s₀ s s' hp ha h' fr (fun e => Proof.MlDsa.KeyGen.reduced_congr kA (post.1 e))
+      (by rw [Proof.MlDsa.KeyGen.polyAt_congr kA]; exact post.2)
 
 
 /-! ## Three polynomials: `vg_mldsa_multiply_ntt`, `vg_mldsa_multiply_add_ntt`, `vg_mldsa_power2round` -/
@@ -237,9 +239,9 @@ theorem mul_piece {c : Prog isa} (hc : Callee c fun stk => Proof.MlDsa.mulContra
     obtain a₂ := he.arg 2 (by simp)
     generalize e = e' at *
     sig_post [Proof.MlDsa.mulContract, Proof.MlDsa.mulSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at post
-    simp only [arg_withRegions, a₀, a₁, a₂, List.getElem_cons_zero, List.getElem_cons_succ, Arg.val, m₂] at post
+    simp only [arg_withRegions, a₀, a₁, a₂, List.getElem_cons_zero, List.getElem_cons_succ, Arg.val] at post
     rw [ent_polyAt he hF, ent_polyAt he hG] at post
-    exact hQ s₀ s s' hp ha h' (fr.mono fun r hr => by simp at hr ⊢; grind) post
+    exact hQ s₀ s s' hp ha h' (fr.mono fun r hr => by simp at hr ⊢; grind) (Proof.MlDsa.KeyGen.polyIs_congr (lostK hp h' (by simp) hN m₂ hH) post)
 
 theorem mulAdd_piece {c : Prog isa} (hc : Callee c fun stk => Proof.MlDsa.mulAddContract X86.abi stk)
     (hk : chk3 Y ⟨ha, hao, 1024⟩ ⟨fa, fo, 1024⟩ ⟨ga, go, 1024⟩ = true)
@@ -291,9 +293,9 @@ theorem mulAdd_piece {c : Prog isa} (hc : Callee c fun stk => Proof.MlDsa.mulAdd
     obtain a₂ := he.arg 2 (by simp)
     generalize e = e' at *
     sig_post [Proof.MlDsa.mulAddContract, Proof.MlDsa.mulSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at post
-    simp only [arg_withRegions, a₀, a₁, a₂, List.getElem_cons_zero, List.getElem_cons_succ, Arg.val, m₂] at post
+    simp only [arg_withRegions, a₀, a₁, a₂, List.getElem_cons_zero, List.getElem_cons_succ, Arg.val] at post
     rw [ent_polyAt he hH, ent_polyAt he hF, ent_polyAt he hG] at post
-    exact hQ s₀ s s' hp ha h' (fr.mono fun r hr => by simp at hr ⊢; grind) post
+    exact hQ s₀ s s' hp ha h' (fr.mono fun r hr => by simp at hr ⊢; grind) (Proof.MlDsa.KeyGen.polyIs_congr (lostK hp h' (by simp) hN m₂ hH) post)
 
 /-- The checks of the buffers of a call with the arguments `t`, `t₁` and `t₀` (both written). -/
 abbrev chkP2 (Y : Lay) (t t1 t0 : Buf) : Bool :=
@@ -356,9 +358,9 @@ theorem p2r_piece {c : Prog isa} (hc : Callee c fun stk => Proof.MlDsa.power2Rou
     generalize e = e' at *
     sig_post [Proof.MlDsa.power2RoundContract, Proof.MlDsa.power2RoundSig, X86.abi, X86.argSlots, X86.argVal,
       X86.argBytes] at post
-    simp only [arg_withRegions, a₀, a₁, a₂, List.getElem_cons_zero, List.getElem_cons_succ, Arg.val, m₂] at post
+    simp only [arg_withRegions, a₀, a₁, a₂, List.getElem_cons_zero, List.getElem_cons_succ, Arg.val] at post
     rw [ent_polyAt he hH] at post
-    exact hQ s₀ s s' hp ha h' fr post.1 post.2
+    exact hQ s₀ s s' hp ha h' fr ((Proof.MlDsa.KeyGen.natPolyAt_congr (lostK hp h' (by simp) hN m₂ hF)).trans post.1) (Proof.MlDsa.KeyGen.polyIs_congr (lostK hp h' (by simp) hN m₂ hG) post.2)
 
 end
 
@@ -413,9 +415,9 @@ theorem acc_piece {op : Poly → Poly → Poly} {nm : String} {c : Prog isa}
     obtain a₁ := he.arg 1 (by simp)
     generalize e = e' at *
     sig_post [Proof.MlDsa.accSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at post
-    simp only [arg_withRegions, a₀, a₁, List.getElem_cons_zero, List.getElem_cons_succ, Arg.val, m₂] at post
+    simp only [arg_withRegions, a₀, a₁, List.getElem_cons_zero, List.getElem_cons_succ, Arg.val] at post
     rw [ent_polyAt he hF, ent_polyAt he hG] at post
-    exact hQ s₀ s s' hp ha h' fr post
+    exact hQ s₀ s s' hp ha h' fr (Proof.MlDsa.KeyGen.polyIs_congr (lostK hp h' (by simp) hN m₂ hF) post)
 
 
 /-! ## `vg_mldsa_rej_bounded_poly` -/
@@ -493,10 +495,12 @@ theorem rejBounded_piece {c : Prog isa} (hc : Callee c fun stk => Proof.MlDsa.re
     generalize e = e' at *
     sig_post [Proof.MlDsa.rejBoundedContract, Proof.MlDsa.rejBoundedSig, X86.abi, X86.argSlots, X86.argVal,
       X86.argBytes] at post
-    simp only [arg_withRegions, a₀, a₁, a₂, List.getElem_cons_zero, List.getElem_cons_succ, Arg.val, m₂, g₂, sw_app,
+    simp only [arg_withRegions, a₀, a₁, a₂, List.getElem_cons_zero, List.getElem_cons_succ, Arg.val, g₂, sw_app,
       eη] at post
     rw [Proof.MlKem.bytesAt_congr (he.mem _ hD)] at post
-    exact hQ s₀ s s' hp ha h' fr post.1 post.2
+    obtain kA := (lostK hp h' (by simp) hN m₂ hA₁)
+    exact hQ s₀ s s' hp ha h' fr (fun e => Proof.MlDsa.KeyGen.reduced_congr kA (post.1 e))
+      (by rw [Proof.MlDsa.KeyGen.polyAt_congr kA]; exact post.2)
 
 /-! ## Packing: `vg_mldsa_simple_bit_pack`, `vg_mldsa_bit_pack` -/
 
@@ -563,10 +567,10 @@ theorem sbp_piece {c : Prog isa} (hc : Callee c fun stk => Proof.MlDsa.simpleBit
     generalize e = e' at *
     sig_post [Proof.MlDsa.simpleBitPackContract, Proof.MlDsa.simpleBitPackSig, X86.abi, X86.argSlots, X86.argVal,
       X86.argBytes] at post
-    simp only [arg_withRegions, a₀, a₁, a₂, a₃, List.getElem_cons_zero, List.getElem_cons_succ, Arg.val, m₂, eb,
+    simp only [arg_withRegions, a₀, a₁, a₂, a₃, List.getElem_cons_zero, List.getElem_cons_succ, Arg.val, eb,
       eL] at post
     rw [Proof.MlDsa.KeyGen.natPolyAt_congr (he.mem _ hF)] at post
-    exact hQ s₀ s s' hp ha h' fr post
+    exact hQ s₀ s s' hp ha h' fr (by rw [Proof.MlKem.bytesAt_congr (lostK hp h' (by simp) hN m₂ hO)]; exact post)
 
 
 theorem bp_bounds : ∀ ab ∈ Proof.MlDsa.bitPackParams, ab.1 < 2 ^ 32 ∧ ab.2 < 2 ^ 32 ∧
@@ -645,9 +649,9 @@ theorem bp_piece {c : Prog isa} (hc : Callee c fun stk => Proof.MlDsa.bitPackCon
     generalize e = e' at *
     sig_post [Proof.MlDsa.bitPackContract, Proof.MlDsa.bitPackSig, X86.abi, X86.argSlots, X86.argVal,
       X86.argBytes] at post
-    simp only [arg_withRegions, a₀, a₁, a₂, a₃, a₄, List.getElem_cons_zero, List.getElem_cons_succ, Arg.val, m₂,
+    simp only [arg_withRegions, a₀, a₁, a₂, a₃, a₄, List.getElem_cons_zero, List.getElem_cons_succ, Arg.val,
       ea, eb, eL] at post
     rw [ent_polyAt he hF] at post
-    exact hQ s₀ s s' hp ha h' fr post
+    exact hQ s₀ s s' hp ha h' fr (by rw [Proof.MlKem.bytesAt_congr (lostK hp h' (by simp) hN m₂ hO)]; exact post)
 
 end VG.Proof.MlDsa.X86.KeyGen

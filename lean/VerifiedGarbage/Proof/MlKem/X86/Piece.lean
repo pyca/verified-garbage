@@ -144,7 +144,7 @@ theorem frame {A B : State → State → Prop} {rs : List Reg} {r : Reg} {body :
     (hb : Piece Pre Pub (fun s₀ s => ∃ s₁, A s₀ s₁ ∧ s = pushed rs s₁)
       (fun s₀ s₂ => B s₀ (popped r rs.length s₂)) body) :
     Piece Pre Pub A B (.frame (.push rs) body (.pop r rs.length)) where
-  wp _ s h₀ ha := WP.frame hne hrs hr (hn _ _ h₀ ha) hsp (hb.wp _ _ h₀ ⟨s, ha, rfl⟩)
+  wp _ s h₀ ha := WP.frameKept hne hrs hr (hn _ _ h₀ ha) hsp (hb.wp _ _ h₀ ⟨s, ha, rfl⟩)
   ct _ _ h₀ h₀' hp := RelCT.frame (fun _ _ ⟨a, a'⟩ => hesp _ _ _ _ h₀ h₀' hp a a')
     ((hb.ct _ _ h₀ h₀' hp).mono (fun _ _ ⟨s₁, s₂, ⟨h₁, h₂⟩, e₁, e₂⟩ => ⟨⟨s₁, h₁, e₁⟩, s₂, h₂, e₂⟩)
       fun _ _ h => h)
@@ -165,7 +165,7 @@ theorem callWith {A B : State → State → Prop} {rs : List Reg} {n : String} {
     (hQ : ∀ s₀ s s', Pre s₀ → A s₀ s → s'.rd = s.rd → s'.wr = s.wr →
       (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) →
       Frame (wr s₀ ++ [below (s.gpr .esp) (4 * rs.length + stackUse c + 4)]) s.mem s'.mem →
-      (∃ s₂ : State, s₂.mem = s'.mem ∧
+      (∃ s₂ : State, Frame [below (s.gpr .esp) (4 * rs.length)] s₂.mem s'.mem ∧
         k.post ((pushed rs s).callEntry.withRegions (rd s₀) (wr s₀)) s₂) → B s₀ s') :
     Piece Pre Pub A B (.frame (.push rs) (.call n c) (.pop .eax rs.length)) where
   wp s₀ s h₀ ha := WP.callWith hv hsp hne hrs (hd _ _ h₀ ha) (hk _ _ h₀ ha)

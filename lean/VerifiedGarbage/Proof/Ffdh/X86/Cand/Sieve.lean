@@ -337,7 +337,7 @@ theorem sieve_ok (h : In Ex base bytes len args s) {j : Nat} (hj : j ≤ 27) {T 
           by rw [mu', mu]⟩
   refine WP.seq (VG.X86.WP.mono_syms pre fun u' ⟨P, au, eaU, ecU, du', Ku', mU⟩ Su => ?_)
   obtain spU : u'.gpr .esp = s.gpr .esp := Ku'.1 _ (by decide)
-  refine WP.seq (WP.mono (WP.frameAlloc (bytes := 20) (Q := fun t => t.gpr .esp = s.gpr .esp ∧ t.rd = s.rd ∧
+  refine WP.seq (WP.mono (WP.frameAllocKept (bytes := 20) (Q := fun t => t.gpr .esp = s.gpr .esp ∧ t.rd = s.rd ∧
       t.wr = s.wr ∧ Frame [below (s.gpr .esp) 96] s.mem t.mem ∧
       t.gpr .eax = BitVec.ofNat 32
         (VG.Proof.RsaKeyGen.trialPrefix (sv s.mem base len .wide j) (sieveCount bits)).toNat ∧

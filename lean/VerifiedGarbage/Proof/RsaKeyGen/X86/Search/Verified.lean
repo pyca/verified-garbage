@@ -452,7 +452,7 @@ theorem framed_ok {mont round : Prog isa} {montName roundName : String}
   have inner : NoSp (.seq (VG.Impl.RsaKeyGen.X86.Candidate.body montName mont roundName round) (.block Compact.restoreRegs)) :=
     CandidateNoSp.sequence (CandidateNoSp.body montNoSp roundNoSp montName roundName) (NoSp.of_all (by rfl))
   unfold VG.Impl.RsaKeyGen.X86.Candidate.code
-  refine WP.frame (rs := VG.Proof.Mont.X86.Compact.savedRegisters) (by decide) (by decide) (by decide) savedFit inner ?_
+  refine WP.frameKept (rs := VG.Proof.Mont.X86.Compact.savedRegisters) (by decide) (by decide) (by decide) savedFit inner ?_
   refine WP.seq (WP.mono (body_ok montVerified montNoSp montStack roundVerified roundNoSp roundStack v I)
     fun t ⟨R, F, K⟩ => ?_)
   have sp : t.gpr .esp = E.p := (K.1 .esp (by unfold bodyClob; decide)).trans entrySp

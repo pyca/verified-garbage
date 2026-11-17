@@ -334,7 +334,8 @@ theorem hinit_piece : Piece P (IA P) (.frame (.push init5) (.call P.F.hiN P.F.hi
       initA (P := P) hL c₂ a₂.1 a₂.2.1 a₂.2.2.1 a₂.2.2.2.1 a₂.2.2.2.2, c₁.esp, c₂.esp⟩)
     fun L g m₀ u hL _ hc a => ?_
   have hS := P.ok.hH.hS
-  refine WP.of_syms (hi_frame P.ok.hi P.ok.hiSp P.ok.hiSU
+  refine WP.of_syms (hi_frame (fun m m' p q msg hb => P.ok.hH.repr m m' p q msg (fun i hi => hb i (by rw [P.ok.hH.hS]; exact hi)))
+    P.ok.hi P.ok.hiSp P.ok.hiSU
     (initA (P := P) hL hc a.1 a.2.1 a.2.2.1 a.2.2.2.1 a.2.2.2.2) fun v af _ _ hsy => ?_)
   have hsafe : ∀ r ∈ [(⟨(L.sc + BitVec.ofNat 32 0).setWidth 64, P.ok.hH.SH.stateBytes⟩ : Region),
       ⟨(L.sc + BitVec.ofNat 32 192).setWidth 64, P.ok.hH.SH.stateBytes⟩,

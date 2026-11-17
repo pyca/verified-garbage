@@ -899,7 +899,7 @@ theorem Result.keep {s t u : State} (R : Result s t)
 theorem Entry.framed {s : State} (E : Entry s) :
     WP isa (code montName montCode) s fun t => abiPreserved s t ∧ Result s t := by
   unfold code
-  refine WP.frame (rs := Compact.savedRegisters) (by decide) (by decide) (by decide)
+  refine WP.frameKept (rs := Compact.savedRegisters) (by decide) (by decide) (by decide)
     (by change 16 ≤ _; have := E.stackFit; omega_using [this]) inner_noSp ?_
   refine WP.seq (WP.mono E.body fun t ⟨R, K, F⟩ => ?_)
   have sp : t.gpr .esp = (entered s).gpr .esp := K.1 .esp (by decide)

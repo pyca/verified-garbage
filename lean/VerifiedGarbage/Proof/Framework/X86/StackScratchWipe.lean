@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 /-!
 # A scratch buffer on the stack, wiped after use (x86)
 
-`Verified.stackScratchWiped`: as `Verified.stackScratch`, for
+`Verified.stackScratchWiped`: as `Verified.stackScratchKept`, for
 `withStackScratchWiped`, which zeroes the first `words` doublewords of the
 buffer after the code. The wipe stores only into the buffer, within the
 frame (`wipe_run`), so the run of the code followed by the wipe keeps what the
@@ -157,7 +157,7 @@ theorem Verified.stackScratchWipedPre {c : Prog isa}
         (setArgsTrace bytes (s.gpr .esp - BitVec.ofNat 32 bytes) (slots sig) ++
           (t ++ wipeTrace (s₃.gpr .esp) (8 + 4 * slots sig) words))
         (popState bytes s s₄) ∧
-      abiPreserved s (popState bytes s s₄) ∧ (popState bytes s s₄).mem = s₄.mem ∧
+      abiPreserved s (popState bytes s s₄) ∧ Frame [below (s.gpr .esp) bytes] s₄.mem (popState bytes s s₄).mem ∧
       (popState bytes s s₄).gpr .eax = s₃.gpr .eax ∧ (popState bytes s s₄).gpr .edx = s₃.gpr .edx := by
     intro s hs
     obtain ⟨hR64, h0⟩ := hR s hs
@@ -202,16 +202,20 @@ theorem Verified.stackScratchWipedPre {c : Prog isa}
       (post := Curry.withScratch abi.ptrBits nm e n sig.params post)).mp hq
     obtain ⟨-, -, hargs, -⟩ := narrow_facts (nm := nm) (e := e) (n := n) hb.1 hs
     rw [hargs] at hq'
-    rw [hm, heax, hedx]
+    rw [heax, hedx]
     have hq'' := Eq.mp (congrFun (congrFun (congrFun (Curry.apply_withScratch abi.ptrBits nm e n sig.params
       post _ _ (stackArgs_length sig s)) _) s₃.mem) _) hq'
     have h₃ := hpost _ _ _ _ _ (stackArgs_length sig s) (narrow_agree hb.1 hs) hq''
     have hpr : Curry.apply (sig.words abi.ptrBits) pre (stackArgs sig s) s.mem :=
       ((pre_stack hl).mp hs).2.2.2.2.2.2
+    -- The memory on return: after the wipe, which writes only the buffer,
+    -- and the `free`, which loses only the frame.
     refine hpostOut _ _ _ _ _ (stackArgs_length sig s) hpr (fun b hb' a ha' => ?_) h₃
-    exact (hfr a fun r hr => by
+    exact ((hm a fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact hdisj s hs b hb' a ha').symm
+      exact frame_disj hb.1 hs b hb' a ha').trans (hfr a fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact hdisj s hs b hb' a ha')).symm
   · obtain ⟨u₁, _, _, f₁, _, _, p₁, x₁, _⟩ := hrun s₁ h₁
     obtain ⟨u₂, _, _, f₂, _, _, p₂, x₂, _⟩ := hrun s₂ h₂
     rw [(Exec.det e₁ x₁).1, (Exec.det e₂ x₂).1, p₁, p₂, ((pubL_stack hl).mp hp).1.1,

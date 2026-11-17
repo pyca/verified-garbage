@@ -94,7 +94,7 @@ theorem md5_anySp :
 key, wiped. -/
 theorem md5_initF :
     Verified X86.target (initCode Spec.Hmac.md5I Md.X86.md5M.hmacInit md5F) (Spec.Hmac.md5I.initAnyKeyContract X86.abi (76 + anyFrame Spec.Hmac.md5I)) :=
-  initCode_verified (Md.X86.initFramed Md.X86.Instances.md5_init Md.X86.md5_initFrameSat) md5_anyFramed (by decide)
+  initCode_verified (Md.X86.initFramed Md.X86.Instances.md5_init Proof.Hmac.md5_local Md.X86.md5_initFrameSat) md5_anyFramed (by decide)
     md5_anyFrameSat
 
 theorem md5_initSp : (initCode Spec.Hmac.md5I Md.X86.md5M.hmacInit md5F).all (fun i => !isa.writesSp i) = true :=
@@ -148,7 +148,7 @@ theorem sha384_anySp :
 key, wiped. -/
 theorem sha384_initF :
     Verified X86.target (initCode Spec.Hmac.sha384I Md.X86.sha384M.hmacInit sha384F) (Spec.Hmac.sha384I.initAnyKeyContract X86.abi (76 + anyFrame Spec.Hmac.sha384I)) :=
-  initCode_verified (Md.X86.initFramed Md.X86.Instances.sha384_init Md.X86.sha384_initFrameSat) sha384_anyFramed (by decide)
+  initCode_verified (Md.X86.initFramed Md.X86.Instances.sha384_init Proof.Hmac.sha384_local Md.X86.sha384_initFrameSat) sha384_anyFramed (by decide)
     sha384_anyFrameSat
 
 theorem sha384_initSp : (initCode Spec.Hmac.sha384I Md.X86.sha384M.hmacInit sha384F).all (fun i => !isa.writesSp i) = true :=
@@ -202,7 +202,7 @@ theorem sha512_anySp :
 key, wiped. -/
 theorem sha512_initF :
     Verified X86.target (initCode Spec.Hmac.sha512I Md.X86.sha512M'.hmacInit sha512F) (Spec.Hmac.sha512I.initAnyKeyContract X86.abi (76 + anyFrame Spec.Hmac.sha512I)) :=
-  initCode_verified (Md.X86.initFramed Md.X86.Instances.sha512_init Md.X86.sha512_initFrameSat) sha512_anyFramed (by decide)
+  initCode_verified (Md.X86.initFramed Md.X86.Instances.sha512_init Proof.Hmac.sha512_local Md.X86.sha512_initFrameSat) sha512_anyFramed (by decide)
     sha512_anyFrameSat
 
 theorem sha512_initSp : (initCode Spec.Hmac.sha512I Md.X86.sha512M'.hmacInit sha512F).all (fun i => !isa.writesSp i) = true :=
@@ -256,7 +256,7 @@ theorem sha512_224_anySp :
 key, wiped. -/
 theorem sha512_224_initF :
     Verified X86.target (initCode Spec.Hmac.sha512_224I Md.X86.sha512_224M.hmacInit sha512_224F) (Spec.Hmac.sha512_224I.initAnyKeyContract X86.abi (76 + anyFrame Spec.Hmac.sha512_224I)) :=
-  initCode_verified (Md.X86.initFramed Md.X86.Instances.sha512_224_init Md.X86.sha512_224_initFrameSat) sha512_224_anyFramed (by decide)
+  initCode_verified (Md.X86.initFramed Md.X86.Instances.sha512_224_init Proof.Hmac.sha512_224_local Md.X86.sha512_224_initFrameSat) sha512_224_anyFramed (by decide)
     sha512_224_anyFrameSat
 
 theorem sha512_224_initSp : (initCode Spec.Hmac.sha512_224I Md.X86.sha512_224M.hmacInit sha512_224F).all (fun i => !isa.writesSp i) = true :=
@@ -310,7 +310,7 @@ theorem sha512_256_anySp :
 key, wiped. -/
 theorem sha512_256_initF :
     Verified X86.target (initCode Spec.Hmac.sha512_256I Md.X86.sha512_256M.hmacInit sha512_256F) (Spec.Hmac.sha512_256I.initAnyKeyContract X86.abi (76 + anyFrame Spec.Hmac.sha512_256I)) :=
-  initCode_verified (Md.X86.initFramed Md.X86.Instances.sha512_256_init Md.X86.sha512_256_initFrameSat) sha512_256_anyFramed (by decide)
+  initCode_verified (Md.X86.initFramed Md.X86.Instances.sha512_256_init Proof.Hmac.sha512_256_local Md.X86.sha512_256_initFrameSat) sha512_256_anyFramed (by decide)
     sha512_256_anyFrameSat
 
 theorem sha512_256_initSp : (initCode Spec.Hmac.sha512_256I Md.X86.sha512_256M.hmacInit sha512_256F).all (fun i => !isa.writesSp i) = true :=

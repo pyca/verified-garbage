@@ -460,7 +460,7 @@ theorem init_framed :
   X86.Verified.stackScratch (sig := Spec.Sm4.Gcm.initSig) (nm := "scratch") (e := .u64) (n := 320)
     (post := Spec.Sm4.Gcm.initPost X86.abi.ptrBits) (wa := true) (stack := 1536) (bytes := 2576)
     init_verified (by decide) init_noEsp init_stackUse
-    (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (initPost_local _) initFrameSat_pre
+    (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (initPost_local _) (fun vs m m₁ m₂ r hl _ => initPostOut_local _ vs m m₁ m₂ r hl) initFrameSat_pre
 
 /-- A state satisfying the preconditions of `vg_sm4_gcm_stream_encrypt` and
 `vg_sm4_gcm_stream_decrypt`, without the working space: their eight argument
@@ -480,7 +480,7 @@ theorem streamEncrypt_framed :
     (n := 320) (post := Spec.Sm4.Gcm.streamEncryptPost X86.abi.ptrBits) (wa := true) (stack := 1536)
     (bytes := 2600) (streamEncrypt_verified (vg := vg)) (by decide) (streamEncrypt_noEsp vg)
     (streamEncrypt_stackUse vg) (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
-    (streamEncryptPost_local _) streamEncryptFrameSat_pre
+    (streamEncryptPost_local _) (fun vs m m₁ m₂ r hl _ => streamEncryptPostOut_local _ vs m m₁ m₂ r hl) streamEncryptFrameSat_pre
 
 theorem streamDecryptFrameSat_pre : ∃ s, (Spec.Sm4.Gcm.streamDecryptContract X86.abi 4136).pre s := by
   implies_sat [Spec.Sm4.Gcm.streamDecryptContract, Spec.Sm4.Gcm.streamCryptSig,
@@ -494,7 +494,7 @@ theorem streamDecrypt_framed :
     (n := 320) (post := Spec.Sm4.Gcm.streamDecryptPost X86.abi.ptrBits) (wa := true) (stack := 1536)
     (bytes := 2600) (streamDecrypt_verified (vg := vg)) (by decide) (streamDecrypt_noEsp vg)
     (streamDecrypt_stackUse vg) (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
-    (streamDecryptPost_local _) streamDecryptFrameSat_pre
+    (streamDecryptPost_local _) (fun vs m m₁ m₂ r hl _ => streamDecryptPostOut_local _ vs m m₁ m₂ r hl) streamDecryptFrameSat_pre
 
 /-- A state satisfying `vg_sm4_gcm_stream_finish`'s precondition, without
 the working space: its seven argument slots at `0x8004`. -/
@@ -513,7 +513,7 @@ theorem streamFinish_framed :
     (n := 320) (post := Spec.Sm4.Gcm.streamFinishPost X86.abi.ptrBits) (wa := true) (stack := 1536)
     (bytes := 2596) (streamFinish_verified (vg := vg)) (by decide) (streamFinish_noEsp vg)
     (streamFinish_stackUse vg) (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
-    (streamFinishPost_local _) finFrameSat_pre
+    (streamFinishPost_local _) (fun vs m m₁ m₂ r hl _ => streamFinishPostOut_local _ vs m m₁ m₂ r hl) finFrameSat_pre
 
 /-- A state satisfying `vg_sm4_gcm_stream_verify`'s precondition, without
 the working space: its eight argument slots at `0x8004`. -/
@@ -532,7 +532,7 @@ theorem streamVerify_framed :
     (n := 320) (post := Spec.Sm4.Gcm.streamVerifyPost X86.abi.ptrBits) (wa := true) (stack := 1536)
     (bytes := 2600) (streamVerify_verified (vg := vg)) (by decide) (streamVerify_noEsp vg)
     (streamVerify_stackUse vg) (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
-    (streamVerifyPost_local _) verFrameSat_pre
+    (streamVerifyPost_local _) (fun vs m m₁ m₂ r hl _ => streamVerifyPostOut_local _ vs m m₁ m₂ r hl) verFrameSat_pre
 
 /-- A state satisfying `vg_sm4_gcm_seal`'s precondition, without the working
 space: its eight argument slots at `0x8004`. -/
@@ -550,7 +550,7 @@ theorem seal_framed :
   X86.Verified.stackScratch (sig := Spec.Sm4.Gcm.sealSig) (nm := "work") (e := .u64)
     (n := 320) (post := Spec.Sm4.Gcm.sealPost X86.abi.ptrBits) (wa := true) (stack := 1536)
     (bytes := 2600) (seal_verified (vg := vg)) (by decide) (seal_noEsp vg)
-    (seal_stackUse vg) (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (sealPost_local _)
+    (seal_stackUse vg) (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (sealPost_local _) (fun vs m m₁ m₂ r hl _ => sealPostOut_local _ vs m m₁ m₂ r hl)
     sealFrameSat_pre
 
 /-- A state satisfying `vg_sm4_gcm_open`'s precondition, without the working
@@ -570,7 +570,7 @@ theorem open_framed :
     (n := 320) (post := Spec.Sm4.Gcm.openPost X86.abi.ptrBits) (wa := true) (stack := 1536)
     (leak := some (Spec.Sm4.Gcm.openLeak X86.abi.ptrBits))
     (bytes := 2604) (open_verified (vg := vg)) (by decide) (open_noEsp vg)
-    (open_stackUse vg) (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (openPost_local _)
+    (open_stackUse vg) (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (openPost_local _) (fun vs m m₁ m₂ r hl _ => openPostOut_local _ vs m m₁ m₂ r hl)
     openFrameSat_pre (hleak := openLeak_local _)
 
 end VG.Proof.Sm4Gcm.X86

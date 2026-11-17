@@ -93,7 +93,7 @@ theorem call_ok {n e m size : Nat} {base : Addr} {s : State}
       wordsVal s.mem base (slot n 5) n^val32 s.mem base (slot n 8) e%m ∧
       (prepare=true → canonical n e m (wordsVal s.mem base (slot n 5) n) base mem))
     (bytes := (layout n e).size) (name := name prepare n e) hs room hused (body_noSp h prepare) (by rw [body_stack h prepare]; decide)
-    (fun r hr => Nat.le_trans (scratch_fits h prepare r hr) hz) ?_ ?_
+    (fun r hr => Nat.le_trans (scratch_fits h prepare r hr) hz) ?_ ?_ ?_
   · intro mem F
     have vals : ∀ d k, d+4*k≤size → val32 mem base d k=val32 s.mem base d k :=
       fun _ _ hd => Pow.frame_val32 room hs.nowrap F hd
@@ -109,6 +109,18 @@ theorem call_ok {n e m size : Nat} {base : Addr} {s : State}
   · intro v E _ ⟨M,G,X,C⟩
     refine WP.mono (body_wide_ok h prepare E hz M hm odd (by rw [G]; exact C)) fun w ⟨V,Cw,O,R,Rd,Wr⟩ => ?_
     exact ⟨⟨by rw [V,G,X],by rw [G] at Cw; exact Cw⟩,Pow.OutsS.of_outs O,R,Rd,Wr⟩
+  · intro mem mem' F ⟨h₁,h₂⟩
+    have vals : ∀ d k, d+4*k≤size → val32 mem' base d k=val32 mem base d k :=
+      fun _ _ hd => Pow.frame_val32 room hs.nowrap F hd
+    have b6 : slot n 6+8*n≤(layout n e).size := by
+      rcases h with ⟨rfl,rfl⟩|⟨rfl,rfl⟩|⟨rfl,rfl⟩|⟨rfl,rfl⟩|⟨rfl,rfl⟩ <;> decide
+    refine ⟨?_,fun hp => ?_⟩
+    · rw [wordsVal_eq_val32,vals _ _ (by omega_using [hz, b6]),←wordsVal_eq_val32]; exact h₁
+    · have H := h₂ hp
+      unfold canonical at H ⊢
+      rw [wordsAt_canonical,wordsVal_eq_val32,vals _ _ (by omega_using [hz, bounds]),←wordsVal_eq_val32,
+        ←wordsAt_canonical]
+      exact H
 
 end VG.Proof.Dsa.X86.Comb
 

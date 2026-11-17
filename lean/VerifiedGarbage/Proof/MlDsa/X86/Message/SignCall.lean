@@ -342,7 +342,12 @@ theorem signCall_piece (hK : K.Ok p.skLen) {n : String} {f : Prog isa} (hf : Sig
       generalize (pushed Proof.MlKem.X86.rs5 s₁).callEntry = e at a0 a1 a2 a3 bSk bMu bRnd post
       sig_post [signKContract, signKSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at post
       simp only [arg_withRegions, a0, a1, a2, a3] at post
-      rw [bSk, bMu, bRnd, Proof.MlKem.X86.setWidth_append32, g₂, m₂] at post
+      rw [bSk, bMu, bRnd, Proof.MlKem.X86.setWidth_append32, g₂] at post
+      obtain kS : bytesAt s'.mem ((arg s₀ 6).setWidth 64) p.sigLen = bytesAt s₂.mem ((arg s₀ 6).setWidth 64) p.sigLen :=
+        Proof.MlKem.bytesAt_congr fun i hi => m₂.bytes (R := ⟨(arg s₀ 6).setWidth 64, p.sigLen⟩) (fun r hr => by
+          rw [List.mem_singleton] at hr; subst hr; rw [hsp1]; exact (R.kSig.sub_left R.argsSub).symm)
+          (by show p.sigLen ≤ 2 ^ 64; have := h₀.nSig; omega_arith) hi
+      rw [← kS] at post
       exact ⟨hc.ok.ctxLt, post⟩
 
 end

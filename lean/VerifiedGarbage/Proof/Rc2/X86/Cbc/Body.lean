@@ -105,9 +105,11 @@ theorem call_ok (d : Spec.Rc2.Direction) (s : State) (hp : CallPre s) :
   · intro s' rd wr cs frame ⟨s₂, mem₂, gpr₂, post⟩
     change (blockContract d).post (sE.withRegions _ _) s₂ at post
     simp only [blockContract, State.withRegions_gpr, State.withRegions_mem, arg_withRegions,
-      a0, a1, mem₂] at post
+      a0, a1] at post
     obtain stackFrame := callEntry_frame fit hrs
     change Frame [below (s.gpr .esp) 16] s.mem sE.mem at stackFrame
+    obtain m16 : Frame [below (s.gpr .esp) 16] s₂.mem s'.mem :=
+      Frame.below_mono (wr := []) mem₂ (by decide) hp.stackLo
     refine ⟨?_, cs, rd, wr, frame, ?_⟩
     · intro r hr
       by_cases he : r = .ecx
@@ -117,7 +119,8 @@ theorem call_ok (d : Spec.Rc2.Direction) (s : State) (hp : CallPre s) :
         exact (State.callEntry_gpr _ (by decide)).trans (pushed_gpr rs s (by decide))
       · have fact : ∀ r ∈ kept, r ≠ .ecx → r ∈ calleeSaved := by decide
         exact cs r (fact r hr he)
-    · rw [post.2, scheduleAt_frame stackFrame _ (by simpa using hp.stackKey.symm),
+    · rw [blockAt_frame m16 _ (by simpa using hp.stackData.symm), post.2,
+        scheduleAt_frame stackFrame _ (by simpa using hp.stackKey.symm),
         blockAt_frame stackFrame _ (by simpa using hp.stackData.symm)]
 
 end VG.Proof.Rc2.X86.Cbc

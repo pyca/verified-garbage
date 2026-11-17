@@ -81,7 +81,7 @@ theorem sha256_anySp (v : Backend) :
 block, or (cold) for any key, wiped. -/
 theorem sha256_initF (v : Backend) :
     Verified X86.target (initCode Spec.Hmac.sha256I v.M.hmacInit v.F) (Spec.Hmac.sha256I.initAnyKeyContract X86.abi (76 + anyFrame Spec.Hmac.sha256I)) :=
-  initCode_verified (Md.X86.initFramed v.hmacInit Md.X86.sha256_initFrameSat (Md.X86.noEsp_of v.initNoSp) v.initStack)
+  initCode_verified (Md.X86.initFramed v.hmacInit Proof.Hmac.sha256_local Md.X86.sha256_initFrameSat (Md.X86.noEsp_of v.initNoSp) v.initStack)
     (sha256_anyFramed v) (by decide) sha256_anyFrameSat
 
 theorem sha256_initSp (v : Backend) : (initCode Spec.Hmac.sha256I v.M.hmacInit v.F).all (fun i => !isa.writesSp i) = true :=
@@ -139,7 +139,7 @@ theorem sha224_anySp (v : Backend) :
 block, or (cold) for any key, wiped. -/
 theorem sha224_initF (v : Backend) :
     Verified X86.target (initCode Spec.Hmac.sha224I v.M224.hmacInit v.F224) (Spec.Hmac.sha224I.initAnyKeyContract X86.abi (76 + anyFrame Spec.Hmac.sha224I)) :=
-  initCode_verified (Md.X86.initFramed v.hmacInit224 Md.X86.sha224_initFrameSat (Md.X86.noEsp_of v.init224NoSp) v.init224Stack)
+  initCode_verified (Md.X86.initFramed v.hmacInit224 Proof.Hmac.sha224_local Md.X86.sha224_initFrameSat (Md.X86.noEsp_of v.init224NoSp) v.init224Stack)
     (sha224_anyFramed v) (by decide) sha224_anyFrameSat
 
 theorem sha224_initSp (v : Backend) : (initCode Spec.Hmac.sha224I v.M224.hmacInit v.F224).all (fun i => !isa.writesSp i) = true :=

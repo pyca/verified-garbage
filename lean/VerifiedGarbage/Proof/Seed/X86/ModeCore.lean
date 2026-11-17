@@ -349,7 +349,17 @@ theorem crypt_wp (d : Direction) {s : State} {B : BitVec 32} {k : Spec.Seed.Sche
       · exact ⟨⟨B.setWidth 64, 4 * 286⟩, List.mem_cons_of_mem _ (by rw [wr₆]; exact hw), 0, by simp, by show 0 + 4 * 272 ≤ 4 * 286; decide⟩
     -- After the call.
     · simp only [ecb_stackUse, List.length_cons, List.length_nil, Nat.reduceMul, Nat.reduceAdd, Nat.add_zero] at f
-      simp only [ecbX86, State.withRegions_mem, arg_withRegions, a0, a1, a2, m₃'] at post
+      simp only [ecbX86, State.withRegions_mem, arg_withRegions, a0, a1, a2] at post
+      obtain hblk₃ : Spec.Seed.blockAt s'.mem ((B + BitVec.ofNat 32 (4 * bufSlot)).setWidth 64) =
+          Spec.Seed.blockAt s₃'.mem ((B + BitVec.ofNat 32 (4 * bufSlot)).setWidth 64) := by
+        have f₃ : Frame [stkRegion (s.gpr .esp) 20] s₃'.mem s'.mem := by
+          have := Frame.below_mono (wr := []) m₃' (b := 20) (by decide) fit
+          rw [esp₆] at this; exact this
+        have := Proof.Seed.blocksAt_frame f₃ (p := (B + BitVec.ofNat 32 (4 * bufSlot)).setWidth 64) (n := 1)
+          (fun r hr => by
+            rw [List.mem_singleton] at hr; subst hr
+            exact (hsS.sub_right (by rw [Nat.mul_comm] at bufSub ⊢; exact bufSub)).symm) (by decide)
+        simpa [Spec.Seed.blocksAt] using this
       obtain esp' : s'.gpr .esp = s.gpr .esp := (cs .esp (by decide)).trans esp₆
       obtain rd'' : s'.rd = s.rd := rd'.trans rd₆
       obtain wr'' : s'.wr = s.wr := wr'.trans wr₆
@@ -428,7 +438,7 @@ theorem crypt_wp (d : Direction) {s : State} {B : BitVec 32} {k : Spec.Seed.Sche
         rw [show (1 : BitVec 32).toNat = 1 from rfl] at post
         obtain hb := block_of_ecb post
         rw [hschE, hblkE] at hb
-        rw [hbw, ha, dirCipher_bytes, bytesAt_eq, m₉, hb]
+        rw [hbw, ha, dirCipher_bytes, bytesAt_eq, m₉, hblk₃, hb]
 
 /-- SEED's core for the direction `d` meets what the modes need. -/
 def dirCoreSpec (d : Direction) : CoreSpec (dirCore d) where

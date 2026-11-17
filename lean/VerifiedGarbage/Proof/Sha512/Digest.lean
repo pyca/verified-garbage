@@ -9,6 +9,8 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.MdStream.Prefix
 import Std.Data.DTreeMap.Internal.Operations
 import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Scratch
+import VerifiedGarbage.Proof.Sha512.Stream
 
 /-!
 # The truncated digests of the SHA-512 family, from the hash value in memory

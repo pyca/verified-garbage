@@ -870,7 +870,7 @@ theorem frame_ok {first : Prog isa} {s : State} (h : (signLocalWith n key post).
       fun t => abiPreserved s t ∧ post s t := by
   have hL := lay_ok h sl
   have hb' := entry_bounds h
-  refine WP.frame (rs := List.replicate 64 .eax) (by simp) (by simp) (by decide)
+  refine WP.frameKept (rs := List.replicate 64 .eax) (by simp) (by simp) (by decide)
     (by simp only [List.length_replicate]; omega_using [hb']) (bodyFrom_nosp hn)
     (WP.mono hb fun u ⟨hu, ho⟩ => ?_)
   refine ⟨⟨fun r hr => ?_, ?_⟩, hp _ ?_⟩

@@ -408,7 +408,7 @@ theorem digest_ok {s t : State} (h : Pre s) (hc : Ctx s t) {dn : String} (ha : t
       (callEntry_arg hfit (by decide) (by decide)).trans hc'
     obtain a2 : arg (pushed argRegs t).callEntry 2 = arg s 1 :=
       (callEntry_arg hfit (by decide) (by decide)).trans hd
-    simp only [arg_withRegions, a0, a1, a2, hm₂, show (BitVec.ofNat 32 32).toNat = 32 from rfl] at hpost
+    simp only [arg_withRegions, a0, a1, a2, show (BitVec.ofNat 32 32).toNat = 32 from rfl] at hpost
     obtain hce := callEntry_frame hfit (by decide : Reg.esp ∉ argRegs)
     obtain hS : Spec.Ed25519.bytesAt (pushed argRegs t).callEntry.mem ((arg s 2).setWidth 64) 32 =
         Spec.Ed25519.bytesAt s.mem ((arg s 2).setWidth 64) 32 := by
@@ -416,7 +416,8 @@ theorem digest_ok {s t : State} (h : Pre s) (hc : Ctx s t) {dn : String} (ha : t
       · exact hc.bytes h.os.symm h.es.symm h.sc h.ks.symm (by decide)
       · rw [List.mem_singleton.mp hr]
         exact h.ks.symm.sub_right (below_stk h hc (by decide))
-    exact hpost.trans (congrArg Spec.Sha512.sha512 hS)
+    refine (bytesAt_frame hm₂ (fun r hr => ?_) (by decide)).trans (hpost.trans (congrArg Spec.Sha512.sha512 hS))
+    rw [List.mem_singleton.mp hr]; exact h.ke.symm.sub_right (below_stk h hc (by decide))
 
 /-! ## The public key -/
 
@@ -604,8 +605,9 @@ theorem pk_ok {s t : State} (h : Pre s) (hc : Ctx s t) {pn : String} (ha : t.gpr
     sig_post [Proof.Ed25519.publicKeyExpandedContract, Proof.Ed25519.publicKeyExpandedSig,
       Spec.Ed25519.scratchWords, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, combConsts_eq,
       Abi.withConsts] at hpost
-    simp only [x0, x1, xm, hm₂] at hpost
-    exact hpost _ (by simp [Spec.Ed25519.bytesAt]) hk'
+    simp only [x0, x1, xm] at hpost
+    refine (bytesAt_frame hm₂ (fun r hr => ?_) (by decide)).trans (hpost _ (by simp [Spec.Ed25519.bytesAt]) hk')
+    rw [List.mem_singleton.mp hr]; exact h.ko.symm.sub_right (below_stk h hc (by decide))
 
 /-! ## The whole function -/
 

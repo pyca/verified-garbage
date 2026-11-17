@@ -228,7 +228,11 @@ theorem core_piece {n : String} {f : Prog isa} (hv : Verified X86.target f (sign
     generalize e = e' at *
     sig_post [signCoreContract, signSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at post
     simp only [arg_withRegions, a₀, a₁, a₂, a₃, coreArgs, List.getElem_cons_zero, List.getElem_cons_succ,
-      VG.Impl.MlDsa.X86.KeyGen.Arg.val, m₂, g₂, sw_app, Buf.addr] at post l₁ l₂ l₃
+      VG.Impl.MlDsa.X86.KeyGen.Arg.val, g₂, sw_app, Buf.addr] at post l₁ l₂ l₃
+    obtain kS : bytesAt s'.mem ((Buf.ptr s₀ (bSig 0 p.sigLen)).setWidth 64) p.sigLen =
+        bytesAt s₂.mem ((Buf.ptr s₀ (bSig 0 p.sigLen)).setWidth 64) p.sigLen :=
+      Proof.MlKem.bytesAt_congr (lostK hp h' (by simp [coreArgs]) (by simp [YE]) m₂ r3)
+    rw [← kS] at post
     refine ⟨h', ?_⟩
     unfold CoreDone
     simp only [Buf.addr]

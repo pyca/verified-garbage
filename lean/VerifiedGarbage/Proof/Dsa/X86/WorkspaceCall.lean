@@ -28,7 +28,8 @@ theorem workspaceCall_ok {s : State} {base : Addr} {size bytes : Nat}
     (input : ∀ mem, Frame [below (s.gpr .esp) 12] s.mem mem → P mem)
     (correct : ∀ v, Pow.Entry v base size → CallRoom (v.gpr .esp) base size → P v.mem → WP isa code v fun w =>
       Q w.mem ∧ Pow.OutsS base (v.gpr .esp) rs v.mem w.mem ∧
-      (∀ r∈calleeSaved, w.gpr r=v.gpr r) ∧ w.rd=v.rd ∧ w.wr=v.wr) :
+      (∀ r∈calleeSaved, w.gpr r=v.gpr r) ∧ w.rd=v.rd ∧ w.wr=v.wr)
+    (keep : ∀ mem mem', Frame [below (s.gpr .esp) 12] mem mem' → Q mem → Q mem') :
     WP isa (.seq (.block [.mov .eax (.imm (BitVec.ofNat 32 (bytes/8)))])
       (.frame (.push [.eax,.edi]) (.call name code) (.pop .eax 2))) s fun t =>
       Q t.mem ∧ StackOuts base (s.gpr .esp) rs s.mem t.mem ∧ Keeps [.eax,.ecx,.edx] s t := by
@@ -107,7 +108,10 @@ theorem workspaceCall_ok {s : State} {base : Addr} {size bytes : Nat}
   · exact Covers.of_mem fun r hr => by rw [List.mem_singleton.mp hr,U.wr]; exact List.mem_cons_of_mem _ hs.wr
   · intro w rd wr cs _ post
     obtain ⟨v,mem,V,O⟩ := post
-    refine ⟨by rw [←mem]; exact V,?_,?_⟩
+    -- The pop loses the arguments' frame, below `esp`.
+    have fL : Frame [below (s.gpr .esp) 12] v.mem w.mem := by
+      rw [usp] at mem; exact Frame.below_mono (wr := []) mem (by decide) (by omega)
+    refine ⟨keep _ _ fL V,?_,?_⟩
     · intro x hx hxstack
       have outside : ¬(below (s.gpr .esp) 12).Contains x 1 := by
         intro hin
@@ -121,7 +125,7 @@ theorem workspaceCall_ok {s : State} {base : Addr} {size bytes : Nat}
         rcases hxstack with hlocal|hstack
         · have := Pow.zone_ofs' ⟨h32,sep⟩ nw (k := 108) (by decide) hin'; omega
         · exact hstack hin'
-      rw [←mem,O x hx deep]
+      rw [fL x (fun r hr => by rw [List.mem_singleton.mp hr]; exact outside),O x hx deep]
       exact fr x fun r hr => by rw [List.mem_singleton.mp hr]; exact outside
     · refine ⟨fun r hr => ?_,rd.trans U.rd,wr.trans U.wr⟩
       have cr : r∈calleeSaved := by revert hr; cases r <;> decide

@@ -103,9 +103,10 @@ theorem inPlace_piece {t : Poly → Poly} {nm : String} {c : Prog isa}
     generalize he : (pushed (argPush 2) s₁).callEntry = e at a0 post
     sig_post [inPlaceContract, inPlaceSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at post
     subst he
-    simp only [arg_withRegions, a0, m₂] at post
+    simp only [arg_withRegions, a0] at post
     rw [polyAt_congr (ent_bytes hp h (n := 2) (by decide) hF'), m] at post
-    exact hQ s₀ s s' hp ha h' (fr80 (by decide) (by have := ok.stk; omega_arith) hp (m ▸ fr)) post
+    exact hQ s₀ s s' hp ha h' (fr80 (by decide) (by have := ok.stk; omega_arith) hp (m ▸ fr))
+      (polyIs_congr (lost_bytes hp (n := 2) (by decide) m₂ hF') post)
 
 end VG.Proof.MlDsa.X86.Sign
 
@@ -200,10 +201,11 @@ theorem mul_piece {nm : String} {c : Prog isa} (hv : Verified X86.target c (mulC
     generalize he : (pushed (argPush 3) s₁).callEntry = e at a0 a1 a2 post
     sig_post [mulContract, mulSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at post
     subst he
-    simp only [arg_withRegions, a0, a1, a2, m₂] at post
+    simp only [arg_withRegions, a0, a1, a2] at post
     rw [polyAt_congr (ent_bytes hp h (n := 3) (by decide) hF), polyAt_congr (ent_bytes hp h (n := 3) (by decide) hG),
       m] at post
-    exact hQ s₀ s s' hp ha h' (fr80 (by decide) (by have := ok.stk; omega_arith) hp (m ▸ fr)) post
+    exact hQ s₀ s s' hp ha h' (fr80 (by decide) (by have := ok.stk; omega_arith) hp (m ▸ fr))
+      (polyIs_congr (lost_bytes hp (n := 3) (by decide) m₂ hH') post)
 
 /-- `h ← h + MultiplyNTT(f, g)`. -/
 theorem mulAdd_piece {nm : String} {c : Prog isa} (hv : Verified X86.target c (mulAddContract X86.abi 16))
@@ -284,10 +286,11 @@ theorem mulAdd_piece {nm : String} {c : Prog isa} (hv : Verified X86.target c (m
     generalize he : (pushed (argPush 3) s₁).callEntry = e at a0 a1 a2 post
     sig_post [mulAddContract, mulSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at post
     subst he
-    simp only [arg_withRegions, a0, a1, a2, m₂] at post
+    simp only [arg_withRegions, a0, a1, a2] at post
     rw [polyAt_congr (ent_bytes hp h (n := 3) (by decide) hH'), polyAt_congr (ent_bytes hp h (n := 3) (by decide) hF), polyAt_congr (ent_bytes hp h (n := 3) (by decide) hG),
       m] at post
-    exact hQ s₀ s s' hp ha h' (fr80 (by decide) (by have := ok.stk; omega_arith) hp (m ▸ fr)) post
+    exact hQ s₀ s s' hp ha h' (fr80 (by decide) (by have := ok.stk; omega_arith) hp (m ▸ fr))
+      (polyIs_congr (lost_bytes hp (n := 3) (by decide) m₂ hH') post)
 
 /-- `f ← op(f, g)` (`vg_mldsa_add`, `vg_mldsa_sub`). -/
 theorem acc_piece {op : Poly → Poly → Poly} {nm : String} {c : Prog isa}
@@ -359,9 +362,10 @@ theorem acc_piece {op : Poly → Poly → Poly} {nm : String} {c : Prog isa}
     generalize he : (pushed (argPush 2) s₁).callEntry = e at a0 a1 post
     sig_post [accSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at post
     subst he
-    simp only [arg_withRegions, a0, a1, m₂] at post
+    simp only [arg_withRegions, a0, a1] at post
     rw [polyAt_congr (ent_bytes hp h (n := 2) (by decide) hF'), polyAt_congr (ent_bytes hp h (n := 2) (by decide) hG),
       m] at post
-    exact hQ s₀ s s' hp ha h' (fr80 (by decide) (by have := ok.stk; omega_arith) hp (m ▸ fr)) post
+    exact hQ s₀ s s' hp ha h' (fr80 (by decide) (by have := ok.stk; omega_arith) hp (m ▸ fr))
+      (polyIs_congr (lost_bytes hp (n := 2) (by decide) m₂ hF') post)
 
 end VG.Proof.MlDsa.X86.Sign

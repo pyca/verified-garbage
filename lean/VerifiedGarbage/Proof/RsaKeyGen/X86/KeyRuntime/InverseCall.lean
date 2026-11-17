@@ -439,7 +439,14 @@ theorem call_ok {B : Addr} {Z n N : Nat} {w : Width} {p : BitVec 32} {a : Nat} {
   obtain lenE : VG.Proof.RsaKeyGen.X86.Inverse.len (invEntry B (8 * invWords a) u) = a := by
     unfold VG.Proof.RsaKeyGen.X86.Inverse.len
     rw [arg2, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := C.len; omega_using [this])]
-  simp only [baseE, sizeE, lenE, hka, mem₂] at inside gcd bezout lt
+  simp only [baseE, sizeE, lenE, hka] at inside gcd bezout lt
+  -- The pop loses the arguments' frame, below `esp`, apart from the workspace.
+  obtain farL : (⟨B, Z⟩ : Region).Disjoint (below (u.gpr .esp) (4 * invArgs.length)) :=
+    far.sub_right (below_sub (by decide) lowSp)
+  have lostNum {j : Nat} (hj : j < 15) : num t.mem B (w.words n) j = num e₂.mem B (w.words n) j :=
+    frame_num mem₂ farL nowrap (Nat.le_trans (VG.Proof.Rsa.X86.Keys.arr_end hj) wsW.fits)
+  rw [← lostNum (j := 1) (by decide)] at gcd bezout
+  rw [← lostNum (j := 3) (by decide)] at bezout lt
   obtain FE := invEntry_frame (B := B) (L := 8 * invWords a) fit16
   obtain farU : (⟨B, Z⟩ : Region).Disjoint (below (u.gpr .esp) 16) :=
     far.sub_right (below_sub (by decide) lowSp)
@@ -474,7 +481,9 @@ theorem call_ok {B : Addr} {Z n N : Nat} {w : Width} {p : BitVec 32} {a : Nat} {
       rw [BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm]
       exact BitVec.sub_add_cancel x B
     rw [back] at changed
-    rw [changed]
+    rw [mem₂ x (fun r hr => by
+      obtain rfl := List.mem_singleton.mp hr
+      exact farL x (Region.sub_prefix size x hin)), changed]
     apply FE x
     intro r hr
     obtain rfl := List.mem_singleton.mp hr

@@ -158,9 +158,20 @@ theorem mulCall_ok {code : Prog isa} {name : String}
   obtain ⟨value, keeps⟩ := mulPost ptrBound capBound right.1
     (sa (by decide : 0 < 5)) (sa (by decide : 1 < 5)) (sa (by decide : 2 < 5))
     (sa (by decide : 3 < 5)) (sa (by decide : 4 < 5)) Mu odd post
-  rw [mem] at value keeps
+  -- The pop loses the arguments' frame, below `esp`, apart from the workspace.
+  have L : WorkspaceFrame g [] u.mem t.mem := by
+    intro i index _
+    apply mem.bytes (R := ⟨g.W, g.L⟩)
+    · intro r hr
+      obtain rfl := List.mem_singleton.mp hr
+      exact far.sub_right (below_sub (by decide : 20 ≤ 80) fit)
+    · have := C.ws.nowrap
+      change g.L ≤ 2 ^ 64
+      omega_using [this]
+    · exact index
+  rw [← L.val32 (v.arrayFit (by decide : 6 < 28)) (by simp)] at value
   have O : WorkspaceFrame g (montWrites g 6) s.mem t.mem :=
-    (F.mono (by simp)).trans (montFrame length keeps)
+    ((F.mono (by simp)).trans (montFrame length keeps)).trans (L.mono (by simp))
   refine ⟨?_, O, K, C.keepMont v wrT (saved .edi (by decide)) O,
     M.keepMont v (by decide) O, VG.X86.Frame.below_mono frame (by change 20 + stackUse code + 4 ≤ 80; omega_using [stack]) fit⟩
   rw [value, F.val32 (v.arrayFit (by decide : 6 < 28)) (by simp),

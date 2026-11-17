@@ -137,6 +137,33 @@ theorem entry_bytes {rs : List Reg} {s : State} (hrs : Reg.esp ∉ rs) (hn : rs.
   exact List.map_congr_left fun i hi => (entry_frame hrs hn h76).bytes (R := ⟨p, k⟩)
     (by simp only [List.mem_singleton]; rintro q rfl; exact hd.symm) hk (List.mem_range.mp hi)
 
+/-- What a callee leaves below `esp` after its return is outside `stk`. -/
+theorem back_frame {rs : List Reg} {s : State} {m m' : Mem} (hn : rs.length ≤ 6)
+    (h76 : 76 ≤ (s.gpr .esp).toNat) (hl : Frame [below (s.gpr .esp) (4 * rs.length)] m m') : Frame [stk s] m m' :=
+  hl.sub fun q hq => by
+    simp only [List.mem_singleton] at hq; subst hq
+    exact ⟨_, List.mem_singleton_self _, below_sub (by omega_arith) h76⟩
+
+theorem back_bytes {rs : List Reg} {s : State} {m m' : Mem} (hn : rs.length ≤ 6)
+    (h76 : 76 ≤ (s.gpr .esp).toNat) (hl : Frame [below (s.gpr .esp) (4 * rs.length)] m m') {p : Addr} {k : Nat}
+    (hd : (stk s).Disjoint ⟨p, k⟩) (hk : k ≤ 2 ^ 64) : bytesAt m' p k = bytesAt m p k := by
+  simp only [bytesAt]
+  exact List.map_congr_left fun i hi => (back_frame hn h76 hl).bytes (R := ⟨p, k⟩)
+    (by simp only [List.mem_singleton]; rintro q rfl; exact hd.symm) hk (List.mem_range.mp hi)
+
+/-- The representation of a streaming state depends only on its bytes. -/
+def ReprOK (S : StreamingHash) : Prop :=
+  ∀ (m m' : Mem) (p q : Addr) (msg : List Byte),
+    (∀ i < S.stateBytes, m' (q + BitVec.ofNat 64 i) = m (p + BitVec.ofNat 64 i)) → S.Repr m p msg → S.Repr m' q msg
+
+/-- A state outside `stk` represents the same message after a callee's return. -/
+theorem back_repr {S : StreamingHash} (hR : ReprOK S) (hS : S.stateBytes ≤ 2 ^ 64) {rs : List Reg} {s : State}
+    {m m' : Mem} (hn : rs.length ≤ 6) (h76 : 76 ≤ (s.gpr .esp).toNat)
+    (hl : Frame [below (s.gpr .esp) (4 * rs.length)] m m') {p : Addr}
+    (hd : (stk s).Disjoint ⟨p, S.stateBytes⟩) {msg : List Byte} (h : S.Repr m p msg) : S.Repr m' p msg :=
+  hR _ _ _ _ _ (fun i hi => (back_frame hn h76 hl).bytes (R := ⟨p, S.stateBytes⟩)
+    (by simp only [List.mem_singleton]; rintro q rfl; exact hd.symm) hS hi) h
+
 /-! ## HMAC's `init`, in a frame of its arguments -/
 
 /-- The five words of `init`'s frame, last to first. -/
@@ -268,7 +295,7 @@ theorem callPre : CallPre (Proof.Hmac.initScratchContract S Wi X86.abi 48) hi5 (
 
 end HiArgs
 
-theorem hi_frame {S : StreamingHash} {Wi : Nat} {n : String} {c : Prog isa}
+theorem hi_frame {S : StreamingHash} {Wi : Nat} {n : String} {c : Prog isa} (hR : ReprOK S)
     (hv : Sound c (Proof.Hmac.initScratchContract S Wi X86.abi 48)) (hsp : NoSp c) (hsu : stackUse c ≤ 48)
     {s : State} {inn out k sc : BitVec 32} {kl : Nat} (h : HiArgs S Wi s inn out k sc kl) {Q : State → Prop}
     (hQ : ∀ s', After s [⟨inn.setWidth 64, S.stateBytes⟩, ⟨out.setWidth 64, S.stateBytes⟩,
@@ -294,8 +321,9 @@ theorem hi_frame {S : StreamingHash} {Wi : Nat} {n : String} {c : Prog isa}
     (by rw [arg_withRegions, h.a2]) (by rw [arg_withRegions, h.a3]) post
   have ek : bytesAt (pushed hi5 s).callEntry.mem (k.setWidth 64) kl = bytesAt s.mem (k.setWidth 64) kl :=
     entry_bytes HiArgs.nesp (by decide) e h.b_k (by have := h.kl32; omega_arith)
-  rw [State.withRegions_mem, ek, m₂] at post'
-  exact hQ s' ⟨rd', wr', cs', f''⟩ post'.1 post'.2
+  rw [State.withRegions_mem, ek] at post'
+  exact hQ s' ⟨rd', wr', cs', f''⟩ (back_repr hR (by have := h.ni; omega_arith) (by decide) e m₂ h.b_i post'.1)
+    (back_repr hR (by have := h.no; omega_arith) (by decide) e m₂ h.b_o post'.2)
 
 theorem hi_rel {S : StreamingHash} {Wi : Nat} {n : String} {c : Prog isa}
     (hv : Sound c (Proof.Hmac.initScratchContract S Wi X86.abi 48)) {P : State → State → Prop}
@@ -311,11 +339,6 @@ theorem hi_rel {S : StreamingHash} {Wi : Nat} {n : String} {c : Prog isa}
   refine ⟨c, c', e.trans e'.symm, init_pub ?_ ?_ ?_ ?_ ?_ ?_⟩
   · simp only [State.withRegions_gpr, callEntry_esp', e, e']
   all_goals simp only [arg_withRegions, a.a0, a'.a0, a.a1, a'.a1, a.a2, a'.a2, a.a3, a'.a3, a.a4, a'.a4]
-
-/-- The representation of a streaming state depends only on its bytes. -/
-def ReprOK (S : StreamingHash) : Prop :=
-  ∀ (m m' : Mem) (p q : Addr) (msg : List Byte),
-    (∀ i < S.stateBytes, m' (q + BitVec.ofNat 64 i) = m (p + BitVec.ofNat 64 i)) → S.Repr m p msg → S.Repr m' q msg
 
 /-- A state outside `stk` represents the same message on entry to a callee. -/
 theorem entry_repr {S : StreamingHash} (hR : ReprOK S) (hS : S.stateBytes ≤ 2 ^ 64) {rs : List Reg} {s : State}
@@ -482,7 +505,7 @@ theorem hf_frame {S : StreamingHash} {Wf : Nat} {n : String} {c : Prog isa} (hR 
   have post' := fin_post (t := (pushed hf6 s).callEntry.withRegions (HfArgs.rd S ou)
     (HfArgs.wr S Wf (s.gpr .esp) inn o sc)) (by rw [arg_withRegions, h.a0]) (by rw [arg_withRegions, h.a1])
     (by rw [arg_withRegions, h.a2]) (by rw [arg_withRegions, h.a3]) (by rw [arg_withRegions, h.a4]) post
-  rw [State.withRegions_mem, m₂] at post'
+  rw [State.withRegions_mem, ← back_bytes (by decide) e m₂ h.b_o (by have := h.no; omega_arith)] at post'
   refine hQ s' ⟨rd', wr', cs', f''⟩ fun k0 text hk hl hi' hc ho => post' k0 text hk hl ?_ hc ?_
   · exact entry_repr hR hSn HfArgs.nesp (by decide) e h.b_i hi'
   · exact entry_repr hR hSn HfArgs.nesp (by decide) e h.b_u ho
@@ -656,7 +679,8 @@ theorem it_frame {S : StreamingHash} {Wt : Nat} {nm : String} {c : Prog isa} (hR
   have post' := it_post (t := (pushed it5 s).callEntry.withRegions (ItArgs.rd S key u)
     (ItArgs.wr S Wt (s.gpr .esp) tt sc)) (by rw [arg_withRegions, h.a0]) (by rw [arg_withRegions, h.a1])
     (by rw [arg_withRegions, h.a2]) (by rw [arg_withRegions, h.a3]) post
-  rw [State.withRegions_mem, m₂, entry_bytes ItArgs.nesp (by decide) e h.b_u (by omega_arith),
+  rw [State.withRegions_mem, ← back_bytes (by decide) e m₂ h.b_t (by have := h.nt; omega_arith),
+    entry_bytes ItArgs.nesp (by decide) e h.b_u (by omega_arith),
     entry_bytes ItArgs.nesp (by decide) e h.b_t (by omega_arith)] at post'
   refine hQ s' ⟨rd', wr', cs', f''⟩ fun k0 hk hi ho => post' k0 hk ?_ ?_
   · exact entry_repr hR (by omega_arith) ItArgs.nesp (by decide) e

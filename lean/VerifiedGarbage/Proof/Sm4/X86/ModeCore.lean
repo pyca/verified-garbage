@@ -269,7 +269,10 @@ theorem prepare_wp (d : Dir) {s : State} {B : BitVec 32} {rs : List Region} {k :
       exact ⟨_, List.mem_cons_of_mem _ (by rw [wr₃]; exact hw), 0, by simp, by show 0 + 179 * 8 ≤ 4 * 368; omega_arith⟩
   · intro s' rd' wr' cs frame ⟨s₂', mem₂, _, post⟩
     change prepX86.post (sE.withRegions _ _) s₂' at post
-    simp only [prepX86, State.withRegions_mem, arg_withRegions, a0, a1, a2, a3, mem₂, toNat_wsWords] at post
+    simp only [prepX86, State.withRegions_mem, arg_withRegions, a0, a1, a2, a3, toNat_wsWords] at post
+    obtain mem₂ : Frame [stkRegion (s.gpr .esp) 20] s₂'.mem s'.mem := by
+      have := Frame.below_mono (wr := []) mem₂ (b := 20) (by decide) fit
+      rw [esp₃] at this; exact this
     obtain stackFrame := callEntry_frame fit hrs
     rw [esp₃, m₃] at stackFrame
     change Frame [stkRegion (s.gpr .esp) 20] s.mem sE.mem at stackFrame
@@ -301,7 +304,10 @@ theorem prepare_wp (d : Dir) {s : State} {B : BitVec 32} {rs : List Region} {k :
     obtain edi₄ : s₄.gpr .edi = B := by rw [u₄.gpr]; exact (congrArg (s'.mem.readW · 32) hea4).trans hq'
     refine ⟨⟨?_, hfB, by rw [g₄ _ (by decide), esp']; exact sW⟩, edi₄, by rw [g₄ _ (by decide), esp'],
       ?_, by rw [u₄.rd, rd', rd₃], by rw [u₄.wr, wr', wr₃]⟩
-    · have := readyAt_of_words (words_of_holds (by rw [slots_eq]; omega_arith) post.1)
+    · have := readyAt_of_words (words_of_holds (by rw [slots_eq]; omega_arith) (holds_frame post.1 mem₂
+        (fun r hr => by
+          rw [List.mem_singleton] at hr; subst hr
+          exact (sW.sub_right (Region.sub_prefix (by rw [slots_eq]; omega_arith))).symm)))
       rw [ofSpecDir_dirOf, dirOf_dirFlagOf] at this
       rw [u₄.mem]; exact this
     · rw [u₄.mem]
@@ -397,7 +403,10 @@ theorem crypt_wp (d : Dir) {s : State} {B : BitVec 32} {k : Spec.Sm4.Schedule} (
       exact ⟨_, List.mem_cons_of_mem _ (by rw [wr₃]; exact hw), 0, by simp, by show 0 + 179 * 8 ≤ 4 * 368; omega_arith⟩
   · intro s' rd' wr' cs frame ⟨s₂', mem₂, _, post⟩
     change cryptX86.post (sE.withRegions _ _) s₂' at post
-    simp only [cryptX86, State.withRegions_mem, arg_withRegions, a0, a1, mem₂, toNat_wsWords] at post
+    simp only [cryptX86, State.withRegions_mem, arg_withRegions, a0, a1, toNat_wsWords] at post
+    obtain mem₂ : Frame [stkRegion (s.gpr .esp) 12] s₂'.mem s'.mem := by
+      have := Frame.below_mono (wr := []) mem₂ (b := 12) (by decide) fit
+      rw [esp₃] at this; exact this
     obtain ⟨hE', hK⟩ := post
     obtain hE := hE' k (specDirX86 d) hHE
     rw [esp₃, m₃, crypt_stack] at frame
@@ -431,7 +440,10 @@ theorem crypt_wp (d : Dir) {s : State} {B : BitVec 32} {k : Spec.Sm4.Schedule} (
     refine ⟨by rw [g₉]; exact edi', by rw [g₉]; exact esp', ⟨?_, hfB, by rw [g₉, esp']; exact sW⟩, ?_,
       fun j hj => ?_, by rw [u₉.rd, u₈.rd, rd', rd₃], by rw [u₉.wr, u₈.wr, wr'']⟩
     · rw [m₉]
-      have := readyAt_of_words (words_of_holds (by rw [slots_eq]; omega_arith) (holds_of_keeps hHE hK))
+      have := readyAt_of_words (words_of_holds (by rw [slots_eq]; omega_arith) (holds_frame (holds_of_keeps hHE hK)
+        mem₂ (fun r hr => by
+          rw [List.mem_singleton] at hr; subst hr
+          exact (s12.sub_right (Region.sub_prefix (by rw [slots_eq]; omega_arith))).symm)))
       rw [ofSpecDir_specDirX86] at this
       exact this
     · rw [m₉]
@@ -449,7 +461,13 @@ theorem crypt_wp (d : Dir) {s : State} {B : BitVec 32} {k : Spec.Sm4.Schedule} (
           rw [List.mem_singleton] at hr; subst hr
           rw [VG.Offset.add_add]
           exact (s12.sub_right (VG.Offset.sub_base _ (by simp only [layout, tailSlot_eq]; omega_arith))).symm
-      rw [show 4 * (dirCore d).bw = 16 from rfl, ha, dirCipher_bytes, bytesAt_eq_blockAt, m₉,
+      obtain hblk₂ : Spec.Sm4.blockAt s'.mem (B.setWidth 64 + BitVec.ofNat 64 layout.buf + BitVec.ofNat 64 (16 * j)) =
+          Spec.Sm4.blockAt s₂'.mem (B.setWidth 64 + BitVec.ofNat 64 layout.buf + BitVec.ofNat 64 (16 * j)) :=
+        blockAt_frame mem₂ fun r hr => by
+          rw [List.mem_singleton] at hr; subst hr
+          rw [VG.Offset.add_add]
+          exact (s12.sub_right (VG.Offset.sub_base _ (by simp only [layout, tailSlot_eq]; omega_arith))).symm
+      rw [show 4 * (dirCore d).bw = 16 from rfl, ha, dirCipher_bytes, bytesAt_eq_blockAt, m₉, hblk₂,
         blockAt_of_ecb hE hj', hblk, quads_spec]
 
 /-- The core's blocks are four words. -/

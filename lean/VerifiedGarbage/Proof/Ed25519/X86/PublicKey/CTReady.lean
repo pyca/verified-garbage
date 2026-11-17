@@ -469,7 +469,7 @@ theorem frame_ok {post : State → State → Prop} {first : Prog isa} {s : State
     WP isa (.frame (.push (List.replicate 64 .eax)) (bodyFrom first) (.pop .eax 64)) s
       fun t => abiPreserved s t ∧ post s t := by
   have hf := facts h
-  refine WP.frame (rs := List.replicate 64 .eax) (by simp) (by simp) (by decide)
+  refine WP.frameKept (rs := List.replicate 64 .eax) (by simp) (by simp) (by decide)
     (by simp only [List.length_replicate]; have := hf.below; omega_using [this]) (bodyFrom_nosp hn)
     (WP.mono hb fun u ⟨hu, ho⟩ => ?_)
   refine ⟨⟨fun r hr => ?_, ?_⟩, hp _ ?_⟩

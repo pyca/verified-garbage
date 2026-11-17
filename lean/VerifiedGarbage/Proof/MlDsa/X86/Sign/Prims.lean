@@ -103,6 +103,17 @@ theorem ent_bytes {p : Params} {s₀ s : State} (hp : TPre (Y p) s₀) (h : Ctx 
       exact (Buf.stkD hp hb (N := 4 * n + 4) (by show _ + 16 ≤ 96; omega_using [hn])).symm)
     (by show b.len ≤ 2 ^ 64; have := Buf.fit hp hb; omega_using [this]) hi
 
+/-- A buffer keeps its bytes while only the stack below `esp` changes: what
+a call's argument words leave below `esp` after it returns. -/
+theorem lost_bytes {p : Params} {s₀ : State} {m m' : Mem} (hp : TPre (Y p) s₀) {n : Nat} (hn : n ≤ 5)
+    (hl : Frame [below (E1 s₀) (4 * n)] m m') {b : Buf} (hb : (Y p).ok b = true) :
+    ∀ i < b.len, m' (b.addr s₀ + BitVec.ofNat 64 i) = m (b.addr s₀ + BitVec.ofNat 64 i) :=
+  fun _ hi => hl.bytes (R := b.rgn s₀)
+    (fun r hr => by
+      rw [List.mem_singleton] at hr; subst hr
+      exact (Buf.stkD hp hb (N := 4 * n) (by show _ + 16 ≤ 96; omega_using [hn])).symm)
+    (by show b.len ≤ 2 ^ 64; have := Buf.fit hp hb; omega_using [this]) hi
+
 /-- The regions a call writes, and the stack its frame and calls use, within `W`. -/
 theorem stk_W {p : Params} {s₀ : State} (hp : TPre (Y p) s₀) {N : Nat} (hN : N ≤ 80) :
     ∃ r' ∈ W (Y p) s₀, Region.Sub (below (E1 s₀) N) r' :=
@@ -139,7 +150,7 @@ theorem callP_piece (as : List Arg) (n : Nat) (hn' : as.length = n) (hv : Verifi
     (hW : ∀ s₀, TPre (Y p) s₀ → ∀ r ∈ wr s₀, ∃ r' ∈ W (Y p) s₀, Region.Sub r r')
     (hQ : ∀ s₀ s₁ s', TPre (Y p) s₀ → After p A as s₀ s₁ → Ctx (Y p) s₀ s' →
       Frame (wr s₀ ++ [below (E1 s₀) (4 * n + stackUse c + 4)]) s₁.mem s'.mem →
-      (∃ s₂ : State, s₂.mem = s'.mem ∧ k.post (((pushed (argPush n) s₁).callEntry).withRegions (rd s₀) (wr s₀)) s₂) → B s₀ s') :
+      (∃ s₂ : State, Frame [below (E1 s₀) (4 * n)] s₂.mem s'.mem ∧ k.post (((pushed (argPush n) s₁).callEntry).withRegions (rd s₀) (wr s₀)) s₂) → B s₀ s') :
     SP p A B (callP name c as) := by
   subst hn'
   have hl := argPush_len hn
@@ -154,7 +165,7 @@ theorem callP_piece (as : List Arg) (n : Nat) (hn' : as.length = n) (hv : Verifi
       exact ⟨e₁, e₂, by rw [h.esp, h'.esp, hq.t.E1], e₃⟩)
     (fun s₀ s₁ s' hp ha e₁ e₂ e₃ fr post => ?_)
   have h := ha.choose_spec.2.1
-  rw [h.esp, hl] at fr
+  rw [h.esp, hl] at fr post
   refine hQ s₀ s₁ s' hp ha (h.call e₁ e₂ e₃ fr fun r hr => ?_) fr post
   rcases List.mem_append.mp hr with hr | hr
   · exact hW s₀ hp r hr
@@ -172,7 +183,7 @@ theorem callPR_piece (as : List Arg) (n : Nat) (hn' : as.length = n) (hv : Verif
     (hW : ∀ s₀, TPre (Y p) s₀ → ∀ r ∈ wr s₀, ∃ r' ∈ W (Y p) s₀, Region.Sub r r')
     (hQ : ∀ s₀ s₁ s', TPre (Y p) s₀ → After p A as s₀ s₁ → Ctx (Y p) s₀ s' →
       Frame (wr s₀ ++ [below (E1 s₀) (4 * n + stackUse c + 4)]) s₁.mem s'.mem →
-      (∃ s₂ : State, s₂.mem = s'.mem ∧ s₂.gpr .eax = s'.gpr .eax ∧
+      (∃ s₂ : State, Frame [below (E1 s₀) (4 * n)] s₂.mem s'.mem ∧ s₂.gpr .eax = s'.gpr .eax ∧
         k.post (((pushed (argPush n) s₁).callEntry).withRegions (rd s₀) (wr s₀)) s₂) → B s₀ s') :
     SP p A B (callPR name c as) := by
   subst hn'
@@ -188,7 +199,7 @@ theorem callPR_piece (as : List Arg) (n : Nat) (hn' : as.length = n) (hv : Verif
       exact ⟨e₁, e₂, by rw [h.esp, h'.esp, hq.t.E1], e₃⟩)
     (fun s₀ s₁ s' hp ha e₁ e₂ e₃ fr post => ?_)
   have h := ha.choose_spec.2.1
-  rw [h.esp, hl] at fr
+  rw [h.esp, hl] at fr post
   refine hQ s₀ s₁ s' hp ha (h.call e₁ e₂ e₃ fr fun r hr => ?_) fr post
   rcases List.mem_append.mp hr with hr | hr
   · exact hW s₀ hp r hr

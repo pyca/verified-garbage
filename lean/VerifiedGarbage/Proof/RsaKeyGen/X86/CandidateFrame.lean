@@ -36,7 +36,7 @@ theorem code_full_ok {body : Prog isa} (noSp : NoSp body)
     rcases hi with rfl | hi
     · rfl
     · exact noSp i hi
-  refine WP.frameAlloc (by decide) (by decide) (by decide) (by rw [spA]; omega_using [fit]) innerNoSp ?_
+  refine WP.frameAllocKept (by decide) (by decide) (by decide) (by rw [spA]; omega_using [fit]) innerNoSp ?_
   refine WP.seq (WP.mono (slot_ok Sa (by rw [spA]; exact fit)
     (by rw [spA]; exact separate) capA) fun b ⟨Sb, Cb, lenFar, Fb, Kb⟩ => ?_)
   rw [privateA] at Cb lenFar

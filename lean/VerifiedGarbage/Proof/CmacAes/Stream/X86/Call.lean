@@ -163,6 +163,15 @@ theorem entry_bytes {rs : List Reg} {s : State} (hfit : 4 * rs.length + 4 ≤ (s
     simp only [List.mem_singleton] at hr; subst hr
     exact (hd.sub_left (below_sub hb hb')).symm) hn
 
+/-- The bytes of a region the stack does not overlap, after a call's return. -/
+theorem back_bytes {rs : List Reg} {s : State} {m m' : Mem} {b : Nat} (hb : 4 * rs.length ≤ b)
+    (hb' : b ≤ (s.gpr .esp).toNat) (hl : Frame [below (s.gpr .esp) (4 * rs.length)] m m') {p : Addr}
+    {n : Nat} (hd : (below (s.gpr .esp) b).Disjoint ⟨p, n⟩) (hn : n ≤ 2 ^ 64) :
+    Spec.Aes.bytesAt m' p n = Spec.Aes.bytesAt m p n :=
+  Proof.Cmac.bytesAt_frame hl (fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr
+    exact (hd.sub_left (below_sub hb hb')).symm) hn
+
 theorem eq_ofNat {x : BitVec 32} {n : Nat} (h : x = BitVec.ofNat 32 n) (hn : n < 2 ^ 32) : x.toNat = n := by
   rw [h, BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt hn
 
@@ -287,7 +296,8 @@ theorem upd_call {s : State} {W C D S : BitVec 32} {R n : Nat} (h : UArgs s W C 
   have keep : ∀ {p : BitVec 32} {k : Nat}, (below (s.gpr .esp) 60).Disjoint ⟨p.setWidth 64, k⟩ → k ≤ 2 ^ 64 →
       Spec.Aes.bytesAt (pushed rs6 s).callEntry.mem (p.setWidth 64) k = Spec.Aes.bytesAt s.mem (p.setWidth 64) k :=
     fun hd hk => entry_bytes h.fit hrs6 (by simp) he hd hk
-  simp only [updateX86, arg_withRegions, State.withRegions_mem, a0, a1, a2, a3, a4, hR, hN, m₂] at post
+  simp only [updateX86, arg_withRegions, State.withRegions_mem, a0, a1, a2, a3, a4, hR, hN] at post
+  rw [← back_bytes (rs := rs6) (by simp) he m₂ h.bC (by decide)] at post
   rw [post, Proof.Cmac.Stream.blocksAt_eq, Proof.Cmac.Stream.blocksAt_eq, Proof.CmacAes.X86.ciphAt,
     keep (h.bW.sub_right (Region.sub_prefix hRb)) (by omega_arith), keep h.bC (by decide),
     keep h.bD (by have := h.hn; omega_arith)]
@@ -428,7 +438,8 @@ theorem fin_call {s : State} {K St P S : BitVec 32} {L R : Nat} (h : FArgs s K S
   have keep : ∀ {p : Addr} {k : Nat}, (below (s.gpr .esp) 60).Disjoint ⟨p, k⟩ → k ≤ 2 ^ 64 →
       Spec.Aes.bytesAt (pushed rs6 s).callEntry.mem p k = Spec.Aes.bytesAt s.mem p k :=
     fun hd hk => entry_bytes h.fit hrs6 (by simp) he hd hk
-  simp only [finalizeX86, arg_withRegions, State.withRegions_mem, a0, a1, a2, a3, a4, hR, hL, m₂] at post
+  simp only [finalizeX86, arg_withRegions, State.withRegions_mem, a0, a1, a2, a3, a4, hR, hL] at post
+  rw [← back_bytes (rs := rs6) (by simp) he m₂ h.bSt (by decide)] at post
   intro _ _ hk msg hm hne hst
   have eK := keep (h.bK.sub_right (Region.sub_prefix hRb)) (by omega_arith)
   have eK2 := keep (p := K.setWidth 64 + 240) (k := 32)
@@ -555,7 +566,8 @@ theorem sub_call {s : State} {W K S : BitVec 32} {R : Nat} (h : SArgs s W K S R)
   obtain ⟨a0, a1, a2, -⟩ := h.args
   rw [(sub_stack v)] at f'
   refine ⟨rd', wr', cs', f'.mono fun r hr => by simpa using hr, ?_⟩
-  simp only [subkeysX86, arg_withRegions, State.withRegions_mem, a0, a1, a2, hR, m₂] at post
+  simp only [subkeysX86, arg_withRegions, State.withRegions_mem, a0, a1, a2, hR] at post
+  rw [← back_bytes (rs := rs4) (by simp) he m₂ h.bK (by decide)] at post
   rw [post, Proof.CmacAes.X86.ciphAt,
     entry_bytes h.fit hrs4 (by simp) he (h.bW.sub_right (Region.sub_prefix hRb)) (by omega_arith)]
 
@@ -669,7 +681,10 @@ theorem ek_call {s : State} {Kp W S : BitVec 32} {KL : Nat} (h : EArgs s Kp W S 
   obtain ⟨a0, a1, a2, -⟩ := h.args
   rw [(ek_stack v)] at f'
   refine ⟨rd', wr', cs', f'.mono fun r hr => by simpa using hr, ?_⟩
-  simp only [Proof.Aes.expandKeyX86, arg_withRegions, State.withRegions_mem, a0, a1, a2, hK, m₂] at post
+  simp only [Proof.Aes.expandKeyX86, arg_withRegions, State.withRegions_mem, a0, a1, a2, hK] at post
+  rw [← back_bytes (rs := rs4) (by simp) he m₂ (h.bW.sub_right (Region.sub_prefix
+    (by rcases h.klen with h | h | h <;> rw [h] <;> decide)))
+    (by rcases h.klen with h | h | h <;> rw [h] <;> decide)] at post
   rw [post, entry_bytes h.fit hrs4 (by simp) he h.bK (by rcases h.klen with h | h | h <;> omega_arith)]
 
 theorem ek_rel {Kp W S E : BitVec 32} {KL : Nat} {P : State → State → Prop}

@@ -604,7 +604,7 @@ theorem framed_ok {base : Addr} {size w candidate exponent : Nat} {s : State}
       rw [baseEq]; exact value
     · change exponentValue s.mem g.base 128 = exponent
       rw [baseEq]; exact eValue
-  refine WP.frameAlloc (by decide) (by decide) (by decide) (by omega_using [fit]) array_noSp ?_
+  refine WP.frameAllocKept (by decide) (by decide) (by decide) (by omega_using [fit]) array_noSp ?_
   · refine WP.mono (array_ok valid C ePositive hw (by rw [allocFrame_mem, baseEq]; exact len))
       fun t ⟨T, result, O, K⟩ => ?_
     have Kout := VG.Proof.RsaKeyGen.X86.FilterStack.freed_keeps K (by decide)

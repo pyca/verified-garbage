@@ -740,7 +740,7 @@ theorem verifyFn_ok (v : PublicImpl) (s : State) {g : Geometry} {bs : Fin 5 → 
     simp only [verifyStack, VG.Impl.RsaPkcs1Sig.X86.Verify.frameBytes] at *
     omega
   unfold code
-  refine WP.frame (rs := savedRegisters) (by decide) (by decide) (by decide) stackFit
+  refine WP.frameKept (rs := savedRegisters) (by decide) (by decide) (by decide) stackFit
     (inner_noSp v) ?_
   refine WP.seq ?_
   refine VG.Proof.Dsa.X86.WP.alloc (by decide) allocation (body_noSp v) ?_

@@ -142,7 +142,7 @@ theorem update : Verified X86.target
   X86.Verified.stackScratch (sig := Spec.Sm3.updateSig) (nm := "scratch") (e := .u64) (n := 20)
     (stack := 20) (bytes := 188)
     (by rw [← Proof.Sm3.updateScratchContract_eq]; exact updateScratch) (by decide) (by lit_decide) (by lit_decide)
-    (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Sm3.updatePost_local _)
+    (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Sm3.updatePost_local _) (fun vs m m₁ m₂ r hl _ hb => Proof.Sm3.updatePostOut_local _ vs m m₁ m₂ r hl hb)
     (by implies_sat [Spec.Sm3.updateContract, Spec.Sm3.updateSig, X86.abi, X86.argSlots, X86.argVal,
         X86.argBytes]
       [updateFrameSat, MdStream.X86.Update.sat₀, MdStream.X86.Update.satMem, X86.arg, X86.argAddr,
@@ -158,7 +158,7 @@ theorem finalize : Verified X86.target
   X86.Verified.stackScratch (sig := Spec.Sm3.finalizeSig) (nm := "scratch") (e := .u64) (n := 20)
     (stack := 20) (bytes := 184)
     (by rw [← Proof.Sm3.finalizeScratchContract_eq]; exact finalizeScratch) (by decide) (by lit_decide) (by lit_decide)
-    (fun _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Sm3.finalizePost_local _)
+    (fun _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Sm3.finalizePost_local _) (fun vs m m₁ m₂ r hl _ hb => Proof.Sm3.finalizePostOut_local _ vs m m₁ m₂ r hl hb)
     (by implies_sat [Spec.Sm3.finalizeContract, Spec.Sm3.finalizeSig, X86.abi, X86.argSlots,
         X86.argVal, X86.argBytes]
       [finalizeFrameSat, MdStream.X86.Finalize.sat₀, MdStream.X86.Finalize.satMem, X86.arg,

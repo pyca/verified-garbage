@@ -164,7 +164,7 @@ theorem absorb_post {s s' : State} {E S D W : BitVec 32} {rate pos len : Nat} (h
     (ha : AbsArgs s S D W rate pos len) (hE : 40 ≤ E.toNat) (hlen : len < 2 ^ 32) (hrate : rate < 2 ^ 32)
     (hpos : pos < 2 ^ 32) (bS : (below E 40).Disjoint (reg32 S 200)) (bD : (below E 40).Disjoint (reg32 D len))
     {rd wr : List Region}
-    (h : ∃ s₂ : State, s₂.mem = s'.mem ∧
+    (h : ∃ s₂ : State, Frame [below (s.gpr .esp) (4 * rs6.length)] s₂.mem s'.mem ∧
       Proof.Sha3.absorbX86.post ((pushed rs6 s).callEntry.withRegions rd wr) s₂) :
     ∀ msg, Repr s.mem (S.setWidth 64) rate msg → pos = msg.length % rate →
       Repr s'.mem (S.setWidth 64) rate (msg ++ bytesAt s.mem (D.setWidth 64) len) := by
@@ -181,14 +181,21 @@ theorem absorb_post {s s' : State} {E S D W : BitVec 32} {rate pos len : Nat} (h
     rw [callEntry_arg fit (by decide) (by decide)]; exact ha.ebp
   obtain fr := entry_frame hesp hE (rs := rs6) (by decide) (by decide)
   simp only [arg_withRegions, State.withRegions_mem, a0, a1, a2, a3, a4, toNat_ofNat32 hlen,
-    toNat_ofNat32 hrate, toNat_ofNat32 hpos, m₂] at post
+    toNat_ofNat32 hrate, toNat_ofNat32 hpos] at post
+  -- The pop loses the arguments' frame, below `esp`, apart from the buffers.
+  obtain fL : Frame [below E 40] s₂.mem s'.mem := by
+    rw [hesp] at m₂; exact Frame.below_mono (wr := []) m₂ (by decide) hE
+  obtain eS' : stateAt s'.mem (S.setWidth 64) = stateAt s₂.mem (S.setWidth 64) :=
+    Proof.Sha3.stateAt_congr fun i hi => fL.bytes (R := reg32 S 200) (by simpa using bS.symm) (by simp) hi
   intro msg hm hp
   obtain eS : stateAt (pushed rs6 s).callEntry.mem (S.setWidth 64) = stateAt s.mem (S.setWidth 64) :=
     Proof.Sha3.stateAt_congr fun i hi => fr.bytes (R := reg32 S 200) (by simpa using bS.symm) (by simp) hi
   obtain eD : bytesAt (pushed rs6 s).callEntry.mem (D.setWidth 64) len = bytesAt s.mem (D.setWidth 64) len :=
     bytesAt_frame fr (by simpa using bD.symm) (by omega_arith)
   have := post msg (by unfold Spec.Sha3.Repr; rw [eS]; exact hm) hp
-  rwa [eD] at this
+  rw [eD] at this
+  unfold Spec.Sha3.Repr at this ⊢
+  rw [eS']; exact this
 
 /-! ## `vg_keccak_pad` -/
 
@@ -246,7 +253,7 @@ theorem pad_pre {s : State} {E S W : BitVec 32} {rate pos sfx : Nat} (hesp : s.g
 theorem pad_post {s s' : State} {E S W : BitVec 32} {rate pos sfx : Nat} (hesp : s.gpr .esp = E)
     (ha : PadArgs s S W rate pos sfx) (hE : 40 ≤ E.toNat) (hrate : rate < 2 ^ 32) (hpos : pos < 2 ^ 32)
     (bS : (below E 40).Disjoint (reg32 S 200)) {rd wr : List Region}
-    (h : ∃ s₂ : State, s₂.mem = s'.mem ∧
+    (h : ∃ s₂ : State, Frame [below (s.gpr .esp) (4 * rs5.length)] s₂.mem s'.mem ∧
       Proof.Sha3.padX86.post ((pushed rs5 s).callEntry.withRegions rd wr) s₂) :
     ∀ msg, Repr s.mem (S.setWidth 64) rate msg → pos = msg.length % rate →
       stateAt s'.mem (S.setWidth 64) = absorb rate (pad rate ((BitVec.ofNat 32 sfx).setWidth 8) msg) := by
@@ -262,10 +269,16 @@ theorem pad_post {s s' : State} {E S W : BitVec 32} {rate pos sfx : Nat} (hesp :
     rw [callEntry_arg fit (by decide) (by decide)]; exact ha.ebx
   obtain fr := entry_frame hesp hE (rs := rs5) (by decide) (by decide)
   simp only [Proof.Sha3.padX86, arg_withRegions, State.withRegions_mem, a0, a1, a2, a3, toNat_ofNat32 hrate,
-    toNat_ofNat32 hpos, m₂] at post
+    toNat_ofNat32 hpos] at post
+  -- The pop loses the arguments' frame, below `esp`, apart from the buffers.
+  obtain fL : Frame [below E 40] s₂.mem s'.mem := by
+    rw [hesp] at m₂; exact Frame.below_mono (wr := []) m₂ (by decide) hE
+  obtain eS' : stateAt s'.mem (S.setWidth 64) = stateAt s₂.mem (S.setWidth 64) :=
+    Proof.Sha3.stateAt_congr fun i hi => fL.bytes (R := reg32 S 200) (by simpa using bS.symm) (by simp) hi
   intro msg hm hp
   obtain eS : stateAt (pushed rs5 s).callEntry.mem (S.setWidth 64) = stateAt s.mem (S.setWidth 64) :=
     Proof.Sha3.stateAt_congr fun i hi => fr.bytes (R := reg32 S 200) (by simpa using bS.symm) (by simp) hi
+  rw [eS']
   exact post msg (by unfold Spec.Sha3.Repr; rw [eS]; exact hm) hp
 
 /-! ## `vg_keccak_squeeze` -/
@@ -326,8 +339,9 @@ theorem squeeze_pre {s : State} {E S O W : BitVec 32} {rate pos len : Nat} (hesp
 
 theorem squeeze_post {s s' : State} {E S O W : BitVec 32} {rate pos len : Nat} (hesp : s.gpr .esp = E)
     (ha : AbsArgs s S O W rate pos len) (hE : 40 ≤ E.toNat) (hlen : len < 2 ^ 32) (hrate : rate < 2 ^ 32)
-    (hpos : pos < 2 ^ 32) (bS : (below E 40).Disjoint (reg32 S 200)) {rd wr : List Region}
-    (h : ∃ s₂ : State, s₂.mem = s'.mem ∧
+    (hpos : pos < 2 ^ 32) (bS : (below E 40).Disjoint (reg32 S 200)) (bO : (below E 40).Disjoint (reg32 O len))
+    {rd wr : List Region}
+    (h : ∃ s₂ : State, Frame [below (s.gpr .esp) (4 * rs6.length)] s₂.mem s'.mem ∧
       Proof.Sha3.squeezeX86.post ((pushed rs6 s).callEntry.withRegions rd wr) s₂) :
     bytesAt s'.mem (O.setWidth 64) len = squeezeFrom rate (stateAt s.mem (S.setWidth 64)) pos len ∧
       ∃ pos' ≤ rate, ∀ d, squeezeFrom rate (stateAt s'.mem (S.setWidth 64)) pos' d =
@@ -345,7 +359,13 @@ theorem squeeze_post {s s' : State} {E S O W : BitVec 32} {rate pos len : Nat} (
     rw [callEntry_arg fit (by decide) (by decide)]; exact ha.ebp
   obtain fr := entry_frame hesp hE (rs := rs6) (by decide) (by decide)
   simp only [Proof.Sha3.squeezeX86, arg_withRegions, State.withRegions_mem, a0, a1, a2, a3, a4,
-    toNat_ofNat32 hlen, toNat_ofNat32 hrate, toNat_ofNat32 hpos, m₂] at post
+    toNat_ofNat32 hlen, toNat_ofNat32 hrate, toNat_ofNat32 hpos] at post
+  -- The pop loses the arguments' frame, below `esp`, apart from the buffers.
+  obtain fL : Frame [below E 40] s₂.mem s'.mem := by
+    rw [hesp] at m₂; exact Frame.below_mono (wr := []) m₂ (by decide) hE
+  obtain eS' : stateAt s'.mem (S.setWidth 64) = stateAt s₂.mem (S.setWidth 64) :=
+    Proof.Sha3.stateAt_congr fun i hi => fL.bytes (R := reg32 S 200) (by simpa using bS.symm) (by simp) hi
+  rw [← eS', ← bytesAt_frame fL (by simpa using bO.symm) (by omega_arith)] at post
   obtain eS : stateAt (pushed rs6 s).callEntry.mem (S.setWidth 64) = stateAt s.mem (S.setWidth 64) :=
     Proof.Sha3.stateAt_congr fun i hi => fr.bytes (R := reg32 S 200) (by simpa using bS.symm) (by simp) hi
   rw [eS] at post
@@ -549,7 +569,7 @@ theorem squeeze_piece (E S O W : State → BitVec 32) (rate pos len : Nat) (hr :
   · have h := hA s₀ s h₀ ha
     have hE := h.bufs.hE
     obtain ⟨r₁, r₂⟩ := squeeze_post h.esp h.args hE hlen (rate_lt hr) (by have := rate_lt hr; omega_arith)
-      h.bufs.bS post
+      h.bufs.bS h.bO post
     refine hQ s₀ s s' h₀ ha e₁ e₂ e₃ (fr.sub fun r hr' => ?_) r₁ r₂
     rw [squeeze_stack, h.esp] at hr'
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr'

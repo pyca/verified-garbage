@@ -204,6 +204,29 @@ theorem covers_frame {E : BitVec 32} {k : Nat} {rd : List Region} {a : Addr}
   simp only [List.mem_singleton] at hr; subst hr
   exact InRegions_append_cons.mpr (.inl (by subst ha; exact hc))
 
+/-! ## Streaming states in memory -/
+
+/-- A streaming state is kept while only memory outside its 192 bytes changes. -/
+theorem repr_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : Addr}
+    (hd : ∀ r ∈ rs, Region.Disjoint ⟨p, 192⟩ r) {h0 : HashValue 64} {d : List Byte}
+    (h : Repr b h0 m p d) : Repr b h0 m' p d := by
+  obtain hb : ∀ i < 192, m' (p + BitVec.ofNat 64 i) = m (p + BitVec.ofNat 64 i) :=
+    fun i hi => hf.bytes (R := ⟨p, 192⟩) hd (by simp) hi
+  obtain ⟨h1, h2⟩ := h
+  obtain hl := Proof.Blake2.bufLen_le (w := 64) (by decide) d.length
+  obtain hs := Proof.Blake2.sub_bufLen (w := 64) d
+  obtain hs' := Proof.Blake2.bufLen_le_self (w := 64) d.length
+  refine ⟨?_, ?_⟩
+  · rw [Proof.Blake2.stateAt_congr (fun i hi => hb i (by simp only [Proof.Blake2.bufOff] at hi; omega_arith))]
+    exact h1
+  · rw [← h2]
+    apply Proof.Blake2.bytesAt_congr
+    intro i hi
+    rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat]
+    have hbb : blockBytes 64 = 128 := rfl
+    rw [hbb] at hl hs hi
+    exact hb _ (by omega_arith)
+
 /-! ## `init` -/
 
 theorem init_ok {B E : BitVec 32} {s : State} (h : Ctx B E s) {n : Nat} (hn : s.gpr .edx = BitVec.ofNat 32 n)
@@ -282,7 +305,11 @@ theorem init_ok {B E : BitVec 32} {s : State} (h : Ctx B E s) {n : Nat} (hn : s.
         exact ⟨_, List.mem_singleton_self _, 0, by simp, by simp⟩).trans
       (h.wr.trans fun a k ⟨r', hr', hc'⟩ => ⟨r', List.mem_cons_of_mem _ hr', hc'⟩)
   · rw [← hsE] at post
-    simp only [initX86, arg_withRegions, State.withRegions_mem, a0, a1, a3, m₃] at post
+    simp only [initX86, arg_withRegions, State.withRegions_mem, a0, a1, a3] at post
+    rw [esp₂] at m₃
+    replace post := repr_frame m₃ (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact (d20.sub_left (below_sub (by decide) (by have := h.lo; omega_arith))).symm) post
     refine ⟨?_, fun r hr => (cs' r hr).trans ?_, rd'.trans (u₂.rd.trans u₁.rd), wr'.trans w₂, ?_⟩
     · have kb : ∀ (m : Mem) (p : Addr), keyBlock 64 (bytesAt m p (BitVec.toNat (0 : BitVec 32))) = [] :=
         fun _ _ => rfl
@@ -297,29 +324,6 @@ theorem init_ok {B E : BitVec 32} {s : State} (h : Ctx B E s) {n : Nat} (hn : s.
       exact f'.mono fun r hr => by
         simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl <;> simp
-
-/-! ## Streaming states in memory -/
-
-/-- A streaming state is kept while only memory outside its 192 bytes changes. -/
-theorem repr_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : Addr}
-    (hd : ∀ r ∈ rs, Region.Disjoint ⟨p, 192⟩ r) {h0 : HashValue 64} {d : List Byte}
-    (h : Repr b h0 m p d) : Repr b h0 m' p d := by
-  obtain hb : ∀ i < 192, m' (p + BitVec.ofNat 64 i) = m (p + BitVec.ofNat 64 i) :=
-    fun i hi => hf.bytes (R := ⟨p, 192⟩) hd (by simp) hi
-  obtain ⟨h1, h2⟩ := h
-  obtain hl := Proof.Blake2.bufLen_le (w := 64) (by decide) d.length
-  obtain hs := Proof.Blake2.sub_bufLen (w := 64) d
-  obtain hs' := Proof.Blake2.bufLen_le_self (w := 64) d.length
-  refine ⟨?_, ?_⟩
-  · rw [Proof.Blake2.stateAt_congr (fun i hi => hb i (by simp only [Proof.Blake2.bufOff] at hi; omega_arith))]
-    exact h1
-  · rw [← h2]
-    apply Proof.Blake2.bytesAt_congr
-    intro i hi
-    rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-    have hbb : blockBytes 64 = 128 := rfl
-    rw [hbb] at hl hs hi
-    exact hb _ (by omega_arith)
 
 /-! ## `update` -/
 
@@ -424,7 +428,8 @@ theorem update_ok {B E : BitVec 32} {s : State} (h : Ctx B E s) {D : BitVec 32} 
       have := callEntry_frame fit hrs; rw [esp₂] at this; exact this
     obtain mE : s₂.mem = s.mem := u₂.mem.trans u₁.mem
     rw [← hsE] at post
-    simp only [updateX86, arg_withRegions, State.withRegions_mem, a0, a3, a4, m₃] at post
+    simp only [updateX86, arg_withRegions, State.withRegions_mem, a0, a3, a4] at post
+    rw [esp₂] at m₃
     obtain reprE : Repr b h0 sE.mem (B.setWidth 64) d :=
       repr_frame hpush (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
@@ -442,6 +447,9 @@ theorem update_ok {B E : BitVec 32} {s : State} (h : Ctx B E s) {D : BitVec 32} 
           exact (stk60 (by decide) hDk).symm) (by simp; omega_arith) hi
     have := post h0 d reprE (by simpa using countE) (by omega_arith)
     rw [dataE] at this
+    replace this := repr_frame m₃ (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact (stk60 (by decide) stR).symm) this
     refine ⟨this, fun r hr => (cs' r hr).trans ?_, rd'.trans r₂, wr'.trans w₂, ?_⟩
     · have : r ≠ .eax := by
         simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -564,7 +572,14 @@ theorem finalize_ok {B E : BitVec 32} {s : State} (h : Ctx B E s)
     obtain hpush : Frame [below E 24] s₄.mem sE.mem := by
       have := callEntry_frame fit hrs; rw [esp₄] at this; exact this
     rw [← hsE] at post
-    simp only [finalizeX86, arg_withRegions, State.withRegions_mem, a0, a3, e768, m₃] at post
+    simp only [finalizeX86, arg_withRegions, State.withRegions_mem, a0, a3, e768] at post
+    rw [esp₄] at m₃
+    obtain dg : bytesAt t.mem (B.setWidth 64 + 768) 64 = bytesAt s₃.mem (B.setWidth 64 + 768) 64 := by
+      simp only [bytesAt]
+      exact List.map_congr_left fun i hi => m₃.bytes (R := ⟨B.setWidth 64 + 768, 64⟩) (fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr
+        exact (dgR.sub_left (below_sub (by decide) hlo)).symm) (by show 64 ≤ 2 ^ 64; decide)
+        (List.mem_range.mp hi)
     obtain reprE : Repr b h0 sE.mem (B.setWidth 64) d :=
       repr_frame hpush (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
@@ -573,7 +588,7 @@ theorem finalize_ok {B E : BitVec 32} {s : State} (h : Ctx B E s)
         [⟨B.setWidth 64, 192⟩, ⟨B.setWidth 64 + 768, 64⟩, ⟨B.setWidth 64 + 192, 576⟩]) =
         BitVec.ofNat 64 d.length := by
       simp only [countX86, arg_withRegions, a1, a2]; exact hc
-    refine ⟨post h0 d reprE hlen countE, fun r hr hne => (cs' r hr).trans ?_, rd'.trans r₄, wr'.trans w₄, ?_⟩
+    refine ⟨by rw [dg]; exact post h0 d reprE hlen countE, fun r hr hne => (cs' r hr).trans ?_, rd'.trans r₄, wr'.trans w₄, ?_⟩
     · have : r ≠ .eax := by
         simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide

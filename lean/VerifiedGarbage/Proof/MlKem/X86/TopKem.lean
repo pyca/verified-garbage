@@ -184,10 +184,13 @@ theorem sample_call (da dO aa ao ca co : Nat)
     generalize he : (pushed [.edx, .ecx, .eax] s).callEntry = e at post
     sig_post [sampleNTTContract, sampleNTTSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at post
     subst he
-    simp only [arg_withRegions, a0, a1, m₂, setWidth_append32, g₂] at post
+    simp only [arg_withRegions, a0, a1, setWidth_append32, g₂] at post
     rw [bytesAt_congr (ek hD)] at post
+    -- The pop loses the arguments' frame, below `esp`, apart from the output.
+    have lk := lost_keep hp h (k := 3) (by omega_arith) m₂ hA₁
+    rw [← polyAt_congr lk] at post
     exact hQ s₀ s s' hp ha h' e₃ (fr_conv hp (a := 12) (N := 72) (by omega_arith) (by omega_arith)
-      (by rw [sample_stack] at fr; exact fr)) post.1 post.2
+      (by rw [sample_stack] at fr; exact fr)) (fun e => reduced_congr lk (post.1 e)) post.2
 
 theorem ce_nosp : NoSp Impl.MlKem.X86.compressEncode := NoSp.of_all (by decide +kernel)
 theorem ce_stack : stackUse Impl.MlKem.X86.compressEncode = 16 := by decide +kernel
@@ -339,8 +342,9 @@ theorem ce_call {nm : String} {c : Prog isa} {ws : List Nat} (F : CeFn c ws) (d 
     generalize he : (pushed [.edi, .edx, .ecx, .eax] s).callEntry = e at post
     sig_post [ceCon, compressEncodeSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at post
     subst he
-    simp only [arg_withRegions, a0, a1, a2, a3, m₂, toNat_ofNat32 hd', toNat_ofNat32 hd32] at post
+    simp only [arg_withRegions, a0, a1, a2, a3, toNat_ofNat32 hd', toNat_ofNat32 hd32] at post
     rw [polyAt_congr (ek hF)] at post
+    replace post := (bytesAt_congr (lost_keep hp h (k := 4) (by omega_arith) m₂ hO₁)).trans post
     exact hQ s₀ s s' hp ha h' e₃ (fr_conv hp (a := 16) (N := 36) (by omega_arith) (by omega_arith)
       (by rw [F.stack] at fr; exact fr)) post
 
@@ -447,8 +451,9 @@ theorem dd_call {nm : String} {c : Prog isa} {ws : List Nat} (F : DdFn c ws) (d 
     sig_post [ddCon, decodeDecompressSig, X86.abi, X86.argSlots, X86.argVal,
       X86.argBytes] at post
     subst he
-    simp only [arg_withRegions, a0, a1, a2, a3, m₂, toNat_ofNat32 hd', toNat_ofNat32 hd32] at post
+    simp only [arg_withRegions, a0, a1, a2, a3, toNat_ofNat32 hd', toNat_ofNat32 hd32] at post
     rw [bytesAt_congr (ek hB)] at post
+    replace post := polyIs_congr (lost_keep hp h (k := 4) (by omega_arith) m₂ hF₁) post
     exact hQ s₀ s s' hp ha h' e₃ (fr_conv hp (a := 16) (N := 36) (by omega_arith) (by omega_arith)
       (by rw [F.stack] at fr; exact fr)) post
 

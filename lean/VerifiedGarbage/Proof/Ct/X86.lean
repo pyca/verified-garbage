@@ -253,7 +253,7 @@ theorem correct (s : State) (hp : contract.pre s) :
   have noSp : NoSp body := by intro i hi; have h : body.allInstrs (fun i => !Taint.clobbers i .esp)=true := by decide +kernel
                               rw [Code.allInstrs_eq] at h
                               simpa only [Bool.not_eq_true'] using List.all_eq_true.mp h i hi
-  apply WP.frame (rs := [.ebx]) (by decide) (by decide) (by decide) hp.2.2.2.2.1 noSp
+  apply WP.frameKept (rs := [.ebx]) (by decide) (by decide) (by decide) hp.2.2.2.2.1 noSp
   obtain ⟨tr,t,he,⟨hm,ho⟩,hk⟩ := WP.keep [.eax,.ecx,.edx,.ebx] (body_ok (pushed [.ebx] s) (pushed_pre s hp)) (by rfl)
   have hsp := hk.gpr (r := .esp) (by decide)
   refine ⟨tr,t,he,⟨?_,?_⟩,?_⟩

@@ -1789,7 +1789,7 @@ theorem framed_ok {mont round : Prog isa} {montName roundName : String}
     have fitW := v.workspaceFit
     exact v.savedFar _ List.mem_cons_self _ (Offset.contains_base E.base (by omega) (by omega)) contains
   unfold VG.Impl.Dsa.X86.ProbablePrime.code
-  refine WP.frame (rs := Compact.savedRegisters) (by decide) (by decide) (by decide) savedFit inner ?_
+  refine WP.frameKept (rs := Compact.savedRegisters) (by decide) (by decide) (by decide) savedFit inner ?_
   refine WP.seq (WP.mono (body_ok montVerified montNoSp montStack roundVerified roundNoSp roundStack v I odd length)
     fun t ⟨R, F, T, K⟩ => ?_)
   obtain sp : t.gpr .esp = E.p := (K.1 .esp (by unfold bodyClob; decide)).trans entrySp

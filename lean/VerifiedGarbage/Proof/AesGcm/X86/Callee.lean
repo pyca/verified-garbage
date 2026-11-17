@@ -225,10 +225,12 @@ theorem gh_call (v : GcmImpl) {s : State} {H Y D S : BitVec 32} {n : Nat} (h : G
   rw [v.gh.stack] at f'
   have fE := callEntry_frame h.fit ghRegs_esp
   rw [show 4 * ghRegs.length + 4 = 24 from rfl] at fE
-  simp only [Proof.Gcm.ghashX86, arg_withRegions, State.withRegions_mem, a0, a1, a2, a3, hn, m₂] at post
+  simp only [Proof.Gcm.ghashX86, arg_withRegions, State.withRegions_mem, a0, a1, a2, a3, hn] at post
+  -- The pop loses the arguments' frame, below `esp`, apart from the buffers.
+  have fL : Frame [below (s.gpr .esp) 24] s₂.mem s'.mem := Frame.below_mono (wr := []) m₂ (by decide) h.esp
   refine ⟨rd', wr', cs', ?_, ?_⟩
   · exact f'.mono fun r hr => by simp only [List.cons_append, List.nil_append] at hr; simpa using hr
-  · rw [post, blockAt_frame fE (one_disj h.kh), blockAt_frame fE (one_disj h.ky),
+  · rw [blockAt_frame fL (one_disj h.ky), post, blockAt_frame fE (one_disj h.kh), blockAt_frame fE (one_disj h.ky),
       blocksAt_frame fE (one_disj h.kd) (by have := h.fD; omega_using [hn])]
 
 /-- Calls of `vg_ghash` with the same arguments and stack pointer in both
@@ -374,7 +376,11 @@ theorem ctr_call (v : GcmImpl) {s : State} {K C D S : BitVec 32} {R n : Nat} (h 
   have fE := callEntry_frame h.fit ctrRegs_esp
   rw [show 4 * ctrRegs.length + 4 = 32 from rfl] at fE
   obtain ⟨hdata, hctr⟩ := post
-  simp only [arg_withRegions, State.withRegions_mem, a0, a1, a2, a3, a4, hR, hn, m₂] at hdata hctr
+  simp only [arg_withRegions, State.withRegions_mem, a0, a1, a2, a3, a4, hR, hn] at hdata hctr
+  -- The pop loses the arguments' frame, below `esp`, apart from the buffers.
+  have fL : Frame [below (s.gpr .esp) 32] s₂.mem s'.mem := Frame.below_mono (wr := []) m₂ (by decide) h.esp
+  rw [← blocksAt_frame fL (one_disj h.bd) (by have := h.fD; omega_using [hn])] at hdata
+  rw [← blockAt_frame fL (one_disj h.bc)] at hctr
   have eK := bytesAt_frame fE (p := w64 K) (n := 16 * (R + 1))
     (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
@@ -511,10 +517,15 @@ theorem key_call (v : GcmImpl) {s : State} {K C S : BitVec 32} {L : Nat} (h : Ke
   rw [v.ctr.expandStack] at f'
   have fE := callEntry_frame h.fit keyRegs_esp
   rw [show 4 * keyRegs.length + 4 = 20 from rfl] at fE
-  simp only [Proof.Aes.expandKeyX86, arg_withRegions, State.withRegions_mem, a0, a1, a2, hL, m₂] at post
+  simp only [Proof.Aes.expandKeyX86, arg_withRegions, State.withRegions_mem, a0, a1, a2, hL] at post
+  -- The pop loses the arguments' frame, below `esp`, apart from the buffers.
+  have fL : Frame [below (s.gpr .esp) 20] s₂.mem s'.mem := Frame.below_mono (wr := []) m₂ (by decide) h.esp
+  have hk : 16 * (Spec.Aes.rounds (L / 4) + 1) ≤ 240 := by rcases h.len with rfl | rfl | rfl <;> decide
   refine ⟨rd', wr', cs', ?_, ?_⟩
   · exact f'.mono fun r hr => by simp only [List.cons_append, List.nil_append] at hr; simpa using hr
-  · rw [post, bytesAt_frame fE (one_disj h.bk) (by rcases h.len with rfl | rfl | rfl <;> decide)]
+  · rw [bytesAt_frame fL (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact (h.bc.sub_right (Region.sub_prefix hk)).symm) (by omega_using [hk]), post, bytesAt_frame fE (one_disj h.bk) (by rcases h.len with rfl | rfl | rfl <;> decide)]
 
 /-- Calls of `vg_aes_expand_key_scratch` with the same arguments and stack pointer
 in both runs are constant time. -/

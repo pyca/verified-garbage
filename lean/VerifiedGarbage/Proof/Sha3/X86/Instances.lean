@@ -43,7 +43,7 @@ meta import VerifiedGarbage.Proof.Framework.Block
 /-!
 # SHA-3 and SHAKE on x86 (32-bit): the functions of each instance
 
-Each allocates a frame of `B` bytes (`WP.frameAlloc`), stores the callee's
+Each allocates a frame of `B` bytes (`WP.frameAllocKept`), stores the callee's
 arguments at its base (`ArgInv`, one word at a time: `copy_step`,
 `const_step`, `buf_step`), and calls the sponge function (`WP.call`), whose
 precondition holds of the arguments stored (`entry_arg`), and whose buffers,
@@ -418,7 +418,7 @@ theorem update_correct {rate : Nat} (hr : rate ∈ rates) {s : State} (hs : (upd
   obtain ⟨-, -, -, -, -, -, -, -, d7, -, d9, d10, d11, -, -, -, -, e40, -, -⟩ := hs'
   obtain hrt := rate_lt hr
   unfold update
-  refine WP.frameAlloc (by decide) (by decide) (by decide) (by omega_using [e40])
+  refine WP.frameAllocKept (by decide) (by decide) (by decide) (by omega_using [e40])
     (nosp_seq (updateArgs_nosp rate) (nosp_call absorb_nosp)) ?_
   refine WP.seq (WP.mono (update_args hs) fun t hI => ?_)
   obtain ⟨a0, a1, a2, a3, a4, -⟩ := update_entry hs hI
@@ -753,7 +753,7 @@ theorem xof_correct {X : Xof} (hX : xofSponge X) (hr : X.rate ∈ rates) {s : St
   obtain ⟨-, -, -, d2, d3, -, e676, efit, -⟩ := hs'
   obtain hrt := rate_lt hr
   unfold xofFinalize
-  refine WP.frameAlloc (by decide) (by decide) (by decide) (by omega_using [e676])
+  refine WP.frameAllocKept (by decide) (by decide) (by decide) (by omega_using [e676])
     (nosp_seq (xofPadArgs_nosp _) (nosp_call pad_nosp)) ?_
   refine WP.seq (WP.mono (xof_args hs) fun t hI => ?_)
   obtain ⟨a0, a1, a2, a3, -⟩ := xof_entry e676 efit hI
@@ -1049,7 +1049,7 @@ theorem xs_correct {X : Xof} (hr : X.rate ∈ rates) {s : State} (hs : (xofSqzX8
   obtain ⟨-, -, -, -, -, d4, -, d6, d7, -, -, e680, efit, -⟩ := hs'
   obtain hrt := rate_lt hr
   unfold xofSqueeze
-  refine WP.frameAlloc (by decide) (by decide) (by decide) (by omega_using [e680])
+  refine WP.frameAllocKept (by decide) (by decide) (by decide) (by omega_using [e680])
     (nosp_seq (xofSqueezeArgs_nosp _) (nosp_call squeeze_nosp)) ?_
   refine WP.seq (WP.mono (xs_args hs) fun t hI => ?_)
   obtain ⟨a0, a1, a2, a3, a4, -⟩ := xs_entry e680 efit hI
@@ -1545,7 +1545,7 @@ theorem fin_correct {H : Spec.Sha3.HashFn} (hH : hashSponge H) (hr : H.rate ∈ 
   obtain ⟨-, -, -, -, -, d4, d5, d6, d7, -, -, e680, efit, -⟩ := hs'
   obtain hrt := rate_lt hr
   unfold finalize
-  refine WP.frameAlloc (by decide) (by decide) (by decide) (by omega_using [e680]) (finalize_nosp _ _) ?_
+  refine WP.frameAllocKept (by decide) (by decide) (by decide) (by omega_using [e680]) (finalize_nosp _ _) ?_
   refine WP.seq (WP.mono (fp_args hs) fun t hI => ?_)
   refine WP.seq (WP.mono (fp_call hr hs hI) fun u hA => ?_)
   refine WP.seq (WP.mono (fs_args hs hA) fun t₂ hI₂ => ?_)

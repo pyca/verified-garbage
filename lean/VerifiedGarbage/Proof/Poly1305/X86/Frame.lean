@@ -44,6 +44,7 @@ theorem update_framed :
     (n := 16) (post := Spec.Poly1305.updatePost X86.abi.ptrBits) (wa := false) (stack := 0)
     (bytes := 156) update_verified (by decide) (by lit_decide) (by lit_decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (updatePost_local _)
+    (fun vs m m₁ m₂ r hl _ hb => updatePostOut_local _ vs m m₁ m₂ r hl hb)
     updateFrameSat_pre
 
 /-- A state satisfying `vg_poly1305_finalize`'s precondition, without the
@@ -64,6 +65,7 @@ theorem finalize_framed :
     (n := 16) (post := Spec.Poly1305.finalizePost X86.abi.ptrBits) (wa := false) (stack := 0)
     (bytes := 152) finalize_verified (by decide) (by lit_decide) (by lit_decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (finalizePost_local _)
+    (fun vs m m₁ m₂ r hl _ hb => finalizePostOut_local _ vs m m₁ m₂ r hl hb)
     finalizeFrameSat_pre
 
 end VG.Proof.Poly1305.X86

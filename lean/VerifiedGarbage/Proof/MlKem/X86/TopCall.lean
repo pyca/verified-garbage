@@ -43,7 +43,8 @@ theorem call_piece {k : Contract isa} {rs : List Reg} {nm : String} {c : Prog is
     (hW : ∀ s₀, TPre Y s₀ → ∀ r ∈ wr s₀, ∃ r' ∈ W Y s₀, Region.Sub r r')
     (hQ : ∀ s₀ s s', TPre Y s₀ → A s₀ s → Ctx Y s₀ s' → (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) →
       Frame (wr s₀ ++ [below (E1 s₀) (4 * rs.length + stackUse c + 4)]) s.mem s'.mem →
-      (∃ s₂ : State, s₂.mem = s'.mem ∧ k.post ((pushed rs s).callEntry.withRegions (rd s₀) (wr s₀)) s₂) →
+      (∃ s₂ : State, Frame [below (s.gpr .esp) (4 * rs.length)] s₂.mem s'.mem ∧
+        k.post ((pushed rs s).callEntry.withRegions (rd s₀) (wr s₀)) s₂) →
       B s₀ s') :
     Piece (TPre Y) (TPub Y lk) A B (callWith rs nm c) :=
   Piece.callWith hv.1 hv.2.1 hsp hne hrs rd wr
@@ -73,7 +74,7 @@ theorem callR_piece {k : Contract isa} {rs : List Reg} {nm : String} {c : Prog i
     (hW : ∀ s₀, TPre Y s₀ → ∀ r ∈ wr s₀, ∃ r' ∈ W Y s₀, Region.Sub r r')
     (hQ : ∀ s₀ s s', TPre Y s₀ → A s₀ s → Ctx Y s₀ s' → (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) →
       Frame (wr s₀ ++ [below (E1 s₀) (4 * rs.length + stackUse c + 4)]) s.mem s'.mem →
-      (∃ s₂ : State, s₂.mem = s'.mem ∧ s₂.gpr .eax = s'.gpr .eax ∧
+      (∃ s₂ : State, Frame [below (s.gpr .esp) (4 * rs.length)] s₂.mem s'.mem ∧ s₂.gpr .eax = s'.gpr .eax ∧
         k.post ((pushed rs s).callEntry.withRegions (rd s₀) (wr s₀)) s₂) → B s₀ s') :
     Piece (TPre Y) (TPub Y lk) A B (callRet rs nm c) :=
   Piece.callRet hv.1 hv.2.1 hsp hne hrs rd wr
@@ -287,6 +288,17 @@ theorem ent_keep {s₀ s : State} (hp : TPre Y s₀) (h : Ctx Y s₀ s) {rs : Li
     (fun r hr => by
       rw [List.mem_singleton] at hr; subst hr; rw [h.esp]
       exact (Buf.stkD hp hb (N := 4 * rs.length + 4) (by omega_using [fit])).symm)
+    (by show b.len ≤ 2 ^ 64; have := Buf.fit hp hb; omega_using [this]) hi
+
+/-- A buffer's bytes are what they were once a call's frame of `k` arguments,
+below `esp`, is lost. -/
+theorem lost_keep {s₀ s : State} {m m' : Mem} (hp : TPre Y s₀) (h : Ctx Y s₀ s) {k : Nat}
+    (fit : 4 * k + 16 ≤ Y.stk) (hl : Frame [below (s.gpr .esp) (4 * k)] m m') {b : Buf} (hb : Y.ok b = true) :
+    ∀ i < b.len, m' (b.addr s₀ + BitVec.ofNat 64 i) = m (b.addr s₀ + BitVec.ofNat 64 i) :=
+  fun _ hi => hl.bytes (R := b.rgn s₀)
+    (fun r hr => by
+      rw [List.mem_singleton] at hr; subst hr; rw [h.esp]
+      exact (Buf.stkD hp hb (N := 4 * k) (by omega_using [fit])).symm)
     (by show b.len ≤ 2 ^ 64; have := Buf.fit hp hb; omega_using [this]) hi
 
 end VG.Proof.MlKem.X86.Top

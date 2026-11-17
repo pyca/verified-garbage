@@ -508,7 +508,7 @@ theorem argsRet_piece {as : List (Reg × Arg)} {rs : List Reg} {n : String} {c :
     (hQ : ∀ s₀ s s₁ s', Pre s₀ → A s₀ s → SetPost as s s₁ → s'.rd = s₁.rd → s'.wr = s₁.wr →
       (∀ r ∈ calleeSaved, s'.gpr r = s₁.gpr r) →
       Frame (wr s₀ ++ [below (s₁.gpr .esp) (4 * rs.length + stackUse c + 4)]) s₁.mem s'.mem →
-      (∃ s₂ : State, s₂.mem = s'.mem ∧ s₂.gpr .eax = s'.gpr .eax ∧
+      (∃ s₂ : State, Frame [below (s₁.gpr .esp) (4 * rs.length)] s₂.mem s'.mem ∧ s₂.gpr .eax = s'.gpr .eax ∧
         k.post ((pushed rs s₁).callEntry.withRegions (rd s₀) (wr s₀)) s₂) → B s₀ s') :
     Piece Pre Pub A B (.seq (.block (setArgs as)) (Impl.MlKem.X86.callRet rs n c)) := by
   refine Piece.seq (setArgs_piece as tt hpub hA hok) (Piece.callRet hv hct hsp hne hrs rd wr ?_ ?_ ?_ ?_)
@@ -545,7 +545,7 @@ theorem argsWith_piece {as : List (Reg × Arg)} {rs : List Reg} {n : String} {c 
     (hQ : ∀ s₀ s s₁ s', Pre s₀ → A s₀ s → SetPost as s s₁ → s'.rd = s₁.rd → s'.wr = s₁.wr →
       (∀ r ∈ calleeSaved, s'.gpr r = s₁.gpr r) →
       Frame (wr s₀ ++ [below (s₁.gpr .esp) (4 * rs.length + stackUse c + 4)]) s₁.mem s'.mem →
-      (∃ s₂ : State, s₂.mem = s'.mem ∧
+      (∃ s₂ : State, Frame [below (s₁.gpr .esp) (4 * rs.length)] s₂.mem s'.mem ∧
         k.post ((pushed rs s₁).callEntry.withRegions (rd s₀) (wr s₀)) s₂) → B s₀ s') :
     Piece Pre Pub A B (.seq (.block (setArgs as)) (Impl.MlKem.X86.callWith rs n c)) := by
   refine Piece.seq (setArgs_piece as tt hpub hA hok) (Piece.callWith hv hct hsp hne hrs rd wr ?_ ?_ ?_ ?_)

@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # `vg_rsa_private_precompute` on x86: correct
 
-The frame around the body (`WP.frameAlloc`), which writes no `esp`
+The frame around the body (`WP.frameAllocKept`), which writes no `esp`
 (`noSp_body`), and the contract's postcondition from `final_post`
 (`correct`).
 -/
@@ -54,7 +54,7 @@ theorem correct {pcName prName : String} {pc : Prog isa}
       (fun t => abiPreserved s t ∧ (Spec.Rsa.privatePrecomputeContract abi stackBytes).post s t) by
     obtain ⟨trace, t, E, P⟩ := W
     exact ⟨trace, t, E, P⟩
-  refine WP.frameAlloc (by decide) (by decide) (by decide)
+  refine WP.frameAllocKept (by decide) (by decide) (by decide)
     (by simp only [Impl.Bignum.X86.PrivPre.frameBytes]; omega_using [l])
     (noSp_body pns prns) (WP.mono (body_ok pv pst pns prst prns A) fun v ⟨Bv, Kv, Ev, X, m, Pm, Hm⟩ => ?_)
   refine ⟨⟨fun r hr => ?_, ?_⟩, ?_⟩

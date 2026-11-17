@@ -566,7 +566,7 @@ theorem framed_ok {eq : Prog isa} (hE : CalleeOk Proof.Ed448.X86.verifyEquationL
   have c0 := push_ctx (s := t) (hrd.trans hp.1) (hwr.trans hp.2.1) hb
   rw [eb] at c0
   have ha : Shake.Args (base s) 7 (arg s) t.mem := by rw [hm]; exact args_val s 7
-  refine WP.frame (rs := List.replicate 64 .eax) (by simp) (by simp) (by decide)
+  refine WP.frameKept (rs := List.replicate 64 .eax) (by simp) (by simp) (by decide)
     (by simp only [List.length_replicate]; omega_using [hb]) (body_nosp hE)
     (WP.mono (body_ok hE h c0 ha hcl) fun u ⟨hu, ho⟩ => ⟨?_, ?_⟩)
   · have hu' : VG.Proof.Ed25519.X86.Whole.Ctx (base t) t.gpr t.mem (vfRd s) (vfWr s) u := by

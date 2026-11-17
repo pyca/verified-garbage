@@ -252,9 +252,15 @@ theorem inner_wp (d : Spec.Seed.Direction) {s₀ s₂ : State} {E : BitVec 32} (
         exact List.mem_cons_of_mem _ (by rw [hl.wr]; exact List.mem_cons_of_mem _ (by rw [hwr]; simp))
     · simp only [ecb_stackUse, List.length_cons, List.length_nil, Nat.reduceMul, Nat.reduceAdd, Nat.add_zero] at f
       refine ⟨rd', wr', cs, f, ?_⟩
-      rw [← m₃]
       simp only [ecbX86, State.withRegions_mem, arg_withRegions, a0, a1, a2] at post
-      rw [post, hsch, hblk]
+      -- The pop loses the arguments' frame, below `esp`, apart from the data.
+      have fL : Frame [below E 24] s₃.mem s'.mem := m₃.sub fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr
+        exact ⟨_, List.mem_singleton_self _, fun x hx => hin x (below_sub (by decide)
+          (by rw [espN₂]; omega_using [hE]) x hx)⟩
+      rw [Proof.Seed.blocksAt_frame fL (p := (arg s₀ 1).setWidth 64) (n := (arg s₀ 2).toNat)
+        (fun r hr => by rw [List.mem_singleton] at hr; subst hr; rw [Nat.mul_comm]; exact sD.symm) (by omega_using []),
+        post, hsch, hblk]
 
 theorem call_wp (d : Spec.Seed.Direction) {s₀ : State} (hp : (callX86 d).pre s₀) :
     WP isa (ecbCall d) s₀ fun s' => abiPreserved s₀ s' ∧ (callX86 d).post s₀ s' := by
@@ -272,7 +278,7 @@ theorem call_wp (d : Spec.Seed.Direction) {s₀ : State} (hp : (callX86 d).pre s
     cases d
     · exact NoSp.of_all (by lit_decide)
     · exact NoSp.of_all (by lit_decide)
-  refine WP.frame (rs := [.ebx]) (r := .ebx) (by decide) (by decide) (by decide) (by simp; omega_using [hE']) hbody ?_
+  refine WP.frameKept (rs := [.ebx]) (r := .ebx) (by decide) (by decide) (by decide) (by simp; omega_using [hE']) hbody ?_
   obtain ⟨s₂, e₂, hl⟩ := argLoads_ok hEd hE fitE (by rw [hrd]; simp)
   refine WP.seq (WP.of_runBlock ⟨s₂, e₂, WP.mono (inner_wp d hc hl) fun s' ⟨rd', wr', cs, f, post⟩ => ?_⟩)
   obtain esp' : s'.gpr .esp = E - BitVec.ofNat 32 4 := by rw [cs .esp (by decide), hl.esp]
