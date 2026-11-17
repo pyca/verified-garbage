@@ -101,7 +101,8 @@ theorem preparePublic_verified {p : Params} (hp : Ok3 p) :
   obtain ⟨s1, s2, -, -⟩ := sizes hp
   refine ⟨fun σ hσ => ?_, ?_, ?_⟩
   · obtain ⟨t, s', he, ha, hb, hk⟩ := entry_correct (B := fun m a => PreparedPublicKey p m a) _ s1 s2
-      (writes_sub _ _) (public_wp hp) (public_pre hσ)
+      (writes_sub _ _) (public_wp hp)
+      (fun _ _ _ hb h => VG.Proof.MlDsa.PreparedKey.preparedPublicKey_of_bytes hb h) (public_pre hσ)
     refine ⟨t, s', he, ha, ?_⟩
     sig_post [preparePublicKeyContract, preparePublicKeySig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
       Arm.Loc.val]
@@ -118,7 +119,8 @@ theorem prepareSecret_verified {p : Params} (hp : Ok3 p) :
   obtain ⟨-, -, s1, s2⟩ := sizes hp
   refine ⟨fun σ hσ => ?_, ?_, ?_⟩
   · obtain ⟨t, s', he, ha, hb, hk⟩ := entry_correct (B := fun m a => PreparedSecretKey p m a) _ s1 s2
-      (writes_sub _ _) (secret_wp hp) (secret_pre hσ)
+      (writes_sub _ _) (secret_wp hp)
+      (fun _ _ _ hb h => VG.Proof.MlDsa.PreparedKey.preparedSecretKey_of_bytes hb h) (secret_pre hσ)
     refine ⟨t, s', he, ha, ?_⟩
     sig_post [prepareSecretKeyContract, prepareSecretKeySig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
       Arm.Loc.val]
