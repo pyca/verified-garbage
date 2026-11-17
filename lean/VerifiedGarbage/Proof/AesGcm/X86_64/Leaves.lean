@@ -15,6 +15,7 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.Frame
 import VerifiedGarbage.Proof.AesGcm.ScratchPrepared16
 import VerifiedGarbage.Proof.AesGcm.Scratch
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
 public import VerifiedGarbage.Proof.Variants.AesGcm.X86_64.VaesVpclmul
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Leaves
 public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Setup
@@ -30,6 +31,7 @@ public import VerifiedGarbage.Proof.Framework.X86_64.ScrubChunks
 public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamLeaves
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubPart
 public import VerifiedGarbage.Proof.Variants.AesGcm.X86_64.AesNiPclmulAvx
+public import VerifiedGarbage.Proof.Variants.AesGcm.X86_64.VaesVpclmulAvx512
 public import VerifiedGarbage.Impl.AesGcm.X86_64.StreamClr
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Base
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
@@ -1436,19 +1438,20 @@ theorem zeroAt_exec (z : Bool) (u : State) (d : Nat)
 
 /-- `zeroWs z k` zeroes the `wbytes z * k` bytes at `r11`, within a region it
 may write. -/
-theorem zeroWs_run (z : Bool) {b : Nat} (hb : b < 2 ^ 64) : ∀ (k : Nat) (u : State),
-    (⟨u.gpr .r11, b⟩ : Region) ∈ u.wr → u.ymm .xmm0 = 0 → u.zmmHi .xmm0 = 0 → wbytes z * k ≤ b →
+theorem zeroWs_run (z : Bool) {p : Addr} {b c : Nat} (hb : b < 2 ^ 64) : ∀ (k : Nat) (u : State),
+    (⟨p, b⟩ : Region) ∈ u.wr → u.gpr .r11 = p + BitVec.ofNat 64 c → u.ymm .xmm0 = 0 → u.zmmHi .xmm0 = 0 →
+    c + wbytes z * k ≤ b →
     ∃ m', execBlock isa (zeroWs z k) u = some ({ u with mem := m' }, zeroWsTr z (u.gpr .r11) k) ∧
       ∀ x, m' x = if (x - u.gpr .r11).toNat < wbytes z * k then 0 else u.mem x
-  | 0, u, _, _, _, _ => ⟨u.mem, rfl, fun x => by simp⟩
-  | k + 1, u, hR, hy, hh, hk => by
-    obtain hk' : wbytes z * k + wbytes z ≤ b := by rw [← Nat.mul_succ]; exact hk
+  | 0, u, _, _, _, _, _ => ⟨u.mem, rfl, fun x => by simp⟩
+  | k + 1, u, hR, h11, hy, hh, hk => by
+    obtain hk' : c + wbytes z * k + wbytes z ≤ b := by rw [Nat.add_assoc, ← Nat.mul_succ]; exact hk
     have hin : InRegions u.wr (u.gpr .r11 + BitVec.ofNat 64 (wbytes z * k)) (wbytes z) := by
       refine ⟨_, hR, ?_⟩
-      simp only [Region.Contains]
-      rw [BitVec.add_comm, BitVec.add_sub_cancel, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]; omega
+      rw [h11, BitVec.add_assoc, ← BitVec.ofNat_add]
+      exact Offset.contains_base _ (by omega) (by omega)
     obtain ⟨m₁, ex, ea, hm₁⟩ := zeroAt_exec z u (wbytes z * k) hin hy hh
-    obtain ⟨m', he, hm⟩ := zeroWs_run z hb k { u with mem := m₁ } hR hy hh (by omega)
+    obtain ⟨m', he, hm⟩ := zeroWs_run z hb k { u with mem := m₁ } hR h11 hy hh (by omega)
     refine ⟨m', ?_, fun x => ?_⟩
     · show execBlock isa (zeroAt z (wbytes z * k) :: zeroWs z k) u = _
       rw [execBlock, ex]
@@ -1493,8 +1496,8 @@ theorem wipeScr_run (z : Bool) (u : State) (hin : InRegions (u.rd ++ u.wr) (u.gp
       BitVec.xor_self]
     rfl
   have h₂ : u₂.zmmHi .xmm0 = 0 := by simp only [u₂, State.setV, ↓reduceIte]
-  obtain ⟨m', he, hm⟩ := zeroWs_run z (b := 2112) (by decide) (2112 / wbytes z) u₂ (by rw [g₂]; exact hR) y₂ h₂
-    (Nat.le_of_eq (wbytes_cover z))
+  obtain ⟨m', he, hm⟩ := zeroWs_run z (b := 2112) (c := 0) (by decide) (2112 / wbytes z) u₂ hR
+    (by rw [g₂, BitVec.add_zero]; rfl) y₂ h₂ (by rw [Nat.zero_add]; exact Nat.le_of_eq (wbytes_cover z))
   refine ⟨{ ({ u₂ with mem := m' } : State) with ymmHi := fun _ => 0, zmmHi := fun _ => 0 }, ?_, fun x => ?_,
     fun r hr => ?_, rfl, rfl, rfl⟩
   · rw [wipeScr, execBlock_append, execBlock_append, e₂]
@@ -1671,6 +1674,308 @@ theorem BlkFn.wipe_leavesD (z : Bool) {M : CtxMode} (B : BlkFn M) : BlkLeavesD (
         obtain ⟨rfl, -⟩ := Prod.mk.inj (Option.some.inj w)
         rw [hm x, ite_t (show (x - stackArg s 0).toNat < 2112 by have : (x - stackArg s 0).toNat + 1 ≤ 2112 := hx; omega)]
         rfl⟩
+
+
+/-! ### Zeroing only the loops' working space -/
+
+open VG.Impl.AesGcm.X86_64 (wipeWin Fn.wipeW imm)
+
+/-- Where `wipeWin _ add` starts zeroing, from `scratch = p`: `p + add`
+rounded down to 64 bytes. -/
+def winOff (add : Nat) (p : Addr) : Nat := (p.toNat + add) / 64 * 64 - p.toNat
+
+theorem alignW_eq {add : Nat} (h1 : 63 ≤ add) (h2 : add ≤ 127) (p : Addr) (hp : p.toNat + 2112 ≤ 2 ^ 64) :
+    (p + BitVec.ofNat 64 add) &&& (-64) = p + BitVec.ofNat 64 (winOff add p) := by
+  apply BitVec.eq_of_toNat_eq
+  rw [AlignedScratch.mask_nat]
+  simp only [winOff, BitVec.toNat_add, BitVec.toNat_ofNat]
+  have hm := Nat.mod_lt (p.toNat + add) (by decide : 0 < 64)
+  have hd := Nat.mod_add_div (p.toNat + add) 64
+  rw [Nat.mod_eq_of_lt (a := add) (by omega), Nat.mod_eq_of_lt (a := p.toNat + add) (by omega),
+    Nat.mod_eq_of_lt (a := (p.toNat + add) / 64 * 64 - p.toNat) (by omega), Nat.mod_eq_of_lt (by omega)]
+  omega
+
+theorem winOff_le {add : Nat} (h1 : 63 ≤ add) (p : Addr) : winOff add p ≤ add ∧ add ≤ winOff add p + 63 := by
+  have hm := Nat.mod_lt (p.toNat + add) (by decide : 0 < 64)
+  have hd := Nat.mod_add_div (p.toNat + add) 64
+  simp only [winOff]; omega
+
+/-- The setup of `wipeWin`: `r11` at `[rsp + 8] + add`, rounded down to 64
+bytes; nothing else changed but the flags. -/
+theorem winSetup_exec (u : State) (add : Nat) (ha : add < 2 ^ 31)
+    (hin : InRegions (u.rd ++ u.wr) (u.gpr .rsp + BitVec.ofNat 64 8) 8) :
+    ∃ u₁, execBlock isa [.mov .r11 (.mem (at_ .rsp 8)), .alu .add .r11 (imm add), .alu .and .r11 (.imm (-64)),
+        .vop (.vbin .vpxor .l128 .xmm0 .xmm0 .xmm0)] u = some (u₁, [.addr (u.gpr .rsp + BitVec.ofNat 64 8)]) ∧
+      (∀ r, u₁.gpr r = if r = .r11 then
+        (u.mem.readW (u.gpr .rsp + BitVec.ofNat 64 8) 64 + BitVec.ofNat 64 add) &&& (-64) else u.gpr r) ∧
+      u₁.mem = u.mem ∧ u₁.rd = u.rd ∧ u₁.wr = u.wr ∧ u₁.mxcsr = u.mxcsr ∧ u₁.ymm .xmm0 = 0 ∧
+      u₁.zmmHi .xmm0 = 0 := by
+  have e1 : (BitVec.ofNat 32 add).signExtend 64 = BitVec.ofNat 64 add := imm_eq ha
+  have e2 : (-64 : BitVec 32).signExtend 64 = -64 := by decide
+  let S := u.mem.readW (u.gpr .rsp + BitVec.ofNat 64 8) 64
+  let i₁ := (BitVec.ofNat 32 add).signExtend 64
+  let a₁ := S + i₁
+  let u₂ := (arithFlags (u.setReg .r11 S) a₁ (decide (2 ^ 64 ≤ S.toNat + i₁.toNat)) (addOverflow S i₁ a₁)).setReg .r11 a₁
+  let a₂ := a₁ &&& (-64 : BitVec 32).signExtend 64
+  let u₃ := (arithFlags u₂ a₂ false false).setReg .r11 a₂
+  let u₄ := u₃.setV .l128 .xmm0 (VBinOp.vpxor.sse.eval (u₃.lane .xmm0 0) (u₃.lane .xmm0 0))
+    (VBinOp.vpxor.sse.eval (u₃.lane .xmm0 1) (u₃.lane .xmm0 1))
+  refine ⟨u₄, ?_, fun r => ?_, rfl, rfl, rfl, rfl, ?_, ?_⟩
+  · simp only [execBlock, isa, reduceExec, readSrc, State.load64, ea_at, hin, ↓reduceIte, Option.map_some, VOp.exec,
+      addrs, srcAddrs, List.map_nil, List.append_nil, List.map_cons, execAlu, imm, Option.bind_some]
+    rfl
+  · simp only [u₄, u₃, u₂, a₂, a₁, i₁, RegUpd.gpr_setV, RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, e1, e2]
+    split <;> rfl
+  · simp only [State.ymm, u₄, RegUpd.ymmHi_setV_128, RegUpd.xmm_setV, ↓reduceIte, VBinOp.sse, XBinOp.eval,
+      BitVec.xor_self]
+    rfl
+  · simp only [u₄, State.setV, ↓reduceIte]
+
+/-- `wipeWin z add k` zeroes the `wbytes z * k` bytes from `winOff add` of
+the scratch at `[rsp + 8]`, a region it may write, and changes no register
+`B`'s caller reads but `r11`. -/
+theorem wipeWin_run (z : Bool) {add k : Nat} (h1 : 63 ≤ add) (h2 : add ≤ 127) (hk : add + wbytes z * k ≤ 2112)
+    (u : State) (hin : InRegions (u.rd ++ u.wr) (u.gpr .rsp + BitVec.ofNat 64 8) 8)
+    (hR : (⟨u.mem.readW (u.gpr .rsp + BitVec.ofNat 64 8) 64, 2112⟩ : Region) ∈ u.wr)
+    (hS : (u.mem.readW (u.gpr .rsp + BitVec.ofNat 64 8) 64).toNat + 2112 ≤ 2 ^ 64) :
+    ∃ u', execBlock isa (wipeWin z add k) u =
+        some (u', .addr (u.gpr .rsp + BitVec.ofNat 64 8) :: zeroWsTr z
+          (u.mem.readW (u.gpr .rsp + BitVec.ofNat 64 8) 64 +
+            BitVec.ofNat 64 (winOff add (u.mem.readW (u.gpr .rsp + BitVec.ofNat 64 8) 64))) k) ∧
+      (∀ x, u'.mem x =
+        if winOff add (u.mem.readW (u.gpr .rsp + BitVec.ofNat 64 8) 64) ≤
+            (x - u.mem.readW (u.gpr .rsp + BitVec.ofNat 64 8) 64).toNat ∧
+          (x - u.mem.readW (u.gpr .rsp + BitVec.ofNat 64 8) 64).toNat <
+            winOff add (u.mem.readW (u.gpr .rsp + BitVec.ofNat 64 8) 64) + wbytes z * k then 0 else u.mem x) ∧
+      (∀ r, r ≠ .r11 → u'.gpr r = u.gpr r) ∧ u'.rd = u.rd ∧ u'.wr = u.wr ∧ u'.mxcsr = u.mxcsr := by
+  generalize hSd : u.mem.readW (u.gpr .rsp + BitVec.ofNat 64 8) 64 = S at hR hS ⊢
+  obtain ⟨u₁, e₁, g₁, m₁, rd₁, wr₁, mx₁, y₁, h₁⟩ := winSetup_exec u add (by omega) hin
+  rw [hSd] at g₁
+  obtain ho := winOff_le h1 S
+  obtain h11 : u₁.gpr .r11 = S + BitVec.ofNat 64 (winOff add S) := by
+    rw [g₁, ite_t rfl]; exact alignW_eq h1 h2 S hS
+  obtain ⟨m', he, hm⟩ := zeroWs_run z (p := S) (b := 2112) (c := winOff add S) (by decide) k u₁
+    (by rw [wr₁]; exact hR) h11 y₁ h₁ (by omega)
+  refine ⟨{ ({ u₁ with mem := m' } : State) with ymmHi := fun _ => 0, zmmHi := fun _ => 0 }, ?_, fun x => ?_,
+    fun r hr => ?_, rd₁, wr₁, mx₁⟩
+  · rw [VG.Impl.AesGcm.X86_64.wipeWin, execBlock_append, execBlock_append, e₁]
+    simp only [Option.bind_some, he, Option.map_some]
+    simp only [execBlock, isa, reduceExec, VOp.exec, addrs, Option.map_some, List.map_nil, List.append_nil]
+    simp only [h11, List.cons_append, List.nil_append]
+  · show m' x = _
+    rw [hm x, h11, m₁]
+    simp only [off_lt _ _ _ _ (show winOff add S + wbytes z * k < 2 ^ 64 by omega)]
+  · show u₁.gpr r = _
+    rw [g₁, ite_f hr]
+
+section WipeW
+variable (z : Bool) {add k : Nat} (h1 : 63 ≤ add) (h2 : add ≤ 127) (hk : add + wbytes z * k ≤ 2112)
+include h1 h2 hk
+
+/-- `wipeWin` after code that kept what `blk_mid` says. -/
+theorem wipeW_after {M : CtxMode} {s v : State} (hp : Blocks.BP M s)
+    (h : v.gpr .rsp = s.gpr .rsp ∧ v.rd = s.rd ∧ v.wr = s.wr ∧
+      v.mem.readW (s.gpr .rsp + BitVec.ofNat 64 8) 64 = stackArg s 0) :
+    ∃ u, execBlock isa (wipeWin z add k) v = some (u, .addr (s.gpr .rsp + BitVec.ofNat 64 8) ::
+        zeroWsTr z (stackArg s 0 + BitVec.ofNat 64 (winOff add (stackArg s 0))) k) ∧
+      (∀ x, u.mem x = if winOff add (stackArg s 0) ≤ (x - stackArg s 0).toNat ∧
+        (x - stackArg s 0).toNat < winOff add (stackArg s 0) + wbytes z * k then 0 else v.mem x) ∧
+      (∀ r, r ≠ .r11 → u.gpr r = v.gpr r) ∧ u.rd = v.rd ∧ u.wr = v.wr ∧ u.mxcsr = v.mxcsr := by
+  obtain ⟨hsp, hrd, hwr, hS⟩ := h
+  have := wipeWin_run z h1 h2 hk v (by rw [hsp, hrd, hwr]; exact Blocks.a_in hp)
+    (by rw [hsp, hS, hwr, hp.wr]; simp [Blocks.wR]) (by rw [hsp, hS]; exact hp.w_s)
+  rwa [hsp, hS] at this
+
+omit h1 h2 in
+theorem wipeW_frame {S : Addr} {m m' : Mem}
+    (h : ∀ x, m' x = if winOff add S ≤ (x - S).toNat ∧ (x - S).toNat < winOff add S + wbytes z * k then 0 else m x)
+    (ho : winOff add S ≤ add) : Frame [⟨S, 2112⟩] m m' := fun x hx => by
+  rw [h x, ite_f]
+  intro hl
+  exact hx _ (List.mem_singleton_self _) (show (x - S).toNat + 1 ≤ 2112 by omega)
+
+theorem wipeW_ok {M : CtxMode} {c : Prog isa} (hc : NoSp c) (hd : c.depth = 1) {post : State → State → Prop}
+    (hpost : ∀ s s₁ u, Blocks.BP M s → Frame [Blocks.sR s] s₁.mem u.mem → post s s₁ → post s u)
+    (h : ∀ s, Proof.AesGcm.blocksPreM M s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ post s s') :
+    ∀ s, Proof.AesGcm.blocksPreM M s →
+      ∃ t s', Exec isa (.seq c (.block (wipeWin z add k))) s t s' ∧ abiPreserved s s' ∧ post s s' := by
+  intro s hs
+  obtain hp := Blocks.BP.ofM hs
+  obtain ⟨t, v, e, ha, hq⟩ := h s hs
+  obtain ⟨u, ew, hm, hg, -, -, hmx⟩ := wipeW_after z h1 h2 hk hp (blk_mid hc hd hp e)
+  obtain hf := wipeW_frame z hk hm (winOff_le h1 _).1
+  refine ⟨_, u, .seq e (.block ew), ⟨fun r hr => ?_, ?_, ?_⟩, hpost s v u hp hf hq⟩
+  · rw [hg r (fun h => by subst h; exact absurd hr (by decide))]; exact ha.1 r hr
+  · rw [hf.readW (r := ⟨s.gpr .rsp, 8⟩) (Region.contains_self _ _) (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact hp.r_s) (by decide)]
+    exact ha.2.1
+  · rw [hmx]; exact ha.2.2
+
+theorem wipeW_ct {M : CtxMode} {c : Prog isa} (hc : NoSp c) (hd : c.depth = 1) {pre : State → Prop}
+    (hpre : ∀ s, pre s → Proof.AesGcm.blocksPreM M s) (h : ConstantTime isa pre Proof.AesGcm.blocksPub c) :
+    ConstantTime isa pre Proof.AesGcm.blocksPub (.seq c (.block (wipeWin z add k))) := by
+  intro s₁ s₂ t₁ t₂ u₁ u₂ h₁' h₂' hp e₁ e₂
+  cases e₁ with
+  | seq a₁ b₁ =>
+    cases e₂ with
+    | seq a₂ b₂ =>
+      cases b₁ with
+      | block w₁ =>
+        cases b₂ with
+        | block w₂ =>
+          obtain p₁ := Blocks.BP.ofM (hpre _ h₁')
+          obtain p₂ := Blocks.BP.ofM (hpre _ h₂')
+          obtain ⟨_, ew₁, -⟩ := wipeW_after z h1 h2 hk p₁ (blk_mid hc hd p₁ a₁)
+          obtain ⟨_, ew₂, -⟩ := wipeW_after z h1 h2 hk p₂ (blk_mid hc hd p₂ a₂)
+          rw [ew₁] at w₁
+          rw [ew₂] at w₂
+          obtain ⟨-, rfl⟩ := Prod.mk.inj (Option.some.inj w₁)
+          obtain ⟨-, rfl⟩ := Prod.mk.inj (Option.some.inj w₂)
+          rw [h s₁ s₂ _ _ _ _ h₁' h₂' hp a₁ a₂, hp.2.2.2.2.2.2.1, show stackArg s₁ 0 = stackArg s₂ 0 from hp.2.2.2.2.2.2.2]
+
+end WipeW
+
+theorem wipeWin_nosp (z : Bool) (add k : Nat) : ∀ i ∈ wipeWin z add k, Taint.clobbers i .rsp = false := by
+  intro i hi
+  simp only [VG.Impl.AesGcm.X86_64.wipeWin, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hi
+  rcases hi with ((rfl | rfl | rfl | rfl) | hi) | rfl
+  · rfl
+  · rfl
+  · rfl
+  · rfl
+  · induction k with
+    | zero => exact absurd hi (by simp [zeroWs])
+    | succ k ih =>
+      simp only [zeroWs, List.mem_cons] at hi
+      rcases hi with rfl | hi
+      · cases z <;> rfl
+      · exact ih hi
+  · rfl
+
+/-- `B`, its functions renamed (`Fn.wipeW`) and zeroing their loops' working
+space before they return (`wipeWin z add k`). -/
+def BlkFn.wipeW (z : Bool) (add k : Nat) (h1 : 63 ≤ add) (h2 : add ≤ 127) (hk : add + wbytes z * k ≤ 2112)
+    (hmx : (Code.block (wipeWin z add k) : Prog isa).allInstrs (fun i => !loadsMxcsr i) = true)
+    (hsp : (Code.block (wipeWin z add k) : Prog isa).all (fun i => !X86_64.isa.writesSp i) = true)
+    {M : CtxMode} (B : BlkFn M) : BlkFn M where
+  enc := B.enc.wipeW z add k
+  dec := B.dec.wipeW z add k
+  encOk := wipeW_ok z h1 h2 hk B.encNosp B.encDepth (fun _ _ _ hp hf h => encPost_wipe hp hf h) B.encOk
+  decOk := wipeW_ok z h1 h2 hk B.decNosp B.decDepth (fun _ _ _ hp hf h => decPost_wipe hp hf h) B.decOk
+  encCt := wipeW_ct z h1 h2 hk B.encNosp B.encDepth (fun _ h => h) B.encCt
+  decCt := wipeW_ct z h1 h2 hk B.decNosp B.decDepth (fun _ h => h) B.decCt
+  encNosp := fun i hi => by
+    rcases List.mem_append.mp hi with hi | hi
+    · exact B.encNosp i hi
+    · exact wipeWin_nosp z add k i hi
+  decNosp := fun i hi => by
+    rcases List.mem_append.mp hi with hi | hi
+    · exact B.decNosp i hi
+    · exact wipeWin_nosp z add k i hi
+  encDepth := by simp only [Fn.wipeW, Code.depth, B.encDepth]; rfl
+  decDepth := by simp only [Fn.wipeW, Code.depth, B.decDepth]; rfl
+  encMx := by simp only [Fn.wipeW, Code.allInstrs, B.encMx, Bool.true_and]; exact hmx
+  decMx := by simp only [Fn.wipeW, Code.allInstrs, B.decMx, Bool.true_and]; exact hmx
+  encSp := by simp only [Fn.wipeW, Code.all, B.encSp, Bool.true_and]; exact hsp
+  decSp := by simp only [Fn.wipeW, Code.all, B.decSp, Bool.true_and]; exact hsp
+  encXd := by simp only [Fn.wipeW, Code.x86_64Depth, Nat.max_le]; exact ⟨B.encXd, Nat.zero_le _⟩
+  decXd := by simp only [Fn.wipeW, Code.x86_64Depth, Nat.max_le]; exact ⟨B.decXd, Nat.zero_le _⟩
+
+/-- What `B.wipeW` leaves at `x` in `scratch` at `S`: zero in the bytes
+`wipeWin` zeroes (`len` from `winOff add`), and elsewhere what `leavesL`
+says of loops that write only their working space. -/
+def leavesW (q : Nat → Nat) (add len : Nat) (rdi rsi rdx rcx r8 r9 : BitVec 64) (S x : Addr) :
+    Option (BitVec 8) :=
+  if winOff add S ≤ (x - S).toNat ∧ (x - S).toNat < winOff add S + len then some 0
+  else leavesL q (fun _ _ _ => false) rdi rsi rdx rcx r8 r9 S x
+
+/-- After code leaving `ScrW` (in the working space `winW aligned`), what
+`wipeWin` leaves, if it zeroes that space (`hcov`). -/
+theorem wipeW_leaves_of {M : CtxMode} {c : Prog isa} (hc : NoSp c) (hd : c.depth = 1) (z : Bool) {add k : Nat}
+    (h1 : 63 ≤ add) (h2 : add ≤ 127) (hk : add + wbytes z * k ≤ 2112) {aligned : Bool} (q : Nat → Nat)
+    (hcov : ∀ p : Addr, ∀ d, Blocks.winW aligned p d = true →
+      winOff add p ≤ d ∧ d < winOff add p + wbytes z * k)
+    {s s' : State} {t : List Leak} (hpre : Proof.AesGcm.blocksPreM M s)
+    (hW : WP isa c s fun s' => Blocks.ScrW s (q (Blocks.n s)) (Blocks.winW aligned (Blocks.S s)) s'.mem)
+    (he : Exec isa (.seq c (.block (wipeWin z add k))) s t s') :
+    ∀ x, (⟨stackArg s 0, 2112⟩ : Region).Contains x 1 →
+      s'.mem x = (leavesW q add (wbytes z * k) (s.gpr .rdi) (s.gpr .rsi) (s.gpr .rdx) (s.gpr .rcx) (s.gpr .r8)
+        (s.gpr .r9) (stackArg s 0) x).getD (s.mem x) := by
+  intro x hx
+  cases he with
+  | seq a b =>
+    cases b with
+    | block w =>
+      obtain hp := Blocks.BP.ofM hpre
+      obtain ⟨_, v', ea, hS⟩ := hW
+      obtain ⟨_, rfl⟩ := Exec.det a ea
+      obtain ⟨u, ew, hm, -⟩ := wipeW_after z h1 h2 hk hp (blk_mid hc hd hp a)
+      rw [ew] at w
+      obtain ⟨rfl, -⟩ := Prod.mk.inj (Option.some.inj w)
+      obtain ⟨d, hd, rfl⟩ : ∃ d, d < 2112 ∧ x = stackArg s 0 + BitVec.ofNat 64 d :=
+        ⟨(x - stackArg s 0).toNat, hx, by
+          rw [BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel]⟩
+      rw [hm]
+      simp only [leavesW, leavesL, Mem.sub_ofNat_toNat _ (show d < 2 ^ 64 by omega)]
+      by_cases hw : winOff add (stackArg s 0) ≤ d ∧ d < winOff add (stackArg s 0) + wbytes z * k
+      · simp only [hw, and_self, ↓reduceIte, Option.getD_some]
+      · simp only [hw, ↓reduceIte]
+        by_cases h48 : d < 48
+        · simp only [h48, ↓reduceIte, Option.getD_some]
+          rw [← kept_words hS.kept (d / 8) (by omega), ← Blocks.byte_readW64 _ _ (by omega),
+            Offset.add_add_eq _ (by omega : 8 * (d / 8) + d % 8 = d)]
+        · simp only [h48, ↓reduceIte, Bool.false_eq_true, Option.getD_none]
+          exact hS.rest d (by omega) hd (by
+            cases h' : Blocks.winW aligned (Blocks.S s) d
+            · rfl
+            · exact absurd (hcov _ d h') hw)
+
+theorem BlkFn.wipeW_leaves (z : Bool) (add k : Nat) (h1 : 63 ≤ add) (h2 : add ≤ 127)
+    (hk : add + wbytes z * k ≤ 2112)
+    (hmx : (Code.block (wipeWin z add k) : Prog isa).allInstrs (fun i => !loadsMxcsr i) = true)
+    (hsp : (Code.block (wipeWin z add k) : Prog isa).all (fun i => !X86_64.isa.writesSp i) = true)
+    {M : CtxMode} (B : BlkFn M) {aligned : Bool} (q : Nat → Nat)
+    (hcov : ∀ p : Addr, ∀ d, Blocks.winW aligned p d = true →
+      winOff add p ≤ d ∧ d < winOff add p + wbytes z * k)
+    (hW : ∀ s, (Proof.AesGcm.encryptBlocksX86_64M M).pre s → WP isa B.enc.code s fun s' =>
+      Blocks.ScrW s (q (Blocks.n s)) (Blocks.winW aligned (Blocks.S s)) s'.mem) :
+    BlkLeaves (B.wipeW z add k h1 h2 hk hmx hsp) :=
+  ⟨leavesW q add (wbytes z * k), fun _ _ _ hpre he =>
+    wipeW_leaves_of B.encNosp B.encDepth z h1 h2 hk q hcov hpre (hW _ hpre) he⟩
+
+theorem BlkFn.wipeW_leavesD (z : Bool) (add k : Nat) (h1 : 63 ≤ add) (h2 : add ≤ 127)
+    (hk : add + wbytes z * k ≤ 2112)
+    (hmx : (Code.block (wipeWin z add k) : Prog isa).allInstrs (fun i => !loadsMxcsr i) = true)
+    (hsp : (Code.block (wipeWin z add k) : Prog isa).all (fun i => !X86_64.isa.writesSp i) = true)
+    {M : CtxMode} (B : BlkFn M) {aligned : Bool} (q : Nat → Nat)
+    (hcov : ∀ p : Addr, ∀ d, Blocks.winW aligned p d = true →
+      winOff add p ≤ d ∧ d < winOff add p + wbytes z * k)
+    (hW : ∀ s, (Proof.AesGcm.decryptBlocksX86_64M M).pre s → WP isa B.dec.code s fun s' =>
+      Blocks.ScrW s (q (Blocks.n s)) (Blocks.winW aligned (Blocks.S s)) s'.mem) :
+    BlkLeavesD (B.wipeW z add k h1 h2 hk hmx hsp) :=
+  ⟨leavesW q add (wbytes z * k), fun _ _ _ hpre he =>
+    wipeW_leaves_of B.decNosp B.decDepth z h1 h2 hk q hcov hpre (hW _ hpre) he⟩
+
+/-- The working space of loops on 64-byte aligned scratch (`winW true`) is
+what `wipeWin _ 127` zeroes with 1024 bytes. -/
+theorem winCov_aligned (z : Bool) (k : Nat) (hk : 1024 ≤ wbytes z * k) :
+    ∀ p : Addr, ∀ d, Blocks.winW true p d = true → winOff 127 p ≤ d ∧ d < winOff 127 p + wbytes z * k := by
+  intro p d h
+  simp only [Blocks.winW, AlignedScratch.offset, ↓reduceIte, Bool.and_eq_true, decide_eq_true_eq] at h
+  have hm := Nat.mod_lt (p.toNat + 127) (by decide : 0 < 64)
+  have hd := Nat.mod_add_div (p.toNat + 127) 64
+  simp only [winOff]; omega
+
+/-- The working space at `scratch + 64` (`winW false`) is within what
+`wipeWin _ 63` zeroes with 1088 bytes. -/
+theorem winCov_base (z : Bool) (k : Nat) (hk : 1088 ≤ wbytes z * k) :
+    ∀ p : Addr, ∀ d, Blocks.winW false p d = true → winOff 63 p ≤ d ∧ d < winOff 63 p + wbytes z * k := by
+  intro p d h
+  simp only [Blocks.winW, AlignedScratch.offset, Bool.false_eq_true, ↓reduceIte, Bool.and_eq_true,
+    decide_eq_true_eq] at h
+  have hm := Nat.mod_lt (p.toNat + 63) (by decide : 0 < 64)
+  have hd := Nat.mod_add_div (p.toNat + 63) 64
+  simp only [winOff]; omega
 
 end Wipe
 
@@ -1925,6 +2230,410 @@ def streamDecryptF16Avx : Registration Spec.Gcm.streamDecryptPreparedApi X86_64.
   else streamDecryptF16AvxPlain
 
 end Avx
+
+/-! ## `vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul_avx512` and `_decrypt_prepared`, without secret residue
+
+The flag-48 route P: the whole-blocks functions zero their loops' working
+space before they return (`BlkFn.wipeW`: 16 aligned zmm stores on the 48
+powers, 17 at `scratch + 64` on the key context), so what they leave in
+`scratch` is a function of their arguments (`blkBZ_leaves`, `blkRZ_leaves`,
+from `Blocks.encryptBW_leaves` and `Blocks.encryptRW_leaves`, which use only
+the loops' frame). -/
+
+section Avx512
+open VG.Proof.Variants.AesGcm.X86_64.VaesVpclmulAvx512 (variant)
+open VG.X86_64.Scrub StackLock
+open VG.Impl.StackScratch.X86_64 (withStackArgScratch)
+open Gcm.X86_64.Stitch (CtxMode)
+open VG.Impl.AesGcm.X86_64 (wipeWin)
+
+theorem wipeZB_mx : (Code.block (wipeWin true 63 17) : Prog isa).allInstrs (fun i => !loadsMxcsr i) = true := by
+  decide
+theorem wipeZB_sp : (Code.block (wipeWin true 63 17) : Prog isa).all (fun i => !X86_64.isa.writesSp i) = true := by
+  decide
+theorem wipeZR_mx : (Code.block (wipeWin true 127 16) : Prog isa).allInstrs (fun i => !loadsMxcsr i) = true := by
+  decide
+theorem wipeZR_sp : (Code.block (wipeWin true 127 16) : Prog isa).all (fun i => !X86_64.isa.writesSp i) = true := by
+  decide
+
+/-- The key-context whole-blocks functions of the AVX-512 variant, zeroing
+the 1088 bytes from `scratch + 63` rounded down to 64 (17 zmm stores). -/
+def blkBZ : BlkFn CtxMode.base :=
+  variant.impl.blkB.wipeW true 63 17 (by decide) (by decide) (by decide) wipeZB_mx wipeZB_sp
+
+/-- The whole-blocks functions of the AVX-512 variant on the 48 prepared
+powers, zeroing the 1024 bytes of their 64-byte aligned working space (16
+zmm stores). -/
+def blkRZ : BlkFn CtxMode.prepared :=
+  (blkR variant).wipeW true 127 16 (by decide) (by decide) (by decide) wipeZR_mx wipeZR_sp
+
+theorem blkBZ_leaves : BlkLeaves blkBZ :=
+  BlkFn.wipeW_leaves true 63 17 _ _ _ _ _ variant.impl.blkB (aligned := false) (fun n => n - n % 16)
+    (winCov_base true 17 (by decide)) fun s hpre => by
+      change WP isa (Impl.AesGcm.X86_64.Blocks.encrypt
+        ⟨variant.impl.ctr.callee.name, variant.impl.ctr.callee.code⟩
+        variant.impl.gh.fn (some Impl.Gcm.X86_64.StitchZ.enc) false false) s _
+      exact Blocks.encryptBW_leaves (Blocks.BP.ofM hpre) _ (variant.impl.ctr.free.get rfl) _
+        (variant.impl.gh.free.get rfl) fun s₃ h₃ hm => (StitchName.ok .vaesAvx512).1 s₃ h₃.base hm
+
+theorem blkBZ_leavesD : BlkLeavesD blkBZ :=
+  BlkFn.wipeW_leavesD true 63 17 _ _ _ _ _ variant.impl.blkB (aligned := false) (fun n => n - n % 16)
+    (winCov_base true 17 (by decide)) fun s hpre => by
+      change WP isa (Impl.AesGcm.X86_64.Blocks.decrypt
+        ⟨variant.impl.ctr.callee.name, variant.impl.ctr.callee.code⟩
+        variant.impl.gh.fn (some Impl.Gcm.X86_64.StitchZ.dec) false false) s _
+      exact Blocks.decryptBW_leaves (Blocks.BP.ofM hpre) _ (variant.impl.ctr.free.get rfl) _
+        (variant.impl.gh.free.get rfl) fun s₃ h₃ hm => (StitchName.ok .vaesAvx512).2 s₃ h₃.base hm
+
+theorem blkRZ_leaves : BlkLeaves blkRZ :=
+  BlkFn.wipeW_leaves true 127 16 _ _ _ _ _ (blkR variant) (aligned := true) (fun _ => 0)
+    (winCov_aligned true 16 (by decide)) fun s hpre => by
+      change WP isa (Impl.AesGcm.X86_64.Blocks.encrypt
+        ⟨variant.impl.ctr.callee.name, variant.impl.ctr.callee.code⟩
+        variant.impl.gh.fn (some Impl.Gcm.X86_64.StitchZH.encR) true true false false
+        (some Impl.Gcm.X86_64.StitchZH.encR)) s _
+      exact Blocks.encryptRW_leaves (Blocks.BP.ofM hpre) _ (variant.impl.ctr.free.get rfl) _
+        (variant.impl.gh.free.get rfl) (fun s₃ h₃ => (StitchName.okR .vaesAvx512).1 s₃ h₃ (Nat.mod_one _))
+        (StitchName.okRS .vaesAvx512).1
+
+theorem blkRZ_leavesD : BlkLeavesD blkRZ :=
+  BlkFn.wipeW_leavesD true 127 16 _ _ _ _ _ (blkR variant) (aligned := true) (fun _ => 0)
+    (winCov_aligned true 16 (by decide)) fun s hpre => by
+      change WP isa (Impl.AesGcm.X86_64.Blocks.decrypt
+        ⟨variant.impl.ctr.callee.name, variant.impl.ctr.callee.code⟩
+        variant.impl.gh.fn (some Impl.Gcm.X86_64.StitchZH.decR) true true false false
+        (some Impl.Gcm.X86_64.StitchZH.decR)) s _
+      exact Blocks.decryptRW_leaves (Blocks.BP.ofM hpre) _ (variant.impl.ctr.free.get rfl) _
+        (variant.impl.gh.free.get rfl) (fun s₃ h₃ => (StitchName.okR .vaesAvx512).2 s₃ h₃ (Nat.mod_one _))
+        (StitchName.okRS .vaesAvx512).2
+
+end Avx512
+
+section F48
+open VG.X86_64.Scrub StackLock
+open VG.Impl.StackScratch.X86_64 (withStackArgScratch)
+open Gcm.X86_64.Stitch (CtxMode)
+
+/-- `streamEncryptCodeF16W` on the 48 prepared powers. -/
+def streamEncryptCodeF48W (v : GcmImpl) (B48 : BlkFn CtxMode.prepared) (B : BlkFn CtxMode.base) : Prog isa :=
+  Impl.Gcm.X86_64.Flag.onFlag 48
+    (withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamEncryptClr (v.withBlk B48) .avx))
+    (withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamEncryptClr (v.withBlk B) .avx))
+
+/-- `streamDecryptCodeF16W` on the 48 prepared powers. -/
+def streamDecryptCodeF48W (v : GcmImpl) (B48 : BlkFn CtxMode.prepared) (B : BlkFn CtxMode.base) : Prog isa :=
+  Impl.Gcm.X86_64.Flag.onFlag 48
+    (withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamDecryptClr (v.withBlk B48) .avx))
+    (withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamDecryptClr (v.withBlk B) .avx))
+
+theorem streamEnc48_narrowPre {s : State} (hs : (Spec.Gcm.streamEncryptPreparedContract X86_64.abi 2608).pre s)
+    (hf : 48 ≤ flagCount s) :
+    (Proof.AesGcm.streamEncryptPreparedRoundsContract X86_64.abi 2608).pre (narrow128 s) := by
+  unfold Spec.Gcm.streamEncryptPreparedContract at hs
+  have h₁ := pre_of_rel (N := 129) (C := fun m ctx => 48 ≤ (m.readW (ctx + 1024) 64).toNat) (leakB := none)
+    (pre := Spec.Gcm.streamCryptPreparedPre 64) (pre' := Proof.Gcm.streamCryptPowersPre 64)
+    (fun _ _ _ _ _ _ _ _ h hf => ⟨h.1, h.2.2 hf⟩) hs hf
+  exact pre_narrowFirstArray (n := 128) (n' := 129) (by decide) (pre := Proof.Gcm.streamCryptPowersPre 64)
+    (fun _ _ _ _ _ _ _ _ h => h) h₁
+
+theorem streamEnc48_narrowPub {s₁ s₂ : State}
+    (hp : (Spec.Gcm.streamEncryptPreparedContract X86_64.abi 2608).pub s₁ s₂) :
+    (Proof.AesGcm.streamEncryptPreparedRoundsContract X86_64.abi 2608).pub (narrow128 s₁) (narrow128 s₂) := by
+  unfold Spec.Gcm.streamEncryptPreparedContract at hp
+  obtain ⟨⟨hs, -⟩, hpubs, hdescs⟩ := (pubL_args (sig := Spec.Gcm.streamCryptPreparedSig) (by decide)).mp hp
+  unfold Proof.AesGcm.streamEncryptPreparedRoundsContract
+  exact (pubL_args (sig := Proof.Gcm.streamCryptPrecomputedSig) (by decide)).mpr ⟨⟨hs, trivial⟩, hpubs,
+    fun r hr i hi => hdescs r (by
+      rw [show Spec.Gcm.streamCryptPreparedSig.params = ("ctx", .array false .u64 129) ::
+        Proof.Gcm.streamCryptPrecomputedSig.params.tail from rfl, descs_array .u64 128 129]
+      exact hr) i hi⟩
+
+open StackLock in
+/-- `streamEncB_agree`, on 48 prepared powers (whose count both runs read). -/
+theorem streamEnc48_agree (lv : Impl.Scrub.X86_64.VecLevel) (v : GcmImpl) (B : BlkFn CtxMode.prepared)
+    (gf : GhashFree v.gh.fn.code) (cf : Proof.Aes.X86_64.Ctr32Free v.ctr.callee) (hB : BlkLeaves B)
+    (hct : Plain v.callees.ctr.code) (hgh : Plain v.callees.gh.code) (hn : UpperLock.inames B.enc.code = [])
+    {s₁ s₂ : State}
+    (h₁ : (Spec.Gcm.streamEncryptPreparedContract X86_64.abi 2608).pre s₁)
+    (h₂ : (Spec.Gcm.streamEncryptPreparedContract X86_64.abi 2608).pre s₂)
+    (hf₁ : 48 ≤ flagCount s₁) (hf₂ : 48 ≤ flagCount s₂)
+    (hp : (Spec.Gcm.streamEncryptPreparedContract X86_64.abi 2608).pub s₁ s₂)
+    (hg : ∀ r, r ≠ .rax → s₁.gpr r = s₂.gpr r)
+    (hbm : ∀ x, (⟨s₁.gpr .rsp - BitVec.ofNat 64 2608, 2608⟩ : Region).Contains x 1 → s₁.mem x = s₂.mem x)
+    (hu : s₁.unknowns = s₂.unknowns) {t₁ t₂ : List Leak} {u₁ u₂ : State}
+    (e₁ : Exec isa (withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamEncryptClr (v.withBlk B) lv)) s₁ t₁ u₁)
+    (e₂ : Exec isa (withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamEncryptClr (v.withBlk B) lv)) s₂ t₂ u₂) :
+    ∀ x, (⟨s₁.gpr .rsp - BitVec.ofNat 64 2608, 2608⟩ : Region).Contains x 1 → u₁.mem x = u₂.mem x := by
+  obtain ⟨Lb, hL⟩ := hB
+  intro x hx
+  have hn₁ := streamEnc48_narrowPre h₁ hf₁
+  have hn₂ := streamEnc48_narrowPre h₂ hf₂
+  have hv := streamEncryptClr48_framed lv v B
+  obtain ⟨t₁', u₁', e₁', hm₁⟩ := exec_narrow hv hn₁
+    (fun _ _ => InRegions.of_prefix (narrowHead_append_prefix _ _ _)) (Covers.refl _) e₁
+  obtain ⟨t₂', u₂', e₂', hm₂⟩ := exec_narrow hv hn₂
+    (fun _ _ => InRegions.of_prefix (narrowHead_append_prefix _ _ _)) (Covers.refl _) e₂
+  have hrsp : s₁.gpr .rsp = s₂.gpr .rsp := hg .rsp (by decide)
+  have hpn := streamEnc48_narrowPub hp
+  unfold Spec.Gcm.streamEncryptPreparedContract at hp
+  rw [hm₁, hm₂]
+  by_cases hb : (below (s₁.gpr .rsp - BitVec.ofNat 64 2584) 24).Contains x 1
+  · exact streamEncryptClr48_below lv v B hct hgh hn hn₁ hn₂ hpn hrsp hbm hu e₁' e₂' x hb
+  · have hx' := frame_or_below hx hb
+    rw [streamEncryptClr48_leaves lv v gf cf B hL hn₁ e₁' x hx',
+      streamEncryptClr48_leaves lv v gf cf B hL hn₂ e₂' x (by have h := hx'; rw [hrsp] at h; exact h),
+      streamFV_congr Lb (s₁ := narrow128 s₁) (s₂ := narrow128 s₂) hg (streamLen_pub (s₁ := s₁) (s₂ := s₂) hp)]
+    exact congrArg (Option.getD _) (hbm x hx)
+
+theorem streamDec48_narrowPre {s : State} (hs : (Spec.Gcm.streamDecryptPreparedContract X86_64.abi 2608).pre s)
+    (hf : 48 ≤ flagCount s) :
+    (Proof.AesGcm.streamDecryptPreparedRoundsContract X86_64.abi 2608).pre (narrow128 s) := by
+  unfold Spec.Gcm.streamDecryptPreparedContract at hs
+  have h₁ := pre_of_rel (N := 129) (C := fun m ctx => 48 ≤ (m.readW (ctx + 1024) 64).toNat) (leakB := none)
+    (pre := Spec.Gcm.streamCryptPreparedPre 64) (pre' := Proof.Gcm.streamCryptPowersPre 64)
+    (fun _ _ _ _ _ _ _ _ h hf => ⟨h.1, h.2.2 hf⟩) hs hf
+  exact pre_narrowFirstArray (n := 128) (n' := 129) (by decide) (pre := Proof.Gcm.streamCryptPowersPre 64)
+    (fun _ _ _ _ _ _ _ _ h => h) h₁
+
+theorem streamDec48_narrowPub {s₁ s₂ : State}
+    (hp : (Spec.Gcm.streamDecryptPreparedContract X86_64.abi 2608).pub s₁ s₂) :
+    (Proof.AesGcm.streamDecryptPreparedRoundsContract X86_64.abi 2608).pub (narrow128 s₁) (narrow128 s₂) := by
+  unfold Spec.Gcm.streamDecryptPreparedContract at hp
+  obtain ⟨⟨hs, -⟩, hpubs, hdescs⟩ := (pubL_args (sig := Spec.Gcm.streamCryptPreparedSig) (by decide)).mp hp
+  unfold Proof.AesGcm.streamDecryptPreparedRoundsContract
+  exact (pubL_args (sig := Proof.Gcm.streamCryptPrecomputedSig) (by decide)).mpr ⟨⟨hs, trivial⟩, hpubs,
+    fun r hr i hi => hdescs r (by
+      rw [show Spec.Gcm.streamCryptPreparedSig.params = ("ctx", .array false .u64 129) ::
+        Proof.Gcm.streamCryptPrecomputedSig.params.tail from rfl, descs_array .u64 128 129]
+      exact hr) i hi⟩
+
+open StackLock in
+/-- `streamDecB_agree`, on 48 prepared powers (whose count both runs read). -/
+theorem streamDec48_agree (lv : Impl.Scrub.X86_64.VecLevel) (v : GcmImpl) (B : BlkFn CtxMode.prepared)
+    (gf : GhashFree v.gh.fn.code) (cf : Proof.Aes.X86_64.Ctr32Free v.ctr.callee) (hB : BlkLeavesD B)
+    (hct : Plain v.callees.ctr.code) (hgh : Plain v.callees.gh.code) (hn : UpperLock.inames B.dec.code = [])
+    {s₁ s₂ : State}
+    (h₁ : (Spec.Gcm.streamDecryptPreparedContract X86_64.abi 2608).pre s₁)
+    (h₂ : (Spec.Gcm.streamDecryptPreparedContract X86_64.abi 2608).pre s₂)
+    (hf₁ : 48 ≤ flagCount s₁) (hf₂ : 48 ≤ flagCount s₂)
+    (hp : (Spec.Gcm.streamDecryptPreparedContract X86_64.abi 2608).pub s₁ s₂)
+    (hg : ∀ r, r ≠ .rax → s₁.gpr r = s₂.gpr r)
+    (hbm : ∀ x, (⟨s₁.gpr .rsp - BitVec.ofNat 64 2608, 2608⟩ : Region).Contains x 1 → s₁.mem x = s₂.mem x)
+    (hu : s₁.unknowns = s₂.unknowns) {t₁ t₂ : List Leak} {u₁ u₂ : State}
+    (e₁ : Exec isa (withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamDecryptClr (v.withBlk B) lv)) s₁ t₁ u₁)
+    (e₂ : Exec isa (withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamDecryptClr (v.withBlk B) lv)) s₂ t₂ u₂) :
+    ∀ x, (⟨s₁.gpr .rsp - BitVec.ofNat 64 2608, 2608⟩ : Region).Contains x 1 → u₁.mem x = u₂.mem x := by
+  obtain ⟨Lb, hL⟩ := hB
+  intro x hx
+  have hn₁ := streamDec48_narrowPre h₁ hf₁
+  have hn₂ := streamDec48_narrowPre h₂ hf₂
+  have hv := streamDecryptClr48_framed lv v B
+  obtain ⟨t₁', u₁', e₁', hm₁⟩ := exec_narrow hv hn₁
+    (fun _ _ => InRegions.of_prefix (narrowHead_append_prefix _ _ _)) (Covers.refl _) e₁
+  obtain ⟨t₂', u₂', e₂', hm₂⟩ := exec_narrow hv hn₂
+    (fun _ _ => InRegions.of_prefix (narrowHead_append_prefix _ _ _)) (Covers.refl _) e₂
+  have hrsp : s₁.gpr .rsp = s₂.gpr .rsp := hg .rsp (by decide)
+  have hpn := streamDec48_narrowPub hp
+  unfold Spec.Gcm.streamDecryptPreparedContract at hp
+  rw [hm₁, hm₂]
+  by_cases hb : (below (s₁.gpr .rsp - BitVec.ofNat 64 2584) 24).Contains x 1
+  · exact streamDecryptClr48_below lv v B hct hgh hn hn₁ hn₂ hpn hrsp hbm hu e₁' e₂' x hb
+  · have hx' := frame_or_below hx hb
+    rw [streamDecryptClr48_leaves lv v gf cf B hL hn₁ e₁' x hx',
+      streamDecryptClr48_leaves lv v gf cf B hL hn₂ e₂' x (by have h := hx'; rw [hrsp] at h; exact h),
+      streamFV_congr Lb (s₁ := narrow128 s₁) (s₂ := narrow128 s₂) hg (streamLen_pub (s₁ := s₁) (s₂ := s₂) hp)]
+    exact congrArg (Option.getD _) (hbm x hx)
+
+/-- Two runs of `streamEncryptCodeF48W` with the same public data leave the
+same bytes in all 2608 of their stack: both read the same count (which the
+contract leaks) and take the same branch, after the test of the count, which
+changes only the flags (`onFlag_inv`); then `streamEnc48_agree` or
+`streamEncB_agree` at the level of 256-bit registers. -/
+theorem streamEncryptF48W_resOk (v : GcmImpl) (B48 : BlkFn CtxMode.prepared) (B : BlkFn CtxMode.base)
+    (gf : GhashFree v.gh.fn.code) (cf : Proof.Aes.X86_64.Ctr32Free v.ctr.callee) (hB : BlkLeaves B)
+    (hB48 : BlkLeaves B48) (hct : Plain v.callees.ctr.code) (hgh : Plain v.callees.gh.code)
+    (hn : UpperLock.inames B.enc.code = []) (hn48 : UpperLock.inames B48.enc.code = []) :
+    ResOk (streamEncryptCodeF48W v B48 B) (Spec.Gcm.streamEncryptPreparedContract X86_64.abi 2608) 2608 [] [2608] := by
+  intro s₁ s₂ t₁ t₂ u₁ u₂ h₁ h₂ hp ho hu e₁ e₂ x hx _
+  have h₁' := h₁
+  have h₂' := h₂
+  have hp' := hp
+  unfold Spec.Gcm.streamEncryptPreparedContract at h₁' h₂' hp'
+  obtain ⟨s₀₁, t₀₁, hS₁, hk₁, hb₁⟩ := onFlag_inv (Or.inr rfl) (flag_inRegions (N := 129) (by decide) h₁') e₁
+  obtain ⟨s₀₂, t₀₂, hS₂, hk₂, hb₂⟩ := onFlag_inv (Or.inr rfl) (flag_inRegions (N := 129) (by decide) h₂') e₂
+  obtain ⟨⟨-, hl⟩, -, -⟩ := (pubL_args (sig := Spec.Gcm.streamCryptPreparedSig) (by decide)).mp hp'
+  have hflag : 48 ≤ flagCount s₁ ↔ 48 ≤ flagCount s₂ :=
+    flagLeak_iff (Or.inr rfl) (List.head_eq_of_cons_eq hl)
+  have q₁ : (Spec.Gcm.streamEncryptPreparedContract X86_64.abi 2608).pre s₀₁ := by
+    unfold Spec.Gcm.streamEncryptPreparedContract; exact (pre_same hS₁).mpr h₁'
+  have q₂ : (Spec.Gcm.streamEncryptPreparedContract X86_64.abi 2608).pre s₀₂ := by
+    unfold Spec.Gcm.streamEncryptPreparedContract; exact (pre_same hS₂).mpr h₂'
+  have qp : (Spec.Gcm.streamEncryptPreparedContract X86_64.abi 2608).pub s₀₁ s₀₂ := by
+    unfold Spec.Gcm.streamEncryptPreparedContract; exact (pub_same hS₁ hS₂).mpr hp'
+  have qg : ∀ r, r ≠ .rax → s₀₁.gpr r = s₀₂.gpr r := fun r h =>
+    (hS₁.gpr r h).trans ((ho.2.2.1 r h).trans (hS₂.gpr r h).symm)
+  have hsp : s₀₁.gpr .rsp = s₁.gpr .rsp := hS₁.gpr .rsp (by decide)
+  have qbm : ∀ x, (⟨s₀₁.gpr .rsp - BitVec.ofNat 64 2608, 2608⟩ : Region).Contains x 1 →
+      s₀₁.mem x = s₀₂.mem x := fun x hx => by
+    rw [hS₁.mem, hS₂.mem]; rw [hsp] at hx; exact below_same h₁' ho (by decide) x hx
+  have qu : s₀₁.unknowns = s₀₂.unknowns := hk₁.trans (hu.trans hk₂.symm)
+  have hf₁ : flagCount s₀₁ = flagCount s₁ := by simp only [flagCount, hS₁.mem, hS₁.gpr .rdi (by decide)]
+  have hf₂ : flagCount s₀₂ = flagCount s₂ := by simp only [flagCount, hS₂.mem, hS₂.gpr .rdi (by decide)]
+  have hx' : (⟨s₀₁.gpr .rsp - BitVec.ofNat 64 2608, 2608⟩ : Region).Contains x 1 := by rw [hsp]; exact hx
+  rcases hb₁ with ⟨c₁, x₁⟩ | ⟨c₁, x₁⟩ <;> rcases hb₂ with ⟨c₂, x₂⟩ | ⟨c₂, x₂⟩
+  · exact streamEnc48_agree .avx v B48 gf cf hB48 hct hgh hn48 q₁ q₂ (hf₁ ▸ c₁) (hf₂ ▸ c₂) qp qg qbm qu
+      x₁ x₂ x hx'
+  · exact absurd (hflag.mp c₁) c₂
+  · exact absurd (hflag.mpr c₂) c₁
+  · exact streamEncB_agree .avx v B gf cf hB hct hgh hn q₁ q₂ qp qg qbm qu x₁ x₂ x hx'
+
+/-- `streamEncryptF48W_resOk` for `vg_aes_gcm_stream_decrypt_prepared`. -/
+theorem streamDecryptF48W_resOk (v : GcmImpl) (B48 : BlkFn CtxMode.prepared) (B : BlkFn CtxMode.base)
+    (gf : GhashFree v.gh.fn.code) (cf : Proof.Aes.X86_64.Ctr32Free v.ctr.callee) (hB : BlkLeavesD B)
+    (hB48 : BlkLeavesD B48) (hct : Plain v.callees.ctr.code) (hgh : Plain v.callees.gh.code)
+    (hn : UpperLock.inames B.dec.code = []) (hn48 : UpperLock.inames B48.dec.code = []) :
+    ResOk (streamDecryptCodeF48W v B48 B) (Spec.Gcm.streamDecryptPreparedContract X86_64.abi 2608) 2608 [] [2608] := by
+  intro s₁ s₂ t₁ t₂ u₁ u₂ h₁ h₂ hp ho hu e₁ e₂ x hx _
+  have h₁' := h₁
+  have h₂' := h₂
+  have hp' := hp
+  unfold Spec.Gcm.streamDecryptPreparedContract at h₁' h₂' hp'
+  obtain ⟨s₀₁, t₀₁, hS₁, hk₁, hb₁⟩ := onFlag_inv (Or.inr rfl) (flag_inRegions (N := 129) (by decide) h₁') e₁
+  obtain ⟨s₀₂, t₀₂, hS₂, hk₂, hb₂⟩ := onFlag_inv (Or.inr rfl) (flag_inRegions (N := 129) (by decide) h₂') e₂
+  obtain ⟨⟨-, hl⟩, -, -⟩ := (pubL_args (sig := Spec.Gcm.streamCryptPreparedSig) (by decide)).mp hp'
+  have hflag : 48 ≤ flagCount s₁ ↔ 48 ≤ flagCount s₂ :=
+    flagLeak_iff (Or.inr rfl) (List.head_eq_of_cons_eq hl)
+  have q₁ : (Spec.Gcm.streamDecryptPreparedContract X86_64.abi 2608).pre s₀₁ := by
+    unfold Spec.Gcm.streamDecryptPreparedContract; exact (pre_same hS₁).mpr h₁'
+  have q₂ : (Spec.Gcm.streamDecryptPreparedContract X86_64.abi 2608).pre s₀₂ := by
+    unfold Spec.Gcm.streamDecryptPreparedContract; exact (pre_same hS₂).mpr h₂'
+  have qp : (Spec.Gcm.streamDecryptPreparedContract X86_64.abi 2608).pub s₀₁ s₀₂ := by
+    unfold Spec.Gcm.streamDecryptPreparedContract; exact (pub_same hS₁ hS₂).mpr hp'
+  have qg : ∀ r, r ≠ .rax → s₀₁.gpr r = s₀₂.gpr r := fun r h =>
+    (hS₁.gpr r h).trans ((ho.2.2.1 r h).trans (hS₂.gpr r h).symm)
+  have hsp : s₀₁.gpr .rsp = s₁.gpr .rsp := hS₁.gpr .rsp (by decide)
+  have qbm : ∀ x, (⟨s₀₁.gpr .rsp - BitVec.ofNat 64 2608, 2608⟩ : Region).Contains x 1 →
+      s₀₁.mem x = s₀₂.mem x := fun x hx => by
+    rw [hS₁.mem, hS₂.mem]; rw [hsp] at hx; exact below_same h₁' ho (by decide) x hx
+  have qu : s₀₁.unknowns = s₀₂.unknowns := hk₁.trans (hu.trans hk₂.symm)
+  have hf₁ : flagCount s₀₁ = flagCount s₁ := by simp only [flagCount, hS₁.mem, hS₁.gpr .rdi (by decide)]
+  have hf₂ : flagCount s₀₂ = flagCount s₂ := by simp only [flagCount, hS₂.mem, hS₂.gpr .rdi (by decide)]
+  have hx' : (⟨s₀₁.gpr .rsp - BitVec.ofNat 64 2608, 2608⟩ : Region).Contains x 1 := by rw [hsp]; exact hx
+  rcases hb₁ with ⟨c₁, x₁⟩ | ⟨c₁, x₁⟩ <;> rcases hb₂ with ⟨c₂, x₂⟩ | ⟨c₂, x₂⟩
+  · exact streamDec48_agree .avx v B48 gf cf hB48 hct hgh hn48 q₁ q₂ (hf₁ ▸ c₁) (hf₂ ▸ c₂) qp qg qbm qu
+      x₁ x₂ x hx'
+  · exact absurd (hflag.mp c₁) c₂
+  · exact absurd (hflag.mpr c₂) c₁
+  · exact streamDecB_agree .avx v B gf cf hB hct hgh hn q₁ q₂ qp qg qbm qu x₁ x₂ x hx'
+
+end F48
+
+section Avx512R
+open VG.Proof.Variants.AesGcm.X86_64.VaesVpclmulAvx512 (variant)
+open VG.X86_64.Scrub StackLock
+
+/-- `vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul_avx512`, clearing the
+registers after each call (`streamEncryptClr`, at the level of 256-bit
+registers: `vpxor` zeroes `zmm0`–`zmm15` whole) and calling whole-blocks
+functions that zero their loops' working space before they return
+(`blkRZ`, `blkBZ`), before any clearing on return. -/
+def streamEncryptF48ZPlain : Registration Spec.Gcm.streamEncryptPreparedApi X86_64.target where
+  suffix := variant.impl.suffix
+  code := streamEncryptCodeF48W variant.impl blkRZ blkBZ
+  stack := 2608
+  verified := VG.Proof.AesGcm.Flag.streamEncrypt_keyed (Flag.streamEncrypt_ofB (Or.inr rfl)
+    (Flag.streamEncrypt_onFlagB (streamEncryptClr48_framed .avx variant.impl blkRZ)
+      (streamEncryptClrB_framed .avx variant.impl blkBZ)))
+  spSafe := VG.X86_64.onFlag_spSafe (streamEncryptClr_spSafe .avx variant.impl blkRZ)
+    (streamEncryptClr_spSafe .avx variant.impl blkBZ)
+
+/-- What the clearing of only the general-purpose registers and
+`zmm16`–`zmm31` needs of
+`vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul_avx512`, checked by the
+emitter (as `StreamChkF16A`). -/
+def StreamChkF48Z : Prop :=
+  UpperLock.inames variant.impl.callees.ctr.code = [] ∧ UpperLock.inames variant.impl.callees.gh.code = [] ∧
+    UpperLock.inames blkBZ.enc.code = [] ∧ UpperLock.inames blkRZ.enc.code = [] ∧
+    UpperLock.inames streamEncryptF48ZPlain.code = [] ∧
+    VecLock.step .avx streamEncryptF48ZPlain.code (true, true) = (true, true)
+
+instance : Decidable StreamChkF48Z := by unfold StreamChkF48Z; infer_instance
+
+/-- `vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul_avx512`, followed by the
+clearing of `zmm16`–`zmm31` and the scratch registers (`withScrubResCRF` at
+the level `evex`): its whole-blocks functions leave in their scratch a
+function of their arguments (`blkBZ_leaves`, `blkRZ_leaves`), so it leaves
+the same stack in two runs (`streamEncryptF48W_resOk`), and `zmm0`–`zmm15`
+agree (`VecLock.regsOk_of_vec`). `vg_aes_gcm_seal_gather_prepared` calls its
+code as it was, `vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul_avx512_core`
+(`encFnF`). `streamEncryptF48ZPlain` if the emitter's check fails. -/
+def streamEncryptF48Z : Registration Spec.Gcm.streamEncryptPreparedApi X86_64.target :=
+  if h : StreamChkF48Z then
+    RScrub.withScrubResCRF streamEncryptF48ZPlain .evex (streamEncryptPreparedOut _) [] [2608]
+      (streamEncryptF48W_resOk variant.impl blkRZ blkBZ (variant.impl.gh.free.get rfl) (variant.impl.ctr.free.get rfl)
+        blkBZ_leaves blkRZ_leaves ⟨variant.impl.ctr.nosp, h.1⟩ ⟨variant.impl.gh.nosp, h.2.1⟩ h.2.2.1 h.2.2.2.1)
+      [] scratchRegs (VecLock.regsOk_of_vec streamEncryptF48ZPlain.verified.2.1 h.2.2.2.2.1 h.2.2.2.2.2)
+  else streamEncryptF48ZPlain
+
+/-- `streamEncryptF48ZPlain` for `vg_aes_gcm_stream_decrypt_prepared`. -/
+def streamDecryptF48ZPlain : Registration Spec.Gcm.streamDecryptPreparedApi X86_64.target where
+  suffix := variant.impl.suffix
+  code := streamDecryptCodeF48W variant.impl blkRZ blkBZ
+  stack := 2608
+  verified := VG.Proof.AesGcm.Flag.streamDecrypt_keyed (Flag.streamDecrypt_onFlag
+    (streamDecryptClr48_framed .avx variant.impl blkRZ)
+    (streamDecryptClrB_framed .avx variant.impl blkBZ))
+  spSafe := VG.X86_64.onFlag_spSafe (streamDecryptClr_spSafe .avx variant.impl blkRZ)
+    (streamDecryptClr_spSafe .avx variant.impl blkBZ)
+
+/-- `StreamChkF48Z` for `vg_aes_gcm_stream_decrypt_prepared_vaes_vpclmul_avx512`. -/
+def StreamChkF48ZD : Prop :=
+  UpperLock.inames variant.impl.callees.ctr.code = [] ∧ UpperLock.inames variant.impl.callees.gh.code = [] ∧
+    UpperLock.inames blkBZ.dec.code = [] ∧ UpperLock.inames blkRZ.dec.code = [] ∧
+    UpperLock.inames streamDecryptF48ZPlain.code = [] ∧
+    VecLock.step .avx streamDecryptF48ZPlain.code (true, true) = (true, true)
+
+instance : Decidable StreamChkF48ZD := by unfold StreamChkF48ZD; infer_instance
+
+/-- `streamEncryptF48Z` for `vg_aes_gcm_stream_decrypt_prepared`. -/
+def streamDecryptF48Z : Registration Spec.Gcm.streamDecryptPreparedApi X86_64.target :=
+  if h : StreamChkF48ZD then
+    RScrub.withScrubResCRF streamDecryptF48ZPlain .evex (streamDecryptPreparedOut _) [] [2608]
+      (streamDecryptF48W_resOk variant.impl blkRZ blkBZ (variant.impl.gh.free.get rfl) (variant.impl.ctr.free.get rfl)
+        blkBZ_leavesD blkRZ_leavesD ⟨variant.impl.ctr.nosp, h.1⟩ ⟨variant.impl.gh.nosp, h.2.1⟩ h.2.2.1 h.2.2.2.1)
+      [] scratchRegs (VecLock.regsOk_of_vec streamDecryptF48ZPlain.verified.2.1 h.2.2.2.2.1 h.2.2.2.2.2)
+  else streamDecryptF48ZPlain
+
+end Avx512R
+
+/-- `vg_aes_gcm_stream_encrypt_prepared` of a variant whose loops read the 48
+prepared powers: `streamEncryptF48Z` for the function of the AVX-512
+variant's name, and otherwise by the flag, its code on the powers or on the
+key context. -/
+def streamEncryptF48Reg (v : GcmVariant) : Registration Spec.Gcm.streamEncryptPreparedApi X86_64.target :=
+  if v.impl.suffix = VG.Proof.Variants.AesGcm.X86_64.VaesVpclmulAvx512.variant.impl.suffix then streamEncryptF48Z
+  else {
+    suffix := v.impl.suffix
+    code := streamEncryptCodeF v
+    verified := VG.Proof.AesGcm.Flag.streamEncrypt_keyed
+      (Flag.streamEncrypt_ofB (Or.inr rfl) (streamEncryptCodeF_verified v))
+    spSafe := streamEncryptCodeF_spAll v }
+
+/-- `streamEncryptF48Reg` for `vg_aes_gcm_stream_decrypt_prepared`. -/
+def streamDecryptR48Reg (v : GcmVariant) : Registration Spec.Gcm.streamDecryptPreparedApi X86_64.target :=
+  if v.impl.suffix = VG.Proof.Variants.AesGcm.X86_64.VaesVpclmulAvx512.variant.impl.suffix then streamDecryptF48Z
+  else {
+    suffix := v.impl.suffix
+    code := Impl.Gcm.X86_64.Flag.onFlag 48
+      (Impl.StackScratch.X86_64.withStackArgScratch 2584 1
+      (Impl.AesGcm.X86_64.streamDecrypt (v.impl.withBlk (blkR v))))
+      (Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamDecrypt v.impl.callees))
+    verified := VG.Proof.AesGcm.Flag.streamDecrypt_keyed (Flag.streamDecrypt_onFlag
+      (streamDecryptPrepared_framed v.impl (blkR v))
+      (streamDecrypt_framed v.impl))
+    spSafe := VG.X86_64.onFlag_spSafe
+      (X86_64.withStackArgScratch_spSafe (streamDecryptM_spSafe v.impl (blkR v)))
+      (X86_64.withStackArgScratch_spSafe (streamDecrypt_spSafe v.impl)) }
 
 /-- `vg_aes_gcm_stream_encrypt_prepared` of a variant whose loops read 16
 powers: `streamEncryptF16Vaes` for the function of the VAES variant's name,

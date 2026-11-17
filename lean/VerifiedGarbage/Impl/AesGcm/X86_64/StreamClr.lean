@@ -90,6 +90,19 @@ def wipeScr (z : Bool) : List Instr :=
 scratch before it returns (`wipeScr z`). -/
 def Fn.wipe (z : Bool) (f : Fn) : Fn := ⟨f.name ++ "_w", .seq f.code (.block (wipeScr z))⟩
 
+/-- The working space of the loops of `vg_aes_gcm_encrypt_blocks` or
+`_decrypt_blocks` zeroed, from `r11 = (scratch + add) & -64` (the scratch,
+its stack argument, `[rsp + 8]` as it returns, rounded up to 64 bytes from
+`add - 63` on): `k` stores (`zeroWs z k`), then `vzeroupper`. -/
+def wipeWin (z : Bool) (add k : Nat) : List Instr :=
+  [.mov .r11 (.mem (at_ .rsp 8)), .alu .add .r11 (imm add), .alu .and .r11 (.imm (-64)),
+    .vop (.vbin .vpxor .l128 .xmm0 .xmm0 .xmm0)] ++ zeroWs z k ++ [.vop .vzeroupper]
+
+/-- `f`, as an internal function of its own (`<name>_w`) that zeroes the
+working space of its loops before it returns (`wipeWin z add k`). -/
+def Fn.wipeW (z : Bool) (add k : Nat) (f : Fn) : Fn :=
+  ⟨f.name ++ "_w", .seq f.code (.block (wipeWin z add k))⟩
+
 variable (c : Callees)
 
 /-- The `rbx` buffered bytes, padded with zeros in the keystream block of

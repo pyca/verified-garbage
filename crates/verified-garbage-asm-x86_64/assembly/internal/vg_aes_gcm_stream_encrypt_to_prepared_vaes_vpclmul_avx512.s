@@ -59,7 +59,7 @@ vg_aes_gcm_stream_encrypt_to_prepared_vaes_vpclmul_avx512:
 	mov r8, QWORD PTR [r11+32]
 	mov r9, QWORD PTR [r11+56]
 	push r10
-	call {vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul_avx512}
+	call {vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul_avx512_core}
 	pop rax
 	mov r11, QWORD PTR [rsp+32]
 	mov rax, QWORD PTR [r11+72]
@@ -159,7 +159,7 @@ vg_aes_gcm_stream_encrypt_to_prepared_vaes_vpclmul_avx512:
 	mov r9, QWORD PTR [r11+56]
 	add r9, rax
 	push r10
-	call {vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul_avx512}
+	call {vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul_avx512_core}
 	pop rax
 	jmp 214f
 213:

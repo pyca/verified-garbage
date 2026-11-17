@@ -2672,8 +2672,13 @@ theorem streamEncryptCodeF_mx (v : GcmVariant) :
   simp only [streamEncryptCodeF, Impl.Gcm.X86_64.Flag.onFlag, Code.iteCold, Code.allInstrs, h₁, h₂, Bool.and_true]
   rfl
 
+/-- The instance of `vg_aes_gcm_stream_encrypt_prepared` of a variant whose
+loops read the 48 prepared powers, as an internal function of its own,
+`vg_aes_gcm_stream_encrypt_prepared<suffix>_core`, with the code as it was:
+the function of that name returns without secret residue
+(`streamEncryptF48Reg`). -/
 def encFnF (v : GcmVariant) : StreamTo.EncFn Proof.Gcm.X86_64.Stitch.CtxMode.flagged :=
-  .ofFlagged ⟨Spec.Gcm.streamEncryptPreparedApi.name ++ v.impl.suffix, streamEncryptCodeF v⟩
+  .ofFlagged ⟨Spec.Gcm.streamEncryptPreparedApi.name ++ v.impl.suffix ++ "_core", streamEncryptCodeF v⟩
     (streamEncryptCodeF_verified v) (streamEncryptCodeF_spAll v) (streamEncryptCodeF_xdepth v) (streamEncryptCodeF_mx v)
 
 def toFnF (v : GcmVariant) : Gather.ToFn Proof.Gcm.X86_64.Stitch.CtxMode.flagged :=

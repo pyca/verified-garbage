@@ -20,7 +20,7 @@ jb 22f
 .base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
 jne 24b
 .base64 "TItcJCBNi1NISYs7SYtzCEmLUxBJi0sYTYtDIE2LSzhBUg=="
-call {vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul_avx512}
+call {vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul_avx512_core}
 .base64 "WEyLXCQgSYtDSEmJQ0A="
 jmp 23f
 22:
@@ -59,14 +59,14 @@ je 213f
 .base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
 jne 215b
 .base64 "TItcJCBJi0NATYtTMEkpwkmLO0mLcwhJi1MQSYtLGE2LQyBJAcBNi0s4SQHBQVI="
-call {vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul_avx512}
+call {vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul_avx512_core}
 .base64 "WA=="
 jmp 214f
 213:
 214:
 .base64 "SI2kJLgIAADD"
 .p2align 6"#,
-        vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul_avx512 = sym crate::gcm::vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul_avx512,
+        vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul_avx512_core = sym crate::aes::vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul_avx512_core::vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul_avx512_core,
         vg_aes_gcm_encrypt_blocks_to_prepared_vaes_vpclmul_avx512 = sym crate::aes::vg_aes_gcm_encrypt_blocks_to_prepared_vaes_vpclmul_avx512::vg_aes_gcm_encrypt_blocks_to_prepared_vaes_vpclmul_avx512,
     )
 }

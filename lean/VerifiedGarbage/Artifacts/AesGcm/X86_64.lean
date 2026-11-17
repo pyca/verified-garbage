@@ -82,23 +82,8 @@ def artifactsR (v : GcmVariant) : List Artifact := [
     code := Impl.Gcm.X86_64.Flag.onFlag 48 (openToCodeF v) (openToCode v)
     verified := VG.Proof.AesGcm.Flag.openTo_keyed (openToCodeR_onFlag v)
     spSafe := openToCodeR_onFlag_spAll v },
-  Spec.Gcm.streamEncryptPreparedApi.artifact X86_64.target {
-    suffix := v.impl.suffix
-    code := streamEncryptCodeF v
-    verified := VG.Proof.AesGcm.Flag.streamEncrypt_keyed (Flag.streamEncrypt_ofB (Or.inr rfl) (streamEncryptCodeF_verified v))
-    spSafe := streamEncryptCodeF_spAll v },
-  Spec.Gcm.streamDecryptPreparedApi.artifact X86_64.target {
-    suffix := v.impl.suffix
-    code := Impl.Gcm.X86_64.Flag.onFlag 48
-      (Impl.StackScratch.X86_64.withStackArgScratch 2584 1
-      (Impl.AesGcm.X86_64.streamDecrypt (v.impl.withBlk (blkR v))))
-      (Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamDecrypt v.impl.callees))
-    verified := VG.Proof.AesGcm.Flag.streamDecrypt_keyed (Flag.streamDecrypt_onFlag
-      (streamDecryptPrepared_framed v.impl (blkR v))
-      (streamDecrypt_framed v.impl))
-    spSafe := VG.X86_64.onFlag_spSafe
-      (X86_64.withStackArgScratch_spSafe (streamDecryptM_spSafe v.impl (blkR v)))
-      (X86_64.withStackArgScratch_spSafe (streamDecrypt_spSafe v.impl)) },
+  Spec.Gcm.streamEncryptPreparedApi.artifact X86_64.target (streamEncryptF48Reg v),
+  Spec.Gcm.streamDecryptPreparedApi.artifact X86_64.target (streamDecryptR48Reg v),
   Spec.Gcm.sealGatherPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
     code := Impl.Gcm.X86_64.Flag.onFlag 48 (sealGatherCodeF v)
