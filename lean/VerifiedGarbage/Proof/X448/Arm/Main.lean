@@ -117,7 +117,7 @@ theorem E_outside {base : Addr} {o n : Nat} {m m' : Mem} (h : Outside base o n m
   simp only [E, F]
   rw [h.fe hi (by have := i.isLt; simp only [slot]; omega_using [])]
 
-/-- What `setup` and `setupBase` leave, for the u-coordinate `u`. -/
+/-- What `setup` leaves, for the u-coordinate `u`. -/
 def SetupPost (s₀ : State) (base : Addr) (u : Spec.X448.Fe) (t : State) : Prop :=
   Scr t base ∧ BoundedEnv t.mem base ∧ t.gpr .r8 = s₀.gpr .r0 ∧ t.gpr .r10 = s₀.gpr .lr ∧
     Keeps setupRegs s₀ t ∧ Outside base 0 8192 s₀.mem t.mem ∧ Saved base s₀.gpr t.mem ∧
@@ -236,26 +236,5 @@ structure BasePre (s₀ : State) : Prop where
 theorem BasePre.of (s₀ : State) (h : Proof.X448.x448BaseArm.pre s₀) : BasePre s₀ := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, h7⟩
-
-theorem correctBase {s₀ : State} (hp : BasePre s₀) :
-    WP isa x448Base s₀ fun s' => (∀ r ∈ preserved, s'.gpr r = s₀.gpr r) ∧
-      Proof.X448.x448BaseArm.post s₀ s' := by
-  rw [x448Base]
-  refine WP.seq ?_
-  rw [List.singleton_append]
-  refine VG.Proof.X25519.Arm.wp_mov (VG.Proof.X25519.Arm.op2_reg _ _) fun s₁ h₁ => ?_
-  have r0 : s₁.gpr .r0 = s₀.gpr .r0 := h₁.other _ (by decide)
-  have r1 : s₁.gpr .r1 = s₀.gpr .r1 := h₁.other _ (by decide)
-  refine WP.mono (setupBase_ok (s := s₁) rfl (by rw [h₁.wr, hp.wr, h₁.gpr]; simp)
-    (by rw [h₁.gpr]; exact hp.sc_fit)) fun s₂ h₂ => ?_
-  refine WP.mono (afterSetup_ok (s₀ := s₁) (by simp only [scalarR]; rw [h₁.rd, hp.rd, r1]; simp)
-    (by simp only [outR]; rw [h₁.wr, hp.wr, r0]; simp)
-    (by simp only [outR]; rw [r0, h₁.gpr]; exact hp.out_sc)
-    (by simp only [scalarR]; rw [r1, h₁.gpr]; exact hp.scalar_sc)
-    (by rw [r0]; exact hp.out_fit) (by rw [r1]; exact hp.scalar_fit) h₂) fun s' ⟨hpres, hpost⟩ => ?_
-  have hpr : ∀ r ∈ preserved, r ≠ Reg.r3 := by decide
-  refine ⟨fun r hr => (hpres r hr).trans (h₁.other r (hpr r hr)), ?_⟩
-  change Spec.X448.bytesAt s'.mem (State.addr (s₀.gpr .r0)) 56 = _
-  rw [← r0, hpost, r1, h₁.mem]
 
 end VG.Proof.X448.Arm

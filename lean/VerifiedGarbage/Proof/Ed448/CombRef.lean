@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ed448.Ref
 public import VerifiedGarbage.Impl.Ed448.Comb
+public import VerifiedGarbage.Proof.X448.Invert
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
@@ -17,9 +18,10 @@ addition of the affine table entry of the row's four bits of `k`, 114 apart
 adding the comb's table entry of `S` in the last 114 (the comb's rows, which
 share the doublings), and `A` when the bit of `k` is set.
 
-That they agree with the specification (`BaseCombOk`, `VerifyEqCombOk`) needs
-the group law: these are `Prop`s, proved in `Proof/Ed448/CombFacts.lean`,
-which only registration files import.
+That they agree with the specification (`BaseCombOk`, `VerifyEqCombOk`, and
+`BaseCombUOk`: X448 of the base point is the u-coordinate `Y² / X²` of the
+comb's point) needs the group law: these are `Prop`s, proved in
+`Proof/Ed448/CombFacts.lean`, which only registration files import.
 -/
 
 @[expose] public section
@@ -65,6 +67,16 @@ theorem comb_row (k : Nat) {t : Nat} (ht : t < 114) :
 def BaseCombOk : Prop :=
   ∀ k, Below456 k → Spec.Ed448.encodePoint (comb k 114) =
     Spec.Ed448.encodePoint (Spec.Ed448.pointMul k Spec.Ed448.basePoint)
+
+/-- X448 of the base point (RFC 7748 §6.2) is the u-coordinate `Y² / X²` (with `1 / 0 = 0`) of
+the comb's point for the decoded scalar, whose bits from 448 up are zero. -/
+def BaseCombUOk : Prop :=
+  ∀ kb : List Byte,
+    (∀ t, 448 ≤ t → (Spec.X448.decodeScalar448 kb >>> t) &&& 1 = 0) ∧
+    Spec.X448.x448 kb Spec.X448.basePoint = Spec.X448.encodeUCoordinate
+      ((comb (Spec.X448.decodeScalar448 kb) 114).Y * (comb (Spec.X448.decodeScalar448 kb) 114).Y *
+        Proof.X448.invert ((comb (Spec.X448.decodeScalar448 kb) 114).X *
+          (comb (Spec.X448.decodeScalar448 kb) 114).X))
 
 /-! ## Verification's equation -/
 

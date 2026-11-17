@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.X448.Arm.Verified
+public import VerifiedGarbage.Proof.X448.Arm.Base
+public import VerifiedGarbage.Proof.Ed448.CombFacts
 public import VerifiedGarbage.Proof.X448.Arm.Exchange
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
@@ -17,6 +19,6 @@ def artifacts : List Artifact := [
     verified := Proof.X448.Arm.Exchange.exchange_baseline },
   Spec.X448.x448BaseApi.artifact Arm.target {
     code := Impl.X448.Arm.x448Base
-    verified := Proof.X448.Arm.x448Base_verified }]
+    verified := Proof.X448.Arm.x448Base_verified Proof.Ed448.baseCombU_ok }]
 
 end VG.Artifacts.X448.Arm

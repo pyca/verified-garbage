@@ -6,6 +6,8 @@ import VerifiedGarbage.Proof.Ed448.Group.Projective
 import VerifiedGarbage.Proof.Ed448.Group.Decode
 import VerifiedGarbage.Proof.Ed448.VerifyEq
 import VerifiedGarbage.Proof.Ed448.Facts
+import VerifiedGarbage.Proof.X448.BaseAdd
+import VerifiedGarbage.Proof.X448.Bytes
 import VerifiedGarbage.Proof.Framework.Omega
 import Mathlib.Tactic.Abel
 
@@ -16,7 +18,8 @@ Untrusted and target-independent, and heavy, as `Facts.lean`: the group law
 over `ZMod p`. `baseComb_ok`: after the rows above `t`, `comb` represents
 `[accScalar k t]B` (`comb_rep`, from the table's entries, `Comb.entry_rep`,
 and the scalar's arithmetic, `Comb.accScalar_step`), so the whole comb
-encodes `[k]B`. `verifyEqComb_ok`: `vcomb` represents
+encodes `[k]B`; and `baseCombU_ok`, X448 of the base point as its
+u-coordinate (`Proof/X448/BaseAdd.lean`). `verifyEqComb_ok`: `vcomb` represents
 `[accScalar S t]B + [k >> t]a` the same way (the scalar of the comb is zero
 above its rows), and the equation follows (`verifyEquation_some`).
 
@@ -58,6 +61,24 @@ theorem baseComb_ok : BaseCombOk := fun k hk => by
   have h := comb_rep k 114 (Nat.le_refl _)
   rw [Nat.sub_self, Comb.accScalar_total k hk] at h
   rw [encodePoint_rep h, encodePoint_rep (pointMul_rep k basePoint_rep)]
+
+/-! ## X448 of the base point -/
+
+theorem baseCombU_ok : BaseCombUOk := fun kb => by
+  have hlt : Spec.X448.decodeScalar448 kb < 2 ^ 448 := by
+    rw [Spec.X448.decodeScalar448, VG.Proof.X448.decodeLittleEndian_eq]
+    refine Nat.lt_of_lt_of_le (VG.Proof.X25519.leNum_lt _) ?_
+    rw [show (2 : Nat) ^ 448 = 256 ^ 56 by decide +kernel]
+    exact Nat.pow_le_pow_right (by decide) (List.length_take_le _ _)
+  refine ⟨fun t ht => ?_, ?_⟩
+  · rw [Nat.shiftRight_eq_div_pow, Nat.div_eq_of_lt
+      (Nat.lt_of_lt_of_le hlt (Nat.pow_le_pow_right (by decide) ht))]
+    rfl
+  · have h := comb_rep (Spec.X448.decodeScalar448 kb) 114 (Nat.le_refl _)
+    rw [Nat.sub_self, Comb.accScalar_total _ (Nat.lt_of_lt_of_le hlt (by decide +kernel))] at h
+    refine VG.Proof.X448.Edwards.x448_basePoint kb _ ?_
+    rw [VG.Proof.X448.invert_eq]
+    exact VG.Proof.X448.u_rep h
 
 /-! ## Verification's equation -/
 

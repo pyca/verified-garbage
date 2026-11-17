@@ -24,6 +24,5 @@ kernel-evaluated check.
 namespace VG
 
 materialize_code Impl.X448.Arm.x448
-materialize_code Impl.X448.Arm.x448Base
 
 end VG
