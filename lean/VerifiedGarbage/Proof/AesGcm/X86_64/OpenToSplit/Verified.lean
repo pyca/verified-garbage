@@ -212,7 +212,7 @@ theorem openToSplitPrepared_framed (F : OpenSplitFn CtxMode.prepared) :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 2624 6 (Impl.AesGcm.X86_64.OpenToSplit.openToSplit F.fn))
       (Proof.AesGcm.openToPreparedRoundsContract X86_64.abi 2776) :=
-  X86_64.Verified.stackArgScratchKept (sig := Proof.Gcm.openToPrecomputedSig) (nm := "work") (e := .u64)
+  X86_64.Verified.stackArgScratchPre (hpostOut := Proof.AesGcm.openToRoundsPostOut_local _ _ (fun _ _ _ _ _ _ _ _ _ _ _ _ _ h => h.2.1)) (sig := Proof.Gcm.openToPrecomputedSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Proof.Gcm.openToPowersPre X86_64.abi.ptrBits)
     (post := Proof.AesGcm.openToRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 152)
     (leak := some (Spec.Gcm.openToLeak X86_64.abi.ptrBits)) (bytes := 2624) (openToSplitPrepared_core F)
@@ -458,7 +458,7 @@ theorem openToSplitPrepared16_framed (F : OpenSplitFn CtxMode.prepared16) :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 2624 6 (Impl.AesGcm.X86_64.OpenToSplit.openToSplit F.fn))
       (Proof.AesGcm.openToPrepared16RoundsContract X86_64.abi 2776) :=
-  X86_64.Verified.stackArgScratchKept (sig := Proof.Gcm.openToPrecomputedSig) (nm := "work") (e := .u64)
+  X86_64.Verified.stackArgScratchPre (hpostOut := Proof.AesGcm.openToRoundsPostOut_local _ _ (fun _ _ _ _ _ _ _ _ _ _ _ _ _ h => h.2.1)) (sig := Proof.Gcm.openToPrecomputedSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Proof.Gcm.openToPrepared16Pre X86_64.abi.ptrBits)
     (post := Proof.AesGcm.openToRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 152)
     (leak := some (Spec.Gcm.openToLeak X86_64.abi.ptrBits)) (bytes := 2624) (openToSplitPrepared16_core F)
@@ -700,7 +700,7 @@ theorem openToSplitBase_framed (F : OpenSplitFn CtxMode.base) :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 2624 6 (Impl.AesGcm.X86_64.OpenToSplit.openToSplit F.fn))
       (Proof.AesGcm.openToRoundsContract X86_64.abi 2776) :=
-  X86_64.Verified.stackArgScratchKept (sig := Spec.Gcm.openToSig) (nm := "work") (e := .u64)
+  X86_64.Verified.stackArgScratchPre (hpostOut := Proof.AesGcm.openToRoundsPostBaseOut_local _ _ (fun _ _ _ _ _ _ _ _ _ _ _ _ _ h => h.2)) (sig := Spec.Gcm.openToSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Gcm.openToPre X86_64.abi.ptrBits)
     (post := Proof.AesGcm.openToRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 152)
     (leak := some (Spec.Gcm.openToLeak X86_64.abi.ptrBits)) (bytes := 2624) (openToSplitBase_core F)
@@ -812,7 +812,7 @@ theorem openToSplitFlagged_framed {t : Nat} (ht : t ≤ 48) (F : OpenSplitFn (Ct
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 2624 6 (Impl.AesGcm.X86_64.OpenToSplit.openToSplit F.fn))
       (Proof.AesGcm.Flag.openToFlaggedRoundsContract t X86_64.abi 2776) :=
-  X86_64.Verified.stackArgScratchKept (sig := Spec.Gcm.openToPreparedSig) (nm := "work") (e := .u64)
+  X86_64.Verified.stackArgScratchPre (hpostOut := Proof.AesGcm.Flag.openToFlaggedRoundsPostOut_local _ _ (fun _ _ _ _ _ _ _ _ _ _ _ _ _ h => h.2.1)) (sig := Spec.Gcm.openToPreparedSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Proof.AesGcm.Flag.openToFlaggedPre t X86_64.abi.ptrBits)
     (post := Proof.AesGcm.openToRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 152)
     (leak := some (Spec.Gcm.openToLeak X86_64.abi.ptrBits)) (bytes := 2624) (openToSplitFlagged_core ht F)

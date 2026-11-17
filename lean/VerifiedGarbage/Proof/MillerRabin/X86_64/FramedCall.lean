@@ -54,7 +54,16 @@ theorem framed_call_ok (M : Mont) {code : Prog isa} {s : State} {B : Addr}
     (by have := hc.good.scr.nowrap; omega_arith) hb) ?_
   rintro t ⟨hr, hbx, h12, h13, h14, h15, hk, hf, hp⟩
   have hsp : t.gpr .rsp = (entered s).gpr .rsp := hk.gpr (by decide)
-  refine ⟨hsp, hk.2.2, ?_, ?_, ?_, ?_⟩
+  refine ⟨hsp, hk.2.2, fun m u fm => ?_⟩
+  -- The frames lose their bytes, which are apart from the workspace.
+  have hB : ∀ i < 8 * n, m (B + BitVec.ofNat 64 i) = t.mem (B + BitVec.ofNat 64 i) := fun i hi =>
+    fm.bytes (R := ⟨B, 8 * n⟩) (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact hd')
+      (by change 8 * n ≤ 2 ^ 64; have := hc.good.scr.nowrap; omega_arith) hi
+  have hF : Region.Sub ⟨(entered s).gpr .rsp, 112⟩ ⟨s.gpr .rsp - BitVec.ofNat 64 120, 120⟩ := by
+    rw [entered_rsp]; exact Offset.sub_below _ (by decide) (by decide)
+  dsimp only
+  refine ⟨?_, ?_, ?_, ?_⟩
   · rw [exited_gpr _ (by decide) (by decide) (by decide)]
     exact hr
   · apply exited_registers hs ?_ hf hsp hbx h12 h13 h14 h15
@@ -67,9 +76,8 @@ theorem framed_call_ok (M : Mont) {code : Prog isa} {s : State} {B : Addr}
       rw [heq, Offset.sub_ofNat_eq (s.gpr .rsp) (by decide : 112 ≤ 120)]
       exact Offset.disjoint_base _ (by decide) (by decide)
     · exact hd.symm
-  · rw [exited_mem]
-    intro i hi' hh ha ht
-    refine (hp i hi' hh ha ht).trans ?_
+  · intro i hi' hh ha ht
+    refine (hB i hi').trans ((hp i hi' hh ha ht).trans ?_)
     apply (entered_frame s hs).bytes (R := ⟨B, 8 * n⟩) ?_ ?_ hi'
     · intro r hr'
       simp only [List.mem_singleton] at hr'
@@ -79,7 +87,10 @@ theorem framed_call_ok (M : Mont) {code : Prog isa} {s : State} {B : Addr}
       have := hc.good.scr.nowrap
       omega_arith
   · -- The frames' 112 bytes and the calls' return address below them.
-    rw [exited_mem]
+    refine Frame.trans ?_ (fm.sub fun r hr => ?_)
+    rotate_left
+    · rw [List.mem_singleton.mp hr]
+      exact ⟨_, List.mem_cons_self .., hF⟩
     have hh : hole ((entered s).gpr .rsp) = ⟨s.gpr .rsp - 120#64, 8⟩ := by
       rw [hole, entered_rsp]
       congr 1

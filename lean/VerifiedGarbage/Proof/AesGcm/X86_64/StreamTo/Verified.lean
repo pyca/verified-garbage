@@ -125,6 +125,52 @@ theorem streamEncryptToPost_local : ∀ vs m₁ m₂ m' r, vs.length = (streamEn
   rw [ctxCiph_congr hn' fun i hi => hc i (by omega_using [hi]), ctxH_congr fun i hi => hc i (by omega_using [hi])] at hr
   exact h hn iv a p (streamRepr_congr (fun i hi => (hs i (by omega_using [hi])).symm) hr) hl ht
 
+/-- `streamEncryptToPost` reads the memory on return only within the buffers,
+for a precondition `P` that makes the output as long as the input (`hP`). -/
+theorem streamEncryptToPostOut_local (P : Curry (streamEncryptToSig.words pb) (Mem → Prop))
+    (hP : ∀ ctx rd st al tl src len dst dl m,
+      Curry.apply (streamEncryptToSig.words pb) P [ctx, rd, st, al, tl, src, len, dst, dl] m →
+      dl.setWidth pb = len.setWidth pb) :
+    ∀ vs m m₁ m₂ r, vs.length = (streamEncryptToSig.words pb).length →
+    Curry.apply (streamEncryptToSig.words pb) P vs m →
+    (∀ b ∈ Sig.bufs streamEncryptToSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (streamEncryptToSig.words pb) (streamEncryptToPost pb) vs m m₁ r →
+      Curry.apply (streamEncryptToSig.words pb) (streamEncryptToPost pb) vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen hp hb h
+  obtain ⟨ctx, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 8) hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨rd, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨st, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨al, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨tl, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨src, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨len, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨dst, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨dl, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  have hdl := congrArg BitVec.toNat (hP _ _ _ _ _ _ _ _ _ _ hp)
+  have hdl' : (dl.setWidth pb).toNat ≤ dl.toNat := by rw [BitVec.toNat_setWidth]; exact Nat.mod_le _ _
+  simp only [streamEncryptToSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+    forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int 64, ArgWord.int 64,
+    ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb] (streamEncryptToPost pb) _ m m₁ r at h
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int 64, ArgWord.int 64,
+    ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb] (streamEncryptToPost pb) _ m m₂ r
+  dsimp only [Curry.apply, streamEncryptToPost, ArgWord.ofRaw] at h ⊢
+  intro hn iv a p hr hl ht
+  obtain ⟨g₁, g₂⟩ := h hn iv a p hr hl ht
+  refine ⟨streamRepr_congr (fun i hi => agree_of hb.2.1 i (by omega_using [hi])) g₁, Eq.trans ?_ g₂⟩
+  exact bytesAt_congr fun i hi => agree_of hb.2.2.2 i (by omega_using [hi, hdl, hdl'])
+
+
 theorem streamEncryptToPrecomputedPost_local : ∀ vs m₁ m₂ m' r, vs.length = (streamEncryptToPrecomputedSig.words pb).length →
     (∀ b ∈ Sig.bufs streamEncryptToPrecomputedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
     Curry.apply (streamEncryptToPrecomputedSig.words pb) (streamEncryptToPost pb) vs m₁ m' r →
@@ -165,6 +211,52 @@ theorem streamEncryptToPrecomputedPost_local : ∀ vs m₁ m₂ m' r, vs.length 
       rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi])]
   rw [ctxCiph_congr hn' fun i hi => hc i (by omega_using [hi]), ctxH_congr fun i hi => hc i (by omega_using [hi])] at hr
   exact h hn iv a p (streamRepr_congr (fun i hi => (hs i (by omega_using [hi])).symm) hr) hl ht
+
+/-- `streamEncryptToPost` reads the memory on return only within the buffers,
+for a precondition `P` that makes the output as long as the input (`hP`). -/
+theorem streamEncryptToPrecomputedPostOut_local (P : Curry (streamEncryptToPrecomputedSig.words pb) (Mem → Prop))
+    (hP : ∀ ctx rd st al tl src len dst dl m,
+      Curry.apply (streamEncryptToPrecomputedSig.words pb) P [ctx, rd, st, al, tl, src, len, dst, dl] m →
+      dl.setWidth pb = len.setWidth pb) :
+    ∀ vs m m₁ m₂ r, vs.length = (streamEncryptToPrecomputedSig.words pb).length →
+    Curry.apply (streamEncryptToPrecomputedSig.words pb) P vs m →
+    (∀ b ∈ Sig.bufs streamEncryptToPrecomputedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (streamEncryptToPrecomputedSig.words pb) (streamEncryptToPost pb) vs m m₁ r →
+      Curry.apply (streamEncryptToPrecomputedSig.words pb) (streamEncryptToPost pb) vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen hp hb h
+  obtain ⟨ctx, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 8) hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨rd, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨st, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨al, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨tl, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨src, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨len, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨dst, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨dl, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  have hdl := congrArg BitVec.toNat (hP _ _ _ _ _ _ _ _ _ _ hp)
+  have hdl' : (dl.setWidth pb).toNat ≤ dl.toNat := by rw [BitVec.toNat_setWidth]; exact Nat.mod_le _ _
+  simp only [streamEncryptToPrecomputedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+    forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int 64, ArgWord.int 64,
+    ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb] (streamEncryptToPost pb) _ m m₁ r at h
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int 64, ArgWord.int 64,
+    ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb] (streamEncryptToPost pb) _ m m₂ r
+  dsimp only [Curry.apply, streamEncryptToPost, ArgWord.ofRaw] at h ⊢
+  intro hn iv a p hr hl ht
+  obtain ⟨g₁, g₂⟩ := h hn iv a p hr hl ht
+  refine ⟨streamRepr_congr (fun i hi => agree_of hb.2.1 i (by omega_using [hi])) g₁, Eq.trans ?_ g₂⟩
+  exact bytesAt_congr fun i hi => agree_of hb.2.2.2 i (by omega_using [hi, hdl, hdl'])
+
 
 end VG.Proof.AesGcm
 
@@ -376,7 +468,7 @@ theorem streamToFrameSat_pre : ∃ s, (Proof.Gcm.streamEncryptToContract X86_64.
 theorem streamEncryptTo_framed (T : BlkToFn CtxMode.base) (E : EncFn CtxMode.base) :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 2232 3 (encrypt T.fn E.fn))
       (Proof.Gcm.streamEncryptToContract X86_64.abi 4856) :=
-  X86_64.Verified.stackArgScratchKept (sig := Proof.Gcm.streamEncryptToSig) (nm := "scratch") (e := .u64)
+  X86_64.Verified.stackArgScratchPre (hpostOut := Proof.AesGcm.streamEncryptToPostOut_local _ _ (fun _ _ _ _ _ _ _ _ _ _ h => h.2)) (sig := Proof.Gcm.streamEncryptToSig) (nm := "scratch") (e := .u64)
     (n := 274) (pre := Proof.Gcm.streamEncryptToPre X86_64.abi.ptrBits)
     (post := Proof.Gcm.streamEncryptToPost X86_64.abi.ptrBits) (wa := true) (stack := 2624)
     (bytes := 2232) (streamEncryptTo_core T E) (by decide) (by decide) (by decide)
@@ -401,7 +493,7 @@ theorem streamToFrameSatP_pre : ∃ s, (Proof.Gcm.streamEncryptToPrecomputedCont
 theorem streamEncryptToP_framed (T : BlkToFn CtxMode.powers) (E : EncFn CtxMode.powers) :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 2232 3 (encrypt T.fn E.fn))
       (Proof.Gcm.streamEncryptToPrecomputedContract X86_64.abi 4856) :=
-  X86_64.Verified.stackArgScratchKept (sig := Proof.Gcm.streamEncryptToPrecomputedSig) (nm := "scratch")
+  X86_64.Verified.stackArgScratchPre (hpostOut := Proof.AesGcm.streamEncryptToPrecomputedPostOut_local _ _ (fun _ _ _ _ _ _ _ _ _ _ h => h.2.1)) (sig := Proof.Gcm.streamEncryptToPrecomputedSig) (nm := "scratch")
     (e := .u64) (n := 274) (pre := Proof.Gcm.streamEncryptToPrecomputedPre X86_64.abi.ptrBits)
     (post := Proof.Gcm.streamEncryptToPost X86_64.abi.ptrBits) (wa := true) (stack := 2624)
     (bytes := 2232) (streamEncryptToP_core T E) (by decide) (by decide) (by decide)

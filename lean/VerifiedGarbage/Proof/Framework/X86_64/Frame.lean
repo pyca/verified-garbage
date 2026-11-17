@@ -169,6 +169,45 @@ theorem WP.frameKept {rs : List Reg} {r : Reg} {body : Prog isa} {s : State} {Q 
     rw [pushed_wr, pushed_rsp]; rfl
   exact ⟨_, _, Exec.frame (push_pushed hne hrs hn) he hpop, hq⟩
 
+/-- A frame's pop from memory `m` that agrees with `s`'s on the `k` words it
+reads loads what it loads from `s`: with that memory (and any unknowns) it
+leads to `popReg s r k` with them. (An outer frame's pop, after an inner
+frame lost its bytes, reads only its own.) -/
+theorem popReg_withMem (r : Reg) : ∀ (k : Nat) (s : State) (m : Mem) (u : Nat → BitVec 64),
+    (∀ i < k, m.readW (s.gpr .rsp + BitVec.ofNat 64 (8 * i)) 64 =
+      s.mem.readW (s.gpr .rsp + BitVec.ofNat 64 (8 * i)) 64) →
+    popReg { s with mem := m, unknowns := u } r k = { popReg s r k with mem := m, unknowns := u }
+  | 0, _, _, _, _ => rfl
+  | k + 1, s, m, u, h => by
+    have h0 : m.readW (s.gpr .rsp) 64 = s.mem.readW (s.gpr .rsp) 64 := by
+      have := h 0 (Nat.zero_lt_succ _)
+      rwa [show s.gpr .rsp + BitVec.ofNat 64 (8 * 0) = s.gpr .rsp from BitVec.add_zero _] at this
+    let s' : State := (s.setReg r (s.mem.readW (s.gpr .rsp) 64)).setReg .rsp (s.gpr .rsp + 8)
+    have hs' : s'.gpr .rsp = s.gpr .rsp + 8 := by simp [s', State.setReg]
+    have e : ({ s with mem := m, unknowns := u }.setReg r ({ s with mem := m, unknowns := u }.mem.readW
+        ({ s with mem := m, unknowns := u }.gpr .rsp) 64)).setReg .rsp
+          ({ s with mem := m, unknowns := u }.gpr .rsp + 8) = { s' with mem := m, unknowns := u } := by
+      show (({ s with mem := m, unknowns := u }.setReg r (m.readW (s.gpr .rsp) 64)).setReg .rsp
+        (s.gpr .rsp + 8)) = _
+      rw [h0]; rfl
+    show popReg (({ s with mem := m, unknowns := u }.setReg r ({ s with mem := m, unknowns := u }.mem.readW
+        ({ s with mem := m, unknowns := u }.gpr .rsp) 64)).setReg .rsp
+          ({ s with mem := m, unknowns := u }.gpr .rsp + 8)) r k = { popReg s' r k with mem := m, unknowns := u }
+    rw [e]
+    refine popReg_withMem r k s' m u fun i hi => ?_
+    have := h (i + 1) (by omega_using [hi])
+    rw [hs', show s.gpr .rsp + 8 + BitVec.ofNat 64 (8 * i) = s.gpr .rsp + BitVec.ofNat 64 (8 * (i + 1)) by
+      rw [BitVec.add_assoc]; congr 1; bv_omega_arith]
+    exact this
+
+/-- `popReg_withMem`, for the pop of a frame. -/
+theorem popped_withMem {r : Reg} {k : Nat} {s : State} {m : Mem} {u : Nat → BitVec 64}
+    (h : ∀ i < k, m.readW (s.gpr .rsp + BitVec.ofNat 64 (8 * i)) 64 =
+      s.mem.readW (s.gpr .rsp + BitVec.ofNat 64 (8 * i)) 64) :
+    popped r k { s with mem := m, unknowns := u } = { popped r k s with mem := m, unknowns := u } := by
+  unfold popped
+  rw [popReg_withMem r k s m u h]
+
 /-- A byte of a region apart from a frame is what it was once the frame's
 bytes are lost. -/
 theorem lost_byte {F R : Region} {m m' : Mem} (f : Frame [F] m m') (hd : R.Disjoint F) {i : Nat}

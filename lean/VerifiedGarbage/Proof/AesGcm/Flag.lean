@@ -281,6 +281,60 @@ theorem openToFlaggedRoundsPost_local (pb : Nat) : ∀ vs m₁ m₂ m' r, vs.len
     (AesGcm.agree_of hb.2.2.2.2.2)]
   exact h hr
 
+/-- `openToRoundsPost` reads the memory on return only within the buffers, for a
+precondition `P` that makes the output as long as the input (`hP`). -/
+theorem openToFlaggedRoundsPostOut_local (pb : Nat) (P : Curry (Spec.Gcm.openToPreparedSig.words pb) (Mem → Prop))
+    (hP : ∀ ctx rd nonce nl aad al src len dst dl tag tl m,
+      Curry.apply (Spec.Gcm.openToPreparedSig.words pb) P [ctx, rd, nonce, nl, aad, al, src, len, dst, dl, tag, tl] m →
+      (dl.setWidth pb).toNat = (len.setWidth pb).toNat) :
+    ∀ vs m m₁ m₂ r, vs.length = (Spec.Gcm.openToPreparedSig.words pb).length →
+    Curry.apply (Spec.Gcm.openToPreparedSig.words pb) P vs m →
+    (∀ b ∈ Sig.bufs Spec.Gcm.openToPreparedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (Spec.Gcm.openToPreparedSig.words pb) (AesGcm.openToRoundsPost pb) vs m m₁ r →
+      Curry.apply (Spec.Gcm.openToPreparedSig.words pb) (AesGcm.openToRoundsPost pb) vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen hp hb h
+  obtain ⟨ctx, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 11) hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨rd, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨nonce, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨nl, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨aad, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨al, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨src, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨len, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨dst, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨dl, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨tag, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨tl, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  have hdl := hP _ _ _ _ _ _ _ _ _ _ _ _ _ hp
+  have hdl' : (dl.setWidth pb).toNat ≤ dl.toNat := by rw [BitVec.toNat_setWidth]; exact Nat.mod_le _ _
+  simp only [Spec.Gcm.openToPreparedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+    forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
+    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb]
+    (AesGcm.openToRoundsPost pb) _ m m₁ r at h
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
+    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb]
+    (AesGcm.openToRoundsPost pb) _ m m₂ r
+  dsimp only [Curry.apply, AesGcm.openToRoundsPost, ArgWord.ofRaw, IntTy.bits] at h ⊢
+  intro hr
+  rw [AesGcm.bytesAt_congr (m₁ := m₁) (m₂ := m₂) (p := dst) (n := (len.setWidth pb).toNat) fun i hi =>
+      AesGcm.agree_of hb.2.2.2.2.1 i (by omega_using [hi, hdl, hdl'])]
+  exact h hr
+
+
 theorem openToFlaggedLeak_local (pb : Nat) : ∀ vs m₁ m₂, vs.length = (Spec.Gcm.openToPreparedSig.words pb).length →
     (∀ b ∈ Sig.bufs Spec.Gcm.openToPreparedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
     Curry.apply (Spec.Gcm.openToPreparedSig.words pb) (Spec.Gcm.openToLeak pb) vs m₁ =

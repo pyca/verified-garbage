@@ -400,7 +400,7 @@ include hF
 theorem sealSplit_framed (B : BlkFn CtxMode.base) (T : BlkToFn CtxMode.base) :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 2616 5 (SealSplit.«seal» (v.splitMid (v.withBlk B) T.fn)))
       (Proof.Gcm.sealSplitContract X86_64.abi 2672) :=
-  X86_64.Verified.stackArgScratchKept (sig := Proof.Gcm.sealSplitSig) (nm := "work") (e := .u64)
+  X86_64.Verified.stackArgScratch (hpostOut := Proof.AesGcm.sealSplitPostOut_local _) (sig := Proof.Gcm.sealSplitSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Proof.Gcm.sealSplitPre X86_64.abi.ptrBits)
     (post := Proof.Gcm.sealSplitPost X86_64.abi.ptrBits) (wa := true) (stack := 56)
     (bytes := 2616) (sealSplit_core v hF B T) (by decide) (by decide) (by decide)
@@ -410,7 +410,7 @@ theorem sealSplit_framed (B : BlkFn CtxMode.base) (T : BlkToFn CtxMode.base) :
 theorem sealSplitP_framed (B : BlkFn CtxMode.powers) (T : BlkToFn CtxMode.powers) :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 2616 5 (SealSplit.«seal» (v.splitMid (v.withBlk B) T.fn)))
       (Proof.Gcm.sealSplitPrecomputedContract X86_64.abi 2672) :=
-  X86_64.Verified.stackArgScratchKept (sig := Proof.Gcm.sealSplitPrecomputedSig) (nm := "work") (e := .u64)
+  X86_64.Verified.stackArgScratch (hpostOut := Proof.AesGcm.sealSplitPrecomputedPostOut_local _) (sig := Proof.Gcm.sealSplitPrecomputedSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Proof.Gcm.sealSplitPrecomputedPre X86_64.abi.ptrBits)
     (post := Proof.Gcm.sealSplitPost X86_64.abi.ptrBits) (wa := true) (stack := 56)
     (bytes := 2616) (sealSplitP_core v hF B T) (by decide) (by decide) (by decide)

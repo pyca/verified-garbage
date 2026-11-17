@@ -305,12 +305,12 @@ theorem ifma_ok (hl : MrOk l) {s : State} (h : roundPre s)
     simp only [arr, VG.Proof.Bignum.slot, aE] at hsz ⊢; omega_arith))) (by
     simp only [arr, VG.Proof.Bignum.slot, aE] at hsz ⊢; omega_arith)
   unfold ifma
-  refine WP.frameKept (by decide) (by decide) (by decide) h48 ?_
+  refine WP.frame (by decide) (by decide) (by decide) h48 ?_
   refine WP.mono (mid_ok hl (pushed_gpr _ _ (by decide)) (by rw [wr₁]; simp [Nat.mul_comm]) hn8 hsz hc₁ h3 hodd
     hinv₁ hr1₁ hx₁ hE₁ (by rw [sp₁, rd₁, wr₁]; exact frame_head) (by rw [sp₁, rd₁, wr₁]; exact frame_at 8 (by decide))
     (by rw [sp₁, rd₁, wr₁]; exact frame_at 16 (by decide)) (by rw [sp₁, rd₁, wr₁]; exact frame_at 24 (by decide))
     (by rw [sp₁, rd₁, wr₁]; exact frame_at 32 (by decide)) (by rw [sp₁, rd₁, wr₁]; exact frame_at 40 (by decide)))
-    fun t ⟨ax, r15, r14, r13, r12, bp, bx, spt, wrt, Ft⟩ => ⟨spt, wrt, ?_⟩
+    fun t ⟨ax, r15, r14, r13, r12, bp, bx, spt, wrt, Ft⟩ => ⟨spt, wrt, fun m u fm => ?_⟩
   obtain F : Frame [⟨s.gpr .rdi, (s.gpr .rsi).toNat * 8⟩] (pushed [.rbx, .rbp, .r12, .r13, .r14, .r15] s).mem
       t.mem := frm_ws Ft hz27
   obtain sv : ∀ j (hj : j < 6), t.mem.readW (s.gpr .rsp - BitVec.ofNat 64 (8 * (j + 1))) 64 =
@@ -325,6 +325,10 @@ theorem ifma_ok (hl : MrOk l) {s : State} (h : roundPre s)
   obtain hflag : (wEnd c (kRun 2 c b (mrE c) (32 * l.W) (32 * l.W))).2 = Proof.MillerRabin.Round.round c b :=
     VG.Proof.MillerRabin.WindowK.kEnd_eq b (by decide) (by decide) h3 hodd
       (VG.Proof.MillerRabin.Word32.mrA_le h3) hEl
+  -- The `pop` loses the frame's 48 bytes, below `rsp`, apart from the workspace.
+  obtain hF : Region.Disjoint ⟨s.gpr .rsp - 48#64, 48⟩ ⟨s.gpr .rdi, (s.gpr .rsi).toNat * 8⟩ :=
+    hstack.sub_left (VG.Offset.sub_below _ (by omega_arith) (by omega_arith))
+  dsimp only
   refine ⟨fun r hr => ?_, ?_, ?_⟩
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
@@ -347,8 +351,8 @@ theorem ifma_ok (hl : MrOk l) {s : State} (h : roundPre s)
     · have hi64 : i < 2 ^ 64 := by omega_arith
       obtain ho : (s.gpr .rdi + BitVec.ofNat 64 i - s.gpr .rdi).toNat = i := by
         rw [VG.Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hi64]
-      rw [popped_mem]
-      refine (Ft _ fun r hr => ?_).trans (hws _ ?_)
+      refine (fm _ fun r hr hc => hF _ (by rw [List.mem_singleton.mp hr] at hc; exact hc)
+        (by simp only [Region.Contains, ho]; omega_arith)).trans ((Ft _ fun r hr => ?_).trans (hws _ ?_))
       · rw [List.mem_singleton.mp hr]
         simp only [ofs, ho]
         simp only [Proof.MillerRabin.Round.extended, Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes] at ht
@@ -356,7 +360,8 @@ theorem ifma_ok (hl : MrOk l) {s : State} (h : roundPre s)
         omega_arith
       · simp only [Region.Contains, ho]; omega_arith
   · intro x hx
-    rw [popped_mem]
+    refine (fm x fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact hx _ (List.mem_cons_self ..)).trans ?_
     exact (F x fun r hr => by
         rw [List.mem_singleton.mp hr]; exact hx _ (List.mem_cons_of_mem _ (List.mem_singleton_self _))).trans
       (mf x fun r hr => by rw [List.mem_singleton.mp hr]; exact hx _ (List.mem_cons_self ..))
