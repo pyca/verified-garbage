@@ -481,6 +481,47 @@ theorem WP.frameReg {r : Reg} {main : Prog isa} {s₀ : State} {Q : State → Pr
       rfl
     rw [e]; exact hq m u f
 
+/-- A frame saving `r` around one allocating `n` bytes (`WP.frame` around
+`WP.alloc`): the body runs from `allocated n (pushed r s)`. The pop reads
+the saved register from the outer frame, which the inner `free` does not
+lose, so it is the one in the body's final memory; the postcondition holds
+whatever memory `m` that differs from the body's only in the two frames, the
+`n + 16` bytes below the stack pointer, and whatever unknowns `u`. -/
+theorem WP.frameAlloc {r r' : Reg} {n : Nat} {body : Prog isa} {s : State} {Q : State → Prop}
+    (hsp : 16 ≤ s.sp.toNat) (hn : 0 < n ∧ n < 4096 ∧ n % 16 = 0) (hsp' : n ≤ (s.sp - 16).toNat)
+    (hb : WP isa body (allocated n (pushed r s)) fun t => ∀ m u,
+      Frame [below s.sp (n + 16)] t.mem m → Q { popped r' (freed n t) with mem := m, unknowns := u }) :
+    WP isa (.frame (.push r) (.frame (.alloc n) body (.free n)) (.pop r')) s Q := by
+  obtain ⟨t, s₂, he, hq⟩ := hb
+  obtain ⟨-, -, hp⟩ := Exec.rdwr he
+  have hn' : n + 16 < 2 ^ 64 := by omega_using [hn]
+  refine WP.frame hsp (WP.alloc hn hsp' ⟨t, s₂, he, fun m₁ u₁ f₁ m₂ u₂ f₂ => ?_⟩)
+  -- The saved register, in the outer frame, is the body's: the inner `free`
+  -- loses only the inner frame.
+  have f₁' : Frame [below (s.sp - 16) n] s₂.mem m₁ := f₁
+  have ha : (freed n s₂).sp = s.sp - 16 := by
+    show s₂.sp + BitVec.ofNat 64 n = s.sp - 16
+    rw [hp]; exact BitVec.sub_add_cancel _ _
+  have hslot : m₁.read (freed n s₂).sp 8 = s₂.mem.read (freed n s₂).sp 8 := by
+    rw [ha]
+    refine f₁'.read (r := ⟨s.sp - 16, 16⟩) (by simp [Region.Contains]) (fun R hR => ?_) (by decide)
+    simp only [List.mem_singleton] at hR; subst hR
+    exact frame_not_below s.sp hn'
+  have e : popped r' { freed n s₂ with mem := m₁, unknowns := u₁ } =
+      { popped r' (freed n s₂) with mem := m₁, unknowns := u₁ } := by
+    simp only [popped]
+    rw [show ({ freed n s₂ with mem := m₁, unknowns := u₁ } : State).mem.read
+        ({ freed n s₂ with mem := m₁, unknowns := u₁ } : State).sp 8 = (freed n s₂).mem.read (freed n s₂).sp 8
+      from hslot]
+    rfl
+  rw [e]
+  -- The two frames' bytes are lost.
+  refine hq m₂ u₂ ((Frame.sub f₁' fun R hR => ?_).trans (Frame.sub f₂ fun R hR => ?_))
+  · simp only [List.mem_singleton] at hR; subst hR
+    exact ⟨_, List.mem_singleton_self _, below_body s.sp n⟩
+  · simp only [List.mem_singleton] at hR; subst hR
+    exact ⟨_, List.mem_singleton_self _, below_frame s.sp n hn'⟩
+
 /-- The previous statement of `WP.frameReg`, kept while proofs move to it. -/
 theorem WP.frameRegKept {r : Reg} {main : Prog isa} {s₀ : State} {Q : State → Prop}
     (hsp : 16 ≤ s₀.sp.toNat) (hd : ∀ R ∈ s₀.wr, Region.Disjoint ⟨s₀.sp - 16, 16⟩ R)

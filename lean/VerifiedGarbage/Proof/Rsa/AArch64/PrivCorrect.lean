@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Rsa.AArch64.PrivCrt
 public import VerifiedGarbage.Proof.Rsa.AArch64.PrivImpl
 public import VerifiedGarbage.Proof.Rsa.AArch64.PrivPub
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Rsa.BytesFrame
 import VerifiedGarbage.Proof.Rsa.AArch64.PrivCheckOk
 import VerifiedGarbage.Proof.Rsa.AArch64.PrivRelease
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
@@ -101,12 +102,6 @@ abbrev StageOk (L : Lay) (g : Reg → BitVec 64) (vv : VReg → BitVec 128) (m�
     WP isa stage t fun t' => Ctx L g vv m₀ t' ∧ Slots L t'.mem ∧ Frame (pcWr L) t.mem t'.mem ∧
       PcOut L t.mem t'.mem (t'.gpr .x0)
 
-/-- `writtenOutcome` reads the memory only in the output. -/
-private theorem writtenOutcome_congr {m m' : Mem} {out : Addr} {k : Nat} {r : BitVec 32}
-    {o : Spec.Rsa.Outcome} (hb : Spec.Rsa.bytesAt m' out k = Spec.Rsa.bytesAt m out k)
-    (h : Spec.Rsa.writtenOutcome m out k r o) : Spec.Rsa.writtenOutcome m' out k r o := by
-  cases o <;> simp only [Spec.Rsa.writtenOutcome, hb] at h ⊢ <;> exact h
-
 /-- The frames, the CRT `C` and the check, for a call that may also read `X`
 (`chkA` holding of it reading the rest, `R₀`), whatever `stage` writes `n`'s
 values, given that the CRT's call states have `C.K`. -/
@@ -172,7 +167,7 @@ theorem codeWith_correct (C : CrtCallee) (v : CrtImpl) (stage : Prog isa) {s : S
         Spec.Rsa.bytesAt t₃.mem (s.gpr .x0) (s.gpr .x3).toNat :=
       List.map_congr_left fun i hi => lost_byte (R := (layW s X).OUT) fS hL.ko.symm
         (show i < (layW s X).ol.toNat by rw [hL.olk]; exact List.mem_range.mp hi)
-    refine writtenOutcome_congr hb ?_
+    refine Proof.Rsa.writtenOutcome_of_bytesAt hb ?_
     show Spec.Rsa.writtenOutcome t₃.mem (s.gpr .x0) (s.gpr .x3).toNat
       (((popped .x30 { freed frameBytes t₃ with mem := m₁, unknowns := u₁ }).gpr .x0).setWidth 32) _
     rw [popped_gpr, ite_neg' (by decide)]
