@@ -18,6 +18,7 @@ import VerifiedGarbage.Proof.Blake2.AArch64.Stream.Lit
 import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Impl.Residue.AArch64
 import VerifiedGarbage.Proof.Framework.AArch64.Clears
+import VerifiedGarbage.Proof.Blake2.Scratch
 
 @[expose] public section
 
@@ -26,7 +27,7 @@ section
 /-!
 # Streaming BLAKE2 on AArch64: `finalize`
 
-Inside the frame saving `x30` (`WP.frameRegKept`), `finalize` saves the
+Inside the frame saving `x30` (`WP.frameReg`), `finalize` saves the
 callee-saved registers (`prologue_ok`), computes the number of buffered bytes
 (`bufLen_ok`), zeroes the rest of the buffer (`pad_ok`), compresses it as the
 last block (`compressWith_ok`), copies the hash value out (`output_ok`) and
@@ -388,7 +389,8 @@ theorem correct (hP : Ok P) (hf : CalleeOk P (compress P)) {s₀ : State}
   obtain ⟨hp, hs⟩ := pre_of hpre
   have hl := hP.len
   obtain hpi : Pre w (inner s₀) := ⟨hp.rd, hp.wr, hp.st_out, hp.st_scr, hp.out_scr⟩
-  refine WP.frameRegKept hs.sp16 (fun R hR => ?_) (WP.mono (correctMain hP hf hpi) fun s' ⟨hk, hsp, hpost⟩ => ?_)
+  refine WP.frameReg hs.sp16 (fun R hR => ?_)
+    (WP.mono (correctMain hP hf hpi) fun s' ⟨hk, hsp, hpost⟩ mm u f => ?_)
     (by rw [fdepth_of_noFrames (noFrames_finalizeMain hf)]; decide)
   · rw [hp.wr] at hR
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hR
@@ -401,7 +403,9 @@ theorem correct (hP : Ok P) (hf : CalleeOk P (compress P)) {s₀ : State}
       · subst h30; simp [State.write]
       · simp only [State.write, h30, ite_false]
         exact hk r hr h30
-    · exact hpost h0 d (repr_congr hP (fun i hi => write_frame_bytes (R := stR s₀ w) hs.st
+    · -- The output lies apart from the frame, whose bytes the pop loses.
+      refine Eq.trans (Proof.Blake2.bytesAt_congr fun i hi => lost_byte (R := outR s₀ w) f hs.out.symm hi) ?_
+      exact hpost h0 d (repr_congr hP (fun i hi => write_frame_bytes (R := stR s₀ w) hs.st
         (by show bufOff w + blockBytes w < 2 ^ 64; omega_arith) hi) hm) hlt hc
 
 end
@@ -546,35 +550,39 @@ theorem finalizeS_verified :
 
 The theorems above are of the streaming functions with their working space
 as an argument (`update_scratch`, `finalize_scratch`); `update` and
-`finalize` run them in a frame that allocates it (`Verified.stackScratchKept`).
+`finalize` run them in a frame that allocates it (`Verified.stackScratch`).
 -/
 
 theorem updateB_framed : Verified AArch64.target
     (Impl.StackScratch.AArch64.withStackScratch 576 .x4 (Impl.Blake2.AArch64.Stream.update b))
     (Spec.Blake2.updateBContract AArch64.abi (16 + 576)) :=
-  AArch64.Verified.stackScratchKept (nm := "scratch") (e := .u64) (n := 72) (stack := 16) (bytes := 576)
+  AArch64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 72) (stack := 16) (bytes := 576)
     updateB_verified (by decide) (by decide)
+    (fun vs m m₁ m₂ r hl _ => Proof.Blake2.updateBPostOut_local _ vs m m₁ m₂ r hl)
     (AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 theorem finalizeB_framed : Verified AArch64.target
     (Impl.StackScratch.AArch64.withStackScratch 576 .x3 (Impl.Blake2.AArch64.Stream.finalize b))
     (Spec.Blake2.finalizeBContract AArch64.abi (16 + 576)) :=
-  AArch64.Verified.stackScratchKept (nm := "scratch") (e := .u64) (n := 72) (stack := 16) (bytes := 576)
+  AArch64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 72) (stack := 16) (bytes := 576)
     finalizeB_verified (by decide) (by decide)
+    (fun vs m m₁ m₂ r hl _ => Proof.Blake2.finalizeBPostOut_local _ vs m m₁ m₂ r hl)
     (AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 theorem updateS_framed : Verified AArch64.target
     (Impl.StackScratch.AArch64.withStackScratch 576 .x4 (Impl.Blake2.AArch64.Stream.update s))
     (Spec.Blake2.updateSContract AArch64.abi (16 + 576)) :=
-  AArch64.Verified.stackScratchKept (nm := "scratch") (e := .u64) (n := 72) (stack := 16) (bytes := 576)
+  AArch64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 72) (stack := 16) (bytes := 576)
     updateS_verified (by decide) (by decide)
+    (fun vs m m₁ m₂ r hl _ => Proof.Blake2.updateSPostOut_local _ vs m m₁ m₂ r hl)
     (AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 theorem finalizeS_framed : Verified AArch64.target
     (Impl.StackScratch.AArch64.withStackScratch 576 .x3 (Impl.Blake2.AArch64.Stream.finalize s))
     (Spec.Blake2.finalizeSContract AArch64.abi (16 + 576)) :=
-  AArch64.Verified.stackScratchKept (nm := "scratch") (e := .u64) (n := 72) (stack := 16) (bytes := 576)
+  AArch64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 72) (stack := 16) (bytes := 576)
     finalizeS_verified (by decide) (by decide)
+    (fun vs m m₁ m₂ r hl _ => Proof.Blake2.finalizeSPostOut_local _ vs m m₁ m₂ r hl)
     (AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 /-! ## Returning without secret residue
