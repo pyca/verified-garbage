@@ -24,6 +24,7 @@ import VerifiedGarbage.Proof.Dsa.Generation.RandomSuffix
 public import VerifiedGarbage.Proof.Rsa.Arm.Stage.VP
 import VerifiedGarbage.Proof.Bignum.Arm.CopyBuffer
 import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.Arm.Lost
 
 /-! ### `Dsa.Arm.Gen.Tape`, which this module and modules that import it used -/
 
@@ -645,11 +646,14 @@ theorem SS.primeCall_ok (h : SS G σ c s) {L u bits : Nat} {name : String} {code
   have sp : s.sp = G.sp := gi.sp
   have big := gi.scrBig
   unfold callWith
-  refine WP.frame (rs := callPush) (r := .r4) (by decide) (by rw [sp]; show 4 * 8 ≤ G.sp.toNat; omega_arith) (by decide) ?_
+  refine WP.frameLost (rs := callPush) (r := .r4) (by decide) (by rw [sp]; show 4 * 8 ≤ G.sp.toNat; omega_arith) (by decide) ?_
   refine FrameStack.WP.callF ok.verified.1 (pre_of_pin pin) hc hw
     (by rw [pushed_sp, sp, FrameStack.sub_toNat' (by show 4 * 8 ≤ G.sp.toNat; omega_arith)]; have := ok.stack
         show armStack code ≤ G.sp.toNat - 4 * 8; omega_arith)
     fun s₂ hrd hwr hsp hf hg hpost => ?_
+  intro lm lu hfl
+  obtain fl : Region.Sub ⟨State.addr (s.sp - BitVec.ofNat 32 (4 * callPush.length)), 4 * callPush.length⟩ G.rBelow := by
+    rw [sp]; exact gi.pushSub
   obtain pp := ppost_of_post pin.bits hpost
   obtain ⟨r0, -, used⟩ := pp
   simp only [State.withRegions_gpr, State.withRegions_mem] at r0 used
@@ -663,16 +667,17 @@ theorem SS.primeCall_ok (h : SS G σ c s) {L u bits : Nat} {name : String} {code
   refine k _ (fun r hr => pg r (mem r hr).1 (mem r hr).2.1 (mem r hr).2.2)
     (by rw [popped_sp, hsp, pushed_sp, BitVec.sub_add_cancel])
     (by rw [popped_rd, hrd, pushed_rd]) (by rw [popped_wr, hwr, pushed_wr, List.tail_cons]) ?_
-    (by rw [popped_gpr (by decide)]; exact r0) fun b rest e => ?_
+    (by dsimp only; rw [popped_gpr (by decide)]; exact r0) fun b rest e => ?_
   · have bl : Region.Sub (belowA G.sp 176) G.rBelow := by
       show Region.Sub ⟨State.addr (G.sp - BitVec.ofNat 32 176), 176⟩ ⟨State.addr G.sp - 176#64, 176⟩
       rw [FrameStack.addr_sub' (by omega_arith)]; exact fun _ h => h
     obtain kz0 : 0 < kz G.pLen := by simp only [kz]; omega_arith
     obtain aS : State.addr (G.scr + BitVec.ofNat 32 sA) = G.sa sA := h.addr (n := wa G.pLen)
       (by simp only [sK] at big ⊢; omega_arith) (by simp only [wa]; omega_arith)
-    rw [popped_mem]
-    refine ((FrameStack.pushed_frameA (rs := callPush) (s := s) (by rw [sp]; show 4 * 8 ≤ G.sp.toNat; omega_arith)).sub
-      fun r hr => ?_).trans (hf.sub fun r hr => ?_)
+    dsimp only
+    refine (((FrameStack.pushed_frameA (rs := callPush) (s := s) (by rw [sp]; show 4 * 8 ≤ G.sp.toNat; omega_arith)).sub
+      fun r hr => ?_).trans (hf.sub fun r hr => ?_)).trans
+      (hfl.sub fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact ⟨G.rBelow, by simp, fl⟩)
     · simp only [List.mem_singleton] at hr; subst hr
       exact ⟨G.rBelow, by simp, by rw [sp]; exact gi.pushSub⟩
     · simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -689,7 +694,12 @@ theorem SS.primeCall_ok (h : SS G σ c s) {L u bits : Nat} {name : String} {code
       gi.randLen] at this
     simp only [Spec.Rsa.wordsAt, List.range_one, List.map_cons, List.map_nil, Nat.mul_zero, BitVec.add_zero,
       List.cons.injEq, and_true] at this
-    rw [popped_mem]; exact this
+    dsimp only
+    rw [hfl.readW (r := G.rU) (Region.contains_self _ _) (fun r' hr' => by
+      simp only [List.mem_singleton] at hr'; subst hr'
+      exact (gi.frame_below.sub_left (Offset.sub_base _ (by simp only [fUsedOut, F]; omega_using []))).sub_right fl)
+      (by decide)]
+    exact this
 
 end
 

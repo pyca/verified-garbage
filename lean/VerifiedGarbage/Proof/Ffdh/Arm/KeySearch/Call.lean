@@ -20,6 +20,7 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Regions
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.CallF
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Memory
+import VerifiedGarbage.Proof.Framework.Arm.Lost
 
 /-! ### `Ffdh.Arm.KeySearch.CallConsts`, which this module and modules that import it used -/
 
@@ -305,7 +306,7 @@ theorem attemptRun_ok (backend : VG.Proof.Ffdh.Arm.KeyBackend sampling) : Attemp
       (arguments_sub h.input.bounds.stackFits)).symm
   unfold VG.Impl.Ffdh.Arm.KeySearch.attemptRunFor
   change WP isa (.frame (.alloc sampling.argumentBytes) (.seq (.block (VG.Impl.Ffdh.Arm.KeySearch.argumentsFor sampling.cachedContext)) (.call backend.keyName backend.generateKey)) (.free sampling.argumentBytes)) s _
-  refine WP.alloc (by cases sampling <;> decide) outerFit ?_
+  refine WP.allocLost (by cases sampling <;> decide) outerFit ?_
   rw [WP.seq_iff]
   refine WP.mono_syms (arguments_ok (allocated sampling.argumentBytes s) control stack separate h.headers h.cachedSlots) ?_
   rintro u ⟨⟨args, mem⟩, rest⟩ symsU
@@ -317,8 +318,23 @@ theorem attemptRun_ok (backend : VG.Proof.Ffdh.Arm.KeyBackend sampling) : Attemp
   refine FrameStack.WP.callF backend.generateKey_verified.1 (call_pre h room args spU memU symsU)
     (h.covers_reads room rest.rd rest.wr) (h.covers_writes rest.wr)
     (by rw [spU]; exact Nat.le_trans backend.keyStack facts.stackFits) ?_
-  intro t rd wr sp frame kept post symsT
-  refine ⟨h.restore ?_ ?_ ?_ ?_ (symsT.trans symsU) (h.attempt_frame memU spU frame backend.keyStack), ?_⟩
+  intro t rd wr sp frame kept post symsT m₀ u₀ hfl
+  change Frame [⟨State.addr (allocated sampling.argumentBytes s).sp, sampling.argumentBytes⟩] t.mem m₀ at hfl
+  rw [h.call_sp] at hfl
+  have argSep : ∀ r ∈ [rX p, rY p], r.Disjoint (rArguments p) := by
+    intro r hr
+    have hw : r ∈ original.wr ++ original.rd := by
+      rw [h.input.write_regions]; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl <;> simp
+    exact ((h.input.stack_separate hw).sub_left (arguments_sub h.input.bounds.stackFits)).symm
+  have fitLen : p.len ≤ 2 ^ 64 := by have := h.input.bounds.maxLength; omega_using [this]
+  have xeq : Spec.Rsa.bytesAt m₀ (State.addr p.xp) p.len = Spec.Rsa.bytesAt t.mem (State.addr p.xp) p.len :=
+    bytesAt_frame (r := rX p) hfl (by simpa using argSep _ (by simp)) fitLen
+  have yeq : Spec.Rsa.bytesAt m₀ (State.addr p.yp) p.len = Spec.Rsa.bytesAt t.mem (State.addr p.yp) p.len :=
+    bytesAt_frame (r := rY p) hfl (by simpa using argSep _ (by simp)) fitLen
+  refine ⟨h.restore ?_ ?_ ?_ ?_ (symsT.trans symsU) ((h.attempt_frame memU spU frame backend.keyStack).trans
+    (hfl.sub fun r hr => ⟨rArguments p, by simp only [List.mem_singleton] at hr; subst hr; simp [callChanges],
+      by simp only [List.mem_singleton] at hr; subst hr; exact fun _ hc => hc⟩)), ?_⟩
   · exact rd.trans rest.rd
   · change t.wr.tail = s.wr
     rw [wr, rest.wr]
@@ -331,6 +347,8 @@ theorem attemptRun_ok (backend : VG.Proof.Ffdh.Arm.KeyBackend sampling) : Attemp
     rw [kept r (by revert r hr; decide) (by revert r hr; decide)]
     exact rest.gpr r (by revert r hr; decide)
   · have result := call_post h room args spU memU (selected_attempt_post.mp post)
-    exact ⟨result.status, result.output⟩
+    have out := result.output
+    rw [← xeq, ← yeq] at out
+    exact ⟨result.status, out⟩
 
 end VG.Proof.Ffdh.Arm.KeySearch

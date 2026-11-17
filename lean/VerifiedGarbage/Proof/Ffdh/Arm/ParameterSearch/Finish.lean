@@ -14,6 +14,9 @@ import VerifiedGarbage.Proof.Ffdh.Arm.Output
 import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.TCB.Code
+import VerifiedGarbage.Proof.Framework.Arm.Frame
+import VerifiedGarbage.Proof.Bignum.Arm.PcDimensions
+import VerifiedGarbage.Proof.Framework.Omega
 /-! The native controller writes its result and restores the complete AAPCS
 callee-saved register set before its final frame pop. -/
 
@@ -63,10 +66,22 @@ open VG.Proof.Ffdh.Arm.KeySearch (usedMem_frame usedMem_words)
 
 def finishRestoreSlots : List (Reg × Nat) := [(.r9, 4), (.r10, 8), (.r11, 12), (.lr, 20)]
 
+private theorem wordsAt_lost {m m' : Mem} {rs : List Region} (frame : Frame rs m m') {a : Addr} {n : Nat}
+    (hd : ∀ w ∈ rs, (⟨a, 8 * n⟩ : Region).Disjoint w) (fit : 8 * n < 2 ^ 64) :
+    Spec.Rsa.wordsAt m' a n = Spec.Rsa.wordsAt m a n := by
+  unfold Spec.Rsa.wordsAt
+  apply List.map_congr_left
+  intro j hj
+  have bound : j < n := List.mem_range.mp hj
+  exact frame.readW (r := ⟨a, 8 * n⟩) (Offset.contains_base _ (by omega_using [bound]) (by omega_using [bound, fit]))
+    hd (by decide)
+
 theorem finish_ok {p : SearchParams} {original s : State} {result : Spec.Ffdh.ParameterSearchResult}
     (h : FinishInput p original result s) :
     WP isa (.block VG.Impl.Ffdh.Arm.ParameterSearch.finish) s fun t =>
-      abiPreserved original (popped .r4 24 t) ∧ ResultPost p result (popped .r4 24 t) := by
+      ∀ m u, Frame [⟨State.addr (original.sp - BitVec.ofNat 32 24), 24⟩] t.mem m →
+        abiPreserved original { popped .r4 24 t with mem := m, unknowns := u } ∧
+          ResultPost p result { popped .r4 24 t with mem := m, unknowns := u } := by
   change WP isa (.block ([VG.Impl.Ffdh.Arm.ParameterSearch.ldf .r1 6, VG.Impl.Ffdh.Arm.ParameterSearch.ldf .r2 4,
     VG.Impl.Ffdh.Arm.ParameterSearch.ldf .r0 13, .mov .r3 (.imm 0), .str .r2 .r1 0, .str .r3 .r1 4] ++
     finishRestoreSlots.map (fun e => Instr.ldrSp e.1 e.2))) s _
@@ -96,7 +111,9 @@ theorem finish_ok {p : SearchParams} {original s : State} {result : Spec.Ffdh.Pa
         apply saved e
         simp only [finishRestoreSlots, List.mem_cons, List.not_mem_nil, or_false] at he
         rcases he with rfl | rfl | rfl | rfl <;> simp [savedSlots])) ?_
-  rintro t ⟨restored, memT, restT⟩
+  rintro t ⟨restored, memT, restT⟩ m₀ u₀ hfl
+  have lost : Frame [⟨State.addr s.sp, 24⟩] u.mem m₀ := by rw [← memT, h.sp]; exact hfl
+  have sep := h.buffers.stackSeparate
   have popped4 : (popped .r4 24 t).gpr .r4 = original.gpr .r4 := by
     change t.mem.readW (State.addr t.sp) 32 = _
     rw [memT, restT.sp]
@@ -106,7 +123,7 @@ theorem finish_ok {p : SearchParams} {original s : State} {result : Spec.Ffdh.Pa
     rw [popped_gpr (by cases r <;> simp_all [finishRestoreSlots])]
     exact (restT.gpr r (by cases r <;> simp_all [finishRestoreSlots])).trans
       ((rest.gpr r (by cases r <;> simp_all [finishRestoreSlots])).trans (h.kept r member))
-  refine ⟨⟨?_, ?_⟩, ⟨?_, ?_, ?_, ?_⟩⟩
+  refine ⟨⟨?_, ?_⟩, ⟨?_, ?_, ?_, ?_⟩⟩ <;> dsimp only
   · intro r hr
     simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
@@ -122,11 +139,18 @@ theorem finish_ok {p : SearchParams} {original s : State} {result : Spec.Ffdh.Pa
   · rw [popped_sp, restT.sp, rest.sp, h.sp, BitVec.sub_add_cancel]
   · rw [popped_gpr (by decide : Reg.r0 ≠ .r4)]
     exact (restT.gpr .r0 (by simp [finishRestoreSlots])).trans status
-  · rw [popped_mem, memT]
-    exact h.toSearchDone.output_after_used frame
-  · rw [popped_mem, memT, mem]
+  · have before := h.toSearchDone.output_after_used frame
+    unfold searchOutput at before ⊢
+    have fit : p.c.out.toNat + p.c.length ≤ 2 ^ 32 := p.c.outputFits
+    exact (VG.Proof.Bignum.Arm.rsa_bytes_frame lost (by omega_using [fit])
+      (by intro r hr; obtain rfl := List.mem_singleton.mp hr; exact (sep _ (by simp)).1.symm)).trans before
+  · rw [wordsAt_lost (n := 1) lost
+      (by intro r hr; obtain rfl := List.mem_singleton.mp hr; exact (sep _ (by simp)).1.symm) (by decide), mem]
     exact usedMem_words _ _ _ (by have := h.usedBound; have := p.c.tapeCount; omega_arith)
-  · rw [popped_mem, memT]
+  · rw [wordsAt_lost (n := 4) lost (by
+      intro r hr; obtain rfl := List.mem_singleton.mp hr
+      exact ((sep ⟨State.addr p.control, 128⟩ (by simp)).1.symm.sub_left fun _ hc => by
+        simp only [Region.Contains] at hc ⊢; omega_using [hc])) (by decide)]
     exact h.toSearchDone.policy_after_used frame
 
 end VG.Proof.Ffdh.Arm.ParameterSearch
