@@ -157,4 +157,77 @@ theorem finishPost_local : ∀ vs m₁ m₂ m' r, vs.length = (tdesFinishSig.wor
   intro key msg hr
   exact h key msg (repr_congr_416 (fun i hi => (hs i (by omega_using [hi])).symm) hr)
 
+/-! ## What the postconditions read of the memory on return -/
+
+/-- `tdesStreamInitPost` reads the memory on return only within the buffers. -/
+theorem streamInitPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (tdesStreamInitSig.words pb).length →
+    (∀ b ∈ Sig.bufs tdesStreamInitSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (tdesStreamInitSig.words pb) (tdesStreamInitPost pb) vs m m₁ r →
+      Curry.apply (tdesStreamInitSig.words pb) (tdesStreamInitPost pb) vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen hb h
+  obtain ⟨state, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 2) hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨key, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨kl, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [tdesStreamInitSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+    forall_eq, Elem.size, Nat.mul_one] at hb
+  change Curry.apply [ArgWord.addr, ArgWord.addr, ArgWord.int pb]
+    (tdesStreamInitPost pb) _ m m₁ r at h
+  change Curry.apply [ArgWord.addr, ArgWord.addr, ArgWord.int pb]
+    (tdesStreamInitPost pb) _ m m₂ r
+  dsimp only [Curry.apply, tdesStreamInitPost, ArgWord.ofRaw] at h ⊢
+  exact repr_congr_416 (fun i hi => Proof.CmacTripleDes.agree_of hb.1 i (by omega_using [hi])) h
+
+/-- `tdesAbsorbPost` reads the memory on return only within the buffers. -/
+theorem absorbPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (tdesAbsorbSig.words pb).length →
+    (∀ b ∈ Sig.bufs tdesAbsorbSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (tdesAbsorbSig.words pb) (tdesAbsorbPost pb) vs m m₁ r →
+      Curry.apply (tdesAbsorbSig.words pb) (tdesAbsorbPost pb) vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen hb h
+  obtain ⟨state, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 3) hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨cnt, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨data, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨len, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [tdesAbsorbSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+    forall_eq, Elem.size, Nat.mul_one] at hb
+  change Curry.apply [ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.int pb]
+    (tdesAbsorbPost pb) _ m m₁ r at h
+  change Curry.apply [ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.int pb]
+    (tdesAbsorbPost pb) _ m m₂ r
+  dsimp only [Curry.apply, tdesAbsorbPost, ArgWord.ofRaw] at h ⊢
+  exact fun key msg hr h1 h2 => repr_congr_416 (fun i hi => Proof.CmacTripleDes.agree_of hb.1 i (by omega_using [hi])) (h key msg hr h1 h2)
+
+/-- `tdesFinishPost` reads the memory on return only within the buffers. -/
+theorem finishPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (tdesFinishSig.words pb).length →
+    (∀ b ∈ Sig.bufs tdesFinishSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (tdesFinishSig.words pb) (tdesFinishPost pb) vs m m₁ r →
+      Curry.apply (tdesFinishSig.words pb) (tdesFinishPost pb) vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen hb h
+  obtain ⟨state, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 2) hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨cnt, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨out, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [tdesFinishSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+    forall_eq, Elem.size, Nat.mul_one] at hb
+  change Curry.apply [ArgWord.addr, ArgWord.int 64, ArgWord.addr]
+    (tdesFinishPost pb) _ m m₁ r at h
+  change Curry.apply [ArgWord.addr, ArgWord.int 64, ArgWord.addr]
+    (tdesFinishPost pb) _ m m₂ r
+  dsimp only [Curry.apply, tdesFinishPost, ArgWord.ofRaw] at h ⊢
+  intro key msg hr h1 h2
+  refine Eq.trans ?_ (h key msg hr h1 h2)
+  exact List.map_congr_left fun i hi =>
+    Proof.CmacTripleDes.agree_of hb.2 i (by have := List.mem_range.mp hi; omega_using [this])
+
 end VG.Proof.CmacTripleDes.Stream
