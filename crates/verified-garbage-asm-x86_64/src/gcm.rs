@@ -2399,6 +2399,24 @@ jmp 216f
 je 225f
 .base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFA="
 call {vg_aes_gcm_encrypt_blocks_vaes_vpclmul_avx512}
+vpxor xmm0, xmm0, xmm0
+vmovdqu32 zmmword ptr [r15+512], zmm0
+vmovdqu32 zmmword ptr [r15+576], zmm0
+vmovdqu32 zmmword ptr [r15+640], zmm0
+vmovdqu32 zmmword ptr [r15+704], zmm0
+vmovdqu32 zmmword ptr [r15+768], zmm0
+vmovdqu32 zmmword ptr [r15+832], zmm0
+vmovdqu32 zmmword ptr [r15+896], zmm0
+vmovdqu32 zmmword ptr [r15+960], zmm0
+vmovdqu32 zmmword ptr [r15+1024], zmm0
+vmovdqu32 zmmword ptr [r15+1088], zmm0
+vmovdqu32 zmmword ptr [r15+1152], zmm0
+vmovdqu32 zmmword ptr [r15+1216], zmm0
+vmovdqu32 zmmword ptr [r15+1280], zmm0
+vmovdqu32 zmmword ptr [r15+1344], zmm0
+vmovdqu32 zmmword ptr [r15+1408], zmm0
+vmovdqu32 zmmword ptr [r15+1472], zmm0
+vzeroupper
 .base64 "WEmLh9AAAABIicFIg+EPSYmP0AAAAEgpyEmLj8gAAABIAcFJiY/IAAAASYuPwAAAAEgBwUmJj8AAAAA="
 jmp 226f
 225:
@@ -2564,6 +2582,24 @@ jmp 267f
 je 276f
 .base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFA="
 call {vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512}
+vpxor xmm0, xmm0, xmm0
+vmovdqu32 zmmword ptr [r15+512], zmm0
+vmovdqu32 zmmword ptr [r15+576], zmm0
+vmovdqu32 zmmword ptr [r15+640], zmm0
+vmovdqu32 zmmword ptr [r15+704], zmm0
+vmovdqu32 zmmword ptr [r15+768], zmm0
+vmovdqu32 zmmword ptr [r15+832], zmm0
+vmovdqu32 zmmword ptr [r15+896], zmm0
+vmovdqu32 zmmword ptr [r15+960], zmm0
+vmovdqu32 zmmword ptr [r15+1024], zmm0
+vmovdqu32 zmmword ptr [r15+1088], zmm0
+vmovdqu32 zmmword ptr [r15+1152], zmm0
+vmovdqu32 zmmword ptr [r15+1216], zmm0
+vmovdqu32 zmmword ptr [r15+1280], zmm0
+vmovdqu32 zmmword ptr [r15+1344], zmm0
+vmovdqu32 zmmword ptr [r15+1408], zmm0
+vmovdqu32 zmmword ptr [r15+1472], zmm0
+vzeroupper
 .base64 "WEmLh9AAAABIicFIg+EPSYmP0AAAAEgpyEmLj8gAAABIAcFJiY/IAAAASYuPwAAAAEgBwUmJj8AAAAA="
 jmp 277f
 276:
