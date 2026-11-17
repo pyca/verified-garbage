@@ -10210,7 +10210,7 @@ vg_ed25519_verify_equation:
 	bl {vg_ed25519_r16_point_double}
 	subs r10, r10, #1
 	bne 235b
-	movw r3, #32
+	movw r3, #16
 	add r11, r11, #1
 	cmp r11, r3
 	bne 234b
@@ -10342,7 +10342,7 @@ vg_ed25519_verify_equation:
 	str r3, [r0, #312]
 	movw r3, #0
 	str r3, [r0, #316]
-	movw r11, #32
+	movw r11, #16
 	str r11, [r0, #56]
 236:
 	ldr r11, [r0, #56]

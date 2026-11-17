@@ -163,18 +163,18 @@ theorem verifyLhs_ct (b pk sig challenge : BitVec 32) :
 end VG.Proof.Ed25519.Arm
 end
 
-/-! Verification multiplies A by every public challenge bit. -/
+/-! Verification multiplies A by the first 256 bits of the public challenge. -/
 namespace VG.Proof.Ed25519.Arm
 open VG VG.Arm VG.Impl.Ed25519.Arm VG.Proof.X25519.Arm
 
 def verifyRhsMul : Prog isa :=
-  .seq (.block (pointTableRead 7776 ++ loadHeader 8168)) (pointFromScalar 32)
+  .seq (.block (pointTableRead 7776 ++ loadHeader 8168)) (pointFromScalar 16)
 
 theorem verifyLoadChallenge_ct (b pk sig challenge : BitVec 32) :
     CT (fun s t => (VerifyContext b pk sig challenge s ∧ AllLim s.mem b) ∧
       (VerifyContext b pk sig challenge t ∧ AllLim t.mem b))
       (.block (pointTableRead 7776 ++ loadHeader 8168))
-      (fun s t => FromCTPre b challenge 32 s ∧ FromCTPre b challenge 32 t) := by
+      (fun s t => FromCTPre b challenge 16 s ∧ FromCTPre b challenge 16 t) := by
   apply ctBoth
   · apply ctRegs [.r0] _ (by native_taint_decide)
     intro s t h r hr
@@ -187,13 +187,13 @@ theorem verifyLoadChallenge_ct (b pk sig challenge : BitVec 32) :
     refine WP.mono (loadHeader_ok (uk.ctx hc.ctx) 8168 (by decide)) fun t ⟨tr, tm, tp⟩ => ?_
     have ku := VerifyKeep.of_acc uk
     have kt := ku.trans (VerifyKeep.of_rest tr (by decide) tm)
-    have hi := (hc.keep kt).challengeInput
+    have hi := (hc.keep kt).challengeInput.prefix (n := 32) (by decide)
     exact ⟨kt.ctx hc.ctx, tm ▸ ul, tp.trans (hc.keep ku).challengeHeader, hi.fit, hi.readable, hi.separate⟩
 
 theorem verifyRhsMul_ct (b pk sig challenge : BitVec 32) :
     CT (fun s t => (VerifyContext b pk sig challenge s ∧ AllLim s.mem b) ∧
       (VerifyContext b pk sig challenge t ∧ AllLim t.mem b)) verifyRhsMul (fun _ _ => True) :=
-  RelCT.seq (verifyLoadChallenge_ct b pk sig challenge) (pointFromScalar_ct b challenge 32 (.inr rfl))
+  RelCT.seq (verifyLoadChallenge_ct b pk sig challenge) (pointFromScalar_ct b challenge 16 (.inl rfl))
 
 theorem verifyRhsMul_ok {b pk sig challenge : BitVec 32} {s : State}
     (hc : VerifyContext b pk sig challenge s) (hl : AllLim s.mem b) :
@@ -210,10 +210,12 @@ theorem verifyRhsMul_ok {b pk sig challenge : BitVec 32} {s : State}
   have cp' : c.gpr .r12 = challenge := cp.trans (hc.keep (VerifyKeep.of_acc ak)).challengeHeader
   have capp : point (env c.mem b) 0 1 2 3 = tablePoint s.mem b 7776 :=
     (congrArg (fun m => point (env m b) 0 1 2 3) cm).trans ap
-  refine WP.mono (pointFromScalar_ok cc.ctx (cm ▸ al) cp' 32 (by decide) (by decide)
-    cc.challengeInput.fit cc.challengeInput.readable cc.challengeInput.separate) fun t ⟨tk, tl, td, tp⟩ => ?_
+  have ci := cc.challengeInput.prefix (n := 32) (by decide)
+  refine WP.mono (pointFromScalar_ok cc.ctx (cm ▸ al) cp' 16 (by decide) (by decide)
+    ci.fit ci.readable ci.separate) fun t ⟨tk, tl, td, tp⟩ => ?_
   refine ⟨cpk.trans tk, tl, td, ?_⟩
-  rw [hc.challengeInput.bytes (VerifyKeep.of_acc kc), capp] at tp
+  rw [show 2 * 16 = 32 from rfl, decodeLE_low cc.challengeTop,
+    hc.challengeInput.bytes (VerifyKeep.of_acc kc), capp] at tp
   exact tp
 
 end VG.Proof.Ed25519.Arm
