@@ -125,15 +125,27 @@ theorem ecb_verified (up : Bool) :
 
 /-! ## Key expansion -/
 
+/-- `vg_blowfish_expand_key` with `scratch: *mut [u64; 12]`. -/
+def expandKeyScratch12Sig : Sig where
+  params := [("key", .slice false .u8 "key_len"), ("schedule", .array true .u8 4168),
+    ("scratch", .array true .u64 12)]
+
+/-- `expandKeyContract`, whatever `scratch` is, for a working space of 96 bytes. -/
+def expandKeyScratch12Contract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  expandKeyScratch12Sig.contract A
+    (pre := fun key keyLen schedule _scratch => expandKeyPre A.ptrBits key keyLen schedule)
+    (post := fun key keyLen schedule _scratch => expandKeyPost A.ptrBits key keyLen schedule)
+    (stack := stack)
+
 /-- The key expansion contract as the code sees it. -/
 def keyC : Contract isa where
   pre s :=
     let key : Region := ⟨State.addr (s.gpr .r0), (s.gpr .r1).toNat⟩
     let sch : Region := ⟨State.addr (s.gpr .r2), 4168⟩
-    let buf : Region := ⟨State.addr (s.gpr .r3), 64⟩
+    let buf : Region := ⟨State.addr (s.gpr .r3), 96⟩
     validKey (s.gpr .r1).toNat ∧ s.rd = [key] ∧ s.wr = [sch, buf] ∧ key.Disjoint sch ∧ key.Disjoint buf ∧
       sch.Disjoint buf ∧ (s.gpr .r0).toNat + (s.gpr .r1).toNat ≤ 2 ^ 32 ∧
-      (s.gpr .r2).toNat + 4168 ≤ 2 ^ 32 ∧ (s.gpr .r3).toNat + 64 ≤ 2 ^ 32
+      (s.gpr .r2).toNat + 4168 ≤ 2 ^ 32 ∧ (s.gpr .r3).toNat + 96 ≤ 2 ^ 32
   post s s' :=
     scheduleAt s'.mem (State.addr (s.gpr .r2)) =
       expandKey (bytesAt s.mem (State.addr (s.gpr .r0)) (s.gpr .r1).toNat)
@@ -184,7 +196,7 @@ theorem expandKey_ok (s : State) (hs : keyC.pre (stripConsts initConsts s)) (hc 
 /-- The initial taint of key expansion: the arguments, and the schedule and
 the working space, the writable regions, at `r2` and `r3`. -/
 def τK : VG.Arm.Taint.T :=
-  { regs := .ofList [.r0, .r1, .r2, .r3], flags := false, lens := [4168, 64], bases := [(.r2, 0), (.r3, 1)] }
+  { regs := .ofList [.r0, .r1, .r2, .r3], flags := false, lens := [4168, 96], bases := [(.r2, 0), (.r3, 1)] }
 
 theorem expandKey_agree {s₁ s₂ : State} (h₁ : keyC.pre (stripConsts initConsts s₁))
     (h₂ : keyC.pre (stripConsts initConsts s₂)) (hp : keyC.pub s₁ s₂) : VG.Arm.Taint.Agree τK s₁ s₂ := by
@@ -233,20 +245,20 @@ def keySat : State where
   v := false
   mem _ := 0
   rd := [⟨0x1000, 4⟩]
-  wr := [⟨0x2000, 4168⟩, ⟨0x4000, 64⟩]
+  wr := [⟨0x2000, 4168⟩, ⟨0x4000, 96⟩]
 
-theorem key_implies : keyC.Implies (expandKeyScratch8Contract abi) where
+theorem key_implies : keyC.Implies (expandKeyScratch12Contract abi) where
   pre := by
     intro s h
-    sig_pre [expandKeyScratch8Contract, expandKeyScratch8Sig, Spec.Blowfish.expandKeyPre,
+    sig_pre [expandKeyScratch12Contract, expandKeyScratch12Sig, Spec.Blowfish.expandKeyPre,
       Spec.Blowfish.expandKeyPost, abi, argRegs, Arm.reduceClassify, Arm.Loc.val, keyC, State.addr] at h
     obtain ⟨_, rd, wr, ks, kb, sb, fK, fS, fB, v⟩ := h
     exact ⟨v, rd, wr, ks, kb, sb, fK, fS, fB⟩
-  post := by sig_implies_post [expandKeyScratch8Contract, expandKeyScratch8Sig, Spec.Blowfish.expandKeyPre,
+  post := by sig_implies_post [expandKeyScratch12Contract, expandKeyScratch12Sig, Spec.Blowfish.expandKeyPre,
       Spec.Blowfish.expandKeyPost, abi, argRegs, Arm.reduceClassify, Arm.Loc.val, keyC, State.addr]
-  pub := by sig_implies_pub [expandKeyScratch8Contract, expandKeyScratch8Sig, Spec.Blowfish.expandKeyPre,
+  pub := by sig_implies_pub [expandKeyScratch12Contract, expandKeyScratch12Sig, Spec.Blowfish.expandKeyPre,
       Spec.Blowfish.expandKeyPost, abi, argRegs, Arm.reduceClassify, Arm.Loc.val, keyC, State.addr]
-  sat := by sig_implies_sat [expandKeyScratch8Contract, expandKeyScratch8Sig, Spec.Blowfish.expandKeyPre,
+  sat := by sig_implies_sat [expandKeyScratch12Contract, expandKeyScratch12Sig, Spec.Blowfish.expandKeyPre,
       Spec.Blowfish.expandKeyPost, abi, argRegs, Arm.reduceClassify, Arm.Loc.val, keyC, State.addr]
       [keySat, Spec.Blowfish.validKey] using keySat
 
@@ -264,26 +276,26 @@ theorem keySatMem_held : ∀ i < Impl.Blowfish.initWords.length,
 def keySatC : State :=
   { keySat with mem := keySatMem, rd := [⟨0x1000, 4⟩, ⟨0x100000, 4168⟩], syms := fun _ => 0x100000 }
 
-theorem key_sat : (expandKeyScratch8Contract (abi.withConsts initConsts)).pre keySatC := by
+theorem key_sat : (expandKeyScratch12Contract (abi.withConsts initConsts)).pre keySatC := by
   have hl : Impl.Blowfish.initWords.length = 521 := initWords_length
   have held := keySatMem_held
   rw [initConsts_eq]
   generalize Impl.Blowfish.initWords = W at hl held ⊢
   generalize e : keySatC = s
-  sig_pre [expandKeyScratch8Contract, expandKeyScratch8Sig, Spec.Blowfish.expandKeyPre, abi, argRegs,
+  sig_pre [expandKeyScratch12Contract, expandKeyScratch12Sig, Spec.Blowfish.expandKeyPre, abi, argRegs,
     Arm.reduceClassify, Arm.Loc.val, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow,
     Spec.Blowfish.validKey]
   subst e
   rw [hl]
   refine ⟨by decide, by decide, fun i hi => held i (by rw [hl]; exact hi), by decide, ?_, ?_⟩
   · intro r hr
-    change r ∈ [⟨0x2000, 4168⟩, ⟨0x4000, 64⟩] at hr
+    change r ∈ [⟨0x2000, 4168⟩, ⟨0x4000, 96⟩] at hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl <;> exact Region.disjoint_of_sep (by decide)
   · repeat' apply And.intro
     all_goals first | rfl | decide | exact Region.disjoint_of_sep (by decide)
 
-theorem keyCC_implies : keyCC.Implies (expandKeyScratch8Contract (abi.withConsts initConsts)) where
+theorem keyCC_implies : keyCC.Implies (expandKeyScratch12Contract (abi.withConsts initConsts)) where
   pre _ hs := ⟨key_implies.pre _ (pre_consts.mp hs).1, (pre_consts.mp hs).2⟩
   post s s' hs hp := post_consts.mpr (key_implies.post (stripConsts initConsts s) s' (pre_consts.mp hs).1 hp)
   pub s₁ s₂ h₁ h₂ hp := ⟨key_implies.pub (stripConsts initConsts s₁) (stripConsts initConsts s₂)
@@ -292,7 +304,7 @@ theorem keyCC_implies : keyCC.Implies (expandKeyScratch8Contract (abi.withConsts
   sat := ⟨keySatC, key_sat⟩
 
 theorem expandKey_verified :
-    Verified target Impl.Blowfish.Arm.expandKey (expandKeyScratch8Contract (abi.withConsts initConsts)) :=
+    Verified target Impl.Blowfish.Arm.expandKey (expandKeyScratch12Contract (abi.withConsts initConsts)) :=
   Verified.of_correct (k := keyCC) (fun s (hs : keyCC.pre s) => expandKey_ok s hs.1 hs.2) expandKey_ct keyCC_implies
 
 end VG.Proof.Blowfish.Arm

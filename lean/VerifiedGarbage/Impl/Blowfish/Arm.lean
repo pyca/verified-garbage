@@ -2,32 +2,37 @@ module
 
 public import VerifiedGarbage.TCB.Arm.Isa
 public import VerifiedGarbage.Impl.Blowfish.Table
+public import VerifiedGarbage.Impl.Scan.Arm
 
 /-!
 # Blowfish on ARMv7
 
-One block at a time in core registers. An S-box lookup reads every entry of
-the S-box's four byte planes, a row of four entries of each plane (a word)
-at a time: a mask is all ones in the byte lane of the index's entry if the
-row holds it (`q - 4k < 4` for the index `q`), else zero, by a comparison
-and `adc` (as RC4's lookups, `Impl/Rc4/Arm.lean`), and the masked words are
-ORed into one accumulator, plane `b`'s rotated left by `8b`. Every address
-and branch is a public counter or pointer; the index is only ever an operand
-of the masks' arithmetic. The accumulator then holds byte `b` of the entry in
-lane `L + b` (mod 4), for the index's lane `L`, and rotating it right by
-`8L`, by two rotations selected by masks of `L`'s bits, gives the entry.
+One block at a time in core registers. An S-box lookup never uses the index
+as an address: it reads the S-box's four byte planes whole, a word of four
+entries of a plane at a time, as 32 rows of eight words, a row the words of
+eight entries of each plane (`Impl/Scan/Arm.lean`: a one-hot word of the
+row's number, the index's high five bits, a mask for each row from its bit,
+and each word kept under it in the register of its column, `r4`–`r11`).
+The index's next bit then chooses, for each plane, between the row's two
+words of it, and its low two bits the word's byte, which a multiplication by
+a power of two brings to the top (`extract`): the entry is the four planes'
+bytes. Every address and branch is a public counter or pointer.
+
+The rows use every register, so F keeps the schedule, the halves and the
+pointer into the P-array in the working space (`fOff`), with its own state:
+xL shifted so that the next index is its top byte, 1024 times the number of
+lookups made, the count of a lookup's groups of rows, and F so far. F is a
+loop of four lookups, each S-box's entry added to F so far, or XORed for
+the third (a branch on the number of lookups).
 
 Registers: the schedule at `r0` (`sch`), the halves in `r1` (xL) and `r2`
-(xR), F in `lr`; during a lookup, the index less four times the rows read
-so far in `r4` (`q`), the accumulator in `r5`, the row's mask in `r6`, the
-index's lane mask in `r7`, all ones in `r8`, a temporary in `r9`, the row
-pointer in `r10` and the rows left in `r11`. `r12` points into the P-array.
-`r3` holds the working space, where the functions keep our caller's
-`r4`–`r11` and `lr` and their own pointer and counter.
+(xR), F in `lr`; `r12` points into the P-array, and `r3` holds the working
+space, where the functions keep our caller's `r4`–`r11` and `lr` and their
+own pointer and counter (during F, `r12` holds it).
 
 `cipher` is the block function: the halves in `r1` and `r2`, the schedule
-at `r0`, and the result in `r1` and `r2`, changing only `r4`–`r12`, `lr`
-and the flags besides.
+at `r0`, and the result in `r1` and `r2`, changing only `r4`–`r12`, `lr`,
+the flags and F's words of the working space besides.
 
 The pointer and counter go through the working space, at offsets of its
 base `r3`, so that they stay public for the taint analysis that proves
@@ -40,87 +45,96 @@ stores and written after.
 
 namespace VG.Impl.Blowfish.Arm
 
-open VG.Arm
+open VG.Arm VG.Impl.Scan.Arm
 
 def sch : Reg := .r0
 def xL : Reg := .r1
 def xR : Reg := .r2
 def fReg : Reg := .lr
-def qReg : Reg := .r4
-def acc : Reg := .r5
-def mReg : Reg := .r6
-def lane : Reg := .r7
-def ones : Reg := .r8
 def tmp : Reg := .r9
-def rowPtr : Reg := .r10
-def rows : Reg := .r11
 def pPtr : Reg := .r12
 
 /-- An immediate. -/
 def imm (n : Nat) : Op2 := .imm (BitVec.ofNat 32 n)
 
-/-- The offset of byte plane `b` of S-box `j` in the schedule. -/
-def planeOff (j b : Nat) : Nat := 1024 * j + 256 * b
-
 /-- The P-array's offset in the schedule. -/
 def pOff : Nat := 4096
 
-/-- `ones` := all ones. -/
-def setOnes : List Instr := [.movw ones 0xFFFF, .movt ones 0xFFFF]
+/-! ## F
 
-/-! ## Lookups -/
+F's eight words of the working space, from `fOff`: the schedule, xL, xR and
+the pointer into the P-array, which it restores; xL shifted left by eight
+bits for each lookup made (`fOff + 16`); 1024 times the number of lookups
+made, the offset of the next S-box (`fOff + 20`); the groups of rows left
+of a lookup (`fOff + 24`); and F so far (`fOff + 28`). -/
 
-/-- `q` := the byte of xL that indexes S-box `j`: byte `3 - j`. -/
-def index (j : Nat) : List Instr :=
-  if j = 0 then [.mov qReg (.shifted xL .lsr 24)]
-  else if j = 3 then [.dp .and qReg xL (imm 255)]
-  else [.mov qReg (.shifted xL .lsl (8 * j)), .mov qReg (.shifted qReg .lsr 24)]
+/-- Where F's words are in the working space. -/
+def fOff : Nat := 48
 
-/-- `x` rotated right by `a` if bit `c` (1 or 2) of `q` is set: `m` is all
-ones if it is clear, and `x := ((x XOR r) AND m) XOR r` for the rotation
-`r`. -/
-def condRot (x : Reg) (c a : Nat) : List Instr :=
-  [.dp .and mReg qReg (imm c), .cmp mReg (imm 1), .adc mReg ones (imm 0),
-   .mov tmp (.shifted x .ror a), .dp .eor x x (.reg tmp), .dp .and x x (.reg mReg),
-   .dp .eor x x (.reg tmp)]
+/-- The offset from a group's pointer of column `c` of its row `r`: the word
+of plane `c / 2` that holds entries `4 (2 r + c % 2)` and the next three. -/
+def wordOff (r c : Nat) : Nat := 256 * (c / 2) + 8 * r + 4 * (c % 2)
 
-/-- The lane mask `0xFF <<< 8L` for the index's lane `L`, the accumulator,
-the row pointer and the rows left. -/
-def lookupStart : List Instr :=
-  [.mov lane (imm 255)] ++ condRot lane 1 24 ++ condRot lane 2 16 ++
-    [.mov acc (imm 0), .mov rowPtr (.reg sch), .mov rows (imm 64)]
+/-- The schedule, the halves and the pointer into the P-array to their
+words, xL to the indices' too; the working space in `r12`; no lookup made,
+and F zero. -/
+def fStart : List Instr :=
+  [.str .r0 .r3 fOff, .str .r1 .r3 (fOff + 4), .str .r2 .r3 (fOff + 8), .str .r12 .r3 (fOff + 12),
+   .str .r1 .r3 (fOff + 16), .mov .r12 (.reg .r3), .mov .r0 (imm 0), .str .r0 .r12 (fOff + 20),
+   .str .r0 .r12 (fOff + 28)]
 
-/-- Plane `b`'s word of the row, masked, into the accumulator, rotated left
-by `8b`. -/
-def plane (j b : Nat) : List Instr :=
-  [.ldr tmp rowPtr (planeOff j b), .dp .and tmp tmp (.reg mReg),
-   .dp .orr acc acc (if b = 0 then .reg tmp else .shifted tmp .ror (32 - 8 * b))]
+/-- The next index into `r0`, its row's one-hot word and the columns
+cleared (`start`), and `lr` at the next S-box. -/
+def lookStart : List Instr :=
+  ([.ldr .r0 .r12 (fOff + 16), .mov .r0 (.shifted .r0 .lsr 24)] : List Instr) ++ start ++
+    ([.ldr .lr .r12 fOff, .ldr .r0 .r12 (fOff + 20), .dp .add .lr .lr (.reg .r0)] : List Instr)
 
-/-- One row of S-box `j`: the mask (all ones in the index's lane if
-`q < 4`), the four planes, and the next row. -/
-def row (j : Nat) : List Instr :=
-  [.cmp qReg (imm 4), .adc mReg ones (imm 0), .dp .and mReg mReg (.reg lane),
-   .dp .sub qReg qReg (imm 4)] ++
-    plane j 0 ++ plane j 1 ++ plane j 2 ++ plane j 3 ++
-    [.dp .add rowPtr rowPtr (imm 4), .subs rows rows (imm 1)]
+/-- The entry into `r0`, from the eight words of the index's row in the
+columns: the index into `r2`; for each plane, the word that the index's bit
+2 chooses of its two, into `r4`, `r6`, `r8` and `r10` (the columns `r6`,
+`r7`, `r10` and `r11` hold their words' negations, and take the selectors'
+negations); `2 ^ (24 - 8 L)` into `r1`, for the index's low two bits `L`;
+and the top byte of each plane's word times that. -/
+def extract : List Instr :=
+  [.ldr .r2 .r12 (fOff + 16), .mov .r2 (.shifted .r2 .lsr 24),
+   .dp .bic .r0 .r3 (.shifted .r2 .lsr 2), .dp .and .r1 .r3 (.shifted .r2 .lsr 2),
+   .mul .r4 .r4 .r0, .mla .r4 .r5 .r1 .r4, .mul .r8 .r8 .r0, .mla .r8 .r9 .r1 .r8,
+   .dp .sub .r5 .r1 (imm 1), .dp .sub .r9 .r0 (imm 1),
+   .mul .r6 .r6 .r5, .mla .r6 .r7 .r9 .r6, .mul .r10 .r10 .r5, .mla .r10 .r11 .r9 .r10,
+   .dp .bic .r0 .r3 (.reg .r2), .dp .add .r1 .r3 (.shifted .r0 .lsl 8), .dp .sub .r1 .r1 (.reg .r0),
+   .dp .bic .r0 .r3 (.shifted .r2 .lsr 1), .dp .add .lr .r3 (.shifted .r0 .lsl 16), .dp .sub .lr .lr (.reg .r0),
+   .mul .r1 .r1 .lr,
+   .mul .r0 .r4 .r1, .mov .r0 (.shifted .r0 .lsr 24),
+   .mul .r5 .r6 .r1, .mov .r5 (.shifted .r5 .lsr 24), .dp .orr .r0 .r0 (.shifted .r5 .lsl 8),
+   .mul .r5 .r8 .r1, .mov .r5 (.shifted .r5 .lsr 24), .dp .orr .r0 .r0 (.shifted .r5 .lsl 16),
+   .mul .r5 .r10 .r1, .mov .r5 (.shifted .r5 .lsr 24), .dp .orr .r0 .r0 (.shifted .r5 .lsl 24)]
 
-/-- The accumulator rotated right by `8L`. -/
-def lookupEnd : List Instr := condRot acc 1 8 ++ condRot acc 2 16
+/-- The indices left; F so far into `r1`, and whether this is the third lookup. -/
+def combineHead : List Instr :=
+  [.ldr .r2 .r12 (fOff + 16), .mov .r2 (.shifted .r2 .lsl 8), .str .r2 .r12 (fOff + 16),
+   .ldr .r1 .r12 (fOff + 28), .ldr .r2 .r12 (fOff + 20), .cmp .r2 (imm 2048)]
 
-/-- S-box `j` of xL's byte `3 - j`, into the accumulator. -/
-def lookup (j : Nat) : Prog isa :=
-  .seq (.block (index j ++ lookupStart)) (.seq (.loop (.block (row j)) .ne) (.block lookupEnd))
+/-- F so far to its word, and the next S-box's offset (Z set after the fourth). -/
+def combineTail : List Instr :=
+  [.str .r1 .r12 (fOff + 28), .dp .add .r2 .r2 (imm 1024), .str .r2 .r12 (fOff + 20), .cmp .r2 (imm 4096)]
 
-/-- F's accumulation of S-box `j`: S₁, then + S₂, XOR S₃, + S₄. -/
-def combine (j : Nat) : Instr :=
-  if j = 0 then .mov fReg (.reg acc)
-  else if j = 2 then .dp .eor fReg fReg (.reg acc)
-  else .dp .add fReg fReg (.reg acc)
+/-- A lookup: the next S-box's entry at xL's next byte, into F so far: S₁,
+then + S₂, XOR S₃, + S₄. -/
+def look : Prog isa :=
+  .seq (.block lookStart) (.seq (rows wordOff 64 (fOff + 24))
+    (.seq (.block (extract ++ combineHead))
+      (.seq (.ite .eq (.block [.dp .eor .r1 .r1 (.reg .r0)]) (.block [.dp .add .r1 .r1 (.reg .r0)]))
+        (.block combineTail))))
 
-/-- F of xL into `fReg`. -/
-def f : Prog isa :=
-  .seq (lookup 0) (.seq (.block [combine 0]) (.seq (lookup 1) (.seq (.block [combine 1])
-    (.seq (lookup 2) (.seq (.block [combine 2]) (.seq (lookup 3) (.block [combine 3])))))))
+/-- F into `lr`, and the schedule, the halves, the working space and the
+pointer into the P-array back. -/
+def fEnd : List Instr :=
+  [.ldr .lr .r12 (fOff + 28), .ldr .r0 .r12 fOff, .ldr .r1 .r12 (fOff + 4), .ldr .r2 .r12 (fOff + 8),
+   .mov .r3 (.reg .r12), .ldr .r12 .r3 (fOff + 12)]
+
+/-- F of xL into `fReg`. Clobbers `r4`–`r11` and F's words of the working
+space at `r3`. -/
+def f : Prog isa := .seq (.block fStart) (.seq (.loop look .ne) (.block fEnd))
 
 /-! ## Rounds
 
@@ -140,11 +154,11 @@ def round (up : Bool) : Prog isa :=
         .dp (if up then .add else .sub) pPtr pPtr (imm 4), .dp .sub tmp pPtr (.reg sch),
         .cmp tmp (imm (if up then pOff + 64 else pOff))]))
 
-/-- The block function: all ones, the sixteen rounds, then the last swap
+/-- The block function: the sixteen rounds, then the last swap
 undone, xL (in `xR`) ^= P₁₈ and xR (in `xL`) ^= P₁₇ when encrypting, P₁ and
 P₂ when decrypting, into `xL` and `xR`. -/
 def cipher (up : Bool) : Prog isa :=
-  .seq (.block (setOnes ++ [.dp .add pPtr sch (imm (if up then pOff else pOff + 64))]))
+  .seq (.block [.dp .add pPtr sch (imm (if up then pOff else pOff + 64))])
     (.seq (.loop (round up) .ne)
       (.block [.ldr tmp pPtr (pAt up), .dp .eor tmp xL (.reg tmp),
         .ldr xL pPtr (4 - pAt up), .dp .eor xL xL (.reg xR), .mov xR (.reg tmp)]))

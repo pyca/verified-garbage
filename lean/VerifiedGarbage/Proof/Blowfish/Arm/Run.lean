@@ -114,6 +114,8 @@ theorem encodable_lt {n : Nat} (h : n < 256) : encodable (BitVec.ofNat 32 n) = t
 
 /-- The code's immediates that need a rotation. -/
 theorem encodable_768 : encodable (BitVec.ofNat 32 768) = true := by decide
+theorem encodable_1024 : encodable (BitVec.ofNat 32 1024) = true := by decide
+theorem encodable_2048 : encodable (BitVec.ofNat 32 2048) = true := by decide
 theorem encodable_4096 : encodable (BitVec.ofNat 32 4096) = true := by decide
 theorem encodable_4160 : encodable (BitVec.ofNat 32 4160) = true := by decide
 
@@ -122,8 +124,8 @@ tactic_template "brun" "[" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(t
                        apply WP.of_runBlock
                        set_option linter.unusedSimpArgs false in
                        simp (disch := decide) only [runBlock_cons, runStep_some, runBlock_nil, exec,
-                         encodable_of_lt, encodable_768, encodable_4096, encodable_4160,
-                         Op2.eval, imm, sch, xL, xR, fReg, qReg, acc, mReg, lane, ones, tmp, rowPtr, rows, pPtr,
+                         encodable_of_lt, encodable_768, encodable_1024, encodable_2048, encodable_4096, encodable_4160,
+                         Op2.eval, imm, sch, xL, xR, fReg, tmp, pPtr,
                          gpr_setReg, mem_setReg, rd_setReg, wr_setReg, sp_setReg, z_setReg, c_setReg,
                          gpr_subFlags, mem_subFlags, rd_subFlags, wr_subFlags, sp_subFlags, z_subFlags, c_subFlags,
                          State.load32, store32_eq, State.load8, store8_eq, sp_store, gpr_store, rd_store, wr_store,

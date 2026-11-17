@@ -12,13 +12,13 @@ namespace VG.Artifacts.Blowfish.Arm
 
 def artifacts : List Artifact := [
   Spec.Blowfish.expandKeyApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withRegScratchWiped 64 .r3 12 Impl.Blowfish.Arm.expandKey
+    code := Impl.StackScratch.Arm.withRegScratchWiped 96 .r3 20 Impl.Blowfish.Arm.expandKey
     verified := Proof.Blowfish.Arm.expandKey_framed },
   Spec.Blowfish.ecbEncryptApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withRegScratchWiped 256 .r3 12 Impl.Blowfish.Arm.encrypt
+    code := Impl.StackScratch.Arm.withRegScratchWiped 256 .r3 20 Impl.Blowfish.Arm.encrypt
     verified := Proof.Blowfish.Arm.ecb_framed true },
   Spec.Blowfish.ecbDecryptApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withRegScratchWiped 256 .r3 12 Impl.Blowfish.Arm.decrypt
+    code := Impl.StackScratch.Arm.withRegScratchWiped 256 .r3 20 Impl.Blowfish.Arm.decrypt
     verified := Proof.Blowfish.Arm.ecb_framed false }]
 
 end VG.Artifacts.Blowfish.Arm
