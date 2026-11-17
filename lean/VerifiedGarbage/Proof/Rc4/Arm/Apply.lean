@@ -129,9 +129,6 @@ theorem encodable_of_lt {v : BitVec 32} (h : v.toNat < 256) : encodable v = true
     have h0 : v.rotateLeft (2 * 0) = v := by ext i; simp
     simpa only [h0, decide_eq_true_eq] using h⟩
 
-theorem encodable_lt {n : Nat} (h : n < 256) : encodable (BitVec.ofNat 32 n) = true :=
-  encodable_of_lt (by rw [BitVec.toNat_ofNat]; omega_using [h])
-
 /-- 256, the one immediate of the code that needs a rotation. -/
 theorem encodable_256 : encodable (256#32) = true := by decide
 
@@ -177,11 +174,6 @@ theorem adc_mask' (c : Bool) (y : BitVec 32) :
       if c = true then 0 else y := by
   rw [BitVec.and_comm, adc_mask]
 
-/-- The address of word `k` of the table at `P`, which does not wrap around. -/
-theorem row_addr {P : BitVec 32} (hP : P.toNat + 256 ≤ 2 ^ 32) {k : Nat} (hk : k < 64) :
-    State.addr (P + BitVec.ofNat 32 (4 * k)) = State.addr P + BitVec.ofNat 64 (4 * k) :=
-  addr_add (by omega_using [hP, hk])
-
 /-- The address of byte `i` of the table at `P`. -/
 theorem idx_addr {P : BitVec 32} (hP : P.toNat + 256 ≤ 2 ^ 32) (i : Byte) :
     State.addr (P + i.setWidth 32 + BitVec.ofNat 32 0) = State.addr P + BitVec.ofNat 64 i.toNat := by
@@ -203,7 +195,7 @@ end
 
 end
 
-/-! # RC4 on ARMv7: the table lookup, a word at a time -/
+/-! # RC4 on ARMv7: the table lookup, by rows of two words -/
 
 @[expose] public section
 
@@ -211,113 +203,217 @@ namespace VG.Proof.Rc4.Arm
 
 open VG VG.Arm VG.Arm.RegUpd VG.Impl.Rc4.Arm VG.Proof.Rc4
 
-/-- The mask `cmp x, #n` and `adc d, ones, #0` leave, applied to `y`: all
-ones if `x < n`. -/
-theorem cmp_mask (x : BitVec 32) {n : Nat} (hn : n < 2 ^ 32) {P : Prop} [Decidable P]
-    (h : x.toNat < n ↔ P) (y : BitVec 32) :
-    (BitVec.allOnes 32 + BitVec.ofNat 32 0 +
-      BitVec.ofNat 32 (decide ((BitVec.ofNat 32 n).toNat ≤ x.toNat)).toNat) &&& y =
-      if P then y else 0 := by
-  rw [adc_mask, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hn]
-  by_cases hp : P
-  · rw [ite_eq_right (by simp only [decide_eq_true_eq]; have := h.mpr hp; omega_using [this]), ite_eq_left hp]
-  · rw [ite_eq_left (by simp only [decide_eq_true_eq]; have := mt h.mp hp; omega_using [this]),
-      ite_eq_right hp]
+/-! ## The values the code makes -/
 
-/-- The mask `rowMask` leaves. -/
-theorem row_mask (idx : Byte) {k : Nat} (hk : k < 64) (y : BitVec 32) :
-    (BitVec.allOnes 32 + BitVec.ofNat 32 0 + BitVec.ofNat 32 (decide ((BitVec.ofNat 32 4).toNat ≤
-      (idx.setWidth 32 ^^^ BitVec.ofNat 32 (4 * k)).toNat)).toNat) &&& y =
-      if idx.toNat / 4 = k then y else 0 :=
-  cmp_mask _ (by decide) (row_hit32 idx hk) y
+/-- Bit `k` of `x`, as `bit` leaves it. -/
+def bitv (x : BitVec 32) (k : Nat) : BitVec 32 := (x <<< (31 - k)) >>> 31
 
-/-- The mask `laneMask` leaves. -/
-theorem lane_mask (idx : Byte) {j : Nat} (hj : j < 4) (y : BitVec 32) :
-    (BitVec.allOnes 32 + BitVec.ofNat 32 0 + BitVec.ofNat 32 (decide ((BitVec.ofNat 32 1).toNat ≤
-      ((idx.setWidth 32 &&& BitVec.ofNat 32 3) ^^^ BitVec.ofNat 32 j).toNat)).toNat) &&& y = if idx.toNat % 4 = j then y else 0 :=
-  cmp_mask _ (by decide) (lane_hit32 idx hj) y
+/-- A step of the one-hot word: `o` shifted left by `n` if `b` is 1. -/
+def ohs (o b : BitVec 32) (n : Nat) : BitVec 32 := (o <<< n - o) * b + o
 
-/-! ## Visiting the words -/
+/-- What `oneHot` leaves for the index `x`. -/
+def ohv (x : BitVec 32) : BitVec 32 :=
+  ohs (ohs (ohs (ohs (bitv x 3 + BitVec.ofNat 32 1) (bitv x (3 + 1)) (2 ^ 1)) (bitv x (3 + 2)) (2 ^ 2))
+    (bitv x (3 + 3)) (2 ^ 3)) (bitv x (3 + 4)) (2 ^ 4)
 
-theorem gather_step (s : State) (idx : Byte) {k : Nat} (hk : k < 64)
-    (h6 : s.gpr .r6 = idx.setWidth 32) (h10 : s.gpr .r10 = BitVec.allOnes 32)
-    (hfit : (s.gpr .r12).toNat + 256 ≤ 2 ^ 32)
-    (hr : InRegions (s.rd ++ s.wr) (State.addr (s.gpr .r12) + BitVec.ofNat 64 (4 * k)) 4) :
-    WP isa (.block (gatherStep k)) s fun t =>
-      t.gpr .r8 = s.gpr .r8 |||
-        (if idx.toNat / 4 = k then s.mem.readW (State.addr (s.gpr .r12) + BitVec.ofNat 64 (4 * k)) 32
-          else 0) ∧ t.mem = s.mem := by
-  have he : encodable (BitVec.ofNat 32 (4 * k)) = true := encodable_lt (by omega_using [hk])
-  have ho : 4 * k < 4096 := by omega_using [hk]
-  rw [← row_addr hfit hk] at hr
-  unfold gatherStep rowMask
-  arun [h6, h10, he, ho, hr]
-  rw [row_addr hfit hk, row_mask idx hk]
+/-- What `deltaWord` multiplies a byte by to move it to the index's byte of a
+word: `2 ^ (8 (x % 4))`. -/
+def mlv (x : BitVec 32) : BitVec 32 :=
+  (bitv x 0 <<< 8 - bitv x 0 + BitVec.ofNat 32 1) * (bitv x 1 <<< 16 - bitv x 1 + BitVec.ofNat 32 1)
 
-def GInv (s₀ : State) (idx : Byte) (k : Nat) (t : State) : Prop :=
-  t.gpr .r8 = gather s₀.mem (State.addr (s₀.gpr .r12)) idx.toNat k ∧ t.gpr .r6 = s₀.gpr .r6 ∧
-    t.gpr .r10 = s₀.gpr .r10 ∧ t.gpr .r12 = s₀.gpr .r12 ∧ t.mem = s₀.mem ∧ t.rd = s₀.rd ∧
-    t.wr = s₀.wr
+/-- `W` shifted right by `n` if `b` is 1. -/
+def cshr (W : BitVec 32) (n : Nat) (b : BitVec 32) : BitVec 32 := (W >>> n - W) * b + W
 
-theorem gather_steps (s₀ : State) (idx : Byte) (h6 : s₀.gpr .r6 = idx.setWidth 32)
-    (h10 : s₀.gpr .r10 = BitVec.allOnes 32) (hfit : (s₀.gpr .r12).toNat + 256 ≤ 2 ^ 32)
-    (hr : InRegions (s₀.rd ++ s₀.wr) (State.addr (s₀.gpr .r12)) 256) :
-    ∀ n ≤ 64, ∀ s, GInv s₀ idx 0 s →
-      WP isa (.block ((List.range n).flatMap gatherStep)) s (GInv s₀ idx n) := by
+/-- What `pickByte` leaves of the word `W` for the index `x`. -/
+def pickv (W x : BitVec 32) : BitVec 32 :=
+  cshr (cshr W 8 (bitv x 0)) 16 (bitv x 1) &&& BitVec.ofNat 32 255
+
+/-- What `deltaWord` leaves: the word `W` with a byte replaced by `a`, minus `W`. -/
+def deltav (W a x : BitVec 32) : BitVec 32 := ((W &&& ~~~(mlv x <<< 8 - mlv x)) ||| (a * mlv x)) - W
+
+/-- The selector of row `r` for the index's row `h`. -/
+def selv (h r : Nat) : BitVec 32 := if h = r then BitVec.ofNat 32 1 else BitVec.ofNat 32 0
+
+theorem selv_self (h : Nat) : selv h h = BitVec.ofNat 32 1 := by
+  unfold selv; rw [ite_eq_left rfl]
+
+theorem selv_ne {h r : Nat} (e : h ≠ r) : selv h r = BitVec.ofNat 32 0 := by
+  unfold selv; rw [ite_eq_right e]
+
+/-- The values for an index `32 a + b`: its low three bits, the multiplier
+of its byte and its row's one-hot word. -/
+theorem idx_split : ∀ a < 8, ∀ b < 32,
+    bitv (BitVec.ofNat 32 (32 * a + b)) 0 = BitVec.ofNat 32 ((32 * a + b) % 2) ∧
+    bitv (BitVec.ofNat 32 (32 * a + b)) 1 = BitVec.ofNat 32 ((32 * a + b) / 2 % 2) ∧
+    bitv (BitVec.ofNat 32 (32 * a + b)) 2 = BitVec.ofNat 32 ((32 * a + b) / 4 % 2) ∧
+    mlv (BitVec.ofNat 32 (32 * a + b)) = BitVec.ofNat 32 (2 ^ (8 * ((32 * a + b) % 4))) ∧
+    ohv (BitVec.ofNat 32 (32 * a + b)) = BitVec.ofNat 32 (2 ^ ((32 * a + b) / 8)) := by decide
+
+theorem idx_vals {n : Nat} (h : n < 256) :
+    bitv (BitVec.ofNat 32 n) 0 = BitVec.ofNat 32 (n % 2) ∧
+    bitv (BitVec.ofNat 32 n) 1 = BitVec.ofNat 32 (n / 2 % 2) ∧
+    bitv (BitVec.ofNat 32 n) 2 = BitVec.ofNat 32 (n / 4 % 2) ∧
+    mlv (BitVec.ofNat 32 n) = BitVec.ofNat 32 (2 ^ (8 * (n % 4))) ∧
+    ohv (BitVec.ofNat 32 n) = BitVec.ofNat 32 (2 ^ (n / 8)) := by
+  have := idx_split (n / 32) (by omega_using [h]) (n % 32) (Nat.mod_lt _ (by decide))
+  rwa [Nat.div_add_mod] at this
+
+/-- The selector `rowSel` makes of the one-hot word of row `h`. -/
+theorem sel_low : ∀ h < 32, ∀ r < 31, (BitVec.ofNat 32 (2 ^ h) <<< (31 - r)) >>> 31 = selv h r := by decide
+
+theorem sel_top : ∀ h < 32, BitVec.ofNat 32 (2 ^ h) >>> 31 = selv h 31 := by decide
+
+/-- 255 at byte `L` of a word, from the byte's multiplier. -/
+theorem lane_val : ∀ L < 4, (BitVec.ofNat 32 (2 ^ (8 * L)) <<< 8) - BitVec.ofNat 32 (2 ^ (8 * L)) =
+    BitVec.ofNat 32 255 <<< (8 * L) := by decide
+
+theorem cshr_eq (W : BitVec 32) (k : Nat) {b : Nat} (hb : b < 2) :
+    cshr W k (BitVec.ofNat 32 b) = W >>> (k * b) := by
+  unfold cshr
+  obtain rfl | rfl : b = 0 ∨ b = 1 := by omega_using [hb]
+  · rw [BitVec.mul_zero, BitVec.zero_add, Nat.mul_zero, BitVec.ushiftRight_zero]
+  · rw [BitVec.mul_one, BitVec.sub_add_cancel, Nat.mul_one]
+
+theorem pickv_eq (W : BitVec 32) {n : Nat} (h : n < 256) :
+    pickv W (BitVec.ofNat 32 n) = (W >>> (8 * (n % 4))) &&& BitVec.ofNat 32 255 := by
+  obtain ⟨v0, v1, -⟩ := idx_vals h
+  unfold pickv
+  rw [v0, v1, cshr_eq _ _ (Nat.mod_lt _ (by decide)), cshr_eq _ _ (Nat.mod_lt _ (by decide)),
+    ← BitVec.shiftRight_add, show 8 * (n % 2) + 16 * (n / 2 % 2) = 8 * (n % 4) by omega_using []]
+
+/-- A sum of the rows' words times their selectors is the word of the
+index's row, once its row is passed. -/
+theorem acc_succ (f : Nat → BitVec 32) (h k : Nat) :
+    f k * selv h k + (if h < k then f h else BitVec.ofNat 32 0) =
+      if h < k + 1 then f h else BitVec.ofNat 32 0 := by
+  rcases Nat.lt_trichotomy h k with hl | rfl | hg
+  · rw [selv_ne (Nat.ne_of_lt hl), ite_eq_left hl, ite_eq_left (Nat.lt_succ_of_lt hl), BitVec.mul_zero,
+      BitVec.zero_add]
+  · rw [selv_self, ite_eq_right (Nat.lt_irrefl _), ite_eq_left (Nat.lt_succ_self _), BitVec.mul_one,
+      BitVec.add_zero]
+  · rw [selv_ne (Nat.ne_of_gt hg), ite_eq_right (by omega_using [hg]), ite_eq_right (by omega_using [hg]),
+      BitVec.mul_zero, BitVec.add_zero]
+
+/-- The word of the index's column, of the two of its row. -/
+theorem gather_col (m : Mem) (p : Addr) (n : Nat) :
+    (m.readW (p + BitVec.ofNat 64 (8 * (n / 8) + 4)) 32 - m.readW (p + BitVec.ofNat 64 (8 * (n / 8))) 32) *
+      BitVec.ofNat 32 (n / 4 % 2) + m.readW (p + BitVec.ofNat 64 (8 * (n / 8))) 32 =
+      m.readW (p + BitVec.ofNat 64 (4 * (n / 4))) 32 := by
+  rcases Nat.mod_two_eq_zero_or_one (n / 4) with e | e
+  · rw [e, BitVec.mul_zero, BitVec.zero_add, show 8 * (n / 8) = 4 * (n / 4) by omega_using [e]]
+  · rw [e, BitVec.mul_one, BitVec.sub_add_cancel, show 8 * (n / 8) + 4 = 4 * (n / 4) by omega_using [e]]
+
+/-- The address of a word of the table at `P`, which does not wrap around. -/
+theorem off_addr {P : BitVec 32} (hP : P.toNat + 256 ≤ 2 ^ 32) {d : Nat} (hd : d < 256) :
+    State.addr (P + BitVec.ofNat 32 d) = State.addr P + BitVec.ofNat 64 d :=
+  addr_add (by omega_using [hP, hd])
+
+/-- A register that has its value again is kept. -/
+theorem Keep.restore {rs : List Reg} {s s' : State} {a : Reg} (h : Keep (a :: rs) s s')
+    (ha : s'.gpr a = s.gpr a) : Keep rs s s' :=
+  ⟨fun r hr => by
+    by_cases e : r = a
+    · rw [e, ha]
+    · exact h.1 r fun hm => (List.mem_cons.mp hm).elim e hr, h.2⟩
+
+/-! ## The one-hot word and the selectors -/
+
+theorem oneHot_ok (s : State) :
+    WP isa (.block oneHot) s fun t => t.gpr .r10 = ohv (s.gpr .r6) ∧ t.mem = s.mem := by
+  unfold oneHot ohStep bit
+  arun [Nat.reduceSub, Nat.reduceAdd, Nat.reducePow]
+  rfl
+
+theorem ones_ok (s : State) :
+    WP isa (.block ones) s fun t => t.gpr .r10 = BitVec.allOnes 32 ∧ t.mem = s.mem := by
+  unfold ones
+  arun [ones_eq]
+
+theorem rowSel_ok (s : State) {d : Reg} (hd : d = .r11 ∨ d = .r9) {h r : Nat} (hh : h < 32) (hr : r < 32)
+    (h10 : s.gpr .r10 = BitVec.ofNat 32 (2 ^ h)) :
+    WP isa (.block (rowSel d r)) s fun t => (t.gpr d = selv h r ∧ t.mem = s.mem) ∧ Keep [d] s t := by
+  unfold rowSel
+  by_cases h31 : r = 31
+  · rw [ite_eq_left h31, h31]
+    rcases hd with rfl | rfl
+    · refine WP.keep [.r11] ?_ rfl
+      arun [h10]
+      exact sel_top h hh
+    · refine WP.keep [.r9] ?_ rfl
+      arun [h10]
+      exact sel_top h hh
+  · rw [ite_eq_right h31]
+    have hs : 1 ≤ 31 - r ∧ 31 - r ≤ 31 := by omega_using [hr, h31]
+    have hr' : r < 31 := by omega_using [hr, h31]
+    unfold bit
+    rcases hd with rfl | rfl
+    · refine WP.keep [.r11] ?_ rfl
+      arun [h10, hs]
+      exact sel_low h hh r hr'
+    · refine WP.keep [.r9] ?_ rfl
+      arun [h10, hs]
+      exact sel_low h hh r hr'
+
+/-! ## Visiting the rows -/
+
+theorem gather_row (s : State) {h r : Nat} (hh : h < 32) (hr : r < 32)
+    (h10 : s.gpr .r10 = BitVec.ofNat 32 (2 ^ h)) (hfit : (s.gpr .r12).toNat + 256 ≤ 2 ^ 32)
+    (hrd : InRegions (s.rd ++ s.wr) (State.addr (s.gpr .r12)) 256) :
+    WP isa (.block (gatherRow r)) s fun t =>
+      t.gpr .r7 = s.mem.readW (State.addr (s.gpr .r12) + BitVec.ofNat 64 (8 * r)) 32 * selv h r + s.gpr .r7 ∧
+      t.gpr .r8 =
+        s.mem.readW (State.addr (s.gpr .r12) + BitVec.ofNat 64 (8 * r + 4)) 32 * selv h r + s.gpr .r8 ∧
+      t.mem = s.mem ∧ Keep [.r7, .r8, .r9, .r11] s t := by
+  unfold gatherRow
+  rw [WP.block_append_iff]
+  refine WP.mono (rowSel_ok s (.inl rfl) hh hr h10) fun t ⟨⟨t11, tm⟩, tk⟩ => ?_
+  have t12 : t.gpr .r12 = s.gpr .r12 := tk.gpr (by decide)
+  have ho0 : 8 * r < 4096 := by omega_using [hr]
+  have ho1 : 8 * r + 4 < 4096 := by omega_using [hr]
+  have a0 := off_addr hfit (d := 8 * r) (by omega_using [hr])
+  have a1 := off_addr hfit (d := 8 * r + 4) (by omega_using [hr])
+  have hq0 : InRegions (t.rd ++ t.wr) (State.addr (t.gpr .r12 + BitVec.ofNat 32 (8 * r))) 4 := by
+    rw [tk.2.1, tk.2.2.1, t12, a0]
+    exact region_offset _ _ _ _ _ (by omega_using [hr]) (by omega_using [hr]) hrd
+  have hq1 : InRegions (t.rd ++ t.wr) (State.addr (t.gpr .r12 + BitVec.ofNat 32 (8 * r + 4))) 4 := by
+    rw [tk.2.1, tk.2.2.1, t12, a1]
+    exact region_offset _ _ _ _ _ (by omega_using [hr]) (by omega_using [hr]) hrd
+  refine WP.mono (WP.keep [.r7, .r8, .r9] (Q := fun u =>
+      u.gpr .r7 = t.mem.readW (State.addr (t.gpr .r12 + BitVec.ofNat 32 (8 * r))) 32 * selv h r + t.gpr .r7 ∧
+      u.gpr .r8 = t.mem.readW (State.addr (t.gpr .r12 + BitVec.ofNat 32 (8 * r + 4))) 32 * selv h r + t.gpr .r8 ∧
+      u.mem = t.mem) ?_ rfl) fun u ⟨⟨u7, u8, um⟩, uk⟩ => ?_
+  · arun [t11, ho0, ho1, hq0, hq1]
+  · refine ⟨?_, ?_, um.trans tm, (tk.trans uk).mono (by decide)⟩
+    · rw [u7, tm, t12, a0, tk.gpr (r := .r7) (by decide)]
+    · rw [u8, tm, t12, a1, tk.gpr (r := .r8) (by decide)]
+
+/-- After `k` rows: the two words of the index's row `h`, once passed. -/
+def GInv (s₀ : State) (h k : Nat) (t : State) : Prop :=
+  t.gpr .r7 = (if h < k then s₀.mem.readW (State.addr (s₀.gpr .r12) + BitVec.ofNat 64 (8 * h)) 32
+    else BitVec.ofNat 32 0) ∧
+  t.gpr .r8 = (if h < k then s₀.mem.readW (State.addr (s₀.gpr .r12) + BitVec.ofNat 64 (8 * h + 4)) 32
+    else BitVec.ofNat 32 0) ∧
+  t.gpr .r10 = BitVec.ofNat 32 (2 ^ h) ∧ t.mem = s₀.mem ∧ Keep [.r7, .r8, .r9, .r10, .r11] s₀ t
+
+theorem gather_rows (s₀ : State) {h : Nat} (hh : h < 32) (hfit : (s₀.gpr .r12).toNat + 256 ≤ 2 ^ 32)
+    (hrd : InRegions (s₀.rd ++ s₀.wr) (State.addr (s₀.gpr .r12)) 256) :
+    ∀ n ≤ 32, ∀ s, GInv s₀ h 0 s →
+      WP isa (.block ((List.range n).flatMap gatherRow)) s (GInv s₀ h n) := by
   intro n hn
   induction n with
-  | zero => intro s h; exact WP.block_nil h
+  | zero => intro s hs; exact WP.block_nil hs
   | succ n ih =>
-    intro s h
+    intro s hs
     rw [flatMap_succ, WP.block_append_iff]
-    refine WP.mono (ih (by omega_using [hn]) s h) fun t ht => ?_
-    obtain ⟨h8, h6', h10', h12, hm, hrd, hwr⟩ := ht
-    have hq : InRegions (t.rd ++ t.wr) (State.addr (t.gpr .r12) + BitVec.ofNat 64 (4 * n)) 4 := by
-      rw [hrd, hwr, h12]
-      exact region_offset _ _ _ _ _ (by omega_using [hn]) (by omega_using [hn]) hr
-    refine WP.mono (WP.keep [.r8, .r9, .r11]
-      (gather_step t idx (by omega_using [hn]) (h6'.trans h6) (h10'.trans h10) (by rw [h12]; exact hfit) hq)
-      rfl) fun u ⟨⟨u8, um⟩, uk⟩ => ?_
-    refine ⟨?_, (uk.gpr (by decide)).trans h6', (uk.gpr (by decide)).trans h10',
-      (uk.gpr (by decide)).trans h12, um.trans hm, uk.2.1.trans hrd, uk.2.2.1.trans hwr⟩
-    rw [u8, h8, h12, hm, gather_succ]
-
-/-! ## Picking the byte of the word -/
-
-theorem pick_step (s : State) (idx : Byte) {j : Nat} (hj : j < 4)
-    (h6 : s.gpr .r6 = idx.setWidth 32) (h10 : s.gpr .r10 = BitVec.allOnes 32) :
-    WP isa (.block (pickStep j)) s fun t =>
-      t.gpr .r7 = s.gpr .r7 ||| (if idx.toNat % 4 = j then s.gpr .r8 else 0) ∧
-      t.gpr .r8 = s.gpr .r8 >>> 8 ∧ t.mem = s.mem := by
-  have he : encodable (BitVec.ofNat 32 j) = true := encodable_lt (by omega_using [hj])
-  unfold pickStep laneMask
-  arun [h6, h10, he]
-  rw [lane_mask idx hj]
-
-def PInv (s₀ : State) (q : BitVec 32) (L j : Nat) (t : State) : Prop :=
-  t.gpr .r7 = pick q L j ∧ t.gpr .r8 = q >>> (8 * j) ∧ t.gpr .r6 = s₀.gpr .r6 ∧
-    t.gpr .r10 = s₀.gpr .r10 ∧ t.mem = s₀.mem
-
-theorem pick_steps (s₀ : State) (idx : Byte) (q : BitVec 32) (h6 : s₀.gpr .r6 = idx.setWidth 32)
-    (h10 : s₀.gpr .r10 = BitVec.allOnes 32) :
-    ∀ n ≤ 4, ∀ s, PInv s₀ q (idx.toNat % 4) 0 s →
-      WP isa (.block ((List.range n).flatMap pickStep)) s (PInv s₀ q (idx.toNat % 4) n) := by
-  intro n hn
-  induction n with
-  | zero => intro s h; exact WP.block_nil h
-  | succ n ih =>
-    intro s h
-    rw [flatMap_succ, WP.block_append_iff]
-    refine WP.mono (ih (by omega_using [hn]) s h) fun t ht => ?_
-    obtain ⟨h7, h8, h6', h10', hm⟩ := ht
-    refine WP.mono (WP.keep [.r7, .r8, .r9]
-      (pick_step t idx (by omega_using [hn]) (h6'.trans h6) (h10'.trans h10)) rfl)
-      fun u ⟨⟨u7, u8, um⟩, uk⟩ => ?_
-    refine ⟨?_, ?_, (uk.gpr (by decide)).trans h6', (uk.gpr (by decide)).trans h10', um.trans hm⟩
-    · rw [u7, h7, h8, pick_succ]
-    · rw [u8, h8, shr_byte32]
-
-/-! ## The lookup -/
+    refine WP.mono (ih (by omega_using [hn]) s hs) fun t ⟨t7, t8, t10, tm, tk⟩ => ?_
+    have t12 : t.gpr .r12 = s₀.gpr .r12 := tk.gpr (by decide)
+    refine WP.mono (gather_row t hh (by omega_using [hn]) t10 (by rw [t12]; exact hfit)
+      (by rw [tk.2.1, tk.2.2.1, t12]; exact hrd)) fun u ⟨u7, u8, um, uk⟩ => ?_
+    refine ⟨?_, ?_, (uk.gpr (by decide)).trans t10, um.trans tm, (tk.trans uk).mono (by decide)⟩
+    · rw [u7, t7, tm, t12]
+      exact acc_succ (fun r => s₀.mem.readW (State.addr (s₀.gpr .r12) + BitVec.ofNat 64 (8 * r)) 32) h n
+    · rw [u8, t8, tm, t12]
+      exact acc_succ (fun r => s₀.mem.readW (State.addr (s₀.gpr .r12) + BitVec.ofNat 64 (8 * r + 4)) 32) h n
 
 /-- What a lookup or replacement needs: the index, all ones, and the table. -/
 structure TableEnv (s : State) (idx : Byte) : Prop where
@@ -329,35 +425,66 @@ structure TableEnv (s : State) (idx : Byte) : Prop where
 theorem TableEnv.read {s : State} {idx : Byte} (h : TableEnv s idx) :
     InRegions (s.rd ++ s.wr) (State.addr (s.gpr .r12)) 256 := region_in h.table
 
+/-- The word that holds the index's byte, and the one-hot word of its row. -/
+theorem gatherWord_ok (s : State) (idx : Byte) (h : TableEnv s idx) :
+    WP isa (.block gatherWord) s fun t =>
+      t.gpr .r7 = s.mem.readW (State.addr (s.gpr .r12) + BitVec.ofNat 64 (4 * (idx.toNat / 4))) 32 ∧
+      t.gpr .r10 = BitVec.ofNat 32 (2 ^ (idx.toNat / 8)) ∧ t.mem = s.mem ∧
+      Keep [.r7, .r8, .r9, .r10, .r11] s t := by
+  have hn := idx.isLt
+  obtain ⟨-, -, v2, -, vo⟩ := idx_vals hn
+  have hh : idx.toNat / 8 < 32 := by omega_using [hn]
+  simp only [gatherWord, List.append_assoc]
+  rw [WP.block_append_iff]
+  refine WP.mono (WP.keep [.r9, .r10, .r11] (oneHot_ok s) (by decide)) fun t ⟨⟨t10, tm⟩, tk⟩ => ?_
+  rw [h.idx, byte32, vo] at t10
+  rw [WP.block_append_iff]
+  have h0 : WP isa (.block [.mov .r7 (imm 0), .mov .r8 (imm 0)]) t fun u =>
+      u.gpr .r7 = BitVec.ofNat 32 0 ∧ u.gpr .r8 = BitVec.ofNat 32 0 ∧ u.mem = t.mem := by
+    arun
+  refine WP.mono (WP.keep [.r7, .r8] h0 (by decide)) fun u ⟨⟨u7, u8, um⟩, uk⟩ => ?_
+  have hu : GInv s (idx.toNat / 8) 0 u :=
+    ⟨by rw [u7, ite_eq_right (Nat.not_lt_zero _)], by rw [u8, ite_eq_right (Nat.not_lt_zero _)],
+      (uk.gpr (by decide)).trans t10, um.trans tm, (tk.trans uk).mono (by decide)⟩
+  rw [WP.block_append_iff]
+  refine WP.mono (gather_rows s hh h.fit h.read 32 (Nat.le_refl _) u hu) fun v ⟨v7, v8, v10, vm, vk⟩ => ?_
+  rw [ite_eq_left hh] at v7 v8
+  have h1 : WP isa (.block (bit .r11 .r6 2 ++
+      ([.dp .sub .r8 .r8 (.reg .r7), .mla .r7 .r8 .r11 .r7] : List Instr))) v fun w =>
+      w.gpr .r7 = (v.gpr .r8 - v.gpr .r7) * bitv (v.gpr .r6) 2 + v.gpr .r7 ∧ w.mem = v.mem := by
+    unfold bit
+    arun [Nat.reduceSub, Nat.reduceAdd, Nat.reducePow]
+    rfl
+  refine WP.mono (WP.keep [.r7, .r8, .r11] h1 (by decide)) fun w ⟨⟨w7, wm⟩, wk⟩ => ?_
+  refine ⟨?_, (wk.gpr (by decide)).trans v10, wm.trans vm, (vk.trans wk).mono (by decide)⟩
+  rw [w7, v7, v8, vk.gpr (r := .r6) (by decide), h.idx, byte32, v2]
+  exact gather_col _ _ _
+
+/-! ## The byte of the word -/
+
+theorem pickByte_ok (s : State) :
+    WP isa (.block pickByte) s fun t => t.gpr .r7 = pickv (s.gpr .r7) (s.gpr .r6) ∧ t.mem = s.mem := by
+  unfold pickByte bit
+  arun [Nat.reduceSub, Nat.reduceAdd, Nat.reducePow]
+  rfl
+
+/-! ## The lookup -/
+
 theorem lookup_core (s : State) (idx : Byte) (h : TableEnv s idx) :
     WP isa (.block lookup) s fun t =>
-      t.gpr .r7 = (s.mem (State.addr (s.gpr .r12) + BitVec.ofNat 64 idx.toNat)).setWidth 32 ∧
-      t.mem = s.mem := by
+      (t.gpr .r7 = (s.mem (State.addr (s.gpr .r12) + BitVec.ofNat 64 idx.toNat)).setWidth 32 ∧
+        t.mem = s.mem) ∧ Keep [.r7, .r8, .r9, .r11] s t := by
   have hn := idx.isLt
   simp only [lookup, List.append_assoc]
   rw [WP.block_append_iff]
-  have h0 : WP isa (.block [.mov .r8 (imm 0)]) s (GInv s idx 0) := by
-    arun [GInv, gather, Nat.not_lt_zero, BitVec.ofNat_eq_ofNat]
-  refine WP.mono h0 fun t ht => ?_
+  refine WP.mono (gatherWord_ok s idx h) fun t ⟨t7, _, tm, tk⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (gather_steps s idx h.idx h.ones h.fit h.read 64 (by decide) t ht)
-    fun u hu => ?_
-  obtain ⟨u8, u6, u10, _, um, _, _⟩ := hu
-  let q := s.mem.readW (State.addr (s.gpr .r12) + BitVec.ofNat 64 (4 * (idx.toNat / 4))) 32
-  have hq : u.gpr .r8 = q := by
-    rw [u8]; unfold gather; rw [ite_eq_left (by omega_using [])]
-  rw [WP.block_append_iff]
-  have h1 : WP isa (.block [.mov .r7 (imm 0)]) u (PInv s q (idx.toNat % 4) 0) := by
-    arun [PInv, pick, hq, u6, u10, um, Nat.mul_zero, BitVec.ushiftRight_zero, Nat.not_lt_zero,
-      BitVec.ofNat_eq_ofNat]
-  refine WP.mono h1 fun v hv => ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (pick_steps s idx q h.idx h.ones 4 (by decide) v hv) fun w hw => ?_
-  obtain ⟨w7, _, _, _, wm⟩ := hw
-  have hL : idx.toNat % 4 < 4 := Nat.mod_lt _ (by decide)
-  arun [w7, wm]
-  unfold pick
-  rw [ite_eq_left hL, dword_byte _ _ hL, row_lane32]
+  refine WP.mono (WP.keep [.r7, .r9, .r11] (pickByte_ok t) (by decide)) fun u ⟨⟨u7, um⟩, uk⟩ => ?_
+  refine WP.mono (WP.keep [.r10] (ones_ok u) (by decide)) fun w ⟨⟨w10, wm⟩, wk⟩ => ?_
+  refine ⟨⟨?_, wm.trans (um.trans tm)⟩, Keep.restore (a := .r10) (((tk.trans uk).trans wk).mono (by decide))
+    (w10.trans h.ones.symm)⟩
+  rw [wk.gpr (r := .r7) (by decide), u7, t7, tk.gpr (r := .r6) (by decide), h.idx, byte32, pickv_eq _ hn,
+    dword_byte _ _ (Nat.mod_lt _ (by decide)), row_lane32]
 
 end VG.Proof.Rc4.Arm
 
@@ -373,83 +500,38 @@ namespace VG.Proof.Rc4.Arm
 
 open VG VG.Arm VG.Arm.RegUpd VG.Impl.Rc4.Arm VG.Proof.Rc4
 
-/-! ## Moving the difference to the byte's lane -/
+/-! ## The word with its byte replaced -/
 
-theorem spread_step (s : State) (idx c : Byte) {j : Nat} (hj : j < 4)
-    (h6 : s.gpr .r6 = idx.setWidth 32) (h10 : s.gpr .r10 = BitVec.allOnes 32)
-    (h7 : s.gpr .r7 = c.setWidth 32) (h8 : s.gpr .r8 = spread c (idx.toNat % 4) (j + 1)) :
-    WP isa (.block (spreadStep j)) s fun t =>
-      t.gpr .r8 = spread c (idx.toNat % 4) j ∧ t.mem = s.mem := by
-  have he : encodable (BitVec.ofNat 32 j) = true := encodable_lt (by omega_using [hj])
-  unfold spreadStep laneMask
-  arun [h6, h10, h7, h8, he]
-  rw [lane_mask idx hj, spread_succ c (Nat.mod_lt _ (by decide))]
+/-- The word `W` with its byte `L`, which is `b`, replaced by `a`. -/
+theorem newWord (W : BitVec 32) (a b : BitVec 8) {L : Nat} (hb : b = W.extractLsb' (8 * L) 8) :
+    (W &&& ~~~(BitVec.ofNat 32 255 <<< (8 * L))) ||| (a.setWidth 32 * BitVec.ofNat 32 (2 ^ (8 * L))) =
+      W ^^^ ((b ^^^ a).setWidth 32) <<< (8 * L) := by
+  rw [show BitVec.ofNat 32 (2 ^ (8 * L)) = BitVec.twoPow 32 (8 * L) from
+    BitVec.eq_of_toNat_eq (by rw [BitVec.toNat_ofNat, BitVec.toNat_twoPow]), BitVec.mul_twoPow_eq_shiftLeft, hb]
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
+  have h255 : ∀ j, (BitVec.ofNat 32 255).getLsbD j = decide (j < 8) := fun j => by
+    change Nat.testBit 255 j = decide (j < 8)
+    exact Nat.testBit_two_pow_sub_one 8 j
+  simp only [BitVec.getLsbD_or, BitVec.getLsbD_and, BitVec.getLsbD_not, BitVec.getLsbD_xor, BitVec.getLsbD_shiftLeft,
+    BitVec.getLsbD_setWidth, BitVec.getLsbD_extractLsb', h255, hi, decide_true, Bool.true_and]
+  by_cases h1 : i < 8 * L
+  · simp only [decide_eq_true h1, Bool.not_true, Bool.false_and, Bool.and_true, Bool.or_false, Bool.xor_false,
+      Bool.not_false]
+  · have h3 : i - 8 * L < 32 := by omega_using [hi]
+    by_cases h2 : i - 8 * L < 8
+    · simp only [decide_eq_false h1, decide_eq_true h2, decide_eq_true h3, Bool.not_false, Bool.true_and,
+        Bool.not_true, Bool.and_false, Bool.false_or, show 8 * L + (i - 8 * L) = i by omega_using [h1]]
+      cases W.getLsbD i <;> cases a.getLsbD (i - 8 * L) <;> rfl
+    · simp only [decide_eq_false h1, decide_eq_false h2, Bool.not_false, Bool.false_and, Bool.and_true,
+        BitVec.getLsbD_of_ge a _ (Nat.le_of_not_lt h2), Bool.and_false, Bool.or_false, Bool.xor_false]
 
-theorem spread_steps (s₀ : State) (idx c : Byte) (h6 : s₀.gpr .r6 = idx.setWidth 32)
-    (h10 : s₀.gpr .r10 = BitVec.allOnes 32) (h7 : s₀.gpr .r7 = c.setWidth 32) :
-    ∀ n ≤ 4, ∀ s, s.gpr .r8 = spread c (idx.toNat % 4) n → Keep [.r8, .r9] s₀ s →
-      s.mem = s₀.mem →
-      WP isa (.block ((List.range n).reverse.flatMap spreadStep)) s fun t =>
-        t.gpr .r8 = spread c (idx.toNat % 4) 0 ∧ Keep [.r8, .r9] s₀ t ∧ t.mem = s₀.mem := by
-  intro n hn
-  induction n with
-  | zero => intro s h8 hk hm; exact WP.block_nil ⟨h8, hk, hm⟩
-  | succ n ih =>
-    intro s h8 hk hm
-    rw [List.range_succ, List.reverse_append, List.reverse_cons, List.reverse_nil,
-      List.nil_append, List.flatMap_append, List.flatMap_cons, List.flatMap_nil,
-      List.append_nil, WP.block_append_iff]
-    refine WP.mono (WP.keep [.r8, .r9] (spread_step s idx c (by omega_using [hn])
-      ((hk.gpr (by decide)).trans h6) ((hk.gpr (by decide)).trans h10)
-      ((hk.gpr (by decide)).trans h7) h8) rfl) fun t ⟨⟨t8, tm⟩, tk⟩ => ?_
-    exact ih (by omega_using [hn]) t t8 ((hk.trans tk).mono (by decide)) (tm.trans hm)
-
-theorem lanesDown_eq : lanesDown = (List.range 4).reverse := rfl
-
-/-! ## Storing back every word -/
-
-theorem scatter_step (s : State) (idx : Byte) {k : Nat} (hk : k < 64)
-    (h6 : s.gpr .r6 = idx.setWidth 32) (h10 : s.gpr .r10 = BitVec.allOnes 32)
-    (hfit : (s.gpr .r12).toNat + 256 ≤ 2 ^ 32)
-    (hw : InRegions s.wr (State.addr (s.gpr .r12) + BitVec.ofNat 64 (4 * k)) 4) :
-    WP isa (.block (scatterStep k)) s fun t =>
-      t.mem = s.mem.writeW (State.addr (s.gpr .r12) + BitVec.ofNat 64 (4 * k))
-        ((if idx.toNat / 4 = k then s.gpr .r8 else 0) ^^^
-          s.mem.readW (State.addr (s.gpr .r12) + BitVec.ofNat 64 (4 * k)) 32) := by
-  have he : encodable (BitVec.ofNat 32 (4 * k)) = true := encodable_lt (by omega_using [hk])
-  have ho : 4 * k < 4096 := by omega_using [hk]
-  have hr := region_in (rs := s.rd) hw
-  rw [← row_addr hfit hk] at hw hr
-  unfold scatterStep rowMask
-  arun [h6, h10, he, ho, hr, hw]
-  rw [row_addr hfit hk, row_mask idx hk]
-
-theorem scatter_steps (s₀ : State) (idx : Byte) (d : BitVec 32) (h : TableEnv s₀ idx) :
-    ∀ n ≤ 64, ∀ s, s.gpr .r8 = d → Keep [.r9, .r11] s₀ s → s.mem = s₀.mem →
-      WP isa (.block ((List.range n).flatMap scatterStep)) s fun t =>
-        t.mem = scatter s₀.mem (State.addr (s₀.gpr .r12)) idx.toNat d n ∧ t.gpr .r8 = d ∧
-        Keep [.r9, .r11] s₀ t := by
-  intro n hn
-  induction n with
-  | zero =>
-    intro s h8 hk hm
-    refine WP.block_nil ⟨?_, h8, hk⟩
-    rw [hm]; unfold scatter; rw [ite_eq_right (Nat.not_lt_zero _)]
-  | succ n ih =>
-    intro s h8 hk hm
-    rw [flatMap_succ, WP.block_append_iff]
-    refine WP.mono (ih (by omega_using [hn]) s h8 hk hm) fun t ⟨tm, t8, tk⟩ => ?_
-    have t12 : t.gpr .r12 = s₀.gpr .r12 := tk.gpr (by decide)
-    have hq : InRegions t.wr (State.addr (t.gpr .r12) + BitVec.ofNat 64 (4 * n)) 4 := by
-      rw [tk.2.2.1, t12]
-      exact region_offset _ _ _ _ _ (by omega_using [hn]) (by omega_using [hn]) h.table
-    refine WP.mono (WP.keep [.r9, .r11] (scatter_step t idx (by omega_using [hn])
-      ((tk.gpr (by decide)).trans h.idx) ((tk.gpr (by decide)).trans h.ones)
-      (by rw [t12]; exact h.fit) hq) rfl) fun u ⟨um, uk⟩ => ?_
-    refine ⟨?_, (uk.gpr (by decide)).trans t8, (tk.trans uk).mono (by decide)⟩
-    rw [um, tm, t8, t12, scatter_succ]
-
-/-! ## The replacement -/
+theorem deltav_eq (W : BitVec 32) (a b : BitVec 8) {n : Nat} (h : n < 256)
+    (hb : b = W.extractLsb' (8 * (n % 4)) 8) :
+    deltav W (a.setWidth 32) (BitVec.ofNat 32 n) = (W ^^^ ((b ^^^ a).setWidth 32) <<< (8 * (n % 4))) - W := by
+  obtain ⟨-, -, -, vm, -⟩ := idx_vals h
+  unfold deltav
+  rw [vm, lane_val _ (Nat.mod_lt _ (by decide)), newWord W a b hb]
 
 theorem loadI_ok (s : State) (ii : Byte) (h4 : s.gpr .r4 = ii.setWidth 32)
     (hfit : (s.gpr .r12).toNat + 256 ≤ 2 ^ 32)
@@ -467,61 +549,185 @@ theorem loadI_ok (s : State) (ii : Byte) (h4 : s.gpr .r4 = ii.setWidth 32)
   arun [h4, hi]
   rw [idx_addr hfit ii]
 
+theorem deltaWord_ok (s : State) (ii : Byte) (h4 : s.gpr .r4 = ii.setWidth 32)
+    (hfit : (s.gpr .r12).toNat + 256 ≤ 2 ^ 32)
+    (hrd : InRegions (s.rd ++ s.wr) (State.addr (s.gpr .r12)) 256) :
+    WP isa (.block deltaWord) s fun t =>
+      t.gpr .r8 = deltav (s.gpr .r7)
+        ((s.mem (State.addr (s.gpr .r12) + BitVec.ofNat 64 ii.toNat)).setWidth 32) (s.gpr .r6) ∧
+      t.mem = s.mem := by
+  have hi : InRegions (s.rd ++ s.wr) (State.addr (s.gpr .r12 + ii.setWidth 32 + BitVec.ofNat 32 0)) 1 := by
+    rw [idx_addr hfit ii]
+    exact region_offset _ _ _ _ _ (by have := ii.isLt; omega_using []) (by have := ii.isLt; omega_using []) hrd
+  unfold deltaWord loadI bit
+  arun [h4, hi, Nat.reduceSub, Nat.reduceAdd, Nat.reducePow]
+  rw [idx_addr hfit ii]
+  rfl
+
+theorem splitDelta_ok (s : State) :
+    WP isa (.block splitDelta) s fun t =>
+      t.gpr .r11 = s.gpr .r8 * bitv (s.gpr .r6) 2 ∧
+      t.gpr .r8 = s.gpr .r8 - s.gpr .r8 * bitv (s.gpr .r6) 2 ∧ t.mem = s.mem := by
+  unfold splitDelta bit
+  arun [Nat.reduceSub, Nat.reduceAdd, Nat.reducePow]
+  exact ⟨rfl, rfl⟩
+
+/-! ## Storing back every word -/
+
+/-- Storing the word read: nothing changes. -/
+theorem writeW_readW (m : Mem) (a : Addr) : m.writeW a (m.readW a 32) = m := by
+  funext x
+  simp only [Mem.writeW, Mem.write, BitVec.setWidth_eq, show 32 / 8 = 4 from rfl]
+  split
+  · rename_i h
+    rw [← Mem.readW_byte m a h, BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel]
+  · rfl
+
+/-- The word at `a` plus `d`. -/
+def addW (m : Mem) (a : Addr) (d : BitVec 32) : Mem := m.writeW a (d + m.readW a 32)
+
+theorem addW_zero (m : Mem) (a : Addr) : addW m a (BitVec.ofNat 32 0) = m := by
+  unfold addW
+  rw [BitVec.zero_add, writeW_readW]
+
+/-- The two words of row `r` plus `d0` and `d1`. -/
+def scatRow (m : Mem) (p : Addr) (r : Nat) (d0 d1 : BitVec 32) : Mem :=
+  addW (addW m (p + BitVec.ofNat 64 (8 * r)) d0) (p + BitVec.ofNat 64 (8 * r + 4)) d1
+
+/-- The memory after `k` rows: row `h` changed, once passed. -/
+def scat (m : Mem) (p : Addr) (h : Nat) (d0 d1 : BitVec 32) (k : Nat) : Mem :=
+  if h < k then scatRow m p h d0 d1 else m
+
+theorem scat_succ (m : Mem) (p : Addr) (h : Nat) (d0 d1 : BitVec 32) (k : Nat) :
+    scatRow (scat m p h d0 d1 k) p k (d0 * selv h k) (d1 * selv h k) = scat m p h d0 d1 (k + 1) := by
+  unfold scat
+  rcases Nat.lt_trichotomy h k with hl | rfl | hg
+  · rw [selv_ne (Nat.ne_of_lt hl), ite_eq_left hl, ite_eq_left (Nat.lt_succ_of_lt hl), BitVec.mul_zero,
+      BitVec.mul_zero]
+    unfold scatRow
+    rw [addW_zero, addW_zero]
+  · rw [selv_self, ite_eq_right (Nat.lt_irrefl _), ite_eq_left (Nat.lt_succ_self _), BitVec.mul_one,
+      BitVec.mul_one]
+  · rw [selv_ne (Nat.ne_of_gt hg), ite_eq_right (by omega_using [hg]), ite_eq_right (by omega_using [hg]),
+      BitVec.mul_zero, BitVec.mul_zero]
+    unfold scatRow
+    rw [addW_zero, addW_zero]
+
+/-- The difference to the index's column changes its word alone. -/
+theorem scatRow_col (m : Mem) (p : Addr) (n : Nat) (d : BitVec 32) :
+    scatRow m p (n / 8) (d - d * BitVec.ofNat 32 (n / 4 % 2)) (d * BitVec.ofNat 32 (n / 4 % 2)) =
+      addW m (p + BitVec.ofNat 64 (4 * (n / 4))) d := by
+  unfold scatRow
+  rcases Nat.mod_two_eq_zero_or_one (n / 4) with e | e
+  · rw [e, BitVec.mul_zero, BitVec.sub_zero, addW_zero, show 8 * (n / 8) = 4 * (n / 4) by omega_using [e]]
+  · rw [e, BitVec.mul_one, BitVec.sub_self, addW_zero, show 8 * (n / 8) + 4 = 4 * (n / 4) by omega_using [e]]
+
+theorem scatter_row (s : State) {h r : Nat} (hh : h < 32) (hr : r < 32)
+    (h10 : s.gpr .r10 = BitVec.ofNat 32 (2 ^ h)) (hfit : (s.gpr .r12).toNat + 256 ≤ 2 ^ 32)
+    (hwr : InRegions s.wr (State.addr (s.gpr .r12)) 256) :
+    WP isa (.block (scatterRow r)) s fun t =>
+      t.mem = scatRow s.mem (State.addr (s.gpr .r12)) r (s.gpr .r8 * selv h r) (s.gpr .r11 * selv h r) ∧
+      Keep [.r6, .r9] s t := by
+  unfold scatterRow
+  rw [WP.block_append_iff]
+  refine WP.mono (rowSel_ok s (.inr rfl) hh hr h10) fun t ⟨⟨t9, tm⟩, tk⟩ => ?_
+  have t12 : t.gpr .r12 = s.gpr .r12 := tk.gpr (by decide)
+  have ho0 : 8 * r < 4096 := by omega_using [hr]
+  have ho1 : 8 * r + 4 < 4096 := by omega_using [hr]
+  have a0 := off_addr hfit (d := 8 * r) (by omega_using [hr])
+  have a1 := off_addr hfit (d := 8 * r + 4) (by omega_using [hr])
+  have hw0 : InRegions t.wr (State.addr (t.gpr .r12 + BitVec.ofNat 32 (8 * r))) 4 := by
+    rw [tk.2.2.1, t12, a0]
+    exact region_offset _ _ _ _ _ (by omega_using [hr]) (by omega_using [hr]) hwr
+  have hw1 : InRegions t.wr (State.addr (t.gpr .r12 + BitVec.ofNat 32 (8 * r + 4))) 4 := by
+    rw [tk.2.2.1, t12, a1]
+    exact region_offset _ _ _ _ _ (by omega_using [hr]) (by omega_using [hr]) hwr
+  have hq0 := region_in (rs := t.rd) hw0
+  have hq1 := region_in (rs := t.rd) hw1
+  refine WP.mono (WP.keep [.r6] (Q := fun u =>
+      u.mem = scatRow t.mem (State.addr (t.gpr .r12)) r (t.gpr .r8 * selv h r) (t.gpr .r11 * selv h r))
+      ?_ rfl) fun u ⟨um, uk⟩ => ?_
+  · arun [t9, ho0, ho1, hq0, hq1, hw0, hw1]
+    rw [t12, a0, a1]
+    rfl
+  · refine ⟨?_, (tk.trans uk).mono (by decide)⟩
+    rw [um, tm, t12, tk.gpr (r := .r8) (by decide), tk.gpr (r := .r11) (by decide)]
+
+theorem scatter_rows (s₀ : State) {h : Nat} (hh : h < 32) (d0 d1 : BitVec 32)
+    (h8 : s₀.gpr .r8 = d0) (h11 : s₀.gpr .r11 = d1) (h10 : s₀.gpr .r10 = BitVec.ofNat 32 (2 ^ h))
+    (hfit : (s₀.gpr .r12).toNat + 256 ≤ 2 ^ 32) (hwr : InRegions s₀.wr (State.addr (s₀.gpr .r12)) 256) :
+    ∀ n ≤ 32, ∀ s, s.mem = s₀.mem → Keep [.r6, .r9] s₀ s →
+      WP isa (.block ((List.range n).flatMap scatterRow)) s fun t =>
+        t.mem = scat s₀.mem (State.addr (s₀.gpr .r12)) h d0 d1 n ∧ Keep [.r6, .r9] s₀ t := by
+  intro n hn
+  induction n with
+  | zero =>
+    intro s hm hk
+    refine WP.block_nil ⟨?_, hk⟩
+    rw [hm]; unfold scat; rw [ite_eq_right (Nat.not_lt_zero _)]
+  | succ n ih =>
+    intro s hm hk
+    rw [flatMap_succ, WP.block_append_iff]
+    refine WP.mono (ih (by omega_using [hn]) s hm hk) fun t ⟨tm, tk⟩ => ?_
+    have t12 : t.gpr .r12 = s₀.gpr .r12 := tk.gpr (by decide)
+    refine WP.mono (scatter_row t hh (by omega_using [hn]) ((tk.gpr (by decide)).trans h10)
+      (by rw [t12]; exact hfit) (by rw [tk.2.2.1, t12]; exact hwr)) fun u ⟨um, uk⟩ => ?_
+    refine ⟨?_, (tk.trans uk).mono (by decide)⟩
+    rw [um, tm, t12, tk.gpr (r := .r8) (by decide), tk.gpr (r := .r11) (by decide), h8, h11, scat_succ]
+
+/-! ## The replacement -/
+
 theorem replace_core (s : State) (idx ii : Byte) (h : TableEnv s idx)
     (h4 : s.gpr .r4 = ii.setWidth 32) :
     WP isa (.block replace) s fun t =>
       t.gpr .r7 = (s.mem (State.addr (s.gpr .r12) + BitVec.ofNat 64 idx.toNat)).setWidth 32 ∧
       t.mem = s.mem.write (State.addr (s.gpr .r12) + BitVec.ofNat 64 idx.toNat) 1
         (s.mem (State.addr (s.gpr .r12) + BitVec.ofNat 64 ii.toNat)) ∧
-      Keep [.r7, .r8, .r9, .r11] s t := by
+      Keep [.r6, .r7, .r8, .r9, .r11] s t := by
   have hn := idx.isLt
+  obtain ⟨-, -, v2, -, -⟩ := idx_vals hn
+  have hh : idx.toNat / 8 < 32 := by omega_using [hn]
+  have hL : idx.toNat % 4 < 4 := Nat.mod_lt _ (by decide)
   let p := State.addr (s.gpr .r12)
+  let W := s.mem.readW (p + BitVec.ofNat 64 (4 * (idx.toNat / 4))) 32
   let b := s.mem (p + BitVec.ofNat 64 idx.toNat)
-  let v := s.mem (p + BitVec.ofNat 64 ii.toNat)
+  let a := s.mem (p + BitVec.ofNat 64 ii.toNat)
+  have hb : b = W.extractLsb' (8 * (idx.toNat % 4)) 8 := by
+    rw [← Mem.readW_byte _ _ hL, row_lane32]
   simp only [replace, List.append_assoc]
   rw [WP.block_append_iff]
-  refine WP.mono (WP.keep [.r7, .r8, .r9, .r11] (lookup_core s idx h) (by decide +kernel))
-    fun t ⟨⟨t7, tm⟩, tk⟩ => ?_
+  refine WP.mono (gatherWord_ok s idx h) fun t ⟨t7, t10, tm, tk⟩ => ?_
   have t12 : t.gpr .r12 = s.gpr .r12 := tk.gpr (by decide)
+  have t6 : t.gpr .r6 = BitVec.ofNat 32 idx.toNat := by rw [tk.gpr (by decide), h.idx, byte32]
   rw [WP.block_append_iff]
-  refine WP.mono (loadI_ok t ii ((tk.gpr (by decide)).trans h4) (by rw [t12]; exact h.fit)
-    (by rw [tk.2.1, tk.2.2.1, t12]; exact h.read)) fun t' ⟨t'11, t'k, t'm⟩ => ?_
-  rw [t12, tm] at t'11
+  refine WP.mono (WP.keep [.r8, .r9, .r11] (deltaWord_ok t ii ((tk.gpr (by decide)).trans h4)
+    (by rw [t12]; exact h.fit) (by rw [tk.2.1, tk.2.2.1, t12]; exact h.read)) (by decide))
+    fun u ⟨⟨u8, um⟩, uk⟩ => ?_
+  rw [t7, tm, t12, t6, deltav_eq W a b hn hb] at u8
   rw [WP.block_append_iff]
-  have h1 : WP isa (.block [.dp .eor .r7 .r7 (.reg .r11), .mov .r8 (imm 0)]) t' fun u =>
-      u.gpr .r7 = (b ^^^ v).setWidth 32 ∧ u.gpr .r8 = 0 ∧ u.mem = s.mem := by
-    have t'7 : t'.gpr .r7 = b.setWidth 32 := (t'k.gpr (by decide)).trans t7
-    arun [t'7, t'11, t'm, tm, BitVec.ofNat_eq_ofNat]
-    rw [xor_byte32]
-  refine WP.mono (WP.keep [.r7, .r8] h1 (by decide)) fun u ⟨⟨u7, u8, um⟩, uk⟩ => ?_
-  have k₁ : Keep [.r7, .r8, .r9, .r11] s u := ((tk.trans t'k).trans uk).mono (by decide)
+  refine WP.mono (WP.keep [.r7, .r9, .r11] (pickByte_ok u) (by decide)) fun v ⟨⟨v7, vm⟩, vk⟩ => ?_
+  rw [uk.gpr (r := .r7) (by decide), t7, uk.gpr (r := .r6) (by decide), t6, pickv_eq _ hn, dword_byte _ _ hL,
+    row_lane32] at v7
   rw [WP.block_append_iff]
-  have hsp := spread_steps u idx (b ^^^ v) ((k₁.gpr (by decide)).trans h.idx)
-    ((k₁.gpr (by decide)).trans h.ones) u7 4 (by decide) u
-    (by rw [u8]; unfold spread; rw [ite_eq_right (by omega_using [])]) (Keep.refl _ _) rfl
-  rw [← lanesDown_eq] at hsp
-  refine WP.mono hsp fun w ⟨w8, wk, wm⟩ => ?_
-  have w11 : w.gpr .r11 = v.setWidth 32 :=
-    (wk.gpr (by decide)).trans ((uk.gpr (by decide)).trans t'11)
-  have w7 : w.gpr .r7 = (b ^^^ v).setWidth 32 := (wk.gpr (by decide)).trans u7
+  refine WP.mono (WP.keep [.r8, .r9, .r11] (splitDelta_ok v) (by decide)) fun w ⟨⟨w11, w8, wm⟩, wk⟩ => ?_
+  rw [vk.gpr (r := .r8) (by decide), u8, vk.gpr (r := .r6) (by decide), uk.gpr (r := .r6) (by decide), t6,
+    v2] at w11 w8
+  have k₁ : Keep [.r7, .r8, .r9, .r10, .r11] s w := (((tk.trans uk).trans vk).trans wk).mono (by decide)
+  have w12 : w.gpr .r12 = s.gpr .r12 := k₁.gpr (by decide)
+  have w10 : w.gpr .r10 = BitVec.ofNat 32 (2 ^ (idx.toNat / 8)) := by
+    rw [wk.gpr (by decide), vk.gpr (by decide), uk.gpr (by decide), t10]
+  have wms : w.mem = s.mem := wm.trans (vm.trans (um.trans tm))
   rw [WP.block_append_iff]
-  have h2 : WP isa (.block [.dp .eor .r7 .r7 (.reg .r11)]) w fun x =>
-      x.gpr .r7 = b.setWidth 32 ∧ x.mem = s.mem := by
-    arun [w7, w11, wm, um]
-    rw [xor_byte32, BitVec.xor_assoc, BitVec.xor_self, BitVec.xor_zero]
-  refine WP.mono (WP.keep [.r7] h2 (by decide)) fun x ⟨⟨x7, xm⟩, xk⟩ => ?_
-  have k₂ : Keep [.r7, .r8, .r9, .r11] s x := ((k₁.trans wk).trans xk).mono (by decide)
-  have x12 : x.gpr .r12 = s.gpr .r12 := k₂.gpr (by decide)
-  have hx : TableEnv x idx := ⟨(k₂.gpr (by decide)).trans h.idx, (k₂.gpr (by decide)).trans h.ones,
-    by rw [x12]; exact h.fit, by rw [k₂.2.2.1, x12]; exact h.table⟩
-  have x8 : x.gpr .r8 = spread (b ^^^ v) (idx.toNat % 4) 0 := (xk.gpr (by decide)).trans w8
-  refine WP.mono (scatter_steps x idx _ hx 64 (by decide) x x8 (Keep.refl _ _) rfl)
-    fun y ⟨ym, _, yk⟩ => ?_
-  refine ⟨(yk.gpr (by decide)).trans x7, ?_, (k₂.trans yk).mono (by decide)⟩
-  rw [ym, xm, x12]
-  unfold scatter spread
-  rw [ite_eq_left (by omega_using []), ite_eq_left (Nat.zero_le _), Nat.sub_zero, writeW_byte32,
-    ← BitVec.xor_assoc, BitVec.xor_self, BitVec.zero_xor]
+  refine WP.mono (scatter_rows w hh _ _ w8 w11 w10 (by rw [w12]; exact h.fit)
+    (by rw [k₁.2.2.1, w12]; exact h.table) 32 (Nat.le_refl _) w rfl (Keep.refl _ _)) fun x ⟨xm, xk⟩ => ?_
+  refine WP.mono (WP.keep [.r10] (ones_ok x) (by decide)) fun y ⟨⟨y10, ym⟩, yk⟩ => ?_
+  refine ⟨?_, ?_, Keep.restore (a := .r10) (((k₁.trans xk).trans yk).mono (by decide)) (y10.trans h.ones.symm)⟩
+  · rw [yk.gpr (r := .r7) (by decide), xk.gpr (r := .r7) (by decide), wk.gpr (r := .r7) (by decide), v7]
+  · rw [ym, xm, wms, w12]
+    unfold scat
+    rw [ite_eq_left hh, scatRow_col]
+    unfold addW
+    rw [BitVec.sub_add_cancel, writeW_byte32, ← BitVec.xor_assoc, BitVec.xor_self, BitVec.zero_xor]
 
 end VG.Proof.Rc4.Arm
 
@@ -1235,8 +1441,7 @@ theorem apply_step (s : State) (i j : Byte) {P D L : BitVec 32} {n : Nat}
   have hw : w.mem = swapped := wm
   obtain hew := hev.keep wk (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (WP.keep [.r7, .r8, .r9, .r11] (lookup_core w (a + b) (hew.tableEnv w6))
-    (by decide +kernel)) fun x ⟨⟨x7, xm⟩, xk⟩ => ?_
+  refine WP.mono (lookup_core w (a + b) (hew.tableEnv w6)) fun x ⟨⟨x7, xm⟩, xk⟩ => ?_
   rw [hew.p, hw] at x7
   obtain hex := hew.keep xk (by decide)
   obtain ktx := ((uk.trans vk).trans wk).trans xk
