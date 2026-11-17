@@ -26,6 +26,7 @@ import VerifiedGarbage.Proof.AesOfb.Arm.Body
 import VerifiedGarbage.Proof.AesCfb.Arm.Body
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Lost
 meta import VerifiedGarbage.Impl.AesCfb.Arm.Final
 meta import VerifiedGarbage.Proof.AesCfb.Final
 meta import VerifiedGarbage.Proof.AesCfb.Spec
@@ -586,10 +587,15 @@ theorem whole_wp {M : Mode} {name : String} {whole : Prog isa}
       rcases hr with rfl | rfl
       · exact hp.data_sv.sub_left (blk_sub s₀)
       · exact hp.stk_data.symm.sub_left (blk_sub s₀))
-  refine WP.frame (rs := [.r12, .lr]) (r := .r12) rfl (by simpa using hsp) (by simp) ?_
+  refine WP.frameLost (rs := [.r12, .lr]) (r := .r12) rfl (by simpa using hsp) (by simp) ?_
   refine FrameStack.WP.callF (k := modeArm M) hv (rd := wRd s₀) (wr := wWr s₀) (whole_pre hp h) hc hw
     (by rw [hd, pushed_sp8, hspA hsp, h.sp]; have := hp.sp_lo; omega_using [this]) ?_
-  intro s₂ hrd₂ hwr₂ hsp₂ hf hcs hpost
+  intro s₂ hrd₂ hwr₂ hsp₂ hf hcs hpost ml ul hfl
+  obtain hfl' : Frame [fStk s₀] s₂.mem ml := by
+    rw [Proof.AesGcm.Arm.e8, hA hsp] at hfl
+    exact hfl.sub fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨fStk s₀, by simp, by rw [h.sp]; exact below8_sub s₀⟩
   obtain hR := toNat_ofNat32 (n := fR s₀) (by rcases hp.rounds with h' | h' | h' <;> omega_using [h'])
   simp only [modeArm, State.withRegions_mem, State.callEntry_mem, view_gpr _ _ _ .r0 (by decide),
     view_gpr _ _ _ .r1 (by decide), view_gpr _ _ _ .r2 (by decide), view_gpr _ _ _ .r3 (by decide), h.r0,
@@ -618,7 +624,16 @@ theorem whole_wp {M : Mode} {name : String} {whole : Prog isa}
     by rw [popped_sp, hsp₂, pushed_sp8, ← h.sp]; exact BitVec.sub_add_cancel _ _,
     by rw [popped_rd, hrd₂, pushed_rd, h.rd],
     by rw [popped_wr, hwr₂, pushed_wr]; exact h.wr,
-    by rw [popped_mem]; exact fr, by rw [popped_mem]; exact hpost.1, by rw [popped_mem]; exact hpost.2⟩
+    fr.trans (hfl'.sub fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact ⟨fStk s₀, by simp, fun _ h => h⟩),
+    by
+      rw [blocksAt_frame' hfl' fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; exact hp.stk_data.symm.sub_left (blk_sub s₀)]
+      exact hpost.1,
+    by
+      rw [Proof.Cmac.bytesAt_frame hfl' (fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; exact hp.stk_iv.symm) (by decide)]
+      exact hpost.2⟩
 
 
 /-! ## The partial last segment -/

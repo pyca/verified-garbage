@@ -40,6 +40,8 @@ public import VerifiedGarbage.Impl.Ffdh.Arm.SharedCheckPublic
 import VerifiedGarbage.Proof.Ffdh.Arm.Head
 import VerifiedGarbage.Proof.Ffdh.Arm.Branch
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Rsa.BytesFrame
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! ### `Ffdh.Arm.SharedExchangePre`, which this module and modules that import it used -/
 

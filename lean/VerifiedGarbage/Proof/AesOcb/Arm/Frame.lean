@@ -39,6 +39,7 @@ import VerifiedGarbage.Spec.Ocb.Contract
 import VerifiedGarbage.Proof.AesOcb.Arm.Nonce
 public import VerifiedGarbage.Impl.StackScratch.Arm
 import VerifiedGarbage.Proof.Framework.Arm.StackScratch
+import VerifiedGarbage.Proof.Framework.Arm.ScratchLost
 
 /-! ### `AesOcb.Arm.Verified`, which only this module used -/
 
@@ -565,7 +566,7 @@ end
 
 `seal` and `open` run their code, proved with the working space as their
 last argument (`Verified.lean`), in a frame that allocates it
-(`Verified.stackScratch`): their working space is their seventh stack
+(`Verified.stackScratchLost`): their working space is their seventh stack
 argument, after `aad`, `aad_len`, `data`, `len`, `tag` and `tag_len`, so the
 frame of 2592 bytes holds a copy of those six words, the address of the
 working space, the saved `lr` and the working space. The copies are read
@@ -594,11 +595,12 @@ theorem sealFrameSat_pre : ∃ s, (Proof.AesOcb.sealRoundsContract Arm.abi 2600)
 theorem seal_framed :
     Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 2592 6 «seal»)
       (Proof.AesOcb.sealRoundsContract Arm.abi 2600) :=
-  Arm.Verified.stackScratch (sig := Spec.Ocb.sealSig) (nm := "work") (e := .u64)
+  Arm.Verified.stackScratchLost (sig := Spec.Ocb.sealSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Ocb.sealPre Arm.abi.ptrBits)
     (post := Proof.AesOcb.sealRoundsPost Arm.abi.ptrBits) (wa := true) (stack := 8)
     (m := 6) seal_verified (by decide) (by decide) (by decide) (by decide)
-    (Proof.AesOcb.sealPre_local _) (Proof.AesOcb.sealPost_local _) sealFrameSat_pre
+    (Proof.AesOcb.sealPre_local _) (Proof.AesOcb.sealPost_local _)
+    (Proof.AesOcb.sealPostOut_local _) sealFrameSat_pre
 
 /-- A state satisfying `vg_aes_ocb_open`'s precondition, without the working
 space: its six words of stack arguments at `0x8000`. -/
@@ -615,12 +617,13 @@ theorem openFrameSat_pre : ∃ s, (Proof.AesOcb.openRoundsContract Arm.abi 2600)
 theorem open_framed :
     Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 2592 6 «open»)
       (Proof.AesOcb.openRoundsContract Arm.abi 2600) :=
-  Arm.Verified.stackScratch (sig := Spec.Ocb.openSig) (nm := "work") (e := .u64)
+  Arm.Verified.stackScratchLost (sig := Spec.Ocb.openSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Ocb.openPre Arm.abi.ptrBits)
     (post := Proof.AesOcb.openRoundsPost Arm.abi.ptrBits) (wa := true) (stack := 8)
     (leak := some (Spec.Ocb.openLeak Arm.abi.ptrBits))
     (m := 6) open_verified (by decide) (by decide) (by decide) (by decide)
-    (Proof.AesOcb.openPre_local _) (Proof.AesOcb.openPost_local _) openFrameSat_pre
+    (Proof.AesOcb.openPre_local _) (Proof.AesOcb.openPost_local _)
+    (Proof.AesOcb.openPostOut_local _) openFrameSat_pre
     (hleak := Proof.AesOcb.openLeak_local _)
 
 end VG.Proof.AesOcb.Arm

@@ -25,6 +25,7 @@ import VerifiedGarbage.Proof.Ffdh.Arm.Branch
 import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Rsa.BytesFrame
 public import VerifiedGarbage.Proof.Ffdh.Arm.Frame
 public import VerifiedGarbage.Proof.Ffdh.Arm.IncomingWord
 public import VerifiedGarbage.Impl.Ffdh.Arm.SharedDerive
@@ -372,11 +373,21 @@ theorem fn_ok (backend : MontBackend) (s : State) {p : Inputs} {xb : List Byte} 
     (fun m status => Spec.Rsa.modulusValid p.P p.k = true → status = SharedDerive.status p xb ∧
       Spec.Rsa.bytesAt m (State.addr p.output) p.k =
         (open Classical in if accepted p xb then Spec.Rsa.i2osp (sharedValue p (gOctets p) xb) p.k
-          else List.replicate p.k 0)) h.saved ?_
-  refine WP.mono (entered_ok backend (entered s) h.args h.incoming h.calls h.out h.domain h.domainLength
-    h.scalar h.positive h.scalarLength h.scalarCount h.scalarStack h.output h.workspaceSep h.stackSep) ?_
-  rintro t ⟨res, frame⟩
-  exact ⟨frame, res⟩
+          else List.replicate p.k 0)) h.saved ?_ ?_
+  · refine WP.mono (entered_ok backend (entered s) h.args h.incoming h.calls h.out h.domain h.domainLength
+      h.scalar h.positive h.scalarLength h.scalarCount h.scalarStack h.output h.workspaceSep h.stackSep) ?_
+    rintro t ⟨res, frame⟩
+    exact ⟨frame, res⟩
+  · intro m₁ m₂ v hf hq hv
+    obtain ⟨hs, he⟩ := hq hv
+    refine ⟨hs, ?_⟩
+    rw [VG.Proof.Rsa.rsa_bytes_frame hf (by have := h.output.fits; omega_using [this]) ?_]
+    · exact he
+    · intro r hr
+      simp only [released, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact (h.saved _ (by simp [SharedExchange.writes, exchangeWrites])).symm
+      · exact h.stackSep.symm
 
 end VG.Proof.Ffdh.Arm.SharedDerive
 
