@@ -15,6 +15,7 @@ open VG.AArch64
 
 def artifacts : List Artifact := [
   Spec.Ct.eqApi.artifact target {
-    code := Impl.Ct.AArch64.eq
-    verified := Proof.Ct.AArch64.verified }]
+    code := Proof.Ct.AArch64.eqCleared
+    verified := Proof.Ct.AArch64.eqCleared_verified
+    residue := some ⟨Proof.Ct.AArch64.eqCleared_noResidue _⟩ }]
 end VG.Artifacts.Ct.AArch64

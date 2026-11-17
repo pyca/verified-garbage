@@ -173,10 +173,8 @@ aarch64 vg_aes_xts_encrypt_unit_aes
 aarch64 vg_aes_xts_encrypt_unit_neon
 aarch64 vg_argon2
 aarch64 vg_blake2b_finalize
-aarch64 vg_blake2b_init
 aarch64 vg_blake2b_update
 aarch64 vg_blake2s_finalize
-aarch64 vg_blake2s_init
 aarch64 vg_blake2s_update
 aarch64 vg_blowfish_cbc_decrypt_chained
 aarch64 vg_blowfish_cbc_encrypt_chained
@@ -216,7 +214,6 @@ aarch64 vg_cast5_ofb_final
 aarch64 vg_chacha20_apply
 aarch64 vg_chacha20_apply_neon
 aarch64 vg_chacha20_apply_sve2
-aarch64 vg_chacha20_init
 aarch64 vg_chacha20_poly1305_open
 aarch64 vg_chacha20_poly1305_open_neon
 aarch64 vg_chacha20_poly1305_open_sve2
@@ -229,7 +226,6 @@ aarch64 vg_chacha20_poly1305_seal_gather_neon
 aarch64 vg_chacha20_poly1305_seal_gather_sve2
 aarch64 vg_chacha20_poly1305_seal_neon
 aarch64 vg_chacha20_poly1305_seal_sve2
-aarch64 vg_chacha20_set_nonce
 aarch64 vg_cmac_aes_absorb
 aarch64 vg_cmac_aes_absorb_aes
 aarch64 vg_cmac_aes_absorb_neon
@@ -242,7 +238,6 @@ aarch64 vg_cmac_aes_init_neon
 aarch64 vg_cmac_triple_des_absorb
 aarch64 vg_cmac_triple_des_finish
 aarch64 vg_cmac_triple_des_stream_init
-aarch64 vg_ct_eq
 aarch64 vg_dsa_derive_key
 aarch64 vg_dsa_generate_key
 aarch64 vg_dsa_parameter_search

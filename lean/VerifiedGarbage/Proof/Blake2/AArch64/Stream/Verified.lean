@@ -16,6 +16,8 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Blake2.AArch64.Stream.Lit
 import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Impl.Residue.AArch64
+import VerifiedGarbage.Proof.Framework.AArch64.Clears
 
 @[expose] public section
 
@@ -574,5 +576,22 @@ theorem finalizeS_framed : Verified AArch64.target
   AArch64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 72) (stack := 16) (bytes := 576)
     finalizeS_verified (by decide) (by decide)
     (AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
+
+/-! ## Returning without secret residue
+
+`init` leaves a word of its parameters in `x9`: the cleared `init` zeroes it
+before returning (`CT.lean` proves it then leaves nothing secret). -/
+
+theorem initBCleared_verified :
+    Verified AArch64.target
+      (Impl.Residue.AArch64.withClears [.x9] [] none (Impl.Blake2.AArch64.Stream.init b))
+      (Spec.Blake2.initBContract AArch64.abi) :=
+  Clears.Verified.withClears initB_verified (by decide)
+
+theorem initSCleared_verified :
+    Verified AArch64.target
+      (Impl.Residue.AArch64.withClears [.x9] [] none (Impl.Blake2.AArch64.Stream.init s))
+      (Spec.Blake2.initSContract AArch64.abi) :=
+  Clears.Verified.withClears initS_verified (by decide)
 
 end VG.Proof.Blake2.AArch64.Stream
