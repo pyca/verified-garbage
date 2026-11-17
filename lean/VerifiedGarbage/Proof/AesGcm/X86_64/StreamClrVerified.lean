@@ -335,14 +335,17 @@ theorem zeroX_exec (u : State) (r : Reg) (d : Nat)
 
 /-- `zeroXs r o k` zeroes the `16 k` bytes at `r + o`, within a region it may
 write, from `xmm0` zero. -/
+theorem covers_of_mem {R : Region} {rs : List Region} (h : R ∈ rs) : Covers [R] rs := fun _ _ ⟨r, hr, hc⟩ => by
+  simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, h, hc⟩
+
 theorem zeroXs_run {r : Reg} {o : Nat} {p : Addr} {b : Nat} (hb : b < 2 ^ 64) : ∀ (k : Nat) (u : State),
-    (⟨p, b⟩ : Region) ∈ u.wr → u.gpr r = p → u.xmm .xmm0 = 0 → o + 16 * k ≤ b →
+    Covers [⟨p, b⟩] u.wr → u.gpr r = p → u.xmm .xmm0 = 0 → o + 16 * k ≤ b →
     ∃ m', execBlock isa (zeroXs r o k) u = some ({ u with mem := m' }, zeroXsTr p o k) ∧
       ∀ x, m' x = if o ≤ (x - p).toNat ∧ (x - p).toNat < o + 16 * k then 0 else u.mem x
   | 0, u, _, _, _, _ => ⟨u.mem, rfl, fun x => by rw [ite_f (by omega)]⟩
   | k + 1, u, hR, hr, hx, hk => by
     have hin : InRegions u.wr (u.gpr r + BitVec.ofNat 64 (o + 16 * k)) 16 := by
-      refine ⟨_, hR, ?_⟩
+      refine hR _ _ ⟨_, List.mem_singleton_self _, ?_⟩
       rw [hr]
       exact Offset.contains_base (n := 16) _ (by omega) (by omega)
     obtain ⟨ex, ea⟩ := zeroX_exec u r (o + 16 * k) hin hx
@@ -370,13 +373,13 @@ theorem zeroXs_run {r : Reg} {o : Nat} {p : Addr} {b : Nat} (hb : b < 2 ^ 64) : 
 /-- `wipeX r o n` zeroes the `n` bytes at `r + o`, within a region it may
 write, and changes no register but `xmm0`, which it zeroes. -/
 theorem wipeX_run {r : Reg} {o n : Nat} {p : Addr} {b : Nat} (hb : b < 2 ^ 64) (u : State)
-    (hR : (⟨p, b⟩ : Region) ∈ u.wr) (hr : u.gpr r = p) (hn : o + n ≤ b) (h16 : n % 16 = 0 ∨ 16 ≤ n) :
+    (hR : Covers [⟨p, b⟩] u.wr) (hr : u.gpr r = p) (hn : o + n ≤ b) (h16 : n % 16 = 0 ∨ 16 ≤ n) :
     ∃ m', execBlock isa (wipeX r o n) u = some ({ u.setXmm .xmm0 0 with mem := m' }, wipeXTr p o n) ∧
       ∀ x, m' x = if o ≤ (x - p).toNat ∧ (x - p).toNat < o + n then 0 else u.mem x := by
   have hx : XOp.exec (.bin .pxor .xmm0 .xmm0) u = u.setXmm .xmm0 0 := by
     simp [XOp.exec, reduceXBinOpEval]
   let u₀ := u.setXmm .xmm0 0
-  have hR₀ : (⟨p, b⟩ : Region) ∈ u₀.wr := hR
+  have hR₀ : Covers [⟨p, b⟩] u₀.wr := hR
   have hr₀ : u₀.gpr r = p := hr
   have hx₀ : u₀.xmm .xmm0 = 0 := by simp [u₀, State.setXmm]
   have hdiv := Nat.div_add_mod n 16
@@ -394,7 +397,7 @@ theorem wipeX_run {r : Reg} {o n : Nat} {p : Addr} {b : Nat} (hb : b < 2 ^ 64) (
       rfl
   · have h16' : 16 ≤ n := h16.resolve_left h0
     have hin : InRegions u₀.wr (u₀.gpr r + BitVec.ofNat 64 (o + n - 16)) 16 := by
-      refine ⟨_, hR₀, ?_⟩
+      refine hR₀ _ _ ⟨_, List.mem_singleton_self _, ?_⟩
       rw [hr₀]
       exact Offset.contains_base (n := 16) _ (by omega) (by omega)
     obtain ⟨ex, ea⟩ := zeroX_exec u₀ r (o + n - 16) hin hx₀
@@ -488,7 +491,7 @@ theorem wipeR_ok {c : Prog isa} {r : Reg} {n b : Nat} (hb : b < 2 ^ 64) (hn : n 
   obtain ⟨-, hwr⟩ := Exec.rdwr e
   obtain hg := Exec.gpr hr e
   obtain ⟨hin, hd⟩ := hR s hs
-  obtain ⟨m', ew, hm⟩ := wipeX_run (o := 0) hb u (by rw [hwr]; exact hin) hg (by omega) h16
+  obtain ⟨m', ew, hm⟩ := wipeX_run (o := 0) hb u (by rw [hwr]; exact covers_of_mem hin) hg (by omega) h16
   obtain hf := wipeX_frame hn hm
   refine ⟨_, _, .seq e (.block ew), abiPreserved_wipeX m' ha ?_, hpost s u m' hs hf hq⟩
   exact hf.readW (r := ⟨s.gpr .rsp, 8⟩) (Region.contains_self _ _) (fun r hr => by
@@ -512,8 +515,8 @@ theorem wipeR_ct {c : Prog isa} {r : Reg} {n b : Nat} (hb : b < 2 ^ 64) (hn : n 
         | block w₂ =>
           obtain ⟨-, hwr₁⟩ := Exec.rdwr a₁
           obtain ⟨-, hwr₂⟩ := Exec.rdwr a₂
-          obtain ⟨_, ew₁, -⟩ := wipeX_run (o := 0) hb _ (by rw [hwr₁]; exact hR _ h₁) (Exec.gpr hr a₁) (by omega) h16
-          obtain ⟨_, ew₂, -⟩ := wipeX_run (o := 0) hb _ (by rw [hwr₂]; exact hR _ h₂) (Exec.gpr hr a₂) (by omega) h16
+          obtain ⟨_, ew₁, -⟩ := wipeX_run (o := 0) hb _ (by rw [hwr₁]; exact covers_of_mem (hR _ h₁)) (Exec.gpr hr a₁) (by omega) h16
+          obtain ⟨_, ew₂, -⟩ := wipeX_run (o := 0) hb _ (by rw [hwr₂]; exact covers_of_mem (hR _ h₂)) (Exec.gpr hr a₂) (by omega) h16
           rw [ew₁] at w₁
           rw [ew₂] at w₂
           obtain ⟨-, rfl⟩ := Prod.mk.inj (Option.some.inj w₁)

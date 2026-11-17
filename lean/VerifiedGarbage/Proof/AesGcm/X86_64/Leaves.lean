@@ -1752,7 +1752,7 @@ theorem wipeS_run {n : Nat} (hn : 64 + n ≤ 2112) (h16 : n % 16 = 0 ∨ 16 ≤ 
     refine ⟨?_, ?_⟩
     · simp only [reduceExec, readSrc, State.load64, ea_at, hin, ↓reduceIte, Option.map_some, hSd, u₁]
     · simp [addrs, srcAddrs, ea_at]
-  obtain ⟨m', he, hm⟩ := wipeX_run (r := .r11) (o := 64) (n := n) (p := S) (b := 2112) (by decide) u₁ hR
+  obtain ⟨m', he, hm⟩ := wipeX_run (r := .r11) (o := 64) (n := n) (p := S) (b := 2112) (by decide) u₁ (covers_of_mem hR)
     (RegUpd.gpr_setReg_self ..) hn h16
   refine ⟨{ u₁.setXmm .xmm0 0 with mem := m' }, ?_, fun x => hm x, fun r hr => ?_, rfl, rfl, rfl⟩
   · rw [execBlock, e₁.1]

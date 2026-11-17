@@ -111,6 +111,144 @@ theorem AbsOut.of0 {Ctx St W SP : Addr} {yo : Nat} {H : Block} {x₀ x : List By
     · exact ⟨⟨W + BitVec.ofNat 64 512, 256⟩, by simp, sub_empty⟩
     · exact ⟨below SP 8, by simp, fun _ h => h⟩⟩
 
+/-! ## Callees that zero their working space -/
+
+/-- The offsets from `a` to `b`. -/
+def zw (a b : Nat) : Nat → Bool := fun d => decide (a ≤ d ∧ d < b)
+
+/-- A call of a function whose code ends with `wipeX r 0 n`, after code
+that never writes `r`, from a state whose `r` is in a region `u` may write:
+the `n` bytes at `r` are zero on return. -/
+theorem wipeR_zero {nm : String} {c : Prog isa} {r : Reg} {n b : Nat} (hb : b < 2 ^ 64) (hn : n ≤ b)
+    (h16 : n % 16 = 0 ∨ 16 ≤ n) (hr : ∀ i ∈ instrs c, Taint.clobbers i r = false) (hrs : r ≠ .rsp)
+    {s u : State} {t : List Leak} (e : Exec isa (.call nm (.seq c (.block (wipeX r 0 n)))) s t u)
+    (hR : Covers [⟨s.gpr r, b⟩] s.wr) :
+    ∀ x, (x - s.gpr r).toNat < n → u.mem x = 0 := by
+  cases e with
+  | call hc hb' hret =>
+    rename_i s₁ s₂
+    cases hb' with
+    | seq a w =>
+      cases w with
+      | block w =>
+        simp only [isa, call, Option.some.injEq] at hc
+        subst hc
+        obtain ⟨-, hwr⟩ := Exec.rdwr a
+        obtain hg := Exec.gpr hr a
+        rw [RegUpd.gpr_setReg_of_ne (h := hrs)] at hg
+        obtain ⟨m', ew, hm⟩ := wipeX_run (o := 0) hb _ (by rw [hwr]; exact hR) hg (by omega) h16
+        rw [ew] at w
+        obtain ⟨rfl, -⟩ := Prod.mk.inj (Option.some.inj w)
+        simp only [isa, X86_64.ret] at hret
+        split at hret <;> cases hret
+        intro x hx
+        show m' x = 0
+        rw [hm x, Scrub.ite_t ⟨Nat.zero_le _, by omega⟩]
+
+theorem CtrCall.preS {s : State} {K C D S : Addr} {R n : Nat} (h : CtrCall s K C D S R n) :
+    Proof.Aes.ctr32X86_64S.pre
+      (s.callEntry.withRegions [⟨K, 240⟩] [⟨C, 16⟩, ⟨D, 16 * n⟩, ⟨S, 1480⟩]) := by
+  have hR := toNat_rounds h.rounds
+  have hn := toNat_ofNat_lt (show n < 2 ^ 64 by have := h.wrap; omega_using [this])
+  obtain hs : Region.Sub ⟨S, 1480⟩ ⟨S, 2048⟩ := Region.sub_prefix (by decide)
+  simp only [Proof.Aes.ctr32X86_64S, State.withRegions_gpr, State.withRegions_rd,
+    State.withRegions_wr, State.callEntry_rsp, State.callEntry_gpr s (by decide : Reg.rdi ≠ .rsp),
+    State.callEntry_gpr s (by decide : Reg.rsi ≠ .rsp), State.callEntry_gpr s (by decide : Reg.rdx ≠ .rsp),
+    State.callEntry_gpr s (by decide : Reg.rcx ≠ .rsp), State.callEntry_gpr s (by decide : Reg.r8 ≠ .rsp),
+    State.callEntry_gpr s (by decide : Reg.r9 ≠ .rsp), h.rdi, h.rsi, h.rdx, h.rcx, h.r8, h.r9, hR, hn]
+  exact ⟨trivial, trivial, h.kc, h.kd, h.ks.sub_right hs, h.cd, h.cs.sub_right hs, h.ds.sub_right hs, h.stkC,
+    h.stkD, h.stkS.sub_right hs, h.wrap, h.rounds⟩
+
+theorem covers_1480 {rs rs' : List Region} {S : Addr} (h : Covers (rs ++ [⟨S, 2048⟩]) rs') :
+    Covers (rs ++ [⟨S, 1480⟩]) rs' := fun a m ⟨r, hr, hc⟩ => by
+  rcases List.mem_append.mp hr with hr | hr
+  · exact h a m ⟨r, List.mem_append_left _ hr, hc⟩
+  · simp only [List.mem_singleton] at hr; subst hr
+    exact h a m ⟨_, List.mem_append_right _ (List.mem_singleton_self _), by
+      simp only [Region.Contains] at hc ⊢; omega⟩
+
+/-- `ctr_call`, with an implementation that uses only 1480 bytes of its
+working space (`Ctr32Small`). -/
+theorem ctr_callS (v : Proof.Aes.X86_64.Ctr32Impl) (f : Proof.Aes.X86_64.Ctr32Small v.callee) {s : State}
+    {K C D S : Addr} {R n : Nat} (h : CtrCall s K C D S R n) :
+    WP isa (.call v.callee.name v.callee.code) s fun s' => CtrPost s K C D S R n s' ∧
+      Frame [⟨C, 16⟩, ⟨D, 16 * n⟩, ⟨S, 1480⟩, below (s.gpr .rsp) 8] s.mem s'.mem := by
+  have hR := toNat_rounds h.rounds
+  have hn := toNat_ofNat_lt (show n < 2 ^ 64 by have := h.wrap; omega_using [this])
+  have hr := covers_1480 (rs := [⟨K, 240⟩, ⟨C, 16⟩, ⟨D, 16 * n⟩]) (by simpa using h.reads)
+  have hw := covers_1480 (rs := [⟨C, 16⟩, ⟨D, 16 * n⟩]) (by simpa using h.writes)
+  refine WP.call (k := Proof.Aes.ctr32X86_64S) f.ok v.nosp (by rw [v.depth]; decide)
+    (rd := [⟨K, 240⟩]) (wr := [⟨C, 16⟩, ⟨D, 16 * n⟩, ⟨S, 1480⟩]) h.preS (by simpa using hr) (by simpa using hw) ?_
+  intro s' hrd hwr hcs hf _ ⟨s₂, hm₂, _, hpost⟩
+  rw [v.depth] at hf
+  obtain ⟨hdata, hctr⟩ := hpost
+  simp only [State.withRegions_gpr, State.withRegions_mem,
+    State.callEntry_gpr s (by decide : Reg.rdi ≠ .rsp), State.callEntry_gpr s (by decide : Reg.rsi ≠ .rsp),
+    State.callEntry_gpr s (by decide : Reg.rdx ≠ .rsp), State.callEntry_gpr s (by decide : Reg.rcx ≠ .rsp),
+    State.callEntry_gpr s (by decide : Reg.r8 ≠ .rsp), h.rdi, h.rsi, h.rdx, h.rcx, h.r8, hR, hn,
+    hm₂] at hdata hctr
+  have fE := callEntry_frame s
+  have hRb : 16 * (R + 1) ≤ 240 := by rcases h.rounds with rfl | rfl | rfl <;> decide
+  have eK := bytesAt_frame fE (p := K) (n := 16 * (R + 1))
+    (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact (h.stkK.sub_right (Region.sub_prefix hRb)).symm) (by omega_using [hRb])
+  rw [blockAt_frame fE (disj_below h.stkC), blocksAt_frame fE (disj_below h.stkD) (by have := h.wrap; omega_using [this]),
+    eK] at hdata
+  rw [blockAt_frame fE (disj_below h.stkC)] at hctr
+  have hf' : Frame [⟨C, 16⟩, ⟨D, 16 * n⟩, ⟨S, 1480⟩, below (s.gpr .rsp) 8] s.mem s'.mem := by simpa using hf
+  exact ⟨⟨hrd, hwr, hcs, hf'.sub fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl
+    · exact ⟨_, List.mem_cons_self .., fun _ h => h⟩
+    · exact ⟨_, by simp, fun _ h => h⟩
+    · exact ⟨⟨S, 2048⟩, by simp, Region.sub_prefix (by decide)⟩
+    · exact ⟨_, by simp, fun _ h => h⟩, hdata, hctr⟩, hf'⟩
+
+/-- `vg_aes_ctr32` that zeroes the 1480 bytes of its working space before it
+returns, used through its contract with 1480 bytes: what it leaves from
+`W + 512`, its working space, is zero there. -/
+theorem crCallZ_wipe (v : GcmImpl) {c₀ : Prog isa} (hc : v.ctr.callee.code = .seq c₀ (.block (wipeX .r9 0 1480)))
+    (h9 : ∀ i ∈ instrs c₀, Taint.clobbers i .r9 = false) (f : Proof.Aes.X86_64.Ctr32Small v.ctr.callee) :
+    CrCallZ v 1480 (zw 512 1992) := by
+  intro s K C D W R n h
+  obtain ⟨t, u, e, q, fr⟩ := ctr_callS v.ctr f h
+  refine ⟨t, u, e, q, fr, fun d a b => ?_⟩
+  rw [hc] at e
+  obtain hR : Covers [⟨s.gpr .r9, 2048⟩] s.wr := fun a m ⟨r, hr, hcn⟩ => by
+    simp only [List.mem_singleton] at hr; subst hr
+    rw [h.r9] at hcn
+    exact h.writes a m ⟨⟨W + BitVec.ofNat 64 512, 2048⟩, by simp, hcn⟩
+  obtain e9 : s.gpr .r9 = W + BitVec.ofNat 64 512 := h.r9
+  obtain hd : (W + BitVec.ofNat 64 d - s.gpr .r9).toNat = d - 512 := by
+    rw [e9]; exact Offset.sub_toNat W a (by omega)
+  by_cases hz : d < 1992
+  · rw [show zw 512 1992 d = true by simp [zw]; omega, Scrub.ite_t rfl]
+    exact wipeR_zero (by decide) (by decide) (.inr (by decide)) h9 (by decide) e hR _ (by rw [hd]; omega)
+  · rw [show zw 512 1992 d = false by simp [zw]; omega]
+    exact fr _ fun r hr hcn => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      obtain hS : (⟨W + BitVec.ofNat 64 512, 2048⟩ : Region).Contains (W + BitVec.ofNat 64 d) 1 := by
+        show (W + BitVec.ofNat 64 d - (W + BitVec.ofNat 64 512)).toNat + 1 ≤ 2048
+        rw [Offset.sub_toNat W a (by omega)]; omega
+      rcases hr with rfl | rfl | rfl | rfl
+      · exact h.cs _ hcn hS
+      · exact h.ds _ hcn hS
+      · simp only [Region.Contains] at hcn; rw [Offset.sub_toNat W a (by omega)] at hcn; omega
+      · exact h.stkS _ hcn hS
+
+/-- `vg_aes_ctr32` that needs no working space: it leaves `W + 512` as it was. -/
+theorem crCallZ_free (v : GcmImpl) (cf : Proof.Aes.X86_64.Ctr32Free v.ctr.callee) : CrCallZ v 0 zNo := by
+  intro s K C D W R n h
+  obtain ⟨t, u, e, q, fr⟩ := CrCallP.free v cf h
+  refine ⟨t, u, e, q, fr, KeepZ.of_frame fr fun r hr => ?_⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl
+  · exact h.cs.symm
+  · exact h.ds.symm
+  · exact Lay.disj_empty
+  · exact h.stkS.symm
+
 /-! ## The pieces that keep `W + 448` -/
 
 section
