@@ -13,6 +13,8 @@ pub const VG_AES_CBC_DECRYPT_AES_SHA3_SCRATCH_WRITTEN: usize = 0;
 ///
 /// Contract: `VG.Spec.Cbc.aesDecryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// It writes at most the first 0 bytes of `scratch` (`VG_AES_CBC_DECRYPT_AES_SHA3_SCRATCH_WRITTEN`): no byte of `scratch` beyond them changes.
 ///
 /// # Safety
@@ -185,7 +187,9 @@ b 220f
 220:
 .inst 0x3d80017f
 21:
-.inst 0xd65f03c0
+.inst 0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e410
+.inst 0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418
+.inst 0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xd65f03c0
 .p2align 6",
     )
 }
@@ -199,6 +203,8 @@ pub const VG_AES_CBC_DECRYPT_AES_SCRATCH_WRITTEN: usize = 0;
 /// AES-CBC decryption (NIST SP 800-38A §6.2) of whole blocks, in place: replaces the `n` 16-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH⁻¹_K` is the AES inverse cipher (FIPS 197 §5.3) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it. No padding is removed.
 ///
 /// Contract: `VG.Spec.Cbc.aesDecryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// It writes at most the first 0 bytes of `scratch` (`VG_AES_CBC_DECRYPT_AES_SCRATCH_WRITTEN`): no byte of `scratch` beyond them changes.
 ///
@@ -374,7 +380,9 @@ b 220f
 220:
 .inst 0x3d80017f
 21:
-.inst 0xd65f03c0
+.inst 0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e410
+.inst 0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418
+.inst 0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xd65f03c0
 .p2align 6",
     )
 }
