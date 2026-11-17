@@ -952,7 +952,9 @@ theorem frame4_ok {n : String} {c : Prog isa} {k : Contract isa}
   obtain hflS : Frame [belowA s.sp 40] s₂.mem mL := hfl.sub fun r hr => ⟨_, List.mem_singleton_self _, by
     rw [List.mem_singleton.mp hr, addr_sub' (by simp only [List.length_cons, List.length_nil]; omega_arith)]
     have := belowA_inner (sp := s.sp) (a := 16) (b := 40) (k := 0) (by omega_arith) h40
-    simpa using this⟩
+    simp only [BitVec.sub_zero, belowA] at this
+    simp only [List.length_cons, List.length_nil, Nat.reduceAdd, Nat.reduceMul]
+    exact this⟩
   refine hQ s₂ mL uL hflS ⟨?_, ?_, ?_, fun r hr hl => ?_, ?_⟩ hpost
   · dsimp only; rw [popped_rd, hrd, pushed_rd]
   · dsimp only; rw [popped_wr, hwr, pushed_wr]; rfl
@@ -1315,8 +1317,8 @@ theorem romix_call (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {i : Nat} (hi :
   have hS := hL.nS
   obtain ⟨cov, covw⟩ := romix_cov hL hc hi
   refine frame2_ok (by decide) (by decide) RoMix.roMix_correct roMix_stack (by rw [hc.sp]; omega_arith)
-    (romix_pre hL hc hi ha) cov covw fun s₂ h2 hpost => ?_
-  obtain hf : Frame (romixWr L i ++ [L.STK]) t.mem (popped .r12 8 s₂).mem :=
+    (romix_pre hL hc hi ha) cov covw fun s₂ mL uL hfl h2 hpost => ?_
+  obtain hf : Frame (romixWr L i ++ [L.STK]) t.mem mL :=
     Frame.sub h2.frame fun r hr => by
       rcases List.mem_append.mp hr with hr | hr
       · exact ⟨r, List.mem_append_left _ hr, fun _ h => h⟩
@@ -1355,6 +1357,12 @@ theorem romix_call (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {i : Nat} (hi :
         rw [Nat.mul_comm]
         exact ((hL.stk_in (blk_in hL hi)).sub_left hs).symm) (by have := hL.r_lt; omega_arith)
     rw [e] at h
+    -- The block is apart from the released frame.
+    dsimp only
+    rw [Memory.frame_bytesAt hfl (fun R hR => by
+      simp only [List.mem_singleton] at hR; subst hR
+      rw [Nat.mul_comm]
+      exact ((hL.stk_in (blk_in hL hi)).sub_left (stk_sub hc)).symm) (by have := hL.r_lt; omega_arith)]
     exact h
 
 end
