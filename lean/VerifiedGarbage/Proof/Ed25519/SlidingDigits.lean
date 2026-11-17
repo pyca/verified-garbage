@@ -14,10 +14,11 @@ with no window in hand (`m = 0`), bit `i` is the digit at `i`, and a set bit ope
 there (`m = 2`); with a window in hand, opened at `p`, the digit at `i` is zero and the bit,
 times the window's weight `m`, is added to the digit at `p`; the window closes after its
 fourth bit (`m = 16`). So after `i` bits the digits weighted by powers of two sum to
-`K mod 2^i` (`Good.sum`), and after 256 to `K < 2^256` itself (`digits_sum`); each is zero or
-odd and below 16 (`digits_odd`), and a nonzero one is followed by three zeros, though nothing
-here needs that. `topPos` is the position of the highest digit that is not zero, where a sum
-over the digits from the top may start.
+`K mod 2^i` (`Good.sum`), and after `n` to `K < 2^n` itself (`digits_sum`: 256 bits for
+Ed25519's challenge, 456 for Ed448's); each is zero or odd and below 16 (`digits_odd`), and a
+nonzero one is followed by three zeros, though nothing here needs that. `topPos` is the
+position of the highest digit that is not zero, where a sum over the digits from the top may
+start.
 -/
 
 @[expose] public section
@@ -107,10 +108,10 @@ def run (K : Nat) : Nat → St
 
 theorem run_succ (K n : Nat) : run K (n + 1) = step K (run K n) := rfl
 
-/-- The digits of `K < 2 ^ 256`. -/
-def digits (K : Nat) : Nat → Nat := (run K 256).u
+/-- The digits of `K < 2 ^ n`. -/
+def digits (n K : Nat) : Nat → Nat := (run K n).u
 
-theorem digits_eq (K q : Nat) : digits K q = (run K 256).u q := rfl
+theorem digits_eq (n K q : Nat) : digits n K q = (run K n).u q := rfl
 
 /-- What every state of the recoding satisfies. -/
 structure Good (K : Nat) (s : St) : Prop where
@@ -236,14 +237,14 @@ theorem run_i (K : Nat) : ∀ n, (run K n).i = n
   | n + 1 => by rw [run_succ, step_i, run_i K n]
 
 /-- The digits sum to `K`. -/
-theorem digits_sum {K : Nat} (hK : K < 2 ^ 256) : wsum (digits K) 0 256 = K := by
-  have h := (run_good K 256).sum
+theorem digits_sum {n K : Nat} (hK : K < 2 ^ n) : wsum (digits n K) 0 n = K := by
+  have h := (run_good K n).sum
   rw [run_i, Nat.mod_eq_of_lt hK] at h
   exact h
 
 /-- Each digit is zero, or odd and below 16. -/
-theorem digits_odd (K q : Nat) : digits K q = 0 ∨ (digits K q % 2 = 1 ∧ digits K q < 16) :=
-  (run_good K 256).odd q
+theorem digits_odd (n K q : Nat) : digits n K q = 0 ∨ (digits n K q % 2 = 1 ∧ digits n K q < 16) :=
+  (run_good K n).odd q
 
 /-! ## The top digit -/
 

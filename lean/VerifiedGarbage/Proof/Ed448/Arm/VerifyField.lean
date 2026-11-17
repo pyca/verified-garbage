@@ -95,8 +95,8 @@ def doubleF (x y z : Index) : List FieldOp := [
   .add 17 16 16, .sub 17 15 17, .sub 18 12 15, .mul x 18 17, .sub 19 13 14, .mul y 15 19,
   .mul z 15 17]
 
-def addF (x y : Index) : List FieldOp := [
-  .mul 12 2 10, .mul 13 12 12, .mul 14 0 x, .mul 15 21 y, .mul 16 11 14, .mul 16 16 15,
+def addF (x y z : Index) : List FieldOp := [
+  .mul 12 2 z, .mul 13 12 12, .mul 14 0 x, .mul 15 21 y, .mul 16 11 14, .mul 16 16 15,
   .sub 17 13 16, .add 18 13 16, .add 19 0 21, .add 20 x y, .mul 19 19 20, .mul 20 12 17,
   .sub 19 19 14, .sub 19 19 15, .mul 3 20 19, .mul 20 12 18, .sub 19 15 14, .mul 4 20 19,
   .mul 5 17 18]
@@ -127,11 +127,8 @@ theorem doubleF_eval0 (e : Env) :
 theorem doubleF_eval8 (e : Env) :
     pt (applyOps (doubleF 8 9 10) e) 8 9 10 = Proof.Ed448.double (pt e 8 9 10) := rfl
 
-theorem addF_eval8 (e : Env) :
-    pt (applyOps (addF 8 9) e) 3 4 5 = addWith (e 11) (pt e 0 21 2) (pt e 8 9 10) := rfl
-
-theorem addF_eval6 (e : Env) :
-    pt (applyOps (addF 6 7) e) 3 4 5 = addWith (e 11) (pt e 0 21 2) (pt e 6 7 10) := rfl
+theorem doubleF_eval6 (e : Env) :
+    pt (applyOps (doubleF 6 7 1) e) 6 7 1 = Proof.Ed448.double (pt e 6 7 1) := rfl
 
 theorem doubleF_keep0 (e : Env) (i : Index)
     (hi : 3 ≤ i.val ∧ i.val < 12 ∨ i.val = 1 ∨ i.val = 20) :
@@ -145,14 +142,14 @@ theorem doubleF_keep8 (e : Env) (i : Index)
   refine applyOps_keep _ _ ?_
   revert i; decide
 
-theorem addF_keep (e : Env) (x y : Index) (hx : x.val = 6 ∧ y.val = 7 ∨ x.val = 8 ∧ y.val = 9) (i : Index)
-    (hi : i.val < 3 ∨ (6 ≤ i.val ∧ i.val < 12) ∨ i.val = 21) :
-    applyOps (addF x y) e i = e i := by
+theorem doubleF_keep6 (e : Env) (i : Index)
+    (hi : i.val = 0 ∨ (2 ≤ i.val ∧ i.val < 6) ∨ (8 ≤ i.val ∧ i.val < 12) ∨ i.val = 20 ∨ i.val = 21) :
+    applyOps (doubleF 6 7 1) e i = e i := by
   refine applyOps_keep _ _ ?_
-  have hx' : (x = 6 ∧ y = 7) ∨ (x = 8 ∧ y = 9) := by
-    rcases hx with ⟨h1, h2⟩ | ⟨h1, h2⟩
-    · exact Or.inl ⟨Fin.ext h1, Fin.ext h2⟩
-    · exact Or.inr ⟨Fin.ext h1, Fin.ext h2⟩
-  rcases hx' with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> revert i <;> decide
+  revert i; decide
+
+/-- The slots an addition writes, whatever its second point's. -/
+theorem addF_dest (x y z : Index) :
+    (addF x y z).map fdest = [12, 13, 14, 15, 16, 16, 17, 18, 19, 20, 19, 20, 19, 19, 3, 20, 19, 4, 5] := rfl
 
 end VG.Proof.Ed448.Arm

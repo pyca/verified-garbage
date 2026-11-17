@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ed448.Ref
 public import VerifiedGarbage.Impl.Ed448.Comb
 public import VerifiedGarbage.Proof.X448.Invert
+public import VerifiedGarbage.Proof.Ed25519.SlidingDigits
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
@@ -16,7 +17,10 @@ addition of the affine table entry of the row's four bits of `k`, 114 apart
 
 `vcomb`: `[S]B + [k]A` from the top bit of 456 down, doubling for every bit,
 adding the comb's table entry of `S` in the last 114 (the comb's rows, which
-share the doublings), and `A` when the bit of `k` is set.
+share the doublings), and, with a sliding window on `k`, the odd multiple of
+`A` (`oddMul`) by `k`'s digit at the bit where that digit is not zero: the
+digits of `Proof/Ed25519/SlidingDigits.lean`, each zero or odd and below 16,
+which sum to `k` at the powers of two.
 
 That they agree with the specification (`BaseCombOk`, `VerifyEqCombOk`, and
 `BaseCombUOk`: X448 of the base point is the u-coordinate `Y² / X²` of the
@@ -80,21 +84,30 @@ def BaseCombUOk : Prop :=
 
 /-! ## Verification's equation -/
 
+/-- `[2m + 1]a`, as a table's entries are computed: `a`, and `[2]a` (by `double`) added to the
+entry before. -/
+def oddMul (a : Point) : Nat → Point
+  | 0 => a
+  | m + 1 => Spec.Ed448.pointAdd (oddMul a m) (double a)
+
+/-- The digits of the 456-bit `k`: each zero or odd and below 16. -/
+abbrev vdigits (K : Nat) : Nat → Nat := Proof.Ed25519.Slide.digits 456 K
+
 /-- One bit `t`: the point doubled, the comb's entry of row `t` of `S` added if `t` is a row,
-and `a` added if the bit `bk` (of `k`) is set. -/
-def vcombStep (S : Nat) (bk : Bool) (t : Nat) (a q : Point) : Point :=
+and the multiple of `a` by the digit `d` (of `k`) added if `d` is not zero. -/
+def vcombStep (S d t : Nat) (a q : Point) : Point :=
   let r₁ := double q
   let r₂ := if t < 114 then Spec.Ed448.pointAdd r₁ (combPoint (combDigit S t)) else r₁
-  if bk then Spec.Ed448.pointAdd r₂ a else r₂
+  if d = 0 then r₂ else Spec.Ed448.pointAdd r₂ (oddMul a ((d - 1) / 2))
 
-/-- The point after the top `m` of the 456 bits of `k`, with the comb's rows of `S` among
+/-- The point after the top `m` of the 456 digits of `k`, with the comb's rows of `S` among
 them. -/
 def vcomb (S K : Nat) (a : Point) : Nat → Point
   | 0 => Spec.Ed448.identity
-  | m + 1 => vcombStep S (bitAt K (455 - m)) (455 - m) a (vcomb S K a m)
+  | m + 1 => vcombStep S (vdigits K (455 - m)) (455 - m) a (vcomb S K a m)
 
 theorem vcomb_bit (S K : Nat) (a : Point) {t : Nat} (ht : t < 456) :
-    vcomb S K a (456 - t) = vcombStep S (bitAt K t) t a (vcomb S K a (456 - (t + 1))) := by
+    vcomb S K a (456 - t) = vcombStep S (vdigits K t) t a (vcomb S K a (456 - (t + 1))) := by
   rw [show 456 - t = (456 - (t + 1)) + 1 by omega_using [ht], vcomb,
     show 455 - (456 - (t + 1)) = t by omega_using [ht]]
 
