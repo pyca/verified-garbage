@@ -233,7 +233,8 @@ theorem start_point (q : GenPoint) (x : State) (h : StartCT q x) : WP isa clearA
 
 /-- A loop's end, with `x30` and the stack pointer back. -/
 def DoneCT (q : GenPoint) (x : State) : Prop :=
-  ∃ original final d, GenDone q.inputs original final d ∧ x.mem = d.mem ∧ x.rd = d.rd ∧ x.wr = d.wr ∧
+  ∃ original final d, GenDone q.inputs original final d ∧ Frame [⟨q.inputs.F - 16, 16⟩] d.mem x.mem ∧
+    x.rd = d.rd ∧ x.wr = d.wr ∧
     x.gpr .x19 = q.inputs.F
 
 theorem body_ct [Key.KeyProof] (v : RoundImpl) :
@@ -256,9 +257,9 @@ theorem body_ct [Key.KeyProof] (v : RoundImpl) :
 theorem body_post [Key.KeyProof] (v : RoundImpl) (q : GenPoint) (t : State) (h : Entered q t) :
     WP isa (body (searchCall v) keyCall) t (DoneCT q) := by
   obtain ⟨s, hs, hx, hm, k⟩ := h
-  refine WP.mono (gen_body v hs.input hx hm k) fun u ⟨d, hd, hu⟩ => ?_
+  refine WP.mono (gen_body v hs.input hx hm k) fun u ⟨d, hd, m, uu, f, hu⟩ => ?_
   subst hu
-  exact ⟨s, _, d, hd, rfl, rfl, rfl, by rw [RegUpd.gpr_write_of_ne _ _ _ (by decide)]; exact hd.1.x19⟩
+  exact ⟨s, _, d, hd, f, rfl, rfl, by rw [RegUpd.gpr_write_of_ne _ _ _ (by decide)]; exact hd.1.x19⟩
 
 theorem finish_ct : RelCT isa (Two DoneCT) (.block finish) (fun _ _ => True) := by
   unfold finish
@@ -266,7 +267,9 @@ theorem finish_ct : RelCT isa (Two DoneCT) (.block finish) (fun _ _ => True) := 
     (frame_pins (fun q => q.inputs) fun _ _ ⟨_, _, _, _, _, _, _, h⟩ => h) ?_ (by taint_decide) (by taint_decide)
   rintro q x ⟨o, f, d, hd, hm, hrd, hwr, h19⟩
   refine ⟨h19, by rw [hrd, hwr]; exact hd.1.frame_ld _ (by decide), ?_⟩
-  rw [hm]; exact hd.1.headers (2, q.inputs.up) (by simp [GenPublic.headers])
+  refine Eq.trans ?_ (hd.1.headers (2, q.inputs.up) (by simp [GenPublic.headers]))
+  exact hm.readW (r := q.inputs.frame) (Offset.contains_base _ (by decide) (by decide))
+    (fun R hR => by obtain rfl := List.mem_singleton.mp hR; exact (slot_frame _).symm) (by decide)
 
 /-! ## The whole controller -/
 

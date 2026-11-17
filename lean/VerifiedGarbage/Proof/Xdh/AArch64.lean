@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 public import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Inline
 import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Framework.Block
@@ -467,7 +468,11 @@ theorem exchange_wp {n w : Nat} {f : List Byte → List Byte → List Byte} {c :
   refine WP.seq (WP.mono (saved_wp (n := n) (w := w)) fun e he => ?_)
   refine WP.seq (WP.mono (called_wp hk h he) fun z hz => ?_)
   refine WP.seq (WP.mono (restored_wp hz) fun u hu => ?_)
-  exact WP.mono (checked_wp h hn hu) fun v hv => popped_ok hv
+  refine WP.mono (checked_wp h hn hu) fun v hv m u f => ?_
+  -- The frame's bytes are lost; the output is apart from them.
+  obtain ⟨⟨h1, h2, h3⟩, ho, hx⟩ := popped_ok hv
+  exact ⟨⟨h1, h2, h3⟩, (List.map_congr_left fun i hi => lost_byte f h.2.1.symm (List.mem_range.mp hi)).trans ho,
+    hx⟩
 
 /-! ## Constant time -/
 
