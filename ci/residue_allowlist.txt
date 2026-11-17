@@ -770,15 +770,10 @@ arm vg_cmac_triple_des_absorb
 arm vg_cmac_triple_des_finish
 arm vg_cmac_triple_des_stream_init
 arm vg_ct_eq
-arm vg_dsa_derive_key
 arm vg_dsa_generate_key
 arm vg_dsa_parameter_search
-arm vg_dsa_parameter_search_init
 arm vg_dsa_parameter_search_umaal
 arm vg_dsa_sign_random_prevalidated
-arm vg_dsa_validate_private_key
-arm vg_dsa_validate_public_key
-arm vg_dsa_verify_prevalidated
 arm vg_ec_brainpoolp256r1_compress_public_key
 arm vg_ec_brainpoolp256r1_compress_public_key_umaal
 arm vg_ec_brainpoolp256r1_decompress_public_key

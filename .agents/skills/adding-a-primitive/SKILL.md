@@ -102,7 +102,10 @@ instructions in an ISA model) go in their own PR before either.
    registration in `Proof/` and scrub it with `X86_64.Scrub.scrubReg`,
    whose code clears what the residue analysis (`X86_64.RTaint`) finds may
    hold secrets and which sets `residue`; the registration file binds the
-   result. Only functions `ci/residue_allowlist.txt` already lists may go
+   result. On ARM, a function without frames (`Code.noFrames`: it writes
+   memory only in its buffers) is scrubbed with `Arm.Scrub.scrubReg`
+   (`Proof/Framework/Arm/Scrub.lean`), which sets the registers a callee may
+   change, but the result, and the flags to constants. Only functions `ci/residue_allowlist.txt` already lists may go
    without: the list only shrinks (`ci/check_residue_allowlist.py`), and the
    emitter refuses a listed function that has a proof, so converting one
    removes its line. Where the analysis fails, its trace says at which

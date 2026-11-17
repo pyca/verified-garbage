@@ -197,7 +197,8 @@ own changes are rebuilt either way, on top of the restored build.
   anywhere else that is not its code and proofs.
 * **Functions return without secret residue.** Every artifact proves its
   ISA's `NoResidue` (`TCB/<ISA>/Residue.lean`; `Registration.residue`, which
-  on x86-64 `X86_64.Scrub.scrubReg` provides), but those
+  on x86-64 `X86_64.Scrub.scrubReg` provides, and on ARM, for code without
+  frames, `Arm.Scrub.scrubReg`), but those
   `ci/residue_allowlist.txt` lists (`<target> <function>`). The list only
   shrinks: never add a line (`ci/check_residue_allowlist.py`; only a target
   that starts requiring `NoResidue` lists its functions, once); the emitter refuses an unlisted function

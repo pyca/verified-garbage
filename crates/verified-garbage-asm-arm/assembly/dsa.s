@@ -7868,6 +7868,11 @@ vg_dsa_validate_private_key:
 	ldr r10, [r12, #152]
 	ldr r11, [r12, #156]
 	ldr lr, [r12, #160]
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_dsa_derive_key:
@@ -14240,6 +14245,11 @@ vg_dsa_derive_key:
 	ldr r10, [r12, #152]
 	ldr r11, [r12, #156]
 	ldr lr, [r12, #160]
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_dsa_generate_key:
@@ -16789,6 +16799,11 @@ vg_dsa_validate_public_key:
 	ldr r10, [r12, #152]
 	ldr r11, [r12, #156]
 	ldr lr, [r12, #160]
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_dsa_verify_prevalidated:
@@ -23624,6 +23639,11 @@ vg_dsa_verify_prevalidated:
 	ldr r10, [r12, #152]
 	ldr r11, [r12, #156]
 	ldr lr, [r12, #160]
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_dsa_parameter_search_init:
@@ -23694,6 +23714,11 @@ vg_dsa_parameter_search_init:
 	str r12, [r0, #0]
 	mov r0, #1
 21:
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_dsa_parameter_search_umaal:
