@@ -949,14 +949,19 @@ theorem scrypt_ok {s : State} (h : scryptPPC.pre s) :
     WP isa (scrypt name pbk) s fun s' => abiPreserved s s' ∧ scryptPPC.post s s' := by
   have hL := lay_ok h
   have h1120 : 1120 ≤ s.sp.toNat := h.1
-  refine WP.allocKept ⟨by decide, by decide, by decide⟩ (by simp only [locals]; omega_arith) ?_
+  refine WP.alloc ⟨by decide, by decide, by decide⟩ (by simp only [locals]; omega_arith) ?_
   refine WP.seq (WP.mono (entry_ok h) fun t ⟨hc, he⟩ => ?_)
-  refine rest_ok hv hd name hL hc he fun u hu ho => WP.mono (restore_ok hu) fun v ⟨vlr, vm, vsp, _, _, vg⟩ => ?_
+  refine rest_ok hv hd name hL hc he fun u hu ho => WP.mono (restore_ok hu) fun v ⟨vlr, vm, vsp, _, _, vg⟩ mL _ fl => ?_
   refine ⟨⟨fun r hr => vg r hr, ?_, vlr⟩, ?_⟩
   · show v.sp + BitVec.ofNat 64 112 = s.sp
     rw [vsp, hu.sp, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
     exact lay_top s
-  · show _ = some (bytesAt v.mem _ _)
+  · -- The `free` loses the frame's bytes, which lie apart from the output.
+    refine Eq.trans ?_ (congrArg some (List.map_congr_left fun i hi =>
+      (lost_byte fl (R := (lay s).OUT)
+        (hL.ko.symm.sub_right (Offset.sub_below _ (by simp only [locals]; decide)
+          (by simp only [locals]; decide))) (List.mem_range.mp hi)).symm))
+    show _ = some (bytesAt v.mem _ _)
     rw [vm]
     exact ho
 

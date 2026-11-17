@@ -74,10 +74,11 @@ theorem restore_ok {s₀ : State} (hp : DPre s₀) {s : State} (h : Inv s₀ s) 
   · rw [ut.mem]; show a.mem = _; rw [ua.mem]
 
 theorem frames_ok {s₀ : State} (hp : DPre s₀) {Q : Mem → Prop}
+    (hQ : ∀ m m', Frame [⟨s₀.sp - BitVec.ofNat 64 336, 336⟩] m m' → Q m → Q m')
     (hb : WP isa Impl.Argon2.PPC64LE.Derive.body (entry s₀) fun t => BodyDone s₀ t ∧ Q t.mem) :
     WP isa Impl.Argon2.PPC64LE.Derive.derive s₀ fun u => abiPreserved s₀ u ∧ Q u.mem := by
-  refine WP.allocKept (by decide) (by have := hp.sp_lo; show 336 ≤ _; omega_using [this]) (hb.mono fun t ⟨d, q⟩ => ?_)
-  refine ⟨⟨d.regs, ?_, d.lr⟩, q⟩
+  refine WP.alloc (by decide) (by have := hp.sp_lo; show 336 ≤ _; omega_using [this]) (hb.mono fun t ⟨d, q⟩ m _ fl => ?_)
+  refine ⟨⟨d.regs, ?_, d.lr⟩, hQ _ _ fl q⟩
   show t.sp + BitVec.ofNat 64 336 = _
   rw [d.sp, BitVec.sub_add_cancel]
 
@@ -129,7 +130,12 @@ theorem body_ok : WP isa Impl.Argon2.PPC64LE.Derive.body (entry s₀) fun t => B
 theorem correct :
     WP isa Impl.Argon2.PPC64LE.Derive.derive s₀ fun t => abiPreserved s₀ t ∧ derivePPC.post s₀ t :=
   frames_ok hp (Q := fun m => bytesAt m (outP s₀) (outL s₀) =
-    Spec.Argon2.derive (prm s₀) (pwB s₀) (saltB s₀) (secB s₀) (adB s₀)) (body_ok hp)
+    Spec.Argon2.derive (prm s₀) (pwB s₀) (saltB s₀) (secB s₀) (adB s₀))
+    -- The `free` loses the frame's bytes, which lie apart from the output.
+    (fun _ _ f q => Eq.trans (List.map_congr_left fun i hi =>
+      lost_byte f (R := outR s₀) ((hp.stk_all _ (by simp)).sub_left
+        (Offset.sub_below _ (by omega_using []) (by omega_using []))).symm (List.mem_range.mp hi)) q)
+    (body_ok hp)
 
 end
 
