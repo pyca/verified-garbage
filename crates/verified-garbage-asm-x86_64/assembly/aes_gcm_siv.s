@@ -2158,6 +2158,27 @@ vg_aes_gcm_siv_seal_vaes_vpclmul_avx512:
 	jmp 261f
 260:
 261:
+	pxor xmm0, xmm0
+	movdqu XMMWORD PTR [r15+64], xmm0
+	movdqu XMMWORD PTR [r15+80], xmm0
+	movdqu XMMWORD PTR [r15+96], xmm0
+	movdqu XMMWORD PTR [r15+112], xmm0
+	movdqu XMMWORD PTR [r15+496], xmm0
+	movdqu XMMWORD PTR [r15+512], xmm0
+	movdqu XMMWORD PTR [r15+528], xmm0
+	movdqu XMMWORD PTR [r15+544], xmm0
+	movdqu XMMWORD PTR [r15+560], xmm0
+	movdqu XMMWORD PTR [r15+576], xmm0
+	movdqu XMMWORD PTR [r15+592], xmm0
+	movdqu XMMWORD PTR [r15+608], xmm0
+	movdqu XMMWORD PTR [r15+624], xmm0
+	movdqu XMMWORD PTR [r15+640], xmm0
+	movdqu XMMWORD PTR [r15+656], xmm0
+	movdqu XMMWORD PTR [r15+672], xmm0
+	movdqu XMMWORD PTR [r15+688], xmm0
+	movdqu XMMWORD PTR [r15+704], xmm0
+	movdqu XMMWORD PTR [r15+720], xmm0
+	movdqu XMMWORD PTR [r15+728], xmm0
 	jmp 234f
 233:
 	movdqu xmm0, XMMWORD PTR [r15]
@@ -4816,6 +4837,27 @@ vg_aes_gcm_siv_open_vaes_vpclmul_avx512:
 	pxor xmm8, xmm11
 	movdqa xmm2, xmm10
 	pxor xmm2, xmm8
+	pxor xmm0, xmm0
+	movdqu XMMWORD PTR [r15+64], xmm0
+	movdqu XMMWORD PTR [r15+80], xmm0
+	movdqu XMMWORD PTR [r15+96], xmm0
+	movdqu XMMWORD PTR [r15+112], xmm0
+	movdqu XMMWORD PTR [r15+496], xmm0
+	movdqu XMMWORD PTR [r15+512], xmm0
+	movdqu XMMWORD PTR [r15+528], xmm0
+	movdqu XMMWORD PTR [r15+544], xmm0
+	movdqu XMMWORD PTR [r15+560], xmm0
+	movdqu XMMWORD PTR [r15+576], xmm0
+	movdqu XMMWORD PTR [r15+592], xmm0
+	movdqu XMMWORD PTR [r15+608], xmm0
+	movdqu XMMWORD PTR [r15+624], xmm0
+	movdqu XMMWORD PTR [r15+640], xmm0
+	movdqu XMMWORD PTR [r15+656], xmm0
+	movdqu XMMWORD PTR [r15+672], xmm0
+	movdqu XMMWORD PTR [r15+688], xmm0
+	movdqu XMMWORD PTR [r15+704], xmm0
+	movdqu XMMWORD PTR [r15+720], xmm0
+	movdqu XMMWORD PTR [r15+728], xmm0
 	jmp 210f
 29:
 	movdqu xmm0, XMMWORD PTR [r15]
@@ -7929,6 +7971,27 @@ vg_aes_gcm_siv_seal_aesni_pclmul_avx:
 	jmp 261f
 260:
 261:
+	pxor xmm0, xmm0
+	movdqu XMMWORD PTR [r15+64], xmm0
+	movdqu XMMWORD PTR [r15+80], xmm0
+	movdqu XMMWORD PTR [r15+96], xmm0
+	movdqu XMMWORD PTR [r15+112], xmm0
+	movdqu XMMWORD PTR [r15+496], xmm0
+	movdqu XMMWORD PTR [r15+512], xmm0
+	movdqu XMMWORD PTR [r15+528], xmm0
+	movdqu XMMWORD PTR [r15+544], xmm0
+	movdqu XMMWORD PTR [r15+560], xmm0
+	movdqu XMMWORD PTR [r15+576], xmm0
+	movdqu XMMWORD PTR [r15+592], xmm0
+	movdqu XMMWORD PTR [r15+608], xmm0
+	movdqu XMMWORD PTR [r15+624], xmm0
+	movdqu XMMWORD PTR [r15+640], xmm0
+	movdqu XMMWORD PTR [r15+656], xmm0
+	movdqu XMMWORD PTR [r15+672], xmm0
+	movdqu XMMWORD PTR [r15+688], xmm0
+	movdqu XMMWORD PTR [r15+704], xmm0
+	movdqu XMMWORD PTR [r15+720], xmm0
+	movdqu XMMWORD PTR [r15+728], xmm0
 	jmp 234f
 233:
 	movdqu xmm0, XMMWORD PTR [r15]
@@ -10950,6 +11013,27 @@ vg_aes_gcm_siv_open_aesni_pclmul_avx:
 	pxor xmm8, xmm11
 	movdqa xmm2, xmm10
 	pxor xmm2, xmm8
+	pxor xmm0, xmm0
+	movdqu XMMWORD PTR [r15+64], xmm0
+	movdqu XMMWORD PTR [r15+80], xmm0
+	movdqu XMMWORD PTR [r15+96], xmm0
+	movdqu XMMWORD PTR [r15+112], xmm0
+	movdqu XMMWORD PTR [r15+496], xmm0
+	movdqu XMMWORD PTR [r15+512], xmm0
+	movdqu XMMWORD PTR [r15+528], xmm0
+	movdqu XMMWORD PTR [r15+544], xmm0
+	movdqu XMMWORD PTR [r15+560], xmm0
+	movdqu XMMWORD PTR [r15+576], xmm0
+	movdqu XMMWORD PTR [r15+592], xmm0
+	movdqu XMMWORD PTR [r15+608], xmm0
+	movdqu XMMWORD PTR [r15+624], xmm0
+	movdqu XMMWORD PTR [r15+640], xmm0
+	movdqu XMMWORD PTR [r15+656], xmm0
+	movdqu XMMWORD PTR [r15+672], xmm0
+	movdqu XMMWORD PTR [r15+688], xmm0
+	movdqu XMMWORD PTR [r15+704], xmm0
+	movdqu XMMWORD PTR [r15+720], xmm0
+	movdqu XMMWORD PTR [r15+728], xmm0
 	jmp 210f
 29:
 	movdqu xmm0, XMMWORD PTR [r15]
