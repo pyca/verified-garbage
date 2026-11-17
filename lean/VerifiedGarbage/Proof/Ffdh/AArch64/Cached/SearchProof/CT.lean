@@ -108,7 +108,7 @@ theorem key_loop_ct (a : Attempt) :
 /-! ## The frame saving `x30` -/
 
 /-- A frame saving `x30` around a body proven with the permissions outside
-it (as `WP.frameRegKept` runs it) leaks what the body does there: the body's
+it (as `WP.frameReg` runs it) leaks what the body does there: the body's
 run in the frame is that run, with more permissions (`Exec.widen`). -/
 theorem relCT_pushX30 {body : Prog isa} {P : State → State → Prop}
     (hsp : ∀ a b, P a b → a.sp = b.sp)

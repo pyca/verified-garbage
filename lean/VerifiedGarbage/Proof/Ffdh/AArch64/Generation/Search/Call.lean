@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AArch64.Inline
 public import VerifiedGarbage.Proof.Ffdh.Contract
 
 /-! # One candidate of the parameter search (AArch64)
@@ -108,6 +109,16 @@ theorem SLive.callFacts {p : SPub} {original s : State} {used k : Nat}
   · simp only [sOfState, Nat.mul_div_cancel _ (by decide : 0 < 8)]
     exact hscr
   · simp only [sOfState, Nat.mul_div_cancel _ (by decide : 0 < 8)]
+
+/-- The output and `used` are apart from the stack the search uses. -/
+theorem SInput.outStack {p : SPub} {original : State} (hi : SInput p original) :
+    (rO p).Disjoint (below p.sp stackUse) ∧ (rU p).Disjoint (below p.sp stackUse) := by
+  obtain ⟨_, _, _, _, _, _, _, hstk, _, _, _, _, _, -, -, -, -⟩ := hi.1
+  cases hi.2
+  simp only [inWrites, inReads, List.mem_cons, List.not_mem_nil, or_false,
+    forall_eq_or_imp, forall_eq, List.cons_append, List.nil_append] at hstk
+  obtain ⟨bo, bu, -⟩ := hstk
+  exact ⟨bo.symm, bu.symm⟩
 
 /-- The candidate's stack argument: `scratch_len`. -/
 def callValues (p : SPub) : List (Nat × BitVec 64) := [(0, BitVec.ofNat 64 (p.Z / 8))]
@@ -235,6 +246,21 @@ def CandPost (p : SPub) (used : Nat) (t : State) : Prop :=
         | some (_, rest) => (p.randLen - used) - rest.length
         | none => 0)]
 
+theorem CandPost.frame {p : SPub} {used : Nat} {s t : State} {F : Region}
+    (h : CandPost p used s) (hf : Frame [F] s.mem t.mem)
+    (ho : (rO p).Disjoint F) (hu : (rU p).Disjoint F)
+    (hr : (t.gpr .x0).setWidth 32 = (s.gpr .x0).setWidth 32) : CandPost p used t := by
+  have eo : Spec.Rsa.bytesAt t.mem p.op p.len = Spec.Rsa.bytesAt s.mem p.op p.len :=
+    List.map_congr_left fun i hi => lost_byte hf ho (List.mem_range.mp hi)
+  have eu : Spec.Rsa.wordsAt t.mem p.up 1 = Spec.Rsa.wordsAt s.mem p.up 1 := by
+    refine List.map_congr_left fun i hi => ?_
+    obtain rfl : i = 0 := by simpa using hi
+    exact hf.readW (r := rU p) (Offset.contains_base _ (by decide) (by decide))
+      (fun R hR => by obtain rfl := List.mem_singleton.mp hR; exact hu) (by decide)
+  unfold CandPost at h ⊢
+  rw [eo, eu, hr]
+  exact h
+
 section
 
 variable {p : SPub} {original s : State} {used k : Nat}
@@ -327,15 +353,25 @@ theorem search_candidate_run (c : Cand) (h : SLive p original used k s) :
     rw [h.sp, show (p.sp - 16 : Addr) = p.sp - BitVec.ofNat 64 16 from rfl, h16]
     omega_arith
   unfold candidateRun
-  refine WP.allocKept (by decide) hroom' ?_
+  refine WP.alloc (by decide) hroom' ?_
   refine WP.seq (WP.mono (search_arguments_ok h) fun u ⟨⟨ha, hm⟩, k⟩ => ?_)
   have hu : u.sp = callSp p := by rw [k.sp]; show s.sp - BitVec.ofNat 64 16 = _; rw [h.sp]
   refine WP.callV (k := ParameterCandidate.pcContract) c.correct (call_candidate_pre hf hu ha hm)
     (call_covers_reads h k.rd k.wr) (call_covers_writes h k.wr) ?_ c.noFrames
-  intro t hrd hwr hsp hfr hcs _ hvs hpost
+  intro t hrd hwr hsp hfr hcs _ hvs hpost m u f
+  have hA : Region.Sub ⟨s.sp - BitVec.ofNat 64 16, 16⟩ (below p.sp stackUse) := by
+    rw [h.sp, show (p.sp - 16 : Addr) - BitVec.ofNat 64 16 = callSp p from rfl, callSp_eq]
+    exact Region.sub_prefix (by decide)
+  have hA' : ∀ R ∈ [(⟨s.sp - BitVec.ofNat 64 16, 16⟩ : Region)],
+      ∃ R' ∈ SInput.callChanges original, Region.Sub R R' := by
+    intro R hR
+    obtain rfl := List.mem_singleton.mp hR
+    refine ⟨below original.sp stackUse, by simp [SInput.callChanges], ?_⟩
+    rw [← h.input.sp_eq]
+    exact hA
   refine ⟨?_, ?_⟩
   · -- The loop state, after the frame.
-    apply h.restore (show (freed 16 t).rd = s.rd from hrd.trans k.rd)
+    apply h.restore (t := { freed 16 t with mem := m, unknowns := u }) (show (freed 16 t).rd = s.rd from hrd.trans k.rd)
       (show (freed 16 t).wr = s.wr from by change t.wr.tail = s.wr; rw [hwr, k.wr]; rfl)
     · change t.sp + BitVec.ofNat 64 16 = s.sp
       rw [hsp, k.sp]
@@ -344,8 +380,9 @@ theorem search_candidate_run (c : Cand) (h : SLive p original used k s) :
       exact (hcs r hr h30).trans (k.gpr r (by revert r hr; decide))
     · intro r hr
       exact (hvs r hr).trans (k.vcs r hr)
-    · exact candidate_frame h hm hfr
+    · exact (candidate_frame h hm hfr).trans (f.sub hA')
   · -- The candidate's status and outputs.
+    refine CandPost.frame (s := t) ?_ f ((h.input.outStack).1.sub_right hA) ((h.input.outStack).2.sub_right hA) rfl
     have hrand := call_rand h hm ha
     obtain ⟨r0, r1, r2, r3, r4, -, r6, -⟩ := ha
     have hb := hf.bits

@@ -10,10 +10,12 @@ import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AArch64.LaneRestore
+import VerifiedGarbage.Proof.Framework.AArch64.Inline
+import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.SearchProof.AttemptRun
 
 /-! # The key-generation controller's correctness (AArch64)
 
-The loop runs in the frame saving `x30` (`WP.frameRegKept`); `finish` then
+The loop runs in the frame saving `x30` (`WP.frameReg`); `finish` then
 stores the octets consumed, returns the status and restores `x19`.
 -/
 
@@ -142,6 +144,35 @@ theorem KeyDone.popped {p : KeyPublic} {original s : State} {r : Spec.Ffdh.KeySe
   · show (s.write .x .x30 v).gpr reg = _
     rw [RegUpd.gpr_write, ite_eq_right h30]; exact h.saved reg hr h19 h30
 
+/-- After the frame, whose slot is lost: a finished search, with `x30` and the
+stack pointer back. -/
+theorem KeyDone.released {p : KeyPublic} {original s : State} {r : Spec.Ffdh.KeySearchResult}
+    (h : KeyDone p original r s) (v sp : BitVec 64) {m : Mem} (u : Nat → BitVec 64)
+    (hf : Frame [below original.sp stackUse] s.mem m) :
+    KeyDone p original r { s.write .x .x30 v with sp := sp, mem := m, unknowns := u } := by
+  have h' := h.popped v sp
+  have hc := h.input.control_frame (hf.sub fun R hR => ⟨R, by
+    obtain rfl := List.mem_singleton.mp hR; simp [KeyInput.callChanges], fun _ hi => hi⟩)
+  rw [← h.input.sp_eq] at hf
+  have hx := fun {i} (hi : i < p.len) => lost_byte (i := i) hf h.input.outStack.1 hi
+  have hy := fun {i} (hi : i < p.len) => lost_byte (i := i) hf h.input.outStack.2 hi
+  refine ⟨h'.input, h'.rd, h'.wr, h'.x19, h'.saved, h'.vcs, (hc 4 (by decide)).trans h.savedX19,
+    (hc 15 (by decide)).trans h.usedPtr, (hc 11 (by decide)).trans h.used,
+    (hc 14 (by decide)).trans h.status,
+    (List.map_congr_left fun i hi => hc i (by have := List.mem_range.mp hi; omega_using [this])).trans
+      h.policy, ?_⟩
+  have ex : Spec.Rsa.bytesAt m p.xp p.len = Spec.Rsa.bytesAt s.mem p.xp p.len :=
+    List.map_congr_left fun i hi => hx (List.mem_range.mp hi)
+  have ey : Spec.Rsa.bytesAt m p.yp p.len = Spec.Rsa.bytesAt s.mem p.yp p.len :=
+    List.map_congr_left fun i hi => hy (List.mem_range.mp hi)
+  have ho := h.output
+  unfold KeyOutput at ho ⊢
+  change (match r.outcome with
+    | .accepted sx sy => Spec.Rsa.bytesAt m p.xp p.len = _ ∧ Spec.Rsa.bytesAt m p.yp p.len = _
+    | _ => Spec.Rsa.bytesAt m p.xp p.len = _ ∧ Spec.Rsa.bytesAt m p.yp p.len = _)
+  rw [ex, ey]
+  exact ho
+
 theorem key_search {p : KeyPublic} {s t : State} (a : Attempt) (h : KeyInput p s)
     (hx : t.gpr .x19 = p.control)
     (hm : t.mem = Proof.Ffdh.Control.writeController s.mem p.control (entryValues s))
@@ -151,7 +182,7 @@ theorem key_search {p : KeyPublic} {s t : State} (a : Attempt) (h : KeyInput p s
   have hl := key_start h hx hm k
   have hsp : 16 ≤ t.sp.toNat := by rw [k.sp, ← h.sp_eq]; have := h.sp_room; omega_using [this]
   unfold search
-  refine WP.frameRegKept hsp ?_ ?_ ?_
+  refine WP.frameReg hsp ?_ ?_ ?_
   · intro R hR
     rw [k.wr, h.1.2.2.2.1] at hR
     have hd := h.stack_disjoint (r := R) (List.mem_append_left _ hR)
@@ -163,8 +194,12 @@ theorem key_search {p : KeyPublic} {s t : State} (a : Attempt) (h : KeyInput p s
       simp only [keyResult, KeyPublic.tail, keyTail, after, keyOfState, KeyPublic.a, List.drop_zero,
         Nat.zero_add,VG.Proof.Ffdh.GenerationPolicy.search]
     refine WP.mono (key_loop a (expected := keyResult s) (n := 128 * p.keys + p.scalars + 1)
-      ⟨0, p.keys, p.scalars, rfl, hl, by rw [hinit], by rw [hinit]⟩) fun u hu => ?_
-    refine ⟨keyResult s, rfl, rfl, hu.popped _ _, ?_, k.sp⟩
+      ⟨0, p.keys, p.scalars, rfl, hl, by rw [hinit], by rw [hinit]⟩) fun u hu m uu f => ?_
+    refine ⟨keyResult s, rfl, rfl, hu.released _ _ uu (f.sub fun R hR => ⟨_, List.mem_singleton_self _, ?_⟩),
+      ?_, k.sp⟩
+    · obtain rfl := List.mem_singleton.mp hR
+      rw [k.sp]
+      exact Offset.sub_below s.sp (a := 16) (b := 64) (by decide) (by decide)
     show (u.write .x .x30 (t.gpr .x30)).gpr .x30 = _
     rw [RegUpd.gpr_write, ite_eq_left rfl]
     exact k.gpr .x30 (by decide)

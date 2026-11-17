@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.SearchProof.Data
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AArch64.Inline
 public import VerifiedGarbage.Impl.Ffdh.AArch64.Cached.Search
 public import VerifiedGarbage.Proof.Ffdh.ControlMemory
 import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.SearchProof.Live
@@ -507,6 +508,18 @@ theorem AttemptPost.keep {p : KeyPublic} {rand : List Byte} {used : Nat} {s t : 
   rw [hm, hr]
   exact h
 
+theorem AttemptPost.frame {p : KeyPublic} {rand : List Byte} {used : Nat} {s t : State} {F : Region}
+    (h : AttemptPost p rand used s) (hf : Frame [F] s.mem t.mem)
+    (hx : (rX p).Disjoint F) (hy : (rY p).Disjoint F)
+    (hr : (t.gpr .x0).setWidth 32 = (s.gpr .x0).setWidth 32) : AttemptPost p rand used t := by
+  have ex : Spec.Rsa.bytesAt t.mem p.xp p.len = Spec.Rsa.bytesAt s.mem p.xp p.len :=
+    List.map_congr_left fun i hi => lost_byte hf hx (List.mem_range.mp hi)
+  have ey : Spec.Rsa.bytesAt t.mem p.yp p.len = Spec.Rsa.bytesAt s.mem p.yp p.len :=
+    List.map_congr_left fun i hi => lost_byte hf hy (List.mem_range.mp hi)
+  unfold AttemptPost at h ⊢
+  rw [ex, ey, hr]
+  exact h
+
 section
 
 variable {p : KeyPublic} {original s : State} {used keys scalars : Nat}
@@ -655,6 +668,22 @@ theorem call_attempt_pre {p : KeyPublic} {original s : State} {used keys scalars
  · simpa only [call_gpr (by decide : Reg.x4∉linkRegs),call_gpr (by decide : Reg.x5∉linkRegs),r4,r5,hdl] using domainValid
  · simpa only [State.withRegions_mem,State.callEntry_mem] using contextValid
 
+/-- The outputs are apart from the stack the search uses. -/
+theorem KeyInput.outStack {p : KeyPublic} {original : State} (hi : KeyInput p original) :
+    (rX p).Disjoint (below p.sp stackUse) ∧ (rY p).Disjoint (below p.sp stackUse) := by
+  obtain ⟨_, _, _, _, _, _, _, hstk, _, _, hx1, hx3, _, -, -, -, -⟩ := hi.1
+  cases hi.2
+  simp only [inWrites, inReads, List.mem_cons, List.not_mem_nil, or_false,
+    forall_eq_or_imp, forall_eq, List.cons_append, List.nil_append] at hstk
+  obtain ⟨bx, by', -⟩ := hstk
+  have hX : rX (keyOfState original) = inX original := by
+    simp only [rX, inX, keyOfState, hx1]
+  have hY : rY (keyOfState original) = inY original := by
+    simp only [rY, inY, keyOfState, hx3]
+  rw [← hX] at bx
+  rw [← hY] at by'
+  exact ⟨bx.symm, by'.symm⟩
+
 theorem key_attempt_run (a : Attempt) (h : KeyLive p original used keys scalars s)
     (hroom : used + p.len ≤ p.randLen) :
     WP isa (attemptRun a.call) s fun t =>
@@ -668,15 +697,26 @@ theorem key_attempt_run (a : Attempt) (h : KeyLive p original used keys scalars 
     rw [h.sp, show (p.sp - 16 : Addr) = p.sp - BitVec.ofNat 64 16 from rfl, h16]
     omega_using [this]
   unfold attemptRun
-  refine WP.allocKept (by decide) hroom' ?_
+  refine WP.alloc (by decide) hroom' ?_
   refine WP.seq (WP.mono (key_arguments_ok h) fun u ⟨⟨ha, hm⟩, k⟩ => ?_)
   have hu : u.sp = callSp p := by rw [k.sp]; show s.sp - BitVec.ofNat 64 48 = _; rw [h.sp]
   refine WP.callFV (k := attemptContract) (attempt_callable a.M) (call_attempt_pre h hroom hf hu ha hm)
     (call_covers_reads h hroom k.rd k.wr) (call_covers_writes h k.wr) ?_ (by rw [a.depth]; decide)
-  intro t hrd hwr hsp hfr hcs hvs hpost
+  intro t hrd hwr hsp hfr hcs hvs hpost m u f
+  have hA : Region.Sub ⟨s.sp - BitVec.ofNat 64 48, 48⟩ (below p.sp stackUse) := by
+    rw [h.sp, show (p.sp - 16 : Addr) - BitVec.ofNat 64 48 = callSp p from rfl, callSp_eq]
+    exact Region.sub_prefix (by decide)
+  have hA' : ∀ R ∈ [(⟨s.sp - BitVec.ofNat 64 48, 48⟩ : Region)],
+      ∃ R' ∈ KeyInput.callChanges original, Region.Sub R R' := by
+    intro R hR
+    obtain rfl := List.mem_singleton.mp hR
+    refine ⟨below original.sp stackUse, by simp [KeyInput.callChanges], ?_⟩
+    rw [← h.input.sp_eq]
+    exact hA
   refine ⟨?_, ?_⟩
   · -- The loop state, after the frame.
-    apply h.restore (show (freed 48 t).rd = s.rd from hrd.trans k.rd)
+    apply h.restore (t := { freed 48 t with mem := m, unknowns := u })
+      (show (freed 48 t).rd = s.rd from hrd.trans k.rd)
       (show (freed 48 t).wr = s.wr from by change t.wr.tail = s.wr; rw [hwr, k.wr]; rfl)
     · change t.sp + BitVec.ofNat 64 48 = s.sp
       rw [hsp, k.sp]
@@ -685,8 +725,9 @@ theorem key_attempt_run (a : Attempt) (h : KeyLive p original used keys scalars 
       exact (hcs r hr h30).trans (k.gpr r (by revert r hr; decide))
     · intro r hr
       exact (hvs r hr).trans (k.vcs r hr)
-    · exact attempt_frame h hm hfr a.depth
+    · exact (attempt_frame h hm hfr a.depth).trans (f.sub hA')
   · -- The attempt's status and outputs.
+    refine AttemptPost.frame (s := t) ?_ f ((h.input.outStack).1.sub_right hA) ((h.input.outStack).2.sub_right hA) rfl
     obtain ⟨hdom, hrand, h6⟩ := call_inputs h hroom hf hm hu ha
     have hp := hpost
     simp only [attemptContract, attemptPost, attemptParameters, attemptScalar, hdom, hrand, h6] at hp
