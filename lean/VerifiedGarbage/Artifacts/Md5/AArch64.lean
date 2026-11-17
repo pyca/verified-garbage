@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Md5.AArch64.Shared
+public import VerifiedGarbage.Proof.Md5.AArch64.Stream.Init
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.AArch64.Print
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant

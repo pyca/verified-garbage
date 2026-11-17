@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Sm3.AArch64.Shared
+public import VerifiedGarbage.Proof.Sm3.AArch64.Stream.Init
 public import VerifiedGarbage.Proof.Variants.Sm3Compress.AArch64
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.AArch64.Print

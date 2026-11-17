@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Sha1.AArch64.Shared
+public import VerifiedGarbage.Proof.Sha1.AArch64.Stream.Init
 public import VerifiedGarbage.Proof.Sha1.AArch64.Sha2.Compress
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.AArch64.Print

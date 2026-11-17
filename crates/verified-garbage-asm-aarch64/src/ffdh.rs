@@ -4175,6 +4175,8 @@ b 21f
 
 /// Initialize native finite-field Diffie–Hellman parameter generation. Validates 512..=8192 bits and generator 2 or 5. Returns 1 and initializes the controller's attempt limit, output width, entropy budget and first entropy request; returns 0 and clears those four words on invalid parameters. The remaining state words are private workspace. Contract: `VG.Spec.Ffdh.parameterInitContract`.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 128 bytes.
@@ -4199,6 +4201,8 @@ b 21f
 }
 
 /// Initialize native finite-field Diffie–Hellman key generation. Returns 1 for a domain width in 64..=1024 bytes, initializing the rejection budgets and first entropy request; returns 0 and clears the first four state words otherwise. The remaining state words are private workspace. Contract: `VG.Spec.Ffdh.keyInitContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///

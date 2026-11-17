@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Sm3.initContract`. The streaming state is the hash value followed by a buffered partial block (`VG.Spec.Sm3.Repr`).
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 96 bytes.
