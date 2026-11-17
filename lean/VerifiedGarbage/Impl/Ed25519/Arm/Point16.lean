@@ -40,7 +40,8 @@ namespace Point16
 /-- `vg_ed25519_r16_point_add` (with `umaal`, `vg_ed25519_r16_point_add_umaal`). -/
 def addFn (umaal : Bool) : Prog isa := asFn false (pointAdd umaal)
 
-/-- `vg_ed25519_r16_point_double` (with `umaal`, `vg_ed25519_r16_point_double_umaal`). -/
+/-- `vg_ed25519_r16_point_double` (with `umaal`, `vg_ed25519_r16_point_double_umaal`): the point's
+`X : Y : Z` doubled, and what gives its `T` left in slots 11 and 14 (`pointDoubleOps`). -/
 def doubleFn (umaal : Bool) : Prog isa := asFn false (pointDouble umaal)
 
 /-- A call of `vg_ed25519_r16_point_add`. -/

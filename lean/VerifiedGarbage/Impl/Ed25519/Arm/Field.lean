@@ -68,15 +68,18 @@ def pointAddOps : List FieldOp := [
 
 def pointAdd (umaal : Bool) : Prog isa := fieldCode umaal pointAddOps
 
-/-- Double the first point, using the complete addition formula on two
-equal inputs. Uses precisely the same formula as the specification. -/
+/-- Double the point in slots 0–2, `X : Y : Z` (its `T` is not read), with `dbl-2008-hwcd` for
+`a = -1`: `A = X²`, `B = Y²`, `C = 2Z²`, `E = 2XY`, `G = B - A`, `F = C - G`, `H = A + B`, and
+`X = EF`, `Y = GH`, `Z = FG`, which are those of the double negated, the same point: seven
+products. `T` (slot 3) is left as it was: it is `EH`, of the `E` and `H` left in slots 11 and
+14 (`doubleTOps`), and only an addition reads it. Slots 8–14 are temporary. -/
 def pointDoubleOps : List FieldOp := [
-  .sub 8 1 0, .mul 8 8 8,
-  .add 9 1 0, .mul 9 9 9,
-  .mul 10 3 16, .add 10 10 10, .mul 10 10 3,
-  .add 11 2 2, .mul 11 11 2,
-  .sub 12 9 8, .sub 13 11 10, .add 14 11 10, .add 15 9 8,
-  .mul 0 12 13, .mul 1 14 15, .mul 2 13 14, .mul 3 12 15]
+  .mul 8 0 0, .mul 9 1 1, .mul 10 2 2, .add 10 10 10, .mul 11 0 1, .add 11 11 11,
+  .sub 12 9 8, .sub 13 10 12, .add 14 8 9, .mul 0 11 13, .mul 1 12 14, .mul 2 13 12]
+
+/-- `T = EH` of the doubling just before (`pointDoubleOps`): one product, inlined, as its callers
+keep counters in `r10` and `r11`, which a call of the product saves and restores. -/
+def doubleTOps : List FieldOp := [.mul 3 11 14]
 
 def pointDouble (umaal : Bool) : Prog isa := fieldCode umaal pointDoubleOps
 

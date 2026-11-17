@@ -37,9 +37,11 @@ digit is those bits' value, and the other three digits of the window are zero. A
 byte `TBA` holds the odd multiples `[1]A, [3]A, …, [15]A` (`oddTable`), packed as the
 verification's other points are. The sum (slots 0–3) starts at the entry of the top digit that
 is not zero (`topDigit`, `slideStart`), and for each digit below it the sum is doubled and the
-digit's entry is added where the digit is not zero (`slideStep`). The digits are the
-challenge's, which verification may leak, so the branches and the table's addresses are on
-public data.
+digit's entry is added where the digit is not zero (`slideStep`). The doubling is of the sum's
+`X : Y : Z` (`vg_ed25519_r16_point_double`, seven products): its `T`, one more product
+(`doubleTOps`), is computed only where an addition reads it, before a digit's entry is added,
+and after the last digit, for the addition of `R`. The digits are the challenge's, which
+verification may leak, so the branches and the table's addresses are on public data.
 
 The recoding reads one bit a step (`recBit`), a byte of `k` at a time (`recByte`): `r9` counts
 the bits read, `r10` holds the byte in hand, shifted right once a bit, `r8` the weight of the
@@ -105,11 +107,12 @@ def recode : Prog isa := .seq (.block recInit) (.loop recByte .ne)
 def entryAddr : List Instr :=
   [.movw .r12 (BitVec.ofNat 16 TBA), .dp .add .r12 .r12 (.shifted .r11 .lsl 7), .dp .add .r12 .r0 (.reg .r12)]
 
-/-- `d` in slot 16, `A` (slots 0–3) to entry 0, `[2]A` in slots 4–7, `A` in slots 0–3 again,
-and the next entry's index. -/
+/-- `d` in slot 16, `A` (slots 0–3) to entry 0, `[2]A` with its `T` in slots 4–7, `A` in slots
+0–3 again, and the next entry's index. -/
 def oddTableInit (umaal : Bool) : Prog isa :=
   .seq (fieldCode false [.const 16 Spec.Ed25519.d]) <| .seq (.block (pointTableWrite TBA)) <|
-  .seq (Point16.doubleCall umaal) <| .seq copyPointToQ (.block (pointTableRead TBA ++ [.mov .r11 (.imm 1)]))
+  .seq (Point16.doubleCall umaal) <| .seq (fieldCode umaal doubleTOps) <|
+  .seq copyPointToQ (.block (pointTableRead TBA ++ [.mov .r11 (.imm 1)]))
 
 /-- Entry `r11` = entry `r11 - 1` (in slots 0–3) + `[2]A` (in slots 4–7). Z is set after
 entry 7. -/
@@ -123,7 +126,8 @@ def oddTable (umaal : Bool) : Prog isa := .seq (oddTableInit umaal) (.loop (oddT
 /-- The digit below `r11` into `r10`, Z set if it is zero. -/
 def digitLoad : List Instr := [.dp .add .r3 .r0 (.reg .r11), .ldrb .r10 .r3 DIG, .cmp .r10 (.imm 0)]
 
-/-- The position `r11` moved down, the sum doubled, and that position's digit loaded. -/
+/-- The position `r11` moved down, the sum's `X : Y : Z` doubled, and that position's digit
+loaded. -/
 def slideHead (umaal : Bool) : Prog isa :=
   .seq (.block [.dp .sub .r11 .r11 (.imm 1)]) (.seq (Point16.doubleCall umaal) (.block digitLoad))
 
@@ -138,10 +142,16 @@ def digitAddr : List Instr :=
 def addEntry (umaal : Bool) : Prog isa :=
   .seq copyPointToQ (.seq (.block (digitAddr ++ pointFromTable)) (Point16.addCall umaal))
 
+/-- After the doubling, with Z set if the digit is zero: for a digit that is not zero, the
+sum's `T` and the digit's entry added; for one that is, the sum's `T` only after digit 0. -/
+def slideTail (umaal : Bool) : Prog isa :=
+  .ite .ne (.seq (fieldCode umaal doubleTOps) (addEntry umaal))
+    (.seq (.block [.cmp .r11 (.imm 0)]) (.ite .eq (fieldCode umaal doubleTOps) (.block [])))
+
 /-- One digit: the sum doubled, and the digit's entry added unless the digit is zero. Z is set
 after digit 0. -/
 def slideStep (umaal : Bool) : Prog isa :=
-  .seq (slideHead umaal) (.seq (.ite .ne (addEntry umaal) (.block [])) (.block [.cmp .r11 (.imm 0)]))
+  .seq (slideHead umaal) (.seq (slideTail umaal) (.block [.cmp .r11 (.imm 0)]))
 
 /-- One position of the search for the top digit: the position `r11` moved down and its digit
 loaded. Z is clear while the digit is zero and a position is left. -/

@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Call
 public import Mathlib.Logic.Function.Basic
 public import VerifiedGarbage.Proof.X25519.Arm.Slots
 public import VerifiedGarbage.Spec.Ed25519
+public import VerifiedGarbage.Proof.Ed25519.DblPoint
 public import VerifiedGarbage.Impl.Ed25519.Arm.Field
 import VerifiedGarbage.Proof.X25519.Arm.AddSub
 import VerifiedGarbage.Proof.Framework.Lit
@@ -427,10 +428,6 @@ theorem pointAdd_formula (e : Env) :
     point (evalOps pointAddOps e) 0 1 2 3 = addResult e 4 (by decide) := by
   rfl
 
-theorem pointDouble_formula (e : Env) :
-    point (evalOps pointDoubleOps e) 0 1 2 3 = addResult e 0 (by decide) := by
-  rfl
-
 theorem addResult_eq (e : Env) (q : Nat) (hq : q + 3 < 22) (hd : e 16 = Spec.Ed25519.d) :
     addResult e q hq = Spec.Ed25519.pointAdd (point e 0 1 2 3)
       (point e ⟨q, by omega_arith⟩ ⟨q + 1, by omega_arith⟩ ⟨q + 2, by omega_arith⟩ ⟨q + 3, hq⟩) := by
@@ -442,9 +439,21 @@ theorem pointAdd_eval (e : Env) (hd : e 16 = Spec.Ed25519.d) :
       Spec.Ed25519.pointAdd (point e 0 1 2 3) (point e 4 5 6 7) :=
   (pointAdd_formula e).trans (addResult_eq e 4 (by decide) hd)
 
-theorem pointDouble_eval (e : Env) (hd : e 16 = Spec.Ed25519.d) :
-    point (evalOps pointDoubleOps e) 0 1 2 3 =
-      Spec.Ed25519.pointAdd (point e 0 1 2 3) (point e 0 1 2 3) :=
-  (pointDouble_formula e).trans (addResult_eq e 0 (by decide) hd)
+/-- The dedicated doubling's `X : Y : Z` (`Proof.Ed25519.dblPoint`), with `T` as it was: what
+`pointDoubleOps` computes. -/
+def dblXYZ (p : Spec.Ed25519.Point) : Spec.Ed25519.Point := { Proof.Ed25519.dblPoint p with T := p.T }
+
+theorem pointDouble_eval (e : Env) :
+    point (evalOps pointDoubleOps e) 0 1 2 3 = dblXYZ (point e 0 1 2 3) := rfl
+
+/-- The doubling leaves `E` and `H`, whose product is its `T`, in slots 11 and 14. -/
+theorem pointDouble_t (e : Env) :
+    evalOps pointDoubleOps e 11 * evalOps pointDoubleOps e 14 =
+      (Proof.Ed25519.dblPoint (point e 0 1 2 3)).T := rfl
+
+/-- The doubling with its `T` (`doubleTOps`). -/
+theorem dblXYZ_t (p : Spec.Ed25519.Point) :
+    (⟨(dblXYZ p).X, (dblXYZ p).Y, (dblXYZ p).Z, (Proof.Ed25519.dblPoint p).T⟩ : Spec.Ed25519.Point) =
+      Proof.Ed25519.dblPoint p := rfl
 
 end VG.Proof.Ed25519.Arm
