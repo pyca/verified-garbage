@@ -1,9 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.Argon2.RISCV64.Derive
-public import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Contract
+public import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Body
 public import VerifiedGarbage.Proof.Framework.Contract
-
 import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.BodyCT
 import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Correct
 

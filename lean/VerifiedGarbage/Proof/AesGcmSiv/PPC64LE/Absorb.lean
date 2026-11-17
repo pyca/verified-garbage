@@ -1,19 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Gcm.PPC64LE.Ghash
-import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Wp
+public import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Wp
 import VerifiedGarbage.Proof.GcmSiv.Spec
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
 import VerifiedGarbage.Proof.AesCcm.PPC64LE.Wp
 import VerifiedGarbage.Proof.Gather.PPC64LE.Copy
-import VerifiedGarbage.Proof.Gcm.PPC64LE.Ghash
 import VerifiedGarbage.Proof.Gcm.Stream
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Impl.AesGcmSiv.PPC64LE
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Callee
-public import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Env
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Run
 public import VerifiedGarbage.Spec.Gcm

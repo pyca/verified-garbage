@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.TripleDes.X86_64.Box
+public import VerifiedGarbage.Proof.TripleDes.X86_64.Box
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 public import VerifiedGarbage.Proof.Framework.Mem
@@ -9,7 +9,6 @@ public import VerifiedGarbage.Impl.TripleDes.X86_64.Block
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Taint
-public import VerifiedGarbage.Proof.TripleDes.X86_64.Spills
 import VerifiedGarbage.Proof.TripleDes.X86_64.RoundBody
 import VerifiedGarbage.Proof.Framework.Offset
 

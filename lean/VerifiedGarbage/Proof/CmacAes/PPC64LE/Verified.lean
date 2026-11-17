@@ -3,12 +3,11 @@ module
 public import VerifiedGarbage.Impl.CmacAes.PPC64LE
 public import VerifiedGarbage.Spec.Cmac.Contract
 public import VerifiedGarbage.TCB.PPC64LE.Target
-public import VerifiedGarbage.Proof.CmacAes.PPC64LE.Contract
+public import VerifiedGarbage.Proof.CmacAes.PPC64LE.Subkeys
 import VerifiedGarbage.Proof.CmacAes.PPC64LE.CT
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.CmacAes.PPC64LE.Finalize
-import VerifiedGarbage.Proof.CmacAes.PPC64LE.Subkeys
 
 /-!
 # AES-CMAC on PPC64LE: `Verified`

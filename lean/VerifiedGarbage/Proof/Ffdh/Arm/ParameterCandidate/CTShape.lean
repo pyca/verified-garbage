@@ -4,10 +4,9 @@ public import VerifiedGarbage.Impl.Ffdh.Arm.ParameterCandidate
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.ShapeContext
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTBase
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTPieces
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.ShapeCopyHead
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.ShapeCopy
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.ShapeCopy
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.ShapeMasks
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.ShapeTop
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.ShapeOdd

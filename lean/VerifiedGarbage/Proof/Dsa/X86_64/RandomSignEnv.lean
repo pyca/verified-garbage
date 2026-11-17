@@ -1,8 +1,7 @@
 module
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignFrame
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignEntry
 
-import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignSaved
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignFrame
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignSaved
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 
 /-! Saved public arguments retained throughout randomized signing. -/

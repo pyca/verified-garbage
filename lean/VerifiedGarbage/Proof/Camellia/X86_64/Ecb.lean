@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Camellia.X86_64.Group
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
-import VerifiedGarbage.Proof.Camellia.X86_64.Crypt8
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith

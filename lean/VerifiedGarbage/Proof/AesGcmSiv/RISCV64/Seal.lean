@@ -3,14 +3,12 @@ module
 import VerifiedGarbage.Proof.AesGcmSiv.RISCV64.Fn
 public import VerifiedGarbage.Proof.AesGcmSiv.RISCV64.Keys
 public import VerifiedGarbage.Proof.AesGcmSiv.RISCV64.Polyval
-public import VerifiedGarbage.Proof.AesGcmSiv.RISCV64.Tag
 public import VerifiedGarbage.Proof.AesGcmSiv.RISCV64.Crypt
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.AesGcmSiv.RISCV64.Contract
 public import VerifiedGarbage.Proof.AesGcmSiv.RISCV64.Entry
 public import VerifiedGarbage.Impl.AesGcmSiv.RISCV64
-public import VerifiedGarbage.Proof.AesGcmSiv.RISCV64.Env
+public import VerifiedGarbage.Proof.AesGcmSiv.RISCV64.Wp
 
 /-!
 # AES-GCM-SIV on RISC-V: `vg_aes_gcm_siv_seal`

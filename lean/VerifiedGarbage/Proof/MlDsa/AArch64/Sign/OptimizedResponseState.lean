@@ -2,8 +2,7 @@ module
 
 import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductInit
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseRawFinalLoop
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductPassMemory
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductMemoryCorrect
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.MultiplyInverse
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
@@ -16,7 +15,6 @@ public import VerifiedGarbage.Proof.MlDsa.RawInverseContract
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableWords
 import VerifiedGarbage.Proof.MlKem.AArch64.Common
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductMemoryCorrect
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttCallTiming
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Call

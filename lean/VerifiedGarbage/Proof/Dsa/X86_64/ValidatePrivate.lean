@@ -1,26 +1,22 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.KeygenEntry
-public import VerifiedGarbage.Proof.Dsa.X86_64.SigningKey
+public import VerifiedGarbage.Proof.Dsa.X86_64.SignCompute
 public import VerifiedGarbage.Proof.Dsa.X86_64.ShapeSpec
 public import VerifiedGarbage.Proof.Dsa.X86_64.SourceSlices
 public import VerifiedGarbage.Proof.Dsa.X86_64.CoreSign
-public import VerifiedGarbage.Proof.Dsa.X86_64.WorkspaceBridge
+public import VerifiedGarbage.Proof.Dsa.X86_64.SigningOperands
 public import VerifiedGarbage.Impl.Dsa.X86_64.PrevalidatedSign
 public import VerifiedGarbage.Spec.Dsa.PrevalidatedSign
 import VerifiedGarbage.Proof.Dsa.X86_64.Parameters
 import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleState
-import VerifiedGarbage.Proof.Dsa.X86_64.PrivateKey
-public import VerifiedGarbage.Proof.Dsa.X86_64.SignCompute
 import VerifiedGarbage.Proof.Dsa.X86_64.AcceptedSpec
-import VerifiedGarbage.Proof.Dsa.X86_64.SignBytesSpec
+import VerifiedGarbage.Proof.Dsa.X86_64.SignBody
 import VerifiedGarbage.Proof.Dsa.X86_64.SigningShape
-import VerifiedGarbage.Proof.Dsa.X86_64.SigningOperands
-import VerifiedGarbage.Proof.Dsa.X86_64.WorkspaceReady
 import VerifiedGarbage.Proof.Dsa.X86_64.Result
 import VerifiedGarbage.Proof.Dsa.X86_64.VerifyFailure
 import VerifiedGarbage.Proof.Dsa.X86_64.EntryScratch
-import VerifiedGarbage.Proof.Dsa.X86_64.KeyPointers
+import VerifiedGarbage.Proof.Dsa.X86_64.EntryFieldsFrame
 import VerifiedGarbage.Proof.Dsa.X86_64.Save
 import VerifiedGarbage.Proof.Dsa.Layout
 import VerifiedGarbage.Proof.Dsa.SizeBounds

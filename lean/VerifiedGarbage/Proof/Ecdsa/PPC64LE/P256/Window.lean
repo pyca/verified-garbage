@@ -4,7 +4,6 @@ module
 -- changes need not re-check them
 public import VerifiedGarbage.Impl.Ecdsa.P256.PPC64LE
 public import VerifiedGarbage.Impl.Ecdsa.PPC64LE.Window
-public import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Fprog
 public import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Ladder
 public import VerifiedGarbage.Proof.Weierstrass.Jac
 public import VerifiedGarbage.Proof.Weierstrass.Law3
@@ -15,8 +14,7 @@ import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Copy
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Mont.PPC64LE.Step
-import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Bits
-import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Loop
+import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Pow
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 
 /-!

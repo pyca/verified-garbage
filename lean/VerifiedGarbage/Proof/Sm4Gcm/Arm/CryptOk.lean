@@ -1,10 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4Gcm.Arm.Crypt
-public import VerifiedGarbage.Proof.Sm4Gcm.Arm.Blocks
+public import VerifiedGarbage.Proof.Sm4Gcm.Arm.Ghash1
 public import VerifiedGarbage.Proof.Cmac.Mem32
 import VerifiedGarbage.Proof.Sm4Gcm.Arm.Flush
-import VerifiedGarbage.Proof.Sm4Gcm.Arm.Ghash1
 import VerifiedGarbage.Proof.Sm4Gcm.Arm.Loops
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd

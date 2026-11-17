@@ -7,9 +7,8 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Checkpoint
 public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Scalar
 import VerifiedGarbage.Proof.MlKem.AArch64.Paired.RejectTiming
 import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Trace
-import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Zero
 import VerifiedGarbage.Proof.MlKem.Arith
-import VerifiedGarbage.Proof.MlKem.AArch64.Paired.ExtraPair
+public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.ExtraPair
 import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Cover
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
@@ -21,8 +20,6 @@ import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Memory
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Context
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.NextBlock
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Continue
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Extra
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.ExtraBoth
 import VerifiedGarbage.Proof.MlKem.AArch64.Paired.SqueezeTiming
 import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Output
 

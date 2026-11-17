@@ -1,13 +1,12 @@
 module
 
-import VerifiedGarbage.Proof.AesGcmSiv.RISCV64.Wp
+public import VerifiedGarbage.Proof.AesGcmSiv.RISCV64.Wp
 public import VerifiedGarbage.Proof.AesCcm.RISCV64.Rel
 public import VerifiedGarbage.Proof.Gather.RISCV64.LoopCT
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 public import VerifiedGarbage.Proof.Framework.RISCV64.Keep
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.Callee
 public import VerifiedGarbage.Proof.AesOcb.RISCV64.Callee
-public import VerifiedGarbage.Proof.AesGcmSiv.RISCV64.Env
 public import VerifiedGarbage.Impl.AesGcm.RISCV64
 public import VerifiedGarbage.Impl.AesGcmSiv.RISCV64
 

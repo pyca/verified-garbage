@@ -5,7 +5,7 @@ public import VerifiedGarbage.Impl.RsaKeyGen.PPC64LE.Ops
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.KeyBits
 import VerifiedGarbage.Proof.Rsa.PPC64LE.Loops
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Bignum.PPC64LE.MontStep
+import VerifiedGarbage.Proof.Bignum.PPC64LE.MontRound
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.KeyHalf
 

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Aes.RISCV64.Ecb
 public import VerifiedGarbage.Proof.Aes.RISCV64.Prologue
-public import VerifiedGarbage.Proof.Aes.RISCV64.Keys
+public import VerifiedGarbage.Proof.Aes.RISCV64.Common
 public import VerifiedGarbage.Proof.Aes.RISCV64.ChainFrame
 public import VerifiedGarbage.Impl.Aes.RISCV64.Chain
 public import VerifiedGarbage.Spec.Cmac

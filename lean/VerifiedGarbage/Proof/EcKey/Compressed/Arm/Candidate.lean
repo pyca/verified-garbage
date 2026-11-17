@@ -9,7 +9,7 @@ public import VerifiedGarbage.Impl.EcKey.Compressed.Arm.Decompress
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Fixed
 public import VerifiedGarbage.Impl.Ecdh.Arm
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Layout
-public import VerifiedGarbage.Proof.Weierstrass.Arm.Pow
+public import VerifiedGarbage.Proof.Weierstrass.Arm.Ladder
 
 /-! # The machine root candidate's shared refinement interface -/
 

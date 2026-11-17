@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.Table
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.TableLoops
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import VerifiedGarbage.Proof.Bignum.X86_64.Row
 import VerifiedGarbage.Proof.Bignum.CrtFrame
@@ -12,7 +12,6 @@ import VerifiedGarbage.Proof.Ffdh.CombBitBytes
 public import VerifiedGarbage.Proof.Rsa.FixedBaseComb
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
-import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.TableLoops
 import VerifiedGarbage.Proof.MlKem.X86_64.S4Squeeze
 
 /-! # FFDH key generation from the context on x86-64: the comb

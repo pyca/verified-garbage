@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Native.FieldProgram
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Field.PointFormula
+public import VerifiedGarbage.Proof.Mont.AArch64.P521Field.PointOps
 import VerifiedGarbage.Proof.Framework.Omega
 
 @[expose] public section

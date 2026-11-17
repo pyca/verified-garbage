@@ -1,7 +1,6 @@
 module
 
 -- separate module: The checked left/right rotation replay is the expensive computational boundary; memory permission and alias proofs reuse it without rechecking word arithmetic.
-
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.P521Native.Representation
 public import VerifiedGarbage.Proof.Mont.AArch64.P521Field.RepresentationFin
 public import VerifiedGarbage.TCB.AArch64.Target
@@ -12,7 +11,6 @@ import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Framework.Block
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Field.RepresentationMath
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionCorrect
 public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionArithmetic

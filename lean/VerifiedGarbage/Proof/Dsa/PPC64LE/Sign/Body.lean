@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Dsa.PPC64LE.VerifyBody
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Sign.KeyPair
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Sign.Gk
 public import VerifiedGarbage.Impl.Dsa.PPC64LE.Sign
-import VerifiedGarbage.Proof.Dsa.PPC64LE.Sign.R
+import VerifiedGarbage.Proof.Dsa.PPC64LE.Sign.Output
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.VerifyInv
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.VerifyQ
 import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Table
@@ -16,7 +16,6 @@ public import VerifiedGarbage.Proof.Bignum.PPC64LE.Run
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Dsa.PPC64LE.Ptr
 import VerifiedGarbage.Proof.Bignum.PPC64LE.MontRound
-import VerifiedGarbage.Proof.Bignum.PPC64LE.MontStep
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Bignum.PPC64LE.MontFinish
 public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Ctx
@@ -30,7 +29,6 @@ import VerifiedGarbage.Proof.Bignum.PPC64LE.ModArithReduce
 import VerifiedGarbage.Proof.Bignum.PPC64LE.MontRounds
 import VerifiedGarbage.Proof.Bignum.PPC64LE.MontCore
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Dsa.PPC64LE.Sign.Output
 import VerifiedGarbage.Proof.Dsa.SizeBounds
 import VerifiedGarbage.Proof.Dsa.Encoding
 import VerifiedGarbage.Proof.Dsa.Digest

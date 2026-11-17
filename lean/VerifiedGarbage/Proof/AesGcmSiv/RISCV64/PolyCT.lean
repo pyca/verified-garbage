@@ -9,9 +9,8 @@ meta import VerifiedGarbage.Proof.AesGcmSiv.RISCV64.Polyval
 meta import VerifiedGarbage.Impl.AesGcmSiv.RISCV64
 public import VerifiedGarbage.Impl.AesGcmSiv.RISCV64
 public import VerifiedGarbage.Proof.AesGcmSiv.RISCV64.Absorb
-public import VerifiedGarbage.Proof.AesGcmSiv.RISCV64.Env
+public import VerifiedGarbage.Proof.AesGcmSiv.RISCV64.Wp
 public import VerifiedGarbage.Proof.Gather.RISCV64.LoopCT
-import VerifiedGarbage.Proof.AesGcmSiv.RISCV64.Wp
 meta import VerifiedGarbage.Proof.AesGcmSiv.RISCV64.Wp
 import VerifiedGarbage.Proof.Framework.RISCV64.Steps
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Steps

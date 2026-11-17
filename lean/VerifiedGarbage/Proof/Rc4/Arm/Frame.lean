@@ -1,11 +1,11 @@
 module
+
 public import VerifiedGarbage.Spec.Rc4.Contract
 public import VerifiedGarbage.Impl.StackScratch.Arm
 public import VerifiedGarbage.Proof.Rc4.Arm.Contract
 public import VerifiedGarbage.Proof.Rc4.Scratch
 import VerifiedGarbage.Proof.Rc4.Arm.ConstantTime
 import VerifiedGarbage.Proof.Rc4.Arm.Apply
-import VerifiedGarbage.Proof.Rc4.Arm.Init
 import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Impl.Rc4.Arm
 public import VerifiedGarbage.TCB.Arm.Target
@@ -14,7 +14,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Arm.RegScratchWipe
 import VerifiedGarbage.Proof.Framework.Lit
-import VerifiedGarbage.Proof.Rc4.Arm.Run
 
 /-! ### `Rc4.Arm.Verified`, which only this module used -/
 

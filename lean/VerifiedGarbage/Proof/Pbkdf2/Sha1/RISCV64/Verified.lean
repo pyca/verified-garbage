@@ -13,13 +13,11 @@ public import VerifiedGarbage.Proof.Framework.RISCV64.Spill
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RISCV64.Align
 public import VerifiedGarbage.Impl.Pbkdf2.Sha1.RISCV64
-public import VerifiedGarbage.Proof.Pbkdf2.Sha1Words
 public import VerifiedGarbage.Proof.Framework.RISCV64.Steps
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
-import VerifiedGarbage.Proof.Pbkdf2.Sha1.RISCV64.Round
 public import VerifiedGarbage.Proof.Pbkdf2.RISCV64.IterateMain
 public import VerifiedGarbage.Proof.Framework.RISCV64.ByteLoad
 import VerifiedGarbage.Proof.Sha1.StateMem

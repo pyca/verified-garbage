@@ -6,14 +6,12 @@ import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.Blowfish.PPC64LE
 public import VerifiedGarbage.Impl.Blowfish.Table
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
-import VerifiedGarbage.Proof.Blowfish.PPC64LE.Lookup
+public import VerifiedGarbage.Proof.Blowfish.PPC64LE.Cipher
 public import VerifiedGarbage.Proof.Blowfish.KeyTable
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Spec.Blowfish
-public import VerifiedGarbage.Proof.Blowfish.PPC64LE.Cipher
-public import VerifiedGarbage.Proof.Blowfish.KeySched
 import VerifiedGarbage.Proof.Blowfish.Schedule
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Spill
 public import VerifiedGarbage.Proof.Framework.Semantics

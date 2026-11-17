@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # The checks of an RSA key on RISC-V: the state between the steps
 
-As on PPC64LE (`Proof/Rsa/PPC64LE/KcBase.lean`), in words of 64 bits.
+As on PPC64LE (`Proof/Rsa/PPC64LE/KcCk.lean`), in words of 64 bits.
 `Arrs m B w A live`: the arrays `live` hold `A`. `Geo`: the working space
 (`B`, `Z` bytes) and the modulus' length `K`, which two runs share; `Vals`:
 the numbers read, which they may not. `Stg g s₀ A live c s`: from the state

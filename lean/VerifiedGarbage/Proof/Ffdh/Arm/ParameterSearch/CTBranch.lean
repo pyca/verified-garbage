@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CTStep
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CTLeaf
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.LiveGuards
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Step
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Exit
 meta import VerifiedGarbage.Impl.Ffdh.Arm.ParameterSearch
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 

@@ -6,7 +6,7 @@ public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.InverseTable
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableWords
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TableWords
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseSpecPre
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttVerified
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttOutVerified
 
 @[expose] public section
 

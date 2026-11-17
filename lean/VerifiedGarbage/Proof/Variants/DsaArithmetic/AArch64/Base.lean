@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Backend
 public import VerifiedGarbage.Proof.Bignum.AArch64.MulFixedCallMont
-public import VerifiedGarbage.Proof.Dsa.AArch64.SigningVerified
+public import VerifiedGarbage.Proof.Dsa.AArch64.PrevalidatedSignVerified
 public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingVerified
 public import VerifiedGarbage.Impl.Dsa.AArch64.Prevalidated
 public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
@@ -12,12 +12,9 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleCTState
 public import VerifiedGarbage.Proof.Dsa.AArch64.SignReleaseCT
 public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingABI
 public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingPublic
-public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingReturn
 public import VerifiedGarbage.Proof.Dsa.AArch64.WorkspaceBridge
 public import VerifiedGarbage.Spec.Dsa.Prevalidated
 import VerifiedGarbage.Proof.Dsa.AArch64.PrevalidatedCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingABIPost
-import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingAgreement
 import VerifiedGarbage.Proof.Bignum.AArch64.PcCode
 import VerifiedGarbage.Proof.Dsa.AArch64.PrevalidatedBody
 import VerifiedGarbage.Proof.Dsa.Encoding
@@ -25,27 +22,22 @@ import VerifiedGarbage.Proof.Dsa.DomainWidths
 import Mathlib.Algebra.Group.Nat.Defs
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingShape
-public import VerifiedGarbage.Proof.Dsa.AArch64.PrevalidatedSat
+import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingInitialize
+public import VerifiedGarbage.Proof.Dsa.AArch64.DeriveCheckedVerified
 import Mathlib.Data.Nat.Basic
 public import VerifiedGarbage.Proof.Dsa.AArch64.ValidateCT
 public import VerifiedGarbage.Proof.Dsa.AArch64.ParametersVerified
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Dsa.AArch64.ABIRegions
 public import VerifiedGarbage.Proof.Bignum.Octets
-import VerifiedGarbage.Proof.Dsa.AArch64.ValidateMain
-public import VerifiedGarbage.Proof.Dsa.AArch64.ValidateBody
+public import VerifiedGarbage.Proof.Dsa.AArch64.ValidateMain
 public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingInput
-public import VerifiedGarbage.Proof.Dsa.AArch64.DeriveVerified
-public import VerifiedGarbage.Proof.Dsa.AArch64.DeriveCheckedVerified
-public import VerifiedGarbage.Proof.Dsa.AArch64.PrevalidatedSignVerified
 public import VerifiedGarbage.Proof.Dsa.AArch64.ValidatePrivateCT
 public import VerifiedGarbage.Spec.Dsa.PrevalidatedSign
 import VerifiedGarbage.Proof.Dsa.AArch64.PublicSlices
 public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightGuard
 public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightGuardCT
 public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightMont
-public import VerifiedGarbage.Proof.Dsa.AArch64.SigningABIPost
 public import VerifiedGarbage.Proof.Dsa.AArch64.SigningABIPre
 public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingABIPre
 

@@ -1,7 +1,6 @@
 module
 
 -- separate module: the proofs, which need none of the variants' instances (`Instances.lean`), so that a change to them does not rebuild them
-
 public import VerifiedGarbage.Proof.AesGcm.Flag
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Flag
 public import VerifiedGarbage.Proof.AesGcm.ScratchPreparedTo
@@ -9,12 +8,12 @@ public import VerifiedGarbage.Proof.Gcm.PreparedContract
 public import VerifiedGarbage.Proof.Gcm.OutOfPlaceContract
 public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Contract
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Contract
-import VerifiedGarbage.Proof.AesGcm.ScratchTo
+public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Verified
 import VerifiedGarbage.Proof.AesGcm.ScratchGather
 import VerifiedGarbage.Proof.AesGcm.Scratch
 import VerifiedGarbage.Proof.Framework.Sig
-public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Callee
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.SealCallee
+public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.BlkCall
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Fn
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.SplitCallee
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Callee
 public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Context
@@ -23,7 +22,6 @@ import VerifiedGarbage.Proof.Aes.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.Contract
 import Mathlib.Data.List.Basic
 import Mathlib.Data.List.Dedup
-public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Verified
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Verified
 public import VerifiedGarbage.Impl.AesGcm.X86_64.StreamTo
 public import VerifiedGarbage.Impl.StackScratch.X86_64

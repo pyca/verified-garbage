@@ -5,11 +5,9 @@ public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyWritePort
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyOutcome
-
 import VerifiedGarbage.Proof.Bignum.Octets
 import Mathlib.Tactic.IntervalCases
-import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyIO
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyWritePorts
+public import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyIO
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyOutputMap
 import VerifiedGarbage.Proof.Rsa.KeyWorkspace
 import VerifiedGarbage.Proof.Mont.X86.WordOps
@@ -18,6 +16,33 @@ import VerifiedGarbage.Proof.Bignum.MemoryFrame
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Spec.Rsa
 import VerifiedGarbage.Proof.Rsa.Octets
+
+/-! ### `RsaKeyGen.X86.KeyWritePorts`, which this module and modules that import it used -/
+
+section
+
+/-! # Export all seven key components without losing earlier outputs -/
+
+@[expose] public section
+namespace VG.Proof.RsaKeyGen.X86.Key
+open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Rsa.X86.Keys
+open VG.Impl.Rsa.X86.Keys hiding slot
+open VG.Impl.RsaKeyGen.X86.Key
+
+structure ExportProgress (g : OutputGeometry) (m : Mem) (accept : Bool) (i : Nat) (s : State) : Prop where
+  input : OutputInput g s
+  zero : num s.mem g.base g.n aZero = 0
+  mask : slot s.mem g.base kOk = if accept then 1 else 0
+  header : ∀ d, d + 4 ≤ hdr → slot s.mem g.base d = slot m g.base d
+  pending : ∀ j, i ≤ j → j < 7 → num s.mem g.base g.n (outputIndex j) = num m g.base g.n (outputIndex j)
+  done : ∀ j, j < i → j < 7 → Spec.Rsa.bytesAt s.mem (g.region j).base (g.region j).len = portResult g m accept j
+
+end VG.Proof.RsaKeyGen.X86.Key
+
+end
+
+end
+
 /-! # The masked native export returns the specified key or all zeros -/
 
 -- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/KeyFields.lean`, which only this module imported.

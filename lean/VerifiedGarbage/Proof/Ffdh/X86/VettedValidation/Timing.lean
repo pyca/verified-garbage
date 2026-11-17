@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.X86.VettedValidation.Correct
 public import VerifiedGarbage.Proof.Ffdh.X86.VettedValidation.PublicState
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Ffdh.X86.VettedValidation.PrefixTiming

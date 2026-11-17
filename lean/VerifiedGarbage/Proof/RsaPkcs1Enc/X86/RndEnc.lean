@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.RsaPkcs1Sig.BytesAt
 # RSAES-PKCS1-v1_5 encryption from a random tape on x86: its callee
 
 `vg_rsa_pkcs1_encrypt_precomputed`'s contract with the stack of its x86
-implementation (`Proof/RsaPkcs1Enc/X86/PcBase.lean`, 1188 bytes), at a call
+implementation (`Proof/RsaPkcs1Enc/X86/PcVerified.lean`, 1188 bytes), at a call
 with given arguments (`enc_pre`, `enc_pub`, `enc_post`), as
 `Proof/RsaPkcs1Sig/X86/PubCall.lean` does for
 `vg_rsa_public_precomputed_checked`: the caller stores its fourteen arguments

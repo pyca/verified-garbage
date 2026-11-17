@@ -1,8 +1,7 @@
 module
 
-import VerifiedGarbage.Proof.X448.X86.Frame
+public import VerifiedGarbage.Proof.X448.X86.Frame
 public import VerifiedGarbage.Proof.Framework.X86.Spill
-public import VerifiedGarbage.Proof.X448.X86.Contract
 public import VerifiedGarbage.Proof.X448.X86.Mem
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Contract

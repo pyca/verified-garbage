@@ -12,12 +12,9 @@ import VerifiedGarbage.Proof.Bignum.Octets
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Generate.Check
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Generate.Entry
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Ctx
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.Generate.Ctx
 public import VerifiedGarbage.Spec.RsaPss
 public import VerifiedGarbage.Proof.Dsa.RandomResult
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.Random.Range
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Random.Sample
-import VerifiedGarbage.Proof.Dsa.PPC64LE.RandomSign.Spec
 import VerifiedGarbage.Proof.Dsa.Derive
 import VerifiedGarbage.Proof.Dsa.PackedBytes
 import VerifiedGarbage.Impl.Dsa.PPC64LE.Derive

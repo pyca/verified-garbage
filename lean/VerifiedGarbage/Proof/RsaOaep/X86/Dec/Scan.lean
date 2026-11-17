@@ -11,10 +11,9 @@ import VerifiedGarbage.Proof.RsaPkcs1Sig.BytesAt
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.RsaOaep.X86
 public import VerifiedGarbage.Proof.RsaOaep.X86.Base
-public import VerifiedGarbage.Proof.RsaPss.X86.Prims
+public import VerifiedGarbage.Proof.RsaPss.X86.CtBase
 public import VerifiedGarbage.Proof.RsaOaep.Decode
 import VerifiedGarbage.Proof.RsaOaep.X86.Instr
-import VerifiedGarbage.Proof.RsaPss.X86.CtBase
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Instr
 import VerifiedGarbage.Proof.Mont.X86.Instr
 public import VerifiedGarbage.Proof.RsaOaep.X86.MgfSlots

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.PPC64LE.FieldProg
+public import VerifiedGarbage.Proof.Ed25519.PPC64LE.SpecConv
 public import VerifiedGarbage.Proof.Ed25519.BaseTable
 public import VerifiedGarbage.Proof.Ed25519.DblPoint
 public import VerifiedGarbage.Impl.Ed25519.PPC64LE.VerifyWindow
@@ -16,10 +16,9 @@ import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.ReadHalves
-import VerifiedGarbage.Proof.Ed25519.PPC64LE.PointAccumulate
+import VerifiedGarbage.Proof.Ed25519.PPC64LE.PointMul
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Ed25519.PPC64LE.WindowDigit
-import VerifiedGarbage.Proof.Ed25519.PPC64LE.PointMul
 import VerifiedGarbage.Proof.Ed25519.WindowNibble
 import VerifiedGarbage.Proof.Ed25519.Window
 import VerifiedGarbage.Proof.Ed25519.WindowConstants

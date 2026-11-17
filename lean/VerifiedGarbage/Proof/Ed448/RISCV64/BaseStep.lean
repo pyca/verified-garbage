@@ -4,12 +4,11 @@ import VerifiedGarbage.Proof.Ed448.RISCV64.BaseSel
 public import VerifiedGarbage.Proof.Ed448.RISCV64.BaseBits
 public import VerifiedGarbage.Proof.X448.RISCV64.Ladder
 public import VerifiedGarbage.Proof.Ed448.Ref
-import VerifiedGarbage.Proof.X448.RISCV64.Mul
+public import VerifiedGarbage.Proof.X448.RISCV64.Slots
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Impl.Ed448.RISCV64.ScalarBase
-public import VerifiedGarbage.Proof.X448.RISCV64.Slots
 import VerifiedGarbage.Proof.X25519.RISCV64.Pass
 public import VerifiedGarbage.Proof.X448.RISCV64.R64.Ladder
 

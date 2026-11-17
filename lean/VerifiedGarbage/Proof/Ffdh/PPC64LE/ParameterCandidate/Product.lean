@@ -12,7 +12,7 @@ public import VerifiedGarbage.Impl.RsaKeyGen.TrialTable32
 import VerifiedGarbage.Proof.RsaKeyGen.TrialTable32
 import VerifiedGarbage.Proof.RsaKeyGen.TrialMath
 import VerifiedGarbage.Proof.RsaKeyGen.Table
-import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Trial.Entry
+import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Trial.Loop
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMinv
 import VerifiedGarbage.Proof.Bignum.PPC64LE.MontRound
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreCore

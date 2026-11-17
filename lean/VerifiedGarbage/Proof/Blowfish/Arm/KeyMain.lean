@@ -2,9 +2,8 @@ module
 
 import VerifiedGarbage.Proof.Rc4.Scan32
 public import VerifiedGarbage.Proof.Blowfish.KeyTable
-public import VerifiedGarbage.Proof.Blowfish.Arm.Cipher
+public import VerifiedGarbage.Proof.Blowfish.Arm.Ecb
 public import VerifiedGarbage.Proof.Framework.Arm.Spill
-import VerifiedGarbage.Proof.Blowfish.Arm.Ecb
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.RegionsSub

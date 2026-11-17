@@ -1,8 +1,7 @@
 module
-public import VerifiedGarbage.Proof.Dsa.AArch64.Modulus
 
+public import VerifiedGarbage.Proof.Dsa.AArch64.ReadyCalls
 import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleOperands
-import VerifiedGarbage.Proof.Dsa.AArch64.CallOperands
 import VerifiedGarbage.Proof.Dsa.Encoding
 import VerifiedGarbage.Proof.Dsa.Arithmetic
 

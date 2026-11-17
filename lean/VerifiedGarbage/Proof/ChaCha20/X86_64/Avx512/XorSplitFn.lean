@@ -2,10 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.XorSplit
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512Tail.Sym
-public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.SymSel
 import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Last
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.FinishSel
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Copy

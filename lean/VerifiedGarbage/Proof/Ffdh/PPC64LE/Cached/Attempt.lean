@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Ffdh.PPC64LE.GenerateKey.Scalar
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Derive.Body
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.GenerateKey.Body
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.ExchangeCorrect
-import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.DomainBody
+import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckDomainFn
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubOut
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMid
 import VerifiedGarbage.Proof.Mont.RangeCover
@@ -14,6 +14,7 @@ import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
+
 -- separate module: the cached attempt's correctness proof is split in a chain of modules, so that a change rebuilds only the modules after it
 
 /-! # `vg_ffdh_generate_key_cached` on PPC64LE: the scalar

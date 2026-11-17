@@ -1,10 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.SharedCheckPublicPrograms
 public import VerifiedGarbage.Spec.Ffdh.Contract
 import VerifiedGarbage.Proof.Ffdh.Arm.SubgroupCT
 public import VerifiedGarbage.Proof.Ffdh.Arm.DomainCallMemory
-import VerifiedGarbage.Proof.Bignum.Arm.MontBackend
+public import VerifiedGarbage.Proof.Bignum.Arm.MontBackend
 public import VerifiedGarbage.Impl.Ffdh.Arm.SharedCheckPublic
 public import VerifiedGarbage.Proof.Ffdh.Arm.PowerAtCT
 public import VerifiedGarbage.Proof.Bignum.Arm.TwoExpMontgomeryCT
@@ -16,13 +15,12 @@ import VerifiedGarbage.Proof.Ffdh.Arm.PowerArgs
 import VerifiedGarbage.Proof.Bignum.Arm.SharedWindowPhaseCT
 import VerifiedGarbage.Proof.Ffdh.Arm.StackCT
 import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
-import VerifiedGarbage.Proof.Ffdh.Arm.SharedCheckPublicPublicPower
 import VerifiedGarbage.Proof.Ffdh.Arm.ValueChecksCT
 import VerifiedGarbage.Proof.Bignum.Arm.TwoExpSharedCT
-import VerifiedGarbage.Impl.Ffdh.Arm.Domain
+public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 public import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicMainCT
 import VerifiedGarbage.Proof.Ffdh.Arm.BranchCT
-import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
+public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
 import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Ffdh.Arm.QTest
 import VerifiedGarbage.Proof.Ffdh.Arm.Context
@@ -36,7 +34,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeCT
 import VerifiedGarbage.Proof.Bignum.Arm.SharedR2CT
 import VerifiedGarbage.Proof.Bignum.Arm.ImportModulus
 import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeInverse
-import VerifiedGarbage.Impl.Bignum.Arm.MontCall
+public import VerifiedGarbage.Impl.Bignum.Arm.MontCall
 import VerifiedGarbage.Proof.Ffdh.Arm.ImportAtCT
 import VerifiedGarbage.Proof.Ffdh.Arm.Range
 import VerifiedGarbage.Proof.Ffdh.Arm.RangeCT
@@ -49,21 +47,521 @@ import VerifiedGarbage.Proof.Ffdh.Arm.Head
 import VerifiedGarbage.Proof.Ffdh.Arm.HeadCT
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-public import VerifiedGarbage.Proof.Ffdh.Arm.SharedCheckPublicFn
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
 import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicEntryCT
 import VerifiedGarbage.Proof.Ffdh.Arm.FrameCT
 import VerifiedGarbage.Proof.Ffdh.Arm.Entered
-import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicEntry
-import VerifiedGarbage.Proof.Ffdh.Arm.SharedCheckPublicPre
+public import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicFn
 import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicSpec
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Sig
 import Init.Data.BitVec.Basic
-import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.Framework.Lit
 import Batteries.Logic
+import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicPre
+import VerifiedGarbage.Proof.Framework.OffsetBelow
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+public import VerifiedGarbage.Proof.Ffdh.Arm.Frame
+public import VerifiedGarbage.Proof.Ffdh.Arm.EntryStore
+public import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicBody
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Ffdh.Arm.ValueChecks
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Impl.Ffdh.Arm.Checks
+public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
+import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicMain
+import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
+public import VerifiedGarbage.Impl.Ffdh.Arm.Arithmetic
+public import VerifiedGarbage.Proof.Ffdh.Arm.Octets
+import VerifiedGarbage.Proof.Bignum.Arm.SharedWindowPhase
+import VerifiedGarbage.Proof.Bignum.Arm.TwoExpShared
+
+/-! ### `Ffdh.Arm.SharedCheckPublicPre`, which only this module used -/
+
+section
+
+/-! ### `Ffdh.Arm.SharedCheckPublicFn`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Ffdh.Arm.SharedCheckPublicPublicPower`, which this module and modules that import it used -/
+
+section
+
+/-! A power from saved FFDH base and exponent buffers. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm
+open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
+open VG.Proof.Rsa.Mont (numAt)
+open VG.Proof.X25519.Arm (Rest)
+
+theorem sharedCheckPublicPublicPower_ok (backend : MontBackend) (s : State) {p : Inputs} {slots : List Nat} (bs es ec : Nat)
+    {bb eb : List Byte} {M : Nat} (h : Context p slots s) (calls : DomainCallMemory p s) (stable : stableSlots slots = true)
+    (hb : bs ∈ slots) (he : es ∈ slots) (hc : ec ∈ slots) (hk : 32 ∈ slots)
+    (ready : ArithmeticReady p.base p.len p.w s)
+    (modulus : numAt s.mem (State.addr p.base) p.w 0 = M) (odd : M % 2 = 1)
+    (r2 : numAt s.mem (State.addr p.base) p.w 4 = 2 ^ (128 * p.w) % M)
+    (baseBytes : Octets p.base (p.slotValue bs) p.len bb s) (baseLength : bb.length = p.k)
+    (exponentBytes : Octets p.base (p.slotValue es) p.len eb s) (exponentPositive : 0 < eb.length)
+    (exponentFits : eb.length < 2 ^ 32) (exponentLength : p.slotValue ec = BitVec.ofNat 32 eb.length)
+    (exponentBelow : Region.Disjoint ⟨State.addr (p.slotValue es), eb.length⟩ (FrameStack.belowA s.sp 48)) :
+    WP isa (VG.Impl.Ffdh.Arm.SharedCheckPublic.publicPowerAt
+      (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) bs es ec) s fun t => Context p slots t ∧
+      ArithmeticReady p.base p.len p.w t ∧
+      numAt t.mem (State.addr p.base) p.w 6 = Spec.Rsa.powMod (Spec.Rsa.os2ip bb) (Spec.Rsa.os2ip eb) M ∧
+      numAt t.mem (State.addr p.base) p.w 0 = M ∧
+      numAt t.mem (State.addr p.base) p.w 4 = 2 ^ (128 * p.w) % M ∧
+      numAt t.mem (State.addr p.base) p.w 7 = 1 ∧
+      Frame [⟨State.addr p.base, 8 * p.len⟩, FrameStack.belowA s.sp 48] s.mem t.mem ∧ Rest roundClobbers s t := by
+  rw [VG.Impl.Ffdh.Arm.SharedCheckPublic.publicPowerAt, WP.seq_iff]
+  refine WP.mono (powerArgs_ok s bs es ec h stable hb he hc hk) ?_
+  rintro u ⟨⟨source, count, exponent, exponentCount, mem⟩, restU⟩
+  have frameU : Frame [⟨State.addr p.base, 8 * p.len⟩] s.mem u.mem := by rw [mem]; exact Frame.refl _ _
+  have readyU := ready.of_mem mem restU ((restU.gpr .r0 (by simp)).trans ready.ptr)
+  have baseU := baseBytes.after_workspace frameU restU
+  have exponentU := exponentBytes.after_workspace frameU restU
+  have input : PowerInput p.base (p.slotValue bs) (p.slotValue es) p.len p.w M bb eb u :=
+    ⟨readyU, by rw [mem]; exact modulus, odd, by rw [mem]; exact r2,
+      baseU, exponentU, by rw [baseLength]; have := p.minLength; omega_using [this],
+      by rw [baseLength]; exact p.width.2.2.2.1, exponentPositive, exponentFits,
+      source, by rw [baseLength]; exact count, exponent, exponentCount.trans exponentLength⟩
+  rw [WP.seq_iff]
+  refine WP.mono (PublicScan.input_ok u input) ?_
+  rintro scanT ⟨inputT,memScan,restScan⟩
+  rw [WP.seq_iff]
+  refine WP.mono (powerImport_ok scanT inputT) ?_
+  rintro v ⟨phaseInput, frameV, restV⟩
+  let K := TwoExp.sharedMontgomery p.base s.sp p.len p.w backend.name backend.mul
+    (fun _ _ _ ho ha hb z hi => backend.correct z hi ho ha hb) backend.stackOk
+  have spV : v.sp = s.sp := restV.sp.trans (restScan.sp.trans restU.sp)
+  have separate : ∀ r ∈ [⟨State.addr p.base, 8 * p.len⟩, FrameStack.belowA s.sp 48],
+      Region.Disjoint ⟨State.addr (p.slotValue es + BitVec.ofNat 32 (VG.Proof.Ffdh.lead eb)), (eb.drop (VG.Proof.Ffdh.lead eb)).length⟩ r := by
+    intro r hr
+    rcases List.mem_cons.mp hr with hr | hr
+    · subst r; exact inputT.exponentBytes.separate
+    · have eq := List.mem_singleton.mp hr; subst r; exact PublicScan.suffix_separate exponentBytes exponentPositive exponentBelow
+  refine WP.mono (sharedWindowExpPhase_ok K v phaseInput
+    ⟨(((calls.after restU).after restScan).after restV).stack, spV⟩ p.width.2.2.1 separate) ?_
+  rintro t ⟨readyT, value, modT, r2T, oneT, _, frameT, restT⟩
+  have initial : Frame [⟨State.addr p.base, 8 * p.len⟩, FrameStack.belowA s.sp 48] s.mem v.mem :=
+    (frameU.trans (show Frame [⟨State.addr p.base,8*p.len⟩] u.mem scanT.mem from
+      by rw [memScan];exact Frame.refl _ _)).trans frameV |>.mono (by simp)
+  have frame := initial.trans frameT
+  have rest : Rest roundClobbers s t :=
+    (((restU.mono (by simp [roundClobbers])).trans (restScan.mono (by simp [roundClobbers]))).trans restV).trans restT
+  exact ⟨h.after_arithmetic calls frame rest readyT.ptr (fun d hd => (stableSlots_at stable hd).1),
+    readyT, by simpa only [VG.Proof.Ffdh.os2ip_drop_lead] using value, modT, r2T, oneT, frame, rest⟩
+
+end VG.Proof.Ffdh.Arm
+
+end
+
+end
+
+/-! The native public-value check, from its entry through AAPCS restoration. -/
+
+-- Formerly `VerifiedGarbage/Proof/Ffdh/Arm/SharedCheckPublicSubgroup.lean`, which only this module imported.
+section
+
+/-! Subgroup membership is a native power followed by a fixed-width equality. -/
+
+section
+namespace VG.Proof.Ffdh.Arm
+open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
+open VG.Proof.Rsa.Mont (numAt Operand)
+open VG.Proof.X25519.Arm (Rest)
+
+theorem sharedCheckPublicSubgroup_ok (backend : MontBackend) (s : State) {p : Inputs} {slots : List Nat} (slot : Nat) {bb : List Byte}
+    (h : Context p slots s) (calls : DomainCallMemory p s) (stable : stableSlots slots = true)
+    (hb : slot ∈ slots) (h60 : 60 ∈ slots) (h32 : 32 ∈ slots) (hasQ : p.hasQ = true)
+    (ready : ArithmeticReady p.base p.len p.w s)
+    (modulus : numAt s.mem (State.addr p.base) p.w 0 = p.P) (odd : p.P % 2 = 1)
+    (r2 : numAt s.mem (State.addr p.base) p.w 4 = 2 ^ (128 * p.w) % p.P)
+    (baseBytes : Octets p.base (p.slotValue slot) p.len bb s) (baseLength : bb.length = p.k) :
+    WP isa (VG.Impl.Ffdh.Arm.SharedCheckPublic.subgroup (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) slot) s fun t => Context p slots t ∧
+      ArithmeticReady p.base p.len p.w t ∧
+      t.gpr .r11 = (if Spec.Rsa.powMod (Spec.Rsa.os2ip bb) p.Q p.P = 1 then 1 else 0) ∧
+      numAt t.mem (State.addr p.base) p.w 0 = p.P ∧
+      numAt t.mem (State.addr p.base) p.w 4 = 2 ^ (128 * p.w) % p.P ∧
+      Frame [⟨State.addr p.base, 8 * p.len⟩, FrameStack.belowA s.sp 48] s.mem t.mem ∧ Rest roundClobbers s t := by
+  rw [VG.Impl.Ffdh.Arm.SharedCheckPublic.subgroup, WP.seq_iff]
+  refine WP.mono (sharedCheckPublicPublicPower_ok backend s slot 60 32 h calls stable hb h60 h32 h32 ready modulus odd r2 baseBytes baseLength
+    (h.qBytes hasQ) (by rw [p.qLength hasQ]; have := p.minLength; omega)
+    (by rw [p.qLength hasQ]; have := p.maxLength; omega) (by change BitVec.ofNat 32 p.k = _; rw [p.qLength hasQ])
+    (by
+      change Region.Disjoint ⟨State.addr p.q, _⟩ _
+      rw [p.qLength hasQ]
+      exact calls.domainSlice h (by have := p.minLength; omega)
+        (by rw [p.domainLength, hasQ]; simp only [ite_true]; omega))) ?_
+  rintro u ⟨contextU, readyU, power, modU, r2U, _, frameU, restU⟩
+  refine WP.mono (isOne_ok u readyU (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp] : Operand 6) (by decide)) ?_
+  rintro t ⟨readyT, flag, arraysT, frameT, restT⟩
+  rw [power] at flag
+  have frame := frameU.trans (frameT.mono (by simp))
+  have rest := restU.trans restT
+  exact ⟨h.after_arithmetic calls frame rest readyT.ptr (fun d hd => (stableSlots_at stable hd).1), readyT,
+    flag, (arraysT 0 (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) (by decide)).trans modU,
+    (arraysT 4 (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) (by decide)).trans r2U,
+    frame, rest⟩
+
+end VG.Proof.Ffdh.Arm
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/Ffdh/Arm/SharedCheckPublicTail.lean`, which only this module imported.
+section
+
+/-! The optional subgroup check of an imported public value. -/
+
+section
+namespace VG.Proof.Ffdh.Arm
+open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
+open VG.Proof.Rsa.Mont (numAt)
+
+theorem sharedCheckPublicTail_ok (backend : MontBackend) (s : State) {p : Inputs} {slots : List Nat} {yb : List Byte}
+    (h : Context p slots s) (calls : DomainCallMemory p s) (stable : stableSlots slots = true)
+    (h28 : 28 ∈ slots) (h32 : 32 ∈ slots) (h36 : 36 ∈ slots) (h60 : 60 ∈ slots)
+    (ready : ArithmeticReady p.base p.len p.w s)
+    (modulus : numAt s.mem (State.addr p.base) p.w 0 = p.P) (odd : p.P % 2 = 1)
+    (r2 : numAt s.mem (State.addr p.base) p.w 4 = 2 ^ (128 * p.w) % p.P)
+    (value : Octets p.base p.publicValue p.len yb s) (length : yb.length = p.k) :
+    WP isa (VG.Impl.Ffdh.Arm.SharedCheckPublic.tail
+      (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul)) s fun t =>
+        t.gpr .r0 = publicTailFlag p (Spec.Rsa.os2ip yb) ∧ Frame [⟨State.addr p.base, 8 * p.len⟩, FrameStack.belowA s.sp 48] s.mem t.mem := by
+  rw [VG.Impl.Ffdh.Arm.SharedCheckPublic.tail, VG.Impl.Ffdh.Arm.Domain.withQ, WP.seq_iff]
+  refine WP.mono (qTest_ok s h h28 h32) ?_
+  rintro u ⟨⟨zero, memU⟩, restU⟩
+  have frameU : Frame [⟨State.addr p.base, 8 * p.len⟩] s.mem u.mem := by rw [memU]; exact Frame.refl _ _
+  have ptrU := (restU.gpr .r0 (by simp)).trans ready.ptr
+  have readyU := ready.of_mem memU restU ptrU
+  have contextU := h.after_workspace frameU restU ptrU (fun d hd => (stableSlots_at stable hd).1)
+  have valueU := value.after_workspace frameU restU
+  refine WP.ite p.hasQ (by simp only [eval, zero, Bool.not_not]) ?_ ?_
+  · intro hasQ
+    rw [WP.seq_iff]
+    refine WP.mono (sharedCheckPublicSubgroup_ok backend u 36 contextU (calls.after restU) stable h36 h60 h32 hasQ readyU
+      (by rw [memU]; exact modulus) odd (by rw [memU]; exact r2) valueU length) ?_
+    rintro v ⟨_, _, flag, _, _, frameV, _⟩
+    refine WP.mono (finishFlag_ok v) ?_
+    rintro t ⟨⟨result, memT⟩, _⟩
+    refine ⟨?_, ?_⟩
+    · rw [result, flag]
+      exact (ite_eq_left hasQ).symm
+    · rw [memT]; exact (frameU.mono (by simp)).trans (by simpa only [restU.sp] using frameV)
+  · intro hasQ
+    refine WP.mono (ret_ok u 1 (by decide)) ?_
+    rintro t ⟨⟨result, memT⟩, _⟩
+    refine ⟨?_, ?_⟩
+    · rw [result]
+      exact (ite_eq_right (by rw [hasQ]; decide)).symm
+    · rw [memT]; exact frameU.mono (by simp)
+
+end VG.Proof.Ffdh.Arm
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/Ffdh/Arm/SharedCheckPublicMain.lean`, which only this module imported.
+section
+
+/-! Complete native range and subgroup checks of an imported public value. -/
+
+section
+namespace VG.Proof.Ffdh.Arm
+open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
+open VG.Proof.Rsa.Mont (numAt Operand arrAt)
+
+theorem sharedCheckPublicMain_ok (backend : MontBackend) (s : State) {p : Inputs} {slots : List Nat} {yb : List Byte}
+    (h : Context p slots s) (calls : DomainCallMemory p s) (stable : stableSlots slots = true)
+    (h0 : 0 ∈ slots) (h24 : 24 ∈ slots) (h28 : 28 ∈ slots) (h32 : 32 ∈ slots)
+    (h36 : 36 ∈ slots) (h60 : 60 ∈ slots)
+    (large : 1 < p.P) (odd : p.P % 2 = 1)
+    (value : Octets p.base p.publicValue p.len yb s) (length : yb.length = p.k)
+    (valueStack : Region.Disjoint ⟨State.addr p.publicValue, yb.length⟩ ⟨State.addr s.sp, 72⟩) :
+    WP isa (VG.Impl.Ffdh.Arm.SharedCheckPublic.main (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul)) s fun t =>
+      t.gpr .r0 = publicFlag p (Spec.Rsa.os2ip yb) ∧ Frame (domainPrepareWrites p s) s.mem t.mem := by
+  have op0 : Operand 0 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
+  have op4 : Operand 4 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
+  have op1 : Operand 1 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
+  have extend {m m' : Mem} (f : Frame [⟨State.addr p.base, 8 * p.len⟩] m m') : Frame (domainPrepareWrites p s) m m' :=
+    f.mono (by intro r hr; rw [List.mem_singleton] at hr; subst r; simp [domainPrepareWrites, prepareAtWrites, prepareWrites])
+  rw [VG.Impl.Ffdh.Arm.SharedCheckPublic.main, WP.seq_iff]
+  refine WP.mono (domainSharedPrepareAt24_ok backend s h calls stable h0 h24 h32 large odd) ?_
+  rintro u ⟨contextU, readyU, modU, r2U, frameU, restU⟩
+  have valueU := value.after_frame frameU restU (by
+    intro r hr
+    simp only [domainPrepareWrites, prepareAtWrites, prepareWrites, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with (rfl | rfl | rfl) | rfl
+    · exact value.separate
+    · exact valueStack.sub_right (Offset.sub_base _ (by decide))
+    · exact valueStack.sub_right (Offset.sub_base _ (by decide))
+    · rw [length]; exact calls.publicValue)
+  rw [WP.seq_iff]
+  refine WP.mono (importAt_ok u 1 36 32 contextU stable h36 h32 readyU (by decide) (by decide)
+    valueU (by rw [length]; have := p.minLength; omega) (by rw [length]; exact p.width.2.2.2.1)
+    (by change BitVec.ofNat 32 p.k = _; rw [length])) ?_
+  rintro v ⟨contextV, readyV, y, keepsV, frameV, restV⟩
+  have bound : arrAt p.w 8 ≤ 8 * p.len := readyV.width ▸ readyV.layout.2.2.1
+  have modV := (keeps_array_num keepsV bound op0 (by decide : 0 ≠ 1)).trans modU
+  have r2V := (keeps_array_num keepsV bound op4 (by decide : 4 ≠ 1)).trans r2U
+  rw [WP.seq_iff]
+  refine WP.mono (inRange_ok v readyV op1 (by decide) (by rw [modV]; exact odd)) ?_
+  rintro w ⟨readyW, flag, arraysW, frameW, restW⟩
+  rw [y, modV] at flag
+  change w.gpr .r11 = (if 1 < Spec.Rsa.os2ip yb ∧ Spec.Rsa.os2ip yb < p.P - 1 then 1 else 0) at flag
+  have contextW := contextV.after_workspace frameW restW readyW.ptr (fun d hd => (stableSlots_at stable hd).1)
+  have modW := (arraysW 0 op0 (by decide)).trans modV
+  have r2W := (arraysW 4 op4 (by decide)).trans r2V
+  have valueW := (valueU.after_workspace frameV restV).after_workspace frameW restW
+  have frameW' := (frameU.trans (extend frameV)).trans (extend frameW)
+  rw [VG.Impl.Ffdh.Arm.Domain.ifFlag, WP.seq_iff]
+  refine WP.mono (testFlag_ok w) ?_
+  rintro z ⟨⟨zero, memZ⟩, restZ⟩
+  by_cases valid : 1 < Spec.Rsa.os2ip yb ∧ Spec.Rsa.os2ip yb < p.P - 1
+  · refine WP.ite true (by change some (!z.z) = some true; rw [zero, flag, ite_eq_left valid]; rfl) ?_ (by intro hf; cases hf)
+    intro _
+    have frameZ : Frame [⟨State.addr p.base, 8 * p.len⟩] w.mem z.mem := by rw [memZ]; exact Frame.refl _ _
+    have ptrZ := (restZ.gpr .r0 (by simp)).trans readyW.ptr
+    have contextZ := contextW.after_workspace frameZ restZ ptrZ (fun d hd => (stableSlots_at stable hd).1)
+    have readyZ := readyW.of_mem memZ restZ ptrZ
+    refine WP.mono (sharedCheckPublicTail_ok backend z contextZ ((calls.after restU).after restV |>.after restW |>.after restZ) stable h28 h32 h36 h60 readyZ
+      (by rw [memZ]; exact modW) odd (by rw [memZ]; exact r2W)
+      (valueW.after_workspace frameZ restZ) length) ?_
+    rintro t ⟨result, frameT⟩
+    refine ⟨?_, ?_⟩
+    · rw [publicFlag, ite_eq_left valid]; exact result
+    · rw [memZ] at frameT
+      apply frameW'.trans
+      rw [restZ.sp, restW.sp, restV.sp, restU.sp] at frameT
+      exact frameT.mono (by
+        intro r hr
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        simp only [domainPrepareWrites, prepareAtWrites, prepareWrites, List.mem_append,
+          List.mem_cons, List.not_mem_nil, or_false]
+        rcases hr with rfl | rfl
+        · exact Or.inl (Or.inl rfl)
+        · exact Or.inr rfl)
+  · refine WP.ite false (by change some (!z.z) = some false; rw [zero, flag, ite_eq_right valid]; rfl) (by intro ht; cases ht) ?_
+    intro _
+    refine WP.mono (ret_ok z 0 (by decide)) ?_
+    rintro t ⟨⟨result, memT⟩, _⟩
+    refine ⟨?_, ?_⟩
+    · rw [publicFlag, ite_eq_right valid]; exact result
+    · rw [memT, memZ]; exact frameW'
+
+end VG.Proof.Ffdh.Arm
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/Ffdh/Arm/SharedCheckPublicBody.lean`, which only this module imported.
+section
+
+/-! The entire imported-public-value body, including invalid public moduli. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm
+open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
+
+def sharedPublicBodyWrites (p : Inputs) (s : State) : List Region :=
+  bodyWrites p s ++ [FrameStack.belowA s.sp 48]
+
+theorem sharedCheckPublicBody_ok (backend : MontBackend) (s : State) {p : Inputs} {slots : List Nat} {yb : List Byte}
+    (h : Context p slots s) (calls : DomainCallMemory p s) (stable : stableSlots slots = true)
+    (h0 : 0 ∈ slots) (h24 : 24 ∈ slots) (h28 : 28 ∈ slots) (h32 : 32 ∈ slots) (h36 : 36 ∈ slots)
+    (value : Octets p.base p.publicValue p.len yb s) (length : yb.length = p.k)
+    (valueStack : Region.Disjoint ⟨State.addr p.publicValue, yb.length⟩ ⟨State.addr s.sp, 72⟩) :
+    WP isa (VG.Impl.Ffdh.Arm.Domain.head (VG.Impl.Ffdh.Arm.SharedCheckPublic.main (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul))) s fun t =>
+      t.gpr .r0 = checkedPublicFlag p (Spec.Rsa.os2ip yb) ∧ Frame (sharedPublicBodyWrites p s) s.mem t.mem := by
+  unfold VG.Impl.Ffdh.Arm.Domain.head
+  apply WP.assoc
+  rw [WP.seq_iff]
+  refine WP.mono (head_ok s h stable h0 h24 h32) ?_
+  rintro u ⟨contextU, zero, frameU, restU⟩
+  have fU : Frame (sharedPublicBodyWrites p s) s.mem u.mem := frameU.mono (by simp [sharedPublicBodyWrites, bodyWrites])
+  by_cases valid : Spec.Rsa.modulusValid p.P p.k = true
+  · refine WP.ite true (by change some u.z = some true; rw [zero, valid]) ?_ (by intro hf; cases hf)
+    intro _
+    have facts := VG.Proof.Bignum.valid_facts valid p.minLength
+    have stableU : stableSlots (60 :: 56 :: slots) = true := by
+      change (true && (true && stableSlots slots)) = true
+      rw [Bool.true_and, Bool.true_and, stable]
+    have valueU := value.after_frame frameU restU (by
+      intro r hr
+      rw [List.mem_singleton] at hr
+      subst r
+      exact valueStack)
+    have valueStackU : Region.Disjoint ⟨State.addr p.publicValue, yb.length⟩ ⟨State.addr u.sp, 72⟩ := by
+      rw [restU.sp]; exact valueStack
+    refine WP.mono (sharedCheckPublicMain_ok backend u contextU (calls.after restU) stableU
+      (by simp [h0]) (by simp [h24]) (by simp [h28]) (by simp [h32]) (by simp [h36]) (by simp)
+      facts.2.1 facts.1 valueU length valueStackU) ?_
+    rintro t ⟨result, frameT⟩
+    refine ⟨?_, fU.trans (frameT.sub ?_)⟩
+    · rw [checkedPublicFlag, ite_eq_left valid]; exact result
+    · intro r hr
+      simp only [domainPrepareWrites, prepareAtWrites, prepareWrites, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with (rfl | rfl | rfl) | rfl
+      · exact ⟨⟨State.addr p.base, 8 * p.len⟩, by simp [sharedPublicBodyWrites, bodyWrites], by intro a ha; exact ha⟩
+      · refine ⟨⟨State.addr s.sp, 72⟩, by simp [sharedPublicBodyWrites, bodyWrites], ?_⟩
+        rw [restU.sp]
+        exact Offset.sub_base _ (by decide)
+      · refine ⟨⟨State.addr s.sp, 72⟩, by simp [sharedPublicBodyWrites, bodyWrites], ?_⟩
+        rw [restU.sp]
+        exact Offset.sub_base _ (by decide)
+      · refine ⟨FrameStack.belowA s.sp 48, by simp [sharedPublicBodyWrites], ?_⟩
+        rw [restU.sp]
+        intro a ha; exact ha
+  · have invalid : Spec.Rsa.modulusValid p.P p.k = false := Bool.eq_false_iff.mpr valid
+    refine WP.ite false (by change some u.z = some false; rw [zero, invalid]) (by intro ht; cases ht) ?_
+    intro _
+    refine WP.mono (ret_ok u 0 (by decide)) ?_
+    rintro t ⟨⟨result, memT⟩, _⟩
+    refine ⟨?_, ?_⟩
+    · rw [checkedPublicFlag, ite_eq_right valid]; exact result
+    · rw [memT]; exact fU
+
+end VG.Proof.Ffdh.Arm
+end
+
+end
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm
+open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
+
+theorem sharedCheckPublicEntered_ok (backend : MontBackend) (s : State) {p : Inputs} {yb : List Byte}
+    (h : ArgumentMemory p [] s) (incoming : IncomingScratch p s) (calls : DomainCallMemory p s)
+    (domain : s.gpr .r0 = p.domain) (domainLength : s.gpr .r1 = BitVec.ofNat 32 p.dom.length)
+    (count : s.gpr .r2 = BitVec.ofNat 32 p.k) (publicValue : s.gpr .r3 = p.publicValue)
+    (value : Octets p.base p.publicValue p.len yb s) (length : yb.length = p.k)
+    (valueStack : Region.Disjoint ⟨State.addr p.publicValue, yb.length⟩ ⟨State.addr s.sp, 72⟩) :
+    WP isa (.seq (.block VG.Impl.Ffdh.Arm.Domain.CheckPublic.entry)
+      (VG.Impl.Ffdh.Arm.Domain.head (VG.Impl.Ffdh.Arm.SharedCheckPublic.main (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul)))) s fun t =>
+      t.gpr .r0 = checkedPublicFlag p (Spec.Rsa.os2ip yb) ∧ Frame (sharedPublicBodyWrites p s) s.mem t.mem := by
+  rw [WP.seq_iff]
+  refine WP.mono (withAllRest (checkPublicEntry_ok s h incoming domain domainLength count publicValue)) ?_
+  rintro u ⟨⟨contextU, frameU⟩, restU⟩
+  have valueU := value.after_frame frameU restU (by
+    intro r hr
+    rw [List.mem_singleton] at hr
+    subst r
+    exact valueStack)
+  have valueStackU : Region.Disjoint ⟨State.addr p.publicValue, yb.length⟩ ⟨State.addr u.sp, 72⟩ := by
+    rw [restU.sp]; exact valueStack
+  refine WP.mono (sharedCheckPublicBody_ok backend u contextU (calls.after restU) (by decide) (by decide) (by decide) (by decide) (by decide)
+    (by decide) valueU length valueStackU) ?_
+  rintro t ⟨result, frameT⟩
+  refine ⟨result, ?_⟩
+  have entryFrame : Frame (sharedPublicBodyWrites p s) s.mem u.mem := frameU.mono (by simp [sharedPublicBodyWrites, bodyWrites])
+  change Frame [⟨State.addr p.base, 8 * p.len⟩, ⟨State.addr u.sp, 72⟩, FrameStack.belowA u.sp 48] u.mem t.mem at frameT
+  rw [restU.sp] at frameT
+  exact entryFrame.trans frameT
+
+structure SharedCheckPublicFnInput (p : Inputs) (yb : List Byte) (s : State) : Prop where
+  input : CheckPublicFnInput p yb s
+  calls : DomainCallMemory p (entered s)
+  saved : ∀ r ∈ sharedPublicBodyWrites p (entered s),
+    (⟨State.addr (pcPushed s).sp, 56⟩ : Region).Disjoint r
+
+theorem sharedCheckPublicFn_ok (backend : MontBackend) (s : State) {p : Inputs} {yb : List Byte} (h : SharedCheckPublicFnInput p yb s) :
+    WP isa (VG.Impl.Ffdh.Arm.SharedCheckPublic.code (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul)) s fun t =>
+      abiPreserved s t ∧ t.gpr .r0 = checkedPublicFlag p (Spec.Rsa.os2ip yb) := by
+  unfold VG.Impl.Ffdh.Arm.SharedCheckPublic.code
+  refine framed_of_separate _ s h.input.stackFits (sharedPublicBodyWrites p (entered s))
+    (fun _ status => status = checkedPublicFlag p (Spec.Rsa.os2ip yb)) h.saved ?_
+  refine WP.mono (sharedCheckPublicEntered_ok backend (entered s) h.input.args h.input.incoming h.calls h.input.domain h.input.domainLength
+    h.input.count h.input.publicValue h.input.value h.input.length h.input.valueStack) ?_
+  rintro t ⟨result, frame⟩
+  exact ⟨frame, result⟩
+
+end VG.Proof.Ffdh.Arm
+
+end
+
+end
+
+/-! The public-check signature reserves the outer frame and shared-call stack. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm
+open VG VG.Arm VG.Arm.FrameStack VG.Proof.Bignum.Arm
+
+theorem sharedCheckPublic_pre128 (s : State) (pre : (Spec.Ffdh.checkPublicContract abi 176).pre s) :
+    (Spec.Ffdh.checkPublicContract abi 128).pre s := by
+  sig_pre [Spec.Ffdh.checkPublicContract, Spec.Ffdh.checkPublicSig, abi, argRegs, reduceClassify, Loc.val, State.addr] at pre ⊢
+  obtain ⟨stackFit, argFit, rd, wr, domS, yS, sArgs, stackDom, stackY, stackS, stackArgs,
+    domFit, yFit, sFit, bounds, domainLen, yLen, space⟩ := pre
+  have inner : Region.Sub ⟨State.addr s.sp - BitVec.ofNat 64 128, 128⟩
+      ⟨State.addr s.sp - BitVec.ofNat 64 176, 176⟩ :=
+    Offset.below_mono _ (by decide) (by decide)
+  exact ⟨by omega_using [stackFit], argFit, rd, wr, domS, yS, sArgs, stackDom.sub_left inner,
+    stackY.sub_left inner, stackS.sub_left inner, stackArgs.sub_left inner,
+    domFit, yFit, sFit, bounds, domainLen, yLen, space⟩
+
+theorem sharedCheckPublic_input (s : State) (pre : (Spec.Ffdh.checkPublicContract abi 176).pre s)
+    {p : Inputs} {yb : List Byte}
+    (base : stackArg s 1 = p.base) (domain : s.gpr .r0 = p.domain) (publicValue : s.gpr .r3 = p.publicValue)
+    (count : (s.gpr .r2).toNat = p.k) (capacity : (stackArg s 2).toNat = p.len)
+    (domainBytes : Spec.Rsa.bytesAt s.mem (State.addr p.domain) (s.gpr .r1).toNat = p.dom)
+    (publicBytes : Spec.Rsa.bytesAt s.mem (State.addr p.publicValue) p.k = yb) :
+    SharedCheckPublicFnInput p yb s := by
+  have old := checkPublic_input s (sharedCheckPublic_pre128 s pre) base domain publicValue count capacity domainBytes publicBytes
+  sig_pre [Spec.Ffdh.checkPublicContract, Spec.Ffdh.checkPublicSig, abi, argRegs, reduceClassify, Loc.val, State.addr] at pre
+  obtain ⟨stackFit, _, _, _, _, _, _, stackDom, stackY, stackS, _, _, _, _, _, _, yLen, _⟩ := pre
+  have domLen : (s.gpr .r1).toNat = p.dom.length := by
+    have eq := congrArg List.length domainBytes
+    simpa only [VG.Proof.Bignum.bytesAt_length] using eq
+  rw [yLen,count,publicValue] at stackY
+  rw [domain,domLen] at stackDom
+  rw [base,capacity,Nat.mul_comm p.len 8] at stackS
+  have reserved : State.addr s.sp - BitVec.ofNat 64 176 = State.addr (s.sp - BitVec.ofNat 32 176) :=
+    (addr_sub' stackFit).symm
+  simp only [State.addr] at reserved
+  rw [reserved] at stackDom stackY stackS
+  have calls := DomainCallMemory.of_outer stackFit (entered_sp s) stackS stackDom.symm stackY.symm
+  refine ⟨old,calls,?_⟩
+  intro r hr
+  rcases List.mem_append.mp hr with hr | hr
+  · exact old.saved r hr
+  · have eq := List.mem_singleton.mp hr
+    subst r
+    have shifted : (pcPushed s).sp = (entered s).sp + BitVec.ofNat 32 72 := (BitVec.sub_add_cancel _ _).symm
+    have fit : (entered s).sp.toNat + 72 < 2^32 := by
+      rw [entered_nat s (by omega_using [stackFit])]; have := s.sp.isLt; omega_using []
+    rw [shifted,VG.Arm.addr_add fit,belowA,addr_sub' calls.stack.fit]
+    exact (Offset.disjoint_below_above _ (m:=48) (a:=72) (l:=56) (by decide)).symm
+
+end VG.Proof.Ffdh.Arm
+
+end
+
+end
+
+/-! ### `Ffdh.Arm.SharedCheckPublicPrograms`, which only this module used -/
+
+section
+
+/-! One public-key validation program for every shared Montgomery backend. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm.SharedCheckPublic
+open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Bignum.Arm
+
+def code (b : MontBackend) : Prog isa :=
+  VG.Impl.Ffdh.Arm.SharedCheckPublic.code (MontCall.op b.name b.mul)
+
+end VG.Proof.Ffdh.Arm.SharedCheckPublic
+
+end
+
+end
 
 /-! ### `Ffdh.Arm.SharedCheckPublicPublicPowerCT`, which only this module used -/
 

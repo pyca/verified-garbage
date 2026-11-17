@@ -2,7 +2,6 @@ module
 
 import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeProductCounter
 public import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeCore
-import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeControl
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.Ffdh.Arm.CombPrecompute
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState

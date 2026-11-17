@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Ed25519.PPC64LE.Decode
+public import VerifiedGarbage.Proof.Ed25519.PPC64LE.Decode
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Ed25519.PPC64LE.FieldTest
@@ -14,7 +14,6 @@ meta import VerifiedGarbage.Proof.Ed25519.PPC64LE.FieldTest
 meta import VerifiedGarbage.Proof.Ed25519.PPC64LE.PointTable
 meta import VerifiedGarbage.Proof.X25519.PPC64LE.Instr
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
-public import VerifiedGarbage.Proof.Ed25519.PPC64LE.RecoverSign
 public import VerifiedGarbage.Spec.Ed25519.Contract
 import VerifiedGarbage.Proof.Ed25519.PPC64LE.RecoverCand
 meta import VerifiedGarbage.Proof.Ed25519.PPC64LE.RecoverCand

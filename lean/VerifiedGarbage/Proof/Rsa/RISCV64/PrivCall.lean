@@ -13,7 +13,7 @@ meta import VerifiedGarbage.Proof.Rsa.Contract
 Untrusted: everything here is checked by Lean. For its callers' proofs: the
 shared contract's precondition from the facts by name (`pre_of_preP`, the
 converse of `preP_of`), and its public data from the facts a caller fixes
-(`pub_of`), as on PPC64LE (`Proof/Rsa/PPC64LE/PrivPre.lean`,
+(`pub_of`), as on PPC64LE (`Proof/Rsa/PPC64LE/PrivCorrect.lean`,
 `Proof/Rsa/PPC64LE/PrivCT.lean`).
 -/
 

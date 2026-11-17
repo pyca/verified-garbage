@@ -1,8 +1,8 @@
 module
+
 public import VerifiedGarbage.Proof.AesCcm.X86_64.Args
 public import VerifiedGarbage.Proof.CmacAes.X86_64.Variant
 import VerifiedGarbage.Proof.AesCcm.X86_64.Seal
-import VerifiedGarbage.Proof.AesCcm.X86_64.Cmp
 public import VerifiedGarbage.Impl.AesCcm.X86_64
 public import VerifiedGarbage.Proof.AesCcm.X86_64.Env
 public import VerifiedGarbage.Proof.Framework.WriteBytes

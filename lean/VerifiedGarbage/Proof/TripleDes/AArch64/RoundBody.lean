@@ -1,7 +1,7 @@
 module
-public import VerifiedGarbage.Proof.TripleDes.AArch64.Round
+
+public import VerifiedGarbage.Proof.TripleDes.AArch64.Box
 public import VerifiedGarbage.Proof.TripleDes.AArch64.Spills
-import VerifiedGarbage.Proof.TripleDes.AArch64.Box
 import VerifiedGarbage.Proof.TripleDes.Round
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec

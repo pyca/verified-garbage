@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.AesSiv.Arm.S2vLoop
 import VerifiedGarbage.Proof.AesSiv.Words
 import VerifiedGarbage.Proof.Cmac.Block
-import VerifiedGarbage.Proof.AesSiv.Arm.S2vAd
 import VerifiedGarbage.Proof.AesGcm.Arm.Loops
 import VerifiedGarbage.Proof.AesGcm.Arm.Run
 import VerifiedGarbage.Proof.AesGcm.Arm.Env

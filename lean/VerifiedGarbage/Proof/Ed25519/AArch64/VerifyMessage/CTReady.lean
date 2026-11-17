@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Setup
-public import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyTbl
+public import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyPoints
 public import VerifiedGarbage.Spec.Ed25519.Contract
 public import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub

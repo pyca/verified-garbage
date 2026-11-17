@@ -2,15 +2,13 @@ module
 
 -- separate module: it builds in parallel with the constant-time proofs (`CTHash`, `CTPost`), which `Verified`
 -- also needs.
-
 public import VerifiedGarbage.Proof.RsaPss.RISCV64.Post
 public import VerifiedGarbage.Proof.RsaPss.VerifyCases
 import VerifiedGarbage.Proof.RsaPss.EncBytes
-import VerifiedGarbage.Proof.RsaPss.Encoding
 import VerifiedGarbage.Proof.Mgf1.Bytes
 public import VerifiedGarbage.Proof.RsaPss.RISCV64.Call
 import VerifiedGarbage.Proof.RsaPss.Params
-import VerifiedGarbage.Proof.RsaOaep.RISCV64.Mgf
+import VerifiedGarbage.Proof.RsaOaep.RISCV64.MgfT
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith

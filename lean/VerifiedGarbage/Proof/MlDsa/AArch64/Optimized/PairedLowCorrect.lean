@@ -1,9 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedKernel
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedEntry
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Basic
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedSpecPre
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Mem
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedRawField
 public import VerifiedGarbage.Proof.MlDsa.PairedResponseContract
@@ -19,12 +16,8 @@ import VerifiedGarbage.Proof.MlKem.Arith
 public import Mathlib.Algebra.Group.Nat.Defs
 import Mathlib.Data.Fin.Basic
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedWordTiming
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedSpecFrame
 import VerifiedGarbage.Proof.MlDsa.Sign.Iter
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedMaskInvariant
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedAbi
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedSatMemory
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Call
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Representation
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttCallTiming
@@ -33,6 +26,442 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
 import VerifiedGarbage.Proof.MlDsa.Verify.Mem
 import Mathlib.Data.Fintype.Fin
 import Mathlib.Tactic.FinCases
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedEntryAccess
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedKernelReady
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedTableMemory
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.MlKem.Mem
+public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.InstancePriority
+public import VerifiedGarbage.Proof.MlDsa.FusedInverseContract
+import VerifiedGarbage.TCB.AArch64.Simd
+public import VerifiedGarbage.Proof.Framework.ConstMem
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.PairedTable
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseFinish
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCheckFlags
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowRun
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFinalMemory
+
+/-! ### `MlDsa.AArch64.Optimized.PairedMaskInvariant`, which this module and modules that import it used -/
+
+section
+
+/-! ## From `PairedFinishSemantic.lean` -/
+
+@[expose] public section
+
+section
+
+namespace VG.Proof.MlDsa.AArch64.Optimized.Paired
+open VG VG.AArch64
+open VG.Proof.MlDsa.AArch64.Optimized.Response
+
+def FlagMasks (v : BitVec 128) : Prop := ∀e<4,vword v e=0 ∨ vword v e= -1
+
+theorem flag_lanes_zero (v : BitVec 128) :
+    (∀e<4,vword v e=0) ↔ vword v 0=0 ∧ vword v 1=0 ∧ vword v 2=0 ∧ vword v 3=0 := by
+  constructor
+  · intro h
+    exact ⟨h 0 (by decide),h 1 (by decide),h 2 (by decide),h 3 (by decide)⟩
+  · rintro ⟨h0,h1,h2,h3⟩ e he
+    rcases (show e=0 ∨ e=1 ∨ e=2 ∨ e=3 by omega_using [he]) with rfl | rfl | rfl | rfl <;>
+      with_reducible assumption
+
+/-- Exact success-bit reduction for the four SIMD rejection-mask lanes. -/
+theorem finishValue_accept (v : BitVec 128) (hv : FlagMasks v) :
+    finishValue v= @ite _ (∀e<4,vword v e=0) (Classical.propDecidable _) 1 0 := by
+  rw [flag_lanes_zero,finishValue]
+  rcases hv 0 (by decide) with h0 | h0 <;>
+    rcases hv 1 (by decide) with h1 | h1 <;>
+    rcases hv 2 (by decide) with h2 | h2 <;>
+    rcases hv 3 (by decide) with h3 | h3 <;>
+    rw [h0,h1,h2,h3] <;> simp
+
+end VG.Proof.MlDsa.AArch64.Optimized.Paired
+
+end
+
+/-! ## From `PairedMaskInvariant.lean` -/
+
+section
+
+namespace VG.Proof.MlDsa.AArch64.Optimized.Paired
+open VG VG.AArch64
+open VG.Proof.MlDsa.AArch64.Optimized.Response
+
+theorem mask_or_closed {a b : BitVec 32} (ha : a=0 ∨ a= -1) (hb : b=0 ∨ b= -1) :
+    a|||b=0 ∨ a|||b= -1 := by
+  rcases ha with rfl | rfl <;> rcases hb with rfl | rfl <;> decide
+
+theorem normMask_closed (x lo width : BitVec 32) : normMask x lo width=0 ∨ normMask x lo width= -1 := by
+  unfold normMask
+  split
+  · exact Or.inr rfl
+  · exact Or.inl rfl
+
+theorem checkStep_masks (hint : Bool) (raw : BitVec 128) (out aux : Addr) (c : CheckConstants)
+    (d : CheckData) (hd : FlagMasks d.flags) : FlagMasks (checkStep hint raw out aux c d).flags := by
+  intro e he
+  rw [checkStep_flag _ _ _ _ _ _ he]
+  exact mask_or_closed (hd e he) (normMask_closed _ _ _)
+
+theorem checkRun_masks (hint : Bool) (v : Values) (out aux : Addr) (c : CheckConstants)
+    (d : CheckData) (js : List (Fin 2 × Fin 8)) (hd : FlagMasks d.flags) :
+    FlagMasks (checkRun hint v out aux c d js).flags := by
+  induction js generalizing d with
+  | nil => exact hd
+  | cons i js ih => exact ih _ (checkStep_masks _ _ _ _ _ _ hd)
+
+theorem finalPass_masks (hint : Bool) (work out aux : Addr) (c : CheckConstants)
+    (d : CheckData) (n : Nat) (hd : FlagMasks d.flags) :
+    FlagMasks (finalPassData hint work out aux c d n).flags := by
+  induction n with
+  | zero => exact hd
+  | succ n ih => exact checkRun_masks _ _ _ _ _ _ _ ih
+
+theorem lowPair_masks (g : Nat) (raw0 raw1 : BitVec 128) (out0 out1 aux0 aux1 : Addr)
+    (c : LowConstants) (d : CheckData) (hd : FlagMasks d.flags) :
+    FlagMasks (lowPairStep g raw0 raw1 out0 out1 aux0 aux1 c d).flags := by
+  intro e he
+  rw [lowPair_flag _ _ _ _ _ _ _ _ _ he]
+  exact mask_or_closed (mask_or_closed (hd e he) (normMask_closed _ _ _)) (normMask_closed _ _ _)
+
+theorem lowRun_masks (g : Nat) (v : Values) (out aux : Addr) (c : LowConstants)
+    (d : CheckData) (is : List LowIndex) (hd : FlagMasks d.flags) :
+    FlagMasks (lowRun g v out aux c d is).flags := by
+  induction is generalizing d with
+  | nil => exact hd
+  | cons i is ih => exact ih _ (lowPair_masks _ _ _ _ _ _ _ _ _ hd)
+
+theorem lowPass_masks (g : Nat) (work out aux : Addr) (c : LowConstants)
+    (d : CheckData) (n : Nat) (hd : FlagMasks d.flags) :
+    FlagMasks (lowPassData g work out aux c d n).flags := by
+  induction n with
+  | zero => exact hd
+  | succ n ih => exact lowRun_masks _ _ _ _ _ _ _ ih
+
+end VG.Proof.MlDsa.AArch64.Optimized.Paired
+
+end
+
+end
+
+end
+
+/-! ### `MlDsa.AArch64.Optimized.PairedSatMemory`, which this module and modules that import it used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.AArch64.Optimized.Paired
+open VG VG.AArch64 VG.Spec.MlDsa
+open VG.Impl.MlDsa.AArch64.Optimized.Paired
+
+def pairedSatMem : Mem := constMem 65536 expandedWords
+
+theorem pairedSat_held : ∀i<512,pairedSatMem.readW (65536+BitVec.ofNat 64 (8*i)) 64=expandedWords.getD i 0 := by
+  intro i hi
+  exact constMem_held 65536 expandedWords (by rw [PairedTable.expandedWords_length]; decide)
+    i (by rw [PairedTable.expandedWords_length]; exact hi)
+
+theorem pairedSat_coeff_zero {p : Nat} (hp : p≤32768) {i : Nat} (hi : i<n) :
+    coeffAt pairedSatMem (BitVec.ofNat 64 p) i=0 := by
+  simp only [pairedSatMem,coeffAt,Mem.readW,BitVec.setWidth_eq]
+  rw [Mem.read_eq_of_bytes (v := (0#32)) ?_]
+  · rfl
+  · intro j hj
+    have ha : ¬ ((BitVec.ofNat 64 p+BitVec.ofNat 64 (4*i)+BitVec.ofNat 64 j)-65536).toNat<8*expandedWords.length := by
+      rw [PairedTable.expandedWords_length]
+      have hi' : i<256 := hi
+      simp only [BitVec.toNat_sub,BitVec.toNat_add,BitVec.toNat_ofNat,
+        show (65536:BitVec 64).toNat=65536 by decide]
+      omega_using [hp, hj, hi']
+    simp only [constMem,ha,ite_false]
+    simp
+
+theorem pairedSat_reduced {p : Nat} (hp : p≤32768) : Reduced pairedSatMem (BitVec.ofNat 64 p) := by
+  intro i hi
+  rw [pairedSat_coeff_zero hp hi]
+  decide
+
+theorem pairedSat_positive {p : Nat} (hp : p≤32768) : PositiveReduced pairedSatMem (BitVec.ofNat 64 p) := by
+  intro i hi
+  rw [pairedSat_coeff_zero hp hi]
+  decide
+
+end VG.Proof.MlDsa.AArch64.Optimized.Paired
+
+end
+
+end
+
+/-! ### `MlDsa.AArch64.Optimized.PairedSpecFrame`, which this module and modules that import it used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.AArch64.Optimized.Paired
+open VG VG.AArch64 VG.Spec.MlDsa
+
+theorem positiveReduced_frame {rs : List Region} {m m' : Mem} {p : Addr}
+    (hf : Frame rs m m') (hd : ∀r∈rs,(⟨p,1024⟩:Region).Disjoint r)
+    (hp : PositiveReduced m p) : PositiveReduced m' p := by
+  intro i hi
+  rw [VG.Proof.MlDsa.Verify.coeffAt_congr (VG.Proof.MlKem.bytes_frame hf hd (by decide)) hi]
+  exact hp i hi
+
+theorem pairedProduct_frame {rs : List Region} {m m' : Mem} {challenge secret : Addr}
+    (hf : Frame rs m m')
+    (hc : ∀r∈rs,(⟨challenge,1024⟩:Region).Disjoint r)
+    (hs : ∀r∈rs,(⟨secret,2048⟩:Region).Disjoint r) {j : Nat} (hj : j<2) :
+    pairedProduct m' challenge secret j=pairedProduct m challenge secret j := by
+  have hp : ∀r∈rs,(⟨pairPolyPtr secret j,1024⟩:Region).Disjoint r := by
+    intro r hr
+    exact (hs r hr).sub_left (Offset.sub_base secret (by omega_using [hj]))
+  rw [pairedProduct,VG.Proof.MlDsa.Verify.polyAt_frame hf hc,
+    VG.Proof.MlDsa.Verify.polyAt_frame hf hp]
+  rfl
+
+theorem pairedProductsReduced_frame {rs : List Region} {m m' : Mem} {challenge secret : Addr}
+    (hf : Frame rs m m')
+    (hc : ∀r∈rs,(⟨challenge,1024⟩:Region).Disjoint r)
+    (hs : ∀r∈rs,(⟨secret,2048⟩:Region).Disjoint r)
+    (hp : pairedProductsReduced m challenge secret) : pairedProductsReduced m' challenge secret := by
+  refine ⟨positiveReduced_frame hf hc hp.1,?_⟩
+  intro j hj
+  apply positiveReduced_frame hf _ (hp.2 j hj)
+  intro r hr
+  exact (hs r hr).sub_left (Offset.sub_base secret (by omega_using [hj]))
+
+theorem pairedDifference_frame {rs : List Region} {m m' : Mem} {challenge secret out : Addr}
+    (hf : Frame rs m m')
+    (hc : ∀r∈rs,(⟨challenge,1024⟩:Region).Disjoint r)
+    (hs : ∀r∈rs,(⟨secret,2048⟩:Region).Disjoint r)
+    (ho : ∀r∈rs,(⟨out,2048⟩:Region).Disjoint r) {j : Nat} (hj : j<2) :
+    pairedDifference m' challenge secret out j=pairedDifference m challenge secret out j := by
+  have hp : ∀r∈rs,(⟨pairPolyPtr out j,1024⟩:Region).Disjoint r := by
+    intro r hr
+    exact (ho r hr).sub_left (Offset.sub_base out (by omega_using [hj]))
+  rw [pairedDifference,VG.Proof.MlDsa.Verify.polyAt_frame hf hp,
+    pairedProduct_frame hf hc hs hj]
+  rfl
+
+end VG.Proof.MlDsa.AArch64.Optimized.Paired
+
+end
+
+end
+
+/-! ### `MlDsa.AArch64.Optimized.PairedSpecPre`, which this module and modules that import it used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.AArch64.Optimized.Paired
+open VG VG.AArch64 VG.Spec.MlDsa
+open VG.Impl.MlDsa.AArch64.Optimized.Paired
+
+theorem pairedConsts_eq : pairedConsts=[("VG_MLDSA_INV_PAIR",expandedWords)] := rfl
+
+structure ZSpecPre (s : State) : Prop where
+  rd : s.rd=[⟨s.gpr .x0,1024⟩,⟨s.gpr .x1,2048⟩,⟨s.syms "VG_MLDSA_INV_PAIR",4096⟩]
+  wr : s.wr=[⟨s.gpr .x2,2048⟩,⟨s.gpr .x4,2176⟩]
+  table : PairedTable.Artifact s.mem (s.syms "VG_MLDSA_INV_PAIR")
+  tableSep : ∀r∈s.wr,(⟨s.syms "VG_MLDSA_INV_PAIR",4096⟩:Region).Disjoint r
+  commonData : (⟨s.gpr .x0,1024⟩:Region).Disjoint ⟨s.gpr .x2,2048⟩
+  commonWork : (⟨s.gpr .x0,1024⟩:Region).Disjoint ⟨s.gpr .x4,2176⟩
+  secretData : (⟨s.gpr .x1,2048⟩:Region).Disjoint ⟨s.gpr .x2,2048⟩
+  secretWork : (⟨s.gpr .x1,2048⟩:Region).Disjoint ⟨s.gpr .x4,2176⟩
+  dataWork : (⟨s.gpr .x2,2048⟩:Region).Disjoint ⟨s.gpr .x4,2176⟩
+  products : pairedProductsReduced s.mem (s.gpr .x0) (s.gpr .x1)
+  data : ∀j<2,Reduced s.mem (pairPolyPtr (s.gpr .x2) j)
+  boundLow : 1≤((s.gpr .x6).setWidth 32).toNat
+  boundHigh : ((s.gpr .x6).setWidth 32).toNat≤524288
+  tableAl : (s.syms "VG_MLDSA_INV_PAIR").toNat%64=0
+
+theorem pairedZ_pre {s : State}
+    (h : (pairedZContract (abi.withConsts pairedConsts)).pre s) : ZSpecPre s := by
+  sig_pre [pairedZContract,pairedZSig,abi,argRegs,pairedConsts_eq,Abi.withConsts,
+    Abi.constRegions,Abi.constsHeld,PairedTable.expandedWords_length,stackBelow] at h
+  obtain ⟨hdrop,hheld,_,hsep,hal,htake,hwr,hcd,hcw,hsd,hsw,hdw,_,_,_,_,hprod,hdata,hbl,hbh⟩ := h
+  refine ⟨?_,hwr,?_,hsep,hcd,hcw,hsd,hsw,hdw,hprod,hdata,hbl,hbh,hal⟩
+  · rw [←List.take_append_drop (s.rd.length-1) s.rd,htake,hdrop]
+    rfl
+  · intro i hi
+    refine (hheld i hi).trans ?_
+    rw [List.getD_eq_getElem?_getD,List.getElem?_eq_getElem (by rw [PairedTable.expandedWords_length]; exact hi),
+      Option.getD_some,getElem!_pos _ _ (by rw [PairedTable.expandedWords_length]; exact hi)]
+
+end VG.Proof.MlDsa.AArch64.Optimized.Paired
+
+end
+
+end
+
+/-! ### `MlDsa.AArch64.Optimized.PairedAbi`, which this module and modules that import it used -/
+
+section
+
+/-! ### `MlDsa.AArch64.Optimized.PairedEntry`, which this module and modules that import it used -/
+
+section
+
+/-! ### `MlDsa.AArch64.Optimized.PairedKernel`, which this module and modules that import it used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.AArch64.Optimized.Paired
+open VG VG.AArch64
+open VG.Impl.MlDsa.AArch64.Optimized.Paired
+open VG.Proof.MlKem.AArch64 (Keep)
+
+def kernelRegs : List Reg := [.x0,.x1,.x2,.x9,.x10,.x11,.x12,.x13,.x14,.x15,.x16]
+
+theorem checkKernel_ok (hint : Bool) (g : Nat) {s₀ s : State}
+    {gr : List Reg} {vr : List VReg}
+    (hf : CallFrame gr vr s₀ s) (hs : Saved s.mem (s.gpr .x0) s₀.v)
+    (ha : KernelAccess s) (ht : PairedTable.Words s.mem (s.gpr .x1))
+    (hdw : (⟨s.gpr .x1,4096⟩:Region).Disjoint ⟨s.gpr .x0,2048⟩)
+    (hdd : (⟨s.gpr .x1,4096⟩:Region).Disjoint ⟨s.gpr .x15,2048⟩)
+    (hsd : (⟨s.gpr .x0+BitVec.ofNat 64 2048,128⟩:Region).Disjoint ⟨s.gpr .x15,2048⟩)
+    (haux : hint=true → ∀off,off+16≤2048 → InRegions (s.rd++s.wr) (s.gpr .x16+BitVec.ofNat 64 off) 16) :
+    WP isa (kernel (if hint then .h else .z) g) s fun t =>
+      ∃u,Prepared s u ∧ CheckSetup hint s u ∧
+        Keep (gr++kernelRegs) s₀ t ∧
+        let d := finalPassData hint (s.gpr .x0) (s.gpr .x15) (s.gpr .x16) (constantsAt u) (dataAt u) 8
+        t.mem=d.mem ∧ t.gpr .x0=dataReturn (if hint then .h else .z) d := by
+  apply checkKernel_wp
+  refine WP.seq (WP.mono (firstKernel_access_ok ha ht hdw) fun b ⟨hb,hq,h0,h1,_,_,hm⟩ => ?_)
+  have hq' : ∀e<4,vword (b.v .v31) e=8380417#32 := by
+    intro e he
+    rw [hq.qv]
+    exact HighPack.repeatedWord_lane 8380417 he
+  refine WP.seq (WP.mono (checkMiddle_ok hint g b hq') fun u ⟨hu,hum,hu0,hu2,hu12,hc⟩ => ?_)
+  have huf := ((hf.trans (CallFrame.ofKeepWide hb)).trans hu)
+  have hu2' : u.gpr .x2=s.gpr .x0 := by rw [hu2,h0]; bv_omega_arith
+  have hu1 : u.gpr .x1=s.gpr .x1+BitVec.ofNat 64 3840 := by
+    rw [hu.gpr .x1 (by decide),h1]
+    rfl
+  have hu15 : u.gpr .x15=s.gpr .x15 :=
+    (hu.gpr .x15 (by decide)).trans (hb.get .x15 (by decide))
+  have hu16 : u.gpr .x16=s.gpr .x16 :=
+    (hu.gpr .x16 (by decide)).trans (hb.get .x16 (by decide))
+  have huframe : Frame [⟨s.gpr .x0,2048⟩] s.mem u.mem := by
+    rw [hum,hm]; exact firstPass_frame (by decide)
+  have htu : PairedTable.Words u.mem (s.gpr .x1) :=
+    tableWords_frame ht huframe (by simpa only [List.mem_singleton,forall_eq] using hdw)
+  have hsu : Saved u.mem (s.gpr .x0) s₀.v := hs.workFrame huframe
+  have hac : CheckSetup hint s u := by
+    refine ⟨hc.ready,hc.flags,hc.count,?_,?_,?_⟩
+    · simpa only [hb.get .x17 (by decide)] using hc.gamma
+    · simpa only [hb.get .x8 (by decide)] using hc.lower
+    · simpa only [hb.get .x8 (by decide)] using hc.width
+  refine WP.mono (finalKernel_ok hint huf hsu hu2' ?_ ?_ htu ?_ hu1 hu12 hc.ready ?_ ?_ ?_)
+    fun t ⟨hkeep,htm,htv⟩ => ?_
+  · simpa only [hu15] using hsd
+  · intro p hp
+    simp only [hu.rd,hu.wr,hb.rd,hb.wr,BitVec.add_assoc,←BitVec.ofNat_add]
+    apply ha.workRead
+    obtain ⟨i,rfl⟩ := (extraSlots_mem _ _).mp hp
+    omega_using []
+  · simpa only [hu15] using hdd
+  · simpa only [hu.rd,hu.wr,hb.rd,hb.wr] using ha.table
+  · intro i hi p j
+    simp only [hu.rd,hu.wr,hb.rd,hb.wr,hu2',BitVec.add_assoc,←BitVec.ofNat_add]
+    exact ha.workRead _ (by omega_using [hi])
+  · intro i hi p j
+    simp only [hu.rd,hu.wr,hb.rd,hb.wr,hu15,hu16,BitVec.add_assoc,←BitVec.ofNat_add]
+    exact ⟨ha.dataRead _ (by omega_using [hi]),fun h => haux h _ (by omega_using [hi]),ha.dataWrite _ (by omega_using [hi])⟩
+  · refine ⟨u,⟨hum.trans hm,hu2',hu15,hu16⟩,hac,?_,?_,?_⟩
+    · refine hkeep.mono ?_
+      intro r hr
+      simp only [List.mem_append,List.mem_cons,List.not_mem_nil,middleRegs,finalGprs,
+        kernelRegs] at hr ⊢
+      grind
+    · simpa only [hu15,hu16] using htm
+    · simpa only [hu15,hu16] using htv
+
+end VG.Proof.MlDsa.AArch64.Optimized.Paired
+
+end
+
+end
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.AArch64.Optimized.Paired
+open VG VG.AArch64
+open VG.Impl.MlDsa.AArch64.Optimized.Paired
+open VG.Proof.MlKem.AArch64 (Keep)
+
+def entryRegs : List Reg := [.x0,.x1,.x2,.x7,.x8,.x9,.x10,.x11,.x12,.x13,.x14,.x15,.x16,.x17]
+
+theorem selected_check_eq (hint : Bool) :
+    selected (if hint then .h else .z)=.seq (.block pro) (kernel (if hint then .h else .z) 0) := by
+  cases hint <;> rfl
+
+/-- Whole z/h entry, including argument remapping, saved vectors, all inverse
+and response iterations, combined result, and ABI restoration. -/
+theorem selected_check_ok (hint : Bool) {s : State}
+    (ha : EntryAccess s) (ht : PairedTable.Words s.mem (s.syms "VG_MLDSA_INV_PAIR"))
+    (hdw : (⟨s.syms "VG_MLDSA_INV_PAIR",4096⟩:Region).Disjoint ⟨s.gpr .x4,2048⟩)
+    (hds : (⟨s.syms "VG_MLDSA_INV_PAIR",4096⟩:Region).Disjoint ⟨s.gpr .x4+BitVec.ofNat 64 2048,128⟩)
+    (hdd : (⟨s.syms "VG_MLDSA_INV_PAIR",4096⟩:Region).Disjoint ⟨s.gpr .x2,2048⟩)
+    (hsd : (⟨s.gpr .x4+BitVec.ofNat 64 2048,128⟩:Region).Disjoint ⟨s.gpr .x2,2048⟩)
+    (haux : hint=true → ∀off,off+16≤2048 → InRegions (s.rd++s.wr) (s.gpr .x3+BitVec.ofNat 64 off) 16) :
+    WP isa (selected (if hint then .h else .z)) s fun t =>
+      ∃a u,Arguments s a ∧ Frame [⟨s.gpr .x4+BitVec.ofNat 64 2048,128⟩] s.mem a.mem ∧
+        Prepared a u ∧ CheckSetup hint a u ∧ Keep entryRegs s t ∧
+        let d := finalPassData hint (s.gpr .x4) (s.gpr .x2) (s.gpr .x3) (constantsAt u) (dataAt u) 8
+        t.mem=d.mem ∧ t.gpr .x0=dataReturn (if hint then .h else .z) d := by
+  rw [selected_check_eq]
+  refine WP.seq (WP.mono (prolog_ok s ha.save) fun a ⟨hk,args,hta,_,hs,hframe⟩ => ?_)
+  have ht' : PairedTable.Words a.mem (a.gpr .x1) := by
+    rw [hta]
+    exact tableWords_frame ht hframe (by simpa only [List.mem_singleton,forall_eq] using hds)
+  have hs' : Saved a.mem (a.gpr .x0) s.v := by rw [args.work]; exact hs
+  refine WP.mono (checkKernel_ok hint 0 (CallFrame.ofKeepWide hk) hs' (ha.kernel hk args hta)
+    ht' ?_ ?_ ?_ ?_) fun t ⟨u,hu,hc,hkt,hm,hv⟩ => ?_
+  · simpa only [hta,args.work] using hdw
+  · simpa only [hta,args.data] using hdd
+  · simpa only [args.work,args.data] using hsd
+  · simpa only [hk.rd,hk.wr,args.aux] using haux
+  · refine ⟨a,u,args,hframe,hu,hc,hkt.mono (by decide),?_,?_⟩
+    · simpa only [args.work,args.data,args.aux] using hm
+    · simpa only [args.work,args.data,args.aux] using hv
+
+end VG.Proof.MlDsa.AArch64.Optimized.Paired
+
+end
+
+end
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.AArch64.Optimized.Paired
+open VG VG.AArch64
+open VG.Proof.MlKem.AArch64 (Keep)
+
+theorem entryKeep_abi {s t : State} (h : Keep entryRegs s t) : abiPreserved s t := by
+  refine ⟨?_,h.sp,h.vcs⟩
+  intro r hr
+  apply h.gpr r
+  simp only [preserved,List.mem_cons,List.not_mem_nil,or_false] at hr
+  rcases hr with rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl <;> decide
+
+end VG.Proof.MlDsa.AArch64.Optimized.Paired
+
+end
+
+end
 
 /-! ### `MlDsa.AArch64.Optimized.PairedLowKernel`, which only this module used -/
 

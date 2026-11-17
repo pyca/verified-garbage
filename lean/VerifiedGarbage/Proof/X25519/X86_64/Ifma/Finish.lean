@@ -1,7 +1,6 @@
 module
-public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Lanes
 
-import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Part1
+public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Part1
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Lit

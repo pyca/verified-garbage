@@ -1,9 +1,8 @@
 module
+
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.CTBase
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.StageC
-
 import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.CTStages
-import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.StageA
 import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Control
 import VerifiedGarbage.Proof.MlDsa.Verify.Norm
 import VerifiedGarbage.Proof.Framework.Contract

@@ -11,9 +11,7 @@ public import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Proof.AesXts.X86_64.Variant
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.AesXts.X86_64.Unit.Steps
 import VerifiedGarbage.Proof.AesXts.X86_64.Unit.Run
-import VerifiedGarbage.Proof.AesXts.X86_64.Unit.Pre
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Cmac.Frame

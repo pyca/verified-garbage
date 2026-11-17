@@ -1,13 +1,13 @@
 module
 
 import VerifiedGarbage.Proof.Ecdh.X86_64.Peer
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Lays
+import VerifiedGarbage.Proof.Ecdsa.X86_64.Fixed
 import VerifiedGarbage.Proof.Ecdsa.X86_64.SlotOps
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Stages
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.Inv
 public import VerifiedGarbage.Impl.Ecdh.X86_64
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Finish
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Middle
+import VerifiedGarbage.Proof.Ecdsa.X86_64.Scalar
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Unch
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
 

@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.Argon2.Slices
 public import VerifiedGarbage.Proof.Argon2.Iterations
 public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.FillState
 public import VerifiedGarbage.Proof.Argon2.Lanes
-import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.FillRef
+import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.FillPtr
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.MemoryInit
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset

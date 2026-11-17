@@ -7,9 +7,7 @@ public import VerifiedGarbage.Impl.Weierstrass.PPC64LE.LadderP
 public import VerifiedGarbage.Spec.Weierstrass
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
-import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Bits
 import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Copy
-import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Loop
 import VerifiedGarbage.Proof.Mont.PPC64LE.Step
 import VerifiedGarbage.Proof.Mont.PPC64LE.Row
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec

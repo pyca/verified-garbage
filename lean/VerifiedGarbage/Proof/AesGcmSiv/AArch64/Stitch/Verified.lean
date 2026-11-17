@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcmSiv.Rounds
+public import VerifiedGarbage.Proof.AesGcmSiv.Scratch
 public import VerifiedGarbage.Proof.AesGcmSiv.AArch64.FnCT
 import VerifiedGarbage.Proof.GcmSiv.Polyval
 public import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Verified
@@ -19,7 +19,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Cmac.Spec
 public import VerifiedGarbage.Impl.AesGcmSiv.AArch64.Stitch
 public import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Absorb
-public import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Stitch.Steps
+public import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Stitch.Poly
 public import VerifiedGarbage.Proof.Framework.AArch64.Interleave
 public import VerifiedGarbage.Proof.Framework.Interleave
 public import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.Ops

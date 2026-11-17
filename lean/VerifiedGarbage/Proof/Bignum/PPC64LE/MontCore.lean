@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Bignum.PPC64LE.MontRounds
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.MontRows
 import VerifiedGarbage.Proof.Bignum.PPC64LE.MontFinish
 import VerifiedGarbage.Proof.Bignum.PPC64LE.MontFinish64
-import VerifiedGarbage.Proof.Bignum.PPC64LE.MontStep
+import VerifiedGarbage.Proof.Bignum.PPC64LE.MontRound
 public import VerifiedGarbage.Proof.Bignum.Layout
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Bignum.Math

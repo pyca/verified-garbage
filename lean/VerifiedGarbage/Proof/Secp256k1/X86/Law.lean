@@ -29,8 +29,7 @@ import VerifiedGarbage.Proof.Weierstrass.Cubic
 import VerifiedGarbage.Proof.Weierstrass.X86.Copy
 import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
 import VerifiedGarbage.Proof.Weierstrass.X86.InvFinishPrep
-import VerifiedGarbage.Proof.Weierstrass.X86.InvInit
-import VerifiedGarbage.Proof.Weierstrass.X86.InvLinearMath
+import VerifiedGarbage.Proof.Weierstrass.X86.InvLinear
 import VerifiedGarbage.Proof.Weierstrass.X86.InvShiftMath
 import VerifiedGarbage.Proof.Weierstrass.X86.InvUnsigned
 import VerifiedGarbage.Proof.Weierstrass.X86.MontRed
@@ -41,10 +40,7 @@ import VerifiedGarbage.Proof.X25519.X86.Arith
 import VerifiedGarbage.Proof.X25519.X86.Fold
 import VerifiedGarbage.Proof.Divstep.Incl
 import VerifiedGarbage.Proof.Divstep.Mred32
-import VerifiedGarbage.Proof.Divstep.Red32
-import VerifiedGarbage.Proof.Divstep.Tc32Red
 import VerifiedGarbage.Proof.Divstep.Word32Bits
-import VerifiedGarbage.Proof.Weierstrass.X86.InvRedSum
 import VerifiedGarbage.Proof.Weierstrass.X86.InvRedWord
 import VerifiedGarbage.Proof.Weierstrass.X86.Loop
 

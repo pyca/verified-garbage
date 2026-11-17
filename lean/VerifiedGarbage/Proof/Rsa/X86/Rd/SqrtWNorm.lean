@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.X86.Rd.SqrtWBase
 import VerifiedGarbage.Proof.Rsa.X86.Rd.Loops
-import VerifiedGarbage.Proof.Rsa.X86.Rd.Move
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Base
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Chain
 import VerifiedGarbage.Proof.Mont.X86.Instr

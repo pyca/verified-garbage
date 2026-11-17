@@ -19,7 +19,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.DownRowUmaal
 public import VerifiedGarbage.Proof.Framework.Arm.CallerTransform
 public import VerifiedGarbage.Proof.Framework.SubstLocal
 public import VerifiedGarbage.Impl.Bignum.Arm.Row
-public import VerifiedGarbage.Proof.Bignum.Arm.RowUmaal
 import VerifiedGarbage.Proof.Bignum.Arm.UmaalArithmetic
 import VerifiedGarbage.Impl.Bignum.Arm.DownRow
 public import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineLoop

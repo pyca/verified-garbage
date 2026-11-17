@@ -6,13 +6,11 @@ public import VerifiedGarbage.Proof.Ecdsa.Arm.Fixed
 import VerifiedGarbage.Proof.Ecdsa.Arm.Lays
 import VerifiedGarbage.Proof.Ecdsa.Arm.SlotOps
 import VerifiedGarbage.Proof.Ecdsa.Arm.Middle
-import VerifiedGarbage.Proof.Ecdsa.Arm.Stages
-import VerifiedGarbage.Proof.Ecdh.Arm.Validate
-import VerifiedGarbage.Proof.Weierstrass.Arm.Fprog
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Main
+import VerifiedGarbage.Proof.Ecdh.Arm.Validate
+public import VerifiedGarbage.Proof.Weierstrass.Arm.Fprog
 public import VerifiedGarbage.Impl.Weierstrass.Arm
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Layout
-public import VerifiedGarbage.Proof.Weierstrass.Arm.MontCall
 public import VerifiedGarbage.Proof.Weierstrass.Env
 public import VerifiedGarbage.Proof.Weierstrass.Unch
 import VerifiedGarbage.Proof.Weierstrass.Words
@@ -29,7 +27,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Mont.Words
 public import VerifiedGarbage.Spec.Ecdsa.Generic
 import VerifiedGarbage.Proof.Ecdsa.Arm.Setup
-public import VerifiedGarbage.Proof.Weierstrass.Arm.Pow
+public import VerifiedGarbage.Proof.Weierstrass.Arm.Ladder
 
 /-! ### `EcKey.Compressed.Arm.Rhs`, which only this module used -/
 

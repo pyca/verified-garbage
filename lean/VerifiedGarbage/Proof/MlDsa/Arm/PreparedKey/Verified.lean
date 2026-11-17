@@ -1,8 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.PreparedKey.CT
-public import VerifiedGarbage.Proof.MlDsa.Arm.PreparedKey.Entry
-public import VerifiedGarbage.Proof.MlDsa.Arm.PreparedKey.Body
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Inst
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.MlDsa.Arm.Pack.Unpack

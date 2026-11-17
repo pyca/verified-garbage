@@ -2,10 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.Divstep.Inv30Def
 import VerifiedGarbage.Proof.Divstep.Red30
-import VerifiedGarbage.Proof.Rsa.Divstep.InvBounds
 import VerifiedGarbage.Proof.Rsa.Divstep.InvResult
 import Mathlib.Algebra.Order.Ring.Int
 import VerifiedGarbage.Proof.Framework.Omega
+
 -- separate module: target-independent, for any target's batched inverse
 
 /-! # The inverse from batches of 30 divsteps with coefficients reduced by `2^30`

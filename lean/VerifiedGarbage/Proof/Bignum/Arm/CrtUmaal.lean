@@ -14,8 +14,8 @@ import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineRounds
 import VerifiedGarbage.Proof.Bignum.Arm.CrtVerified
 import VerifiedGarbage.Proof.Bignum.Arm.UmaalArithmetic
 public import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineLoop
-public import VerifiedGarbage.Proof.Bignum.Arm.WindowKernel
-import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineOp
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowPower
+import VerifiedGarbage.Proof.Bignum.Arm.MontOp
 import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineOpCT
 public import VerifiedGarbage.Proof.Bignum.Arm.SharedWindowPhase
 public import VerifiedGarbage.Proof.Bignum.Arm.SharedWindowPhaseCT

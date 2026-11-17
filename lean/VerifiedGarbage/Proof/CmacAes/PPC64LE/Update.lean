@@ -1,10 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.CmacAes.PPC64LE.Contract
+public import VerifiedGarbage.Proof.CmacAes.PPC64LE.Subkeys
 public import VerifiedGarbage.Impl.CmacAes.PPC64LE
 public import VerifiedGarbage.Proof.AesCbc.PPC64LE.Loop
 import VerifiedGarbage.Proof.AesCbc.PPC64LE.Body
-import VerifiedGarbage.Proof.CmacAes.PPC64LE.Subkeys
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step

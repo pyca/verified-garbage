@@ -1,10 +1,9 @@
 module
 
--- separate module: the PPC64LE power by a chain, for any `ChainCfg` (verification and compressed keys can use it), as `Proof/Weierstrass/AArch64/Chain.lean`; it does not depend on the ECDSA layout
+-- separate module: the PPC64LE power by a chain, for any `ChainCfg` (verification and compressed keys can use it), as `Proof/Weierstrass/AArch64/InvSpec.lean`; it does not depend on the ECDSA layout
 public import VerifiedGarbage.Impl.Weierstrass.PPC64LE.Chain
 public import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Pow
 import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Copy
-import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Loop
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Mont.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.Omega
@@ -14,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 
 `VG.Impl.Weierstrass.PPC64LE.ChainCfg.pow P S` leaves `[acc]` reading (in Montgomery form) as `[base]^e`
 for an exponent `e` whose chain the configuration holds (`ChainOk`), as on
-AArch64 (`Proof/Weierstrass/AArch64/Chain.lean`): the table holds
+AArch64 (`Proof/Weierstrass/AArch64/InvSpec.lean`): the table holds
 `B^(2 i + 1)` and `B²` (`table_ok`), each step takes `B^v` to
 `B^(v 2^s + d)` (`step_ok`: squarings by a counted loop, `squares_ok`, and a
 multiplication by the table), so the steps take `B^first` to `B^e`

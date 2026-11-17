@@ -4,14 +4,13 @@ import VerifiedGarbage.Proof.Ed25519.Arm.LrSlot
 public import VerifiedGarbage.Proof.Ed25519.Arm.PointKeep
 import VerifiedGarbage.Proof.Ed25519.Arm.ScalarPass
 public import VerifiedGarbage.Impl.Ed25519.Arm.Verify
-public import VerifiedGarbage.Proof.Ed25519.Arm.DecodeKeep
+public import VerifiedGarbage.Proof.Ed25519.Arm.PointDecode
 public import VerifiedGarbage.Spec.Ed25519.Contract
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Ed25519.Arm.PointDecode
 import VerifiedGarbage.Proof.Ed25519.Arm.ScalarCodec
 import VerifiedGarbage.Proof.Ed25519.Arm.InitFields
 import VerifiedGarbage.Proof.Ed25519.VerifyBytes

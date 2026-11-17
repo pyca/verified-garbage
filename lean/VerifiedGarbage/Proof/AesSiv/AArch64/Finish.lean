@@ -1,7 +1,6 @@
 module
-public import VerifiedGarbage.Proof.AesSiv.AArch64.FinishShort
 
-import VerifiedGarbage.Proof.AesSiv.AArch64.FinishLong
+public import VerifiedGarbage.Proof.AesSiv.AArch64.FinishLong
 meta import VerifiedGarbage.Proof.AesSiv.AArch64.FinishLong
 import VerifiedGarbage.Proof.AesSiv.AArch64.Call
 meta import VerifiedGarbage.Proof.AesSiv.AArch64.Call

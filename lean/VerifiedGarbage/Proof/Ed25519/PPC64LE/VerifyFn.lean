@@ -5,7 +5,6 @@ import VerifiedGarbage.Proof.Ed25519.PPC64LE.Packed
 import VerifiedGarbage.Proof.Ed25519.PPC64LE.PointPowers
 import VerifiedGarbage.Proof.Ed25519.PPC64LE.PointTable
 import VerifiedGarbage.Proof.Ed25519.PPC64LE.PointScalar
-import VerifiedGarbage.Proof.Ed25519.PPC64LE.ScalarBit
 public import VerifiedGarbage.Proof.Ed25519.PPC64LE.ScalarReduce
 import VerifiedGarbage.Proof.Ed25519.VerifyBytes
 import VerifiedGarbage.Proof.X25519.PPC64LE.Instr

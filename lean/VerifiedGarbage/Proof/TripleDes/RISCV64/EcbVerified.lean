@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.TripleDes.RISCV64.Ecb
+public import VerifiedGarbage.Proof.TripleDes.RISCV64.Ecb
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 public import VerifiedGarbage.Spec.TripleDes.Contract
 public import VerifiedGarbage.TCB.RISCV64.Target
@@ -19,7 +19,6 @@ meta import VerifiedGarbage.Proof.Framework.Taint
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.TripleDes.RISCV64.FunctionsLit
 public import VerifiedGarbage.Proof.Modes.RISCV64.Seq
-public import VerifiedGarbage.Proof.TripleDes.RISCV64.EcbLoop
 
 /-!
 # Serial Triple DES ECB encryption on RISC-V meets its contract

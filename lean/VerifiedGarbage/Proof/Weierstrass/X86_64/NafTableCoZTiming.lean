@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableTimingInit
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableCoZ
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafCoZField
 import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableInit
 import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableStoreTiming
 import VerifiedGarbage.Proof.Weierstrass.X86_64.PointFieldTiming

@@ -6,8 +6,6 @@ public import VerifiedGarbage.Proof.Framework.Covers
 public import VerifiedGarbage.Proof.X25519.Arm.Instr
 import VerifiedGarbage.Proof.Framework.Arm.Syms
 import VerifiedGarbage.Proof.Framework.Block
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Contract
-public import VerifiedGarbage.Proof.HmacTable.Arm
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -15,6 +13,262 @@ import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.TCB.Arm.Isa
 public import VerifiedGarbage.TCB.Artifact
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Instances
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Sha224
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Sha256
+public import VerifiedGarbage.Spec.HmacTable
+public import VerifiedGarbage.Proof.HashTable.Basic
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Instance
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.GetElem
+
+/-! ### `Ecdsa.Rfc6979.Arm.Contract`, which this module and modules that import it used -/
+
+section
+
+/-!
+# Deterministic ECDSA on 32-bit ARM: the contract the proof is written against
+
+The facts of the contract for an instance `I` of a curve of `len`-byte
+scalars with a hash of `I.hashLen` bytes, for 32-bit ARM and `N` bytes of
+stack, by name, as the code for that hash function sees them:
+`vg_ecdsa_<curve>_sign(out = r0, d = r1, digest = r2, digest_len = r3,
+scratch = [sp], hmac = [sp + 4])` (the table, 24 bytes, read-only, with what
+`TabFacts` says of it), the result in `r0` (the low word of `r1:r0`), and
+the tables of constants `cs` that `vg_ecdsa_<curve>_sign_k` reads
+(`TablesOk`), at their statics; the public data include the addresses of
+the functions `ns`, those of the tables. `Table.lean` shows
+`TableInstance.signContract` gives it for the hash function of the table.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ecdsa.Rfc6979.Arm
+
+open VG VG.Arm Spec.Weierstrass Spec.Ecdsa
+
+/-- RFC 6979's signature of the arguments, and the number of candidates tried. -/
+abbrev result (I : Proof.Ecdsa.Rfc6979.Instance) (m : Mem) (d digest : Addr) : Option (Nat × Nat) × Nat :=
+  I.result m d digest
+
+/-- The `N` bytes of stack below `sp`. -/
+abbrev stkR (sp : BitVec 32) (N : Nat) : Region := ⟨State.addr sp - BitVec.ofNat 64 N, N⟩
+
+/-- Static tables are readable, held in memory, and apart from every write region. -/
+def TablesOk (cs : List (String × List (BitVec 64))) (sy : String → BitVec 32) (m : Mem)
+    (writes : List Region) : Prop :=
+  ∀ c∈cs,(∀ i<c.2.length,m.readW (State.addr (sy c.1)+BitVec.ofNat 64 (8*i)) 64=c.2.getD i 0) ∧
+    (sy c.1).toNat+8*c.2.length≤2^32 ∧
+    (∀ r∈writes,Region.Disjoint ⟨State.addr (sy c.1),8*c.2.length⟩ r) ∧
+    (State.addr (sy c.1)).toNat%64=0
+
+def rfcArm (I : Proof.Ecdsa.Rfc6979.Instance) (N : Nat) (cs : List (String × List (BitVec 64)))
+    (TabFacts : State → Prop) (ns : List String) : Contract Arm.isa where
+  pre s :=
+    let out : Region := ⟨State.addr (s.gpr .r0), 2 * I.ecdsa.curve.len⟩
+    let d : Region := ⟨State.addr (s.gpr .r1), I.ecdsa.curve.len⟩
+    let digest : Region := ⟨State.addr (s.gpr .r2), I.hashLen⟩
+    let scratch : Region := ⟨State.addr (stackArg s 0), 8192⟩
+    let tab : Region := ⟨State.addr (stackArg s 1), 24⟩
+    let args : Region := ⟨State.addr s.sp, 8⟩
+    let stk : Region := stkR s.sp N
+    s.rd = [d, digest, tab, args] ++ Abi.constRegions (fun n => State.addr (s.syms n)) cs ∧
+      s.wr = [out, scratch] ∧
+      out.Disjoint d ∧ out.Disjoint digest ∧ out.Disjoint scratch ∧
+      d.Disjoint scratch ∧ digest.Disjoint scratch ∧
+      stk.Disjoint out ∧ stk.Disjoint d ∧ stk.Disjoint digest ∧ stk.Disjoint scratch ∧
+      (s.gpr .r0).toNat + 2 * I.ecdsa.curve.len ≤ 2 ^ 32 ∧ (s.gpr .r1).toNat + I.ecdsa.curve.len ≤ 2 ^ 32 ∧
+      (s.gpr .r2).toNat + I.hashLen ≤ 2 ^ 32 ∧ (stackArg s 0).toNat + 8192 ≤ 2 ^ 32 ∧ N ≤ s.sp.toNat ∧
+      s.sp.toNat + 8 ≤ 2 ^ 32 ∧ args.Disjoint out ∧ args.Disjoint scratch ∧
+      (stackArg s 1).toNat + 24 ≤ 2 ^ 32 ∧ tab.Disjoint out ∧ tab.Disjoint scratch ∧ tab.Disjoint stk ∧
+      TablesOk cs s.syms s.mem [out,scratch,stk] ∧ TabFacts s
+  post s s' :=
+    match (result I s.mem (State.addr (s.gpr .r1)) (State.addr (s.gpr .r2))).1 with
+    | some rs => BitVec.setWidth 32 (s'.gpr .r1 ++ s'.gpr .r0) = 1 ∧
+        bytesAt s'.mem (State.addr (s.gpr .r0)) (2 * I.ecdsa.curve.len) = encode I.ecdsa.curve rs
+    | none => BitVec.setWidth 32 (s'.gpr .r1 ++ s'.gpr .r0) = 0 ∧
+        bytesAt s'.mem (State.addr (s.gpr .r0)) (2 * I.ecdsa.curve.len) = List.replicate (2 * I.ecdsa.curve.len) 0
+  pub s₁ s₂ := s₁.sp = s₂.sp ∧ s₁.gpr .r0 = s₂.gpr .r0 ∧ s₁.gpr .r1 = s₂.gpr .r1 ∧
+    s₁.gpr .r2 = s₂.gpr .r2 ∧ stackArg s₁ 0 = stackArg s₂ 0 ∧ stackArg s₁ 1 = stackArg s₂ 1 ∧
+    (result I s₁.mem (State.addr (s₁.gpr .r1)) (State.addr (s₁.gpr .r2))).2 =
+      (result I s₂.mem (State.addr (s₂.gpr .r1)) (State.addr (s₂.gpr .r2))).2 ∧
+    (∀ c∈cs,s₁.syms c.1=s₂.syms c.1) ∧ ∀ n ∈ ns, s₁.syms n = s₂.syms n
+
+end VG.Proof.Ecdsa.Rfc6979.Arm
+
+end
+
+end
+
+/-! ### `HmacTable.Arm`, which this module and modules that import it used -/
+
+section
+
+/-!
+# Tables of the interface `Hmac` on ARMv7
+
+As on x86-64 (`Proof/HmacTable/X86_64.lean`), with every hash function that
+has HMAC on ARMv7, each with one implementation (`vars`: MD5, SHA-1,
+SHA-224, SHA-256, SHA-384, SHA-512, SHA-512/224 and SHA-512/256, the
+functions PBKDF2's code calls, `Proof.Pbkdf2.Whole.Arm`): the table of a
+hash function (`tableOf`, `VG_HMAC_<HASH>`) holds the addresses of HMAC's
+`init` and `finalize` and of the streaming `update`, in the forms that take
+their working space as an argument (`_scratch`), then its data
+(`Spec.HmacTable.dataOf`), each word 32 bits wide; an indirect call of the
+functions of every table (`fnsOf`) to one of them reaches it (`tabOK_of`),
+when the functions of distinct names are at distinct addresses and those of
+the same name have the same code (`Coh`). `held_tableOf` reads a table's
+words, and `hashAt_tableOf` the hash function it names.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.HmacTable.Arm
+
+open VG VG.Arm
+open VG.Impl.Ecdsa.Rfc6979.Arm (Fns)
+open VG.Proof.HashTable (pw_ne find_name)
+
+/-- A hash function with HMAC on ARMv7: the functions PBKDF2's code calls,
+what is proven of them, and its place in `Spec.Mgf1.hashes`, whose HMAC is
+theirs. -/
+structure HVar where
+  F : Impl.Pbkdf2.Whole.Arm.Fns
+  ok : Proof.Pbkdf2.Whole.Arm.FnsOK F
+  G : Spec.Mgf1.Hash
+  idx : Spec.Mgf1.hashes[Spec.HashTable.index G]? = some G
+  glen : G.len = F.H.D
+  hmac : Spec.HmacTable.hmacOf G = some ok.hH.SH.H
+
+open Proof.Pbkdf2.Whole.Arm in
+def md5V : HVar := ⟨md5F, md5OKF, Spec.Mgf1.md5, rfl, rfl, rfl⟩
+open Proof.Pbkdf2.Whole.Arm in
+def sha1V : HVar := ⟨sha1F, sha1OKF, Spec.Mgf1.sha1, rfl, rfl, rfl⟩
+open Proof.Pbkdf2.Whole.Arm in
+def sha224V : HVar := ⟨sha224F, sha224OKF, Spec.Mgf1.sha224, rfl, rfl, rfl⟩
+open Proof.Pbkdf2.Whole.Arm in
+def sha256V : HVar := ⟨sha256F, sha256OKF, Spec.Mgf1.sha256, rfl, rfl, rfl⟩
+open Proof.Pbkdf2.Whole.Arm in
+def sha384V : HVar := ⟨sha384F, sha384OKF, Spec.Mgf1.sha384, rfl, rfl, rfl⟩
+open Proof.Pbkdf2.Whole.Arm in
+def sha512V : HVar := ⟨sha512F, sha512OKF, Spec.Mgf1.sha512, rfl, rfl, rfl⟩
+open Proof.Pbkdf2.Whole.Arm in
+def sha512_224V : HVar := ⟨sha512_224F, sha512_224OKF, Spec.Mgf1.sha512_224, rfl, rfl, rfl⟩
+open Proof.Pbkdf2.Whole.Arm in
+def sha512_256V : HVar := ⟨sha512_256F, sha512_256OKF, Spec.Mgf1.sha512_256, rfl, rfl, rfl⟩
+
+/-- Every hash function with HMAC on ARMv7. -/
+def vars : List HVar := [md5V, sha1V, sha224V, sha256V, sha384V, sha512V, sha512_224V, sha512_256V]
+
+/-- The table of `w`'s HMAC, `VG_HMAC_<HASH>`. -/
+def tableOf (w : HVar) : FnTable where
+  name := s!"VG_HMAC_{w.G.rust.toUpper}"
+  iface := Spec.HmacTable.iface
+  fns := [w.F.hiN, w.F.H.updN, w.F.hfN]
+  data := Spec.HmacTable.dataOf w.G
+
+/-- The tables of `vs`. -/
+def tables (vs : List HVar) : List FnTable := vs.map tableOf
+
+/-- For each of a table's functions, that function of each of `vs`. -/
+def fnsOf (vs : List HVar) : Fns :=
+  ⟨vs.map fun w => (w.F.hiN, w.F.hiC), vs.map fun w => (w.F.H.updN, w.F.H.updC),
+    vs.map fun w => (w.F.hfN, w.F.hfC)⟩
+
+/-- The functions of `tables vs`. -/
+def names (vs : List HVar) : List String := ((tables vs).map (·.fns)).flatten
+
+/-- The functions of the same name have the same code. -/
+def Coh (vs : List HVar) : Prop :=
+  ∀ w ∈ vs, ∀ w' ∈ vs, (w.F.hiN = w'.F.hiN → w.F.hiC = w'.F.hiC) ∧
+    (w.F.H.updN = w'.F.H.updN → w.F.H.updC = w'.F.H.updC) ∧ (w.F.hfN = w'.F.hfN → w.F.hfC = w'.F.hfC)
+
+instance (vs : List HVar) : Decidable (Coh vs) := by unfold Coh; infer_instance
+
+/-- The table's word at `p + o`. -/
+abbrev tA (p : BitVec 32) (o : Nat) : Addr := State.addr (p + BitVec.ofNat 32 o)
+
+/-- At `p` in `m`, the addresses `sy` gives `F`'s HMAC `init`, the streaming
+`update` and HMAC's `finalize`. -/
+def TabMem (F : Impl.Pbkdf2.Whole.Arm.Fns) (sy : String → BitVec 32) (p : BitVec 32) (m : Mem) : Prop :=
+  m.readW (tA p 0) 32 = sy F.hiN ∧ m.readW (tA p 4) 32 = sy F.H.updN ∧ m.readW (tA p 8) 32 = sy F.hfN
+
+/-- An indirect call of `f`'s functions, at the addresses `sy` gives, to the
+address of one of `F`'s HMAC functions reaches it. -/
+structure TabOK (F : Impl.Pbkdf2.Whole.Arm.Fns) (f : Fns) (sy : String → BitVec 32) : Prop where
+  i : f.init.find? (fun q => (sy q.1).setWidth 64 == (sy F.hiN).setWidth 64) = some (F.hiN, F.hiC)
+  u : f.upd.find? (fun q => (sy q.1).setWidth 64 == (sy F.H.updN).setWidth 64) = some (F.H.updN, F.H.updC)
+  f : f.fin.find? (fun q => (sy q.1).setWidth 64 == (sy F.hfN).setWidth 64) = some (F.hfN, F.hfC)
+
+theorem mem_names {vs : List HVar} {w : HVar} (hw : w ∈ vs) :
+    w.F.hiN ∈ names vs ∧ w.F.H.updN ∈ names vs ∧ w.F.hfN ∈ names vs := by
+  have : (tableOf w).fns ∈ (tables vs).map (·.fns) := List.mem_map_of_mem (List.mem_map_of_mem hw)
+  refine ⟨?_, ?_, ?_⟩ <;> exact List.mem_flatten.mpr ⟨_, this, by simp [tableOf]⟩
+
+/-- An indirect call of `fnsOf vs`'s functions reaches `w`'s. -/
+theorem tabOK_of {vs : List HVar} (hc : Coh vs) {sy : String → BitVec 32}
+    (hd64 : (names vs).Pairwise fun f g => f ≠ g → (sy f).setWidth 64 ≠ (sy g).setWidth 64) {w : HVar}
+    (hw : w ∈ vs) : TabOK w.F (fnsOf vs) sy := by
+  have hn := mem_names hw
+  refine ⟨find_name (sy := fun n => (sy n).setWidth 64) (List.mem_map_of_mem hw) ?_ ?_,
+    find_name (sy := fun n => (sy n).setWidth 64) (List.mem_map_of_mem hw) ?_ ?_,
+    find_name (sy := fun n => (sy n).setWidth 64) (List.mem_map_of_mem hw) ?_ ?_⟩
+  all_goals intro q hq
+  all_goals obtain ⟨w', hw', rfl⟩ := List.mem_map.mp hq
+  · exact pw_ne hd64 _ (mem_names hw').1 _ hn.1
+  · exact (hc w' hw' w hw).1
+  · exact pw_ne hd64 _ (mem_names hw').2.1 _ hn.2.1
+  · exact (hc w' hw' w hw).2.1
+  · exact pw_ne hd64 _ (mem_names hw').2.2 _ hn.2.2
+  · exact (hc w' hw' w hw).2.2
+
+/-- HMAC's block size, as the table holds it. -/
+theorem blockSize_eq (w : HVar) : Spec.HmacTable.blockSize w.G = w.F.H.B := by
+  simp only [Spec.HmacTable.blockSize, w.hmac, Option.map_some, Option.getD_some]
+  exact w.ok.hH.hB
+
+/-- The words of the table of `w`. -/
+theorem words_tableOf (s : State) (w : HVar) :
+    FnTable.words isa s (tableOf w) = [(s.syms w.F.hiN).setWidth 64, (s.syms w.F.H.updN).setWidth 64,
+      (s.syms w.F.hfN).setWidth 64, BitVec.ofNat 64 (Spec.HashTable.index w.G), BitVec.ofNat 64 w.G.len,
+      BitVec.ofNat 64 (Spec.HmacTable.blockSize w.G)] := rfl
+
+/-- What the table of `w` at `p` holds: its functions' addresses, its index,
+its digest length and HMAC's block size, 32 bits each. -/
+theorem held_tableOf {m : Mem} {p : BitVec 32} (hp : p.toNat + 24 ≤ 2 ^ 32) {s : State} {w : HVar}
+    (h : Abi.tableHeld 32 m (State.addr p) (FnTable.words isa s (tableOf w))) :
+    TabMem w.F s.syms p m ∧ m.readW (tA p 12) 32 = BitVec.ofNat 32 (Spec.HashTable.index w.G) ∧
+      m.readW (tA p 16) 32 = BitVec.ofNat 32 w.F.H.D ∧ m.readW (tA p 20) 32 = BitVec.ofNat 32 w.F.H.B := by
+  rw [words_tableOf, blockSize_eq] at h
+  have a : ∀ i, i < 6 → tA p (4 * i) = State.addr p + BitVec.ofNat 64 (32 / 8 * i) := fun i hi => by
+    rw [tA, VG.Arm.addr_add (by omega_using [hp, hi])]
+  have e : ∀ i (hi : i < 6), m.readW (tA p (4 * i)) 32 = _ := fun i hi => (a i hi).symm ▸ h i (by simp; omega_using [hi])
+  refine ⟨⟨?_, ?_, ?_⟩, ?_, ?_, ?_⟩
+  · have := e 0 (by decide); simp only [Nat.mul_zero] at this; rw [this]; simp
+  · have := e 1 (by decide); simp only [Nat.mul_one] at this; rw [this]; simp
+  · have := e 2 (by decide); rw [show 4 * 2 = 8 by rfl] at this; rw [this]; simp
+  · have := e 3 (by decide); rw [show 4 * 3 = 12 by rfl] at this; rw [this]; simp
+  · have := e 4 (by decide); rw [show 4 * 4 = 16 by rfl] at this; rw [this, w.glen]; simp
+  · have := e 5 (by decide); rw [show 4 * 5 = 20 by rfl] at this; rw [this]; simp
+
+/-- The hash function a table of `w` names. -/
+theorem hashAt_tableOf {m : Mem} {p : BitVec 32} (hp : p.toNat + 24 ≤ 2 ^ 32) {w : HVar}
+    (h : m.readW (tA p 12) 32 = BitVec.ofNat 32 (Spec.HashTable.index w.G)) :
+    Spec.HmacTable.hashAt 32 m (State.addr p) = some w.G := by
+  simp only [Spec.HmacTable.hashAt, Spec.HmacTable.fns]
+  rw [show State.addr p + BitVec.ofNat 64 (32 / 8 * 3) = tA p 12 by rw [tA, VG.Arm.addr_add (by omega_using [hp])], h,
+    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by
+      have := List.findIdx_le_length (p := fun G => G.rust == w.G.rust) (xs := Spec.Mgf1.hashes)
+      simp only [Spec.HashTable.index, Spec.Mgf1.hashes, List.length_cons, List.length_nil] at this ⊢
+      omega_using [this])]
+  exact w.idx
+
+end VG.Proof.HmacTable.Arm
+
+end
+
+end
 
 /-! ### `Ecdsa.Rfc6979.Arm.SymsInstr`, which only this module used -/
 

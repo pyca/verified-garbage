@@ -1,22 +1,19 @@
 module
 
 -- separate module: its proofs build in parallel with `Encode`'s, which `ScalarBase` also imports
-
 public import VerifiedGarbage.Impl.Ed25519.PPC64LE.Comb
 public import VerifiedGarbage.Proof.Ed25519.PPC64LE.WindowDigit
 public import VerifiedGarbage.Proof.Ed25519.PPC64LE.BaseContract
-public import VerifiedGarbage.Proof.Ed25519.PPC64LE.FieldProg
-public import VerifiedGarbage.Proof.Ed25519.PPC64LE.PointOps
+public import VerifiedGarbage.Proof.Ed25519.PPC64LE.SpecConv
+public import VerifiedGarbage.Proof.Ed25519.PPC64LE.PointTable
 public import VerifiedGarbage.Proof.Ed25519.CombDigits64
 public import VerifiedGarbage.Proof.Ed25519.Group.Extended
 public import VerifiedGarbage.Proof.X25519.PPC64LE.Field
 public import VerifiedGarbage.Proof.X25519.PPC64LE.Instr
 import VerifiedGarbage.Proof.Ed25519.CombDigits
 import VerifiedGarbage.Proof.Ed25519.ScalarBytes
-import VerifiedGarbage.Proof.Ed25519.PPC64LE.PointAccumulate
-import VerifiedGarbage.Proof.Ed25519.PPC64LE.PointTable
-import VerifiedGarbage.Proof.Ed25519.PPC64LE.PointPowers
 import VerifiedGarbage.Proof.Ed25519.PPC64LE.PointMul
+import VerifiedGarbage.Proof.Ed25519.PPC64LE.PointPowers
 import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset

@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPss.X86.CtHash
-import VerifiedGarbage.Proof.RsaPss.X86.CtSel
 public import VerifiedGarbage.Proof.Mgf1.Basic
 import VerifiedGarbage.Proof.RsaPss.X86.Taint
 import VerifiedGarbage.Proof.RsaPss.X86.CtInit

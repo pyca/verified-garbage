@@ -20,8 +20,6 @@ import VerifiedGarbage.Proof.Argon2.X86.HPrime.Verified
 import VerifiedGarbage.Proof.Blake2.Scratch
 import VerifiedGarbage.Proof.Blake2.X86.CompressB.Verified
 import VerifiedGarbage.Proof.Blake2.X86.Stream.Finalize
-import VerifiedGarbage.Proof.Blake2.X86.Stream.Init
-import VerifiedGarbage.Proof.Blake2.X86.Stream.Update
 import VerifiedGarbage.Proof.Blake2.X86.Stream.Verified
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Bswap

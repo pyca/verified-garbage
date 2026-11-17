@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchClassify
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Safety
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchCandidate
-import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchExhausted
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchShort
 import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchGuards
 
 /-! # Public control-state transitions for paired native search executions -/

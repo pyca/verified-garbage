@@ -2,10 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.X25519.Arm.Verified
 public import VerifiedGarbage.Impl.X25519.Arm.Words
-public import VerifiedGarbage.Proof.X25519.Arm.Words.Chain
 public import VerifiedGarbage.Proof.X25519.Arm.Words.Ladder
-import VerifiedGarbage.Proof.X25519.Arm.Words.Mul
-import VerifiedGarbage.Proof.X25519.Arm.Words.AddSub
 import VerifiedGarbage.Proof.X25519.Arm.Invert
 import VerifiedGarbage.Proof.X25519.Field
 import VerifiedGarbage.Proof.X25519.Invert

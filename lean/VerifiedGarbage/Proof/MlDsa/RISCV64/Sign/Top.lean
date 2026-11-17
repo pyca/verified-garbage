@@ -3,15 +3,15 @@ module
 public import VerifiedGarbage.Proof.MlDsa.RISCV64.Sign.Output
 import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
 import VerifiedGarbage.Proof.MlDsa.Sign.Setup
-import VerifiedGarbage.Proof.MlDsa.Sign.Loop
+import VerifiedGarbage.Proof.MlDsa.Sign.Iter
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Mono
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RISCV64.Steps
 import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 meta import VerifiedGarbage.Proof.MlDsa.RISCV64.Sign.Output
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
-
 public import VerifiedGarbage.TCB.RISCV64.Target
+
 /-!
 # ML-DSA signing on RISC-V: the function
 

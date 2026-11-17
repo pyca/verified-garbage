@@ -4,9 +4,7 @@ public import VerifiedGarbage.Proof.EntropyRequest
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Search.Data
 public import VerifiedGarbage.Proof.Ffdh.ControlMemory
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Ffdh.GenerationBounds
 import VerifiedGarbage.Proof.Ffdh.SievedBounds
-import VerifiedGarbage.Proof.Ffdh.SievedTape
 
 /-! # What keeps the parameter search's loop state (AArch64), and where the search goes -/
 

@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.AesCtr.RISCV64.Iter
+public import VerifiedGarbage.Proof.AesCtr.RISCV64.Iter
 import VerifiedGarbage.Proof.AesCbc.RISCV64.CT
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 import VerifiedGarbage.Proof.Framework.RISCV64.Steps
@@ -9,7 +9,6 @@ meta import VerifiedGarbage.Proof.AesCtr.RISCV64.Iter
 meta import VerifiedGarbage.Proof.AesCbc.RISCV64.CT
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 meta import VerifiedGarbage.Proof.AesCtr.RISCV64.Lit
-public import VerifiedGarbage.Proof.AesCtr.RISCV64.Body
 public import VerifiedGarbage.Proof.AesCbc.RISCV64.Loop
 public import VerifiedGarbage.Proof.Framework.RelCT
 

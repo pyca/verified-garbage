@@ -1,9 +1,8 @@
 module
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverFrame
+
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverCall
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.Encode
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCall
-
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverCall
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCorrect
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Recover
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.Compare

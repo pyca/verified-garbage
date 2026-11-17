@@ -6,12 +6,11 @@ public import VerifiedGarbage.Proof.AesGcm.ScratchPreparedTo
 public import VerifiedGarbage.Proof.Gcm.PreparedContract
 public import VerifiedGarbage.Proof.Gcm.OutOfPlaceContract
 public import VerifiedGarbage.Impl.AesGcm.X86_64.StreamTo
-public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Callee
+public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.BlkCall
 import Mathlib.Data.List.Dedup
 public import VerifiedGarbage.Impl.StackScratch.X86_64
 public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Context
 import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.CT
-import VerifiedGarbage.Proof.AesGcm.ScratchTo
 import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 public import VerifiedGarbage.Proof.Framework.Contract
 

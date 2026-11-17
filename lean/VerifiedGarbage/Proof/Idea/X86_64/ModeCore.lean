@@ -3,8 +3,7 @@ module
 public import VerifiedGarbage.Proof.Modes.X86_64.Core
 public import VerifiedGarbage.Impl.Idea.X86_64.Modes
 public import VerifiedGarbage.Spec.Idea.Cbc
-public import VerifiedGarbage.Proof.Idea.X86_64.Round
-import VerifiedGarbage.Proof.Idea.X86_64.Block
+public import VerifiedGarbage.Proof.Idea.X86_64.Block
 import VerifiedGarbage.Proof.Idea.Memory
 import VerifiedGarbage.Proof.Modes.X86_64.Steps
 import VerifiedGarbage.Proof.Framework.Offset

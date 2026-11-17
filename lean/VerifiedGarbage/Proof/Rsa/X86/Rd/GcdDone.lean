@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.Rd.GcdW
-import VerifiedGarbage.Proof.Rsa.Divstep.Bound
 import VerifiedGarbage.Proof.Rsa.Divstep.OddInput
 import VerifiedGarbage.Proof.Divstep.Alg32
 import VerifiedGarbage.Proof.Framework.Omega

@@ -1,7 +1,6 @@
 module
-public import VerifiedGarbage.Proof.Weierstrass.X86.NafEntry
 
-import VerifiedGarbage.Proof.Weierstrass.X86.NafSum
+public import VerifiedGarbage.Proof.Weierstrass.X86.NafSum
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Weierstrass.X86.TCombJSelect
 import VerifiedGarbage.Proof.Weierstrass.X86.JacState

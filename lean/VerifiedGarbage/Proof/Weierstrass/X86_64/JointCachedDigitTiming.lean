@@ -3,7 +3,7 @@ module
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JointDigitTiming
 public import VerifiedGarbage.Proof.Weierstrass.JacMul
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointCachedDigit
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafCacheEntryFields
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointCachedEntry
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.RegFieldTiming
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
 import VerifiedGarbage.Proof.Weierstrass.PointContract
@@ -13,7 +13,6 @@ import VerifiedGarbage.Proof.Mont.X86_64.Wide
 import VerifiedGarbage.Proof.Weierstrass.CombLay
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-import VerifiedGarbage.Proof.Weierstrass.X86_64.NafCacheEntryPoint
 import VerifiedGarbage.Proof.Weierstrass.X86_64.PointFieldTiming
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.Naf
 public import VerifiedGarbage.Proof.Framework.RelCT

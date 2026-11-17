@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.StorePrefixTiming
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.TableTiming
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.GeneratorSource
+public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PrecomputeInitial
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.TaintBatch

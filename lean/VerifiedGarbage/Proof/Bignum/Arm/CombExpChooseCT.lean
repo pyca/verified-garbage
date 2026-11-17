@@ -3,8 +3,6 @@ module
 import VerifiedGarbage.Proof.Bignum.Arm.CombExpKernelAt
 public import VerifiedGarbage.Proof.Bignum.Arm.CombExpTiming
 import VerifiedGarbage.Proof.Bignum.Arm.CombExpGatherCT
-import VerifiedGarbage.Proof.Bignum.Arm.CombExpGather
-import VerifiedGarbage.Proof.Bignum.Arm.CombExpStore
 import VerifiedGarbage.Proof.Bignum.Arm.CombScanCT
 import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc

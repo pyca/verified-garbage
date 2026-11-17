@@ -1,7 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Search.Data
-import VerifiedGarbage.Proof.RsaKeyGen.Arm.Search.Entry
+public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Search.Entry
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Arm.CallF
 import VerifiedGarbage.Proof.Framework.Offset

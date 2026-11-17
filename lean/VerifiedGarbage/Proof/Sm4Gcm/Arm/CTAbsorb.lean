@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4Gcm.Arm.CTBase
-public import VerifiedGarbage.Proof.Sm4Gcm.Arm.Absorb
+public import VerifiedGarbage.Proof.Sm4Gcm.Arm.Fn
 meta import VerifiedGarbage.Proof.Sm4Gcm.Arm.CTBase
 import VerifiedGarbage.Proof.Sm4Gcm.Arm.Flush
 meta import VerifiedGarbage.Proof.Sm4Gcm.Arm.Flush

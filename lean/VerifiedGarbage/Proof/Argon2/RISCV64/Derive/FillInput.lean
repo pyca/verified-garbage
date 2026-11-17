@@ -4,7 +4,7 @@ import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.FillDep
 public import VerifiedGarbage.Proof.Argon2.AddressInput
 import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Initial
 import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.FillSteps
+public import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.FillState
 import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Scratch
 import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Locals
 public import VerifiedGarbage.Proof.Argon2.Contract

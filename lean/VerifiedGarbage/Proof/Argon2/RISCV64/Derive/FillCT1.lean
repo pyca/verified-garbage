@@ -17,7 +17,6 @@ meta import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.FillDep
 meta import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Locals
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Initial
-public import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.CTBase
 
 /-!
 # Argon2 on RISC-V: the random word, in two runs

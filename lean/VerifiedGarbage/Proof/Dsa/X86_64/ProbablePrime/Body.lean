@@ -12,7 +12,6 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 import VerifiedGarbage.Proof.Bignum.X86_64.Words
 import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
 public import VerifiedGarbage.Impl.Bignum.X86_64
-public import VerifiedGarbage.Proof.Dsa.X86_64.ProbablePrime.ABI
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Arguments
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Impl.Dsa.Generation.Layout

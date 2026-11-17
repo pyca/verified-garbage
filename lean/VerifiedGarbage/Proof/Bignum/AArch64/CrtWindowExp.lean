@@ -1,11 +1,98 @@
 module
+
 public import VerifiedGarbage.Impl.Rsa.AArch64.WindowLoop
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowBody
-
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowFrameContext
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowHead
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowRun
 import VerifiedGarbage.Proof.Bignum.Math
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtFrame
+public import VerifiedGarbage.Proof.Bignum.CrtWindowFiveLayout
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToAdditive
+import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowPrefixInv
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowGroups
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTails
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowFinish
+
+/-! ### `Bignum.AArch64.CrtWindowRun`, which this module and modules that import it used -/
+
+section
+
+/-! Complete exponentiation through shared five-bit windows and exact tails. -/
+
+@[expose] public section
+namespace VG.Proof.Bignum.AArch64.WindowFive
+open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64 VG.Impl.Bignum.Public VG.Proof.Bignum
+open VG.Proof.MlKem.AArch64 (Keep)
+open VG.Impl.Rsa.AArch64.WindowFive (expRun)
+
+theorem expRun_ok (W : Window) (M : Mont) (S : Selector) {s t : State} {P ep : Addr} {w : Nat}
+    {mi : BitVec 64} {X Xc x : Nat} {Q : Prop} {bs : List Byte}
+    (hw : 2 ≤ w) (hw' : w < 2 ^ 30) (hR : Nat.Coprime (2 ^ (64 * w)) X)
+    (hL : bs.length < 2 ^ 64)
+    (hread : ∀ j < bs.length, InRegions (s.rd ++ s.wr) (ep + BitVec.ofNat 64 j) 1)
+    (hbytes : ∀ j (hj : j < bs.length), s.mem (ep + BitVec.ofNat 64 j) = bs[j])
+    (hout : ∀ j < bs.length, slot w 8 + CrtWindowFive.tabBytes32 w ≤ ofs P (ep + BitVec.ofNat 64 j))
+    (h : PrefixInv s P w mi X Xc Q x ep bs 0 0 t) :
+    WP isa (expRun W.code M.mm S.code) t fun u =>
+      TableCtx u P w mi X Xc ∧ CrtWindowFive.CTab u.mem P w X Q x ∧
+      wv u.mem P (slot w aY) w < X ∧
+      (Q → wv u.mem P (slot w aY) w % X = x ^ Spec.Rsa.os2ip bs * 2 ^ (64 * w) % X) ∧
+      Frm P (CrtWindowFive.crtExpRanges w) s.mem u.mem ∧ Keep mmRegs s u := by
+  unfold expRun
+  refine WP.seq (WP.mono (expGroups_ok W hw hw' hR hL hread hbytes hout h) fun a ha => ?_)
+  refine WP.seq (WP.mono (expTail_ok W hw hw' hR hL (by omega_using []) hread hbytes hout ha) fun b hb => ?_)
+  refine WP.mono (finish_ok M S hb.ctx hb.tab hw hw' hR hb.pending)
+    fun u ⟨cu,tu,yu,vu,fu,ku⟩ => ?_
+  exact ⟨cu,tu,yu,by simpa only [pre_len] using vu,
+    hb.frm.trans (fu.mono (CrtWindowFive.crtWinRanges_sub w)),(hb.keep.trans ku).mono (by decide)⟩
+
+end VG.Proof.Bignum.AArch64.WindowFive
+
+end
+
+end
+
+/-! ### `Bignum.AArch64.CrtWindowFrameContext`, which this module and modules that import it used -/
+
+section
+
+/-! The wider table leaves the modulus and prime workspace headers unchanged. -/
+
+@[expose] public section
+namespace VG.Proof.Bignum.AArch64.WindowFive
+open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64 VG.Impl.Bignum.Crt VG.Proof.Bignum
+
+theorem subCtx_of_wide {s t : State} {B : Addr} {Z o w wx : Nat} {minv : BitVec 64} {rs : List (Nat × Nat)}
+    (h : SubCtx s B Z o w wx minv)
+    (hwide : o + slot wx 8 + CrtWindowFive.tabBytes32 wx ≤ Z) (hf : Frm (off B o) rs s.mem t.mem)
+    (hr : ∀ r ∈ rs, 8 * 17 ≤ r.1 ∧ r.1 + r.2 ≤ slot wx 8 + CrtWindowFive.tabBytes32 wx) (hwr : t.wr = s.wr)
+    (h0 : t.gpr .x0 = s.gpr .x0) : SubCtx t B Z o w wx minv := by
+  have hn := h.scr.nowrap
+  have hi := hwide
+  have hL : o + (slot wx 8 + CrtWindowFive.tabBytes32 wx) ≤ 2 ^ 64 := by omega_using [hwide, hn]
+  have hr' : ∀ r ∈ rs, r.1 + r.2 ≤ slot wx 8 + CrtWindowFive.tabBytes32 wx := fun r hr' => (hr r hr').2
+  have hh : ∀ i < 17, word t.mem (off B o) (8 * i) = word s.mem (off B o) (8 * i) := fun i hi' =>
+    hf.word_eq (fun r hr' => Or.inl (by have := hr r hr'; omega_using [hi', this]))
+      (by have : 8 * 32 ≤ slot wx 8 := by unfold slot hdrBytes; omega_using []
+          omega_using [hi'])
+  have hb : ∀ i < 32, word t.mem B (8 * i) = word s.mem B (8 * i) := fun i hi' =>
+    hf.word_below hr' hL (by unfold slot hdrBytes at hL; omega_using [hL]) (by have := hdr_lt_slot w 8 hi'; have := h.lo; omega_arith)
+  exact ⟨h.scr.congr hwr, h0.trans h.x0,
+    ⟨(hh _ (by decide)).trans h.hdr.hw, (hh _ (by decide)).trans h.hdr.hminv,
+      fun j hj => (hh _ (by unfold sArr; omega_using [hj])).trans (h.hdr.harr j hj)⟩,
+    (hh _ (by decide)).trans h.link, (hb _ (by decide)).trans h.nw,
+    fun j hj => (hb _ (by unfold sArr; omega_using [hj])).trans (h.narr j hj), h.lo, h.hi⟩
+
+end VG.Proof.Bignum.AArch64.WindowFive
+
+end
+
+end
 
 /-! Five-bit prime exponentiation with an explicitly bounded wider table. -/
 

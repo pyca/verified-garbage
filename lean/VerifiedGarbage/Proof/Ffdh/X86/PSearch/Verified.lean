@@ -1,7 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.Ffdh.X86.PSearch.CT
-public import VerifiedGarbage.Proof.Ffdh.X86.PSearch.ABI
+public import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Steps
 public import VerifiedGarbage.Impl.Ffdh.X86.ParamSearch
 public import VerifiedGarbage.TCB.Artifact
 public import VerifiedGarbage.Proof.Framework.ConstMem

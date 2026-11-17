@@ -1,15 +1,13 @@
 module
 
-import VerifiedGarbage.Proof.MillerRabin.X86.TimingCall
+public import VerifiedGarbage.Proof.MillerRabin.X86.TimingCall
 public import VerifiedGarbage.Proof.MillerRabin.X86.Caller
 import VerifiedGarbage.Proof.MillerRabin.X86.Multiply
-import VerifiedGarbage.Proof.MillerRabin.X86.CallSetup
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 public import VerifiedGarbage.Impl.MillerRabin.X86.Round
 public import VerifiedGarbage.Proof.Framework.X86.Call
 public import VerifiedGarbage.Proof.MillerRabin.X86.Modulus
 public import VerifiedGarbage.Proof.MillerRabin.X86.TimingBase
-public import VerifiedGarbage.Proof.MillerRabin.X86.TimingCallPre
 
 /-! # A prepared product retains the round's public base across the call -/
 

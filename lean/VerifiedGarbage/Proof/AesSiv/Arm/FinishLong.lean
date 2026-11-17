@@ -4,7 +4,6 @@ import VerifiedGarbage.Proof.AesSiv.Arm.FinishShort
 public import VerifiedGarbage.Proof.AesSiv.Long
 public import VerifiedGarbage.Proof.AesSiv.Arm.S2vLoop
 import VerifiedGarbage.Proof.Cmac.Stream
-import VerifiedGarbage.Proof.AesSiv.Arm.S2vAd
 import VerifiedGarbage.Proof.AesGcm.Arm.Loops
 import VerifiedGarbage.Proof.AesGcm.Arm.Run
 import VerifiedGarbage.Proof.AesGcm.Arm.Env

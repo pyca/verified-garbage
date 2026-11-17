@@ -1,8 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.StreamFrame
-public import VerifiedGarbage.Proof.Dsa.X86.RunFrame
-import VerifiedGarbage.Proof.Dsa.X86.RunBytes
+public import VerifiedGarbage.Proof.Dsa.X86.RunBytes
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Caller-owned operands remain readable and unchanged throughout DSA -/

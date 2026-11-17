@@ -3,7 +3,7 @@ module
 import VerifiedGarbage.Proof.Ecdsa.Arm.P224.Umaal
 import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 meta import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
-import VerifiedGarbage.Proof.EcKey.Compressed.Arm.DecompressMain
+public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.DecompressMain
 public import VerifiedGarbage.Spec.EcKey.P224
 import VerifiedGarbage.Proof.Ecdsa.Arm.P224.Verified
 import VerifiedGarbage.Proof.P224.Sqrt
@@ -21,7 +21,6 @@ meta import VerifiedGarbage.Proof.EcKey.Compressed.Arm.Contract
 public import VerifiedGarbage.Impl.EcKey.Compressed.Arm.Decompress
 public import VerifiedGarbage.Impl.Ecdsa.P224.Arm
 public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.DecompressContract
-public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.DecompressMiddle
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Proof.Weierstrass.Law

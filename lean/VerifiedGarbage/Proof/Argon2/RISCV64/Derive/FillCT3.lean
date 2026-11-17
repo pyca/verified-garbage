@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.CTCall
+public import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.CTCall
 public import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.FillLoops
 public import VerifiedGarbage.Proof.Argon2.FillStep
 public import VerifiedGarbage.Proof.Argon2.Slices
@@ -23,7 +23,6 @@ meta import VerifiedGarbage.Proof.Argon2.LanesIndices
 meta import VerifiedGarbage.Proof.Argon2.SlicesIndices
 meta import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.FillBlock
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Exec
-public import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.CTBase
 public import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Locals
 meta import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Locals
 

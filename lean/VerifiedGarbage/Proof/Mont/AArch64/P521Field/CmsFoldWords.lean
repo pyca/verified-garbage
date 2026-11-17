@@ -1,9 +1,7 @@
 module
 
 -- separate module: The fused linear-coefficient fold limb/value equations (cms_fold_words) costs 2.73s of proof versus 1.37s of imports; CmsFold composition edits reuse this checked computation.
-
 public import VerifiedGarbage.Proof.Mont.AArch64.P521Field.CmsScalar
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Field.CmsLowAll
 public import VerifiedGarbage.Proof.Mont.AArch64.P521Field.CmsHigh
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Lit
@@ -11,7 +9,6 @@ public import VerifiedGarbage.Proof.Mont.AArch64.P521Field.LoadWords
 public import VerifiedGarbage.Proof.Mont.AArch64.P521Field.StreamValue
 public import VerifiedGarbage.Proof.Mont.AArch64.P521Field.RowMath
 import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Field.CmsAndWords
 import VerifiedGarbage.Proof.Mont.AArch64.P521Field.NativeFold
 import VerifiedGarbage.Proof.Mont.AArch64.P521Field.PointCarry
 import VerifiedGarbage.Proof.Framework.AArch64.Exec

@@ -3,7 +3,7 @@ module
 import VerifiedGarbage.Proof.Framework.RISCV64.Spill
 import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.FillLoops
 public import VerifiedGarbage.Proof.Argon2.FinalReduction
-public import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.FillWrite
+public import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.FillBlock
 public import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Parameters
 import VerifiedGarbage.Proof.Argon2.Serialization
 import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.HCall

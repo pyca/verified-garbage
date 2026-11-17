@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Camellia.Prepared
 public import VerifiedGarbage.Proof.Camellia.X86_64.Ecb
-import VerifiedGarbage.Proof.Camellia.X86_64.Crypt8
+import VerifiedGarbage.Proof.Camellia.X86_64.Group
 import VerifiedGarbage.Proof.Modes.X86_64.Setup
 public import VerifiedGarbage.Impl.Camellia.X86_64.Prepared
 import VerifiedGarbage.Proof.Modes.X86_64.Steps

@@ -16,7 +16,6 @@ import VerifiedGarbage.Proof.Dsa.Generation.QShapeMemory
 import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Proof.Dsa.Arm.Gen.St
 public import VerifiedGarbage.Proof.Rsa.Arm.Stage.VP
-public import VerifiedGarbage.Proof.Dsa.Arm.Gen.Tape
 import VerifiedGarbage.Proof.Dsa.Generation.QCandidate
 import VerifiedGarbage.Proof.Dsa.Generation.Memory
 

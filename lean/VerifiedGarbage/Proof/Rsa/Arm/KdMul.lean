@@ -1,8 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.Arm.KdStep
+public import VerifiedGarbage.Proof.Rsa.Arm.KdDiv
 import VerifiedGarbage.Proof.Bignum.Arm.Row
-import VerifiedGarbage.Proof.Rsa.Arm.KdDiv
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # The key checks' low product on ARMv7 (`KeyDiv.mulLo`): a row per word of `[x]` -/

@@ -4,16 +4,15 @@ public import VerifiedGarbage.Impl.RsaKeyGen.X86.Trial
 public import VerifiedGarbage.Proof.Bignum.X86.ReverseBytes
 public import VerifiedGarbage.Proof.Framework.X86.Exec
 public import VerifiedGarbage.Proof.Mont.Words32
-
 import VerifiedGarbage.Proof.RsaKeyGen.TrialMath
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.RsaKeyGen.X86.TrialPointer
 import VerifiedGarbage.Proof.RsaKeyGen.Trial32
-import VerifiedGarbage.Proof.RsaKeyGen.X86.TrialLoad
 import VerifiedGarbage.Proof.RsaKeyGen.X86.TrialWord
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Mont.X86.Words
+
 /-! # A whole-word i686 sieve pass returns the exact divisibility bit -/
 
 -- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/TrialLoop.lean`, which only this module imported.

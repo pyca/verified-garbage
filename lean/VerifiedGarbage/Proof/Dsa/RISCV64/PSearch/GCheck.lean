@@ -9,10 +9,9 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Proof.Dsa.RISCV64.PSearch.Ctl
-public import VerifiedGarbage.Proof.Dsa.RISCV64.PSearch.PrimeCall
+public import VerifiedGarbage.Proof.Dsa.RISCV64.PSearch.Test
 public import VerifiedGarbage.Proof.Dsa.Generation.RefillSeed
 public import VerifiedGarbage.Proof.Dsa.Contract
-import VerifiedGarbage.Proof.Dsa.RISCV64.PSearch.Test
 import VerifiedGarbage.Proof.Dsa.Generation.ParamsEncoding
 import VerifiedGarbage.Proof.Dsa.Generation.GeneratorDomain
 import VerifiedGarbage.Proof.Dsa.Encoding

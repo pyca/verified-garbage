@@ -9,7 +9,6 @@ meta import VerifiedGarbage.Proof.AesCbc.AArch64.Decrypt.Lit
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Impl.AesCbc.AArch64.Decrypt
 public import VerifiedGarbage.Proof.AesCbc.AArch64.Block
-public import VerifiedGarbage.Proof.AesCbc.AArch64.Call
 
 /-! # The existing CBC contract, ABI, constant time, and scratch-write bound -/
 

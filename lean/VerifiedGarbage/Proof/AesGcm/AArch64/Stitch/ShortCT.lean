@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.AesGcm.AArch64.Fn
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Seal
 import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Entry
-import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.ShortCopy
+import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.ShortSeal
 
 /-!
 # AES-GCM on AArch64, short records: `sealShort` is constant time

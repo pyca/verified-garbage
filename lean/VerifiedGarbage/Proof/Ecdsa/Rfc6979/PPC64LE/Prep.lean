@@ -1,6 +1,6 @@
 module
--- separate module: its proofs (the buffers X and h) build in parallel with `Steps`, which `Cand` also imports
 
+-- separate module: its proofs (the buffers X and h) build in parallel with `Steps`, which `Cand` also imports
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Hmac
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
 import VerifiedGarbage.Proof.Weierstrass.PPC64LE.BytesLen
@@ -11,7 +11,6 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Step
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Entry
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Copy
 public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Loops
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem

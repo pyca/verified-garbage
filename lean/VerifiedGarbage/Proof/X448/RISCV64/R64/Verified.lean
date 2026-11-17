@@ -10,12 +10,11 @@ import VerifiedGarbage.Proof.X448.Bytes
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Framework.AddrArith
-public import VerifiedGarbage.Proof.X448.RISCV64.Setup
+public import VerifiedGarbage.Proof.X448.RISCV64.Freeze
 public import VerifiedGarbage.Proof.X448.RISCV64.Slots
 public import VerifiedGarbage.TCB.Artifact
 public import VerifiedGarbage.TCB.RISCV64.Isa
 public import VerifiedGarbage.Impl.X448.RISCV64.R64
-import VerifiedGarbage.Proof.X448.RISCV64.Freeze
 import VerifiedGarbage.Proof.X448.RISCV64.R64.CT
 import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.TCB.RISCV64.Target

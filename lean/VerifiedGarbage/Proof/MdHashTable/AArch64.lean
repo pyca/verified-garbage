@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Framework.Block
 `digestK H`: the contract of `digest P` (`Impl/MdHashTable/AArch64.lean`) for
 a hash function `H` whose streaming code has the parameters `P`: it writes
 `H.digest` of the hash value at `x0` to `x1` (`digest_verified`, from what
-`Shape` says of `P.out`), as on x86-64 (`Proof/MdHashTable/X86_64.lean`).
+`Shape` says of `P.out`), as on x86-64 (`Proof/RsaPss/X86_64/TabCall.lean`).
 -/
 
 @[expose] public section

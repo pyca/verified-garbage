@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Weierstrass.Arm.Copy
 # ECDSA on 32-bit ARM: field operations on numbered slots
 
 The calls of the Montgomery arithmetic's functions
-(`Proof/Weierstrass/Arm/MontCall.lean`) on the slots `c.sl i` of the working
+(`Proof/Weierstrass/Arm/Fprog.lean`) on the slots `c.sl i` of the working
 space, modulo `p` (`c.SP`) or `n` (`c.SN`), whose own working space is at
 `c.wk`: an operation writing slot `o` keeps every other slot but the
 temporary area's (`sv_keep`) and the moduli (`ModOkW.keepArm`).

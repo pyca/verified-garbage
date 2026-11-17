@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.X448.RISCV64.Slots
 public import VerifiedGarbage.Proof.X448.Ladder
-import VerifiedGarbage.Proof.X448.RISCV64.Mul
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith

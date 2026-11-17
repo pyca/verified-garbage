@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 /-!
 # The arrays of 32-bit words in the scratch buffer
 
-As on PPC64LE (`Proof/Seed/PPC64LE/Lanes.lean`): the ECB code keeps sixteen
+As on PPC64LE (`Proof/Seed/PPC64LE/Steps.lean`): the ECB code keeps sixteen
 lanes of each of its arrays (`G`'s words, `a`, `c`, `d` and the blocks'
 words) in the scratch buffer at `a5`: lane `b` of the array at slot `k` is
 the 32-bit word at `a5 + 8k + 4b` (`laneA`, `lv`). This file has the 32-bit

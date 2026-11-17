@@ -5,7 +5,6 @@ public import VerifiedGarbage.Impl.Weierstrass.X86_64.WindowGeneral
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinQuad
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinLoop
 public import VerifiedGarbage.Proof.Weierstrass.JacDblAF
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Window
 import VerifiedGarbage.Proof.Weierstrass.X86_64.WinEntry
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TComb
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Loop

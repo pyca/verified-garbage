@@ -1,9 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Cast5.AArch64.TblBatch
-public import VerifiedGarbage.Proof.Blowfish.AArch64.Copy
 public import VerifiedGarbage.Proof.Blowfish.AArch64.EcbMain
-import VerifiedGarbage.Proof.Blowfish.AArch64.Ecb
 import VerifiedGarbage.Proof.Cast5.Memory
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
@@ -40,7 +38,7 @@ their verification against the shared contracts.
 /-!
 ## CAST5 on AArch64: ECB by batches of sixteen blocks
 
-As Blowfish's (`Proof/Blowfish/AArch64/Ecb.lean`, `EcbMain.lean`), whose
+As Blowfish's (`Proof/Blowfish/AArch64/EcbMain.lean`, `EcbMain.lean`), whose
 registers the code uses after its entry: `wide_ok`, the batches of sixteen
 blocks in place while there are that many; `tail_ok`, the blocks left,
 through the working space; `ecb_correct`, the function, which saves

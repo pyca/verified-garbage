@@ -4,40 +4,29 @@ public import VerifiedGarbage.Impl.Curve448.AArch64.Fast
 public import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Bounds
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.X448.AArch64.Mem
-public import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Sub
+public import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Butterfly
 import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Prelude
 public import VerifiedGarbage.Proof.Framework.AArch64.Exec
 public import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Ed25519.AArch64.Step
 public import VerifiedGarbage.Proof.X448.Field
-public import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Mul
+public import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Sqr
 public import VerifiedGarbage.Proof.X448.AArch64.Weak.Env
 public import VerifiedGarbage.Proof.Curve448.AArch64.Copy
 public import VerifiedGarbage.Proof.Curve448.AArch64.Swap
 public import VerifiedGarbage.Impl.X448.AArch64.Fast
-public import VerifiedGarbage.Proof.Curve448.AArch64.Columns
-public import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Columns
-public import VerifiedGarbage.Proof.Curve448.AArch64.Pointwise
-public import VerifiedGarbage.Proof.Curve448.AArch64.SmallEval
-public import VerifiedGarbage.Proof.Curve448.AArch64.Square
-public import VerifiedGarbage.Proof.Curve448.AArch64.SubEval
-public import VerifiedGarbage.Proof.Curve448.AArch64.SymmetricColumns
-public import VerifiedGarbage.Proof.X448.Wide.CarryRegs
-public import VerifiedGarbage.Proof.X448.Wide.DoubleTerm
-public import VerifiedGarbage.Proof.X448.Wide.Encoded
-public import VerifiedGarbage.Proof.X448.Wide.TailBounds
-public import VerifiedGarbage.Proof.X448.Wide.TailNormalize
-public import VerifiedGarbage.Proof.X448.Wide.TailPass
-public import VerifiedGarbage.Proof.X448.Wide.TailRegs
-public import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Butterfly
-public import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Sqr
+public import VerifiedGarbage.Proof.Curve448.AArch64.Product
+public import VerifiedGarbage.Proof.X448.Wide.CarryStep
 public import VerifiedGarbage.Proof.Curve448.AArch64.AccumSquareBody
+public import VerifiedGarbage.Proof.X448.Wide.Encoded
+public import VerifiedGarbage.Proof.X448.Wide.TailPass
+public import VerifiedGarbage.Proof.X448.Wide.TailNormalize
+public import VerifiedGarbage.Proof.X448.Wide.TailStep
 public import VerifiedGarbage.Proof.Curve448.AArch64.AddEval
 public import VerifiedGarbage.Proof.Curve448.AArch64.Bounds
 public import VerifiedGarbage.Proof.Curve448.AArch64.Collect
 public import VerifiedGarbage.Proof.Curve448.AArch64.Fast.ColEnd
 public import VerifiedGarbage.Proof.Curve448.AArch64.Normalize
-public import VerifiedGarbage.Proof.Curve448.AArch64.Product
 public import VerifiedGarbage.Proof.Curve448.AArch64.Stage
 public import VerifiedGarbage.Proof.Curve448.AArch64.SymmetricColumn
 public import VerifiedGarbage.Proof.Framework.AddrArith
@@ -55,7 +44,6 @@ public import VerifiedGarbage.Proof.X448.Wide.Pack
 public import VerifiedGarbage.Proof.X448.Wide.Pass
 public import VerifiedGarbage.Proof.X448.Wide.PassInit
 public import VerifiedGarbage.Proof.X448.Wide.Reduce
-public import VerifiedGarbage.Proof.X448.Wide.TailStep
 public import VerifiedGarbage.Proof.X448.Wide.Term
 public import VerifiedGarbage.Proof.X448.Wide.UnpackRegs
 public import VerifiedGarbage.Impl.X448.AArch64
@@ -68,7 +56,6 @@ public import VerifiedGarbage.Proof.X448.Wide.Memory
 public import VerifiedGarbage.Proof.X448.Wide.Product
 public import VerifiedGarbage.Proof.X448.Wide.Word
 public import VerifiedGarbage.Proof.X448.Wide.Column
-public import VerifiedGarbage.Proof.X448.Wide.CarryStep
 
 /-! ### `Curve448.AArch64.Fast.Field`, which only this module used -/
 

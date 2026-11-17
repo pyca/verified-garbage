@@ -4,7 +4,7 @@ public import VerifiedGarbage.Impl.Weierstrass.X86.WinJac
 public import VerifiedGarbage.Proof.Weierstrass.Jac
 public import VerifiedGarbage.Proof.Weierstrass.X86.Ladder
 public import VerifiedGarbage.Proof.Weierstrass.X86.TCombScan
-import VerifiedGarbage.Proof.Weierstrass.X86.TCombSelect
+import VerifiedGarbage.Proof.Weierstrass.X86.TComb
 import VerifiedGarbage.Proof.Weierstrass.X86.NafAdjust
 import VerifiedGarbage.Proof.Weierstrass.X86.NafTableIO
 import VerifiedGarbage.Proof.Framework.X86.RegUpd

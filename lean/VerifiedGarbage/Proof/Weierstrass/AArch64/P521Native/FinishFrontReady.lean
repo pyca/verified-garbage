@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Native.FinishAssemble
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Native.WindowFiveDoubles
 import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Native.WindowLookupPoint
@@ -8,6 +7,298 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Native.NormalizeLayo
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Native.FinishProjectiveState
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Native.FinishCounter
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Native.FinishCopy
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Native.FinishProjective
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Native.FinishFixY
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Native.FinishAddCode
+import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Native.NormalizeInverse
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Native.FinishOutput
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Scalar
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Flags
+import VerifiedGarbage.Proof.Ecdsa.AArch64.SlotOps
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Finish
+import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Native.LookupCode
+public import VerifiedGarbage.Proof.Framework.Semantics
+
+/-! ### `Weierstrass.AArch64.P521Native.FinishAssemble`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Weierstrass.AArch64.P521Native.FinishLookup`, which this module and modules that import it used -/
+
+section
+
+/-! The final digit reuses the exact main-loop constant-time affine lookup. -/
+
+@[expose] public section
+namespace VG.Proof.Weierstrass.AArch64.P521Native
+open VG VG.AArch64 VG.Impl.Weierstrass.AArch64.P521Native
+
+def finishLookupCode : List Instr := (outerBlock152.drop 209).take 693
+
+theorem finish_lookup_source : finishLookupCode=(outerBlock142.drop 54).take 693 := by lit_decide
+
+theorem finish_vector_lookup_source : (outerBlock152.drop 231).take 564=lookupCode := by lit_decide
+
+/-- Any machine contract for the full main-loop nibble/lookup/sign-selection
+phase applies to the final digit unchanged; its public index is zero. -/
+theorem finish_lookup_wp {s : State} {Q : State → Prop}
+    (h : WP isa (.block ((outerBlock142.drop 54).take 693)) s Q) :
+    WP isa (.block finishLookupCode) s Q := by
+  rw [finish_lookup_source]
+  exact h
+
+end VG.Proof.Weierstrass.AArch64.P521Native
+
+end
+
+end
+
+/-! ### `Weierstrass.AArch64.P521Native.FinishChecks`, which this module and modules that import it used -/
+
+section
+
+/-! Original ECDH security checks and masked serialization, independently of
+how the affine shared coordinate was obtained. -/
+
+@[expose] public section
+namespace VG.Proof.Weierstrass.AArch64.P521Native
+open VG VG.AArch64 VG.Impl.Ecdsa.AArch64 VG.Proof.Ecdsa.AArch64
+open VG.Proof.Mont.AArch64 VG.Proof.Mont VG.Proof.Weierstrass
+open VG.Proof.Ecdh.AArch64
+
+ theorem checked_finish_ok {c : Cfg} (hc : BaseCfgOk c) {base : Addr} {s : State}
+    (hs : Scr s base size) {g : Reg → BitVec 64}
+    (mn : wordsVal s.mem base (c.sl MN) c.n=c.C.n) (saved : Spill.Saved base g Cfg.saved s.mem)
+    {V : Prop} [Decidable V] (hflag : word s.mem base (c.sl FLAG)=mask V) {out : Addr}
+    (hx20 : s.gpr .x20=out) (hfit : out.toNat+c.C.len≤2^64)
+    (hw : (⟨out,c.C.len⟩ : Region)∈s.wr) (hd : Region.Disjoint ⟨out,c.C.len⟩ ⟨base,size⟩) :
+    WP isa (.block (c.checkRange (c.sl D)++c.checkNonzero (c.sl RZ)++VG.Impl.Ecdh.AArch64.Cfg.finish c)) s fun t =>
+      VG.Spec.Ecdsa.bytesAt t.mem out c.C.len=
+        (if ok c base s V then VG.Spec.Weierstrass.toBytes c.C.len (sv c base s X) else List.replicate c.C.len 0) ∧
+      (t.gpr .x0).setWidth 32=(if ok c base s V then 1 else 0) ∧
+      (∀r∈Cfg.saved.map Prod.fst,t.gpr r=g r) := by
+  have h0 := hc.n0
+  have h7 := hc.n10
+  have hn := hs.nowrap
+  have hf : c.sl FLAG+8≤size := by have := sl_le c h7 (i:=FLAG) (by decide); omega_arith
+  rw [List.append_assoc,WP.block_append_iff]
+  refine WP.mono (checkRange_ok c hs h0 (sl_le c h7 (i:=D) (by decide)) (sl_le c h7 (i:=MN) (by decide))
+    hf (sl_mod8 c D) (sl_mod8 c MN) (sl_mod8 c FLAG)) fun u ⟨fu,ku,Ou⟩ => ?_
+  have hsu := hs.of_keepRegs ku (by decide)
+  rw [WP.block_append_iff]
+  refine WP.mono (checkNonzero_ok c hsu h0 (sl_le c h7 (i:=RZ) (by decide)) hf
+    (sl_mod8 c RZ) (sl_mod8 c FLAG)) fun v ⟨fv,kv,Ov⟩ => ?_
+  have hsv := hsu.of_keepRegs kv (by decide)
+  have lowFlag : ∀w∈[(c.sl FLAG,8)],64≤w.1 := by
+    intro w hw
+    obtain rfl := List.mem_singleton.mp hw
+    exact sl_ge64 c FLAG
+  have savedV := Saved.unch (Saved.unch saved lowFlag Ou.unch) lowFlag Ov.unch
+  have flagv : word v.mem base (c.sl FLAG)=if ok c base s V then BitVec.allOnes 64 else 0 := by
+    rw [fv,fu,hflag,sv_flag Ou h0 h7 hn (i:=RZ) (by decide) (by decide),mn,mask_and,mask_and]
+    simp only [mask,decide_eq_true_eq,and_assoc]
+  have outv : v.gpr .x20=out := by rw [kv.gpr _ (by decide),ku.gpr _ (by decide),hx20]
+  have wrv : (⟨out,c.C.len⟩ : Region)∈v.wr := by rw [kv.wr,ku.wr]; exact hw
+  refine WP.mono (ecFinish_ok hc hsv outv hfit wrv hd savedV _ flagv) fun t ⟨bytes,ret,saved⟩ => ⟨?_,ret,saved⟩
+  have xv : sv c base v X=sv c base s X :=
+    (sv_flag Ov h0 h7 hn (i:=X) (by decide) (by decide)).trans
+      (sv_flag Ou h0 h7 hn (i:=X) (by decide) (by decide))
+  rw [bytes,xv]
+
+/-- The exact emitted final block retains scalar/nonzero validation and the
+original output/ABI contract, including every invalid-input path. -/
+theorem native_finish_output_ok (hc : BaseCfgOk VG.Impl.Weierstrass.AArch64.P521Native.config)
+    {base : Addr} {s : State} (hs : Scr s base size) {g : Reg → BitVec 64}
+    (mn : wordsVal s.mem base 136 9=VG.Impl.Weierstrass.AArch64.P521Native.config.C.n)
+    (saved : Spill.Saved base g Cfg.saved s.mem)
+    {V : Prop} [Decidable V]
+    (hflag : word s.mem base 3232=mask V) {out : Addr}
+    (hx20 : s.gpr .x20=out) (hfit : out.toNat+66≤2^64)
+    (hw : (⟨out,66⟩ : Region)∈s.wr) (hd : Region.Disjoint ⟨out,66⟩ ⟨base,size⟩) :
+    WP isa (.block VG.Impl.Weierstrass.AArch64.P521Native.outerBlock171) s fun t =>
+      VG.Spec.Ecdsa.bytesAt t.mem out 66=
+        (if ok VG.Impl.Weierstrass.AArch64.P521Native.config base s V then
+          VG.Spec.Weierstrass.toBytes 66 (wordsVal s.mem base 2584 9) else List.replicate 66 0) ∧
+      (t.gpr .x0).setWidth 32=(if ok VG.Impl.Weierstrass.AArch64.P521Native.config base s V then 1 else 0) ∧
+      (∀r∈Cfg.saved.map Prod.fst,t.gpr r=g r) := by
+  apply finish_output_wp
+  refine WP.seq (WP.mono (VG.Proof.Weierstrass.AArch64.Mont.lr_ok s) fun u ⟨_,ku⟩ => ?_)
+  have hsu := hs.of_keeps ku (by decide)
+  have mnu : wordsVal u.mem base 136 9=VG.Impl.Weierstrass.AArch64.P521Native.config.C.n := by
+    rw [ku.mem]; exact mn
+  have savedU : Spill.Saved base g Cfg.saved u.mem := ku.mem.symm ▸ saved
+  have flagu : word u.mem base 3232=mask V := by rw [ku.mem]; exact hflag
+  have outu : u.gpr .x20=out := (ku.gpr .x20 (by decide)).trans hx20
+  have wru : (⟨out,66⟩ : Region)∈u.wr := by rw [ku.wr]; exact hw
+  refine WP.mono (checked_finish_ok hc hsu mnu savedU flagu outu hfit wru hd) fun t ht => ?_
+  simpa only [ok,sv,ku.mem,
+    (show VG.Impl.Weierstrass.AArch64.P521Native.config.C.len=66 from rfl),
+    (show VG.Impl.Weierstrass.AArch64.P521Native.config.n=9 from rfl),
+    (show VG.Impl.Weierstrass.AArch64.P521Native.config.sl X=2584 from rfl)] using ht
+
+end VG.Proof.Weierstrass.AArch64.P521Native
+
+end
+
+end
+
+/-! ### `Weierstrass.AArch64.P521Native.FinishProducts`, which this module and modules that import it used -/
+
+section
+
+/-! Final ordinary-field products retain all calls of the selected prototype. -/
+
+@[expose] public section
+namespace VG.Proof.Weierstrass.AArch64.P521Native
+open VG VG.AArch64 VG.Impl.Weierstrass.AArch64.P521Native
+open VG.Proof.Mont.AArch64.P521Field
+
+def finishProductsOps : List PointOp := [.mul 2512 1072 2152 false,.mul 2584 2512 352 false]
+
+theorem finish_products_source169 : outerBlock169=normalizeCallArgs 2512 1072 2152 := by lit_decide
+
+theorem finish_products_source170 : outerBlock170=buildRestore++normalizeCallArgs 2584 2512 352 := by lit_decide
+
+def finishProductsMachine : Prog isa := sequence [
+  .block outerBlock169,callNormalMul,.block outerBlock170,callNormalMul,.block buildRestore]
+
+private theorem products_wp_post_iff {code : Prog isa} {s : State} {Q R : State → Prop}
+    (h : ∀t,Q t ↔ R t) : WP isa code s Q ↔ WP isa code s R :=
+  ⟨fun q => WP.mono q (fun t ht => (h t).mp ht),fun q => WP.mono q (fun t ht => (h t).mpr ht)⟩
+
+theorem finish_products_machine_wp {s : State} {Q : State → Prop} :
+    WP isa finishProductsMachine s Q ↔ WP isa (fieldProgram id finishProductsOps) s Q := by
+  simp only [finishProductsMachine,sequence,List.foldr_cons,List.foldr_nil,
+    finishProductsOps,fieldProgram,fieldCode,id,Nat.reduceEqDiff,ite_false,
+    normalizeMulStep,finish_products_source169,finish_products_source170]
+  repeat' first | rfl | rw [VG.WP.seq_iff] | rw [VG.WP.block_append_iff] | rw [VG.WP.block_nil_iff] | (apply products_wp_post_iff; intro t)
+
+theorem finish_products_value {F : Type _} [Lean.Grind.CommRing F] (E : Nat → F) :
+    pointRun finishProductsOps E 2584=E 1072*E 2152*E 352 := by
+  simp only [pointRun,finishProductsOps,List.foldl,PointOp.run,Function.update_apply,ite_true]
+  rfl
+
+theorem finish_products_machine_ok {base : Addr} {s : State}
+    {E : Nat → Fin VG.Proof.Mont.AArch64.P521Square.fieldPrime}
+    (hs : VG.Proof.Mont.AArch64.Scr s base 8192)
+    (inv : OrdinaryInv base VG.Proof.Mont.AArch64.P521Square.fieldPrime id
+      [1072,2152,352] E (fun _ => 1) s) :
+    WP isa finishProductsMachine s fun t =>
+      OrdinaryInv base VG.Proof.Mont.AArch64.P521Square.fieldPrime id
+        (fieldLive finishProductsOps [1072,2152,352]) (pointRun finishProductsOps E) (fun _ => 1) t ∧
+      VG.Proof.Mont.AArch64.Scr t base 8192 ∧ FieldPublic s t ∧
+      FieldProgramFrame base id finishProductsOps s.mem t.mem := by
+  apply finish_products_machine_wp.mpr
+  exact field_program_ok (by decide) (by decide) build_field_layout finishProductsOps hs inv
+    (by simp [buildSlot])
+    (by simp [finishProductsOps,PointOp.out,PointOp.ins,buildSlot])
+    (by decide) (by simp [finishProductsOps,fieldCoeffs])
+
+end VG.Proof.Weierstrass.AArch64.P521Native
+
+end
+
+end
+
+/-! ### `Weierstrass.AArch64.P521Native.FinishInverse`, which this module and modules that import it used -/
+
+section
+
+/-! The final inversion is the same proved ordinary/Montgomery round trip. -/
+
+@[expose] public section
+namespace VG.Proof.Weierstrass.AArch64.P521Native
+open VG VG.AArch64 VG.Proof.Mont VG.Proof.Mont.AArch64 VG.Proof.Weierstrass
+open VG.Proof.Mont.AArch64.P521Field (toMontValue)
+open VG.Proof.Mont.AArch64.P521Square (fieldPrime)
+open VG.Impl.Weierstrass.AArch64.P521Native
+
+def finishInversePhase : Prog isa := sequence [
+  .block (representationMemoryCode representationToCode 1216),
+  .block outerBlock167,callInvModP,.block outerBlock168,
+  .block (representationMemoryCode representationFromCode 2152)]
+
+private theorem inverse_wp_post_iff {code : Prog isa} {s : State} {Q R : State → Prop}
+    (h : ∀t,Q t ↔ R t) : WP isa code s Q ↔ WP isa code s R :=
+  ⟨fun q => WP.mono q (fun t ht => (h t).mp ht),fun q => WP.mono q (fun t ht => (h t).mpr ht)⟩
+
+theorem finish_inverse_phase_wp {s : State} {Q : State → Prop} :
+    WP isa finishInversePhase s Q ↔ WP isa normalizeInversePhase s Q := by
+  have save : outerBlock167=[.vop (.ins .d2 .v29 0 .x30)] := by decide
+  have restore : outerBlock168=[.umov .x .x30 .v29 0] := by decide
+  have inversion : config.pPow=.seq (.block outerBlock167) (.seq callInvModP (.block outerBlock168)) := by
+    rw [save,restore]
+    rfl
+  simp only [finishInversePhase,normalizeInversePhase,sequence,List.foldr_cons,List.foldr_nil,inversion]
+  repeat' first | rfl | rw [VG.WP.seq_iff] | rw [VG.WP.block_nil_iff] | (apply inverse_wp_post_iff; intro t)
+
+theorem finish_inverse_phase_ok (hc : VG.Proof.Ecdsa.AArch64.BaseCfgOk config)
+    {s : State} {base : Addr} (hs : Scr s base 8192)
+    (hM : ModOkA config.MP' 8192 config.C.p s.mem base)
+    (bound : wordsVal s.mem base 1216 9<fieldPrime) :
+    WP isa finishInversePhase s fun t =>
+      wordsVal t.mem base 2152 9<fieldPrime ∧
+      Fin.ofNat fieldPrime (wordsVal t.mem base 2152 9)=
+        Fin.ofNat fieldPrime (wordsVal s.mem base 1216 9)^(fieldPrime-2) ∧
+      Unch base normalizeInverseWrites s.mem t.mem ∧
+      t.gpr .x0=base ∧ t.rd=s.rd ∧ t.wr=s.wr ∧ t.sp=s.sp ∧
+      t.gpr .x20=s.gpr .x20 ∧ t.gpr .x26=s.gpr .x26 ∧ t.gpr .x30=s.gpr .x30 ∧ t.v .v31=s.v .v31 ∧
+      wordsVal t.mem base 1216 9=toMontValue (wordsVal s.mem base 1216 9) ∧
+      (∀r∈[Reg.x27,Reg.x28],t.gpr r=s.gpr r) := by
+  exact finish_inverse_phase_wp.mpr (normalize_inverse_phase_ok hc hs hM bound)
+
+end VG.Proof.Weierstrass.AArch64.P521Native
+
+end
+
+end
+
+/-! Exact concatenation of the final independent machine-level phases. -/
+
+@[expose] public section
+namespace VG.Proof.Weierstrass.AArch64.P521Native
+open VG VG.AArch64 VG.Impl.Weierstrass.AArch64.P521Native
+open VG.Impl.Ecdsa.AArch64 (D RZ)
+
+def finishFiveDoubles : Prog isa := .seq loop25 (.seq (.block outerBlock148) callNormalDouble)
+def finishCheckCode : List Instr := config.checkRange (config.sl D)++config.checkNonzero (config.sl RZ)++
+  VG.Impl.Ecdh.AArch64.Cfg.finish config
+
+def finishStages : Prog isa := sequence [
+  .block outerBlock144,finishFiveDoubles,.block finishCopyPoint,finishProjectiveMachine,
+  .block finishCopyPoint,.block finishFixYCode,.block finishLookupCode,finishAddMachine,
+  .block finishCopyPoint,finishInversePhase,finishProductsMachine,.block finishCheckCode]
+
+theorem finish_partition149 : outerBlock149=finishCopyPoint++outerBlock149.drop 54 := by lit_decide
+
+theorem finish_partition152 : outerBlock152=outerBlock152.take 53++finishCopyPoint++
+    finishFixYCode++finishLookupCode++outerBlock152.drop (outerBlock152.length-4) := by lit_decide
+
+theorem finish_partition166 : outerBlock166=outerBlock166.take 53++finishCopyPoint := by lit_decide
+
+theorem finish_partition171 : outerBlock171=buildRestore++finishCheckCode := by
+  exact finish_output_source
+
+/-- Every contract proved for the separated final phases applies to the full
+exact native finishAndWrite, with no removed checks or instructions. -/
+theorem finish_stages_wp {s : State} {Q : State → Prop} (h : WP isa finishStages s Q) :
+    WP isa finishAndWrite s Q := by
+  simp only [finishAndWrite,sequence,List.foldr_cons,List.foldr_nil]
+  rw [finish_partition149,finish_partition152,finish_partition166,finish_partition171]
+  simp only [finishStages,finishFiveDoubles,finishProjectiveMachine,finishAddMachine,finishInversePhase,
+    finishProductsMachine,sequence,List.foldr_cons,List.foldr_nil] at h
+  simp only [VG.WP.seq_iff (M:=isa),VG.WP.block_append_iff (M:=isa),VG.WP.block_nil_iff (M:=isa)] at h ⊢
+  exact h
+
+end VG.Proof.Weierstrass.AArch64.P521Native
+
+end
+
+end
 
 /-! Adjacent stages of the final P-521 window, sharing their machine-state interface. -/
 

@@ -7,15 +7,13 @@ public import VerifiedGarbage.Proof.Ed25519.RISCV64.BaseContract
 import VerifiedGarbage.Proof.Framework.RISCV64.Syms
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RISCV64.StackScratch
-public import VerifiedGarbage.Proof.Ed25519.RISCV64.Whole.SignNonce
-public import VerifiedGarbage.Proof.Ed25519.RISCV64.Whole.SignExpand
 import VerifiedGarbage.Proof.Ed25519.Signing
 import VerifiedGarbage.Proof.Ed25519.VerifyBytes
 import VerifiedGarbage.Proof.Ed25519.Expanded
 import VerifiedGarbage.Proof.Ed25519.RISCV64.Whole.Sha512OK
 public import VerifiedGarbage.TCB.RISCV64.Target
 public import VerifiedGarbage.Impl.Ed25519.RISCV64.Whole
-public import VerifiedGarbage.Proof.Ed25519.RISCV64.PointOps
+public import VerifiedGarbage.Proof.Ed25519.RISCV64.PointTable
 public import VerifiedGarbage.Proof.Framework.RISCV64.Call
 public import VerifiedGarbage.Proof.Framework.RISCV64.Spill
 public import VerifiedGarbage.Proof.Framework.Contract
@@ -33,6 +31,561 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.Ed25519.Contract
 public import VerifiedGarbage.Spec.Ed25519.ExpandedSign
 public import VerifiedGarbage.TCB.Artifact
+public import VerifiedGarbage.Proof.Ed25519.RISCV64.ScalarVerified
+import VerifiedGarbage.Proof.Framework.AddrArith
+
+/-! ### `Ed25519.RISCV64.Whole.SignNonce`, which only this module used -/
+
+section
+
+/-! ### `Ed25519.RISCV64.Whole.SignExpand`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Ed25519.RISCV64.Whole.SignSetup`, which this module and modules that import it used -/
+
+section
+
+/-!
+# `vg_ed25519_sign_expanded` on RISC-V: the setup
+
+`out` in `a0`, `expanded` in `a1`, `pk` in `a2`, the message in `a3` (`len` in
+`a4`), `scratch` in `a5` and the frame `F` (288 bytes) in `a6`. The setup
+saves the registers at `224(F)`, moves what lives across calls to `s7`–`s11`
+and `expanded` to `s1`, and copies `pk` to `192(F)` (`signSetup_ok`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ed25519.RISCV64.Whole
+
+open VG VG.RISCV64 VG.RISCV64.Steps VG.Impl.Ed25519.RISCV64.Whole VG.Proof.X25519.RISCV64
+open VG.Spec.Ed25519 (bytesAt)
+open VG.Impl.Ed25519.RISCV64 (combSym combWord)
+
+variable {sl : Nat}
+
+/-- The message. -/
+abbrev msgR (s : State) : Region := ⟨s.gpr .a3, (s.gpr .a4).toNat⟩
+
+/-- What the body may write. -/
+abbrev signW (s : State) : List Region := [⟨s.gpr .a0, 64⟩, ⟨s.gpr .a5, 8192⟩, ⟨s.gpr .a6, 288⟩, below s.sp 208]
+
+/-- The precondition, by register, for `sl` bytes at `a1` (the seed's digest, so 64). That `pk` is
+the seed's public key is a hypothesis of its own (`signExpanded_wp`). -/
+structure SignPre (sl : Nat) (s : State) : Prop where
+  rd : s.rd = [⟨s.gpr .a1, sl⟩, ⟨s.gpr .a2, 32⟩, msgR s, TBL (s.syms combSym)]
+  wr : s.wr = [⟨s.gpr .a0, 64⟩, ⟨s.gpr .a5, 8192⟩, ⟨s.gpr .a6, 288⟩]
+  alC : (s.gpr .a5).toNat % 8 = 0
+  alF : (s.gpr .a6).toNat % 8 = 0
+  oS : Region.Disjoint ⟨s.gpr .a0, 64⟩ ⟨s.gpr .a1, sl⟩
+  oP : Region.Disjoint ⟨s.gpr .a0, 64⟩ ⟨s.gpr .a2, 32⟩
+  oM : Region.Disjoint ⟨s.gpr .a0, 64⟩ (msgR s)
+  oC : Region.Disjoint ⟨s.gpr .a0, 64⟩ ⟨s.gpr .a5, 8192⟩
+  oF : Region.Disjoint ⟨s.gpr .a0, 64⟩ ⟨s.gpr .a6, 288⟩
+  sC : Region.Disjoint ⟨s.gpr .a1, sl⟩ ⟨s.gpr .a5, 8192⟩
+  sF : Region.Disjoint ⟨s.gpr .a1, sl⟩ ⟨s.gpr .a6, 288⟩
+  pC : Region.Disjoint ⟨s.gpr .a2, 32⟩ ⟨s.gpr .a5, 8192⟩
+  pF : Region.Disjoint ⟨s.gpr .a2, 32⟩ ⟨s.gpr .a6, 288⟩
+  mC : Region.Disjoint (msgR s) ⟨s.gpr .a5, 8192⟩
+  mF : Region.Disjoint (msgR s) ⟨s.gpr .a6, 288⟩
+  cF : Region.Disjoint ⟨s.gpr .a5, 8192⟩ ⟨s.gpr .a6, 288⟩
+  spal : s.sp.toNat % 16 = 0
+  sp : 208 ≤ s.sp.toNat
+  bO : (below s.sp 208).Disjoint ⟨s.gpr .a0, 64⟩
+  bS : (below s.sp 208).Disjoint ⟨s.gpr .a1, sl⟩
+  bP : (below s.sp 208).Disjoint ⟨s.gpr .a2, 32⟩
+  bM : (below s.sp 208).Disjoint (msgR s)
+  bC : (below s.sp 208).Disjoint ⟨s.gpr .a5, 8192⟩
+  bF : (below s.sp 208).Disjoint ⟨s.gpr .a6, 288⟩
+  tal : (s.syms combSym).toNat % 8 = 0
+  tfit : (s.syms combSym).toNat + 49152 ≤ 2 ^ 64
+  words : ∀ q < 64 * 96, s.mem.readW (s.syms combSym + BitVec.ofNat 64 (8 * q)) 64 = combWord q
+  tW : ∀ r ∈ signW s, (TBL (s.syms combSym)).Disjoint r
+
+/-- The values in `s1` and `s7`–`s11`. -/
+def signV (s : State) : Reg → BitVec 64
+  | .s1 => s.gpr .a1 | .s7 => s.gpr .a0 | .s8 => s.gpr .a3 | .s9 => s.gpr .a4 | .s10 => s.gpr .a5
+  | .s11 => s.gpr .a6 | _ => 0
+
+abbrev SignInv (s : State) : State → Prop := Inv s (s.gpr .a6) 224 signRegs (signV s) (signW s)
+
+theorem signRegs_pres : ∀ r ∈ signRegs, r ∈ preserved := by decide
+
+/-- The slots are apart from everything but the frame's first 224 bytes. -/
+theorem sign_slot {s : State} (hp : SignPre sl s) :
+    (slotArea (s.gpr .a6) 224 signRegs).Disjoint ⟨s.gpr .a0, 64⟩ ∧
+    (slotArea (s.gpr .a6) 224 signRegs).Disjoint ⟨s.gpr .a5, 8192⟩ ∧
+    (slotArea (s.gpr .a6) 224 signRegs).Disjoint (below s.sp 208) ∧
+    ∀ d n, d + n ≤ 224 → (slotArea (s.gpr .a6) 224 signRegs).Disjoint ⟨s.gpr .a6 + BitVec.ofNat 64 d, n⟩ := by
+  have hs : Region.Sub (slotArea (s.gpr .a6) 224 signRegs) ⟨s.gpr .a6, 288⟩ := Offset.sub_base _ (by decide)
+  refine ⟨(hp.oF.symm.sub_left hs), (hp.cF.symm.sub_left hs), (hp.bF.symm.sub_left hs), fun d n h => ?_⟩
+  exact Offset.disjoint _ (.inr h) (by decide) (by omega_using [h])
+
+theorem signV_s7 (s : State) : signV s .s7 = s.gpr .a0 := rfl
+theorem signV_s10 (s : State) : signV s .s10 = s.gpr .a5 := rfl
+theorem signV_s11 (s : State) : signV s .s11 = s.gpr .a6 := rfl
+
+/-- The setup: the registers saved, the pointers moved, `pk` copied to `192(F)`. -/
+theorem signSetup_ok {s : State} (hp : SignPre sl s) :
+    WP isa (.block signSetup) s fun t => SignInv s t ∧
+      bytesAt t.mem (s.gpr .a6 + BitVec.ofNat 64 192) 32 = bytesAt s.mem (s.gpr .a2) 32 := by
+  have hF : (⟨s.gpr .a6, 288⟩ : Region) ∈ s.wr := by rw [hp.wr]; simp
+  have hsl : ∀ p ∈ slots 224 signRegs, p.2 + 8 ≤ 288 := by decide
+  unfold signSetup
+  refine save_ok hp.alF (by decide) (by decide)
+    (fun p hp' => in_base hF (hsl p hp') (by have := hsl p hp'; omega_using [this])) fun u hu hsv hfr => ?_
+  unfold mov
+  simp only [List.cons_append, List.nil_append]
+  refine wp_mv fun u₁ h₁ => wp_mv fun u₂ h₂ => wp_mv fun u₃ h₃ => wp_mv fun u₄ h₄ =>
+    wp_mv fun u₅ h₅ => wp_mv fun u₆ h₆ => ?_
+  have m₆ : u₆.mem = u.mem := by rw [h₆.mem, h₅.mem, h₄.mem, h₃.mem, h₂.mem, h₁.mem]
+  have g₆ : ∀ r, r ∉ signRegs → u₆.gpr r = u.gpr r := fun r hr => by
+    simp only [signRegs, List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    obtain ⟨a, b, c, d, e, f⟩ := hr
+    rw [h₆.other _ f, h₅.other _ e, h₄.other _ d, h₃.other _ c, h₂.other _ a, h₁.other _ b]
+  have gu : ∀ r, u.gpr r = s.gpr r := fun r => hu.gpr r (by simp)
+  have rd₆ : u₆.rd = s.rd := by rw [h₆.rd, h₅.rd, h₄.rd, h₃.rd, h₂.rd, h₁.rd, hu.rd]
+  have wr₆ : u₆.wr = s.wr := by rw [h₆.wr, h₅.wr, h₄.wr, h₃.wr, h₂.wr, h₁.wr, hu.wr]
+  have sp₆ : u₆.sp = s.sp := by rw [h₆.sp, h₅.sp, h₄.sp, h₃.sp, h₂.sp, h₁.sp, hu.sp]
+  have e2 : u₆.gpr .a2 = s.gpr .a2 := by rw [g₆ _ (by decide), gu]
+  have e11 : u₆.gpr .s11 = s.gpr .a6 := by rw [h₆.gpr, h₅.other _ (by decide), h₄.other _ (by decide), h₃.other _ (by decide), h₂.other _ (by decide), h₁.other _ (by decide), gu]
+  have hP : (⟨s.gpr .a2, 32⟩ : Region) ∈ s.rd := by rw [hp.rd]; simp
+  rw [← List.append_nil (copyIn .a2 .s11 192)]
+  refine copyIn_ok (P := s.gpr .a2) (F := s.gpr .a6) (o := 192) (by decide) (by decide) e2 e11 (by decide)
+    (fun i hi => by rw [rd₆, wr₆]; exact in_base (List.mem_append_left _ hP) (by omega_using [hi]) (by omega_using [hi]))
+    (fun i hi => by rw [wr₆]; exact in_base hF (by omega_using [hi]) (by omega_using [hi]))
+    (hp.pF.sub_right (Offset.sub_base _ (by decide))) fun t ht hft hb => WP.block_nil ?_
+  have fin : Frame [slotArea (s.gpr .a6) 224 signRegs, ⟨s.gpr .a6 + BitVec.ofNat 64 192, 32⟩] s.mem t.mem :=
+    (hfr.mono (by simp)).trans (by rw [m₆] at hft; exact hft.mono (by simp))
+  refine ⟨⟨by rw [ht.rd, rd₆], by rw [ht.wr, wr₆], by rw [ht.sp, sp₆], fun r hr => ?_, fun r hr hn => ?_, ?_,
+    fin.sub fun r hr => ?_⟩, ?_⟩
+  · rw [ht.gpr r (by revert hr; decide +revert)]
+    simp only [signRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
+    · rw [h₆.other _ (by decide), h₅.other _ (by decide), h₄.other _ (by decide), h₃.other _ (by decide),
+        h₂.gpr, h₁.other _ (by decide), gu]; rfl
+    · rw [h₆.other _ (by decide), h₅.other _ (by decide), h₄.other _ (by decide), h₃.other _ (by decide),
+        h₂.other _ (by decide), h₁.gpr, gu]; rfl
+    · rw [h₆.other _ (by decide), h₅.other _ (by decide), h₄.other _ (by decide), h₃.gpr, h₂.other _ (by decide), h₁.other _ (by decide), gu]; rfl
+    · rw [h₆.other _ (by decide), h₅.other _ (by decide), h₄.gpr, h₃.other _ (by decide), h₂.other _ (by decide), h₁.other _ (by decide), gu]; rfl
+    · rw [h₆.other _ (by decide), h₅.gpr, h₄.other _ (by decide), h₃.other _ (by decide), h₂.other _ (by decide), h₁.other _ (by decide), gu]; rfl
+    · rw [e11]; rfl
+  · have h5 : r ∉ [Reg.a5] := by
+      simp only [List.mem_singleton]; intro e; rw [e] at hr; exact absurd hr (by decide)
+    rw [ht.gpr r h5, g₆ r hn, gu r]
+  · refine (hsv.frame_in (slots_in 224 signRegs) (m₆ ▸ hft) fun r hr => ?_)
+    rw [List.mem_singleton.mp hr]
+    exact (Offset.disjoint _ (.inr (by decide)) (by decide) (by decide))
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact ⟨⟨s.gpr .a6, 288⟩, by simp, Offset.sub_base _ (by decide)⟩
+    · exact ⟨⟨s.gpr .a6, 288⟩, by simp, Offset.sub_base _ (by decide)⟩
+  · rw [hb]
+    simp only [Spec.Ed25519.bytesAt]
+    refine List.map_congr_left fun i hi => ?_
+    have hi' := List.mem_range.mp hi
+    rw [m₆]
+    exact hfr _ fun r hr => by
+      rw [List.mem_singleton.mp hr]
+      exact fun hc => (hp.pF.sub_right (Offset.sub_base _ (by decide))) _
+        (Offset.contains_base _ (by omega_using [hi']) (by omega_using [hi'])) hc
+
+/-- The regions a step of the body may write: the scratch space, the callees' frames, `out`, its
+halves, or the frame below the slots. -/
+def SignWr (s : State) (r : Region) : Prop :=
+  r = ⟨s.gpr .a5, 8192⟩ ∨ r = below s.sp 208 ∨ r = ⟨s.gpr .a0, 64⟩ ∨ r = ⟨s.gpr .a0 + BitVec.ofNat 64 32, 32⟩ ∨
+    r = ⟨s.gpr .a0, 32⟩ ∨ ∃ d n, d + n ≤ 224 ∧ r = ⟨s.gpr .a6 + BitVec.ofNat 64 d, n⟩
+
+theorem signStep {s t t' : State} (hp : SignPre sl s) (h : SignInv s t) (hrd : t'.rd = t.rd)
+    (hwr : t'.wr = t.wr) (hsp : t'.sp = t.sp) (hg : ∀ r ∈ preserved, t'.gpr r = t.gpr r) {Wc : List Region}
+    (hf : Frame Wc t.mem t'.mem) (hW : ∀ r ∈ Wc, SignWr s r) : SignInv s t' := by
+  obtain ⟨h₁, h₂, h₃, h₄⟩ := sign_slot hp
+  refine Inv.step h signRegs_pres hrd hwr hsp hg hf (fun r hr => ?_) fun r hr => ?_
+  · rcases hW r hr with rfl | rfl | rfl | rfl | rfl | ⟨d, n, hdn, rfl⟩
+    · exact ⟨_, by simp, fun _ h => h⟩
+    · exact ⟨_, by simp, fun _ h => h⟩
+    · exact ⟨_, by simp, fun _ h => h⟩
+    · exact ⟨⟨s.gpr .a0, 64⟩, by simp, Offset.sub_base _ (by decide)⟩
+    · exact ⟨⟨s.gpr .a0, 64⟩, by simp, Region.sub_prefix (by decide)⟩
+    · exact ⟨⟨s.gpr .a6, 288⟩, by simp, Offset.sub_base _ (by omega_using [hdn])⟩
+  · rcases hW r hr with rfl | rfl | rfl | rfl | rfl | ⟨d, n, hdn, rfl⟩
+    · exact h₂
+    · exact h₃
+    · exact h₁
+    · exact h₁.sub_right (Offset.sub_base _ (by decide))
+    · exact h₁.sub_right (Region.sub_prefix (by decide))
+    · exact h₄ d n hdn
+
+end VG.Proof.Ed25519.RISCV64.Whole
+
+end
+
+end
+
+/-!
+# `vg_ed25519_sign_expanded` on RISCV64: the secret scalar and the nonce's prefix
+
+The seed's digest, at `expanded`, copied to `128(F)` (`signCopy_ok`); then,
+after any first step that leaves the digest there, its first half pruned
+into `0(F)` and its second half copied to `32(F)` (`signExpandWith_ok`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ed25519.RISCV64.Whole
+
+open VG VG.RISCV64 VG.RISCV64.Steps VG.Impl.Ed25519.RISCV64.Whole VG.Proof.X25519.RISCV64
+open VG.Spec.Ed25519 (bytesAt decodeLE encodeLE)
+
+variable {sl : Nat}
+
+theorem sign_env {s t : State} (hp : SignPre sl s) (h : SignInv s t) : ScEnv (s.gpr .a5) t :=
+  ⟨by rw [h.wr, hp.wr]; simp, by rw [h.sp]; exact hp.spal, by rw [h.sp]; exact hp.sp, by rw [h.sp]; exact hp.bC⟩
+
+theorem sign_Fw {s t : State} (hp : SignPre sl s) (h : SignInv s t) : (⟨s.gpr .a6, 288⟩ : Region) ∈ t.wr := by
+  rw [h.wr, hp.wr]; simp
+
+theorem sign_inF {s t : State} (hp : SignPre sl s) (h : SignInv s t) {d : Nat} (hd : d + 8 ≤ 288) :
+    InRegions t.wr (s.gpr .a6 + BitVec.ofNat 64 d) 8 := in_base (sign_Fw hp h) hd (by omega_arith)
+
+theorem sign_inF' {s t : State} (hp : SignPre sl s) (h : SignInv s t) {d : Nat} (hd : d + 8 ≤ 288) :
+    InRegions (t.rd ++ t.wr) (s.gpr .a6 + BitVec.ofNat 64 d) 8 :=
+  in_base (List.mem_append_right _ (sign_Fw hp h)) hd (by omega_arith)
+
+/-- An input, while the body runs. -/
+theorem sign_input {s t : State} (h : SignInv s t) {p : Addr} {n : Nat} (hn : n < 2 ^ 64)
+    (hO : Region.Disjoint ⟨p, n⟩ ⟨s.gpr .a0, 64⟩) (hC : Region.Disjoint ⟨p, n⟩ ⟨s.gpr .a5, 8192⟩)
+    (hF : Region.Disjoint ⟨p, n⟩ ⟨s.gpr .a6, 288⟩) (hB : Region.Disjoint ⟨p, n⟩ (below s.sp 208)) :
+    bytesAt t.mem p n = bytesAt s.mem p n :=
+  bytes_keep h.frame hn fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl
+    · exact hO
+    · exact hC
+    · exact hF
+    · exact hB
+
+/-- What the first step and the expansion write: the scratch space, the frame below its copy of
+`pk`, the callees' frames. -/
+abbrev expW (s : State) : List Region := [⟨s.gpr .a5, 8192⟩, ⟨s.gpr .a6, 192⟩, below s.sp 208]
+
+/-- The seed's digest, at `expanded`, copied to `128(F)`. -/
+theorem signCopy_ok {s t : State} (hp : SignPre 64 s) (h : SignInv s t) :
+    WP isa signCopy t fun t' => SignInv s t' ∧ Frame (expW s) t.mem t'.mem ∧
+      bytesAt t'.mem (s.gpr .a6 + BitVec.ofNat 64 128) 64 = bytesAt s.mem (s.gpr .a1) 64 := by
+  have hS : (⟨s.gpr .a1, 64⟩ : Region) ∈ t.rd := by rw [h.rd, hp.rd]; simp
+  unfold signCopy
+  rw [← List.append_nil (copyIn .s1 .s11 128 64)]
+  refine copyIn_ok (P := s.gpr .a1) (F := s.gpr .a6) (o := 128) (n := 64) (by decide) (by decide)
+    (h.regs _ (by decide)) (h.regs _ (by decide)) (by decide)
+    (fun i hi => in_base (List.mem_append_left _ hS) (by omega_using [hi]) (by omega_using [hi]))
+    (fun i hi => in_base (sign_Fw hp h) (by omega_using [hi]) (by omega_using [hi]))
+    (hp.sF.sub_right (Offset.sub_base _ (by decide))) fun u hu hfu hb => WP.block_nil ?_
+  refine ⟨signStep hp h hu.rd hu.wr hu.sp (fun r hr => hu.gpr r (by revert hr; cases r <;> decide)) hfu
+      fun r hr => by
+        rw [List.mem_singleton.mp hr]; exact .inr (.inr (.inr (.inr (.inr ⟨128, 64, by decide, rfl⟩)))),
+    hfu.sub fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact ⟨⟨s.gpr .a6, 192⟩, by simp, Offset.sub_base _ (by decide)⟩, ?_⟩
+  rw [hb, sign_input h (by decide) hp.oS.symm hp.sC hp.sF hp.bS.symm]
+
+/-- The pruning of the digest `D` at `128(F)` into `0(F)` and the copy of its second half to
+`32(F)`, after the first step, which leaves `D` there. -/
+theorem signExpandWith_ok {first : Prog isa} {D : List Byte} {s t : State} (hp : SignPre sl s)
+    (hf : WP isa first t fun t' => SignInv s t' ∧ Frame (expW s) t.mem t'.mem ∧
+      bytesAt t'.mem (s.gpr .a6 + BitVec.ofNat 64 128) 64 = D) :
+    WP isa (signExpandWith first) t fun t' => SignInv s t' ∧ Frame (expW s) t.mem t'.mem ∧
+      bytesAt t'.mem (s.gpr .a6) 32 = encodeLE 32 (Spec.Ed25519.prune D) ∧
+      bytesAt t'.mem (s.gpr .a6 + BitVec.ofNat 64 32) 32 = D.drop 32 := by
+  unfold signExpandWith
+  refine WP.seq (WP.mono hf fun t₄ ⟨h₄, f₄, dg⟩ => ?_)
+  -- The pruning, and the copy of the second half.
+  refine prune_ok (f := .s11) (F := s.gpr .a6) (d := 128) (o := 0) (by decide) (h₄.regs _ (by decide)) hp.alF
+    (by decide) (by decide) (by decide) (fun k hk => sign_inF' hp h₄ (by omega_arith)) (fun k hk => sign_inF hp h₄ (by omega_arith))
+    fun u hu hfu hpr => ?_
+  have hu' : SignInv s u := signStep hp h₄ hu.rd hu.wr hu.sp
+    (fun r hr => hu.gpr r (by revert hr; cases r <;> decide)) hfu fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact .inr (.inr (.inr (.inr (.inr ⟨0, 32, by decide, rfl⟩))))
+  rw [← List.append_nil (copy32 .s11 160 32)]
+  refine copy_ok (A := s.gpr .a6) (B := s.gpr .a6) (da := fun k => 160 + 8 * k) (db := fun k => 32 + 8 * k)
+    (R := ⟨s.gpr .a6 + BitVec.ofNat 64 32, 32⟩) (by decide) (by decide)
+    (hu'.regs _ (by decide)) (hu'.regs _ (by decide)) (fun k hk => ⟨by omega_arith, Spill.al8 hp.alF (by omega_arith)⟩)
+    (fun k hk => ⟨by omega_arith, Spill.al8 hp.alF (by omega_arith)⟩) (fun k hk => sign_inF' hp hu' (by omega_arith)) (fun k hk => sign_inF hp hu' (by omega_arith))
+    (fun k hk => Offset.contains _ (by omega_arith) (by omega_arith) (by omega_arith))
+    (fun i hi j hj => Offset.sep _ (by omega_arith) (by omega_arith) (by omega_arith))
+    (fun i hi j hj hij => Offset.sep _ (by omega_arith) (by omega_arith) (by omega_arith)) fun v hv hfv hw => WP.block_nil ?_
+  have hv' : SignInv s v := signStep hp hu' hv.rd hv.wr hv.sp
+    (fun r hr => hv.gpr r (by revert hr; cases r <;> decide)) hfv fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact .inr (.inr (.inr (.inr (.inr ⟨32, 32, by decide, rfl⟩))))
+  have F0 : Region.Sub ⟨s.gpr .a6 + BitVec.ofNat 64 0, 32⟩ ⟨s.gpr .a6, 192⟩ := Offset.sub_base _ (by decide)
+  have F32 : Region.Sub ⟨s.gpr .a6 + BitVec.ofNat 64 32, 32⟩ ⟨s.gpr .a6, 192⟩ := Offset.sub_base _ (by decide)
+  refine ⟨hv', ?_, ?_, ?_⟩
+  · -- The writes: the first step's, the scalar's and the prefix's.
+    refine f₄.trans <| (hfu.sub fun r hr => ?_).trans (hfv.sub fun r hr => ?_)
+    · rw [List.mem_singleton.mp hr]; exact ⟨_, by simp, F0⟩
+    · rw [List.mem_singleton.mp hr]; exact ⟨_, by simp, F32⟩
+  · have e₁ : bytesAt v.mem (s.gpr .a6) 32 = bytesAt u.mem (s.gpr .a6) 32 :=
+      bytes_keep hfv (by decide) fun r hr => by
+        rw [List.mem_singleton.mp hr]; exact Offset.base_disjoint _ (by decide) (by decide)
+    have hdec : decodeLE (bytesAt u.mem (s.gpr .a6) 32) = Spec.Ed25519.prune D := by
+      have := hpr
+      rwa [BitVec.add_zero, dg] at this
+    rw [e₁, Proof.Ed25519.bytesAt_encodeLE, hdec]
+  · have e₁ : bytesAt v.mem (s.gpr .a6 + BitVec.ofNat 64 32) 32 =
+        bytesAt u.mem (s.gpr .a6 + BitVec.ofNat 64 160) 32 :=
+      bytes32_of_words fun k hk => by rw [Offset.add_add, Offset.add_add]; exact hw k hk
+    have e₂ : bytesAt u.mem (s.gpr .a6 + BitVec.ofNat 64 160) 32 =
+        bytesAt t₄.mem (s.gpr .a6 + BitVec.ofNat 64 160) 32 :=
+      bytes_keep hfu (by decide) fun r hr => by
+        rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inr (by decide)) (by decide) (by decide)
+    rw [e₁, e₂, show s.gpr .a6 + BitVec.ofNat 64 160 = s.gpr .a6 + BitVec.ofNat 64 128 + BitVec.ofNat 64 32 by
+      rw [Offset.add_add], ← Proof.Ed25519.signatureBytes_drop, dg]
+
+end VG.Proof.Ed25519.RISCV64.Whole
+
+end
+
+end
+
+/-!
+# `vg_ed25519_sign_expanded` on RISCV64: the nonce, and `R`
+
+The prefix at `32(F)` and the message hashed into `128(F)`, the digest
+reduced into the nonce at `64(F)` by a call of `vg_ed25519_scalar_reduce`,
+and `R = [r]B` encoded into `out` by a call of `vg_ed25519_scalar_base`
+(`signNonce_ok`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ed25519.RISCV64.Whole
+
+open VG VG.RISCV64 VG.RISCV64.Steps VG.Impl.Ed25519.RISCV64.Whole VG.Proof.X25519.RISCV64
+open VG.Spec.Ed25519 (bytesAt)
+open VG.Impl.Ed25519.RISCV64 (combSym)
+
+variable {sl : Nat}
+
+/-- The message's bytes. -/
+abbrev msgB (s : State) : List Byte := bytesAt s.mem (s.gpr .a3) (s.gpr .a4).toNat
+
+theorem msgB_length (s : State) : (msgB s).length = (s.gpr .a4).toNat := by simp [bytesAt]
+
+theorem sign_msg {s t : State} (hp : SignPre sl s) (h : SignInv s t) :
+    bytesAt t.mem (s.gpr .a3) (s.gpr .a4).toNat = msgB s :=
+  sign_input h (s.gpr .a4).isLt hp.oM.symm hp.mC hp.mF hp.bM.symm
+
+theorem sign_msg_cov {s t : State} (hp : SignPre sl s) (h : SignInv s t) : Covers [msgR s] (t.rd ++ t.wr) :=
+  fun a n hi => by
+    obtain ⟨r, hr, hc⟩ := hi
+    rw [h.rd, hp.rd]
+    exact ⟨r, List.mem_append_left _ (by rw [List.mem_singleton.mp hr]; simp), hc⟩
+
+/-- The message fits beside the scratch space. -/
+theorem sign_len {s : State} (hp : SignPre sl s) : (s.gpr .a4).toNat + 8192 ≤ 2 ^ 64 :=
+  len_add_le (Nat.le_of_lt (s.gpr .a4).isLt) (by decide) hp.mC
+
+theorem signNonce_ok (C : ShaOK) (B : BaseOk) {s t : State} (hp : SignPre sl s) (h : SignInv s t) {P : List Byte}
+    (hP : bytesAt t.mem (s.gpr .a6 + BitVec.ofNat 64 32) 32 = P) (hsy : t.syms combSym = s.syms combSym) :
+    WP isa signNonce t fun t' => SignInv s t' ∧
+      Frame [⟨s.gpr .a5, 8192⟩, ⟨s.gpr .a6 + BitVec.ofNat 64 64, 128⟩, below s.sp 208, ⟨s.gpr .a0, 32⟩]
+        t.mem t'.mem ∧
+      bytesAt t'.mem (s.gpr .a6 + BitVec.ofNat 64 64) 32 =
+        Spec.Ed25519.scalarReduce (Spec.Sha512.sha512 (P ++ msgB s)) ∧
+      bytesAt t'.mem (s.gpr .a0) 32 =
+        Spec.Ed25519.scalarBase (Spec.Ed25519.scalarReduce (Spec.Sha512.sha512 (P ++ msgB s))) := by
+  obtain hPl : P.length = 32 := by rw [← hP]; simp [bytesAt]
+  obtain hlen := sign_len hp
+  -- The hashes write the scratch space and the callees' frames.
+  obtain toL : ∀ {m m' : Mem} {sp : Addr}, sp = s.sp → Frame [⟨s.gpr .a5, 8192⟩, below sp 208] m m' →
+      Frame [⟨s.gpr .a5, 8192⟩, ⟨s.gpr .a6 + BitVec.ofNat 64 64, 128⟩, below s.sp 208, ⟨s.gpr .a0, 32⟩] m m' :=
+    fun e hf => by subst e; exact hf.mono (by simp)
+  obtain scW : ∀ {t : State}, SignInv s t → ∀ r ∈ [(⟨s.gpr .a5, 8192⟩ : Region), below t.sp 208], SignWr s r :=
+    fun h r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact .inl rfl
+      · exact .inr (.inl (by rw [h.sp]))
+  obtain F32 : Region.Sub ⟨s.gpr .a6 + BitVec.ofNat 64 32, 32⟩ ⟨s.gpr .a6, 288⟩ := Offset.sub_base _ (by decide)
+  obtain F64 : Region.Sub ⟨s.gpr .a6 + BitVec.ofNat 64 64, 32⟩ ⟨s.gpr .a6, 288⟩ := Offset.sub_base _ (by decide)
+  obtain F128 : Region.Sub ⟨s.gpr .a6 + BitVec.ofNat 64 128, 64⟩ ⟨s.gpr .a6, 288⟩ := Offset.sub_base _ (by decide)
+  unfold signNonce
+  refine WP.seq (WP.of_syms <| hashInit_ok C (sr := .s10) (h.regs _ (by decide)) (sign_env hp h)
+    fun t₂ a b c f₂ g hr₂ sy₂ => ?_)
+  obtain h₂ := signStep hp h a b c g f₂ (scW h)
+  refine WP.seq (WP.of_syms <| hashUpdate_ok C (sr := .s10) (src := .s11) (off := 32) (len := 32) (by decide)
+    (by decide) (by decide) (h₂.regs _ (by decide)) (by rw [h₂.regs _ (by decide)]; rfl)
+    (Sets.li (d := .a1) (k := 0) (by decide)) (Sets.li (d := .a3) (k := 32) (by decide))
+    (fun _ _ _ => rfl) (fun _ _ _ => rfl) rfl (sign_env hp h₂)
+    (Covers.of_sub fun r hr => by
+      rw [List.mem_singleton.mp hr]
+      exact ⟨_, List.mem_append_right _ (sign_Fw hp h₂), 32, rfl, show 32 + 32 ≤ 288 by decide⟩)
+    (hp.cF.symm.sub_left F32) (by rw [h₂.sp]; exact hp.bF.sub_right F32) fun t₃ a b c f₃ g hr₃ sy₃ => ?_)
+  obtain h₃ := signStep hp h₂ a b c g f₃ (scW h₂)
+  obtain P₂ : bytesAt t₂.mem (s.gpr .a6 + BitVec.ofNat 64 32) 32 = P := by
+    rw [← hP]
+    exact bytes_keep f₂ (by decide) fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact hp.cF.symm.sub_left F32
+      · rw [h.sp]; exact hp.bF.symm.sub_left F32
+  obtain r₃ : Repr t₃.mem (s.gpr .a5) P := by
+    have := hr₃ [] hr₂ rfl
+    rwa [List.nil_append, P₂] at this
+  refine WP.seq (WP.of_syms <| hashUpdate_ok C (sr := .s10) (src := .s8) (off := 0) (len := (s.gpr .a4).toNat) (by decide)
+    (by decide) (by decide) (h₃.regs _ (by decide))
+    (by rw [h₃.regs _ (by decide), BitVec.add_zero]; rfl)
+    (Sets.li (d := .a1) (k := 32) (by decide)) (Sets.mov (d := .a3) (n := .s9))
+    (fun _ _ _ => rfl) (fun g g' hg => by rw [hg .s9 (by decide) (by decide) (by decide)])
+    (by rw [h₃.regs _ (by decide)]; rfl) (sign_env hp h₃) (sign_msg_cov hp h₃)
+    hp.mC (by rw [h₃.sp]; exact hp.bM) fun t₄ a b c f₄ g hr₄ sy₄ => ?_)
+  obtain h₄ := signStep hp h₃ a b c g f₄ (scW h₃)
+  obtain r₄ : Repr t₄.mem (s.gpr .a5) (P ++ msgB s) := by
+    have := hr₄ P r₃ (by rw [hPl])
+    rwa [sign_msg hp h₃] at this
+  refine WP.seq (WP.of_syms <| hashFinalize_ok C (sr := .s10) (f := .s11) (o := 128) (out := s.gpr .a6 + BitVec.ofNat 64 128)
+    (vc := fun g => g .s9 + BitVec.ofNat 64 32)
+    (by decide) (by decide) (by decide) (h₄.regs _ (by decide))
+    (by rw [h₄.regs _ (by decide)]; rfl)
+    (Sets.addi (d := .a1) (n := .s9) (k := 32) (by decide)) (fun g g' hg => by rw [hg .s9 (by decide)])
+    (sign_env hp h₄)
+    (Covers.of_sub fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact ⟨_, sign_Fw hp h₄, 128, rfl, show 128 + 64 ≤ 288 by decide⟩)
+    (hp.cF.symm.sub_left F128) (by rw [h₄.sp]; exact hp.bF.sub_right F128) fun t₅ a b c f₅ g hd₅ sy₅ => ?_)
+  obtain h₅ := signStep hp h₄ a b c g f₅ (fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact .inl rfl
+    · exact .inr (.inr (.inr (.inr (.inr ⟨128, 64, by decide, rfl⟩))))
+    · exact .inr (.inl (by rw [h₄.sp])))
+  obtain dg : bytesAt t₅.mem (s.gpr .a6 + BitVec.ofNat 64 128) 64 = Spec.Sha512.sha512 (P ++ msgB s) :=
+    hd₅ _ r₄ (by rw [List.length_append, hPl, msgB_length]; omega_using [hlen])
+      (by rw [h₄.regs _ (by decide), List.length_append, hPl, msgB_length, cnt_eq]; rfl)
+  -- The nonce: `scalar_reduce`.
+  obtain sF : Region.Disjoint ⟨s.gpr .a6 + BitVec.ofNat 64 64, 32⟩ ⟨s.gpr .a6 + BitVec.ofNat 64 128, 64⟩ :=
+    Offset.disjoint _ (.inl (by decide)) (by decide) (by decide)
+  obtain hFw := sign_Fw hp h₅
+  obtain hCw : (⟨s.gpr .a5, 8192⟩ : Region) ∈ t₅.wr := (sign_env hp h₅).w
+  obtain hOw : (⟨s.gpr .a0, 64⟩ : Region) ∈ t₅.wr := by rw [h₅.wr, hp.wr]; simp
+  unfold mov
+  refine WP.seq (WP.of_syms <| args3_ok (by decide) (by decide) (by decide) (by decide) (by decide) fun t₆ k₆ c3 c4 c5 sy₆ => ?_)
+  rw [h₅.regs _ (by decide), signV_s11] at c3 c4
+  rw [h₅.regs _ (by decide), BitVec.add_zero, signV_s10] at c5
+  obtain ce : ∀ (u : State) q, q ∉ linkRegs → ∀ rd wr, (u.callEntry.withRegions rd wr).gpr q = u.gpr q :=
+    fun _ q hq _ _ => by rw [State.withRegions_gpr, State.callEntry_gpr _ hq]
+  refine WP.seq (WP.of_syms <| WP.call (k := reduceRISCV64) reduce_ok' (rd := [⟨s.gpr .a6 + BitVec.ofNat 64 128, 64⟩])
+    (wr := [⟨s.gpr .a6 + BitVec.ofNat 64 64, 32⟩, ⟨s.gpr .a5, 8192⟩])
+    ⟨by rw [State.withRegions_rd, ce _ _ (by decide), c4],
+      by rw [State.withRegions_wr, ce _ _ (by decide), ce _ _ (by decide), c3, c5],
+      by rw [ce _ _ (by decide), ce _ _ (by decide), c3, c4]; exact sF,
+      by rw [ce _ _ (by decide), ce _ _ (by decide), c3, c5]; exact hp.cF.symm.sub_left F64,
+      by rw [ce _ _ (by decide), ce _ _ (by decide), c4, c5]; exact hp.cF.symm.sub_left F128⟩
+    (Covers.of_sub fun r hr => by
+      rw [k₆.rd, k₆.wr]
+      simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact ⟨_, List.mem_append_right _ hFw, 128, rfl, show 128 + 64 ≤ 288 by decide⟩
+      · exact ⟨_, List.mem_append_right _ hFw, 64, rfl, show 64 + 32 ≤ 288 by decide⟩
+      · exact ⟨_, List.mem_append_right _ hCw, 0, by simp, by simp⟩)
+    (Covers.of_sub fun r hr => by
+      rw [k₆.wr]
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact ⟨_, hFw, 64, rfl, show 64 + 32 ≤ 288 by decide⟩
+      · exact ⟨_, hCw, 0, by simp, by simp⟩) (fun t₇ a b c f₇ g _ hpost sy₇ => ?_) (by decide +kernel))
+  simp only [reduceRISCV64, State.withRegions_mem, State.withRegions_gpr, State.callEntry_mem,
+    State.callEntry_gpr _ (show Reg.a0 ∉ linkRegs by decide), State.callEntry_gpr _ (show Reg.a1 ∉ linkRegs by decide),
+    c3, c4, k₆.mem, dg] at hpost
+  obtain h₇ := signStep hp h₅ (a.trans k₆.rd) (b.trans k₆.wr) (c.trans k₆.sp)
+    (fun r hr => (g r hr).trans (k₆.pres r hr)) (k₆.mem ▸ f₇) fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact .inr (.inr (.inr (.inr (.inr ⟨64, 32, by decide, rfl⟩))))
+      · exact .inl rfl
+  -- `R`: `scalar_base`.
+  refine WP.seq (WP.of_syms <| args3_ok (by decide) (by decide) (by decide) (by decide) (by decide) fun t₈ k₈ d3 d4 d5 sy₈ => ?_)
+  rw [h₇.regs _ (by decide), BitVec.add_zero] at d3 d5
+  rw [signV_s7] at d3
+  rw [signV_s10] at d5
+  rw [h₇.regs _ (by decide), signV_s11] at d4
+  obtain sy : t₈.syms combSym = s.syms combSym := by rw [sy₈, sy₇, sy₆, sy₅, sy₄, sy₃, sy₂, hsy]
+  obtain wd₈ : ∀ q < 64 * 96, t₈.mem.readW (s.syms combSym + BitVec.ofNat 64 (8 * q)) 64 =
+      Impl.Ed25519.RISCV64.combWord q := fun q hq => by
+    rw [← hp.words q hq, k₈.mem]
+    exact h₇.frame.readW (r := TBL (s.syms combSym)) (Offset.contains_base _ (by omega_using [hq]) (by omega_using [hq])) hp.tW
+      (by decide)
+  refine WP.call (k := baseRV) B (rd := [⟨s.gpr .a6 + BitVec.ofNat 64 64, 32⟩, TBL (s.syms combSym)])
+    (wr := [⟨s.gpr .a0, 32⟩, ⟨s.gpr .a5, 8192⟩])
+    (basePre_call d3 d4 d5 sy hp.alC (hp.oC.sub_left (Region.sub_prefix (by decide))) (hp.cF.symm.sub_left F64)
+      hp.tal hp.tfit wd₈ (hp.tW _ (by simp)))
+    (Covers.of_sub fun r hr => by
+      rw [k₈.rd, k₈.wr, h₇.wr, h₇.rd]
+      simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl
+      · exact ⟨⟨s.gpr .a6, 288⟩, List.mem_append_right _ (by rw [hp.wr]; simp), 64, rfl,
+          show 64 + 32 ≤ 288 by decide⟩
+      · exact ⟨TBL (s.syms combSym), List.mem_append_left _ (by rw [hp.rd]; simp), 0, by simp, by simp⟩
+      · exact ⟨⟨s.gpr .a0, 64⟩, List.mem_append_right _ (by rw [hp.wr]; simp), 0, by simp, by simp⟩
+      · exact ⟨⟨s.gpr .a5, 8192⟩, List.mem_append_right _ (by rw [hp.wr]; simp), 0, by simp, by simp⟩)
+    (Covers.of_sub fun r hr => by
+      rw [k₈.wr, h₇.wr, hp.wr]
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact ⟨⟨s.gpr .a0, 64⟩, by simp, 0, by simp, by simp⟩
+      · exact ⟨⟨s.gpr .a5, 8192⟩, by simp, 0, by simp, by simp⟩) (fun t₉ a b c f₉ g _ hpost' => ?_) (by decide +kernel)
+  simp only [baseRV, State.withRegions_mem, State.withRegions_gpr, State.callEntry_mem,
+    State.callEntry_gpr _ (show Reg.a0 ∉ linkRegs by decide), State.callEntry_gpr _ (show Reg.a1 ∉ linkRegs by decide),
+    d3, d4, k₈.mem] at hpost'
+  obtain h₉ := signStep hp h₇ (a.trans k₈.rd) (b.trans k₈.wr) (c.trans k₈.sp)
+    (fun r hr => (g r hr).trans (k₈.pres r hr)) (k₈.mem ▸ f₉) fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact .inr (.inr (.inr (.inr (.inl rfl))))
+      · exact .inl rfl
+  obtain keepN : bytesAt t₉.mem (s.gpr .a6 + BitVec.ofNat 64 64) 32 = bytesAt t₇.mem (s.gpr .a6 + BitVec.ofNat 64 64) 32 := by
+    rw [← k₈.mem]
+    exact bytes_keep f₉ (by decide) fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact hp.oF.symm.sub_left F64 |>.sub_right (Region.sub_prefix (by decide))
+      · exact hp.cF.symm.sub_left F64
+  refine ⟨h₉, ?_, by rw [keepN, hpost], by rw [hpost', hpost]⟩
+  -- The writes.
+  obtain L64 : Region.Sub ⟨s.gpr .a6 + BitVec.ofNat 64 64, 32⟩ ⟨s.gpr .a6 + BitVec.ofNat 64 64, 128⟩ :=
+    Region.sub_prefix (by decide)
+  obtain L128 : Region.Sub ⟨s.gpr .a6 + BitVec.ofNat 64 128, 64⟩ ⟨s.gpr .a6 + BitVec.ofNat 64 64, 128⟩ := by
+    have := Offset.sub (s.gpr .a6) (d := 128) (n := 64) (e := 64) (k := 128) (by decide) (by decide)
+    exact this
+  obtain g₅ : Frame [⟨s.gpr .a5, 8192⟩, ⟨s.gpr .a6 + BitVec.ofNat 64 64, 128⟩, below s.sp 208, ⟨s.gpr .a0, 32⟩]
+      t₄.mem t₅.mem := f₅.sub fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact ⟨_, List.mem_cons_self, fun _ h => h⟩
+    · exact ⟨_, by simp, L128⟩
+    · exact ⟨below s.sp 208, by simp, by rw [h₄.sp]; exact fun _ h => h⟩
+  obtain g₇ : Frame [⟨s.gpr .a5, 8192⟩, ⟨s.gpr .a6 + BitVec.ofNat 64 64, 128⟩, below s.sp 208, ⟨s.gpr .a0, 32⟩]
+      t₅.mem t₇.mem := by
+    rw [← k₆.mem]
+    exact f₇.sub fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact ⟨_, by simp, L64⟩
+      · exact ⟨_, List.mem_cons_self, fun _ h => h⟩
+  obtain g₉ : Frame [⟨s.gpr .a5, 8192⟩, ⟨s.gpr .a6 + BitVec.ofNat 64 64, 128⟩, below s.sp 208, ⟨s.gpr .a0, 32⟩]
+      t₇.mem t₉.mem := by
+    rw [← k₈.mem]
+    exact f₉.sub fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact ⟨_, by simp, fun _ h => h⟩
+      · exact ⟨_, List.mem_cons_self, fun _ h => h⟩
+  exact (toL h.sp f₂).trans <| (toL h₂.sp f₃).trans <| (toL h₃.sp f₄).trans <| g₅.trans <| g₇.trans g₉
+
+end VG.Proof.Ed25519.RISCV64.Whole
+
+end
+
+end
 
 /-! ### `Ed25519.RISCV64.Whole.ByRegister`, which only this module used -/
 

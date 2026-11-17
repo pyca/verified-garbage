@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Seal
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Base
+import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.BlkCall
 import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
 
 /-!

@@ -1,9 +1,8 @@
 module
-public import VerifiedGarbage.Proof.X25519.Arm.Ladder
-public import VerifiedGarbage.Proof.X25519.Bytes
 
+public import VerifiedGarbage.Proof.X25519.Arm.Invert
+public import VerifiedGarbage.Proof.X25519.Bytes
 import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Proof.X25519.Arm.Invert
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith

@@ -9,7 +9,7 @@ meta import VerifiedGarbage.Proof.Bignum.PPC64LE.MontCT
 meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Bignum.Minv32
+import VerifiedGarbage.Proof.Bignum.PPC64LE.MontFn
 
 /-!
 # The Miller–Rabin round on PPC64LE: constant time

@@ -1,7 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.EncMulY
-import VerifiedGarbage.Proof.MlKem.X86_64.KgMul16
+public import VerifiedGarbage.Proof.MlKem.X86_64.KgMul16
 import VerifiedGarbage.Proof.MlKem.X86_64.Lit
 import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 public import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr

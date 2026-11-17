@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Cmac.Stream
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.AesSiv.RISCV64.FinRaw
+import VerifiedGarbage.Proof.AesSiv.RISCV64.Mac
 import VerifiedGarbage.Proof.CmacAes.RISCV64.Finalize
 
 /-!

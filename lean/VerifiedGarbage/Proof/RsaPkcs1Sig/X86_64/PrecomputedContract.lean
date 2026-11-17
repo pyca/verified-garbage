@@ -2,8 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.RsaPkcs1Sig.X86_64.Precomputed
 public import VerifiedGarbage.Proof.Rsa.X86_64.PublicImpl
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.PrecomputedCtx
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.PrecomputedCall
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.PrecomputedCall
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCorrect
 import VerifiedGarbage.Proof.Framework.Offset

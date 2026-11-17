@@ -27,7 +27,7 @@ import VerifiedGarbage.Proof.Ffdh.Lead
 import VerifiedGarbage.Proof.Ffdh.Domain
 import VerifiedGarbage.Proof.Ffdh.ContextRows
 import VerifiedGarbage.Proof.Bignum.Octets
-import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Prepare
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Ctx
 import VerifiedGarbage.Proof.Framework.CallLay
 meta import VerifiedGarbage.Proof.Ffdh.X86.Checks
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc

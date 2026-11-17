@@ -1,16 +1,14 @@
 module
 
 -- separate module: this consolidated proof replays 0.79s of elaboration/kernel work versus 0.28s importing its dependencies (local Lean trace); retaining the boundary avoids replaying it in its sole importer.
-
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Native.LookupCode
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Native.LookupEntry
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Native.LookupStoreVectors
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.P521Native.OuterBlocks
 import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.Lit
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Native.LookupStoreVectors
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Weierstrass.AArch64.MontSaves

@@ -8,16 +8,14 @@ public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.ExpandMask
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.BallCT
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Backend
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Prims
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Verified
 import VerifiedGarbage.Proof.MlDsa.Sign.Leak
-import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
+public import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
 import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
-public import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
 public import VerifiedGarbage.Proof.Framework.X86_64.Taint
 public import VerifiedGarbage.Proof.MlDsa.Arith.Representation
 public import VerifiedGarbage.Proof.MlDsa.Sign.Iter
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Call
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Glue
 public import VerifiedGarbage.Spec.MlDsa
 public import VerifiedGarbage.Spec.Sha3
 public import VerifiedGarbage.TCB.X86_64.Target

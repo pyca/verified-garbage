@@ -7,7 +7,7 @@ public import VerifiedGarbage.Proof.Dsa.X86.CoreFrame
 public import VerifiedGarbage.Proof.Weierstrass.PointContract
 public import VerifiedGarbage.Impl.Dsa.X86.Shape
 public import VerifiedGarbage.Proof.Framework.RelCT
-import VerifiedGarbage.Proof.Dsa.X86.ShapeInspectP
+import VerifiedGarbage.Proof.Dsa.X86.ShapeModuli
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Dsa.X86.ValidationBlocksTiming

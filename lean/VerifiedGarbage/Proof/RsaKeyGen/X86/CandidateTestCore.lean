@@ -1,9 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.CandidateTest
-import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidatePrepareInput
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidatePrepareInput
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.MillerRabinLoop
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.Prepare
 
 /-! # Prepared arithmetic and the complete blinded loop compose without re-reading entropy -/
 

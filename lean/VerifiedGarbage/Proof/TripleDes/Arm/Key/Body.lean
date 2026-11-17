@@ -5,9 +5,8 @@ import VerifiedGarbage.Proof.TripleDes.Arm.Bytes
 public import VerifiedGarbage.Impl.TripleDes.Arm.ExpandKey
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.TripleDes.Arm.WordStore
-import VerifiedGarbage.Proof.TripleDes.Arm.Word
-import VerifiedGarbage.Proof.Rc2.Arm.KeySteps
 import VerifiedGarbage.Proof.TripleDes.Arm.Key.Rotation
+import VerifiedGarbage.Proof.Rc2.Arm.KeySteps
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.TripleDes.Schedule
 public import VerifiedGarbage.Proof.Rc2.Arm.Lookup

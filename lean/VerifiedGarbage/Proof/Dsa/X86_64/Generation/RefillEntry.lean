@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Covers
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Memory
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.FrameStore
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntryState
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextSlice
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeometryWork

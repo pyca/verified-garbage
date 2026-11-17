@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.RISCV64.Pack.HintPack
-public import VerifiedGarbage.Proof.MlDsa.RISCV64.Pack.HintBase
 import VerifiedGarbage.Proof.MlDsa.Pack.HintMem
 import VerifiedGarbage.Proof.MlDsa.Pack.Mem
 import VerifiedGarbage.Proof.MlKem.Mem

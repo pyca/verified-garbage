@@ -7,7 +7,6 @@ public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.RowOp
 public import VerifiedGarbage.Proof.Weierstrass.Unch
 import VerifiedGarbage.Proof.Weierstrass.X86.InvShift
 import VerifiedGarbage.Proof.Weierstrass.X86.InvLinear
-import VerifiedGarbage.Proof.Weierstrass.X86.InvLinearMath
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Divstep.Tc32Words
 import VerifiedGarbage.Proof.Weierstrass.X86.InvRead

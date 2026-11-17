@@ -16,10 +16,8 @@ public import VerifiedGarbage.Proof.Framework.Inline
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Call
 public import VerifiedGarbage.Proof.Framework.PPC64LE.StraightK
 public import VerifiedGarbage.Spec.Cmac
-import VerifiedGarbage.Proof.AesCcm.PPC64LE.Chunk
 import VerifiedGarbage.Proof.AesCcm.PPC64LE.Crypt
 import VerifiedGarbage.Proof.AesCcm.PPC64LE.Ctrs
-import VerifiedGarbage.Proof.AesCcm.PPC64LE.Exit
 import VerifiedGarbage.Proof.AesCcm.PPC64LE.Mac
 import VerifiedGarbage.Proof.AesCcm.PPC64LE.Wp
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step

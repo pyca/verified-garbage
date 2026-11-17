@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Dsa.X86.Comb.Checking
 public import VerifiedGarbage.Impl.Dsa.X86.Generate
 public import VerifiedGarbage.Proof.Dsa.X86.DerivingABI
 public import VerifiedGarbage.Proof.Dsa.X86.Installed
-
 import VerifiedGarbage.Proof.Dsa.X86.InstalledInputs
 import VerifiedGarbage.Proof.Dsa.X86.ParameterBuffers
 import VerifiedGarbage.Proof.Dsa.X86.Comb.CanonicalFrame
@@ -15,7 +14,6 @@ import VerifiedGarbage.Proof.Dsa.X86.DerivingOperation
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Dsa.X86.ABIResources
 import VerifiedGarbage.Proof.Dsa.X86.DerivingResources
-import VerifiedGarbage.Proof.Dsa.X86.DeriveSized
 import VerifiedGarbage.Proof.Dsa.X86.Comb.DeriveCompute
 import VerifiedGarbage.Proof.Dsa.X86.GenerateParameters
 import VerifiedGarbage.Proof.Dsa.X86.ShapeSavedFrame
@@ -23,6 +21,7 @@ import VerifiedGarbage.Impl.Dsa.X86.Entry
 import VerifiedGarbage.Proof.Dsa.X86.CallerBuffer
 import VerifiedGarbage.Proof.Framework.X86.Spill
 import VerifiedGarbage.Spec.Dsa.Derive
+
 /-! # Derivation reads the caller's parameters and explicit scalar -/
 
 -- Formerly `VerifiedGarbage/Proof/Dsa/X86/Comb/DerivingSized.lean`, which only this module imported.

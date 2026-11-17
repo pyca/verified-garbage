@@ -1,16 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCallResult
+public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignSingle
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignPublic
 import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCallPre
 import VerifiedGarbage.Proof.Dsa.AArch64.SigningABI
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignSingle
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignRetryCT
 import VerifiedGarbage.Proof.Dsa.AArch64.CallFinishCT
-import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCallValue
-import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignArgsSaved
 import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCallMemory
 import VerifiedGarbage.Proof.Dsa.AArch64.RandomMemory
 import VerifiedGarbage.Proof.Bignum.Octets

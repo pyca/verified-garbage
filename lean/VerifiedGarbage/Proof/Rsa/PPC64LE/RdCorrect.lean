@@ -1,12 +1,11 @@
 module
--- separate module: builds in parallel with the constant time of the entry and the check (`RdCT1.lean`)
 
+-- separate module: builds in parallel with the constant time of the entry and the check (`RdCT1.lean`)
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.RdOps
 import VerifiedGarbage.Proof.Rsa.PPC64LE.RdTwos
 import VerifiedGarbage.Proof.Rsa.PPC64LE.RdGcd
-import VerifiedGarbage.Proof.Rsa.PPC64LE.RdProd
-import VerifiedGarbage.Proof.Rsa.PPC64LE.RdDiv
 import VerifiedGarbage.Proof.Rsa.PPC64LE.RdSquare
+import VerifiedGarbage.Proof.Rsa.PPC64LE.RdDiv
 import VerifiedGarbage.Proof.Rsa.PPC64LE.RdSqrt
 import VerifiedGarbage.Proof.Rsa.RecoverRoot
 import VerifiedGarbage.Proof.Rsa.PPC64LE.Seqs

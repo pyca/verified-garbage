@@ -2,14 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Front
 public import VerifiedGarbage.Spec.Ecdsa.Verify
-public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Generator
-public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Scalars
+public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Final
 import VerifiedGarbage.Proof.Framework.Arm.Syms
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Final
 import VerifiedGarbage.Proof.Ecdsa.Verify
 import VerifiedGarbage.Proof.Ecdh.Arm.Main
-import VerifiedGarbage.Proof.Weierstrass.Arm.Rep
+import VerifiedGarbage.Proof.Ecdsa.Arm.Main
 import VerifiedGarbage.Proof.Weierstrass.Pow
 import VerifiedGarbage.Proof.Weierstrass.Words
 public import VerifiedGarbage.Proof.Weierstrass.MulContract

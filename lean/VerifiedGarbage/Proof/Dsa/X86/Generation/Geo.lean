@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86.Generation.Hash
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.TestPre
 public import VerifiedGarbage.Spec.Dsa.Derive
 public import VerifiedGarbage.Proof.Dsa.Contract

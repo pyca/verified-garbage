@@ -1,7 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.DecompressMain
-import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.Candidate
+public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.DecompressMain
 import VerifiedGarbage.Proof.Framework.AArch64.LaneTaint
 meta import VerifiedGarbage.Proof.Framework.AArch64.LaneTaint
 import VerifiedGarbage.Proof.Weierstrass.Sqrt
@@ -19,8 +18,6 @@ meta import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.Contract
 public import VerifiedGarbage.Impl.EcKey.Compressed.AArch64.Decompress
 public import VerifiedGarbage.Impl.EcKey.Compressed.Root
 public import VerifiedGarbage.Impl.Ecdsa.P521.AArch64
-public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.DecompressContract
-public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.DecompressMiddle
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec

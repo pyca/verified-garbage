@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Gcm.PreparedPowers
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Frame
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Verified
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Verified
 public import VerifiedGarbage.Proof.AesGcm.X86_64.OpenTo.Verified
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Verified

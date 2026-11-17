@@ -22,7 +22,7 @@ selected length and the mask of the private-key operation's success
 /-! ## `vg_rsa_pkcs1_decrypt` on RISC-V: the scan of `EM`
 
 Untrusted: everything here is checked by Lean. As on PPC64LE
-(`Proof/RsaPkcs1Enc/PPC64LE/DecScan.lean`): the first zero of `EM` from index
+(`Proof/RsaPkcs1Enc/PPC64LE/DecSel.lean`): the first zero of `EM` from index
 2 (`scanPart_ok`): whether there is one as a mask in `a4`, and where in `a5`,
 as `firstZero` says.
 -/

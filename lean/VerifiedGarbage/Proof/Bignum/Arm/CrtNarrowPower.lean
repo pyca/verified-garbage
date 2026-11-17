@@ -1,15 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.WindowKernel
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtPoweredState
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtPrimePowerInput
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowShared
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtNarrowPower
 import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowEnter
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtStages
 import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowCopy
 import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowHalf
-import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowExp
 import VerifiedGarbage.Proof.Bignum.Arm.CrtSavedSources
 import VerifiedGarbage.Proof.Bignum.Arm.SavedOperandLayout
 import VerifiedGarbage.Proof.Bignum.Math
@@ -26,6 +23,212 @@ import VerifiedGarbage.Proof.Bignum.ByteWords
 import VerifiedGarbage.Proof.Mont.Words32
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Bignum.Layout
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtPowerSources
+public import VerifiedGarbage.Proof.Bignum.Arm.PrepareAcceptedPrime
+public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
+public import VerifiedGarbage.Proof.Bignum.Arm.WindowPhase
+public import VerifiedGarbage.Impl.Bignum.Arm.CrtLayout
+import VerifiedGarbage.Proof.Bignum.Arm.ExpControls
+public import VerifiedGarbage.Proof.Bignum.Arm.PublicBuffers
+public import VerifiedGarbage.Proof.Bignum.Arm.ExpPhaseInput
+import VerifiedGarbage.Proof.Bignum.Arm.Stack
+import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+public import VerifiedGarbage.Proof.Bignum.Arm.WindowPhaseCT
+
+/-! ### `Bignum.Arm.CrtNarrowExp`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Bignum.Arm.WindowKernel`, which this module and modules that import it used -/
+
+section
+
+/-! The CRT pipeline uses one exponentiation proof for every arithmetic kernel. -/
+
+@[expose] public section
+namespace VG.Proof.Bignum.Arm
+open VG VG.Arm VG.Impl.Bignum.Arm
+open VG.Proof.Rsa.Mont (numAt arrAt)
+open VG.Proof.X25519.Arm (Rest)
+
+structure WindowKernel where
+  code : Prog isa
+  correct : ∀ (s : State) {base ep : BitVec 32} {len w M x : Nat} {eb : List Byte},
+    ExpPhaseInput base ep len w M x eb s → arrAt w 16 ≤ 8 * len →
+    WP isa code s fun t => ArithmeticReady base len w t ∧
+      numAt t.mem (State.addr base) w 6 = Spec.Rsa.powMod x (Spec.Rsa.os2ip eb) M ∧
+      numAt t.mem (State.addr base) w 0 = M ∧
+      numAt t.mem (State.addr base) w 4 = 2 ^ (128 * w) % M ∧
+      numAt t.mem (State.addr base) w 7 = 1 ∧
+      Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t
+  ct : ∀ {base ep : BitVec 32} {len w M1 M2 x1 x2 : Nat} {eb1 eb2 : List Byte},
+    arrAt w 3 + 32 ≤ 8 * len → arrAt w 16 ≤ 8 * len → 0 < eb1.length →
+    eb1.length = eb2.length →
+    RelCT isa (fun s t => ExpPhaseInput base ep len w M1 x1 eb1 s ∧
+      ExpPhaseInput base ep len w M2 x2 eb2 t ∧ s.sp = t.sp) code (fun _ _ => True)
+
+def baselineWindowKernel : WindowKernel where
+  code := windowExpPhase
+  correct := windowExpPhase_ok
+  ct := windowExpPhase_ct
+
+end VG.Proof.Bignum.Arm
+
+end
+
+end
+
+/-! # The private exponentiation in the narrow workspace -/
+
+@[expose] public section
+
+namespace VG.Proof.Bignum.Arm
+open VG VG.Arm VG.Impl.Bignum.Arm VG.Impl.Bignum.Arm.Crt VG.Proof.Mont
+open VG.Proof.Rsa.Mont (numAt arrAt)
+open VG.Proof.X25519.Arm (Rest)
+
+/-- A prepared narrow workspace holding the reduced input, and the exponent's saved argument. -/
+structure NarrowExpInput (base ep : BitVec 32) (len v M x eLen es : Nat) (eb : List Byte) (s : State) : Prop where
+  ready : ArithmeticReady base len v s
+  modulus : numAt s.mem (State.addr base) v 0 = M
+  odd : M % 2 = 1
+  input : numAt s.mem (State.addr base) v 1 = x
+  r2 : numAt s.mem (State.addr base) v 4 = 2 ^ (128 * v) % M
+  stackFit : s.sp.toNat + es + 8 ≤ 2 ^ 32
+  slotSmall : es + 4 < 4096
+  pointerRead : InRegions (s.rd ++ s.wr) (off (State.addr s.sp) es) 4
+  countRead : InRegions (s.rd ++ s.wr) (off (State.addr s.sp) (es + 4)) 4
+  pointer : s.mem.readW (off (State.addr s.sp) es) 32 = ep
+  count : s.mem.readW (off (State.addr s.sp) (es + 4)) 32 = BitVec.ofNat 32 eLen
+  exponent : PublicBytes ep eLen eb s
+  separate : Region.Disjoint ⟨State.addr ep, eLen⟩ ⟨State.addr base, 8 * len⟩
+  positive : 0 < eLen
+  fits : eLen < 2 ^ 32
+  /-- Room for the windowed exponentiation's table after the eight arrays. -/
+  tableFits : arrAt v 16 ≤ 8 * len
+
+/-- A narrow workspace of a width at most the modulus's has room for the table. -/
+theorem table_fits {v W : Nat} (h : v ≤ W) : arrAt v 16 ≤ 8 * workspaceWords W := by
+  simp only [arrAt, Proof.Rsa.Mont.hdrBytes, workspaceWords]
+  omega_using [h]
+
+theorem crt_exponentArgs_ok (s : State) {base ep : BitVec 32} {len v M x eLen es : Nat} {eb : List Byte}
+    (h : NarrowExpInput base ep len v M x eLen es eb s) :
+    WP isa (.block (exponentArgs es)) s fun t =>
+      t.gpr .r1 = ep ∧ t.gpr .r2 = BitVec.ofNat 32 eLen ∧ t.mem = s.mem ∧ Rest [.r1, .r2] s t := by
+  have small := h.slotSmall
+  unfold exponentArgs
+  refine wp_loadStack (a := off (State.addr s.sp) es) (by omega_using [small])
+    (addr_add (by have := h.stackFit; omega_using [this])) h.pointerRead fun u a => ?_
+  refine wp_loadStack (a := off (State.addr s.sp) (es + 4)) (by omega_using [small])
+    (by rw [a.sp]; exact addr_add (by have := h.stackFit; omega_using [this])) (by rw [a.rd, a.wr]; exact h.countRead)
+    fun t b => WP.block_nil ?_
+  exact ⟨by rw [b.other .r1 (by decide), a.gpr, h.pointer], by rw [b.gpr, a.mem, h.count],
+    b.mem.trans a.mem, (a.rest (by decide)).trans (b.rest (by decide))⟩
+
+theorem NarrowExpInput.of_mem {s t : State} {base ep : BitVec 32} {len v M x eLen es : Nat} {eb : List Byte}
+    (h : NarrowExpInput base ep len v M x eLen es eb s) (mem : t.mem = s.mem) (rest : Rest [.r1, .r2] s t) :
+    NarrowExpInput base ep len v M x eLen es eb t := by
+  refine ⟨h.ready.of_mem mem rest ((rest.gpr .r0 (by decide)).trans h.ready.ptr), by rw [mem]; exact h.modulus, h.odd,
+    by rw [mem]; exact h.input, by rw [mem]; exact h.r2, by rw [rest.sp]; exact h.stackFit, h.slotSmall,
+    by rw [rest.rd, rest.wr, rest.sp]; exact h.pointerRead, by rw [rest.rd, rest.wr, rest.sp]; exact h.countRead,
+    by rw [mem, rest.sp]; exact h.pointer, by rw [mem, rest.sp]; exact h.count,
+    h.exponent.after_frame (regions := []) (by rw [mem]; exact Frame.refl _ _) rest (by simp),
+    h.separate, h.positive, h.fits, h.tableFits⟩
+
+theorem crt_narrowControls_ready (s : State) {base ep : BitVec 32} {len v M x eLen es : Nat} {eb : List Byte}
+    (h : NarrowExpInput base ep len v M x eLen es eb s)
+    (pointerR : s.gpr .r1 = ep) (countR : s.gpr .r2 = BitVec.ofNat 32 eLen) :
+    WP isa (.block expControls) s fun t =>
+      ExpPhaseInput base ep len v M x eb t ∧ Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧
+      Rest roundClobbers s t := by
+  refine WP.mono (expControls_ok s h.ready) ?_
+  rintro t ⟨ready, pointer, count, arrays, frame, rest⟩
+  have restT : Rest roundClobbers s t := rest.mono (by decide)
+  have exponent := h.exponent.after_frame frame restT
+    (by intro r hr; simp only [List.mem_singleton] at hr; subst r; exact h.separate)
+  have positive : 0 < M := by have := h.ready.modulus; rw [h.modulus] at this; omega_using [this]
+  have r2 := (arrays 4 (by decide)).trans h.r2
+  refine ⟨⟨ready, (arrays 0 (by decide)).trans h.modulus, h.odd, (arrays 1 (by decide)).trans h.input,
+    ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, exponent.byte⟩, frame, restT⟩
+  · rw [r2]; exact Nat.mod_lt _ positive
+  · rw [r2, Nat.mod_mod, ← Nat.pow_add, show 64 * v + 64 * v = 128 * v by omega_using []]
+  · rw [pointer, pointerR]
+  · rw [count, countR, exponent.length]
+  · rw [exponent.length]; exact h.positive
+  · rw [exponent.length]; exact h.fits
+  · rw [exponent.length]; exact exponent.fits
+  · rw [exponent.length]; exact exponent.read
+  · rw [exponent.length]; exact h.separate
+
+theorem crt_narrowExp_ok (s : State) {base ep : BitVec 32} {len v M x eLen es : Nat} {eb : List Byte}
+    (h : NarrowExpInput base ep len v M x eLen es eb s) (kernel : WindowKernel := baselineWindowKernel) :
+    WP isa ((narrowExpWith kernel.code) es) s fun t => ArithmeticReady base len v t ∧
+      numAt t.mem (State.addr base) v 6 = Spec.Rsa.powMod x (Spec.Rsa.os2ip eb) M ∧
+      Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
+  rw [narrowExpWith, WP.seq_iff]
+  refine WP.mono (crt_exponentArgs_ok s h) ?_
+  rintro u ⟨pointerU, countU, memU, restU⟩
+  rw [WP.seq_iff]
+  refine WP.mono (crt_narrowControls_ready u (h.of_mem memU restU) pointerU countU) ?_
+  rintro z ⟨input, frameZ, restZ⟩
+  refine WP.mono (kernel.correct z input h.tableFits) ?_
+  rintro t ⟨ready, value, _, _, _, frameT, restT⟩
+  rw [memU] at frameZ
+  exact ⟨ready, value, frameZ.trans frameT, (restU.mono (by decide)).trans (restZ.trans restT)⟩
+
+end VG.Proof.Bignum.Arm
+
+end
+
+end
+
+/-! ### `Bignum.Arm.CrtPrimePowerInput`, which this module and modules that import it used -/
+
+section
+
+/-! # A validated factor becomes an arithmetic workspace while retaining its sources -/
+
+@[expose] public section
+
+namespace VG.Proof.Bignum.Arm
+open VG VG.Arm VG.Impl.Bignum.Arm VG.Impl.Bignum.Arm.Crt VG.Proof.Mont
+open VG.Proof.Rsa.Mont (numAt)
+open VG.Proof.X25519.Arm (Rest)
+
+structure CrtPrimePowerInput (base xp ep : BitVec 32) (len w k eLen slot : Nat)
+    (xb eb : List Byte) (s : State) : Prop where
+  accepted : AcceptedPrimeInput base len w s
+  sources : CrtPowerSources base xp ep len w k eLen slot xb eb s
+
+structure CrtPreparedPower (base xp ep : BitVec 32) (len w k eLen slot M : Nat)
+    (xb eb : List Byte) (s : State) : Prop where
+  ready : ArithmeticReady base len w s
+  sources : CrtPowerSources base xp ep len w k eLen slot xb eb s
+  modulus : numAt s.mem (State.addr base) w 0 = M
+  odd : M % 2 = 1
+  r2 : numAt s.mem (State.addr base) w 4 = 2 ^ (128 * w) % M
+
+theorem crt_primePower_prepare (s : State) {base xp ep : BitVec 32} {len w k eLen slot : Nat} {xb eb : List Byte}
+    (h : CrtPrimePowerInput base xp ep len w k eLen slot xb eb s) (countFits : 128 * w < 2 ^ 32) :
+    WP isa prepareAcceptedPrime s fun t =>
+      let M := safePrime (s.mem.readW (off (State.addr s.sp) 48) 32).toNat (numAt s.mem (State.addr base) w 0)
+      CrtPreparedPower base xp ep len w k eLen slot M xb eb t ∧
+      Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
+  have valid := safePrime_valid h.accepted.valid
+  refine WP.mono (prepareAcceptedPrime_ok s h.accepted countFits) ?_
+  rintro t ⟨done, modulus, r2, frame, rest⟩
+  have ready : ArithmeticReady base len w t :=
+    ⟨done.workspace, done.layout, done.width, done.ptr, done.inverse,
+      by rw [modulus]; exact valid.1, done.stackRead, done.stackSep, done.saved⟩
+  exact ⟨⟨ready, h.sources.after_workspace frame rest, modulus, valid.2, r2⟩, frame, rest⟩
+
+end VG.Proof.Bignum.Arm
+
+end
+
+end
 
 /-! # One CRT factor's private power, computed at the factor's own width
 

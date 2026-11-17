@@ -1,11 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PolicyChoice
+public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PolicyStep
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PolicyMatchTiming
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PolicyStep
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Framework.TaintBatch

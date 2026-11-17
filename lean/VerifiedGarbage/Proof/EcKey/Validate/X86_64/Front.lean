@@ -13,7 +13,6 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Front
 import VerifiedGarbage.Proof.Ecdh.X86_64.Peer
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Finish
 public import VerifiedGarbage.Proof.Ecdh.X86_64.Validate
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Setup
 
 /-! ### `EcKey.Validate.X86_64.Setup`, which only this module used -/
 

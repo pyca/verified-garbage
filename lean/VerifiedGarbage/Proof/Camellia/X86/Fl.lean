@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 /-!
 # FL and FLINV on x86 (32-bit)
 
-As on ARMv7 (`Proof/Camellia/Arm/Fl.lean`): the two steps of FL (`flRot`,
+As on ARMv7 (`Proof/Camellia/Arm/Core.lean`): the two steps of FL (`flRot`,
 `flOr`) AND and OR the planes with the subkey's, so they are not linear,
 and are run symbolically: one plane's instructions for any plane
 (`flRotStep_ok`, `flOrStep_ok`), composed by induction over the planes.

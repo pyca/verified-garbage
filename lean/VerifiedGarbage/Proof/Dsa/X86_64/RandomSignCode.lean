@@ -1,7 +1,7 @@
 module
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCallResult
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignFinishResult
 
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignSingle
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignFinishResult
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignInvalid
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignBody

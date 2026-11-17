@@ -6,10 +6,9 @@ import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Packed
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Fields
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Memory
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Regions
-import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.TerminalMemory
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.TerminalMemory
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Contract
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Terminal
 public import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Bounds
 

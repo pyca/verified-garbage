@@ -2,10 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.SearchProof.AttemptRun
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.SearchProof.Attempt
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.SearchProof.CallFacts
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.SearchProof.CallEntry
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.PackedBytes
-import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.SearchProof.CallEntry
 import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.SearchProof.Live
 import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
 

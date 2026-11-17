@@ -8,8 +8,8 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.Loop
 import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Scalars
 import VerifiedGarbage.Proof.Ecdsa.X86_64.CombLays
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Lays
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Points
+import VerifiedGarbage.Proof.Ecdsa.X86_64.Fixed
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Final
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Stages
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
 

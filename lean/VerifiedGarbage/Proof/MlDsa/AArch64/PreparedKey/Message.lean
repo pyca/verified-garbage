@@ -14,13 +14,11 @@ import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.MlKem.Mem
 import VerifiedGarbage.Proof.MlDsa.AArch64.PreparedKey.Verified
 public import VerifiedGarbage.Proof.MlDsa.AArch64.PreparedKey.SignEntryTiming
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Entry
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.HashMu
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.SignCall
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.HashMu
 import VerifiedGarbage.Proof.MlDsa.AArch64.Message.SignCorrect
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.PairedCallTiming
 import VerifiedGarbage.Proof.MlDsa.AArch64.Message.OptimizedRel
-import VerifiedGarbage.Proof.MlDsa.AArch64.Message.HashCT
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.SignCT
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsExec
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsExecution
 public import VerifiedGarbage.Proof.Framework.Sig
@@ -40,6 +38,42 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Inst
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsEntry
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRoots
 public import VerifiedGarbage.Spec.MlDsa.CachedVerify
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Lit
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Lit
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Samp
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Lit
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentLit
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRoots
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsFrame
+import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Hash
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Common
+public import VerifiedGarbage.Spec.MlDsa
+
+/-! ### `MlDsa.AArch64.Message.PairedCallTiming`, which only this module used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.AArch64.Message.Paired
+open VG.Proof.MlDsa.AArch64.Message.Optimized (call_tr MovedS)
+open VG VG.AArch64 VG.Impl.MlDsa.AArch64.Message
+open VG.Proof.MlDsa.Message
+open VG.Spec.MlDsa
+open VG.Spec.Sha3 (bytesAt)
+open VG.Proof.MlDsa.AArch64.Sign (StaticRoots PairedRoots pairedSignRootConsts)
+
+abbrev rootsAt (s : State) : Addr × Addr × Addr :=
+  (s.syms "VG_MLDSA_NTT_EXPANDED",s.syms "VG_MLDSA_INV_FOLDED",s.syms "VG_MLDSA_INV_PAIR")
+abbrev rootPairRegions (tab : Addr × Addr × Addr) : List Region := [⟨tab.1,3904⟩,⟨tab.2.1,3904⟩,⟨tab.2.2,4096⟩]
+theorem rootsAt_syms {s t : State} (h : t.syms=s.syms) : rootsAt t=rootsAt s := by simp only [rootsAt,h]
+
+variable {p : Params}
+end VG.Proof.MlDsa.AArch64.Message.Paired
+
+end
+
+end
 
 /-! ### `MlDsa.AArch64.Message.PairedTopTiming`, which only this module used -/
 

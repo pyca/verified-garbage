@@ -1,6 +1,5 @@
 module
 
-import VerifiedGarbage.Proof.TripleDes.Arm.KeySteps
 import VerifiedGarbage.Proof.TripleDes.KeySchedule
 public import VerifiedGarbage.Proof.Rc2.Arm.Lookup
 public import VerifiedGarbage.Impl.TripleDes.Arm.ExpandKey
@@ -9,6 +8,116 @@ import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Omega
+
+/-! ### `TripleDes.Arm.KeySteps`, which this module and modules that import it used -/
+
+section
+
+/-! ### `TripleDes.Arm.Word`, which this module and modules that import it used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.TripleDes.Arm
+
+theorem mask28 (x : BitVec 32) : x &&& 0x0fffffff = (x.setWidth 28).setWidth 32 := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_and, BitVec.toNat_setWidth]
+  change x.toNat &&& (2 ^ 28 - 1) = x.toNat % 268435456 % 4294967296
+  rw [Nat.and_two_pow_sub_one_eq_mod]
+  omega_using []
+
+theorem rotate28_word (x : BitVec 28) (n : Nat) (hn : 1 ≤ n) (hn' : n < 5) :
+    ((x.setWidth 32).rotateRight (32 - n) ^^^ (x.setWidth 32) >>> (28 - n)) &&& 0x0fffffff =
+      (x.rotateLeft n).setWidth 32 := by
+  rw [mask28]
+  apply congrArg (BitVec.setWidth 32)
+  apply BitVec.eq_of_getLsbD_eq
+  intro j hj
+  simp only [BitVec.getLsbD_setWidth, BitVec.getLsbD_xor, BitVec.getLsbD_rotateRight,
+    BitVec.getLsbD_ushiftRight, BitVec.getLsbD_rotateLeft]
+  have n32 : (32 - n) % 32 = 32 - n := Nat.mod_eq_of_lt (by omega_using [hn])
+  have n28 : n % 28 = n := Nat.mod_eq_of_lt (by omega_using [hn'])
+  rw [n32, n28]
+  rw [show 32 - (32 - n) = n by omega_using [hn']]
+  by_cases h : j < n
+  · simp (disch := omega) [h, hj,
+      show j + (28 - n) < 32 by omega_using [hn', h], BitVec.getLsbD_of_ge, Nat.add_comm]
+  · simp (disch := omega) [h, hj, show j < 32 by omega_using [hj],
+      show j - n < 32 by omega_using [hj], BitVec.getLsbD_of_ge]
+
+
+theorem mask_word (x : BitVec 32) (n : Nat) (hn : 0 < n) (hn32 : n ≤ 32) :
+    (x <<< (32 - n)) >>> (32 - n) = (x.setWidth n).setWidth 32 := by
+  apply BitVec.eq_of_getLsbD_eq
+  intro j hj
+  simp only [BitVec.getLsbD_ushiftRight, BitVec.getLsbD_shiftLeft, BitVec.getLsbD_setWidth]
+  by_cases h : j < n
+  · have hi : 32 - n + j < 32 := by omega
+    have hlo : ¬32 - n + j < 32 - n := by omega_using []
+    simp only [hi, hlo, h, hj, decide_true, decide_false, Bool.not_false,
+      Bool.true_and, show 32 - n + j - (32 - n) = j by omega_using []]
+  · have ho : ¬32 - n + j < 32 := by omega_using [h]
+    simp only [ho, h, hj, decide_true, decide_false, Bool.false_and, Bool.true_and]
+
+theorem packed48 (x : BitVec 48) :
+    ((x >>> 32).setWidth 16).setWidth 32 ++ x.setWidth 32 = x.setWidth 64 := by
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
+  simp only [BitVec.getLsbD_append, BitVec.getLsbD_setWidth, BitVec.getLsbD_ushiftRight,
+    hi, decide_true, Bool.true_and]
+  by_cases hlo : i < 32
+  · simp only [hlo, ite_true, decide_true, Bool.true_and]
+  · simp (disch := omega) only [hlo, ite_false, decide_true, Bool.true_and,
+      show i - 32 < 32 by omega_using [hi], show 32 + (i - 32) = i by omega_using [hlo]]
+    by_cases h48 : i < 48
+    · simp only [show i - 32 < 16 by omega_using [h48], decide_true, Bool.true_and]
+    · simp only [show ¬i - 32 < 16 by omega_using [h48], decide_false, Bool.false_and,
+        BitVec.getLsbD_of_ge x i (by omega_using [h48])]
+
+end VG.Proof.TripleDes.Arm
+
+end
+
+end
+
+@[expose] public section
+
+namespace VG.Proof.TripleDes.Arm
+open VG VG.Arm VG.Arm.RegUpd VG.Impl.TripleDes.Arm
+
+theorem rotate28_ok (s : State) (r : Reg) (hr : r ≠ .r4)
+    (x : BitVec 28) (hx : s.gpr r = x.setWidth 32)
+    (n : Nat) (hn : 1 ≤ n) (hn' : n < 5) :
+    ∃ s', runBlock isa (Key.rotate28 r n) s = some s' ∧
+      s'.gpr r = (x.rotateLeft n).setWidth 32 ∧
+      s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧
+      (∀ r', r' ≠ r → r' ≠ .r4 → s'.gpr r' = s.gpr r') := by
+  have hleft : 1 ≤ 32 - n ∧ 32 - n ≤ 31 := by omega_using [hn, hn']
+  have hright : 1 ≤ 28 - n ∧ 28 - n ≤ 31 := by omega_using [hn']
+  refine ⟨_, by
+    simp only [Key.rotate28, mask, List.cons_append, List.nil_append,
+      runBlock_cons, runStep_some, runBlock_nil, exec, Op2.eval, hleft.1, hleft.2, hright.1, hright.2,
+      show 1 ≤ (4 : Nat) from by decide, show (4 : Nat) ≤ 31 from by decide, and_self, ite_true, Option.map_some,
+      hr, Ne.symm hr, gpr_setReg, ite_false]
+    rfl, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · simp only [gpr_setReg, ite_true, hr, ite_false]
+    rw [hx, mask_word _ 28 (by decide) (by decide)]
+    exact (mask28 _).symm.trans (rotate28_word x n hn hn')
+  · simp only [mem_setReg]
+  · simp only [rd_setReg]
+  · simp only [wr_setReg]
+  · simp only [sp_setReg]
+  · intro r' h1 h2; simp only [gpr_setReg, h1, h2, ite_false]
+end VG.Proof.TripleDes.Arm
+
+end
+
+end
 
 @[expose] public section
 

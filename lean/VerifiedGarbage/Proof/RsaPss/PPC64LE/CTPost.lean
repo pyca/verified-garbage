@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaPss.PPC64LE.CTHash
 public import VerifiedGarbage.Proof.RsaPss.PPC64LE.Post
-public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.CTMgfT
+public import VerifiedGarbage.Proof.RsaPss.PPC64LE.CTTab
 import VerifiedGarbage.Proof.RsaOaep.PPC64LE.MgfT
 import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 import VerifiedGarbage.Proof.Framework.Offset

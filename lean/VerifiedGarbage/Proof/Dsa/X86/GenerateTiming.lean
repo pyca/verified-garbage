@@ -3,10 +3,8 @@ module
 public import VerifiedGarbage.Impl.Dsa.X86.Generate
 public import VerifiedGarbage.Proof.Dsa.X86.CallTiming
 import VerifiedGarbage.Proof.Dsa.X86.CallValidationTiming
-import VerifiedGarbage.Proof.Dsa.X86.CallMinusTiming
-import VerifiedGarbage.Proof.Dsa.X86.CallPowerTiming
-import VerifiedGarbage.Proof.Dsa.X86.CallReduceTiming
 import VerifiedGarbage.Proof.Dsa.X86.KeyTiming
+import VerifiedGarbage.Proof.Dsa.X86.CallPowerTiming
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import Mathlib.Logic.Function.Basic
 import Mathlib.Tactic.Set

@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.CmacTripleDes.Stream.PPC64LE.CT
 public import VerifiedGarbage.Proof.CmacTripleDes.StreamScratch
 public import VerifiedGarbage.TCB.PPC64LE.Target
 public import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.CmacTripleDes.Stream.PPC64LE.Calls
 public import VerifiedGarbage.Spec.Cmac.TripleDesContract
 import VerifiedGarbage.Proof.Framework.PPC64LE.Call
 import VerifiedGarbage.Proof.Framework.Offset
@@ -17,14 +16,12 @@ import VerifiedGarbage.Proof.TripleDes.CbcBlocks
 public import VerifiedGarbage.Proof.CmacTripleDes.Stream
 import VerifiedGarbage.Proof.CmacTripleDes.Cmac
 public import VerifiedGarbage.Proof.CmacTripleDes.Block
-import VerifiedGarbage.Proof.CmacTripleDes.Stream.PPC64LE.Common
-import VerifiedGarbage.Proof.Framework.PPC64LE.Step
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 public import VerifiedGarbage.Proof.Cmac.Mem
 public import VerifiedGarbage.Proof.CmacTripleDes.Bytes
 public import VerifiedGarbage.Impl.CmacTripleDes.Stream.PPC64LE
 public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Framework.Semantics
-public import VerifiedGarbage.Proof.CmacTripleDes.Stream.PPC64LE.Copy
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Cmac.Stream
 public import VerifiedGarbage.Proof.Framework.Mem
@@ -36,6 +33,364 @@ import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Framework.GetElem
 public import VerifiedGarbage.Impl.StackScratch.PPC64LE
 import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratch
+public import VerifiedGarbage.TCB.PPC64LE.Isa
+import VerifiedGarbage.Proof.Framework.Covers
+import VerifiedGarbage.Proof.TripleDes.PPC64LE.Key.Verified
+import VerifiedGarbage.Proof.Gcm.Bits
+
+/-! ### `CmacTripleDes.Stream.PPC64LE.Calls`, which only this module used -/
+
+section
+
+/-! ### `CmacTripleDes.Stream.PPC64LE.Common`, which this module and modules that import it used -/
+
+section
+
+/-!
+# Streaming TDEA-CMAC on PPC64LE: what the functions share
+
+The weakest preconditions of the instructions `Framework/PPC64LE/Step.lean`
+lacks (`mflr`, `mtlr`, `or`, `ldbrx`, `stdbrx`), the doubling of `dblCode`
+(`dblCode_wp`), and that a word is determined by its bytes (`le8_inj`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.CmacTripleDes.Stream.PPC64LE
+
+open VG VG.PPC64LE VG.Impl.CmacTripleDes.Stream.PPC64LE
+open VG.Proof.Cmac (le8)
+
+section
+variable {is : List Instr} {s : State} {Q : State → Prop}
+
+theorem wp_mflr {d : Reg} (k : ∀ s', Upd s s' d s.lr → WP isa (.block is) s' Q) :
+    WP isa (.block (.mflr d :: is)) s Q :=
+  WP.cons exec_mflr (k _ (Upd.write _ _ _))
+
+theorem wp_mtlr {r : Reg} (k : WP isa (.block is) { s with lr := s.gpr r } Q) :
+    WP isa (.block (.mtlr r :: is)) s Q :=
+  WP.cons exec_mtlr k
+
+theorem wp_or {d n m : Reg} (k : ∀ s', Upd s s' d (s.gpr n ||| s.gpr m) → WP isa (.block is) s' Q) :
+    WP isa (.block (.logic .or d n m :: is)) s Q :=
+  WP.cons exec_logic (k _ (Upd.write _ _ _))
+
+/-- `ldbrx t, a, b`. -/
+theorem wp_ldbrx {t a b : Reg} {ea : Addr} (hn : a ≠ .r0) (hea : s.gpr a + s.gpr b = ea)
+    (hin : InRegions (s.rd ++ s.wr) ea 8)
+    (k : ∀ s', Upd s s' t (rev64 (s.mem.readW ea 64)) → WP isa (.block is) s' Q) :
+    WP isa (.block (.loadRev .d t a b :: is)) s Q := by
+  refine WP.cons (s' := s.write t (rev64 (s.mem.readW ea 64))) ?_ (k _ (Upd.write _ _ _))
+  rw [exec_loadRev_d hn (by rw [hea]; exact hin), hea]
+
+/-- `stdbrx t, a, b`. -/
+theorem wp_stdbrx {t a b : Reg} {ea : Addr} (hn : a ≠ .r0) (hea : s.gpr a + s.gpr b = ea)
+    (hout : InRegions s.wr ea 8)
+    (k : ∀ s', Mupd s s' (s.mem.writeW ea (rev64 (s.gpr t))) → WP isa (.block is) s' Q) :
+    WP isa (.block (.storeRev .d t a b :: is)) s Q := by
+  refine WP.cons (s' := { s with mem := s.mem.writeW ea (rev64 (s.gpr t)) }) ?_ (k _ ⟨rfl, rfl, rfl, rfl⟩)
+  rw [exec_storeRev_d hn (by rw [hea]; exact hout), hea]
+
+end
+
+/-- A slot of the working space at `B` is writable. -/
+theorem scr_in {s : State} {B : Addr} {off : Nat} (hw : (⟨B, 640⟩ : Region) ∈ s.wr) (h : off + 8 ≤ 640) :
+    InRegions s.wr (B + BitVec.ofNat 64 off) 8 :=
+  ⟨_, hw, VG.Offset.contains_base _ h (by omega_using [h])⟩
+
+theorem scr_rd {s : State} {B : Addr} {off : Nat} (hw : (⟨B, 640⟩ : Region) ∈ s.wr) (h : off + 8 ≤ 640) :
+    InRegions (s.rd ++ s.wr) (B + BitVec.ofNat 64 off) 8 :=
+  let ⟨r, hr, hc⟩ := scr_in hw h
+  ⟨r, List.mem_append_right _ hr, hc⟩
+
+/-- A word read past a word written apart from it. -/
+theorem readW_sep64 {m : Mem} {a b : Addr} {v : BitVec 64} (h : Region.Disjoint ⟨a, 8⟩ ⟨b, 8⟩) :
+    (m.writeW b v).readW a 64 = m.readW a 64 :=
+  Mem.readW_writeW_sep (fun x h1 h2 => h x (by simp only [Region.Contains]; omega_using [h1])
+    (by simp only [Region.Contains]; omega_using [h2])) (by decide)
+
+/-- The registers the functions use as temporaries are not preserved. -/
+theorem preserved_ne : ∀ r ∈ preserved, r ≠ .r0 ∧ r ≠ .r3 ∧ r ≠ .r4 ∧ r ≠ .r5 ∧ r ≠ .r6 ∧ r ≠ .r7 ∧
+    r ≠ .r8 ∧ r ≠ .r9 ∧ r ≠ .r10 ∧ r ≠ .r11 ∧ r ≠ .r12 := by decide
+
+theorem rev64_eq (x : BitVec 64) : rev64 x = byteRev64 x := rfl
+
+theorem rev64_rev64 (x : BitVec 64) : rev64 (rev64 x) = x := Proof.Gcm.byteRev64_byteRev64 x
+
+theorem le8_inj {a b : BitVec 64} (h : le8 a = le8 b) : a = b := by
+  apply BitVec.eq_of_getLsbD_eq; intro i hi
+  have e := congrArg (fun l => (l.getD (i / 8) 0).getLsbD (i % 8)) h
+  simp only [Proof.Cmac.getD_le8 _ (show i / 8 < 8 by omega_using [hi]), BitVec.getLsbD_extractLsb',
+    show i % 8 < 8 by omega_using [], decide_true, Bool.true_and, show 8 * (i / 8) + i % 8 = i by omega_using []] at e
+  exact e
+
+/-- The doubling as `dblCode` computes it. -/
+theorem dbl_eq (y : BitVec 64) :
+    (y <<< 1) ^^^ ((0 - (y >>> 63)) &&& BitVec.ofNat 64 0x1b) = dbl64 y := by
+  rw [msb_shift, dbl64]
+  by_cases hm : y.msb
+  · rw [ite_eq_left hm, ite_eq_left hm]; congr 1
+  · rw [ite_eq_right hm, ite_eq_right hm]; congr 1
+
+/-- `dblCode` doubles `r7`, with `r6 = 0`, writing `r8`–`r10`. -/
+theorem dblCode_wp {s : State} {is : List Instr} {Q : State → Prop} (h6 : s.gpr .r6 = 0)
+    (k : ∀ s', s'.gpr .r7 = dbl64 (s.gpr .r7) →
+      (∀ r, r ≠ .r7 → r ≠ .r8 → r ≠ .r9 → r ≠ .r10 → s'.gpr r = s.gpr r) → s'.mem = s.mem →
+      s'.rd = s.rd → s'.wr = s.wr → WP isa (.block is) s' Q) :
+    WP isa (.block (dblCode ++ is)) s Q := by
+  simp only [dblCode, List.cons_append, List.nil_append]
+  refine wp_lsr (by decide) fun s₁ u₁ => wp_sub fun s₂ u₂ => wp_li (by decide) fun s₃ u₃ =>
+    wp_and fun s₄ u₄ => wp_lsl (by decide) fun s₅ u₅ => wp_xor fun s₆ u₆ => ?_
+  refine k s₆ ?_ (fun r h7 h8 h9 h10 => ?_) (by rw [u₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem])
+    (by rw [u₆.rd, u₅.rd, u₄.rd, u₃.rd, u₂.rd, u₁.rd]) (by rw [u₆.wr, u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr])
+  · have a5 : s₅.gpr .r7 = s.gpr .r7 <<< 1 := by
+      rw [u₅.gpr, u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide)]
+    have b3 : s₃.gpr .r9 = 0 - (s.gpr .r7 >>> 63) := by
+      rw [u₃.other _ (by decide), u₂.gpr, u₁.gpr, u₁.other _ (by decide), h6]
+      rfl
+    have b5 : s₅.gpr .r9 = (0 - (s.gpr .r7 >>> 63)) &&& BitVec.ofNat 64 0x1b := by
+      rw [u₅.other _ (by decide), u₄.gpr, u₃.gpr, b3]
+    rw [u₆.gpr, a5, b5, dbl_eq]
+  · rw [u₆.other r h7, u₅.other r h7, u₄.other r h9, u₃.other r h10, u₂.other r h9, u₁.other r h8]
+
+/-- `(n - 1) & 7`, plus one. -/
+theorem held_word {n : Nat} (hn : n < 2 ^ 64) (h0 : n ≠ 0) :
+    (BitVec.ofNat 64 n - BitVec.ofNat 64 1 &&& BitVec.ofNat 64 7) + BitVec.ofNat 64 1 =
+      BitVec.ofNat 64 ((n - 1) % 8 + 1) := by
+  apply BitVec.eq_of_toNat_eq
+  have e1 : (BitVec.ofNat 64 n - BitVec.ofNat 64 1).toNat = n - 1 := by
+    rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat]; omega_using [hn, h0]
+  rw [BitVec.toNat_add, BitVec.toNat_and, e1, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
+    show (7 : Nat) % 2 ^ 64 = 2 ^ 3 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod, BitVec.toNat_ofNat]
+
+/-- `heldCode` computes, from `count = n` in `r4`, the number of bytes held
+back for a message of `n` bytes, to `r8`, through `r9`. -/
+theorem heldCode_wp {s : State} {n : Nat} (hn : n < 2 ^ 64) (h4 : s.gpr .r4 = BitVec.ofNat 64 n)
+    {Q : State → Prop}
+    (k : ∀ t, t.gpr .r8 = BitVec.ofNat 64 (Proof.CmacTripleDes.Stream.held n) →
+      (∀ r, r ≠ .r8 → r ≠ .r9 → t.gpr r = s.gpr r) → t.mem = s.mem → t.rd = s.rd → t.wr = s.wr → Q t) :
+    WP isa heldCode s Q := by
+  by_cases h0 : n = 0
+  · subst h0
+    refine WP.ite true (by rw [eval_zero_ofNat s .r4 (by decide) h4]; rfl) (fun _ => ?_) (fun h => by cases h)
+    refine wp_li (by decide) fun t u => wp_nil (k t (by rw [u.gpr]; rfl) (fun r h8 _ => u.other r h8) u.mem u.rd u.wr)
+  refine WP.ite false (by rw [eval_zero_ofNat s .r4 hn h4]; simp [h0]) (fun h => by cases h) fun _ => ?_
+  refine wp_subi (by decide) (by decide) fun t₁ u₁ => wp_li (by decide) fun t₂ u₂ => wp_and fun t₃ u₃ =>
+    wp_addi (by decide) (by decide) fun t₄ u₄ => wp_nil ?_
+  refine k t₄ ?_ (fun r h8 h9 => by rw [u₄.other r h8, u₃.other r h8, u₂.other r h9, u₁.other r h8])
+    (by rw [u₄.mem, u₃.mem, u₂.mem, u₁.mem]) (by rw [u₄.rd, u₃.rd, u₂.rd, u₁.rd]) (by rw [u₄.wr, u₃.wr, u₂.wr, u₁.wr])
+  rw [u₄.gpr, u₃.gpr, u₂.gpr, u₂.other _ (by decide), u₁.gpr, h4, Proof.CmacTripleDes.Stream.held_pos (by omega_using [h0])]
+  exact held_word hn h0
+
+end VG.Proof.CmacTripleDes.Stream.PPC64LE
+
+end
+
+end
+
+/-!
+# Streaming TDEA-CMAC on PPC64LE: the calls
+
+`keyCall_wp` and `encCall_wp`: the calls of the verified key expansion and
+block function, from their contracts (`Key.correct`, `Ecb.call_ok`), as the
+streaming functions make them: the key expansion writes the schedule at the
+start of the state, and the block function enciphers the block at `B + 512`
+with the working space at `B`, the scratch buffer's 640 bytes.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.CmacTripleDes.Stream.PPC64LE
+
+open VG VG.PPC64LE VG.Impl.CmacTripleDes.Stream.PPC64LE
+
+/-- The key expansion's call, with the key at `r3` (`len` bytes, in `r4`)
+and the schedule at `r5`, within the 416 bytes at `S`. -/
+theorem keyCall_wp {s : State} {K S : Addr} {len : Nat} (h3 : s.gpr .r3 = K) (h4 : s.gpr .r4 = BitVec.ofNat 64 len)
+    (h5 : s.gpr .r5 = S) (hlen : len < 2 ^ 64) (hkey : (⟨K, len⟩ : Region) ∈ s.rd)
+    (hS : (⟨S, 416⟩ : Region) ∈ s.wr) (hd : Region.Disjoint ⟨K, len⟩ ⟨S, 416⟩)
+    (hv : Spec.TripleDes.validKey len) {Q : State → Prop}
+    (k : ∀ s', s'.rd = s.rd → s'.wr = s.wr → Frame [⟨S, 384⟩] s.mem s'.mem →
+      (∀ r ∈ preserved, s'.gpr r = s.gpr r) →
+      Spec.TripleDes.scheduleAt s'.mem S = Spec.TripleDes.expandKey (Spec.TripleDes.bytesAt s.mem K len) → Q s') :
+    WP isa keyCall s Q := by
+  have c3 := State.callEntry_gpr s (r := .r3) (by decide)
+  have c4 := State.callEntry_gpr s (r := .r4) (by decide)
+  have c5 := State.callEntry_gpr s (r := .r5) (by decide)
+  have hlt : (s.gpr .r4).toNat = len := by rw [h4, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hlen]
+  have sub : Region.Sub ⟨S, 384⟩ ⟨S, 416⟩ := Region.sub_prefix (by decide)
+  refine WP.call (k := Proof.TripleDes.PPC64LE.Key.contract) Proof.TripleDes.PPC64LE.Key.correct
+    (rd := [⟨K, len⟩]) (wr := [⟨S, 384⟩]) ?_ ?_ ?_ ?_
+  · simp only [Proof.TripleDes.PPC64LE.Key.contract, State.withRegions_gpr, State.withRegions_rd,
+      State.withRegions_wr, c3, c4, c5, h3, hlt, h5]
+    exact ⟨trivial, trivial, hd.sub_right sub, hv⟩
+  · refine VG.Covers.of_sub fun r hr => ?_
+    simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact ⟨_, List.mem_append_left _ hkey, 0, by simp, by simp⟩
+    · exact ⟨_, List.mem_append_right _ hS, 0, by simp, by show 0 + 384 ≤ 416; decide⟩
+  · refine VG.Covers.of_sub fun r hr => ?_
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    subst hr
+    exact ⟨_, hS, 0, by simp, by show 0 + 384 ≤ 416; decide⟩
+  · intro s' rd wr _ frame callee _ out
+    simp only [Proof.TripleDes.PPC64LE.Key.contract, State.withRegions_gpr, State.withRegions_mem,
+      State.callEntry_mem, c3, c4, c5, h3, hlt, h5] at out
+    exact k s' rd wr frame callee out
+
+/-- The block function's call, with the schedule at `r3 = S`, the block at
+`r4 = B + 512` and the working space at `r5 = B`. -/
+theorem encCall_wp {s : State} {S B : Addr} (h3 : s.gpr .r3 = S) (h4 : s.gpr .r4 = B + BitVec.ofNat 64 512)
+    (h5 : s.gpr .r5 = B) (hkey : InRegions (s.rd ++ s.wr) S 384) {L : Nat} (hB : (⟨B, L⟩ : Region) ∈ s.wr)
+    (hL : 640 ≤ L) (hd : Region.Disjoint ⟨S, 384⟩ ⟨B, 640⟩) {Q : State → Prop}
+    (k : ∀ s', s'.rd = s.rd → s'.wr = s.wr → (∀ r ∈ preserved, s'.gpr r = s.gpr r) →
+      s'.gpr .r3 = S → s'.gpr .r4 = B + BitVec.ofNat 64 512 → s'.gpr .r5 = B →
+      Frame [⟨B, 520⟩] s.mem s'.mem →
+      Spec.TripleDes.blockAt s'.mem (B + BitVec.ofNat 64 512) =
+        Spec.TripleDes.encryptBlock (Spec.TripleDes.scheduleAt s.mem S)
+          (Spec.TripleDes.blockAt s.mem (B + BitVec.ofNat 64 512)) → Q s') :
+    WP isa encCall s Q := by
+  have bufIn : Region.Sub ⟨B + BitVec.ofNat 64 512, 8⟩ ⟨B, 640⟩ := VG.Offset.sub_base _ (by decide)
+  have scrIn : Region.Sub ⟨B, 512⟩ ⟨B, 640⟩ := Region.sub_prefix (by decide)
+  have cw : VG.Covers [⟨s.gpr .r4, 8⟩, ⟨s.gpr .r5, 512⟩] s.wr := VG.Covers.of_sub fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact ⟨⟨B, L⟩, hB, 512, h4, by show 512 + 8 ≤ L; omega_using [hL]⟩
+    · exact ⟨⟨B, L⟩, hB, 0, by simp [h5], by show 0 + 512 ≤ L; omega_using [hL]⟩
+  have hp : Proof.TripleDes.PPC64LE.Ecb.CallPre s :=
+    ⟨VG.Covers.cons (by rw [h3]; exact VG.Covers.one hkey) (VG.Covers.right cw), cw,
+      by rw [h3, h5]; exact hd.sub_right scrIn,
+      by rw [h4, h5]; exact VG.Offset.disjoint_base _ (by decide) (by omega_using [])⟩
+  refine WP.mono (Proof.TripleDes.PPC64LE.Ecb.call_ok .encrypt s hp) fun s' h' => ?_
+  have sub : ∀ r ∈ [(⟨s.gpr .r4, 8⟩ : Region), ⟨s.gpr .r5, 512⟩], ∃ r' ∈ [(⟨B, 520⟩ : Region)], Region.Sub r r' :=
+    fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact ⟨_, List.mem_singleton_self _, by rw [h4]; exact VG.Offset.sub_base _ (by decide)⟩
+      · exact ⟨_, List.mem_singleton_self _, by rw [h5]; exact Region.sub_prefix (by decide)⟩
+  have out := h'.output
+  rw [h3, h4] at out
+  exact k s' h'.rd h'.wr h'.callee (by rw [h'.reg _ (by decide), h3]) (by rw [h'.reg _ (by decide), h4])
+    (by rw [h'.reg _ (by decide), h5]) (h'.mem.sub sub) out
+
+end VG.Proof.CmacTripleDes.Stream.PPC64LE
+
+end
+
+end
+
+/-! ### `CmacTripleDes.Stream.PPC64LE.Copy`, which only this module used -/
+
+section
+
+/-!
+# Streaming TDEA-CMAC on PPC64LE: the byte copy
+
+`copyLoop_wp`: `copyLoop` copies the `n` bytes at `src` (`r10`) to `dst`
+(`r11`), where `r12 = n`, when the two do not overlap, and changes no other
+memory and no register but `r0` and `r10`–`r12`, leaving `r10` and `r11`
+past the bytes.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.CmacTripleDes.Stream.PPC64LE
+
+open VG VG.PPC64LE VG.Impl.CmacTripleDes.Stream.PPC64LE
+
+theorem sub_lt_one {x a : Addr} : (x - a).toNat < 1 ↔ x = a := by
+  constructor
+  · intro h
+    have h0 : x - a = 0 := BitVec.eq_of_toNat_eq (by show _ = 0; omega_using [h])
+    calc x = x - a + a := (BitVec.sub_add_cancel x a).symm
+      _ = a := by rw [h0]; simp
+  · rintro rfl; simp
+
+theorem ofNat_succ (p : Addr) (j : Nat) :
+    p + BitVec.ofNat 64 j + BitVec.ofNat 64 1 = p + BitVec.ofNat 64 (j + 1) := by
+  rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat]
+
+/-- After `j` of the `n` bytes. -/
+structure CopyInv (s : State) (src dst : Addr) (n j : Nat) (t : State) : Prop where
+  r10 : t.gpr .r10 = src + BitVec.ofNat 64 j
+  r11 : t.gpr .r11 = dst + BitVec.ofNat 64 j
+  r12 : t.gpr .r12 = BitVec.ofNat 64 (n - j)
+  regs : ∀ r, r ≠ .r0 → r ≠ .r10 → r ≠ .r11 → r ≠ .r12 → t.gpr r = s.gpr r
+  rd : t.rd = s.rd
+  wr : t.wr = s.wr
+  copied : ∀ i < j, t.mem (dst + BitVec.ofNat 64 i) = s.mem (src + BitVec.ofNat 64 i)
+  rest : ∀ x, (∀ i < j, x ≠ dst + BitVec.ofNat 64 i) → t.mem x = s.mem x
+
+theorem copy_step {s : State} {src dst : Addr} {n j : Nat} (hj : j < n) (hn : n < 2 ^ 64)
+    (hrd : ∀ i < n, InRegions (s.rd ++ s.wr) (src + BitVec.ofNat 64 i) 1)
+    (hwr : ∀ i < n, InRegions s.wr (dst + BitVec.ofNat 64 i) 1)
+    (hsep : ∀ i < n, ∀ i' < n, src + BitVec.ofNat 64 i ≠ dst + BitVec.ofNat 64 i')
+    {t : State} (hI : CopyInv s src dst n j t) :
+    WP isa (.block [.lbz .r0 .r10 0, .stb .r0 .r11 0, .addi .r10 .r10 1, .addi .r11 .r11 1,
+      .subi .r12 .r12 1]) t (CopyInv s src dst n (j + 1)) := by
+  refine wp_lbz (a := src + BitVec.ofNat 64 j) (by decide) (by decide) (by rw [hI.r10]; simp)
+    (by rw [hI.rd, hI.wr]; exact hrd j hj) fun t₁ u₁ => ?_
+  refine wp_stb (a := dst + BitVec.ofNat 64 j) (by decide) (by decide)
+    (by rw [u₁.other _ (by decide), hI.r11]; simp) (by rw [u₁.wr, hI.wr]; exact hwr j hj) fun t₂ u₂ => ?_
+  refine wp_addi (by decide) (by decide) fun t₃ u₃ => wp_addi (by decide) (by decide) fun t₄ u₄ =>
+    wp_subi (by decide) (by decide) fun t₅ u₅ => wp_nil ?_
+  have src_j : t.mem (src + BitVec.ofNat 64 j) = s.mem (src + BitVec.ofNat 64 j) :=
+    hI.rest _ fun i hi => hsep j hj i (by omega_using [hj, hi])
+  have m₅ : t₅.mem = t.mem.writeW (dst + BitVec.ofNat 64 j) (s.mem (src + BitVec.ofNat 64 j)) := by
+    rw [u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.gpr, u₁.mem, setWidth8_64, src_j]
+  refine ⟨?_, ?_, ?_, fun r h0 h10 h11 h12 => ?_, by rw [u₅.rd, u₄.rd, u₃.rd, u₂.rd, u₁.rd, hI.rd],
+    by rw [u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr, hI.wr], fun i hi => ?_, fun x hx => ?_⟩
+  · rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.gpr, u₂.gpr, u₁.other _ (by decide), hI.r10,
+      ofNat_succ]
+  · rw [u₅.other _ (by decide), u₄.gpr, u₃.other _ (by decide), u₂.gpr, u₁.other _ (by decide), hI.r11,
+      ofNat_succ]
+  · rw [u₅.gpr, u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr, u₁.other _ (by decide), hI.r12]
+    apply BitVec.eq_of_toNat_eq
+    rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
+    omega_using [hj]
+  · rw [u₅.other r h12, u₄.other r h11, u₃.other r h10, u₂.gpr, u₁.other r h0, hI.regs r h0 h10 h11 h12]
+  · rw [m₅, write1_apply]
+    by_cases e : i = j
+    · subst e; rw [ite_eq_left (sub_lt_one.mpr rfl)]
+    · have hne : dst + BitVec.ofNat 64 i ≠ dst + BitVec.ofNat 64 j := by
+        intro h
+        have := congrArg (fun y => BitVec.toNat (y - dst)) h
+        simp only [VG.Offset.add_sub_cancel_left, BitVec.toNat_ofNat] at this
+        rw [Nat.mod_eq_of_lt (by omega_using [hj, hn, hi]), Nat.mod_eq_of_lt (by omega_using [hj, hn])] at this
+        exact e this
+      rw [ite_eq_right (fun h => hne (sub_lt_one.mp h)), hI.copied i (by omega_using [hi, e])]
+  · rw [m₅, write1_apply, ite_eq_right (fun h => hx j (by omega_using []) (sub_lt_one.mp h)),
+      hI.rest x fun i hi => hx i (by omega_using [hi])]
+
+theorem copyLoop_wp {s : State} {src dst : Addr} {n : Nat} (hn : n < 2 ^ 64)
+    (h10 : s.gpr .r10 = src) (h11 : s.gpr .r11 = dst) (h12 : s.gpr .r12 = BitVec.ofNat 64 n)
+    (hrd : ∀ i < n, InRegions (s.rd ++ s.wr) (src + BitVec.ofNat 64 i) 1)
+    (hwr : ∀ i < n, InRegions s.wr (dst + BitVec.ofNat 64 i) 1)
+    (hsep : ∀ i < n, ∀ i' < n, src + BitVec.ofNat 64 i ≠ dst + BitVec.ofNat 64 i')
+    {Q : State → Prop} (k : ∀ t, CopyInv s src dst n n t → Q t) :
+    WP isa copyLoop s Q := by
+  have h0 : CopyInv s src dst n 0 s := ⟨by rw [h10]; simp, by rw [h11]; simp, by rw [h12, Nat.sub_zero], fun _ _ _ _ _ => rfl,
+    rfl, rfl, fun i hi => absurd hi (Nat.not_lt_zero _), fun _ _ => rfl⟩
+  by_cases hz : n = 0
+  · subst hz
+    exact WP.ite true (by rw [eval_zero_ofNat s .r12 (by decide) h12]; rfl) (fun _ => wp_nil (k s h0))
+      (fun h => by cases h)
+  refine WP.ite false (by rw [eval_zero_ofNat s .r12 hn h12]; simp [hz]) (fun h => by cases h) fun _ => ?_
+  refine WP.loop (M := isa) (Q := Q)
+    (fun (m : Nat) (t : State) => ∃ j, m = n - j ∧ j < n ∧ CopyInv s src dst n j t) ?_ n s ⟨0, by omega_using [], by omega_using [hz], h0⟩
+  rintro _ t ⟨j, rfl, hj, hI⟩
+  refine WP.mono (copy_step hj hn hrd hwr hsep hI) fun t' h' => ?_
+  have e := eval_nonzero_ofNat' t' .r12 (k := n - (j + 1)) (by omega_using [hn]) h'.r12
+  by_cases he : j + 1 = n
+  · left; exact ⟨by rw [e]; simp [he], k t' (he ▸ h')⟩
+  · right; exact ⟨by rw [e]; simp; omega_using [hj, he], n - (j + 1), by omega_using [hj], j + 1, rfl, by omega_using [hj, he], h'⟩
+
+end VG.Proof.CmacTripleDes.Stream.PPC64LE
+
+end
+
+end
 
 /-! ### `CmacTripleDes.Stream.PPC64LE.Verified`, which only this module used -/
 

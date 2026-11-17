@@ -3,8 +3,7 @@ module
 public import VerifiedGarbage.Impl.Ed25519.X86.PointDecode
 import VerifiedGarbage.Proof.Ed25519.X86.PointEncodeSign
 public import VerifiedGarbage.Proof.Ed25519.X86.PointMultiplyFrame
-public import VerifiedGarbage.Proof.Ed25519.X86.RecoverSign
-import VerifiedGarbage.Proof.Ed25519.X86.RecoverPoint
+public import VerifiedGarbage.Proof.Ed25519.X86.RecoverPoint
 import VerifiedGarbage.Proof.Ed25519.X86.ScalarBody
 import VerifiedGarbage.Proof.X25519.X86.Freeze
 import VerifiedGarbage.Proof.Framework.Contract

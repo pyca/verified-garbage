@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Reg.Keys
-public import VerifiedGarbage.Proof.GcmSiv.MulX
+public import VerifiedGarbage.Proof.GcmSiv.Spec
 public import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Exec
 import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Keys
 import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Absorb
@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
 import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Gcm.Stream
-import VerifiedGarbage.Proof.GcmSiv.Spec
 import VerifiedGarbage.Proof.AesGcm.X86_64.Env
 import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd

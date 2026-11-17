@@ -2,9 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.WindowSparseCtContext
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCtHead
-import VerifiedGarbage.Proof.Bignum.AArch64.WindowSparseTile
-import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightSetup
 import VerifiedGarbage.Proof.Bignum.AArch64.WindowSparseRows
+import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightSetup
 import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightCtContext
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightRows
 

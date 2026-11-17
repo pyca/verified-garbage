@@ -4,8 +4,6 @@ public import VerifiedGarbage.Impl.Dsa.X86.ProbablePrime
 public import VerifiedGarbage.Proof.Framework.X86.Call
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateNoSpLoop
 import VerifiedGarbage.Proof.Framework.X86.CallWith
-import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateNoSpPrepare
-import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateNoSpWords
 
 /-! # The probable-prime test never writes ESP outside its frames -/
 

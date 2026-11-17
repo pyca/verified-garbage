@@ -28,7 +28,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.Inline
 import VerifiedGarbage.Proof.Framework.X86_64.Masked
 import VerifiedGarbage.Proof.Mont.X86_64.Blocks
-import VerifiedGarbage.Proof.Mont.X86_64.CsubR
+import VerifiedGarbage.Proof.Weierstrass.X86_64.MontCall
 import VerifiedGarbage.Proof.Mont.X86_64.CsubS
 import VerifiedGarbage.Proof.Mont.X86_64.Friendly
 import VerifiedGarbage.Proof.Mont.X86_64.Ops
@@ -45,9 +45,6 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
 import VerifiedGarbage.Proof.Weierstrass.X86_64.InvPacked
 import VerifiedGarbage.Proof.Weierstrass.X86_64.InvRed
 import VerifiedGarbage.Proof.Weierstrass.X86_64.InvWords
-import VerifiedGarbage.Proof.Weierstrass.X86_64.MontCall
-import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnB
-import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnN
 import VerifiedGarbage.Proof.Weierstrass.X86_64.MontWide8
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Unch
 

@@ -10,8 +10,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Ed25519.PPC64LE.Field
 import VerifiedGarbage.Proof.Ed25519.PPC64LE.Packed
-import VerifiedGarbage.Proof.Ed25519.PPC64LE.ScalarBit
-import VerifiedGarbage.Proof.Ed25519.PPC64LE.ScalarLoop
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!

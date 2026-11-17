@@ -13,10 +13,9 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Taint
-import VerifiedGarbage.Proof.Blowfish.AArch64.Ecb
+import VerifiedGarbage.Proof.Blowfish.AArch64.EcbMain
 public import VerifiedGarbage.Proof.Blowfish.AArch64.Round
 import VerifiedGarbage.Proof.Blowfish.AArch64.Exec
-import VerifiedGarbage.Proof.Blowfish.AArch64.EcbMain
 public import VerifiedGarbage.Proof.Blowfish.AArch64.ConstantTime
 import VerifiedGarbage.Proof.Framework.AArch64.Inline
 public import VerifiedGarbage.Proof.Framework.Contract

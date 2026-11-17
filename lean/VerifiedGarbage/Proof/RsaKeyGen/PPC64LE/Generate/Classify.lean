@@ -107,7 +107,7 @@ octets, the exponent and the table's address. The controller keeps its
 working state in the 14 words at `sp - 112` (`GenPublic.F`) of the frame it
 allocates, with their base in `r31`; the loop runs below it, in the frame
 saving the link register, as the prime search's does
-(`Proof/RsaKeyGen/PPC64LE/Search/Data.lean`).
+(`Proof/RsaKeyGen/PPC64LE/Search/Entry.lean`).
 -/
 
 namespace VG.Proof.RsaKeyGen.PPC64LE.Generate

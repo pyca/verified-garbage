@@ -1,8 +1,8 @@
 module
+
 public import VerifiedGarbage.Impl.Dsa.X86.GenerateKey
 public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.State
-
-import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Prepare
+import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Copy
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith

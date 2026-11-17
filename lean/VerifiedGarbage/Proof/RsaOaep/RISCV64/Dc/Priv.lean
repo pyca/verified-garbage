@@ -22,7 +22,7 @@ public import VerifiedGarbage.Impl.RsaOaep.RISCV64.Decrypt
 # RSAES-OAEP decryption on RISC-V: the private operation
 
 Untrusted: everything here is checked by Lean. As on PPC64LE
-(`Proof/RsaOaep/PPC64LE/Dc/PrivArgs.lean`, `Dc/PrivPre.lean`,
+(`Proof/RsaOaep/PPC64LE/Dc/PrivCall.lean`, `Dc/PrivPre.lean`,
 `Dc/PrivCall.lean`), with the call as in RSASSA-PKCS1-v1_5 signing
 (`Proof/RsaPkcs1Sig/RISCV64/Sign/Call.lean`). In the frame of `privBytes`
 bytes below ours (`pb`), `privArgs` writes `vg_rsa_private_checked`'s
@@ -42,7 +42,7 @@ rest of `scratch` (`callWr`), where its precondition holds (`preP_at`);
 ## RSAES-OAEP decryption on RISC-V: the precondition and the entry
 
 Untrusted: everything here is checked by Lean. As on PPC64LE
-(`Proof/RsaOaep/PPC64LE/Dc/Pre.lean`, `Dc/Entry.lean`): `PreD s`, the
+(`Proof/RsaOaep/PPC64LE/Dc/PrivCall.lean`, `Dc/Entry.lean`): `PreD s`, the
 contract's precondition (`Spec.RsaOaep.decryptMdTablesContract`, with the stack
 of the frames and of `vg_rsa_private_checked`, `stackBytes`), by name
 (`preD_of`), and what it says of the tables (`spec_tabD`); the working space `Sd s` and the values the decoding keeps in

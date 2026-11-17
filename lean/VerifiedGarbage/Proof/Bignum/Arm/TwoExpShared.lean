@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.CallStack
 public import VerifiedGarbage.Proof.Bignum.Arm.MontCallEntry
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
 public import VerifiedGarbage.Proof.Framework.Arm.CallF
-import VerifiedGarbage.Proof.Bignum.Arm.MontCallArgs
 import VerifiedGarbage.Proof.Bignum.Arm.MontCallArgsReady
 import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
 import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase

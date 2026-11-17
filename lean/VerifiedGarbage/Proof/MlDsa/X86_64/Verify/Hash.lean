@@ -1,8 +1,7 @@
 module
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Call
 
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Entry
 import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
-import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Entry
 import VerifiedGarbage.Proof.MlKem.X86_64.Zero
 import VerifiedGarbage.Proof.MlKem.X86_64.KCall
 import VerifiedGarbage.Proof.Sha3.Stream

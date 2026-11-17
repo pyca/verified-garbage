@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Ffdh.Arm.ParameterCandidate
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.SieveContext
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.TableWrites
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.Table
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Omega

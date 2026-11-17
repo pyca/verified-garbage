@@ -1,11 +1,10 @@
 module
+
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hash
 public import VerifiedGarbage.Proof.RsaPss.X86_64.Basic
 public import VerifiedGarbage.Proof.RsaPss.X86_64.TabCall
-public import VerifiedGarbage.Proof.MdHashTable.X86_64
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
-
 import VerifiedGarbage.Proof.RsaPss.X86_64.CtHash
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 

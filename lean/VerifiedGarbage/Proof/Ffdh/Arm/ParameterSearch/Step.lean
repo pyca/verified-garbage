@@ -6,22 +6,130 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.State
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CallPost
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Call
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.LiveGuards
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Exit
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Result
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CandidateFacts
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Bounds
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CandidateFacts
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.PolicyMemory
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.FieldMemory
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Memory
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Done
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Live
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CounterMemory
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CompareResult
 public import VerifiedGarbage.Proof.Ffdh.Contract
+public import VerifiedGarbage.Proof.EntropyRequest
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.LivePolicy
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Outputs
+import VerifiedGarbage.Proof.Bignum.Arm.PcDimensions
+
+/-! ### `Ffdh.Arm.ParameterSearch.Exit`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Ffdh.Arm.ParameterSearch.Done`, which this module and modules that import it used -/
+
+section
+
+/-! Assemble the native terminal state from exact policy words, consumed bytes and output. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm.ParameterSearch
+open VG VG.Arm VG.Proof.Mont
+open VG.Proof.Ffdh.Arm.KeySearch (lowWord)
+
+theorem SearchLive.done {p : SearchParams} {result : Spec.Ffdh.ParameterSearchResult} {s : State}
+    (h : SearchLive p result.used result.remaining s)
+    (status : lowWord s.mem p.control 13 = BitVec.ofNat 32 result.status)
+    (request : s.mem.readW (off (State.addr p.control) 24) 64 = BitVec.ofNat 64 (Proof.Ffdh.requested p.c.bits result))
+    (output : searchOutput p result s.mem) : SearchDone p result s := by
+  refine ⟨h.buffers, h.usedBound, ?_, ?_, status, ?_, output⟩
+  · exact h.saved 6 (by simp [searchSlots])
+  · exact h.saved 4 (by simp [searchSlots])
+  · change [s.mem.readW (off (State.addr p.control) 0) 64,
+      s.mem.readW (off (State.addr p.control) 8) 64,
+      s.mem.readW (off (State.addr p.control) 16) 64,
+      s.mem.readW (off (State.addr p.control) 24) 64] = _
+    have counter := h.counter
+    have address : off (State.addr p.control) 0 = State.addr p.control := by simp [off]
+    rw [← address] at counter
+    rw [counter, h.width, h.entropy, request]
+    rfl
+
+theorem control_output {p : SearchParams} {result : Spec.Ffdh.ParameterSearchResult} {m m' : Mem}
+    (output : searchOutput p result m) (frame : Frame [⟨State.addr p.control, 128⟩] m m') :
+    searchOutput p result m' := by
+  unfold searchOutput at output ⊢
+  have fit : p.c.out.toNat + p.c.length ≤ 2 ^ 32 := p.c.outputFits
+  refine (VG.Proof.Bignum.Arm.rsa_bytes_frame frame (by omega_using [fit]) ?_).trans output
+  intro r hr
+  obtain rfl := List.mem_singleton.mp hr
+  exact p.controlOutput.symm
+
+theorem output_control_word {p : SearchParams} {m m' : Mem} {offset bits : Nat}
+    (frame : Frame [⟨State.addr p.c.out, p.c.length⟩] m m')
+    (bounds : offset + bits / 8 ≤ 128) :
+    m'.readW (off (State.addr p.control) offset) bits = m.readW (off (State.addr p.control) offset) bits := by
+  exact frame.readW (r := ⟨State.addr p.control, 128⟩)
+    (Offset.contains_base _ bounds (by omega_using [bounds]))
+    (by intro r hr; obtain rfl := List.mem_singleton.mp hr; exact p.controlOutput) (by omega_using [bounds])
+
+end VG.Proof.Ffdh.Arm.ParameterSearch
+
+end
+
+end
+
+/-! Exhaustion and entropy requests return the exact shared search results. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm.ParameterSearch
+open VG VG.Arm VG.Proof.Mont VG.Proof.X25519.Arm
+open VG.Proof.Ffdh.Arm.KeySearch (lowWord)
+
+def requestResult (p : SearchParams) (used remaining : Nat) : Spec.Ffdh.ParameterSearchResult :=
+  .entropy remaining (p.c.bytes.length - used) used
+
+theorem SearchLive.exhausted {p : SearchParams} {used remaining : Nat} {s : State}
+    (h : SearchLive p used remaining s) :
+    WP isa VG.Impl.Ffdh.Arm.ParameterSearch.exhausted s fun t =>
+      SearchDone p (.exhausted used) t ∧ Rest searchClobbers s t := by
+  unfold VG.Impl.Ffdh.Arm.ParameterSearch.exhausted
+  refine WP.seq (WP.mono (h.terminal (Or.inr rfl)) fun u ⟨live, status, request, _, restU⟩ => ?_)
+  refine WP.mono live.zero_output ?_
+  rintro t ⟨finished, bytes, frame, restT⟩
+  have statusT : lowWord t.mem p.control 13 = 3#32 := by
+    unfold lowWord
+    rw [output_control_word frame (by decide : 8 * 13 + 32 / 8 ≤ 128)]
+    exact status
+  have requestT : t.mem.readW (off (State.addr p.control) 24) 64 = 0 :=
+    (output_control_word frame (by decide : 24 + 64 / 8 ≤ 128)).trans request
+  exact ⟨finished.done statusT requestT bytes,
+    (restU.mono (by simp [searchClobbers])).trans (restT.mono (by simp [searchClobbers]))⟩
+
+theorem SearchLive.request_done {p : SearchParams} {used remaining : Nat} {s : State}
+    (h : SearchLive p used remaining s)
+    (zero : Spec.Rsa.bytesAt s.mem (State.addr p.c.out) p.c.length = List.replicate p.c.length 0) :
+    WP isa VG.Impl.Ffdh.Arm.ParameterSearch.request s fun t =>
+      SearchDone p (requestResult p used remaining) t ∧ Rest searchClobbers s t := by
+  refine WP.mono h.request ?_
+  rintro t ⟨live, status, request, frame, rest⟩
+  exact ⟨live.done status request (control_output zero frame), rest.mono (by simp [searchClobbers])⟩
+
+theorem SearchLive.short_request {p : SearchParams} {used remaining : Nat} {s : State}
+    (h : SearchLive p used remaining s) :
+    WP isa (.seq VG.Impl.Ffdh.Arm.ParameterSearch.zeroOut VG.Impl.Ffdh.Arm.ParameterSearch.request) s fun t =>
+      SearchDone p (requestResult p used remaining) t ∧ Rest searchClobbers s t := by
+  refine WP.seq (WP.mono h.zero_output fun u ⟨live, zero, _, restU⟩ => ?_)
+  refine WP.mono (live.request_done zero) ?_
+  rintro t ⟨done, restT⟩
+  exact ⟨done, (restU.mono (by simp [searchClobbers])).trans restT⟩
+
+end VG.Proof.Ffdh.Arm.ParameterSearch
+
+end
+
+end
 
 /-! ### `Ffdh.Arm.ParameterSearch.Advance`, which only this module used -/
 

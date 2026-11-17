@@ -4,13 +4,13 @@ public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Cached.PcFn
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Cached.PcBody
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.VettedValidation.Recognize
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckDomainFn
-public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.Save
+public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckPublicFn
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Cached.PcRecog
 public import VerifiedGarbage.Proof.Mont.Words
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckDomainCT
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubCorrect
-import VerifiedGarbage.Proof.Ffdh.PPC64LE.VettedValidation.Table
+import VerifiedGarbage.Proof.Ffdh.PPC64LE.VettedValidation.Geometry
 import VerifiedGarbage.Proof.Ffdh.VettedTableFacts
 import VerifiedGarbage.Proof.Ffdh.GenerationPrecompute
 import VerifiedGarbage.Proof.Ffdh.Domain

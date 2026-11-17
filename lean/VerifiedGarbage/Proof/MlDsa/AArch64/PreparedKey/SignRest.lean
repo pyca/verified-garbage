@@ -10,7 +10,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedInitialization
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Depth
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedDepth
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedChecksCorrect
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedLoopCorrect
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseK
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Correct
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRoots

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.CT
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Instrs
-public import VerifiedGarbage.Proof.HmacTable.X86
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Layout
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Table
 import VerifiedGarbage.Proof.Framework.X86.CallWith
 import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Frame

@@ -1,12 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcmSiv.Rounds
+public import VerifiedGarbage.Proof.AesGcmSiv.Scratch
 public import VerifiedGarbage.Proof.AesGcmSiv.RISCV64.Seal
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.AesGcmSiv.Scratch
 public import VerifiedGarbage.Impl.AesGcmSiv.RISCV64
 public import VerifiedGarbage.Impl.StackScratch.RISCV64.Args
-public import VerifiedGarbage.Proof.AesGcmSiv.RISCV64.Contract
+public import VerifiedGarbage.Proof.AesGcmSiv.RISCV64.Entry
 import VerifiedGarbage.Proof.AesGcmSiv.RISCV64.TopCT
 import VerifiedGarbage.Proof.AesGcmSiv.RISCV64.Open
 import VerifiedGarbage.Proof.Framework.SigEval

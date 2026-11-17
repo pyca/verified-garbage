@@ -1,9 +1,9 @@
 module
+
 -- separate module: the proof of Appendix C.2's body is split in a chain of modules, so that a change rebuilds only the modules after it
 public import VerifiedGarbage.Proof.Rsa.Arm.KeyOps
 public import VerifiedGarbage.Proof.Rsa.Arm.Stage.KS
 public import VerifiedGarbage.Impl.Rsa.Arm.RecoverDet
-
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.Ops
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.Ops2
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.Slots
@@ -14,7 +14,6 @@ import VerifiedGarbage.Proof.Rsa.KeyBits32
 import VerifiedGarbage.Proof.Bignum.Arm.ShiftLeft
 import VerifiedGarbage.Proof.Bignum.Arm.ShiftK
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Bignum.Arm.CopyWords
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.Views
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset

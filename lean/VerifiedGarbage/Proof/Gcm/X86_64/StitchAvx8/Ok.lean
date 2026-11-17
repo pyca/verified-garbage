@@ -1,11 +1,10 @@
 module
 
 import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Ghash
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.TailD
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.TailD
 public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Context
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
 import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Ctr32
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx.Loop
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemLoopOneD
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
@@ -13,7 +12,6 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
-public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Tail
 import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Load
 import VerifiedGarbage.Proof.Gcm.Powers
 public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.SpecTo

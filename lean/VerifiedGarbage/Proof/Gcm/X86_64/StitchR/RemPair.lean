@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Gcm.X86_64.StitchTo.Base
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.Base
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
 import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Ctr32
-import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemBodyD
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith

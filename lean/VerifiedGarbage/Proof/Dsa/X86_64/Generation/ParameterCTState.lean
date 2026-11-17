@@ -3,11 +3,9 @@ module
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PConstructCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedCTState
-
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ParameterInvariant
 public import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ChunkTake
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ChunkCheck
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.TapeIteration
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextFrame
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextSlice
 public import Mathlib.Algebra.Group.Nat.Defs
@@ -25,7 +23,6 @@ public import VerifiedGarbage.Impl.RsaOaep.X86_64
 public import VerifiedGarbage.Proof.Bignum.Words
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Context
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SubgroupState
 public import VerifiedGarbage.Proof.Dsa.X86_64.Parameters
 public import VerifiedGarbage.Proof.Framework.X86_64.Call
 public import VerifiedGarbage.Spec.Ffdh
@@ -43,9 +40,9 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedSearchPlanCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchInitCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchIterationCTState
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchIterationCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashChoice
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedPhaseStableCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedSubgroupCT
+
 /-! # Public seed and witness cursors for the complete parameter search -/
 
 -- Formerly `VerifiedGarbage/Proof/Dsa/X86_64/Generation/SeedPrimeResultCT.lean`, which only this module imported.

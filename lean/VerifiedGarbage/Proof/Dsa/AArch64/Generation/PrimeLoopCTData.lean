@@ -2,14 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeIterationCT
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.LoopState
-
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.LoopStep
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTDefs
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.LoopExhausted
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeTapeCheck
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrMain
 import VerifiedGarbage.Proof.Framework.Block
+
 /-! # Public transitions of the finite DSA witness loop -/
 
 -- Formerly `VerifiedGarbage/Proof/Dsa/AArch64/Generation/IterationPublic.lean`, which only this module imported.

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTMontOne
-public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.KeyReady
+public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.KeyFrame
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTBase
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTExponentStep
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.ExponentStep

@@ -17,7 +17,7 @@ import VerifiedGarbage.Proof.Modes.Addr
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Modes.CfbDec
-import VerifiedGarbage.Proof.Modes.X86_64.Xor
+import VerifiedGarbage.Proof.Modes.X86_64.Group
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import VerifiedGarbage.Proof.Modes.X86_64.CbcDecChained
 import VerifiedGarbage.Proof.Modes.CbcNext

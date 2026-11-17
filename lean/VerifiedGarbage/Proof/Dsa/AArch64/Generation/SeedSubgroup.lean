@@ -1,9 +1,8 @@
 module
 
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ContextSeed
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ContextSeed
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Hashes
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Context
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedArguments
 public import VerifiedGarbage.Proof.MillerRabin.AArch64.Kernel
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeTest
 import VerifiedGarbage.Proof.Framework.Omega

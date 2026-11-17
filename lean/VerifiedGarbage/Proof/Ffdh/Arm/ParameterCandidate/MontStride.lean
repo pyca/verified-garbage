@@ -1,9 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.KeyReady
+public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.KeyFrame
 public import VerifiedGarbage.Impl.Ffdh.Arm.ParameterCandidate
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.KeyFrame
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.KeyView
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
 import VerifiedGarbage.Proof.Rc2.PairMem
 import VerifiedGarbage.Proof.Framework.Offset

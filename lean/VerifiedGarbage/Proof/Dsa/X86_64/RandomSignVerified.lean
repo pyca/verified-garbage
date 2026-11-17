@@ -4,7 +4,7 @@ public import VerifiedGarbage.Impl.Dsa.X86_64.RandomSign
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCall
 public import VerifiedGarbage.Spec.Dsa.RandomSign
 public import VerifiedGarbage.Spec.Dsa.PrevalidatedSign
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCallResult
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignSingle
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCode
 public import VerifiedGarbage.Proof.Dsa.SignContractWith
 import VerifiedGarbage.Proof.Framework.Omega
@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignPublic
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignInvalidCT
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignBodyCT
-import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignABI
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignFrame
 public import VerifiedGarbage.Proof.Dsa.X86_64.PrevalidatedSignVerified
 import VerifiedGarbage.Proof.Dsa.X86_64.PrevalidatedVerified
 

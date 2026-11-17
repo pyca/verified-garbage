@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CTState
 public import VerifiedGarbage.Impl.Ffdh.Arm.ParameterSearch
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.ZeroOutput
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Outputs
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Live
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.LivePolicy

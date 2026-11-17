@@ -1,12 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.KeygenEntry
-public import VerifiedGarbage.Proof.Dsa.AArch64.SigningKey
+public import VerifiedGarbage.Proof.Dsa.AArch64.Parameters
+public import VerifiedGarbage.Proof.Dsa.AArch64.SignCompute
 public import VerifiedGarbage.Proof.Dsa.AArch64.ShapeSpec
 public import VerifiedGarbage.Proof.Dsa.AArch64.SourceSlices
 public import VerifiedGarbage.Proof.Dsa.AArch64.CoreSign
 public import VerifiedGarbage.Proof.Dsa.AArch64.InitializedLayout
-public import VerifiedGarbage.Proof.Dsa.AArch64.SignCompute
 public import VerifiedGarbage.Impl.Dsa.AArch64.PrevalidatedSign
 public import VerifiedGarbage.Spec.Dsa.PrevalidatedSign
 import VerifiedGarbage.Proof.Dsa.AArch64.DeriveChecked
@@ -14,21 +13,15 @@ import VerifiedGarbage.Proof.Dsa.AArch64.SharedCall
 import VerifiedGarbage.Proof.Dsa.AArch64.Sequences
 import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleState
 import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleOperands
-import VerifiedGarbage.Proof.Dsa.AArch64.CallOperands
 import VerifiedGarbage.Proof.Dsa.AArch64.CheckOperands
 import VerifiedGarbage.Proof.Dsa.Encoding
-import VerifiedGarbage.Proof.Dsa.AArch64.Parameters
-import VerifiedGarbage.Proof.Dsa.AArch64.PrivateKey
 import VerifiedGarbage.Proof.Dsa.AArch64.AcceptedSpec
 import VerifiedGarbage.Proof.Dsa.AArch64.SigningOperands
 import VerifiedGarbage.Proof.Dsa.AArch64.WorkspaceReady
 import VerifiedGarbage.Proof.Dsa.AArch64.Result
-import VerifiedGarbage.Proof.Dsa.AArch64.KeyPointers
 import VerifiedGarbage.Proof.Dsa.AArch64.EntryFieldsFrame
-import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleState
 import VerifiedGarbage.Proof.Dsa.Layout
 import VerifiedGarbage.Proof.Dsa.SizeBounds
-import VerifiedGarbage.Proof.Dsa.Encoding
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec

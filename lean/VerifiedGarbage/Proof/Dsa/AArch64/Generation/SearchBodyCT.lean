@@ -1,12 +1,12 @@
 module
+
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PConstructCT
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SearchCTState
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SourceFrame
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.PAttempt
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PPrimalityCTState
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.PConstruct
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PConstruct
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PConstructTest
 public import VerifiedGarbage.Proof.Dsa.Encoding
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CandidateWidthCT
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeCallCT
@@ -17,7 +17,6 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TaintBatch
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PTestSmallCT
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CandidateWidth
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PConstructTest
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.AttemptBlocksCT
 
 /-! ### `Dsa.AArch64.Generation.SearchEntryCT`, which only this module used -/

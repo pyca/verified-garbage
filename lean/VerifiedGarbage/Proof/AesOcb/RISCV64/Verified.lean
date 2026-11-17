@@ -1,11 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.AesOcb.Rounds
-public import VerifiedGarbage.Proof.AesOcb.RISCV64.Contract
 public import VerifiedGarbage.Proof.AesOcb.Scratch
+public import VerifiedGarbage.Proof.AesOcb.RISCV64.Seal
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Impl.AesOcb.RISCV64
-import VerifiedGarbage.Proof.AesOcb.RISCV64.Seal
 import VerifiedGarbage.Proof.AesOcb.RISCV64.Open
 import VerifiedGarbage.Proof.AesOcb.RISCV64.FnCT
 import VerifiedGarbage.Proof.Framework.SigEval

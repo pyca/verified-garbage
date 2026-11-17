@@ -2,7 +2,7 @@ module
 
 import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.By
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Split.FnCT
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.Contract
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Callee
 import VerifiedGarbage.Proof.ChaCha20Poly1305.Scratch
 public import VerifiedGarbage.Proof.Framework.Scratch
 public import VerifiedGarbage.Proof.Gcm.OutOfPlaceContract
@@ -16,7 +16,6 @@ import VerifiedGarbage.Proof.Aes.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TaintBatch
 import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Lit
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Callee
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Shared
 public import VerifiedGarbage.Impl.ChaCha20Poly1305.X86_64.SealGather
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Whole.Callee

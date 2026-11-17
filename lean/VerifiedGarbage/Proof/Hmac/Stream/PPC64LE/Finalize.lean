@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Save
 public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Init
 import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Copy
 import VerifiedGarbage.Proof.Hmac.Common

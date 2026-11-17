@@ -3,19 +3,154 @@ module
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterBackend
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CallPost
 public import VerifiedGarbage.Impl.Ffdh.Arm.ParameterSearch
-
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CallPre
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CallRegions
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CallBytes
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CallGeometry
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Tape
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Arm.Exec
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CallLayout
+public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CallLayout
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CallPreserves
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Arguments
+public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Arguments
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.State
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Bounds
+import VerifiedGarbage.Proof.Bignum.Arm.PcDimensions
+public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.ArgumentWords
+public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CallFacts
+public import VerifiedGarbage.Spec.Ffdh.Contract
+public import VerifiedGarbage.Proof.Ffdh.Contract
+public import VerifiedGarbage.TCB.Arm.Target
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CallParams
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Spec.Ffdh.SievedContract
+import VerifiedGarbage.Proof.Framework.CallLay
+public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Params
+
+/-! ### `Ffdh.Arm.ParameterSearch.CallRegions`, which this module and modules that import it used -/
+
+section
+
+/-! The candidate's narrowed permissions are covered by the controller's buffers. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm.ParameterSearch
+open VG VG.Arm VG.Proof.Mont VG.Proof.Bignum.Arm
+
+theorem call_writes {p : SearchParams} {s : State}
+    (output : Workspace s p.c.out p.c.length)
+    (control : Workspace s p.control 128)
+    (scratch : Workspace s p.c.base (8 * p.c.capacity)) : Covers (callWr p) s.wr := by
+  apply Covers.cons (Covers.one ⟨_, output.2, Region.contains_self _ _⟩)
+  apply Covers.cons ?_ (Covers.one ⟨_, scratch.2, Region.contains_self _ _⟩)
+  apply Covers.one
+  rw [p.used_addr]
+  exact VG.CallLay.inRegions_sub ⟨_, control.2, Region.contains_self _ _⟩
+    (by decide : 112 + 8 ≤ 128) (by decide)
+
+theorem call_reads {p : SearchParams} {used : Nat} {s : State}
+    (writes : Covers (callWr p) s.wr)
+    (source : InRegions (s.rd ++ s.wr) (State.addr (p.c.tape + BitVec.ofNat 32 used))
+      (p.c.bytes.length - used)) (stack : Workspace s s.sp 24) :
+    Covers (callRd p used s.sp ++ callWr p) (s.rd ++ s.wr) := by
+  apply Covers.append_left ?_ writes.right
+  apply Covers.pair (Covers.one source)
+  apply Covers.right
+  apply Covers.one
+  simpa only [VG.Proof.Mont.off, BitVec.add_zero] using VG.CallLay.inRegions_sub
+    ⟨_, stack.2, Region.contains_self _ _⟩ (off := 0) (by decide : 0 + 20 ≤ 24) (by decide)
+
+end VG.Proof.Ffdh.Arm.ParameterSearch
+
+end
+
+end
+
+/-! ### `Ffdh.Arm.ParameterSearch.CallPre`, which this module and modules that import it used -/
+
+section
+
+/-! The nested native candidate satisfies the existing public FFDH signature's precondition. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm.ParameterSearch
+open VG VG.Arm
+
+theorem call_pre {p : SearchParams} {used : Nat} {s : State} {m : Mem}
+    (facts : CallFacts p used s.sp) (context : ArgumentContext p used s)
+    (memory : s.mem = callMem p used m s.sp) (room : used + p.c.length ≤ p.c.bytes.length) :
+    (Proof.Ffdh.sievedParameterCandidateContract abi 184).pre (callState p used s) := by
+  let q := p.candidateParams used room
+  have a0 := call_stackArg (j := 0) facts.argsFits memory (by decide)
+  have a1 := call_stackArg (j := 1) facts.argsFits memory (by decide)
+  have a2 := call_stackArg (j := 2) facts.argsFits memory (by decide)
+  have a3 := call_stackArg (j := 3) facts.argsFits memory (by decide)
+  have a4 := call_stackArg (j := 4) facts.argsFits memory (by decide)
+  simp only [callValue] at a0 a1 a2 a3 a4
+  have widthNat : (BitVec.ofNat 32 p.c.length).toNat = p.c.length := by
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := p.width_bounds; omega_using [this])]
+  have bitsNat : (BitVec.ofNat 32 p.c.bits).toNat = p.c.bits := by
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := p.c.maxBits; omega_using [this])]
+  have genNat : (BitVec.ofNat 32 p.c.generator).toNat = p.c.generator := by
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by rcases p.c.generatorAllowed with eq | eq <;> omega_using [eq])]
+  have tapeNat : (BitVec.ofNat 32 (p.c.bytes.length - used)).toNat = p.c.bytes.length - used := by
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := p.c.tapeCount; omega_using [this])]
+  have capNat : (BitVec.ofNat 32 p.c.capacity).toNat = p.c.capacity := by
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt p.capacity_fits]
+  sig_pre [Proof.Ffdh.sievedParameterCandidateContract, Proof.Ffdh.parameterCandidateSig,
+    abi, argRegs, reduceClassify, Loc.val, State.addr]
+  simp only [context.out, context.width, context.usedPtr, context.bits,
+    a0, a1, a2, a3, a4, widthNat, bitsNat, genNat, tapeNat, capNat]
+  have argAddr : stackArgAddr (callState p used s) 0 = State.addr s.sp := by simp [stackArgAddr]
+  rw [argAddr]
+  simp only [Nat.mul_comm p.c.capacity 8]
+  have address := FrameStack.addr_sub' facts.stackFits
+  change BitVec.setWidth 64 (s.sp - 184#32) = BitVec.setWidth 64 s.sp - 184#64 at address
+  rw [← address]
+  refine ⟨facts.stackFits, facts.argsFits, rfl, rfl, q.outputUsed, ?_, q.outputScratch,
+    facts.outputArgs, ?_, q.usedScratch, facts.usedArgs, ?_, facts.scratchArgs,
+    facts.stackOutput, facts.stackUsed, facts.stackTape, facts.stackScratch, facts.stackArgs,
+    q.outputFits, q.usedFits, ?_, q.scratchFits, p.c.minBits, p.c.maxBits, rfl, p.c.generatorAllowed, p.c.space⟩
+  · simpa only [q, SearchParams.candidateParams, VG.Proof.Ffdh.Arm.ParameterCandidate.CandidateParams.length, State.addr, List.length_drop] using q.outputTape
+  · simpa only [q, SearchParams.candidateParams, VG.Proof.Ffdh.Arm.ParameterCandidate.CandidateParams.length, State.addr, List.length_drop] using q.usedTape
+  · simpa only [q, SearchParams.candidateParams, VG.Proof.Ffdh.Arm.ParameterCandidate.CandidateParams.length, State.addr, List.length_drop] using q.tapeScratch
+  · simpa only [q, SearchParams.candidateParams, VG.Proof.Ffdh.Arm.ParameterCandidate.CandidateParams.length, State.addr, List.length_drop] using q.tapeFits
+
+end VG.Proof.Ffdh.Arm.ParameterSearch
+
+end
+
+end
+
+/-! ### `Ffdh.Arm.ParameterSearch.CallBytes`, which this module and modules that import it used -/
+
+section
+
+/-! Preparing stack arguments leaves the remaining candidate entropy unchanged. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm.ParameterSearch
+open VG VG.Arm VG.Proof.Bignum.Arm
+
+theorem SearchLive.call_bytes {p : SearchParams} {used remaining : Nat} {s u : State}
+    (h : SearchLive p used remaining s) (room : used + p.c.length ≤ p.c.bytes.length)
+    (mem : u.mem = callMem p used s.mem (s.sp - 24#32)) :
+    Spec.Rsa.bytesAt u.mem (State.addr (p.c.tape + BitVec.ofNat 32 used))
+      (p.c.bytes.length - used) = p.c.bytes.drop used := by
+  rw [mem]
+  refine (rsa_bytes_frame (callMem_frame p used s.mem (s.sp - 24#32))
+    (by have := p.c.tapeCount; omega_using [this]) ?_).trans (h.source_bytes room)
+  intro r hr
+  obtain rfl := List.mem_singleton.mp hr
+  exact (((h.buffers.stackSeparate _ (by simp)).2.sub_left
+    (callArguments_sub h.buffers.below)).sub_right (p.source_sub used room)).symm
+
+end VG.Proof.Ffdh.Arm.ParameterSearch
+
+end
+
+end
+
 /-! The native search calls its selected, fully verified candidate and restores its live state. -/
 
 -- Formerly `VerifiedGarbage/Proof/Ffdh/Arm/ParameterSearch/CallFrame.lean`, which only this module imported.

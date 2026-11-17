@@ -1,8 +1,7 @@
 module
-public import VerifiedGarbage.Proof.Seed.PPC64LE.G16
+
 public import VerifiedGarbage.Proof.Seed.PPC64LE.Steps
 public import VerifiedGarbage.Proof.Framework.Bitslice.Sym
-public import VerifiedGarbage.Proof.Seed.PPC64LE.Lanes
 import VerifiedGarbage.Proof.Framework.ReadHalves
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd

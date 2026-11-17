@@ -1,8 +1,6 @@
 module
-public import VerifiedGarbage.Proof.Seed.PPC64LE.G16
-public import VerifiedGarbage.Proof.Seed.PPC64LE.Lanes
 
-import VerifiedGarbage.Proof.Seed.PPC64LE.Steps
+public import VerifiedGarbage.Proof.Seed.PPC64LE.Steps
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.PlainSimp

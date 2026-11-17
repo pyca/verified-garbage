@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.ExponentRt.Code
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateShape
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateArrays
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateInput
-import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateMemory
 import VerifiedGarbage.Proof.Framework.X86.Syms
 
 /-! # Exponent filtering retains all live candidate inputs and the consumed entropy count -/

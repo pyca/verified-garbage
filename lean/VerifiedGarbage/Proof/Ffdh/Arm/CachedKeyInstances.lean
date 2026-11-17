@@ -9,8 +9,8 @@ public import VerifiedGarbage.Impl.Ffdh.Arm.CachedPower
 public import VerifiedGarbage.Impl.Ffdh.Arm.KeyGenerate
 public import VerifiedGarbage.Proof.Bignum.Arm.MontBackend
 public import VerifiedGarbage.TCB.Arm.Isa
-public import VerifiedGarbage.Proof.Ffdh.Arm.EnvironmentPrepareLaw
-import VerifiedGarbage.Proof.Ffdh.Arm.CachedPrepare
+public import VerifiedGarbage.Proof.Ffdh.Arm.CachedKeyGenerateData
+import VerifiedGarbage.Proof.Ffdh.Arm.CachedPrepareState
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Ffdh.Arm.CachedGenerationEnvironment
@@ -18,9 +18,8 @@ import VerifiedGarbage.Proof.Ffdh.Arm.KeyPrepareLaw
 import VerifiedGarbage.Proof.Ffdh.Arm.CachedPrepareCT
 import VerifiedGarbage.Proof.Ffdh.Arm.StackCT
 import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
-import VerifiedGarbage.Proof.Ffdh.Arm.CachedPrepareState
 public import VerifiedGarbage.Impl.Ffdh.Arm.SampleScalar
-import VerifiedGarbage.Proof.Ffdh.Arm.EnvironmentBoundLaw
+import VerifiedGarbage.Proof.Ffdh.Arm.CachedSamplePolicy
 import VerifiedGarbage.Proof.Ffdh.Arm.KeyScalar
 import VerifiedGarbage.Proof.Ffdh.Arm.SampleScalarArgs
 import VerifiedGarbage.Proof.Bignum.Arm.PcDimensions
@@ -33,7 +32,6 @@ public import VerifiedGarbage.Proof.Framework.GetElem
 public import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Ffdh.Arm.SamplePrefix
 import VerifiedGarbage.Proof.Ffdh.Arm.SampleFirstRetained
-import VerifiedGarbage.Proof.Ffdh.Arm.ZeroOptional
 import VerifiedGarbage.Proof.Bignum.Arm.CopyBuffer
 import VerifiedGarbage.Proof.Bignum.Arm.CopyRegion
 import VerifiedGarbage.Proof.Framework.Arm.Exec
@@ -63,12 +61,9 @@ public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Ffdh.Arm.KeyArgsCT
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 import VerifiedGarbage.Proof.Ffdh.Arm.KeyByteCT
-public import VerifiedGarbage.Proof.Ffdh.Arm.EnvironmentSampleLaw
-import VerifiedGarbage.Proof.Ffdh.Arm.CachedSamplePolicy
 import VerifiedGarbage.Proof.Ffdh.Arm.CachedSampleCT
-import VerifiedGarbage.Proof.Ffdh.Arm.CachedSampleBound
 import VerifiedGarbage.Proof.Bignum.Arm.CombExpBackend
-import VerifiedGarbage.Proof.Ffdh.Arm.CachedPowerMetadata
+import VerifiedGarbage.Proof.Ffdh.Arm.CachedPowerArgs
 import VerifiedGarbage.Proof.Ffdh.Arm.CachedGenerationFacts
 public import VerifiedGarbage.Proof.Bignum.Arm.CombTableState
 import VerifiedGarbage.Proof.Bignum.Octets
@@ -86,10 +81,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.CombExpKernelAt
 import VerifiedGarbage.Proof.Bignum.Arm.CombExpTiming
 import VerifiedGarbage.Proof.Ffdh.Arm.CachedPowerArgsCT
 import VerifiedGarbage.Proof.Ffdh.Arm.SampleEnvironment
-import VerifiedGarbage.Proof.Ffdh.Arm.SamplePowerLaw
-import VerifiedGarbage.Proof.Ffdh.Arm.CachedPowerArgs
-public import VerifiedGarbage.Proof.Ffdh.Arm.EnvironmentTailLaw
-import VerifiedGarbage.Proof.Ffdh.Arm.KeyFinish
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyTail
 import VerifiedGarbage.Proof.Ffdh.Arm.ExportResult
 import VerifiedGarbage.Proof.Ffdh.Arm.ExchangeMain
 import VerifiedGarbage.Proof.Ffdh.Arm.Range
@@ -98,7 +90,6 @@ import VerifiedGarbage.Proof.Ffdh.Arm.KeyTailLaw
 import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Proof.Ffdh.Arm.RangeCT
 public import VerifiedGarbage.Spec.Ffdh.CachedKeyGenerationContract
-public import VerifiedGarbage.Proof.Ffdh.Arm.SampleResult
 import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.Ffdh.Arm.DomainSpec
 import VerifiedGarbage.Proof.Ffdh.Arm.PrivateSpec
@@ -109,13 +100,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import Init.Prelude
 import VerifiedGarbage.TCB.Artifact
-import VerifiedGarbage.Proof.Ffdh.Arm.CachedKeyGenerateData
-import VerifiedGarbage.Proof.Ffdh.Arm.CachedKeyGenerateFn
-import VerifiedGarbage.Proof.Ffdh.Arm.CachedKeyGenerateInput
-import VerifiedGarbage.Proof.Ffdh.Arm.CachedKeyGenerateEnvironment
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeyMain
 import VerifiedGarbage.Proof.Framework.Sig
-import VerifiedGarbage.Proof.Ffdh.Arm.CachedKeyGeneratePre
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeyState
@@ -136,9 +121,7 @@ import VerifiedGarbage.Proof.Ffdh.Arm.HeadCT
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
 import VerifiedGarbage.Proof.Ffdh.Arm.FrameCT
 import VerifiedGarbage.Proof.Ffdh.Arm.Entered
-import VerifiedGarbage.Proof.Ffdh.Arm.CachedKeyGenerateEntry
 import VerifiedGarbage.Proof.Ffdh.Arm.CachedKeyGenerateSat
-import VerifiedGarbage.Proof.Bignum.Arm.CombExpChoose
 import VerifiedGarbage.Proof.Bignum.Arm.CombExpLoop
 import VerifiedGarbage.Proof.Bignum.Arm.CombExpInitial
 public import VerifiedGarbage.Proof.Bignum.Arm.CombExpKernel

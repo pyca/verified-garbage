@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Sm4.PPC64LE.ModesConstantTime
 public import VerifiedGarbage.Proof.Sm4.CbcScratch
 public import VerifiedGarbage.Proof.Sm4.FbScratch
-public import VerifiedGarbage.Proof.Sm4.PPC64LE.ModeCore
 public import VerifiedGarbage.Proof.Sm4.PPC64LE.SerialCore
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 import VerifiedGarbage.Proof.Modes.PPC64LE.Modes

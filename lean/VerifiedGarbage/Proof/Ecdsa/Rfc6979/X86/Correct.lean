@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Cand
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Blocks
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Hmac
 import VerifiedGarbage.Proof.Framework.X86.Syms

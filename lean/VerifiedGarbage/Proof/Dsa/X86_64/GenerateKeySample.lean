@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86_64.GenerateKeyCheckStep
 import VerifiedGarbage.Proof.Dsa.Derive
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Dsa.X86_64.RandomPrepareState
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignRunning
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomMemory
 import VerifiedGarbage.Proof.Dsa.SizeBounds
 import VerifiedGarbage.Proof.Bignum.Octets

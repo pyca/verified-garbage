@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.RsaPss.X86_64.PrefixCheck
 public import VerifiedGarbage.Proof.Rsa.X86_64.PubChecked
 public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyFrame
 import VerifiedGarbage.Proof.RsaPss.X86_64.Params
-import VerifiedGarbage.Proof.RsaPss.Encoding
+import VerifiedGarbage.Proof.RsaPss.EncBytes
 import VerifiedGarbage.Proof.RsaPss.MgfBytes
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Bignum.X86_64.PdCT

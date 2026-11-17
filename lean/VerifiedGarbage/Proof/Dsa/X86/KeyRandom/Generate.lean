@@ -3,12 +3,12 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Invoke
 public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Finish
 public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Result
-
 import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Sample
-import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Prepare
+import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Copy
 import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.CallArgs
 import VerifiedGarbage.Proof.Dsa.X86.RandomAttempt
 import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.CallResult
+
 /-! # Prepare and sample a private scalar after accepting the domain -/
 
 -- Formerly `VerifiedGarbage/Proof/Dsa/X86/KeyRandom/Sampled.lean`, which only this module imported.

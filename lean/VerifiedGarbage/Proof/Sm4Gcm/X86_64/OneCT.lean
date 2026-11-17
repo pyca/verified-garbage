@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Sm4Gcm.X86_64.Seal
+public import VerifiedGarbage.Proof.Sm4Gcm.X86_64.Seal
 import VerifiedGarbage.Proof.Sm4Gcm.X86_64.CryptCT
 import VerifiedGarbage.Proof.Sm4Gcm.X86_64.TagCT
 import VerifiedGarbage.Proof.Sm4Gcm.X86_64.CryptOk
@@ -31,7 +31,6 @@ meta import VerifiedGarbage.Impl.Sm4Gcm.X86_64
 meta import VerifiedGarbage.TCB.X86_64.Isa
 meta import VerifiedGarbage.TCB.X86_64.State
 public import VerifiedGarbage.Proof.Sm4Gcm.X86_64.Crypt
-public import VerifiedGarbage.Proof.Sm4Gcm.X86_64.OneShot
 
 /-!
 # SM4-GCM on x86-64: `seal` and its pieces in two runs

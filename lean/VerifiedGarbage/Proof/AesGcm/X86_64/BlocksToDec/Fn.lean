@@ -54,7 +54,6 @@ meta import VerifiedGarbage.Proof.Gcm.Be64
 meta import VerifiedGarbage.Proof.Gcm.Bits
 meta import VerifiedGarbage.Proof.Gcm.Spec
 import VerifiedGarbage.Proof.AesGcm.X86_64.Run
-public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksToDec.Contract
 public import VerifiedGarbage.Impl.AesGcm.X86_64.BlocksToDec
 public import VerifiedGarbage.Proof.Framework.X86_64.Depth
 import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Verified

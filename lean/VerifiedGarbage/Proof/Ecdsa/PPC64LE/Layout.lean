@@ -4,7 +4,7 @@ public import VerifiedGarbage.Impl.Ecdsa.PPC64LE
 public import VerifiedGarbage.Proof.Weierstrass.PPC64LE.LadderP
 public import VerifiedGarbage.Proof.Weierstrass.Unch
 public import VerifiedGarbage.Spec.Ecdsa.Generic
-public import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Bits
+public import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Pow
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.Weierstrass.PPC64LE
 public import VerifiedGarbage.Proof.Weierstrass.PPC64LE.MontCall

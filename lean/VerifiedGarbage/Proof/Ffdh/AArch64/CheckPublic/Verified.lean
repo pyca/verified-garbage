@@ -1,10 +1,10 @@
 module
+
 public import VerifiedGarbage.Impl.Ffdh.AArch64.Domain
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowBody
 public import VerifiedGarbage.Spec.Ffdh.Contract
-
 import VerifiedGarbage.Proof.Ffdh.AArch64.CheckPublic.CT
-import VerifiedGarbage.Proof.Ffdh.AArch64.CheckPublic.Correct
+import VerifiedGarbage.Proof.Ffdh.AArch64.CheckPublic.Stages
 
 /-!
 # `vg_ffdh_check_public` on AArch64: verified

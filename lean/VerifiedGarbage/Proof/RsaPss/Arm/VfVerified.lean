@@ -3,13 +3,12 @@ module
 public import VerifiedGarbage.Proof.RsaPss.Arm.VfAny
 public import VerifiedGarbage.Proof.RsaPss.Arm.VfFixed
 import all Init.Data.Nat.Bitwise.Basic
-import VerifiedGarbage.Proof.RsaPss.Encoding
+import VerifiedGarbage.Proof.RsaPss.EncBytes
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Callees
 public import VerifiedGarbage.Proof.RsaPss.Arm.VfChk
-public import VerifiedGarbage.Proof.MdHashTable.Arm.Tables
 public import VerifiedGarbage.Proof.HashTable.Arm
 import VerifiedGarbage.Proof.RsaOaep.Arm.LabelT
 import VerifiedGarbage.Proof.RsaOaep.Arm.Calls

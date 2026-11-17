@@ -1,13 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.Ifma.Mult
-
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 import VerifiedGarbage.Proof.Bignum.CrtFrame
 import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
-import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Out
+import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CoreU
 import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Conv
 import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.PubExp
 

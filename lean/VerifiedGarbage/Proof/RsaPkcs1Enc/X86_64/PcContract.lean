@@ -7,7 +7,6 @@ public import VerifiedGarbage.Proof.RsaPkcs1Enc.Contract
 import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.PcCall
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncCorrect
-import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.PcCtx
 import VerifiedGarbage.Proof.Bignum.X86_64.PubVerified
 
 /-! ### `RsaPkcs1Enc.X86_64.PcCorrect`, which only this module used -/

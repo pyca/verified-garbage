@@ -10,7 +10,7 @@ public import VerifiedGarbage.Proof.Framework.RISCV64.Syms
 public import VerifiedGarbage.Impl.RsaKeyGen.RISCV64.Generate
 public import VerifiedGarbage.Proof.Framework.RISCV64.Alloc
 public import VerifiedGarbage.Proof.Framework.RISCV64.Call
-public import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Search.Data
+public import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Search.Entry
 public import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Search.Step
 public import VerifiedGarbage.Proof.Framework.RISCV64.StackScratch
 public import VerifiedGarbage.Proof.Framework.RISCV64.CallAny
@@ -109,7 +109,7 @@ octets, the exponent and the table's address. The controller keeps its
 working state in the 14 words at `sp - 112` (`GenPublic.F`) of the frame it
 allocates, with their base in `s0`; the loop runs below it, in the 16-byte
 frame saving `ra`, as the prime search's does
-(`Proof/RsaKeyGen/RISCV64/Search/Data.lean`).
+(`Proof/RsaKeyGen/RISCV64/Search/Entry.lean`).
 -/
 
 namespace VG.Proof.RsaKeyGen.RISCV64.Generate

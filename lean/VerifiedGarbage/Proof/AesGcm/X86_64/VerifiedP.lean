@@ -11,7 +11,6 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.OpenCT
 import VerifiedGarbage.Proof.AesGcm.X86_64.StreamCryptCT
 import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 import VerifiedGarbage.Proof.AesGcm.X86_64.SealCT
-import VerifiedGarbage.Proof.AesGcm.X86_64.StreamRun
 
 /-!
 # AES-GCM on x86-64, for a key context of either kind

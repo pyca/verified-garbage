@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.AesCtr.X86_64.Body
-import VerifiedGarbage.Proof.AesCtr.X86_64.Steps
 import VerifiedGarbage.Proof.AesCbc.X86_64.Body
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd

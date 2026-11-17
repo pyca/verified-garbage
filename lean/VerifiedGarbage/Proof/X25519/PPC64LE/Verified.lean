@@ -3,12 +3,11 @@ module
 public import VerifiedGarbage.Proof.X25519.Contract
 import VerifiedGarbage.Proof.X25519.PPC64LE.Bits
 public import VerifiedGarbage.TCB.PPC64LE.Target
-public import VerifiedGarbage.Proof.X25519.PPC64LE.Setup
+public import VerifiedGarbage.Proof.X25519.PPC64LE.Freeze
 public import VerifiedGarbage.Proof.X25519.PPC64LE.Fe51.Ladder
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.PPC64LE.RunR
 import VerifiedGarbage.Proof.X25519.PPC64LE.Mul
-import VerifiedGarbage.Proof.X25519.PPC64LE.Freeze
 import VerifiedGarbage.Proof.X25519.PPC64LE.Cswap
 import VerifiedGarbage.Proof.X25519.PPC64LE.Reduce
 import VerifiedGarbage.Proof.Framework.Offset

@@ -22,7 +22,6 @@ meta import VerifiedGarbage.Proof.Ecdsa.PPC64LE.BrainpoolP512r1
 import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Spec.Ecdsa.Verify.BrainpoolP512r1
-public import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.Front
 public import VerifiedGarbage.Spec.Ecdsa.BrainpoolP512r1
 public import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
 public import VerifiedGarbage.Proof.Weierstrass.PPC64LE.TCombI
@@ -34,7 +33,7 @@ public import VerifiedGarbage.Proof.Framework.ConstMem
 meta import VerifiedGarbage.Proof.Framework.ConstMem
 import VerifiedGarbage.Proof.BrainpoolP512r1.PPC64LE.Comb
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.BrainpoolP512r1.Window
-import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Lays
+import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Stages
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.MulFn
 import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Keep

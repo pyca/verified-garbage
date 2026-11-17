@@ -5,7 +5,6 @@ public import VerifiedGarbage.Spec.Siv.Contract
 public import VerifiedGarbage.Proof.AesSiv.X86_64.Seal
 import VerifiedGarbage.Proof.AesSiv.X86_64.Call
 import VerifiedGarbage.Proof.AesSiv.X86_64.Common
-import VerifiedGarbage.Proof.AesSiv.X86_64.S2vAd
 import VerifiedGarbage.Proof.Cmac.Block
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.AesSiv.X86_64.CmacOf

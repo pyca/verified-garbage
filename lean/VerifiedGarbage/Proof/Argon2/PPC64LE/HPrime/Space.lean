@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.PPC64LE.HPrime.Chain
-public import VerifiedGarbage.Proof.Argon2.PPC64LE.HPrime.Output
 import VerifiedGarbage.Proof.Argon2.PPC64LE.HPrime.Calls
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Blake2.PPC64LE.Stream.Lit

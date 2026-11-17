@@ -12,9 +12,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.Encoding
-public import VerifiedGarbage.Proof.Dsa.Generation.Contributions
 public import VerifiedGarbage.Proof.Dsa.Generation.PCandidate
-import VerifiedGarbage.Proof.Dsa.Generation.PEncoding
 import VerifiedGarbage.Proof.Dsa.Digest
 import VerifiedGarbage.Proof.Dsa.Arithmetic
 import VerifiedGarbage.Proof.Dsa.Generation.PReduction

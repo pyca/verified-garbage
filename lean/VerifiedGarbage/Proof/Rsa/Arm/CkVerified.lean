@@ -1,24 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.KcBodyW
-public import VerifiedGarbage.Proof.Rsa.Arm.KcCT
+public import VerifiedGarbage.Proof.Rsa.Arm.KcFnCT
 public import VerifiedGarbage.Proof.Rsa.Arm.KdDivCT
 public import VerifiedGarbage.Proof.Rsa.Arm.KcTaintW
 import VerifiedGarbage.Proof.Rsa.Arm.InvParts
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-public import VerifiedGarbage.Proof.Rsa.Arm.KcBody
-public import VerifiedGarbage.Proof.Rsa.Arm.KcLoads
 import VerifiedGarbage.Proof.Rsa.Arm.CvFail
 import VerifiedGarbage.Proof.Rsa.Octets
 public import VerifiedGarbage.Proof.Rsa.Arm.KcShape
-import VerifiedGarbage.Proof.Rsa.KeyCheckWords
 public import VerifiedGarbage.Impl.Rsa.Arm.CheckKey
-public import VerifiedGarbage.Proof.Rsa.Arm.KcFn
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Bignum.Arm.UmaalArithmetic
 import VerifiedGarbage.Proof.Rsa.Arm.CkTaint
 import VerifiedGarbage.Proof.Rsa.Arm.CckVerified
-public import VerifiedGarbage.Proof.Rsa.Arm.KcFnCT
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Spec.Rsa.Contract

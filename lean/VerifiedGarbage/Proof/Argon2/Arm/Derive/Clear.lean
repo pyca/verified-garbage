@@ -1,9 +1,8 @@
 module
-public import VerifiedGarbage.Proof.Argon2.Arm.Derive.Body
 
+public import VerifiedGarbage.Proof.Argon2.Arm.Derive.Locals
 import VerifiedGarbage.Proof.Argon2.Arm.Derive.Scratch
 import VerifiedGarbage.Proof.Argon2.Arm.Derive.Parameters
-import VerifiedGarbage.Proof.Argon2.Arm.Derive.Locals
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith

@@ -5,15 +5,14 @@ public import VerifiedGarbage.Spec.Dsa.Prevalidated
 public import VerifiedGarbage.Impl.Dsa.AArch64.SignVerify
 public import VerifiedGarbage.Proof.Dsa.AArch64.CoreVerify
 public import VerifiedGarbage.Impl.Dsa.AArch64.Prevalidated
-
 import VerifiedGarbage.Proof.Dsa.AArch64.AcceptedSpec
 import VerifiedGarbage.Proof.Dsa.AArch64.Result
 import VerifiedGarbage.Proof.Dsa.SizeBounds
 import VerifiedGarbage.Proof.Dsa.AArch64.CheckOperands
-import VerifiedGarbage.Proof.Dsa.AArch64.CallOperands
-import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleState
 import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleOperands
+import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleState
 import VerifiedGarbage.Proof.Dsa.Encoding
+
 /-! # Verification computation, result return and ABI register restoration -/
 
 -- Formerly `VerifiedGarbage/Proof/Dsa/AArch64/PrevalidatedCompute.lean`, which only this module imported.

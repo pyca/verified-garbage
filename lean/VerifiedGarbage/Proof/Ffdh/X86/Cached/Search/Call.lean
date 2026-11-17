@@ -15,7 +15,7 @@ public import VerifiedGarbage.Spec.Ffdh.Contract
 public import VerifiedGarbage.Proof.Ffdh.X86.Cached.Search.Frame
 public import VerifiedGarbage.Proof.Framework.X86.Call
 public import VerifiedGarbage.Proof.Framework.X86.Inline
-public import VerifiedGarbage.Proof.Ffdh.X86.ABI
+public import VerifiedGarbage.Proof.Ffdh.X86.Entry
 import VerifiedGarbage.Proof.Mont.X86.Words
 
 /-! # The attempt's call (x86)

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcmSiv.Rounds
+public import VerifiedGarbage.Proof.AesGcmSiv.Scratch
 public import VerifiedGarbage.Proof.Gcm.PPC64LE.Ghash
 import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.TopCT
 public import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Seal
@@ -12,10 +12,9 @@ import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Fn
 import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Wp
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.AesGcmSiv.Scratch
 public import VerifiedGarbage.Impl.AesGcmSiv.PPC64LE
 public import VerifiedGarbage.Impl.StackScratch.PPC64LE.Args
-public import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Contract
+public import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Entry
 import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratchArgs
 
 /-! ### `AesGcmSiv.PPC64LE.Open`, which only this module used -/

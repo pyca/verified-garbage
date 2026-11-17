@@ -2,9 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.Ffdh.Arm.ParameterCandidate
 public import VerifiedGarbage.Proof.X25519.Arm.Instr
-public import VerifiedGarbage.Proof.RsaKeyGen.Trial16
+public import VerifiedGarbage.Proof.Bignum.Arm.TrialDivision16
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
-import VerifiedGarbage.Proof.Bignum.Arm.TrialDivision16
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Omega
 

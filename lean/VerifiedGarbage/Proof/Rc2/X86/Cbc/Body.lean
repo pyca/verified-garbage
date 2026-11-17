@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Rc2.X86.KeyLoop
+import VerifiedGarbage.Proof.Rc2.X86.KeyIO
 import VerifiedGarbage.Proof.Rc2.CbcMemory
 import VerifiedGarbage.Proof.Rc2.PairMem
 public import VerifiedGarbage.Proof.Rc2.X86.Block

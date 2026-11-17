@@ -7,7 +7,6 @@ public import VerifiedGarbage.Proof.MillerRabin.X86.RoundFrame
 public import VerifiedGarbage.Proof.MillerRabin.X86.Context
 public import VerifiedGarbage.Proof.Mont.Words32
 import VerifiedGarbage.Proof.MillerRabin.X86.Scalar
-import VerifiedGarbage.Proof.MillerRabin.X86.Pointer
 import VerifiedGarbage.Proof.MillerRabin.X86.StageSlots
 import VerifiedGarbage.Proof.MillerRabin.X86.RoundScalarFrame
 

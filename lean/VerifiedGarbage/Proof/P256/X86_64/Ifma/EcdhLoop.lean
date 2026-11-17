@@ -1,14 +1,11 @@
 module
 
 -- separate module: its proofs (about 10 s, the window method's loop in vectors) are not checked again when `Proof/Ecdh/X86_64/VerifiedIfma.lean`'s literal or analyses change
-
 public import VerifiedGarbage.Proof.P256.X86_64.Ifma.Window
 public import VerifiedGarbage.Impl.P256.X86_64.Ifma.Ecdh
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacOddWin
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacOddStep
-public import VerifiedGarbage.Proof.Weierstrass.OddWin
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacOddState
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Loop
-import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacOddEntry
 import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacOddBuild
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Unch
 import VerifiedGarbage.Proof.Framework.X86_64.Syms

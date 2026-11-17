@@ -1,9 +1,8 @@
 module
-public import VerifiedGarbage.Proof.AesOcb.X86_64.Callee
-public import VerifiedGarbage.Proof.AesOcb.X86_64.Contract
-public import VerifiedGarbage.Proof.AesOcb.X86_64.Nonce
 
-import VerifiedGarbage.Proof.AesOcb.X86_64.Seal
+public import VerifiedGarbage.Proof.AesOcb.X86_64.Callee
+public import VerifiedGarbage.Proof.AesOcb.X86_64.Seal
+public import VerifiedGarbage.Proof.AesOcb.X86_64.Nonce
 import VerifiedGarbage.Proof.AesOcb.X86_64.Run
 import VerifiedGarbage.Proof.AesCcm.X86_64.Bytes
 import VerifiedGarbage.Proof.AesCcm.X86_64.Callee

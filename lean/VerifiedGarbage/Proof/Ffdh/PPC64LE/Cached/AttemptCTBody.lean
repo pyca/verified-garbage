@@ -13,7 +13,7 @@ meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 meta import VerifiedGarbage.Proof.Bignum.PPC64LE.WinBase
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.ExchangeCorrect
-import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.DomainBody
+import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckDomainFn
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubOut
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubCorrect
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubLoad

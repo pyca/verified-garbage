@@ -9,11 +9,8 @@ import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.Sm4.Arm.BatchCbc
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Sm4.Arm.BatchEntry
 public import VerifiedGarbage.Spec.Cbc
 public import VerifiedGarbage.Spec.Sm4.Cbc
-import VerifiedGarbage.Proof.Sm4.Arm.CbcPrepare
-public import VerifiedGarbage.Proof.Sm4.Arm.CbcGroup
 import VerifiedGarbage.Proof.Sm4.Arm.BatchGroup
 public import VerifiedGarbage.Proof.Sm4.Arm.PreparedBody
 import VerifiedGarbage.Proof.Framework.Arm.Exec

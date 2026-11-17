@@ -5,7 +5,7 @@ import VerifiedGarbage.Proof.Ffdh.PPC64LE.Derive.Front
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.Derive.Body
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.Derive.Status
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.ExchangeCorrect
-import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.DomainBody
+import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckDomainFn
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubCorrect
 import VerifiedGarbage.Proof.Ffdh.Domain
 import VerifiedGarbage.Proof.Bignum.Octets

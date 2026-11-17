@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Rel
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseD
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PrimsD
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.BlockTr
 

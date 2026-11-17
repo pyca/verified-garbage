@@ -5,8 +5,7 @@ import VerifiedGarbage.Proof.MlKem.X86_64.Sel16
 public import VerifiedGarbage.Proof.MlKem.X86_64.Top16Ctl
 public meta import VerifiedGarbage.Proof.MlKem.X86_64.Top16Ctl
 public meta import VerifiedGarbage.Proof.MlKem.X86_64.KgH16CT
-public import VerifiedGarbage.Proof.MlKem.X86_64.Kg16Tail
-import VerifiedGarbage.Proof.MlKem.X86_64.KgH16Rows
+public import VerifiedGarbage.Proof.MlKem.X86_64.Kg16
 
 /-!
 # ML-KEM-768 on x86-64: key generation of each implementation

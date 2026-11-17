@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Impl.Ffdh.X86.Derive
 public import VerifiedGarbage.Spec.Ffdh.DerivePublicContract
 public import VerifiedGarbage.TCB.X86.Target
-public import VerifiedGarbage.Proof.Ffdh.X86.ABI
+public import VerifiedGarbage.Proof.Ffdh.X86.Entry
 
 /-! # `vg_ffdh_derive_public` on i686 against its contract -/
 

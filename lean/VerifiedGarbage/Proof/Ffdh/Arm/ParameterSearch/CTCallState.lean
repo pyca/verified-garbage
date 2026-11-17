@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CTState
-public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.ArgumentContext
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Arguments
 public import VerifiedGarbage.Proof.Framework.Arm.Call
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CallGeometry

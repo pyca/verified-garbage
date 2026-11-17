@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseBankFieldStage
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversalField
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Residue
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit

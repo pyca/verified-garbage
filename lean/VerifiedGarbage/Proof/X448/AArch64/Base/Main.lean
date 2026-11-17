@@ -2,19 +2,18 @@ module
 
 public import VerifiedGarbage.Proof.X448.AArch64.Base.Setup
 public import VerifiedGarbage.Proof.X448.AArch64.Fast.Finish
-public import VerifiedGarbage.Proof.X448.AArch64.Fast.Inv
+public import VerifiedGarbage.Proof.X448.AArch64.Fast.Setup
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.X448.AArch64.Fast.Weave
 public import VerifiedGarbage.Proof.Ed448.AArch64.CombBase
 public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Combine
 public import VerifiedGarbage.Impl.X448.AArch64.BaseFn
-public import VerifiedGarbage.Proof.X448.Edwards.Ladder
+public import VerifiedGarbage.Proof.X448.BaseAdd
 public import VerifiedGarbage.Spec.X448.Contract
 public import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.X448.AArch64.Finish
 import VerifiedGarbage.Proof.X448.Bytes
-import VerifiedGarbage.Proof.X448.BaseAdd
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Ring
 

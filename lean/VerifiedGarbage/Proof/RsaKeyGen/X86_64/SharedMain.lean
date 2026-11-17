@@ -1,8 +1,7 @@
 module
 
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedRanges
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedRanges
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrMain
-public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedRound
 import VerifiedGarbage.Proof.Framework.Omega
 import Mathlib.Algebra.GroupWithZero.Nat
 import Mathlib.Basic.IsEmpty.Defs

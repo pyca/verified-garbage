@@ -1,14 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.RsaKeyGen.AArch64.Search
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Search.Data
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Search.Entry
 public import VerifiedGarbage.Proof.Framework.Covers
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Search.Entry
 
 /-! # One candidate of the search (AArch64)
 

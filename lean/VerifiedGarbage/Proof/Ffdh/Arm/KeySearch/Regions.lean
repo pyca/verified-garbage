@@ -2,11 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Bounds
-import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Geometry
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Geometry
 public import VerifiedGarbage.Proof.Framework.Arm.CallF
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Contract
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CacheMemory
 
 /-! Regions of a key-generation call nested inside the retry controller. -/
 

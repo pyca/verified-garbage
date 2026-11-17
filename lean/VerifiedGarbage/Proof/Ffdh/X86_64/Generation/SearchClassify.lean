@@ -3,16 +3,13 @@ module
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchCandidatePost
 import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchGuards
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchDone
-import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchDoneUpdate
-import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchMemory
-import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchTerminal
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchShort
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchTerminate
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchData
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchLayout
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchShort
 public import VerifiedGarbage.Impl.Ffdh.X86_64.Generation.Search
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.ControlMemory
-import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchUpdate
 import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchRestore
 public import VerifiedGarbage.Proof.Ffdh.Contract
 

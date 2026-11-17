@@ -1,12 +1,11 @@
 module
+
 public import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Rows
-public import VerifiedGarbage.Proof.Argon2.X86_64.Avx512.Gb
+public import VerifiedGarbage.Proof.Argon2.X86_64.Avx512.Rows
 public import VerifiedGarbage.Proof.Argon2.X86_64.Avx512.Mem
 public import VerifiedGarbage.Proof.Argon2.X86_64.Initialize
-
 import VerifiedGarbage.Proof.Argon2.X86_64.Avx512.Cols
 import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Ends
-import VerifiedGarbage.Proof.Argon2.X86_64.Avx512.Rows
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86_64.Exec

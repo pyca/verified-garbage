@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Sm4.PPC64LE.Group
 public import VerifiedGarbage.Spec.Sm4.Contract
 public import VerifiedGarbage.Proof.Sm4.Contract
-public import VerifiedGarbage.Proof.Sm4.PPC64LE.Keys
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Sm4.PPC64LE.LayersLit
 

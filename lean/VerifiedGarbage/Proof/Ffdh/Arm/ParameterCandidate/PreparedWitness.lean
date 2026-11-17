@@ -7,14 +7,9 @@ import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.RoundData
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.MontPrepare
-public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.KeyReady
+public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.KeyFrame
 public import VerifiedGarbage.Proof.MillerRabin.Contract
 public import VerifiedGarbage.Proof.Rsa.Arm.KeyOps
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.Decompose
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.ExponentSigma
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.KeyFrame
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.KeyView
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.Mont2
@@ -26,16 +21,474 @@ import VerifiedGarbage.Proof.Framework.PowLit
 import Mathlib.Basic.IsEmpty.Defs
 import Mathlib.Data.Nat.Basic
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.ExponentStep
-import Batteries.Tactic.Init
-import Batteries.Tactic.PermuteGoals
-import Batteries.Tactic.SeqFocus
-import VerifiedGarbage.Proof.Framework.GetElem
-import VerifiedGarbage.Proof.Framework.Mem
+public import Batteries.Tactic.Init
+public import Batteries.Tactic.PermuteGoals
+public import Batteries.Tactic.SeqFocus
+public import VerifiedGarbage.Proof.Framework.GetElem
+public import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Impl.Bignum.Arm.TwoPower
-import VerifiedGarbage.Proof.Bignum.Arm.Workspace
+public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
 import VerifiedGarbage.Proof.Bignum.Arm.Stack
 import VerifiedGarbage.Proof.Bignum.Arm.TwoPower
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.SavedFrame
+public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.MontData
+public import VerifiedGarbage.Spec.Rsa
+import VerifiedGarbage.Proof.Rsa.TwosMath
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.SaveWord
+import VerifiedGarbage.Proof.Rsa.Arm.KeyBits
+
+/-! ### `Ffdh.Arm.ParameterCandidate.ExponentSigma`, which this module and modules that import it used -/
+
+section
+
+/-! Select the shared compact Miller–Rabin kernel's shift in 1..=4. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm.ParameterCandidate
+open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Ffdh.Arm
+open VG.Proof.X25519.Arm (Rest ofNat_beq_zero wp_mov op2_imm)
+
+def countShift (count : Nat) : Nat := if count % 4 = 0 then 4 else count % 4
+
+theorem countShift_bounds (count : Nat) : 0 < countShift count ∧ countShift count ≤ 4 := by
+  unfold countShift
+  split <;> omega_arith
+
+private theorem maskCount (count : Nat) : BitVec.ofNat 32 count &&& 3 = BitVec.ofNat 32 (count % 4) := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_and, BitVec.toNat_ofNat]
+  change (count % 2 ^ 32 &&& (2 ^ 2 - 1)) = (count % 4) % 2 ^ 32
+  rw [Nat.and_two_pow_sub_one_eq_mod, Nat.mod_mod_of_dvd count (by decide : 4 ∣ 2 ^ 32),
+    Nat.mod_eq_of_lt (by omega_using [] : count % 4 < 2 ^ 32)]
+
+theorem sigmaHead_ok {s : State} {count : Nat} (stack : Workspace s s.sp 72)
+    (saved : s.mem.readW (State.addr (s.sp + 60#32)) 32 = BitVec.ofNat 32 count) :
+    WP isa (.block VG.Impl.Ffdh.Arm.ParameterCandidate.exponentSigmaHead) s fun t =>
+      (t.gpr .r1 = BitVec.ofNat 32 (count % 4) ∧ t.z = decide (count % 4 = 0) ∧ t.mem = s.mem) ∧
+      Rest [.r1] s t := by
+  have read : InRegions (s.rd ++ s.wr) (State.addr (s.sp + 60#32)) 4 := by
+    rw [VG.Arm.addr_add (by have := stack.nowrap; omega_using [this])]
+    exact stack.read (by decide)
+  refine withRest_all [.r1] ?_ (by rfl) (by rfl)
+  unfold VG.Impl.Ffdh.Arm.ParameterCandidate.exponentSigmaHead
+  ffrun [BitVec.add_zero, read, saved, maskCount count]
+  change (_ - 0#32 == 0#32) = _
+  rw [BitVec.sub_zero]
+  exact ofNat_beq_zero (by omega_using [] : count % 4 < 2 ^ 32)
+
+private theorem sigmaChoice_ok {s : State} {count : Nat}
+    (value : s.gpr .r1 = BitVec.ofNat 32 (count % 4)) (zero : s.z = decide (count % 4 = 0)) :
+    WP isa (.ite .eq (.block [.mov .r1 (.imm 4)]) (.block [])) s fun t =>
+      t.gpr .r1 = BitVec.ofNat 32 (countShift count) ∧ t.mem = s.mem ∧ Rest [.r1] s t := by
+  by_cases divisible : count % 4 = 0
+  · refine WP.ite true (by change some s.z = some true; simp only [zero, divisible, decide_true]) ?_
+      (by intro h; cases h)
+    intro _
+    refine wp_mov (op2_imm (by decide)) fun t u => WP.block_nil ?_
+    refine ⟨?_, u.mem, u.rest (by simp)⟩
+    simp only [countShift, divisible, ite_true]
+    exact u.gpr
+  · refine WP.ite false (by change some s.z = some false; simp only [zero, divisible, decide_false])
+      (by intro h; cases h) ?_
+    intro _
+    exact WP.block_nil ⟨by simpa only [countShift, divisible, ite_false] using value, rfl, Rest.refl _ _⟩
+
+theorem exponentSigma_ok {s : State} {count : Nat} (stack : Workspace s s.sp 72)
+    (saved : s.mem.readW (State.addr (s.sp + 60#32)) 32 = BitVec.ofNat 32 count) :
+    WP isa VG.Impl.Ffdh.Arm.ParameterCandidate.exponentSigma s fun t =>
+      t.mem = s.mem.writeW (State.addr (s.sp + 64#32)) (BitVec.ofNat 32 (countShift count)) ∧
+      Rest [.r1, .r12] s t := by
+  simp only [VG.Impl.Ffdh.Arm.ParameterCandidate.exponentSigma, VG.Impl.Ffdh.Arm.ParameterCandidate.seqs]
+  refine WP.seq (WP.mono (sigmaHead_ok stack saved) ?_)
+  rintro u ⟨⟨valueU, zeroU, memU⟩, restU⟩
+  refine WP.seq (WP.mono (sigmaChoice_ok valueU zeroU) ?_)
+  rintro v ⟨valueV, memV, restV⟩
+  have restUV := restU.trans restV
+  have stackV : Workspace v v.sp 72 := by rw [restUV.sp]; exact stack.congr restUV.wr
+  refine WP.seq (WP.mono (saveR1_ok stackV (d := 64) (by decide)) ?_)
+  rintro t ⟨memT, restT⟩
+  exact WP.block_nil ⟨by rw [memT, valueV, memV, memU, restUV.sp],
+    (restUV.mono (by simp)).trans (restT.mono (by simp))⟩
+
+end VG.Proof.Ffdh.Arm.ParameterCandidate
+
+end
+
+end
+
+/-! ### `Ffdh.Arm.ParameterCandidate.Decompose`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Ffdh.Arm.ParameterCandidate.CountInit`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Ffdh.Arm.ParameterCandidate.CountStep`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Ffdh.Arm.ParameterCandidate.CountTail`, which only this module used -/
+
+section
+
+/-! Increment the native halving count and test the new exponent's low bit. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm.ParameterCandidate
+open VG VG.Arm VG.Proof.Mont VG.Proof.Bignum.Arm VG.Proof.Ffdh.Arm
+open VG.Proof.X25519.Arm (Rest ofNat_beq_zero)
+open VG.Proof.Rsa.Arm.Keys (num arr S)
+
+theorem halfCountTail_ok {s : State} {base : BitVec 32} {capacity w count : Nat}
+    (workspace : Workspace s base (8 * capacity)) (ready : KeyReady base capacity w s)
+    (stack : Workspace s s.sp 72)
+    (saved : s.mem.readW (State.addr (s.sp + 60#32)) 32 = BitVec.ofNat 32 count)
+    (separate : (⟨State.addr s.sp, 72⟩ : Region).Disjoint ⟨State.addr base, 8 * capacity⟩) :
+    WP isa (.block VG.Impl.Ffdh.Arm.ParameterCandidate.halfCountTail) s fun t =>
+      (t.mem = s.mem.writeW (State.addr (s.sp + 60#32)) (BitVec.ofNat 32 (count + 1)) ∧
+        t.z = decide (num s.mem (base + 96#32) (2 * w + 2) 29 % 2 = 0)) ∧
+      Rest [.r0, .r1, .r12] s t := by
+  have read : InRegions (s.rd ++ s.wr) (State.addr (s.sp + 60#32)) 4 := by
+    rw [VG.Arm.addr_add (by have := stack.nowrap; omega_using [this])]
+    exact stack.read (by decide)
+  have write : InRegions s.wr (State.addr (s.sp + 60#32)) 4 := by
+    rw [VG.Arm.addr_add (by have := stack.nowrap; omega_using [this])]
+    exact stack.write (by decide)
+  let B := base + 96#32
+  let d := arr (2 * w + 2) 29
+  have nativeAddr : State.addr (B + BitVec.ofNat 32 d) = off (State.addr B) d :=
+    ready.addr (by have := ready.arr_fit (j := 29) (by decide); simp only [S] at this; omega_using [this])
+  have realRead : InRegions (s.rd ++ s.wr) (State.addr (B + BitVec.ofNat 32 d)) 4 := by
+    rw [nativeAddr]
+    rw [VG.Arm.addr_add (ready.baseShiftFits workspace)]
+    unfold off
+    rw [BitVec.add_assoc, ← BitVec.ofNat_add, keyView_array]
+    exact workspace.read (by have := ready.arrayFit (j := 29) (by decide); omega_using [this])
+  have stackSep : (⟨State.addr (s.sp + 60#32), 4⟩ : Region).Disjoint
+      ⟨State.addr (B + BitVec.ofNat 32 d), 4⟩ := by
+    have a : State.addr (B + BitVec.ofNat 32 d) = off (State.addr base) (Proof.Rsa.Mont.arrAt w 29) := by
+      rw [nativeAddr, VG.Arm.addr_add (ready.baseShiftFits workspace)]
+      unfold off
+      rw [BitVec.add_assoc, ← BitVec.ofNat_add, keyView_array]
+    rw [a, VG.Arm.addr_add (by have := stack.nowrap; omega_using [this])]
+    exact separate.sub_left (Offset.sub_base _ (by decide : 60 + 4 ≤ 72)) |>.sub_right
+      (Offset.sub_base _ (by have := ready.arrayFit (j := 29) (by decide); omega_using [this]))
+  have lowUnchanged : (s.mem.writeW (State.addr (s.sp + 60#32)) (BitVec.ofNat 32 (count + 1))).readW
+      (State.addr (B + BitVec.ofNat 32 d)) 32 = s.mem.readW (State.addr (B + BitVec.ofNat 32 d)) 32 :=
+    Mem.readW_writeW_sep stackSep.symm (by decide)
+  have ptrValue : BitVec.ofNat 32 29 * BitVec.ofNat 32 (S (2 * w + 2)) + B + 160 = B + BitVec.ofNat 32 d :=
+    VG.Proof.Rsa.Arm.Keys.ptr_val B 29 (S (2 * w + 2))
+  change BitVec.ofNat 32 29 * BitVec.ofNat 32 (S (2 * w + 2)) + B +
+    BitVec.ofNat 32 VG.Impl.Rsa.Arm.Keys.hdr = B + BitVec.ofNat 32 d at ptrValue
+  have r7 : s.gpr .r7 = BitVec.ofNat 32 (S (2 * w + 2)) := ready.r7
+  have r8 : s.gpr .r8 = B := ready.r8
+  have plus : BitVec.ofNat 32 count + 1 = BitVec.ofNat 32 (count + 1) := by
+    change BitVec.ofNat 32 count + BitVec.ofNat 32 1 = _
+    exact BitVec.ofNat_add_ofNat count 1
+  have parity : (s.mem.readW (State.addr (B + BitVec.ofNat 32 d)) 32 &&& 1 == 0) =
+      decide (num s.mem B (2 * w + 2) 29 % 2 = 0) := by
+    apply Bool.eq_iff_iff.mpr
+    simp only [beq_iff_eq, decide_eq_true_eq]
+    rw [← BitVec.toNat_inj, VG.Proof.Rsa.Arm.Keys.bv_and_one, nativeAddr,
+      ← VG.Proof.Rsa.Arm.Keys.num_mod2 s.mem B (by omega_using [] : 0 < 2 * w + 2)]
+    rfl
+  refine withRest_all [.r0, .r1, .r12] ?_ (by rfl) (by rfl)
+  unfold VG.Impl.Ffdh.Arm.ParameterCandidate.halfCountTail VG.Impl.Ffdh.Arm.ParameterCandidate.save
+    VG.Impl.Rsa.Arm.Keys.ptr
+  ffrun [List.cons_append, List.nil_append, BitVec.add_zero, read, write, saved, plus, r7, r8,
+    ptrValue, realRead, lowUnchanged]
+  change (_ - 0#32 == 0#32) = _
+  rw [BitVec.sub_zero]
+  exact parity
+
+end VG.Proof.Ffdh.Arm.ParameterCandidate
+
+end
+
+end
+
+
+/-! One native exponent-halving iteration, with the exact count and parity. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm.ParameterCandidate
+open VG VG.Arm VG.Proof.Mont VG.Proof.Bignum.Arm VG.Proof.X25519.Arm
+open VG.Proof.Rsa.Arm.Keys (num opRegs)
+
+private theorem zeroCarry (s : State) :
+    WP isa (.block [.mov .r11 (.imm 0)]) s fun t =>
+      t.gpr .r11 = 0#32 ∧ t.mem = s.mem ∧ Rest [.r11] s t := by
+  refine wp_mov (op2_imm (by decide)) fun t u => WP.block_nil ?_
+  exact ⟨u.gpr, u.mem, u.rest (by simp)⟩
+
+theorem halfCountStep_ok {s : State} {base : BitVec 32} {capacity w count : Nat}
+    (workspace : Workspace s base (8 * capacity)) (ready : KeyReady base capacity w s)
+    (data : MontData base capacity w s.mem) (stack : Workspace s s.sp 72)
+    (saved : s.mem.readW (State.addr (s.sp + 60#32)) 32 = BitVec.ofNat 32 count)
+    (separate : (⟨State.addr s.sp, 72⟩ : Region).Disjoint ⟨State.addr base, 8 * capacity⟩) :
+    WP isa VG.Impl.Ffdh.Arm.ParameterCandidate.halfCountStep s fun t =>
+      KeyReady base capacity w t ∧ MontData base capacity w t.mem ∧
+      num t.mem (base + 96#32) (2 * w + 2) 29 = num s.mem (base + 96#32) (2 * w + 2) 29 / 2 ∧
+      t.mem.readW (State.addr (t.sp + 60#32)) 32 = BitVec.ofNat 32 (count + 1) ∧
+      t.z = decide (num s.mem (base + 96#32) (2 * w + 2) 29 / 2 % 2 = 0) ∧
+      (∀ j, j < 30 → j ≠ 29 → num t.mem (base + 96#32) (2 * w + 2) j =
+        num s.mem (base + 96#32) (2 * w + 2) j) ∧
+      (∀ d, d + 8 ≤ 256 → t.mem.readW (off (State.addr base) d) 64 =
+        s.mem.readW (off (State.addr base) d) 64) ∧
+      Frame [⟨State.addr base, 8 * capacity⟩, ⟨State.addr (s.sp + 60#32), 4⟩] s.mem t.mem ∧
+      Rest opRegs s t := by
+  simp only [VG.Impl.Ffdh.Arm.ParameterCandidate.halfCountStep, VG.Impl.Ffdh.Arm.ParameterCandidate.seqs]
+  refine WP.seq (WP.mono (zeroCarry s) ?_)
+  rintro u ⟨carryU, memU, restU⟩
+  have readyU := ready.rest restU (by decide) (by decide) (by decide)
+  have workspaceU := workspace.congr restU.wr
+  refine WP.seq (WP.mono (keyHalf_ok workspaceU readyU (j := 29) (by decide) (by rw [carryU]; decide)) ?_)
+  rintro v ⟨readyV, keepV, valueV, restV⟩
+  rw [carryU, memU, show (0#32).toNat = 0 from rfl, Nat.mul_zero, Nat.add_zero] at valueV
+  have frameV := key_keep_workspace workspaceU readyU (by simp) keepV
+  have dataV := (MontData.after_key_keep (by rw [memU]; exact data) workspaceU readyU
+    (by simp) (by simp) keepV).1
+  have restUV : Rest opRegs s v := (restU.mono (by simp [opRegs])).trans restV
+  have stackV : Workspace v v.sp 72 := by rw [restUV.sp]; exact stack.congr restUV.wr
+  have countSep : (⟨State.addr (s.sp + 60#32), 4⟩ : Region).Disjoint ⟨State.addr base, 8 * capacity⟩ := by
+    rw [VG.Arm.addr_add (by have := stack.nowrap; omega_using [this])]
+    exact separate.sub_left (Offset.sub_base _ (by decide : 60 + 4 ≤ 72))
+  have countV : v.mem.readW (State.addr (v.sp + 60#32)) 32 = BitVec.ofNat 32 count := by
+    rw [restUV.sp, frameV.readW (r := ⟨State.addr (s.sp + 60#32), 4⟩)
+      (Region.contains_self _ _) (by intro r hr; rw [List.mem_singleton] at hr; subst r; exact countSep) (by decide), memU]
+    exact saved
+  refine WP.seq (WP.mono (halfCountTail_ok (workspace.congr restUV.wr) readyV stackV countV
+    (by rw [restUV.sp]; exact separate)) ?_)
+  rintro t ⟨⟨memT, zeroT⟩, restT⟩
+  have tailFrame : Frame [⟨State.addr (v.sp + 60#32), 4⟩] v.mem t.mem := by
+    rw [memT]
+    exact (Frame.refl _ _).writeW (by simp) _ (Region.contains_self _ _)
+  have equal : WorkspaceEq (State.addr base) (8 * capacity) v.mem t.mem :=
+    WorkspaceEq.of_frame (by have := workspace.nowrap; omega_using [this]) tailFrame (by
+      intro r hr
+      rw [List.mem_singleton] at hr
+      subst r
+      rw [restUV.sp]
+      exact countSep.symm)
+  have numberT := (key_number_of_workspaceEq (workspace.congr restUV.wr) readyV equal (j := 29) (by decide)).trans valueV
+  have rest := restUV.trans (restT.mono (by simp [opRegs]))
+  have frameV' : Frame [⟨State.addr base, 8 * capacity⟩] s.mem v.mem := by rw [← memU]; exact frameV
+  refine WP.block_nil ⟨readyV.rest restT (by decide) (by decide) (by decide), dataV.after_workspaceEq equal,
+    numberT, ?_, ?_, ?_, ?_, (frameV'.mono (by simp)).trans (tailFrame.mono (by simp only [restUV.sp]; simp)), rest⟩
+  · rw [restT.sp, memT, Mem.readW_writeW_self32]
+  · rw [valueV] at zeroT
+    exact zeroT
+  · intro j bound different
+    rw [key_number_of_workspaceEq (workspace.congr restUV.wr) readyV equal bound,
+      keepV.num (j := j) (by simpa using different.symm) (by simp) (readyU.fit64 bound), memU]
+  · intro d bound
+    have fits := readyV.arrayFit (j := 0) (by decide)
+    simp only [Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes, Nat.zero_mul, Nat.add_zero] at fits
+    rw [equal.word (bits := 64) (by omega_using [bound, fits]), key_keep_header workspaceU readyU (by simp) bound keepV, memU]
+
+end VG.Proof.Ffdh.Arm.ParameterCandidate
+
+end
+
+end
+
+/-! ### `Ffdh.Arm.ParameterCandidate.CountLoop`, which only this module used -/
+
+section
+
+/-! The native loop stops at the odd part and records the complete number
+of factors of two; the termination measure is the number being halved. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm.ParameterCandidate
+open VG VG.Arm VG.Proof.Mont VG.Proof.Bignum.Arm VG.Proof.X25519.Arm
+open VG.Proof.Rsa.Arm.Keys (num opRegs)
+open VG.Spec.Rsa (splitTwos)
+
+structure CountInv (s0 : State) (base : BitVec 32) (capacity w original count m : Nat) (s : State) : Prop where
+  workspace : Workspace s base (8 * capacity)
+  ready : KeyReady base capacity w s
+  data : MontData base capacity w s.mem
+  stack : Workspace s s.sp 72
+  separate : (⟨State.addr s.sp, 72⟩ : Region).Disjoint ⟨State.addr base, 8 * capacity⟩
+  number : num s.mem (base + 96#32) (2 * w + 2) 29 = m
+  positive : 0 < m
+  even : m % 2 = 0
+  factors : count + (splitTwos m).1 = (splitTwos original).1
+  oddPart : (splitTwos m).2 = (splitTwos original).2
+  saved : s.mem.readW (State.addr (s.sp + 60#32)) 32 = BitVec.ofNat 32 count
+  arrays : ∀ j, j < 30 → j ≠ 29 → num s.mem (base + 96#32) (2 * w + 2) j =
+    num s0.mem (base + 96#32) (2 * w + 2) j
+  header : ∀ d, d + 8 ≤ 256 → s.mem.readW (off (State.addr base) d) 64 =
+    s0.mem.readW (off (State.addr base) d) 64
+  frame : Frame [⟨State.addr base, 8 * capacity⟩, ⟨State.addr (s0.sp + 60#32), 4⟩] s0.mem s.mem
+  rest : Rest opRegs s0 s
+
+theorem halfCountLoop_ok {s : State} {base : BitVec 32} {capacity w original : Nat}
+    (workspace : Workspace s base (8 * capacity)) (ready : KeyReady base capacity w s)
+    (data : MontData base capacity w s.mem) (stack : Workspace s s.sp 72)
+    (separate : (⟨State.addr s.sp, 72⟩ : Region).Disjoint ⟨State.addr base, 8 * capacity⟩)
+    (number : num s.mem (base + 96#32) (2 * w + 2) 29 = original)
+    (positive : 0 < original) (even : original % 2 = 0)
+    (saved : s.mem.readW (State.addr (s.sp + 60#32)) 32 = 0#32) :
+    WP isa (.loop VG.Impl.Ffdh.Arm.ParameterCandidate.halfCountStep .eq) s fun t =>
+      KeyReady base capacity w t ∧ MontData base capacity w t.mem ∧
+      num t.mem (base + 96#32) (2 * w + 2) 29 = (splitTwos original).2 ∧
+      t.mem.readW (State.addr (t.sp + 60#32)) 32 = BitVec.ofNat 32 (splitTwos original).1 ∧
+      (∀ j, j < 30 → j ≠ 29 → num t.mem (base + 96#32) (2 * w + 2) j =
+        num s.mem (base + 96#32) (2 * w + 2) j) ∧
+      (∀ d, d + 8 ≤ 256 → t.mem.readW (off (State.addr base) d) 64 =
+        s.mem.readW (off (State.addr base) d) 64) ∧
+      Frame [⟨State.addr base, 8 * capacity⟩, ⟨State.addr (s.sp + 60#32), 4⟩] s.mem t.mem ∧ Rest opRegs s t := by
+  let inv := fun m t => ∃ count, CountInv s base capacity w original count m t
+  refine WP.loop (M := isa) inv ?_ original s ?_
+  · intro m u h
+    obtain ⟨count, h⟩ := h
+    refine WP.mono (halfCountStep_ok h.workspace h.ready h.data h.stack h.saved h.separate) ?_
+    rintro t ⟨readyT, dataT, valueT, savedT, zeroT, arraysT, headerT, frameT, restT⟩
+    rw [h.number] at valueT zeroT
+    have smaller : m / 2 < m := Nat.div_lt_self h.positive (by decide)
+    have positiveT : 0 < m / 2 := by have := h.even; have := h.positive; omega_arith
+    have split := VG.Proof.Rsa.splitTwos_even (by have := h.positive; omega_using [smaller]) h.even
+    have factors : count + 1 + (splitTwos (m / 2)).1 = (splitTwos original).1 := by
+      have := h.factors
+      rw [split] at this
+      dsimp only at this
+      omega_using [this]
+    have oddPart : (splitTwos (m / 2)).2 = (splitTwos original).2 := by
+      have := h.oddPart
+      rw [split] at this
+      exact this
+    have rest := h.rest.trans restT
+    rw [h.rest.sp] at frameT
+    have frame := h.frame.trans frameT
+    have arrays (j : Nat) (bound : j < 30) (different : j ≠ 29) :=
+      (arraysT j bound different).trans (h.arrays j bound different)
+    have header (d : Nat) (bound : d + 8 ≤ 256) := (headerT d bound).trans (h.header d bound)
+    by_cases evenT : m / 2 % 2 = 0
+    · right
+      refine ⟨?_, m / 2, smaller, count + 1, ?_⟩
+      · change some t.z = some true
+        simp only [zeroT, evenT, decide_true]
+      · refine ⟨h.workspace.congr restT.wr, readyT, dataT, ?_, ?_, valueT, positiveT,
+          evenT, factors, oddPart, savedT, arrays, header, frame, rest⟩
+        · rw [restT.sp]; exact h.stack.congr restT.wr
+        · rw [restT.sp]; exact h.separate
+    · left
+      have oddT : m / 2 % 2 = 1 := by omega_using [evenT]
+      rw [VG.Proof.Rsa.splitTwos_odd oddT] at factors oddPart
+      have countDone : count + 1 = (splitTwos original).1 := by simpa using factors
+      refine ⟨?_, readyT, dataT, valueT.trans oddPart, ?_, arrays, header, frame, rest⟩
+      · change some t.z = some false
+        simp only [zeroT, evenT, decide_false]
+      · rw [savedT, countDone]
+  · exact ⟨0, workspace, ready, data, stack, separate, number, positive, even,
+      by simp, rfl, saved, by intros; rfl, by intros; rfl, Frame.refl _ _, Rest.refl _ _⟩
+
+end VG.Proof.Ffdh.Arm.ParameterCandidate
+
+end
+
+end
+
+
+/-! Initialize the native decomposition with N−1 and a zero halving count. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm.ParameterCandidate
+open VG VG.Arm VG.Proof.Mont VG.Proof.Bignum.Arm VG.Proof.X25519.Arm
+open VG.Proof.Rsa.Arm.Keys (num opRegs)
+
+theorem expCountInit_ok {s : State} {base : BitVec 32} {capacity w n : Nat}
+    (workspace : Workspace s base (8 * capacity)) (ready : KeyReady base capacity w s)
+    (data : MontData base capacity w s.mem) (stack : Workspace s s.sp 72)
+    (separate : (⟨State.addr s.sp, 72⟩ : Region).Disjoint ⟨State.addr base, 8 * capacity⟩)
+    (number : num s.mem (base + 96#32) (2 * w + 2) 0 = n) (large : 1 < n) (odd : n % 2 = 1) :
+    WP isa VG.Impl.Ffdh.Arm.ParameterCandidate.expCountInit s
+      (CountInv s base capacity w (n - 1) 0 (n - 1)) := by
+  simp only [VG.Impl.Ffdh.Arm.ParameterCandidate.expCountInit, VG.Impl.Ffdh.Arm.ParameterCandidate.seqs]
+  refine WP.seq (WP.mono (keyCopy_ok workspace ready (o := 29) (a := 0) (by decide) (by decide) (by decide)) ?_)
+  rintro u ⟨readyU, keepU, numberU, restU⟩
+  rw [number] at numberU
+  have workspaceU := workspace.congr restU.wr
+  refine WP.seq (WP.mono (keyClrLow_ok workspaceU readyU (j := 29) (by decide)) ?_)
+  rintro v ⟨readyV, keepV, numberV, restV⟩
+  rw [numberU] at numberV
+  have valueV : num v.mem (base + 96#32) (2 * w + 2) 29 = n - 1 := by omega_using [odd, numberV]
+  have restUV := restU.trans restV
+  have workspaceV := workspace.congr restUV.wr
+  have stackV : Workspace v v.sp 72 := by rw [restUV.sp]; exact stack.congr restUV.wr
+  have keep := keepU.trans keepV
+  have frameV := key_keep_workspace workspace ready (by simp) keep
+  have dataV := (data.after_key_keep workspace ready (by simp) (by simp) keep).1
+  refine WP.seq (WP.mono (saveWord_ok stackV (d := 60) (by decide) 0#32 (by decide)) ?_)
+  rintro t ⟨memT, restT⟩
+  have equal : WorkspaceEq (State.addr base) (8 * capacity) v.mem t.mem := by
+    rw [memT]
+    exact stackWrite_workspaceEq workspaceV stackV (by rw [restUV.sp]; exact separate) (by decide) _
+  have frameT : Frame [⟨State.addr (s.sp + 60#32), 4⟩] v.mem t.mem := by
+    rw [memT, restUV.sp]
+    exact (Frame.refl _ _).writeW (by simp) _ (Region.contains_self _ _)
+  have rest : Rest opRegs s t := restUV.trans (restT.mono (by simp [opRegs]))
+  refine WP.block_nil ⟨workspace.congr rest.wr, readyV.rest restT (by decide) (by decide) (by decide),
+    dataV.after_workspaceEq equal, ?_, ?_, ?_, by omega_using [large], by omega_using [odd], by simp, rfl, ?_, ?_, ?_,
+    (frameV.mono (by simp)).trans (frameT.mono (by simp)), rest⟩
+  · rw [rest.sp]; exact stack.congr rest.wr
+  · rw [rest.sp]; exact separate
+  · exact (key_number_of_workspaceEq workspaceV readyV equal (j := 29) (by decide)).trans valueV
+  · rw [restT.sp, memT, Mem.readW_writeW_self32]
+  · intro j bound different
+    rw [key_number_of_workspaceEq workspaceV readyV equal bound,
+      keep.num (j := j) (by simpa using different.symm) (by simp) (ready.fit64 bound)]
+  · intro d bound
+    have fits := readyV.arrayFit (j := 0) (by decide)
+    simp only [Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes, Nat.zero_mul, Nat.add_zero] at fits
+    rw [equal.word (bits := 64) (by omega_using [bound, fits]), key_keep_header workspace ready (by simp) bound keep]
+
+end VG.Proof.Ffdh.Arm.ParameterCandidate
+
+end
+
+end
+
+/-! Compose native initialization and the exact factor-of-two loop. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm.ParameterCandidate
+open VG VG.Arm VG.Proof.Mont VG.Proof.Bignum.Arm VG.Proof.X25519.Arm
+open VG.Proof.Rsa.Arm.Keys (num opRegs)
+open VG.Spec.Rsa (splitTwos)
+
+theorem expDecompose_ok {s : State} {base : BitVec 32} {capacity w n : Nat}
+    (workspace : Workspace s base (8 * capacity)) (ready : KeyReady base capacity w s)
+    (data : MontData base capacity w s.mem) (stack : Workspace s s.sp 72)
+    (separate : (⟨State.addr s.sp, 72⟩ : Region).Disjoint ⟨State.addr base, 8 * capacity⟩)
+    (number : num s.mem (base + 96#32) (2 * w + 2) 0 = n) (large : 1 < n) (odd : n % 2 = 1) :
+    WP isa VG.Impl.Ffdh.Arm.ParameterCandidate.expDecompose s fun t =>
+      KeyReady base capacity w t ∧ MontData base capacity w t.mem ∧
+      num t.mem (base + 96#32) (2 * w + 2) 29 = (splitTwos (n - 1)).2 ∧
+      t.mem.readW (State.addr (t.sp + 60#32)) 32 = BitVec.ofNat 32 (splitTwos (n - 1)).1 ∧
+      (∀ j, j < 30 → j ≠ 29 → num t.mem (base + 96#32) (2 * w + 2) j =
+        num s.mem (base + 96#32) (2 * w + 2) j) ∧
+      (∀ d, d + 8 ≤ 256 → t.mem.readW (off (State.addr base) d) 64 =
+        s.mem.readW (off (State.addr base) d) 64) ∧
+      Frame [⟨State.addr base, 8 * capacity⟩, ⟨State.addr (s.sp + 60#32), 4⟩] s.mem t.mem ∧ Rest opRegs s t := by
+  rw [VG.Impl.Ffdh.Arm.ParameterCandidate.expDecompose, WP.seq_iff]
+  refine WP.mono (expCountInit_ok workspace ready data stack separate number large odd) ?_
+  intro u h
+  refine WP.mono (halfCountLoop_ok h.workspace h.ready h.data h.stack h.separate h.number h.positive h.even h.saved) ?_
+  rintro t ⟨readyT, dataT, valueT, countT, arraysT, headerT, frameT, restT⟩
+  rw [h.rest.sp] at frameT
+  exact ⟨readyT, dataT, valueT, countT,
+    fun j bound different => (arraysT j bound different).trans (h.arrays j bound different),
+    fun d bound => (headerT d bound).trans (h.header d bound), h.frame.trans frameT, h.rest.trans restT⟩
+
+end VG.Proof.Ffdh.Arm.ParameterCandidate
+
+end
+
+end
 
 /-! ### `Ffdh.Arm.ParameterCandidate.ExponentSetup`, which only this module used -/
 

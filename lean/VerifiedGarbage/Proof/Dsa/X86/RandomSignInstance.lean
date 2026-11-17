@@ -1,16 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86.Verified
+public import VerifiedGarbage.Proof.Dsa.X86.PrevalidatedVerified
 public import VerifiedGarbage.Impl.Dsa.X86.RandomSign
-public import VerifiedGarbage.Proof.Dsa.X86.RandomCall
+public import VerifiedGarbage.Proof.Dsa.X86.RandomAttemptState
 public import VerifiedGarbage.Proof.Framework.X86.CallWith
 public import VerifiedGarbage.Spec.Dsa.PrevalidatedSign
 public import VerifiedGarbage.Proof.Dsa.PrivateKeyWitness
-import VerifiedGarbage.Proof.Dsa.X86.PrevalidatedVerified
 import VerifiedGarbage.Proof.Dsa.X86.ShapeCall
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-public import VerifiedGarbage.Proof.Dsa.X86.RandomAttemptState
 public import VerifiedGarbage.Proof.Dsa.X86.RandomCallCT
 public import VerifiedGarbage.Proof.Dsa.SignContractWith
 import VerifiedGarbage.Proof.Dsa.X86.RandomBodyCT
@@ -19,8 +17,6 @@ public import VerifiedGarbage.Impl.Dsa.X86.PrevalidatedSign
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Dsa.X86.PrevalidatedSignCT
-import VerifiedGarbage.Proof.Dsa.X86.PrevalidatedSign
-import VerifiedGarbage.Proof.Dsa.X86.SharedPublic
 import VerifiedGarbage.Proof.Dsa.X86.PublicDomain
 
 /-! ### `Dsa.X86.RandomSignCT`, which only this module used -/

@@ -1,18 +1,16 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.Prevalidated
-public import VerifiedGarbage.Proof.Dsa.X86_64.VerifyEntry
+public import VerifiedGarbage.Proof.Dsa.X86_64.InitializedFields
 public import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingInitialize
 public import VerifiedGarbage.Spec.Dsa.Prevalidated
 public import VerifiedGarbage.Proof.Dsa.X86_64.EntryFields
 import VerifiedGarbage.Proof.Dsa.X86_64.EntryFieldsFrame
 import VerifiedGarbage.Proof.Dsa.X86_64.KeygenEntry
-import VerifiedGarbage.Proof.Dsa.X86_64.KeyPointers
 import VerifiedGarbage.Proof.Dsa.X86_64.Save
 import VerifiedGarbage.Proof.Dsa.X86_64.EntryScratch
-import VerifiedGarbage.Proof.Dsa.X86_64.WorkspaceReady
-import VerifiedGarbage.Proof.Dsa.X86_64.SigningShape
 import VerifiedGarbage.Proof.Dsa.X86_64.SigningOperands
+import VerifiedGarbage.Proof.Dsa.X86_64.SigningShape
 import VerifiedGarbage.Proof.Dsa.X86_64.PublicKey
 import VerifiedGarbage.Proof.Dsa.X86_64.AcceptedSpec
 import VerifiedGarbage.Proof.Dsa.X86_64.Result

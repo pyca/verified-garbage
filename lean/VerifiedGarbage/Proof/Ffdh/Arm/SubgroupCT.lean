@@ -6,8 +6,6 @@ public import VerifiedGarbage.Proof.Framework.Taint
 public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
-
-import VerifiedGarbage.Proof.Ffdh.Arm.PublicPowerAt
 import VerifiedGarbage.Proof.Ffdh.Arm.Subgroup
 import VerifiedGarbage.Proof.Ffdh.Arm.ValueChecksCT
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
@@ -15,8 +13,8 @@ import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
 import VerifiedGarbage.Proof.Ffdh.Arm.PowerAtCT
 import VerifiedGarbage.Proof.Ffdh.Arm.PublicPowerInput
 import VerifiedGarbage.Proof.Ffdh.Arm.PublicScanCT
-import VerifiedGarbage.Proof.Ffdh.Arm.PowerCT
 import VerifiedGarbage.Proof.Ffdh.Arm.StackCT
+
 /-! Subgroup checks have a trace determined by the domain width and pointers. -/
 
 -- Formerly `VerifiedGarbage/Proof/Ffdh/Arm/PublicPowerAtCT.lean`, which only this module imported.

@@ -1,14 +1,9 @@
 module
 
-import VerifiedGarbage.Proof.Mont.X86.CombSquares
-
-import VerifiedGarbage.Proof.Mont.X86.CombColumnControl
-
+public import VerifiedGarbage.Proof.Mont.X86.CombColumns
 import VerifiedGarbage.Proof.Dsa.X86.Comb.SelectTable
-
 public import VerifiedGarbage.Proof.Dsa.X86.Comb.PowerFrame
 meta import VerifiedGarbage.Proof.Dsa.X86.Comb.PowerFrame
-public import VerifiedGarbage.Proof.Mont.X86.CombColumns
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Framework.X86.RelCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc

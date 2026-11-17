@@ -2,9 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.SeedSearch
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Context
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeometrySubgroup
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextFrame
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Subgroup
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SubgroupState
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.QBuildCT
 public import VerifiedGarbage.Proof.Dsa.Encoding
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeCallCT
@@ -12,7 +11,6 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HeaderCT
 import VerifiedGarbage.Proof.Framework.Omega
 public import Mathlib.Algebra.Group.Nat.Defs
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextSeed
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextSubgroup
 import VerifiedGarbage.Proof.Dsa.Arithmetic
 import VerifiedGarbage.Proof.Dsa.Generation.QCandidate
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.QBuild

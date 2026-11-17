@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.DrawFn
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.CTBase
 public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Search.RoundCallCT
-import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.Round
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.RelCTChain
 meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.DrawFn

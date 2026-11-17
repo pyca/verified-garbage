@@ -1,6 +1,5 @@
 module
 
-import VerifiedGarbage.Proof.AesGcm.Arm.Words
 public import VerifiedGarbage.Proof.Cmac.Mem32
 public import VerifiedGarbage.Proof.Gcm.Compose
 public import VerifiedGarbage.Proof.AesGcm.Arm.Env
@@ -16,6 +15,77 @@ import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.TCB.Arm.Isa
+public import VerifiedGarbage.Spec.Gcm
+import VerifiedGarbage.Proof.Gcm.Spec
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.PlainSimp
+
+/-! ### `AesGcm.Arm.Words`, which this module and modules that import it used -/
+
+section
+
+/-!
+# AES-GCM on ARMv7: words and the lengths block
+
+Untrusted: everything here is checked by Lean. `rev` is `byteRev32`; the
+bytes of a block of two 64-bit values are their big-endian bytes
+(`toBytes_append64`); and `8 x` of a 64-bit `x = hi:lo`, as the code computes
+it with shifts (`shl3_words`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.AesGcm.Arm
+
+open VG
+open VG.Spec.Gcm (be64 toBytes)
+
+theorem rev_eq : VG.Arm.rev = byteRev32 := rfl
+
+theorem toBytes_append64 (a c : BitVec 64) : toBytes (a ++ c) = be64 a.toNat ++ be64 c.toNat := by
+  have ha := a.isLt; have hc := c.isLt
+  have e : (a ++ c).toNat = a.toNat * 2 ^ 64 + c.toNat := Proof.Gcm.toNat_append a c
+  simp only [toBytes, be64, List.range_succ, List.range_zero, List.nil_append, List.map_cons, List.map_nil,
+    List.cons_append, List.cons.injEq, and_true]
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
+  · apply BitVec.eq_of_toNat_eq
+    rw [BitVec.extractLsb'_toNat, Nat.shiftRight_eq_div_pow, BitVec.toNat_ofNat, e]
+    omega_using []
+
+/-- `8 x`, of `x = hi:lo`, in two words, as `lsl #3` and `orr` with `lsr #29`. -/
+theorem shl3_words (hi lo : BitVec 32) :
+    (((hi <<< 3) ||| (lo >>> 29)) ++ (lo <<< 3) : BitVec 64) = (hi ++ lo) <<< 3 := by
+  apply BitVec.eq_of_toNat_eq
+  have h₁ := hi.isLt; have h₂ := lo.isLt
+  simp only [Proof.Gcm.toNat_append, BitVec.toNat_shiftLeft, BitVec.toNat_or, BitVec.toNat_ushiftRight,
+    Nat.shiftLeft_eq, Nat.shiftRight_eq_div_pow]
+  have hor : (hi.toNat * 2 ^ 3 % 2 ^ 32) ||| (lo.toNat / 2 ^ 29) = hi.toNat * 2 ^ 3 % 2 ^ 32 + lo.toNat / 2 ^ 29 := by
+    have : lo.toNat / 2 ^ 29 < 2 ^ 3 := by omega_using []
+    rw [show hi.toNat * 2 ^ 3 % 2 ^ 32 = 2 ^ 3 * (hi.toNat % 2 ^ 29) by omega_using [], Nat.mul_comm,
+      ← Nat.shiftLeft_eq, Nat.shiftLeft_add_eq_or_of_lt this]
+  rw [hor]
+  omega_using []
+
+/-- `8 x` modulo 2⁶⁴, as a number. -/
+theorem shl3_toNat (x : BitVec 64) : (x <<< 3).toNat = 8 * x.toNat % 2 ^ 64 := by
+  rw [BitVec.toNat_shiftLeft, Nat.shiftLeft_eq]; congr 1; omega_using []
+
+theorem toBytes_append4 (a b c d : BitVec 32) :
+    toBytes (a ++ b ++ c ++ d) = be64 (a ++ b).toNat ++ be64 (c ++ d).toNat := by
+  have e : a ++ b ++ c ++ d = (a ++ b) ++ (c ++ d) := by
+    apply BitVec.eq_of_toNat_eq
+    have := c.isLt; have := d.isLt
+    simp only [Proof.Gcm.toNat_append]
+    omega_using []
+  rw [e, toBytes_append64]
+
+end VG.Proof.AesGcm.Arm
+
+end
+
+end
 
 /-!
 # AES-GCM on ARMv7: padding the buffer (`flush`) and the lengths block (`lens`)

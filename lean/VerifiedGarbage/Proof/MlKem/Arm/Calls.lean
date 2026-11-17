@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.MlKem.Arm.HashTop
+public import VerifiedGarbage.Proof.MlKem.Arm.HashTop
 public import VerifiedGarbage.Proof.MlKem.Arm.CallF
 public import VerifiedGarbage.Proof.MlKem.Arm.Cbd2
 public import VerifiedGarbage.Proof.MlKem.Arm.CompressEncode
@@ -9,7 +9,6 @@ public import VerifiedGarbage.Proof.MlKem.Arm.Decompress
 public import VerifiedGarbage.Proof.MlKem.Arm.Encode12
 public import VerifiedGarbage.Proof.MlKem.Arm.Ntt
 public import VerifiedGarbage.Impl.MlKem.Arm.Top
-public import VerifiedGarbage.Proof.MlKem.Arm.Lay
 public import VerifiedGarbage.Proof.MlKem.Arm.Prims
 public import VerifiedGarbage.Proof.MlKem.Arm.Sample
 import VerifiedGarbage.Proof.MlKem.Arm.NttInv

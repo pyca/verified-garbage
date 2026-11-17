@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Exponentiate
-import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Seed
 import Mathlib.Data.Int.GCD
 import VerifiedGarbage.Proof.Framework.Omega
 

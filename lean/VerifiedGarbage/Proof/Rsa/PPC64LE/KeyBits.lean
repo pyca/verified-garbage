@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.KeyOps
 import VerifiedGarbage.Proof.Rsa.PPC64LE.Shifts
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Bignum.PPC64LE.MontStep
+import VerifiedGarbage.Proof.Bignum.PPC64LE.MontRound
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Impl.Rsa.PPC64LE.KeyWs
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.Run

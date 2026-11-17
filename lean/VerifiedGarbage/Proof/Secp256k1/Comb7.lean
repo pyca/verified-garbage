@@ -1,7 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Weierstrass.CombCheckFast
-public import VerifiedGarbage.Proof.Weierstrass.CombCheckW
+public import VerifiedGarbage.Proof.Weierstrass.CombCheckFast
 public import VerifiedGarbage.Impl.Secp256k1.CombTable7
 public import VerifiedGarbage.Spec.Secp256k1
 

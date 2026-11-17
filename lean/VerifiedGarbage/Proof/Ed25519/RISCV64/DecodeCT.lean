@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Ed25519.RISCV64.Decode
+public import VerifiedGarbage.Proof.Ed25519.RISCV64.Decode
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Ed25519.RISCV64.FieldTest
@@ -14,7 +14,6 @@ meta import VerifiedGarbage.Proof.Ed25519.RISCV64.FieldTest
 meta import VerifiedGarbage.Proof.Ed25519.RISCV64.PointTable
 meta import VerifiedGarbage.Proof.X25519.RISCV64.Instr
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
-public import VerifiedGarbage.Proof.Ed25519.RISCV64.RecoverSign
 public import VerifiedGarbage.Spec.Ed25519.Contract
 import VerifiedGarbage.Proof.Ed25519.RISCV64.RecoverCand
 meta import VerifiedGarbage.Proof.Ed25519.RISCV64.RecoverCand

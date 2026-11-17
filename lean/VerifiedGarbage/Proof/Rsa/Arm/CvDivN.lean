@@ -1,8 +1,7 @@
 module
-public import VerifiedGarbage.Proof.Rsa.Arm.CvLoad
-public import VerifiedGarbage.Proof.Rsa.Arm.KeyDiv
-public import VerifiedGarbage.Proof.Rsa.Arm.KeyOps
 
+public import VerifiedGarbage.Proof.Rsa.Arm.CvLoad
+public import VerifiedGarbage.Proof.Rsa.Arm.KeyOps
 import VerifiedGarbage.Proof.Rsa.Arm.InvParts
 import VerifiedGarbage.Proof.Rsa.Arm.KeyBits
 import VerifiedGarbage.Proof.Framework.Offset

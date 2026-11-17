@@ -1,8 +1,8 @@
 module
+
 -- separate module: the proof of Appendix C.2's body is split in a chain of modules, so that a change rebuilds only the modules after it
 public import VerifiedGarbage.Proof.Rsa.Arm.RdRows
-public import VerifiedGarbage.Proof.Rsa.Arm.KeyDiv
-
+public import VerifiedGarbage.Proof.Rsa.Arm.CvLoad
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.Div
 import VerifiedGarbage.Proof.Rsa.Arm.CvDivN
 import VerifiedGarbage.Proof.Rsa.Arm.DivCT
@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.Views
-import VerifiedGarbage.Proof.Bignum.Arm.CopyWords
+import VerifiedGarbage.Proof.Rsa.Arm.KeyOps
 import VerifiedGarbage.Proof.Rsa.Arm.KdNorm
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.Slots
 import VerifiedGarbage.Proof.Rsa.Arm.KeyEq

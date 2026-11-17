@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecContract
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.Bytes
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncFrame
 public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 public import VerifiedGarbage.Proof.Bignum.X86_64.Words
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.Framework.X86_64.CallSp
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.RsaPkcs1Enc.Steps
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
-import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncFrame
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hashes.Sha256
 import VerifiedGarbage.Proof.Bignum.X86_64.CTSetup
 

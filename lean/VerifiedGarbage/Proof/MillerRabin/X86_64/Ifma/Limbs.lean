@@ -2,12 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.PubVec
 public import VerifiedGarbage.Impl.MillerRabin.X86_64.Ifma
-
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.MlKem.X86_64.Wp
-import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Out
+import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CoreU
 import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Win
 import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Conv
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86.Ops
-import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Load
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Import
 public import VerifiedGarbage.Proof.Framework.RelCTChain
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Omega

@@ -8,7 +8,6 @@ public import VerifiedGarbage.Proof.X448.Arm.Save
 public import VerifiedGarbage.Spec.Ed448.Contract
 public import VerifiedGarbage.Spec.X448.Contract
 import VerifiedGarbage.Proof.X448.Arm.Freeze
-import VerifiedGarbage.Proof.X448.Arm.Output
 import VerifiedGarbage.Proof.X448.Arm.Restore
 import VerifiedGarbage.Proof.X448.Arm.BitWrite
 import VerifiedGarbage.Proof.X448.Arm.Carry

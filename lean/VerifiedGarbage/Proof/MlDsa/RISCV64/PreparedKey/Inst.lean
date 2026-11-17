@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.RISCV64.PreparedKey.SignEntry
+public import VerifiedGarbage.Proof.MlDsa.RISCV64.PreparedKey.VerifyEntry
 public import VerifiedGarbage.Proof.MlDsa.RISCV64.Sign.Top
 public import VerifiedGarbage.Impl.MlDsa.RISCV64.Sign.Inst
 import VerifiedGarbage.Proof.MlDsa.RISCV64.Arith.Ntt
@@ -22,7 +22,6 @@ import VerifiedGarbage.Proof.MlDsa.RISCV64.Sample.Ball
 import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
 import VerifiedGarbage.Proof.MlDsa.Sign.Leak
 import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.MlDsa.RISCV64.PreparedKey.VerifyEntry
 public import VerifiedGarbage.Proof.MlDsa.RISCV64.Verify.Top
 public import VerifiedGarbage.Impl.MlDsa.RISCV64.Verify.Inst
 import VerifiedGarbage.Proof.MlDsa.RISCV64.Round.UseHint

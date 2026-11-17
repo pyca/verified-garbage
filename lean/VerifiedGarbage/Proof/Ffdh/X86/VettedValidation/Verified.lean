@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.X86.VettedValidation.Correct
+public import VerifiedGarbage.Proof.Ffdh.X86.VettedValidation.PublicState
 import VerifiedGarbage.Proof.Ffdh.X86.VettedValidation.Timing
 import VerifiedGarbage.Proof.Ffdh.X86.VettedValidation.Sat
 

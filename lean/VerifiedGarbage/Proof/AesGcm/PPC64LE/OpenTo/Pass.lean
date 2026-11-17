@@ -7,7 +7,7 @@ public import VerifiedGarbage.Proof.Framework.PPC64LE.Call
 public import VerifiedGarbage.Proof.Gcm.PPC64LE.Vpmsum.Groups
 public import VerifiedGarbage.Proof.Gcm.PPC64LE.Ghash
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.SplitBlocks.Verified
-public import VerifiedGarbage.Proof.Gcm.SplitBlocksContract
+public import VerifiedGarbage.Proof.AesGcm.PPC64LE.SplitBlocks.Contract
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.OneEntry
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Ghash1
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.SealFused

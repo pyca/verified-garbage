@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.RelCTChain
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Ffdh.X86.StagesCT
-import VerifiedGarbage.Proof.Ffdh.X86.Checks
+public import VerifiedGarbage.Proof.Ffdh.X86.Checks
 import VerifiedGarbage.Proof.Bignum.X86.ModulusCheck
 import VerifiedGarbage.Proof.Bignum.X86.PublicArgs
 import VerifiedGarbage.Proof.Framework.CallLay
@@ -19,7 +19,6 @@ meta import VerifiedGarbage.Proof.Ffdh.X86.Checks
 import VerifiedGarbage.Proof.Ffdh.X86.KeyScan
 meta import VerifiedGarbage.Proof.Ffdh.X86.KeyScan
 public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimeWindow
-public import VerifiedGarbage.Proof.Ffdh.X86.Dom
 public import VerifiedGarbage.Proof.Ffdh.X86.EntryCT
 public import VerifiedGarbage.Proof.Ffdh.X86.Stages
 import Mathlib.Logic.Function.Basic

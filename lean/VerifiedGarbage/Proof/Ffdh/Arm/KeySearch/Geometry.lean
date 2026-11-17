@@ -7,13 +7,117 @@ public import VerifiedGarbage.Proof.Framework.GetElem
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Bounds
-import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CachedGeometry
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CacheMemory
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Contract
+import VerifiedGarbage.Proof.Rsa.BytesFrame
+
+/-! ### `Ffdh.Arm.KeySearch.CacheMemory`, which this module and modules that import it used -/
+
+section
+
+/-! The canonical dynamic context remains readonly throughout a search. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm.KeySearch
+variable {sampling : VG.Proof.Ffdh.GenerationPolicy}
+open VG VG.Arm VG.Spec.Ffdh
+
+def rContext (p : KeyPublic sampling) : Region := ⟨State.addr p.context, 8 * p.contextWords⟩
+
+theorem KeyInput.cached_held {p : KeyPublic sampling} {s : State} (h : KeyInput p s) :
+    CachedHeld p s.mem := by
+  cases sampling with
+  | full | vetted => simp [CachedHeld, GenerationPolicy.cachedContext]
+  | cached =>
+    intro _
+    have pre := h.1
+    cases h.2.1
+    have strip : stripConsts [] s = s := by simp [stripConsts, State.withRegions]
+    change (cachedKeySearchContract abi (stackUse .cached)).pre (stripConsts [] s) at pre
+    rw [strip] at pre
+    sig_pre [cachedKeySearchContract, cachedKeySearchSig,
+      keySearchSig, abi, argRegs, reduceClassify, Loc.val, State.addr] at pre
+    sig_split pre
+    change generationContextAt s.mem (State.addr (stackArg s 9)) (stackArg s 10).toNat
+      (stackArg s 3).toNat (Spec.Rsa.bytesAt s.mem (State.addr (stackArg s 1)) (stackArg s 2).toNat)
+    simp only [generationContextAt, State.addr]
+    constructor <;> sig_close
+
+theorem KeyInput.context_fit {p : KeyPublic sampling} {s : State} (h : KeyInput p s)
+    (cached : sampling.cachedContext = true) : p.context.toNat + 8 * p.contextWords ≤ 2 ^ 32 := by
+  cases sampling with
+  | full | vetted => simp [GenerationPolicy.cachedContext] at cached
+  | cached =>
+    have pre := h.1
+    cases h.2.1
+    have strip : stripConsts [] s = s := by simp [stripConsts, State.withRegions]
+    change (cachedKeySearchContract abi (stackUse .cached)).pre (stripConsts [] s) at pre
+    rw [strip] at pre
+    sig_pre [cachedKeySearchContract, cachedKeySearchSig,
+      keySearchSig, abi, argRegs, reduceClassify, Loc.val, State.addr] at pre
+    sig_split pre
+    change (stackArg s 9).toNat + 8 * (stackArg s 10).toNat ≤ 2 ^ 32
+    simp only [Nat.mul_comm] at *
+    sig_close
+
+theorem CachedHeld.after_frame {p : KeyPublic sampling} {m m' : Mem} {changes : List Region}
+    (h : CachedHeld p m) (frame : Frame changes m m')
+    (fit : sampling.cachedContext = true → 8 * p.contextWords < 2 ^ 64)
+    (sep : sampling.cachedContext = true → ∀ r ∈ changes, (rContext p).Disjoint r) : CachedHeld p m' := by
+  intro cached
+  obtain ⟨size, canonical⟩ := h cached
+  refine ⟨size, ?_⟩
+  rw [VG.Proof.Rsa.wordsAt_frame frame (fit cached) (sep cached)]
+  exact canonical
+
+end VG.Proof.Ffdh.Arm.KeySearch
+
+end
+
+end
+
+/-! ### `Ffdh.Arm.KeySearch.CachedGeometry`, which this module and modules that import it used -/
+
+section
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm.KeySearch
+open VG VG.Arm VG.Proof.Mont
+
+private theorem widen_toNat (a : BitVec 32) : (a.setWidth 64).toNat = a.toNat := by
+  rw [BitVec.toNat_setWidth]
+  exact Nat.mod_eq_of_lt (Nat.lt_trans a.isLt (by decide))
+
+theorem cached_layout {p : KeyPublic .cached} {s : State} (h : KeyInput p s) :
+    KeyLayout (sampling := .cached) s := by
+  have pre := h.1
+  have strip : stripConsts [] s = s := by simp [stripConsts, State.withRegions]
+  change (Spec.Ffdh.cachedKeySearchContract abi (stackUse .cached)).pre (stripConsts [] s) at pre
+  rw [strip] at pre
+  sig_pre [Spec.Ffdh.cachedKeySearchContract, Spec.Ffdh.cachedKeySearchSig,
+    Spec.Ffdh.keySearchSig, abi, argRegs, reduceClassify, Loc.val, State.addr] at pre
+  sig_split pre
+  have stackAddr : stackArgAddr s 0 = State.addr s.sp := by simp [stackArgAddr]
+  have stackEq : stackUse .cached = 240 := rfl
+  constructor <;>
+    simp only [reads, writes, contextReads, GenerationPolicy.cachedContext, KeyConstants.consts,
+      inX, inY, inUsed, inDomain, inRand, inScratch, inControl, inArgs, inContext,
+      argsBytes, State.addr, stackAddr, ite_true, List.cons_append, List.nil_append, List.append_nil,
+      constRegs, Abi.constRegions_nil, List.mem_cons, List.not_mem_nil, or_false,
+      List.pairwise_cons, List.Pairwise.nil, forall_eq_or_imp, forall_eq,
+      false_implies, and_true, stackEq, widen_toNat, Nat.mul_comm] at *
+  sig_and_intros
+  sig_close
+  exact fun _ => True.intro
+
+end VG.Proof.Ffdh.Arm.KeySearch
+
+end
+
+end
 
 /-! Region geometry for the controller and its nested key-generation call. -/
 

@@ -1,4 +1,5 @@
 module
+
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.DrawCTData
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.RoundResultCT
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.Kernel
@@ -6,11 +7,9 @@ import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.CutRestoreCT
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.WitnessRangeCT
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.WitnessRange
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.DrawPrefix
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.DrawBody
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.DrawLoop
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.TapeHead
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.RoundRunCT
-import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.DrawLoop
 public import Mathlib.Algebra.Group.Nat.Defs
 
 /-! ### `Ffdh.X86_64.ParameterCandidate.DrawLoopCT`, which only this module used -/

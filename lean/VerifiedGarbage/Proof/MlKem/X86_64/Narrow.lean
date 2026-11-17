@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.KgBase
 public import VerifiedGarbage.Proof.MlKem.X86_64.EkBase
-public import VerifiedGarbage.Proof.MlKem.X86_64.DcBase
+public import VerifiedGarbage.Proof.MlKem.X86_64.DcDec
 public import VerifiedGarbage.Proof.MlKem.X86_64.FragKpke
 public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.MlKem.X86_64.Kem16

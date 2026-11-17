@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.RsaPss.X86.NoSp
 public import VerifiedGarbage.Proof.RsaOaep.X86.NoSp
 public import VerifiedGarbage.Impl.RsaPss.X86.Table
 

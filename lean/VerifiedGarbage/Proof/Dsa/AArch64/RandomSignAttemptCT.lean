@@ -1,10 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCallResult
+public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignSingle
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCall
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignPublic
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignRunning
-
 import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignSingleCT
 import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignSampleCT
 import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignAttempt

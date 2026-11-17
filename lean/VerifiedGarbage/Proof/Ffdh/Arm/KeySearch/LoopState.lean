@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Contract
 public import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Geometry
-import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Guards
 
 /-! The search result depends on its outcome and consumed bytes; its public
 status controls the native loop's continuation flag. -/

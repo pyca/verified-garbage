@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Ed25519.RISCV64.ScalarBase
 public import VerifiedGarbage.Impl.X25519.RISCV64.Base
 public import VerifiedGarbage.Spec.X25519
 import VerifiedGarbage.Proof.Ed25519.RISCV64.Comb
-import VerifiedGarbage.Proof.Ed25519.RISCV64.Encode
+import VerifiedGarbage.Proof.Ed25519.RISCV64.RecoverCand
 import VerifiedGarbage.Proof.Ed25519.RISCV64.Freeze
 import VerifiedGarbage.Proof.Ed25519.RISCV64.PointScalar
 import VerifiedGarbage.Proof.Ed25519.RISCV64.Packed

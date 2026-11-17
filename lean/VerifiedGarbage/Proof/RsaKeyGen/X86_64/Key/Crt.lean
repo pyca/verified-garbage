@@ -1,9 +1,8 @@
 module
-public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Pieces
 
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Front
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.DPart
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Halve
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Front
 import VerifiedGarbage.Proof.Rsa.X86_64.Inv
 import VerifiedGarbage.Proof.Rsa.X86_64.Loops
 import VerifiedGarbage.Proof.Bignum.X86_64.Row

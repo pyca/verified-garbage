@@ -5,9 +5,8 @@ import VerifiedGarbage.Proof.Gcm.X86_64.StitchR.RemPairE
 public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Enc
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx.Reduction
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemSetup
-import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Ks
+import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemGKs
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemD
-import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemGD
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith

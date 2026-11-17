@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Dsa.Arm.CoreTrace
+import VerifiedGarbage.Proof.Dsa.Arm.ValidateTrace
 public import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
 public import VerifiedGarbage.Impl.Dsa.Arm.Entry
 public import VerifiedGarbage.Proof.Dsa.Arm.Shape

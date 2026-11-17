@@ -30,7 +30,7 @@ public import VerifiedGarbage.Proof.Ecdsa.Contract
 # ECDSA over P-256 on x86-64 with BMI2 and ADX: `Verified`
 
 `p256x` is `p256` multiplying with BMI2 and ADX (`Mod.adx`), which the proof
-of `sign_ok` covers as it covers any multiplication (`Proof/Mont/X86_64/Adx.lean`):
+of `sign_ok` covers as it covers any multiplication (`Proof/Mont/X86_64/Rounds.lean`):
 the same curve, so the same facts (`p256x_ok`, from `p256_ok` but for the
 inversions' constants, decided again) and the same precondition.
 -/

@@ -2,10 +2,9 @@ module
 
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Loops2
 public import VerifiedGarbage.Proof.Bignum.X86.PublicCall
-public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Stages
+public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Load
 import VerifiedGarbage.Impl.Bignum.X86.PrecomputeFn
 public import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Load
 import VerifiedGarbage.Proof.Dsa.Frame
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset

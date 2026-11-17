@@ -4,7 +4,7 @@ import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseDCT
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseC
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Rel
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.BlockTr
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PrimsD
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseD
 import VerifiedGarbage.Proof.Framework.Contract
 
 /-!

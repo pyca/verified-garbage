@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.SealSplit.Input
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.SealFused
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.SplitBlocks.Verified
-public import VerifiedGarbage.Proof.Gcm.SplitBlocksContract
+public import VerifiedGarbage.Proof.AesGcm.PPC64LE.SplitBlocks.Contract
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 import VerifiedGarbage.Proof.Framework.PPC64LE.Run
 import VerifiedGarbage.Proof.Framework.Sig

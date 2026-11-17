@@ -1,13 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Workspace
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyBorrowMask
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeySaveSlot
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyNotSlot
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyDTrivial
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyFinalExponent
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRetry
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyExponentBranch
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyFinalExponent
 import Mathlib.Logic.Function.Basic
 import Mathlib.Tactic.Set
 import Mathlib.Tactic.SplitIfs

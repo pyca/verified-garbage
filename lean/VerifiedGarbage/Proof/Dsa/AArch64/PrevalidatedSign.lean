@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Dsa.AArch64.CheckEffects
 import VerifiedGarbage.Proof.Dsa.AArch64.Sequences
 import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleState
 import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleOperands
-import VerifiedGarbage.Proof.Dsa.AArch64.CallOperands
 import VerifiedGarbage.Proof.Dsa.DomainWidths
 import VerifiedGarbage.Proof.Dsa.SizeBounds
 import VerifiedGarbage.Proof.Dsa.Encoding

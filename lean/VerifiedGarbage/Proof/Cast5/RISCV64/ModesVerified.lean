@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Cast5.RISCV64.ModesConstantTime
 public import VerifiedGarbage.Proof.Modes.RISCV64.Core
 public import VerifiedGarbage.Impl.Cast5.RISCV64.Modes
 public import VerifiedGarbage.Proof.Cast5.ModeCipher
-public import VerifiedGarbage.Proof.Cast5.RISCV64.Block
+public import VerifiedGarbage.Proof.Cast5.RISCV64.Ecb
 import VerifiedGarbage.Proof.Cast5.ModeMem
 public import VerifiedGarbage.Proof.Framework.RISCV64.Spill
 import VerifiedGarbage.Proof.Framework.RISCV64.Syms

@@ -5,8 +5,7 @@ import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTArguments
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTFrames
 public import VerifiedGarbage.Proof.Ffdh.CachedGenerateKeyContract
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.ConstantContract
-import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.ConstantMemory
-import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CallPost
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Memory
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.ArgumentWords
@@ -15,8 +14,6 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTAttemptState
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTBase
 public import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeyBackend
-import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CallConsts
-import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CallRegions
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Allocated
 
 /-! ### `Ffdh.Arm.KeySearch.CallPublic`, which only this module used -/

@@ -1,9 +1,8 @@
 module
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Base
 
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Entry
 import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 import VerifiedGarbage.Proof.Framework.WriteBytes
-import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Entry
 import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Contract

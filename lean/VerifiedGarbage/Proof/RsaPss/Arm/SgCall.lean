@@ -11,7 +11,6 @@ import VerifiedGarbage.Proof.RsaPss.Params
 import VerifiedGarbage.Proof.RsaPss.MgfBytes
 import VerifiedGarbage.Proof.RsaPss.EncBytes
 import VerifiedGarbage.Proof.RsaPss.CtPad
-import VerifiedGarbage.Proof.RsaPss.Encoding
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset

@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.X448.AArch64.Base.Const
 import VerifiedGarbage.Proof.Framework.AArch64.Inline
 public import VerifiedGarbage.Proof.Framework.AArch64.Simd64
 public import VerifiedGarbage.Proof.Framework.AArch64.Tbl
-public import VerifiedGarbage.Proof.X448.Edwards.Ladder
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!

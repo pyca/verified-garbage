@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.CheckOperands
-import VerifiedGarbage.Proof.Dsa.AArch64.BufferFrame
+import VerifiedGarbage.Proof.Dsa.AArch64.Execution
 
 /-! # State and operand preservation between complete DSA schedules -/
 

@@ -2,21 +2,18 @@ module
 
 -- separate module: its proofs (about 8 s) cost more than its imports, and its importer's
 -- changes need not re-check them
-
 public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.P256.Window
 public import VerifiedGarbage.Impl.Ecdsa.P521.PPC64LE
 public import VerifiedGarbage.Impl.Ecdsa.PPC64LE.Window3
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.P521
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Flags
 import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Copy
-import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Bits
-import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Loop
+import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Pow
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Mont.PPC64LE.Step
-
 
 /-!
 # `[k]P` by three-bit windows on PPC64LE, P-521

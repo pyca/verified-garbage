@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.SieveContext
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.PairEntry
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.TrialValue
 public import VerifiedGarbage.Spec.Rsa.Contract
-public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.TrialStep
 import VerifiedGarbage.Proof.Bignum.Arm.TrialDivision16
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Omega

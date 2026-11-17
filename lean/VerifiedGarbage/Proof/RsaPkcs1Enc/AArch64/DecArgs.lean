@@ -1,7 +1,6 @@
 module
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecHash
 
-import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecMac
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecMac
 import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecCTBase
 
 /-!

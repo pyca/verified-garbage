@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Rsa.X86.PrivVerified
 import VerifiedGarbage.Proof.Rsa.X86.PrivStackSafety
 import VerifiedGarbage.Proof.RsaPkcs1Sig.BytesAt
 import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86.DecBase
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86.DecTaint
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Loops
 public import VerifiedGarbage.Proof.Bignum.X86.CopyRegion
@@ -74,7 +73,7 @@ section
 /-!
 # RSAES-PKCS1-v1_5 decryption on x86: the private-key operation
 
-As on ARMv7 (`Proof/RsaPkcs1Enc/Arm/DecPriv.lean`): the call's twenty
+As on ARMv7 (`Proof/RsaPkcs1Enc/Arm/DecPrf.lean`): the call's twenty
 arguments, one word of the frame at a time (`Slots`, `copySlot`,
 `privArgs_wp`), and the call of `vg_rsa_private_checked` (`call_vp`,
 correct and constant time: its arguments and the public key it reads are
@@ -327,7 +326,7 @@ end
 /-!
 # RSAES-PKCS1-v1_5 decryption on x86: `D = I2OSP(d, k)`
 
-As on ARMv7 (`Proof/RsaPkcs1Enc/Arm/DecD.lean`): from here on the call's
+As on ARMv7 (`Proof/RsaPkcs1Enc/Arm/DecPrf.lean`): from here on the call's
 result stays in `out` and in its slot (`Base`), as long as memory changes
 only in `scratch`, the frame's other words and the stack below
 (`Base.frame`). `D`, `k` bytes in `scratch`: zeros (`dZero_vp`,
@@ -1691,7 +1690,7 @@ end
 # RSAES-PKCS1-v1_5 decryption on x86: an IRPRF loop
 
 As on ARMv7 (`Proof/RsaPkcs1Enc/Arm/DecPrf.lean`,
-`Proof/RsaPkcs1Enc/Arm/DecPrfLoop.lean`): a loop (`Prf`) writes block `i`
+`Proof/RsaPkcs1Enc/Arm/DecVerified.lean`): a loop (`Prf`) writes block `i`
 of IRPRF, `HMAC(KDK, msgV i label L)`, to `scratch + dst + 32 i`
 (`prfBody_vp`), keeping `KDK` and `xn` bytes of `scratch` at `xo`; the
 whole loop (`loop_vp`) writes its `nb` blocks (`CI`).
@@ -3737,7 +3736,7 @@ end
 /-!
 # RSAES-PKCS1-v1_5 decryption on x86: the body
 
-As on ARMv7 (`Proof/RsaPkcs1Enc/Arm/DecBody.lean`): the pieces in order,
+As on ARMv7 (`Proof/RsaPkcs1Enc/Arm/DecVerified.lean`): the pieces in order,
 each correct and constant time (`body_vp`), from the state the body starts
 from to the result (`Fin`); and no instruction of the body or of the
 functions it calls writes `esp` (`body_noSp`).

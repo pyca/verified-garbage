@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.DecCorrect
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.Callees
-import VerifiedGarbage.Proof.RsaOaep.X86_64.DecTab
+import VerifiedGarbage.Proof.RsaOaep.X86_64.DecMain
 import VerifiedGarbage.Proof.RsaOaep.X86_64.LabelT
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Good
 import VerifiedGarbage.Proof.Framework.Offset

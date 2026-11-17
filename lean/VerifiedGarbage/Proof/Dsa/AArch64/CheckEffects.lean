@@ -1,12 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.LocalCallFrame
+public import VerifiedGarbage.Proof.Dsa.AArch64.Execution
 public import VerifiedGarbage.Proof.Dsa.AArch64.ReadyCalls
 public import VerifiedGarbage.Impl.Dsa.AArch64.Checks
-public import VerifiedGarbage.Proof.Dsa.AArch64.Modulus
-public import VerifiedGarbage.Proof.Dsa.AArch64.CheckFrame
 import VerifiedGarbage.Proof.Dsa.Layout
-import VerifiedGarbage.Proof.Dsa.AArch64.MaskContext
 import VerifiedGarbage.Proof.Dsa.AArch64.Minus
 public import VerifiedGarbage.Proof.Dsa.AArch64.Call
 import VerifiedGarbage.Proof.Dsa.AArch64.EnterLeave
@@ -24,13 +21,163 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 public import Aesop.BuiltinRules
 import VerifiedGarbage.Proof.Dsa.AArch64.ZeroMask
 import VerifiedGarbage.Proof.Dsa.AArch64.Masks
-import VerifiedGarbage.Proof.Dsa.AArch64.CheckCall
 public import VerifiedGarbage.Proof.Dsa.AArch64.Frame
 public import VerifiedGarbage.Spec.Dsa
 import VerifiedGarbage.Proof.Dsa.AArch64.RangeMask
 import VerifiedGarbage.Proof.Dsa.AArch64.Prepare
 import VerifiedGarbage.Proof.Dsa.AArch64.ZeroHead
 import VerifiedGarbage.Proof.Dsa.AArch64.OneScan
+public import VerifiedGarbage.Proof.Dsa.AArch64.CallHeader
+public import VerifiedGarbage.Proof.Dsa.AArch64.Return
+
+/-! ### `Dsa.AArch64.CheckCall`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Dsa.AArch64.MaskContext`, which this module and modules that import it used -/
+
+section
+
+/-! # Acceptance-mask writes preserve reusable arithmetic state -/
+
+@[expose] public section
+
+namespace VG.Proof.Dsa.AArch64
+open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64 VG.Impl.Bignum.Public
+open VG.Impl.Dsa.Layout VG.Impl.Dsa.AArch64
+open VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
+
+theorem maskWrite_good {s t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
+    (hg : Good s B Z w minv) (hf : Outside B Field.mask.offset 8 s.mem t.mem)
+    (hk : Keep [.x3, .x4] s t) : Good t B Z w minv := by
+  have he : ∀ i < 32, word t.mem B (8 * i) = word s.mem B (8 * i) := fun i hi =>
+    hf.word (Or.inl (by change 8 * i + 8 ≤ 360; omega_using [hi])) (by omega_using [hi])
+  exact ⟨hg.scr.congr hk.wr, (hk.gpr .x0 (by decide)).trans hg.x0,
+    ⟨(he _ (by decide)).trans hg.hdr.hw, (he _ (by decide)).trans hg.hdr.hminv,
+      fun j hj => (he _ (by unfold sArr; omega_using [hj])).trans (hg.hdr.harr j hj)⟩⟩
+
+theorem maskWrite_child {mem mem' : Mem} {B : Addr} {o wx m : Nat} {minv : BitVec 64}
+    (child : ChildReady mem B o wx m minv) (hf : Outside B Field.mask.offset 8 mem mem')
+    (ho : 368 ≤ o) (hbound : o + slot wx 8 ≤ 2 ^ 64) : ChildReady mem' B o wx m minv := by
+  have hslot : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega_using []
+  have he : ∀ d, o + d + 8 ≤ 2 ^ 64 → word mem' (off B o) d = word mem (off B o) d := by
+    intro d hd
+    rw [word_off, word_off]
+    exact hf.word (Or.inr (by change 368 ≤ o + d; omega_using [ho])) hd
+  have hN := slot_le (w := wx) (show aN < 8 by decide)
+  refine ⟨child.header.of_words (fun i hi => he _ (by omega_using [hbound, hslot, hi])), ?_, ?_⟩
+  · rw [wv_congr (m := mem) (m' := mem') (fun i hi => he _ (by omega_using [hbound, hN, hi]))]
+    exact child.modulus
+  · rw [he _ (by omega_using [hbound, hN])]
+    exact child.inverse
+
+/-- The mask store leaves the parent and selected child ready for another call. -/
+theorem accumulate_context {s : State} {B : Addr} {Z o w wx m : Nat} {minv parentMinv : BitVec 64}
+    (hg : Good s B Z w parentMinv) (child : ChildReady s.mem B o wx m minv)
+    (hZ : pWorkspace ≤ Z) (ho : 368 ≤ o) (hhi : o + slot wx 8 ≤ Z) {a b : Bool}
+    (ha : s.gpr .x3 = mask a) (hb : word s.mem B Field.mask.offset = mask b) :
+    WP isa (.block Checks.accumulate) s fun t =>
+      Good t B Z w parentMinv ∧ ChildReady t.mem B o wx m minv ∧
+      word t.mem B Field.mask.offset = mask (a && b) ∧
+      Outside B Field.mask.offset 8 s.mem t.mem ∧ Keep [.x3, .x4] s t := by
+  have hn := hg.scr.nowrap
+  exact WP.mono (accumulate_ok hg.scr hg.x0 hZ ha hb) fun t ⟨ht, hf, hk⟩ =>
+    ⟨maskWrite_good hg hf hk, maskWrite_child child hf ho (by omega_using [hhi, hn]), ht, hf, hk⟩
+
+end VG.Proof.Dsa.AArch64
+
+end
+
+end
+
+/-! ### `Dsa.AArch64.CheckFrame`, which this module and modules that import it used -/
+
+section
+
+/-! # Memory changed by a DSA validation call -/
+
+@[expose] public section
+
+namespace VG.Proof.Dsa.AArch64
+open VG VG.AArch64 VG.Impl.Dsa.Layout
+open VG.Proof.Bignum
+
+def RangeFrame (B : Addr) (o wx : Nat) (mem mem' : Mem) : Prop :=
+  ∀ x, (∀ r ∈ callRanges arg argLen, ofs B x < r.1 ∨ r.1 + r.2 ≤ ofs B x) →
+    (∀ r ∈ workRanges wx, ofs (off B o) x < r.1 ∨ r.1 + r.2 ≤ ofs (off B o) x) →
+    (ofs B x < Field.mask.offset ∨ Field.mask.offset + 8 ≤ ofs B x) → mem' x = mem x
+
+end VG.Proof.Dsa.AArch64
+
+end
+
+end
+
+/-! # Returning DSA validation predicates through the parent workspace -/
+
+@[expose] public section
+
+namespace VG.Proof.Dsa.AArch64
+open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64 VG.Impl.Bignum.Public
+open VG.Impl.Rsa.AArch64 VG.Impl.Dsa.Layout VG.Impl.Dsa.AArch64
+open VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
+
+/-- A verified check body returns its boolean mask to the parent and leaves
+the modulus ready for the next operation. -/
+theorem checkCall_ok {s : State} {B : Addr} {Z o w wx m : Nat} {minv parentMinv : BitVec 64}
+    (hg : Good s B Z w parentMinv) (child : ChildReady s.mem B o wx m minv)
+    (hZ : pWorkspace ≤ Z) (hlo : slot w 8 ≤ o) (hfield : 368 ≤ o)
+    (hhi : o + slot wx 8 + tabBytes wx ≤ Z) (ho : o < 2 ^ 16)
+    (a : Operand) (ha : pointerFits a.pointer) {body : Prog isa} {accepted valid : Bool}
+    (hmask : word s.mem B Field.mask.offset = mask valid)
+    (run : ∀ u, SubCtx u B Z o w wx minv → ModCtx u (off B o) (slot wx 8) wx minv m →
+      word u.mem B (8 * arg) = pointerValue s.mem B a.pointer →
+      word u.mem B (8 * argLen) = word s.mem B a.length.offset →
+      Frm B (callRanges arg argLen) s.mem u.mem → Keep coreRegs s u →
+      WP isa body u fun v => SubCtx v B Z o w wx minv ∧ ModCtx v (off B o) (slot wx 8) wx minv m ∧
+        v.gpr .x3 = mask accepted ∧ Frm (off B o) (workRanges wx) u.mem v.mem ∧ Keep mmRegs u v) :
+    WP isa (.seq (.block (Core.operand arg argLen a ++ Core.enter o))
+      (.seq body (.block (([Crt.leave] : List Instr) ++ Checks.accumulate)))) s fun t =>
+      Good t B Z w parentMinv ∧ ChildReady t.mem B o wx m minv ∧
+      word t.mem B Field.mask.offset = mask (accepted && valid) ∧
+      RangeFrame B o wx s.mem t.mem ∧ Keep coreRegs s t := by
+  have hn := hg.scr.nowrap
+  refine WP.seq ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (operand_context hg hZ a ha (by decide) (by decide) (by decide) (by decide) (by decide))
+    fun u ⟨hgu, hua, hul, hfields, hfu, hku⟩ => ?_
+  have hchild := call_ready child hfu (by decide) (by decide) (by omega_using [hfield]) (by omega_using [hhi, hn])
+  refine WP.mono (enter_ok hgu hchild.header hlo hhi ho) fun v ⟨hcv, hvm, hkv⟩ => ?_
+  have hmv : ModCtx v (off B o) (slot wx 8) wx minv m :=
+    ⟨hcv.good, by rw [hvm]; exact hchild.modulus, by rw [hvm]; exact hchild.inverse⟩
+  have hks : Keep coreRegs s v := (hku.trans hkv).mono (by decide)
+  have hfv : Frm B (callRanges arg argLen) s.mem v.mem := by rw [hvm]; exact hfu
+  refine WP.seq (WP.mono (run v hcv hmv (by rw [hvm]; exact hua)
+    (by rw [hvm]; exact hul) hfv hks) fun f ⟨hcf, hmf, hfmask, hff, hkf⟩ => ?_)
+  rw [WP.block_append_iff]
+  have hpm : word f.mem B (8 * sMinv) = parentMinv :=
+    (work_parent hcv hff (by decide)).trans (by rw [hvm]; exact hgu.hdr.hminv)
+  have hmaskf : word f.mem B Field.mask.offset = mask valid := by
+    rw [hff.word_below (fun r hr => (workRanges_ok wx r hr).2) (by omega_using [hhi, hn]) (by omega_using [ho])
+      (show Field.mask.offset + 8 ≤ o from hfield), hvm, hfields .mask]
+    exact hmask
+  refine WP.mono (leave_ok hcf hpm) fun l ⟨hgl, hlm, hkl⟩ => ?_
+  have hcl : ChildReady l.mem B o wx m minv :=
+    ⟨by rw [hlm]; exact ⟨hcf.hdr, hcf.link⟩, by rw [hlm]; exact hmf.modulus,
+      by rw [hlm]; exact hmf.inverse⟩
+  refine WP.mono (accumulate_context (b := valid) hgl hcl hZ hfield (by omega_using [hhi])
+    ((hkl.gpr .x3 (by decide)).trans hfmask) (by rw [hlm]; exact hmaskf))
+    fun t ⟨hgt, hct, htmask, hft, hkt⟩ => ?_
+  refine ⟨hgt, hct, htmask, ?_, ((((hku.trans hkv).trans hkf).trans hkl).trans hkt).mono (by decide)⟩
+  intro x hxarg hxwork hxmask
+  rw [hft x hxmask, hlm]
+  exact (hff x hxwork).trans (by rw [hvm]; exact hfu x hxarg)
+
+end VG.Proof.Dsa.AArch64
+
+end
+
+end
 
 /-! ### `Dsa.AArch64.ReadyChecks`, which only this module used -/
 

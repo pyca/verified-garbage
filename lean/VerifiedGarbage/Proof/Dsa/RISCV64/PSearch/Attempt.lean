@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.RISCV64.PSearch.QPart
+public import VerifiedGarbage.Proof.Dsa.RISCV64.PSearch.PX
 public import VerifiedGarbage.Proof.Dsa.RISCV64.PSearch.PPart
 public import VerifiedGarbage.Proof.Dsa.RISCV64.PSearch.GCheck
 public import VerifiedGarbage.Proof.Dsa.RISCV64.PSearch.Top

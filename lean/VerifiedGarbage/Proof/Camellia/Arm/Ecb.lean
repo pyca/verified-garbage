@@ -4,12 +4,10 @@ public import VerifiedGarbage.Proof.Camellia.Arm.Prologue
 public import VerifiedGarbage.Proof.Camellia.Common
 public import VerifiedGarbage.Proof.Camellia.Arm.Core
 import VerifiedGarbage.Proof.Camellia.Arm.Crypt8
-import VerifiedGarbage.Proof.Camellia.Arm.Fl
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Camellia.Arm.Copy
 
 /-! ### `Camellia.Arm.Group`, which only this module used -/
 

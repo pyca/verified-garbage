@@ -4,15 +4,15 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Main
 public import VerifiedGarbage.Proof.Ecdh.X86_64.Main
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.ProjectiveFinal
 public import VerifiedGarbage.Proof.Weierstrass.Jac
-
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Stages
 import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardField
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Lays
+import VerifiedGarbage.Proof.Ecdsa.X86_64.Fixed
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Unch
 import VerifiedGarbage.Proof.Ecdh.Exchange
 import VerifiedGarbage.Spec.Ecdsa.Verify
 import VerifiedGarbage.Proof.Ecdsa.Verify
 import VerifiedGarbage.Proof.Weierstrass.JacAdd
+
 /-! The measured Jacobian denominator square and projective check satisfy verification. -/
 
 -- Formerly `VerifiedGarbage/Proof/Ecdsa/Verify/X86_64/JointSquare.lean`, which only this module imported.

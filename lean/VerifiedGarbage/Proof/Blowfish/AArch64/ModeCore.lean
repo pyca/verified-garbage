@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Blowfish.AArch64.KeepV
 public import VerifiedGarbage.Proof.Blowfish.ModeBytes
 public import VerifiedGarbage.Proof.Modes.AArch64.FbLoop
 public import VerifiedGarbage.Impl.Blowfish.AArch64.Modes
-public import VerifiedGarbage.Proof.Blowfish.AArch64.Sbox
+public import VerifiedGarbage.Proof.Blowfish.AArch64.Round
 import VerifiedGarbage.Proof.Modes.AArch64.Steps
 import VerifiedGarbage.Proof.Blowfish.AArch64.ModesLit
 import VerifiedGarbage.Proof.Blowfish.AArch64.EcbMain

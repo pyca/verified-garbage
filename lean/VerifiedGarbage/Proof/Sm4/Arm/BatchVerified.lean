@@ -9,7 +9,6 @@ public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Spec.Sm4.Ctr
 public import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.Sm4.Arm.BatchChain
-import VerifiedGarbage.Proof.Sm4.Arm.BatchEntry
 public import VerifiedGarbage.Proof.Sm4.Arm.BatchCT
 public import VerifiedGarbage.Proof.Sm4.Scratch
 public import VerifiedGarbage.Impl.StackScratch.Arm

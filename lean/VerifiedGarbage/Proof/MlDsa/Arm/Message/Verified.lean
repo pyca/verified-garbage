@@ -6,19 +6,14 @@ public import VerifiedGarbage.Impl.MlDsa.Arm.Sign.Sign
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Inst
 public import VerifiedGarbage.Impl.MlDsa.Arm.Verify.Inst
 public import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Lay
-public import VerifiedGarbage.Proof.MlDsa.Arm.Message.VerifyCall
+public import VerifiedGarbage.Proof.MlDsa.Arm.Message.VerifyCorrect
 public import VerifiedGarbage.Spec.MlDsa.CachedVerify
-
 import VerifiedGarbage.Proof.MlDsa.Arm.Message.VerifyCT
-import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Verified
-import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Entry
 import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Entry
-import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Verified
 import VerifiedGarbage.Proof.MlDsa.Arm.PreparedKey.Verified
 import VerifiedGarbage.Proof.MlDsa.PreparedKey.Values
 import VerifiedGarbage.Proof.MlDsa.Arm.Message.SignCorrect
 import VerifiedGarbage.Proof.MlDsa.Arm.Message.SignCT
-import VerifiedGarbage.Proof.MlDsa.Arm.Message.VerifyCorrect
 import VerifiedGarbage.Proof.MlDsa.Verify.Bounds
 import VerifiedGarbage.Proof.MlKem.Mem
 

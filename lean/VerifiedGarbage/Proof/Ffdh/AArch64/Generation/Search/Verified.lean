@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.MillerRabin.AArch64.Backend
 public import VerifiedGarbage.Impl.Ffdh.AArch64.ParameterCandidate
 public import VerifiedGarbage.Impl.Ffdh.AArch64.Generation.Search
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Search.Contract
+public import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Search.Data
 public import VerifiedGarbage.Spec.Ffdh.SievedContract
 import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Search.Correct
 import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Search.CTCode

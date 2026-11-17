@@ -1,6 +1,5 @@
 module
 
-import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeControl
 public import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeCore
 public import VerifiedGarbage.Impl.Ffdh.Arm.CombPrecompute
 import VerifiedGarbage.Proof.Ffdh.Arm.Block

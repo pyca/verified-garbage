@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Cand
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Blocks
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Prep
 import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
 import VerifiedGarbage.Proof.Framework.X86_64.Syms

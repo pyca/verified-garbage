@@ -1,11 +1,10 @@
 module
+
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.TapeLoop
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorSearchMemory
-
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorInvariant
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ChunkTake
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ChunkCheck
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.TapeIteration
 
 /-! # Public cursor and exact chunk state of the generator search -/
 

@@ -1,9 +1,8 @@
 module
+
 public import VerifiedGarbage.Proof.Framework.X86.CallWith
 public import VerifiedGarbage.Proof.Rsa.X86.PrivInstances
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyPublicCall
-
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedRt.Verified
 public import VerifiedGarbage.Proof.Framework.X86.Call
 public import VerifiedGarbage.Spec.Rsa.Contract
 public import Mathlib.Data.Nat.Basic

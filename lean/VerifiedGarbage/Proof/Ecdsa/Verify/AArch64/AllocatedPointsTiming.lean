@@ -1,22 +1,20 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointInitTiming
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointPoints
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedPoints
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.NafWindowTiming
 public import VerifiedGarbage.Proof.P256.VerifyTable.Build
 public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
-
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.CachedChecks
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedPoints
 import VerifiedGarbage.Proof.P256.VerifyTable.Timing
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointFinishTiming
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointGenerator
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticTableHead
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticTableTail
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombSelectV
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Weierstrass.AArch64.NafInvariant
+
 /-! ## `ArithmeticTableChecks` -/
 
 -- Formerly `VerifiedGarbage/Proof/Weierstrass/AArch64/ArithmeticTableTiming.lean`, which only this module imported.

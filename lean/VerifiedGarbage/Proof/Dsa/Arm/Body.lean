@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Dsa.Arm.Compute
 import VerifiedGarbage.Proof.Dsa.OutputBytes
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Dsa.Arm.Bytes
+import VerifiedGarbage.Proof.Dsa.Arm.CoreOps
 import VerifiedGarbage.Proof.Dsa.Frame
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Weierstrass.Words

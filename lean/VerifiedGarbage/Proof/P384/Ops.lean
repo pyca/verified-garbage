@@ -3,8 +3,7 @@ module
 public import VerifiedGarbage.Impl.P384.Ops
 public import VerifiedGarbage.Proof.Mont.AArch64.P384Mul.Product
 public import VerifiedGarbage.Proof.Mont.AArch64.P384Mul.Reduce
-import VerifiedGarbage.Proof.Mont.AArch64.P384Sqr.Square
-public import VerifiedGarbage.Proof.Mont.AArch64.P384Sqr.Rows
+public import VerifiedGarbage.Proof.Mont.AArch64.P384Sqr.Square
 public import VerifiedGarbage.Proof.Weierstrass.Unch
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Fprog
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch

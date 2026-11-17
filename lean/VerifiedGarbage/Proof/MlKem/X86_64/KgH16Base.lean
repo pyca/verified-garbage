@@ -8,10 +8,9 @@ import VerifiedGarbage.Proof.MlKem.X86_64.FragL
 import VerifiedGarbage.Proof.MlKem.PolyW
 public import VerifiedGarbage.Impl.MlKem.X86_64.Kem
 public import VerifiedGarbage.Proof.MlKem.X86_64.FragOf
-import VerifiedGarbage.Proof.MlKem.X86_64.Kg16
+public import VerifiedGarbage.Proof.MlKem.X86_64.Kg16
 public import VerifiedGarbage.Impl.MlKem.X86_64.Kem16
 public import VerifiedGarbage.Proof.MlKem.X86_64.FragS4_16
-public import VerifiedGarbage.Proof.MlKem.X86_64.KgA16
 public import VerifiedGarbage.Proof.MlKem.X86_64.KgB
 public import VerifiedGarbage.Proof.MlKem.X86_64.KgBase
 public import VerifiedGarbage.Proof.MlKem.HSponge

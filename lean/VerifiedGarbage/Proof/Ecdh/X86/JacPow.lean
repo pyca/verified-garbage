@@ -1,10 +1,8 @@
 module
-public import VerifiedGarbage.Proof.Ecdh.X86.JacWrites
-public import VerifiedGarbage.Proof.Ecdsa.X86.Stages
-public import VerifiedGarbage.Proof.Ecdsa.X86.InvLays
 
-import VerifiedGarbage.Proof.Ecdsa.X86.Inv
-import VerifiedGarbage.Proof.Ecdh.X86.JacMul
+public import VerifiedGarbage.Proof.Ecdh.X86.JacMul
+public import VerifiedGarbage.Proof.Ecdsa.X86.Stages
+public import VerifiedGarbage.Proof.Ecdsa.X86.Inv
 
 /-! # Signed-window multiplication followed by affine conversion for x86 ECDH -/
 

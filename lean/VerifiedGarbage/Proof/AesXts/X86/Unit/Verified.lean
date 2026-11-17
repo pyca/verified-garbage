@@ -3,7 +3,7 @@ module
 import VerifiedGarbage.Proof.AesXts.X86.Unit.CT
 import VerifiedGarbage.Proof.AesXts.X86.Verified
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.AesXts.X86.Unit.Run
+public import VerifiedGarbage.Proof.AesXts.X86.Unit.Dec
 import VerifiedGarbage.Proof.AesXts.X86.CT
 public import VerifiedGarbage.Proof.Aes.X86.BlocksVariant
 

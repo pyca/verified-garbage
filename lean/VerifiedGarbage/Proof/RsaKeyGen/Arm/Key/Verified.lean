@@ -3,11 +3,10 @@ module
 public import VerifiedGarbage.Proof.Rsa.Arm.InvLaw
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Top1
-import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Top3
+public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Top3
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Result
-public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Top2
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Spec.RsaKeyGen.Contract
 meta import VerifiedGarbage.Proof.RsaKeyGen.Contract

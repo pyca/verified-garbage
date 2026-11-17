@@ -4,15 +4,12 @@ import VerifiedGarbage.Proof.Seed.KeyRot
 public import VerifiedGarbage.Impl.Seed.Arm.ExpandKey
 public import VerifiedGarbage.Proof.Seed.KeySchedule
 public import VerifiedGarbage.Proof.Seed.Arm.Lanes
-import VerifiedGarbage.Proof.Seed.Arm.Steps
+public import VerifiedGarbage.Proof.Seed.Arm.Group
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Bswap
-public import VerifiedGarbage.Proof.Seed.Arm.Prologue
-import VerifiedGarbage.Proof.Seed.Arm.Group
-import VerifiedGarbage.Proof.Seed.Arm.Round
 import VerifiedGarbage.Proof.Seed.Memory
 
 /-! ### `Seed.Arm.KeyRound`, which only this module used -/

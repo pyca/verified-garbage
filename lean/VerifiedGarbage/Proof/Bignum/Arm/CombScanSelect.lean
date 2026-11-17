@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
 public import VerifiedGarbage.Impl.Bignum.Arm.Select
 public import VerifiedGarbage.Proof.Mont.Words32
 public import VerifiedGarbage.Proof.X25519.Arm.Instr
-
 import VerifiedGarbage.Proof.Bignum.Arm.WindowSelect
 import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
 import VerifiedGarbage.Proof.Bignum.Arm.LayoutBridge
@@ -16,11 +15,11 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
 import VerifiedGarbage.Proof.Bignum.Layout
 import VerifiedGarbage.Proof.Framework.Arm.Exec
-import VerifiedGarbage.Proof.Bignum.Arm.SelectReadState
 import VerifiedGarbage.Proof.Bignum.Arm.SelectReadBody
 import VerifiedGarbage.Proof.Bignum.Arm.SelectWord
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.Block
+
 /-! The ordinary RSA selector reads one dense, external comb row. -/
 
 -- Formerly `VerifiedGarbage/Proof/Bignum/Arm/SelectReadRow.lean`, which only this module imported.

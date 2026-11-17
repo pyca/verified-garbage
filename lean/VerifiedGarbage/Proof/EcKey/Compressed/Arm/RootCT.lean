@@ -1,22 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.DescentRound
-import VerifiedGarbage.Proof.EcKey.Compressed.Arm.TonelliPowers
-import VerifiedGarbage.Proof.EcKey.Compressed.Arm.TonelliSetup
-import VerifiedGarbage.Proof.EcKey.Compressed.Arm.Tonelli
+public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.Tonelli
 public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.DecompressFront
 public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.DecompressContract
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.EcKey.Compressed.Arm.Frame
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
-import VerifiedGarbage.Proof.EcKey.Compressed.Arm.DescentPower
 import VerifiedGarbage.Proof.Weierstrass.Arm.Copy
 import VerifiedGarbage.Proof.Weierstrass.Arm.Loop
 public import VerifiedGarbage.Impl.EcKey.Compressed.Arm.Decompress
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Layout
-public import VerifiedGarbage.Proof.Weierstrass.Arm.Pow
-import VerifiedGarbage.Proof.EcKey.Compressed.Arm.Square
+public import VerifiedGarbage.Proof.Weierstrass.Arm.Ladder
 
 /-! # Carry P-224's public counter through existing field calls
 

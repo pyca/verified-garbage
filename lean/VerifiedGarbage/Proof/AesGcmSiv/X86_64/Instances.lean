@@ -1,13 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcmSiv.Rounds
+public import VerifiedGarbage.Proof.AesGcmSiv.Scratch
 public import Mathlib.Data.List.Dedup
 import VerifiedGarbage.Proof.AesGcmSiv.X86_64.FnCT
 import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Fn
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.GcmSiv.Polyval
 import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Ghash
-public import VerifiedGarbage.Proof.AesGcmSiv.Scratch
 public import Aesop.BuiltinRules
 public import VerifiedGarbage.Impl.AesGcmSiv.X86_64
 public import VerifiedGarbage.Proof.Aes.X86_64.BlocksVariant

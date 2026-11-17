@@ -8,11 +8,10 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Ecdsa.X86.Finish
-public import VerifiedGarbage.Proof.Weierstrass.X86.PointCall
+public import VerifiedGarbage.Proof.Weierstrass.X86.LadderPCall
 public import VerifiedGarbage.Proof.Ecdsa.X86.Fixed
 public import VerifiedGarbage.Proof.Weierstrass.X86.Ladder
 public import VerifiedGarbage.Proof.Weierstrass.X86.LadderP
-import VerifiedGarbage.Proof.Weierstrass.X86.LadderPCall
 import VerifiedGarbage.Proof.Framework.X86.CallWith
 import VerifiedGarbage.Proof.Framework.Contract
 

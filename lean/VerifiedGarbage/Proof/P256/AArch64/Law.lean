@@ -53,7 +53,7 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
 import VerifiedGarbage.Proof.Weierstrass.Cubic
 import VerifiedGarbage.Proof.Weierstrass.GroupOrder
 import VerifiedGarbage.Proof.Weierstrass.Law3
-import VerifiedGarbage.Proof.Weierstrass.RcbIdent
+import VerifiedGarbage.Proof.Weierstrass.Complete
 import VerifiedGarbage.Proof.Weierstrass.Words
 import VerifiedGarbage.Proof.Divstep.Incl
 

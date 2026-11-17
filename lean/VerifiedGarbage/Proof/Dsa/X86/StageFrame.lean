@@ -1,8 +1,7 @@
 module
-public import VerifiedGarbage.Proof.Dsa.X86.RunFrame
-public import VerifiedGarbage.Proof.Mont.X86.PowerStep
 
-import VerifiedGarbage.Proof.Dsa.X86.RunBytes
+public import VerifiedGarbage.Proof.Dsa.X86.RunBytes
+public import VerifiedGarbage.Proof.Mont.X86.PowerStep
 import VerifiedGarbage.Proof.Dsa.X86.Layout
 import VerifiedGarbage.Proof.Dsa.Encoding
 import VerifiedGarbage.Proof.Framework.Offset

@@ -16,7 +16,7 @@ import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeInput
 public import VerifiedGarbage.Impl.Dsa.Generation.Layout
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ProbablePrime
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeBytes
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Workspace
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.BitLengthBounds

@@ -1,12 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.Local
-public import VerifiedGarbage.Proof.Ed448.AArch64.Verify.Hash
+public import VerifiedGarbage.Proof.Ed448.AArch64.Verify.Correct
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Ed448.AArch64.Verify.Main
 import VerifiedGarbage.Proof.Ed448.AArch64.Whole.CallsCT
-import VerifiedGarbage.Proof.Ed448.AArch64.Verify.Calls
 public import VerifiedGarbage.Proof.Ed448.AArch64.Whole.CT
 import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.CallCT
 import VerifiedGarbage.Proof.Framework.Contract
@@ -14,7 +13,6 @@ public import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Calls
 import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.WrapCT
 public import VerifiedGarbage.Proof.Ed448.AArch64.Verify.Body
 public import VerifiedGarbage.Proof.Sha3.AArch64.Variant
-import VerifiedGarbage.Proof.Ed448.AArch64.Verify.Correct
 meta import VerifiedGarbage.Proof.Ed448.AArch64.Verify.Main
 meta import VerifiedGarbage.Proof.Ed448.AArch64.Whole.CallsCT
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.WrapCT

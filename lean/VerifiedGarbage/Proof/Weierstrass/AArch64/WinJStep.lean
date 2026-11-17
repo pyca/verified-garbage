@@ -23,7 +23,6 @@ public import VerifiedGarbage.Proof.Weierstrass.JacMadd
 public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
 public import VerifiedGarbage.Proof.Weierstrass.Unch
 public import VerifiedGarbage.Proof.Weierstrass.WindowJA
-import VerifiedGarbage.Proof.Weierstrass.AArch64.WinJBuild
 
 /-!
 # Windows in Jacobian coordinates on AArch64: an iteration

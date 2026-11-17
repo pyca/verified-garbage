@@ -31,7 +31,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Words
 import VerifiedGarbage.Proof.MlKem.PolyW
 import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncodeAvx2
 import VerifiedGarbage.Proof.MlKem.X86_64.MulAvx2
-import VerifiedGarbage.Proof.MlKem.X86_64.NttLazy
+import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Top
 import VerifiedGarbage.Proof.MlKem.X86_64.VLay42
 import VerifiedGarbage.Proof.MlKem.X86_64.VMxcsr
 import VerifiedGarbage.Proof.MlKem.X86_64.VPack

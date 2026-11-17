@@ -21,8 +21,8 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Spec.Rsa.Contract
 meta import VerifiedGarbage.TCB.Arm.Target
 meta import VerifiedGarbage.Proof.Rsa.Contract
-public import VerifiedGarbage.Proof.Rsa.Arm.PrivPcCall
-public import VerifiedGarbage.Proof.Rsa.Arm.PrivPcArgs
+public import VerifiedGarbage.Proof.Rsa.Arm.PrivPdCall
+public import VerifiedGarbage.Proof.Rsa.Arm.PrivPcPre
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivStages
 import VerifiedGarbage.Proof.Rsa.Arm.PrivCheckFrame
 import VerifiedGarbage.Proof.Bignum.Arm.CopyBuffer
@@ -35,18 +35,15 @@ import VerifiedGarbage.Proof.Bignum.Arm.PcEntryCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Arm.Inline
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
-import VerifiedGarbage.Proof.Rsa.Arm.PrivCrtArgs
+public import VerifiedGarbage.Proof.Rsa.Arm.PrivCrtPre
 import VerifiedGarbage.Proof.Rsa.Arm.PrivCopyArgs
-import VerifiedGarbage.Proof.Rsa.Arm.PrivCrtCall
+public import VerifiedGarbage.Proof.Rsa.Arm.PrivCrtCall
 import VerifiedGarbage.Proof.Rsa.Arm.PrivStatusPreserved
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivContext
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivSlots
-public import VerifiedGarbage.Proof.Rsa.Arm.PrivCrtArgs
 import VerifiedGarbage.Proof.Rsa.Arm.PrivStackWord
 import VerifiedGarbage.Proof.Rsa.Arm.PrivPreWords
 import VerifiedGarbage.Proof.Framework.Block
-public import VerifiedGarbage.Proof.Rsa.Arm.PrivCrtPre
-public import VerifiedGarbage.Proof.Rsa.Arm.PrivCrtCall
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Rsa.Arm.PrivCall
 import VerifiedGarbage.Proof.Framework.Covers

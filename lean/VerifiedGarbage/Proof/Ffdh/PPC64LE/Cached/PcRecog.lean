@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.VettedValidation.Recognize
-public import VerifiedGarbage.Proof.Ffdh.PPC64LE.VettedValidation.Table
+public import VerifiedGarbage.Proof.Ffdh.PPC64LE.VettedValidation.Geometry
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.VettedValidation.ScanTiming
 import VerifiedGarbage.Proof.Ffdh.VettedTableFacts

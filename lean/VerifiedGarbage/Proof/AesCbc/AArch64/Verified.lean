@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.AesCbc.Rounds
 public import VerifiedGarbage.Impl.AesCbc.AArch64
 public import VerifiedGarbage.Proof.Aes.AArch64.BlocksVariant
-public import VerifiedGarbage.Proof.AesCbc.AArch64.Call
+public import VerifiedGarbage.Proof.AesCbc.AArch64.Block
 import VerifiedGarbage.Proof.AesCbc.AArch64.CT
 import VerifiedGarbage.Proof.AesCbc.AArch64.Body
 import VerifiedGarbage.Proof.AesCbc.AArch64.Group

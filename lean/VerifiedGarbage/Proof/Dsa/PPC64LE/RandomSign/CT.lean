@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Dsa.PPC64LE.Random.CT
 meta import VerifiedGarbage.Proof.Dsa.PPC64LE.RandomSign.Fn
 meta import VerifiedGarbage.Proof.Dsa.PPC64LE.Random.CT
 import VerifiedGarbage.Proof.Dsa.PPC64LE.PrevalidatedSign.CT
-import VerifiedGarbage.Proof.Dsa.PPC64LE.PrevalidatedSign.Fn
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.RandomSign.Call
 import VerifiedGarbage.Proof.Dsa.PPC64LE.Sizes
 import VerifiedGarbage.Proof.Dsa.RandomSignTrace
 import VerifiedGarbage.Proof.Dsa.RandomTraceResult
@@ -16,7 +16,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Bignum.Octets
 meta import VerifiedGarbage.Proof.Dsa.PPC64LE.RandomSign.Call
 meta import VerifiedGarbage.Proof.Dsa.PPC64LE.Sign.Front
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.RandomSign.Call
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Sign.Front
 
 /-!

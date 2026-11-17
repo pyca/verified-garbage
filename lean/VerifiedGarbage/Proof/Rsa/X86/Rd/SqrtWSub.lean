@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.Rd.SqrtWWin
-import VerifiedGarbage.Proof.Rsa.X86.Rd.Move
 import VerifiedGarbage.Proof.Rsa.X86.Rd.Loops
 import VerifiedGarbage.Proof.Rsa.X86.WordRt.Sub
 import VerifiedGarbage.Proof.Bignum.X86.R2Words.Sub

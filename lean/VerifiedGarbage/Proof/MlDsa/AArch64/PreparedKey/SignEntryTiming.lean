@@ -20,7 +20,7 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedTableMemory
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableWords
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TableWords
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseSpecPre
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttVerified
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttOutVerified
 import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.MlDsa.AArch64.PreparedKey.Entry
 import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
@@ -50,22 +50,14 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.CachedVerifyVerified
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Inst
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Final
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedState
-import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedHintPack
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedRowEnd
-import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedRowProduct
-import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedDot
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedTimingBase
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCalls
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Verify.Optimized
 import VerifiedGarbage.Proof.MlDsa.DecideAt
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseSingleCall
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttCallTiming
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.AddSubVerified
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MontProductCallTiming
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.UseHintPackCallTiming
 import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedRowStart
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MontDotCallTiming
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Rest
 import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Cmp
 import VerifiedGarbage.Proof.MlDsa.Verify.Final
@@ -84,15 +76,13 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Lit
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Verify.OptimizedSamples
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttCallee
-import VerifiedGarbage.Proof.MlDsa.AArch64.Message.OptimizedVerifyRoots
 import VerifiedGarbage.Proof.MlDsa.AArch64.Message.SignCorrect
 import VerifiedGarbage.Proof.MlDsa.AArch64.Message.HashMu
-import VerifiedGarbage.Proof.MlDsa.AArch64.Message.OptimizedCallTiming
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.RootedCachedVerifyCT
 import VerifiedGarbage.Proof.MlDsa.AArch64.Message.VerifyCT
 import VerifiedGarbage.Proof.MlDsa.AArch64.Message.OptimizedRel
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsExecution
-import VerifiedGarbage.Proof.MlDsa.AArch64.Message.HashCT
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.RootedCachedVerifyCT
+import VerifiedGarbage.Proof.MlDsa.AArch64.Message.SignCT
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.RootedCachedVerifySat
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.MatrixMask
@@ -107,7 +97,6 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Hash
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsFrame
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.VerifyCall
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.OptimizedPre
-import VerifiedGarbage.Proof.MlDsa.AArch64.Message.SignCT
 import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.Prims
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Lay
 import VerifiedGarbage.Proof.Sha3.AArch64.Variant

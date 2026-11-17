@@ -3,15 +3,12 @@ module
 public import VerifiedGarbage.Proof.Sha3.RISCV64.Contract
 public import VerifiedGarbage.Impl.Sha3.RISCV64.Stream
 public import VerifiedGarbage.TCB.RISCV64.Target
-import VerifiedGarbage.Proof.Sha3.RISCV64.Stream.Absorb
-import VerifiedGarbage.Proof.Sha3.RISCV64.Stream.AbsorbWs
-public import VerifiedGarbage.Proof.Sha3.RISCV64.Call
+public import VerifiedGarbage.Proof.Sha3.RISCV64.Stream.AbsorbWs
 public import VerifiedGarbage.Proof.Framework.RISCV64.Alloc
 public import VerifiedGarbage.Proof.Sha3.Stream
 import VerifiedGarbage.Proof.Sha3.Arith
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Sha3.RISCV64.Stream.Common
 import VerifiedGarbage.Proof.Sha3.Lanes
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.RISCV64.Wp

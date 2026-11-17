@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.RsaPss.RISCV64.Hash
 import VerifiedGarbage.Proof.RsaOaep.RISCV64.CTBlocks
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
 import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.RsaPss.RISCV64.Sg.Pre
+public import VerifiedGarbage.Proof.RsaPss.RISCV64.Sg.Spec
 public import VerifiedGarbage.Proof.RsaPss.RISCV64.Inst
 import VerifiedGarbage.Proof.RsaPss.RISCV64.ByIdx
 import VerifiedGarbage.Proof.Framework.Offset

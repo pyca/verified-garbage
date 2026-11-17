@@ -1,9 +1,8 @@
 module
 
 -- separate module: The full doubleFn instruction/vector-ABI replay costs more than its imports; window-call changes reuse this checked callee contract.
-
 public import VerifiedGarbage.Proof.Mont.AArch64.P521Field.DoubleOutput
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Field.DoubleBlocks
+public import VerifiedGarbage.Proof.Mont.AArch64.P521Field.DoubleBody
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.KernelRfl

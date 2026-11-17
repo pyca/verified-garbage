@@ -3,7 +3,6 @@ module
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Geometry
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Regions
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Memory
-import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.ConstantMemory
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Live
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Bounds

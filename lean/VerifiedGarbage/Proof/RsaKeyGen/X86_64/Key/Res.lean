@@ -2,17 +2,15 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.Contract
 public import VerifiedGarbage.Proof.Rsa.X86_64.CvStore
-public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.DOdd
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.DPart
 import VerifiedGarbage.Proof.Rsa.X86_64.CvFail
 import VerifiedGarbage.Proof.Rsa.Octets
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Crt
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.DPart
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Lcm
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Front
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Front
 import VerifiedGarbage.Proof.Bignum.X86_64.PubOut
 import VerifiedGarbage.Spec.RsaKeyGen
 import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Pieces
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Halve
 import VerifiedGarbage.Proof.Rsa.X86_64.Inv

@@ -1,8 +1,8 @@
 module
+
 public import VerifiedGarbage.Impl.Ed448.Wnaf
 public import VerifiedGarbage.Impl.Ed448.X86_64.Wnaf.Recode
-public import VerifiedGarbage.Proof.X448.X86_64.Reduce
-
+public import VerifiedGarbage.Proof.X448.X86_64.AddSub
 import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Write
 import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Digit
 import VerifiedGarbage.Proof.Ed448.Wnaf.Recoding

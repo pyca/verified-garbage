@@ -14,7 +14,6 @@ import VerifiedGarbage.Proof.MlKem.Arm.Common
 import VerifiedGarbage.Proof.Sha3.Arm.Stream.Absorb
 public import VerifiedGarbage.Proof.MlKem.Arm.CallF
 public import VerifiedGarbage.Proof.MlDsa.Arm.Message.Args
-public import VerifiedGarbage.Proof.MlDsa.Arm.Message.Step
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Sha512.Arm.Rounds
 public import VerifiedGarbage.Proof.MlKem.Arm.Keccak

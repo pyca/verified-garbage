@@ -2,9 +2,8 @@ module
 
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8CtEdges
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8CtTile
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Tile
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Redc
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Edges
 
 /-! ### `Bignum.X86_64.AdxRotate8CtLoop`, which only this module used -/

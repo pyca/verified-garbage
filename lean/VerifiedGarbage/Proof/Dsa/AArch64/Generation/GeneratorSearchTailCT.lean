@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorInvariant
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.TapeState
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorEvaluateCT
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorDecisionCT
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorStatus
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorSearchPlan
 
 /-! ### `Dsa.AArch64.Generation.GeneratorStepCT`, which only this module used -/
 

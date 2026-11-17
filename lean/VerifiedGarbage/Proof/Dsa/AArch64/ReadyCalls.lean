@@ -1,16 +1,132 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Modulus
 public import VerifiedGarbage.Proof.Dsa.AArch64.Call
 import VerifiedGarbage.Proof.Dsa.AArch64.Power
 import VerifiedGarbage.Proof.Dsa.AArch64.Multiply
-public import VerifiedGarbage.Proof.Dsa.AArch64.Arguments2
 import VerifiedGarbage.Proof.Dsa.AArch64.EnterLeave
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Dsa.AArch64.Run
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Dsa.AArch64.Reduce
 import VerifiedGarbage.Proof.Dsa.AArch64.Add
+public import VerifiedGarbage.Proof.Dsa.AArch64.Execution
+import VerifiedGarbage.Proof.Dsa.Layout
+public import VerifiedGarbage.Proof.Dsa.AArch64.Arguments
+
+/-! ### `Dsa.AArch64.Arguments2`, which this module and modules that import it used -/
+
+section
+
+/-! # Input and output bindings for streaming reduction -/
+
+@[expose] public section
+
+namespace VG.Proof.Dsa.AArch64
+open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64 VG.Impl.Bignum.Public
+open VG.Impl.Dsa.Layout
+open VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
+open VG.Impl.Dsa.AArch64
+
+def Arguments2 (mem original : Mem) (B : Addr) (a output : Operand) : Prop :=
+  word mem B (8 * arg) = pointerValue original B a.pointer ∧
+  word mem B (8 * argLen) = word original B a.length.offset ∧
+  word mem B (8 * result) = pointerValue original B output.pointer ∧
+  word mem B (8 * resultLen) = word original B output.length.offset
+
+/-- Bind the reduction input and result while preserving saved fields and
+both structural and modulus words of the selected child. -/
+theorem arguments2_ok {s : State} {B : Addr} {Z o w wx m : Nat} {minv parentMinv : BitVec 64}
+    (hg : Good s B Z w parentMinv) (child : ChildReady s.mem B o wx m minv)
+    (hZ : pWorkspace ≤ Z) (ho : 256 ≤ o) (hhi : o + slot wx 8 ≤ Z)
+    (a output : Operand) (ha : pointerFits a.pointer) (hout : pointerFits output.pointer) :
+    WP isa (.block (Core.operand arg argLen a ++ Core.operand result resultLen output)) s fun t =>
+      Good t B Z w parentMinv ∧ ChildReady t.mem B o wx m minv ∧
+      Arguments2 t.mem s.mem B a output ∧
+      (∀ f : Field, word t.mem B f.offset = word s.mem B f.offset) ∧
+      Frm B argumentRanges s.mem t.mem ∧ Keep [.x3, .x4] s t := by
+  have hn := hg.scr.nowrap
+  rw [WP.block_append_iff]
+  refine WP.mono (operand_context hg hZ a ha (by decide) (by decide) (by decide) (by decide) (by decide))
+    fun u ⟨hgu, hua, hual, hfieldsu, hfu, hku⟩ => ?_
+  have hchildu := call_ready child hfu (by decide) (by decide) ho (by omega_using [hhi, hn])
+  refine WP.mono (operand_context hgu hZ output hout (by decide) (by decide) (by decide) (by decide) (by decide))
+    fun t ⟨hgt, hto, htol, hfieldst, hft, hkt⟩ => ?_
+  rw [pointerValue_congr hfieldsu] at hto
+  rw [hfieldsu output.length] at htol
+  refine ⟨hgt, call_ready hchildu hft (by decide) (by decide) ho (by omega_using [hhi, hn]), ?_,
+    fun f => (hfieldst f).trans (hfieldsu f), ?_, (hku.trans hkt).mono (by decide)⟩
+  · exact ⟨(call_word hft (by decide) (by decide) (by decide) (by decide) (by decide)).trans hua,
+      (call_word hft (by decide) (by decide) (by decide) (by decide) (by decide)).trans hual, hto, htol⟩
+  · exact (call_argument_frame hfu (by decide) (by decide)).trans
+      (call_argument_frame hft (by decide) (by decide))
+
+end VG.Proof.Dsa.AArch64
+
+end
+
+end
+
+/-! ### `Dsa.AArch64.Modulus`, which this module and modules that import it used -/
+
+section
+
+/-! # Selecting one of the two reusable DSA arithmetic moduli -/
+
+@[expose] public section
+
+namespace VG.Proof.Dsa.AArch64
+open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64
+open VG.Impl.Dsa.Layout VG.Impl.Dsa.AArch64
+open VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
+
+inductive ModulusSide where | p | q
+
+def ModulusSide.offset : ModulusSide → Nat | .p => pWorkspace | .q => qWorkspace
+def ModulusSide.lengthField : ModulusSide → Field | .p => .pLen | .q => .qLen
+def ModulusSide.length (side : ModulusSide) (L : ExecutionLayout) : Nat := match side with | .p => L.pLen | .q => L.qLen
+def ModulusSide.words (side : ModulusSide) (L : ExecutionLayout) : Nat := (side.length L + 7) / 8
+def ModulusSide.value (side : ModulusSide) (L : ExecutionLayout) : Nat := match side with | .p => L.modulus | .q => L.subgroup
+def ModulusSide.inverse (side : ModulusSide) (L : ExecutionLayout) : BitVec 64 := match side with | .p => L.pInverse | .q => L.qInverse
+
+theorem ModulusSide.bounds (side : ModulusSide) (L : ExecutionLayout) :
+    2 ≤ side.words L ∧ side.words L ≤ outerWords ∧
+    slot outerWords 8 ≤ side.offset ∧ side.offset < 2 ^ 16 ∧
+    side.offset + slot (side.words L) 8 + tabBytes (side.words L) ≤ activeBytes ∧
+    1 ≤ side.length L ∧ side.length L < 2 ^ 31 := by
+  obtain ⟨hp2, hp48, hq2, hq48, hpLo, hpHi, hqHi, _⟩ := VG.Proof.Dsa.workspace_bounds L.lengths
+  have hqa : qWorkspace ≤ activeBytes := by decide
+  have hl : 1 ≤ L.pLen ∧ L.pLen < 2 ^ 31 ∧ 1 ≤ L.qLen ∧ L.qLen < 2 ^ 31 := by
+    rcases L.lengths with ⟨h1, h2⟩ | ⟨h1, h2 | h2 | h2⟩ | ⟨h1, h2⟩ <;> rw [h1, h2] <;> decide
+  cases side
+  · exact ⟨hp2, hp48, hpLo, by decide, Nat.le_trans hpHi hqa, hl.1, hl.2.1⟩
+  · exact ⟨hq2, hq48, by decide, by decide, hqHi, hl.2.2.1, hl.2.2.2⟩
+
+theorem Ready.child {L : ExecutionLayout} {s : State} (h : Ready L s) (side : ModulusSide) :
+    ChildReady s.mem L.base side.offset (side.words L) (side.value L) (side.inverse L) := by
+  cases side
+  · exact h.pChild
+  · exact h.qChild
+
+theorem Ready.length {L : ExecutionLayout} {s : State} (h : Ready L s) (side : ModulusSide) :
+    word s.mem L.base side.lengthField.offset = BitVec.ofNat 64 (side.length L) := by
+  cases side
+  · exact (h.fields .pLen (by decide)).trans L.pLength
+  · exact (h.fields .qLen (by decide)).trans L.qLength
+
+theorem Ready.afterCall {L : ExecutionLayout} {s t : State} {d k : Nat} (side : ModulusSide)
+    (h : Ready L s) (hp : Good t L.base activeBytes outerWords 0)
+    (hc : ChildReady t.mem L.base side.offset (side.words L) (side.value L) (side.inverse L))
+    (hf : CallFrame L.base side.offset (side.words L) (off L.base d) k s.mem t.mem)
+    (hk : Keep coreRegs s t) (hd : activeBytes ≤ d) (hend : d + k ≤ usedBytes) : Ready L t := by
+  cases side
+  · exact h.afterP hp hc hf hk hd hend
+  · exact h.afterQ hp hc hf hk hd hend
+
+end VG.Proof.Dsa.AArch64
+
+end
+
+end
 
 /-! ### `Dsa.AArch64.CoreCalls`, which only this module used -/
 

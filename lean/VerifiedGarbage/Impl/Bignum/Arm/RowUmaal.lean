@@ -13,7 +13,7 @@ for the 16-bit products and carries `row` uses: the scalar is joined into
 input word's halves in `r2` and `r6`, `r7 = x₀ y₁`, the accumulator word
 in `r5`, the high word of `x y + a` in `r4`, the mask in `r9`), so that
 `rowU` ends in the state `row` ends in: its proofs are `row`'s
-(`Proof/Bignum/Arm/RowUmaal.lean`). It needs the CPU feature `umaal`. -/
+(`Proof/Bignum/Arm/DownRowUmaal.lean`). It needs the CPU feature `umaal`. -/
 
 @[expose] public section
 

@@ -7,13 +7,9 @@ public import VerifiedGarbage.Impl.MlKem.AArch64.FixedHashDecaps
 public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Table
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TransformTables
 public import VerifiedGarbage.Impl.MlKem.AArch64.Optimized
-import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.Ops
+import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.VRest
 import VerifiedGarbage.Proof.MlKem.AArch64.KemEnc
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
-import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.VRest
-import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Lists
-import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemUContext
-import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemReady
 
 /-! ### `MlKem.AArch64.Optimized.DecryptSeed`, which only this module used -/
 

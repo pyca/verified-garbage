@@ -17,7 +17,7 @@ meta import VerifiedGarbage.Proof.Cmac.Frame
 # AES-CTR on x86: one block, and constant time
 
 `body_ok`: one run of `body` takes the loop invariant AES-CBC's proofs share
-(`Proof/AesCbc/X86/Loop.lean`) from `k` blocks to `k + 1`, for `ctrMode`,
+(`Proof/AesCbc/X86/Body.lean`) from `k` blocks to `k + 1`, for `ctrMode`,
 for any implementation of the block functions (`BlocksImpl`). The counter
 block is copied to the scratch buffer and enciphered there (`pre_wp`), the
 output block is XORed into the data block, and the counter block is

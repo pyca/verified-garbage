@@ -37,7 +37,7 @@ public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
 public import VerifiedGarbage.Proof.Weierstrass.Window5
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Chain
+import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
 public import VerifiedGarbage.Proof.Framework.AArch64.Interleave
 

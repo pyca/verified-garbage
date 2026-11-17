@@ -19,7 +19,7 @@ meta import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Locals
 meta import VerifiedGarbage.Proof.Argon2.References
 meta import VerifiedGarbage.Proof.Argon2.Iterations
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
-public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.CTBase
+public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.CTCall
 import VerifiedGarbage.Proof.Argon2.FinalReduction
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Reduce
 meta import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Reduce

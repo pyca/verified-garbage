@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.X86.Message.Entry
 public import VerifiedGarbage.Impl.MlDsa.X86.Message
-public import VerifiedGarbage.Proof.MlDsa.X86.Message.Layout
+public import VerifiedGarbage.Proof.MlDsa.X86.Message.Call
 public import VerifiedGarbage.Spec.MlDsa.CachedVerify
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Contract

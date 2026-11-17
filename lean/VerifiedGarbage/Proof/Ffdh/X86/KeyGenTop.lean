@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.X86.KeyGen
 public import VerifiedGarbage.Proof.Ffdh.X86.Entry
-public import VerifiedGarbage.Proof.Ffdh.X86.ABI
 public import VerifiedGarbage.Proof.Mont.X86.StaticSquare.Shape
 import VerifiedGarbage.Proof.Rsa.X86.StackTactic
 meta import VerifiedGarbage.Proof.Rsa.X86.StackTactic

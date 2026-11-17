@@ -11,7 +11,6 @@ import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.TCB.X86_64.State
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Core
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Math
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Digit
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Memory

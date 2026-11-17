@@ -1,8 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.AttemptCorrect
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.SearchProof.LeafCT
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.SearchProof.AttemptRun
+public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.SearchProof.LeafCT
 import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.AttemptTiming
 import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.SearchProof.Loop

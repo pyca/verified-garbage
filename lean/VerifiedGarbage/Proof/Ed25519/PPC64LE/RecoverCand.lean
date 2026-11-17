@@ -1,11 +1,10 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.PPC64LE.Recover
-public import VerifiedGarbage.Proof.Ed25519.PPC64LE.PointOps
+public import VerifiedGarbage.Proof.Ed25519.PPC64LE.PointTable
 public import VerifiedGarbage.Proof.Ed25519.Recover
 import VerifiedGarbage.Proof.Ed25519.PPC64LE.Encode
-import VerifiedGarbage.Proof.Ed25519.PPC64LE.PointTable
-import VerifiedGarbage.Proof.Ed25519.PPC64LE.Power
+import VerifiedGarbage.Proof.Ed25519.PPC64LE.SpecConv
 import VerifiedGarbage.Proof.X25519.Invert
 import VerifiedGarbage.Proof.Framework.Offset
 

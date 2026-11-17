@@ -1,7 +1,6 @@
 module
 
 import VerifiedGarbage.Proof.Rc4.X86_64.Schedule
-import VerifiedGarbage.Proof.Rc4.X86_64.Replace
 import VerifiedGarbage.Proof.Rc4.X86_64.Lookup
 public import VerifiedGarbage.Impl.Rc4.X86_64
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp

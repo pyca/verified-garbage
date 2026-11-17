@@ -2,7 +2,7 @@ module
 
 import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 meta import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
-import VerifiedGarbage.Proof.EcKey.Compressed.Arm.DecompressMain
+public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.DecompressMain
 public import VerifiedGarbage.Spec.EcKey.BrainpoolP384r1
 import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP384r1.Verified
 import VerifiedGarbage.Proof.Weierstrass.Sqrt
@@ -17,7 +17,6 @@ meta import VerifiedGarbage.Proof.EcKey.Compressed.Arm.Contract
 public import VerifiedGarbage.Impl.EcKey.Compressed.Arm.Decompress
 public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP384r1.Arm
 public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.DecompressContract
-public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.DecompressMiddle
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.TCB.Arm.Target

@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Ffdh.CachedSat
 public import VerifiedGarbage.TCB.Artifact
 import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Impl.Ffdh.X86.Cached
-public import VerifiedGarbage.Proof.Ffdh.X86.ABI
+public import VerifiedGarbage.Proof.Ffdh.X86.Entry
 public import VerifiedGarbage.Spec.Ffdh.CachedKeyGenerationContract
 
 /-! # `vg_ffdh_generate_key_cached` on i686 against its contract -/

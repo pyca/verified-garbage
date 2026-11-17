@@ -1,11 +1,10 @@
 module
 
-import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Enc
+public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Enc
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchR.SetupFin
 import VerifiedGarbage.Proof.Gcm.Split
 import VerifiedGarbage.Proof.Gcm.StreamTo
 public import VerifiedGarbage.Proof.Gcm.Ctr
-public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Loop
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Taint

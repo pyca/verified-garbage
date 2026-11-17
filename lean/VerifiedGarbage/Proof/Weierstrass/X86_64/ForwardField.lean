@@ -2,8 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.ForwardField
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.Fprog
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.Forward
-import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardStores
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardStores
 public import VerifiedGarbage.Impl.Mont.X86_64.Double4
 public import VerifiedGarbage.Proof.Mont.X86_64.OpsReg
 import VerifiedGarbage.Proof.Mont.X86_64.Chain

@@ -8,9 +8,8 @@ import VerifiedGarbage.Proof.Dsa.Arm.ShapeTrace
 import VerifiedGarbage.Proof.Dsa.Arm.Leaves
 import VerifiedGarbage.Proof.Dsa.PackedBytes
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Dsa.Arm.GenerateCheck
+public import VerifiedGarbage.Proof.Dsa.Arm.GenerateCheck
 public import VerifiedGarbage.Impl.Dsa.Arm.Generate
-public import VerifiedGarbage.Proof.Dsa.Arm.GenerateEntry
 public import VerifiedGarbage.Proof.Dsa.Arm.KeyTrace
 public import VerifiedGarbage.Proof.Dsa.Arm.OpTrace
 public import VerifiedGarbage.Proof.Dsa.RandomSignRemaining

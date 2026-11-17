@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.PrivPre.CTCode
-public import VerifiedGarbage.Proof.Bignum.X86_64.PrivPre.Contract
+public import VerifiedGarbage.Proof.Bignum.X86_64.PrivPre.Head
 public import VerifiedGarbage.Proof.Rsa.X86_64.CallMont
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub

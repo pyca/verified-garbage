@@ -3,12 +3,10 @@ module
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.SieveContext
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.SieveStep
 public import VerifiedGarbage.Proof.Framework.X86.RelCT
-
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
-import VerifiedGarbage.Proof.RsaKeyGen.X86.SieveLoad
-import VerifiedGarbage.Proof.RsaKeyGen.X86.TrialReadControl
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.RsaKeyGen.X86.TrialLoopTiming
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+
 /-! # The sieve leaks only the divisor pattern of a rejected candidate
 
 Passing candidates have the all-false pattern, so their values remain secret.

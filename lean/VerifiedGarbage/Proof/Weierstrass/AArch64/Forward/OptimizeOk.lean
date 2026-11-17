@@ -2,12 +2,11 @@ module
 
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.DeadOk
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Kernel
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Concrete
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ForwardOk
 import Mathlib.Tactic.SplitIfs
 import Mathlib.Logic.Function.Basic
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.Forward
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.FoldOk
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ForwardOk
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PlainSimp
 

@@ -3,14 +3,13 @@ module
 public import VerifiedGarbage.Proof.Ed448.AArch64.BaseContract
 public import VerifiedGarbage.Proof.Ed448.AArch64.SignCached.Body
 public import VerifiedGarbage.Proof.Sha3.AArch64.Variant
-
 import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Calls
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Ed448.AArch64.ScalarLit
-import VerifiedGarbage.Proof.Ed448.AArch64.SignCached.Hash
 import VerifiedGarbage.Proof.Ed448.AArch64.SignCached.Correct
 import VerifiedGarbage.Proof.Ed448.Signing
 import VerifiedGarbage.Proof.Framework.AddrArith
+
 /-!
 # Ed448 signing with a cached public key on AArch64: the whole function
 

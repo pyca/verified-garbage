@@ -21,7 +21,7 @@ meta import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
 import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
 public import VerifiedGarbage.Impl.Rc4.PPC64LE
-public import VerifiedGarbage.Proof.Rc4.PPC64LE.Lookup
+public import VerifiedGarbage.Proof.Rc4.PPC64LE.Schedule
 public import VerifiedGarbage.Spec.Rc4
 public import VerifiedGarbage.TCB.Artifact
 

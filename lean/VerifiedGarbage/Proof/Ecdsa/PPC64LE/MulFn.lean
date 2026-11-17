@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Stages
+public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Stages
 import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Copy
 import VerifiedGarbage.Proof.Mont.PPC64LE.Row
 import VerifiedGarbage.Proof.Mont.PPC64LE.Step
@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Covers
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Call
-public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Lays
 public import VerifiedGarbage.Proof.Weierstrass.Law
 
 /-!
@@ -23,7 +22,7 @@ RY`, which the copies carry to the ladder's point) that accepts `O`, `Q 0`
 accepts what `R` holds at the end, and the body writes only what the ladder
 writes, `ACC`, `PT` and the table of bits (`mulBody_ok`). `mulFn` keeps
 `r31` and `lr` past the numbered slots around it (`mulFn_ok`). As on 32-bit
-ARM (`Proof/Ecdsa/Arm/MulFn.lean`).
+ARM (`Proof/Ecdsa/Arm/Main.lean`).
 -/
 
 @[expose] public section

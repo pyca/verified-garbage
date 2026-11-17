@@ -1,8 +1,8 @@
 module
-public import VerifiedGarbage.Proof.Ed448.Window
+
+public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Mask
 public import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Fn
 public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Memory
-
 import VerifiedGarbage.Proof.Ed448.X86_64.Window.Ops
 import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLoop
 import VerifiedGarbage.Proof.Framework.Block

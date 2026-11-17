@@ -1,28 +1,390 @@
 module
 
 public import VerifiedGarbage.Proof.EntropyRequest
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchSafety
 public import VerifiedGarbage.Spec.Ffdh.SievedContract
 import VerifiedGarbage.Proof.Ffdh.SievedBounds
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchData
 import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchEntryCT
 import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchFinishCT
-import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchLoop
-import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchStart
 import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchCTData
-import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Safety
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Safety
 import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchBranch
-import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchLoopGuards
 import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchIterationCT
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Ffdh.Contract
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchContract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchDone
-import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchMemory
-import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchSemantics
-import VerifiedGarbage.Proof.Ffdh.GenerationBounds
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchDone
+public import VerifiedGarbage.Impl.Ffdh.X86_64.Generation.Search
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Depth
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchCandidate
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchClassify
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchShort
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchGuards
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchCandidatePost
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchRestore
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchLayout
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchEntry
+
+/-! ### `Ffdh.X86_64.Generation.SearchStart`, which only this module used -/
+
+section
+
+/-! # Establish the complete parameter-search invariant -/
+
+-- Formerly `VerifiedGarbage/Proof/Ffdh/X86_64/Generation/SearchEntryTail.lean`, which only this module imported.
+section
+
+/-! # Capture stack arguments without changing the caller's argument area -/
+
+section
+
+namespace VG.Proof.Ffdh.X86_64.Generation
+
+open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
+open VG.Impl.Ffdh.X86_64.Generation.Search
+
+theorem search_entry_head_args {p : SearchPublic} {s : State} (h : SearchInput p s)
+    {t : State} (hm : t.mem = writeController s.mem p.control (searchHeadValues s))
+    (k : Keep [.rax, .r8, .r12] s t) (j : Nat) (hj : j < 4) :
+    stackArg t j = stackArg s j := by
+  have hf := writeController_frame s.mem p.control (searchHeadValues s) (searchHeadValues_bound s)
+  have hd : (inputArgs s).Disjoint ⟨p.control, 128⟩ := by
+    cases h.2
+    exact (h.1.2.2.2.2.2.1 _ (by simp)).symm
+  change t.mem.readW (stackArgAddr t j) 64 = _
+  have ha : stackArgAddr t j = stackArgAddr s j := by
+    simp only [stackArgAddr, k.1 .rsp (by simp)]
+  rw [ha, hm]
+  exact hf.readW (input_arg_contains s hj) (fun r hr => by
+    obtain rfl := List.mem_singleton.mp hr
+    exact hd) (by decide)
+
+theorem search_entry_tail_ok {p : SearchPublic} {s t : State} (h : SearchInput p s)
+    (hm : t.mem = writeController s.mem p.control (searchHeadValues s))
+    (k : Keep [.rax, .r8, .r12] s t) (hr : t.gpr .r12 = p.control) :
+    WP isa (.block entryTail) t fun u =>
+      u.mem = writeController t.mem p.control (searchTailValues s) ∧
+      Keep [.rax, .r10, .r11] t u := by
+  have scr := h.control_scr (s := t) k.2.2
+  have hs : ∀ d, d + 8 ≤ 128 → InRegions t.wr (p.control + BitVec.ofNat 64 d) 8 :=
+    fun _ hd => scr.st hd
+  have ha (j : Nat) (hj : j < 4) : InRegions (t.rd ++ t.wr) (stackArgAddr t j) 8 := by
+    simpa only [k.2.1, k.2.2, stackArgAddr, k.1 .rsp (by simp)] using input_args h j hj
+  have hv (j : Nat) (hj : j < 4) : t.mem.readW (stackArgAddr t j) 64 = stackArg s j :=
+    search_entry_head_args h hm k j hj
+  refine WP.keep [.rax, .r10, .r11] ?_ rfl
+  unfold entryTail writeController searchTailValues
+  simp only [List.foldl_cons, List.foldl_nil]
+  have ha0 : InRegions (t.rd ++ t.wr) (t.gpr .rsp + BitVec.ofNat 64 8) 8 := ha 0 (by decide)
+  have ha1 : InRegions (t.rd ++ t.wr) (t.gpr .rsp + BitVec.ofNat 64 16) 8 := ha 1 (by decide)
+  have ha2 : InRegions (t.rd ++ t.wr) (t.gpr .rsp + BitVec.ofNat 64 24) 8 := ha 2 (by decide)
+  have hv0 : t.mem.readW (t.gpr .rsp + BitVec.ofNat 64 8) 64 = stackArg s 0 := hv 0 (by decide)
+  have hv1 : t.mem.readW (t.gpr .rsp + BitVec.ofNat 64 16) 64 = stackArg s 1 := hv 1 (by decide)
+  have hv2 : t.mem.readW (t.gpr .rsp + BitVec.ofNat 64 24) 64 = stackArg s 2 := hv 2 (by decide)
+  xrun [State.ea, field, off, BitVec.ofInt_ofNat, BitVec.ofInt_natCast, Nat.reduceMul,
+    hr, ha0, ha1, ha2, hv0, hv1, hv2, hs 88 (by decide), hs 104 (by decide),
+    hs 120 (by decide), hs 96 (by decide)]
+  rfl
+
+theorem search_entry_ok {p : SearchPublic} {s : State} (h : SearchInput p s) :
+    WP isa (.block entry) s fun t =>
+      t.gpr .r12 = p.control ∧
+      t.mem = writeController s.mem p.control (searchEntryValues s) ∧
+      Keep [.rax, .r8, .r12, .r10, .r11] s t := by
+  rw [entry, WP.block_append_iff]
+  refine WP.mono (search_entry_head_ok h) fun t ⟨hr, hm, k⟩ => ?_
+  refine WP.mono (search_entry_tail_ok h hm k hr) fun u ⟨hu, ku⟩ => ?_
+  exact ⟨(ku.gpr (by decide)).trans hr,
+    by rw [hu, hm, searchEntryValues, writeController_append],
+    (k.trans ku).mono (by decide)⟩
+
+end VG.Proof.Ffdh.X86_64.Generation
+end
+
+end
+
+@[expose] public section
+
+namespace VG.Proof.Ffdh.X86_64.Generation
+
+open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.Ffdh.X86_64
+open VG.Proof.Ffdh.X86_64.ParameterCandidate
+open VG.Impl.Ffdh.X86_64.Generation.Search
+
+theorem searchEntryValues_bound (s : State) : ∀ e ∈ searchEntryValues s, e.1 < 16 := by
+  intro e he
+  rcases List.mem_append.mp he with he | he
+  · exact searchHeadValues_bound s e he
+  · exact searchTailValues_bound s e he
+
+theorem search_entry_headers {p : SearchPublic} {s : State} (h : SearchInput p s) :
+    Slots (writeController s.mem p.control (searchEntryValues s)) p.control (p.headers 0 p.remaining) := by
+  cases h.2
+  have hlen : (pcRand s).length = (stackArg s 0).toNat := by
+    simp only [pcRand, Spec.Rsa.bytesAt, List.length_map, List.length_range]
+  have hwidth : BitVec.ofNat 64 ((s.gpr .r8).setWidth 32).toNat =
+      ((s.gpr .r8).setWidth 32).setWidth 64 := by
+    apply BitVec.eq_of_toNat_eq
+    simp only [BitVec.toNat_ofNat, BitVec.toNat_setWidth]
+  intro e he
+  simp only [SearchPublic.headers, List.mem_cons, List.not_mem_nil, or_false] at he
+  rcases he with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+    rw [writeController_word _ _ _ (searchEntryValues_bound s) _ (by dsimp only; decide)] <;>
+    simp only [searchOfState, candidateOfState, SearchPublic.c, controllerValue,
+      searchEntryValues, searchHeadValues, searchTailValues, List.foldl_append,
+      List.foldl_cons, List.foldl_nil, Nat.reduceEqDiff, ite_true, ite_false,
+      Nat.sub_zero, Nat.mul_zero, off, BitVec.add_zero, BitVec.ofNat_toNat,
+      hwidth, hlen, BitVec.setWidth_eq]
+  · simp only [Bignum.word, off, BitVec.add_zero]
+  · exact h.1.2.2.2.2.2.2.2.2.2.2.1
+  · exact h.1.2.2.2.2.2.2.2.2.2.2.2.1
+  · rfl
+  · rw [Nat.mul_div_cancel _ (by decide), BitVec.ofNat_toNat, BitVec.setWidth_eq]
+
+theorem search_start {p : SearchPublic} {s : State} (h : SearchInput p s) :
+    WP isa (.block entry) s fun t => SearchLive p s 0 p.remaining t := by
+  refine WP.mono (search_entry_ok h) fun t ⟨hr, hm, k⟩ => ?_
+  have hf := writeController_frame s.mem p.control (searchEntryValues s) (searchEntryValues_bound s)
+  refine ⟨h, by omega_using [], by omega_using [], k.2.1, k.2.2, ?_, hr, ?_, ?_, ?_, ?_⟩
+  · cases h.2
+    exact k.gpr (by decide)
+  · intro r hcal hne
+    exact k.gpr (by cases r <;> simp_all [calleeSaved])
+  · rw [hm]
+    change word (writeController s.mem p.control (searchEntryValues s)) p.control (8 * 4) = _
+    rw [writeController_word _ _ _ (searchEntryValues_bound s) 4 (by decide)]
+    rfl
+  · have hf' : Frame (s.wr ++ [below (s.gpr .rsp) 160]) s.mem t.mem := by
+      rw [hm]
+      exact hf.sub fun r hr => by
+        obtain rfl := List.mem_singleton.mp hr
+        exact ⟨inputControl s, List.mem_append_left _ (by rw [h.1.2.2.2.1]; simp), by
+          cases h.2; exact fun _ hi => hi⟩
+    rw [h.random_frame hf']
+    cases h.2
+    dsimp only [searchOfState, SearchPublic.c, candidateOfState]
+    simp only [pcRand, Spec.Rsa.bytesAt, List.length_map, List.length_range]
+  · rw [hm]
+    exact search_entry_headers h
+
+end VG.Proof.Ffdh.X86_64.Generation
+
+end
+
+end
+
+/-! ### `Ffdh.X86_64.Generation.SearchLoop`, which only this module used -/
+
+section
+
+/-! ### `Ffdh.X86_64.Generation.SearchLoopGuards`, which this module and modules that import it used -/
+
+section
+
+/-! # Only a native rejection continues the search loop -/
+
+@[expose] public section
+
+namespace VG.Proof.Ffdh.X86_64.Generation
+
+open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
+open VG.Impl.Ffdh.X86_64.Generation.Search
+
+theorem done_loop_guard {p : SearchPublic} {original s : State} {result : Spec.Ffdh.ParameterSearchResult}
+    (h : SearchDone p original result s) :
+    WP isa (.block [.mov .rax (.mem (field 14)), .alu .cmp .rax (.imm 4)]) s fun t =>
+      eval .e t = some false ∧ SearchDone p original result t := by
+  have hb : result.status < 2 ^ 64 := by cases result <;> dsimp only [Spec.Ffdh.ParameterSearchResult.status] <;> decide
+  refine WP.mono (loop_guard (h.input.control_scr h.wr) h.r12 h.status hb)
+    fun t ⟨⟨he, hm⟩, k⟩ => ?_
+  refine ⟨?_, h.keep k hm (by decide)⟩
+  cases result <;> exact he
+
+theorem live_loop_guard {p : SearchPublic} {original s : State} {used remaining : Nat}
+    (h : SearchLive p original used remaining s) (hs : word s.mem p.control 112 = 4) :
+    WP isa (.block [.mov .rax (.mem (field 14)), .alu .cmp .rax (.imm 4)]) s fun t =>
+      eval .e t = some true ∧ SearchLive p original used remaining t := by
+  refine WP.mono (loop_guard (status := 4) (h.input.control_scr h.wr) h.r12 hs (by decide))
+    fun _ ⟨⟨he, hm⟩, k⟩ => ⟨he, h.keep k hm (by decide)⟩
+
+end VG.Proof.Ffdh.X86_64.Generation
+
+end
+
+end
+
+/-! ### `Ffdh.X86_64.Generation.SearchSemantics`, which this module and modules that import it used -/
+
+section
+
+/-! # The native controller's local transitions implement the complete search -/
+
+@[expose] public section
+
+namespace VG.Proof.Ffdh.X86_64.Generation
+
+open VG VG.Proof.Ffdh.SievedGeneration
+
+def searchTail (p : SearchPublic) (used remaining : Nat) : Spec.Ffdh.ParameterSearchResult :=
+  (Spec.Ffdh.sievedParameterSearch p.c.bits p.c.gen remaining (p.c.rand.drop used)).consume used
+
+theorem searchTail_zero (p : SearchPublic) (used : Nat) : searchTail p used 0 = .exhausted used := rfl
+
+theorem searchTail_short {p : SearchPublic} {used remaining : Nat} (hr : 0 < remaining)
+    (hc : searchCandidate p used = none) : searchTail p used remaining = shortResult p used remaining := by
+  cases remaining with
+  | zero => omega_using [hr]
+  | succ n =>
+    unfold searchTail
+    rw [Spec.Ffdh.sievedParameterSearch, show Spec.Ffdh.sievedParameterCandidate p.c.bits p.c.gen
+      (p.c.rand.drop used) = none from hc]
+    simp only [List.length_drop]
+    by_cases hb : Spec.Ffdh.parameterEntropy p.c.bits ≤ p.c.rand.length - used <;>
+      simp [hb, shortResult, Spec.Ffdh.ParameterSearchResult.consume]
+
+theorem searchTail_accept {p : SearchPublic} {used remaining prime : Nat} {rest : List Byte}
+    (hr : 0 < remaining) (hc : searchCandidate p used = some (some prime, rest)) :
+    searchTail p used remaining = .accepted prime (used + (p.c.rand.length - used - rest.length)) := by
+  cases remaining with
+  | zero => omega_using [hr]
+  | succ n =>
+    unfold searchTail
+    rw [Spec.Ffdh.sievedParameterSearch, show Spec.Ffdh.sievedParameterCandidate p.c.bits p.c.gen
+      (p.c.rand.drop used) = some (some prime, rest) from hc]
+    simp only [Spec.Ffdh.ParameterSearchResult.consume, List.length_drop]
+
+theorem searchTail_reject {p : SearchPublic} {used remaining : Nat} {rest : List Byte}
+    (hr : 0 < remaining) (hc : searchCandidate p used = some (none, rest)) :
+    searchTail p used remaining = searchTail p (used + (p.c.rand.length - used - rest.length))
+      (remaining - 1) := by
+  simpa only [searchTail, List.length_drop] using search_reject hr hc
+
+end VG.Proof.Ffdh.X86_64.Generation
+
+end
+
+end
+
+/-! # Total correctness of the complete native parameter-search loop -/
+
+@[expose] public section
+
+namespace VG.Proof.Ffdh.X86_64.Generation
+
+open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MillerRabin.X86_64
+open VG.Impl.Ffdh.X86_64.Generation.Search VG.Proof.Ffdh.X86_64.ParameterCandidate
+
+def SearchInvariant (p : SearchPublic) (original : State) (expected : Spec.Ffdh.ParameterSearchResult)
+    (n : Nat) (s : State) : Prop :=
+  ∃ used remaining, n = remaining + 1 ∧ SearchLive p original used remaining s ∧
+    expected = searchTail p used remaining
+
+theorem search_iteration (v : RoundImpl) {p : SearchPublic} {original s : State}
+    {expected : Spec.Ffdh.ParameterSearchResult} {n : Nat}
+    (h : SearchInvariant p original expected n s) :
+    WP isa (iteration (candidateCode v)) s fun t =>
+      (eval .e t = some false ∧ SearchDone p original expected t) ∨
+      (eval .e t = some true ∧ ∃ m < n, SearchInvariant p original expected m t) := by
+  obtain ⟨used, remaining, hn, h, hexpected⟩ := h
+  unfold iteration
+  change WP isa (.seq _ (.seq _ _)) s _
+  refine WP.seq (WP.mono (remaining_guard h) fun u ⟨hu, he⟩ => ?_)
+  apply WP.seq
+  refine WP.ite (decide (remaining = 0)) he ?_ ?_
+  · intro hz
+    have hz' := of_decide_eq_true hz
+    have hresult : expected = .exhausted used := by rw [hexpected, hz', searchTail_zero]
+    refine WP.mono (search_exhausted hu) fun t ht => ?_
+    refine WP.mono (done_loop_guard ht) fun q ⟨hq, hdone⟩ => ?_
+    exact Or.inl ⟨hq, by rw [hresult]; exact hdone⟩
+  · intro hnz
+    have hr : 0 < remaining := by omega_using [of_decide_eq_false hnz]
+    refine WP.seq (WP.mono (search_candidate_run v hu) fun t ⟨ht, hp⟩ => ?_)
+    refine WP.mono (search_classify ht hr hp) fun q hq => ?_
+    cases hc : searchCandidate p used with
+    | none =>
+      simp only [SearchClassified, hc] at hq
+      have hresult : expected = shortResult p used remaining := hexpected.trans (searchTail_short hr hc)
+      refine WP.mono (done_loop_guard hq) fun z ⟨hz, hd⟩ => ?_
+      exact Or.inl ⟨hz, by rw [hresult]; exact hd⟩
+    | some pair =>
+      obtain ⟨value, rest⟩ := pair
+      cases value with
+      | some prime =>
+        simp only [SearchClassified, hc] at hq
+        have hresult : expected = .accepted prime (used + (p.c.rand.length - used - rest.length)) :=
+          hexpected.trans (searchTail_accept hr hc)
+        refine WP.mono (done_loop_guard hq) fun z ⟨hz, hd⟩ => ?_
+        exact Or.inl ⟨hz, by rw [hresult]; exact hd⟩
+      | none =>
+        simp only [SearchClassified, hc] at hq
+        refine WP.mono (live_loop_guard hq.1 hq.2) fun z ⟨hz, hzlive⟩ => ?_
+        refine Or.inr ⟨hz, remaining - 1 + 1, by omega_using [hn, hr], ?_⟩
+        exact ⟨used + (p.c.rand.length - used - rest.length), remaining - 1,
+          rfl, hzlive, hexpected.trans (searchTail_reject hr hc)⟩
+
+theorem search_loop (v : RoundImpl) {p : SearchPublic} {original s : State}
+    {expected : Spec.Ffdh.ParameterSearchResult} {n : Nat}
+    (h : SearchInvariant p original expected n s) :
+    WP isa (.loop (iteration (candidateCode v)) .e) s (SearchDone p original expected) := by
+  exact WP.loop (M := isa) (body := iteration (candidateCode v)) (c := .e)
+    (Q := SearchDone p original expected) (SearchInvariant p original expected)
+    (fun _ _ h => search_iteration v h) n s h
+
+end VG.Proof.Ffdh.X86_64.Generation
+
+end
+
+end
+
+/-! ### `Ffdh.X86_64.Generation.SearchSafety`, which only this module used -/
+
+section
+
+/-! # The complete generation controller's instruction safety and stack bound -/
+
+@[expose] public section
+
+namespace VG.Proof.Ffdh.X86_64.Generation
+
+open VG VG.X86_64 VG.Proof.MillerRabin.X86_64 VG.Impl.Bignum.X86_64
+open VG.Proof.Ffdh.X86_64.ParameterCandidate
+open VG.Impl.Ffdh.X86_64.Generation.Search
+
+def searchCode (v : RoundImpl) : Prog isa := code (candidateCode v)
+
+private theorem controller_all (p : Instr → Bool) (c : Prog isa)
+    (hp : (code (.block [])).all p = true) (hc : c.all p = true) : (code c).all p = true := by
+  unfold code iteration candidateRun at hp ⊢
+  simp only [seqs, Code.all, List.all_nil, hc, Bool.and_true] at hp ⊢
+  exact hp
+
+private theorem controller_ctlC (c : Prog isa) (hp : ctlC (code (.block [])) = true) (hc : ctlC c = true) :
+    ctlC (code c) = true := by
+  unfold code iteration candidateRun at hp ⊢
+  simp only [seqs, ctlC, hc, Bool.and_true] at hp ⊢
+  exact hp
+
+theorem searchCode_sp (v : RoundImpl) : (searchCode v).all (fun i => !isa.writesSp i) = true := by
+  exact controller_all _ _ (by decide +kernel) (candidateCode_sp v)
+
+/-- The search loads MXCSR only where the round restores it. -/
+theorem searchCode_ctlC (v : RoundImpl) : ctlC (searchCode v) = true :=
+  controller_ctlC _ (by decide +kernel) (candidateCode_ctlC v)
+
+theorem searchCode_depth (v : RoundImpl) : (searchCode v).x86_64Depth ≤ 160 := by
+  have he : exhausted.x86_64Depth = 0 := rfl
+  have hc : classify.x86_64Depth = 0 := rfl
+  unfold searchCode code iteration candidateRun
+  simp only [seqs, Code.x86_64Depth, Instr.frameBytes, he, hc, Nat.zero_max, Nat.max_zero]
+  exact Nat.add_le_add_right (candidateCode_depth v) 32
+
+end VG.Proof.Ffdh.X86_64.Generation
+
+end
+
+end
 
 /-! ### `Ffdh.X86_64.Generation.SearchCT`, which only this module used -/
 

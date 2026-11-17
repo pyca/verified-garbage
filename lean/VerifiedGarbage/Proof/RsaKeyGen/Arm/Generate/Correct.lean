@@ -50,7 +50,7 @@ key's calls, the steps after each, the loop, and the whole controller.
 As on AArch64 (`Proof/RsaKeyGen/AArch64/Generate/Loop.lean`), but the
 controller's working state is in the callee-saved registers (`r4`–`r10`,
 and the status in `r11`), as the prime search's is
-(`Proof/RsaKeyGen/Arm/Search/Data.lean`): it saves them in the frame it
+(`Proof/RsaKeyGen/Arm/Search/Entry.lean`): it saves them in the frame it
 pushes, of 40 bytes at `sp - 40`. Its memory moves only within what it may
 write (`changes`).
 -/

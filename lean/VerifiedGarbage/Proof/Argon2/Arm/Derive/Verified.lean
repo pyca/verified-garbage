@@ -1,9 +1,9 @@
 module
+
 public import VerifiedGarbage.Impl.Argon2.Arm.Derive
 public import VerifiedGarbage.Proof.Argon2.Arm.CompressLit
-public import VerifiedGarbage.Proof.Argon2.Arm.Derive.Contract
+public import VerifiedGarbage.Proof.Argon2.Arm.Derive.Locals
 import VerifiedGarbage.Proof.Argon2.Arm.Derive.BodyCT
-public import VerifiedGarbage.Proof.Argon2.Arm.Derive.Frame
 import VerifiedGarbage.Proof.Argon2.Arm.Derive.Reduce
 import VerifiedGarbage.Proof.Argon2.Arm.Derive.FillLoops
 import VerifiedGarbage.Proof.Argon2.Arm.Derive.MemoryInit

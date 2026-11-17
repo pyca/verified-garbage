@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.DrawFn
 import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Search.GeFlag
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.Witnesses
 
 /-!
 # An FFDH parameter candidate on PPC64LE: the witnesses of a modulus

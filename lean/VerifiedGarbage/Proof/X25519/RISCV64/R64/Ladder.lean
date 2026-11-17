@@ -16,7 +16,7 @@ public import VerifiedGarbage.Proof.X448.RISCV64.R64.Basic
 The conditional swap a doubleword at a time (`cswap_ok`, the invariant
 `SwapInv64`), as X25519's swap does a word at a time; the field operations of
 `Impl/X25519/RISCV64/R64.lean` as updates of the elements of `SlotsOk`
-(`mulS`, `addS`, `subS`, `cswapS`), as `Proof/X25519/RISCV64/Slots.lean`
+(`mulS`, `addS`, `subS`, `cswapS`), as `Proof/X25519/RISCV64/Ladder.lean`
 states them for the 32-bit operations, for slots whose separation (`Sep1`)
 and alignment to doublewords (`Sep8`) are decided on their offsets.
 

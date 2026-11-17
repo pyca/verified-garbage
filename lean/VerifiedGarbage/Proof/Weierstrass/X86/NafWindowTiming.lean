@@ -3,7 +3,7 @@ module
 import VerifiedGarbage.Proof.Weierstrass.X86.NafPublicFields
 public import VerifiedGarbage.Proof.Weierstrass.X86.RegFieldTiming
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-public import VerifiedGarbage.Proof.Weierstrass.X86.NafEntry
+public import VerifiedGarbage.Proof.Weierstrass.X86.NafSum
 public import VerifiedGarbage.Proof.Weierstrass.X86.JacAddTiming
 public import VerifiedGarbage.Proof.Weierstrass.X86.PointTransfer
 import VerifiedGarbage.Proof.Weierstrass.X86.NafArithmeticTiming

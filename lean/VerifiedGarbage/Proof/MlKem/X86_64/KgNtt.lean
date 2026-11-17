@@ -4,7 +4,6 @@ public import VerifiedGarbage.Impl.MlKem.X86_64.KpkeKgRows
 import VerifiedGarbage.Proof.MlKem.X86_64.KpkeKg
 import VerifiedGarbage.Proof.MlKem.X86_64.KgMul16
 import VerifiedGarbage.Proof.MlKem.X86_64.KpkeBodiesY
-import VerifiedGarbage.Proof.MlKem.X86_64.EncMulY
 public import VerifiedGarbage.Proof.MlKem.X86_64.VMxcsr
 import VerifiedGarbage.Proof.MlKem.PolyW
 import VerifiedGarbage.Proof.Framework.Offset

@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.RISCV64.HPrime.Chain
-public import VerifiedGarbage.Proof.Argon2.RISCV64.HPrime.Output
 import VerifiedGarbage.Proof.Argon2.RISCV64.HPrime.Calls
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Blake2.RISCV64.Stream.Lit

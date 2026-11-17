@@ -2,12 +2,9 @@ module
 
 import VerifiedGarbage.Proof.MlKem.AArch64.NttR.ModelI
 import VerifiedGarbage.Proof.MlKem.AArch64.NttR.Model
-import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Gs
-import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Rows
-import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Lane
+public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Vec
 import VerifiedGarbage.Proof.MlKem.Arith
 import VerifiedGarbage.Proof.MlKem.Ntt
-public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Vec
 public import VerifiedGarbage.Proof.MlKem.AArch64.NttR.Sound
 public import VerifiedGarbage.Proof.MlKem.NttLayer
 import VerifiedGarbage.Proof.MlKem.AArch64.NttR.Lit

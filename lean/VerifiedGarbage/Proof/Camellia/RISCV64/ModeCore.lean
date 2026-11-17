@@ -4,13 +4,13 @@ public import VerifiedGarbage.Proof.Modes.RISCV64.Shared
 public import VerifiedGarbage.Impl.Camellia.RISCV64.Modes
 public import VerifiedGarbage.Spec.Camellia.Cbc
 public import VerifiedGarbage.Proof.Camellia.RISCV64.Ecb
-import VerifiedGarbage.Proof.Camellia.RISCV64.Crypt8
+import VerifiedGarbage.Proof.Camellia.RISCV64.Prologue
 import VerifiedGarbage.Proof.Camellia.RISCV64.ModesLit
 import VerifiedGarbage.Proof.Camellia.CtrCipher
 import VerifiedGarbage.Proof.Camellia.Words
 import VerifiedGarbage.Proof.Framework.RISCV64.Steps
 import VerifiedGarbage.Proof.Framework.RISCV64.Spill
-import VerifiedGarbage.Proof.Camellia.RISCV64.Fl
+import VerifiedGarbage.Proof.Camellia.RISCV64.Core
 import VerifiedGarbage.Proof.Framework.RISCV64.Call
 import VerifiedGarbage.Proof.Framework.RISCV64.Lit
 import VerifiedGarbage.Proof.Framework.Covers

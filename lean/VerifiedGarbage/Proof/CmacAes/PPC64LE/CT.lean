@@ -8,12 +8,11 @@ meta import VerifiedGarbage.Proof.CmacAes.PPC64LE.Finalize
 meta import VerifiedGarbage.Proof.AesCbc.PPC64LE.CT
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.CmacAes.PPC64LE.Subkeys
+public import VerifiedGarbage.Proof.CmacAes.PPC64LE.Subkeys
 meta import VerifiedGarbage.Proof.CmacAes.PPC64LE.Subkeys
 public import VerifiedGarbage.Impl.CmacAes.PPC64LE
 public import VerifiedGarbage.Proof.AesCbc.PPC64LE.Call
 public import VerifiedGarbage.Proof.AesCbc.PPC64LE.Loop
-public import VerifiedGarbage.Proof.CmacAes.PPC64LE.Contract
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 

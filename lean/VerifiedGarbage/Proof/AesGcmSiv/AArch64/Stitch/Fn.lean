@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Stitch.Loops
 public import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Stitch.Poly
 public import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Crypt
 import VerifiedGarbage.Proof.AesGcm.AArch64.Loops

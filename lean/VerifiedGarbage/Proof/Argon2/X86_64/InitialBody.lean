@@ -16,7 +16,7 @@ import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Update
 import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Update
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Output
+import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Space
 import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Finalize
 import VerifiedGarbage.Proof.Argon2.HPrime
 import VerifiedGarbage.Proof.Framework.AddrArith

@@ -1,17 +1,15 @@
 module
 
-import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJBuild
 public import VerifiedGarbage.Proof.Weierstrass.WindowJA
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
+public import VerifiedGarbage.Proof.Mont.X86_64.Wide
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+public import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 import VerifiedGarbage.Proof.Weierstrass.JacAdd
-import VerifiedGarbage.Impl.Weierstrass.X86_64.WindowJ
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.WindowJ
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Mont.X86_64.Round
-public import VerifiedGarbage.Impl.Weierstrass.X86_64.WindowJ
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.BitByte
 public import VerifiedGarbage.Proof.Framework.Offset
@@ -32,7 +30,6 @@ import VerifiedGarbage.Proof.Mont.X86_64.Ops
 import VerifiedGarbage.Proof.Mont.X86_64.Sparse
 import VerifiedGarbage.Proof.Mont.X86_64.SparseX
 import VerifiedGarbage.Proof.Mont.X86_64.SqrPX
-public import VerifiedGarbage.Proof.Mont.X86_64.Wide
 import VerifiedGarbage.Proof.Mont.X86_64.WideOps
 import VerifiedGarbage.Proof.Weierstrass.TCombWords
 import VerifiedGarbage.Proof.Weierstrass.WinJacMath
@@ -41,37 +38,6 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.Loop
 import VerifiedGarbage.Proof.Weierstrass.X86_64.MontCall
 import VerifiedGarbage.Proof.Weierstrass.X86_64.MontWide8
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.TComb
-import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelectY
-import VerifiedGarbage.Proof.Weierstrass.X86_64.WinLoop
-public import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.BitByte
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.RegSetOrder
-import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86_64.Abi
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
-import VerifiedGarbage.Proof.Framework.X86_64.Bswap
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Framework.X86_64.Inline
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.Proof.Framework.X86_64.Sse
-import VerifiedGarbage.Proof.Mont.Words128
-import VerifiedGarbage.Proof.Mont.X86_64.Blocks
-import VerifiedGarbage.Proof.Mont.X86_64.CsubS
-import VerifiedGarbage.Proof.Mont.X86_64.Friendly
-import VerifiedGarbage.Proof.Mont.X86_64.Ops
-import VerifiedGarbage.Proof.Mont.X86_64.Sparse
-import VerifiedGarbage.Proof.Mont.X86_64.SparseX
-import VerifiedGarbage.Proof.Mont.X86_64.SqrPX
-import VerifiedGarbage.Proof.Mont.X86_64.WideOps
-import VerifiedGarbage.Proof.Weierstrass.TCombWords
-import VerifiedGarbage.Proof.Weierstrass.WinJacMath
-import VerifiedGarbage.Proof.Weierstrass.WindowJ
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Loop
-import VerifiedGarbage.Proof.Weierstrass.X86_64.MontCall
-import VerifiedGarbage.Proof.Weierstrass.X86_64.MontWide8
-import VerifiedGarbage.Proof.Weierstrass.X86_64.TComb
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelectY
 import VerifiedGarbage.Proof.Weierstrass.X86_64.WinLoop
 public import VerifiedGarbage.Impl.Weierstrass.X86_64
@@ -86,12 +52,55 @@ public import VerifiedGarbage.Proof.Weierstrass.Booth
 public import VerifiedGarbage.Proof.Weierstrass.Env
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinQuad
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.Window
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinEntry
 public import VerifiedGarbage.Spec.Weierstrass
 public import VerifiedGarbage.TCB.Code
 public import VerifiedGarbage.TCB.Mem
 public import VerifiedGarbage.TCB.X86_64.Isa
 public import VerifiedGarbage.TCB.X86_64.State
+
+/-! ### `Weierstrass.X86_64.WinJBuild`, which this module and modules that import it used -/
+
+section
+
+/-!
+# Windows in Jacobian coordinates on x86-64: the slots
+
+The field programs of the Jacobian window method are on slots that are apart
+(`WinLay.rcbApart_winJ`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Weierstrass.X86_64
+
+open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Mont VG.Impl.Weierstrass.X86_64 VG.Impl.Weierstrass
+open VG.Proof.Mont.X86_64 VG.Proof.Mont VG.Proof.Weierstrass
+open VG.Proof.X25519.X86_64 (Keeps Keeps.trans Keeps.mono)
+open Spec.Weierstrass
+
+/-- The slots the Jacobian window method's field programs use are apart:
+the doublings between `R` and `D`, and `fromJ` from `R` into `D` (`z` the
+slots of zero). -/
+theorem _root_.VG.Proof.Weierstrass.WinLay.rcbApart_winJ {K : WinCfg} {size : Nat} (hL : WinLay K size) :
+    RcbApart K.S K.R K.R K.D ∧ RcbApart K.S K.D K.D K.R ∧
+      RcbApart K.S K.R ⟨K.zero, K.zero, K.zero⟩ K.D :=
+  ⟨hL.rcbApart_codes (lw := [7, 8, 9, 10, 11, 12, 13, 14, 15]) (lr := [16, 17, 0, 1, 2, 0, 1, 2]) rfl rfl,
+    hL.rcbApart_codes (lw := [7, 8, 9, 10, 11, 12, 0, 1, 2]) (lr := [16, 17, 13, 14, 15, 13, 14, 15]) rfl rfl,
+    hL.rcbApart_codes (lw := [7, 8, 9, 10, 11, 12, 13, 14, 15]) (lr := [16, 17, 0, 1, 2, 18, 18, 18]) rfl rfl⟩
+
+/-- The slots of a point, written. -/
+theorem pt_other {K : WinCfg} {p : Pt} (h : p = K.R ∨ p = K.E ∨ p = K.D) :
+    ∀ x ∈ [p.x, p.y, p.z], x ∈ winOther K := by
+  intro x hx
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
+  rcases h with rfl | rfl | rfl <;> rcases hx with rfl | rfl | rfl <;> win_mem
+
+end VG.Proof.Weierstrass.X86_64
+
+end
+
+end
 
 /-!
 # Windows in Jacobian coordinates on x86-64: the table into affine coordinates

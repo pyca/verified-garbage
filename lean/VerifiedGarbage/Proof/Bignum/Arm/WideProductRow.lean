@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Bignum.Arm.WideProductState
 public import VerifiedGarbage.Impl.Bignum.Arm.WideProduct
 import VerifiedGarbage.Proof.Bignum.Arm.ProductRowMath
-import VerifiedGarbage.Proof.Bignum.Arm.ProductWindow
 import VerifiedGarbage.Proof.Bignum.Arm.WideProductArgs
 import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFn
 import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase

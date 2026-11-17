@@ -1,7 +1,6 @@
 module
 
 -- separate module: The Z=1 diagonal low-product instruction replay (point_low_z1_ok) costs 4.38s of proof versus 0.43s of imports; PointSquareGenericZ1 composition edits reuse this checked computation.
-
 public import VerifiedGarbage.Proof.Mont.AArch64.P521Field.PointLow
 public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductLow
 public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross0
@@ -14,7 +13,6 @@ import VerifiedGarbage.Proof.Mont.AArch64.P521Field.PointCarry
 public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross2
 public import VerifiedGarbage.Proof.Mont.AArch64.P521Field.PointCross3Z1
 public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductDouble
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Field.PointDiag
 import VerifiedGarbage.Proof.Framework.Block
 
 @[expose] public section

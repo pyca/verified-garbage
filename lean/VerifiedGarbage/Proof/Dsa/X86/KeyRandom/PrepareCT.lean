@@ -1,10 +1,10 @@
 module
+
 public meta import VerifiedGarbage.Proof.Framework.X86.RelCT
 public meta import VerifiedGarbage.Impl.Dsa.X86.KeyRandom
 public meta import VerifiedGarbage.Proof.Framework.X86.Taint
-
 public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.CTDefs
-import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Prepare
+import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Copy
 import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-!

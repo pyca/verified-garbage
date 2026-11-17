@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ffdh.X86_64.VettedValidation.Correct
 import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Safety
 import VerifiedGarbage.Proof.Framework.Semantics
-import VerifiedGarbage.Proof.Ffdh.X86_64.VettedValidation.Recognize
+import VerifiedGarbage.Proof.Ffdh.X86_64.VettedValidation.Restore
 
 /-! Recognition uses baseline integer instructions without writing the stack pointer. -/
 

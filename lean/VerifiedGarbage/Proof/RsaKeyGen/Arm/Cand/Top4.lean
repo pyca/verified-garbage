@@ -1,8 +1,7 @@
 module
-public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Fin4
-public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Top2
 
-import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Top3
+public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Fin4
+public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Top3
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Fin5
 import VerifiedGarbage.Proof.Framework.Offset

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Cast5.AArch64.Tbl
-public import VerifiedGarbage.Proof.Blowfish.AArch64.Sbox
+public import VerifiedGarbage.Proof.Blowfish.AArch64.Round
 public import VerifiedGarbage.Proof.Framework.AArch64.Tbl
 import VerifiedGarbage.Proof.Blowfish.AArch64.Lanes
 import VerifiedGarbage.Proof.Cast5.Table
@@ -12,7 +12,6 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Taint
-public import VerifiedGarbage.Proof.Blowfish.AArch64.Round
 public import VerifiedGarbage.Proof.Cast5.AArch64.Block
 import VerifiedGarbage.Proof.Cast5.Rotate
 import VerifiedGarbage.Proof.Framework.AArch64.Simd64
@@ -41,7 +40,7 @@ code: the S-box lookups, one round, the rounds, and the batch (`batch_ok`).
 /-!
 ## CAST5 on AArch64: S-box lookups by `tbl`
 
-As Blowfish's (`Proof/Blowfish/AArch64/Sbox.lean`), with the planes in the
+As Blowfish's (`Proof/Blowfish/AArch64/Round.lean`), with the planes in the
 table of constants the loads carry (`ldrqTbl`) rather than in memory.
 
 `quarter_run`: four loads of quarter `q` of byte plane `b` of S-box `j` into

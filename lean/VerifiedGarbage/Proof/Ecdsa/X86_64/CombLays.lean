@@ -3,7 +3,6 @@ module
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Stages
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.TComb
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.Fixed
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Lays
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 

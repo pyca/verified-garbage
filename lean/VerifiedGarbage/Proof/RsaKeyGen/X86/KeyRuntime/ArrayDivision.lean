@@ -12,16 +12,69 @@ import Mathlib.Tactic.Attr.Core
 import Mathlib.Tactic.Basic
 import Mathlib.Tactic.Set
 import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyDivisionLoad
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Copy
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Chain
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyDivisionStore
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyInverseFrame
 import VerifiedGarbage.Proof.Mont.RangeCover
 import VerifiedGarbage.Impl.Rsa.X86.KeyWs
 import VerifiedGarbage.Proof.Mont.Words32
 import VerifiedGarbage.Proof.Mont.X86.Words
+public import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyDivision
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyDivisionGeometry
+import VerifiedGarbage.Proof.Rsa.X86.DivCopy
+import VerifiedGarbage.Impl.Mont.X86
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.RsaKeyGen.WordBounds32
+
+/-! ### `RsaKeyGen.X86.KeyDivisionStore`, which only this module used -/
+
+section
+
+/-! # Export native division results to persistent workspace arrays -/
+
+@[expose] public section
+namespace VG.Proof.RsaKeyGen.X86.Key
+open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Rsa.X86.Keys
+open VG.Impl.Rsa.X86.Keys hiding slot
+open VG.Impl.RsaKeyGen.X86.Key
+
+structure DivisionOutputs (Z n quotient remainder : Nat) : Prop where
+  quotient_bound : quotient + 4 * n ≤ Z
+  remainder_bound : remainder + 4 * n ≤ Z
+  quotient_outside : quotient + 4 * n ≤ hdr ∨ arr n 4 ≤ quotient
+  remainder_outside : remainder + 4 * n ≤ hdr ∨ arr n 4 ≤ remainder
+  separate : quotient + 4 * n ≤ remainder ∨ remainder + 4 * n ≤ quotient
+
+end VG.Proof.RsaKeyGen.X86.Key
+
+end
+
+end
+
+/-! ### `RsaKeyGen.X86.KeyDivisionLoad`, which this module and modules that import it used -/
+
+section
+
+/-! # Load the native division bank without clearing its temporary arrays -/
+
+@[expose] public section
+namespace VG.Proof.RsaKeyGen.X86.Key
+open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Rsa.X86.Keys
+open VG.Impl.Rsa.X86.Keys hiding slot
+open VG.Impl.RsaKeyGen.X86.Key
+
+structure DivisionInputs (Z n src divisor : Nat) : Prop where
+  source_bound : src + 4 * n ≤ Z
+  divisor_bound : divisor + 4 * n ≤ Z
+  source_outside : src + 4 * n ≤ hdr ∨ arr n 4 ≤ src
+  divisor_outside : divisor + 4 * n ≤ hdr ∨ arr n 4 ≤ divisor
+
+end VG.Proof.RsaKeyGen.X86.Key
+
+end
+
+end
 
 /-! ### `RsaKeyGen.X86.KeyRuntime.DivisionLoad`, which only this module used -/
 

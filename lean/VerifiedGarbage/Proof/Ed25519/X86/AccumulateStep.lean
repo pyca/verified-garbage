@@ -7,7 +7,6 @@ public import VerifiedGarbage.Proof.Ed25519.X86.PowerEnv
 import VerifiedGarbage.Proof.Ed25519.X86.PrepareAdd
 import VerifiedGarbage.Proof.Ed25519.X86.ScalarBody
 import VerifiedGarbage.Proof.Ed25519.X86.Points
-import VerifiedGarbage.Proof.Ed25519.X86.PointPowers
 import VerifiedGarbage.Proof.X25519.X86.Fold
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub

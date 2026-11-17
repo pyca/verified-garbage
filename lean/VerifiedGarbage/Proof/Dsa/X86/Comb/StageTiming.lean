@@ -21,16 +21,13 @@ import Mathlib.Logic.Function.Basic
 import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Mont.Words32
 import VerifiedGarbage.Proof.Dsa.X86.Comb.PublicVerified
-import VerifiedGarbage.Proof.Dsa.X86.Comb.PublicBodyTiming
-import VerifiedGarbage.Proof.Dsa.X86.Comb.PrivateBodyTiming
-import VerifiedGarbage.Proof.Dsa.X86.Comb.Call
+import VerifiedGarbage.Proof.Dsa.X86.Comb.StagePower
 import VerifiedGarbage.Proof.Dsa.X86.Comb.CanonicalFrame
 import VerifiedGarbage.Proof.Dsa.X86.Comb.SelectTable
 import VerifiedGarbage.Proof.Dsa.X86.CorePowerLoad
 import VerifiedGarbage.Proof.Dsa.X86.CoreStoreTiming
 import VerifiedGarbage.Proof.Dsa.X86.Layout
 import VerifiedGarbage.Proof.Dsa.X86.CallPowerTiming
-import VerifiedGarbage.Proof.Dsa.X86.Comb.StagePower
 
 /-! ### `Dsa.X86.Comb.CorePowerTiming`, which only this module used -/
 

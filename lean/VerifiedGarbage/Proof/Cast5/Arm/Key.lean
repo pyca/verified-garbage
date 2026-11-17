@@ -1,16 +1,15 @@
 module
+
 public import VerifiedGarbage.Proof.Framework.Arm.StackScratchConsts
 public import VerifiedGarbage.Impl.Cast5.Arm
 public import VerifiedGarbage.Proof.Cast5.KeyMem
-import VerifiedGarbage.Proof.Cast5.Arm.Block
+import VerifiedGarbage.Proof.Cast5.Arm.Ecb
 public import VerifiedGarbage.Proof.Cast5.Arm.Run
 public import VerifiedGarbage.Proof.Cast5.Table
 import VerifiedGarbage.Proof.Framework.Arm.Syms
-import VerifiedGarbage.Proof.Cast5.Arm.Scan
 import VerifiedGarbage.Proof.Cast5.Arm.Round
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-import VerifiedGarbage.Proof.Cast5.Arm.Ecb
 import VerifiedGarbage.Proof.Framework.Contract
 
 /-! ### `Cast5.Arm.KeyHalf`, which only this module used -/

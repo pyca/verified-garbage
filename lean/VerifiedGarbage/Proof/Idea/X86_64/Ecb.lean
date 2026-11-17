@@ -1,9 +1,8 @@
 module
 
-import VerifiedGarbage.Proof.Idea.X86_64.Block
+public import VerifiedGarbage.Proof.Idea.X86_64.Block
 public import VerifiedGarbage.Proof.Idea.X86_64.ConstantTime
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
-public import VerifiedGarbage.Proof.Idea.X86_64.Round
 import VerifiedGarbage.Proof.Idea.Memory
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset

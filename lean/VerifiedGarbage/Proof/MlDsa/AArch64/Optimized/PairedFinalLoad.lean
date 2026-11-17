@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseRawFinalSlice
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedStageRun
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedRoots
 import Mathlib.Tactic.FinCases
 import Mathlib.Data.Fintype.Basic
 import Mathlib.Tactic.Attr.Core

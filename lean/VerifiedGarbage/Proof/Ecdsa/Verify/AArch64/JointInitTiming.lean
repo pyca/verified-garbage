@@ -8,7 +8,7 @@ public import Mathlib.Algebra.Group.Nat.Defs
 import Mathlib.Tactic.ClearExcept
 import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacMixedAdd
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Production
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
 import Mathlib.Basic.IsEmpty.Defs
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointCacheTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointPairedTiming

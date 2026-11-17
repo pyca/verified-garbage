@@ -34,7 +34,6 @@ import VerifiedGarbage.Proof.Ed25519.Window
 import VerifiedGarbage.Proof.Ed25519.X86_64.PointEqual
 import VerifiedGarbage.Proof.Ed25519.X86_64.PointMul
 import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyFrame
-import VerifiedGarbage.Proof.Ed25519.X86_64.WindowEntry
 import VerifiedGarbage.Proof.Ed25519.X86_64.Points
 import VerifiedGarbage.Proof.Ed25519.X86_64.FieldMemory
 import VerifiedGarbage.Proof.Framework.RegionsSub

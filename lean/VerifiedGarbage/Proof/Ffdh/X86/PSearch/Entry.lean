@@ -1,11 +1,10 @@
 module
 
-import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Steps
+public import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Steps
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.ReadHalves
 import VerifiedGarbage.Proof.Framework.X86.Spill
 public import VerifiedGarbage.Impl.Ffdh.X86.ParamSearch
-public import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Data
 import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # The parameter search's entry (x86)

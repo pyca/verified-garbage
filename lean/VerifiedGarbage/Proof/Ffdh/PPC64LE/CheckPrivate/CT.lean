@@ -12,13 +12,12 @@ meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckDomainCT
 meta import VerifiedGarbage.Proof.Bignum.PPC64LE.MontCT
 meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
-import VerifiedGarbage.Proof.Ffdh.PPC64LE.CheckPrivate.Body
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.CheckPrivate.Status
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.Derive.Body
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.Derive.CT
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.Derive.Status
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.ExchangeBody
-import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.DomainBody
+import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckDomainFn
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckPublicFn
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Dsa.PackedBytes

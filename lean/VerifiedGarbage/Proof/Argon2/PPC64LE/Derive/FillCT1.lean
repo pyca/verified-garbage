@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.CTCall
+public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.CTCall
 public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.FillState
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.FillCache
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.FillInput
@@ -16,7 +16,6 @@ meta import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.FillDep
 meta import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Locals
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Initial
-public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.CTBase
 
 /-!
 # Argon2 on PPC64LE: the random word, in two runs

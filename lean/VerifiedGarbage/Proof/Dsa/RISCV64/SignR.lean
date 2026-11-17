@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 /-!
 # DSA signing on RISC-V: r and the ranges
 
-As on PPC64LE (`Proof/Dsa/PPC64LE/Sign/R.lean`). `rRanges_ok`: in the Q
+As on PPC64LE (`Proof/Dsa/PPC64LE/Sign/Output.lean`). `rRanges_ok`: in the Q
 space, `r = (g^k mod p) mod q` (`reduce64` of the buffer's `p_len` octets)
 into array 25, and the header's word `hMask &=` the masks of `0 < k < q`,
 `0 < x < q` and `r ≠ 0`.

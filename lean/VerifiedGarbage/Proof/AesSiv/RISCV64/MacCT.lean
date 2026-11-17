@@ -2,7 +2,7 @@ module
 
 import VerifiedGarbage.Proof.AesSiv.RISCV64.Rel
 import VerifiedGarbage.Proof.AesSiv.RISCV64.Long
-import VerifiedGarbage.Proof.AesSiv.RISCV64.Short
+public import VerifiedGarbage.Proof.AesSiv.RISCV64.Short
 import VerifiedGarbage.Proof.AesSiv.RISCV64.CtrLoop
 public import VerifiedGarbage.Proof.AesCcm.RISCV64.Rel
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -15,7 +15,6 @@ meta import VerifiedGarbage.Proof.AesCcm.RISCV64.Rel
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.AesSiv.Long
 public import VerifiedGarbage.Proof.AesSiv.RISCV64.Env
-public import VerifiedGarbage.Proof.AesSiv.RISCV64.S2v
 public import VerifiedGarbage.Proof.CmacAes.Stream.RISCV64.Common
 public import VerifiedGarbage.Proof.Gather.RISCV64.LoopCT
 meta import VerifiedGarbage.Proof.Gather.RISCV64.LoopCT

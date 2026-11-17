@@ -1,7 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.Camellia.X86.Crypt8
-public import VerifiedGarbage.Proof.Camellia.X86.Linear
+public import VerifiedGarbage.Proof.Camellia.X86.Round
 public import VerifiedGarbage.Impl.Camellia.X86.ExpandKey
 public import VerifiedGarbage.Proof.Camellia.X86.Core
 import VerifiedGarbage.Proof.Camellia.X86.Fl
@@ -67,7 +67,7 @@ end
 /-!
 # Camellia's key schedule on x86 (32-bit): a pair of rounds on one value
 
-As on ARMv7 (`Proof/Camellia/Arm/KeyPair.lean`): `pairPlain_step`, the
+As on ARMv7 (`Proof/Camellia/Arm/ExpandKey.lean`): `pairPlain_step`, the
 running value, in the four words at `wSlot` (`VW`: its bytes, the most
 significant first, four to a word, little-endian, as ECB loads a block),
 in all eight lanes (`bcast_step`), through two rounds with the next two

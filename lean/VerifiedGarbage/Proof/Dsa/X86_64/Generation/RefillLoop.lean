@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Dsa.Generation.RefillSearch
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.FrameStore
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntryState
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Memory
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.AttemptStatus
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.TapeState

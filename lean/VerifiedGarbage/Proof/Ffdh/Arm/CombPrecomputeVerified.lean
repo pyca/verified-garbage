@@ -27,12 +27,9 @@ import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeTableInit
 import VerifiedGarbage.Proof.Rsa.FixedBaseCombTable
 import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeProductState
-import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeBasisStore
 import VerifiedGarbage.Proof.Ffdh.Arm.CachedSamplePolicy
 import VerifiedGarbage.Proof.Ffdh.Arm.Branch
 import VerifiedGarbage.Proof.Ffdh.Domain
-import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputePre
-import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeEnvironment
 import VerifiedGarbage.Proof.Framework.Arm.StackScratchConsts
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Arm.Contract
@@ -46,9 +43,215 @@ import VerifiedGarbage.Proof.Ffdh.Arm.Entered
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 import VerifiedGarbage.Proof.Framework.Arm.Syms
-import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeEntry
 import VerifiedGarbage.Proof.Ffdh.Arm.VettedGroupsConsts
-import VerifiedGarbage.Proof.Ffdh.Arm.VettedGroupsEnvironment
+public import VerifiedGarbage.Proof.Ffdh.Arm.VettedGroupsEnvironment
+import VerifiedGarbage.Proof.Ffdh.Arm.VettedGroupsBytes
+import VerifiedGarbage.Proof.Framework.OffsetBelow
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Rsa.BytesFrame
+public import VerifiedGarbage.Proof.Ffdh.Arm.Frame
+
+/-! ### `Ffdh.Arm.CombPrecomputeEnvironment`, which only this module used -/
+
+section
+
+/-! The shared public recognition table survives the precomputation frame. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm
+open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
+open VG.Impl.Ffdh.Arm.VettedGroups
+open VettedGroups
+
+theorem combPrecompute_environment (s : State)
+    (pre : (Spec.Ffdh.generationPrecomputeContract (abi.withConsts tableConsts) 176).pre s)
+    {p : Inputs} (base : stackArg s 1 = p.base) (output : s.gpr .r0 = p.output)
+    (capacity : (stackArg s 2).toNat = p.len) (count : (stackArg s 0).toNat = p.k)
+    (privateAlias : p.privateValue = p.output) (publicAlias : p.publicValue = p.output) :
+    VettedGroups.environment.holds p (entered s) := by
+  obtain ⟨plain,hc⟩ := pre_consts.mp pre
+  sig_pre [Spec.Ffdh.generationPrecomputeContract,Spec.Ffdh.generationPrecomputeSig,
+    abi,argRegs,reduceClassify,Loc.val,State.addr] at plain
+  obtain ⟨stackFit,_,_,wr,_,_,_,_,_,_,_,_,_,_,_,_,_,_,ctxLen,_,_⟩ := plain
+  change s.wr = [⟨State.addr (s.gpr .r0),(s.gpr .r1).toNat*8⟩,
+    ⟨State.addr (stackArg s 1),(stackArg s 2).toNat*8⟩] at wr
+  change (s.gpr .r1).toNat = Spec.Ffdh.generationPrecomputedWords (stackArg s 0).toNat at ctxLen
+  have small : p.k ≤ (s.gpr .r1).toNat*8 := by
+    rw [ctxLen,count]
+    have hw := p.width.2.2.2.1
+    change p.k ≤ 8*p.w at hw
+    simp only [Spec.Ffdh.generationPrecomputedWords,Spec.Rsa.FixedBaseComb.precomputedWords,
+      Spec.Rsa.precomputedWords,Spec.Rsa.FixedBaseComb.entries]
+    change p.k ≤ (3+(2*p.w+32*p.w))*8
+    omega_using [hw]
+  have geometry := consts_singleton_regions (name := tableSym) (words := tableWords) hc
+  have span : 8*tableWords.length = tableBytes.length := by rw [tableWords_length,tableBytes_length]
+  have fit := hc.fit (name := tableSym) (ws := tableWords) List.mem_cons_self
+  rw [span] at fit
+  have reserved : (⟨State.addr (s.syms tableSym),tableBytes.length⟩ : Region).Disjoint (FrameStack.belowA s.sp 176) := by
+    rw [←span]
+    apply geometry.2.2
+    rw [FrameStack.belowA,FrameStack.addr_sub' stackFit]
+    simp only [abi,stackBelow]
+    exact List.mem_cons_self
+  have localSub : (⟨State.addr (entered s).sp,72⟩ : Region).Sub (FrameStack.belowA s.sp 176) :=
+    fun a h => FrameStack.belowA_sub (by decide) stackFit a (locals_sub_reserved s (by omega_using [stackFit]) a h)
+  have savedSub : (⟨State.addr (pcPushed s).sp,56⟩ : Region).Sub (FrameStack.belowA s.sp 176) :=
+    fun a h => FrameStack.belowA_sub (by decide) stackFit a (saved_sub_reserved s (by omega_using [stackFit]) a h)
+  have writable (r : Region) (member : r ∈ (entered s).wr) :
+      (⟨State.addr (s.syms tableSym),tableBytes.length⟩ : Region).Disjoint r := by
+    change r ∈ (⟨State.addr (entered s).sp,72⟩ : Region)::⟨State.addr (pcPushed s).sp,56⟩::s.wr at member
+    rcases List.mem_cons.mp member with rfl | member
+    · exact reserved.sub_right localSub
+    rcases List.mem_cons.mp member with rfl | member
+    · exact reserved.sub_right savedSub
+    · rw [←span]; exact geometry.2.1 r member
+  apply VettedGroups.tableOfBytes (entered s) ((entered s).syms tableSym) groups fit (entered_read (consts_table_read hc))
+  · rw [VG.Proof.Rsa.rsa_bytes_frame (entered_frame s (by omega_using [stackFit])) (by change tableBytes.length < 2^64; rw [tableBytes_length]; decide) (by
+      intro r hr
+      have eq := List.mem_singleton.mp hr
+      subst r
+      exact reserved.sub_right savedSub)]
+    exact consts_table_bytes hc
+  · intro g hg
+    simp only [groups,List.mem_cons,List.not_mem_nil,or_false] at hg
+    rcases hg with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+  · intro r hr
+    simp only [keyCallWrites,keyWrites,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hr
+    rcases hr with (rfl | rfl | rfl | rfl) | rfl
+    · apply writable
+      change _ ∈ _::_::s.wr
+      apply List.mem_cons_of_mem; apply List.mem_cons_of_mem
+      rw [wr,base,capacity,Nat.mul_comm p.len 8]
+      exact List.mem_cons_of_mem _ List.mem_cons_self
+    · exact reserved.sub_right localSub
+    · rw [privateAlias,←output]
+      apply (writable ⟨State.addr (s.gpr .r0),(s.gpr .r1).toNat*8⟩ (by
+        apply List.mem_cons_of_mem; apply List.mem_cons_of_mem; rw [wr]; exact List.mem_cons_self)).sub_right
+      simpa only [off,BitVec.add_zero] using (Offset.sub_base (State.addr (s.gpr .r0)) (d:=0) (n:=p.k) (by omega_using [small]))
+    · rw [publicAlias,←output]
+      apply (writable ⟨State.addr (s.gpr .r0),(s.gpr .r1).toNat*8⟩ (by
+        apply List.mem_cons_of_mem; apply List.mem_cons_of_mem; rw [wr]; exact List.mem_cons_self)).sub_right
+      simpa only [off,BitVec.add_zero] using (Offset.sub_base (State.addr (s.gpr .r0)) (d:=0) (n:=p.k) (by omega_using [small]))
+    · rw [entered_sp]
+      exact reserved.sub_right (FrameStack.belowA_inner (a:=48) (k:=128) (by decide) stackFit)
+
+end VG.Proof.Ffdh.Arm
+
+end
+
+end
+
+/-! ### `Ffdh.Arm.CombPrecomputePre`, which only this module used -/
+
+section
+
+/-! The reviewed precomputation signature supplies native buffers and frames. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm
+open VG VG.Arm VG.Arm.FrameStack VG.Proof.Bignum.Arm VG.Proof.Mont
+
+theorem combPrecompute_input (s : State)
+    (pre : (Spec.Ffdh.generationPrecomputeContract (abi.withConsts VG.Impl.Ffdh.Arm.VettedGroups.tableConsts) 176).pre s)
+    {p : Inputs}
+    (base : stackArg s 1 = p.base) (output : s.gpr .r0 = p.output)
+    (domain : s.gpr .r2 = p.domain) (count : (stackArg s 0).toNat = p.k)
+    (capacity : (stackArg s 2).toNat = p.len)
+    (domainBytes : Spec.Rsa.bytesAt s.mem (State.addr p.domain) (s.gpr .r3).toNat = p.dom)
+    (privateAlias : p.privateValue = p.output) (publicAlias : p.publicValue = p.output)
+    (entropyAlias : p.entropy = p.output)
+    (environment : VettedGroups.environment.holds p (entered s)) :
+    CombPrecomputeFnInput p s := by
+  obtain ⟨pre,hc⟩ := pre_consts.mp pre
+  sig_pre [Spec.Ffdh.generationPrecomputeContract, Spec.Ffdh.generationPrecomputeSig,
+    abi, argRegs, reduceClassify, Loc.val, State.addr] at pre
+  simp only [show ∀ (K : List (String × List (BitVec 64))) (s : State) (i : Nat), stackArg (stripConsts K s) i = stackArg s i by intros; rfl] at pre
+  simp only [show ∀ (K : List (String × List (BitVec 64))) (s : State) (i : Nat), stackArgAddr (stripConsts K s) i = stackArgAddr s i by intros; rfl] at pre
+  obtain ⟨stackFit,argFit,rd,wr,outDom,outWs,outArgs,domWs,wsArgs,
+    stackOut,stackDom,stackWs,stackArgs,outFit,domFit,wsFit,_,_,ctxLen,_,valid⟩ := pre
+  have rdFull : s.rd = [⟨BitVec.setWidth 64 (s.gpr .r2),(s.gpr .r3).toNat⟩,⟨stackArgAddr s 0,12⟩] ++ constRegs VG.Impl.Ffdh.Arm.VettedGroups.tableConsts s := by
+    have drop : s.rd.drop (s.rd.length - 1) = constRegs VG.Impl.Ffdh.Arm.VettedGroups.tableConsts s := hc.1
+    rw [←List.take_append_drop (s.rd.length - 1) s.rd,drop]
+    exact congrArg (· ++ constRegs VG.Impl.Ffdh.Arm.VettedGroups.tableConsts s) rd
+  clear rd
+  have rd := rdFull
+  have domLen : (s.gpr .r3).toNat = p.dom.length := by
+    have eq := congrArg List.length domainBytes
+    simpa only [VG.Proof.Bignum.bytesAt_length] using eq
+  rw [count] at ctxLen valid
+  simp only [output,ctxLen,domain,domLen,base,capacity,Nat.mul_comm p.len 8] at rd wr outDom outWs outArgs domWs wsArgs stackOut stackDom stackWs outFit domFit wsFit
+  rw [domain] at valid
+  change Spec.Ffdh.domainValid p.k (Spec.Rsa.bytesAt s.mem (State.addr p.domain) (s.gpr .r3).toNat) = true at valid
+  rw [domainBytes] at valid
+  have bytes : Spec.Ffdh.generationPrecomputedWords p.k * 8 = CombBuilder.bytes p := by simp [CombBuilder.bytes,Nat.mul_comm]
+  rw [bytes] at wr outDom outWs outArgs stackOut outFit
+  have reserved : (⟨State.addr s.sp - BitVec.ofNat 64 176,176⟩ : Region) = belowA s.sp 176 := by
+    rw [belowA,addr_sub' stackFit]
+  simp only [State.addr] at reserved
+  rw [reserved] at stackOut stackDom stackWs stackArgs
+  have inner : (belowA s.sp 128).Sub (belowA s.sp 176) := belowA_sub (by decide) stackFit
+  have fit128 : 128 ≤ s.sp.toNat := by omega_using [stackFit]
+  have ws : Workspace s p.base (8*p.len) := ⟨wsFit,by rw [wr]; simp [State.addr]⟩
+  have domRead : InRegions (s.rd ++ s.wr) (State.addr p.domain) p.dom.length :=
+    ⟨_,List.mem_append_left _ (by rw [rd]; simp [State.addr]),Region.contains_self _ _⟩
+  have domOctets : Octets p.base p.domain p.len p.dom s :=
+    ⟨domFit,domRead,domWs,by rw [←domLen]; exact domainBytes⟩
+  have args : ArgumentMemory p [] (entered s) :=
+    ⟨entered_workspace ws,entered_locals s fit128 (stackWs.sub_left inner),
+      entered_octets domOctets fit128 (stackDom.sub_left inner),
+      stackDom.symm.sub_right (fun a h => inner a (locals_sub_reserved s fit128 a h)),by simp⟩
+  have outSize : p.k ≤ CombBuilder.bytes p := by
+    have small := p.width.2.2.2.1
+    change p.k ≤ 8 * p.w at small
+    simp only [CombBuilder.bytes,Spec.Ffdh.generationPrecomputedWords,Spec.Rsa.FixedBaseComb.precomputedWords,Spec.Rsa.precomputedWords,Spec.Rsa.FixedBaseComb.entries]
+    change p.k ≤ 8 * (3 + (2*p.w + 32*p.w))
+    omega_using [small]
+  have outSub : (⟨State.addr p.output,p.k⟩ : Region).Sub ⟨State.addr p.output,CombBuilder.bytes p⟩ := by
+    simpa only [off,BitVec.add_zero] using
+      (Offset.sub_base (State.addr p.output) (d := 0) (n := p.k) (k := CombBuilder.bytes p) (by omega_using [outSize]))
+  have callSep : (⟨State.addr p.output,CombBuilder.bytes p⟩ : Region).Disjoint (belowA (entered s).sp 48) := by
+    rw [entered_sp]
+    exact stackOut.symm.sub_right (belowA_inner (a := 48) (k := 128) (by decide) stackFit)
+  have calls : KeyCallMemory p (entered s) := KeyCallMemory.of_outer stackFit (entered_sp s) stackWs stackDom.symm
+    (by rw [privateAlias]; exact (stackOut.symm.sub_left outSub))
+    (by rw [publicAlias]; exact (stackOut.symm.sub_left outSub))
+    (by rw [entropyAlias]; exact (stackOut.symm.sub_left outSub))
+    (by rw [privateAlias]; omega_using [outFit, outSize])
+  have incoming (i : Nat) (hi : i < 3) : IncomingWord (stackArg s i) (128+4*i) (entered s) := by
+    have start : stackArgAddr s 0 = State.addr s.sp := by simp [stackArgAddr]
+    have addr : stackArgAddr s i = off (State.addr s.sp) (4*i) := addr_add (by omega_using [argFit, hi])
+    have sub : (⟨stackArgAddr s i,4⟩ : Region).Sub ⟨stackArgAddr s 0,12⟩ := by
+      rw [start,addr]; exact Offset.sub_base _ (by omega_using [hi])
+    refine enteredIncoming s fit128 (by omega_using [argFit, hi]) ?_ (stackArgs.sub_left inner |>.sub_right sub) rfl
+    refine ⟨⟨stackArgAddr s 0,12⟩,List.mem_append_left _ (by rw [rd]; simp),?_⟩
+    rw [start,addr]; exact Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])
+  refine ⟨stackFit,args,?_,?_,output,domain,?_,calls,?_,outWs.symm,outDom.symm,?_,callSep,valid,environment,?_⟩
+  · have h := incoming 0 (by decide)
+    have eq : stackArg s 0 = BitVec.ofNat 32 p.k := by rw [←count,BitVec.ofNat_toNat,BitVec.setWidth_eq]
+    simpa only [Nat.mul_zero,Nat.add_zero,eq] using h
+  · simpa only [Nat.mul_one,base] using incoming 1 (by decide)
+  · rw [←domLen,BitVec.ofNat_toNat,BitVec.setWidth_eq]
+  · refine ⟨outFit,?_⟩
+    exact ⟨_,List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (by rw [wr]; simp [State.addr])),Region.contains_self _ _⟩
+  · exact stackOut.sub_left (fun a h => inner a (locals_sub_reserved s fit128 a h))
+  · intro r hr
+    simp only [combPrecomputeWrites,List.mem_cons,List.not_mem_nil,or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl
+    · exact stackWs.sub_left (fun a h => inner a (saved_sub_reserved s fit128 a h))
+    · exact stackOut.sub_left (fun a h => inner a (saved_sub_reserved s fit128 a h))
+    · exact saved_separate_locals s fit128
+    · have shifted : (pcPushed s).sp = (entered s).sp + BitVec.ofNat 32 72 := (BitVec.sub_add_cancel _ _).symm
+      have fit : (entered s).sp.toNat + 72 < 2^32 := by rw [entered_nat s fit128]; have := s.sp.isLt; omega_using []
+      rw [shifted,VG.Arm.addr_add fit,belowA,addr_sub' calls.stack.fit]
+      exact (Offset.disjoint_below_above _ (m:=48) (a:=72) (l:=56) (by decide)).symm
+
+
+end VG.Proof.Ffdh.Arm
+
+end
+
+end
 
 /-! ### `Ffdh.Arm.CombPrecomputeTable`, which only this module used -/
 

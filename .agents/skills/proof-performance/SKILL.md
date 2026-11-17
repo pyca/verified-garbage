@@ -514,7 +514,7 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   register's value at its index, written with `List.set`, each list is
   evaluated once. `Sha3.AArch64.Scalar`'s symbolic run of the 25 lanes took
   29.5 s as functions and 2 s as a list (`KFile`, `symRun_regs`,
-  `Proof/Sha3/AArch64/Scalar/Reflect.lean`): keep the function, which the
+  `Proof/Sha3/AArch64/Scalar/Stages.lean`): keep the function, which the
   proofs about the checker read easily, and prove it equal to the list's.
   A fold that filters a list at every step has the same shape: the kernel
   evaluates lazily, so after 15,000 instructions the list is a filter of a

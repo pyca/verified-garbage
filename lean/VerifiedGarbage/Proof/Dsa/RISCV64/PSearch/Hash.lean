@@ -16,7 +16,7 @@ import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! # DSA parameter search on RISC-V: a hash of one block
 
-As on PPC64LE (`Proof/Dsa/PPC64LE/Gen/Hash.lean`). `hash Gh dst`
+As on PPC64LE (`Proof/Dsa/PPC64LE/Gen/QPart.lean`). `hash Gh dst`
 (`Impl/Dsa/RISCV64/ParameterSearch.lean`) hashes the block at `sMsg`: the
 initial hash value into `sState` (`initAt_ok`), the compression function on
 it, with 80 octets of scratch at `sCS`, and the hash value's words big-endian

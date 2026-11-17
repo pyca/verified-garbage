@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.TripleDes.PPC64LE.ModesConstantTime
 public import VerifiedGarbage.Proof.TripleDes.CbcScratch
 public import VerifiedGarbage.Proof.TripleDes.FbScratch
-public import VerifiedGarbage.Proof.TripleDes.PPC64LE.ModeCore
 public import VerifiedGarbage.Proof.TripleDes.PPC64LE.ModeCoreWide
 import VerifiedGarbage.Proof.Modes.PPC64LE.Wide
 import VerifiedGarbage.Proof.Modes.PPC64LE.Modes

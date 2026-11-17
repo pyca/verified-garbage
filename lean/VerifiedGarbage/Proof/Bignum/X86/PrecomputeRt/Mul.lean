@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputeRt.In
 public import VerifiedGarbage.Proof.Bignum.X86.RtCall
 public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.MulEnv
-public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.MulArgs
+public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Callee
 import VerifiedGarbage.Proof.Dsa.Arithmetic
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Power

@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.MlDsa.PPC64LE.Sign.Output
 import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
 import VerifiedGarbage.Proof.MlDsa.Sign.Setup
-import VerifiedGarbage.Proof.MlDsa.Sign.Loop
+import VerifiedGarbage.Proof.MlDsa.Sign.Iter
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Mono
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
@@ -19,7 +19,7 @@ meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 /-!
 # ML-DSA signing on PPC64LE: the function
 
-As on 32-bit ARM (`Proof/MlDsa/Arm/Sign/Correct.lean`, `SignCT.lean`,
+As on 32-bit ARM (`Proof/MlDsa/Arm/Sign/PhaseOCT.lean`, `SignCT.lean`,
 `Top.lean`). The function returns 1 with `Sign_internal`'s signature (within
 `maxBounds`) in `sig`, or 0 when `Sign_internal` returns nothing within
 `minBounds` (`sign_ok`): its `ExpandA` or its loop does not finish

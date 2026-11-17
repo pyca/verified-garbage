@@ -9,7 +9,7 @@ public import VerifiedGarbage.Proof.Ed25519.Group.Extended
 import VerifiedGarbage.Proof.Ed25519.X86.CombLoop
 import VerifiedGarbage.Proof.Ed25519.X86.FreezeField
 import VerifiedGarbage.Proof.Ed25519.X86.InputBits
-import VerifiedGarbage.Proof.Ed25519.X86.Power
+import VerifiedGarbage.Proof.Ed25519.X86.PointEncodeSign
 import VerifiedGarbage.Proof.Ed25519.X86.CommonMemory
 import VerifiedGarbage.Proof.Ed25519.X86.CombLit
 import VerifiedGarbage.Proof.Ed25519.X86.PointCTBlocks

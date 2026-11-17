@@ -2,14 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PConstructCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchCTState
-
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SourceFrame
 import Mathlib.Algebra.GroupWithZero.Nat
 import Mathlib.Algebra.NeZero
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PPrimalityCTState
 import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PAttempt
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PConstruct
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PConstructTest
 import VerifiedGarbage.Proof.Dsa.Encoding
 import Mathlib.Algebra.Group.Nat.Defs
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateWidthCT
@@ -21,8 +19,8 @@ import VerifiedGarbage.Proof.Framework.TaintBatch
 import VerifiedGarbage.TCB.Registration
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateWidth
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PTestSmallCT
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PConstructTest
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.AttemptBlocksCT
+
 /-! # One complete native p-search iteration has a public trace -/
 
 -- Formerly `VerifiedGarbage/Proof/Dsa/X86_64/Generation/SearchEntryCT.lean`, which only this module imported.

@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Random.Copy
 public import VerifiedGarbage.Proof.Dsa.RandomBytes
 import VerifiedGarbage.Proof.Dsa.RandomEncoding
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.Random.Math
 
 /-!
 # DSA sampling on PPC64LE: the sampler's data of q

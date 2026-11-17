@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.PrepareData
-import VerifiedGarbage.Proof.RsaKeyGen.MrCounts
 public import VerifiedGarbage.Proof.RsaKeyGen.MrLoopAt
 public import VerifiedGarbage.Spec.Rsa.Contract
 import VerifiedGarbage.Proof.RsaKeyGen.X86.PreparedDataGap

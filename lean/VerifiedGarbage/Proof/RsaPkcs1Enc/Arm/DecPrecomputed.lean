@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.DecVerified
 public import VerifiedGarbage.Proof.Rsa.PreKey
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
-import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.DecBody
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Rsa.BytesFrame
 import VerifiedGarbage.Proof.Rsa.Arm.PrivPrecomputed

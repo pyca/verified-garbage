@@ -1,10 +1,9 @@
 module
 
-import VerifiedGarbage.Proof.Aes.Arm.Encrypt
+public import VerifiedGarbage.Proof.Aes.Arm.Encrypt
 public import VerifiedGarbage.Proof.Framework.Bitslice.Sym
 import VerifiedGarbage.Proof.Framework.Arm.Bytes
 public import VerifiedGarbage.Impl.Aes.Arm.Ctr32
-public import VerifiedGarbage.Proof.Aes.Arm.Linear
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Lit

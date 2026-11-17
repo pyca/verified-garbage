@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.RISCV64.VerifyFn
-public import VerifiedGarbage.Proof.Ed25519.RISCV64.Encode
+public import VerifiedGarbage.Proof.Ed25519.RISCV64.RecoverCand
 public import VerifiedGarbage.Impl.Ed25519.RISCV64.ScalarBase
 public import VerifiedGarbage.Proof.Ed25519.RISCV64.Comb
 import VerifiedGarbage.Proof.Ed25519.RISCV64.PointScalar

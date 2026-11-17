@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Top
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Parse
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.RejNtt5
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej5Vec
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNtt

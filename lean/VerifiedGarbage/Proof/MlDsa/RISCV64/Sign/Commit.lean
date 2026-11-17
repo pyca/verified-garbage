@@ -1,9 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.RISCV64.Sign.Decode
-public import VerifiedGarbage.Proof.MlDsa.Sign.Loop
+public import VerifiedGarbage.Proof.MlDsa.Sign.Iter
 import VerifiedGarbage.Proof.MlDsa.Sign.Mem
-import VerifiedGarbage.Proof.MlDsa.Sign.Iter
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Rest
 import VerifiedGarbage.Proof.MlKem.KPke
 import VerifiedGarbage.Proof.MlKem.Mem
@@ -17,8 +16,8 @@ import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
 import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 meta import VerifiedGarbage.Proof.MlDsa.RISCV64.Sign.Decode
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
-
 public import VerifiedGarbage.TCB.RISCV64.Target
+
 /-!
 # ML-DSA signing on RISC-V: the commitment of an iteration
 

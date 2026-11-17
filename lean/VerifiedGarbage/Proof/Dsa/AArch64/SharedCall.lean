@@ -1,4 +1,5 @@
 module
+
 public import VerifiedGarbage.Impl.Dsa.AArch64.SharedPower
 public import VerifiedGarbage.Proof.Dsa.AArch64.Call
 public import VerifiedGarbage.Proof.Dsa.AArch64.Return
@@ -6,7 +7,6 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.ReadyCalls
 public import VerifiedGarbage.Proof.Dsa.AArch64.CheckEffects
 public import VerifiedGarbage.Spec.Dsa
 import VerifiedGarbage.Proof.Dsa.AArch64.SharedPowerCT
-import VerifiedGarbage.Proof.Dsa.AArch64.MaskContext
 import VerifiedGarbage.Proof.Dsa.AArch64.EnterLeave
 import VerifiedGarbage.Proof.Dsa.AArch64.Finish
 import VerifiedGarbage.Proof.Dsa.AArch64.Operands

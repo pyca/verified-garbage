@@ -12,13 +12,12 @@ public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Proof.Camellia.X86.PreparedVerified
-import VerifiedGarbage.Proof.Camellia.X86.Call
 public import VerifiedGarbage.Proof.Framework.X86.CallWith
 import VerifiedGarbage.Proof.Framework.X86.Inline
 import VerifiedGarbage.Proof.Camellia.X86.Lit
 public import VerifiedGarbage.Impl.Camellia.X86.Prepared
 public import VerifiedGarbage.Proof.Camellia.Common
-public import VerifiedGarbage.Proof.Camellia.X86.Keys
+public import VerifiedGarbage.Proof.Camellia.X86.PreparedBody
 public import VerifiedGarbage.Proof.Camellia.X86.Prologue
 public import VerifiedGarbage.Proof.Framework.X86.TaintMono
 

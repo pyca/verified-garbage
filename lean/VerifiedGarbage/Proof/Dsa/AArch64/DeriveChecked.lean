@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Dsa.AArch64.Derive
 import VerifiedGarbage.Proof.Dsa.AArch64.DeriveCopy
 import VerifiedGarbage.Proof.Dsa.AArch64.DeriveWrite
-import VerifiedGarbage.Proof.Dsa.AArch64.CallOperands
 import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleOperands
 import VerifiedGarbage.Proof.Dsa.AArch64.SourceSlices
 import VerifiedGarbage.Proof.Dsa.AArch64.WorkspaceReady
@@ -34,7 +33,7 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Dsa.AArch64.CheckOperands
 import VerifiedGarbage.Proof.Dsa.AArch64.PublicCalls
 import VerifiedGarbage.Proof.Dsa.Zero
-import VerifiedGarbage.Proof.Dsa.AArch64.SigningKey
+import VerifiedGarbage.Proof.Dsa.AArch64.SignCompute
 import VerifiedGarbage.Proof.Dsa.AArch64.CheckEffects
 import VerifiedGarbage.Proof.Dsa.AArch64.ReadyCalls
 import VerifiedGarbage.Proof.Dsa.AArch64.Parameters

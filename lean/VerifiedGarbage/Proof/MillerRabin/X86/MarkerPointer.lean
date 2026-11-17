@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Impl.MillerRabin.X86.Round
 public import VerifiedGarbage.Proof.MillerRabin.X86.Context
 import VerifiedGarbage.Proof.MillerRabin.X86.Copy
-import VerifiedGarbage.Proof.MillerRabin.X86.Pointer
 
 /-! # The exponent marker is addressed using only the prepared public width -/
 

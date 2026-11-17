@@ -1,8 +1,7 @@
 module
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCallResult
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignPublic
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignSingle
 
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignSingle
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignPublic
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCallObserve
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub

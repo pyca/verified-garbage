@@ -15,7 +15,7 @@ meta import VerifiedGarbage.Proof.AesCcm.PPC64LE.CallArgs
 public import VerifiedGarbage.Impl.AesGcmSiv.PPC64LE
 public import VerifiedGarbage.Proof.Aes.SboxSpec
 public import VerifiedGarbage.Proof.AesCcm.PPC64LE.Env
-public import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Env
+public import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Wp
 public import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Run
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Spill

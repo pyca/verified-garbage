@@ -1,11 +1,506 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.X86.Cand.Prep
-import VerifiedGarbage.Proof.Bignum.X86.CrtRt.WindowPower
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Stage
 import VerifiedGarbage.Proof.Bignum.X86.CrtRt.StageR
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Rsa.TwosMath
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Ctx
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Proof.Ffdh.X86.Cand.Base
+public import VerifiedGarbage.Impl.Ffdh.X86.Candidate
+public import VerifiedGarbage.Proof.Bignum.X86.CrtValue
+public import VerifiedGarbage.Spec.Dsa
+
+/-! ### `Ffdh.X86.Cand.Prep`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Ffdh.X86.Cand.Halve`, which this module and modules that import it used -/
+
+section
+
+/-!
+# The FFDH candidate on i686: a number halved in place
+
+`halve` shifts a wide slot down a bit, a word at a time from the top, the
+low bit of each word carried into the top of the next (`halve_ok`). After
+`i` words, the top `i` words hold the top `i` words' value halved, and the
+carry is that value's low bit.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ffdh.X86.Cand
+
+open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Bignum.X86 VG.Impl.Bignum.X86.CrtRt VG.Proof.Mont
+open VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt VG.Proof.Bignum.X86 VG.Proof.Bignum.X86.CrtRt
+open VG.Proof.Ffdh.X86
+open VG.Impl.Ffdh.X86.Candidate
+
+variable {Ex : List Region → List Region → Prop} {s : State} {base : Addr} {bytes len : Nat}
+  {args : Nat → BitVec 32}
+
+theorem ror_carry {c : Nat} (hc : c ≤ 1) : (BitVec.ofNat 32 c).rotateRight 1 = BitVec.ofNat 32 (c * 2 ^ 31) := by
+  rcases (show c = 0 ∨ c = 1 by omega_arith) with rfl | rfl <;> decide
+
+theorem shr_or (w : BitVec 32) {c : Nat} (hc : c ≤ 1) :
+    (w >>> 1 ||| BitVec.ofNat 32 (c * 2 ^ 31)).toNat = w.toNat / 2 + c * 2 ^ 31 := by
+  have hw := w.isLt
+  rw [BitVec.toNat_or, BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow,
+    Nat.mod_eq_of_lt (by omega_arith), Nat.pow_one, Nat.or_comm, Nat.mul_comm c,
+    ← Nat.two_pow_add_eq_or_of_lt (show w.toNat / 2 < 2 ^ 31 by omega_arith)]
+  omega_arith
+
+/-- What `i` steps of the halving leave. -/
+structure HalveAt (h : In Ex base bytes len args s) (j n i : Nat) (t : State) : Prop where
+  ecx : t.gpr .ecx = BitVec.ofNat 32 (4 * (n - i))
+  esi : PtrAt t base .esi (lo len (.slot .wide j) + 4 * (n - i))
+  ebx : t.gpr .ebx = BitVec.ofNat 32 (val32 s.mem base (lo len (.slot .wide j) + 4 * (n - i)) i % 2)
+  top : val32 t.mem base (lo len (.slot .wide j) + 4 * (n - i)) i =
+    val32 s.mem base (lo len (.slot .wide j) + 4 * (n - i)) i / 2
+  out : Outside base (lo len (.slot .wide j) + 4 * (n - i)) (4 * i) s.mem t.mem
+  keeps : Keeps [.eax, .ebx, .ecx, .edx, .esi] s t
+
+theorem halveStep_ok (h : In Ex base bytes len args s) {j : Nat} (hj : j ≤ 27) {i : Nat}
+    (hi : i < cwc len .wide) {t : State} (H : HalveAt h j (cwc len .wide) i t) :
+    WP isa (.block halveStep) t fun u => HalveAt h j (cwc len .wide) (i + 1) u ∧
+      isa.eval .ne u = some (decide (i + 1 ≠ cwc len .wide)) := by
+  have bl := h.bytes_lt
+  obtain f := slot_fit1 h hj
+  rw [cb1] at f
+  obtain bw := bc_eq_cwc len .wide
+  obtain hw : Ws t base bytes := h.ws.of_keeps H.keeps
+  -- The word processed, at `o`.
+  generalize ho : lo len (.slot .wide j) + 4 * (cwc len .wide - (i + 1)) = o
+  obtain eo : lo len (.slot .wide j) + 4 * (cwc len .wide - i) = o + 4 := by omega_arith
+  have hesi := H.esi
+  rw [eo] at hesi
+  unfold halveStep
+  refine wp_subi fun t₁ U₁ _ _ => ?_
+  obtain p₁ : PtrAt t₁ base .esi o := by
+    rw [PtrAt, U₁.gpr, ptr_sub hesi 4 (by show 4 ≤ o + 4; omega_arith)]
+    show (base.toNat + (o + 4 - 4)) % 2 ^ 32 = _
+    rw [Nat.add_sub_cancel]
+  obtain hw₁ := hw.of_keeps U₁.keeps
+  refine wp_movS (readSrc_ptr hw₁ p₁ (d := 0) (by omega_arith)) fun t₂ U₂ _ => ?_
+  refine wp_mov fun t₃ U₃ => wp_andi fun t₄ U₄ => wp_shr (by decide) fun t₅ U₅ _ => ?_
+  refine wp_ror (by decide) fun t₆ U₆ => wp_or fun t₇ U₇ => ?_
+  obtain p₇ : PtrAt t₇ base .esi o := by
+    rw [PtrAt, U₇.other _ (by decide), U₆.other _ (by decide), U₅.other _ (by decide), U₄.other _ (by decide),
+      U₃.other _ (by decide), U₂.other _ (by decide)]; exact p₁
+  obtain hw₇ : Ws t₇ base bytes :=
+    (((((hw₁.of_wr U₂.wr).of_wr U₃.wr).of_wr U₄.wr).of_wr U₅.wr).of_wr U₆.wr).of_wr U₇.wr
+  refine wp_storeS (ea_ptr hw₇ p₇ (d := 0) (by omega_arith)) (ws_write hw₇ (y := o + 0) (n := 4) (by omega_arith))
+    fun t₈ M₈ => wp_mov fun t₉ U₉ => wp_subi fun u U₁₀ _ z => WP.block_nil ?_
+  -- The values.
+  obtain mt : t₇.mem = t.mem := by rw [U₇.mem, U₆.mem, U₅.mem, U₄.mem, U₃.mem, U₂.mem, U₁.mem]
+  obtain w : t₂.gpr .eax = t.mem.readW (off base o) 32 := by rw [U₂.gpr, U₁.mem, Nat.add_zero]
+  obtain wo : t.mem.readW (off base o) 32 = s.mem.readW (off base o) 32 :=
+    Mem.readW_congr fun x hx => H.out _ (by rw [ofs_off base (by omega_arith)]; omega_arith)
+  obtain carry : val32 s.mem base (o + 4) i % 2 ≤ 1 := by omega_arith
+  obtain e₇ : (t₇.gpr .eax).toNat = (s.mem.readW (off base o) 32).toNat / 2 +
+      val32 s.mem base (o + 4) i % 2 * 2 ^ 31 := by
+    rw [U₇.gpr, U₆.other _ (by decide), U₅.gpr, U₄.other _ (by decide), U₃.other _ (by decide), w, wo, U₆.gpr,
+      U₅.other _ (by decide), U₄.other _ (by decide), U₃.other _ (by decide), U₂.other _ (by decide),
+      U₁.other _ (by decide), H.ebx, eo, ror_carry carry, shr_or _ carry]
+  obtain e₉ : u.gpr .ebx = BitVec.ofNat 32 ((s.mem.readW (off base o) 32).toNat % 2) := by
+    rw [U₁₀.other _ (by decide), U₉.gpr, M₈.keeps [] |>.1 .edx (by simp), U₇.other _ (by decide),
+      U₆.other _ (by decide), U₅.other _ (by decide), U₄.gpr, U₃.gpr, w, wo]
+    apply BitVec.eq_of_toNat_eq
+    have h1 : (1 : BitVec 32).toNat = 1 := rfl
+    rw [BitVec.toNat_and, h1, Nat.and_one_is_mod, BitVec.toNat_ofNat,
+      Nat.mod_eq_of_lt (a := (s.mem.readW (off base o) 32).toNat % 2) (by omega_arith)]
+  obtain mu : u.mem = t.mem.writeW (off base o) (t₇.gpr .eax) := by
+    rw [U₁₀.mem, U₉.mem, M₈.mem, mt, Nat.add_zero]
+  obtain Ow : Outside base o 4 t.mem u.mem := by rw [mu]; exact writeW32_outside _ _ _ (by omega_arith)
+  have sp : i + 1 ≤ cwc len .wide := hi
+  refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_⟩, ?_⟩
+  · rw [U₁₀.gpr, U₉.other _ (by decide), M₈.keeps [] |>.1 .ecx (by simp), U₇.other _ (by decide),
+      U₆.other _ (by decide), U₅.other _ (by decide), U₄.other _ (by decide), U₃.other _ (by decide),
+      U₂.other _ (by decide), U₁.other _ (by decide), H.ecx]
+    rw [show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl, sub_ofNat (by omega_arith)]
+    congr 1; omega_arith
+  · rw [ho, PtrAt, U₁₀.other _ (by decide), U₉.other _ (by decide), M₈.keeps [] |>.1 .esi (by simp)]
+    exact p₇
+  · rw [ho, e₉, val32]
+    congr 1
+    simp only [w32]
+    omega_arith
+  · rw [ho, val32, val32, mu, w32_write_self, e₇]
+    obtain rest : val32 (t.mem.writeW (off base o) (t₇.gpr .eax)) base (o + 4) i = val32 t.mem base (o + 4) i :=
+      (writeW32_outside t.mem base _ (by omega_arith)).val32 (by omega_arith) (by omega_arith)
+    have top := H.top
+    rw [eo] at top
+    rw [rest, top]
+    simp only [w32]
+    omega_arith
+  · rw [ho]
+    intro x hx
+    by_cases hin : ofs base x < o ∨ o + 4 ≤ ofs base x
+    · rw [Ow x hin]
+      exact H.out x (by rw [eo]; omega_arith)
+    · omega_arith
+  · have K₉ : Keeps [.eax, .ebx, .ecx, .edx, .esi] t u :=
+      (U₁.keeps.mono (by decide)).trans ((U₂.keeps.mono (by decide)).trans ((U₃.keeps.mono (by decide)).trans
+        ((U₄.keeps.mono (by decide)).trans ((U₅.keeps.mono (by decide)).trans ((U₆.keeps.mono (by decide)).trans
+          ((U₇.keeps.mono (by decide)).trans ((M₈.keeps _).trans ((U₉.keeps.mono (by decide)).trans
+            (U₁₀.keeps.mono (by decide))))))))))
+    exact H.keeps.trans K₉
+  · show u.zf.map (!·) = _
+    rw [z, U₉.other _ (by decide), M₈.keeps [] |>.1 .ecx (by simp), U₇.other _ (by decide),
+      U₆.other _ (by decide), U₅.other _ (by decide), U₄.other _ (by decide), U₃.other _ (by decide),
+      U₂.other _ (by decide), U₁.other _ (by decide), H.ecx, show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl,
+      sub_beq (by omega_arith) (by decide)]
+    simp only [Option.map_some, Option.some.injEq]
+    by_cases e : i + 1 = cwc len .wide
+    · simp [e, show 4 * (cwc len .wide - i) = 4 by omega_arith]
+    · simp [e, show 4 * (cwc len .wide - i) ≠ 4 by omega_arith]
+
+/-- A wide slot halved in place. -/
+theorem halve_ok (h : In Ex base bytes len args s) {j : Nat} (hj : j ≤ 27) :
+    WP isa (halve (.slot .wide j)) s fun t => In Ex base bytes len args t ∧
+      Outside base (lo len (.slot .wide j)) (bc len .wide) s.mem t.mem ∧
+      sv t.mem base len .wide j = sv s.mem base len .wide j / 2 ∧
+      Keeps [.eax, .ebx, .ecx, .edx, .esi] s t := by
+  have bl := h.bytes_lt
+  obtain f := slot_fit1 h hj
+  rw [cb1] at f
+  obtain bw := bc_eq_cwc len .wide
+  obtain cp := cwc_pos h
+  unfold halve
+  rw [show ptrTo (.slot .wide j) .esi .edx ++ cntTo (one .wide) .ecx ++ [.alu .add .esi (.reg .ecx), .mov .ebx (.imm 0)] =
+    ptrTo (.slot .wide j) .esi .edx ++ (cntTo (one .wide) .ecx ++ [.alu .add .esi (.reg .ecx), .mov .ebx (.imm 0)])
+    from List.append_assoc _ _ _]
+  refine WP.seq (ptrTo_ok (r := .esi) (t := .edx) (by decide) (by decide) h.edi h.width h.upper' (by omega_arith)
+    fun u Ku mu pu => ?_)
+  obtain hu : In Ex base bytes len args u := h.regs (Ku.mono (by decide) : Keeps [.edx, .esi] s u) mu
+  refine cntTo_ok (n := one .wide) hu.width h.upper' (by decide) fun u₁ K₁ m₁ c₁ => ?_
+  refine wp_addS rfl fun u₂ U₂ _ => wp_movi fun u₃ U₃ => WP.block_nil ?_
+  obtain c₁' : u₁.gpr .ecx = BitVec.ofNat 32 (4 * cwc len .wide) := by rw [c₁, cb1, bw]
+  obtain H₀ : HalveAt h j (cwc len .wide) 0 u₃ := by
+    refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩
+    · rw [U₃.other _ (by decide), U₂.other _ (by decide), c₁', Nat.sub_zero]
+    · rw [PtrAt, U₃.other _ (by decide), U₂.gpr, ptr_add (by rw [PtrAt, K₁.1 _ (by decide)]; exact pu), c₁',
+        BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 4 * cwc len .wide) (by omega_arith), Nat.sub_zero]
+    · rw [U₃.gpr]; rfl
+    · simp only [val32]
+    · rw [U₃.mem, U₂.mem, m₁, mu]; exact Outside.refl _ _ _ _
+    · exact (Ku.mono (by decide)).trans ((K₁.mono (by decide)).trans ((U₂.keeps.mono (by decide)).trans
+        (U₃.keeps.mono (by decide))))
+  refine WP.loop (M := isa) (fun m t => ∃ i, m = cwc len .wide - i ∧ i < cwc len .wide ∧ HalveAt h j (cwc len .wide) i t)
+    ?_ (cwc len .wide) u₃ ⟨0, by omega_arith, cp, H₀⟩
+  rintro m t ⟨i, rfl, hi, H⟩
+  refine WP.mono (halveStep_ok h hj hi H) fun u ⟨Hu, ne⟩ => ?_
+  by_cases last : i + 1 = cwc len .wide
+  · refine .inl ⟨by rw [ne]; simp [last], ?_⟩
+    rw [last] at Hu
+    have O := Hu.out
+    have T := Hu.top
+    simp only [Nat.sub_self, Nat.mul_zero, Nat.add_zero] at O T
+    exact ⟨h.keep Hu.keeps (by decide) (by decide) (O.mono (Nat.zero_le _) (by omega_arith)), O.mono (Nat.le_refl _)
+      (by omega_arith), T, Hu.keeps⟩
+  · exact .inr ⟨by rw [ne]; simp [last], cwc len .wide - (i + 1), by omega_arith, i + 1, rfl, by omega_arith, Hu⟩
+
+end VG.Proof.Ffdh.X86.Cand
+
+end
+
+end
+
+/-!
+# The FFDH candidate on i686: a phase's preparation
+
+`prepPhase j`: the context of the modulus `w` in wide slot `j` (its
+Montgomery inverse and `R² mod w`), one in slot 14, `w − 1` in slot 15,
+and `w − 1 = 2^s d` with `d` odd: `d` in slot 11 and `s` in the header,
+by halving `w − 1` while it is even (`prepPhase_ok`, `splitTwos_of`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ffdh.X86.Cand
+
+open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Bignum.X86 VG.Impl.Bignum.X86.CrtRt VG.Proof.Mont
+open VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt VG.Proof.Bignum.X86 VG.Proof.Bignum.X86.CrtRt
+open VG.Proof.Ffdh.X86
+open VG.Impl.Ffdh.X86.Candidate
+
+variable {Ex : List Region → List Region → Prop} {s : State} {base : Addr} {bytes len : Nat}
+  {args : Nat → BitVec 32}
+
+/-- Halvings while even find the split of `m`. -/
+theorem splitTwos_of : ∀ (k m : Nat), 0 < m → (∀ i < k, (m / 2 ^ i) % 2 = 0) → (m / 2 ^ k) % 2 = 1 →
+    Spec.Rsa.splitTwos m = (k, m / 2 ^ k)
+  | 0, m, _, _, hodd => by
+    simp only [Nat.pow_zero, Nat.div_one] at hodd ⊢
+    exact VG.Proof.Rsa.splitTwos_odd hodd
+  | k + 1, m, hm, heven, hodd => by
+    obtain h0 := heven 0 (by omega_arith)
+    simp only [Nat.pow_zero, Nat.div_one] at h0
+    rw [VG.Proof.Rsa.splitTwos_even (by omega_arith) h0]
+    obtain ih := splitTwos_of k (m / 2) (by omega_arith) (fun i hi => by
+        rw [Nat.div_div_eq_div_mul, ← Nat.pow_succ']; exact heven (i + 1) (by omega_arith))
+      (by rw [Nat.div_div_eq_div_mul, ← Nat.pow_succ']; exact hodd)
+    rw [ih, Nat.div_div_eq_div_mul, ← Nat.pow_succ']
+
+/-- `o = a − b` for wide slots, with `b ≤ a`. -/
+theorem subW_ok (h : In Ex base bytes len args s) {o a b : Nat} (ho : o ≤ 19) (ha : a ≤ 19) (hb : b ≤ 19)
+    (hoa : o ≠ a) (hob : o ≠ b) (hle : sv s.mem base len .wide b ≤ sv s.mem base len .wide a) :
+    WP isa (chain .sbb (.slot .wide o) (.slot .wide a) (.slot .wide b) (one .wide)) s fun u =>
+      Step Ex base bytes len args s u ∧
+      sv u.mem base len .wide o = sv s.mem base len .wide a - sv s.mem base len .wide b ∧
+      Kept base len [o] [] s.mem u.mem ∧ Outside base (lo len (.slot .wide o)) (bc len .wide) s.mem u.mem ∧
+      Keeps [.eax, .ebx, .ecx, .edx, .ebp] s u := by
+  refine WP.mono (chainSub_ok h (one_ok .wide) (slot_fit1 h (by omega_arith)) (slot_fit1 h (by omega_arith))
+    (slot_fit1 h (by omega_arith)) (apart1 len hoa) (apart1 len hob)) fun u ⟨O, _, ⟨c, _, V⟩, K⟩ => ?_
+  rw [cb1] at O
+  rw [cw1] at V
+  refine ⟨Step.slot h (by omega_arith) O K, ?_, kept_slot h O, O, K⟩
+  change sv u.mem base len .wide o + sv s.mem base len .wide b = sv s.mem base len .wide a +
+    2 ^ (32 * cwc len .wide) * c.toNat at V
+  obtain lt := val32_lt u.mem base (lo len (.slot .wide o)) (cwc len .wide)
+  obtain lta := val32_lt s.mem base (lo len (.slot .wide a)) (cwc len .wide)
+  change sv u.mem base len .wide o < _ at lt
+  change sv s.mem base len .wide a < _ at lta
+  cases c <;> simp only [Bool.toNat_false, Bool.toNat_true, Nat.mul_zero, Nat.mul_one, Nat.add_zero] at V <;> omega_arith
+
+/-- The wide slot `a` copied into `b`, with the bytes it changes. -/
+theorem copyO_ok (h : In Ex base bytes len args s) {a b : Nat} (ha : a ≤ 19) (hb : b ≤ 19) (hab : a ≠ b) :
+    WP isa (copy (.slot .wide a) (.slot .wide b) (one .wide)) s fun u => Step Ex base bytes len args s u ∧
+      sv u.mem base len .wide b = sv s.mem base len .wide a ∧ Kept base len [b] [] s.mem u.mem ∧
+      Outside base (lo len (.slot .wide b)) (bc len .wide) s.mem u.mem ∧
+      Keeps [.eax, .ebx, .ecx, .edx, .ebp] s u := by
+  refine WP.mono (copy_ok h (x := .slot .wide a) (d := .slot .wide b) (one_ok .wide)
+    (slot_fit1 h (by omega_arith)) (slot_fit1 h (by omega_arith)) (apart1 len (Ne.symm hab))) fun u ⟨O, V, K⟩ => ?_
+  rw [cb1] at O
+  rw [cw1] at V
+  exact ⟨Step.slot h (by omega_arith) O K, V, kept_slot h O, O, K⟩
+
+/-- A modulus's context, ready for its powers: the context, one in slot 3 and `R² mod w` in slot 4. -/
+structure Ready (Ex : List Region → List Region → Prop) (base : Addr) (bytes len : Nat)
+    (args : Nat → BitVec 32) (w : Nat) (t : State) : Prop where
+  ctx : CtxOk Ex base bytes len args .wide w t
+  one : sv t.mem base len .wide 3 = 1
+  r2 : sv t.mem base len .wide 4 = 2 ^ (16 * bc len .wide) % w
+
+/-- A write into a wide slot from 5 to 27 keeps a context ready. -/
+theorem Ready.slot {w : Nat} (R : Ready Ex base bytes len args w s) {t : State} {a : Nat} (ha9 : 5 ≤ a)
+    (ha : a ≤ 27) {rs : List Reg} (K : Keeps rs s t) (di : .edi ∉ rs) (sp : .esp ∉ rs)
+    (O : Outside base (lo len (.slot .wide a)) (bc len .wide) s.mem t.mem) : Ready Ex base bytes len args w t := by
+  have h := R.ctx.inp
+  have bl := h.bytes_lt
+  obtain f := slot_fit1 h ha
+  rw [cb1] at f
+  obtain ea := lo_wide len a
+  have est : st len .wide = 2 * bc len .wide + 32 := rfl
+  have := Nat.mul_le_mul_right (st len .wide) ha9
+  refine ⟨R.ctx.keepF K di sp (ws := [(lo len (.slot .wide a), bc len .wide)])
+    (frameR_of_outside O (by omega_arith) (List.mem_singleton_self _)) (by simp; omega_arith) (by simp; omega_arith), ?_, ?_⟩
+  · rw [← R.one]; exact slotKeep h (by decide) (by omega_arith) O
+  · rw [← R.r2]; exact slotKeep h (by decide) (by omega_arith) O
+
+/-- A write into a header word keeps a context ready. -/
+theorem Ready.hdr {w : Nat} (R : Ready Ex base bytes len args w s) {t : State} {d : Nat} (hd : Hdr d)
+    {rs : List Reg} (K : Keeps rs s t) (di : .edi ∉ rs) (sp : .esp ∉ rs)
+    (O : Outside base d 4 s.mem t.mem) : Ready Ex base bytes len args w t := by
+  have h := R.ctx.inp
+  have bl := h.bytes_lt
+  obtain hf := hdr_fit h hd
+  have nb : numBase = 3336 := rfl
+  obtain e3 := lo_wide len 3
+  obtain e4 := lo_wide len 4
+  obtain f4 := slot_fit1 h (j := 4) (by decide)
+  rw [cb1] at f4
+  obtain bw := bc_eq_cwc len .wide
+  refine ⟨R.ctx.keepF2 K di sp (ws := [(d, 4)]) (frameR_of_outside O (by omega_arith) (List.mem_singleton_self _))
+    (by simp; omega_arith) (by simp; rcases hd.1 with e | e <;> omega_arith), ?_, ?_⟩
+  · rw [← R.one]; exact O.val32 (.inr (by omega)) (by omega)
+  · rw [← R.r2]; exact O.val32 (.inr (by omega)) (by omega_using [bl, f4, bw])
+
+theorem Ready.regs {w : Nat} (R : Ready Ex base bytes len args w s) {t : State} {rs : List Reg}
+    (K : Keeps rs s t) (di : .edi ∉ rs) (sp : .esp ∉ rs) (m : t.mem = s.mem) : Ready Ex base bytes len args w t :=
+  ⟨R.ctx.keepF K di sp (ws := []) (by rw [m]; exact Frame.refl _ _) (fun _ h => nomatch h) (fun _ h => nomatch h),
+    by rw [m]; exact R.one, by rw [m]; exact R.r2⟩
+
+/-- The context of the modulus in wide slot `j`, ready. -/
+theorem ready_ok (h : In Ex base bytes len args s) {j w : Nat} (hj9 : 9 ≤ j) (hj : j ≤ 19)
+    (hw : sv s.mem base len .wide j = w) (hw1 : 1 < w) (hodd : w % 2 = 1) :
+    WP isa (.seq (copy (.slot .wide j) (.slot .wide 0) (one .wide)) (prepare .wide)) s fun t =>
+      Step Ex base bytes len args s t ∧ Ready Ex base bytes len args w t ∧ Kept base len [] [] s.mem t.mem := by
+  have bl := h.bytes_lt
+  obtain f0 := h.slot_fit .wide (j := 0) (by decide)
+  have est : st len .wide = 2 * bc len .wide + 32 := rfl
+  refine WP.seq (WP.mono (copyIn_ok h (j := j) (d := 0) hj9 hj (by decide)) fun u₁ ⟨O₁, V₁, K₁⟩ => ?_)
+  obtain F₁ : Frame (frameR base (s.gpr .esp) (stR len 0)) s.mem u₁.mem :=
+    stR_of_outside h (by decide) O₁ ⟨_, by simp, slot_in h .wide (j := 0) (by decide)⟩
+  obtain S₁ : Step Ex base bytes len args s u₁ := Step.ops h F₁ K₁
+  refine WP.mono (prepCtx_ok S₁.inp .wide) fun u ⟨C, one, R2, F, K⟩ => ?_
+  rw [V₁, hw, safeM_of hw1 hodd] at C R2
+  obtain F₂ := stR_widen F (prepR_in S₁.inp .wide 0)
+  rw [S₁.esp] at F₂
+  exact ⟨S₁.trans (Step.ops S₁.inp (by rw [S₁.esp]; exact F₂) K), ⟨C, one, R2⟩,
+    (kept_ops h F₁ h.room).trans (kept_ops h F₂ h.room)⟩
+
+/-- What a phase's preparation leaves for the modulus `w`: its context ready, one in slot 14,
+`w − 1` in slot 15, and its split `w − 1 = 2^s d`: `d` in slot 11, `s` in the header. -/
+structure Prepped (Ex : List Region → List Region → Prop) (base : Addr) (bytes len : Nat)
+    (args : Nat → BitVec 32) (w : Nat) (t : State) : Prop extends Ready Ex base bytes len args w t where
+  one14 : sv t.mem base len .wide 14 = 1
+  m1 : sv t.mem base len .wide 15 = w - 1
+  exp : sv t.mem base len .wide 11 = (Spec.Rsa.splitTwos (w - 1)).2
+  two : w32 t.mem base twoOff = (Spec.Rsa.splitTwos (w - 1)).1
+
+/-- The halvings so far: slot 11 holds `(w − 1) / 2^k`, even and positive, and the header `k`. -/
+structure Halving (Ex : List Region → List Region → Prop) (base : Addr) (bytes len : Nat)
+    (args : Nat → BitVec 32) (s : State) (w k : Nat) (t : State) : Prop where
+  step : Step Ex base bytes len args s t
+  ready : Ready Ex base bytes len args w t
+  one14 : sv t.mem base len .wide 14 = 1
+  m1 : sv t.mem base len .wide 15 = w - 1
+  exp : sv t.mem base len .wide 11 = (w - 1) / 2 ^ k
+  two : w32 t.mem base twoOff = k
+  even : ∀ i < k, ((w - 1) / 2 ^ i) % 2 = 0
+  kept : Kept base len [11, 14, 15] [twoOff] s.mem t.mem
+
+theorem hdr_two : Hdr twoOff := ⟨.inr ⟨by decide, by decide⟩, by decide⟩
+
+/-- One halving of the split. -/
+theorem halveIter_ok {w k : Nat} {t : State} (H : Halving Ex base bytes len args s w k t)
+    (hx : ((w - 1) / 2 ^ k) % 2 = 0) (hp : 0 < (w - 1) / 2 ^ k) (hwl : w < 2 ^ (32 * cwc len .wide)) :
+    WP isa (.seq (halve (.slot .wide 11)) (.block (([.mov .eax (.mem (sc twoOff)), .alu .add .eax (.imm 1),
+      .store (sc twoOff) .eax] : List Instr) ++ lowWord (.slot .wide 11) ++ ([.alu .and .eax (.imm 1)] : List Instr)))) t fun u =>
+      Halving Ex base bytes len args s w (k + 1) u ∧
+        isa.eval .e u = some (decide (((w - 1) / 2 ^ (k + 1)) % 2 = 0)) := by
+  have ht := H.step.inp
+  have bl := ht.bytes_lt
+  have nb : numBase = 3336 := rfl
+  obtain kl : k + 1 < 2 ^ 32 := by
+    obtain p1 : 2 ^ k ≤ w - 1 := (Nat.div_pos_iff.mp hp).2
+    obtain p2 : 2 ^ k < 2 ^ (32 * cwc len .wide) := by omega_arith
+    obtain p3 := (Nat.pow_lt_pow_iff_right (by decide : 1 < 2)).mp p2
+    have := bc_le ht.upper' .wide
+    simp only [cwc] at p3
+    omega_arith
+  obtain half : (w - 1) / 2 ^ (k + 1) = (w - 1) / 2 ^ k / 2 := by
+    rw [Nat.pow_succ, Nat.div_div_eq_div_mul]
+  refine WP.seq (WP.mono (halve_ok ht (j := 11) (by decide)) fun u₁ ⟨h₁, O₁, V₁, K₁⟩ => ?_)
+  rw [H.exp] at V₁
+  obtain two₁ : w32 u₁.mem base twoOff = k := by
+    rw [← H.two]
+    have := lo_wide len 11
+    exact O₁.w32 (.inl (by simp only [twoOff]; omega_arith)) (by simp only [twoOff]; omega_arith)
+  simp only [List.cons_append, List.append_assoc]
+  refine wp_movS (hdr_read h₁ hdr_two) fun u₂ U₂ _ => wp_addi fun u₃ U₃ => ?_
+  refine hdr_store (h₁.regs ((U₂.keeps.trans U₃.keeps).mono (by decide) : Keeps [.eax] u₁ u₃)
+    (by rw [U₃.mem, U₂.mem])) hdr_two fun u₄ S₄ W₄ k₄ O₄ G₄ _ _ => ?_
+  refine lowWord_ok S₄.inp (j := 11) (by decide) fun u₅ m₅ K₅ e₅ => wp_andZ fun u U z => WP.block_nil ?_
+  obtain S₃ : Step Ex base bytes len args u₁ u₃ := Step.regs h₁ (by rw [U₃.mem, U₂.mem]) (U₂.keeps.trans U₃.keeps)
+  obtain S₅ : Step Ex base bytes len args u₄ u := Step.regs S₄.inp (by rw [U.mem, m₅]) (K₅.trans (U.keeps.mono (by decide)))
+  obtain S₁ : Step Ex base bytes len args t u₁ := Step.slot ht (by decide) O₁ K₁
+  obtain sv₄ : sv u₄.mem base len .wide 11 = (w - 1) / 2 ^ k / 2 := by
+    rw [k₄.slot_eq, U₃.mem, U₂.mem, V₁]
+  refine ⟨⟨H.step.trans (S₁.trans (S₃.trans (S₄.trans S₅))), ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_⟩
+  · have R₁ := H.ready.slot (a := 11) (by decide) (by decide) K₁ (by decide) (by decide) O₁
+    obtain R₃ := R₁.regs (U₂.keeps.trans U₃.keeps) (by decide) (by decide) (by rw [U₃.mem, U₂.mem])
+    exact (R₃.hdr hdr_two S₄.keeps (by decide) (by decide) O₄).regs (K₅.trans (U.keeps.mono (by decide))) (by decide) (by decide)
+      (by rw [U.mem, m₅])
+  · rw [U.mem, m₅, k₄.slot_eq, U₃.mem, U₂.mem, slotKeep ht (by decide) (by decide) O₁, H.one14]
+  · rw [U.mem, m₅, k₄.slot_eq, U₃.mem, U₂.mem, slotKeep ht (by decide) (by decide) O₁, H.m1]
+  · rw [U.mem, m₅, sv₄, half]
+  · rw [U.mem, m₅, W₄, U₃.gpr, U₂.gpr, two₁, BitVec.toNat_add, BitVec.toNat_ofNat,
+      show (1 : BitVec 32).toNat = 1 from rfl, Nat.mod_eq_of_lt (a := k) (by omega_arith), Nat.mod_eq_of_lt kl]
+  · intro i hi
+    rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | rfl
+    · exact H.even i hi
+    · exact hx
+  · have k₁ : Kept base len [11, 14, 15] [twoOff] t.mem u₁.mem := (kept_slot ht (a := 11) O₁).mono
+    obtain k₃ : Kept base len [11, 14, 15] [twoOff] u₁.mem u₃.mem := by
+      rw [U₃.mem, U₂.mem]; exact Kept.refl _ |>.mono
+    obtain k₅ : Kept base len [11, 14, 15] [twoOff] u₄.mem u.mem := by
+      rw [U.mem, m₅]; exact Kept.refl _ |>.mono
+    exact H.kept.trans (k₁.trans (k₃.trans (k₄.mono.trans k₅)))
+  · show u.zf = _
+    rw [z, e₅, sv₄, and_one_zero _ (by omega_arith), half, Nat.mod_mod_of_dvd _ (by decide : 2 ∣ 2 ^ 32)]
+
+
+/-- The context of `w`, one, `w − 1` and its copy, and the count of halvings zero. -/
+theorem prepHead_ok (h : In Ex base bytes len args s) {j w : Nat} (hj9 : 9 ≤ j) (hj : j ≤ 10)
+    (hw : sv s.mem base len .wide j = w) (hw3 : 3 ≤ w) (hodd : w % 2 = 1) :
+    WP isa (prepHead j) s (Halving Ex base bytes len args s w 0) := by
+  have bl := h.bytes_lt
+  obtain bw := bc_eq_cwc len .wide
+  unfold prepHead
+  refine WP.assoc (WP.seq (WP.mono (ready_ok h hj9 (by omega_arith) hw (by omega_arith) hodd) fun u₁ ⟨S₁, R₁, k₁⟩ => ?_))
+  have h₁ := S₁.inp
+  refine WP.seq (WP.mono (setW_ok h₁ (a := 14) (v := 1) (by decide) (by decide)) fun u₂ ⟨O₂, V₂, K₂⟩ => ?_)
+  obtain S₂ : Step Ex base bytes len args s u₂ := S₁.trans (Step.slot h₁ (by decide) O₂ K₂)
+  obtain R₂ := R₁.slot (a := 14) (by decide) (by decide) K₂ (by decide) (by decide) O₂
+  obtain k₂ : Kept base len [11, 14, 15] [twoOff] s.mem u₂.mem := k₁.mono.trans (kept_slot h₁ (a := 14) O₂).mono
+  obtain wj₂ : sv u₂.mem base len .wide j = w := by
+    rw [slotKeep h₁ (by omega_arith) (by omega_arith) O₂, k₁.slot_eq ⟨hj9, by omega_arith, by simp⟩, hw]
+  refine WP.seq (WP.mono (subW_ok S₂.inp (o := 15) (a := j) (b := 14) (by decide) (by omega_arith) (by decide) (by omega_arith)
+    (by decide) (by rw [V₂, wj₂]; omega_arith)) fun u₃ ⟨S₃, V₃, k₃, O₃, K₃⟩ => ?_)
+  rw [V₂, wj₂] at V₃
+  obtain R₃ := R₂.slot (a := 15) (by decide) (by decide) K₃ (by decide) (by decide) O₃
+  refine WP.seq (WP.mono (copyO_ok S₃.inp (a := 15) (b := 11) (by decide) (by decide) (by decide))
+    fun u₄ ⟨S₄, V₄, k₄, O₄, K₄⟩ => ?_)
+  obtain R₄ := R₃.slot (a := 11) (by decide) (by decide) K₄ (by decide) (by decide) O₄
+  refine wp_movi fun u₅ U₅ => hdr_store (S₄.inp.regs U₅.keeps U₅.mem) hdr_two fun u₆ S₆ W₆ k₆ O₆ G₆ _ _ =>
+    WP.block_nil ?_
+  obtain S₅ : Step Ex base bytes len args u₄ u₅ := Step.regs S₄.inp U₅.mem U₅.keeps
+  refine ⟨S₂.trans (S₃.trans (S₄.trans (S₅.trans S₆))), ((R₄.regs U₅.keeps (by decide) (by decide) U₅.mem).hdr hdr_two
+    S₆.keeps (by decide) (by decide) O₆), ?_, ?_, ?_, ?_, fun i hi => absurd hi (by omega_arith), ?_⟩
+  · rw [k₆.slot_eq, U₅.mem, k₄.slot_eq, k₃.slot_eq, V₂]
+  · rw [k₆.slot_eq, U₅.mem, k₄.slot_eq, V₃]
+  · rw [k₆.slot_eq, U₅.mem, V₄, V₃, Nat.pow_zero, Nat.div_one]
+  · rw [W₆, U₅.gpr]; rfl
+  · exact k₂.trans (k₃.mono.trans (k₄.mono.trans ((by rw [U₅.mem]; exact Kept.refl _ : Kept base len [] [] u₄.mem u₅.mem).mono.trans
+      k₆.mono)))
+
+/-- The halving loop's invariant: `k` halvings done, `(w − 1) / 2^k` still even. -/
+abbrev Halved (Ex : List Region → List Region → Prop) (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32)
+    (s : State) (w x : Nat) (t : State) : Prop :=
+  ∃ k, x = (w - 1) / 2 ^ k ∧ x % 2 = 0 ∧ 0 < x ∧ Halving Ex base bytes len args s w k t
+
+/-- A halving, and whether to halve again. -/
+theorem halveRound_ok {w x : Nat} {t : State} (hw3 : 3 ≤ w) (hodd : w % 2 = 1) (hwl : w < 2 ^ (32 * cwc len .wide))
+    (H : Halved Ex base bytes len args s w x t) :
+    WP isa (.seq (halve (.slot .wide 11)) (.block (([.mov .eax (.mem (sc twoOff)), .alu .add .eax (.imm 1),
+      .store (sc twoOff) .eax] : List Instr) ++ lowWord (.slot .wide 11) ++ ([.alu .and .eax (.imm 1)] : List Instr)))) t fun u =>
+      (isa.eval .e u = some false ∧ Step Ex base bytes len args s u ∧ Prepped Ex base bytes len args w u ∧
+        Kept base len [11, 14, 15] [twoOff] s.mem u.mem) ∨
+      (isa.eval .e u = some true ∧ ∃ x' < x, Halved Ex base bytes len args s w x' u) := by
+  obtain ⟨k, rfl, hx, hp, H⟩ := H
+  refine WP.mono (halveIter_ok H hx hp hwl) fun u ⟨Hu, z⟩ => ?_
+  obtain half : (w - 1) / 2 ^ (k + 1) = (w - 1) / 2 ^ k / 2 := by rw [Nat.pow_succ, Nat.div_div_eq_div_mul]
+  by_cases ev : ((w - 1) / 2 ^ (k + 1)) % 2 = 0
+  · refine .inr ⟨by rw [z]; simp [ev], (w - 1) / 2 ^ (k + 1), by omega_arith, k + 1, rfl, ev, by omega_arith, Hu⟩
+  · have od : ((w - 1) / 2 ^ (k + 1)) % 2 = 1 := by omega_arith
+    obtain sp := splitTwos_of (k + 1) (w - 1) (by omega_arith) Hu.even od
+    refine .inl ⟨by rw [z]; simp [ev], Hu.step, ⟨Hu.ready, Hu.one14, Hu.m1, by rw [Hu.exp, sp], by rw [Hu.two, sp]⟩,
+      Hu.kept⟩
+
+/-- The context of the modulus `w` in wide slot `j`, and the split `w − 1 = 2^s d`. -/
+theorem prepPhase_ok (h : In Ex base bytes len args s) {j w : Nat} (hj9 : 9 ≤ j) (hj : j ≤ 10)
+    (hw : sv s.mem base len .wide j = w) (hw3 : 3 ≤ w) (hodd : w % 2 = 1) :
+    WP isa (prepPhase j) s fun t => Step Ex base bytes len args s t ∧ Prepped Ex base bytes len args w t ∧
+      Kept base len [11, 14, 15] [twoOff] s.mem t.mem := by
+  obtain hwl : w < 2 ^ (32 * cwc len .wide) := by rw [← hw]; exact val32_lt _ _ _ _
+  unfold prepPhase
+  refine WP.seq (WP.mono (prepHead_ok h hj9 hj hw hw3 hodd) fun u₆ H₀ => ?_)
+  refine WP.loop (M := isa) (Halved Ex base bytes len args s w) ?_ (w - 1) u₆ ⟨0, by simp, by omega_arith, by omega_arith, H₀⟩
+  intro x t H
+  refine WP.mono (halveRound_ok hw3 hodd hwl H) fun u o => ?_
+  rcases o with ⟨e, r⟩ | ⟨e, r⟩
+  · exact .inl ⟨e, r⟩
+  · exact .inr ⟨e, r⟩
+
+end VG.Proof.Ffdh.X86.Cand
+
+end
+
+end
 
 /-!
 # The FFDH candidate on i686: a Miller–Rabin round

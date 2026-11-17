@@ -1,20 +1,116 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowLane
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCheckModel
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFinalCheck
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseVec
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
 import Batteries.Data.List.Lemmas
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Taint
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFinalAdvance
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Basic
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCallFrame
 import VerifiedGarbage.Proof.MlKem.Arith
 import Mathlib.Tactic.FinCases
 public import Mathlib.Tactic.SetNotationForOrder
 import Mathlib.Data.Fintype.Fin
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFrame
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
+
+/-! ### `MlDsa.AArch64.Optimized.PairedCallFrame`, which this module and modules that import it used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.AArch64.Optimized.Paired
+open VG VG.AArch64
+open VG.Proof.MlKem.AArch64 (Keep)
+
+structure CallFrame (gr : List Reg) (vr : List VReg) (s t : State) : Prop where
+  gpr : ∀r,r∉gr → t.gpr r=s.gpr r
+  rd : t.rd=s.rd
+  wr : t.wr=s.wr
+  sp : t.sp=s.sp
+  vec : ∀r,r∉vr → t.v r=s.v r
+
+theorem CallFrame.ofStep {vr : List VReg} {s t : State} (h : StepFrame vr s t) : CallFrame [] vr s t :=
+  ⟨fun _ _ => congrFun h.gpr _,h.rd,h.wr,h.sp,h.vec⟩
+theorem CallFrame.ofKeep {gr : List Reg} {s t : State} (h : Keep gr s t) (hv : t.v=s.v) : CallFrame gr [] s t :=
+  ⟨fun r hr => h.get r hr,h.rd,h.wr,h.sp,fun _ _ => congrFun hv _⟩
+theorem CallFrame.trans {gr gs : List Reg} {vr vs : List VReg} {s t u : State}
+    (h : CallFrame gr vr s t) (h' : CallFrame gs vs t u) : CallFrame (gr++gs) (vr++vs) s u := by
+  refine ⟨?_,h'.rd.trans h.rd,h'.wr.trans h.wr,h'.sp.trans h.sp,?_⟩
+  · intro r hr
+    rw [h'.gpr r (fun hm => hr (List.mem_append_right _ hm)),h.gpr r (fun hm => hr (List.mem_append_left _ hm))]
+  · intro r hr
+    rw [h'.vec r (fun hm => hr (List.mem_append_right _ hm)),h.vec r (fun hm => hr (List.mem_append_left _ hm))]
+theorem CallFrame.mono {gr gs : List Reg} {vr vs : List VReg} {s t : State}
+    (h : CallFrame gr vr s t) (hg : gr⊆gs) (hv : vr⊆vs) : CallFrame gs vs s t :=
+  ⟨fun r hr => h.gpr r (fun hm => hr (hg hm)),h.rd,h.wr,h.sp,
+    fun r hr => h.vec r (fun hm => hr (hv hm))⟩
+
+end VG.Proof.MlDsa.AArch64.Optimized.Paired
+
+end
+
+end
+
+/-! ### `MlDsa.AArch64.Optimized.PairedFinalAdvance`, which this module and modules that import it used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.AArch64.Optimized.Paired
+open VG VG.AArch64
+open VG.Proof.MlKem.AArch64 (Keep)
+
+def finalAdvance : List Instr :=
+  [.addImm .x .x2 .x2 16,.addImm .x .x15 .x15 16,.addImm .x .x16 .x16 16,.subImm .x .x12 .x12 1]
+
+theorem finalAdvance_ok (s : State) : WP isa (.block finalAdvance) s fun t =>
+    ((t.gpr .x2=s.gpr .x2+16 ∧ t.gpr .x15=s.gpr .x15+16 ∧
+      t.gpr .x16=s.gpr .x16+16 ∧ t.gpr .x12=s.gpr .x12-1 ∧ t.mem=s.mem) ∧
+      Keep [.x2,.x12,.x15,.x16] s t) ∧ t.v=s.v := by
+  apply VG.Proof.MlKem.AArch64.WP.keepV (by rfl)
+  refine VG.Proof.MlDsa.AArch64.Arith.WP.keep _ ?_ (by rfl) (hv:=rfl)
+  unfold finalAdvance
+  arun
+  exact ⟨rfl,rfl,rfl,rfl⟩
+
+theorem final_z_eq (g : Nat) : VG.Impl.MlDsa.AArch64.Optimized.Paired.final .z g=
+    finalCheckCode false++finalAdvance := by
+  unfold VG.Impl.MlDsa.AArch64.Optimized.Paired.final finalCheckCode
+  rw [finalPrefix_eq]
+  have he : ([0,1].flatMap fun p => (List.range 8).flatMap fun j =>
+      VG.Impl.MlDsa.AArch64.Optimized.Paired.check .z g p j)=checkRunCode false allChecks := by
+    simp only [zCheck_eq]
+    rfl
+  rw [he]
+  simp only [List.append_assoc]
+  rfl
+
+theorem final_h_eq (g : Nat) : VG.Impl.MlDsa.AArch64.Optimized.Paired.final .h g=
+    finalCheckCode true++finalAdvance := by
+  unfold VG.Impl.MlDsa.AArch64.Optimized.Paired.final finalCheckCode
+  rw [finalPrefix_eq]
+  have he : ([0,1].flatMap fun p => (List.range 8).flatMap fun j =>
+      VG.Impl.MlDsa.AArch64.Optimized.Paired.check .h g p j)=checkRunCode true allChecks := by
+    simp only [hCheck_eq]
+    decide +kernel
+  rw [he]
+  simp only [List.append_assoc]
+  rfl
+
+end VG.Proof.MlDsa.AArch64.Optimized.Paired
+
+end
+
+end
 
 /-! ### `MlDsa.AArch64.Optimized.PairedLowPair`, which only this module used -/
 

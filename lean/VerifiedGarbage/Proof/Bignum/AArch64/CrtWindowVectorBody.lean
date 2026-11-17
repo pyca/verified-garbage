@@ -7,7 +7,6 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorLoop
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorSetup
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcGuard
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorCopy
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcMont
 
 /-! ### `Bignum.AArch64.CrtWindowVectorFinish`, which only this module used -/

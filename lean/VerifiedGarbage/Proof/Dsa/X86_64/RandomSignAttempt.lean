@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCallResult
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignSingle
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignSample
 import VerifiedGarbage.Proof.Framework.Omega

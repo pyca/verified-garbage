@@ -12,10 +12,9 @@ import VerifiedGarbage.Proof.Framework.RISCV64.Bytes
 public import VerifiedGarbage.Proof.Framework.RISCV64.ByteLoad
 import VerifiedGarbage.Proof.Framework.RISCV64.Words64
 public import VerifiedGarbage.Proof.Framework.WriteBytes
-public import VerifiedGarbage.Proof.Aes.RISCV64.Keys
+public import VerifiedGarbage.Proof.Aes.RISCV64.Common
 import VerifiedGarbage.Proof.Framework.RISCV64.Align
 public import VerifiedGarbage.Impl.Aes.RISCV64.Ctr32
-public import VerifiedGarbage.Proof.Aes.RISCV64.Encrypt
 public import VerifiedGarbage.Proof.Framework.RISCV64.Spill
 import VerifiedGarbage.Proof.Aes.RISCV64.Ecb
 public import VerifiedGarbage.TCB.RISCV64.Target

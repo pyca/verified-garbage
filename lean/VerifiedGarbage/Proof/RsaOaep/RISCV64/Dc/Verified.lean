@@ -8,11 +8,7 @@ public import VerifiedGarbage.Proof.Mgf1.Basic
 import VerifiedGarbage.Proof.RsaOaep.RISCV64.Dc.CTLabel
 import VerifiedGarbage.Proof.RsaOaep.RISCV64.Dc.CTPriv
 import VerifiedGarbage.Proof.RsaOaep.RISCV64.Dc.CTBlocks
-import VerifiedGarbage.Proof.RsaOaep.RISCV64.Dc.Label
-import VerifiedGarbage.Proof.RsaOaep.RISCV64.Dc.Scan
 import VerifiedGarbage.Proof.RsaOaep.RISCV64.Dc.Buf
-import VerifiedGarbage.Proof.RsaOaep.RISCV64.Dc.Shift
-import VerifiedGarbage.Proof.RsaOaep.RISCV64.Dc.Out
 import VerifiedGarbage.Proof.RsaOaep.RISCV64.Dc.Unmask
 import VerifiedGarbage.Proof.RsaOaep.RISCV64.CTBlocks
 import VerifiedGarbage.Proof.RsaOaep.RISCV64.Main
@@ -25,7 +21,7 @@ public import VerifiedGarbage.Proof.RsaOaep.RISCV64.ByLen
 # RSAES-OAEP decryption on RISC-V: `Verified`
 
 Untrusted: everything here is checked by Lean. As on PPC64LE
-(`Proof/RsaOaep/PPC64LE/Dc/CTMain.lean`, `Dc/Verified.lean`): constant time
+(`Proof/RsaOaep/PPC64LE/Dc/Verified.lean`, `Dc/Verified.lean`): constant time
 (`code_constantTime`, from `code_ct`, for the tables of the first run,
 which the public data makes the second's); a state meeting the
 precondition, with both tables that of any `w` of `vs`, at `0x300000`

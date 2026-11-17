@@ -1,6 +1,6 @@
 module
--- separate module: the ABI, the failure path and the timing base build in parallel with the stages' proofs, which `Timing` also waits for
 
+-- separate module: the ABI, the failure path and the timing base build in parallel with the stages' proofs, which `Timing` also waits for
 public import VerifiedGarbage.Proof.Bignum.X86.PublicArgumentTiming
 public import VerifiedGarbage.Proof.Rsa.X86.Rd.Inputs
 public import VerifiedGarbage.Proof.Weierstrass.PointContract
@@ -45,7 +45,7 @@ public import VerifiedGarbage.Impl.Rsa.X86.RecoverDetRt
 import VerifiedGarbage.Proof.Bignum.X86.ModulusCheck
 import VerifiedGarbage.Proof.Bignum.X86.PublicArgs
 public import VerifiedGarbage.Impl.Bignum.X86.ModulusCheck
-import VerifiedGarbage.Proof.Rsa.MontMulContract
+import VerifiedGarbage.Proof.Mont.X86.ArgWs
 import VerifiedGarbage.Proof.Mont.X86.Sse2.AtVerified
 public import VerifiedGarbage.Proof.Rsa.X86.Rd.Taint
 public import VerifiedGarbage.Proof.Framework.RelCT

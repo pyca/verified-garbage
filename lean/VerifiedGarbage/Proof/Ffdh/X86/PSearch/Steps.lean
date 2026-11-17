@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Data
 import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Zero
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.Ffdh.X86.KeySearch
@@ -11,6 +10,343 @@ import VerifiedGarbage.Proof.Mont.X86.Instr
 public import VerifiedGarbage.Impl.Ffdh.X86.ParamSearch
 import VerifiedGarbage.Proof.Framework.X86.Syms
 public import VerifiedGarbage.Proof.Mont.X86.Words
+public import VerifiedGarbage.Proof.EntropyRequest
+public import VerifiedGarbage.Spec.Ffdh.SievedGeneration
+import VerifiedGarbage.Proof.Ffdh.SievedBounds
+import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Stream
+import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Spec.Ffdh.SievedContract
+public import VerifiedGarbage.Proof.Dsa.X86.VerifyingABI
+public import VerifiedGarbage.Impl.RsaKeyGen.TrialTable32
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateABI
+
+/-! ### `Ffdh.X86.PSearch.Data`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Ffdh.X86.PSearch.ABI`, which this module and modules that import it used -/
+
+section
+
+/-! # The parameter search on i686: what its cdecl contract supplies
+
+`vg_ffdh_generate_parameters(out, out_len, used, bits, generator, rand, rand_len, scratch,
+scratch_len, state)`: ten arguments on the stack, and RSA's table of primes as a constant. The
+controller uses 212 bytes of stack: its attempt's frame of 36, the call's return address and the
+candidate's own 172.
+-/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.X86.PSearch
+open VG VG.X86
+open VG.Proof.Dsa.X86 (argumentPointer)
+
+/-- The bytes of stack the controller uses. -/
+abbrev stack : Nat := 212
+
+/-- The contract, with RSA's table of primes as the constants. -/
+abbrev contract : Contract isa :=
+  Spec.Ffdh.sievedParameterSearchContract (abi.withConsts VG.Impl.RsaKeyGen.TrialTable32.consts) stack
+
+/-- The arguments' regions: `out`, `used`, `rand`, `scratch` and `state`. -/
+abbrev oR (s : State) : Region := ⟨argumentPointer s 0, (arg s 1).toNat⟩
+abbrev uR (s : State) : Region := ⟨argumentPointer s 2, 8⟩
+abbrev rR (s : State) : Region := ⟨argumentPointer s 5, (arg s 6).toNat⟩
+abbrev bR (s : State) : Region := ⟨argumentPointer s 7, (arg s 8).toNat * 8⟩
+abbrev sR (s : State) : Region := ⟨argumentPointer s 9, 128⟩
+/-- The arguments themselves. -/
+abbrev aR (s : State) : Region := ⟨argAddr s 0, 40⟩
+/-- The return address and the stack below it. -/
+abbrev retR (s : State) : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
+abbrev lowR (s : State) : Region := ⟨(s.gpr .esp).setWidth 64 - 212#64, 212⟩
+/-- RSA's table. -/
+abbrev tR (s : State) : Region := ⟨(s.syms VG.Impl.RsaKeyGen.TrialTable32.symbol).setWidth 64, 8192⟩
+
+structure PSearchABI (s : State) : Prop where
+  stackLow : stack ≤ (s.gpr .esp).toNat
+  stackBound : (s.gpr .esp).toNat + 4 + 40 ≤ 2 ^ 32
+  rdTable : s.rd.drop (s.rd.length - 1) = Abi.constRegions (fun name => (s.syms name).setWidth 64)
+    [(VG.Impl.RsaKeyGen.TrialTable32.symbol, VG.Impl.RsaKeyGen.TrialTable32.packed)]
+  held : Abi.constsHeld s.mem (fun name => (s.syms name).setWidth 64)
+    [(VG.Impl.RsaKeyGen.TrialTable32.symbol, VG.Impl.RsaKeyGen.TrialTable32.packed)]
+  tableFar : ∀ t ∈ Abi.constRegions (fun name => (s.syms name).setWidth 64)
+      [(VG.Impl.RsaKeyGen.TrialTable32.symbol, VG.Impl.RsaKeyGen.TrialTable32.packed)],
+    t.base.toNat + t.len ≤ 2 ^ 32 ∧ (∀ r ∈ s.wr, t.Disjoint r) ∧ t.Disjoint (retR s) ∧ t.Disjoint (lowR s)
+  tableAligned : ∀ t ∈ Abi.constRegions (fun name => (s.syms name).setWidth 64)
+      [(VG.Impl.RsaKeyGen.TrialTable32.symbol, VG.Impl.RsaKeyGen.TrialTable32.packed)], t.base.toNat % 64 = 0
+  rdPrefix : s.rd.take (s.rd.length - 1) = [rR s]
+  wr : s.wr = [oR s, uR s, bR s, sR s, aR s]
+  ou : (oR s).Disjoint (uR s)
+  or_ : (oR s).Disjoint (rR s)
+  ob : (oR s).Disjoint (bR s)
+  os : (oR s).Disjoint (sR s)
+  oa : (oR s).Disjoint (aR s)
+  ur : (uR s).Disjoint (rR s)
+  ub : (uR s).Disjoint (bR s)
+  us : (uR s).Disjoint (sR s)
+  ua : (uR s).Disjoint (aR s)
+  rb : (rR s).Disjoint (bR s)
+  rs : (rR s).Disjoint (sR s)
+  ra : (rR s).Disjoint (aR s)
+  bs : (bR s).Disjoint (sR s)
+  ba : (bR s).Disjoint (aR s)
+  sa : (sR s).Disjoint (aR s)
+  retO : (retR s).Disjoint (oR s)
+  retU : (retR s).Disjoint (uR s)
+  retRand : (retR s).Disjoint (rR s)
+  retB : (retR s).Disjoint (bR s)
+  retS : (retR s).Disjoint (sR s)
+  retA : (retR s).Disjoint (aR s)
+  lowO : (lowR s).Disjoint (oR s)
+  lowU : (lowR s).Disjoint (uR s)
+  lowRand : (lowR s).Disjoint (rR s)
+  lowB : (lowR s).Disjoint (bR s)
+  lowS : (lowR s).Disjoint (sR s)
+  lowA : (lowR s).Disjoint (aR s)
+  oBound : (arg s 0).toNat + (arg s 1).toNat ≤ 2 ^ 32
+  uBound : (arg s 2).toNat + 8 ≤ 2 ^ 32
+  rBound : (arg s 5).toNat + (arg s 6).toNat ≤ 2 ^ 32
+  bBound : (arg s 7).toNat + (arg s 8).toNat * 8 ≤ 2 ^ 32
+  sBound : (arg s 9).toNat + 128 ≤ 2 ^ 32
+  bitsLow : 512 ≤ (arg s 3).toNat
+  bitsHigh : (arg s 3).toNat ≤ 8192
+  outLen : (arg s 1).toNat = ((arg s 3).toNat + 7) / 8
+  gen : (arg s 4).toNat = 2 ∨ (arg s 4).toNat = 5
+  scratchLength : Spec.Rsa.scratchWords (arg s 1).toNat ≤ (arg s 8).toNat
+  attempts : (s.mem.readW (argumentPointer s 9) 64).toNat ≤ Spec.Ffdh.parameterAttempts (arg s 3).toNat
+  width : s.mem.readW (argumentPointer s 9 + 8) 64 = BitVec.ofNat 64 (arg s 1).toNat
+  cap : s.mem.readW (argumentPointer s 9 + 16) 64 = BitVec.ofNat 64 (Spec.Ffdh.parameterEntropy (arg s 3).toNat)
+  randLen : (arg s 6).toNat ≤ Spec.Ffdh.parameterEntropy (arg s 3).toNat
+
+theorem pSearchABI_of {s : State} (h : contract.pre s) : PSearchABI s := by
+  sig_pre [contract, Spec.Ffdh.sievedParameterSearchContract, Spec.Ffdh.parameterSearchSig, abi, argSlots, argVal,
+    argBytes, Abi.withConsts, VG.Impl.RsaKeyGen.TrialTable32.consts, VG.Proof.RsaKeyGen.X86.Candidate.packed_length,
+    stackBelow] at h
+  sig_split h
+  constructor <;> with_reducible assumption
+
+end VG.Proof.Ffdh.X86.PSearch
+
+end
+
+end
+
+/-! ### `Ffdh.X86.PSearch.Tail`, which only this module used -/
+
+section
+
+/-! # The sieved parameter search from an offset into the tape
+
+`ptail` is the search from octet `used` of the tape with `n` attempts left,
+counting the octets consumed from the tape's start, as the controller's loop
+tracks it; each of its cases after a candidate (`ptail_short`,
+`ptail_accept`, `ptail_reject`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ffdh.X86.PSearch
+
+open VG VG.Spec.Ffdh
+open VG.Spec.RsaKeyGen (Rand)
+
+/-- The search from octet `used` of `rand`, with `n` attempts left. -/
+def ptail (bits gen : Nat) (rand : Rand) (used n : Nat) : ParameterSearchResult :=
+  (sievedParameterSearch bits gen n (rand.drop used)).consume used
+
+/-- The candidate at octet `used`. -/
+abbrev candAt (bits gen : Nat) (rand : Rand) (used : Nat) : Option (Option Nat × Rand) :=
+  sievedParameterCandidate bits gen (rand.drop used)
+
+/-- The octets the candidate at `used` consumes: none on a shortage. -/
+def candUsed (bits gen : Nat) (rand : Rand) (used : Nat) : Nat :=
+  match candAt bits gen rand used with
+  | some (_, rest) => (rand.length - used) - rest.length
+  | none => 0
+
+theorem ptail_zero (bits gen : Nat) (rand : Rand) (used : Nat) : ptail bits gen rand used 0 = .exhausted used := by
+  simp only [ptail, sievedParameterSearch, ParameterSearchResult.consume, Nat.add_zero]
+
+theorem candUsed_le (bits gen : Nat) (rand : Rand) (used : Nat) : candUsed bits gen rand used ≤ rand.length - used := by
+  unfold candUsed
+  split <;> omega_using []
+
+theorem cand_short {bits gen : Nat} {rand : Rand} {used : Nat} (h : rand.length - used < (bits + 7) / 8) :
+    candAt bits gen rand used = none := by
+  unfold candAt sievedParameterCandidate
+  rw [ParameterCandidate.draw_of_short (by rw [List.length_drop]; exact h)]
+  rfl
+
+theorem ptail_short {bits gen : Nat} {rand : Rand} {used n : Nat} (hn : n ≠ 0) (h : candAt bits gen rand used = none) :
+    ptail bits gen rand used n = if parameterEntropy bits ≤ rand.length - used then .exhausted used
+      else .entropy n (rand.length - used) used := by
+  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega_using [hn]⟩
+  unfold ptail
+  rw [sievedParameterSearch, show sievedParameterCandidate bits gen (rand.drop used) = none from h]
+  simp only [List.length_drop]
+  split <;> simp only [ParameterSearchResult.consume, Nat.add_zero]
+
+theorem ptail_accept {bits gen : Nat} {rand : Rand} {used n p : Nat} {rest : Rand} (hn : n ≠ 0)
+    (h : candAt bits gen rand used = some (some p, rest)) :
+    ptail bits gen rand used n = .accepted p (used + candUsed bits gen rand used) := by
+  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega_using [hn]⟩
+  unfold ptail candUsed
+  rw [sievedParameterSearch, show sievedParameterCandidate bits gen (rand.drop used) = some (some p, rest) from h]
+  simp only [List.length_drop, ParameterSearchResult.consume, h]
+
+theorem ptail_reject {bits gen : Nat} {rand : Rand} {used n : Nat} {rest : Rand} (hn : n ≠ 0)
+    (h : candAt bits gen rand used = some (none, rest)) :
+    ptail bits gen rand used n = ptail bits gen rand (used + candUsed bits gen rand used) (n - 1) := by
+  have step := SievedGeneration.search_reject (by omega_using [hn] : 0 < n) h
+  simpa only [ptail, candUsed, h, List.length_drop] using step
+
+end VG.Proof.Ffdh.X86.PSearch
+
+end
+
+end
+
+
+/-! # The parameter search's public data and loop states (x86)
+
+`PPub` is everything two constant-time runs share: the arguments, the tape,
+the attempts at entry and the table's address, all public in this
+contract. A loop state
+(`Live`) is at an offset into the tape with attempts left; the search from
+there (`PPub.tail`) is what the controller returns. Every state of the run
+differs from the entry's memory only in the writable arguments and the stack
+below the entry's (`Frame (frameR o)`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ffdh.X86.PSearch
+
+open VG VG.X86 VG.Spec.Ffdh
+open VG.Proof.Ffdh.X86.KeySearch (Ctl)
+open VG.Proof.Dsa.X86 (argumentPointer)
+
+structure PPub where
+  sp : BitVec 32
+  S : BitVec 32
+  op : BitVec 32
+  up : BitVec 32
+  rp : BitVec 32
+  B : BitVec 32
+  len : Nat
+  bits : Nat
+  gen : Nat
+  randLen : Nat
+  slen : Nat
+  attempts : Nat
+  rand : List Byte
+  T : BitVec 32
+
+def ofState (s : State) : PPub where
+  sp := s.gpr .esp
+  S := arg s 9
+  op := arg s 0
+  up := arg s 2
+  rp := arg s 5
+  B := arg s 7
+  len := (arg s 1).toNat
+  bits := (arg s 3).toNat
+  gen := (arg s 4).toNat
+  randLen := (arg s 6).toNat
+  slen := (arg s 8).toNat
+  attempts := (s.mem.readW (argumentPointer s 9) 64).toNat
+  rand := Spec.Rsa.bytesAt s.mem (argumentPointer s 5) (arg s 6).toNat
+  T := s.syms VG.Impl.RsaKeyGen.TrialTable32.symbol
+
+def Input (p : PPub) (o : State) : Prop := PSearchABI o ∧ ofState o = p
+
+/-- The search from octet `used` of the tape, with `n` attempts left. -/
+abbrev PPub.tail (p : PPub) (used n : Nat) : ParameterSearchResult := ptail p.bits p.gen p.rand used n
+
+/-- The entropy cap. -/
+abbrev PPub.cap (p : PPub) : Nat := parameterEntropy p.bits
+
+/-- Where the run may write: the writable arguments and the stack below the entry's. -/
+abbrev frameR (o : State) : List Region := o.wr ++ [lowR o]
+
+/-- The offsets of the words the loop keeps. -/
+def liveDs : List Nat := [0, 4, 8, 12, 16, 20, 28, 32, 36, 40, 44, 48, 52, 56, 60, 64, 72]
+
+/-- The words the loop keeps: the attempts (64 bits), the width and the cap and the request's high
+halves, the caller's `esi`, the arguments passed on, the tape's pointer and length and the octets
+consumed. -/
+def liveF (p : PPub) (esi : BitVec 32) (used n : Nat) (d : Nat) : BitVec 32 :=
+  if d = 0 then BitVec.ofNat 32 n else
+  if d = 4 then BitVec.ofNat 32 (n / 2 ^ 32) else
+  if d = 8 then BitVec.ofNat 32 p.len else
+  if d = 16 then BitVec.ofNat 32 p.cap else
+  if d = 32 then esi else
+  if d = 36 then p.op else
+  if d = 40 then p.up else
+  if d = 44 then BitVec.ofNat 32 p.bits else
+  if d = 48 then BitVec.ofNat 32 p.gen else
+  if d = 52 then p.rp + BitVec.ofNat 32 used else
+  if d = 56 then BitVec.ofNat 32 (p.randLen - used) else
+  if d = 60 then p.B else
+  if d = 64 then BitVec.ofNat 32 p.slen else
+  if d = 72 then BitVec.ofNat 32 used else 0
+
+/-- A state of the loop: `used` octets consumed, `n` attempts left. -/
+structure Live (p : PPub) (o : State) (used n : Nat) (s : State) : Prop where
+  input : Input p o
+  used_le : used ≤ p.randLen
+  n_le : n ≤ p.attempts
+  rd : s.rd = o.rd
+  wr : s.wr = o.wr
+  syms : s.syms = o.syms
+  esp : s.gpr .esp = p.sp
+  esi : s.gpr .esi = p.S
+  saved : ∀ r ∈ calleeSaved, r ≠ .esi → s.gpr r = o.gpr r
+  frame : Frame (frameR o) o.mem s.mem
+  words : Ctl s.mem p.S liveDs (liveF p (o.gpr .esi) used n)
+
+/-- The outputs of a finished search. -/
+def Output (p : PPub) (result : ParameterSearchResult) (m : Mem) : Prop :=
+  match result with
+  | .accepted q _ => Spec.Rsa.bytesAt m (p.op.setWidth 64) p.len = Spec.Rsa.i2osp q p.len
+  | _ => Spec.Rsa.bytesAt m (p.op.setWidth 64) p.len = List.replicate p.len 0
+
+/-- The offsets of the words a finished search leaves. -/
+def doneDs : List Nat := [0, 4, 8, 12, 16, 20, 24, 28, 32, 40, 68, 72]
+
+/-- The words a finished search leaves: the four public words (64 bits), the caller's `esi`, `used`'s
+pointer, the status and the octets consumed. -/
+def doneF (p : PPub) (esi : BitVec 32) (result : ParameterSearchResult) (d : Nat) : BitVec 32 :=
+  if d = 0 then BitVec.ofNat 32 result.remaining else
+  if d = 4 then BitVec.ofNat 32 (result.remaining / 2 ^ 32) else
+  if d = 8 then BitVec.ofNat 32 p.len else
+  if d = 16 then BitVec.ofNat 32 p.cap else
+  if d = 24 then BitVec.ofNat 32 (Proof.Ffdh.requested p.bits result) else
+  if d = 32 then esi else
+  if d = 40 then p.up else
+  if d = 68 then BitVec.ofNat 32 result.status else
+  if d = 72 then BitVec.ofNat 32 result.used else 0
+
+/-- A finished search, before `finish` stores `used` and restores `esi`. -/
+structure Done (p : PPub) (o : State) (result : ParameterSearchResult) (s : State) : Prop where
+  input : Input p o
+  rd : s.rd = o.rd
+  wr : s.wr = o.wr
+  syms : s.syms = o.syms
+  esp : s.gpr .esp = p.sp
+  esi : s.gpr .esi = p.S
+  saved : ∀ r ∈ calleeSaved, r ≠ .esi → s.gpr r = o.gpr r
+  frame : Frame (frameR o) o.mem s.mem
+  words : Ctl s.mem p.S doneDs (doneF p (o.gpr .esi) result)
+  output : Output p result s.mem
+  small : result.remaining ≤ p.attempts ∧ (Proof.Ffdh.requested p.bits result) ≤ p.cap ∧ result.used ≤ p.randLen
+
+end VG.Proof.Ffdh.X86.PSearch
+
+end
+
+end
 
 /-! ### `Ffdh.X86.KeySearch.Steps`, which only this module used -/
 

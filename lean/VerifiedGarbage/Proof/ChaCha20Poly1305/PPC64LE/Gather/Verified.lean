@@ -1,10 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.PPC64LE.Gather.Contract
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.PPC64LE.Gather.Fn
 public import VerifiedGarbage.Impl.ChaCha20Poly1305.PPC64LE.SealGather
 public import VerifiedGarbage.TCB.Artifact
 import VerifiedGarbage.Proof.ChaCha20Poly1305.PPC64LE.Gather.CT
-import VerifiedGarbage.Proof.ChaCha20Poly1305.PPC64LE.Gather.Fn
 import VerifiedGarbage.Proof.ChaCha20Poly1305.PPC64LE.Verified
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Sig

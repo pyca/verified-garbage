@@ -1,13 +1,12 @@
 module
+
 public import VerifiedGarbage.Impl.Bignum.Arm.PdFn
-public import VerifiedGarbage.Proof.Bignum.Arm.PdCheckRest
+public import VerifiedGarbage.Proof.Bignum.Arm.PdChecks
 public import VerifiedGarbage.Proof.Bignum.Arm.PdArithmetic
 public import VerifiedGarbage.Proof.Bignum.Arm.PdBodyInput
-
 import VerifiedGarbage.Proof.Bignum.Arm.PdInverse
 import VerifiedGarbage.Proof.Bignum.Arm.PdApply
 import VerifiedGarbage.Proof.Bignum.Arm.PdFail
-import VerifiedGarbage.Proof.Bignum.Arm.PdChecks
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Bignum.Arm.PublicStackFrame
 

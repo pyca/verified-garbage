@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Framework.Arm.Call
 public import VerifiedGarbage.Proof.Framework.Arm.Frame
 public import VerifiedGarbage.Proof.Rsa.Arm.Stage.VP
 public import VerifiedGarbage.Proof.Dsa.ProbablePrimeContract
-import VerifiedGarbage.Proof.Dsa.Arm.Gen.CT
+import VerifiedGarbage.Proof.Dsa.Arm.Gen.Frame
 
 /-! # DSA parameter generation on ARMv7: a stage's pure facts as hypotheses -/
 

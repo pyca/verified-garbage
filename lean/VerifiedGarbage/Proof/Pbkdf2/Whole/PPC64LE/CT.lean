@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.PPC64LE.Block
-import VerifiedGarbage.Proof.Pbkdf2.Whole.PPC64LE.Loop
 import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Vector

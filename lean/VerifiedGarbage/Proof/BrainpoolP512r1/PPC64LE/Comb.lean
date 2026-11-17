@@ -5,7 +5,6 @@ public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP512r1.PPC64LEComb
 public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.LadPow
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.BrainpoolP512r1
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Stages
-import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Lays
 import VerifiedGarbage.Proof.BrainpoolP512r1.Comb7
 import VerifiedGarbage.Proof.Weierstrass.TCombWords
 import VerifiedGarbage.Proof.Weierstrass.Env

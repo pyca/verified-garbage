@@ -1,7 +1,6 @@
 module
-public import VerifiedGarbage.Proof.Sm4Gcm.Arm.OneShot
 
-import VerifiedGarbage.Proof.Sm4Gcm.Arm.Seal
+public import VerifiedGarbage.Proof.Sm4Gcm.Arm.Seal
 import VerifiedGarbage.Proof.Sm4Gcm.Arm.StreamCrypt
 import VerifiedGarbage.Proof.Sm4Gcm.Arm.StreamVerify
 import VerifiedGarbage.Proof.Sm4Gcm.Arm.Compare

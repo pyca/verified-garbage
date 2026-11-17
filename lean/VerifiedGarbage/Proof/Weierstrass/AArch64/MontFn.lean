@@ -2,9 +2,8 @@ module
 
 import VerifiedGarbage.Proof.Weierstrass.AArch64.MontSaves
 public import VerifiedGarbage.Proof.Mont.AArch64.Csub
-public import VerifiedGarbage.Proof.Mont.AArch64.Round
+public import VerifiedGarbage.Proof.Mont.AArch64.Rounds
 import VerifiedGarbage.Proof.Mont.AArch64.Chain
-import VerifiedGarbage.Proof.Mont.AArch64.Rounds
 import VerifiedGarbage.Proof.Mont.AArch64.Blocks
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
@@ -25,7 +24,7 @@ section
 The functions' product (`Impl/Weierstrass/AArch64/Mont.lean`) multiplies by
 words in registers only: `[b]`'s in `bRegsF`, and a general modulus's in
 `mRegs`. Its rounds (`roundG`, `roundsG_ok`) are the inline product's
-(`Proof/Mont/AArch64/Round.lean`) with those words in place of `bWords` and
+(`Proof/Mont/AArch64/Rounds.lean`) with those words in place of `bWords` and
 `mWords`, for any registers the rounds do not write (`RoundSafe`), and for
 P-384's `p` a reduction without its words (`redSparse_ok`); the reduction of
 the result subtracts the modulus's words in registers (`csubM_ok`, as

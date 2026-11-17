@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Rsa.X86.PrivP.Pre
 public import VerifiedGarbage.Proof.Rsa.X86.PrivCrtCall
 public import VerifiedGarbage.Proof.Bignum.X86.CrtABI
-import VerifiedGarbage.Proof.Rsa.X86.PrivCrtPre
 import VerifiedGarbage.Proof.Rsa.X86.PrivRetained
 import VerifiedGarbage.Proof.Rsa.X86.PrivStackWord
 import VerifiedGarbage.Proof.Rsa.X86.PrivRegions

@@ -12,7 +12,6 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
 import VerifiedGarbage.Proof.Aes.Vector
 import VerifiedGarbage.Proof.Framework.Interleave
 import VerifiedGarbage.Proof.Framework.Bswap
-import VerifiedGarbage.Proof.Camellia.KeySched
 import VerifiedGarbage.Proof.Camellia.Common
 import VerifiedGarbage.Proof.Camellia.CtrCipher
 public import VerifiedGarbage.Proof.Camellia.PPC64LE.ModeCore

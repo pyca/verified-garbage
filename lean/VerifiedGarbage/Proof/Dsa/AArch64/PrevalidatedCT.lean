@@ -1,4 +1,5 @@
 module
+
 import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingCT
 public import VerifiedGarbage.Impl.Dsa.AArch64.Prevalidated
 public import VerifiedGarbage.Impl.Dsa.AArch64.SignVerify
@@ -7,8 +8,7 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.CallHeadCT
 public import VerifiedGarbage.Proof.Dsa.AArch64.CoreSign
 public import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleCTState
 public import VerifiedGarbage.Proof.Dsa.AArch64.SignReleaseCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingShapeCT
-import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingReadyCT
+public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingReadyCT
 import VerifiedGarbage.Proof.Dsa.AArch64.BodyCT
 import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
 import VerifiedGarbage.Proof.Framework.Offset

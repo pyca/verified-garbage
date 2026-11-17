@@ -18,7 +18,6 @@ public import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.AesCcm.RISCV64.Chunk
 import VerifiedGarbage.Proof.AesCcm.RISCV64.Crypt
 import VerifiedGarbage.Proof.AesCcm.RISCV64.Ctrs
-import VerifiedGarbage.Proof.AesCcm.RISCV64.Exit
 import VerifiedGarbage.Proof.AesCcm.RISCV64.Mac
 public import VerifiedGarbage.Proof.AesCcm.RISCV64.Wp
 

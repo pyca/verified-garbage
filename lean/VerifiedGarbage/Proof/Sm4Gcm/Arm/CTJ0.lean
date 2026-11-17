@@ -1,7 +1,7 @@
 module
-public import VerifiedGarbage.Proof.Sm4Gcm.Arm.CTBase
-public import VerifiedGarbage.Proof.Sm4Gcm.Arm.J0
 
+public import VerifiedGarbage.Proof.Sm4Gcm.Arm.CTBase
+public import VerifiedGarbage.Proof.Sm4Gcm.Arm.Fn
 import VerifiedGarbage.Proof.Sm4Gcm.Arm.CTAbsorb
 meta import VerifiedGarbage.Proof.Sm4Gcm.Arm.CTAbsorb
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd

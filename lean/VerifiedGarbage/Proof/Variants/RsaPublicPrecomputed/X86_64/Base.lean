@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Rsa.X86_64.PublicImpl
 public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedBackend
 public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCTChecked
-public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedChecked
 
 /-!
 # Precomputed RSA public operation: Base: the variant's code and proofs

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ecdh.X86_64.WinJac
 import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacOddP
-public import VerifiedGarbage.Proof.Weierstrass.OddWin
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacOddState
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacOdd
 public import VerifiedGarbage.Proof.Mont.X86_64.Csub
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
@@ -14,14 +14,13 @@ import VerifiedGarbage.Proof.Mont.X86_64.Wide
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.Mem
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Lays
-import VerifiedGarbage.Proof.Weierstrass.X86_64.AddConst
+import VerifiedGarbage.Proof.Ecdsa.X86_64.Fixed
+import VerifiedGarbage.Proof.Ecdh.X86_64.Window
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TComb
 import VerifiedGarbage.Proof.Mont.X86_64.Ops
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Stages
 public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacState
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacOddState
 
 /-! ### `Weierstrass.X86_64.OddScalar`, which only this module used -/
 

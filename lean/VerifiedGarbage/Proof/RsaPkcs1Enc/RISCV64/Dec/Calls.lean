@@ -12,7 +12,6 @@ public import VerifiedGarbage.Proof.Framework.RISCV64.CallAny
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.RISCV64.Encode
 public import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha256Family
 public import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Hash
-public import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Calls
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Covers
@@ -21,7 +20,7 @@ import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
 import VerifiedGarbage.Proof.RsaPkcs1Enc.Steps
 import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.InitMain
 import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Finalize
-import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Common
+import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Init
 
 /-!
 # `vg_rsa_pkcs1_decrypt` on RISC-V: from the frame to the calls after the private-key operation

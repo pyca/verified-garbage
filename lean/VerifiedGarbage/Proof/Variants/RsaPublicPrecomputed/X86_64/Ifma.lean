@@ -8,7 +8,6 @@ public import VerifiedGarbage.Proof.Bignum.Amm52
 public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedMain
 public import VerifiedGarbage.Proof.Rsa.X86_64.PubChecked
 import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.PubMain
-import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCode
 import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCTChecked
 import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.PubLit
 import VerifiedGarbage.Proof.Framework.Lit

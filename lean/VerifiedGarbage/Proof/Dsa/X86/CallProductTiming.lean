@@ -1,10 +1,225 @@
 module
-public import VerifiedGarbage.Proof.Dsa.X86.CallTiming
 
+public import VerifiedGarbage.Proof.Dsa.X86.CallTiming
 import VerifiedGarbage.Proof.Dsa.X86.CallPowerTiming
-import VerifiedGarbage.Proof.Dsa.X86.CoreProductTiming
 import VerifiedGarbage.Proof.Dsa.X86.StageArithmetic
 import VerifiedGarbage.Proof.Weierstrass.MontContract
+public import VerifiedGarbage.Proof.Dsa.X86.CorePowerTiming
+import VerifiedGarbage.Proof.Dsa.X86.CoreStoreTiming
+import VerifiedGarbage.Proof.Dsa.X86.MulCall
+public import VerifiedGarbage.Impl.Dsa.X86.Arith
+public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Dsa.X86.StackFrame
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Dsa.X86.EntryTiming
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Dsa.X86.CoreSetupTiming
+import VerifiedGarbage.Proof.Framework.X86.RelCT
+import VerifiedGarbage.Proof.Framework.X86.CallWith
+import VerifiedGarbage.Proof.Mont.X86.Instr
+public import VerifiedGarbage.Impl.Dsa.Layout
+import VerifiedGarbage.Proof.Dsa.X86.Layout
+public import VerifiedGarbage.Impl.Dsa.X86.Arithmetic
+import VerifiedGarbage.Proof.Mont.X86.ExponentTiming
+
+/-! ### `Dsa.X86.CoreProductTiming`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Dsa.X86.ArithmeticTiming`, which only this module used -/
+
+section
+
+/-! # Constant-time ordinary modular products and sums -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.X86
+open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Mont.X86.Dynamic VG.Impl.Dsa.X86 VG.Proof.Mont.X86.Dynamic
+
+theorem ordinaryMul_relCT (n : Nat) :
+    RelCT isa (VG.X86.Taint.Agree (workspaceTaint false)) (ordinaryMul n)
+      (VG.X86.Taint.Agree (workspaceTaint false)) :=
+  checkedProgramChange (τ' := rowTaint false) (hint := .seq (workspaceTaint false) (mulHint false) (mulHint false))
+    (exponent_check_seq taint (mul_check false _ _ _ _ _ _) (by rfl) (mul_check false _ _ _ _ _ _)) rfl
+
+theorem ordinaryAdd_relCT (n : Nat) :
+    RelCT isa (VG.X86.Taint.Agree (workspaceTaint true)) (ordinaryAdd n)
+      (VG.X86.Taint.Agree (workspaceTaint true)) :=
+  checkedProgramChange (hint := addHint true) (add_check true _ _ _ _ _) rfl
+
+end VG.Proof.Dsa.X86
+
+end
+
+end
+
+/-! ### `Dsa.X86.MulTiming`, which only this module used -/
+
+section
+
+/-! # Traces of the IA-32 DSA product and of its calls
+
+Two runs from the same stack pointer and working space leak the same trace:
+the saves read the argument and store through public pointers, and the
+context's setup, the product and the restores are checked by taint, which
+the values of the numbers do not reach. -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.X86.Mul
+open VG VG.X86 VG.X86.Wp VG.Proof.Mont VG.Proof.Mont.X86 VG.Impl.Mont.X86 VG.Impl.Mont.X86.Dynamic
+open VG.Impl.Dsa.X86.Arith VG.Proof.Mont.X86.Dynamic
+
+theorem body_relCT (n : Nat) :
+    RelCT isa (fun s t => s.gpr .esp = t.gpr .esp ∧ arg s 0 = arg t 0 ∧
+      readSrc s (.mem (at_ .esp 4)) = some (arg s 0) ∧
+      readSrc t (.mem (at_ .esp 4)) = some (arg t 0))
+      (mulBody n) (fun _ _ => True) := by
+  unfold mulBody
+  have saveCT : RelCT isa (fun s t => s.gpr .esp = t.gpr .esp ∧ arg s 0 = arg t 0 ∧
+      readSrc s (.mem (at_ .esp 4)) = some (arg s 0) ∧
+      readSrc t (.mem (at_ .esp 4)) = some (arg t 0))
+      (.block VG.Impl.Dsa.X86.Pow.save) (VG.X86.Taint.Agree (workspaceTaint false)) := by
+    unfold VG.Impl.Dsa.X86.Pow.save
+    rw [List.append_assoc]
+    exact RelCT.block_append (RelCT.seq (scratchArgument_relCT 0)
+      (checkedProgramChange (σ := workspaceTaint false) (hint := .block []) rfl rfl))
+  refine RelCT.seq saveCT (RelCT.seq (contextSetup_relCT n) (RelCT.seq (ordinaryMul_relCT n) ?_))
+  exact (checkedProgramChange (σ := { regs := .ofList [], flags := false }) (hint := .block []) (by rfl) rfl).mono
+    (fun _ _ h => h) (fun _ _ _ => trivial)
+
+theorem body_readArg {n : Nat} {s t : State} {tr : List Leak}
+    (E : Exec isa (mulBody n) s tr t) :
+    readSrc s (.mem (at_ .esp 4)) = some (arg s 0) := by
+  change s.load32 (argAddr s 0) = some (arg s 0)
+  unfold State.load32
+  split
+  · rfl
+  · rename_i h
+    cases E with
+    | seq E _ =>
+      cases E with
+      | block H =>
+        simp only [VG.Impl.Dsa.X86.Pow.save, VG.Impl.Dsa.X86.Pow.slots, List.map_cons, List.map_nil,
+          List.cons_append, List.nil_append, execBlock, isa, exec, readSrc, State.load32] at H
+        simp only [show s.ea (at_ .esp 4) = argAddr s 0 from rfl, h, ↓reduceIte, Option.map_none] at H
+        cases H
+
+theorem framed_relCT (n : Nat) :
+    RelCT isa (fun s t => s.gpr .esp = t.gpr .esp ∧ s.gpr .edi = t.gpr .edi ∧ 12 ≤ (s.gpr .esp).toNat)
+      (.frame (.push [.eax, .edi]) (.call (mulName n) (mulBody n)) (.pop .eax 2))
+      (fun _ _ => True) := by
+  refine RelCT.frame (R := fun _ _ => True) (fun _ _ H => H.1) ?_
+  rintro _ _ tr ur sf tf ⟨s, t, ⟨SP, DI, fit⟩, rfl, rfl⟩ E F
+  cases E with
+  | call C E R =>
+    cases F with
+    | call D F S =>
+      rw [call_callEntry, Option.some.injEq] at C D
+      subst C D
+      have sp : (pushed [Reg.eax, .edi] s).callEntry.gpr .esp =
+          (pushed [Reg.eax, .edi] t).callEntry.gpr .esp := by
+        rw [callEntry_esp', callEntry_esp', SP]
+      have args : arg (pushed [Reg.eax, .edi] s).callEntry 0 =
+          arg (pushed [Reg.eax, .edi] t).callEntry 0 := by
+        rw [callEntry_arg (rs := [.eax, .edi]) (s := s) fit (by decide) (by decide),
+          callEntry_arg (rs := [.eax, .edi]) (s := t) (by rw [← SP]; exact fit) (by decide) (by decide)]
+        exact DI
+      have traces := (body_relCT n) _ _ _ _ _ _ ⟨sp, args, body_readArg E, body_readArg F⟩ E F
+      have r := (ret_gpr R .esp).1
+      have q := (ret_gpr S .esp).1
+      refine ⟨?_, trivial⟩
+      simp only [r, q, State.callEntry_esp, pushed_esp, SP, traces.1]
+
+theorem call_relCT (n : Nat) :
+    RelCT isa (fun s t => s.gpr .esp = t.gpr .esp ∧ s.gpr .edi = t.gpr .edi ∧ 12 ≤ (s.gpr .esp).toNat)
+      (mulCall n) (fun _ _ => True) := by
+  unfold mulCall
+  refine RelCT.seq ?_ (framed_relCT n)
+  intro s t tr ur sf tf H E F
+  have W (s : State) : WP isa (.block [.mov .eax (.imm (BitVec.ofNat 32 (contextBytes n / 8)))]) s
+      (fun t => VG.Proof.Mont.X86.Keeps [.eax] s t ∧ t.mem = s.mem) :=
+    wp_movS rfl fun _ U _ => WP.block_nil ⟨U.keeps, U.mem⟩
+  have K := wp_result (W s) E
+  have L := wp_result (W t) F
+  refine ⟨?_, ?_⟩
+  · cases E with
+    | block E => cases F with
+      | block F =>
+        simp only [execBlock, isa, exec, readSrc, Option.map_some, addrs, srcAddrs, List.map_nil,
+          List.nil_append, Option.some.injEq, Prod.mk.injEq] at E F
+        exact E.2.symm.trans F.2
+  · dsimp only
+    rw [K.1.1 .esp (by decide), L.1.1 .esp (by decide), K.1.1 .edi (by decide), L.1.1 .edi (by decide)]
+    exact ⟨H.1, H.2.1, H.2.2⟩
+
+end VG.Proof.Dsa.X86.Mul
+
+end
+
+end
+
+
+/-! # Complete modular products have secret-independent execution traces -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.X86
+open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Mont.X86.Dynamic
+open VG.Impl.Mont.X86.Dynamic VG.Impl.Dsa.Layout VG.Impl.Dsa.X86
+
+theorem productTail_relCT (base : Addr) (size n len output : Nat)
+    (hz : contextBytes n ≤ size) (hu : usedBytes ≤ size) (hn : 0 < n) (hn48 : n ≤ 48) :
+    RelCT isa (PowerPair base size n) (.seq (Arith.mulCall n) (Core.store len output))
+      (VG.X86.Taint.Agree (workspaceTaint true)) := by
+  refine RelCT.seq ?_ (coreStore_workspace_relCT len output)
+  intro s t tr ur sf tf ⟨S, T, SP⟩ E F
+  have DI : s.gpr .edi = t.gpr .edi := BitVec.eq_of_toNat_eq (S.scr.edi_toNat.trans T.scr.edi_toNat.symm)
+  have CT := (Mul.call_relCT n) _ _ _ _ _ _ ⟨SP, DI, by have := S.room.1; omega_using [this]⟩ E F
+  obtain ⟨_, _, K⟩ := wp_result (Mul.call_ok S.scr S.room hz hu hn hn48 rfl S.large S.odd) E
+  obtain ⟨_, _, L⟩ := wp_result (Mul.call_ok T.scr T.room hz hu hn hn48 rfl T.large T.odd) F
+  refine ⟨CT.1, agree_regs (rs := [.edi]) ?_⟩
+  intro r hr
+  obtain rfl := List.mem_singleton.mp hr
+  rw [K.1 .edi (by decide), L.1 .edi (by decide), DI]
+
+theorem coreProductMod_relCT (base : Addr) (size len output : Nat) (modulus : Field) (a b : Pointer)
+    (hz : Layout.saved ≤ size) (hu : usedBytes ≤ size) (h4 : 4 ≤ len) (hmax : len ≤ 384)
+    (hw4 : len % 4 = 0) :
+    RelCT isa (PowerAgree base size len len modulus a b)
+      (Core.productMod len modulus a b output) (VG.X86.Taint.Agree (workspaceTaint true)) := by
+  have hn : (len + 7) / 8 ≤ 48 := by omega_using [hmax]
+  have cb := VG.Proof.Dsa.X86.Layout.context_bound hn
+  have sz : 8256 ≤ size := hz
+  unfold Core.productMod
+  dsimp only
+  refine RelCT.seq ?_ (productTail_relCT base size _ len output (by omega_using [cb, sz]) hu (by omega_using [h4]) hn)
+  have H := (powerHead_relCT base size len len modulus a b hz h4 hmax hw4).mono
+    (fun _ _ (P : PowerAgree base size len len modulus a b _ _) => P.1) (fun _ _ A => A)
+  refine (H.wpDep (F := fun s t => PowerReady base size ((len + 7) / 8) t ∧ Keeps loadClob s t)
+    (fun s t P => ⟨powerHead_ok P.1.1 P.2.1 hz h4 hmax h4 (Nat.le_refl _) hw4 hw4,
+      powerHead_ok P.1.2.1 P.2.2.1 hz h4 hmax h4 (Nat.le_refl _) hw4 hw4⟩)).mono (fun _ _ P => P) ?_
+  rintro s t ⟨_, a, b, P, ⟨S, K⟩, ⟨T, L⟩⟩
+  exact ⟨S, T, (K.1 .esp (by decide)).trans (P.2.2.2.trans (L.1 .esp (by decide)).symm)⟩
+
+theorem coreSum_relCT (base : Addr) (size len output : Nat) (a b : Pointer)
+    (hz : Layout.saved ≤ size) (h4 : 4 ≤ len) (hmax : len ≤ 384) (hw4 : len % 4 = 0) :
+    RelCT isa (ArithmeticAgree base size len len .q a b)
+      (Core.sum len a b output) (VG.X86.Taint.Agree (workspaceTaint true)) := by
+  unfold Core.sum
+  dsimp only
+  apply RelCT.assoc
+  refine RelCT.seq (arithmeticHead_relCT base size len len .q a b hz h4 hmax hw4) ?_
+  refine RelCT.seq (ordinaryAdd_relCT _) ?_
+  exact (coreStore_workspace_relCT len output).mono
+    (fun _ _ h => taint.le_sound (show taint.le (workspaceTaint false) (workspaceTaint true) = true from rfl) h)
+    (fun _ _ h => h)
+
+end VG.Proof.Dsa.X86
+
+end
+
+end
 
 /-! # Product stages retain public layout and caller operands -/
 

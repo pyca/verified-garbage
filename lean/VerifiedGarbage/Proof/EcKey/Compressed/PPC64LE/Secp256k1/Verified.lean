@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.Main
+public import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.Main
 public import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.DecompressMain
 public import VerifiedGarbage.Proof.Weierstrass.Law
 import VerifiedGarbage.Proof.Weierstrass.Sqrt
@@ -16,7 +16,6 @@ meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 meta import VerifiedGarbage.Spec.EcKey.Secp256k1
 meta import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.Secp256k1.Lit
 meta import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Secp256k1
-public import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.Contract
 public import VerifiedGarbage.Spec.Secp256k1
 
 /-!

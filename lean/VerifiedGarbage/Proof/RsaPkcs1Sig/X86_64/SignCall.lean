@@ -1,8 +1,7 @@
 module
+
 public import VerifiedGarbage.Impl.Rsa.X86_64.PrivChecked
 public import VerifiedGarbage.Proof.Rsa.X86_64.PrivImpl
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.SignBlocks
-
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.SignEntry
 public import VerifiedGarbage.Proof.Rsa.X86_64.PrivCtx
 import VerifiedGarbage.Proof.Rsa.X86_64.PrivCT

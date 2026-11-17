@@ -8,12 +8,10 @@ public import Init.Data.BitVec.Basic
 public import VerifiedGarbage.Proof.Mont.X86.Words
 public import VerifiedGarbage.Proof.Mont.X86.WordOps
 import VerifiedGarbage.Proof.Mont.RangeCover
-import VerifiedGarbage.Proof.RsaKeyGen.X86.ExponentMarker
 import VerifiedGarbage.Proof.RsaKeyGen.X86.HeaderStore
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Mont.X86.Instr
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.HalfPass
-import VerifiedGarbage.Proof.RsaKeyGen.X86.HalfPassWord
 import VerifiedGarbage.Proof.Mont.Halve32
 import Init.Prelude
 import VerifiedGarbage.Impl.RsaKeyGen.X86.ExponentShift
@@ -24,6 +22,376 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.PreparedR2State
 import VerifiedGarbage.Proof.RsaKeyGen.X86.PreparedGeometry
 import VerifiedGarbage.Proof.RsaKeyGen.X86.PreparedGaps
+public import VerifiedGarbage.Impl.RsaKeyGen.X86.ExponentMarker
+public import VerifiedGarbage.Spec.Rsa
+import VerifiedGarbage.Proof.Rsa.TwosMath
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.LowPairScan
+public import VerifiedGarbage.Impl.RsaKeyGen.X86.LowPair
+import VerifiedGarbage.Proof.Mont.Words
+import VerifiedGarbage.Proof.Bignum.Words
+public import VerifiedGarbage.Impl.RsaKeyGen.X86.LowBit
+import VerifiedGarbage.Proof.RsaKeyGen.X86.Mod64Subtract
+import VerifiedGarbage.Proof.RsaKeyGen.X86.Gcd64Words
+import VerifiedGarbage.Proof.Mont.X86.ExponentWord
+
+/-! ### `RsaKeyGen.X86.HalfPassWord`, which this module and modules that import it used -/
+
+section
+
+/-! # One exponent word is halved or retained under the secret mask -/
+
+@[expose] public section
+namespace VG.Proof.RsaKeyGen.X86.HalfPass
+open VG VG.X86 VG.X86.Wp VG.Proof.Mont VG.Proof.Mont.X86 VG.Impl.RsaKeyGen.X86.HalfPass
+
+theorem select_word (old shifted : BitVec 32) (choice : Bool) :
+    old ^^^ ((shifted ^^^ old) &&& cmask choice) = if choice then shifted else old := by
+  cases choice
+  · rw [show cmask false = 0#32 from rfl, BitVec.and_zero, BitVec.xor_zero]
+    rfl
+  · rw [show cmask true = BitVec.allOnes 32 from rfl, BitVec.and_allOnes, BitVec.xor_comm shifted old,
+      ← BitVec.xor_assoc, BitVec.xor_self, BitVec.zero_xor]
+    rfl
+
+theorem step_ok {s : State} {base : Addr} {size src out index : Nat} (scratch : Scr s base size)
+    (pointer : s.gpr .ebp = s.gpr .edi + BitVec.ofNat 32 (4 * index))
+    (srcFit : src + 4 * index + 8 ≤ size) (outFit : out + 4 * index + 4 ≤ size)
+    {choice : Bool} (mask : s.gpr .ecx = cmask choice) :
+    WP isa (.block (step src out)) s fun t =>
+      Outside base (out + 4 * index) 4 s.mem t.mem ∧
+      w32 t.mem base (out + 4 * index) =
+        (if choice then w32 s.mem base (src + 4 * index) / 2 +
+          2 ^ 31 * (w32 s.mem base (src + 4 * index + 4) % 2) else w32 s.mem base (src + 4 * index)) ∧
+      Keeps [.eax, .ebx, .edx] s t := by
+  unfold step
+  refine wp_movS (readSrc_at' scratch pointer (by omega_using [srcFit])) fun a A _ =>
+    wp_logicS (.inl rfl) rfl fun b B => wp_ror (by decide) fun c C => ?_
+  have Kc : Keeps [.eax, .ebx, .edx] s c := ((A.keeps.mono (by decide)).widen B.keeps).widen C.keeps
+  have pc : c.gpr .ebp = c.gpr .edi + BitVec.ofNat 32 (4 * index) := by
+    rw [Kc.1 .ebp (by decide), Kc.1 .edi (by decide)]; exact pointer
+  refine wp_movS (readSrc_at' (scratch.of_keeps Kc (by decide)) pc (by omega_using [srcFit])) fun d D _ =>
+    wp_shr (by decide) fun e E _ => wp_addS rfl fun f F _ => ?_
+  have Kf : Keeps [.eax, .ebx, .edx] s f := ((Kc.widen D.keeps).widen E.keeps).widen F.keeps
+  have pf : f.gpr .ebp = f.gpr .edi + BitVec.ofNat 32 (4 * index) := by
+    rw [Kf.1 .ebp (by decide), Kf.1 .edi (by decide)]; exact pointer
+  refine wp_movS (readSrc_at' (scratch.of_keeps Kf (by decide)) pf (by omega_using [srcFit])) fun g G _ =>
+    wp_xor fun h H => wp_and fun i I => wp_xor fun j J => ?_
+  have Kj : Keeps [.eax, .ebx, .edx] s j := (((Kf.widen G.keeps).widen H.keeps).widen I.keeps).widen J.keeps
+  have pj : j.gpr .ebp = j.gpr .edi + BitVec.ofNat 32 (4 * index) := by
+    rw [Kj.1 .ebp (by decide), Kj.1 .edi (by decide)]; exact pointer
+  have Sj := scratch.of_keeps Kj (by decide)
+  refine wp_storeS (Sj.ea_at' pj (by omega_using [outFit])) (Sj.write outFit) fun t T => WP.block_nil ?_
+  have M : j.mem = s.mem := J.mem.trans (I.mem.trans (H.mem.trans (G.mem.trans
+    (F.mem.trans (E.mem.trans (D.mem.trans (C.mem.trans (B.mem.trans A.mem))))))))
+  have old : g.gpr .ebx = s.mem.readW (off base (src + 4 * index)) 32 := by
+    rw [G.gpr, F.mem, E.mem, D.mem, C.mem, B.mem, A.mem]
+  have half : f.gpr .edx = (s.mem.readW (off base (src + 4 * index)) 32 >>> 1) +
+      (s.mem.readW (off base (src + 4 * index + 4)) 32 &&& 1).rotateRight 1 := by
+    rw [F.gpr, E.gpr, D.gpr, E.other .eax (by decide), D.other .eax (by decide), C.gpr, B.gpr, A.gpr,
+      C.mem, B.mem, A.mem]
+    rw [show src + 4 + 4 * index = src + 4 * index + 4 by omega_using []]
+    rfl
+  have selected : j.gpr .ebx = if choice then f.gpr .edx else g.gpr .ebx := by
+    rw [J.gpr, I.other .ebx (by decide), H.other .ebx (by decide), I.gpr, H.gpr,
+      G.other .edx (by decide), H.other .ecx (by decide),
+      G.other .ecx (by decide), Kf.1 .ecx (by decide), mask, select_word]
+  refine ⟨?_, ?_, Kj.widen (T.keeps [])⟩
+  · rw [T.mem, M]
+    exact writeW32_outside _ _ _ (by have := scratch.nowrap; omega_using [outFit, this])
+  · rw [T.mem, w32_write_self, selected, old, half]
+    cases choice
+    · rfl
+    · exact VG.Proof.Mont.X86.Dynamic.shifted_word _ _
+
+end VG.Proof.RsaKeyGen.X86.HalfPass
+
+end
+
+end
+
+/-! ### `RsaKeyGen.X86.ExponentMarker`, which this module and modules that import it used -/
+
+section
+
+/-! ### `RsaKeyGen.X86.LowBit`, which this module and modules that import it used -/
+
+section
+
+/-! # Native subtraction and masking isolate the paired word's lowest set bit -/
+
+-- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/NegPair.lean`, which only this module imported.
+section
+
+/-! # Native subtraction through the borrow forms the negation of a 64-bit pair -/
+
+section
+namespace VG.Proof.RsaKeyGen.X86.LowBit
+open VG VG.Proof.Mont.X86
+
+theorem neg_pair (lo hi : BitVec 32) :
+    (0#32 - hi - (BitVec.ofBool (decide (0 < lo.toNat))).setWidth 32) ++ (0#32 - lo) = -(hi ++ lo) := by
+  let borrow := decide (0 < lo.toNat)
+  let carry := decide (0 < hi.toNat + borrow.toNat)
+  have L := Mod64.sub_rel (0#32) lo
+  have H := sbb_rel (0#32) hi borrow
+  simp only [BitVec.toNat_zero, Nat.zero_add] at L H
+  change (0#32 - lo).toNat + lo.toNat = 2 ^ 32 * borrow.toNat at L
+  change (0#32 - hi - (BitVec.ofBool borrow).setWidth 32).toNat + hi.toNat + borrow.toNat =
+    2 ^ 32 * carry.toNat at H
+  have paired : ((0#32 - hi - (BitVec.ofBool borrow).setWidth 32) ++ (0#32 - lo)).toNat +
+      (hi ++ lo).toNat = 2 ^ 64 * carry.toNat := by
+    rw [Gcd64.append_pair, Gcd64.append_pair]
+    unfold Mod64.pair
+    omega
+  have outputBound := ((0#32 - hi - (BitVec.ofBool borrow).setWidth 32) ++ (0#32 - lo)).isLt
+  have inputBound := (hi ++ lo).isLt
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_neg]
+  change ((0#32 - hi - (BitVec.ofBool borrow).setWidth 32) ++ (0#32 - lo)).toNat = _
+  cases C : carry <;> rw [C] at paired <;> simp only [Bool.toNat_false, Bool.toNat_true, Nat.mul_zero, Nat.mul_one] at paired <;> omega
+
+end VG.Proof.RsaKeyGen.X86.LowBit
+end
+
+end
+
+@[expose] public section
+namespace VG.Proof.RsaKeyGen.X86.LowBit
+open VG VG.X86 VG.X86.Wp VG.Proof.Mont.X86 VG.Impl.RsaKeyGen.X86.LowBit
+
+theorem code_ok (s : State) :
+    WP isa (.block code) s fun t =>
+      t.gpr .edx ++ t.gpr .eax = (s.gpr .esi ++ s.gpr .ebx) &&& -(s.gpr .esi ++ s.gpr .ebx) ∧
+      t.mem = s.mem ∧ Keeps [.eax, .edx] s t := by
+  unfold code
+  refine wp_movS rfl fun a A _ => wp_subS rfl fun b B cfB => wp_movS rfl fun c C cfC => ?_
+  refine wp_sbbS rfl (cfC.trans cfB) fun d D _ => wp_and fun e E => wp_and fun t T => WP.block_nil ?_
+  have low : t.gpr .eax = (0#32 - s.gpr .ebx) &&& s.gpr .ebx := by
+    rw [T.other .eax (by decide), E.gpr, D.other .eax (by decide), C.other .eax (by decide),
+      B.gpr, A.gpr, A.other .ebx (by decide), D.other .ebx (by decide), C.other .ebx (by decide),
+      B.other .ebx (by decide), A.other .ebx (by decide)]
+    rfl
+  have high : t.gpr .edx = (0#32 - s.gpr .esi - (BitVec.ofBool (decide (0 < (s.gpr .ebx).toNat))).setWidth 32)
+      &&& s.gpr .esi := by
+    rw [T.gpr, E.other .edx (by decide), D.gpr, C.gpr, C.other .esi (by decide), B.other .esi (by decide),
+      A.other .esi (by decide), A.gpr, A.other .ebx (by decide),
+      E.other .esi (by decide), D.other .esi (by decide), C.other .esi (by decide), B.other .esi (by decide),
+      A.other .esi (by decide)]
+    rfl
+  refine ⟨?_, ?_, (((((A.keeps.mono (by decide)).widen B.keeps).widen C.keeps).widen D.keeps).widen E.keeps).widen T.keeps⟩
+  · rw [low, high, ← BitVec.and_append, neg_pair, BitVec.and_comm]
+  · rw [T.mem, E.mem, D.mem, C.mem, B.mem, A.mem]
+
+end VG.Proof.RsaKeyGen.X86.LowBit
+
+end
+
+end
+
+/-! ### `RsaKeyGen.X86.LowPairTwos`, which this module and modules that import it used -/
+
+section
+
+/-! ### `RsaKeyGen.X86.LowPairFirst`, which only this module used -/
+
+section
+
+/-! # The paired scan retains exactly the first nonzero source word -/
+
+@[expose] public section
+namespace VG.Proof.RsaKeyGen.X86.LowPair
+open VG
+
+theorem first_keep (m : Mem) (base : Addr) (src start count : Nat) (before : BitVec 32 × BitVec 32)
+    (nonzero : ¬(before.1 = 0#32 ∧ before.2 = 0#32)) : first m base src before start count = before := by
+  induction count generalizing start with
+  | zero => rfl
+  | succ count ih =>
+    unfold first select
+    rw [ite_eq_right nonzero]
+    exact ih (start + 1)
+
+theorem first_hit (m : Mem) (base : Addr) (src start count index : Nat)
+    (lo : start ≤ index) (hi : index < start + count)
+    (below : ∀ j, start ≤ j → j < index → pairAt m base (src + 8 * j) = (0#32, 0#32))
+    (hit : pairAt m base (src + 8 * index) ≠ (0#32, 0#32)) :
+    first m base src (0#32, 0#32) start count = pairAt m base (src + 8 * index) := by
+  induction count generalizing start with
+  | zero => omega
+  | succ count ih =>
+    change first m base src (pairAt m base (src + 8 * start)) (start + 1) count = _
+    by_cases same : start = index
+    · subst start
+      exact first_keep m base src (index + 1) count _ (fun ⟨a, b⟩ => hit (Prod.ext a b))
+    · rw [below start (Nat.le_refl _) (by omega_using [lo, same])]
+      exact ih (start + 1) (by omega_using [lo, same]) (by omega_using [hi]) (fun j hj lt => below j (by omega_using [hj]) lt)
+
+end VG.Proof.RsaKeyGen.X86.LowPair
+
+end
+
+end
+
+/-! # The native pair scan finds the word containing the exponent's lowest set bit -/
+
+-- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/LowPairWord.lean`, which only this module imported.
+section
+
+/-! # Native halves read by the masked scan form the original 64-bit word -/
+
+section
+namespace VG.Proof.RsaKeyGen.X86.LowPair
+open VG VG.Proof.Mont
+
+theorem pairAt_word (m : Mem) (base : Addr) (src : Nat) :
+    (pairAt m base src).2 ++ (pairAt m base src).1 = word m base src := by
+  rw [word, VG.Proof.Rc2.Word32.read64_pair, VG.Offset.add_add]
+  rfl
+
+theorem pairAt_zero_iff (m : Mem) (base : Addr) (src : Nat) :
+    pairAt m base src = (0#32, 0#32) ↔ word m base src = 0#64 := by
+  constructor
+  · intro h
+    rw [← pairAt_word, h]
+    rfl
+  · intro h
+    have value := congrArg BitVec.toNat h
+    rw [word_eq_w32] at value
+    change w32 m base src + 2 ^ 32 * w32 m base (src + 4) = 0 at value
+    have low : w32 m base src = 0 := by omega
+    have high : w32 m base (src + 4) = 0 := by omega
+    exact Prod.ext (BitVec.eq_of_toNat_eq low) (BitVec.eq_of_toNat_eq high)
+
+end VG.Proof.RsaKeyGen.X86.LowPair
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/Mont/Digits64.lean`, which only this module imported.
+section
+
+/-! # A native paired word is a base-2⁶⁴ digit of its integer -/
+
+section
+namespace VG.Proof.Mont
+open VG
+
+theorem word_digit64 (m : Mem) (base : Addr) (src n index : Nat) (bound : index < n) :
+    (word m base (src + 8 * index)).toNat = wordsVal m base src n / 2 ^ (64 * index) % 2 ^ 64 := by
+  have bridge : ∀ k, wordsVal m base src k = VG.Proof.Bignum.wv m base src k := by
+    intro k
+    induction k with
+    | zero => rfl
+    | succ k ih => rw [wordsVal_succ_top, VG.Proof.Bignum.wv, ih]
+  rw [bridge]
+  exact VG.Proof.Bignum.word_of_wv m base src n bound
+
+end VG.Proof.Mont
+end
+
+end
+
+@[expose] public section
+namespace VG.Proof.RsaKeyGen.X86.LowPair
+open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Impl.RsaKeyGen.X86.LowPair
+
+/-- The first nonzero pair of `count` pairs whose value is `N > 0` is the
+64-bit word holding `N`'s lowest set bit. -/
+theorem first_twos {m : Mem} {base : Addr} {src count N : Nat}
+    (value : val32 m base src (2 * count) = N) (positive : 0 < N) :
+    ((first m base src (0#32, 0#32) 0 count).2 ++ (first m base src (0#32, 0#32) 0 count).1).toNat =
+      N / 2 ^ (64 * ((Spec.Rsa.splitTwos N).1 / 64)) % 2 ^ 64 := by
+  obtain ⟨factor, odd⟩ := VG.Proof.Rsa.splitTwos_spec positive
+  rw [Nat.mul_comm] at factor
+  let a := (Spec.Rsa.splitTwos N).1
+  obtain ⟨zero, bit, lower⟩ := VG.Proof.RsaKeyGen.lowWord_bits factor odd
+  have bound : a < 64 * count := by
+    have small : N < 2 ^ (64 * count) := by
+      rw [← value, ← wordsVal_eq_val32]
+      exact wordsVal_lt _ _ _ _
+    by_cases h : a < 64 * count
+    · exact h
+    · have pow := Nat.pow_le_pow_right (n := 2) (by decide) (show 64 * count ≤ a by omega_using [h])
+      have mul := Nat.le_mul_of_pos_left (2 ^ a) (show 0 < (Spec.Rsa.splitTwos N).2 by omega_using [odd])
+      rw [← factor] at mul
+      omega
+  have digit {j : Nat} (index : j < count) :
+      (word m base (src + 8 * j)).toNat = N / 2 ^ (64 * j) % 2 ^ 64 := by
+    rw [word_digit64 _ _ _ _ _ index, wordsVal_eq_val32, value]
+  have below (j : Nat) (_ : 0 ≤ j) (hj : j < a / 64) :
+      pairAt m base (src + 8 * j) = (0#32, 0#32) := by
+    apply (pairAt_zero_iff _ _ _).mpr
+    apply BitVec.eq_of_toNat_eq
+    rw [digit (by omega_using [bound, hj]), zero j hj]
+    rfl
+  have hit : pairAt m base (src + 8 * (a / 64)) ≠ (0#32, 0#32) := by
+    intro h
+    have empty := congrArg BitVec.toNat ((pairAt_zero_iff _ _ _).mp h)
+    rw [digit (by omega_using [bound])] at empty
+    have notZero : N / 2 ^ (64 * (a / 64)) % 2 ^ 64 ≠ 0 := by
+      intro h
+      rw [h, Nat.zero_testBit] at bit
+      contradiction
+    exact notZero empty
+  rw [first_hit m base src 0 count (a / 64) (by omega_using []) (by omega_using [bound]) below hit, pairAt_word, digit (by omega_using [bound])]
+
+theorem scan_twos {s : State} {base : Addr} {size src count N : Nat} (scratch : Scr s base size)
+    (fit : src + 8 * count ≤ size) (value : val32 s.mem base src (2 * count) = N) (positive : 0 < N) :
+    WP isa (scan src count) s fun t =>
+      (t.gpr .esi ++ t.gpr .ebx).toNat = N / 2 ^ (64 * ((Spec.Rsa.splitTwos N).1 / 64)) % 2 ^ 64 ∧
+      t.mem = s.mem ∧ Keeps [.eax, .ecx, .edx, .ebx, .esi] s t := by
+  refine WP.mono (scan_ok scratch fit) fun t ⟨V, M, K⟩ => ?_
+  have pair := congrArg (fun p : BitVec 32 × BitVec 32 => p.2 ++ p.1) V
+  dsimp only at pair
+  exact ⟨by rw [pair]; exact first_twos value positive, M, K⟩
+
+end VG.Proof.RsaKeyGen.X86.LowPair
+
+end
+
+end
+
+/-! # The native alignment marker is exactly 2^(v2(N) mod 64) -/
+
+@[expose] public section
+namespace VG.Proof.RsaKeyGen.X86.ExponentMarker
+open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Impl.RsaKeyGen.X86.ExponentMarker
+
+/-- `LowBit` on the 64-bit word holding `N`'s lowest set bit, in `esi:ebx`. -/
+theorem lowBit_marker {a : State} {N : Nat} (positive : 0 < N)
+    (selectedWord : (a.gpr .esi ++ a.gpr .ebx).toNat = N / 2 ^ (64 * ((Spec.Rsa.splitTwos N).1 / 64)) % 2 ^ 64) :
+    WP isa (.block VG.Impl.RsaKeyGen.X86.LowBit.code) a fun t =>
+      t.gpr .edx ++ t.gpr .eax = BitVec.twoPow 64 ((Spec.Rsa.splitTwos N).1 % 64) ∧
+      t.mem = a.mem ∧ Keeps [.eax, .edx] a t := by
+  refine WP.mono (LowBit.code_ok a) fun t ⟨marker, Mt, Kt⟩ => ?_
+  obtain ⟨factor, odd⟩ := VG.Proof.Rsa.splitTwos_spec positive
+  rw [Nat.mul_comm] at factor
+  obtain ⟨_, bit, below⟩ := VG.Proof.RsaKeyGen.lowWord_bits factor odd
+  have setBit : (a.gpr .esi ++ a.gpr .ebx).getLsbD ((Spec.Rsa.splitTwos N).1 % 64) = true := by
+    change (a.gpr .esi ++ a.gpr .ebx).toNat.testBit _ = true
+    rw [selectedWord]
+    exact bit
+  have clearBit (j : Nat) (lt : j < (Spec.Rsa.splitTwos N).1 % 64) :
+      (a.gpr .esi ++ a.gpr .ebx).getLsbD j = false := by
+    change (a.gpr .esi ++ a.gpr .ebx).toNat.testBit j = false
+    rw [selectedWord]
+    exact below j lt
+  exact ⟨marker.trans (VG.Proof.RsaKeyGen.and_neg_eq_twoPow (Nat.mod_lt _ (by decide)) setBit clearBit), Mt, Kt⟩
+
+theorem code_ok {s : State} {base : Addr} {size src count N : Nat} (scratch : Scr s base size)
+    (fit : src + 8 * count ≤ size) (value : val32 s.mem base src (2 * count) = N) (positive : 0 < N) :
+    WP isa (code src count) s fun t =>
+      t.gpr .edx ++ t.gpr .eax = BitVec.twoPow 64 ((Spec.Rsa.splitTwos N).1 % 64) ∧
+      t.mem = s.mem ∧ Keeps [.eax, .ecx, .edx, .ebx, .esi] s t := by
+  refine WP.seq (WP.mono (LowPair.scan_twos scratch fit value positive) fun a ⟨selectedWord, M, K⟩ => ?_)
+  refine WP.mono (lowBit_marker positive selectedWord) fun t ⟨marker, Mt, Kt⟩ => ?_
+  exact ⟨marker, Mt.trans M, K.widen Kt⟩
+
+end VG.Proof.RsaKeyGen.X86.ExponentMarker
+
+end
+
+end
 
 /-! ### `RsaKeyGen.X86.Exponent`, which only this module used -/
 

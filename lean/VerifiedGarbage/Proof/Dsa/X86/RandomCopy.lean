@@ -1,8 +1,7 @@
 module
-public import VerifiedGarbage.Proof.Dsa.X86.RandomContext
-public import VerifiedGarbage.Proof.Dsa.X86.RandomMask
 
-import VerifiedGarbage.Proof.Dsa.X86.RandomPrepare
+public import VerifiedGarbage.Proof.Dsa.X86.RandomContext
+public import VerifiedGarbage.Proof.Dsa.X86.RandomPrepare
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Framework.AddrArith
 

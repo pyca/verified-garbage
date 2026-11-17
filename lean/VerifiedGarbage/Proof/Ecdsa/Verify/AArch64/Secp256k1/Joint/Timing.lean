@@ -1,12 +1,10 @@
 module
 
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Secp256k1.Joint.Points
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Secp256k1.Joint.Points
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Secp256k1.Joint.Math
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Secp256k1.Joint.Loop
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Front
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP512r1.Joint.Math
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Secp256k1.Joint.LoopOps
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Secp256k1.Joint.Lit
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Framework.AArch64.Exec

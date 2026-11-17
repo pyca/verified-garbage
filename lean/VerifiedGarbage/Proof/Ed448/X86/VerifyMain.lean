@@ -31,15 +31,13 @@ import VerifiedGarbage.Proof.X448.X86.Restore
 import VerifiedGarbage.Proof.X448.X86.Select
 import VerifiedGarbage.Proof.X448.X86.Small
 import VerifiedGarbage.Proof.X448.X86.Step
-public import VerifiedGarbage.Proof.Ed448.X86.VerifyBits
-import VerifiedGarbage.Proof.Ed448.X86.VerifyLoop
+public import VerifiedGarbage.Proof.Ed448.X86.VerifyLoop
 import VerifiedGarbage.Proof.Ed448.X86.VerifyFinish
 import VerifiedGarbage.Proof.Ed448.X86.BaseMain
-import VerifiedGarbage.Proof.Ed448.X86.BaseSetup
 import VerifiedGarbage.Proof.X448.X86.Iter
 import VerifiedGarbage.Proof.Ed448.X86.ScalarMain
 import VerifiedGarbage.Proof.X448.X86.BitStep
-import VerifiedGarbage.Proof.X448.X86.BitWrite
+import VerifiedGarbage.Proof.X448.X86.Bits
 
 /-! ### `Ed448.X86.VerifyDecodeLoop`, which only this module used -/
 

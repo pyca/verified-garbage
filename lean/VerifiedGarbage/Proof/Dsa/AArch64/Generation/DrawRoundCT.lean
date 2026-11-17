@@ -6,11 +6,10 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.DrawCopyCT
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SampleCT
 public import VerifiedGarbage.Proof.MillerRabin.AArch64.Kernel
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PublicKernel
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.TapeSlice
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.DrawBuffer
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.DrawCopyCT
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SampleRoundCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SampleRoundCT
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.DrawBuffer
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.DrawBuffer
 
 /-! A complete entropy draw and shared primality round have a public trace. -/

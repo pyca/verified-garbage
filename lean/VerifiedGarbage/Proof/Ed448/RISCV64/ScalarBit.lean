@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Ed448.Binary
 import VerifiedGarbage.Proof.Framework.RISCV64.ByteLoad
 import VerifiedGarbage.Proof.Ed25519.RISCV64.Base
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.X448.RISCV64.Pass
 
 /-!
 # Ed448 on RISCV64: one bit of the reduction modulo `L`

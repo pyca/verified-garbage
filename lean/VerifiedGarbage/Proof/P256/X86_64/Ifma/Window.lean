@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.P256.X86_64.Ifma.VLoop
-public import VerifiedGarbage.Proof.P256.X86_64.Ifma.Ends
+public import VerifiedGarbage.Proof.P256.X86_64.Ifma.ConvOk
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombLay
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Loop
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacState

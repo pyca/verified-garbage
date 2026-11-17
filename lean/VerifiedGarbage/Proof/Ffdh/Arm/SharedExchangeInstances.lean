@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.SharedExchangePrograms
+public import VerifiedGarbage.Proof.Ffdh.Arm.SharedExchangeCorrect
 public import VerifiedGarbage.Spec.Ffdh.Contract
 import VerifiedGarbage.Proof.Ffdh.Arm.SharedExchangeVerified
 

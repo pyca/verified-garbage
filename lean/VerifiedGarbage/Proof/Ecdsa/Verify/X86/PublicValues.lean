@@ -2,7 +2,7 @@ module
 
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Main
 public import VerifiedGarbage.Proof.Ecdh.X86.Main
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Scalars
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Points
 
 @[expose] public section
 

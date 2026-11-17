@@ -1,6 +1,5 @@
 module
 
-
 public import VerifiedGarbage.Proof.EcKey.X86_64.Scrub.Out
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -8,14 +7,12 @@ meta import VerifiedGarbage.Proof.EcKey.X86_64.Scrub.Out
 meta import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Spec.EcKey.P224
-import VerifiedGarbage.Proof.EcKey.Compressed.X86_64.DecompressMain
+public import VerifiedGarbage.Proof.EcKey.Compressed.X86_64.DecompressMain
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.P224.InverseVerified
 public import VerifiedGarbage.Spec.EcKey.P224
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P224.InverseLit
 import VerifiedGarbage.Proof.P224.Sqrt
-public import VerifiedGarbage.Proof.EcKey.Compressed.X86_64.Candidate
 public import VerifiedGarbage.Impl.EcKey.Compressed.Root
-import VerifiedGarbage.Proof.EcKey.Compressed.X86_64.Frame
 public import VerifiedGarbage.Impl.EcKey.Compressed.X86_64.Decompress
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Stages
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
@@ -28,16 +25,14 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.Pow
 import VerifiedGarbage.Proof.Weierstrass.Law
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Unch
 import VerifiedGarbage.Proof.Ecdsa.X86_64.SlotOps
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Middle
+import VerifiedGarbage.Proof.Ecdsa.X86_64.Scalar
 import VerifiedGarbage.Proof.Weierstrass.RootPowers
 import VerifiedGarbage.Proof.Ecdh.X86_64.Peer
 import VerifiedGarbage.Proof.Mont.X86_64.Ops
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Lays
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Fprog
 import VerifiedGarbage.Proof.Weierstrass.RootTonelli
-import VerifiedGarbage.Proof.EcKey.Compressed.X86_64.RootPow
 import VerifiedGarbage.Proof.EcKey.Compressed.X86_64.DecompressCT
 meta import VerifiedGarbage.Proof.EcKey.Compressed.X86_64.DecompressCT
 import VerifiedGarbage.Proof.Framework.LitShare

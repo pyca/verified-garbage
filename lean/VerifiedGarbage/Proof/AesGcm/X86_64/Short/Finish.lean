@@ -1,11 +1,10 @@
 module
+
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Tab
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Xor
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Seal
 public import VerifiedGarbage.Proof.Framework.X86_64.Avx
 public import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Facts
-
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Seal
 import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks
 import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
 import VerifiedGarbage.Proof.Gcm.Be64

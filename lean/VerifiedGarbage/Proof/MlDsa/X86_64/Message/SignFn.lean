@@ -1,11 +1,11 @@
 module
+
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Same
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.SignCall
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Inst
-
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Lit
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Verified
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Correct
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseOCT
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.SignCT
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Inv
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Entry

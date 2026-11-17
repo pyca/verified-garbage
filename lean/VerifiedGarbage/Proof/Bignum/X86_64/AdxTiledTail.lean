@@ -1,4 +1,5 @@
 module
+
 public import VerifiedGarbage.Impl.Bignum.X86_64.AdxTiledProduct
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8Row
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledTailSetup
@@ -9,8 +10,6 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Add
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Store
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
-import VerifiedGarbage.Proof.Bignum.Rectangular
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8AddChain
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Digit
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Memory
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock

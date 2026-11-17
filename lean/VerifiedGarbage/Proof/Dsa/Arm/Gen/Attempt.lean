@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Dsa.Arm.Gen.QPart
 public import VerifiedGarbage.Proof.Dsa.Arm.Gen.PLoop
 public import VerifiedGarbage.Proof.Dsa.Arm.Gen.GPart
-public import VerifiedGarbage.Proof.Dsa.Arm.Gen.CheckPart
 public import VerifiedGarbage.Proof.Dsa.Generation.RefillSeed
 public import VerifiedGarbage.Proof.Dsa.Generation.PDomain
 import VerifiedGarbage.Proof.Dsa.Generation.SearchDomain
@@ -17,6 +16,468 @@ import VerifiedGarbage.Proof.Dsa.Encoding
 import VerifiedGarbage.Proof.Rsa.Octets
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.Generation.Memory
+import VerifiedGarbage.Proof.Dsa.Arm.Gen.KSLoad
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Dsa.Arm.Gen.Bytes
+public import VerifiedGarbage.Proof.Dsa.Arm.Gen.Frame
+public import VerifiedGarbage.Proof.Rsa.Arm.Stage.VP
+public import VerifiedGarbage.Proof.Dsa.Arm.Gen.Test
+public import VerifiedGarbage.Proof.Dsa.Arm.GenerateCheck
+public import VerifiedGarbage.Impl.Dsa.Arm.Generate
+import VerifiedGarbage.Proof.Dsa.Arm.GenerateCheckCT
+import VerifiedGarbage.Proof.Dsa.Arm.Key.Call
+import VerifiedGarbage.Proof.Framework.Arm.Frame
+import VerifiedGarbage.Proof.Framework.Arm.RelCT
+
+/-! ### `Dsa.Arm.Gen.CheckPart`, which only this module used -/
+
+section
+
+/-! ### `Dsa.Arm.Gen.CheckCall`, which only this module used -/
+
+section
+
+/-! # DSA parameter generation on ARMv7: calling the domain check
+
+`SS.checkCall_ok`: `callWith name Generate.checkParameters`, its stack
+arguments (`scratch` from `sA` and its words, in `r4` and `r5`) pushed,
+checks p‖q‖g at `sPacked`: its verdict in `r0`, and `scratch` changed only
+from `sA` on. `checkCall_ct`: two runs with the same p‖q‖g.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Dsa.Arm.Gen
+open VG VG.Arm VG.Proof.Rsa.Arm.Keys
+open VG.Impl.Dsa.Arm.Generation
+open VG.Proof.X25519.Arm (Rest Upd Mupd)
+open VG.Proof.Rsa.Arm.Recover (VP)
+open VG.Arm.FrameStack (armStack belowA)
+open VG.Proof.Dsa.Arm (checkPre checkArm checkParams checkRes)
+
+/-- The bytes of p‖q‖g. -/
+abbrev nPk (G : GP) : Nat := 2 * G.pLen + G.qLen
+
+/-- The check's arguments, in `r0`–`r5`. -/
+abbrev CArgs (G : GP) (s : State) : Prop :=
+  s.gpr .r0 = G.scr + BitVec.ofNat 32 sPacked ∧ s.gpr .r1 = BitVec.ofNat 32 (nPk G) ∧
+  s.gpr .r2 = BitVec.ofNat 32 G.pLen ∧ s.gpr .r3 = BitVec.ofNat 32 G.qLen ∧
+  s.gpr .r4 = G.scr + BitVec.ofNat 32 sA ∧ s.gpr .r5 = BitVec.ofNat 32 (wa G.pLen / 8)
+
+/-- The regions the check is given. -/
+abbrev cRd (G : GP) : List Region :=
+  [⟨State.addr (G.scr + BitVec.ofNat 32 sPacked), (BitVec.ofNat 32 (nPk G)).toNat⟩,
+    ⟨State.addr (G.sp - BitVec.ofNat 32 (4 * callPush.length)), 8⟩]
+abbrev cWr (G : GP) : List Region :=
+  [⟨State.addr (G.scr + BitVec.ofNat 32 sA), (BitVec.ofNat 32 (wa G.pLen / 8)).toNat * 8⟩]
+
+/-- The check's entry. -/
+abbrev cEntry (G : GP) (s : State) : State := (pushed callPush s).callEntry.withRegions (cRd G) (cWr G)
+
+theorem cEntry_gpr {G : GP} {s : State} {r : Reg} (hr : r ∉ linkRegs) : (cEntry G s).gpr r = s.gpr r := by
+  rw [State.withRegions_gpr, State.callEntry_gpr _ hr, pushed_gpr]
+
+theorem cEntry_sp {G : GP} {s : State} : (cEntry G s).sp = s.sp - BitVec.ofNat 32 (4 * callPush.length) := rfl
+
+section
+variable {G : GP} {σ s : State} {c : Cfg}
+
+/-- The check's stack argument `i`: the pushed register. -/
+theorem SS.cEntry_arg (h : SS G σ c s) {i : Nat} (hi : i < 8) : stackArg (cEntry G s) i = s.gpr callPush[i] := by
+  have := h.gi.sp176
+  have := G.sp.isLt
+  obtain hs : (s.sp - BitVec.ofNat 32 32).toNat = G.sp.toNat - 32 := by
+    rw [h.gi.sp]; exact FrameStack.sub_toNat' (by omega_arith)
+  have := VG.Proof.Dsa.Arm.Key.storeWords_read (callPush.map s.gpr) s.mem (s.sp - BitVec.ofNat 32 32)
+    (by rw [List.length_map]; show (s.sp - BitVec.ofNat 32 32).toNat + 4 * 8 ≤ 2 ^ 32; omega_arith) i
+    (by rw [List.length_map]; exact hi)
+  simpa only [List.getElem_map, stackArg, stackArgAddr, State.withRegions_mem, State.withRegions_sp,
+    State.callEntry_mem, State.callEntry_sp, pushed, List.length_cons, List.length_nil] using this
+
+theorem nPk_le (hlq : Spec.Dsa.generationLengthsValid G.pLen G.qLen) : nPk G ≤ 800 := by
+  unfold Spec.Dsa.generationLengthsValid at hlq; simp only [nPk]; omega_arith
+
+/-- The check's arguments meet its precondition. -/
+theorem SS.cEntry_pre (h : SS G σ c s) (regs : CArgs G s) (hlq : Spec.Dsa.generationLengthsValid G.pLen G.qLen) :
+    checkPre (cEntry G s) := by
+  have gi := h.gi
+  have big := gi.scrBig
+  have fit := gi.scrFit
+  have s176 := gi.sp176
+  have spHi := gi.spHi
+  have hLv := h.lens
+  obtain np := nPk_le hlq
+  obtain kz0 : 0 < kz G.pLen := by simp only [kz]; omega_arith
+  obtain ⟨r0, r1, r2, r3, r4, r5⟩ := regs
+  have sp : s.sp = G.sp := gi.sp
+  obtain esp : (cEntry G s).sp = G.sp - BitVec.ofNat 32 32 := by rw [cEntry_sp, sp]; rfl
+  obtain espN : (cEntry G s).sp.toNat = G.sp.toNat - 32 := by rw [esp, FrameStack.sub_toNat' (by omega_arith)]
+  obtain e0 : (cEntry G s).gpr .r0 = G.scr + BitVec.ofNat 32 sPacked := by rw [cEntry_gpr (by decide), r0]
+  obtain e1 : (cEntry G s).gpr .r1 = BitVec.ofNat 32 (nPk G) := by rw [cEntry_gpr (by decide), r1]
+  obtain e2 : (cEntry G s).gpr .r2 = BitVec.ofNat 32 G.pLen := by rw [cEntry_gpr (by decide), r2]
+  obtain e3 : (cEntry G s).gpr .r3 = BitVec.ofNat 32 G.qLen := by rw [cEntry_gpr (by decide), r3]
+  obtain a0 : stackArg (cEntry G s) 0 = G.scr + BitVec.ofNat 32 sA := by rw [h.cEntry_arg (by decide)]; exact r4
+  obtain a1 : stackArg (cEntry G s) 1 = BitVec.ofNat 32 (wa G.pLen / 8) := by
+    rw [h.cEntry_arg (by decide)]; exact r5
+  obtain wl := wa_toNat hLv
+  obtain nl : (BitVec.ofNat 32 (nPk G)).toNat = nPk G := by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
+  obtain hpk : sPacked + nPk G ≤ sA := by simp only [sPacked, sA]; omega_arith
+  obtain hsA : sA + wa G.pLen ≤ sK G.pLen := by simp only [sK]; omega_arith
+  obtain aP : State.addr (G.scr + BitVec.ofNat 32 sPacked) = G.sa sPacked :=
+    h.addr (n := nPk G) (by omega_arith) (by simp only [nPk]; omega_arith)
+  obtain aS : State.addr (G.scr + BitVec.ofNat 32 sA) = G.sa sA := h.addr (n := wa G.pLen) hsA (by simp only [wa]; omega_arith)
+  obtain argB : Region.Sub ⟨State.addr (G.sp - BitVec.ofNat 32 32), 8⟩ G.rBelow :=
+    fun a ha => gi.pushSub a (by simp only [Region.Contains] at ha ⊢; omega_arith)
+  obtain spT : (G.sp - BitVec.ofNat 32 32).toNat = G.sp.toNat - 32 := by rw [← esp]; exact espN
+  obtain hq32 : G.qLen ≤ 32 := by unfold Spec.Dsa.generationLengthsValid at hlq; omega_arith
+  unfold checkPre
+  simp only [State.withRegions_rd, State.withRegions_wr, e0, e1, e2, e3, VG.Proof.Dsa.Arm.arg, a0, a1, esp]
+  refine ⟨by omega_arith, rfl, trivial, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · rw [aP, aS, nl, wl]; exact gi.sdisj (.inl hpk) (by omega_arith) (by omega_arith)
+  · rw [aS, wl]; exact (gi.scr_below (by omega_arith)).sub_right argB
+  · rw [nl, h.toNat (by omega_arith)]; omega_arith
+  · rw [wl, h.toNat (by omega_arith)]; omega_arith
+  · rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
+    unfold Spec.Dsa.generationLengthsValid at hlq; unfold Spec.Dsa.lengthsValid; omega_arith
+  · rw [nl, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
+  · rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith), Nat.mod_eq_of_lt (by simp only [wa]; omega_arith)]
+    unfold Spec.Dsa.scratchWords; simp only [wa]; omega_arith
+
+/-- The regions the check is given are the push's and `scratch`'s. -/
+theorem SS.cCovers (h : SS G σ c s) (hlq : Spec.Dsa.generationLengthsValid G.pLen G.qLen) :
+    Covers (cRd G ++ cWr G) ((pushed callPush s).rd ++ (pushed callPush s).wr) ∧
+      Covers (cWr G) (pushed callPush s).wr := by
+  have gi := h.gi
+  have big := gi.scrBig
+  have fit := gi.scrFit
+  have s176 := gi.sp176
+  obtain np := nPk_le hlq
+  have hLv := h.lens
+  obtain kz0 : 0 < kz G.pLen := by simp only [kz]; omega_arith
+  obtain wl := wa_toNat h.lens
+  obtain nl : (BitVec.ofNat 32 (nPk G)).toNat = nPk G := by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
+  obtain hpk : sPacked + nPk G ≤ sA := by simp only [sPacked, sA]; omega_arith
+  obtain hsA : sA + wa G.pLen ≤ sK G.pLen := by simp only [sK]; omega_arith
+  obtain aP : State.addr (G.scr + BitVec.ofNat 32 sPacked) = G.sa sPacked :=
+    h.addr (n := nPk G) (by omega_arith) (by simp only [nPk]; omega_arith)
+  obtain aS : State.addr (G.scr + BitVec.ofNat 32 sA) = G.sa sA := h.addr (n := wa G.pLen) hsA (by simp only [wa]; omega_arith)
+  obtain hpw : (pushed callPush s).wr = belowA G.sp 32 :: G.rFrame :: σ.wr := by
+    rw [pushed_wr, gi.wr, gi.sp]; rfl
+  obtain inScr : ∀ {o n : Nat}, o + n ≤ sK G.pLen → InRegions (pushed callPush s).wr (G.sa o) n := fun hon =>
+    ⟨G.rScr, by rw [hpw, gi.pre.wr, gi.hG]; simp,
+      Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
+  obtain hw : Covers (cWr G) (pushed callPush s).wr := Covers.one (by rw [aS, wl]; exact inScr hsA)
+  refine ⟨Covers.append_left (Covers.right (Covers.pair (Covers.one ?_) (Covers.one ?_))) hw.right, hw⟩
+  · rw [aP, nl]; exact inScr (by omega_arith)
+  · refine ⟨belowA G.sp 32, by rw [hpw]; simp, ?_⟩
+    show (_ - _ : Addr).toNat + 8 ≤ 32
+    rw [show (4 * callPush.length) = 32 from rfl, BitVec.sub_self, BitVec.toNat_zero]; omega_arith
+
+/-- The bytes the check reads: p‖q‖g at `sPacked`. -/
+theorem SS.cEntry_params (h : SS G σ c s) (regs : CArgs G s) (hlq : Spec.Dsa.generationLengthsValid G.pLen G.qLen) :
+    checkParams (cEntry G s) = Spec.Rsa.bytesAt s.mem (G.sa sPacked) (nPk G) := by
+  have big := h.gi.scrBig
+  obtain np := nPk_le hlq
+  have hLv := h.lens
+  obtain kz0 : 0 < kz G.pLen := by simp only [kz]; omega_arith
+  obtain nl : (BitVec.ofNat 32 (nPk G)).toNat = nPk G := by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
+  obtain aP : State.addr (G.scr + BitVec.ofNat 32 sPacked) = G.sa sPacked :=
+    h.addr (n := nPk G) (by simp only [sK, sPacked, sA] at *; omega_arith) (by simp only [nPk]; omega_arith)
+  show Spec.Rsa.bytesAt (pushed callPush s).mem (State.addr ((cEntry G s).gpr .r0)) ((cEntry G s).gpr .r1).toNat = _
+  rw [cEntry_gpr (by decide), cEntry_gpr (by decide), regs.1, regs.2.1, aP, nl]
+  refine List.map_congr_left fun k hk => ?_
+  exact h.push_scr (o := sPacked) (n := nPk G) (by simp only [sK, sPacked, sA] at *; omega_arith) (List.mem_range.mp hk)
+
+/-- The check's call: its effects. -/
+theorem SS.checkCall_ok (h : SS G σ c s) {name : String} (regs : CArgs G s)
+    (hlq : Spec.Dsa.generationLengthsValid G.pLen G.qLen) {Q : State → Prop}
+    (k : ∀ t, (∀ r ∈ [Reg.r5, .r6, .r7, .r8, .r9, .r10, .r11], t.gpr r = s.gpr r) → t.sp = s.sp → t.rd = s.rd →
+      t.wr = s.wr → Frame [G.rs sA (wa G.pLen), G.rU, G.rBelow] s.mem t.mem →
+      t.gpr .r0 = (if Spec.Dsa.checkParametersBytes G.pLen G.qLen
+        (Spec.Rsa.bytesAt s.mem (G.sa sPacked) (nPk G)) then 1 else 0) → Q t) :
+    WP isa (callWith name VG.Impl.Dsa.Arm.Generate.checkParameters) s Q := by
+  have gi := h.gi
+  have s176 := gi.sp176
+  obtain pre := h.cEntry_pre regs hlq
+  obtain ⟨hc, hw⟩ := h.cCovers hlq
+  have sp : s.sp = G.sp := gi.sp
+  have big := gi.scrBig
+  unfold callWith
+  refine WP.frame (rs := callPush) (r := .r4) (by decide) (by rw [sp]; show 4 * 8 ≤ G.sp.toNat; omega_arith) (by decide) ?_
+  refine FrameStack.WP.callF (k := checkArm) (fun s hs => by
+      obtain ⟨t, s', e, ha, hp⟩ := VG.Proof.Dsa.Arm.check_correct hs; exact ⟨t, s', e, ha, hp⟩) pre hc hw
+    (by rw [VG.Proof.Dsa.Arm.Key.check_armStack]; exact Nat.zero_le _)
+    fun s₂ hrd hwr hsp hf hg hpost => ?_
+  rw [VG.Proof.Dsa.Arm.Key.check_armStack] at hf
+  have r0 := hpost
+  dsimp only [checkArm] at r0
+  rw [State.withRegions_gpr, BitVec.setWidth_append_eq_right] at r0
+  obtain res : checkRes (cEntry G s) = Spec.Dsa.checkParametersBytes G.pLen G.qLen
+      (Spec.Rsa.bytesAt s.mem (G.sa sPacked) (nPk G)) := by
+    have hLv := h.lens
+    obtain hq32 : G.qLen ≤ 32 := by unfold Spec.Dsa.generationLengthsValid at hlq; omega_arith
+    unfold checkRes
+    rw [h.cEntry_params regs hlq, cEntry_gpr (by decide), cEntry_gpr (by decide), regs.2.2.1, regs.2.2.2.1,
+      BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
+  rw [res] at r0
+  obtain pg : ∀ r, r ≠ .r4 → r ∈ preserved → r ≠ .lr → (popped .r4 (4 * callPush.length) s₂).gpr r = s.gpr r :=
+    fun r h4 hp hl => by rw [popped_gpr h4, hg r hp hl, pushed_gpr]
+  obtain mem : ∀ r ∈ [Reg.r5, .r6, .r7, .r8, .r9, .r10, .r11], r ≠ .r4 ∧ r ∈ preserved ∧ r ≠ .lr := by decide
+  refine k _ (fun r hr => pg r (mem r hr).1 (mem r hr).2.1 (mem r hr).2.2)
+    (by rw [popped_sp, hsp, pushed_sp, BitVec.sub_add_cancel])
+    (by rw [popped_rd, hrd, pushed_rd]) (by rw [popped_wr, hwr, pushed_wr, List.tail_cons]) ?_ ?_
+  · have kz0 : 0 < kz G.pLen := by simp only [kz]; omega_arith
+    obtain aS : State.addr (G.scr + BitVec.ofNat 32 sA) = G.sa sA := h.addr (n := wa G.pLen)
+      (by simp only [sK] at big ⊢; omega_arith) (by simp only [wa]; omega_arith)
+    rw [popped_mem]
+    refine ((FrameStack.pushed_frameA (rs := callPush) (s := s) (by rw [sp]; show 4 * 8 ≤ G.sp.toNat; omega_arith)).sub
+      fun r hr => ?_).trans (hf.sub fun r hr => ?_)
+    · simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨G.rBelow, by simp, by rw [sp]; exact gi.pushSub⟩
+    · simp only [cWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · refine ⟨G.rs sA (wa G.pLen), List.mem_cons_self, ?_⟩
+        rw [aS, wa_toNat h.lens]; exact fun _ h => h
+      · exact ⟨G.rBelow, by simp, fun _ hc => absurd hc (by simp [Region.Contains])⟩
+  · rw [popped_gpr (by decide)]
+    apply BitVec.eq_of_toNat_eq
+    rw [r0]; split <;> rfl
+
+end
+
+/-- The check's call in two runs at the same stage, with the same p‖q‖g. -/
+theorem checkCall_ct {G : GP} {c : Cfg} {name : String} (hlq : Spec.Dsa.generationLengthsValid G.pLen G.qLen)
+    {pk : List Byte} :
+    RelCT isa (fun s₁ s₂ => (∃ σ, SS G σ c s₁) ∧ CArgs G s₁ ∧ Spec.Rsa.bytesAt s₁.mem (G.sa sPacked) (nPk G) = pk ∧
+        (∃ σ, SS G σ c s₂) ∧ CArgs G s₂ ∧ Spec.Rsa.bytesAt s₂.mem (G.sa sPacked) (nPk G) = pk)
+      (callWith name VG.Impl.Dsa.Arm.Generate.checkParameters) fun _ _ => True := by
+  unfold callWith
+  refine RelCT.frame (fun s₁ s₂ ⟨⟨_, h₁⟩, _, _, ⟨_, h₂⟩, _, _⟩ => by rw [h₁.gi.sp, h₂.gi.sp]) ?_
+  intro a b ta tb a' b' hp ea eb
+  obtain ⟨t₁, t₂, ⟨⟨σ₁, h₁⟩, g₁, c₁, ⟨σ₂, h₂⟩, g₂, c₂⟩, p₁, p₂⟩ := hp
+  have s₁ := h₁.gi.sp176
+  have s₂ := h₂.gi.sp176
+  rw [push_pushed (by decide) (by rw [h₁.gi.sp]; show 4 * 8 ≤ G.sp.toNat; omega_arith), Option.some.injEq] at p₁
+  rw [push_pushed (by decide) (by rw [h₂.gi.sp]; show 4 * 8 ≤ G.sp.toNat; omega_arith), Option.some.injEq] at p₂
+  subst p₁ p₂
+  refine RelCT.call (P := fun x y => x = pushed callPush t₁ ∧ y = pushed callPush t₂) (k := checkArm)
+    (fun s hs => by obtain ⟨t, s', e, ha, hp⟩ := VG.Proof.Dsa.Arm.check_correct hs; exact ⟨t, s', e, ha, hp⟩)
+    VG.Proof.Dsa.Arm.check_constantTime (cRd G) (cWr G) (fun _ _ ⟨r₁, r₂⟩ => ?_) _ _ _ _ _ _ ⟨rfl, rfl⟩ ea eb
+  subst r₁ r₂
+  obtain ⟨cv₁, w₁⟩ := h₁.cCovers hlq
+  obtain ⟨cv₂, w₂⟩ := h₂.cCovers hlq
+  refine ⟨h₁.cEntry_pre g₁ hlq, h₂.cEntry_pre g₂ hlq, ⟨?_, ?_, ?_, ?_, ?_, ?_, fun i hi => ?_⟩, cv₁, w₁, cv₂, w₂⟩
+  · show (pushed callPush t₁).sp = (pushed callPush t₂).sp
+    rw [pushed_sp, pushed_sp, h₁.gi.sp, h₂.gi.sp]
+  · rw [h₁.cEntry_params g₁ hlq, h₂.cEntry_params g₂ hlq, c₁, c₂]
+  · show (cEntry G t₁).gpr .r0 = (cEntry G t₂).gpr .r0
+    rw [cEntry_gpr (by decide), cEntry_gpr (by decide), g₁.1, g₂.1]
+  · show (cEntry G t₁).gpr .r1 = (cEntry G t₂).gpr .r1
+    rw [cEntry_gpr (by decide), cEntry_gpr (by decide), g₁.2.1, g₂.2.1]
+  · show (cEntry G t₁).gpr .r2 = (cEntry G t₂).gpr .r2
+    rw [cEntry_gpr (by decide), cEntry_gpr (by decide), g₁.2.2.1, g₂.2.2.1]
+  · show (cEntry G t₁).gpr .r3 = (cEntry G t₂).gpr .r3
+    rw [cEntry_gpr (by decide), cEntry_gpr (by decide), g₁.2.2.2.1, g₂.2.2.2.1]
+  · show stackArg (cEntry G t₁) i = stackArg (cEntry G t₂) i
+    rw [h₁.cEntry_arg (by omega_arith), h₂.cEntry_arg (by omega_arith)]
+    rcases (by omega_arith : i = 0 ∨ i = 1) with rfl | rfl
+    · exact g₁.2.2.2.2.1.trans g₂.2.2.2.2.1.symm
+    · exact g₁.2.2.2.2.2.trans g₂.2.2.2.2.2.symm
+
+section
+variable {G : GP} {c : Cfg} {X : State → Prop}
+
+/-- The check's call, at a stage that claims p‖q‖g at `sPacked`. -/
+theorem checkCall_vp {name : String} {pk : List Byte} {cl' : Claims}
+    (hlq : Spec.Dsa.generationLengthsValid G.pLen G.qLen) (hpk : (sPacked, pk) ∈ c.cl) (hpkl : pk.length = nPk G)
+    (h88 : fUsedOut ∉ c.LS) (h92 : fUsedOut + 4 ∉ c.LS) (hcl : ∀ x ∈ cl', x ∈ c.cl ∧ Apart sA (wa G.pLen) x) :
+    VP (fun σ s => St G c X σ s ∧ CArgs G s) (callWith name VG.Impl.Dsa.Arm.Generate.checkParameters)
+      (fun σ t => St G { c with cl := cl' } X σ t ∧
+        t.gpr .r0 = (if Spec.Dsa.checkParametersBytes G.pLen G.qLen pk then 1 else 0)) := by
+  obtain bytes : ∀ σ s, SS G σ c s → Spec.Rsa.bytesAt s.mem (G.sa sPacked) (nPk G) = pk := fun σ s h => by
+    have := h.sb _ hpk; rwa [hpkl] at this
+  refine VP.of_ct (fun σ₁ σ₂ => (checkCall_ct (c := c) (name := name) hlq).mono
+    (fun s₁ s₂ ⟨⟨⟨h₁, _⟩, g₁⟩, ⟨⟨h₂, _⟩, g₂⟩⟩ => ⟨⟨σ₁, h₁⟩, g₁, bytes _ _ h₁, ⟨σ₂, h₂⟩, g₂, bytes _ _ h₂⟩)
+    fun _ _ _ => trivial) fun σ s ⟨⟨h, x⟩, regs⟩ => ?_
+  refine h.checkCall_ok (name := name) regs hlq fun t g sp rd wr f r0 => ⟨⟨?_, x⟩, by rw [r0, bytes _ _ h]⟩
+  exact h.of_call rfl (fun r hr => g r (by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with rfl | rfl | rfl <;> simp))
+    sp rd wr f h88 h92 hcl
+
+end
+
+end VG.Proof.Dsa.Arm.Gen
+
+end
+
+end
+
+/-! # DSA parameter generation on ARMv7: checking p‖q‖g
+
+`checkPart_vp`: p (at `sPBE`), q (at `sQ`) and g (at `sG`) copied side by
+side to `sPacked`, checked by `vg_dsa_check_parameters`: `fStatus` := 1 if
+`Spec.Dsa.checkParametersBytes` accepts them.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Dsa.Arm.Gen
+open VG VG.Arm VG.Proof.Rsa.Arm.Keys
+open VG.Impl.Dsa.Arm.Generation
+open VG.Proof.X25519.Arm (Rest Upd wp_movw wp_mov wp_cmp op2_imm eval_eq)
+open VG.Proof.Rsa.Arm.Recover (VP)
+
+section
+variable {G : GP} {c : Cfg} {X : State → Prop}
+
+/-- The check's arguments. -/
+theorem cargs_vp (hlq : Spec.Dsa.generationLengthsValid G.pLen G.qLen) :
+    VP (St G c X) (.block (scr G.pLen .r0 sPacked ++ ([.movw .r1 (BitVec.ofNat 16 (2 * G.pLen + G.qLen)),
+        .movw .r2 (BitVec.ofNat 16 G.pLen), .mov .r3 (.imm (BitVec.ofNat 32 G.qLen))] : List Instr) ++ scr G.pLen .r4 sA ++
+        ([.movw .r5 (BitVec.ofNat 16 (wa G.pLen / 8))] : List Instr)))
+      (fun σ s => St G c X σ s ∧ CArgs G s) := by
+  refine VP.taint [.r8] ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r8])
+      (.block (scr 128 .r0 sPacked ++ [.movw .r1 (BitVec.ofNat 16 1), .movw .r2 (BitVec.ofNat 16 1),
+        .mov .r3 (.imm (BitVec.ofNat 32 1))] ++ scr 128 .r4 sA ++ [.movw .r5 (BitVec.ofNat 16 1)])), rfl⟩
+    (fun σ₁ σ₂ s₁ s₂ h₁ h₂ r hr => by simp only [List.mem_singleton] at hr; subst hr; rw [h₁.1.r8, h₂.1.r8])
+    fun σ s ⟨h, x⟩ => ?_
+  have big := h.gi.scrBig
+  have hLv := h.lens
+  have hq32 : G.qLen ≤ 32 := by unfold Spec.Dsa.generationLengthsValid at hlq; omega_arith
+  have hsK : sA ≤ sK G.pLen := by simp only [sK]; omega_arith
+  simp only [List.append_assoc, List.cons_append, List.nil_append]
+  refine scr_ok (d := .r0) h.r8 rfl hLv (by simp only [sPacked, sK, sA]; omega_arith) fun s₁ v₁ R₁ M₁ => ?_
+  refine wp_movw fun s₂ u₂ => wp_movw fun s₃ u₃ => wp_mov (op2_imm (encodable_lt (by omega_arith))) fun s₄ u₄ => ?_
+  have h4 : SS G σ c s₄ := ((((h.of_rest R₁ M₁).of_rest (u₂.rest (ws := [.r1]) (by simp)) u₂.mem).of_rest
+    (u₃.rest (ws := [.r2]) (by simp)) u₃.mem).of_rest (u₄.rest (ws := [.r3]) (by simp)) u₄.mem)
+  refine scr_ok (d := .r4) h4.r8 rfl hLv hsK fun s₅ v₅ R₅ M₅ => wp_movw fun t u => WP.block_nil ?_
+  refine ⟨⟨(h4.of_rest R₅ M₅).of_rest (u.rest (ws := [.r5]) (by simp)) u.mem, x⟩, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · rw [u.other _ (by decide), R₅.gpr _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide),
+      u₂.other _ (by decide), v₁]
+  · rw [u.other _ (by decide), R₅.gpr _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr,
+      setWidth_ofNat16 (by omega_arith)]
+  · rw [u.other _ (by decide), R₅.gpr _ (by decide), u₄.other _ (by decide), u₃.gpr, setWidth_ofNat16 (by omega_arith)]
+  · rw [u.other _ (by decide), R₅.gpr _ (by decide), u₄.gpr]
+  · rw [u.other _ (by decide), v₅]
+  · rw [u.gpr, setWidth_ofNat16 (by simp only [wa]; omega_arith)]
+
+/-- p‖q‖g. -/
+abbrev pkOf (pB qB gB : List Byte) : List Byte := pB ++ qB ++ gB
+
+/-- The stage after the check. -/
+abbrev ckCfg (c : Cfg) (pk : List Byte) (ok : Bool) : Cfg :=
+  if ok then ({ c with cl := (sPacked, pk) :: c.cl }).setV fStatus 1 else { c with cl := (sPacked, pk) :: c.cl }
+
+theorem checkPart_vp {g : Geo} (hp : g.pLen = G.pLen) (hq : g.qLen = G.qLen)
+    (hck : g.checkCode = VG.Impl.Dsa.Arm.Generate.checkParameters)
+    (hlq : Spec.Dsa.generationLengthsValid G.pLen G.qLen) {pB qB gB : List Byte}
+    (hP : (sPBE, pB) ∈ c.cl) (hQ : (sQ, qB) ∈ c.cl) (hG : (sG, gB) ∈ c.cl)
+    (hPl : pB.length = G.pLen) (hQl : qB.length = G.qLen) (hGl : gB.length = G.pLen)
+    (hcl : ∀ x ∈ c.cl, x.1 + x.2.length ≤ sPacked) (h88 : fUsedOut ∉ c.LS) (h92 : fUsedOut + 4 ∉ c.LS) :
+    VP (St G c X) g.checkPart
+      (St G (ckCfg c (pkOf pB qB gB) (Spec.Dsa.checkParametersBytes G.pLen G.qLen (pkOf pB qB gB))) X) := by
+  unfold Geo.checkPart
+  rw [hp, hq, hck]
+  have hq32 : G.qLen ≤ 32 := by unfold Spec.Dsa.generationLengthsValid at hlq; omega_arith
+  have hp384 : G.pLen ≤ 384 := by unfold Spec.Dsa.generationLengthsValid at hlq; omega_arith
+  have hp0 : 0 < G.pLen := by unfold Spec.Dsa.generationLengthsValid at hlq; omega_arith
+  have hq0 : 0 < G.qLen := by unfold Spec.Dsa.generationLengthsValid at hlq; omega_arith
+  have e1 : sPacked = 2112 := rfl
+  have e2 : sPBE = 576 := rfl
+  have e3 : sQ = 128 := rfl
+  have e4 : sG = 1728 := rfl
+  have e5 : sA = 4096 := rfl
+  have hK : ∀ n, n ≤ 4096 → n ≤ sK G.pLen := fun n hn => by simp only [sK, sA] at *; omega_arith
+  -- The copies.
+  refine VP.seq (G := St G { c with cl := (sPacked, pB) :: c.cl } X) (copyS_vp (c := fun _ => c) (fun σ s h => h.1) rfl hp0 (by omega_arith)
+    (hK _ (by omega_arith)) (hK _ (by omega_arith)) (.inr (by omega_arith)) fun σ s t ⟨h, x⟩ R f e => ⟨?_, x⟩) ?_
+  · have b := h.sb _ hP
+    refine h.of_scr R (o := sPacked) (n := G.pLen) (hK _ (by omega_arith)) (f.mono (by simp))
+      (cl' := (sPacked, pB) :: c.cl) fun y hy => ?_
+    rcases List.mem_cons.mp hy with rfl | hy
+    · exact .inr ⟨by rw [hPl, e, ← hPl]; exact b, by rw [hPl]; exact hK _ (by omega_arith)⟩
+    · exact .inl ⟨hy, .inl (hcl y hy)⟩
+  refine VP.seq (G := St G { c with cl := (sPacked + G.pLen, qB) :: (sPacked, pB) :: c.cl } X)
+    (copyS_vp (c := fun _ => { c with cl := (sPacked, pB) :: c.cl }) (fun σ s h => h.1) rfl hq0 (by omega_arith)
+    (hK _ (by omega_arith)) (hK _ (by omega_arith)) (.inr (by omega_arith)) fun σ s t ⟨h, x⟩ R f e => ⟨?_, x⟩) ?_
+  · have b := h.sb _ (show (sQ, qB) ∈ (sPacked, pB) :: c.cl from List.mem_cons_of_mem _ hQ)
+    refine h.of_scr R (o := sPacked + G.pLen) (n := G.qLen) (hK _ (by omega_arith)) (f.mono (by simp))
+      (cl' := (sPacked + G.pLen, qB) :: (sPacked, pB) :: c.cl) fun y hy => ?_
+    rcases List.mem_cons.mp hy with rfl | hy
+    swap
+    rcases List.mem_cons.mp hy with rfl | hy
+    · exact .inl ⟨List.mem_cons_self, .inl (by rw [hPl])⟩
+    · exact .inl ⟨List.mem_cons_of_mem _ hy, .inl (by have := hcl y hy; omega_arith)⟩
+    · exact .inr ⟨by rw [hQl, e, ← hQl]; exact b, by rw [hQl]; exact hK _ (by omega_arith)⟩
+  refine VP.seq (G := St G { c with cl := (sPacked + G.pLen + G.qLen, gB) :: (sPacked + G.pLen, qB) ::
+      (sPacked, pB) :: c.cl } X)
+    (copyS_vp (c := fun _ => { c with cl := (sPacked + G.pLen, qB) :: (sPacked, pB) :: c.cl }) (fun σ s h => h.1) rfl hp0 (by omega_arith)
+    (hK _ (by omega_arith)) (hK _ (by omega_arith)) (.inr (by omega_arith)) fun σ s t ⟨h, x⟩ R f e => ⟨?_, x⟩) ?_
+  · have b := h.sb _ (show (sG, gB) ∈ (sPacked + G.pLen, qB) :: (sPacked, pB) :: c.cl from
+      List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hG))
+    refine h.of_scr R (o := sPacked + G.pLen + G.qLen) (n := G.pLen) (hK _ (by omega_arith)) (f.mono (by simp))
+      (cl' := (sPacked + G.pLen + G.qLen, gB) :: (sPacked + G.pLen, qB) :: (sPacked, pB) :: c.cl) fun y hy => ?_
+    rcases List.mem_cons.mp hy with rfl | hy
+    · exact .inr ⟨by rw [hGl, e, ← hGl]; exact b, by rw [hGl]; exact hK _ (by omega_arith)⟩
+    rcases List.mem_cons.mp hy with rfl | hy
+    · exact .inl ⟨List.mem_cons_self, .inl (by rw [hQl])⟩
+    rcases List.mem_cons.mp hy with rfl | hy
+    · exact .inl ⟨List.mem_cons_of_mem _ List.mem_cons_self, .inl (by rw [hPl]; omega_arith)⟩
+    · exact .inl ⟨List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hy), .inl (by have := hcl y hy; omega_arith)⟩
+  -- p‖q‖g, as one claim.
+  have join : ∀ σ s, SS G σ { c with cl := (sPacked + G.pLen + G.qLen, gB) :: (sPacked + G.pLen, qB) ::
+      (sPacked, pB) :: c.cl } s → SS G σ { c with cl := (sPacked, pkOf pB qB gB) :: c.cl } s := fun σ s h => by
+    have hc : ∀ y ∈ (sPacked, pkOf pB qB gB) :: c.cl,
+        Spec.Rsa.bytesAt s.mem (G.sa y.1) y.2.length = y.2 ∧ y.1 + y.2.length ≤ sK G.pLen := by
+      intro y hy
+      rcases List.mem_cons.mp hy with rfl | hy
+      · have bp := h.sb (sPacked, pB) (by simp)
+        have bq := h.sb (sPacked + G.pLen, qB) (by simp)
+        have bg := h.sb (sPacked + G.pLen + G.qLen, gB) (by simp)
+        have offe : ∀ o n, VG.Proof.Bignum.off (G.sa o) n = G.sa (o + n) := fun o n => by
+          simp only [VG.Proof.Bignum.off, GP.sa]; rw [BitVec.add_assoc, ← BitVec.ofNat_add]
+        simp only at bp bq bg
+        refine ⟨?_, by simp only [pkOf, List.length_append, hPl, hQl, hGl]; exact hK _ (by omega_arith)⟩
+        show Spec.Rsa.bytesAt s.mem (G.sa sPacked) (pB ++ qB ++ gB).length = pB ++ qB ++ gB
+        rw [List.length_append, List.length_append, VG.Proof.Dsa.Generation.bytesAt_append,
+          VG.Proof.Dsa.Generation.bytesAt_append, offe, offe, ← Nat.add_assoc, bp, hPl, bq, hQl, bg]
+      · exact ⟨h.sb _ (by simp [hy]), h.clOk _ (by simp [hy])⟩
+    exact ⟨h.gi, h.r7, h.r8, h.r9, fun y hy => (hc y hy).1, fun y hy => (hc y hy).2, h.arrs, h.liveOk, h.ksl,
+      h.kslOk⟩
+  refine VP.seq ((cargs_vp (c := { c with cl := (sPacked + G.pLen + G.qLen, gB) :: (sPacked + G.pLen, qB) ::
+      (sPacked, pB) :: c.cl }) (X := X) hlq).mono (G' := fun σ s => St G { c with cl := (sPacked, pkOf pB qB gB) ::
+        c.cl } X σ s ∧ CArgs G s) (fun _ _ h => h) fun σ s ⟨⟨h, x⟩, a⟩ => ⟨⟨join σ s h, x⟩, a⟩) ?_
+  -- The check.
+  have hpkl : (pkOf pB qB gB).length = nPk G := by simp only [pkOf, List.length_append, hPl, hQl, hGl, nPk]; omega_arith
+  refine VP.seq (checkCall_vp (c := { c with cl := (sPacked, pkOf pB qB gB) :: c.cl })
+    (cl' := (sPacked, pkOf pB qB gB) :: c.cl) hlq (by simp) hpkl h88 h92 fun y hy =>
+    ⟨hy, .inl (by
+      rcases List.mem_cons.mp hy with rfl | hy
+      · rw [hpkl]; simp only [nPk, sPacked, sA]; omega_arith
+      · have := hcl y hy; simp only [sPacked, sA] at *; omega_arith)⟩) ?_
+  generalize hb : Spec.Dsa.checkParametersBytes G.pLen G.qLen (pkOf pB qB gB) = b
+  refine VP.seq (G := fun σ s => St G { c with cl := (sPacked, pkOf pB qB gB) :: c.cl } X σ s ∧ isa.eval .eq s = some b)
+    (VP.taint [.r0] ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r0]) (.block [.cmp .r0 (.imm 1)]), rfl⟩
+      (fun σ₁ σ₂ s₁ s₂ h₁ h₂ r hr => by simp only [List.mem_singleton] at hr; subst hr; rw [h₁.2, h₂.2])
+      fun σ s ⟨⟨h, x⟩, r0⟩ => wp_cmp (op2_imm (by decide)) fun t f z => WP.block_nil
+        ⟨⟨h.of_rest (f.rest []) f.mem, x⟩, by rw [eval_eq, z, r0]; cases b <;> decide⟩) ?_
+  refine VP.ite (fun σ₁ σ₂ s₁ s₂ h₁ h₂ => by rw [h₁.2, h₂.2]) ?_ ?_
+  · cases b
+    · exact VP.of_false fun σ s ⟨⟨_, e⟩, z⟩ => by rw [e] at z; simp at z
+    · exact stImm_vp (c := fun _ => { c with cl := (sPacked, pkOf pB qB gB) :: c.cl }) (fun σ s h => h.1.1.1) (by decide) (varOk_of (by decide))
+        fun σ s t h h' _ => ⟨h', h.1.1.2⟩
+  · cases b
+    · exact VP.block_nil fun σ s h => h.1.1
+    · exact VP.of_false fun σ s ⟨⟨_, e⟩, z⟩ => by rw [e] at z; simp at z
+
+end
+
+end VG.Proof.Dsa.Arm.Gen
+
+end
+
+end
 
 /-! # DSA parameter generation on ARMv7: a seed
 

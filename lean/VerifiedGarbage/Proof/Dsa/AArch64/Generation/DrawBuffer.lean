@@ -1,10 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeFrame
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.TapeSlice
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.DrawCopy
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SampleState
-
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Rsa.AArch64.KeyWs
@@ -13,14 +11,110 @@ import VerifiedGarbage.Proof.Dsa.AArch64.RandomCopy
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import Aesop.BuiltinRules
-import VerifiedGarbage.Proof.Dsa.AArch64.Run
+public import VerifiedGarbage.Proof.Dsa.AArch64.Run
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ModulusHeader
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ModulusWords
 import VerifiedGarbage.Proof.Bignum.WorkFrame
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeSetup
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeSetup
 import VerifiedGarbage.Proof.Bignum.ExternalWords
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeState
+import VerifiedGarbage.Proof.Dsa.AArch64.SourceSlices
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ModulusFrame
+
+/-! ### `Dsa.AArch64.Generation.ModulusHeader`, which this module and modules that import it used -/
+
+section
+
+/-! Policy-header writes leave the prepared modulus and exponent intact. -/
+@[expose] public section
+namespace VG.Proof.Dsa.AArch64.Generation
+open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64 VG.Impl.Bignum.Public
+open VG.Impl.Rsa.AArch64 VG.Impl.Rsa.AArch64.Keys VG.Impl.RsaKeyGen.AArch64.Candidate
+open VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.Rsa.AArch64 VG.Proof.RsaKeyGen.AArch64
+open VG.Proof.MlKem.AArch64
+
+theorem ModulusReady.write_header {s : State} {B : Addr} {Z w N i : Nat} (v : BitVec 64)
+    (h : ModulusReady s B Z w N) (hEZ : slot w aE + 8 * (w + 2) ≤ Z)
+    (hi : i ∈ [0, 16, 17, 18, 19, 20, 21, 22, 24, 25, 27, 31]) :
+    ModulusReady {s with mem := s.mem.writeW (off B (8 * i)) v} B Z w N := by
+  have hi32 : i < 32 := by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
+    omega_using [hi]
+  have hf : Frm B [(8 * i, 8)] s.mem (s.mem.writeW (off B (8 * i)) v) :=
+    Frm.of_outside (writeW_outside _ B v (by omega_using [hi32])) (by simp)
+  have hk : Keep [] s {s with mem := s.mem.writeW (off B (8 * i)) v} :=
+    ⟨fun _ _ => rfl, rfl, rfl, rfl, fun _ _ => rfl⟩
+  refine h.of_frm hEZ hf ?_ hk (by decide) ?_ ?_ ?_
+  · intro r hr; rw [List.mem_singleton.mp hr]
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
+    rcases hi with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+      exact KMut.hdr (by decide)
+  · intro a ha r hr; rw [List.mem_singleton.mp hr]
+    right; simp only [slot, hdrBytes]; omega_arith
+  · intro r hr; rw [List.mem_singleton.mp hr]
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
+    rcases hi with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+  · intro r hr; rw [List.mem_singleton.mp hr]
+    right; simp only [slot, hdrBytes, aE]; omega_arith
+
+end VG.Proof.Dsa.AArch64.Generation
+
+end
+
+end
+
+/-! ### `Dsa.AArch64.Generation.TapeSlice`, which this module and modules that import it used -/
+
+section
+
+/-! # The next significant witness bytes are a disjoint slice of the random tape -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.AArch64.Generation
+open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64
+open VG.Proof.Dsa.AArch64
+
+def PrimeParams.drawStart (P : PrimeParams) (used : Nat) : Nat := used + (P.drawBytes - P.len)
+def PrimeParams.drawSlice (P : PrimeParams) (used : Nat) : List Byte := (P.rand.drop (P.drawStart used)).take P.len
+
+theorem PrimeParams.slice_length (P : PrimeParams) {used : Nat} (h : used + P.drawBytes ≤ P.rand.length) :
+    (P.drawSlice used).length = P.len := by
+  simp only [PrimeParams.drawSlice, PrimeParams.drawStart, List.length_take, List.length_drop]
+  have := P.lenDraw
+  omega_using [h, this]
+
+theorem PrimeState.slice_source {P : PrimeParams} {used : Nat} {s : State}
+    (h : PrimeState P used s) (hroom : used + P.drawBytes ≤ P.rand.length) : Src s P.B P.Z (off P.rp (P.drawStart used)) (P.drawSlice used) :=
+  source_slice h.source (by have := P.lenDraw; dsimp only [PrimeParams.drawStart]; omega_using [hroom, this])
+
+theorem PrimeParams.slice_separate (P : PrimeParams) {used : Nat}
+    (hroom : used + P.drawBytes ≤ P.rand.length) :
+    ∀ i < (P.drawSlice used).length, ∀ j < (P.drawSlice used).length,
+      off (off P.rp (P.drawStart used)) i ≠ off P.p j := by
+  intro i hi j hj he
+  rw [P.slice_length hroom] at hi hj
+  have hs : P.drawStart used + i < P.rand.length := by
+    dsimp only [PrimeParams.drawStart]; have := P.lenDraw; omega_using [hroom, hi, this]
+  have ha : off (off P.rp (P.drawStart used)) i = off P.rp (P.drawStart used + i) := by
+    simp only [off, BitVec.ofNat_add, BitVec.add_assoc]
+  apply P.tapeBuffer (off P.p j)
+  · rw [← he, ha]
+    apply (Region.contains_self P.rp P.rand.length).byte
+    simp only [off, Offset.add_sub_cancel_left, BitVec.toNat_ofNat]
+    rw [Nat.mod_eq_of_lt (by have := P.randMax; omega_using [hs, this])]
+    exact hs
+  · apply (Region.contains_self P.p P.len).byte
+    simp only [off, Offset.add_sub_cancel_left, BitVec.toNat_ofNat]
+    rw [Nat.mod_eq_of_lt (by have := P.lenDraw; have := P.drawMax; omega_arith)]
+    exact hj
+
+end VG.Proof.Dsa.AArch64.Generation
+
+end
+
+end
+
 /-! # A whole tape draw supplies the sampler and preserves all loop arguments -/
 
 -- Formerly `VerifiedGarbage/Proof/Dsa/AArch64/Generation/DrawCopy.lean`, which only this module imported.

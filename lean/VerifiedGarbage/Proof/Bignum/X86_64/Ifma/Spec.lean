@@ -1,8 +1,7 @@
 module
-import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Out
 
-import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CoreU
+import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CoreU
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset

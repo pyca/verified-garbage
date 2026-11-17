@@ -4,7 +4,6 @@ public import VerifiedGarbage.Impl.RsaKeyGen.X86.Constants
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.PreparedR2State
 public import VerifiedGarbage.Proof.MillerRabin.X86.TimingBase
 public import VerifiedGarbage.Proof.Framework.X86.Call
-import VerifiedGarbage.Proof.RsaKeyGen.X86.ConstantsOne
 import VerifiedGarbage.Proof.RsaKeyGen.X86.Constants
 import VerifiedGarbage.Proof.RsaKeyGen.X86.PreparedContext
 public import VerifiedGarbage.Proof.MillerRabin.X86.TimingMultiply

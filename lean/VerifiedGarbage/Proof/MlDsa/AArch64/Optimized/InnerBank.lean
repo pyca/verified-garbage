@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TraversalBank
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Traversal
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TraversalSlice
 import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PlainSimp

@@ -8,7 +8,6 @@ public import VerifiedGarbage.Proof.Bignum.X86.R2Words.Add
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Rsa.RecoverDetWords
 import VerifiedGarbage.Proof.Rsa.X86.WordRt.Loop
-import VerifiedGarbage.Proof.Rsa.X86.Rd.Move
 import VerifiedGarbage.Proof.Mont.WriteWord32
 import VerifiedGarbage.Proof.Bignum.SqrtRem
 

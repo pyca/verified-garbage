@@ -1,8 +1,7 @@
 module
-public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Block
-public import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Finalize
 
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86.HmacFin
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Block
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.HmacFin
 import VerifiedGarbage.Proof.Framework.Contract
 
 /-!

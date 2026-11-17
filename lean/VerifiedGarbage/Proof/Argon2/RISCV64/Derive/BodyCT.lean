@@ -20,7 +20,7 @@ meta import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Locals
 meta import VerifiedGarbage.Proof.Argon2.References
 meta import VerifiedGarbage.Proof.Argon2.Iterations
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Exec
-public import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.CTBase
+public import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.CTCall
 import VerifiedGarbage.Proof.Argon2.FinalReduction
 import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Reduce
 meta import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Reduce

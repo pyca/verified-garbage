@@ -4,11 +4,10 @@ public import VerifiedGarbage.Impl.Dsa.X86_64.Prevalidated
 public import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingReturn
 public import VerifiedGarbage.Spec.Dsa.Prevalidated
 import VerifiedGarbage.Proof.Dsa.X86_64.AcceptedSpec
-import VerifiedGarbage.Proof.Dsa.X86_64.CheckEffects
+import VerifiedGarbage.Proof.Dsa.X86_64.CheckOperands
 import VerifiedGarbage.Proof.Dsa.X86_64.Result
 import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleState
 import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleOperands
-import VerifiedGarbage.Proof.Dsa.X86_64.CallOperands
 import VerifiedGarbage.Proof.Dsa.DomainWidths
 import VerifiedGarbage.Proof.Dsa.SizeBounds
 import VerifiedGarbage.Proof.Dsa.Encoding

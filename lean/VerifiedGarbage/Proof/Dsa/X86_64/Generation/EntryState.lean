@@ -20,9 +20,34 @@ import VerifiedGarbage.Proof.RsaKeyGen.Table
 import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
 import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
 import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.FrameStore
 import VerifiedGarbage.Proof.Framework.OmegaLit
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
+
+/-! ### `Dsa.X86_64.Generation.FrameStore`, which this module and modules that import it used -/
+
+section
+
+/-! # Initialize frame words before the search scratch pointer has been stored -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.X86_64.Generation
+open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
+open VG.Proof.RsaOaep.X86_64 VG.Impl.RsaOaep.X86_64
+open VG.Impl.Mgf1.X86_64 (sp)
+
+theorem frameWord_write {F : Addr} {k : Nat} (hk : k < nW) (m : Mem) (v : BitVec 64) :
+    Frame [⟨F, frameBytes⟩] m (m.writeW (off F (8 * k)) v) :=
+  (Frame.refl _ _).writeW (r := ⟨F, frameBytes⟩) (by simp) _
+    (Offset.contains_base _ (by unfold nW frameBytes at *; omega_using [hk]) (by unfold nW frameBytes at *; omega_using [hk]))
+
+theorem initialRep (m : Mem) (F S : Addr) :
+    Rep m F S (fun i => m (off S i)) (fun k => word m F (8 * k)) := ⟨fun _ _ => rfl, fun _ _ => rfl⟩
+
+end VG.Proof.Dsa.X86_64.Generation
+
+end
+
+end
 
 /-! ### `Dsa.X86_64.Generation.FrameDerived`, which only this module used -/
 

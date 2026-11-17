@@ -1,10 +1,9 @@
 module
 
-import VerifiedGarbage.Proof.MlDsa.PPC64LE.KeyGen.CallSP
+public import VerifiedGarbage.Proof.MlDsa.PPC64LE.KeyGen.CallSP
 import VerifiedGarbage.Proof.MlDsa.PPC64LE.KeyGen.ContractsV
 import VerifiedGarbage.Proof.Framework.Covers
 public import VerifiedGarbage.Proof.Framework.Semantics
-public import VerifiedGarbage.Proof.MlDsa.PPC64LE.KeyGen.Call
 public import VerifiedGarbage.Proof.MlDsa.Contract
 public import VerifiedGarbage.TCB.PPC64LE.Target
 

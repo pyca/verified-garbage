@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Divstep
 public import VerifiedGarbage.Impl.X25519.AArch64.Base
-import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseEngine
-import VerifiedGarbage.Proof.Ed25519.AArch64.BitByte
+public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseEngine
+import VerifiedGarbage.Proof.Ed25519.AArch64.Bits
 import VerifiedGarbage.Proof.X25519.Edwards.Base
 public import VerifiedGarbage.Proof.Ed25519.AArch64.CounterKeep
 public import VerifiedGarbage.Proof.Ed25519.AArch64.CombSelect
@@ -11,8 +11,6 @@ public import VerifiedGarbage.Proof.Ed25519.AArch64.PointPowers
 public import VerifiedGarbage.Spec.Ed25519.Contract
 import VerifiedGarbage.Proof.Ed25519.AArch64.PointEncode
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
-public import VerifiedGarbage.Proof.Ed25519.AArch64.CombLoop
-import VerifiedGarbage.Proof.Ed25519.AArch64.CombStart
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Spec.Weierstrass

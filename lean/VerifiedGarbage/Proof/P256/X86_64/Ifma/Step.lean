@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.P256.X86_64.Ifma.Glue
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.P256.X86_64.Ifma.Stage
 
 /-!
 # P-256 on x86-64 with AVX512_IFMA: a stage's piece of code

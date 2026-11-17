@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Weierstrass.TCombWords
 import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Copy
 import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Keep
 public import VerifiedGarbage.Proof.Weierstrass.PPC64LE.MontCall
-import VerifiedGarbage.Proof.Weierstrass.PPC64LE.PointFn
+import VerifiedGarbage.Proof.Weierstrass.PPC64LE.LadderPCall
 import VerifiedGarbage.Proof.Mont.PPC64LE.Const
 import VerifiedGarbage.Proof.Mont.PPC64LE.Csub
 import VerifiedGarbage.Proof.Mont.Words32
@@ -24,14 +24,11 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 public import VerifiedGarbage.Proof.Weierstrass.CombDigitW
 public import VerifiedGarbage.Proof.Mont.PPC64LE.Words
 import VerifiedGarbage.Proof.Weierstrass.CombDigitTopW
-import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Bits
+import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Pow
 public import VerifiedGarbage.Proof.Weierstrass.CombW
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Proof.Weierstrass.PPC64LE.MontFn
 import VerifiedGarbage.Proof.Weierstrass.CombPointW
-import VerifiedGarbage.Proof.Weierstrass.PPC64LE.LadderPCall
-import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Loop
-import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Pow
 import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
 import VerifiedGarbage.Proof.Framework.PPC64LE.VectorBytes
 

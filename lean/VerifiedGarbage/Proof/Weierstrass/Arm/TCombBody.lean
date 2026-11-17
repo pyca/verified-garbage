@@ -5,7 +5,6 @@ import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Impl.Weierstrass.Arm.TComb
 public import VerifiedGarbage.Proof.Mont.Arm.Words
-import VerifiedGarbage.Proof.Weierstrass.Arm.TCombMask
 
 /-! One public-index iteration of the signed comb table scan. -/
 

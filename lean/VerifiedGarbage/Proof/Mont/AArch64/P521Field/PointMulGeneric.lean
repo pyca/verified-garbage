@@ -1,11 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Field.PointMulRow8
+public import VerifiedGarbage.Proof.Mont.AArch64.P521Field.PointMulProduct
 public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionWords
 import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Field.PointMulProduct
 public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionFold
 public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionMath
 import VerifiedGarbage.Proof.Mont.AArch64.P521Field.NativeReduction

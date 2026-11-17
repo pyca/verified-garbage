@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Argon2.AddressInput
 public import VerifiedGarbage.Proof.Argon2.Arm.Derive.FillCall
-public import VerifiedGarbage.Proof.Argon2.Arm.Derive.FillSteps
+public import VerifiedGarbage.Proof.Argon2.Arm.Derive.FillState
 import VerifiedGarbage.Proof.Argon2.Arm.Derive.Clear
 import VerifiedGarbage.Proof.Argon2.Arm.Derive.Initial
 import VerifiedGarbage.Proof.Argon2.Arm.Derive.Scratch

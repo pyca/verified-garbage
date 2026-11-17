@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Loop
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Gh48
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Pow
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Pair
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Exec

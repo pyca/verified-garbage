@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.Arm.LadderP
 public import VerifiedGarbage.Proof.Weierstrass.Arm.TCombConfig
-public import VerifiedGarbage.Proof.Weierstrass.Arm.TCombLayout
 public import VerifiedGarbage.Proof.Framework.ConstMem
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Impl.Ecdsa.P256.ArmComb

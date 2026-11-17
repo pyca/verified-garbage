@@ -10,13 +10,12 @@ import VerifiedGarbage.Proof.Framework.AArch64.Simd
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedStageRun
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedPackedRoot
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InversePackedRun
 import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseLocalTable
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedStore
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFive
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedShape
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedState
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Slice
 import VerifiedGarbage.Proof.Framework.Offset
 

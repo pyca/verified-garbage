@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.LoopState
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ModulusHeader
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.DrawBuffer
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ModulusWords
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec

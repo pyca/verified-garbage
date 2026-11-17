@@ -1,8 +1,7 @@
 module
-public import VerifiedGarbage.Impl.Weierstrass.AArch64.Forward
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Concrete
 
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ForwardOk
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.Forward
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ForwardOk
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PlainSimp
 

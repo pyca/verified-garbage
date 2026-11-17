@@ -1,28 +1,522 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.Arm.TCombConfig
-public import VerifiedGarbage.Proof.Weierstrass.Arm.TCombHorner
-import VerifiedGarbage.Proof.Weierstrass.Arm.TCombDigit
 public import VerifiedGarbage.Proof.Weierstrass.Arm.TCombTable
 public import VerifiedGarbage.Impl.Weierstrass.Arm.TComb
 public import VerifiedGarbage.Proof.Mont.Arm.Words
-import VerifiedGarbage.Proof.Weierstrass.Arm.TCombLoop
 import VerifiedGarbage.Proof.Weierstrass.Arm.Const
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Weierstrass.Arm.TCombScan
-import VerifiedGarbage.Proof.Weierstrass.Arm.TCombTail
 public import VerifiedGarbage.Proof.Mont.Words32
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.PlainSimp
-import VerifiedGarbage.Proof.Weierstrass.Arm.TCombIndex
 import VerifiedGarbage.Proof.Weierstrass.CombDigitTopW
-public import VerifiedGarbage.Proof.Weierstrass.Arm.TCombLayout
 import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
 import VerifiedGarbage.Proof.Framework.Arm.Syms
 import VerifiedGarbage.Proof.Weierstrass.CombPointW
 import VerifiedGarbage.Proof.Weierstrass.Arm.Loop
+public import VerifiedGarbage.Proof.Weierstrass.Arm.Bits
+import VerifiedGarbage.Proof.Weierstrass.Arm.TCombBody
+import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Weierstrass.CombDigitW
+public import VerifiedGarbage.Proof.X25519.Arm.Instr
+import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Weierstrass.Arm.Copy
+public import VerifiedGarbage.Impl.Weierstrass.Arm
+
+/-! ### `Weierstrass.Arm.TCombTail`, which only this module used -/
+
+section
+
+/-! Complete the selected affine point, including the zero digit's infinity. -/
+
+@[expose] public section
+namespace VG.Proof.Weierstrass.Arm.TComb
+open VG VG.Arm VG.Impl.Weierstrass.Arm VG.Impl.Mont.Arm
+open VG.Proof.Mont VG.Proof.Mont.Arm VG.Proof.X25519.Arm
+
+theorem selField_ok {s : State} {base : Addr} {size n o a b : Nat} (hs : Scr s base size)
+    (c : Bool) (hc : s.gpr .r10=if c then BitVec.allOnes 32 else 0)
+    (ho : o+8*n≤size) (ha : a+8*n≤size) (hb : b+8*n≤size)
+    (hoa : o≤a ∨ a+8*n≤o) (hob : o≤b ∨ b+8*n≤o) :
+    WP isa (.block (sel (2*n) o a b)) s fun t =>
+      wordsVal t.mem base o n=(if c then wordsVal s.mem base b n else wordsVal s.mem base a n) ∧
+      Rest [.r4,.r5] s t ∧ Outside base o (8*n) s.mem t.mem := by
+  simp only [wordsVal_eq_val32]
+  simpa only [show 4*(2*n)=8*n by omega_using []] using
+    (sel_ok c (2*n) hs hc (by omega_using [ho]) (by omega_using [ha]) (by omega_using [hb]) (by omega_using [hoa]) (by omega_using [hob]))
+
+theorem selectTail_ok (K : TCombCfg) {s : State} {base : Addr} {size a : Nat}
+    (hs : Scr s base size) (hq : K.Q.x+24*K.L.M.n≤size)
+    (hzle : K.zero+8*K.L.M.n≤size)
+    (hza : K.zero+8*K.L.M.n≤K.Q.x ∨ K.Q.x+24*K.L.M.n≤K.zero)
+    (hone : K.one<2^(64*K.L.M.n))
+    (ha : a<2^31) (ga : s.gpr .r9=BitVec.ofNat 32 a)
+    (hz : wordsVal s.mem base K.zero K.L.M.n=0) :
+    WP isa (.block K.selectTail) s fun t =>
+      wordsVal t.mem base K.Q.x K.L.M.n=wordsVal s.mem base K.Q.x K.L.M.n ∧
+      wordsVal t.mem base K.Q.y K.L.M.n=(if a=0 then K.one else wordsVal s.mem base K.Q.y K.L.M.n) ∧
+      wordsVal t.mem base K.Q.z K.L.M.n=(if a=0 then 0 else K.one) ∧
+      Rest [.r4,.r5,.r10] s t ∧ Outside base K.Q.x (24*K.L.M.n) s.mem t.mem := by
+  have hy : K.Q.y=K.Q.x+8*K.L.M.n := rfl
+  have hzz : K.Q.z=K.Q.x+16*K.L.M.n := by
+    simp only [TCombCfg.Q, VG.Impl.Weierstrass.Arm.Point.ptAt, Impl.Weierstrass.Point.elemBytes]
+    omega_using []
+  have hn := hs.nowrap
+  unfold TCombCfg.selectTail
+  rw [List.append_assoc,List.append_assoc]
+  refine VG.Proof.X25519.Arm.WP.append (setConst_ok hs (o := K.Q.z) (n := K.L.M.n)
+    (by rw [hzz]; omega_using [hq]) hone) fun s₁ ⟨one₁,k₁,O₁⟩ => ?_
+  refine VG.Proof.X25519.Arm.WP.append (eqMask_ok (op2_imm (by decide))) fun s₂ ⟨mask₂,k₂,mem₂⟩ => ?_
+  have k₁₂ : Rest [.r4,.r5,.r10] s s₂ := (k₁.mono (by simp)).trans (k₂.mono (by simp))
+  have hs₂ := hs.of_rest k₁₂ (by decide)
+  have cm₂ : s₂.gpr .r10=if decide (a=0) then BitVec.allOnes 32 else 0 := by
+    rw [mask₂,k₁.gpr .r9 (by decide),ga]
+    change 0#32-(((BitVec.ofNat 32 a ^^^ 0#32)-1) >>> 31)=_
+    rw [equality_mask (by simp only [BitVec.toNat_ofNat,Nat.mod_eq_of_lt (show a<2^32 by omega_using [ha])]; exact ha)
+      (by decide)]
+    have e : BitVec.ofNat 32 a=0#32 ↔ a=0 := by
+      exact ofNat32_eq (by omega_using [ha]) (by decide)
+    simp only [e,decide_eq_true_eq]
+  refine VG.Proof.X25519.Arm.WP.append (selField_ok hs₂ (decide (a=0)) cm₂
+    (o := K.Q.y) (a := K.Q.y) (b := K.Q.z) (n := K.L.M.n)
+    (by rw [hy]; omega_using [hq]) (by rw [hy]; omega_using [hq]) (by rw [hzz]; omega_using [hq])
+    (.inl (Nat.le_refl _)) (.inl (by rw [hy,hzz]; omega_using []))) fun s₃ ⟨y₃,k₃,O₃⟩ => ?_
+  have k₁₃ : Rest [.r4,.r5,.r10] s s₃ := k₁₂.trans (k₃.mono (by simp))
+  have hs₃ := hs.of_rest k₁₃ (by decide)
+  have cm₃ : s₃.gpr .r10=if decide (a=0) then BitVec.allOnes 32 else 0 := by
+    rw [k₃.gpr .r10 (by decide),cm₂]
+  refine WP.mono (selField_ok hs₃ (decide (a=0)) cm₃
+    (o := K.Q.z) (a := K.Q.z) (b := K.zero) (n := K.L.M.n)
+    (by rw [hzz]; omega_using [hq]) (by rw [hzz]; omega_using [hq]) hzle (.inl (Nat.le_refl _)) (by rw [hzz]; omega_using [hza]))
+    fun s₄ ⟨z₄,k₄,O₄⟩ => ?_
+  have oldx : wordsVal s₄.mem base K.Q.x K.L.M.n=wordsVal s.mem base K.Q.x K.L.M.n := by
+    rw [O₄.wordsVal (by rw [hzz]; omega_using []) (by omega_using [hq, hn]),O₃.wordsVal (by rw [hy]; omega_using []) (by omega_using [hq, hn]),
+      mem₂,O₁.wordsVal (by rw [hzz]; omega_using []) (by omega_using [hq, hn])]
+  have oldy : wordsVal s₂.mem base K.Q.y K.L.M.n=wordsVal s.mem base K.Q.y K.L.M.n := by
+    rw [mem₂,O₁.wordsVal (by rw [hy,hzz]; omega_using []) (by omega_using [hq, hy, hn])]
+  have oz : wordsVal s₃.mem base K.Q.z K.L.M.n=K.one := by
+    rw [O₃.wordsVal (by rw [hy,hzz]; omega_using []) (by omega_using [hq, hzz, hn]),mem₂,one₁]
+  have zero₃ : wordsVal s₃.mem base K.zero K.L.M.n=0 := by
+    rw [O₃.wordsVal (by rw [hy]; omega_using [hza]) (by omega_using [hzle, hn]),mem₂,
+      O₁.wordsVal (by rw [hzz]; omega_using [hza]) (by omega_using [hzle, hn]),hz]
+  refine ⟨oldx,?_,?_,k₁₃.trans (k₄.mono (by simp)),?_⟩
+  · rw [O₄.wordsVal (by rw [hy,hzz]; omega_using []) (by omega_using [hq, hy, hn]),y₃,mem₂,one₁]
+    simp only [decide_eq_true_eq]
+    split <;> first | rfl | exact mem₂ ▸ oldy
+  · rw [z₄,oz,zero₃]
+    simp only [decide_eq_true_eq]
+  · have O₂ : Outside base K.Q.x (24*K.L.M.n) s₁.mem s₂.mem := by rw [mem₂]; exact Outside.refl _ _ _ _
+    exact ((O₁.mono (by rw [hzz]; omega_using []) (by rw [hzz]; omega_using [])).trans O₂).trans
+      ((O₃.mono (by rw [hy]; omega_using []) (by rw [hy]; omega_using [])).trans
+        (O₄.mono (by rw [hzz]; omega_using []) (by rw [hzz]; omega_using [])))
+
+end VG.Proof.Weierstrass.Arm.TComb
+
+end
+
+end
+
+/-! ### `Weierstrass.Arm.TCombLoop`, which only this module used -/
+
+section
+
+/-! The table scan's public loop retains exactly the chosen entry. -/
+
+@[expose] public section
+namespace VG.Proof.Weierstrass.Arm.TComb
+open VG VG.Arm VG.Impl.Weierstrass.Arm
+open VG.Proof.Mont VG.Proof.Mont.Arm VG.Proof.X25519.Arm
+
+structure ScanInv (K : TCombCfg) (base X : Addr) (s₀ : State) (a m : Nat) (s : State) : Prop where
+  ptr : s.gpr .r8=s₀.gpr .r8+BitVec.ofNat 32 (16*K.L.M.n*(m-1))
+  index : s.gpr .r7=BitVec.ofNat 32 m
+  keep : Rest [.r4,.r5,.r7,.r8,.r10] s₀ s
+  unch : Outside base K.Q.x (16*K.L.M.n) s₀.mem s.mem
+  val : ∀ i<4*K.L.M.n, w32 s.mem base (K.Q.x+4*i) =
+    if 1≤a ∧ a<m then w32 s₀.mem X (16*K.L.M.n*(a-1)+4*i) else 0
+
+theorem prefix_step {a m : Nat} (hm : 1≤m) (f : Nat → Nat) :
+    (if a=m then f m else if 1≤a ∧ a<m then f a else 0) =
+      if 1≤a ∧ a<m+1 then f a else 0 := by
+  by_cases h : a=m
+  · subst a; simp only [↓reduceIte,hm,true_and,Nat.lt_succ_self]
+  · have he : (1≤a ∧ a<m) ↔ (1≤a ∧ a<m+1) := by omega_using [h]
+    simp only [h,↓reduceIte,he]
+
+theorem scan_step (K : TCombCfg) {s₀ s : State} {base X : Addr} {size a m : Nat}
+    (hs₀ : Scr s₀ base size) (hX : State.addr (s₀.gpr .r8)=X)
+    (ho : K.Q.x+16*K.L.M.n ≤ size) (hi : 16*K.L.M.n ≤ 4096)
+    (fit : X.toNat+16*K.L.M.n*K.H ≤ 2^32)
+    (hr : InRegions (s₀.rd ++ s₀.wr) X (16*K.L.M.n*K.H))
+    (hd : Region.Disjoint ⟨X,16*K.L.M.n*K.H⟩ ⟨base,size⟩)
+    (hn : 1≤K.L.M.n) (hH : K.H+1<2^31)
+    (ha : a≤K.H) (ga : s₀.gpr .r9=BitVec.ofNat 32 a)
+    (es : encodable (BitVec.ofNat 32 (16*K.L.M.n))=true)
+    (eh : encodable (BitVec.ofNat 32 (K.H+1))=true)
+    (hm : 1≤m) (mh : m≤K.H) (I : ScanInv K base X s₀ a m s) :
+    WP isa (.block K.selectBody) s fun t => ScanInv K base X s₀ a (m+1) t ∧
+      t.z=decide (m+1=K.H+1) := by
+  have hs := hs₀.of_rest I.keep (by decide)
+  have hmul : 16*K.L.M.n*(m-1)+16*K.L.M.n ≤ 16*K.L.M.n*K.H := by
+    calc
+      16*K.L.M.n*(m-1)+16*K.L.M.n = 16*K.L.M.n*m := by
+        rw [← Nat.mul_succ]; congr 1; omega_using [hm]
+      _ ≤ 16*K.L.M.n*K.H := Nat.mul_le_mul_left _ mh
+  have hop : 16*K.L.M.n*(m-1)<2^32 := by omega_using [fit, hn, hmul]
+  have ptrfit : (s₀.gpr .r8).toNat+16*K.L.M.n*(m-1)<2^32 := by
+    have hnX : (s₀.gpr .r8).toNat=X.toNat := by rw [← hX,addr_toNat]
+    omega_using [fit, hn, hmul, hnX]
+  have hx : State.addr (s.gpr .r8)=off X (16*K.L.M.n*(m-1)) := by
+    rw [I.ptr,VG.Arm.addr_add ptrfit,hX]
+  have efit : (off X (16*K.L.M.n*(m-1))).toNat+16*K.L.M.n ≤ 2^32 := by
+    rw [off,BitVec.toNat_add,BitVec.toNat_ofNat,Nat.mod_eq_of_lt (show 16*K.L.M.n*(m-1)<2^64 by omega_using [fit, hmul]),
+      Nat.mod_eq_of_lt (show X.toNat+16*K.L.M.n*(m-1)<2^64 by omega_using [fit, hmul])]
+    omega_using [fit, hmul]
+  have er : InRegions (s.rd ++ s.wr) (off X (16*K.L.M.n*(m-1))) (16*K.L.M.n) := by
+    rw [I.keep.rd,I.keep.wr]
+    exact CallLay.inRegions_sub hr hmul (by omega_using [fit])
+  have ed : Region.Disjoint ⟨off X (16*K.L.M.n*(m-1)),16*K.L.M.n⟩ ⟨base,size⟩ :=
+    hd.sub_left (Offset.sub_base X hmul)
+  refine WP.mono (selectBody_ok K (a := a) (m := m) hs hx ho hi efit er ed (by omega_using [hH, ha]) (by omega_using [hH, mh])
+    (by rw [I.keep.gpr .r9 (by decide),ga]) I.index es eh (by omega_using [hH, mh]) (by omega_using [hH]))
+    fun t ⟨v,k,O,p,index,z⟩ => ⟨?_,z⟩
+  refine ⟨?_,index,I.keep.trans k,I.unch.trans O,?_⟩
+  · have he : 16*K.L.M.n*(m-1)+16*K.L.M.n=16*K.L.M.n*m := by
+      rw [← Nat.mul_succ]; congr 1; omega_using [hm]
+    rw [p,I.ptr,BitVec.add_assoc,← BitVec.ofNat_add,he,show m+1-1=m by omega_using []]
+  · intro i hii
+    have hoff : 16*K.L.M.n*(m-1)+4*i+4 ≤ 16*K.L.M.n*K.H := by omega_using [ho, hi, fit, hn, hH, ha, hm, mh, hmul, hop, ptrfit, efit, hii]
+    have src : w32 s.mem (off X (16*K.L.M.n*(m-1))) (4*i) =
+        w32 s₀.mem X (16*K.L.M.n*(m-1)+4*i) := by
+      unfold w32 off
+      rw [Offset.add_add]
+      apply congrArg BitVec.toNat
+      exact (outside_frame (size := size) I.unch ho).readW
+        (r := ⟨X,16*K.L.M.n*K.H⟩)
+        (Offset.contains_base (d := 16*K.L.M.n*(m-1)+4*i) (n := 4) X hoff (by omega_using [fit, hmul, hii]))
+        (fun r hr' => by rcases List.mem_singleton.mp hr' with rfl; exact hd) (by decide)
+    rw [v i hii,src,I.val i hii]
+    exact prefix_step hm (fun q => w32 s₀.mem X (16*K.L.M.n*(q-1)+4*i))
+
+/-- All rows are visited in order, independently of the selected magnitude. -/
+theorem scan_loop_ok (K : TCombCfg) {s₀ : State} {base X : Addr} {size a : Nat}
+    (hs₀ : Scr s₀ base size) (hX : State.addr (s₀.gpr .r8)=X)
+    (ho : K.Q.x+16*K.L.M.n ≤ size) (hi : 16*K.L.M.n ≤ 4096)
+    (fit : X.toNat+16*K.L.M.n*K.H ≤ 2^32)
+    (hr : InRegions (s₀.rd ++ s₀.wr) X (16*K.L.M.n*K.H))
+    (hd : Region.Disjoint ⟨X,16*K.L.M.n*K.H⟩ ⟨base,size⟩)
+    (hn : 1≤K.L.M.n) (hH : K.H+1<2^31)
+    (ha : a≤K.H) (ga : s₀.gpr .r9=BitVec.ofNat 32 a)
+    (es : encodable (BitVec.ofNat 32 (16*K.L.M.n))=true)
+    (eh : encodable (BitVec.ofNat 32 (K.H+1))=true)
+    (gm : s₀.gpr .r7=1)
+    (hz : ∀ i<4*K.L.M.n,w32 s₀.mem base (K.Q.x+4*i)=0) :
+    WP isa (.loop (.block K.selectBody) .ne) s₀
+      (ScanInv K base X s₀ a (K.H+1)) := by
+  have hHp : 1≤K.H := Nat.two_pow_pos _
+  refine WP.loop (M := isa)
+    (fun j s => 1≤j ∧ j≤K.H ∧ ScanInv K base X s₀ a (K.H+1-j) s)
+    (fun j s ⟨j1,jH,I⟩ => ?_) K.H s₀ ?_
+  · have m1 : 1≤K.H+1-j := by omega_using [jH]
+    have mH : K.H+1-j≤K.H := by omega_using [j1]
+    refine WP.mono (scan_step K hs₀ hX ho hi fit hr hd hn hH ha ga es eh m1 mH I)
+      fun t ⟨I',z⟩ => ?_
+    by_cases je : j=1
+    · have me : K.H+1-j+1=K.H+1 := by omega_using [je]
+      refine .inl ⟨?_,me ▸ I'⟩
+      rw [VG.Proof.X25519.Arm.eval_ne,z,decide_eq_true me]
+      rfl
+    · have me : ¬K.H+1-j+1=K.H+1 := by omega_using [hHp, je]
+      refine .inr ⟨?_,j-1,by omega_using [j1],by omega_using [j1, je],by omega_using [jH],?_⟩
+      · rw [VG.Proof.X25519.Arm.eval_ne,z,decide_eq_false me]
+        rfl
+      · have e : K.H+1-(j-1)=K.H+1-j+1 := by omega_using [j1, jH]
+        rw [e]; exact I'
+  · refine ⟨hHp,Nat.le_refl _,?_⟩
+    have e : K.H+1-K.H=1 := by omega_using []
+    rw [e]
+    refine ⟨?_,?_,Rest.refl _ _,Outside.refl _ _ _ _,?_⟩
+    · simp only [Nat.sub_self,Nat.mul_zero,BitVec.add_zero]
+    · exact gm
+    · intro i hi'
+      rw [hz i hi']
+      have h : ¬(1≤a ∧ a<1) := by omega_using []
+      simp only [h,↓reduceIte]
+
+end VG.Proof.Weierstrass.Arm.TComb
+
+end
+
+end
+
+/-! ### `Weierstrass.Arm.TCombDigit`, which only this module used -/
+
+section
+
+/-! ### `Weierstrass.Arm.TCombIndex`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Weierstrass.Arm.TCombMagnitude`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Weierstrass.Arm.TCombHorner`, which this module and modules that import it used -/
+
+section
+
+/-! The ARM comb decodes bits using the same Horner invariant as x86. -/
+
+@[expose] public section
+namespace VG.Proof.Weierstrass.Arm.TComb
+open VG VG.Arm VG.Impl.Weierstrass.Arm VG.Proof.X25519.Arm
+
+structure RegOnly (rs : List Reg) (s t : State) : Prop where
+  keep : Rest rs s t
+  mem : t.mem=s.mem
+
+theorem hornerAt_ok (K : TCombCfg) {v : Nat → Nat} (hv : ∀ i,v i≤1) :
+    ∀ k d s, k<32 → K.L.bits%4096+d+k ≤ 4096 →
+    (∀ i<k,
+      InRegions (s.rd ++ s.wr) (State.addr (s.gpr .r4+BitVec.ofNat 32 (K.L.bits%4096+d+i))) 1 ∧
+      s.mem (State.addr (s.gpr .r4+BitVec.ofNat 32 (K.L.bits%4096+d+i))) = BitVec.ofNat 8 (v (d+i))) →
+    WP isa (.block (K.hornerAt d k)) s fun t =>
+      t.gpr .r9=BitVec.ofNat 32 (hornerVal v d k) ∧ RegOnly [.r5,.r9] s t
+  | 0,d,s,_,_,_ => by
+    unfold TCombCfg.hornerAt
+    exact wp_mov (op2_imm (by decide)) fun t u => WP.block_nil
+      ⟨u.gpr,⟨u.rest (by simp),u.mem⟩⟩
+  | k+1,d,s,hk,ho,hb => by
+    rw [TCombCfg.hornerAt]
+    refine VG.Proof.X25519.Arm.WP.append
+      (hornerAt_ok K hv k (d+1) s (by omega_using [hk]) (by omega_using [ho]) (fun i hi => by
+        rw [show K.L.bits%4096+(d+1)+i=K.L.bits%4096+d+(i+1) by omega_using [],
+          show d+1+i=d+(i+1) by omega_using []]
+        exact hb (i+1) (by omega_using [hi]))) fun s₁ ⟨v₁,k₁⟩ => ?_
+    refine wp_dp (op2_reg _ _) fun s₂ u₂ => ?_
+    have ptr₂ : s₂.gpr .r4=s.gpr .r4 := by
+      rw [u₂.other .r4 (by decide),k₁.keep.gpr .r4 (by decide)]
+    have mem₂ : s₂.mem=s.mem := u₂.mem.trans k₁.mem
+    have rd₂ : s₂.rd ++ s₂.wr=s.rd ++ s.wr := by rw [u₂.rd,u₂.wr,k₁.keep.rd,k₁.keep.wr]
+    have h0 := hb 0 (by omega_using [])
+    simp only [Nat.add_zero] at h0
+    refine wp_ldrb (by omega_using [ho]) rfl (by rw [ptr₂,rd₂]; exact h0.1) fun s₃ u₃ =>
+      wp_dp (op2_reg _ _) fun s₄ u₄ => WP.block_nil ?_
+    refine ⟨?_,⟨k₁.keep.trans ((u₂.rest (by simp)).trans ((u₃.rest (by simp)).trans (u₄.rest (by simp)))),
+      by rw [u₄.mem,u₃.mem,mem₂]⟩⟩
+    · rw [u₄.gpr,dpVal,u₃.other .r9 (by decide),u₂.gpr,dpVal,v₁,u₃.gpr,ptr₂,mem₂,h0.2]
+      have hn := hornerVal_lt hv (d+1) k
+      have hvd := hv d
+      have hp : 2^k < 2^31 := Nat.pow_lt_pow_right (by decide) (by omega_using [hk])
+      apply BitVec.eq_of_toNat_eq
+      simp only [BitVec.toNat_add,BitVec.toNat_ofNat,BitVec.toNat_setWidth,hornerVal]
+      rw [Nat.mod_eq_of_lt (by omega_using [hn, hp] : hornerVal v (d+1) k<2^32),
+        Nat.mod_eq_of_lt (by omega_using [hvd] : v d<2^8),Nat.mod_eq_of_lt (by omega_using [hvd] : v d<2^32)]
+      omega_using []
+
+end VG.Proof.Weierstrass.Arm.TComb
+
+end
+
+end
+
+/-! The signed digit's magnitude uses the same arithmetic theorem as x86. -/
+
+@[expose] public section
+namespace VG.Proof.Weierstrass.Arm.TComb
+open VG VG.Arm VG.Impl.Weierstrass.Arm VG.Proof.X25519.Arm
+
+theorem magnitude_ok (K : TCombCfg) {s : State} {v : Nat}
+    (hw : K.w<9) (hv : v<2^K.w) (gv : s.gpr .r9=BitVec.ofNat 32 v) :
+    WP isa (.block K.magnitude) s fun t =>
+      t.gpr .r9=BitVec.ofNat 32 (magH K.H v) ∧ RegOnly [.r4,.r5,.r9] s t := by
+  have enc : encodable (BitVec.ofNat 32 K.H)=true :=
+    (by decide : ∀ w<9,encodable (BitVec.ofNat 32 (2^(w-1)))=true) K.w hw
+  unfold TCombCfg.magnitude
+  refine wp_dp (op2_imm enc) fun s₁ u₁ => wp_mov (op2_lsr (by decide)) fun s₂ u₂ =>
+    wp_mov (op2_imm (by decide)) fun s₃ u₃ => wp_dp (op2_reg _ _) fun s₄ u₄ =>
+    wp_dp (op2_reg _ _) fun s₅ u₅ => wp_dp (op2_reg _ _) fun s₆ u₆ => WP.block_nil ?_
+  let D := BitVec.ofNat 32 v-BitVec.ofNat 32 K.H
+  let M := 0#32-(D >>> 31)
+  have hd : s₁.gpr .r9=D := by rw [u₁.gpr,dpVal,gv]
+  have hs : s₂.gpr .r4=D >>> 31 := by rw [u₂.gpr,hd]
+  have hm : s₄.gpr .r4=M := by
+    rw [u₄.gpr,dpVal,u₃.gpr,u₃.other .r4 (by decide),hs]; rfl
+  have hn : s₅.gpr .r9=D ^^^ M := by
+    rw [u₅.gpr,dpVal,hm,u₄.other .r9 (by decide),u₃.other .r9 (by decide),u₂.other .r9 (by decide),hd]
+  have k₁₂ : Rest [.r4,.r5,.r9] s s₂ := (u₁.rest (by simp)).trans (u₂.rest (by simp))
+  have k₃₄ : Rest [.r4,.r5,.r9] s₂ s₄ := (u₃.rest (by simp)).trans (u₄.rest (by simp))
+  have k₅₆ : Rest [.r4,.r5,.r9] s₄ s₆ := (u₅.rest (by simp)).trans (u₆.rest (by simp))
+  refine ⟨?_,⟨(k₁₂.trans k₃₄).trans k₅₆,by rw [u₆.mem,u₅.mem,u₄.mem,u₃.mem,u₂.mem,u₁.mem]⟩⟩
+  rw [u₆.gpr,dpVal,hn,u₅.other .r4 (by decide),hm]
+  exact magH_fact K.w hw v hv
+
+end VG.Proof.Weierstrass.Arm.TComb
+
+end
+
+end
+
+/-! Digit and sign decoding share the public window-address calculation. -/
+
+@[expose] public section
+namespace VG.Proof.Weierstrass.Arm.TComb
+open VG VG.Arm VG.Impl.Weierstrass.Arm VG.Impl.Mont.Arm VG.Proof.X25519.Arm
+
+theorem windowIndex_ok (K : TCombCfg) {s : State} {j : Nat}
+    (hw : K.w<9) (gj : s.gpr .r11=BitVec.ofNat 32 j) :
+    WP isa (.block K.windowIndex) s fun t =>
+      t.gpr .r4=t.gpr .r12+BitVec.ofNat 32 (K.w*j+farOff K.L.bits) ∧ RegOnly [.r4] s t := by
+  have enc : encodable (BitVec.ofNat 32 K.w)=true :=
+    (by decide : ∀ w<9,encodable (BitVec.ofNat 32 w)=true) K.w hw
+  unfold TCombCfg.windowIndex
+  simp only [List.cons_append,List.nil_append]
+  refine wp_mov (op2_imm enc) fun s₁ u₁ => wp_mul fun s₂ u₂ => wp_dp (op2_reg _ _) fun s₃ u₃ => ?_
+  have k₁₂ : Rest [.r4] s s₂ := (u₁.rest (by simp)).trans (u₂.rest (by simp))
+  have k₃ : Rest [.r4] s s₃ := k₁₂.trans (u₃.rest (by simp))
+  have p : s₃.gpr .r4=s₃.gpr .r12+BitVec.ofNat 32 (K.w*j) := by
+    rw [u₃.gpr,dpVal,u₂.gpr,u₁.gpr,u₁.other .r11 (by decide),gj,← BitVec.ofNat_mul,
+      u₃.other .r12 (by decide)]
+  rw [← List.append_nil (far .r4 K.L.bits)]
+  refine wp_far (d := K.L.bits) p (by decide) fun s₄ k₄ m₄ p₄ => WP.block_nil
+    ⟨p₄,⟨k₃.trans k₄,by rw [m₄,u₃.mem,u₂.mem,u₁.mem]⟩⟩
+
+end VG.Proof.Weierstrass.Arm.TComb
+
+end
+
+end
+
+/-! Decode one signed comb digit, reading only the last window's real bits. -/
+
+@[expose] public section
+namespace VG.Proof.Weierstrass.Arm.TComb
+open VG VG.Arm VG.Impl.Weierstrass.Arm VG.Proof.X25519.Arm VG.Proof.Mont.Arm
+
+theorem lastTest_ok (K : TCombCfg) {s : State} {j : Nat}
+    (hj : j<2^32) (hJ : K.J-1<2^32)
+    (enc : encodable (BitVec.ofNat 32 (K.J-1))=true)
+    (gj : s.gpr .r11=BitVec.ofNat 32 j) :
+    WP isa (.block K.lastTest) s fun t =>
+      t.z=decide (j=K.J-1) ∧ RegOnly [] s t := by
+  unfold TCombCfg.lastTest
+  refine wp_cmp (op2_imm enc) fun t f z => WP.block_nil ⟨?_,⟨f.rest _,f.mem⟩⟩
+  rw [z,gj]
+  apply Bool.eq_iff_iff.mpr
+  simp only [beq_iff_eq,decide_eq_true_eq]
+  change BitVec.ofNat 32 j-BitVec.ofNat 32 (K.J-1)=0#32 ↔ j=K.J-1
+  rw [sub_zero_iff,ofNat32_eq hj hJ]
+
+theorem hornerWindow_ok (K : TCombCfg) {s : State} {base : Addr} {size len j count : Nat}
+    (hs : Scr s base size) (hf : Far s base len)
+    (hw : K.w<9) (hc : count≤K.w) (hd : K.L.bits<8192)
+    (ho : K.L.bits%4096+K.w≤4096) (hl : K.L.bits+K.w*j+count≤len)
+    (hp : s.gpr .r4=s.gpr .r12+BitVec.ofNat 32 (K.w*j+farOff K.L.bits))
+    {v : Nat → Nat} (hv : ∀ i,v i≤1)
+    (hb : ∀ i<count,s.mem (VG.Proof.Mont.off base (K.L.bits+K.w*j+i))=BitVec.ofNat 8 (v i)) :
+    WP isa (.block (K.horner count)) s fun t =>
+      t.gpr .r9=BitVec.ofNat 32 (hornerVal v 0 count) ∧ RegOnly [.r5,.r9] s t := by
+  unfold TCombCfg.horner
+  refine hornerAt_ok K hv count 0 s (by omega_using [hw, hc]) (by omega_using [hc, ho]) fun i hi => ?_
+  have fa := far_add hd
+  have ea : State.addr (s.gpr .r4+BitVec.ofNat 32 (K.L.bits%4096+0+i))=
+      VG.Proof.Mont.off base (K.L.bits+K.w*j+i) := by
+    rw [hf.ea_reg hs hp (by omega_using [hl, hi, fa])]
+    congr 1
+    omega_using [fa]
+  rw [ea]
+  exact ⟨hf.read (by omega_using [hl, hi]),by simpa only [Nat.zero_add] using hb i hi⟩
+
+theorem digitWords_ok (K : TCombCfg) {s : State} {base : Addr} {size len j : Nat}
+    (hs : Scr s base size) (hf : Far s base len)
+    (hw : K.w<9) (ht : K.topBits≤K.w)
+    (hj : j<2^32) (hJ : K.J-1<2^32)
+    (enc : encodable (BitVec.ofNat 32 (K.J-1))=true)
+    (hd : K.L.bits<8192) (ho : K.L.bits%4096+K.w≤4096)
+    (hl : K.L.bits+K.w*j+(if j=K.J-1 then K.topBits else K.w)≤len)
+    (gj : s.gpr .r11=BitVec.ofNat 32 j)
+    {v : Nat → Nat} (hv : ∀ i,v i≤1)
+    (hb : ∀ i<(if j=K.J-1 then K.topBits else K.w),
+      s.mem (VG.Proof.Mont.off base (K.L.bits+K.w*j+i))=BitVec.ofNat 8 (v i)) :
+    WP isa K.digit s fun t =>
+      t.gpr .r9=BitVec.ofNat 32
+        (magH K.H (hornerVal v 0 (if j=K.J-1 then K.topBits else K.w))) ∧
+      RegOnly [.r4,.r5,.r9] s t := by
+  let count := if j=K.J-1 then K.topBits else K.w
+  have hc : count≤K.w := by dsimp only [count]; split <;> omega_arith
+  unfold TCombCfg.digit
+  rw [WP.seq_iff]
+  refine WP.mono (windowIndex_ok K hw gj) fun s₁ ⟨p₁,k₁⟩ => ?_
+  rw [WP.seq_iff]
+  refine WP.mono (lastTest_ok K hj hJ enc (by rw [k₁.keep.gpr .r11 (by decide),gj]))
+    fun s₂ ⟨z₂,k₂⟩ => ?_
+  have keep₂ : Rest [.r4] s s₂ := k₁.keep.trans (k₂.keep.mono (by simp))
+  have mem₂ : s₂.mem=s.mem := k₂.mem.trans k₁.mem
+  have hs₂ := hs.of_rest keep₂ (by decide)
+  have hf₂ := hf.of_rest keep₂
+  have p₂ : s₂.gpr .r4=s₂.gpr .r12+BitVec.ofNat 32 (K.w*j+farOff K.L.bits) := by
+    rw [k₂.keep.gpr .r4 (by decide),p₁,k₂.keep.gpr .r12 (by decide)]
+  have decode : WP isa
+      (.ite .eq (.block (K.horner K.topBits)) (.block (K.horner K.w))) s₂ fun t =>
+      t.gpr .r9=BitVec.ofNat 32 (hornerVal v 0 count) ∧ RegOnly [.r5,.r9] s₂ t := by
+    have hh := hornerWindow_ok K hs₂ hf₂ hw hc hd ho hl p₂ hv
+      (by intro i hi; rw [mem₂]; exact hb i hi)
+    by_cases h : j=K.J-1
+    · apply WP.ite true (by change some s₂.z=some true; simp only [z₂,h,decide_true])
+      · intro _; simpa only [count,h,↓reduceIte] using hh
+      · intro impossible; cases impossible
+    · apply WP.ite false (by change some s₂.z=some false; simp only [z₂,h,decide_false])
+      · intro impossible; cases impossible
+      · intro _; simpa only [count,h,↓reduceIte] using hh
+  rw [WP.seq_iff]
+  refine WP.mono decode fun s₃ ⟨v₃,k₃⟩ => ?_
+  have hvlt : hornerVal v 0 count<2^K.w :=
+    Nat.lt_of_lt_of_le (hornerVal_lt hv 0 count) (Nat.pow_le_pow_right (by decide) hc)
+  refine WP.mono (magnitude_ok K hw hvlt v₃) fun s₄ ⟨v₄,k₄⟩ =>
+    ⟨v₄,⟨((keep₂.mono (by simp)).trans (k₃.keep.mono (by simp))).trans k₄.keep,
+      k₄.mem.trans (k₃.mem.trans mem₂)⟩⟩
+
+theorem digit_ok (K : TCombCfg) {s : State} {base : Addr} {size len j k : Nat}
+    (hs : Scr s base size) (hf : Far s base len)
+    (hw : K.w<9) (hj : j<K.J) (hJ : K.J-1<2^32)
+    (enc : encodable (BitVec.ofNat 32 (K.J-1))=true)
+    (start : K.w*(K.J-1)≤K.L.nbits) (cover : K.L.nbits≤K.w*K.J)
+    (hd : K.L.bits<8192) (ho : K.L.bits%4096+K.w≤4096)
+    (hl : K.L.bits+K.L.nbits≤len) (hk : k<2^K.L.nbits)
+    (gj : s.gpr .r11=BitVec.ofNat 32 j)
+    (hb : ∀ i<K.L.nbits,s.mem (VG.Proof.Mont.off base (K.L.bits+i))=
+      if k.testBit i then 1 else 0) :
+    WP isa K.digit s fun t =>
+      t.gpr .r9=BitVec.ofNat 32 (magH K.H (combWin K.w k j)) ∧ RegOnly [.r4,.r5,.r9] s t := by
+  let count := if j=K.J-1 then K.topBits else K.w
+  have bounds := windowBits_bounds hj start cover
+  change count≤K.w ∧ K.w*j+count≤K.L.nbits ∧
+    (count=K.w ∨ K.w*j+count=K.L.nbits) at bounds
+  let v := fun i => (k.testBit (K.w*j+i)).toNat
+  have hv : ∀ i,v i≤1 := by
+    intro i
+    dsimp only [v]
+    cases k.testBit (K.w*j+i) <;> decide
+  have bytes : ∀ i<count,s.mem (VG.Proof.Mont.off base (K.L.bits+K.w*j+i))=
+      BitVec.ofNat 8 (v i) := by
+    intro i hi
+    rw [show K.L.bits+K.w*j+i=K.L.bits+(K.w*j+i) by omega_using [],hb _ (by omega_using [bounds, hi])]
+    dsimp only [v]
+    cases k.testBit (K.w*j+i) <;> rfl
+  refine WP.mono (digitWords_ok K hs hf hw (topWindow_le (by omega_using [hj]) cover)
+    (by omega_using [hj, hJ]) hJ enc hd ho (by omega_using [hl, bounds]) gj hv bytes) fun t ⟨val,keep⟩ => ⟨?_,keep⟩
+  rw [val]
+  change BitVec.ofNat 32 (magH K.H (hornerVal v 0 count))=_
+  rw [window_without_padding bounds.1 bounds.2.2 hk]
+
+end VG.Proof.Weierstrass.Arm.TComb
+
+end
+
+end
 
 /-! ### `Weierstrass.Arm.TCombStep`, which only this module used -/
 

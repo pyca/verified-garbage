@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ed25519.X86.AccumulateStep
 public import VerifiedGarbage.Impl.Ed25519.X86.PointBatch
 public import VerifiedGarbage.Impl.Ed25519.X86.PointAccumulate
-public import VerifiedGarbage.Proof.Ed25519.X86.PointPowers
+public import VerifiedGarbage.Proof.Ed25519.X86.PrepareAdd
 
 /-! Merged from `Proof.Ed25519.X86.PointMulBatch`. -/
 

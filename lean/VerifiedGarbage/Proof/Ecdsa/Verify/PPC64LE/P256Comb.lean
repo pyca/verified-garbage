@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.P256.PPC64LE.Comb
 import VerifiedGarbage.Proof.Weierstrass.PPC64LE.TCombJ
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.P256
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.P256.Window
-import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Lays
+import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Stages
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.MulFn
 import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Keep

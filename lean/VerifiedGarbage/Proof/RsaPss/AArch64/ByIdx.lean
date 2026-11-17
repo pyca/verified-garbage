@@ -15,7 +15,7 @@ meta import VerifiedGarbage.Impl.RsaPss.AArch64.Encoding
 `byIdx b is` runs `b i` for the index `i` in `x27`, by comparisons with each
 of `is` (`x9 := x27 - j`): `byIdx_wp` from the state before the comparisons,
 `byIdx_ct` in two runs whose `x27` is the same, each comparison writing only
-`x9`, as on x86-64 (`Proof/RsaPss/X86_64/ByIdx.lean`).
+`x9`, as on x86-64 (`Proof/RsaPss/X86_64/SignCCorrect.lean`).
 -/
 
 @[expose] public section

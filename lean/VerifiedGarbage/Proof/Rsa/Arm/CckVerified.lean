@@ -9,8 +9,6 @@ import VerifiedGarbage.Proof.Rsa.Arm.CvFail
 public import VerifiedGarbage.Proof.Rsa.Contract
 meta import VerifiedGarbage.Proof.Rsa.Contract
 public import VerifiedGarbage.Impl.Rsa.Arm.KeyCheck
-public import VerifiedGarbage.Proof.Rsa.Arm.KcFn
-import VerifiedGarbage.Impl.Rsa.Arm.KeyCheck
 import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
 
 /-! # `vg_rsa_check_crt_key` on ARMv7 is verified against the shared RSA contract -/

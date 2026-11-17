@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.RsaPss.AArch64.ChkPre
 public import VerifiedGarbage.Proof.RsaPss.AArch64.ChkFrame
 public import VerifiedGarbage.Proof.RsaPss.AArch64.Mgf
 

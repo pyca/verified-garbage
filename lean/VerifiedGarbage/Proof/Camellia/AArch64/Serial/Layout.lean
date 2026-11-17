@@ -3,9 +3,8 @@ module
 public import VerifiedGarbage.Proof.Camellia.Prepared
 public import VerifiedGarbage.Proof.Camellia.AArch64.Serial.State
 public import VerifiedGarbage.Impl.Camellia.AArch64.Serial.Prepared
-public import VerifiedGarbage.Proof.Camellia.Bytes
+public import VerifiedGarbage.Proof.Camellia.Bitsliced
 import VerifiedGarbage.Proof.Camellia.Common
-import VerifiedGarbage.Proof.Camellia.KeySched
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 

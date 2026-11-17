@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.AesGcm.X86.Open
 import VerifiedGarbage.Proof.AesGcm.X86.Init
 public import VerifiedGarbage.Proof.AesGcm.Scratch
 public import VerifiedGarbage.Proof.AesGcm.X86.Callee
-public import VerifiedGarbage.Proof.AesGcm.X86.Contract
+public import VerifiedGarbage.Proof.AesGcm.X86.Top
 import VerifiedGarbage.Proof.AesGcm.X86.StreamEncrypt
 public import Mathlib.Data.List.Defs
 import Mathlib.Tactic.Push

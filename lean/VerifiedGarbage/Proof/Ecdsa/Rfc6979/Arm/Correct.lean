@@ -10,12 +10,10 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Search
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Steps
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Blocks
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Contract
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Layout
 import VerifiedGarbage.Proof.Framework.Arm.Call
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Prep
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Reduce
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Copy
 import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
 import VerifiedGarbage.Proof.Framework.Arm.Exec

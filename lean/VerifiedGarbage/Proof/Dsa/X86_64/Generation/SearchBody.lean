@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchEntry
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchControl
 public import Mathlib.Algebra.Group.Nat.Defs
-
 import VerifiedGarbage.Proof.Framework.Omega
 import Mathlib.Algebra.GroupWithZero.Nat
 import Mathlib.Algebra.NeZero
@@ -14,12 +13,12 @@ import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PConstructTest
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.AttemptEntry
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PPrimalityPlan
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.AttemptStatus
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SourceFrame
 import VerifiedGarbage.Proof.Dsa.Generation.Memory
 import VerifiedGarbage.Proof.Rsa.X86_64.Loops
+
 /-! # The complete p body returns the persistent state needed by its next iteration -/
 
 -- Formerly `VerifiedGarbage/Proof/Dsa/X86_64/Generation/ControllerFrame.lean`, which only this module imported.

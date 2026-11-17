@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.Arm.ScalarIO
+public import VerifiedGarbage.Proof.Ed448.Arm.ScalarMain
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.X448.Radix16
 import VerifiedGarbage.Proof.X448.Arm.MulLoop
@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.X448.Arm.Init
 import VerifiedGarbage.Proof.X448.Arm.RowPass
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Ed448.Arm.ScalarMain
 import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! ### `Ed448.Arm.ScalarMulAdd`, which only this module used -/

@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Dsa.Arm.GenerateCheck
+public import VerifiedGarbage.Proof.Dsa.Arm.GenerateCheck
 public import VerifiedGarbage.Proof.Dsa.Arm.RandomFrame
 import VerifiedGarbage.Proof.Dsa.Arm.Env
 public import VerifiedGarbage.Impl.Dsa.Arm.Generate
@@ -9,11 +9,10 @@ import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.Dsa.Arm.Session
+public import VerifiedGarbage.Proof.Dsa.Arm.PublicKey
 import VerifiedGarbage.Proof.Dsa.Arm.Body
 import VerifiedGarbage.Proof.Dsa.RandomBytes
 import VerifiedGarbage.Proof.Dsa.OutputBytes
-import VerifiedGarbage.Proof.Dsa.Arm.Install
 public import VerifiedGarbage.Proof.Dsa.Arm.ValidateOps
 import VerifiedGarbage.Proof.Dsa.Arm.SignCorrect
 import VerifiedGarbage.Proof.Dsa.Derive
@@ -22,7 +21,6 @@ import VerifiedGarbage.Proof.Zeroize.Common
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Dsa.Arm.Dispatch
 public import VerifiedGarbage.Proof.Dsa.Arm.GenerateCompute
-public import VerifiedGarbage.Proof.Dsa.Arm.GenerateEntry
 import Mathlib.Basic.Logic.Basic
 import Mathlib.Logic.Function.Basic
 

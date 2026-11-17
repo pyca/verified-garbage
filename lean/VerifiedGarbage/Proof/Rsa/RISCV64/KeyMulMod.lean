@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # `mulMod` on RISC-V: `[a] = ([a] + ([y] mod 2^k) [x]) mod [m]`
 
-As on PPC64LE (`Proof/Rsa/PPC64LE/MulMod.lean`), in words of 64 bits.
+As on PPC64LE (`Proof/Rsa/PPC64LE/KcCk.lean`), in words of 64 bits.
 `addMod_ok`: `[o] = ([a] + [b]) mod [m]` for `[a], [b] < [m]`,
 `2 [m] ≤ 2^(64 w)` and `[z] = 0`. `mulMod_ok`: `k = s7` steps of
 `mulModStep`, each adding the selected `[x]` to `[a]` and doubling `[x]`

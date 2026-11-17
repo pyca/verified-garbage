@@ -1,9 +1,9 @@
 module
+
 public import VerifiedGarbage.Proof.Ed25519.X86_64.CombLoop
 public import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Entry
-public import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Half
 public import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Select
-import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Halves
+import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Consts
 public import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Digits
 import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombLoop
 import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Lit
@@ -16,7 +16,6 @@ import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Ring
 public import VerifiedGarbage.Proof.Ed25519.BaseTable
 public import VerifiedGarbage.Proof.Ed25519.Group.Extended
-import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Consts
 import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Part1
 import VerifiedGarbage.Proof.Ed25519.X86_64.FieldMemory
 import VerifiedGarbage.Proof.Framework.X86_64.Avx512

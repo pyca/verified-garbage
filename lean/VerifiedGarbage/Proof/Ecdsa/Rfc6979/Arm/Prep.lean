@@ -3,7 +3,7 @@ module
 import VerifiedGarbage.Proof.Framework.Arm.Syms
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Hmac
 public import VerifiedGarbage.Proof.Mont.Arm.Words
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Reduce
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Blocks
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
 import VerifiedGarbage.Proof.Weierstrass.Arm.BytesLen
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Copy
@@ -18,7 +18,6 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.OmegaLit
 import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.AesGcm.Arm.Loops
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Blocks
 import VerifiedGarbage.Proof.AesGcm.Arm.Run
 import VerifiedGarbage.Proof.Framework.WriteBytes
 

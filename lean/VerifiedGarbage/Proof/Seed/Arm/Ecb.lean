@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Seed.Arm.Group
-import VerifiedGarbage.Proof.Seed.Arm.Crypt8
 import VerifiedGarbage.Proof.Seed.Memory
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec

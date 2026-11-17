@@ -6,7 +6,6 @@ public import VerifiedGarbage.Impl.AesGcm.X86_64.OpenSplit
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.BlkCall
 import VerifiedGarbage.Proof.Framework.X86_64.CallSp
-import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Steps
 import VerifiedGarbage.Proof.AesGcm.X86_64.Absorb
 import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
 import VerifiedGarbage.Proof.AesGcm.X86_64.Arith

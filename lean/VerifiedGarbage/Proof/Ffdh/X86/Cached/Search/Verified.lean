@@ -1,7 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.Ffdh.X86.Cached.Search.CT
-public import VerifiedGarbage.Proof.Ffdh.X86.Cached.Search.ABI
+public import VerifiedGarbage.Proof.Ffdh.X86.Cached.Search.Entry
 public import VerifiedGarbage.Impl.Ffdh.X86.Cached
 public import VerifiedGarbage.TCB.Artifact
 import VerifiedGarbage.Proof.Framework.Sig

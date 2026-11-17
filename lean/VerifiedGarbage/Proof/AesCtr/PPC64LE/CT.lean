@@ -1,12 +1,11 @@
 module
 
-import VerifiedGarbage.Proof.AesCtr.PPC64LE.Iter
+public import VerifiedGarbage.Proof.AesCtr.PPC64LE.Iter
 public import VerifiedGarbage.Proof.AesCbc.PPC64LE.CT
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 meta import VerifiedGarbage.Proof.AesCtr.PPC64LE.Iter
 meta import VerifiedGarbage.Proof.AesCbc.PPC64LE.CT
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
-public import VerifiedGarbage.Proof.AesCtr.PPC64LE.Body
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 

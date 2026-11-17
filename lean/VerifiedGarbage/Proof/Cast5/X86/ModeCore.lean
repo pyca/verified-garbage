@@ -3,10 +3,9 @@ module
 public import VerifiedGarbage.Proof.Modes.X86.Core
 public import VerifiedGarbage.Impl.Cast5.X86.Modes
 public import VerifiedGarbage.Proof.Cast5.ModeCipher
-public import VerifiedGarbage.Proof.Cast5.X86.Block
+public import VerifiedGarbage.Proof.Cast5.X86.Ecb
 import VerifiedGarbage.Proof.Cast5.Memory
 import VerifiedGarbage.Proof.Framework.CallLay
-import VerifiedGarbage.Proof.Cast5.X86.Ecb
 import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!

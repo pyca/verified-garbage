@@ -3,8 +3,8 @@ module
 import VerifiedGarbage.Proof.AesXts.AArch64.Unit.CT
 public import VerifiedGarbage.Proof.AesXts.AArch64.Variant
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.AesCbc.AArch64.Call
-public import VerifiedGarbage.Proof.AesXts.AArch64.Unit.Contract
+public import VerifiedGarbage.Proof.AesCbc.AArch64.Block
+public import VerifiedGarbage.Proof.AesXts.AArch64.Unit.Enc
 public import VerifiedGarbage.Proof.AesXts.Spec
 import VerifiedGarbage.Proof.AesXts.AArch64.Unit.Dec
 import VerifiedGarbage.Proof.AesXts.AArch64.CT

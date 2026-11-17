@@ -5,15 +5,13 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.VettedGroupsEnvironment
 public import VerifiedGarbage.Impl.Ffdh.Arm.VettedValidation
 public import VerifiedGarbage.Proof.Ffdh.Arm.DomainBody
 public import VerifiedGarbage.Proof.Ffdh.Arm.VettedGroupsState
-
-import VerifiedGarbage.Proof.Ffdh.Arm.DomainEntry
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
 import VerifiedGarbage.Proof.Framework.Arm.Syms
 import VerifiedGarbage.Proof.Ffdh.Arm.VettedGroups
-import VerifiedGarbage.Proof.Ffdh.Arm.VettedGroupsFinish
 import VerifiedGarbage.Proof.Ffdh.Arm.DomainSpec
 import VerifiedGarbage.Proof.Ffdh.VettedValidation.Facts
 import VerifiedGarbage.Proof.Ffdh.Arm.Branch
+
 /-! The recognized-domain checker uses the existing 128-byte AAPCS frame. -/
 
 -- Formerly `VerifiedGarbage/Proof/Ffdh/Arm/VettedValidation/Body.lean`, which only this module imported.

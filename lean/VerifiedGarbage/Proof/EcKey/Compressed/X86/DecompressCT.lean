@@ -4,10 +4,7 @@ public import VerifiedGarbage.Proof.EcKey.Compressed.X86.RootCT
 public import VerifiedGarbage.Proof.EcKey.Compressed.X86.CT
 public import VerifiedGarbage.Proof.EcKey.Compressed.X86.Candidate
 public import VerifiedGarbage.Proof.EcKey.Compressed.X86.DecompressContract
-public import VerifiedGarbage.Proof.EcKey.Compressed.X86.DecompressFront
-public import VerifiedGarbage.Proof.EcKey.Compressed.X86.DecompressMiddle
-
-import VerifiedGarbage.Proof.EcKey.Compressed.X86.DecompressMain
+public import VerifiedGarbage.Proof.EcKey.Compressed.X86.DecompressMain
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.EcKey.Compressed.X86.Pre
 import VerifiedGarbage.Proof.Framework.X86.Call

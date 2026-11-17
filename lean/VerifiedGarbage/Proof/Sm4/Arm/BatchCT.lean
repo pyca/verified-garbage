@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Sm4.Arm.BatchHead
 public import VerifiedGarbage.Proof.Sm4.Arm.BatchLoop
 import VerifiedGarbage.Proof.Sm4.Arm.BatchTaint
-import VerifiedGarbage.Proof.Sm4.Arm.BatchEntry
+import VerifiedGarbage.Proof.Sm4.Arm.BatchPrologue
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.Arm.Taint

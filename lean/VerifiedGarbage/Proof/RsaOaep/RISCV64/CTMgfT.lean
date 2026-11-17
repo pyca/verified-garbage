@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.RISCV64.Syms
 # RSAES-OAEP on RISC-V: MGF1 with the hash function of a table, twice
 
 Untrusted: everything here is checked by Lean. As on PPC64LE
-(`Proof/RsaOaep/PPC64LE/CTMgfT.lean`): `roundT_ct`, two runs of a round of
+(`Proof/RsaPss/PPC64LE/CTTab.lean`): `roundT_ct`, two runs of a round of
 `mgfXorT` from states with `Base` and the same MGF1 registers (`MgfRT`) leak
 alike: its blocks by the taint analysis, its calls through the table by
 `tcall_two` and `init_ct`, `upd_ct` and `fin_ct`; the loads of the table's

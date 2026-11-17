@@ -25,7 +25,7 @@ meta import VerifiedGarbage.Proof.EcKey.Compressed.X86.CT
 public import VerifiedGarbage.Impl.EcKey.Compressed.X86.Decompress
 public import VerifiedGarbage.Impl.Ecdsa.Secp256k1.X86
 public import VerifiedGarbage.Proof.EcKey.Compressed.X86.DecompressContract
-public import VerifiedGarbage.Proof.EcKey.Compressed.X86.DecompressMiddle
+public import VerifiedGarbage.Proof.EcKey.Compressed.X86.DecompressMain
 public import VerifiedGarbage.Proof.Framework.X86.CallWith
 public import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 public import VerifiedGarbage.Proof.Weierstrass.X86.CallOps

@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! # DSA parameter search on RISC-V: before the seeds
 
-As on PPC64LE (`Proof/Dsa/PPC64LE/Gen/Pre.lean`). `pre_vp`: the last
+As on PPC64LE (`Proof/Dsa/PPC64LE/Gen/Verified.lean`). `pre_vp`: the last
 64 − `qLen` bytes of a hash block after a `qLen`-byte message (`padInit`),
 which every seed's hashes share: the search's first stage.
 -/

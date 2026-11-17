@@ -9,12 +9,10 @@ import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.RISCV64.ByteLoad
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Seed.KeySchedule
-import VerifiedGarbage.Proof.Seed.RISCV64.Batch
+import VerifiedGarbage.Proof.Seed.RISCV64.Ecb
 import VerifiedGarbage.Proof.Framework.RISCV64.Steps
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Seed.RISCV64.Setup
 public import VerifiedGarbage.Proof.Framework.RISCV64.ByteLoad64
-import VerifiedGarbage.Proof.Seed.RISCV64.Ecb
 import VerifiedGarbage.Proof.Seed.Memory
 public import VerifiedGarbage.Impl.Seed.RISCV64.Ecb
 public import VerifiedGarbage.Proof.Framework.Mem
@@ -138,7 +136,7 @@ section
 /-!
 # A round of the key schedule on RISC-V
 
-As on PPC64LE (`Proof/Seed/PPC64LE/KeyRound.lean`): `keyRound_ok`:
+As on PPC64LE (`Proof/Seed/PPC64LE/Key.lean`): `keyRound_ok`:
 `keyRound j` writes round `j + 1`'s two inputs of `G`, from
 `t5 = Key0 || Key1` and `t6 = Key2 || Key3`, to their lanes, and rotates one
 of the two (two shifts and an `or`).

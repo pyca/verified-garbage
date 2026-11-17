@@ -1,10 +1,9 @@
 module
-public import VerifiedGarbage.Proof.Dsa.Arm.Prime.St
 
+public import VerifiedGarbage.Proof.Dsa.Arm.Prime.St
 import VerifiedGarbage.Proof.Bignum.OddDivision
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Taint5
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Ops
-import VerifiedGarbage.Proof.Dsa.Arm.Prime.Words
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Instr
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.Mont2
 import VerifiedGarbage.Proof.Rsa.Arm.RdTwos

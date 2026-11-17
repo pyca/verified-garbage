@@ -4,13 +4,12 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleCTState
 public import VerifiedGarbage.Proof.Dsa.AArch64.CallFinishCT
 public import VerifiedGarbage.Proof.Dsa.AArch64.Call
 public import VerifiedGarbage.Proof.Dsa.AArch64.ReadyCallCT
-
 import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleState
 import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleOperands
-import VerifiedGarbage.Proof.Dsa.AArch64.CallOperands
-import VerifiedGarbage.Proof.Dsa.AArch64.Arguments2
+import VerifiedGarbage.Proof.Dsa.AArch64.ReadyCalls
 import VerifiedGarbage.Proof.Dsa.AArch64.EnterLeave
 import VerifiedGarbage.Proof.Framework.Block
+
 /-! # Composable streaming-reduction timing steps -/
 
 -- Formerly `VerifiedGarbage/Proof/Dsa/AArch64/CallReduceCT.lean`, which only this module imported.

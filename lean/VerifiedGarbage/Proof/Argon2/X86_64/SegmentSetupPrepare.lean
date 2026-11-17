@@ -3,11 +3,11 @@ module
 public import VerifiedGarbage.Impl.Argon2.X86_64.SegmentSetup
 public import VerifiedGarbage.Impl.Argon2.X86_64.FillSegment
 public import VerifiedGarbage.Impl.Argon2.X86_64.FillBlock
-import VerifiedGarbage.Proof.Argon2.X86_64.FillKernelSpec
+public import VerifiedGarbage.Proof.Argon2.X86_64.DependentWord
 public import VerifiedGarbage.Impl.Argon2.X86_64.RandomSource
 public import VerifiedGarbage.Proof.Argon2.Matrix
 import VerifiedGarbage.Proof.Argon2.X86_64.FillKernelStable
-public import VerifiedGarbage.Proof.Argon2.X86_64.AddressCacheMeta
+public import VerifiedGarbage.Proof.Argon2.X86_64.AddressCacheWord
 public import VerifiedGarbage.Proof.Argon2.X86_64.AddressCallsStage
 import VerifiedGarbage.Proof.Argon2.X86_64.ClearBlock
 public import VerifiedGarbage.Proof.Argon2.AddressInput
@@ -18,12 +18,9 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.Argon2.Contract
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Argon2.X86_64.AddressCacheWord
-public import VerifiedGarbage.Proof.Argon2.X86_64.FillKernel
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Argon2.Dimensions
 public import VerifiedGarbage.Proof.Argon2.FillStep
-import VerifiedGarbage.Proof.Argon2.X86_64.DependentWord
 public import VerifiedGarbage.Proof.Argon2.Segment
 
 /-! ### `Argon2.X86_64.FillSegment`, which only this module used -/

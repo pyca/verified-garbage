@@ -1,6 +1,5 @@
 module
 
-import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacOddStep
 import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacOddBuild
 import VerifiedGarbage.Proof.Weierstrass.PointContract
 import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardField
@@ -12,15 +11,572 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.Loop
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Pow
 import VerifiedGarbage.Proof.Weierstrass.WinJacMath
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacOddEntry
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacOdd
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 public import VerifiedGarbage.Proof.Mont.X86_64.Csub
 public import VerifiedGarbage.Proof.Weierstrass.Env
 public import VerifiedGarbage.Proof.Weierstrass.Law3
-public import VerifiedGarbage.Proof.Weierstrass.OddWin
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacLay
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacOddState
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacLay
+public import VerifiedGarbage.Proof.Weierstrass.JacAdd
+public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.CachedJac
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacDbls
+import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacIter
+public import VerifiedGarbage.Proof.Weierstrass.Layout
+import VerifiedGarbage.Proof.Weierstrass.JacMadd
+public import VerifiedGarbage.Proof.Weierstrass.Jac
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.Fprog
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
+public import VerifiedGarbage.Proof.Weierstrass.Window5
+import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacSelect
+import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
+import VerifiedGarbage.Proof.Weierstrass.X86_64.Unch
+import VerifiedGarbage.Proof.Mont.X86_64.Ops
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+
+/-! ### `Weierstrass.X86_64.WinJacOddStep`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Weierstrass.X86_64.WinJacOddEntry`, which this module and modules that import it used -/
+
+section
+
+/-!
+# The odd window method on x86-64: the entry of a digit
+
+Digit `j = rbx`: its window `e` of `oq J k`, read as the comb reads one
+(`winIndex`, `hornerBits`), gives the entry `magO e = ((e ⊕ s) ∧ 15) + 1`
+(`magnitudeO_ok`, `digitO_ok`), never zero, which is selected into `T`
+(`jselect_ok`) and its `Y` negated for `e < 16` (`negY`, as the comb's), so
+that `T` holds digit `j`'s point `oddPt` with its powers (`jentryO_ok`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Weierstrass.X86_64
+
+open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Mont VG.Impl.Weierstrass.X86_64 VG.Impl.Weierstrass
+open VG.Proof.Mont.X86_64 VG.Proof.Mont VG.Proof.Weierstrass
+open VG.Proof.X25519.X86_64 (Keeps Keeps.trans Keeps.mono)
+open Spec.Weierstrass
+
+variable {K : JacWinCfg} {size : Nat} {C : Curve}
+
+/-- The entry of the odd digit of window `v`: `v - 15` for `v ≥ 16`, else `16 - v`. -/
+def magO (v : Nat) : Nat := if 16 ≤ v then v - 15 else 16 - v
+
+private theorem magO_fact : ∀ v < 32,
+    ((BitVec.ofNat 64 v ^^^ BitVec.ofNat 64 v >>> 4 - BitVec.signExtend 64 (1 : BitVec 32)) &&&
+        BitVec.signExtend 64 (15 : BitVec 32)) + BitVec.signExtend 64 (1 : BitVec 32) =
+      BitVec.ofNat 64 (magO v) := by
+  decide +kernel
+
+/-- `rax = r8 = magO v` from the window `v < 32` in `rax`, through `rdx`. -/
+theorem magnitudeO_ok (s : State) {v : Nat} (hv : v < 32) (hx : s.gpr .rax = BitVec.ofNat 64 v) :
+    WP isa (.block JacWinCfg.magnitudeO) s fun t =>
+      t.gpr .rax = BitVec.ofNat 64 (magO v) ∧ t.gpr .r8 = BitVec.ofNat 64 (magO v) ∧
+        Keeps [.rax, .rdx, .r8] s t := by
+  crun [JacWinCfg.magnitudeO, hx]
+  rw [magO_fact v hv]
+  refine ⟨rfl, rfl, fun r hr => ?_, rfl, rfl, rfl⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+  simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.gpr_setFlags, hr.1, hr.2.1, hr.2.2,
+    ite_false]
+
+theorem magO_pos {v : Nat} (hv : v < 32) : 1 ≤ magO v ∧ magO v ≤ 16 := by
+  unfold magO; split <;> omega_arith
+
+/-- The entry `magO e` of digit `rbx = j` into `rax` and `r8`, from window `j`
+of `k` in its table of bits at `K.bits`. -/
+theorem digitO_ok (K : JacWinCfg) {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
+    {k j N : Nat} (hj : 5 * j + 5 ≤ N) (hN : K.bits + N ≤ size)
+    (hx : s.gpr .rbx = BitVec.ofNat 64 j)
+    (hbits : ∀ t < N, s.mem (off base (K.bits + t)) = if k.testBit t then 1 else 0) :
+    WP isa (.block K.digitO) s fun t =>
+      t.gpr .rax = BitVec.ofNat 64 (magO (Window5.nib k j)) ∧
+      t.gpr .r8 = BitVec.ofNat 64 (magO (Window5.nib k j)) ∧ Keeps [.rax, .rcx, .rdx, .r8] s t := by
+  have hn := hs.nowrap
+  obtain hj32 : j < 2 ^ 64 := by omega_arith
+  rw [JacWinCfg.digitO, List.append_assoc, WP.block_append_iff]
+  refine WP.mono (winIndex_ok s (by decide) hj32 hx) fun a ⟨a1, ka⟩ => ?_
+  rw [WP.block_append_iff]
+  obtain hv : ∀ i, (fun t => (k.testBit (5 * j + (t - K.bits))).toNat) i ≤ 1 := fun _ => Bool.toNat_le _
+  refine WP.mono (hornerBits_ok hv 5 K.bits (s := a) (by decide) fun i hi => ?_)
+    fun b ⟨b2, kb⟩ => ?_
+  · have he : a.ea (winByte (K.bits + i)) = off base (K.bits + (5 * j + i)) := by
+      rw [ea_winByte ((ka.1 .rdi (by decide)).trans hs.rdi) a1]
+      exact congrArg (off base) (by omega_arith)
+    refine ⟨by rw [he]; exact ⟨_, List.mem_append_right _ (ka.2.2.2 ▸ hs.wr), hs.contains (by omega_arith) (by decide)⟩, ?_⟩
+    rw [he, ka.2.1, hbits _ (by omega_arith), show K.bits + i - K.bits = i by omega_arith]
+    cases k.testBit (5 * j + i) <;> rfl
+  · have hw' : hornerVal (fun t => (k.testBit (5 * j + (t - K.bits))).toNat) K.bits 5 = Window5.nib k j := by
+      have := hornerVal_eq k 5 j 5 (Nat.le_refl _)
+      rw [Nat.sub_self, Nat.add_zero] at this
+      rw [← Window5.combWin_five, combWin, ← this]
+      exact hornerVal_congr fun i _ => by simp only [show K.bits + i - K.bits = i by omega_arith]
+    refine WP.mono (magnitudeO_ok b (Window5.nib_lt k j) (by rw [b2, hw'])) fun t ⟨t1, t2, kt⟩ =>
+      ⟨t1, t2, ((ka.mono (by decide)).trans (kb.mono (by decide))).trans (kt.mono (by decide))⟩
+
+/-- The table of bits survives the method. -/
+theorem JFrame.bitsO (hL : JacWinLay K size) {base : Addr} {s₀ s : State} {P : Point C} {k : Nat}
+    (hF : JacWinFixedO K C base s₀ P k) (hf : JFrame K C base size s₀ s) :
+    ∀ t < 5 * K.J, s.mem (off base (K.bits + t)) = if (OddWin.oq K.J k).testBit t then 1 else 0 := by
+  intro t ht
+  have hb := hL.bits
+  have hn := hf.scr.nowrap
+  rw [hf.unch.byte (fun w hw => by have := hL.bits_w w hw; omega_arith) (by omega_arith)]
+  exact hF.bits t ht
+
+/-- What `T` holds after the selection and the negation, from `s`: digit
+`j`'s point with its powers. -/
+structure JEntO (K : JacWinCfg) (C : Curve) (base : Addr) (size : Nat) (P : Point C) (s₀ : State)
+    (k j : Nat) (s t : State) : Prop where
+  fr : JFrame K C base size s₀ t
+  unch : Unch base ((List.range 5).map (fun c => (jg K (80 + c), 8 * K.M.n)) ++
+    [(K.neg, 8 * K.M.n), (K.M.tmp, 8 * K.M.n)]) s.mem t.mem
+  keep : KeepRegs (clob K.M.n) s t
+  ent : JPt C K.M.n base t (TS K) (OddWin.oddPt C P K.J k j)
+
+/-- `T` holding entry `a = magO e` of digit `j`'s window `e`, its `Y` negated
+for `e < 16`: `T` then holds digit `j`'s point with its powers. -/
+theorem jnegO_ok (hL : JacWinLay K size) {base : Addr} {P : Point C} {s₀ : State} {k : Nat}
+    (hF : JacWinFixedO K C base s₀ P k) {s₂ : State} {j : Nat} (hj : j < K.J)
+    (F₂ : JFrame K C base size s₀ s₂) (hb : s₂.gpr .rbx = BitVec.ofNat 64 j)
+    (T₂ : JPt C K.M.n base s₂ (TS K) (mul (2 * magO (Window5.nib (OddWin.oq K.J k) j) - 1) P)) :
+    WP isa (.block K.tc.negY) s₂ fun s₅ => JFrame K C base size s₀ s₅ ∧
+      Unch base [(K.neg, 8 * K.M.n), (K.M.tmp, 8 * K.M.n), (jg K 81, 8 * K.M.n)] s₂.mem s₅.mem ∧
+      KeepRegs (clob K.M.n) s₂ s₅ ∧ JPt C K.M.n base s₅ (TS K) (OddWin.oddPt C P K.J k j) := by
+  have hs₂ := F₂.scr
+  have hn := hs₂.nowrap
+  have hbl := hL.bits
+  obtain hp0 : 0 < C.p := Nat.lt_of_le_of_lt (Nat.zero_le _) (hF.ro_lt K.P.x (by simp))
+  obtain hbits := F₂.bitsO hL hF
+  generalize hk' : OddWin.oq K.J k = k' at hbits T₂
+  generalize ha : magO (Window5.nib k' j) = a at T₂
+  obtain hwj : 5 * j + 5 ≤ 5 * K.J := by omega_arith
+  obtain ⟨tx, ty, tz, t2, t3⟩ := hL.TS_eq
+  obtain ⟨mx, my, mz, m2, m3⟩ := hL.T_mem
+  obtain hneg : K.neg ∈ jwSlots K := by jw_mem
+  obtain hzero : K.zero ∈ jwSlots K := by jw_mem
+  obtain hz₂ : wordsVal s₂.mem base K.zero K.M.n = 0 := by rw [F₂.ro hL (by jw_mem)]; exact hF.zero
+  obtain hy₂ : wordsVal s₂.mem base K.E.y K.M.n < C.p := by rw [← ty]; exact T₂.lt 1 (by decide)
+  obtain hyneg : K.E.y + 8 * K.M.n ≤ K.neg ∨ K.neg + 8 * K.M.n ≤ K.E.y := by
+    rw [hL.Ty]; exact (hL.jg_apart (x := K.neg) (by jw_mem) (by decide)).symm
+  rw [TCombCfg.negY, List.append_assoc, WP.block_append_iff]
+  refine WP.mono (sub_ok hs₂ F₂.mod (o := K.neg) (a := K.zero) (b := K.E.y) (hL.le hneg) (hL.le hzero)
+    (hL.le my) (hL.lay.tmp _ hneg) (hL.lay.tmp _ hzero) (hL.lay.tmp _ my) (hL.lay.mo _ hneg)
+    (by rw [hz₂]; exact hp0) hy₂) fun s₃ ⟨k₃, e₃⟩ => ?_
+  obtain hs₃ := k₃.scr hs₂
+  obtain hbits₃ : ∀ t < 5 * K.J, s₃.mem (off base (K.bits + t)) = if k'.testBit t then 1 else 0 := by
+    intro t ht
+    rw [k₃.unch.byte (fun w hw => by
+      obtain hw' : w ∈ jwW K := by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+        rcases hw with rfl | rfl
+        · exact mem_jwW_ws (other_ws (by jw_mem))
+        · exact mem_jwW_tmp
+      have := hL.bits_w w hw'; omega_arith) (by omega_arith)]
+    exact hbits t ht
+  rw [WP.block_append_iff]
+  refine WP.mono (signMask_ok K.tc hs₃ (k := k') (j := j) (N := 5 * K.J) (by show 1 ≤ 5; decide)
+    (by show 5 < 2 ^ 31; decide) hwj (by show K.bits + 5 * K.J ≤ size; omega_arith)
+    (by rw [k₃.gpr _ (rbx_not_clob _), hb]) hbits₃) fun s₄ ⟨x₄, k₄⟩ => ?_
+  obtain hs₄ := hs₃.of_keeps k₄ (by decide)
+  obtain hwin : combWin K.tc.w k' j = Window5.nib k' j := Window5.combWin_five k' j
+  rw [hwin] at x₄
+  refine WP.mono (sel_ok (decide (Window5.nib k' j < 2 ^ (K.tc.w - 1))) K.M.n hs₄ x₄ (o := K.E.y)
+    (a := K.E.y) (b := K.neg) (hL.le my) (hL.le my) (hL.le hneg) (Or.inl (Nat.le_refl _))
+    (by omega_arith)) fun s₅ ⟨e₅, k₅, O₅⟩ => ?_
+  have m₄ : s₄.mem = s₃.mem := k₄.2.1
+  obtain hs₅ := hs₄.of_keepRegs k₅ (by decide)
+  obtain b64 : ∀ x ∈ jwSlots K, x + 8 * K.M.n ≤ 2 ^ 64 := fun x hx => by have := hL.le hx; omega_arith
+  -- `T`'s words: as at `s₂` but `Y`.
+  obtain keepT : ∀ c < 5, c ≠ 1 → wordsVal s₅.mem base (TS K c) K.M.n = wordsVal s₂.mem base (TS K c) K.M.n := by
+    intro c hc h1
+    obtain hy : TS K c + 8 * K.M.n ≤ K.E.y ∨ K.E.y + 8 * K.M.n ≤ TS K c := by
+      rw [hL.Ty]; exact jg_sep K (by omega_arith)
+    rw [O₅.wordsVal hy (b64 _ (jg_mem (by omega_arith))), m₄, k₃.unch.wordsVal (fun w hw => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+      rcases hw with rfl | rfl
+      · exact (hL.jg_apart (x := K.neg) (by jw_mem) (i := 80 + c) (by omega_arith)).symm
+      · exact hL.lay.tmp _ (jg_mem (by omega_arith))) (b64 _ (jg_mem (by omega_arith)))]
+  obtain y₃ : wordsVal s₃.mem base K.E.y K.M.n = wordsVal s₂.mem base K.E.y K.M.n :=
+    k₃.unch.wordsVal (fun w hw => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+      rcases hw with rfl | rfl
+      · exact hyneg
+      · exact hL.lay.tmp _ my) (b64 _ my)
+  obtain keepY : wordsVal s₅.mem base (TS K 1) K.M.n = if decide (Window5.nib k' j < 2 ^ (K.tc.w - 1)) then
+      (0 + C.p - wordsVal s₂.mem base K.E.y K.M.n) % C.p else wordsVal s₂.mem base K.E.y K.M.n := by
+    rw [ty, e₅, m₄, e₃, hz₂, y₃]
+  have h16 : (2 : Nat) ^ (K.tc.w - 1) = 16 := rfl
+  rw [h16] at keepY
+  obtain hU : Unch base [(K.neg, 8 * K.M.n), (K.M.tmp, 8 * K.M.n), (jg K 81, 8 * K.M.n)] s₂.mem s₅.mem := by
+    refine (k₃.unch.trans (m₄ ▸ O₅.unch)).mono fun w hw => ?_
+    simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hw ⊢
+    rcases hw with (h | h) | h
+    · exact Or.inl h
+    · exact Or.inr (Or.inl h)
+    · rw [h, hL.Ty]; exact Or.inr (Or.inr rfl)
+  obtain hcl : ∀ r ∈ [Reg.rax, .rcx, .rdx, .r8], r ∈ clob K.M.n := by
+    intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl
+    · simp [clob]
+    · simp [clob]
+    · simp [clob]
+    · exact r8_mem_clob _
+  obtain kk : KeepRegs (clob K.M.n) s₂ s₅ :=
+    ((⟨k₃.gpr, k₃.rd, k₃.wr⟩ : KeepRegs (clob K.M.n) s₂ s₃).trans ((Keeps.regs k₄).mono fun r hr => hcl r (by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with h | h | h <;> simp [h]))).trans
+      (k₅.mono fun r hr => hcl r (by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with h | h <;> simp [h]))
+  obtain tv : ∀ {x y : Nat}, wordsVal s₅.mem base x K.M.n = wordsVal s₂.mem base y K.M.n →
+      tmv C K.M.n base s₅ x = tmv C K.M.n base s₂ y := fun h => by show toM _ _ _ = toM _ _ _; rw [h]
+  obtain tz' : ∀ c < 5, c ≠ 1 → tmv C K.M.n base s₅ (TS K c) = tmv C K.M.n base s₂ (TS K c) :=
+    fun c hc h1 => tv (keepT c hc h1)
+  obtain hUL : Unch base (jwLoopW K) s₂.mem s₅.mem := hU.mono fun w hw => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+    rcases hw with rfl | rfl | rfl
+    · exact List.mem_append_left _ (List.mem_map_of_mem (List.mem_append_left _ (by jw_mem)))
+    · exact List.mem_append_right _ (List.mem_singleton_self _)
+    · exact T_loopW K (show 1 < 5 by decide)
+  refine ⟨F₂.next hL hs₅ (kk.mono clob_powClob) hUL (jwLoopW_sub K), hU, kk, ?_⟩
+  -- The point.
+  obtain hoe : OddWin.oe K.J k j = Window5.nib k' j := by rw [← hk']; rfl
+  rw [OddWin.oddPt, hoe]
+  obtain hlt := Window5.nib_lt k' j
+  obtain ha16 := magO_pos hlt
+  rw [ha] at ha16
+  by_cases hng : Window5.nib k' j < 16
+  · have ha' : a = 16 - Window5.nib k' j := by
+      rw [← ha, magO, ite_eq_right_of_eq_false _ _ (eq_false (by omega_arith))]
+    rw [ite_eq_right_of_eq_false _ _ (eq_false (by omega_arith)), show 31 - 2 * Window5.nib k' j = 2 * a - 1 by omega_arith]
+    simp only [decide_eq_true hng, ↓reduceIte] at keepY
+    obtain hy : tmv C K.M.n base s₅ (TS K 1) = -tmv C K.M.n base s₂ (TS K 1) := by
+      show toM _ _ _ = -toM _ _ _
+      rw [keepY, toM_sub (by omega_arith), toM_zero, ty]
+      grind
+    refine ⟨fun c hc => ?_, ?_, ?_, ?_, ?_⟩
+    · by_cases h1 : c = 1
+      · subst h1; rw [keepY]; exact Nat.mod_lt _ hp0
+      · rw [keepT c hc h1]; exact T₂.lt c hc
+    · rw [tz' 0 (by decide) (by decide), tz' 2 (by decide) (by decide), hy]; exact T₂.jac.negY
+    · rw [tz' 2 (by decide) (by decide)]; exact T₂.z
+    · rw [tz' 3 (by decide) (by decide), tz' 2 (by decide) (by decide)]; exact T₂.z2
+    · rw [tz' 4 (by decide) (by decide), tz' 3 (by decide) (by decide), tz' 2 (by decide) (by decide)]
+      exact T₂.z3
+  · have ha' : a = Window5.nib k' j - 15 := by
+      rw [← ha, magO, ite_eq_left_of_eq_true _ _ (eq_true (by omega_arith))]
+    rw [ite_eq_left_of_eq_true _ _ (eq_true (by omega_arith)), show 2 * Window5.nib k' j - 31 = 2 * a - 1 by omega_arith]
+    simp only [decide_eq_false hng, Bool.false_eq_true, ↓reduceIte] at keepY
+    rw [← ty] at keepY
+    exact T₂.congr fun c hc => by
+      by_cases h1 : c = 1
+      · subst h1; exact keepY
+      · exact keepT c hc h1
+
+/-- Digit `j`'s entry into `T`, negated for a negative digit. -/
+theorem jentryO_ok (hL : JacWinLay K size) {base : Addr} {P : Point C} {s₀ : State} {k : Nat}
+    (hF : JacWinFixedO K C base s₀ P k) {s : State} {j : Nat} (hj : j < K.J)
+    (hf : JFrame K C base size s₀ s) (hT : JTblOkO K C base P 16 s) (hb : s.gpr .rbx = BitVec.ofNat 64 j) :
+    WP isa (.block (K.digitO ++ K.select)) s fun s₂ =>
+      WP isa (.block K.tc.negY) s₂ (JEntO K C base size P s₀ k j s) := by
+  have hs := hf.scr
+  have hn := hs.nowrap
+  obtain hbits := hf.bitsO hL hF
+  obtain hwj : 5 * j + 5 ≤ 5 * K.J := by omega_arith
+  have hbl := hL.bits
+  rw [WP.block_append_iff]
+  refine WP.mono (digitO_ok K hs (k := OddWin.oq K.J k) (j := j) (N := 5 * K.J) hwj
+    (by omega_arith) hb hbits) fun s₁ ⟨_, r₁, k₁⟩ => ?_
+  obtain hs₁ := hs.of_keeps k₁ (by decide)
+  obtain ha16 := magO_pos (Window5.nib_lt (OddWin.oq K.J k) j)
+  refine WP.mono (jselect_ok hL hs₁ r₁ ha16.2) fun s₂ ⟨e₂, k₂, O₂⟩ => ?_
+  obtain hs₂ := hs₁.of_keepRegs k₂ (by decide)
+  have m₁ : s₁.mem = s.mem := k₁.2.1
+  rw [m₁] at e₂
+  obtain U₂ : Unch base (jwLoopW K) s.mem s₂.mem := by
+    rw [← m₁]; exact (outside_grid5 (b := 80) O₂).mono fun w hw => by
+      obtain ⟨c, hc, rfl⟩ := List.mem_map.mp hw; exact T_loopW K (List.mem_range.mp hc)
+  obtain F₂ := hf.next hL hs₂ (((Keeps.regs k₁).mono (sub_powClob (by decide))).trans
+    (k₂.mono (sub_powClob (by decide)))) U₂ (jwLoopW_sub K)
+  obtain e₂' : ∀ c < 5, wordsVal s₂.mem base (TS K c) K.M.n =
+      wordsVal s.mem base (entS K (magO (Window5.nib (OddWin.oq K.J k) j)) c) K.M.n :=
+    fun c hc => by rw [show TS K c = jg K (80 + c) from rfl, e₂ c hc, ite_eq_left_of_eq_true _ _ (eq_true ha16.1)]
+  obtain T₂ := (hT _ ha16.1 ha16.2).congr fun c hc => e₂' c hc
+  obtain hb₂ : s₂.gpr .rbx = BitVec.ofNat 64 j := by rw [k₂.gpr _ (by decide), k₁.1 _ (by decide), hb]
+  refine WP.mono (jnegO_ok hL hF hj F₂ hb₂ T₂) fun s₅ ⟨F₅, U₅, kk₅, P₅⟩ => ⟨F₅, ?_, ?_, P₅⟩
+  · rw [← m₁]
+    refine ((outside_grid5 (b := 80) O₂).trans U₅).mono fun w hw => ?_
+    simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hw ⊢
+    rcases hw with h | h | h | h
+    · exact Or.inl h
+    · exact Or.inr (Or.inl h)
+    · exact Or.inr (Or.inr h)
+    · rw [h]; exact Or.inl (List.mem_map.mpr ⟨1, by decide, rfl⟩)
+  · have hcl : ∀ r ∈ [Reg.rax, .rcx, .rdx, .r8], r ∈ clob K.M.n := by
+      intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl
+      · simp [clob]
+      · simp [clob]
+      · simp [clob]
+      · exact r8_mem_clob _
+    exact (((Keeps.regs k₁).mono hcl).trans (k₂.mono fun r hr => hcl r (by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with h | h <;> simp [h]))).trans kk₅
+
+end VG.Proof.Weierstrass.X86_64
+
+end
+
+end
+
+/-! ### `Weierstrass.X86_64.CachedJacIP`, which only this module used -/
+
+section
+
+/-!
+# The cached Jacobian addition in place
+
+`CachedJac.head n S p q dst ++ jacTail S p q p` adds `q` (with its `Z²` at
+`dst` and `Z³` at `dst + 8 n`) to `p` in place: the head reads `p`, and the
+tail never reads `p`'s `X` or `Y` again, and reads its `Z` before writing it.
+On numbered slots (`ipσ`: the temporaries `0 … 5`, `p` at `6 … 8`, then what
+it only reads) it computes `jacAddF` (`ip_values`), and so on any slots
+apart as `ipσ` numbers them (`ip_run`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Weierstrass.X86_64.CachedJac
+open VG VG.Impl.Weierstrass VG.Impl.Weierstrass.X86_64 VG.Proof.Weierstrass
+
+/-- The slots the addition in place writes: the temporaries and `p`. -/
+def ipW (S : RcbSlots) (p : Pt) : List Nat := [S.t0, S.t1, S.t2, S.t3, S.t4, S.t5, p.x, p.y, p.z]
+
+/-- The slots it only reads. -/
+def ipR (n : Nat) (S : RcbSlots) (q : Pt) (dst : Nat) : List Nat := [S.a, S.b3, q.x, q.y, q.z, dst, dst + 8 * n]
+
+/-- Slot `i` of the numbered program. -/
+def ipσ (n : Nat) (S : RcbSlots) (p q : Pt) (dst i : Nat) : Nat := (ipW S p ++ ipR n S q dst).getD i S.a
+
+/-- The head on numbered slots. -/
+def headIPN : List FOp :=
+  [.mul 0 8 8, .mul 2 6 14, .mul 3 11 0, .mul 4 7 15, .mul 5 12 8, .mul 5 5 0, .sub 3 3 2, .sub 5 5 4]
+
+/-- The tail in place on numbered slots. -/
+def tailIPN : List FOp := jacTail ⟨9, 10, 0, 1, 2, 3, 4, 5⟩ ⟨6, 7, 8⟩ ⟨11, 12, 13⟩ ⟨6, 7, 8⟩
+
+theorem ip_eq (n : Nat) (S : RcbSlots) (p q : Pt) (dst : Nat) :
+    Impl.Weierstrass.X86_64.CachedJac.head n S p q dst ++ jacTail S p q p =
+      (headIPN ++ tailIPN).map (FOp.rename (ipσ n S p q dst)) := rfl
+
+theorem ipN_out : ∀ op ∈ headIPN ++ tailIPN, op.out < 9 := by decide
+
+theorem ip_values {F : Type _} [Lean.Grind.CommRing F] (E : Nat → F)
+    (h2 : E 14 = E 13 * E 13) (h3 : E 15 = E 14 * E 13) :
+    (runOps (headIPN ++ tailIPN) E 6, runOps (headIPN ++ tailIPN) E 7, runOps (headIPN ++ tailIPN) E 8) =
+      jacAddF (E 6) (E 7) (E 8) (E 11) (E 12) (E 13) := by
+  simp only [headIPN, tailIPN, jacTail, List.cons_append, List.nil_append,
+    runOps, List.foldl_cons, List.foldl_nil, FOp.run, Function.update_apply]
+  simp only [ite_true, h3, h2, jacAddF, Prod.mk.injEq]
+  constructor
+  · grind
+  constructor <;> grind
+
+/-- What `ip_run` needs of the slots: what is written has no duplicates, and
+nothing only read (nor `S.a`, the default) is written. -/
+structure IPApart (n : Nat) (S : RcbSlots) (p q : Pt) (dst : Nat) : Prop where
+  nodup : (ipW S p).Nodup
+  apart : ∀ x ∈ ipR n S q dst, x ∉ ipW S p
+
+theorem ip_inj {n : Nat} {S : RcbSlots} {p q : Pt} {dst : Nat} (h : IPApart n S p q dst) {w : Nat}
+    (hw : w < 9) (y : Nat) (hy : ipσ n S p q dst y = ipσ n S p q dst w) : y = w :=
+  getD_append_inj h.nodup h.apart (h.apart _ (List.mem_cons_self ..)) hw y hy
+
+/-- The addition in place computes `jacAddF`. -/
+theorem ip_run {F : Type _} [Lean.Grind.CommRing F] {n : Nat} {S : RcbSlots} {p q : Pt} {dst : Nat}
+    (hA : IPApart n S p q dst) (E : Nat → F) (h2 : E dst = E q.z * E q.z)
+    (h3 : E (dst + 8 * n) = E dst * E q.z) :
+    let ops := Impl.Weierstrass.X86_64.CachedJac.head n S p q dst ++ jacTail S p q p
+    (runOps ops E p.x, runOps ops E p.y, runOps ops E p.z) =
+      jacAddF (E p.x) (E p.y) (E p.z) (E q.x) (E q.y) (E q.z) := by
+  dsimp only
+  rw [ip_eq]
+  have he := runOps_rename (ipσ n S p q dst) (headIPN ++ tailIPN) E
+    (fun op hop => ip_inj hA (ipN_out op hop))
+  exact (congrArg₂ Prod.mk (congrFun he 6) (congrArg₂ Prod.mk (congrFun he 7) (congrFun he 8))).trans
+    (ip_values (fun i => E (ipσ n S p q dst i)) h2 h3)
+
+theorem ipσ_mem (n : Nat) (S : RcbSlots) (p q : Pt) (dst i : Nat) :
+    ipσ n S p q dst i ∈ ipW S p ++ ipR n S q dst :=
+  getD_append_mem (List.mem_cons_self ..) i
+
+theorem ipσ_out (n : Nat) (S : RcbSlots) (p q : Pt) (dst : Nat) {i : Nat} (hi : i < 9) :
+    ipσ n S p q dst i ∈ ipW S p := by
+  rw [ipσ, getD_append_left (by simp [ipW]; omega_using [hi])]
+  exact List.getElem_mem _
+
+end VG.Proof.Weierstrass.X86_64.CachedJac
+
+end
+
+end
+
+
+/-!
+# The odd window method on x86-64: an iteration
+
+`JacWinCfg.stepO`: `rbx = j - 1`, `R = 32 R` (`dblsO_ok`), digit `j - 1`'s
+entry in `T` (`jentryO_ok`), and `R = R + T` in place (`caddO_ok`): `R` then
+represents `[S_{j-1}]P` for an odd `k < n` (`jstepO_point`), as no addition
+is exceptional (`OddWin.loop_noexc`), and some point of the curve for any
+`k` (`jstepO_pt`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Weierstrass.X86_64
+
+open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Mont VG.Impl.Weierstrass.X86_64 VG.Impl.Weierstrass
+open VG.Proof.Mont.X86_64 VG.Proof.Mont VG.Proof.Weierstrass
+open VG.Proof.X25519.X86_64 (Keeps Keeps.trans Keeps.mono)
+open Spec.Weierstrass
+
+variable {K : JacWinCfg} {size : Nat} {C : Curve}
+
+/-! ## The addition in place -/
+
+/-- What `R = R + T` writes and reads are apart as `ipσ` numbers them. -/
+theorem JacWinLay.ipApart (hL : JacWinLay K size) : CachedJac.IPApart K.M.n K.S K.R K.E K.z2 := by
+  have hgW : ∀ c < 5, jg K (80 + c) ∉ rcbW K.S K.R := by
+    intro c hc hw
+    simp only [rcbW, List.mem_cons, List.not_mem_nil, or_false] at hw
+    have g := fun x (hx : x ∈ jwOther K) => hL.jg_ne (List.mem_append_right _ hx) (i := 80 + c) (by omega_using [hc])
+    rcases hw with h | h | h | h | h | h | h | h | h <;> exact g _ (by jw_mem) h.symm
+  refine ⟨hL.rcbW_R, fun x hx => ?_⟩
+  simp only [CachedJac.ipR, List.mem_cons, List.not_mem_nil, or_false] at hx
+  show x ∉ rcbW K.S K.R
+  rcases hx with rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  · intro hw
+    exact hL.ro K.S.a (by jw_mem) (by
+      simp only [rcbW, List.mem_cons, List.not_mem_nil, or_false] at hw
+      rcases hw with h | h | h | h | h | h | h | h | h <;> rw [h] <;> jw_mem)
+  · intro hw
+    exact hL.ro K.S.b3 (by jw_mem) (by
+      simp only [rcbW, List.mem_cons, List.not_mem_nil, or_false] at hw
+      rcases hw with h | h | h | h | h | h | h | h | h <;> rw [h] <;> jw_mem)
+  · rw [hL.Tx]; exact hgW 0 (by decide)
+  · rw [hL.Ty]; exact hgW 1 (by decide)
+  · rw [hL.Tz]; exact hgW 2 (by decide)
+  · rw [hL.Tz2]; exact hgW 3 (by decide)
+  · rw [hL.Tz3]; exact hgW 4 (by decide)
+
+/-- `R = R + T` in place, with `T`'s cached `Z²` and `Z³`. -/
+theorem caddO_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) {base : Addr}
+    {V : List Nat} {E : Nat → Fe C} {s : State} (hI : Inv K.M base size C.p (· ∈ jwSlots K) V E s)
+    (hV : ∀ x ∈ [K.R.x, K.R.y, K.R.z, K.E.x, K.E.y, K.E.z, K.z2, K.z2 + 8 * K.M.n], x ∈ V)
+    (h2 : E K.z2 = E K.E.z * E K.E.z) (h3 : E (K.z2 + 8 * K.M.n) = E K.z2 * E K.E.z) :
+    WP isa (ForwardField.programB K.M K.addOpsO).inline s fun t =>
+      ProgKeep K.M base (rcbW K.S K.R) s t ∧ ∃ E' : Nat → Fe C,
+        Inv K.M base size C.p (· ∈ jwSlots K) ([K.R.x, K.R.y, K.R.z] ++ V) E' t ∧
+        (E' K.R.x, E' K.R.y, E' K.R.z) =
+          jacAddF (E K.R.x) (E K.R.y) (E K.R.z) (E K.E.x) (E K.E.y) (E K.E.z) := by
+  have hA := hL.ipApart
+  have hSl : ∀ x ∈ CachedJac.ipW K.S K.R ++ CachedJac.ipR K.M.n K.S K.E K.z2, x ∈ jwSlots K := by
+    intro x hx
+    simp only [CachedJac.ipW, CachedJac.ipR, List.cons_append, List.nil_append, List.mem_cons,
+      List.not_mem_nil, or_false] at hx
+    rw [hL.Tz3, hL.Tx, hL.Ty, hL.Tz, hL.Tz2] at hx
+    rcases hx with h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h <;> rw [h]
+    all_goals first
+      | exact jg_mem (by decide) | jw_mem
+  have hr : readsOk K.addOpsO V = true := by
+    rw [JacWinCfg.addOpsO, CachedJac.ip_eq]
+    refine readsOk_mono (readsOk_rename (CachedJac.ipσ K.M.n K.S K.R K.E K.z2)
+      (show readsOk (CachedJac.headIPN ++ CachedJac.tailIPN) [6, 7, 8, 11, 12, 13, 14, 15] = true by decide))
+      fun x hx => hV x ?_
+    simp only [List.map_cons, List.map_nil, List.mem_cons, List.not_mem_nil, or_false] at hx ⊢
+    rcases hx with h | h | h | h | h | h | h | h <;> rw [h] <;>
+      simp [CachedJac.ipσ, CachedJac.ipW, CachedJac.ipR]
+  have hs : ∀ op ∈ K.addOpsO, ∀ x ∈ op.out :: op.ins, x ∈ jwSlots K := by
+    rw [JacWinCfg.addOpsO, CachedJac.ip_eq]
+    intro op hop x hx
+    obtain ⟨op', _, rfl⟩ := List.mem_map.mp hop
+    refine hSl x ?_
+    cases op' <;> simp only [FOp.rename, FOp.out, FOp.ins, List.mem_cons, List.not_mem_nil,
+      or_false] at hx <;> rcases hx with rfl | rfl | rfl <;> exact CachedJac.ipσ_mem ..
+  refine WP.mono (ForwardField.programB_ok hL.lay hp _ hI hs hr) fun t ⟨kt, it⟩ =>
+    ⟨kt.mono ?_, _, it.sub fun x hx => ?_, CachedJac.ip_run hA E h2 h3⟩
+  · intro x hx
+    obtain ⟨op, hop, rfl⟩ := List.mem_map.mp hx
+    rw [JacWinCfg.addOpsO, CachedJac.ip_eq] at hop
+    obtain ⟨op', hop', rfl⟩ := List.mem_map.mp hop
+    rw [FOp.out_rename]
+    exact CachedJac.ipσ_out _ _ _ _ _ (CachedJac.ipN_out op' hop')
+  · rw [mem_validAfter]
+    rcases List.mem_append.mp hx with hx | hx
+    · right
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
+      rcases hx with rfl | rfl | rfl <;> simp [JacWinCfg.addOpsO, jacTail, FOp.out]
+    · exact Or.inl hx
+
+/-! ## The point -/
+
+/-- The iteration's sum for an odd `k < n`: a triple of `[S_i]P`. -/
+theorem jstepO_point (hC : Law C) (hM3 : AM3 C) (hO : PrimeOrder C) {P : Point C} (hP : onCurve C P = true)
+    (hP0 : P ≠ .infinity) (hn2 : C.n % 2 = 1) (hn64 : C.n % 64 < 33) (hnb : 128 ≤ C.n) {k J i : Nat}
+    (hk : k % 2 = 1) (hkn : k < C.n) (hi : i + 1 < J) {X1 Y1 Z1 X2 Y2 Z2 : Fe C}
+    (h1 : InvJ C X1 Y1 Z1 (mul (32 * OddWin.oS J k (i + 1)) P))
+    (h2 : InvJ C X2 Y2 Z2 (OddWin.oddPt C P J k i)) (z2 : Z2 ≠ 0) :
+    InvJ C (jacAddF X1 Y1 Z1 X2 Y2 Z2).1 (jacAddF X1 Y1 Z1 X2 Y2 Z2).2.1 (jacAddF X1 Y1 Z1 X2 Y2 Z2).2.2
+      (mul (OddWin.oS J k i) P) := by
+  obtain ⟨ne0, ne1, ne2⟩ := OddWin.loop_noexc hC hO hP hP0 hn2 hn64 hnb hk hkn hi
+  rw [← OddWin.win_add hC hP hk (by omega_using [hi])]
+  have hQ := hC.onCurve_mul hP (32 * OddWin.oS J k (i + 1))
+  have hW := OddWin.onCurve_oddPt hC hP J k i
+  have hz : Z1 ≠ 0 := fun h => ne0 ((h1.z_zero_iff hC).mp h)
+  have hh : X2 * (Z1 * Z1) - X1 * (Z2 * Z2) ≠ 0 := by
+    intro hx
+    by_cases hy : Y2 * Z1 * (Z1 * Z1) - Y1 * Z2 * (Z2 * Z2) = 0
+    · exact ne1 (h1.same hC h2 hz z2 hx hy)
+    · exact ne2 (h1.opposite hC hQ hW h2 hz z2 hx hy)
+  exact h1.add_ne hC hM3 hQ hW h2 hz z2 hh
+
+/-- The iteration's sum for any `k`: a triple of a point of the curve, which
+is `[S_i]P` for an odd `k < n` (`jstepO_point`). Beyond it an addition may
+be exceptional or start from `O`: then `Z = 0`, a triple of `O`. -/
+theorem jstepO_pt (hC : Law C) (hM3 : AM3 C) (hO : PrimeOrder C) {P : Point C} (hP : onCurve C P = true)
+    (hP0 : P ≠ .infinity) (hn2 : C.n % 2 = 1) (hn64 : C.n % 64 < 33) (hnb : 128 ≤ C.n) {k J i : Nat}
+    (hi : i + 1 < J) {X1 Y1 Z1 X2 Y2 Z2 : Fe C} {Q1 : Point C} (hQ1 : onCurve C Q1 = true)
+    (hQ1e : k % 2 = 1 ∧ k < C.n → Q1 = mul (32 * OddWin.oS J k (i + 1)) P)
+    (h1 : InvJ C X1 Y1 Z1 Q1) (h2 : InvJ C X2 Y2 Z2 (OddWin.oddPt C P J k i)) (z2 : Z2 ≠ 0) :
+    ∃ Q : Point C, onCurve C Q = true ∧ (k % 2 = 1 ∧ k < C.n → Q = mul (OddWin.oS J k i) P) ∧
+      InvJ C (jacAddF X1 Y1 Z1 X2 Y2 Z2).1 (jacAddF X1 Y1 Z1 X2 Y2 Z2).2.1
+        (jacAddF X1 Y1 Z1 X2 Y2 Z2).2.2 Q := by
+  by_cases hk : k % 2 = 1 ∧ k < C.n
+  · refine ⟨_, hC.onCurve_mul hP _, fun _ => rfl, ?_⟩
+    rw [hQ1e hk] at h1
+    exact jstepO_point hC hM3 hO hP hP0 hn2 hn64 hnb hk.1 hk.2 hi h1 h2 z2
+  have nk : ∀ Q : Point C, k % 2 = 1 ∧ k < C.n → Q = mul (OddWin.oS J k i) P := fun _ h' => absurd h' hk
+  have hW := OddWin.onCurve_oddPt hC hP J k i
+  have zO : (jacAddF X1 Y1 Z1 X2 Y2 Z2).2.2 = Z1 * Z2 * (X2 * (Z1 * Z1) - X1 * (Z2 * Z2)) := rfl
+  by_cases hz : Z1 = 0
+  · refine ⟨.infinity, rfl, nk _, Or.inl ⟨rfl, ?_⟩⟩
+    rw [zO, hz]; grind
+  · by_cases hh : X2 * (Z1 * Z1) - X1 * (Z2 * Z2) = 0
+    · refine ⟨.infinity, rfl, nk _, Or.inl ⟨rfl, ?_⟩⟩
+      rw [zO, hh]; grind
+    · exact ⟨_, hC.onCurve_add hQ1 hW, nk _, h1.add_ne hC hM3 hQ1 hW h2 hz z2 hh⟩
+
+end VG.Proof.Weierstrass.X86_64
+
+end
+
+end
 
 /-!
 # Scalar multiplication by odd 5-bit windows in Jacobian coordinates on x86-64

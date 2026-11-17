@@ -10,7 +10,6 @@ public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Flag
 import VerifiedGarbage.Proof.AesGcm.X86_64.Scrub
 import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared16.Verified
-import VerifiedGarbage.Proof.AesGcm.X86_64.Verified
 import VerifiedGarbage.Proof.AesGcm.X86_64.Frame
 import VerifiedGarbage.Proof.AesGcm.ScratchPrepared16
 import VerifiedGarbage.Proof.AesGcm.Scratch

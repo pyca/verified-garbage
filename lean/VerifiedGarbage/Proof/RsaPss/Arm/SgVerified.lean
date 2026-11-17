@@ -4,7 +4,6 @@ import VerifiedGarbage.Proof.RsaPss.Arm.SgCall
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivImpl
 public import VerifiedGarbage.Proof.RsaPss.Arm.SgChk
-public import VerifiedGarbage.Proof.MdHashTable.Arm.Tables
 public import VerifiedGarbage.Proof.HashTable.Arm
 import VerifiedGarbage.Proof.RsaOaep.Arm.LabelT
 import VerifiedGarbage.Proof.RsaOaep.Arm.Calls

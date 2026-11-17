@@ -1,9 +1,8 @@
 module
-public import VerifiedGarbage.Proof.Argon2.X86.Derive.Body
+
+public import VerifiedGarbage.Proof.Argon2.X86.Derive.Scratch
 public import VerifiedGarbage.Proof.Argon2.X86.HPrime.Calls
 public import VerifiedGarbage.Proof.Framework.X86.CallWith
-
-import VerifiedGarbage.Proof.Argon2.X86.Derive.Scratch
 import VerifiedGarbage.Proof.Argon2.X86.HPrime.Verified
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Argon2.X86.CompressLit

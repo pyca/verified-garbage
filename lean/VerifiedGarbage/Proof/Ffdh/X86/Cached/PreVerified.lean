@@ -7,7 +7,7 @@ public import VerifiedGarbage.Proof.Ffdh.X86.EntryCT
 import VerifiedGarbage.Proof.Ffdh.X86.VettedValidation.Table
 import VerifiedGarbage.Proof.Ffdh.VettedTableFacts
 import VerifiedGarbage.Proof.Ffdh.X86.Checks
-import VerifiedGarbage.Proof.Bignum.X86.PublicRt.TimeBase
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.TimeMul
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.ConstMem

@@ -20,7 +20,7 @@ section
 /-!
 # The steps of a round, lane by lane
 
-As on ARMv7 (`Proof/Seed/Arm/Steps.lean`): each step of the round
+As on ARMv7 (`Proof/Seed/Arm/Group.lean`): each step of the round
 (`step1` … `step4`) on one lane meets its `LaneSpec` (`LaneOk`); `lanes_ok`
 then gives it on all eight. The halves `L` and `R` are at `l` and `r`, the
 arrays of `L0`/`R0`, whose second words are 8 slots on.
@@ -176,7 +176,7 @@ end
 # A round on x86 (32-bit)
 
 `g8_lanes` restates `g8_ok` on the lanes of the arrays, and `round_ok` puts
-the steps of a round together, as on ARMv7 (`Proof/Seed/Arm/Round.lean`):
+the steps of a round together, as on ARMv7 (`Proof/Seed/Arm/Group.lean`):
 on every lane, `round l r`, with `L` at `l` and `R` at `r`, does RFC 4269
 §2's round (`Spec.Seed.round`, which then exchanges the halves) to
 `(L0, L1, R0, R1)`, with the round key in the slots `k` and `k + 1`, at

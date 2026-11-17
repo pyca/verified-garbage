@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.HashTable.RISCV64
 public import VerifiedGarbage.Spec.HmacTable
 public import VerifiedGarbage.Proof.HashTable.Basic
 public import VerifiedGarbage.Impl.Ecdsa.Rfc6979.RISCV64
-public import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Common
+public import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Init
 import VerifiedGarbage.Proof.Framework.Mem
 
 /-!

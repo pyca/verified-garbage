@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.Comb.PowerFrame
-public import VerifiedGarbage.Proof.Mont.X86.CombDigit
+public import VerifiedGarbage.Proof.Dsa.X86.Comb.PowerDigits
 import VerifiedGarbage.Proof.Mont.X86.DynamicFrame
 import VerifiedGarbage.Proof.Mont.X86.ContextMul
 import VerifiedGarbage.Proof.Mont.X86.ContextMath
@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Mont.X86.PowerInit
 import VerifiedGarbage.Proof.Rsa.FixedBaseCombMont
 import VerifiedGarbage.Proof.Dsa.X86.Comb.SelectTable
-import VerifiedGarbage.Proof.Dsa.X86.Comb.PowerDigits
 import VerifiedGarbage.Impl.Mont.X86.CombPower
 import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Mont.Words32

@@ -1,10 +1,8 @@
 module
 
-import VerifiedGarbage.Proof.CmacTripleDes.Arm.Update
+public import VerifiedGarbage.Proof.CmacTripleDes.Arm.Update
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Proof.Cmac.Mem
-public import VerifiedGarbage.Proof.CmacTripleDes.Arm.Contract
-public import VerifiedGarbage.Proof.CmacTripleDes.Arm.Save
 import VerifiedGarbage.Proof.CmacTripleDes.Cmac
 import VerifiedGarbage.Proof.CmacTripleDes.Words
 import VerifiedGarbage.Proof.Cmac.Block

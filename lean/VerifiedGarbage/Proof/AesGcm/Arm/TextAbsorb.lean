@@ -1,9 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.Arm.Args
-public import VerifiedGarbage.Proof.AesGcm.Arm.Absorb
+public import VerifiedGarbage.Proof.AesGcm.Arm.Fn
 public import VerifiedGarbage.Proof.AesGcm.Arm.Flush
-import VerifiedGarbage.Proof.AesGcm.Arm.Fn
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 

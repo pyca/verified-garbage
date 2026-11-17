@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Cand
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Blocks
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Regs
 import VerifiedGarbage.Proof.Framework.AArch64.Syms

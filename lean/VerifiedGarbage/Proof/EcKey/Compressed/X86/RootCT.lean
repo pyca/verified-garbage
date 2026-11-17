@@ -1,15 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.EcKey.Compressed.X86.DescentRound
-import VerifiedGarbage.Proof.EcKey.Compressed.X86.TonelliPowers
-import VerifiedGarbage.Proof.EcKey.Compressed.X86.TonelliSetup
-import VerifiedGarbage.Proof.EcKey.Compressed.X86.Tonelli
+public import VerifiedGarbage.Proof.EcKey.Compressed.X86.Tonelli
 import VerifiedGarbage.Proof.EcKey.Compressed.X86.DecompressContract
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.EcKey.Compressed.X86.Frame
 public import VerifiedGarbage.Proof.Framework.X86.Taint
-import VerifiedGarbage.Proof.EcKey.Compressed.X86.DescentPower
 import VerifiedGarbage.Proof.Weierstrass.X86.Copy
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Framework.X86.Exec

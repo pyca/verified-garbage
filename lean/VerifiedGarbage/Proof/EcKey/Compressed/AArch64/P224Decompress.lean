@@ -1,12 +1,10 @@
 module
 
-import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.DecompressMain
-public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.Candidate
+public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.DecompressMain
 public import VerifiedGarbage.Impl.EcKey.Compressed.Root
 public import VerifiedGarbage.Impl.EcKey.Compressed.AArch64.Decompress
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Fixed
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Fprog
-import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.Frame
 import VerifiedGarbage.Proof.Ecdsa.AArch64.SlotOps
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Middle
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Copy
@@ -29,7 +27,6 @@ import VerifiedGarbage.Proof.Weierstrass.RootPowers
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
 import VerifiedGarbage.Spec.Weierstrass
 import VerifiedGarbage.Proof.Weierstrass.RootTonelli
-import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.RootPow
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
 import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
 import VerifiedGarbage.Proof.P224.Sqrt
@@ -50,8 +47,6 @@ meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
 meta import VerifiedGarbage.Impl.EcKey.Compressed.AArch64.Decompress
 meta import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.Contract
 public import VerifiedGarbage.Impl.Ecdsa.P224.AArch64
-public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.DecompressContract
-public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.DecompressMiddle
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
 

@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Prepare
 public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Ctx
 import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Stage
 public import VerifiedGarbage.Impl.Bignum.X86.PrivPre

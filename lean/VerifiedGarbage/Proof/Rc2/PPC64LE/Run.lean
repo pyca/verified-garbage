@@ -14,7 +14,7 @@ public import VerifiedGarbage.TCB.PPC64LE.Isa
 
 `rrun [facts]` runs a block of the RC2 code symbolically (`crun`), keeping
 32- and 64-bit loads and stores as `Mem.readW` and `Mem.writeW` and byte
-loads as the byte, as IDEA's `irun` (`Proof/Idea/PPC64LE/Round.lean`).
+loads as the byte, as IDEA's `irun` (`Proof/Idea/PPC64LE/Block.lean`).
 -/
 
 @[expose] public section

@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.RefillABI
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Context
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Entry
 public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.FrameStore
 public import Mathlib.Algebra.Group.Nat.Defs
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.Basic
 public import VerifiedGarbage.Proof.Bignum.Words
@@ -31,6 +30,31 @@ import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ContextFrame
 import VerifiedGarbage.Proof.Dsa.Generation.Memory
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Omega
+
+/-! ### `Dsa.AArch64.Generation.FrameStore`, which only this module used -/
+
+section
+
+/-! # Initialize frame words before the search scratch pointer has been stored -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.AArch64.Generation
+open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
+open VG.Proof.RsaOaep.AArch64 VG.Impl.RsaOaep.AArch64
+
+theorem frameWord_write {F : Addr} {k : Nat} (hk : k < nW) (m : Mem) (v : BitVec 64) :
+    Frame [⟨F, frameBytes⟩] m (m.writeW (VG.Proof.Bignum.off F (8 * k)) v) :=
+  (Frame.refl _ _).writeW (r := ⟨F, frameBytes⟩) (by simp) _
+    (Offset.contains_base _ (by unfold nW frameBytes at *; omega_using [hk]) (by unfold nW frameBytes at *; omega_using [hk]))
+
+theorem initialRep (m : Mem) (F S : Addr) :
+    Rep m F S (fun i => m (VG.Proof.Bignum.off S i)) (fun k => VG.Proof.Bignum.word m F (8 * k)) := ⟨fun _ _ => rfl, fun _ _ => rfl⟩
+
+end VG.Proof.Dsa.AArch64.Generation
+
+end
+
+end
 
 /-! ### `Dsa.AArch64.Generation.EntryState`, which only this module used -/
 

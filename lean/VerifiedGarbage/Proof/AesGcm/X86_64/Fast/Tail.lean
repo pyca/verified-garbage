@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.Cmp
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Loop
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Enc
 import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
 
 /-!

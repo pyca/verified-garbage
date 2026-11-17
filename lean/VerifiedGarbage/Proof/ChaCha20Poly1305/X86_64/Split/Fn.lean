@@ -11,11 +11,10 @@ import VerifiedGarbage.Proof.Framework.TaintBatch
 import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Lit
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Split.Pre
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Split.Crypt
 import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Split.Correct
 import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Verified
 import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
-import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Split.Crypt
 import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Verified
 import VerifiedGarbage.Proof.Framework.X86_64.InlineCalls
 import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.LitSplit

@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CTCallState
 public import VerifiedGarbage.Impl.Ffdh.Arm.ParameterSearch
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CallGeometry
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.ArgumentHead
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Arguments
 import VerifiedGarbage.Proof.Ffdh.Arm.StackCT
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc

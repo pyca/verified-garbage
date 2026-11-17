@@ -30,24 +30,21 @@ public import VerifiedGarbage.Proof.Sha256.Md
 public import VerifiedGarbage.Proof.Sha256.Digest
 public import VerifiedGarbage.Proof.Sha512.Md
 public import VerifiedGarbage.Proof.RsaPss.PPC64LE.Sg.CTBase
-public import VerifiedGarbage.Proof.RsaPss.PPC64LE.Sg.PrivCall
+public import VerifiedGarbage.Proof.RsaPss.PPC64LE.Sg.Correct
 import VerifiedGarbage.Proof.RsaPss.PPC64LE.Sg.CTBlocks
 import VerifiedGarbage.Proof.Rsa.PPC64LE.PrivCT
-import VerifiedGarbage.Proof.Rsa.PPC64LE.PrivPre
+import VerifiedGarbage.Proof.Rsa.PPC64LE.PrivCorrect
 import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
 import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Entry
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.PPC64LE.Two
-public import VerifiedGarbage.Proof.RsaPss.PPC64LE.Sg.Correct
-public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.CTMgfT
 public import VerifiedGarbage.Proof.RsaPss.PPC64LE.CTTab
 import VerifiedGarbage.Proof.RsaOaep.PPC64LE.MgfT
 import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 import VerifiedGarbage.Proof.Framework.RelSplit
 import VerifiedGarbage.Proof.RsaPss.PPC64LE.ByIdx
 import VerifiedGarbage.Proof.RsaPss.PPC64LE.CTBlocks
-import VerifiedGarbage.Proof.RsaPss.PPC64LE.Sg.Em
-import VerifiedGarbage.Proof.RsaPss.PPC64LE.Sg.Blocks
-import VerifiedGarbage.Proof.RsaPss.PPC64LE.CTFixed
+import VerifiedGarbage.Proof.RsaPss.PPC64LE.Sg.Spec
+import VerifiedGarbage.Proof.RsaPss.PPC64LE.CTHash
 import VerifiedGarbage.Proof.RsaPss.PPC64LE.Fixed
 import VerifiedGarbage.Proof.RsaOaep.PPC64LE.CTBlocks
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.PreCore

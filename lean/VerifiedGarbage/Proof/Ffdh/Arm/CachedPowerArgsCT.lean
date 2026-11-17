@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
 import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
 meta import VerifiedGarbage.Impl.Ffdh.Arm.CachedPower
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-import VerifiedGarbage.Proof.Ffdh.Arm.CachedPowerLoad
 public import VerifiedGarbage.Impl.Ffdh.Arm.CachedPower
 public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
 meta import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady

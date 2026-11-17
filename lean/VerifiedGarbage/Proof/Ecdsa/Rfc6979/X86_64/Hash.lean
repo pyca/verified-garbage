@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Regs
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hash
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Core
-public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.PbkCalls
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.PbkLoop
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Curve
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.MgfT
 public import VerifiedGarbage.Proof.Framework.PowLit

@@ -1,10 +1,10 @@
 module
+
 public import VerifiedGarbage.Impl.TripleDes.X86_64.ExpandKey
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.TripleDes.X86_64.Key.Loop
 import VerifiedGarbage.Proof.TripleDes.Schedule
-import VerifiedGarbage.Proof.TripleDes.X86_64.Key.Permutation
 import VerifiedGarbage.Proof.TripleDes.Word
 public import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Rc2.X86_64.Lookup

@@ -19,8 +19,8 @@ import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Verified
 import VerifiedGarbage.Proof.P384.EcdhDouble.Verified
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P384.Lit
 import VerifiedGarbage.Proof.P384.GTable9Shape
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P384.JointFixedSource
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombTbl
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P384.JointFixedBridge
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Layout
 import VerifiedGarbage.Proof.Ecdsa.AArch64.CombLays
 import VerifiedGarbage.Proof.Weierstrass.JacAdd
@@ -34,32 +34,27 @@ public import VerifiedGarbage.Proof.Ecdh.AArch64.Window
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.State
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
 public import VerifiedGarbage.Proof.Weierstrass.FastNaf
-import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Wide9
+import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Wide9Timing
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.ProjectiveFlags
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P384.JointFixedBridge
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Impl.AArch64Instrs
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Main
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedPrefix
-import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Wide9Timing
 import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.JointDigit
 public import VerifiedGarbage.Proof.Weierstrass.Joint
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P384.JointFixedEntry
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.DigitTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacMixedTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.StepDTiming
+import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.WindowTiming
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P384.JointFixedChecks
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JointRead9
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFixedLookupTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTableTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacMixedTimingB
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeArithmetic
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JointRead
 import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.JointDouble
-import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.WindowTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.JointFinish
 import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Window
 import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.CacheBuild

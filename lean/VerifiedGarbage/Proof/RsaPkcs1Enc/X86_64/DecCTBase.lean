@@ -1,10 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecMac
-import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncPre
+import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncCall
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncCall
 
 /-! ### `RsaPkcs1Enc.X86_64.DecArgs`, which only this module used -/
 

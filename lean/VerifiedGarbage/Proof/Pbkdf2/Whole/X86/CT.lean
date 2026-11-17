@@ -3,11 +3,10 @@ module
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.Pbkdf2.Contract
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
-import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Loop
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Loop
 meta import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Loop
 public import VerifiedGarbage.Proof.Sha256.X86.Lit
 public import VerifiedGarbage.Proof.Framework.X86.RelCT
-public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Block
 meta import VerifiedGarbage.Proof.Sha256.X86.Lit
 import VerifiedGarbage.Proof.Hmac.Common
 meta import VerifiedGarbage.Proof.Hmac.Common

@@ -2,7 +2,7 @@ module
 
 import VerifiedGarbage.Proof.AesGcm.X86_64.Split.ShortCT
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.FinCT
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.Fin
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.Body
 import VerifiedGarbage.Proof.AesGcm.X86_64.Short.SealFin
 import Mathlib.Data.List.Dedup
 import VerifiedGarbage.Proof.AesGcm.X86_64.Short.KsA

@@ -4,10 +4,9 @@ import VerifiedGarbage.Proof.Ecdsa.X86_64.Finish
 public import VerifiedGarbage.Impl.EcKey.X86_64
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.MulBase
 public import VerifiedGarbage.Spec.EcKey
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Middle
+import VerifiedGarbage.Proof.Ecdsa.X86_64.Scalar
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Main
 import VerifiedGarbage.Proof.EcKey.PublicKey
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Scalar
 import VerifiedGarbage.Proof.Ecdsa.X86_64.SlotOps
 import VerifiedGarbage.Proof.Framework.Offset
 

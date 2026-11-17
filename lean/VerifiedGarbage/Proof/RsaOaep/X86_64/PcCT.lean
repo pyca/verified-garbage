@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.PcContract
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.EncCT
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.MgfTCT
-public import VerifiedGarbage.Proof.RsaOaep.X86_64.PcTab
 public import VerifiedGarbage.Proof.HashTable.X86_64
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Hash
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Good

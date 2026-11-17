@@ -1,12 +1,11 @@
 module
+
 public import VerifiedGarbage.Impl.Dsa.X86.SignVerify
 public import VerifiedGarbage.Proof.Dsa.X86.CallTiming
 public import VerifiedGarbage.Proof.Weierstrass.PointContract
 import VerifiedGarbage.Proof.Dsa.X86.Persistent
 import VerifiedGarbage.Proof.Dsa.X86.CallProductTiming
-import VerifiedGarbage.Proof.Dsa.X86.CoreProductTiming
 import VerifiedGarbage.Proof.Dsa.X86.KeyTiming
-import VerifiedGarbage.Proof.Dsa.X86.CallReduceTiming
 import VerifiedGarbage.Proof.Dsa.X86.CallPowerTiming
 import VerifiedGarbage.Proof.Dsa.X86.StageArithmetic
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks

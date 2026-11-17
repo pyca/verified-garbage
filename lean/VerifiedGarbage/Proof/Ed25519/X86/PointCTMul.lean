@@ -15,7 +15,7 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 public import VerifiedGarbage.Impl.Ed25519.X86.PointBatch
 public import VerifiedGarbage.Impl.Ed25519.X86.PointAccumulate
-import VerifiedGarbage.Proof.Ed25519.X86.PointPowers
+import VerifiedGarbage.Proof.Ed25519.X86.PrepareAdd
 import VerifiedGarbage.Proof.Ed25519.X86.PointMultiplyFrame
 
 /-! Merged from `Proof.Ed25519.X86.PointCTBatch`. -/

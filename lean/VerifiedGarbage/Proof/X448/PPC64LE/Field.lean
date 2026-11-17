@@ -1,7 +1,8 @@
 module
+
 public import VerifiedGarbage.Impl.X448.PPC64LE
 public import VerifiedGarbage.Proof.X25519.PPC64LE.Field
-public import VerifiedGarbage.Proof.X25519.PPC64LE.Limbs -- shake: keep (re-exported for the PPC64LE proofs' `open`s)
+public import VerifiedGarbage.Proof.X25519.PPC64LE.Pass -- shake: keep (re-exported for the PPC64LE proofs' `open`s)
 public import VerifiedGarbage.Proof.X448.Limbs32 -- shake: keep (re-exported below for the PPC64LE proofs' `open`s)
 import VerifiedGarbage.Proof.X448.PPC64LE.Pass
 public import VerifiedGarbage.Proof.X448.Field

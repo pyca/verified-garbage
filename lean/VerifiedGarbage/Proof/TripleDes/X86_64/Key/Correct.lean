@@ -1,8 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.X86_64.Key.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
-public import VerifiedGarbage.Proof.TripleDes.X86_64.Key.Composition
 public import VerifiedGarbage.Proof.Rc2.X86_64.Lookup
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
@@ -14,6 +12,201 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.TripleDes.Bytes
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.TripleDes.X86_64.FunctionsLit
+public import VerifiedGarbage.Proof.TripleDes.X86_64.ConstantTime
+import VerifiedGarbage.Proof.TripleDes.X86_64.Key.Copy
+public import VerifiedGarbage.Proof.TripleDes.KeyMemory
+public import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Proof.TripleDes.Schedule
+import VerifiedGarbage.Proof.TripleDes.X86_64.Key.Component
+import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Mem
+
+/-! ### `TripleDes.X86_64.Key.Composition`, which only this module used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.TripleDes.X86_64.Key
+
+open VG VG.X86_64
+open VG.Proof.TripleDes (componentKeys componentOffset)
+
+abbrev keyR (s : State) : Region := ⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩
+abbrev outputR (s : State) : Region := ⟨s.gpr .rdx, 384⟩
+
+def slot (base : Addr) (c j : Nat) : Addr := base + BitVec.ofNat 64 (128 * c + 8 * j)
+
+structure Components (origin s : State) (done : Nat) : Prop where
+  keys : ∀ c < done, ∀ j < 16, s.mem.readW (slot (origin.gpr .rdx) c j) 64 =
+    ((componentKeys origin.mem (origin.gpr .rdi) (origin.gpr .rsi).toNat c).getD j 0).setWidth 64
+  rd : s.rd = origin.rd
+  wr : s.wr = origin.wr
+  reg : ∀ r ∈ [Reg.rdi, .rsi, .rdx, .rcx, .rsp], s.gpr r = origin.gpr r
+  frame : Frame [outputR origin] origin.mem s.mem
+
+structure Permissions (s : State) : Prop where
+  reads : ∀ offset, offset + 8 ≤ (s.gpr .rsi).toNat →
+    InRegions (s.rd ++ s.wr) (s.gpr .rdi + BitVec.ofNat 64 offset) 8
+  writes : ∀ offset, offset + 8 ≤ 384 → InRegions s.wr (s.gpr .rdx + BitVec.ofNat 64 offset) 8
+  keyOutput : (keyR s).Disjoint (outputR s)
+  valid : Spec.TripleDes.validKey (s.gpr .rsi).toNat
+
+theorem componentStep_ok (origin s : State) (c : Nat) (hc : c < 3)
+    (hp : Permissions origin) (hs : Components origin s c)
+    (hoff : componentOffset (origin.gpr .rsi).toNat c = 8 * c) :
+    WP isa (Impl.TripleDes.X86_64.Key.component (8 * c) c) s
+      (Components origin · (c + 1)) := by
+  have offsetBound := VG.Proof.TripleDes.componentOffset_bound _ c hp.valid hc
+  rw [hoff] at offsetBound
+  have read : InRegions (s.rd ++ s.wr) (s.gpr .rdi + BitVec.ofNat 64 (8 * c)) 8 := by
+    rw [hs.rd, hs.wr, hs.reg .rdi (by decide)]
+    exact hp.reads _ offsetBound
+  have write : ∀ j < 16, InRegions s.wr
+      (s.gpr .rdx + BitVec.ofNat 64 (128 * c) + BitVec.ofNat 64 (8 * j)) 8 := by
+    intro j hj
+    rw [hs.wr, hs.reg .rdx (by decide), Offset.add_ofNat_add_ofNat]
+    exact hp.writes _ (by omega_using [hc, hj])
+  apply WP.mono (component_ok s (8 * c) c hc read write)
+  intro t ht
+  have frame : Frame [⟨origin.gpr .rdx + BitVec.ofNat 64 (128 * c), 128⟩] s.mem t.mem := by
+    have hf := ht.frame
+    rw [hs.reg .rdx (by decide)] at hf
+    exact hf
+  have key : Spec.TripleDes.blockAt s.mem (s.gpr .rdi + BitVec.ofNat 64 (8 * c)) =
+      Spec.TripleDes.blockAt origin.mem (origin.gpr .rdi + BitVec.ofNat 64 (8 * c)) := by
+    rw [hs.reg .rdi (by decide)]
+    apply VG.Proof.TripleDes.blockAt_eq_of_frame _ hs.frame
+    intro r hr
+    obtain rfl := List.mem_singleton.mp hr
+    exact hp.keyOutput.sub_left (Offset.sub_base _ offsetBound)
+  refine ⟨?_, ht.rd.trans hs.rd, ht.wr.trans hs.wr,
+    fun r hr => (ht.reg r hr).trans (hs.reg r hr), hs.frame.trans (frame.sub ?_)⟩
+  · intro k hk j hj
+    by_cases he : k = c
+    · subst k
+      have h := ht.keys j hj
+      rw [key, hs.reg .rdx (by decide), Offset.add_ofNat_add_ofNat] at h
+      unfold componentKeys
+      rw [hoff]
+      exact h
+    · have before : k < c := by omega_using [hk, he]
+      have sep : (Region.mk (slot (origin.gpr .rdx) k j) 8).Disjoint
+          ⟨origin.gpr .rdx + BitVec.ofNat 64 (128 * c), 128⟩ :=
+        Offset.disjoint _ (by omega_using [before, hj])
+          (by omega_using [hk, hc, hj]) (by omega_using [hc])
+      have hmem := frame.readW (a := slot (origin.gpr .rdx) k j) (w := 64) (r := ⟨slot (origin.gpr .rdx) k j, 8⟩)
+        (Region.contains_self _ _) (fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact sep)
+        (by decide)
+      exact hmem.trans (hs.keys k before j hj)
+  · intro r hr
+    obtain rfl := List.mem_singleton.mp hr
+    exact ⟨outputR origin, by simp, Offset.sub_base _ (by omega_using [hc])⟩
+
+theorem copyThird_ok (origin s : State) (hp : Permissions origin)
+    (hs : Components origin s 2) (hn : (origin.gpr .rsi).toNat = 16) :
+    WP isa (.block Impl.TripleDes.X86_64.Key.copyThird) s (Components origin · 3) := by
+  have reads : ∀ i < 16, InRegions (s.rd ++ s.wr) (s.gpr .rdx + BitVec.ofNat 64 (8 * i)) 8 := by
+    intro i hi
+    rw [hs.rd, hs.wr, hs.reg .rdx (by decide)]
+    obtain ⟨r, hr, hc⟩ := hp.writes (8 * i) (by omega_using [hi])
+    exact ⟨r, List.mem_append_right _ hr, hc⟩
+  have writes : ∀ i < 16, InRegions s.wr (s.gpr .rdx + BitVec.ofNat 64 (256 + 8 * i)) 8 := by
+    intro i hi
+    rw [hs.wr, hs.reg .rdx (by decide)]
+    exact hp.writes _ (by omega_using [hi])
+  apply WP.mono (copy_ok s 16 (by decide) reads writes)
+  intro t ht
+  have frame : Frame [⟨origin.gpr .rdx + BitVec.ofNat 64 256, 128⟩] s.mem t.mem := by
+    have h := ht.frame
+    rw [hs.reg .rdx (by decide)] at h
+    exact h
+  refine ⟨?_, ht.rd.trans hs.rd, ht.wr.trans hs.wr, ?_, hs.frame.trans (frame.sub ?_)⟩
+  · intro c hc j hj
+    by_cases he : c = 2
+    · subst c
+      have hRepeat : componentKeys origin.mem (origin.gpr .rdi) (origin.gpr .rsi).toNat 2 =
+          componentKeys origin.mem (origin.gpr .rdi) (origin.gpr .rsi).toNat 0 := by
+        rw [hn]; rfl
+      have h := ht.keys j hj
+      rw [hs.reg .rdx (by decide)] at h
+      change t.mem.readW (origin.gpr .rdx + BitVec.ofNat 64 (256 + 8 * j)) 64 = _
+      rw [hRepeat]
+      have first := hs.keys 0 (by decide) j hj
+      simp only [slot, Nat.mul_zero, Nat.zero_add] at first
+      exact h.trans first
+    · have before : c < 2 := by omega_using [hc, he]
+      have sep : (Region.mk (slot (origin.gpr .rdx) c j) 8).Disjoint
+          ⟨origin.gpr .rdx + BitVec.ofNat 64 256, 128⟩ :=
+        Offset.disjoint _ (by omega_using [before, hj])
+          (by omega_using [before, hj]) (by decide)
+      have hmem := frame.readW (a := slot (origin.gpr .rdx) c j) (w := 64) (r := ⟨slot (origin.gpr .rdx) c j, 8⟩)
+        (Region.contains_self _ _) (fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact sep)
+        (by decide)
+      exact hmem.trans (hs.keys c before j hj)
+  · intro r hr
+    have unused : ∀ r ∈ [Reg.rdi, .rsi, .rdx, .rcx, .rsp], r ≠ .rax := by decide
+    exact (ht.reg r (unused r hr)).trans (hs.reg r hr)
+  · intro r hr
+    obtain rfl := List.mem_singleton.mp hr
+    exact ⟨outputR origin, by simp, Offset.sub_base _ (by decide)⟩
+
+def componentIndex (i : Nat) : Nat := if i < 16 then 0 else if i < 32 then 1 else 2
+
+theorem index_partition : ∀ i < 48, componentIndex i < 3 ∧ i % 16 < 16 ∧
+    8 * i = 128 * componentIndex i + 8 * (i % 16) := by decide
+
+theorem Components.schedule {origin s : State} (h : Components origin s 3) :
+    Spec.TripleDes.scheduleAt s.mem (origin.gpr .rdx) =
+      VG.Proof.TripleDes.expandedMemory origin.mem (origin.gpr .rdi) (origin.gpr .rsi).toNat := by
+  apply Vector.ext
+  intro i hi
+  have fact := index_partition i hi
+  have keys := h.keys (componentIndex i) fact.1 (i % 16) fact.2.1
+  rw [slot, ← fact.2.2] at keys
+  rw [VG.Proof.TripleDes.scheduleAt_readW s.mem (origin.gpr .rdx) i hi]
+  simp only [VG.Proof.TripleDes.expandedMemory, Vector.getElem_ofFn]
+  by_cases h16 : i < 16
+  · simpa only [componentIndex, h16, ite_true] using keys
+  · by_cases h32 : i < 32
+    · simpa only [componentIndex, h16, h32, ite_false, ite_true] using keys
+    · simpa only [componentIndex, h16, h32, ite_false] using keys
+
+
+end VG.Proof.TripleDes.X86_64.Key
+
+end
+
+end
+
+/-! ### `TripleDes.X86_64.Key.Contract`, which this module and modules that import it used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.TripleDes.X86_64.Key
+
+open VG VG.X86_64
+
+def contract : Contract isa where
+  pre s :=
+    let key : Region := ⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩
+    let output : Region := ⟨s.gpr .rdx, 384⟩
+    let scratch : Region := ⟨s.gpr .rcx, 512⟩
+    let ret : Region := ⟨s.gpr .rsp, 8⟩
+    s.rd = [key] ∧ s.wr = [output, scratch] ∧ key.Disjoint output ∧ key.Disjoint scratch ∧
+      output.Disjoint scratch ∧ ret.Disjoint output ∧ ret.Disjoint scratch ∧
+      Spec.TripleDes.validKey (s.gpr .rsi).toNat
+  post s s' := Spec.TripleDes.scheduleAt s'.mem (s.gpr .rdx) =
+    Spec.TripleDes.expandKey (Spec.TripleDes.bytesAt s.mem (s.gpr .rdi) (s.gpr .rsi).toNat)
+  pub := PublicRegs [.rdi, .rsi, .rdx, .rcx]
+
+end VG.Proof.TripleDes.X86_64.Key
+
+end
+
+end
 
 /-! ### `TripleDes.X86_64.Key.Body`, which only this module used -/
 

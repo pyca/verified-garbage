@@ -10,14 +10,12 @@ public import VerifiedGarbage.Proof.Ffdh.Contract
 public import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CallFacts
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.ArgumentWords
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CallBytes
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Call
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Bounds
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 public import VerifiedGarbage.Spec.Ffdh.SievedContract
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CallPre
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CallRegions
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Tape
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTFrames
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
@@ -27,7 +25,6 @@ import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CTLeaf
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CTRequest
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.LiveGuards
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Outputs
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Call
 meta import VerifiedGarbage.Impl.Ffdh.Arm.ParameterSearch
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CTState

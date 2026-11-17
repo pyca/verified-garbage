@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.RISCV64.Spill
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.RISCV64.Align
-public import VerifiedGarbage.Proof.Aes.RISCV64.Keys
+public import VerifiedGarbage.Proof.Aes.RISCV64.Common
 
 /-!
 # AES on whole blocks on RISC-V: the whole functions

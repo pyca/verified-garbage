@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.CTCall
+public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.CTCall
 public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Initial
 public import VerifiedGarbage.Proof.Argon2.PPC64LE.HPrime.FixedCT
 import VerifiedGarbage.Proof.Argon2.PPC64LE.HPrime.Calls
@@ -19,7 +19,6 @@ meta import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Locals
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 meta import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Parameters
-public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.CTBase
 public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Parameters
 
 /-!

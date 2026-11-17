@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.FromBuf
-public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512Tail.Out
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.Out
 import VerifiedGarbage.Proof.ChaCha20.X86_64.XorBuf
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Contract

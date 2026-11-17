@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 /-!
 # ML-DSA signing on ARMv7: the buffers of the function
 
-As on x86-64 (`Proof/MlDsa/X86_64/Sign/Lay.lean`): the function keeps the
+As on x86-64 (`Proof/MlDsa/X86_64/Sign/Glue.lean`): the function keeps the
 address of each buffer it works in (its arguments and its working space) in a
 callee-saved register; a layout (`Lay`) lists these registers with the lengths
 of their buffers, which are apart from each other and from the `D` bytes of

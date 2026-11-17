@@ -1,12 +1,11 @@
 module
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Lay
-public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Glue
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 import VerifiedGarbage.Proof.MlKem.X86_64.FragBase
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
 import VerifiedGarbage.Proof.MlKem.X86_64.SampleLoop
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Glue
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Contract

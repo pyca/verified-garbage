@@ -1,4 +1,5 @@
 module
+
 public meta import VerifiedGarbage.Proof.Framework.X86.RelCT
 import VerifiedGarbage.Proof.Dsa.X86.OutputTiming
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
@@ -12,7 +13,6 @@ public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
 public import VerifiedGarbage.Proof.Dsa.X86.KeyCopyParts
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Dsa.X86.KeyCopyPart
 import VerifiedGarbage.Proof.Dsa.X86.PointerTiming
 import VerifiedGarbage.Proof.Dsa.X86.Pointer
 import VerifiedGarbage.Proof.Framework.KernelRfl

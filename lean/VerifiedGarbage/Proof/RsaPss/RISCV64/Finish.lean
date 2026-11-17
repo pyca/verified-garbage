@@ -1,7 +1,6 @@
 module
 
 -- separate module: it builds in parallel with `Unmask`, `Scan` and `Check`, which `Post` also needs.
-
 import VerifiedGarbage.Proof.RsaPss.RISCV64.Select
 public import VerifiedGarbage.Proof.RsaPss.RISCV64.Prefix
 import VerifiedGarbage.Proof.Framework.Offset
@@ -9,7 +8,6 @@ import VerifiedGarbage.Proof.Mgf1.Bytes
 public import VerifiedGarbage.Proof.RsaPss.RISCV64.Hash
 public import VerifiedGarbage.Impl.RsaPss.RISCV64
 public import VerifiedGarbage.Proof.RsaPss.RISCV64.Mid
-import VerifiedGarbage.Proof.RsaPss.RISCV64.Cmp
 import VerifiedGarbage.Proof.RsaPss.RISCV64.Shift
 import VerifiedGarbage.Proof.Framework.RISCV64.Syms
 

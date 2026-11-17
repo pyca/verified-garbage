@@ -1,20 +1,16 @@
 module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedRest
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedOutputPack
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedChecksEnd
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseOCT
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedOutputCorrect
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedLoop
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedLoopEndTiming
-
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedInitializationTiming
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCommitmentTiming
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseCCTBase
 import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedChecksEnd
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedChallenge
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Correct
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedRest
 
 -- Formerly `VerifiedGarbage/Proof/MlDsa/AArch64/Sign/OptimizedOutputTiming.lean`, which only this module imported.
 section

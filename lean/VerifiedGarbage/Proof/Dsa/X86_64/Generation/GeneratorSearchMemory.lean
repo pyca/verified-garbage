@@ -2,10 +2,9 @@ module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.GeneratorStep
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
-public import VerifiedGarbage.Proof.Dsa.X86_64.Finish
+public import VerifiedGarbage.Proof.Dsa.X86_64.Return
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorPlan
 public import VerifiedGarbage.Spec.Dsa.Generate
-
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SourceSlice
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SourceFrame
@@ -14,6 +13,7 @@ import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorOutput
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorStages
 import VerifiedGarbage.Proof.Dsa.Generation.Chunks
 import VerifiedGarbage.Proof.Framework.Offset
+
 /-! # Preserve the whole h tape while testing successive complete chunks -/
 
 -- Formerly `VerifiedGarbage/Proof/Dsa/X86_64/Generation/GeneratorStep.lean`, which only this module imported.

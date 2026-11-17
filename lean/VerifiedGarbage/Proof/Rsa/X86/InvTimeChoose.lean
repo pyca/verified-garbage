@@ -1,4 +1,5 @@
 module
+
 meta import VerifiedGarbage.Proof.Framework.X86.Taint
 meta import VerifiedGarbage.Proof.Rsa.X86.InvTimeBase
 meta import VerifiedGarbage.Impl.Rsa.X86.InvBatchRt
@@ -16,7 +17,7 @@ public import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Base
 public import VerifiedGarbage.Proof.Framework.X86.Taint
 public import VerifiedGarbage.Impl.Rsa.X86.CrtValuesRt
 public import VerifiedGarbage.Proof.Rsa.X86.InvGuard
-public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Time.Comp
+public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Time.FBatchRel
 import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Time.FBodyRel
 
 /-! ### `Rsa.X86.InvTimeCompare`, which only this module used -/

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.AesSiv.Rounds
+public import VerifiedGarbage.Proof.AesSiv.Scratch
 import VerifiedGarbage.Proof.AesSiv.RISCV64.Dec
 import VerifiedGarbage.Proof.AesSiv.RISCV64.TopCT
 public import VerifiedGarbage.Proof.AesSiv.RISCV64.MacCT
@@ -9,14 +9,13 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Framework.RISCV64.StackScratch
 public import VerifiedGarbage.Impl.StackScratch.RISCV64
-public import VerifiedGarbage.Proof.AesSiv.Scratch
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.TCB.RISCV64.Target
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Siv.Spec
 public import VerifiedGarbage.Impl.AesSiv.RISCV64
-public import VerifiedGarbage.Proof.AesSiv.RISCV64.Entry
-public import VerifiedGarbage.Proof.AesSiv.RISCV64.S2v
+public import VerifiedGarbage.Proof.AesSiv.RISCV64.Enc
+public import VerifiedGarbage.Proof.AesSiv.RISCV64.Short
 public import VerifiedGarbage.Proof.Framework.Covers
 public import VerifiedGarbage.TCB.Artifact
 

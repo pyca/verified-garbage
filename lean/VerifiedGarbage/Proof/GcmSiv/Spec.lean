@@ -3,11 +3,38 @@ module
 public import VerifiedGarbage.Proof.Cmac.Mem
 public import VerifiedGarbage.Proof.Cmac.Mem32
 public import VerifiedGarbage.Spec.GcmSiv
-public import VerifiedGarbage.Proof.GcmSiv.MulX
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Framework.InstancePriority
 import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Spec.Gcm
+
+/-! ### `GcmSiv.MulX`, which this module and modules that import it used -/
+
+section
+
+/-!
+# AES-GCM-SIV: GHASH's product with `x`
+
+Untrusted: everything here is checked by Lean. `mulXG`, the key with which
+GHASH computes POLYVAL (`Proof.GcmSiv.Polyval.polyvalFrom_eq`), in a module
+of its own, so that code computing it need not import the algebra that
+relates the two.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.GcmSiv.Polyval
+
+/-- GHASH's product with `x`: a shift to the right (`Proof.Gcm.Poly.φ_shr1`). -/
+def mulXG (h : Spec.Gcm.Block) : Spec.Gcm.Block :=
+  if h.getLsbD 0 then (h >>> 1) ^^^ Spec.Gcm.R else h >>> 1
+
+end VG.Proof.GcmSiv.Polyval
+
+end
+
+end
 
 /-!
 # AES-GCM-SIV: lemmas on the specification

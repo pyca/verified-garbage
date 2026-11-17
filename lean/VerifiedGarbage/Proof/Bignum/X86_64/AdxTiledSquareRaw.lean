@@ -1,13 +1,12 @@
 module
+
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Impl.Bignum.X86_64.AdxTiledSquare
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareCross
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledInit
-
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareChoice
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRaw
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxHeaderFrame
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonalChoice
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
 

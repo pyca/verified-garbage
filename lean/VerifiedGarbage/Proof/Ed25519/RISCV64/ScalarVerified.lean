@@ -8,8 +8,6 @@ import VerifiedGarbage.Proof.X25519.Bytes
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Ed25519.RISCV64.Packed
-import VerifiedGarbage.Proof.Ed25519.RISCV64.ScalarCompare
-import VerifiedGarbage.Proof.Ed25519.RISCV64.ScalarLoop
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Ed25519.RISCV64.Base
 import VerifiedGarbage.Proof.Framework.Contract

@@ -3,12 +3,11 @@ module
 public import VerifiedGarbage.Proof.Rsa.X86.Rd.SqrtWBase
 public import VerifiedGarbage.Spec.Rsa.RecoverDet
 import VerifiedGarbage.Proof.Rsa.X86.Rd.Loops
-import VerifiedGarbage.Proof.Rsa.X86.Rd.Move
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Half
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Chain
 import VerifiedGarbage.Proof.Bignum.SqrtRem
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Ptr
-import VerifiedGarbage.Proof.Mont.X86.Square.Scalar
+import VerifiedGarbage.Proof.Rsa.X86.Chain
 import VerifiedGarbage.Proof.Framework.Omega
 
 -- separate module: the square root's last piece, which only `SqrtW` composes with the others

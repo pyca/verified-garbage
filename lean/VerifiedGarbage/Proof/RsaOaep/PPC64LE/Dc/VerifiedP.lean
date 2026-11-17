@@ -1,9 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Dc.Verified
-public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Dc.CTBase
 public import VerifiedGarbage.Proof.Rsa.PreKey
-import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Dc.CTMain
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
 meta import VerifiedGarbage.Proof.Framework.Contract

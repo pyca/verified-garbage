@@ -11,7 +11,6 @@ public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverCall
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Verify
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Spec.RsaPkcs1Sig.Precomputed
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverFrame
 public import VerifiedGarbage.Proof.Rsa.X86_64.PublicImpl
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverCT
 import Mathlib.Basic.IsEmpty.Defs

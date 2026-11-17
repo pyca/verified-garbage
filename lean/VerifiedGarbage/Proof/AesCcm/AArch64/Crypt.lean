@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.AesCcm.AArch64.Chunk
 import VerifiedGarbage.Proof.AesCcm.AArch64.Blocks
-import VerifiedGarbage.Proof.AesCcm.AArch64.Callee
 import VerifiedGarbage.Proof.AesCcm.BytesAt
 import VerifiedGarbage.Proof.AesGcm.AArch64.Loops
 import VerifiedGarbage.Proof.Cmac.Spec

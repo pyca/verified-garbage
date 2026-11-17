@@ -13,7 +13,6 @@ public import VerifiedGarbage.Proof.Framework.Covers
 public import VerifiedGarbage.Proof.Rsa.Arm.KeyWs
 public import VerifiedGarbage.Proof.Dsa.Arm.Gen.Test
 import VerifiedGarbage.Proof.Rsa.Arm.KeyWord
-import VerifiedGarbage.Proof.Dsa.Arm.Gen.CT
 public import VerifiedGarbage.Proof.Rsa.Arm.Stage.VP
 
 /-! ### `Dsa.Arm.Gen.KS`, which only this module used -/

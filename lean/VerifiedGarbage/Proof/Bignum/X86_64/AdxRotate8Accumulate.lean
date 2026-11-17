@@ -1,10 +1,9 @@
 module
+
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Core
 public import VerifiedGarbage.Proof.Bignum.X86_64.Words
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
-
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Add
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8AddChain
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8ProductStep
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock

@@ -7,10 +7,8 @@ public import VerifiedGarbage.Proof.Sm4.RISCV64.PreparedBody
 public import VerifiedGarbage.Proof.Framework.RISCV64.Inline
 public import VerifiedGarbage.Spec.Sm4.Ctr
 public import VerifiedGarbage.Spec.Sm4.Cbc
-import VerifiedGarbage.Proof.Sm4.RISCV64.Keys
-import VerifiedGarbage.Proof.Sm4.RISCV64.Crypt16
-import VerifiedGarbage.Proof.Sm4.RISCV64.Ecb
 import VerifiedGarbage.Proof.Sm4.RISCV64.Group
+import VerifiedGarbage.Proof.Sm4.RISCV64.Ecb
 import VerifiedGarbage.Proof.Framework.RISCV64.Steps
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.Covers
@@ -28,7 +26,7 @@ import VerifiedGarbage.Proof.Sm4.RISCV64.LayersLit
 (`Impl.Sm4.RISCV64.inlineCore d`) meets what the modes need of a core
 (`Proof.Modes.RISCV64.CoreSpec`), with the key a schedule, its cipher
 `Spec.Sm4.cipher` for encryption and `Spec.Sm4.invCipher` for decryption,
-as on PPC64LE (`Proof/Sm4/PPC64LE/ModeCore.lean`).
+as on PPC64LE (`Proof/Sm4/PPC64LE/SerialCore.lean`).
 
 The core runs ECB's code on ECB's scratch buffer `ecbOff` bytes into the
 frame (at `E`), which ECB's proofs take for one writable region: they run

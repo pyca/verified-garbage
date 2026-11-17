@@ -1,10 +1,8 @@
 module
-public import VerifiedGarbage.Proof.Ed448.X86_64.SignCached.Calls
-public import VerifiedGarbage.Proof.Ed448.X86_64.SignCached.Pre
-public import VerifiedGarbage.Proof.Ed448.X86_64.SignCached.Rel
 
+public import VerifiedGarbage.Proof.Ed448.X86_64.SignCached.Correct
+public import VerifiedGarbage.Proof.Ed448.X86_64.SignCached.Rel
 import VerifiedGarbage.Proof.Ed448.X86_64.SignCached.HashCT
-import VerifiedGarbage.Proof.Ed448.X86_64.SignCached.Correct
 import VerifiedGarbage.Proof.Ed448.X86_64.Verify.CT
 import VerifiedGarbage.Proof.Ed448.X86_64.SignCached.Prune
 import VerifiedGarbage.Proof.Ed448.X86_64.ScalarLit

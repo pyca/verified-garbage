@@ -22,8 +22,7 @@ import VerifiedGarbage.Proof.AesGcm.AArch64.OpenCT
 import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Open
 import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.OpenCT
 import VerifiedGarbage.Proof.AesGcm.AArch64.OpenToOne
-import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.ShortCopy
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.ShortOpen
+import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.ShortSeal
 
 /-!
 # AES-GCM on AArch64, short records: `openShort` is constant time

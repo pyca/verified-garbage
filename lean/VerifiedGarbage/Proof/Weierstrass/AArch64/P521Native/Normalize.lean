@@ -1,7 +1,6 @@
 module
 
 -- separate module: The consolidated batch-inversion recurrence, zero-safe machine composition, and memory-frame proof cost about 0.54 seconds; API/recode changes reuse this complete phase contract.
-
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Native.NormalizePrefixCode
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Weierstrass.AArch64.MontSaves
@@ -9,14 +8,11 @@ import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Native.NormalizeBackCode
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Native.NormalizePrefixInv
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Native.NormalizeInverse
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Native.NormalizeBackInv
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Copy
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.P521Native.Code
 import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
 import VerifiedGarbage.Proof.Weierstrass.AArch64.InvBatchStart
 import VerifiedGarbage.Proof.Framework.Lit
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Native.NormalizeBackWork
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Native.NormalizeMath
 public import VerifiedGarbage.Spec.P521
 
 @[expose] public section

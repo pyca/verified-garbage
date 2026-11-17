@@ -26,7 +26,7 @@ public import VerifiedGarbage.Impl.AesGcm.RISCV64
 # AES-GCM on RISC-V: the pre-counter block (`j0`)
 
 Untrusted: everything here is checked by Lean. As on ARMv7
-(`Proof/AesGcm/Arm/J0.lean`): `j0` writes `J₀` for the `s5`-byte nonce at
+(`Proof/AesGcm/Arm/Fn.lean`): `j0` writes `J₀` for the `s5`-byte nonce at
 `s4` to the state: its words and `0x00000001` for a 12-byte nonce
 (`j012_ok`), and otherwise GHASH of the nonce padded with zeros and the
 lengths block, with `absorb`, `flush` and `lens` on the accumulator at the

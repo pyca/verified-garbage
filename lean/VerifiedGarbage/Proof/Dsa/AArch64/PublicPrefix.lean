@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Dsa.AArch64.CheckOperands
 import VerifiedGarbage.Proof.Dsa.Zero
 import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleOperands
-import VerifiedGarbage.Proof.Dsa.AArch64.CallOperands
 import VerifiedGarbage.Proof.Dsa.Encoding
 
 /-! # DSA validation before the public subgroup exponentiations -/

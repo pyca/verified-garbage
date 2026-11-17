@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.AesGcm.Rounds
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.GatherSplit.Correct
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.GatherSplit.CT
-import VerifiedGarbage.Proof.AesGcm.PPC64LE.Gather.Verified
+import VerifiedGarbage.Proof.AesGcm.PPC64LE.GatherSplit.Contract
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Frame
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Sig

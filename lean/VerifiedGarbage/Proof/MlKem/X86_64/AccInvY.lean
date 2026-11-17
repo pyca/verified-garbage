@@ -2,18 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.AccY
 import VerifiedGarbage.Proof.MlKem.X86_64.Lit
-import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Top
+public import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Top
 public import VerifiedGarbage.Proof.MlKem.X86_64.NttR.InvRun
-public import VerifiedGarbage.Proof.MlKem.X86_64.Lazy
 public import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Sound
-import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Model
 import VerifiedGarbage.Proof.MlKem.X86_64.NttInv
-import VerifiedGarbage.Proof.MlKem.X86_64.NttLazy
 import VerifiedGarbage.Proof.MlKem.X86_64.YNtt
 import VerifiedGarbage.Proof.MlKem.X86_64.VPack
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.MlKem.Mem
-import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Step
 import VerifiedGarbage.Proof.MlKem.X86_64.NttR.InvRunAccA
 import VerifiedGarbage.Proof.MlKem.X86_64.NttR.InvRunAcc0
 import VerifiedGarbage.Proof.MlKem.X86_64.NttR.InvRunAcc1

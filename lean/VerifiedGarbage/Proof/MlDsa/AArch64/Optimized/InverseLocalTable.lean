@@ -1,8 +1,7 @@
 module
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseRun
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableMemory
 
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseRoots
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseRun
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseRoots
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
 

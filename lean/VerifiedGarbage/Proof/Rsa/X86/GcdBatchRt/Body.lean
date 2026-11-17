@@ -34,8 +34,7 @@ public import VerifiedGarbage.Impl.Rsa.X86.GcdBatchRt
 public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Ops
 public import VerifiedGarbage.Proof.Weierstrass.Unch
 public import VerifiedGarbage.Proof.Weierstrass.X86.InvClob
-public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.State
-import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Batch
+public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Batch
 import VerifiedGarbage.Proof.Rsa.X86.GcdBatch.Count
 import VerifiedGarbage.Proof.Divstep.Batch
 import VerifiedGarbage.Proof.Divstep.BatchBasic

@@ -1,16 +1,14 @@
 module
--- separate module: it imports the batches' and the end's proofs, which only the registrations reach
 
+-- separate module: it imports the batches' and the end's proofs, which only the registrations reach
 public import VerifiedGarbage.Proof.Rsa.Divstep.OddInputDef
-import VerifiedGarbage.Proof.Rsa.Divstep.Bound
 import VerifiedGarbage.Proof.Rsa.Divstep.OddInput
 public import VerifiedGarbage.Proof.Rsa.Divstep.InvResult
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Rsa.PPC64LE.KeyOps
-import VerifiedGarbage.Proof.Bignum.PPC64LE.MontStep
-import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMinv
 import VerifiedGarbage.Proof.Bignum.PPC64LE.MontRound
+import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMinv
 import VerifiedGarbage.Proof.Bignum.PPC64LE.MontFios
 import VerifiedGarbage.Proof.Mont.Words32
 import VerifiedGarbage.Proof.Bignum.Math

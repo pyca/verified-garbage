@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.Weierstrass.RISCV64.GenWide
 public import VerifiedGarbage.Proof.Framework.RISCV64.Wide
 public import VerifiedGarbage.Proof.Framework.RISCV64.Steps
-public import VerifiedGarbage.Proof.X448.RISCV64.R64.Product
+public import VerifiedGarbage.Proof.X448.RISCV64.R64.Reduce
 public import VerifiedGarbage.Proof.X25519.RISCV64.Field
 public import VerifiedGarbage.Proof.X25519.RISCV64.Instr
 public import VerifiedGarbage.Proof.Ed25519.RISCV64.FieldCT

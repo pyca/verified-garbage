@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPss.PPC64LE.MHash
-import VerifiedGarbage.Proof.RsaPss.PPC64LE.Cmp
+import VerifiedGarbage.Proof.RsaPss.PPC64LE.Select
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 import VerifiedGarbage.Proof.Mgf1.Bytes

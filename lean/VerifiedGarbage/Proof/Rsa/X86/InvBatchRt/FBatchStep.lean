@@ -1,13 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.FStep
-public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.State
+public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Batch
 public import VerifiedGarbage.Proof.Divstep.Libsecp
-import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Batch
 import VerifiedGarbage.Proof.Weierstrass.X86.InvMatrix
 import VerifiedGarbage.Proof.Weierstrass.X86.InvRead
 import VerifiedGarbage.Proof.Divstep.Word32
-import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Update
 public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Arrays
 import VerifiedGarbage.Proof.Divstep.Batch
 import VerifiedGarbage.Proof.Framework.Omega

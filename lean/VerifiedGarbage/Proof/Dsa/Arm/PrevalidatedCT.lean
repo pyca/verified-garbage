@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Dsa.Arm.VerifyCorrect
 import VerifiedGarbage.Proof.Dsa.Arm.VerifyCT
 import VerifiedGarbage.Proof.Dsa.Arm.BodyTrace
 import VerifiedGarbage.Proof.Dsa.Arm.ValidateTrace
-import VerifiedGarbage.Proof.Dsa.Arm.PublicValidationCall
+import VerifiedGarbage.Proof.Dsa.Arm.Compute
 import VerifiedGarbage.Proof.Dsa.Arm.SignCorrect
 import VerifiedGarbage.Proof.Dsa.Arm.ShapeTrace
 import VerifiedGarbage.Proof.Dsa.Arm.Leaves

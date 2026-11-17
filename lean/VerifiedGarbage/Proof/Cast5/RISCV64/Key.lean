@@ -4,15 +4,13 @@ public import VerifiedGarbage.Proof.Cast5.RISCV64.KeyStep
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Cast5.RISCV64.Block
-import VerifiedGarbage.Proof.Cast5.RISCV64.Scan
 import VerifiedGarbage.Proof.Cast5.RISCV64.Ecb
+import VerifiedGarbage.Proof.Cast5.RISCV64.Scan
 import VerifiedGarbage.Proof.Framework.RISCV64.Steps
 public import VerifiedGarbage.Proof.Framework.RISCV64.Keep
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.RISCV64.Align
 public import VerifiedGarbage.Impl.Cast5.RISCV64
-public import VerifiedGarbage.Proof.Cast5.RISCV64.KeySteps
 public import VerifiedGarbage.Proof.Cast5.RISCV64.Run
 public import VerifiedGarbage.Proof.Cast5.Table
 public import VerifiedGarbage.Proof.Framework.RISCV64.Spill

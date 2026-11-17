@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.RsaKeyGen.PPC64LE.Search
-public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Search.Data
+public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Search.Entry
 public import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratch
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Alloc
 public import VerifiedGarbage.Proof.Framework.Covers
@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Search.Entry
 import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 
 /-! # One candidate of the search (PPC64LE)

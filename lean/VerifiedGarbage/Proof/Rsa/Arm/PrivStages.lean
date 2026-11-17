@@ -1,10 +1,9 @@
 module
-public import VerifiedGarbage.Proof.Rsa.Arm.PrivCrtArgs
-public import VerifiedGarbage.Proof.Rsa.Arm.PrivPcCall
-public import VerifiedGarbage.Proof.Rsa.Arm.PrivPdArgs
 
+public import VerifiedGarbage.Proof.Rsa.Arm.PrivCrtPre
+public import VerifiedGarbage.Proof.Rsa.Arm.PrivPdCall
+public import VerifiedGarbage.Proof.Rsa.Arm.PrivPdPre
 import VerifiedGarbage.Proof.Rsa.Arm.PrivStatusPreserved
-import VerifiedGarbage.Proof.Rsa.Arm.PrivPdCall
 import VerifiedGarbage.Proof.Rsa.Arm.PrivCrtCall
 import VerifiedGarbage.Proof.Rsa.BytesFrame
 import VerifiedGarbage.Proof.Rsa.Arm.PrivCheckFrame

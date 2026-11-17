@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Framework.X86.CallWipe
 public import VerifiedGarbage.Proof.Zeroize.X86
 public import VerifiedGarbage.Proof.MlKem.Scrubbed
 public import VerifiedGarbage.Proof.MlKem.X86.KeyGenFin
-public import VerifiedGarbage.Proof.MlKem.X86.KeyGenPrf
 public import VerifiedGarbage.Proof.MlKem.X86.KeyGenBody
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.MlKem.X86.Common

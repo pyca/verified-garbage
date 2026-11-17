@@ -1,15 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.InvLaw
-public import VerifiedGarbage.Proof.Rsa.Arm.CvDivD
+public import VerifiedGarbage.Proof.Rsa.Arm.CvWords
 public import VerifiedGarbage.Proof.Rsa.Arm.CvFail
 public import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
 public import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 import VerifiedGarbage.Proof.Rsa.Arm.CvTaint
 import VerifiedGarbage.Proof.Rsa.Arm.CvTaintW
-public import VerifiedGarbage.Proof.Rsa.Arm.CvWords
 public import VerifiedGarbage.Proof.Rsa.Arm.KdDivCT
-public import VerifiedGarbage.Proof.Rsa.Arm.CvFinish
 import VerifiedGarbage.Proof.Rsa.Arm.CvLoads
 import VerifiedGarbage.Proof.Rsa.Arm.DivCT
 import VerifiedGarbage.Proof.Rsa.Arm.InvParts
@@ -23,7 +21,7 @@ public import VerifiedGarbage.TCB.Arm.Target
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Spec.Rsa.Contract
 meta import VerifiedGarbage.TCB.Arm.Target
-public import VerifiedGarbage.Proof.Rsa.KeyCheckWords
+public import VerifiedGarbage.Proof.Rsa.Arm.KcBodyW
 import VerifiedGarbage.Proof.Rsa.KeyCheckMath
 import VerifiedGarbage.Proof.Rsa.Arm.CvSpec
 import VerifiedGarbage.Proof.Framework.Block

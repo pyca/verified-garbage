@@ -1,10 +1,9 @@
 module
 
-import VerifiedGarbage.Proof.MlDsa.RISCV64.KeyGen.CallSP
+public import VerifiedGarbage.Proof.MlDsa.RISCV64.KeyGen.CallSP
 import VerifiedGarbage.Proof.MlDsa.RISCV64.KeyGen.ContractsV
 import VerifiedGarbage.Proof.Framework.Covers
 public import VerifiedGarbage.Proof.Framework.Semantics
-public import VerifiedGarbage.Proof.MlDsa.RISCV64.KeyGen.Call
 public import VerifiedGarbage.Proof.MlDsa.Contract
 public import VerifiedGarbage.TCB.RISCV64.Target
 

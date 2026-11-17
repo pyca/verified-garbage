@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Weierstrass.RISCV64.P256Field.Words
 public import VerifiedGarbage.Proof.X448.RISCV64.R64.Basic
 public import VerifiedGarbage.Proof.X25519.RISCV64.Field
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
-import VerifiedGarbage.Proof.X448.RISCV64.R64.Product
+import VerifiedGarbage.Proof.X448.RISCV64.R64.Reduce
 import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.X25519.RISCV64.Instr

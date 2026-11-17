@@ -1,6 +1,7 @@
 module
+
 public meta import VerifiedGarbage.Proof.Framework.X86.RelCT
-import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Prepare
+import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Copy
 public import VerifiedGarbage.Impl.Dsa.X86.GenerateKey
 public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.InvokeTiming
 public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Result

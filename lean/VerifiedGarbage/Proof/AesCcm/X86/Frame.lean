@@ -1,14 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.AesCcm.Rounds
+public import VerifiedGarbage.Proof.AesCcm.Scratch
 import VerifiedGarbage.Proof.AesCcm.X86.SealCT
 import VerifiedGarbage.Proof.AesCcm.X86.OpenCT
 import VerifiedGarbage.Proof.CmacAes.X86.Verified
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.AesCcm.Scratch
 public import VerifiedGarbage.Impl.AesCcm.X86
 public import VerifiedGarbage.Proof.Aes.X86.VariantProof
-public import VerifiedGarbage.Proof.AesCcm.X86.Contract
+public import VerifiedGarbage.Proof.AesCcm.X86.Top
 import VerifiedGarbage.Proof.AesCcm.X86.Open
 import VerifiedGarbage.Proof.AesCcm.X86.Seal
 import VerifiedGarbage.Proof.AesGcm.X86.Top

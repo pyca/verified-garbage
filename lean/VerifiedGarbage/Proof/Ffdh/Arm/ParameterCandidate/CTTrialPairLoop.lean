@@ -2,13 +2,10 @@ module
 
 public import VerifiedGarbage.Impl.Ffdh.Arm.ParameterCandidate
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTTrialLoop
-public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.TrialLoopWord
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.TrialDigit
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.TrialStepWord
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.TrialWordCongr
 import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Impl.Ffdh.Arm.ParameterCandidate
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint

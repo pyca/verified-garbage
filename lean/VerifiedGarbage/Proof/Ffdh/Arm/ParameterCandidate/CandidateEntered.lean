@@ -19,7 +19,6 @@ import Mathlib.Algebra.GroupWithZero.Nat
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateReturn
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidatePair
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidatePairMath
-public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.ScreenedTestsMath
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateParams
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.LimitedTest
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateShape

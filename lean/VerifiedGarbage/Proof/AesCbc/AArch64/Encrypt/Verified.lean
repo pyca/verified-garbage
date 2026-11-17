@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.AesCbc.AArch64.Encrypt.Core
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-public import VerifiedGarbage.Proof.AesCbc.AArch64.Encrypt.State
 public import VerifiedGarbage.Proof.Aes.AArch64.Aese.Blocks
 public import VerifiedGarbage.Proof.AesCbc.AArch64.Loop
 public import VerifiedGarbage.Impl.AesCbc.AArch64.Decrypt
@@ -20,7 +19,6 @@ public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.AesCbc.AArch64.Encrypt.Lit
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.AesCbc.AArch64.Block
-public import VerifiedGarbage.Proof.AesCbc.AArch64.Call
 
 /-! ### `AesCbc.AArch64.Encrypt.Correct`, which only this module used -/
 

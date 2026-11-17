@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Dsa.X86_64.EntryScratch
 import VerifiedGarbage.Proof.Dsa.X86_64.EntryFieldsFrame
 import VerifiedGarbage.Proof.Dsa.Layout
 import VerifiedGarbage.Proof.Dsa.X86_64.Operands
-import VerifiedGarbage.Proof.Dsa.X86_64.KeyPointers
 import VerifiedGarbage.Proof.Dsa.X86_64.Save
 import Mathlib.Order.RelClasses
 import Mathlib.Tactic.Finiteness.Attr

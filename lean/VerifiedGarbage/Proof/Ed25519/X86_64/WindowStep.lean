@@ -2,14 +2,11 @@ module
 
 import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyFrame
 import VerifiedGarbage.Proof.Ed25519.X86_64.BaseOdd
-import VerifiedGarbage.Proof.Ed25519.X86_64.WindowEntry
 public import VerifiedGarbage.Proof.Ed25519.X86_64.BaseEntry
 import VerifiedGarbage.Proof.Ed25519.X86_64.CachedPoint
 import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulBatch
 public import VerifiedGarbage.Proof.Ed25519.Group.Double
 public import VerifiedGarbage.Proof.Ed25519.Recode
-public import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Fn
-import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Keeps
 import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Lit
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCounter
@@ -25,6 +22,331 @@ import VerifiedGarbage.Proof.X25519.X86_64.Lit
 import Mathlib.Tactic.Ring.RingNF
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Ring
+public import VerifiedGarbage.Impl.Ed25519.X86_64.VerifyWindow
+public import VerifiedGarbage.Proof.Ed25519.X86_64.PointTableAddr
+public import VerifiedGarbage.Proof.Ed25519.BaseTable
+import VerifiedGarbage.Proof.Ed25519.X86_64.MulAddMemory
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Ed25519.Point64Contract
+public import VerifiedGarbage.Proof.Framework.X86_64.KeepReg
+public import VerifiedGarbage.Impl.Ed25519.X86_64.Point64
+public import VerifiedGarbage.Proof.Ed25519.X86_64.FieldWide
+import VerifiedGarbage.Proof.Framework.X86_64.Inline
+
+/-! ### `Ed25519.X86_64.Point64.Keeps`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Ed25519.X86_64.Point64.Fn`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Ed25519.X86_64.FieldLazy`, which only this module used -/
+
+section
+
+/-!
+# Ed25519 field programs on the wide scratch, with bounds
+
+`field_liftB` lifts a field program's proof on the narrow scratch (4096 bytes)
+to the wide one (8192), with bounds on the memory before and after.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ed25519.X86_64
+
+open VG VG.X86_64 VG.Impl.Ed25519.X86_64
+open VG.Proof.X25519.X86_64 (Scr Outside Op clob F fe)
+
+variable {fld : Arith} [EdArith fld]
+
+/-- `field_lift`, with bounds before and after. -/
+theorem field_liftB {s : State} {base : Addr} (hs : Scratch s base) (code : List Instr)
+    (f : Env → Env) (Pre Post : Mem → Prop) (hpre : Pre s.mem)
+    (correct : ∀ t, Scr t base → Pre t.mem → WP isa (.block code) t fun u =>
+      Keep base t u ∧ env u.mem base = f (env t.mem base) ∧ Post u.mem) :
+    WP isa (.block code) s fun t => Keep base s t ∧ env t.mem base = f (env s.mem base) ∧
+      Post t.mem := by
+  let narrow := s.withRegions s.rd [⟨base, 4096⟩]
+  have hn : Scr narrow base := ⟨hs.rdi, List.mem_singleton_self _, by have := hs.nowrap; omega_using [this]⟩
+  obtain ⟨tr, t, he, hk, hv, hp⟩ := correct narrow hn hpre
+  have cw : Covers [⟨base, 4096⟩] s.wr := by
+    apply Covers.of_sub
+    intro r hr
+    obtain rfl := List.mem_singleton.mp hr
+    exact ⟨⟨base, 8192⟩, hs.wr, 0, (BitVec.add_zero base).symm, by change 0 + 4096 ≤ 8192; decide⟩
+  refine ⟨tr, t.withRegions s.rd s.wr, ?_, ⟨hk.gpr, rfl, rfl, hk.mem⟩, hv, hp⟩
+  have e := VG.X86_64.Exec.widen he (Covers.append (fun _ _ h => h) cw) cw
+  simpa only [narrow, State.withRegions_withRegions, State.withRegions_rd, State.withRegions_self] using e
+
+end VG.Proof.Ed25519.X86_64
+
+end
+
+end
+
+
+/-!
+# Ed25519's point functions on x86-64: what they compute
+
+Untrusted: everything here is checked by Lean. From `ws` in `rdi`, writable
+for its 8192 bytes (`Scratch`), a function running the field program `ops`
+(`fn_ok`) keeps every register but the field arithmetic's caller-saved ones
+(`rax`, `rcx`, `rdx`, `r8`–`r11`): `saves` changes only `xmm0`–`xmm4`, the
+program only the arithmetic's registers (`Keep`), and `restores` brings back
+`rbp` and `r12`–`r15`, which `KeepReg.keeps` follows through `xmm0`–`xmm4`.
+The program's values are `evalOps ops` of the slots', and it changes only the
+bytes of its results (`fieldCode_frame`). The doubling's values are RFC
+8032's formula's (`dblOps_formula`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ed25519.X86_64.Point64
+
+open VG VG.X86_64 VG.Impl.Ed25519.X86_64 VG.Impl.Ed25519.X86_64.Point64 VG.Proof.Ed25519.X86_64
+open VG.Proof.X25519.X86_64 (clob ofs)
+
+variable {fld : Arith} [EdArith fld]
+
+private theorem setXmm_gpr (s : State) (r : XReg) (v : BitVec 128) : (s.setXmm r v).gpr = s.gpr := rfl
+private theorem setXmm_mem (s : State) (r : XReg) (v : BitVec 128) : (s.setXmm r v).mem = s.mem := rfl
+private theorem setXmm_rd (s : State) (r : XReg) (v : BitVec 128) : (s.setXmm r v).rd = s.rd := rfl
+private theorem setXmm_wr (s : State) (r : XReg) (v : BitVec 128) : (s.setXmm r v).wr = s.wr := rfl
+
+/-- The registers the functions restore. -/
+abbrev keptRegs : List Reg := kept.map Prod.fst
+
+theorem saves_ok (s : State) :
+    WP isa (.block saves) s fun t => t.gpr = s.gpr ∧ t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr := by
+  apply WP.of_runBlock
+  simp only [saves, kept, List.map_cons, List.map_nil, runBlock_cons, runStep_some, runBlock_nil, exec,
+    XOp.exec, Option.some.injEq, exists_eq_left', setXmm_gpr, setXmm_mem, setXmm_rd, setXmm_wr]
+  exact ⟨trivial, trivial, trivial, trivial⟩
+
+theorem restores_ok (s : State) :
+    WP isa (.block restores) s fun t => (∀ r, r ∉ keptRegs → t.gpr r = s.gpr r) ∧ t.mem = s.mem ∧
+      t.rd = s.rd ∧ t.wr = s.wr := by
+  apply WP.of_runBlock
+  simp only [restores, kept, List.map_cons, List.map_nil, runBlock_cons, runStep_some, runBlock_nil, exec,
+    Option.some.injEq, exists_eq_left']
+  refine ⟨fun r hr => ?_, rfl, rfl, rfl⟩
+  simp only [keptRegs, kept, List.map_cons, List.map_nil, List.mem_cons, List.not_mem_nil, or_false,
+    not_or] at hr
+  simp only [RegUpd.gpr_setReg_of_ne _ _ hr.1, RegUpd.gpr_setReg_of_ne _ _ hr.2.1,
+    RegUpd.gpr_setReg_of_ne _ _ hr.2.2.1, RegUpd.gpr_setReg_of_ne _ _ hr.2.2.2.1,
+    RegUpd.gpr_setReg_of_ne _ _ hr.2.2.2.2]
+
+/-- `fieldCode_frame` for the whole working space. -/
+theorem fieldCodeWideF_ok {s : State} {base : Addr} (hs : Scratch s base) (ops : List FieldOp) :
+    WP isa (.block (fieldCode fld ops)) s fun t => Keep base s t ∧
+      env t.mem base = evalOps ops (env s.mem base) ∧ ∀ x, Outs ops base x → t.mem x = s.mem x :=
+  field_liftB hs _ (evalOps ops) (· = s.mem) (fun m => ∀ x, Outs ops base x → m x = s.mem x) rfl
+    fun _ ht hp => WP.mono (fieldCode_frame ops ht) fun u ⟨k, e, f⟩ =>
+      ⟨k, e, fun x hx => by rw [f x hx, hp]⟩
+
+/-- A function running the field program `ops`: every register but the field arithmetic's
+caller-saved ones kept, the slots' values `evalOps ops` of theirs, and memory changed only at
+the program's results. -/
+theorem fn_ok {s : State} {base : Addr} (hs : Scratch s base) (ops : List FieldOp)
+    (hk : ∀ r ∈ keptRegs, KeepReg.keeps r (fn fld ops) = true) :
+    WP isa (fn fld ops) s fun t => (∀ r, (r ∉ clob ∨ r ∈ keptRegs) → t.gpr r = s.gpr r) ∧
+      t.rd = s.rd ∧ t.wr = s.wr ∧ env t.mem base = evalOps ops (env s.mem base) ∧
+      ∀ x, Outs ops base x → t.mem x = s.mem x := by
+  have hw : WP isa (fn fld ops) s fun t => (∀ r, r ∉ clob → t.gpr r = s.gpr r) ∧
+      t.rd = s.rd ∧ t.wr = s.wr ∧ env t.mem base = evalOps ops (env s.mem base) ∧
+      ∀ x, Outs ops base x → t.mem x = s.mem x := by
+    simp only [fn, List.append_assoc]
+    rw [WP.block_append_iff]
+    refine WP.mono (saves_ok s) fun s₁ ⟨g₁, m₁, rd₁, wr₁⟩ => ?_
+    have hs₁ : Scratch s₁ base := ⟨by rw [g₁]; exact hs.rdi, by rw [wr₁]; exact hs.wr, hs.nowrap⟩
+    rw [WP.block_append_iff]
+    refine WP.mono (fieldCodeWideF_ok hs₁ ops) fun s₂ ⟨k₂, e₂, f₂⟩ => ?_
+    refine WP.mono (restores_ok s₂) fun s₃ ⟨g₃, m₃, rd₃, wr₃⟩ => ?_
+    refine ⟨fun r hr => ?_, by rw [rd₃, k₂.rd, rd₁], by rw [wr₃, k₂.wr, wr₁], by rw [m₃, e₂, m₁],
+      fun x hx => by rw [m₃, f₂ x hx, m₁]⟩
+    have hk' : r ∉ keptRegs := fun h => hr (by
+      revert h; simp only [keptRegs, kept, clob, List.map_cons, List.map_nil, List.mem_cons,
+        List.not_mem_nil, or_false]
+      rintro (rfl | rfl | rfl | rfl | rfl) <;> simp)
+    rw [g₃ r hk', k₂.gpr r hr, g₁]
+  obtain ⟨t, s', he, h⟩ := hw
+  exact ⟨t, s', he, fun r hr => hr.elim (h.1 r) fun hm => Exec.gpr_keeps (hk r hm) he, h.2⟩
+
+/-! ## The programs' values -/
+
+/-- What `dblOps` leaves in slots 0–3. -/
+def dblResult (e : Env) : Spec.Ed25519.Point :=
+  let a := e 0 * e 0
+  let b := e 1 * e 1
+  let c := e 2 * e 2 + e 2 * e 2
+  let ee := e 0 * e 1 + e 0 * e 1
+  let g := b - a
+  let f := g - c
+  let h := g - b - b
+  ⟨ee * f, g * h, f * g, ee * h⟩
+
+theorem dblOps_formula (e : Env) (t : Bool) :
+    evalOps (dblOps t) e 0 = (dblResult e).X ∧ evalOps (dblOps t) e 1 = (dblResult e).Y ∧
+      evalOps (dblOps t) e 2 = (dblResult e).Z ∧ (t = true → evalOps (dblOps t) e 3 = (dblResult e).T) := by
+  cases t
+  · exact ⟨rfl, rfl, rfl, nofun⟩
+  · exact ⟨rfl, rfl, rfl, fun _ => rfl⟩
+
+end VG.Proof.Ed25519.X86_64.Point64
+
+end
+
+end
+
+/-!
+# The point functions keep `rbp` and `r12`–`r15`
+
+Untrusted: everything here is checked by Lean. Each function saves the
+registers in `xmm0`–`xmm4`, runs field code that writes no vector register,
+and restores them (`fn`), so it keeps them (`fn_keeps`): one pass over the
+code, where `KeepReg.keeps` evaluated on the code would take one for each
+register.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ed25519.X86_64.Point64
+
+open VG VG.X86_64 VG.Impl.Ed25519.X86_64 VG.Impl.Ed25519.X86_64.Point64
+
+variable {fld : Arith} [EdArith fld]
+
+/-- The code between a function's saves and restores (`fn`'s five each). -/
+def midCode : Prog isa → List Instr
+  | .block l => (l.drop 5).take (l.length - 10)
+  | _ => []
+
+theorem midCode_fn (fld : Arith) (ops : List FieldOp) : midCode (fn fld ops) = fieldCode fld ops := by
+  simp [midCode, fn, saves, restores, kept]
+
+/-- A function keeps `rbp` and `r12`–`r15` if its field code writes no vector register: one
+pass over the code, where `KeepReg.keeps` would take one for each register. -/
+theorem fn_keeps {fld : Arith} {ops : List FieldOp}
+    (h : (midCode (fn fld ops)).all (fun i => !KeepReg.writesVec i) = true) :
+    ∀ r ∈ keptRegs, KeepReg.keeps r (fn fld ops) = true := by
+  rw [midCode_fn] at h
+  intro r hr
+  refine KeepReg.keeps_around h fun b => ?_
+  simp only [keptRegs, kept, List.map_cons, List.map_nil, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl <;> cases b <;> decide
+
+/-- The functions' bodies keep `rbp` and `r12`–`r15`. -/
+theorem doubleFn_keeps (t : Bool) : ∀ r ∈ keptRegs, KeepReg.keeps r (doubleFn fld t) = true := by
+  rcases EdArith.known (fld := fld) with rfl | rfl <;> cases t <;>
+    exact fn_keeps (by lit_decide)
+
+theorem addFn_keeps (t : Bool) : ∀ r ∈ keptRegs, KeepReg.keeps r (addFn fld t) = true := by
+  rcases EdArith.known (fld := fld) with rfl | rfl <;> cases t <;>
+    exact fn_keeps (by lit_decide)
+
+theorem addAffineFn_keeps : ∀ r ∈ keptRegs, KeepReg.keeps r (addAffineFn fld) = true := by
+  rcases EdArith.known (fld := fld) with rfl | rfl <;>
+    exact fn_keeps (by lit_decide)
+
+end VG.Proof.Ed25519.X86_64.Point64
+
+end
+
+end
+
+/-! ### `Ed25519.X86_64.WindowEntry`, which this module and modules that import it used -/
+
+section
+
+/-!
+# Loading a table entry
+
+`pointFromTableQ` copies a table entry to slots 4–7 (`pointFromTableQ_ok`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ed25519.X86_64
+
+open VG VG.X86_64 VG.Impl.Ed25519.X86_64
+open VG.Proof.X25519.X86_64 (off F fe_st4 st4_outside Outside Keeps clob)
+open VG.Impl.X25519.X86_64 (stores)
+
+variable {fld : Arith} [EdArith fld]
+
+theorem fromTableQuarterQ_ok {s : State} {base : Addr} (hs : Scratch s base) {o : Nat}
+    (hp : s.gpr .rax = off base o) (j : Nat) (hj : j < 4) (ho : o + 128 ≤ 8192) :
+    WP isa (.block (fromTableWords (32 * j) ++ stores (192 + 32 * j) .r8 .r9 .r10 .r11)) s fun t =>
+      env t.mem base ⟨4 + j, by omega_using [hj]⟩ = F s.mem base (o + 32 * j) ∧
+      TableKeep base (192 + 32 * j) 32 s t := by
+  rw [WP.block_append_iff]
+  refine WP.mono (fromTableWords_ok hs hp (32 * j) (by omega_using [hj, ho])) fun t ⟨hv, hk⟩ => ?_
+  have ht := hs.of_keeps hk (by decide)
+  refine WP.mono (stores8192_ok ht.rdi ht.wr (by omega_using [hj] : 192 + 32 * j + 32 ≤ 8192)
+    .r8 .r9 .r10 .r11) fun u ⟨hm, hg, hrd, hwr⟩ => ?_
+  refine ⟨?_, ⟨fun r hr => (congrFun hg r).trans (hk.1 r hr), hrd.trans hk.2.2.1,
+    hwr.trans hk.2.2.2, ?_⟩⟩
+  · change F u.mem base (64 + 32 * (4 + j)) = _
+    rw [show 64 + 32 * (4 + j) = 192 + 32 * j by omega_using [], F, hm, fe_st4 _ _ (by omega_using [hj]), hv]
+  · rw [hm, hk.2.1]; exact st4_outside _ _ (by omega_using [hj]) _ _ _ _
+
+theorem fromTablePrefixQ_ok {s : State} {base : Addr} (hs : Scratch s base) {o : Nat}
+    (hp : s.gpr .rax = off base o) (hlo : 768 ≤ o) (ho : o + 128 ≤ 8192)
+    (n : Nat) (hn : n ≤ 4) :
+    WP isa (.block ((List.range n).flatMap fun j =>
+      fromTableWords (32 * j) ++ stores (192 + 32 * j) .r8 .r9 .r10 .r11)) s fun t =>
+      (∀ j (hj : j < n), env t.mem base ⟨4 + j, by omega_using [hn, hj]⟩ = F s.mem base (o + 32 * j)) ∧
+      TableKeep base 192 (32 * n) s t := by
+  induction n generalizing s with
+  | zero =>
+    exact WP.block_nil ⟨fun j hj => by omega,
+      ⟨fun _ _ => rfl, rfl, rfl, Outside.refl _ _ _ _⟩⟩
+  | succ n ih =>
+    rw [List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil,
+      List.append_nil, WP.block_append_iff]
+    refine WP.mono (ih hs hp (by omega_using [hn])) fun t ⟨hv, hk⟩ => ?_
+    refine WP.mono (fromTableQuarterQ_ok (hk.scratch hs)
+      ((hk.gpr _ (by decide)).trans hp) n (by omega_using [hn]) ho) fun u ⟨hu, ku⟩ => ?_
+    refine ⟨fun j hj => ?_, (hk.mono (by omega_using []) (by omega_using [])).trans
+      (ku.mono (by omega_using []) (by omega_using []))⟩
+    by_cases h : j < n
+    · have he : env u.mem base ⟨4 + j, by omega_using [hn, hj]⟩ = env t.mem base ⟨4 + j, by omega_using [hn, hj]⟩ :=
+        Outside_F ku.mem (by simp only [offset]; omega_using [hn, hj]) (Or.inl (by simp only [offset]; omega_using [h]))
+      rw [he, hv j h]
+    · have he : j = n := by omega_using [hj, h]
+      subst j
+      rw [hu, Outside_F hk.mem (by omega_using [ho, hn]) (Or.inr (by omega_using [hlo]))]
+
+theorem pointFromTableQ_ok {s : State} {base : Addr} (hs : Scratch s base) {o : Nat}
+    (hp : s.gpr .rax = off base o) (hlo : 768 ≤ o) (ho : o + 128 ≤ 8192) :
+    WP isa (.block pointFromTableQ) s fun t =>
+      point (env t.mem base) 4 5 6 7 = tablePoint s.mem base o ∧ TableKeep base 192 128 s t := by
+  refine WP.mono (fromTablePrefixQ_ok hs hp hlo ho 4 (by decide)) fun t ⟨hv, hk⟩ => ?_
+  refine ⟨?_, hk⟩
+  have h0 := hv 0 (by decide)
+  have h1 := hv 1 (by decide)
+  have h2 := hv 2 (by decide)
+  have h3 := hv 3 (by decide)
+  simp only [Nat.mul_zero, Nat.add_zero, Nat.mul_one] at h0 h1
+  change env t.mem base 4 = _ at h0
+  change env t.mem base 5 = _ at h1
+  change env t.mem base 6 = _ at h2
+  change env t.mem base 7 = _ at h3
+  simp only [tablePoint, point, h0, h1, h2, h3]
+
+theorem Keep.of_tableQ {base : Addr} {s t : State}
+    (h : TableKeep base 192 128 s t) : Keep base s t := by
+  refine ⟨fun r hr => h.gpr r (fun hm => hr ?_), h.rd, h.wr, h.mem.mono (by decide) (by decide)⟩
+  exact (show ∀ r ∈ [Reg.r8, .r9, .r10, .r11], r ∈ clob by decide) r hm
+
+end VG.Proof.Ed25519.X86_64
+
+end
+
+end
 
 /-! ### `Ed25519.X86_64.Point64.Ops`, which only this module used -/
 

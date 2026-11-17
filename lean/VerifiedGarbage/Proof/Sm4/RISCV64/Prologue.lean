@@ -16,7 +16,7 @@ import VerifiedGarbage.Proof.Sm4.RISCV64.LayersLit
 Saving and restoring the callee-saved registers `s0`–`s11` in their slots
 (`save_ok`, `restore_ok`), and storing constants to slots (`setSlots_ok`,
 through `li64`): the masks of the round keys' planes and of the transposes.
-As on PPC64LE (`Proof/Sm4/PPC64LE/Prologue.lean`), with the scratch buffer
+As on PPC64LE (`Proof/Sm4/PPC64LE/Group.lean`), with the scratch buffer
 aligned to 8 bytes, as `ld` and `sd` need.
 -/
 

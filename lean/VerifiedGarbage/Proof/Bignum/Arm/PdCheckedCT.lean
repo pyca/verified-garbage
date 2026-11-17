@@ -3,18 +3,17 @@ module
 public import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeState
 public import VerifiedGarbage.Impl.Bignum.Arm.PdFn
 public import VerifiedGarbage.Proof.Bignum.Arm.PdBodyInput
-public import VerifiedGarbage.Proof.Bignum.Arm.PdCheckRest
+public import VerifiedGarbage.Proof.Bignum.Arm.PdChecks
 public import VerifiedGarbage.Proof.Bignum.Arm.PdImport
-
 import VerifiedGarbage.Proof.Bignum.Arm.PdChecksCT
 import VerifiedGarbage.Proof.Bignum.Arm.PdApplyCT
 import VerifiedGarbage.Proof.Bignum.Arm.PdFailCT
 import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeCT
 import VerifiedGarbage.Proof.Bignum.Arm.PdInverse
 import VerifiedGarbage.Proof.Bignum.Arm.CrtStageCT
-import VerifiedGarbage.Proof.Bignum.Arm.PdChecks
 import VerifiedGarbage.Proof.Bignum.Arm.PdPrepare
 import VerifiedGarbage.Proof.Framework.Offset
+
 /-! # Packed-key checks branch only on public values -/
 
 -- Formerly `VerifiedGarbage/Proof/Bignum/Arm/PdStages.lean`, which only this module imported.

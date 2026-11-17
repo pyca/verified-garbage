@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.Argon2.Slices
 public import VerifiedGarbage.Proof.Argon2.Iterations
 public import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.FillState
 public import VerifiedGarbage.Proof.Argon2.Lanes
-import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.FillRef
+import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.FillPtr
 import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.MemoryInit
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.RISCV64.Steps

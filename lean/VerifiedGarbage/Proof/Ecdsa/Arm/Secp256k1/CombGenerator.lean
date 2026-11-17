@@ -5,7 +5,6 @@ public import VerifiedGarbage.Impl.NatPairs
 public import VerifiedGarbage.Proof.Weierstrass.Arm.TCombConfig
 public import VerifiedGarbage.Impl.Weierstrass.Arm.TCombSecp256k1
 public import VerifiedGarbage.Proof.Weierstrass.Arm.LadderP
-public import VerifiedGarbage.Proof.Weierstrass.Arm.TCombLayout
 import VerifiedGarbage.Proof.Secp256k1.Comb7
 import VerifiedGarbage.Proof.Secp256k1.Point
 import VerifiedGarbage.Proof.Weierstrass.Arm.MontSecp256k1

@@ -9,11 +9,10 @@ import VerifiedGarbage.Proof.Weierstrass.CombDigitTopW
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Mont.PPC64LE.Row
 import VerifiedGarbage.Proof.Mont.PPC64LE.Step
-import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Bits
+import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Pow
 import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Copy
-import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Fprog
+import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Ladder
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
-import VerifiedGarbage.Proof.Weierstrass.PPC64LE.PointFn
 import VerifiedGarbage.Proof.Weierstrass.PPC64LE.LadderPCall
 import VerifiedGarbage.Proof.Framework.Covers
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd

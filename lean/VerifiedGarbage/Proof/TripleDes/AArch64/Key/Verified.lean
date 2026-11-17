@@ -1,9 +1,8 @@
 module
 
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-import VerifiedGarbage.Proof.TripleDes.AArch64.Key.Correct
+public import VerifiedGarbage.Proof.TripleDes.AArch64.Key.Correct
 public import VerifiedGarbage.Spec.TripleDes.Contract
-public import VerifiedGarbage.Proof.TripleDes.AArch64.Key.Contract
 public import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Contract

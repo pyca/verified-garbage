@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.Arm.Key.ABI
+public import VerifiedGarbage.Proof.Dsa.Arm.Key.Frame
 public import VerifiedGarbage.Impl.Dsa.Arm.GenerateKey
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Spec.Dsa.Generate

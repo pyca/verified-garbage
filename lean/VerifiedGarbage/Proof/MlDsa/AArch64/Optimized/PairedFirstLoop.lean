@@ -3,8 +3,8 @@ module
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFirstMemory
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedTableDecode
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedPackedRoot
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InversePackedTable
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedStageRun
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFive
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseLocalTable
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedTableMemory
 import VerifiedGarbage.Proof.Framework.Contract

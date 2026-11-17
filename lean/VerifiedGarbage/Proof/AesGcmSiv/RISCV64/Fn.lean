@@ -9,9 +9,8 @@ import VerifiedGarbage.Proof.Cmac.Stream
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.RISCV64.Steps
-import VerifiedGarbage.Proof.AesGcmSiv.RISCV64.Wp
+public import VerifiedGarbage.Proof.AesGcmSiv.RISCV64.Wp
 public import VerifiedGarbage.Impl.AesGcmSiv.RISCV64
-public import VerifiedGarbage.Proof.AesGcmSiv.RISCV64.Env
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Framework.WriteBytes

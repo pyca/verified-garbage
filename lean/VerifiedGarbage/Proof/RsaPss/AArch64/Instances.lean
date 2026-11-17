@@ -4,8 +4,6 @@ public import VerifiedGarbage.Proof.MdHashTable.AArch64.Tables
 public import VerifiedGarbage.Proof.HashTable.AArch64
 public import VerifiedGarbage.Proof.RsaPss.AArch64.SignCEnc
 public import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyChk
-public import VerifiedGarbage.Proof.RsaPss.AArch64.EncVerified
-public import VerifiedGarbage.Proof.RsaPss.AArch64.ChkVerified
 public import VerifiedGarbage.Impl.RsaPss.AArch64.Encoding
 public import VerifiedGarbage.Proof.Framework.AArch64.Depth
 import VerifiedGarbage.Proof.RsaPss.AArch64.Shapes

@@ -1,9 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.PPC64LE.Sign.Decode
-public import VerifiedGarbage.Proof.MlDsa.Sign.Loop
+public import VerifiedGarbage.Proof.MlDsa.Sign.Iter
 import VerifiedGarbage.Proof.MlDsa.Sign.Mem
-import VerifiedGarbage.Proof.MlDsa.Sign.Iter
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Rest
 import VerifiedGarbage.Proof.MlKem.KPke
 import VerifiedGarbage.Proof.MlKem.Mem

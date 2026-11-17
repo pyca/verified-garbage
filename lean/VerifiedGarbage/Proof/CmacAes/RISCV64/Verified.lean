@@ -3,10 +3,9 @@ module
 public import VerifiedGarbage.Impl.CmacAes.RISCV64
 public import VerifiedGarbage.Spec.Cmac.Contract
 public import VerifiedGarbage.TCB.RISCV64.Target
-public import VerifiedGarbage.Proof.CmacAes.RISCV64.Contract
+public import VerifiedGarbage.Proof.CmacAes.RISCV64.Subkeys
 public import VerifiedGarbage.Proof.AesCbc.RISCV64.Chain
 import VerifiedGarbage.Proof.CmacAes.RISCV64.CT
-import VerifiedGarbage.Proof.CmacAes.RISCV64.Subkeys
 import VerifiedGarbage.Proof.CmacAes.RISCV64.Finalize
 import VerifiedGarbage.Proof.Framework.Contract
 

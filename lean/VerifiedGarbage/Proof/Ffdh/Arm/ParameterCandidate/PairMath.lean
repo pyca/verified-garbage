@@ -2,9 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.PairState
 public import VerifiedGarbage.Spec.Ffdh
-public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.SieveState
-
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.SieveMath
+public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.SieveMath
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.SievePolicy
 import VerifiedGarbage.Proof.RsaKeyGen.Table
 import VerifiedGarbage.Proof.Framework.Omega

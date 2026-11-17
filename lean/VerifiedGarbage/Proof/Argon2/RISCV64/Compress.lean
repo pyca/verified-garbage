@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Argon2.RISCV64.Copy
+public import VerifiedGarbage.Proof.Argon2.RISCV64.Copy
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.TCB.RISCV64.Target
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
@@ -23,7 +23,6 @@ meta import VerifiedGarbage.Proof.Framework.RISCV64.Wp
 meta import VerifiedGarbage.Spec.Argon2.Contract
 public import VerifiedGarbage.Spec.Argon2.Contract
 public import VerifiedGarbage.Proof.Argon2.Contract
-public import VerifiedGarbage.Proof.Argon2.RISCV64.Rounds
 
 /-! # Argon2 compression G on RISC-V: correctness and constant time
 

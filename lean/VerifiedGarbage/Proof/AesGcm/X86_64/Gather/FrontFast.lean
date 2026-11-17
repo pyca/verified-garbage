@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CT
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.SplitPath
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.SplitCall
 import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.SplitCT
 import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Copy
@@ -14,7 +14,6 @@ import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TaintBatch
 import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.SplitCall
 import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
 
 /-! ### `AesGcm.X86_64.Gather.Front`, which only this module used -/

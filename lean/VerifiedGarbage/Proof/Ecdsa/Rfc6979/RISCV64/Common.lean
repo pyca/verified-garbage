@@ -2,7 +2,6 @@ module
 
 -- separate module: its proofs (about 4 s) cost more than its imports, and its importer's
 -- changes need not re-check them
-
 public import VerifiedGarbage.Impl.Ecdsa.Rfc6979.RISCV64
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Instance
 public import VerifiedGarbage.Spec.Ecdsa.Generic
@@ -16,7 +15,7 @@ public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Ecdsa.RISCV64.Comb.Tail
 public import VerifiedGarbage.Proof.Framework.RISCV64.Consts
 public import VerifiedGarbage.Proof.Weierstrass.RISCV64.Call
-import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Common
+import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Init
 import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.InitMain
 import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Finalize
 import VerifiedGarbage.Proof.Framework.RISCV64.CallAny

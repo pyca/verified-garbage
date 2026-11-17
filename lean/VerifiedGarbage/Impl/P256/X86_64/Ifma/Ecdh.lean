@@ -23,7 +23,7 @@ while it runs: `adjUp`, `adjDn`), and its constants at `EKB`.
 
 Nothing here branches on the scalar: the additions are those of distinct
 points for every scalar the window method takes
-(`Proof/Weierstrass/OddWin.lean`).
+(`Proof/Weierstrass/X86_64/WinJacOddState.lean`).
 -/
 
 @[expose] public section

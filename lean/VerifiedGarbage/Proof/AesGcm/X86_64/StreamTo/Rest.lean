@@ -1,11 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Callee
-public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Mid
+public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.BlkCall
 public import VerifiedGarbage.Proof.Framework.X86_64.Frame
-import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.BlkCall
 import VerifiedGarbage.Proof.Framework.X86_64.CallSp
-import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Steps
 import VerifiedGarbage.Proof.AesGcm.X86_64.Env
 import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
 import VerifiedGarbage.Proof.Framework.Offset

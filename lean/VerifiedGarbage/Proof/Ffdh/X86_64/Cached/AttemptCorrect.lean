@@ -15,14 +15,12 @@ public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Scan
 public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.CutInputs
 public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Finish
 public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Arithmetic
-public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.PublicOutput
+public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Outputs
 import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Start
 import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Scalar
 import VerifiedGarbage.Proof.Ffdh.X86_64.Moves
-public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Outputs
 import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Work
 import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Data
-import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.OutputBytes
 import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.MaskOutput
 import Mathlib.Order.RelClasses
 import Mathlib.Tactic.Finiteness.Attr

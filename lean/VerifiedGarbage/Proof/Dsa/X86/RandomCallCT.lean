@@ -1,7 +1,7 @@
 module
-public import VerifiedGarbage.Proof.Dsa.X86.RandomCTDefs
-public import VerifiedGarbage.Proof.Dsa.X86.RandomCall
 
+public import VerifiedGarbage.Proof.Dsa.X86.RandomCTDefs
+public import VerifiedGarbage.Proof.Dsa.X86.RandomAttemptState
 import VerifiedGarbage.Proof.Dsa.X86.RandomAttempt
 import VerifiedGarbage.Proof.Framework.Offset
 import Batteries.Logic

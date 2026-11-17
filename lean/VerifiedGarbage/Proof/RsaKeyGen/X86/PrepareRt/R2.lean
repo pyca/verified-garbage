@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Framework.X86.Call
 public import VerifiedGarbage.Proof.Mont.X86.PowerStep
 import VerifiedGarbage.Proof.RsaKeyGen.X86.PrepareRt.Zero
 import VerifiedGarbage.Proof.RsaKeyGen.X86.PrepareRt.Doubles
-import VerifiedGarbage.Proof.RsaKeyGen.X86.PreparedR2Squares
 import VerifiedGarbage.Proof.RsaKeyGen.X86.WitnessRt.Blocks
 import VerifiedGarbage.Proof.MillerRabin.X86.Copy
 

@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.P256.Point
 import VerifiedGarbage.Proof.P256.Prime
 import VerifiedGarbage.Proof.Weierstrass.Cubic
 import VerifiedGarbage.Proof.Weierstrass.Group
-import VerifiedGarbage.Proof.Weierstrass.RcbIdent
+import VerifiedGarbage.Proof.Weierstrass.Complete
 
 /-! # P-256's group law, on PPC64LE -/
 

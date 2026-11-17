@@ -2,8 +2,7 @@ module
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Pro
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.OuterFrame
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.FiveLoop
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.FiveInit
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.FiveInit
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Offset

@@ -1,7 +1,6 @@
 module
-public import VerifiedGarbage.Proof.RsaPss.AArch64.MgfParts
 
-import VerifiedGarbage.Proof.RsaPss.AArch64.Mgf
+public import VerifiedGarbage.Proof.RsaPss.AArch64.Mgf
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Encode
 import VerifiedGarbage.Proof.RsaPss.AArch64.CtComp
 import VerifiedGarbage.Proof.RsaPss.AArch64.PadLen

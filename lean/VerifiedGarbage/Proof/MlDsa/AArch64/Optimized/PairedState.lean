@@ -5,8 +5,36 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InversePackedBank
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Vec
 import VerifiedGarbage.Proof.Framework.Lit
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedShape
 import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
+
+/-! ### `MlDsa.AArch64.Optimized.PairedShape`, which this module and modules that import it used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.AArch64.Optimized.Paired
+open VG VG.AArch64
+open VG.Impl.MlDsa.AArch64.Optimized.PairedBase
+open VG.Impl.MlDsa.AArch64.Optimized.Paired
+
+theorem bank_safe {j : Nat} (hj : j<16) :
+    vr j∉([.v24,.v25,.v26,.v27,.v28,.v29,.v30,.v31] : List VReg) := by
+  have h : ∀j∈List.range 16,vr j∉([.v24,.v25,.v26,.v27,.v28,.v29,.v30,.v31] : List VReg) := by decide
+  exact h j (List.mem_range.mpr hj)
+
+theorem bank_injective {a b : Nat} (ha : a<16) (hb : b<16) (h : vr a=vr b) : a=b := by
+  have hi : ∀a b:Fin 16,vr a.val=vr b.val → a=b := by decide
+  exact congrArg Fin.val (hi ⟨a,ha⟩ ⟨b,hb⟩ h)
+
+end VG.Proof.MlDsa.AArch64.Optimized.Paired
+
+end
+
+end
 
 /-! ### `MlDsa.AArch64.Optimized.PairedPackedBank`, which only this module used -/
 

@@ -80,7 +80,7 @@ end
 /-!
 # RSAES-OAEP decryption on AArch64: the loops of the decoding
 
-As on x86-64 (`Proof/RsaOaep/X86_64/DecLoops.lean`), each loop of `decMain`
+As on x86-64 (`Proof/RsaOaep/X86_64/DecSpec.lean`), each loop of `decMain`
 after MGF1, as a function of the working space's bytes (`V`) and the
 frame's words: the comparison of `lHash'` with `lHash` (`accLh_ok`, the
 `accG` of `Proof/RsaOaep/Scan.lean`), the scan of `T` (`scan_ok`,

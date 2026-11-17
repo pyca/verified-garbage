@@ -15,7 +15,7 @@ the shared ones of `Spec/Sm4/Gcm/Contract.lean`, which imply these
 `esp` for its arguments, the return address and the callee's frames: 1536
 bytes for `vg_sm4_ctr32` (and less for `vg_sm4_expand_key` and
 `vg_ghash`), which no buffer overlaps, nor the return address.
-`stream_init` and `stream_aad` are AES-GCM's (`Proof/AesGcm/X86/Contract.lean`).
+`stream_init` and `stream_aad` are AES-GCM's (`Proof/AesGcm/X86/Top.lean`).
 -/
 
 @[expose] public section

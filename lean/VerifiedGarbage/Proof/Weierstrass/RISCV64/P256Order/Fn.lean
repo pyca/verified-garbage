@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Weierstrass.RISCV64.P256Field.Fn
 import VerifiedGarbage.Proof.Framework.RISCV64.ByteLoad64
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
-import VerifiedGarbage.Proof.X448.RISCV64.R64.Product
+import VerifiedGarbage.Proof.X448.RISCV64.R64.Reduce
 
 /-!
 # Arithmetic modulo P-256's order on RISC-V: the operations

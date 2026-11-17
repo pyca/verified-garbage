@@ -2,9 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.SigningShape
 public import VerifiedGarbage.Proof.Dsa.X86_64.SignBody
-public import VerifiedGarbage.Proof.Dsa.X86_64.WorkspaceBridge
-import VerifiedGarbage.Proof.Dsa.X86_64.SigningOperands
-import VerifiedGarbage.Proof.Dsa.X86_64.WorkspaceReady
+public import VerifiedGarbage.Proof.Dsa.X86_64.SigningOperands
 
 /-! # Establishing all signing operands after public domain acceptance -/
 

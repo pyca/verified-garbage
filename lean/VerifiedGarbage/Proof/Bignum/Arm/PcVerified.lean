@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.PublicPrecomputeKernel
+public import VerifiedGarbage.Proof.Bignum.Arm.PcValid
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Bignum.Arm.PcInput
 import VerifiedGarbage.Proof.Bignum.Words

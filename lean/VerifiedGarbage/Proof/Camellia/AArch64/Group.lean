@@ -1,14 +1,304 @@
 module
 
-public import VerifiedGarbage.Proof.Camellia.AArch64.Prologue
 public import VerifiedGarbage.Proof.Camellia.Common
 public import VerifiedGarbage.Proof.Camellia.AArch64.Keys
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Camellia.AArch64.Copy
-import VerifiedGarbage.Proof.Camellia.AArch64.Crypt8
+public import VerifiedGarbage.Proof.Camellia.AArch64.Crypt8
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Impl.Camellia.AArch64.Ecb
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.Mem
+
+/-! ### `Camellia.AArch64.Copy`, which this module and modules that import it used -/
+
+section
+
+/-!
+# Copying blocks on AArch64
+
+As on x86-64: `copyBlocks_wp`: the loop `copyBlocks` copies `c ≥ 1` blocks
+of 16 bytes from `x14` to `x15` (areas that do not overlap), through `t0`,
+counting down `x17`, and changes nothing else in memory.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Camellia.AArch64
+
+open VG VG.AArch64 VG.Impl.Camellia.AArch64
+open VG.Impl.Aes.AArch64 (t0)
+
+/-- `ldr t0, [x14, #d]; str t0, [x15, #d]`. -/
+theorem copyWord_ok (s : State) {d : Nat} (hd : d % 8 = 0 ∧ d < 32768)
+    (hr : InRegions (s.rd ++ s.wr) (s.gpr .x14 + BitVec.ofNat 64 d) 8)
+    (hw : InRegions s.wr (s.gpr .x15 + BitVec.ofNat 64 d) 8) :
+    ∃ s', runBlock isa [.ldr .x t0 .x14 d, .str .x t0 .x15 d] s = some s' ∧
+      s'.mem = s.mem.writeW (s.gpr .x15 + BitVec.ofNat 64 d) (s.mem.readW (s.gpr .x14 + BitVec.ofNat 64 d) 64) ∧
+      (∀ r, r ≠ t0 → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  let v := s.mem.readW (s.gpr .x14 + BitVec.ofNat 64 d) 64
+  let s₁ := s.write .x t0 v
+  have h15 : s₁.gpr .x15 = s.gpr .x15 := RegUpd.gpr_write_of_ne _ _ _ (by decide)
+  have ht : s₁.gpr t0 = v := (RegUpd.gpr_write_self _ _ _ _).trans (BitVec.setWidth_eq _)
+  refine ⟨{ s₁ with mem := s₁.mem.writeW (s₁.gpr .x15 + BitVec.ofNat 64 d) (s₁.gpr t0) }, ?_, ?_,
+    fun r hr => RegUpd.gpr_write_of_ne _ _ _ hr, rfl, rfl⟩
+  · have e1 : runBlock isa [.ldr .x t0 .x14 d] s = some s₁ := by
+      simp only [runBlock_cons, runStep_some, runBlock_nil, exec_ldr_x hd hr]; rfl
+    have e2 : runBlock isa [.str .x t0 .x15 d] s₁ =
+        some { s₁ with mem := s₁.mem.writeW (s₁.gpr .x15 + BitVec.ofNat 64 d) (s₁.gpr t0) } := by
+      simp only [runBlock_cons, runStep_some, runBlock_nil, exec_str_x hd (by rw [h15]; exact hw)]
+    rw [show ([.ldr .x t0 .x14 d, .str .x t0 .x15 d] : List Instr) =
+      [.ldr .x t0 .x14 d] ++ [.str .x t0 .x15 d] from rfl, runBlock_append', e1, Option.bind_some, e2]
+  · show s.mem.writeW (s₁.gpr .x15 + BitVec.ofNat 64 d) (s₁.gpr t0) = _
+    rw [h15, ht]
+
+/-- Copying, after `j` of `c` blocks. -/
+structure CopyInv (A B : Addr) (c : Nat) (s₀ : State) (j : Nat) (s : State) : Prop where
+  src : s.gpr .x14 = A + BitVec.ofNat 64 (16 * j)
+  dst : s.gpr .x15 = B + BitVec.ofNat 64 (16 * j)
+  cnt : s.gpr .x17 = BitVec.ofNat 64 (c - j)
+  copied : ∀ t < 16 * j, s.mem (B + BitVec.ofNat 64 t) = s₀.mem (A + BitVec.ofNat 64 t)
+  frame : Frame [⟨B, 16 * c⟩] s₀.mem s.mem
+  regs : ∀ r, r ≠ .x14 → r ≠ .x15 → r ≠ .x17 → r ≠ t0 → s.gpr r = s₀.gpr r
+  rd : s.rd = s₀.rd
+  wr : s.wr = s₀.wr
+
+theorem copyBlocks_bounded_wp {A B : Addr} {c : Nat} {s₀ : State} (hc : 0 < c) (hcBound : c ≤ 17)
+    (hA : ∀ t < 2 * c, InRegions (s₀.rd ++ s₀.wr) (A + BitVec.ofNat 64 (8 * t)) 8)
+    (hB : ∀ t < 2 * c, InRegions s₀.wr (B + BitVec.ofNat 64 (8 * t)) 8)
+    (hsep : Region.Disjoint ⟨A, 16 * c⟩ ⟨B, 16 * c⟩) (hs : CopyInv A B c s₀ 0 s₀) :
+    WP isa copyBlocks s₀ (CopyInv A B c s₀ c) := by
+  refine WP.loop (M := isa) (fun n s => ∃ j, n = c - j ∧ j < c ∧ CopyInv A B c s₀ j s)
+    (fun n s hs => ?_) c s₀ ⟨0, by omega_arith, hc, hs⟩
+  obtain ⟨j, rfl, hj, hi⟩ := hs
+  have hA0 := hA (2 * j) (by omega_arith)
+  have hA1 := hA (2 * j + 1) (by omega_arith)
+  have hB0 := hB (2 * j) (by omega_arith)
+  have hB1 := hB (2 * j + 1) (by omega_arith)
+  have hfA : Frame [⟨B, 16 * c⟩] s₀.mem s.mem := hi.frame
+  have hAs : ∀ t < 16 * c, s.mem (A + BitVec.ofNat 64 t) = s₀.mem (A + BitVec.ofNat 64 t) := fun t ht =>
+    hfA.bytes (R := ⟨A, 16 * c⟩) (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hsep)
+      (by simp only; omega_arith) ht
+  obtain ⟨s₁, e₁, m₁, g₁, rd₁, wr₁⟩ := copyWord_ok s (d := 0) (by decide)
+    (by rw [hi.rd, hi.wr, hi.src, addr_add, show 16 * j + 0 = 8 * (2 * j) by omega_arith]; exact hA0)
+    (by rw [hi.wr, hi.dst, addr_add, show 16 * j + 0 = 8 * (2 * j) by omega_arith]; exact hB0)
+  obtain ⟨s₂, e₂, m₂, g₂, rd₂, wr₂⟩ := copyWord_ok s₁ (d := 8) (by decide)
+    (by rw [rd₁, wr₁, hi.rd, hi.wr, g₁ _ (by decide), hi.src, addr_add,
+      show 16 * j + 8 = 8 * (2 * j + 1) by omega_arith]; exact hA1)
+    (by rw [wr₁, hi.wr, g₁ _ (by decide), hi.dst, addr_add, show 16 * j + 8 = 8 * (2 * j + 1) by omega_arith]; exact hB1)
+  obtain ⟨s₃, e₃, a₃, o₃, m₃, rd₃, wr₃⟩ := addI_ok s₂ .x14 .x14 (imm := 16) (by decide)
+  obtain ⟨s₄, e₄, a₄, o₄, m₄, rd₄, wr₄⟩ := addI_ok s₃ .x15 .x15 (imm := 16) (by decide)
+  obtain ⟨s₅, e₅, c₅, o₅, m₅, rd₅, wr₅⟩ := subI_ok s₄ .x17 .x17 (imm := 1) (by decide)
+  refine WP.of_runBlock ⟨s₅, by
+    rw [show ([Instr.ldr .x t0 .x14 0, .str .x t0 .x15 0, .ldr .x t0 .x14 8, .str .x t0 .x15 8,
+      .addImm .x .x14 .x14 16, .addImm .x .x15 .x15 16, .subImm .x .x17 .x17 1] : List Instr) =
+      [.ldr .x t0 .x14 0, .str .x t0 .x15 0] ++ ([.ldr .x t0 .x14 8, .str .x t0 .x15 8] ++
+      ([.addImm .x .x14 .x14 16] ++ ([.addImm .x .x15 .x15 16] ++ [.subImm .x .x17 .x17 1]))) from rfl,
+      runBlock_append', e₁, Option.bind_some, runBlock_append', e₂, Option.bind_some, runBlock_append', e₃,
+      Option.bind_some, runBlock_append', e₄, Option.bind_some, e₅], ?_⟩
+  have hn : 16 * c < 2 ^ 64 := by omega_arith
+  have r1 : s₁.gpr .x15 = B + BitVec.ofNat 64 (16 * j) := by rw [g₁ _ (by decide), hi.dst]
+  have a1 : s₁.gpr .x14 = A + BitVec.ofNat 64 (16 * j) := by rw [g₁ _ (by decide), hi.src]
+  have hm : s₅.mem = (s₁.mem.writeW (B + BitVec.ofNat 64 (16 * j + 8))
+      (s₁.mem.readW (A + BitVec.ofNat 64 (16 * j + 8)) 64)) := by
+    rw [m₅, m₄, m₃, m₂, r1, a1, addr_add, addr_add]
+  have hm₁ : s₁.mem = s.mem.writeW (B + BitVec.ofNat 64 (16 * j))
+      (s.mem.readW (A + BitVec.ofNat 64 (16 * j)) 64) := by
+    rw [m₁, hi.dst, hi.src, addr_add, addr_add, Nat.add_zero]
+  -- `s₁` and `s` agree on `A`'s area.
+  have hA₁ : ∀ t < 16 * c, s₁.mem (A + BitVec.ofNat 64 t) = s.mem (A + BitVec.ofNat 64 t) := fun t ht => by
+    rw [hm₁, writeW_readW_apply, ite_eq_right (not_in_of_disjoint hsep ht (by omega_arith) hn)]
+  have hc₅ : s₅.gpr .x17 = BitVec.ofNat 64 (c - (j + 1)) := by
+    rw [c₅, o₄ _ (by decide), o₃ _ (by decide), g₂ _ (by decide), g₁ _ (by decide), hi.cnt,
+      VG.Offset.ofNat_sub_ofNat (by omega_arith), show c - j - 1 = c - (j + 1) by omega_arith]
+  have hinv : CopyInv A B c s₀ (j + 1) s₅ := by
+    refine ⟨?_, ?_, hc₅, fun t ht => ?_, hi.frame.trans fun x hx => ?_, fun r h1 h2 h3 h4 => ?_,
+      by rw [rd₅, rd₄, rd₃, rd₂, rd₁, hi.rd], by rw [wr₅, wr₄, wr₃, wr₂, wr₁, hi.wr]⟩
+    · rw [o₅ _ (by decide), o₄ _ (by decide), a₃, g₂ _ (by decide), a1, addr_add,
+        show 16 * j + 16 = 16 * (j + 1) by omega_arith]
+    · rw [o₅ _ (by decide), a₄, o₃ _ (by decide), g₂ _ (by decide), r1, addr_add,
+        show 16 * j + 16 = 16 * (j + 1) by omega_arith]
+    · rw [hm, writeW_readW_apply]
+      by_cases h8 : 16 * j + 8 ≤ t
+      · rw [ite_eq_left (by rw [off_sub_toNat B h8 (by omega_arith)]; omega_arith), off_sub_toNat B h8 (by omega_arith), addr_add,
+          show 16 * j + 8 + (t - (16 * j + 8)) = t by omega_arith, hA₁ t (by omega_arith), hAs t (by omega_arith)]
+      · rw [ite_eq_right (off_sub_not B (Or.inl (by omega_arith)) (by omega_arith) (by omega_arith) (by omega_arith)), hm₁,
+          writeW_readW_apply]
+        by_cases h0 : 16 * j ≤ t
+        · rw [ite_eq_left (by rw [off_sub_toNat B h0 (by omega_arith)]; omega_arith), off_sub_toNat B h0 (by omega_arith), addr_add,
+            show 16 * j + (t - 16 * j) = t by omega_arith, hAs t (by omega_arith)]
+        · rw [ite_eq_right (off_sub_not B (Or.inl (by omega_arith)) (by omega_arith) (by omega_arith) (by omega_arith))]
+          exact hi.copied t (by omega_arith)
+    · have hout : ∀ e, e + 8 ≤ 16 * c → ¬ (x - (B + BitVec.ofNat 64 e)).toNat < 8 := fun e he h =>
+        hx _ (List.mem_singleton_self _) (VG.Offset.sub_base B he _ (by simp only [Region.Contains]; omega_arith))
+      rw [hm, writeW_readW_apply, ite_eq_right (hout _ (by omega_arith)), hm₁, writeW_readW_apply,
+        ite_eq_right (hout _ (by omega_arith))]
+    · rw [o₅ r h3, o₄ r h2, o₃ r h1, g₂ r h4, g₁ r h4, hi.regs r h1 h2 h3 h4]
+  have hz : (s₅.gpr .x17 == 0) = decide (c - (j + 1) = 0) := by
+    rw [hc₅, show (0 : BitVec 64) = BitVec.ofNat 64 0 from rfl, Bool.eq_iff_iff, beq_iff_eq,
+      decide_eq_true_iff]
+    constructor
+    · intro h; have := congrArg BitVec.toNat h; simp only [BitVec.toNat_ofNat] at this; omega_arith
+    · intro h; rw [h]
+  by_cases hl : j + 1 = c
+  · refine .inl ⟨(eval_nonzero s₅ .x17).trans (by rw [hz]; simp; omega_arith),
+      by rw [show j + 1 = c from hl] at hinv; exact hinv⟩
+  · exact .inr ⟨(eval_nonzero s₅ .x17).trans (by rw [hz]; simp; omega_arith), c - (j + 1), by omega_arith, j + 1, rfl,
+      by omega_arith, hinv⟩
+
+/-- The original eight-block interface used by the parallel block modes. -/
+theorem copyBlocks_wp {A B : Addr} {c : Nat} {s₀ : State} (hc : 0 < c) (hc8 : c ≤ 8)
+    (hA : ∀ t < 2*c, InRegions (s₀.rd ++ s₀.wr) (A+BitVec.ofNat 64 (8*t)) 8)
+    (hB : ∀ t < 2*c, InRegions s₀.wr (B+BitVec.ofNat 64 (8*t)) 8)
+    (hsep : Region.Disjoint ⟨A,16*c⟩ ⟨B,16*c⟩) (hs : CopyInv A B c s₀ 0 s₀) :
+    WP isa copyBlocks s₀ (CopyInv A B c s₀ c) :=
+  copyBlocks_bounded_wp hc (by omega_using [hc8]) hA hB hsep hs
+
+end VG.Proof.Camellia.AArch64
+
+end
+
+end
+
+/-! ### `Camellia.AArch64.Prologue`, which this module and modules that import it used -/
+
+section
+
+/-!
+# Camellia's prologue and epilogue on AArch64
+
+Saving and restoring the callee-saved registers `x19`–`x28` in their slots
+(`save_ok`, `restore_ok`, by symbolic execution of the stores and loads),
+and setting the masks of the layers (`setSlots_ok`, by evaluation: the
+masks are constants of the lane domain).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Camellia.AArch64
+
+open VG VG.AArch64 VG.AArch64.Straight VG.Bitslice VG.Impl.Camellia.AArch64
+open VG.Impl.Aes.AArch64 (q sb t0 t1 kp movR ldS stS imm)
+
+theorem savedSlot_eq : savedSlot = 368 := rfl
+
+/-! ## Saving and restoring the callee-saved registers -/
+
+/-- The callee-saved registers the code uses, in the order of `savedRegs`. -/
+def sreg (i : Nat) : Reg := ((savedRegs.map (·.1))[i]?).getD .x19
+
+theorem savedRegs_eq : savedRegs = (List.range 10).map fun i => (sreg i, savedSlot + i) := by decide
+
+/-- The saved registers are in their slots. -/
+def Saved (s₀ : State) (b : Addr) (m : Mem) : Prop :=
+  ∀ i < 10, m.readW (wordAddr b (savedSlot + i)) 64 = s₀.gpr (sreg i)
+
+/-- The saved registers' slots. -/
+def savedRegion (b : Addr) : Region := ⟨b + BitVec.ofNat 64 (8 * savedSlot), 80⟩
+
+theorem sreg_ne_sb : ∀ i < 10, sreg i ≠ sb := by decide
+
+theorem save_ok {s : State} {b : Addr} (hw : (⟨b, 8 * slots⟩ : Region) ∈ s.wr) (hb : s.gpr sb = b) :
+    ∃ s', runBlock isa saveRegs s = some s' ∧ Saved s b s'.mem ∧ s'.gpr = s.gpr ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr ∧ Frame [savedRegion b] s.mem s'.mem ∧
+      ∀ k, (k < savedSlot ∨ savedSlot + 10 ≤ k) → k < 2 ^ 58 → slotW s' k = slotW s k := by
+  let L : List (Nat × Reg) := (List.range 10).map fun i => (savedSlot + i, sreg i)
+  have hL : saveRegs = L.map fun x => stS x.1 x.2 := by
+    rw [saveRegs, savedRegs_eq]; simp only [L, List.map_map]; rfl
+  have hslots : L.map (·.1) = (List.range 10).map fun i => savedSlot + i := by
+    simp only [L, List.map_map]; rfl
+  rw [slots_eq] at hw
+  obtain ⟨s', e', g', rd', wr', f', o', v'⟩ := stS_list_ok (savedRegion b) L s (by rw [hslots]; decide)
+    (fun x hx => by
+      simp only [L, List.mem_map, List.mem_range] at hx
+      obtain ⟨i, hi, rfl⟩ := hx
+      refine ⟨by rw [savedSlot_eq]; omega, ⟨_, hw, ?_⟩, ?_⟩
+      · rw [hb]; exact VG.Offset.contains_base b (by rw [savedSlot_eq]; omega) (by rw [savedSlot_eq]; omega)
+      · rw [hb, savedRegion, wordAddr]
+        exact VG.Offset.contains _ (by omega_using []) (by omega) (by rw [savedSlot_eq]; omega_using []))
+  refine ⟨s', by rw [hL]; exact e', fun i hi => ?_, g', rd', wr', f', fun k hk hk' => o' k ?_ hk'⟩
+  · have := v' (savedSlot + i, sreg i) (by simp only [L, List.mem_map, List.mem_range]; exact ⟨i, hi, rfl⟩)
+    simp only [slotW, g', hb] at this
+    exact this
+  · rw [hslots]
+    simp only [List.mem_map, List.mem_range, not_exists, not_and]
+    intro i hi h; omega_using [hk, hi, h]
+
+theorem restore_ok {s₀ s : State} {b : Addr} (hw : (⟨b, 8 * slots⟩ : Region) ∈ s.wr) (hb : s.gpr sb = b)
+    (hs : Saved s₀ b s.mem) :
+    ∃ s', runBlock isa restoreRegs s = some s' ∧ (∀ i < 10, s'.gpr (sreg i) = s₀.gpr (sreg i)) ∧
+      (∀ r, (∀ i < 10, r ≠ sreg i) → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr := by
+  let L : List (Reg × Nat) := (List.range 10).map fun i => (sreg i, savedSlot + i)
+  have hL : restoreRegs = L.map fun x => ldS x.1 x.2 := by
+    rw [restoreRegs, savedRegs_eq]
+  have hregs : L.map (·.1) = (List.range 10).map sreg := by simp only [L, List.map_map]; rfl
+  rw [slots_eq] at hw
+  obtain ⟨s', e', m', rd', wr', o', v'⟩ := ldS_list_ok L s
+    (fun x hx => by
+      simp only [L, List.mem_map, List.mem_range] at hx
+      obtain ⟨i, hi, rfl⟩ := hx; exact sreg_ne_sb i hi)
+    (by rw [hregs]; decide)
+    (fun x hx => by
+      simp only [L, List.mem_map, List.mem_range] at hx
+      obtain ⟨i, hi, rfl⟩ := hx
+      refine ⟨by rw [savedSlot_eq]; omega, ⟨_, List.mem_append_right _ hw, ?_⟩⟩
+      rw [hb]; exact VG.Offset.contains_base b (by rw [savedSlot_eq]; omega) (by rw [savedSlot_eq]; omega))
+  refine ⟨s', by rw [hL]; exact e', fun i hi => ?_, fun r hr => o' r ?_, m', rd', wr'⟩
+  · rw [v' (sreg i, savedSlot + i) (by simp only [L, List.mem_map, List.mem_range]; exact ⟨i, hi, rfl⟩), slotW, hb]
+    exact hs i hi
+  · rw [hregs]
+    simp only [List.mem_map, List.mem_range, not_exists, not_and]
+    exact fun i hi h => hr i hi h.symm
+
+/-! ## The masks -/
+
+/-- The masks' slots, below the table. -/
+def maskCfg : Cfg := { base := sb, slots := keySlot, ext := sb, exts := 0 }
+
+def maskPost (e : Env (Nat × Nat)) : Bool := layerMasks.all fun kv => e.slot kv.1 == some (kv.2.toNat, 0)
+
+theorem setSlots_check :
+    check (lanes 64 1) maskCfg (fun _ => none) (setSlots layerMasks) (linEnvG [] [] []) maskPost = true := by
+  decide +kernel
+
+theorem setSlots_ok {s : State} {b : Addr} (hw : (⟨b, 8 * slots⟩ : Region) ∈ s.wr) (hb : s.gpr sb = b) :
+    ∃ s', runBlock isa (setSlots layerMasks) s = some s' ∧ MasksOk s' ∧
+      (∀ r, r ≠ t0 → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
+      Frame [⟨b, 8 * keySlot⟩] s.mem s'.mem := by
+  obtain ⟨e', he, hpost⟩ := of_check _ _ _ setSlots_check
+  have hok : Ok maskCfg s :=
+    Ok.of_region hw hb.symm (by show 8 * keySlot ≤ 8 * slots; rw [keySlot_eq, slots_eq]; omega_using [])
+      (by show 8 * keySlot < 2 ^ 64; rw [keySlot_eq]; decide) rfl
+  have hrel : Rel (LaneRel 1 0) maskCfg (fun _ => none) (linEnvG [] [] []) s := by
+    refine ⟨fun r a h => ?_, fun k a _ h => ?_, fun _ _ _ h => ?_, fun _ _ h => ?_⟩ <;>
+      simp [linEnvG] at h
+  obtain ⟨s', hs', p⟩ := run lanes_sound hok hrel he
+  have hall : ∀ r, r ≠ t0 → ((setSlots layerMasks).all fun i => !clobbers i r) = true := by
+    intro r hr
+    have : ((setSlots layerMasks).all fun i => (dsts i).all (· == t0)) = true := by
+      decide +kernel
+    refine List.all_eq_true.mpr fun i hi => ?_
+    simpa using clobbers_eq_false_of_all (List.all_eq_true.mp this i hi) (by simpa using hr)
+  refine ⟨s', hs', fun kv hkv => ?_, fun r hr => p.other r (by simp [hall r hr]), p.rd, p.wr, ?_⟩
+  · have h := List.all_eq_true.mp hpost kv hkv
+    simp only [beq_iff_eq] at h
+    have hr := p.rel.slot kv.1 _ (by simp only [maskCfg]; exact mask_lt hkv) h
+    simp only [maskCfg] at hr
+    apply BitVec.eq_of_getLsbD_eq
+    intro q hq
+    show (s'.mem.readW (wordAddr (s'.gpr sb) kv.1) 64).getLsbD q = _
+    rw [hr.2 q hq, par_zero, Bool.xor_false]
+    rfl
+  · have := p.frame
+    simpa [slotRegion, maskCfg, hb] using this
+
+end VG.Proof.Camellia.AArch64
+
+end
+
+end
 
 /-!
 # A group of blocks of Camellia ECB on AArch64

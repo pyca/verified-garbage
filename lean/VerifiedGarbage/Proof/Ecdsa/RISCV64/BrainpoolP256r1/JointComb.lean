@@ -2,7 +2,6 @@ module
 
 -- separate module: brainpoolP256r1's verification is its only importer, but it builds on both callees' proofs
 -- (the windows' and the comb's), which then build in parallel with the rest of its imports
-
 public import VerifiedGarbage.Impl.Ecdsa.RISCV64.VerifyComb
 public import VerifiedGarbage.Proof.Ecdsa.RISCV64.BrainpoolP256r1.Joint
 public import VerifiedGarbage.Proof.Ecdsa.RISCV64.BrainpoolP256r1.Window
@@ -21,7 +20,6 @@ import VerifiedGarbage.Proof.Framework.RISCV64.Inline
 import VerifiedGarbage.Proof.Framework.RISCV64.Syms
 import VerifiedGarbage.Proof.Ecdsa.RISCV64.BrainpoolP256r1.CombLit
 import VerifiedGarbage.Proof.Ecdsa.RISCV64.BrainpoolP256r1.MulLit
-import VerifiedGarbage.Proof.Ecdh.RISCV64.BrainpoolP256r1.Check
 
 /-!
 # ECDSA verification over brainpoolP256r1 on RISC-V: `[u]G` by the comb and `[v]Q` by windows

@@ -1,9 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.AesSiv.Rounds
+public import VerifiedGarbage.Proof.AesSiv.Scratch
 public import VerifiedGarbage.Proof.AesSiv.Arm.CTEnc
 import VerifiedGarbage.Proof.AesSiv.Arm.CTInit
-public import VerifiedGarbage.Proof.AesSiv.Scratch
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Impl.StackScratch.Arm

@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.Prime.Pre
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.Prime.Entry
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Spill
 public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Ctx
 

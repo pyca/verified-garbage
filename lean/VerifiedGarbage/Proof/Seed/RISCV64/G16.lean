@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 # `g16` on RISC-V
 
 `g16_ok`: `g16` replaces each of the sixteen words in `tSlot 0 … tSlot 7`
-with `G` of it. As on PPC64LE (`Proof/Seed/PPC64LE/G16.lean`): its linear
+with `G` of it. As on PPC64LE (`Proof/Seed/PPC64LE/Steps.lean`): its linear
 layers, which read their masks from the words at `kb` (`gKs`), are checked
 by evaluation over the lane domain (`g16In_check`, `g16Out_check`: the
 planes of `M`, and the words from the S-box's planes, as

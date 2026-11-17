@@ -1,9 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtFn
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtImportModulus
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtSaveMain
 import VerifiedGarbage.Proof.Bignum.Arm.CrtInitialize
-import VerifiedGarbage.Proof.Bignum.Arm.CrtSaveMain
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Bignum.Arm.CrtStorage
 import VerifiedGarbage.Proof.Framework.Block

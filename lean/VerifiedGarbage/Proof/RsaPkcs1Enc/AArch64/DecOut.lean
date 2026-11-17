@@ -1,8 +1,7 @@
 module
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecScan
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.Select
 
-import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecSel
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecSel
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.Select
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncLay
 import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.Bytes

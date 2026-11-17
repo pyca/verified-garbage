@@ -11,7 +11,7 @@ public import VerifiedGarbage.TCB.PPC64LE.Isa
 
 `c5run [facts]` runs a block of the CAST5 code symbolically (`crun`),
 keeping 32-bit loads as `Mem.readW` and byte loads as the byte, as IDEA's
-`irun` (`Proof/Idea/PPC64LE/Round.lean`), with the code's register names
+`irun` (`Proof/Idea/PPC64LE/Block.lean`), with the code's register names
 unfolded. The code's 32-bit values live in the low words of registers: `lo`
 is that word, and the `lo_*` lemmas take it through the operations the code
 uses.

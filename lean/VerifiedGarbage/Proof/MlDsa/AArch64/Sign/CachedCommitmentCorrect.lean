@@ -2,9 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedMaskCopy
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCommitmentHash
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedHashCall
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedHashCall
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.CachedCommitment
-public import VerifiedGarbage.Proof.MlDsa.CommitTailContract
 import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedHashSetup

@@ -7,7 +7,7 @@ meta import VerifiedGarbage.Proof.MlKem.X86_64.EkInline16
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Enc16
 public import VerifiedGarbage.Impl.MlKem.X86_64.Encaps16
 public import VerifiedGarbage.Proof.MlKem.X86_64.EkBase
-public import VerifiedGarbage.Proof.MlKem.X86_64.KgA16
+public import VerifiedGarbage.Proof.MlKem.X86_64.Kg16
 meta import VerifiedGarbage.Impl.MlKem.X86_64.Encaps16
 import all Init.Data.Nat.Bitwise.Basic
 meta import VerifiedGarbage.Proof.MlKem.X86_64.YLanes

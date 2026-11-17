@@ -1,19 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PConstructCTState
-
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PBuild
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SourceFrame
 import VerifiedGarbage.Proof.Dsa.Encoding
 import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PShapeValue
 import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PHash
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashSequence
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
 import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
 import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
+
 /-! # Preserve public candidate bytes and persistent arguments across hashing -/
 
 -- Formerly `VerifiedGarbage/Proof/Dsa/X86_64/Generation/PBuildValue.lean`, which only this module imported.

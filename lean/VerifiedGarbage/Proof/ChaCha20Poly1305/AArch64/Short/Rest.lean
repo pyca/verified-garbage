@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.Main
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.Main
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stages
 public import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64.ShortRest
 import VerifiedGarbage.Proof.Framework.Offset
@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
 import VerifiedGarbage.Proof.ChaCha20.Stream
 import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Correct
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.Prologue
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.XorKs
 
 /-! ### `ChaCha20Poly1305.AArch64.Short.Stash`, which only this module used -/

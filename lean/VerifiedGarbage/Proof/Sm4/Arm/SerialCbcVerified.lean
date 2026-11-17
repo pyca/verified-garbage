@@ -8,14 +8,10 @@ public import VerifiedGarbage.Impl.Sm4.Arm.SerialCbc
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.Sm4.Arm.BatchChain
-import VerifiedGarbage.Proof.Sm4.Arm.BatchEntry
 public import VerifiedGarbage.Spec.Sm4.Ctr
 public import VerifiedGarbage.Spec.Cbc
-import VerifiedGarbage.Proof.Sm4.Arm.SerialCbcGroup
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 public import VerifiedGarbage.Proof.Sm4.Arm.SerialCfbHead
-import VerifiedGarbage.Proof.Sm4.Arm.SerialCbcCore
-import VerifiedGarbage.Proof.Sm4.Arm.SerialCbcFill
 import VerifiedGarbage.Proof.Sm4.Arm.BatchTaint
 import VerifiedGarbage.Proof.Sm4.Arm.SerialCbcTaint
 import VerifiedGarbage.Proof.Sm4.Arm.BatchHead

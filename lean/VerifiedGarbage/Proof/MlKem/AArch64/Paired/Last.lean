@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.MlKem.AArch64.Shared
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.WriteBytes
-import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.DdSplit
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Dd10Step
 import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.DdStore
 import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Narrow
 import VerifiedGarbage.Proof.MlKem.AArch64.NttVec

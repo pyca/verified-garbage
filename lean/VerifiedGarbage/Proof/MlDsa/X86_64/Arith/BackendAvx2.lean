@@ -17,7 +17,6 @@ public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.MlDsa.Sample.Rej4
 public import VerifiedGarbage.Proof.Sha3.X86_64.Round
 public import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Verified
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej5CT
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4CT
 

@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.Arm.Gen.Bytes
-import VerifiedGarbage.Proof.Dsa.Arm.Gen.CT
+import VerifiedGarbage.Proof.Dsa.Arm.Gen.Frame
 public import VerifiedGarbage.Proof.Rsa.Arm.Stage.VP
 
 /-! # DSA parameter generation on ARMv7: numbers out of the key working space

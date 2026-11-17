@@ -12,7 +12,7 @@ public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Impl.X448.AArch64
 public import VerifiedGarbage.Impl.X448.AArch64.Weak
 public import VerifiedGarbage.Proof.X448.AArch64.Main
-import VerifiedGarbage.Proof.X448.AArch64.Fast.Inv
+import VerifiedGarbage.Proof.X448.AArch64.Fast.Setup
 import VerifiedGarbage.Proof.X448.AArch64.Fast.Ladder
 import VerifiedGarbage.Proof.X448.AArch64.Env
 import VerifiedGarbage.Proof.X448.AArch64.Iter

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesSiv.PPC64LE.S2v
-import VerifiedGarbage.Proof.CmacAes.PPC64LE.FinSteps
+import VerifiedGarbage.Proof.CmacAes.PPC64LE.Finalize
 import VerifiedGarbage.Proof.Siv.Spec
 import VerifiedGarbage.Proof.Cmac.Block
 import VerifiedGarbage.Proof.Cmac.Frame
@@ -10,8 +10,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.AesCcm.PPC64LE.Wp
 import VerifiedGarbage.Proof.AesCbc.PPC64LE.CT
-import VerifiedGarbage.Proof.AesSiv.PPC64LE.FinRaw
-import VerifiedGarbage.Proof.CmacAes.PPC64LE.Finalize
+import VerifiedGarbage.Proof.AesSiv.PPC64LE.Mac
 public import VerifiedGarbage.Proof.Gather.PPC64LE.Copy
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 

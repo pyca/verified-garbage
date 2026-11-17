@@ -9,7 +9,7 @@ public import VerifiedGarbage.TCB.RISCV64.Target
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
-import VerifiedGarbage.Proof.X448.RISCV64.R64.Product
+import VerifiedGarbage.Proof.X448.RISCV64.R64.Reduce
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Mont.Read
 import VerifiedGarbage.Proof.Framework.Offset

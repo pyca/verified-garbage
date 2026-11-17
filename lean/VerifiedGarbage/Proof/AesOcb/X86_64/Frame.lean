@@ -1,11 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.AesOcb.Rounds
+public import VerifiedGarbage.Proof.AesOcb.Scratch
 import VerifiedGarbage.Proof.AesOcb.X86_64.OpenCT
 import VerifiedGarbage.Proof.AesOcb.X86_64.InitCT
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.AesOcb.Scratch
-public import VerifiedGarbage.Proof.AesOcb.X86_64.Contract
+public import VerifiedGarbage.Proof.AesOcb.X86_64.Seal
 public import VerifiedGarbage.Proof.AesOcb.X86_64.Nonce
 import VerifiedGarbage.Proof.AesOcb.X86_64.Open
 public import VerifiedGarbage.Impl.StackScratch.X86_64

@@ -1,27 +1,23 @@
 module
 
 public import VerifiedGarbage.Proof.X25519.AArch64.AltLadder.Step
-public import VerifiedGarbage.Proof.X25519.AArch64.Word.Formula
-public import VerifiedGarbage.Proof.X25519.AArch64.Word.Head
+public import VerifiedGarbage.Proof.X25519.AArch64.AltLadder.Formula
 import VerifiedGarbage.Proof.X25519.AArch64.Ladder
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-public import VerifiedGarbage.Proof.X25519.AArch64.AltLadder.Formula
-import VerifiedGarbage.Proof.X25519.AArch64.AltLadder.Flags
 import VerifiedGarbage.Proof.X25519.AArch64.Ops
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Divstep
 public import VerifiedGarbage.Proof.X25519.AArch64.Word.Top
 public import VerifiedGarbage.Impl.X25519.AArch64.AltLadder
-public import VerifiedGarbage.Proof.X25519.AArch64.Setup
+public import VerifiedGarbage.Proof.X25519.AArch64.Top
 public import VerifiedGarbage.Spec.X25519.Contract
-import VerifiedGarbage.Proof.X25519.AArch64.Top
 import VerifiedGarbage.Proof.Ed25519.AArch64.DecodeBits
 import VerifiedGarbage.Proof.Ed25519.Bytes
 public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarMemory
 public import VerifiedGarbage.Proof.X25519.Bytes
 import VerifiedGarbage.Proof.Ed25519.AArch64.Codec
 import VerifiedGarbage.Proof.Ed25519.AArch64.MulAddMemory
-import VerifiedGarbage.Proof.Ed25519.AArch64.Freeze
+import VerifiedGarbage.Proof.Ed25519.AArch64.PointEncode
 import VerifiedGarbage.Proof.X25519.AArch64.AltLadder.Lit
 import VerifiedGarbage.Proof.Framework.RegionsSub
 

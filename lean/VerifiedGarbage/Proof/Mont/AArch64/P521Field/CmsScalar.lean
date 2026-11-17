@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Mont.AArch64.P521Field.CmsPrefix
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Field.CmsPairValue
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Reduce

@@ -1,10 +1,8 @@
 module
 
-import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.SgBody
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.SgCall
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.SgBody
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivImpl
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.SgBase
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
 
 /-!

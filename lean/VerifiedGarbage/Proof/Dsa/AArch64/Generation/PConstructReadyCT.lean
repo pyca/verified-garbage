@@ -2,20 +2,18 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PConstructCTState
 public import Mathlib.Algebra.Group.Nat.Defs
-
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PBuild
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SourceFrame
 import VerifiedGarbage.Proof.Dsa.Encoding
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTDefs
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PShapeValue
 import VerifiedGarbage.Impl.Dsa.AArch64.Generation.PHash
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.HashSequence
 import VerifiedGarbage.Proof.Dsa.AArch64.Run
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.OmegaLit
 import VerifiedGarbage.Proof.Framework.RegionsSub
+
 /-! # Preserve public candidate bytes and persistent arguments across hashing -/
 
 -- Formerly `VerifiedGarbage/Proof/Dsa/AArch64/Generation/PBuildValue.lean`, which only this module imported.

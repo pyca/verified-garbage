@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.RefillCTFinish
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.RefillCorrect
 public import VerifiedGarbage.Spec.Dsa.ParameterSearchContract
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Dispatch
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntrySpill
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntryAllocated
 import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 import VerifiedGarbage.Proof.Framework.Sig

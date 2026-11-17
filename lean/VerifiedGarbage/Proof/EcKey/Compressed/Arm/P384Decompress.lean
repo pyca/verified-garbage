@@ -2,7 +2,7 @@ module
 
 import VerifiedGarbage.Proof.Ecdsa.Arm.P384.Umaal
 import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
-import VerifiedGarbage.Proof.EcKey.Compressed.Arm.DecompressMain
+public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.DecompressMain
 public import VerifiedGarbage.Spec.EcKey.P384
 import VerifiedGarbage.Proof.Ecdsa.Arm.P384.Verified
 import VerifiedGarbage.Proof.Weierstrass.Sqrt
@@ -18,7 +18,6 @@ meta import VerifiedGarbage.Proof.EcKey.Compressed.Arm.Contract
 public import VerifiedGarbage.Impl.EcKey.Compressed.Arm.Decompress
 public import VerifiedGarbage.Impl.Ecdsa.P384.Arm
 public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.DecompressContract
-public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.DecompressMiddle
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.TCB.Arm.Target

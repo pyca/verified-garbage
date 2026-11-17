@@ -1,9 +1,9 @@
 module
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignFinishResult
 
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignFinishResult
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignSaved
-import VerifiedGarbage.Proof.Dsa.X86_64.RandomPrepare
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignRunning
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomFrame
 import VerifiedGarbage.Proof.Dsa.RandomSignResult
 import VerifiedGarbage.Proof.Framework.RelCTAssoc

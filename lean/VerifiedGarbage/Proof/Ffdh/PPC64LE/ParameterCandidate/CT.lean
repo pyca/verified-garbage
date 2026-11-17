@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.CTMain
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.Correct
-import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.Entry
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.PPC64LE.Syms

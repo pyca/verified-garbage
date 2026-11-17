@@ -1,12 +1,11 @@
 module
+
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentRejTwo
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedCallTwo
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Seed4
-
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseA4
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedMatrixCall
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Blocks
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseA4
 
 @[expose] public section
 

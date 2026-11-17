@@ -1,11 +1,10 @@
 module
-public import VerifiedGarbage.Proof.Bignum.Layout
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Chain
-public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
+public import VerifiedGarbage.Proof.Bignum.Layout
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8RowCore
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Sum
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8RowCore
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Memory
 
 /-! # The triangular block's first row, which writes its columns

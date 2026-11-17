@@ -1,15 +1,14 @@
 module
-public import VerifiedGarbage.Proof.MillerRabin.Arm.Backend
-public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Fin1
-public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Mr8
 
-import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Fin2
+public import VerifiedGarbage.Proof.MillerRabin.Arm.Backend
+public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Fin2
+public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Mr8
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Mr11
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Mont7
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Mont5
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Seqs
-import VerifiedGarbage.Proof.MillerRabin.Arm.Pieces
+import VerifiedGarbage.Proof.MillerRabin.Arm.Words
 
 /-! # A candidate on ARMv7: Miller–Rabin's result (`mrPart_vp`)
 

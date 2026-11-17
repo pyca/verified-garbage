@@ -8,9 +8,8 @@ import Mathlib.Tactic.ClearExcept
 import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
 import Mathlib.Data.Nat.Prime.Defs
 import VerifiedGarbage.Proof.P256.VerifyAllocated.Timing
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Timing
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAddTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Production
 
 /-! ## `AllocatedCachedTiming` -/
 

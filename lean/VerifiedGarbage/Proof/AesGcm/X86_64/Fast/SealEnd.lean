@@ -2,7 +2,7 @@ module
 
 import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.TailCT
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.CT
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.Fin
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.Body
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd

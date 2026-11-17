@@ -1,9 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.Argon2.PPC64LE.Derive
-public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Contract
+public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Body
 public import VerifiedGarbage.Proof.Framework.Contract
-
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.BodyCT
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Correct
 

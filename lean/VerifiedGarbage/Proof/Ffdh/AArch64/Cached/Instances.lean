@@ -1,14 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.CachedGenerateKeyContract
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.AttemptCorrect
+public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.SearchProof.AttemptRun
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.AttemptTiming
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.AttemptSat
 import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PrecomputeSat
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PrecomputeContract
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.CheckedParameters
+public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.AttemptInput
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PolicyConsts
 public import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup
 import VerifiedGarbage.Proof.Bignum.Octets

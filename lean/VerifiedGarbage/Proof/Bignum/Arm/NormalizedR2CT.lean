@@ -8,7 +8,6 @@ public import VerifiedGarbage.Impl.Bignum.Arm.NormalizedR2
 import VerifiedGarbage.Proof.Bignum.Arm.SharedR2CT
 import VerifiedGarbage.Proof.Bignum.Arm.NormalizedR2
 import VerifiedGarbage.Proof.Bignum.Arm.DoubleLoopCT
-import VerifiedGarbage.Proof.Bignum.Arm.NormalizedR2Init
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConstCT
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
 import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
@@ -17,7 +16,6 @@ import VerifiedGarbage.Proof.Framework.Arm.Taint
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Arm.Exec
-
 meta import VerifiedGarbage.Impl.Bignum.Arm.NormalizedR2
 meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.CallFinishCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.Call
-import VerifiedGarbage.Proof.Dsa.X86_64.EnterLeave
+import VerifiedGarbage.Proof.Dsa.X86_64.Return
 
 /-! # Public argument binding for complete arithmetic calls -/
 

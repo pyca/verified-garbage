@@ -1,8 +1,7 @@
 module
-public import VerifiedGarbage.Proof.Rsa.X86.PrivStages
-public import VerifiedGarbage.Proof.Framework.RelCT
 
-import VerifiedGarbage.Proof.Rsa.X86.PrivCallsTiming
+public import VerifiedGarbage.Proof.Rsa.X86.PrivCallsTiming
+public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Rsa.X86.PrivSetupTiming
 import VerifiedGarbage.Proof.Rsa.X86.PrivTailContext
 import VerifiedGarbage.Proof.Rsa.X86.PrivTailTiming

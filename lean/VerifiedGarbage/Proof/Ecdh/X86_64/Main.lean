@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Ecdsa.X86_64.Finish
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Stages
 import VerifiedGarbage.Proof.Ecdh.X86_64.Peer
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Scalar
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Middle
 import VerifiedGarbage.Proof.Ecdsa.X86_64.SlotOps
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Unch
 import VerifiedGarbage.Proof.EcKey.PublicKey

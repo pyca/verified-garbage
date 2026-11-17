@@ -6,28 +6,22 @@ public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.MillerRabin.Contract
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Impl.MillerRabin.X86.Round
-public import VerifiedGarbage.Proof.MillerRabin.X86.Entry
+public import VerifiedGarbage.Proof.MillerRabin.X86.EntryMemory
 public import VerifiedGarbage.Proof.MillerRabin.X86.TimingBlocks
 public import VerifiedGarbage.Proof.Framework.RelCT
-public import VerifiedGarbage.Proof.MillerRabin.X86.EntryValues
+public import VerifiedGarbage.Proof.MillerRabin.X86.EntryMarker
 public import VerifiedGarbage.Proof.MillerRabin.X86.TimingCoreState
 import VerifiedGarbage.Proof.MillerRabin.X86.EntryArgs
-import VerifiedGarbage.Proof.MillerRabin.X86.EntryMarker
-import VerifiedGarbage.Proof.MillerRabin.X86.TimingStage
 public import VerifiedGarbage.Proof.MillerRabin.X86.TableMath
 import VerifiedGarbage.Proof.MillerRabin.X86.TimingCopy
-import VerifiedGarbage.Proof.MillerRabin.X86.TimingAttach
 public import VerifiedGarbage.Proof.MillerRabin.X86.TimingPrivate
 import VerifiedGarbage.Proof.MillerRabin.X86.TimingSequences
-import VerifiedGarbage.Proof.MillerRabin.X86.TableInit
-import VerifiedGarbage.Proof.MillerRabin.X86.TableStep
 public import VerifiedGarbage.Proof.MillerRabin.X86.Stage
 import VerifiedGarbage.Proof.MillerRabin.X86.TimingPointers
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.MillerRabin.X86.TimingBase
 import VerifiedGarbage.Proof.Framework.KernelRfl
-import VerifiedGarbage.Proof.MillerRabin.X86.TimingSquareLoop
 import VerifiedGarbage.Proof.MillerRabin.X86.MontInstance
 import VerifiedGarbage.Proof.Mont.X86.Sse2.PreparedVerified
 import VerifiedGarbage.Proof.Framework.X86.RelCT
@@ -35,23 +29,14 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.MillerRabin.X86.RoundFrame
 public import VerifiedGarbage.Proof.MillerRabin.X86.Caller
-public import VerifiedGarbage.Proof.MillerRabin.X86.EntryMemory
 import VerifiedGarbage.Proof.Mont.X86.Compact.Arithmetic
 import VerifiedGarbage.Proof.Mont.X86.Compact.EntryArgs
 import VerifiedGarbage.Proof.MillerRabin.Word32
 import VerifiedGarbage.Proof.MillerRabin.ExponentWords32
-public import VerifiedGarbage.Proof.MillerRabin.X86.ExponentState
-public import VerifiedGarbage.Proof.MillerRabin.X86.RunView
 public import VerifiedGarbage.Proof.MillerRabin.X86.SquareState
 public import VerifiedGarbage.Proof.Framework.X86.Call
-import VerifiedGarbage.Proof.MillerRabin.X86.PrepareRun
-import VerifiedGarbage.Proof.MillerRabin.X86.WordLoop
-import VerifiedGarbage.Proof.MillerRabin.X86.StageLastSquares
-import VerifiedGarbage.Proof.MillerRabin.X86.SquareLoop
-import VerifiedGarbage.Proof.MillerRabin.X86.RoundMarker
 import VerifiedGarbage.Proof.MillerRabin.X86.Scalar
-import VerifiedGarbage.Proof.MillerRabin.X86.Sequences
-import VerifiedGarbage.Proof.Mont.X86.Compact.Restore
+import VerifiedGarbage.Proof.Mont.X86.Compact.Frame
 import VerifiedGarbage.Proof.Framework.X86.CallWith
 
 /-! ### `MillerRabin.X86.Verified`, which only this module used -/

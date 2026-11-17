@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4.AArch64.Ecb
-import VerifiedGarbage.Proof.Sm4.AArch64.Crypt16
 public import VerifiedGarbage.Impl.Sm4.AArch64.Prepared
 import VerifiedGarbage.Proof.Sm4.Planes
 import VerifiedGarbage.Proof.Framework.Offset

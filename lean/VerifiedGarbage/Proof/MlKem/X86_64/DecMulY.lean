@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.AccY
 public import VerifiedGarbage.Proof.MlKem.Kpke16Contract
 import VerifiedGarbage.Proof.MlKem.X86_64.NttR.TopAcc16
 import VerifiedGarbage.Proof.MlKem.X86_64.NttR.RunAccR101
-import VerifiedGarbage.Proof.MlKem.X86_64.NttR.TopAcc
 import VerifiedGarbage.Proof.MlKem.X86_64.NttR.RunA
 import VerifiedGarbage.Proof.MlKem.X86_64.NttR.RunAccR100
 import VerifiedGarbage.Proof.MlKem.X86_64.Lit

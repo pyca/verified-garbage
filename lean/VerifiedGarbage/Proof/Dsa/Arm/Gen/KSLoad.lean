@@ -1,16 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.Arm.Gen.KSOps
-public import VerifiedGarbage.Proof.Rsa.Arm.KeyDiv
+public import VerifiedGarbage.Proof.Rsa.Arm.CvLoad
 import VerifiedGarbage.Proof.Rsa.Arm.CvDivN
 import VerifiedGarbage.Proof.Rsa.Arm.DivCT
 import VerifiedGarbage.Proof.Rsa.Arm.KcStart
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Impl.Rsa.Arm.CrtValues
-public import VerifiedGarbage.Proof.Rsa.Arm.CvLoad
 public import VerifiedGarbage.Proof.Rsa.Arm.KeyWs
-import VerifiedGarbage.Proof.Dsa.Arm.Gen.CT
+import VerifiedGarbage.Proof.Dsa.Arm.Gen.Frame
 public import VerifiedGarbage.Proof.Rsa.Arm.Stage.VP
 import VerifiedGarbage.Proof.Bignum.Arm.LoadBE
 import VerifiedGarbage.Proof.Dsa.Arithmetic
@@ -28,7 +27,7 @@ section
 /-! # DSA parameter generation on ARMv7: the division
 
 `divHdr_vp`: the division's header; `div_vp`: the division
-(`Impl/Rsa/Arm/Div.lean`, `Proof/Rsa/Arm/KeyDiv.lean`), which changes `r7`
+(`Impl/Rsa/Arm/Div.lean`, `Proof/Rsa/Arm/CvLoad.lean`), which changes `r7`
 and `r9` (`SS79`: a state of the search once they are set back); `wRegs_vp`:
 `r9` and `r7` set back. The division's constant time is proven on the state
 narrowed to the key working space (`RelCT.narrow`).

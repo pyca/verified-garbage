@@ -6,10 +6,9 @@ public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.FBatchStep
 public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Arrays
 import VerifiedGarbage.Proof.Rsa.Divstep.Inv30
 import VerifiedGarbage.Proof.Rsa.Divstep.Inv30Def
-import VerifiedGarbage.Proof.Rsa.Divstep.InvBounds
+import VerifiedGarbage.Proof.Rsa.Divstep.InvResult
 import VerifiedGarbage.Proof.Divstep.Libsecp
 import VerifiedGarbage.Proof.Framework.Omega
-
 -- separate module: `BatchInstance` joins it with the gcd's proof (`GcdBatchRt.Body`), which builds in
 -- parallel
 import VerifiedGarbage.Proof.Rsa.X86.GcdBatch.Count

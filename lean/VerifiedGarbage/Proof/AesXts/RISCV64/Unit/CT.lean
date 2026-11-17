@@ -1,12 +1,11 @@
 module
 
-import VerifiedGarbage.Proof.AesXts.RISCV64.Unit.Dec
+public import VerifiedGarbage.Proof.AesXts.RISCV64.Unit.Dec
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.AesXts.RISCV64.Unit.Dec
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
-public import VerifiedGarbage.Proof.AesXts.RISCV64.Unit.Enc
 public import VerifiedGarbage.Proof.Framework.RelCT
 
 /-!

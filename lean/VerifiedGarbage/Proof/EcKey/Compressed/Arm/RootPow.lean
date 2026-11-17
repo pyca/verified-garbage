@@ -4,7 +4,7 @@ public import VerifiedGarbage.Impl.EcKey.Compressed.Arm.Decompress
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Layout
 import VerifiedGarbage.Proof.Ecdsa.Arm.Lays
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Fixed
-public import VerifiedGarbage.Proof.Weierstrass.Arm.Pow
+public import VerifiedGarbage.Proof.Weierstrass.Arm.Ladder
 public import VerifiedGarbage.Proof.Weierstrass.Layout
 import VerifiedGarbage.Proof.Weierstrass.Arm.Const
 import VerifiedGarbage.Proof.Weierstrass.Arm.Bits

@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.MillerRabin.AArch64.Kernel
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PublicKernel
-public import VerifiedGarbage.Proof.MillerRabin.AArch64.CallerFrame
+public import VerifiedGarbage.Proof.MillerRabin.AArch64.CallerResult
 public import VerifiedGarbage.Proof.MillerRabin.Contract
 public import VerifiedGarbage.Proof.Rsa.MontContract
 

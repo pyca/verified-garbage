@@ -1,17 +1,15 @@
 module
 
-import VerifiedGarbage.Proof.Rc4.RISCV64.Replace
+public import VerifiedGarbage.Proof.Rc4.RISCV64.Apply
 import VerifiedGarbage.Proof.Framework.RISCV64.Steps
 import VerifiedGarbage.Proof.Rc4.Memory
 public import VerifiedGarbage.Proof.Rc4.Identity
 public import VerifiedGarbage.Proof.Rc4.Schedule
 public import VerifiedGarbage.Proof.Rc4.RISCV64.Lookup
 public import VerifiedGarbage.Proof.Framework.RISCV64.Keep
-import VerifiedGarbage.Proof.Rc4.RISCV64.Apply
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Rc4.Stream
 import VerifiedGarbage.Proof.Rc4.Table
-public import VerifiedGarbage.Proof.Rc4.RISCV64.Frame
 public import VerifiedGarbage.Proof.Framework.RISCV64.Alloc
 public import VerifiedGarbage.Spec.Rc4
 

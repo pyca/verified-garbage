@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.SignCorrect
 public import VerifiedGarbage.Proof.Rsa.X86_64.PrivPCorrect
 import VerifiedGarbage.Proof.Rsa.X86_64.PrivPCT
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.SignCtx
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.SignEntry
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.CallSp

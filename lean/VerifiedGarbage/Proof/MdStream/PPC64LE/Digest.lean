@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.MdStream.PPC64LE.Digest
-public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Save
 public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Init
 public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Hash
 import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.InitLong

@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckPublicCT
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.ExchangeCorrect
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckDomainFn
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckPublicFn
-import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.Save
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubCorrect
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Offset

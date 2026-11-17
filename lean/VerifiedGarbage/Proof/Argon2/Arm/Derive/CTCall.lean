@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Argon2.Arm.Derive.Body
+public import VerifiedGarbage.Proof.Argon2.Arm.Derive.Locals
 import VerifiedGarbage.Proof.Argon2.Arm.Derive.Clear
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Blake2.Arm.CompressB
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Argon2.Arm.Derive.FillCall
 import VerifiedGarbage.Proof.Argon2.Arm.HPrime.Verified
-import VerifiedGarbage.Proof.Argon2.Arm.Derive.HCall
+import VerifiedGarbage.Proof.Argon2.Arm.Derive.MemoryInit
 import VerifiedGarbage.Proof.Argon2.Arm.CompressVerified
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
 

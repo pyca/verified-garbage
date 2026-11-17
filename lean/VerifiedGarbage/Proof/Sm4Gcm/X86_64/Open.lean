@@ -1,7 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Sm4Gcm.X86_64.Seal
-
+public import VerifiedGarbage.Proof.Sm4Gcm.X86_64.Seal
 import VerifiedGarbage.Proof.AesGcm.X86_64.Cmp
 import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks
 import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
@@ -11,7 +10,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Sm4Gcm.X86_64.Fn
-public import VerifiedGarbage.Proof.Sm4Gcm.X86_64.OneShot
 
 /-!
 # SM4-GCM on x86-64: `vg_sm4_gcm_open`

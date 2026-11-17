@@ -3,7 +3,7 @@ module
 import VerifiedGarbage.Proof.P256.X86_64.DoubleHalfPublic
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointDoubler
 public import VerifiedGarbage.Impl.P256.X86_64.Joint
-public import VerifiedGarbage.Proof.P256.X86_64.DoubleHalf
+public import VerifiedGarbage.Proof.P256.X86_64.DoubleHalfWP
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
 

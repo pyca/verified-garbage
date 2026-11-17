@@ -16,7 +16,7 @@ import VerifiedGarbage.Proof.Framework.TacticTemplate
 # XTS-AES on x86: all the blocks in one call
 
 `crypt_wp`: from AES-CBC's loop invariant after no blocks
-(`Proof/AesCbc/X86/Loop.lean`), `batch` reaches it after all of them
+(`Proof/AesCbc/X86/Body.lean`), `batch` reaches it after all of them
 (`batch_wp`), for `xtsMode enc`, for any implementation of the block
 functions (`BlocksImpl`). The tweak is saved (`saveT_wp`); a pass XORs each
 block's tweak into it, multiplying the tweak by `α` after each (`pass_wp`, by

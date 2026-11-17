@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Ed25519.BaseTable
 public import VerifiedGarbage.Spec.Ed25519.Contract
 public import VerifiedGarbage.Impl.Ed25519.AArch64.Verify
 import VerifiedGarbage.Proof.Ed25519.AArch64.DecodeBits
-public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarStep
+public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarMemory
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Field
 import VerifiedGarbage.Proof.Ed25519.AArch64.Points
 import VerifiedGarbage.Proof.Framework.AArch64.Exec

@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.TCB.Arm.Isa
 import VerifiedGarbage.Proof.Rsa.Arm.KeyWord
-import VerifiedGarbage.Proof.Dsa.Arm.Gen.CT
+import VerifiedGarbage.Proof.Dsa.Arm.Gen.Frame
 public import VerifiedGarbage.Proof.Rsa.Arm.Stage.VP
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Dsa.Generation.PReduction

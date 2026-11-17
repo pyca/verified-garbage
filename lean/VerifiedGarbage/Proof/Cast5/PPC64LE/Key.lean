@@ -12,7 +12,6 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 import VerifiedGarbage.Proof.Cast5.PPC64LE.Ecb
 public import VerifiedGarbage.Impl.Cast5.PPC64LE
-public import VerifiedGarbage.Proof.Cast5.PPC64LE.KeySteps
 public import VerifiedGarbage.Proof.Cast5.PPC64LE.Run
 public import VerifiedGarbage.Proof.Cast5.Table
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Spill

@@ -17,7 +17,7 @@ meta import VerifiedGarbage.Proof.Cmac.Frame
 # AES-CFB128 on x86: one block, and constant time
 
 `encBody_ok` and `decBody_ok`: one run of `body` takes the loop invariant
-AES-CBC's proofs share (`Proof/AesCbc/X86/Loop.lean`) from `k` blocks to
+AES-CBC's proofs share (`Proof/AesCbc/X86/Body.lean`) from `k` blocks to
 `k + 1`, for `cfbMode`, for any implementation of the block functions
 (`BlocksImpl`). The code before the call and the call are AES-OFB's
 (`Proof/AesOfb/X86/Body.lean`). `encBody_ct` and `decBody_ct`: they are

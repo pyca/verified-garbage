@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Context
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeometryHash
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeometryWork
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PConstructPlan
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeometryPrime
 import VerifiedGarbage.Proof.Framework.TaintBatch
@@ -12,7 +12,6 @@ public import VerifiedGarbage.Proof.Dsa.Encoding -- shake: keep
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PPrimalityPlan
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeometryWork
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SearchPlan
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ArenaSource
 

@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.Rsa.PPC64LE.WordLoops
 import VerifiedGarbage.Proof.Bignum.PPC64LE.MontFios
 import VerifiedGarbage.Proof.Framework.PPC64LE.Carry
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Bignum.PPC64LE.MontStep
+import VerifiedGarbage.Proof.Bignum.PPC64LE.MontRound
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!

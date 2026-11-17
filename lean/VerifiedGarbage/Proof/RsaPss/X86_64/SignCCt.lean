@@ -5,23 +5,109 @@ public import VerifiedGarbage.Proof.RsaPss.X86_64.SignPro
 public import VerifiedGarbage.Proof.RsaPss.X86_64.CtBase
 import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
 public import VerifiedGarbage.Proof.RsaPss.X86_64.SignCall
-public import VerifiedGarbage.Proof.RsaPss.X86_64.SignCVerified
-public import VerifiedGarbage.Proof.RsaPss.X86_64.SignCParams
-import VerifiedGarbage.Proof.RsaPss.X86_64.SignCCorrect
-import VerifiedGarbage.Proof.RsaPss.X86_64.SignFail
+public import VerifiedGarbage.Proof.RsaPss.X86_64.SignCCorrect
+import VerifiedGarbage.Proof.RsaPss.X86_64.SignCorrect
 import VerifiedGarbage.Proof.RsaPss.MgfBytes
 import VerifiedGarbage.Proof.RsaPss.X86_64.Safe
 import VerifiedGarbage.Proof.RsaPss.X86_64.SignCCall
 import VerifiedGarbage.Proof.RsaPss.X86_64.SignCFixed
 import VerifiedGarbage.Proof.RsaPss.X86_64.SignFixed
-import VerifiedGarbage.Proof.RsaPss.X86_64.SignCorrect
 import VerifiedGarbage.Proof.RsaPss.SignEncode
 import VerifiedGarbage.Proof.RsaPss.Params
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
-public import VerifiedGarbage.Proof.RsaPss.X86_64.ByIdx
+public import VerifiedGarbage.Impl.RsaPss.X86_64.Encoding
+public import VerifiedGarbage.Proof.RsaPss.X86_64.SignCtx
+public import VerifiedGarbage.Proof.RsaPss.X86_64.EncCtx
+public import VerifiedGarbage.Proof.Framework.X86_64.Depth
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
+
+/-! ### `RsaPss.X86_64.SignCVerified`, which this module and modules that import it used -/
+
+section
+
+/-!
+# RSASSA-PSS signing on x86-64, around the encoding: the calling convention
+
+`signC_correct`: `signC` meets `signK` and keeps the callee-saved registers,
+its return address (which only its frame and calls are below) and MXCSR's
+control bits (no instruction loads MXCSR).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.RsaPss.X86_64
+
+open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Impl.RsaPss.X86_64
+open VG.Proof.Rsa.X86_64 (chkContract)
+
+variable {tsH tsG : List FnTable} {f : MdFns} {g : Impl.Mgf1.X86_64.Table.Fns} {privN : String}
+  {privC : Prog isa}
+
+theorem spAll_of {c : Prog isa} (hC : SpSafe c) : c.allInstrs (fun i => !isa.writesSp i) = true := by
+  rw [Code.allInstrs_eq]; exact List.all_eq_true.mpr fun i hi => by rw [hC i hi]; rfl
+
+/-- The calls of `byIdx` keep the stack pointer, and use at most `n` bytes of
+stack. -/
+theorem byIdx_calls {b : Nat → Prog isa} {n : Nat} : ∀ {is : List Nat},
+    (∀ i ∈ is, (b i).allInstrs (fun i => !isa.writesSp i) = true ∧ (b i).x86_64Depth ≤ n) →
+    (byIdx b is).allInstrs (fun i => !isa.writesSp i) = true ∧ (byIdx b is).x86_64Depth ≤ n
+  | [], _ => ⟨rfl, Nat.zero_le _⟩
+  | [i], h => h i (List.mem_singleton_self _)
+  | i :: j :: is, h => by
+    have ih := byIdx_calls (b := b) (n := n) (is := j :: is) fun k hk => h k (List.mem_cons_of_mem _ hk)
+    have hi := h i (List.mem_cons_self ..)
+    simp only [byIdx, Code.allInstrs, Code.x86_64Depth, ih.1, hi.1, Bool.and_true]
+    exact ⟨rfl, by simp only [Nat.zero_max, Nat.max_le]; exact ⟨hi.2, ih.2⟩⟩
+
+theorem enc_calls (hE : ∀ i ∈ idxs, SpSafe (encode f (ofIdx i) g))
+    (hdE : ∀ i ∈ idxs, (encode f (ofIdx i) g).x86_64Depth ≤ encStack) :
+    (byIdx (fun i => .call (encName i) (encode f (ofIdx i) g)) idxs).allInstrs (fun i => !isa.writesSp i) = true ∧
+      (byIdx (fun i => .call (encName i) (encode f (ofIdx i) g)) idxs).x86_64Depth ≤ encStack + 8 :=
+  byIdx_calls fun i hi => ⟨by simp only [Code.allInstrs]; exact spAll_of (hE i hi),
+    by simp only [Code.x86_64Depth]; have := hdE i hi; omega_using [this]⟩
+
+theorem signC_xd (hdE : ∀ i ∈ idxs, (encode f (ofIdx i) g).x86_64Depth ≤ encStack)
+    (hE : ∀ i ∈ idxs, SpSafe (encode f (ofIdx i) g)) (hd : privC.x86_64Depth ≤ Rsa.X86_64.stackBytes) :
+    (Impl.RsaPss.X86_64.signC f g privN privC).x86_64Depth ≤ signStack := by
+  have := (enc_calls hE hdE).2
+  simp only [Impl.RsaPss.X86_64.signC, signCBody, signCBodyWith, seqs, Code.x86_64Depth, signFail, byteLoop,
+    X86_64.Instr.frameBytes, Nat.zero_max, Nat.max_zero]
+  unfold signStack Rsa.X86_64.stackBytes frameBytes encStack at *
+  omega
+
+/-- Code that writes `rsp` only in frames and calls, within `signStack`, and
+leaves what `signK` says, the callee-saved registers and MXCSR's control
+bits: it meets `signK` and keeps its return address. -/
+theorem signCode_correct {c : Prog isa} (hsp : SpSafe c) (hd : c.x86_64Depth ≤ signStack) {s : State}
+    (hp : SPre tsH tsG s)
+    (hW : WP isa c s fun s' => (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧ (signK tsH tsG).post s s' ∧
+      s'.mxcsr.extractLsb' 6 10 = s.mxcsr.extractLsb' 6 10) :
+    ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ (signK tsH tsG).post s s' := by
+  have hW := X86_64.WP.stackFrame hsp (by unfold signStack Rsa.X86_64.stackBytes at hd; omega_using [hd]) hW
+  obtain ⟨t, s', he, ⟨hcs, hpost, hmx⟩, hf⟩ := hW
+  refine ⟨t, s', he, ⟨hcs, ?_, hmx⟩, hpost⟩
+  -- The return address.
+  refine Mem.readW_congr fun i hi => hf _ fun r hr hc => ?_
+  rcases List.mem_append.mp hr with hr | hr
+  · rw [hp.hwr] at hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact hp.dRo _ (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])) hc
+    · exact hp.dRs _ (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])) hc
+  · simp only [List.mem_singleton] at hr; subst hr
+    have := hp.sp1; have := hp.sp2
+    exact Offset.base_disjoint_below (s.gpr .rsp) (n := c.x86_64Depth)
+      (k := 8) (by unfold signStack at *; omega_arith) _ (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])) hc
+
+end VG.Proof.RsaPss.X86_64
+
+end
+
+end
 
 /-! ### `RsaPss.X86_64.SignCtBase`, which only this module used -/
 

@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Rsa.X86.Rd.TimeW2Q
 public import VerifiedGarbage.Proof.Rsa.X86.Rd.DivBW
 import VerifiedGarbage.Proof.Rsa.X86.Rd.Loops
-import VerifiedGarbage.Proof.Rsa.X86.Rd.Move
 import VerifiedGarbage.Proof.Rsa.X86.Rd.TwosW
 import VerifiedGarbage.Proof.Rsa.X86.Rd.DivQ
 import VerifiedGarbage.Proof.Framework.Omega

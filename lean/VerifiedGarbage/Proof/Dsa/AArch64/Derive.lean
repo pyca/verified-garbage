@@ -1,16 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.KeygenEntry
+public import VerifiedGarbage.Proof.Dsa.AArch64.Parameters
 import VerifiedGarbage.Proof.Dsa.Layout
 import VerifiedGarbage.Proof.Dsa.AArch64.EntryFieldsFrame
-import VerifiedGarbage.Proof.Dsa.AArch64.KeyPointers
 import VerifiedGarbage.Proof.Dsa.AArch64.Operands
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-public import VerifiedGarbage.Proof.Dsa.AArch64.Parameters
 import VerifiedGarbage.Proof.Dsa.AArch64.DeriveCopy
 import VerifiedGarbage.Proof.Dsa.AArch64.DeriveWrite
-import VerifiedGarbage.Proof.Dsa.AArch64.CallOperands
 import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleOperands
 import VerifiedGarbage.Proof.Dsa.AArch64.SourceSlices
 import VerifiedGarbage.Proof.Dsa.AArch64.WorkspaceReady

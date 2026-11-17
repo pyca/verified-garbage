@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.St
-public import VerifiedGarbage.Proof.Rsa.Arm.KeyDiv
+public import VerifiedGarbage.Proof.Rsa.Arm.CvLoad
 import VerifiedGarbage.Proof.Rsa.Arm.DivCT
 import VerifiedGarbage.Proof.Rsa.Arm.CvDivN
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.Div

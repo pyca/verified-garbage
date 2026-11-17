@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Ed25519.X86.Verify
 public import VerifiedGarbage.Proof.Ed25519.X86.InputSlice
-import VerifiedGarbage.Proof.Ed25519.X86.ScalarStep
+import VerifiedGarbage.Proof.Ed25519.X86.ScalarBody
 import VerifiedGarbage.Proof.Ed25519.Scalar
 
 @[expose] public section

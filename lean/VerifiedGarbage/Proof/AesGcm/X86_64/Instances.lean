@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.AesGcm.X86_64.Flag
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Flagged
 public import VerifiedGarbage.Proof.Gcm.PreparedPowers
 public import VerifiedGarbage.Proof.AesGcm.Rounds
-public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Callee
+public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.BlkCall
 public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Context
 import Mathlib.Data.List.Basic
 public import Aesop.BuiltinRules
@@ -22,10 +22,10 @@ public import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Verified
 public import VerifiedGarbage.Proof.AesGcm.X86_64.VerifiedP
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Variant
 public import VerifiedGarbage.Proof.AesGcm.X86_64.GhashImpls
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Verified
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Short
 public import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Ghash
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Pow
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Field48
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.OkP
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Tab
 public import VerifiedGarbage.Proof.Gcm.Poly
 import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Bcast
@@ -40,20 +40,16 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Gcm.Stream
 import VerifiedGarbage.Proof.Gcm.Split
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchR.Ok
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.OkP
 import VerifiedGarbage.Proof.Framework.TacticTemplate
 import VerifiedGarbage.Proof.Framework.TaintBatch
 public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Verified
 public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamClrVerified
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Verified
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.SealCallee
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.VerifiedP
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Fn
 import VerifiedGarbage.Proof.AesGcm.X86_64.Short.SealFin
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Ok
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Ct
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Ok
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Ok
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Short
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.StreamTo
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Verified
 public import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
@@ -65,7 +61,6 @@ public import VerifiedGarbage.Proof.Gcm.Prepared16Contract
 public import VerifiedGarbage.Impl.StackScratch.X86_64
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared16.Verified
 import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.OpenCT
-import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.SealSel
 import VerifiedGarbage.Proof.AesGcm.X86_64.Short.KsA
 public import VerifiedGarbage.Proof.AesGcm.ScratchSplit
 import VerifiedGarbage.Proof.AesGcm.ScratchPrepared16
@@ -79,7 +74,6 @@ public import VerifiedGarbage.Proof.AesGcm.ScratchPrepared16To
 public import VerifiedGarbage.Impl.AesGcm.X86_64.StreamTo
 import Mathlib.Data.List.Dedup
 import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.CT
-import VerifiedGarbage.Proof.AesGcm.ScratchTo
 public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Contract
 import VerifiedGarbage.Proof.AesSiv.X86_64.Verified
 import VerifiedGarbage.Proof.AesGcm.ScratchGather

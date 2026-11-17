@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Dsa.Arm.Validate
 public import VerifiedGarbage.Proof.Dsa.Arm.CoreOps
-public import VerifiedGarbage.Proof.Dsa.Arm.Checks
+public import VerifiedGarbage.Proof.Dsa.Arm.ArithCall
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.Arm.Leaves
 

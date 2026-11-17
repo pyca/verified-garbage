@@ -1,10 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Mont.X86.Words
-
 public import VerifiedGarbage.Proof.Dsa.X86.PowEntry
 public import VerifiedGarbage.Proof.Dsa.X86.StackFrame
-public import VerifiedGarbage.Proof.Dsa.X86.PowOuts
+public import VerifiedGarbage.Proof.Dsa.X86.PowCore
 public import VerifiedGarbage.Proof.Framework.X86.Call
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Dsa.X86.PowCallFrame

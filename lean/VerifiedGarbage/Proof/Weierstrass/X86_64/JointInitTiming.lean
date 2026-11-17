@@ -1,4 +1,5 @@
 module
+
 public import VerifiedGarbage.Proof.Weierstrass.JacMul
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointInitLayout
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.PointFieldTiming
@@ -6,7 +7,6 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableTimingInit
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableCoZTiming
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JointSeed
 import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableTiming
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafCacheBuild
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldTiming
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
 import VerifiedGarbage.Proof.Weierstrass.PointContract

@@ -1,10 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.Arm.VerifyMessage.Calls
 import VerifiedGarbage.Proof.Sha512.Stream
 public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.HashPre
 import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Wipe
-public import VerifiedGarbage.Proof.Ed25519.Arm.VerifyMessage.Layout
 public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Setup
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.Ed25519.Arm.VerifyMessage
@@ -41,6 +39,177 @@ public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Wrap
 import VerifiedGarbage.Proof.Ed25519.Arm.Whole.WrapCT
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Sha512.Arm.Stream.Finalize
+public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Layout
+public import VerifiedGarbage.Spec.Ed25519.Contract
+import VerifiedGarbage.Proof.Framework.Lit
+
+/-! ### `Ed25519.Arm.VerifyMessage.Calls`, which only this module used -/
+
+section
+
+/-! ### `Ed25519.Arm.VerifyMessage.Layout`, which this module and modules that import it used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.Ed25519.Arm.VerifyMessage
+open VG VG.Arm
+
+structure Lay where
+  pk : BitVec 32
+  msg : BitVec 32
+  len : BitVec 32
+  sig : BitVec 32
+  scr : BitVec 32
+  E : BitVec 32
+
+namespace Lay
+variable (L : Lay)
+abbrev SIG : Region := ⟨State.addr L.sig, 64⟩
+abbrev PK : Region := ⟨State.addr L.pk, 32⟩
+abbrev MSG : Region := ⟨State.addr L.msg, L.len.toNat⟩
+abbrev SCR : Region := ⟨State.addr L.scr, 8192⟩
+abbrev ARGS : Region := ⟨State.addr L.E + BitVec.ofNat 64 248, 24⟩
+abbrev FR : Region := Whole.FR L.E
+abbrev ORIGINALARGS : Region := ⟨State.addr L.E + 280, 4⟩
+def inputs : List Region := [L.PK, L.MSG, L.SIG, L.ORIGINALARGS, L.ARGS]
+def outputs : List Region := [L.SCR]
+def value (j : Nat) : BitVec 32 :=
+  match j with | 0 => L.pk | 1 => L.msg | 2 => L.len | 3 => L.sig | _ => L.scr
+
+structure Ok : Prop where
+  top : L.E.toNat + 272 ≤ 2 ^ 32
+  sc : ∀ r ∈ L.inputs, r.Disjoint L.SCR
+  ks : ∀ r ∈ L.inputs, L.FR.Disjoint r
+  kc : L.FR.Disjoint L.SCR
+  np : L.pk.toNat + 32 ≤ 2 ^ 32
+  nm : L.msg.toNat + L.len.toNat ≤ 2 ^ 32
+  ns : L.sig.toNat + 64 ≤ 2 ^ 32
+  nc : L.scr.toNat + 8192 ≤ 2 ^ 32
+end Lay
+
+/-- The scratch allocation leaves enough address space for either hash prefix. -/
+theorem Lay.Ok.message_bound {L : Lay} (h : L.Ok) : 64 + L.len.toNat < 2 ^ 32 := by
+  have hd := h.sc L.MSG (by simp [Lay.inputs])
+  have nm := h.nm
+  have nc := h.nc
+  have ap : (State.addr L.msg).toNat = L.msg.toNat := BitVec.toNat_setWidth_of_le (by decide)
+  have ac : (State.addr L.scr).toNat = L.scr.toNat := BitVec.toNat_setWidth_of_le (by decide)
+  by_cases hz : L.len.toNat = 0
+  · omega_using [hz]
+  by_cases hp : State.addr L.msg ≤ State.addr L.scr
+  · have hn : ¬ L.MSG.Contains (State.addr L.scr) 1 := fun hx => hd _ hx (by simp [Region.Contains])
+    simp only [Region.Contains, BitVec.toNat_sub_of_le hp] at hn
+    have hp' : (State.addr L.msg).toNat ≤ (State.addr L.scr).toNat := hp
+    rw [ap, ac] at hn hp'
+    omega_using [nc, hn]
+  · have hp' : State.addr L.scr ≤ State.addr L.msg := by
+      change (State.addr L.scr).toNat ≤ (State.addr L.msg).toNat
+      change ¬ (State.addr L.msg).toNat ≤ (State.addr L.scr).toNat at hp
+      omega_using [hp]
+    have hn : ¬ L.SCR.Contains (State.addr L.msg) 1 := fun hx => hd _ (by simp [Region.Contains]; omega_using [hz]) hx
+    simp only [Region.Contains, BitVec.toNat_sub_of_le hp'] at hn
+    have hp'' : (State.addr L.scr).toNat ≤ (State.addr L.msg).toNat := hp'
+    rw [ap, ac] at hn hp''
+    omega_using [nm, hn]
+
+
+abbrev Ctx (L : Lay) (g : Reg → BitVec 32) (m₀ : Mem) (t : State) :=
+  Whole.Ctx L.E g m₀ L.inputs L.outputs t
+
+namespace Ctx
+variable {L : Lay} {g : Reg → BitVec 32} {m₀ : Mem} {t : State}
+
+theorem input_bytes (hc : Ctx L g m₀ t) (hL : L.Ok)
+    {r : Region} (hr : r ∈ L.inputs) (hn : r.len ≤ 2 ^ 64) :
+    Spec.Ed25519.bytesAt t.mem r.base r.len = Spec.Ed25519.bytesAt m₀ r.base r.len := by
+  unfold Spec.Ed25519.bytesAt
+  refine List.map_congr_left fun i hi => ?_
+  refine Frame.bytes hc.frame ?_ hn (List.mem_range.mp hi)
+  intro R hR
+  simp only [Lay.outputs, List.cons_append, List.nil_append, List.mem_cons,
+    List.not_mem_nil, or_false] at hR
+  rcases hR with rfl | rfl
+  · exact hL.sc r hr
+  · exact (hL.ks r hr).symm
+
+theorem arg_word (hc : Ctx L g m₀ t) (hL : L.Ok) {j : Nat} (hj : j < 6) :
+    t.mem.readW (State.addr L.E + BitVec.ofNat 64 (248 + 4 * j)) 32 =
+      m₀.readW (State.addr L.E + BitVec.ofNat 64 (248 + 4 * j)) 32 := by
+  refine hc.frame.readW (r := L.ARGS) ?_ ?_ (by decide)
+  · exact Offset.contains _ (e := 248) (k := 24) (by omega_using []) (by omega_using [hj]) (by decide)
+  · intro R hR
+    simp only [Lay.outputs, List.cons_append, List.nil_append, List.mem_cons,
+      List.not_mem_nil, or_false] at hR
+    have ha : L.ARGS ∈ L.inputs := by simp [Lay.inputs]
+    rcases hR with rfl | rfl
+    · exact hL.sc _ ha
+    · exact (hL.ks _ ha).symm
+
+end Ctx
+end VG.Proof.Ed25519.Arm.VerifyMessage
+
+end
+
+end
+
+@[expose] public section
+
+namespace VG.Proof.Ed25519.Arm.VerifyMessage
+open VG VG.Arm
+
+variable {L : Lay}
+
+def field (L : Lay) (d : Nat) : Region := ⟨State.addr L.E + BitVec.ofNat 64 d, 32⟩
+def digest (L : Lay) : Region := ⟨State.addr L.E + BitVec.ofNat 64 184, 64⟩
+theorem fieldWithin (L : Lay) {d : Nat} (hd : d + 32 ≤ 248) : Whole.Within (field L d) L.FR :=
+  ⟨d, rfl, hd⟩
+theorem digestWithin (L : Lay) : Whole.Within (digest L) L.FR := ⟨184, rfl, by change 184 + 64 ≤ 248; decide⟩
+theorem scratchWithin (L : Lay) : Whole.Within L.SCR L.SCR := ⟨0, by simp, by simp⟩
+
+theorem covers {rs : List Region}
+    (h : ∀ r ∈ rs, Whole.Within r L.FR ∨ ∃ R ∈ L.inputs ++ L.outputs, Whole.Within r R) :
+    Covers rs (L.inputs ++ L.FR :: L.outputs) := by
+  apply Covers.of_sub
+  intro r hr
+  rcases h r hr with hf | ⟨R, hR, hsub⟩
+  · exact ⟨L.FR, List.mem_append_right _ List.mem_cons_self, hf⟩
+  · refine ⟨R, ?_, hsub⟩
+    rcases List.mem_append.mp hR with hi | ho
+    · exact List.mem_append_left _ hi
+    · exact List.mem_append_right _ (List.mem_cons_of_mem _ ho)
+
+theorem scratch_covered (L : Lay) : ∃ R ∈ L.inputs ++ L.outputs, Whole.Within L.SCR R :=
+  ⟨L.SCR, by simp [Lay.outputs], scratchWithin L⟩
+
+theorem writes {rs : List Region}
+    (h : ∀ r ∈ rs, Whole.Within r L.FR ∨ Whole.Within r L.SCR) :
+    ∀ r ∈ rs, Whole.Within r L.FR ∨ ∃ R ∈ L.outputs, Whole.Within r R := by
+  intro r hr
+  rcases h r hr with hf | hs
+  · exact .inl hf
+  · exact .inr ⟨L.SCR,by simp [Lay.outputs],hs⟩
+
+theorem field_scr (hL : L.Ok) {d : Nat} (hd : d + 32 ≤ 248) :
+    (field L d).Disjoint L.SCR := hL.kc.sub_left (fieldWithin L hd).sub
+
+theorem frame_addr (hL : L.Ok) {d : Nat} (hd : d < 272) :
+    State.addr (L.E + BitVec.ofNat 32 d) = State.addr L.E + BitVec.ofNat 64 d :=
+  addr_add (by have := hL.top; omega_using [hd, this])
+
+theorem frame_fit (hL : L.Ok) {d n : Nat} (hd : d + n ≤ 248) :
+    (L.E + BitVec.ofNat 32 d).toNat + n ≤ 2 ^ 32 := by
+  have ht := hL.top
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hd] : d < 2 ^ 32),
+    Nat.mod_eq_of_lt (by omega_using [hd, ht] : L.E.toNat + d < 2 ^ 32)]
+  omega_using [hd, ht]
+
+end VG.Proof.Ed25519.Arm.VerifyMessage
+
+end
+
+end
 
 /-! ### `Ed25519.Arm.VerifyMessage.Body`, which only this module used -/
 

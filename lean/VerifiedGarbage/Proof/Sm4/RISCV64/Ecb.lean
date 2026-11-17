@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Sm4.RISCV64.Group
 public import VerifiedGarbage.Spec.Sm4.Contract
 public import VerifiedGarbage.Proof.Sm4.Contract
-public import VerifiedGarbage.Proof.Sm4.RISCV64.Keys
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Interleave
 import VerifiedGarbage.Proof.Sm4.RISCV64.Prologue

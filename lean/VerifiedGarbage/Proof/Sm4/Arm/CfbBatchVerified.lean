@@ -8,13 +8,12 @@ public import VerifiedGarbage.Impl.Sm4.Arm.BatchCfb
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.Sm4.Arm.BatchChain
-import VerifiedGarbage.Proof.Sm4.Arm.BatchEntry
 public import VerifiedGarbage.Spec.Cfb
 public import VerifiedGarbage.Spec.Sm4.Ctr
 import VerifiedGarbage.Proof.Sm4.Arm.CfbGroup
 public import VerifiedGarbage.Impl.Sm4.Arm.Prepared
 import VerifiedGarbage.Proof.Sm4.Arm.CfbFill
-import VerifiedGarbage.Proof.Sm4.Arm.BatchCalls
+import VerifiedGarbage.Proof.Sm4.Arm.BatchGroup
 public import VerifiedGarbage.Proof.Sm4.Arm.PreparedBody
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 public import VerifiedGarbage.Impl.Sm4.Arm.BatchCtr

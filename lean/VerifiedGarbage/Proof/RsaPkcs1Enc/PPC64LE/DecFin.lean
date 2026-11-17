@@ -1,12 +1,11 @@
 module
 
-import VerifiedGarbage.Proof.RsaPkcs1Enc.PPC64LE.DecSel
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.PPC64LE.DecSel
 import VerifiedGarbage.Proof.RsaPkcs1Enc.Decrypt
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreLoad
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.PPC64LE.DecScan
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.Select
 
 /-! ### `RsaPkcs1Enc.PPC64LE.DecOut`, which only this module used -/

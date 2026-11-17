@@ -15,7 +15,7 @@ public import VerifiedGarbage.Proof.Framework.Bswap
 `brun [facts]` runs a block symbolically (`runBlock_cons`, `runStep_some`,
 the semantics of the instructions the code uses, reading through the writes
 with `RegUpd`), keeping the flag and memory updates folded, as RC4's `arun`
-(`Proof/Rc4/Arm/Run.lean`). `Keep rs s s'` says that `s'` has the registers
+(`Proof/Rc4/Arm/Apply.lean`). `Keep rs s s'` says that `s'` has the registers
 of `s` but for `rs`, and its regions and stack pointer; `WP.keep` proves it
 of a block none of whose instructions writes another register.
 -/

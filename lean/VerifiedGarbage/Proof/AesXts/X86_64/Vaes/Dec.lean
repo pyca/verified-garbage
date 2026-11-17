@@ -1,11 +1,10 @@
 module
+
 public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Dec
 public import VerifiedGarbage.Proof.AesXts.Spec
-public import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Setup
-
+public import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Top
 import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Enc
 import VerifiedGarbage.Proof.Aes.X86_64.VaesBlocks.Dec
-import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Top
 import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Blocks
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Aes.X86_64.CodeLit

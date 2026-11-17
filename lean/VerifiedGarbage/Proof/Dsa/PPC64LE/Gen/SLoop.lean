@@ -5,11 +5,9 @@ public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.PPart
 import VerifiedGarbage.Proof.Dsa.Generation.RandomSuffix
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.GPow
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.KSOps
-import VerifiedGarbage.Proof.Bignum.PPC64LE.MontStep
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.KSStore
+import VerifiedGarbage.Proof.Bignum.PPC64LE.MontRound
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.KSLoad
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.KSSetup
 import VerifiedGarbage.Proof.Dsa.Arithmetic
 import VerifiedGarbage.Proof.Dsa.Generation.Memory
 import VerifiedGarbage.Proof.Framework.Offset
@@ -18,9 +16,8 @@ import VerifiedGarbage.Proof.Dsa.Generation.Chunks
 public import VerifiedGarbage.Proof.Dsa.Generation.GeneratorCount
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.CheckCall
 import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.PX
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.Pieces
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.Bytes
 import VerifiedGarbage.Proof.Bignum.PPC64LE.Run
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.Hash
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.Test
 public import VerifiedGarbage.Spec.Ffdh
 public import VerifiedGarbage.Proof.Dsa.Generation.RefillSeed

@@ -16,15 +16,12 @@ import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Xor
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon.Lanes
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Feed
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Rotate
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.RoundLoop
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Chunk
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Transpose
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Xor
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.CachedAdd
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Finish
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Save
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Xor
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Small.Chunk
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Small.Xor
 import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitch.Bulk
 import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
@@ -47,7 +44,6 @@ import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Update
 import VerifiedGarbage.Proof.Poly1305.Limbs64
 import VerifiedGarbage.Proof.Poly1305.Stream
 import VerifiedGarbage.Spec.ChaCha20Poly1305.Contract
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Chunk
 import VerifiedGarbage.Impl.ChaCha20.AArch64.Rows6
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Xor
 

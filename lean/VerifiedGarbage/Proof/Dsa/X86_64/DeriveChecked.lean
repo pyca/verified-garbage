@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Derive
 import VerifiedGarbage.Proof.Dsa.X86_64.Parameters
-import VerifiedGarbage.Proof.Dsa.X86_64.CheckEffects
 import VerifiedGarbage.Proof.Dsa.X86_64.CheckOperands
 import VerifiedGarbage.Proof.Dsa.X86_64.PublicCalls
 import VerifiedGarbage.Proof.Dsa.Zero
@@ -10,11 +9,9 @@ import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 import VerifiedGarbage.Proof.Dsa.X86_64.DeriveCopy
 import VerifiedGarbage.Proof.Dsa.X86_64.DeriveWrite
-import VerifiedGarbage.Proof.Dsa.X86_64.DeriveFailure
-import VerifiedGarbage.Proof.Dsa.X86_64.CallOperands
 import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleOperands
 import VerifiedGarbage.Proof.Dsa.X86_64.SigningShape
-import VerifiedGarbage.Proof.Dsa.X86_64.WorkspaceReady
+import VerifiedGarbage.Proof.Dsa.X86_64.SigningOperands
 import VerifiedGarbage.Proof.Dsa.X86_64.ABIRegions
 import VerifiedGarbage.Proof.Dsa.X86_64.Result
 import VerifiedGarbage.Proof.Dsa.X86_64.Sequences

@@ -1,8 +1,7 @@
 module
-public import VerifiedGarbage.Impl.Ed25519.Arm.PointMul
-public import VerifiedGarbage.Proof.Ed25519.Arm.MulInput
 
-import VerifiedGarbage.Proof.Ed25519.Arm.PointMulBody
+public import VerifiedGarbage.Impl.Ed25519.Arm.PointMul
+public import VerifiedGarbage.Proof.Ed25519.Arm.PointMulBody
 
 /-! Descending through every checkpoint proves the full scalar product. -/
 

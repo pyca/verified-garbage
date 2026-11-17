@@ -1,7 +1,109 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Finish
 public import VerifiedGarbage.Proof.Dsa.X86_64.Frame
+public import VerifiedGarbage.Impl.Dsa.X86_64.Core
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtFrame
+public import VerifiedGarbage.Spec.Dsa
+public import VerifiedGarbage.Spec.Rsa.Contract
+import VerifiedGarbage.Proof.Dsa.X86_64.StoreSuffix
+public import Aesop.BuiltinRules
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Bignum.CrtMath
+
+/-! ### `Dsa.X86_64.Finish`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Dsa.X86_64.EnterLeave`, which this module and modules that import it used -/
+
+section
+
+/-! # Switching between the DSA parent and arithmetic workspaces -/
+
+@[expose] public section
+
+namespace VG.Proof.Dsa.X86_64
+open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
+open VG.Impl.Rsa.X86_64
+open VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
+open VG.Impl.Dsa.X86_64
+
+/-- Enter a linked child without changing memory or any other register. -/
+theorem enter_ok {s : State} {B : Addr} {Z o w wx : Nat} {parentMinv minv : BitVec 64}
+    (hg : Good s B Z w parentMinv) (child : WsAt s.mem B o wx minv)
+    (hlo : slot w 8 ≤ o) (hhi : o + slot wx 8 + tabBytes wx ≤ Z) (ho : o < 2 ^ 31) :
+    WP isa (.block (Core.enter o)) s fun t =>
+      SubCtx t B Z o w wx minv ∧ t.mem = s.mem ∧ Keep [.rdi] s t := by
+  refine WP.mono (WP.keep [.rdi] (Q := fun t => t.gpr .rdi = off B o ∧ t.mem = s.mem) ?_ rfl)
+    fun t ⟨⟨hdi, hm⟩, hk⟩ =>
+      ⟨⟨hg.scr.congr hk.2.2, hdi, hm ▸ child.hdr, hm ▸ child.link,
+        hm ▸ hg.hdr.hw, hm ▸ hg.hdr.harr, hlo, hhi⟩, hm, hk⟩
+  unfold Core.enter
+  xrun [hg.rdi, sx_ofNat ho]
+
+/-- Return through the child's parent link; all parent fields and operand
+buffers retain the memory frame established by the arithmetic routine. -/
+theorem leave_ok {s : State} {B : Addr} {Z o w wx : Nat} {minv parentMinv : BitVec 64}
+    (hc : SubCtx s B Z o w wx minv)
+    (hp : word s.mem B (8 * sMinv) = parentMinv) :
+    WP isa (.block [Crt.leave]) s fun t =>
+      Good t B Z w parentMinv ∧ t.mem = s.mem ∧ Keep [.rdi] s t := by
+  refine WP.mono (WP.keep [.rdi] (Q := fun t => t.gpr .rdi = B ∧ t.mem = s.mem) ?_ rfl)
+    fun t ⟨⟨hdi, hm⟩, hk⟩ =>
+      ⟨⟨hc.scr.congr hk.2.2, hdi, ⟨hm ▸ hc.nw, hm ▸ hp, hm ▸ hc.narr⟩⟩, hm, hk⟩
+  unfold Crt.leave
+  xrun [State.ea, hdr, hc.rdi, hdrOff, hc.link,
+    hc.good.scr.ld (show 8 * Crt.sLink + 8 ≤ slot wx 8 from hdr_lt_slot wx 8 (by decide))]
+
+end VG.Proof.Dsa.X86_64
+
+end
+
+end
+
+/-! # Returning an encoded DSA arithmetic result to the parent workspace -/
+
+@[expose] public section
+
+namespace VG.Proof.Dsa.X86_64
+open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
+open VG.Impl.Dsa.Layout
+open VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
+open VG.Impl.Dsa.X86_64
+
+/-- Internal DSA calls may use the arithmetic registers and temporarily
+switch rdi to the child workspace. The enclosing entry point saves the ABI. -/
+def coreRegs : List Reg := .rdi :: mmRegs
+
+/-- Encode the arithmetic result, restore the parent workspace pointer,
+and preserve every word in the active prefix. -/
+theorem finish_ok {s : State} {B : Addr} {Z o w wx k : Nat} {minv parentMinv : BitVec 64}
+    {out : Addr} (hc : SubCtx s B Z o w wx minv)
+    (hpm : word s.mem B (8 * sMinv) = parentMinv)
+    (hp : word s.mem B (8 * result) = out)
+    (hl : word s.mem B (8 * resultLen) = BitVec.ofNat 64 k)
+    (hk1 : 1 ≤ k) (hk' : k < 2 ^ 31) (hkw : wx = (k + 7) / 8)
+    (hout : ∀ j < k, InRegions s.wr (out + BitVec.ofNat 64 j) 1)
+    (hprefix : ∀ j < k, Z ≤ ofs B (out + BitVec.ofNat 64 j)) :
+    WP isa (seqs Core.finish) s fun t =>
+      Good t B Z w parentMinv ∧
+      Spec.Rsa.bytesAt t.mem out k = Spec.Dsa.encodeBE k (wv s.mem (off B o) (slot wx aY) wx) ∧
+      (∀ d, d + 8 ≤ Z → word t.mem B d = word s.mem B d) ∧
+      (∀ x, (∀ j < k, x ≠ out + BitVec.ofNat 64 j) → t.mem x = s.mem x) ∧ Keep coreRegs s t := by
+  unfold Core.finish seqs
+  refine WP.seq (WP.mono (storeSuffix_ok hc (by decide) (by decide) (by decide)
+    hp hl hk1 hk' hkw hout hprefix) fun u ⟨hcu, huout, hwrd, _, hfu, hku⟩ => ?_)
+  have hpmu : word u.mem B (8 * sMinv) = parentMinv :=
+    (hwrd _ (by have := hc.lo; have := hc.hi; have := hdr_lt_slot w 8 (show sMinv < 32 by decide); omega_arith)).trans hpm
+  refine WP.mono (leave_ok hcu hpmu) fun t ⟨hgt, hmem, hkt⟩ =>
+    ⟨hgt, hmem ▸ huout, hmem ▸ hwrd, hmem ▸ hfu, (hku.trans hkt).mono (by decide)⟩
+
+end VG.Proof.Dsa.X86_64
+
+end
+
+end
 
 /-! # Composing DSA arithmetic with result encoding and workspace return -/
 

@@ -2,7 +2,7 @@ module
 
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.FillLoops
 public import VerifiedGarbage.Proof.Argon2.FinalReduction
-public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.FillWrite
+public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.FillBlock
 public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Parameters
 import VerifiedGarbage.Proof.Argon2.Serialization
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.HCall

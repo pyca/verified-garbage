@@ -1,14 +1,10 @@
 module
 
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyRuntime
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyWritePorts
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyExport
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyOutcome
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyArgContext
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyEnvironment
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.WriteArray
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.ContextFar
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.ContextWorkspace
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Zero
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyOutputMap
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyGeometry
@@ -16,6 +12,253 @@ import VerifiedGarbage.Proof.Rsa.KeyWorkspace
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Bignum.MemoryFrame
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Rsa.X86.KeyWs
+public import VerifiedGarbage.Spec.Rsa.Contract
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.ContextArgument
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Address
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Ops
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyWriteArray
+import VerifiedGarbage.Proof.Bignum.X86.ReverseBuffer
+import VerifiedGarbage.Proof.Bignum.ReadPrefix
+import VerifiedGarbage.Proof.Bignum.ByteWords
+import VerifiedGarbage.Proof.Framework.X86.Call
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Workspace
+import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Logic.Function.Basic
+import Mathlib.Tactic.Set
+import Mathlib.Tactic.SplitIfs
+
+/-! ### `RsaKeyGen.X86.KeyRuntime.WriteArray`, which this module and modules that import it used -/
+
+section
+
+/-! ### `RsaKeyGen.X86.KeyRuntime.ContextWorkspace`, which this module and modules that import it used -/
+
+section
+
+/-! # Establish the three runtime widths from the retained cdecl arguments -/
+
+@[expose] public section
+namespace VG.Proof.RsaKeyGen.X86.KeyRuntime
+open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86
+open VG.Impl.RsaKeyGen.X86.KeyRuntime
+open VG.Proof.Rsa.X86.KeyRt (kw RtWs)
+open VG.Proof.Bignum.X86 (CallArgument)
+open VG.Proof.RsaKeyGen.X86.Key (Environment)
+open VG.Proof.RsaKeyGen.X86.KeyArgs (Context)
+
+theorem context_workspace {E : Environment} {p : BitVec 32} {s : State}
+    (v : E.Valid) (C : Context E.base E.size p E.argument s)
+    (old : VG.Proof.Rsa.X86.Keys.Ws s E.base E.size E.n 32) : Ws s E.base E.size E.n 32 := by
+  obtain ⟨lo, hi, nk, kp, ke, plen⟩ := v.widths
+  have width : E.n % 4 = 0 := by omega_using [nk, ke]
+  have resize (k : Nat) (positive : 0 < k) (small : k ≤ E.n) :
+      VG.Proof.Rsa.X86.Keys.Ws s E.base E.size k 32 := by
+    refine ⟨old.workspace, Nat.le_trans ?_ old.fits, positive, Nat.le_trans small old.wle⟩
+    unfold VG.Proof.Rsa.X86.Keys.arr VG.Proof.Rsa.X86.Keys.S
+    omega_using [small]
+  have wsValue : BitVec.ofNat 32 E.base.toNat = E.workspace := by
+    apply BitVec.eq_of_toNat_eq
+    simp only [Environment.base, BitVec.toNat_ofNat, BitVec.toNat_setWidth]
+    have bound := E.workspace.isLt
+    omega_using []
+  have wsArg : CallArgument s E.base E.size 20 (BitVec.ofNat 32 E.base.toNat) := by
+    rw [wsValue]
+    exact context_argument C (i := 16) (by decide)
+  refine ⟨?_, ?_, ?_, width, ⟨lo, hi⟩, by rw [C.sp]; exact C.deep⟩
+  · refine ⟨?_, ⟨2 * E.primeLength, by omega_using [hi, plen], ?_, context_argument C (i := 3) (by decide)⟩,
+      wsArg, by omega_using [hi], by decide⟩
+    · simpa only [kw_full width] using old
+    · change kw (2 * E.primeLength) = kw (4 * E.n)
+      rw [plen]
+      congr 1
+      omega_using []
+  · refine ⟨?_, ⟨E.primeLength, by omega_using [hi, plen], ?_, context_argument C (i := 5) (by decide)⟩,
+      wsArg, by omega_using [hi], by decide⟩
+    · simpa only [kw_prime width] using resize (E.n / 2) (by omega_using [lo]) (by omega_using [])
+    · change kw E.primeLength = kw (2 * E.n)
+      rw [plen]
+  · have kw8 : kw 8 = 2 := by decide
+    refine ⟨?_, ⟨E.exponentLength, by have := v.exponentLength; omega_using [this], ?_,
+      context_argument C (i := 15) (by decide)⟩, wsArg, by decide, by decide⟩
+    · simpa only [kw8] using resize 2 (by decide) (by omega_using [lo])
+    · have bounds := v.exponentLength
+      change kw E.exponentLength = kw 8
+      simp only [kw, Spec.Rsa.modulusWords]
+      omega_using [bounds]
+
+end VG.Proof.RsaKeyGen.X86.KeyRuntime
+
+end
+
+end
+
+/-! ### `RsaKeyGen.X86.KeyRuntime.ContextFar`, which this module and modules that import it used -/
+
+section
+
+/-! # The cdecl arguments survive writes away from them, such as the key outputs -/
+
+@[expose] public section
+namespace VG.Proof.RsaKeyGen.X86.KeyArgs
+open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Impl.RsaKeyGen.X86.CandidateArgs
+
+/-- `Context.keep` for writes to any regions apart from the arguments. -/
+theorem Context.keepFar {base : Addr} {size : Nat} {p : BitVec 32} {inputs : Nat → BitVec 32} {s t : State}
+    {rs : List Reg} (C : Context base size p inputs s) (K : Keeps rs s t) {writes : List Region}
+    (F : Frame writes s.mem t.mem) (far : ∀ r ∈ writes, (argsRegion p).Disjoint r)
+    (edi : .edi ∉ rs := by decide) (esp : .esp ∉ rs := by decide) :
+    Context base size p inputs t := by
+  have spT : t.gpr .esp = p := (K.1 .esp esp).trans C.sp
+  refine ⟨C.scratch.of_keeps K edi esp, C.header, spT, C.fit, C.separate, ?_, C.deep⟩
+  intro i index
+  have eaT : t.ea (arg i) = s.ea (arg i) := by
+    change addr (t.gpr .esp) _ = addr (s.gpr .esp) _
+    rw [K.1 .esp esp]
+  have memory : t.mem.readW (s.ea (arg i)) 32 = s.mem.readW (s.ea (arg i)) 32 := by
+    rw [C.address index]
+    exact F.readW (r := argsRegion p)
+      (Offset.contains_base _ (by change 4 * i + 4 ≤ 72; omega_using [index]) (by omega_using [index] : 4 * i < 2 ^ 64))
+      far (by decide)
+  have same : readSrc t (.mem (arg i)) = readSrc s (.mem (arg i)) := by
+    show t.load32 (t.ea (arg i)) = s.load32 (s.ea (arg i))
+    simp only [State.load32, eaT, K.2.1, K.2.2, memory]
+  exact same.trans (C.read i index)
+
+end VG.Proof.RsaKeyGen.X86.KeyArgs
+
+end
+
+end
+
+/-! # One masked key output, through the pointer and length arguments, at the run-time width -/
+
+@[expose] public section
+namespace VG.Proof.RsaKeyGen.X86.KeyRuntime
+open VG VG.X86 VG.X86.Wp VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Rsa.X86.Keys
+open VG.Impl.Rsa.X86.Keys hiding slot
+open VG.Impl.RsaKeyGen.X86.KeyRuntime
+open VG.Impl.RsaKeyGen.X86.Key (kOk)
+open VG.Proof.RsaKeyGen.X86.Key (Environment)
+open VG.Proof.RsaKeyGen.X86.KeyArgs (Context argsRegion)
+open VG.Proof.Bignum.X86 (byteAddr)
+
+/-- `writeArray j pointer length`, with the pointer and length from arguments `pointer` and `length`. -/
+theorem writeArray_ok {E : Environment} {sp : BitVec 32} {s : State} {j pointer length len : Nat}
+    {p : BitVec 32} (valid : E.Valid) (h : VG.Proof.Rsa.X86.Keys.Ws s E.base E.size E.n 32)
+    (C : Context E.base E.size sp E.argument s) (hj : j < 32) (nonzero : j ≠ aZero)
+    (hp : pointer < 18) (hl : length < 18)
+    (pointerEq : E.argument pointer = p) (lengthEq : E.argument length = BitVec.ofNat 32 len)
+    (positive : 0 < len) (bound : len ≤ 4 * E.n)
+    (fit : p.toNat + len ≤ 2 ^ 32) (write : InRegions s.wr (p.setWidth 64) len)
+    (separate : Region.Disjoint ⟨E.base, E.size⟩ ⟨p.setWidth 64, len⟩)
+    (far : (argsRegion sp).Disjoint ⟨p.setWidth 64, len⟩)
+    (zero : num s.mem E.base E.n aZero = 0) (accept : Bool)
+    (mask : slot s.mem E.base kOk = if accept then 1 else 0) :
+    WP isa (writeArray j pointer length) s fun t =>
+      VG.Proof.Rsa.X86.Keys.Ws t E.base E.size E.n 32 ∧ Context E.base E.size sp E.argument t ∧
+      Spec.Rsa.bytesAt t.mem (p.setWidth 64) len =
+        Spec.Rsa.i2osp ((if accept then num s.mem E.base E.n j else 0) % 2 ^ (8 * len)) len ∧
+      Frame [⟨off E.base (arr E.n j), S E.n⟩, ⟨p.setWidth 64, len⟩] s.mem t.mem ∧
+      (∀ d, d + 4 ≤ hdr → slot t.mem E.base d = slot s.mem E.base d) ∧
+      (∀ k, k < 32 → k ≠ j → num t.mem E.base E.n k = num s.mem E.base E.n k) ∧
+      Keeps [.eax, .ecx, .edx, .ebp, .ebx, .esi] s t := by
+  obtain H := context_workspace valid C h
+  obtain fits := h.arr_fit hj
+  obtain fit64 := h.fit64 hj
+  have head := h.hdr_le
+  have nowrap := h.workspace.nowrap
+  unfold S at fits fit64
+  unfold writeArray arraySetup
+  refine WP.seq (WP.seq (WP.mono (sel_ok H hj (by decide) hj (by decide)
+    (by rw [mask]; cases accept <;> decide) (Or.inl nonzero)) fun u ⟨Hu, Ou, selected, Ku⟩ => ?_))
+  obtain raw : Outside E.base (arr E.n j) (S E.n) s.mem u.mem := by
+    intro a ha
+    apply Ou a
+    intro r hr
+    change r ∈ [(arr E.n j, S E.n)] at hr
+    obtain rfl := List.mem_singleton.mp hr
+    exact ha
+  obtain ownFrame := VG.Proof.Bignum.outside_frame raw (by unfold S; exact fit64)
+  obtain ownFar : (argsRegion sp).Disjoint ⟨off E.base (arr E.n j), S E.n⟩ :=
+    C.separate.sub_right (Offset.sub_base E.base (by unfold S; exact fits))
+  obtain Cu := C.keepFar Ku ownFrame (by intro r hr; obtain rfl := List.mem_singleton.mp hr; exact ownFar)
+  obtain chosen : num u.mem E.base E.n j = if accept then num s.mem E.base E.n j else 0 := by
+    rw [selected, mask, zero]
+    cases accept <;> rfl
+  obtain Pu := context_argument Cu (i := pointer) hp
+  obtain Lu := context_argument Cu (i := length) hl
+  simp only [List.cons_append, List.nil_append]
+  refine wp_movS Pu.readSrc fun a A _ => ?_
+  refine wp_movS (Lu.keep A.keeps (by decide) (by rw [A.mem]; exact Outside.refl _ _ _ _)).readSrc
+    fun b Bb _ => ?_
+  obtain Kab : Keeps [.ebx, .ecx] u b := (A.keeps.mono (by decide)).trans (Bb.keeps.mono (by decide))
+  obtain mb : b.mem = u.mem := Bb.mem.trans A.mem
+  obtain Hb := Hu.keep Kab (by rw [mb]; exact Outside.refl _ _ _ _)
+  obtain ebx_b : b.gpr .ebx = p := by rw [Bb.other _ (by decide), A.gpr, pointerEq]
+  obtain ecx_b : b.gpr .ecx = BitVec.ofNat 32 len := by rw [Bb.gpr, lengthEq]
+  refine Hb.ptr_ok (arr j) (r := .esi) (t := .edx) (by decide) (by decide)
+    (by change arr E.n j < _; omega_using [fits, nowrap]) fun c Kc mc Pc => ?_
+  refine wp_addS rfl fun d D _ => wp_subS rfl fun e Ee _ => WP.block_nil ?_
+  obtain Kce : Keeps [.esi] c e := (D.keeps.mono (by decide)).trans (Ee.keeps.mono (by decide))
+  obtain me : e.mem = u.mem := by rw [Ee.mem, D.mem, mc, mb]
+  obtain Kue : Keeps [.ebx, .ecx, .esi, .edx] u e :=
+    ((Kab.mono (by decide)).trans (Kc.mono (by decide))).trans (Kce.mono (by decide))
+  obtain Kse : Keeps [.eax, .ecx, .edx, .ebp, .ebx, .esi] s e := (Ku.mono (by decide)).trans (Kue.mono (by decide))
+  obtain ebx_e : e.gpr .ebx = p := by
+    rw [Ee.other _ (by decide), D.other _ (by decide), Kc.1 _ (by decide), ebx_b]
+  obtain ecx_e : e.gpr .ecx = BitVec.ofNat 32 len := by
+    rw [Ee.other _ (by decide), D.other _ (by decide), Kc.1 _ (by decide), ecx_b]
+  obtain ecx_c : c.gpr .ecx = BitVec.ofNat 32 len := by rw [Kc.1 _ (by decide), ecx_b]
+  obtain srcNat : (c.gpr .esi).toNat = E.base.toNat + arr E.n j := by
+    have P : (c.gpr .esi).toNat = (E.base.toNat + arr E.n j) % 2 ^ 32 := Pc
+    rw [P, Nat.mod_eq_of_lt (by omega_using [fits, nowrap])]
+  obtain lenSmall : len < 2 ^ 32 := by omega_using [bound, fits, nowrap]
+  obtain esi_e : e.gpr .esi = c.gpr .esi + BitVec.ofNat 32 (len - 1) := by
+    rw [Ee.gpr, D.gpr, ecx_c]
+    apply BitVec.eq_of_toNat_eq
+    simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat]
+    rw [show (1 : BitVec 32).toNat = 1 from rfl]
+    have := (c.gpr .esi).isLt
+    omega_using [positive]
+  obtain source : byteAddr (c.gpr .esi) = off E.base (arr E.n j) := by
+    apply BitVec.eq_of_toNat_eq
+    simp only [byteAddr, off, BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_ofNat, srcNat]
+    omega_using []
+  obtain rd : e.rd ++ e.wr = s.rd ++ s.wr := by rw [Kse.2.1, Kse.2.2]
+  refine WP.mono (VG.Proof.Bignum.X86.reverseBuffer_ok e (src := c.gpr .esi) (dst := p) positive
+    (by omega_using [bound, fits, nowrap, srcNat]) fit lenSmall
+    (by rw [rd, source]; exact h.workspace.read (by omega_using [bound, fits]))
+    (by rw [Kse.2.2]; exact write)
+    (by rw [source]; exact separate.sub_left (Offset.sub_base E.base (by omega_using [bound, fits])))
+    ebx_e esi_e ecx_e)
+    fun t ⟨V, F, _, Kt⟩ => ?_
+  rw [source, me] at V
+  rw [me] at F
+  change Frame [⟨p.setWidth 64, len⟩] u.mem t.mem at F
+  obtain all : Keeps [.eax, .ecx, .edx, .ebp, .ebx, .esi] s t := Kse.trans (Kt.mono (by decide))
+  obtain prefixValue : (u.mem.read (off E.base (arr E.n j)) len).toNat =
+      num u.mem E.base E.n j % 2 ^ (8 * len) := by
+    rw [VG.Proof.Bignum.read_prefix u.mem _ bound, BitVec.toNat_setWidth, VG.Proof.Bignum.read_eq_val32]
+  refine ⟨h.rest all, Cu.keepFar ((Kue.mono (rs' := [.eax, .ebx, .ecx, .esi, .edx]) (by decide)).trans (Kt.mono (by decide))) F
+    (by intro r hr; obtain rfl := List.mem_singleton.mp hr; exact far), ?_, ?_, ?_, ?_, all⟩
+  · change Spec.Rsa.bytesAt t.mem (p.setWidth 64) len = _ at V
+    rw [V, prefixValue, chosen]
+  · exact (ownFrame.mono (by simp)).trans (F.mono (by simp))
+  · intro d hd
+    change w32 t.mem E.base d = w32 s.mem E.base d
+    rw [VG.Proof.RsaKeyGen.X86.Key.output_word h separate F (by omega_using [head, hd])]
+    exact Ou.slot hd (by simp)
+  · intro k hk different
+    rw [VG.Proof.RsaKeyGen.X86.Key.output_num h separate F hk]
+    exact Ou.num (by intro a ha; obtain rfl := List.mem_singleton.mp ha; exact Ne.symm different)
+      (by simp) (h.fit64 hk)
+
+end VG.Proof.RsaKeyGen.X86.KeyRuntime
+
+end
+
+end
 
 /-! # The seven masked key outputs and the status, at the run-time width -/
 

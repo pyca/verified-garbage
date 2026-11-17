@@ -2,16 +2,15 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.LimitedParams
 public import VerifiedGarbage.Impl.Ffdh.Arm.ParameterCandidate
-
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidatePhaseHead
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidatePhaseFrame
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateMemory
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.PhaseHeader
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.Arm.Workspace
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
+
 /-! Limit a prepared p header while preserving all candidate metadata and tape counters. -/
 
 -- Formerly `VerifiedGarbage/Proof/Ffdh/Arm/ParameterCandidate/LimitStore.lean`, which only this module imported.

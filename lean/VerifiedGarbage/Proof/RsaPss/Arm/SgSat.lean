@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPss.Arm.SgBase
-public import VerifiedGarbage.Proof.MdHashTable.Arm.Tables
 public import VerifiedGarbage.Proof.HashTable.Arm
 public import VerifiedGarbage.Proof.RsaPss.Arm.SgP
 public import VerifiedGarbage.Proof.Rsa.PreKey

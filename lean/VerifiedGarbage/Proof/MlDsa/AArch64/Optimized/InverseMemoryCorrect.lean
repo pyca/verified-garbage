@@ -1,15 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseMemory
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseMemorySchedule
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseSliceComposition
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Representation
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseBankField
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFinalBankFieldRun
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFinalBankFieldFold
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFinalLoop
 public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseSliceComposition
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductMemory
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MemoryBank
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
@@ -20,6 +16,209 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TraversalBank
 public import VerifiedGarbage.Proof.MlDsa.MontgomeryContract
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MemoryOuterPass
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversalCorrect
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFinalBankFieldStage
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFinalRoots
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseScale
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Residue
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFirstLoop
+
+/-! ### `MlDsa.AArch64.Optimized.InverseMemory`, which only this module used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.AArch64.Optimized.Inverse
+open VG VG.AArch64 VG.Spec.MlDsa VG.Proof.MlDsa.Arith
+
+def firstMemStep (m : Mem) (p : Addr) (u : Nat) : Mem :=
+  writeBank (fiveValues u (readBank m (coeffAddr p (32*u)) 16)) (coeffAddr p (32*u)) 16 m
+
+def finalMemStep (m : Mem) (p : Addr) (q : BitVec 128) (u : Nat) : Mem :=
+  writeBank (finalValues (readBank m (coeffAddr p (4*u)) 128) q) (coeffAddr p (4*u)) 128 m
+
+theorem firstPassMem_step (m : Mem) (p : Addr) (u : Nat) :
+    firstPassMem m p (u+1)=firstMemStep (firstPassMem m p u) p u := by
+  simp only [firstPassMem,firstMemStep,coeffAddr,show 4*(32*u)=128*u by omega_using []]
+
+theorem finalPassMem_step (m : Mem) (p : Addr) (q : BitVec 128) (u : Nat) :
+    finalPassMem m p q (u+1)=finalMemStep (finalPassMem m p q u) p q u := by
+  simp only [finalPassMem,finalMemStep,coeffAddr,show 4*(4*u)=16*u by omega_using []]
+
+theorem firstMemStep_at (m : Mem) (p : Addr) {u : Nat} (hu : u<8) (i : Fin 8)
+    {e : Nat} (he : e<4) :
+    coeffAt (firstMemStep m p u) p (32*u+4*i.val+e)=
+      vword (fiveValues u (readBank m (coeffAddr p (32*u)) 16))[i.val] e := by
+  exact writeBank_coeff_at _ m p (start := 32*u) (step := 4) (by decide) (by omega_using [hu]) i he
+
+theorem firstMemStep_outside (m : Mem) (p : Addr) {u k : Nat}
+    (hu : u<8) (hk : k<n) (hout : k<32*u ∨ 32*(u+1)≤k) :
+    coeffAt (firstMemStep m p u) p k=coeffAt m p k := by
+  apply writeBank_coeff_outside (start := 32*u) (step := 4) _ m p (by omega_using [hu]) hk
+  intro i; omega_using [hout]
+
+theorem firstPass_untouched (m : Mem) (p : Addr) {u k : Nat}
+    (hu : u≤8) (hk : k<n) (hbefore : 32*u≤k) :
+    coeffAt (firstPassMem m p u) p k=coeffAt m p k := by
+  induction u with
+  | zero => rfl
+  | succ u ih =>
+    rw [firstPassMem_step,firstMemStep_outside _ _ (by omega_using [hu]) hk (Or.inr hbefore)]
+    exact ih (by omega_using [hu]) (by omega_using [hbefore])
+
+theorem finalMemStep_at (m : Mem) (p : Addr) (q : BitVec 128) {u : Nat}
+    (hu : u<8) (i : Fin 8) {e : Nat} (he : e<4) :
+    coeffAt (finalMemStep m p q u) p (4*u+32*i.val+e)=
+      vword (finalValues (readBank m (coeffAddr p (4*u)) 128) q)[i.val] e := by
+  exact writeBank_coeff_at _ m p (start := 4*u) (step := 32) (by decide) (by omega_using [hu]) i he
+
+theorem finalMemStep_outside (m : Mem) (p : Addr) (q : BitVec 128) {u k : Nat}
+    (hu : u<8) (hk : k<n) (hout : k%32/4≠u) :
+    coeffAt (finalMemStep m p q u) p k=coeffAt m p k := by
+  apply writeBank_coeff_outside (start := 4*u) (step := 32) _ m p (by omega_using [hu]) hk
+  intro i; omega_using [hu, hout]
+
+theorem finalPass_untouched (m : Mem) (p : Addr) (q : BitVec 128) {u k : Nat}
+    (hu : u≤8) (hk : k<n) (hbefore : u≤k%32/4) :
+    coeffAt (finalPassMem m p q u) p k=coeffAt m p k := by
+  induction u with
+  | zero => rfl
+  | succ u ih =>
+    rw [finalPassMem_step,finalMemStep_outside _ _ _ (by omega_using [hu]) hk (by omega_using [hbefore])]
+    exact ih (by omega_using [hu]) (by omega_using [hbefore])
+
+/-- A later local block still reads the original, unexpanded input range. -/
+theorem firstPass_bank_bound {m : Mem} {p : Addr} {u : Nat} {bound : Int}
+    (hu : u<8) (h : ∀ k<n, -bound≤(coeffAt m p k).toInt ∧ (coeffAt m p k).toInt≤bound)
+    (i : Fin 8) {e : Nat} (he : e<4) :
+    -bound≤(vword (readBank (firstPassMem m p u) (coeffAddr p (32*u)) 16)[i.val] e).toInt ∧
+      (vword (readBank (firstPassMem m p u) (coeffAddr p (32*u)) 16)[i.val] e).toInt≤bound := by
+  rw [readBank_coeff _ p (32*u) 4 i he]
+  have hk : 32*u+4*i.val+e<n := by change 32*u+4*i.val+e<256; omega_using [hu, he]
+  rw [firstPass_untouched m p (by omega_using [hu]) hk (by omega_using [])]
+  exact h _ hk
+
+end VG.Proof.MlDsa.AArch64.Optimized.Inverse
+
+end
+
+end
+
+/-! ### `MlDsa.AArch64.Optimized.InverseFinalBankFieldFold`, which this module and modules that import it used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.AArch64.Optimized.Inverse
+open VG VG.AArch64 VG.Spec.MlDsa VG.Proof.MlDsa.Arith
+
+theorem scaleValues_word (v : Vector (BitVec 128) 8) (k : Fin 8) {e : Nat} (he : e<4) :
+    vword (scaleValues v)[k.val] e=
+      if k.val<4 then fastMulWord (vword v[k.val] e) 16382 else vword v[k.val] e := by
+  simp only [scaleValues,Vector.getElem_ofFn]
+  split
+  · exact fastVector_word _ _ he
+  · rfl
+
+theorem final_sides (k : Fin 8) : (leftSide 6 k.val ↔ k.val<4) ∧ (rightSide 6 k.val ↔ ¬k.val<4) := by
+  exact (show ∀ k : Fin 8, (leftSide 6 k.val ↔ k.val<4) ∧ (rightSide 6 k.val ↔ ¬k.val<4) by decide +kernel) k
+
+theorem folded_root_field : ofInt (finalZ 6 0)=ofInt (negZetaNat 1 : Int)*ofInt 16382 := by decide +kernel
+
+theorem folded_lane (v : Vector (BitVec 128) 8) (k : Fin 8) {e : Nat} (he : e<4) :
+    let x := vword (scaleValues (stageValues 6 v (finalZ 6)))[k.val] e;
+    -8380417<x.toInt ∧ x.toInt<2*8380417 ∧
+      ofInt x.toInt=ofInt (vword (stageValues 6 v (fun _ => (negZetaNat 1 : Int)))[k.val] e).toInt*ofInt 16382 := by
+  dsimp only
+  rw [scaleValues_word _ _ he,stageValues_word _ _ _ _ he]
+  simp only [(final_sides k).1,(final_sides k).2]
+  by_cases hk : k.val<4
+  · rw [ite_eq_left hk,ite_eq_left hk]
+    have hb := fastMul_bounds (z := (16382 : Int))
+      (BitVec.le_toInt (vword v[(leftSource 6 k).val] e+vword v[(rightSource 6 k).val] e))
+      (BitVec.toInt_lt (x := vword v[(leftSource 6 k).val] e+vword v[(rightSource 6 k).val] e))
+    rw [fastMulWord_int]
+    refine ⟨hb.1,hb.2,?_⟩
+    rw [fastMul_field,stageValues_word _ _ _ _ he,ite_eq_left ((final_sides k).1.mpr hk)]
+  · rw [ite_eq_right hk,ite_eq_right hk,ite_eq_left hk]
+    have hb := fastMul_bounds (z := finalZ 6 e)
+      (BitVec.le_toInt (vword v[(leftSource 6 k).val] e-vword v[(rightSource 6 k).val] e))
+      (BitVec.toInt_lt (x := vword v[(leftSource 6 k).val] e-vword v[(rightSource 6 k).val] e))
+    rw [fastMulWord_int]
+    refine ⟨hb.1,hb.2,?_⟩
+    rw [fastMul_field,stageValues_word _ _ _ _ he,
+      ite_eq_right (fun h => hk ((final_sides k).1.mp h)),ite_eq_left ((final_sides k).2.mpr hk),
+      fastMulWord_int,fastMul_field]
+    change _*ofInt (finalZ 6 0)=_
+    rw [folded_root_field,Fin.mul_assoc]
+
+theorem foldedStage_field (v : Vector (BitVec 128) 8) (w : Poly) {u : Nat} (hu : u<8)
+    (hv : StageBound v 6 268173344) (hf : BankField u v w)
+    (k : Fin 8) {e : Nat} (he : e<4) :
+    let x := vword (scaleValues (stageValues 6 v (finalZ 6)))[k.val] e;
+    -8380417<x.toInt ∧ x.toInt<2*8380417 ∧
+      ofInt x.toInt=(InverseTraversal.run (stridedStageOps u 1 6) w)[InverseTraversal.stridedLoc u k.val e]!*ofInt 16382 := by
+  have h := folded_lane v k he
+  have hs := stridedStageValues_field (6 : Fin 7) v w hu 1 (by decide) (by decide) hv hf k e he
+  exact ⟨h.1,h.2.1,h.2.2.trans (congrArg (·*ofInt 16382) hs)⟩
+
+end VG.Proof.MlDsa.AArch64.Optimized.Inverse
+
+end
+
+end
+
+/-! ### `MlDsa.AArch64.Optimized.InverseFinalBankFieldRun`, which this module and modules that import it used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.AArch64.Optimized.Inverse
+open VG VG.AArch64 VG.Spec.MlDsa VG.Proof.MlDsa.Arith
+
+def finalIndex (i : Nat) : Nat := if i<4 then 7-i else if i<6 then 3-(i-4) else 1
+
+def stridedRunOps (u i : Nat) : Nat → List InverseTraversal.Op
+  | 0 => []
+  | n+1 => stridedStageOps u (finalIndex i) i ++ stridedRunOps u (i+1) n
+
+theorem finalZ_index {i : Nat} (hi : i<6) : finalZ i=(fun _ => (negZetaNat (finalIndex i) : Int)) := by
+  funext e
+  simp only [finalZ,finalValue,finalIndex]
+  split
+  · rfl
+  · rfl
+
+theorem runValues_final_six (i n : Nat) (hin : i+n≤6) (v : Vector (BitVec 128) 8) (w : Poly)
+    {u : Nat} (hu : u<8) (hv : StageBound v i 268173344) (hf : BankField u v w) :
+    StageBound (runValues finalZ i n v) (i+n) 268173344 ∧
+      BankField u (runValues finalZ i n v) (InverseTraversal.run (stridedRunOps u i n) w) := by
+  induction n generalizing i v w with
+  | zero => exact ⟨hv,hf⟩
+  | succ n ih =>
+    have hi : i<6 := by omega_using [hin]
+    have hp := stageValues_bound ⟨i,by omega_using [hin]⟩ v (finalZ i) (by decide) (by decide) hv
+    have hfield := stridedStageValues_field ⟨i,by omega_using [hin]⟩ v w hu (finalIndex i) (by decide) (by decide) hv hf
+    rw [← finalZ_index hi] at hfield
+    have h := ih (i := i+1) (by omega_using [hin]) _ _ hp hfield
+    simpa only [runValues,stridedRunOps,InverseTraversal.run_append,Nat.add_assoc,Nat.add_comm 1 n] using h
+
+theorem stridedOps_eq {u : Nat} (hu : u<8) :
+    stridedRunOps u 0 6 ++ stridedStageOps u 1 6=InverseTraversal.stridedSlice u := by
+  exact (show ∀ u : Fin 8,
+    stridedRunOps u.val 0 6 ++ stridedStageOps u.val 1 6=InverseTraversal.stridedSlice u.val
+    by decide +kernel) ⟨u,hu⟩
+
+theorem runValues_split_last (v : Vector (BitVec 128) 8) :
+    runValues finalZ 0 7 v=stageValues 6 (runValues finalZ 0 6 v) (finalZ 6) := rfl
+
+end VG.Proof.MlDsa.AArch64.Optimized.Inverse
+
+end
+
+end
 
 /-! ### `MlDsa.AArch64.Optimized.InverseMemoryFinalField`, which only this module used -/
 

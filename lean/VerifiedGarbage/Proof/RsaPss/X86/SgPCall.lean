@@ -4,14 +4,13 @@ public import VerifiedGarbage.Proof.RsaPss.X86.SgVerified
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.PrivCallP
 import VerifiedGarbage.Proof.Rsa.X86.PrivStackSafety
 import VerifiedGarbage.Proof.Rsa.BytesFrame
-import VerifiedGarbage.Proof.RsaPss.X86.NoSp
+import VerifiedGarbage.Proof.RsaOaep.X86.NoSp
 import VerifiedGarbage.Proof.RsaPss.X86.NoSpT
 import VerifiedGarbage.Proof.RsaPss.X86.Taint
 import VerifiedGarbage.Proof.RsaPkcs1Sig.BytesAt
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86.Syms
 import VerifiedGarbage.Proof.RsaOaep.X86.LabelT
-import VerifiedGarbage.Proof.RsaOaep.X86.NoSp
 meta import VerifiedGarbage.Impl.RsaPss.X86
 meta import VerifiedGarbage.Proof.Framework.X86.RelCT
 

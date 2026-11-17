@@ -23,7 +23,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 # RSASSA-PSS signing on RISC-V: the encoding
 
 Untrusted: everything here is checked by Lean. As on PPC64LE
-(`Proof/RsaPss/PPC64LE/Sg/Em.lean`, `Sg/EnView.lean`, `Sg/Blocks.lean`,
+(`Proof/RsaPss/PPC64LE/Sg/Spec.lean`, `Sg/EnView.lean`, `Sg/Blocks.lean`,
 `Sg/Enc.lean`): the writes to our part of `scratch`, each keeping `Base`:
 `M' = 0⁸ ‖ mHash ‖ salt` at `oY` (`mPrime_ok`, its bytes `mPrime_bytes`);
 `EM`'s place cleared (`clearEm_ok`), `0x01` and the salt (`putSalt_ok`), `H`

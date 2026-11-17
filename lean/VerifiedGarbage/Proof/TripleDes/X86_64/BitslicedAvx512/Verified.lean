@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.TripleDes.Schedule
 import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Bytes
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Ecb
-import VerifiedGarbage.Proof.TripleDes.X86_64.SaveRegs
+import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.Ecb
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx2.Ecb
@@ -24,7 +24,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.X86_64.Sse
 import VerifiedGarbage.Proof.TripleDes.Bitslice.Layout
 import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx2.Round
-import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.Round
+import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.Pass
 import VerifiedGarbage.Proof.TripleDes.X86_64.Sbox
 
 /-! ### `TripleDes.X86_64.BitslicedAvx512.Ecb`, which only this module used -/

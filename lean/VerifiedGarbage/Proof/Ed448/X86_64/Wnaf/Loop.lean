@@ -1,10 +1,10 @@
 module
+
 public import VerifiedGarbage.Impl.Ed448.X86_64.Wnaf.Joint
-public import VerifiedGarbage.Proof.Ed448.Window
+public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Mask
 public import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Fn
 public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Memory
 public import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Step
-
 import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Math
 import VerifiedGarbage.Proof.Ed448.Wnaf.Recoding
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd

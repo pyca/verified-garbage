@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.MlDsa.RISCV64.KeyGen.RestRow
+public import VerifiedGarbage.Proof.MlDsa.RISCV64.KeyGen.RestRow
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Rest
 import VerifiedGarbage.Proof.MlKem.KPke
 import VerifiedGarbage.Proof.MlKem.Mem
@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 meta import VerifiedGarbage.Proof.MlDsa.RISCV64.KeyGen.RestRow
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
-public import VerifiedGarbage.Proof.MlDsa.RISCV64.KeyGen.RestPack
 
 /-!
 # ML-DSA key generation on RISC-V: `vg_mldsa44_keygen`, `vg_mldsa65_keygen`, `vg_mldsa87_keygen`

@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.FBatchStep
 public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.FScatter
 public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Virtualize
 public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Slots
-public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.State
+public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Batch
 public import VerifiedGarbage.Proof.Rsa.Divstep.OddInputDef
 import VerifiedGarbage.Proof.Rsa.X86.GcdBatch.InitWords
 import VerifiedGarbage.Proof.Mont.X86.Inverse

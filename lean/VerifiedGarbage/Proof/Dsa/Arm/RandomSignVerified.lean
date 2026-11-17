@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.Dsa.Arm.Entry
 public import VerifiedGarbage.Impl.Dsa.Arm.RandomSign
 public import VerifiedGarbage.Proof.Dsa.Arm.RandomTwo
-public import VerifiedGarbage.Proof.Dsa.Arm.RandomCall
+public import VerifiedGarbage.Proof.Dsa.Arm.RandomAttempt
 public import VerifiedGarbage.Proof.Framework.Arm.Call
 public import VerifiedGarbage.Proof.Dsa.SignContractWith
 import VerifiedGarbage.Proof.Dsa.Arm.RandomBodyCT
@@ -23,7 +23,6 @@ public import VerifiedGarbage.Spec.Dsa.PrevalidatedSign
 public import VerifiedGarbage.Proof.Dsa.PrivateKeyWitness
 public import VerifiedGarbage.Proof.Dsa.Arm.SignCorrect
 public import VerifiedGarbage.Proof.Dsa.Arm.SignCT
-public import VerifiedGarbage.Proof.Dsa.Arm.PrevalidatedSign
 public import VerifiedGarbage.Proof.Dsa.Arm.PrevalidatedSignCT
 import VerifiedGarbage.Proof.Dsa.Arm.PrevalidatedVerified
 

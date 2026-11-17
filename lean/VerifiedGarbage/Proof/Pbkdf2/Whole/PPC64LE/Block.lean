@@ -3,9 +3,8 @@ module
 public import VerifiedGarbage.Impl.Pbkdf2.Whole.PPC64LE
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.PPC64LE.Contract
 public import VerifiedGarbage.Proof.Pbkdf2.Stream.PPC64LE.Contract
-public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Calls
 public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Hash
-public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Save
+public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Init
 public import VerifiedGarbage.Proof.Framework.PPC64LE.CallAny
 public import VerifiedGarbage.Proof.MdStream.PPC64LE.Basic
 import VerifiedGarbage.Proof.Framework.Offset

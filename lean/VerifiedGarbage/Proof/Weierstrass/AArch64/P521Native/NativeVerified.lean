@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Native.NativeWindow
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Framework.RelCTAssoc
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Native.NativeEntry
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Verified
 import VerifiedGarbage.Proof.Framework.AArch64.Lit

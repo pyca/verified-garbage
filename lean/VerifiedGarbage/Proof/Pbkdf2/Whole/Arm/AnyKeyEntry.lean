@@ -3,9 +3,8 @@ module
 import VerifiedGarbage.Proof.Framework.EntryBranch
 public import VerifiedGarbage.Impl.Pbkdf2.Md.AnyKey.Arm
 public import VerifiedGarbage.Proof.Hmac.Contract
-public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Common
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Loop
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Upd
-import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Loop
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Hmac.Generic.Common
 import VerifiedGarbage.Proof.Framework.Arm.Contract

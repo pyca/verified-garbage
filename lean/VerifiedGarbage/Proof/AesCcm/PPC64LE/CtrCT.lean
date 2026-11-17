@@ -1,7 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.AesCcm.PPC64LE.CallArgs
-import VerifiedGarbage.Proof.AesCcm.PPC64LE.Crypt
+public import VerifiedGarbage.Proof.AesCcm.PPC64LE.Crypt
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.AesCcm.PPC64LE.CallArgs
 meta import VerifiedGarbage.Proof.AesCcm.PPC64LE.Crypt
@@ -10,7 +10,6 @@ meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.AesCcm.PPC64LE.Env
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Impl.AesCcm.PPC64LE
-public import VerifiedGarbage.Proof.AesCcm.PPC64LE.Chunk
 public import VerifiedGarbage.Proof.Gather.PPC64LE.LoopCT
 public import VerifiedGarbage.Spec.Ccm
 import VerifiedGarbage.Proof.AesCcm.PPC64LE.Wp

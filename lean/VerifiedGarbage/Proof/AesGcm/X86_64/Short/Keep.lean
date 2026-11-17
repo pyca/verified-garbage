@@ -1,11 +1,9 @@
 module
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Seal
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Front
 
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Seal
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Seal
 import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Open
-import VerifiedGarbage.Proof.AesGcm.X86_64.Short.CopyG
 import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Ks
-import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Xor
 import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset

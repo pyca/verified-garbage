@@ -1,7 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Aes.X86.AesNi.Invariant
-import VerifiedGarbage.Proof.Aes.X86.AesNi.Tail
+public import VerifiedGarbage.Proof.Aes.X86.AesNi.Tail
 import VerifiedGarbage.Proof.Aes.X86.AesNi.Load
 import VerifiedGarbage.Proof.Aes.X86.AesNi.Data
 import VerifiedGarbage.Proof.Framework.PlainSimp

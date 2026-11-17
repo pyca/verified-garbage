@@ -1,8 +1,7 @@
 module
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignFrame
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignEntry
 
-import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignSaved
+public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignFrame
+public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignSaved
 import VerifiedGarbage.Proof.Dsa.AArch64.Run
 import VerifiedGarbage.Proof.Framework.Contract
 

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Base
+public import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Inv
 import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Top
 import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.NoSp
 import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Prim

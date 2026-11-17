@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.Lazy
+public import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Top
 public import VerifiedGarbage.Proof.MlKem.X86_64.DecMul
 public import VerifiedGarbage.Proof.MlKem.X86_64.FinY
 import VerifiedGarbage.Proof.Framework.CallLay

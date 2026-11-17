@@ -1,19 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.Mont.X86.Sse2.Time
+public import VerifiedGarbage.Proof.Mont.X86.Sse2.AtVerified
 public import VerifiedGarbage.Proof.Mont.X86.Rt.ABI
 public import VerifiedGarbage.Proof.Rsa.MontContract
 import VerifiedGarbage.Proof.Mont.X86.ArgWs
 import VerifiedGarbage.Proof.Mont.X86.Compact.Prepared
 import VerifiedGarbage.Proof.Mont.X86.Compact.Arithmetic
-import VerifiedGarbage.Proof.Mont.X86.Compact.Layout
 import VerifiedGarbage.Proof.Mont.X86.Compact.EntryValues
 import VerifiedGarbage.Proof.Mont.X86.Square.FinalMath
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Mont.X86.Sse2.Body
 public import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Mont.X86.Sse2.AtVerified
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Mont.X86.Sse2.TimeTaint
 

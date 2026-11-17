@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Mont.X86.Step
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Weierstrass.MontContract
-import VerifiedGarbage.Proof.Mont.X86.Square.Scalar
+import VerifiedGarbage.Proof.Rsa.X86.Chain
 import VerifiedGarbage.Proof.Bignum.X86.CrtRt.SelectX
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Power
 import VerifiedGarbage.Proof.Weierstrass.X86.InvUnsigned

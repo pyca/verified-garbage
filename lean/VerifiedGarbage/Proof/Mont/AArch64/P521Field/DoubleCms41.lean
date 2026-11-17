@@ -1,13 +1,9 @@
 module
 
 -- separate module: The fused-coefficient word and normalization replay at DoubleCms41 (cms_one_eight_ok) costs 2.44s of proof versus 0.37s of imports; DoubleBlocks composition edits reuse this checked computation.
-
 public import VerifiedGarbage.Proof.Mont.AArch64.P521Field.CmsSmallLoaded
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Field.CmsTopMath
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Field.CmsOnePair
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Field.CmsLow
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Field.CmsAndWords
 public import VerifiedGarbage.Proof.Mont.AArch64.P521Field.CmsHigh
+public import VerifiedGarbage.Proof.Mont.AArch64.P521Field.CmsOnePair
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd

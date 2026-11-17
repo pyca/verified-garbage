@@ -3,7 +3,7 @@ module
 -- separate module: it builds in parallel with the constant-time proofs that do not need it (`CTBase`,
 -- `CTBlocks`).
 public import VerifiedGarbage.Proof.RsaOaep.RISCV64.Pub
-public import VerifiedGarbage.Proof.RsaOaep.RISCV64.Hashes
+public import VerifiedGarbage.Proof.HashTable.RISCV64
 public import VerifiedGarbage.Proof.MdHashTable.RISCV64.Tables
 public import VerifiedGarbage.Proof.RsaOaep.RISCV64.ByLen
 import VerifiedGarbage.Proof.Framework.RISCV64.Syms

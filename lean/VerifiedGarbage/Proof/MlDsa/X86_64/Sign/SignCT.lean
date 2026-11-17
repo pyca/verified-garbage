@@ -1,7 +1,6 @@
 module
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseLCT
 
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseOCT
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseOCT
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseOCT
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseACT
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseACT

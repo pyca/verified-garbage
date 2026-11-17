@@ -1,14 +1,12 @@
 module
 
 -- separate module: The mixed-add literal schedule partition and instruction replay (mixed_arithmetic_source) costs 6.22s of proof versus 0.33s of imports; MixedBody composition edits reuse this checked computation.
-
 public import VerifiedGarbage.Proof.Mont.AArch64.P521Field.MixedSquare5
 public import VerifiedGarbage.Proof.Mont.AArch64.P521Field.MixedMul3Field
 public import VerifiedGarbage.Proof.Mont.AArch64.P521Field.MixedMul4Field
 public import VerifiedGarbage.Proof.Mont.AArch64.P521Field.MixedMul5Field
 public import VerifiedGarbage.Proof.Mont.AArch64.P521Field.LinearSub
 public import VerifiedGarbage.Impl.Mont.AArch64.P521Field.Kernels
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Field.HoistMarked
 public import VerifiedGarbage.Proof.Mont.AArch64.P521Field.PointSchedule
 import VerifiedGarbage.Proof.Mont.AArch64.P521Field.KernelSlice
 import VerifiedGarbage.Proof.Framework.AArch64.Exec

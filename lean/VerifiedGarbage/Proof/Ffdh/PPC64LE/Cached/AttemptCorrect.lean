@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Cached.Attempt
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.GenerateKey.ScalarEq
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.Derive.Status
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.ExchangeCorrect
-import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.DomainBody
+import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckDomainFn
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckPublicFn
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubCorrect
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreCore

@@ -4,7 +4,6 @@ public import VerifiedGarbage.Impl.Sm4.Arm.SerialOfb
 import VerifiedGarbage.Proof.Sm4.Arm.CfbGroup
 import VerifiedGarbage.Proof.Sm4.Arm.CfbFill
 public import VerifiedGarbage.Proof.Sm4.Arm.BatchChain
-import VerifiedGarbage.Proof.Sm4.Arm.Keys
 import VerifiedGarbage.Proof.Sm4.Arm.Group
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith

@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Step
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Search
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Entry
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Hmac
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Prep
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Reduce
 import VerifiedGarbage.Proof.Framework.PPC64LE.Alloc

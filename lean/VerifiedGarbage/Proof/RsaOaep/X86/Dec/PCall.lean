@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.RsaOaep.X86.Certs
 import VerifiedGarbage.Proof.RsaOaep.X86.NoSp
 import VerifiedGarbage.Proof.RsaOaep.X86.LabelT
 import VerifiedGarbage.Proof.RsaOaep.X86.Taint
-import VerifiedGarbage.Proof.RsaPss.X86.NoSp
 import VerifiedGarbage.Proof.RsaPkcs1Sig.BytesAt
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86.Syms

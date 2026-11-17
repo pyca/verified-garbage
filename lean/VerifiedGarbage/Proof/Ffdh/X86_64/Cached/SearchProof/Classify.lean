@@ -1,13 +1,13 @@
 module
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.SearchProof.AttemptRun
 
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.SearchProof.AttemptRun
 import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.SearchProof.Rejects
 import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchClassify
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.SearchProof.Exits
 import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.SearchProof.Outputs
 import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.SearchProof.Live
-import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchTerminal
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchTerminate
 
 /-! # After an attempt: the key, or one fewer scalar or key -/
 

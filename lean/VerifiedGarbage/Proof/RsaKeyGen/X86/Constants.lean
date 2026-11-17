@@ -2,18 +2,108 @@ module
 
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.Constants
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.PreparedR2State
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.ConstantsFrame
 public import VerifiedGarbage.Proof.Framework.X86.Call
-
-import VerifiedGarbage.Proof.RsaKeyGen.X86.ConstantsOne
-import VerifiedGarbage.Proof.RsaKeyGen.X86.ConstantsMath
 import VerifiedGarbage.Proof.RsaKeyGen.X86.PreparedCopy
 import VerifiedGarbage.Proof.RsaKeyGen.X86.PreparedContext
 import VerifiedGarbage.Proof.MillerRabin.X86.Multiply
 import VerifiedGarbage.Proof.Mont.X86.WordOps
-import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Mont.Words32
 import VerifiedGarbage.Proof.Mont.X86.Words
+public import VerifiedGarbage.Proof.MillerRabin.X86.MontFrame
+public import VerifiedGarbage.TCB.Mem
+public import VerifiedGarbage.Impl.Mont.X86.Power
+import VerifiedGarbage.Proof.Mont.X86.PowerInit
+public import VerifiedGarbage.Proof.MillerRabin.Word32
+
+/-! ### `RsaKeyGen.X86.ConstantsMath`, which this module and modules that import it used -/
+
+section
+
+/-! # Multiplying a plain one by R² produces the Montgomery representation of one -/
+
+@[expose] public section
+namespace VG.Proof.RsaKeyGen.X86.Constants
+open VG VG.Proof.MillerRabin
+
+theorem one_r2 {c w : Nat} (odd : c % 2 = 1) :
+    Word32.mm c w 1 (2 ^ (64 * w) * 2 ^ (64 * w) % c) = 2 ^ (64 * w) % c := by
+  unfold Word32.mm
+  rw [Nat.one_mul, Nat.mod_mul_mod, Nat.mul_assoc, Nat.mul_mod, Word32.R_rinv odd,
+    ← Nat.mul_mod, Nat.mul_one]
+
+end VG.Proof.RsaKeyGen.X86.Constants
+
+end
+
+end
+
+/-! ### `RsaKeyGen.X86.ConstantsOne`, which this module and modules that import it used -/
+
+section
+
+/-! # Plain one enters the prepared multiplier without rebuilding its modulus -/
+
+@[expose] public section
+namespace VG.Proof.RsaKeyGen.X86.Constants
+open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.MillerRabin.X86 VG.Proof.RsaKeyGen.X86.PreparedR2
+
+theorem plainOne_ok {g : Geometry} (v : g.Valid) {s : State} {c capacity : Nat} {p : BitVec 32}
+    (S : Ready g c capacity p s) :
+    WP isa (VG.Impl.Mont.X86.Dynamic.one g.w (g.array 6)) s fun t =>
+      Ready g c capacity p t ∧ val32 t.mem g.W (g.array 6) g.words = 1 ∧
+      val32 t.mem g.W (g.array 4) g.words = val32 s.mem g.W (g.array 4) g.words ∧
+      Outside g.W (g.array 6) (4 * g.words) s.mem t.mem ∧ Keeps [.eax, .ebp, .edx] s t := by
+  refine WP.mono (VG.Proof.Mont.X86.Dynamic.one_ok S.scratch (by have := v.minWidth; omega_using [this])
+    (show g.array 6 + 8 * g.w ≤ g.L from by have := v.arrayFit (j := 6) (by decide); unfold Geometry.words at this; omega_using [this]))
+    fun t ⟨O, V, K⟩ => ?_
+  rw [show 8 * g.w = 4 * g.words by unfold Geometry.words; omega_using []] at O
+  have W := Outs.of_outside O (List.mem_singleton_self _)
+  have F := WorkspaceFrame.of_outs S.scratch.nowrap W
+  refine ⟨⟨S.context.keepOutside K (by decide) O (v.arrayHeader _),
+    S.modulus.keep v F (fun r mem => by obtain rfl := List.mem_singleton.mp mem; exact Or.inl (by have := v.arrayHeader 6; omega))
+      (fun r mem => by obtain rfl := List.mem_singleton.mp mem; exact Or.inl (g.arrayBefore (by decide))),
+    S.caller.keepOuts K (by decide) W (fun r mem => by obtain rfl := List.mem_singleton.mp mem; exact v.arrayFit (by decide)),
+    S.scratch.of_keeps K (by decide)⟩, ?_, ?_, O, K⟩
+  · unfold Geometry.words
+    rw [← wordsVal_eq_val32]
+    exact V
+  · exact O.val32 (Or.inl (g.arrayBefore (by decide))) (by have := S.scratch.nowrap; have := v.arrayFit (j := 4) (by decide); omega_arith)
+
+end VG.Proof.RsaKeyGen.X86.Constants
+
+end
+
+end
+
+/-! ### `RsaKeyGen.X86.ConstantsFrame`, which this module and modules that import it used -/
+
+section
+
+/-! # Preparing one and minus one preserves R², c-1 and the exponent -/
+
+@[expose] public section
+namespace VG.Proof.RsaKeyGen.X86.Constants
+open VG VG.Proof.Mont VG.Proof.MillerRabin.X86
+
+def ranges (g : Geometry) : List (Nat × Nat) := montWrites g 6 ++ [(g.array 9, 4 * g.words), (g.array 10, 4 * g.words)]
+
+theorem preserve {g : Geometry} (v : g.Valid) {s t : Mem} (F : WorkspaceFrame g (ranges g) s t)
+    {j : Nat} (index : j = 4 ∨ j = 5 ∨ j = 27) :
+    val32 t g.W (g.array j) g.words = val32 s g.W (g.array j) g.words := by
+  apply F.val32 (v.arrayFit (by omega_using [index]))
+  intro r mem
+  simp only [ranges, montWrites, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at mem
+  rcases index with rfl | rfl | rfl <;>
+    rcases mem with (rfl | rfl | rfl) | (rfl | rfl) <;>
+    simp only [Geometry.array, Geometry.words, Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes] <;> omega_using []
+
+end VG.Proof.RsaKeyGen.X86.Constants
+
+end
+
+end
+
 /-! # Complete one-time preparation of Montgomery one and minus one -/
 
 -- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/ConstantsSubtract.lean`, which only this module imported.

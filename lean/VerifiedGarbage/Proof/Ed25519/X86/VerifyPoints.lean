@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Ed25519.X86.WindowLoop
 public import VerifiedGarbage.Impl.Ed25519.X86.Verify
 import VerifiedGarbage.Proof.Ed25519.X86.PointEqual
-import VerifiedGarbage.Proof.Ed25519.X86.WindowTables
 import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseMain
 import VerifiedGarbage.Proof.Ed25519.Window
 import VerifiedGarbage.Proof.Framework.Contract

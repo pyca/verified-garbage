@@ -7,7 +7,7 @@ public import VerifiedGarbage.Impl.Ecdsa.PPC64LE.VerifyHash
 import VerifiedGarbage.Proof.Ecdsa.Verify.Curves
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.Hash
 meta import VerifiedGarbage.Impl.Ecdsa.PPC64LE.VerifyHash
-import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.Main
+public import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.Main
 public import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.P192.Contract
 public import VerifiedGarbage.Impl.Ecdsa.Verify.P192.PPC64LE
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
@@ -22,7 +22,6 @@ meta import VerifiedGarbage.Spec.Ecdsa.Verify.P192
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.P192.Lit
 meta import VerifiedGarbage.Proof.Ecdsa.PPC64LE.P192
 meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.Front
 public import VerifiedGarbage.Spec.Ecdsa.P192
 public import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
 

@@ -13,9 +13,8 @@ import VerifiedGarbage.Proof.Dsa.Arm.Prime.Mr11
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Exp7
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Mont7
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Seqs
-import VerifiedGarbage.Proof.Dsa.Arm.Prime.Taint8
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Trial2
-import VerifiedGarbage.Proof.MillerRabin.Arm.Pieces
+import VerifiedGarbage.Proof.MillerRabin.Arm.Words
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Vals
 
 /-! # DSA's probable-prime test on ARMv7: the result

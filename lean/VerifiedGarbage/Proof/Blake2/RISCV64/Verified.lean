@@ -5,9 +5,8 @@ public import VerifiedGarbage.Impl.Blake2.RISCV64
 public import VerifiedGarbage.Spec.Blake2.Contract
 public import VerifiedGarbage.Proof.Blake2.Contract
 public import VerifiedGarbage.TCB.RISCV64.Target
-public import VerifiedGarbage.Proof.Blake2.RISCV64.Round
+public import VerifiedGarbage.Proof.Blake2.RISCV64.Words
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
-import VerifiedGarbage.Proof.Blake2.RISCV64.Words
 public import VerifiedGarbage.Proof.Framework.RISCV64.Spill
 public import VerifiedGarbage.Proof.Framework.RISCV64.Align
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec

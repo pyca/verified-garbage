@@ -2,7 +2,7 @@ module
 
 import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecCT4
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecHash
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecMac
 import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecCT1
 import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecCT3
 import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecCorrect

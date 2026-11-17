@@ -1,11 +1,10 @@
 module
 
-import VerifiedGarbage.Proof.Ecdsa.X86.Inv
+public import VerifiedGarbage.Proof.Ecdsa.X86.Inv
 import VerifiedGarbage.Proof.Ecdh.X86.Peer
 import VerifiedGarbage.Proof.Ecdsa.X86.Lays
 import VerifiedGarbage.Proof.Ecdsa.X86.Middle
 public import VerifiedGarbage.Proof.Ecdsa.X86.Main
-public import VerifiedGarbage.Proof.Ecdsa.X86.InvLays
 public import VerifiedGarbage.Impl.Ecdh.X86
 import VerifiedGarbage.Proof.Ecdsa.X86.PtLays
 import VerifiedGarbage.Proof.Ecdsa.X86.SlotOps

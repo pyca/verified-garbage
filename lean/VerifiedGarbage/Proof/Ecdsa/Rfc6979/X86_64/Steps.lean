@@ -5,7 +5,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 public import VerifiedGarbage.Impl.Ecdsa.Rfc6979.X86_64
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Layout
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Regs
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Copy
 import VerifiedGarbage.Proof.Hmac.Common
 

@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 /-!
 # DSA key derivation on RISC-V: after the check of the domain
 
-As on PPC64LE (`Proof/Dsa/PPC64LE/Derive/Body.lean`). `dbody_ok`:
+As on PPC64LE (`Proof/Dsa/PPC64LE/Derive/Fn.lean`). `dbody_ok`:
 `Derive.body` writes to `out` the domain's octets, then `y = g^x mod p`'s
 `p_len` octets and x's `q_len` octets, and leaves 1 in `a0`, exactly when
 `1 < y` and `0 < x < q`; else zeros and 0. Memory changes only in

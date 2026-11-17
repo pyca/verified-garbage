@@ -2,12 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeIterationCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.LoopState
-
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.LoopStep
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.LoopExhausted
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.TapeCheck
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrMain
+
 /-! # Public transitions of the finite DSA witness loop -/
 
 -- Formerly `VerifiedGarbage/Proof/Dsa/X86_64/Generation/IterationPublic.lean`, which only this module imported.

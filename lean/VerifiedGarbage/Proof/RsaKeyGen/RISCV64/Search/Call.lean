@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.RsaKeyGen.RISCV64.Search
-public import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Search.Data
+public import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Search.Entry
 public import VerifiedGarbage.Proof.Framework.RISCV64.StackScratch
 public import VerifiedGarbage.Proof.Framework.RISCV64.Alloc
 public import VerifiedGarbage.Proof.Framework.Covers
@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Search.Entry
 import VerifiedGarbage.Proof.Framework.RISCV64.Syms
 
 /-! # One candidate of the search (RISCV64)

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.St
-public import VerifiedGarbage.Proof.Rsa.Arm.MulMod
+public import VerifiedGarbage.Proof.Rsa.Arm.KcOps
 import VerifiedGarbage.Proof.Bignum.Arm.Stack
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.CallLay

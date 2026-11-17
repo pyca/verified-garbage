@@ -1,10 +1,9 @@
 module
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.M4Base
 
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.M4Squeeze
 import VerifiedGarbage.Proof.MlDsa.Arith.Mem
 import VerifiedGarbage.Proof.MlKem.X86_64.ArithOk
 import VerifiedGarbage.Proof.MlKem.X86_64.FragCall
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.M4Squeeze
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 

@@ -1,9 +1,8 @@
 module
-public import VerifiedGarbage.Proof.Bignum.Layout
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Chain
-public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8RowCore
+public import VerifiedGarbage.Proof.Bignum.Layout
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8RowCore
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8ProductStep
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
 import VerifiedGarbage.Proof.Bignum.X86_64.MontMul

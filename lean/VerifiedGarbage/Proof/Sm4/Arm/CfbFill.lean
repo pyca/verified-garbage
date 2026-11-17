@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Sm4.Arm.BatchCfb
 public import VerifiedGarbage.Proof.Sm4.Arm.BatchChain
-public import VerifiedGarbage.Proof.Sm4.Arm.BatchXor
+public import VerifiedGarbage.Proof.Sm4.Arm.BatchGroup
 import VerifiedGarbage.Proof.MdStream.Arm.Common
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec

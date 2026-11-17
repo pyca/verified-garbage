@@ -1,7 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.Dsa.X86.PowCorrect
-import VerifiedGarbage.Proof.Dsa.X86.PowMul
+import VerifiedGarbage.Proof.Dsa.X86.PowCore
 public import VerifiedGarbage.Proof.Dsa.X86.StackFrame
 import Mathlib.Logic.Function.Basic
 import Mathlib.Tactic.SplitIfs
@@ -12,7 +12,6 @@ public import VerifiedGarbage.Spec.Weierstrass
 public import VerifiedGarbage.Proof.Framework.X86.Call
 import VerifiedGarbage.Proof.Framework.X86.CallWith
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Dsa.X86.PowBody
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Mont.Words

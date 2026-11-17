@@ -6,9 +6,8 @@ import Mathlib.Tactic.FinCases
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.PairedConsts
 public import VerifiedGarbage.Proof.MlDsa.PairedResponseContract
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Call
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedMaskSemantic
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedEntry
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedSatMemory
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedZCallTiming
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowCorrect
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Basic
 public import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
@@ -18,36 +17,27 @@ public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFinalCheck
 public import VerifiedGarbage.Proof.MlDsa.Round.Ones
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCheckSlot
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedSpecFrame
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintPacked
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedTiming
 import VerifiedGarbage.Proof.MlKem.AArch64.Common
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedPassOutput
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCheckCoverage
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedMaskInvariant
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowCorrect
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedAbi
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCoordinates
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCheckSource
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedRawField
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedSpecPre
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductMemoryCorrect
 import VerifiedGarbage.Proof.MlDsa.Verify.Mem
 import VerifiedGarbage.Proof.Framework.Offset
 import Mathlib.Order.Basic
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFinalMemory
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFirstMemory
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedZStoredField
 public import VerifiedGarbage.Proof.MlDsa.ResponseHintContract
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Response
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintWord
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseWord
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintField
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseZInit
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseAdd
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintVec
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseFinish
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseZInit
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseAdd
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintVec
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseFinish
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLoop
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Mem
@@ -62,13 +52,147 @@ public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedResponse
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Representation
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseK
 public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintDecompose
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedLowState
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedZ
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedHintState
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedPairedHints
 import VerifiedGarbage.Proof.MlKem.Arith
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintFinish
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Mem
+import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Arith
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowMath
+import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
+
+/-! ### `MlDsa.AArch64.Optimized.ResponseHintDecompose`, which only this module used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.AArch64.Optimized.Response
+open VG VG.AArch64 VG.Spec.MlDsa
+open VG.Proof.MlDsa.Round VG.Proof.MlDsa.AArch64.Round
+
+/-- Recombining high and signed low parts recovers the original field element. -/
+theorem hintBase_parts {g : Nat} (hg : IsG g) (r : Zq) :
+    ofInt (lowBits g r+2*(g:Int)*(highBits g r).toNat)=r := by
+  -- `LowBits + 2γ₂·HighBits` is `r`, less `q` when `f = m`.
+  have he : lowBits g r+2*(g:Int)*(highBits g r).toNat=
+      (r.val:Int)-(if hbF g r.val=hbM g then (q:Int) else 0) := by
+    rw [lowBits_eq (mem_of_isG hg),highBits_eq (mem_of_isG hg),Int.toNat_natCast,
+      Int.natCast_mul,Int.natCast_mul,Int.mul_comm (2*(g:Int)),Int.sub_sub,
+      Int.add_comm (_*_),←Int.sub_sub,show ((2:Nat):Int)=2 from rfl,Int.sub_add_cancel]
+  rw [he]
+  apply Fin.ext
+  have hv := VG.Proof.MlDsa.KeyGen.ofInt_val ((r.val:Int)-(if hbF g r.val=hbM g then (q:Int) else 0))
+  have hr := r.isLt
+  have hq : ((q:Nat):Int)=8380417 := rfl
+  by_cases hc : hbF g r.val=hbM g <;> simp only [hc,ite_true,ite_false] at hv ⊢ <;> omega_using [hq, hv]
+
+theorem responseHintBase_parts {m : Mem} {low high : Addr} {g i : Nat} (hg : IsG g) {r : Zq}
+    (hl : (coeffAt m low i).toInt=lowBits g r)
+    (hh : (coeffAt m high i).toNat=(highBits g r).toNat) : responseHintBase m low high g i=r := by
+  unfold responseHintBase
+  rw [hl,hh,hintBase_parts hg]
+
+theorem responseDecomposed_parts {m : Mem} {low high : Addr} {g : Nat} (hg : IsG g) (f : Poly)
+    (hl : ∀i<n,(coeffAt m low i).toInt=lowBits g f[i]!)
+    (hh : ∀i<n,(coeffAt m high i).toNat=(highBits g f[i]!).toNat) : ResponseDecomposed m low high g := by
+  intro i hi
+  rw [responseHintBase_parts hg (hl i hi) (hh i hi)]
+  exact ⟨hl i hi,hh i hi⟩
+
+theorem small_signed_injective {a b : Int} (ha : -524288≤a ∧ a≤524288)
+    (hb : -524288≤b ∧ b≤524288) (he : ofInt a=ofInt b) : a=b := by
+  have h1 := VG.Proof.MlDsa.KeyGen.ofInt_val a
+  have h2 := VG.Proof.MlDsa.KeyGen.ofInt_val b
+  rw [he] at h1
+  omega_using [ha, hb, h1, h2]
+
+theorem hintLow_exact {m : Mem} {low : Addr} {g : Nat} {f : Poly} (hg : IsG g)
+    (hl : SignedPolyIs m low (f.map fun r=>ofInt (lowBits g r)) (-(g:Int)) g) :
+    ∀i<n,(coeffAt m low i).toInt=lowBits g f[i]! := by
+  intro i hi
+  have hb := hl.1 i hi
+  have hv := hl.2 i hi
+  have hr := lowBits_bounds hg f[i]!
+  have hg' : g≤524288 := by rcases hg with rfl|rfl <;> decide
+  rw [VG.Proof.MlDsa.Arith.getElem!_eq _ hi,Vector.getElem_map,
+    ←VG.Proof.MlDsa.Arith.getElem!_eq f hi] at hv
+  exact small_signed_injective (by omega_using [hb, hg']) (by omega_using [hr, hg']) hv
+
+theorem hintHigh_exact {m : Mem} {high : Addr} {g : Nat} {f : Poly}
+    (hh : NatPolyIs m high (f.map fun r=>(highBits g r).toNat)) :
+    ∀i<n,(coeffAt m high i).toNat=(highBits g f[i]!).toNat := by
+  intro i hi
+  have he := congrArg (fun v : Vector Nat n=>v[i]) hh
+  simp only [natPolyAt,Vector.getElem_ofFn,Vector.getElem_map] at he
+  rw [VG.Proof.MlDsa.Arith.getElem!_eq f hi]
+  exact he
+
+end VG.Proof.MlDsa.AArch64.Optimized.Response
+
+end
+
+end
+
+/-! ### `MlDsa.AArch64.Optimized.ResponseHintPacked`, which only this module used -/
+
+section
+
+/-! ### `MlDsa.AArch64.Optimized.ResponseHintCount`, which only this module used -/
+
+section
+
+/-! ## From `ResponseHintSemantic.lean` -/
+
+@[expose] public section
+
+/-! ## From `ResponseHintCount.lean` -/
+
+section
+
+namespace VG.Proof.MlDsa.AArch64.Optimized.Response
+open VG VG.AArch64
+
+theorem shift31_bound (x : BitVec 32) : (x >>> 31).toNat≤1 := by
+  rw [BitVec.toNat_ushiftRight,Nat.shiftRight_eq_div_pow]
+  have h := x.isLt
+  change _<4294967296 at h
+  change _/2147483648≤1
+  omega_using []
+
+/-- The final logical shift makes every hint a bit, even on rejected inputs. -/
+theorem hintWord_bit (B t h : BitVec 32) : (hintWord B t h).toNat≤1 :=
+  shift31_bound _
+
+end VG.Proof.MlDsa.AArch64.Optimized.Response
+
+end
+
+end
+
+end
+
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.AArch64.Optimized.Response
+open VG VG.AArch64
+
+theorem packedWords_nat (lo hi : BitVec 32) :
+    (lo.setWidth 64 ||| (hi.setWidth 64 <<< 32)).toNat=lo.toNat+hi.toNat*4294967296 := by
+  rw [BitVec.or_comm,←BitVec.setWidth_append_eq_shiftLeft_setWidth_or,BitVec.setWidth_eq,
+    BitVec.toNat_append,←Nat.shiftLeft_add_eq_or_of_lt lo.isLt,Nat.shiftLeft_eq]
+  omega_using []
+
+end VG.Proof.MlDsa.AArch64.Optimized.Response
+
+end
+
+end
 
 /-! ### `MlDsa.AArch64.Optimized.PairedHintCallTiming`, which only this module used -/
 

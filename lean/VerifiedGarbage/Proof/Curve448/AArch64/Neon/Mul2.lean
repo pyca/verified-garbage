@@ -1,9 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Value
-public import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Halves
 public import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Convert
-public import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Folds
 public import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Prep
 import VerifiedGarbage.Proof.Framework.Block
 import Mathlib.Tactic.NormNum.OfScientific
@@ -11,6 +9,305 @@ import Mathlib.Tactic.NormNum.DivMod
 import Mathlib.Tactic.NormNum.Abs
 import Mathlib.Data.Rat.Cast.Order
 import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Macs
+public import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Exec
+import Mathlib.Algebra.BigOperators.Group.List.Basic
+public import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Math
+public import VerifiedGarbage.Impl.Curve448.AArch64.Neon
+import Mathlib.Tactic.Ring.RingNF
+import Mathlib.Tactic.Ring
+import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Arith
+import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+
+/-! ### `Curve448.AArch64.Neon.Folds`, which only this module used -/
+
+section
+
+/-!
+# Combining the halves' coefficients
+
+Untrusted: everything here is checked by Lean. `foldS` turns the coefficients
+`S_q` into `S_d - S_{d+8}` (in `v_d`) and `-S_d` (in `v_{d+8}`); `foldU` adds
+`U_{d+8}` (in `v_{16+d}`) to both.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Curve448.AArch64.Neon
+
+open VG VG.AArch64
+open VG.Impl.Curve448.AArch64.Neon
+
+/-- Lane `e` of vector register `r` is `f r e`, modulo 2⁶⁴. -/
+abbrev LaneEq (t : State) (r : Nat) (x : Nat → Int) : Prop := ∀ e < 2, lane (t.v (V r)) e % M64 = x e % M64
+
+def foldSChunk (d : Nat) : List Instr :=
+  [vo (.mov (V 28) (V (d + 8))), vo (.sub .d2 (V (d + 8)) (V 31) (V d)), vo (.sub .d2 (V d) (V d) (V 28))]
+
+theorem foldS_eq : foldS = (List.range 7).flatMap foldSChunk ++ [vo (.sub .d2 (V 15) (V 31) (V 7))] := rfl
+
+theorem cong_sub {x y a b : Int} (hx : x % M64 = a % M64) (hy : y % M64 = b % M64) :
+    (x - y) % M64 = (a - b) % M64 := by rw [Int.sub_emod, hx, hy, ← Int.sub_emod]
+
+theorem cong_add {x y a b : Int} (hx : x % M64 = a % M64) (hy : y % M64 = b % M64) :
+    (x + y) % M64 = (a + b) % M64 := by rw [Int.add_emod, hx, hy, ← Int.add_emod]
+
+theorem cong_neg {x a : Int} (hx : x % M64 = a % M64) : (0 - x) % M64 = (-a) % M64 := by
+  rw [cong_sub (x := 0) (a := 0) rfl hx, Int.zero_sub]
+
+theorem lane_zero (e : Nat) : lane (0 : BitVec 128) e = 0 := by simp [lane, vdword]
+
+theorem foldSChunk_ok {s : State} {d : Nat} (hd : d < 7) {a b : Nat → Int} (ha : LaneEq s d a)
+    (hb : LaneEq s (d + 8) b) (h31 : s.v (V 31) = 0) :
+    WP isa (.block (foldSChunk d)) s fun t =>
+      LaneEq t d (fun e => a e - b e) ∧ LaneEq t (d + 8) (fun e => - a e) ∧ t.mem = s.mem ∧ t.gpr = s.gpr ∧
+      t.rd = s.rd ∧ t.wr = s.wr ∧ (∀ r : VReg, r ≠ V 28 → r ≠ V d → r ≠ V (d + 8) → t.v r = s.v r) := by
+  have n1 : V 28 ≠ V d := V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)
+  have n2 : V 28 ≠ V (d + 8) := V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)
+  have n3 : V (d + 8) ≠ V d := V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)
+  have n4 : V 31 ≠ V 28 := by decide
+  have n5 : V 31 ≠ V (d + 8) := V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)
+  have n6 : V d ≠ V 28 := n1.symm
+  have n7 : V d ≠ V (d + 8) := n3.symm
+  have n8 : V (d + 8) ≠ V 28 := n2.symm
+  have n9 : V 28 ≠ V 31 := n4.symm
+  simp only [foldSChunk]
+  refine WP.block_cons_iff.mpr ⟨_, exec_vo_of rfl, ?_⟩
+  refine WP.block_cons_iff.mpr ⟨_, exec_vo_of rfl, ?_⟩
+  vred
+  refine WP.block_cons_iff.mpr ⟨_, exec_vo_of rfl, ?_⟩
+  vred
+  refine WP.block_nil_iff.mpr ⟨fun e he => ?_, fun e he => ?_, rfl, rfl, rfl, rfl, fun r h1 h2 h3 => ?_⟩
+  · rw [RegUpd.v_setV_self, lane_sub _ _ he]
+    exact cong_sub (ha e he) (hb e he)
+  · rw [RegUpd.v_setV_of_ne _ _ n3, RegUpd.v_setV_self, lane_sub _ _ he, h31, lane_zero]
+    exact cong_neg (ha e he)
+  · rw [RegUpd.v_setV_of_ne _ _ h2, RegUpd.v_setV_of_ne _ _ h3, RegUpd.v_setV_of_ne _ _ h1]
+
+theorem foldS_ok {s : State} (x : Nat → Nat → Int) (hx : ∀ q < 15, LaneEq s q (x q)) (h31 : s.v (V 31) = 0) :
+    WP isa (.block foldS) s fun t =>
+      (∀ d < 8, LaneEq t d (fun e => x d e - (if d < 7 then x (d + 8) e else 0))) ∧
+      (∀ d < 8, LaneEq t (d + 8) (fun e => - x d e)) ∧ t.mem = s.mem ∧ t.gpr = s.gpr ∧ t.rd = s.rd ∧
+      t.wr = s.wr ∧ (∀ r : VReg, (∀ n < 16, r ≠ V n) → r ≠ V 28 → t.v r = s.v r) := by
+  rw [foldS_eq, WP.block_append_iff]
+  let inv := fun n (t : State) =>
+    (∀ d < 7, LaneEq t d (fun e => x d e - (if d < n then x (d + 8) e else 0))) ∧
+    (∀ d < 7, LaneEq t (d + 8) (fun e => if d < n then - x d e else x (d + 8) e)) ∧
+    LaneEq t 7 (x 7) ∧ t.v (V 31) = 0 ∧ t.mem = s.mem ∧ t.gpr = s.gpr ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
+    (∀ r : VReg, (∀ n < 16, r ≠ V n) → r ≠ V 28 → t.v r = s.v r)
+  refine WP.mono (wp_range_flatMap (M := isa) (N := 7) inv (fun n t hn ⟨ta, tb, t7, t31, tm, tg, tr, tw, tv⟩ => ?_)
+    7 (by decide) s ⟨fun d hd e he => by simp [hx d (by omega_arith) e he], fun d hd e he => by simp [hx (d + 8) (by omega_arith) e he],
+      hx 7 (by decide), h31, rfl, rfl, rfl, rfl, fun _ _ _ => rfl⟩) fun t ⟨ta, tb, t7, t31, tm, tg, tr, tw, tv⟩ => ?_
+  · refine WP.mono (foldSChunk_ok hn (ta n hn) (tb n hn) t31) fun u ⟨ua, ub, um, ug, ur, uw, uv⟩ =>
+      ⟨fun d hd e he => ?_, fun d hd e he => ?_, ?_, ?_, um.trans tm, ug.trans tg, ur.trans tr, uw.trans tw,
+        fun r h1 h2 => (uv r h2 (h1 n (by omega_arith)) (h1 (n + 8) (by omega_arith))).trans (tv r h1 h2)⟩
+    · rcases (show d = n ∨ d ≠ n by omega_arith) with rfl | hne
+      · rw [ua e he]; simp
+      · rw [uv _ (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)) (V_ne _ (by omega_arith) _ (by omega_arith) hne)
+          (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)), ta d hd e he]
+        simp only [show (d < n + 1) = (d < n) from propext (by omega_arith)]
+    · rcases (show d = n ∨ d ≠ n by omega_arith) with rfl | hne
+      · rw [ub e he]; simp
+      · rw [uv _ (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)) (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith))
+          (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)), tb d hd e he]
+        simp only [show (d < n + 1) = (d < n) from propext (by omega_arith)]
+    · intro e he
+      rw [uv _ (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)) (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith))
+        (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)), t7 e he]
+    · rw [uv _ (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)) (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith))
+        (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)), t31]
+  · refine WP.block_cons_iff.mpr ⟨_, exec_vo_of rfl, WP.block_nil_iff.mpr
+      ⟨fun d hd e he => ?_, fun d hd e he => ?_, tm, tg, tr, tw, fun r h1 h2 => ?_⟩⟩
+    · rw [RegUpd.v_setV_of_ne _ _ (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith))]
+      rcases (show d < 7 ∨ d = 7 by omega_arith) with h | rfl
+      · rw [ta d h e he]
+      · rw [t7 e he]; simp
+    · rcases (show d < 7 ∨ d = 7 by omega_arith) with h | rfl
+      · rw [RegUpd.v_setV_of_ne _ _ (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)), tb d h e he]; simp [h]
+      · rw [RegUpd.v_setV_self, lane_sub _ _ he, t31, lane_zero]
+        exact cong_neg (t7 e he)
+    · rw [RegUpd.v_setV_of_ne _ _ (h1 15 (by decide)), tv r h1 h2]
+
+/-- After `U`: `U_{d+8}`, in `v_{16+d}`, into `v_d` and `v_{d+8}`. -/
+def foldUChunk (d : Nat) : List Instr :=
+  [vo (.add .d2 (V d) (V d) (V (16 + d))), vo (.add .d2 (V (d + 8)) (V (d + 8)) (V (16 + d)))]
+
+theorem foldU_eq : foldU = (List.range 7).flatMap foldUChunk := rfl
+
+theorem foldU_ok {s : State} (x y : Nat → Nat → Int) (hx : ∀ k < 16, LaneEq s k (x k))
+    (hy : ∀ d < 7, LaneEq s (16 + d) (y d)) :
+    WP isa (.block foldU) s fun t =>
+      (∀ k < 16, LaneEq t k (fun e => x k e + (if k < 7 then y k e else if 8 ≤ k ∧ k < 15 then y (k - 8) e else 0))) ∧
+      t.mem = s.mem ∧ t.gpr = s.gpr ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
+      (∀ r : VReg, (∀ n < 16, r ≠ V n) → t.v r = s.v r) := by
+  rw [foldU_eq]
+  let inv := fun n (t : State) =>
+    (∀ k < 16, LaneEq t k (fun e => x k e + (if k < n then y k e else if 8 ≤ k ∧ k < 8 + n then y (k - 8) e else 0))) ∧
+    (∀ d < 7, LaneEq t (16 + d) (y d)) ∧ t.mem = s.mem ∧ t.gpr = s.gpr ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
+    (∀ r : VReg, (∀ n < 16, r ≠ V n) → t.v r = s.v r)
+  refine WP.mono (wp_range_flatMap (M := isa) (N := 7) inv (fun n t hn ⟨ta, ty, tm, tg, tr, tw, tv⟩ => ?_)
+    7 (by decide) s ⟨fun k hk e he => by simp [hx k hk e he, show ¬ (8 ≤ k ∧ k < 8) by omega_arith], hy, rfl, rfl, rfl,
+      rfl, fun _ _ => rfl⟩)
+    fun t ⟨ta, _, tm, tg, tr, tw, tv⟩ => ⟨fun k hk e he => by rw [ta k hk e he], tm, tg, tr, tw, tv⟩
+  simp only [foldUChunk]
+  refine WP.block_cons_iff.mpr ⟨_, exec_vo_of rfl, ?_⟩
+  refine WP.block_cons_iff.mpr ⟨_, exec_vo_of rfl, WP.block_nil_iff.mpr
+    ⟨fun k hk e he => ?_, fun d hd e he => ?_, tm, tg, tr, tw, fun r h1 => ?_⟩⟩
+  · have hn8 : V (n + 8) ≠ V n := V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)
+    have hU8 : V (16 + n) ≠ V n := V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)
+    rcases (show k = n + 8 ∨ k = n ∨ (k ≠ n ∧ k ≠ n + 8) by omega_arith) with rfl | rfl | ⟨k1, k2⟩
+    · rw [RegUpd.v_setV_self, lane_add _ _ he, RegUpd.v_setV_of_ne _ _ hn8,
+        RegUpd.v_setV_of_ne _ _ hU8]
+      rw [cong_add (ta _ hk e he) (ty n hn e he)]
+      congr 1
+      by_cases h : n + 8 < n <;> simp [h] <;> split <;> omega_arith
+    · rw [RegUpd.v_setV_of_ne _ _ hn8.symm, RegUpd.v_setV_self, lane_add _ _ he,
+        cong_add (ta _ hk e he) (ty k hn e he)]
+      congr 1
+      simp only [show k < k + 1 from by omega_arith, ite_true, show ¬ k < k from by omega_arith, ite_false]
+      split <;> omega_arith
+    · rw [RegUpd.v_setV_of_ne _ _ (V_ne _ (by omega_arith) _ (by omega_arith) k2),
+        RegUpd.v_setV_of_ne _ _ (V_ne _ (by omega_arith) _ (by omega_arith) k1), ta k hk e he]
+      congr 2
+      by_cases h1 : k < n <;> by_cases h2 : k < n + 1 <;> by_cases h3 : 8 ≤ k ∧ k < 8 + n <;>
+        by_cases h4 : 8 ≤ k ∧ k < 8 + (n + 1) <;> simp [h1, h2, h3, h4] <;> omega_arith
+  · rw [RegUpd.v_setV_of_ne _ _ (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)),
+      RegUpd.v_setV_of_ne _ _ (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)), ty d hd e he]
+  · rw [RegUpd.v_setV_of_ne _ _ (h1 _ (by omega_arith)), RegUpd.v_setV_of_ne _ _ (h1 _ (by omega_arith)), tv r h1]
+
+end VG.Proof.Curve448.AArch64.Neon
+
+end
+
+end
+
+/-! ### `Curve448.AArch64.Neon.Halves`, which only this module used -/
+
+section
+
+/-! ### `Curve448.AArch64.Neon.Pairs`, which only this module used -/
+
+section
+
+/-!
+# Which limbs each product multiplies
+
+Untrusted: everything here is checked by Lean. Product `p` of a half multiplies
+half-limb `ia p` of the first operand by half-limb `ib p` of the second, at
+coefficient `ia p + ib p`; the products at coefficient `q` are, up to order,
+the terms of `cv x y q` (`perm_q`, by evaluation).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Curve448.AArch64.Neon
+
+open VG.Impl.Curve448.AArch64.Neon
+
+def ia (p : Prod) : Nat := 2 * p.i + (if p.hi then 1 else 0)
+def ib (p : Prod) : Nat :=
+  if p.bv < 4 then 2 * p.bv + (if p.hi then 1 else 0) else 2 * (p.bv - 4) + (if p.hi then 1 else 0) - 1
+
+/-- The terms `(i, q - i)` of coefficient `q`. -/
+def pairsQ (q : Nat) : List (Nat × Nat) :=
+  ((List.range 8).filter fun i => i ≤ q ∧ q - i < 8).map fun i => (i, q - i)
+
+theorem prods_pos : ∀ p ∈ prods, p.pos = ia p + ib p ∧ ia p < 8 ∧ ib p < 8 ∧
+    (p.bv ≥ 4 → (p.hi = false → p.bv ≠ 4) ∧ (p.hi = true → p.bv ≠ 8)) := by decide
+
+theorem perm_q : ∀ q < 15, List.Perm ((prods.filter fun p => p.pos == q).map fun p => (ia p, ib p)) (pairsQ q) := by
+  decide
+
+theorem cv_pairs (x y : Nat → Nat) : ∀ q < 15, cv x y q = ((pairsQ q).map fun ij => x ij.1 * y ij.2).sum := by
+  intro q hq
+  rcases q with _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | q
+  all_goals first | omega | (simp [cv, pairsQ, List.range, List.range.loop]; try ring_nf)
+
+end VG.Proof.Curve448.AArch64.Neon
+
+end
+
+end
+
+/-!
+# A half's products are its coefficients
+
+Untrusted: everything here is checked by Lean. With the first operand's half
+in vectors at `aHalf h` and the second's (and its shifted copy) at `bOff h`,
+lane `e` of the products aimed at a register is coefficient `q` of the product
+of the halves, `cv`.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Curve448.AArch64.Neon
+
+open VG VG.AArch64
+open VG.Impl.Curve448.AArch64.Neon
+open VG.Proof.X448.AArch64 (Scr off)
+
+/-- The memory words of a half: element `c % 2`'s half-limb `2i + c / 2` in word `c` of vector `i`,
+and the shifted copy of the second operand. -/
+structure HalfMem (m : Mem) (base : Addr) (h : Nat) (X Y : Nat → Nat → Nat) : Prop where
+  a : ∀ i < 4, ∀ c < 4, nw m base (aHalf h + 16 * i + 4 * c) = X (c % 2) (2 * i + c / 2)
+  b : ∀ j < 4, ∀ c < 4, nw m base (bHalf h + 16 * j + 4 * c) = Y (c % 2) (2 * j + c / 2)
+  sh : ∀ j < 5, ∀ c < 4, nw m base (NBP + 80 * h + 16 * j + 4 * c) =
+    if c < 2 then (if j = 0 then 0 else Y (c % 2) (2 * j - 1)) else (if j = 4 then 0 else Y (c % 2) (2 * j))
+
+theorem prodVal_eq {m : Mem} {base : Addr} {h : Nat} {X Y : Nat → Nat → Nat} (hm : HalfMem m base h X Y)
+    {p : Prod} (hpm : p ∈ prods) {e : Nat} (he : e < 2) :
+    prodVal (fun i => m.read (off base (aHalf h + 16 * i)) 16) (fun bv => m.read (off base (bOff h bv)) 16) p e =
+      X e (ia p) * Y e (ib p) := by
+  obtain ⟨-, -, -, hz⟩ := prods_pos p hpm
+  obtain ⟨pi, pb⟩ := prods_facts p hpm
+  have hc : hp p.hi + e < 4 := by unfold hp; split <;> omega_using [he]
+  simp only [prodVal]
+  rw [vword_ld _ _ _ hc, vword_ld _ _ _ hc, hm.a _ pi _ hc]
+  have e1 : (hp p.hi + e) % 2 = e := by unfold hp; split <;> omega_using [he]
+  have e2 : (hp p.hi + e) / 2 = if p.hi then 1 else 0 := by unfold hp; split <;> omega_using [he]
+  rw [e1, e2]
+  congr 1
+  unfold bOff ib
+  split
+  · rename_i hb; rw [hm.b _ hb _ hc, e1, e2]
+  · rename_i hb
+    rw [show NBP + 80 * h + 16 * (p.bv - 4) + 4 * (hp p.hi + e) = NBP + 80 * h + 16 * (p.bv - 4) + 4 * (hp p.hi + e)
+      from rfl, hm.sh _ (by omega_using [pb]) _ hc, e1]
+    cases hhi : p.hi
+    · have := (hz (by omega_using [hb])).1 hhi
+      simp only [hp, Bool.false_eq_true, ite_false, Nat.zero_add, Nat.add_zero, show e < 2 from he, ite_true,
+        show p.bv - 4 ≠ 0 by omega_using [hb, this]]
+    · have := (hz (by omega_using [hb])).2 hhi
+      simp only [hp, ite_true, show ¬ (2 + e < 2) by omega_using [], ite_false, show p.bv - 4 ≠ 4 by omega_using [this],
+        Nat.add_sub_cancel]
+
+theorem cast_sum {α : Type} (l : List α) (f : α → Nat) :
+    (((l.map f).sum : Nat) : Int) = (l.map fun x => (f x : Int)).sum := by
+  induction l with
+  | nil => rfl
+  | cons x l ih => simp [List.sum_cons, ih]
+
+theorem prodSum_cv {m : Mem} {base : Addr} {h : Nat} {X Y : Nat → Nat → Nat} (hm : HalfMem m base h X Y)
+    {tgt : Nat → Nat} {r q : Nat} (hq : q < 15) (ht : ∀ p ∈ prods, tgt p.pos = r ↔ p.pos = q) {e : Nat} (he : e < 2) :
+    prodSum (fun i => m.read (off base (aHalf h + 16 * i)) 16) (fun bv => m.read (off base (bOff h bv)) 16)
+      tgt prods r e = cv (X e) (Y e) q := by
+  simp only [prodSum]
+  rw [List.filter_congr (q := fun p => p.pos == q) fun p hp => by simp [ht p hp],
+    List.map_congr_left (g := fun p => ((X e (ia p) * Y e (ib p) : Nat) : Int)) fun p hp => by
+      rw [prodVal_eq hm (List.mem_filter.mp hp).1 he],
+    cv_pairs _ _ q hq]
+  have hperm := (perm_q q hq).map (fun ij : Nat × Nat => ((X e ij.1 * Y e ij.2 : Nat) : Int))
+  rw [List.map_map] at hperm
+  rw [show (fun p => ((X e (ia p) * Y e (ib p) : Nat) : Int)) =
+    (fun ij : Nat × Nat => ((X e ij.1 * Y e ij.2 : Nat) : Int)) ∘ (fun p => (ia p, ib p)) from rfl, hperm.sum_eq]
+  rw [cast_sum]
+
+end VG.Proof.Curve448.AArch64.Neon
+
+end
+
+end
 
 /-!
 # Two field multiplications in AdvSIMD

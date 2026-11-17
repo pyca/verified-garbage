@@ -1,9 +1,9 @@
 module
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCallResult
+
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignSingle
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignPublic
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCall
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignRunning
-
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignAttemptCT
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignStep
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomSampleLoop

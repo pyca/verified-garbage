@@ -2,11 +2,10 @@ module
 
 import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeProductCounterState
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
-import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeControl
+public import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeCore
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeCore
 
 /-! Initialize the first nontrivial public comb basis counter. -/
 @[expose] public section

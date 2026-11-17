@@ -1,7 +1,6 @@
 module
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNafStep
 
-import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNafDigits
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNafDigits
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Lit

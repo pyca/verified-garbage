@@ -2,12 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.X86.CheckPrivate
 import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Export
-import VerifiedGarbage.Proof.Bignum.X86.CrtRt.WindowPower
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Stage
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.Bignum.Octets
-import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Load
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Import
 public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Ctx
 public import VerifiedGarbage.Proof.Ffdh.X86.Ops
 public import VerifiedGarbage.Proof.Ffdh.X86.Stages

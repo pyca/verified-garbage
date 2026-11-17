@@ -1,9 +1,8 @@
 module
-public import VerifiedGarbage.Proof.Dsa.AArch64.CheckOperands
 
+public import VerifiedGarbage.Proof.Dsa.AArch64.CheckOperands
 import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleOperands
 import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleState
-import VerifiedGarbage.Proof.Dsa.AArch64.CallOperands
 import VerifiedGarbage.Proof.Dsa.Encoding
 
 /-! # Public state and secret operand availability for complete schedules -/

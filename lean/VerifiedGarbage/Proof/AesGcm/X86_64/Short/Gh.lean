@@ -1,11 +1,11 @@
 module
+
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Copy
 public import VerifiedGarbage.Proof.Framework.X86_64.ZFrame
 public import VerifiedGarbage.Proof.Framework.X86_64.ZLaneSse
 public import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Exec
-
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Gh
-import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Gh
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Group
 import VerifiedGarbage.Proof.Framework.X86_64.Avx512
 import VerifiedGarbage.Proof.AesGcm.X86_64.Run
 import VerifiedGarbage.Proof.AesGcm.X86_64.Arith

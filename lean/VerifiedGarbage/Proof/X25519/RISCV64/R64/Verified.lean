@@ -5,11 +5,10 @@ public import VerifiedGarbage.Proof.X25519.RISCV64.R64.Ladder
 public import VerifiedGarbage.Proof.X25519.RISCV64.Invert
 public import VerifiedGarbage.TCB.Artifact
 public import VerifiedGarbage.TCB.RISCV64.Isa
-public import VerifiedGarbage.Proof.X25519.RISCV64.Setup
+public import VerifiedGarbage.Proof.X25519.RISCV64.Freeze
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.X25519.RISCV64.Mul
 import VerifiedGarbage.Proof.X25519.RISCV64.Bits
-import VerifiedGarbage.Proof.X25519.RISCV64.Freeze
 public import VerifiedGarbage.Impl.X25519.RISCV64.R64
 public import VerifiedGarbage.Spec.X25519.Contract
 import VerifiedGarbage.Proof.X25519.RISCV64.R64.CT

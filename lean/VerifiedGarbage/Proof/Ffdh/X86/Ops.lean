@@ -4,7 +4,7 @@ public import VerifiedGarbage.Impl.Ffdh.X86.Domain
 public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.StageR
 import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Import
 import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Power
+public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Ctx
 public import VerifiedGarbage.Proof.Bignum.X86.CrtValue
 
 /-!

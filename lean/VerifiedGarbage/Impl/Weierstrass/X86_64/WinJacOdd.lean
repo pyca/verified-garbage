@@ -11,7 +11,7 @@ recoded regularly into `J` odd digits `d_j = 2 e_j - 31 ∈ [-31, 31]`, where
 `k + 32^J - 1` read from its bit 1 (the table of bits at `bits`, one past
 that of `k + 32^J - 1`). With no zero digit, and the operands of every
 addition neither equal nor opposite nor `O` for `1 ≤ k < n` and
-`n mod 64 < 33` (`Proof/Weierstrass/OddWin.lean`), the loop needs none of
+`n mod 64 < 33` (`Proof/Weierstrass/X86_64/WinJacOddState.lean`), the loop needs none of
 `WinJac`'s masks.
 
 The table holds the odd multiples `[2m - 1]P` for `m = 1 … 16`, entry `m` at

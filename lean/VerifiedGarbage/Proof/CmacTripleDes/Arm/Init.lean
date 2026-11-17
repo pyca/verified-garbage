@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.CmacTripleDes.Arm.Update
+public import VerifiedGarbage.Proof.CmacTripleDes.Arm.Update
 public import VerifiedGarbage.Proof.CmacTripleDes.Arm.Block
 import VerifiedGarbage.Proof.CmacTripleDes.KeySchedule
 import VerifiedGarbage.Proof.CmacTripleDes.Arm.KeysLit
@@ -9,8 +9,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Taint
 public import VerifiedGarbage.Proof.CmacTripleDes.Cmac
-public import VerifiedGarbage.Proof.CmacTripleDes.Arm.Contract
-public import VerifiedGarbage.Proof.CmacTripleDes.Arm.Save
 import VerifiedGarbage.Proof.CmacTripleDes.Words
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Framework.Arm.Exec

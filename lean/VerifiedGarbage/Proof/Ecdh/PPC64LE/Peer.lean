@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Weierstrass.PPC64LE.MontCall
 public import VerifiedGarbage.Proof.Weierstrass.Unch
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Flags
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Setup
-import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Bits
+import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Pow
 import VerifiedGarbage.Proof.Weierstrass.PPC64LE.BytesLen
 import VerifiedGarbage.Proof.Weierstrass.Words
 import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Keep

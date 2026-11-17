@@ -1,11 +1,10 @@
 module
+
 public import VerifiedGarbage.Proof.Rsa.Arm.InvLaw
 public import VerifiedGarbage.Proof.MillerRabin.Arm.Backend
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Loads
-public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Top2
-
+public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Top3
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Top4
-import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Top3
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Fin5
 import VerifiedGarbage.Proof.Rsa.Arm.PrivSetupCT
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT

@@ -1,7 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.Dsa.Arm.GenerateTrace
-import VerifiedGarbage.Proof.Dsa.Arm.GenerateCheck
+public import VerifiedGarbage.Proof.Dsa.Arm.GenerateCheck
 import VerifiedGarbage.Proof.Dsa.Arm.SignCorrect
 import VerifiedGarbage.Proof.Dsa.Arm.ShapeTrace
 import VerifiedGarbage.Proof.Dsa.Arm.Leaves
@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Dsa.PackedBytes
 public import VerifiedGarbage.Impl.Dsa.Arm.Generate
-public import VerifiedGarbage.Proof.Dsa.Arm.GenerateEntry
 public import VerifiedGarbage.Proof.Dsa.Arm.KeyTrace
 
 /-!

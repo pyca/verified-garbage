@@ -12,8 +12,8 @@ import VerifiedGarbage.Proof.Mont.AArch64.RowInit
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256DR
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256ED
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256RD
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Production
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Timing
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAddTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
 import VerifiedGarbage.Proof.Weierstrass.Pow
@@ -25,7 +25,6 @@ public import VerifiedGarbage.Impl.Weierstrass.AArch64.Jacobian
 public import VerifiedGarbage.Impl.Weierstrass.Slots
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Fprog
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAddTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowInvariant
 public import VerifiedGarbage.Proof.Weierstrass.CheckPointContract

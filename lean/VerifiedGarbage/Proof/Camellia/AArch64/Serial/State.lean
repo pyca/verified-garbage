@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Impl.Camellia.AArch64.Serial.Core
 public import VerifiedGarbage.Proof.Modes.AArch64.Core
 import VerifiedGarbage.Proof.Camellia.Common
-import VerifiedGarbage.Proof.Camellia.KeySched
 import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
 import VerifiedGarbage.Proof.Framework.Bswap
 import VerifiedGarbage.Proof.Framework.Offset

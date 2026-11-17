@@ -22,7 +22,6 @@ meta import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Secp256k1
 import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Spec.Ecdsa.Verify.Secp256k1
-public import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.Front
 public import VerifiedGarbage.Spec.Ecdsa.Secp256k1
 public import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
 public import VerifiedGarbage.Proof.Weierstrass.PPC64LE.TComb
@@ -34,7 +33,7 @@ public import VerifiedGarbage.Proof.Framework.ConstMem
 meta import VerifiedGarbage.Proof.Framework.ConstMem
 import VerifiedGarbage.Proof.Secp256k1.PPC64LE.Comb
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Secp256k1.Window
-import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Lays
+import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Stages
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.MulFn
 import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Keep

@@ -1,9 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4Gcm.Arm.Args
-public import VerifiedGarbage.Proof.Sm4Gcm.Arm.Absorb
+public import VerifiedGarbage.Proof.Sm4Gcm.Arm.Fn
 public import VerifiedGarbage.Proof.Sm4Gcm.Arm.Flush
-import VerifiedGarbage.Proof.Sm4Gcm.Arm.Fn
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 

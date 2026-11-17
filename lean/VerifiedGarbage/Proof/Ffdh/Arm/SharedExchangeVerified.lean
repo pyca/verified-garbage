@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Ffdh.Arm.SharedExchangeCorrect
+public import VerifiedGarbage.Proof.Ffdh.Arm.SharedExchangeCorrect
 public import VerifiedGarbage.Proof.Bignum.Arm.MontBackend
 public import VerifiedGarbage.Impl.Bignum.Arm.MontCall
 public import Init.Data.BitVec.Basic
@@ -10,7 +10,6 @@ public import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Bignum.Octets
-import VerifiedGarbage.Proof.Ffdh.Arm.SharedExchangePre
 import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
 import VerifiedGarbage.Proof.Ffdh.Arm.ExchangeMain
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
@@ -31,7 +30,6 @@ import VerifiedGarbage.Proof.Ffdh.Arm.HeadCT
 import VerifiedGarbage.Proof.Ffdh.Arm.BranchCT
 import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
 import VerifiedGarbage.Proof.Framework.RelCT
-import VerifiedGarbage.Proof.Ffdh.Arm.SharedExchangeFn
 import VerifiedGarbage.Proof.Ffdh.Arm.ExchangeEntryCT
 import VerifiedGarbage.Proof.Ffdh.Arm.FrameCT
 import VerifiedGarbage.Proof.Ffdh.Arm.Entered
@@ -43,7 +41,6 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Spec.Ffdh.Contract
 meta import VerifiedGarbage.TCB.Arm.Target
 public import Init.Core
-public import VerifiedGarbage.Proof.Ffdh.Arm.SharedExchangePrograms
 
 /-! ### `Ffdh.Arm.SharedExchangeContractCT`, which only this module used -/
 

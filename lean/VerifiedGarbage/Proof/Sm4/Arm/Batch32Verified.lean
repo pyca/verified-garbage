@@ -2,11 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Sm4.Arm.Batch32Body
 public import VerifiedGarbage.Proof.Sm4.Arm.BatchCT
-public import VerifiedGarbage.Proof.Sm4.Arm.Batch32Loop
 public import VerifiedGarbage.Impl.Sm4.Arm.BatchCtr32
 import VerifiedGarbage.Proof.Sm4.Arm.BatchTaint
 import VerifiedGarbage.Proof.Sm4.Arm.Batch32Taint
-import VerifiedGarbage.Proof.Sm4.Arm.BatchCalls
+import VerifiedGarbage.Proof.Sm4.Arm.BatchGroup
 import VerifiedGarbage.Proof.Sm4.Arm.Core
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.Arm.Taint

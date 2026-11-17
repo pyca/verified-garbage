@@ -3,7 +3,7 @@ module
 import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.Final
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.Tbl
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Crypt
-public import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.Spec
+public import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.Base
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.Ok
 import VerifiedGarbage.Proof.Framework.AArch64.Exec

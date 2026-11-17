@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Arguments
-import VerifiedGarbage.Proof.Dsa.X86_64.EnterLeave
+import VerifiedGarbage.Proof.Dsa.X86_64.Return
 
 /-! # Complete DSA arithmetic calls, from operand binding through return -/
 

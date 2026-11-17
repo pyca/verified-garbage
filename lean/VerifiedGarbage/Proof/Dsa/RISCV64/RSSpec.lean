@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Bignum.Octets
 /-!
 # Randomized DSA signing on RISC-V: the specification's input
 
-As on PPC64LE (`Proof/Dsa/PPC64LE/RandomSign/Spec.lean`). `inpOf`: the specification's input of a call, on entry; its subgroup order
+As on PPC64LE (`Proof/Dsa/PPC64LE/RandomSign/Attempt.lean`). `inpOf`: the specification's input of a call, on entry; its subgroup order
 is q's octets' (`inp_q`), its draws are the sampler's (`draw_eq`), and a
 nonce of zeros then the candidate is the candidate's encoding (`nonce_eq`).
 -/

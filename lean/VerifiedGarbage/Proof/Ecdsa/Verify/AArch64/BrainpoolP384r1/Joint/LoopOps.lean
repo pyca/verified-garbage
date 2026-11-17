@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP384r1.Joint.Table
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Block
@@ -15,11 +14,268 @@ public import VerifiedGarbage.Proof.Weierstrass.CheckPointContract
 public import VerifiedGarbage.Proof.Weierstrass.InverseContract
 public import VerifiedGarbage.Proof.Weierstrass.MulContract
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP384r1.Joint.State
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP384r1.Joint.TableLayout
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP384r1.Joint.Digit
 import VerifiedGarbage.Proof.Ed25519.AArch64.Step
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP384r1.Joint.Math
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP512r1.Joint.Math
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP384r1.Joint.Inputs
+import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombDigit
+import VerifiedGarbage.Proof.Weierstrass.CombDigitW
+import VerifiedGarbage.Proof.Weierstrass.CombW
+
+/-! ### `Ecdsa.Verify.AArch64.BrainpoolP384r1.Joint.Digit`, which this module and modules that import it used -/
+
+section
+
+/-! Reading one public pair of unsigned two-bit digits. -/
+
+@[expose] public section
+namespace VG.Proof.Ecdsa.Verify.AArch64.BrainpoolP384r1.Joint
+open VG VG.AArch64 VG.Impl.Mont.AArch64 VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64
+open VG.Proof.Mont VG.Proof.Mont.AArch64 VG.Proof.Weierstrass VG.Proof.Weierstrass.AArch64
+open VG.Proof.Ed25519.AArch64 (Keeps Keeps.trans Keeps.mono read_x)
+open VG.Impl.Ecdsa.Verify.AArch64.BrainpoolP384r1.Joint
+
+abbrev Bits (base : Addr) (u v : Nat) (s : State) : Prop :=
+  (∀ t < 384,s.mem (off base (bitsU+t)) = if u.testBit t then 1 else 0) ∧
+  (∀ t < 384,s.mem (off base (bitsV+t)) = if v.testBit t then 1 else 0)
+
+def digitPair (u v j : Nat) : Nat := (u >>> (2*j)) % 4 + 4*((v >>> (2*j)) % 4)
+
+theorem digitPair_lt (u v j : Nat) : digitPair u v j < 16 := by
+  unfold digitPair; omega_using []
+
+theorem Changes.bits {base : Addr} {u v : Nat} {s t : State}
+    (h : Changes base arithmeticWork s t) (hb : Bits base u v s) : Bits base u v t := by
+  have apart : ∀ b ∈ [bitsU,bitsV],∀ j < 384,∀ w ∈ arithmeticWork,
+      b+j+1 ≤ w.1 ∨ w.1+w.2 ≤ b+j := by
+    intro b h j hj w hw
+    have hd : ∀ b ∈ [bitsU,bitsV],∀ w ∈ arithmeticWork,b+384 ≤ w.1 ∨ w.1+w.2 ≤ b := by decide
+    have := hd b h w hw; omega_using [hj, this]
+  constructor
+  · intro j hj
+    rw [h.mem.byte (apart bitsU (by simp) j hj) (by change 2944+j < 2^64; omega_using [hj])]
+    exact hb.1 j hj
+  · intro j hj
+    rw [h.mem.byte (apart bitsV (by simp) j hj) (by change 3328+j < 2^64; omega_using [hj])]
+    exact hb.2 j hj
+
+theorem index2_ok {s : State} {base : Addr} (hs : Scr s base 8192) {j : Nat}
+    (hx : s.gpr .x19 = BitVec.ofNat 64 j) :
+    WP isa (.block [.lsl .x .x16 .x19 1,.add .x .x16 .x0 .x16]) s fun t =>
+      t.gpr .x16 = off base (2*j) ∧ Keeps [.x16] s t := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons,runStep_some,runBlock_nil,exec,read_x,RegUpd.gpr_write,
+    show 1 < Size.x.bits by decide,BitVec.setWidth_eq,reduceCtorEq,ite_false,ite_true,hx,hs.x0,
+    Option.some.injEq,exists_eq_left']
+  refine ⟨?_,⟨fun r hr => ?_,rfl,rfl,rfl,rfl⟩⟩
+  · rw [BitVec.shiftLeft_eq_mul_twoPow]
+    change base + BitVec.ofNat 64 j * BitVec.ofNat 64 2 = base + BitVec.ofNat 64 (2*j)
+    rw [←BitVec.ofNat_mul,Nat.mul_comm j 2]
+  · simp only [List.mem_singleton] at hr
+    simp only [RegUpd.gpr_write,hr,ite_false]
+
+theorem read2_ok {base : Addr} {s : State} (hs : Scr s base 8192) {bits k j : Nat}
+    (hbits : bits+384 ≤ 8192) (henc : bits+2 ≤ 4096) (hj : j < 192)
+    (h16 : s.gpr .x16 = off base (2*j))
+    (hb : ∀ t < 384,s.mem (off base (bits+t)) = if k.testBit t then 1 else 0) :
+    WP isa (.block (hornerBits bits 2)) s fun t =>
+      t.gpr .x2 = BitVec.ofNat 64 ((k >>> (2*j)) % 4) ∧ Keeps [.x2,.x4] s t := by
+  have hv : ∀ i,(k.testBit (2*j+(i-bits))).toNat ≤ 1 := fun _ => Bool.toNat_le _
+  refine WP.mono (hornerBits_ok hv 2 bits (s:=s) (by decide) henc fun i hi => ?_)
+    fun t ⟨v,h⟩ => ⟨?_,h⟩
+  · have e : s.gpr .x16+BitVec.ofNat 64 (bits+i) = off base (bits+(2*j+i)) := by
+      rw [h16,off,off,BitVec.add_assoc,←BitVec.ofNat_add]
+      exact congrArg (base+·) (congrArg _ (by omega_using []))
+    refine ⟨?_,?_⟩
+    · rw [e]; exact ⟨_,List.mem_append_right _ hs.wr,hs.contains (by omega_using [hbits, hj, hi]) (by decide)⟩
+    · rw [e,hb _ (by omega_using [hj, hi]),show bits+i-bits=i by omega_using []]
+      cases k.testBit (2*j+i) <;> rfl
+  · have he : hornerVal (fun i => (k.testBit (2*j+(i-bits))).toNat) bits 2 = combWin 2 k j := by
+      have hh := hornerVal_eq k 2 j 2 (Nat.le_refl _)
+      rw [Nat.sub_self,Nat.add_zero] at hh
+      rw [combWin,←hh]
+      exact hornerVal_congr fun i _ => by simp only [show bits+i-bits=i by omega_using []]
+    rw [v,he,combWin,Nat.shiftRight_eq_div_pow]
+
+theorem save_digit_ok (s : State) :
+    WP isa (.block [.addImm .x .x6 .x2 0]) s fun t => t.gpr .x6=s.gpr .x2 ∧ Keeps [.x6] s t := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons,runStep_some,runBlock_nil,exec,read_x,RegUpd.gpr_write,
+    show (0 : Nat) < 4096 by decide,BitVec.setWidth_eq,BitVec.add_zero,ite_true,
+    Option.some.injEq,exists_eq_left']
+  refine ⟨True.intro,⟨fun r hr => ?_,rfl,rfl,rfl,rfl⟩⟩
+  simp only [List.mem_singleton] at hr
+  simp only [RegUpd.gpr_write,hr,ite_false]
+
+theorem combine_ok (s : State) {a b : Nat}
+    (h6 : s.gpr .x6=BitVec.ofNat 64 a) (h2 : s.gpr .x2=BitVec.ofNat 64 b) :
+    WP isa (.block [.lsl .x .x2 .x2 2,.add .x .x2 .x2 .x6]) s fun t =>
+      t.gpr .x2=BitVec.ofNat 64 (a+4*b) ∧ Keeps [.x2] s t := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons,runStep_some,runBlock_nil,exec,read_x,RegUpd.gpr_write,
+    show 2 < Size.x.bits by decide,BitVec.setWidth_eq,reduceCtorEq,ite_false,ite_true,h6,h2,
+    Option.some.injEq,exists_eq_left']
+  refine ⟨?_,⟨fun r hr => ?_,rfl,rfl,rfl,rfl⟩⟩
+  · rw [BitVec.shiftLeft_eq_mul_twoPow]
+    change BitVec.ofNat 64 b*BitVec.ofNat 64 4+BitVec.ofNat 64 a=BitVec.ofNat 64 (a+4*b)
+    rw [←BitVec.ofNat_mul,←BitVec.ofNat_add]
+    exact congrArg (BitVec.ofNat 64) (by omega_using [])
+  · simp only [List.mem_singleton] at hr
+    simp only [RegUpd.gpr_write,hr,ite_false]
+
+theorem digit_ok {base : Addr} {s : State} (hs : Scr s base 8192) {u v j : Nat}
+    (hb : Bits base u v s) (hj : j < 192) (h19 : s.gpr .x19=BitVec.ofNat 64 j) :
+    WP isa (.block digit) s fun t =>
+      t.gpr .x2=BitVec.ofNat 64 (digitPair u v j) ∧ Keeps [.x2,.x4,.x6,.x16] s t := by
+  rw [Impl.Ecdsa.Verify.AArch64.BrainpoolP384r1.Joint.digit]
+  simp only [List.append_assoc]
+  rw [WP.block_append_iff]
+  refine WP.mono (index2_ok hs h19) fun s₁ ⟨p₁,k₁⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (read2_ok (hs.of_keeps k₁ (by decide)) (bits:=bitsU) (k:=u) (by decide) (by decide) hj p₁
+    (by rw [k₁.mem]; exact hb.1)) fun s₂ ⟨v₂,k₂⟩ => ?_
+  rw [←List.singleton_append,WP.block_append_iff]
+  refine WP.mono (save_digit_ok s₂) fun s₃ ⟨v₃,k₃⟩ => ?_
+  rw [WP.block_append_iff]
+  have hs₃ := ((hs.of_keeps k₁ (by decide)).of_keeps k₂ (by decide)).of_keeps k₃ (by decide)
+  have p₃ : s₃.gpr .x16=off base (2*j) := by rw [k₃.gpr _ (by decide),k₂.gpr _ (by decide),p₁]
+  refine WP.mono (read2_ok hs₃ (bits:=bitsV) (k:=v) (by decide) (by decide) hj p₃
+    (by rw [k₃.mem,k₂.mem,k₁.mem]; exact hb.2)) fun s₄ ⟨v₄,k₄⟩ => ?_
+  have e₆ : s₄.gpr .x6=BitVec.ofNat 64 ((u >>> (2*j)) % 4) := by rw [k₄.gpr _ (by decide),v₃,v₂]
+  refine WP.mono (combine_ok s₄ e₆ v₄) fun t ⟨v₅,k₅⟩ => ?_
+  exact ⟨v₅,((((k₁.mono (by decide)).trans (k₂.mono (by decide))).trans
+    (k₃.mono (by decide))).trans (k₄.mono (by decide))).trans (k₅.mono (by decide))⟩
+end VG.Proof.Ecdsa.Verify.AArch64.BrainpoolP384r1.Joint
+
+end
+
+end
+
+/-! ### `Ecdsa.Verify.AArch64.BrainpoolP384r1.Joint.Table`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Ecdsa.Verify.AArch64.BrainpoolP384r1.Joint.TableLayout`, which this module and modules that import it used -/
+
+section
+
+/-! The fifteen projective table entries fit beside the existing arithmetic workspace. -/
+
+@[expose] public section
+namespace VG.Proof.Ecdsa.Verify.AArch64.BrainpoolP384r1.Joint
+open VG VG.AArch64 VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64
+open VG.Proof.Weierstrass VG.Proof.Mont VG.Proof.Mont.AArch64
+open VG.Impl.Ecdsa.Verify.AArch64.BrainpoolP384r1.Joint
+
+abbrev resultWork : List (Nat × Nat) := (coordinates resultPt).map (·,48)
+
+theorem resultWork_sub : ∀ w ∈ resultWork,w ∈ loopWork := by decide
+
+theorem table_coord_bounds {d : Nat} (h1 : 1 ≤ d) (h15 : d ≤ 15) :
+    ∀ x ∈ coordinates (tablePt d),tableAt ≤ x ∧ x+48 ≤ 7440 ∧ x % 8 = 0 := by
+  intro x hx
+  change 5280 ≤ x ∧ x+48 ≤ 7440 ∧ x % 8 = 0
+  simp only [coordinates,tablePt,tableAt,List.mem_cons,List.not_mem_nil,or_false] at hx
+  rcases hx with rfl | rfl | rfl <;> exact ⟨by omega,by omega,by omega⟩
+
+theorem store_layout {d : Nat} (h1 : 1 ≤ d) (h15 : d ≤ 15) : CopyLayout (tablePt d) resultPt := by
+  constructor
+  · intro x hx
+    simp only [List.mem_append] at hx
+    rcases hx with h | h
+    · exact Nat.le_trans (table_coord_bounds h1 h15 x h).2.1 (by decide)
+    · have hc : ∀ x ∈ coordinates resultPt,x+48 ≤ 8192 := by decide
+      exact hc x h
+  · intro x hx
+    simp only [List.mem_append] at hx
+    rcases hx with h | h
+    · exact (table_coord_bounds h1 h15 x h).2.2
+    · have hc : ∀ x ∈ coordinates resultPt,x % 8 = 0 := by decide
+      exact hc x h
+  · intro x hx y hy hne
+    rcases List.mem_append.mp hy with hy | hy
+    · simp only [coordinates,tablePt,tableAt,List.mem_cons,List.not_mem_nil,or_false] at hx hy
+      rcases hx with rfl | rfl | rfl <;> rcases hy with rfl | rfl | rfl <;> omega_arith
+    · have hh : ∀ x ∈ coordinates resultPt,x+48 ≤ tableAt := by decide
+      exact Or.inr (Nat.le_trans (hh y hy) (table_coord_bounds h1 h15 x hx).1)
+
+  · intro x hx hy
+    have hb := (table_coord_bounds h1 h15 x hx).1
+    have hc : ∀ x ∈ coordinates resultPt,x < tableAt := by decide
+    have := hc x hy; omega_using [hb, this]
+  · simp only [tablePt]; exact ⟨by omega_using [],by omega_using [],by omega_using []⟩
+
+theorem load_layout {d : Nat} (h1 : 1 ≤ d) (h15 : d ≤ 15) : CopyLayout resultPt (tablePt d) := by
+  have hs := store_layout h1 h15
+  constructor
+  · intro x hx; exact hs.end_le x (List.mem_append.mpr ((List.mem_append.mp hx).elim Or.inr Or.inl))
+  · intro x hx; exact hs.aligned x (List.mem_append.mpr ((List.mem_append.mp hx).elim Or.inr Or.inl))
+  · intro x hx y hy hne
+    simp only [List.mem_append] at hy
+    rcases hy with hy | hy
+    · have hf : ∀ x ∈ coordinates resultPt,∀ y ∈ coordinates resultPt,x ≠ y →
+        x+48 ≤ y ∨ y+48 ≤ x := by decide
+      exact hf x hx y hy hne
+    · have hx' : x+48 ≤ tableAt := by
+        have hc : ∀ x ∈ coordinates resultPt,x+48 ≤ tableAt := by decide
+        exact hc x hx
+      exact Or.inl (Nat.le_trans hx' (table_coord_bounds h1 h15 y hy).1)
+  · intro x hx hy
+    exact hs.different x hy hx
+  · decide
+
+theorem tableWork_cover {d : Nat} (h1 : 1 ≤ d) (h15 : d ≤ 15) :
+    ∀ w ∈ (coordinates (tablePt d)).map (·,48),
+      ∃ w' ∈ arithmeticWork,w'.1 ≤ w.1 ∧ w.1+w.2 ≤ w'.1+w'.2 := by
+  intro w hw
+  obtain ⟨x,hx,rfl⟩ := List.mem_map.mp hw
+  have h := table_coord_bounds h1 h15 x hx
+  exact ⟨(tableAt,2160),List.mem_append_right _ (by simp),h.1,h.2.1⟩
+
+theorem Changes.table {base : Addr} {s t : State} (h : Changes base loopWork s t)
+    (hs : Scr s base 8192) {d : Nat} (h1 : 1 ≤ d) (h15 : d ≤ 15)
+    {P : VG.Spec.Weierstrass.Point C} (hp : PointAt base s (tablePt d) P) :
+    PointAt base t (tablePt d) P := by
+  refine h.point hs hp (fun x hx => Nat.le_trans (table_coord_bounds h1 h15 x hx).2.1 (by decide)) ?_
+  intro x hx w hw
+  have hb := (table_coord_bounds h1 h15 x hx).1
+  have hh : ∀ w ∈ loopWork,w.1+w.2 ≤ tableAt := by decide
+  exact Or.inr (Nat.le_trans (hh w hw) hb)
+
+theorem earlier_table_apart {j d : Nat} (hj : 1 ≤ j) (hjd : j < d) :
+    ∀ x ∈ coordinates (tablePt j),∀ w ∈ (coordinates (tablePt d)).map (·,48),
+      x+48 ≤ w.1 ∨ w.1+w.2 ≤ x := by
+  intro x hx w hw
+  obtain ⟨y,hy,rfl⟩ := List.mem_map.mp hw
+  simp only [coordinates,tablePt,tableAt,List.mem_cons,List.not_mem_nil,or_false] at hx hy
+  rcases hx with rfl | rfl | rfl <;> rcases hy with rfl | rfl | rfl <;> exact Or.inl (by omega_arith)
+end VG.Proof.Ecdsa.Verify.AArch64.BrainpoolP384r1.Joint
+
+end
+
+end
+
+/-! Building the joint digit-pair table with the existing complete addition. -/
+
+@[expose] public section
+namespace VG.Proof.Ecdsa.Verify.AArch64.BrainpoolP384r1.Joint
+open VG VG.AArch64 VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64
+open VG.Proof.Mont VG.Proof.Mont.AArch64 VG.Proof.Weierstrass VG.Proof.Weierstrass.AArch64
+open VG.Impl.Ecdsa.AArch64 VG.Proof.Ecdsa.AArch64 VG.Spec.Weierstrass
+open VG.Impl.Ecdh.AArch64 (PX PY)
+open VG.Impl.Ecdsa.Verify.AArch64.BrainpoolP384r1.Joint
+
+abbrev Table (base : Addr) (P Q : Point C) (m : Nat) (s : State) : Prop :=
+  ∀ d,1 ≤ d → d ≤ m → PointAt base s (tablePt d) (pair P Q (d%4) (d/4))
+
+theorem entry_from_generator : CopyLayout entry gSource := ⟨by decide,by decide,by decide,by decide,by decide⟩
+theorem entry_from_peer : CopyLayout entry qSource := ⟨by decide,by decide,by decide,by decide,by decide⟩
+
+end VG.Proof.Ecdsa.Verify.AArch64.BrainpoolP384r1.Joint
+
+end
+
+end
 
 /-! ### `Ecdsa.Verify.AArch64.BrainpoolP384r1.Joint.Fetch`, which only this module used -/
 

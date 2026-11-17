@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Rc2.X86.Cbc.Body
 import VerifiedGarbage.Proof.Rc2.CbcMemory
-import VerifiedGarbage.Proof.Rc2.X86.KeyLoop
+import VerifiedGarbage.Proof.Rc2.X86.KeyIO
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Rc2.X86.Lit

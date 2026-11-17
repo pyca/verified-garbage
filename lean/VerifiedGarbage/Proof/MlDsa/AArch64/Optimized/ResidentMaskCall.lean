@@ -3,7 +3,7 @@ module
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentMaskVerified
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Call
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentMask
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRate
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentMemory
 public import VerifiedGarbage.Proof.MlDsa.ResidentMaskContract
 
 @[expose] public section

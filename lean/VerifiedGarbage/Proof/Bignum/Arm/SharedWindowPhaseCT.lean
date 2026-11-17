@@ -7,18 +7,14 @@ public import VerifiedGarbage.Proof.Bignum.Arm.TwoExpMontgomery
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Proof.Bignum.Arm.SharedWindowApplyCT
-import VerifiedGarbage.Proof.Bignum.Arm.SharedWindowBytes
 import VerifiedGarbage.Proof.Bignum.Arm.SharedWindowPhase
 public import VerifiedGarbage.Proof.Bignum.Arm.WindowBuild
-import VerifiedGarbage.Proof.Bignum.Arm.SharedWindowBuild
-import VerifiedGarbage.Proof.Bignum.Arm.WindowBuildCT
+import VerifiedGarbage.Proof.Bignum.Arm.WindowScanCT
 import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
 import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
 import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
-import VerifiedGarbage.Proof.Bignum.Arm.SharedWindowApply
 import VerifiedGarbage.Proof.Bignum.Arm.WindowPhase
-import VerifiedGarbage.Proof.Bignum.Arm.SharedWindowBit
 public import VerifiedGarbage.Proof.Bignum.Arm.WindowBytes
 public import VerifiedGarbage.Proof.Bignum.Arm.WindowBitCT
 import VerifiedGarbage.Proof.Bignum.Arm.ExpControl

@@ -2,7 +2,6 @@ module
 
 -- separate module: its proofs cost more than its imports, and its importer's changes need
 -- not re-check them
-
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.Prep
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Search
 public import VerifiedGarbage.Proof.Framework.RISCV64.Alloc
@@ -15,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Covers
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Hmac.Common
-import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Common
+import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Init
 import VerifiedGarbage.Proof.Sha256.Stream
 import VerifiedGarbage.Proof.X25519.RISCV64.Instr
 

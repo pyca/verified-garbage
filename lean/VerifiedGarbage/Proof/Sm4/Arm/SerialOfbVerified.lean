@@ -8,7 +8,6 @@ public import VerifiedGarbage.Impl.Sm4.Arm.SerialOfb
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.Sm4.Arm.BatchChain
-import VerifiedGarbage.Proof.Sm4.Arm.BatchEntry
 public import VerifiedGarbage.Spec.Ofb
 public import VerifiedGarbage.Spec.Sm4.Ctr
 import VerifiedGarbage.Proof.Sm4.Arm.SerialOfbGroup

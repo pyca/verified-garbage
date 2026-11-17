@@ -1,12 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Native.BuildGroup
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Native.BuildAdvance
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Native.BuildCounter
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Native.NormalizeLayout
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Native.BuildCounter
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Native.BuildSeedStore
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Lit

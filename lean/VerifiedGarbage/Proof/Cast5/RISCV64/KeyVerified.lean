@@ -10,10 +10,9 @@ meta import VerifiedGarbage.Proof.Cast5.RISCV64.EcbVerified
 meta import VerifiedGarbage.Proof.Cast5.RISCV64.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Cast5.RISCV64.KeyStep
+public import VerifiedGarbage.Proof.Cast5.RISCV64.KeyStep
 meta import VerifiedGarbage.Proof.Cast5.RISCV64.KeyStep
 public import VerifiedGarbage.Impl.Cast5.RISCV64
-public import VerifiedGarbage.Proof.Cast5.RISCV64.KeySteps
 public import VerifiedGarbage.Proof.Cast5.RISCV64.Run
 public import VerifiedGarbage.Proof.Framework.ConstMem
 public import VerifiedGarbage.Proof.Framework.Contract

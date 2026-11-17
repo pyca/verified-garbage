@@ -4,11 +4,11 @@ public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.In
 public import VerifiedGarbage.Impl.Ffdh.X86.Cached
 public import VerifiedGarbage.Proof.Rsa.FixedBaseComb
 import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Num
-import VerifiedGarbage.Proof.Bignum.X86.CrtRt.MulOk
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Frame
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Ptr
 import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Powers
 import VerifiedGarbage.Proof.Ffdh.X86.Stages
-public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Power
+public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Ctx
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!

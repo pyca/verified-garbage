@@ -2,7 +2,6 @@ module
 
 import VerifiedGarbage.Proof.Dsa.X86.PowCallFrame
 import VerifiedGarbage.Proof.Dsa.X86.WorkspaceCall
-import VerifiedGarbage.Proof.Dsa.X86.PowBody
 import VerifiedGarbage.Proof.Dsa.X86.PowCorrect
 public import VerifiedGarbage.Impl.Dsa.X86.Pow
 public import VerifiedGarbage.Proof.Dsa.X86.StackFrame

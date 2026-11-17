@@ -1,14 +1,12 @@
 module
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackVerify
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackFourContracts
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackFourContracts
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.KeygenPack
 public import VerifiedGarbage.Proof.MlDsa.Contract
 public import VerifiedGarbage.TCB.AArch64.Target
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackTail
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Contracts
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Loop
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackWidth
 import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.SimpleBitPack
 import VerifiedGarbage.Proof.MlDsa.Pack.Arith
 

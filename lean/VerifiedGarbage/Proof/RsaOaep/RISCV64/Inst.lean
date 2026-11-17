@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.RsaOaep.RISCV64.CTBase
 public import VerifiedGarbage.Proof.RsaOaep.RISCV64.CTBlocks
 public import VerifiedGarbage.Proof.RsaOaep.RISCV64.CTMgfT
 public import VerifiedGarbage.Proof.RsaOaep.RISCV64.Correct
-import VerifiedGarbage.Proof.RsaOaep.RISCV64.Em
 import VerifiedGarbage.Proof.RsaOaep.RISCV64.Label
 import VerifiedGarbage.Proof.RsaOaep.RISCV64.Main
 import VerifiedGarbage.Proof.Mgf1.Bytes

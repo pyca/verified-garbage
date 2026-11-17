@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86.Call
 public import VerifiedGarbage.Impl.Ffdh.X86.Candidate
-public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Power
+public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Ctx
 public import VerifiedGarbage.Proof.Bignum.X86.CrtValue
 public import VerifiedGarbage.Spec.Dsa
 

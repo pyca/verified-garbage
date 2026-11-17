@@ -2,7 +2,6 @@ module
 
 -- separate module: secp256k1's verification is its only importer, but it builds on both callees' proofs
 -- (the windows' and the comb's), which then build in parallel with the rest of its imports
-
 public import VerifiedGarbage.Impl.Ecdsa.RISCV64.VerifyComb
 public import VerifiedGarbage.Proof.Ecdsa.RISCV64.Secp256k1.Joint
 public import VerifiedGarbage.Proof.Ecdsa.RISCV64.Secp256k1.Window
@@ -21,7 +20,6 @@ import VerifiedGarbage.Proof.Framework.RISCV64.Inline
 import VerifiedGarbage.Proof.Framework.RISCV64.Syms
 import VerifiedGarbage.Proof.Ecdsa.RISCV64.Secp256k1.CombLit
 import VerifiedGarbage.Proof.Ecdsa.RISCV64.Secp256k1.MulLit
-import VerifiedGarbage.Proof.Ecdh.RISCV64.Secp256k1.Check
 
 /-!
 # ECDSA verification over secp256k1 on RISC-V: `[u]G` by the comb and `[v]Q` by windows

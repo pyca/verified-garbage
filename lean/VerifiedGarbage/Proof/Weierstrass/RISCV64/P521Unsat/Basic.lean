@@ -4,7 +4,7 @@ public import VerifiedGarbage.Impl.Weierstrass.RISCV64.P521Unsat
 public import VerifiedGarbage.Proof.Weierstrass.RISCV64.GenWide.Field
 public import VerifiedGarbage.Proof.Framework.RISCV64.Wide
 public import VerifiedGarbage.Proof.X448.RISCV64.R64.Basic
-public import VerifiedGarbage.Proof.X448.RISCV64.R64.Product
+public import VerifiedGarbage.Proof.X448.RISCV64.R64.Reduce
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
 import VerifiedGarbage.Proof.Framework.Range

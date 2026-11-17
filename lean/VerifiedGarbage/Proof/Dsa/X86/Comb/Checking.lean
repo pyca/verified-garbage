@@ -7,8 +7,6 @@ public import VerifiedGarbage.Proof.Dsa.X86.Comb.Core
 public import VerifiedGarbage.Proof.Dsa.X86.OutputFrame
 public import VerifiedGarbage.Proof.Dsa.X86.Installed
 public import VerifiedGarbage.Proof.Framework.X86.Spill
-
-import VerifiedGarbage.Proof.Dsa.X86.CheckingSized
 import VerifiedGarbage.Proof.Dsa.X86.CheckingOperation
 import VerifiedGarbage.Proof.Dsa.X86.CheckingResources
 import VerifiedGarbage.Proof.Dsa.X86.InstalledInputs
@@ -16,13 +14,14 @@ import VerifiedGarbage.Proof.Dsa.X86.ParameterBuffers
 import VerifiedGarbage.Proof.Dsa.X86.ABIResources
 import VerifiedGarbage.Proof.Dsa.X86.Comb.StagePower
 import VerifiedGarbage.Proof.Dsa.X86.Comb.CanonicalFrame
-import VerifiedGarbage.Proof.Dsa.X86.ValidateOne
+import VerifiedGarbage.Proof.Dsa.X86.StageChecks
 import VerifiedGarbage.Proof.Dsa.X86.Persistent
 import VerifiedGarbage.Proof.Dsa.X86.GenerateDomain
 import VerifiedGarbage.Proof.Dsa.Encoding
 import VerifiedGarbage.Proof.Dsa.X86.LocalOperand
 import VerifiedGarbage.Proof.Dsa.X86.Checks
 import VerifiedGarbage.Proof.Dsa.X86.ScheduleFrame
+
 /-! The checker returns its usual result and retains a canonical table on success. -/
 
 -- Formerly `VerifiedGarbage/Proof/Dsa/X86/Comb/Parameters.lean`, which only this module imported.

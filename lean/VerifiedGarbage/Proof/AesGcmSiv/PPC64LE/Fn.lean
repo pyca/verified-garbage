@@ -1,7 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Entry
-import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Wp
+public import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Wp
 import VerifiedGarbage.Proof.AesCcm.PPC64LE.Wp
 import VerifiedGarbage.Proof.AesCcm.Compare
 import VerifiedGarbage.Proof.AesCcm.BytesAt
@@ -14,7 +14,6 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 public import VerifiedGarbage.Impl.AesGcmSiv.PPC64LE
 public import VerifiedGarbage.Proof.Aes.SboxSpec
-public import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Env
 public import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
 public import VerifiedGarbage.Proof.Framework.Inline
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Call

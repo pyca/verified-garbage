@@ -1,10 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Search.Data
+public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Search.Entry
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Slots
 public import VerifiedGarbage.Impl.RsaKeyGen.Arm.Search
 public import VerifiedGarbage.Proof.Framework.Arm.Call
-import VerifiedGarbage.Proof.RsaKeyGen.Arm.Search.Entry
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd

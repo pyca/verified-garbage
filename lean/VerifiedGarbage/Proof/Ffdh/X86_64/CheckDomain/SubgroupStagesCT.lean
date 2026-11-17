@@ -1,12 +1,11 @@
 module
+
 public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.QPrepareCT
 public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.StagesCT
-public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Subgroup
+public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.SubgroupRun
 public import VerifiedGarbage.Proof.Ffdh.X86_64.PowCT
-
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.QTestCT
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.SubgroupRun
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
 

@@ -2,33 +2,651 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Interface
 public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Hole
-public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Compiled
-public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Fusion
 import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Impl.MlKem.AArch64.Kem
 public import VerifiedGarbage.Impl.MlKem1024.AArch64.KeyGen
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Schedule
-import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.AbsorbPlan
 import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Permute
 import VerifiedGarbage.Proof.Sha3.Arith
-import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Transport
 public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Pad
 public import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
-public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.SqueezeCode
 public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.WordSemantic
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.MlKem.Mem
-import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Word
 public import VerifiedGarbage.Impl.MlKem.AArch64.Top
-import VerifiedGarbage.Proof.Sha3.Stream
+public import VerifiedGarbage.Proof.Sha3.Stream
 import VerifiedGarbage.Proof.Framework.Block
-public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Link
 import VerifiedGarbage.Proof.Sha3.AArch64.Call
 import VerifiedGarbage.Impl.MlKem.AArch64.FixedHash
+public import VerifiedGarbage.Proof.Framework.CallFill
+public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Absorb
+
+/-! ### `MlKem.AArch64.FixedHash.Link`, which only this module used -/
+
+section
+
+@[expose] public section
+namespace VG.Proof.MlKem.AArch64.FixedHash
+open VG VG.AArch64 VG.Impl.MlKem.AArch64
+open VG.Spec.Sha3 (stateAt)
+
+abbrev linkSlot (sc : Reg) (wk : Nat) (s₀ : State) : Addr :=
+  s₀.gpr sc + BitVec.ofNat 64 wk + 600
+
+theorem link_covers {sc : Reg} {st wk rate : Nat} {s₀ s : State}
+    (hS : HSetup sc st wk rate s₀) (hg : Rg s₀ s) :
+    InRegions s.wr (linkSlot sc wk s₀) 8 := by
+  rw [hg.wr]
+  exact Covers.tail hS.cov _ _ ⟨_,List.mem_singleton_self _,
+    Offset.contains_base _ (d:=600) (by decide) (by decide)⟩
+
+theorem saveLink_ok {sc : Reg} {st wk rate : Nat} {s₀ s : State}
+    (hS : HSetup sc st wk rate s₀) (hg : Rg s₀ s)
+    (hoff : (wk+600)%8=0 ∧ wk+600<32768) :
+    WP isa (.block [.str .x .x30 sc (wk+600)]) s fun t=>
+      Kept [WKr sc wk s₀] s t ∧ t.gpr=s.gpr ∧
+      t.mem.readW (linkSlot sc wk s₀) 64=s.gpr .x30 ∧
+      stateAt t.mem (s₀.gpr sc+BitVec.ofNat 64 st)=
+        stateAt s.mem (s₀.gpr sc+BitVec.ofNat 64 st) := by
+  have addr : s.gpr sc+BitVec.ofNat 64 (wk+600)=linkSlot sc wk s₀ := by
+    rw [hg.cs sc hS.hsc.1 hS.hsc.2,BitVec.ofNat_add,← BitVec.add_assoc]
+    rfl
+  refine wp_strx hoff addr (link_covers hS hg) fun t ht=>wp_nil ?_
+  have fr : Frame [WKr sc wk s₀] s.mem t.mem := by
+    rw [ht.mem]
+    exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _
+      (Offset.contains_base _ (d:=600) (by decide) (by decide))
+  refine ⟨⟨fun r _ _=>congrFun ht.gpr r,ht.sp,ht.rd,ht.wr,fr,ht.vcs⟩,
+    ht.gpr,?_,?_⟩
+  · rw [ht.mem]; exact Mem.readW_writeW_self64 _ _ _
+  · apply Proof.Sha3.stateAt_congr
+    intro i hi
+    apply fr
+    intro r hr hc
+    rw [List.mem_singleton.mp hr] at hc
+    exact hS.d _ (contains_off (by omega_using [hi]) (by decide)) hc
+
+theorem restoreLink_ok {sc : Reg} {st wk rate : Nat} {s₀ s : State}
+    (hS : HSetup sc st wk rate s₀) (hg : Rg s₀ s)
+    (hoff : (wk+600)%8=0 ∧ wk+600<32768) :
+    WP isa (.block [.ldr .x .x30 sc (wk+600)]) s fun t=>
+      Kept [] s t ∧ t.mem=s.mem ∧
+      t.gpr .x30=s.mem.readW (linkSlot sc wk s₀) 64 := by
+  have addr : s.gpr sc+BitVec.ofNat 64 (wk+600)=linkSlot sc wk s₀ := by
+    rw [hg.cs sc hS.hsc.1 hS.hsc.2,BitVec.ofNat_add,← BitVec.add_assoc]
+    rfl
+  have hin : InRegions (s.rd++s.wr) (linkSlot sc wk s₀) 8 := in_rd_wr (link_covers hS hg)
+  refine wp_ldrx hoff addr hin fun t ht et=>wp_nil ?_
+  exact ⟨⟨fun r _ hn=>ht.get r (by simpa using hn),ht.sp,ht.rd,ht.wr,by rw [ht.mem]; exact Frame.refl _ _,ht.keep.vcs⟩,ht.mem,et⟩
+
+end VG.Proof.MlKem.AArch64.FixedHash
+
+end
+
+end
+
+/-! ### `MlKem.AArch64.FixedHash.Transport`, which only this module used -/
+
+section
+
+/-! ### `MlKem.AArch64.FixedHash.AbsorbPlan`, which this module and modules that import it used -/
+
+section
+
+/-! ### `MlKem.AArch64.FixedHash.Word`, which this module and modules that import it used -/
+
+section
+
+@[expose] public section
+namespace VG.Proof.MlKem.AArch64.FixedHash
+open VG VG.AArch64 VG.Impl.MlKem.AArch64
+
+/-- One exact word absorb from the measured fixed-length generator. -/
+theorem absorbWord_ok {s : State} {sc base : Reg} {off dst : Nat}
+    (hb : base≠.x2) (hc2 : sc≠.x2) (hc9 : sc≠.x9) (hc10 : sc≠.x10)
+    (ho : off<65536) (hd : dst%8=0 ∧ dst<32768)
+    (hr : InRegions (s.rd++s.wr) (s.gpr base+BitVec.ofNat 64 off) 8)
+    (hw : InRegions s.wr (s.gpr sc+BitVec.ofNat 64 dst) 8) :
+    WP isa (.block (ptrTo .x2 base off ++
+      ([.ldr .x .x9 .x2 0,.ldr .x .x10 sc dst,.logic .eor .x .x9 .x9 .x10,.str .x .x9 sc dst] : List Instr))) s
+      fun t=>Keep [.x2,.x9,.x10] s t ∧
+        t.mem=s.mem.writeW (s.gpr sc+BitVec.ofNat 64 dst)
+          (s.mem.readW (s.gpr base+BitVec.ofNat 64 off) 64 ^^^
+           s.mem.readW (s.gpr sc+BitVec.ofNat 64 dst) 64) := by
+  refine wp_ptrTo hb.symm ho fun a ha ea=> ?_
+  refine wp_ldrx (by decide) (by rw [ea,ptr_zero]) (by rw [ha.rd,ha.wr]; exact hr) fun b hb eb=> ?_
+  refine wp_ldrx hd (by rw [hb.get sc (by simp [hc9]),ha.get sc (by simp [hc2])])
+    (by rw [hb.rd,hb.wr,ha.rd,ha.wr]; obtain ⟨r,hr,hc⟩:=hw; exact ⟨r,List.mem_append_right _ hr,hc⟩) fun c hc ec=> ?_
+  refine wp_eor fun d hd' ed=> ?_
+  have hh := ((ha.trans hb).trans hc).trans hd'
+  refine wp_strx hd (by rw [hh.get sc (by simp [hc2,hc9,hc10])])
+    (by rw [hh.wr]; exact hw) fun t ht=>wp_nil ?_
+  refine ⟨(hh.keep.trans ht.keep).mono (by simp),?_⟩
+  rw [ht.mem,ed,hc.get .x9,eb,ec,hd'.mem,hc.mem,hb.mem,ha.mem]
+
+/-- One exact byte absorb from the measured fixed-length generator. -/
+theorem absorbByte_ok {s : State} {sc base : Reg} {off dst : Nat}
+    (hb : base≠.x2) (hc2 : sc≠.x2) (hc9 : sc≠.x9) (hc10 : sc≠.x10)
+    (ho : off<65536) (hd : dst<4096)
+    (hr : InRegions (s.rd++s.wr) (s.gpr base+BitVec.ofNat 64 off) 1)
+    (hw : InRegions s.wr (s.gpr sc+BitVec.ofNat 64 dst) 1) :
+    WP isa (.block (ptrTo .x2 base off ++
+      ([.ldrb .x9 .x2 0,.ldrb .x10 sc dst,.logic .eor .x .x9 .x9 .x10,.strb .x9 sc dst] : List Instr))) s
+      fun t=>Keep [.x2,.x9,.x10] s t ∧
+        t.mem=s.mem.writeW (s.gpr sc+BitVec.ofNat 64 dst)
+          (s.mem (s.gpr base+BitVec.ofNat 64 off) ^^^
+           s.mem (s.gpr sc+BitVec.ofNat 64 dst)) := by
+  refine wp_ptrTo hb.symm ho fun a ha ea=> ?_
+  refine wp_ldrb (by decide) (by rw [ea,ptr_zero]) (by rw [ha.rd,ha.wr]; exact hr) fun b hb eb=> ?_
+  refine wp_ldrb hd (by rw [hb.get sc (by simp [hc9]),ha.get sc (by simp [hc2])])
+    (by rw [hb.rd,hb.wr,ha.rd,ha.wr]; obtain ⟨r,hr,hc⟩:=hw; exact ⟨r,List.mem_append_right _ hr,hc⟩) fun c hc ec=> ?_
+  refine wp_eor fun d hd' ed=> ?_
+  have hh := ((ha.trans hb).trans hc).trans hd'
+  refine wp_strb hd (by rw [hh.get sc (by simp [hc2,hc9,hc10])])
+    (by rw [hh.wr]; exact hw) fun t ht=>wp_nil ?_
+  refine ⟨(hh.keep.trans ht.keep).mono (by simp),?_⟩
+  rw [ht.mem,ed,hc.get .x9,eb,ec,hd'.mem,hc.mem,hb.mem,ha.mem]
+  congr 1
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
+  simp [hi]
+
+/-- A word squeeze leaves the state unchanged when the output is disjoint. -/
+theorem squeezeWord_ok {s : State} {sc base : Reg} {src off : Nat}
+    (hb : base≠.x2) (hb9 : base≠.x9)
+    (ho : off<65536) (hs : src%8=0 ∧ src<32768)
+    (hr : InRegions (s.rd++s.wr) (s.gpr sc+BitVec.ofNat 64 src) 8)
+    (hw : InRegions s.wr (s.gpr base+BitVec.ofNat 64 off) 8) :
+    WP isa (.block (([.ldr .x .x9 sc src] : List Instr) ++ ptrTo .x2 base off ++ ([.str .x .x9 .x2 0] : List Instr))) s
+      fun t=>Keep [.x2,.x9] s t ∧
+        t.mem=s.mem.writeW (s.gpr base+BitVec.ofNat 64 off)
+          (s.mem.readW (s.gpr sc+BitVec.ofNat 64 src) 64) := by
+  refine wp_ldrx hs rfl hr fun a ha ea=> ?_
+  refine wp_ptrTo hb.symm ho fun b hb eb=> ?_
+  refine wp_strx (by decide) (by rw [eb,ha.get base (by simp [hb9]),ptr_zero])
+    (by rw [hb.wr,ha.wr]; exact hw) fun t ht=>wp_nil ?_
+  refine ⟨((ha.keep.trans hb.keep).trans ht.keep).mono (by simp),?_⟩
+  rw [ht.mem,hb.get .x9,ea,hb.mem,ha.mem]
+end VG.Proof.MlKem.AArch64.FixedHash
+
+end
+
+end
+
+/-! ### `MlKem.AArch64.FixedHash.AbsorbStep`, which only this module used -/
+
+section
+
+@[expose] public section
+namespace VG.Proof.MlKem.AArch64.FixedHash
+open VG VG.AArch64 VG.Impl.MlKem.AArch64
+open VG.Spec.Sha3 (stateAt bytesAt)
+open VG.Proof.Sha3 (xorAt)
+
+theorem absorbWord_piece_ok {s₀ s : State} {sc : Reg} {st wk rate pos i : Nat} {p : Piece}
+ (hS : HSetup sc st wk rate s₀) (hp : PieceOk sc st wk s₀ false p) (hg : Rg s₀ s)
+ (hi : i+8≤p.len) (ho : p.off+i<65536) (hpos : pos+8≤rate)
+ (hd : (st+pos)%8=0 ∧ st+pos<32768) :
+ WP isa (.block (ptrTo .x2 p.base (p.off+i) ++
+   ([.ldr .x .x9 .x2 0,.ldr .x .x10 sc (st+pos),.logic .eor .x .x9 .x9 .x10,
+     .str .x .x9 sc (st+pos)] : List Instr))) s fun t=>
+ Kept [STr sc st s₀] s t ∧
+ stateAt t.mem (s₀.gpr sc+BitVec.ofNat 64 st)=
+   xorAt (stateAt s.mem (s₀.gpr sc+BitVec.ofNat 64 st)) pos
+     (bytesAt s.mem (s₀.gpr p.base+BitVec.ofNat 64 (p.off+i)) 8) := by
+ have ns : sc≠.x2 ∧ sc≠.x9 ∧ sc≠.x10 := by
+   have all : ∀r∈preserved,r≠.x2 ∧ r≠.x9 ∧ r≠.x10 := by decide
+   exact all sc hS.hsc.1
+ have nb : p.base≠.x2 := (pres_not hp.base.1).2.2.1
+ have gs := hg.cs sc hS.hsc.1 hS.hsc.2
+ have gb := hg.cs p.base hp.base.1 hp.base.2
+ have addr : s.gpr sc+BitVec.ofNat 64 (st+pos)=s₀.gpr sc+BitVec.ofNat 64 st+BitVec.ofNat 64 pos := by
+   rw [gs,BitVec.add_assoc,←BitVec.ofNat_add]
+ have cs : (STr sc st s₀).Contains (s.gpr sc+BitVec.ofNat 64 (st+pos)) 8 := by
+   rw [addr]
+   exact Offset.contains_base _ (by have:= (rate_bounds hS.hrate).2; omega_using [hpos, this]) (by have:= (rate_bounds hS.hrate).2; omega_using [hd])
+ refine WP.mono (absorbWord_ok nb ns.1 ns.2.1 ns.2.2 ho hd ?_ ?_) fun t ⟨kt,mt⟩=> ?_
+ · rw [hg.rd,hg.wr,gb]
+   apply hp.cov
+   refine ⟨preg s₀ p,List.mem_singleton_self _,?_⟩
+   rw [BitVec.ofNat_add,←BitVec.add_assoc]
+   exact Offset.contains_base _ hi (by have:=hp.len; omega_using [ho])
+ · rw [hg.wr]
+   exact hS.cov _ _ ⟨_,List.mem_cons_self ..,cs⟩
+ · refine ⟨⟨fun r hr hn=>kt.gpr r (by revert r hr; decide),kt.sp,kt.rd,kt.wr,?_,kt.vcs⟩,?_⟩
+   · rw [mt]
+     exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ cs
+   · rw [mt,addr,gb]
+     exact absorbWord_state _ _ _ (by have:= (rate_bounds hS.hrate).2; omega_using [hpos, this])
+theorem absorbByte_piece_ok {s₀ s : State} {sc : Reg} {st wk rate pos i : Nat} {p : Piece}
+ (hS : HSetup sc st wk rate s₀) (hp : PieceOk sc st wk s₀ false p) (hg : Rg s₀ s)
+ (hi : i+1≤p.len) (ho : p.off+i<65536) (hpos : pos+1≤rate)
+ (hd : st+pos<4096) :
+ WP isa (.block (ptrTo .x2 p.base (p.off+i) ++
+   ([.ldrb .x9 .x2 0,.ldrb .x10 sc (st+pos),.logic .eor .x .x9 .x9 .x10,
+     .strb .x9 sc (st+pos)] : List Instr))) s fun t=>
+ Kept [STr sc st s₀] s t ∧
+ stateAt t.mem (s₀.gpr sc+BitVec.ofNat 64 st)=
+   xorAt (stateAt s.mem (s₀.gpr sc+BitVec.ofNat 64 st)) pos
+     (bytesAt s.mem (s₀.gpr p.base+BitVec.ofNat 64 (p.off+i)) 1) := by
+ have ns : sc≠.x2 ∧ sc≠.x9 ∧ sc≠.x10 := by
+   have all : ∀r∈preserved,r≠.x2 ∧ r≠.x9 ∧ r≠.x10 := by decide
+   exact all sc hS.hsc.1
+ have nb : p.base≠.x2 := (pres_not hp.base.1).2.2.1
+ have gs := hg.cs sc hS.hsc.1 hS.hsc.2
+ have gb := hg.cs p.base hp.base.1 hp.base.2
+ have addr : s.gpr sc+BitVec.ofNat 64 (st+pos)=s₀.gpr sc+BitVec.ofNat 64 st+BitVec.ofNat 64 pos := by
+   rw [gs,BitVec.add_assoc,←BitVec.ofNat_add]
+ have cs : (STr sc st s₀).Contains (s.gpr sc+BitVec.ofNat 64 (st+pos)) 1 := by
+   rw [addr]
+   exact Offset.contains_base _ (by have:= (rate_bounds hS.hrate).2; omega_using [hpos, this]) (by have:= (rate_bounds hS.hrate).2; omega_using [hd])
+ refine WP.mono (absorbByte_ok nb ns.1 ns.2.1 ns.2.2 ho hd ?_ ?_) fun t ⟨kt,mt⟩=> ?_
+ · rw [hg.rd,hg.wr,gb]
+   apply hp.cov
+   refine ⟨preg s₀ p,List.mem_singleton_self _,?_⟩
+   rw [BitVec.ofNat_add,←BitVec.add_assoc]
+   exact Offset.contains_base _ hi (by have:=hp.len; omega_using [ho])
+ · rw [hg.wr]
+   exact hS.cov _ _ ⟨_,List.mem_cons_self ..,cs⟩
+ · refine ⟨⟨fun r hr hn=>kt.gpr r (by revert r hr; decide),kt.sp,kt.rd,kt.wr,?_,kt.vcs⟩,?_⟩
+   · rw [mt]
+     exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ cs
+   · rw [mt,addr,gb]
+     simpa [bytesAt,Proof.Sha3.xorAt_single] using
+       absorbByte_state s.mem (s₀.gpr sc+BitVec.ofNat 64 st)
+         (s₀.gpr p.base+BitVec.ofNat 64 (p.off+i)) (by have:= (rate_bounds hS.hrate).2; omega_using [hpos, this])
+end VG.Proof.MlKem.AArch64.FixedHash
+
+end
+
+end
+
+@[expose] public section
+namespace VG.Proof.MlKem.AArch64.FixedHash
+open VG VG.AArch64 VG.Impl.MlKem.AArch64
+open VG.Spec.Sha3 (stateAt bytesAt)
+open VG.Proof.Sha3 (Rep xorAt)
+
+def chunkBytes (s : State) (p : Piece) (i n : Nat) : List Byte :=
+ bytesAt s.mem (s.gpr p.base+BitVec.ofNat 64 (p.off+i)) n
+
+def remainingBytes (s : State) : List Piece → Nat → List Byte
+ | [],_=>[]
+ | p::ps,i=>chunkBytes s p i (p.len-i) ++ (ps.map (pbytes s)).flatten
+
+theorem remaining_skip (s : State) (p : Piece) (ps : List Piece) :
+ remainingBytes s (p::ps) p.len=remainingBytes s ps 0 := by
+ cases ps with
+ | nil => simp [remainingBytes,chunkBytes,bytesAt]
+ | cons q qs => simp [remainingBytes,chunkBytes,pbytes,bytesAt]
+
+theorem remaining_step (s : State) (p : Piece) (ps : List Piece) {i n : Nat}
+ (hn : i+n≤p.len) : remainingBytes s (p::ps) i=
+ chunkBytes s p i n ++ remainingBytes s (p::ps) (i+n) := by
+ simp only [remainingBytes,chunkBytes]
+ rw [show p.len-i=n+(p.len-(i+n)) by omega_using [hn],
+   Proof.Sha3.AArch64.Stream.Absorb.bytesAt_add,List.append_assoc,
+   BitVec.add_assoc,←BitVec.ofNat_add,Nat.add_assoc]
+
+theorem chunkBytes_frame {s₀ s : State} {sc : Reg} {st wk : Nat} {p : Piece} {i n : Nat}
+ (hp : PieceOk sc st wk s₀ false p) (hk : Kept [STr sc st s₀,WKr sc wk s₀] s₀ s)
+ (hn : i+n≤p.len) : chunkBytes s p i n=chunkBytes s₀ p i n := by
+ unfold chunkBytes
+ rw [hk.cs p.base hp.base.1 hp.base.2]
+ have sub : Region.Sub ⟨s₀.gpr p.base+BitVec.ofNat 64 (p.off+i),n⟩ (preg s₀ p) := by
+   simpa only [preg,BitVec.add_assoc,←BitVec.ofNat_add] using
+     (Offset.sub_base (s₀.gpr p.base+BitVec.ofNat 64 p.off) (d:=i) hn)
+ apply VG.Proof.MlKem.bytesAt_frame hk.frame
+ · intro r hr
+   rcases mem2' hr with rfl|rfl
+   · exact hp.dst.sub_left sub
+   · exact hp.dwk.sub_left sub
+ · have:=hp.len; omega_using [hn, this]
+
+theorem action_piece_ok {s₀ s : State} {sc : Reg} {st wk rate pos i : Nat} {p : Piece} {w : Bool}
+ (hS : HSetup sc st wk rate s₀) (hp : PieceOk sc st wk s₀ false p) (hg : Rg s₀ s)
+ (hi : i+width w≤p.len) (ho : p.off+p.len≤65536) (hpos : pos+width w≤rate)
+ (hw : w=true→i%8=0 ∧ pos%8=0) (ha : st%8=0) (hb : st+rate≤4096) :
+ WP isa (.block (actionCode sc st (action p i pos w))) s fun t=>
+ Kept [STr sc st s₀] s t ∧ stateAt t.mem (s₀.gpr sc+BitVec.ofNat 64 st)=
+ xorAt (stateAt s.mem (s₀.gpr sc+BitVec.ofNat 64 st)) pos (chunkBytes s p i (width w)) := by
+ have gb := hg.cs p.base hp.base.1 hp.base.2
+ cases w <;> simp only [actionCode,action,width,Bool.false_eq_true,ite_false,ite_true,chunkBytes] at * <;> simp only [gb]
+ · exact absorbByte_piece_ok (s₀:=s₀) (s:=s) (sc:=sc) (st:=st) (wk:=wk) (rate:=rate) (pos:=pos) (i:=i) (p:=p) hS hp hg hi (by omega_using [ho, hi]) hpos
+     (by omega_using [hb, hpos])
+ · have hw' : i%8=0 ∧ pos%8=0 := by simpa using hw
+   have hm := hw'.2
+   apply absorbWord_piece_ok (s₀:=s₀) (s:=s) (sc:=sc) (st:=st) (wk:=wk) (rate:=rate) (pos:=pos) (i:=i) (p:=p) hS hp hg hi (by omega_using [ho, hi]) hpos
+   exact ⟨by omega_using [ha, hw'],by omega_using [hb, hpos]⟩
+
+end VG.Proof.MlKem.AArch64.FixedHash
+
+end
+
+end
+
+@[expose] public section
+namespace VG.Proof.MlKem.AArch64.FixedHash
+open VG VG.AArch64 VG.Impl.MlKem.AArch64
+
+theorem hsetup_rg {s t : State} {sc : Reg} {st wk rate : Nat}
+ (h : HSetup sc st wk rate s) (g : Rg s t) : HSetup sc st wk rate t := by
+ have e:=g.cs sc h.hsc.1 h.hsc.2
+ refine ⟨h.hsc,h.hst,h.hwk,h.hrate,?_,?_,?_,?_,?_⟩
+ · simpa only [e] using h.d
+ · simpa only [g.sp] using h.sp16
+ · simpa only [e,stk,g.sp] using h.kst
+ · simpa only [e,stk,g.sp] using h.kwk
+ · simpa only [e,g.wr] using h.cov
+
+theorem piece_rg {s t : State} {sc : Reg} {st wk rate : Nat} {p : Piece} {w : Bool}
+ (h : HSetup sc st wk rate s) (hp : PieceOk sc st wk s w p) (g : Rg s t) :
+ PieceOk sc st wk t w p := by
+ have e:=g.cs sc h.hsc.1 h.hsc.2
+ have b:=g.cs p.base hp.base.1 hp.base.2
+ refine ⟨hp.base,hp.off,hp.len,?_,?_,?_,?_⟩
+ · simpa only [preg,STr,e,b] using hp.dst
+ · simpa only [preg,WKr,e,b] using hp.dwk
+ · simpa only [preg,stk,b,g.sp] using hp.stk
+ · simpa only [preg,b,g.wr,g.rd] using hp.cov
+
+theorem preg_rg {s t : State} {sc : Reg} {st wk : Nat} {p : Piece} {w : Bool}
+ (hp : PieceOk sc st wk s w p) (g : Rg s t) : preg t p=preg s p := by
+ unfold preg
+ rw [g.cs p.base hp.base.1 hp.base.2]
+
+theorem outs_rg {s t : State} {sc : Reg} {st wk : Nat} {ps : List Piece}
+ (hp : ∀p∈ps,PieceOk sc st wk s true p) (g : Rg s t)
+ {m : Mem} {rate pos : Nat} {A : Spec.Sha3.State} :
+ Outs t m rate A pos ps↔Outs s m rate A pos ps := by
+ induction ps generalizing pos with
+ | nil=>rfl
+ | cons p ps ih=>
+   simp only [Outs,g.cs p.base (hp _ (by simp)).base.1 (hp _ (by simp)).base.2]
+   exact and_congr Iff.rfl (ih (fun p hh=>hp p (by simp [hh])))
+
+theorem remaining_zero (s : State) (ps : List Piece) :
+ remainingBytes s ps 0=(ps.map (pbytes s)).flatten := by
+ cases ps with
+ | nil=>rfl
+ | cons p ps=>simp [remainingBytes,chunkBytes,pbytes]
+end VG.Proof.MlKem.AArch64.FixedHash
+
+end
+
+end
+
+/-! ### `MlKem.AArch64.FixedHash.Fusion`, which only this module used -/
+
+section
+
+@[expose] public section
+namespace VG.Proof.MlKem.AArch64.FixedHash.Fusion
+open VG
+variable {M : ISA}
+
+def Same (a b : Prog M) : Prop := ∀s tr t,Exec M a s tr t ↔ Exec M b s tr t
+
+theorem Same.refl (a : Prog M) : Same a a := fun _ _ _=>Iff.rfl
+theorem Same.symm {a b : Prog M} (h : Same a b) : Same b a := fun s tr t=>(h s tr t).symm
+theorem Same.trans {a b c : Prog M} (h : Same a b) (g : Same b c) : Same a c :=
+ fun s tr t=>(h s tr t).trans (g s tr t)
+
+theorem Same.wp {a b : Prog M} (h : Same a b) {s : M.State} {Q : M.State→Prop} :
+ WP M a s Q ↔ WP M b s Q := by
+ constructor <;> rintro ⟨tr,t,he,hq⟩
+ · exact ⟨tr,t,(h s tr t).mp he,hq⟩
+ · exact ⟨tr,t,(h s tr t).mpr he,hq⟩
+
+theorem seq_congr {a b c d : Prog M} (h : Same a b) (g : Same c d) :
+ Same (.seq a c) (.seq b d) := by
+ intro s tr t
+ constructor
+ · intro he; cases he with
+   | seq e f => exact .seq ((h ..).mp e) ((g ..).mp f)
+ · intro he; cases he with
+   | seq e f => exact .seq ((h ..).mpr e) ((g ..).mpr f)
+
+theorem block_append (xs ys : List M.Instr) : Same (.seq (.block xs) (.block ys)) (.block (xs++ys)) := by
+ intro s tr t
+ constructor
+ · intro he; cases he with
+   | seq e f =>
+     cases e with
+     | block e =>
+       cases f with
+       | block f =>
+         exact .block (by rw [execBlock_append,e]; simp only [Option.bind_some,f,Option.map_some])
+ · intro he
+   rw [Exec.block_iff,execBlock_append] at he
+   obtain ⟨⟨u,ta⟩,ha,hb⟩ := Option.bind_eq_some_iff.mp he
+   obtain ⟨⟨v,tb⟩,hc,hd⟩ := Option.map_eq_some_iff.mp hb
+   simp only [Prod.mk.injEq] at hd
+   obtain ⟨rfl,rfl⟩:=hd
+   exact .seq (.block ha) (.block hc)
+
+theorem nil_left (a : Prog M) : Same (.seq (.block []) a) a := by
+ intro s tr t
+ constructor
+ · intro he; cases he with
+   | seq e f =>
+     rw [Exec.block_iff] at e
+     simp only [execBlock,Option.some.injEq,Prod.mk.injEq] at e
+     obtain ⟨rfl,rfl⟩:=e
+     exact f
+ · intro he
+   simpa only [List.nil_append] using (Exec.seq (Exec.block (by rfl : execBlock M [] s=some (s,[]))) he)
+
+theorem nil_right (a : Prog M) : Same (.seq a (.block [])) a := by
+ intro s tr t
+ constructor
+ · intro he; cases he with
+   | seq e f =>
+     rw [Exec.block_iff] at f
+     simp only [execBlock,Option.some.injEq,Prod.mk.injEq] at f
+     obtain ⟨rfl,rfl⟩:=f
+     simpa only [List.append_nil] using e
+ · intro he
+   simpa only [List.append_nil] using (Exec.seq he (Exec.block (by rfl : execBlock M [] t=some (t,[]))))
+
+theorem assoc (a b c : Prog M) : Same (.seq (.seq a b) c) (.seq a (.seq b c)) := by
+ intro s tr t
+ constructor
+ · intro he; cases he with
+   | seq e f => cases e with
+     | seq g h => simpa only [List.append_assoc] using (Exec.seq g (Exec.seq h f))
+ · intro he; cases he with
+   | seq e f => cases f with
+     | seq g h => simpa only [List.append_assoc] using (Exec.seq (Exec.seq e g) h)
+
+/-- Concatenate code, flattening sequences and coalescing adjacent blocks. -/
+def append : Prog M → Prog M → Prog M
+ | .seq a b,c => append a (append b c)
+ | .block [],c => c
+ | .block xs,.block ys => .block (xs++ys)
+ | .block xs,.seq (.block ys) c => .seq (.block (xs++ys)) c
+ | a,.block [] => a
+ | a,b => .seq a b
+
+theorem append_same (a b : Prog M) : Same (.seq a b) (append a b) := by
+ induction a generalizing b with
+ | seq a c ia ic =>
+   exact (assoc a c b).trans ((seq_congr (Same.refl a) (ic b)).trans (ia (append c b)))
+ | block xs =>
+   cases xs with
+   | nil => exact nil_left b
+   | cons x xs =>
+     cases b with
+     | block ys => exact block_append _ _
+     | seq b c =>
+       cases b with
+       | block ys =>
+         exact (assoc (.block (x::xs)) (.block ys) c).symm.trans
+           (seq_congr (block_append _ _) (Same.refl c))
+       | _ => exact Same.refl _
+     | _ => exact Same.refl _
+ | _ =>
+   cases b with
+   | block ys => cases ys with
+     | nil => exact nil_right _
+     | cons y ys => exact Same.refl _
+   | _ => exact Same.refl _
+
+/-- Normalize sequence grouping and block boundaries without changing calls. -/
+def normalize : Prog M → Prog M
+ | .seq a b => append (normalize a) (normalize b)
+ | a => a
+
+theorem normalize_same (a : Prog M) : Same a (normalize a) := by
+ induction a with
+ | seq a b ha hb => exact (seq_congr ha hb).trans (append_same _ _)
+ | _ => exact Same.refl _
+
+/-- Equality of normal forms certifies exact state and leakage equivalence. -/
+theorem of_normalize_eq {a b : Prog M} (h : normalize a=normalize b) : Same a b :=
+ (normalize_same a).trans (h ▸ (normalize_same b).symm)
+
+/-! ## Code with its holes filled
+
+`append` and `normalize` look at blocks and sequences only, which filling
+holes (`Code.fillHoles`) keeps, so they commute with it: two programs whose
+code with holes has the same normal form are the same with the holes filled
+by any callee (`Same.of_fillHoles`). -/
+
+theorem fillHoles_append (n : String) (b : Prog M) (a c : Prog M) :
+    Code.fillHoles n b (append a c) = append (Code.fillHoles n b a) (Code.fillHoles n b c) := by
+  induction a generalizing c with
+  | seq a₁ a₂ ih₁ ih₂ => simp only [append, Code.fillHoles, ih₁, ih₂]
+  | block xs =>
+    cases xs with
+    | nil => rfl
+    | cons x xs =>
+      cases c with
+      | block ys => rfl
+      | seq c₁ c₂ =>
+        cases c₁ with
+        | block ys => rfl
+        | call m body =>
+          cases body with
+          | block is => cases is <;> rfl
+          | _ => rfl
+        | _ => rfl
+      | call m body =>
+        cases body with
+        | block is => cases is <;> rfl
+        | _ => rfl
+      | _ => rfl
+  | call m body =>
+    cases body with
+    | block is =>
+      cases is with
+      | nil =>
+        cases c with
+        | block ys => cases ys <;> rfl
+        | call m' body' =>
+          cases body' with
+          | block is' => cases is' <;> rfl
+          | _ => rfl
+        | _ => rfl
+      | cons i is =>
+        cases c with
+        | block ys => cases ys <;> rfl
+        | call m' body' =>
+          cases body' with
+          | block is' => cases is' <;> rfl
+          | _ => rfl
+        | _ => rfl
+    | _ =>
+      cases c with
+      | block ys => cases ys <;> rfl
+      | call m' body' =>
+        cases body' with
+        | block is' => cases is' <;> rfl
+        | _ => rfl
+      | _ => rfl
+  | _ =>
+    cases c with
+    | block ys => cases ys <;> rfl
+    | call m' body' =>
+      cases body' with
+      | block is' => cases is' <;> rfl
+      | _ => rfl
+    | _ => rfl
+
+theorem normalize_fillHoles (n : String) (b : Prog M) (a : Prog M) :
+    normalize (Code.fillHoles n b a) = Code.fillHoles n b (normalize a) := by
+  induction a with
+  | seq x y ihx ihy => simp only [Code.fillHoles, normalize, ihx, ihy, fillHoles_append]
+  | call m body =>
+    cases body with
+    | block is => cases is <;> rfl
+    | _ => rfl
+  | _ => rfl
+
+/-- `a` and `b` are the code with holes `a₀` and `b₀` with the holes filled:
+if `a₀` and `b₀` have the same normal form, `a` and `b` are the same. -/
+theorem Same.of_fillHoles {a b a₀ b₀ : Prog M} {n : String} {body : Prog M}
+    (ha : a = Code.fillHoles n body a₀) (hb : b = Code.fillHoles n body b₀)
+    (h : normalize a₀ = normalize b₀) : Same a b :=
+  of_normalize_eq (by rw [ha, hb, normalize_fillHoles, normalize_fillHoles, h])
+
+end VG.Proof.MlKem.AArch64.FixedHash.Fusion
+
+end
+
+end
+
+/-! ### `MlKem.AArch64.FixedHash.Compiled`, which only this module used -/
+
+section
+
+/-! ### `MlKem.AArch64.FixedHash.SqueezeCode`, which this module and modules that import it used -/
+
+section
+
+/-! # A compositional view of the fixed generator's output instructions -/
+@[expose] public section
+namespace VG.Proof.MlKem.AArch64.FixedHash
+open VG VG.AArch64 VG.Impl.MlKem.AArch64
+
+def squeezePieceCode (sc : Reg) (st pos : Nat) (p : Piece) : List Instr :=
+ (List.range (p.len/8)).flatMap fun i=>
+  [.ldr .x .x9 sc (st+pos+8*i)] ++ ptrTo .x2 p.base (p.off+8*i) ++ [.str .x .x9 .x2 0]
+
+def squeezeCode (sc : Reg) (st : Nat) : Nat→List Piece→List Instr
+ | _,[]=>[]
+ | pos,p::ps=>squeezePieceCode sc st pos p ++ squeezeCode sc st (pos+p.len) ps
+
+end VG.Proof.MlKem.AArch64.FixedHash
+
+end
+
+end
+
+@[expose] public section
+namespace VG.Proof.MlKem.AArch64.FixedHash
+open VG VG.AArch64 VG.Impl.MlKem.AArch64
+
+/-- A proof-oriented decomposition of the measured fixed hash generator. -/
+def compiled (c : Impl.Sha3.AArch64.Callee) (sc : Reg) (st wk rate sfx : Nat)
+ (ins outs : List Piece) : Prog isa :=
+ .seq (.block (zeroState sc st ++ [.str .x .x30 sc (wk+600)]))
+ (.seq (compile c sc st wk rate (schedule rate ins).1)
+ (.seq (.block (padCode sc st rate (schedule rate ins).2 sfx))
+ (.seq (permute c sc st wk)
+ (.seq (.block (squeezeCode sc st 0 outs)) (.block [.ldr .x .x30 sc (wk+600)])))))
+
+end VG.Proof.MlKem.AArch64.FixedHash
+
+end
+
+end
 
 /-! ### `MlKem.AArch64.FixedHash.CompiledShapes`, which only this module used -/
 

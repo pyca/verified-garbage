@@ -4,7 +4,6 @@ import VerifiedGarbage.Proof.Ffdh.Arm.CandidatePrepare
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Ffdh.Arm.NormalizedPrepareCT
 import VerifiedGarbage.Proof.Ffdh.Arm.PrepareCT
-import VerifiedGarbage.Proof.Bignum.Arm.InlineMontgomery
 import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
 import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Impl.Ffdh.Arm.CandidatePrepare

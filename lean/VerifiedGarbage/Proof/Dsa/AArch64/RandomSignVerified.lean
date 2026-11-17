@@ -4,10 +4,10 @@ public import VerifiedGarbage.Impl.Dsa.AArch64.RandomSign
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCall
 public import VerifiedGarbage.Spec.Dsa.RandomSign
 public import VerifiedGarbage.Spec.Dsa.PrevalidatedSign
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCallResult
+public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignSingle
 public import VerifiedGarbage.Proof.Dsa.AArch64.PrevalidatedSignVerified
 public import VerifiedGarbage.Proof.Dsa.SignContractWith
-import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignABI
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignFrame
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCode
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.RandomSignResult

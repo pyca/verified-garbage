@@ -5,12 +5,10 @@ public import VerifiedGarbage.Proof.AesCbc.X86_64.Loop
 public import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Loop
 public import VerifiedGarbage.Impl.AesXts.X86_64VaesTo
 public import VerifiedGarbage.Proof.AesXts.X86_64.Steps
-public import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Tail
+public import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Top
 public import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Enc
 public import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Dec
 public import VerifiedGarbage.Proof.AesXts.X86_64.AesNi.Loop
-import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.PrePost
-import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.TailOps
 import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Ctr32
 import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Ctr32
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
@@ -23,19 +21,15 @@ import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
 import VerifiedGarbage.Proof.Aes.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Body
 import VerifiedGarbage.Proof.AesCbc.X86_64.Call
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Setup
 import VerifiedGarbage.Proof.AesCbc.X86_64.Body
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Blocks
-import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Top
 import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Rounds
 import VerifiedGarbage.Proof.Aes.X86_64.VaesBlocks.Dec
 import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Dec
-import VerifiedGarbage.Proof.AesXts.X86_64.AesNi.Step
 
 /-!
 # One-pass XTS-AES on x86-64, out of place: correctness
@@ -614,7 +608,7 @@ end VG.Proof.AesXts.X86_64.VaesTo
 `enterTo` keeps `src - dst` at `scratch + 248` (`SInv.dl`) and moves the
 arguments as `enter` does, with `dst` as the data pointer (`SInv.r11`);
 `gen` then stores the tweaks of blocks `0 … 7` at `scratch + 256`, as in
-`Proof/AesXts/X86_64/Vaes/Setup.lean`, and leaves `src - dst` where it was.
+`Proof/AesXts/X86_64/Vaes/Top.lean`, and leaves `src - dst` where it was.
 -/
 
 namespace VG.Proof.AesXts.X86_64.VaesTo
@@ -764,7 +758,7 @@ end VG.Proof.AesXts.X86_64.VaesTo
 
 /-! ## One-pass XTS-AES on x86-64, out of place: the blocks left
 
-`tbody_ok` and `tail_wp` of `Proof/AesXts/X86_64/Vaes/Tail.lean`, with each
+`tbody_ok` and `tail_wp` of `Proof/AesXts/X86_64/Vaes/Top.lean`, with each
 block loaded from `src` (`tPreListTo_ok`) and stored to `dst`.
 -/
 

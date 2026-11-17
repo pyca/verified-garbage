@@ -1,13 +1,49 @@
 module
+
 public import VerifiedGarbage.Impl.X448.AArch64.Tail
 public import VerifiedGarbage.Proof.X448.Wide.CarryStep
 public import VerifiedGarbage.Proof.X448.Wide.Column
-
 import VerifiedGarbage.Proof.X448.Wide.PassInit
 import VerifiedGarbage.Proof.X448.Wide.TailStep
 import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Proof.X448.Wide.TailBounds
 import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.X448.Wide.Limbs
+import VerifiedGarbage.Proof.Framework.Omega
+
+/-! ### `X448.Wide.TailBounds`, which this module and modules that import it used -/
+
+section
+
+/-! Untrusted: tighter carry bounds for coefficients after the first fold. -/
+
+@[expose] public section
+
+namespace VG.Proof.X448.Wide
+
+theorem carry_small {f : Nat → Nat} {n : Nat} (h : ∀ i < n, f i < 2 ^ 63 + radix) :
+    carry f n < 2 ^ 8 := by
+  induction n with
+  | zero => simp only [carry]; decide
+  | succ n ih =>
+    have hi := ih (fun i hi => h i (by omega_using [hi]))
+    have hn := h n (by omega_using [])
+    simp only [carry, radix]
+    simp only [radix] at hn
+    omega_using [hi, hn]
+
+theorem folded_small {f : Nat → Nat} (h : ∀ i < 8, f i < 2 ^ 118) :
+    ∀ i < 8, folded f i < 2 ^ 63 + radix := by
+  have hc := carry_bound h
+  intro i _
+  have hd := digit_lt f i
+  simp only [folded]
+  split <;> omega_arith
+
+end VG.Proof.X448.Wide
+
+end
+
+end
 
 /-! Untrusted: in-place or disjoint wide carry propagation. -/
 

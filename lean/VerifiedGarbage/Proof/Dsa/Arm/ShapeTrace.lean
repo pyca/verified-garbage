@@ -1,8 +1,7 @@
 module
-public import VerifiedGarbage.Impl.Dsa.Arm.Shape
-public import VerifiedGarbage.Proof.Dsa.Arm.CoreTrace
 
-import VerifiedGarbage.Proof.Dsa.Arm.ValidateTrace
+public import VerifiedGarbage.Impl.Dsa.Arm.Shape
+public import VerifiedGarbage.Proof.Dsa.Arm.ValidateTrace
 import VerifiedGarbage.Proof.Dsa.Arm.Shape
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.RelCTAssoc

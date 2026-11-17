@@ -5,10 +5,10 @@ import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Setup
 import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.OutOfPlace
 import VerifiedGarbage.Proof.Gcm.Powers
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchR.RemE
-public import VerifiedGarbage.Proof.Gcm.X86_64.StitchTo.Loop
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchR.SetupFin
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx.Reduction
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemSetup
-import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Ks
+import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemGKs
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Rem
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
 public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Setup
@@ -17,8 +17,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchR.Rem
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchR.RemPairE
-import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemGD
-public import VerifiedGarbage.Proof.Gcm.X86_64.StitchR.SetupFin
+import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemD
 public import VerifiedGarbage.Proof.Gcm.Poly
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Cvt
 import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Ghash

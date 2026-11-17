@@ -6,7 +6,7 @@ meta import VerifiedGarbage.Proof.Ffdh.X86.Cached.Search.CTClassify
 meta import VerifiedGarbage.Proof.Ffdh.X86.Cached.Search.Loop
 meta import VerifiedGarbage.Proof.Ffdh.X86.Cached.Search.Entry
 public import VerifiedGarbage.Impl.Ffdh.X86.Cached
-public import VerifiedGarbage.Proof.Ffdh.X86.Cached.Search.Data
+public import VerifiedGarbage.Proof.Ffdh.X86.Cached.Search.Entry
 public import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Mont.X86.Instr
 meta import VerifiedGarbage.Proof.Mont.X86.Words

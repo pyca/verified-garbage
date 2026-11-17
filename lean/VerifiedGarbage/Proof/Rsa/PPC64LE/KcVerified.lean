@@ -9,11 +9,8 @@ public import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.TCB.PPC64LE.Target
 public import VerifiedGarbage.Proof.Rsa.Contract
 public import VerifiedGarbage.Impl.Rsa.PPC64LE.KeyCheck
-import VerifiedGarbage.Impl.Rsa.PPC64LE.KeyCheck
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubE
-import VerifiedGarbage.Proof.Rsa.PPC64LE.KcBase
 import VerifiedGarbage.Proof.Rsa.PPC64LE.KcCk
-import VerifiedGarbage.Proof.Rsa.PPC64LE.KcCkPre
 import VerifiedGarbage.Proof.Rsa.PPC64LE.KcFrame
 import VerifiedGarbage.Spec.Rsa
 import VerifiedGarbage.Proof.Bignum.PPC64LE.MontCT

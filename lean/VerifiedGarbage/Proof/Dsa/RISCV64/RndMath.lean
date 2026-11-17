@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 /-!
 # DSA sampling on RISC-V: the arithmetic of the registers
 
-As on PPC64LE (`Proof/Dsa/PPC64LE/Random/Math.lean`).
+As on PPC64LE (`Proof/Dsa/PPC64LE/Random/Copy.lean`).
 
 What the sampler's instructions compute, on 64-bit registers: the mask of
 q's first significant octet (`smear_eq`, its bits smeared right), a masked

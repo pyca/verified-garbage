@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.X448.RISCV64.Ladder
-import VerifiedGarbage.Proof.X448.RISCV64.Mul
+import VerifiedGarbage.Proof.X448.RISCV64.Slots
 import VerifiedGarbage.Proof.X25519.RISCV64.Mul
 import VerifiedGarbage.Proof.Framework.Offset
 

@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Modes.AArch64.CbcGroup
 public import VerifiedGarbage.Impl.Modes.AArch64.Ecb
 public import VerifiedGarbage.Proof.Modes.AArch64.Setup
 public import VerifiedGarbage.Proof.Modes.Ctr
-public import VerifiedGarbage.Proof.Modes.AArch64.Copy
 import VerifiedGarbage.Proof.Modes.AArch64.Ctr
 import VerifiedGarbage.Proof.Modes.AArch64.Words
 import VerifiedGarbage.Proof.Modes.AArch64.Steps

@@ -3,7 +3,7 @@ module
 -- separate module: generic over the curve, for every curve whose `a` is not `-3` (brainpoolP384r1's and brainpoolP512r1's verification next), and not imported by the other curves' verification proofs
 public import VerifiedGarbage.Impl.Ecdsa.Verify.X86_64.CombGeneral
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Main
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Points
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Final
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.CombGeneral
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.ProjectiveFinal
 import VerifiedGarbage.Proof.Ecdsa.Verify
@@ -11,15 +11,14 @@ import VerifiedGarbage.Proof.Ecdh.X86_64.Main
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Stages
 import VerifiedGarbage.Proof.Ecdsa.X86_64.SharedSlots
 import VerifiedGarbage.Proof.Ecdsa.X86_64.MulFn
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Lays
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Rep
+import VerifiedGarbage.Proof.Ecdsa.X86_64.Fixed
+import VerifiedGarbage.Proof.Ecdsa.X86_64.MulBase
 import VerifiedGarbage.Proof.Ecdsa.X86_64.CombLays
 import VerifiedGarbage.Proof.Ecdh.X86_64.Peer
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
 import VerifiedGarbage.Proof.Weierstrass.JacMadd
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WindowGeneral
 public import VerifiedGarbage.Proof.Ecdh.X86_64.Window
-import VerifiedGarbage.Proof.Weierstrass.X86_64.AddConst
 
 /-!
 # ECDSA verification on x86-64 with a comb for any `a`
@@ -27,7 +26,7 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.AddConst
 `Cfg.verifyG d` (`Impl/Ecdsa/Verify/X86_64/CombGeneral.lean`) is `Cfg.verify`
 with `[u]G` by the signature's comb for any `a` (`Cfg.gMulG d`), so its proof
 is `verify_ok`'s (`Proof/Ecdsa/Verify/X86_64/Main.lean`) with the points'
-(`pointsG_ok`), which is `pointsL_ok`'s (`Proof/Ecdsa/Verify/X86_64/Points.lean`)
+(`pointsG_ok`), which is `pointsL_ok`'s (`Proof/Ecdsa/Verify/X86_64/Final.lean`)
 with `[u]G` by `gMulG_ok'` (`Proof/Ecdsa/X86_64/CombGeneral.lean`) from the
 tables of `d`, which the configuration declares as its `gtab`
 (`tbl_of_held_mem`).

@@ -3,17 +3,655 @@ module
 public import VerifiedGarbage.Proof.RsaPss.X86_64.ChkFrame
 public import VerifiedGarbage.Proof.RsaPss.X86_64.CtBase
 public import VerifiedGarbage.Proof.RsaPss.X86_64.CtHashCT
-public import VerifiedGarbage.Proof.RsaPss.X86_64.MgfCT
 import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
 public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyFixed
 import VerifiedGarbage.Proof.RsaPss.X86_64.PrefixCheck
-import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyBlocks
-import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyCtBase
+public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyBlocks
 import VerifiedGarbage.Proof.RsaPss.MgfBytes
 import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
 import VerifiedGarbage.Proof.RsaPss.X86_64.SignEnc
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.RsaPss.X86_64.Params
+public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyFrame
+public import VerifiedGarbage.Proof.RsaPss.X86_64.Mgf
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+
+/-! ### `RsaPss.X86_64.MgfCT`, which this module and modules that import it used -/
+
+section
+
+/-!
+# RSASSA-PSS on x86-64: MGF1 is constant time
+
+Two runs of `mgfXor H g` with the same frame, working space, writable
+regions, place and length of `DB`, and addresses of statics (`MA`) leak the
+same trace (`mgfXor_ct`): the loop runs once per `hLen` bytes of `DB` in
+both, each round's pieces between the calls are checked by the taint
+analysis (`FixedChecks`, `HashChecks`), and each call through a slot of the
+table of `MdHash` is of the same streaming function of `G` in both runs
+(`two_scall`), whose arguments agree (`two_init`, `two_upd`, `two_fin`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.RsaPss.X86_64
+
+open VG VG.X86_64 VG.Impl.RsaPss.X86_64
+open VG.Proof.MlKem.X86_64 (Keep WP.keep ifp ifn)
+open VG.Proof.Bignum (off)
+open VG.Proof.Bignum.X86_64 (Two two_post two_map two_loop)
+open VG.Impl.Pbkdf2.Md.X86_64 (Hash Stream)
+open VG.Proof.Pbkdf2.Md.X86_64.Calls (StreamOK)
+open VG.Impl.Mgf1.X86_64.Table (Fns)
+
+/-- What two runs of `mgfXor` share: the frame, the working space, the
+writable regions after the frame, `DB`'s offset and length, and the
+addresses of statics. -/
+structure MA where
+  F : Addr
+  S : Addr
+  rest : List Region
+  e : Nat
+  db : Nat
+  sy : String → Addr
+
+/-- The public words in round `j`: `scratch`, `DB`, `dbLen`, the seed, the
+counter, the bytes done, and the slots of the table of `MdHash`. -/
+def mws (G : Stream) (D : Nat) (a : MA) (j : Nat) : List (Nat × BitVec 64) :=
+  [(21, a.S), (23, off a.S a.e), (24, BitVec.ofNat 64 a.db), (29, off a.S (a.e + a.db)), (30, BitVec.ofNat 64 D),
+    (31, BitVec.ofNat 64 j), (32, BitVec.ofNat 64 (j * G.D)), (14, BitVec.ofNat 64 G.D), (11, a.sy G.initN),
+    (12, a.sy G.updN), (13, a.sy G.finN)]
+
+/-- The rounds of `dbLen` bytes, `hLen` at a time. -/
+def mN (D : Nat) (a : MA) : Nat := (a.db + D - 1) / D
+
+theorem cnt_iff {j D db : Nat} (hD : 0 < D) : j < (db + D - 1) / D ↔ j * D < db := by
+  rw [Nat.lt_iff_add_one_le, Nat.le_div_iff_mul_le hD, Nat.succ_mul]
+  omega_arith
+
+variable {G : Stream} (hG : StreamOK G) {g : Fns} {n : Nat} {H : Hash}
+variable {Gs : Spec.Mgf1.Hash} (hGh : ∀ x, Gs.hash x = hG.SH.H.hash x) (hGl : Gs.len = G.D)
+  (hGv : Proof.Mgf1.Valid Gs)
+
+variable (G g n H) in
+/-- The anchor fits `mgfXor`, and the calls of `g` reach `G`'s functions. -/
+def MOk (a : MA) : Prop := RestOk n a.F a.rest ∧ DbAt H.D a.e a.db
+
+variable (G g) in
+/-- A run's symbols `sy'`: the calls of `g` reach `G`'s functions, whose
+addresses are the anchor's, `sy`. The runs agree on these names alone. -/
+def SyG (sy sy' : String → Addr) : Prop :=
+  GTF G g sy' ∧ sy' G.initN = sy G.initN ∧ sy' G.updN = sy G.updN ∧ sy' G.finN = sy G.finN
+
+theorem SyG.tr {sy s₁ s₂ : String → Addr} (h : SyG G g sy s₂) (e : s₁ = s₂) : SyG G g sy s₁ := e ▸ h
+
+theorem mws_gt {D : Nat} {a : MA} {j : Nat} {sy : String → Addr} {W : Nat → BitVec 64} (hok : SyG G g a.sy sy)
+    (hw : ∀ q ∈ mws G D a j, W q.1 = q.2) : GT G g W sy :=
+  hok.1.gt ((hw (11, a.sy G.initN) (by simp only [mws, List.mem_cons, true_or, or_true])).trans hok.2.1.symm)
+    ((hw (12, a.sy G.updN) (by simp only [mws, List.mem_cons, true_or, or_true])).trans hok.2.2.1.symm)
+    ((hw (13, a.sy G.finN) (by simp only [mws, List.mem_cons, true_or, or_true])).trans hok.2.2.2.symm)
+    (hw (14, BitVec.ofNat 64 G.D) (by simp only [mws, List.mem_cons, true_or, or_true]))
+
+variable (G g n H) in
+/-- A point of round `j`: the public words as they are at its start. -/
+structure RP (a : MA) (j : Nat) (t : State) : Prop where
+  ok : MOk n H a
+  lt : j * G.D < a.db
+  pub : Pub a.F a.S a.rest (mws G H.D a j) [] (fun _ _ => True) t
+  sy : SyG G g a.sy t.syms
+
+theorem RP.after {a : MA} {j : Nat} {t t' : State} (h : RP G g n H a j t) (L' : Lay t' a.F a.S)
+    (hwr : t'.wr = t.wr) {V' : Nat → Byte} {W : Nat → BitVec 64} (R' : Rep t'.mem a.F a.S V' W)
+    (hw : ∀ q ∈ mws G H.D a j, W q.1 = q.2) (hs : t'.syms = t.syms) : RP G g n H a j t' :=
+  ⟨h.ok, h.lt, h.pub.next L' hwr R' hw trivial, h.sy.tr hs⟩
+
+theorem RP.keepM {a : MA} {j : Nat} {t t' : State} (h : RP G g n H a j t) (hsp : t'.gpr .rsp = t.gpr .rsp)
+    (hwr : t'.wr = t.wr) (hm : t'.mem = t.mem) (hs : t'.syms = t.syms) : RP G g n H a j t' :=
+  ⟨h.ok, h.lt, h.pub.keepM hsp hwr hm, h.sy.tr hs⟩
+
+theorem RP.sub {a : MA} {j : Nat} {t : State} (h : RP G g n H a j t) {ws : List (Nat × BitVec 64)}
+    (hws : ∀ q ∈ ws, q ∈ mws G H.D a j) : Pub a.F a.S a.rest ws [] (fun _ _ => True) t :=
+  h.pub.sub hws (fun _ h => h) fun _ _ x => x
+
+/-! ## A round -/
+
+variable (G g n H) in
+abbrev Q0 (p : MA × Nat) (t : State) : Prop := RP G g n H p.1 p.2 t
+
+variable (G g n H) in
+abbrev Q1 (p : MA × Nat) (t : State) : Prop := RP G g n H p.1 p.2 t ∧ t.gpr .rdi = off p.1.S oSt
+
+variable (G g n H) in
+abbrev Q3 (p : MA × Nat) (t : State) : Prop :=
+  RP G g n H p.1 p.2 t ∧ t.gpr .rdi = off p.1.S oSt ∧ t.gpr .rsi = BitVec.ofNat 64 0 ∧
+    t.gpr .rdx = off p.1.S (p.1.e + p.1.db) ∧ t.gpr .rcx = BitVec.ofNat 64 H.D ∧ t.gpr .r8 = off p.1.S oCW
+
+variable (G g n H) in
+abbrev Q5 (p : MA × Nat) (t : State) : Prop :=
+  RP G g n H p.1 p.2 t ∧ t.gpr .rdi = off p.1.S oSt ∧ t.gpr .rsi = BitVec.ofNat 64 H.D ∧
+    t.gpr .rdx = off p.1.S oLen ∧ t.gpr .rcx = BitVec.ofNat 64 4 ∧ t.gpr .r8 = off p.1.S oCW
+
+variable (G g n H) in
+abbrev Q7 (p : MA × Nat) (t : State) : Prop :=
+  RP G g n H p.1 p.2 t ∧ t.gpr .rdi = off p.1.S oSt ∧ t.gpr .rsi = BitVec.ofNat 64 (H.D + 4) ∧
+    t.gpr .rdx = off p.1.S oDig ∧ t.gpr .rcx = off p.1.S oCW
+
+theorem mws_w {D : Nat} {a : MA} {j : Nat} {W : Nat → BitVec 64} (hw : ∀ q ∈ mws G D a j, W q.1 = q.2) :
+    W 14 = BitVec.ofNat 64 G.D ∧ W 23 = off a.S a.e ∧ W 24 = BitVec.ofNat 64 a.db ∧
+      W 29 = off a.S (a.e + a.db) ∧ W 30 = BitVec.ofNat 64 D ∧ W 31 = BitVec.ofNat 64 j ∧
+      W 32 = BitVec.ofNat 64 (j * G.D) :=
+  have m : ∀ {q}, q ∈ mws G D a j → W q.1 = q.2 := fun h => hw _ h
+  ⟨m (q := (14, BitVec.ofNat 64 G.D)) (by simp only [mws, List.mem_cons, true_or, or_true]),
+    m (q := (23, off a.S a.e)) (by simp only [mws, List.mem_cons, true_or, or_true]),
+    m (q := (24, BitVec.ofNat 64 a.db)) (by simp only [mws, List.mem_cons, true_or, or_true]),
+    m (q := (29, off a.S (a.e + a.db))) (by simp only [mws, List.mem_cons, true_or, or_true]),
+    m (q := (30, BitVec.ofNat 64 D)) (by simp only [mws, List.mem_cons, true_or, or_true]),
+    m (q := (31, BitVec.ofNat 64 j)) (by simp only [mws, List.mem_cons, true_or, or_true]),
+    m (q := (32, BitVec.ofNat 64 (j * G.D))) (by simp only [mws, List.mem_cons, true_or, or_true])⟩
+
+include hG in
+theorem round_ct (hfx : FixedChecks n) :
+    RelCT isa (Two (Q0 G g n H)) (mgfRound g) fun _ _ => True := by
+  obtain ⟨hzS, hzF, hzW, hzDF, hzD⟩ := sizes hG
+  have c1 : oSt = 2048 := rfl
+  have c2 : oDig = 2304 := rfl
+  have c3 : oLen = 2368 := rfl
+  have c4 : oCW = 0 := rfl
+  have c5 : oRsa = 8192 := rfl
+  have c6 : oEm = 2560 := rfl
+  obtain ⟨_, hmgfIni⟩ := hfx.mgfIni
+  obtain ⟨_, hmgfSrc⟩ := hfx.mgfSrc
+  obtain ⟨_, hmgfCtr⟩ := hfx.mgfCtr
+  obtain ⟨_, hmgfFin⟩ := hfx.mgfFin
+  obtain ⟨_, hmgfXorOut⟩ := hfx.mgfXorOut
+  obtain ⟨_, hmgfNext⟩ := hfx.mgfNext
+  unfold mgfRound seqs seqs seqs seqs seqs seqs seqs seqs seqs
+  -- `init`.
+  refine RelCT.seq (two_post (Ψ := Q1 G g n H) (two_pub n [21] [] (fun p => p.1.F) (fun p => p.1.S)
+      (fun p => p.1.rest) (fun p => [(21, p.1.S)]) (fun _ => []) (fun p t h => ⟨_, h.sub fun q hq => by
+        rw [List.mem_singleton.mp hq]; simp only [mws, List.mem_cons, true_or]⟩)
+      (fun p t h => h.ok.1) (fun _ => rfl) (fun _ => rfl) (by decide) hmgfIni)
+    fun p t h => X86_64.WP.mono_syms (scr_ok h.pub.L (d := .rdi) (by decide) (o := oSt) (by decide))
+      fun t' ⟨hdi, hm, k⟩ sy => ⟨h.keepM (k.gpr (by decide)) k.2.2 hm sy, hdi⟩) ?_
+  refine RelCT.seq (two_post (Ψ := Q0 G g n H) (two_scall n (s := sIniG) (by decide) (fun p => p.1.F)
+      (fun p => p.1.S) (fun p => p.1.rest) (fun p => p.1.sy G.initN)
+      (fun p t h => ⟨h.1.pub.L, h.1.pub.wr, h.1.ok.1, pub_slot h.1.pub (k := 11) rfl (by decide) (by simp only [mws, List.mem_cons, true_or, or_true]),
+        h.1.sy.2.1, h.1.sy.1.fi⟩) (hfx.ld _ (.inr (.inr (.inr (.inl rfl)))))
+      (two_init hG (fun p => p.1.F) (fun p => p.1.S) fun p t ⟨t₀, h, k, hm, _⟩ =>
+        ⟨lay_keep11 h.1.pub.L k hm, (k.gpr (by decide)).trans h.2⟩)) fun p t h => ?_) ?_
+  · obtain ⟨V, W, R, hw, -⟩ := h.1.pub.W
+    exact X86_64.WP.mono_syms (initS_ok hG h.1.pub.L R (mws_gt h.1.sy hw) h.2)
+      fun t' ⟨L', _, wr', _, R', _⟩ sy => h.1.after L' wr' R' hw sy
+  -- `update` with the seed.
+  refine RelCT.seq (two_post (Ψ := Q3 G g n H) (two_pub n [21, 29, 30] [] (fun p => p.1.F) (fun p => p.1.S)
+      (fun p => p.1.rest) (fun p => [(21, p.1.S), (29, off p.1.S (p.1.e + p.1.db)), (30, BitVec.ofNat 64 H.D)])
+      (fun _ => []) (fun p t h => ⟨_, h.sub fun q hq => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
+        rcases hq with rfl | rfl | rfl <;> simp only [mws, List.mem_cons, true_or, or_true]⟩)
+      (fun p t h => h.ok.1) (fun _ => rfl) (fun _ => rfl) (by decide) hmgfSrc) fun p t h => ?_) ?_
+  · obtain ⟨V, W, R, hw, -⟩ := h.pub.W
+    have w := mws_w hw
+    exact X86_64.WP.mono_syms (updSrc_ok h.pub.L R w.2.2.2.1 w.2.2.2.2.1)
+      fun t' ⟨hdi, hsi, hdx, hcx, h8, hm, k⟩ sy => ⟨h.keepM (k.gpr (by decide)) k.2.2 hm sy, hdi, hsi, hdx, hcx, h8⟩
+  refine RelCT.seq (two_post (Ψ := Q0 G g n H) (two_scall n (s := sUpdG) (by decide) (fun p => p.1.F)
+      (fun p => p.1.S) (fun p => p.1.rest) (fun p => p.1.sy G.updN)
+      (fun p t h => ⟨h.1.pub.L, h.1.pub.wr, h.1.ok.1, pub_slot h.1.pub (k := 12) rfl (by decide) (by simp only [mws, List.mem_cons, true_or, or_true]),
+        h.1.sy.2.2.1, h.1.sy.1.fu⟩) (hfx.ld _ (.inr (.inr (.inr (.inr (.inl rfl))))))
+      (two_upd hG (fun p => p.1.F) (fun p => p.1.S) (fun p => p.1.e + p.1.db) (fun _ => H.D)
+        (fun _ => BitVec.ofNat 64 0) fun p t ⟨t₀, h, k, hm, _⟩ => by
+          have := h.1.ok.2.fit; have := h.1.ok.2.e1
+          exact ⟨lay_keep11 h.1.pub.L k hm, by omega_arith, Or.inr (by omega_arith), Or.inr (by omega_arith),
+            (k.gpr (by decide)).trans h.2.1, (k.gpr (by decide)).trans h.2.2.1, (k.gpr (by decide)).trans h.2.2.2.1,
+            (k.gpr (by decide)).trans h.2.2.2.2.1, (k.gpr (by decide)).trans h.2.2.2.2.2⟩)) fun p t h => ?_) ?_
+  · obtain ⟨V, W, R, hw, -⟩ := h.1.pub.W
+    have := h.1.ok.2.fit; have := h.1.ok.2.e1
+    exact X86_64.WP.mono_syms (updS_ok hG h.1.pub.L R (mws_gt h.1.sy hw)
+        (a := p.1.e + p.1.db) (len := H.D) (by omega_arith) (Or.inr (by omega_arith)) (Or.inr (by omega_arith))
+        h.2.1 h.2.2.2.1 h.2.2.2.2.1 h.2.2.2.2.2)
+      fun t' ⟨L', _, wr', _, R', _⟩ sy => h.1.after L' wr' R' hw sy
+  -- The counter, and `update` with it.
+  refine RelCT.seq (two_post (Ψ := Q5 G g n H) (two_pub n [21, 30, 31] [] (fun p => p.1.F) (fun p => p.1.S)
+      (fun p => p.1.rest) (fun p => [(21, p.1.S), (30, BitVec.ofNat 64 H.D), (31, BitVec.ofNat 64 p.2)])
+      (fun _ => []) (fun p t h => ⟨_, h.sub fun q hq => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
+        rcases hq with rfl | rfl | rfl <;> simp only [mws, List.mem_cons, true_or, or_true]⟩)
+      (fun p t h => h.ok.1) (fun _ => rfl) (fun _ => rfl) (by decide) hmgfCtr) fun p t h => ?_) ?_
+  · obtain ⟨V, W, R, hw, -⟩ := h.pub.W
+    have w := mws_w hw
+    have := h.lt; have := h.ok.2.fit; have := h.ok.2.e1
+    have hc : p.2 ≤ p.2 * G.D := Nat.le_mul_of_pos_right _ hzD
+    exact X86_64.WP.mono_syms (updCtr_ok h.pub.L R w.2.2.2.2.1 w.2.2.2.2.2.1 (by omega_arith))
+      fun t' ⟨L', hdi, hsi, hdx, hcx, h8, k, R'⟩ sy => ⟨h.after L' k.2.2 R' hw sy, hdi, hsi, hdx, hcx, h8⟩
+  refine RelCT.seq (two_post (Ψ := Q0 G g n H) (two_scall n (s := sUpdG) (by decide) (fun p => p.1.F)
+      (fun p => p.1.S) (fun p => p.1.rest) (fun p => p.1.sy G.updN)
+      (fun p t h => ⟨h.1.pub.L, h.1.pub.wr, h.1.ok.1, pub_slot h.1.pub (k := 12) rfl (by decide) (by simp only [mws, List.mem_cons, true_or, or_true]),
+        h.1.sy.2.2.1, h.1.sy.1.fu⟩) (hfx.ld _ (.inr (.inr (.inr (.inr (.inl rfl))))))
+      (two_upd hG (fun p => p.1.F) (fun p => p.1.S) (fun _ => oLen) (fun _ => 4)
+        (fun _ => BitVec.ofNat 64 H.D) fun p t ⟨t₀, h, k, hm, _⟩ =>
+          ⟨lay_keep11 h.1.pub.L k hm, by omega_arith, Or.inr (by omega_arith), Or.inr (by omega_arith),
+            (k.gpr (by decide)).trans h.2.1, (k.gpr (by decide)).trans h.2.2.1, (k.gpr (by decide)).trans h.2.2.2.1,
+            (k.gpr (by decide)).trans h.2.2.2.2.1, (k.gpr (by decide)).trans h.2.2.2.2.2⟩)) fun p t h => ?_) ?_
+  · obtain ⟨V, W, R, hw, -⟩ := h.1.pub.W
+    exact X86_64.WP.mono_syms (updS_ok hG h.1.pub.L R (mws_gt h.1.sy hw)
+        (a := oLen) (len := 4) (by omega_arith) (Or.inr (by omega_arith)) (Or.inr (by omega_arith))
+        h.2.1 h.2.2.2.1 h.2.2.2.2.1 h.2.2.2.2.2)
+      fun t' ⟨L', _, wr', _, R', _⟩ sy => h.1.after L' wr' R' hw sy
+  -- `finalize`.
+  refine RelCT.seq (two_post (Ψ := Q7 G g n H) (two_pub n [21, 30] [] (fun p => p.1.F) (fun p => p.1.S)
+      (fun p => p.1.rest) (fun p => [(21, p.1.S), (30, BitVec.ofNat 64 H.D)])
+      (fun _ => []) (fun p t h => ⟨_, h.sub fun q hq => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
+        rcases hq with rfl | rfl <;> simp only [mws, List.mem_cons, true_or, or_true]⟩)
+      (fun p t h => h.ok.1) (fun _ => rfl) (fun _ => rfl) (by decide) hmgfFin) fun p t h => ?_) ?_
+  · obtain ⟨V, W, R, hw, -⟩ := h.pub.W
+    have w := mws_w hw
+    exact X86_64.WP.mono_syms (finA_ok h.pub.L R w.2.2.2.2.1)
+      fun t' ⟨hdi, hsi, hdx, hcx, hm, k⟩ sy => ⟨h.keepM (k.gpr (by decide)) k.2.2 hm sy, hdi, hsi, hdx, hcx⟩
+  refine RelCT.seq (two_post (Ψ := Q0 G g n H) (two_scall n (s := sFinG) (by decide) (fun p => p.1.F)
+      (fun p => p.1.S) (fun p => p.1.rest) (fun p => p.1.sy G.finN)
+      (fun p t h => ⟨h.1.pub.L, h.1.pub.wr, h.1.ok.1, pub_slot h.1.pub (k := 13) rfl (by decide) (by simp only [mws, List.mem_cons, true_or, or_true]),
+        h.1.sy.2.2.2, h.1.sy.1.ff⟩) (hfx.ld _ (.inr (.inr (.inr (.inr (.inr rfl))))))
+      (two_fin hG (fun p => p.1.F) (fun p => p.1.S) (fun _ => oDig) (fun _ => BitVec.ofNat 64 (H.D + 4))
+        fun p t ⟨t₀, h, k, hm, _⟩ =>
+          ⟨lay_keep11 h.1.pub.L k hm, ⟨by omega_arith, by omega_arith⟩, (k.gpr (by decide)).trans h.2.1,
+            (k.gpr (by decide)).trans h.2.2.1, (k.gpr (by decide)).trans h.2.2.2.1,
+            (k.gpr (by decide)).trans h.2.2.2.2⟩)) fun p t h => ?_) ?_
+  · obtain ⟨V, W, R, hw, -⟩ := h.1.pub.W
+    exact X86_64.WP.mono_syms (finS_ok hG h.1.pub.L R (mws_gt h.1.sy hw) (o := oDig)
+        ⟨by omega_arith, by omega_arith⟩ h.2.1 h.2.2.2.1 h.2.2.2.2)
+      fun t' ⟨L', _, wr', _, R', _⟩ sy => h.1.after L' wr' R' hw sy
+  -- Into `DB`, and the next counter.
+  refine RelCT.seq (two_post (Ψ := Q0 G g n H) (two_pub n [14, 21, 23, 24, 32] [] (fun p => p.1.F)
+      (fun p => p.1.S) (fun p => p.1.rest)
+      (fun p => [(14, BitVec.ofNat 64 G.D), (21, p.1.S), (23, off p.1.S p.1.e), (24, BitVec.ofNat 64 p.1.db),
+        (32, BitVec.ofNat 64 (p.2 * G.D))])
+      (fun _ => []) (fun p t h => ⟨_, h.sub fun q hq => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
+        rcases hq with rfl | rfl | rfl | rfl | rfl <;> simp only [mws, List.mem_cons, true_or, or_true]⟩)
+      (fun p t h => h.ok.1) (fun _ => rfl) (fun _ => rfl) (by decide) hmgfXorOut) fun p t h => ?_) ?_
+  · obtain ⟨V, W, R, hw, -⟩ := h.pub.W
+    have w := mws_w hw
+    have := h.ok.2.fit; have := h.ok.2.e1
+    exact X86_64.WP.mono_syms (xorOut_ok (G := G) h.pub.L R (dst := p.1.e) (dstLen := p.1.db) (done := p.2 * G.D)
+        (by omega_arith) (by omega_arith) hzD (by omega_arith) w.1 w.2.1 w.2.2.1 w.2.2.2.2.2.2 h.lt)
+      fun t' ⟨L', k, R'⟩ sy => h.after L' k.2.2 R' hw sy
+  exact two_pub n [14, 24, 31, 32] [] (fun p => p.1.F) (fun p => p.1.S) (fun p => p.1.rest)
+    (fun p => [(14, BitVec.ofNat 64 G.D), (24, BitVec.ofNat 64 p.1.db), (31, BitVec.ofNat 64 p.2),
+      (32, BitVec.ofNat 64 (p.2 * G.D))])
+    (fun _ => []) (fun p t h => ⟨_, h.sub fun q hq => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
+      rcases hq with rfl | rfl | rfl | rfl <;> simp only [mws, List.mem_cons, true_or, or_true]⟩)
+    (fun p t h => h.ok.1) (fun _ => rfl) (fun _ => rfl) (by decide) hmgfNext
+
+/-! ## The loop -/
+
+variable (G g n H) in
+/-- Before round `j`: the correctness proof's invariant. -/
+def MI (a : MA) (j : Nat) (t : State) : Prop :=
+  MOk n H a ∧ j * G.D < a.db ∧ ∃ (u₀ : State) (V : Nat → Byte) (W : Nat → BitVec 64),
+    u₀.wr = ⟨a.F, frameBytes⟩ :: a.rest ∧ SyG G g a.sy u₀.syms ∧ W 21 = a.S ∧ W 23 = off a.S a.e ∧
+    W 24 = BitVec.ofNat 64 a.db ∧ W 29 = off a.S (a.e + a.db) ∧ W 30 = BitVec.ofNat 64 H.D ∧ GT G g W u₀.syms ∧
+    MgfI u₀ a.F a.S V W (Spec.Mgf1.mgf1 Gs ((List.range H.D).map fun i => V (a.e + a.db + i)) a.db)
+      a.e a.db G.D j t
+
+theorem mi_rp {a : MA} {j : Nat} {t : State} (h : MI G g n H (Gs := Gs) a j t) : RP G g n H a j t := by
+  obtain ⟨hok, hj, u₀, V, W, hwr, hsy, h21, h23, h24, h29, h30, T, I⟩ := h
+  obtain ⟨V', W', R', h31, h32, hW, -⟩ := I.rep
+  have e : ∀ k, k < nW → k ≠ 31 → k ≠ 32 → W' k = W k := hW
+  refine ⟨hok, hj, ⟨I.L, I.wr.trans hwr, ⟨V', W', R', fun q hq => ?_, trivial⟩, fun _ hp => by cases hp⟩,
+    hsy.tr I.sy⟩
+  simp only [mws, List.mem_cons, List.not_mem_nil, or_false] at hq
+  rcases hq with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  · exact (e 21 (by decide) (by decide) (by decide)).trans h21
+  · exact (e 23 (by decide) (by decide) (by decide)).trans h23
+  · exact (e 24 (by decide) (by decide) (by decide)).trans h24
+  · exact (e 29 (by decide) (by decide) (by decide)).trans h29
+  · exact (e 30 (by decide) (by decide) (by decide)).trans h30
+  · exact h31
+  · exact h32
+  · exact (e 14 (by decide) (by decide) (by decide)).trans T.wd
+  · exact (e 11 (by decide) (by decide) (by decide)).trans (T.wi.trans hsy.2.1)
+  · exact (e 12 (by decide) (by decide) (by decide)).trans (T.wu.trans hsy.2.2.1)
+  · exact (e 13 (by decide) (by decide) (by decide)).trans (T.wf.trans hsy.2.2.2)
+
+include hG hGh hGl hGv in
+theorem round_wp {a : MA} {j : Nat} {t : State} (h : MI G g n H (Gs := Gs) a j t) :
+    WP isa (mgfRound g) t fun t' =>
+      isa.eval .b t' = some (decide (j + 1 < mN G.D a)) ∧ (j + 1 < mN G.D a → MI G g n H (Gs := Gs) a (j + 1) t') ∧
+      (j + 1 = mN G.D a → True) := by
+  have hD := (sizes hG).2.2.2.2
+  obtain ⟨hok, hjD, u₀, V, W, hwr, hsy, h21, h23, h24, h29, h30, T, I⟩ := h
+  refine WP.mono (round_ok hG hGh hGl hGv hok.2 h23 h24 h29 h30 T I hjD) fun t' ⟨hcf, I'⟩ => ⟨?_, fun h' =>
+    ⟨hok, (cnt_iff hD).mp h', u₀, V, W, hwr, hsy, h21, h23, h24, h29, h30, T, I'⟩, fun _ => trivial⟩
+  simp only [eval, hcf, Option.some.injEq, decide_eq_decide]
+  exact (cnt_iff hD).symm
+
+variable (G g n H) in
+/-- At the start: the public words of `DB` and the slots of the table of
+`Hash`. -/
+def ME (a : MA) (t : State) : Prop :=
+  MOk n H a ∧ Pub a.F a.S a.rest [(21, a.S), (23, off a.S a.e), (24, BitVec.ofNat 64 a.db),
+    (14, BitVec.ofNat 64 G.D), (11, a.sy G.initN), (12, a.sy G.updN), (13, a.sy G.finN)] [] (fun _ _ => True) t ∧
+    SyG G g a.sy t.syms
+
+include hG in
+theorem mgfHead_ct (hc : HashChecks H.P H.D n) :
+    RelCT isa (Two (ME G g n H))
+      (.block (mgfSeed H ++ ([.mov32 .rax (.imm 0), .store (sp sCtr) .rax, .store (sp sDone) .rax] : List Instr)))
+      (Two fun a t => 0 < mN G.D a ∧ MI G g n H (Gs := Gs) a 0 t) := by
+  have hD := (sizes hG).2.2.2.2
+  obtain ⟨_, hhd⟩ := hc.mgfHead
+  refine two_post (two_pub n [21, 23, 24] [] MA.F MA.S MA.rest
+    (fun a => [(21, a.S), (23, off a.S a.e), (24, BitVec.ofNat 64 a.db)]) (fun _ => [])
+    (fun a t h => ⟨_, h.2.1.sub (fun q hq => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
+      rcases hq with rfl | rfl | rfl <;> simp) (fun _ h => h) fun _ _ x => x⟩)
+    (fun a t h => h.1.1) (fun _ => rfl) (fun _ => rfl) (by decide) hhd) fun a t h => ?_
+  obtain ⟨V, W, R, hw, -⟩ := h.2.1.W
+  have hp : ∀ {k v}, (k, v) ∈ [(21, a.S), (23, off a.S a.e), (24, BitVec.ofNat 64 a.db),
+      (14, BitVec.ofNat 64 G.D), (11, a.sy G.initN), (12, a.sy G.updN), (13, a.sy G.finN)] → W k = v :=
+    fun hm => hw _ hm
+  have hdb1 := h.1.2.db1
+  refine X86_64.WP.mono_syms (mgfHead_ok H h.2.1.L R h.1.2 (hp (by simp)) (hp (by simp)))
+    fun v ⟨Lv, hk, Rv⟩ sv => ?_
+  let W₀ := upd (upd W 29 (off a.S (a.e + a.db))) 30 (BitVec.ofNat 64 H.D)
+  have hW₀ : ∀ k, k ≠ 29 → k ≠ 30 → W₀ k = W k := fun k h1 h2 => by simp only [W₀, upd, ifn h1, ifn h2]
+  have T₀ : GT G g W₀ v.syms := by
+    rw [sv]
+    exact h.2.2.1.gt (((hW₀ 11 (by decide) (by decide)).trans (hp (by simp))).trans h.2.2.2.1.symm)
+      (((hW₀ 12 (by decide) (by decide)).trans (hp (by simp))).trans h.2.2.2.2.1.symm)
+      (((hW₀ 13 (by decide) (by decide)).trans (hp (by simp))).trans h.2.2.2.2.2.symm)
+      ((hW₀ 14 (by decide) (by decide)).trans (hp (by simp)))
+  refine ⟨(cnt_iff hD).mpr (by rw [Nat.zero_mul]; omega_arith), h.1, by rw [Nat.zero_mul]; omega_arith, v, V, W₀,
+    hk.2.2.trans h.2.1.wr, h.2.2.tr sv, (hW₀ 21 (by decide) (by decide)).trans (hp (by simp)),
+    (hW₀ 23 (by decide) (by decide)).trans (hp (by simp)), (hW₀ 24 (by decide) (by decide)).trans (hp (by simp)),
+    by simp [W₀, upd], by simp [W₀, upd], T₀,
+    ⟨Lv, rfl, rfl, fun _ _ => rfl, rfl, _, _, Rv, by simp [upd], by simp [upd],
+      fun k _ h1 h2 => by simp only [upd, ifn h2, ifn h1]; rfl,
+      fun o _ _ => by simp only [mixV, Nat.zero_mul, Nat.zero_min, Nat.add_zero]; rw [ifn (by omega_arith)]⟩⟩
+
+include hG hGh hGl hGv in
+/-- `mgfXor` is constant time. -/
+theorem mgfXor_ct (hc : HashChecks H.P H.D n) (hfx : FixedChecks n) :
+    RelCT isa (Two (ME G g n H)) (mgfXor H g) fun _ _ => True :=
+  (mgfHead_ct hG (Gs := Gs) hc).seq ((two_loop (Φ := MI G g n H (Gs := Gs)) (Ψ := fun _ _ => True) (mN G.D)
+    (two_map id (fun _ _ h => mi_rp h.2) (round_ct hG hfx))
+    fun _ _ _ _ h => round_wp hG hGh hGl hGv h).mono (fun _ _ h => h) fun _ _ _ => trivial)
+
+end VG.Proof.RsaPss.X86_64
+
+end
+
+end
+
+/-! ### `RsaPss.X86_64.VerifyCtBase`, which this module and modules that import it used -/
+
+section
+
+/-!
+# RSASSA-PSS verification on x86-64: two runs
+
+Two runs of `verify` from states meeting `verifyK.pre` whose public data
+agree (`VSib a s`: each run's entry state `s` agrees with the first's, `a`)
+compute the same public values (`vw`): the arguments, the encoding's length,
+`DB`'s place and length, the mask of the top bits, the expected salt length
+and the hash's blocks. The secret ones (the signature, the digest, and what
+the code derives from them, such as the salt's length when any is allowed)
+stay out of `vw`. A run's state between two pieces is described by `VS`:
+its frame, and its public words, those of `vw`; both runs then start the
+next piece's taint analysis from the same public values (`vtwo`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.RsaPss.X86_64
+
+open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Impl.RsaPss.X86_64
+open VG.Proof.MlKem.X86_64 (Keep WP.keep writesOnly ifp ifn)
+open VG.Impl.Pbkdf2.Md.X86_64 (Hash)
+
+variable (tsH tsG : List FnTable)
+
+/-- Word 5 of the table `hash`: the index of its hash function. -/
+def vidxWord (s : State) : BitVec 64 := s.mem.readW (off (stackArg s 8) 40) 64
+
+/-- The entry state `s` of a run, and the first's, `a`: both meet the
+precondition, their public data agree, and so does the index of the hash
+function of the table `hash` (word 5 of the table, which the tables of
+`MdHash` the precondition allows give, and the public data fix). -/
+def VSib (a s : State) : Prop :=
+  VPre tsH tsG a ∧ (verifyK tsH tsG).pub a s ∧ VPre tsH tsG s ∧ vidxWord s = vidxWord a
+
+/-- A predicate of the state of a run, given its entry state, for every run
+whose entry state agrees with `a`. -/
+def VAt (J : State → State → Prop) (a t : State) : Prop := ∃ s, VSib tsH tsG a s ∧ J s t
+
+theorem vpub_refl (s : State) : (verifyK tsH tsG).pub s s :=
+  ⟨fun _ _ => rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, fun _ _ => rfl,
+    fun _ _ => Iff.rfl, fun _ _ => Iff.rfl⟩
+
+variable {tsH tsG}
+
+namespace VSib
+
+variable {a s : State} (h : VSib tsH tsG a s)
+include h
+
+theorem gpr {r : Reg} (hr : r ∈ [Reg.rdi, .rsi, .rdx, .rcx, .r8, .r9, .rsp]) : s.gpr r = a.gpr r :=
+  (h.2.1.1 r hr).symm
+
+theorem sig : stackArg s 0 = stackArg a 0 := h.2.1.2.1.symm
+theorem arg1 : stackArg s 2 = stackArg a 2 := h.2.1.2.2.2.1.symm
+theorem arg2 : (stackArg s 3).setWidth 32 = (stackArg a 3).setWidth 32 := h.2.1.2.2.2.2.1.symm
+theorem arg3 : stackArg s 4 = stackArg a 4 := h.2.1.2.2.2.2.2.1.symm
+theorem arg4 : stackArg s 5 = stackArg a 5 := h.2.1.2.2.2.2.2.2.1.symm
+theorem arg6 : stackArg s 6 = stackArg a 6 := h.2.1.2.2.2.2.2.2.2.1.symm
+theorem arg7 : stackArg s 7 = stackArg a 7 := h.2.1.2.2.2.2.2.2.2.2.1.symm
+theorem arg8 : stackArg s 8 = stackArg a 8 := h.2.1.2.2.2.2.2.2.2.2.2.1.symm
+theorem arg9 : stackArg s 9 = stackArg a 9 := h.2.1.2.2.2.2.2.2.2.2.2.2.1.symm
+
+theorem nB : Spec.Rsa.bytesAt s.mem (s.gpr .rdi) (s.gpr .rsi).toNat =
+    Spec.Rsa.bytesAt a.mem (a.gpr .rdi) (a.gpr .rsi).toNat := h.2.1.2.2.2.2.2.2.2.2.2.2.2.1.symm
+
+theorem eB : Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat =
+    Spec.Rsa.bytesAt a.mem (a.gpr .rdx) (a.gpr .rcx).toNat := h.2.1.2.2.2.2.2.2.2.2.2.2.2.2.1.symm
+
+theorem preW : Spec.Rsa.wordsAt s.mem (stackArg s 6) (stackArg s 7).toNat =
+    Spec.Rsa.wordsAt a.mem (stackArg a 6) (stackArg a 7).toNat := h.2.1.2.2.2.2.2.2.2.2.2.2.2.2.2.1.symm
+
+theorem pa : VPre tsH tsG a := h.1
+theorem ps : VPre tsH tsG s := h.2.2.1
+theorem idxw : vidxWord s = vidxWord a := h.2.2.2
+
+theorem fb : fb s = fb a := by
+  simp only [VG.Proof.RsaPss.X86_64.fb, h.gpr (r := .rsp) (by decide)]
+
+theorem wr : s.wr = a.wr := by rw [h.ps.hwr, h.pa.hwr, h.arg3, h.arg4]
+
+theorem frR : frR s = ⟨VG.Proof.RsaPss.X86_64.fb a, frameBytes⟩ := by
+  simp only [VG.Proof.RsaPss.X86_64.frR, h.fb]
+
+theorem n0 : s.mem (s.gpr .rdi) = a.mem (a.gpr .rdi) := by
+  have := congrArg (fun l => l.getD 0 0) h.nB
+  have hk := h.ps.k1
+  have hk' := h.pa.k1
+  simpa [Spec.Rsa.bytesAt, List.getD_eq_getElem?_getD, List.getElem?_range (show 0 < (s.gpr .rsi).toNat by omega_using [hk]),
+    List.getElem?_range (show 0 < (a.gpr .rsi).toNat by omega_using [hk'])] using this
+
+end VSib
+
+/-! ## The public values -/
+
+/-- The modulus' first byte. -/
+def n0v (s : State) : Nat := (s.mem (s.gpr .rdi)).toNat
+
+/-- `lo`: 1 if the modulus' first byte is 1 (`EM` one byte shorter). -/
+def vlo (s : State) : Nat := loV (n0v s)
+
+/-- `emLen`. -/
+def veml (s : State) : Nat := (s.gpr .rsi).toNat - vlo s
+
+/-- `dbLen`. -/
+def vdb (D : Nat) (s : State) : Nat := veml s - D - 1
+
+/-- The blocks of the hash of `M'`. -/
+def vnb (H : Hash) (s : State) : Nat := (vdb H.D s + (7 + H.D + H.P.L)) / H.P.B + 1
+
+/-- The public words of the frame, by index. -/
+def vw (H : Hash) (s : State) (k : Nat) : BitVec 64 :=
+  match k with
+  | 2 => stackArg s 8
+  | 3 => stackArg s 9
+  | 47 => vidxWord s
+  | 17 => s.gpr .rsi
+  | 18 => s.gpr .rdi
+  | 19 => s.gpr .rdx
+  | 20 => s.gpr .rcx
+  | 21 => stackArg s 4
+  | 22 => stackArg s 5
+  | 23 => off (stackArg s 4) (oEm + vlo s)
+  | 24 => BitVec.ofNat 64 (vdb H.D s)
+  | 25 => maskV (n0v s)
+  | 26 => BitVec.ofNat 64 (vlo s)
+  | 28 => BitVec.ofNat 64 (vnb H s)
+  | 35 => if (stackArg s 3).setWidth 32 = 0 then 0 else 1
+  | 36 => stackArg s 2
+  | 37 => s.gpr .r8
+  | 38 => stackArg s 0
+  | _ => 0
+
+/-- The public words `ks`. -/
+def pw (H : Hash) (s : State) (ks : List Nat) : List (Nat × BitVec 64) := ks.map fun k => (k, vw H s k)
+
+namespace VSib
+
+variable {a s : State} (h : VSib tsH tsG a s)
+include h
+
+theorem n0v : n0v s = n0v a := by simp only [VG.Proof.RsaPss.X86_64.n0v, h.n0]
+theorem vlo : vlo s = vlo a := by simp only [VG.Proof.RsaPss.X86_64.vlo, h.n0v]
+theorem veml : veml s = veml a := by
+  simp only [VG.Proof.RsaPss.X86_64.veml, h.vlo, h.gpr (r := .rsi) (by decide)]
+theorem vdb {D : Nat} : vdb D s = vdb D a := by simp only [VG.Proof.RsaPss.X86_64.vdb, h.veml]
+theorem vnb {H : Hash} : vnb H s = vnb H a := by simp only [VG.Proof.RsaPss.X86_64.vnb, h.vdb]
+theorem vw {H : Hash} (k : Nat) : vw H s k = vw H a k := by
+  unfold VG.Proof.RsaPss.X86_64.vw
+  split <;> simp only [h.gpr (r := .rsi) (by decide), h.gpr (r := .rdi) (by decide),
+    h.gpr (r := .rdx) (by decide), h.gpr (r := .rcx) (by decide), h.gpr (r := .r8) (by decide),
+    h.sig, h.arg1, h.arg2, h.arg3, h.arg4, h.vlo, h.vdb, h.n0v, h.vnb, h.arg8, h.arg9, h.idxw]
+
+/-- The frame and the working space are apart. -/
+theorem rest : RestOk 1 (VG.Proof.RsaPss.X86_64.fb a) a.wr := by
+  have hp := h.pa
+  refine ⟨by rw [hp.hwr]; rfl, ?_, ?_⟩
+  · rw [hp.hwr]
+    refine List.pairwise_pair.mpr ?_
+    exact (hp.dKs.sub_left (vframe_sub a))
+  · rw [hp.hwr]; intro r hr
+    rw [List.mem_singleton.mp hr]
+    have := hp.wS; dsimp only; omega_using [this]
+
+end VSib
+
+/-! ## A run's state between pieces -/
+
+/-- A run, with entry state `s`, between two pieces: its frame, its public
+words `ks` (`vw`), the registers `rs`, and what else is true of its working
+space and words (`X`). -/
+structure VS (H : Hash) (s t : State) (ks : List Nat) (rs : List (Reg × BitVec 64))
+    (X : (Nat → Byte) → (Nat → BitVec 64) → Prop) : Prop where
+  L : Lay t (fb s) (stackArg s 4)
+  wr : t.wr = frR s :: s.wr
+  W : ∃ V W, Rep t.mem (fb s) (stackArg s 4) V W ∧ (∀ k ∈ ks, W k = vw H s k) ∧ X V W
+  regs : ∀ p ∈ rs, t.gpr p.1 = p.2
+  sy : t.syms = s.syms
+
+variable {H : Hash}
+
+theorem vs_pub {a s t : State} (S : VSib tsH tsG a s) {ks : List Nat} {rs : List (Reg × BitVec 64)}
+    {X : (Nat → Byte) → (Nat → BitVec 64) → Prop} (h : VS H s t ks rs X) :
+    Pub (fb a) (stackArg a 4) a.wr (pw H a ks) rs X t := by
+  obtain ⟨V, W, R, hw, hx⟩ := h.W
+  refine ⟨?_, ?_, ⟨V, W, ?_, fun p hp => ?_, hx⟩, h.regs⟩
+  · rw [← S.fb, ← S.arg3]; exact h.L
+  · rw [h.wr, S.frR, S.wr]
+  · rw [← S.fb, ← S.arg3]; exact R
+  · simp only [pw, List.mem_map] at hp
+    obtain ⟨k, hk, rfl⟩ := hp
+    rw [hw k hk, S.vw]
+
+/-- A piece the analysis checks from `pT 1 ks rgs`. -/
+theorem vtwo {Φ : State → State → Prop} {c : Prog isa} (ks : List Nat) (rgs : List Reg)
+    (rs : State → List (Reg × BitVec 64))
+    (hΦ : ∀ a t, Φ a t → ∃ s X, VSib tsH tsG a s ∧ VS H s t ks (rs a) X) (hr : ∀ a, (rs a).map Prod.fst = rgs)
+    (hks : ∀ k ∈ ks, k < nW) {hc : VG.Taint.Hint X86_64.Taint.T}
+    (h : (taint.check (pT 1 ks rgs) c hc).isSome = true) : RelCT isa (Two Φ) c fun _ _ => True :=
+  two_pub 1 ks rgs fb (fun a => stackArg a 4) State.wr (fun a => pw H a ks) rs
+    (fun a t h => let ⟨_, X, S, v⟩ := hΦ a t h; ⟨X, vs_pub S v⟩) (fun a t h => let ⟨_, _, S, _⟩ := hΦ a t h; S.rest)
+    (fun a => by simp [pw, Function.comp_def]) hr hks h
+
+/-- `VS` after code that keeps the memory and the registers but `rs'`. -/
+theorem VS.keep {s t t' : State} {ks : List Nat} {rs : List (Reg × BitVec 64)}
+    {X : (Nat → Byte) → (Nat → BitVec 64) → Prop} (h : VS H s t ks rs X) {rs' : List Reg} (k : Keep rs' t t')
+    (hm : t'.mem = t.mem) (hsp : Reg.rsp ∉ rs') (hrs : ∀ p ∈ rs, p.1 ∉ rs') (hs : t'.syms = t.syms) :
+    VS H s t' ks rs X :=
+  ⟨h.L.congr (k.gpr hsp) k.2.2 (by rw [hm]), k.2.2.trans h.wr, by rw [hm]; exact h.W,
+    fun p hp => (k.gpr (hrs p hp)).trans (h.regs p hp), hs.trans h.sy⟩
+
+/-- `VS` after code that keeps the regions and the scratch slot. -/
+theorem VS.next {s t t' : State} {ks ks' : List Nat} {rs : List (Reg × BitVec 64)}
+    {X X' : (Nat → Byte) → (Nat → BitVec 64) → Prop} (h : VS H s t ks rs X) (L' : Lay t' (fb s) (stackArg s 4))
+    (hwr : t'.wr = t.wr) {V' : Nat → Byte} {W' : Nat → BitVec 64} (R' : Rep t'.mem (fb s) (stackArg s 4) V' W')
+    (hw : ∀ k ∈ ks', W' k = vw H s k) (hx : X' V' W') (hs : t'.syms = t.syms) : VS H s t' ks' [] X' :=
+  ⟨L', hwr.trans h.wr, ⟨V', W', R', hw, hx⟩, (fun _ hp => by cases hp), hs.trans h.sy⟩
+
+
+theorem VS.sub {s t : State} {ks ks' : List Nat} {rs : List (Reg × BitVec 64)}
+    {X X' : (Nat → Byte) → (Nat → BitVec 64) → Prop} (h : VS H s t ks rs X) (hks : ∀ k ∈ ks', k ∈ ks)
+    (rs' : List (Reg × BitVec 64)) (hrs : ∀ p ∈ rs', t.gpr p.1 = p.2) (hX : ∀ V W, X V W → X' V W) :
+    VS H s t ks' rs' X' := by
+  obtain ⟨V, W, R, hw, hx⟩ := h.W
+  exact ⟨h.L, h.wr, ⟨V, W, R, fun k hk => hw k (hks k hk), hX V W hx⟩, hrs, h.sy⟩
+
+/-- A piece the analysis checks from `pT 1 (ks ++ eks) rgs`: the public
+words `ks` of `vw`, and `ex`, of the anchor. -/
+theorem vtwoX {α : Type} {Φ : α → State → Prop} {c : Prog isa} (π : α → State) (ks : List Nat)
+    (ex : α → List (Nat × BitVec 64)) (eks : List Nat) (rgs : List Reg) (rs : α → List (Reg × BitVec 64))
+    (hΦ : ∀ a t, Φ a t → ∃ s, VSib tsH tsG (π a) s ∧ VS H s t ks (rs a) fun _ W => ∀ p ∈ ex a, W p.1 = p.2)
+    (he : ∀ a, (ex a).map Prod.fst = eks) (hr : ∀ a, (rs a).map Prod.fst = rgs)
+    (hks : ∀ k ∈ ks ++ eks, k < nW) {hc : VG.Taint.Hint X86_64.Taint.T}
+    (h : (taint.check (pT 1 (ks ++ eks) rgs) c hc).isSome = true) : RelCT isa (Two Φ) c fun _ _ => True :=
+  two_pub 1 (ks ++ eks) rgs (fun a => fb (π a)) (fun a => stackArg (π a) 4) (fun a => (π a).wr)
+    (fun a => pw H (π a) ks ++ ex a) rs
+    (fun a t h => by
+      obtain ⟨s, S, v⟩ := hΦ a t h
+      obtain ⟨L, w, ⟨V, W, R, hw, hx⟩, rg⟩ := vs_pub S v
+      exact ⟨fun _ _ => True, L, w, ⟨V, W, R, fun p hp => (List.mem_append.mp hp).elim (hw p) (hx p), trivial⟩, rg⟩)
+    (fun a t h => let ⟨_, S, _⟩ := hΦ a t h; S.rest)
+    (fun a => by simp [pw, Function.comp_def, he a]) hr hks h
+
+theorem fnz_lt {f : Nat → Byte} : ∀ {j i : Nat}, fnz f j = some i → i < j
+  | 0, _, h => by simp [fnz] at h
+  | j + 1, i, h => by
+    simp only [fnz] at h
+    split at h
+    · rename_i k hk
+      cases h; exact Nat.lt_succ_of_lt (fnz_lt hk)
+    · split at h
+      · cases h
+      · cases h; exact Nat.lt_succ_self _
+
+theorem fnz_getD_lt {f : Nat → Byte} {j : Nat} (hj : 1 ≤ j) : (fnz f j).getD 0 < j := by
+  cases h : fnz f j with
+  | none => simp only [Option.getD_none]; omega_using [hj]
+  | some i => exact fnz_lt h
+
+end VG.Proof.RsaPss.X86_64
+
+end
+
+end
 
 /-! ### `RsaPss.X86_64.ChkCtMid`, which only this module used -/
 

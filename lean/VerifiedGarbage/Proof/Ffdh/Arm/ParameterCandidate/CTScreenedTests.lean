@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.WitnessEnd
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTCandidateTest
-
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.LimitedTest
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateReturn
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateMemory
@@ -10,7 +9,6 @@ import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.Status
 import VerifiedGarbage.Proof.Bignum.Arm.StackOnlyCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTLimitedTest
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTLimitedResult
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTShape
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateShape
@@ -22,6 +20,7 @@ import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateBuffers
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.Taint
+
 /-! Early p screening follows public primality results and exact entropy suffixes. -/
 
 -- Formerly `VerifiedGarbage/Proof/Ffdh/Arm/ParameterCandidate/CTScreenedQ.lean`, which only this module imported.

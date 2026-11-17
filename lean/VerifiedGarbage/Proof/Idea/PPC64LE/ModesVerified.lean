@@ -13,10 +13,9 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Impl.Idea.PPC64LE
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Semantics
-public import VerifiedGarbage.Proof.Idea.PPC64LE.Round
+public import VerifiedGarbage.Proof.Idea.PPC64LE.Block
 public import VerifiedGarbage.Spec.Idea
 public import VerifiedGarbage.Spec.Idea.Cbc
-import VerifiedGarbage.Proof.Idea.PPC64LE.Block
 import VerifiedGarbage.Proof.Modes.PPC64LE.Modes
 public import VerifiedGarbage.Proof.Modes.PPC64LE.Seq
 public import VerifiedGarbage.Proof.Modes.Steps

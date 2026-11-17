@@ -1,13 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Mont.X86.Sse2.Dot
-public import VerifiedGarbage.Proof.Mont.ColumnSquare
+public import VerifiedGarbage.Proof.Mont.X86.Square.FinalMath
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Mont.X86.ArgFar
 import VerifiedGarbage.Proof.Framework.X86.Sse
 import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
 import VerifiedGarbage.Proof.Framework.PowLit
-import VerifiedGarbage.Proof.Mont.X86.Square.FinalMath
 
 /-! ### `Mont.X86.Sse2.Fold`, which only this module used -/
 

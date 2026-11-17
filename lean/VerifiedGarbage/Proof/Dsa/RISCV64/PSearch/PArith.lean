@@ -17,7 +17,7 @@ import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! # DSA parameter search on RISC-V: p and `(p − 1) / q`
 
-As on PPC64LE (`Proof/Dsa/PPC64LE/Gen/KSSetup.lean`, `KSLoad.lean`,
+As on PPC64LE (`Proof/Dsa/PPC64LE/Gen/KSStore.lean`, `KSLoad.lean`,
 `KSStore.lean`, `KSDiv.lean` and `PArith.lean`). `ksEnter_vp`: the key working
 space's registers (`ksRegs`); `ksSetup_vp`: every array zero but `[aOne] = 1`,
 and the top word of every other array zero (`TopAll`), which the division's

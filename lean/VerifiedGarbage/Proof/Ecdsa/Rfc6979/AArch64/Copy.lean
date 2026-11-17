@@ -1,9 +1,8 @@
 module
 
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Regs
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Regs
 import VerifiedGarbage.Proof.Hmac.Common
 public import VerifiedGarbage.Impl.Ecdsa.Rfc6979.AArch64
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Layout
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Spec.Sha256
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd

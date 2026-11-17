@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcmSiv.Rounds
 public import VerifiedGarbage.Proof.AesGcmSiv.Scratch
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Reg.Env
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Reg.Polyval

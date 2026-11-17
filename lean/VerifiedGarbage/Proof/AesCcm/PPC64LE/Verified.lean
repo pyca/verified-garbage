@@ -1,14 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.AesCcm.Rounds
+public import VerifiedGarbage.Proof.AesCcm.Scratch
 import VerifiedGarbage.Proof.AesCcm.PPC64LE.TopCT
 import VerifiedGarbage.Proof.AesCcm.PPC64LE.Seal
 import VerifiedGarbage.Proof.AesCcm.PPC64LE.Open
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.AesCcm.Scratch
 public import VerifiedGarbage.Impl.AesCcm.PPC64LE
 public import VerifiedGarbage.Impl.StackScratch.PPC64LE.Args
-public import VerifiedGarbage.Proof.AesCcm.PPC64LE.Contract
+public import VerifiedGarbage.Proof.AesCcm.PPC64LE.Entry
 import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratchArgs
 
 /-!

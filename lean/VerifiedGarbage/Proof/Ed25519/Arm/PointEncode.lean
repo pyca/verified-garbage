@@ -1,8 +1,7 @@
 module
-public import VerifiedGarbage.Impl.Ed25519.Arm.PointEncode
-public import VerifiedGarbage.Proof.Ed25519.Arm.Power
 
-import VerifiedGarbage.Proof.Ed25519.Arm.PointAffine
+public import VerifiedGarbage.Impl.Ed25519.Arm.PointEncode
+public import VerifiedGarbage.Proof.Ed25519.Arm.PointAffine
 import VerifiedGarbage.Proof.Ed25519.Arm.Freeze
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Block

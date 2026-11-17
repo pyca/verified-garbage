@@ -1,8 +1,7 @@
 module
 
-import VerifiedGarbage.Proof.CmacTripleDes.Arm.Update
+public import VerifiedGarbage.Proof.CmacTripleDes.Arm.Update
 public import VerifiedGarbage.Impl.CmacTripleDes.Arm
-public import VerifiedGarbage.Proof.CmacTripleDes.Arm.Contract
 public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.CmacTripleDes.Arm.Finalize
 import VerifiedGarbage.Proof.CmacTripleDes.Cmac

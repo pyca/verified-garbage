@@ -1,6 +1,5 @@
 module
 
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Production
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.Jacobian
 public import VerifiedGarbage.Proof.Weierstrass.JacAdd
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Fprog
@@ -11,6 +10,29 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.Copy
 import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
 public import VerifiedGarbage.Proof.Weierstrass.PointOpsContract
 public import VerifiedGarbage.Proof.Weierstrass.InverseContract
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256RD
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256DR
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256ED
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
+
+/-! ### `Weierstrass.AArch64.Forward.Production`, which this module and modules that import it used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.Weierstrass.AArch64.Forward.Production
+
+theorem cases : Fixed.Cases where
+  rd := ⟨P256RD.checked,P256Bounds.rd_left,P256Bounds.rd_right,P256Bounds.rd_clob⟩
+  dr := ⟨P256DR.checked,P256Bounds.dr_left,P256Bounds.dr_right,P256Bounds.dr_clob⟩
+  ed := ⟨P256ED.checked,P256Bounds.ed_left,P256Bounds.ed_right,P256Bounds.ed_clob⟩
+
+end VG.Proof.Weierstrass.AArch64.Forward.Production
+
+end
+
+end
 
 /-! Jacobian addition field programs, including the header's public branch values. -/
 

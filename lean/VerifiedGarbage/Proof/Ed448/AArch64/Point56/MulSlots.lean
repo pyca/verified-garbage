@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Mul
+public import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Sqr
 public import VerifiedGarbage.Proof.Framework.AArch64.LaneRestore
 public import VerifiedGarbage.Impl.X448.AArch64.Field56
 import VerifiedGarbage.Proof.Framework.AArch64.LaneSave
@@ -26,7 +26,7 @@ Untrusted: everything here is checked by Lean. `mulFn_ok`: from the arguments of
 `vg_gf448_r56_mul` (`ws` in `x0`, the byte offsets `o`, `a`, `b` in `x1`–`x3`), the function
 sets the operands' pointers (`ws + a` in `x10`, `ws + b` in `x30`, `ws + o` in `x1`), `ws` in
 `x3` and the mask in `x12`, and runs `vg_x448`'s product with its operands addressed by the
-pointers (`mulAt_ok`, `Proof/Curve448/AArch64/Fast/Mul.lean`): the result's limbs, and only the
+pointers (`mulAt_ok`, `Proof/Curve448/AArch64/Fast/Sqr.lean`): the result's limbs, and only the
 result's 64 bytes and the operand sums' (`KA`) written. The callee-saved registers it changes
 (and the return address, which holds the second operand's pointer while it runs) are kept in
 lanes of `v21`–`v25` (`insOf_ok`, `umovOf_ok`), which the product does not write.

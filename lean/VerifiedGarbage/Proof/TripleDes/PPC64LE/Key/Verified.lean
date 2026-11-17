@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.TripleDes.PPC64LE.ConstantTime
 public import VerifiedGarbage.Spec.TripleDes.Contract
 public import VerifiedGarbage.TCB.PPC64LE.Target
-public import VerifiedGarbage.Proof.TripleDes.PPC64LE.Key.Load
 public import VerifiedGarbage.Proof.TripleDes.PPC64LE.Write
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
@@ -11,14 +10,12 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Taint
-import VerifiedGarbage.Proof.TripleDes.PPC64LE.Lit
+public import VerifiedGarbage.Proof.TripleDes.PPC64LE.Lit
 public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Spec.TripleDes
 public import VerifiedGarbage.TCB.PPC64LE.Isa
 public import VerifiedGarbage.Proof.TripleDes.KeyMemory
-import VerifiedGarbage.Proof.TripleDes.PPC64LE.Key.Rotation
 import VerifiedGarbage.Proof.TripleDes.PPC64LE.Word
-import VerifiedGarbage.Proof.TripleDes.PPC64LE.Key.Permutation
 public import VerifiedGarbage.Proof.TripleDes.KeySchedule
 import VerifiedGarbage.Proof.TripleDes.Schedule
 import VerifiedGarbage.Proof.Framework.Lit
@@ -27,6 +24,349 @@ import VerifiedGarbage.Proof.TripleDes.Bytes
 import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.TripleDes.PPC64LE.FunctionsLit
+public import VerifiedGarbage.Impl.TripleDes.PPC64LE.ExpandKey
+import VerifiedGarbage.Proof.TripleDes.Word
+import VerifiedGarbage.Proof.TripleDes.PPC64LE.Bytes
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
+import VerifiedGarbage.Proof.TripleDes.PPC64LE.Permutation
+
+/-! ### `TripleDes.PPC64LE.Key.Rotation`, which only this module used -/
+
+section
+
+/-! ### `TripleDes.PPC64LE.Key.Load`, which this module and modules that import it used -/
+
+section
+
+/-! ### `TripleDes.PPC64LE.Key.Permutation`, which this module and modules that import it used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.TripleDes.PPC64LE.Key
+
+open VG VG.PPC64LE VG.Impl.TripleDes.PPC64LE
+
+theorem pc1_ok (s : State) :
+    ∃ s', runBlock isa (permuteCode Spec.TripleDes.pc1 64 .r9 .r8 .r10 .r11) s = some s' ∧
+      s'.gpr .r9 = (Spec.TripleDes.permute Spec.TripleDes.pc1 (s.gpr .r8)).setWidth 64 ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mem = s.mem ∧
+      (∀ r, ((instrs keyPermutation1.lit).all fun op => dstOf op != some r) = true →
+        s'.gpr r = s.gpr r) := by
+  obtain ⟨s', run, word, rd, wr, mem, regs⟩ :=
+    fixedPermutation_ok Spec.TripleDes.pc1 (by decide) (by decide) (by decide)
+       .r8 .r9 (instrs keyPermutation1.lit) keyPermutation1_check s
+  have hcode : permuteCode Spec.TripleDes.pc1 64 .r9 .r8 .r10 .r11 = instrs keyPermutation1.lit :=
+    congrArg instrs keyPermutation1.lit_eq
+  refine ⟨s', (congrArg (fun is => runBlock isa is s) hcode).trans run, ?_, rd, wr, mem, regs⟩
+  exact word.trans (congrArg (fun x => (Spec.TripleDes.permute Spec.TripleDes.pc1 x).setWidth 64)
+    (BitVec.setWidth_eq _))
+
+theorem pc2_ok (s : State) :
+    ∃ s', runBlock isa (permuteCode Spec.TripleDes.pc2 56 .r9 .r8 .r10 .r11) s = some s' ∧
+      s'.gpr .r9 = (Spec.TripleDes.permute Spec.TripleDes.pc2 ((s.gpr .r8).setWidth 56)).setWidth 64 ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mem = s.mem ∧
+      (∀ r, ((instrs keyPermutation2.lit).all fun op => dstOf op != some r) = true →
+        s'.gpr r = s.gpr r) := by
+  obtain ⟨s', run, word, rd, wr, mem, regs⟩ :=
+    fixedPermutation_ok Spec.TripleDes.pc2 (by decide) (by decide) (by decide)
+       .r8 .r9 (instrs keyPermutation2.lit) keyPermutation2_check s
+  have hcode : permuteCode Spec.TripleDes.pc2 56 .r9 .r8 .r10 .r11 = instrs keyPermutation2.lit :=
+    congrArg instrs keyPermutation2.lit_eq
+  exact ⟨s', (congrArg (fun is => runBlock isa is s) hcode).trans run, word, rd, wr, mem, regs⟩
+
+end VG.Proof.TripleDes.PPC64LE.Key
+
+end
+
+end
+
+@[expose] public section
+
+namespace VG.Proof.TripleDes.PPC64LE.Key
+
+open VG VG.PPC64LE VG.Impl.TripleDes.PPC64LE
+
+/-- The registers key expansion keeps: its arguments. -/
+def keyKept : List Reg := [.r3, .r4, .r5]
+
+theorem readKey_ok (s : State) (offset : Nat) (ho : offset < 32768)
+    (hr : InRegions (s.rd ++ s.wr) (s.gpr .r3 + BitVec.ofNat 64 offset) 8) :
+    ∃ s', runBlock isa [.li .r8 offset, .loadRev .d .r8 .r3 .r8] s = some s' ∧
+      s'.gpr .r8 = Spec.TripleDes.decodeBlock
+        (Spec.TripleDes.blockAt s.mem (s.gpr .r3 + BitVec.ofNat 64 offset)) ∧
+      s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
+      (∀ r, r ≠ .r8 → s'.gpr r = s.gpr r) := by
+  let s₁ := s.write .r8 (BitVec.ofNat 64 offset)
+  have ha : s₁.gpr .r3 + s₁.gpr .r8 = s.gpr .r3 + BitVec.ofNat 64 offset := by
+    simp only [s₁, gpr_write, reduceCtorEq, ite_true, ite_false]
+  have hload := exec_loadRev_d (s := s₁) (t := .r8) (a := .r3) (b := .r8) (by decide)
+    (by rw [ha]; exact hr)
+  rw [ha] at hload
+  let s₂ := s₁.write .r8 (rev64 (s₁.mem.readW (s.gpr .r3 + BitVec.ofNat 64 offset) 64))
+  refine ⟨s₂, by
+    rw [runBlock_cons, exec_li ho, runStep_some, runBlock_cons, hload, runStep_some,
+      runBlock_nil], ?_, rfl, rfl, rfl, ?_⟩
+  · rw [gpr_write_self]
+    exact (decodeBlock_readW s.mem _).symm
+  · intro r hr
+    simp only [s₂, s₁, gpr_write, hr, ite_false]
+
+def loadTail (component : Nat) : List Instr :=
+  [.lsr .d .r0 .r9 28, rr .r7 .r9] ++ mask .r7 28 ++
+    [imm .r12 0, .addi .r6 .r5 (128 * component)]
+
+theorem loadTail_ok (s : State) (component : Nat) (hc : component < 3) (x : BitVec 56)
+    (hx : s.gpr .r9 = x.setWidth 64) :
+    ∃ s', runBlock isa (loadTail component) s = some s' ∧
+      s'.gpr .r0 = ((x >>> 28).setWidth 28).setWidth 64 ∧
+      s'.gpr .r7 = (x.setWidth 28).setWidth 64 ∧ s'.gpr .r12 = 0 ∧
+      s'.gpr .r6 = s.gpr .r5 + BitVec.ofNat 64 (128 * component) ∧
+      s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
+      (∀ r, r ∉ [Reg.r0, .r7, .r12, .r6] → s'.gpr r = s.gpr r) := by
+  have hb : 128 * component < 2 ^ 15 := by omega_using [hc]
+  let s₁ := s.write .r0 (s.gpr .r9 >>> 28)
+  let s₂ := s₁.write .r7 (s₁.gpr .r9 ||| s₁.gpr .r9)
+  let s₃ := s₂.write .r7 (s₂.gpr .r7 <<< (64 - 28))
+  let s₄ := s₃.write .r7 (s₃.gpr .r7 >>> (64 - 28))
+  let s₅ := s₄.write .r12 (BitVec.ofNat 64 0)
+  let s₆ := s₅.write .r6 (s₅.gpr .r5 + BitVec.ofNat 64 (128 * component))
+  refine ⟨s₆, ?_, ?_, ?_, ?_, ?_, rfl, rfl, rfl, ?_⟩
+  · simp only [loadTail, rr, mask, imm, List.cons_append, List.nil_append]
+    rw [runBlock_cons, exec_lsr_d (by decide), runStep_some,
+      runBlock_cons, exec_logic, runStep_some, runBlock_cons, exec_lsl (by decide), runStep_some,
+      runBlock_cons, exec_lsr_d (by decide), runStep_some, runBlock_cons, exec_li (by decide),
+      runStep_some, runBlock_cons, exec_addi (by decide) hb, runStep_some, runBlock_nil]
+  · simp only [s₆, s₅, s₄, s₃, s₂, s₁, gpr_write, reduceCtorEq, ite_true, ite_false]
+    rw [hx]; exact VG.Proof.TripleDes.split28_upper x
+  · simp only [s₆, s₅, s₄, s₃, s₂, s₁, gpr_write, reduceCtorEq, ite_true, ite_false,
+      BitVec.or_self]
+    rw [hx, mask_word _ 28 (by decide) (by decide),
+      BitVec.setWidth_setWidth_of_le x (by decide : 28 ≤ 64)]
+  · simp only [s₆, s₅, gpr_write, reduceCtorEq, ite_true, ite_false]; rfl
+  · simp only [s₆, s₅, s₄, s₃, s₂, s₁, gpr_write, reduceCtorEq, ite_true, ite_false]
+  · intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    simp only [s₆, s₅, s₄, s₃, s₂, s₁, gpr_write, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2, ite_false]
+
+structure LoadPost (x : BitVec 56) (component : Nat) (s s' : State) : Prop where
+  c : s'.gpr .r0 = ((x >>> 28).setWidth 28).setWidth 64
+  d : s'.gpr .r7 = (x.setWidth 28).setWidth 64
+  counter : s'.gpr .r12 = 0
+  ptr : s'.gpr .r6 = s.gpr .r5 + BitVec.ofNat 64 (128 * component)
+  mem : s'.mem = s.mem
+  rd : s'.rd = s.rd
+  wr : s'.wr = s.wr
+  reg : ∀ r ∈ keyKept, s'.gpr r = s.gpr r
+
+theorem load_ok (s : State) (offset component : Nat) (hc : component < 3)
+    (ho : offset < 32768)
+    (hr : InRegions (s.rd ++ s.wr) (s.gpr .r3 + BitVec.ofNat 64 offset) 8) :
+    WP isa (.block (Impl.TripleDes.PPC64LE.Key.load offset component)) s
+      (LoadPost (Spec.TripleDes.permute Spec.TripleDes.pc1 (Spec.TripleDes.decodeBlock
+        (Spec.TripleDes.blockAt s.mem (s.gpr .r3 + BitVec.ofNat 64 offset)))) component s) := by
+  have code : Impl.TripleDes.PPC64LE.Key.load offset component =
+      (([.li .r8 offset, .loadRev .d .r8 .r3 .r8] : List Instr) ++
+        permuteCode Spec.TripleDes.pc1 64 .r9 .r8 .r10 .r11) ++ loadTail component := by
+    simp only [Impl.TripleDes.PPC64LE.Key.load, loadTail, List.append_assoc]
+  rw [code, WP.block_append_iff, WP.block_append_iff]
+  obtain ⟨s₁, run₁, key₁, mem₁, rd₁, wr₁, reg₁⟩ := readKey_ok s offset ho hr
+  refine WP.of_runBlock ⟨s₁, run₁, ?_⟩
+  obtain ⟨s₂, run₂, word₂, rd₂, wr₂, mem₂, reg₂⟩ := pc1_ok s₁
+  refine WP.of_runBlock ⟨s₂, run₂, ?_⟩
+  rw [key₁] at word₂
+  obtain ⟨s₃, run₃, c₃, d₃, counter₃, ptr₃, mem₃, rd₃, wr₃, reg₃⟩ :=
+    loadTail_ok s₂ component hc _ word₂
+  have hcheck : ∀ r ∈ keyKept,
+      ((instrs keyPermutation1.lit).all fun op => dstOf op != some r) = true := by decide +kernel
+  refine WP.of_runBlock ⟨s₃, run₃, ⟨c₃, d₃, counter₃, ?_, mem₃.trans (mem₂.trans mem₁),
+    rd₃.trans (rd₂.trans rd₁), wr₃.trans (wr₂.trans wr₁), ?_⟩⟩
+  · have r5₂ : s₂.gpr .r5 = s.gpr .r5 :=
+      (reg₂ .r5 (hcheck .r5 (by decide))).trans (reg₁ .r5 (by decide))
+    rw [r5₂] at ptr₃
+    exact ptr₃
+  · intro r hr
+    have unused : ∀ r ∈ keyKept, r ∉ [Reg.r0, .r7, .r12, .r6] ∧ r ≠ .r8 := by decide
+    exact (reg₃ r (unused r hr).1).trans ((reg₂ r (hcheck r hr)).trans (reg₁ r (unused r hr).2))
+
+end VG.Proof.TripleDes.PPC64LE.Key
+
+end
+
+end
+
+/-! ### `TripleDes.PPC64LE.KeySteps`, which only this module used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.TripleDes.PPC64LE
+
+open VG VG.PPC64LE VG.Impl.TripleDes.PPC64LE
+
+theorem rotate28_ok (s : State) (r : Reg) (hr : r ≠ .r8)
+    (x : BitVec 28) (hx : s.gpr r = x.setWidth 64)
+    (n : Nat) (hn : 1 ≤ n) (hn' : n < 28) :
+    ∃ s', runBlock isa (Key.rotate28 r n) s = some s' ∧
+      s'.gpr r = (x.rotateLeft n).setWidth 64 ∧
+      s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
+      (∀ r', r' ≠ r → r' ≠ .r8 → s'.gpr r' = s.gpr r') := by
+  have hleft : 64 - n < 64 := by omega_using [hn]
+  have hright : 28 - n < 64 := by omega_using []
+  let s₁ := s.write .r8 (s.gpr r >>> (28 - n))
+  let s₂ := s₁.write r ((s₁.gpr r).rotateRight (64 - n))
+  let s₃ := s₂.write r (s₂.gpr r ^^^ s₂.gpr .r8)
+  let s₄ := s₃.write r (s₃.gpr r <<< (64 - 28))
+  let s₅ := s₄.write r (s₄.gpr r >>> (64 - 28))
+  refine ⟨s₅, ?_, ?_, rfl, rfl, rfl, ?_⟩
+  · rw [Key.rotate28, mask, List.cons_append, List.cons_append, List.cons_append, List.nil_append,
+      runBlock_cons, exec_lsr_d hright, runStep_some, runBlock_cons, exec_rotr_d hleft,
+      runStep_some, runBlock_cons, exec_logic, runStep_some, runBlock_cons, exec_lsl (by decide),
+      runStep_some, runBlock_cons, exec_lsr_d (by decide), runStep_some, runBlock_nil]
+  · have h₁ : s₁.gpr r = s.gpr r := gpr_write_of_ne _ _ hr
+    have h₈ : s₂.gpr .r8 = s.gpr r >>> (28 - n) := by
+      rw [gpr_write_of_ne _ _ (Ne.symm hr), gpr_write_self]
+    simp only [s₅, s₄, s₃, gpr_write_self]
+    rw [h₈, show s₂.gpr r = (s₁.gpr r).rotateRight (64 - n) from gpr_write_self _ _ _, h₁, hx,
+      mask_word _ 28 (by decide) (by decide)]
+    exact (VG.Proof.TripleDes.mask28 _).symm.trans (VG.Proof.TripleDes.rotate28_word x n hn hn')
+  · intro r' h1 h2
+    simp only [s₅, s₄, s₃, s₂, s₁, gpr_write, h1, h2, ite_false]
+
+end VG.Proof.TripleDes.PPC64LE
+
+end
+
+end
+
+
+@[expose] public section
+
+namespace VG.Proof.TripleDes.PPC64LE.Key
+
+open VG VG.PPC64LE VG.Impl.TripleDes.PPC64LE
+
+structure RotatePost (c d : BitVec 28) (n : Nat) (s s' : State) : Prop where
+  c : s'.gpr .r0 = (c.rotateLeft n).setWidth 64
+  d : s'.gpr .r7 = (d.rotateLeft n).setWidth 64
+  mem : s'.mem = s.mem
+  rd : s'.rd = s.rd
+  wr : s'.wr = s.wr
+  reg : ∀ r, r ≠ .r8 → r ≠ .r0 → r ≠ .r7 → s'.gpr r = s.gpr r
+
+theorem rotate_ok (s : State) (c d : BitVec 28)
+    (hc : s.gpr .r0 = c.setWidth 64) (hd : s.gpr .r7 = d.setWidth 64)
+    (n : Nat) (hn : 1 ≤ n) (hn' : n < 28) :
+    WP isa (Impl.TripleDes.PPC64LE.Key.rotate n) s (RotatePost c d n s) := by
+  rw [Impl.TripleDes.PPC64LE.Key.rotate, WP.block_append_iff]
+  obtain ⟨s₁, run₁, c₁, mem₁, rd₁, wr₁, reg₁⟩ := rotate28_ok s .r0 (by decide) c hc n hn hn'
+  refine WP.of_runBlock ⟨s₁, run₁, ?_⟩
+  have d₁ : s₁.gpr .r7 = d.setWidth 64 := (reg₁ .r7 (by decide) (by decide)).trans hd
+  obtain ⟨s₂, run₂, d₂, mem₂, rd₂, wr₂, reg₂⟩ := rotate28_ok s₁ .r7 (by decide) d d₁ n hn hn'
+  refine WP.of_runBlock ⟨s₂, run₂, ⟨(reg₂ .r0 (by decide) (by decide)).trans c₁, d₂,
+    mem₂.trans mem₁, rd₂.trans rd₁, wr₂.trans wr₁, ?_⟩⟩
+  intro r ha hc hd
+  exact (reg₂ r hd ha).trans (reg₁ r hc ha)
+
+theorem comparison_values : ∀ j < 16, ∀ k < 16,
+    ((BitVec.ofNat 64 j >>> 1) == (0 : BitVec 64)) = decide (j < 2) ∧
+    ((BitVec.ofNat 64 j - BitVec.ofNat 64 k) == (0 : BitVec 64)) = decide (j = k) := by
+  decide
+
+theorem write_keep (s : State) (v : BitVec 64) : Kept [.r8] s (s.write .r8 v) := by
+  refine ⟨?_, rfl, rfl, rfl⟩
+  intro r hr
+  simp only [List.mem_singleton] at hr
+  exact gpr_write_of_ne _ _ hr
+
+theorem lowTest_ok (s : State) (j : Nat) (hj : j < 16)
+    (hv : s.gpr .r12 = BitVec.ofNat 64 j) :
+    ∃ s', runBlock isa [.lsr .d .r8 .r12 1] s = some s' ∧
+      isa.eval (.zero .d .r8) s' = some (decide (j < 2)) ∧ Kept [.r8] s s' := by
+  refine ⟨s.write .r8 (s.gpr .r12 >>> 1), ?_, ?_, write_keep _ _⟩
+  · rw [runBlock_cons, exec_lsr_d (by decide), runStep_some, runBlock_nil]
+  · change VG.PPC64LE.eval (.zero .d .r8) _ = _
+    simp only [VG.PPC64LE.eval, State.read, Size.bits, gpr_write_self, BitVec.setWidth_eq, hv]
+    exact congrArg some (comparison_values j hj 0 (by decide)).1
+
+theorem eqTest_ok (s : State) (j k : Nat) (hj : j < 16) (hk : k < 16)
+    (hv : s.gpr .r12 = BitVec.ofNat 64 j) :
+    ∃ s', runBlock isa [.subi .r8 .r12 k] s = some s' ∧
+      isa.eval (.zero .d .r8) s' = some (decide (j = k)) ∧ Kept [.r8] s s' := by
+  refine ⟨s.write .r8 (s.gpr .r12 - BitVec.ofNat 64 k), ?_, ?_, write_keep _ _⟩
+  · rw [runBlock_cons, exec_subi (by decide) (by omega_using [hk]), runStep_some, runBlock_nil]
+  · change VG.PPC64LE.eval (.zero .d .r8) _ = _
+    simp only [VG.PPC64LE.eval, State.read, Size.bits, gpr_write_self, BitVec.setWidth_eq, hv]
+    exact congrArg some (comparison_values j hj k hk).2
+
+theorem rotation_ok (s : State) (c d : BitVec 28) (j : Nat) (hj : j < 16)
+    (hc : s.gpr .r0 = c.setWidth 64) (hd : s.gpr .r7 = d.setWidth 64)
+    (hjreg : s.gpr .r12 = BitVec.ofNat 64 j) :
+    WP isa Impl.TripleDes.PPC64LE.Key.rotation s
+      (RotatePost c d (Spec.TripleDes.rotations.getD j 0) s) := by
+  rw [Impl.TripleDes.PPC64LE.Key.rotation]
+  apply WP.seq
+  obtain ⟨s₁, run₁, cond₁, keep₁⟩ := lowTest_ok s j hj hjreg
+  refine WP.of_runBlock ⟨s₁, run₁, ?_⟩
+  have hrot (s' : State) (h : Kept [.r8] s s') (n : Nat) (hn : 1 ≤ n) (hn' : n < 28)
+      (hv : Spec.TripleDes.rotations.getD j 0 = n) :
+      WP isa (Impl.TripleDes.PPC64LE.Key.rotate n) s' (RotatePost c d (Spec.TripleDes.rotations.getD j 0) s) := by
+    apply WP.mono (rotate_ok s' c d ((h.reg .r0 (by simp)).trans hc)
+      ((h.reg .r7 (by simp)).trans hd) n hn hn')
+    intro t ht
+    rw [hv]
+    exact ⟨ht.c, ht.d, ht.mem.trans h.mem, ht.rd.trans h.rd, ht.wr.trans h.wr,
+      fun r ha hc hd => (ht.reg r ha hc hd).trans (h.reg r (by simpa only [List.mem_singleton] using ha))⟩
+  have combine {a b : State} (ha : Kept [.r8] s a) (hb : Kept [.r8] a b) : Kept [.r8] s b :=
+    ⟨fun r hr => (hb.reg r hr).trans (ha.reg r hr), hb.mem.trans ha.mem,
+      hb.rd.trans ha.rd, hb.wr.trans ha.wr⟩
+  by_cases h2 : j < 2
+  · apply WP.ite true (by simpa only [h2, decide_true] using cond₁)
+    · intro _
+      exact hrot s₁ keep₁ 1 (by decide) (by decide)
+        (by rw [VG.Proof.TripleDes.rotation_value j hj, ite_eq_left (Or.inl h2)])
+    · simp
+  · apply WP.ite false (by simpa only [h2, decide_false] using cond₁)
+    · simp
+    · intro _
+      apply WP.seq
+      obtain ⟨s₂, run₂, cond₂, keep₂⟩ := eqTest_ok s₁ j 8 hj (by decide)
+        ((keep₁.reg .r12 (by simp)).trans hjreg)
+      refine WP.of_runBlock ⟨s₂, run₂, ?_⟩
+      have keep₂' := combine keep₁ keep₂
+      by_cases h8 : j = 8
+      · apply WP.ite true (by simpa only [h8, decide_true] using cond₂)
+        · intro _
+          exact hrot s₂ keep₂' 1 (by decide) (by decide)
+            (by rw [VG.Proof.TripleDes.rotation_value j hj, ite_eq_left (Or.inr (Or.inl h8))])
+        · simp
+      · apply WP.ite false (by simpa only [h8, decide_false] using cond₂)
+        · simp
+        · intro _
+          apply WP.seq
+          obtain ⟨s₃, run₃, cond₃, keep₃⟩ := eqTest_ok s₂ j 15 hj (by decide)
+            ((keep₂'.reg .r12 (by simp)).trans hjreg)
+          refine WP.of_runBlock ⟨s₃, run₃, ?_⟩
+          have keep₃' := combine keep₂' keep₃
+          by_cases h15 : j = 15
+          · apply WP.ite true (by simpa only [h15, decide_true] using cond₃)
+            · intro _
+              exact hrot s₃ keep₃' 1 (by decide) (by decide)
+                (by rw [VG.Proof.TripleDes.rotation_value j hj, ite_eq_left (Or.inr (Or.inr h15))])
+            · simp
+          · apply WP.ite false (by simpa only [h15, decide_false] using cond₃)
+            · simp
+            · intro _
+              exact hrot s₃ keep₃' 2 (by decide) (by decide)
+                (by rw [VG.Proof.TripleDes.rotation_value j hj, ite_eq_right (by simp only [h2, h8, h15, or_self, not_false_eq_true])])
+
+end VG.Proof.TripleDes.PPC64LE.Key
+
+end
+
+end
 
 /-! ### `TripleDes.PPC64LE.Key.Body`, which only this module used -/
 

@@ -1,15 +1,14 @@
 module
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Points
+
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Final
 public import VerifiedGarbage.Impl.Ecdsa.Verify.X86_64
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.Fixed
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Lays
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Stages
 import VerifiedGarbage.Proof.Ecdh.X86_64.Peer
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Unch
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.ProjectiveFlags
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Finish
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Final
 import VerifiedGarbage.Proof.Ecdsa.Projective
 
 /-! ### `Ecdsa.Verify.X86_64.ProjectiveArithmetic`, which only this module used -/

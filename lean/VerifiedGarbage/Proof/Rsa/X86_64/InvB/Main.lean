@@ -1,9 +1,8 @@
 module
--- separate module: its proofs import algebra, which `InvInstance` alone supplies to the registrations through `InvLaw`
 
+-- separate module: its proofs import algebra, which `InvInstance` alone supplies to the registrations through `InvLaw`
 public import VerifiedGarbage.Proof.Rsa.X86_64.InvB.Finish
 import VerifiedGarbage.Proof.Divstep.TcSBounds
-import VerifiedGarbage.Proof.Rsa.Divstep.Bound
 import VerifiedGarbage.Proof.Rsa.Divstep.OddInput
 import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Loop
 import Mathlib.Tactic.Ring

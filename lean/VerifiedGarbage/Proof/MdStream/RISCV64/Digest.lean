@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.MdStream.RISCV64.Digest
-public import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Common
+public import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Init
 public import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Hash
 public import VerifiedGarbage.Proof.Framework.RISCV64.Alloc
 public import VerifiedGarbage.Proof.Framework.Covers
@@ -10,7 +10,6 @@ public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 public import VerifiedGarbage.Proof.Hmac.Generic.Implies
 public import VerifiedGarbage.Spec.Sha256.Contract
 public import VerifiedGarbage.TCB.RISCV64.Target
-import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Init
 import VerifiedGarbage.Proof.Sha256.Stream
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith

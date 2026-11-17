@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86.DecBody
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86.DecBase
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86.DecMem
 public import VerifiedGarbage.Proof.Rsa.X86.PrivImpl
 public import VerifiedGarbage.Proof.Sha256.X86.Variants.Interface
 import VerifiedGarbage.Proof.RsaPkcs1Sig.BytesAt

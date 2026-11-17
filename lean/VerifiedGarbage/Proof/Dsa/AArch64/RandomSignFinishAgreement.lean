@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignFinishCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignFinishResult
+public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignInvalid
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignPublic
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.Octets

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSlots
+public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignSaved
 public import VerifiedGarbage.Impl.Dsa.AArch64.GenerateKey
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignFrame
 import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignEnv

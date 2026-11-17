@@ -1,11 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.CmacAes.RISCV64.Contract
+public import VerifiedGarbage.Proof.CmacAes.RISCV64.Subkeys
 public import VerifiedGarbage.Impl.CmacAes.RISCV64
 public import VerifiedGarbage.Proof.AesCbc.RISCV64.Call
 public import VerifiedGarbage.Proof.Framework.RISCV64.Spill
 import VerifiedGarbage.Proof.Framework.RISCV64.Steps
-public import VerifiedGarbage.Proof.CmacAes.RISCV64.Subkeys
 import VerifiedGarbage.Proof.AesCbc.RISCV64.Loop
 import VerifiedGarbage.Proof.AesCbc.RISCV64.Body
 import VerifiedGarbage.Proof.Aes.RISCV64.BlocksVerified

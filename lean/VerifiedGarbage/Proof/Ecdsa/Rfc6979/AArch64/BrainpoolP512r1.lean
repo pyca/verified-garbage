@@ -5,9 +5,8 @@ meta import VerifiedGarbage.Proof.Weierstrass.AArch64.BrainpoolP512r1Literals
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Curve
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.TableSat
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
-import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP512r1.Comb.Tables
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP512r1.Config
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP512r1.Comb.Contract
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP512r1.Config
 import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP512r1.Comb.Verified
 import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP512r1.Comb.Lit
 import Mathlib.Data.Finset.Attr

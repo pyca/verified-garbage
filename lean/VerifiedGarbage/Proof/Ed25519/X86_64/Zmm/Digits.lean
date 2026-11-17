@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Select
 public import VerifiedGarbage.Proof.Ed25519.X86_64.CombLoop
-import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Half
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith

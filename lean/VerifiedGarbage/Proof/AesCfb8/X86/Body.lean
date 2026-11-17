@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.Aes.X86.BlocksVariant
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.AesCbc.X86.Body
-public import VerifiedGarbage.Proof.AesCbc.X86.Loop
 public import VerifiedGarbage.Proof.AesCfb8.Spec
 import VerifiedGarbage.Proof.CmacAes.X86.UpdateLoop
 import VerifiedGarbage.Proof.Cmac.Frame
@@ -127,7 +126,7 @@ The artifacts' contracts are the shared ones of `Spec/Cfb8/Contract.lean`,
 which imply these (`Verified.lean`): `cfb8X86 enc`, for encryption
 (`enc = true`) and decryption. The functions have AES-CBC's arguments, with
 `len` counting bytes, and its prologue and epilogue
-(`Proof/AesCbc/X86/Loop.lean`), whose stride-free definitions this reuses.
+(`Proof/AesCbc/X86/Body.lean`), whose stride-free definitions this reuses.
 
 The invariant after `k` bytes (`LInv`): `esi` points at the next byte,
 `esp` is unchanged, only the input block, the data, the first 2064 bytes of

@@ -20,7 +20,7 @@ public import VerifiedGarbage.Impl.AesGcm.RISCV64
 # AES-GCM on RISC-V: the pieces of `vg_aes_gcm_seal` and `vg_aes_gcm_open`
 
 Untrusted: everything here is checked by Lean. As on ARMv7
-(`Proof/AesGcm/Arm/OneShot.lean`): both keep a streaming state at `W + 16`;
+(`Proof/AesGcm/Arm/Seal.lean`): both keep a streaming state at `W + 16`;
 `oneAad` writes `J₀` and absorbs the additional data, padded (`oneAad_ok`),
 `oneCrypt` runs counter mode over the data from the first counter block
 (`oneCrypt_ok`), and `oneTag o` absorbs the data as ciphertext, padded, then

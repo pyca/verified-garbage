@@ -1,9 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.Fixed
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.Setup
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Lays
 
 /-!
 # ECDSA on x86-64: the setup and the tables of bits

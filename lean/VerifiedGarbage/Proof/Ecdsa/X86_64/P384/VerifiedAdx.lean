@@ -31,7 +31,7 @@ meta import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
 
 `p384x` is `p384` multiplying modulo `p` and `n` with BMI2 and ADX
 (`Mod.adx`) and selecting the comb's entries with AVX2, which the proof of
-`sign_ok` covers as it covers any multiplication (`Proof/Mont/X86_64/Adx.lean`)
+`sign_ok` covers as it covers any multiplication (`Proof/Mont/X86_64/Rounds.lean`)
 and either selection (`selPassV_ok`): the same curve, so the same facts
 (`p384x_ok`, from `p384_ok`) and the same precondition.
 -/

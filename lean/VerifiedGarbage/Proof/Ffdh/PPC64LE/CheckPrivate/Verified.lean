@@ -3,10 +3,9 @@ module
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.CheckPrivate.Fn
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.CheckPrivate.Implies
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.CheckPrivate.Front
-import VerifiedGarbage.Proof.Ffdh.PPC64LE.CheckPrivate.Body
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.CheckPrivate.Status
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.ExchangeCorrect
-import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.DomainBody
+import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckDomainFn
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckPublicFn
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.Derive.Correct
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.Derive.CT

@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.ImportData
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.ImportFrame
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTDefs
 import VerifiedGarbage.Proof.Framework.Omega

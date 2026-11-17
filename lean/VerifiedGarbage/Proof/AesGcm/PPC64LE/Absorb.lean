@@ -22,7 +22,7 @@ public import VerifiedGarbage.Impl.AesGcm.PPC64LE
 # AES-GCM on PPC64LE: GHASH absorbing a piece (`absorb`)
 
 Untrusted: everything here is checked by Lean. As on ARMv7
-(`Proof/AesGcm/Arm/Absorb.lean`): `absorb yo` absorbs the `r25` bytes at
+(`Proof/AesGcm/Arm/Fn.lean`): `absorb yo` absorbs the `r25` bytes at
 `r24` into GHASH, with the accumulator at `st + yo` and the `r26` buffered
 bytes at `st + 32` (`absorb_ok`): it fills the buffer (`headPre_ok`,
 `head_ok`), absorbs whole blocks (`whole_ok`) and buffers the rest

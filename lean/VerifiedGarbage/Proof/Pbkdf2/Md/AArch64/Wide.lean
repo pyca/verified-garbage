@@ -1,6 +1,5 @@
 module
 
-import VerifiedGarbage.Proof.Pbkdf2.AArch64.Copy
 public import VerifiedGarbage.Proof.Pbkdf2.AArch64.Iterate
 public import VerifiedGarbage.Proof.MdStream.AArch64.OneShot
 public import VerifiedGarbage.Impl.Pbkdf2.Md.AArch64

@@ -12,7 +12,7 @@ public import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
 import VerifiedGarbage.Proof.Framework.PPC64LE.Lit
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
-import VerifiedGarbage.Proof.Camellia.PPC64LE.Prologue
+import VerifiedGarbage.Proof.Camellia.PPC64LE.Group
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Covers
 meta import VerifiedGarbage.Proof.Camellia.PPC64LE.Lit

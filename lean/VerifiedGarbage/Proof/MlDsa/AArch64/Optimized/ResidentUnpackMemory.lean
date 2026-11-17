@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentUnpackWord
 public import VerifiedGarbage.Proof.Framework.Semantics
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentUnpackGather
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentUnpackConst
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
 import VerifiedGarbage.Proof.MlKem.AArch64.Vec
 import VerifiedGarbage.Proof.Framework.Block
@@ -11,7 +11,6 @@ import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentUnpackConst
 import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
 import VerifiedGarbage.Proof.Framework.AddrArith
 

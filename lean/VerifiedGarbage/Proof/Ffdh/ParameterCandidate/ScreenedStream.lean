@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Spec.Ffdh.ScreenedCandidate
 public import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Stream
-import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Witness
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! The screened policy is three verified witness-engine calls with the original full counts. -/

@@ -4,14 +4,13 @@ public import VerifiedGarbage.Proof.RsaPkcs1Enc.Contract
 public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.TCB.RISCV64.Target
 public import VerifiedGarbage.Proof.Framework.PowLit
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.RISCV64.Frame
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.RISCV64.VerifyCall
 import VerifiedGarbage.Proof.Framework.Covers
 import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.RISCV64.Encode
 public import VerifiedGarbage.Impl.RsaPkcs1Enc.RISCV64.Precomputed
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.RISCV64.VerifyCall
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.RISCV64.RecoverCorrect

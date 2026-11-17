@@ -2,13 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Lay
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.InitCall
-
 import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Cover
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
-import VerifiedGarbage.Proof.MlKem.AArch64.Paired.InitCore
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.Framework.Block
+
 /-! # Preserve the outer flags while restarting a singleton stream -/
 
 -- Formerly `VerifiedGarbage/Proof/MlKem/AArch64/Paired/Reinit.lean`, which only this module imported.

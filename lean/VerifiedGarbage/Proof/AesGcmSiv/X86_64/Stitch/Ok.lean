@@ -1,8 +1,7 @@
 module
-public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Enc
-public import VerifiedGarbage.Proof.Gcm.Poly
 
-import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Ctr
+public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Ctr
+public import VerifiedGarbage.Proof.Gcm.Poly
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Ok
 import VerifiedGarbage.Proof.Gcm.X86_64.Vpclmul.Ghash
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Setup

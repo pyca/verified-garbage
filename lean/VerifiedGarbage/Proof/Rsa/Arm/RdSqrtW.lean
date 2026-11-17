@@ -1,8 +1,8 @@
 module
+
 -- separate module: the proof of Appendix C.2's body is split in a chain of modules, so that a change rebuilds only the modules after it
 public import VerifiedGarbage.Proof.Rsa.Arm.RdHalve
 public import VerifiedGarbage.Proof.Rsa.Arm.KdTop
-
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.Ops
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.Ops2
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.Slots
@@ -14,14 +14,13 @@ import VerifiedGarbage.Proof.Bignum.WordStepNorm32
 public import VerifiedGarbage.Proof.Bignum.WordStep32
 import Mathlib.Tactic.Ring
 import VerifiedGarbage.Proof.Framework.PlainSimp
-import VerifiedGarbage.Proof.Rsa.Arm.KdRun
+import VerifiedGarbage.Proof.Rsa.Arm.KdNorm
 import VerifiedGarbage.Proof.Rsa.RecoverDet
 import VerifiedGarbage.Proof.Rsa.Arm.KeyBits
 import VerifiedGarbage.Proof.Rsa.Arm.KeyWord
 import VerifiedGarbage.Proof.Framework.Arm.Keep
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Bignum.Arm.ShiftK
-import VerifiedGarbage.Proof.Bignum.Arm.CopyWords
 import VerifiedGarbage.Proof.Bignum.Arm.SubState
 
 /-! # `vg_rsa_recover_primes_det` on ARMv7: the square root by words

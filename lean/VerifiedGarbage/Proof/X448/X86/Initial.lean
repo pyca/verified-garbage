@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.X448.X86.Env
-import VerifiedGarbage.Proof.X448.X86.Fill
+import VerifiedGarbage.Proof.X448.X86.FnContract
 import VerifiedGarbage.Proof.Framework.Contract
 
 /-!

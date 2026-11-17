@@ -15,7 +15,6 @@ public import VerifiedGarbage.Proof.AesOcb.PPC64LE.Callee
 public import VerifiedGarbage.Impl.AesGcmSiv.PPC64LE
 public import VerifiedGarbage.Impl.AesGcm.PPC64LE
 public import VerifiedGarbage.Proof.Aes.SboxSpec
-public import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Env
 public import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
 public import VerifiedGarbage.Proof.Framework.Inline
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Call

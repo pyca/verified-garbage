@@ -1,13 +1,11 @@
 module
 
 public import VerifiedGarbage.Impl.P256.X86_64.DoubleHalfForward
-public import VerifiedGarbage.Proof.P256.X86_64.DoubleHalf
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.Forward
-import VerifiedGarbage.Proof.P256.X86_64.DoubleHalfWP
+public import VerifiedGarbage.Proof.P256.X86_64.DoubleHalfWP
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardStores
 import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardField
 import VerifiedGarbage.Proof.Weierstrass.PointContract
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacState
-import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardStores
 
 /-! Functional correctness of point doubling with register forwarding across every field boundary. -/
 

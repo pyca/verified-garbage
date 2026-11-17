@@ -3,7 +3,7 @@ module
 import VerifiedGarbage.Proof.Argon2.Arm.Derive.FillState
 import VerifiedGarbage.Proof.Argon2.Arm.CompressVerified
 public import VerifiedGarbage.Proof.Argon2.Arm.CompressLit
-public import VerifiedGarbage.Proof.Argon2.Arm.Derive.Body
+public import VerifiedGarbage.Proof.Argon2.Arm.Derive.Locals
 public import VerifiedGarbage.Proof.Argon2.Arm.Words
 public import VerifiedGarbage.Proof.Argon2.Arm.CompressContract
 import VerifiedGarbage.Proof.Argon2.Arm.Derive.MemoryInit
@@ -11,8 +11,6 @@ import VerifiedGarbage.Proof.Argon2.Arm.Derive.Initial
 import VerifiedGarbage.Proof.Argon2.Arm.Derive.Scratch
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Argon2.Arm.Compress
-import VerifiedGarbage.Proof.Argon2.Arm.Derive.HCall
-import VerifiedGarbage.Proof.Argon2.Arm.Derive.Locals
 import VerifiedGarbage.Proof.Argon2.Arm.HPrime.Verified
 import VerifiedGarbage.Proof.Argon2.Arm.Mix
 import VerifiedGarbage.Proof.Argon2.Arm.Rounds

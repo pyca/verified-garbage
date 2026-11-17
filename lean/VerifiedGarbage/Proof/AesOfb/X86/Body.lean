@@ -15,7 +15,7 @@ meta import VerifiedGarbage.Proof.Cmac.Frame
 # AES-OFB on x86: one block, and constant time
 
 `body_ok`: one run of `body` takes the loop invariant AES-CBC's proofs
-share (`Proof/AesCbc/X86/Loop.lean`) from `k` blocks to `k + 1`, for
+share (`Proof/AesCbc/X86/Body.lean`) from `k` blocks to `k + 1`, for
 `ofbMode`, for any implementation of the block functions (`BlocksImpl`).
 `body_ct`: it is constant time, by the shared framework, with the call on
 the block at `iv`.

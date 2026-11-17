@@ -1,11 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.Arm.ValidatePrivate
+public import VerifiedGarbage.Proof.Dsa.Arm.ValidatePrivateCT
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Spec.Dsa.PrevalidatedSign
-import VerifiedGarbage.Proof.Dsa.Arm.ValidatePrivateCT
 
 /-!
 # DSA private-key validation on 32-bit ARM: `Verified`

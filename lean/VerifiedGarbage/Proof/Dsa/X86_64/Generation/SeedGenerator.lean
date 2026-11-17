@@ -14,7 +14,6 @@ import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextGenerator
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextSlice
 import VerifiedGarbage.Proof.Dsa.Encoding
 import Mathlib.Algebra.Group.Nat.Defs
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeometryGeneratorWork
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.RsaKeyGen.Slots
 import VerifiedGarbage.Proof.RsaKeyGen.Table

@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Mont8
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Mont7
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Mont5
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.St
-import VerifiedGarbage.Proof.MillerRabin.Arm.Win
+import VerifiedGarbage.Proof.MillerRabin.Arm.Body
 import VerifiedGarbage.Proof.Rsa.Arm.RdTwos
 import VerifiedGarbage.Proof.Rsa.TwosMath
 import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeState

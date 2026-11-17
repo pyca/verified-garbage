@@ -1,15 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.VerifyBody
-public import VerifiedGarbage.Proof.Dsa.X86_64.WorkspaceBridge
+public import VerifiedGarbage.Proof.Dsa.X86_64.SigningOperands
 public import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingInput
-
-import VerifiedGarbage.Proof.Dsa.X86_64.WorkspaceReady
 import VerifiedGarbage.Proof.Dsa.X86_64.SigningShape
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
-import VerifiedGarbage.Proof.Dsa.X86_64.SigningOperands
 import VerifiedGarbage.Proof.Framework.AddrArith
+
 /-! # Establishing all verifying operands after public domain acceptance -/
 
 -- Formerly `VerifiedGarbage/Proof/Dsa/X86_64/VerifyingShape.lean`, which only this module imported.

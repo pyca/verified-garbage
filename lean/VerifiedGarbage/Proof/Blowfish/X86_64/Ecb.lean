@@ -1,7 +1,6 @@
 module
-public import VerifiedGarbage.Proof.Blowfish.X86_64.Round
 
-import VerifiedGarbage.Proof.Blowfish.X86_64.Block
+public import VerifiedGarbage.Proof.Blowfish.X86_64.Block
 import VerifiedGarbage.Proof.Blowfish.Blocks
 import VerifiedGarbage.Proof.Blowfish.Schedule
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd

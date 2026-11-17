@@ -18,13 +18,12 @@ import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Setup
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Stages
 import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Copy
 import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Keep
-import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Loop
+import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Pow
 import VerifiedGarbage.Proof.Weierstrass.Law
 import VerifiedGarbage.Proof.Mont.PPC64LE.Step
 import VerifiedGarbage.Proof.Mont.PPC64LE.Row
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Layout
-import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Pow
 
 /-! ### `EcKey.Compressed.PPC64LE.Counter`, which only this module used -/
 

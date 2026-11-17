@@ -4,7 +4,7 @@ import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.Last3
 import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.RoundsVL
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512Tail.Tail
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.FromBuf
-public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.Sym
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.Out
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Finish
 import VerifiedGarbage.Proof.Framework.AddrArith

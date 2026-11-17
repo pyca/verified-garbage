@@ -1,7 +1,6 @@
 module
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.Fixed
 
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Lays
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.Fixed
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Stages
 import VerifiedGarbage.Proof.Weierstrass.X86_64.SpillUnch
 import VerifiedGarbage.Proof.Framework.Offset

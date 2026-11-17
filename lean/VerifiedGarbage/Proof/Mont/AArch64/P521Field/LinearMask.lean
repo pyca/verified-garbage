@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Mont.AArch64.P521Field.LinearPair
 public import VerifiedGarbage.Proof.Mont.AArch64.Csub
 import VerifiedGarbage.Proof.Framework.Block
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Field.LinearPairs
 public import VerifiedGarbage.Proof.Mont.AArch64.P521Field.LinearSum
 import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionBits

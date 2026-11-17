@@ -1,4 +1,5 @@
 module
+
 import Mathlib.Logic.Function.Basic
 import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.Dsa.X86.Pow
@@ -7,9 +8,8 @@ public import VerifiedGarbage.Spec.Weierstrass
 import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.TCB.X86.Target
-
 import VerifiedGarbage.Proof.Framework.X86.RelCT
-public import VerifiedGarbage.Proof.Dsa.X86.PowTiming
+public import VerifiedGarbage.Proof.Dsa.X86.PowCorrect
 public import VerifiedGarbage.Proof.Dsa.X86.StackFrame
 import VerifiedGarbage.Proof.Dsa.X86.PowCallFrame
 import VerifiedGarbage.Proof.Framework.X86.CallWith

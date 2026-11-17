@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Ffdh.Arm.VettedGroupsEnvironment
 public import VerifiedGarbage.Proof.Ffdh.Arm.VettedGroupsState
 import VerifiedGarbage.Proof.Ffdh.Arm.VettedGroups
-import VerifiedGarbage.Proof.Ffdh.Arm.VettedGroupsBlocks
-import VerifiedGarbage.Proof.Ffdh.Arm.VettedGroupsFinish
-import VerifiedGarbage.Proof.Ffdh.Arm.VettedGroupsStep
-import VerifiedGarbage.Proof.Ffdh.Arm.VettedGroupsLoop
 import VerifiedGarbage.Proof.Bignum.Arm.CompareBytesCT
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 import VerifiedGarbage.Proof.Ffdh.Arm.StackCT

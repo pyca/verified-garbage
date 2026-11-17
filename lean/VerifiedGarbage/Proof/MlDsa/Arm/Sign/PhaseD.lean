@@ -1,10 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseA
-import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PrimsD
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PrimsD
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PrimsB
-public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Hash
-public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PrimsC
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Top
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Blocks

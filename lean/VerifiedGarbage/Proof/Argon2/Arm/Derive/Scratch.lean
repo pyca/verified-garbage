@@ -1,8 +1,7 @@
 module
-public import VerifiedGarbage.Proof.Argon2.Arm.Derive.Body
-public import VerifiedGarbage.Proof.Argon2.Arm.HPrime.Hash
 
-import VerifiedGarbage.Proof.Argon2.Arm.Derive.Locals
+public import VerifiedGarbage.Proof.Argon2.Arm.Derive.Locals
+public import VerifiedGarbage.Proof.Argon2.Arm.HPrime.Hash
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Blake2.Arm.CompressB
 import VerifiedGarbage.Proof.Framework.Arm.Contract

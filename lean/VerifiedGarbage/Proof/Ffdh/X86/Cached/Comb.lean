@@ -8,8 +8,6 @@ import VerifiedGarbage.Proof.Rsa.FixedBaseCombMont
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Frame
 import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Stage
-import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Prepare
-import VerifiedGarbage.Proof.Bignum.X86.CrtRt.WindowPower
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Loops
 import VerifiedGarbage.Proof.Ffdh.X86.Stages
 import VerifiedGarbage.Proof.Ffdh.X86.Ops

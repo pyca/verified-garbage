@@ -14,18 +14,18 @@ import VerifiedGarbage.Proof.Framework.X86.Exec
 public import VerifiedGarbage.Proof.RsaPss.X86.Params
 public import VerifiedGarbage.Proof.RsaPss.X86.Hash
 import VerifiedGarbage.Proof.RsaPss.X86.Taint
-import VerifiedGarbage.Proof.RsaPss.X86.Prims
+import VerifiedGarbage.Proof.RsaPss.X86.CtBase
 import VerifiedGarbage.Proof.RsaPss.SignCases
 import VerifiedGarbage.Proof.RsaPss.Params
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Instr
-public import VerifiedGarbage.Proof.RsaPss.X86.CtMgfLoop
+public import VerifiedGarbage.Proof.RsaOaep.X86.Mgf
 public import VerifiedGarbage.Proof.RsaPss.X86.CtTab
 public import VerifiedGarbage.Proof.RsaPss.X86.YDig
 import VerifiedGarbage.Proof.RsaPss.X86.CtInit
 import VerifiedGarbage.Proof.RsaPss.X86.CtLen
 public import VerifiedGarbage.Proof.RsaPss.EncBytes
 import VerifiedGarbage.Proof.RsaPss.CtPad
-import VerifiedGarbage.Proof.RsaPss.X86.CtLoop
+import VerifiedGarbage.Proof.RsaPss.X86.CtHash
 import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Proof.RsaOaep.X86.MgfSlots
 import VerifiedGarbage.Proof.RsaOaep.X86.Taint

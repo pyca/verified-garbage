@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.PrivPre.Correct
-public import VerifiedGarbage.Proof.Bignum.X86.PrivPre.PrimesCall
+public import VerifiedGarbage.Proof.Bignum.X86.PrivPre.Wrap
 public import VerifiedGarbage.Proof.Framework.X86.RelCT
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Framework.Sig

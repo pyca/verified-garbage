@@ -13,7 +13,7 @@ public import VerifiedGarbage.TCB.PPC64LE.Isa
 
 `brun [facts]` runs a block of the Blowfish code symbolically (`crun`),
 keeping 32-bit loads and doubleword stores as `Mem.readW` and `Mem.writeW`
-and byte loads as the byte, as IDEA's `irun` (`Proof/Idea/PPC64LE/Round.lean`).
+and byte loads as the byte, as IDEA's `irun` (`Proof/Idea/PPC64LE/Block.lean`).
 The code's 32-bit values live in the low words of registers: `lo` is that
 word, and the `lo_*` lemmas take it through the operations the code uses.
 -/

@@ -3,11 +3,9 @@ module
 public import VerifiedGarbage.Proof.Bignum.Arm.PrivPreModulus
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtPrepareState
 public import VerifiedGarbage.Proof.Bignum.Arm.PrivPreBlocksCT
-public import VerifiedGarbage.Proof.Bignum.Arm.PrivPrePhase
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Bignum.Arm.PrepareAcceptedPrime
 import VerifiedGarbage.Proof.Bignum.Arm.PrepareAcceptedPrimeCT
-import VerifiedGarbage.Proof.Bignum.Arm.PrepareModulus
 import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeOut
 import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeOutCT
 import VerifiedGarbage.Proof.Bignum.Arm.MaskOutputCT
@@ -15,7 +13,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.CrtSelectWorkspace
 import VerifiedGarbage.Proof.Bignum.Arm.CrtWorkspaceCallCT
 import VerifiedGarbage.Proof.Bignum.Arm.CrtStageCT
 import VerifiedGarbage.Proof.Bignum.Arm.CrtPrepareCT
-import VerifiedGarbage.Proof.Bignum.Arm.CrtAcceptedFactors
+import VerifiedGarbage.Proof.Bignum.Arm.CrtBothPowers
 import VerifiedGarbage.Proof.Bignum.Arm.SavedOperandState
 import VerifiedGarbage.Proof.Bignum.Arm.CrtStorage
 import VerifiedGarbage.Proof.Bignum.Arm.CrtLayout

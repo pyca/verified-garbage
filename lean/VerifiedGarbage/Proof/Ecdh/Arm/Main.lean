@@ -5,7 +5,7 @@ public import VerifiedGarbage.Spec.Ecdh
 import VerifiedGarbage.Proof.Ecdh.Exchange
 import VerifiedGarbage.Proof.Ecdsa.Arm.Finish
 import VerifiedGarbage.Proof.Weierstrass.Arm.BytesLen
-import VerifiedGarbage.Proof.Weierstrass.Arm.Rep
+import VerifiedGarbage.Proof.Ecdsa.Arm.Main
 import VerifiedGarbage.Proof.Ecdh.Arm.Peer
 import VerifiedGarbage.Proof.Ecdsa.Arm.Scalar
 import VerifiedGarbage.Proof.Ecdsa.Arm.Middle

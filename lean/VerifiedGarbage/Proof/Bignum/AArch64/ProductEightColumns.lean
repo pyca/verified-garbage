@@ -1,14 +1,14 @@
 module
+
 public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcWord
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcBlock
+public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcColumns
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcTile
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcLoad
 public import VerifiedGarbage.Impl.Bignum.AArch64.ProductEight
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcFinish
 import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightMath
-import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcColumns
 
 /-! ### `Bignum.AArch64.ProductEightTile`, which only this module used -/
 

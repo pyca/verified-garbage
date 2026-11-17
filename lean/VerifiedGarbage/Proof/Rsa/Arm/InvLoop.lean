@@ -8,7 +8,7 @@ public import VerifiedGarbage.Proof.Rsa.Divstep.OddInputDef
 public import VerifiedGarbage.Proof.Divstep.Alg32Def
 public import VerifiedGarbage.Proof.Divstep.Red30
 public import VerifiedGarbage.Proof.Rsa.Arm.Inv.Geo
-import VerifiedGarbage.Proof.Rsa.Divstep.InvBounds
+import VerifiedGarbage.Proof.Rsa.Divstep.InvResult
 import VerifiedGarbage.Proof.Divstep.Word32
 import VerifiedGarbage.Proof.Divstep.Batch
 import VerifiedGarbage.Proof.Framework.Block

@@ -3,16 +3,14 @@ module
 import VerifiedGarbage.Proof.Dsa.AArch64.EntryScratch
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Dsa.AArch64.Finish
-public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyEntry
+public import VerifiedGarbage.Proof.Dsa.AArch64.InitializedFields
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-public import VerifiedGarbage.Proof.Dsa.AArch64.InitializedFields
 public import VerifiedGarbage.Impl.Dsa.AArch64.Prevalidated
 public import VerifiedGarbage.Proof.Bignum.AArch64.Run
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Dsa.AArch64.EntryFieldsFrame
 import VerifiedGarbage.Proof.Dsa.Layout
-import VerifiedGarbage.Proof.Dsa.AArch64.KeyPointers
 import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Complete AAPCS64 entry for DSA verification -/

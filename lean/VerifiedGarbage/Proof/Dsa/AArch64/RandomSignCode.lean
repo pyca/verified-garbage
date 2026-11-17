@@ -1,14 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCallResult
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignFinishResult
-
-import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignInvalid
+public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignSingle
+public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignInvalid
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Dsa.RandomSignResult
 import VerifiedGarbage.Proof.Dsa.RandomSign
+
 /-! Whole-entry execution, frame restoration, and stack bounds. -/
 
 -- Formerly `VerifiedGarbage/Proof/Dsa/AArch64/RandomSignBody.lean`, which only this module imported.

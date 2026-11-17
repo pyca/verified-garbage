@@ -1,17 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.CTMgfT
+public import VerifiedGarbage.Proof.RsaPss.PPC64LE.CTTab
 public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.CTBase
 public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.CTBlocks
 public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Hash
 public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Pre
 public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.MgfT
-public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Label
+public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Dc.Label
 public import VerifiedGarbage.Proof.RsaOaep.Encode
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
 import VerifiedGarbage.Proof.Mgf1.Bytes
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Em
 import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Entry
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.PPC64LE.Callee

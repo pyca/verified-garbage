@@ -11,8 +11,6 @@ public import VerifiedGarbage.Proof.Rc2.Word
 public import VerifiedGarbage.Proof.Weierstrass.Pow
 public import VerifiedGarbage.Proof.Weierstrass.Words
 public import VerifiedGarbage.Proof.Weierstrass.X86.MontBody
-public import VerifiedGarbage.Proof.Weierstrass.X86.MontSquareBody
-public import VerifiedGarbage.Proof.Weierstrass.X86.MontSquareInit
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Weierstrass.X86.Bits
 import VerifiedGarbage.Proof.Weierstrass.X86.Copy

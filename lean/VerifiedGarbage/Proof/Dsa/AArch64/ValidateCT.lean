@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Dsa.AArch64.ValidateMain
+public import VerifiedGarbage.Proof.Dsa.AArch64.ValidateMain
 public import VerifiedGarbage.Proof.Dsa.AArch64.ParametersCT
 public import VerifiedGarbage.Proof.Dsa.AArch64.WorkspaceBridge
 public import VerifiedGarbage.Proof.Dsa.AArch64.PublicScheduleCT
@@ -29,7 +29,6 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
 public import VerifiedGarbage.Proof.Dsa.SizeBounds
-public import VerifiedGarbage.Proof.Dsa.AArch64.ValidateInitialize
 public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingInitialize
 meta import VerifiedGarbage.Proof.Dsa.AArch64.ValidateEntry
 public import VerifiedGarbage.Proof.Dsa.AArch64.ValidateEntry

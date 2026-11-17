@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Bignum.X86.R2Words.Loop
 public import VerifiedGarbage.Proof.Bignum.X86.R2Words.Norm
 public import VerifiedGarbage.Proof.Bignum.X86.R2Words.Recip
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputeRt.Double
-public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Stages
+public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Load
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Power
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Loops

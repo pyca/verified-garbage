@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.X448.Field16Contract
 public import VerifiedGarbage.Proof.X448.X86.FnContract
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.X86.Call
@@ -25,7 +24,7 @@ Correctness under `binX86` and `a24X86` (`FnContract.lean`), constant time
 by taint tracking (every branch is on the row pointer and every address is
 `ws`, an offset, the row pointer or `esp` plus a constant: only the
 arguments, which are public, and `esp` need be), satisfiability, and the
-shared contracts of `Proof/X448/Field16Contract.lean`.
+shared contracts of `Proof/X448/X86/FnContract.lean`.
 -/
 
 @[expose] public section

@@ -1,13 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4.RISCV64.Ecb
-import VerifiedGarbage.Proof.Sm4.RISCV64.Crypt16
+import VerifiedGarbage.Proof.Sm4.RISCV64.Group
 public import VerifiedGarbage.Impl.Sm4.RISCV64.Prepared
 import VerifiedGarbage.Proof.Sm4.Planes
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Sm4.RISCV64.Prologue
-import VerifiedGarbage.Proof.Sm4.RISCV64.Group
 import VerifiedGarbage.Proof.Framework.Interleave
 import VerifiedGarbage.Proof.Sm4.RISCV64.LayersLit
 public import VerifiedGarbage.Proof.Sm4.Prepared

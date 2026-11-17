@@ -4,7 +4,7 @@ public import VerifiedGarbage.Impl.Modes.Arm.SeqFinal
 public import VerifiedGarbage.Proof.Modes.Arm.SeqBody
 public import VerifiedGarbage.Spec.Cfb.Final
 public import VerifiedGarbage.Spec.Ofb.Final
-import VerifiedGarbage.Proof.Modes.Arm.SeqLoop
+import VerifiedGarbage.Proof.Modes.Arm.Cbc
 import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
 import VerifiedGarbage.Proof.Modes.FbFinal
 import VerifiedGarbage.Proof.AesOfb.Spec

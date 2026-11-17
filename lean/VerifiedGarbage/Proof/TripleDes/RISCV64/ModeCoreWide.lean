@@ -1,6 +1,6 @@
 module
--- separate module: the core on 64 blocks, as `ModeCore.lean` is the core on one; it alone imports the bitsliced ECB
 
+-- separate module: the core on 64 blocks, as `ModeCore.lean` is the core on one; it alone imports the bitsliced ECB
 public import VerifiedGarbage.Proof.TripleDes.RISCV64.ModeCore
 public import VerifiedGarbage.Proof.TripleDes.RISCV64.Bitsliced.Ecb
 public import VerifiedGarbage.Proof.Modes.RISCV64.Wide
@@ -15,7 +15,6 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.RISCV64.Spill
 import VerifiedGarbage.Proof.TripleDes.CbcBlocks
-import VerifiedGarbage.Proof.TripleDes.RISCV64.BlockOk
 
 /-!
 # Triple DES's core on 64 blocks for the modes on RISC-V

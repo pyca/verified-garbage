@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Argon2.AArch64.InitialBody
 public import VerifiedGarbage.Proof.Argon2.AArch64.InitFill
-import VerifiedGarbage.Proof.Argon2.AArch64.SegmentSetupSteps
+import VerifiedGarbage.Proof.Argon2.AArch64.SegmentSetupPrepare
 import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Absorb
 public import VerifiedGarbage.Proof.Argon2.AArch64.InitialLayout
 public import VerifiedGarbage.Impl.Argon2.AArch64.Initial
@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Update
 import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Init
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Blake2.AArch64.Stream.Lit
-import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Output
+import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Space
 import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Finalize
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Argon2.AArch64.Instructions

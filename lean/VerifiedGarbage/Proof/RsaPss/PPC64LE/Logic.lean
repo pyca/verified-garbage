@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.RsaPss.PPC64LE.Post
 public import VerifiedGarbage.Proof.RsaPss.VerifyCases
 import VerifiedGarbage.Proof.RsaPss.EncBytes
-import VerifiedGarbage.Proof.RsaPss.Encoding
 import VerifiedGarbage.Proof.Mgf1.Bytes
 
 /-!

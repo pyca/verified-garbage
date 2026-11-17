@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PlainSimp
-public import VerifiedGarbage.Proof.Ed448.SignedWindow
+public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Mask
 public import VerifiedGarbage.Spec.Ed448.Contract
 import VerifiedGarbage.Proof.X448.X86_64.Bits
 import VerifiedGarbage.Proof.Ed448.Scalar
@@ -25,7 +25,6 @@ import Mathlib.Algebra.Order.Field.Basic
 import VerifiedGarbage.Proof.Ed448.X86_64.BaseConst
 import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLocal
-public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Mask
 public import VerifiedGarbage.Proof.X448.X86_64.Setup
 public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyRoot
 public import VerifiedGarbage.Proof.X448.X86_64.Adx.Lit

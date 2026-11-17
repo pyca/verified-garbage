@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.CT
-public import VerifiedGarbage.Proof.HmacTable.Arm
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Layout
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Table
 import VerifiedGarbage.Proof.Framework.Arm.Syms
 import VerifiedGarbage.Proof.Sha256.Md

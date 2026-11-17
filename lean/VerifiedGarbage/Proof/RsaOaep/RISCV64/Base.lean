@@ -45,7 +45,7 @@ Untrusted: everything here is checked by Lean. The frame of
 from its base `fb`, which its allocation makes writable (`fr`), and the 208
 bytes below it that the streaming hash functions use (`cR`): the stack the
 function uses, `kR`, the 336 bytes below the stack pointer on entry. As on
-PPC64LE (`Proof/RsaOaep/PPC64LE/Frame.lean`): `save_ok`, the saves of
+PPC64LE (`Proof/RsaOaep/PPC64LE/Base.lean`): `save_ok`, the saves of
 `s0`–`s11` and of the return address; `Saves`, what the restores need, kept
 by code writing other registers and memory apart from the slots;
 `restore_ok`, the restores giving back the caller's registers.

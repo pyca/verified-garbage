@@ -3,11 +3,10 @@ module
 public import VerifiedGarbage.Proof.Modes.X86.Core
 public import VerifiedGarbage.Impl.Blowfish.X86.Modes
 public import VerifiedGarbage.Proof.Blowfish.ModeBytes
-public import VerifiedGarbage.Proof.Blowfish.X86.Cipher
+public import VerifiedGarbage.Proof.Blowfish.X86.Ecb
 import VerifiedGarbage.Proof.Blowfish.Blocks
 import VerifiedGarbage.Proof.Blowfish.X86.Run
 import VerifiedGarbage.Proof.Blowfish.Schedule
-import VerifiedGarbage.Proof.Blowfish.X86.Ecb
 
 /-!
 # Blowfish's core for the modes on x86 (32-bit)

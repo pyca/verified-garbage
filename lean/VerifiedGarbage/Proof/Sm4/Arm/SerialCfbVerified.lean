@@ -1,18 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4.Arm.BatchPrologue
-public import VerifiedGarbage.Proof.Sm4.Arm.SerialCfbLoop
+public import VerifiedGarbage.Proof.Sm4.Arm.SerialCfbHead
 import VerifiedGarbage.Proof.Sm4.Arm.Core
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.Sm4.Arm.SerialCfb
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.Sm4.Arm.BatchChain
-import VerifiedGarbage.Proof.Sm4.Arm.BatchEntry
 public import VerifiedGarbage.Spec.Cfb
 public import VerifiedGarbage.Spec.Sm4.Ctr
-import VerifiedGarbage.Proof.Sm4.Arm.SerialCfbGroup
-public import VerifiedGarbage.Proof.Sm4.Arm.SerialCfbHead
 import VerifiedGarbage.Proof.Sm4.Arm.BatchTaint
 import VerifiedGarbage.Proof.Sm4.Arm.SerialCfbTaint
 import VerifiedGarbage.Proof.Sm4.Arm.BatchHead

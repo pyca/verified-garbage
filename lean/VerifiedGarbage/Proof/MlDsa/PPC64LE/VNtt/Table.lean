@@ -1,8 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.PPC64LE.VNtt.Lanes
-public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.MlDsa.PPC64LE.VNtt.Mem
+public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Impl.MlDsa.PPC64LE.VNtt
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step

@@ -1,8 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseBankFieldRun
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFive
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseBankFieldSchedule
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InversePackedBank
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PackedLanes
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TraversalBank
@@ -11,11 +9,114 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Residue
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InnerBank
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TailBank
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversalField
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseBankFieldStage
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversalCorrect
 import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseLocalTable
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
+
+/-! ### `MlDsa.AArch64.Optimized.InverseBankFieldSchedule`, which only this module used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.AArch64.Optimized.InverseTraversal
+open VG.Spec.MlDsa VG.Proof.MlDsa.Arith
+
+def packedSchedule (start len : Nat) (root : Nat → Nat) : List Op :=
+  (List.range (4/len)).flatMap fun g => (List.range len).map fun j =>
+    ⟨start+2*len*g+j,len,root (len*g+j)⟩
+
+theorem packedSchedule_get (w : Poly) {start len i : Nat} (hl : len=1 ∨ len=2)
+    (hs : start+8≤256) (hi : i<8) (root : Nat → Nat) :
+    (run (packedSchedule start len root) w)[start+i]! =
+      let x := w[start+packedLow len i]!
+      let y := w[start+packedLow len i+len]!
+      if i%(2*len)<len then x+y else -zetas (root (packedLane len i))*(x-y) := by
+  have hi' : i=0 ∨ i=1 ∨ i=2 ∨ i=3 ∨ i=4 ∨ i=5 ∨ i=6 ∨ i=7 := by omega_using [hi]
+  rcases hl with rfl | rfl <;>
+    rcases hi' with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+    simp [-getElem!_pos,packedSchedule,run,List.range_succ,Op.apply,packedLow,packedLane,Nat.add_assoc] <;>
+    repeat (rw [bflyInv_get _ (by omega_using []) (by unfold n; omega_using [hs]) _ (by unfold n; omega_using [hs])]
+            simp (disch := omega) [-getElem!_pos,Nat.add_assoc])
+
+theorem packedSchedule_outside (w : Poly) {start len i : Nat} (hl : len=1 ∨ len=2)
+    (hs : start+8≤256) (hi : i<256) (hout : i<start ∨ start+8≤i) (root : Nat → Nat) :
+    (run (packedSchedule start len root) w)[i]! = w[i]! := by
+  have h0 : i≠start := by omega_using [hout]
+  have hn : ∀ j<8,i≠start+j := by intro j hj; omega_using [hout, hj]
+  rcases hl with rfl | rfl <;>
+    simp [-getElem!_pos,packedSchedule,run,List.range_succ,Op.apply] <;>
+    repeat (rw [bflyInv_get _ (by omega_using []) (by unfold n; omega_using [hs]) _ (by unfold n; omega_using [hi])]
+            simp (disch := omega) [-getElem!_pos,Nat.add_assoc,h0,hn 1 (by decide),
+              hn 2 (by decide),hn 3 (by decide),hn 4 (by decide),hn 5 (by decide),
+              hn 6 (by decide),hn 7 (by decide)])
+
+end VG.Proof.MlDsa.AArch64.Optimized.InverseTraversal
+
+end
+
+end
+
+/-! ### `MlDsa.AArch64.Optimized.InverseBankFieldRun`, which this module and modules that import it used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.AArch64.Optimized.Inverse
+open VG VG.AArch64 VG.Spec.MlDsa VG.Proof.MlDsa.Arith
+
+def runOps (u : Nat) (root : Nat → Nat) (i : Nat) : Nat → List InverseTraversal.Op
+  | 0 => []
+  | n+1 => stageOps u (root i) i ++ runOps u root (i+1) n
+
+theorem runValues_field (i n : Nat) (hin : i+n≤7) (v : Vector (BitVec 128) 8) (w : Poly)
+    {u : Nat} (hu : u<8) (root : Nat → Nat) {b : Int}
+    (hb : 8380417≤b) (hs : 8*b<2147483648) (hv : StageBound v i b)
+    (hf : InnerBankField u v w) :
+    StageBound (runValues (fun i _ => (negZetaNat (root i) : Int)) i n v) (i+n) b ∧
+      InnerBankField u (runValues (fun i _ => (negZetaNat (root i) : Int)) i n v)
+        (InverseTraversal.run (runOps u root i n) w) := by
+  induction n generalizing i v w with
+  | zero => exact ⟨hv,hf⟩
+  | succ n ih =>
+    have hi : i<7 := by omega_using [hin]
+    have hp := stageValues_bound ⟨i,hi⟩ v (fun _ => (negZetaNat (root i) : Int)) hb hs hv
+    have hfield := stageValues_field ⟨i,hi⟩ v w hu (root i) hb hs hv hf
+    have h := ih (i := i+1) (by omega_using [hin]) _ _ hp hfield
+    simpa only [runValues,runOps,InverseTraversal.run_append,Nat.add_assoc,Nat.add_comm 1 n] using h
+
+theorem stageBound_zero (v : Vector (BitVec 128) 8) (b : Int) :
+    StageBound v 0 b ↔ BankBound v b := by
+  simp only [StageBound,BankBound,stageDepth,Nat.reduceLT,ite_true,Nat.mul_zero,
+    Nat.not_lt_zero,ite_false,Int.pow_zero,Int.one_mul]
+
+theorem stageBound_seven (v : Vector (BitVec 128) 8) (b : Int) :
+    StageBound v 7 b ↔ BankBound v (8*b) := by
+  simp only [StageBound,BankBound,stageDepth,Nat.reduceLT,ite_false,Nat.reduceEqDiff,Int.reducePow]
+
+theorem localRoot_index (u : Nat) :
+    localRoot u=(fun i _ => (negZetaNat (localIndex u i) : Int)) := rfl
+
+theorem runValues_local (v : Vector (BitVec 128) 8) (w : Poly) {u : Nat} (hu : u<8)
+    (hv : BankBound v 33521668) (hf : InnerBankField u v w) :
+    BankBound (runValues (localRoot u) 0 7 v) 268173344 ∧
+      InnerBankField u (runValues (localRoot u) 0 7 v)
+        (InverseTraversal.run (runOps u (localIndex u) 0 7) w) := by
+  rw [localRoot_index]
+  have h := runValues_field 0 7 (by decide) v w hu (localIndex u) (by decide) (by decide)
+    ((stageBound_zero v 33521668).mpr hv) hf
+  exact ⟨(stageBound_seven _ _).mp h.1,h.2⟩
+
+end VG.Proof.MlDsa.AArch64.Optimized.Inverse
+
+end
+
+end
 
 /-! ### `MlDsa.AArch64.Optimized.InverseBankFieldPackedBank`, which only this module used -/
 

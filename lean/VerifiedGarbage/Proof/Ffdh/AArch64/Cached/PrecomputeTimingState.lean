@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PrecomputeTable
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.StorePrefix
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PublicFrame
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.ContextBuild
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.BuildFrame
 public import VerifiedGarbage.Proof.Ffdh.GenerationPrecompute
@@ -13,16 +12,14 @@ import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Offset
 import Mathlib.Tactic.Ring
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PrecomputeFieldFrame
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PolicyDomain
 public import VerifiedGarbage.Impl.Ffdh.AArch64.Cached.Precompute
 import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.Header
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.Metadata
 public import VerifiedGarbage.Spec.Rsa.Contract
 import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.WorkspaceState
 public import VerifiedGarbage.Spec.Ffdh.Contract
-import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.Source
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.GeneratorSource
+public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.Source
+public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PrecomputeInitial
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 public import VerifiedGarbage.Impl.Ffdh.AArch64.Cached.Layout
 public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
@@ -35,6 +32,257 @@ import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PrecomputeTailTiming
 import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.InverseUnique
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PolicyRecognizeTimingState
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.TableTiming
+public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.DomainFacts
+public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PolicyRecognize
+public import VerifiedGarbage.Proof.Ffdh.KeyScalar
+public import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup
+public import VerifiedGarbage.Proof.Bignum.AArch64.PubR2
+public import VerifiedGarbage.Impl.Ffdh.AArch64.Cached.Policy
+public import VerifiedGarbage.Impl.Rsa.AArch64
+public import VerifiedGarbage.Spec.Rsa
+
+/-! ### `Ffdh.AArch64.Cached.PrecomputeFieldFrame`, which only this module used -/
+
+section
+
+/-! Modulus setup preserves the cached-generation controls in the upper header. -/
+
+-- Formerly `VerifiedGarbage/Proof/Ffdh/AArch64/Cached/PrecomputeField.lean`, which only this module imported.
+section
+
+/-! Context creation reuses the verified public modulus loading and R² construction. -/
+@[expose] public section
+namespace VG.Proof.Ffdh.AArch64.Cached
+open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64
+open VG.Impl.Rsa.AArch64
+open VG.Proof.Bignum VG.Proof.Bignum.AArch64
+open VG.Proof.MlKem.AArch64 (Keep)
+
+theorem precomputeField_ok (M : Mont) {s : State} {B np : Addr} {Z k : Nat} {nb : List Byte}
+ (scratch : Scr s B Z) (base : s.gpr .x0=B) (room : slot ((k+7)/8) 8≤Z)
+ (positive : 9≤k) (size : k<2^31)
+ (length : word s.mem B (8*Public.sK)=BitVec.ofNat 64 k) (modulusPtr : word s.mem B (8*Public.sN)=np)
+ (source : Src s B Z np nb) (span : InRegions (s.rd++s.wr) np k) (byteLength : nb.length=k)
+ (odd : Spec.Rsa.os2ip nb%2=1) (normalized : 2^(64*((k+7)/8-1))≤Spec.Rsa.os2ip nb) :
+ WP isa (seqs (pcLoadW++r2StepsPub M.mm)) s fun t =>
+ ∃ mi, Good t B Z ((k+7)/8) mi ∧
+ wv t.mem B (slot ((k+7)/8) 0) ((k+7)/8)=Spec.Rsa.os2ip nb ∧
+ ((word t.mem B (slot ((k+7)/8) 0)).toNat*mi.toNat+1)%2^64=0 ∧
+ wv t.mem B (slot ((k+7)/8) 4) ((k+7)/8)=2^(128*((k+7)/8))%Spec.Rsa.os2ip nb ∧
+ Frm B (pcLoadRanges ((k+7)/8)++r2Ranges ((k+7)/8)) s.mem t.mem ∧ Keep mmRegs s t := by
+ refine wp_seqs_append (by simp [pcLoadW,pcLoadWith]) (by simp [r2StepsPub]) ?_
+ refine WP.mono (pcLoadW_ok scratch base room positive size length modulusPtr source span byteLength odd) ?_
+ rintro u ⟨mi,good,modulus,inverse,frame,rest⟩
+ refine WP.mono (r2Pub_ok M good room (by omega_using [positive]) (by omega_using [size]) modulus inverse odd normalized) ?_
+ rintro t ⟨goodT,boundT,valueT,frameT,restT⟩
+ have nowrap : B.toNat+slot ((k+7)/8) 8≤2^64 := by have := scratch.nowrap;omega_using [room, this]
+ have sameMod : wv t.mem B (slot ((k+7)/8) 0) ((k+7)/8)=Spec.Rsa.os2ip nb :=
+  (frameT.r2_wv nowrap (by decide) (by decide) (by decide) (by decide)).trans modulus
+ have sameInverse : ((word t.mem B (slot ((k+7)/8) 0)).toNat*mi.toNat+1)%2^64=0 := by
+  rw [frameT.r2_word nowrap (by decide) (by decide) (by decide) (by decide)]
+  exact inverse
+ have value : wv t.mem B (slot ((k+7)/8) 4) ((k+7)/8)=2^(128*((k+7)/8))%Spec.Rsa.os2ip nb := by
+  rw [Nat.mod_eq_of_lt boundT] at valueT
+  rw [←Nat.pow_add] at valueT
+  have exponent : 64*((k+7)/8)+64*((k+7)/8)=128*((k+7)/8) := by omega_using []
+  rw [exponent] at valueT
+  exact valueT
+ exact ⟨mi,goodT,sameMod,sameInverse,value,
+  (frame.mono (fun r hr => List.mem_append_left _ hr)).trans
+   (frameT.mono (fun r hr => List.mem_append_right _ hr)),(rest.trans restT).mono (by simp)⟩
+
+end VG.Proof.Ffdh.AArch64.Cached
+end
+
+end
+
+@[expose] public section
+namespace VG.Proof.Ffdh.AArch64.Cached
+open VG VG.Impl.Bignum VG.Impl.Bignum.AArch64
+open VG.Proof.Bignum
+open VG.Impl.Bignum.Public
+
+theorem precomputeField_header {B : Addr} {w i : Nat} {m m' : Mem}
+ (frame : Frm B (pcLoadRanges w++r2Ranges w) m m')
+ (lower : 16≤i) (upper : i<32) (counter : i≠sCnt) :
+ word m' B (8*i)=word m B (8*i) := by
+ apply frame.word_eq _ (by omega_using [upper])
+ intro r hr
+ have belowN := hdr_lt_slot w aN upper
+ have belowAcc := hdr_lt_slot w aAcc upper
+ have belowTmp := hdr_lt_slot w aTmp upper
+ have belowR2 := hdr_lt_slot w aR2 upper
+ simp only [List.mem_append,pcLoadRanges,r2Ranges,List.mem_cons,List.not_mem_nil,or_false] at hr
+ rcases hr with (rfl|rfl|rfl|rfl) | (rfl|rfl|rfl|rfl)
+ all_goals simp only [sW,sArr,sMinv] at *
+ all_goals omega_arith
+
+theorem precomputeField_inscr {B : Addr} {w Z : Nat} {m m' : Mem}
+ (frame : Frm B (pcLoadRanges w++r2Ranges w) m m') (room : slot w 8≤Z) : InScr B Z m m' := by
+ intro x hx
+ apply frame x
+ intro r hr
+ have inside : r.1+r.2≤slot w 8 := by
+  rcases List.mem_append.mp hr with load | square
+  · exact pcLoadRanges_le w r load
+  · have two := slot_le (w:=w) (show Public.aAcc<8 by decide)
+    have three := slot_le (w:=w) (show Public.aTmp<8 by decide)
+    have four := slot_le (w:=w) (show Public.aR2<8 by decide)
+    have count := hdr_lt_slot w 8 (show sCnt<32 by decide)
+    simp only [r2Ranges,List.mem_cons,List.not_mem_nil,or_false] at square
+    rcases square with rfl|rfl|rfl|rfl <;> omega_arith
+ exact Or.inr (by omega_using [room, hx, inside])
+
+end VG.Proof.Ffdh.AArch64.Cached
+
+end
+
+end
+
+/-! ### `Ffdh.AArch64.Cached.PublicFrame`, which only this module used -/
+
+section
+
+/-! Public precomputation may write only its scratch buffer and output context. -/
+@[expose] public section
+namespace VG.Proof.Ffdh.AArch64.Cached
+open VG VG.Proof.Bignum
+
+def publicWrites (p : Parameters) : List Region := [⟨p.B,p.Z⟩,⟨p.ctx,8*(3+34*p.w)⟩]
+
+abbrev PublicFrame (p : Parameters) := Frame (publicWrites p)
+
+theorem PublicFrame.of_inscr {p : Parameters} {m m' : Mem} (h : InScr p.B p.Z m m') : PublicFrame p m m' := by
+ intro x hx
+ apply h
+ have no := hx ⟨p.B,p.Z⟩ (by simp [publicWrites])
+ change ¬ofs p.B x+1≤p.Z at no
+ omega_using [no]
+
+theorem PublicFrame.of_build {p : Parameters} {m m' : Mem} (h : BuildFrame p m m') : PublicFrame p m m' := by
+ apply h.sub
+ intro r hr
+ simp only [buildWrites,List.mem_cons,List.not_mem_nil,or_false] at hr
+ rcases hr with rfl | rfl
+ · exact ⟨⟨p.B,p.Z⟩,by simp [publicWrites],fun _ h => h⟩
+ · exact ⟨⟨p.ctx,8*(3+34*p.w)⟩,by simp [publicWrites],Offset.sub_base p.ctx (by unfold tableStart;omega_using [])⟩
+
+theorem PublicFrame.of_context {p : Parameters} {m m' : Mem} {d n : Nat}
+ (h : Outside p.ctx d n m m') (fit : d+n≤8*(3+34*p.w)) : PublicFrame p m m' := by
+ have limit : 8*(3+34*p.w)<2^64 := by have := p.width;omega_using [this]
+ have frame := outside_to_array (by omega_using [fit, limit]) (by omega_using [fit, limit]) h
+ intro x hx
+ apply frame x
+ right
+ have no := hx ⟨p.ctx,8*(3+34*p.w)⟩ (by simp [publicWrites])
+ have sub := Offset.sub_base p.ctx (d:=d) (n:=n) fit
+ have notInside : ¬(⟨off p.ctx d,n⟩ : Region).Contains x 1 := fun hi => no (sub x hi)
+ change ¬ofs (off p.ctx d) x+1≤n at notInside
+ omega_using [notInside]
+
+end VG.Proof.Ffdh.AArch64.Cached
+
+end
+
+end
+
+/-! ### `Ffdh.AArch64.Cached.PolicyDomain`, which only this module used -/
+
+section
+
+/-! Checked domains provide every bound-scan premise, including its nonzero leading byte. -/
+@[expose] public section
+namespace VG.Proof.Ffdh.AArch64.Cached
+open VG VG.AArch64 VG.Impl.Bignum.AArch64
+open VG.Impl.Ffdh.AArch64.Cached
+open VG.Proof.Bignum VG.Proof.Bignum.AArch64
+open VG.Proof.MlKem.AArch64 (Keep)
+open VG.Proof.Ffdh (lead lead_lt lead_zero lead_nonzero)
+open VG.Proof.Ffdh.KeyScalar (bnd)
+
+theorem checked_bound_bits {k : Nat} {dom : List Byte} (positive : 0<k)
+ (shape : dom.length=2*k ∨ dom.length=3*k) (valid : Spec.Ffdh.domainValid k dom=true) :
+ Spec.RsaKeyGen.bitLength (Spec.Ffdh.scalarBound (Spec.Ffdh.domainOf k dom))=
+ 8*((bnd k dom).length-lead (bnd k dom)-1)+
+ Spec.RsaKeyGen.bitLength ((bnd k dom).getD (lead (bnd k dom)) 0).toNat := by
+ have length := VG.Proof.Ffdh.KeyScalar.bnd_length shape
+ have nonempty : bnd k dom≠[] := by intro h;rw [h] at length;simp at length;omega_using [positive, length]
+ have modulus := VG.Proof.Ffdh.domainValid_mod valid
+ simp only [Spec.Rsa.modulusValid,Bool.and_eq_true,beq_iff_eq,decide_eq_true_eq] at modulus
+ dsimp only [Spec.Ffdh.domainOf] at modulus
+ have bound := VG.Proof.Ffdh.KeyScalar.bound_bits (by omega_using [positive] : 1≤k) shape (fun _ => ⟨modulus.1.1.1,by omega_using [modulus]⟩)
+ rw [length,List.getD_eq_getElem?_getD,List.getElem?_eq_getElem (lead_lt nonempty),Option.getD_some]
+ exact bound
+
+theorem checked_bound_lead {k : Nat} {dom : List Byte} (positive : 0<k)
+ (shape : dom.length=2*k ∨ dom.length=3*k) (valid : Spec.Ffdh.domainValid k dom=true) :
+ let bs := bnd k dom
+ lead bs<bs.length ∧ (∀ i<lead bs,bs.getD i 0=0#8) ∧ bs.getD (lead bs) 0≠0#8 := by
+ dsimp only
+ have length := VG.Proof.Ffdh.KeyScalar.bnd_length shape
+ have nonempty : bnd k dom≠[] := by intro h;rw [h] at length;simp at length;omega_using [positive, length]
+ have inside := lead_lt nonempty
+ refine ⟨inside,?_,?_⟩
+ · intro i hi
+   obtain ⟨bound,zero⟩ := lead_zero (bs:=bnd k dom) i hi
+   change (bnd k dom)[i]=0#8 at zero
+   simpa only [List.getD_eq_getElem?_getD,List.getElem?_eq_getElem bound,Option.getD_some] using zero
+ · intro zero
+   have last : ¬lead (bnd k dom)+1<(bnd k dom).length := by
+    intro before
+    have nz := lead_nonzero nonempty before
+    have same : (bnd k dom).getD (lead (bnd k dom)) 0=(bnd k dom)[lead (bnd k dom)] := by
+     simp only [List.getD_eq_getElem?_getD,List.getElem?_eq_getElem inside,Option.getD_some]
+    exact nz (same.symm.trans zero)
+   have bits := checked_bound_bits positive shape valid
+   rw [zero] at bits
+   have pos := scalarBound_positive valid
+   have lengthPos : 0<Spec.RsaKeyGen.bitLength (Spec.Ffdh.scalarBound (Spec.Ffdh.domainOf k dom)) := by
+    unfold Spec.RsaKeyGen.bitLength
+    rw [ite_eq_right (by omega_using [pos] : Spec.Ffdh.scalarBound (Spec.Ffdh.domainOf k dom)≠0)]
+    omega_using []
+   have tail : (bnd k dom).length-lead (bnd k dom)-1=0 := by omega_using [last]
+   rw [tail] at bits
+   change Spec.RsaKeyGen.bitLength (Spec.Ffdh.scalarBound (Spec.Ffdh.domainOf k dom))=0 at bits
+   omega_using [lengthPos, bits]
+
+theorem Source.bound {s : State} {domPtr : Addr} {dom : List Byte} {k dl : Nat}
+ (source : Source domPtr dom s) (positive : 0<k) (length : dom.length=dl) (shape : dl=2*k ∨ dl=3*k) :
+ Source (if dl=2*k then domPtr else off domPtr (2*k)) (bnd k dom) s := by
+ unfold bnd
+ by_cases three : dl=3*k
+ · rw [ite_eq_left (by omega_using [length, three] : dom.length=3*k),ite_eq_right (by omega_using [positive, three] : ¬dl=2*k)]
+   exact (source.drop (2*k)).take k
+ · rw [ite_eq_right (by omega_using [length, three] : ¬dom.length=3*k),ite_eq_left (by omega_using [shape, three] : dl=2*k)]
+   exact source.take k
+
+theorem policyDomain_ok {s : State} {B domPtr : Addr} {Z k dl : Nat} {dom : List Byte}
+ (scratch : Scr s B Z) (room : 256≤Z) (base : s.gpr .x0=B)
+ (positive : 0<k) (size : k≤1024) (shape : dl=2*k ∨ dl=3*k) (domLength : dom.length=dl)
+ (valid : Spec.Ffdh.domainValid k dom=true)
+ (pointer : word s.mem B (8*sDom)=domPtr) (length : word s.mem B (8*sLen)=BitVec.ofNat 64 k)
+ (domainLength : word s.mem B (8*sDL)=BitVec.ofNat 64 dl)
+ (source : Source domPtr dom s)
+ (outside : ∀ i<dom.length,8*sBits+8≤ofs B (domPtr+BitVec.ofNat 64 i))
+ (records : PolicyTableAt B (s.syms Policy.tableSym) Policy.groups s) :
+ WP isa Policy.recognize s fun t =>
+ word t.mem B (8*sBits)=BitVec.ofNat 64 (Spec.Ffdh.generationScalarBits (Spec.Ffdh.domainOf k dom)) ∧
+ Outside B (8*sBits) 8 s.mem t.mem ∧ Keep recordClobbers s t := by
+ have shapeDom : dom.length=2*k ∨ dom.length=3*k := by omega_using [shape, domLength]
+ have leadFacts := checked_bound_lead positive shapeDom valid
+ have bits := checked_bound_bits positive shapeDom valid
+ refine WP.mono (policyRecognize_ok scratch room base positive (by omega_using [size]) shape domLength pointer length domainLength
+  source outside (source.bound positive domLength shape) (VG.Proof.Ffdh.KeyScalar.bnd_length shapeDom)
+  leadFacts.1 leadFacts.2.1 leadFacts.2.2 records) ?_
+ rintro t ⟨width,frame,rest⟩
+ rw [←bits,policyWidth_spec positive shapeDom (domain_normalized positive valid)] at width
+ exact ⟨width,frame,rest⟩
+
+end VG.Proof.Ffdh.AArch64.Cached
+
+end
+
+end
 
 /-! ### `Ffdh.AArch64.Cached.PrecomputeNative`, which only this module used -/
 

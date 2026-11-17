@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Gcm.RISCV64.Ghash
-import VerifiedGarbage.Proof.AesGcmSiv.RISCV64.Wp
+public import VerifiedGarbage.Proof.AesGcmSiv.RISCV64.Wp
 import VerifiedGarbage.Proof.GcmSiv.Spec
 public import VerifiedGarbage.Proof.Framework.RISCV64.Keep
 public import VerifiedGarbage.Proof.Framework.RISCV64.ByteLoad64
@@ -13,7 +13,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Impl.AesGcmSiv.RISCV64
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.Callee
-public import VerifiedGarbage.Proof.AesGcmSiv.RISCV64.Env
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Spec.Gcm
 public import VerifiedGarbage.Spec.GcmSiv

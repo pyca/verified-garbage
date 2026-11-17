@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Combine
 import VerifiedGarbage.Proof.Ed448.AArch64.BaseEncode
 import VerifiedGarbage.Proof.X448.AArch64.Base.Add
 import VerifiedGarbage.Proof.X448.AArch64.Fast.Finish
-public import VerifiedGarbage.Proof.X448.AArch64.Fast.Inv
+public import VerifiedGarbage.Proof.X448.AArch64.Fast.Setup
 public import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Impl.Ed448.AArch64.ScalarBase
 public import VerifiedGarbage.Proof.Ed448.Formulas
@@ -29,7 +29,6 @@ public import VerifiedGarbage.Spec.Ed448
 public import VerifiedGarbage.TCB.Code
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.TCB.AArch64.Isa
-public import VerifiedGarbage.Proof.X448.AArch64.Fast.Setup
 public import VerifiedGarbage.Proof.X448.AArch64.Env
 public import VerifiedGarbage.Proof.X448.AArch64.Setup
 public import VerifiedGarbage.Proof.X448.AArch64.Weak.Env
@@ -41,7 +40,7 @@ import VerifiedGarbage.Proof.X448.AArch64.Main
 import VerifiedGarbage.Proof.Ed448.Scalar
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.X448.AArch64.Base.Step
-public import VerifiedGarbage.Proof.X448.AArch64.BitBody
+public import VerifiedGarbage.Proof.X448.AArch64.Bits
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.X448.AArch64.Base.Setup

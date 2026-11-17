@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Pbkdf2.Md.AnyKey.X86_64
-public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Pbkdf2
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.PbkLoop
 import VerifiedGarbage.Proof.Hmac.Generic.Common
 import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Words
 public import VerifiedGarbage.Proof.Hmac.Contract

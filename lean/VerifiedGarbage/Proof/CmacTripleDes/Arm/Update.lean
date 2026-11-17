@@ -1,9 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.CmacTripleDes.Arm.Save
 import VerifiedGarbage.Proof.Cmac.Frame
 public import VerifiedGarbage.Proof.CmacTripleDes.Arm.Block
-public import VerifiedGarbage.Proof.CmacTripleDes.Arm.Contract
 public import VerifiedGarbage.Proof.Framework.Bswap
 public import VerifiedGarbage.Proof.MdStream.Arm.Common
 import VerifiedGarbage.Proof.CmacTripleDes.Words
@@ -11,6 +9,184 @@ import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Impl.CmacTripleDes.Arm
+public import VerifiedGarbage.Proof.Framework.Arm.Spill
+public import VerifiedGarbage.TCB.Arm.Target
+import VerifiedGarbage.Proof.CmacTripleDes.Arm.RoundLit
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.TripleDes.SboxTables
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Spec.Cmac
+
+/-! ### `CmacTripleDes.Arm.Contract`, which this module and modules that import it used -/
+
+section
+
+/-!
+# TDEA-CMAC on ARMv7: the contracts the proofs are written against
+
+Untrusted: everything here is checked by Lean. These are the contracts of
+the code the streaming functions run inline
+(`Proof/CmacTripleDes/Stream/Arm/Inline.lean`). The functions call nothing and use no stack; `update` and
+`finalize` take `scratch` on the stack.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.CmacTripleDes.Arm
+
+open VG VG.Arm
+
+/-- `CIPH_K` for TDEA with the key schedule at `w`, in `m`. -/
+abbrev ciphAt (m : Mem) (w : Addr) : Spec.Cmac.Cipher := Spec.Cmac.tdesWith (Spec.TripleDes.scheduleAt m w)
+
+/-- `vg_cmac_triple_des_init(key = r0, key_len = r1, out = r2, scratch = r3)`. -/
+def initArm : Contract isa where
+  pre s :=
+    let key : Region := ⟨State.addr (s.gpr .r0), (s.gpr .r1).toNat⟩
+    let out : Region := ⟨State.addr (s.gpr .r2), 400⟩
+    let scr : Region := ⟨State.addr (s.gpr .r3), 640⟩
+    s.rd = [key] ∧ s.wr = [out, scr] ∧ key.Disjoint out ∧ key.Disjoint scr ∧ out.Disjoint scr ∧
+      (s.gpr .r0).toNat + (s.gpr .r1).toNat ≤ 2 ^ 32 ∧ (s.gpr .r2).toNat + 400 ≤ 2 ^ 32 ∧
+      (s.gpr .r3).toNat + 640 ≤ 2 ^ 32 ∧ Spec.TripleDes.validKey (s.gpr .r1).toNat
+  post s s' :=
+    let k := Spec.TripleDes.expandKey (Spec.TripleDes.bytesAt s.mem (State.addr (s.gpr .r0)) (s.gpr .r1).toNat)
+    let ks := Spec.Cmac.subkeys (Spec.Cmac.tdesWith k) 8
+    Spec.TripleDes.scheduleAt s'.mem (State.addr (s.gpr .r2)) = k ∧
+      Spec.Aes.bytesAt s'.mem (State.addr (s.gpr .r2) + 384) 16 = ks.1 ++ ks.2
+  pub s₁ s₂ :=
+    s₁.sp = s₂.sp ∧ s₁.gpr .r0 = s₂.gpr .r0 ∧ s₁.gpr .r1 = s₂.gpr .r1 ∧ s₁.gpr .r2 = s₂.gpr .r2 ∧
+      s₁.gpr .r3 = s₂.gpr .r3
+
+/-- `vg_cmac_triple_des_update(schedule = r0, state = r1, data = r2, n = r3, scratch = [sp])`. -/
+def updateArm : Contract isa where
+  pre s :=
+    let sched : Region := ⟨State.addr (s.gpr .r0), 384⟩
+    let state : Region := ⟨State.addr (s.gpr .r1), 8⟩
+    let data : Region := ⟨State.addr (s.gpr .r2), 8 * (s.gpr .r3).toNat⟩
+    let scr : Region := ⟨State.addr (stackArg s 0), 640⟩
+    let args : Region := ⟨stackArgAddr s 0, 4⟩
+    s.rd = [sched, data, args] ∧ s.wr = [state, scr] ∧
+      sched.Disjoint state ∧ sched.Disjoint scr ∧ data.Disjoint state ∧ data.Disjoint scr ∧
+      state.Disjoint scr ∧ state.Disjoint args ∧ scr.Disjoint args ∧ (s.gpr .r0).toNat + 384 ≤ 2 ^ 32 ∧
+      (s.gpr .r1).toNat + 8 ≤ 2 ^ 32 ∧ (s.gpr .r2).toNat + 8 * (s.gpr .r3).toNat ≤ 2 ^ 32 ∧
+      (stackArg s 0).toNat + 640 ≤ 2 ^ 32 ∧ s.sp.toNat + 4 ≤ 2 ^ 32
+  post s s' :=
+    Spec.Aes.bytesAt s'.mem (State.addr (s.gpr .r1)) 8 =
+      Spec.Cmac.chain (ciphAt s.mem (State.addr (s.gpr .r0))) (Spec.Aes.bytesAt s.mem (State.addr (s.gpr .r1)) 8)
+        (Spec.Cmac.blocksAt s.mem (State.addr (s.gpr .r2)) 8 (s.gpr .r3).toNat)
+  pub s₁ s₂ :=
+    s₁.sp = s₂.sp ∧ s₁.gpr .r0 = s₂.gpr .r0 ∧ s₁.gpr .r1 = s₂.gpr .r1 ∧ s₁.gpr .r2 = s₂.gpr .r2 ∧
+      s₁.gpr .r3 = s₂.gpr .r3 ∧ stackArg s₁ 0 = stackArg s₂ 0
+
+/-- `vg_cmac_triple_des_finalize(key = r0, state = r1, last = r2, last_len = r3, scratch = [sp])`. -/
+def finalizeArm : Contract isa where
+  pre s :=
+    let key : Region := ⟨State.addr (s.gpr .r0), 400⟩
+    let state : Region := ⟨State.addr (s.gpr .r1), 8⟩
+    let last : Region := ⟨State.addr (s.gpr .r2), (s.gpr .r3).toNat⟩
+    let scr : Region := ⟨State.addr (stackArg s 0), 640⟩
+    let args : Region := ⟨stackArgAddr s 0, 4⟩
+    s.rd = [key, last, args] ∧ s.wr = [state, scr] ∧
+      key.Disjoint state ∧ key.Disjoint scr ∧ last.Disjoint state ∧ last.Disjoint scr ∧
+      state.Disjoint scr ∧ state.Disjoint args ∧ scr.Disjoint args ∧
+      (s.gpr .r0).toNat + 400 ≤ 2 ^ 32 ∧ (s.gpr .r1).toNat + 8 ≤ 2 ^ 32 ∧
+      (s.gpr .r2).toNat + (s.gpr .r3).toNat ≤ 2 ^ 32 ∧ (stackArg s 0).toNat + 640 ≤ 2 ^ 32 ∧
+      s.sp.toNat + 4 ≤ 2 ^ 32 ∧ (s.gpr .r3).toNat ≤ 8
+  post s s' :=
+    let ciph := ciphAt s.mem (State.addr (s.gpr .r0))
+    let ks := Spec.Cmac.subkeys ciph 8
+    Spec.Aes.bytesAt s.mem (State.addr (s.gpr .r0) + 384) 16 = ks.1 ++ ks.2 →
+    ∀ msg : List Byte, msg.length % 8 = 0 → (msg = [] ∨ 0 < (s.gpr .r3).toNat) →
+      Spec.Aes.bytesAt s.mem (State.addr (s.gpr .r1)) 8 =
+        Spec.Cmac.chain ciph (Spec.Cmac.zeros 8) (Spec.Cmac.blocks 8 msg) →
+      Spec.Aes.bytesAt s'.mem (State.addr (s.gpr .r1)) 8 =
+        Spec.Cmac.macFull ciph 8 (msg ++ Spec.Aes.bytesAt s.mem (State.addr (s.gpr .r2)) (s.gpr .r3).toNat)
+  pub s₁ s₂ :=
+    s₁.sp = s₂.sp ∧ s₁.gpr .r0 = s₂.gpr .r0 ∧ s₁.gpr .r1 = s₂.gpr .r1 ∧ s₁.gpr .r2 = s₂.gpr .r2 ∧
+      s₁.gpr .r3 = s₂.gpr .r3 ∧ stackArg s₁ 0 = stackArg s₂ 0
+
+end VG.Proof.CmacTripleDes.Arm
+
+end
+
+end
+
+/-! ### `CmacTripleDes.Arm.Save`, which this module and modules that import it used -/
+
+section
+
+/-!
+# TDEA-CMAC on ARMv7: saving and restoring the registers
+
+Untrusted: everything here is checked by Lean. Each function saves our
+caller's callee-saved registers to bytes `[52, 88)` of the scratch buffer
+(`save`), and restores them from there through `r10`, `r10` last
+(`restore`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.CmacTripleDes.Arm
+
+open VG VG.Arm VG.Impl.CmacTripleDes.Arm
+open VG.Proof.MdStream.Arm (saveMem)
+
+theorem saved_bound : ∀ p ∈ saved, 52 ≤ p.2 ∧ p.2 + 4 ≤ 88 := by decide
+
+/-- The memory after saving the registers to the scratch buffer at `S`. -/
+def savedMem (s₀ : State) (S : BitVec 32) : Mem := saveMem s₀.mem (State.addr S) s₀.gpr saved
+
+export VG.Arm.Spill (saveMem_congr)
+
+theorem saved_slots : Spill.Slots 52 88 saved := by decide
+
+theorem savedMem_frame (s₀ : State) (S : BitVec 32) :
+    Frame [⟨State.addr S + BitVec.ofNat 64 52, 36⟩] s₀.mem (savedMem s₀ S) :=
+  Spill.saveMem_frame_slots saved_slots _ _ _
+
+/-- Each slot holds the register saved there. -/
+theorem savedMem_slot (s₀ : State) (S : BitVec 32) {r : Reg} {d : Nat} (h : (r, d) ∈ saved) :
+    (savedMem s₀ S).readW (State.addr S + BitVec.ofNat 64 d) 32 = s₀.gpr r :=
+  Spill.saveMem_saved (State.addr S) s₀.gpr s₀.mem saved saved_slots (r, d) h
+
+/-- The registers but `r10`, and where they are saved. -/
+def saved8 : List (Reg × Nat) :=
+  [(.r4, 52), (.r5, 56), (.r6, 60), (.r7, 64), (.r8, 68), (.r9, 72), (.r11, 76), (.lr, 80)]
+
+theorem saved_eq : saved = saved8 ++ [(.r10, 84)] := rfl
+
+/-- `restore` from the scratch buffer at `S`: each register gets its slot. -/
+theorem restore_ok {s : State} {S : BitVec 32} (hb : s.gpr .r10 = S) (hS : S.toNat + 88 ≤ 2 ^ 32)
+    (hr : ∀ d, 52 ≤ d → d + 4 ≤ 88 → InRegions (s.rd ++ s.wr) (State.addr S + BitVec.ofNat 64 d) 4) :
+    WP isa (.block restore) s fun s' =>
+      (∀ p ∈ saved, s'.gpr p.1 = s.mem.readW (State.addr S + BitVec.ofNat 64 p.2) 32) ∧
+      s'.sp = s.sp ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  rw [restore, saved_eq, ← List.append_nil (List.map _ _)]
+  subst hb
+  refine Spill.restoreBase_ok (by decide) (fun p hp => ?_) fun s' hl _ hm hrd hwr hsp => WP.block_nil ⟨hl, hsp, hm, hrd, hwr⟩
+  have := saved_slots.bound hp
+  exact ⟨by omega_using [this], by omega_using [hS, this], hr _ this.1 this.2.1⟩
+
+/-- The registers restored from slots that have not changed since they were
+saved. -/
+theorem restored {s₀ s s' : State} {S : BitVec 32}
+    (hm : ∀ d, 52 ≤ d → d + 4 ≤ 88 →
+      s.mem.readW (State.addr S + BitVec.ofNat 64 d) 32 = (savedMem s₀ S).readW (State.addr S + BitVec.ofNat 64 d) 32)
+    (h : ∀ p ∈ saved, s'.gpr p.1 = s.mem.readW (State.addr S + BitVec.ofNat 64 p.2) 32) (hsp : s'.sp = s₀.sp) :
+    abiPreserved s₀ s' := by
+  refine ⟨fun r hr => ?_, hsp⟩
+  have hk : ∀ r ∈ preserved, r ∈ saved.map Prod.fst := by decide
+  obtain ⟨p, hp, rfl⟩ := List.mem_map.mp (hk r hr)
+  have hb := saved_bound _ hp
+  rw [h _ hp, hm p.2 hb.1 hb.2, savedMem_slot s₀ S hp]
+
+end VG.Proof.CmacTripleDes.Arm
+
+end
+
+end
 
 /-!
 # TDEA-CMAC on ARMv7: `vg_cmac_triple_des_update`

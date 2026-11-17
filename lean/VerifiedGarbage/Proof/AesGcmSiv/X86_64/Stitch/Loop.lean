@@ -186,7 +186,7 @@ plaintext of the first `e - 1` absorbed into `Y` (in `xmm2`), the powers `P`
 in the working space; `rdx` points to group `e - 1`, the next to hash.
 `body_ok`: a body deciphers group `e` (two batches, `batch_ok`) while it
 hashes group `e - 1` between their rounds (`gq_ok`), which they do not write
-(`QG.data`), as AES-GCM's encryption does (`Proof/Gcm/X86_64/Stitch/Loop.lean`).
+(`QG.data`), as AES-GCM's encryption does (`Proof/Gcm/X86_64/Stitch/Enc.lean`).
 -/
 
 @[expose] public section

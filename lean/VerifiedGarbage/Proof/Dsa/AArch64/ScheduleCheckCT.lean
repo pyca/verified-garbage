@@ -11,7 +11,7 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.CheckOperands
 import VerifiedGarbage.Proof.Dsa.AArch64.ZeroCT
 import VerifiedGarbage.Proof.Dsa.AArch64.EqualCT
 public import VerifiedGarbage.Impl.Dsa.AArch64.Checks
-public import VerifiedGarbage.Proof.Dsa.AArch64.Modulus
+public import VerifiedGarbage.Proof.Dsa.AArch64.ReadyCalls
 
 /-! ### `Dsa.AArch64.ReadyRangeCT`, which only this module used -/
 

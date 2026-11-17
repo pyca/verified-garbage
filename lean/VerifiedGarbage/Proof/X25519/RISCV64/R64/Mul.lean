@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.X25519.RISCV64.R64
 public import VerifiedGarbage.Proof.X25519.RISCV64.Field
 public import VerifiedGarbage.Proof.X448.RISCV64.R64.Basic
-public import VerifiedGarbage.Proof.X448.RISCV64.R64.Product
+public import VerifiedGarbage.Proof.X448.RISCV64.R64.Reduce
 import VerifiedGarbage.Proof.X448.RISCV64.R64.Macc
 public import VerifiedGarbage.Proof.X448.RISCV64.R64.Mul
 import VerifiedGarbage.Proof.Framework.Offset

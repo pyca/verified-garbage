@@ -167,7 +167,7 @@ end VG.Proof.Dsa.RISCV64.PSearch
 
 /-! ## DSA parameter search on RISC-V: a state of the search with its data
 
-As on PPC64LE (`Proof/Dsa/PPC64LE/Gen/St.lean`), in words of 64 bits.
+As on PPC64LE (`Proof/Dsa/PPC64LE/Gen/Bytes.lean`), in words of 64 bits.
 `SS G STK σ c s`: a state of the search (`GI`), with the bytes the claims
 `c.cl` of `scratch` hold (past the header, apart from the key working
 space), and the arrays and slots of the key working space (at `kB p_len`)
@@ -443,7 +443,7 @@ end VG.Proof.Dsa.RISCV64.PSearch
 
 /-! ## DSA parameter search on RISC-V: header words in pieces
 
-As on PPC64LE (`Proof/Dsa/PPC64LE/Gen/Pieces.lean`). `WP.wr`: an
+As on PPC64LE (`Proof/Dsa/PPC64LE/Gen/Bytes.lean`). `WP.wr`: an
 instruction that writes one register. The taint analysis does not follow the
 header's words, which the search keeps its state in: a load of one (`ld`) and
 a store into one (`st`) leak only addresses from `s6`, which holds `scratch`

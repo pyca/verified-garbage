@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Divstep.Word
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.Loops
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.IbLoops
 import VerifiedGarbage.Proof.Bignum.PPC64LE.MontRound
-import VerifiedGarbage.Proof.Bignum.PPC64LE.MontStep
 import VerifiedGarbage.Proof.Bignum.PPC64LE.MontFios
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Omega

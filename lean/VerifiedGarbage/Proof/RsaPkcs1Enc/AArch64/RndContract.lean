@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.RndBody
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.RndReject
 
 /-!
 # RSAES-PKCS1-v1_5 encryption from a random tape on AArch64: the contract

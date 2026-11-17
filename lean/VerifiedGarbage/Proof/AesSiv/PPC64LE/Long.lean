@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesSiv.PPC64LE.Short
 public import VerifiedGarbage.Proof.AesSiv.Long
-public import VerifiedGarbage.Proof.CmacAes.PPC64LE.FinSteps
+public import VerifiedGarbage.Proof.CmacAes.PPC64LE.Finalize
 import VerifiedGarbage.Proof.AesCcm.BytesAt
 import VerifiedGarbage.Proof.AesSiv.CtrPart
 import VerifiedGarbage.Proof.Cmac.Block
@@ -13,8 +13,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.AesCcm.PPC64LE.Wp
 import VerifiedGarbage.Proof.AesCbc.PPC64LE.CT
-import VerifiedGarbage.Proof.AesSiv.PPC64LE.FinRaw
-import VerifiedGarbage.Proof.CmacAes.PPC64LE.Finalize
+import VerifiedGarbage.Proof.AesSiv.PPC64LE.Mac
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 
 /-!

@@ -1,7 +1,7 @@
 module
 
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
-public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Common
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Loop
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Curve
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Layout
 

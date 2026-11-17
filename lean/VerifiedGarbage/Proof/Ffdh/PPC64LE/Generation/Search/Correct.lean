@@ -1,11 +1,10 @@
 module
-public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Generation.Search.Entry
 
+public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Generation.Search.Entry
 import VerifiedGarbage.Proof.Ffdh.SievedBounds
 import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.Generation.Search.Loop
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Ffdh.GenerationBounds
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec

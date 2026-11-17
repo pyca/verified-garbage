@@ -1,7 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.CmacAes.RISCV64.Finalize
-import VerifiedGarbage.Proof.CmacAes.RISCV64.Subkeys
+public import VerifiedGarbage.Proof.CmacAes.RISCV64.Subkeys
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 import VerifiedGarbage.Proof.AesCbc.RISCV64.CT
@@ -14,7 +14,6 @@ meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 public import VerifiedGarbage.Impl.CmacAes.RISCV64
 public import VerifiedGarbage.Proof.AesCbc.RISCV64.Call
-public import VerifiedGarbage.Proof.CmacAes.RISCV64.Contract
 
 /-!
 # AES-CMAC on RISC-V: constant time

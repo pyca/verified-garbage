@@ -2,11 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Ecdh.X86_64.WinJac
 public import VerifiedGarbage.Proof.Ecdh.X86_64.MulJ4
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacNorm
-import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacA
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacA
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Lays
-import VerifiedGarbage.Proof.Weierstrass.X86_64.AddConst
+import VerifiedGarbage.Proof.Ecdsa.X86_64.Fixed
+import VerifiedGarbage.Proof.Ecdh.X86_64.Window
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TComb
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Stages
 

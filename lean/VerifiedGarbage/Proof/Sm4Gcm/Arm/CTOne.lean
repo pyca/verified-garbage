@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Sm4Gcm.Arm.CTJ0
 public import VerifiedGarbage.Proof.Sm4Gcm.Arm.CTAbsorb
 public import VerifiedGarbage.Proof.Sm4Gcm.Arm.CTCrypt
 public import VerifiedGarbage.Proof.Sm4Gcm.Arm.CTFin
-public import VerifiedGarbage.Proof.Sm4Gcm.Arm.OneShot
+public import VerifiedGarbage.Proof.Sm4Gcm.Arm.Seal
 meta import VerifiedGarbage.Proof.Sm4Gcm.Arm.CTJ0
 import VerifiedGarbage.Proof.Sm4Gcm.Arm.CTFn
 import VerifiedGarbage.Proof.Sm4Gcm.Arm.FinTag

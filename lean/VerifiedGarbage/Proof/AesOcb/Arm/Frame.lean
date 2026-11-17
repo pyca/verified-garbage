@@ -1,10 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.AesOcb.Rounds
+public import VerifiedGarbage.Proof.AesOcb.Scratch
 import VerifiedGarbage.Proof.AesOcb.Arm.CTFn
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
-public import VerifiedGarbage.Proof.AesOcb.Scratch
 public import Batteries.Logic
 public import VerifiedGarbage.Impl.AesOcb.Arm
 public import VerifiedGarbage.Proof.AesOcb.Arm.Contract
@@ -37,7 +36,7 @@ import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Sha256.Stream
 import VerifiedGarbage.Spec.Ocb.Contract
-import VerifiedGarbage.Proof.AesOcb.Arm.Offset0
+import VerifiedGarbage.Proof.AesOcb.Arm.Nonce
 public import VerifiedGarbage.Impl.StackScratch.Arm
 import VerifiedGarbage.Proof.Framework.Arm.StackScratch
 

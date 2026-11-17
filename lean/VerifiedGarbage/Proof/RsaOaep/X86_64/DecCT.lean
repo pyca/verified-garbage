@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Spec.RsaPkcs1Sig
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.MgfTCT
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.LabelTCT
-public import VerifiedGarbage.Proof.RsaOaep.X86_64.DecTab
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.DecMain
 public import VerifiedGarbage.Proof.HashTable.X86_64
 meta import VerifiedGarbage.Proof.RsaOaep.X86_64.DecSteps
 meta import VerifiedGarbage.Proof.RsaOaep.X86_64.LabelTCT

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.Arm.GenerateContract
+public import VerifiedGarbage.Proof.Dsa.Arm.GenerateCheck
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Impl.Dsa.Arm.Generate
@@ -9,7 +9,6 @@ public import VerifiedGarbage.Spec.Dsa.DomainChecked
 public import VerifiedGarbage.Proof.Dsa.Validation
 public import VerifiedGarbage.Proof.Dsa.Contract
 public import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Dsa.Arm.GenerateCheck
 import VerifiedGarbage.Proof.Dsa.Arm.GenerateCheckCT
 import VerifiedGarbage.Proof.Dsa.Arm.GenerateDerive
 import VerifiedGarbage.Proof.Dsa.Arm.GenerateDeriveCT

@@ -2,10 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.AesCfb8.Rounds
 public import VerifiedGarbage.Impl.AesCfb8.PPC64LE
-public import VerifiedGarbage.Proof.AesCfb8.PPC64LE.Loop
+public import VerifiedGarbage.Proof.AesCfb8.PPC64LE.Body
 public import VerifiedGarbage.Spec.Cfb8.Contract
 import VerifiedGarbage.Proof.AesCfb8.PPC64LE.CT
-import VerifiedGarbage.Proof.AesCfb8.PPC64LE.Body
 import VerifiedGarbage.Proof.AesCbc.PPC64LE.Verified
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec

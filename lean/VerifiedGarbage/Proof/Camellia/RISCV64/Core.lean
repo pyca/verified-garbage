@@ -1,9 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Camellia.RISCV64.Round
 public import VerifiedGarbage.Proof.Camellia.RISCV64.Linear
 public import VerifiedGarbage.Impl.Camellia.RISCV64.Ecb
-public import VerifiedGarbage.Proof.Camellia.RISCV64.Fl
 public import VerifiedGarbage.Proof.Camellia.Words
 import VerifiedGarbage.Proof.Camellia.Common
 import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
@@ -12,6 +10,673 @@ import VerifiedGarbage.Proof.Framework.RISCV64.Steps
 import VerifiedGarbage.Proof.Framework.RISCV64.Spill
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Impl.Camellia.RISCV64.Sbox
+public import VerifiedGarbage.Proof.Camellia.SboxTable
+public import VerifiedGarbage.Proof.Aes.RISCV64.Layers
+public import VerifiedGarbage.Impl.Camellia.RISCV64.Layers
+public import VerifiedGarbage.Proof.Camellia.Bitsliced
+public import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.RISCV64.Straight
+
+/-! ### `Camellia.RISCV64.Round`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Camellia.RISCV64.Fl`, which this module and modules that import it used -/
+
+section
+
+/-!
+# FL and FLINV on RISC-V
+
+As on PPC64LE (`Proof/Camellia/PPC64LE/Crypt8.lean`) and x86-64: the two steps of FL (`flRot`, `flOr`) AND and OR the planes
+with the subkey's, so they are not linear, and are run symbolically, one
+plane's five instructions for any plane (`flRotStep_ok`, `flOrStep_ok`),
+composed by induction over the planes. The mask of the step is loaded into
+`t2` first. RV64I has no rotate: a plane's step rotates with two shifts and
+an XOR through `t4` (`rorI`), which `rot_shifts` turns back into a rotation.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Camellia.RISCV64
+
+open VG VG.RISCV64 VG.Impl.Camellia.RISCV64
+open VG.Impl.Aes.RISCV64 (q sb t0 t1 t2 u7 kp rt ldS rorI shlI shrI andR xorR movR)
+open VG.Proof.Camellia (RotStep OrStep oddAt rotPos)
+
+theorem runBlock_append' (a b : List Instr) (s : State) :
+    runBlock isa (a ++ b) s = (runBlock isa a s).bind (runBlock isa b) := by
+  induction a generalizing s with
+  | nil => rfl
+  | cons i is ih =>
+    show (isa.exec i s).bind _ = ((isa.exec i s).bind _).bind _
+    cases isa.exec i s with
+    | none => rfl
+    | some s' => exact ih s'
+
+/-- The memory FL reads: the subkey's planes `K i` at words `off + i` of
+`kp`, and the masks of the odd and even bytes in their slots. -/
+structure FlMem (s : State) (off : Nat) (K : Nat → BitVec 64) : Prop where
+  key : ∀ i < 8, InRegions (s.rd ++ s.wr) (s.gpr kp + BitVec.ofNat 64 (8 * (off + i))) 8 ∧
+    s.mem.readW (s.gpr kp + BitVec.ofNat 64 (8 * (off + i))) 64 = K i
+  keyOff : 8 * (off + 7) < 2048
+  kpAl : (s.gpr kp).toNat % 8 = 0
+  sbAl : (s.gpr sb).toNat % 8 = 0
+  odd : InRegions (s.rd ++ s.wr) (s.gpr sb + BitVec.ofNat 64 (8 * oddSlot)) 8 ∧
+    s.mem.readW (s.gpr sb + BitVec.ofNat 64 (8 * oddSlot)) 64 = 0xFF00FF00FF00FF00
+  even : InRegions (s.rd ++ s.wr) (s.gpr sb + BitVec.ofNat 64 (8 * evenSlot)) 8 ∧
+    s.mem.readW (s.gpr sb + BitVec.ofNat 64 (8 * evenSlot)) 64 = 0x00FF00FF00FF00FF
+
+/-- `FlMem` survives a run that keeps the memory, the regions, `kp` and `sb`. -/
+theorem FlMem.congr {s s' : State} {off : Nat} {K : Nat → BitVec 64} (h : FlMem s off K)
+    (hm : s'.mem = s.mem) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) (hk : s'.gpr kp = s.gpr kp)
+    (hb : s'.gpr sb = s.gpr sb) : FlMem s' off K where
+  key i hi := by rw [hm, hrd, hwr, hk]; exact h.key i hi
+  keyOff := h.keyOff
+  kpAl := by rw [hk]; exact h.kpAl
+  sbAl := by rw [hb]; exact h.sbAl
+  odd := by rw [hm, hrd, hwr, hb]; exact h.odd
+  even := by rw [hm, hrd, hwr, hb]; exact h.even
+
+theorem q_ne_t0 : ∀ i < 8, q i ≠ t0 := by decide
+theorem q_ne_t1 : ∀ i < 8, q i ≠ t1 := by decide
+theorem q_ne_t2 : ∀ i < 8, q i ≠ t2 := by decide
+theorem q_ne_u7 : ∀ i < 8, q i ≠ u7 := by decide
+theorem q_ne_kp : ∀ i < 8, q i ≠ kp := by decide
+theorem q_ne_sb : ∀ i < 8, q i ≠ sb := by decide
+theorem q_ne_rt : ∀ i < 8, q i ≠ rt := by decide
+theorem q_inj : ∀ i < 8, ∀ j < 8, q i = q j → i = j := by decide
+
+/-- The rotation through `rt`, `rorI`'s two shifts and XOR. -/
+theorem rot_shifts (x : BitVec 64) {k : Nat} (hk : 0 < k) (hk' : k < 64) :
+    x <<< (64 - k) ^^^ x >>> k = x.rotateRight k := by
+  rw [BitVec.xor_comm]
+  exact Straight.shr_shl x hk hk' (op := .xor) (by decide)
+
+/-- `ld r, 8 k(sb)`, a mask. -/
+theorem ldMask_ok {s : State} {r : Reg} {k : Nat} {M : BitVec 64} (hk : 8 * k < 2048)
+    (hal : (s.gpr sb).toNat % 8 = 0)
+    (hin : InRegions (s.rd ++ s.wr) (s.gpr sb + BitVec.ofNat 64 (8 * k)) 8)
+    (hv : s.mem.readW (s.gpr sb + BitVec.ofNat 64 (8 * k)) 64 = M) :
+    ∃ s', runBlock isa [ldS r k] s = some s' ∧ s'.gpr r = M ∧ (∀ r', r' ≠ r → s'.gpr r' = s.gpr r') ∧
+      s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  refine ⟨s.write r (s.mem.readW (s.gpr sb + BitVec.ofNat 64 (8 * k)) 64), by
+    simp only [ldS, runBlock_cons, runStep_some, runBlock_nil,
+      exec_load_d hk (Spill.al8 hal (by omega_using [])) hin], ?_,
+    fun r' h => RegUpd.gpr_write_of_ne _ _ h, rfl, rfl, rfl⟩
+  simp only [RegUpd.gpr_write_self, hv]
+
+theorem flRotStep_ok {s : State} {j kw sh : Nat} {src : Reg} {K : BitVec 64} (hj : j < 8)
+    (hsrc : src ≠ u7) (hko : 8 * kw < 2048) (hal : (s.gpr kp).toNat % 8 = 0)
+    (hk : InRegions (s.rd ++ s.wr) (s.gpr kp + BitVec.ofNat 64 (8 * kw)) 8)
+    (hkv : s.mem.readW (s.gpr kp + BitVec.ofNat 64 (8 * kw)) 64 = K) (hsh0 : 0 < sh) (hsh : sh < 64) :
+    ∃ s', runBlock isa (flRotStep j src kw sh) s = some s' ∧
+      s'.gpr (q j) = s.gpr (q j) ^^^ ((s.gpr src &&& K).rotateRight sh &&& s.gpr t2) ∧
+      (∀ r, r ≠ q j → r ≠ t0 → r ≠ u7 → r ≠ rt → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr := by
+  have h1 := q_ne_t0 j hj
+  have h2 := q_ne_u7 j hj
+  have h3 := q_ne_rt j hj
+  refine ⟨_, by
+    simp only [flRotStep, andR, rorI, shlI, shrI, xorR, List.cons_append, List.nil_append,
+      runBlock_cons, runStep_some, runBlock_nil,
+      exec_load_d hko (Spill.al8 hal (by omega_using [])) hk, exec_logic,
+      exec_shift_d hsh, exec_shift_d (show 64 - sh < 64 by omega_using [hsh0])]
+    rfl, ?_⟩
+  refine ⟨?_, fun r r1 r2 r3 r4 => ?_, rfl, rfl, rfl⟩
+  · simp only [RegUpd.gpr_write_self, RegUpd.gpr_write_of_ne _ _ h1,
+      RegUpd.gpr_write_of_ne _ _ h2, RegUpd.gpr_write_of_ne _ _ h3, RegUpd.gpr_write_of_ne _ _ hsrc,
+      RegUpd.gpr_write_of_ne _ _ (show (t2 : Reg) ≠ t0 by decide),
+      RegUpd.gpr_write_of_ne _ _ (show (t2 : Reg) ≠ u7 by decide),
+      RegUpd.gpr_write_of_ne _ _ (show (t2 : Reg) ≠ rt by decide),
+      RegUpd.gpr_write_of_ne _ _ (show (t0 : Reg) ≠ rt by decide),
+      RegUpd.gpr_write_of_ne _ _ (show (rt : Reg) ≠ t0 by decide), hkv]
+    simp only [rot_shifts _ hsh0 hsh]
+  · simp only [RegUpd.gpr_write_of_ne _ _ r1, RegUpd.gpr_write_of_ne _ _ r2,
+      RegUpd.gpr_write_of_ne _ _ r3, RegUpd.gpr_write_of_ne _ _ r4]
+
+theorem flOrStep_ok {s : State} {j kw : Nat} {K : BitVec 64} (hj : j < 8) (hko : 8 * kw < 2048)
+    (hal : (s.gpr kp).toNat % 8 = 0)
+    (hk : InRegions (s.rd ++ s.wr) (s.gpr kp + BitVec.ofNat 64 (8 * kw)) 8)
+    (hkv : s.mem.readW (s.gpr kp + BitVec.ofNat 64 (8 * kw)) 64 = K) :
+    ∃ s', runBlock isa (flOrStep j kw) s = some s' ∧
+      s'.gpr (q j) = s.gpr (q j) ^^^ ((s.gpr (q j) ||| K).rotateRight 8 &&& s.gpr t2) ∧
+      (∀ r, r ≠ q j → r ≠ t0 → r ≠ u7 → r ≠ rt → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr := by
+  have h1 := q_ne_t0 j hj
+  have h2 := q_ne_u7 j hj
+  have h3 := q_ne_rt j hj
+  refine ⟨_, by
+    simp only [flOrStep, orR, rorI, shlI, shrI, andR, xorR, List.cons_append, List.nil_append,
+      runBlock_cons, runStep_some, runBlock_nil,
+      exec_load_d hko (Spill.al8 hal (by omega_using [])) hk, exec_logic,
+      exec_shift_d (show 8 < 64 by decide), exec_shift_d (show 64 - 8 < 64 by decide)]
+    rfl, ?_⟩
+  refine ⟨?_, fun r r1 r2 r3 r4 => ?_, rfl, rfl, rfl⟩
+  · simp only [RegUpd.gpr_write_self, RegUpd.gpr_write_of_ne _ _ h1,
+      RegUpd.gpr_write_of_ne _ _ h2, RegUpd.gpr_write_of_ne _ _ h3,
+      RegUpd.gpr_write_of_ne _ _ (show (t2 : Reg) ≠ t0 by decide),
+      RegUpd.gpr_write_of_ne _ _ (show (t2 : Reg) ≠ u7 by decide),
+      RegUpd.gpr_write_of_ne _ _ (show (t2 : Reg) ≠ rt by decide),
+      RegUpd.gpr_write_of_ne _ _ (show (t0 : Reg) ≠ rt by decide),
+      RegUpd.gpr_write_of_ne _ _ (show (rt : Reg) ≠ t0 by decide), hkv]
+    simp only [rot_shifts _ (show 0 < 8 by decide) (show 8 < 64 by decide)]
+  · simp only [RegUpd.gpr_write_of_ne _ _ r1, RegUpd.gpr_write_of_ne _ _ r2,
+      RegUpd.gpr_write_of_ne _ _ r3, RegUpd.gpr_write_of_ne _ _ r4]
+
+/-- The rotation step's update of plane `j` from the planes `X` and the subkey's `K`. -/
+def rotUpd (X K : Nat → BitVec 64) (j : Nat) : BitVec 64 :=
+  X j ^^^ ((X ((j + 7) % 8) &&& K ((j + 7) % 8)).rotateRight (if j = 0 then 8 else 56) &&&
+    0xFF00FF00FF00FF00)
+
+theorem flRotDesc_ok {off K} : ∀ n ≤ 7, ∀ s : State, FlMem s off K → s.gpr t2 = 0xFF00FF00FF00FF00 →
+    ∃ s', runBlock isa (flRotDesc off n) s = some s' ∧
+      (∀ i < 8, s'.gpr (q i) = if 1 ≤ i ∧ i ≤ n then rotUpd (fun i => s.gpr (q i)) K i else s.gpr (q i)) ∧
+      (∀ r, (∀ i < 8, r ≠ q i) → r ≠ t0 → r ≠ u7 → r ≠ rt → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr
+  | 0, _, s, _, _ => ⟨s, runBlock_nil, fun i _ => by simp only [show ¬ (1 ≤ i ∧ i ≤ 0) by omega_arith, ↓reduceIte],
+      fun _ _ _ _ _ => rfl, rfl, rfl, rfl⟩
+  | n + 1, hn, s, hf, ht2 => by
+    obtain ⟨hk, hkv⟩ := hf.key n (by omega_arith)
+    have hko := hf.keyOff
+    obtain ⟨s₁, h₁, g₁, o₁, m₁, rd₁, wr₁⟩ :=
+      flRotStep_ok (j := n + 1) (src := q n) (by omega_arith) (q_ne_u7 n (by omega_arith)) (by omega_arith) hf.kpAl hk hkv
+        (by decide) (by decide : 56 < 64)
+    have hf₁ : FlMem s₁ off K := hf.congr m₁ rd₁ wr₁ (o₁ _ (fun h => q_ne_kp _ (by omega_arith) h.symm)
+      (by decide) (by decide) (by decide)) (o₁ _ (fun h => q_ne_sb _ (by omega_arith) h.symm) (by decide) (by decide) (by decide))
+    have ht2₁ : s₁.gpr t2 = 0xFF00FF00FF00FF00 := by
+      rw [o₁ _ (fun h => q_ne_t2 _ (by omega_arith) h.symm) (by decide) (by decide) (by decide), ht2]
+    obtain ⟨s', h', g', o', m', rd', wr'⟩ := flRotDesc_ok n (by omega_arith) s₁ hf₁ ht2₁
+    refine ⟨s', by rw [flRotDesc, runBlock_append', h₁]; exact h', fun i hi => ?_,
+      fun r h1 h2 h3 h4 => by rw [o' r h1 h2 h3 h4, o₁ r (h1 _ (by omega_arith)) h2 h3 h4], by rw [m', m₁],
+      by rw [rd', rd₁], by rw [wr', wr₁]⟩
+    have hs₁ : ∀ i' < 8, i' ≠ n + 1 → s₁.gpr (q i') = s.gpr (q i') := fun i' hi' hne =>
+      o₁ _ (fun h => hne (q_inj _ hi' _ (by omega_arith) h)) (q_ne_t0 _ hi') (q_ne_u7 _ hi') (q_ne_rt _ hi')
+    rw [g' i hi]
+    by_cases hin : 1 ≤ i ∧ i ≤ n
+    · simp only [hin, show 1 ≤ i ∧ i ≤ n + 1 by omega_arith, and_self, ↓reduceIte]
+      simp only [rotUpd]
+      rw [hs₁ _ hi (by omega_arith), hs₁ _ (Nat.mod_lt _ (by omega_arith)) (by omega_arith)]
+    · simp only [hin, ↓reduceIte]
+      by_cases hi1 : i = n + 1
+      · subst hi1
+        simp only [g₁, ht2, show 1 ≤ n + 1 ∧ n + 1 ≤ n + 1 by omega_arith, and_self, ↓reduceIte]
+        simp only [rotUpd, show (n + 1 + 7) % 8 = n by omega_arith, show ¬ n + 1 = 0 by omega_arith, ite_false]
+      · rw [hs₁ _ hi hi1]; simp only [show ¬ (1 ≤ i ∧ i ≤ n + 1) by omega_arith, ↓reduceIte]
+
+/-- The OR step's update of plane `j`. -/
+def orUpd (X K : Nat → BitVec 64) (j : Nat) : BitVec 64 :=
+  X j ^^^ ((X j ||| K j).rotateRight 8 &&& 0x00FF00FF00FF00FF)
+
+theorem flOrDesc_ok {off K} : ∀ n ≤ 8, ∀ s : State, FlMem s off K → s.gpr t2 = 0x00FF00FF00FF00FF →
+    ∃ s', runBlock isa (flOrDesc off n) s = some s' ∧
+      (∀ i < 8, s'.gpr (q i) = if i < n then orUpd (fun i => s.gpr (q i)) K i else s.gpr (q i)) ∧
+      (∀ r, (∀ i < 8, r ≠ q i) → r ≠ t0 → r ≠ u7 → r ≠ rt → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr
+  | 0, _, s, _, _ => ⟨s, runBlock_nil, fun i _ => by simp only [show ¬ i < 0 by omega_arith, ↓reduceIte],
+      fun _ _ _ _ _ => rfl, rfl, rfl, rfl⟩
+  | n + 1, hn, s, hf, ht2 => by
+    obtain ⟨hk, hkv⟩ := hf.key n (by omega_arith)
+    have hko := hf.keyOff
+    obtain ⟨s₁, h₁, g₁, o₁, m₁, rd₁, wr₁⟩ := flOrStep_ok (j := n) (by omega_arith) (by omega_arith) hf.kpAl hk hkv
+    have hf₁ : FlMem s₁ off K := hf.congr m₁ rd₁ wr₁ (o₁ _ (fun h => q_ne_kp _ (by omega_arith) h.symm)
+      (by decide) (by decide) (by decide)) (o₁ _ (fun h => q_ne_sb _ (by omega_arith) h.symm) (by decide) (by decide) (by decide))
+    have ht2₁ : s₁.gpr t2 = 0x00FF00FF00FF00FF := by
+      rw [o₁ _ (fun h => q_ne_t2 _ (by omega_arith) h.symm) (by decide) (by decide) (by decide), ht2]
+    obtain ⟨s', h', g', o', m', rd', wr'⟩ := flOrDesc_ok n (by omega_arith) s₁ hf₁ ht2₁
+    refine ⟨s', by rw [flOrDesc, runBlock_append', h₁]; exact h', fun i hi => ?_,
+      fun r h1 h2 h3 h4 => by rw [o' r h1 h2 h3 h4, o₁ r (h1 _ (by omega_arith)) h2 h3 h4], by rw [m', m₁],
+      by rw [rd', rd₁], by rw [wr', wr₁]⟩
+    have hs₁ : ∀ i' < 8, i' ≠ n → s₁.gpr (q i') = s.gpr (q i') := fun i' hi' hne =>
+      o₁ _ (fun h => hne (q_inj _ hi' _ (by omega_arith) h)) (q_ne_t0 _ hi') (q_ne_u7 _ hi') (q_ne_rt _ hi')
+    rw [g' i hi]
+    by_cases hin : i < n
+    · simp only [hin, show i < n + 1 by omega_arith, ↓reduceIte, orUpd]
+      rw [hs₁ _ hi (by omega_arith)]
+    · simp only [hin, ↓reduceIte]
+      by_cases hi1 : i = n
+      · subst hi1
+        simp only [g₁, ht2, show i < i + 1 by omega_arith, ↓reduceIte, orUpd]
+      · rw [hs₁ _ hi hi1]; simp only [show ¬ i < n + 1 by omega_arith, ↓reduceIte]
+
+theorem flOr_ok {off K} {s : State} (hf : FlMem s off K) :
+    ∃ s', runBlock isa (flOr off) s = some s' ∧
+      (∀ i < 8, s'.gpr (q i) = orUpd (fun i => s.gpr (q i)) K i) ∧
+      (∀ r, (∀ i < 8, r ≠ q i) → r ≠ t0 → r ≠ u7 → r ≠ t2 → r ≠ rt → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr := by
+  obtain ⟨s₀, h₀, v₀, g₀, m₀, rd₀, wr₀⟩ := ldMask_ok (r := t2) (k := evenSlot) (by decide) hf.sbAl hf.even.1 hf.even.2
+  have hf₀ : FlMem s₀ off K := hf.congr m₀ rd₀ wr₀ (g₀ _ (by decide)) (g₀ _ (by decide))
+  obtain ⟨s', h', g', o', m', rd', wr'⟩ := flOrDesc_ok 8 (by omega_arith) s₀ hf₀ v₀
+  have hq₀ : ∀ i < 8, s₀.gpr (q i) = s.gpr (q i) := fun i hi => g₀ _ (q_ne_t2 i hi)
+  refine ⟨s', by rw [flOr, show ldS t2 evenSlot :: flOrDesc off 8 = [ldS t2 evenSlot] ++ flOrDesc off 8
+      from rfl, runBlock_append', h₀, Option.bind_some]; exact h', fun i hi => ?_,
+    fun r h1 h2 h3 h4 h5 => by rw [o' r h1 h2 h3 h5, g₀ r h4], by rw [m', m₀], by rw [rd', rd₀],
+    by rw [wr', wr₀]⟩
+  rw [g' i hi]
+  simp only [hi, ↓reduceIte, orUpd, hq₀ i hi]
+
+theorem flRot_ok {off K} {s : State} (hf : FlMem s off K) :
+    ∃ s', runBlock isa (flRot off) s = some s' ∧
+      (∀ i < 8, s'.gpr (q i) = rotUpd (fun i => s.gpr (q i)) K i) ∧
+      (∀ r, (∀ i < 8, r ≠ q i) → r ≠ t0 → r ≠ u7 → r ≠ t1 → r ≠ t2 → r ≠ rt → s'.gpr r = s.gpr r) ∧
+      s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  obtain ⟨sa, ha, va, ga, ma, rda, wra⟩ := ldMask_ok (r := t2) (k := oddSlot) (by decide) hf.sbAl hf.odd.1 hf.odd.2
+  -- `mov t1, q 7`
+  let s₀ := sa.write t1 (sa.gpr (q 7))
+  have h₀ : runBlock isa [movR t1 (q 7)] sa = some s₀ := by
+    simp only [movR, runBlock_cons, exec_addi (show imm12 0 by decide), runStep_some, runBlock_nil, s₀]
+    rw [show BitVec.ofInt 64 0 = 0 from rfl]; exact congrArg (fun v => some (State.write sa t1 v)) (BitVec.add_zero _)
+  have g₀ : ∀ r, r ≠ t1 → s₀.gpr r = sa.gpr r := fun r h => RegUpd.gpr_write_of_ne _ _ h
+  have hfa : FlMem sa off K := hf.congr ma rda wra (ga _ (by decide)) (ga _ (by decide))
+  have hf₀ : FlMem s₀ off K := hfa.congr rfl rfl rfl (g₀ _ (by decide)) (g₀ _ (by decide))
+  have ht2₀ : s₀.gpr t2 = 0xFF00FF00FF00FF00 := by rw [g₀ _ (by decide), va]
+  obtain ⟨s₁, h₁, g₁, o₁, m₁, rd₁, wr₁⟩ := flRotDesc_ok 7 (by omega_arith) s₀ hf₀ ht2₀
+  have hko := hf.keyOff
+  have hf₁ : FlMem s₁ off K := hf₀.congr m₁ rd₁ wr₁ (o₁ _ (fun i hi h => q_ne_kp _ hi h.symm)
+    (by decide) (by decide) (by decide)) (o₁ _ (fun i hi h => q_ne_sb _ hi h.symm) (by decide) (by decide) (by decide))
+  obtain ⟨hk, hkv⟩ := hf₁.key 7 (by omega_arith)
+  obtain ⟨s₂, h₂, g₂, o₂, m₂, rd₂, wr₂⟩ :=
+    flRotStep_ok (j := 0) (src := t1) (by omega_arith) (by decide) (by omega_arith) hf₁.kpAl hk hkv (by decide) (by decide : 8 < 64)
+  have hq₀ : ∀ i < 8, s₀.gpr (q i) = s.gpr (q i) := fun i hi => by
+    rw [g₀ _ (q_ne_t1 i hi), ga _ (q_ne_t2 i hi)]
+  have ht2₁ : s₁.gpr t2 = 0xFF00FF00FF00FF00 := by
+    rw [o₁ _ (fun i hi h => q_ne_t2 i hi h.symm) (by decide) (by decide) (by decide), ht2₀]
+  refine ⟨s₂, by rw [flRot, show [ldS t2 oddSlot, movR t1 (q 7)] = [ldS t2 oddSlot] ++ [movR t1 (q 7)]
+      from rfl, runBlock_append', runBlock_append', runBlock_append', ha, Option.bind_some, h₀,
+      Option.bind_some, h₁, Option.bind_some]; exact h₂, fun i hi => ?_, fun r h1 h2 h3 h4 h5 h6 => ?_,
+    by rw [m₂, m₁, ← ma]; rfl, by rw [rd₂, rd₁, ← rda]; rfl, by rw [wr₂, wr₁, ← wra]; rfl⟩
+  · have hrot : ∀ j < 8, rotUpd (fun i => s₀.gpr (q i)) K j = rotUpd (fun i => s.gpr (q i)) K j := by
+      intro j hj
+      simp only [rotUpd]
+      rw [hq₀ _ hj, hq₀ _ (Nat.mod_lt _ (by omega_arith))]
+    by_cases hi0 : i = 0
+    · subst hi0
+      have ht1 : s₁.gpr t1 = s.gpr (q 7) := by
+        rw [o₁ _ (fun i hi h => q_ne_t1 i hi h.symm) (by decide) (by decide) (by decide)]
+        rw [show s₀.gpr t1 = sa.gpr (q 7) from by
+          simp only [s₀, RegUpd.gpr_write_self], ga _ (q_ne_t2 7 (by omega_arith))]
+      rw [g₂, g₁ 0 (by omega_arith), ht1, hq₀ 0 (by omega_arith), ht2₁]
+      simp only [show ¬ (1 ≤ 0 ∧ 0 ≤ 7) by omega_arith, ↓reduceIte, rotUpd]
+    · rw [o₂ _ (fun h => hi0 (q_inj _ hi _ (by omega_arith) h)) (q_ne_t0 _ hi) (q_ne_u7 _ hi) (q_ne_rt _ hi), g₁ i hi]
+      simp only [show 1 ≤ i ∧ i ≤ 7 by omega_arith, and_self, ↓reduceIte]
+      exact hrot i hi
+  · rw [o₂ r (h1 0 (by omega_arith)) h2 h3 h6, o₁ r h1 h2 h3 h6, g₀ r h4, ga r h5]
+
+theorem odd_mask_bit : ∀ p < 64, (0xFF00FF00FF00FF00 : BitVec 64).getLsbD p = oddAt p := by decide
+theorem even_mask_bit : ∀ p < 64, (0x00FF00FF00FF00FF : BitVec 64).getLsbD p = !oddAt p := by decide
+
+theorem rotStep_of {X K Y : Nat → BitVec 64} (h : ∀ i < 8, Y i = rotUpd X K i) : RotStep X K Y := by
+  intro j hj p hp
+  rw [h j hj, rotUpd, BitVec.getLsbD_xor, BitVec.getLsbD_and, odd_mask_bit p hp,
+    VG.Bitslice.getLsbD_rotateRight_lt _ _ _ hp, BitVec.getLsbD_and]
+  simp only [rotPos, Bool.and_comm (oddAt p), Bool.and_assoc]
+
+theorem orStep_of {X K Y : Nat → BitVec 64} (h : ∀ i < 8, Y i = orUpd X K i) : OrStep X K Y := by
+  intro j hj p hp
+  rw [h j hj, orUpd, BitVec.getLsbD_xor, BitVec.getLsbD_and, even_mask_bit p hp,
+    VG.Bitslice.getLsbD_rotateRight_lt _ _ _ hp, BitVec.getLsbD_or, Bool.and_comm]
+
+end VG.Proof.Camellia.RISCV64
+
+end
+
+end
+
+/-! ### `Camellia.RISCV64.Sbox`, which only this module used -/
+
+section
+
+/-!
+# The bitsliced Camellia S-box on RISC-V
+
+As on PPC64LE (`Proof/Camellia/PPC64LE/Sbox.lean`): `sboxCode` only
+combines words bitwise, so it computes the same Boolean function at each of
+the 64 bit positions: the kernel evaluates it once on truth tables of the
+256 inputs (`Bitslice.table`) and compares the result with the
+specification's `SBOX1` on the same inputs. Its run relates each abstract
+table to the concrete word at every position at once (AES's `TabAll`),
+which makes the relation a function, as the evaluator needs. `sbox_ok` then
+gives, at every bit position `p`, the S-box of the byte formed by bit `p`
+of the eight words.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Camellia.RISCV64
+
+open VG VG.RISCV64 VG.RISCV64.Straight VG.Bitslice VG.Impl.Aes.RISCV64
+open VG.Proof.Camellia
+open VG.Proof.Aes (bsByte getLsbD_bsByte)
+open VG.Proof.Aes.RISCV64 (TabAll tabAll_sound tabAll_fun sboxWrites not_sboxWrites restRegs)
+
+/-- The S-box's memory: its spill slots, at `a5`. -/
+def sboxCfg : Cfg := { base := sb, slots := 48, ext := sb, exts := 0 }
+
+def sboxEnv : Env Nat :=
+  { reg := fun r => ((List.range 8).find? (fun k => q k == r)).map fun k => .v (inT k)
+    slot := fun _ => none }
+
+def sboxPost (e : Env Nat) : Bool :=
+  (List.range 8).all fun j => word (e.reg (q j)) == some (sbox1T j)
+
+theorem sbox_check :
+    check (table 64 256) sboxCfg (fun _ => none) Impl.Camellia.RISCV64.sboxCode sboxEnv sboxPost = true := by
+  lit_decide
+
+theorem sbox_writes_rest :
+    restRegs.all (fun r => Impl.Camellia.RISCV64.sboxCode.all fun i => dst i != some r) = true := by
+  decide +kernel
+
+/-- The S-box, at every bit position of the words in `q 0 … q 7`. -/
+theorem sbox_ok {s : State} (hok : Ok sboxCfg s) :
+    ∃ s', runBlock isa Impl.Camellia.RISCV64.sboxCode s = some s' ∧
+      (∀ j < 8, ∀ p < 64,
+        (s'.gpr (q j)).getLsbD p = (Spec.Camellia.sbox1 (bsByte (fun k => s.gpr (q k)) p)).getLsbD j) ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ (∀ r, r ∉ sboxWrites → s'.gpr r = s.gpr r) ∧
+      Frame [slotRegion sboxCfg s] s.mem s'.mem := by
+  obtain ⟨e', he, hpost⟩ := of_check _ _ _ sbox_check
+  obtain hout : ∀ j < 8, e'.reg (q j) = some (.v (sbox1T j)) := by
+    intro j hj
+    have := List.all_eq_true.mp hpost j (List.mem_range.mpr hj)
+    simp only [beq_iff_eq] at this
+    cases h : e'.reg (q j) with
+    | none => rw [h] at this; cases this
+    | some v => cases v <;> rw [h] at this <;> simp_all [word]
+  let cs : Nat → Nat := fun p => (bsByte (fun k => s.gpr (q k)) p).toNat
+  obtain hcs : ∀ p < 64, cs p < 256 := fun p _ => (bsByte (fun k => s.gpr (q k)) p).isLt
+  obtain hrel : Rel (TabAll cs) sboxCfg (fun _ => none) sboxEnv s := by
+    refine ⟨fun r a h => ?_, (fun _ _ _ h => by cases h), (fun _ _ _ h => by cases h)⟩
+    simp only [sboxEnv, Option.map_eq_some_iff] at h
+    obtain ⟨k, hk, rfl⟩ := h
+    obtain ⟨hqk, hkr⟩ := List.find?_some hk, List.mem_of_find?_eq_some hk
+    obtain hk8 := List.mem_range.mp hkr
+    simp only [beq_iff_eq] at hqk
+    subst hqk
+    intro p hp
+    simp only [TableRel, inT, testBit_tableOf, hcs p hp, decide_true, Bool.true_and, cs,
+      BitVec.testBit_toNat, getLsbD_bsByte _ _ hk8]
+  obtain ⟨s', hs', p₀⟩ := run (tabAll_sound hcs) tabAll_fun hok hrel he
+  refine ⟨s', hs', fun j hj p hp => ?_, p₀.rd, p₀.wr, p₀.sp, fun r hr => p₀.other r ?_, p₀.frame⟩
+  · have hc := hcs p hp
+    have := p₀.rel.reg (q j) _ (hout j hj) p hp
+    simp only [TableRel] at this
+    rw [← this, testBit_sbox1T hc, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+  · simp [List.all_eq_true.mp sbox_writes_rest r (not_sboxWrites r hr)]
+
+end VG.Proof.Camellia.RISCV64
+
+end
+
+end
+
+
+/-!
+# A round of bitsliced Camellia on RISC-V
+
+As on PPC64LE (`Proof/Camellia/PPC64LE/Crypt8.lean`), `round_ok`: with the half `D1` (or `D2`) in the state registers, the other
+half in its slots and the subkey's planes at `kp`, `round off d` leaves
+`d2 ^ F(d1, k)` in both the state registers and the other half's slots,
+keeping the masks and the first half's slots, and writing only the slots
+below the table. The layers are composed from their checks
+(`Linear.lean`, `Sbox.lean`) and `round_rel`.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Camellia.RISCV64
+
+open VG VG.RISCV64 VG.RISCV64.Straight VG.Bitslice VG.Impl.Camellia.RISCV64
+open VG.Impl.Aes.RISCV64 (q sb t0 t1 kp)
+open VG.Proof.Aes.RISCV64 (sboxWrites not_sboxWrites restRegs)
+open VG.Proof.Camellia (HalfRel toBsG fromBsG keyInG outPG inSrc outSrc pRow pos cpos rowBits round_rel)
+open VG.Proof.Aes (bsByte)
+
+/-- The planes in the state registers. -/
+abbrev Qs (s : State) (i : Nat) : BitVec 64 := s.gpr (q i)
+
+/-- Slot `k` of the scratch buffer. -/
+abbrev slotW (s : State) (k : Nat) : BitVec 64 := s.mem.readW (wordAddr (s.gpr sb) k) 64
+
+/-- Word `k` of the table entry at `kp`. -/
+abbrev keyW (s : State) (k : Nat) : BitVec 64 := s.mem.readW (wordAddr (s.gpr kp) k) 64
+
+/-- The masks are in their slots. -/
+def MasksOk (s : State) : Prop := ∀ kv ∈ allMasks, slotW s kv.1 = kv.2
+
+/-- The masks' slots, above the S-box's spills and below the halves'. -/
+theorem allMasks_slots : ∀ kv ∈ allMasks, 48 ≤ kv.1 ∧ kv.1 < d1Slot := by decide
+
+theorem ok_sbox {s : State} (h : Ok layerCfg s) : Ok sboxCfg s where
+  slotIn k hk := h.slotIn k (by simp [sboxCfg, layerCfg, savedSlot] at hk ⊢; omega_using [hk])
+  extIn k hk := by simp [sboxCfg] at hk
+  baseAl h0 := h.baseAl (by simp [layerCfg, savedSlot])
+  extAl h0 := by simp [sboxCfg] at h0
+  slots := by simp [sboxCfg]
+  sep k _ j hj := by simp [sboxCfg] at hj
+
+theorem xorBits_map_rows (W : Nat → BitVec 64) (S : Nat → BitVec 64) (hS : ∀ i < 8, W i = S i)
+    (j b : Nat) (hb : b < 8) (hj : j < 8) (l : List Nat) (hl : ∀ i ∈ l, i < 8) :
+    xorBits W (l.map fun i => 64 * outSrc (cpos i) j + 8 * cpos i + b) = rowBits S j b l := by
+  induction l with
+  | nil => rfl
+  | cons i l ih =>
+    obtain hi := hl i List.mem_cons_self
+    obtain hc : cpos i < 8 := Camellia.cpos_lt hi
+    obtain ho : outSrc (cpos i) j < 8 := by simp only [outSrc]; split <;> (try split) <;> omega_arith
+    simp only [List.map_cons, xorBits_cons, rowBits, List.foldr_cons] at ih ⊢
+    rw [Nat.add_assoc, bitOf_word _ _ _ (by omega_using [hb, hc]), hS _ ho, ih fun i' hi' => hl i' (List.mem_cons_of_mem _ hi')]
+
+/-- The frame of the S-box (its spills) keeps the slots from 48 on. -/
+theorem slot_above {m m' : Mem} {b : Addr} {n k : Nat} (hf : Frame [⟨b, 8 * n⟩] m m') (hk : n ≤ k)
+    (hk' : k < 2 ^ 58) : m'.readW (wordAddr b k) 64 = m.readW (wordAddr b k) 64 :=
+  hf.readW (r := ⟨wordAddr b k, 8⟩) (by simp only [Region.Contains]; simp) (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact VG.Offset.disjoint_base b (by omega_using [hk]) (by omega_using [hk'])) (by decide)
+
+/-- A round, with the subkey at word `off` of `kp` and the other half at slot `d`. -/
+theorem round_ok {off d : Nat}
+    (hkc : check (lanes 64 12) layerCfg (linExt 8) (keyXor off ++ inSel) keyInEnv
+      (linPostG 12 (qOuts (keyInG off)) [] (maskSlots ++ halvesIns.map (·.1)) keyInEnv) = true)
+    (hfc : check (lanes 64 12) layerCfg (linExt 24) (feistel d) bothEnv
+      (linPostG 12 (qOuts (feistelG d)) ((List.range 8).map fun j => (d + j, feistelG d j))
+        (feistelKeep d) bothEnv) = true)
+    (hoff : off = 0 ∨ off = 8) (hd : d = d1Slot ∨ d = d2Slot)
+    {s : State} (hok : Ok layerCfg s) (hm : MasksOk s) {d1 d2 : Nat → BitVec 64} {k : BitVec 64}
+    (hQ : HalfRel (Qs s) d1) (hK : HalfRel (fun j => keyW s (off + j)) fun _ => k)
+    (hR : HalfRel (fun j => slotW s (d + j)) d2) :
+    ∃ s', runBlock isa (round off d) s = some s' ∧
+      HalfRel (Qs s') (fun b => d2 b ^^^ Spec.Camellia.f (d1 b) k) ∧
+      HalfRel (fun j => slotW s' (d + j)) (fun b => d2 b ^^^ Spec.Camellia.f (d1 b) k) ∧
+      MasksOk s' ∧ (∀ j < 16, d1Slot + j < d ∨ d + 8 ≤ d1Slot + j →
+        slotW s' (d1Slot + j) = slotW s (d1Slot + j)) ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ (∀ r, r ∉ sboxWrites → s'.gpr r = s.gpr r) ∧
+      Frame [slotRegion layerCfg s] s.mem s'.mem := by
+  obtain hcode : round off d = (keyXor off ++ inSel) ++ (Impl.Camellia.RISCV64.sboxCode ++
+      ((outSel ++ pLayer) ++ feistel d)) := by simp only [round, List.append_assoc]
+  obtain hsb : ∀ is : List Instr, ∀ s₁ s₂ : State,
+      (∀ r, (is.all fun i => dst i != some r) = true → s₂.gpr r = s₁.gpr r) →
+      (is.all fun i => dst i != some sb) = true → s₂.gpr sb = s₁.gpr sb := fun _ _ _ h h' => h _ h'
+  -- The subkey XOR and input selection.
+  let W₁ : Nat → BitVec 64 := fun i =>
+    if i < 8 then Qs s i else if i < 24 then keyW s (i - 8) else slotW s (d1Slot + (i - 24))
+  obtain ⟨s₁, h₁, x₁, -, k₁, rd₁, wr₁, sp₁, o₁, f₁, -, -⟩ := linG_ok hkc hok W₁
+    (fun r i hri => by
+      simp only [qIns, List.mem_map, List.mem_range, Prod.mk.injEq] at hri
+      obtain ⟨i, hi, rfl, rfl⟩ := hri
+      exact ⟨by omega_arith, by simp [W₁, hi]⟩)
+    (fun j i hji => by
+      simp only [halvesIns, List.mem_map, List.mem_range, Prod.mk.injEq] at hji
+      obtain ⟨j, hj, rfl, rfl⟩ := hji
+      refine ⟨by simp [layerCfg, d1Slot, savedSlot]; omega_arith, by omega_arith, ?_⟩
+      simp [W₁, show ¬ 24 + j < 8 by omega_arith, show ¬ 24 + j < 24 by omega_arith]; rfl)
+    (fun kv hkv => ⟨by have := allMasks_slots kv hkv; simp only [layerCfg, savedSlot, d1Slot] at this ⊢; omega_using [this],
+        hm kv hkv⟩)
+    (fun j hj => by
+      simp only [layerCfg] at hj
+      exact ⟨by omega_arith, by simp [W₁, show ¬ 8 + j < 8 by omega_arith, show 8 + j < 24 by omega_arith]; rfl⟩)
+  obtain hX : ∀ j < 8, ∀ p < 64, (Qs s₁ j).getLsbD p =
+      ((Qs s (inSrc (p / 8) j)).getLsbD p ^^ (keyW s (off + inSrc (p / 8) j)).getLsbD p) := by
+    intro j hj p hp
+    obtain hi : inSrc (p / 8) j < 8 := by simp only [inSrc]; split <;> omega_arith
+    have := x₁ (q j) (keyInG off j) (by simp only [qOuts, List.mem_map, List.mem_range]; exact ⟨j, hj, rfl⟩) p hp
+    rw [this, keyInG, xorBits_cons, xorBits_cons, xorBits_nil, Bool.xor_false,
+      bitOf_word _ _ _ hp, bitOf_word _ _ _ hp]
+    simp [W₁, hi, show ¬ 8 + off + inSrc (p / 8) j < 8 by omega_arith,
+      show 8 + off + inSrc (p / 8) j < 24 by rcases hoff with h | h <;> subst h <;> omega_arith,
+      show 8 + off + inSrc (p / 8) j - 8 = off + inSrc (p / 8) j by omega_arith]
+  obtain hok₁ : Ok layerCfg s₁ := hok.congr (o₁ _ (by rcases hoff with rfl | rfl <;> decide +kernel)) (o₁ _ (by rcases hoff with rfl | rfl <;> decide +kernel)) rd₁ wr₁
+  obtain hm₁ : MasksOk s₁ := fun kv hkv => by
+    obtain hb : s₁.gpr sb = s.gpr sb := o₁ _ (by rcases hoff with rfl | rfl <;> decide +kernel)
+    have := k₁ kv.1 (List.mem_append_left _ (List.mem_map_of_mem hkv)) (by
+      have := allMasks_slots kv hkv; simp only [layerCfg, savedSlot, d1Slot] at this ⊢; omega_using [this])
+    simp only [layerCfg] at this
+    rw [slotW, hb, this]; exact hm kv hkv
+  obtain hh₁ : ∀ j < 16, slotW s₁ (d1Slot + j) = slotW s (d1Slot + j) := fun j hj => by
+    obtain hb : s₁.gpr sb = s.gpr sb := o₁ _ (by rcases hoff with rfl | rfl <;> decide +kernel)
+    have := k₁ (d1Slot + j) (List.mem_append_right _ (by
+      simp only [halvesIns, List.map_map, List.mem_map, List.mem_range]; exact ⟨j, hj, rfl⟩))
+      (by simp [layerCfg, savedSlot, d1Slot]; omega_arith)
+    simp only [layerCfg] at this
+    rw [slotW, hb, this]
+  -- The S-box.
+  obtain ⟨s₂, h₂, sx₂, rd₂, wr₂, sp₂, o₂, f₂⟩ := sbox_ok (ok_sbox hok₁)
+  obtain b₂ : s₂.gpr sb = s.gpr sb := (o₂ sb (by decide)).trans (o₁ _ (by rcases hoff with rfl | rfl <;> decide +kernel))
+  obtain kp₂ : s₂.gpr kp = s.gpr kp := (o₂ kp (by decide)).trans (o₁ _ (by rcases hoff with rfl | rfl <;> decide +kernel))
+  obtain hok₂ : Ok layerCfg s₂ := hok₁.congr (o₂ sb (by decide)) (o₂ kp (by decide)) rd₂ wr₂
+  obtain above₂ : ∀ k, 48 ≤ k → k < keySlot → slotW s₂ k = slotW s₁ k := fun k h1 h2 => by
+    simp only [slotW, o₂ sb (by decide)]
+    exact slot_above (n := 48) f₂ h1 (by simp [keySlot] at h2; omega_arith)
+  obtain hm₂ : MasksOk s₂ := fun kv hkv => by
+    rw [above₂ _ (allMasks_slots kv hkv).1
+      (by have := allMasks_slots kv hkv; simp only [keySlot, d1Slot] at this ⊢; omega_using [this])]
+    exact hm₁ kv hkv
+  obtain hh₂ : ∀ j < 16, slotW s₂ (d1Slot + j) = slotW s (d1Slot + j) := fun j hj => by
+    rw [above₂ _ (by simp [d1Slot]; omega_arith) (by simp [d1Slot, keySlot]; omega_arith), hh₁ j hj]
+  -- The output selection and the P-function.
+  let W₃ : Nat → BitVec 64 := fun i =>
+    if i < 8 then Qs s₂ i else if i < 24 then slotW s₂ (d1Slot + (i - 8)) else keyW s₂ (i - 24)
+  obtain bothIns_ok : ∀ s' : State, (W : Nat → BitVec 64) →
+      (∀ i, 8 ≤ i → i < 24 → W i = slotW s' (d1Slot + (i - 8))) →
+      ∀ j i, (j, i) ∈ bothIns → j < layerCfg.slots ∧ 64 * i + 64 ≤ 2 ^ 12 ∧
+        W i = s'.mem.readW (wordAddr (s'.gpr layerCfg.base) j) 64 := by
+    intro s' W hW j i hji
+    simp only [bothIns, List.mem_map, List.mem_range, Prod.mk.injEq] at hji
+    obtain ⟨j, hj, rfl, rfl⟩ := hji
+    refine ⟨by simp [layerCfg, d1Slot, savedSlot]; omega_arith, by omega_arith, ?_⟩
+    rw [hW _ (by omega_arith) (by omega_arith), show 8 + j - 8 = j by omega_arith]; rfl
+  obtain masks_ok : ∀ s' : State, MasksOk s' → ∀ kv ∈ allMasks, kv.1 < layerCfg.slots ∧
+      s'.mem.readW (wordAddr (s'.gpr layerCfg.base) kv.1) 64 = kv.2 := fun s' hm' kv hkv =>
+    ⟨by have := allMasks_slots kv hkv; simp only [layerCfg, savedSlot, d1Slot] at this ⊢; omega_using [this], hm' kv hkv⟩
+  obtain ⟨s₃, h₃, y₃, -, k₃, rd₃, wr₃, sp₃, o₃, f₃, -, -⟩ := linG_ok outP_check hok₂ W₃
+    (fun r i hri => by
+      simp only [qIns, List.mem_map, List.mem_range, Prod.mk.injEq] at hri
+      obtain ⟨i, hi, rfl, rfl⟩ := hri
+      exact ⟨by omega_arith, by simp [W₃, hi]⟩)
+    (bothIns_ok s₂ W₃ fun i h1 h2 => by simp [W₃, show ¬ i < 8 by omega_arith, h2])
+    (masks_ok s₂ hm₂)
+    (fun j hj => by
+      simp only [layerCfg] at hj
+      exact ⟨by omega_arith, by simp [W₃, show ¬ 24 + j < 8 by omega_arith, show ¬ 24 + j < 24 by omega_arith]; rfl⟩)
+  obtain hY : ∀ j < 8, ∀ p < 64, (Qs s₃ j).getLsbD p = rowBits (Qs s₂) j (p % 8) (pRow (pos (p / 8))) := by
+    intro j hj p hp
+    rw [y₃ (q j) (outPG j) (by simp only [qOuts, List.mem_map, List.mem_range]; exact ⟨j, hj, rfl⟩) p hp,
+      outPG]
+    exact xorBits_map_rows W₃ (Qs s₂) (fun i hi => by simp [W₃, hi]) j (p % 8) (by omega_arith) hj _
+      fun i hi => Camellia.pRow_lt hi
+  obtain b₃ : s₃.gpr sb = s₂.gpr sb := o₃ _ (by decide +kernel)
+  obtain kp₃ : s₃.gpr kp = s₂.gpr kp := o₃ _ (by decide +kernel)
+  obtain hok₃ : Ok layerCfg s₃ := hok₂.congr b₃ kp₃ rd₃ wr₃
+  obtain hm₃ : MasksOk s₃ := fun kv hkv => by
+    have := k₃ kv.1 (List.mem_append_left _ (List.mem_map_of_mem hkv)) (masks_ok s₂ hm₂ kv hkv).1
+    simp only [layerCfg] at this
+    rw [slotW, b₃, this]; exact hm₂ kv hkv
+  obtain hh₃ : ∀ j < 16, slotW s₃ (d1Slot + j) = slotW s (d1Slot + j) := fun j hj => by
+    have := k₃ (d1Slot + j) (List.mem_append_right _ (by
+      simp only [bothIns, List.map_map, List.mem_map, List.mem_range]; exact ⟨j, hj, rfl⟩))
+      (by simp [layerCfg, savedSlot, d1Slot]; omega_arith)
+    simp only [layerCfg] at this
+    rw [slotW, b₃, this, ← hh₂ j hj]
+  -- The Feistel XOR.
+  let W₄ : Nat → BitVec 64 := fun i =>
+    if i < 8 then Qs s₃ i else if i < 24 then slotW s₃ (d1Slot + (i - 8)) else keyW s₃ (i - 24)
+  obtain ⟨s₄, h₄, r₄, sl₄, k₄, rd₄, wr₄, sp₄, o₄, f₄, -, -⟩ := linG_ok hfc hok₃ W₄
+    (fun r i hri => by
+      simp only [qIns, List.mem_map, List.mem_range, Prod.mk.injEq] at hri
+      obtain ⟨i, hi, rfl, rfl⟩ := hri
+      exact ⟨by omega_arith, by simp [W₄, hi]⟩)
+    (bothIns_ok s₃ W₄ fun i h1 h2 => by simp [W₄, show ¬ i < 8 by omega_arith, h2])
+    (masks_ok s₃ hm₃)
+    (fun j hj => by
+      simp only [layerCfg] at hj
+      exact ⟨by omega_arith, by simp [W₄, show ¬ 24 + j < 8 by omega_arith, show ¬ 24 + j < 24 by omega_arith]; rfl⟩)
+  obtain hdj : ∀ j < 8, d + j = d1Slot + (d - d1Slot + j) := fun j _ => by
+    rcases hd with rfl | rfl <;> simp [d1Slot, d2Slot] <;> omega_arith
+  obtain hd8 : d - d1Slot < 16 - 7 := by rcases hd with rfl | rfl <;> simp [d1Slot, d2Slot]
+  obtain hfe : ∀ j < 8, ∀ p < 64, xorBits W₄ (feistelG d j p) =
+      ((Qs s₃ j).getLsbD p ^^ (slotW s (d + j)).getLsbD p) := by
+    intro j hj p hp
+    rw [feistelG, xorBits_cons, xorBits_cons, xorBits_nil, Bool.xor_false, bitOf_word _ _ _ hp,
+      bitOf_word _ _ _ hp, hdj j hj, ← hh₃ _ (by omega_arith)]
+    simp [W₄, hj, show ¬ 8 + (d - d1Slot) + j < 8 by omega_arith, show 8 + (d - d1Slot) + j < 24 by omega_arith,
+      show 8 + (d - d1Slot) + j - 8 = d - d1Slot + j by omega_arith]
+  obtain b₄ : s₄.gpr sb = s₃.gpr sb := o₄ _ (by rcases hd with rfl | rfl <;> decide +kernel)
+  obtain hD : HalfRel (Qs s₄) (fun b => d2 b ^^^ Spec.Camellia.f (d1 b) k) :=
+    round_rel hQ hK hR hX sx₂ hY fun j hj p hp => by
+      rw [r₄ (q j) (feistelG d j) (by simp only [qOuts, List.mem_map, List.mem_range]; exact ⟨j, hj, rfl⟩)
+        p hp, hfe j hj p hp, Bool.xor_comm]
+  obtain hS : HalfRel (fun j => slotW s₄ (d + j)) (fun b => d2 b ^^^ Spec.Camellia.f (d1 b) k) :=
+    round_rel hQ hK hR hX sx₂ hY fun j hj p hp => by
+      have := sl₄ (d + j) (feistelG d j) (by simp only [List.mem_map, List.mem_range]; exact ⟨j, hj, rfl⟩)
+        (by rcases hd with rfl | rfl <;> simp [layerCfg, savedSlot, d1Slot, d2Slot] <;> omega_arith) p hp
+      simp only [layerCfg] at this
+      rw [slotW, b₄, this, hfe j hj p hp, Bool.xor_comm]
+  obtain keep_any : ∀ r, r ∉ sboxWrites → ∀ is : List Instr,
+      (restRegs.all fun r => is.all fun i => dst i != some r) = true →
+      (is.all fun i => dst i != some r) = true := fun r hr is h =>
+    List.all_eq_true.mp h r (not_sboxWrites r hr)
+  refine ⟨s₄, ?_, hD, hS, ?_, ?_, by rw [rd₄, rd₃, rd₂, rd₁], by rw [wr₄, wr₃, wr₂, wr₁],
+    by rw [sp₄, sp₃, sp₂, sp₁], ?_, ?_⟩
+  · rw [hcode, runBlock_append', h₁, Option.bind_some, runBlock_append', h₂, Option.bind_some,
+      runBlock_append', h₃, Option.bind_some, h₄]
+  · intro kv hkv
+    have := k₄ kv.1 (List.mem_append_left _ (List.mem_map_of_mem hkv)) (masks_ok s₃ hm₃ kv hkv).1
+    simp only [layerCfg] at this
+    rw [slotW, b₄, this]; exact hm₃ kv hkv
+  · intro j hj hjd
+    obtain hb : s₄.gpr sb = s.gpr sb := by rw [b₄, b₃, b₂]
+    obtain hmem : d1Slot + j ∈ feistelKeep d := by
+      refine List.mem_append_right _ ?_
+      simp only [List.mem_map, List.mem_range]
+      rcases hd with rfl | rfl
+      · exact ⟨j - 8, by simp [d1Slot] at hjd; omega_arith, by simp [d1Slot, d2Slot]; omega_arith⟩
+      · exact ⟨j, by simp [d1Slot, d2Slot] at hjd; omega_arith, by simp [d1Slot, d2Slot]⟩
+    have := k₄ _ hmem (by simp [layerCfg, savedSlot, d1Slot]; omega_arith)
+    simp only [layerCfg] at this
+    rw [slotW, b₄, this, ← hh₃ j hj, slotW, b₃]
+  · intro r hr
+    rw [o₄ r (keep_any r hr _ (by rcases hd with rfl | rfl <;> decide +kernel)),
+      o₃ r (keep_any r hr _ (by decide +kernel)), o₂ r hr,
+      o₁ r (keep_any r hr _ (by rcases hoff with rfl | rfl <;> decide +kernel))]
+  · have e₁ : slotRegion layerCfg s₁ = slotRegion layerCfg s := by
+      simp only [slotRegion, layerCfg]; rw [o₁ _ (by rcases hoff with rfl | rfl <;> decide +kernel)]
+    obtain e₂ : slotRegion layerCfg s₂ = slotRegion layerCfg s := by
+      simp only [slotRegion, layerCfg]; rw [b₂]
+    obtain e₃ : slotRegion layerCfg s₃ = slotRegion layerCfg s := by
+      simp only [slotRegion, layerCfg]; rw [b₃, b₂]
+    refine f₁.trans ((f₂.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩).trans
+      ((e₂ ▸ f₃).trans (e₃ ▸ f₄)))
+    simp only [List.mem_singleton] at hr; subst hr
+    simp only [slotRegion, sboxCfg, layerCfg]
+    rw [o₁ _ (by rcases hoff with rfl | rfl <;> decide +kernel)]
+    exact Region.sub_prefix (by simp [savedSlot])
+
+end VG.Proof.Camellia.RISCV64
+
+end
+
+end
 
 /-! ### `Camellia.RISCV64.Moves`, which only this module used -/
 
@@ -100,7 +765,7 @@ end
 /-!
 # Eight blocks of bitsliced Camellia on RISC-V
 
-As on PPC64LE (`Proof/Camellia/PPC64LE/Core.lean`) and x86-64: with the table of bitsliced subkeys `E 0 … E (8 g + 1)` in
+As on PPC64LE (`Proof/Camellia/PPC64LE/Crypt8.lean`) and x86-64: with the table of bitsliced subkeys `E 0 … E (8 g + 1)` in
 the scratch buffer (`CorePre`), `crypt8` replaces each of the eight blocks
 in the tail buffer with `cryptWords g E` of it. Until its last block
 (`tail`) it writes only the rounds' working space, below the table (`Ctx`). The rounds are `round_ok`; the pairs of

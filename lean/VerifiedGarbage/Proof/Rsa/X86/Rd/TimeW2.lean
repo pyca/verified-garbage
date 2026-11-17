@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Rsa.X86.Rd.Loops
-import VerifiedGarbage.Proof.Mont.X86.Square.Scalar
+import VerifiedGarbage.Proof.Rsa.X86.Chain
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Ptr
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Mont.X86.Rt.Step

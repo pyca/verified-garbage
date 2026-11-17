@@ -17,7 +17,6 @@ import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Weierstrass.Words
 import VerifiedGarbage.Proof.P521.Point
 import VerifiedGarbage.Proof.EcKey.PublicKey
-import VerifiedGarbage.Proof.Ecdh.RISCV64.Shr
 
 /-!
 # ECDSA verification over P-521 on RISC-V: correctness

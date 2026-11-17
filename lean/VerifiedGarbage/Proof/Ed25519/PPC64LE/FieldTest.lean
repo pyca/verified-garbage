@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Ed25519.PPC64LE.Freeze
 public import VerifiedGarbage.Proof.X25519.PPC64LE.Field
-public import VerifiedGarbage.Proof.Ed25519.PPC64LE.FieldProg
+public import VerifiedGarbage.Proof.Ed25519.PPC64LE.SpecConv
 import VerifiedGarbage.Proof.Ed25519.PPC64LE.PointPowers
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Ed25519.PPC64LE.Freeze

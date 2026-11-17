@@ -2,13 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Hashes
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Context
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedArguments
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextSeed
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeTest
-
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextSeed
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextFrame
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SubgroupState
 import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Subgroup
 import VerifiedGarbage.Proof.Dsa.Arithmetic
 import VerifiedGarbage.Proof.Dsa.Generation.QCandidate
@@ -16,6 +13,7 @@ import VerifiedGarbage.Proof.Dsa.X86_64.Generation.QBuild
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SourceFrame
 import VerifiedGarbage.Proof.Dsa.Generation.Memory
 import Mathlib.Algebra.Group.Nat.Defs
+
 /-! # Complete first phase of a seed attempt, retaining every retry input -/
 
 -- Formerly `VerifiedGarbage/Proof/Dsa/X86_64/Generation/Subgroup.lean`, which only this module imported.

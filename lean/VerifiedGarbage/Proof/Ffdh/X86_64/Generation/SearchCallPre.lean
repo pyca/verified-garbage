@@ -1,13 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchArguments
-
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchContract
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchData
 import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.ControlMemory
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Depth
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Contract
+
 /-! # The verified candidate contract holds for every internal invocation -/
 
 -- Formerly `VerifiedGarbage/Proof/Ffdh/X86_64/Generation/Outgoing.lean`, which only this module imported.

@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Ed25519.RISCV64.Decode
+public import VerifiedGarbage.Proof.Ed25519.RISCV64.Decode
 public import VerifiedGarbage.Proof.Ed25519.RISCV64.PointMul
 public import VerifiedGarbage.Impl.Ed25519.RISCV64.Verify
 import VerifiedGarbage.Proof.Ed25519.RISCV64.FieldTest
@@ -17,7 +17,6 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.X25519.Bytes
 import VerifiedGarbage.Proof.Ed25519.Bytes
 import VerifiedGarbage.Proof.Ed25519.Scalar
-public import VerifiedGarbage.Proof.Ed25519.RISCV64.RecoverSign
 public import VerifiedGarbage.Spec.Ed25519.Contract
 
 /-!

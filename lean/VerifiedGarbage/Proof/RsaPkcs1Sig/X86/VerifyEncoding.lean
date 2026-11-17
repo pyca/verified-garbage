@@ -1,7 +1,7 @@
 module
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.EncodeContext
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyContext
 
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.EncodeHash
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyContext
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyLocal
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Verify

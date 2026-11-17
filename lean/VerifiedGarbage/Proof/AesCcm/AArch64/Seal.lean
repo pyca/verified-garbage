@@ -1,7 +1,7 @@
 module
-public import VerifiedGarbage.Proof.AesCcm.AArch64.B0
-public import VerifiedGarbage.Proof.AesCcm.AArch64.Entry
 
+public import VerifiedGarbage.Proof.AesCcm.AArch64.Header
+public import VerifiedGarbage.Proof.AesCcm.AArch64.Entry
 import VerifiedGarbage.Proof.AesCcm.AArch64.Crypt
 import VerifiedGarbage.Proof.AesCcm.AArch64.Tag
 import VerifiedGarbage.Proof.AesCcm.AArch64.Mac

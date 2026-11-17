@@ -3,7 +3,7 @@ module
 import VerifiedGarbage.Proof.Idea.AArch64.Key
 public import VerifiedGarbage.Proof.Idea.Inverse
 public import VerifiedGarbage.Proof.Idea.AArch64.ConstantTime
-public import VerifiedGarbage.Proof.Idea.AArch64.Round
+public import VerifiedGarbage.Proof.Idea.AArch64.Block
 public import VerifiedGarbage.Spec.Idea.Contract
 public import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.Proof.Idea.AArch64.Ecb

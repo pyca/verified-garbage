@@ -3,7 +3,7 @@ module
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedPrims
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Depth
 public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.OptimizedPrims
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourCallTiming
+import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedSecretCall
 
 @[expose] public section
 

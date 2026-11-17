@@ -1,9 +1,8 @@
 module
+
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Fprog
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowLayout
 public import VerifiedGarbage.Proof.Weierstrass.Jac
-
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Production
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
 import VerifiedGarbage.Proof.Weierstrass.Comb
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd

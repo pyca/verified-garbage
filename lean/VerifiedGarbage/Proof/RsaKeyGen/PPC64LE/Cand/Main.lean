@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Cand.Close
+public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Cand.WUni
 public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Cand.Gcd
 import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Cand.Slot
 import VerifiedGarbage.Proof.RsaKeyGen.CandSpec

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.CmacAes.Stream.PPC64LE
-public import VerifiedGarbage.Proof.CmacAes.PPC64LE.Contract
+public import VerifiedGarbage.Proof.CmacAes.PPC64LE.Subkeys
 public import VerifiedGarbage.Proof.Aes.PPC64LE.ExpandKey
 public import VerifiedGarbage.Proof.Cmac.Stream
 public import VerifiedGarbage.Proof.Framework.Covers
@@ -12,7 +12,7 @@ public import VerifiedGarbage.Proof.Framework.PPC64LE.Call
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Spill
 import VerifiedGarbage.Proof.CmacAes.PPC64LE.Verified
 import VerifiedGarbage.Proof.CmacAes.PPC64LE.CT
-import VerifiedGarbage.Proof.CmacAes.PPC64LE.FinSteps
+import VerifiedGarbage.Proof.CmacAes.PPC64LE.Finalize
 import VerifiedGarbage.Proof.AesCbc.PPC64LE.Body
 import VerifiedGarbage.Proof.AesCbc.PPC64LE.Call
 import VerifiedGarbage.Proof.Aes.PPC64LE.CodeLit

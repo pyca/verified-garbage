@@ -1,10 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.AesOcb.Rounds
+public import VerifiedGarbage.Proof.AesOcb.Scratch
 import VerifiedGarbage.Proof.AesOcb.X86.SealCT
 import VerifiedGarbage.Proof.AesOcb.X86.Init
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.AesOcb.Scratch
 public import VerifiedGarbage.Proof.AesOcb.X86.Callee
 public import VerifiedGarbage.Proof.AesOcb.X86.Contract
 public import VerifiedGarbage.Proof.AesOcb.X86.Front
@@ -17,7 +16,7 @@ import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Spec.Ocb.Contract
 public import VerifiedGarbage.Impl.StackScratch.X86
 import VerifiedGarbage.Proof.Framework.X86.StackScratch
-import VerifiedGarbage.Proof.Aes.X86.Keys
+import VerifiedGarbage.Proof.Aes.X86.Ctr32
 
 /-! ### `AesOcb.X86.Verified`, which only this module used -/
 

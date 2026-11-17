@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SearchEntry
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SearchControl
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PConstructTest
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.AttemptEntry
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PPrimalityPlan
 public import VerifiedGarbage.Proof.Bignum.Words
 import VerifiedGarbage.Proof.Framework.Offset

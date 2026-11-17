@@ -15,16 +15,12 @@ import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.X25519.RISCV64.Pass
 public import VerifiedGarbage.Proof.Ed448.RISCV64.VDecode
 public import VerifiedGarbage.Proof.Ed448.RISCV64.VJoint
-import VerifiedGarbage.Proof.Ed448.RISCV64.VDecodeY
 import VerifiedGarbage.Proof.Ed448.RISCV64.ScalarBit
 import VerifiedGarbage.Proof.Ed448.DecodeBytes
-import VerifiedGarbage.Proof.Ed448.RISCV64.VDecodeCheck
-import VerifiedGarbage.Proof.Ed448.RISCV64.VSel
 import VerifiedGarbage.Proof.Ed448.RISCV64.BaseEncode
 import VerifiedGarbage.Proof.X448.RISCV64.Freeze
-import VerifiedGarbage.Proof.X448.RISCV64.Mul
-public import VerifiedGarbage.Proof.Ed448.RISCV64.BaseStep
 public import VerifiedGarbage.Proof.X448.RISCV64.Slots
+public import VerifiedGarbage.Proof.Ed448.RISCV64.BaseStep
 import VerifiedGarbage.Proof.Ed448.VerifyEq
 import VerifiedGarbage.Proof.Ed448.Group.Decode
 import VerifiedGarbage.Proof.Framework.RISCV64.Keep

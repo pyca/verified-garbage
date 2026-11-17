@@ -1,13 +1,214 @@
 module
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorHead
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorStore
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorStart
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorBlock
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorStart
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorCopy
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorScan
+import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorLoad
+public import VerifiedGarbage.Proof.Bignum.Words
+public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
+import VerifiedGarbage.Proof.Bignum.AArch64.Run
+import VerifiedGarbage.Proof.Framework.Offset
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Push
+import VerifiedGarbage.Proof.Framework.Mem
+public import Aesop.BuiltinRules
+import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Lit
+
+/-! ### `Bignum.AArch64.CrtWindowVectorCopy`, which this module and modules that import it used -/
+
+section
+
+/-! Join adjacent selected blocks without losing previously copied bytes. -/
+
+@[expose] public section
+namespace VG.Proof.Bignum.AArch64.WindowVector
+open VG VG.Proof.Bignum
+
+theorem copy_append {m₀ m₁ m₂ : Mem} {B : Addr} {dst src n k : Nat}
+    (hn : dst + n + k ≤ 2 ^ 64)
+    (h₁ : Outside B dst n m₀ m₁) (h₂ : Outside B (dst + n) k m₁ m₂)
+    (b₁ : ∀ j < n, m₁ (off B (dst + j)) = m₀ (off B (src + j)))
+    (b₂ : ∀ j < k, m₂ (off B (dst + n + j)) = m₀ (off B (src + n + j))) :
+    Outside B dst (n + k) m₀ m₂ ∧
+      ∀ j < n + k, m₂ (off B (dst + j)) = m₀ (off B (src + j)) := by
+  refine ⟨(h₁.mono (by omega_using []) (by omega_using [])).trans (h₂.mono (by omega_using []) (by omega_using [])), ?_⟩
+  intro j hj
+  by_cases h : j < n
+  · rw [h₂ _ (by
+      simp only [ofs, off, Offset.add_sub_cancel_left, BitVec.toNat_ofNat,
+        Nat.mod_eq_of_lt (show dst + j < 2 ^ 64 by omega_using [hn, hj])]
+      omega_using [h])]
+    exact b₁ j h
+  · have he₁ : dst + j = dst + n + (j - n) := by omega_using [h]
+    have he₂ : src + j = src + n + (j - n) := by omega_using [h]
+    rw [he₁,he₂]
+    exact b₂ (j - n) (by omega_using [hj, h])
+
+theorem wv_copy {m m' : Mem} {P : Addr} {dst src w : Nat}
+    (h : ∀ j < 8 * w, m' (off P (dst + j)) = m (off P (src + j))) :
+    wv m' P dst w = wv m P src w := by
+  apply wv_congr2
+  intro i hi
+  change m'.read (off P (dst + 8 * i)) 8 = m.read (off P (src + 8 * i)) 8
+  apply Mem.read_eq_of_bytes
+  intro j hj
+  rw [Mem.extractLsb'_read m _ hj]
+  simpa only [off, BitVec.add_assoc, ← BitVec.ofNat_add, Nat.add_assoc] using h (8 * i + j) (by omega_using [hi, hj])
+
+end VG.Proof.Bignum.AArch64.WindowVector
+
+end
+
+end
+
+/-! ### `Bignum.AArch64.CrtWindowVectorBlock`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Bignum.AArch64.CrtWindowVectorStore`, which this module and modules that import it used -/
+
+section
+
+/-! Store a selected 64-byte block while preserving its source snapshot. -/
+
+@[expose] public section
+namespace VG.Proof.Bignum.AArch64.WindowVector
+open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64 VG.Proof.Bignum
+open VG.Proof.MlKem.AArch64 (Keep)
+
+theorem write16_outside (m : Mem) (B : Addr) {d : Nat} (v : BitVec 128)
+    (h : d + 16 ≤ 2 ^ 64) : Outside B d 16 m (m.write (off B d) 16 v) := by
+  intro x hx
+  apply Mem.write_apply
+  simp only [ofs] at hx
+  have he : (x - off B d).toNat = (2 ^ 64 - d + (x - B).toNat) % 2 ^ 64 :=
+    Offset.toNat_sub_add x B (by omega_using [h])
+  rw [he]
+  have := (x - B).isLt
+  rcases hx with hx | hx
+  · rw [Nat.mod_eq_of_lt (by omega_using [hx])]; omega_using [h]
+  · rw [show 2 ^ 64 - d + (x - B).toNat = (x - B).toNat - d + 2 ^ 64 by omega_using [hx],
+      Nat.add_mod_right, Nat.mod_eq_of_lt (by omega_using [])]
+    omega_using [hx]
+
+theorem write16_byte (m source : Mem) (dst src : Addr) {j : Nat} (hj : j < 16) :
+    (m.write dst 16 (source.read src 16)) (dst + BitVec.ofNat 64 j) =
+      source (src + BitVec.ofNat 64 j) := by
+  simp only [Mem.write, Mem.sub_ofNat_toNat dst (show j < 2 ^ 64 by omega_using [hj]), hj, ite_true,
+    Mem.extractLsb'_read source src hj]
+
+theorem storePair_ok {s : State} {r : VReg} {i : Nat} (hi : i < 4)
+    (hw : InRegions s.wr (s.gpr .x17 + BitVec.ofNat 64 (16 * i)) 16) :
+    WP isa (.block [.strq r .x17 (16 * i)]) s fun t =>
+      (t.mem = s.mem.write (s.gpr .x17 + BitVec.ofNat 64 (16 * i)) 16 (s.v r) ∧
+        t.v = s.v) ∧ Keep [] s t := by
+  refine WP.keep [] ?_ rfl rfl rfl
+  apply WP.of_runBlock
+  simp only [runBlock_cons, exec, addr, show 16 * i % 16 = 0 by omega_using [],
+    show 16 * i < 4096 * 16 by omega_using [hi], and_self, ite_true, Option.bind_some,
+    State.store, hw, runStep_some, runBlock_nil, Option.some.injEq, exists_eq_left']
+
+def stores (n : Nat) : List Instr := (List.range n).map fun i => .strq (acc i) .x17 (16 * i)
+
+structure StoreInv (s : State) (B : Addr) (dst src n : Nat) (t : State) : Prop where
+  keep : Keep [] s t
+  vectors : t.v = s.v
+  frame : Outside B dst (16 * n) s.mem t.mem
+  bytes : ∀ j < 16 * n, t.mem (off B (dst + j)) = s.mem (off B (src + j))
+
+theorem stores_ok (n : Nat) {s : State} {B : Addr} {dst src : Nat}
+    (hn : n ≤ 4) (hptr : s.gpr .x17 = off B dst) (hd : dst + 16 * n ≤ 2 ^ 64)
+    (hv : ∀ i < n, s.v (acc i) = s.mem.read (off B (src + 16 * i)) 16)
+    (hw : ∀ i < n, InRegions s.wr (off B (dst + 16 * i)) 16) :
+    WP isa (.block (stores n)) s (StoreInv s B dst src n) := by
+  induction n with
+  | zero =>
+    exact WP.block_nil ⟨Keep.refl _ _, rfl, Outside.refl _ _ _ _, fun _ h => by omega⟩
+  | succ n ih =>
+    rw [show stores (n + 1) = stores n ++ [.strq (acc n) .x17 (16 * n)] by
+      simp [stores, List.range_succ], WP.block_append_iff]
+    refine WP.mono (ih (by omega_using [hn]) (by omega_using [hd]) (fun i hi => hv i (by omega_using [hi]))
+      (fun i hi => hw i (by omega_using [hi]))) fun t ht => ?_
+    have ptr : t.gpr .x17 + BitVec.ofNat 64 (16 * n) = off B (dst + 16 * n) := by
+      rw [ht.keep.gpr .x17 (by simp), hptr, off, BitVec.add_assoc, ← BitVec.ofNat_add]
+    refine WP.mono (storePair_ok (r := acc n) (by omega_using [hn])
+      (by rw [ht.keep.wr, ptr]; exact hw n (by omega_using []))) fun u ⟨⟨hm, huv⟩, ku⟩ => ?_
+    rw [ptr, ht.vectors, hv n (by omega_using [])] at hm
+    have ho := write16_outside t.mem B (d := dst + 16 * n)
+      (s.mem.read (off B (src + 16 * n)) 16) (by omega_using [hd])
+    rw [← hm] at ho
+    refine ⟨(ht.keep.trans ku).mono (by decide), huv.trans ht.vectors,
+      (ht.frame.mono (by omega_using []) (by omega_using [])).trans (ho.mono (by omega_using []) (by omega_using [])), ?_⟩
+    intro j hj
+    by_cases hjn : j < 16 * n
+    · rw [ho _ (by
+      simp only [ofs, off, Offset.add_sub_cancel_left, BitVec.toNat_ofNat,
+        Nat.mod_eq_of_lt (show dst + j < 2 ^ 64 by omega_using [hd, hj])]
+      omega_using [hjn])]
+      exact ht.bytes j hjn
+    · have hp : off B (dst + j) = off B (dst + 16 * n) + BitVec.ofNat 64 (j - 16 * n) := by
+        rw [off, off, BitVec.add_assoc, ← BitVec.ofNat_add]
+        exact congrArg (fun z => B + BitVec.ofNat 64 z) (by omega_using [hjn])
+      rw [hm, hp, write16_byte t.mem s.mem _ _ (by omega_using [hj]), off,
+        BitVec.add_assoc, ← BitVec.ofNat_add]
+      exact congrArg (fun z => s.mem (B + BitVec.ofNat 64 z)) (by omega_using [hjn])
+
+end VG.Proof.Bignum.AArch64.WindowVector
+
+end
+
+end
+
+/-! A full table scan followed by the four stores of one selected block. -/
+
+@[expose] public section
+namespace VG.Proof.Bignum.AArch64.WindowVector
+open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64 VG.Proof.Bignum
+open VG.Proof.MlKem.AArch64 (Keep)
+open VG.Impl.Rsa.AArch64.WindowSelectVector (inner)
+
+theorem scan_store_ok {s : State} {B : Addr} {base stride dst v n : Nat} (hn : n ≤ 32)
+    (hv : v < n) (hs : s.gpr .x6 = BitVec.ofNat 64 stride)
+    (hc : s.gpr .x14 = BitVec.ofNat 64 n)
+    (h0 : ScanInv s (off B base) stride v 0 s)
+    (hp : s.gpr .x17 = off B dst) (hd : dst + 64 ≤ 2 ^ 64)
+    (hld : ∀ j < n, ∀ i < 4,
+      InRegions (s.rd ++ s.wr) (off B (base + stride * j + 16 * i)) 16)
+    (hw : ∀ i < 4, InRegions s.wr (off B (dst + 16 * i)) 16) :
+    WP isa (.seq (countLoop .x14 inner) (.block (stores 4))) s fun t =>
+      Keep [.x14, .x16] s t ∧ Outside B dst 64 s.mem t.mem ∧
+      t.v .v22 = dup2 (BitVec.ofNat 64 v) ∧ t.v .v24 = dup2 1 ∧
+      ∀ j < 64, t.mem (off B (dst + j)) =
+        s.mem (off B (base + stride * v + j)) := by
+  apply WP.seq
+  refine WP.mono (scan_ok hn (Nat.zero_lt_of_lt hv) (Nat.lt_of_lt_of_le hv hn) hs hc h0 (fun j hj i hi => by
+    simpa only [off, BitVec.add_assoc, ← BitVec.ofNat_add, Nat.add_assoc] using hld j hj i hi))
+    fun u hu => ?_
+  refine WP.mono (stores_ok 4 (src := base + stride * v) (by decide)
+    (by rw [hu.keep.gpr .x17 (by decide)]; exact hp) hd
+    (fun i hi => by
+      simp only [hu.value i hi, hv, ite_true, hu.mem]
+      simp only [off, BitVec.add_assoc, ← BitVec.ofNat_add, Nat.add_assoc])
+    (fun i hi => by rw [hu.keep.wr]; exact hw i hi)) fun t ht => ?_
+  refine ⟨(hu.keep.trans ht.keep).mono (by decide), ?_, ?_, ?_, ?_⟩
+  · simpa only [hu.mem] using ht.frame
+  · rw [ht.vectors]; exact hu.digit
+  · rw [ht.vectors]; exact hu.one
+  · simpa only [hu.mem] using ht.bytes
+
+end VG.Proof.Bignum.AArch64.WindowVector
+
+end
+
+end
 
 /-! ### `Bignum.AArch64.CrtWindowVectorTile`, which only this module used -/
 

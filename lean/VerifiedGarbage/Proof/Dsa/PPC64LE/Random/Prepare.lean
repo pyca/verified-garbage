@@ -2,7 +2,7 @@ module
 
 import VerifiedGarbage.Proof.Dsa.PPC64LE.Random.Q
 import VerifiedGarbage.Proof.Dsa.PPC64LE.Sizes
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.Random.Math
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.Random.Copy
 import VerifiedGarbage.Proof.Dsa.RandomEncoding
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreCheck
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreLoad

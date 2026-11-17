@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.RsaPss.RISCV64.Scan
 public import VerifiedGarbage.Proof.RsaPss.RISCV64.Check
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Mgf1.Bytes
-import VerifiedGarbage.Proof.RsaPss.RISCV64.Cmp
+import VerifiedGarbage.Proof.RsaPss.RISCV64.Select
 import VerifiedGarbage.Proof.Framework.RISCV64.Syms
 public import VerifiedGarbage.Impl.RsaPss.RISCV64
 public import VerifiedGarbage.Proof.RsaPss.RISCV64.Prefix

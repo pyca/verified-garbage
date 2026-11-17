@@ -1,13 +1,12 @@
 module
 
-import VerifiedGarbage.Proof.Ffdh.X86.Checks
+public import VerifiedGarbage.Proof.Ffdh.X86.Checks
 import VerifiedGarbage.Proof.Bignum.X86.ModulusCheck
 import VerifiedGarbage.Proof.Bignum.X86.PublicArgs
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Ctx
-import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Prepare
 import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Stage
 import VerifiedGarbage.Proof.Bignum.X86.CrtRt.StageR
 import VerifiedGarbage.Proof.Ffdh.Domain
@@ -17,7 +16,6 @@ public import VerifiedGarbage.Impl.Bignum.X86.PublicFn
 public import VerifiedGarbage.Impl.Ffdh.X86.Domain
 public import VerifiedGarbage.Proof.Bignum.X86.CrtValue
 public import VerifiedGarbage.Proof.Bignum.X86.ReverseBytes
-public import VerifiedGarbage.Proof.Ffdh.X86.Dom
 public import VerifiedGarbage.Proof.Ffdh.X86.Stages
 public import VerifiedGarbage.Proof.Framework.RelCTChain
 public import VerifiedGarbage.Proof.Framework.Semantics

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.RsaPss.AArch64.SignCVerified
+public import VerifiedGarbage.Proof.RsaPss.AArch64.SignPVerified
 public import VerifiedGarbage.Proof.RsaPss.AArch64.Instances
 public import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyCTBase
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callee
@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyCCt
 import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyCTop
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callees
-public import VerifiedGarbage.Proof.RsaPss.AArch64.SignPVerified
 public import VerifiedGarbage.Proof.Rsa.PreKey
 
 /-! ### `RsaPss.AArch64.VerifyCVerified`, which only this module used -/

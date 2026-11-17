@@ -1,8 +1,7 @@
 module
-public import VerifiedGarbage.Proof.AesCcm.AArch64.Absorb
-public import VerifiedGarbage.Proof.AesCcm.Mac
 
-import VerifiedGarbage.Proof.AesCcm.AArch64.Header
+public import VerifiedGarbage.Proof.AesCcm.AArch64.Header
+public import VerifiedGarbage.Proof.AesCcm.Mac
 import VerifiedGarbage.Proof.AesCcm.BytesAt
 import VerifiedGarbage.Proof.AesGcm.AArch64.Loops
 import VerifiedGarbage.Proof.AesGcm.AArch64.Callee

@@ -4,7 +4,6 @@ public import VerifiedGarbage.Impl.Ed448.RISCV64.ScalarBase
 public import VerifiedGarbage.Proof.X448.RISCV64.Field
 public import VerifiedGarbage.Proof.X448.RISCV64.Slots
 import VerifiedGarbage.Proof.X25519.RISCV64.Freeze
-import VerifiedGarbage.Proof.X448.RISCV64.Mul
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.Offset

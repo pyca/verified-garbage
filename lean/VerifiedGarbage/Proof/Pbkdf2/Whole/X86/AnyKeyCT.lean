@@ -1,8 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Pbkdf2.Md.AnyKey.X86
-public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Common
-import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Key
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Loop
 import VerifiedGarbage.Proof.Hmac.Generic.Common
 import VerifiedGarbage.Proof.Framework.OffsetBelow
 import VerifiedGarbage.Proof.Framework.TacticTemplate

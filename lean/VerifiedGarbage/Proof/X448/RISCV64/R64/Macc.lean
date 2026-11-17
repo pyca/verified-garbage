@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Impl.X448.RISCV64.R64
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.RISCV64.Wide
-public import VerifiedGarbage.Proof.X448.RISCV64.Limbs
+public import VerifiedGarbage.Proof.X448.RISCV64.Field
 
 /-!
 # X448 on RISC-V, 64-bit limbs: a product added to an accumulator

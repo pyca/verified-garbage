@@ -1,8 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Rc2.RISCV64.Mix
+public import VerifiedGarbage.Proof.Rc2.RISCV64.Rounds
 public import VerifiedGarbage.Proof.Rc2.Memory
-import VerifiedGarbage.Proof.Rc2.RISCV64.Rounds
 import VerifiedGarbage.Proof.Framework.RISCV64.Bytes
 import VerifiedGarbage.Proof.Framework.RISCV64.Words64
 

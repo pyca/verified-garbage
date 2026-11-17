@@ -3,10 +3,9 @@ module
 public import VerifiedGarbage.Impl.Weierstrass.PPC64LE.TCombI
 public import VerifiedGarbage.Proof.Weierstrass.PPC64LE.TComb
 public import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Ladder
-import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Fprog
 import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Copy
 import VerifiedGarbage.Proof.Weierstrass.PPC64LE.LadderPCall
-import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Loop
+import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Pow
 import VerifiedGarbage.Proof.Weierstrass.CombW
 import VerifiedGarbage.Proof.Weierstrass.CombPointW
 import VerifiedGarbage.Proof.Weierstrass.Layout

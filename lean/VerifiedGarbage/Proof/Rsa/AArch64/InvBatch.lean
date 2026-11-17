@@ -2,7 +2,6 @@ module
 
 import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.Omega
-
 public import VerifiedGarbage.Proof.Divstep.SignedWords
 public import VerifiedGarbage.Proof.Divstep.Alg
 public import VerifiedGarbage.Proof.Divstep.TcS
@@ -32,7 +31,6 @@ import Mathlib.Algebra.Order.Ring.Abs
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.NormNum
 import Mathlib.Tactic.Positivity
-import VerifiedGarbage.Proof.Rsa.Divstep.Bound
 import VerifiedGarbage.Proof.Rsa.Divstep.OddInput
 import Mathlib.Tactic.Ring
 import VerifiedGarbage.Proof.Divstep.RowWord

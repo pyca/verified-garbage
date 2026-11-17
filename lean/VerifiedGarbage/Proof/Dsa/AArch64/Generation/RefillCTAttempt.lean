@@ -16,7 +16,6 @@ import VerifiedGarbage.Proof.Dsa.AArch64.Generation.OnSuccessCT
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedPhaseStableCT
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ContextSuccess
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedPrime
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedSubgroupCT
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ContextSlice
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeometryWork

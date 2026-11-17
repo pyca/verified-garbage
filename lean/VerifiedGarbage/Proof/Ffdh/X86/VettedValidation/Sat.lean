@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Spec.Ffdh.Contract
 meta import VerifiedGarbage.TCB.X86.Target
-public import VerifiedGarbage.Proof.Ffdh.X86.CheckDomainVerified
 
 /-! A concrete cdecl caller with disjoint input, scratch, stack, and static table. -/
 

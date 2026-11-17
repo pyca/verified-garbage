@@ -13,10 +13,9 @@ import VerifiedGarbage.Proof.RsaPkcs1Sig.BytesAt
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.MdHashTable.X86.Tables
 public import VerifiedGarbage.Proof.HashTable.X86
-import VerifiedGarbage.Proof.RsaPss.X86.NoSp
+import VerifiedGarbage.Proof.RsaOaep.X86.NoSp
 import VerifiedGarbage.Proof.RsaPss.X86.NoSpT
 import VerifiedGarbage.Proof.RsaOaep.X86.LabelT
-import VerifiedGarbage.Proof.RsaOaep.X86.NoSp
 import VerifiedGarbage.Proof.RsaOaep.X86.Taint
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.X86.CallWith

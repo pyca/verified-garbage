@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.FScatter
 import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Red
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Divstep.Batch
-import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Update
+import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Batch
 import VerifiedGarbage.Proof.Divstep.Tc32
 import VerifiedGarbage.Proof.Divstep.Alg32
 import VerifiedGarbage.Proof.Rsa.X86.GcdBatch.Count

@@ -8,16 +8,14 @@ import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.RISCV64.ByteLoad
+public import VerifiedGarbage.Proof.Framework.RISCV64.ByteLoad
 import VerifiedGarbage.Proof.Framework.RISCV64.Run
 public import VerifiedGarbage.Impl.AesGcmSiv.RISCV64
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.Callee
-public import VerifiedGarbage.Proof.AesGcmSiv.RISCV64.Env
+public import VerifiedGarbage.Proof.AesGcmSiv.RISCV64.Wp
 public import VerifiedGarbage.Proof.Cmac.Block
 public import VerifiedGarbage.Proof.Framework.WriteBytes
-public import VerifiedGarbage.Proof.Framework.RISCV64.ByteLoad
 public import VerifiedGarbage.Spec.GcmSiv
-import VerifiedGarbage.Proof.AesGcmSiv.RISCV64.Wp
 
 /-!
 # AES-GCM-SIV on RISC-V: the keys (`keys`)

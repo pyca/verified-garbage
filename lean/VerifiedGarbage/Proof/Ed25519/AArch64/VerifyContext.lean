@@ -11,8 +11,7 @@ import VerifiedGarbage.Proof.Ed25519.Canonical64
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Ed25519.AArch64.PointPowers
-public import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyTbl
-import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyPoints
+public import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyPoints
 import Mathlib.Tactic.NormNum.Prime
 import Mathlib.Data.Nat.Totient
 import Mathlib.Tactic.Positivity.Finset

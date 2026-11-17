@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejWideValue
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejWideStep
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejParsePublic
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
 import VerifiedGarbage.Proof.Framework.AddrArith

@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.AesGcm.Arm.CTJ0
 public import VerifiedGarbage.Proof.AesGcm.Arm.CTAbsorb
 public import VerifiedGarbage.Proof.AesGcm.Arm.CTCrypt
 public import VerifiedGarbage.Proof.AesGcm.Arm.CTFin
-public import VerifiedGarbage.Proof.AesGcm.Arm.OneShot
+public import VerifiedGarbage.Proof.AesGcm.Arm.Seal
 meta import VerifiedGarbage.Proof.AesGcm.Arm.CTJ0
 import VerifiedGarbage.Proof.AesGcm.Arm.CTFn
 import VerifiedGarbage.Proof.AesGcm.Arm.FinTag
@@ -22,7 +22,6 @@ import VerifiedGarbage.Proof.AesGcm.Arm.Entry
 import VerifiedGarbage.Proof.AesGcm.Arm.Ghash1
 import VerifiedGarbage.Proof.AesGcm.Arm.Loops
 import VerifiedGarbage.Proof.AesGcm.Arm.Open
-import VerifiedGarbage.Proof.AesGcm.Arm.Seal
 import VerifiedGarbage.Proof.AesGcm.Arm.StreamCrypt
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Cmac.Mem

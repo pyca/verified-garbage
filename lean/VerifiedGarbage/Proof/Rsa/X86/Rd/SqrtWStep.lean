@@ -16,7 +16,6 @@ import VerifiedGarbage.Proof.Bignum.X86.R2Words.Quot
 import VerifiedGarbage.Proof.Bignum.WordTop32
 import VerifiedGarbage.Proof.Rsa.X86.Rd.SqrtWFix
 import VerifiedGarbage.Proof.Rsa.X86.Rd.SqrtWSub
-import VerifiedGarbage.Proof.Rsa.X86.Rd.Move
 import VerifiedGarbage.Proof.Rsa.X86.WordRt.Loop
 
 -- separate module: the digit step, its own proof, which `SqrtW` and the timing import

@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.Main
+public import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.Main
 public import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.DecompressMain
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.Descent
@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.Mont.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.Poly
 public import VerifiedGarbage.Impl.EcKey.Compressed.Root
-import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.RootPow
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Stages
 import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Copy
 import VerifiedGarbage.Proof.Weierstrass.RootTonelli
@@ -28,7 +27,6 @@ meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 meta import VerifiedGarbage.Spec.EcKey.P224
 meta import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.P224.Lit
 meta import VerifiedGarbage.Proof.Ecdsa.PPC64LE.P224
-public import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.Contract
 public import VerifiedGarbage.Spec.P224
 
 /-! ### `EcKey.Compressed.PPC64LE.Tonelli`, which only this module used -/

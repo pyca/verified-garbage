@@ -2,17 +2,12 @@ module
 
 import VerifiedGarbage.Proof.RsaKeyGen.X86.ExponentRt.Pointer
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.ExponentRanges
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.Gcd64Check
 public import VerifiedGarbage.Proof.MillerRabin.X86.WorkspaceFrame
 public import VerifiedGarbage.Proof.Framework.X86.Call
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.Mod64
 public import VerifiedGarbage.Proof.Mont.Words32
 import VerifiedGarbage.Proof.RsaKeyGen.X86.ExponentRt.Copy
 import VerifiedGarbage.Proof.RsaKeyGen.X86.ExponentRt.Array
-import VerifiedGarbage.Proof.RsaKeyGen.X86.Gcd64Setup
-import VerifiedGarbage.Proof.RsaKeyGen.X86.Gcd64
-import VerifiedGarbage.Proof.RsaKeyGen.X86.Gcd64Result
-import VerifiedGarbage.Proof.RsaKeyGen.X86.Gcd64Preserve
 import VerifiedGarbage.Proof.RsaKeyGen.X86.WorkspaceDisjoint
 import VerifiedGarbage.Proof.RsaKeyGen.X86.FilterStack
 import VerifiedGarbage.Proof.Framework.Offset

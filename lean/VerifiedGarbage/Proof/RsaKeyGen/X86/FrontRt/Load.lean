@@ -9,9 +9,7 @@ public import VerifiedGarbage.Spec.RsaKeyGen
 import VerifiedGarbage.Proof.RsaKeyGen.X86.ImportLoop
 import VerifiedGarbage.Proof.RsaKeyGen.X86.ImportEncoding
 import VerifiedGarbage.Proof.RsaKeyGen.X86.ImportWorkspace
-import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateWord
 import VerifiedGarbage.Proof.RsaKeyGen.Bits32
-
 import VerifiedGarbage.Proof.Bignum.ByteWords
 import VerifiedGarbage.Proof.Bignum.MemoryFrame
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Ptr
@@ -19,6 +17,41 @@ import VerifiedGarbage.Proof.Rc2.PairMem
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.RsaKeyGen.X86.ExponentRt.Pointer
 import VerifiedGarbage.Proof.RsaKeyGen.FrameOutside
+public import VerifiedGarbage.Impl.RsaKeyGen.X86.CandidateBits
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.X86.Words
+
+/-! ### `RsaKeyGen.X86.CandidateWord`, which this module and modules that import it used -/
+
+section
+
+/-! # Force a native word's candidate bits without touching other memory -/
+
+@[expose] public section
+namespace VG.Proof.RsaKeyGen.X86.CandidateBits
+open VG VG.X86 VG.X86.Wp VG.Proof.Mont VG.Proof.Mont.X86
+open VG.Impl.RsaKeyGen.X86.CandidateBits
+
+theorem forceWord_ok {s : State} {base : Addr} {size offset : Nat} (mask : BitVec 32)
+    (scratch : Scr s base size) (fit : offset + 4 ≤ size) :
+    WP isa (.block (forceWord offset mask)) s fun t =>
+      w32 t.mem base offset = w32 s.mem base offset ||| mask.toNat ∧
+      Outside base offset 4 s.mem t.mem ∧ Keeps [.eax] s t := by
+  unfold forceWord
+  refine wp_movS (readSrc_sc scratch fit) fun a A _ => wp_orS rfl fun b B => ?_
+  have K : Keeps [.eax] s b := A.keeps.trans B.keeps
+  have Sb := scratch.of_keeps K (by decide)
+  refine wp_storeS (Sb.ea (by omega_using [fit])) (Sb.write fit) fun t T => WP.block_nil ?_
+  refine ⟨?_, ?_, K.widen (T.keeps [])⟩
+  · rw [T.mem, w32_write_self, B.gpr, A.gpr, BitVec.toNat_or]
+  · rw [T.mem, B.mem, A.mem]
+    exact writeW32_outside _ _ _ (by have := scratch.nowrap; omega_using [fit, this])
+
+end VG.Proof.RsaKeyGen.X86.CandidateBits
+
+end
+
+end
 
 /-! # The candidate drawn into array 0 at the run-time width -/
 

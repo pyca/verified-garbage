@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.CTCall
+public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.CTCall
 public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.FillLoops
 public import VerifiedGarbage.Proof.Argon2.FillStep
 public import VerifiedGarbage.Proof.Argon2.Slices
@@ -22,7 +22,6 @@ meta import VerifiedGarbage.Proof.Argon2.LanesIndices
 meta import VerifiedGarbage.Proof.Argon2.SlicesIndices
 meta import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.FillBlock
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
-public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.CTBase
 public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Locals
 meta import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Locals
 

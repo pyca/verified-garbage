@@ -1,12 +1,10 @@
 module
 
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.BlkCall
+public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.BlkCall
 public import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Piece
 public import VerifiedGarbage.Impl.AesGcm.X86_64.SealSplit
-public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Callee
 import VerifiedGarbage.Proof.Framework.X86_64.CallSp
-import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Steps
 import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
 import VerifiedGarbage.Proof.Gcm.Stream
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd

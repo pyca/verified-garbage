@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.RndCorrect
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncCorrect
-import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.Bytes
+import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncFrame
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Contract

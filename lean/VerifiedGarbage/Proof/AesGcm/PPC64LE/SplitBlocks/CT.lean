@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.SplitBlocks.Contract
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTBase
-public import VerifiedGarbage.Proof.Gcm.SplitBlocksContract
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.SplitBlocks.Lit
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.SigEval

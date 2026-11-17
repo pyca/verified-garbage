@@ -2,7 +2,6 @@ module
 
 import VerifiedGarbage.Proof.Ffdh.X86.Cand.Body
 public import VerifiedGarbage.Proof.Ffdh.X86.Entry
-public import VerifiedGarbage.Proof.Ffdh.X86.ABI
 public import VerifiedGarbage.Spec.Ffdh.SievedContract
 public import VerifiedGarbage.Impl.RsaKeyGen.TrialTable32
 public import VerifiedGarbage.Proof.Mont.X86.StaticSquare.Shape
@@ -19,7 +18,7 @@ import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Ffdh.X86.Checks
 public import VerifiedGarbage.Proof.Ffdh.X86.Cand.Draw
-public import VerifiedGarbage.Proof.Ffdh.X86.Cand.Result
+public import VerifiedGarbage.Proof.Ffdh.X86.Cand.Tests
 public import VerifiedGarbage.Proof.Ffdh.X86.Cand.Sieve
 public import VerifiedGarbage.Spec.Ffdh.SievedCandidate
 import Mathlib.Logic.Function.Basic

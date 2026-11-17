@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86.PcBuild
 import VerifiedGarbage.Proof.RsaPkcs1Enc.X86.PcTaint
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Vp
 import VerifiedGarbage.Proof.Bignum.X86.CopyRegion
@@ -17,9 +16,359 @@ public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyPublicCall
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Loops
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
 public import VerifiedGarbage.TCB.X86.Isa
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86.PcBase
 import VerifiedGarbage.Proof.Rsa.X86.PrivStackSafety
 import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.WriteBytes
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Entry
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.Contract
+public import VerifiedGarbage.Proof.Framework.Sig
+
+/-! ### `RsaPkcs1Enc.X86.PcBuild`, which only this module used -/
+
+section
+
+/-! ### `RsaPkcs1Enc.X86.PcBase`, which this module and modules that import it used -/
+
+section
+
+/-!
+# RSAES-PKCS1-v1_5 encryption with a precomputed public key on x86: where everything is
+
+As on ARMv7 (`Proof/RsaPkcs1Enc/Arm/PcBase.lean`): `EP`, what two runs
+share (the frame's base `B`, the pointers, the lengths, `e`'s bytes and
+`pre`'s words), and its layout (`EP.lay`), with the 100 bytes below the frame
+that `vg_rsa_public_precomputed_checked` and its return address use.
+`In P σ`: the state `σ` the body starts from; `S P σ s`: a state of the
+body. The shared contract, with the stack of the frames and of the call,
+gives `In (ep s) (entered frameBytes s)` (`in_of_pre`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.RsaPkcs1Enc.X86.Pc
+
+open VG VG.Impl.RsaPkcs1Enc.X86.Precomputed VG.Proof.RsaPkcs1Sig.X86
+open VG.X86 hiding frameBytes
+
+/-- What two runs share. -/
+structure EP where
+  B : BitVec 32
+  out : BitVec 32
+  n : BitVec 32
+  e : BitVec 32
+  msg : BitVec 32
+  ps : BitVec 32
+  scr : BitVec 32
+  pre : BitVec 32
+  K : Nat
+  el : Nat
+  ml : Nat
+  pl : Nat
+  sl : Nat
+  rl : Nat
+  eB : List Byte
+  pw : List (BitVec 64)
+
+namespace EP
+
+variable (P : EP)
+
+abbrev OUT : Region := ⟨P.out.setWidth 64, P.K⟩
+abbrev N : Region := ⟨P.n.setWidth 64, P.K⟩
+abbrev E : Region := ⟨P.e.setWidth 64, P.el⟩
+abbrev MSG : Region := ⟨P.msg.setWidth 64, P.ml⟩
+abbrev PS : Region := ⟨P.ps.setWidth 64, P.pl⟩
+abbrev SCR : Region := ⟨P.scr.setWidth 64, P.sl * 8⟩
+abbrev PRE : Region := ⟨P.pre.setWidth 64, P.rl * 8⟩
+
+/-- The arguments, in order. -/
+abbrev argv : List (BitVec 32) :=
+  [P.out, BitVec.ofNat 32 P.K, P.n, BitVec.ofNat 32 P.K, P.e, BitVec.ofNat 32 P.el, P.msg,
+    BitVec.ofNat 32 P.ml, P.ps, BitVec.ofNat 32 P.pl, P.scr, BitVec.ofNat 32 P.sl, P.pre,
+    BitVec.ofNat 32 P.rl]
+
+abbrev ro : List Region := [P.N, P.E, P.MSG, P.PS, P.PRE]
+abbrev rw : List Region := [P.OUT, P.SCR]
+
+abbrev lay : Lay where
+  B := P.B
+  F := frameBytes
+  argv := P.argv
+  ro := P.ro
+  rw := P.rw
+  C := 100
+
+end EP
+
+/-- The state the body starts from. -/
+structure In (P : EP) (σ : State) : Prop where
+  ok : P.lay.Ok σ
+  kv : Spec.Rsa.lenValid P.K
+  el1 : 1 ≤ P.el
+  elK : P.el ≤ P.K
+  mlK : P.ml + 11 ≤ P.K
+  plK : P.pl = P.K - P.ml - 3
+  slK : Spec.Rsa.publicScratchWords P.K ≤ P.sl
+  sl32 : P.sl < 2 ^ 32
+  rlK : P.rl = Spec.Rsa.precomputedWords P.K
+  eB : Spec.Rsa.bytesAt σ.mem (P.e.setWidth 64) P.el = P.eB
+  pw : Spec.Rsa.wordsAt σ.mem (P.pre.setWidth 64) P.rl = P.pw
+
+/-- A state of the body. -/
+abbrev S (P : EP) (σ s : State) : Prop := In P σ ∧ P.lay.St σ s
+
+namespace In
+
+variable {P : EP} {σ : State} (h : In P σ)
+include h
+
+theorem k64 : 64 ≤ P.K := h.kv.1
+theorem k1024 : P.K ≤ 1024 := h.kv.2
+theorem pl8 : 8 ≤ P.pl := by have := h.plK; have := h.mlK; omega_arith
+theorem em_len : P.pl + P.ml + 3 = P.K := by have := h.plK; have := h.mlK; omega_arith
+
+end In
+
+/-! ## The entry -/
+
+/-- The stack the function uses: the push, the inner frame and the call's. -/
+abbrev stackBytes : Nat := 16 + frameBytes + 100
+
+/-- The shared contract, with that stack. -/
+abbrev spec : Contract isa := Proof.RsaPkcs1Enc.encryptPrecomputedContract abi stackBytes
+
+/-- The public parameters of an entry state. -/
+def ep (s : State) : EP where
+  B := s.gpr .esp - BitVec.ofNat 32 16 - BitVec.ofNat 32 frameBytes
+  out := arg s 0
+  n := arg s 2
+  e := arg s 4
+  msg := arg s 6
+  ps := arg s 8
+  scr := arg s 10
+  pre := arg s 12
+  K := (arg s 3).toNat
+  el := (arg s 5).toNat
+  ml := (arg s 7).toNat
+  pl := (arg s 9).toNat
+  sl := (arg s 11).toNat
+  rl := (arg s 13).toNat
+  eB := Spec.Rsa.bytesAt s.mem ((arg s 4).setWidth 64) (arg s 5).toNat
+  pw := Spec.Rsa.wordsAt s.mem ((arg s 12).setWidth 64) (arg s 13).toNat
+
+theorem ep_lay (s : State) :
+    (ep s).lay = layOf frameBytes (ep s).argv (ep s).ro (ep s).rw s 100 := rfl
+
+theorem in_of_pre {s : State} (h : spec.pre s) : In (ep s) (entered frameBytes s) := by
+  sig_pre [Proof.RsaPkcs1Enc.encryptPrecomputedContract, Proof.RsaPkcs1Enc.encryptPrecomputedSig, abi, argSlots,
+    argVal, argBytes, stackBelow] at h
+  sig_split h
+  rename_i hsp hsa hrd hwr oN oE oM oP oS oR oA nS nA eS eA mS mA pS pA sR sA rA rO rN rE rM rP rS rR rAr kO kN
+    kE kM kP kS kR kA fO fN fE fM fP fS fR kv olk el1 elK mlK plK slK
+  have rlK := h
+  simp only [stackBytes, frameBytes, Nat.reduceAdd] at hsp kO kN kE kM kP kS kR kA
+  have a1 : arg s 1 = arg s 3 := BitVec.eq_of_toNat_eq olk
+  rw [olk] at hwr oN oE oM oP oS oR oA rO kO fO
+  have h16 : 4 * Impl.RsaPkcs1Sig.X86.savedRegs.length ≤ (s.gpr .esp).toNat := by
+    simp only [Impl.RsaPkcs1Sig.X86.savedRegs, List.length_cons, List.length_nil]; omega_arith
+  have hpush : Frame [below (s.gpr .esp) (4 * Impl.RsaPkcs1Sig.X86.savedRegs.length)] s.mem
+      (entered frameBytes s).mem :=
+    pushed_frame (by decide) h16
+  have below16 : Region.Sub (below (s.gpr .esp) (4 * Impl.RsaPkcs1Sig.X86.savedRegs.length))
+      ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 1188, 1188⟩ := by
+    simp only [below, Impl.RsaPkcs1Sig.X86.savedRegs, List.length_cons, List.length_nil]
+    rw [Taint.sub_setWidth (by omega_arith)]
+    exact Offset.sub_below _ (by omega_arith) (by omega_arith)
+  have sl32 : (arg s 11).toNat < 2 ^ 32 := (arg s 11).isLt
+  refine
+    { ok := ?_
+      kv := kv, el1 := el1, elK := elK, mlK := mlK, plK := plK, slK := slK, sl32 := sl32, rlK := rlK
+      eB := Proof.RsaPkcs1Sig.bytesAt_frame hpush (fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; exact (kE.sub_left below16).symm)
+        (by show (arg s 5).toNat ≤ 2 ^ 64; omega_arith)
+      pw := Proof.RsaPkcs1Sig.wordsAt_frame' hpush (fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; exact (kR.sub_left below16).symm)
+        (by show (arg s 13).toNat * 8 ≤ 2 ^ 64; have := (arg s 13).isLt; omega_arith) }
+  rw [ep_lay]
+  refine ok_entered (S := 1188) rfl (by decide) hsp (by simp) (by simp; omega_arith) hrd
+    (by rw [hwr]; rfl) ?_ ?_ ?_ ?_ ?_ ?_
+  · intro r hr
+    simp only [EP.ro, EP.rw, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    exacts [kN, kE, kM, kP, kR, kO, kS]
+  · intro r hr
+    simp only [EP.rw, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    exacts [rO, rS]
+  · intro w hw r hr
+    simp only [EP.rw, List.mem_cons, List.not_mem_nil, or_false] at hw
+    simp only [EP.ro, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hw with rfl | rfl <;> rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
+    exacts [oN, oE, oM, oP, oR, oA, nS.symm, eS.symm, mS.symm, pS.symm, sR, sA]
+  · exact List.pairwise_pair.mpr oS
+  · intro r hr
+    simp only [EP.ro, EP.rw, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    all_goals simp only [ep, BitVec.toNat_setWidth]
+    all_goals first
+      | (rw [Nat.mod_eq_of_lt (by have := (arg s 2).isLt; omega_arith)]; omega_arith)
+      | (rw [Nat.mod_eq_of_lt (by have := (arg s 4).isLt; omega_arith)]; omega_arith)
+      | (rw [Nat.mod_eq_of_lt (by have := (arg s 6).isLt; omega_arith)]; omega_arith)
+      | (rw [Nat.mod_eq_of_lt (by have := (arg s 8).isLt; omega_arith)]; omega_arith)
+      | (rw [Nat.mod_eq_of_lt (by have := (arg s 12).isLt; omega_arith)]; omega_arith)
+      | (rw [Nat.mod_eq_of_lt (by have := (arg s 0).isLt; omega_arith)]; omega_arith)
+      | (rw [Nat.mod_eq_of_lt (by have := (arg s 10).isLt; omega_arith)]; omega_arith)
+  · intro j hj
+    have : j < 14 := hj
+    rcases (by omega_arith : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 ∨ j = 8 ∨ j = 9 ∨
+        j = 10 ∨ j = 11 ∨ j = 12 ∨ j = 13) with
+      rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [ep, a1]
+
+end VG.Proof.RsaPkcs1Enc.X86.Pc
+
+end
+
+end
+
+/-!
+# RSAES-PKCS1-v1_5 encryption with a precomputed public key on x86: building `EM`
+
+As on ARMv7 (`Proof/RsaPkcs1Enc/Arm/PcVerified.lean`): the mask of a zero
+byte in `PS`, as the code computes it (`zm`), `EM` as the specification
+encodes it (`enc`), and its first bytes in the frame (`EMok`), stored one at
+a time (`wp_st8EM`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.RsaPkcs1Enc.X86.Pc
+
+open VG VG.Impl.RsaPkcs1Enc.X86.Precomputed VG.Proof.RsaPkcs1Sig.X86
+open VG.X86 hiding frameBytes
+
+/-- Whether a string of bytes has a zero byte, as the mask the code computes. -/
+def zm (bs : List Byte) : BitVec 32 := if bs.all (· != 0) = true then 0#32 else BitVec.allOnes 32
+
+theorem zm_snoc (bs : List Byte) (b : Byte) :
+    zm (bs ++ [b]) = zm bs |||
+      (if decide ((b.setWidth 32).toNat < (1 : BitVec 32).toNat) = true then BitVec.allOnes 32 else 0) := by
+  have e1 : (1 : BitVec 32).toNat = 1 := rfl
+  rw [e1, BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := b.isLt; omega_using [])]
+  have hb : (b.toNat < 1) = (b = 0) := by
+    apply propext; constructor
+    · intro h; exact BitVec.eq_of_toNat_eq (by simp; omega_using [h])
+    · intro h; subst h; decide
+  simp only [hb]
+  unfold zm
+  rw [List.all_append, List.all_cons, List.all_nil, Bool.and_true]
+  cases (bs.all (· != 0)) <;> by_cases h : b = 0 <;> simp [h] <;> (try split) <;> (try decide)
+
+/-- `EM`, as the specification encodes it. -/
+abbrev msgB (P : EP) (σ : State) : List Byte := Spec.Rsa.bytesAt σ.mem (P.msg.setWidth 64) P.ml
+abbrev psB (P : EP) (σ : State) : List Byte := Spec.Rsa.bytesAt σ.mem (P.ps.setWidth 64) P.pl
+abbrev enc (P : EP) (σ : State) : List Byte := Spec.RsaPkcs1Enc.encode (msgB P σ) (psB P σ)
+
+theorem enc_length (P : EP) (σ : State) : (enc P σ).length = P.pl + P.ml + 3 := by
+  simp only [enc, Spec.RsaPkcs1Enc.encode, List.length_append, Proof.RsaPkcs1Sig.bytesAt_len]; simp; omega_using []
+
+theorem enc_getD_ps (P : EP) (σ : State) {i : Nat} (hi : i < P.pl) :
+    (enc P σ).getD (2 + i) 0 = σ.mem (P.ps.setWidth 64 + BitVec.ofNat 64 i) := by
+  simp only [enc, Spec.RsaPkcs1Enc.encode, List.append_assoc]
+  rw [Proof.RsaPkcs1Sig.getD_append_right _ _ _ (by simp),
+    Proof.RsaPkcs1Sig.getD_append_left _ _ _ (by simp [Proof.RsaPkcs1Sig.bytesAt_len]; omega_using [hi])]
+  simp only [List.length_cons, List.length_nil, Nat.zero_add, Nat.reduceAdd, Nat.add_sub_cancel_left]
+  exact Proof.RsaPkcs1Sig.bytesAt_getD hi 0
+
+theorem enc_getD_sep (P : EP) (σ : State) : (enc P σ).getD (2 + P.pl) 0 = 0 := by
+  simp only [enc, Spec.RsaPkcs1Enc.encode, List.append_assoc]
+  rw [Proof.RsaPkcs1Sig.getD_append_right _ _ _ (by simp),
+    Proof.RsaPkcs1Sig.getD_append_right _ _ _ (by simp [Proof.RsaPkcs1Sig.bytesAt_len])]
+  simp [Proof.RsaPkcs1Sig.bytesAt_len]
+
+theorem enc_getD_msg (P : EP) (σ : State) {i : Nat} (hi : i < P.ml) :
+    (enc P σ).getD (3 + P.pl + i) 0 = σ.mem (P.msg.setWidth 64 + BitVec.ofNat 64 i) := by
+  simp only [enc, Spec.RsaPkcs1Enc.encode, List.append_assoc]
+  rw [Proof.RsaPkcs1Sig.getD_append_right _ _ _ (by simp; omega_using []),
+    Proof.RsaPkcs1Sig.getD_append_right _ _ _ (by simp [Proof.RsaPkcs1Sig.bytesAt_len]; omega_using []),
+    Proof.RsaPkcs1Sig.getD_append_right _ _ _ (by simp [Proof.RsaPkcs1Sig.bytesAt_len]; omega_using [])]
+  simp only [List.length_cons, List.length_nil, Proof.RsaPkcs1Sig.bytesAt_len]
+  rw [show 3 + P.pl + i - (0 + 1 + 1) - P.pl - (0 + 1) = i by omega_using []]
+  exact Proof.RsaPkcs1Sig.bytesAt_getD hi 0
+
+/-- `EM`'s first `n` bytes written. -/
+def EMok (P : EP) (σ s : State) (n : Nat) : Prop :=
+  ∀ i < n, s.mem (P.lay.fr (oEM + i)) = (enc P σ).getD i 0
+
+/-! ## Stores of bytes into `EM` -/
+
+theorem em_ne (P : EP) {i j : Nat} (hij : i ≠ j) (hi : oEM + i < 2 ^ 64) (hj : oEM + j < 2 ^ 64) :
+    P.lay.fr (oEM + i) ≠ P.lay.fr (oEM + j) :=
+  Offset.add_ofNat_ne _ hi hj (by omega_using [hij])
+
+/-- `EMok` after a byte stored at index `n`. -/
+theorem EMok.store {P : EP} {σ s : State} {n : Nat} (h : EMok P σ s n) {m : Mem} (hn : n < 1024)
+    (hm : m = s.mem.writeW (P.lay.fr (oEM + n)) ((enc P σ).getD n 0)) :
+    ∀ i < n + 1, m (P.lay.fr (oEM + i)) = (enc P σ).getD i 0 := by
+  intro i hi
+  subst hm
+  rw [WriteBytes.writeW8_apply]
+  by_cases e : i = n
+  · subst e; simp
+  · simp only [em_ne P e (by simp only [oEM]; omega_using [hn, hi]) (by simp only [oEM]; omega_using [hn]), ↓reduceIte]
+    exact h i (by omega_using [hi, e])
+
+theorem EMok.zero {P : EP} {σ s : State} : EMok P σ s 0 := fun _ hi => absurd hi (Nat.not_lt_zero _)
+
+theorem EMok.mono {P : EP} {σ s : State} {n m : Nat} (h : EMok P σ s n) (hm : m ≤ n) : EMok P σ s m :=
+  fun i hi => h i (by omega_using [hm, hi])
+
+theorem frame_byte1 {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {a : Addr}
+    (hd : ∀ r ∈ rs, Region.Disjoint ⟨a, 1⟩ r) : m' a = m a := by
+  have := hf.bytes (R := ⟨a, 1⟩) hd (by show (1 : Nat) ≤ 2 ^ 64; decide) (i := 0) (by show 0 < 1; decide)
+  simpa using this
+
+/-- `EMok` of memory that changed apart from `EM`'s first `n` bytes. -/
+theorem EMok.frame {P : EP} {σ s t : State} {n : Nat} (h : EMok P σ s n) {rs : List Region}
+    (hf : Frame rs s.mem t.mem) (hd : ∀ i < n, ∀ r ∈ rs, Region.Disjoint ⟨P.lay.fr (oEM + i), 1⟩ r) :
+    EMok P σ t n := fun i hi => by rw [frame_byte1 hf (hd i hi)]; exact h i hi
+
+theorem EMok.of_mem {P : EP} {σ s t : State} {n : Nat} (h : EMok P σ s n) (hm : t.mem = s.mem) :
+    EMok P σ t n := fun i hi => by rw [hm]; exact h i hi
+
+/-- A byte of `EM` stored through `rb + off = B + oEM + n` from the low byte `r`. -/
+theorem wp_st8EM {P : EP} {σ s : State} (hs : S P σ s) {r : Reg8} {rb : Reg} {off n : Nat}
+    (hn : n < P.K) (hb : s.gpr rb + BitVec.ofNat 32 off = P.B + BitVec.ofNat 32 (oEM + n))
+    {is : List Instr} {Q : State → Prop}
+    (k : ∀ t, S P σ t → t.gpr = s.gpr →
+      t.mem = s.mem.writeW (P.lay.fr (oEM + n)) ((s.gpr r.reg).setWidth 8) → WP isa (.block is) t Q) :
+    WP isa (.block (.store8 ⟨rb, off⟩ r :: is)) s Q := by
+  have hk := hs.1.k1024
+  have hF : oEM + n + 1 ≤ P.lay.F := by show oEM + n + 1 ≤ frameBytes; simp only [oEM, frameBytes]; omega_using [hn, hk]
+  refine wp_store8 (a := P.lay.fr (oEM + n)) ?_ (hs.2.inFr hF)
+    fun t u => k t ⟨hs.1, hs.2.frameW hF ?_ u.rd u.wr (by rw [u.gpr])⟩ u.gpr u.mem
+  · have hd : oEM + n < P.lay.F + 20 + P.lay.A := by
+      simp only [Lay.A, EP.argv, List.length_cons, List.length_nil, oEM, frameBytes] at hF ⊢; omega_using [hF]
+    rw [ea_at, addr, hb]
+    exact hs.2.ok.addrB hd
+  · rw [u.mem]
+    exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
+
+theorem setWidth_byte (b : Byte) : (b.setWidth 32).setWidth 8 = b := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_setWidth]
+  have := b.isLt
+  omega_using []
+
+theorem bytesAt_succ (m : Mem) (p : Addr) (j : Nat) :
+    Spec.Rsa.bytesAt m p (j + 1) = Spec.Rsa.bytesAt m p j ++ [m (p + BitVec.ofNat 64 j)] := by
+  simp [Spec.Rsa.bytesAt, List.range_succ]
+
+end VG.Proof.RsaPkcs1Enc.X86.Pc
+
+end
+
+end
 
 /-! ### `RsaPkcs1Enc.X86.PcBody`, which only this module used -/
 

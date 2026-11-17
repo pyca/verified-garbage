@@ -31,7 +31,6 @@ import VerifiedGarbage.Proof.Ffdh.Arm.BranchCT
 import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Ffdh.Arm.ImportAt
-import VerifiedGarbage.Proof.Ffdh.Arm.DomainQRange
 import VerifiedGarbage.Proof.Ffdh.Arm.ImportAtCT
 import VerifiedGarbage.Proof.Ffdh.Arm.RangeCT
 import VerifiedGarbage.Proof.Ffdh.Arm.OddCT
@@ -39,7 +38,6 @@ import VerifiedGarbage.Proof.Ffdh.Arm.Odd
 import VerifiedGarbage.Proof.Ffdh.Arm.CheckFlag
 import VerifiedGarbage.Proof.Ffdh.Arm.EqualCT
 import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
-import VerifiedGarbage.Proof.Ffdh.Arm.DomainDivides
 import VerifiedGarbage.Proof.Ffdh.Arm.PrepareAtCT
 import VerifiedGarbage.Proof.Ffdh.Arm.ValueChecksCT
 import VerifiedGarbage.Proof.Bignum.Arm.ReduceOperandCT
@@ -55,7 +53,6 @@ import VerifiedGarbage.Proof.Ffdh.Arm.Branch
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 import VerifiedGarbage.Proof.Ffdh.Arm.SampleEnvironment
 import VerifiedGarbage.Proof.Ffdh.Arm.VettedGroupsState
-import VerifiedGarbage.Proof.Ffdh.Arm.DomainEntry
 import VerifiedGarbage.Proof.Ffdh.Arm.DomainEntryCT
 import VerifiedGarbage.Proof.Ffdh.Arm.FrameCT
 import VerifiedGarbage.Proof.Ffdh.Arm.Block

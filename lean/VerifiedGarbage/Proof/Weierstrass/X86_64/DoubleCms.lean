@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.Mont.X86_64.MulS
 public import VerifiedGarbage.Proof.Mont.X86_64.OpsReg
 import VerifiedGarbage.Proof.Mont.X86_64.CsubS
 import VerifiedGarbage.Proof.Mont.X86_64.Chain
-import VerifiedGarbage.Proof.Mont.X86_64.Adx
+import VerifiedGarbage.Proof.Mont.X86_64.Rounds
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.Steps
 import VerifiedGarbage.Proof.Mont.X86_64.Round
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd

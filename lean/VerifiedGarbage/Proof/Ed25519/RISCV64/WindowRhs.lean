@@ -16,10 +16,9 @@ import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.ReadHalves
-import VerifiedGarbage.Proof.Ed25519.RISCV64.PointAccumulate
+import VerifiedGarbage.Proof.Ed25519.RISCV64.PointMul
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Ed25519.RISCV64.WindowDigit
-import VerifiedGarbage.Proof.Ed25519.RISCV64.PointMul
 import VerifiedGarbage.Proof.Ed25519.WindowNibble
 import VerifiedGarbage.Proof.Ed25519.Window
 import VerifiedGarbage.Proof.Ed25519.WindowConstants

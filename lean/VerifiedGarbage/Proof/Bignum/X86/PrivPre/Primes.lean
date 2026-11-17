@@ -1,6 +1,6 @@
 module
--- separate module: primes' body, a long proof, apart from its entry and return
 
+-- separate module: primes' body, a long proof, apart from its entry and return
 public import VerifiedGarbage.Proof.Bignum.X86.PrivPre.Prime
 public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Validate
 public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Import
@@ -8,9 +8,8 @@ import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Bignum.X86.PrecomputedRt.Key
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Bignum.X86.CopyBytes
-import VerifiedGarbage.Proof.Bignum.X86.CopyRead
 import VerifiedGarbage.Proof.Bignum.X86.CopyRegion
+import VerifiedGarbage.Proof.Bignum.X86.CopyRead
 import VerifiedGarbage.Proof.Bignum.ByteWords
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Mont.Read

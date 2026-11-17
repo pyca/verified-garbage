@@ -2,12 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtCTBase
 import VerifiedGarbage.Proof.Bignum.PPC64LE.Reach
-import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtPinsB
+public import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtPinsB
 meta import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtPinsB
 meta import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtCTBase
 meta import VerifiedGarbage.Proof.Bignum.PPC64LE.Reach
 import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtCorrect
-public import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtPinsA
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.MontCT
 public import VerifiedGarbage.Proof.Framework.Flat
 

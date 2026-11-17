@@ -1,7 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PrivPreCT
-public import VerifiedGarbage.Proof.Bignum.PPC64LE.PrivPreE
+public import VerifiedGarbage.Proof.Bignum.PPC64LE.PrivPreCTA
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Rsa.PrivatePrecompute
 meta import VerifiedGarbage.Proof.Framework.Contract

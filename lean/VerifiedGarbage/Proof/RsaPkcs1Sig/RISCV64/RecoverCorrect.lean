@@ -6,12 +6,11 @@ import VerifiedGarbage.Proof.Framework.Covers
 public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.TCB.RISCV64.Target
 public import VerifiedGarbage.Proof.Framework.PowLit
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.RISCV64.Frame
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.RISCV64.VerifyCall
 import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Impl.RsaPkcs1Sig.RISCV64.Frame
 public import VerifiedGarbage.TCB.Mem
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.RISCV64.VerifyCall
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.RISCV64.Encode

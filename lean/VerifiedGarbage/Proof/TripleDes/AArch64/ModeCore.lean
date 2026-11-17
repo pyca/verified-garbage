@@ -1,12 +1,11 @@
 module
 
-import VerifiedGarbage.Proof.TripleDes.AArch64.VerifiedBlock
+public import VerifiedGarbage.Proof.TripleDes.AArch64.VerifiedBlock
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 public import VerifiedGarbage.Proof.Modes.AArch64.Core
 import VerifiedGarbage.Proof.Modes.AArch64.Words
 public import VerifiedGarbage.Impl.TripleDes.AArch64.Cbc
 public import VerifiedGarbage.Proof.TripleDes.CbcBlocks
-public import VerifiedGarbage.Proof.TripleDes.AArch64.Pre
 import VerifiedGarbage.Proof.TripleDes.Schedule
 import VerifiedGarbage.Proof.Modes.AArch64.Steps
 import VerifiedGarbage.Proof.Framework.Offset

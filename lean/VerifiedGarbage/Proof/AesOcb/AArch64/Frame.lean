@@ -1,10 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.AesOcb.Rounds
+public import VerifiedGarbage.Proof.AesOcb.Scratch
 import VerifiedGarbage.Proof.AesOcb.AArch64.OpenCT
 import VerifiedGarbage.Proof.AesOcb.AArch64.InitCT
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.AesOcb.Scratch
 public import VerifiedGarbage.Proof.AesOcb.AArch64.Args
 public import VerifiedGarbage.Proof.AesOcb.AArch64.Contract
 import VerifiedGarbage.Proof.AesOcb.AArch64.Init

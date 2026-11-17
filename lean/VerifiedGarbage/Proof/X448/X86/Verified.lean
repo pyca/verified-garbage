@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.X448.X86.Lit
 public import VerifiedGarbage.Proof.Framework.Contract
 import Mathlib.Logic.Function.Basic
 import Mathlib.Tactic.Set
-public import VerifiedGarbage.Proof.X448.X86.Contract
+public import VerifiedGarbage.Proof.X448.X86.Frame
 import Mathlib.Tactic.SplitIfs
 
 /-!

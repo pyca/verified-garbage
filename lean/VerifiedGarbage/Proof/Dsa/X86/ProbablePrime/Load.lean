@@ -1,7 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.Memory
-import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.Enter
+public import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.Enter
 import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.Width
 import VerifiedGarbage.Proof.RsaKeyGen.X86.ImportLoad
 import VerifiedGarbage.Proof.RsaKeyGen.X86.ImportRegions

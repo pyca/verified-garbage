@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.CTCall
+public import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.CTCall
 public import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Initial
 public import VerifiedGarbage.Proof.Argon2.RISCV64.HPrime.FixedCT
 import VerifiedGarbage.Proof.Argon2.RISCV64.HPrime.Calls
@@ -20,7 +20,6 @@ meta import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Locals
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 meta import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Parameters
-public import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.CTBase
 public import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Parameters
 
 /-!

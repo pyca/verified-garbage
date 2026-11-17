@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.AesGcmSiv.RISCV64.Wp
+public import VerifiedGarbage.Proof.AesGcmSiv.RISCV64.Wp
 public import VerifiedGarbage.Proof.GcmSiv.Spec
 public import VerifiedGarbage.Proof.Cmac.Block
 import VerifiedGarbage.Proof.Cmac.Spec
@@ -11,7 +11,6 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Impl.AesGcmSiv.RISCV64
 public import VerifiedGarbage.Proof.AesOcb.RISCV64.Callee
-public import VerifiedGarbage.Proof.AesGcmSiv.RISCV64.Env
 public import VerifiedGarbage.Spec.Gcm
 
 /-!

@@ -1,9 +1,8 @@
 module
-public import VerifiedGarbage.Proof.AesCcm.X86.Args
 
+public import VerifiedGarbage.Proof.AesCcm.X86.Top
 import VerifiedGarbage.Proof.AesCcm.X86.Mask
 import VerifiedGarbage.Proof.AesCcm.BytesAt
-import VerifiedGarbage.Proof.AesCcm.X86.Top
 import VerifiedGarbage.Proof.AesCcm.X86.Mac
 import VerifiedGarbage.Proof.AesCcm.X86.Run
 import VerifiedGarbage.Proof.AesCcm.Mac

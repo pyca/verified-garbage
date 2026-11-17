@@ -24,7 +24,6 @@ public import VerifiedGarbage.TCB.X86_64.Target
 import Aesop.BuiltinRules
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ParameterCTState
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.OutputPlan
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntrySave
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Bignum.Octets
 

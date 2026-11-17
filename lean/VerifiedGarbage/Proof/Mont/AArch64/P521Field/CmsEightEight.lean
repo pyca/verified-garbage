@@ -1,10 +1,7 @@
 module
 
 -- separate module: The 8A+8B fused limb/carry instruction replay (cms_eight_eight_ok) costs 2.94s of proof versus 1.29s of imports; DoubleCms38 composition edits reuse this checked computation.
-
 public import VerifiedGarbage.Proof.Mont.AArch64.P521Field.CmsEightPair
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Field.CmsLow
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Field.CmsAndWords
 public import VerifiedGarbage.Proof.Mont.AArch64.P521Field.CmsHigh
 import VerifiedGarbage.Proof.Framework.Block
 

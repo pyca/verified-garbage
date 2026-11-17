@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 `fprog F ops` (`Impl/Weierstrass/RISCV64.lean`) runs the field operations
 `ops` on slots of the working space, one by one by calls of the functions of
 the field `F` (`fprog_ok`), as on PPC64LE
-(`Proof/Weierstrass/PPC64LE/Fprog.lean`): on slots that are apart from each
+(`Proof/Weierstrass/PPC64LE/Ladder.lean`): on slots that are apart from each
 other, below the functions' own working space (`Proof.Mont.Lay` of
 `own M.n` bytes) and at offsets `liAt` reaches (below 4095), what the slots
 stand for (`toM`) follows `runOps ops`, the program on environments (`Inv`).

@@ -2,14 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.Rounds
 public import VerifiedGarbage.Proof.Gcm.RISCV64.Ghash
-public import VerifiedGarbage.Proof.AesGcm.RISCV64.Gather.Contract
+public import VerifiedGarbage.Proof.AesGcm.RISCV64.Gather.Fn
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Impl.AesGcm.RISCV64.SealGather
 public import VerifiedGarbage.TCB.Artifact
 import VerifiedGarbage.Proof.ChaCha20Poly1305.RISCV64.Gather.Verified
 import VerifiedGarbage.Proof.AesGcm.RISCV64.Gather.CT
-import VerifiedGarbage.Proof.AesGcm.RISCV64.Gather.Fn
 import VerifiedGarbage.Proof.AesGcm.RISCV64.Verified
 
 /-!
@@ -21,7 +20,7 @@ pointer that its frame and its call use (`Proof.AesGcm.sealGatherRoundsContract`
 implies the one the proof is written against (`gatherRISCV64`,
 `gather_implies`), and so the code, calling `vg_aes_gcm_seal` by its shared
 contract (`seal_framed`), is `Verified` against it (`sealGather_verified`).
-As on PPC64LE (`Proof/AesGcm/PPC64LE/Gather/Verified.lean`).
+As on PPC64LE (`Proof/AesGcm/PPC64LE/GatherSplit/Contract.lean`).
 -/
 
 @[expose] public section

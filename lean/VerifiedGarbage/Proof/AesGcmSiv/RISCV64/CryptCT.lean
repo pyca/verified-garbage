@@ -9,7 +9,7 @@ meta import VerifiedGarbage.Proof.AesGcmSiv.RISCV64.Rel
 meta import VerifiedGarbage.Proof.AesGcmSiv.RISCV64.Crypt
 meta import VerifiedGarbage.Impl.AesGcmSiv.RISCV64
 public import VerifiedGarbage.Impl.AesGcmSiv.RISCV64
-public import VerifiedGarbage.Proof.AesGcmSiv.RISCV64.Env
+public import VerifiedGarbage.Proof.AesGcmSiv.RISCV64.Wp
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Gather.RISCV64.LoopCT
 import VerifiedGarbage.Proof.Framework.RISCV64.Steps

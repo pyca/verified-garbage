@@ -1,8 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.CallTiming
-public import VerifiedGarbage.Proof.Dsa.X86.ArithmeticHead
-import VerifiedGarbage.Proof.Dsa.X86.CorePowerTiming
+public import VerifiedGarbage.Proof.Dsa.X86.CorePowerTiming
 import VerifiedGarbage.Proof.Dsa.X86.StagePower
 import VerifiedGarbage.Proof.Weierstrass.MontContract
 

@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Dsa.X86.ABIResources
 public import VerifiedGarbage.Proof.Dsa.X86.Installed
 import VerifiedGarbage.Proof.Dsa.X86.InstalledInputs
 import VerifiedGarbage.Proof.Dsa.X86.PackedKeyBuffers
-import VerifiedGarbage.Proof.Dsa.X86.CallerSlice
 
 /-! # Public call layout obtained from installed verification arguments -/
 

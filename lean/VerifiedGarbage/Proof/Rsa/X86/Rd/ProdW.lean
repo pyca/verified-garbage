@@ -7,7 +7,6 @@ public import VerifiedGarbage.Spec.Rsa.RecoverDet
 public import VerifiedGarbage.Proof.Rsa.BoolNat
 public import VerifiedGarbage.Proof.Rsa.Sub32
 import VerifiedGarbage.Proof.Rsa.X86.Rd.Loops
-import VerifiedGarbage.Proof.Rsa.X86.Rd.Move
 public import VerifiedGarbage.Proof.Rsa.X86.WordRt.Mul
 import VerifiedGarbage.Proof.Rsa.X86.WordRt.Loop
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Zero

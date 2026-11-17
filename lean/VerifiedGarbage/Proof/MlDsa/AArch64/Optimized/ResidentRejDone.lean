@@ -2,9 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejPrefix
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejRows
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourFlags
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFlagValue
 
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFlagValue
 /-! ## From `ResidentRejFlagsSemantic.lean` -/
 
 -- Formerly `VerifiedGarbage/Proof/MlDsa/AArch64/Optimized/ResidentRejFlags.lean`, which only this module imported.

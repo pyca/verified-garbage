@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Aes.RISCV64.Common
 public import VerifiedGarbage.Impl.Aes.RISCV64.Blocks
-public import VerifiedGarbage.Proof.Aes.RISCV64.Encrypt
 public import VerifiedGarbage.Proof.Aes.InvSboxSpec
 public import VerifiedGarbage.Proof.Aes.InvBitsliced
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -14,7 +13,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RISCV64.Bytes
 import VerifiedGarbage.Proof.Framework.RISCV64.Words64
 public import VerifiedGarbage.Proof.Framework.RISCV64.Steps
-import VerifiedGarbage.Proof.Aes.RISCV64.Keys
 import VerifiedGarbage.Proof.Framework.RISCV64.Align
 
 /-! ### `Aes.RISCV64.Decrypt`, which only this module used -/

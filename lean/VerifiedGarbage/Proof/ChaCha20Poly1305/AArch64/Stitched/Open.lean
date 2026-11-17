@@ -1,12 +1,10 @@
 module
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Correct
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Crypted
 
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Correct
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Rest
 import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Seal
 import VerifiedGarbage.Proof.Poly1305.AArch64.Lit
-import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Rest
 import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.PadRest
-import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Wide
 import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
 import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.Rest
 import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.Main

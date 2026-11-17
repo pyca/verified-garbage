@@ -1,9 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.X86.Sign.Blocks
+public import VerifiedGarbage.Proof.MlDsa.X86.Sign.Words
 public import VerifiedGarbage.Proof.MlDsa.X86.Sign.Inv
 public import VerifiedGarbage.Proof.MlDsa.X86.Sign.Prims
-import VerifiedGarbage.Proof.MlDsa.X86.Sign.Words
 import VerifiedGarbage.Proof.MlDsa.X86.Sign.PrimB
 import VerifiedGarbage.Proof.MlDsa.X86.Sign.Local
 import VerifiedGarbage.Proof.MlDsa.Sign.Bounds

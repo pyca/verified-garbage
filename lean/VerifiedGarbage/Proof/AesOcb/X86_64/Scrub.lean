@@ -8,7 +8,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Framework.X86_64.Registration
 public import VerifiedGarbage.Proof.Aes.X86_64.BlocksVariant
 public import VerifiedGarbage.Proof.AesOcb.X86_64.Frame
-public import VerifiedGarbage.Proof.AesOcb.Rounds
+public import VerifiedGarbage.Proof.AesOcb.Scratch
 public import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 import VerifiedGarbage.Proof.Aes.X86_64.Scrub
 import VerifiedGarbage.Proof.Aes.X86_64.ModesScrub

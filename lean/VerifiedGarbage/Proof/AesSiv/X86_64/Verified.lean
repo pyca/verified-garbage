@@ -1,10 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.AesSiv.Rounds
+public import VerifiedGarbage.Proof.AesSiv.Scratch
 public import VerifiedGarbage.Proof.AesSiv.X86_64.Init
 public import VerifiedGarbage.Proof.AesSiv.X86_64.EncCT
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.AesSiv.Scratch
 public import VerifiedGarbage.Proof.AesSiv.X86_64.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 

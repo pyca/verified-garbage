@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Argon2.Arm.Derive.FillCall
 public import VerifiedGarbage.Proof.Argon2.Arm.Derive.FillState
 import VerifiedGarbage.Proof.Argon2.Arm.Derive.MemoryInit
-import VerifiedGarbage.Proof.Argon2.Arm.Derive.HCall
 import VerifiedGarbage.Proof.Argon2.Arm.Derive.Initial
 import VerifiedGarbage.Proof.Argon2.Arm.Derive.Scratch
 import VerifiedGarbage.Proof.Argon2.Arm.Derive.Locals

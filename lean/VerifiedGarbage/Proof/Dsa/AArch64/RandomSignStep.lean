@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCallResult
+public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignSingle
 import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignAttempt
 public import VerifiedGarbage.Proof.Dsa.RandomSignTraceResult
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCall

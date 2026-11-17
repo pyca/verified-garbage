@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Update
 public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Start
 public import VerifiedGarbage.Proof.Weierstrass.X86.InvLoop
 import VerifiedGarbage.Proof.Weierstrass.X86.InvHalf
@@ -10,6 +9,71 @@ import VerifiedGarbage.Proof.Framework.Omega
 import Mathlib.Algebra.Group.Monoid
 import VerifiedGarbage.Proof.Rsa.X86.GcdBatch.Count
 import VerifiedGarbage.Proof.Divstep.Batch
+import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Arrays
+public import VerifiedGarbage.Proof.Weierstrass.X86.InvClob
+public import VerifiedGarbage.Proof.Divstep.Alg32Def
+public import VerifiedGarbage.Proof.Divstep.BatchBasic
+public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Ops
+public import VerifiedGarbage.Proof.Weierstrass.Unch
+
+/-! ### `Rsa.X86.InvBatchRt.Update`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Rsa.X86.InvBatchRt.State`, which this module and modules that import it used -/
+
+section
+
+/-! # The state carried between batches at a run-time width
+
+`GcdBatch.MatrixAt` with the divstep window at the header's `win` rather than in array 3.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Rsa.X86.InvBatchRt
+
+open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Rsa.X86.KeyRt VG.Impl.Rsa.X86.InvBatchRt
+open VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt VG.Proof.Rsa.X86.KeyRt VG.Proof.Weierstrass
+
+/-- A batch's transition matrix in the window. -/
+structure MatrixAt (B : Addr) (T : Divstep.MSt) (s : State) : Prop where
+  d : s.mem.readW (off B win) 32 = BitVec.ofInt 32 T.d
+  u : s.mem.readW (off B (win + 12)) 32 = BitVec.ofInt 32 T.u
+  v : s.mem.readW (off B (win + 16)) 32 = BitVec.ofInt 32 T.v
+  q : s.mem.readW (off B (win + 20)) 32 = BitVec.ofInt 32 T.q
+  r : s.mem.readW (off B (win + 24)) 32 = BitVec.ofInt 32 T.r
+
+variable {L : Lay} {Z N : Nat}
+
+end VG.Proof.Rsa.X86.InvBatchRt
+
+end
+
+end
+
+/-! # Sequences of a batch, regrouped -/
+
+@[expose] public section
+
+namespace VG.Proof.Rsa.X86.InvBatchRt
+
+open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Rsa.X86.KeyRt VG.Impl.Rsa.X86.InvBatchRt
+open VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt VG.Proof.Rsa.X86.KeyRt VG.Proof.Weierstrass
+open VG.Proof.Weierstrass.X86.Inv (wordClob)
+
+variable {L : Lay} {B : Addr} {Z len N : Nat}
+
+theorem seq_assoc {a b c : Prog isa} {s : State} {Q : State → Prop} (h : WP isa (.seq (.seq a b) c) s Q) :
+    WP isa (.seq a (.seq b c)) s Q := by
+  rw [WP.seq_iff, WP.seq_iff] at h
+  exact WP.seq_iff.mpr (WP.mono h fun _ hu => WP.seq_iff.mpr hu)
+
+end VG.Proof.Rsa.X86.InvBatchRt
+
+end
+
+end
 
 /-! # A batch at a run-time width
 

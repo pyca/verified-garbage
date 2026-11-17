@@ -1,14 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.Modes.AArch64.CfbDec
-public import VerifiedGarbage.Proof.Modes.AArch64.Copy
+public import VerifiedGarbage.Proof.Modes.AArch64.CbcGroup
 import VerifiedGarbage.Proof.Modes.AArch64.Words
 import VerifiedGarbage.Proof.Modes.AArch64.Xor
 import VerifiedGarbage.Proof.Modes.AArch64.Steps
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Modes.CfbDec
-public import VerifiedGarbage.Proof.Modes.AArch64.CbcGroup
 import VerifiedGarbage.Proof.Modes.Addr
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 public import VerifiedGarbage.Proof.Framework.Mem

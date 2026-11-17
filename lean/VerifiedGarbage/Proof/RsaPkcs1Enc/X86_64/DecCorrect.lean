@@ -1,7 +1,6 @@
 module
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecSel
 
-import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecResult
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecResult
 import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncCorrect
 import VerifiedGarbage.Proof.RsaPkcs1Enc.Decrypt
 import VerifiedGarbage.Proof.Framework.Offset

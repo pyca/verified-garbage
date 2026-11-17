@@ -1,10 +1,9 @@
 module
 
-import VerifiedGarbage.Proof.X448.AArch64.Base.Negate
+public import VerifiedGarbage.Proof.X448.AArch64.Base.Step
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.Ed448.AArch64.Point56.AsFn
 meta import VerifiedGarbage.Proof.Ed448.AArch64.Point56.AsFn
-public import VerifiedGarbage.Proof.X448.AArch64.Base.Step
 meta import VerifiedGarbage.Proof.X448.AArch64.Base.Step
 import VerifiedGarbage.Proof.X448.AArch64.Base.Setup
 meta import VerifiedGarbage.Proof.X448.AArch64.Base.Setup
@@ -96,7 +95,6 @@ public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.TCB.AArch64.Isa
 public import VerifiedGarbage.Proof.Framework.Taint
 public import VerifiedGarbage.Impl.X448.AArch64.Base
-public import VerifiedGarbage.Proof.X448.AArch64.Base.Select
 public import VerifiedGarbage.Proof.X448.AArch64.Mem
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd

@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.KSStore
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.KSSetup
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.DivLoop
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Omega

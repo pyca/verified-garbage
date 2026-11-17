@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PHashCT
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PShape
-
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PShapeArgs
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.ShapeCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
@@ -16,10 +15,10 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
 import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
 import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PSeedHash
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashStep
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PHashArgs
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashStep
+
 /-! # Public addressing for shaping the full-width p candidate -/
 
 -- Formerly `VerifiedGarbage/Proof/Dsa/X86_64/Generation/PHashCopyCT.lean`, which only this module imported.

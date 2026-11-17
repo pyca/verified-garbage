@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Native.WindowZeroMask
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Native.WindowZero
 import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Mont.AArch64.P521Field.StreamMemory
 import VerifiedGarbage.Proof.Framework.Block
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Native.WindowZero
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.P521Native.Code
 import VerifiedGarbage.Proof.Weierstrass.Words
 import VerifiedGarbage.Proof.Framework.Lit

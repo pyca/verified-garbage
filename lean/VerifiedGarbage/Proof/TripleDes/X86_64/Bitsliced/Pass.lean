@@ -1,7 +1,7 @@
 module
+
 public import VerifiedGarbage.Proof.TripleDes.Bitslice.Pass
-public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Machine
-import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Step
+public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Step
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec

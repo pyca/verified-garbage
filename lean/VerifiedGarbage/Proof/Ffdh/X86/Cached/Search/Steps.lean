@@ -1,10 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.X86.Cached.Search.Data
-import VerifiedGarbage.Proof.Ffdh.X86.Cached.Search.Entry
+public import VerifiedGarbage.Proof.Ffdh.X86.Cached.Search.Entry
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.Ffdh.X86.Cached
-public import VerifiedGarbage.Proof.Ffdh.X86.Cached.Search.Words
 public import VerifiedGarbage.Proof.Framework.X86.Wp
 import VerifiedGarbage.Proof.Mont.X86.Instr
 public import VerifiedGarbage.Proof.Mont.X86.Words

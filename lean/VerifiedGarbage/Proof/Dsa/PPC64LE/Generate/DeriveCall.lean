@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Bignum.Octets
 public import VerifiedGarbage.Impl.Dsa.PPC64LE.Generate
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.Generate.Ctx
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.Generate.Entry
 public import VerifiedGarbage.Spec.Dsa.Derive
 public import VerifiedGarbage.Spec.RsaPss
 

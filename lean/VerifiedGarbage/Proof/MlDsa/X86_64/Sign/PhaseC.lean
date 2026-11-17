@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseD
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Blocks
 import VerifiedGarbage.Proof.MlDsa.Arith.DotSum
 import VerifiedGarbage.Proof.Framework.WriteBytes
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PrimsD
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseA4
 import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
 import VerifiedGarbage.Proof.MlKem.Mem

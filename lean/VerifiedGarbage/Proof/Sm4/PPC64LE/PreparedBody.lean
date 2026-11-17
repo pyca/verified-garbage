@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4.PPC64LE.Ecb
-import VerifiedGarbage.Proof.Sm4.PPC64LE.Crypt16
+import VerifiedGarbage.Proof.Sm4.PPC64LE.Group
 public import VerifiedGarbage.Impl.Sm4.PPC64LE.Prepared
 import VerifiedGarbage.Proof.Sm4.Planes
 import VerifiedGarbage.Proof.Framework.Offset

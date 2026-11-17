@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.Arm.CTBase
-public import VerifiedGarbage.Proof.AesGcm.Arm.Absorb
+public import VerifiedGarbage.Proof.AesGcm.Arm.Fn
 meta import VerifiedGarbage.Proof.AesGcm.Arm.CTBase
 import VerifiedGarbage.Proof.AesGcm.Arm.Flush
 meta import VerifiedGarbage.Proof.AesGcm.Arm.Flush

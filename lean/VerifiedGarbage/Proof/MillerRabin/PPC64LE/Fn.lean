@@ -1,11 +1,10 @@
 module
 
-import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Last
+public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Last
 public import VerifiedGarbage.Proof.MillerRabin.Contract
 import VerifiedGarbage.Proof.Ffdh.MillerRabin
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Eq
-public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Exp
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.Run
 public import VerifiedGarbage.Impl.MillerRabin.PPC64LE.Round
 import VerifiedGarbage.Proof.Framework.Range
@@ -13,7 +12,6 @@ import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.TCB.PPC64LE.Target
 import VerifiedGarbage.Proof.Bignum.PPC64LE.MontFn
 import VerifiedGarbage.Proof.MillerRabin.Representation
-import VerifiedGarbage.Proof.Bignum.Minv32
 import VerifiedGarbage.Proof.Bignum.Math
 
 /-! ### `MillerRabin.PPC64LE.Core`, which only this module used -/

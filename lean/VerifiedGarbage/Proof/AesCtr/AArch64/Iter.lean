@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.AesCtr.AArch64.Body
-import VerifiedGarbage.Proof.AesCtr.AArch64.Steps
 import VerifiedGarbage.Proof.AesCbc.AArch64.Body
 import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
 import VerifiedGarbage.Proof.Framework.Contract

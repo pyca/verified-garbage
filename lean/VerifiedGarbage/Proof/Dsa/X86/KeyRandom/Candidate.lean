@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Copy
 public import VerifiedGarbage.Proof.Dsa.RandomRange
 import VerifiedGarbage.Proof.Dsa.Zero
-import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Prepare
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Dsa.RandomEncoding

@@ -1,9 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcmSiv.Rounds
+public import VerifiedGarbage.Proof.AesGcmSiv.Scratch
 import VerifiedGarbage.Proof.AesGcmSiv.AArch64.FnCT
 import VerifiedGarbage.Proof.GcmSiv.Polyval
-public import VerifiedGarbage.Proof.AesGcmSiv.Scratch
 public import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Fn
 public import VerifiedGarbage.Impl.StackScratch.AArch64
 import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch

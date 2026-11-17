@@ -12,7 +12,7 @@ public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Spec
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Aes
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Gh48
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Loop48
-public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Pair
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Pow
 import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Contract
@@ -27,10 +27,8 @@ import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Loop48
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemMask
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Aes
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
-import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Gh
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Group
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Gh
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Pow
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.Base
 
 /-!

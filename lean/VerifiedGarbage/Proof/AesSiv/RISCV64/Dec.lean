@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.AesSiv.RISCV64.Enc
+public import VerifiedGarbage.Proof.AesSiv.RISCV64.Enc
 import VerifiedGarbage.Proof.AesCcm.BytesAt
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Cmac.Spec
@@ -8,8 +8,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.AesSiv.RISCV64.CtrLoop
 import VerifiedGarbage.Proof.AesSiv.RISCV64.Fn
 import VerifiedGarbage.Proof.AesSiv.RISCV64.Long
-public import VerifiedGarbage.Proof.AesSiv.RISCV64.Entry
-public import VerifiedGarbage.Proof.AesSiv.RISCV64.S2v
+public import VerifiedGarbage.Proof.AesSiv.RISCV64.Short
 
 /-!
 # AES-SIV on RISC-V: `decrypt`

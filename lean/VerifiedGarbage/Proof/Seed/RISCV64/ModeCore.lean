@@ -4,8 +4,6 @@ public import VerifiedGarbage.Proof.Modes.RISCV64.Shared
 public import VerifiedGarbage.Impl.Seed.RISCV64.Modes
 public import VerifiedGarbage.Proof.Seed.ModeBytes
 public import VerifiedGarbage.Proof.Seed.RISCV64.Ecb
-import VerifiedGarbage.Proof.Seed.RISCV64.Batch
-public import VerifiedGarbage.Proof.Seed.RISCV64.Setup
 import VerifiedGarbage.Proof.Seed.Rounds
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.RISCV64.Steps

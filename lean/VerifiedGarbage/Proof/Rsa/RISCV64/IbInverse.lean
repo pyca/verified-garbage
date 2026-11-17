@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.Divstep.OddInputDef
 public import VerifiedGarbage.Proof.Divstep.TcSLaw
-import VerifiedGarbage.Proof.Rsa.Divstep.Bound
 import VerifiedGarbage.Proof.Rsa.Divstep.OddInput
 public import VerifiedGarbage.Proof.Rsa.Divstep.InvResult
 import VerifiedGarbage.Proof.Framework.Block

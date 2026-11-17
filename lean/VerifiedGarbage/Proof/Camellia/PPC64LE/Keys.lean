@@ -1,8 +1,7 @@
 module
 
-import VerifiedGarbage.Proof.Camellia.PPC64LE.Crypt8
+public import VerifiedGarbage.Proof.Camellia.PPC64LE.Crypt8
 public import VerifiedGarbage.Proof.Camellia.PPC64LE.KeyChecks
-public import VerifiedGarbage.Proof.Camellia.PPC64LE.Core
 import VerifiedGarbage.Proof.Camellia.Common
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec

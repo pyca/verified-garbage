@@ -1,11 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.AesOcb.Rounds
-public import VerifiedGarbage.Proof.AesOcb.PPC64LE.Contract
 public import VerifiedGarbage.Proof.AesOcb.Scratch
+public import VerifiedGarbage.Proof.AesOcb.PPC64LE.Seal
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Impl.AesOcb.PPC64LE
-public import VerifiedGarbage.Proof.AesOcb.PPC64LE.Seal
 public import VerifiedGarbage.Proof.AesOcb.PPC64LE.Env
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Spec.Ocb

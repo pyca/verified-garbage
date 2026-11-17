@@ -1,16 +1,13 @@
 module
+
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InnerBank
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFinalLoad
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFirstMemory
 public import VerifiedGarbage.Proof.MlDsa.Arith.Representation
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductPassMemory
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductMemoryCorrect
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Representation
-
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedProductField
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductMemoryBankField
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductMemoryField
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductMemoryCorrect
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseSliceComposition
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseBankField
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversalCorrect

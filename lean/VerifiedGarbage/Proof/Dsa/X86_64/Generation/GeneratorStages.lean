@@ -3,8 +3,7 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorPlan
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.GeneratorStep
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
-public import VerifiedGarbage.Proof.Dsa.X86_64.Finish
-
+public import VerifiedGarbage.Proof.Dsa.X86_64.Return
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorFromFrame
 import VerifiedGarbage.Impl.Dsa.Generation.Layout
@@ -17,6 +16,7 @@ import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorModulus
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Basic
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorInput
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Memory
+
 /-! # Generator range and power stages preserve their common memory invariant -/
 
 -- Formerly `VerifiedGarbage/Proof/Dsa/X86_64/Generation/GeneratorFootprint.lean`, which only this module imported.

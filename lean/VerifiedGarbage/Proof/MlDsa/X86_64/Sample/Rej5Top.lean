@@ -1,9 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.RejNtt5
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Parse
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Top
 import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Top
 import VerifiedGarbage.Proof.MlDsa.Sample.Hash
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej5Batch
 import VerifiedGarbage.Proof.MlKem.X86_64.S4Top

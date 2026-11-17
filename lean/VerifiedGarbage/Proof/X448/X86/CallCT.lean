@@ -1,10 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.X448.Field16Contract
+public import VerifiedGarbage.Proof.X448.X86.FnContract
 public import VerifiedGarbage.Proof.X448.X86.Ops
 public import VerifiedGarbage.Proof.Framework.X86.RelCT
 public import VerifiedGarbage.Proof.Framework.X86.TaintErase
-public import VerifiedGarbage.Proof.X448.X86.FnContract
 import VerifiedGarbage.Proof.X448.X86.FnVerified
 
 /-!

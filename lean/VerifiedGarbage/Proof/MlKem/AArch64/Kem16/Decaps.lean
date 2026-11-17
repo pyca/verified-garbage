@@ -6,29 +6,26 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.DecapsStart
 public import VerifiedGarbage.Impl.MlKem.AArch64.Kem
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Semantics
-public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Bounds
+public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Step
 public import VerifiedGarbage.Proof.MlKem.AArch64.KemB
 public import VerifiedGarbage.Proof.MlKem.AArch64.KemEnc
 public import VerifiedGarbage.Proof.MlKem.AArch64.KemOps
 public import VerifiedGarbage.Proof.MlKem.AArch64.Lay
 public import VerifiedGarbage.Proof.MlKem.Mem
 public import VerifiedGarbage.TCB.AArch64.Target
-
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.PrfUsing
 import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Interface
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Tables
-import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemVDecode
-import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemURow
-import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemTransformFrames
+import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.VRest
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.DecryptStart
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TableApart
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.EncapsTiming
 import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Correct
-import VerifiedGarbage.Proof.MlKem.AArch64.DecapsCmp
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Tail
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemMatrixCall
+
 /-! # The 16-bit decapsulation's postcondition and `J(z ‖ c)`
 
 `DoneW` and `post_ofW`: what the re-encryption, the comparison and the

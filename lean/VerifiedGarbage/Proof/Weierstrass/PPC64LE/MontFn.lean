@@ -14,7 +14,6 @@ import VerifiedGarbage.Proof.Mont.PPC64LE.P256
 import VerifiedGarbage.Proof.Mont.RangeCover
 public import VerifiedGarbage.Impl.Mont.PPC64LE
 public import VerifiedGarbage.Proof.Mont.PPC64LE.Csub
-public import VerifiedGarbage.Proof.Mont.PPC64LE.AddSub
 public import VerifiedGarbage.Proof.Mont.PPC64LE.Words
 public import VerifiedGarbage.TCB.PPC64LE.Target
 public import VerifiedGarbage.Proof.Mont.Words32

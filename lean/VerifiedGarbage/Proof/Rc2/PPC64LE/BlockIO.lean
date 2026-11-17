@@ -1,8 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Rc2.PPC64LE.Mix
+public import VerifiedGarbage.Proof.Rc2.PPC64LE.Rounds
 public import VerifiedGarbage.Proof.Rc2.Memory
-import VerifiedGarbage.Proof.Rc2.PPC64LE.Rounds
 
 /-! # RC2 on PPC64LE: loading and storing the block -/
 

@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Ffdh.X86_64.DerivePublic.Correct
+public import VerifiedGarbage.Proof.Ffdh.X86_64.DerivePublic.Correct
 public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.StagesCT
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
 import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.CT
@@ -31,7 +31,6 @@ meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Bignum.Octets
 public import VerifiedGarbage.Proof.Bignum.X86_64.R2Impl
-public import VerifiedGarbage.Proof.Ffdh.X86_64.DerivePublic.Start
 
 /-! # FFDH public-value derivation on x86-64: constant time
 

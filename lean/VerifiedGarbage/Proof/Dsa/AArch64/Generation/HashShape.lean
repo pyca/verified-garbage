@@ -2,15 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.Generation.PCandidate
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.HashPlan
-
 import VerifiedGarbage.Proof.Dsa.Generation.Memory
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Dsa.AArch64.Run
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Dsa.Generation.Contributions
 import VerifiedGarbage.Proof.Dsa.Digest
+
 /-! # The stored hash suffix determines exactly the specified p candidate -/
 
 -- Formerly `VerifiedGarbage/Proof/Dsa/AArch64/Generation/HashValue.lean`, which only this module imported.

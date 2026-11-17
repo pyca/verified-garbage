@@ -13,7 +13,6 @@ import VerifiedGarbage.Proof.Ed448.Arm.PublicKey.Base
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Ed448.Arm.BaseEncode
 import VerifiedGarbage.Proof.Ed448.Arm.PublicKey.Hash
-import VerifiedGarbage.Proof.Ed448.Arm.PublicKey.Prune
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Arm.Lit

@@ -4,15 +4,12 @@ public import VerifiedGarbage.Impl.Dsa.Arm.Prevalidated
 public import VerifiedGarbage.Spec.Dsa.Prevalidated
 public import VerifiedGarbage.Proof.Dsa.Arm.Contract
 public import VerifiedGarbage.Proof.Dsa.Arm.Env
-public import VerifiedGarbage.Proof.Dsa.Arm.GenerateEntry
+public import VerifiedGarbage.Proof.Dsa.Arm.GenerateCheck
 public import VerifiedGarbage.Proof.Dsa.Arm.Compute
-import VerifiedGarbage.Proof.Dsa.Arm.GenerateCheck
 import VerifiedGarbage.Proof.Dsa.Arm.VerifyCorrect
 import VerifiedGarbage.Proof.Dsa.Arm.SignCorrect
-import VerifiedGarbage.Proof.Dsa.Arm.PublicValidationCall
 import VerifiedGarbage.Proof.Dsa.Arm.Body
 import VerifiedGarbage.Proof.Dsa.Arm.Shape
-import VerifiedGarbage.Proof.Dsa.Arm.Install
 import VerifiedGarbage.Proof.Dsa.Validation
 import VerifiedGarbage.Proof.Dsa.OutputBytes
 import VerifiedGarbage.Proof.Framework.Omega

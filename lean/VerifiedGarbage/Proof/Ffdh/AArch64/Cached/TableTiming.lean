@@ -2,9 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.InitialTiming
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.BasisTiming
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PrecomputeBasisLoop
-import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PrecomputeTable
+import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Framework.TaintBatch

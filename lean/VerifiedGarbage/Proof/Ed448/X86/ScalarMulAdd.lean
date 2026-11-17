@@ -1,7 +1,7 @@
 module
+
 public import VerifiedGarbage.Proof.Ed448.X86.ScalarIO
-public import VerifiedGarbage.Proof.X448.X86.Row
-import VerifiedGarbage.Proof.X448.X86.Init
+public import VerifiedGarbage.Proof.X448.X86.FnContract
 import VerifiedGarbage.Proof.X448.X86.RowPass
 import VerifiedGarbage.Proof.X448.X86.Carry
 import VerifiedGarbage.Proof.Framework.Contract

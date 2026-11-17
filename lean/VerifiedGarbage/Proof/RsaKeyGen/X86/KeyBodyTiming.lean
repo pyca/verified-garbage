@@ -1,26 +1,49 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyBody
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyImportedPair
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyOutputReady
 public import VerifiedGarbage.Proof.Framework.X86.RelCT
-
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyScratchFrame
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyExportState
 import VerifiedGarbage.Proof.Rsa.KeyWorkspace
 import VerifiedGarbage.Proof.Mont.X86.WordOps
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyWritePortTiming
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyDSelectTiming
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Impl.RsaKeyGen.X86.Key
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyOutputReady
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateWidthTiming
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyGeometry
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyEntry
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Framework.X86.Call
 import VerifiedGarbage.Impl.RsaKeyGen.X86.Candidate
 import VerifiedGarbage.Proof.Framework.X86.Wp
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyInput
+public import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyIO
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyWritePort
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyOutputMap
+
+/-! ### `RsaKeyGen.X86.KeyExportState`, which this module and modules that import it used -/
+
+section
+
+/-! # Each masked output retains the header, zero array and validity bit for the next port -/
+
+@[expose] public section
+namespace VG.Proof.RsaKeyGen.X86.Key
+open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Rsa.X86.Keys
+open VG.Impl.Rsa.X86.Keys hiding slot
+open VG.Impl.RsaKeyGen.X86.Key
+
+structure ExportState (E : Environment) (s : State) : Prop where
+  input : Input E s
+  zero : num s.mem E.base E.n aZero = 0
+  bit : slot s.mem E.base kOk ≤ 1
+
+end VG.Proof.RsaKeyGen.X86.Key
+
+end
+
+end
+
 /-! # The complete native key body obeys the shared public exponent and retry leak -/
 
 -- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/KeyEntryTiming.lean`, which only this module imported.

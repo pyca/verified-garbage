@@ -1,7 +1,6 @@
 module
-public import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Chunk
 
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Check
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Check
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Loop
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec

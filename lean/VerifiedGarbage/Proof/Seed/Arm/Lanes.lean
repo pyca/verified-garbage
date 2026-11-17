@@ -16,7 +16,7 @@ section
 # `g8` on ARMv7
 
 `g8_ok`: `g8` replaces each of the eight words in `tSlot 0 … tSlot 7` with
-`G` of it. As on AArch64 (`Proof/Seed/AArch64/G16.lean`): its linear
+`G` of it. As on AArch64 (`Proof/Seed/AArch64/Steps.lean`): its linear
 layers, which build their masks with `movw` and `movt`, are checked by
 evaluation over the lane domain (`g8In_check`, `g8Out_check`: the planes of
 `M`, and the words from the S-box's planes, as `Proof/Seed/G8.lean` states
@@ -189,7 +189,7 @@ end
 /-!
 # The arrays of 32-bit words in the scratch buffer
 
-As on AArch64 (`Proof/Seed/AArch64/Lanes.lean`): the ECB code keeps eight
+As on AArch64 (`Proof/Seed/AArch64/Steps.lean`): the ECB code keeps eight
 lanes of each of its arrays (`G`'s words, `a`, `c`, `d` and the blocks'
 words) in the scratch buffer at `r8`: lane `b` of the array at slot `k` is
 slot `k + b` (`lv`). This file has the slots' loads and stores, and

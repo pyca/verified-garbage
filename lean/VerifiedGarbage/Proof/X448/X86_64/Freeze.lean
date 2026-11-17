@@ -1,10 +1,9 @@
 module
-public import VerifiedGarbage.Proof.X448.X86_64.Field
-public import VerifiedGarbage.Proof.X448.X86_64.Swap
 
+public import VerifiedGarbage.Proof.X448.X86_64.AddSub
+public import VerifiedGarbage.Proof.X448.X86_64.Swap
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.X448.X86_64.AddSub
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PlainSimp
