@@ -109,16 +109,17 @@ theorem hbu_okS {c : Prog isa} (hc : Callee c (fun stk => hintBitUnpackContract 
   rw [g0, g1, g2, g3, hs.addrE m.py l0, hs.addrE m.ph h0, imm_toNat ll, imm_toNat lo, hb] at this
   simp only [State.withRegions_mem, State.withRegions_gpr, hr₃ .r0 (by decide)] at this
   -- The hint is apart from the released frame.
+  have e4 : hl * 4 = 1024 * (len - om) := by rw [m.hh]; omega_arith
   have hd : ∀ r ∈ [below s (4 + stackUse c)], Region.Disjoint ⟨lpa L h, 1024 * (len - om)⟩ r := fun r hr => by
     rw [List.mem_singleton.mp hr]
-    have := (hs.kE m.ph (by have := hc.stack; omega_arith) rfl).symm
-    rwa [show hl * 4 = 1024 * (len - om) by rw [m.hh]; omega_arith] at this
+    have := (hs.kE m.ph (n := 4 + stackUse c) (by have := hc.stack; omega_arith) rfl).symm
+    rw [e4] at this
+    exact this
   cases e : hintBitUnpack om (len - om) (bytesAt s.mem (lpa L y) len) with
-  | none => rw [e] at this ⊢; exact this
+  | none => rw [e] at this; exact this
   | some hint =>
-    rw [e] at this ⊢
-    exact ⟨this.1, Proof.MlDsa.Verify.hintIs_frame hm₃ (by rw [← show hl * 4 = 1024 * (len - om) by
-      rw [m.hh]; omega_arith]; omega_arith) hd this.2⟩
+    rw [e] at this
+    exact ⟨this.1, Proof.MlDsa.Verify.hintIs_frame hm₃ (by rw [← e4]; omega_arith) hd this.2⟩
 
 theorem hbu_tr {c : Prog isa} (hc : Callee c (fun stk => hintBitUnpackContract Arm.abi stk) S) (hS : 4 + S ≤ STK)
     {name : String} (m : HbuOk L Wb y len om h hl) {P : State → State → Prop}
@@ -237,7 +238,7 @@ theorem bu_okS {c : Prog isa} (hc : Callee c (fun stk => bitUnpackContract Arm.a
   simp only [State.withRegions_mem] at this
   -- The polynomial is apart from the released frame.
   exact Proof.MlDsa.Verify.polyIs_frame hm₃ (fun r hr => by
-    rw [List.mem_singleton.mp hr]; exact (hs.kE m.pf (by have := hc.stack; omega_arith) rfl).symm) this
+    rw [List.mem_singleton.mp hr]; exact (hs.kE m.pf (n := 4 + stackUse c) (by have := hc.stack; omega_arith) rfl).symm) this
 
 theorem bu_tr {c : Prog isa} (hc : Callee c (fun stk => bitUnpackContract Arm.abi stk) S) (hS : 4 + S ≤ STK)
     {name : String} (m : BuOk L Wb v len a b f) {P : State → State → Prop}
@@ -358,7 +359,7 @@ theorem ball_okS {cd : Prog isa} (hc : Callee cd (fun stk => sampleInBallContrac
   -- The polynomial is apart from the released frame.
   obtain hd : ∀ r ∈ [below s (4 + stackUse cd)], (Proof.MlDsa.Arith.polyRegion (lpa L c)).Disjoint r :=
     fun r hr => by
-      rw [List.mem_singleton.mp hr]; exact (hs.kE m.pc (by have := hc.stack; omega_arith) rfl).symm
+      rw [List.mem_singleton.mp hr]; exact (hs.kE m.pc (n := 4 + stackUse cd) (by have := hc.stack; omega_arith) rfl).symm
   refine hQ s' (hs.keptW [tri c 1024, tri w 2048] (by have := hc.stack; omega_arith) hk)
     (fun e => Proof.MlDsa.Verify.reduced_frame hm₃ hd (this.1 e)) ?_
   rw [Proof.MlDsa.Verify.polyAt_frame hm₃ hd]
