@@ -181,7 +181,7 @@ vg_sha512_256_init:
 	.p2align 6
 
 vg_sha384_finalize_sha512:
-	sub sp, sp, #1376
+	sub sp, sp, #688
 	add x3, sp, #0
 	str x30, [sp, #-16]!
 	str x19, [x3, #640]
@@ -278,7 +278,7 @@ vg_sha384_finalize_sha512:
 	ldr x24, [x20, #680]
 	ldr x20, [x20, #648]
 	ldr x30, [sp], #16
-	add sp, sp, #1376
+	add sp, sp, #688
 	ret
 	.p2align 6
 
@@ -492,7 +492,7 @@ vg_sha384_digest_sha512:
 	.p2align 6
 
 vg_sha384_finalize:
-	sub sp, sp, #1376
+	sub sp, sp, #688
 	add x3, sp, #0
 	str x30, [sp, #-16]!
 	str x19, [x3, #640]
@@ -589,7 +589,7 @@ vg_sha384_finalize:
 	ldr x24, [x20, #680]
 	ldr x20, [x20, #648]
 	ldr x30, [sp], #16
-	add sp, sp, #1376
+	add sp, sp, #688
 	ret
 	.p2align 6
 
@@ -803,7 +803,7 @@ vg_sha384_digest:
 	.p2align 6
 
 vg_sha512_update_sha512:
-	sub sp, sp, #1376
+	sub sp, sp, #688
 	add x4, sp, #0
 	str x30, [sp, #-16]!
 	str x19, [x4, #640]
@@ -952,12 +952,12 @@ vg_sha512_update_sha512:
 	ldr x24, [x20, #680]
 	ldr x20, [x20, #648]
 	ldr x30, [sp], #16
-	add sp, sp, #1376
+	add sp, sp, #688
 	ret
 	.p2align 6
 
 vg_sha512_finalize_sha512:
-	sub sp, sp, #1376
+	sub sp, sp, #688
 	add x3, sp, #0
 	str x30, [sp, #-16]!
 	str x19, [x3, #640]
@@ -1060,7 +1060,7 @@ vg_sha512_finalize_sha512:
 	ldr x24, [x20, #680]
 	ldr x20, [x20, #648]
 	ldr x30, [sp], #16
-	add sp, sp, #1376
+	add sp, sp, #688
 	ret
 	.p2align 6
 
@@ -1280,7 +1280,7 @@ vg_sha512_digest_sha512:
 	.p2align 6
 
 vg_sha512_update:
-	sub sp, sp, #1376
+	sub sp, sp, #688
 	add x4, sp, #0
 	str x30, [sp, #-16]!
 	str x19, [x4, #640]
@@ -1429,12 +1429,12 @@ vg_sha512_update:
 	ldr x24, [x20, #680]
 	ldr x20, [x20, #648]
 	ldr x30, [sp], #16
-	add sp, sp, #1376
+	add sp, sp, #688
 	ret
 	.p2align 6
 
 vg_sha512_finalize:
-	sub sp, sp, #1376
+	sub sp, sp, #688
 	add x3, sp, #0
 	str x30, [sp, #-16]!
 	str x19, [x3, #640]
@@ -1537,7 +1537,7 @@ vg_sha512_finalize:
 	ldr x24, [x20, #680]
 	ldr x20, [x20, #648]
 	ldr x30, [sp], #16
-	add sp, sp, #1376
+	add sp, sp, #688
 	ret
 	.p2align 6
 
@@ -1757,7 +1757,7 @@ vg_sha512_digest:
 	.p2align 6
 
 vg_sha512_224_finalize_sha512:
-	sub sp, sp, #1376
+	sub sp, sp, #688
 	add x3, sp, #0
 	str x30, [sp, #-16]!
 	str x19, [x3, #640]
@@ -1848,7 +1848,7 @@ vg_sha512_224_finalize_sha512:
 	ldr x24, [x20, #680]
 	ldr x20, [x20, #648]
 	ldr x30, [sp], #16
-	add sp, sp, #1376
+	add sp, sp, #688
 	ret
 	.p2align 6
 
@@ -2056,7 +2056,7 @@ vg_sha512_224_digest_sha512:
 	.p2align 6
 
 vg_sha512_224_finalize:
-	sub sp, sp, #1376
+	sub sp, sp, #688
 	add x3, sp, #0
 	str x30, [sp, #-16]!
 	str x19, [x3, #640]
@@ -2147,7 +2147,7 @@ vg_sha512_224_finalize:
 	ldr x24, [x20, #680]
 	ldr x20, [x20, #648]
 	ldr x30, [sp], #16
-	add sp, sp, #1376
+	add sp, sp, #688
 	ret
 	.p2align 6
 
@@ -2355,7 +2355,7 @@ vg_sha512_224_digest:
 	.p2align 6
 
 vg_sha512_256_finalize_sha512:
-	sub sp, sp, #1376
+	sub sp, sp, #688
 	add x3, sp, #0
 	str x30, [sp, #-16]!
 	str x19, [x3, #640]
@@ -2446,7 +2446,7 @@ vg_sha512_256_finalize_sha512:
 	ldr x24, [x20, #680]
 	ldr x20, [x20, #648]
 	ldr x30, [sp], #16
-	add sp, sp, #1376
+	add sp, sp, #688
 	ret
 	.p2align 6
 
@@ -2654,7 +2654,7 @@ vg_sha512_256_digest_sha512:
 	.p2align 6
 
 vg_sha512_256_finalize:
-	sub sp, sp, #1376
+	sub sp, sp, #688
 	add x3, sp, #0
 	str x30, [sp, #-16]!
 	str x19, [x3, #640]
@@ -2745,7 +2745,7 @@ vg_sha512_256_finalize:
 	ldr x24, [x20, #680]
 	ldr x20, [x20, #648]
 	ldr x30, [sp], #16
-	add sp, sp, #1376
+	add sp, sp, #688
 	ret
 	.p2align 6
 

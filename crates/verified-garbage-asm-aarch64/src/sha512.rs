@@ -101,12 +101,12 @@ pub const VG_SHA384_FINALIZE_SHA512_FEATURES: verified_garbage_cpu::Features = v
 /// * `count` must be the exact length of the message: messages of 2⁶⁴ bytes or more are not supported.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the 1392 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `out` may overlap the 704 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha384_finalize_sha512(state: *mut [u8; 192], count: u64, out: *mut [u8; 48]) {
     core::arch::naked_asm!(
-        r".inst 0xd11583ff,0x910003e3,0xf81f0ffe,0xf9014073,0xf9014474,0xf9014875,0xf9014c76,0xf9015077
+        r".inst 0xd10ac3ff,0x910003e3,0xf81f0ffe,0xf9014073,0xf9014474,0xf9014875,0xf9014c76,0xf9015077
 .inst 0xf9015478,0x91000013,0x91000074,0x91000055,0x91000036,0xd2800fe9,0x8a0902d7,0xd2801009
 .inst 0x8b17026c,0x39010189,0x910006f7,0x91003ef8,0xd347ff18
 20:
@@ -143,7 +143,7 @@ cbz x24, 20b
 .inst 0xf9400269,0xdac00d29,0xf90002a9,0xf9400669,0xdac00d29,0xf90006a9,0xf9400a69,0xdac00d29
 .inst 0xf9000aa9,0xf9400e69,0xdac00d29,0xf9000ea9,0xf9401269,0xdac00d29,0xf90012a9,0xf9401669
 .inst 0xdac00d29,0xf90016a9,0xf9414293,0xf9414a95,0xf9414e96,0xf9415297,0xf9415698,0xf9414694
-.inst 0xf84107fe,0x911583ff,0xd65f03c0
+.inst 0xf84107fe,0x910ac3ff,0xd65f03c0
 .p2align 6",
         vg_sha512_compress_sha512 = sym super::sha512::vg_sha512_compress_sha512::vg_sha512_compress_sha512,
     )
@@ -241,11 +241,11 @@ bl {vg_sha512_compress_sha512}
 /// * `count` must be the exact length of the message: messages of 2⁶⁴ bytes or more are not supported.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the 1392 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `out` may overlap the 704 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha384_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 48]) {
     core::arch::naked_asm!(
-        r".inst 0xd11583ff,0x910003e3,0xf81f0ffe,0xf9014073,0xf9014474,0xf9014875,0xf9014c76,0xf9015077
+        r".inst 0xd10ac3ff,0x910003e3,0xf81f0ffe,0xf9014073,0xf9014474,0xf9014875,0xf9014c76,0xf9015077
 .inst 0xf9015478,0x91000013,0x91000074,0x91000055,0x91000036,0xd2800fe9,0x8a0902d7,0xd2801009
 .inst 0x8b17026c,0x39010189,0x910006f7,0x91003ef8,0xd347ff18
 20:
@@ -282,7 +282,7 @@ cbz x24, 20b
 .inst 0xf9400269,0xdac00d29,0xf90002a9,0xf9400669,0xdac00d29,0xf90006a9,0xf9400a69,0xdac00d29
 .inst 0xf9000aa9,0xf9400e69,0xdac00d29,0xf9000ea9,0xf9401269,0xdac00d29,0xf90012a9,0xf9401669
 .inst 0xdac00d29,0xf90016a9,0xf9414293,0xf9414a95,0xf9414e96,0xf9415297,0xf9415698,0xf9414694
-.inst 0xf84107fe,0x911583ff,0xd65f03c0
+.inst 0xf84107fe,0x910ac3ff,0xd65f03c0
 .p2align 6",
         vg_sha512_compress = sym super::sha512::vg_sha512_compress::vg_sha512_compress,
     )
@@ -377,12 +377,12 @@ pub const VG_SHA512_UPDATE_SHA512_FEATURES: verified_garbage_cpu::Features = ver
 /// * `state` must be valid for reads and writes of 192 bytes.
 /// * `data` must be valid for reads of `len` bytes.
 /// * `state` must not overlap `data` (distinct Rust objects never do).
-/// * Neither `state` nor `data` may overlap the 1392 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `data` may overlap the 704 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha512_update_sha512(state: *mut [u8; 192], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        r".inst 0xd11583ff,0x910003e4,0xf81f0ffe,0xf9014093,0xf9014494,0xf9014895,0xf9014c96,0xf9015097
+        r".inst 0xd10ac3ff,0x910003e4,0xf81f0ffe,0xf9014093,0xf9014494,0xf9014895,0xf9014c96,0xf9015097
 .inst 0xf9015498,0x91000013,0x91000094,0x91000055,0x91000076,0xd2800fe9,0x8a090037
 cbz x22, 20f
 22:
@@ -471,7 +471,7 @@ cbnz x22, 22b
 b 21f
 20:
 21:
-.inst 0xf9414293,0xf9414a95,0xf9414e96,0xf9415297,0xf9415698,0xf9414694,0xf84107fe,0x911583ff
+.inst 0xf9414293,0xf9414a95,0xf9414e96,0xf9415297,0xf9415698,0xf9414694,0xf84107fe,0x910ac3ff
 .inst 0xd65f03c0
 .p2align 6",
         vg_sha512_compress_sha512 = sym super::sha512::vg_sha512_compress_sha512::vg_sha512_compress_sha512,
@@ -492,12 +492,12 @@ pub const VG_SHA512_FINALIZE_SHA512_FEATURES: verified_garbage_cpu::Features = v
 /// * `count` must be the exact length of the message: messages of 2⁶⁴ bytes or more are not supported.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the 1392 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `out` may overlap the 704 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha512_finalize_sha512(state: *mut [u8; 192], count: u64, out: *mut [u8; 64]) {
     core::arch::naked_asm!(
-        r".inst 0xd11583ff,0x910003e3,0xf81f0ffe,0xf9014073,0xf9014474,0xf9014875,0xf9014c76,0xf9015077
+        r".inst 0xd10ac3ff,0x910003e3,0xf81f0ffe,0xf9014073,0xf9014474,0xf9014875,0xf9014c76,0xf9015077
 .inst 0xf9015478,0x91000013,0x91000074,0x91000055,0x91000036,0xd2800fe9,0x8a0902d7,0xd2801009
 .inst 0x8b17026c,0x39010189,0x910006f7,0x91003ef8,0xd347ff18
 20:
@@ -534,7 +534,7 @@ cbz x24, 20b
 .inst 0xf9400269,0xdac00d29,0xf90002a9,0xf9400669,0xdac00d29,0xf90006a9,0xf9400a69,0xdac00d29
 .inst 0xf9000aa9,0xf9400e69,0xdac00d29,0xf9000ea9,0xf9401269,0xdac00d29,0xf90012a9,0xf9401669
 .inst 0xdac00d29,0xf90016a9,0xf9401a69,0xdac00d29,0xf9001aa9,0xf9401e69,0xdac00d29,0xf9001ea9
-.inst 0xf9414293,0xf9414a95,0xf9414e96,0xf9415297,0xf9415698,0xf9414694,0xf84107fe,0x911583ff
+.inst 0xf9414293,0xf9414a95,0xf9414e96,0xf9415297,0xf9415698,0xf9414694,0xf84107fe,0x910ac3ff
 .inst 0xd65f03c0
 .p2align 6",
         vg_sha512_compress_sha512 = sym super::sha512::vg_sha512_compress_sha512::vg_sha512_compress_sha512,
@@ -631,11 +631,11 @@ bl {vg_sha512_compress_sha512}
 /// * `state` must be valid for reads and writes of 192 bytes.
 /// * `data` must be valid for reads of `len` bytes.
 /// * `state` must not overlap `data` (distinct Rust objects never do).
-/// * Neither `state` nor `data` may overlap the 1392 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `data` may overlap the 704 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha512_update(state: *mut [u8; 192], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        r".inst 0xd11583ff,0x910003e4,0xf81f0ffe,0xf9014093,0xf9014494,0xf9014895,0xf9014c96,0xf9015097
+        r".inst 0xd10ac3ff,0x910003e4,0xf81f0ffe,0xf9014093,0xf9014494,0xf9014895,0xf9014c96,0xf9015097
 .inst 0xf9015498,0x91000013,0x91000094,0x91000055,0x91000076,0xd2800fe9,0x8a090037
 cbz x22, 20f
 22:
@@ -724,7 +724,7 @@ cbnz x22, 22b
 b 21f
 20:
 21:
-.inst 0xf9414293,0xf9414a95,0xf9414e96,0xf9415297,0xf9415698,0xf9414694,0xf84107fe,0x911583ff
+.inst 0xf9414293,0xf9414a95,0xf9414e96,0xf9415297,0xf9415698,0xf9414694,0xf84107fe,0x910ac3ff
 .inst 0xd65f03c0
 .p2align 6",
         vg_sha512_compress = sym super::sha512::vg_sha512_compress::vg_sha512_compress,
@@ -742,11 +742,11 @@ b 21f
 /// * `count` must be the exact length of the message: messages of 2⁶⁴ bytes or more are not supported.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the 1392 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `out` may overlap the 704 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha512_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 64]) {
     core::arch::naked_asm!(
-        r".inst 0xd11583ff,0x910003e3,0xf81f0ffe,0xf9014073,0xf9014474,0xf9014875,0xf9014c76,0xf9015077
+        r".inst 0xd10ac3ff,0x910003e3,0xf81f0ffe,0xf9014073,0xf9014474,0xf9014875,0xf9014c76,0xf9015077
 .inst 0xf9015478,0x91000013,0x91000074,0x91000055,0x91000036,0xd2800fe9,0x8a0902d7,0xd2801009
 .inst 0x8b17026c,0x39010189,0x910006f7,0x91003ef8,0xd347ff18
 20:
@@ -783,7 +783,7 @@ cbz x24, 20b
 .inst 0xf9400269,0xdac00d29,0xf90002a9,0xf9400669,0xdac00d29,0xf90006a9,0xf9400a69,0xdac00d29
 .inst 0xf9000aa9,0xf9400e69,0xdac00d29,0xf9000ea9,0xf9401269,0xdac00d29,0xf90012a9,0xf9401669
 .inst 0xdac00d29,0xf90016a9,0xf9401a69,0xdac00d29,0xf9001aa9,0xf9401e69,0xdac00d29,0xf9001ea9
-.inst 0xf9414293,0xf9414a95,0xf9414e96,0xf9415297,0xf9415698,0xf9414694,0xf84107fe,0x911583ff
+.inst 0xf9414293,0xf9414a95,0xf9414e96,0xf9415297,0xf9415698,0xf9414694,0xf84107fe,0x910ac3ff
 .inst 0xd65f03c0
 .p2align 6",
         vg_sha512_compress = sym super::sha512::vg_sha512_compress::vg_sha512_compress,
@@ -881,12 +881,12 @@ pub const VG_SHA512_224_FINALIZE_SHA512_FEATURES: verified_garbage_cpu::Features
 /// * `count` must be the exact length of the message: messages of 2⁶⁴ bytes or more are not supported.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the 1392 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `out` may overlap the 704 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha512_224_finalize_sha512(state: *mut [u8; 192], count: u64, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
-        r".inst 0xd11583ff,0x910003e3,0xf81f0ffe,0xf9014073,0xf9014474,0xf9014875,0xf9014c76,0xf9015077
+        r".inst 0xd10ac3ff,0x910003e3,0xf81f0ffe,0xf9014073,0xf9014474,0xf9014875,0xf9014c76,0xf9015077
 .inst 0xf9015478,0x91000013,0x91000074,0x91000055,0x91000036,0xd2800fe9,0x8a0902d7,0xd2801009
 .inst 0x8b17026c,0x39010189,0x910006f7,0x91003ef8,0xd347ff18
 20:
@@ -922,7 +922,7 @@ bl {vg_sha512_compress_sha512}
 cbz x24, 20b
 .inst 0xf9400269,0xdac00d29,0xf90002a9,0xf9400669,0xdac00d29,0xf90006a9,0xf9400a69,0xdac00d29
 .inst 0xf9000aa9,0xb9401e69,0x5ac00929,0xb9001aa9,0xf9414293,0xf9414a95,0xf9414e96,0xf9415297
-.inst 0xf9415698,0xf9414694,0xf84107fe,0x911583ff,0xd65f03c0
+.inst 0xf9415698,0xf9414694,0xf84107fe,0x910ac3ff,0xd65f03c0
 .p2align 6",
         vg_sha512_compress_sha512 = sym super::sha512::vg_sha512_compress_sha512::vg_sha512_compress_sha512,
     )
@@ -1019,11 +1019,11 @@ bl {vg_sha512_compress_sha512}
 /// * `count` must be the exact length of the message: messages of 2⁶⁴ bytes or more are not supported.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the 1392 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `out` may overlap the 704 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha512_224_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
-        r".inst 0xd11583ff,0x910003e3,0xf81f0ffe,0xf9014073,0xf9014474,0xf9014875,0xf9014c76,0xf9015077
+        r".inst 0xd10ac3ff,0x910003e3,0xf81f0ffe,0xf9014073,0xf9014474,0xf9014875,0xf9014c76,0xf9015077
 .inst 0xf9015478,0x91000013,0x91000074,0x91000055,0x91000036,0xd2800fe9,0x8a0902d7,0xd2801009
 .inst 0x8b17026c,0x39010189,0x910006f7,0x91003ef8,0xd347ff18
 20:
@@ -1059,7 +1059,7 @@ bl {vg_sha512_compress}
 cbz x24, 20b
 .inst 0xf9400269,0xdac00d29,0xf90002a9,0xf9400669,0xdac00d29,0xf90006a9,0xf9400a69,0xdac00d29
 .inst 0xf9000aa9,0xb9401e69,0x5ac00929,0xb9001aa9,0xf9414293,0xf9414a95,0xf9414e96,0xf9415297
-.inst 0xf9415698,0xf9414694,0xf84107fe,0x911583ff,0xd65f03c0
+.inst 0xf9415698,0xf9414694,0xf84107fe,0x910ac3ff,0xd65f03c0
 .p2align 6",
         vg_sha512_compress = sym super::sha512::vg_sha512_compress::vg_sha512_compress,
     )
@@ -1155,12 +1155,12 @@ pub const VG_SHA512_256_FINALIZE_SHA512_FEATURES: verified_garbage_cpu::Features
 /// * `count` must be the exact length of the message: messages of 2⁶⁴ bytes or more are not supported.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the 1392 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `out` may overlap the 704 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha512_256_finalize_sha512(state: *mut [u8; 192], count: u64, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
-        r".inst 0xd11583ff,0x910003e3,0xf81f0ffe,0xf9014073,0xf9014474,0xf9014875,0xf9014c76,0xf9015077
+        r".inst 0xd10ac3ff,0x910003e3,0xf81f0ffe,0xf9014073,0xf9014474,0xf9014875,0xf9014c76,0xf9015077
 .inst 0xf9015478,0x91000013,0x91000074,0x91000055,0x91000036,0xd2800fe9,0x8a0902d7,0xd2801009
 .inst 0x8b17026c,0x39010189,0x910006f7,0x91003ef8,0xd347ff18
 20:
@@ -1196,7 +1196,7 @@ bl {vg_sha512_compress_sha512}
 cbz x24, 20b
 .inst 0xf9400269,0xdac00d29,0xf90002a9,0xf9400669,0xdac00d29,0xf90006a9,0xf9400a69,0xdac00d29
 .inst 0xf9000aa9,0xf9400e69,0xdac00d29,0xf9000ea9,0xf9414293,0xf9414a95,0xf9414e96,0xf9415297
-.inst 0xf9415698,0xf9414694,0xf84107fe,0x911583ff,0xd65f03c0
+.inst 0xf9415698,0xf9414694,0xf84107fe,0x910ac3ff,0xd65f03c0
 .p2align 6",
         vg_sha512_compress_sha512 = sym super::sha512::vg_sha512_compress_sha512::vg_sha512_compress_sha512,
     )
@@ -1293,11 +1293,11 @@ bl {vg_sha512_compress_sha512}
 /// * `count` must be the exact length of the message: messages of 2⁶⁴ bytes or more are not supported.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the 1392 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `out` may overlap the 704 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha512_256_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
-        r".inst 0xd11583ff,0x910003e3,0xf81f0ffe,0xf9014073,0xf9014474,0xf9014875,0xf9014c76,0xf9015077
+        r".inst 0xd10ac3ff,0x910003e3,0xf81f0ffe,0xf9014073,0xf9014474,0xf9014875,0xf9014c76,0xf9015077
 .inst 0xf9015478,0x91000013,0x91000074,0x91000055,0x91000036,0xd2800fe9,0x8a0902d7,0xd2801009
 .inst 0x8b17026c,0x39010189,0x910006f7,0x91003ef8,0xd347ff18
 20:
@@ -1333,7 +1333,7 @@ bl {vg_sha512_compress}
 cbz x24, 20b
 .inst 0xf9400269,0xdac00d29,0xf90002a9,0xf9400669,0xdac00d29,0xf90006a9,0xf9400a69,0xdac00d29
 .inst 0xf9000aa9,0xf9400e69,0xdac00d29,0xf9000ea9,0xf9414293,0xf9414a95,0xf9414e96,0xf9415297
-.inst 0xf9415698,0xf9414694,0xf84107fe,0x911583ff,0xd65f03c0
+.inst 0xf9415698,0xf9414694,0xf84107fe,0x910ac3ff,0xd65f03c0
 .p2align 6",
         vg_sha512_compress = sym super::sha512::vg_sha512_compress::vg_sha512_compress,
     )
