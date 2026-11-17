@@ -273,14 +273,16 @@ theorem code_ok {s : State} (hp : PreV s) : WP isa code s (Post s) := by
   obtain hne := eval_len e₁
   by_cases hsig : stackArg s 0 = s.gpr .a1
   · refine WP.ite false (by rw [hne]; simp [hsig]) (by simp) fun _ => ?_
-    refine WP.allocLeKept (by decide) (by rw [o₁.sp]; exact hp.sp1) ?_
+    refine WP.allocLe (by decide) (by rw [o₁.sp]; exact hp.sp1) ?_
     unfold body
     refine WP.seq (WP.mono (pubArgs_ok hp (by show t₁.sp - _ = _; rw [o₁.sp])
       (by show (⟨t₁.sp - _, _⟩ :: t₁.wr) = _; rw [o₁.sp, o₁.wr])
       (by show t₁.rd = _; rw [o₁.rd])
       (by show Frame _ _ t₁.mem; rw [o₁.mem]; exact Frame.refl _ _)
       (fun r hr => o₁.gpr r hr)) fun t₂ h₂ => ?_)
-    exact WP.seq (WP.mono (call_ok hp h₂ hsig) fun t₃ h₃ => afterPub_ok hp hsig h₃)
+    -- The postcondition reads none of the memory, so the bytes the `free` loses do not matter.
+    exact WP.seq (WP.mono (call_ok hp h₂ hsig) fun t₃ h₃ => WP.mono (afterPub_ok hp hsig h₃)
+      fun w h _ _ _ => ⟨⟨h.1.1, h.1.2.1, h.1.2.2⟩, h.2⟩)
   · refine WP.ite true (by rw [hne]; simp [hsig]) (fun _ => WP.mono (ret0_ok t₁) fun w ⟨o, e⟩ =>
       ⟨⟨fun r hr => ?_, ?_, ?_⟩, fun _ => ?_⟩) (by simp)
     · exact (o₁.trans o).gpr r (by revert r; decide)

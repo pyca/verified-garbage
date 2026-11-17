@@ -152,18 +152,30 @@ theorem afterEnc_ok {s u : State} (h : SPre pc s) (X : pc = true → PreX s) (B 
     refine WP.seq (WP.mono (callArgs_ok h B hb) fun t₃ C => ?_)
     exact WP.seq (call_ok h X C fun t₄ R => WP.mono (wipe_ok h R) fun v ⟨M, o⟩ => ⟨M, o⟩)
 
+/-- `writtenOutcome` reads the memory only in the output. -/
+private theorem writtenOutcome_congr {m m' : Mem} {out : Addr} {k : Nat} {r : BitVec 32} {o : Spec.Rsa.Outcome}
+    (hb : Spec.Rsa.bytesAt m' out k = Spec.Rsa.bytesAt m out k) (h : Spec.Rsa.writtenOutcome m out k r o) :
+    Spec.Rsa.writtenOutcome m' out k r o := by
+  cases o <;> simp only [Spec.Rsa.writtenOutcome, hb] at h ⊢ <;> exact h
+
 theorem codeG_correct (s : State) (h : SPre pc s) (X : pc = true → PreX s) :
     ∃ tr t, Exec isa (codeG pc) s tr t ∧ abiPreserved s t ∧ fnPost s t := by
   show WP isa (codeG pc) s fun t => abiPreserved s t ∧ fnPost s t
   unfold codeG
-  refine WP.allocLeKept ⟨by decide, by decide, by decide⟩ (by have := h.sp1; unfold stackBytes at this; omega_using [this]) ?_
+  refine WP.allocLe ⟨by decide, by decide, by decide⟩ (by have := h.sp1; unfold stackBytes at this; omega_using [this]) ?_
   unfold body
   refine WP.seq (WP.mono (setup_ok h) fun t₁ A => ?_)
   refine WP.seq (WP.mono (enc_ok h A) fun t₂ B => ?_)
   refine WP.seq (WP.mono (afterEnc_ok h X B) fun v ⟨M, hp⟩ => WP.mono (restore_ok h M.saves)
-    fun w ⟨wa, w0, wm⟩ => ⟨wa, ?_⟩)
+    fun w ⟨wa, w0, wm⟩ mL _ fl => ⟨⟨wa.1, wa.2.1, wa.2.2⟩, ?_⟩)
   unfold fnPost at hp ⊢
-  simp only [freed]
+  -- The `free` loses the frame's bytes, which lie apart from the output.
+  refine writtenOutcome_congr (m := w.mem) (List.map_congr_left fun i hi =>
+    lost_byte fl (R := ⟨s.gpr .a0, (s.gpr .a3).toNat⟩) (by
+      rw [← h.h1]
+      have hfb : frameBytes ≤ stackBytes := Nat.le_add_right _ _
+      exact h.ko.symm.sub_right (Offset.sub_below _ hfb (by omega_using [hfb]))) (List.mem_range.mp hi)) ?_
+  show Spec.Rsa.writtenOutcome w.mem _ _ ((w.gpr .a0).setWidth 32) _
   rw [wm, w0]; exact hp
 
 theorem code_correct (s : State) (hpre : (Spec.RsaPkcs1Sig.signContract RISCV64.abi stackBytes).pre s) :
