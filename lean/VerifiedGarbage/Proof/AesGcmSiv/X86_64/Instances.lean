@@ -964,22 +964,25 @@ theorem sealOut (stack : Nat) :
         Proof.AesSiv.bytesAt_congr fun i hi => Proof.AesSiv.agree_of hb.2.2.2.2 i hi]
 
 theorem openOut (stack : Nat) :
-    PostOut (Spec.GcmSiv.openContract X86_64.abi stack) (Spec.GcmSiv.openSig.retBits 64) :=
-  postOut_of_local ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
-    match vs, hlen with
-    | [schedule, rounds, nonce, aad, aadLen, data, len, tag], _ =>
-      simp only [Spec.GcmSiv.openSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
-        forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
-      change Curry.apply [ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.addr, ArgWord.int 64,
-        ArgWord.addr, ArgWord.int 64, ArgWord.addr] (Spec.GcmSiv.openPost 64) _ m m₁ r at h
-      change Curry.apply [ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.addr, ArgWord.int 64,
-        ArgWord.addr, ArgWord.int 64, ArgWord.addr] (Spec.GcmSiv.openPost 64) _ m m₂ r
-      dsimp only [Curry.apply, Spec.GcmSiv.openPost, ArgWord.ofRaw, IntTy.bits] at h ⊢
-      intro key hl hk
-      have e := Proof.AesSiv.bytesAt_congr (n := (BitVec.setWidth 64 len).toNat) fun i hi =>
-        Proof.AesSiv.agree_of hb.2.2.2.1 i (by simpa using hi)
-      rw [e]
-      exact h key hl hk
+    PostOut (Spec.GcmSiv.openContract X86_64.abi stack) (Spec.GcmSiv.openSig.retBits 64) := by
+  -- The postcondition is a `match` on a decryption, which the elaborator evaluates (AES on symbolic
+  -- bytes, 2 s) wherever it reduces a type that ends in it to see what it is a function of: for the
+  -- expected type of a `fun` given to `postOut_of_local` (so `?_`), and for `h` applied or as it is (so `@h`).
+  refine postOut_of_local ScrubAbi.plain ?_
+  intro vs m m₁ m₂ r hlen hb h
+  match vs, hlen with
+  | [schedule, rounds, nonce, aad, aadLen, data, len, tag], _ =>
+    simp only [Spec.GcmSiv.openSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+      forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+    change Curry.apply [ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.addr, ArgWord.int 64,
+      ArgWord.addr, ArgWord.int 64, ArgWord.addr] (Spec.GcmSiv.openPost 64) _ m m₁ r at h
+    change Curry.apply [ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.addr, ArgWord.int 64,
+      ArgWord.addr, ArgWord.int 64, ArgWord.addr] (Spec.GcmSiv.openPost 64) _ m m₂ r
+    dsimp only [Curry.apply, Spec.GcmSiv.openPost, ArgWord.ofRaw, IntTy.bits] at h ⊢
+    have e := Proof.AesSiv.bytesAt_congr (n := (BitVec.setWidth 64 len).toNat) fun i hi =>
+      Proof.AesSiv.agree_of hb.2.2.2.1 i (by simpa using hi)
+    rw [e]
+    exact @h
 
 /-! ### The code in registers: what its frame holds on return
 
@@ -1499,15 +1502,16 @@ def sealReg (v : GcmImpl) : Registration Spec.GcmSiv.sealApi X86_64.target :=
     verified := Proof.AesGcmSiv.seal_keyed (framedSeal_verified v)
     spSafe := framedSeal_spSafe v } (sealOut _)
 
-/-- `vg_aes_gcm_siv_open` over `v`. -/
+/-- `vg_aes_gcm_siv_open` over `v`. (`@openOut`: applied without `@`, the elaborator reduces its type,
+`PostOut` of a postcondition that is a `match` on a decryption, to see what it is a function of.) -/
 def openReg (v : GcmImpl) : Registration Spec.GcmSiv.openApi X86_64.target :=
-  if sivReg v then withScrubResC (regOpenReg v) (openOut _) sivKs [8, 776] (regOpen_resOk v)
+  if sivReg v then withScrubResC (regOpenReg v) (@openOut _) sivKs [8, 776] (regOpen_resOk v)
   else scrubSoft {
     suffix := v.suffix
     code := framedOpen v
     stack := sivStack v
     verified := Proof.AesGcmSiv.open_keyed (framedOpen_verified v)
-    spSafe := framedOpen_spSafe v } (openOut _)
+    spSafe := framedOpen_spSafe v } (@openOut _)
 
 /-- `vg_aes_gcm_siv_seal` over `v`, with the AVX2 copies. -/
 def wideSealReg (v : GcmImpl) : Registration Spec.GcmSiv.sealApi X86_64.target :=
@@ -1525,7 +1529,7 @@ def wideOpenReg (v : GcmImpl) : Registration Spec.GcmSiv.openApi X86_64.target :
     code := avx2OpenCode v
     stack := 3856
     verified := Proof.AesGcmSiv.open_keyed (avx2Open_verified v)
-    spSafe := avx2Open_spSafe v } (openOut _)
+    spSafe := avx2Open_spSafe v } (@openOut _)
 
 end
 
