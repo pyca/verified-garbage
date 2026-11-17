@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 
 The same structure as the x86-64 proof
 (`VG.Proof.Sha3.X86_64.Stream.Squeeze`), inside the frame that saves `x30`
-(`WP.frameRegKept`).
+(`WP.frameReg`).
 -/
 
 @[expose] public section
@@ -468,7 +468,8 @@ theorem correct (v : Permutation) {s₀ : State} (hp : SPre s₀) (hs : Stack s�
     WP isa (squeezeWith v.callee) s₀ fun s' => abiPreserved s₀ s' ∧ Proof.Sha3.squeezeAArch64.post s₀ s' := by
   have hpi : SPre (inner s₀) := ⟨hp.rd, hp.wr, hp.st_o, hp.st_c, hp.o_c, hp.rate_mem, hp.pos_le⟩
   have e : stateAt (inner s₀).mem (stp s₀) = stateAt s₀.mem (stp s₀) := write_frame_state hs.st
-  refine WP.frameRegKept (hn := by rw [v.squeezeMain_depth]; decide) hs.sp16 (fun R hR => ?_) (WP.mono ((correctMain v) hpi) fun s' ⟨hk, hsp, hv, hpost⟩ => ?_)
+  refine WP.frameReg (hn := by rw [v.squeezeMain_depth]; decide) hs.sp16 (fun R hR => ?_) 
+    (WP.mono ((correctMain v) hpi) fun s' ⟨hk, hsp, hv, hpost⟩ mm u f => ?_)
   · rw [hp.wr] at hR
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hR
     rcases hR with rfl | rfl | rfl
@@ -481,11 +482,15 @@ theorem correct (v : Permutation) {s₀ : State} (hp : SPre s₀) (hs : Stack s�
       · subst h30; simp [State.write]
       · simp only [State.write, h30, ite_false]
         exact hk r hr h30
-    · have := h1
+    · -- The output and the state lie apart from the frame, whose bytes the pop loses.
+      have := h1
       rw [show stateAt (inner s₀).mem (inner s₀ |>.gpr .x0) = stateAt s₀.mem (stp s₀) from e] at this
-      exact this
+      exact Eq.trans (List.map_congr_left fun i hi =>
+        lost_byte (R := OR s₀) f hs.o.symm (List.mem_range.mp hi)) this
     · have := h3 d
       rw [show stateAt (inner s₀).mem (inner s₀ |>.gpr .x0) = stateAt s₀.mem (stp s₀) from e] at this
+      rw [Proof.Sha3.stateAt_congr (m := s'.mem) (m' := mm) (p := s₀.gpr .x0) fun i hi =>
+        lost_byte (R := SR s₀) f hs.st.symm hi]
       exact this
 
 /-! ## Constant time -/
