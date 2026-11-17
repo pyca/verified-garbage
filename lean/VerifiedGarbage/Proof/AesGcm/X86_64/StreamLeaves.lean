@@ -2347,7 +2347,8 @@ theorem framedS_leaves {sig : Sig} {nm : String} {e : Elem} {n : Nat}
     {s : State} (hs : (sig.contract abi pre post wa (24 + 2584) leak).pre s) {t : List Leak} {u : State}
     (he : Exec isa (withStackArgScratch 2584 (nStack sig) c) s t u) :
     ∀ x, (⟨s.gpr .rsp - BitVec.ofNat 64 2584, 2584⟩ : Region).Contains x 1 →
-      u.mem x = (streamFV Lb s x).getD (s.mem x) := by
+      u.mem x = (loseL (s.gpr .rsp - BitVec.ofNat 64 2584) 2584 (innerU c (narrowS sig e n 2584 s))
+        (streamFV Lb s) x).getD (s.mem x) := by
   have hb' : 16 + 8 * nStack sig + n * e.size ≤ 2584 ∧ 2584 < 4096 ∧ 2584 % 8 = 0 := ⟨hb, by decide, by decide⟩
   have hW := framed_leaves (R := fun s => ⟨stackArg s 1, 2560⟩)
     (L := fun s x => streamL Lb s.gpr (fun i => stackArg s i) x) hv hP (fun s t s' hp he => (hl s t s' hp he).1)
@@ -2357,7 +2358,8 @@ theorem framedS_leaves {sig : Sig} {nm : String} {e : Elem} {n : Nat}
   obtain ⟨hg, ha, hlst, hf⟩ := narrowS_args hk hb (by decide) hs
   obtain ⟨hrsp, -⟩ := narrowS_facts (nm := "") hk hb (by decide) hs
   rw [h1] at ha hlst hf
-  generalize hA : s.gpr .rsp - BitVec.ofNat 64 2584 = A at hrsp hlst hf ⊢
+  generalize hA : s.gpr .rsp - BitVec.ofNat 64 2584 = A at hrsp hlst hf hW hH ⊢
+  generalize hU : innerU c (narrowS sig e n 2584 s) = U at hW hH ⊢
   have hW' : stackArg (narrowS sig e n 2584 s) 1 = A + BitVec.ofNat 64 24 := hlst
   have ha0 : stackArg (narrowS sig e n 2584 s) 0 = stackArg s 0 := ha 0 (by decide)
   rw [hW'] at hW
@@ -2368,12 +2370,23 @@ theorem framedS_leaves {sig : Sig} {nm : String} {e : Elem} {n : Nat}
   have ex : x = A + BitVec.ofNat 64 d := by
     rw [← hdx, BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel]
   subst ex
+  have hxW' : d < 24 ∨ (⟨A + BitVec.ofNat 64 24, 2560⟩ : Region).Contains (A + BitVec.ofNat 64 d) 1 := by
+    by_cases h : d < 24
+    · exact .inl h
+    · exact .inr (Offset.contains A (by omega_arith) (by omega_arith) (by decide))
+  rcases loseL_cases A 2584 U (A + BitVec.ofNat 64 d) with hc | ⟨w, hc⟩
+  rotate_left
+  · rw [hc]
+    rcases hxW' with h | h
+    · rw [hH _ (Offset.contains_base A (by omega_arith) (by omega_arith)), hc]; rfl
+    · rw [hW _ h, hc]; rfl
+  rw [hc]
   unfold streamFV
   rw [hA]
   simp only [hdx]
   by_cases h8 : d < 8
   · simp only [h8, ↓reduceIte, Option.getD_none]
-    rw [hH _ (Offset.contains_base A (by omega_arith) (by omega_arith))]
+    rw [hH _ (Offset.contains_base A (by omega_arith) (by omega_arith)), hc]
     simp only [Option.getD_none]
     refine hf _ fun r hr hc => ?_
     simp only [List.mem_singleton] at hr; subst hr
@@ -2383,7 +2396,7 @@ theorem framedS_leaves {sig : Sig} {nm : String} {e : Elem} {n : Nat}
     omega_using [this, h8]
   · by_cases h24 : d < 24
     · simp only [h8, h24, ↓reduceIte, Option.getD_some]
-      rw [hH _ (Offset.contains_base A (by omega_arith) (by omega_arith)), Option.getD_none]
+      rw [hH _ (Offset.contains_base A (by omega_arith) (by omega_arith)), hc, Option.getD_none]
       have ex' : A + BitVec.ofNat 64 d = A + BitVec.ofNat 64 (8 * (d / 8)) + BitVec.ofNat 64 (d % 8) := by
         rw [Offset.add_add_eq _ (show 8 * (d / 8) + d % 8 = d by omega_arith)]
       rw [ex', byte_readW64' (narrowS sig e n 2584 s).mem (A + BitVec.ofNat 64 (8 * (d / 8))) (show d % 8 < 8 by omega_arith)]
@@ -2400,7 +2413,7 @@ theorem framedS_leaves {sig : Sig} {nm : String} {e : Elem} {n : Nat}
     · simp only [h8, h24, ↓reduceIte]
       have hxW : (⟨A + BitVec.ofNat 64 24, 2560⟩ : Region).Contains (A + BitVec.ofNat 64 d) 1 :=
         Offset.contains A (by omega_arith) (by omega_arith) (by decide)
-      rw [hW _ hxW, streamL_congr Lb (g' := s.gpr) (a' := fun i => if i = 0 then stackArg s 0 else A + BitVec.ofNat 64 24)
+      rw [hW _ hxW, hc, streamL_congr Lb (g' := s.gpr) (a' := fun i => if i = 0 then stackArg s 0 else A + BitVec.ofNat 64 24)
         (fun r h₁ h₂ => hg r h₁ h₂) (by simp [ha0]) (by simp [hW'])]
       refine congrArg (Option.getD _) ?_
       refine hf _ fun r hr hc => ?_
@@ -2437,7 +2450,8 @@ theorem framedS_leavesZ {sig : Sig} {nm : String} {e : Elem} {n : Nat}
     {s : State} (hs : (sig.contract abi pre post wa (24 + 2584) leak).pre s) {t : List Leak} {u : State}
     (he : Exec isa (withStackArgScratch 2584 (nStack sig) c) s t u) :
     ∀ x, (⟨s.gpr .rsp - BitVec.ofNat 64 2584, 2584⟩ : Region).Contains x 1 →
-      u.mem x = (streamFVZ z zg Lb s x).getD (s.mem x) := by
+      u.mem x = (loseL (s.gpr .rsp - BitVec.ofNat 64 2584) 2584 (innerU c (narrowS sig e n 2584 s))
+        (streamFVZ z zg Lb s) x).getD (s.mem x) := by
   have hb' : 16 + 8 * nStack sig + n * e.size ≤ 2584 ∧ 2584 < 4096 ∧ 2584 % 8 = 0 := ⟨hb, by decide, by decide⟩
   have hW := framed_leaves (R := fun s => ⟨stackArg s 1, 2560⟩)
     (L := fun s x => streamLZ z zg Lb s.gpr (fun i => stackArg s i) x) hv hP (fun s t s' hp he => (hl s t s' hp he).1)
@@ -2447,7 +2461,8 @@ theorem framedS_leavesZ {sig : Sig} {nm : String} {e : Elem} {n : Nat}
   obtain ⟨hg, ha, hlst, hf⟩ := narrowS_args hk hb (by decide) hs
   obtain ⟨hrsp, -⟩ := narrowS_facts (nm := "") hk hb (by decide) hs
   rw [h1] at ha hlst hf
-  generalize hA : s.gpr .rsp - BitVec.ofNat 64 2584 = A at hrsp hlst hf ⊢
+  generalize hA : s.gpr .rsp - BitVec.ofNat 64 2584 = A at hrsp hlst hf hW hH ⊢
+  generalize hU : innerU c (narrowS sig e n 2584 s) = U at hW hH ⊢
   have hW' : stackArg (narrowS sig e n 2584 s) 1 = A + BitVec.ofNat 64 24 := hlst
   have ha0 : stackArg (narrowS sig e n 2584 s) 0 = stackArg s 0 := ha 0 (by decide)
   rw [hW'] at hW
@@ -2458,12 +2473,23 @@ theorem framedS_leavesZ {sig : Sig} {nm : String} {e : Elem} {n : Nat}
   have ex : x = A + BitVec.ofNat 64 d := by
     rw [← hdx, BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel]
   subst ex
+  have hxW' : d < 24 ∨ (⟨A + BitVec.ofNat 64 24, 2560⟩ : Region).Contains (A + BitVec.ofNat 64 d) 1 := by
+    by_cases h : d < 24
+    · exact .inl h
+    · exact .inr (Offset.contains A (by omega_arith) (by omega_arith) (by decide))
+  rcases loseL_cases A 2584 U (A + BitVec.ofNat 64 d) with hc | ⟨w, hc⟩
+  rotate_left
+  · rw [hc]
+    rcases hxW' with h | h
+    · rw [hH _ (Offset.contains_base A (by omega_arith) (by omega_arith)), hc]; rfl
+    · rw [hW _ h, hc]; rfl
+  rw [hc]
   unfold streamFVZ
   rw [hA]
   simp only [hdx]
   by_cases h8 : d < 8
   · simp only [h8, ↓reduceIte, Option.getD_none]
-    rw [hH _ (Offset.contains_base A (by omega_arith) (by omega_arith))]
+    rw [hH _ (Offset.contains_base A (by omega_arith) (by omega_arith)), hc]
     simp only [Option.getD_none]
     refine hf _ fun r hr hc => ?_
     simp only [List.mem_singleton] at hr; subst hr
@@ -2473,7 +2499,7 @@ theorem framedS_leavesZ {sig : Sig} {nm : String} {e : Elem} {n : Nat}
     omega_using [this, h8]
   · by_cases h24 : d < 24
     · simp only [h8, h24, ↓reduceIte, Option.getD_some]
-      rw [hH _ (Offset.contains_base A (by omega_arith) (by omega_arith)), Option.getD_none]
+      rw [hH _ (Offset.contains_base A (by omega_arith) (by omega_arith)), hc, Option.getD_none]
       have ex' : A + BitVec.ofNat 64 d = A + BitVec.ofNat 64 (8 * (d / 8)) + BitVec.ofNat 64 (d % 8) := by
         rw [Offset.add_add_eq _ (show 8 * (d / 8) + d % 8 = d by omega_arith)]
       rw [ex', byte_readW64' (narrowS sig e n 2584 s).mem (A + BitVec.ofNat 64 (8 * (d / 8))) (show d % 8 < 8 by omega_arith)]
@@ -2490,7 +2516,7 @@ theorem framedS_leavesZ {sig : Sig} {nm : String} {e : Elem} {n : Nat}
     · simp only [h8, h24, ↓reduceIte]
       have hxW : (⟨A + BitVec.ofNat 64 24, 2560⟩ : Region).Contains (A + BitVec.ofNat 64 d) 1 :=
         Offset.contains A (by omega_arith) (by omega_arith) (by decide)
-      rw [hW _ hxW, streamLZ_congr z zg Lb (g' := s.gpr) (a' := fun i => if i = 0 then stackArg s 0 else A + BitVec.ofNat 64 24)
+      rw [hW _ hxW, hc, streamLZ_congr z zg Lb (g' := s.gpr) (a' := fun i => if i = 0 then stackArg s 0 else A + BitVec.ofNat 64 24)
         (fun r h₁ h₂ => hg r h₁ h₂) (by simp [ha0]) (by simp [hW'])]
       refine congrArg (Option.getD _) ?_
       refine hf _ fun r hr hc => ?_
@@ -2529,7 +2555,8 @@ theorem streamEncryptClrB_leaves (B : BlkFn CtxMode.base)
     (hs : (Proof.AesGcm.streamEncryptRoundsContract X86_64.abi 2608).pre s) {t : List Leak} {u : State}
     (he : Exec isa (withStackArgScratch 2584 1 (streamEncryptClr (v.withBlk B) lv)) s t u) :
     ∀ x, (⟨s.gpr .rsp - BitVec.ofNat 64 2584, 2584⟩ : Region).Contains x 1 →
-      u.mem x = (streamFV Lb s x).getD (s.mem x) := by
+      u.mem x = (loseL (s.gpr .rsp - BitVec.ofNat 64 2584) 2584
+        (innerU (streamEncryptClr (v.withBlk B) lv) (narrowS Spec.Gcm.streamCryptSig .u64 320 2584 s)) (streamFV Lb s) x).getD (s.mem x) := by
   have hsp := streamEncryptSM_spSafe (v.wrapC lv) (B.wrapC lv)
   rw [← hoist_all lv] at hsp
   have hd := streamEncryptSM_xdepth (v.wrapC lv) (B.wrapC lv)
@@ -2552,7 +2579,8 @@ theorem streamDecryptClrB_leaves (B : BlkFn CtxMode.base)
     (hs : (Proof.AesGcm.streamDecryptRoundsContract X86_64.abi 2608).pre s) {t : List Leak} {u : State}
     (he : Exec isa (withStackArgScratch 2584 1 (streamDecryptClr (v.withBlk B) lv)) s t u) :
     ∀ x, (⟨s.gpr .rsp - BitVec.ofNat 64 2584, 2584⟩ : Region).Contains x 1 →
-      u.mem x = (streamFV Lb s x).getD (s.mem x) := by
+      u.mem x = (loseL (s.gpr .rsp - BitVec.ofNat 64 2584) 2584
+        (innerU (streamDecryptClr (v.withBlk B) lv) (narrowS Spec.Gcm.streamCryptSig .u64 320 2584 s)) (streamFV Lb s) x).getD (s.mem x) := by
   have hsp := streamDecryptSM_spSafe (v.wrapC lv) (B.wrapC lv)
   rw [← hoist_all lv] at hsp
   have hd := streamDecryptSM_xdepth (v.wrapC lv) (B.wrapC lv)
@@ -2578,7 +2606,8 @@ theorem streamEncryptClrB_leavesZ (B : BlkFn CtxMode.base) {zg : Nat → Bool} (
     (hs : (Proof.AesGcm.streamEncryptRoundsContract X86_64.abi 2608).pre s) {t : List Leak} {u : State}
     (he : Exec isa (withStackArgScratch 2584 1 (streamEncryptClr (v.withBlk B) lv)) s t u) :
     ∀ x, (⟨s.gpr .rsp - BitVec.ofNat 64 2584, 2584⟩ : Region).Contains x 1 →
-      u.mem x = (streamFVZ z zg Lb s x).getD (s.mem x) := by
+      u.mem x = (loseL (s.gpr .rsp - BitVec.ofNat 64 2584) 2584
+        (innerU (streamEncryptClr (v.withBlk B) lv) (narrowS Spec.Gcm.streamCryptSig .u64 320 2584 s)) (streamFVZ z zg Lb s) x).getD (s.mem x) := by
   have hsp := streamEncryptSM_spSafe (v.wrapC lv) (B.wrapC lv)
   rw [← hoist_all lv] at hsp
   have hd := streamEncryptSM_xdepth (v.wrapC lv) (B.wrapC lv)
@@ -2602,7 +2631,8 @@ theorem streamDecryptClrB_leavesZ (B : BlkFn CtxMode.base) {zg : Nat → Bool} (
     (hs : (Proof.AesGcm.streamDecryptRoundsContract X86_64.abi 2608).pre s) {t : List Leak} {u : State}
     (he : Exec isa (withStackArgScratch 2584 1 (streamDecryptClr (v.withBlk B) lv)) s t u) :
     ∀ x, (⟨s.gpr .rsp - BitVec.ofNat 64 2584, 2584⟩ : Region).Contains x 1 →
-      u.mem x = (streamFVZ z zg Lb s x).getD (s.mem x) := by
+      u.mem x = (loseL (s.gpr .rsp - BitVec.ofNat 64 2584) 2584
+        (innerU (streamDecryptClr (v.withBlk B) lv) (narrowS Spec.Gcm.streamCryptSig .u64 320 2584 s)) (streamFVZ z zg Lb s) x).getD (s.mem x) := by
   have hsp := streamDecryptSM_spSafe (v.wrapC lv) (B.wrapC lv)
   rw [← hoist_all lv] at hsp
   have hd := streamDecryptSM_xdepth (v.wrapC lv) (B.wrapC lv)
@@ -2625,7 +2655,8 @@ theorem streamEncryptClr16_leaves (B : BlkFn CtxMode.prepared16)
     (hs : (Proof.AesGcm.streamEncryptPrepared16RoundsContract X86_64.abi 2608).pre s) {t : List Leak} {u : State}
     (he : Exec isa (withStackArgScratch 2584 1 (streamEncryptClr (v.withBlk B) lv)) s t u) :
     ∀ x, (⟨s.gpr .rsp - BitVec.ofNat 64 2584, 2584⟩ : Region).Contains x 1 →
-      u.mem x = (streamFV Lb s x).getD (s.mem x) := by
+      u.mem x = (loseL (s.gpr .rsp - BitVec.ofNat 64 2584) 2584
+        (innerU (streamEncryptClr (v.withBlk B) lv) (narrowS Proof.Gcm.streamCryptPrecomputedSig .u64 320 2584 s)) (streamFV Lb s) x).getD (s.mem x) := by
   have hsp := streamEncryptSM_spSafe (v.wrapC lv) (B.wrapC lv)
   rw [← hoist_all lv] at hsp
   have hd := streamEncryptSM_xdepth (v.wrapC lv) (B.wrapC lv)
@@ -2650,7 +2681,8 @@ theorem streamDecryptClr16_leaves (B : BlkFn CtxMode.prepared16)
     (hs : (Proof.AesGcm.streamDecryptPrepared16RoundsContract X86_64.abi 2608).pre s) {t : List Leak} {u : State}
     (he : Exec isa (withStackArgScratch 2584 1 (streamDecryptClr (v.withBlk B) lv)) s t u) :
     ∀ x, (⟨s.gpr .rsp - BitVec.ofNat 64 2584, 2584⟩ : Region).Contains x 1 →
-      u.mem x = (streamFV Lb s x).getD (s.mem x) := by
+      u.mem x = (loseL (s.gpr .rsp - BitVec.ofNat 64 2584) 2584
+        (innerU (streamDecryptClr (v.withBlk B) lv) (narrowS Proof.Gcm.streamCryptPrecomputedSig .u64 320 2584 s)) (streamFV Lb s) x).getD (s.mem x) := by
   have hsp := streamDecryptSM_spSafe (v.wrapC lv) (B.wrapC lv)
   rw [← hoist_all lv] at hsp
   have hd := streamDecryptSM_xdepth (v.wrapC lv) (B.wrapC lv)
@@ -2675,7 +2707,8 @@ theorem streamEncryptClr48_leaves (B : BlkFn CtxMode.prepared)
     (hs : (Proof.AesGcm.streamEncryptPreparedRoundsContract X86_64.abi 2608).pre s) {t : List Leak} {u : State}
     (he : Exec isa (withStackArgScratch 2584 1 (streamEncryptClr (v.withBlk B) lv)) s t u) :
     ∀ x, (⟨s.gpr .rsp - BitVec.ofNat 64 2584, 2584⟩ : Region).Contains x 1 →
-      u.mem x = (streamFV Lb s x).getD (s.mem x) := by
+      u.mem x = (loseL (s.gpr .rsp - BitVec.ofNat 64 2584) 2584
+        (innerU (streamEncryptClr (v.withBlk B) lv) (narrowS Proof.Gcm.streamCryptPrecomputedSig .u64 320 2584 s)) (streamFV Lb s) x).getD (s.mem x) := by
   have hsp := streamEncryptSM_spSafe (v.wrapC lv) (B.wrapC lv)
   rw [← hoist_all lv] at hsp
   have hd := streamEncryptSM_xdepth (v.wrapC lv) (B.wrapC lv)
@@ -2700,7 +2733,8 @@ theorem streamDecryptClr48_leaves (B : BlkFn CtxMode.prepared)
     (hs : (Proof.AesGcm.streamDecryptPreparedRoundsContract X86_64.abi 2608).pre s) {t : List Leak} {u : State}
     (he : Exec isa (withStackArgScratch 2584 1 (streamDecryptClr (v.withBlk B) lv)) s t u) :
     ∀ x, (⟨s.gpr .rsp - BitVec.ofNat 64 2584, 2584⟩ : Region).Contains x 1 →
-      u.mem x = (streamFV Lb s x).getD (s.mem x) := by
+      u.mem x = (loseL (s.gpr .rsp - BitVec.ofNat 64 2584) 2584
+        (innerU (streamDecryptClr (v.withBlk B) lv) (narrowS Proof.Gcm.streamCryptPrecomputedSig .u64 320 2584 s)) (streamFV Lb s) x).getD (s.mem x) := by
   have hsp := streamDecryptSM_spSafe (v.wrapC lv) (B.wrapC lv)
   rw [← hoist_all lv] at hsp
   have hd := streamDecryptSM_xdepth (v.wrapC lv) (B.wrapC lv)
