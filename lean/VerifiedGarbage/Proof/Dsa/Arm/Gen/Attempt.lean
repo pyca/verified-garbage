@@ -28,6 +28,7 @@ public import VerifiedGarbage.Impl.Dsa.Arm.Generate
 import VerifiedGarbage.Proof.Dsa.Arm.GenerateCheckCT
 import VerifiedGarbage.Proof.Dsa.Arm.Key.Call
 import VerifiedGarbage.Proof.Framework.Arm.Frame
+import VerifiedGarbage.Proof.Framework.Arm.Lost
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
 
 /-! ### `Dsa.Arm.Gen.CheckPart`, which only this module used -/
@@ -206,12 +207,15 @@ theorem SS.checkCall_ok (h : SS G σ c s) {name : String} (regs : CArgs G s)
   have sp : s.sp = G.sp := gi.sp
   have big := gi.scrBig
   unfold callWith
-  refine WP.frame (rs := callPush) (r := .r4) (by decide) (by rw [sp]; show 4 * 8 ≤ G.sp.toNat; omega_arith) (by decide) ?_
+  refine WP.frameLost (rs := callPush) (r := .r4) (by decide) (by rw [sp]; show 4 * 8 ≤ G.sp.toNat; omega_arith) (by decide) ?_
   refine FrameStack.WP.callF (k := checkArm) (fun s hs => by
       obtain ⟨t, s', e, ha, hp⟩ := VG.Proof.Dsa.Arm.check_correct hs; exact ⟨t, s', e, ha, hp⟩) pre hc hw
     (by rw [VG.Proof.Dsa.Arm.Key.check_armStack]; exact Nat.zero_le _)
     fun s₂ hrd hwr hsp hf hg hpost => ?_
   rw [VG.Proof.Dsa.Arm.Key.check_armStack] at hf
+  intro lm lu hfl
+  obtain fl : Region.Sub ⟨State.addr (s.sp - BitVec.ofNat 32 (4 * callPush.length)), 4 * callPush.length⟩ G.rBelow := by
+    rw [sp]; exact gi.pushSub
   have r0 := hpost
   dsimp only [checkArm] at r0
   rw [State.withRegions_gpr, BitVec.setWidth_append_eq_right] at r0
@@ -232,9 +236,10 @@ theorem SS.checkCall_ok (h : SS G σ c s) {name : String} (regs : CArgs G s)
   · have kz0 : 0 < kz G.pLen := by simp only [kz]; omega_arith
     obtain aS : State.addr (G.scr + BitVec.ofNat 32 sA) = G.sa sA := h.addr (n := wa G.pLen)
       (by simp only [sK] at big ⊢; omega_arith) (by simp only [wa]; omega_arith)
-    rw [popped_mem]
-    refine ((FrameStack.pushed_frameA (rs := callPush) (s := s) (by rw [sp]; show 4 * 8 ≤ G.sp.toNat; omega_arith)).sub
-      fun r hr => ?_).trans (hf.sub fun r hr => ?_)
+    dsimp only
+    refine (((FrameStack.pushed_frameA (rs := callPush) (s := s) (by rw [sp]; show 4 * 8 ≤ G.sp.toNat; omega_arith)).sub
+      fun r hr => ?_).trans (hf.sub fun r hr => ?_)).trans
+      (hfl.sub fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact ⟨G.rBelow, by simp, fl⟩)
     · simp only [List.mem_singleton] at hr; subst hr
       exact ⟨G.rBelow, by simp, by rw [sp]; exact gi.pushSub⟩
     · simp only [cWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -242,7 +247,7 @@ theorem SS.checkCall_ok (h : SS G σ c s) {name : String} (regs : CArgs G s)
       · refine ⟨G.rs sA (wa G.pLen), List.mem_cons_self, ?_⟩
         rw [aS, wa_toNat h.lens]; exact fun _ h => h
       · exact ⟨G.rBelow, by simp, fun _ hc => absurd hc (by simp [Region.Contains])⟩
-  · rw [popped_gpr (by decide)]
+  · dsimp only; rw [popped_gpr (by decide)]
     apply BitVec.eq_of_toNat_eq
     rw [r0]; split <;> rfl
 

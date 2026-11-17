@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Blake2.Arm.Stream.Verified
 public import VerifiedGarbage.Impl.StackScratch.Arm
 import VerifiedGarbage.Proof.Blake2.Scratch
 import VerifiedGarbage.Proof.Framework.Arm.StackScratch
+import VerifiedGarbage.Proof.Framework.Arm.ScratchLost
 import VerifiedGarbage.Proof.Blake2.Arm.CompressS.Compress
 public import VerifiedGarbage.Impl.Blake2.Arm.CompressS
 import VerifiedGarbage.Proof.Framework.Arm.Contract
@@ -47,7 +48,7 @@ theorem finalizeS_verified :
 
 The theorems above are of the streaming functions with their working space
 as an argument (`update_scratch`, `finalize_scratch`); `update` and
-`finalize` run them in a frame that allocates it (`Verified.stackScratch`).
+`finalize` run them in a frame that allocates it (`Verified.stackScratchLost`).
 -/
 
 /-- A state satisfying `update`'s precondition. -/
@@ -57,9 +58,10 @@ def updateFrameSat : Arm.State :=
 theorem updateS_framed : Verified Arm.target
     (Impl.StackScratch.Arm.withStackScratch 592 2 (Impl.Blake2.Arm.Stream.update (w := 32) "vg_blake2s_compress" Impl.Blake2.Arm.S.compress))
     (Spec.Blake2.updateSContract Arm.abi (16 + 592)) :=
-  Arm.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 72) (stack := 16) (bytes := 592) (m := 2)
+  Arm.Verified.stackScratchLost (nm := "scratch") (e := .u64) (n := 72) (stack := 16) (bytes := 592) (m := 2)
     updateS_verified (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Blake2.updateSPost_local _)
+    (fun vs mm m₁ m₂ r hl _ hb h => Proof.Blake2.updateSPostOut_local _ vs mm m₁ m₂ r hl hb h)
     (by implies_sat [Spec.Blake2.updateSContract, Spec.Blake2.updateSSig, Arm.abi, Arm.argRegs,
         Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       [updateFrameSat, Proof.Blake2.Arm.Stream.updateSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW,
@@ -72,9 +74,10 @@ def finalizeFrameSat : Arm.State :=
 theorem finalizeS_framed : Verified Arm.target
     (Impl.StackScratch.Arm.withStackScratch 592 1 (Impl.Blake2.Arm.Stream.finalize (w := 32) "vg_blake2s_compress" Impl.Blake2.Arm.S.compress))
     (Spec.Blake2.finalizeSContract Arm.abi (16 + 592)) :=
-  Arm.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 72) (stack := 16) (bytes := 592) (m := 1)
+  Arm.Verified.stackScratchLost (nm := "scratch") (e := .u64) (n := 72) (stack := 16) (bytes := 592) (m := 1)
     finalizeS_verified (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Blake2.finalizeSPost_local _)
+    (fun vs mm m₁ m₂ r hl _ hb h => Proof.Blake2.finalizeSPostOut_local _ vs mm m₁ m₂ r hl hb h)
     (by implies_sat [Spec.Blake2.finalizeSContract, Spec.Blake2.finalizeSSig, Arm.abi, Arm.argRegs,
         Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       [finalizeFrameSat, Proof.Blake2.Arm.Stream.finalizeSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW,
