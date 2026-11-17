@@ -12,7 +12,7 @@ namespace VG.Artifacts.CamelliaCbc.Arm
 
 def artifacts : List Artifact := [
   Spec.Camellia.cbcEncryptChainedApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 88 1 18 Impl.Camellia.Arm.cbcEncryptChained
+    code := Impl.StackScratch.Arm.withStackScratchWiped 2816 1 698 Impl.Camellia.Arm.cbcEncryptChained
     verified := Proof.Camellia.Arm.cbcEncryptChained_framed },
   Spec.Camellia.cbcDecryptChainedApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratchWiped 88 1 18 Impl.Camellia.Arm.cbcDecryptChained

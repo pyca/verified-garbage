@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Camellia.Arm.ModeCore
+public import VerifiedGarbage.Proof.Camellia.Arm.Keyed
+public import VerifiedGarbage.Proof.Modes.Arm.SeqKeyed
 public import VerifiedGarbage.Proof.Camellia.CbcScratch
 public import VerifiedGarbage.Proof.Modes.Arm.SeqCT
 public import VerifiedGarbage.Proof.Modes.Arm.WideCT
@@ -14,6 +16,8 @@ import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Camellia.Arm.ModeCore
+meta import VerifiedGarbage.Proof.Camellia.Arm.Keyed
+meta import VerifiedGarbage.Proof.Modes.Arm.SeqKeyed
 meta import VerifiedGarbage.Proof.Camellia.CbcScratch
 meta import VerifiedGarbage.Proof.Modes.Arm.SeqCT
 meta import VerifiedGarbage.Proof.Modes.Arm.WideCT
@@ -36,11 +40,15 @@ meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
 `cbcEncryptChained_verified`, `cbcDecryptChained_verified`: the generic CBC
 encryption one block at a time and decryption a group of blocks at a time,
 which return the chaining value in the IV (`Impl/Modes/Arm/CbcChained.lean`,
-`Wide.lean`), over Camellia's ECB functions (`Proof.Modes.Arm.seq_verified`
-and `seqW_verified` with `ecbSpec`) meet the chained contracts with a scratch
-buffer, as OFB and CFB do (`FbVerified.lean`), whose IV is also read and
-written; decryption with the 128 bytes of the groups' buffer more stack. The
-`_framed` theorems keep the scratch buffer on the stack, zeroed on return.
+`Wide.lean`), meet the chained contracts with a scratch buffer, as OFB and
+CFB do (`FbVerified.lean`), whose IV is also read and written. Decryption is
+over Camellia's ECB function (`Proof.Modes.Arm.seqW_verified` with
+`ecbSpec`), with the 128 bytes of the groups' buffer more stack. Encryption
+is over the two functions that split it, the table of subkeys built once in
+the scratch buffer (`Proof.Modes.Arm.seqK_verified` with `keyedSpec`,
+`Keyed.lean`): its scratch buffer holds their working space, and it uses
+the 8 bytes of stack of the call's push. The `_framed` theorems keep the
+scratch buffer on the stack, zeroed on return.
 -/
 
 @[expose] public section
@@ -69,11 +77,16 @@ def cbcSat (len : Nat) : State where
 def cbcFrameSat (len : Nat) : State :=
   { cbcSat len with rd := [⟨0x1000, 272⟩, ⟨0x8000, 4⟩], wr := [⟨0x2000, 16⟩, ⟨0x3000, len⟩] }
 
-theorem cbcEncryptChainedTaint : SeqTaint (ecbCore .encrypt) cbcEncChained :=
-  ⟨⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩⟩
+/-- `cbcSat`, with the scratch buffer of the functions that keep the table
+of subkeys in it. -/
+def cbcSatK (len : Nat) : State := { cbcSat len with wr := [⟨0x2000, 16⟩, ⟨0x3000, len⟩, ⟨0, 2792⟩] }
 
-theorem cbcEncryptChained_implies : (seqArm (ecbCore .encrypt) (ecbSpec .encrypt) cbcEncChained).Implies
-    (Proof.Camellia.cbcEncChainedScratchContract Arm.abi 9 2816) where
+theorem cbcEncryptChainedTaint : SeqTaintK (scrCore .encrypt) cbcEncChained :=
+  ⟨⟨⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩,
+    ⟨_, by native_taint_decide⟩⟩, ⟨_, by native_taint_decide⟩⟩
+
+theorem cbcEncryptChained_implies : (seqArm (scrCore .encrypt) (scrSpec .encrypt) cbcEncChained).Implies
+    (Proof.Camellia.cbcEncChainedScratchContract Arm.abi 349 8) where
   pre s h := seqArm_pre_rwR rfl (len := (· * 16)) (fun n => rfl) (by
     sig_pre [Proof.Camellia.cbcEncChainedScratchContract, Proof.Camellia.cbcChainedScratchSig, Spec.Camellia.cbcChainedSig, Proof.Camellia.cbcChainedPre, Arm.abi, Arm.argRegs,
       Arm.reduceClassify, Arm.Loc.val] at h
@@ -83,9 +96,9 @@ theorem cbcEncryptChained_implies : (seqArm (ecbCore .encrypt) (ecbSpec .encrypt
       Arm.reduceClassify, Arm.Loc.val]
     intro hR
     have e := cbcEncChained_post h
-    obtain ⟨e1, e2, e3, -, -⟩ := args_rounds (c := ecbCore .encrypt) rfl s
-    simp only [show (ecbCore .encrypt).bs = 16 from rfl, e1, e2, e3] at e
-    simp only [ecbSpec, dirCipher, rsel_eq hR, State.addr, VG.Proof.Modes.blocksOf_16] at e
+    obtain ⟨e1, e2, e3, -, -⟩ := args_rounds (c := scrCore .encrypt) rfl s
+    simp only [show (scrCore .encrypt).bs = 16 from rfl, e1, e2, e3] at e
+    simp only [scrSpec, dirCipher, rsel_eq hR, State.addr, VG.Proof.Modes.blocksOf_16] at e
     exact e
   pub s₁ s₂ _ _ h := by
     sig_pub [Proof.Camellia.cbcEncChainedScratchContract, Proof.Camellia.cbcChainedScratchSig, Spec.Camellia.cbcChainedSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
@@ -94,24 +107,25 @@ theorem cbcEncryptChained_implies : (seqArm (ecbCore .encrypt) (ecbSpec .encrypt
   sat := by
     sig_implies_sat [Proof.Camellia.cbcEncChainedScratchContract, Proof.Camellia.cbcChainedScratchSig, Spec.Camellia.cbcChainedSig, Proof.Camellia.cbcChainedPre, Arm.abi,
       Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
-      [cbcSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using cbcSat 0
+      [cbcSatK, cbcSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using cbcSatK 0
 
-theorem cbcEncryptChained_verified : Verified Arm.target cbcEncryptChained (Proof.Camellia.cbcEncChainedScratchContract Arm.abi 9 2816) :=
-  seq_verified (ecbSpec .encrypt) (cbcEncChained_ok _) cbcEncryptChainedTaint cbcEncryptChained_implies
+/-- `cbcEncryptChained`, from a table of subkeys built once in its scratch buffer: 8 bytes of stack. -/
+theorem cbcEncryptChained_verified : Verified Arm.target cbcEncryptChained (Proof.Camellia.cbcEncChainedScratchContract Arm.abi 349 8) :=
+  seqK_verified (keyedSpec .encrypt) (cbcEncChained_ok _) cbcEncryptChainedTaint cbcEncryptChained_implies
 
-theorem cbcEncryptChainedFrameSat : ∃ s, (Proof.Camellia.cbcEncryptChainedContractSk Arm.abi 2904).pre s := by
+theorem cbcEncryptChainedFrameSat : ∃ s, (Proof.Camellia.cbcEncryptChainedContractSk Arm.abi 2824).pre s := by
   implies_sat [Proof.Camellia.cbcEncryptChainedContractSk, Spec.Camellia.cbcChainedSig, Proof.Camellia.cbcChainedPre, Arm.abi, Arm.argRegs,
     Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] [cbcFrameSat, cbcSat, stackArg, stackArgAddr, Mem.readW,
     Mem.read] using cbcFrameSat 0
 
 /-- `cbcEncryptChained`, with its scratch buffer on the stack (zeroed on return). -/
 theorem cbcEncryptChained_framed :
-    Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 88 1 18 cbcEncryptChained)
-      (Spec.Camellia.cbcEncryptChainedContract Arm.abi 2904) :=
+    Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 2816 1 698 cbcEncryptChained)
+      (Spec.Camellia.cbcEncryptChainedContract Arm.abi 2824) :=
   Proof.Camellia.cbcEncryptChained_of_sk <|
-  Arm.Verified.stackScratchWiped (sig := Spec.Camellia.cbcChainedSig) (nm := "scratch") (e := .u64) (n := 9)
+  Arm.Verified.stackScratchWiped (sig := Spec.Camellia.cbcChainedSig) (nm := "scratch") (e := .u64) (n := 349)
     (pre := Proof.Camellia.cbcChainedPre Arm.abi.ptrBits) (post := Proof.Camellia.cbcEncChainedPost Arm.abi.ptrBits)
-    (wa := true) (stack := 2816) (m := 1) (bytes := 88)
+    (wa := true) (stack := 8) (m := 1) (bytes := 2816)
     cbcEncryptChained_verified (by decide) (by decide) (by decide) (by decide) (by decide)
     (Proof.Camellia.cbcChainedPre_local _) (Proof.Camellia.cbcEncChainedPost_local _) (Proof.Camellia.cbcEncChainedPostOut_local _) cbcEncryptChainedFrameSat
 

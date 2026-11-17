@@ -11769,3 +11769,11 @@ add sp, sp, #2816
 bx lr",
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_camellia_ecb_encrypt_keys.rs"]
+pub(crate) mod vg_camellia_ecb_encrypt_keys;
+
+#[rustfmt::skip]
+#[path = "internal/vg_camellia_ecb_keyed.rs"]
+pub(crate) mod vg_camellia_ecb_keyed;
