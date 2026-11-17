@@ -1183,4 +1183,58 @@ theorem decMid_ok (F : MulFacts) {lp : Impl.AesGcmSiv.X86_64Stitch.Loops} (hlp :
     exact WP.mono (decL_ok F hlp L hR E₁ (m₁ ▸ S) (hA.of_eq rd₁ wr₁) (hD.of_eq rd₁ wr₁) (by rw [wr₁]; exact hDw) h')
       cast
 
+/-! ## What the pieces with the loops write -/
+
+section
+variable {K W SP D : Addr} {n : Nat} {m m' : Mem}
+
+theorem frL (f : Frame (lR W) m m') : Frame (mutR W SP D n) m m' :=
+  f.sub fun q hq => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
+    rcases hq with rfl | rfl
+    · exact ⟨wA W, by simp, Offset.sub_base W (by decide)⟩
+    · exact ⟨wC W, by simp, Offset.sub W (by decide) (by decide)⟩
+
+theorem frLD (f : Frame (lR W ++ [⟨D, n⟩]) m m') : Frame (mutR W SP D n) m m' :=
+  f.sub fun q hq => by
+    simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hq
+    rcases hq with rfl | rfl | rfl
+    · exact ⟨wA W, by simp, Offset.sub_base W (by decide)⟩
+    · exact ⟨wC W, by simp, Offset.sub W (by decide) (by decide)⟩
+    · exact ⟨_, by simp, fun _ h => h⟩
+
+/-- What counter mode without the loop writes, among what it writes with it. -/
+theorem toLD (f : Frame [⟨W + BitVec.ofNat 64 128, 16⟩, ⟨D, n⟩] m m') : Frame (lR W ++ [⟨D, n⟩]) m m' :=
+  f.sub fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact ⟨⟨W + BitVec.ofNat 64 64, 80⟩, by simp, Offset.sub W (by decide) (by decide)⟩
+    · exact ⟨⟨D, n⟩, by simp, fun _ h => h⟩
+
+/-- A buffer, through POLYVAL with the loop. -/
+theorem bufL {s : State} {P : Addr} {len : Nat} (hP : Buf K W SP s P len) (hf : Frame (lR W) m m') :
+    bytesAt m' P len = bytesAt m P len :=
+  Proof.AesGcm.X86_64.bytesAt_frame hf (buf_lR hP) (Nat.le_of_lt hP.lt)
+
+/-- The encryption key's schedule, through POLYVAL with the loop. -/
+theorem keyL (L : Lay K W SP) (hf : Frame (lR W) m m') {R : Nat} (hRb : 16 * (R + 1) ≤ 240) :
+    Spec.GcmSiv.ctxCiph m' (W + BitVec.ofNat 64 248) R = Spec.GcmSiv.ctxCiph m (W + BitVec.ofNat 64 248) R :=
+  ctxCiph_frame hf (fun q hq => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
+    rcases hq with rfl | rfl
+    · exact L.w_w (.inr (by decide)) (by decide) (by decide)
+    · exact L.w_w (.inl (by decide)) (by decide) (by decide)) hRb
+
+/-- The tag at `W`, through counter mode with the loop. -/
+theorem tagLD (L : Lay K W SP) (hD : (⟨D, n⟩ : Region).Disjoint ⟨W, 744⟩) (hf : Frame (lR W ++ [⟨D, n⟩]) m m') :
+    bytesAt m' W 16 = bytesAt m W 16 :=
+  Proof.AesGcm.X86_64.bytesAt_frame hf (fun q hq => by
+    simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hq
+    rcases hq with rfl | rfl | rfl
+    · simpa using L.w_w (a := 0) (n := 16) (.inl (by decide)) (by decide) (by decide)
+    · simpa using L.w_w (a := 0) (n := 16) (.inl (by decide)) (by decide) (by decide)
+    · exact (hD.sub_right (Region.sub_prefix (by decide))).symm) (by decide)
+
+end
+
 end VG.Proof.AesGcmSivReg.X86_64

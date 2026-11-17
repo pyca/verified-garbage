@@ -324,7 +324,7 @@ theorem Slots.of_frame {W : Addr} {R : Nat} {N A D : Addr} {al n : Nat} {m m' : 
 `[192, 200)` and `[248, 744)`. -/
 abbrev wA (W : Addr) : Region := ⟨W, 144⟩
 abbrev wO (W : Addr) : Region := ⟨W + BitVec.ofNat 64 192, 8⟩
-abbrev wC (W : Addr) : Region := ⟨W + BitVec.ofNat 64 248, 240⟩
+abbrev wC (W : Addr) : Region := ⟨W + BitVec.ofNat 64 248, 496⟩
 
 /-- What the pieces may change: those parts of `W`, the stack below `SP`
 and the data. -/
