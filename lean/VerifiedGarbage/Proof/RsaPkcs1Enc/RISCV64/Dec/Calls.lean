@@ -597,7 +597,7 @@ theorem preP_entry {s t : State} (h : DPre pc s) (A : AtCall pc s t) : Rsa.RISCV
     ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · simp only [Rsa.RISCV64.Priv.rdL, hN, hE, hI, hP, hQ, hDP, hDQ, hQI, hA]
     cases pc
-    · rfl
+    · simp only [Bool.false_eq_true, ↓reduceIte]; rfl
     · simp only [↓reduceIte, Rsa.RISCV64.Priv.preR, callE_stackArg A (i := 12) (by decide),
         callE_stackArg A (i := 13) (by decide)]
       rfl
@@ -1183,16 +1183,14 @@ theorem shaFin_ok {t : State} (hp : Post s R EM t) {a o : Nat} (ha : a + 96 ≤ 
 
 omit h in
 theorem hi_sdepth : sdepth sha256.init ≤ sha256.ibytes + sha256.F := by
-  have := hH.initSd; have := hH.updSd; have := hH.finSd
   simp only [Hash.init, Hash.initMain, Hash.longKey, Hash.padKey, Hash.updBlock, Hash.callInit, Hash.callUpd,
-    Hash.callFin, Hash.keyLoop, Hash.padLoop, sdepth, Instr.frameBytes]
-  omega_arith
+    Hash.callFin, Hash.keyLoop, Hash.padLoop, sdepth, Instr.frameBytes, Nat.add_le_add_iff_left, Nat.max_le,
+    Nat.zero_le, hH.initSd, hH.updSd, hH.finSd, and_self]
 
 omit h in
 theorem hf_sdepth : sdepth sha256.finalize ≤ sha256.fbytes + sha256.F := by
-  have := hH.updSd; have := hH.finSd
-  simp only [Hash.finalize, Hash.finalizeMain, Hash.callUpd, Hash.callFin, sdepth, Instr.frameBytes]
-  omega_arith
+  simp only [Hash.finalize, Hash.finalizeMain, Hash.callUpd, Hash.callFin, sdepth, Instr.frameBytes,
+    Nat.add_le_add_iff_left, Nat.max_le, Nat.zero_le, hH.updSd, hH.finSd, and_self]
 
 /-- HMAC's `init` of the inner state at `scratch + i` and the outer one at
 `scratch + u`, with the 32-byte key at `scratch + k`. -/

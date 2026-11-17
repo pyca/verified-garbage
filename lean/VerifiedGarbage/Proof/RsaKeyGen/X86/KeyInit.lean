@@ -250,7 +250,7 @@ theorem octet_ok {s u : State} (A : ABI s) {n j : Nat} (hj : j < n) (hn : n = (a
     refine congrArg (Mem.writeW _ _) ?_
     simp only [← BitVec.ofNat_add]
     apply BitVec.eq_of_toNat_eq
-    simp only [BitVec.toNat_ofNat]
+    simp only [BitVec.toNat_ofNat, ← Nat.two_mul]
     omega_using []
   · have fr : Frame [⟨B s, 56⟩] s.mem t.mem := by
       rw [hm]; exact frame_w (frame_w (frame_w h.frame (by decide) _) (by decide) _) (by decide) _

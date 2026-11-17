@@ -887,8 +887,17 @@ theorem exF_line (st : XZ) {tgt : Arr} {ls : List Impl.Cast5.Line} (hg : GroupOk
 def gsFirst (ls : List Impl.Cast5.Line) (kl : List Impl.Cast5.Line) (keys : Bool) : Gs :=
   gsMain 4 (ls.getD 0 default) ++ gsExtras 5 ls ++ (if keys then gsKeys kl else [])
 
+/-- A gather is distinct when its registers and lanes, which are literals, are. -/
+private theorem gsDistinct_of_keys {gs : Gs} (ks : List (Nat × Nat)) (e : gs.map (fun g => (g.2.1, g.1)) = ks)
+    (h : ks.Pairwise fun a b => ¬(a.1 = b.1 ∧ a.2 = b.2)) : GsDistinct gs := by
+  subst e; exact List.pairwise_map.mp h
+
 theorem gsFirst_distinct (ls kl : List Impl.Cast5.Line) (keys : Bool) : GsDistinct (gsFirst ls kl keys) := by
-  cases keys <;> simp [GsDistinct, gsFirst, gsMain, gsExtras, gsKeys]
+  cases keys
+  · exact gsDistinct_of_keys [(0, 4), (1, 4), (2, 4), (3, 4), (0, 5), (1, 5), (2, 5), (3, 5)] rfl (by decide)
+  · exact gsDistinct_of_keys [(0, 4), (1, 4), (2, 4), (3, 4), (0, 5), (1, 5), (2, 5), (3, 5),
+      (0, 0), (1, 0), (2, 0), (3, 0), (0, 1), (1, 1), (2, 1), (3, 1), (0, 2), (1, 2), (2, 2), (3, 2),
+      (0, 3), (1, 3), (2, 3), (3, 3), (0, 8), (1, 8), (2, 8), (3, 8)] rfl (by decide)
 
 theorem gsFirst_ok {tgt : Arr} {ls kl : List Impl.Cast5.Line} (hg : GroupOk (some tgt) ls) {keys : Bool}
     (hk : keys = true → KeysOk kl) : GsOk (gsFirst ls kl keys) := by
@@ -994,8 +1003,9 @@ theorem KeptH.trans {a b c : State} (h₁ : KeptH a b) (h₂ : KeptH b c) : Kept
 theorem Kept.toH {s u : State} (k : Kept s u) : KeptH s u :=
   ⟨fun r hr => k.gpr r (fun h => hr (List.mem_append_left _ h)), k.rd, k.wr, k.sp, k.syms, k.v⟩
 
-theorem gsKeys_distinct (kl : List Impl.Cast5.Line) : GsDistinct (gsKeys kl) := by
-  simp [GsDistinct, gsMain, gsExtras, gsKeys]
+theorem gsKeys_distinct (kl : List Impl.Cast5.Line) : GsDistinct (gsKeys kl) :=
+  gsDistinct_of_keys [(0, 0), (1, 0), (2, 0), (3, 0), (0, 1), (1, 1), (2, 1), (3, 1), (0, 2), (1, 2), (2, 2), (3, 2),
+    (0, 3), (1, 3), (2, 3), (3, 3), (0, 8), (1, 8), (2, 8), (3, 8)] rfl (by decide)
 
 /-- The last subkeys of a half: their pass, then `x2` and the count of halves. -/
 theorem keysPass_ok {m0 : Mem} {c K : Addr} {s : State} {st : XZ} {ws : List Spec.Cast5.Word}

@@ -171,7 +171,9 @@ theorem sat_nil {T : Spec.Ecdsa.Rfc6979.TableInstance} {vs : List HVar} {w : HVa
     | exact ⟨tableOf w, List.mem_map_of_mem hv, satT_held vs w _ _ _⟩
     | (rw [List.append_eq, List.append_nil]; exact symT_distinct hl)
     | exact Region.disjoint_of_sep (by
-        simp only [Region.sep, Bool.and_eq_true, Bool.or_eq_true, decide_eq_true_eq]; bv_omega)
+        simp only [Region.sep, Bool.and_eq_true, Bool.or_eq_true, decide_eq_true_eq, BitVec.reduceSetWidth,
+          BitVec.reduceSub, BitVec.reduceToNat]
+        omega_using [hQ, hD])
     | bv_omega
     | (intro H hH
        obtain rfl := Option.some.inj (hH.symm.trans hG)
@@ -211,7 +213,9 @@ theorem sat_one {T : Spec.Ecdsa.Rfc6979.TableInstance} {vs : List HVar} {w : HVa
     | (rw [List.append_eq, List.append_nil]; exact symT_distinct hl)
     | exact (constRegions_symT vs n W hna).symm
     | exact Region.disjoint_of_sep (by
-        simp only [Region.sep, Bool.and_eq_true, Bool.or_eq_true, decide_eq_true_eq]; bv_omega)
+        simp only [Region.sep, Bool.and_eq_true, Bool.or_eq_true, decide_eq_true_eq, BitVec.reduceSetWidth,
+          BitVec.reduceSub, BitVec.reduceToNat]
+        omega_using [hQ, hD])
     | bv_omega
     | (intro H hH
        obtain rfl := Option.some.inj (hH.symm.trans hG)
@@ -222,7 +226,9 @@ theorem sat_one {T : Spec.Ecdsa.Rfc6979.TableInstance} {vs : List HVar} {w : HVa
        exact hheld i hi)
     | (refine ⟨show (1048576 : BitVec 64).toNat + 8 * W.length ≤ 2 ^ 32 by bv_omega, ?_, ?_, ?_⟩ <;>
        exact Region.disjoint_of_sep (by
-         simp only [Region.sep, Bool.and_eq_true, Bool.or_eq_true, decide_eq_true_eq]; bv_omega))
+         simp only [Region.sep, Bool.and_eq_true, Bool.or_eq_true, decide_eq_true_eq, BitVec.reduceSub,
+           BitVec.reduceToNat]
+         omega_using [hQ, hW]))
 
 theorem names_len : (names vars).length < 2 ^ 24 := by decide
 

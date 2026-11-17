@@ -130,22 +130,24 @@ private theorem vetted_satAux (W : List (BitVec 64)) (length : W.length = 2218) 
     rw [v0, v1, v2, v3, v4, v5, v6, v7, v8]
     dsimp only [stackArgAddr, stripConsts, State.withRegions, searchSat, keySat]
     repeat' apply And.intro
+    -- the last four facts are about the memory: each by its own lemma, not by trying the others' first
+    rotate_right 4
+    · change domainValid 64 (Spec.Rsa.bytesAt (searchMem W) 0x3000 128) = true
+      rw [searchSat_domain W]
+      decide +kernel
+    · change ((searchMem W).readW 0x4000 64).toNat ≤ 128
+      rw [searchSat_control W (by decide)]
+      decide +kernel
+    · change ((searchMem W).readW 0x4008 64).toNat ≤ 128
+      rw [searchSat_control W (by decide)]
+      decide +kernel
+    · change (searchMem W).readW 0x4010 64 = 64
+      rw [searchSat_control W (by decide)]
+      decide +kernel
     all_goals first
       | rfl
       | decide +kernel
       | (apply Region.disjoint_of_sep; decide +kernel)
-      | (change domainValid 64 (Spec.Rsa.bytesAt (searchMem W) 0x3000 128) = true
-         rw [searchSat_domain W]
-         decide +kernel)
-      | (change ((searchMem W).readW 0x4000 64).toNat ≤ 128
-         rw [searchSat_control W (by simp)]
-         decide +kernel)
-      | (change ((searchMem W).readW 0x4008 64).toNat ≤ 128
-         rw [searchSat_control W (by simp)]
-         decide +kernel)
-      | (change (searchMem W).readW 0x4010 64 = 64
-         rw [searchSat_control W (by simp)]
-         decide +kernel)
   · refine ⟨?_, ?_, ?_, fun r hr => by
       simp only [constRegs, Abi.constRegions, List.mem_map, List.mem_singleton] at hr
       obtain ⟨c, rfl, rfl⟩ := hr
@@ -219,18 +221,21 @@ theorem cached_sat : ∃ s, (GenerationPolicy.cached.searchContract abi (stackUs
   rw [a0,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10]
   dsimp only [cachedSearchSat,cachedSearchBase,keySat]
   repeat' apply And.intro
+  -- the last six facts are about the memory: each by its own lemma, not by trying the others' first
+  rotate_right 6
+  · change domainValid 64 (Spec.Rsa.bytesAt cachedSearchSat.mem 0x3000 128)=true
+    rw [cachedSearch_domain]; exact CachedSat.domain_valid
+  · change (cachedSearchSat.mem.readW 0x4000 64).toNat≤128
+    rw [cachedSearch_control (by decide)]; decide +kernel
+  · change (cachedSearchSat.mem.readW 0x4008 64).toNat≤128
+    rw [cachedSearch_control (by decide)]; decide +kernel
+  · change cachedSearchSat.mem.readW 0x4010 64=64
+    rw [cachedSearch_control (by decide)]; decide +kernel
+  · decide +kernel
+  · change Spec.Ffdh.generationPrecompute 64 (Spec.Rsa.bytesAt cachedSearchSat.mem 0x3000 128) =
+      some (Spec.Rsa.wordsAt cachedSearchSat.mem 0x100000 275)
+    rw [cachedSearch_domain]; exact (CachedSat.canonical _).2
   all_goals first
-    | (change domainValid 64 (Spec.Rsa.bytesAt cachedSearchSat.mem 0x3000 128)=true
-       rw [cachedSearch_domain]; exact CachedSat.domain_valid)
-    | (change Spec.Ffdh.generationPrecompute 64 (Spec.Rsa.bytesAt cachedSearchSat.mem 0x3000 128) =
-         some (Spec.Rsa.wordsAt cachedSearchSat.mem 0x100000 275)
-       rw [cachedSearch_domain]; exact (CachedSat.canonical _).2)
-    | (change (cachedSearchSat.mem.readW 0x4000 64).toNat≤128
-       rw [cachedSearch_control (by simp)]; decide +kernel)
-    | (change (cachedSearchSat.mem.readW 0x4008 64).toNat≤128
-       rw [cachedSearch_control (by simp)]; decide +kernel)
-    | (change cachedSearchSat.mem.readW 0x4010 64=64
-       rw [cachedSearch_control (by simp)]; decide +kernel)
     | decide +kernel
     | (apply Region.disjoint_of_sep; decide +kernel)
 

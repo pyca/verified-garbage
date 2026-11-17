@@ -155,7 +155,8 @@ theorem call_ops {name : String} {ops : List FOp} {qs : List Nat} {v : Nat → F
     simp only [isa, ret]
     exact ite_eq_left_of_eq_true _ _ (eq_true hl3)
   refine ⟨_, s3, Exec.call (call_callEntry s) he hret, k s3 ⟨⟨fun r hr => ?_, ?_, ?_, ?_⟩, ?_⟩ h3.slots⟩
-  · rw [h3.stp.rest.gpr r hr, State.callEntry_gpr s (by cases r <;> simp_all [work, linkRegs])]
+  · rw [h3.stp.rest.gpr r hr,
+      State.callEntry_gpr s fun hl => hr ((by decide : ∀ x ∈ linkRegs, x ∈ work) r hl)]
   · rw [h3.stp.rest.rd, State.callEntry_rd]
   · rw [h3.stp.rest.wr, State.callEntry_wr]
   · rw [h3.stp.rest.sp, State.callEntry_sp]
