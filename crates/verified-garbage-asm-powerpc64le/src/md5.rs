@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Md5.initContract`. The streaming state is the MD buffer followed by a buffered partial block (`VG.Spec.Md5.Repr`).
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 80 bytes.

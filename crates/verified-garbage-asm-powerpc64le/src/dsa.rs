@@ -3575,6 +3575,8 @@ bne %cr0, 2227b
 ///
 /// Contract: `VG.Spec.Dsa.parameterInitContract`.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 32 bytes.
