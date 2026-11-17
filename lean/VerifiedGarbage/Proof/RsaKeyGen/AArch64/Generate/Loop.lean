@@ -16,6 +16,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Bignum.Layout
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AArch64.Inline
 import VerifiedGarbage.Proof.RsaKeyGen.InitWords
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtGPow
 import VerifiedGarbage.Proof.Bignum.AArch64.PubFail
@@ -576,7 +577,7 @@ theorem push_frame (h : GenInput p s) (m : Mem) (v : BitVec 64) :
 
 end GenInput
 
-/-- The state the body of the frame saving `x30` starts in (`WP.frameRegKept`). -/
+/-- The state the body of the frame saving `x30` starts in (`WP.frameReg`). -/
 abbrev pushedX30 (t : State) : State :=
   { t with sp := t.sp - 16, mem := t.mem.write (t.sp - 16) 8 (t.gpr .x30) }
 
@@ -1629,13 +1630,13 @@ theorem search_run (v : RoundImpl) {p : GenPublic} {original s : State} {used : 
       show (BitVec.ofNat 64 176).toNat = 176 from rfl]
     omega_using [hroom]
   unfold searchRun searchCall
-  refine WP.allocKept (by decide) hsp32 ?_
+  refine WP.alloc (by decide) hsp32 ?_
   refine WP.seq (WP.mono (search_args_ok h.toGenFrame) fun u ⟨⟨ha, hm⟩, k⟩ => ?_)
   obtain hu : u.sp = callSp p := k.sp.trans (alloc32_sp h.toGenFrame)
   obtain hd : 16 * (Search.searchCode v).aarch64Depth < 2 ^ 64 := by rw [searchCode_depth]; decide
   refine WP.callFV (k := Search.searchContract) (Search.search_correct _) (callS_pre h hu ha hm)
     (search_covers_reads h.toGenFrame k.rd k.wr) (search_covers_writes h.toGenFrame k.wr) ?_ hd
-  intro t htr htw htsp hfr hg hvs hpost
+  intro t htr htw htsp hfr hg hvs hpost m uu f
   obtain hres := callS_result h hu ha hm
   obtain ⟨a0, a1, a2, a3⟩ := callS_args (used := used) (st := st) hu hm
   obtain hlen : Search.searchLen (callS p used st u) = p.L := by
@@ -1673,12 +1674,34 @@ theorem search_run (v : RoundImpl) {p : GenPublic} {original s : State} {used : 
   obtain hframe := f₀.trans f₁
   obtain hrem := KeySearch.primeSearch_remaining_le p.L p.eB st.phase.other st.remaining ((genRand original).drop used)
   have hle := h.state.remaining_le
-  have hfree : (freed 32 t).mem = t.mem := rfl
-  refine ⟨h.toGenFrame.restore (htr.trans k.rd) (show t.wr.tail = s.wr by rw [htw, k.wr]; rfl)
+  -- The frame's bytes are lost: they are in the stack, apart from the outputs.
+  have hG : Region.Sub ⟨s.sp - BitVec.ofNat 64 32, 32⟩ ⟨p.sp - BitVec.ofNat 64 416, 416⟩ := by
+    rw [show s.sp - BitVec.ofNat 64 32 = callSp p from alloc32_sp h.toGenFrame]
+    exact Offset.sub_below _ (by decide) (by decide)
+  have hG' : Region.Sub ⟨s.sp - BitVec.ofNat 64 32, 32⟩ ⟨p.sp - BitVec.ofNat 64 416, 256⟩ := by
+    rw [show s.sp - BitVec.ofNat 64 32 = callSp p from alloc32_sp h.toGenFrame]
+    exact Offset.sub_below _ (by decide) (by decide)
+  obtain hframe' : Frame (searchChanges p st) s.mem m :=
+    hframe.trans (f.sub fun r hr => ⟨_, stack_mem p st, by obtain rfl := List.mem_singleton.mp hr; exact hG'⟩)
+  have hw (d : Nat) (hd' : d + 8 ≤ 56) : word m p.stp d = word t.mem p.stp d :=
+    f.readW (r := cS p) (Offset.contains_base _ hd' (by omega_using [hd']))
+      (fun q hq => by obtain rfl := List.mem_singleton.mp hq; exact (hf.stack _ (by simp)).sub_right hG)
+      (by decide)
+  have hU : word m p.up 0 = word t.mem p.up 0 :=
+    f.readW (r := rU p) (Offset.contains_base _ (by decide) (by decide))
+      (fun q hq => by obtain rfl := List.mem_singleton.mp hq; exact (hf.stack _ (by simp)).sub_right hG)
+      (by decide)
+  have hO : Spec.Rsa.bytesAt m (outOf p st) p.L = Spec.Rsa.bytesAt t.mem (outOf p st) p.L :=
+    List.map_congr_left fun i hi => lost_byte f
+      (((hf.stack _ (by simp)).sub_left (rO_sub (st := st) hf)).sub_right hG) (List.mem_range.mp hi)
+  refine ⟨h.toGenFrame.restore (t := { freed 32 t with mem := m, unknowns := uu })
+      (htr.trans k.rd) (show t.wr.tail = s.wr by rw [htw, k.wr]; rfl)
       (show t.sp + BitVec.ofNat 64 32 = s.sp by rw [htsp, k.sp]; exact BitVec.sub_add_cancel _ _)
       (fun r hr h30 => (hg r hr h30).trans (k.gpr r (by revert r hr; decide)))
-      (fun r hr => (hvs r hr).trans (k.vcs r hr)) (hframe.sub (searchChanges_sub h.toGenFrame)) ?_ w1 w2
-      (.inl rfl) rfl (Nat.le_trans hrem hle), ?_, ?_, ?_, ⟨req, ?_, hreq⟩, hframe⟩
+      (fun r hr => (hvs r hr).trans (k.vcs r hr)) (hframe'.sub (searchChanges_sub h.toGenFrame))
+      ((hw 0 (by decide)).trans ?_) ((hw 8 (by decide)).trans w1) ((hw 16 (by decide)).trans w2)
+      (.inl rfl) rfl (Nat.le_trans hrem hle), ?_, hU.trans ?_, hO.trans ?_,
+      ⟨req, (hw 24 (by decide)).trans ?_, hreq⟩, hframe'⟩
   · exact w0
   · exact hst
   · exact hused
@@ -2413,6 +2436,29 @@ theorem callK_res {p : GenPublic} {original s u : State} {used : Nat} {st : KeyP
   rw [he, hbytes (R := ⟨p.slot 4, p.L⟩) (.inl (kSlot_sub (by omega_using []))) (by show p.L ≤ 2 ^ 64; omega_using [hL2]),
     hbytes (R := ⟨p.slot 5, p.L⟩) (.inl (kSlot_sub (by omega_using []))) (by show p.L ≤ 2 ^ 64; omega_using [hL2])]
 
+/-- The key's outputs are in the key's buffer. -/
+theorem keyOuts_sub {p : GenPublic} : ∀ o ∈ keyOutsOf p, Region.Sub ⟨o.1, o.2⟩ (cK p) := by
+  intro o ho
+  simp only [keyOutsOf, List.mem_cons, List.not_mem_nil, or_false] at ho
+  rcases ho with rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  · exact kN_sub
+  all_goals exact kSlot_sub (by omega_using [])
+
+/-- What the key leaves at its outputs, for the key's result `K`. -/
+def KeyOutAt (p : GenPublic) (K : Except Failure (List (List Byte)) ⊕ Unit) (m : Mem) : Prop :=
+  match K with
+  | .inl (.ok ys) => (keyOutsOf p).map (fun o => Spec.Rsa.bytesAt m o.1 o.2) = ys
+  | _ => ∀ o ∈ keyOutsOf p, Spec.Rsa.bytesAt m o.1 o.2 = List.replicate o.2 0
+
+/-- What the key leaves, in memory that agrees on its outputs. -/
+theorem keyOut_congr {p : GenPublic} {K : Except Failure (List (List Byte)) ⊕ Unit} {m m' : Mem}
+    (he : ∀ o ∈ keyOutsOf p, Spec.Rsa.bytesAt m' o.1 o.2 = Spec.Rsa.bytesAt m o.1 o.2)
+    (h : KeyOutAt p K m) : KeyOutAt p K m' := by
+  rcases K with (_ | ys) | _
+  · exact fun o ho => (he o ho).trans (h o ho)
+  · exact (List.map_congr_left fun o ho => he o ho).trans h
+  · exact fun o ho => (he o ho).trans (h o ho)
+
 theorem key_run [Key.KeyProof] {p : GenPublic} {original s : State} {used : Nat} {st : KeyProgress}
     (h : GenFrame p original used st s) :
     WP isa (keyRun keyCall) s (AfterKey p original used st s) := by
@@ -2424,12 +2470,12 @@ theorem key_run [Key.KeyProof] {p : GenPublic} {original s : State} {used : Nat}
       show (BitVec.ofNat 64 176).toNat = 176 from rfl]
     omega_using [hroom]
   unfold keyRun keyCall
-  refine WP.allocKept (by decide) hsp80 ?_
+  refine WP.alloc (by decide) hsp80 ?_
   refine WP.seq (WP.mono (key_args_ok h) fun u ⟨⟨ha, hm⟩, k⟩ => ?_)
   obtain hu : u.sp = keySp p := k.sp.trans (alloc80_sp h)
   refine WP.callV (k := Key.keyA) Key.KeyProof.correct (callK_pre h hu ha hm) (key_covers_reads h k.rd k.wr)
     (key_covers_writes h k.wr) ?_ keyCode_noFrames
-  intro t htr htw htsp hfr hg _ hvs hpost
+  intro t htr htw htsp hfr hg _ hvs hpost m uu f
   obtain ⟨hres, -⟩ := callK_res h hu ha hm
   obtain ⟨r0, r1, r2, r3, r4, r5, r6, r7⟩ := ha
   obtain ⟨a0, a1, a2, a3, a4, -⟩ := callK_args (s := s) hu hm
@@ -2473,8 +2519,18 @@ theorem key_run [Key.KeyProof] {p : GenPublic} {original s : State} {used : Nat}
     · exact ⟨cK p, mK, kSlot_sub (by omega_using [])⟩
     · exact ⟨cK p, mK, kSlot_sub (by omega_using [])⟩
     · exact ⟨rS p, mS, fun _ h => h⟩
-  obtain hframe := f₀.trans f₁
-  have hword (d : Nat) (hd : d + 8 ≤ 56) : word t.mem p.stp d = word s.mem p.stp d := by
+  -- The frame's bytes are lost: they are in the stack, apart from the key's buffer.
+  have hG : Region.Sub ⟨s.sp - BitVec.ofNat 64 80, 80⟩ ⟨p.sp - BitVec.ofNat 64 416, 256⟩ := by
+    rw [show s.sp - BitVec.ofNat 64 80 = keySp p from alloc80_sp h]
+    exact Offset.sub_below _ (by decide) (by decide)
+  obtain hframe := (f₀.trans f₁).trans (f.sub fun r hr => ⟨_, mT, by
+    obtain rfl := List.mem_singleton.mp hr; exact hG⟩)
+  have heo : ∀ o ∈ keyOutsOf p, Spec.Rsa.bytesAt m o.1 o.2 = Spec.Rsa.bytesAt t.mem o.1 o.2 :=
+    fun o ho => List.map_congr_left fun i hi => lost_byte f
+      (((hf.stack _ (by simp)).sub_left (keyOuts_sub o ho)).sub_right
+        fun x hx => Offset.sub_below p.sp (a := 416) (n := 256) (b := 416) (m := 416) (by decide) (by decide)
+          x (hG x hx)) (List.mem_range.mp hi)
+  have hword (d : Nat) (hd : d + 8 ≤ 56) : word m p.stp d = word s.mem p.stp d := by
     refine hframe.readW (r := cS p) (Offset.contains_base _ hd (by have := hf.nT; omega_using [hd])) (fun q hq => ?_)
       (by decide)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
@@ -2482,13 +2538,13 @@ theorem key_run [Key.KeyProof] {p : GenPublic} {original s : State} {used : Nat}
     · exact hf.kT.symm
     · exact hf.sT.symm
     · exact sT.sub_right (Region.sub_prefix (by decide))
-  refine ⟨h.restore (htr.trans k.rd) (show t.wr.tail = s.wr by rw [htw, k.wr]; rfl)
+  refine ⟨h.restore (t := { freed 80 t with mem := m, unknowns := uu }) (htr.trans k.rd) (show t.wr.tail = s.wr by rw [htw, k.wr]; rfl)
       (show t.sp + BitVec.ofNat 64 80 = s.sp by rw [htsp, k.sp]; exact BitVec.sub_add_cancel _ _)
       (fun r hr h30 => (hg r hr h30).trans (k.gpr r (by revert r hr; decide)))
       (fun r hr => (hvs r hr).trans (k.vcs r hr)) (hframe.sub (key_frame_sub h))
       ((hword 0 (by decide)).trans h.state.remaining)
       ((hword 8 (by decide)).trans h.state.len) ((hword 16 (by decide)).trans h.state.cap) (.inl rfl) rfl
-      h.state.remaining_le, hstat, hout, hframe⟩
+      h.state.remaining_le, hstat, keyOut_congr (K := keyOf p s.mem) heo hout, hframe⟩
 
 end VG.Proof.RsaKeyGen.AArch64.Generate
 

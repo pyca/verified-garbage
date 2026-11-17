@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignSingle
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignInvalid
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.AArch64.Inline
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Dsa.RandomSignResult
@@ -92,15 +93,21 @@ structure RandomSignCodePost (s : State) (result : Spec.Dsa.RandomSignResult) (t
   callee : ∀ r ∈ preserved, t.gpr r = s.gpr r
   sp : t.sp = s.sp
   vectors : ∀ r ∈ preservedV, (t.v r).extractLsb' 0 64 = (s.v r).extractLsb' 0 64
-  nonce : ∀ i < 32, t.mem (off (randomBase s) (200 + i)) = 0
 
 theorem random_sign_code (S : Signer) {s : State} (h : RandomSignABI S.stack s) (hval : RandomValid S s) :
     WP isa (RandomSign.code S.name S.code) s
       (RandomSignCodePost s (randomSignRemaining (randomInput s) 0 8)) := by
   apply random_frame_ok h
-  refine WP.mono (random_sign_body S h hval) fun t ht => ⟨ht.sp, ht.wr, ?_⟩
-  refine ⟨ht.rd, by change t.wr.tail = _; rw [ht.wr]; rfl, ht.status, ht.output, ht.used,
-    ht.callee, ?_, ht.vectors, ht.nonce⟩
+  refine WP.mono (random_sign_body S h hval) fun t ht m u f => ?_
+  -- The frame's bytes are lost; the outputs are apart from them.
+  have hsub := random_frame_sub h
+  refine ⟨ht.rd, by change t.wr.tail = _; rw [ht.wr]; rfl, ht.status,
+    (List.map_congr_left fun i hi => lost_byte f (h.stackOut.symm.sub_right hsub) (List.mem_range.mp hi)).trans
+      ht.output,
+    (f.readW (r := ⟨s.gpr .x2, 8⟩) (Region.contains_self _ _)
+      (fun R hR => by obtain rfl := List.mem_singleton.mp hR; exact h.stackUsed.symm.sub_right hsub)
+      (by decide)).trans ht.used,
+    ht.callee, ?_, ht.vectors⟩
   change t.sp + BitVec.ofNat 64 Random.frameBytes = s.sp
   rw [ht.sp, randomBase, BitVec.sub_add_cancel]
 

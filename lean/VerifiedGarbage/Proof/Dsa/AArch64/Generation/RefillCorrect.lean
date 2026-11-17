@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.RefillFinish
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.RefillAttempt
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AArch64.Inline
 import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 import VerifiedGarbage.Proof.Framework.AArch64.LaneSave
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
@@ -573,10 +574,21 @@ theorem refill_correct (H : GenerationHashes) (G : GeneratorStage) (T : PrimeTes
     unfold Impl.Dsa.AArch64.Generation.code
     apply alloc_frame_ok (bytes := 480) (by decide) (by have := h.stackLower; unfold refillStack at this; omega_using [this])
     refine WP.mono (body_ok h H G T) ?_
-    intro t ⟨x0, bytes, used, words, gp, vp, sp, _, wr⟩
-    refine ⟨by simp only [allocState]; exact sp, by simp only [allocState]; exact wr, ?_⟩
-    simp only [freeState]
-    refine ⟨x0, bytes, used, words, gp, vp, ?_⟩
+    intro t ⟨x0, bytes, used, words, gp, vp, sp, _, wr⟩ m u f
+    -- The frame's bytes are lost; the outputs are apart from them.
+    have hA : Region.Sub ⟨s.sp - BitVec.ofNat 64 480, 480⟩ (below s.sp refillStack) :=
+      below_sub (by decide) (by decide)
+    have eW : ∀ {R : Region} {n : Nat}, (below s.sp refillStack).Disjoint R → 8 * n ≤ R.len → R.len < 2 ^ 64 →
+        Spec.Rsa.wordsAt m R.base n = Spec.Rsa.wordsAt t.mem R.base n := by
+      intro R n hd hk hk2
+      refine List.map_congr_left fun i hi => ?_
+      have hi := List.mem_range.mp hi
+      exact f.readW (r := R) (Offset.contains_base _ (by omega_using [hi, hk]) (by omega_using [hi, hk, hk2]))
+        (fun R' hR' => by obtain rfl := List.mem_singleton.mp hR'; exact hd.symm.sub_right hA) (by decide)
+    refine ⟨x0, (List.map_congr_left fun i hi => lost_byte f (h.stackOut.symm.sub_right hA)
+        (List.mem_range.mp hi)).trans bytes,
+      (eW (R := inUsed s) h.stackUsed (by simp only [inUsed]; decide) (by simp only [inUsed]; decide)).trans used,
+      (eW (R := inState s) h.stackState (by simp only [inState]; decide) (by simp only [inState]; decide)).trans words, gp, vp, ?_⟩
     change t.sp + BitVec.ofNat 64 480 = s.sp
     rw [sp]; exact BitVec.sub_add_cancel ..
   refine ⟨tr, t, he, ⟨gp, tsp, vp⟩, ?_⟩

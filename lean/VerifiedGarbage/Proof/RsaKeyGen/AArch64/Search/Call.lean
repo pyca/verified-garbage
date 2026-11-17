@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.RsaKeyGen.AArch64.Search
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Search.Entry
 public import VerifiedGarbage.Proof.Framework.Covers
+import VerifiedGarbage.Proof.Framework.AArch64.Inline
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
@@ -123,6 +124,16 @@ theorem SearchLive.callFacts {p : SearchPublic} {original s : State} {used remai
   · simp only [searchOfState, Nat.mul_div_cancel _ (by decide : 0 < 8)]
     exact hscr
   · simp only [searchOfState, Nat.mul_div_cancel _ (by decide : 0 < 8)]
+
+/-- The output and `used` are apart from the stack the search uses. -/
+theorem SearchInput.outStack {p : SearchPublic} {original : State} (hi : SearchInput p original) :
+    (rO p).Disjoint (below p.sp stackUse) ∧ (rU p).Disjoint (below p.sp stackUse) := by
+  obtain ⟨_, _, _, _, _, _, _, hstk, _, _, _, _, _, -, -, -, -⟩ := hi.1
+  cases hi.2
+  simp only [inWrites, inReads, List.mem_cons, List.not_mem_nil, or_false,
+    forall_eq_or_imp, forall_eq, List.cons_append, List.nil_append] at hstk
+  obtain ⟨bo, bu, -⟩ := hstk
+  exact ⟨bo.symm, bu.symm⟩
 
 /-! ## The candidate's arguments -/
 
@@ -409,6 +420,21 @@ theorem CandPost.keep {p : SearchPublic} {pB rand : List Byte} {used : Nat} {s t
   rw [hm, hr]
   exact h
 
+theorem CandPost.frame {p : SearchPublic} {pB rand : List Byte} {used : Nat} {s t : State} {F : Region}
+    (h : CandPost p pB rand used s) (hf : Frame [F] s.mem t.mem)
+    (ho : (rO p).Disjoint F) (hu : (rU p).Disjoint F)
+    (hr : (t.gpr .x0).setWidth 32 = (s.gpr .x0).setWidth 32) : CandPost p pB rand used t := by
+  have eo : Spec.Rsa.bytesAt t.mem p.op p.len = Spec.Rsa.bytesAt s.mem p.op p.len :=
+    List.map_congr_left fun i hi => lost_byte hf ho (List.mem_range.mp hi)
+  have eu : Spec.Rsa.wordsAt t.mem p.up 1 = Spec.Rsa.wordsAt s.mem p.up 1 := by
+    refine List.map_congr_left fun i hi => ?_
+    obtain rfl : i = 0 := by simpa using hi
+    exact hf.readW (r := rU p) (Offset.contains_base _ (by decide) (by decide))
+      (fun R hR => by obtain rfl := List.mem_singleton.mp hR; exact hu) (by decide)
+  unfold CandPost at h ⊢
+  rw [eo, eu, hr]
+  exact h
+
 theorem search_candidate_run (c : Cand) {p : SearchPublic} {original s : State} {used remaining : Nat}
     (h : SearchLive p original used remaining s) :
     WP isa (candidateRun c.call) s fun t =>
@@ -419,14 +445,27 @@ theorem search_candidate_run (c : Cand) {p : SearchPublic} {original s : State} 
       simp only [BitVec.le_def, BitVec.toNat_ofNat]; have := hf.room; omega_using [this])]
     simp only [BitVec.toNat_ofNat]; have := hf.room; omega_using [this]
   unfold candidateRun
-  refine WP.allocKept (by decide) hroom ?_
+  refine WP.alloc (by decide) hroom ?_
   refine WP.seq (WP.mono (search_arguments_ok h) fun u ⟨⟨ha, hm⟩, k⟩ => ?_)
   have hu : u.sp = callSp p := k.sp.trans (alloc_call_sp h)
   refine WP.callV (k := candContract) c.correct (call_cand_pre hf hu ha hm)
     (call_covers_reads h k.rd k.wr) (call_covers_writes h k.wr) ?_ c.noFrames
-  intro t hrd hwr hsp hfr hcs _ hvs hpost
+  intro t hrd hwr hsp hfr hcs _ hvs hpost m uu f
+  have hA : Region.Sub ⟨s.sp - BitVec.ofNat 64 32, 32⟩ ⟨p.sp - BitVec.ofNat 64 stackUse, 48⟩ := by
+    rw [show s.sp - BitVec.ofNat 64 32 = callSp p from alloc_call_sp h]
+    exact Region.sub_prefix (by decide)
+  have hA' : ∀ R ∈ [(⟨s.sp - BitVec.ofNat 64 32, 32⟩ : Region)],
+      ∃ R' ∈ SearchInput.callChanges original, Region.Sub R R' := by
+    intro R hR
+    obtain rfl := List.mem_singleton.mp hR
+    refine ⟨⟨original.sp - BitVec.ofNat 64 stackUse, 48⟩, by simp [SearchInput.callChanges], ?_⟩
+    rw [← h.input.sp_eq]
+    exact hA
+  have hS : Region.Sub ⟨s.sp - BitVec.ofNat 64 32, 32⟩ (below p.sp stackUse) :=
+    fun x hx => Offset.sub_below p.sp (a := stackUse) (n := 48) (b := stackUse) (m := stackUse)
+      (by decide) (by decide) x (hA x hx)
   refine ⟨?_, ?_⟩
-  · apply h.restore (show (freed 32 t).rd = s.rd from hrd.trans k.rd)
+  · apply h.restore (t := { freed 32 t with mem := m, unknowns := uu }) (show (freed 32 t).rd = s.rd from hrd.trans k.rd)
       (show (freed 32 t).wr = s.wr from by change t.wr.tail = s.wr; rw [hwr, k.wr]; rfl)
     · change t.sp + BitVec.ofNat 64 32 = s.sp
       rw [hsp, k.sp]
@@ -435,8 +474,9 @@ theorem search_candidate_run (c : Cand) {p : SearchPublic} {original s : State} 
       exact (hcs r hr h30).trans (k.gpr r (by revert r hr; decide))
     · intro r hr
       exact (hvs r hr).trans (k.vcs r hr)
-    · exact call_frame h hm hfr
-  · obtain ⟨he, hpb, hrand⟩ := call_inputs h hm
+    · exact (call_frame h hm hfr).trans (f.sub hA')
+  · refine CandPost.frame (s := t) ?_ f ((h.input.outStack).1.sub_right hS) ((h.input.outStack).2.sub_right hS) rfl
+    obtain ⟨he, hpb, hrand⟩ := call_inputs h hm
     obtain ⟨a0, -, -⟩ := call_args hu hm
     obtain ⟨r0, r1, r2, r3, r4, r5, r6, r7⟩ := ha
     have tl := toNat_ofNat_lt hf.len64

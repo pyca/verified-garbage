@@ -188,17 +188,11 @@ theorem keygen_incoming_read {extra : Nat} {s : State} (h : GenerateKeyABI extra
 theorem keygen_frame_ok {extra : Nat} {s : State} (h : GenerateKeyABI extra s)
     {body : Prog isa} {Q : State → Prop}
     (hb : WP isa body (allocated Random.frameBytes s) fun t =>
-      t.sp = randomBase s ∧ t.wr = (allocated Random.frameBytes s).wr ∧ Q (randomFreed t)) :
+      ∀ m u, Frame [⟨randomBase s, Random.frameBytes⟩] t.mem m →
+        Q { randomFreed t with mem := m, unknowns := u }) :
     WP isa (.frame (.alloc Random.frameBytes) body (.free Random.frameBytes)) s Q := by
-  obtain ⟨trace, t, he, htsp, htwr, hq⟩ := hb
   have hl := h.stackLower
-  have ha : isa.push (.alloc Random.frameBytes) s = some (allocated Random.frameBytes s) := by
-    simp only [isa, push, allocated]
-    exact ite_eq_left ⟨by decide, by decide, by decide, by unfold Random.frameBytes; omega_using [hl]⟩
-  have hf : isa.pop (.free Random.frameBytes) (allocated Random.frameBytes s) t = some (randomFreed t) := by
-    simp only [isa, pop]
-    exact ite_eq_left ⟨by decide, by decide, by decide, htsp, htwr, rfl⟩
-  exact ⟨_, _, Exec.frame ha he hf, hq⟩
+  exact WP.alloc ⟨by decide, by decide, by decide⟩ (by unfold Random.frameBytes; omega_using [hl]) hb
 
 theorem keygen_initial_source {extra : Nat} {s : State} (h : GenerateKeyABI extra s)
     {p : Addr} {n : Nat} (hr : (⟨p, n⟩ : Region) ∈ s.rd)
@@ -1551,15 +1545,21 @@ structure KeygenCodePost (s : State) (result : Spec.Dsa.GenerateKeyResult) (t : 
   callee : ∀ r ∈ preserved, t.gpr r = s.gpr r
   sp : t.sp = s.sp
   vectors : ∀ r ∈ preservedV, (t.v r).extractLsb' 0 64 = (s.v r).extractLsb' 0 64
-  nonce : ∀ i < 32, t.mem (off (randomBase s) (200 + i)) = 0
 
 theorem keygen_code (v : Backend) {s : State} (h : GenerateKeyABI v.stack s) :
     WP isa (GenerateKey.code (keygenCheckName v) (keygenDeriveName v) (Generate.checkParameters v.mul)
       (Generate.deriveChecked v.mul)) s (KeygenCodePost s (keygenResult s)) := by
   apply keygen_frame_ok h
-  refine WP.mono (keygen_body v h) fun t ht => ⟨ht.sp, ht.wr, ?_⟩
-  refine ⟨ht.rd, by change t.wr.tail = _; rw [ht.wr]; rfl, ht.status, ht.output, ht.used,
-    ht.callee, ?_, ht.vectors, ht.nonce⟩
+  refine WP.mono (keygen_body v h) fun t ht m u f => ?_
+  -- The frame's bytes are lost; the outputs are apart from them.
+  have hsub := keygen_frame_sub h
+  refine ⟨ht.rd, by change t.wr.tail = _; rw [ht.wr]; rfl, ht.status,
+    (List.map_congr_left fun i hi => lost_byte f (h.stackOut.symm.sub_right hsub) (List.mem_range.mp hi)).trans
+      ht.output,
+    (f.readW (r := ⟨s.gpr .x2, 8⟩) (Region.contains_self _ _)
+      (fun R hR => by obtain rfl := List.mem_singleton.mp hR; exact h.stackUsed.symm.sub_right hsub)
+      (by decide)).trans ht.used,
+    ht.callee, ?_, ht.vectors⟩
   change t.sp + BitVec.ofNat 64 Random.frameBytes = s.sp
   rw [ht.sp, randomBase, BitVec.sub_add_cancel]
 
