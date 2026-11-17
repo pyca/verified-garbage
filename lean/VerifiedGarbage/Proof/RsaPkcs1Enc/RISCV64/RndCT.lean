@@ -215,14 +215,42 @@ theorem body_ok {s : State} (hp : RPre s) :
     exact WP.ite false (by rw [hev, decide_eq_false (by omega_using [hc])]) (fun h => absurd h (by decide))
       fun _ => reject_ok hp hb hI hc
 
-theorem post_freed {s x : State} (n : Nat) (h : post s x) : post s (freed n x) := by
-  have hm : (freed n x).mem = x.mem := rfl
-  have hg : (freed n x).gpr = x.gpr := rfl
-  unfold post; rw [hm, hg]; exact h
+/-- The postcondition holds whatever the frame's bytes hold once it is freed:
+the output and the counts lie apart from it. -/
+theorem post_lost {s x : State} (hp : RPre s) (n : Nat) (m : Mem) (u : Nat → BitVec 64)
+    (fl : Frame [kR s] x.mem m) (h : post s x) :
+    post s { freed n x with mem := m, unknowns := u } := by
+  have hbo : Spec.Rsa.bytesAt m (s.gpr .a0) (s.gpr .a4).toNat =
+      Spec.Rsa.bytesAt x.mem (s.gpr .a0) (s.gpr .a4).toNat :=
+    List.map_congr_left fun i hi => lost_byte fl (R := ⟨s.gpr .a0, (s.gpr .a4).toNat⟩)
+      (by rw [← hp.ok]; exact (k_dis hp.ko).symm) (List.mem_range.mp hi)
+  have hd : ∀ r ∈ [kR s], (tR s).Disjoint r := fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr; exact (k_dis hp.kt).symm
+  have hr0 : m.readW (s.gpr .a2) 64 = x.mem.readW (s.gpr .a2) 64 :=
+    fl.readW (r := tR s) (by simp only [Region.Contains]; rw [BitVec.sub_self]; decide) hd (by decide)
+  have hr8 : m.readW (s.gpr .a2 + BitVec.ofNat 64 8) 64 = x.mem.readW (s.gpr .a2 + BitVec.ofNat 64 8) 64 :=
+    fl.readW (r := tR s) (Offset.contains_base _ (by decide) (by decide)) hd (by decide)
+  simp only [post, freed] at h ⊢
+  obtain ⟨⟨req, h1, h2, h3⟩, h4⟩ := h
+  refine ⟨⟨req, hr0.trans h1, hr8.trans h2, h3⟩, ?_⟩
+  revert h4
+  generalize (Spec.RsaPkcs1Enc.padSearch (psLen s) (randB s)).outcome = o
+  intro h4
+  cases o with
+  | accepted ps =>
+    intro ok
+    have h5 := h4 ok
+    revert h5
+    generalize Spec.RsaPkcs1Enc.encrypt (nB s) (eB s) (msgB s) ps = c
+    intro h5
+    cases c <;> simp only [Spec.RsaPkcs1Enc.writtenRandom, hbo] at h5 ⊢ <;> exact h5
+  | entropy => exact ⟨h4.1, hbo.trans h4.2⟩
+  | exhausted => exact ⟨h4.1, hbo.trans h4.2⟩
 
 theorem code_ok {s : State} (hp : RPre s) : WP isa code s fun s' => abiPreserved s s' ∧ post s s' := by
   unfold code
-  exact WP.allocLeKept (by decide) (sp1' hp) (WP.mono (body_ok hp) fun x h => ⟨h.1, post_freed _ h.2⟩)
+  exact WP.allocLe (by decide) (sp1' hp) (WP.mono (body_ok hp) fun x h m u fl =>
+    ⟨⟨h.1.1, h.1.2.1, h.1.2.2⟩, post_lost hp _ m u fl h.2⟩)
 
 
 /-! ## The public data -/
