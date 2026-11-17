@@ -755,16 +755,31 @@ theorem tail_ok {s t : State} (hp : PreE s) (ha : AfterCall s t) :
 theorem preCall_ok {s w : State} (hp : PreE s) (hw : Setup s w) : WP isa preCall w (AtCall s) :=
   em_ok hp hw fun _ hy => callArgs_ok hp hy
 
+/-- `written` reads the memory only in the output. -/
+private theorem written_lost {m m' : Mem} {out : Addr} {k : Nat} {r r' : BitVec 32} {o : Option (List Byte)}
+    (hr : r' = r) (hb : Spec.Rsa.bytesAt m' out k = Spec.Rsa.bytesAt m out k) (h : Spec.Rsa.written m out k r o) :
+    Spec.Rsa.written m' out k r' o := by
+  subst hr
+  cases o <;> simp only [Spec.Rsa.written, hb] at h ⊢ <;> exact h
+
 theorem code_ok {s : State} (hp : PreE s) : WP isa code s (Post s) := by
   unfold code
-  refine WP.allocKept (by decide) hp.sp1 ?_
+  refine WP.alloc (by decide) hp.sp1 ?_
   unfold body
   refine WP.seq (WP.mono (setup_ok hp (by rw [allocated_sp]) (by rw [allocated_wr, frameR_eq])
     (by rw [allocated_rd])
     (by rw [allocated_mem]; exact Frame.write (Frame.refl _ _) (List.mem_singleton_self _) _ (fb_contains s))
     (fun r _ => by rw [allocated_gpr]) (by rw [allocated_lr])) fun w hw => ?_)
   refine WP.seq (WP.mono (preCall_ok hp hw) fun t ht => ?_)
-  exact WP.seq (WP.mono (call_ok hp ht) fun t' ht' => tail_ok hp ht')
+  -- The `free` loses the frame's bytes, which lie apart from the output.
+  refine WP.seq (WP.mono (call_ok hp ht) fun t' ht' => WP.mono (tail_ok hp ht')
+    fun w h mL _ fl => ⟨abiPreserved_lost h.1, fun ok => ?_⟩)
+  have hb : Spec.Rsa.bytesAt mL (s.gpr .r3) (s.gpr .r6).toNat =
+      Spec.Rsa.bytesAt (freed frameBytes w).mem (s.gpr .r3) (s.gpr .r6).toNat := by
+    rw [freed_mem_eq]
+    exact List.map_congr_left fun i hi => lost_byte fl (R := ⟨s.gpr .r3, (s.gpr .r6).toNat⟩)
+      (by rw [← hp.ok]; exact hp.ko.symm) (List.mem_range.mp hi)
+  exact written_lost rfl hb (h.2 ok)
 
 /-- The correctness of `vg_rsa_pkcs1_encrypt_precomputed`, against its
 shared contract. -/

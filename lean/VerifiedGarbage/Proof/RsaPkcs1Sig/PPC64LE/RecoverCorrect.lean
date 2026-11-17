@@ -810,6 +810,13 @@ theorem recover_len {s : State} (h : stackArg s 0 ≠ s.gpr .r6) (hh : Spec.RsaP
   unfold Spec.RsaPkcs1Sig.recover
   rw [bytesAt_length, bytesAt_length, ite_eq_right fun e => h (BitVec.eq_of_toNat_eq e)]
 
+/-- `written` reads the memory only in the output. -/
+private theorem written_lost {m m' : Mem} {out : Addr} {k : Nat} {r r' : BitVec 32} {o : Option (List Byte)}
+    (hr : r' = r) (hb : Spec.Rsa.bytesAt m' out k = Spec.Rsa.bytesAt m out k) (h : Spec.Rsa.written m out k r o) :
+    Spec.Rsa.written m' out k r' o := by
+  subst hr
+  cases o <;> simp only [Spec.Rsa.written, hb] at h ⊢ <;> exact h
+
 theorem code_ok {s : State} (hp : PreR s) : WP isa code s (Post s) := by
   obtain hL1 := hp.len_pos; have hL2 := hp.len_le
   unfold code
@@ -817,7 +824,7 @@ theorem code_ok {s : State} (hp : PreR s) : WP isa code s (Post s) := by
   obtain hne := eval_len e₁
   by_cases hsig : stackArg s 0 = s.gpr .r6
   · refine WP.ite false (by rw [hne]; simp [hsig]) (by simp) fun _ => ?_
-    refine WP.allocKept (by decide) (by rw [o₁.sp]; exact hp.sp1) ?_
+    refine WP.alloc (by decide) (by rw [o₁.sp]; exact hp.sp1) ?_
     obtain fr₁ : frameR frameBytes t₁ = fr s := by rw [frameR_eq]; unfold fr fb; rw [o₁.sp]
     unfold body
     refine WP.seq (WP.mono (pubArgs_ok hp (by rw [allocated_sp, o₁.sp]) (by rw [allocated_wr, fr₁, o₁.wr])
@@ -829,7 +836,15 @@ theorem code_ok {s : State} (hp : PreR s) : WP isa code s (Post s) := by
         exact o₁.gpr r fun h => hr (by
           simp only [List.mem_cons, List.not_mem_nil, or_false] at h ⊢; exact h.symm))
       (by rw [allocated_lr, o₁.lr])) fun t₂ h₂ => ?_)
-    exact WP.seq (WP.mono (call_ok hp h₂ hsig) fun t₃ h₃ => afterPub_ok hp hsig h₃)
+    -- The `free` loses the frame's bytes, which lie apart from the output.
+    refine WP.seq (WP.mono (call_ok hp h₂ hsig) fun t₃ h₃ => WP.mono (afterPub_ok hp hsig h₃)
+      fun w h mL _ fl => ⟨abiPreserved_lost h.1, fun ok hh e => ?_⟩)
+    rw [o₁.sp] at fl
+    have hb : Spec.Rsa.bytesAt mL (s.gpr .r3) (s.gpr .r4).toNat =
+        Spec.Rsa.bytesAt (freed frameBytes w).mem (s.gpr .r3) (s.gpr .r4).toNat := by
+      rw [freed_mem_eq]
+      exact List.map_congr_left fun i hi => lost_byte fl (R := oR s) hp.ko.symm (List.mem_range.mp hi)
+    exact written_lost rfl hb (h.2 ok hh e)
   · refine WP.ite true (by rw [hne]; simp [hsig]) (fun _ => ?_) (by simp)
     unfold zeroArgs
     refine WP.seq (wp_mov fun y₁ p₁ f₁ => wp_mov fun y₂ p₂ f₂ => wp_nil ?_)

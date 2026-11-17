@@ -1872,6 +1872,12 @@ def StepOk (pc : Bool) (s : State) : Prop :=
   ∀ t (c : Prog isa) (Q : State → Prop), Mid s t → crtOut s t → (∀ u, AtPub pc s u → WP isa c u Q) →
     WP isa (.seq (preStep pc) c) t Q
 
+/-- `writtenOutcome` reads the memory only in the output. -/
+private theorem writtenOutcome_congr {m m' : Mem} {out : Addr} {k : Nat} {r : BitVec 32} {o : Spec.Rsa.Outcome}
+    (hb : Spec.Rsa.bytesAt m' out k = Spec.Rsa.bytesAt m out k) (h : Spec.Rsa.writtenOutcome m out k r o) :
+    Spec.Rsa.writtenOutcome m' out k r o := by
+  cases o <;> simp only [Spec.Rsa.writtenOutcome, hb] at h ⊢ <;> exact h
+
 /-- `n`'s values in the frame are its precomputed values, if they are valid. -/
 abbrev PreValOk (pc : Bool) (s : State) : Prop :=
   ∀ ws, Spec.Rsa.publicPrecompute (Spec.Rsa.bytesAt s.mem (s.gpr .r5) (s.gpr .r6).toNat) = some ws →
@@ -1881,7 +1887,7 @@ theorem codeG_correct {pc : Bool} (s : State) (h : PreP pc s) (hcrt : CrtOk pc s
     WP isa (.frame (.alloc frameBytes) (bodyG pc) (.free frameBytes)) s fun t =>
       abiPreserved s t ∧ (PreValOk pc s → fnPost s t) := by
   have hk := h.k2
-  refine WP.allocKept ⟨by decide, by decide, by decide⟩ h.sp1 ?_
+  refine WP.alloc ⟨by decide, by decide, by decide⟩ h.sp1 ?_
   unfold bodyG
   refine WP.seq (WP.mono (setup_ok h) fun t₁ A => ?_)
   refine WP.seq (hcrt t₁ _ A fun t₂ M C => ?_)
@@ -1902,8 +1908,14 @@ theorem codeG_correct {pc : Bool} (s : State) (h : PreP pc s) (hcrt : CrtOk pc s
   refine WP.seq (WP.mono (release_ok h L9 (fun b => Proof.Rsa.low_and_mask b _ _) r6 r7 r8 r9)
     fun t₁₀ ⟨hout, f10, k10⟩ => ?_)
   have L10 := L9.release h k10 f10
-  refine WP.mono (restore_ok L10) fun v ⟨vp, vl, vs, vm, v3⟩ => ?_
-  refine ⟨⟨fun r hr => ?_, ?_, ?_⟩, fun hv => ?_⟩
+  refine WP.mono (restore_ok L10) fun v ⟨vp, vl, vs, vm, v3⟩ mL _ fl => ?_
+  -- The `free` loses the frame's bytes, which lie apart from the output.
+  have hb : Spec.Rsa.bytesAt mL (s.gpr .r3) (s.gpr .r6).toNat =
+      Spec.Rsa.bytesAt (freed frameBytes v).mem (s.gpr .r3) (s.gpr .r6).toNat := by
+    rw [freed_mem]
+    exact List.map_congr_left fun i hi => lost_byte fl (R := outR s) (by rw [outR_eq h]; exact h.ko.symm)
+      (List.mem_range.mp hi)
+  refine ⟨abiPreserved_lost ⟨fun r hr => ?_, ?_, ?_⟩, fun hv => writtenOutcome_congr hb (?_ : fnPost s _)⟩
   · rw [freed_gpr]; exact vp r hr
   · rw [freed_sp, vs]; exact BitVec.sub_add_cancel _ _
   · rw [freed_lr]; exact vl

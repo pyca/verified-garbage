@@ -1346,18 +1346,32 @@ theorem afterEnc_ok {s u : State} (h : SPre pc s) (X : pc = true → PreX s) (B 
     refine WP.seq (WP.mono (callArgs_ok h B hb) fun t₃ C => ?_)
     refine WP.seq (call_ok h X C fun t₄ R => WP.mono (wipe_ok h R) fun v ⟨F, o⟩ => ⟨F, o⟩)
 
+/-- `writtenOutcome` reads the memory only in the output. -/
+private theorem writtenOutcome_congr {m m' : Mem} {out : Addr} {k : Nat} {r : BitVec 32} {o : Spec.Rsa.Outcome}
+    (hb : Spec.Rsa.bytesAt m' out k = Spec.Rsa.bytesAt m out k) (h : Spec.Rsa.writtenOutcome m out k r o) :
+    Spec.Rsa.writtenOutcome m' out k r o := by
+  cases o <;> simp only [Spec.Rsa.writtenOutcome, hb] at h ⊢ <;> exact h
+
 theorem codeG_correct (s : State) (h : SPre pc s) (X : pc = true → PreX s) :
     WP isa (codeG pc) s fun t => abiPreserved s t ∧ fnPost s t := by
   have hk := h.k2
   unfold codeG
-  refine WP.allocKept ⟨by decide, by decide, by decide⟩ (by have := h.sp1; unfold stackBytes at this; omega_using [this]) ?_
+  refine WP.alloc ⟨by decide, by decide, by decide⟩ (by have := h.sp1; unfold stackBytes at this; omega_using [this]) ?_
   unfold body
   refine WP.seq (WP.mono (setup_ok h) fun t₁ A => ?_)
   refine WP.seq (WP.mono (enc_ok h A) fun t₂ B => ?_)
   refine WP.seq (Q := fun _ => _) (WP.mono (Q := fun v => Fr2 s v ∧ fnPost s v) ?_ fun v ⟨F, hp⟩ =>
-    WP.mono (restore_ok F) fun w ⟨wp, wl, ws, wm, w3⟩ => ?_)
+    WP.mono (restore_ok F) fun w ⟨wp, wl, ws, wm, w3⟩ mL _ fl => ?_)
   · exact afterEnc_ok h X B
-  · refine ⟨⟨fun r hr => ?_, ?_, ?_⟩, ?_⟩
+  · -- The `free` loses the frame's bytes, which lie apart from the output.
+    have hb : Spec.Rsa.bytesAt mL (s.gpr .r3) (s.gpr .r6).toNat =
+        Spec.Rsa.bytesAt (freed frameBytes w).mem (s.gpr .r3) (s.gpr .r6).toNat := by
+      rw [freed_mem]
+      have hfb : frameBytes ≤ stackBytes := by unfold stackBytes; omega_using []
+      exact List.map_congr_left fun i hi => lost_byte fl (R := oR s)
+        (h.ko.symm.sub_right (Offset.sub_below _ hfb (by omega_using [hfb])))
+        (by show i < (s.gpr .r4).toNat; have h₁ := List.mem_range.mp hi; have h₂ := h.h4; omega_using [h₁, h₂])
+    refine ⟨abiPreserved_lost ⟨fun r hr => ?_, ?_, ?_⟩, writtenOutcome_congr hb (?_ : fnPost s _)⟩
     · rw [freed_gpr]; exact wp r hr
     · rw [freed_sp, ws]; exact BitVec.sub_add_cancel _ _
     · rw [freed_lr]; exact wl
