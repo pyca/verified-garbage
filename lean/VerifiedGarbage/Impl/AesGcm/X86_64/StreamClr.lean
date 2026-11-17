@@ -78,18 +78,6 @@ def zeroWs (z : Bool) : Nat → List Instr
   | 0 => []
   | k + 1 => zeroAt z (wbytes z * k) :: zeroWs z k
 
-/-- The 2112 bytes of the scratch of `vg_aes_gcm_encrypt_blocks` or
-`_decrypt_blocks` (its stack argument, `[rsp + 8]` as it returns) zeroed,
-with `2112 / wbytes z` stores (`zeroWs z`: 66 of `ymm0`, or with AVX-512
-33 of `zmm0`), then `vzeroupper`. -/
-def wipeScr (z : Bool) : List Instr :=
-  [.mov .r11 (.mem (at_ .rsp 8)), .vop (.vbin .vpxor .l128 .xmm0 .xmm0 .xmm0)] ++ zeroWs z (2112 / wbytes z) ++
-    [.vop .vzeroupper]
-
-/-- `f`, as an internal function of its own (`<name>_w`) that zeroes its
-scratch before it returns (`wipeScr z`). -/
-def Fn.wipe (z : Bool) (f : Fn) : Fn := ⟨f.name ++ "_w", .seq f.code (.block (wipeScr z))⟩
-
 /-- The working space of the loops of `vg_aes_gcm_encrypt_blocks` or
 `_decrypt_blocks` zeroed, from `r11 = (scratch + add) & -64` (the scratch,
 its stack argument, `[rsp + 8]` as it returns, rounded up to 64 bytes from

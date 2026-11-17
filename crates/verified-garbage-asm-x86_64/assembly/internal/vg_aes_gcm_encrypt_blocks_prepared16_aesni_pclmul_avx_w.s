@@ -4481,41 +4481,9 @@ vg_aes_gcm_encrypt_blocks_prepared16_aesni_pclmul_avx_w:
 225:
 21:
 	mov r11, QWORD PTR [rsp+8]
+	add r11, 127
+	and r11, -64
 	vpxor xmm0, xmm0, xmm0
-	vmovdqu YMMWORD PTR [r11+2080], ymm0
-	vmovdqu YMMWORD PTR [r11+2048], ymm0
-	vmovdqu YMMWORD PTR [r11+2016], ymm0
-	vmovdqu YMMWORD PTR [r11+1984], ymm0
-	vmovdqu YMMWORD PTR [r11+1952], ymm0
-	vmovdqu YMMWORD PTR [r11+1920], ymm0
-	vmovdqu YMMWORD PTR [r11+1888], ymm0
-	vmovdqu YMMWORD PTR [r11+1856], ymm0
-	vmovdqu YMMWORD PTR [r11+1824], ymm0
-	vmovdqu YMMWORD PTR [r11+1792], ymm0
-	vmovdqu YMMWORD PTR [r11+1760], ymm0
-	vmovdqu YMMWORD PTR [r11+1728], ymm0
-	vmovdqu YMMWORD PTR [r11+1696], ymm0
-	vmovdqu YMMWORD PTR [r11+1664], ymm0
-	vmovdqu YMMWORD PTR [r11+1632], ymm0
-	vmovdqu YMMWORD PTR [r11+1600], ymm0
-	vmovdqu YMMWORD PTR [r11+1568], ymm0
-	vmovdqu YMMWORD PTR [r11+1536], ymm0
-	vmovdqu YMMWORD PTR [r11+1504], ymm0
-	vmovdqu YMMWORD PTR [r11+1472], ymm0
-	vmovdqu YMMWORD PTR [r11+1440], ymm0
-	vmovdqu YMMWORD PTR [r11+1408], ymm0
-	vmovdqu YMMWORD PTR [r11+1376], ymm0
-	vmovdqu YMMWORD PTR [r11+1344], ymm0
-	vmovdqu YMMWORD PTR [r11+1312], ymm0
-	vmovdqu YMMWORD PTR [r11+1280], ymm0
-	vmovdqu YMMWORD PTR [r11+1248], ymm0
-	vmovdqu YMMWORD PTR [r11+1216], ymm0
-	vmovdqu YMMWORD PTR [r11+1184], ymm0
-	vmovdqu YMMWORD PTR [r11+1152], ymm0
-	vmovdqu YMMWORD PTR [r11+1120], ymm0
-	vmovdqu YMMWORD PTR [r11+1088], ymm0
-	vmovdqu YMMWORD PTR [r11+1056], ymm0
-	vmovdqu YMMWORD PTR [r11+1024], ymm0
 	vmovdqu YMMWORD PTR [r11+992], ymm0
 	vmovdqu YMMWORD PTR [r11+960], ymm0
 	vmovdqu YMMWORD PTR [r11+928], ymm0

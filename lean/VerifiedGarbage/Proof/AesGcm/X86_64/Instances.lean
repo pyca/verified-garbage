@@ -3058,7 +3058,7 @@ theorem streamEncryptCodeF16S_mx (v : GcmVariant) :
 
 /-- Whether `vg_aes_gcm_stream_encrypt_prepared` of a variant whose loops read
 16 powers calls whole-blocks functions that zero their working space before
-they return (`BlkFn.wipe`), and clears only the scratch registers on return,
+they return (`BlkFn.wipeW`), and clears only the scratch registers on return,
 as the variant on AES-NI and PCLMULQDQ in `VEX.128` does, whose loops leave
 the powers and the keystream there. -/
 def GcmVariant.streamF16Wipe (v : GcmVariant) : Bool :=

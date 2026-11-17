@@ -1384,28 +1384,28 @@ def streamDecryptWAesniPclmul : Registration Spec.Gcm.streamDecryptPreparedApi X
   else streamDecryptWPlainA
 
 
-/-! ## Whole-blocks functions that zero their scratch before they return
+/-! ## Whole-blocks functions that zero their loops' working space before they return
 
-`BlkFn.wipe z B` runs `B`'s code and then `wipeScr z`, which zeroes the 2112
-bytes of the stack argument `scratch` with stores of `ymm0`, or of `zmm0` if
-`z`: whatever `B`'s loops left there, `B.wipe z` leaves zeros
-(`BlkFn.wipe_leaves`). Its code that never writes `rsp` keeps the stack
-pointer and the stack argument (`blk_mid`), and the stores touch only
-`scratch` (`wipe_frame`), which holds none of what the contract reads. -/
+`BlkFn.wipeW z add k B` runs `B`'s code and then `wipeWin z add k`, which
+zeroes `wbytes z * k` bytes of the stack argument `scratch` from
+`winOff add` (`scratch + add` rounded down to 64 bytes) with stores of
+`ymm0`, or of `zmm0` if `z`. Where those cover the loops' working space
+(`winCov_aligned`, `winCov_base`), whatever the loops left there, `B.wipeW`
+leaves zeros, and elsewhere in `scratch` what `B`'s calls and slots leave
+(`Blocks.ScrW`): a function of its arguments (`BlkFn.wipeW_leaves`). Its code
+that never writes `rsp` keeps the stack pointer and the stack argument
+(`blk_mid`), and the stores touch only `scratch` (`wipeW_frame`), which holds
+none of what the contract reads. -/
 
 section Wipe
 open Gcm.X86_64.Stitch (CtxMode)
-open VG.Impl.AesGcm.X86_64 (wbytes zeroAt zeroWs wipeScr at_ Fn.wipe)
+open VG.Impl.AesGcm.X86_64 (wbytes zeroAt zeroWs at_)
 open VG.X86_64.Scrub (writeW_zero256 off_lt ite_t ite_f)
 
 /-- The trace of `zeroWs z k` from `r11 = p`. -/
 def zeroWsTr (z : Bool) (p : Addr) : Nat → List Leak
   | 0 => []
   | k + 1 => .addr (p + BitVec.ofNat 64 (wbytes z * k)) :: zeroWsTr z p k
-
-/-- The trace of `wipeScr z`, from `rsp = sp` with `[rsp + 8] = S`. -/
-def wipeTr (z : Bool) (sp S : Addr) : List Leak :=
-  .addr (sp + BitVec.ofNat 64 8) :: zeroWsTr z S (2112 / wbytes z)
 
 theorem ea_at (u : State) (r : Reg) (n : Nat) : u.ea (at_ r n) = u.gpr r + BitVec.ofNat 64 n := by
   simp [at_, State.ea, BitVec.ofInt_natCast]
@@ -1470,46 +1470,6 @@ theorem zeroWs_run (z : Bool) {p : Addr} {b c : Nat} (hb : b < 2 ^ 64) : ∀ (k 
         · rw [ite_t ⟨by omega, by omega⟩, ite_t h2]
         · rw [ite_f (by omega), ite_f h2]
 
-theorem wbytes_cover (z : Bool) : wbytes z * (2112 / wbytes z) = 2112 := by cases z <;> decide
-
-/-- `wipeScr z` zeroes the 2112 bytes at `[rsp + 8]`, within a region it may
-write, and changes no register `B`'s caller reads but `r11`. -/
-theorem wipeScr_run (z : Bool) (u : State) (hin : InRegions (u.rd ++ u.wr) (u.gpr .rsp + BitVec.ofNat 64 8) 8)
-    (hR : (⟨u.mem.readW (u.gpr .rsp + BitVec.ofNat 64 8) 64, 2112⟩ : Region) ∈ u.wr) :
-    ∃ u', execBlock isa (wipeScr z) u =
-        some (u', wipeTr z (u.gpr .rsp) (u.mem.readW (u.gpr .rsp + BitVec.ofNat 64 8) 64)) ∧
-      (∀ x, u'.mem x = if (x - u.mem.readW (u.gpr .rsp + BitVec.ofNat 64 8) 64).toNat < 2112 then 0 else u.mem x) ∧
-      (∀ r, r ≠ .r11 → u'.gpr r = u.gpr r) ∧ u'.rd = u.rd ∧ u'.wr = u.wr ∧ u'.mxcsr = u.mxcsr := by
-  let S := u.mem.readW (u.gpr .rsp + BitVec.ofNat 64 8) 64
-  let u₁ := u.setReg .r11 S
-  let u₂ := u₁.setV .l128 .xmm0 (VBinOp.vpxor.sse.eval (u₁.lane .xmm0 0) (u₁.lane .xmm0 0))
-    (VBinOp.vpxor.sse.eval (u₁.lane .xmm0 1) (u₁.lane .xmm0 1))
-  have e₂ : execBlock isa [.mov .r11 (.mem (at_ .rsp 8)), .vop (.vbin .vpxor .l128 .xmm0 .xmm0 .xmm0)] u =
-      some (u₂, [.addr (u.gpr .rsp + BitVec.ofNat 64 8)]) := by
-    simp only [execBlock, isa, reduceExec, readSrc, State.load64, ea_at, hin, ↓reduceIte, Option.map_some, VOp.exec,
-      addrs, srcAddrs, List.map_nil, List.append_nil, List.map_cons]
-    rfl
-  have g₂ : ∀ r, u₂.gpr r = if r = .r11 then S else u.gpr r := fun r => by
-    simp only [u₂, RegUpd.gpr_setV, u₁, RegUpd.gpr_setReg]
-  have y₂ : u₂.ymm .xmm0 = 0 := by
-    simp only [State.ymm, u₂, RegUpd.ymmHi_setV_128, RegUpd.xmm_setV, ↓reduceIte, VBinOp.sse, XBinOp.eval,
-      BitVec.xor_self]
-    rfl
-  have h₂ : u₂.zmmHi .xmm0 = 0 := by simp only [u₂, State.setV, ↓reduceIte]
-  obtain ⟨m', he, hm⟩ := zeroWs_run z (b := 2112) (c := 0) (by decide) (2112 / wbytes z) u₂ hR
-    (by rw [g₂, BitVec.add_zero]; rfl) y₂ h₂ (by rw [Nat.zero_add]; exact Nat.le_of_eq (wbytes_cover z))
-  refine ⟨{ ({ u₂ with mem := m' } : State) with ymmHi := fun _ => 0, zmmHi := fun _ => 0 }, ?_, fun x => ?_,
-    fun r hr => ?_, rfl, rfl, rfl⟩
-  · rw [wipeScr, execBlock_append, execBlock_append, e₂]
-    simp only [Option.bind_some, he, Option.map_some]
-    simp only [execBlock, isa, reduceExec, VOp.exec, addrs, Option.map_some, List.map_nil, List.append_nil]
-    simp only [wipeTr, g₂, ↓reduceIte, List.cons_append, List.nil_append]
-    rfl
-  · show m' x = _
-    rw [hm x, g₂, wbytes_cover]; rfl
-  · show u₂.gpr r = _
-    simp only [g₂, hr, ↓reduceIte]
-
 /-- Code that never writes `rsp`, with calls one deep, run from the entry of
 a whole-blocks function: the stack pointer, the permissions and the stack
 argument kept. -/
@@ -1532,41 +1492,6 @@ theorem blk_mid {M : CtxMode} {c : Prog isa} (hc : NoSp c) (hd : c.depth = 1) {s
   · simp only [List.mem_singleton] at hr; subst hr
     exact Offset.disjoint_below _ (by decide)
 
-/-- `wipeScr z` after code that kept what `blk_mid` says. -/
-theorem wipe_after (z : Bool) {M : CtxMode} {s v : State} (hp : Blocks.BP M s)
-    (h : v.gpr .rsp = s.gpr .rsp ∧ v.rd = s.rd ∧ v.wr = s.wr ∧
-      v.mem.readW (s.gpr .rsp + BitVec.ofNat 64 8) 64 = stackArg s 0) :
-    ∃ u, execBlock isa (wipeScr z) v = some (u, wipeTr z (s.gpr .rsp) (stackArg s 0)) ∧
-      (∀ x, u.mem x = if (x - stackArg s 0).toNat < 2112 then 0 else v.mem x) ∧
-      (∀ r, r ≠ .r11 → u.gpr r = v.gpr r) ∧ u.rd = v.rd ∧ u.wr = v.wr ∧ u.mxcsr = v.mxcsr := by
-  obtain ⟨hsp, hrd, hwr, hS⟩ := h
-  have := wipeScr_run z v (by rw [hsp, hrd, hwr]; exact Blocks.a_in hp)
-    (by rw [hsp, hS, hwr, hp.wr]; simp [Blocks.wR])
-  rwa [hsp, hS] at this
-
-theorem wipe_frame {S : Addr} {m m' : Mem} (h : ∀ x, m' x = if (x - S).toNat < 2112 then 0 else m x) :
-    Frame [⟨S, 2112⟩] m m' := fun x hx => by
-  rw [h x, ite_f]
-  intro hl
-  exact hx _ (List.mem_singleton_self _) (show (x - S).toNat + 1 ≤ 2112 by omega)
-
-theorem wipe_ok (z : Bool) {M : CtxMode} {c : Prog isa} (hc : NoSp c) (hd : c.depth = 1) {post : State → State → Prop}
-    (hpost : ∀ s s₁ u, Blocks.BP M s → Frame [Blocks.sR s] s₁.mem u.mem → post s s₁ → post s u)
-    (h : ∀ s, Proof.AesGcm.blocksPreM M s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ post s s') :
-    ∀ s, Proof.AesGcm.blocksPreM M s →
-      ∃ t s', Exec isa (.seq c (.block (wipeScr z))) s t s' ∧ abiPreserved s s' ∧ post s s' := by
-  intro s hs
-  obtain hp := Blocks.BP.ofM hs
-  obtain ⟨t, v, e, ha, hq⟩ := h s hs
-  obtain ⟨u, ew, hm, hg, -, -, hmx⟩ := wipe_after z hp (blk_mid hc hd hp e)
-  obtain hf := wipe_frame hm
-  refine ⟨_, u, .seq e (.block ew), ⟨fun r hr => ?_, ?_, ?_⟩, hpost s v u hp hf hq⟩
-  · rw [hg r (fun h => by subst h; exact absurd hr (by decide))]; exact ha.1 r hr
-  · rw [hf.readW (r := ⟨s.gpr .rsp, 8⟩) (Region.contains_self _ _) (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact hp.r_s) (by decide)]
-    exact ha.2.1
-  · rw [hmx]; exact ha.2.2
-
 theorem encPost_wipe {M : CtxMode} {s s₁ u : State} (hp : Blocks.BP M s) (hf : Frame [Blocks.sR s] s₁.mem u.mem)
     (h : Proof.AesGcm.encryptBlocksX86_64.post s s₁) : Proof.AesGcm.encryptBlocksX86_64.post s u := by
   simp only [Proof.AesGcm.encryptBlocksX86_64] at h ⊢
@@ -1584,97 +1509,6 @@ theorem decPost_wipe {M : CtxMode} {s s₁ u : State} (hp : Blocks.BP M s) (hf :
     blockAt_frame hf (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hp.c_s),
     blockAt_frame hf (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hp.y_s)]
   exact h
-
-theorem wipe_ct (z : Bool) {M : CtxMode} {c : Prog isa} (hc : NoSp c) (hd : c.depth = 1) {pre : State → Prop}
-    (hpre : ∀ s, pre s → Proof.AesGcm.blocksPreM M s) (h : ConstantTime isa pre Proof.AesGcm.blocksPub c) :
-    ConstantTime isa pre Proof.AesGcm.blocksPub (.seq c (.block (wipeScr z))) := by
-  intro s₁ s₂ t₁ t₂ u₁ u₂ h₁ h₂ hp e₁ e₂
-  cases e₁ with
-  | seq a₁ b₁ =>
-    cases e₂ with
-    | seq a₂ b₂ =>
-      cases b₁ with
-      | block w₁ =>
-        cases b₂ with
-        | block w₂ =>
-          obtain p₁ := Blocks.BP.ofM (hpre _ h₁)
-          obtain p₂ := Blocks.BP.ofM (hpre _ h₂)
-          obtain ⟨_, ew₁, -⟩ := wipe_after z p₁ (blk_mid hc hd p₁ a₁)
-          obtain ⟨_, ew₂, -⟩ := wipe_after z p₂ (blk_mid hc hd p₂ a₂)
-          rw [ew₁] at w₁
-          rw [ew₂] at w₂
-          obtain ⟨-, rfl⟩ := Prod.mk.inj (Option.some.inj w₁)
-          obtain ⟨-, rfl⟩ := Prod.mk.inj (Option.some.inj w₂)
-          rw [h s₁ s₂ _ _ _ _ h₁ h₂ hp a₁ a₂, hp.2.2.2.2.2.2.1, show stackArg s₁ 0 = stackArg s₂ 0 from hp.2.2.2.2.2.2.2]
-
-theorem wipeScr_nosp (z : Bool) : ∀ i ∈ wipeScr z, Taint.clobbers i .rsp = false := by cases z <;> decide
-
-theorem wipe_nosp (z : Bool) {c : Prog isa} (h : NoSp c) : NoSp (.seq c (.block (wipeScr z))) := by
-  intro i hi
-  rcases List.mem_append.mp hi with hi | hi
-  · exact h i hi
-  · exact wipeScr_nosp z i hi
-
-theorem wipe_mx (z : Bool) {c : Prog isa} (h : c.allInstrs (fun i => !loadsMxcsr i) = true) :
-    (Code.seq c (.block (wipeScr z)) : Prog isa).allInstrs (fun i => !loadsMxcsr i) = true := by
-  simp only [Code.allInstrs, h, Bool.true_and]
-  cases z <;> decide
-
-theorem wipe_sp (z : Bool) {c : Prog isa} (h : c.all (fun i => !X86_64.isa.writesSp i) = true) :
-    (Code.seq c (.block (wipeScr z)) : Prog isa).all (fun i => !X86_64.isa.writesSp i) = true := by
-  simp only [Code.all, h, Bool.true_and]
-  cases z <;> decide
-
-/-- `B`, its functions renamed (`Fn.wipe`) and zeroing their scratch before
-they return, with stores of `zmm0` if `z` (AVX-512), else of `ymm0`. -/
-def BlkFn.wipe (z : Bool) {M : CtxMode} (B : BlkFn M) : BlkFn M where
-  enc := B.enc.wipe z
-  dec := B.dec.wipe z
-  encOk := wipe_ok z B.encNosp B.encDepth (fun _ _ _ hp hf h => encPost_wipe hp hf h) B.encOk
-  decOk := wipe_ok z B.decNosp B.decDepth (fun _ _ _ hp hf h => decPost_wipe hp hf h) B.decOk
-  encCt := wipe_ct z B.encNosp B.encDepth (fun _ h => h) B.encCt
-  decCt := wipe_ct z B.decNosp B.decDepth (fun _ h => h) B.decCt
-  encNosp := wipe_nosp z B.encNosp
-  decNosp := wipe_nosp z B.decNosp
-  encDepth := by simp only [Fn.wipe, Code.depth, B.encDepth]; rfl
-  decDepth := by simp only [Fn.wipe, Code.depth, B.decDepth]; rfl
-  encMx := wipe_mx z B.encMx
-  decMx := wipe_mx z B.decMx
-  encSp := wipe_sp z B.encSp
-  decSp := wipe_sp z B.decSp
-  encXd := by simp only [Fn.wipe, Code.x86_64Depth, Nat.max_le]; exact ⟨B.encXd, Nat.zero_le _⟩
-  decXd := by simp only [Fn.wipe, Code.x86_64Depth, Nat.max_le]; exact ⟨B.decXd, Nat.zero_le _⟩
-
-/-- `B.wipe z` leaves zeros in all of its scratch. -/
-theorem BlkFn.wipe_leaves (z : Bool) {M : CtxMode} (B : BlkFn M) : BlkLeaves (B.wipe z) :=
-  ⟨fun _ _ _ _ _ _ _ _ => some 0, fun s t s' hpre he x hx => by
-    change Exec isa (.seq B.enc.code (.block (wipeScr z))) s t s' at he
-    cases he with
-    | seq a b =>
-      cases b with
-      | block w =>
-        obtain hp := Blocks.BP.ofM hpre
-        obtain ⟨u, ew, hm, -⟩ := wipe_after z hp (blk_mid B.encNosp B.encDepth hp a)
-        rw [ew] at w
-        obtain ⟨rfl, -⟩ := Prod.mk.inj (Option.some.inj w)
-        rw [hm x, ite_t (show (x - stackArg s 0).toNat < 2112 by have : (x - stackArg s 0).toNat + 1 ≤ 2112 := hx; omega)]
-        rfl⟩
-
-/-- `B.wipe z`'s decryption leaves zeros in all of its scratch. -/
-theorem BlkFn.wipe_leavesD (z : Bool) {M : CtxMode} (B : BlkFn M) : BlkLeavesD (B.wipe z) :=
-  ⟨fun _ _ _ _ _ _ _ _ => some 0, fun s t s' hpre he x hx => by
-    change Exec isa (.seq B.dec.code (.block (wipeScr z))) s t s' at he
-    cases he with
-    | seq a b =>
-      cases b with
-      | block w =>
-        obtain hp := Blocks.BP.ofM hpre
-        obtain ⟨u, ew, hm, -⟩ := wipe_after z hp (blk_mid B.decNosp B.decDepth hp a)
-        rw [ew] at w
-        obtain ⟨rfl, -⟩ := Prod.mk.inj (Option.some.inj w)
-        rw [hm x, ite_t (show (x - stackArg s 0).toNat < 2112 by have : (x - stackArg s 0).toNat + 1 ≤ 2112 := hx; omega)]
-        rfl⟩
-
 
 /-! ### Zeroing only the loops' working space -/
 
@@ -2153,30 +1987,99 @@ def streamEncryptF16Vaes : Registration Spec.Gcm.streamEncryptPreparedApi X86_64
         (hc ▸ h.2.2.2.2.2.2))
   else streamEncryptF16Plain variant
 
+section AvxW
+open VG.Proof.Variants.AesGcm.X86_64.AesNiPclmulAvx (variant)
+open Gcm.X86_64.Stitch (CtxMode)
+open VG.Impl.AesGcm.X86_64 (wipeWin)
+
+theorem wipeAB_mx : (Code.block (wipeWin false 63 34) : Prog isa).allInstrs (fun i => !loadsMxcsr i) = true := by
+  decide
+theorem wipeAB_sp : (Code.block (wipeWin false 63 34) : Prog isa).all (fun i => !X86_64.isa.writesSp i) = true := by
+  decide
+theorem wipeAR_mx : (Code.block (wipeWin false 127 32) : Prog isa).allInstrs (fun i => !loadsMxcsr i) = true := by
+  decide
+theorem wipeAR_sp : (Code.block (wipeWin false 127 32) : Prog isa).all (fun i => !X86_64.isa.writesSp i) = true := by
+  decide
+
+/-- The key-context whole-blocks functions of the AVX variant, zeroing the
+1088 bytes from `scratch + 63` rounded down to 64 (34 ymm stores). -/
+def blkBA : BlkFn CtxMode.base :=
+  variant.impl.blkB.wipeW false 63 34 (by decide) (by decide) (by decide) wipeAB_mx wipeAB_sp
+
+/-- The whole-blocks functions of the AVX variant on 16 prepared powers,
+zeroing the 1024 bytes of their 64-byte aligned working space (32 ymm
+stores). -/
+def blkRA : BlkFn CtxMode.prepared16 :=
+  (blkR16 variant).wipeW false 127 32 (by decide) (by decide) (by decide) wipeAR_mx wipeAR_sp
+
+theorem blkBA_leaves : BlkLeaves blkBA :=
+  BlkFn.wipeW_leaves false 63 34 _ _ _ _ _ variant.impl.blkB (aligned := false) (fun _ => 0)
+    (winCov_base false 34 (by decide)) fun s hpre => by
+      change WP isa (Impl.AesGcm.X86_64.Blocks.encrypt
+        ⟨variant.impl.ctr.callee.name, variant.impl.ctr.callee.code⟩
+        variant.impl.gh.fn (some Impl.Gcm.X86_64.StitchAvx8.enc) false true false false
+        (some Impl.Gcm.X86_64.StitchAvx8.enc)) s _
+      exact Blocks.encryptRW_leaves (Blocks.BP.ofM hpre) _ (variant.impl.ctr.free.get rfl) _
+        (variant.impl.gh.free.get rfl) (fun s₃ h₃ => StitchName.okFull .aesniAvx rfl s₃ h₃.base)
+        (fun s₃ h₃ _ => StitchName.okFull .aesniAvx rfl s₃ h₃.base)
+
+theorem blkBA_leavesD : BlkLeavesD blkBA :=
+  BlkFn.wipeW_leavesD false 63 34 _ _ _ _ _ variant.impl.blkB (aligned := false) (fun n => n - n % 16)
+    (winCov_base false 34 (by decide)) fun s hpre => by
+      change WP isa (Impl.AesGcm.X86_64.Blocks.decrypt
+        ⟨variant.impl.ctr.callee.name, variant.impl.ctr.callee.code⟩
+        variant.impl.gh.fn (some Impl.Gcm.X86_64.StitchAvx8.dec) false false) s _
+      exact Blocks.decryptBW_leaves (Blocks.BP.ofM hpre) _ (variant.impl.ctr.free.get rfl) _
+        (variant.impl.gh.free.get rfl) fun s₃ h₃ hm => (StitchName.ok .aesniAvx).2 s₃ h₃.base hm
+
+theorem blkRA_leaves : BlkLeaves blkRA :=
+  BlkFn.wipeW_leaves false 127 32 _ _ _ _ _ (blkR16 variant) (aligned := true) (fun _ => 0)
+    (winCov_aligned false 32 (by decide)) fun s hpre => by
+      change WP isa (Impl.AesGcm.X86_64.Blocks.encrypt
+        ⟨variant.impl.ctr.callee.name, variant.impl.ctr.callee.code⟩
+        variant.impl.gh.fn (some Impl.Gcm.X86_64.StitchAvx8.encR) true true true true
+        (some Impl.Gcm.X86_64.StitchAvx8.encRS)) s _
+      exact Blocks.encryptRW_leaves (Blocks.BP.ofM hpre) _ (variant.impl.ctr.free.get rfl) _
+        (variant.impl.gh.free.get rfl) (fun s₃ h₃ => (StitchName.okR16 .aesniAvx rfl).1 s₃ h₃ (Nat.mod_one _))
+        (StitchName.okRS16 .aesniAvx rfl).1
+
+theorem blkRA_leavesD : BlkLeavesD blkRA :=
+  BlkFn.wipeW_leavesD false 127 32 _ _ _ _ _ (blkR16 variant) (aligned := true) (fun _ => 0)
+    (winCov_aligned false 32 (by decide)) fun s hpre => by
+      change WP isa (Impl.AesGcm.X86_64.Blocks.decrypt
+        ⟨variant.impl.ctr.callee.name, variant.impl.ctr.callee.code⟩
+        variant.impl.gh.fn (some Impl.Gcm.X86_64.StitchAvx8.decR) true true true true
+        (some Impl.Gcm.X86_64.StitchAvx8.decRS)) s _
+      exact Blocks.decryptRW_leaves (Blocks.BP.ofM hpre) _ (variant.impl.ctr.free.get rfl) _
+        (variant.impl.gh.free.get rfl) (fun s₃ h₃ => (StitchName.okR16 .aesniAvx rfl).2 s₃ h₃ (Nat.mod_one _))
+        (StitchName.okRS16 .aesniAvx rfl).2
+
+end AvxW
+
 section Avx
 open VG.Proof.Variants.AesGcm.X86_64.AesNiPclmulAvx (variant)
 open VG.X86_64.Scrub StackLock
 
 /-- `vg_aes_gcm_stream_encrypt_prepared_aesni_pclmul_avx`, clearing the
 registers after each call (`streamEncryptClr`, at the level of 256-bit
-registers) and calling whole-blocks functions that zero their scratch before
-they return (`BlkFn.wipe`), before any clearing on return. -/
+registers) and calling whole-blocks functions that zero their loops' working
+space before they return (`blkRA`, `blkBA`), before any clearing on return. -/
 def streamEncryptF16AvxPlain : Registration Spec.Gcm.streamEncryptPreparedApi X86_64.target where
   suffix := variant.impl.suffix
-  code := streamEncryptCodeF16W variant.impl ((blkR16 variant).wipe false) (variant.impl.blkB.wipe false)
+  code := streamEncryptCodeF16W variant.impl blkRA blkBA
   stack := 2608
   verified := VG.Proof.AesGcm.Flag.streamEncrypt_keyed (Flag.streamEncrypt_ofB (Or.inl rfl)
-    (Flag.streamEncrypt_onFlag16B (streamEncryptClr16_framed .avx variant.impl ((blkR16 variant).wipe false))
-      (streamEncryptClrB_framed .avx variant.impl (variant.impl.blkB.wipe false))))
-  spSafe := VG.X86_64.onFlag_spSafe (streamEncryptClr_spSafe .avx variant.impl ((blkR16 variant).wipe false))
-    (streamEncryptClr_spSafe .avx variant.impl (variant.impl.blkB.wipe false))
+    (Flag.streamEncrypt_onFlag16B (streamEncryptClr16_framed .avx variant.impl blkRA)
+      (streamEncryptClrB_framed .avx variant.impl blkBA)))
+  spSafe := VG.X86_64.onFlag_spSafe (streamEncryptClr_spSafe .avx variant.impl blkRA)
+    (streamEncryptClr_spSafe .avx variant.impl blkBA)
 
 /-- What the clearing of only the general-purpose registers needs of
 `vg_aes_gcm_stream_encrypt_prepared_aesni_pclmul_avx`, checked by the
 emitter (as `StreamChk`). -/
 def StreamChkF16A : Prop :=
   UpperLock.inames variant.impl.callees.ctr.code = [] ∧ UpperLock.inames variant.impl.callees.gh.code = [] ∧
-    UpperLock.inames (variant.impl.blkB.wipe false).enc.code = [] ∧ UpperLock.inames ((blkR16 variant).wipe false).enc.code = [] ∧
+    UpperLock.inames blkBA.enc.code = [] ∧ UpperLock.inames blkRA.enc.code = [] ∧
     UpperLock.inames streamEncryptF16AvxPlain.code = [] ∧
     VecLock.step .avx streamEncryptF16AvxPlain.code (true, true) = (true, true)
 
@@ -2184,7 +2087,7 @@ instance : Decidable StreamChkF16A := by unfold StreamChkF16A; infer_instance
 
 /-- `vg_aes_gcm_stream_encrypt_prepared_aesni_pclmul_avx`, followed by the
 clearing of the scratch registers only (`withScrubResCR`): its whole-blocks
-functions leave zeros in their scratch (`BlkFn.wipe_leaves`), so it leaves
+functions zero their loops' working space (`blkBA_leaves`, `blkRA_leaves`), so it leaves
 the same stack in two runs (`streamEncryptF16W_resOk`), and the vector
 registers it leaves agree (`VecLock.regsOk_of_vec`).
 `vg_aes_gcm_seal_gather_prepared` calls its code as it was,
@@ -2193,8 +2096,8 @@ registers it leaves agree (`VecLock.regsOk_of_vec`).
 def streamEncryptF16Avx : Registration Spec.Gcm.streamEncryptPreparedApi X86_64.target :=
   if h : StreamChkF16A then
     RScrub.withScrubResCR streamEncryptF16AvxPlain (streamEncryptPreparedOut _) [] [2608]
-      (streamEncryptF16W_resOk variant.impl ((blkR16 variant).wipe false) (variant.impl.blkB.wipe false)
-        (variant.impl.gh.free.get rfl) (variant.impl.ctr.free.get rfl) (BlkFn.wipe_leaves false _) (BlkFn.wipe_leaves false _)
+      (streamEncryptF16W_resOk variant.impl blkRA blkBA
+        (variant.impl.gh.free.get rfl) (variant.impl.ctr.free.get rfl) blkBA_leaves blkRA_leaves
         ⟨variant.impl.ctr.nosp, h.1⟩ ⟨variant.impl.gh.nosp, h.2.1⟩ h.2.2.1 h.2.2.2.1)
       [] scratchRegs (VecLock.regsOk_of_vec streamEncryptF16AvxPlain.verified.2.1 h.2.2.2.2.1 h.2.2.2.2.2)
   else streamEncryptF16AvxPlain
@@ -2202,18 +2105,18 @@ def streamEncryptF16Avx : Registration Spec.Gcm.streamEncryptPreparedApi X86_64.
 /-- `streamEncryptF16AvxPlain` for `vg_aes_gcm_stream_decrypt_prepared`. -/
 def streamDecryptF16AvxPlain : Registration Spec.Gcm.streamDecryptPreparedApi X86_64.target where
   suffix := variant.impl.suffix
-  code := streamDecryptCodeF16W variant.impl ((blkR16 variant).wipe false) (variant.impl.blkB.wipe false)
+  code := streamDecryptCodeF16W variant.impl blkRA blkBA
   stack := 2608
   verified := VG.Proof.AesGcm.Flag.streamDecrypt_keyed (Flag.streamDecrypt_onFlag16
-    (streamDecryptClr16_framed .avx variant.impl ((blkR16 variant).wipe false))
-    (streamDecryptClrB_framed .avx variant.impl (variant.impl.blkB.wipe false)))
-  spSafe := VG.X86_64.onFlag_spSafe (streamDecryptClr_spSafe .avx variant.impl ((blkR16 variant).wipe false))
-    (streamDecryptClr_spSafe .avx variant.impl (variant.impl.blkB.wipe false))
+    (streamDecryptClr16_framed .avx variant.impl blkRA)
+    (streamDecryptClrB_framed .avx variant.impl blkBA))
+  spSafe := VG.X86_64.onFlag_spSafe (streamDecryptClr_spSafe .avx variant.impl blkRA)
+    (streamDecryptClr_spSafe .avx variant.impl blkBA)
 
 /-- `StreamChkF16A` for `vg_aes_gcm_stream_decrypt_prepared_aesni_pclmul_avx`. -/
 def StreamChkF16AD : Prop :=
   UpperLock.inames variant.impl.callees.ctr.code = [] ∧ UpperLock.inames variant.impl.callees.gh.code = [] ∧
-    UpperLock.inames (variant.impl.blkB.wipe false).dec.code = [] ∧ UpperLock.inames ((blkR16 variant).wipe false).dec.code = [] ∧
+    UpperLock.inames blkBA.dec.code = [] ∧ UpperLock.inames blkRA.dec.code = [] ∧
     UpperLock.inames streamDecryptF16AvxPlain.code = [] ∧
     VecLock.step .avx streamDecryptF16AvxPlain.code (true, true) = (true, true)
 
@@ -2223,8 +2126,8 @@ instance : Decidable StreamChkF16AD := by unfold StreamChkF16AD; infer_instance
 def streamDecryptF16Avx : Registration Spec.Gcm.streamDecryptPreparedApi X86_64.target :=
   if h : StreamChkF16AD then
     RScrub.withScrubResCR streamDecryptF16AvxPlain (streamDecryptPreparedOut _) [] [2608]
-      (streamDecryptF16W_resOk variant.impl ((blkR16 variant).wipe false) (variant.impl.blkB.wipe false)
-        (variant.impl.gh.free.get rfl) (variant.impl.ctr.free.get rfl) (BlkFn.wipe_leavesD false _) (BlkFn.wipe_leavesD false _)
+      (streamDecryptF16W_resOk variant.impl blkRA blkBA
+        (variant.impl.gh.free.get rfl) (variant.impl.ctr.free.get rfl) blkBA_leavesD blkRA_leavesD
         ⟨variant.impl.ctr.nosp, h.1⟩ ⟨variant.impl.gh.nosp, h.2.1⟩ h.2.2.1 h.2.2.2.1)
       [] scratchRegs (VecLock.regsOk_of_vec streamDecryptF16AvxPlain.verified.2.1 h.2.2.2.2.1 h.2.2.2.2.2)
   else streamDecryptF16AvxPlain
