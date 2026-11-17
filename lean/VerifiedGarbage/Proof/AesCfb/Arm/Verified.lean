@@ -29,7 +29,7 @@ open VG.Proof.AesCbc (cts)
 open VG.Proof.AesCbc.Arm
 
 theorem encrypt_verified : Verified Arm.target encrypt (Proof.AesCfb.encryptRoundsContract Arm.abi 8) :=
-  Verified.of_correct (fun _ hs => whole_wp encBody_ok hs) (whole_ct encBody_ok encBody_ct) (by
+  Verified.of_correct (fun _ hs => wholeK_wp encBody_ok hs) (wholeK_ct encBody_ok encBody_ct) (by
     sig_implies [Proof.AesCfb.encryptRoundsContract, Spec.Cfb.aesSig, Spec.Cbc.aesSig, modeArm, cfbMode, cfb, cts,
       Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       [sat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using sat)

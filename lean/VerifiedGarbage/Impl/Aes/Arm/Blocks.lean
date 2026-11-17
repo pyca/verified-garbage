@@ -113,4 +113,57 @@ def decrypt2 : Prog isa :=
 def encryptBlocks : Prog isa := blocks encrypt2
 def decryptBlocks : Prog isa := blocks decrypt2
 
+/-! ## The round keys bitsliced once, for many calls
+
+A caller that enciphers its blocks one at a time, each depending on the one
+before, bitslices the round keys once into the scratch buffer it gives every
+call (`blocksKeys`), and enciphers each block from them (`blocksKeyed`),
+rather than have `blocks` bitslice them again for every block. -/
+
+/-- The scratch buffer's base (`r2`) to `r12`, the registers saved, and the
+key loop set up as `keySetup` does, with the base kept in `r8` for the
+epilogue: the key loop uses every other register. -/
+def keysSetup : List Instr :=
+  ([movR .r12 .r2] : List Instr) ++ saveRegs .r12 ++
+  [movR .r8 .r12, .dp .add kp .r12 (.imm (BitVec.ofNat 32 lastKey)),
+   .dp .add .r12 .r0 (.shifted .r1 .lsl 4), .dp .add .lr .r1 (.imm 1)]
+
+/-- `vg_aes_blocks_keys(schedule = r0, rounds = r1, scratch = r2)`: the round
+keys of the schedule bitsliced into the scratch buffer, where `blocks` and
+`ctr32Gen` put them, the last at byte `lastKey`. -/
+def blocksKeys : Prog isa :=
+  .seq (.block keysSetup)
+    (.seq (.loop (.block keyBody) .ne) (.block (movR .r12 .r8 :: restoreRegs .r12)))
+
+/-- After `blocksPrologue`, with the round keys in the scratch buffer (at
+`r12`) already: its base to `sb`, the first round key
+(`scratch + lastKey − 32 rounds`) to `r12`, the data pointer to `r10`, the
+blocks to `r11`. -/
+def keyedSetup : List Instr :=
+  [movR sb .r12, .dp .add .r12 .r12 (.imm (BitVec.ofNat 32 lastKey)),
+   .dp .sub .r12 .r12 (.shifted .r1 .lsl 5), movR .r10 .r2, movR .r11 .r3]
+
+/-- `blocks crypt2` without its key loop: from the round keys `blocksKeys`
+left in the scratch buffer, which it leaves as they are. It does not read
+`schedule`. -/
+def blocksKeyed (crypt2 : Prog isa) : Prog isa :=
+  .seq (.block (blocksPrologue ++ keyedSetup ++ ([.cmp .r11 (.imm 0)] : List Instr)))
+    (.seq (.ite .eq (.block []) (.loop (blockGroup crypt2) .ne))
+      (.block (.ldrSp .r12 0 :: restoreRegs .r12)))
+
+/-- `vg_aes_encrypt_blocks_keyed(schedule = r0, rounds = r1, data = r2, n = r3,
+scratch = [sp])`. -/
+def encryptBlocksKeyed : Prog isa := blocksKeyed encrypt2
+
+/-- `vg_aes_encrypt_blocks_keyed`, with the working space in `r12` pushed as
+its stack argument, as its callers call `vg_aes_encrypt_blocks`. -/
+def keyedFrame : Prog isa :=
+  .frame (.push [.r12, .lr]) (.call "vg_aes_encrypt_blocks_keyed" encryptBlocksKeyed) (.pop .r12 8)
+
+/-- `vg_aes_blocks_keys` on the schedule in `r4`, the rounds in `r5` and the
+working space in `r10`, where the functions that work block by block keep
+them. -/
+def keysCall : Prog isa :=
+  .seq (.block [movR .r0 .r4, movR .r1 .r5, movR .r2 .r10]) (.call "vg_aes_blocks_keys" blocksKeys)
+
 end VG.Impl.Aes.Arm

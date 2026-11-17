@@ -15,6 +15,7 @@ namespace VG.Proof.CmacAes.Arm
 
 open VG VG.Arm VG.Impl.CmacAes.Arm
 open VG.Proof.MdStream.Arm (Upd wp_ldr eval_eq)
+open VG.Impl.Aes.Arm (keysCall)
 
 /-! ## Restoring the registers -/
 
@@ -58,14 +59,15 @@ theorem epilogue_wp {s₀ : State} (hp : UPre s₀) {s : State} (h : LInv s₀ (
 /-! ## The whole function -/
 
 theorem mid_wp {s₀ : State} (hp : UPre s₀) {s₁ : State} (h : LInv s₀ 0 s₁) (hz : s₁.z = decide (N s₀ = 0)) :
-    WP isa (.ite .eq (.block []) (.loop body .ne)) s₁ (LInv s₀ (N s₀)) := by
+    WP isa (.ite .eq (.block []) (.seq keysCall (.loop body .ne))) s₁ (LInv s₀ (N s₀)) := by
   have ev : isa.eval .eq s₁ = some (decide (N s₀ = 0)) := by
     show VG.Arm.eval .eq s₁ = _; rw [eval_eq, hz]
   by_cases hn : N s₀ = 0
   · refine WP.ite true (by rw [ev]; simp [hn]) (fun _ => WP.block_nil ?_) (fun h => by cases h)
     rw [hn]; exact h
   · refine WP.ite false (by rw [ev]; simp [hn]) (fun h => by cases h) fun _ => ?_
-    exact loop_ok hp (by omega_using [hn]) h
+    exact WP.seq (WP.mono (keysCall_wp hp h) fun _ h' =>
+      WP.mono (loop_ok hp (by omega_using [hn]) h') fun _ h'' => h''.1)
 
 theorem update_wp {s₀ : State} (h0 : updateArm.pre s₀) :
     WP isa update s₀ fun s' => abiPreserved s₀ s' ∧ updateArm.post s₀ s' := by
