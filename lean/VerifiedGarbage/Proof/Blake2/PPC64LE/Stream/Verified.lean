@@ -1817,33 +1817,37 @@ as an argument (`update_scratch`, `finalize_scratch`); `update` and
 theorem updateB_framed : Verified PPC64LE.target
     (Impl.StackScratch.PPC64LE.withStackScratch 608 .r7 (Impl.Blake2.PPC64LE.Stream.update b))
     (Spec.Blake2.updateBContract PPC64LE.abi (48 + 608)) :=
-  PPC64LE.Verified.stackScratchKept (nm := "scratch") (e := .u64) (n := 72) (stack := 48) (bytes := 608)
+  PPC64LE.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 72) (stack := 48) (bytes := 608)
     updateB_verified (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Blake2.updateBPost_local _)
+    (fun vs m m₁ m₂ r hl _ hb h => Proof.Blake2.updateBPostOut_local _ vs m m₁ m₂ r hl hb h)
     (PPC64LE.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 theorem finalizeB_framed : Verified PPC64LE.target
     (Impl.StackScratch.PPC64LE.withStackScratch 608 .r6 (Impl.Blake2.PPC64LE.Stream.finalize b))
     (Spec.Blake2.finalizeBContract PPC64LE.abi (48 + 608)) :=
-  PPC64LE.Verified.stackScratchKept (nm := "scratch") (e := .u64) (n := 72) (stack := 48) (bytes := 608)
+  PPC64LE.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 72) (stack := 48) (bytes := 608)
     finalizeB_verified (by decide) (by decide)
     (fun _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Blake2.finalizeBPost_local _)
+    (fun vs m m₁ m₂ r hl _ hb h => Proof.Blake2.finalizeBPostOut_local _ vs m m₁ m₂ r hl hb h)
     (PPC64LE.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 theorem updateS_framed : Verified PPC64LE.target
     (Impl.StackScratch.PPC64LE.withStackScratch 608 .r7 (Impl.Blake2.PPC64LE.Stream.update s))
     (Spec.Blake2.updateSContract PPC64LE.abi (48 + 608)) :=
-  PPC64LE.Verified.stackScratchKept (nm := "scratch") (e := .u64) (n := 72) (stack := 48) (bytes := 608)
+  PPC64LE.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 72) (stack := 48) (bytes := 608)
     updateS_verified (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Blake2.updateSPost_local _)
+    (fun vs m m₁ m₂ r hl _ hb h => Proof.Blake2.updateSPostOut_local _ vs m m₁ m₂ r hl hb h)
     (PPC64LE.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 theorem finalizeS_framed : Verified PPC64LE.target
     (Impl.StackScratch.PPC64LE.withStackScratch 608 .r6 (Impl.Blake2.PPC64LE.Stream.finalize s))
     (Spec.Blake2.finalizeSContract PPC64LE.abi (48 + 608)) :=
-  PPC64LE.Verified.stackScratchKept (nm := "scratch") (e := .u64) (n := 72) (stack := 48) (bytes := 608)
+  PPC64LE.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 72) (stack := 48) (bytes := 608)
     finalizeS_verified (by decide) (by decide)
     (fun _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Blake2.finalizeSPost_local _)
+    (fun vs m m₁ m₂ r hl _ hb h => Proof.Blake2.finalizeSPostOut_local _ vs m m₁ m₂ r hl hb h)
     (PPC64LE.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 end VG.Proof.Blake2.PPC64LE.Stream

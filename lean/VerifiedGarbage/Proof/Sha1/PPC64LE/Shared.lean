@@ -57,18 +57,20 @@ theorem finalizeScratch :
 theorem update : Verified PPC64LE.target
     (Impl.StackScratch.PPC64LE.withStackScratch 192 .r7 Impl.Sha1.PPC64LE.Stream.update)
     (Spec.Sha1.updateContract PPC64LE.abi (48 + 192)) :=
-  PPC64LE.Verified.stackScratchKept (nm := "scratch") (e := .u64) (n := 20) (stack := 48) (bytes := 192)
+  PPC64LE.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 20) (stack := 48) (bytes := 192)
     updateScratch (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Sha1.updatePost_local _)
+    (fun vs m m₁ m₂ r hl _ hb h => Proof.Sha1.updatePostOut_local _ vs m m₁ m₂ r hl hb h)
     (PPC64LE.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 /-- `finalize`: `finalizeScratch` with its working space in a frame of its own. -/
 theorem finalize : Verified PPC64LE.target
     (Impl.StackScratch.PPC64LE.withStackScratch 192 .r6 Impl.Sha1.PPC64LE.Stream.finalize)
     (Spec.Sha1.finalizeContract PPC64LE.abi (48 + 192)) :=
-  PPC64LE.Verified.stackScratchKept (nm := "scratch") (e := .u64) (n := 20) (stack := 48) (bytes := 192)
+  PPC64LE.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 20) (stack := 48) (bytes := 192)
     finalizeScratch (by decide) (by decide)
     (fun _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Sha1.finalizePost_local _)
+    (fun vs m m₁ m₂ r hl _ hb h => Proof.Sha1.finalizePostOut_local _ vs m m₁ m₂ r hl hb h)
     (PPC64LE.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 end VG.Proof.Sha1.PPC64LE.Shared

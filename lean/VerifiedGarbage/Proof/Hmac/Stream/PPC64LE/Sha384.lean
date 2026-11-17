@@ -82,7 +82,7 @@ theorem longScratch : Verified PPC64LE.target hash.initLong (Shared.longScratchC
 theorem initAny : Verified PPC64LE.target (initCode hash Spec.Hmac.sha384I 7)
     (Spec.Hmac.sha384I.initAnyKeyContract PPC64LE.abi (96 + hmacFrame Spec.Hmac.sha384I)) :=
   Shared.initAny (b := 7) (.inr rfl) rfl (by decide)
-    (Shared.initFrame initScratch (by decide) (by
+    (Shared.initFrame initScratch (by decide) Proof.Hmac.sha384_local (by decide) (by
       inst_sat [Spec.Hmac.Instance.initContract, Spec.Hmac.initContract, Spec.Hmac.initSig, Spec.Hmac.initPre,
         Spec.Hmac.sha384I, Spec.Hmac.sha384S, Spec.Hmac.sha384, hmacFrame, PPC64LE.abi, PPC64LE.argRegs]
         using initSat 192 0))
@@ -98,7 +98,7 @@ theorem initAny : Verified PPC64LE.target (initCode hash Spec.Hmac.sha384I 7)
 theorem finalize : Verified PPC64LE.target
     (Impl.StackScratch.PPC64LE.withStackScratch (hmacFrame Spec.Hmac.sha384I) .r7 hash.finalize)
     (Spec.Hmac.sha384I.finalizeContract PPC64LE.abi (96 + hmacFrame Spec.Hmac.sha384I)) :=
-  Shared.finalizeFrame finalizeScratch (by decide) Proof.Hmac.sha384_local (by decide) (by
+  Shared.finalizeFrame finalizeScratch (by decide) Proof.Hmac.sha384_local (by decide) (by decide) (by
     inst_sat [Spec.Hmac.Instance.finalizeContract, Spec.Hmac.finalizeContract, Spec.Hmac.finalizeSig,
       Spec.Hmac.sha384I, Spec.Hmac.sha384S, Spec.Hmac.sha384, hmacFrame, PPC64LE.abi, PPC64LE.argRegs]
       using finSat 192 48 0)

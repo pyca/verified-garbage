@@ -97,4 +97,27 @@ theorem blocksPost_local (pb : Nat) : ∀ vs m₁ m₂ m' r, vs.length = (blocks
     omega_using [this, hi])]
   exact h key msg (repr_congr (fun i hi => (hs i (by simp only [Elem.size]; omega_using [hi])).symm) hrep)
 
+/-- `blocksPost` reads the memory on return only within the buffers (the
+state). -/
+theorem blocksPostOut_local (pb : Nat) : ∀ vs m m₁ m₂ r, vs.length = (blocksSig.words pb).length →
+    (∀ b ∈ Sig.bufs blocksSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (blocksSig.words pb) (blocksPost pb) vs m m₁ r →
+      Curry.apply (blocksSig.words pb) (blocksPost pb) vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen hb h
+  obtain ⟨st, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 2) hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨bl, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨n, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [blocksSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+    forall_eq] at hb
+  have hs := agree_of' hb.1
+  change Curry.apply [ArgWord.addr, ArgWord.addr, ArgWord.int pb] (blocksPost pb) _ m m₁ r at h
+  change Curry.apply [ArgWord.addr, ArgWord.addr, ArgWord.int pb] (blocksPost pb) _ m m₂ r
+  dsimp only [Curry.apply, blocksPost, ArgWord.ofRaw] at h ⊢
+  intro key msg hrep
+  exact repr_congr (fun i hi => hs i (by simp only [Elem.size]; omega_using [hi])) (h key msg hrep)
+
 end VG.Proof.Poly1305

@@ -128,7 +128,7 @@ theorem longScratch : Verified PPC64LE.target hash.initLong (Shared.longScratchC
 theorem initAny : Verified PPC64LE.target (initCode hash Spec.Hmac.md5I 6)
     (Spec.Hmac.md5I.initAnyKeyContract PPC64LE.abi (96 + hmacFrame Spec.Hmac.md5I)) :=
   Shared.initAny (b := 6) (.inl rfl) rfl (by decide)
-    (Shared.initFrame initScratch (by decide) (by
+    (Shared.initFrame initScratch (by decide) Proof.Hmac.md5_local (by decide) (by
       inst_sat [Spec.Hmac.Instance.initContract, Spec.Hmac.initContract, Spec.Hmac.initSig, Spec.Hmac.initPre,
         Spec.Hmac.md5I, Spec.Hmac.md5S, Spec.Hmac.md5, hmacFrame, PPC64LE.abi, PPC64LE.argRegs]
         using initSat 80 0))
@@ -144,7 +144,7 @@ theorem initAny : Verified PPC64LE.target (initCode hash Spec.Hmac.md5I 6)
 theorem finalize : Verified PPC64LE.target
     (Impl.StackScratch.PPC64LE.withStackScratch (hmacFrame Spec.Hmac.md5I) .r7 hash.finalize)
     (Spec.Hmac.md5I.finalizeContract PPC64LE.abi (96 + hmacFrame Spec.Hmac.md5I)) :=
-  Shared.finalizeFrame finalizeScratch (by decide) Proof.Hmac.md5_local (by decide) (by
+  Shared.finalizeFrame finalizeScratch (by decide) Proof.Hmac.md5_local (by decide) (by decide) (by
     inst_sat [Spec.Hmac.Instance.finalizeContract, Spec.Hmac.finalizeContract, Spec.Hmac.finalizeSig,
       Spec.Hmac.md5I, Spec.Hmac.md5S, Spec.Hmac.md5, hmacFrame, PPC64LE.abi, PPC64LE.argRegs]
       using finSat 80 16 0)

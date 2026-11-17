@@ -123,18 +123,20 @@ theorem finalizeScratch :
 theorem update : Verified PPC64LE.target
     (Impl.StackScratch.PPC64LE.withStackScratch 640 .r7 Impl.Sha256.PPC64LE.Stream.update)
     (Spec.Sha256.updateContract PPC64LE.abi (48 + 640)) :=
-  PPC64LE.Verified.stackScratchKept (nm := "scratch") (e := .u64) (n := 76) (stack := 48) (bytes := 640)
+  PPC64LE.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 76) (stack := 48) (bytes := 640)
     updateScratch (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Sha256.updatePost_local _)
+    (fun vs m m₁ m₂ r hl _ hb h => Proof.Sha256.updatePostOut_local _ vs m m₁ m₂ r hl hb h)
     (PPC64LE.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 /-- `finalize`: `finalizeScratch` with its working space in a frame of its own. -/
 theorem finalize : Verified PPC64LE.target
     (Impl.StackScratch.PPC64LE.withStackScratch 640 .r6 Impl.Sha256.PPC64LE.Stream.finalize)
     (Spec.Sha256.finalizeContract PPC64LE.abi (48 + 640)) :=
-  PPC64LE.Verified.stackScratchKept (nm := "scratch") (e := .u64) (n := 76) (stack := 48) (bytes := 640)
+  PPC64LE.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 76) (stack := 48) (bytes := 640)
     finalizeScratch (by decide) (by decide)
     (fun _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Sha256.finalizePost_local _)
+    (fun vs m m₁ m₂ r hl _ hb h => Proof.Sha256.finalizePostOut_local _ vs m m₁ m₂ r hl hb h)
     (PPC64LE.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 end VG.Proof.Sha256.PPC64LE.Shared

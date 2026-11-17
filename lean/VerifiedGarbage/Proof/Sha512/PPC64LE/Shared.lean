@@ -119,18 +119,20 @@ theorem finalizeScratch : Verified PPC64LE.target Impl.Sha512.PPC64LE.Stream.fin
 theorem update : Verified PPC64LE.target
     (Impl.StackScratch.PPC64LE.withStackScratch 1408 .r7 Impl.Sha512.PPC64LE.Stream.update)
     (Spec.Sha512.updateContract PPC64LE.abi (0 + 1408)) :=
-  PPC64LE.Verified.stackScratchKept (nm := "scratch") (e := .u64) (n := 172) (stack := 0) (bytes := 1408)
+  PPC64LE.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 172) (stack := 0) (bytes := 1408)
     updateScratch (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Sha512.updatePost_local _)
+    (fun vs m m₁ m₂ r hl _ hb h => Proof.Sha512.updatePostOut_local _ vs m m₁ m₂ r hl hb h)
     (PPC64LE.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 /-- `finalize`: `finalizeScratch` with its working space in a frame of its own. -/
 theorem finalize : Verified PPC64LE.target
     (Impl.StackScratch.PPC64LE.withStackScratch 1408 .r6 Impl.Sha512.PPC64LE.Stream.finalize)
     (Spec.Sha512.finalizeContract PPC64LE.abi (0 + 1408)) :=
-  PPC64LE.Verified.stackScratchKept (nm := "scratch") (e := .u64) (n := 172) (stack := 0) (bytes := 1408)
+  PPC64LE.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 172) (stack := 0) (bytes := 1408)
     finalizeScratch (by decide) (by decide)
     (fun _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Sha512.finalizePost_local _)
+    (fun vs m m₁ m₂ r hl _ hb h => Proof.Sha512.finalizePostOut_local _ vs m m₁ m₂ r hl hb h)
     (PPC64LE.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 /-! ## The truncated digests
@@ -208,9 +210,10 @@ theorem finalizeDigest_of {code : Prog isa} {D : Nat} {iv : Spec.Sha512.HashValu
   have hi := finalizeDigestScratchImplies iv digest hD
   have h := (finalizeDigestWide_of hv hdg hi.sat_left).of_implies hi
   rcases hD with rfl | rfl | rfl <;>
-  exact PPC64LE.Verified.stackScratchKept (nm := "scratch") (e := .u64) (n := 172) (stack := 0) (bytes := 1408)
+  exact PPC64LE.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 172) (stack := 0) (bytes := 1408)
     h (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Sha512.finalizeDigestPost_local _ _ _ _)
+    (fun vs m m₁ m₂ r hl _ hb h => Proof.Sha512.finalizeDigestPostOut_local _ _ _ _ vs m m₁ m₂ r hl hb h)
     (PPC64LE.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 theorem finalize384 : Verified PPC64LE.target

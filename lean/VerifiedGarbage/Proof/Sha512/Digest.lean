@@ -154,4 +154,34 @@ theorem finalizeDigestPost_local (iv : Spec.Sha512.HashValue) (D : Nat) (digest 
   intro msg hr hl hc
   exact h msg (Stream.repr_congr (fun i hi => (hs i hi).symm) hr) hl hc
 
+/-! ## What the postconditions read of the memory on return -/
+
+/-- `finalizeDigestPost` reads the memory on return only within the buffers (the
+digest). -/
+theorem finalizeDigestPostOut_local (iv : Spec.Sha512.HashValue) (D : Nat) (digest : List Byte → List Byte)
+    (pb : Nat) :
+    ∀ vs m m₁ m₂ r, vs.length = ((Spec.Sha512.finalizeDigestSig D).words pb).length →
+      (∀ b ∈ Sig.bufs ((Spec.Sha512.finalizeDigestSig D)).params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply ((Spec.Sha512.finalizeDigestSig D).words pb) (Spec.Sha512.finalizeDigestPost iv D digest pb) vs m m₁ r →
+        Curry.apply ((Spec.Sha512.finalizeDigestSig D).words pb) (Spec.Sha512.finalizeDigestPost iv D digest pb) vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen hb h
+  obtain ⟨st, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 2) hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨ct, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨ot, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [Spec.Sha512.finalizeDigestSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+    forall_eq] at hb
+  intro msg hr hl hc
+  refine Eq.trans (Stream.bytesAt_congr fun i hi => ?_) (h msg hr hl hc)
+  -- The digest may be longer than the address space: its `i`th byte is at `i % 2 ^ 64`.
+  rw [show BitVec.ofNat 64 i = BitVec.ofNat 64 (i % 2 ^ 64) from
+    BitVec.eq_of_toNat_eq (by simp only [BitVec.toNat_ofNat, Nat.mod_mod])]
+  have := Nat.mod_le i (2 ^ 64)
+  have := Nat.mod_lt i (show 0 < 2 ^ 64 by decide)
+  exact (hb.2 _ (Offset.contains_base _ (by simp only [Elem.size]; omega_using [hi, this])
+    (by omega_using [this]))).symm
+
 end VG.Proof.Sha512

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Hmac.Scratch
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Sha256.Stream
 import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
@@ -43,5 +44,25 @@ theorem initPostOut_local (hR : ReprLocal S) (hS : S.stateBytes < 2 ^ 64) : ∀ 
       ∀ i < S.stateBytes, m₂ (p + BitVec.ofNat 64 i) = m₁ (p + BitVec.ofNat 64 i) :=
     fun p hp i hi => (hp _ (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hS, hi]))).symm
   exact ⟨hR (hs _ hb.1) h.1, hR (hs _ hb.2.1) h.2⟩
+
+/-- `finalizePost` reads the memory on return only within the buffers (the
+tag). -/
+theorem finalizePostOut_local (hD : S.digestBytes < 2 ^ 64) : ∀ vs m m₁ m₂ r,
+    vs.length = ((finalizeSig S).words pb).length →
+    (∀ b ∈ Sig.bufs (finalizeSig S).params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply ((finalizeSig S).words pb) (finalizePost S pb) vs m m₁ r →
+      Curry.apply ((finalizeSig S).words pb) (finalizePost S pb) vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen hb h
+  iterate 3
+    obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+  obtain ⟨out, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [finalizeSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+    forall_eq, Elem.size, Nat.mul_one] at hb
+  intro k0 text hk hl hi hc ho
+  refine Eq.trans (Sha256.Stream.bytesAt_congr fun i hi => ?_) (h k0 text hk hl hi hc ho)
+  exact (hb.2.2 _ (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hD, hi]))).symm
 
 end VG.Proof.Hmac
