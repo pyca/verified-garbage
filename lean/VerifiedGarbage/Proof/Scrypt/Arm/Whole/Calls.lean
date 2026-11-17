@@ -950,11 +950,9 @@ theorem frame4_ok {n : String} {c : Prog isa} {k : Contract isa}
     (by simp only [List.length_cons, List.length_nil]; omega_arith) ?_
   refine WP.callF hv hpre hc hw (by rw [p4_sp, h16]; omega_arith) fun s₂ hrd hwr hsp hf hcs hpost mL uL hfl => ?_
   obtain hflS : Frame [belowA s.sp 40] s₂.mem mL := hfl.sub fun r hr => ⟨_, List.mem_singleton_self _, by
-    rw [List.mem_singleton.mp hr, addr_sub' (by simp only [List.length_cons, List.length_nil]; omega_arith)]
+    rw [List.mem_singleton.mp hr]
     have := belowA_inner (sp := s.sp) (a := 16) (b := 40) (k := 0) (by omega_arith) h40
-    simp only [BitVec.sub_zero, belowA] at this
-    simp only [List.length_cons, List.length_nil, Nat.reduceAdd, Nat.reduceMul]
-    exact this⟩
+    simpa using this⟩
   refine hQ s₂ mL uL hflS ⟨?_, ?_, ?_, fun r hr hl => ?_, ?_⟩ hpost
   · dsimp only; rw [popped_rd, hrd, pushed_rd]
   · dsimp only; rw [popped_wr, hwr, pushed_wr]; rfl
