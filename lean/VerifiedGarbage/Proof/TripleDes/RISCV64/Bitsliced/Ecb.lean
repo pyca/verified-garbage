@@ -846,7 +846,7 @@ theorem ecb_wp (d : Direction) {s : State} (h : EcbPre s) :
     apply WP.seq
     refine WP.mono (loop_ok E hn I0) fun w J => ?_
     exact finish_ok E J
-  refine WP.mono (WP.rdwr body) fun y ⟨⟨gy, by_⟩, _, _, spy⟩ => ?_
+  refine WP.mono (WP.rdwr body) fun y ⟨⟨gy, by_⟩, _, _, spy⟩ m _ fl => ?_
   refine ⟨⟨fun r hr => ?_, ?_, ?_⟩, fun b hb => ?_⟩
   · show y.gpr r = s.gpr r
     exact gy r (preserved_saved r hr)
@@ -854,7 +854,11 @@ theorem ecb_wp (d : Direction) {s : State} (h : EcbPre s) :
     rw [spy, usp]; exact BitVec.sub_add_cancel s.sp _
   · show y.gpr .ra = s.gpr .ra
     exact gy .ra (by decide)
-  · have e : (freed frameBytes y).mem = y.mem := by simp only [freed]
-    rw [e]; exact by_ b hb
+  · -- The `free` loses the frame's bytes, which lie apart from the data.
+    show blockAt m (wAt D b) = _
+    rw [blockAt_frame fl fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact (h.stackData.symm.sub_left (Offset.sub_base _ (by omega_using [hb])))]
+    exact by_ b hb
 
 end VG.Proof.TripleDes.RISCV64.Bitsliced

@@ -86,16 +86,10 @@ theorem inFrame_wp {body : Prog isa} {s : State} {Q : State → Prop} (hsp : 417
   have e₂ : s.sp - BitVec.ofNat 64 2032 - BitVec.ofNat 64 2032 = s.sp - BitVec.ofNat 64 4064 := by
     rw [BitVec.sub_sub, ← BitVec.ofNat_add]
   have f₁' : Frame [⟨s.sp - BitVec.ofNat 64 4176, 112⟩] s₂.mem m₁ := by
-    rw [← frameBase_eq, ← (show s₂.sp = frameBase s from hsp₂)]; exact f₁
+    rw [← frameBase_eq]; exact f₁
   have f₂' : Frame [⟨s.sp - BitVec.ofNat 64 4064, 2032⟩] m₁ m₂ := by
-    rw [← e₂]
-    have e : (freed 112 s₂).sp = s.sp - BitVec.ofNat 64 2032 - BitVec.ofNat 64 2032 := by
-      simp only [freed, hsp₂, allocd, BitVec.sub_add_cancel]
-    rw [← e]; exact f₂
-  have f₃' : Frame [⟨s.sp - BitVec.ofNat 64 2032, 2032⟩] m₂ m₃ := by
-    have e : (freed 2032 (freed 112 s₂)).sp = s.sp - BitVec.ofNat 64 2032 := by
-      simp only [freed, hsp₂, allocd, BitVec.sub_add_cancel]
-    rw [← e]; exact f₃
+    rw [← e₂]; exact f₂
+  have f₃' : Frame [⟨s.sp - BitVec.ofNat 64 2032, 2032⟩] m₂ m₃ := f₃
   have sub : ∀ {a n : Nat}, a ≤ 4176 → 4176 - a + n ≤ 4176 → ∀ r ∈ [(⟨s.sp - BitVec.ofNat 64 a, n⟩ : Region)],
       ∃ r' ∈ [(⟨frameBase s, 4176⟩ : Region)], Region.Sub r r' := fun ha hn r hr => by
     simp only [List.mem_singleton] at hr; subst hr
@@ -1434,15 +1428,19 @@ theorem ecb_wp (up : Bool) {s : State} (h : EcbPre s) :
       exact Offset.disjoint_base P (by decide) (by have := P.isLt; omega_using [])
     · rw [BitVec.add_zero, bg _ (by decide), bg _ (by decide)]; exact dB
   refine WP.mono (Spill.restore_wp (B := B) (by omega_using [hBal]) (by rw [e0, eB']) saved_ok (by decide) (fun p hp => ?_)
-    hsv) fun t R => ⟨fun i hi => ?_, fun p hp => ?_⟩
+    hsv) fun t R m u fl => ⟨fun i hi => ?_, fun p hp => ?_⟩
   · have := saved_in p hp
     rw [ek.2.1, ek.2.2, ewr]
     exact ⟨_, List.mem_append_right _ (by show _ ∈ a.wr; rw [awr']; exact List.mem_cons_self),
       Offset.contains_base B (by omega_using [this]) (by omega_using [this])⟩
-  · show blockAt t.mem _ = _
+  · show blockAt m _ = _
     have := eblk i (by rw [bg _ (by decide)]; exact hi)
     rw [bg _ (by decide), bg _ (by decide)] at this
-    rw [R.mem, em, this]
+    -- The `free` loses the frame's bytes, which lie apart from the data.
+    rw [blockAt_frame fl fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr
+        exact (dB.sub_right (r₂' := ⟨wAt D i, 8⟩) (Offset.sub_base _ (by omega_using [hi]))).symm,
+      R.mem, em, this]
     show blockOut (scheduleAt Ms _) up (blockAt Ms _) = _
     rw [scheduleAt_eq_of_frame _ fs fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact dK.symm,

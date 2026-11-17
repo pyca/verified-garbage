@@ -1376,7 +1376,7 @@ steps of data at `data` with the outputs of `F` from the IV, and (if
 caller expects preserved, the stack pointer and the return address. Each
 mode's and cipher's contract follows from it. `seq_changes_wp`: besides,
 memory changes only in the frame (below the stack pointer), the data and the
-IV, and the frame is zeroed (`Changes`).
+IV (`Changes`).
 
 Both are `seqWith_changes_wp` for the loops of `Core.seq`, `Core.steps M`
 (`steps_ok`): the function around any loops that take all the steps
@@ -1830,10 +1830,10 @@ abbrev iv0 (c : Core) (s₀ : State) : List Byte := bytesAt s₀.mem (P s₀) (4
 abbrev wrs0 (c : Core) (M : Mode) (s₀ : State) : List Region := wrs c (Fb s₀ c) (Dp s₀) (N s₀) M.step
 
 /-- What the function changes besides the registers: memory only in the
-frame, the data and the IV; and it leaves the frame zeroed. -/
+frame, the data and the IV. (It zeroes the frame before it frees it, which
+loses the frame's bytes.) -/
 structure Changes (c : Core) (M : Mode) (s₀ s' : State) : Prop where
   frame : Frame [scrRegion c (Fb s₀ c), dataRegion (Dp s₀) M.step (N s₀), ivR s₀ c] s₀.mem s'.mem
-  zeroed : ∀ j < c.total, s'.mem.readW (slotA (Fb s₀ c) j) 64 = 0#64
 
 /-- What the code `loops` must do, from the state after the key, with the
 mode's first step to take: all of them (`Done`). -/
@@ -1979,7 +1979,9 @@ theorem seqWith_changesO_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : St
   -- The end: the registers back, the frame zeroed.
   obtain abi : ∀ v : State, v.gpr .s1 = s₀.gpr .s1 → v.gpr .s2 = s₀.gpr .s2 → v.gpr .s3 = s₀.gpr .s3 →
       v.gpr .s4 = s₀.gpr .s4 → (∀ r ∈ kept, r ≠ .s1 → r ≠ .s2 → r ≠ .s3 → r ≠ .s4 → v.gpr r = s₀.gpr r) →
-      abiPreserved s₀ { v with sp := s₀.sp, wr := s₀.wr } := fun v g1 g2 g3 g4 hk => ⟨fun r hr => by
+      ∀ (mL : Mem) (uL : Nat → BitVec 64),
+        abiPreserved s₀ { v with sp := s₀.sp, wr := s₀.wr, mem := mL, unknowns := uL } :=
+      fun v g1 g2 g3 g4 hk mL uL => ⟨fun r hr => by
         show v.gpr r = _
         by_cases e1 : r = .s1
         · subst e1; exact g1
@@ -1997,20 +1999,25 @@ theorem seqWith_changesO_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : St
   cases hiv : M.ivOut
   · rw [show (if false = true then c.ivBack else []) = [] by simp, List.nil_append, ← List.append_nil Core.restore]
     refine restore_wp hL hS₄ h₄.b sv₄ fun u g1 g2 g3 g4 g3' g m rdu wru => WP.block_nil ?_
-    refine WP.mono (wipe_wp hL (hS₄.congr wru) g3') fun s' ⟨z, f, g', rd', wr'⟩ =>
+    -- The `free` loses the frame's bytes (`fl`), which lie apart from the data and the IV.
+    refine WP.mono (wipe_wp hL (hS₄.congr wru) g3') fun s' ⟨_, f, g', rd', wr'⟩ mL uL fl =>
       ⟨abi s' (by rw [g' _ (by decide) (by decide) (by decide), g1])
         (by rw [g' _ (by decide) (by decide) (by decide), g2]) (by rw [g' _ (by decide) (by decide) (by decide), g3])
-        (by rw [g' _ (by decide) (by decide) (by decide), g4]) fun r hr h1 h2 h3 h4 => by
+        (by rw [g' _ (by decide) (by decide) (by decide), g4]) (fun r hr h1 h2 h3 h4 => by
           rw [g' r (ne3 r hr).2.1 (ne3 r hr).2.2.1 (ne3 r hr).2.2.2, g r h1 h2 h3 h4 (ne3 r hr).1,
-            keep₄ r hr h1 h2 h3 h4], ?_, (fun h => by cases h), ⟨?_, z⟩⟩
-    · show chunksAt M.step s'.mem (Dp s₀) (N s₀) = _
-      rw [chunksAt_frame f (fun r hr => by
+            keep₄ r hr h1 h2 h3 h4]) mL uL, ?_, (fun h => by cases h), ⟨?_⟩⟩
+    · show chunksAt M.step mL (Dp s₀) (N s₀) = _
+      rw [chunksAt_frame fl (fun r hr => by
+          simp only [List.mem_singleton] at hr; subst hr; exact scrData) (by have := hp.dataFit; omega_arith),
+        chunksAt_frame f (fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr; exact scrData) (by have := hp.dataFit; omega_arith), m,
         data₄]
-    · show Frame _ s₀.mem s'.mem
+    · show Frame _ s₀.mem mL
       rw [m] at f
-      exact fr₄.trans (f.sub fun r hr => ⟨_, List.mem_cons_self, by
-        simp only [List.mem_singleton] at hr; subst hr; exact fun _ h => h⟩)
+      exact (fr₄.trans (f.sub fun r hr => ⟨_, List.mem_cons_self, by
+        simp only [List.mem_singleton] at hr; subst hr; exact fun _ h => h⟩)).trans
+        (fl.sub fun r hr => ⟨_, List.mem_cons_self, by
+          simp only [List.mem_singleton] at hr; subst hr; exact fun _ h => h⟩)
   · rw [show (if true = true then c.ivBack else []) ++ Core.restore =
       mov .s2 .s1 :: (c.opsCode false (copyBlk c.bw .dat .chn) ++ Core.restore) by simp [Core.ivBack]]
     refine wp_mv fun s₅ u₅ => ?_
@@ -2034,33 +2041,40 @@ theorem seqWith_changesO_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : St
     obtain b₆ : s₆.gpr sb = Fb s₀ c := by
       rw [g₆' _ (by decide) (by decide) (by decide) (by decide)]; exact h₄.b
     refine restore_wp hL (hS₄.congr (by rw [wr₆, u₅.wr])) b₆ sv₆ fun u g1 g2 g3 g4 g3' g m rdu wru => WP.block_nil ?_
-    refine WP.mono (wipe_wp hL (hS₄.congr (by rw [wru, wr₆, u₅.wr])) g3') fun s' ⟨z, f, g', rd', wr'⟩ =>
+    -- The `free` loses the frame's bytes (`fl`), which lie apart from the data and the IV.
+    refine WP.mono (wipe_wp hL (hS₄.congr (by rw [wru, wr₆, u₅.wr])) g3') fun s' ⟨_, f, g', rd', wr'⟩ mL uL fl =>
       ⟨abi s' (by rw [g' _ (by decide) (by decide) (by decide), g1])
         (by rw [g' _ (by decide) (by decide) (by decide), g2]) (by rw [g' _ (by decide) (by decide) (by decide), g3])
-        (by rw [g' _ (by decide) (by decide) (by decide), g4]) fun r hr h1 h2 h3 h4 => by
+        (by rw [g' _ (by decide) (by decide) (by decide), g4]) (fun r hr h1 h2 h3 h4 => by
           rw [g' r (ne3 r hr).2.1 (ne3 r hr).2.2.1 (ne3 r hr).2.2.2, g r h1 h2 h3 h4 (ne3 r hr).1,
-            g₆' r (ne3 r hr).2.1 (ne3 r hr).2.2.1 (ne3 r hr).2.2.2 h2, keep₄ r hr h1 h2 h3 h4], ?_, (fun _ => ?_),
-        ⟨?_, z⟩⟩
-    · show chunksAt M.step s'.mem (Dp s₀) (N s₀) = _
-      rw [chunksAt_frame f (fun r hr => by
+            g₆' r (ne3 r hr).2.1 (ne3 r hr).2.2.1 (ne3 r hr).2.2.2 h2, keep₄ r hr h1 h2 h3 h4]) mL uL, ?_,
+        (fun _ => ?_), ⟨?_⟩⟩
+    · show chunksAt M.step mL (Dp s₀) (N s₀) = _
+      rw [chunksAt_frame fl (fun r hr => by
+          simp only [List.mem_singleton] at hr; subst hr; exact scrData) (by have := hp.dataFit; omega_arith),
+        chunksAt_frame f (fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr; exact scrData) (by have := hp.dataFit; omega_arith), m,
         chunksAt_frame f₆ (ivOnly (hp.ivData hiv).symm) (by have := hp.dataFit; omega_arith), data₄]
-    · show bytesAt s'.mem (P s₀) (4 * c.bw) = _
+    · show bytesAt mL (P s₀) (4 * c.bw) = _
       have hc := h₄.chn
       rw [← hc]
       refine List.map_congr_left fun i hi => ?_
       obtain hi := List.mem_range.mp hi
-      rw [f.bytes (R := ivR s₀ c) (fun r hr => by
+      rw [fl.bytes (R := ivR s₀ c) (fun r hr => by
+          simp only [List.mem_singleton] at hr; subst hr; exact hp.ivScr) (by show 4 * c.bw ≤ 2 ^ 64; omega_arith) hi,
+        f.bytes (R := ivR s₀ c) (fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr; exact hp.ivScr) (by show 4 * c.bw ≤ 2 ^ 64; omega_arith) hi,
         m]
       obtain e₆ := a₆ .dat i hi
       simp only [cont, ivAreas] at e₆
       rw [e₆, copyBlk_apply (by decide), ite_eq_left ⟨rfl, hi⟩]
       rfl
-    · show Frame _ s₀.mem s'.mem
+    · show Frame _ s₀.mem mL
       rw [m] at f
-      refine (fr₄.trans (f₆.sub fun r hr => ?_)).trans (f.sub fun r hr => ⟨_, List.mem_cons_self, by
-        simp only [List.mem_singleton] at hr; subst hr; exact fun _ h => h⟩)
+      refine ((fr₄.trans (f₆.sub fun r hr => ?_)).trans (f.sub fun r hr => ⟨_, List.mem_cons_self, by
+        simp only [List.mem_singleton] at hr; subst hr; exact fun _ h => h⟩)).trans
+        (fl.sub fun r hr => ⟨_, List.mem_cons_self, by
+          simp only [List.mem_singleton] at hr; subst hr; exact fun _ h => h⟩)
       simp only [areaRegions, ivAreas, List.map, List.mem_cons, List.not_mem_nil, or_false] at hr
       subst hr; exact ⟨_, by simp, fun _ h => h⟩
 
