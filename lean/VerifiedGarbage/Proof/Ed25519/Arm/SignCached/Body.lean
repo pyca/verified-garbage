@@ -27,10 +27,7 @@ import VerifiedGarbage.Proof.Ed25519.Arm.FnCall
 import VerifiedGarbage.Proof.Ed25519.Arm.MulFnFinal
 import VerifiedGarbage.Proof.Ed25519.Arm.PackField
 import VerifiedGarbage.Proof.Ed25519.Arm.PointAffine
-import VerifiedGarbage.Proof.Ed25519.Arm.PointFromScalar
-import VerifiedGarbage.Proof.Ed25519.Arm.PointMulBody
 import VerifiedGarbage.Proof.Ed25519.Arm.Points
-import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTBody
 import VerifiedGarbage.Proof.Ed25519.Arm.ScalarCodec
 import VerifiedGarbage.Proof.X25519.Arm.AddSub
 import VerifiedGarbage.Proof.X25519.Arm.Cswap

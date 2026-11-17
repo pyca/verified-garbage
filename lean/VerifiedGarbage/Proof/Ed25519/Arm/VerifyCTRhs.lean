@@ -9,7 +9,6 @@ public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseVerified
 import VerifiedGarbage.Proof.Ed25519.VerifyBytes
 meta import VerifiedGarbage.Proof.Ed25519.VerifyBytes
 import VerifiedGarbage.Proof.Framework.Arm.Syms
-import VerifiedGarbage.Proof.Ed25519.Arm.PointFromScalar
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Ed25519.Arm.RecoverCTBlocks
 meta import VerifiedGarbage.Proof.Ed25519.Arm.PointEqual
@@ -18,7 +17,6 @@ meta import VerifiedGarbage.Proof.Ed25519.Arm.VerifyCTLit
 meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTFrom
 meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseVerified
 meta import VerifiedGarbage.Proof.Framework.Arm.Syms
-meta import VerifiedGarbage.Proof.Ed25519.Arm.PointFromScalar
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import VerifiedGarbage.Proof.Framework.Block
 meta import VerifiedGarbage.Proof.Framework.Block

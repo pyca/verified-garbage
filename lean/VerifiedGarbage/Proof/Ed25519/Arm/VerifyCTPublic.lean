@@ -21,7 +21,6 @@ public import VerifiedGarbage.Proof.Ed25519.Arm.RecoverSign
 import VerifiedGarbage.Proof.Ed25519.Arm.PointEqual
 import VerifiedGarbage.Proof.Ed25519.Arm.UnpackField
 import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTMul
-import VerifiedGarbage.Proof.Ed25519.Arm.PointFromScalar
 import VerifiedGarbage.Proof.Ed25519.Arm.Points
 import VerifiedGarbage.Proof.Ed25519.Arm.FnCall
 import VerifiedGarbage.Proof.Ed25519.Group.Decode

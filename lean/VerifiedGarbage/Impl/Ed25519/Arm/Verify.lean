@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Impl.Ed25519.Arm.PointDecode
 public import VerifiedGarbage.Impl.Ed25519.Arm.PointEqual
 public import VerifiedGarbage.Impl.Ed25519.Arm.PointTableIO
-public import VerifiedGarbage.Impl.Ed25519.Arm.PointFromScalar
 public import VerifiedGarbage.Impl.Ed25519.Arm.ScalarABI
 public import VerifiedGarbage.Impl.Ed25519.Arm.Comb
 

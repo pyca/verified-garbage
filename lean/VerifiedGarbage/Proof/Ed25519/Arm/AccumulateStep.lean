@@ -74,38 +74,6 @@ section
 namespace VG.Proof.Ed25519.Arm
 open VG VG.Arm VG.Impl.Ed25519.Arm VG.Proof.X25519.Arm
 
-theorem prepareAdd_ok {s : State} {b : BitVec 32} (hc : Ctx b s) (hl : AllLim s.mem b)
-    (j : Nat) (hj : j < 16) (h11 : s.gpr .r11 = BitVec.ofNat 32 j) :
-    WP isa prepareAdd s fun t => AccKeep b s t ∧ AllLim t.mem b ∧
-      point (env t.mem b) 0 1 2 3 = point (env s.mem b) 0 1 2 3 ∧
-      point (env t.mem b) 4 5 6 7 = tablePoint s.mem b (5728 + 128 * j) ∧
-      point (env t.mem b) 17 18 19 20 = point (env s.mem b) 0 1 2 3 ∧
-      env t.mem b 16 = env s.mem b 16 := by
-  refine WP.seq (WP.mono (fieldCode_ok savePointOps hc hl) fun a ⟨ka, la, ea⟩ => ?_)
-  refine WP.seq ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (tableAddr_ok (ka.ctx hc) 5728 j (by omega_arith) (by omega_arith)
-    ((ka.rest.gpr _ (by decide)).trans h11)) fun a' ⟨hptr, hr, hm⟩ => ?_
-  have ka' : AccKeep b a a' := AccKeep.of_rest hr (by decide) hm
-  refine WP.mono (pointFromTable_ok (ka'.ctx (ka.ctx hc)) (by rw [hm]; exact la)
-    hptr (by omega_arith) (by omega_arith)) fun c ⟨pc, lc, kc⟩ => ?_
-  have kc' : AccKeep b a' c := AccKeep.of_table kc (by decide) (by decide)
-  have ks : AccKeep b s c := (AccKeep.of_keep ka).trans (ka'.trans kc')
-  have savec : point (env c.mem b) 17 18 19 20 = point (env s.mem b) 0 1 2 3 := by
-    rw [point_congr _ _ _ _ (kc.high 17 (by decide)) (kc.high 18 (by decide))
-      (kc.high 19 (by decide)) (kc.high 20 (by decide)), hm, ea, savePoint_eval]
-  have dc : env c.mem b 16 = env s.mem b 16 := by rw [kc.high 16 (by decide), hm, ea, savePoint_d]
-  have tc : tablePoint a'.mem b (5728 + 128 * j) = tablePoint s.mem b (5728 + 128 * j) := by
-    rw [hm]
-    exact workspace_tablePoint ka.frame (by omega_arith) (by omega_arith)
-  refine WP.seq (WP.mono (fieldCode_ok copyPointToQOps (ks.ctx hc) lc) fun d ⟨kd, ld, ed⟩ => ?_)
-  refine WP.mono (fieldCode_ok restorePointOps (kd.ctx (ks.ctx hc)) ld) fun t ⟨kt, lt, et⟩ => ?_
-  refine ⟨ks.trans ((AccKeep.of_keep kd).trans (AccKeep.of_keep kt)), lt, ?_, ?_, ?_, ?_⟩
-  · rw [et, restorePoint_eval, ed, copyPointToQ_saved, savec]
-  · rw [et, restorePoint_q, ed, copyPointToQ_eval, pc, tc]
-  · rw [et, restorePoint_saved, ed, copyPointToQ_saved, savec]
-  · rw [et, restorePoint_d, ed, copyPointToQ_d, dc]
-
 end VG.Proof.Ed25519.Arm
 end
 
@@ -121,7 +89,6 @@ theorem AccKeep.bit {b : BitVec 32} {s t : State} (h : AccKeep b s t) (j : Nat) 
   rw [List.mem_singleton.mp hr]
   exact (Offset.disjoint (State.addr b) (d := 32 + j) (n := 1) (e := 64) (k := 1568)
     (.inl (by omega_arith)) (by omega_arith) (by decide)) _ (Region.contains_self _ _)
-
 
 theorem scalarBitMask_ok {b : BitVec 32} {s : State} (hc : Ctx b s) (j : Nat) (hj : j < 16)
     (h11 : s.gpr .r11 = BitVec.ofNat 32 j) (bit : Bool)
@@ -247,37 +214,6 @@ theorem select_flip {α : Type} (bit : Bool) {a b c d e : α}
   | false => exact hc.trans hd
   | true => exact hc.trans he
 
-theorem pointAccumulate_ok {s : State} {b : BitVec 32} (hc : Ctx b s) (hl : AllLim s.mem b)
-    (j : Nat) (hj : j < 16) (h11 : s.gpr .r11 = BitVec.ofNat 32 j)
-    (hd : env s.mem b 16 = Spec.Ed25519.d) (bit : Bool)
-    (hbit : s.mem (State.addr b + BitVec.ofNat 64 (32 + j)) = BitVec.ofNat 8 bit.toNat) :
-    WP isa pointAccumulate s fun t => AccKeep b s t ∧ AllLim t.mem b ∧
-      point (env t.mem b) 0 1 2 3 =
-        (if bit then Spec.Ed25519.pointAdd (point (env s.mem b) 0 1 2 3)
-          (tablePoint s.mem b (5728 + 128 * j)) else point (env s.mem b) 0 1 2 3) ∧
-      env t.mem b 16 = env s.mem b 16 := by
-  refine WP.seq (WP.mono (prepareAdd_ok hc hl j hj h11) fun u ⟨ku, lu, up, uq, us, ud⟩ => ?_)
-  refine WP.seq (WP.mono (pointAdd_ok (ku.ctx hc) lu (ud.trans hd)) fun v ⟨kv, lv, vp, vh⟩ => ?_)
-  have ks := ku.trans (AccKeep.of_keep kv)
-  have hvc : v.gpr .r11 = BitVec.ofNat 32 j := (ks.rest.gpr _ (by decide)).trans h11
-  have hvb : v.mem (State.addr b + BitVec.ofNat 64 (32 + j)) = BitVec.ofNat 8 bit.toNat :=
-    (ks.bit j hj).trans hbit
-  have vs : point (env v.mem b) 17 18 19 20 = point (env s.mem b) 0 1 2 3 :=
-    (point_congr (e := env v.mem b) (f := env u.mem b) 17 18 19 20 (vh 17 (by decide)) (vh 18 (by decide))
-      (vh 19 (by decide)) (vh 20 (by decide))).trans us
-  have vp' : point (env v.mem b) 0 1 2 3 =
-      Spec.Ed25519.pointAdd (point (env s.mem b) 0 1 2 3) (tablePoint s.mem b (5728 + 128 * j)) :=
-    vp.trans (congrArg₂ Spec.Ed25519.pointAdd up uq)
-  rw [WP.block_append_iff]
-  refine WP.mono (scalarBitMask_ok (ks.ctx hc) j hj hvc bit hvb) fun w ⟨kw, mw, mask⟩ => ?_
-  refine WP.mono (pointSelect_ok (kw.ctx (ks.ctx hc)) (by rw [mw]; exact lv) mask)
-    fun t ⟨kt, lt, tp, td⟩ => ?_
-  refine ⟨ks.trans (kw.trans (AccKeep.of_keep kt)), lt, ?_, ?_⟩
-  · exact select_flip bit tp
-      ((congrArg (fun m => point (env m b) 17 18 19 20) mw).trans vs)
-      ((congrArg (fun m => point (env m b) 0 1 2 3) mw).trans vp')
-  · exact td.trans ((congrArg (fun m => env m b 16) mw).trans ((vh 16 (by decide)).trans ud))
-
 end VG.Proof.Ed25519.Arm
 end
 
@@ -338,31 +274,5 @@ theorem accumulateTest_ok (s : State) (n : Nat) (hn : n < 16) (h11 : s.gpr .r11 
   refine wp_cmp (op2_imm (by decide)) fun t ht hz => WP.block_nil ⟨?_, ht.rest _, ht.mem⟩
   have he : BitVec.ofNat 32 n - (0 : BitVec 32) = BitVec.ofNat 32 n := BitVec.sub_zero _
   rw [hz, h11, he, ofNat_beq_zero (by omega_arith)]
-
-theorem accumulateBody_ok {s : State} {b : BitVec 32} (hc : Ctx b s) (hl : AllLim s.mem b)
-    (n start scalar : Nat) (p : Spec.Ed25519.Point) (hn : n < 16)
-    (h11 : s.gpr .r11 = BitVec.ofNat 32 (n + 1))
-    (hb : s.mem (State.addr b + BitVec.ofNat 64 (32 + n)) = BitVec.ofNat 8 (scalarBit scalar (start + n)).toNat)
-    (hd : env s.mem b 16 = Spec.Ed25519.d)
-    (hp : point (env s.mem b) 0 1 2 3 = after scalar p (start + n + 1))
-    (ht : tablePoint s.mem b (5728 + 128 * n) = powerPoint p (start + n)) :
-    WP isa accumulateBody s fun t => t.gpr .r11 = BitVec.ofNat 32 n ∧ t.z = decide (n = 0) ∧
-      AllLim t.mem b ∧ point (env t.mem b) 0 1 2 3 = after scalar p (start + n) ∧
-      env t.mem b 16 = Spec.Ed25519.d ∧ LoopKeep b s t := by
-  refine WP.seq (WP.mono (accumulateDec_ok s n h11) fun u ⟨uc, ur, um⟩ => ?_)
-  have uk : LoopKeep b s u := LoopKeep.of_rest ur (by decide) um
-  refine WP.seq (WP.mono (pointAccumulate_ok (uk.ctx hc) (by rw [um]; exact hl) n hn uc
-    (by rw [um]; exact hd) (scalarBit scalar (start + n)) (by rw [um]; exact hb))
-    fun v ⟨vk, vl, vp, vd⟩ => ?_)
-  have vc := (vk.rest.gpr .r11 (by decide)).trans uc
-  have vpoint : point (env v.mem b) 0 1 2 3 = after scalar p (start + n) :=
-    vp.trans (choose_after scalar (start + n) p _ _
-      ((congrArg (fun m => point (env m b) 0 1 2 3) um).trans hp)
-      ((congrArg (fun m => tablePoint m b (5728 + 128 * n)) um).trans ht))
-  refine WP.mono (accumulateTest_ok v n hn vc) fun t ⟨tz, tr, tm⟩ => ?_
-  exact ⟨(tr.gpr _ (by decide)).trans vc, tz, tm ▸ vl,
-    (congrArg (fun m => point (env m b) 0 1 2 3) tm).trans vpoint,
-    (congrArg (fun m => env m b 16) tm).trans (vd.trans ((congrArg (fun m => env m b 16) um).trans hd)),
-    uk.trans ((LoopKeep.of_acc vk).trans (LoopKeep.of_rest tr (by decide) tm))⟩
 
 end VG.Proof.Ed25519.Arm

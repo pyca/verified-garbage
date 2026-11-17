@@ -13,8 +13,6 @@ meta import VerifiedGarbage.Proof.Framework.ConstMem
 import VerifiedGarbage.Proof.Framework.Arm.Syms
 meta import VerifiedGarbage.Proof.Framework.Arm.Syms
 import VerifiedGarbage.Proof.Ed25519.CombDigits
-import VerifiedGarbage.Proof.Ed25519.Arm.PointFromScalar
-meta import VerifiedGarbage.Proof.Ed25519.Arm.PointFromScalar
 import VerifiedGarbage.Proof.Ed25519.Arm.PointEncode
 meta import VerifiedGarbage.Proof.Ed25519.Arm.PointEncode
 import VerifiedGarbage.Proof.Ed25519.Arm.InitFields
@@ -50,8 +48,6 @@ import VerifiedGarbage.Proof.Ed25519.Arm.FieldMemory
 import VerifiedGarbage.Proof.Ed25519.Arm.FnCall
 import VerifiedGarbage.Proof.Ed25519.Arm.MulFnFinal
 import VerifiedGarbage.Proof.Ed25519.Arm.PointAffine
-import VerifiedGarbage.Proof.Ed25519.Arm.PointMulBody
-import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTBody
 import VerifiedGarbage.Proof.Ed25519.Bytes
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Arm.Call
@@ -65,8 +61,6 @@ meta import VerifiedGarbage.Proof.Ed25519.Arm.FieldMemory
 meta import VerifiedGarbage.Proof.Ed25519.Arm.FnCall
 meta import VerifiedGarbage.Proof.Ed25519.Arm.MulFnFinal
 meta import VerifiedGarbage.Proof.Ed25519.Arm.PointAffine
-meta import VerifiedGarbage.Proof.Ed25519.Arm.PointMulBody
-meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTBody
 meta import VerifiedGarbage.Proof.Ed25519.Bytes
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.Arm.Call
