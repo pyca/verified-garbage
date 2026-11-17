@@ -362,9 +362,20 @@ def split16 : List Instr :=
 where the loop left it, and the rest of the data, as `ctrInit` leaves them. -/
 def ctrBack : List Instr := ctrLoad ++ (restLoad ++ split16)
 
-/-- The data's groups enciphered by `L.ctr`, then the rest. -/
+/-- The offsets in `W` of the 16-byte stores of `zeroL`. -/
+def zeroOffs : List Nat := [64, 80, 96, 112] ++ (List.range 15).map (496 + 16 * ·) ++ [728]
+
+/-- What only the loops' paths write of `W`, zeroed: `H`, `Y` and the
+counter block at `W + 64`, and the powers of `H` from `W + 496` (their first
+8 bytes share 16 bytes with the schedule's last). Then what `seal` and
+`open` leave there does not depend on the keys or the data, with or without
+the loops. -/
+def zeroL : List Instr :=
+  .xop (.bin .pxor .xmm0 .xmm0) :: zeroOffs.map fun o => .movdquStore (at_ .r15 o) .xmm0
+
+/-- The data's groups enciphered by `L.ctr`, then the rest; and `zeroL`. -/
 def ctrFront (L : Loops) : Prog isa :=
-  .seq (.block ctrArgs) (.seq L.ctr (.seq (.block ctrBack) cryptRest))
+  .seq (.block ctrArgs) (.seq L.ctr (.seq (.seq (.block ctrBack) cryptRest) (.block zeroL)))
 
 /-- Counter mode, as `crypt`, the data's 256-byte groups with `L.ctr`. -/
 def cryptL (L : Loops) : Prog isa :=
@@ -382,11 +393,11 @@ def decFront (L : Loops) : Prog isa :=
 
 /-- With 256 bytes of data or more: POLYVAL of the additional data, the
 data deciphered and its groups absorbed (`decFront`), then the rest of the
-plaintext absorbed, and the lengths. -/
+plaintext absorbed, and the lengths; and `zeroL`. -/
 def decL (L : Loops) : Prog isa :=
   .seq (.block (hkey ++ ([.mov .r12 (.mem (at_ .r15 aadO)), .mov .rbp (.mem (at_ .r15 alenO))] : List Instr)))
     (.seq (absorb false)
-      (.seq (decFront L) (.seq (.block back) (.seq (absorb true) (.block lens)))))
+      (.seq (decFront L) (.seq (.block back) (.seq (absorb true) (.seq (.block lens) (.block zeroL))))))
 
 /-- `vg_aes_gcm_siv_open`, with the loops `L` from 256 bytes of data. -/
 def openL (L : Loops) : Prog isa :=
