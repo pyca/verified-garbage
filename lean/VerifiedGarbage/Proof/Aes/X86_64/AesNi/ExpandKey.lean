@@ -10,6 +10,7 @@ public import VerifiedGarbage.Spec.Aes.Contract
 public import VerifiedGarbage.Proof.Aes.Contract
 meta import VerifiedGarbage.Proof.Aes.Contract
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 import VerifiedGarbage.Proof.Aes.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
@@ -26,6 +27,7 @@ meta import VerifiedGarbage.Proof.Aes.X86_64.Lit
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 @[expose] public section
 
@@ -378,7 +380,7 @@ theorem kstep_exec (d s : XReg) (sel : BitVec 8) (rot : Bool) (k : XReg) (off : 
   rw [← kv2]
   cases rot <;>
   simp only [reduceCtorEq, ↓reduceIte, kstep, kgen, kmix, Bool.false_eq_true, List.cons_append,
-    List.nil_append, runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec, isa, State.setXmm,
+    List.nil_append, runBlock_cons, runStep_some, runBlock_nil, reduceExec, XOp.exec, isa, State.setXmm,
     State.store128, ea_at, hw, hd3, hd4, hk3, Ne.symm hd3, Ne.symm hd4, Option.some.injEq, exists_eq_left',
     eval_movdqa, pslldq4, pslldq8, eval_pxor', genT] <;>
   exact ⟨by first | trivial | rfl, by first | trivial | rfl, trivial, trivial, trivial,
@@ -393,7 +395,7 @@ theorem kstepB6_exec (off : Nat) (st : State)
       st'.gpr = st.gpr ∧ st'.rd = st.rd ∧ st'.wr = st.wr ∧
       ∀ x, x ≠ .xmm2 → x ≠ .xmm3 → x ≠ .xmm4 → st'.xmm x = st.xmm x := by
   apply WP.of_runBlock
-  simp only [reduceCtorEq, ↓reduceIte, kstepB6, runBlock_cons, runStep_some, runBlock_nil, exec,
+  simp only [reduceCtorEq, ↓reduceIte, kstepB6, runBlock_cons, runStep_some, runBlock_nil, reduceExec,
     XOp.exec, isa, State.setXmm, State.store128, ea_at, hw, 
     Option.some.injEq, exists_eq_left', eval_movdqa, pslldq4, eval_pxor']
   exact ⟨rfl, rfl, trivial, trivial, trivial, fun x h1 h2 h3 => by simp only [h1, h2, h3, ite_false]⟩
@@ -658,7 +660,7 @@ abbrev rcRegs : List XReg := [.xmm5, .xmm6, .xmm7, .xmm8, .xmm9, .xmm10, .xmm11,
 theorem rcons_ok (st : State) : WP isa (.block rcons) st fun st' => XFrame rcRegs st st' ∧ RC 8 st' := by
   apply WP.of_runBlock
   simp only [rcons, show List.range 7 = [0, 1, 2, 3, 4, 5, 6] from rfl, List.flatMap_cons, List.flatMap_nil,
-    List.cons_append, List.nil_append, List.append_nil, rcReg, runBlock_cons, runStep_some, runBlock_nil, exec,
+    List.cons_append, List.nil_append, List.append_nil, rcReg, runBlock_cons, runStep_some, runBlock_nil, reduceExec,
     XOp.exec, isa, State.setXmm, Option.some.injEq, exists_eq_left', eval_movdqa]
   refine ⟨⟨rfl, rfl, rfl, rfl, fun r hr => ?_⟩, fun j hj => ?_⟩
   · simp only [rcRegs, List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
@@ -670,7 +672,7 @@ theorem rcons_ok (st : State) : WP isa (.block rcons) st fun st' => XFrame rcReg
 theorem rcons128_ok {st : State} (h : RC 8 st) :
     WP isa (.block rcons128) st fun st' => XFrame [.xmm13, .xmm14] st st' ∧ RC 10 st' := by
   apply WP.of_runBlock
-  simp only [rcons128, runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec, isa, State.setXmm,
+  simp only [rcons128, runBlock_cons, runStep_some, runBlock_nil, reduceExec, XOp.exec, isa, State.setXmm,
     Option.some.injEq, exists_eq_left', eval_movdqa]
   refine ⟨⟨rfl, rfl, rfl, rfl, fun r hr => ?_⟩, fun j hj => ?_⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
@@ -699,7 +701,7 @@ theorem rotMaskSet_ok {i : Nat} (hi : i = 1 ∨ i = 3) (st : State) :
       st'.mem = st.mem ∧ st'.rd = st.rd ∧ st'.wr = st.wr ∧ ∀ x, x ≠ .xmm0 → st'.xmm x = st.xmm x := by
   apply WP.of_runBlock
   rcases hi with rfl | rfl <;>
-  simp only [Impl.Aes.X86_64.AesNi.rotMaskSet, runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec, isa,
+  simp only [Impl.Aes.X86_64.AesNi.rotMaskSet, runBlock_cons, runStep_some, runBlock_nil, reduceExec, XOp.exec, isa,
     State.setXmm, State.setReg, Option.some.injEq, exists_eq_left'] <;>
   exact ⟨by simp only [ite_true]; decide, fun r hr => by simp only [hr, ite_false], trivial, trivial, trivial,
     fun x hx => by simp only [hx, ite_false]⟩
@@ -724,7 +726,7 @@ theorem expand128_ok {s₀ : State} (hp : Pre s₀) (hl : len s₀ = 16) {rs : L
   refine WP.mono (Q := Inv128 s₀ 0) ?_ fun st₁ h₁ => WP.mono
     (wp_range_flatMap (Inv128 s₀) (fun k st hk h => ?_) 10 (Nat.le_refl _) st₁ h₁) fun _ h => h.1
   · apply WP.of_runBlock
-    simp only [↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec, isa,
+    simp only [↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, reduceExec, isa,
       State.setXmm, State.load128, State.store128, ea_at, hgm .rdi (by decide), hgm .rdx (by decide), hrdm, hwrm, hmm,
       hf'.gpr, hf'.rd, hf'.wr, hf'.mem, hin, hw, Option.map_some, Option.some.injEq, exists_eq_left']
     obtain hv : ∀ j < 4, dword (s₀.mem.readW (s₀.gpr .rdi + BitVec.ofInt 64 ((0 : Nat) : Int)) 128) j =
@@ -770,7 +772,7 @@ theorem expand192_ok {s₀ : State} (hp : Pre s₀) (hl : len s₀ = 24) {rs : L
   refine WP.mono (Q := Inv192 s₀ 0) ?_ fun st₁ h₁ => WP.block_append_iff.mpr (WP.mono
     (wp_range_flatMap (Inv192 s₀) (fun k st hk h => ?_) 7 (Nat.le_refl _) st₁ h₁) fun st₂ h => ?_)
   · apply WP.of_runBlock
-    simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, isa,
+    simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, reduceExec, isa,
       XOp.exec, State.setXmm, State.load128, State.store128, ea_at, hgm .rdi (by decide), hgm .rdx (by decide),
       hrdm, hwrm, hmm, hf.gpr, hf.rd, hf.wr, hf.mem, hin0, hin8, hw0, hw16, ite_true, ite_false, Option.map_some, Option.some.injEq, exists_eq_left']
     obtain hv : ∀ j < 4, dword (s₀.mem.readW (s₀.gpr .rdi + BitVec.ofInt 64 ((0 : Nat) : Int)) 128) j =
@@ -837,7 +839,7 @@ theorem expand256_ok {s₀ : State} (hp : Pre s₀) (hl : len s₀ = 32) {rs : L
   refine WP.mono (Q := Inv256 s₀ 0) ?_ fun st₁ h₁ => WP.block_append_iff.mpr (WP.mono
     (wp_range_flatMap (Inv256 s₀) (fun k st hk h => ?_) 6 (Nat.le_refl _) st₁ h₁) fun st₂ h => ?_)
   · apply WP.of_runBlock
-    simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, isa,
+    simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, reduceExec, isa,
       XOp.exec, State.setXmm, State.load128, State.store128, ea_at, hgm .rdi (by decide), hgm .rdx (by decide),
       hrdm, hwrm, hmm, hf.gpr, hf.rd, hf.wr, hf.mem, hin0, hin16,
       hw0, hw16, ite_true, ite_false, Option.map_some, Option.some.injEq, exists_eq_left', eval_pxor',

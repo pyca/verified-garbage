@@ -864,10 +864,10 @@ theorem decompress_ok (hL : VG.Proof.Weierstrass.Law W) {s : State} (hs : DPre s
       r * r := by
     unfold VG.Impl.EcKey.Compressed.chooseRoot; split
     · rfl
-    · grind
+    · rw [Lean.Grind.Ring.neg_mul, Lean.Grind.Ring.mul_neg, Lean.Grind.AddCommGroup.neg_neg]
   obtain hdif : sv base s₄ DIF = 0 ↔ r * r = rhsF := by
     rw [← toM_eq_zero_iff unit ltd₄, vd₄]
-    constructor <;> intro h <;> grind
+    exact Lean.Grind.AddCommGroup.sub_eq_zero_iff
   -- The specification's decoding.
   obtain hsplit : bytesAt s.mem (s.gpr .a1) 49 = tag :: bytesAt s.mem (s.gpr .a1 + BitVec.ofNat 64 1) 48 := by
     obtain h1 : bytesAt s.mem (s.gpr .a1) 1 = [tag] := by

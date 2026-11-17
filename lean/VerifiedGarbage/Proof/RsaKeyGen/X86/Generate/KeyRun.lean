@@ -1023,6 +1023,15 @@ theorem rdN (m : Mem) (B : Addr) {d e : Nat} (h : d + 4 ≤ e ∨ e + 4 ≤ d) (
     (m.writeW (B + BitVec.ofNat 64 e) v).readW (B + BitVec.ofNat 64 d) 32 = m.readW (B + BitVec.ofNat 64 d) 32 :=
   Mem.readW_writeW_sep (Offset.sep B h (by omega_using [hd]) (by omega_using [he])) (by decide)
 
+/-- `rdN`, its side conditions one closed Boolean, which `rfl` evaluates: a `simp` that reads a
+slot through the writes of the others asks three facts of its discharger at each write. -/
+theorem rdNb (m : Mem) (B : Addr) {d e : Nat}
+    (h : ((Nat.ble (d + 4) e || Nat.ble (e + 4) d) && (Nat.blt d (2 ^ 32) && Nat.blt e (2 ^ 32))) = true)
+    (v : BitVec 32) :
+    (m.writeW (B + BitVec.ofNat 64 e) v).readW (B + BitVec.ofNat 64 d) 32 = m.readW (B + BitVec.ofNat 64 d) 32 := by
+  simp only [Bool.and_eq_true, Bool.or_eq_true, Nat.ble_eq, Nat.blt_eq] at h
+  exact rdN m B h.1 h.2.1 h.2.2 v
+
 theorem rdS (m : Mem) (B : Addr) (d : Nat) (v : BitVec 32) :
     (m.writeW (B + BitVec.ofNat 64 d) v).readW (B + BitVec.ofNat 64 d) 32 = v :=
   Mem.readW_writeW_self32 _ _ _
@@ -1062,6 +1071,20 @@ def searchArg (p : GenPublic) (used ph : Nat) : Nat → BitVec 32
   | 9 => p.B
   | 10 => BitVec.ofNat 32 p.words
   | _ => p.stp
+
+/-- The search's arguments, each by evaluation: `simp only [searchArg]` unfolds the `match` for each
+index through its equations, a tenth of the time of a case of `searchArgs_ok` each. -/
+theorem searchArg_lits (p : GenPublic) (used ph : Nat) :
+    searchArg p used ph 0 = p.kp + BitVec.ofNat 32 (4 * p.L) + BitVec.ofNat 32 (pLenOf p.L ph) ∧
+    searchArg p used ph 1 = BitVec.ofNat 32 p.L ∧ searchArg p used ph 2 = p.up ∧
+    searchArg p used ph 3 = p.stp + 48 ∧ searchArg p used ph 4 = 8 ∧
+    searchArg p used ph 5 = p.kp + BitVec.ofNat 32 (4 * p.L) ∧
+    searchArg p used ph 6 = BitVec.ofNat 32 (pLenOf p.L ph) ∧
+    searchArg p used ph 7 = (if used < p.randLen then p.rp + BitVec.ofNat 32 used else p.rp) ∧
+    searchArg p used ph 8 = BitVec.ofNat 32 p.randLen - BitVec.ofNat 32 used ∧
+    searchArg p used ph 9 = p.B ∧ searchArg p used ph 10 = BitVec.ofNat 32 p.words ∧
+    searchArg p used ph 11 = p.stp :=
+  ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
 
 /-- The search's arguments are in its frame. -/
 def SArgs (p : GenPublic) (o : State) (used ph : Nat) (m : Mem) : Prop :=
@@ -1120,7 +1143,7 @@ theorem searchArgs_ok {p : GenPublic} {o s₀ t : State} {used ph : Nat} (h : Fr
   refine ⟨fun j hj => ?_, ?_⟩
   · rcases (show j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 ∨ j = 8 ∨ j = 9 ∨ j = 10 ∨ j = 11
       by omega_using [hj]) with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-    simp (disch := decide) only [Nat.reduceSub, Nat.reduceAdd, Nat.reduceMul, rdS, rdN, searchArg,
+    simp (disch := decide) only [Nat.reduceSub, Nat.reduceAdd, Nat.reduceMul, rdS, rdNb, searchArg_lits p used ph,
       hi.kp_eq, hi.up_eq, hi.rp_eq, hi.B_eq, hi.stp_eq, hi.randLen_eq, hi.words_eq, BitVec.ofNat_toNat,
       BitVec.setWidth_eq]
   · iterate 12 (refine fr_slot ?_ ?hk _; case hk => decide)
@@ -1199,10 +1222,10 @@ theorem pLen_cases (L ph : Nat) : pLenOf L ph = 0 ∨ pLenOf L ph = L := by unfo
 
 theorem sa7_lt {p : GenPublic} {used ph : Nat} (h : used < p.randLen) :
     searchArg p used ph 7 = p.rp + BitVec.ofNat 32 used := by
-  simp only [searchArg, h, ↓reduceIte]
+  simp only [searchArg_lits p used ph, h, ↓reduceIte]
 
 theorem sa7_ge {p : GenPublic} {used ph : Nat} (h : p.randLen ≤ used) : searchArg p used ph 7 = p.rp := by
-  simp only [searchArg, show ¬ used < p.randLen by omega_using [h], ↓reduceIte]
+  simp only [searchArg_lits p used ph, show ¬ used < p.randLen by omega_using [h], ↓reduceIte]
 
 theorem tn_add (x : BitVec 32) {k : Nat} (h : x.toNat + k < 2 ^ 32) : (x + BitVec.ofNat 32 k).toNat = x.toNat + k := by
   rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := k) (by omega_using [h])]
@@ -2043,6 +2066,19 @@ def keyArg (p : GenPublic) : Nat → BitVec 32
   | 16 => p.B
   | _ => BitVec.ofNat 32 p.words
 
+/-- The key's arguments, each by evaluation (see `searchArg_lits`). -/
+theorem keyArg_lits (p : GenPublic) :
+    keyArg p 0 = p.kp ∧ keyArg p 1 = BitVec.ofNat 32 (2 * p.L) ∧
+    keyArg p 2 = p.kp + BitVec.ofNat 32 (2 * p.L) ∧ keyArg p 3 = BitVec.ofNat 32 (2 * p.L) ∧
+    keyArg p 4 = p.kp + BitVec.ofNat 32 (4 * p.L) ∧ keyArg p 5 = BitVec.ofNat 32 p.L ∧
+    keyArg p 6 = p.kp + BitVec.ofNat 32 (5 * p.L) ∧ keyArg p 7 = BitVec.ofNat 32 p.L ∧
+    keyArg p 8 = p.kp + BitVec.ofNat 32 (6 * p.L) ∧ keyArg p 9 = BitVec.ofNat 32 p.L ∧
+    keyArg p 10 = p.kp + BitVec.ofNat 32 (7 * p.L) ∧ keyArg p 11 = BitVec.ofNat 32 p.L ∧
+    keyArg p 12 = p.kp + BitVec.ofNat 32 (8 * p.L) ∧ keyArg p 13 = BitVec.ofNat 32 p.L ∧
+    keyArg p 14 = p.stp + 48 ∧ keyArg p 15 = 8 ∧ keyArg p 16 = p.B ∧
+    keyArg p 17 = BitVec.ofNat 32 p.words :=
+  ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
+
 /-- The key's arguments are in its frame. -/
 def KArgs (p : GenPublic) (o : State) (m : Mem) : Prop :=
   ∀ j < 18, m.readW (low o + BitVec.ofNat 64 (196 + 4 * j)) 32 = keyArg p j
@@ -2061,7 +2097,7 @@ theorem keyArgs_ok {p : GenPublic} {o s₀ t : State} (h : Fr p o s₀ 72 t)
   · rcases (show j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 ∨ j = 8 ∨ j = 9 ∨ j = 10 ∨ j = 11 ∨
       j = 12 ∨ j = 13 ∨ j = 14 ∨ j = 15 ∨ j = 16 ∨ j = 17 by omega_using [hj]) with
       rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-    simp (disch := decide) only [Nat.reduceSub, Nat.reduceAdd, Nat.reduceMul, rdS, rdN, keyArg,
+    simp (disch := decide) only [Nat.reduceSub, Nat.reduceAdd, Nat.reduceMul, rdS, rdNb, keyArg_lits p,
       hi.kp_eq, hi.B_eq, hi.stp_eq, hi.words_eq, BitVec.ofNat_toNat, BitVec.setWidth_eq]
     all_goals
       simp only [BitVec.add_assoc, ← BitVec.ofNat_add]
@@ -2148,7 +2184,7 @@ theorem kL2 : (BitVec.ofNat 32 (2 * p.L)).toNat = 2 * p.L := by
   have := h.len_valid; rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [this])]
 
 theorem kE0 : kG p 0 1 = ⟨p.kp.setWidth 64 + BitVec.ofNat 64 (0 * p.L), 2 * p.L⟩ :=
-  kNum h 0 2 (by decide) (by simp [keyArg]) (kL2 h)
+  kNum h 0 2 (by decide) (by simp [keyArg_lits p]) (kL2 h)
 
 theorem kE1 : kG p 2 3 = ⟨p.kp.setWidth 64 + BitVec.ofNat 64 (2 * p.L), 2 * p.L⟩ :=
   kNum h 2 2 (by decide) (rfl) (kL2 h)
@@ -2300,7 +2336,7 @@ theorem key_pre {p : GenPublic} {o s₀ t : State} (h : Fr p o s₀ 72 t) (ha : 
     obtain hn : c * p.L + n * p.L ≤ 9 * p.L := by rw [← Nat.add_mul]; exact Nat.mul_le_mul_right _ hc.1
     obtain h8 := Nat.mul_le_mul_right p.L (show c ≤ 8 by omega_using [hc])
     rw [hl, hi', tn_add _ (by omega_using [kb, h8])]; omega_using [kb, hn]
-  obtain g0 := bnum 0 1 0 2 (by decide) (kE0 hi) (by simp [keyArg])
+  obtain g0 := bnum 0 1 0 2 (by decide) (kE0 hi) (by simp [keyArg_lits p])
   obtain g2 := bnum 2 3 2 2 (by decide) (kE1 hi) rfl
   obtain g4 := bnum 4 5 4 1 (by decide) (kE2 hi) rfl
   obtain g6 := bnum 6 7 5 1 (by decide) (kE3 hi) rfl

@@ -91,13 +91,20 @@ theorem entry_ok (a : State) (hP : (a.gpr .esp).toNat + 96 ≤ 2 ^ 32)
       (∀ r, r ≠ .eax → r ≠ .ebx → r ≠ .edx → r ≠ .esi → e.gpr r = a.gpr r) ∧ e.rd = a.rd ∧ e.wr = a.wr := by
   have hw0 : InRegions a.wr (w64 (a.gpr .esp)) 4 := by simpa only [add_zero32] using hw 0 (by decide)
   refine WP.of_runBlock ⟨_, by
-    xrun [SealGather.entry, sp, hw 36 (by decide), hw 40 (by decide), hw 44 (by decide), hw0, hw 4 (by decide),
+    -- not `xrun`: its side conditions are closed by `simp` itself here, not by a tactic it runs for
+    -- each (0.75 s for 0.2 s)
+    simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, State.load32, store32_eq, State.ea, at_,
+      Option.bind_some, Option.map_some, gpr_setReg_self, gpr_setReg_of_ne, mem_setReg, rd_setReg, wr_setReg,
+      gpr_setMem, mem_setMem, rd_setMem, wr_setMem, reduceCtorEq, Nat.reduceAdd, ↓reduceIte, Nat.reduceLeDiff,
+      ne_eq, not_false_eq_true, or_true, true_or,
+      SealGather.entry, sp, hw 36 (by decide), hw 40 (by decide), hw 44 (by decide), hw0, hw 4 (by decide),
       hw 8 (by decide), hw 12 (by decide), hw 16 (by decide), hw 20 (by decide), hw 24 (by decide),
       hw 28 (by decide), hw 32 (by decide), hr 52 (by decide) (by decide), hr 56 (by decide) (by decide),
       hr 60 (by decide) (by decide), hr 64 (by decide) (by decide), hr 68 (by decide) (by decide),
       hr 72 (by decide) (by decide), hr 76 (by decide) (by decide), hr 80 (by decide) (by decide),
       hr 84 (by decide) (by decide), hr 88 (by decide) (by decide), hr 92 (by decide) (by decide), add_zero32,
-      rdw hP, rdw0 hP, rd0w hP], ?_⟩
+      rdw hP, rdw0 hP, rd0w hP]
+    rfl, ?_⟩
   refine ⟨?_, ?_, ?_, ?_, fun r h₁ h₂ h₃ h₄ => ?_, ?_, ?_⟩
   · simp only [mem_setMem, mem_setReg]; rfl
   · regs []
@@ -133,7 +140,7 @@ theorem eMem_words :
     e.readW (w64 P) 32 = r m 52 ∧ r e 4 = r m 56 ∧ r e 8 = r m 60 ∧ r e 12 = r m 64 ∧ r e 16 = r m 68 ∧
       r e 20 = r m 72 ∧ r e 24 = r m 84 ∧ r e 28 = r m 88 ∧ r e 32 = r m 92 ∧ r e 36 = ebx ∧ r e 40 = esi ∧
       r e 44 = edi := by
-  simp (disch := first | decide | omega_arith) only [eMem, rdw hP, rdw0 hP, rd0w hP, rds]
+  simp only [eMem, rdw hP, rdw0 hP, rd0w hP, rds, Nat.reduceAdd, Nat.reduceLeDiff, or_true, true_or]
   exact ⟨trivial, trivial, trivial, trivial, trivial, trivial, trivial, trivial, trivial, trivial, trivial,
     trivial⟩
 

@@ -247,9 +247,10 @@ theorem lastCore_ok {s : State} (hc : Lazy.VConstsW Lazy.bInvC s) :
       XOnly [.xmm0, .xmm1, .xmm2, .xmm3, .xmm4, .xmm5, .xmm6] s s' := by
   simp only [lastCore, ibfR, vmont, vredc, vcsub, vcadd, xmov, xb, List.cons_append, List.nil_append]
   -- reads through the writes before their branches: as post-rewrites `simp` visits each discarded branch
-  vrun [↓VG.Proof.MlKem.X86_64.xmm_setXmm, ↓reduceIte, eval_movdqa]
-  rw [hc.q, hc.qinv, hc.q2]
-  exact ⟨⟨rfl, rfl, rfl, rfl⟩, by xonly⟩
+  vrun [↓VG.Proof.MlKem.X86_64.xmm_setXmm, ↓reduceIte, eval_movdqa, hc.q, hc.qinv, hc.q2]
+  exact ⟨⟨rfl, rfl, rfl, rfl⟩, by
+    repeat (refine VG.Proof.MlKem.X86_64.XOnly.setXmm (by decide) ?_ _)
+    exact VG.Proof.MlKem.X86_64.XOnly.refl _ _⟩
 
 theorem lane_lastCore : laneSseBlock (toY lastCore) = some lastCore := by decide +kernel
 

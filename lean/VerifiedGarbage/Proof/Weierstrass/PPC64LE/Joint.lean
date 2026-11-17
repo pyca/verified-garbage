@@ -285,7 +285,11 @@ theorem selQ_conds {n : Nat} (hk3 : 3 ≤ n) (hk6 : n ≤ 6) {a b : Pt}
     omega_using [h1, h2, he, hb3, ha, hq, hp, hoo, ho1, h8]
   obtain ⟨q4, qle, qge⟩ := e4
   simp only [ptAt, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
-  omega_using [q4, qle, qge, a1, a2, a3, b1, b2, b3, a1', a2', a3', b1', b2', b3', he]
+  refine ⟨?_, ?_, ?_, ?_⟩
+  · omega_using [he, q4, a1', a2', a3', b1', b2', b3']
+  · omega_using [qle, qge, a1, a2, a3, b1, b2, b3, he]
+  · omega_using [he]
+  · omega_using [he, qge, a1, a2, a3, b1, b2, b3]
 
 /-- `Apart` is symmetric. -/
 theorem Apart.symm {n x y : Nat} (h : Apart n x y) : Apart n y x := Or.symm h

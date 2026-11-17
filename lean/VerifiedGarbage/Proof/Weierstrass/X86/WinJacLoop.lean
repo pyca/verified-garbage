@@ -170,8 +170,8 @@ theorem full_values {F : Type _} [Lean.Grind.CommRing F] (E : Nat → F)
     (runOps (headN++jacTailN) E 6,runOps (headN++jacTailN) E 7,runOps (headN++jacTailN) E 8)=
       jacAddF (E 11) (E 12) (E 13) (E 14) (E 15) (E 16) := by
   simp only [headN,jacTailN,jacTail,List.cons_append,List.nil_append,
-    runOps,List.foldl_cons,List.foldl_nil,FOp.run,Function.update_apply]
-  simp only [ite_true,h3,h2,jacAddF,Prod.mk.injEq]
+    runOps,List.foldl_cons,List.foldl_nil,FOp.run,Function.update_apply,↓reduceIte,Nat.reduceEqDiff]
+  simp only [h3,h2,jacAddF,Prod.mk.injEq]
   constructor
   · grind
   constructor <;> grind

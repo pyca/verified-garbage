@@ -82,12 +82,12 @@ theorem xDataTo_ok {w : Nat} (hw : w = 4 ∨ w = 5 ∨ w = 6) {d sr : Reg} {D S 
     have e₂ : B + BitVec.ofNat 64 i * BitVec.ofNat 64 1 + BitVec.ofInt 64 0 = B + BitVec.ofNat 64 i := by simp
     have e₃ : S + BitVec.ofNat 64 i * BitVec.ofNat 64 1 + BitVec.ofInt 64 0 = S + BitVec.ofNat 64 i := by simp
     apply WP.of_runBlock
-    simp only [reduceCtorEq, ↓reduceIte, xDataTo, idx, runBlock_cons, runStep_some, runBlock_nil, exec,
+    simp only [reduceCtorEq, ↓reduceIte, xDataTo, idx, runBlock_cons, runStep_some, runBlock_nil, reduceExec,
       State.ea, State.load128, State.store128, State.setXmm, XOp.exec, reduceXBinOpEval, hD, hS, hB, hrcx, e₁, e₂,
       e₃, i₃, i₂, o₁, Option.map_some, Option.bind_some, Option.some.injEq, exists_eq_left']
     exact ⟨trivial, trivial, trivial, trivial⟩
   · apply WP.of_runBlock
-    simp only [xDataTo, runBlock_cons, runStep_some, runBlock_nil, exec, ea₁, ea₂, ea₃, State.load256,
+    simp only [xDataTo, runBlock_cons, runStep_some, runBlock_nil, reduceExec, ea₁, ea₂, ea₃, State.load256,
       State.store256_eq, i₃, i₂, o₁, Option.map_some, Option.bind_some, Option.some.injEq,
       exists_eq_left', ite_true, VOp.exec_gpr, VOp.exec_mem, VOp.exec_rd, VOp.exec_wr, VOp.exec_ea,
       State.setV_gpr, State.setV_mem, State.setV_rd, State.setV_wr, State.setV_ea, State.setMem_gpr,
@@ -95,7 +95,7 @@ theorem xDataTo_ok {w : Nat} (hw : w = 4 ∨ w = 5 ∨ w = 6) {d sr : Reg} {D S 
       reduceCtorEq, ↓reduceIte, Nat.reduceEqDiff, reduceVBinOpSse, reduceXBinOpEval, halves256]
     exact ⟨trivial, trivial, trivial, trivial⟩
   · apply WP.of_runBlock
-    simp only [xDataTo, runBlock_cons, runStep_some, runBlock_nil, exec, ea₁, ea₂, ea₃, State.load512,
+    simp only [xDataTo, runBlock_cons, runStep_some, runBlock_nil, reduceExec, ea₁, ea₂, ea₃, State.load512,
       State.store512_eq, i₃, i₂, o₁, Option.map_some, Option.bind_some, Option.some.injEq,
       exists_eq_left', ite_true, ZOp.exec_gpr, ZOp.exec_mem, ZOp.exec_rd, ZOp.exec_wr, ZOp.exec_ea,
       State.setZ_gpr, State.setZ_mem, State.setZ_rd, State.setZ_wr, State.setZ_ea, State.setMem_gpr,
@@ -156,7 +156,7 @@ theorem x_step (hw : w = 4 ∨ w = 5 ∨ w = 6) (hs : Sep D S B n)
   refine WP.block_append (WP.mono (xDataTo_ok hw hR.rd hR.rs hR.rb hR.rcx o₁ i₃ i₂)
     fun s₁ ⟨m₁, g₁, rd₁, wr₁⟩ => ?_)
   apply WP.of_runBlock
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu, arithFlags,
+  simp only [runBlock_cons, runStep_some, runBlock_nil, reduceExec, readSrc, execAlu, arithFlags,
     State.setReg, State.setFlags, Option.bind_some, Option.some.injEq, exists_eq_left', se1, seW hw, g₁,
     hR.rcx, hax, reduceCtorEq, ↓reduceIte]
   refine ⟨by rw [eW]; exact hI.wstep hp.2 hs hi m₁ rd₁ wr₁,
@@ -189,7 +189,7 @@ theorem xloop_ok (hw : w = 4 ∨ w = 5 ∨ w = 6) (hs : Sep D S B n)
     have h1 : w ≠ 1 := by omega_arith
     apply WP.of_runBlock
     simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLeDiff, and_self, runBlock_cons, runStep_some,
-      runBlock_nil, exec, readSrc, readSrc32, execShift, State.setReg, State.setReg32, State.setFlags,
+      runBlock_nil, reduceExec, readSrc, readSrc32, execShift, State.setReg, State.setReg32, State.setFlags,
       Option.map_some, Option.some.injEq, exists_eq_left', hrdx, hc, h1, and_true, ite_true, ite_false]
     have hs : BitVec.ofNat 64 n >>> w = BitVec.ofNat 64 (n / 2 ^ w) := by
       apply BitVec.eq_of_toNat_eq
@@ -300,7 +300,7 @@ theorem xorBufXTo_ok {w : Nat} (hw : w = 4 ∨ w = 5 ∨ w = 6) {d sr : Reg}
         (∀ r, r ≠ .rdi → r ≠ sr → r ≠ .rsi → r ≠ .rdx → s.gpr r = s₂.gpr r) ∧ s.mem = s₂.mem ∧
         s.rd = s₂.rd ∧ s.wr = s₂.wr := by
     apply WP.of_runBlock
-    simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu, arithFlags,
+    simp only [runBlock_cons, runStep_some, runBlock_nil, reduceExec, readSrc, execAlu, arithFlags,
       State.setReg, State.setFlags, Option.map_some, Option.bind_some, Option.some.injEq,
       exists_eq_left', reduceCtorEq, ↓reduceIte, hR₂.rd, hR₂.rs, hR₂.rb, hR₂.rcx, hR₂.rdx,
       hsx.2.2.2.2.2, hsx.2.2.2.2.2.symm, hsx.2.2.2.1, hsx.2.2.2.1.symm, hsx.2.2.1, hsx.2.2.2.2.1,
@@ -342,7 +342,7 @@ theorem xorBufX_ok {w : Nat} (hw : w = 4 ∨ w = 5 ∨ w = 6) {d : Reg}
         (∀ r, r ≠ .rdi → r ≠ .rsi → r ≠ .rdx → s.gpr r = s₂.gpr r) ∧ s.mem = s₂.mem ∧
         s.rd = s₂.rd ∧ s.wr = s₂.wr := by
     apply WP.of_runBlock
-    simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu, arithFlags,
+    simp only [runBlock_cons, runStep_some, runBlock_nil, reduceExec, readSrc, execAlu, arithFlags,
       State.setReg, State.setFlags, Option.map_some, Option.bind_some, Option.some.injEq,
       exists_eq_left', reduceCtorEq, ↓reduceIte, hR₂.rd, hR₂.rb, hR₂.rcx, hR₂.rdx]
     refine ⟨by simp [hdx.2.2.1], by simp, ?_, fun r h₁ h₂ h₃ => by simp [h₁, h₂, h₃], trivial, trivial,

@@ -262,16 +262,16 @@ theorem finish_ok {s : State} (h : LAt σ pos 272 s) :
       (hk.gpr (by decide)).trans h.rcx, by rw [hm]; exact h.stored, h.stream.mem_eq hm⟩
   by_cases hf : (Lt σ 272).length = 256
   · apply WP.ite true (by show s'.zf = _; rw [hz, h.rdi, hf]; rfl) (fun _ => end_ok hp h' hf)
-    intro e; contradiction
+    intro e; exact Bool.noConfusion e
   · have hz' : s'.zf = some false := by
       rw [hz, h.rdi]
-      congr 1
+      refine congrArg some ?_
       apply beq_eq_false_iff_ne.mpr
       intro e
       have := congrArg BitVec.toNat e
       rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := Lt_length_le (σ := σ) 272; omega_using [this])] at this
       exact hf this
-    apply WP.ite false hz' (fun e => by contradiction) (fun _ => continue_ok hp h')
+    apply WP.ite false hz' (fun e => Bool.noConfusion e) (fun _ => continue_ok hp h')
 
 /-- The prefix and continuation together retain the original postcondition. -/
 theorem short_correct {η : Nat} (hη : etaOf σ = η) :
