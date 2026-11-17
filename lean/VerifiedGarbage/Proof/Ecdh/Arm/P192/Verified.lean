@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Ecdh.Arm.Main
 public import VerifiedGarbage.Proof.Ecdh.Arm.P192.Contract
 import VerifiedGarbage.Proof.Ecdsa.Arm.P192.Verified
-import VerifiedGarbage.Proof.Ecdsa.Arm.P192.Umaal
 import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 public import VerifiedGarbage.Impl.Ecdh.P192.Arm
 public import VerifiedGarbage.Proof.Framework.Arm.NativeHintData

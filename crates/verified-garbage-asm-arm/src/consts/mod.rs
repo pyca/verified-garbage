@@ -31,6 +31,10 @@ mod vg_ffdh_vetted_groups;
 pub use vg_ffdh_vetted_groups::VG_FFDH_VETTED_GROUPS;
 
 #[rustfmt::skip]
+mod vg_p192_comb;
+pub use vg_p192_comb::VG_P192_COMB;
+
+#[rustfmt::skip]
 mod vg_p224_comb;
 pub use vg_p224_comb::VG_P224_COMB;
 

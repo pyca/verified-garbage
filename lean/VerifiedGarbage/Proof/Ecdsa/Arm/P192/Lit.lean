@@ -27,6 +27,5 @@ every instruction): the literal of the code (`materialize_code`,
 namespace VG
 
 materialize_code Impl.Ecdsa.Arm.signP192
-materialize_code Impl.Ecdsa.Arm.signP192U
 
 end VG

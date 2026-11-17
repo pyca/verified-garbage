@@ -18,13 +18,7 @@ def p192With (u : Bool) : Cfg :=
 /-- P-192 as the code has it. -/
 def p192 : Cfg := p192With false
 
-/-- `vg_ecdsa_p192_sign`, or with `u` `vg_ecdsa_p192_sign_umaal`. -/
-def signP192With (u : Bool) : Prog isa := (p192With u).sign
-
 /-- `vg_ecdsa_p192_sign`. -/
-def signP192 : Prog isa := signP192With false
-
-/-- `vg_ecdsa_p192_sign_umaal`. -/
-def signP192U : Prog isa := signP192With true
+def signP192 : Prog isa := p192.sign
 
 end VG.Impl.Ecdsa.Arm

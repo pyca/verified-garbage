@@ -11,13 +11,7 @@ namespace VG.Impl.EcKey.Arm
 
 open VG.Arm
 
-/-- `vg_ec_p192_public_key`, or with `u` `vg_ec_p192_public_key_umaal`. -/
-def publicKeyP192With (u : Bool) : Prog isa := Cfg.publicKey (Impl.Ecdsa.Arm.p192With u)
-
 /-- `vg_ec_p192_public_key`. -/
-def publicKeyP192 : Prog isa := publicKeyP192With false
-
-/-- `vg_ec_p192_public_key_umaal`. -/
-def publicKeyP192U : Prog isa := publicKeyP192With true
+def publicKeyP192 : Prog isa := Cfg.publicKey Impl.Ecdsa.Arm.p192
 
 end VG.Impl.EcKey.Arm
