@@ -696,10 +696,10 @@ bytes that a call of `vg_sm4_ctr32` takes. The working space is 2560 bytes for
 `init`, `seal` and `open`, and the 768 the streaming functions use for them
 (`vg_ghash`'s 256 at 512 the last). `init` and `stream_finish`, whose
 working space is their last argument in a register, have a frame of it and
-8 more bytes to keep `rsp` aligned (`Verified.stackScratchKept`): 2568 and 776.
+8 more bytes to keep `rsp` aligned (`Verified.stackScratch`): 2568 and 776.
 The working space of the others is their last argument, passed on the stack
 after the six argument registers and their other stack arguments: their
-frames (`Verified.stackArgScratchKept`) also hold a copy of those, 784 bytes for
+frames (`Verified.stackArgScratch`) also hold a copy of those, 784 bytes for
 `stream_encrypt`, `stream_decrypt` and `stream_verify` (none), 2592 for
 `seal` (two) and 2600 for `open` (three,
 and a leak, whether it succeeds, which reads only its buffers:

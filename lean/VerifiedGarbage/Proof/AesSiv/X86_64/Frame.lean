@@ -16,7 +16,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 
 `vg_aes_siv_init` runs its code, proved with the working space as an argument
 (`Verified.lean`), in a frame of 2568 bytes that allocates it
-(`Verified.stackScratchKept`): the 2560 bytes of working space, and 8 more to
+(`Verified.stackScratch`): the 2560 bytes of working space, and 8 more to
 keep `rsp` aligned. Its own calls use 16 bytes below it: two return
 addresses, as `vg_aes_ctr32` and `vg_aes_expand_key_scratch` use no stack.
 Over the bitsliced AES given its working space 512 bytes into
@@ -28,7 +28,7 @@ only 72 bytes of it, in a frame of 88 (`initF_framed`), which
 
 `encrypt` and `decrypt` run their code, proved with the working space as
 their last argument, in a frame that allocates it
-(`Verified.stackArgScratchLKept`): their working space is passed on the stack
+(`Verified.stackArgScratchL`): their working space is passed on the stack
 after `siv`, so the frame of 2600 bytes holds the 2576 bytes of working
 space, a copy of `siv`, the word that stands for the return address and the
 address of the working space. The code's own calls use 16 bytes below it.

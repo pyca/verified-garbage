@@ -215,12 +215,12 @@ end
 Every function runs its code, proved with the working space as its last
 argument (`Verified.lean`), in a frame that allocates it. `init`'s working
 space is in a register (`rcx`): its frame of 2568 bytes holds the 2560
-bytes and 8 more to keep `rsp` aligned (`Verified.stackScratchKept`). The
+bytes and 8 more to keep `rsp` aligned (`Verified.stackScratch`). The
 working space of `seal` and `open` is passed on the stack after the six
 argument registers and four other stack arguments (`data`, `len`, `tag` and
 `tag_len`), so their frame of 3632 bytes holds the 3584 bytes of working
 space, a copy of those four arguments, the word that stands for the return
-address and the address of the working space (`Verified.stackArgScratchKept`).
+address and the address of the working space (`Verified.stackArgScratch`).
 The code's own calls use 8 bytes below the frame, the return address, as
 `vg_aes_encrypt_blocks`, `vg_aes_decrypt_blocks` and `vg_aes_expand_key_scratch` use
 no stack. `open`'s leak, whether it succeeds, reads only its buffers

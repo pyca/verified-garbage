@@ -1089,14 +1089,14 @@ end
 
 `init`, `stream_init` and `stream_aad` run their code, proved with the
 working space as an argument (`Verified.lean`), in a frame of 2568 bytes that
-allocates it (`Verified.stackScratchKept`): the 2560 bytes of working space, and
+allocates it (`Verified.stackScratch`): the 2560 bytes of working space, and
 8 more to keep `rsp` aligned. Their own calls use 8 bytes below it, the
 return address, as `vg_aes_expand_key_scratch`, `vg_aes_ctr32` and `vg_ghash` use no
 stack (`KeyImpl.noStack`, `Ctr32Impl.noStack`, `GhashImpl.noStack`).
 
 The working space of the others is their last argument, passed on the stack
 after the six argument registers and their other stack arguments: their
-frames (`Verified.stackArgScratchKept`) also hold a copy of those, 2584 bytes for
+frames (`Verified.stackArgScratch`) also hold a copy of those, 2584 bytes for
 `stream_encrypt` and `stream_decrypt` (one), 2576 for `stream_finish` (none),
 2584 for `stream_verify` (one), 2600 for `seal` (three) and 2608 for `open`
 (four, and a leak, whether it succeeds, which reads only its buffers:

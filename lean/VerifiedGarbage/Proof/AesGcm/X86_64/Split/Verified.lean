@@ -126,7 +126,7 @@ its return address and its stack), so it preserves what the ABI says; it
 meets the shared contracts with a `work` buffer appended
 (`sealSplitScratchContract`, …), and the shared contracts of
 `Spec/Gcm/OutOfPlace.lean` and `Spec/Gcm/Prepared.lean` in a frame of 2616
-bytes holding the working space (`Verified.stackArgScratchKept`): its 2560
+bytes holding the working space (`Verified.stackArgScratch`): its 2560
 bytes, a copy of the five other stack arguments, and 16 more, for 2672 bytes
 of stack in all; for the key contexts of `vg_aes_gcm_init`,
 `vg_aes_gcm_init_precomputed` and `vg_aes_gcm_prepare`.

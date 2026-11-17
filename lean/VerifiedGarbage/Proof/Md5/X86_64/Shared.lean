@@ -24,7 +24,7 @@ contracts of `Spec/Md5/Contract.lean`, which the artifacts are emitted with.
 `update` and `finalize` keep their working space in a frame of their own:
 they are `updateScratch` and `finalizeScratch` (the shared contracts with
 the working space as an argument, which HMAC's and PBKDF2's code calls) run
-in a frame that allocates it (`Verified.stackScratchKept`).
+in a frame that allocates it (`Verified.stackScratch`).
 -/
 
 @[expose] public section

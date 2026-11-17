@@ -23,7 +23,7 @@ contracts of `Spec/Sm3/Contract.lean`, which the artifacts are emitted with.
 function's 112 bytes, then our caller's callee-saved registers) in a frame of
 their own: they are `updateScratch` and `finalizeScratch` (the shared
 contracts with the working space as an argument, `Proof/Sm3/Scratch.lean`)
-run in a frame that allocates it (`Verified.stackScratchKept`).
+run in a frame that allocates it (`Verified.stackScratch`).
 -/
 
 @[expose] public section

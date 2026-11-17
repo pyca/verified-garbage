@@ -22,7 +22,7 @@ argument (`Proof/AesOcb/Scratch.lean`), with the 8 bytes of stack of the
 functions over the AES block functions, which the preconditions they share
 include (this code calls nothing). In a frame that allocates the working space (`seal_framed`,
 `open_framed`: the working space and the 48 bytes of
-`Verified.stackArgScratchKept`), which holds the offsets, the checksum, the
+`Verified.stackArgScratch`), which holds the offsets, the checksum, the
 table `C`, the blocks of the data XORed with offsets and, for `open`, the
 round keys through `aesimc`, so it is wiped whole on return (`sealReg`,
 `openReg`).

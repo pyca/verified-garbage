@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.CmacAes.Stream.Scratch
 
 The streaming functions run their code, proved with the working space as an
 argument (`Verified.lean`), in a frame of 2312 bytes that allocates it
-(`Verified.stackScratchKept`): the 2304 bytes of working space, and 8 more to
+(`Verified.stackScratch`): the 2304 bytes of working space, and 8 more to
 keep `rsp` aligned. Their own calls use at most 16 bytes below it: two
 return addresses, as `vg_aes_ctr32` and `vg_aes_expand_key_scratch` use no
 stack (and `vg_cmac_aes_update_aesni` none at all). Over implementations of

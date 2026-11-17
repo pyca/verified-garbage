@@ -18,7 +18,7 @@ section
 # IDEA ECB with its working space as an argument
 
 `vg_idea_ecb` keeps its working space in a frame of its own
-(`Verified.stackScratchKept`), around code proved with the working space as an
+(`Verified.stackScratch`), around code proved with the working space as an
 argument: `ecbScratchContract` is the shared contract with the `scratch`
 buffer appended, whatever it holds.
 -/

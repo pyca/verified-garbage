@@ -1361,7 +1361,7 @@ end
 
 The streaming functions run their code, proved with the working space as an
 argument (`Verified.lean`), in a frame that allocates it
-(`Verified.stackScratchKept`): 8 bytes standing for the return address, then
+(`Verified.stackScratch`): 8 bytes standing for the return address, then
 the working space (120 bytes, and 160 for `absorb`).
 -/
 

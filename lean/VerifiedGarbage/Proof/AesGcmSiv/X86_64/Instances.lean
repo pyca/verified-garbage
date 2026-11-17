@@ -218,7 +218,7 @@ theorem open_verified (v : GcmImpl) (eb : BlocksImpl) (wide : Bool) :
 
 `seal` and `open` run their code, proved with the working space as their
 last argument (above), in a frame that allocates it
-(`Verified.stackArgScratchKept`): their working space is passed on the stack
+(`Verified.stackArgScratch`): their working space is passed on the stack
 after the six argument registers and two other stack arguments (`len` and
 `tag`), so the frame of 3848 bytes holds the 3816 bytes of working space, a
 copy of those two, the word that stands for the return address and the

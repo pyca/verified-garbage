@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 # AES-GCM streaming encryption out of place, x86-64: the contracts
 
 Untrusted: everything here is checked by Lean. `vg_aes_gcm_stream_encrypt_to`
-keeps its working space in a frame of its own (`Verified.stackArgScratchKept`),
+keeps its working space in a frame of its own (`Verified.stackArgScratch`),
 around code proved with the working space as its last argument:
 `streamEncryptToScratchContract` is the shared contract with a 2192-byte
 `scratch` buffer appended, whatever it holds, which the contract the proof

@@ -34,7 +34,7 @@ section
 # AES-GCM streaming encryption out of place: the conditions read only the buffers
 
 Untrusted: everything here is checked by Lean. A frame that copies the
-arguments passed on the stack (`Verified.stackArgScratchKept`) needs the pre-
+arguments passed on the stack (`Verified.stackArgScratch`) needs the pre-
 and postconditions of `vg_aes_gcm_stream_encrypt_to` and
 `vg_aes_gcm_stream_encrypt_to_precomputed` to read the memory on entry only
 within their buffers: the key context, the streaming state (through
@@ -310,7 +310,7 @@ static facts (no load of `mxcsr`, `rsp` written only in frames, 2624 bytes
 of stack), the shared contracts with a `scratch` buffer appended
 (`streamEncryptToScratchContract`), and the shared contracts of
 `Spec/Gcm/OutOfPlace.lean` in a frame of 2232 bytes holding the working
-space (`Verified.stackArgScratchKept`): its 2192 bytes, a copy of the three
+space (`Verified.stackArgScratch`): its 2192 bytes, a copy of the three
 other stack arguments, and 16 more, for 4856 bytes of stack in all; for the
 key contexts of `vg_aes_gcm_init` and `vg_aes_gcm_init_precomputed`.
 -/

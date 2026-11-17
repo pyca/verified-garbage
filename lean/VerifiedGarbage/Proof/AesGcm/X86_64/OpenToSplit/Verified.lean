@@ -30,7 +30,7 @@ of `Proof/AesGcm/RoundsTo.lean` for prepared key contexts with a working
 space appended (`Proof/AesGcm/ScratchOpenTo.lean`) and 152 bytes of stack
 (its frame of 88, the call's return address and the 56 bytes of
 `vg_aes_gcm_open_split`), and so, in a frame of 2624 bytes holding its
-working space (`Verified.stackArgScratchKept`), those contracts with 2776 bytes
+working space (`Verified.stackArgScratch`), those contracts with 2776 bytes
 of stack (`openToSplitPrepared_framed`). `openToSel` chooses on entry between
 `open_to` by a copy (`OpenTo.openToPrepared_verified`, 2728 bytes) and that
 frame (`Verified.entryBranch`): the comparison of `len` with the threshold

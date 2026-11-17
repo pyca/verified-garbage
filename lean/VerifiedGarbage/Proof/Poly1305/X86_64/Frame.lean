@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Poly1305.Scratch
 # Streaming Poly1305 on x86-64, with its working space on the stack
 
 `update` and `finalize` run their code, proved with the working space as an
-argument, in a frame of 136 bytes that allocates it (`Verified.stackScratchKept`):
+argument, in a frame of 136 bytes that allocates it (`Verified.stackScratch`):
 the 128 bytes of working space, and 8 more to keep `rsp` aligned. `update`'s
 call of `vg_poly1305_blocks` uses 24 bytes below it, as before.
 -/

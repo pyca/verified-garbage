@@ -22,7 +22,7 @@ function.
 `update` and `finalize` keep their working space in a frame of their own:
 they are `updateScratch` and `finalizeScratch` (the shared contracts with
 the working space as an argument, which HMAC's and PBKDF2's code calls) run
-in a frame that allocates it (`Verified.stackScratchKept`), for an `f` that uses
+in a frame that allocates it (`Verified.stackScratch`), for an `f` that uses
 no stack.
 -/
 

@@ -77,7 +77,7 @@ Constant time (`final_rel`): the blocks by the taint analysis, the calls by
 their contracts' constant time (`RelCT.callEx`, `blk_rel`), every address
 and branch from the pointers and `len`, which agree in both runs.
 `encryptFinal_framed` runs the code with `save` in a frame of 64 bytes on
-the stack (`Verified.stackArgScratchKept`), which the scrub after it zeroes.
+the stack (`Verified.stackArgScratch`), which the scrub after it zeroes.
 -/
 
 @[expose] public section

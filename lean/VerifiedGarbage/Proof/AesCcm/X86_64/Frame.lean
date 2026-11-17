@@ -162,7 +162,7 @@ end
 
 `seal` and `open` run their code, proved with the working space as their
 last argument (`Verified.lean`), in a frame that allocates it
-(`Verified.stackArgScratchKept`): their working space is passed on the stack
+(`Verified.stackArgScratch`): their working space is passed on the stack
 after the six argument registers and four other stack arguments (`data`,
 `len`, `tag` and `tag_len`), so the frame of 2608 bytes holds the 2560 bytes
 of working space, a copy of those four arguments, the word that stands for

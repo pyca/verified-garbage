@@ -1115,7 +1115,7 @@ end
 
 /-! ## The frame, with a leak
 
-`Verified.stackScratchKept` and `narrow_pub` (`Proof/Framework/X86_64/StackScratch.lean`)
+`Verified.stackScratch` and `narrow_pub` (`Proof/Framework/X86_64/StackScratch.lean`)
 for a contract with a leak, as on RISC-V: `narrow` keeps the memory, so the
 leak is the same. -/
 

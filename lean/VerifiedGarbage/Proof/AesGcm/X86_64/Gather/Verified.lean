@@ -25,7 +25,7 @@ of `vg_aes_gcm_seal_gather` calling any `vg_aes_gcm_stream_init`,
 `mxcsr`, `rsp` written only in frames, 4888 bytes of stack), the shared
 contracts with a `scratch` buffer appended (`sealGatherScratchContract`),
 and the shared contracts of `Spec/Gcm/OutOfPlace.lean` in a frame of 240
-bytes holding the working space (`Verified.stackArgScratchLKept`): its 184
+bytes holding the working space (`Verified.stackArgScratchL`): its 184
 bytes, a copy of the five other stack arguments, and 16 more, for 5128
 bytes of stack in all; for the key contexts of `vg_aes_gcm_init` and
 `vg_aes_gcm_init_precomputed`.

@@ -153,7 +153,7 @@ function.
 `update` and `finalize` keep their working space in a frame of their own:
 they are `updateScratch` and `finalizeScratch` (the shared contracts with
 the working space as an argument, which HMAC's, PBKDF2's and ECDSA's code
-calls) run in a frame that allocates it (`Verified.stackScratchKept`), for an
+calls) run in a frame that allocates it (`Verified.stackScratch`), for an
 `f` that uses no stack.
 -/
 
