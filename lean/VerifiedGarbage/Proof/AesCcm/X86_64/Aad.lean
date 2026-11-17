@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.AesCcm.X86_64.B0
 import VerifiedGarbage.Proof.AesCcm.X86_64.Blocks
 import VerifiedGarbage.Proof.AesCcm.X86_64.Run
 import VerifiedGarbage.Proof.AesCcm.X86_64.Bytes
-import VerifiedGarbage.Proof.AesCcm.X86_64.Callee
+public import VerifiedGarbage.Proof.AesCcm.X86_64.Callee
 import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
 import VerifiedGarbage.Proof.Cmac.Stream
 import VerifiedGarbage.Proof.Cmac.Spec
@@ -34,13 +34,14 @@ set_option linter.unusedSimpArgs false
 
 namespace VG.Proof.AesCcm.X86_64
 
+variable [fp : Footprint]
+
 open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesCcm.X86_64 VG.WriteBytes
 open VG.Impl.AesGcm.X86_64 (at_ imm ptr copyLoop)
 open VG.Proof.AesGcm.X86_64 (LoopPre copyLoop_ok)
 open VG.Spec.Aes (bytesAt)
 open VG.Proof.Aes.X86_64 (Ctr32Impl)
 open VG.Proof.CmacAes.X86_64 (UpdateImpl)
-open VG.Proof.CmacAes.Stream.X86_64 (upd_call)
 
 theorem sub_mac {W SP : Addr} {y : Nat} {r : Region} (hr : r ∈ macR W SP y) :
     ∃ r' ∈ macR W SP y, Region.Sub r r' := ⟨r, hr, fun _ h => h⟩
@@ -58,13 +59,13 @@ structure Absorbed {K W SP : Addr} (s : State) (y : Nat) (P : Addr) (len : Nat) 
   wr : s'.wr = s.wr
 
 /-- The whole blocks of the string. -/
-theorem absorbWhole_ok (v : UpdateImpl) {K W SP : Addr} {s : State} (L : Lay K W SP) (E : Env K W SP s) {R : Nat}
+theorem absorbWhole_ok (v : UpdateImpl) [UpdateFits v] {K W SP : Addr} {s : State} (L : Lay K W SP) (E : Env K W SP s) {R : Nat}
     (hR : R = 10 ∨ R = 12 ∨ R = 14) (hRo : s.mem.readW (W + BitVec.ofNat 64 232) 64 = BitVec.ofNat 64 R)
     {y : Nat} (hy : y = 0 ∨ y = 96) {P : Addr} {len : Nat} (hP : Buf K W SP s P len)
     (h12 : s.gpr .r12 = P) (hbp : s.gpr .rbp = BitVec.ofNat 64 len) :
     WP isa (.seq (.block [.mov .r8 (.reg .rbp), .shift .shr .r8 4, .alu .test .r8 (.reg .r8)])
         (.ite .e (.block []) (.seq (.block (updArgs y ++ ([.mov .rcx (.reg .r12)] : List Instr))) (callUpdate v.callee))))
-      s (@Absorbed K W SP s y P len
+      s (@Absorbed _ K W SP s y P len
         (Spec.Cmac.chain (Spec.Ccm.ctxCiph s.mem K R) (bytesAt s.mem (W + BitVec.ofNat 64 y) 16)
           (Spec.Cmac.blocks 16 ((bytesAt s.mem P len).take (16 * (len / 16)))))) := by
   have hl := hP.lt
@@ -137,7 +138,7 @@ def tailBlocks (x : List Byte) : List (List Byte) :=
   if x.length % 16 = 0 then [] else [x.drop (16 * (x.length / 16)) ++ Spec.Ccm.zeros (16 - x.length % 16)]
 
 /-- The last bytes of the string, padded with zeros in `B`. -/
-theorem absorbTail_ok (v : UpdateImpl) {K W SP : Addr} {s : State} (L : Lay K W SP) (E : Env K W SP s) {R : Nat}
+theorem absorbTail_ok (v : UpdateImpl) [UpdateFits v] {K W SP : Addr} {s : State} (L : Lay K W SP) (E : Env K W SP s) {R : Nat}
     (hR : R = 10 ∨ R = 12 ∨ R = 14) (hRo : s.mem.readW (W + BitVec.ofNat 64 232) 64 = BitVec.ofNat 64 R)
     {y : Nat} (hy : y = 0 ∨ y = 96) {P : Addr} {len : Nat} (hP : Buf K W SP s P len)
     (h12 : s.gpr .r12 = P) (hbp : s.gpr .rbp = BitVec.ofNat 64 len) :
@@ -146,7 +147,7 @@ theorem absorbTail_ok (v : UpdateImpl) {K W SP : Addr} {s : State} (L : Lay K W 
           (.seq (.block (zero16 bO ++ ([.mov .rsi (.reg .rbp), .alu .sub .rsi (.reg .rcx), .alu .add .rsi (.reg .r12)] : List Instr) ++
               ptr .rdi .r15 bO))
             (.seq copyLoop (updBlock v.callee y)))))
-      s (@Absorbed K W SP s y P len
+      s (@Absorbed _ K W SP s y P len
         (Spec.Cmac.chain (Spec.Ccm.ctxCiph s.mem K R) (bytesAt s.mem (W + BitVec.ofNat 64 y) 16)
           (tailBlocks (bytesAt s.mem P len)))) := by
   have hl := hP.lt
@@ -275,7 +276,7 @@ theorem rounds_kept {K W SP : Addr} (L : Lay K W SP) {y : Nat} (hy : y = 0 ∨ y
       · exact L.w_w (.inr (by decide)) (by decide) (by decide)
       · exact L.w_w (.inr (by decide)) (by decide) (by decide)
     · exact L.w_w (.inr (by decide)) (by decide) (by decide)
-    · exact L.w_w (.inl (by decide)) (by decide) (by decide)
+    · exact L.w_w (.inl (by decide)) (by decide) (by have := tailBytes_le; have := scratchBytes_le; omega)
     · exact (L.stk_w' (by decide)).symm) (by decide)
 
 /-- A buffer missing `W` and the stack below `SP` keeps its bytes. -/
@@ -286,7 +287,7 @@ theorem buf_kept {K W SP : Addr} {s : State} {P : Addr} {len : Nat} (hP : Buf K 
     rcases hr with rfl | rfl | rfl | rfl
     · exact hP.w.sub_right (Lay.wSub hy)
     · exact hP.w.sub_right (Lay.wSub (by decide))
-    · exact hP.w.sub_right (Lay.wSub (by decide))
+    · exact hP.w.sub_right (Lay.wSub (by have := tailBytes_le; have := scratchBytes_le; omega))
     · exact hP.stk.symm) (by have := hP.lt; omega_arith)
 
 theorem k_macR {K W SP : Addr} (L : Lay K W SP) {y : Nat} (hy : y + 16 ≤ 2560) :
@@ -296,16 +297,16 @@ theorem k_macR {K W SP : Addr} (L : Lay K W SP) {y : Nat} (hy : y + 16 ≤ 2560)
   rcases hr with rfl | rfl | rfl | rfl
   · exact L.k_w.sub_right (Lay.wSub hy)
   · exact L.k_w.sub_right (Lay.wSub (by decide))
-  · exact L.k_w.sub_right (Lay.wSub (by decide))
+  · exact L.k_w.sub_right (Lay.wSub (by have := tailBytes_le; have := scratchBytes_le; omega))
   · exact L.stk_k.symm
 
 /-- The `len` bytes at `P`, padded with zeros to whole blocks, chained into
 the MAC state at `W + y`. -/
-theorem absorbPad_ok (v : UpdateImpl) {K W SP : Addr} {s : State} (L : Lay K W SP) (E : Env K W SP s) {R : Nat}
+theorem absorbPad_ok (v : UpdateImpl) [UpdateFits v] {K W SP : Addr} {s : State} (L : Lay K W SP) (E : Env K W SP s) {R : Nat}
     (hR : R = 10 ∨ R = 12 ∨ R = 14) (hRo : s.mem.readW (W + BitVec.ofNat 64 232) 64 = BitVec.ofNat 64 R)
     {y : Nat} (hy : y = 0 ∨ y = 96) {P : Addr} {len : Nat} (hP : Buf K W SP s P len)
     (h12 : s.gpr .r12 = P) (hbp : s.gpr .rbp = BitVec.ofNat 64 len) :
-    WP isa (absorbPad v.callee y) s (@Absorbed K W SP s y P len
+    WP isa (absorbPad v.callee y) s (@Absorbed _ K W SP s y P len
       (Spec.Cmac.chain (Spec.Ccm.ctxCiph s.mem K R) (bytesAt s.mem (W + BitVec.ofNat 64 y) 16)
         (Spec.Cmac.blocks 16 (Spec.Ccm.pad16 (bytesAt s.mem P len))))) := by
   refine seq_assoc (WP.seq (WP.mono (absorbWhole_ok v L E hR hRo hy hP h12 hbp) fun s₁ A₁ => ?_))
@@ -339,6 +340,8 @@ set_option linter.unusedSimpArgs false
 
 namespace VG.Proof.AesCcm.X86_64
 
+variable [fp : Footprint]
+
 open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesCcm.X86_64 VG.WriteBytes
 open VG.Impl.AesGcm.X86_64 (at_ imm ptr copyLoop minLen)
 open VG.Proof.AesGcm.X86_64 (LoopPre copyLoop_ok)
@@ -347,6 +350,7 @@ open VG.Proof.Aes.X86_64 (Ctr32Impl)
 open VG.Proof.CmacAes.X86_64 (UpdateImpl)
 open VG.Proof.AesCcm (hdrLen headLen adataBlocks)
 
+omit fp in
 /-- The encoding of the length of the associated data and its first bytes in `B`. -/
 theorem aadHeadPre_ok {K W SP : Addr} {s : State} (E : Env K W SP s)
     {A : Addr} {a : Nat} (hA : Buf K W SP s A a) (ha0 : 0 < a)
@@ -438,11 +442,11 @@ theorem aadHeadPre_ok {K W SP : Addr} {s : State} (E : Env K W SP s)
     by rw [hg₄ _ (by decide) (by decide), h12₃], by rw [hg₄ _ (by decide) (by decide), hbp₃], hB₄⟩
 
 /-- The first block of the associated data. -/
-theorem aadHead_ok (v : UpdateImpl) {K W SP : Addr} {s : State} (L : Lay K W SP) (E : Env K W SP s) {R : Nat}
+theorem aadHead_ok (v : UpdateImpl) [UpdateFits v] {K W SP : Addr} {s : State} (L : Lay K W SP) (E : Env K W SP s) {R : Nat}
     (hR : R = 10 ∨ R = 12 ∨ R = 14) (hRo : s.mem.readW (W + BitVec.ofNat 64 232) 64 = BitVec.ofNat 64 R)
     {y : Nat} (hy : y = 0 ∨ y = 96) {A : Addr} {a : Nat} (hA : Buf K W SP s A a) (ha0 : 0 < a)
     (h12 : s.gpr .r12 = A) (hbp : s.gpr .rbp = BitVec.ofNat 64 a) :
-    WP isa (aadHead v.callee y) s (@Absorbed K W SP s y (A + BitVec.ofNat 64 (headLen a)) (a - headLen a)
+    WP isa (aadHead v.callee y) s (@Absorbed _ K W SP s y (A + BitVec.ofNat 64 (headLen a)) (a - headLen a)
       (Spec.Cmac.chain (Spec.Ccm.ctxCiph s.mem K R) (bytesAt s.mem (W + BitVec.ofNat 64 y) 16)
         [Spec.Ccm.pad16 (Spec.Ccm.encodeLen a ++ (bytesAt s.mem A a).take (headLen a))])) := by
   refine seq_assoc4 (WP.seq (WP.mono (aadHeadPre_ok E hA ha0 h12 hbp)
@@ -482,10 +486,10 @@ structure MacStep {K W SP : Addr} (s : State) (y : Nat) (Y : List Byte) (s' : St
   wr : s'.wr = s.wr
 
 /-- The associated data, formatted and chained. -/
-theorem aad_ok (v : UpdateImpl) {K W SP : Addr} {s : State} (L : Lay K W SP) (E : Env K W SP s) {R : Nat}
+theorem aad_ok (v : UpdateImpl) [UpdateFits v] {K W SP : Addr} {s : State} (L : Lay K W SP) (E : Env K W SP s) {R : Nat}
     {N A D : Addr} {nl al n tl : Nat} (S : Slots W R N A D nl al n tl s.mem) (hR : R = 10 ∨ R = 12 ∨ R = 14)
     {y : Nat} (hy : y = 0 ∨ y = 96) (hA : Buf K W SP s A al) :
-    WP isa (aad v.callee y) s (@MacStep K W SP s y
+    WP isa (aad v.callee y) s (@MacStep _ K W SP s y
       (Spec.Cmac.chain (Spec.Ccm.ctxCiph s.mem K R) (bytesAt s.mem (W + BitVec.ofNat 64 y) 16)
         (adataBlocks (bytesAt s.mem A al)))) := by
   have h15 := E.r15

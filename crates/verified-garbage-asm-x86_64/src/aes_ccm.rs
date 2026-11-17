@@ -10,6 +10,8 @@ pub const VG_AES_CCM_SEAL_AESNI_FEATURES: verified_garbage_cpu::Features = verif
 ///
 /// Contract: `VG.Spec.Ccm.sealContract`. Constant time: only the pointers, `rounds`, the lengths and `tag_len` may affect timing, not the key schedule, the nonce, the associated data or the payload.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 240 bytes.
@@ -133,11 +135,17 @@ jne 229b
 jmp 228f
 227:
 228:
-.base64 "SIt8JBhMif5Ji4/QAAAAQboAAAAA"
-230:
+.base64 "SIt8JBhMif5Ji4/QAAAASIP5EA=="
+je 230f
+.base64 "QboAAAAA"
+232:
 .base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 230b
-.base64 "SYtfcEmLb3hNi6eAAAAATYuviAAAAE2Lt5AAAABNi7+YAAAASI2kJDAKAADD"
+jne 232b
+jmp 231f
+230:
+.base64 "SIsGTItWCEiJB0yJVwg="
+231:
+.base64 "SYtfcEmLb3hNi6eAAAAATYuviAAAAE2Lt5AAAABNi7+YAAAASI2kJDAKAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjaQkwPX///MPf4QkQAEAAPMPf4QkMAEAAPMPf4QkIAEAAPMPf4QkEAEAAPMPf4QkoAAAAPMPf4QkkAAAAPMPf4QkgAAAAPMPf0QkcPMPf0QkYPMPf0QkUPMPf0QkQPMPfwQkSI2kJEAKAAAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_cmac_aes_update_aesni = sym super::cmac_aes::vg_cmac_aes_update_aesni::vg_cmac_aes_update_aesni,
         vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
@@ -150,6 +158,8 @@ pub const VG_AES_CCM_OPEN_AESNI_FEATURES: verified_garbage_cpu::Features = verif
 /// AES-CCM decryption-verification (NIST SP 800-38C §6.2, with the formatting and counter generation of its Appendix A): with the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it, and the received encrypted MAC (the last `tag_len` bytes of the ciphertext) the `tag_len` bytes at `tag`, decrypts the `len` bytes of encrypted payload at `data` in place, under the `nonce_len`-byte nonce at `nonce`, and returns 1 if the MAC is that of the payload and the `aad_len` bytes of associated data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The MACs are compared without a branch.
 ///
 /// Contract: `VG.Spec.Ccm.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the associated data, the data or the tag.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -311,7 +321,7 @@ jne 241b
 jmp 240f
 239:
 240:
-.base64 "SYuH4AAAAEmLX3BJi294TYungAAAAE2Lr4gAAABNi7eQAAAATYu/mAAAAEiNpCQwCgAAww=="
+.base64 "SYuH4AAAAEmLX3BJi294TYungAAAAE2Lr4gAAABNi7eQAAAATYu/mAAAAEiNpCQwCgAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI2kJMD1///zD3+EJEABAADzD3+EJDABAADzD3+EJCABAADzD3+EJBABAADzD3+EJKAAAADzD3+EJJAAAADzD3+EJIAAAADzD39EJHDzD39EJGDzD39EJFDzD39EJEDzD38EJEiNpCRACgAAicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
         vg_cmac_aes_update_aesni = sym super::cmac_aes::vg_cmac_aes_update_aesni::vg_cmac_aes_update_aesni,
@@ -446,10 +456,16 @@ jne 229b
 jmp 228f
 227:
 228:
-.base64 "SIt8JBhMif5Ji4/QAAAAQboAAAAA"
-230:
+.base64 "SIt8JBhMif5Ji4/QAAAASIP5EA=="
+je 230f
+.base64 "QboAAAAA"
+232:
 .base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 230b
+jne 232b
+jmp 231f
+230:
+.base64 "SIsGTItWCEiJB0yJVwg="
+231:
 .base64 "SYtfcEmLb3hNi6eAAAAATYuviAAAAE2Lt5AAAABNi7+YAAAASI2kJDAKAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjaQkwPX///MPf4QkMAoAAPMPf4QkIAoAAPMPf4QkEAoAAPMPf4QkAAoAAPMPf4Qk8AkAAPMPf4Qk4AkAAPMPf4Qk0AkAAPMPf4QkwAkAAPMPf4QksAkAAPMPf4QkoAkAAPMPf4QkkAkAAPMPf4QkgAkAAPMPf4QkcAkAAPMPf4QkYAkAAPMPf4QkUAkAAPMPf4QkQAkAAPMPf4QkMAkAAPMPf4QkIAkAAPMPf4QkEAkAAPMPf4QkAAkAAPMPf4Qk8AgAAPMPf4Qk4AgAAPMPf4Qk0AgAAPMPf4QkwAgAAPMPf4QksAgAAPMPf4QkoAgAAPMPf4QkkAgAAPMPf4QkgAgAAPMPf4QkcAgAAPMPf4QkYAgAAPMPf4QkUAgAAPMPf4QkQAgAAPMPf4QkMAgAAPMPf4QkIAgAAPMPf4QkEAgAAPMPf4QkAAgAAPMPf4Qk8AcAAPMPf4Qk4AcAAPMPf4Qk0AcAAPMPf4QkwAcAAPMPf4QksAcAAPMPf4QkoAcAAPMPf4QkkAcAAPMPf4QkgAcAAPMPf4QkcAcAAPMPf4QkYAcAAPMPf4QkUAcAAPMPf4QkQAcAAPMPf4QkMAcAAPMPf4QkIAcAAPMPf4QkEAcAAPMPf4QkAAcAAPMPf4Qk8AYAAPMPf4Qk4AYAAPMPf4Qk0AYAAPMPf4QkwAYAAPMPf4QksAYAAPMPf4QkoAYAAPMPf4QkkAYAAPMPf4QkgAYAAPMPf4QkcAYAAPMPf4QkYAYAAPMPf4QkUAYAAPMPf4QkQAYAAPMPf4QkMAYAAPMPf4QkIAYAAPMPf4QkEAYAAPMPf4QkAAYAAPMPf4Qk8AUAAPMPf4Qk4AUAAPMPf4Qk0AUAAPMPf4QkwAUAAPMPf4QksAUAAPMPf4QkoAUAAPMPf4QkkAUAAPMPf4QkgAUAAPMPf4QkcAUAAPMPf4QkYAUAAPMPf4QkUAUAAPMPf4QkQAUAAPMPf4QkMAUAAPMPf4QkIAUAAPMPf4QkEAUAAPMPf4QkAAUAAPMPf4Qk8AQAAPMPf4Qk4AQAAPMPf4Qk0AQAAPMPf4QkwAQAAPMPf4QksAQAAPMPf4QkoAQAAPMPf4QkkAQAAPMPf4QkgAQAAPMPf4QkcAQAAPMPf4QkYAQAAPMPf4QkUAQAAPMPf4QkQAQAAPMPf4QkMAQAAPMPf4QkIAQAAPMPf4QkEAQAAPMPf4QkAAQAAPMPf4Qk8AMAAPMPf4Qk4AMAAPMPf4Qk0AMAAPMPf4QkwAMAAPMPf4QksAMAAPMPf4QkoAMAAPMPf4QkkAMAAPMPf4QkgAMAAPMPf4QkcAMAAPMPf4QkYAMAAPMPf4QkUAMAAPMPf4QkQAMAAPMPf4QkMAMAAPMPf4QkIAMAAPMPf4QkEAMAAPMPf4QkAAMAAPMPf4Qk8AIAAPMPf4Qk4AIAAPMPf4Qk0AIAAPMPf4QkwAIAAPMPf4QksAIAAPMPf4QkoAIAAPMPf4QkkAIAAPMPf4QkgAIAAPMPf4QkcAIAAPMPf4QkYAIAAPMPf4QkUAIAAPMPf4QkQAIAAPMPf4QkMAIAAPMPf4QkIAIAAPMPf4QkEAIAAPMPf4QkAAIAAPMPf4Qk8AEAAPMPf4Qk4AEAAPMPf4Qk0AEAAPMPf4QkwAEAAPMPf4QksAEAAPMPf4QkoAEAAPMPf4QkkAEAAPMPf4QkgAEAAPMPf4QkcAEAAPMPf4QkYAEAAPMPf4QkUAEAAPMPf4QkQAEAAPMPf4QkMAEAAPMPf4QkIAEAAPMPf4QkEAEAAPMPf4QkAAEAAPMPf4Qk8AAAAPMPf4Qk4AAAAPMPf4Qk0AAAAPMPf4QkwAAAAPMPf4QksAAAAPMPf4QkoAAAAPMPf4QkkAAAAPMPf4QkgAAAAPMPf0QkcPMPf0QkYPMPf0QkUPMPf0QkQPMPf0QkMPMPf0QkIPMPf0QkEPMPfwQkSI2kJEAKAAAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_cmac_aes_update = sym super::cmac_aes::vg_cmac_aes_update::vg_cmac_aes_update,

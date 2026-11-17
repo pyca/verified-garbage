@@ -738,7 +738,7 @@ theorem wholeCall_ok (v : Ctr32Impl) {s : State} {K C D S : Addr} {R n : Nat} (h
     WP isa (Impl.CmacAes.X86_64.ctrCall v.callee) s (WPost s K C D ⟨S, 2048⟩ R n) := by
   rcases hs : v.small with _ | f
   · rw [Proof.CmacAes.X86_64.ctrCall_zero (v.scr hs)]
-    exact WP.mono (Proof.AesCcm.X86_64.ctr_call v h) fun _ p => ⟨p.rd, p.wr, p.saved, p.frame, p.out⟩
+    exact WP.mono (Proof.AesCcm.X86_64.ctr_call_base v h) fun _ p => ⟨p.rd, p.wr, p.saved, p.frame, p.out⟩
   · refine WP.mono (wholeCall_okS v f (ctrCall_small h) h.r9) fun _ p => ⟨p.rd, p.wr, p.saved, p.frame.sub fun r hr => ?_, p.out⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl

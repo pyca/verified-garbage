@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.AesCcm.X86_64.Callee
 
 public import VerifiedGarbage.Proof.AesCcm.X86_64.Args
 public import VerifiedGarbage.Proof.CmacAes.X86_64.Variant
@@ -41,16 +42,20 @@ set_option linter.unusedSimpArgs false
 
 namespace VG.Proof.AesCcm.X86_64
 
+variable [fp : Footprint]
+
 open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesCcm.X86_64 VG.WriteBytes
 open VG.Impl.AesGcm.X86_64 (at_ imm ptr)
 open VG.Proof.AesGcm.X86_64 (in_of_covers succ_ofNat MInv maskTail_wp ofNat_shr4)
 open VG.Spec.Aes (bytesAt)
 open VG.Spec.Ccm (zeros)
 
+omit fp in
 theorem length_mask (m : Mem) (P : Addr) (c : Bool) (j : Nat) :
     (if c then bytesAt m P j else zeros j).length = j := by
   cases c <;> simp [zeros, length_bytesAt]
 
+omit fp in
 /-- Every byte of the data ANDed with `0 − ok`. -/
 theorem mask_ok {K W SP : Addr} {s : State} (E : Env K W SP s) {R : Nat} {N A D : Addr} {nl al n tl : Nat}
     (S : Slots W R N A D nl al n tl s.mem) (hD : Buf K W SP s D n) (hDw : Covers [⟨D, n⟩] s.wr) {c : Bool}
@@ -120,6 +125,8 @@ set_option linter.unusedSimpArgs false
 
 namespace VG.Proof.AesCcm.X86_64
 
+variable [fp : Footprint]
+
 open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesCcm.X86_64 VG.WriteBytes
 open VG.Impl.AesGcm.X86_64 (at_ imm ptr recv cmp)
 open VG.Spec.Aes (bytesAt)
@@ -127,6 +134,7 @@ open VG.Spec.Ccm (zeros)
 open VG.Proof.Aes.X86_64 (Ctr32Impl)
 open VG.Proof.CmacAes.X86_64 (UpdateImpl)
 
+omit fp in
 /-- The tag length loaded into `rbx`, and the address of the received tag
 `T` into `rsi`. -/
 theorem loadTag_ok {K W SP : Addr} {s : State} (E : Env K W SP s) {R : Nat} {N A D : Addr}
@@ -146,6 +154,7 @@ theorem loadTag_ok {K W SP : Addr} {s : State} (E : Env K W SP s) {R : Nat} {N A
   · intro r a b; simp [gpr_setReg, a, b]
   all_goals rfl
 
+omit fp in
 /-- The comparison of the encrypted MAC at `W + 96` with the received tag at
 `T`, and `ok` stored at `W + 224`. -/
 theorem openCmp_ok {K W SP : Addr} (L : Lay K W SP) {s : State} (E : Env K W SP s) {R : Nat} {N A D : Addr}
@@ -216,7 +225,7 @@ theorem openTail_ok {K W SP : Addr} (L : Lay K W SP) {s : State} (E : Env K W SP
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact ⟨wK W, by simp, Offset.sub W (by decide) (by decide)⟩
-    · exact ⟨wC W, by simp, Offset.sub W (by decide) (by decide)⟩
+    · exact ⟨wC W, by simp, Offset.sub W (by decide) (by have := tailBytes_le; have := tailBytes_ge; have := scratchBytes_le; omega)⟩
   obtain S₄ := slots_mut L hD.w f₀₄ S
   obtain ⟨c, hc⟩ : ∃ c, c = decide (bytesAt s.mem (W + BitVec.ofNat 64 96) tl = bytesAt s.mem T tl) := ⟨_, rfl⟩
   obtain hok : s₄.mem.readW (W + BitVec.ofNat 64 224) 64 = if c then 1 else 0 := by
@@ -263,7 +272,7 @@ theorem openTail_ok {K W SP : Addr} (L : Lay K W SP) {s : State} (E : Env K W SP
       (f₅.sub fun r hr => ⟨r, by simp at hr ⊢; simp [hr], fun _ h => h⟩)
 
 /-- `vg_aes_ccm_open`, for its arguments. -/
-theorem open_wp' (v : UpdateImpl) {s : State} {K W SP N A D T : Addr} {R nl al n tl : Nat}
+theorem open_wp'_frame (v : UpdateImpl) [UpdateFits v] {s : State} {K W SP N A D T : Addr} {R nl al n tl : Nat}
     (Ar : Args s K W SP N A D R nl al n tl) (Tb : TagBuf W SP D n T tl) (hTc : Covers [⟨T, tl⟩] (s.rd ++ s.wr))
     (hsp : s.gpr .rsp = SP)
     (hD : s.mem.readW (SP + BitVec.ofNat 64 8) 64 = D) (hn : s.mem.readW (SP + BitVec.ofNat 64 16) 64 = BitVec.ofNat 64 n)
@@ -272,11 +281,11 @@ theorem open_wp' (v : UpdateImpl) {s : State} {K W SP N A D T : Addr} {R nl al n
     (hW : s.mem.readW (SP + BitVec.ofNat 64 40) 64 = W)
     (hdi : s.gpr .rdi = K) (hsi : s.gpr .rsi = BitVec.ofNat 64 R) (hdx : s.gpr .rdx = N)
     (hcx : s.gpr .rcx = BitVec.ofNat 64 nl) (hr8 : s.gpr .r8 = A) (hr9 : s.gpr .r9 = BitVec.ofNat 64 al) :
-    WP isa («open» v.callee v.ctr.callee) s fun s' => gprPreserved s s' ∧
+    WP isa («open» v.callee v.ctr.callee) s fun s' => (gprPreserved s s' ∧
       match Spec.Ccm.decryptWith (Spec.Ccm.ctxCiph s.mem K R) tl (bytesAt s.mem N nl) (bytesAt s.mem D n)
           (bytesAt s.mem A al) (bytesAt s.mem T tl) with
       | some pt => (s'.gpr .rax).setWidth 32 = 1 ∧ bytesAt s'.mem D n = pt
-      | none => (s'.gpr .rax).setWidth 32 = 0 ∧ bytesAt s'.mem D n = zeros n := by
+      | none => (s'.gpr .rax).setWidth 32 = 0 ∧ bytesAt s'.mem D n = zeros n) ∧ EntryFrame s s' W SP D n T tl := by
   have L := Ar.lay
   obtain hRb : 16 * (R + 1) ≤ 240 := by rcases Ar.rounds with h | h | h <;> subst h <;> decide
   obtain ⟨s₁, run₁, E₁, S₁, sv₁, f₁, rd₁, wr₁⟩ :=
@@ -310,7 +319,7 @@ theorem open_wp' (v : UpdateImpl) {s : State} {K W SP N A D T : Addr} {R nl al n
       rcases hr with rfl | rfl | rfl | rfl | rfl
       · exact L.w_w (.inl (by decide)) (by decide) (by decide)
       · exact L.w_w (.inl (by decide)) (by decide) (by decide)
-      · exact L.w_w (.inl (by decide)) (by decide) (by decide)
+      · exact L.w_w (.inl (by decide)) (by decide) (by have := tailBytes_le; have := tailBytes_ge; have := scratchBytes_le; omega)
       · exact (L.stk_w' (by decide)).symm
       · exact (Ar.data.w.sub_right (Lay.wSub (by decide))).symm) (by decide), c₂]
   obtain rd₁₃ : s₃.rd = s.rd := by rw [rd₃, rd₂, rd₁]
@@ -334,7 +343,7 @@ theorem open_wp' (v : UpdateImpl) {s : State} {K W SP N A D T : Addr} {R nl al n
   refine WP.mono (openTail_ok L E₄ (slots_mut L Ar.data.w f₁₄ S₁) (Ar.data.of_eq rd₁₄ wr₁₄)
     (by rw [wr₁₄]; exact Ar.dw) (by have := Ar.t4; omega_arith) Ar.t16 (saved_mut L Ar.data.w f₁₄ sv₁) hT₄ hTr₄
     (by rw [rd₁₄, wr₁₄]; exact hTc) Tb.w)
-    fun s₅ ⟨hg₅, hsp₅, hax₅, hd₅, f₅⟩ => ⟨⟨fun r hr => ?_, ?_⟩, ?_⟩
+    fun s₅ ⟨hg₅, hsp₅, hax₅, hd₅, f₅⟩ => ⟨⟨⟨fun r hr => ?_, ?_⟩, ?_⟩, ?_⟩
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact hg₅ (.rbx, 112) (by decide)
@@ -349,7 +358,7 @@ theorem open_wp' (v : UpdateImpl) {s : State} {K W SP N A D T : Addr} {R nl al n
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl
         · exact ⟨wK W, by simp, Offset.sub W (by decide) (by decide)⟩
-        · exact ⟨wC W, by simp, Offset.sub W (by decide) (by decide)⟩
+        · exact ⟨wC W, by simp, Offset.sub W (by decide) (by have := tailBytes_le; have := tailBytes_ge; have := scratchBytes_le; omega)⟩
         · exact ⟨_, by simp, fun _ h => h⟩)
     rw [hsp]
     exact fall.readW (r := ⟨SP, 8⟩) (Region.contains_self _ _) (ret_disj L Ar.retW Ar.retD) (by decide)
@@ -396,11 +405,31 @@ theorem open_wp' (v : UpdateImpl) {s : State} {K W SP N A D T : Addr} {R nl al n
       simp only [hk, ↓reduceIte]
       exact ⟨by rw [hax₅]; simp only [hk', ↓reduceIte]; rfl, by rw [hd₅]; simp only [hk', ↓reduceIte]⟩
 
+  · obtain ⟨tp, p, ep, ap, mp⟩ := entryRestore_run run₁ E₁ sv₁ hsp
+      (f₁.readW (r := ⟨s.gpr .rsp, 8⟩) (Region.contains_self _ _) (fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr
+        rw [hsp]; exact Ar.retW.sub_right (Lay.wSub (by decide))) (by decide))
+    refine ⟨tp, p, ep, ap, ?_⟩
+    rw [mp]
+    apply Frame.mono (f₁₄.trans (f₅.sub ?_)) (List.subset_append_left ..)
+    intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact ⟨wK W, by simp, Offset.sub W (by decide) (by decide)⟩
+    · exact ⟨wC W, by simp, Region.sub_prefix tailBytes_ge⟩
+    · exact ⟨_, by simp, fun _ h => h⟩
+
 /-- `vg_aes_ccm_open`. -/
-theorem open_wp (v : UpdateImpl) {s : State} (h : openX86_64.pre s) :
-    WP isa («open» v.callee v.ctr.callee) s fun s' => gprPreserved s s' ∧ openX86_64.post s s' :=
+theorem open_wp_frame (v : UpdateImpl) [UpdateFits v] {s : State} (h : openX86_64.pre s) :
+    WP isa («open» v.callee v.ctr.callee) s fun s' => (gprPreserved s s' ∧ openX86_64.post s s') ∧
+      EntryFrame s s' (stackArg s 4) (s.gpr .rsp) (stackArg s 0) (stackArg s 1).toNat
+        (stackArg s 2) (stackArg s 3).toNat :=
   have A := args_of_open h
-  open_wp' v A.1.1 A.1.2 A.2 rfl rfl (ofNat_toNat64 _).symm rfl (ofNat_toNat64 _).symm rfl rfl
+  open_wp'_frame v A.1.1 A.1.2 A.2 rfl rfl (ofNat_toNat64 _).symm rfl (ofNat_toNat64 _).symm rfl rfl
     (ofNat_toNat64 _).symm rfl (ofNat_toNat64 _).symm rfl (ofNat_toNat64 _).symm
+
+theorem open_wp (v : UpdateImpl) [UpdateFits v] {s : State} (h : openX86_64.pre s) :
+    WP isa («open» v.callee v.ctr.callee) s fun s' => gprPreserved s s' ∧ openX86_64.post s s' :=
+  WP.mono (open_wp_frame v h) (fun _ h => h.1)
 
 end VG.Proof.AesCcm.X86_64

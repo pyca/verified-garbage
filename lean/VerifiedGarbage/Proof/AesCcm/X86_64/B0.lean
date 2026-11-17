@@ -7,7 +7,7 @@ public import VerifiedGarbage.Spec.Ccm
 import VerifiedGarbage.Proof.AesCcm.X86_64.Blocks
 import VerifiedGarbage.Proof.AesCcm.X86_64.Run
 import VerifiedGarbage.Proof.AesCcm.X86_64.Bytes
-import VerifiedGarbage.Proof.AesCcm.X86_64.Callee
+public import VerifiedGarbage.Proof.AesCcm.X86_64.Callee
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
@@ -28,6 +28,8 @@ set_option linter.unusedSimpArgs false
 
 namespace VG.Proof.AesCcm.X86_64
 
+variable [fp : Footprint]
+
 open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesCcm.X86_64 VG.WriteBytes
 open VG.Impl.AesGcm.X86_64 (at_ imm ptr)
 open VG.Spec.Aes (bytesAt)
@@ -38,8 +40,9 @@ open VG.Proof.CmacAes.X86_64 (UpdateImpl)
 /-- What the pieces of the MAC write: the MAC state at `W + y`, `B`, the
 working space of the functions called and the stack below `SP`. -/
 abbrev macR (W SP : Addr) (y : Nat) : List Region :=
-  [⟨W + BitVec.ofNat 64 y, 16⟩, ⟨W + BitVec.ofNat 64 32, 16⟩, ⟨W + BitVec.ofNat 64 384, 2176⟩, below SP 16]
+  [⟨W + BitVec.ofNat 64 y, 16⟩, ⟨W + BitVec.ofNat 64 32, 16⟩, ⟨W + BitVec.ofNat 64 384, scratchBytes⟩, below SP 16]
 
+omit fp in
 theorem flags_val {tl nl al : Nat} (ht4 : 4 ≤ tl) (ht16 : tl ≤ 16) (hte : tl % 2 = 0) (h7 : 7 ≤ nl) (h13 : nl ≤ 13) :
     ((BitVec.ofNat 64 (4 * (tl - 2) + (14 - nl) + if al = 0 then 0 else 64)).setWidth 8 : Byte) =
       Spec.Ccm.flags tl (15 - nl) al := by
@@ -49,6 +52,7 @@ theorem flags_val {tl nl al : Nat} (ht4 : 4 ≤ tl) (ht16 : tl ≤ 16) (hte : tl
   · subst h; simp only [ite_true, Nat.add_zero, show ¬ (0 > 0) by omega, ite_false, Nat.zero_add]; omega
   · simp only [h, ite_false, show al > 0 by omega, ite_true]; omega
 
+omit fp in
 /-- `B₀` in `B` and the MAC state at `W + y` zeroed. -/
 theorem b0Pre_ok {K W SP : Addr} {s : State} (L : Lay K W SP) (E : Env K W SP s) {R : Nat}
     {N A D : Addr} {nl al n tl : Nat} (S : Slots W R N A D nl al n tl s.mem)
@@ -203,7 +207,7 @@ theorem b0Pre_ok {K W SP : Addr} {s : State} (L : Lay K W SP) (E : Env K W SP s)
     rw [hB₁, hB]
 
 /-- `B₀` chained into a zeroed MAC state at `W + y`. -/
-theorem b0_ok (v : UpdateImpl) {K W SP : Addr} {s : State} (L : Lay K W SP) (E : Env K W SP s) {R : Nat}
+theorem b0_ok (v : UpdateImpl) [UpdateFits v] {K W SP : Addr} {s : State} (L : Lay K W SP) (E : Env K W SP s) {R : Nat}
     {N A D : Addr} {nl al n tl : Nat} (S : Slots W R N A D nl al n tl s.mem) (hR : R = 10 ∨ R = 12 ∨ R = 14)
     {nonce : List Byte} (hnl : nonce.length = nl) (h7 : 7 ≤ nl) (h13 : nl ≤ 13)
     (ht4 : 4 ≤ tl) (ht16 : tl ≤ 16) (hte : tl % 2 = 0) (hal : al < 2 ^ 64) (hn : n < 256 ^ (15 - nl))
