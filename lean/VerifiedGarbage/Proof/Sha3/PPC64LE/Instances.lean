@@ -270,11 +270,12 @@ def xofFinalizeSat : State := { xofPadSat with wr := [⟨0x1000, 200⟩] }
 theorem xofFinalize_verified {X : Xof} (hX : xofSponge X) (hr : X.rate ∈ rates) :
     Verified PPC64LE.target (xofFinalize X.rate) (Spec.Sha3.xofFinalizeContract PPC64LE.abi X (48 + 672)) := by
   obtain h0 : 0 < X.rate := by simp [rates] at hr; omega_using [hr]
-  refine PPC64LE.Verified.stackScratchKept (sig := Spec.Sha3.xofFinalizeSig) (nm := "scratch") (e := .u64)
+  refine PPC64LE.Verified.stackScratch (sig := Spec.Sha3.xofFinalizeSig) (nm := "scratch") (e := .u64)
     (n := 80) (pre := Spec.Sha3.xofFinalizePre X PPC64LE.abi.ptrBits)
     (post := Spec.Sha3.xofFinalizePost X PPC64LE.abi.ptrBits) (wa := true) (stack := 48)
     (bytes := 672) (xofPad_verified hX hr) (by decide) (by decide)
     (VG.Proof.Sha3.Instances.xofFinalizePre_local _ X) (VG.Proof.Sha3.Instances.xofFinalizePost_local _ X)
+    (fun vs m m₁ m₂ r hl _ => VG.Proof.Sha3.Instances.xofFinalizePostOut_local _ X vs m m₁ m₂ r hl)
     ⟨xofFinalizeSat, ?_⟩
   sig_pre [Spec.Sha3.xofFinalizeContract, Spec.Sha3.xofFinalizeSig, Spec.Sha3.xofFinalizePre,
     Spec.Sha3.xofFinalizePost, PPC64LE.abi, PPC64LE.argRegs, xofFinalizeSat, xofPadSat,
@@ -372,11 +373,12 @@ def xofSqueezeTopSat : State := { xofSqueezeSat with wr := [⟨0x1000, 200⟩, �
 
 theorem xofSqueeze_verified {X : Xof} (hr : X.rate ∈ rates) :
     Verified PPC64LE.target (xofSqueeze X.rate) (Spec.Sha3.xofSqueezeContract PPC64LE.abi X (48 + 672)) := by
-  refine PPC64LE.Verified.stackScratchKept (sig := Spec.Sha3.xofSqueezeSig) (nm := "scratch") (e := .u64)
+  refine PPC64LE.Verified.stackScratch (sig := Spec.Sha3.xofSqueezeSig) (nm := "scratch") (e := .u64)
     (n := 80) (pre := Spec.Sha3.xofSqueezePre X PPC64LE.abi.ptrBits)
     (post := Spec.Sha3.xofSqueezePost X PPC64LE.abi.ptrBits) (wa := true) (stack := 48)
     (bytes := 672) (xofSqueezeS_verified hr) (by decide) (by decide)
     (VG.Proof.Sha3.Instances.xofSqueezePre_local _ X) (VG.Proof.Sha3.Instances.xofSqueezePost_local _ X)
+    (fun vs m m₁ m₂ r hl _ => VG.Proof.Sha3.Instances.xofSqueezePostOut_local _ X vs m m₁ m₂ r hl)
     ⟨xofSqueezeTopSat, ?_⟩
   sig_pre [Spec.Sha3.xofSqueezeContract, Spec.Sha3.xofSqueezeSig, Spec.Sha3.xofSqueezePre,
     Spec.Sha3.xofSqueezePost, PPC64LE.abi, PPC64LE.argRegs, xofSqueezeTopSat, xofSqueezeSat,
@@ -853,12 +855,13 @@ theorem finalize_verified {H : Spec.Sha3.HashFn} (hH : hashSponge H) (hr : H.rat
     (hsat : ∃ s, (finPPC64LE H).pre s) (hsat' : ∃ s, (finScratchContract PPC64LE.abi H 84 48).pre s)
     (hsat'' : ∃ s, (Spec.Sha3.finalizeContract PPC64LE.abi H (48 + 704)).pre s) :
     Verified PPC64LE.target (finalize H.rate H.len) (Spec.Sha3.finalizeContract PPC64LE.abi H (48 + 704)) :=
-  PPC64LE.Verified.stackScratchKept (sig := Spec.Sha3.finalizeSig H.len) (nm := "scratch") (e := .u64)
+  PPC64LE.Verified.stackScratch (sig := Spec.Sha3.finalizeSig H.len) (nm := "scratch") (e := .u64)
     (n := 84) (pre := Spec.Sha3.finalizePre H PPC64LE.abi.ptrBits)
     (post := Spec.Sha3.finalizePost H PPC64LE.abi.ptrBits) (wa := true) (stack := 48)
     (bytes := 704) (finBody_verified hH hr hl hct hsat hsat') (by exact (by decide : 3 < 8))
     (by decide) (VG.Proof.Sha3.Instances.finalizePre_local _ H)
-    (VG.Proof.Sha3.Instances.finalizePost_local _ H) hsat'' rfl
+    (VG.Proof.Sha3.Instances.finalizePost_local _ H)
+    (fun vs m m₁ m₂ r hl _ => VG.Proof.Sha3.Instances.finalizePostOut_local _ H vs m m₁ m₂ r hl) hsat'' rfl
 
 /-- A state satisfying `finPPC64LE`'s precondition. -/
 def finSat (len : Nat) : State :=

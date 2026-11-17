@@ -151,10 +151,11 @@ theorem sealFrameSat_pre : ∃ s, (Proof.AesCcm.sealRoundsContract PPC64LE.abi 2
 theorem seal_framed :
     Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratchArgs 2688 2 «seal»)
       (Proof.AesCcm.sealRoundsContract PPC64LE.abi 2688) :=
-  Verified.stackScratchArgsKept (sig := Spec.Ccm.sealSig) (nm := "work") (e := .u64)
+  Verified.stackScratchArgs (sig := Spec.Ccm.sealSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Ccm.sealPre PPC64LE.abi.ptrBits)
     (post := Proof.AesCcm.sealRoundsPost PPC64LE.abi.ptrBits) (wa := true) (stack := 0) (bytes := 2688) (m := 2)
     seal_verified (by decide) (by decide) (Proof.AesCcm.sealPre_local _) (Proof.AesCcm.sealPost_local _)
+    (Proof.AesCcm.sealPostOut_local _)
     sealFrameSat_pre
 
 /-- A state satisfying `vg_aes_ccm_open`'s precondition, without the working
@@ -172,11 +173,12 @@ theorem openFrameSat_pre : ∃ s, (Proof.AesCcm.openRoundsContract PPC64LE.abi 2
 theorem open_framed :
     Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratchArgs 2688 2 «open»)
       (Proof.AesCcm.openRoundsContract PPC64LE.abi 2688) :=
-  Verified.stackScratchArgsKept (sig := Spec.Ccm.openSig) (nm := "work") (e := .u64)
+  Verified.stackScratchArgs (sig := Spec.Ccm.openSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Ccm.openPre PPC64LE.abi.ptrBits)
     (post := Proof.AesCcm.openRoundsPost PPC64LE.abi.ptrBits) (wa := true) (stack := 0) (bytes := 2688) (m := 2)
     (leak := some (Spec.Ccm.openLeak PPC64LE.abi.ptrBits))
     open_verified (by decide) (by decide) (Proof.AesCcm.openPre_local _) (Proof.AesCcm.openPost_local _)
+    (Proof.AesCcm.openPostOut_local _)
     openFrameSat_pre (hleak := Proof.AesCcm.openLeak_local _)
 
 end VG.Proof.AesCcm.PPC64LE

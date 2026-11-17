@@ -266,4 +266,62 @@ theorem xofSqueezePost_local (X : Xof) : ∀ vs m₁ m₂ m' r,
   rw [stateAt_agree (m₁ := m₁) (m₂ := m₂) hb.1]
   exact h
 
+/-- `xofFinalizePost` reads the memory on return only within the buffers (the
+state). -/
+theorem xofFinalizePostOut_local (X : Xof) : ∀ vs m m₁ m₂ r,
+    vs.length = (xofFinalizeSig.words pb).length →
+    (∀ b ∈ Sig.bufs xofFinalizeSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (xofFinalizeSig.words pb) (xofFinalizePost X pb) vs m m₁ r →
+      Curry.apply (xofFinalizeSig.words pb) (xofFinalizePost X pb) vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen hb h
+  obtain ⟨st, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 1) hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [xofFinalizeSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+    forall_eq, Elem.size] at hb
+  change Curry.apply [ArgWord.addr, ArgWord.int pb] (xofFinalizePost X pb) _ m m₁ r at h
+  change Curry.apply [ArgWord.addr, ArgWord.int pb] (xofFinalizePost X pb) _ m m₂ r
+  dsimp only [Curry.apply, xofFinalizePost, ArgWord.ofRaw, XofRepr] at h ⊢
+  intro msg hr hp
+  rw [stateAt_agree (m₁ := m₁) (m₂ := m₂) hb]
+  exact h msg hr hp
+
+/-- `xofSqueezePost` reads the memory on return only within the buffers (the
+state and the output). -/
+theorem xofSqueezePostOut_local (X : Xof) : ∀ vs m m₁ m₂ r,
+    vs.length = (xofSqueezeSig.words pb).length →
+    (∀ b ∈ Sig.bufs xofSqueezeSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (xofSqueezeSig.words pb) (xofSqueezePost X pb) vs m m₁ r →
+      Curry.apply (xofSqueezeSig.words pb) (xofSqueezePost X pb) vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen hb h
+  obtain ⟨st, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 3) hlen
+  replace hlen := Nat.succ.inj hlen
+  iterate 2
+    obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+  obtain ⟨ol, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [xofSqueezeSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+    forall_eq, Elem.size] at hb
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb]
+    (xofSqueezePost X pb) _ m m₁ r at h
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb]
+    (xofSqueezePost X pb) _ m m₂ r
+  dsimp only [Curry.apply, xofSqueezePost, ArgWord.ofRaw, XofRepr] at h ⊢
+  refine ⟨fun msg n hx => ?_, h.2⟩
+  obtain ⟨h1, h2⟩ := h.1 msg n hx
+  refine ⟨Eq.trans (List.map_congr_left fun i hi => (hb.2 _ ?_).symm) h1, ?_⟩
+  · simp only [Region.Contains]
+    rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat]
+    have := Nat.mod_le i (2 ^ 64)
+    have := List.mem_range.mp hi
+    rw [BitVec.toNat_setWidth] at this
+    have := Nat.mod_le ol.toNat (2 ^ pb)
+    omega
+  · rw [stateAt_agree (m₁ := m₁) (m₂ := m₂) hb.1]
+    exact h2
+
 end VG.Proof.Sha3.Instances

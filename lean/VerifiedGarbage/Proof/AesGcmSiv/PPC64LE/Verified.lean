@@ -389,10 +389,11 @@ theorem sealFrameSat_pre : ∃ s, (Proof.AesGcmSiv.sealRoundsContract PPC64LE.ab
 theorem seal_framed [VG.Proof.Gcm.PPC64LE.GhashLaw] (hti : TagInputEq) :
     Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratchArgs 3936 0 «seal»)
       (Proof.AesGcmSiv.sealRoundsContract PPC64LE.abi 3936) :=
-  Verified.stackScratchArgsKept (sig := Spec.GcmSiv.sealSig) (nm := "work") (e := .u64)
+  Verified.stackScratchArgs (sig := Spec.GcmSiv.sealSig) (nm := "work") (e := .u64)
     (n := 478) (pre := Spec.GcmSiv.sealPre PPC64LE.abi.ptrBits)
     (post := Proof.AesGcmSiv.sealRoundsPost PPC64LE.abi.ptrBits) (wa := true) (stack := 0) (bytes := 3936) (m := 0)
     (seal_verified hti) (by decide) (by decide) (Proof.AesGcmSiv.sealPre_local _) (Proof.AesGcmSiv.sealPost_local _)
+    (fun vs m m₁ m₂ r hl _ => Proof.AesGcmSiv.sealPostOut_local _ vs m m₁ m₂ r hl)
     sealFrameSat_pre
 
 /-- A state satisfying `vg_aes_gcm_siv_open`'s precondition, without the
@@ -409,12 +410,13 @@ theorem openFrameSat_pre : ∃ s, (Proof.AesGcmSiv.openRoundsContract PPC64LE.ab
 theorem open_framed [VG.Proof.Gcm.PPC64LE.GhashLaw] (hti : TagInputEq) :
     Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratchArgs 3936 0 «open»)
       (Proof.AesGcmSiv.openRoundsContract PPC64LE.abi 3936) :=
-  Verified.stackScratchArgsKept (sig := Spec.GcmSiv.openSig) (nm := "work") (e := .u64)
+  Verified.stackScratchArgs (sig := Spec.GcmSiv.openSig) (nm := "work") (e := .u64)
     (n := 478) (pre := Spec.GcmSiv.openPre PPC64LE.abi.ptrBits)
     (post := Proof.AesGcmSiv.openRoundsPost PPC64LE.abi.ptrBits) (wa := true) (stack := 0) (bytes := 3936) (m := 0)
     (leak := some (Spec.GcmSiv.openLeak PPC64LE.abi.ptrBits))
     (Proof.AesGcmSiv.Verified.of_openScratch (open_verified hti)) (by decide) (by decide)
     (Proof.AesGcmSiv.openPre_local _) (Proof.AesGcmSiv.openPost_local _)
+    (fun vs m m₁ m₂ r hl _ => Proof.AesGcmSiv.openPostOut_local _ vs m m₁ m₂ r hl)
     openFrameSat_pre (hleak := Proof.AesGcmSiv.openLeak_local _)
 
 end VG.Proof.AesGcmSiv.PPC64LE
