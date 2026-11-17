@@ -513,8 +513,10 @@ theorem carry_ok (s : State) (hF : s.v F = 0#128) :
       s'.v P0 = s.v P0 ^^^ ext8 (sl 63 (s.v P1) ^^^ sl 62 (s.v P1) ^^^ sl 57 (s.v P1)) 0#128 ∧
       VOnly [A, U, P0, P1] s s' := by
   apply WP.of_runBlock
-  simp (disch := decide) only [carry, runBlock_cons, runStep_some, runBlock_nil, exec_eor, exec_ext8,
-    exec_shl, Option.some.injEq, exists_eq_left', v_setV, ite_true, ite_false, reduceCtorEq, hF]
+  simp only [carry, runBlock_cons, runStep_some, runBlock_nil, exec_eor, exec_ext8,
+    exec_shl _ _ _ (show 63 < 64 by decide), exec_shl _ _ _ (show 62 < 64 by decide),
+    exec_shl _ _ _ (show 57 < 64 by decide), Option.some.injEq, exists_eq_left', v_setV, ite_true, ite_false,
+    reduceCtorEq, hF]
   refine ⟨trivial, trivial, ⟨fun r hr => ?_, by simp only [gpr_setV], by simp only [mem_setV],
     by simp only [rd_setV], by simp only [wr_setV], by simp only [sp_setV]⟩⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr

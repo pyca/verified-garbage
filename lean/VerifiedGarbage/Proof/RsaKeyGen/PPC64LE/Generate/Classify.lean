@@ -1066,7 +1066,8 @@ theorem slots_kept (h : GenFrame p original used st s) (values : List (Nat × Bi
   · intro x hx heq
     have := hnot x hx
     simp only [GenPublic.headers, List.mem_cons, List.not_mem_nil, or_false] at he
-    rcases he with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp_all
+    rcases he with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+      (dsimp only at heq; omega_using [heq, this])
 
 /-- A loop state's frame words, read. -/
 theorem slot (h : GenFrame p original used st s) {j : Nat} {v : BitVec 64}

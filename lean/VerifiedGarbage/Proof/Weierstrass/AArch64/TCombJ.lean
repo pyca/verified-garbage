@@ -110,8 +110,9 @@ theorem firstJ_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : A
       (hAE y hy) hxy)
     (fun x hx => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hx ⊢
-      rcases hx with rfl | rfl | rfl <;> grind)
-    ⟨by grind, by grind, by grind⟩) fun s₆ ⟨ex₆, ey₆, ez₆, k₆, U₆⟩ => ?_
+      rcases hx with rfl | rfl | rfl <;>
+        exact not_or.mpr ⟨by nd_find hnd, not_or.mpr ⟨by nd_find hnd, by nd_find hnd⟩⟩)
+    ⟨by nd_find hnd, by nd_find hnd, by nd_find hnd⟩) fun s₆ ⟨ex₆, ey₆, ez₆, k₆, U₆⟩ => ?_
   refine WP.mono (movz_ok s₆ .x19 1) fun s₇ ⟨b₇, k₇⟩ sy₇ => ?_
   have m₇ : s₇.mem = s₆.mem := k₇.mem
   have hEW : ∀ w ∈ [(K.E.x, 8 * K.M.n), (K.E.y, 8 * K.M.n), (K.E.z, 8 * K.M.n), (K.neg, 8 * K.M.n),
@@ -295,12 +296,12 @@ theorem tcombJOut_ok {arithmetic : Mod → List FOp → Prog isa} {K : TCombCfg}
     obtain e : ∀ x ∈ [K.A.x, K.A.y, K.A.z], tmv C K.M.n base s₄ x = runOps K.outOps (tmv C K.M.n base s₃) x :=
       fun x hx => (hval x hx).1
     rw [e _ (by simp), e _ (by simp), e _ (by simp)]
-    obtain hxt : K.A.x ≠ K.S.t0 := by grind
-    obtain hzt : K.A.z ≠ K.S.t0 := by grind
-    obtain hxz : K.A.x ≠ K.A.z := by grind
-    obtain hxy : K.A.x ≠ K.A.y := by grind
-    obtain hyt : K.A.y ≠ K.S.t0 := by grind
-    obtain hyz : K.A.y ≠ K.A.z := by grind
+    obtain hxt : K.A.x ≠ K.S.t0 := by nd_find hnd
+    obtain hzt : K.A.z ≠ K.S.t0 := by nd_find hnd
+    obtain hxz : K.A.x ≠ K.A.z := by nd_find hnd
+    obtain hxy : K.A.x ≠ K.A.y := by nd_find hnd
+    obtain hyt : K.A.y ≠ K.S.t0 := by nd_find hnd
+    obtain hyz : K.A.y ≠ K.A.z := by nd_find hnd
     simp only [TCombCfg.outOps, runOps, List.foldl_cons, List.foldl_nil, FOp.run, Function.update_apply,
       hxt, hzt, hxz, hyt, hyz, hxz.symm, hxt.symm, hxy.symm, ite_true, ite_false]
     obtain hy : tmv C K.M.n base s₃ K.A.y = if tmv C K.M.n base s₂ K.A.z = 0 then 1

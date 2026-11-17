@@ -765,7 +765,7 @@ theorem keygen_sp (v : Backend) :
       (Generate.deriveChecked v.sq v.mul)).all (fun i => !isa.writesSp i) = true := by
   simp only [GenerateKey.code, GenerateKey.body, GenerateKey.generate, Code.all, Bool.and_eq_true]
   repeat' constructor
-  all_goals first | exact v.parametersSp | exact v.deriveCheckedSp | decide
+  all_goals first | with_reducible exact v.parametersSp | with_reducible exact v.deriveCheckedSp | decide
 
 theorem keygen_depth (v : Backend) :
     (GenerateKey.code (keygenCheckName v) (keygenDeriveName v) (Generate.checkParameters v.sq v.mul)

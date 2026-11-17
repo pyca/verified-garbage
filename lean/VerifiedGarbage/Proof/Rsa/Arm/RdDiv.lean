@@ -541,10 +541,10 @@ theorem divAPre_vp {f g : Nat × Nat × Nat → Nat × Nat × Nat} (hg : ProdF P
     (liveW' := [wA, wOne, wZ]) (V' := VG' P σ) (ls' := [sOkDE])
     (fun j hj => by
       simp only [LB, List.mem_cons, List.not_mem_nil, or_false] at hj
-      rcases hj with rfl | rfl | rfl <;> refine ⟨by decide, ?_⟩ <;> simp only [AB, AG] <;> rd_ev)
+      rcases hj with rfl | rfl | rfl <;> refine ⟨by decide, ?_⟩ <;> simp only [AB, AG] <;> rd_up)
     (fun j hj => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
-      rcases hj with rfl | rfl | rfl <;> refine ⟨by decide, ?_⟩ <;> simp only [AWG, av] <;> rd_ev)
+      rcases hj with rfl | rfl | rfl <;> refine ⟨by decide, ?_⟩ <;> simp only [AWG, av] <;> rd_up)
     (fun d hd => by
       simp only [List.mem_singleton] at hd; subst hd; exact ⟨by decide, by rd_up⟩)
   simp only [divAPre, seqs]
@@ -565,7 +565,7 @@ theorem divAPre_vp {f g : Nat × Nat × Nat → Nat × Nat × Nat} (hg : ProdF P
   refine h4.toW hv4 fun t ht hvt _ => WP.block_nil ⟨e, ?_, hvt⟩
   refine ht.mono (fun j hj => ⟨hj, rfl⟩) (fun j hj => ⟨hj, ?_⟩) (fun d hd => ⟨hd, rfl⟩)
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
-  rcases hj with rfl | rfl | rfl | rfl <;> simp only [AWA1, AB] <;> rd_ev
+  rcases hj with rfl | rfl | rfl | rfl <;> simp only [AWA1, AB] <;> rd_up
 
 /-- `shiftAmt`: `4 s` into `sS`, from `n_len`. -/
 theorem shiftAmt_vp {L LW LS : List Nat} {E : State → Prop} {A AW V : State → Nat → Nat} :
@@ -915,7 +915,7 @@ theorem divBPre_vp {f g : Nat × Nat × Nat → Nat × Nat × Nat} {E : State �
     (fun j hj => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
       refine ⟨by rcases hj with rfl | rfl | rfl | rfl | rfl <;> decide, ?_⟩
-      rcases hj with rfl | rfl | rfl | rfl | rfl <;> simp only [AWA2, AWA1, AB] <;> rd_ev)
+      rcases hj with rfl | rfl | rfl | rfl | rfl <;> simp only [AWA2, AWA1, AB] <;> rd_up)
     (fun j hj => ⟨hj, rfl⟩) (fun d hd => ⟨hd, rfl⟩)
   refine WP.seq (WP.mono (h4'.eqS_w hv4 (d := sM0) (a := aT1) (b := aZN) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide)) fun s3 ⟨h5, hv5, _⟩ => ?_)
@@ -927,10 +927,11 @@ theorem divBPre_vp {f g : Nat × Nat × Nat → Nat × Nat × Nat} {E : State �
   refine h7.mono (fun j hj => ?_) (fun j hj => ?_) (fun d hd => ?_)
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
     refine ⟨by rcases hj with rfl | rfl | rfl | rfl | rfl <;> decide, ?_⟩
-    rcases hj with rfl | rfl | rfl | rfl | rfl <;> simp only [ABd, AB, m1V] <;> rd_ev
+    rcases hj with rfl | rfl | rfl | rfl | rfl <;> simp only [ABd, AB, m1V] <;> rd_up
+    by_cases h0 : m1R P f g σ = 0 <;> simp [h0]
   · simp only [LWB0, List.mem_cons, List.not_mem_nil, or_false] at hj
     refine ⟨by rcases hj with rfl | rfl | rfl | rfl <;> decide, ?_⟩
-    rcases hj with rfl | rfl | rfl | rfl <;> simp only [AWB, AWA2, AWA1] <;> rd_ev
+    rcases hj with rfl | rfl | rfl | rfl <;> simp only [AWB, AWA2, AWA1] <;> rd_up
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
     refine ⟨by rcases hd with rfl | rfl <;> decide, ?_⟩
     rcases hd with rfl | rfl <;> rd_up

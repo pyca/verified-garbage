@@ -386,6 +386,21 @@ theorem step5 {s₀ : State} (hp : Pre s₀) (hd : dN s₀ = 5) {i : Nat} (hi : 
       (coeff_one (by omega_arith) (coeff_one (by omega_arith) (coeff_one (by omega_arith) (coeff_one (by omega_arith)
       h.coeff rfl) rfl) rfl) rfl) rfl) rfl) rfl) rfl
 
+/-- Eleven bits of a 48-bit group are those of the whole it is the low part of: the bytes above do
+not reach them. Stated for any position, so that no bit arithmetic is left to `omega`. -/
+private theorem slice_lo (X H p : Nat) (hp : p + 11 ≤ 48) :
+    X / 2 ^ p % 2 ^ 11 = (X + 2 ^ 48 * H) / 2 ^ p % 2048 := by
+  obtain e : (2 : Nat) ^ 48 = 2 ^ p * (2 ^ 11 * 2 ^ (48 - p - 11)) := by
+    rw [← Nat.pow_add, ← Nat.pow_add]; refine congrArg (2 ^ ·) ?_; omega_using [hp]
+  rw [e, Nat.mul_assoc, Nat.add_mul_div_left _ _ (Nat.two_pow_pos p), show (2048 : Nat) = 2 ^ 11 from rfl,
+    Nat.mul_assoc, Nat.add_mul_mod_self_left]
+
+/-- Eleven bits of a group are those of the whole it is the part of above 40 bits. -/
+private theorem slice_hi (L B q : Nat) (hL : L < 2 ^ 40) :
+    B / 2 ^ q % 2 ^ 11 = (L + 2 ^ 40 * B) / 2 ^ (40 + q) % 2048 := by
+  rw [Nat.pow_add, ← Nat.div_div_eq_div_mul, Nat.add_mul_div_left _ _ (Nat.two_pow_pos 40), Nat.div_eq_of_lt hL,
+    Nat.zero_add]
+
 theorem step11 {s₀ : State} (hp : Pre s₀) (hd : dN s₀ = 11) {i : Nat} (hi : i < 32) {s : State}
     (h : Inv s₀ 11 32 i s) :
     WP isa (.block dd11Body) s fun s' =>
@@ -436,8 +451,10 @@ theorem step11 {s₀ : State} (hp : Pre s₀) (hd : dN s₀ = 11) {i : Nat} (hi 
       (64 - 11))).setWidth 32 = out s₀ (8 * i + k) := fun k hk => by
     rw [f11_val _ (by omega_arith), out, D, hd, decodeDecompress11_group _ hB hi (by omega_arith), ea]
     refine congrArg (fun y => BitVec.ofNat 32 (decompress 11 y).val) ?_
-    rcases (by omega_arith : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl <;>
-      simp only [Nat.reducePow, Nat.reduceMul, Nat.mul_zero, Nat.pow_zero, Nat.div_one] <;> omega_arith
+    exact (slice_lo _ (((Bl s₀).getD (11 * i + 6) 0).toNat + 256 * ((Bl s₀).getD (11 * i + 7) 0).toNat +
+        65536 * ((Bl s₀).getD (11 * i + 8) 0).toNat + 16777216 * ((Bl s₀).getD (11 * i + 9) 0).toNat +
+        4294967296 * ((Bl s₀).getD (11 * i + 10) 0).toNat) (11 * k) (by omega_using [hk])).trans
+      (congrArg (fun x => x / 2 ^ (11 * k) % 2048) (by omega_using []))
   obtain vb : ∀ k < 4, (dec 11 (G11b s (B s₀ + BitVec.ofNat 64 (11 * i)) <<<
       (64 - 11 - (11 * k + 4)) >>> (64 - 11))).setWidth 32 = out s₀ (8 * i + 4 + k) :=
     fun k hk => by
@@ -445,8 +462,11 @@ theorem step11 {s₀ : State} (hp : Pre s₀) (hd : dN s₀ = 11) {i : Nat} (hi 
       show 8 * i + 4 + k = 8 * i + (4 + k) by omega_arith,
       decodeDecompress11_group _ hB hi (by omega_arith), ebb]
     refine congrArg (fun y => BitVec.ofNat 32 (decompress 11 y).val) ?_
-    rcases (by omega_arith : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl <;>
-      simp only [Nat.reducePow, Nat.reduceMul, Nat.reduceAdd] <;> omega_arith
+    rw [show 11 * (4 + k) = 40 + (11 * k + 4) by omega_using []]
+    exact (slice_hi (((Bl s₀).getD (11 * i) 0).toNat + 256 * ((Bl s₀).getD (11 * i + 1) 0).toNat +
+        65536 * ((Bl s₀).getD (11 * i + 2) 0).toNat + 16777216 * ((Bl s₀).getD (11 * i + 3) 0).toNat +
+        4294967296 * ((Bl s₀).getD (11 * i + 4) 0).toNat) _ (11 * k + 4) (by omega_using [l0, l1, l2, l3, l4])).trans
+      (congrArg (fun x => x / 2 ^ (40 + (11 * k + 4)) % 2048) (by omega_using []))
   obtain v0 := va 0 (by decide)
   obtain v1 := va 1 (by decide)
   obtain v2 := va 2 (by decide)

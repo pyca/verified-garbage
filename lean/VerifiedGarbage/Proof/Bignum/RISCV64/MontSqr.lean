@@ -192,7 +192,7 @@ theorem sqrTailN_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
   refine WP.seq (WP.mono (subMod64_ok (w := w) (dA := dT + 8 * w) (dT := dP) (dM := dM) hs₅ j5
     (by rw [g5 .a6 (by decide), i6]) (by rw [g5 .a7 (by decide), i7]) (by rw [g5 .t0 (by decide), it0])
     (by omega_arith) hw' (by omega_arith) aP aM (by omega_arith) (by omega_arith) (by omega_arith)
-    (by omega_arith) (by omega_arith))
+    (by omega_using [pP]) (by omega_using [pPM]))
     fun s₆ ⟨⟨c, hc, hD, h46⟩, o6, k6⟩ => ?_)
   rw [m5', tl5] at hD
   rw [tw5] at h46
@@ -200,14 +200,14 @@ theorem sqrTailN_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
   obtain hs₆ := hs.congr k16.2.2
   obtain g6 : ∀ r ∈ [Reg.a2, .a5, .a6, .t0], s₆.gpr r = s₅.gpr r := fun r hr => k6.gpr (by revert r hr; decide)
   obtain tl6 : wordsVal s₆.mem B (dT + 8 * w) w = wordsVal s₄.mem B (dT + 8 * w) w :=
-    (o6.wordsVal (by omega_arith) (by omega_arith)).trans tl5
+    (o6.wordsVal (by omega_using [pP]) (by omega_arith)).trans tl5
   -- The selection.
   refine WP.seq (WP.mono (selectAcc64_ok (w := w) (dA := dT + 8 * w) (dT := dP) (dO := dO)
     (b := decide ((s₄.gpr .a1).toNat < c)) hs₆
     (by rw [g6 .a5 (by decide), j5]) (by rw [g6 .a6 (by decide), g5 .a6 (by decide), i6])
     (by rw [g6 .a2 (by decide), g5 .a2 (by decide), i2]) (by rw [g6 .t0 (by decide), g5 .t0 (by decide), it0])
     (by rw [h46]; simp only [decide_eq_true_eq]) (by omega_arith) hw' (by omega_arith) aP aO (by omega_arith)
-    (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith))
+    (by omega_arith) (by omega_arith) (by omega_using [pO]) (by omega_using [pPO]))
     fun s₇ ⟨hv, o7, k7⟩ => ?_)
   rw [tl6] at hv
   obtain k17 := k16.trans k7

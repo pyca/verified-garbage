@@ -112,6 +112,9 @@ theorem SearchLive.output {p : SearchPublic} {original s : State} {used remainin
   refine ⟨fun i hi => ⟨_, hin, contains_byte _ hi (by omega_using [hn])⟩, fun i hi => Nat.le_of_not_lt fun hlt =>
     hd _ (by simp only [ofs] at hlt; simp only [Region.Contains]; omega_using [hlt]) (contains_byte _ hi (by omega_using [hn]))⟩
 
+/-- The registers `zeroOut` writes are not callee-saved: decided once, in no context. -/
+private theorem calleeSaved_not_scratch : ∀ r ∈ calleeSaved, r ∉ [Reg.rsi, .rcx, .rax] := by decide
+
 theorem search_clear {p : SearchPublic} {original s : State} {used remaining : Nat}
     (h : SearchLive p original used remaining s) (hdi : s.gpr .rdi = p.F) :
     WP isa (VG.Impl.Rsa.X86_64.Keys.zeroOut 5 6) s fun t =>
@@ -134,7 +137,7 @@ theorem search_clear {p : SearchPublic} {original s : State} {used remaining : N
     apply ha (inOut original) (by simp [SearchInput.callChanges])
     rw [he, ← h.out_region]
     exact contains_byte _ hi (by have := hf.nO; omega_using [this])
-  refine ⟨h.restore k.2.1 k.2.2 (fun r hr => k.gpr (by cases r <;> simp_all [calleeSaved])) hframe,
+  refine ⟨h.restore k.2.1 k.2.2 (fun r hr => k.gpr (calleeSaved_not_scratch r hr)) hframe,
     ?_, h.input.frame_words hframe, k⟩
   refine List.eq_replicate_iff.mpr ⟨by simp only [Spec.Rsa.bytesAt, List.length_map, List.length_range], ?_⟩
   intro b hb

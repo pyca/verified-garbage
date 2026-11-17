@@ -185,6 +185,13 @@ theorem block_bytes {m : Mem} {Y : Addr} {k : Nat} (hk : k < 64) :
       Option.map_some, Option.getD_some]
     rw [Offset.add_add]
 
+omit F in
+/-- The registers `hash` keeps are the compression function's callee-saved ones (stated here, so
+that the cases are split in no context). -/
+private theorem calleeSaved_of_ne (r : Reg) (a : r ≠ .eax) (b : r ≠ .ebx) (c : r ≠ .ecx) (d : r ≠ .edx)
+    (e : r ≠ .ebp) : r ∈ calleeSaved := by
+  cases r <;> simp_all [calleeSaved]
+
 theorem hash_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
     {dst : Nat} (hsz : sHScr + H.so ≤ size) (hsC : sHScr < size) (hdst : dst + H.N ≤ size)
     (hsepS : sState + H.N + 64 ≤ dst ∨ dst + H.N ≤ sState)
@@ -290,8 +297,7 @@ theorem hash_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
 
   · intro r a b c d e
     rw [gx r c d, gw r a, gv r b, au.cs r ?_, g r a b c e]
-    simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false]
-    cases r <;> simp_all
+    exact calleeSaved_of_ne r a b c d e
   · rw [rdx, rdw, rdv, au.rd, rd]
   · rw [wrx, wrw, wrv, au.wr, wr]
 

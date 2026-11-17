@@ -115,21 +115,18 @@ theorem ranges_apart {g : Geometry} {d bytes : Nat} (safe : protectedHeader d by
     {r : Nat × Nat} (mem : r ∈ ranges g) : d + bytes ≤ r.1 ∨ r.1 + r.2 ≤ d := by
   rcases List.mem_append.mp mem with mem | mem
   · exact Prepare.ranges_apart (by unfold protectedHeader at safe; left; omega_using [safe]) mem
-  · simp only [MillerRabinLoop.ranges, WitnessChecks.ranges, WitnessStep.ranges,
+  · refine (?_ : ∀ r ∈ MillerRabinLoop.ranges g, d + bytes ≤ r.1 ∨ r.1 + r.2 ≤ d) r mem
+    unfold protectedHeader at safe
+    simp only [MillerRabinLoop.ranges, WitnessChecks.ranges, WitnessStep.ranges,
       WitnessRound.ranges, WitnessMont.ranges, montWrites, roundWrites,
-      WitnessCount.ranges, WitnessCount.nextRanges, List.mem_append, List.mem_cons,
-      List.not_mem_nil, or_false] at mem
-    repeat' first
-      | (rcases mem with mem | mem)
-      | (rcases mem with rfl)
-    all_goals
-      simp only [Geometry.array, Geometry.words, Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes,
-        VG.Impl.RsaKeyGen.X86.WitnessRound.uniformOffset,
-        VG.Impl.RsaKeyGen.X86.WitnessCount.statusOffset,
-        VG.Impl.RsaKeyGen.X86.WitnessCount.roundsOffset,
-        VG.Impl.RsaKeyGen.X86.WitnessCount.uniformOffset]
-      unfold protectedHeader at safe
-      omega_using [safe]
+      WitnessCount.ranges, WitnessCount.nextRanges, List.forall_mem_append, List.forall_mem_cons,
+      List.not_mem_nil, false_imp_iff, implies_true, and_true,
+      Geometry.array, Geometry.words, Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes,
+      VG.Impl.RsaKeyGen.X86.WitnessRound.uniformOffset,
+      VG.Impl.RsaKeyGen.X86.WitnessCount.statusOffset,
+      VG.Impl.RsaKeyGen.X86.WitnessCount.roundsOffset,
+      VG.Impl.RsaKeyGen.X86.WitnessCount.uniformOffset]
+    omega_using [safe]
 
 theorem metadata32 {g : Geometry} (v : g.Valid) {m m' : Mem}
     (W : WorkspaceFrame g (ranges g) m m') {d : Nat} (safe : protectedHeader d 4) :

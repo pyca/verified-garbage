@@ -71,8 +71,8 @@ theorem linearWord_byte (x : BitVec 64) (j : Nat) (hj : j < 8) :
       BitVec.getLsbD_setWidth, BitVec.getLsbD_ushiftRight,
       BitVec.getLsbD_append, BitVec.getLsbD_xor, BitVec.getLsbD_rotateRight]
     <;> simp +arith (disch := omega) only [Nat.reduceMul, Nat.reduceSub,
-      Nat.reduceMod, ite_eq_left, ite_eq_right, decide_eq_true,
-      Bool.true_and, ite_false, Nat.add_sub_cancel, Nat.add_sub_assoc]
+      Nat.reduceMod, ↓ite_eq_left, ↓ite_eq_right, decide_eq_true,
+      Bool.true_and, Nat.add_sub_cancel, Nat.add_sub_assoc]
     <;> simp +arith only [Bool.xor_assoc, Bool.xor_comm, Bool.xor_left_comm]
 
 theorem linearWord_eq (x : BitVec 64) : linearWord x = permuted x := by

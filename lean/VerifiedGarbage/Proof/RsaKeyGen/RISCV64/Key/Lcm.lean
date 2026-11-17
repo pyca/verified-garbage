@@ -412,7 +412,7 @@ theorem gcdUV_ok [VG.Proof.Rsa.RISCV64.InvLaw] (h : Ws s B Z w nArr) {L : Nat}
   refine WP.mono (sel_ok h4 (o := aS) (a := aV2) (b := aThree) (sl := X1) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) hX1 (by decide) b4) fun t5 ⟨h5, f5, v5, k5⟩ => ?_
   rw [wp_seqs_cons (by simp)]
-  obtain K5 : Keep stRegs s t5 := (((((k0.trans k1).trans k2).trans k3).trans k4).trans k5).mono (by simp)
+  obtain K5 : Keep stRegs s t5 := (((((k0.trans k1).trans k2).trans k3).trans k4).trans k5).mono (by decide)
   obtain hL4 : L / 4 = w := by omega_using [hLw]
   obtain hL : 0 < L := by omega_using [hw, hLw]
   obtain p8 : 4 ≤ 2 ^ (8 * L) := by
@@ -432,7 +432,8 @@ theorem gcdUV_ok [VG.Proof.Rsa.RISCV64.InvLaw] (h : Ws s B Z w nArr) {L : Nat}
     rcases Nat.mod_two_eq_zero_or_one V with e | e <;> simp [e]
   obtain n3 : ∀ j, j < nArr → j ∉ gcdArrs → num t3.mem B w j = num s.mem B w j := fun j hj hn => by
     obtain F : VG.Proof.Rsa.RISCV64.Keys.Frame B w gcdArrs [X0, X1] s.mem t3.mem :=
-      (((f0.mono.trans f1.mono).trans f2.mono).trans f3.mono)
+      ((((f0.mono (by decide) (by decide)).trans (f1.mono (by decide) (by decide))).trans
+        (f2.mono (by decide) (by decide))).trans (f3.mono (by decide) (by decide)))
     exact F.num (j := j) (fun k hk e => hn (e ▸ hk)) (by decide) (fit j hj)
   obtain t3T : num t3.mem B w aTwo = 2 := by rw [n3 aTwo (by decide) (by decide), two]
   rw [t3T, V2] at x4
@@ -445,7 +446,7 @@ theorem gcdUV_ok [VG.Proof.Rsa.RISCV64.InvLaw] (h : Ws s B Z w nArr) {L : Nat}
   obtain m5 : num t5.mem B w aS = if v < 2 then 3 else v := by
     rw [v5, x4, frame_num f4 (fit _ (by decide)), V2, frame_num f4 (fit _ (by decide)),
       n3 aThree (by decide) (by decide), three]
-    by_cases e : v < 2 <;> simp [e]
+    split <;> rfl
   obtain mB : num t5.mem B w aS < 2 ^ (8 * L) := by rw [m5]; split <;> omega_arith
   obtain modd : num t5.mem B w aS % 2 = 1 := by
     rw [m5]; split
@@ -462,9 +463,11 @@ theorem gcdUV_ok [VG.Proof.Rsa.RISCV64.InvLaw] (h : Ws s B Z w nArr) {L : Nat}
   obtain s6 : slot t6.mem B X1 = slot t4.mem B X1 := by rw [f6.slot hX1 (by decide), f5.slot hX1 (by decide)]
   refine WP.mono (sel_ok h6 (o := aG) (a := 1) (b := aOne) (sl := X1) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) hX1 (by decide) (by rw [s6]; exact b4)) fun t ⟨ht, ft, vt, kt⟩ => ?_
-  refine ⟨ht, ?_, ?_, ((K5.trans k6).trans kt).mono (by simp)⟩
-  · exact (((((((f0.mono.trans f1.mono).trans f2.mono).trans f3.mono).trans f4.mono).trans f5.mono).trans
-      f6.mono).trans ft.mono)
+  refine ⟨ht, ?_, ?_, ((K5.trans k6).trans kt).mono (by decide)⟩
+  · exact ((((((((f0.mono (by decide) (by decide)).trans (f1.mono (by decide) (by decide))).trans
+      (f2.mono (by decide) (by decide))).trans (f3.mono (by decide) (by decide))).trans
+      (f4.mono (by decide) (by decide))).trans (f5.mono (by decide) (by decide))).trans
+      (f6.mono (by decide) (by decide))).trans (ft.mono (by decide) (by decide)))
   -- The values.
   obtain m1 : 1 < num t5.mem B w aS := by rw [m5]; split <;> omega_arith
   obtain o6 : num t6.mem B w aOne = 1 := by

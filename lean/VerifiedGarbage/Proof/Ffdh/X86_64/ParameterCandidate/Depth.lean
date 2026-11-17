@@ -28,11 +28,7 @@ private theorem template_depth (mul : Nat → Nat → Nat → Prog isa) (round :
     (codeWith mul round).x86_64Depth ≤ 128 := by
   unfold codeWith VG.Impl.Ffdh.X86_64.ParameterCandidate.code VG.Impl.Ffdh.X86_64.ParameterCandidate.body VG.Impl.Ffdh.X86_64.ParameterCandidate.testCandidate VG.Impl.Ffdh.X86_64.ParameterCandidate.candidateFilter VG.Impl.Ffdh.X86_64.ParameterCandidate.sieveQ VG.Impl.Ffdh.X86_64.ParameterCandidate.sieveP VG.Impl.Ffdh.X86_64.ParameterCandidate.testFirst VG.Impl.Ffdh.X86_64.ParameterCandidate.testQ VG.Impl.Ffdh.X86_64.ParameterCandidate.testP VG.Impl.Ffdh.X86_64.ParameterCandidate.phaseTest VG.Impl.Ffdh.X86_64.ParameterCandidate.modulusPolicy VG.Impl.Ffdh.X86_64.ParameterCandidate.rounds VG.Impl.Ffdh.X86_64.ParameterCandidate.roundBody VG.Impl.Ffdh.X86_64.ParameterCandidate.roundRun VG.Impl.Ffdh.X86_64.ParameterCandidate.witnessRound VG.Impl.Ffdh.X86_64.ParameterCandidate.prepareModulus VG.Impl.Ffdh.X86_64.ParameterCandidate.prepareR2 VG.Impl.Ffdh.X86_64.ParameterCandidate.prepareConstants R2Words.choice R2Words.fast R2Words.old VG.Impl.Bignum.X86_64.Public.R2Squares.run
     VG.Impl.Bignum.X86_64.Public.R2Squares.init VG.Impl.Bignum.X86_64.Public.R2Squares.next
-  repeat' first
-    | rw [depth_seqs]
-    | rw [Code.x86_64Depth]
-    | rw [List.foldr_cons]
-    | rw [List.foldr_nil]
+  simp only [depth_seqs, Code.x86_64Depth, List.foldr_cons, List.foldr_nil]
   simp only [hm, Nat.max_zero, Nat.zero_max, Nat.max_le]
   and_intros
   all_goals first | exact hr | decide +kernel

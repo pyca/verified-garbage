@@ -454,8 +454,7 @@ theorem stageXW_ok {a c : Nat} (h : KS g s0 A [aD, aZero] AW [wR] V (sC4 :: lsN)
     (fun d hd => ⟨mem_of_sub (by decide) hd, rfl⟩), ?_, ?_⟩
   · intro d hd hne
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
-    rcases hd with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp_all [upd, sStg, sC4, sKw, sZf, sZb,
-      sOkDE, sLt, sExact, sOk4]
+    rw [upd_ne _ _ hne, upd_ne _ _ (fun e => by subst e; revert hd; decide)]
   · by_cases hlt : AW wR < 2 ^ (32 * (2 * wq a - c))
     · have z' : z = 1 := by rw [← hz]; simp only [top.mpr hlt, ↓reduceIte]
       subst z'

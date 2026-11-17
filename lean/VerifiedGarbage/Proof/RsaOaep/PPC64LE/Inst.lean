@@ -1195,13 +1195,14 @@ theorem enc_sat (hw : w ∈ vs) (hl : (Proof.MdHashTable.PPC64LE.names vs).lengt
   unfold encSpec
   rw [e304]
   simp only [Impl.RsaOaep.PPC64LE.lens, List.mem_cons, List.not_mem_nil, or_false] at hl'
+  -- The contract is evaluated once, for any `D`: only what is left of it needs the digest's length.
+  sig_pre [Spec.RsaOaep.encryptMdTablesContract, Spec.RsaOaep.encryptMdTablesSig, Spec.RsaOaep.seedLenMdOk,
+    Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi,
+    argRegs, stackArgs_ten, List.append_eq, List.range, List.range.loop]
+  simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
+    List.getD_cons_zero, Option.some.injEq, exists_eq_left', a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, sat_e]
   rcases hl' with rfl | rfl | rfl | rfl | rfl | rfl
   all_goals
-    sig_pre [Spec.RsaOaep.encryptMdTablesContract, Spec.RsaOaep.encryptMdTablesSig, Spec.RsaOaep.seedLenMdOk,
-      Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi,
-      argRegs, stackArgs_ten, List.append_eq, List.range, List.range.loop]
-    simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
-      List.getD_cons_zero, Option.some.injEq, exists_eq_left', a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, sat_e]
     sig_and_intros
     all_goals first
       | exact ⟨Proof.MdHashTable.PPC64LE.tableOf w, List.mem_map_of_mem hw, Proof.MdHashTable.PPC64LE.held_twL _ _ _ rfl⟩

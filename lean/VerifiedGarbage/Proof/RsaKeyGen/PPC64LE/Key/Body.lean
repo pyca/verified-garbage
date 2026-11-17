@@ -203,10 +203,10 @@ theorem primes_ok (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) (one : V aOne = 
   obtain hq := ks.lt (j := aQ0) (by decide)
   obtain vP : V7 aP = if V aP0 < V aQ0 then V aQ0 else V aP0 := by
     simp (disch := decide) only [o7, o6, o5, o4, o3, e2, g1, o1]
-    split <;> simp_all
+    split <;> rfl
   obtain vQ : V7 aQ = if V aP0 < V aQ0 then V aP0 else V aQ0 := by
     simp (disch := decide) only [o7, o6, o5, o4, e3, g1, o2, o1]
-    split <;> simp_all
+    split <;> rfl
   refine ⟨ht, ⟨V7, F6, kt, fun j hj hn => ?_, fun d _ hd => ?_, vP, vQ, ?_, ?_⟩,
     ((((((f1.trans f2).trans f3).trans f4).trans f5).trans f6).trans ft),
     ((((((r1.trans' r2).trans' r3).trans' r4).trans' r5).trans' r6).trans' rt).mono⟩
@@ -688,7 +688,7 @@ theorem dPart_ok [InvLaw] (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) (hw : 10
     rcases Nat.mod_two_eq_zero_or_one (V aE) with a | a
     · have ok' : good (V aL) ∧ Nat.gcd (V aE) (mL (V aL)) = 1 := by
         rcases ok with ⟨a', _⟩ | ⟨_, g1, g2⟩
-        · omega_arith
+        · exact absurd a' (by omega_using [a])
         · exact ⟨g1, g2⟩
       simp only [a, show ¬ (0 = 1) by decide, ↓reduceIte]
       have g := ok'.2
@@ -701,14 +701,14 @@ theorem dPart_ok [InvLaw] (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) (hw : 10
           rcases ok with ⟨_, (⟨_, h⟩ | ⟨b', _⟩)⟩ | ⟨a', _⟩
           · exact h
           · exact absurd b b'
-          · omega_arith
+          · exact absurd a a'
         simp only [b, ↓reduceIte, Nat.one_ne_zero]
         exact inverse_one' hL
       · have ok' : ¬ V aL < 2 ∧ Nat.gcd (V aL % V aE) (V aE) = 1 := by
           rcases ok with ⟨_, (⟨b', _⟩ | ⟨_, hL, g⟩)⟩ | ⟨a', _⟩
           · exact absurd b' b
           · rw [mE_of a b] at g; exact ⟨hL, g⟩
-          · omega_arith
+          · exact absurd a a'
         simp only [b, ↓reduceIte]
         rw [mE_of a b] at xd xl vDo
         rw [vDo]

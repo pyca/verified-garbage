@@ -144,7 +144,9 @@ macro "sat_close" : tactic => `(tactic| first
   | decide
   | rfl
   | exact Region.disjoint_of_sep (by
-      simp only [Region.sep, Bool.and_eq_true, Bool.or_eq_true, decide_eq_true_eq]; bv_omega)
+      simp only [Region.sep, Bool.and_eq_true, Bool.or_eq_true, decide_eq_true_eq, BitVec.reduceSetWidth,
+        BitVec.reduceSub, BitVec.reduceToNat, BitVec.toNat_ofNat]
+      omega_arith)
   | bv_omega)
 
 theorem sat_nil {T : Spec.Ecdsa.Rfc6979.TableInstance} {vs : List HVar} (hO : OK vs)

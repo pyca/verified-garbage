@@ -302,6 +302,11 @@ def eqRegs (rd : Reg) : List Reg := [.s0, .s1, .t2, .t3, .t4, .t5, rd]
 theorem or_xor_zero (x a b : BitVec 64) : (x ||| a ^^^ b) = 0 ↔ x = 0 ∧ a = b := by
   rw [show (0 : BitVec 64) = 0#64 from rfl, BitVec.or_eq_zero_iff, BitVec.xor_eq_zero_iff]
 
+/-- What `eqMask`'s last block writes, for any `rd`: the cases are split here, in no context. -/
+private theorem eqMask_tail_writes (rd : Reg) :
+    writesOnly [.s0, .s1, rd] (.block [.li .s0 0, .sltu .s1 .s0 .t2, .addi rd .s1 (-1)]) = true := by
+  cases rd <;> decide
+
 /-- `eqMask rd j k`: `rd :=` the mask of arrays `j` and `k` being equal in
 their `w` words. -/
 theorem eqMask_ok {s : State} {B : Addr} {Z w j k : Nat} (h : Env s B Z w) (hj : j < 28) (hk : k < 28)
@@ -367,9 +372,10 @@ theorem eqMask_ok {s : State} {B : Addr} {Z w j k : Nat} (h : Env s B Z w) (hj :
         (Keep.write _ _ _)).trans (Keep.write _ _ _)).trans (Keep.write _ _ _)).trans (Keep.write _ _ _)).mono
         (by simp [eqRegs]))
   · refine WP.keep [.s0, .s1, rd] (Q := fun u => u.gpr rd = mask (decide (wordsVal s.mem B (slot w j) w =
-      wordsVal s.mem B (slot w k) w)) ∧ u.mem = t.mem) ?_ (by cases rd <;> simp_all <;> decide) (by rfl)
+      wordsVal s.mem B (slot w k) w)) ∧ u.mem = t.mem) ?_ (eqMask_tail_writes rd) (by rfl)
       |>.mono fun u ⟨⟨q, mu⟩, ku⟩ => ⟨⟨q, by rw [mu, tm]⟩, (tk.trans ku).mono (by simp [eqRegs])⟩
-    obtain hrs0 : rd ≠ .s0 := fun e => hrd (by simp [e])
+    -- `have`: the unused-variable linter does not see `hrd` referenced under `obtain`
+    have hrs0 : rd ≠ .s0 := fun e => hrd (by simp [e])
     obtain hrs1 : rd ≠ .s1 := fun e => hrd (by simp [e])
     brun [exec_li_zero, hrs0.symm, hrs1.symm, gpr_write_self, gpr_write_of_ne _ _ hrs0, gpr_write_of_ne _ _ hrs1]
     obtain hiff : (wordsVal s.mem B (slot w j) w = wordsVal s.mem B (slot w k) w) ↔ t.gpr .t2 = 0 := by

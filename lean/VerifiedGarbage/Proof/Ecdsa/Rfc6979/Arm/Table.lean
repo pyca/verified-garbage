@@ -73,13 +73,35 @@ theorem sha512_len (iv : Spec.Sha512.HashValue) (n : Nat) (hn : n ≤ 64) (x : L
     ((Spec.Sha512.finalHash iv x).take n).length = n := by
   rw [List.length_take, Proof.Hmac.Generic.Common.finalHash_length]; omega_using [hn]
 
+/-- Which of `vars` have a function's name in common: none HMAC's `init` or `finalize`, and
+`update` only SHA-224 with SHA-256 and the four of SHA-512. One evaluation, in which the kernel
+reads each name once. -/
+private theorem vars_names : ∀ (i : Nat) (hi : i < 8) (j : Nat) (hj : j < 8),
+    ((vars[i]'hi).F.hiN = (vars[j]'hj).F.hiN → i = j) ∧
+    ((vars[i]'hi).F.H.updN = (vars[j]'hj).F.H.updN →
+      i = j ∨ (2 ≤ i ∧ i < 4 ∧ 2 ≤ j ∧ j < 4) ∨ (4 ≤ i ∧ 4 ≤ j)) ∧
+    ((vars[i]'hi).F.hfN = (vars[j]'hj).F.hfN → i = j) := by
+  decide +kernel
+
 /-- Every hash function with HMAC on ARMv7 meets `WOk`. -/
 theorem vars_coh : Coh vars := by
   intro w hw w' hw'
-  simp only [vars, List.mem_cons, List.not_mem_nil, or_false] at hw hw'
-  rcases hw with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-    rcases hw' with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-    refine ⟨?_, ?_, ?_⟩ <;> intro h <;> first | rfl | exact absurd h (by decide)
+  obtain ⟨i, hi, rfl⟩ := List.mem_iff_getElem.mp hw
+  obtain ⟨j, hj, rfl⟩ := List.mem_iff_getElem.mp hw'
+  obtain ⟨n₁, n₂, n₃⟩ := vars_names i hi j hj
+  refine ⟨fun h => ?_, fun h => ?_, fun h => ?_⟩
+  · obtain rfl := n₁ h; rfl
+  · rcases n₂ h with rfl | ⟨a, b, c, d⟩ | ⟨a, b⟩
+    · rfl
+    · obtain rfl | rfl : i = 2 ∨ i = 3 := by omega
+      all_goals obtain rfl | rfl : j = 2 ∨ j = 3 := by omega
+      all_goals rfl
+    · have hi' : i < 8 := hi
+      have hj' : j < 8 := hj
+      obtain rfl | rfl | rfl | rfl : i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 := by omega
+      all_goals obtain rfl | rfl | rfl | rfl : j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 := by omega
+      all_goals rfl
+  · obtain rfl := n₃ h; rfl
 
 theorem vars_ok : OK vars := by
   refine ⟨vars_coh, fun w hw => ?_⟩

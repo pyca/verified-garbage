@@ -195,7 +195,8 @@ theorem pRowG_ok {o x Y : Nat} {L LW LS : List Nat} (c : RCfg o x Y L LW) {σ s 
     rw [← hyv, ← val32_lo _ _ _ (show i + 1 ≤ P.w by omega_using [hR, hi]), ← val32_lo _ _ _ (show i ≤ P.w by omega_using [hR, hi]), val32_succ,
       aY]
   obtain pq : (2 : Nat) ^ (32 * i) * 2 ^ (32 * (P.W - i)) = 2 ^ (32 * P.W) := by
-    rw [← Nat.pow_add]; congr 1; omega_using [hR, hi, wl, Wl, eW, nw, fo, fx, fY, Z64, dox, doY, aY]
+    rw [← Nat.pow_add]; refine congrArg (2 ^ ·) ?_
+    omega_using [hR, hi, wl, Wl, eW, nw, fo, fx, fY, Z64, dox, doY, aY]
   obtain eV : num v1.mem P.B P.W o = A (2 * Y) % 2 ^ (32 * (i + 1)) * AW x % 2 ^ (32 * P.W) := by
     change val32 v1.mem (State.addr P.B) (arr P.W o) P.W = _
     rw [Wsplit, hlow, Ylo, ← pq]
