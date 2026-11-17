@@ -9,6 +9,15 @@ meta import VerifiedGarbage.Proof.AesCbc.AArch64.Decrypt.Lit
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Impl.AesCbc.AArch64.Decrypt
 public import VerifiedGarbage.Proof.AesCbc.AArch64.Block
+public import VerifiedGarbage.Impl.Residue.AArch64
+meta import VerifiedGarbage.Impl.Residue.AArch64
+public import VerifiedGarbage.TCB.AArch64.Residue
+meta import VerifiedGarbage.TCB.AArch64.Residue
+import VerifiedGarbage.Proof.Framework.AArch64.Clears
+import VerifiedGarbage.Proof.Framework.AArch64.ResidueTaint
+meta import VerifiedGarbage.Proof.Framework.AArch64.ResidueTaint
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 /-! # The existing CBC contract, ABI, constant time, and scratch-write bound -/
 
@@ -102,5 +111,40 @@ theorem writtenAes (s : State) (tr : List Leak) (t : State)
   rcases hr with rfl | rfl
   · exact fun hi => h.iv_scr _ hi hc
   · exact fun hi => h.data_scr _ hi hc
+
+/-! ## Returning without secret residue
+
+The decryptions leave blocks in `v0`–`v6` and the round keys in
+`v16`–`v31`: `vg_aes_cbc_decrypt_aes` and `vg_aes_cbc_decrypt_aes_sha3`
+clear them before they return. -/
+
+/-- The vector registers the decryptions leave secrets in. -/
+def left : List VReg :=
+  [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24,
+   .v25, .v26, .v27, .v28, .v29, .v30, .v31]
+
+/-- `code`, then `left` cleared. -/
+abbrev codeC : Prog isa := Impl.Residue.AArch64.withClears [] left none code
+
+/-- `codeAes`, then `left` cleared. -/
+abbrev codeAesC : Prog isa := Impl.Residue.AArch64.withClears [] left none codeAes
+
+theorem codeC_noResidue (k : Contract isa) : NoResidue codeC k 0 :=
+  RTaint.noResidue_of_check ⟨_, by taint_decide⟩ k
+
+theorem codeAesC_noResidue (k : Contract isa) : NoResidue codeAesC k 0 :=
+  RTaint.noResidue_of_check ⟨_, by taint_decide⟩ k
+
+theorem writtenC (s : State) (tr : List Leak) (t : State)
+    (hp : (Proof.AesCbc.decryptRoundsContract AArch64.abi).pre s) (he : Exec isa codeC s tr t) :
+    Sig.writtenWithin (AArch64.abi.withConsts []) Spec.Cbc.aesSig [("scratch",0)] s t := by
+  obtain ⟨_, _, he', hm⟩ := Clears.exec_withClears (by decide) he
+  exact Clears.writtenWithin_congr (fun _ => rfl) hm (written s _ _ hp he')
+
+theorem writtenAesC (s : State) (tr : List Leak) (t : State)
+    (hp : (Proof.AesCbc.decryptRoundsContract AArch64.abi).pre s) (he : Exec isa codeAesC s tr t) :
+    Sig.writtenWithin (AArch64.abi.withConsts []) Spec.Cbc.aesSig [("scratch",0)] s t := by
+  obtain ⟨_, _, he', hm⟩ := Clears.exec_withClears (by decide) he
+  exact Clears.writtenWithin_congr (fun _ => rfl) hm (writtenAes s _ _ hp he')
 
 end VG.Proof.AesCbc.AArch64.Decrypt

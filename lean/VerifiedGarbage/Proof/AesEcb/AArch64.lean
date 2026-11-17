@@ -6,13 +6,15 @@ public import VerifiedGarbage.Proof.Framework.AArch64.CallWipe
 public import VerifiedGarbage.Proof.Zeroize.AArch64Wide
 import VerifiedGarbage.Proof.Framework.AArch64.Depth
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Framework.AArch64.Clears
 
 /-!
 # AES-ECB on AArch64
 
 For each implementation of the blocks functions (`BlocksImpl`): where it
 writes nothing in `scratch` (`BlocksImpl.free`), `vg_aes_ecb_encrypt` and
-`vg_aes_ecb_decrypt` are its code (`encrypt_free`, `decrypt_free`);
+`vg_aes_ecb_decrypt` are its code (`encrypt_free`, `decrypt_free`), with the
+vector registers it leaves cleared (`BlocksImpl.ecbClear`);
 otherwise a call of it by `callWipe`, which then zeroes the whole of
 `scratch` with `vg_zeroize` (`encrypt_verified`, `decrypt_verified`).
 Which is emitted for each (`encryptRegs`, `decryptRegs`): the first where it
@@ -94,8 +96,9 @@ otherwise. -/
 def encryptRegs (v : BlocksImpl) : List (Registration Spec.AesEcb.encryptApi target) :=
   if h : v.free = true then [{
     suffix := v.suffix
-    code := v.enc.code
-    verified := encrypt_free v h }]
+    code := Impl.Residue.AArch64.withClears [] v.ecbClear none v.enc.code
+    verified := Clears.Verified.withClears (encrypt_free v h) v.ecbClearOk
+    residue := v.encRes.map fun r => ⟨r.down _⟩ }]
   else [{
     suffix := v.suffix
     code := encrypt v
@@ -108,8 +111,9 @@ otherwise. -/
 def decryptRegs (v : BlocksImpl) : List (Registration Spec.AesEcb.decryptApi target) :=
   if h : v.free = true then [{
     suffix := v.suffix
-    code := v.dec.code
-    verified := decrypt_free v h }]
+    code := Impl.Residue.AArch64.withClears [] v.ecbClear none v.dec.code
+    verified := Clears.Verified.withClears (decrypt_free v h) v.ecbClearOk
+    residue := v.decRes.map fun r => ⟨r.down _⟩ }]
   else [{
     suffix := v.suffix
     code := decrypt v

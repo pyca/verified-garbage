@@ -9,6 +9,10 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
 public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Impl.Residue.AArch64
+public import VerifiedGarbage.TCB.AArch64.Residue
+import VerifiedGarbage.Proof.Framework.AArch64.ResidueTaint
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Aes.AArch64.Aese.Ctr32
 meta import VerifiedGarbage.Proof.Aes.AArch64.Aese.Dec
@@ -18,6 +22,10 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
 meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Impl.Residue.AArch64
+meta import VerifiedGarbage.TCB.AArch64.Residue
+meta import VerifiedGarbage.Proof.Framework.AArch64.ResidueTaint
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
@@ -618,5 +626,26 @@ theorem decryptBlocks_written (s : State) (t : List Leak) (s' : State)
   simp [Sig.writtenWithin, AArch64.abi, AArch64.argRegs, Abi.withConsts, Spec.Aes.blocksSig,
     Sig.words, Sig.arrays, Param.words, ArgWord.bits]
   exact fun i h => blocks_scratch decFn (fun _ hp => decSetup_ok hp) hp he (by simpa [Elem.size] using h)
+
+/-! ## Returning without secret residue
+
+`encryptBlocks` and `decryptBlocks` leave the blocks in `v0`–`v7` and the
+round keys in `v16`–`v30`. The functions that callers call by name keep them
+(a caller that calls them for each block clears once, at its own end), and
+`vg_aes_ecb_encrypt` and `vg_aes_ecb_decrypt`, which are their code, clear
+them before they return (`AesEcb.AArch64.encryptRegs`). -/
+
+/-- The vector registers `encryptBlocks` and `decryptBlocks` leave secrets in. -/
+def blocksLeft : List VReg :=
+  [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23,
+   .v24, .v25, .v26, .v27, .v28, .v29, .v30]
+
+theorem encryptBlocks_noResidue (k : Contract isa) :
+    NoResidue (Impl.Residue.AArch64.withClears [] blocksLeft none encryptBlocks) k 0 :=
+  RTaint.noResidue_of_check ⟨_, by taint_decide⟩ k
+
+theorem decryptBlocks_noResidue (k : Contract isa) :
+    NoResidue (Impl.Residue.AArch64.withClears [] blocksLeft none decryptBlocks) k 0 :=
+  RTaint.noResidue_of_check ⟨_, by taint_decide⟩ k
 
 end VG.Proof.Aes.AArch64.Aese

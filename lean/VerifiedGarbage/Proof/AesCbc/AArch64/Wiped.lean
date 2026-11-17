@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.Framework.AArch64.CallWipe
 public import VerifiedGarbage.Proof.Zeroize.AArch64Wide
 import VerifiedGarbage.Proof.AesEcb.AArch64
 import VerifiedGarbage.Proof.Framework.AArch64.Depth
+import VerifiedGarbage.Proof.Framework.AArch64.Clears
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
@@ -139,6 +140,18 @@ theorem decryptAes_scrubbed :
       (Spec.Cbc.aesSig.contract abi (pre 64) (scrubbedPost 64 (decPost 64)) false 0 none) :=
   Verified.cbc_of_unwritten (Proof.AesCbc.decrypt_keyed Proof.AesCbc.AArch64.Decrypt.verifiedAes)
     Proof.AesCbc.AArch64.Decrypt.writtenAes args_length
+
+/-- `decryptSha3_scrubbed`, with the vector registers it leaves cleared. -/
+theorem decryptSha3C_scrubbed :
+    Verified target Proof.AesCbc.AArch64.Decrypt.codeC
+      (Spec.Cbc.aesSig.contract abi (pre 64) (scrubbedPost 64 (decPost 64)) false 0 none) :=
+  Clears.Verified.withClears decryptSha3_scrubbed (by decide)
+
+/-- `decryptAes_scrubbed`, with the vector registers it leaves cleared. -/
+theorem decryptAesC_scrubbed :
+    Verified target Proof.AesCbc.AArch64.Decrypt.codeAesC
+      (Spec.Cbc.aesSig.contract abi (pre 64) (scrubbedPost 64 (decPost 64)) false 0 none) :=
+  Clears.Verified.withClears decryptAes_scrubbed (by decide)
 
 /-- `vg_aes_cbc_decrypt_neon`: the decryption in AdvSIMD registers, wiping
 `scratch`. -/

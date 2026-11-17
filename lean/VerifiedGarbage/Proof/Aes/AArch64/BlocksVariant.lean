@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Aes.AArch64.Variant
 public import VerifiedGarbage.Proof.Aes.AArch64.Aese.Blocks
 public import VerifiedGarbage.Proof.Aes.AArch64.OneBlock
+public import VerifiedGarbage.Proof.Framework.AArch64.Clears
 import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
@@ -73,6 +74,18 @@ structure BlocksImpl where
     ∃ t s', Exec isa expand.code s t s' ∧ abiPreserved s s' ∧ Proof.Aes.expandKeyAArch64.post s s'
   expandCt : ConstantTime isa Proof.Aes.expandKeyAArch64.pre Proof.Aes.expandKeyAArch64.pub expand.code
   expandKeepsV : expand.code.allInstrs AArch64.keepsV = true
+  /-- The vector registers `vg_aes_ecb_encrypt` and `vg_aes_ecb_decrypt`,
+  whose code is `enc`'s and `dec`'s where they write nothing in `scratch`,
+  clear before they return (`Impl.Residue.AArch64.withClears`), and, where the
+  residue analysis checks it, that they then return without secret residue.
+  `enc` and `dec` themselves, which callers call by name for as little as a
+  block, keep what they leave. -/
+  ecbClear : List VReg := []
+  ecbClearOk : (Impl.Residue.AArch64.clears [] ecbClear none).all Clears.clearOk = true := by decide
+  encRes : Option (PLift (∀ k, NoResidue (Impl.Residue.AArch64.withClears [] ecbClear none enc.code) k 0)) :=
+    none
+  decRes : Option (PLift (∀ k, NoResidue (Impl.Residue.AArch64.withClears [] ecbClear none dec.code) k 0)) :=
+    none
 
 namespace BlocksImpl
 
@@ -125,6 +138,9 @@ def aese : BlocksImpl where
   expandOk := Ctr32Impl.aese.expandOk
   expandCt := Ctr32Impl.aese.expandCt
   expandKeepsV := Ctr32Impl.aese.expandKeepsV
+  ecbClear := Aese.blocksLeft
+  encRes := some ⟨Aese.encryptBlocks_noResidue⟩
+  decRes := some ⟨Aese.decryptBlocks_noResidue⟩
 
 end BlocksImpl
 

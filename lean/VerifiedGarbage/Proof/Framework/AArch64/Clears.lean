@@ -171,4 +171,33 @@ theorem Verified.withClears {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Me
     Verified target (.seq c (.block cl)) (sig.contract abi pre post wa stack leak) :=
   Verified.withClears_of h (fun hq hm hx => post_congr hq hm hx) hcl
 
+/-- A run of code followed by a block of clears is a run of the code, after
+which the clears leave the memory as it was. -/
+theorem exec_withClears {c : Prog isa} {cl : List Instr} (hcl : cl.all clearOk = true)
+    {s s'' : State} {t : List Leak} (he : Exec isa (.seq c (.block cl)) s t s'') :
+    ∃ t' s', Exec isa c s t' s' ∧ s''.mem = s'.mem := by
+  cases he with
+  | seq a b =>
+    cases b with
+    | block hb =>
+      obtain ⟨u, hu, hk⟩ := execBlock_clearOk cl hcl _
+      rw [hu] at hb
+      cases hb
+      exact ⟨_, _, a, hk.1⟩
+
+/-- What a function writes within its buffers depends only on the memory it
+leaves. -/
+theorem writtenWithin_congr {A : Abi isa} {sig : Sig} {w : List (String × Nat)} {s s' s'' : State}
+    (hA : ∀ u, A.mem u = u.mem) (hm : s''.mem = s'.mem) (h : Sig.writtenWithin A sig w s s') :
+    Sig.writtenWithin A sig w s s'' := by
+  revert h
+  unfold Sig.writtenWithin
+  split
+  · exact id
+  · split
+    · exact id
+    · intro h x hx b hb he i h₁ h₂
+      rw [hA, hm, ← hA]
+      exact h x hx b hb he i h₁ h₂
+
 end VG.AArch64.Clears
