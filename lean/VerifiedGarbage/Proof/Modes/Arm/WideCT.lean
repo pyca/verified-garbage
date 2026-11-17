@@ -83,11 +83,16 @@ theorem relCT_nil {P : State → State → Prop} : RelCT isa P (.block []) P := 
 
 /-- Two runs of a frame that reserves stack leak the same trace if the runs
 of its body do, and end as the frame's end leaves what the body's runs end
-in. -/
+in, whatever memory (differing from the body's only in the released frame)
+and unknowns the release leaves. -/
 theorem RelCT.allocFrameQ {bytes : Nat} {body : Prog isa} {P Q : State → State → Prop}
     (hb : RelCT isa (fun a b => ∃ s₁ s₂, P s₁ s₂ ∧ a = allocated bytes s₁ ∧ b = allocated bytes s₂) body Q) :
     RelCT isa P (.frame (.alloc bytes) body (.free bytes))
-      fun a b => ∃ t₁ t₂, Q t₁ t₂ ∧ a = freed bytes t₁ ∧ b = freed bytes t₂ := by
+      fun a b => ∃ t₁ t₂, Q t₁ t₂ ∧
+        (Frame [⟨State.addr t₁.sp, bytes⟩] t₁.mem a.mem ∧
+          a = { freed bytes t₁ with mem := a.mem, unknowns := a.unknowns }) ∧
+        (Frame [⟨State.addr t₂.sp, bytes⟩] t₂.mem b.mem ∧
+          b = { freed bytes t₂ with mem := b.mem, unknowns := b.unknowns }) := by
   intro s₁ s₂ t₁ t₂ s₁' s₂' hp e₁ e₂
   cases e₁ with
   | frame p₁ b₁ q₁ =>
@@ -98,11 +103,13 @@ theorem RelCT.allocFrameQ {bytes : Nat} {body : Prog isa} {P Q : State → State
         simp only [isa, push] at h
         split at h <;> [cases h; cases h]
         rfl
-      have ef : ∀ {a t s' : State}, isa.pop (.free bytes) a t = some s' → s' = freed bytes t := by
+      have ef : ∀ {a t s' : State}, isa.pop (.free bytes) a t = some s' →
+          Frame [⟨State.addr t.sp, bytes⟩] t.mem s'.mem ∧
+            s' = { freed bytes t with mem := s'.mem, unknowns := s'.unknowns } := by
         intro a t s' h
         simp only [isa, pop] at h
         split at h <;> [cases h; cases h]
-        rfl
+        exact ⟨Frame.refl _ _, rfl⟩
       obtain ⟨ht, hq⟩ := hb _ _ _ _ _ _ ⟨s₁, s₂, hp, ea p₁, ea p₂⟩ b₁ b₂
       refine ⟨?_, _, _, hq, ef q₁, ef q₂⟩
       rw [ht]
@@ -346,7 +353,15 @@ theorem wide_ct (h0 : c.stackScratch = 0) (hp : UPre c S M s₀) (hp' : UPre c S
   have eW := pub_Wp (wb := wb) hq
   unfold Core.wide
   refine (RelCT.allocFrameQ (Q := WRel wb c S M s₀ s₀') ?_).mono (fun _ _ h => h)
-    fun a b ⟨t₁, t₂, ⟨k, hk, h₁, h₂⟩, e₁, e₂⟩ => ⟨k, hk, by rw [e₁]; exact h₁.inv, by rw [e₂]; exact h₂.inv⟩
+    fun a b ⟨t₁, t₂, ⟨k, hk, h₁, h₂⟩, ⟨f₁, e₁⟩, ⟨f₂, e₂⟩⟩ => by
+      rw [h₁.sp] at f₁
+      rw [h₂.sp] at f₂
+      have i₁ : WInv wb c S M s₀ k { t₁ with mem := a.mem, unknowns := a.unknowns } :=
+        h₁.congr hp hd (fun _ _ => rfl) rfl rfl rfl f₁
+      have i₂ : WInv wb c S M s₀' k { t₂ with mem := b.mem, unknowns := b.unknowns } :=
+        h₂.congr hp' hd (fun _ _ => rfl) rfl rfl rfl f₂
+      exact ⟨k, hk, by rw [e₁]; exact i₁.inv.congr rfl rfl rfl rfl rfl,
+        by rw [e₂]; exact i₂.inv.congr rfl rfl rfl rfl rfl⟩
   refine RelCT.seq (R := WRel wb c S M s₀ s₀')
     ((wlevels_ct h0 hp hp' hq hd (Nat.le_of_lt hwb.2.1) hl hT.levels).mono
       (fun a b ⟨s₁, s₂, ⟨k, hk, h₁, h₂⟩, e₁, e₂⟩ => ⟨k, hk, by rw [e₁]; exact h₁.toW, by rw [e₂]; exact h₂.toW⟩)
