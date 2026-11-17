@@ -251,7 +251,7 @@ theorem finalizeDigest_of {code : Prog isa} {o : List Instr} {D : Nat} {iv : Spe
   rcases hD with rfl | rfl | rfl <;>
   exact AArch64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 86) (stack := 16) (bytes := 688)
     h (by decide) (by decide)
-    (fun vs m m₁ m₂ r hl _ => Proof.Sha512.finalizeDigestPostOut_local _ _ _ _ (by decide) vs m m₁ m₂ r hl)
+    (fun vs m m₁ m₂ r hl _ => Proof.Sha512.finalizeDigestPostOut_local _ _ _ _ vs m m₁ m₂ r hl)
     (AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 end VG.Proof.Sha512.AArch64.Shared
