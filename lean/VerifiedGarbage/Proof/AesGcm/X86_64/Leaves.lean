@@ -37,6 +37,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
 
 /-!
 # AES-GCM on x86-64: what the VAES functions leave in their working space
@@ -223,6 +224,22 @@ theorem seal_vaes_leaves :
 section
 open VG.Impl.StackScratch.X86_64 (withStackArgScratch)
 
+/-- The state `pre_narrowFirstArray` gives: the key context narrowed to its
+first 32 words. -/
+abbrev narrow32 (s : State) : State := s.withRegions (narrowHead (32 * 8) s.rd) s.wr
+
+/-- The state `pre_narrowFirstArray` gives on 16 prepared powers: the key
+context narrowed to its first 128 words. -/
+abbrev narrow128 (s : State) : State := s.withRegions (narrowHead (128 * 8) s.rd) s.wr
+
+/-- What `L₁` and `L₂` say alike they say alike through the same release. -/
+theorem loseL_getD_congr {B : Addr} {n : Nat} {U : Nat → BitVec 64} {L₁ L₂ : Addr → Option (BitVec 8)}
+    {o₁ o₂ : BitVec 8} {x : Addr} (h : (L₁ x).getD o₁ = (L₂ x).getD o₂) :
+    (loseL B n U L₁ x).getD o₁ = (loseL B n U L₂ x).getD o₂ := by
+  rcases loseL_cases B n U x with hc | ⟨w, hc⟩
+  · rw [hc, hc]; exact h
+  · rw [hc, hc]; rfl
+
 /-- A run of code verified against `k` from `s`, where `k` holds of `s` with
 fewer regions permitted, ends in the memory of a run from that state. -/
 theorem exec_narrow {c : Prog isa} {k : Contract isa} (hv : Verified X86_64.target c k) {s : State}
@@ -255,14 +272,15 @@ theorem framed_leavesQ {sig : Sig} {nm : String} {e : Elem} {n bytes stack : Nat
     {s : State} (hs : (sig.contract abi pre post wa (stack + bytes) leak).pre s) {t : List Leak} {u : State}
     (he : Exec isa (withStackArgScratch bytes (nStack sig) c) s t u) :
     ∀ x, Q (narrowS sig e n bytes s) x →
-      u.mem x = (L (narrowS sig e n bytes s) x).getD ((narrowS sig e n bytes s).mem x) := by
+      u.mem x = (loseL (s.gpr .rsp - BitVec.ofNat 64 bytes) bytes (innerU c (narrowS sig e n bytes s))
+        (L (narrowS sig e n bytes s)) x).getD ((narrowS sig e n bytes s).mem x) := by
   have hn := narrowS_pre (nm := nm) hk hb.1 hb.2.1 (fun vs m₁ m₂ hl hb _ => hpre vs m₁ m₂ hl hb) hs
   obtain ⟨t₃, s₃, he₃, ha, -⟩ := hv.1 _ hn
   obtain ⟨hex, -, hm, -⟩ := withStackArgScratch_runMem hk hb hst (SpSafe.of_all hsp) hd hs he₃ ha
   obtain ⟨-, rfl⟩ := Exec.det he hex
   intro x hx
-  rw [hm]
-  exact hl _ _ _ (hP _ hn) he₃ x hx
+  rw [hm, innerU_eq he₃]
+  exact lose_loseL _ _ _ (hl _ _ _ (hP _ hn) he₃ x hx)
 
 /-- The stack arguments of `vg_aes_gcm_seal`'s code in the frame of
 `withStackArgScratch 2600 3` from `s`: those of `s`, then `work`. -/
@@ -316,7 +334,9 @@ theorem sealP16_branch :
         Exec isa (withStackArgScratch 2600 3 (variant.impl.sealCodeP (variant.impl.withBlk (blkR16 variant))))
           s t u →
         ∀ x, (⟨s.gpr .rsp - BitVec.ofNat 64 2600 + BitVec.ofNat 64 40 + BitVec.ofNat 64 96, 2464⟩ : Region).Contains x 1 →
-          u.mem x = (sealL Lb s.gpr (sealArgs s) x).getD (s.mem x) := by
+          u.mem x = (loseL (s.gpr .rsp - BitVec.ofNat 64 2600) 2600
+            (innerU (Impl.AesGcm.X86_64.«seal» (variant.impl.withBlk (blkR16 variant))) (narrowS Proof.Gcm.sealPrecomputedSig .u64 320 2600 (narrow128 s)))
+            (sealL Lb s.gpr (sealArgs s)) x).getD (s.mem x) := by
   have hc : variant.impl.sealCodeP (variant.impl.withBlk (blkR16 variant)) =
       Impl.AesGcm.X86_64.«seal» (variant.impl.withBlk (blkR16 variant)) := by
     have hs : variant.impl.short = false := rfl
@@ -342,7 +362,7 @@ theorem sealP16_branch :
     (sealPrepared16_verified variant.impl (blkR16 variant)) (fun s h => sealPrepared16_implies.pre s h) hL
     (by decide) (by decide) (by decide) (sealM_spSafe _ _) (sealM_xdepth _ _)
     (Proof.AesGcm.sealPrepared16Pre_local _) h₂ he₁ x hx']
-  exact hv
+  exact loseL_getD_congr hv
 
 /-- The code of `vg_aes_gcm_seal` of the variant `v` for the key context of
 `vg_aes_gcm_init`, in the frame of `withStackArgScratch 2600 3`, from a state
@@ -359,7 +379,9 @@ theorem seal_branchOf (v : GcmVariant) (hc : v.impl.sealCode v.impl.callees = Im
     ∀ s t u, (Spec.Gcm.sealPreparedContract X86_64.abi 2624).pre s → C s.mem (s.gpr .rdi) →
       Exec isa (withStackArgScratch 2600 3 (v.impl.sealCode v.impl.callees)) s t u →
       ∀ x, (⟨s.gpr .rsp - BitVec.ofNat 64 2600 + BitVec.ofNat 64 40 + BitVec.ofNat 64 96, 2464⟩ : Region).Contains x 1 →
-        u.mem x = (sealL Lb s.gpr (sealArgs s) x).getD (s.mem x) := by
+        u.mem x = (loseL (s.gpr .rsp - BitVec.ofNat 64 2600) 2600
+            (innerU (Impl.AesGcm.X86_64.«seal» v.impl.callees) (narrowS Spec.Gcm.sealSig .u64 320 2600 (narrow32 s)))
+            (sealL Lb s.gpr (sealArgs s)) x).getD (s.mem x) := by
   rw [hc] at hL
   intro s t u hs hf he x hx
   rw [hc] at he
@@ -378,7 +400,7 @@ theorem seal_branchOf (v : GcmVariant) (hc : v.impl.sealCode v.impl.callees = Im
     (seal_verified v.impl) (fun s h => ⟨sealCode_implies.pre s h, trivial⟩) hL
     (by decide) (by decide) (by decide) (seal_spSafe _) (seal_xdepth _)
     (sealPre_local _) h₂ he₁ x hx']
-  exact hv
+  exact loseL_getD_congr hv
 
 open VG.Proof.Variants.AesGcm.X86_64.VaesVpclmul (variant) in
 /-- `vg_aes_gcm_seal_prepared_vaes_vpclmul` on a key context without 16
@@ -390,7 +412,9 @@ theorem seal_branch :
       ∀ s t u, (Spec.Gcm.sealPreparedContract X86_64.abi 2624).pre s → ¬ 16 ≤ flagCount s →
         Exec isa (withStackArgScratch 2600 3 (variant.impl.sealCode variant.impl.callees)) s t u →
         ∀ x, (⟨s.gpr .rsp - BitVec.ofNat 64 2600 + BitVec.ofNat 64 40 + BitVec.ofNat 64 96, 2464⟩ : Region).Contains x 1 →
-          u.mem x = (sealL Lb s.gpr (sealArgs s) x).getD (s.mem x) := by
+          u.mem x = (loseL (s.gpr .rsp - BitVec.ofNat 64 2600) 2600
+            (innerU (Impl.AesGcm.X86_64.«seal» variant.impl.callees) (narrowS Spec.Gcm.sealSig .u64 320 2600 (narrow32 s)))
+            (sealL Lb s.gpr (sealArgs s)) x).getD (s.mem x) := by
   have hc : variant.impl.sealCode variant.impl.callees = Impl.AesGcm.X86_64.«seal» variant.impl.callees := by
     have hs : variant.impl.short = false := rfl
     have hf : variant.impl.fin = false := rfl
@@ -399,18 +423,99 @@ theorem seal_branch :
   obtain ⟨Lb, hL⟩ := seal_vaes_leaves
   exact ⟨Lb, seal_branchOf variant hc hL (C := fun m ctx => ¬ 16 ≤ (m.readW (ctx + 1024) 64).toNat)⟩
 
+open VG.Proof.Variants.AesGcm.X86_64.VaesVpclmul (variant) in
+/-- The unknowns `vg_aes_gcm_seal`'s code on 16 prepared powers ends with in
+its frame: the same in two runs. -/
+theorem sealP16_innerU {s₁ s₂ : State} (h₁ : (Spec.Gcm.sealPreparedContract X86_64.abi 2624).pre s₁)
+    (h₂ : (Spec.Gcm.sealPreparedContract X86_64.abi 2624).pre s₂) (hf₁ : 16 ≤ flagCount s₁)
+    (hf₂ : 16 ≤ flagCount s₂) (hp : (Spec.Gcm.sealPreparedContract X86_64.abi 2624).pub s₁ s₂)
+    (hu : s₁.unknowns = s₂.unknowns)
+    (hsy : ∀ n ∈ UpperLock.inames (Impl.AesGcm.X86_64.«seal» (variant.impl.withBlk (blkR16 variant))),
+      s₁.syms n = s₂.syms n) :
+    innerU (Impl.AesGcm.X86_64.«seal» (variant.impl.withBlk (blkR16 variant)))
+        (narrowS Proof.Gcm.sealPrecomputedSig .u64 320 2600 (narrow128 s₁)) =
+      innerU (Impl.AesGcm.X86_64.«seal» (variant.impl.withBlk (blkR16 variant)))
+        (narrowS Proof.Gcm.sealPrecomputedSig .u64 320 2600 (narrow128 s₂)) := by
+  unfold Spec.Gcm.sealPreparedContract at h₁ h₂ hp
+  have q (s : State) (hs : (Spec.Gcm.sealPreparedSig.contract abi (Spec.Gcm.sealPreparedPre abi.ptrBits)
+      (Spec.Gcm.sealPost abi.ptrBits) true 2624 (some (Spec.Gcm.sealPreparedLeak abi.ptrBits))).pre s)
+      (hf : 16 ≤ flagCount s) := pre_narrowFirstArray (n := 128) (n' := 129) (by decide)
+    (pre := Proof.Gcm.sealPrepared16Pre 64) (fun _ _ _ _ _ _ _ _ _ _ h => h)
+    (pre_of_rel (N := 129) (C := fun m ctx => 16 ≤ (m.readW (ctx + 1024) 64).toNat) (leakB := none)
+      (pre := Spec.Gcm.sealPreparedPre 64) (pre' := Proof.Gcm.sealPrepared16Pre 64)
+      (fun _ _ _ _ _ _ _ _ _ _ h hf => ⟨h.1, h.2.1 hf⟩) hs hf)
+  obtain ⟨⟨hs, -⟩, hpubs, hdescs⟩ := (pubL_args (sig := Spec.Gcm.sealPreparedSig) (by decide)).mp hp
+  exact framed_innerU_agree (sig := Proof.Gcm.sealPrecomputedSig) (nm := "work") (e := .u64) (n := 320)
+    (stack := 24) (bytes := 2600) (pre := Proof.Gcm.sealPrepared16Pre X86_64.abi.ptrBits)
+    (post := Proof.AesGcm.sealRoundsPost X86_64.abi.ptrBits) (wa := true) (leak := none)
+    (sealPrepared16_verified variant.impl (blkR16 variant)) (by decide) (by decide) (by decide)
+    (Proof.AesGcm.sealPrepared16Pre_local _) (q s₁ h₁ hf₁) (q s₂ h₂ hf₂)
+    ((pubL_args (sig := Proof.Gcm.sealPrecomputedSig) (by decide)).mpr ⟨⟨hs, trivial⟩, hpubs,
+      fun r hr i hi => hdescs r (by
+        rw [show Spec.Gcm.sealPreparedSig.params = ("ctx", .array false .u64 129) ::
+          Proof.Gcm.sealPrecomputedSig.params.tail from rfl, descs_array .u64 128 129]
+        exact hr) i hi⟩) hu hsy
+
+/-- The unknowns `vg_aes_gcm_seal`'s code of `v` ends with in its frame: the
+same in two runs. -/
+theorem seal32_innerU (v : GcmVariant) {C : Mem → Addr → Prop} {s₁ s₂ : State}
+    (h₁ : (Spec.Gcm.sealPreparedContract X86_64.abi 2624).pre s₁)
+    (h₂ : (Spec.Gcm.sealPreparedContract X86_64.abi 2624).pre s₂) (hf₁ : C s₁.mem (s₁.gpr .rdi))
+    (hf₂ : C s₂.mem (s₂.gpr .rdi)) (hp : (Spec.Gcm.sealPreparedContract X86_64.abi 2624).pub s₁ s₂)
+    (hu : s₁.unknowns = s₂.unknowns)
+    (hsy : ∀ n ∈ UpperLock.inames (Impl.AesGcm.X86_64.«seal» v.impl.callees), s₁.syms n = s₂.syms n) :
+    innerU (Impl.AesGcm.X86_64.«seal» v.impl.callees) (narrowS Spec.Gcm.sealSig .u64 320 2600 (narrow32 s₁)) =
+      innerU (Impl.AesGcm.X86_64.«seal» v.impl.callees) (narrowS Spec.Gcm.sealSig .u64 320 2600 (narrow32 s₂)) := by
+  unfold Spec.Gcm.sealPreparedContract at h₁ h₂ hp
+  have q (s : State) (hs : (Spec.Gcm.sealPreparedSig.contract abi (Spec.Gcm.sealPreparedPre abi.ptrBits)
+      (Spec.Gcm.sealPost abi.ptrBits) true 2624 (some (Spec.Gcm.sealPreparedLeak abi.ptrBits))).pre s)
+      (hf : C s.mem (s.gpr .rdi)) := pre_narrowFirstArray (n := 32) (n' := 129) (by decide)
+    (pre := Spec.Gcm.sealPre 64) (fun _ _ _ _ _ _ _ _ _ _ h => h)
+    (pre_of_rel (N := 129) (C := C) (leakB := none)
+      (pre := Spec.Gcm.sealPreparedPre 64) (pre' := Spec.Gcm.sealPre 64)
+      (fun _ _ _ _ _ _ _ _ _ _ h _ => h.1) hs hf)
+  obtain ⟨⟨hs, -⟩, hpubs, hdescs⟩ := (pubL_args (sig := Spec.Gcm.sealPreparedSig) (by decide)).mp hp
+  exact framed_innerU_agree (sig := Spec.Gcm.sealSig) (nm := "work") (e := .u64) (n := 320)
+    (stack := 24) (bytes := 2600) (pre := Spec.Gcm.sealPre X86_64.abi.ptrBits)
+    (post := Proof.AesGcm.sealRoundsPost X86_64.abi.ptrBits) (wa := true) (leak := none)
+    (seal_verified v.impl) (by decide) (by decide) (by decide)
+    (sealPre_local _) (q s₁ h₁ hf₁) (q s₂ h₂ hf₂)
+    ((pubL_args (sig := Spec.Gcm.sealSig) (by decide)).mpr ⟨⟨hs, trivial⟩, hpubs,
+      fun r hr i hi => hdescs r (by
+        rw [show Spec.Gcm.sealPreparedSig.params = ("ctx", .array false .u64 129) ::
+          Spec.Gcm.sealSig.params.tail from rfl, descs_array .u64 32 129]
+        exact hr) i hi⟩) hu hsy
+
 /-! ## `vg_aes_gcm_seal_prepared_vaes_vpclmul` without secret residue -/
 
 open VG.X86_64.Scrub VG.Impl.Scrub.X86_64
+
+/-- The state after the test of `onFlag t`, from `s`. -/
+def afterFlag (t : Nat) (s : State) : State :=
+  match execBlock isa (Impl.Gcm.X86_64.Flag.testFlag t) s with
+  | some p => p.1
+  | none => s
+
+/-- The state after the test is `s` but for `rax` and the flags, with its
+unknowns and the addresses of its statics. -/
+theorem afterFlag_facts {t : Nat} (htv : t = 16 ∨ t = 48) {s : State}
+    (hin : InRegions (s.rd ++ s.wr) (s.gpr .rdi + 1024) 8) :
+    Same s (afterFlag t s) ∧ (afterFlag t s).unknowns = s.unknowns ∧ (afterFlag t s).syms = s.syms := by
+  obtain ⟨s₀, e₀, hS, -⟩ := testFlag_run htv s hin
+  have hA : afterFlag t s = s₀ := by unfold afterFlag; rw [e₀]
+  rw [hA]
+  exact ⟨hS, execBlock_keep (M := isa) (fun s : State => s.unknowns) (ok := fun _ => True)
+    (fun _ he => RTaint.exec_unknowns he) (fun _ _ => trivial) e₀, execBlock_syms e₀⟩
 
 /-- `onFlag t c₁ c₂` from `s` runs `c₁` from the state after the test if the
 count is at least `t`, and `c₂` if not. -/
 theorem onFlag_inv {t : Nat} (htv : t = 16 ∨ t = 48) {c₁ c₂ : Prog isa} {s u : State} {tr : List Leak}
     (hin : InRegions (s.rd ++ s.wr) (s.gpr .rdi + 1024) 8)
     (he : Exec isa (Impl.Gcm.X86_64.Flag.onFlag t c₁ c₂) s tr u) :
-    ∃ s₀ t₀, Same s s₀ ∧ s₀.unknowns = s.unknowns ∧
+    ∃ s₀ t₀, Same s s₀ ∧ s₀.unknowns = s.unknowns ∧ afterFlag t s = s₀ ∧
       ((t ≤ flagCount s ∧ Exec isa c₁ s₀ t₀ u) ∨ (¬ t ≤ flagCount s ∧ Exec isa c₂ s₀ t₀ u)) := by
   obtain ⟨s₀, e₀, hS, ev⟩ := testFlag_run htv s hin
+  have hA : afterFlag t s = s₀ := by unfold afterFlag; rw [e₀]
   have hk : s₀.unknowns = s.unknowns := execBlock_keep (M := isa) (fun s : State => s.unknowns) (ok := fun _ => True)
     (fun _ he => RTaint.exec_unknowns he) (fun _ _ => trivial) e₀
   unfold Impl.Gcm.X86_64.Flag.onFlag Code.iteCold at he
@@ -434,11 +539,11 @@ theorem onFlag_inv {t : Nat} (htv : t = 16 ∨ t = 48) {c₁ c₂ : Prog isa} {s
           | seq b₁ b₂ =>
             obtain rfl := hnil b₁
             obtain rfl := hnil b₂
-            exact ⟨_, _, hS, hk, .inl ⟨of_decide_eq_true (Option.some.inj hc'), hc₁⟩⟩
+            exact ⟨_, _, hS, hk, hA, .inl ⟨of_decide_eq_true (Option.some.inj hc'), hc₁⟩⟩
       | iteF hc hel =>
         have hc' : eval .ae s₀ = some false := hc
         rw [ev] at hc'
-        exact ⟨_, _, hS, hk, .inr ⟨of_decide_eq_false (Option.some.inj hc'), hel⟩⟩
+        exact ⟨_, _, hS, hk, hA, .inr ⟨of_decide_eq_false (Option.some.inj hc'), hel⟩⟩
 
 /-- The granules `vg_aes_gcm_seal_prepared_vaes_vpclmul` wipes: the 160
 bytes at the bottom of its 2624 bytes of stack, the 24 below its frame
@@ -512,12 +617,33 @@ theorem sealF16_resOk :
     ResOk (sealCodeF16 variant) (Spec.Gcm.sealPreparedContract X86_64.abi 2624) 2624 sealKs (chunks 2624) := by
   obtain ⟨Lb₁, h₁⟩ := sealP16_branch
   obtain ⟨Lb₂, h₂⟩ := seal_branch
-  unfold Spec.Gcm.sealPreparedContract
-  refine resOk_of_leaves (V := fun s x => if 16 ≤ flagCount s then sealL Lb₁ s.gpr (sealArgs s) x
-    else sealL Lb₂ s.gpr (sealArgs s) x) ScrubAbi.plain ?_ ?_
+  have hc₁ : variant.impl.sealCodeP (variant.impl.withBlk (blkR16 variant)) =
+      Impl.AesGcm.X86_64.«seal» (variant.impl.withBlk (blkR16 variant)) := by
+    have hs : variant.impl.short = false := rfl
+    have hf : variant.impl.fin = false := rfl
+    unfold GcmImpl.sealCodeP
+    simp only [hs, hf, Bool.false_eq_true, ↓reduceIte]
+  have hc₂ : variant.impl.sealCode variant.impl.callees = Impl.AesGcm.X86_64.«seal» variant.impl.callees := by
+    have hs : variant.impl.short = false := rfl
+    have hf : variant.impl.fin = false := rfl
+    unfold GcmImpl.sealCode
+    simp only [hs, hf, Bool.false_eq_true, ↓reduceIte]
+  have hn : UpperLock.inames (sealCodeF16 variant) =
+      UpperLock.inames (Impl.AesGcm.X86_64.«seal» (variant.impl.withBlk (blkR16 variant))) ++
+        UpperLock.inames (Impl.AesGcm.X86_64.«seal» variant.impl.callees) := by
+    rw [← hc₁, ← hc₂]; rfl
+  refine resOk_of_leaves (V := fun s x => if 16 ≤ flagCount s then
+      loseL (s.gpr .rsp - BitVec.ofNat 64 2600) 2600
+        (innerU (Impl.AesGcm.X86_64.«seal» (variant.impl.withBlk (blkR16 variant)))
+          (narrowS Proof.Gcm.sealPrecomputedSig .u64 320 2600 (narrow128 (afterFlag 16 s))))
+        (sealL Lb₁ s.gpr (sealArgs s)) x
+    else loseL (s.gpr .rsp - BitVec.ofNat 64 2600) 2600
+        (innerU (Impl.AesGcm.X86_64.«seal» variant.impl.callees)
+          (narrowS Spec.Gcm.sealSig .u64 320 2600 (narrow32 (afterFlag 16 s))))
+        (sealL Lb₂ s.gpr (sealArgs s)) x) ScrubAbi.plain ?_ ?_
   · intro s t u hs he x hx hw
     have hW := sealWindow hx hw
-    obtain ⟨s₀, t₀, hS, -, hb⟩ := onFlag_inv (Or.inl rfl) (flag_inRegions (N := 129) (by decide) hs) he
+    obtain ⟨s₀, t₀, hS, -, hA, hb⟩ := onFlag_inv (Or.inl rfl) (flag_inRegions (N := 129) (by decide) hs) he
     have hs₀ := (pre_same hS).mpr hs
     have hf : flagCount s₀ = flagCount s := by simp only [flagCount, hS.mem, hS.gpr .rdi (by decide)]
     have hg : sealL Lb₁ s₀.gpr (sealArgs s₀) = sealL Lb₁ s.gpr (sealArgs s) ∧
@@ -525,13 +651,14 @@ theorem sealF16_resOk :
       rw [sealArgs_same hS]
       exact ⟨sealL_congr Lb₁ (fun r hr _ => hS.gpr r hr) (fun _ _ => rfl),
         sealL_congr Lb₂ (fun r hr _ => hS.gpr r hr) (fun _ _ => rfl)⟩
-    rw [← hS.gpr .rsp (by decide)] at hW
+    have hsp := hS.gpr .rsp (by decide)
+    rw [← hsp] at hW
     rcases hb with ⟨hb, he₀⟩ | ⟨hb, he₀⟩
-    · rw [h₁ s₀ t₀ u hs₀ (hf ▸ hb) he₀ x hW, hg.1, hS.mem]
-      simp only [hb, ↓reduceIte]
-    · rw [h₂ s₀ t₀ u hs₀ (hf ▸ hb) he₀ x hW, hg.2, hS.mem]
-      simp only [hb, ↓reduceIte]
-  · intro s₁ s₂ _ _ hp ho _
+    · rw [h₁ s₀ t₀ u hs₀ (hf ▸ hb) he₀ x hW, hg.1, hS.mem, hsp]
+      simp only [hb, ↓reduceIte, hA]
+    · rw [h₂ s₀ t₀ u hs₀ (hf ▸ hb) he₀ x hW, hg.2, hS.mem, hsp]
+      simp only [hb, ↓reduceIte, hA]
+  · intro s₁ s₂ hs₁ hs₂ hp ho hu hsy
     obtain ⟨⟨-, hl⟩, -, -⟩ := (pubL_args (sig := Spec.Gcm.sealPreparedSig) (by decide)).mp hp
     have hg : ∀ r, r ≠ .rax → s₁.gpr r = s₂.gpr r := ho.2.2.1
     have hflag : 16 ≤ flagCount s₁ ↔ 16 ≤ flagCount s₂ := by
@@ -539,13 +666,32 @@ theorem sealF16_resOk :
         List.head_eq_of_cons_eq hl
       exact flagLeak_iff (Or.inl rfl) hl'
     have ha := sealArgs_pub hp ho
+    obtain ⟨S₁, U₁, Y₁⟩ := afterFlag_facts (t := 16) (Or.inl rfl) (flag_inRegions (N := 129) (by decide) hs₁)
+    obtain ⟨S₂, U₂, Y₂⟩ := afterFlag_facts (t := 16) (Or.inl rfl) (flag_inRegions (N := 129) (by decide) hs₂)
+    have a₁ := (pre_same S₁).mpr hs₁
+    have a₂ := (pre_same S₂).mpr hs₂
+    have ap := (pub_same S₁ S₂).mpr hp
+    have au : (afterFlag 16 s₁).unknowns = (afterFlag 16 s₂).unknowns := by rw [U₁, U₂, hu]
+    have hf₁ : flagCount (afterFlag 16 s₁) = flagCount s₁ := by
+      simp only [flagCount, S₁.mem, S₁.gpr .rdi (by decide)]
+    have hf₂ : flagCount (afterFlag 16 s₂) = flagCount s₂ := by
+      simp only [flagCount, S₂.mem, S₂.gpr .rdi (by decide)]
+    have hsy' : ∀ n ∈ UpperLock.inames (sealCodeF16 variant),
+        (afterFlag 16 s₁).syms n = (afterFlag 16 s₂).syms n := fun n h => by rw [Y₁, Y₂]; exact hsy n h
+    rw [hn] at hsy'
     funext x
     dsimp only
     rw [ha, sealL_congr Lb₁ (g' := s₂.gpr) (fun r hr _ => hg r hr) (fun _ _ => rfl),
-      sealL_congr Lb₂ (g' := s₂.gpr) (fun r hr _ => hg r hr) (fun _ _ => rfl)]
+      sealL_congr Lb₂ (g' := s₂.gpr) (fun r hr _ => hg r hr) (fun _ _ => rfl), hg .rsp (by decide)]
     by_cases h : 16 ≤ flagCount s₁
     · simp only [h, hflag.mp h, ↓reduceIte]
+      rw [sealP16_innerU a₁ a₂ (hf₁ ▸ h) (hf₂ ▸ hflag.mp h) ap au
+        (fun n hn' => hsy' n (List.mem_append_left _ hn'))]
     · simp only [h, mt hflag.mpr h, ↓reduceIte]
+      rw [seal32_innerU variant (C := fun m ctx => ¬ 16 ≤ (m.readW (ctx + 1024) 64).toNat) a₁ a₂
+        (show ¬ 16 ≤ flagCount (afterFlag 16 s₁) by rw [hf₁]; exact h)
+        (show ¬ 16 ≤ flagCount (afterFlag 16 s₂) by rw [hf₂]; exact mt hflag.mpr h) ap au
+        (fun n hn' => hsy' n (List.mem_append_right _ hn'))]
 
 /-- `vg_aes_gcm_seal_prepared`'s postcondition reads the memory on return
 only within the buffers: the data and the tag. -/
@@ -797,7 +943,9 @@ theorem seal_branchQ (v : GcmVariant) (hc : v.impl.sealCode v.impl.callees = Imp
     {C : Mem → Addr → Prop} :
     ∀ s t u, (Spec.Gcm.sealPreparedContract X86_64.abi 2624).pre s → C s.mem (s.gpr .rdi) →
       Exec isa (withStackArgScratch 2600 3 (v.impl.sealCode v.impl.callees)) s t u →
-      ∀ x, sealQ (sealA s) (sealW s) x → u.mem x = (sealVs Lb s x).getD (s.mem x) := by
+      ∀ x, sealQ (sealA s) (sealW s) x → u.mem x = (loseL (sealA s) 2600
+        (innerU (Impl.AesGcm.X86_64.«seal» v.impl.callees) (narrowS Spec.Gcm.sealSig .u64 320 2600 (narrow32 s)))
+        (sealVs Lb s) x).getD (s.mem x) := by
   rw [hc] at hL
   intro s t u hs hf he x hx
   rw [hc] at he
@@ -816,7 +964,7 @@ theorem seal_branchQ (v : GcmVariant) (hc : v.impl.sealCode v.impl.callees = Imp
     (seal_verified v.impl) (fun s h => ⟨⟨sealCode_implies.pre s h, trivial⟩, sealScratch_tagArgs s h⟩) hL
     (by decide) (by decide) (by decide) (seal_spSafe _) (seal_xdepth _)
     (sealPre_local _) h₂ he₁ x hx']
-  exact hv
+  exact loseL_getD_congr hv
 
 /-- The granules `vg_aes_gcm_seal_prepared_aesni_pclmul` wipes, of its 2624
 bytes of stack in chunks of 8 (at the top) and 2616, whose 16-byte granules
@@ -886,17 +1034,26 @@ theorem sealW_resOk (v : GcmVariant)
       (Spec.Gcm.sealPreparedContract X86_64.abi 2624) 2624 sealKsA [8, 2616] := by
   obtain ⟨Lb, hL⟩ := hL
   unfold Spec.Gcm.sealPreparedContract
-  refine resOk_of_leaves (V := sealVs Lb) ScrubAbi.plain ?_ ?_
+  refine resOk_of_leaves (V := fun s x => loseL (sealA s) 2600
+      (innerU (Impl.AesGcm.X86_64.«seal» v.impl.callees) (narrowS Spec.Gcm.sealSig .u64 320 2600 (narrow32 s)))
+      (sealVs Lb s) x) ScrubAbi.plain ?_ ?_
   · intro s t u hs he x hx hw
     exact seal_branchQ v hc hL (C := fun _ _ => True) s t u hs trivial he x (sealWindowA hx hw)
-  · intro s₁ s₂ _ _ hp ho _
+  · intro s₁ s₂ h₁ h₂ hp ho hu hsy
     have ha := sealArgs_pub hp ho
     have hsp : s₁.gpr .rsp = s₂.gpr .rsp := ho.2.2.1 .rsp (by decide)
     have hA : sealA s₁ = sealA s₂ := by simp only [sealA, hsp]
+    have hV : sealVs Lb s₁ = sealVs Lb s₂ := by
+      funext x
+      unfold sealVs
+      rw [ha, hA]
+      exact sealV_congr Lb (fun _ => by simp only [sealHdr, ha, hA]) (fun r hr _ => ho.2.2.1 r hr) (fun _ _ => rfl)
+    have hsy' : ∀ n ∈ UpperLock.inames (Impl.AesGcm.X86_64.«seal» v.impl.callees), s₁.syms n = s₂.syms n := by
+      rw [← hc]; exact hsy
+    have hU := seal32_innerU v (C := fun _ _ => True) h₁ h₂ trivial trivial hp hu hsy'
     funext x
-    unfold sealVs
-    rw [ha, hA]
-    exact sealV_congr Lb (fun _ => by simp only [sealHdr, ha, hA]) (fun r hr _ => ho.2.2.1 r hr) (fun _ _ => rfl)
+    dsimp only
+    rw [hA, hU, hV]
 
 /-- `vg_aes_gcm_seal_prepared` of a variant whose loops read only the key
 context. -/
@@ -986,9 +1143,6 @@ open VG.X86_64.Scrub
 open VG.Impl.StackScratch.X86_64 (withStackArgScratch)
 open Gcm.X86_64.Stitch (CtxMode)
 
-/-- The state `pre_narrowFirstArray` gives: the key context narrowed to its
-first 32 words. -/
-abbrev narrow32 (s : State) : State := s.withRegions (narrowHead (32 * 8) s.rd) s.wr
 
 theorem streamEnc_narrowPre {s : State} (hs : (Spec.Gcm.streamEncryptPreparedContract X86_64.abi 2608).pre s) :
     (Proof.AesGcm.streamEncryptRoundsContract X86_64.abi 2608).pre (narrow32 s) :=
@@ -1075,7 +1229,8 @@ theorem streamEncB_agree (lv : Impl.Scrub.X86_64.VecLevel) (v : GcmImpl) (B : Bl
     (hp : (Spec.Gcm.streamEncryptPreparedContract X86_64.abi 2608).pub s₁ s₂)
     (hg : ∀ r, r ≠ .rax → s₁.gpr r = s₂.gpr r)
     (hbm : ∀ x, (⟨s₁.gpr .rsp - BitVec.ofNat 64 2608, 2608⟩ : Region).Contains x 1 → s₁.mem x = s₂.mem x)
-    (hu : s₁.unknowns = s₂.unknowns) {t₁ t₂ : List Leak} {u₁ u₂ : State}
+    (hu : s₁.unknowns = s₂.unknowns)
+    (hsy : ∀ n ∈ UpperLock.inames (Impl.AesGcm.X86_64.streamEncryptClr (v.withBlk B) lv), s₁.syms n = s₂.syms n) {t₁ t₂ : List Leak} {u₁ u₂ : State}
     (e₁ : Exec isa (withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamEncryptClr (v.withBlk B) lv)) s₁ t₁ u₁)
     (e₂ : Exec isa (withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamEncryptClr (v.withBlk B) lv)) s₂ t₂ u₂) :
     ∀ x, (⟨s₁.gpr .rsp - BitVec.ofNat 64 2608, 2608⟩ : Region).Contains x 1 → u₁.mem x = u₂.mem x := by
@@ -1097,6 +1252,8 @@ theorem streamEncB_agree (lv : Impl.Scrub.X86_64.VecLevel) (v : GcmImpl) (B : Bl
     rw [streamEncryptClrB_leaves lv v gf cf B hL hn₁ e₁' x hx',
       streamEncryptClrB_leaves lv v gf cf B hL hn₂ e₂' x (by have h := hx'; rw [hrsp] at h; exact h),
       streamFV_congr Lb (s₁ := narrow32 s₁) (s₂ := narrow32 s₂) hg (streamLen_pub (s₁ := s₁) (s₂ := s₂) hp)]
+    have hb' : (narrow32 s₁).gpr .rsp = (narrow32 s₂).gpr .rsp := hrsp
+    rw [streamEncryptClrB_leaves_innerU lv v B hn₁ hn₂ (streamEnc_narrowPub hp) hu hsy, hb']
     exact congrArg (Option.getD _) (hbm x hx)
 
 open StackLock in
@@ -1110,7 +1267,8 @@ theorem streamDecB_agree (lv : Impl.Scrub.X86_64.VecLevel) (v : GcmImpl) (B : Bl
     (hp : (Spec.Gcm.streamDecryptPreparedContract X86_64.abi 2608).pub s₁ s₂)
     (hg : ∀ r, r ≠ .rax → s₁.gpr r = s₂.gpr r)
     (hbm : ∀ x, (⟨s₁.gpr .rsp - BitVec.ofNat 64 2608, 2608⟩ : Region).Contains x 1 → s₁.mem x = s₂.mem x)
-    (hu : s₁.unknowns = s₂.unknowns) {t₁ t₂ : List Leak} {u₁ u₂ : State}
+    (hu : s₁.unknowns = s₂.unknowns)
+    (hsy : ∀ n ∈ UpperLock.inames (Impl.AesGcm.X86_64.streamDecryptClr (v.withBlk B) lv), s₁.syms n = s₂.syms n) {t₁ t₂ : List Leak} {u₁ u₂ : State}
     (e₁ : Exec isa (withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamDecryptClr (v.withBlk B) lv)) s₁ t₁ u₁)
     (e₂ : Exec isa (withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamDecryptClr (v.withBlk B) lv)) s₂ t₂ u₂) :
     ∀ x, (⟨s₁.gpr .rsp - BitVec.ofNat 64 2608, 2608⟩ : Region).Contains x 1 → u₁.mem x = u₂.mem x := by
@@ -1132,11 +1290,10 @@ theorem streamDecB_agree (lv : Impl.Scrub.X86_64.VecLevel) (v : GcmImpl) (B : Bl
     rw [streamDecryptClrB_leaves lv v gf cf B hL hn₁ e₁' x hx',
       streamDecryptClrB_leaves lv v gf cf B hL hn₂ e₂' x (by have h := hx'; rw [hrsp] at h; exact h),
       streamFV_congr Lb (s₁ := narrow32 s₁) (s₂ := narrow32 s₂) hg (streamLen_pub (s₁ := s₁) (s₂ := s₂) hp)]
+    have hb' : (narrow32 s₁).gpr .rsp = (narrow32 s₂).gpr .rsp := hrsp
+    rw [streamDecryptClrB_leaves_innerU lv v B hn₁ hn₂ (streamDec_narrowPub hp) hu hsy, hb']
     exact congrArg (Option.getD _) (hbm x hx)
 
-/-- The state `pre_narrowFirstArray` gives on 16 prepared powers: the key
-context narrowed to its first 128 words. -/
-abbrev narrow128 (s : State) : State := s.withRegions (narrowHead (128 * 8) s.rd) s.wr
 
 theorem streamEnc16_narrowPre {s : State} (hs : (Spec.Gcm.streamEncryptPreparedContract X86_64.abi 2608).pre s)
     (hf : 16 ≤ flagCount s) :
@@ -1180,7 +1337,8 @@ theorem streamEncBZ_agree (lv : Impl.Scrub.X86_64.VecLevel) (v : GcmImpl) (B : B
     (hp : (Spec.Gcm.streamEncryptPreparedContract X86_64.abi 2608).pub s₁ s₂)
     (hg : ∀ r, r ≠ .rax → s₁.gpr r = s₂.gpr r)
     (hbm : ∀ x, (⟨s₁.gpr .rsp - BitVec.ofNat 64 2608, 2608⟩ : Region).Contains x 1 → s₁.mem x = s₂.mem x)
-    (hu : s₁.unknowns = s₂.unknowns) {t₁ t₂ : List Leak} {u₁ u₂ : State}
+    (hu : s₁.unknowns = s₂.unknowns)
+    (hsy : ∀ n ∈ UpperLock.inames (Impl.AesGcm.X86_64.streamEncryptClr (v.withBlk B) lv), s₁.syms n = s₂.syms n) {t₁ t₂ : List Leak} {u₁ u₂ : State}
     (e₁ : Exec isa (withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamEncryptClr (v.withBlk B) lv)) s₁ t₁ u₁)
     (e₂ : Exec isa (withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamEncryptClr (v.withBlk B) lv)) s₂ t₂ u₂) :
     ∀ x, (⟨s₁.gpr .rsp - BitVec.ofNat 64 2608, 2608⟩ : Region).Contains x 1 → u₁.mem x = u₂.mem x := by
@@ -1202,6 +1360,8 @@ theorem streamEncBZ_agree (lv : Impl.Scrub.X86_64.VecLevel) (v : GcmImpl) (B : B
     rw [streamEncryptClrB_leavesZ lv v B GZ hsc CZ hL hn₁ e₁' x hx',
       streamEncryptClrB_leavesZ lv v B GZ hsc CZ hL hn₂ e₂' x (by have h := hx'; rw [hrsp] at h; exact h),
       streamFVZ_congr z zg Lb (s₁ := narrow32 s₁) (s₂ := narrow32 s₂) hg (streamLen_pub (s₁ := s₁) (s₂ := s₂) hp)]
+    have hb' : (narrow32 s₁).gpr .rsp = (narrow32 s₂).gpr .rsp := hrsp
+    rw [streamEncryptClrB_leaves_innerU lv v B hn₁ hn₂ (streamEnc_narrowPub hp) hu hsy, hb']
     exact congrArg (Option.getD _) (hbm x hx)
 
 open StackLock in
@@ -1216,7 +1376,8 @@ theorem streamDecBZ_agree (lv : Impl.Scrub.X86_64.VecLevel) (v : GcmImpl) (B : B
     (hp : (Spec.Gcm.streamDecryptPreparedContract X86_64.abi 2608).pub s₁ s₂)
     (hg : ∀ r, r ≠ .rax → s₁.gpr r = s₂.gpr r)
     (hbm : ∀ x, (⟨s₁.gpr .rsp - BitVec.ofNat 64 2608, 2608⟩ : Region).Contains x 1 → s₁.mem x = s₂.mem x)
-    (hu : s₁.unknowns = s₂.unknowns) {t₁ t₂ : List Leak} {u₁ u₂ : State}
+    (hu : s₁.unknowns = s₂.unknowns)
+    (hsy : ∀ n ∈ UpperLock.inames (Impl.AesGcm.X86_64.streamDecryptClr (v.withBlk B) lv), s₁.syms n = s₂.syms n) {t₁ t₂ : List Leak} {u₁ u₂ : State}
     (e₁ : Exec isa (withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamDecryptClr (v.withBlk B) lv)) s₁ t₁ u₁)
     (e₂ : Exec isa (withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamDecryptClr (v.withBlk B) lv)) s₂ t₂ u₂) :
     ∀ x, (⟨s₁.gpr .rsp - BitVec.ofNat 64 2608, 2608⟩ : Region).Contains x 1 → u₁.mem x = u₂.mem x := by
@@ -1238,6 +1399,8 @@ theorem streamDecBZ_agree (lv : Impl.Scrub.X86_64.VecLevel) (v : GcmImpl) (B : B
     rw [streamDecryptClrB_leavesZ lv v B GZ hsc CZ hL hn₁ e₁' x hx',
       streamDecryptClrB_leavesZ lv v B GZ hsc CZ hL hn₂ e₂' x (by have h := hx'; rw [hrsp] at h; exact h),
       streamFVZ_congr z zg Lb (s₁ := narrow32 s₁) (s₂ := narrow32 s₂) hg (streamLen_pub (s₁ := s₁) (s₂ := s₂) hp)]
+    have hb' : (narrow32 s₁).gpr .rsp = (narrow32 s₂).gpr .rsp := hrsp
+    rw [streamDecryptClrB_leaves_innerU lv v B hn₁ hn₂ (streamDec_narrowPub hp) hu hsy, hb']
     exact congrArg (Option.getD _) (hbm x hx)
 
 open StackLock in
@@ -1252,7 +1415,8 @@ theorem streamEnc16_agree (lv : Impl.Scrub.X86_64.VecLevel) (v : GcmImpl) (B : B
     (hp : (Spec.Gcm.streamEncryptPreparedContract X86_64.abi 2608).pub s₁ s₂)
     (hg : ∀ r, r ≠ .rax → s₁.gpr r = s₂.gpr r)
     (hbm : ∀ x, (⟨s₁.gpr .rsp - BitVec.ofNat 64 2608, 2608⟩ : Region).Contains x 1 → s₁.mem x = s₂.mem x)
-    (hu : s₁.unknowns = s₂.unknowns) {t₁ t₂ : List Leak} {u₁ u₂ : State}
+    (hu : s₁.unknowns = s₂.unknowns)
+    (hsy : ∀ n ∈ UpperLock.inames (Impl.AesGcm.X86_64.streamEncryptClr (v.withBlk B) lv), s₁.syms n = s₂.syms n) {t₁ t₂ : List Leak} {u₁ u₂ : State}
     (e₁ : Exec isa (withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamEncryptClr (v.withBlk B) lv)) s₁ t₁ u₁)
     (e₂ : Exec isa (withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamEncryptClr (v.withBlk B) lv)) s₂ t₂ u₂) :
     ∀ x, (⟨s₁.gpr .rsp - BitVec.ofNat 64 2608, 2608⟩ : Region).Contains x 1 → u₁.mem x = u₂.mem x := by
@@ -1275,6 +1439,8 @@ theorem streamEnc16_agree (lv : Impl.Scrub.X86_64.VecLevel) (v : GcmImpl) (B : B
     rw [streamEncryptClr16_leaves lv v gf cf B hL hn₁ e₁' x hx',
       streamEncryptClr16_leaves lv v gf cf B hL hn₂ e₂' x (by have h := hx'; rw [hrsp] at h; exact h),
       streamFV_congr Lb (s₁ := narrow128 s₁) (s₂ := narrow128 s₂) hg (streamLen_pub (s₁ := s₁) (s₂ := s₂) hp)]
+    have hb' : (narrow128 s₁).gpr .rsp = (narrow128 s₂).gpr .rsp := hrsp
+    rw [streamEncryptClr16_leaves_innerU lv v B hn₁ hn₂ hpn hu hsy, hb']
     exact congrArg (Option.getD _) (hbm x hx)
 
 theorem streamDec16_narrowPre {s : State} (hs : (Spec.Gcm.streamDecryptPreparedContract X86_64.abi 2608).pre s)
@@ -1311,7 +1477,8 @@ theorem streamDec16_agree (lv : Impl.Scrub.X86_64.VecLevel) (v : GcmImpl) (B : B
     (hp : (Spec.Gcm.streamDecryptPreparedContract X86_64.abi 2608).pub s₁ s₂)
     (hg : ∀ r, r ≠ .rax → s₁.gpr r = s₂.gpr r)
     (hbm : ∀ x, (⟨s₁.gpr .rsp - BitVec.ofNat 64 2608, 2608⟩ : Region).Contains x 1 → s₁.mem x = s₂.mem x)
-    (hu : s₁.unknowns = s₂.unknowns) {t₁ t₂ : List Leak} {u₁ u₂ : State}
+    (hu : s₁.unknowns = s₂.unknowns)
+    (hsy : ∀ n ∈ UpperLock.inames (Impl.AesGcm.X86_64.streamDecryptClr (v.withBlk B) lv), s₁.syms n = s₂.syms n) {t₁ t₂ : List Leak} {u₁ u₂ : State}
     (e₁ : Exec isa (withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamDecryptClr (v.withBlk B) lv)) s₁ t₁ u₁)
     (e₂ : Exec isa (withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamDecryptClr (v.withBlk B) lv)) s₂ t₂ u₂) :
     ∀ x, (⟨s₁.gpr .rsp - BitVec.ofNat 64 2608, 2608⟩ : Region).Contains x 1 → u₁.mem x = u₂.mem x := by
@@ -1334,6 +1501,8 @@ theorem streamDec16_agree (lv : Impl.Scrub.X86_64.VecLevel) (v : GcmImpl) (B : B
     rw [streamDecryptClr16_leaves lv v gf cf B hL hn₁ e₁' x hx',
       streamDecryptClr16_leaves lv v gf cf B hL hn₂ e₂' x (by have h := hx'; rw [hrsp] at h; exact h),
       streamFV_congr Lb (s₁ := narrow128 s₁) (s₂ := narrow128 s₂) hg (streamLen_pub (s₁ := s₁) (s₂ := s₂) hp)]
+    have hb' : (narrow128 s₁).gpr .rsp = (narrow128 s₂).gpr .rsp := hrsp
+    rw [streamDecryptClr16_leaves_innerU lv v B hn₁ hn₂ hpn hu hsy, hb']
     exact congrArg (Option.getD _) (hbm x hx)
 
 open StackLock in
@@ -1343,11 +1512,11 @@ theorem streamEncryptW_resOk (v : GcmImpl) (gf : GhashFree v.gh.fn.code)
     (hgh : Plain v.callees.gh.code) (hn : UpperLock.inames v.blkB.enc.code = []) :
     ResOk (withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamEncryptClr (v.withBlk v.blkB) .sse))
       (Spec.Gcm.streamEncryptPreparedContract X86_64.abi 2608) 2608 [] [2608] := by
-  intro s₁ s₂ t₁ t₂ u₁ u₂ h₁ h₂ hp ho hu e₁ e₂ x hx _
+  intro s₁ s₂ t₁ t₂ u₁ u₂ h₁ h₂ hp ho hu hsy e₁ e₂ x hx _
   have h₁' := h₁
   unfold Spec.Gcm.streamEncryptPreparedContract at h₁'
   exact streamEncB_agree .sse v v.blkB gf cf hB hct hgh hn h₁ h₂ hp (fun r h => ho.2.2.1 r h)
-    (below_same h₁' ho (by decide)) hu e₁ e₂ x hx
+    (below_same h₁' ho (by decide)) hu hsy e₁ e₂ x hx
 
 open StackLock in
 /-- `streamEncryptW_resOk` for `vg_aes_gcm_stream_decrypt_prepared`. -/
@@ -1356,11 +1525,11 @@ theorem streamDecryptW_resOk (v : GcmImpl) (gf : GhashFree v.gh.fn.code)
     (hgh : Plain v.callees.gh.code) (hn : UpperLock.inames v.blkB.dec.code = []) :
     ResOk (withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamDecryptClr (v.withBlk v.blkB) .sse))
       (Spec.Gcm.streamDecryptPreparedContract X86_64.abi 2608) 2608 [] [2608] := by
-  intro s₁ s₂ t₁ t₂ u₁ u₂ h₁ h₂ hp ho hu e₁ e₂ x hx _
+  intro s₁ s₂ t₁ t₂ u₁ u₂ h₁ h₂ hp ho hu hsy e₁ e₂ x hx _
   have h₁' := h₁
   unfold Spec.Gcm.streamDecryptPreparedContract at h₁'
   exact streamDecB_agree .sse v v.blkB gf cf hB hct hgh hn h₁ h₂ hp (fun r h => ho.2.2.1 r h)
-    (below_same h₁' ho (by decide)) hu e₁ e₂ x hx
+    (below_same h₁' ho (by decide)) hu hsy e₁ e₂ x hx
 
 /-- `vg_aes_gcm_stream_encrypt_prepared`'s postcondition reads the memory on
 return only within the buffers: the state and the data. -/
@@ -2144,13 +2313,13 @@ theorem streamEncryptF16W_resOk (v : GcmImpl) (B16 : BlkFn CtxMode.prepared16) (
     (hB16 : BlkLeaves B16) (hct : Plain v.callees.ctr.code) (hgh : Plain v.callees.gh.code)
     (hn : UpperLock.inames B.enc.code = []) (hn16 : UpperLock.inames B16.enc.code = []) :
     ResOk (streamEncryptCodeF16W v B16 B) (Spec.Gcm.streamEncryptPreparedContract X86_64.abi 2608) 2608 [] [2608] := by
-  intro s₁ s₂ t₁ t₂ u₁ u₂ h₁ h₂ hp ho hu e₁ e₂ x hx _
+  intro s₁ s₂ t₁ t₂ u₁ u₂ h₁ h₂ hp ho hu hsy e₁ e₂ x hx _
   have h₁' := h₁
   have h₂' := h₂
   have hp' := hp
   unfold Spec.Gcm.streamEncryptPreparedContract at h₁' h₂' hp'
-  obtain ⟨s₀₁, t₀₁, hS₁, hk₁, hb₁⟩ := onFlag_inv (Or.inl rfl) (flag_inRegions (N := 129) (by decide) h₁') e₁
-  obtain ⟨s₀₂, t₀₂, hS₂, hk₂, hb₂⟩ := onFlag_inv (Or.inl rfl) (flag_inRegions (N := 129) (by decide) h₂') e₂
+  obtain ⟨s₀₁, t₀₁, hS₁, hk₁, hA₁, hb₁⟩ := onFlag_inv (Or.inl rfl) (flag_inRegions (N := 129) (by decide) h₁') e₁
+  obtain ⟨s₀₂, t₀₂, hS₂, hk₂, hA₂, hb₂⟩ := onFlag_inv (Or.inl rfl) (flag_inRegions (N := 129) (by decide) h₂') e₂
   obtain ⟨⟨-, hl⟩, -, -⟩ := (pubL_args (sig := Spec.Gcm.streamCryptPreparedSig) (by decide)).mp hp'
   have hflag : 16 ≤ flagCount s₁ ↔ 16 ≤ flagCount s₂ :=
     flagLeak_iff (Or.inl rfl) (List.head_eq_of_cons_eq hl)
@@ -2170,12 +2339,17 @@ theorem streamEncryptF16W_resOk (v : GcmImpl) (B16 : BlkFn CtxMode.prepared16) (
   have hf₁ : flagCount s₀₁ = flagCount s₁ := by simp only [flagCount, hS₁.mem, hS₁.gpr .rdi (by decide)]
   have hf₂ : flagCount s₀₂ = flagCount s₂ := by simp only [flagCount, hS₂.mem, hS₂.gpr .rdi (by decide)]
   have hx' : (⟨s₀₁.gpr .rsp - BitVec.ofNat 64 2608, 2608⟩ : Region).Contains x 1 := by rw [hsp]; exact hx
+  have y₁ : s₀₁.syms = s₁.syms := by
+    rw [← hA₁]; exact (afterFlag_facts (Or.inl rfl) (flag_inRegions (N := 129) (by decide) h₁')).2.2
+  have y₂ : s₀₂.syms = s₂.syms := by
+    rw [← hA₂]; exact (afterFlag_facts (Or.inl rfl) (flag_inRegions (N := 129) (by decide) h₂')).2.2
   rcases hb₁ with ⟨c₁, x₁⟩ | ⟨c₁, x₁⟩ <;> rcases hb₂ with ⟨c₂, x₂⟩ | ⟨c₂, x₂⟩
   · exact streamEnc16_agree .avx v B16 gf cf hB16 hct hgh hn16 q₁ q₂ (hf₁ ▸ c₁) (hf₂ ▸ c₂) qp qg qbm qu
-      x₁ x₂ x hx'
+      (fun n h => by rw [y₁, y₂]; exact hsy n (List.mem_append_right _ (List.mem_append_left _ h))) x₁ x₂ x hx'
   · exact absurd (hflag.mp c₁) c₂
   · exact absurd (hflag.mpr c₂) c₁
-  · exact streamEncB_agree .avx v B gf cf hB hct hgh hn q₁ q₂ qp qg qbm qu x₁ x₂ x hx'
+  · exact streamEncB_agree .avx v B gf cf hB hct hgh hn q₁ q₂ qp qg qbm qu
+      (fun n h => by rw [y₁, y₂]; exact hsy n (List.mem_append_right _ (List.mem_append_right _ h))) x₁ x₂ x hx'
 
 /-- `streamEncryptF16W_resOk` for the blocks functions of `streamEncryptCodeF16C`. -/
 theorem streamEncryptF16_resOk (v : GcmVariant) (gf : GhashFree v.impl.gh.fn.code)
@@ -2201,13 +2375,13 @@ theorem streamDecryptF16W_resOk (v : GcmImpl) (B16 : BlkFn CtxMode.prepared16) (
     (hB16 : BlkLeavesD B16) (hct : Plain v.callees.ctr.code) (hgh : Plain v.callees.gh.code)
     (hn : UpperLock.inames B.dec.code = []) (hn16 : UpperLock.inames B16.dec.code = []) :
     ResOk (streamDecryptCodeF16W v B16 B) (Spec.Gcm.streamDecryptPreparedContract X86_64.abi 2608) 2608 [] [2608] := by
-  intro s₁ s₂ t₁ t₂ u₁ u₂ h₁ h₂ hp ho hu e₁ e₂ x hx _
+  intro s₁ s₂ t₁ t₂ u₁ u₂ h₁ h₂ hp ho hu hsy e₁ e₂ x hx _
   have h₁' := h₁
   have h₂' := h₂
   have hp' := hp
   unfold Spec.Gcm.streamDecryptPreparedContract at h₁' h₂' hp'
-  obtain ⟨s₀₁, t₀₁, hS₁, hk₁, hb₁⟩ := onFlag_inv (Or.inl rfl) (flag_inRegions (N := 129) (by decide) h₁') e₁
-  obtain ⟨s₀₂, t₀₂, hS₂, hk₂, hb₂⟩ := onFlag_inv (Or.inl rfl) (flag_inRegions (N := 129) (by decide) h₂') e₂
+  obtain ⟨s₀₁, t₀₁, hS₁, hk₁, hA₁, hb₁⟩ := onFlag_inv (Or.inl rfl) (flag_inRegions (N := 129) (by decide) h₁') e₁
+  obtain ⟨s₀₂, t₀₂, hS₂, hk₂, hA₂, hb₂⟩ := onFlag_inv (Or.inl rfl) (flag_inRegions (N := 129) (by decide) h₂') e₂
   obtain ⟨⟨-, hl⟩, -, -⟩ := (pubL_args (sig := Spec.Gcm.streamCryptPreparedSig) (by decide)).mp hp'
   have hflag : 16 ≤ flagCount s₁ ↔ 16 ≤ flagCount s₂ :=
     flagLeak_iff (Or.inl rfl) (List.head_eq_of_cons_eq hl)
@@ -2227,12 +2401,17 @@ theorem streamDecryptF16W_resOk (v : GcmImpl) (B16 : BlkFn CtxMode.prepared16) (
   have hf₁ : flagCount s₀₁ = flagCount s₁ := by simp only [flagCount, hS₁.mem, hS₁.gpr .rdi (by decide)]
   have hf₂ : flagCount s₀₂ = flagCount s₂ := by simp only [flagCount, hS₂.mem, hS₂.gpr .rdi (by decide)]
   have hx' : (⟨s₀₁.gpr .rsp - BitVec.ofNat 64 2608, 2608⟩ : Region).Contains x 1 := by rw [hsp]; exact hx
+  have y₁ : s₀₁.syms = s₁.syms := by
+    rw [← hA₁]; exact (afterFlag_facts (Or.inl rfl) (flag_inRegions (N := 129) (by decide) h₁')).2.2
+  have y₂ : s₀₂.syms = s₂.syms := by
+    rw [← hA₂]; exact (afterFlag_facts (Or.inl rfl) (flag_inRegions (N := 129) (by decide) h₂')).2.2
   rcases hb₁ with ⟨c₁, x₁⟩ | ⟨c₁, x₁⟩ <;> rcases hb₂ with ⟨c₂, x₂⟩ | ⟨c₂, x₂⟩
   · exact streamDec16_agree .avx v B16 gf cf hB16 hct hgh hn16 q₁ q₂ (hf₁ ▸ c₁) (hf₂ ▸ c₂) qp qg qbm qu
-      x₁ x₂ x hx'
+      (fun n h => by rw [y₁, y₂]; exact hsy n (List.mem_append_right _ (List.mem_append_left _ h))) x₁ x₂ x hx'
   · exact absurd (hflag.mp c₁) c₂
   · exact absurd (hflag.mpr c₂) c₁
-  · exact streamDecB_agree .avx v B gf cf hB hct hgh hn q₁ q₂ qp qg qbm qu x₁ x₂ x hx'
+  · exact streamDecB_agree .avx v B gf cf hB hct hgh hn q₁ q₂ qp qg qbm qu
+      (fun n h => by rw [y₁, y₂]; exact hsy n (List.mem_append_right _ (List.mem_append_right _ h))) x₁ x₂ x hx'
 
 /-- `streamDecryptF16W_resOk` for the blocks functions of `streamDecryptCodeF16C`. -/
 theorem streamDecryptF16_resOk (v : GcmVariant) (gf : GhashFree v.impl.gh.fn.code)
@@ -2562,7 +2741,8 @@ theorem streamEnc48_agree (lv : Impl.Scrub.X86_64.VecLevel) (v : GcmImpl) (B : B
     (hp : (Spec.Gcm.streamEncryptPreparedContract X86_64.abi 2608).pub s₁ s₂)
     (hg : ∀ r, r ≠ .rax → s₁.gpr r = s₂.gpr r)
     (hbm : ∀ x, (⟨s₁.gpr .rsp - BitVec.ofNat 64 2608, 2608⟩ : Region).Contains x 1 → s₁.mem x = s₂.mem x)
-    (hu : s₁.unknowns = s₂.unknowns) {t₁ t₂ : List Leak} {u₁ u₂ : State}
+    (hu : s₁.unknowns = s₂.unknowns)
+    (hsy : ∀ n ∈ UpperLock.inames (Impl.AesGcm.X86_64.streamEncryptClr (v.withBlk B) lv), s₁.syms n = s₂.syms n) {t₁ t₂ : List Leak} {u₁ u₂ : State}
     (e₁ : Exec isa (withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamEncryptClr (v.withBlk B) lv)) s₁ t₁ u₁)
     (e₂ : Exec isa (withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamEncryptClr (v.withBlk B) lv)) s₂ t₂ u₂) :
     ∀ x, (⟨s₁.gpr .rsp - BitVec.ofNat 64 2608, 2608⟩ : Region).Contains x 1 → u₁.mem x = u₂.mem x := by
@@ -2585,6 +2765,8 @@ theorem streamEnc48_agree (lv : Impl.Scrub.X86_64.VecLevel) (v : GcmImpl) (B : B
     rw [streamEncryptClr48_leaves lv v gf cf B hL hn₁ e₁' x hx',
       streamEncryptClr48_leaves lv v gf cf B hL hn₂ e₂' x (by have h := hx'; rw [hrsp] at h; exact h),
       streamFV_congr Lb (s₁ := narrow128 s₁) (s₂ := narrow128 s₂) hg (streamLen_pub (s₁ := s₁) (s₂ := s₂) hp)]
+    have hb' : (narrow128 s₁).gpr .rsp = (narrow128 s₂).gpr .rsp := hrsp
+    rw [streamEncryptClr48_leaves_innerU lv v B hn₁ hn₂ hpn hu hsy, hb']
     exact congrArg (Option.getD _) (hbm x hx)
 
 theorem streamDec48_narrowPre {s : State} (hs : (Spec.Gcm.streamDecryptPreparedContract X86_64.abi 2608).pre s)
@@ -2621,7 +2803,8 @@ theorem streamDec48_agree (lv : Impl.Scrub.X86_64.VecLevel) (v : GcmImpl) (B : B
     (hp : (Spec.Gcm.streamDecryptPreparedContract X86_64.abi 2608).pub s₁ s₂)
     (hg : ∀ r, r ≠ .rax → s₁.gpr r = s₂.gpr r)
     (hbm : ∀ x, (⟨s₁.gpr .rsp - BitVec.ofNat 64 2608, 2608⟩ : Region).Contains x 1 → s₁.mem x = s₂.mem x)
-    (hu : s₁.unknowns = s₂.unknowns) {t₁ t₂ : List Leak} {u₁ u₂ : State}
+    (hu : s₁.unknowns = s₂.unknowns)
+    (hsy : ∀ n ∈ UpperLock.inames (Impl.AesGcm.X86_64.streamDecryptClr (v.withBlk B) lv), s₁.syms n = s₂.syms n) {t₁ t₂ : List Leak} {u₁ u₂ : State}
     (e₁ : Exec isa (withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamDecryptClr (v.withBlk B) lv)) s₁ t₁ u₁)
     (e₂ : Exec isa (withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamDecryptClr (v.withBlk B) lv)) s₂ t₂ u₂) :
     ∀ x, (⟨s₁.gpr .rsp - BitVec.ofNat 64 2608, 2608⟩ : Region).Contains x 1 → u₁.mem x = u₂.mem x := by
@@ -2644,6 +2827,8 @@ theorem streamDec48_agree (lv : Impl.Scrub.X86_64.VecLevel) (v : GcmImpl) (B : B
     rw [streamDecryptClr48_leaves lv v gf cf B hL hn₁ e₁' x hx',
       streamDecryptClr48_leaves lv v gf cf B hL hn₂ e₂' x (by have h := hx'; rw [hrsp] at h; exact h),
       streamFV_congr Lb (s₁ := narrow128 s₁) (s₂ := narrow128 s₂) hg (streamLen_pub (s₁ := s₁) (s₂ := s₂) hp)]
+    have hb' : (narrow128 s₁).gpr .rsp = (narrow128 s₂).gpr .rsp := hrsp
+    rw [streamDecryptClr48_leaves_innerU lv v B hn₁ hn₂ hpn hu hsy, hb']
     exact congrArg (Option.getD _) (hbm x hx)
 
 /-- Two runs of `streamEncryptCodeF48W` with the same public data leave the
@@ -2656,13 +2841,13 @@ theorem streamEncryptF48W_resOk (v : GcmImpl) (B48 : BlkFn CtxMode.prepared) (B 
     (hB48 : BlkLeaves B48) (hct : Plain v.callees.ctr.code) (hgh : Plain v.callees.gh.code)
     (hn : UpperLock.inames B.enc.code = []) (hn48 : UpperLock.inames B48.enc.code = []) :
     ResOk (streamEncryptCodeF48W v B48 B) (Spec.Gcm.streamEncryptPreparedContract X86_64.abi 2608) 2608 [] [2608] := by
-  intro s₁ s₂ t₁ t₂ u₁ u₂ h₁ h₂ hp ho hu e₁ e₂ x hx _
+  intro s₁ s₂ t₁ t₂ u₁ u₂ h₁ h₂ hp ho hu hsy e₁ e₂ x hx _
   have h₁' := h₁
   have h₂' := h₂
   have hp' := hp
   unfold Spec.Gcm.streamEncryptPreparedContract at h₁' h₂' hp'
-  obtain ⟨s₀₁, t₀₁, hS₁, hk₁, hb₁⟩ := onFlag_inv (Or.inr rfl) (flag_inRegions (N := 129) (by decide) h₁') e₁
-  obtain ⟨s₀₂, t₀₂, hS₂, hk₂, hb₂⟩ := onFlag_inv (Or.inr rfl) (flag_inRegions (N := 129) (by decide) h₂') e₂
+  obtain ⟨s₀₁, t₀₁, hS₁, hk₁, hA₁, hb₁⟩ := onFlag_inv (Or.inr rfl) (flag_inRegions (N := 129) (by decide) h₁') e₁
+  obtain ⟨s₀₂, t₀₂, hS₂, hk₂, hA₂, hb₂⟩ := onFlag_inv (Or.inr rfl) (flag_inRegions (N := 129) (by decide) h₂') e₂
   obtain ⟨⟨-, hl⟩, -, -⟩ := (pubL_args (sig := Spec.Gcm.streamCryptPreparedSig) (by decide)).mp hp'
   have hflag : 48 ≤ flagCount s₁ ↔ 48 ≤ flagCount s₂ :=
     flagLeak_iff (Or.inr rfl) (List.head_eq_of_cons_eq hl)
@@ -2682,12 +2867,17 @@ theorem streamEncryptF48W_resOk (v : GcmImpl) (B48 : BlkFn CtxMode.prepared) (B 
   have hf₁ : flagCount s₀₁ = flagCount s₁ := by simp only [flagCount, hS₁.mem, hS₁.gpr .rdi (by decide)]
   have hf₂ : flagCount s₀₂ = flagCount s₂ := by simp only [flagCount, hS₂.mem, hS₂.gpr .rdi (by decide)]
   have hx' : (⟨s₀₁.gpr .rsp - BitVec.ofNat 64 2608, 2608⟩ : Region).Contains x 1 := by rw [hsp]; exact hx
+  have y₁ : s₀₁.syms = s₁.syms := by
+    rw [← hA₁]; exact (afterFlag_facts (Or.inr rfl) (flag_inRegions (N := 129) (by decide) h₁')).2.2
+  have y₂ : s₀₂.syms = s₂.syms := by
+    rw [← hA₂]; exact (afterFlag_facts (Or.inr rfl) (flag_inRegions (N := 129) (by decide) h₂')).2.2
   rcases hb₁ with ⟨c₁, x₁⟩ | ⟨c₁, x₁⟩ <;> rcases hb₂ with ⟨c₂, x₂⟩ | ⟨c₂, x₂⟩
   · exact streamEnc48_agree .avx v B48 gf cf hB48 hct hgh hn48 q₁ q₂ (hf₁ ▸ c₁) (hf₂ ▸ c₂) qp qg qbm qu
-      x₁ x₂ x hx'
+      (fun n h => by rw [y₁, y₂]; exact hsy n (List.mem_append_right _ (List.mem_append_left _ h))) x₁ x₂ x hx'
   · exact absurd (hflag.mp c₁) c₂
   · exact absurd (hflag.mpr c₂) c₁
-  · exact streamEncB_agree .avx v B gf cf hB hct hgh hn q₁ q₂ qp qg qbm qu x₁ x₂ x hx'
+  · exact streamEncB_agree .avx v B gf cf hB hct hgh hn q₁ q₂ qp qg qbm qu
+      (fun n h => by rw [y₁, y₂]; exact hsy n (List.mem_append_right _ (List.mem_append_right _ h))) x₁ x₂ x hx'
 
 /-- `streamEncryptF48W_resOk` for `vg_aes_gcm_stream_decrypt_prepared`. -/
 theorem streamDecryptF48W_resOk (v : GcmImpl) (B48 : BlkFn CtxMode.prepared) (B : BlkFn CtxMode.base)
@@ -2695,13 +2885,13 @@ theorem streamDecryptF48W_resOk (v : GcmImpl) (B48 : BlkFn CtxMode.prepared) (B 
     (hB48 : BlkLeavesD B48) (hct : Plain v.callees.ctr.code) (hgh : Plain v.callees.gh.code)
     (hn : UpperLock.inames B.dec.code = []) (hn48 : UpperLock.inames B48.dec.code = []) :
     ResOk (streamDecryptCodeF48W v B48 B) (Spec.Gcm.streamDecryptPreparedContract X86_64.abi 2608) 2608 [] [2608] := by
-  intro s₁ s₂ t₁ t₂ u₁ u₂ h₁ h₂ hp ho hu e₁ e₂ x hx _
+  intro s₁ s₂ t₁ t₂ u₁ u₂ h₁ h₂ hp ho hu hsy e₁ e₂ x hx _
   have h₁' := h₁
   have h₂' := h₂
   have hp' := hp
   unfold Spec.Gcm.streamDecryptPreparedContract at h₁' h₂' hp'
-  obtain ⟨s₀₁, t₀₁, hS₁, hk₁, hb₁⟩ := onFlag_inv (Or.inr rfl) (flag_inRegions (N := 129) (by decide) h₁') e₁
-  obtain ⟨s₀₂, t₀₂, hS₂, hk₂, hb₂⟩ := onFlag_inv (Or.inr rfl) (flag_inRegions (N := 129) (by decide) h₂') e₂
+  obtain ⟨s₀₁, t₀₁, hS₁, hk₁, hA₁, hb₁⟩ := onFlag_inv (Or.inr rfl) (flag_inRegions (N := 129) (by decide) h₁') e₁
+  obtain ⟨s₀₂, t₀₂, hS₂, hk₂, hA₂, hb₂⟩ := onFlag_inv (Or.inr rfl) (flag_inRegions (N := 129) (by decide) h₂') e₂
   obtain ⟨⟨-, hl⟩, -, -⟩ := (pubL_args (sig := Spec.Gcm.streamCryptPreparedSig) (by decide)).mp hp'
   have hflag : 48 ≤ flagCount s₁ ↔ 48 ≤ flagCount s₂ :=
     flagLeak_iff (Or.inr rfl) (List.head_eq_of_cons_eq hl)
@@ -2721,12 +2911,17 @@ theorem streamDecryptF48W_resOk (v : GcmImpl) (B48 : BlkFn CtxMode.prepared) (B 
   have hf₁ : flagCount s₀₁ = flagCount s₁ := by simp only [flagCount, hS₁.mem, hS₁.gpr .rdi (by decide)]
   have hf₂ : flagCount s₀₂ = flagCount s₂ := by simp only [flagCount, hS₂.mem, hS₂.gpr .rdi (by decide)]
   have hx' : (⟨s₀₁.gpr .rsp - BitVec.ofNat 64 2608, 2608⟩ : Region).Contains x 1 := by rw [hsp]; exact hx
+  have y₁ : s₀₁.syms = s₁.syms := by
+    rw [← hA₁]; exact (afterFlag_facts (Or.inr rfl) (flag_inRegions (N := 129) (by decide) h₁')).2.2
+  have y₂ : s₀₂.syms = s₂.syms := by
+    rw [← hA₂]; exact (afterFlag_facts (Or.inr rfl) (flag_inRegions (N := 129) (by decide) h₂')).2.2
   rcases hb₁ with ⟨c₁, x₁⟩ | ⟨c₁, x₁⟩ <;> rcases hb₂ with ⟨c₂, x₂⟩ | ⟨c₂, x₂⟩
   · exact streamDec48_agree .avx v B48 gf cf hB48 hct hgh hn48 q₁ q₂ (hf₁ ▸ c₁) (hf₂ ▸ c₂) qp qg qbm qu
-      x₁ x₂ x hx'
+      (fun n h => by rw [y₁, y₂]; exact hsy n (List.mem_append_right _ (List.mem_append_left _ h))) x₁ x₂ x hx'
   · exact absurd (hflag.mp c₁) c₂
   · exact absurd (hflag.mpr c₂) c₁
-  · exact streamDecB_agree .avx v B gf cf hB hct hgh hn q₁ q₂ qp qg qbm qu x₁ x₂ x hx'
+  · exact streamDecB_agree .avx v B gf cf hB hct hgh hn q₁ q₂ qp qg qbm qu
+      (fun n h => by rw [y₁, y₂]; exact hsy n (List.mem_append_right _ (List.mem_append_right _ h))) x₁ x₂ x hx'
 
 end F48
 
@@ -2952,11 +3147,11 @@ theorem streamEncryptWZ_resOk (v : GcmImpl) (B : BlkFn CtxMode.base) {zg : Nat �
     (hct : Plain v.callees.ctr.code) (hgh : Plain v.callees.gh.code) (hn : UpperLock.inames B.enc.code = []) :
     ResOk (withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamEncryptClr (v.withBlk B) .sse))
       (Spec.Gcm.streamEncryptPreparedContract X86_64.abi 2608) 2608 [] [2608] := by
-  intro s₁ s₂ t₁ t₂ u₁ u₂ h₁ h₂ hp ho hu e₁ e₂ x hx _
+  intro s₁ s₂ t₁ t₂ u₁ u₂ h₁ h₂ hp ho hu hsy e₁ e₂ x hx _
   have h₁' := h₁
   unfold Spec.Gcm.streamEncryptPreparedContract at h₁'
   exact streamEncBZ_agree .sse v B GZ hsc CZ hB hct hgh hn h₁ h₂ hp (fun r h => ho.2.2.1 r h)
-    (below_same h₁' ho (by decide)) hu e₁ e₂ x hx
+    (below_same h₁' ho (by decide)) hu hsy e₁ e₂ x hx
 
 open StackLock in
 theorem streamDecryptWZ_resOk (v : GcmImpl) (B : BlkFn CtxMode.base) {zg : Nat → Bool} (GZ : GhCallZ (v.wrapC .sse) zg)
@@ -2965,11 +3160,11 @@ theorem streamDecryptWZ_resOk (v : GcmImpl) (B : BlkFn CtxMode.base) {zg : Nat �
     (hct : Plain v.callees.ctr.code) (hgh : Plain v.callees.gh.code) (hn : UpperLock.inames B.dec.code = []) :
     ResOk (withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamDecryptClr (v.withBlk B) .sse))
       (Spec.Gcm.streamDecryptPreparedContract X86_64.abi 2608) 2608 [] [2608] := by
-  intro s₁ s₂ t₁ t₂ u₁ u₂ h₁ h₂ hp ho hu e₁ e₂ x hx _
+  intro s₁ s₂ t₁ t₂ u₁ u₂ h₁ h₂ hp ho hu hsy e₁ e₂ x hx _
   have h₁' := h₁
   unfold Spec.Gcm.streamDecryptPreparedContract at h₁'
   exact streamDecBZ_agree .sse v B GZ hsc CZ hB hct hgh hn h₁ h₂ hp (fun r h => ho.2.2.1 r h)
-    (below_same h₁' ho (by decide)) hu e₁ e₂ x hx
+    (below_same h₁' ho (by decide)) hu hsy e₁ e₂ x hx
 
 /-- `StreamChk` over the callees of `v`. -/
 def StreamChkV (v : GcmImpl) (c : Prog isa) (b : Prog isa) : Prop :=
@@ -3509,6 +3704,44 @@ theorem narrowS_openV {sig : Sig} {e : Elem} {n : Nat}
     have := (Offset.lt_iff x (openA s) (d := 8) (n := 40) (by decide)).1 hlt
     simp only [Region.Contains]; omega_using [this]
 
+/-- The unknowns `vg_aes_gcm_open`'s code of `v` ends with in its frame: the
+same in two runs. -/
+theorem open32_innerU (v : GcmVariant) {C : Mem → Addr → Prop} {s₁ s₂ : State}
+    (h₁ : (Spec.Gcm.openPreparedContract X86_64.abi 2640).pre s₁)
+    (h₂ : (Spec.Gcm.openPreparedContract X86_64.abi 2640).pre s₂) (hf₁ : C s₁.mem (s₁.gpr .rdi))
+    (hf₂ : C s₂.mem (s₂.gpr .rdi)) (hp : (Spec.Gcm.openPreparedContract X86_64.abi 2640).pub s₁ s₂)
+    (hu : s₁.unknowns = s₂.unknowns)
+    (hsy : ∀ n ∈ UpperLock.inames (Impl.AesGcm.X86_64.«open» v.impl.callees), s₁.syms n = s₂.syms n) :
+    innerU (Impl.AesGcm.X86_64.«open» v.impl.callees) (narrowS Spec.Gcm.openSig .u64 320 2616 (narrow32 s₁)) =
+      innerU (Impl.AesGcm.X86_64.«open» v.impl.callees) (narrowS Spec.Gcm.openSig .u64 320 2616 (narrow32 s₂)) := by
+  unfold Spec.Gcm.openPreparedContract at h₁ h₂ hp
+  have q (s : State) (hs : (Spec.Gcm.openPreparedSig.contract abi (Spec.Gcm.openPreparedPre abi.ptrBits)
+      (Spec.Gcm.openPost abi.ptrBits) true 2640 (some (Spec.Gcm.openPreparedLeak abi.ptrBits))).pre s)
+      (hf : C s.mem (s.gpr .rdi)) := pre_narrowFirstArray (n := 32) (n' := 129) (by decide)
+    (pre := Spec.Gcm.openPre 64) (fun _ _ _ _ _ _ _ _ _ _ _ h => h)
+    (pre_of_rel (N := 129) (C := C) (leakB := some (Spec.Gcm.openLeak 64))
+      (pre := Spec.Gcm.openPreparedPre 64) (pre' := Spec.Gcm.openPre 64)
+      (fun _ _ _ _ _ _ _ _ _ _ _ h _ => h.1) hs hf)
+  obtain ⟨⟨hs, hl⟩, hpubs, hdescs⟩ := (pubL_args (sig := Spec.Gcm.openPreparedSig) (by decide)).mp hp
+  have e : ∀ s : State, Curry.apply (Spec.Gcm.openPreparedSig.words abi.ptrBits) (Spec.Gcm.openPreparedLeak abi.ptrBits)
+      (allArgs Spec.Gcm.openPreparedSig s) s.mem = flagLeak s.mem (s.gpr .rdi) ::
+        Curry.apply (Spec.Gcm.openSig.words abi.ptrBits) (Spec.Gcm.openLeak abi.ptrBits)
+          (allArgs Spec.Gcm.openSig s) s.mem := fun _ => rfl
+  have hl' := (List.cons.inj ((e s₁).symm.trans (hl.trans (e s₂)))).2
+  exact framed_innerU_agree (sig := Spec.Gcm.openSig) (nm := "work") (e := .u64) (n := 320)
+    (stack := 24) (bytes := 2616) (pre := Spec.Gcm.openPre X86_64.abi.ptrBits)
+    (post := Proof.AesGcm.openRoundsPost X86_64.abi.ptrBits) (wa := true)
+    (leak := some (Spec.Gcm.openLeak X86_64.abi.ptrBits))
+    (open_verified v.impl) (by decide) (by decide) (by decide)
+    (openPre_local _) (q s₁ h₁ hf₁) (q s₂ h₂ hf₂)
+    ((pubL_args (sig := Spec.Gcm.openSig) (by decide)).mpr ⟨⟨hs, hl'⟩, hpubs,
+      fun r hr i hi => hdescs r (by
+        rw [show Spec.Gcm.openPreparedSig.params = ("ctx", .array false .u64 129) ::
+          Spec.Gcm.openSig.params.tail from rfl, descs_array .u64 32 129]
+        exact hr) i hi⟩) hu hsy
+    (Sig.LeakLocal.toL (sig := Spec.Gcm.openSig) (leak := some (Spec.Gcm.openLeak X86_64.abi.ptrBits))
+      (openLeak_local _))
+
 /-- The code of `vg_aes_gcm_open` of the variant `v` for the key context of
 `vg_aes_gcm_init`, in the frame of `withStackArgScratch 2616 4`, from a state
 meeting `vg_aes_gcm_open_prepared`'s precondition and `C`: what `openVs`
@@ -3523,7 +3756,9 @@ theorem open_branchOf (v : GcmVariant) (hc : v.impl.openCode v.impl.callees = Im
     {C : Mem → Addr → Prop} :
     ∀ s t u, (Spec.Gcm.openPreparedContract X86_64.abi 2640).pre s → C s.mem (s.gpr .rdi) →
       Exec isa (withStackArgScratch 2616 4 (v.impl.openCode v.impl.callees)) s t u →
-      ∀ x, openQ (openA s) (openW s) x → u.mem x = (openVs Lb s x).getD (s.mem x) := by
+      ∀ x, openQ (openA s) (openW s) x → u.mem x = (loseL (openA s) 2616
+        (innerU (Impl.AesGcm.X86_64.«open» v.impl.callees) (narrowS Spec.Gcm.openSig .u64 320 2616 (narrow32 s)))
+        (openVs Lb s) x).getD (s.mem x) := by
   rw [hc] at hL
   intro s t u hs hf he x hx
   rw [hc] at he
@@ -3543,7 +3778,7 @@ theorem open_branchOf (v : GcmVariant) (hc : v.impl.openCode v.impl.callees = Im
     (open_verified v.impl) (fun s h => ⟨openCode_implies.pre s h, trivial⟩) hL
     (by decide) (by decide) (by decide) (open_spSafe _) (open_xdepth _)
     (openPre_local _) h₂ he₁ x hx']
-  exact hv
+  exact loseL_getD_congr hv
 
 /-- The granules `vg_aes_gcm_open_prepared` wipes, of its 2640 bytes of stack
 in chunks of 8 (at the top), 2344, 8 and 280, whose granules are then
@@ -3673,19 +3908,28 @@ theorem openW_resOk (v : GcmVariant)
       (Spec.Gcm.openPreparedContract X86_64.abi 2640) 2640 openKs openCs := by
   obtain ⟨Lb, hL⟩ := hL
   unfold Spec.Gcm.openPreparedContract
-  refine resOk_of_leaves (V := openVs Lb) ScrubAbi.plain ?_ ?_
+  refine resOk_of_leaves (V := fun s x => loseL (openA s) 2616
+      (innerU (Impl.AesGcm.X86_64.«open» v.impl.callees) (narrowS Spec.Gcm.openSig .u64 320 2616 (narrow32 s)))
+      (openVs Lb s) x) ScrubAbi.plain ?_ ?_
   · intro s t u hs he x hx hw
     exact open_branchOf v hc hL (C := fun _ _ => True) s t u hs trivial he x (openWindow hx hw)
-  · intro s₁ s₂ _ _ hp ho _
+  · intro s₁ s₂ h₁ h₂ hp ho hu hsy
     have ha := openArgs_pub hp ho
     have hsp : s₁.gpr .rsp = s₂.gpr .rsp := ho.2.2.1 .rsp (by decide)
     have hA : openA s₁ = openA s₂ := by simp only [openA, hsp]
     have hW : openW s₁ = openW s₂ := by simp only [openW, hsp]
+    have hV : openVs Lb s₁ = openVs Lb s₂ := by
+      funext x
+      unfold openVs
+      rw [ha, hA, hW]
+      exact openV_congr Lb (fun _ => by simp only [openHdr, ha, hA]) (fun r hr _ => ho.2.2.1 r hr)
+        (fun _ _ => rfl)
+    have hsy' : ∀ n ∈ UpperLock.inames (Impl.AesGcm.X86_64.«open» v.impl.callees), s₁.syms n = s₂.syms n := by
+      rw [← hc]; exact hsy
+    have hU := open32_innerU v (C := fun _ _ => True) h₁ h₂ trivial trivial hp hu hsy'
     funext x
-    unfold openVs
-    rw [ha, hA, hW]
-    exact openV_congr Lb (fun _ => by simp only [openHdr, ha, hA]) (fun r hr _ => ho.2.2.1 r hr)
-      (fun _ _ => rfl)
+    dsimp only
+    rw [hA, hU, hV]
 
 /-- `vg_aes_gcm_open_prepared`'s postcondition reads the memory on return
 only within the buffers: the data. -/

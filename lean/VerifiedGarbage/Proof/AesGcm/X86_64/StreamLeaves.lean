@@ -2572,6 +2572,19 @@ theorem streamEncryptClrB_leaves (B : BlkFn CtxMode.base)
       exact q)
     rfl (by decide) (by decide) hsp hd (streamTextPre_local _) hs he
 
+omit gf cf in
+/-- What `streamEncryptClrB_leaves` leaves goes through the release of the frame with the
+unknowns its code ends with, which two runs agree on. -/
+theorem streamEncryptClrB_leaves_innerU (B : BlkFn CtxMode.base) {s₁ s₂ : State}
+    (h₁ : (Proof.AesGcm.streamEncryptRoundsContract X86_64.abi 2608).pre s₁) (h₂ : (Proof.AesGcm.streamEncryptRoundsContract X86_64.abi 2608).pre s₂)
+    (hp : (Proof.AesGcm.streamEncryptRoundsContract X86_64.abi 2608).pub s₁ s₂) (hu : s₁.unknowns = s₂.unknowns)
+    (hsy : ∀ n ∈ UpperLock.inames (streamEncryptClr (v.withBlk B) lv), s₁.syms n = s₂.syms n) :
+    innerU (streamEncryptClr (v.withBlk B) lv) (narrowS Spec.Gcm.streamCryptSig .u64 320 2584 s₁) =
+      innerU (streamEncryptClr (v.withBlk B) lv) (narrowS Spec.Gcm.streamCryptSig .u64 320 2584 s₂) :=
+  framed_innerU_agree (sig := Spec.Gcm.streamCryptSig) (nm := "scratch") (e := .u64) (n := 320)
+    (pre := Spec.Gcm.streamTextPre X86_64.abi.ptrBits) (post := Proof.AesGcm.streamEncryptRoundsPost X86_64.abi.ptrBits) (wa := true) (leak := none)
+    (Verified.hoist lv (streamEncryptSB_verified (v.wrapC lv) (B.wrapC lv))) (by decide) (by decide) (by decide) (streamTextPre_local _) h₁ h₂ hp hu hsy
+
 /-- `streamEncryptClrB_leaves` for `vg_aes_gcm_stream_decrypt`. -/
 theorem streamDecryptClrB_leaves (B : BlkFn CtxMode.base)
     {Lb : BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → Addr → Addr → Option (BitVec 8)}
@@ -2595,6 +2608,19 @@ theorem streamDecryptClrB_leaves (B : BlkFn CtxMode.base)
       obtain ⟨-, rfl⟩ := Exec.det ((exec_hoist lv _ _ _ _).mp he) e'
       exact q)
     rfl (by decide) (by decide) hsp hd (streamTextPre_local _) hs he
+
+omit gf cf in
+/-- What `streamDecryptClrB_leaves` leaves goes through the release of the frame with the
+unknowns its code ends with, which two runs agree on. -/
+theorem streamDecryptClrB_leaves_innerU (B : BlkFn CtxMode.base) {s₁ s₂ : State}
+    (h₁ : (Proof.AesGcm.streamDecryptRoundsContract X86_64.abi 2608).pre s₁) (h₂ : (Proof.AesGcm.streamDecryptRoundsContract X86_64.abi 2608).pre s₂)
+    (hp : (Proof.AesGcm.streamDecryptRoundsContract X86_64.abi 2608).pub s₁ s₂) (hu : s₁.unknowns = s₂.unknowns)
+    (hsy : ∀ n ∈ UpperLock.inames (streamDecryptClr (v.withBlk B) lv), s₁.syms n = s₂.syms n) :
+    innerU (streamDecryptClr (v.withBlk B) lv) (narrowS Spec.Gcm.streamCryptSig .u64 320 2584 s₁) =
+      innerU (streamDecryptClr (v.withBlk B) lv) (narrowS Spec.Gcm.streamCryptSig .u64 320 2584 s₂) :=
+  framed_innerU_agree (sig := Spec.Gcm.streamCryptSig) (nm := "scratch") (e := .u64) (n := 320)
+    (pre := Spec.Gcm.streamTextPre X86_64.abi.ptrBits) (post := Proof.AesGcm.streamDecryptRoundsPost X86_64.abi.ptrBits) (wa := true) (leak := none)
+    (Verified.hoist lv (streamDecryptSB_verified (v.wrapC lv) (B.wrapC lv))) (by decide) (by decide) (by decide) (streamTextPre_local _) h₁ h₂ hp hu hsy
 
 omit gf cf in
 /-- `vg_aes_gcm_stream_encrypt` clearing the registers after each call, with
@@ -2674,6 +2700,19 @@ theorem streamEncryptClr16_leaves (B : BlkFn CtxMode.prepared16)
       exact q)
     rfl (by decide) (by decide) hsp hd (Proof.AesGcm.streamCryptPrepared16Pre_local _) hs he
 
+omit gf cf in
+/-- What `streamEncryptClr16_leaves` leaves goes through the release of the frame with the
+unknowns its code ends with, which two runs agree on. -/
+theorem streamEncryptClr16_leaves_innerU (B : BlkFn CtxMode.prepared16) {s₁ s₂ : State}
+    (h₁ : (Proof.AesGcm.streamEncryptPrepared16RoundsContract X86_64.abi 2608).pre s₁) (h₂ : (Proof.AesGcm.streamEncryptPrepared16RoundsContract X86_64.abi 2608).pre s₂)
+    (hp : (Proof.AesGcm.streamEncryptPrepared16RoundsContract X86_64.abi 2608).pub s₁ s₂) (hu : s₁.unknowns = s₂.unknowns)
+    (hsy : ∀ n ∈ UpperLock.inames (streamEncryptClr (v.withBlk B) lv), s₁.syms n = s₂.syms n) :
+    innerU (streamEncryptClr (v.withBlk B) lv) (narrowS Proof.Gcm.streamCryptPrecomputedSig .u64 320 2584 s₁) =
+      innerU (streamEncryptClr (v.withBlk B) lv) (narrowS Proof.Gcm.streamCryptPrecomputedSig .u64 320 2584 s₂) :=
+  framed_innerU_agree (sig := Proof.Gcm.streamCryptPrecomputedSig) (nm := "scratch") (e := .u64) (n := 320)
+    (pre := Proof.Gcm.streamCryptPrepared16Pre X86_64.abi.ptrBits) (post := Proof.AesGcm.streamEncryptRoundsPost X86_64.abi.ptrBits) (wa := true) (leak := none)
+    (Verified.hoist lv (streamEncryptSPrepared16_verified (v.wrapC lv) (B.wrapC lv))) (by decide) (by decide) (by decide) (Proof.AesGcm.streamCryptPrepared16Pre_local _) h₁ h₂ hp hu hsy
+
 /-- `streamEncryptClr16_leaves` for `vg_aes_gcm_stream_decrypt`. -/
 theorem streamDecryptClr16_leaves (B : BlkFn CtxMode.prepared16)
     {Lb : BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → Addr → Addr → Option (BitVec 8)}
@@ -2699,6 +2738,19 @@ theorem streamDecryptClr16_leaves (B : BlkFn CtxMode.prepared16)
       obtain ⟨-, rfl⟩ := Exec.det ((exec_hoist lv _ _ _ _).mp he) e'
       exact q)
     rfl (by decide) (by decide) hsp hd (Proof.AesGcm.streamCryptPrepared16Pre_local _) hs he
+
+omit gf cf in
+/-- What `streamDecryptClr16_leaves` leaves goes through the release of the frame with the
+unknowns its code ends with, which two runs agree on. -/
+theorem streamDecryptClr16_leaves_innerU (B : BlkFn CtxMode.prepared16) {s₁ s₂ : State}
+    (h₁ : (Proof.AesGcm.streamDecryptPrepared16RoundsContract X86_64.abi 2608).pre s₁) (h₂ : (Proof.AesGcm.streamDecryptPrepared16RoundsContract X86_64.abi 2608).pre s₂)
+    (hp : (Proof.AesGcm.streamDecryptPrepared16RoundsContract X86_64.abi 2608).pub s₁ s₂) (hu : s₁.unknowns = s₂.unknowns)
+    (hsy : ∀ n ∈ UpperLock.inames (streamDecryptClr (v.withBlk B) lv), s₁.syms n = s₂.syms n) :
+    innerU (streamDecryptClr (v.withBlk B) lv) (narrowS Proof.Gcm.streamCryptPrecomputedSig .u64 320 2584 s₁) =
+      innerU (streamDecryptClr (v.withBlk B) lv) (narrowS Proof.Gcm.streamCryptPrecomputedSig .u64 320 2584 s₂) :=
+  framed_innerU_agree (sig := Proof.Gcm.streamCryptPrecomputedSig) (nm := "scratch") (e := .u64) (n := 320)
+    (pre := Proof.Gcm.streamCryptPrepared16Pre X86_64.abi.ptrBits) (post := Proof.AesGcm.streamDecryptRoundsPost X86_64.abi.ptrBits) (wa := true) (leak := none)
+    (Verified.hoist lv (streamDecryptSPrepared16_verified (v.wrapC lv) (B.wrapC lv))) (by decide) (by decide) (by decide) (Proof.AesGcm.streamCryptPrepared16Pre_local _) h₁ h₂ hp hu hsy
 
 /-- `streamEncryptClrB_leaves`, on 48 powers of the hash subkey. -/
 theorem streamEncryptClr48_leaves (B : BlkFn CtxMode.prepared)
@@ -2726,6 +2778,19 @@ theorem streamEncryptClr48_leaves (B : BlkFn CtxMode.prepared)
       exact q)
     rfl (by decide) (by decide) hsp hd (Proof.AesGcm.streamCryptPreparedPre_local _) hs he
 
+omit gf cf in
+/-- What `streamEncryptClr48_leaves` leaves goes through the release of the frame with the
+unknowns its code ends with, which two runs agree on. -/
+theorem streamEncryptClr48_leaves_innerU (B : BlkFn CtxMode.prepared) {s₁ s₂ : State}
+    (h₁ : (Proof.AesGcm.streamEncryptPreparedRoundsContract X86_64.abi 2608).pre s₁) (h₂ : (Proof.AesGcm.streamEncryptPreparedRoundsContract X86_64.abi 2608).pre s₂)
+    (hp : (Proof.AesGcm.streamEncryptPreparedRoundsContract X86_64.abi 2608).pub s₁ s₂) (hu : s₁.unknowns = s₂.unknowns)
+    (hsy : ∀ n ∈ UpperLock.inames (streamEncryptClr (v.withBlk B) lv), s₁.syms n = s₂.syms n) :
+    innerU (streamEncryptClr (v.withBlk B) lv) (narrowS Proof.Gcm.streamCryptPrecomputedSig .u64 320 2584 s₁) =
+      innerU (streamEncryptClr (v.withBlk B) lv) (narrowS Proof.Gcm.streamCryptPrecomputedSig .u64 320 2584 s₂) :=
+  framed_innerU_agree (sig := Proof.Gcm.streamCryptPrecomputedSig) (nm := "scratch") (e := .u64) (n := 320)
+    (pre := Proof.Gcm.streamCryptPowersPre X86_64.abi.ptrBits) (post := Proof.AesGcm.streamEncryptRoundsPost X86_64.abi.ptrBits) (wa := true) (leak := none)
+    (Verified.hoist lv (streamEncryptSPrepared_verified (v.wrapC lv) (B.wrapC lv))) (by decide) (by decide) (by decide) (Proof.AesGcm.streamCryptPreparedPre_local _) h₁ h₂ hp hu hsy
+
 /-- `streamEncryptClr48_leaves` for `vg_aes_gcm_stream_decrypt`. -/
 theorem streamDecryptClr48_leaves (B : BlkFn CtxMode.prepared)
     {Lb : BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → Addr → Addr → Option (BitVec 8)}
@@ -2751,6 +2816,19 @@ theorem streamDecryptClr48_leaves (B : BlkFn CtxMode.prepared)
       obtain ⟨-, rfl⟩ := Exec.det ((exec_hoist lv _ _ _ _).mp he) e'
       exact q)
     rfl (by decide) (by decide) hsp hd (Proof.AesGcm.streamCryptPreparedPre_local _) hs he
+
+omit gf cf in
+/-- What `streamDecryptClr48_leaves` leaves goes through the release of the frame with the
+unknowns its code ends with, which two runs agree on. -/
+theorem streamDecryptClr48_leaves_innerU (B : BlkFn CtxMode.prepared) {s₁ s₂ : State}
+    (h₁ : (Proof.AesGcm.streamDecryptPreparedRoundsContract X86_64.abi 2608).pre s₁) (h₂ : (Proof.AesGcm.streamDecryptPreparedRoundsContract X86_64.abi 2608).pre s₂)
+    (hp : (Proof.AesGcm.streamDecryptPreparedRoundsContract X86_64.abi 2608).pub s₁ s₂) (hu : s₁.unknowns = s₂.unknowns)
+    (hsy : ∀ n ∈ UpperLock.inames (streamDecryptClr (v.withBlk B) lv), s₁.syms n = s₂.syms n) :
+    innerU (streamDecryptClr (v.withBlk B) lv) (narrowS Proof.Gcm.streamCryptPrecomputedSig .u64 320 2584 s₁) =
+      innerU (streamDecryptClr (v.withBlk B) lv) (narrowS Proof.Gcm.streamCryptPrecomputedSig .u64 320 2584 s₂) :=
+  framed_innerU_agree (sig := Proof.Gcm.streamCryptPrecomputedSig) (nm := "scratch") (e := .u64) (n := 320)
+    (pre := Proof.Gcm.streamCryptPowersPre X86_64.abi.ptrBits) (post := Proof.AesGcm.streamDecryptRoundsPost X86_64.abi.ptrBits) (wa := true) (leak := none)
+    (Verified.hoist lv (streamDecryptSPrepared_verified (v.wrapC lv) (B.wrapC lv))) (by decide) (by decide) (by decide) (Proof.AesGcm.streamCryptPreparedPre_local _) h₁ h₂ hp hu hsy
 
 end
 
