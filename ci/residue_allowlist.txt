@@ -731,17 +731,6 @@ powerpc64le vg_blake2s_finalize
 powerpc64le vg_blake2s_init
 powerpc64le vg_blake2s_update
 powerpc64le vg_camellia_ctr_final
-powerpc64le vg_cast5_cbc_decrypt_chained
-powerpc64le vg_cast5_cbc_encrypt_chained
-powerpc64le vg_cast5_cfb64_decrypt
-powerpc64le vg_cast5_cfb64_decrypt_final
-powerpc64le vg_cast5_cfb64_encrypt
-powerpc64le vg_cast5_cfb64_encrypt_final
-powerpc64le vg_cast5_ecb_decrypt
-powerpc64le vg_cast5_ecb_encrypt
-powerpc64le vg_cast5_expand_key
-powerpc64le vg_cast5_ofb
-powerpc64le vg_cast5_ofb_final
 powerpc64le vg_chacha20_apply
 powerpc64le vg_chacha20_init
 powerpc64le vg_chacha20_poly1305_open

@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Cast5.PPC64LE.ModesFrame
 public import VerifiedGarbage.Proof.Cast5.PPC64LE.FbFinalVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Cast5.PPC64LE.Scrub
 public import VerifiedGarbage.TCB.PPC64LE.Print
 import VerifiedGarbage.Proof.Cast5.PPC64LE.ModesLit
 import VerifiedGarbage.Proof.Cast5.PPC64LE.FbFinalLit
@@ -14,17 +15,9 @@ import VerifiedGarbage.Proof.Cast5.PPC64LE.FbFinalLit
 namespace VG.Artifacts.Cast5Cfb.PPC64LE
 
 def artifacts : List Artifact := [
-  Spec.Cast5.cfbEncryptApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 208 .r8 22 Impl.Cast5.PPC64LE.cfbEncrypt
-    verified := Proof.Cast5.cfbEncrypt_keyed Proof.Cast5.PPC64LE.Modes.cfbEncrypt_framed },
-  Spec.Cast5.cfbDecryptApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 208 .r8 22 Impl.Cast5.PPC64LE.cfbDecrypt
-    verified := Proof.Cast5.cfbDecrypt_keyed Proof.Cast5.PPC64LE.Modes.cfbDecrypt_framed },
-  Spec.Cast5.cfbEncryptFinalApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 208 .r8 22 Impl.Cast5.PPC64LE.cfbEncryptFinal
-    verified := Proof.Cast5.cfbEncryptFinal_keyed Proof.Cast5.PPC64LE.FbFinal.cfbEncryptFinal_framed },
-  Spec.Cast5.cfbDecryptFinalApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 208 .r8 22 Impl.Cast5.PPC64LE.cfbDecryptFinal
-    verified := Proof.Cast5.cfbDecryptFinal_keyed Proof.Cast5.PPC64LE.FbFinal.cfbDecryptFinal_framed }]
+  Spec.Cast5.cfbEncryptApi.artifact PPC64LE.target Proof.Cast5.PPC64LE.Scrub.cfbEncryptReg,
+  Spec.Cast5.cfbDecryptApi.artifact PPC64LE.target Proof.Cast5.PPC64LE.Scrub.cfbDecryptReg,
+  Spec.Cast5.cfbEncryptFinalApi.artifact PPC64LE.target Proof.Cast5.PPC64LE.Scrub.cfbEncryptFinalReg,
+  Spec.Cast5.cfbDecryptFinalApi.artifact PPC64LE.target Proof.Cast5.PPC64LE.Scrub.cfbDecryptFinalReg]
 
 end VG.Artifacts.Cast5Cfb.PPC64LE

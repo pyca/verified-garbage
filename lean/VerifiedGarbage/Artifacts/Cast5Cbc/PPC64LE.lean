@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Cast5.PPC64LE.ModesFrame
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Cast5.PPC64LE.Scrub
 public import VerifiedGarbage.TCB.PPC64LE.Print
 import VerifiedGarbage.Proof.Cast5.PPC64LE.ModesLit
 
@@ -12,11 +13,7 @@ import VerifiedGarbage.Proof.Cast5.PPC64LE.ModesLit
 namespace VG.Artifacts.Cast5Cbc.PPC64LE
 
 def artifacts : List Artifact := [
-  Spec.Cast5.cbcEncryptChainedApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 208 .r8 22 Impl.Cast5.PPC64LE.cbcEncryptChained
-    verified := Proof.Cast5.cbcEncryptChained_keyed Proof.Cast5.PPC64LE.Modes.cbcEncryptChained_framed },
-  Spec.Cast5.cbcDecryptChainedApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 208 .r8 22 Impl.Cast5.PPC64LE.cbcDecryptChained
-    verified := Proof.Cast5.cbcDecryptChained_keyed Proof.Cast5.PPC64LE.Modes.cbcDecryptChained_framed }]
+  Spec.Cast5.cbcEncryptChainedApi.artifact PPC64LE.target Proof.Cast5.PPC64LE.Scrub.cbcEncryptChainedReg,
+  Spec.Cast5.cbcDecryptChainedApi.artifact PPC64LE.target Proof.Cast5.PPC64LE.Scrub.cbcDecryptChainedReg]
 
 end VG.Artifacts.Cast5Cbc.PPC64LE

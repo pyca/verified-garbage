@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Cast5.PPC64LE.ModesFrame
 public import VerifiedGarbage.Proof.Cast5.PPC64LE.FbFinalVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Cast5.PPC64LE.Scrub
 public import VerifiedGarbage.TCB.PPC64LE.Print
 import VerifiedGarbage.Proof.Cast5.PPC64LE.ModesLit
 import VerifiedGarbage.Proof.Cast5.PPC64LE.FbFinalLit
@@ -14,11 +15,7 @@ import VerifiedGarbage.Proof.Cast5.PPC64LE.FbFinalLit
 namespace VG.Artifacts.Cast5Ofb.PPC64LE
 
 def artifacts : List Artifact := [
-  Spec.Cast5.ofbApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 208 .r8 22 Impl.Cast5.PPC64LE.ofb
-    verified := Proof.Cast5.ofb_keyed Proof.Cast5.PPC64LE.Modes.ofb_framed },
-  Spec.Cast5.ofbFinalApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 208 .r8 22 Impl.Cast5.PPC64LE.ofbFinal
-    verified := Proof.Cast5.ofbFinal_keyed Proof.Cast5.PPC64LE.FbFinal.ofbFinal_framed }]
+  Spec.Cast5.ofbApi.artifact PPC64LE.target Proof.Cast5.PPC64LE.Scrub.ofbReg,
+  Spec.Cast5.ofbFinalApi.artifact PPC64LE.target Proof.Cast5.PPC64LE.Scrub.ofbFinalReg]
 
 end VG.Artifacts.Cast5Ofb.PPC64LE
