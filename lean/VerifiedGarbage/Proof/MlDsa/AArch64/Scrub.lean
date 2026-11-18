@@ -149,6 +149,123 @@ theorem preparedVerifyMessageSelectedOk : ScrubAllOk
   rw [messageVerifyK, ite_eq_left rfl]
   exact preparedVerifyMessageOk_consts p 64 _ _
 
+/-! ## Signing and verifying `μ` -/
+
+/-- `ScrubAllOk` of the contract, for code that takes tables of constants. -/
+theorem signOk_consts (W : Nat) (c₀ : String × List (BitVec 64)) (cs : List (String × List (BitVec 64)))
+    (hW : 0 < W := by decide) :
+    ScrubAllOk (signContract p (abi.withConsts (c₀ :: cs)) W) W ((signSig p).retBits abi.ptrBits) :=
+  scrubAllOk_consts (sig := signSig p) (Nat.le_of_ble_eq_true rfl) hW (Nat.le_refl _) fun vs m m₁ m₂ r hlen hb h => by
+    match vs, hlen with
+    | [sk, mu, rnd, sig, sc], _ =>
+      simp only [signSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+        forall_eq, Elem.size, Nat.mul_one] at hb
+      have e := bytesAt_of (n := p.sigLen) (Nat.le_refl _) hb.2.2.2.1
+      show Outcome (fun b => signMu p b (Spec.Sha3.bytesAt m sk p.skLen) (Spec.Sha3.bytesAt m mu 64)
+        (Spec.Sha3.bytesAt m rnd 32)) r (Spec.Sha3.bytesAt m₂ sig p.sigLen)
+      rw [e]
+      exact h
+
+/-- `ScrubAllOk` of the contract, for code that takes tables of constants. -/
+theorem preparedSignOk_consts (W : Nat) (c₀ : String × List (BitVec 64)) (cs : List (String × List (BitVec 64)))
+    (hW : 0 < W := by decide) :
+    ScrubAllOk (preparedSignContract p (abi.withConsts (c₀ :: cs)) W) W ((preparedSignSig p).retBits abi.ptrBits) :=
+  scrubAllOk_consts (sig := preparedSignSig p) (Nat.le_of_ble_eq_true rfl) hW (Nat.le_refl _) fun vs m m₁ m₂ r hlen hb h => by
+    match vs, hlen with
+    | [sk, mu, rnd, sig, sc], _ =>
+      simp only [Spec.MlDsa.preparedSignSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+        forall_eq, Elem.size, Nat.mul_one] at hb
+      have e := bytesAt_of (n := p.sigLen) (Nat.le_refl _) hb.2.2.2.1
+      show Outcome (fun b => signMu p b (Spec.Sha3.bytesAt m sk p.skLen) (Spec.Sha3.bytesAt m mu 64)
+        (Spec.Sha3.bytesAt m rnd 32)) r (Spec.Sha3.bytesAt m₂ sig p.sigLen)
+      rw [e]
+      exact h
+
+/-- `ScrubAllOk` of the contract, for code that takes tables of constants. -/
+theorem verifyOk_consts (W : Nat) (c₀ : String × List (BitVec 64)) (cs : List (String × List (BitVec 64)))
+    (hW : 0 < W := by decide) :
+    ScrubAllOk (verifyContract p (abi.withConsts (c₀ :: cs)) W) W ((verifySig p).retBits abi.ptrBits) :=
+  scrubAllOk_consts (sig := verifySig p) (Nat.le_of_ble_eq_true rfl) hW (Nat.le_refl _) fun vs m m₁ m₂ r hlen _ h => by
+    match vs, hlen with
+    | [_, _, _, _], _ => exact h
+
+/-- `ScrubAllOk` of the contract, for code that takes tables of constants. -/
+theorem preparedVerifyOk_consts (W : Nat) (c₀ : String × List (BitVec 64)) (cs : List (String × List (BitVec 64)))
+    (hW : 0 < W := by decide) :
+    ScrubAllOk (preparedVerifyContract p (abi.withConsts (c₀ :: cs)) W) W ((preparedVerifySig p).retBits abi.ptrBits) :=
+  scrubAllOk_consts (sig := preparedVerifySig p) (Nat.le_of_ble_eq_true rfl) hW (Nat.le_refl _) fun vs m m₁ m₂ r hlen _ h => by
+    match vs, hlen with
+    | [_, _, _, _], _ => exact h
+
+open VG.Proof.MlDsa.AArch64.PreparedKey (rawSignK rawVerifyK)
+
+theorem signPairedOk : ScrubAllOk
+    (rawSignK p false (abi.withConsts Proof.MlDsa.AArch64.Sign.pairedSignRootConsts)) 64
+    ((signSig p).retBits abi.ptrBits) := by
+  rw [rawSignK, ite_eq_right Bool.false_ne_true, Proof.MlDsa.AArch64.Sign.pairedSignRootConsts_eq]
+  exact signOk_consts p 64 _ _
+
+theorem preparedSignPairedOk : ScrubAllOk
+    (rawSignK p true (abi.withConsts Proof.MlDsa.AArch64.Sign.pairedSignRootConsts)) 64
+    ((preparedSignSig p).retBits abi.ptrBits) := by
+  rw [rawSignK, ite_eq_left rfl, Proof.MlDsa.AArch64.Sign.pairedSignRootConsts_eq]
+  exact preparedSignOk_consts p 64 _ _
+
+theorem verifySelectedOk : ScrubAllOk
+    (rawVerifyK p false Proof.MlDsa.AArch64.Verify.OptimizedSelected.selectedAbi) 64
+    ((verifySig p).retBits abi.ptrBits) := by
+  rw [rawVerifyK, ite_eq_right Bool.false_ne_true]
+  exact verifyOk_consts p 64 _ _
+
+theorem preparedVerifySelectedOk : ScrubAllOk
+    (rawVerifyK p true Proof.MlDsa.AArch64.Verify.OptimizedSelected.selectedAbi) 64
+    ((preparedVerifySig p).retBits abi.ptrBits) := by
+  rw [rawVerifyK, ite_eq_left rfl]
+  exact preparedVerifyOk_consts p 64 _ _
+
+/-! ## The entries the message functions call -/
+
+/-- The message functions call the entries as emitted, scrubbed whole: that
+code keeps `Message.DLe 4`, its frame of 64 bytes being 4 units. -/
+theorem dle_scrubAll {c : Prog VG.AArch64.isa} (h : VG.Proof.MlDsa.AArch64.Message.DLe 4 c) :
+    VG.Proof.MlDsa.AArch64.Message.DLe 4 (VG.Impl.Residue.AArch64.scrubAll 64 32 c) := by
+  refine ⟨?_, ?_⟩
+  · have hl := h.le
+    show Code.aarch64Depth (.seq (VG.Impl.Residue.AArch64.withRet 32 (.seq c (.block VG.Impl.Residue.AArch64.clearsAll)))
+      (VG.Impl.Residue.AArch64.scrubTailG 64 (List.range 4))) ≤ 4
+    simp only [VG.Impl.Residue.AArch64.withRet, VG.Impl.Residue.AArch64.scrubTailG, Code.aarch64Depth,
+      Instr.frameUnits, Nat.max_le, Nat.zero_le, Nat.reduceDiv, Nat.zero_add, Nat.le_refl, and_true]
+    exact hl
+  · have hn := h.nd
+    show Code.all (fun i => !i.touchesDit) (.seq (VG.Impl.Residue.AArch64.withRet 32
+      (.seq c (.block VG.Impl.Residue.AArch64.clearsAll))) (VG.Impl.Residue.AArch64.scrubTailG 64 (List.range 4))) = true
+    simp only [VG.Impl.Residue.AArch64.withRet, VG.Impl.Residue.AArch64.scrubTailG, Code.all, hn, Bool.true_and]
+    decide
+
+open VG.Proof.MlDsa.AArch64.PreparedKey (MessageSignFn MessageVerifyFn message_sign_fn message_verify_fn)
+
+/-- What a message signing function calls: the signing entry, scrubbed whole. -/
+theorem message_sign_fn_scrub (v : Proof.Sha3.AArch64.Permutation) (hp : Proof.MlDsa.AArch64.Sign.Ok3 p)
+    (name : String) (prepared : Bool) :
+    MessageSignFn p prepared
+      (VG.Impl.Residue.AArch64.scrubAll 64 32 (Proof.MlDsa.AArch64.PreparedKey.signCode v p name prepared)) := by
+  obtain h := message_sign_fn v hp name prepared
+  refine ⟨Verified.scrubAll h.ver (by decide) (by decide) ?_, dle_scrubAll h.dle⟩
+  cases prepared
+  · exact signPairedOk p
+  · exact preparedSignPairedOk p
+
+/-- What a message verification function calls: the verification entry, scrubbed whole. -/
+theorem message_verify_fn_scrub (v : Proof.Sha3.AArch64.Permutation) (hp : Proof.MlDsa.AArch64.Sign.Ok3 p)
+    (name : String) (prepared : Bool) :
+    MessageVerifyFn p prepared
+      (VG.Impl.Residue.AArch64.scrubAll 64 32 (Proof.MlDsa.AArch64.PreparedKey.verifyCode v p name prepared)) := by
+  obtain h := message_verify_fn v hp name prepared
+  refine ⟨Verified.scrubAll h.ver (by decide) (by decide) ?_, dle_scrubAll h.dle⟩
+  cases prepared
+  · exact verifySelectedOk p
+  · exact preparedVerifySelectedOk p
+
 /-! ## Preparing keys -/
 
 theorem agreeBuf {m₁ m₂ : Mem} {q : Addr} {N : Nat} (hN : N < 2 ^ 64)

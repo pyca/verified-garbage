@@ -1145,6 +1145,8 @@ pub const VG_MLDSA87_SIGN_SHA3_FEATURES: verified_garbage_cpu::Features = verifi
 ///
 /// Contract: `VG.Spec.MlDsa.signContract`. Constant time but for `ρ` and the rejection sampling: timing may depend on the pointers, on `ρ` (the first 32 bytes of `*sk`), on the number of iterations of the signing loop, the commitment hash of each and which validity check rejected it, and on the hint of the signature (`signLeak`), but not on anything else of the key, the message representative or the randomness.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `sk` must be valid for reads of 4896 bytes.
@@ -1163,7 +1165,14 @@ pub(crate) unsafe extern "C" fn vg_mldsa87_sign_sha3(sk: *const [u8; 4896], mu: 
     core::arch::naked_asm!(
         r".inst 0xf81f0ffe,0x91000005,0xd2800006
 bl {vg_mldsa87_sign_with_cache_sha3}
-.inst 0xf84107fe,0xd65f03c0
+.inst 0xf84107fe,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007
+.inst 0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f
+.inst 0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405
+.inst 0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415
+.inst 0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d
+.inst 0x6f00e41e,0x6f00e41f,0xea01003f,0x4e181c28,0x4e181c29,0x4e181c2a,0x4e181c2b,0x4e181c2c
+.inst 0x4e181c2d,0x4e181c2e,0x4e181c2f,0x11000000,0xd10103ff,0x6f00e41f,0x910003e9,0x3d80013f
+.inst 0x3d80053f,0x3d80093f,0x3d800d3f,0x910103ff,0xd65f03c0
 .p2align 6",
         vg_mldsa87_sign_with_cache_sha3 = sym super::mldsa87::vg_mldsa87_sign_with_cache_sha3::vg_mldsa87_sign_with_cache_sha3,
     )
@@ -1175,6 +1184,8 @@ pub const VG_MLDSA87_SIGN_PREPARED_SHA3_FEATURES: verified_garbage_cpu::Features
 /// ML-DSA-87 signing of an external 64-byte message representative `*mu` with a prepared private key: `vg_mldsa87_sign` (with its results, timing and leakage) of the private key that `*sk` begins with.
 ///
 /// Contract: `VG.Spec.MlDsa.preparedSignContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1195,7 +1206,14 @@ pub(crate) unsafe extern "C" fn vg_mldsa87_sign_prepared_sha3(sk: *const [u8; 28
     core::arch::naked_asm!(
         r".inst 0xf81f0ffe,0xd2826405,0x8b050005,0xd28b8006
 bl {vg_mldsa87_sign_with_cache_sha3}
-.inst 0xf84107fe,0xd65f03c0
+.inst 0xf84107fe,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007
+.inst 0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f
+.inst 0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405
+.inst 0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415
+.inst 0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d
+.inst 0x6f00e41e,0x6f00e41f,0xea01003f,0x4e181c28,0x4e181c29,0x4e181c2a,0x4e181c2b,0x4e181c2c
+.inst 0x4e181c2d,0x4e181c2e,0x4e181c2f,0x11000000,0xd10103ff,0x6f00e41f,0x910003e9,0x3d80013f
+.inst 0x3d80053f,0x3d80093f,0x3d800d3f,0x910103ff,0xd65f03c0
 .p2align 6",
         vg_mldsa87_sign_with_cache_sha3 = sym super::mldsa87::vg_mldsa87_sign_with_cache_sha3::vg_mldsa87_sign_with_cache_sha3,
     )
@@ -1204,6 +1222,8 @@ bl {vg_mldsa87_sign_with_cache_sha3}
 /// ML-DSA-87 signing of a message representative, `ML-DSA.Sign_internal(sk, M′, rnd)` (FIPS 204 Algorithm 7) with `μ` computed by the caller: with the private key `*sk`, the 64-byte message representative `μ = H(tr ‖ M′, 64)` at `mu` (for the public key hash `tr`, bytes 64–127 of `*sk`) and the randomness `*rnd`, writes the signature to `*sig`. Returns 1 on success. Returns 0 if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlDsa.signContract`. Constant time but for `ρ` and the rejection sampling: timing may depend on the pointers, on `ρ` (the first 32 bytes of `*sk`), on the number of iterations of the signing loop, the commitment hash of each and which validity check rejected it, and on the hint of the signature (`signLeak`), but not on anything else of the key, the message representative or the randomness.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1222,7 +1242,14 @@ pub(crate) unsafe extern "C" fn vg_mldsa87_sign(sk: *const [u8; 4896], mu: *cons
     core::arch::naked_asm!(
         r".inst 0xf81f0ffe,0x91000005,0xd2800006
 bl {vg_mldsa87_sign_with_cache}
-.inst 0xf84107fe,0xd65f03c0
+.inst 0xf84107fe,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007
+.inst 0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f
+.inst 0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405
+.inst 0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415
+.inst 0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d
+.inst 0x6f00e41e,0x6f00e41f,0xea01003f,0x4e181c28,0x4e181c29,0x4e181c2a,0x4e181c2b,0x4e181c2c
+.inst 0x4e181c2d,0x4e181c2e,0x4e181c2f,0x11000000,0xd10103ff,0x6f00e41f,0x910003e9,0x3d80013f
+.inst 0x3d80053f,0x3d80093f,0x3d800d3f,0x910103ff,0xd65f03c0
 .p2align 6",
         vg_mldsa87_sign_with_cache = sym super::mldsa87::vg_mldsa87_sign_with_cache::vg_mldsa87_sign_with_cache,
     )
@@ -1231,6 +1258,8 @@ bl {vg_mldsa87_sign_with_cache}
 /// ML-DSA-87 signing of an external 64-byte message representative `*mu` with a prepared private key: `vg_mldsa87_sign` (with its results, timing and leakage) of the private key that `*sk` begins with.
 ///
 /// Contract: `VG.Spec.MlDsa.preparedSignContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1250,7 +1279,14 @@ pub(crate) unsafe extern "C" fn vg_mldsa87_sign_prepared(sk: *const [u8; 28448],
     core::arch::naked_asm!(
         r".inst 0xf81f0ffe,0xd2826405,0x8b050005,0xd28b8006
 bl {vg_mldsa87_sign_with_cache}
-.inst 0xf84107fe,0xd65f03c0
+.inst 0xf84107fe,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007
+.inst 0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f
+.inst 0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405
+.inst 0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415
+.inst 0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d
+.inst 0x6f00e41e,0x6f00e41f,0xea01003f,0x4e181c28,0x4e181c29,0x4e181c2a,0x4e181c2b,0x4e181c2c
+.inst 0x4e181c2d,0x4e181c2e,0x4e181c2f,0x11000000,0xd10103ff,0x6f00e41f,0x910003e9,0x3d80013f
+.inst 0x3d80053f,0x3d80093f,0x3d800d3f,0x910103ff,0xd65f03c0
 .p2align 6",
         vg_mldsa87_sign_with_cache = sym super::mldsa87::vg_mldsa87_sign_with_cache::vg_mldsa87_sign_with_cache,
     )
@@ -1533,6 +1569,8 @@ pub const VG_MLDSA87_VERIFY_SHA3_FEATURES: verified_garbage_cpu::Features = veri
 ///
 /// Contract: `VG.Spec.MlDsa.verifyContract`. Not constant time: timing may depend on the public key, the message representative and the signature.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `pk` must be valid for reads of 2592 bytes.
@@ -1548,7 +1586,14 @@ pub(crate) unsafe extern "C" fn vg_mldsa87_verify_sha3(pk: *const [u8; 2592], mu
     core::arch::naked_asm!(
         r".inst 0xf81f0ffe,0x91000004,0xd2800005
 bl {vg_mldsa87_verify_with_cache_sha3}
-.inst 0xf84107fe,0xd65f03c0
+.inst 0xf84107fe,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007
+.inst 0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f
+.inst 0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405
+.inst 0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415
+.inst 0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d
+.inst 0x6f00e41e,0x6f00e41f,0xea01003f,0x4e181c28,0x4e181c29,0x4e181c2a,0x4e181c2b,0x4e181c2c
+.inst 0x4e181c2d,0x4e181c2e,0x4e181c2f,0x11000000,0xd10103ff,0x6f00e41f,0x910003e9,0x3d80013f
+.inst 0x3d80053f,0x3d80093f,0x3d800d3f,0x910103ff,0xd65f03c0
 .p2align 6",
         vg_mldsa87_verify_with_cache_sha3 = sym super::mldsa87::vg_mldsa87_verify_with_cache_sha3::vg_mldsa87_verify_with_cache_sha3,
     )
@@ -1560,6 +1605,8 @@ pub const VG_MLDSA87_VERIFY_PREPARED_SHA3_FEATURES: verified_garbage_cpu::Featur
 /// ML-DSA-87 verification of an external 64-byte message representative `*mu` with a prepared public key: `vg_mldsa87_verify` (with its results, timing and leakage) of the public key that `*pk` begins with.
 ///
 /// Contract: `VG.Spec.MlDsa.preparedVerifyContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1577,7 +1624,14 @@ pub(crate) unsafe extern "C" fn vg_mldsa87_verify_prepared_sha3(pk: *const [u8; 
     core::arch::naked_asm!(
         r".inst 0xf81f0ffe,0x91288004,0xd2840005
 bl {vg_mldsa87_verify_with_cache_sha3}
-.inst 0xf84107fe,0xd65f03c0
+.inst 0xf84107fe,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007
+.inst 0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f
+.inst 0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405
+.inst 0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415
+.inst 0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d
+.inst 0x6f00e41e,0x6f00e41f,0xea01003f,0x4e181c28,0x4e181c29,0x4e181c2a,0x4e181c2b,0x4e181c2c
+.inst 0x4e181c2d,0x4e181c2e,0x4e181c2f,0x11000000,0xd10103ff,0x6f00e41f,0x910003e9,0x3d80013f
+.inst 0x3d80053f,0x3d80093f,0x3d800d3f,0x910103ff,0xd65f03c0
 .p2align 6",
         vg_mldsa87_verify_with_cache_sha3 = sym super::mldsa87::vg_mldsa87_verify_with_cache_sha3::vg_mldsa87_verify_with_cache_sha3,
     )
@@ -1586,6 +1640,8 @@ bl {vg_mldsa87_verify_with_cache_sha3}
 /// ML-DSA-87 verification of a signature of a message representative, `ML-DSA.Verify_internal(pk, M′, σ)` (FIPS 204 Algorithm 8) with `μ` computed by the caller: with the public key `*pk`, the 64-byte message representative `μ = H(H(pk, 64) ‖ M′, 64)` at `mu` and the signature `*sig`, returns 1 if the signature is valid, and 0 if it is not or if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less).
 ///
 /// Contract: `VG.Spec.MlDsa.verifyContract`. Not constant time: timing may depend on the public key, the message representative and the signature.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1601,7 +1657,14 @@ pub(crate) unsafe extern "C" fn vg_mldsa87_verify(pk: *const [u8; 2592], mu: *co
     core::arch::naked_asm!(
         r".inst 0xf81f0ffe,0x91000004,0xd2800005
 bl {vg_mldsa87_verify_with_cache}
-.inst 0xf84107fe,0xd65f03c0
+.inst 0xf84107fe,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007
+.inst 0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f
+.inst 0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405
+.inst 0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415
+.inst 0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d
+.inst 0x6f00e41e,0x6f00e41f,0xea01003f,0x4e181c28,0x4e181c29,0x4e181c2a,0x4e181c2b,0x4e181c2c
+.inst 0x4e181c2d,0x4e181c2e,0x4e181c2f,0x11000000,0xd10103ff,0x6f00e41f,0x910003e9,0x3d80013f
+.inst 0x3d80053f,0x3d80093f,0x3d800d3f,0x910103ff,0xd65f03c0
 .p2align 6",
         vg_mldsa87_verify_with_cache = sym super::mldsa87::vg_mldsa87_verify_with_cache::vg_mldsa87_verify_with_cache,
     )
@@ -1610,6 +1673,8 @@ bl {vg_mldsa87_verify_with_cache}
 /// ML-DSA-87 verification of an external 64-byte message representative `*mu` with a prepared public key: `vg_mldsa87_verify` (with its results, timing and leakage) of the public key that `*pk` begins with.
 ///
 /// Contract: `VG.Spec.MlDsa.preparedVerifyContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1626,7 +1691,14 @@ pub(crate) unsafe extern "C" fn vg_mldsa87_verify_prepared(pk: *const [u8; 10784
     core::arch::naked_asm!(
         r".inst 0xf81f0ffe,0x91288004,0xd2840005
 bl {vg_mldsa87_verify_with_cache}
-.inst 0xf84107fe,0xd65f03c0
+.inst 0xf84107fe,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007
+.inst 0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f
+.inst 0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405
+.inst 0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415
+.inst 0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d
+.inst 0x6f00e41e,0x6f00e41f,0xea01003f,0x4e181c28,0x4e181c29,0x4e181c2a,0x4e181c2b,0x4e181c2c
+.inst 0x4e181c2d,0x4e181c2e,0x4e181c2f,0x11000000,0xd10103ff,0x6f00e41f,0x910003e9,0x3d80013f
+.inst 0x3d80053f,0x3d80093f,0x3d800d3f,0x910103ff,0xd65f03c0
 .p2align 6",
         vg_mldsa87_verify_with_cache = sym super::mldsa87::vg_mldsa87_verify_with_cache::vg_mldsa87_verify_with_cache,
     )
