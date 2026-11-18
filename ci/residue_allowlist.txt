@@ -445,7 +445,6 @@ aarch64 vg_poly1305_update_neon
 aarch64 vg_rc2_cbc_decrypt_chained
 aarch64 vg_rc2_cbc_encrypt_chained
 aarch64 vg_rc2_cbc_init
-aarch64 vg_rc4_apply
 aarch64 vg_rsa_check_key
 aarch64 vg_rsa_crt_values
 aarch64 vg_rsa_generate

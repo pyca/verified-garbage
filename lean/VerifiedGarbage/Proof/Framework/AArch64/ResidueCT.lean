@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Framework.AArch64.ResidueTaint
 public import VerifiedGarbage.Proof.Framework.TaintCT
+public import VerifiedGarbage.TCB.AArch64.Target
+import VerifiedGarbage.Proof.Framework.Semantics
 
 /-!
 # What constant-time code leaves in its registers (AArch64)
@@ -21,6 +23,12 @@ analysis from everything public ends in `RTaintL.done r`, returns without
 secret residue with an `r`-bit result. The two runs `NoResidue` compares
 satisfy the precondition and agree on what the contract's `pub` says, so
 their traces are equal (`TaintCT.agree_of_check`).
+
+`noResidue_of_verified`: code verified against its contract needs no more
+than that of the registers the calling convention preserves (`x19`–`x28`,
+`x30`, and the low halves of `v8`–`v15`), which it leaves as they were on
+entry, where the two runs agree (`donePres`): the analysis need not follow
+a value saved and restored through memory it does not know.
 -/
 
 @[expose] public section
@@ -124,6 +132,68 @@ theorem noResidue_of_check {c : Prog isa} {k : Contract isa} {r : Nat}
     rw [hτ] at h
     exact RTaintL.outside_of_done
       (TaintCT.agree_of_check hct hτ h₁ h₂ hp (RTaintL.agree_init ho hu) e₁ e₂) h
+
+/-- The registers the calling convention does not preserve, but `x0`. -/
+def scratchRegs : List Reg :=
+  [.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17]
+
+theorem mem_scratch_or {q : Reg} (hq : q ≠ .x0) : q ∈ scratchRegs ∨ q ∈ preserved := by
+  cases q <;> simp_all [scratchRegs, preserved]
+
+/-- `RTaintL.done r`, but for what the calling convention preserves: a
+vector register that it preserves the low half of needs only its high half
+public. -/
+def donePres (r : Nat) (τ : RTaintL.T) : Bool :=
+  scratchRegs.all (fun q => τ.1.1.1.mem q) &&
+    RTaintL.vregs.all (fun v => if preservedV.contains v then τ.1.1.2.mem v || τ.2.2.mem v
+      else RTaintL.vpub τ v) &&
+    τ.1.2.1 && Nat.ble τ.1.2.2 r
+
+theorem outside_of_donePres {τ : RTaintL.T} {r : Nat} {s₁ s₂ s₁' s₂' : State}
+    (h : RTaintL.Agree τ s₁' s₂') (hd : donePres r τ = true) (ho : Outside 0 s₁ s₂)
+    (hp₁ : abiPreserved s₁ s₁') (hp₂ : abiPreserved s₂ s₂') : Outside r s₁' s₂' := by
+  simp only [donePres, Bool.and_eq_true, List.all_eq_true] at hd
+  obtain ⟨⟨⟨hg, hv⟩, hf⟩, hr⟩ := hd
+  obtain ⟨⟨⟨⟨hsp, hgr⟩, hvr⟩, hfl, hx0, hrd, hwr, hdit, -, hm⟩, hq⟩ := h
+  obtain ⟨hc, hn, hz, hvf⟩ := hfl hf
+  refine ⟨hrd, hwr, fun q hq' => ?_, RTaint.shr_mono hx0 (Nat.le_of_ble_eq_true hr), hsp, hc, hn,
+    hz, hvf, hdit, funext fun v => ?_, hm⟩
+  · rcases mem_scratch_or hq' with hs | hs
+    · exact hgr q (Taint.pub_iff.mp (hg q hs))
+    · rw [hp₁.1 q hs, hp₂.1 q hs]; exact ho.2.2.1 q hq'
+  · have hp := hv v (RTaintL.mem_vregs v)
+    by_cases hpv : v ∈ preservedV
+    · simp only [List.contains_iff_mem.mpr hpv, ite_true, Bool.or_eq_true] at hp
+      rcases hp with hp | hp
+      · exact hvr v hp
+      · refine RTaintL.eq_of_halves ?_ (hq true v hp)
+        rw [hp₁.2.2 v hpv, hp₂.2.2 v hpv, ho.2.2.2.2.2.2.2.2.2.2.1]
+    · have : preservedV.contains v = false := by simpa using hpv
+      simp only [this, Bool.false_eq_true, ite_false, RTaintL.vpub, Bool.or_eq_true,
+        Bool.and_eq_true] at hp
+      rcases hp with hp | ⟨h₀, h₁⟩
+      · exact hvr v hp
+      · exact RTaintL.eq_of_halves (hq false v h₀) (hq true v h₁)
+
+/-- Code verified against its contract, whose analysis (`rtaintCT`) from
+everything public ends in `donePres r`, returns without secret residue,
+with an `r`-bit result. -/
+theorem noResidue_of_verified {c : Prog isa} {k : Contract isa} {r : Nat}
+    (hv : Verified target c k)
+    (h : ∃ hc, (rtaintCT.check RTaintL.init c hc).any (donePres r) = true) :
+    NoResidue c k r := by
+  intro s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp ho hu e₁ e₂
+  obtain ⟨hc, h⟩ := h
+  cases hτ : rtaintCT.check RTaintL.init c hc with
+  | none => rw [hτ] at h; cases h
+  | some τ' =>
+    rw [hτ] at h
+    obtain ⟨_, u₁, f₁, hp₁, -⟩ := hv.1 s₁ h₁
+    obtain ⟨_, u₂, f₂, hp₂, -⟩ := hv.1 s₂ h₂
+    obtain ⟨-, rfl⟩ := Exec.det e₁ f₁
+    obtain ⟨-, rfl⟩ := Exec.det e₂ f₂
+    exact outside_of_donePres
+      (TaintCT.agree_of_check hv.2.1 hτ h₁ h₂ hp (RTaintL.agree_init ho hu) e₁ e₂) h ho hp₁ hp₂
 
 end RTaintCT
 
