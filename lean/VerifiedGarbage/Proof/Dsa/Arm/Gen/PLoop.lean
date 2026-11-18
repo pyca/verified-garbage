@@ -1,11 +1,10 @@
 module
 
-import VerifiedGarbage.Proof.Dsa.Arm.Gen.Intro
+public import VerifiedGarbage.Proof.Dsa.Arm.Gen.PArith
 import VerifiedGarbage.Proof.Dsa.Generation.RandomSuffix
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Dsa.Generation.Search
-public import VerifiedGarbage.Proof.Dsa.Arm.Gen.PArith
 import VerifiedGarbage.Proof.Dsa.Generation.CandidateWidth
 import VerifiedGarbage.Proof.Dsa.Digest
 import VerifiedGarbage.Proof.Rsa.Octets

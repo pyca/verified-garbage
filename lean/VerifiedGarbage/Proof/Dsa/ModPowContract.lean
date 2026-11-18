@@ -26,7 +26,7 @@ The function may change the bytes of its `scratch` ranges, which include
 the result's; every other byte of the working space keeps its value. Its
 timing may depend on the working space's address and length, not on the
 numbers; but on 32-bit ARM also on the modulus, some of whose bits choose
-how its Montgomery context is set up (`Proof/Dsa/Arm/PowVerified.lean`).
+how its Montgomery context is set up (`Proof/Dsa/Arm/Gen/GPart.lean`).
 -/
 
 @[expose] public section

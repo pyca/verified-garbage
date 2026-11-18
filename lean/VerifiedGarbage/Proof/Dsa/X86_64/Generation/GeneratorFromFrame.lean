@@ -11,14 +11,12 @@ import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Rsa.Ranges
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorArguments
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.GeneratorRange
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorLoads
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.DecrementOdd
 import VerifiedGarbage.Proof.Dsa.X86_64.RangeMask
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CheckPrime
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.WorkspaceBase
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Memory
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Workspace
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 import Mathlib.Data.Nat.Basic
 import Mathlib.Order.Basic

@@ -2,12 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Parameters
 public import VerifiedGarbage.Proof.Dsa.AArch64.WorkspaceBridge
-public import VerifiedGarbage.Proof.Dsa.AArch64.PublicScheduleCT
+public import VerifiedGarbage.Proof.Dsa.AArch64.PublicKeyCT
 import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingCT
 import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleOperands
 import VerifiedGarbage.Proof.Dsa.Encoding
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Dsa.AArch64.PublicKeyCT
 import VerifiedGarbage.Proof.Dsa.AArch64.DomainShapeCT
 import VerifiedGarbage.Proof.Dsa.AArch64.BoundaryCT
 import VerifiedGarbage.Proof.Framework.Offset
@@ -15,13 +14,12 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Parameters
 meta import VerifiedGarbage.Proof.Dsa.AArch64.WorkspaceBridge
-meta import VerifiedGarbage.Proof.Dsa.AArch64.PublicScheduleCT
+meta import VerifiedGarbage.Proof.Dsa.AArch64.PublicKeyCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingCT
 meta import VerifiedGarbage.Proof.Dsa.SizeBounds
 meta import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleOperands
 meta import VerifiedGarbage.Proof.Dsa.Encoding
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
-meta import VerifiedGarbage.Proof.Dsa.AArch64.PublicKeyCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.DomainShapeCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.BoundaryCT
 meta import VerifiedGarbage.Proof.Framework.Offset

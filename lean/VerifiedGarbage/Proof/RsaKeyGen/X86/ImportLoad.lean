@@ -3,10 +3,9 @@ module
 public import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.ImportEntry
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.ImportContext
-
 import VerifiedGarbage.Proof.RsaKeyGen.X86.ImportLoop
-import VerifiedGarbage.Proof.RsaKeyGen.X86.ImportEncoding
 import VerifiedGarbage.Proof.Mont.X86.Instr
+
 /-! # Complete workspace import from the original big-endian input -/
 
 -- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/ImportEntry.lean`, which only this module imported.

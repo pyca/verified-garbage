@@ -12,9 +12,9 @@ import VerifiedGarbage.Proof.Rsa.BytesFrame
 public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.TCB.X86.Isa
 import VerifiedGarbage.Proof.Framework.Sig
-import VerifiedGarbage.Proof.Dsa.X86.Generation.Base
+import VerifiedGarbage.Proof.Dsa.X86.Generation.Q
 import VerifiedGarbage.Proof.Dsa.X86.Generation.PAttempt
-import VerifiedGarbage.Proof.Dsa.X86.Generation.Words
+import VerifiedGarbage.Proof.Dsa.X86.Generation.Geo
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.Env
 import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.ABIEntry
 import VerifiedGarbage.Proof.RsaKeyGen.RandMemory
@@ -27,7 +27,6 @@ public import VerifiedGarbage.Spec.Ffdh
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.Search
 public import VerifiedGarbage.Proof.EntropyRequest
-import VerifiedGarbage.Proof.Dsa.X86.Generation.Q
 import VerifiedGarbage.Proof.Dsa.X86.FailureLoop
 import VerifiedGarbage.Proof.Bignum.X86.CopyRead
 import VerifiedGarbage.Proof.Framework.AddrArith

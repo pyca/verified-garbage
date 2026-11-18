@@ -8,8 +8,6 @@ public import VerifiedGarbage.Spec.Dsa.Generate
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SourceSlice
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SourceFrame
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorStatus
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorOutput
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorStages
 import VerifiedGarbage.Proof.Dsa.Generation.Chunks
 import VerifiedGarbage.Proof.Framework.Offset

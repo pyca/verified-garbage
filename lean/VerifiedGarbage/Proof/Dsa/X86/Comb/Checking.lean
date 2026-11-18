@@ -3,20 +3,19 @@ module
 public import VerifiedGarbage.Proof.Mont.X86.PowerStep
 public import VerifiedGarbage.Impl.Dsa.X86.CombGenerate
 public import VerifiedGarbage.Proof.Dsa.X86.CheckingABI
-public import VerifiedGarbage.Proof.Dsa.X86.Comb.Core
+public import VerifiedGarbage.Proof.Dsa.X86.Comb.Correct
 public import VerifiedGarbage.Proof.Dsa.X86.OutputFrame
 public import VerifiedGarbage.Proof.Dsa.X86.Installed
 public import VerifiedGarbage.Proof.Framework.X86.Spill
 import VerifiedGarbage.Proof.Dsa.X86.CheckingOperation
-import VerifiedGarbage.Proof.Dsa.X86.CheckingResources
+import VerifiedGarbage.Proof.Dsa.X86.CheckingEntry
 import VerifiedGarbage.Proof.Dsa.X86.InstalledInputs
 import VerifiedGarbage.Proof.Dsa.X86.ParameterBuffers
 import VerifiedGarbage.Proof.Dsa.X86.ABIResources
-import VerifiedGarbage.Proof.Dsa.X86.Comb.StagePower
 import VerifiedGarbage.Proof.Dsa.X86.Comb.CanonicalFrame
 import VerifiedGarbage.Proof.Dsa.X86.StageChecks
 import VerifiedGarbage.Proof.Dsa.X86.Persistent
-import VerifiedGarbage.Proof.Dsa.X86.GenerateDomain
+import VerifiedGarbage.Proof.Dsa.X86.GenerateParameters
 import VerifiedGarbage.Proof.Dsa.Encoding
 import VerifiedGarbage.Proof.Dsa.X86.LocalOperand
 import VerifiedGarbage.Proof.Dsa.X86.Checks

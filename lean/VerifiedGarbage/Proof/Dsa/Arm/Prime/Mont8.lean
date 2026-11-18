@@ -1,14 +1,247 @@
 module
+
 public import VerifiedGarbage.Proof.Dsa.Arm.Prime.Mont1
 public import VerifiedGarbage.Proof.Dsa.Arm.Prime.St
-
-import VerifiedGarbage.Proof.Dsa.Arm.Prime.Mont7
 import VerifiedGarbage.Proof.Bignum.Arm.MontOp
 import VerifiedGarbage.Proof.Bignum.Arm.MontOpCT
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Mont5
-import VerifiedGarbage.Proof.Dsa.Arm.Prime.Mont2
+public import VerifiedGarbage.Proof.Dsa.Arm.Prime.Mont2
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Dsa.Arm.Prime.Mont4
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Dsa.Arm.Prime.Exp7
+import VerifiedGarbage.Proof.Dsa.Arm.Prime.Mont6
+import VerifiedGarbage.Proof.Bignum.Arm.Store64
+
+/-! ### `Dsa.Arm.Prime.Mont7`, which this module and modules that import it used -/
+
+section
+
+/-! # A candidate on ARMv7: Montgomery multiplication modulo `c` ready (`montA_vp`)
+
+The base of the working space into `r0` (`mont0_vp`), and the stride into its
+header word 28 (`strideW_vp`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Dsa.Arm.Prime
+open VG VG.Arm VG.Proof.Mont VG.Impl.Rsa.Arm.Keys VG.Impl.RsaKeyGen.Arm.Candidate VG.Proof.Rsa.Arm.Keys
+open VG.Proof.X25519.Arm VG.Proof.Bignum.Arm
+open VG.Proof.Rsa.Mont (arrAt numAt wOf wordAt Layout Keeps Operand)
+open VG.Proof.Rsa.Arm.Recover (VP)
+
+section
+variable {P : CP}
+
+/-- Frame word 0 holds the base. -/
+theorem MSp.fw0 {σ s : State} (h : MSp P σ s) (sp : s.sp = P.sp) : fw s.mem P 0 = P.M0 := by
+  have := h.saved
+  rw [sp] at this
+  simpa only [fw, off, BitVec.add_zero] using this
+
+/-- `mont0`: the base into `r0`. -/
+theorem mont0_vp {E : State → Prop} {X : State → State → Prop} (hX : ∀ σ s, X σ s → MSp P σ s)
+    (hXr : ∀ σ s t, X σ s → t.mem = s.mem → t.sp = s.sp → t.rd = s.rd → t.wr = s.wr → X σ t) :
+    VP (fun σ s => SX P E σ s ∧ X σ s) (.block mont0)
+      (fun σ s => (SX P E σ s ∧ X σ s) ∧ s.gpr .r0 = P.M0) := by
+  show VP _ (.block ([(Reg.r0, 0)].map fun p => Instr.ldrSp p.1 p.2)) _
+  refine VP.ldrSp (fun σ₁ σ₂ s₁ s₂ h₁ h₂ => ?_) fun σ s ⟨⟨e, h, hw⟩, x⟩ => ?_
+  · rw [h₁.1.2.1.sp, h₁.1.2.1.pre.sp, h₂.1.2.1.sp, h₂.1.2.1.pre.sp]
+  have sp : s.sp = P.sp := h.sp.trans h.pre.sp
+  refine h.bk.ldrSpV (o := 0) (by decide) (by decide) ((hX σ s x).fw0 sp) fun t u => WP.block_nil ?_
+  have r := u.rest (ws := [.r0]) (by simp)
+  exact ⟨⟨⟨e, h.of_rest r u.mem, hw.of_upd u (by decide) (by decide) (by decide)⟩,
+    hXr σ s t x u.mem u.sp u.rd u.wr⟩, u.gpr⟩
+
+/-- `strideW`: the stride into Montgomery multiplication's header word 28. -/
+theorem strideW_vp {E : State → Prop} :
+    VP (fun σ s => (SX P E σ s ∧ MSp P σ s) ∧ s.gpr .r0 = P.M0) (.block strideW)
+      (fun σ s => SX P E σ s ∧ MS P σ s) := by
+  refine VP.taint [.r0, .r7] strideW_taint (fun σ₁ σ₂ s₁ s₂ h₁ h₂ => ?_) fun σ s ⟨⟨⟨e, h, hw⟩, m⟩, r0⟩ => ?_
+  · simp only [List.mem_cons, List.not_mem_nil, or_false]
+    rintro r (rfl | rfl)
+    · rw [h₁.2, h₂.2]
+    · rw [h₁.1.1.2.2.r7, h₂.1.1.2.2.r7]
+  have pre := h.pre
+  have hf := pre.fS
+  have zl := pre.Z_le
+  have e1 := pre.oM_arrAt 1
+  have fit1 := Nat.le_trans (arr_mono (w := P.W) (show mBase + 1 ≤ nArr by decide)) pre.fits
+  have a1 : 256 ≤ arrAt P.w 1 := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega_using []
+  unfold strideW
+  refine wp_mov (op2_imm (by decide)) fun u1 v1 => ?_
+  have hw1 := hw.of_upd v1 (by decide) (by decide) (by decide)
+  have ea : State.addr (u1.gpr .r0 + BitVec.ofNat 32 224) = off (State.addr P.B) (P.oM + 224) := by
+    rw [v1.other _ (by decide), r0, ← pre.M0_off]; exact addr_add (by have := pre.M0_toNat; omega_using [hf, e1, fit1, a1, this])
+  have eb : State.addr (u1.gpr .r0 + BitVec.ofNat 32 (224 + 4)) =
+      off (State.addr P.B) (P.oM + 224) + BitVec.ofNat 64 4 := by
+    rw [v1.other _ (by decide), r0, addr_add (by have := pre.M0_toNat; omega_using [hf, e1, fit1, a1, this]), pre.M0_addr, Offset.add_add,
+      Offset.add_add]
+  refine WP.mono (store64_ok u1 .r7 .r1 .r0 224 (off (State.addr P.B) (P.oM + 224)) (by decide) ea eb
+    (hw1.write (by omega_using [e1, fit1, a1])) (by rw [Offset.add_add]; exact hw1.write (by omega_using [e1, fit1, a1]))) fun t ⟨mt, rt⟩ => ?_
+  have v64 : (u1.gpr .r1 ++ u1.gpr .r7) = BitVec.ofNat 64 (8 * (P.w + 2)) := by
+    rw [v1.gpr, v1.other _ (by decide), hw.r7, pre.S_eq]
+    apply BitVec.eq_of_toNat_eq
+    have := pre.w4
+    rw [BitVec.toNat_append, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [this]),
+      Nat.mod_eq_of_lt (by omega_using [this])]
+    simp
+  rw [v64] at mt
+  have out := writeW_outside u1.mem (State.addr P.B) (d := P.oM + 224) (BitVec.ofNat 64 (8 * (P.w + 2)))
+    (by omega_using [hf, e1, fit1])
+  rw [← mt, v1.mem] at out
+  -- Within the header.
+  have fH : Frame [⟨State.addr P.M0, 256⟩] s.mem t.mem := by
+    rw [mt, v1.mem, ← pre.M0_off]
+    exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by decide) (by
+      have := pre.M0_toNat; omega_using []))
+  have kp := keep_of_frameH pre fH
+  have ht : KS P σ (AX P σ) LX (V3 P σ) [sUsed] t :=
+    h.core kp (by simp only [List.mem_range'_1]; intro j hj; simp only [nArr]; omega_using [hj]) (by simp)
+      (by rw [rt.sp, v1.sp]) (by rw [rt.rd, v1.rd]) (by rw [rt.wr, v1.wr]) (h.arrs_keep kp (fun j hj hj' => by
+        simp only [List.mem_range'_1] at hj'
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
+        rcases hj with rfl | rfl | rfl | rfl | rfl <;> simp [mBase, aCm1, aTwo, aOne, aC] at hj' <;> omega)
+        (by simp)) (h.sl_keep kp (by simp) (by simp)) h.live_lt h.ls_ok
+  have sp : t.sp = s.sp := by rw [rt.sp, v1.sp]
+  have a0 : 256 ≤ arrAt P.w 0 := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega_using []
+  have sv : t.mem.readW (State.addr t.sp) 32 = s.mem.readW (State.addr s.sp) 32 := by
+    rw [sp, h.sp, pre.sp]
+    refine fH.readW (r := P.rW0) (by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; decide)
+      (fun r hr => ?_) (by decide)
+    simp only [List.mem_singleton] at hr; subst hr
+    refine pre.rW0_rM.sub_right ?_
+    have := Offset.sub_base (State.addr P.M0) (d := 0) (n := 256) (k := 8 * P.lenM) (by simp only [CP.lenM]; omega_using [])
+    simpa only [BitVec.add_zero] using this
+  refine ⟨⟨e, ht, hw1.rest rt⟩, ⟨m.of_outside pre out (fun d k hd => ?_) (.inr (by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega_using []))
+    (by have := pre.oM_arrAt 5; have := Nat.le_trans (arr_mono (w := P.W) (show mBase + 5 ≤ nArr by decide)) pre.fits
+        omega_arith) sv sp (by rw [rt.rd, v1.rd]) (by rw [rt.wr, v1.wr]), ?_⟩⟩
+  · rcases hd with h1 | ⟨h1, _⟩
+    · left; omega_using [h1]
+    · right; omega_using [a0, h1]
+  · unfold wordAt
+    rw [show State.addr P.M0 + BitVec.ofNat 64 (8 * 28) = off (State.addr P.M0) 224 from rfl, pre.M0_off, mt,
+      Mem.readW_writeW_self64]
+
+/-- `MSp` of the same memory. -/
+theorem MSp.of_same {σ s t : State} (h : MSp P σ s) (mem : t.mem = s.mem) (sp : t.sp = s.sp) (rd : t.rd = s.rd)
+    (wr : t.wr = s.wr) : MSp P σ t :=
+  h.of_read (fun _ _ _ => by rw [mem]) (by rw [mem]) (by rw [mem, sp]) sp rd wr
+
+/-- Montgomery multiplication modulo `c`: ready, with `R² mod c` in its array 4. -/
+theorem montA_vp {E : State → Prop} : VP (SX P E) montA (fun σ s => SX P E σ s ∧ MS P σ s) := by
+  simp only [montA, seqs]
+  exact montSet_vp.seq (setup_vp.seq (pinv_vp.seq (r2_vp.seq (ctxClr_vp.seq
+    ((mont0_vp (X := MSp P) (fun _ _ h => h) fun _ _ _ h m sp rd wr => h.of_same m sp rd wr).seq strideW_vp)))))
+
+end
+
+end VG.Proof.Dsa.Arm.Prime
+
+end
+
+end
+
+/-! ### `Dsa.Arm.Prime.Mont9`, which the modules that import this one used -/
+
+section
+
+/-! # A candidate on ARMv7: the Montgomery forms of 1 and −1 (`montB_vp`)
+
+`St.pctxClr`: after a multiplication, the context and the top words of its
+result's key array cleared; `montB`: `R mod c` (from `1 · R²`) into the key
+arrays `mBase + 1` and `mBase + 9`, and `c − R mod c` into `mBase + 10`.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Dsa.Arm.Prime
+open VG VG.Arm VG.Proof.Mont VG.Impl.Rsa.Arm.Keys VG.Impl.RsaKeyGen.Arm.Candidate VG.Proof.Rsa.Arm.Keys
+open VG.Proof.X25519.Arm VG.Proof.Bignum.Arm
+open VG.Proof.Rsa.Mont (arrAt numAt wOf wordAt Layout Keeps Operand)
+open VG.Proof.Rsa.Arm.Recover (VP sub32)
+
+section
+variable {P : CP} {E : State → Prop} {A : State → Nat → Nat} {L : List Nat} {V : State → Nat → Nat}
+  {LS : List Nat}
+
+/-- After a multiplication into array `j`: the context, and `[mBase + j]`'s
+top words cleared, so that its key number is Montgomery multiplication's. -/
+theorem St.pctxClr {j : Nat} (cert : Cert (.block (clrTop (mBase + j)))) (hj : j < 8) (hjM : MOk (mBase + j))
+    {x : State → Nat} :
+    VP (fun σ s => (E σ ∧ KS P σ (A σ) L (V σ) LS s) ∧ MS P σ s ∧ numAt s.mem (State.addr P.M0) P.w j = x σ)
+      (.block (ctx ++ clrTop (mBase + j)))
+      (fun σ s => St P E (fun σ => upd (A σ) (mBase + j) (x σ)) ((mBase + j) :: L) V LS σ s ∧ MS P σ s) := by
+  rw [show ctx ++ clrTop (mBase + j) = [.ldrSp .r8 aoS] ++ (ctxW ++ clrTop (mBase + j)) from rfl]
+  refine VP.block_append (G := fun σ s => ((E σ ∧ KS P σ (A σ) L (V σ) LS s) ∧ MS P σ s ∧
+    numAt s.mem (State.addr P.M0) P.w j = x σ) ∧ s.gpr .r8 = P.B) ?_ ?_
+  · show VP _ (.block ([(Reg.r8, aoS)].map fun p => Instr.ldrSp p.1 p.2)) _
+    refine VP.ldrSp (fun σ₁ σ₂ s₁ s₂ h₁ h₂ => ?_) fun σ s ⟨⟨e, k⟩, m, n⟩ => ?_
+    · rw [h₁.1.2.sp, h₁.1.2.pre.sp, h₂.1.2.sp, h₂.1.2.pre.sp]
+    refine k.ldrSp (o := aoS) (by decide) fun t u => WP.block_nil ⟨⟨⟨e, k.of_rest (u.rest (ws := [.r8])
+      (by simp)) u.mem⟩, ⟨m.toMSp.of_same u.mem u.sp u.rd u.wr, by rw [u.mem]; exact m.stride⟩,
+      by rw [u.mem]; exact n⟩, by rw [u.gpr, k.pre.aS]⟩
+  refine VP.block_append (G := fun σ s => (((E σ ∧ KS P σ (A σ) L (V σ) LS s) ∧ MS P σ s ∧
+    numAt s.mem (State.addr P.M0) P.w j = x σ) ∧ Ws s P.B P.Z P.W nArr) ∧ s.gpr .r8 = P.B) ?_ ?_
+  · refine VP.taint [.r8] ctxW_taint (fun σ₁ σ₂ s₁ s₂ h₁ h₂ r hr => ?_) fun σ s ⟨⟨⟨e, k⟩, m, n⟩, r8⟩ => ?_
+    · simp only [List.mem_singleton] at hr; subst hr; rw [h₁.2, h₂.2]
+    have pre := k.pre
+    have hz := pre.hdr_Z
+    have hf := pre.fS
+    have ea : State.addr (s.gpr .r8 + BitVec.ofNat 32 16) = off (State.addr P.B) 16 := by
+      rw [r8]; exact addr_add (by simp only [hdr] at hz; omega_using [hz, hf])
+    have rd : InRegions (s.rd ++ s.wr) (off (State.addr P.B) 16) 4 :=
+      ⟨P.rS, List.mem_append_right _ (by rw [k.wr]; exact pre.rS_mem),
+        Offset.contains_base _ (by simp only [hdr] at hz; omega_using [hz]) (by omega_using [])⟩
+    simp only [ctxW, stride, List.cons_append, List.nil_append]
+    refine wp_ldr (by decide) ea rd fun s2 u2 => ?_
+    refine wp_dp (op2_imm (by decide)) fun s3 u3 => wp_mov (op2_lsl (by decide)) fun s4 u4 => WP.block_nil ?_
+    have m4 : s4.mem = s.mem := by rw [u4.mem, u3.mem, u2.mem]
+    have r4 : Rest [.r7, .r9] s s4 := (u2.rest (by simp)).trans ((u3.rest (by simp)).trans (u4.rest (by simp)))
+    have wl := pre.wle
+    have e9 : s4.gpr .r9 = BitVec.ofNat 32 P.W := by
+      rw [u4.other _ (by decide), u3.other _ (by decide), u2.gpr]
+      apply BitVec.eq_of_toNat_eq
+      have := k.cnt
+      simp only [slot, w32] at this
+      rw [this, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [wl])]
+    have e7 : s4.gpr .r7 = BitVec.ofNat 32 (S P.W) := by
+      rw [u4.gpr, u3.gpr, dpVal, u2.gpr]
+      apply BitVec.eq_of_toNat_eq
+      have := k.cnt
+      simp only [slot, w32] at this
+      rw [BitVec.toNat_shiftLeft, BitVec.toNat_add, this, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
+      simp only [show (2 : BitVec 32).toNat = 2 from rfl, S]
+      omega_using []
+    have e8 : s4.gpr .r8 = P.B := by rw [r4.gpr _ (by decide), r8]
+    have k4 := k.of_rest r4 m4
+    exact ⟨⟨⟨⟨e, k4⟩, ⟨m.toMSp.of_same m4 r4.sp r4.rd r4.wr, by rw [m4]; exact m.stride⟩, by rw [m4]; exact n⟩,
+      k4.ws e7 e8 e9⟩, e8⟩
+  · refine VP.kv cert (fun _ _ h => h.1.2) fun σ s ⟨⟨⟨⟨e, k⟩, m, n⟩, hw⟩, _⟩ => ?_
+    have pre := k.pre
+    have hW := pre.W_eq
+    rw [← List.append_nil (clrTop (mBase + j))]
+    refine clrTopO_ok hw (by simp only [mBase, nArr]; omega_using [hj]) (by decide) (by omega_using [hW]) fun t ht out nt rest => WP.block_nil ?_
+    have hS := pre.S_eq
+    have fit := pre.fitZ (j := mBase + j) (by simp only [mBase, nArr]; omega_using [hj])
+    have kp : Keep P.B P.W [mBase + j] [] s.mem t.mem :=
+      Keep.of_arr (d := 4 * (P.W - 2)) out (by simp only [S]; omega_using []) (by simp)
+    have v : num t.mem P.B P.W (mBase + j) = x σ := by
+      rw [nt, ← pre.numAt_val32, n]
+    exact ⟨⟨e, k.write1 kp (by simp only [mBase, nArr]; omega_using [hj]) (by simp) rest.sp rest.rd rest.wr v (by simp), ht⟩,
+      m.of_keep pre kp (by simp only [List.mem_singleton]; rintro _ rfl; exact hjM) (by simp) rest.sp rest.rd rest.wr
+        (k.sp.trans pre.sp)⟩
+
+end
+
+end VG.Proof.Dsa.Arm.Prime
+
+end
+
+end
 
 /-! # A candidate on ARMv7: Montgomery multiplications as pieces
 

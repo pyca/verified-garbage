@@ -3,8 +3,7 @@ module
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.CandidateTest
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidatePrepareInput
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.PreparedR2Timing
-import VerifiedGarbage.Proof.RsaKeyGen.X86.ConstantsTiming
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.ConstantsTiming
 import VerifiedGarbage.Proof.RsaKeyGen.X86.PreparedR2
 import VerifiedGarbage.Impl.RsaKeyGen.X86.LowPair
 public import VerifiedGarbage.Proof.MillerRabin.X86.TimingBase
@@ -23,9 +22,8 @@ public import VerifiedGarbage.Proof.Framework.X86.Call
 import VerifiedGarbage.Proof.RsaKeyGen.X86.PreparedContext
 public import VerifiedGarbage.Proof.RsaKeyGen.CandLeak
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.MillerRabinLoop
-import VerifiedGarbage.Proof.RsaKeyGen.X86.MillerRabinInit
-import VerifiedGarbage.Impl.RsaKeyGen.X86.WitnessChecks
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.MillerRabinStep
+import VerifiedGarbage.Impl.RsaKeyGen.X86.WitnessChecks
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.MillerRabinState
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.WitnessAvailable
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.WitnessStep
@@ -42,7 +40,6 @@ public import VerifiedGarbage.Proof.MillerRabin.X86.Context
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.X86.CallReturn
 public import VerifiedGarbage.Proof.Framework.RelCT
-import VerifiedGarbage.Proof.RsaKeyGen.X86.WitnessFrame
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.WitnessCount
 import VerifiedGarbage.Impl.RsaKeyGen.X86.WitnessStatus
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.HeaderRt

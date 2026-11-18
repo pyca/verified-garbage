@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeTest
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.PrimeCall
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.Basic
 public import VerifiedGarbage.Proof.Framework.Covers
@@ -21,6 +20,40 @@ import VerifiedGarbage.Proof.Dsa.Generation.RandomSuffix
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Dsa.BitLengthBounds
 public import VerifiedGarbage.Proof.Dsa.ProbablePrimeContract
+public import VerifiedGarbage.Proof.Dsa.AArch64.ProbablePrime.Params
+public import VerifiedGarbage.Proof.Framework.AArch64.Depth
+public import VerifiedGarbage.Proof.Framework.AArch64.ModeSim
+
+/-! ### `Dsa.AArch64.Generation.PrimeTest`, which this module and modules that import it used -/
+
+section
+
+/-! # The probable-prime tests parameter generation calls
+
+`vg_dsa_probable_prime_{bits}` for each candidate width: each one's name,
+its code, its proof, and the stack its frames use. -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.AArch64.Generation
+open VG VG.AArch64
+
+structure PrimeTest where
+  name : Nat → String
+  code : Nat → Prog isa
+  verified : ∀ bits, ProbablePrime.Supported bits →
+    Verified target (code bits) (ProbablePrime.contract bits)
+  depth : ∀ bits, 16 * (code bits).aarch64Depth ≤ ProbablePrime.stack
+  /-- It never touches PSTATE.DIT (`ConstantTime.withDit`). -/
+  noDit : ∀ bits, ProbablePrime.Supported bits → (code bits).all (fun i => !i.touchesDit) = true
+
+/-- The call of the test of `bits` bits. -/
+def PrimeTest.run (T : PrimeTest) (bits : Nat) : Prog isa := .call (T.name bits) (T.code bits)
+
+end VG.Proof.Dsa.AArch64.Generation
+
+end
+
+end
 
 /-! # Calling the probable-prime test, which returns its cursor and status to the generation frame -/
 

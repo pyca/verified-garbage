@@ -1,27 +1,22 @@
 module
 
 public import VerifiedGarbage.Proof.MillerRabin.X86.Backend
-public import VerifiedGarbage.Proof.MillerRabin.X86.Baseline
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.MillerRabin.Contract
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Impl.MillerRabin.X86.Round
-public import VerifiedGarbage.Proof.MillerRabin.X86.EntryMemory
+public import VerifiedGarbage.Proof.MillerRabin.X86.TimingSequences
 public import VerifiedGarbage.Proof.MillerRabin.X86.TimingBase
 public import VerifiedGarbage.Proof.Framework.RelCT
-public import VerifiedGarbage.Proof.MillerRabin.X86.EntryMarker
 public import VerifiedGarbage.Proof.MillerRabin.X86.TimingCoreState
-import VerifiedGarbage.Proof.MillerRabin.X86.EntryArgs
 public import VerifiedGarbage.Proof.MillerRabin.X86.TableMath
 import VerifiedGarbage.Proof.MillerRabin.X86.TimingCopy
 public import VerifiedGarbage.Proof.MillerRabin.X86.TimingSquares
-import VerifiedGarbage.Proof.MillerRabin.X86.TimingSequences
-public import VerifiedGarbage.Proof.MillerRabin.X86.Stage
+public import VerifiedGarbage.Proof.MillerRabin.X86.StageSlots
 import VerifiedGarbage.Proof.MillerRabin.X86.TimingPointers
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.KernelRfl
-import VerifiedGarbage.Proof.MillerRabin.X86.MontInstance
 import VerifiedGarbage.Proof.Mont.X86.Sse2.PreparedVerified
 import VerifiedGarbage.Proof.Framework.X86.RelCT
 import VerifiedGarbage.Proof.Framework.Offset
@@ -34,7 +29,6 @@ import VerifiedGarbage.Proof.MillerRabin.Word32
 import VerifiedGarbage.Proof.MillerRabin.ExponentWords32
 public import VerifiedGarbage.Proof.MillerRabin.X86.StageLoadWord
 public import VerifiedGarbage.Proof.Framework.X86.Call
-import VerifiedGarbage.Proof.MillerRabin.X86.DataSquareControl
 import VerifiedGarbage.Proof.Mont.X86.Compact.Frame
 import VerifiedGarbage.Proof.Framework.X86.CallWith
 

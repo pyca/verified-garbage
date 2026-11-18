@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Dsa.RISCV64.PrevalidatedFn
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 public meta import VerifiedGarbage.Proof.Bignum.RISCV64.Run
-import VerifiedGarbage.Proof.Dsa.RISCV64.CTKey
 import VerifiedGarbage.Proof.Dsa.RISCV64.CTParams
 import VerifiedGarbage.Proof.Dsa.RISCV64.ValidateFn
 import VerifiedGarbage.Proof.Dsa.PackedBytes
@@ -17,7 +16,6 @@ meta import VerifiedGarbage.Proof.Dsa.RISCV64.VerifyCT
 meta import VerifiedGarbage.Proof.Dsa.RISCV64.PrevalidatedFn
 meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
-meta import VerifiedGarbage.Proof.Dsa.RISCV64.CTKey
 meta import VerifiedGarbage.Proof.Dsa.RISCV64.CTParams
 meta import VerifiedGarbage.Proof.Dsa.RISCV64.ValidateFn
 meta import VerifiedGarbage.Proof.Dsa.PackedBytes

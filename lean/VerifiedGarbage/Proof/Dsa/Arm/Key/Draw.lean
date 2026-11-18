@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Dsa.Arm.Key.Copy
 public import VerifiedGarbage.Proof.Dsa.RandomRange
 import VerifiedGarbage.Proof.Dsa.Arm.Key.Prepare
-import VerifiedGarbage.Proof.Dsa.Arm.Key.Scan
 import VerifiedGarbage.Proof.Dsa.Zero
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith

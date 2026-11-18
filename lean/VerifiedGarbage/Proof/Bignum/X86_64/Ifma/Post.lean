@@ -1,8 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Pre
-public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.R2X
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Pre
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtP
 public import VerifiedGarbage.Impl.Rsa.X86_64.CrtIfma
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtUnit

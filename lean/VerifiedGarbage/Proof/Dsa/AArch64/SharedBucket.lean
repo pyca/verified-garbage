@@ -1,12 +1,12 @@
 module
+
 public import VerifiedGarbage.Impl.Dsa.AArch64.SharedPower
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtExp
 public import VerifiedGarbage.Proof.Dsa.AArch64.Frame
 import VerifiedGarbage.Proof.Dsa.AArch64.SharedStore
-import VerifiedGarbage.Proof.Dsa.AArch64.PublicSelect
 import VerifiedGarbage.Proof.Dsa.AArch64.PublicWindow
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorBody
-import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcGuard
+import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcMont
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtBuild
 import VerifiedGarbage.Proof.Bignum.AArch64.Copy
 import VerifiedGarbage.Proof.Bignum.AArch64.PubOut

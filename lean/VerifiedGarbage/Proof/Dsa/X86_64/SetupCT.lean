@@ -4,7 +4,6 @@ import VerifiedGarbage.Proof.Dsa.X86_64.SetupChoice
 public import VerifiedGarbage.Proof.Dsa.X86_64.ProductCT
 import VerifiedGarbage.Proof.Bignum.X86_64.R2wCT
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
-import VerifiedGarbage.Proof.Dsa.X86_64.Setup
 public import Aesop.BuiltinRules
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -12,7 +11,6 @@ meta import VerifiedGarbage.Proof.Dsa.X86_64.SetupChoice
 meta import VerifiedGarbage.Proof.Dsa.X86_64.ProductCT
 meta import VerifiedGarbage.Proof.Bignum.X86_64.R2wCT
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Setup
 meta import Aesop.BuiltinRules
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub

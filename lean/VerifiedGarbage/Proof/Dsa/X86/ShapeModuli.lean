@@ -21,7 +21,6 @@ public import VerifiedGarbage.Impl.Ecdsa.X86
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Mont.X86.Words
 public import VerifiedGarbage.Proof.Weierstrass.MulContract
-public import VerifiedGarbage.Proof.Dsa.X86.CoreLoad
 public import VerifiedGarbage.Proof.Mont.Words32
 import VerifiedGarbage.Proof.Weierstrass.PointContract
 public import VerifiedGarbage.Impl.Dsa.X86.Width

@@ -1,26 +1,23 @@
 module
-public import VerifiedGarbage.Proof.Dsa.AArch64.SharedPowerCT
+
 public import VerifiedGarbage.Proof.Dsa.AArch64.SharedCall
 public import VerifiedGarbage.Proof.Dsa.AArch64.CallHeadCT
 public import VerifiedGarbage.Proof.Dsa.AArch64.ReadyCallCT
 import VerifiedGarbage.Proof.Dsa.AArch64.CallFinishCT
-import VerifiedGarbage.Proof.Dsa.AArch64.FinishCT
 import VerifiedGarbage.Proof.Dsa.AArch64.Call
-import VerifiedGarbage.Proof.Dsa.AArch64.EnterLeave
+import VerifiedGarbage.Proof.Dsa.AArch64.Finish
 import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TaintBatch
-meta import VerifiedGarbage.Proof.Dsa.AArch64.SharedPowerCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.SharedCall
 meta import VerifiedGarbage.Proof.Dsa.AArch64.CallHeadCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.ReadyCallCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.CallFinishCT
-meta import VerifiedGarbage.Proof.Dsa.AArch64.FinishCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Call
-meta import VerifiedGarbage.Proof.Dsa.AArch64.EnterLeave
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Finish
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.Block

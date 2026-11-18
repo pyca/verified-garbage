@@ -1,7 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.RISCV64.CTBase
-public import VerifiedGarbage.Proof.Dsa.RISCV64.CTKey
 public import VerifiedGarbage.Proof.Dsa.RISCV64.CTParams
 public import VerifiedGarbage.Proof.Dsa.RISCV64.ParamsFront
 public import VerifiedGarbage.Proof.Framework.RelCT
@@ -10,8 +8,6 @@ public meta import VerifiedGarbage.Proof.Bignum.RISCV64.Run
 import VerifiedGarbage.Proof.Dsa.RISCV64.ParamsFn
 import VerifiedGarbage.Proof.Framework.Flat
 import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Dsa.RISCV64.CTBase
-meta import VerifiedGarbage.Proof.Dsa.RISCV64.CTKey
 meta import VerifiedGarbage.Proof.Dsa.RISCV64.CTParams
 meta import VerifiedGarbage.Proof.Dsa.RISCV64.ParamsFront
 meta import VerifiedGarbage.Proof.Framework.RelCT

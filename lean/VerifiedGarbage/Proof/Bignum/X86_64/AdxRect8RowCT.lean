@@ -2,13 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8Row
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8Frame
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8Setup
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8Row
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
-meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8Frame
 meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8Setup
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub

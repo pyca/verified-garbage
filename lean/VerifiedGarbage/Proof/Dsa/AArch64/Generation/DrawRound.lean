@@ -1,9 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.PrimeLoop
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.WitnessRound
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Sample
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.TestWitness
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Sample
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeSetup
 import VerifiedGarbage.Impl.Dsa.AArch64.Generation.RoundTail

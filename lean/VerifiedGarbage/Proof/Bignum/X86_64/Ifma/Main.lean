@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.CrtBack
 import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Post
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtPreR2
 public import VerifiedGarbage.Spec.Rsa.PrivatePrecompute
-import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.R2X
 import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Pre
 import VerifiedGarbage.Proof.Bignum.Math
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtContract

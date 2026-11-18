@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Dsa.Arm.RandomTwo
 public import VerifiedGarbage.Proof.Dsa.Arm.RandomAttempt
 public import VerifiedGarbage.Proof.Framework.Arm.Call
 public import VerifiedGarbage.Proof.Dsa.SignContractWith
-import VerifiedGarbage.Proof.Dsa.Arm.RandomBodyCT
+public import VerifiedGarbage.Proof.Dsa.Arm.RandomBodyCT
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Arm.CallF
 import VerifiedGarbage.Proof.Framework.Offset
@@ -18,8 +18,6 @@ public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Spec.Dsa.RandomSign
 public import VerifiedGarbage.Proof.Weierstrass.PointContract
 public import VerifiedGarbage.TCB.Arm.Target
-public import VerifiedGarbage.Proof.Dsa.Arm.RandomFinish
-import VerifiedGarbage.Proof.Dsa.Arm.RandomBody
 public import VerifiedGarbage.Impl.Dsa.Arm.PrevalidatedSign
 public import VerifiedGarbage.Spec.Dsa.PrevalidatedSign
 public import VerifiedGarbage.Proof.Dsa.PrivateKeyWitness

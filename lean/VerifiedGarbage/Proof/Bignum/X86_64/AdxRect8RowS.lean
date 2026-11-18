@@ -2,7 +2,6 @@ module
 
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8Row
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8Frame
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8Setup
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Digit
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop

@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Bignum.AArch64.CrtBack
 public import VerifiedGarbage.Impl.Rsa.AArch64.WindowFive
 public import VerifiedGarbage.Proof.Bignum.CrtWindowFiveLayout
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowP
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowPow
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowQ
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtPow
 
 /-! ### `Bignum.AArch64.CrtWindowBack`, which this module and modules that import it used -/

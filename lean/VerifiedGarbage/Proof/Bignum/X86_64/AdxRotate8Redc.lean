@@ -7,8 +7,6 @@ import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Core
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8TileEdges
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Tail
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Head
 
 /-! ### `Bignum.X86_64.AdxRotate8Loop`, which this module and modules that import it used -/

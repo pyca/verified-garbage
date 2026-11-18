@@ -8,14 +8,14 @@ public import VerifiedGarbage.Proof.Framework.X86.Call
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.PreparedR2
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.Constants
 import VerifiedGarbage.Proof.RsaKeyGen.X86.PreparedContext
-import VerifiedGarbage.Proof.RsaKeyGen.X86.PreparedGeometry
+import VerifiedGarbage.Proof.RsaKeyGen.X86.PreparedDataGap
 import VerifiedGarbage.Proof.Mont.RangeCover
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.PrepareHeader
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.HeaderRt
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.PreparedR2State
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Mont.X86.Words
-import VerifiedGarbage.Proof.RsaKeyGen.X86.HeaderStore
+import VerifiedGarbage.Proof.RsaKeyGen.X86.Gcd64Words
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Ptr
 import VerifiedGarbage.Proof.Mont.X86.Instr
 public import VerifiedGarbage.Proof.Rsa.MontContract
@@ -43,7 +43,6 @@ import VerifiedGarbage.Proof.RsaKeyGen.MrWindow
 import VerifiedGarbage.Proof.RsaKeyGen.X86.SigMask
 import VerifiedGarbage.Proof.Rc2.PairMem
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.RsaKeyGen.X86.PreparedGaps
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.ExponentMarker
 public import VerifiedGarbage.Spec.Rsa
 import VerifiedGarbage.Proof.Rsa.TwosMath
@@ -52,7 +51,6 @@ import VerifiedGarbage.Proof.Mont.Words
 import VerifiedGarbage.Proof.Bignum.Words
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.LowBit
 import VerifiedGarbage.Proof.RsaKeyGen.X86.Mod64Subtract
-import VerifiedGarbage.Proof.RsaKeyGen.X86.Gcd64Words
 import VerifiedGarbage.Proof.Mont.X86.ExponentWord
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.Header

@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.MillerRabin.X86.TimingSquares
 public import VerifiedGarbage.Proof.MillerRabin.X86.RoundFrame
 public import VerifiedGarbage.Proof.RsaKeyGen.MrWindow
-public import VerifiedGarbage.Proof.MillerRabin.X86.Stage
+public import VerifiedGarbage.Proof.MillerRabin.X86.StageSlots
 public import VerifiedGarbage.Proof.MillerRabin.X86.StageLoadWord
 public import VerifiedGarbage.Proof.MillerRabin.X86.TimingMultiply
 public import VerifiedGarbage.Impl.MillerRabin.X86.Round
@@ -14,16 +14,12 @@ import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.MillerRabin.X86.TimingPointers
 import VerifiedGarbage.Proof.Framework.KernelRfl
-import VerifiedGarbage.Proof.MillerRabin.X86.DataSquareControl
 public import VerifiedGarbage.Impl.MillerRabin.X86.Layout
 import VerifiedGarbage.Proof.Mont.Words
 import VerifiedGarbage.Proof.MillerRabin.X86.TimingBase
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.X86.Call
 public import VerifiedGarbage.Proof.MillerRabin.X86.TableMath
-import VerifiedGarbage.Proof.MillerRabin.X86.DataScalar
-import VerifiedGarbage.Proof.MillerRabin.X86.StageSlots
-import VerifiedGarbage.Proof.MillerRabin.X86.RoundScalarFrame
 import VerifiedGarbage.Proof.MillerRabin.X86.Copy
 public import VerifiedGarbage.Impl.MillerRabin.X86.Ops
 public import VerifiedGarbage.Proof.Framework.Semantics
@@ -36,7 +32,6 @@ import VerifiedGarbage.Proof.MillerRabin.X86.WorkspaceFrame
 public import VerifiedGarbage.TCB.Code
 public import VerifiedGarbage.Proof.Mont.X86.Rt.Base
 public import VerifiedGarbage.Proof.MillerRabin.Word32
-import VerifiedGarbage.Proof.MillerRabin.X86.ModulusKeep
 
 /-! ### `MillerRabin.X86.MarkerPointer`, which only this module used -/
 

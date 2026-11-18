@@ -8,7 +8,6 @@ public import VerifiedGarbage.Proof.Dsa.Generation.GeneratorCount
 import VerifiedGarbage.Proof.Dsa.Generation.Chunks
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorOutput
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorStages
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.PAttempt
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.AttemptStatus

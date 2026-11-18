@@ -13,7 +13,7 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.CrtFront
 public import VerifiedGarbage.Proof.Bignum.AArch64.PdRest
 public import VerifiedGarbage.Proof.Bignum.CrtResult
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtMain
-import VerifiedGarbage.Proof.Bignum.AArch64.PubFail
+import VerifiedGarbage.Proof.Bignum.AArch64.PcMain
 import VerifiedGarbage.Proof.Bignum.AArch64.PubValid
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Offset

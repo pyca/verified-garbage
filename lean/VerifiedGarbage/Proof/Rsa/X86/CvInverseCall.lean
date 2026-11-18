@@ -4,11 +4,9 @@ public import VerifiedGarbage.Impl.Rsa.X86.CrtValuesRt
 public import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Base
 public import VerifiedGarbage.Proof.Rsa.X86.InvLoop
 public import VerifiedGarbage.Proof.Rsa.X86.InvGate
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.StackRange
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.InverseCall
 public import VerifiedGarbage.Spec.RsaKeyGen.Contract
 public import VerifiedGarbage.Proof.RsaKeyGen.Contract
-
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.InverseCall
 import VerifiedGarbage.Proof.RsaKeyGen.X86.Inverse.Verified
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Compare
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Ops

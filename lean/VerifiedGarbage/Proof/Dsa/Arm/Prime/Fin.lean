@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Rc2.PairMem
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Mr11
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Exp7
-import VerifiedGarbage.Proof.Dsa.Arm.Prime.Mont7
+import VerifiedGarbage.Proof.Dsa.Arm.Prime.Mont8
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Seqs
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Trial2
 import VerifiedGarbage.Proof.MillerRabin.Arm.Body

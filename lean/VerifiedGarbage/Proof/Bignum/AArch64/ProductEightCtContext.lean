@@ -1,7 +1,7 @@
 module
-public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcCtContext
-public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightRows
 
+public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcCtRow
+public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightRows
 import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightSetup
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareLayout
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcCtLoop

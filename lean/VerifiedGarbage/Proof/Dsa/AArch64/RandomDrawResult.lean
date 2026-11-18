@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomState
 public import VerifiedGarbage.Spec.Dsa.Random
 import VerifiedGarbage.Proof.Dsa.AArch64.RandomDrawCopy
-import VerifiedGarbage.Proof.Dsa.AArch64.RandomDrawRange
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomDrawControl
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomMask
 public import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup

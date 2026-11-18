@@ -14,7 +14,7 @@ public import Aesop.BuiltinRules
 import Mathlib.Tactic.ToDual
 public import VerifiedGarbage.Proof.Dsa.X86_64.JointAdvance
 import VerifiedGarbage.Proof.Dsa.X86_64.JointEntries
-import VerifiedGarbage.Proof.Dsa.X86_64.Setup
+import VerifiedGarbage.Proof.Dsa.X86_64.SetupChoice
 
 /-! ### `Dsa.X86_64.JointBuild`, which this module and modules that import it used -/
 

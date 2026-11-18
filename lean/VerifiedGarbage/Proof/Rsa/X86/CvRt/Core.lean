@@ -1,6 +1,6 @@
 module
-public import VerifiedGarbage.Proof.Rsa.X86.BatchLaw
 
+public import VerifiedGarbage.Proof.Rsa.X86.BatchLaw
 public import VerifiedGarbage.Proof.Rsa.X86.CvRt.Checks
 public import VerifiedGarbage.Proof.Rsa.X86.WordRt.Guard
 import VerifiedGarbage.Proof.Rsa.X86.WordRt.Mul
@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Word
 public import VerifiedGarbage.Impl.Rsa.X86.CrtValuesRt
 public import VerifiedGarbage.Proof.Rsa.X86.InvGate
 public import VerifiedGarbage.Proof.Rsa.X86.InvLoop
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.StackRange
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.InverseCall
 
 /-! # CRT parameter calculation at a run-time width: the divisions
 

@@ -14,10 +14,9 @@ import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.TCB.X86.State
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateEnvironment
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.CandidateSieve
-import VerifiedGarbage.Proof.RsaKeyGen.X86.SieveLoop
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.RsaKeyGen.X86.SieveAdvancedMem
 import VerifiedGarbage.Proof.RsaKeyGen.X86.SieveFrame
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.RsaKeyGen.X86.SieveStep
 public import VerifiedGarbage.Proof.Framework.X86.Call
 
 /-! ### `RsaKeyGen.X86.SieveSetup`, which this module and modules that import it used -/

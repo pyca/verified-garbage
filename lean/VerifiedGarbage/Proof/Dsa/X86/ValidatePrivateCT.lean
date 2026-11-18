@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
 import VerifiedGarbage.Proof.Dsa.X86.LayoutAgreement
 import VerifiedGarbage.Proof.Dsa.X86.VerifySizedTiming
 import VerifiedGarbage.Proof.Dsa.X86.KeyTiming
-import VerifiedGarbage.Proof.Dsa.X86.BodyTiming
 import VerifiedGarbage.Proof.Dsa.X86.CheckingDispatchCT
 public import VerifiedGarbage.Proof.Dsa.X86.EntryTiming
 import VerifiedGarbage.Proof.Dsa.X86.InstalledInputs

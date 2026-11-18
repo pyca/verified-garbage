@@ -1,7 +1,7 @@
 module
-public import VerifiedGarbage.Proof.Dsa.AArch64.InitFrame
-public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.GeneratorPower
 
+public import VerifiedGarbage.Proof.Dsa.AArch64.InitInverse
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.GeneratorPower
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorFields
 import VerifiedGarbage.Proof.Dsa.AArch64.Child
 import VerifiedGarbage.Proof.Framework.Omega

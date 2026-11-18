@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Dsa.Arm.Prime.Exp7
 import VerifiedGarbage.Proof.Bignum.Arm.Setup
 import VerifiedGarbage.Proof.Bignum.Arm.SetupCT
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Dsa.Arm.Prime.Taint6
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Mont1
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.Mont2
 import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
@@ -22,6 +21,42 @@ public import VerifiedGarbage.Proof.Dsa.Arm.Prime.Base
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Loads
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 public import VerifiedGarbage.Proof.Rsa.MontContract
+public import VerifiedGarbage.Proof.Dsa.Arm.Prime.Taint0
+public import VerifiedGarbage.Impl.RsaKeyGen.Arm.Candidate
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Dsa.Arm.Prime.Taint0
+meta import VerifiedGarbage.Impl.RsaKeyGen.Arm.Candidate
+meta import VerifiedGarbage.Proof.Framework.Mem
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+
+/-! ### `Dsa.Arm.Prime.Taint6`, which this module and modules that import it used -/
+
+section
+
+/-! # A candidate on ARMv7: the taint analysis of Montgomery multiplication's setup -/
+
+@[expose] public section
+
+namespace VG.Proof.Dsa.Arm.Prime
+open VG VG.Arm VG.Impl.Rsa.Arm.Keys VG.Impl.RsaKeyGen.Arm.Candidate
+
+theorem montHead_taint : Cert (.block (ptr .r0 mBase ++ ([.dp .sub .r0 .r0 (.imm 256)] : List Instr))) := ⟨_, by taint_decide⟩
+theorem ctxW_taint : ∃ hc, (VG.Taint.check VG.Arm.taint (Taint.ofRegs [.r8]) (.block ctxW) hc).isSome = true :=
+  ⟨_, by taint_decide⟩
+theorem clrTopC_taint : Cert (.block (clrTop mBase)) := ⟨_, by taint_decide⟩
+theorem strideW_taint : ∃ hc, (VG.Taint.check VG.Arm.taint (Taint.ofRegs [.r0, .r7]) (.block strideW) hc).isSome =
+    true := ⟨_, by taint_decide⟩
+theorem copy1One_taint : Cert (copy (mBase + 1) aOne) := ⟨_, by taint_decide⟩
+theorem clrTop1_taint : Cert (.block (clrTop (mBase + 1))) := ⟨_, by taint_decide⟩
+theorem copy9_taint : Cert (copy (mBase + 9) (mBase + 1)) := ⟨_, by taint_decide⟩
+theorem sub10_taint : Cert (sub3 (mBase + 10) mBase (mBase + 9)) := ⟨_, by taint_decide⟩
+
+end VG.Proof.Dsa.Arm.Prime
+
+end
+
+end
 
 /-! ### `Dsa.Arm.Prime.Mont3`, which this module and modules that import it used -/
 

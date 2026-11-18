@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Dsa.Accepted
 public import VerifiedGarbage.Proof.Dsa.Arm.ValidateOps
 import VerifiedGarbage.Proof.Dsa.BitLengthBounds
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Mont.Arm.Dyn.ContextInit
+import VerifiedGarbage.Proof.Dsa.Arm.Pow
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Dsa.Arm.Leaves
 

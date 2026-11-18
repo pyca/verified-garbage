@@ -3,18 +3,17 @@ module
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.CandidateArithmetic
 public import VerifiedGarbage.Proof.Rsa.Ranges
 public import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
-
 import VerifiedGarbage.Proof.Bignum.CrtFrame
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Double
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateReduction
 import Mathlib.Order.RelClasses
 import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.Push
 import Mathlib.Tactic.Attr.Core
 import VerifiedGarbage.Proof.Rsa.KeyMath
 import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Reduce
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateReduction
 import VerifiedGarbage.Proof.Dsa.Generation.PReduction
 import Mathlib.Tactic.Widget.Calc
+
 /-! # The byte-to-integer bridge for p-candidate arithmetic -/
 
 -- Formerly `VerifiedGarbage/Proof/Dsa/X86_64/Generation/ReductionExponent.lean`, which only this module imported.

@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Impl.Dsa.X86_64.ParameterSearch
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.RefillContract
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeCall
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CodeDepth
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Hashes
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
 public import VerifiedGarbage.Proof.Variants.MillerRabin.X86_64.Base
@@ -57,7 +56,6 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.ProbablePrime.CT
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.Kernel
 public import VerifiedGarbage.Proof.Dsa.X86_64.ProbablePrime.Params
 public import VerifiedGarbage.Impl.Dsa.X86_64.ProbablePrime
-public import VerifiedGarbage.Proof.Dsa.X86_64.ProbablePrime.Body
 import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.Dsa.ModPowContract
 public import VerifiedGarbage.Proof.Dsa.ProbablePrimeContract
@@ -65,6 +63,58 @@ import VerifiedGarbage.Proof.Dsa.BitLengthBounds
 import VerifiedGarbage.Proof.Dsa.Arithmetic
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PrimeBytes
+public import VerifiedGarbage.Impl.Bignum.X86_64
+import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+
+/-! ### `Dsa.X86_64.Generation.CodeDepth`, which only this module used -/
+
+section
+
+/-! # Compositional bounds for stack use below the persistent search frame -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.X86_64.Generation
+open VG VG.X86_64
+
+def generationDepth (c : Prog isa) : Prop := c.x86_64Depth ≤ 128
+
+theorem generationDepth.seq {a b : Prog isa} (ha : generationDepth a) (hb : generationDepth b) :
+    generationDepth (.seq a b) := Nat.max_le.mpr ⟨ha, hb⟩
+
+theorem generationDepth.ite {a b : Prog isa} (ha : generationDepth a) (hb : generationDepth b) (cc : Cond) :
+    generationDepth (.ite cc a b) := Nat.max_le.mpr ⟨ha, hb⟩
+
+theorem generationDepth.block (is : List Instr) : generationDepth (.block is) := by
+  change 0 ≤ 128
+  decide
+
+/-- What code around the probable-prime calls may use below the frame: a
+call's return address and the 184 bytes of the test's stack. -/
+def callerDepth (c : Prog isa) : Prop := c.x86_64Depth ≤ 192
+
+theorem callerDepth.of {c : Prog isa} (h : generationDepth c) : callerDepth c :=
+  Nat.le_trans h (by decide)
+
+theorem callerDepth.seq {a b : Prog isa} (ha : callerDepth a) (hb : callerDepth b) :
+    callerDepth (.seq a b) := Nat.max_le.mpr ⟨ha, hb⟩
+
+theorem callerDepth.ite {a b : Prog isa} (ha : callerDepth a) (hb : callerDepth b) (cc : Cond) :
+    callerDepth (.ite cc a b) := Nat.max_le.mpr ⟨ha, hb⟩
+
+theorem generation_depth_seqs (l : List (Prog isa)) :
+    (Impl.Bignum.X86_64.seqs l).x86_64Depth = l.foldr (fun c n => max c.x86_64Depth n) 0 := by
+  induction l with
+  | nil => rfl
+  | cons a l ih =>
+    cases l with
+    | nil => simp only [Impl.Bignum.X86_64.seqs, List.foldr_cons, List.foldr_nil, Nat.max_zero]
+    | cons b l => simp only [Impl.Bignum.X86_64.seqs, Code.x86_64Depth, List.foldr_cons] at ih ⊢; rw [ih]
+
+end VG.Proof.Dsa.X86_64.Generation
+
+end
+
+end
 
 /-! ### `Dsa.X86_64.ProbablePrime.Verified`, which only this module used -/
 

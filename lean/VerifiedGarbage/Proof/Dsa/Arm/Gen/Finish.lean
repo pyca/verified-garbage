@@ -1,7 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.Arm.Gen.SLoop
-import VerifiedGarbage.Proof.Dsa.Arm.Gen.Pre
+public import VerifiedGarbage.Proof.Dsa.Arm.Gen.Pre
 import VerifiedGarbage.Proof.Bignum.Arm.CopyBuffer
 import VerifiedGarbage.Proof.Bignum.Arm.Stack
 import VerifiedGarbage.Proof.Dsa.Generation.Memory

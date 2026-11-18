@@ -20,7 +20,7 @@ import VerifiedGarbage.Proof.Dsa.BitLengthBounds
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeCall
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeometryWork
 public import VerifiedGarbage.Proof.Dsa.ModPowContract
-public import VerifiedGarbage.Proof.Dsa.GeneratorStageContract
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generator.ABI
 public import VerifiedGarbage.Spec.Dsa
 
 /-! # Calling the generator stage from the generation frame

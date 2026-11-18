@@ -23,7 +23,6 @@ public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.RsaKeyGen.Table
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Arguments
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.WorkspaceBase
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.FrameWord
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Workspace
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CandidateArguments
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CandidateStores

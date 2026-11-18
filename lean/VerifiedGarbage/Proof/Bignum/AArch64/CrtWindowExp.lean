@@ -14,7 +14,6 @@ import Mathlib.Tactic.ToDual
 import Mathlib.Tactic.ToAdditive
 import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowPrefixInv
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowGroups
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTails
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowFinish
 

@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.Execution
 import VerifiedGarbage.Proof.Dsa.AArch64.Child
 public import VerifiedGarbage.Spec.Dsa.SignVerify
 public import VerifiedGarbage.Impl.Dsa.AArch64.Workspace
-public import VerifiedGarbage.Proof.Dsa.AArch64.InitFrame
+public import VerifiedGarbage.Proof.Dsa.AArch64.InitInverse
 import VerifiedGarbage.Proof.Dsa.Layout
 import VerifiedGarbage.Proof.Dsa.AArch64.Parent
 

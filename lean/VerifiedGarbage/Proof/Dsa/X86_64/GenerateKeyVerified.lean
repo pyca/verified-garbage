@@ -1,17 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.GenerateKeySample
-import VerifiedGarbage.Proof.Dsa.X86_64.GenerateKeyBlockCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomPrepareCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.GenerateKeyCorrect
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignBodyCT
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.X86_64.DeriveCheckedVerified
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCallMemory
-import VerifiedGarbage.Proof.Dsa.X86_64.ParametersVerified
+import VerifiedGarbage.Proof.Dsa.X86_64.PrevalidatedVerified
 public import VerifiedGarbage.Proof.Dsa.Contract
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignSampleCT
-import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignBodyCT
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignSingleCT
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomSample
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomMemory
@@ -19,6 +16,67 @@ import VerifiedGarbage.Proof.Dsa.RandomTraceResult
 import VerifiedGarbage.Proof.Bignum.Octets
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignFinishAgreement
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Impl.Dsa.X86_64.GenerateKey
+public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+import Aesop.BuiltinRules
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Impl.Dsa.X86_64.GenerateKey
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+meta import Aesop.BuiltinRules
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+
+/-! ### `Dsa.X86_64.GenerateKeyBlockCT`, which only this module used -/
+
+section
+
+/-! # Key generation's straight-line pieces: only the stack pointer is public in them -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.X86_64
+open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
+open VG.Impl.Dsa.X86_64
+
+theorem keygen_rsp_pins : Pins (fun (B : Addr) (s : State) => s.gpr .rsp = B) [.rsp] := by
+  intro B s t hs ht r hr
+  rw [List.mem_singleton] at hr
+  subst r
+  exact hs.trans ht.symm
+
+theorem keygen_head_ct : RelCT isa (fun s t => s.gpr .rsp = t.gpr .rsp)
+    (.block (GenerateKey.entry ++ GenerateKey.checkArgs)) (fun _ _ => True) :=
+  (two_taint (Φ := fun (B : Addr) s => s.gpr .rsp = B) [.rsp] keygen_rsp_pins (by taint_decide)).mono
+    (fun s _ h => ⟨s.gpr .rsp, rfl, h.symm⟩) (fun _ _ _ => trivial)
+
+theorem keygen_testCheck_ct : RelCT isa (fun s t => s.gpr .rsp = t.gpr .rsp)
+    (.block [.mov32 .rax (.reg .rax), .alu .cmp .rax (.imm 0)]) (fun _ _ => True) :=
+  (two_taint (Φ := fun (B : Addr) s => s.gpr .rsp = B) [.rsp] keygen_rsp_pins (by taint_decide)).mono
+    (fun s _ h => ⟨s.gpr .rsp, rfl, h.symm⟩) (fun _ _ _ => trivial)
+
+theorem keygen_storeStatus_ct : RelCT isa (fun s t => s.gpr .rsp = t.gpr .rsp)
+    (.block [.store (Random.sp Random.oStatus) .rax, .alu .cmp .rax (.imm 1)]) (fun _ _ => True) :=
+  (two_taint (Φ := fun (B : Addr) s => s.gpr .rsp = B) [.rsp] keygen_rsp_pins (by taint_decide)).mono
+    (fun s _ h => ⟨s.gpr .rsp, rfl, h.symm⟩) (fun _ _ _ => trivial)
+
+theorem keygen_deriveArgs_ct : RelCT isa (fun s t => s.gpr .rsp = t.gpr .rsp)
+    (.block GenerateKey.deriveArgs) (fun _ _ => True) :=
+  (two_taint (Φ := fun (B : Addr) s => s.gpr .rsp = B) [.rsp] keygen_rsp_pins (by taint_decide)).mono
+    (fun s _ h => ⟨s.gpr .rsp, rfl, h.symm⟩) (fun _ _ _ => trivial)
+
+theorem keygen_keepStatus_ct : RelCT isa (fun s t => s.gpr .rsp = t.gpr .rsp)
+    (.block GenerateKey.keepStatus) (fun _ _ => True) :=
+  (two_taint (Φ := fun (B : Addr) s => s.gpr .rsp = B) [.rsp] keygen_rsp_pins (by taint_decide)).mono
+    (fun s _ h => ⟨s.gpr .rsp, rfl, h.symm⟩) (fun _ _ _ => trivial)
+
+end VG.Proof.Dsa.X86_64
+
+end
+
+end
 
 /-! ### `Dsa.X86_64.GenerateKeyPublic`, which only this module used -/
 

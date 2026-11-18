@@ -1,16 +1,1188 @@
 module
+
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Impl.Bignum.X86_64.AdxTiledSquare
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledInit
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledTail
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareCross
-
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Block
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledCounter
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareRow
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8Frame
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8Setup
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
-import VerifiedGarbage.Proof.Bignum.Triangular
+public import VerifiedGarbage.Proof.Bignum.Triangular
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+public import VerifiedGarbage.Proof.Bignum.X86_64.OpAt
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8ProductStep
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
+public import VerifiedGarbage.Proof.Bignum.Layout
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Memory
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+public import VerifiedGarbage.Proof.Bignum.X86_64.Words
+public import VerifiedGarbage.Impl.Bignum.X86_64.AdxTri8
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxStep
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxDualAddWord
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Sig
+
+/-! ### `Bignum.X86_64.AdxTri8Block`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Bignum.X86_64.AdxTri8Row0`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Bignum.X86_64.AdxTri8Sum`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Bignum.X86_64.AdxTri8RowCore`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Bignum.X86_64.AdxTri8Chain`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Bignum.X86_64.AdxTri8Word`, which this module and modules that import it used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.Bignum.X86_64.AdxTri8
+open VG VG.X86_64 VG.Impl.Bignum.X86_64
+open VG.Proof.Bignum.X86_64
+open VG.Impl.Bignum.X86_64.AdxRotate8 (at_)
+
+theorem word_ok (s : State) {k : Nat} {hi prev col : Reg} {v : BitVec 64} {c o : Bool}
+    (hm : readSrc s (.mem (at_ .rbp (8*k)))=some v) (hc : s.cf=some c) (ho : s.of=some o)
+    (h1 : hi≠.rsi) (h2 : col≠hi) (h3 : col≠.rsi)
+    (h4 : prev≠hi) (h5 : prev≠.rsi) (h6 : prev≠col) :
+    WP isa (.block (AdxTri8.word k hi prev col)) s fun t => ∃ c' o' : Bool,
+      t.cf=some c' ∧ t.of=some o' ∧
+      (t.gpr col).toNat+2^64*((t.gpr hi).toNat+c'.toNat+o'.toNat)=
+        (s.gpr col).toNat+(s.gpr .rdx).toNat*v.toNat+(s.gpr prev).toNat+c.toNat+o.toNat ∧
+      Keeps [hi,.rsi,col] s t := by
+  rw [show AdxTri8.word k hi prev col = [.mulx hi .rsi (.mem (at_ .rbp (8*k)))] ++
+    AdxDualAdd.word col (.reg .rsi) (.reg prev) from rfl,WP.block_append_iff]
+  refine WP.mono (mulx_ok s hm (fun _ h => nomatch h) h1) fun a ⟨ea,ca,oa,ka⟩ => ?_
+  refine WP.mono (AdxDualAdd.word_ok a (a := .reg .rsi) (b := .reg prev) (vb := a.gpr prev) rfl
+    (fun u ku => by simp only [readSrc]; rw [ku.gpr (by simp [h6])])
+    (fun _ h => nomatch h) (fun _ h => nomatch h) (ca.trans hc) (oa.trans ho))
+    fun t ⟨ct,ot,hct,hot,eq,kt⟩ => ?_
+  have colA : a.gpr col=s.gpr col := ka.gpr (by simp [h2,h3])
+  have prevA : a.gpr prev=s.gpr prev := ka.gpr (by simp [h4,h5])
+  have hiT : t.gpr hi=a.gpr hi := kt.gpr (by simp [Ne.symm h2])
+  rw [colA,prevA] at eq
+  refine ⟨ct,ot,hct,hot,?_,(ka.trans kt).mono (by simp)⟩
+  rw [hiT]
+  omega_using [ea, eq]
+
+theorem close_ok (s : State) {hi col : Reg} {c o : Bool}
+    (hc : s.cf=some c) (ho : s.of=some o) (hz : s.gpr col=0) (hne : hi≠col) :
+    WP isa (.block (AdxTri8.close hi col)) s fun t => ∃ c' o' : Bool,
+      t.cf=some c' ∧ t.of=some o' ∧
+      (t.gpr col).toNat+2^64*(c'.toNat+o'.toNat)=
+        (s.gpr col).toNat+(s.gpr hi).toNat+c.toNat+o.toNat ∧ Keeps [col] s t := by
+  change WP isa (.block (AdxDualAdd.word col (.reg col) (.reg hi))) s _
+  refine WP.mono (AdxDualAdd.word_ok s (a := .reg col) (b := .reg hi) (vb := s.gpr hi) rfl
+    (fun t kt => by simp only [readSrc]; rw [kt.gpr (by simp [hne])])
+    (fun _ h => nomatch h) (fun _ h => nomatch h) hc ho) fun t ⟨ct,ot,hct,hot,eq,kt⟩ => ?_
+  rw [hz] at eq ⊢
+  simp only [show (0 : BitVec 64).toNat=0 from rfl,Nat.add_zero,Nat.zero_add] at eq ⊢
+  exact ⟨ct,ot,hct,hot,eq,kt⟩
+
+end VG.Proof.Bignum.X86_64.AdxTri8
+
+end
+
+end
+
+@[expose] public section
+
+namespace VG.Proof.Bignum.X86_64.AdxTri8
+open VG VG.X86_64 VG.Impl.Bignum.X86_64
+open VG.Proof.Bignum.X86_64
+open VG.Impl.Bignum.X86_64.AdxRotate8 (at_)
+
+def value (s : State) : List Reg → Nat
+  | [] => 0
+  | r::rs => (s.gpr r).toNat+2^64*value s rs
+
+def Safe (r : Reg) : Prop := r≠.rsi ∧ r≠.rbp ∧ r≠.rdx ∧ r≠.rcx
+
+theorem value_congr {s t : State} {rs : List Reg} (h : ∀ r ∈ rs, t.gpr r=s.gpr r) : value t rs=value s rs := by
+  induction rs with
+  | nil => rfl
+  | cons r rs ih => rw [value,value,h r (by simp),ih (fun r hr => h r (by simp [hr]))]
+
+private theorem append_arith {L L' R H C O X P D U U' Q F A Ci Oi : Nat}
+    (word : L'+R*(H+C+O)=L+X*D+P+Ci+Oi)
+    (tail : U'+Q*F=U+X*A+H+C+O) :
+    L'+R*U'+(R*Q)*F=(L+R*U)+X*(D+R*A)+P+Ci+Oi := by grind
+
+theorem chain_ok (rs : List Reg) {s : State} {B : Addr} {Z e k : Nat}
+    {hi other prev : Reg} {c o : Bool}
+    (hs : Scr s B Z) (hp : s.gpr .rbp=off B e) (htop : value s rs<2^(64*(rs.length-1)))
+    (hZ : e+8*(k+(rs.length-1)) ≤ Z) (hn : rs≠[]) (hd : rs.Nodup)
+    (hh : Safe hi) (ho' : Safe other) (hne : hi≠other) (hp1 : prev≠hi) (hp2 : prev≠.rsi)
+    (hrs : ∀ r ∈ rs, Safe r ∧ r≠hi ∧ r≠other ∧ r≠prev)
+    (hc : s.cf=some c) (ho : s.of=some o) :
+    WP isa (.block (AdxTri8.chain k hi other prev rs)) s fun t => ∃ c' o' : Bool,
+      t.cf=some c' ∧ t.of=some o' ∧
+      value t rs+2^(64*rs.length)*(c'.toNat+o'.toNat)=
+        value s rs+(s.gpr .rdx).toNat*wv s.mem B (e+8*k) (rs.length-1)+
+          (s.gpr prev).toNat+c.toNat+o.toNat ∧ Keeps ([hi,other,.rsi]++rs) s t := by
+  induction rs generalizing s k hi other prev c o with
+  | nil => exact False.elim (hn rfl)
+  | cons col rs ih =>
+    cases rs with
+    | nil =>
+      have cp := (hrs col (by simp)).2.2.2
+      have hz : s.gpr col=0 := by
+        apply BitVec.eq_of_toNat_eq
+        simp only [value,List.length_cons,List.length_nil,Nat.sub_self,Nat.mul_zero,Nat.pow_zero] at htop
+        simp only [show (0 : BitVec 64).toNat=0 from rfl]; omega_using [htop]
+      refine WP.mono (close_ok s hc ho hz (Ne.symm cp)) fun t ⟨ct,ot,hct,hot,eq,kt⟩ => ?_
+      refine ⟨ct,ot,hct,hot,?_,kt.mono (by simp)⟩
+      simpa only [value,List.length_cons,List.length_nil,Nat.mul_one,Nat.sub_self,wv,
+        Nat.mul_zero,Nat.add_zero] using eq
+    | cons next rest =>
+      have cs := hrs col (by simp)
+      have nd : col∉next::rest ∧ (next::rest).Nodup := List.nodup_cons.mp hd
+      have hkZ : e+8*k+8 ≤ Z := by simp only [List.length_cons] at hZ; omega_using [hZ]
+      have hm : readSrc s (.mem (at_ .rbp (8*k)))=some (word s.mem B (e+8*k)) :=
+        readSrc_word hs (AdxRotate8.ea_at hp (8*k)) hkZ
+      simp only [AdxTri8.chain]
+      rw [WP.block_append_iff]
+      refine WP.mono (word_ok s hm hc ho hh.1 cs.2.1 cs.1.1 hp1 hp2 cs.2.2.2.symm)
+        fun a ⟨ca,oa,hca,hoa,eq,ka⟩ => ?_
+      have pa : a.gpr .rbp=off B e := (ka.gpr (by simp [Ne.symm hh.2.1,Ne.symm cs.1.2.1])).trans hp
+      have tailPres : value a (next::rest)=value s (next::rest) := value_congr (by
+        intro r hr
+        have h := hrs r (by simp [hr])
+        exact ka.gpr (by simp [h.2.1,h.1.1,show r≠col by intro e; subst r; exact nd.1 hr]))
+      have topA : value a (next::rest)<2^(64*((next::rest).length-1)) := by
+        rw [tailPres]
+        have e1 : value s (col::next::rest)=(s.gpr col).toNat+2^64*value s (next::rest) := rfl
+        have e2 : 64*((col::next::rest).length-1)=64+64*((next::rest).length-1) := by
+          simp only [List.length_cons]; omega_using []
+        rw [e1,e2,Nat.pow_add] at htop
+        exact Nat.lt_of_mul_lt_mul_left (Nat.lt_of_le_of_lt (Nat.le_add_left _ _) htop)
+      refine WP.mono (ih (hs.congr ka.2.2.2) pa topA (by simp only [List.length_cons] at *; omega_using [hZ])
+        (by simp) nd.2 ho' hh hne.symm hne hh.1 ?_ hca hoa) fun t ⟨ct,ot,hct,hot,et,kt⟩ => ?_
+      · intro r hr
+        have h := hrs r (by simp [hr])
+        exact ⟨h.1,h.2.2.1,h.2.1,h.2.1⟩
+      have caPres : a.gpr .rdx=s.gpr .rdx := ka.gpr (by simp [Ne.symm hh.2.2.1,Ne.symm cs.1.2.2.1])
+      have colPres : t.gpr col=a.gpr col := kt.gpr (by simp [cs.2.1,cs.2.2.1,cs.1.1,nd.1])
+      rw [caPres,ka.2.1,tailPres] at et
+      refine ⟨ct,ot,hct,hot,?_,(ka.trans kt).mono (by
+        intro r hr
+        simp only [List.mem_append] at hr ⊢
+        rcases hr with h | h
+        · simp only [List.mem_cons, List.not_mem_nil, or_false] at h
+          rcases h with rfl | rfl | rfl <;> simp
+        · rcases h with h | h
+          · simp only [List.mem_cons, List.not_mem_nil, or_false] at h
+            rcases h with rfl | rfl | rfl <;> simp
+          · exact Or.inr (List.mem_cons_of_mem _ h))⟩
+      rw [show value t (col::next::rest)=(t.gpr col).toNat+2^64*value t (next::rest) from rfl,
+        show value s (col::next::rest)=(s.gpr col).toNat+2^64*value s (next::rest) from rfl,colPres,show 64*(col::next::rest).length=64+64*(next::rest).length by simp; omega_using [],Nat.pow_add]
+      have split : wv s.mem B (e+8*k) ((col::next::rest).length-1)=
+          (word s.mem B (e+8*k)).toNat+2^64*wv s.mem B (e+8*(k+1)) ((next::rest).length-1) := by
+        rw [show (col::next::rest).length-1=1+((next::rest).length-1) by simp; omega_using [],wv_add]
+        simp only [wv,Nat.mul_zero,Nat.add_zero,Nat.zero_add,Nat.pow_zero,Nat.one_mul,Nat.mul_one]
+        rw [show e+8*k+8=e+8*(k+1) by omega_using []]
+      rw [split]
+      exact append_arith eq et
+
+end VG.Proof.Bignum.X86_64.AdxTri8
+
+end
+
+end
+
+/-! ### `Bignum.X86_64.AdxTri8Value`, which only this module used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.Bignum.X86_64.AdxTri8
+open VG VG.X86_64
+
+private theorem digit_bound {R Q A V : Nat} (ha : A<R) (hv : V<Q) : A+R*V<R*Q := by
+  have h : R*V ≤ R*(Q-1) := Nat.mul_le_mul_left R (by omega_using [hv])
+  have e : R+R*(Q-1)=R*Q := by
+    calc
+      _ = R*1+R*(Q-1) := by rw [Nat.mul_one]
+      _ = R*(1+(Q-1)) := (Nat.mul_add ..).symm
+      _ = R*Q := by rw [show 1+(Q-1)=Q by omega_using [hv]]
+  omega_using [ha, h, e]
+
+theorem value_lt (s : State) (rs : List Reg) : value s rs<2^(64*rs.length) := by
+  induction rs with
+  | nil => simp only [value,List.length_nil,Nat.mul_zero,Nat.pow_zero]; decide
+  | cons r rs ih =>
+    rw [value,List.length_cons,show 64*(rs.length+1)=64+64*rs.length by omega_using [],Nat.pow_add]
+    exact digit_bound (s.gpr r).isLt ih
+
+theorem value_append (s : State) (rs tail : List Reg) :
+    value s (rs++tail)=value s rs+2^(64*rs.length)*value s tail := by
+  induction rs with
+  | nil => simp only [List.nil_append,value,List.length_nil,Nat.mul_zero,Nat.pow_zero,Nat.one_mul,Nat.zero_add]
+  | cons r rs ih =>
+    simp only [List.cons_append,value,List.length_cons,ih]
+    rw [show 64*(rs.length+1)=64+64*rs.length by omega_using [],Nat.pow_add]
+    rw [Nat.mul_add,Nat.add_assoc,Nat.mul_assoc]
+
+theorem value_zero_top {s : State} {rs : List Reg} {top : Reg} (hz : s.gpr top=0) :
+    value s (rs++[top])<2^(64*((rs++[top]).length-1)) := by
+  rw [value_append]
+  simp only [value,hz,show (0 : BitVec 64).toNat=0 from rfl,Nat.mul_zero,Nat.add_zero,
+    List.length_append,List.length_cons,List.length_nil,Nat.zero_add,Nat.add_sub_cancel]
+  exact value_lt s rs
+
+end VG.Proof.Bignum.X86_64.AdxTri8
+
+end
+
+end
+
+
+/-! ## AdxTri8Closed -/
+
+@[expose] public section
+
+section
+
+namespace VG.Proof.Bignum.X86_64.AdxTri8
+open VG VG.X86_64 VG.Impl.Bignum.X86_64
+open VG.Proof.Bignum.X86_64
+open VG.Impl.Bignum.X86_64.AdxRotate8 (at_)
+
+private theorem mac_bound {R Q X U V : Nat} (hx : X<R) (hu : U<Q) (hv : V<Q) : V+X*U<R*Q := by
+  have h : X*U ≤ (R-1)*(Q-1) := Nat.mul_le_mul (by omega_arith) (by omega_arith)
+  have e : (Q-1)+(R-1)*(Q-1)+R=R*Q := by
+    calc
+      _ = ((R-1)+1)*(Q-1)+R := by rw [Nat.add_mul,Nat.one_mul]; omega_arith
+      _ = R*(Q-1)+R := by rw [Nat.sub_add_cancel (by omega_arith : 1≤R)]
+      _ = R*((Q-1)+1) := by rw [Nat.mul_add,Nat.mul_one]
+      _ = R*Q := by rw [Nat.sub_add_cancel (by omega_arith : 1≤Q)]
+  omega_arith
+
+private theorem no_carry {L Q C V : Nat} (h : L+Q*C=V) (hb : V<Q) : L=V := by
+  have hc : C=0 := by
+    by_contra ne
+    have : Q ≤ Q*C := Nat.le_mul_of_pos_right _ (by omega_arith)
+    omega_arith
+  simpa only [hc,Nat.mul_zero,Nat.add_zero] using h
+
+theorem last_mem (col : Reg) (rest : List Reg) : AdxTri8.last col rest ∈ col::rest := by
+  induction rest generalizing col with
+  | nil => simp [AdxTri8.last]
+  | cons r rs ih => exact List.mem_cons_of_mem _ (ih r)
+
+theorem dropLast_last (col : Reg) (rest : List Reg) :
+    (col::rest).dropLast++[AdxTri8.last col rest]=col::rest := by
+  induction rest generalizing col with
+  | nil => rfl
+  | cons r rs ih => simp only [AdxTri8.last,List.dropLast_cons_cons,List.cons_append,ih]
+
+theorem last_ne {col next : Reg} {rest : List Reg} (hd : (col::next::rest).Nodup) :
+    AdxTri8.last col (next::rest)≠col := by
+  intro h
+  have m := last_mem next rest
+  rw [show AdxTri8.last col (next::rest)=AdxTri8.last next rest from rfl] at h
+  rw [h] at m
+  exact (List.nodup_cons.mp hd).1 m
+
+/-- The value of the columns once their top one is zero: that of the others. -/
+theorem value_top_zero {s : State} {col : Reg} {rest : List Reg}
+    (hz : s.gpr (AdxTri8.last col rest)=0) :
+    value s (col::rest)=value s (col::rest).dropLast := by
+  conv => lhs; rw [← dropLast_last col rest]
+  rw [value_append]
+  simp only [value,hz,show (0 : BitVec 64).toNat=0 from rfl,Nat.mul_zero,Nat.add_zero]
+
+theorem xorZero_ok (s : State) (r : Reg) :
+    WP isa (.block [.alu32 .xor r (.reg r)]) s fun t =>
+      t.gpr r=0 ∧ t.cf=some false ∧ t.of=some false ∧ Keeps [r] s t := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons,runStep_some,runBlock_nil,exec,execAlu32,readSrc32,Option.bind_some,
+    State.setReg32,Option.some.injEq,exists_eq_left']
+  refine ⟨?_,rfl,rfl,fun r' hr => ?_,rfl,rfl,rfl⟩
+  · simp only [RegUpd.gpr_setReg_self,BitVec.xor_self]; rfl
+  · simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
+    simp only [RegUpd.gpr_setReg_of_ne _ _ hr,RegUpd.gpr_arithFlags]
+
+theorem xorRax_ok (s : State) :
+    WP isa (.block [.alu32 .xor .rax (.reg .rax)]) s fun t =>
+      t.gpr .rax=0 ∧ t.cf=some false ∧ t.of=some false ∧ Keeps [.rax] s t := xorZero_ok s .rax
+
+theorem wordF_ok (s : State) {k : Nat} {hi col : Reg} {v : BitVec 64} {c : Bool}
+    (hm : readSrc s (.mem (at_ .rbp (8*k)))=some v) (hc : s.cf=some c)
+    (h1 : hi≠.rsi) (h2 : col≠hi) (h3 : col≠.rsi) :
+    WP isa (.block (AdxTri8.wordF k hi col)) s fun t => ∃ c' : Bool,
+      t.cf=some c' ∧ t.of=s.of ∧
+      (t.gpr col).toNat+2^64*((t.gpr hi).toNat+c'.toNat)=
+        (s.gpr col).toNat+(s.gpr .rdx).toNat*v.toNat+c.toNat ∧ Keeps [hi,.rsi,col] s t := by
+  rw [show AdxTri8.wordF k hi col=[.mulx hi .rsi (.mem (at_ .rbp (8*k)))]++[.adcx col (.reg .rsi)] from rfl,
+    WP.block_append_iff]
+  refine WP.mono (mulx_ok s hm (fun _ h => nomatch h) h1) fun a ⟨ea,ca,oa,ka⟩ => ?_
+  refine WP.mono (adcx_ok a (src := .reg .rsi) (v := a.gpr .rsi) rfl (fun _ h => nomatch h) (ca.trans hc))
+    fun t ⟨ct,hct,ot,eq,kt⟩ => ?_
+  have colA : a.gpr col=s.gpr col := ka.gpr (by simp [h2,h3])
+  have hiT : t.gpr hi=a.gpr hi := kt.gpr (by simp [Ne.symm h2])
+  refine ⟨ct,hct,ot.trans oa,?_,(ka.trans kt).mono (by simp)⟩
+  rw [hiT]
+  rw [colA] at eq
+  omega_arith
+
+end VG.Proof.Bignum.X86_64.AdxTri8
+
+end
+
+/-! ## AdxTri8RowCore -/
+section
+
+namespace VG.Proof.Bignum.X86_64.AdxTri8
+open VG VG.X86_64 VG.Impl.Bignum.X86_64
+open VG.Proof.Bignum.X86_64
+open VG.Impl.Bignum.X86_64.AdxRotate8 (at_)
+
+theorem last_not_mem_dropLast {col : Reg} {rest : List Reg} (hd : (col::rest).Nodup) :
+    AdxTri8.last col rest ∉ (col::rest).dropLast := by
+  intro m
+  have h := hd
+  rw [← dropLast_last col rest,List.nodup_append] at h
+  exact h.2.2 _ m _ (by simp) rfl
+
+private theorem row_arith {Ct Cb Hc c1 Vb X v1 W Tt P O : Nat}
+    (first : Ct+2^64*(Hc+c1)=Cb+X*v1)
+    (tail : Tt+P*O=Vb+X*W+Hc+c1) :
+    Ct+2^64*Tt+(2^64*P)*O=Cb+2^64*Vb+X*(v1+2^64*W) := by grind
+
+/-- A row over `col::rest` (two columns or more): its top column is zeroed
+first, so the result is the value of the others plus the row's products. -/
+theorem rowCore_ok (col : Reg) (rest : List Reg) {s : State} {B : Addr} {Z e i : Nat}
+    (hs : Scr s B Z) (hp : s.gpr .rbp=off B e)
+    (hZ : e+8*(i+(col::rest).length) ≤ Z) (hn : rest≠[]) (hd : (col::rest).Nodup)
+    (hrs : ∀ r ∈ col::rest, Safe r ∧ r≠.rax ∧ r≠.rbx ∧ r≠.rcx) :
+    WP isa (.block (AdxTri8.rowCore i col rest)) s fun t =>
+      value t (col::rest)=value s (col::rest).dropLast+
+        (word s.mem B (e+8*i)).toNat*wv s.mem B (e+8*(i+1)) rest.length ∧
+      Keeps (([.rdx,.rax,.rbx,.rsi] : List Reg)++col::rest) s t := by
+  cases rest with
+  | nil => exact absurd rfl hn
+  | cons next rest =>
+  have nd := List.nodup_cons.mp hd
+  have cs := hrs col (by simp)
+  have zm := last_mem col (next::rest)
+  have zs := hrs _ zm
+  have zc : AdxTri8.last col (next::rest)≠col := last_ne hd
+  have zl : AdxTri8.last col (next::rest)=AdxTri8.last next rest := rfl
+  have len : (col::next::rest).length=rest.length+2 := by simp
+  have hm := readSrc_word hs (AdxRotate8.ea_at hp (8*i)) (by omega_using [hZ, len])
+  unfold AdxTri8.rowCore
+  rw [WP.block_append_iff]
+  rw [show ([.mov .rdx (.mem (at_ .rbp (8*i))),.alu32 .xor (AdxTri8.last col (next::rest))
+      (.reg (AdxTri8.last col (next::rest)))] : List Instr)=
+    [.mov .rdx (.mem (at_ .rbp (8*i)))] ++ [.alu32 .xor (AdxTri8.last col (next::rest))
+      (.reg (AdxTri8.last col (next::rest)))] from rfl,WP.block_append_iff]
+  refine WP.mono (movMem_ok s hm) fun a ⟨pa,_,_,ka⟩ => ?_
+  refine WP.mono (xorZero_ok a _) fun b ⟨zb,cb,ob,kb⟩ => ?_
+  have kab := ka.trans kb
+  have vb : value b (col::next::rest)=value s (col::next::rest).dropLast := by
+    rw [value_top_zero zb]
+    apply value_congr
+    intro r hr
+    have hr' : r ∈ col::next::rest := by
+      rw [← dropLast_last col (next::rest)]; exact List.mem_append_left _ hr
+    have h := hrs r hr'
+    refine kab.gpr ?_
+    simp only [List.mem_append,List.mem_cons,List.not_mem_nil,or_false,not_or]
+    refine ⟨h.1.2.2.1,?_⟩
+    intro e; subst e
+    exact last_not_mem_dropLast hd hr
+  have xb : b.gpr .rdx=word s.mem B (e+8*i) :=
+    (kb.gpr (by simp only [List.mem_cons,List.not_mem_nil,or_false]; exact zs.1.2.2.1.symm)).trans pa
+  have sb := hs.congr kab.2.2.2
+  have pb : b.gpr .rbp=off B e := (kab.gpr (by
+    simp only [List.mem_append,List.mem_cons,List.not_mem_nil,or_false,not_or]
+    exact ⟨by decide,zs.1.2.1.symm⟩)).trans hp
+  have hm1 := readSrc_word sb (AdxRotate8.ea_at pb (8*(i+1))) (by omega_using [hZ, len])
+  rw [WP.block_append_iff]
+  refine WP.mono (wordF_ok b hm1 cb (by decide) cs.2.2.1 cs.1.1) fun c ⟨c1,cc,oc,eqF,kc⟩ => ?_
+  have pc : c.gpr .rbp=off B e := (kc.gpr (by
+    simp only [List.mem_cons,List.not_mem_nil,or_false,not_or]
+    exact ⟨by decide,by decide,cs.1.2.1.symm⟩)).trans pb
+  have nrC : value c (next::rest)=value b (next::rest) := value_congr fun r hr => by
+    have h := hrs r (by simp [hr])
+    refine kc.gpr ?_
+    simp only [List.mem_cons,List.not_mem_nil,or_false,not_or]
+    exact ⟨h.2.2.1,h.1.1,fun e => by subst e; exact nd.1 hr⟩
+  have zcz : c.gpr (AdxTri8.last next rest)=0 := by
+    rw [← zl]
+    refine (kc.gpr ?_).trans zb
+    simp only [List.mem_cons,List.not_mem_nil,or_false,not_or]
+    exact ⟨zs.2.2.1,zs.1.1,zc⟩
+  have topC : value c (next::rest)<2^(64*((next::rest).length-1)) := by
+    have h := value_zero_top (s := c) (rs := (next::rest).dropLast) zcz
+    rwa [dropLast_last next rest] at h
+  refine WP.mono (chain_ok (next::rest) (hs.congr (kab.trans kc).2.2.2) pc topC
+    (by simp only [List.length_cons] at hZ ⊢; omega_using [hZ]) (by simp) nd.2
+    (by unfold Safe; decide) (by unfold Safe; decide) (by decide) (by decide) (by decide)
+    (fun r h => let q := hrs r (by simp [h]); ⟨q.1,q.2.1,q.2.2.1,q.2.2.1⟩) cc
+    (oc.trans ob)) fun t ⟨c',o',_,_,eqT,kt⟩ => ?_
+  have xc : c.gpr .rdx=b.gpr .rdx := kc.gpr (by
+    simp only [List.mem_cons,List.not_mem_nil,or_false,not_or]
+    exact ⟨by decide,by decide,cs.1.2.2.1.symm⟩)
+  have colT : t.gpr col=c.gpr col := kt.gpr (r := col) (by
+    intro h
+    simp only [List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at h
+    rcases h with (h|h|h)|h
+    exacts [cs.2.1 h,cs.2.2.1 h,cs.1.1 h,nd.1 (List.mem_cons.mpr h)])
+  have mc : c.mem=s.mem := kc.2.1.trans kab.2.1
+  rw [xc,xb,mc,nrC] at eqT
+  rw [xb,kab.2.1,show (false : Bool).toNat=0 from rfl,Nat.add_zero] at eqF
+  rw [show (false : Bool).toNat=0 from rfl,Nat.add_zero] at eqT
+  have dl : (col::next::rest).dropLast=col::(next::rest).dropLast := List.dropLast_cons_cons
+  have colB : b.gpr col=s.gpr col := kab.gpr (by
+    simp only [List.mem_append,List.mem_cons,List.not_mem_nil,or_false,not_or]
+    exact ⟨cs.1.2.2.1,zc.symm⟩)
+  have vb' : (b.gpr col).toNat+2^64*value b (next::rest)=value s (col::next::rest).dropLast := vb
+  have l1 : (next::rest).length-1=rest.length := by simp
+  have l2 : (next::rest).length=rest.length+1 := by simp
+  rw [l1,l2] at eqT
+  have split : wv s.mem B (e+8*(i+1)) (rest.length+1)=
+      (word s.mem B (e+8*(i+1))).toNat+2^64*wv s.mem B (e+8*(i+2)) rest.length := by
+    rw [Nat.add_comm rest.length 1,wv_add]
+    simp only [wv,Nat.mul_zero,Nat.add_zero,Nat.zero_add,Nat.pow_zero,Nat.one_mul]
+    rw [show e+8*(i+1)+8=e+8*(i+2) by omega_arith]
+  have total := row_arith eqF eqT
+  rw [← split,vb',← colT] at total
+  have vt : value t (col::next::rest)=(t.gpr col).toNat+2^64*value t (next::rest) := rfl
+  have eqV : value t (col::next::rest)+(2^64*2^(64*(rest.length+1)))*(c'.toNat+o'.toNat)=
+      value s (col::next::rest).dropLast+(word s.mem B (e+8*i)).toNat*wv s.mem B (e+8*(i+1)) (rest.length+1) := by
+    rw [vt]; exact total
+  have vl : value s (col::next::rest).dropLast<2^(64*(rest.length+1)) := by
+    have h := value_lt s (col::next::rest).dropLast
+    rwa [List.length_dropLast,show (col::next::rest).length-1=rest.length+1 by simp] at h
+  have bound : value s (col::next::rest).dropLast+
+      (word s.mem B (e+8*i)).toNat*wv s.mem B (e+8*(i+1)) (rest.length+1)<2^64*2^(64*(rest.length+1)) :=
+    mac_bound (word s.mem B (e+8*i)).isLt (wv_lt s.mem B (e+8*(i+1)) (rest.length+1)) vl
+  rw [l2]
+  refine ⟨no_carry eqV bound,(kab.trans (kc.trans kt)).mono ?_⟩
+  intro r hr
+  have zm' := zm
+  simp only [List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hr zm' ⊢
+  grind
+
+end VG.Proof.Bignum.X86_64.AdxTri8
+
+end
+
+end
+
+end
+
+/-! ## AdxTri8Store -/
+
+@[expose] public section
+
+section
+
+namespace VG.Proof.Bignum.X86_64.AdxTri8
+open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
+open VG.Proof.Bignum.X86_64
+open VG.Proof.MlKem.X86_64 (Keep WP.keep)
+open VG.Impl.Bignum.X86_64.AdxRotate8 (at_)
+
+theorem headBases_ok {s : State} {B : Addr} {Z w I : Nat} {mi : BitVec 64}
+    (hs : Scr s B Z) (hd : s.gpr .rdi=B) (hh : Hdr s.mem B w mi) (hZ : slot w 8≤Z)
+    (hI : word s.mem B (8*sFn 12)=BitVec.ofNat 64 I) :
+    WP isa (.block AdxTri8.headBases) s fun t =>
+      t.gpr .rcx=off B (slot w aAcc+16*I) ∧ t.mem=s.mem ∧ Keep [.rsi,.rcx] s t := by
+  have ld : ∀ k<32, InRegions (s.rd++s.wr) (off B (8*k)) 8 := fun k hk =>
+    hs.ld (by have := hdr_lt_slot w 8 hk; omega_using [hZ, this])
+  have sh : BitVec.ofNat 64 I <<< (4 : Nat)=BitVec.ofNat 64 (16*I) := by
+    rw [BitVec.shiftLeft_eq_mul_twoPow]
+    change BitVec.ofNat 64 I*BitVec.ofNat 64 16=BitVec.ofNat 64 (16*I)
+    rw [← BitVec.ofNat_mul,Nat.mul_comm]
+  have add : BitVec.ofNat 64 (16*I)+off B (slot w aAcc)=off B (slot w aAcc+16*I) := by
+    rw [BitVec.add_comm]; exact off_off ..
+  refine WP.mono (WP.keep [.rsi,.rcx] (Q := fun t => t.gpr .rcx=off B (slot w aAcc+16*I) ∧ t.mem=s.mem) ?_ rfl)
+    fun t ⟨⟨p,m⟩,k⟩ => ⟨p,m,k⟩
+  unfold AdxTri8.headBases
+  xrun [State.ea,hdr,hd,hdrOff,ld (sArr aAcc) (by decide),ld (sFn 12) (by decide),
+    hh.harr aAcc (by decide),hI,sh,add]
+
+theorem storeHead_ok {s : State} {B : Addr} {Z w I i : Nat} {lo hi : Reg}
+    (hs : Scr s B Z) (hc : s.gpr .rcx=off B (slot w aAcc+16*I))
+    (he : slot w aAcc+16*I+(16+8*(2*i+2))+8≤Z) :
+    let e := slot w aAcc+16*I+(16+8*(2*i+1))
+    WP isa (AdxTri8.storeHead i lo hi) s fun t =>
+      wv t.mem B e 2=(s.gpr lo).toNat+2^64*(s.gpr hi).toNat ∧
+      Outside B e 16 s.mem t.mem ∧ Keep [] s t := by
+  dsimp only
+  have nowrap := hs.nowrap
+  unfold AdxTri8.storeHead
+  refine WP.seq (WP.mono (AdxRotate8.storeAt_ok (p := .rcx) (r := lo) hs hc
+    (by omega_using [he] : slot w aAcc+16*I+(16+8*(2*i+1))+8≤Z)) fun b ⟨vb,ob,kb⟩ => ?_)
+  refine WP.mono (AdxRotate8.storeAt_ok (p := .rcx) (r := hi) (hs.congr kb.2.2)
+    ((kb.gpr (by simp)).trans hc) he) fun t ⟨vt,ot,kt⟩ => ?_
+  have low : word t.mem B (slot w aAcc+16*I+(16+8*(2*i+1)))=s.gpr lo := by
+    rw [ot.word (by omega_using []) (by omega_using [he, nowrap]),vb]
+  have high : word t.mem B (slot w aAcc+16*I+(16+8*(2*i+2)))=s.gpr hi :=
+    vt.trans (kb.gpr (by simp))
+  refine ⟨?_,(ob.mono (n' := 16) (by omega_using []) (by omega_using [])).trans (ot.mono (by omega_using []) (by omega_using [])),(kb.trans kt).mono (by simp)⟩
+  rw [wv,wv,wv]
+  simp only [Nat.mul_zero,Nat.mul_one,Nat.pow_zero,Nat.one_mul,Nat.zero_add,Nat.add_zero]
+  rw [low,show slot w aAcc+16*I+(16+8*(2*i+1))+8=slot w aAcc+16*I+(16+8*(2*i+2)) by omega_using [],high]
+
+end VG.Proof.Bignum.X86_64.AdxTri8
+
+end
+
+/-! ## AdxTri8Row -/
+section
+
+namespace VG.Proof.Bignum.X86_64.AdxTri8
+open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
+open VG.Proof.Bignum.X86_64
+open VG.Proof.MlKem.X86_64 (Keep)
+
+private theorem split_arith {A B R T V : Nat} (h : A+R*(B+R*T)=V) :
+    (A+R*B)+(R*R)*T=V := by grind
+
+theorem rowStep_ok {s : State} {B : Addr} {Z w I i e : Nat}
+    {lo hi : Reg} {tail : List Reg}
+    (hs : Scr s B Z) (hc : s.gpr .rcx=off B (slot w aAcc+16*I)) (hp : s.gpr .rbp=off B e)
+    (he : e+8*(i+(lo::hi::tail).length)≤Z)
+    (hout : slot w aAcc+16*I+(16+8*(2*i+2))+8≤Z)
+    (hr : (lo::hi::tail).Nodup)
+    (hrs : ∀ r ∈ lo::hi::tail, Safe r ∧ r≠.rax ∧ r≠.rbx ∧ r≠.rcx ∧ r≠.rdi) :
+    let out := slot w aAcc+16*I+(16+8*(2*i+1))
+    WP isa (AdxTri8.rowStep i lo hi tail) s fun t =>
+      wv t.mem B out 2+2^128*value t tail=
+        value s (lo::hi::tail).dropLast+(word s.mem B (e+8*i)).toNat*wv s.mem B (e+8*(i+1)) ((lo::hi::tail).length-1) ∧
+      Outside B out 16 s.mem t.mem ∧ Keep (([.rdx,.rax,.rbx,.rsi] : List Reg)++lo::hi::tail) s t := by
+  dsimp only
+  unfold AdxTri8.rowStep
+  have baseSafe : ∀ r ∈ lo::hi::tail, Safe r ∧ r≠.rax ∧ r≠.rbx ∧ r≠.rcx :=
+    fun r h => let q := hrs r h; ⟨q.1,q.2.1,q.2.2.1,q.2.2.2.1⟩
+  refine WP.seq (WP.mono (rowCore_ok lo (hi::tail) hs hp he (by simp) hr baseSafe)
+    fun a ⟨va,ka⟩ => ?_)
+  have sl := hrs lo (by simp)
+  have sh := hrs hi (by simp)
+  have ca : a.gpr .rcx=off B (slot w aAcc+16*I) := (ka.gpr (by
+    simp only [List.mem_append,List.mem_cons,List.not_mem_nil,or_false,not_or]
+    exact ⟨by decide,⟨sl.2.2.2.1.symm,sh.2.2.2.1.symm,
+      fun h => (hrs .rcx (by simp [h])).2.2.2.1 rfl⟩⟩)).trans hc
+  refine WP.mono (storeHead_ok (hs.congr ka.2.2.2) ca hout) fun t ⟨vb,ob,kb⟩ => ?_
+  have tailT : value t tail=value a tail := value_congr fun r h => kb.gpr (by simp)
+  rw [ka.2.1] at ob
+  refine ⟨?_,ob,(ka.keep.trans kb).mono (by simp)⟩
+  rw [vb,tailT]
+  simp only [value] at va
+  have mul : (2 : Nat)^128=2^64*2^64 := by rw [← Nat.pow_add]
+  rw [mul,show (lo::hi::tail).length-1=(hi::tail).length by simp]
+  exact split_arith va
+
+end VG.Proof.Bignum.X86_64.AdxTri8
+
+end
+
+/-! ## AdxTri8Rotate -/
+section
+
+namespace VG.Proof.Bignum.X86_64.AdxTri8
+open VG VG.X86_64 VG.Impl.Bignum.X86_64
+open VG.Proof.Bignum.X86_64
+
+/-- All triangular accumulators stay in registers untouched by addressing. -/
+def Regs (rs : List Reg) : Prop := rs.Nodup ∧
+  ∀ r ∈ rs, Safe r ∧ r≠.rax ∧ r≠.rbx ∧ r≠.rcx ∧ r≠.rdi
+
+theorem rotate_regs {lo hi : Reg} {tail : List Reg} (h : Regs (lo::hi::tail)) : Regs (tail++[lo]) := by
+  refine ⟨?_,?_⟩
+  · rw [List.nodup_append]
+    refine ⟨h.1.tail.tail,by simp,?_⟩
+    intro r hr q hq
+    simp only [List.mem_cons,List.not_mem_nil,or_false] at hq
+    subst q
+    intro eq
+    subst r
+    exact (List.nodup_cons.mp h.1).1 (by simp [hr])
+  · intro r hr
+    apply h.2 r
+    simp only [List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hr ⊢
+    rcases hr with hr | rfl
+    · exact Or.inr (Or.inr hr)
+    · exact Or.inl rfl
+
+theorem rotate_subset {lo hi : Reg} {tail : List Reg} :
+    ∀ r ∈ tail++[lo], r∈lo::hi::tail := by
+  intro r hr
+  simp only [List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hr ⊢
+  rcases hr with hr | rfl
+  · exact Or.inr (Or.inr hr)
+  · exact Or.inl rfl
+
+end VG.Proof.Bignum.X86_64.AdxTri8
+
+end
+
+/-! ## AdxTri8Sum -/
+section
+
+namespace VG.Proof.Bignum.X86_64.AdxTri8
+open VG VG.X86_64 VG.Impl.Bignum.X86_64
+open VG.Proof.Bignum.X86_64
+
+def rowSum (m : Mem) (B : Addr) (e : Nat) : Nat → Nat → Nat
+  | _, 0 => 0
+  | i, n+1 => (word m B (e+8*i)).toNat*wv m B (e+8*(i+1)) (n+1)+2^128*rowSum m B e (i+1) n
+
+theorem rowSum_congr {m m' : Mem} {B : Addr} {e i n : Nat}
+    (h : ∀ j≤n, word m' B (e+8*(i+j))=word m B (e+8*(i+j))) : rowSum m' B e i n=rowSum m B e i n := by
+  induction n generalizing i with
+  | zero => rfl
+  | succ n ih =>
+    have w : wv m' B (e+8*(i+1)) (n+1)=wv m B (e+8*(i+1)) (n+1) := by
+      apply wv_congr
+      intro k hk
+      rw [show e+8*(i+1)+8*k=e+8*(i+(k+1)) by omega_using []]
+      exact h (k+1) (by omega_using [hk])
+    have h0 := h 0 (by omega_using [])
+    simp only [Nat.add_zero] at h0
+    rw [rowSum,rowSum,h0,w,ih (by
+      intro j hj
+      rw [show (i+1)+j=i+(j+1) by omega_using []]
+      exact h (j+1) (by omega_using [hj]))]
+
+end VG.Proof.Bignum.X86_64.AdxTri8
+
+end
+
+end
+
+end
+
+/-! # The triangular block's first row, which writes its columns
+
+`AdxTri8.row0Core` writes each low product straight into its column and adds
+the high word before it in one carry chain, the last column taking the last
+high word and the carry: the columns' old values do not matter, so nothing
+clears them first. The pending high word plus the carry never exceeds
+`2^64 - 1`, so the last column cannot overflow. -/
+
+@[expose] public section
+
+namespace VG.Proof.Bignum.X86_64.AdxTri8
+open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
+open VG.Proof.Bignum.X86_64
+open VG.Proof.MlKem.X86_64 (Keep)
+open VG.Impl.Bignum.X86_64.AdxRotate8 (at_)
+
+theorem word0_ok (s : State) {k : Nat} {hi prev col : Reg} {v : BitVec 64} {c : Bool}
+    (hm : readSrc s (.mem (at_ .rbp (8*k))) = some v) (hc : s.cf = some c)
+    (h1 : hi ≠ col) (h2 : prev ≠ hi) (h3 : prev ≠ col) :
+    WP isa (.block (AdxTri8.word0 k hi prev col)) s fun t => ∃ c' : Bool,
+      t.cf = some c' ∧
+      (t.gpr col).toNat + 2^64*((t.gpr hi).toNat + c'.toNat) =
+        (s.gpr .rdx).toNat*v.toNat + (s.gpr prev).toNat + c.toNat ∧
+      Keeps [hi, col] s t := by
+  rw [show AdxTri8.word0 k hi prev col =
+    [.mulx hi col (.mem (at_ .rbp (8*k)))] ++ [.adcx col (.reg prev)] from rfl, WP.block_append_iff]
+  refine WP.mono (mulx_ok s hm (fun _ h => nomatch h) h1) fun a ⟨ea, ca, _, ka⟩ => ?_
+  refine WP.mono (adcx_ok a (src := .reg prev) rfl (fun _ h => nomatch h) (ca.trans hc))
+    fun t ⟨ct, hct, _, et, kt⟩ => ?_
+  have pa : a.gpr prev = s.gpr prev := ka.gpr (by simp [h2, h3])
+  have hiT : t.gpr hi = a.gpr hi := kt.gpr (by simp [h1])
+  rw [pa] at et
+  refine ⟨ct, hct, ?_, (ka.trans kt).mono (by simp)⟩
+  rw [hiT]
+  omega_arith
+
+theorem last0_ok (s : State) {col prev : Reg} {c : Bool} (hc : s.cf = some c) (hne : prev ≠ col)
+    (hb : (s.gpr prev).toNat + c.toNat < 2^64) :
+    WP isa (.block [.mov32 col (.imm 0), .adcx col (.reg prev)]) s fun t =>
+      (t.gpr col).toNat = (s.gpr prev).toNat + c.toNat ∧ Keeps [col] s t := by
+  rw [show ([.mov32 col (.imm 0), .adcx col (.reg prev)] : List Instr) =
+    [.mov32 col (.imm 0)] ++ [.adcx col (.reg prev)] from rfl, WP.block_append_iff]
+  refine WP.mono (movZero_ok s col) fun a ⟨za, ca, _, ka⟩ => ?_
+  refine WP.mono (adcx_ok a (src := .reg prev) rfl (fun _ h => nomatch h) (ca.trans hc))
+    fun t ⟨_, _, _, et, kt⟩ => ?_
+  have pa : a.gpr prev = s.gpr prev := ka.gpr (by simp [hne])
+  rw [za, pa] at et
+  simp only [show (0 : BitVec 64).toNat = 0 from rfl, Nat.zero_add] at et
+  exact ⟨by omega_arith, (ka.trans kt).mono (by simp)⟩
+
+private theorem comb {L R H C X V P Ci W T : Nat}
+    (hw : L + R*(H + C) = X*V + P + Ci) (ht : T = H + C + X*W) :
+    L + R*T = P + Ci + X*(V + R*W) := by grind
+
+private theorem comb2 {L R H X V W : Nat} (hw : L + R*H = X*V) : L + R*(H + X*W) = X*(V + R*W) := by
+  grind
+
+private theorem hi_bound {L R H C X V P Ci : Nat} (hR : R = 2^64) (hX : X < R) (hV : V < R)
+    (hP : P + Ci < R) (hw : L + R*(H + C) = X*V + P + Ci) : H + C < R := by
+  subst hR
+  have m : X*V ≤ (2^64-1)*(2^64-1) := Nat.mul_le_mul (by omega_arith) (by omega_arith)
+  have : 2^64*(H + C) ≤ 2^64*(2^64-1) := by omega_arith
+  exact Nat.lt_of_le_of_lt (Nat.le_of_mul_le_mul_left this (by decide)) (by decide)
+
+theorem chain0_ok (rs : List Reg) {s : State} {B : Addr} {Z e k : Nat}
+    {hi other prev : Reg} {c : Bool}
+    (hs : Scr s B Z) (hp : s.gpr .rbp = off B e)
+    (hZ : e + 8*(k + (rs.length - 1)) ≤ Z) (hn : rs ≠ []) (hd : rs.Nodup)
+    (hh : hi ≠ other) (hph : prev ≠ hi)
+    (hx : hi ≠ .rdx ∧ hi ≠ .rbp ∧ other ≠ .rdx ∧ other ≠ .rbp)
+    (hrs : ∀ r ∈ rs, r ≠ hi ∧ r ≠ other ∧ r ≠ prev ∧ r ≠ .rdx ∧ r ≠ .rbp)
+    (hc : s.cf = some c) (hb : (s.gpr prev).toNat + c.toNat < 2^64) :
+    WP isa (.block (AdxTri8.chain0 k hi other prev rs)) s fun t =>
+      value t rs = (s.gpr prev).toNat + c.toNat +
+        (s.gpr .rdx).toNat*wv s.mem B (e + 8*k) (rs.length - 1) ∧
+      Keeps ([hi, other] ++ rs) s t := by
+  induction rs generalizing s k hi other prev c with
+  | nil => exact absurd rfl hn
+  | cons col rest ih =>
+    cases rest with
+    | nil =>
+      change WP isa (.block [.mov32 col (.imm 0), .adcx col (.reg prev)]) s _
+      have hcol := hrs col (by simp)
+      refine WP.mono (last0_ok s hc (Ne.symm hcol.2.2.1) hb) fun t ⟨et, kt⟩ => ?_
+      refine ⟨?_, kt.mono (by simp)⟩
+      simp only [value, et, List.length_cons, List.length_nil, Nat.sub_self, wv, Nat.mul_zero,
+        Nat.add_zero]
+    | cons next rest =>
+      change WP isa (.block (AdxTri8.word0 k hi prev col ++
+        AdxTri8.chain0 (k+1) other hi hi (next::rest))) s _
+      rw [WP.block_append_iff]
+      have hcol := hrs col (by simp)
+      have hm := readSrc_word hs (AdxRotate8.ea_at hp (8*k))
+        (show e + 8*k + 8 ≤ Z by simp only [List.length_cons] at hZ; omega_arith)
+      refine WP.mono (word0_ok s hm hc (Ne.symm hcol.1) hph (Ne.symm hcol.2.2.1))
+        fun a ⟨ca, hca, ea, ka⟩ => ?_
+      have hda := List.nodup_cons.mp hd
+      have rdxA : a.gpr .rdx = s.gpr .rdx := ka.gpr (by
+        simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]
+        exact ⟨Ne.symm hx.1, Ne.symm hcol.2.2.2.1⟩)
+      have rbpA : a.gpr .rbp = s.gpr .rbp := ka.gpr (by
+        simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]
+        exact ⟨Ne.symm hx.2.1, Ne.symm hcol.2.2.2.2⟩)
+      have bnd : (a.gpr hi).toNat + ca.toNat < 2^64 :=
+        hi_bound rfl (s.gpr .rdx).isLt (word s.mem B (e + 8*k)).isLt hb ea
+      refine WP.mono (ih (s := a) (k := k+1) (hi := other) (other := hi) (prev := hi) (c := ca)
+        (hs.congr ka.2.2.2) (rbpA.trans hp)
+        (by simp only [List.length_cons] at hZ ⊢; omega_arith) (by simp) hda.2 (Ne.symm hh) hh ⟨hx.2.2.1, hx.2.2.2, hx.1, hx.2.1⟩
+        (fun r hr => let q := hrs r (List.mem_cons_of_mem _ hr); ⟨q.2.1, q.1, q.1, q.2.2.2.1, q.2.2.2.2⟩)
+        hca bnd) fun t ⟨et, kt⟩ => ?_
+      have colT : t.gpr col = a.gpr col := kt.gpr (by
+        simp only [List.cons_append, List.nil_append, List.mem_cons, not_or]
+        exact ⟨hcol.2.1, hcol.1, fun h => hda.1 (h ▸ by simp), fun h => hda.1 (by simp [h])⟩)
+      rw [ka.2.1, rdxA] at et
+      refine ⟨?_, (ka.trans kt).mono (by intro r hr; simp only [List.cons_append,
+        List.nil_append, List.mem_cons] at hr ⊢; grind)⟩
+      simp only [value, colT, List.length_cons, Nat.add_sub_cancel] at et ⊢
+      have wsplit : wv s.mem B (e + 8*k) (rest.length + 1) =
+          (word s.mem B (e + 8*k)).toNat + 2^64*wv s.mem B (e + 8*(k+1)) rest.length := by
+        rw [show rest.length + 1 = 1 + rest.length by omega_arith, wv_add]
+        simp only [wv, Nat.pow_zero, Nat.mul_zero, Nat.zero_add, Nat.one_mul, Nat.add_zero, Nat.mul_one]
+        rw [show e + 8*k + 8 = e + 8*(k+1) by omega_arith]
+      rw [wsplit]
+      exact comb ea et
+
+theorem row0Core_ok (rs : List Reg) {s : State} {B : Addr} {Z e : Nat}
+    (hs : Scr s B Z) (hp : s.gpr .rbp = off B e)
+    (hZ : e + 8*rs.length ≤ Z) (hlen : 2 ≤ rs.length) (hd : rs.Nodup)
+    (hrs : ∀ r ∈ rs, Safe r ∧ r ≠ .rax ∧ r ≠ .rbx ∧ r ≠ .rcx) :
+    WP isa (.block (AdxTri8.row0Core rs)) s fun t =>
+      value t rs = (word s.mem B (e + 8*0)).toNat*wv s.mem B (e + 8*(0+1)) (rs.length - 1) ∧
+      Keeps (([.rdx,.rax,.rbx,.rsi] : List Reg)++rs) s t := by
+  cases rs with
+  | nil => simp at hlen
+  | cons col rest =>
+    simp only [List.length_cons] at hZ hlen
+    have hcol := hrs col (by simp)
+    change WP isa (.block (([.mov .rdx (.mem (at_ .rbp 0))] : List Instr) ++
+      ((([.alu32 .xor .rax (.reg .rax)] : List Instr) ++ [.mulx .rbx col (.mem (at_ .rbp 8))]) ++
+        AdxTri8.chain0 2 .rax .rbx .rbx rest))) s _
+    rw [WP.block_append_iff]
+    have h0 := readSrc_word hs (AdxRotate8.ea_at hp (8*0)) (show e + 8*0 + 8 ≤ Z by omega_arith)
+    refine WP.mono (movMem_ok s h0) fun a ⟨pa, _, _, ka⟩ => ?_
+    rw [WP.block_append_iff, WP.block_append_iff]
+    refine WP.mono (xorRax_ok a) fun b ⟨zb, cb, _, kb⟩ => ?_
+    have kab := ka.trans kb
+    have rbpB : b.gpr .rbp = off B e := (kab.gpr (by decide)).trans hp
+    have h1 := readSrc_word (hs.congr kab.2.2.2) (AdxRotate8.ea_at rbpB 8)
+      (show e + 8 + 8 ≤ Z by omega_arith)
+    rw [kab.2.1] at h1
+    refine WP.mono (mulx_ok b h1 (fun _ h => nomatch h) (Ne.symm hcol.2.2.1))
+      fun c' ⟨ec, cc, _, kc⟩ => ?_
+    have rdxC : c'.gpr .rdx = word s.mem B (e + 8*0) := by
+      rw [kc.gpr (by simp [Ne.symm hcol.1.2.2.1]), kb.gpr (by decide), pa]
+    have rbpC : c'.gpr .rbp = off B e := (kc.gpr (by simp [Ne.symm hcol.1.2.1])).trans rbpB
+    have hda := List.nodup_cons.mp hd
+    have hrest : rest ≠ [] := by
+      intro h; subst h; simp at hlen
+    refine WP.mono (chain0_ok rest (k := 2) (hi := .rax) (other := .rbx) (prev := .rbx) (c := false)
+      (hs.congr (kab.trans kc).2.2.2) rbpC
+      (by omega_arith) hrest hda.2 (by decide) (by decide)
+      ⟨by decide, by decide, by decide, by decide⟩
+      (fun r hr => let q := hrs r (List.mem_cons_of_mem _ hr); ⟨q.2.1, q.2.2.1, q.2.2.1, q.1.2.2.1, q.1.2.1⟩)
+      (cc.trans cb) (by simp only [Bool.toNat_false, Nat.add_zero]; exact (c'.gpr .rbx).isLt))
+      fun t ⟨et, kt⟩ => ?_
+    have colT : t.gpr col = c'.gpr col := kt.gpr (by
+      simp only [List.cons_append, List.nil_append, List.mem_cons, not_or]
+      exact ⟨hcol.2.1, hcol.2.2.1, hda.1⟩)
+    have rdxB : b.gpr .rdx = word s.mem B (e + 8*0) := by rw [kb.gpr (by decide), pa]
+    rw [rdxB] at ec
+    rw [(kab.trans kc).2.1, rdxC] at et
+    have sub : ∀ r ∈ (([.rdx] : List Reg) ++ [.rax]) ++ ([.rbx, col] ++ ([.rax, .rbx] ++ rest)),
+        r ∈ ([.rdx,.rax,.rbx,.rsi] : List Reg) ++ col :: rest := by
+      intro r hr
+      simp only [List.cons_append, List.nil_append, List.mem_cons] at hr ⊢
+      grind
+    refine ⟨?_, ((kab.trans kc).trans kt).mono sub⟩
+    have wsplit : wv s.mem B (e + 8*(0+1)) rest.length =
+        (word s.mem B (e + 8)).toNat + 2^64*wv s.mem B (e + 8*2) (rest.length - 1) := by
+      obtain ⟨n, hn⟩ : ∃ n, rest.length = n + 1 := ⟨rest.length - 1, by omega_arith⟩
+      rw [hn, Nat.add_sub_cancel, show n + 1 = 1 + n by omega_arith, wv_add]
+      simp only [wv, Nat.pow_zero, Nat.mul_zero, Nat.zero_add, Nat.one_mul, Nat.add_zero, Nat.mul_one]
+    show (t.gpr col).toNat + 2^64*value t rest = _
+    rw [colT, et, List.length_cons, Nat.add_sub_cancel, wsplit]
+    simp only [Bool.toNat_false, Nat.add_zero]
+    exact comb2 (by simpa only [show e + 8 = e + 8 * 1 by omega_arith] using ec)
+
+private theorem split_arith0 {A B R T V : Nat} (h : A+R*(B+R*T)=V) :
+    (A+R*B)+(R*R)*T=V := by grind
+
+theorem rowStep0_ok {s : State} {B : Addr} {Z w I e : Nat}
+    {lo hi : Reg} {tail : List Reg}
+    (hs : Scr s B Z) (hc : s.gpr .rcx=off B (slot w aAcc+16*I)) (hp : s.gpr .rbp=off B e)
+    (he : e+8*(lo::hi::tail).length≤Z)
+    (hout : slot w aAcc+16*I+(16+8*(2*0+2))+8≤Z)
+    (hr : (lo::hi::tail).Nodup)
+    (hrs : ∀ r ∈ lo::hi::tail, Safe r ∧ r≠.rax ∧ r≠.rbx ∧ r≠.rcx ∧ r≠.rdi) :
+    let out := slot w aAcc+16*I+(16+8*(2*0+1))
+    WP isa (AdxTri8.rowStep0 lo hi tail) s fun t =>
+      wv t.mem B out 2+2^128*value t tail=
+        (word s.mem B (e+8*0)).toNat*wv s.mem B (e+8*(0+1)) ((lo::hi::tail).length-1) ∧
+      Outside B out 16 s.mem t.mem ∧ Keep (([.rdx,.rax,.rbx,.rsi] : List Reg)++lo::hi::tail) s t := by
+  dsimp only
+  unfold AdxTri8.rowStep0
+  have baseSafe : ∀ r ∈ lo::hi::tail, Safe r ∧ r≠.rax ∧ r≠.rbx ∧ r≠.rcx :=
+    fun r h => let q := hrs r h; ⟨q.1,q.2.1,q.2.2.1,q.2.2.2.1⟩
+  refine WP.seq (WP.mono (row0Core_ok (lo::hi::tail) hs hp he (by simp) hr baseSafe)
+    fun a ⟨va,ka⟩ => ?_)
+  have sl := hrs lo (by simp)
+  have sh := hrs hi (by simp)
+  have ca : a.gpr .rcx=off B (slot w aAcc+16*I) := (ka.gpr (by
+    simp only [List.mem_append,List.mem_cons,List.not_mem_nil,or_false,not_or]
+    exact ⟨by decide,⟨sl.2.2.2.1.symm,sh.2.2.2.1.symm,
+      fun h => (hrs .rcx (by simp [h])).2.2.2.1 rfl⟩⟩)).trans hc
+  refine WP.mono (storeHead_ok (hs.congr ka.2.2.2) ca hout) fun t ⟨vb,ob,kb⟩ => ?_
+  have tailT : value t tail=value a tail := value_congr fun r h => kb.gpr (by simp)
+  rw [ka.2.1] at ob
+  refine ⟨?_,ob,(ka.keep.trans kb).mono (by simp)⟩
+  rw [vb,tailT]
+  simp only [value] at va
+  have mul : (2 : Nat)^128=2^64*2^64 := by rw [← Nat.pow_add]
+  rw [mul]
+  exact split_arith0 va
+
+end VG.Proof.Bignum.X86_64.AdxTri8
+
+end
+
+end
+
+/-! ### `Bignum.X86_64.AdxTri8Math`, which this module and modules that import it used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.Bignum.X86_64.AdxTri8
+open VG VG.X86_64
+open VG.Proof.Bignum.X86_64
+open VG.Proof.Bignum
+
+theorem rowSum_words (m : Mem) (B : Addr) (e i n : Nat) :
+    rowSum m B e i n=Triangular.rows (2^64) (fun j => (word m B (e+8*(i+j))).toNat) n := by
+  induction n generalizing i with
+  | zero => rfl
+  | succ n ih =>
+    have shift : (fun j => (word m B (e+8*(i+(j+1)))).toNat)=
+        (fun j => (word m B (e+8*(i+1)+8*j)).toNat) := by
+      funext j
+      rw [show e+8*(i+(j+1))=e+8*(i+1)+8*j by omega_using []]
+    have shift' : (fun j => (word m B (e+8*(i+1)+8*j)).toNat)=
+        (fun j => (word m B (e+8*((i+1)+j))).toNat) := by
+      funext j
+      rw [show e+8*(i+1)+8*j=e+8*((i+1)+j) by omega_using []]
+    rw [rowSum,Triangular.rows]
+    simp only [Nat.add_zero]
+    rw [shift,AdxSquare.value_words,shift',← ih,← Nat.pow_add]
+
+theorem rowSum_cross (m : Mem) (B : Addr) (e n : Nat) :
+    2^64*rowSum m B e 0 n=AdxSquare.crossValue m B e (n+1) := by
+  rw [rowSum_words,Triangular.rows_cross]
+  simp only [Nat.zero_add,AdxSquare.crossValue]
+
+end VG.Proof.Bignum.X86_64.AdxTri8
+
+end
+
+end
+
+/-! ## AdxTri8Rows -/
+
+@[expose] public section
+
+section
+
+namespace VG.Proof.Bignum.X86_64.AdxTri8
+open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
+open VG.Proof.Bignum.X86_64
+open VG.Proof.MlKem.X86_64 (Keep)
+
+def output (w I i : Nat) := slot w aAcc+16*I+(16+8*(2*i+1))
+
+private theorem compose_arith {P R T V A S W : Nat}
+    (h : P+R*T=V+A) (e : W=T+S) : P+R*W=V+(A+R*S) := by grind
+
+/-- The rows from `i`, over the columns `rs` whose top one each row zeroes:
+the value of the others, plus the rows' products. -/
+theorem rows_ok (n : Nat) {s : State} {B : Addr} {Z w I i e : Nat} {rs : List Reg}
+    (hs : Scr s B Z) (hc : s.gpr .rcx=off B (slot w aAcc+16*I)) (hp : s.gpr .rbp=off B e)
+    (he : e+8*(i+n+1)≤Z) (hout : output w I i+16*n≤Z)
+    (hsep : e+8*(i+n+1)≤output w I i ∨ output w I i+16*n≤e)
+    (hr : Regs rs) (hlen : rs.length=n+1) :
+    WP isa (AdxTri8.rows n i rs) s fun t =>
+      wv t.mem B (output w I i) (2*n)=value s rs.dropLast+rowSum s.mem B e i n ∧
+      Outside B (output w I i) (16*n) s.mem t.mem ∧
+      Keep (([.rdx,.rax,.rbx,.rsi] : List Reg)++rs) s t := by
+  have nowrap := hs.nowrap
+  induction n generalizing s i rs with
+  | zero =>
+    change WP isa (.block []) s _
+    apply WP.block_nil
+    obtain vz : rs.dropLast=[] := by
+      rw [List.dropLast_eq_take,hlen]; rfl
+    exact ⟨by simp only [wv,rowSum,vz,value,Nat.zero_add],Outside.refl _ _ _ _,Keep.refl _ _⟩
+  | succ n ih =>
+    cases rs with
+    | nil => simp only [List.length_nil] at hlen; omega_using [hlen]
+    | cons lo rs =>
+      cases rs with
+      | nil => simp only [List.length_cons,List.length_nil] at hlen; omega_using [hlen]
+      | cons hi tail =>
+        obtain tl : tail.length=n := by simp only [List.length_cons] at hlen; omega_using [hlen]
+        change WP isa (.seq (AdxTri8.rowStep i lo hi tail) (AdxTri8.rows n (i+1) (tail++[lo]))) s _
+        refine WP.seq (WP.mono (rowStep_ok hs hc hp (by rw [hlen]; omega_using [he])
+          (by unfold output at hout; omega_using [hout]) hr.1 hr.2)
+          fun a ⟨va,oa,ka⟩ => ?_)
+        change Outside B (output w I i) 16 s.mem a.mem at oa
+        obtain sa := hs.congr ka.2.2
+        obtain ca : a.gpr .rcx=off B (slot w aAcc+16*I) := (ka.gpr (by
+          simp only [List.mem_append,List.mem_cons,List.not_mem_nil,or_false,not_or]
+          exact ⟨by decide,⟨(hr.2 lo (by simp)).2.2.2.1.symm,(hr.2 hi (by simp)).2.2.2.1.symm,
+            fun h => (hr.2 .rcx (by simp [h])).2.2.2.1 rfl⟩⟩)).trans hc
+        obtain pa : a.gpr .rbp=off B e := (ka.gpr (by
+          simp only [List.mem_append,List.mem_cons,List.not_mem_nil,or_false,not_or]
+          exact ⟨by decide,⟨(hr.2 lo (by simp)).1.2.1.symm,(hr.2 hi (by simp)).1.2.1.symm,
+            fun h => (hr.2 .rbp (by simp [h])).1.2.1 rfl⟩⟩)).trans hp
+        obtain outNext : output w I (i+1)=output w I i+16 := by unfold output; omega_using []
+        refine WP.mono (ih (i := i+1) sa ca pa (by omega_using [he])
+          (by rw [outNext]; omega_using [hout]) (by rw [outNext]; omega_using [hsep]) (rotate_regs hr)
+          (by simp only [List.length_append,List.length_cons,List.length_nil,tl]))
+          fun t ⟨vt,ot,kt⟩ => ?_
+        rw [List.dropLast_concat] at vt
+        obtain input : rowSum a.mem B e (i+1) n=rowSum s.mem B e (i+1) n :=
+          rowSum_congr fun j hj => oa.word (by omega_using [hsep, hj]) (by omega_using [nowrap, he, hj])
+        rw [input] at vt
+        obtain pre : wv t.mem B (output w I i) 2=wv a.mem B (output w I i) 2 :=
+          ot.wv (by rw [outNext]; omega_using []) (by omega_using [nowrap, hout])
+        obtain frames : Outside B (output w I i) (16*(n+1)) s.mem t.mem :=
+          (oa.mono (by omega_using []) (by omega_using [])).trans (ot.mono (by rw [outNext]; omega_using []) (by rw [outNext]; omega_using []))
+        refine ⟨?_,frames,(ka.trans kt).mono ?_⟩
+        · rw [show 2*(n+1)=2+2*n by omega_using [],wv_add,pre,
+            show output w I i+8*2=output w I (i+1) by rw [outNext],rowSum]
+          change wv a.mem B (output w I i) 2+2^128*wv t.mem B (output w I (i+1)) (2*n)=_
+          simp only [hlen,Nat.add_sub_cancel] at va
+          exact compose_arith va vt
+        · intro r hm
+          simp only [List.mem_append] at hm ⊢
+          rcases hm with old | new
+          · exact old
+          · rcases new with base | rot
+            · exact Or.inl base
+            · exact Or.inr (rotate_subset r (List.mem_append.mpr rot))
+
+end VG.Proof.Bignum.X86_64.AdxTri8
+
+end
+
+/-! ## AdxTri8Clear -/
+section
+
+namespace VG.Proof.Bignum.X86_64.AdxTri8
+open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
+open VG.Proof.Bignum.X86_64
+open VG.Proof.MlKem.X86_64 (Keep)
+
+theorem columns_regs : Regs AdxTri8.columns := by
+  unfold Regs Safe AdxTri8.columns
+  decide
+
+end VG.Proof.Bignum.X86_64.AdxTri8
+
+end
+
+/-! ## AdxTri8Block -/
+section
+
+namespace VG.Proof.Bignum.X86_64.AdxTri8
+open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
+open VG.Proof.Bignum.X86_64
+open VG.Proof.MlKem.X86_64 (Keep WP.keep)
+
+theorem setup_ok {s : State} {B : Addr} {Z w a I : Nat}
+    (hs : Scr s B Z) (hd : s.gpr .rdi=B) (hZ : slot w 8≤Z)
+    {ps : List (Nat × Nat)} (hv : Ops s.mem B w ps) {ca : Nat} (pa : (ca, a) ∈ ps)
+    (hI : word s.mem B (8*sFn 12)=BitVec.ofNat 64 I) :
+    WP isa (.block (AdxTri8.setup ca)) s fun t =>
+      t.gpr .rbp=off B (slot w a+8*I) ∧ t.mem=s.mem ∧ Keep [.rax,.rbp] s t := by
+  obtain ld : ∀ k<32, InRegions (s.rd++s.wr) (off B (8*k)) 8 := fun k hk =>
+    hs.ld (by have := hdr_lt_slot w 8 hk; omega_using [hZ, this])
+  obtain add : off B (slot w a)+BitVec.ofNat 64 (8*I)=off B (slot w a+8*I) := off_off ..
+  refine WP.mono (WP.keep [.rax,.rbp] (Q := fun t => t.gpr .rbp=off B (slot w a+8*I) ∧ t.mem=s.mem) ?_ rfl)
+    fun t ⟨⟨p,m⟩,k⟩ => ⟨p,m,k⟩
+  unfold AdxTri8.setup
+  xrun [State.ea,hdr,hd,hdrOff,ld (sArr ca) (by have := hv.lt pa; unfold sArr; omega_using [this]),ld (sFn 12) (by decide),
+    show word s.mem B (8*sArr ca) = _ from hv.at pa,hI,AdxRect8.shift3,add]
+
+theorem zero_ends {m : Mem} {B : Addr} {e n : Nat}
+    (lo : word m B e=0) (hi : word m B (e+8*(n+1))=0) :
+    wv m B e (n+2)=2^64*wv m B (e+8) n := by
+  rw [show n+2=1+(n+1) by omega_using [],wv_add,wv_add]
+  simp only [wv,lo,Nat.mul_zero,Nat.mul_one,Nat.add_zero,Nat.pow_zero,Nat.one_mul,Nat.zero_add]
+  rw [show e+8+8*n=e+8*(n+1) by omega_using [],hi]
+  simp only [show (0 : BitVec 64).toNat=0 from rfl,Nat.mul_zero,Nat.add_zero,Nat.zero_add]
+
+/-- `clearEnds`: the first and last of the block's sixteen output words are
+zeroed. -/
+theorem clearEnds_ok {s : State} {B : Addr} {Z w I : Nat} {mi : BitVec 64}
+    (hs : Scr s B Z) (hd : s.gpr .rdi=B) (hh : Hdr s.mem B w mi) (hZ : slot w 8≤Z)
+    (hI : word s.mem B (8*sFn 12)=BitVec.ofNat 64 I) (he : slot w aAcc+16*I+144≤Z) :
+    let e := slot w aAcc+16+16*I
+    WP isa AdxTri8.clearEnds s fun t =>
+      word t.mem B e=0 ∧ word t.mem B (e+120)=0 ∧
+      (∀ d, 8≤d → d+8≤120 → word t.mem B (e+d)=word s.mem B (e+d)) ∧
+      Outside B e 128 s.mem t.mem ∧ t.gpr .rcx=off B (slot w aAcc+16*I) ∧ Keep [.rsi,.rcx,.rax] s t := by
+  dsimp only
+  have nowrap := hs.nowrap
+  unfold AdxTri8.clearEnds
+  refine WP.seq (WP.mono (headBases_ok hs hd hh hZ hI) fun a₀ ⟨pa₀,ma₀,ka₀⟩ => ?_)
+  rw [show ([Instr.mov32 .rax (.imm 0),.store (AdxRotate8.at_ .rcx 16) .rax] : List Instr)=
+    [.mov32 .rax (.imm 0)]++[.store (AdxRotate8.at_ .rcx 16) .rax] from rfl]
+  refine WP.seq (WP.block_append (WP.mono (movZero_ok a₀ .rax) fun a ⟨za,_,_,kz⟩ => ?_))
+  obtain ka : Keep [.rsi,.rcx,.rax] s a := (ka₀.trans kz.keep).mono (by simp)
+  obtain ma : a.mem=s.mem := kz.2.1.trans ma₀
+  obtain pa : a.gpr .rcx=off B (slot w aAcc+16*I) := (kz.gpr (by decide)).trans pa₀
+  refine WP.mono (AdxRotate8.storeAt_ok (p := .rcx) (r := .rax) (hs.congr ka.2.2) pa
+    (by omega_using [he] : slot w aAcc+16*I+16+8≤Z)) fun b ⟨vb,ob,kb⟩ => ?_
+  refine WP.mono (AdxRotate8.storeAt_ok (p := .rcx) (r := .rax) (hs.congr (ka.trans kb).2.2)
+    ((kb.gpr (by simp)).trans pa) (by omega_using [he] : slot w aAcc+16*I+136+8≤Z)) fun t ⟨vt,ot,kt⟩ => ?_
+  have r8a : a.gpr .rax=0 := za
+  obtain r8b : b.gpr .rax=0 := (kb.gpr (by simp)).trans r8a
+  rw [ma] at ob
+  refine ⟨?_,?_,?_,(ob.mono (by omega_using []) (by omega_using [])).trans (ot.mono (by omega_using []) (by omega_using [])),
+    (kt.gpr (by simp)).trans ((kb.gpr (by simp)).trans pa),((ka.trans kb).trans kt).mono (by simp)⟩
+  · rw [show slot w aAcc+16+16*I=slot w aAcc+16*I+16 by omega_using [],ot.word (by omega_using []) (by omega_using [he, nowrap]),vb,r8a]
+  · rw [show slot w aAcc+16+16*I+120=slot w aAcc+16*I+136 by omega_using [],vt,r8b]
+  · intro d h1 h2
+    rw [ot.word (by omega_using [h2]) (by omega_using [he, nowrap, h2]),ob.word (by omega_using [h1]) (by omega_using [he, nowrap, h2])]
+
+theorem block_ok {s : State} {B : Addr} {Z w a I : Nat} {mi : BitVec 64}
+    (hs : Scr s B Z) (hd : s.gpr .rdi=B) (hh : Hdr s.mem B w mi) (hZ : slot w 8≤Z)
+    {ps : List (Nat × Nat)} (hv : Ops s.mem B w ps) {ca : Nat} (pa : (ca, a) ∈ ps)
+    (ha : a<8) (ha1 : a≠aAcc) (ha2 : a≠aTmp) (hIndex : I+8≤w)
+    (hI : word s.mem B (8*sFn 12)=BitVec.ofNat 64 I) :
+    WP isa (AdxTri8.block ca) s fun t =>
+      wv t.mem B (slot w aAcc+16+16*I) 16=AdxSquare.crossValue s.mem B (slot w a+8*I) 8 ∧
+      Outside B (slot w aAcc+16+16*I) 128 s.mem t.mem ∧ Keep mmRegs s t := by
+  have nowrap := hs.nowrap
+  obtain ar := AdxRect8.tile_ranges hIndex hIndex ha ha1 ha2
+  obtain outZ : output w I 0+112≤Z := by unfold output at *; omega_using [hZ, ar]
+  obtain endZ : slot w aAcc+16*I+144≤Z := by omega_using [hZ, ar]
+  unfold AdxTri8.block
+  refine WP.seq (WP.mono (setup_ok hs hd hZ hv pa hI) fun u ⟨pu,mu,ku⟩ => ?_)
+  refine WP.seq (WP.mono (clearEnds_ok (hs.congr ku.2.2) ((ku.gpr (by decide)).trans hd) (mu ▸ hh) hZ
+    (mu ▸ hI) endZ) fun x ⟨lx,hx,_,ox,cx,kx⟩ => ?_)
+  rw [mu] at ox
+  obtain kux := ku.trans kx
+  obtain px : x.gpr .rbp=off B (slot w a+8*I) := (kx.gpr (by decide)).trans pu
+  have regs := columns_regs
+  refine WP.seq (WP.mono (rowStep0_ok (lo := .r8) (hi := .r9) (tail := [.r10,.r11,.r12,.r13,.r14,.r15])
+    (hs.congr kux.2.2) cx px (by simp only [List.length_cons,List.length_nil]; omega_using [hZ, ar])
+    (by unfold output at outZ; omega_using [endZ]) regs.1 regs.2) fun y ⟨vy,oy,ky⟩ => ?_)
+  change Outside B (output w I 0) 16 x.mem y.mem at oy
+  obtain sy := hs.congr (kux.trans ky).2.2
+  obtain cy : y.gpr .rcx=off B (slot w aAcc+16*I) := (ky.gpr (by decide)).trans cx
+  obtain py : y.gpr .rbp=off B (slot w a+8*I) := (ky.gpr (by decide)).trans px
+  have rot : AdxTri8.rotate AdxTri8.columns=[.r10,.r11,.r12,.r13,.r14,.r15]++[.r8] := rfl
+  obtain outNext : output w I 1=output w I 0+16 := by unfold output; omega_using []
+  refine WP.mono (rows_ok 6 (i := 1) sy cy py (by omega_using [hZ, ar])
+    (by rw [outNext]; unfold output at outZ ⊢; omega_using [endZ]) (by unfold output; omega_using [ar])
+    (by rw [rot]; exact rotate_regs regs) (by rw [rot]; rfl))
+    fun t ⟨vt,ot,kt⟩ => ?_
+  rw [rot,List.dropLast_concat] at vt
+  obtain input : rowSum y.mem B (slot w a+8*I) 1 6=rowSum s.mem B (slot w a+8*I) 1 6 :=
+    rowSum_congr fun j hj => by
+      rw [oy.word (by unfold output; omega_using [ar, hj]) (by omega_using [hZ, nowrap, ar, hj]),ox.word (by omega_using [ar, hj]) (by omega_using [hZ, nowrap, ar, hj])]
+  obtain e0 : word x.mem B (slot w a+8*I+8*0)=word s.mem B (slot w a+8*I+8*0) := ox.word (by omega_using [ar]) (by omega_using [hZ, nowrap, ar])
+  obtain e1 : wv x.mem B (slot w a+8*I+8*(0+1)) 7=wv s.mem B (slot w a+8*I+8*(0+1)) 7 :=
+    ox.wv (by omega_using [ar]) (by omega_using [hZ, nowrap, ar])
+  obtain vy' : wv y.mem B (output w I 0) 2+2^128*value y [.r10,.r11,.r12,.r13,.r14,.r15]=
+      (word s.mem B (slot w a+8*I+8*0)).toNat*wv s.mem B (slot w a+8*I+8*(0+1)) (6+1) := by
+    rw [← e0, ← e1]; exact vy
+  rw [input] at vt
+  obtain pre : wv t.mem B (output w I 0) 2=wv y.mem B (output w I 0) 2 :=
+    ot.wv (by rw [outNext]; omega_using []) (by omega_using [nowrap, outZ])
+  obtain v14 : wv t.mem B (output w I 0) 14=rowSum s.mem B (slot w a+8*I) 0 7 := by
+    rw [show 14=2+2*6 from rfl,wv_add,pre,show output w I 0+8*2=output w I 1 by rw [outNext],vt,
+      show rowSum s.mem B (slot w a+8*I) 0 7=(word s.mem B (slot w a+8*I+8*0)).toNat*
+        wv s.mem B (slot w a+8*I+8*(0+1)) (6+1)+2^128*rowSum s.mem B (slot w a+8*I) 1 6 from rfl,
+      show 64*2=128 from rfl]
+    omega_using [vy']
+  obtain low : word t.mem B (slot w aAcc+16+16*I)=0 := by
+    rw [ot.word (by unfold output; omega_using []) (by omega_using [nowrap, endZ]),oy.word (by unfold output; omega_using []) (by omega_using [nowrap, endZ]),lx]
+  obtain high : word t.mem B (slot w aAcc+16+16*I+8*(14+1))=0 := by
+    rw [ot.word (by unfold output; omega_using []) (by omega_using [nowrap, endZ]),oy.word (by unfold output; omega_using []) (by omega_using [nowrap, endZ]),hx]
+  refine ⟨?_,ox.trans ((oy.mono (by unfold output; omega_using []) (by unfold output; omega_using [])).trans
+    (ot.mono (by unfold output; omega_using []) (by unfold output; omega_using []))),
+    ((kux.trans ky).trans kt).mono (by decide)⟩
+  rw [show 16=14+2 from rfl,zero_ends low high,
+    show slot w aAcc+16+16*I+8=output w I 0 by unfold output; omega_using [],v14]
+  exact rowSum_cross s.mem B _ 7
+
+end VG.Proof.Bignum.X86_64.AdxTri8
+
+end
+
+end
+
+end
 
 /-! ## AdxTri8FullBlock -/
 

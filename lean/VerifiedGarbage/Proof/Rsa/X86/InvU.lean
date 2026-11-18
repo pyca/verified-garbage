@@ -1,13 +1,13 @@
 module
+
 public import VerifiedGarbage.Impl.Rsa.X86.Inverse
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Rsa.X86.KeyWs
-import VerifiedGarbage.Proof.Rsa.X86.InvParts
+public import VerifiedGarbage.Proof.Rsa.X86.InvParts
 import VerifiedGarbage.Proof.Rsa.X86.KeyBits
 import VerifiedGarbage.Proof.Mont.X86.ExponentShift
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Framework.PlainSimp
-public import VerifiedGarbage.Proof.Rsa.X86.KeySelect
 public import VerifiedGarbage.Proof.Mont.X86.ShiftDown
 import VerifiedGarbage.Proof.Rsa.X86.KeySub
 import Mathlib.Order.RelClasses

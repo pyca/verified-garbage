@@ -1,14 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86.VerifyLayout
+public import VerifiedGarbage.Proof.Dsa.X86.SignLayout
 public import VerifiedGarbage.Proof.Dsa.X86.ShapeCall
 public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
 import VerifiedGarbage.Proof.Dsa.X86.LayoutAgreement
 import VerifiedGarbage.Proof.Dsa.X86.VerifySizedTiming
-import VerifiedGarbage.Proof.Dsa.X86.VerifyTiming
 import VerifiedGarbage.Proof.Dsa.X86.KeyTiming
-import VerifiedGarbage.Proof.Dsa.X86.CallValidationTiming
-import VerifiedGarbage.Proof.Dsa.X86.BodyTiming
 import VerifiedGarbage.Proof.Dsa.X86.CheckingDispatchCT
 import VerifiedGarbage.Proof.Dsa.X86.EntryTiming
 import VerifiedGarbage.Proof.Dsa.X86.InstalledInputs
@@ -35,12 +32,11 @@ public import VerifiedGarbage.Proof.Mont.X86.PowerStep
 import VerifiedGarbage.Proof.Weierstrass.X86.CallOps
 import VerifiedGarbage.Proof.Dsa.X86.ABIResources
 import VerifiedGarbage.Proof.Dsa.X86.InstallArguments
-import VerifiedGarbage.Proof.Dsa.X86.PublicKey
+import VerifiedGarbage.Proof.Dsa.X86.PrivateKey
 import VerifiedGarbage.Proof.Dsa.X86.ShapeModuli
 import VerifiedGarbage.Proof.Dsa.X86.ShapeSavedFrame
 import VerifiedGarbage.Proof.Dsa.X86.SavedFrame
 import VerifiedGarbage.Proof.Dsa.X86.Result
-import VerifiedGarbage.Proof.Dsa.X86.CheckingDispatch
 import VerifiedGarbage.Proof.Dsa.X86.EntrySave
 import VerifiedGarbage.Proof.Dsa.Validation
 public import VerifiedGarbage.Proof.Dsa.Accepted

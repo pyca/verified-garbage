@@ -1,6 +1,157 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.CallHeader
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtFrame
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Impl.Bignum.CrtLayout
+public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+import VerifiedGarbage.Proof.Bignum.X86_64.Setup
+import VerifiedGarbage.Impl.Rsa.X86_64
+import VerifiedGarbage.Impl.Rsa.X86_64.Crt
+public import VerifiedGarbage.Impl.Dsa.X86_64.Core
+public import VerifiedGarbage.Proof.Bignum.X86_64.Words
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
+public import Aesop.BuiltinRules
+
+/-! ### `Dsa.X86_64.NewChild`, which the modules that import this one used -/
+
+section
+
+/-! ### `Dsa.X86_64.ChildCount`, which this module and modules that import it used -/
+
+section
+
+/-! # Public child width and workspace selection -/
+
+@[expose] public section
+
+namespace VG.Proof.Dsa.X86_64
+open VG VG.X86_64 VG.Impl.Bignum.X86_64
+open VG.Impl.Dsa.Layout VG.Impl.Dsa.X86_64
+open VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
+
+abbrev childCount (offset : Nat) : List Instr :=
+  ([.mov .rsi (.reg .rdi), .mov .r12 (.mem (hdr argLen)),
+    .alu .add .r12 (.imm 7), .shift .shr .r12 3] : List Instr) ++ Core.enter offset
+
+theorem childCount_ok {s : State} {B : Addr} {Z offset len : Nat}
+    (hs : Scr s B Z) (hdi : s.gpr .rdi = B) (hZ : pWorkspace ≤ Z)
+    (ho : offset < 2 ^ 31) (hlen : len < 2 ^ 32)
+    (hl : word s.mem B (8 * argLen) = BitVec.ofNat 64 len) :
+    WP isa (.block (childCount offset)) s fun t =>
+      t.gpr .rsi = B ∧ t.gpr .rdi = off B offset ∧ t.gpr .r12 = BitVec.ofNat 64 ((len + 7) / 8) ∧
+      t.mem = s.mem ∧ Keep [.rsi, .rdi, .r12] s t := by
+  refine WP.mono (WP.keep [.rsi, .rdi, .r12] (Q := fun t =>
+      t.gpr .rsi = B ∧ t.gpr .rdi = off B offset ∧ t.gpr .r12 = BitVec.ofNat 64 ((len + 7) / 8) ∧
+      t.mem = s.mem) ?_ rfl) fun t ⟨⟨hsi, hd, h12, hm⟩, hk⟩ => ⟨hsi, hd, h12, hm, hk⟩
+  unfold childCount Core.enter
+  simp only [List.cons_append, List.nil_append]
+  xrun [State.ea, hdr, hdrOff, hdi, hl, hs.ld (Nat.le_trans (show 8 * argLen + 8 ≤ pWorkspace by decide) hZ),
+    shr3_w len hlen, sx_ofNat ho]
+
+end VG.Proof.Dsa.X86_64
+
+end
+
+end
+
+/-! ### `Dsa.X86_64.ChildBases`, which this module and modules that import it used -/
+
+section
+
+/-! # Constructing a child workspace header before loading its modulus -/
+
+@[expose] public section
+
+namespace VG.Proof.Dsa.X86_64
+open VG VG.X86_64 VG.Impl.Bignum.X86_64
+open VG.Impl.Rsa.X86_64
+open VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
+
+abbrev childBases : List Instr :=
+  ([.store (hdr sW) .r12, .store (hdr Crt.sLink) .rsi] : List Instr) ++ setBases
+
+theorem childBases_ok {s : State} {B parent : Addr} {Z w : Nat}
+    (hs : Scr s B Z) (hdi : s.gpr .rdi = B) (hsi : s.gpr .rsi = parent)
+    (h12 : s.gpr .r12 = BitVec.ofNat 64 w) (hZ : 136 ≤ Z) :
+    WP isa (.block childBases) s fun t =>
+      Good t B Z w (word s.mem B (8 * sMinv)) ∧ word t.mem B (8 * Crt.sLink) = parent ∧
+      Outside B 48 88 s.mem t.mem ∧ Keep [.rax, .rdx] s t := by
+  unfold childBases
+  rw [WP.block_append_iff]
+  refine WP.mono (WP.keep [] (Q := fun u => u.mem =
+    (s.mem.writeW (off B (8 * sW)) (BitVec.ofNat 64 w)).writeW (off B (8 * Crt.sLink)) parent) ?_ rfl)
+    fun u ⟨hum, hku⟩ => ?_
+  · xrun [State.ea, hdr, hdrOff, hdi, hsi, h12, hs.st (d := 8 * sW) (Nat.le_trans (by decide) hZ), hs.st (d := 8 * Crt.sLink) hZ]
+  have hudi := (hku.gpr (show Reg.rdi ∉ [] by decide)).trans hdi
+  have hu12 := (hku.gpr (show Reg.r12 ∉ [] by decide)).trans h12
+  refine WP.mono (setBases_ok (hs.congr hku.2.2) hudi hu12 (Nat.le_trans (by decide) hZ))
+    fun t ⟨htarr, hft, hkt⟩ => ?_
+  have hks := hku.trans hkt
+  refine ⟨⟨hs.congr hks.2.2, (hks.gpr (by decide)).trans hdi, ⟨?_, ?_, htarr⟩⟩, ?_, ?_, hks.mono (by decide)⟩
+  · rw [hft.word (Or.inl (by decide)) (by decide), hum,
+      (writeW_outside _ B _ (d := 8 * Crt.sLink) (by decide)).word (Or.inl (by decide)) (by decide), word_writeW_self]
+  · rw [hft.word (Or.inl (by decide)) (by decide), hum,
+      (writeW_outside _ B _ (d := 8 * Crt.sLink) (by decide)).word (Or.inl (by decide)) (by decide),
+      (writeW_outside _ B _ (d := 8 * sW) (by decide)).word (Or.inr (by decide)) (by decide)]
+  · rw [hft.word (Or.inr (by decide)) (by decide), hum, word_writeW_self]
+  · intro x hx
+    rw [hft x (by change ofs B x < 64 ∨ 128 ≤ ofs B x; change ofs B x < 48 ∨ 136 ≤ ofs B x at hx; omega_using [hx]), hum]
+    rw [writeW_outside _ B _ (d := 8 * Crt.sLink) (by decide) x
+      (by change ofs B x < 128 ∨ 136 ≤ ofs B x; change ofs B x < 48 ∨ 136 ≤ ofs B x at hx; omega_using [hx])]
+    exact writeW_outside _ B _ (d := 8 * sW) (by decide) x
+      (by change ofs B x < 48 ∨ 56 ≤ ofs B x; change ofs B x < 48 ∨ 136 ≤ ofs B x at hx; omega_using [hx])
+
+end VG.Proof.Dsa.X86_64
+
+end
+
+end
+
+/-! # Creating a linked arithmetic child from its public operand length -/
+
+@[expose] public section
+
+namespace VG.Proof.Dsa.X86_64
+open VG VG.X86_64 VG.Impl.Bignum.X86_64
+open VG.Impl.Dsa.Layout VG.Impl.Dsa.X86_64
+open VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
+
+theorem newChild_ok {s : State} {B : Addr} {Z o w len : Nat} {parentMinv : BitVec 64}
+    (hg : Good s B Z w parentMinv) (hZ : pWorkspace ≤ Z)
+    (ho : o < 2 ^ 31) (hlen : len < 2 ^ 32)
+    (hl : word s.mem B (8 * argLen) = BitVec.ofNat 64 len)
+    (hlo : slot w 8 ≤ o) (hhi : o + slot ((len + 7) / 8) 8 + tabBytes ((len + 7) / 8) ≤ Z) :
+    WP isa (.block (childCount o ++ childBases)) s fun t => ∃ mi : BitVec 64,
+      SubCtx t B Z o w ((len + 7) / 8) mi ∧
+      Outside (off B o) 48 88 s.mem t.mem ∧ Keep [.rsi, .rdi, .r12, .rax, .rdx] s t := by
+  have hslot : 256 ≤ slot ((len + 7) / 8) 8 := by unfold slot hdrBytes; omega_using []
+  have hroot : 256 ≤ slot w 8 := by unfold slot hdrBytes; omega_using []
+  rw [WP.block_append_iff]
+  refine WP.mono (childCount_ok hg.scr hg.rdi hZ ho hlen hl)
+    fun u ⟨husi, hudi, hu12, hum, hku⟩ => ?_
+  have hus : Scr u (off B o) (slot ((len + 7) / 8) 8) :=
+    (hg.scr.congr hku.2.2).sub (by omega_using [hhi]) (by omega_using [hslot])
+  refine WP.mono (childBases_ok hus hudi husi hu12 (by omega_using [hslot])) fun t ⟨hgt, hlink, hft, hkt⟩ => ?_
+  have hf : Outside (off B o) 48 88 s.mem t.mem := by rw [← hum]; exact hft
+  have hff : Frm (off B o) [(48, 88)] s.mem t.mem := Frm.of_outside hf (by simp)
+  have hb : ∀ i < 32, word t.mem B (8 * i) = word s.mem B (8 * i) := by
+    intro i hi
+    exact hff.word_below (L := 136) (by intro r hr; rw [List.mem_singleton.mp hr]; decide)
+      (by have := hg.scr.nowrap; omega_using [ho]) (by omega_using [ho]) (by omega_using [hlo, hroot, hi])
+  have hk := hku.trans hkt
+  exact ⟨_, ⟨hg.scr.congr hk.2.2, hgt.rdi, hgt.hdr, hlink,
+    (hb _ (by decide)).trans hg.hdr.hw,
+    fun j hj => (hb _ (by unfold sArr; omega_using [hj])).trans (hg.hdr.harr j hj), hlo, hhi⟩,
+    hf, hk.mono (by decide)⟩
+
+end VG.Proof.Dsa.X86_64
+
+end
+
+end
 
 /-! # Changes permitted while initializing one DSA child -/
 

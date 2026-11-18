@@ -1,21 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.RISCV64.ParamsCT
-public import VerifiedGarbage.Proof.Dsa.RISCV64.DeriveFront
+public import VerifiedGarbage.Proof.Dsa.RISCV64.DeriveFn
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 public meta import VerifiedGarbage.Proof.Bignum.RISCV64.Run
-import VerifiedGarbage.Proof.Dsa.RISCV64.DeriveFn
 import VerifiedGarbage.Proof.Bignum.RISCV64.PubCorrect
 import VerifiedGarbage.Proof.Framework.Flat
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Dsa.RISCV64.ParamsCT
-meta import VerifiedGarbage.Proof.Dsa.RISCV64.DeriveFront
+meta import VerifiedGarbage.Proof.Dsa.RISCV64.DeriveFn
 meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
-meta import VerifiedGarbage.Proof.Dsa.RISCV64.DeriveFn
 meta import VerifiedGarbage.Proof.Bignum.RISCV64.PubCorrect
 meta import VerifiedGarbage.Proof.Framework.Flat
 meta import VerifiedGarbage.Proof.Framework.Offset

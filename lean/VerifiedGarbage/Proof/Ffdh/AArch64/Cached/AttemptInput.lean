@@ -7,7 +7,7 @@ public import VerifiedGarbage.Proof.Ffdh.AArch64.Stage
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.Bignum.AArch64.PcMain
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.Finish
+public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.OutputTiming
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Out
 import VerifiedGarbage.Proof.Bignum.AArch64.PdCode
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd

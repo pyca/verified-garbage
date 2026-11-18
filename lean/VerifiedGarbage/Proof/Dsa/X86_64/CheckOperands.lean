@@ -16,7 +16,7 @@ import VerifiedGarbage.Proof.Dsa.X86_64.EqualHead
 import VerifiedGarbage.Proof.Dsa.X86_64.ReduceCount
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtRedc
 public import Aesop.BuiltinRules
-import VerifiedGarbage.Proof.Dsa.X86_64.ZeroMask
+public import VerifiedGarbage.Proof.Dsa.X86_64.OneScan
 import VerifiedGarbage.Proof.Dsa.X86_64.Masks
 public import VerifiedGarbage.Proof.Dsa.X86_64.Frame
 public import VerifiedGarbage.Spec.Dsa
@@ -27,7 +27,6 @@ import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.Attr.Core
 import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Dsa.X86_64.ZeroHead
-public import VerifiedGarbage.Proof.Dsa.X86_64.OneScan
 
 /-! ### `Dsa.X86_64.CheckEffects`, which this module and modules that import it used -/
 

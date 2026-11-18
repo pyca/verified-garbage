@@ -29,7 +29,6 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.RsaKeyGen.Slots
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CheckPrime
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.WorkspaceBase
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Workspace
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-! ### `Dsa.X86_64.Generation.PConstruct`, which this module and modules that import it used -/

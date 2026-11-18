@@ -7,11 +7,10 @@ import VerifiedGarbage.Proof.RsaKeyGen.RandMemory
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Dsa.ProbablePrimeContract
-public import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.Enter
+public import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.Width
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Mont.X86.Compact.Frame
-import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.Width
 import VerifiedGarbage.Proof.Dsa.Arithmetic
 import VerifiedGarbage.Proof.Framework.Sig
 

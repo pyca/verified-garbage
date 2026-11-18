@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.RsaKeyGen.RandMemory
 import VerifiedGarbage.Proof.RsaKeyGen.X86.WitnessRt.Blocks
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.WitnessRt
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.WitnessChecks
-import VerifiedGarbage.Proof.RsaKeyGen.X86.WitnessFrame
 public import VerifiedGarbage.Proof.Framework.X86.Call
 import VerifiedGarbage.Proof.MillerRabin.X86.RoundFrame
 public import VerifiedGarbage.Proof.MillerRabin.X86.WorkspaceFrame
@@ -27,7 +26,6 @@ import VerifiedGarbage.Proof.RsaKeyGen.WitnessBits32
 import VerifiedGarbage.Proof.Mont.X86.Instr
 public import VerifiedGarbage.Proof.MillerRabin.X86.Context
 import VerifiedGarbage.Proof.RsaKeyGen.X86.ImportLoop
-import VerifiedGarbage.Proof.RsaKeyGen.X86.ImportEncoding
 import VerifiedGarbage.Proof.Bignum.ByteWords
 import VerifiedGarbage.Proof.Mont.RegionOutside
 public import VerifiedGarbage.Proof.Mont.X86.Rt.Base

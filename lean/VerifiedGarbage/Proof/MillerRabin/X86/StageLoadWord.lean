@@ -1,15 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.MillerRabin.X86.Stage
+public import VerifiedGarbage.Proof.MillerRabin.X86.StageSlots
 public import VerifiedGarbage.Impl.MillerRabin.X86.Round
 public import VerifiedGarbage.Proof.MillerRabin.X86.RoundFrame
 public import VerifiedGarbage.Proof.MillerRabin.X86.Context
 public import VerifiedGarbage.Proof.Mont.Words32
-public import VerifiedGarbage.Proof.MillerRabin.X86.DataSquareControl
-import VerifiedGarbage.Proof.MillerRabin.X86.StageSlots
-import VerifiedGarbage.Proof.MillerRabin.X86.RoundScalarFrame
 public import VerifiedGarbage.Proof.MillerRabin.X86.Data
-import VerifiedGarbage.Proof.MillerRabin.X86.DataSlots
 public import VerifiedGarbage.Impl.MillerRabin.X86.Layout
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Framework.Semantics

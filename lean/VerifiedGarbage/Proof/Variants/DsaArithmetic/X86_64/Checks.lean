@@ -11,7 +11,7 @@ public import VerifiedGarbage.Proof.Framework.X86_64.ScrubChecks
 /-!
 # What the kernel evaluates of a DSA backend's entry points
 
-A backend (`Backend`, `Proof/Dsa/X86_64/Backend.lean`) asks of each of its
+A backend (`Backend`, `Proof/Dsa/X86_64/RandomSignCall.lean`) asks of each of its
 eight entry points that its calls can be inlined, that it never touches MXCSR,
 that it writes `rsp` only by its calls, and how much stack it uses: tests the
 kernel evaluates on the code, each a `match` on every instruction it has not

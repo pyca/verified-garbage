@@ -1,15 +1,119 @@
 module
 
-import VerifiedGarbage.Proof.Dsa.PPC64LE.Validate.CT
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Validate.Contract
 public import VerifiedGarbage.Impl.Dsa.PPC64LE.Prevalidated
 import VerifiedGarbage.Proof.Dsa.PPC64LE.Validate.Spec
 import VerifiedGarbage.Proof.Dsa.PPC64LE.Params.Fn
 import VerifiedGarbage.Proof.Dsa.PPC64LE.CheckKey
-import VerifiedGarbage.Proof.Dsa.PPC64LE.Validate.Implies
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Dsa.Prevalidated
 public import VerifiedGarbage.TCB.PPC64LE.Target
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.Params.CT
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.VerifyCT
+import VerifiedGarbage.Proof.Dsa.PPC64LE.VerifyBody
+meta import VerifiedGarbage.Proof.Dsa.PPC64LE.Params.CT
+meta import VerifiedGarbage.Proof.Dsa.PPC64LE.Validate.Contract
+meta import VerifiedGarbage.Impl.Dsa.PPC64LE.Prevalidated
+meta import VerifiedGarbage.Proof.Framework.Contract
+
+/-! ### `Dsa.PPC64LE.Validate.Implies`, which only this module used -/
+
+section
+
+/-!
+# `vg_dsa_validate_public_key` on PPC64LE: the contract on the registers
+
+`validate_implies`: `vkContract` implies the shared contract.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Dsa.PPC64LE
+
+open VG VG.PPC64LE
+
+/-- A state meeting `vkContract.pre`: 1024-bit p and 160-bit q, the key at
+`0x1000` and the working space at `0x10000`. -/
+def validateSatState : State where
+  gpr r := match r with
+    | .r3 => 0x1000 | .r4 => 404 | .r5 => 128 | .r6 => 20 | .r7 => 0x10000 | .r8 => 2048 | _ => 0
+  lr := 0
+  sp := 0x9000
+  mem _ := 0
+  rd := [⟨0x1000, 404⟩]
+  wr := [⟨0x10000, 16384⟩]
+
+theorem validate_implies : vkContract.Implies (Spec.Dsa.validatePublicKeyContract abi) := by
+  sig_implies [Spec.Dsa.validatePublicKeyContract, Spec.Dsa.validatePublicKeySig, abi, argRegs, vkContract,
+    List.getD_cons_succ, List.getD_cons_zero, Sig.pairFacts, List.filterMap_cons,
+    List.filterMap_nil, Bool.cond_true, Bool.cond_false, Bool.or_true, Bool.or_false, List.cons_append,
+    List.nil_append, List.append_nil, Sig.conj_cons, Sig.conj_append]
+    [validateSatState] using validateSatState
+
+end VG.Proof.Dsa.PPC64LE
+
+end
+
+end
+
+/-! ### `Dsa.PPC64LE.Validate.CT`, which only this module used -/
+
+section
+
+/-!
+# DSA public-key validation on PPC64LE: constant time
+
+`validate_ct`: two runs from states that satisfy `vkContract` and agree on its
+public data (the arguments' registers and the key, all of it public) leak
+the same trace. The entry is `vg_dsa_check_parameters`'s (`pentry_taint`,
+`pfront_S0_of`, for the public data `vkvdOf`: the key's octets), the check
+of the key verification's (`checkKey_rel`), then the result and `restore`.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Dsa.PPC64LE
+
+open VG VG.PPC64LE VG.PPC64LE.Taint VG.Proof.Mont VG.Proof.Bignum.PPC64LE
+open VG.Impl.Dsa.PPC64LE
+
+/-- A call's public data: the layout and the key's octets. -/
+def vkvdOf (s : State) : VD := pvdN (3 * (s.gpr .r5).toNat + (s.gpr .r6).toNat) s
+
+/-- On entry. -/
+def VK0 (v : VD) (s : State) : Prop := vkContract.pre s ∧ vkvdOf s = v
+
+theorem vfront_S0 {v : VD} {s : State} (h : VK0 v s) :
+    WP isa (.block Params.entry) s fun t => S0 v t ∧ KY v := by
+  obtain ⟨hp, rfl⟩ := h
+  have hL := vkContract_lay hp
+  obtain ⟨hrd, hwr, dKS, -, nw, -, hkl, -⟩ := hp
+  exact (pfront_S0_of hL hwr nw (fun hr hw => psrc_of hrd dKS (by omega_using [hkl]) hr hw)
+    (by simp only [playOf]; omega_using [])).mono fun _ h => ⟨h, by simp only [KY, vkvdOf, pvdN, playOf]; omega_using []⟩
+
+theorem validate_rel : RelCT isa (Two VK0) Prevalidated.validate fun _ _ => True := by
+  unfold Prevalidated.validate
+  exact RelCT.seq (two_post (pentry_taint (pins_pvd fun _ _ h => h.2)) fun _ _ h => vfront_S0 h)
+    (RelCT.seq (checkKey_rel (one_rel fun _ _ h => h.1)) (two_taint _ pins_End (by taint_decide)))
+
+/-- Runs that agree on the contract's public data have the same public data `vkvdOf`. -/
+theorem vkvdOf_eq {s t : State} (hs : vkContract.pre s) (hp : vkContract.pub s t) : vkvdOf s = vkvdOf t := by
+  obtain ⟨-, h3, h4, h5, h6, h7, h8, hl⟩ := hp
+  have hk := hs.2.2.2.2.2.2.1
+  simp only [Spec.Dsa.publicBytesLeak, bytesAt_take] at hl
+  have e := map_toNat_inj hl
+  rw [← h3, ← h4, ← h5, ← h6, Nat.min_eq_right (by omega_using [hk])] at e
+  simp only [vkvdOf, pvdN, playOf, ← h3, ← h5, ← h6, ← h7, ← h8, e]
+
+theorem validate_ct : ConstantTime isa vkContract.pre vkContract.pub Prevalidated.validate :=
+  RelCT.constantTime (validate_rel.mono (fun s _ ⟨hs, ht, hp⟩ =>
+    ⟨vkvdOf s, ⟨hs, rfl⟩, ⟨ht, (vkvdOf_eq hs hp).symm⟩, hp.1⟩) fun _ _ h => h)
+
+end VG.Proof.Dsa.PPC64LE
+
+end
+
+end
 
 /-! ### `Dsa.PPC64LE.Validate.Fn`, which only this module used -/
 

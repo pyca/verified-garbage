@@ -1,22 +1,18 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.CachedGenerateKeyContract
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.SearchProof.AttemptRun
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.AttemptTiming
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.AttemptSat
+public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.SearchProof.Loop
+public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.SearchProof.Sat
+public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PrecomputeEntryTiming
 import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Lit
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PrecomputeSat
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PrecomputeContract
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.AttemptInput
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PolicyConsts
 public import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PrecomputeTimingState
 import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.SourceSlices
-import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PrecomputeEntryTiming
 import VerifiedGarbage.Proof.Bignum.AArch64.PcCode
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 public import VerifiedGarbage.Impl.Ffdh.AArch64.Cached.Precompute
@@ -24,12 +20,9 @@ public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PowerState
 public import VerifiedGarbage.Spec.Ffdh.VettedKeyGeneration
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.SearchProof.Contract
 public import VerifiedGarbage.Impl.Ffdh.AArch64.Cached.Search
-import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.SearchProof.CT
 public import VerifiedGarbage.Spec.Ffdh.CachedKeyGenerationContract
-import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.SearchProof.Sat
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Sig
-import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.SearchProof.Correct
 public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightMont
 
 /-! ### `Ffdh.AArch64.Cached.AttemptVerified`, which only this module used -/

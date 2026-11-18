@@ -1,18 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.RISCV64.SignFront
-public import VerifiedGarbage.Proof.Dsa.RISCV64.SignBody
+public import VerifiedGarbage.Proof.Dsa.RISCV64.SignFn
 public import VerifiedGarbage.Impl.Dsa.RISCV64.PrevalidatedSign
 public import VerifiedGarbage.Spec.Dsa.PrevalidatedSign
 public meta import VerifiedGarbage.Proof.Bignum.RISCV64.Run
-import VerifiedGarbage.Proof.Dsa.RISCV64.SignFn
 import VerifiedGarbage.Proof.Dsa.RISCV64.PrevalidatedFn
 import VerifiedGarbage.Proof.Dsa.RISCV64.VerifyFn
-import VerifiedGarbage.Proof.Dsa.RISCV64.CheckKey
+import VerifiedGarbage.Proof.Dsa.RISCV64.VerifyComb
 import VerifiedGarbage.Proof.Dsa.RISCV64.Elem
 import VerifiedGarbage.Proof.Dsa.RISCV64.Arr
 import VerifiedGarbage.Proof.Dsa.RISCV64.Sizes
-import VerifiedGarbage.Proof.Dsa.RISCV64.DeriveOutput
+import VerifiedGarbage.Proof.Dsa.RISCV64.DeriveFn
 import VerifiedGarbage.Proof.Dsa.PackedBytes
 import VerifiedGarbage.Proof.Dsa.Accepted
 import VerifiedGarbage.Proof.Dsa.SizeBounds

@@ -1,8 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignEnv
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignInputs
-import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignSaved
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Framework.Offset

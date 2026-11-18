@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.RISCV64.ParamsFront
-public import VerifiedGarbage.Proof.Dsa.RISCV64.CheckKey
+public import VerifiedGarbage.Proof.Dsa.RISCV64.VerifyComb
 public meta import VerifiedGarbage.Proof.Bignum.RISCV64.Run
 import VerifiedGarbage.Proof.Dsa.RISCV64.VerifyFn
 import VerifiedGarbage.Proof.Dsa.PackedBytes

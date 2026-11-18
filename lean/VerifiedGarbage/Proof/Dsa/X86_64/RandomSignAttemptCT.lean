@@ -7,7 +7,6 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignRunning
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignSingleCT
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignSampleCT
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignAttempt
-import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignSample
 import VerifiedGarbage.Proof.Dsa.RandomSignTrace
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Offset
@@ -18,7 +17,6 @@ meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignRunning
 meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignSingleCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignSampleCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignAttempt
-meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignSample
 meta import VerifiedGarbage.Proof.Dsa.RandomSignTrace
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.Offset

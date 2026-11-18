@@ -1,4 +1,5 @@
 module
+
 public import VerifiedGarbage.Proof.Dsa.AArch64.Run
 public import VerifiedGarbage.Proof.RsaKeyGen.Table
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.GeneratorStep
@@ -8,13 +9,11 @@ public import VerifiedGarbage.Proof.RsaOaep.AArch64.Basic
 public import VerifiedGarbage.Proof.Rsa.Ranges
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorArguments
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.GeneratorRange
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorLoads
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.DecrementOdd
 import VerifiedGarbage.Proof.Dsa.AArch64.RangeMask
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.WorkspaceBase
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Memory
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.FrameWord
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Workspace
 
 /-! ### `Dsa.AArch64.Generation.GeneratorCheck`, which only this module used -/

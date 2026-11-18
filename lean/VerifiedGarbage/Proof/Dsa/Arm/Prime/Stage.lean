@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.Arm.Prime.Load1
-import VerifiedGarbage.Proof.Dsa.Arm.Prime.Inv
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Taint3
 import VerifiedGarbage.Proof.Rsa.Arm.CvLoad
 import VerifiedGarbage.Proof.Rsa.Octets

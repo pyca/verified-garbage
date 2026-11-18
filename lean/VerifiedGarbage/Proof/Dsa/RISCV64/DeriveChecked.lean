@@ -1,9 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.RISCV64.DeriveFront
-public import VerifiedGarbage.Proof.Dsa.RISCV64.CheckKey
+public import VerifiedGarbage.Proof.Dsa.RISCV64.DeriveFn
+public import VerifiedGarbage.Proof.Dsa.RISCV64.VerifyComb
 public import VerifiedGarbage.Impl.Dsa.RISCV64.Generate
-import VerifiedGarbage.Proof.Dsa.RISCV64.DeriveFn
 import VerifiedGarbage.Proof.Dsa.RISCV64.ParamsFn
 import VerifiedGarbage.Proof.Dsa.RISCV64.PrevalidatedFn
 import VerifiedGarbage.Proof.Dsa.SizeBounds

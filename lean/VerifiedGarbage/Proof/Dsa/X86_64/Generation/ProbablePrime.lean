@@ -3,16 +3,15 @@ module
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.ProbablePrime
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeTrial
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.DrawRound
-
 import VerifiedGarbage.Proof.Dsa.Generation.Primality
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeInput
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MontAll
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeFrame
 import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerStages
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.LoopState
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.LoopInit
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.LoopStep
+
 /-! # The complete native primality operation matches DSA's specification -/
 
 -- Formerly `VerifiedGarbage/Proof/Dsa/X86_64/Generation/PrimeReject.lean`, which only this module imported.

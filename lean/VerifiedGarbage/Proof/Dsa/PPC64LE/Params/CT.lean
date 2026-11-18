@@ -4,13 +4,11 @@ import VerifiedGarbage.Proof.Dsa.PPC64LE.CT.Key
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Params.Front
 meta import VerifiedGarbage.Proof.Dsa.PPC64LE.CT.Key
 meta import VerifiedGarbage.Proof.Dsa.PPC64LE.Params.Front
-import VerifiedGarbage.Proof.Dsa.PPC64LE.CT.SizesRest
-meta import VerifiedGarbage.Proof.Dsa.PPC64LE.CT.SizesRest
 import VerifiedGarbage.Proof.Dsa.PPC64LE.VerifyCT
+meta import VerifiedGarbage.Proof.Dsa.PPC64LE.VerifyCT
 import VerifiedGarbage.Proof.Dsa.PPC64LE.Params.Fn
 import VerifiedGarbage.Proof.Dsa.PPC64LE.CheckKey
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.CT.Sizes
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.CT.Base
 
 /-!
 # DSA domain checks on PPC64LE: constant time

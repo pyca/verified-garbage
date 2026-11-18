@@ -18,7 +18,6 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrRoundAll
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerStages
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Round
 import VerifiedGarbage.Proof.Bignum.WorkFrame
 
 /-! ### `Dsa.X86_64.Generation.SampleRound`, which only this module used -/

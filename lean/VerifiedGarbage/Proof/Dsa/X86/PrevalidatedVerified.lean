@@ -17,13 +17,12 @@ import Mathlib.Tactic.Set
 import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Dsa.X86.SignLayout
 import VerifiedGarbage.Proof.Dsa.X86.LayoutAgreement
-import VerifiedGarbage.Proof.Dsa.X86.SignSizedTiming
+import VerifiedGarbage.Proof.Dsa.X86.WriteSignature
 import VerifiedGarbage.Proof.Dsa.X86.EntryTiming
 import VerifiedGarbage.Proof.Dsa.X86.VerifyingOperation
 import VerifiedGarbage.Proof.Dsa.X86.InstalledInputs
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-public import VerifiedGarbage.Proof.Dsa.X86.VerifyLayout
 import VerifiedGarbage.Proof.Dsa.X86.VerifySizedTiming
 import VerifiedGarbage.Proof.Dsa.X86.Installed
 public import VerifiedGarbage.Proof.Dsa.X86.OutputFrame
@@ -36,8 +35,6 @@ public import VerifiedGarbage.Proof.Dsa.Accepted
 public import VerifiedGarbage.Proof.Dsa.X86.Moduli
 public import VerifiedGarbage.Proof.Dsa.X86.Checks
 import VerifiedGarbage.Proof.Dsa.X86.SavedFrame
-import VerifiedGarbage.Proof.Dsa.X86.SignCompute
-import VerifiedGarbage.Proof.Dsa.X86.WriteSignature
 import VerifiedGarbage.Proof.Dsa.X86.Result
 import VerifiedGarbage.Proof.Dsa.X86.Layout
 import VerifiedGarbage.Proof.Dsa.OutputBytes

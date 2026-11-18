@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Impl.Dsa.X86.Validate
 public import VerifiedGarbage.Proof.Weierstrass.PointContract
 public import VerifiedGarbage.Proof.Dsa.X86.CallTiming
-import VerifiedGarbage.Proof.Dsa.X86.CallValidationTiming
 import VerifiedGarbage.Proof.Dsa.X86.CallPowerTiming
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import Mathlib.Logic.Function.Basic
@@ -13,7 +12,6 @@ public import VerifiedGarbage.Proof.Dsa.X86.Pointer
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
 import VerifiedGarbage.Proof.Dsa.X86.PointerTiming
-import VerifiedGarbage.Proof.Dsa.X86.ValidationBlocksTiming
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Dsa.X86.StageMinus
 public import VerifiedGarbage.Proof.Dsa.X86.StreamTiming
@@ -32,6 +30,204 @@ import VerifiedGarbage.TCB.X86.Isa
 import VerifiedGarbage.TCB.X86.State
 import VerifiedGarbage.Proof.Dsa.X86.Persistent
 import VerifiedGarbage.Proof.Weierstrass.MontContract
+public import VerifiedGarbage.Proof.Dsa.X86.CoreFrame
+import VerifiedGarbage.Proof.Dsa.X86.RawInputsTiming
+import VerifiedGarbage.Proof.Dsa.X86.ChecksTiming
+import VerifiedGarbage.Proof.Dsa.X86.StageChecks
+import VerifiedGarbage.Proof.Framework.KernelRfl
+
+/-! ### `Dsa.X86.CallValidationTiming`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Dsa.X86.ValidationBlocksTiming`, which this module and modules that import it used -/
+
+section
+
+/-! # Constant-time validation masks and fixed constants -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.X86
+open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Mont.X86.Dynamic VG.Impl.Dsa.X86 VG.Proof.Mont.X86.Dynamic
+
+theorem setConst_relCT (k out value : Nat) :
+    RelCT isa (VG.X86.Taint.Agree (workspaceTaint false)) (setConstW k out value)
+      (VG.X86.Taint.Agree (workspaceTaint false)) := by
+  unfold setConstW
+  refine RelCT.seq (erased_relCT (σ := workspaceTaint false) _ (zerosW 0 1)
+    (VG.Taint.hintOf taint (workspaceTaint false) (Code.erase (zerosW 0 1))) (by kernel_rfl) (by kernel_rfl) (by kernel_rfl) (by kernel_rfl)) ?_
+  apply blockFlatMap_relCT
+  intro j
+  split
+  · exact RelCT.block_nil (fun _ _ h => h)
+  · apply checkedBlockInvariant (τ' := zeroTaint false) ?_ rfl
+    rw [← VG.X86.Taint.checkBlock_erase _ _ rfl]
+    change taint.checkBlock (workspaceTaint false) [.mov .eax (.imm 0), .store (sc 0) .eax] = _
+    rfl
+
+theorem lessThanConstant_relCT (n a tmp value : Nat) :
+    RelCT isa (VG.X86.Taint.Agree (workspaceTaint false)) (lessThanConstant n a tmp value)
+      (VG.X86.Taint.Agree (workspaceTaint false)) :=
+  RelCT.seq (setConst_relCT _ tmp value) (lessThan_relCT false n a tmp)
+
+theorem lowerTwo_relCT (n : Nat) :
+    RelCT isa (VG.X86.Taint.Agree (workspaceTaint false)) (Validate.lowerTwo n)
+      (VG.X86.Taint.Agree (workspaceTaint false)) := by
+  unfold Validate.lowerTwo
+  refine RelCT.seq (lessThanConstant_relCT n (slot n 5) (slot n 7) 2) ?_
+  exact erased_relCT _ (.block ([.alu .xor .eax (.imm (BitVec.allOnes 32)), .mov .edx (.reg .eax)] ++ andFlag 0))
+    (.block []) (by kernel_rfl) (by kernel_rfl) (by kernel_rfl) (by kernel_rfl)
+
+theorem rangeMask_relCT (n : Nat) (aboveOne : Bool) :
+    RelCT isa (VG.X86.Taint.Agree (workspaceTaint false))
+      (.seq (checkRange n (slot n 5) (slot n 0) (Layout.field .mask))
+        (if aboveOne then Validate.lowerTwo n else .block [])) (VG.X86.Taint.Agree (workspaceTaint false)) := by
+  apply RelCT.seq (checkRange_relCT false _ _ _ _)
+  cases aboveOne
+  · exact RelCT.block_nil (fun _ _ h => h)
+  · exact lowerTwo_relCT n
+
+theorem equalMask_relCT (n a b : Nat) :
+    RelCT isa (VG.X86.Taint.Agree (workspaceTaint false))
+      (.seq (equal n a b) (.block Validate.accumulate)) (VG.X86.Taint.Agree (workspaceTaint false)) :=
+  RelCT.seq (equal_relCT false n a b) (checkedBlockInvariant (andFlag_check false _) rfl)
+
+theorem modulusMinus_relCT (n amount : Nat) :
+    RelCT isa (VG.X86.Taint.Agree (workspaceTaint false)) (modulusMinus n amount)
+      (VG.X86.Taint.Agree (workspaceTaint false)) := by
+  unfold modulusMinus
+  refine RelCT.seq (setConst_relCT _ _ _) ?_
+  exact erased_relCT _ (chainW .sbb 1 0 0 0)
+    (VG.Taint.hintOf taint (workspaceTaint false) (Code.erase (chainW .sbb 1 0 0 0))) (by kernel_rfl) (by kernel_rfl) (by kernel_rfl) (by kernel_rfl)
+
+end VG.Proof.Dsa.X86
+
+end
+
+end
+
+/-! ### `Dsa.X86.ValidationTiming`, which only this module used -/
+
+section
+
+/-! # Component validation does not branch or address memory on secret values -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.X86
+open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Mont.X86.Dynamic
+open VG.Impl.Mont.X86.Dynamic VG.Impl.Dsa.Layout VG.Impl.Dsa.X86
+
+theorem forget_counter {s t : State} (H : VG.X86.Taint.Agree (workspaceTaint true) s t) :
+    VG.X86.Taint.Agree (workspaceTaint false) s t := taint.le_sound (by rfl) H
+
+theorem validateRange_relCT (len : Nat) (modulus : Field) (input : Pointer) (aboveOne : Bool)
+    (base : Addr) (size : Nat) (hz : Layout.saved ≤ size) (h4 : 4 ≤ len) (hmax : len ≤ 384) (hw4 : len % 4 = 0) :
+    RelCT isa (fun s t => Scr s base size ∧ Scr t base size ∧
+      OperandReady s base ((len + 7) / 8) (.input modulus) len ∧
+      OperandReady t base ((len + 7) / 8) (.input modulus) len ∧
+      pointerValue base s (.input modulus) = pointerValue base t (.input modulus) ∧
+      pointerValue base s input = pointerValue base t input)
+      (Validate.range len modulus input aboveOne) (VG.X86.Taint.Agree (workspaceTaint false)) := by
+  unfold Validate.range
+  dsimp only
+  apply RelCT.assoc
+  apply RelCT.seq (rawInputs_relCT _ len len 0 5 (.input modulus) input base size hz (by omega_using [hmax]) (by decide) h4
+    (by omega_using []) hw4)
+  exact (rangeMask_relCT _ aboveOne).mono (fun _ _ h => forget_counter h) (fun _ _ h => h)
+
+theorem validateEqual_relCT (len : Nat) (a b : Pointer) (base : Addr) (size : Nat)
+    (hz : Layout.saved ≤ size) (h4 : 4 ≤ len) (hmax : len ≤ 384) (hw4 : len % 4 = 0) :
+    RelCT isa (fun s t => Scr s base size ∧ Scr t base size ∧
+      OperandReady s base ((len + 7) / 8) a len ∧ OperandReady t base ((len + 7) / 8) a len ∧
+      pointerValue base s a = pointerValue base t a ∧ pointerValue base s b = pointerValue base t b)
+      (Validate.equalValues len a b) (VG.X86.Taint.Agree (workspaceTaint false)) := by
+  unfold Validate.equalValues
+  dsimp only
+  apply RelCT.assoc
+  apply RelCT.seq (rawInputs_relCT _ len len 5 8 a b base size hz (by omega_using [hmax]) (by decide) h4 (by omega_using []) hw4)
+  exact (equalMask_relCT _ _ _).mono (fun _ _ h => forget_counter h) (fun _ _ h => h)
+
+theorem validateOne_relCT (len : Nat) (input : Pointer) (base : Addr) (size : Nat) (hz : Layout.saved ≤ size) :
+    RelCT isa (fun s t => Scr s base size ∧ Scr t base size ∧ pointerValue base s input = pointerValue base t input)
+      (Validate.isOne len input) (VG.X86.Taint.Agree (workspaceTaint false)) := by
+  unfold Validate.isOne
+  dsimp only
+  apply RelCT.seq (coreLoad_relCT _ len _ input base size hz)
+  have Tail := RelCT.seq (setConst_relCT (2 * ((len + 7) / 8)) (slot ((len + 7) / 8) 8) 1)
+    (equalMask_relCT ((len + 7) / 8) (slot ((len + 7) / 8) 5) (slot ((len + 7) / 8) 8))
+  exact Tail.mono (fun _ _ h => forget_counter h) (fun _ _ h => h)
+
+theorem validateZero_relCT (len : Nat) (input : Pointer) (wantNonzero : Bool) (base : Addr) (size : Nat) (hz : Layout.saved ≤ size) :
+    RelCT isa (fun s t => Scr s base size ∧ Scr t base size ∧ pointerValue base s input = pointerValue base t input)
+      (Validate.zero len input wantNonzero) (VG.X86.Taint.Agree (workspaceTaint false)) := by
+  unfold Validate.zero
+  dsimp only
+  apply RelCT.seq (coreLoad_relCT _ len _ input base size hz)
+  exact (checkZero_relCT true _ _ _ wantNonzero).mono (fun _ _ h => h) (fun _ _ h => forget_counter h)
+
+end VG.Proof.Dsa.X86
+
+end
+
+end
+
+
+/-! # Validation stages retain the public call layout -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.X86
+open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Mont.X86.Dynamic
+open VG.Impl.Mont.X86.Dynamic VG.Impl.Dsa.Layout VG.Impl.Dsa.X86
+
+theorem callRange_relCT (L : CallLayout) (len : Nat) (modulus : Field) (input : Pointer) (aboveOne : Bool)
+    (M : CallOperand L (.input modulus) len) (I : CallOperand L input len) (h4 : 4 ≤ len) (hmax : len ≤ 384) (hw4 : len % 4 = 0) :
+    RelCT isa (CallPair L) (Validate.range len modulus input aboveOne) (CallPair L) := by
+  refine call_stage (Q := VG.X86.Taint.Agree (workspaceTaint false)) ?_ ?_
+  · apply (validateRange_relCT len modulus input aboveOne L.base L.size L.saved h4 hmax hw4).mono ?_ (fun _ _ h => h)
+    intro s t H
+    exact ⟨H.1.moduli.scr, H.2.moduli.scr, H.1.operand M (by omega_using [h4]) (by omega_using [hmax]),
+      H.2.operand M (by omega_using [h4]) (by omega_using [hmax]), H.pointer M, H.pointer I⟩
+  · intro s R
+    exact WP.mono (stageRange_ok R.moduli h4 hmax hw4 (R.operand M (by omega_using [h4]) (by omega_using [hmax]))
+      (R.operand I (by omega_using [h4]) (by omega_using [hmax])) aboveOne) fun _ H => H.2.2.execution (.inr ⟨rfl, rfl⟩)
+
+theorem callEqual_relCT (L : CallLayout) (len : Nat) (a b : Pointer)
+    (A : CallOperand L a len) (B : CallOperand L b len) (h4 : 4 ≤ len) (hmax : len ≤ 384) (hw4 : len % 4 = 0) :
+    RelCT isa (CallPair L) (Validate.equalValues len a b) (CallPair L) := by
+  refine call_stage (Q := VG.X86.Taint.Agree (workspaceTaint false)) ?_ ?_
+  · apply (validateEqual_relCT len a b L.base L.size L.saved h4 hmax hw4).mono ?_ (fun _ _ h => h)
+    intro s t H
+    exact ⟨H.1.moduli.scr, H.2.moduli.scr, H.1.operand A (by omega_using [h4]) (by omega_using [hmax]),
+      H.2.operand A (by omega_using [h4]) (by omega_using [hmax]), H.pointer A, H.pointer B⟩
+  · intro s R
+    exact WP.mono (stageEqual_ok R.moduli h4 hmax hw4 (R.operand A (by omega_using [h4]) (by omega_using [hmax]))
+      (R.operand B (by omega_using [h4]) (by omega_using [hmax]))) fun _ H => H.2.2.execution (.inr ⟨rfl, rfl⟩)
+
+theorem callOne_relCT (L : CallLayout) (len : Nat) (input : Pointer)
+    (I : CallOperand L input len) (h4 : 4 ≤ len) (hmax : len ≤ 384) (hw4 : len % 4 = 0) :
+    RelCT isa (CallPair L) (Validate.isOne len input) (CallPair L) := by
+  refine call_stage (Q := VG.X86.Taint.Agree (workspaceTaint false)) ?_ ?_
+  · exact (validateOne_relCT len input L.base L.size L.saved).mono
+      (fun _ _ H => ⟨H.1.moduli.scr, H.2.moduli.scr, H.pointer I⟩) (fun _ _ h => h)
+  · intro s R
+    exact WP.mono (stageOne_ok R.moduli h4 hmax hw4 (R.operand I (by omega_using [h4]) (by omega_using [hmax])))
+      fun _ H => H.2.2.execution (.inr ⟨rfl, rfl⟩)
+
+theorem callZero_relCT (L : CallLayout) (len : Nat) (input : Pointer) (wantNonzero : Bool)
+    (I : CallOperand L input len) (h4 : 4 ≤ len) (hmax : len ≤ 384) (hw4 : len % 4 = 0) :
+    RelCT isa (CallPair L) (Validate.zero len input wantNonzero) (CallPair L) := by
+  refine call_stage (Q := VG.X86.Taint.Agree (workspaceTaint false)) ?_ ?_
+  · exact (validateZero_relCT len input wantNonzero L.base L.size L.saved).mono
+      (fun _ _ H => ⟨H.1.moduli.scr, H.2.moduli.scr, H.pointer I⟩) (fun _ _ h => h)
+  · intro s R
+    exact WP.mono (stageZero_ok R.moduli h4 hmax hw4 (R.operand I (by omega_using [h4]) (by omega_using [hmax])) wantNonzero)
+      fun _ H => H.2.2.execution (.inr ⟨rfl, rfl⟩)
+
+end VG.Proof.Dsa.X86
+
+end
+
+end
 
 /-! ### `Dsa.X86.CallReduceTiming`, which this module and modules that import it used -/
 

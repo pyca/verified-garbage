@@ -2,7 +2,7 @@ module
 
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcCtLoop
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareCtContext
-public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcCtContext
+public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcCtRow
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcLayout
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareLayout
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcCorrect
@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcCtLoop
 meta import VerifiedGarbage.Proof.Bignum.AArch64.SquareCtContext
-meta import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcCtContext
+meta import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcCtRow
 meta import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcLayout
 meta import VerifiedGarbage.Proof.Bignum.AArch64.SquareLayout
 meta import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcCorrect

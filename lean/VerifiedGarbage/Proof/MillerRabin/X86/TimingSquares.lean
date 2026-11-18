@@ -1,24 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.MillerRabin.X86.Stage
+public import VerifiedGarbage.Proof.MillerRabin.X86.StageSlots
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 public import VerifiedGarbage.Proof.MillerRabin.X86.TimingMultiply
 public import VerifiedGarbage.Proof.MillerRabin.X86.TimingBase
 import VerifiedGarbage.Proof.MillerRabin.X86.TimingPointers
-import VerifiedGarbage.Proof.MillerRabin.X86.Data
+public import VerifiedGarbage.Proof.MillerRabin.X86.Data
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Proof.MillerRabin.Word32
 public import VerifiedGarbage.Impl.MillerRabin.X86.Round
-public import VerifiedGarbage.Proof.MillerRabin.X86.DataSquareControl
 public import VerifiedGarbage.Proof.MillerRabin.X86.RoundFrame
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.X86.Call
-import VerifiedGarbage.Proof.MillerRabin.X86.RoundScalarFrame
-import VerifiedGarbage.Proof.MillerRabin.X86.StageSlots
 public import VerifiedGarbage.Impl.MillerRabin.X86.Ops
-import VerifiedGarbage.Proof.MillerRabin.X86.ModulusKeep
-import VerifiedGarbage.Proof.MillerRabin.X86.DataScalar
 public import VerifiedGarbage.Proof.MillerRabin.X86.MontFrame
 import VerifiedGarbage.Proof.MillerRabin.X86.Caller
 import VerifiedGarbage.Proof.MillerRabin.X86.Multiply
@@ -28,6 +23,92 @@ import VerifiedGarbage.Proof.MillerRabin.X86.Copy
 public import VerifiedGarbage.Proof.Mont.X86.Rt.Base
 public import VerifiedGarbage.Impl.MillerRabin.X86.Layout
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Power
+public import VerifiedGarbage.Proof.MillerRabin.X86.Modulus
+
+/-! ### `MillerRabin.X86.DataScalar`, which this module and modules that import it used -/
+
+section
+
+/-! # Updating a scratch word preserves all known array and other scalar values -/
+
+@[expose] public section
+namespace VG.Proof.MillerRabin.X86
+open VG VG.X86 VG.Proof.Mont
+
+theorem Data.afterScalar {g : Geometry} (v : g.Valid) {A : Nat → Nat} {Js : List Nat}
+    {V : Nat → BitVec 32} {Ds : List Nat} {s t : State} (D : Data g A Js V Ds s)
+    (C : Context g t) (d : Nat) (scratch : scratchWord d) (value : BitVec 32)
+    (O : Outside g.W d 4 s.mem t.mem) (stored : t.mem.readW (off g.W d) 32 = value) :
+    Data g A Js (setAt V d value) (d :: Ds) t := by
+  have fit := scratch_fit scratch
+  refine ⟨C, ?_, ?_⟩
+  · intro j known
+    obtain ⟨index, read⟩ := D.arrayValues j known
+    have header := v.arrayHeader j
+    refine ⟨index, ?_⟩
+    rw [O.val32 (by omega_using [fit, header]) (by have := v.arrayFit index; have := C.ws.nowrap; omega_arith), read]
+  · intro e known
+    by_cases same : e = d
+    · subst e
+      exact ⟨scratch, by rw [setAt_self]; exact stored⟩
+    · have old : e ∈ Ds := by
+        rcases List.mem_cons.mp known with bad | old
+        · exact False.elim (same bad)
+        · exact old
+      obtain ⟨es, read⟩ := D.slotValues e old
+      have apart := scratch_apart es scratch same
+      have bound := scratch_fit es
+      refine ⟨es, ?_⟩
+      have unchanged := BitVec.eq_of_toNat_eq (O.w32 (d := e) (by omega_using [apart]) (by omega_using [bound]))
+      rw [unchanged, read, setAt_other V value same]
+
+end VG.Proof.MillerRabin.X86
+
+end
+
+end
+
+/-! ### `MillerRabin.X86.ModulusKeep`, which this module and modules that import it used -/
+
+section
+
+/-! # Scratch updates and array copies keep the candidate prepared -/
+
+@[expose] public section
+namespace VG.Proof.MillerRabin.X86
+open VG VG.Proof.Mont
+
+theorem Modulus.keepScalar {g : Geometry} (v : g.Valid) {c d : Nat} {m m' : Mem}
+    (M : Modulus g c m) (nowrap : g.W.toNat + g.L ≤ 2 ^ 32)
+    (scratch : scratchWord d) (O : Outside g.W d 4 m m') : Modulus g c m' := by
+  have bound := scratch_fit scratch
+  refine M.keep v (WorkspaceFrame.of_outs nowrap (Outs.of_outside O (List.mem_singleton_self _))) ?_ ?_
+  · intro r mem
+    obtain rfl := List.mem_singleton.mp mem
+    unfold scratchWord at scratch
+    dsimp only
+    omega_using [scratch]
+  · intro r mem
+    obtain rfl := List.mem_singleton.mp mem
+    right
+    exact Nat.le_trans bound (v.arrayHeader 0)
+
+theorem Modulus.keepArray {g : Geometry} (v : g.Valid) {c j : Nat} {m m' : Mem}
+    (M : Modulus g c m) (nowrap : g.W.toNat + g.L ≤ 2 ^ 32)
+    (notMod : 0 < j) (O : Outside g.W (g.array j) (4 * g.words) m m') : Modulus g c m' := by
+  refine M.keep v (WorkspaceFrame.of_outs nowrap (Outs.of_outside O (List.mem_singleton_self _))) ?_ ?_
+  · intro r mem
+    obtain rfl := List.mem_singleton.mp mem
+    exact Or.inl (Nat.le_trans (by decide) (v.arrayHeader j))
+  · intro r mem
+    obtain rfl := List.mem_singleton.mp mem
+    exact Or.inl (g.arrayBefore notMod)
+
+end VG.Proof.MillerRabin.X86
+
+end
+
+end
 
 /-! ### `MillerRabin.X86.TimingPrivate`, which this module and modules that import it used -/
 

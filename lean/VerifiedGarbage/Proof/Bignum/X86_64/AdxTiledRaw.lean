@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.AdxHeaderFrame
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxFinish8
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledInit
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledTail
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRow
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 

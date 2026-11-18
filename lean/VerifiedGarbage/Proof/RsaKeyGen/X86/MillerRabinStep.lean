@@ -17,7 +17,6 @@ public import VerifiedGarbage.Impl.RsaKeyGen.X86.WitnessStep
 import VerifiedGarbage.Proof.Bignum.MemoryFrame
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.WitnessRound
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.WitnessFrame
 public import VerifiedGarbage.Proof.MillerRabin.X86.RoundFrame
 public import VerifiedGarbage.Proof.Mont.X86.WordOps
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.ImportContext
@@ -53,7 +52,6 @@ public import VerifiedGarbage.Proof.MillerRabin.X86.Modulus
 public import VerifiedGarbage.TCB.X86.Target
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Mont.X86.Compact.Arithmetic
-import VerifiedGarbage.Proof.RsaKeyGen.X86.PreparedGeometry
 import VerifiedGarbage.Proof.MillerRabin.X86.Caller
 import VerifiedGarbage.Proof.Framework.X86.CallWith
 import VerifiedGarbage.Proof.Framework.Contract
@@ -61,6 +59,129 @@ public import VerifiedGarbage.Impl.RsaKeyGen.X86.RoundCall
 public import VerifiedGarbage.Proof.MillerRabin.X86.WorkspaceFrame
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.WitnessStatus
 public import VerifiedGarbage.TCB.X86.Isa
+public import VerifiedGarbage.Impl.RsaKeyGen.X86.WitnessChecks
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.WitnessChecks
+public import VerifiedGarbage.Proof.MillerRabin.X86.MontFrame
+
+/-! ### `RsaKeyGen.X86.WitnessFrame`, which this module and modules that import it used -/
+
+section
+
+/-! # Per-witness products retain the candidate's reusable prepared values -/
+
+@[expose] public section
+namespace VG.Proof.RsaKeyGen.X86.WitnessMont
+open VG VG.Proof.Mont VG.Proof.MillerRabin.X86
+
+def ranges (g : Geometry) : List (Nat × Nat) := montWrites g 6 ++ [(g.array 5, 4 * g.words)]
+
+theorem preserve {g : Geometry} (v : g.Valid) {s t : Mem} (F : WorkspaceFrame g (ranges g) s t)
+    {j : Nat} (index : j = 4 ∨ j = 9 ∨ j = 10 ∨ j = 27) :
+    val32 t g.W (g.array j) g.words = val32 s g.W (g.array j) g.words := by
+  apply F.val32 (v.arrayFit (by omega_using [index]))
+  intro r mem
+  simp only [ranges, montWrites, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at mem
+  rcases index with rfl | rfl | rfl | rfl <;>
+    rcases mem with (rfl | rfl | rfl) | rfl <;>
+    simp only [Geometry.array, Geometry.words, Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes] <;> omega_using []
+
+theorem marker_preserve {g : Geometry} (v : g.Valid) {s t : Mem}
+    (F : WorkspaceFrame g (ranges g) s t) :
+    word t g.W (g.array 27 + 8 * g.w) = word s g.W (g.array 27 + 8 * g.w) := by
+  apply F.read64 (by have := Prepared.paddedFit v (j := 27) (by decide); omega_using [this])
+  intro r mem
+  simp only [ranges, montWrites, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at mem
+  rcases mem with (rfl | rfl | rfl) | rfl <;>
+    simp only [Geometry.array, Geometry.words, Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes] <;> omega_using []
+
+theorem data_keep {g : Geometry} (v : g.Valid) {s t : VG.X86.State} {c capacity : Nat} {p : BitVec 32}
+    (S : Prepare.Data g c capacity p s) (T : PreparedR2.Ready g c capacity p t)
+    (F : WorkspaceFrame g (ranges g) s.mem t.mem) : Prepare.Data g c capacity p t :=
+  ⟨T, (preserve v F (Or.inl rfl)).trans S.r2,
+    (preserve v F (Or.inr (Or.inl rfl))).trans S.one,
+    (preserve v F (Or.inr (Or.inr (Or.inl rfl)))).trans S.minusOne,
+    (preserve v F (Or.inr (Or.inr (Or.inr rfl)))).trans S.exponent,
+    (marker_preserve v F).trans S.marker, (F.read64 (by have := v.headerFit; omega_using [this]) (fun r mem => by
+      simp only [ranges, montWrites, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at mem
+      rcases mem with (rfl | rfl | rfl) | rfl <;>
+        exact Or.inl (by simp only [Geometry.array, Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes]; omega_using []))).trans S.stride⟩
+
+theorem data_outside {g : Geometry} (v : g.Valid) {s t : VG.X86.State} {c capacity : Nat} {p : BitVec 32}
+    (S : Prepare.Data g c capacity p s) (O : Outside g.W (g.array 6) (4 * g.words) s.mem t.mem)
+    {regs : List VG.X86.Reg} (K : VG.Proof.Mont.X86.Keeps regs s t)
+    (base : .edi ∉ regs) (sp : .esp ∉ regs) : Prepare.Data g c capacity p t := by
+  have A := S.ready
+  have outs := Outs.of_outside O (List.mem_singleton_self _)
+  have F := WorkspaceFrame.of_outs A.scratch.nowrap outs
+  have T : PreparedR2.Ready g c capacity p t :=
+    ⟨A.context.keepOutside K base O (v.arrayHeader _),
+      A.modulus.keep v F
+        (fun r mem => by obtain rfl := List.mem_singleton.mp mem; exact Or.inl (by have := v.arrayHeader 6; omega))
+        (fun r mem => by obtain rfl := List.mem_singleton.mp mem; exact Or.inl (g.arrayBefore (by decide))),
+      A.caller.keepOuts K sp outs
+        (fun r mem => by obtain rfl := List.mem_singleton.mp mem; exact v.arrayFit (by decide)),
+      A.scratch.of_keeps K base sp⟩
+  apply data_keep v S T
+  exact WorkspaceFrame.of_outs A.scratch.nowrap (Outs.of_outside
+    (O.mono (o' := g.array 6) (n' := 8 * (g.w + 2)) (Nat.le_refl _) (by unfold Geometry.words; omega_using [])) (by simp [ranges, montWrites]))
+
+end VG.Proof.RsaKeyGen.X86.WitnessMont
+
+end
+
+end
+
+/-! ### `RsaKeyGen.X86.MillerRabinInit`, which the modules that import this one used -/
+
+section
+
+/-! # Initial counters establish the reviewed blinded-loop invariant -/
+
+@[expose] public section
+namespace VG.Proof.RsaKeyGen.X86.MillerRabinLoop
+open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.MillerRabin.X86 VG.Proof.RsaKeyGen
+
+theorem init_ok {P : Parameters} (v : P.Valid) {s : State}
+    (S : Prepare.Data P.g P.candidate P.capacity P.p s)
+    (readable : InRegions (s.rd ++ s.wr) (P.rand.setWidth 64) P.randLen)
+    (entropy : Spec.Rsa.bytesAt s.mem (P.rand.setWidth 64) P.randLen = P.entropy)
+    (randPtr : s.mem.readW (off P.g.W 28) 32 = P.rand)
+    (randLength : w32 s.mem P.g.W 32 = P.randLen)
+    (used : w32 s.mem P.g.W 152 = P.start) (enough : P.start ≤ P.randLen) :
+    WP isa (.block (VG.Impl.RsaKeyGen.X86.WitnessChecks.codeOf P.checks)) s fun t =>
+      StateAt P 0 (itersOf P.bytes P.entropy.length
+        (shapeOf P.test) P.start - 1) t ∧
+      WorkspaceFrame P.g WitnessChecks.ranges s.mem t.mem ∧ Frame [⟨P.g.W, P.g.L⟩] s.mem t.mem ∧
+      Keeps [.eax] s t := by
+  refine WP.mono (WitnessChecks.codeOf_ok v.geometry S v.checksFit) fun t ⟨T, roundsT, uniformT, checksT, O, K⟩ => ?_
+  have rangesFit : ∀ r ∈ WitnessChecks.ranges, r.1 + r.2 ≤ P.g.L := by
+    intro r mem
+    simp only [WitnessChecks.ranges, List.mem_cons, List.not_mem_nil, or_false] at mem
+    rcases mem with rfl | rfl | rfl <;> have := v.geometry.headerFit <;> omega_using [this]
+  have W := WorkspaceFrame.of_outs S.ready.scratch.nowrap O
+  have F := workspaceGlobalFrame O rangesFit
+  have hdr {d : Nat} (bound : d + 4 ≤ 176) : w32 t.mem P.g.W d = w32 s.mem P.g.W d := by
+    apply congrArg BitVec.toNat
+    apply W.read32 (by have := v.geometry.headerFit; omega_using [bound, this])
+    intro r mem
+    simp only [WitnessChecks.ranges, List.mem_cons, List.not_mem_nil, or_false] at mem
+    rcases mem with rfl | rfl | rfl <;> left <;> omega_using [bound]
+  have primeAt := mrLoopAt_zero (ch := P.checks) (a := P.twos.1) (m := P.twos.2) (s := P.start) v.witnessBytes
+    (by have := v.narrow; have := v.two; omega_arith)
+    (by rw [v.entropyLength]; exact enough)
+  refine ⟨⟨T, ?_, ?_, ?_, (hdr (by decide)).trans randLength,
+    by simpa only [Nat.mul_zero, Nat.add_zero] using (hdr (d := 152) (by decide)).trans used,
+    roundsT, uniformT, checksT, primeAt⟩, W, F, K⟩
+  · rw [K.2.1, K.2.2]; exact readable
+  · exact (frame_bytesAt F (by intro r mem; obtain rfl := List.mem_singleton.mp mem; exact v.randSeparate)
+      (by have := v.randLenFit; omega_using [this])).trans entropy
+  · exact (BitVec.eq_of_toNat_eq (hdr (d := 28) (by decide))).trans randPtr
+
+end VG.Proof.RsaKeyGen.X86.MillerRabinLoop
+
+end
+
+end
 
 /-! ### `RsaKeyGen.X86.WitnessStep`, which this module and modules that import it used -/
 

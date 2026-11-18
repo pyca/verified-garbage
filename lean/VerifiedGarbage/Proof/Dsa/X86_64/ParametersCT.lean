@@ -1,21 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Parameters
-public import VerifiedGarbage.Proof.Dsa.X86_64.PublicScheduleCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.PublicKeyCT
 import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingCT
 import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleOperands
 import VerifiedGarbage.Proof.Dsa.Encoding
-import VerifiedGarbage.Proof.Dsa.X86_64.PublicKeyCT
-import VerifiedGarbage.Proof.Dsa.X86_64.DomainShapeCT
+import VerifiedGarbage.Proof.Dsa.X86_64.EntryCT
 import VerifiedGarbage.Proof.Dsa.X86_64.BoundaryCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Parameters
-meta import VerifiedGarbage.Proof.Dsa.X86_64.PublicScheduleCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.PublicKeyCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleOperands
 meta import VerifiedGarbage.Proof.Dsa.SizeBounds
 meta import VerifiedGarbage.Proof.Dsa.Encoding
-meta import VerifiedGarbage.Proof.Dsa.X86_64.PublicKeyCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.DomainShapeCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.EntryCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.BoundaryCT
 public import VerifiedGarbage.Proof.Dsa.SizeBounds
 import VerifiedGarbage.Proof.Framework.RelCTAssoc

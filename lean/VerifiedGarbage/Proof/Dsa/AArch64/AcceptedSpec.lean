@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.SignCompute
 public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyCompute
 import VerifiedGarbage.Proof.Dsa.SizeBounds
 import VerifiedGarbage.Proof.Dsa.Zero

@@ -14,7 +14,6 @@ public import VerifiedGarbage.Impl.Dsa.Arm.Stream
 public import VerifiedGarbage.Proof.Mont.Arm.Dyn.Context
 public import VerifiedGarbage.Spec.Dsa
 public import VerifiedGarbage.Spec.Rsa.Contract
-import VerifiedGarbage.Proof.Mont.Arm.Dyn.ContextInit
 import VerifiedGarbage.Proof.Framework.Arm.Inline
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.PlainSimp

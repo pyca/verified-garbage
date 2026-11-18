@@ -6,12 +6,11 @@ public import VerifiedGarbage.Impl.Dsa.AArch64.Checks
 import VerifiedGarbage.Proof.Dsa.Layout
 import VerifiedGarbage.Proof.Dsa.AArch64.Minus
 public import VerifiedGarbage.Proof.Dsa.AArch64.Call
-import VerifiedGarbage.Proof.Dsa.AArch64.EnterLeave
+public import VerifiedGarbage.Proof.Dsa.AArch64.Finish
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Dsa.AArch64.Run
 import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup
-public import VerifiedGarbage.Proof.Dsa.AArch64.Finish
 public import VerifiedGarbage.Proof.Dsa.AArch64.Operands
 import VerifiedGarbage.Proof.Dsa.AArch64.EqualHead
 import VerifiedGarbage.Proof.Dsa.AArch64.Significant

@@ -1,20 +1,370 @@
 module
+
 public import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Phase
 public import VerifiedGarbage.Proof.MillerRabin.AArch64.Kernel
 public import VerifiedGarbage.Proof.RsaKeyGen.Table
-
-import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Round
 import VerifiedGarbage.Proof.RsaKeyGen.Slots
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Ffdh.MillerRabin
 import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Draw
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrRound
-import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Shape
 import VerifiedGarbage.Proof.Rsa.Ranges
 import VerifiedGarbage.Proof.Bignum.AArch64.PcMain
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Bignum.AArch64.Rounds
+public import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Base
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.SharedRound
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.WordCut
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.LoadC
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Base
+import VerifiedGarbage.Proof.Rsa.AArch64.KeyLoops
+
+/-! ### `Ffdh.AArch64.ParameterCandidate.Shape`, which this module and modules that import it used -/
+
+section
+
+/-!
+# An FFDH parameter candidate on AArch64: the candidate `p`
+
+`shapeP` (`shapeP_ok`): the first `out_len` octets of the tape into `aN`
+(`loadA`), then its top word and'ed with `fTop = 2^k − 1` and bit `k − 1`
+set, and its low bit set: `candidateOf bits` of their number (`wv_shape`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ffdh.AArch64.ParameterCandidate
+
+open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64 VG.Impl.Rsa.AArch64 VG.Impl.Rsa.AArch64.Keys
+open VG.Impl.RsaKeyGen.AArch64.Candidate VG.Impl.Ffdh.AArch64.ParameterCandidate
+open VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.Rsa.AArch64 VG.Proof.RsaKeyGen.AArch64
+open VG.Proof.MlKem.AArch64 (Keep)
+open VG.Impl.Bignum.Public (aN aX aAcc aTmp aR2 aXm aY aOne sK sCnt)
+
+/-- A prefix of a source. -/
+theorem src_take {s : State} {B : Addr} {Z : Nat} {p : Addr} {bs : List Byte} (h : Src s B Z p bs) (n : Nat) :
+    Src s B Z p (bs.take n) :=
+  ⟨fun i hi => h.rd i (by rw [List.length_take] at hi; omega_arith), fun i hi => by
+    rw [List.getElem_take]; exact h.val i (by rw [List.length_take] at hi; omega_arith),
+    fun i hi => h.out i (by rw [List.length_take] at hi; omega_arith)⟩
+
+/-- A suffix of a source, at its offset. -/
+theorem src_drop {s : State} {B : Addr} {Z : Nat} {p : Addr} {bs : List Byte} (h : Src s B Z p bs) (n : Nat) :
+    Src s B Z (p + BitVec.ofNat 64 n) (bs.drop n) := by
+  have e : ∀ i, p + BitVec.ofNat 64 n + BitVec.ofNat 64 i = p + BitVec.ofNat 64 (n + i) := fun i => by
+    rw [BitVec.add_assoc, ofNat_add_ofNat]
+  refine ⟨fun i hi => ?_, fun i hi => ?_, fun i hi => ?_⟩
+  · rw [e]; exact h.rd (n + i) (by rw [List.length_drop] at hi; omega_arith)
+  · rw [e, List.getElem_drop]; exact h.val (n + i) (by rw [List.length_drop] at hi; omega_arith)
+  · rw [e]; exact h.out (n + i) (by rw [List.length_drop] at hi; omega_arith)
+
+theorem shr1_add1 {k : Nat} (hk1 : 1 ≤ k) (hk : k ≤ 64) :
+    BitVec.ofNat 64 (2 ^ k - 1) >>> 1 + BitVec.ofNat 64 1 = BitVec.ofNat 64 (2 ^ (k - 1)) := by
+  rw [shr_ofNat, Nat.mod_eq_of_lt (by have := Nat.pow_le_pow_right (show 0 < 2 by decide) hk; omega_arith),
+    ofNat_add_ofNat]
+  congr 1
+  have e : 2 ^ k = 2 * 2 ^ (k - 1) := by rw [← Nat.pow_succ']; congr 1; omega_arith
+  have := Nat.two_pow_pos (k - 1)
+  rw [e]; omega_arith
+
+/-- The shaping block, from `aN` holding the loaded number. -/
+theorem shapeBlock_ok {s : State} {B : Addr} {Z w k : Nat} (h : Ws s B Z w) (hk1 : 1 ≤ k) (hk : k ≤ 64)
+    (hT : word s.mem B (8 * fTop) = BitVec.ofNat 64 (2 ^ k - 1)) :
+    WP isa (.block (ws ++ base aN .x16 ++ ([.lsl .x .x5 .x12 3, .add .x .x5 .x16 .x5, .subImm .x .x5 .x5 8,
+      ldh .x4 fTop, ld .x3 .x16, ld .x6 .x5, movi .x9 1, .logic .orr .x .x3 .x3 .x9, .logic .and .x .x6 .x6 .x4,
+      .lsr .x .x9 .x4 1, .addImm .x .x9 .x9 1, .logic .orr .x .x6 .x6 .x9, st .x3 .x16, st .x6 .x5] : List Instr))) s fun t =>
+      wv t.mem B (slot w aN) w = Spec.Ffdh.candidateOf (64 * (w - 1) + k) (wv s.mem B (slot w aN) w) ∧
+      Frm B [(slot w aN, 8 * (w + 2))] s.mem t.mem ∧ Keep mmRegs s t := by
+  have hs := h.scr
+  have hn := hs.nowrap
+  have hw1 := h.w1
+  have hw2 := h.w2
+  have sN := h.sl (show aN < 16 by decide)
+  have hTs : 8 * fTop + 8 ≤ slot w aN := hdr_lt_slot w aN (by decide)
+  rw [WP.block_append_iff, WP.block_append_iff]
+  refine WP.mono h.ws_ok fun s₁ ⟨⟨h12, h11, m₁, _⟩, k₁⟩ => ?_
+  refine WP.mono (base_ok aN .x16 ((k₁.gpr .x0 (by decide)).trans h.x0) h11) fun s₂ ⟨⟨h16, m₂, _⟩, k₂⟩ => ?_
+  have k12 := k₁.trans k₂
+  have hs₂ := hs.congr k12.wr
+  have h0₂ : s₂.gpr .x0 = B := (k12.gpr .x0 (by decide)).trans h.x0
+  have e12 : s₂.gpr .x12 = BitVec.ofNat 64 w := (k₂.gpr .x12 (by decide)).trans h12
+  have hm₂ : s₂.mem = s.mem := m₂.trans m₁
+  generalize ht : word s.mem B (slot w aN + 8 * (w - 1)) = top
+  generalize hb : word s.mem B (slot w aN) = bot
+  have one16 : (1#16).setWidth 64 = (1 : BitVec 64) := rfl
+  have hsel := shr1_add1 hk1 hk
+  refine WP.mono (WP.keep [.x3, .x4, .x5, .x6, .x9] (Q := fun t => t.mem =
+      (s.mem.writeW (off B (slot w aN)) (bot ||| 1)).writeW (off B (slot w aN + 8 * (w - 1)))
+        ((top &&& BitVec.ofNat 64 (2 ^ k - 1)) ||| BitVec.ofNat 64 (2 ^ (k - 1)))) (by
+    brun [hm₂, h16, e12, h0₂, one16, hb, ht, hT, hsel,
+      top_addr B (d := slot w aN) (w := w) (by omega_arith) (by omega_arith),
+      hs₂.ld (d := slot w aN) (by omega_arith), hs₂.st (d := slot w aN) (by omega_arith),
+      hs₂.ld (d := slot w aN + 8 * (w - 1)) (by omega_arith), hs₂.st (d := slot w aN + 8 * (w - 1)) (by omega_arith),
+      hdr_enc (show fTop < 32 by decide), hs₂.ld (d := 8 * fTop) (by omega_arith)])
+    (by decide) (by decide) (by decide +kernel)) fun t ⟨hm, k₃⟩ => ⟨?_, ?_, (k12.trans k₃).mono (by decide)⟩
+  · rw [hm]
+    refine VG.Proof.Ffdh.ParameterCandidate.wv_shape (by omega_arith) hk1 hk ?_ ?_ ?_
+    · rw [(writeW_outside _ _ _ (by omega_arith)).word (by omega_arith) (by omega_arith), word_writeW_self, hb]
+    · rw [word_writeW_self, ht]
+    · intro j h0 hj
+      rw [(writeW_outside _ _ _ (by omega_arith)).word (by omega_arith) (by omega_arith),
+        (writeW_outside _ _ _ (by omega_arith)).word (by omega_arith) (by omega_arith)]
+  · intro x hx
+    rw [hm, writeW_outside _ B _ (by omega_arith) x (by have := hx (slot w aN, 8 * (w + 2)) (by simp); omega_arith),
+      writeW_outside _ B _ (by omega_arith) x (by have := hx (slot w aN, 8 * (w + 2)) (by simp); omega_arith)]
+
+/-- `shapeP`: `p` into `aN`. -/
+theorem shapeP_ok {s : State} {p : PP} (h : PSt p (mW p.bits) s)
+    (hK : word s.mem p.B (8 * sK) = BitVec.ofNat 64 p.L)
+    (hT : word s.mem p.B (8 * fTop) = BitVec.ofNat 64 (2 ^ mK p.bits - 1)) (hr : p.L ≤ p.r.length) :
+    WP isa (seqs shapeP) s fun t =>
+      PSt p (mW p.bits) t ∧
+      wv t.mem p.B (slot (mW p.bits) aN) (mW p.bits) =
+        Spec.Ffdh.candidateOf p.bits (Spec.Rsa.os2ip (p.r.take p.L)) ∧
+      Frm p.B [(slot (mW p.bits) aN, 8 * (mW p.bits + 2))] s.mem t.mem ∧ Keep mmRegs s t := by
+  have hb1 := h.dims.b1
+  have hb2 := h.dims.b2
+  have hws := h.ws
+  have hn := hws.scr.nowrap
+  have sN := hws.sl (show aN < 16 by decide)
+  have hTs : 8 * fTop + 8 ≤ slot (mW p.bits) aN := hdr_lt_slot _ aN (by decide)
+  unfold shapeP
+  refine wp_seqs_append (by simp [loadA]) (by simp) ?_
+  refine WP.mono (loadA_ok hws (j := aN) (sPtr := kRand) (sLen := kLen) (len := p.L) (bs := p.r.take p.L)
+    (by decide) (by decide) (by decide) h.args.rand hK (src_take h.src p.L) (by rw [List.length_take]; omega_arith)
+    (by simp only [PP.L]; omega_arith) (by simp only [PP.L, mW]; omega_arith)) fun s₁ ⟨hv₁, o₁, _, _, k₁⟩ => ?_
+  have f₁ : Frm p.B [(slot (mW p.bits) aN, 8 * (mW p.bits + 2))] s.mem s₁.mem := Frm.of_outside o₁ (by simp)
+  have st₁ : PSt p (mW p.bits) s₁ :=
+    h.step (hws.congr' f₁ (fun r hr => by rw [List.mem_singleton.mp hr]; exact KMut.ofSlot _ _ _) k₁ (by decide))
+      f₁ (fun r hr => by rw [List.mem_singleton.mp hr]; exact PMut.ofSlot _ _ _)
+      (fun r hr => by rw [List.mem_singleton.mp hr]; dsimp only; omega_arith) k₁
+  have hT₁ : word s₁.mem p.B (8 * fTop) = BitVec.ofNat 64 (2 ^ mK p.bits - 1) := by
+    rw [f₁.word_eq (fun r hr => by rw [List.mem_singleton.mp hr]; exact Or.inl hTs) (by omega_arith)]; exact hT
+  rw [seqs_one]
+  refine WP.mono (shapeBlock_ok st₁.ws (by simp only [mK, mW]; omega_arith) (by simp only [mK, mW]; omega_arith) hT₁)
+    fun t ⟨hv, f₂, k₂⟩ => ⟨st₁.step (st₁.ws.congr' f₂ (fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact KMut.ofSlot _ _ _) k₂ (by decide)) f₂
+      (fun r hr => by rw [List.mem_singleton.mp hr]; exact PMut.ofSlot _ _ _)
+      (fun r hr => by rw [List.mem_singleton.mp hr]; dsimp only; omega_arith) k₂, ?_, f₁.trans f₂,
+      (k₁.trans k₂).mono (by decide)⟩
+  rw [hv, hv₁, show 64 * (mW p.bits - 1) + mK p.bits = p.bits by simp only [mK, mW]; omega_arith]
+
+end VG.Proof.Ffdh.AArch64.ParameterCandidate
+
+end
+
+end
+
+/-! ### `Ffdh.AArch64.ParameterCandidate.Round`, which this module and modules that import it used -/
+
+section
+
+/-!
+# An FFDH parameter candidate on AArch64: a round
+
+`round` (`round_ok`): an accepted witness `a` in Montgomery form, the shared
+round (`Kernel.ok`, whose result is FFDH's `mrRound`: `rsa_round_eq`), then
+`kStat := 2` for a failing witness, else the passing witnesses counted and
+`kStat` 4 or, once there are `fChecks` of them, 1.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ffdh.AArch64.ParameterCandidate
+
+open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64 VG.Impl.Rsa.AArch64 VG.Impl.Rsa.AArch64.Keys
+open VG.Impl.RsaKeyGen VG.Impl.RsaKeyGen.AArch64.Candidate VG.Impl.Ffdh.AArch64.ParameterCandidate
+open VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.Rsa.AArch64 VG.Proof.RsaKeyGen.AArch64
+open VG.Proof.MillerRabin.AArch64
+open VG.Proof.MlKem.AArch64 (Keep eval_zero)
+open VG.Impl.Bignum.Public (aN aX aAcc aTmp aR2 aXm aY aOne sK sCnt)
+
+/-- What a round changes. -/
+def rdRanges (w : Nat) : List (Nat × Nat) :=
+  [(slot w aAcc, 8 * (w + 2)), (slot w aTmp, 8 * (w + 2)), (slot w aXm, 8 * (w + 2))] ++
+    Caller.callRanges w ++ [(8 * fIdx, 8), (8 * kStat, 8)]
+
+theorem mm3_shape (w : Nat) : VG.Proof.RsaKeyGen.RangeShape w [] [(2, 1), (3, 1), (5, 1)]
+    [(slot w aAcc, 8 * (w + 2)), (slot w aTmp, 8 * (w + 2)), (slot w aXm, 8 * (w + 2))] := by
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl
+  · exact .inr ⟨(2, 1), by decide, by simp only [slot, hdrBytes, aAcc]; omega_using [], by simp only [slot, hdrBytes, aAcc]; omega_using []⟩
+  · exact .inr ⟨(3, 1), by decide, by simp only [slot, hdrBytes, aTmp]; omega_using [], by simp only [slot, hdrBytes, aTmp]; omega_using []⟩
+  · exact .inr ⟨(5, 1), by decide, by simp only [slot, hdrBytes, aXm]; omega_using [], by simp only [slot, hdrBytes, aXm]; omega_using []⟩
+
+theorem rdRanges_shape (w : Nat) : VG.Proof.RsaKeyGen.RangeShape w
+    ([] ++ [(8, 8), (184, 8), (208, 8), (232, 8), (240, 8)] ++ [(8 * fIdx, 8), (8 * kStat, 8)])
+    ([(2, 1), (3, 1), (5, 1)] ++ [(7, 1), (2, 1), (3, 1), (5, 1), (6, 1), (8, 1), (11, 16)] ++ [])
+    (rdRanges w) :=
+  VG.Proof.RsaKeyGen.shape_append (VG.Proof.RsaKeyGen.shape_append (mm3_shape w) (sharedKernel_shape w))
+    (VG.Proof.RsaKeyGen.shape_self w _)
+
+/-- A header word a round keeps. -/
+theorem rdRanges_hdr (w : Nat) {k : Nat} (hk : k ∈ [0, 2, 16, 17, 18, 19, 20, 21, 22, 24, 25, 27]) :
+    ∀ r ∈ rdRanges w, 8 * k + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * k := by
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hk
+  rcases hk with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+    exact VG.Proof.RsaKeyGen.hdr_of_shape (rdRanges_shape w) (by decide) (by decide)
+
+/-- An array a round keeps. -/
+theorem rdRanges_arr (w : Nat) {j : Nat} (hj : j ∈ [aN, aR2, aR1, aRm1]) :
+    ∀ r ∈ rdRanges w, slot w j + 8 * (w + 2) ≤ r.1 ∨ r.1 + r.2 ≤ slot w j := by
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
+  rcases hj with rfl | rfl | rfl | rfl <;>
+    exact VG.Proof.RsaKeyGen.arr_of_shape (rdRanges_shape w) (by decide) (by decide) (Nat.le_refl _)
+
+theorem rdRanges_lt (w : Nat) : ∀ r ∈ rdRanges w, r.1 + r.2 ≤ slot w aE := by
+  intro r hr
+  rcases (rdRanges_shape w) r hr with h | ⟨q, hq, _, h2⟩
+  · exact Nat.le_trans ((by decide : ∀ h ∈ ([] ++ [(8, 8), (184, 8), (208, 8), (232, 8), (240, 8)] ++
+      [(8 * fIdx, 8), (8 * kStat, 8)] : List (Nat × Nat)), h.1 + h.2 ≤ hdrBytes) r h)
+      (show hdrBytes ≤ slot w aE by unfold slot; exact Nat.le_add_right _ _)
+  · refine Nat.le_trans h2 (VG.Proof.RsaKeyGen.slot_le_slot ?_)
+    exact (by decide : ∀ q ∈ ([(2, 1), (3, 1), (5, 1)] ++ [(7, 1), (2, 1), (3, 1), (5, 1), (6, 1), (8, 1),
+      (11, 16)] ++ [] : List (Nat × Nat)), q.1 + q.2 ≤ aE) q hq
+
+theorem rdRanges_pmut (w : Nat) : ∀ r ∈ rdRanges w, PMut r := by
+  intro r hr
+  rcases (rdRanges_shape w) r hr with h | ⟨q, _, h1, _⟩
+  · have := (by decide : ∀ h ∈ ([] ++ [(8, 8), (184, 8), (208, 8), (232, 8), (240, 8)] ++
+      [(8 * fIdx, 8), (8 * kStat, 8)] : List (Nat × Nat)), 8 * 26 ≤ h.1 ∨ h.1 + h.2 ≤ 8 * 16 ∨
+      (8 * 18 ≤ h.1 ∧ h.1 + h.2 ≤ 8 * 19) ∨ (8 * 22 ≤ h.1 ∧ h.1 + h.2 ≤ 8 * 24)) r h
+    exact this
+  · exact Or.inl (Nat.le_trans (by unfold slot hdrBytes; omega_using []) h1)
+
+/-- The end of a round. -/
+theorem rdTail_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w)
+    {f : Bool} {i K : Nat} (hF : word s.mem B (8 * kFlag) = mask f) (hI : word s.mem B (8 * fIdx) = BitVec.ofNat 64 i)
+    (hC : word s.mem B (8 * fChecks) = BitVec.ofNat 64 K) (hi : i < 2 ^ 62) (hK : K < 2 ^ 62) :
+    WP isa (seqs [.block [ldh .x3 kFlag],
+      .ite (.zero .x .x3) (.block [movi .x3 2, sth .x3 kStat])
+        (.block [ldh .x3 fIdx, ldh .x4 fChecks, .addImm .x .x3 .x3 1, .subs .x .x5 .x3 .x4, movi .x6 4, movi .x7 1,
+          .csel .x .x5 .x7 .x6, sth .x3 fIdx, sth .x5 kStat])]) s fun t =>
+      t.mem = (if f then (s.mem.writeW (off B (8 * fIdx)) (BitVec.ofNat 64 (i + 1))).writeW (off B (8 * kStat))
+          (BitVec.ofNat 64 (if i + 1 < K then 4 else 1))
+        else s.mem.writeW (off B (8 * kStat)) (BitVec.ofNat 64 2)) ∧ Keep mmRegs s t := by
+  have hs := h.scr
+  have hn := hs.nowrap
+  have h256 := h.h256
+  simp only [seqs]
+  refine WP.seq (WP.mono (WP.keep [.x3] (Q := fun t => t.gpr .x3 = mask f ∧ t.mem = s.mem) (by
+    brun [h.x0, hdr_enc (show kFlag < 32 by decide), hs.ld (d := 8 * kFlag) (by simp only [kFlag, kPlen, sFn]; omega_using [h256]),
+      hF]) (by decide) (by decide) (by decide +kernel)) fun s₁ ⟨⟨h3₁, hm₁⟩, k₁⟩ => ?_)
+  have hs₁ := hs.congr k₁.wr
+  have h0₁ : s₁.gpr .x0 = B := (k₁.gpr .x0 (by decide)).trans h.x0
+  refine WP.ite (!f) (by rw [eval_zero, h3₁]; cases f <;> decide) (fun hf => ?_) (fun hf => ?_)
+  · simp only [Bool.not_eq_true'] at hf
+    refine WP.mono (WP.keep [.x3] (Q := fun t => t.mem = s.mem.writeW (off B (8 * kStat)) (BitVec.ofNat 64 2)) (by
+      brun [h0₁, hdr_enc (show kStat < 32 by decide), hs₁.st (d := 8 * kStat) (by simp only [kStat, sFn]; omega_using [h256]), hm₁]
+      rfl) (by decide) (by decide) (by decide +kernel))
+      fun t ⟨hm, k⟩ => ⟨by rw [hm, hf]; rfl, (k₁.trans k).mono (by decide)⟩
+  · simp only [Bool.not_eq_false'] at hf
+    have hI' : s₁.mem.readW (B + BitVec.ofNat 64 (8 * fIdx)) 64 = BitVec.ofNat 64 i := by rw [hm₁]; exact hI
+    have hC' : s₁.mem.readW (B + BitVec.ofNat 64 (8 * fChecks)) 64 = BitVec.ofNat 64 K := by rw [hm₁]; exact hC
+    refine WP.mono (WP.keep [.x3, .x4, .x5, .x6, .x7] (Q := fun t => t.mem =
+        (s₁.mem.writeW (off B (8 * fIdx)) (BitVec.ofNat 64 (i + 1))).writeW (off B (8 * kStat))
+          (BitVec.ofNat 64 (if i + 1 < K then 4 else 1))) (by
+      brun [h0₁, hdr_enc (show fIdx < 32 by decide), hdr_enc (show fChecks < 32 by decide),
+        hdr_enc (show kStat < 32 by decide), hs₁.ld (d := 8 * fIdx) (by simp only [fIdx]; omega_using [h256]),
+        hs₁.ld (d := 8 * fChecks) (by simp only [fChecks]; omega_using [h256]),
+        hs₁.st (d := 8 * fIdx) (by simp only [fIdx]; omega_using [h256]), hs₁.st (d := 8 * kStat) (by simp only [kStat, sFn]; omega_using [h256]),
+        hI', hC', subs_carry]
+      have e1 : BitVec.ofNat 64 i + 1#64 = BitVec.ofNat 64 (i + 1) := (BitVec.ofNat_add _ _).symm
+      rw [e1, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show K < 2 ^ 64 by omega_using [hK]),
+        Nat.mod_eq_of_lt (show i + 1 < 2 ^ 64 by omega_using [hi])]
+      by_cases hc : i + 1 < K
+      · rw [decide_eq_false (by omega_using [hc])]; simp only [hc, Bool.false_eq_true, ↓reduceIte]; rfl
+      · rw [decide_eq_true (by omega_using [hc])]; simp only [hc, ↓reduceIte]; rfl) (by decide) (by decide) (by decide +kernel))
+      fun t ⟨hm, k⟩ => ⟨by rw [hm, hm₁, hf]; rfl, (k₁.trans k).mono (by decide)⟩
+
+/-- A round of an accepted witness `a`. -/
+theorem round_ok (M : Mont) (R : Kernel) {s : State} {B : Addr} {Z w c bm a i K : Nat} (hw4 : 4 ≤ w)
+    (hw128 : w ≤ 128) (hEZ : slot w aE + 8 * (w + 2) ≤ Z) (hc : MrCtx s B Z w c bm) (he : ECtx s.mem B w c)
+    (hR2 : wv s.mem B (slot w aR2) w = 2 ^ (64 * w) * 2 ^ (64 * w) % c) (hodd : c % 2 = 1) (hc3 : 3 ≤ c)
+    (hx : wv s.mem B (slot w aX) w = a) (ha : a < c)
+    (hI : word s.mem B (8 * fIdx) = BitVec.ofNat 64 i) (hC : word s.mem B (8 * fChecks) = BitVec.ofNat 64 K)
+    (hi : i < 2 ^ 62) (hK : K < 2 ^ 62) :
+    WP isa (seqs (VG.Impl.Ffdh.AArch64.ParameterCandidate.round M.mm R.run)) s fun t =>
+      (∃ bm', MrCtx t B Z w c bm') ∧ ECtx t.mem B w c ∧
+      word t.mem B (8 * kStat) = BitVec.ofNat 64
+        (if Proof.MillerRabin.Round.round c a then (if i + 1 < K then 4 else 1) else 2) ∧
+      word t.mem B (8 * fIdx) = BitVec.ofNat 64 (if Proof.MillerRabin.Round.round c a then i + 1 else i) ∧
+      Frm B (rdRanges w) s.mem t.mem ∧ Keep mmRegs s t := by
+  have hn := hc.ws.scr.nowrap
+  have hZ := hc.ws.hZ
+  have hw' : w < 2 ^ 31 := by omega_using [hw128]
+  have hRc : Nat.Coprime (2 ^ (64 * w)) c := VG.Proof.Bignum.coprime_pow2 hodd _
+  have hc0 : 0 < c := by omega_using [hc3]
+  simp only [VG.Impl.Ffdh.AArch64.ParameterCandidate.round]
+  refine wp_seqs_append (by simp) (by simp) ?_
+  refine wp_seqs_append (by simp) R.nonempty ?_
+  simp only [seqs_one]
+  -- `a R mod c` into `aXm`.
+  have hg := hc.good
+  refine WP.mono (M.mm_ok hg.1 hg.2 hc.ws.w1 hw' (o := aXm) (a := aX) (b := aR2) (by decide)
+    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) hc.inv
+    (by rw [hR2, hc.n]; exact Nat.mod_lt _ hc0)) fun s₁ ⟨_, hlt₁, hy₁, ha₁, k₁⟩ => ?_
+  rw [hc.n] at hlt₁ hy₁
+  rw [hx, hR2] at hy₁
+  have hXm : wv s₁.mem B (slot w aXm) w = a % c * 2 ^ (64 * w) % c := by
+    rw [← Nat.mod_eq_of_lt hlt₁, Nat.mod_eq_of_lt ha]
+    refine VG.Proof.Bignum.mont_cancel hRc ?_
+    rw [hy₁, Nat.mul_mod, Nat.mod_mod, ← Nat.mul_mod, Nat.mul_assoc]
+  have f₁ : Frm B [(slot w aAcc, 8 * (w + 2)), (slot w aTmp, 8 * (w + 2)), (slot w aXm, 8 * (w + 2))]
+      s.mem s₁.mem := Frm.of_arrays ha₁ (by simp)
+  have hc₁ : MrCtx s₁ B Z w c bm := hc.of_frm f₁ (by kmut) k₁ (by decide) (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl)
+    (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl)
+    (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl)
+  have he₁ : ECtx s₁.mem B w c := he.of_frm f₁ (fun r hr => Or.inr (rdRanges_lt w r (by
+    simp only [rdRanges]; exact List.mem_append_left _ (List.mem_append_left _ hr)))) (by omega_arith)
+  have hI₁ : word s₁.mem B (8 * fIdx) = BitVec.ofNat 64 i := by
+    rw [f₁.word_eq (VG.Proof.RsaKeyGen.hdr_of_shape (mm3_shape w) (by decide) (by decide))
+      (by simp only [fIdx]; omega_arith)]; exact hI
+  have hC₁ : word s₁.mem B (8 * fChecks) = BitVec.ofNat 64 K := by
+    rw [f₁.word_eq (VG.Proof.RsaKeyGen.hdr_of_shape (mm3_shape w) (by decide) (by decide))
+      (by simp only [fChecks]; omega_arith)]; exact hC
+  -- The round.
+  refine WP.mono (R.ok hc₁ he₁ hw4 hw128 hEZ hodd hc3 hXm) fun s₂ ⟨⟨bm₂, hc₂⟩, he₂, hf₂, f₂, k₂⟩ => ?_
+  have hI₂ : word s₂.mem B (8 * fIdx) = BitVec.ofNat 64 i := by
+    rw [f₂.word_eq (VG.Proof.RsaKeyGen.hdr_of_shape (sharedKernel_shape w) (by decide) (by decide))
+      (by simp only [fIdx]; omega_arith)]; exact hI₁
+  have hC₂ : word s₂.mem B (8 * fChecks) = BitVec.ofNat 64 K := by
+    rw [f₂.word_eq (VG.Proof.RsaKeyGen.hdr_of_shape (sharedKernel_shape w) (by decide) (by decide))
+      (by simp only [fChecks]; omega_arith)]; exact hC₁
+  generalize Proof.MillerRabin.Round.round c a = f at hf₂ ⊢
+  refine WP.mono (rdTail_ok hc₂.ws hf₂ hI₂ hC₂ hi hK) fun t ⟨hm, k⟩ => ?_
+  have hft : Frm B [(8 * fIdx, 8), (8 * kStat, 8)] s₂.mem t.mem := by
+    rw [hm]
+    cases f <;> simp only [Bool.false_eq_true, ↓reduceIte]
+    · exact Frm.of_outside (writeW_outside _ B _ (d := 8 * kStat) (by decide)) (by simp)
+    · exact (Frm.of_outside (writeW_outside s₂.mem B _ (d := 8 * fIdx) (by decide)) (by simp)).trans
+        (Frm.of_outside (writeW_outside _ B _ (d := 8 * kStat) (by decide)) (by simp))
+  refine ⟨⟨bm₂, hc₂.of_frm hft (by kmut) k (by decide) (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl)
+    (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl)
+    (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl)⟩,
+    he₂.of_frm hft (fun r hr => Or.inr (rdRanges_lt w r (by
+      simp only [rdRanges]; exact List.mem_append_right _ hr))) (by omega_arith), ?_, ?_, ?_,
+    ((k₁.trans k₂).trans k).mono (by decide)⟩
+  · rw [hm]; cases f <;> simp only [↓reduceIte, Bool.false_eq_true, word_writeW_self]
+  · rw [hm]
+    cases f
+    · simp only [Bool.false_eq_true, ↓reduceIte]
+      rw [hdrStore_hdr _ _ _ (by decide) (by decide) (by decide)]; exact hI₂
+    · simp only [↓reduceIte]
+      rw [hdrStore_hdr _ _ _ (by decide) (by decide) (by decide), word_writeW_self]
+  · simp only [rdRanges]
+    exact ((f₁.mono fun r hr => List.mem_append_left _ (List.mem_append_left _ hr)).trans
+      (f₂.mono fun r hr => List.mem_append_left _ (List.mem_append_right _ hr))).trans
+      (hft.mono fun r hr => List.mem_append_right _ hr)
+
+end VG.Proof.Ffdh.AArch64.ParameterCandidate
+
+end
+
+end
 
 /-!
 # An FFDH parameter candidate on AArch64: a draw

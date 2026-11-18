@@ -1,8 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignEnv
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignInputs
-import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignSaved
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Dsa.AArch64.Run
 import VerifiedGarbage.Proof.Framework.Contract

@@ -3,10 +3,9 @@ module
 public import VerifiedGarbage.Proof.Dsa.Generation.RefillSearch
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Dsa.X86.Generation.PAttempt
-import VerifiedGarbage.Proof.Dsa.X86.Generation.Base
-import VerifiedGarbage.Proof.Dsa.X86.Generation.Words
-import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.Q
+public import VerifiedGarbage.Proof.Dsa.X86.Generation.Geo
+import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.GPart
 public import VerifiedGarbage.Proof.Dsa.Generation.RefillSeed
 import VerifiedGarbage.Proof.Dsa.Generation.ParamsEncoding
@@ -15,7 +14,6 @@ import VerifiedGarbage.Proof.Dsa.Generation.RandomSuffix
 import VerifiedGarbage.Proof.Dsa.Generation.Memory
 import VerifiedGarbage.Proof.Dsa.Encoding
 import VerifiedGarbage.Proof.Dsa.Arithmetic
-public import VerifiedGarbage.Proof.Dsa.X86.Generation.Geo
 import VerifiedGarbage.Proof.Framework.X86.CallReturn
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.RelCTChain

@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Dsa.Arm.Body
 import VerifiedGarbage.Proof.Dsa.Arm.GenerateTrace
 public import VerifiedGarbage.Proof.Dsa.Arm.GenerateCheck
-import VerifiedGarbage.Proof.Dsa.Arm.VerifyCorrect
 import VerifiedGarbage.Proof.Dsa.Arm.VerifyCT
 import VerifiedGarbage.Proof.Dsa.Arm.BodyTrace
 import VerifiedGarbage.Proof.Dsa.Arm.ValidateTrace

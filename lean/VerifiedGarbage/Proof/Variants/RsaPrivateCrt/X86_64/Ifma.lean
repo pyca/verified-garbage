@@ -18,40 +18,31 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxCT
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxDualAddWord
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxHeaderSave
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8Frame
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8RowS
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8RowSCT
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8Setup
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8RowS
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareBackend
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Accumulate
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8CT
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Head
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Redc
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Memory
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8ProductStep
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Tail
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8TileEdges
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Core
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareWideRow
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRaw
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareMont
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledMont
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareCross
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledCounter
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRawCT
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRow
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRaw
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareDispatch
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareRawCrossCT
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareRow
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareRowsCT
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareRowsChoiceCT
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledTail
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledTailSetup
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Block
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8RowCore
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareChoice
 public import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
 public import VerifiedGarbage.Proof.Bignum.X86_64.CallPost
-public import VerifiedGarbage.Proof.Bignum.X86_64.Compare8
+public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedIO
 public import VerifiedGarbage.Proof.Bignum.X86_64.Copy
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTGPow
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTPMq
@@ -60,27 +51,23 @@ import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRows
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupWs
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtChk
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtPow
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtFront
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtQ
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtRows
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSetup
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtWs
 public import VerifiedGarbage.Proof.Bignum.X86_64.Csub
 public import VerifiedGarbage.Proof.Bignum.X86_64.Double
 public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCTChecked
-public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCTCode
-public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCTMain
-public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCounter
-public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedIOCT
-public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedPublic
 public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedLoop
+public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedPublic
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTMain
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Conv
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Core
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CoreU
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Post
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.PubExp
-public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.PubMain
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.PubCT
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.StepU
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Vec
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.VecR
@@ -101,7 +88,6 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.Row
 public import VerifiedGarbage.Proof.Bignum.X86_64.Setup
 public import VerifiedGarbage.Proof.Bignum.X86_64.Valid
 public import VerifiedGarbage.Proof.Bignum.X86_64.WordIOLoad
-public import VerifiedGarbage.Proof.Bignum.X86_64.WordIOStore
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.RegSetOrder
@@ -124,7 +110,6 @@ public import VerifiedGarbage.Proof.Rsa.X86_64.ExpCheck
 public import VerifiedGarbage.Proof.Rsa.X86_64.Inv
 public import VerifiedGarbage.Proof.Rsa.X86_64.Loops
 public import VerifiedGarbage.Proof.Rsa.X86_64.PrivFrame
-import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCTLoop
 public import VerifiedGarbage.Proof.Rsa.X86_64.CvCode
 public import VerifiedGarbage.Impl.Bignum.X86_64.AdxSquare
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxStep

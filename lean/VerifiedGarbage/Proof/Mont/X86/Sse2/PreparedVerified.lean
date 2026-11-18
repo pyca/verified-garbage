@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Mont.X86.Sse2.AtVerified
-public import VerifiedGarbage.Proof.Mont.X86.Rt.ABI
+public import VerifiedGarbage.Proof.Mont.X86.Rt.Body
 public import VerifiedGarbage.Proof.Rsa.MontContract
 import VerifiedGarbage.Proof.Mont.X86.ArgWs
 import VerifiedGarbage.Proof.Mont.X86.Compact.Prepared
@@ -13,7 +13,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Mont.X86.Sse2.Body
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.TCB.X86.Target
-public import VerifiedGarbage.Proof.Mont.X86.Sse2.TimeTaint
 
 /-! ### `Mont.X86.Sse2.PreparedABI`, which only this module used -/
 

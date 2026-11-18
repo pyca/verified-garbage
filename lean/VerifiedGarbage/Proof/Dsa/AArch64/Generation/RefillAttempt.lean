@@ -5,9 +5,9 @@ public import VerifiedGarbage.Proof.Dsa.Generation.RefillSeed
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.RefillOutcome
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Hashes
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorStage
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeTest
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeCall
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorCall
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedSubgroup
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.HashChoice
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ContextSuccess
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ContextFrame
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ContextSlice
@@ -29,7 +29,6 @@ public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.PAttempt
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Context
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SearchPlan
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ContextSearch
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.HashChoice
 import VerifiedGarbage.Proof.Dsa.Generation.SearchDomain
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SearchBody
 public import VerifiedGarbage.Proof.Dsa.Generation.Search

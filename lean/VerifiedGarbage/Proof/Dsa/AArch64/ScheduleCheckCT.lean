@@ -2,16 +2,250 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleReduceCT
 public import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleCallCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.MinusCT
 import VerifiedGarbage.Proof.Dsa.AArch64.OneScanCT
 public import VerifiedGarbage.Proof.Dsa.AArch64.ReadyCallCT
-import VerifiedGarbage.Proof.Dsa.AArch64.EnterLeave
+import VerifiedGarbage.Proof.Dsa.AArch64.Finish
 import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Dsa.AArch64.CheckOperands
-import VerifiedGarbage.Proof.Dsa.AArch64.ZeroCT
-import VerifiedGarbage.Proof.Dsa.AArch64.EqualCT
 public import VerifiedGarbage.Impl.Dsa.AArch64.Checks
 public import VerifiedGarbage.Proof.Dsa.AArch64.ReadyCalls
+public import VerifiedGarbage.Proof.Dsa.AArch64.CallFinishCT
+public import VerifiedGarbage.Proof.Dsa.AArch64.Minus
+public import VerifiedGarbage.Proof.Dsa.AArch64.Product
+import VerifiedGarbage.Proof.Dsa.AArch64.CTBlocks
+import VerifiedGarbage.Proof.Bignum.AArch64.PubOut
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Dsa.AArch64.CallFinishCT
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Minus
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Product
+meta import VerifiedGarbage.Proof.Dsa.AArch64.CTBlocks
+meta import VerifiedGarbage.Proof.Bignum.AArch64.PubOut
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
+public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
+public import VerifiedGarbage.Proof.Dsa.AArch64.Operands
+import VerifiedGarbage.Proof.Dsa.AArch64.ZeroHead
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTDefs
+meta import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Operands
+meta import VerifiedGarbage.Impl.Dsa.AArch64.Checks
+meta import VerifiedGarbage.Proof.Dsa.AArch64.ZeroHead
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTDefs
+import VerifiedGarbage.Proof.Dsa.AArch64.EqualHead
+meta import VerifiedGarbage.Proof.Dsa.AArch64.EqualHead
+
+/-! ### `Dsa.AArch64.EqualCT`, which only this module used -/
+
+section
+
+/-! # Constant-time equality of DSA byte buffers -/
+
+@[expose] public section
+
+namespace VG.Proof.Dsa.AArch64
+open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64
+open VG.Impl.Dsa.Layout VG.Impl.Dsa.AArch64
+open VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
+
+structure EqualPublic where
+  base : Addr
+  left : Addr
+  right : Addr
+  length : Nat
+
+def EqualPre (a b : Operand) (p : EqualPublic) (s : State) : Prop :=
+  ∃ Z, Scr s p.base Z ∧ pWorkspace ≤ Z ∧ s.gpr .x0 = p.base ∧
+    pointerValue s.mem p.base a.pointer = p.left ∧ pointerValue s.mem p.base b.pointer = p.right ∧
+    word s.mem p.base a.length.offset = BitVec.ofNat 64 p.length
+
+def EqualRegs (p : EqualPublic) (s : State) : Prop :=
+  s.gpr .x0 = p.base ∧ s.gpr .x1 = p.left ∧ s.gpr .x2 = p.right ∧
+    s.gpr .x9 = BitVec.ofNat 64 p.length
+
+/-- The equality check and mask accumulation depend only on the public
+workspace address, operand pointers and length. Input contents remain secret. -/
+theorem equal_ct {a b : Operand} (ha : pointerFits a.pointer) (hb : pointerFits b.pointer)
+    (unequal : Bool) {hc : VG.Taint.Hint VG.AArch64.Taint.T}
+    (hT : (taint.check (Taint.ofRegs [.x0]) (.block (Core.pointer a.pointer ++
+      ([mov .x1 .x3] : List Instr) ++ Core.pointer b.pointer ++
+      ([mov .x2 .x3, Core.field .x9 a.length,
+        movi .x8 0] : List Instr))) hc).isSome = true) :
+    RelCT isa (Two (EqualPre a b)) (Checks.equal a b unequal) (fun _ _ => True) := by
+  unfold Checks.equal seqs
+  refine RelCT.seq (two_piece (Ψ := EqualRegs) [.x0]
+    (pins_of (fun p _ => p.base) (by
+      intro p s h r hr
+      obtain ⟨_, _, _, hdi, _⟩ := h
+      simp only [List.mem_singleton] at hr
+      subst r
+      exact hdi)) hT ?_) ?_
+  · intro p s ⟨Z, hs, hZ, hdi, hleft, hright, hlen⟩
+    exact WP.mono (equalHead_ok hs hdi hZ a b ha hb) fun t h =>
+      ⟨(h.2.2.2.2.2.gpr .x0 (by decide)).trans hdi, h.1.trans hleft,
+        h.2.1.trans hright, h.2.2.1.trans hlen⟩
+  have hp : Pins EqualRegs [.x0, .x1, .x2, .x9] :=
+    pins_of (fun p r => if r = .x0 then p.base else if r = .x1 then p.left
+      else if r = .x2 then p.right else BitVec.ofNat 64 p.length) (by
+        intro p s h r hr
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl | rfl
+        · exact h.1
+        · exact h.2.1
+        · exact h.2.2.1
+        · exact h.2.2.2)
+  cases unequal <;> exact two_taint [.x0, .x1, .x2, .x9] hp (by taint_decide)
+
+end VG.Proof.Dsa.AArch64
+
+end
+
+end
+
+/-! ### `Dsa.AArch64.ZeroCT`, which only this module used -/
+
+section
+
+/-! # Constant-time zero checks of DSA byte buffers -/
+
+@[expose] public section
+
+namespace VG.Proof.Dsa.AArch64
+open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64
+open VG.Impl.Dsa.Layout VG.Impl.Dsa.AArch64
+open VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
+
+structure ZeroPublic where
+  base : Addr
+  left : Addr
+  length : Nat
+
+def ZeroPre (a : Operand) (p : ZeroPublic) (s : State) : Prop :=
+  ∃ Z, Scr s p.base Z ∧ pWorkspace ≤ Z ∧ s.gpr .x0 = p.base ∧
+    pointerValue s.mem p.base a.pointer = p.left ∧
+    word s.mem p.base a.length.offset = BitVec.ofNat 64 p.length
+
+def ZeroRegs (p : ZeroPublic) (s : State) : Prop :=
+  s.gpr .x0 = p.base ∧ s.gpr .x1 = p.left ∧
+    s.gpr .x9 = BitVec.ofNat 64 p.length
+
+/-- The zero check and mask accumulation depend only on the public
+workspace address, operand pointers and length. Input contents remain secret. -/
+theorem zero_ct {a : Operand} (ha : pointerFits a.pointer)
+    (nonzero : Bool) {hc : VG.Taint.Hint VG.AArch64.Taint.T}
+    (hT : (taint.check (Taint.ofRegs [.x0]) (.block (Core.pointer a.pointer ++
+      ([mov .x1 .x3, Core.field .x9 a.length,
+        movi .x8 0] : List Instr))) hc).isSome = true) :
+    RelCT isa (Two (ZeroPre a)) (Checks.zero a nonzero) (fun _ _ => True) := by
+  unfold Checks.zero seqs
+  refine RelCT.seq (two_piece (Ψ := ZeroRegs) [.x0]
+    (pins_of (fun p _ => p.base) (by
+      intro p s h r hr
+      obtain ⟨_, _, _, hdi, _⟩ := h
+      simp only [List.mem_singleton] at hr
+      subst r
+      exact hdi)) hT ?_) ?_
+  · intro p s ⟨Z, hs, hZ, hdi, hleft, hlen⟩
+    exact WP.mono (zeroHead_ok hs hdi hZ a ha) fun t h =>
+      ⟨(h.2.2.2.2.gpr .x0 (by decide)).trans hdi, h.1.trans hleft,
+        h.2.1.trans hlen⟩
+  have hp : Pins ZeroRegs [.x0, .x1, .x9] :=
+    pins_of (fun p r => if r = .x0 then p.base else if r = .x1 then p.left
+      else BitVec.ofNat 64 p.length) (by
+        intro p s h r hr
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl
+        · exact h.1
+        · exact h.2.1
+        · exact h.2.2)
+  cases nonzero <;> exact two_taint [.x0, .x1, .x9] hp (by taint_decide)
+
+end VG.Proof.Dsa.AArch64
+
+end
+
+end
+
+/-! ### `Dsa.AArch64.MinusCT`, which only this module used -/
+
+section
+
+/-! # Timing of modulus-minus constants used in DSA validation -/
+
+@[expose] public section
+
+namespace VG.Proof.Dsa.AArch64
+open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64 VG.Impl.Bignum.Public
+open VG.Impl.Dsa.AArch64
+open VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
+
+def MinusRegs (L : Ws) (s : State) : Prop :=
+  s.gpr .x14 = BitVec.ofNat 64 L.w ∧ s.gpr .x16 = off L.B (slot L.w aN) ∧ s.gpr .x17 = off L.B (slot L.w aY)
+
+theorem pins_minusRegs : Pins MinusRegs [.x14, .x16, .x17] :=
+  pins_of (fun L r => if r = .x14 then BitVec.ofNat 64 L.w else if r = .x16 then off L.B (slot L.w aN)
+    else off L.B (slot L.w aY)) (by
+      intro L s h r hr
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact h.1
+      · exact h.2.1
+      · exact h.2.2)
+
+def minusRest (amount : Nat) : Prog isa :=
+  .seq (.block ([movi .x4 amount, movi .x7 0, ld .x3 .x16, .subs .x .x3 .x3 .x4,
+      st .x3 .x17, next .x16, next .x17, .subImm .x .x14 .x14 1] : List Instr)) (countLoop .x14 minusTail)
+
+theorem minusCore_ct (amount : Nat) {hc : VG.Taint.Hint VG.AArch64.Taint.T}
+    (hT : (taint.check (Taint.ofRegs [.x14, .x16, .x17]) (minusRest amount) hc).isSome = true) :
+    RelCT isa (Two GoodW) (.seq (.block (minusHead amount)) (countLoop .x14 minusTail)) (fun _ _ => True) := by
+  apply fuseBlocks_ct (a := [ldh .x14 sW, ldh .x16 (sArr aN), ldh .x17 (sArr aY)])
+  refine RelCT.seq (two_piece (Ψ := MinusRegs) [.x0]
+    (pins_of (fun L _ => L.B) (by
+      intro L s ⟨_, hg, _⟩ r hr
+      obtain rfl := List.mem_singleton.mp hr
+      exact hg.x0)) (by taint_decide) ?_)
+    (two_taint [.x14, .x16, .x17] pins_minusRegs hT)
+  intro L s ⟨minv, hg, hz⟩
+  brun [MinusRegs, hg.x0, hdr_enc (show sW < 32 by decide), hdr_enc (show sArr aN < 32 by decide),
+    hdr_enc (show sArr aY < 32 by decide), hg.ld hz (show sW < 32 by decide),
+    hg.ld hz (show sArr aN < 32 by decide), hg.ld hz (show sArr aY < 32 by decide),
+    hg.hdr.hw, hg.hdr.harr aN (by decide), hg.hdr.harr aY (by decide)]
+
+structure MinusPublic (amount : Nat) extends BPub where
+  minv : BitVec 64
+  modulus : Nat
+  lower : 2 ≤ x.wx
+  upper : x.wx < 2 ^ 31
+  enough : amount ≤ modulus
+
+def MinusPre {amount : Nat} (p : MinusPublic amount) (s : State) : Prop :=
+  SubCtx s p.x.B p.x.Z p.x.o p.x.w p.x.wx p.minv ∧
+  ModCtx s (off p.x.B p.x.o) (slot p.x.wx 8) p.x.wx p.minv p.modulus ∧ FinishPre p.toBPub s
+
+theorem minusFinish_ct (amount : Nat) (ha : amount < 2 ^ 16) {hc : VG.Taint.Hint VG.AArch64.Taint.T}
+    (hT : (taint.check (Taint.ofRegs [.x14, .x16, .x17]) (minusRest amount) hc).isSome = true) :
+    RelCT isa (Two (@MinusPre amount))
+      (.seq (.seq (.block (minusHead amount)) (countLoop .x14 minusTail)) (seqs Core.finish)) (fun _ _ => True) := by
+  refine RelCT.seq (two_post (Ψ := fun p s => FinishPre p.toBPub s)
+    (two_map (fun p : MinusPublic amount => p.x.ws)
+      (fun _ _ h => ⟨_, h.1.good, Nat.le_refl _⟩) (minusCore_ct amount hT)) ?_)
+    (two_map MinusPublic.toBPub (fun _ _ h => h) finish_ct)
+  intro p s ⟨hc, hm, hf⟩
+  exact WP.mono (minus_ok hc hm p.lower p.upper ha p.enough)
+    fun t ⟨hct, _, _, hft, hkt⟩ => hf.work hc hct hft hkt
+
+end VG.Proof.Dsa.AArch64
+
+end
+
+end
 
 /-! ### `Dsa.AArch64.ReadyRangeCT`, which only this module used -/
 

@@ -1,10 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Generate.Fn
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.Random.CT
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.RandomSign.CT
 meta import VerifiedGarbage.Proof.Dsa.PPC64LE.Generate.Fn
-meta import VerifiedGarbage.Proof.Dsa.PPC64LE.Random.CT
-import VerifiedGarbage.Proof.Dsa.PPC64LE.RandomSign.CT
+meta import VerifiedGarbage.Proof.Dsa.PPC64LE.RandomSign.CT
 import VerifiedGarbage.Proof.Dsa.PPC64LE.Params.CT
 import VerifiedGarbage.Proof.Dsa.PPC64LE.Params.Fn
 import VerifiedGarbage.Proof.Dsa.PPC64LE.DeriveChecked.CT

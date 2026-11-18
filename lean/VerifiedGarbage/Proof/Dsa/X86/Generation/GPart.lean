@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Mont.X86.WordOps
 import VerifiedGarbage.Proof.Bignum.OutsFrame
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86.Syms
-import VerifiedGarbage.Proof.Dsa.X86.Generation.Base
+import VerifiedGarbage.Proof.Dsa.X86.Generation.Q
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.PAttempt
 public import VerifiedGarbage.Impl.Dsa.Layout
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.Geo
@@ -17,7 +17,6 @@ public import VerifiedGarbage.Proof.Dsa.Generation.Search
 public import VerifiedGarbage.Proof.Dsa.Generation.GeneratorCount
 import VerifiedGarbage.Proof.Dsa.Arithmetic
 import VerifiedGarbage.Proof.Bignum.Octets
-import VerifiedGarbage.Proof.Dsa.X86.Generation.Words
 public import VerifiedGarbage.Proof.Dsa.X86.StackFrame
 import VerifiedGarbage.Proof.Bignum.X86.LoadBE
 import VerifiedGarbage.Proof.Framework.AddrArith

@@ -1,7 +1,7 @@
 module
+
 public import VerifiedGarbage.Impl.Dsa.AArch64.Checks
 public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
-
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTDefs
 import VerifiedGarbage.Proof.Dsa.AArch64.LowerScan
 import VerifiedGarbage.Proof.Bignum.AArch64.PubOut
@@ -22,7 +22,6 @@ meta import Aesop.BuiltinRules
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
-meta import VerifiedGarbage.Proof.Dsa.AArch64.RangeLow
 
 /-! # Fixed-trace scalar range scans -/
 @[expose] public section

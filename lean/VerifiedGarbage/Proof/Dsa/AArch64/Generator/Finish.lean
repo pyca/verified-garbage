@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generator.Prepared
 public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
-public import VerifiedGarbage.Proof.Dsa.GeneratorStageContract
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generator.ABI
 public import VerifiedGarbage.Proof.Dsa.AArch64.Parameters
 public import VerifiedGarbage.Proof.Dsa.Generation.ParamsEncoding
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.GeneratorSearch

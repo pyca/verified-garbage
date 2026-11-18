@@ -2,10 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedRt.TimeSized
 meta import VerifiedGarbage.Proof.Bignum.X86.PrecomputedRt.TimeSized
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedExponentTiming
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedFailureTiming
-public import VerifiedGarbage.Proof.Bignum.X86.PublicEntryTiming
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedArgumentsEq
+public import VerifiedGarbage.Proof.Bignum.X86.PublicEntryTiming
 meta import VerifiedGarbage.Proof.Bignum.X86.PublicArgumentTiming
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks

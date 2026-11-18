@@ -1,11 +1,152 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Backend
 import VerifiedGarbage.Proof.Framework.X86_64.CallSp
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Dsa.X86_64.SigningABI
 public import VerifiedGarbage.Proof.Framework.X86_64.ModeSim
+public import VerifiedGarbage.Proof.Dsa.X86_64.SigningInput
+public import VerifiedGarbage.Proof.Bignum.Octets
+public import VerifiedGarbage.Proof.Framework.X86_64.Depth
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generate
+public import VerifiedGarbage.Spec.Dsa.Derive
+public import VerifiedGarbage.Spec.Dsa.Prevalidated
+public import VerifiedGarbage.Impl.Dsa.X86_64.Prevalidated
+public import VerifiedGarbage.Impl.Dsa.X86_64.PrevalidatedSign
+public import VerifiedGarbage.Spec.Dsa.PrevalidatedSign
+public import VerifiedGarbage.Spec.Dsa.DomainChecked
+public import VerifiedGarbage.Proof.Dsa.Contract
+public import VerifiedGarbage.Proof.Dsa.SignContractWith
+public import Aesop.BuiltinRules
+import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+
+/-! ### `Dsa.X86_64.Backend`, which this module and modules that import it used -/
+
+section
+
+/-! # Arithmetic variants for the complete DSA entry points
+
+A backend supplies Montgomery arithmetic, its stack allowance and proofs of
+the complete callers. This admits both inline arithmetic and calls to a
+shared kernel. The generic registration emits both callers for every backend.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Dsa.X86_64
+open VG VG.X86_64 VG.Impl.Dsa.X86_64 VG.Proof.Bignum.X86_64
+
+structure Backend where
+  sq : Prog isa
+  mul : Nat → Nat → Nat → Prog isa
+  stack : Nat := 0
+  suffix : String
+  features : List String
+  signVerified : Verified target (SignVerify.sign sq mul) (Spec.Dsa.signContract abi stack)
+  signSp : (SignVerify.sign sq mul).all (fun i => !isa.writesSp i) = true
+  signMx : (SignVerify.sign sq mul).allInstrs (fun i => !touchesMxcsr i) = true
+  validateVerified : Verified target (Prevalidated.validate sq mul) (Spec.Dsa.validatePublicKeyContract abi stack)
+  prevalidatedVerified : Verified target (Prevalidated.verify sq mul) (Spec.Dsa.verifyPrevalidatedContract abi stack)
+  validateSp : (Prevalidated.validate sq mul).all (fun i => !isa.writesSp i) = true
+  prevalidatedSp : (Prevalidated.verify sq mul).all (fun i => !isa.writesSp i) = true
+  signDepth : (SignVerify.sign sq mul).x86_64Depth ≤ stack
+  parametersVerified : Verified target (Generate.checkParameters sq mul) (Proof.Dsa.checkParametersContract abi stack)
+  deriveVerified : Verified target (Generate.deriveKey sq mul) (Spec.Dsa.deriveKeyContract abi stack)
+  parametersSp : (Generate.checkParameters sq mul).all (fun i => !isa.writesSp i) = true
+  parametersMx : (Generate.checkParameters sq mul).allInstrs (fun i => !touchesMxcsr i) = true
+  deriveSp : (Generate.deriveKey sq mul).all (fun i => !isa.writesSp i) = true
+  parametersDepth : (Generate.checkParameters sq mul).x86_64Depth ≤ stack
+  deriveDepth : (Generate.deriveKey sq mul).x86_64Depth ≤ stack
+  prevalidatedSignVerified : Verified target (PrevalidatedSign.sign sq mul)
+    (signContractWith Spec.Dsa.validatePrivateKeyBytes abi stack)
+  prevalidatedSignSp : (PrevalidatedSign.sign sq mul).all (fun i => !isa.writesSp i) = true
+  prevalidatedSignMx : (PrevalidatedSign.sign sq mul).allInstrs (fun i => !touchesMxcsr i) = true
+  prevalidatedSignDepth : (PrevalidatedSign.sign sq mul).x86_64Depth ≤ stack
+  validatePrivateVerified : Verified target (PrevalidatedSign.validate sq mul)
+    (Spec.Dsa.validatePrivateKeyContract abi stack)
+  validatePrivateSp : (PrevalidatedSign.validate sq mul).all (fun i => !isa.writesSp i) = true
+  deriveCheckedVerified : Verified target (Generate.deriveChecked sq mul)
+    (Spec.Dsa.deriveKeyDomainCheckedContract abi stack)
+  deriveCheckedSp : (Generate.deriveChecked sq mul).all (fun i => !isa.writesSp i) = true
+  deriveCheckedMx : (Generate.deriveChecked sq mul).allInstrs (fun i => !touchesMxcsr i) = true
+  deriveCheckedDepth : (Generate.deriveChecked sq mul).x86_64Depth ≤ stack
+  stackBound : stack < 2 ^ 32
+
+end VG.Proof.Dsa.X86_64
+
+end
+
+end
+
+/-! ### `Dsa.X86_64.SigningABI`, which this module and modules that import it used -/
+
+section
+
+/-! # The signing ABI and its shared-contract precondition -/
+
+@[expose] public section
+
+namespace VG.Proof.Dsa.X86_64
+open VG VG.X86_64 VG.Impl.Bignum.X86_64
+open VG.Impl.Dsa.Layout VG.Impl.Dsa.X86_64
+open VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
+
+theorem stackArgs_five (s : State) : List.map (stackArg s) (List.range 5) =
+    [stackArg s 0, stackArg s 1, stackArg s 2, stackArg s 3, stackArg s 4] := rfl
+
+structure SigningABI (s : State) : Prop where
+  stackBound : (s.gpr .rsp).toNat + 48 ≤ 2 ^ 64
+  rd : s.rd = [⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩, ⟨s.gpr .r9, (stackArg s 0).toNat⟩,
+    ⟨stackArg s 1, (stackArg s 2).toNat⟩, ⟨stackArgAddr s 0, 40⟩]
+  wr : s.wr = [⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩, ⟨stackArg s 3, (stackArg s 4).toNat * 8⟩]
+  outScratch : (⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩ : Region).Disjoint ⟨stackArg s 3, (stackArg s 4).toNat * 8⟩
+  keyScratch : (⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩ : Region).Disjoint ⟨stackArg s 3, (stackArg s 4).toNat * 8⟩
+  nonceScratch : (⟨s.gpr .r9, (stackArg s 0).toNat⟩ : Region).Disjoint ⟨stackArg s 3, (stackArg s 4).toNat * 8⟩
+  digestScratch : (⟨stackArg s 1, (stackArg s 2).toNat⟩ : Region).Disjoint ⟨stackArg s 3, (stackArg s 4).toNat * 8⟩
+  scratchArgs : (⟨stackArg s 3, (stackArg s 4).toNat * 8⟩ : Region).Disjoint ⟨stackArgAddr s 0, 40⟩
+  retScratch : (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨stackArg s 3, (stackArg s 4).toNat * 8⟩
+  retOut : (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩
+  outBound : (s.gpr .rdi).toNat + (s.gpr .rsi).toNat ≤ 2 ^ 64
+  keyBound : (s.gpr .rdx).toNat + (s.gpr .rcx).toNat ≤ 2 ^ 64
+  nonceBound : (s.gpr .r9).toNat + (stackArg s 0).toNat ≤ 2 ^ 64
+  digestBound : (stackArg s 1).toNat + (stackArg s 2).toNat ≤ 2 ^ 64
+  scratchBound : (stackArg s 3).toNat + (stackArg s 4).toNat * 8 ≤ 2 ^ 64
+  lengths : Spec.Dsa.lengthsValid (s.gpr .r8).toNat (stackArg s 0).toNat
+  outLength : (s.gpr .rsi).toNat = 2 * (stackArg s 0).toNat
+  keyLength : (s.gpr .rcx).toNat = 3 * (s.gpr .r8).toNat + 2 * (stackArg s 0).toNat
+  scratchLength : Spec.Dsa.scratchWords (s.gpr .r8).toNat ≤ (stackArg s 4).toNat
+
+theorem signingABI_of {s : State} (h : (Spec.Dsa.signContract abi).pre s) : SigningABI s := by
+  sig_pre [Spec.Dsa.signContract, Spec.Dsa.signSig, abi, argRegs, stackArgs_five, List.range, List.range.loop] at h
+  sig_pre [Spec.Dsa.signContract, Spec.Dsa.signSig, abi, argRegs, stackArgs_five, List.range, List.range.loop] at h
+  sig_split h
+  constructor <;> with_reducible assumption
+
+def SigningABI.input {s : State} (h : SigningABI s) : SigningInput where
+  base := stackArg s 3
+  digestPointer := stackArg s 1
+  pLen := (s.gpr .r8).toNat
+  qLen := (stackArg s 0).toNat
+  key := Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat
+  nonce := Spec.Rsa.bytesAt s.mem (s.gpr .r9) (stackArg s 0).toNat
+  digest := Spec.Rsa.bytesAt s.mem (stackArg s 1) (stackArg s 2).toNat
+  lengths := h.lengths
+  keyLength := (bytesAt_length _ _ _).trans h.keyLength
+  nonceLength := bytesAt_length _ _ _
+  digestBound := by rw [bytesAt_length]; exact (stackArg s 2).isLt
+
+theorem SigningABI.used {s : State} (h : SigningABI s) : usedBytes ≤ (stackArg s 4).toNat * 8 := by
+  have hl := h.lengths
+  have hs := h.scratchLength
+  unfold Spec.Dsa.lengthsValid at hl
+  unfold Spec.Dsa.scratchWords at hs
+  change 15712 ≤ _
+  omega_using [hl, hs]
+
+end VG.Proof.Dsa.X86_64
+
+end
+
+end
 
 /-! Call any registered supplied-nonce signer, retaining its contract and frame. -/
 @[expose] public section

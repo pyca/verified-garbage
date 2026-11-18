@@ -19,7 +19,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AArch64.Inline
 import VerifiedGarbage.Proof.RsaKeyGen.InitWords
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtGPow
-import VerifiedGarbage.Proof.Bignum.AArch64.PubFail
+import VerifiedGarbage.Proof.Bignum.AArch64.PcMain
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Search.Call
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Search.Step
 import VerifiedGarbage.Proof.Framework.AddrArith

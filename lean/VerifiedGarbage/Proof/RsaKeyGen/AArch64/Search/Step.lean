@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Search.Call
 import VerifiedGarbage.Proof.RsaKeyGen.SearchSpec
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Search.Entry
 import VerifiedGarbage.Proof.Framework.AArch64.Depth
-import VerifiedGarbage.Proof.Bignum.AArch64.PubFail
+import VerifiedGarbage.Proof.Bignum.AArch64.PcMain
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtGPow
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Base
 import VerifiedGarbage.Proof.RsaKeyGen.InitWords

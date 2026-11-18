@@ -9,10 +9,9 @@ import VerifiedGarbage.Proof.Dsa.X86.CoreStore
 import VerifiedGarbage.Proof.Dsa.X86.PowCorrect
 import VerifiedGarbage.Proof.Mont.X86.ContextLayout
 import VerifiedGarbage.Proof.Dsa.X86.Layout
-import VerifiedGarbage.Proof.Dsa.X86.CoreInputs
 import VerifiedGarbage.Proof.Dsa.X86.CoreSetup
 import VerifiedGarbage.Proof.Mont.X86.DynamicFrame
-public import VerifiedGarbage.Proof.Dsa.X86.StreamFrame
+public import VerifiedGarbage.Proof.Dsa.X86.CallerBuffer
 import VerifiedGarbage.Proof.Dsa.X86.Pointer
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Mont.X86.Instr
@@ -39,7 +38,7 @@ import VerifiedGarbage.Proof.Mont.X86.OutsZ
 import VerifiedGarbage.Proof.Dsa.X86.StreamStep
 import VerifiedGarbage.Proof.Mont.X86.WordOps
 import VerifiedGarbage.Proof.Dsa.StreamBytes
-public import VerifiedGarbage.Proof.Dsa.X86.PowABI
+public import VerifiedGarbage.Proof.Mont.X86.Rt.ScalarVerified
 import VerifiedGarbage.Proof.Dsa.X86.EntryTiming
 import VerifiedGarbage.Proof.Dsa.X86.StreamTiming
 public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
@@ -47,7 +46,6 @@ import VerifiedGarbage.Proof.Mont.X86.ExponentTiming
 import VerifiedGarbage.Proof.Dsa.X86.WorkspaceCall
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Mont.X86.Words
-import VerifiedGarbage.Proof.Dsa.X86.Arithmetic
 
 /-! ### `Dsa.X86.MulCall`, which this module and modules that import it used -/
 

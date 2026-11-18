@@ -1,19 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.RISCV64.CTBase
+public import VerifiedGarbage.Proof.Dsa.RISCV64.CTParams
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
-import VerifiedGarbage.Proof.Dsa.RISCV64.CTKey
-public import VerifiedGarbage.Proof.Dsa.RISCV64.CTParams
-import VerifiedGarbage.Proof.Dsa.RISCV64.CTBodyA
 import VerifiedGarbage.Proof.Dsa.RISCV64.CTBodyB
 import VerifiedGarbage.Proof.Dsa.RISCV64.VerifyBody
-meta import VerifiedGarbage.Proof.Dsa.RISCV64.CTBase
+meta import VerifiedGarbage.Proof.Dsa.RISCV64.CTParams
 meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
-meta import VerifiedGarbage.Proof.Dsa.RISCV64.CTKey
-meta import VerifiedGarbage.Proof.Dsa.RISCV64.CTParams
-meta import VerifiedGarbage.Proof.Dsa.RISCV64.CTBodyA
 meta import VerifiedGarbage.Proof.Dsa.RISCV64.CTBodyB
 meta import VerifiedGarbage.Proof.Dsa.RISCV64.VerifyBody
 

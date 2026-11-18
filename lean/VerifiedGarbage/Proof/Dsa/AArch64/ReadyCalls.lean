@@ -1,14 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Call
-import VerifiedGarbage.Proof.Dsa.AArch64.Power
-import VerifiedGarbage.Proof.Dsa.AArch64.Multiply
-import VerifiedGarbage.Proof.Dsa.AArch64.EnterLeave
+import VerifiedGarbage.Proof.Dsa.AArch64.Add
+import VerifiedGarbage.Proof.Dsa.AArch64.Finish
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Dsa.AArch64.Run
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Dsa.AArch64.Reduce
-import VerifiedGarbage.Proof.Dsa.AArch64.Add
 public import VerifiedGarbage.Proof.Dsa.AArch64.Execution
 import VerifiedGarbage.Proof.Dsa.Layout
 

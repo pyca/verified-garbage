@@ -1,8 +1,7 @@
 module
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRowsCT
 
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRowsCT
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRawCT
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8CT
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxCT
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Redc
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRaw
@@ -12,7 +11,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRowsCT
 meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRawCT
-meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8CT
 meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxCT
 meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Redc
 meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRaw

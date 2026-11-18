@@ -3,13 +3,12 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignSingle
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCall
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignRunning
-import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignFinish
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignFinish
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignAttempt
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomSampleLoop
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignPublish
 public import VerifiedGarbage.Spec.Rsa.Contract
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCallMemory
 import Mathlib.Order.RelClasses

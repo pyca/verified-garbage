@@ -3,16 +3,44 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashPlan
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.LabelCT
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PHash
-
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedAddCT
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
 import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
 import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedAdd
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PHashArgs
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.SeedAdd
+public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+meta import VerifiedGarbage.Impl.Dsa.X86_64.Generation.SeedAdd
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+
+/-! ### `Dsa.X86_64.Generation.SeedAddCT`, which only this module used -/
+
+section
+
+/-! # Wrapped-seed addition leaks only its buffer addresses -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.X86_64.Generation
+open VG VG.X86_64 VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
+
+theorem seedAdd20_ct {α : Type} {Φ : α → State → Prop} (hp : Pins Φ [.rdi, .rsi]) :
+    RelCT isa (Two Φ) (Impl.Dsa.X86_64.Generation.seedAdd 20) (fun _ _ => True) :=
+  two_taint _ hp (by taint_decide)
+
+theorem seedAdd32_ct {α : Type} {Φ : α → State → Prop} (hp : Pins Φ [.rdi, .rsi]) :
+    RelCT isa (Two Φ) (Impl.Dsa.X86_64.Generation.seedAdd 32) (fun _ _ => True) :=
+  two_taint _ hp (by taint_decide)
+
+end VG.Proof.Dsa.X86_64.Generation
+
+end
+
+end
+
 /-! # Streaming hash contributions for the public p-candidate search -/
 
 -- Formerly `VerifiedGarbage/Proof/Dsa/X86_64/Generation/PSeedCT.lean`, which only this module imported.

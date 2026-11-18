@@ -4,8 +4,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtQ
 import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtPow
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtGPow
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtUnit
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSetup
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
 import VerifiedGarbage.Proof.Bignum.CrtMath
@@ -15,8 +14,7 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtQ
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
-meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtPow
-meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtGPow
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtUnit
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtSetup
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
 meta import VerifiedGarbage.Proof.Bignum.CrtMath

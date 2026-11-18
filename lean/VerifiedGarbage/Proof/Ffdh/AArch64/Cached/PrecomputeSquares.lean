@@ -1,11 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PrecomputeSquareLoop
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.Controls
-
+public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PowerState
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+
 /-! Complete precomputation of the next comb tooth using the shared squaring kernel. -/
 
 -- Formerly `VerifiedGarbage/Proof/Ffdh/AArch64/Cached/CounterInit.lean`, which only this module imported.

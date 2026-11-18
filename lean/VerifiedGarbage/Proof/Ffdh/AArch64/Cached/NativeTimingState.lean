@@ -1,46 +1,862 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.ImportPrefixTiming
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.SampleTiming
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.InverseUnique
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.ScalarRangeTiming
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.OutputTiming
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PublicRangeTiming
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.CombTiming
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Impl.Ffdh.AArch64.Cached.Generate
-import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.Header
+public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.Header
 import VerifiedGarbage.Proof.Bignum.AArch64.PdCode
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 public import VerifiedGarbage.Impl.Ffdh.AArch64.Cached.Layout
 public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
 public import VerifiedGarbage.Proof.Bignum.AArch64.MontMul
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.ImportFrame
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.SourceEncoding
 public import VerifiedGarbage.Proof.Ffdh.Domain
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.SourceSlices
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.MemoryState
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.Finish
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.SampleMask
+public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.SetLowBit
 public import VerifiedGarbage.Proof.Ffdh.VettedPolicy
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.WorkspaceState
 public import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.GetElem
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.Initial
 import VerifiedGarbage.Proof.Mont.WordsCanonical
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.ReadEnv
+public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.Stable
 import Mathlib.Tactic.Ring
 public import VerifiedGarbage.Proof.Ffdh.GenerationPrecompute
 public import VerifiedGarbage.Spec.Ffdh.CachedKeyGenerationContract
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.Frame
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.RangeFrame
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.Comb
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.Clear
 public import VerifiedGarbage.Proof.Ffdh.KeyScalar
 public import VerifiedGarbage.Proof.Ffdh.Power
 import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.TCB.AArch64.Isa
+meta import VerifiedGarbage.Impl.Ffdh.AArch64.Cached.Layout
+meta import VerifiedGarbage.Impl.Bignum.AArch64.Core
+meta import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTDefs
+public import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup
+public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.Const
+public import VerifiedGarbage.Proof.Bignum.AArch64.Copy
+public import VerifiedGarbage.Proof.Bignum.AArch64.Setup
+public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PowerState
+meta import VerifiedGarbage.Impl.Ffdh.AArch64.Cached.Generate
+public import VerifiedGarbage.Proof.Bignum.AArch64.Run
+public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.LessTiming
+public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.CopyTiming
+
+/-! ### `Ffdh.AArch64.Cached.PublicRangeTiming`, which only this module used -/
+
+section
+
+/-! Result-range checks have no data-dependent branch or address. -/
+@[expose] public section
+namespace VG.Proof.Ffdh.AArch64.Cached
+open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64
+open VG.Impl.Ffdh.AArch64.Cached
+open VG.Proof.Bignum VG.Proof.Bignum.AArch64
+
+structure RangePublic where
+ workspace : Ws
+ positive : 0<workspace.w
+ size : workspace.w<2^31
+
+def RangeReady (p : RangePublic) (s : State) : Prop := GoodW p.workspace s
+
+theorem setLowBit_ct : RelCT isa (Two GoodW)
+ (.block [ldh .x8 (sArr 1),ld .x3 .x8,movi .x4 1,.logic .orr .x .x3 .x3 .x4,st .x3 .x8]) (fun _ _ =>True) := by
+ change RelCT isa (Two GoodW) (.block ([ldh .x8 (sArr 1)]++[ld .x3 .x8,movi .x4 1,.logic .orr .x .x3 .x3 .x4,st .x3 .x8])) _
+ apply RelCT.block_append
+ refine RelCT.seq (two_piece (Ψ:=fun p s =>s.gpr .x8=off p.B (slot p.w 1)) [.x0] pins_goodW (by taint_decide) ?_)
+  (two_taint [.x8] (fun p s t hs ht r hr =>by
+   have eq : r= .x8 := by simpa using hr
+   subst r;exact hs.trans ht.symm) (by taint_decide))
+ rintro p s ⟨mi,good,room⟩
+ brun [good.x0,hdr_enc (show sArr 1<32 by decide),header_read good room (show sArr 1<32 by decide),good.hdr.harr 1 (by decide)]
+
+theorem publicRange_ct : RelCT isa (Two RangeReady) Generate.publicRange (fun _ _ =>True) := by
+ unfold Generate.publicRange
+ simp only [seqs]
+ refine RelCT.seq (two_post (Ψ:=RangeReady)
+  (two_map RangePublic.workspace (fun _ _ h =>h) (less_ct (by decide : 7<8) (by decide : 6<8) (by taint_decide))) ?_) ?_
+ · rintro p s ⟨mi,good,room⟩
+   refine WP.mono (less_ok good room p.positive p.size (by decide : 7<8) (by decide : 6<8)) ?_
+   rintro t ⟨_,mem,rest⟩
+   exact ⟨mi,good_after_mem good mem rest ((rest.gpr .x0 (by simp [mmRegs])).trans good.x0),room⟩
+ · refine RelCT.seq (two_post (Ψ:=RangeReady) (two_taint [.x0]
+    (fun _ s t hs ht =>pins_goodW _ s t hs ht) (by taint_decide)) ?_) ?_
+   · rintro p s ⟨mi,good,room⟩
+     exact WP.mono (store_control_ok good room (by decide : 16≤sTmp) (by decide : sTmp<32) .x9)
+      (fun _ ⟨good,_,_,_⟩ =>⟨mi,good,room⟩)
+   · refine RelCT.seq (two_post (Ψ:=RangeReady)
+      (two_map RangePublic.workspace (fun _ _ h =>h) (copy_ct (by decide : 1<8) (by decide : 6<8) (by taint_decide))) ?_) ?_
+     · rintro p s ⟨mi,good,room⟩
+       exact WP.mono (copy_ok good room p.positive p.size (by decide : 1<8) (by decide : 6<8) (by decide))
+        (fun _ ⟨good,_,_,_⟩ =>⟨mi,good,room⟩)
+     · refine RelCT.seq (two_post (Ψ:=RangeReady)
+        (two_map RangePublic.workspace (fun _ _ h =>h) setLowBit_ct) ?_) ?_
+       · rintro p s ⟨mi,good,room⟩
+         exact WP.mono (setLowBit_ok good room p.positive) (fun _ ⟨good,_,_,_⟩ =>⟨mi,good,room⟩)
+       · refine RelCT.seq (two_post (Ψ:=RangeReady)
+          (two_map RangePublic.workspace (fun _ _ h =>h) (less_ct (by decide : 1<8) (by decide : 0<8) (by taint_decide))) ?_)
+          (two_taint [.x0] (fun _ s t hs ht =>pins_goodW _ s t hs ht) (by taint_decide))
+         rintro p s ⟨mi,good,room⟩
+         refine WP.mono (less_ok good room p.positive p.size (by decide : 1<8) (by decide : 0<8)) ?_
+         rintro t ⟨_,mem,rest⟩
+         exact ⟨mi,good_after_mem good mem rest ((rest.gpr .x0 (by simp [mmRegs])).trans good.x0),room⟩
+
+end VG.Proof.Ffdh.AArch64.Cached
+
+end
+
+end
+
+/-! ### `Ffdh.AArch64.Cached.SampleTiming`, which only this module used -/
+
+section
+
+/-! ### `Ffdh.AArch64.Cached.SampleMaskTiming`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Ffdh.AArch64.Cached.SampleMask`, which this module and modules that import it used -/
+
+section
+
+/-! Exact public top-byte mask, including widths divisible by eight. -/
+
+-- Formerly `VerifiedGarbage/Proof/Ffdh/AArch64/Cached/MaskShift.lean`, which only this module imported.
+section
+
+/-! The reviewed sampler mask shifts by a public count of at most seven positions. -/
+@[expose] public section
+namespace VG.Proof.Ffdh.AArch64.Cached
+open VG VG.AArch64 VG.Impl.Bignum.AArch64
+open VG.Proof.MlKem.AArch64 (Keep)
+open VG.Proof.Bignum.AArch64
+
+private theorem maskShift_step (s : State) {k : Nat} (positive : 0<k) (fit : k<2^64)
+ (count : s.gpr .x3=BitVec.ofNat 64 k) :
+ WP isa (.block [.lsr .x .x12 .x12 1,.subImm .x .x3 .x3 1]) s fun t =>
+ (t.gpr .x12=s.gpr .x12 >>> 1 ∧ t.gpr .x3=BitVec.ofNat 64 (k-1) ∧ t.mem=s.mem) ∧
+ Keep [.x3,.x12] s t := by
+ refine WP.keep [.x3,.x12] ?_ rfl rfl rfl
+ brun [count]
+ exact BitVec.ofNat_sub_ofNat_of_le k 1 (by decide) (by omega)
+
+theorem maskShift_ok (s : State) {n : Nat} (positive : 0<n) (fit : n<2^64)
+ (count : s.gpr .x3=BitVec.ofNat 64 n) :
+ WP isa (.loop (.block [.lsr .x .x12 .x12 1,.subImm .x .x3 .x3 1]) (.nonzero .x .x3)) s fun t =>
+ t.gpr .x12=s.gpr .x12 >>> n ∧ t.gpr .x3=0#64 ∧ t.mem=s.mem ∧ Keep [.x3,.x12] s t := by
+ let I := fun k t => 0<k ∧ k≤n ∧ t.gpr .x3=BitVec.ofNat 64 k ∧
+  t.gpr .x12=s.gpr .x12 >>> (n-k) ∧ t.mem=s.mem ∧ Keep [.x3,.x12] s t
+ refine WP.loop (M:=isa) I ?_ n s ⟨positive,by omega_using [],count,by simp,rfl,Keep.refl _ _⟩
+ intro k t h
+ obtain ⟨posK,leK,countK,word,mem,rest⟩ := h
+ refine WP.mono (maskShift_step t posK (by omega_using [fit, leK]) countK) ?_
+ rintro u ⟨⟨wordU,countU,memU⟩,restU⟩
+ have next : u.gpr .x12=s.gpr .x12 >>> (n-(k-1)) := by
+  rw [wordU,word,←BitVec.shiftRight_add]
+  congr 1
+  omega_using [posK, leK]
+ by_cases last : k=1
+ · left
+   refine ⟨?_,?_,?_,memU.trans mem,(rest.trans restU).mono (by decide)⟩
+   · change some (u.gpr .x3 != 0#64) = some false
+     simp only [countU,last,Nat.sub_self]
+     decide
+   · simpa only [last,Nat.sub_self,Nat.sub_zero] using next
+   · simpa only [last,Nat.sub_self] using countU
+ · right
+   refine ⟨?_,k-1,by omega_using [posK],by omega_using [posK, last],by omega_using [leK],countU,next,memU.trans mem,(rest.trans restU).mono (by decide)⟩
+   change some (u.gpr .x3 != 0#64) = some true
+   rw [countU]
+   have ne : BitVec.ofNat 64 (k-1) ≠ 0#64 := by
+    intro eq
+    have h := congrArg BitVec.toNat eq
+    change (k-1)%2^64=0 at h
+    rw [Nat.mod_eq_of_lt (by omega_using [fit, leK])] at h
+    omega_using [positive, fit, count, posK, leK, countK, word, wordU, countU, next, last, eq, h]
+   simp [ne]
+
+end VG.Proof.Ffdh.AArch64.Cached
+end
+
+end
+
+@[expose] public section
+namespace VG.Proof.Ffdh.AArch64.Cached
+open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64
+open VG.Impl.Ffdh.AArch64.Cached
+open VG.Proof.Bignum VG.Proof.Bignum.AArch64
+open VG.Proof.MlKem.AArch64 (Keep eval_zero)
+
+def sampleMask (N : Nat) : Addr := BitVec.ofNat 64 (2^((N-1)%8+1)-1)
+
+private theorem byteMask : ∀ n<8,(255#64 >>> (7-n))=BitVec.ofNat 64 (2^(n+1)-1) := by decide +kernel
+
+theorem sampleMaskHead_ok {s : State} {B : Addr} {Z N : Nat}
+ (scratch : Scr s B Z) (room : 256≤Z) (base : s.gpr .x0=B)
+ (positive : 0<N) (_bound : N≤8192) (bits : word s.mem B (8*sBits)=BitVec.ofNat 64 N) :
+ WP isa (.block [ldh .x3 sBits,.subImm .x .x3 .x3 1,movi .x4 7,
+ .logic .and .x .x3 .x3 .x4,.sub .x .x3 .x4 .x3,movi .x12 255]) s fun t =>
+ (t.gpr .x3=BitVec.ofNat 64 (7-(N-1)%8) ∧ t.gpr .x12=255#64 ∧ t.mem=s.mem) ∧ Keep [.x3,.x4,.x12] s t := by
+ have low : BitVec.ofNat 64 (N-1) &&& 7#64=BitVec.ofNat 64 ((N-1)%8) := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_and,BitVec.toNat_ofNat]
+  change ((N-1)%2^64) &&& (2^3-1)=_
+  rw [Nat.and_two_pow_sub_one_eq_mod]
+  omega_using []
+ have sub : (7#64 : Addr)-BitVec.ofNat 64 ((N-1)%8)=BitVec.ofNat 64 (7-(N-1)%8) :=
+  BitVec.ofNat_sub_ofNat_of_le 7 ((N-1)%8) (by omega_using []) (by omega_using [])
+ refine WP.keep [.x3,.x4,.x12] ?_ rfl rfl rfl
+ brun [movi_nat (show 7<2^16 by decide),movi_nat (show 255<2^16 by decide),base,hdr_enc (show sBits<32 by decide),scratch.ld (d:=8*sBits) (by unfold sBits;omega_using [room]),bits,
+  BitVec.ofNat_sub_ofNat_of_le (w:=64) N 1 (by decide) positive,low,sub]
+
+theorem sampleMask_ok {s : State} {B : Addr} {Z N : Nat}
+ (scratch : Scr s B Z) (room : 256≤Z) (base : s.gpr .x0=B)
+ (positive : 0<N) (bound : N≤8192) (bits : word s.mem B (8*sBits)=BitVec.ofNat 64 N) :
+ WP isa Generate.mask s fun t =>
+ t.gpr .x12=sampleMask N ∧ word t.mem B (8*sMask)=sampleMask N ∧ t.mem=s.mem.writeW (off B (8*sMask)) (sampleMask N) ∧ Outside B (8*sMask) 8 s.mem t.mem ∧ Keep [.x3,.x4,.x12] s t := by
+ unfold Generate.mask
+ rw [WP.seq_iff]
+ refine WP.mono (sampleMaskHead_ok scratch room base positive bound bits) ?_
+ rintro a ⟨⟨countA,valueA,memA⟩,restA⟩
+ rw [WP.seq_iff]
+ have shifts : WP isa (.ite (.zero .x .x3) (.block [])
+  (.loop (.block [.lsr .x .x12 .x12 1,.subImm .x .x3 .x3 1]) (.nonzero .x .x3))) a fun b =>
+  b.gpr .x12=sampleMask N ∧ b.mem=a.mem ∧ Keep [.x3,.x12] a b := by
+  by_cases zero : 7-(N-1)%8=0
+  · have value : a.gpr .x12=sampleMask N := by rw [valueA,sampleMask,←byteMask ((N-1)%8) (by omega_using []),zero];rfl
+    refine ⟨_,a,.iteT ?_ (.block rfl),value,rfl,Keep.refl _ _⟩
+    rw [eval_zero,countA,zero];decide
+  · obtain ⟨tr,b,run,word,_,mem,rest⟩ := maskShift_ok a (by omega_using [zero] : 0<7-(N-1)%8) (by omega_using []) countA
+    refine ⟨_,b,.iteF ?_ run,?_,mem,rest⟩
+    · rw [eval_zero,countA]
+      have nz : BitVec.ofNat 64 (7-(N-1)%8)≠0#64 := by
+       intro eq;have := congrArg BitVec.toNat eq;change (7-(N-1)%8)%2^64=0 at this;omega_using [zero, this]
+      simp [nz]
+    · rw [word,valueA,byteMask ((N-1)%8) (by omega_using [])];rfl
+ refine WP.mono shifts ?_
+ rintro b ⟨maskB,memB,restB⟩
+ have rest := restA.trans restB
+ refine WP.mono (WP.keep [] (Q:=fun t =>t.mem=b.mem.writeW (off B (8*sMask)) (sampleMask N)) ?_ rfl rfl rfl) ?_
+ · brun [(rest.gpr .x0 (by decide)).trans base,hdr_enc (show sMask<32 by decide),maskB,
+    (scratch.congr rest.wr).st (d:=8*sMask) (by unfold sMask;omega_using [room])]
+ · rintro t ⟨mem,restT⟩
+   refine ⟨(restT.gpr .x12 (by simp)).trans maskB,?_,?_,?_,(rest.trans restT).mono (by simp)⟩
+   · rw [mem,word_writeW_self]
+   · rw [mem,memB,memA]
+   · rw [mem,memB,memA];exact writeW_outside _ _ _ (by decide)
+
+end VG.Proof.Ffdh.AArch64.Cached
+
+end
+
+end
+
+/-! Mask setup branches only on the reviewed public width, never on entropy. -/
+@[expose] public section
+namespace VG.Proof.Ffdh.AArch64.Cached
+open VG VG.AArch64 VG.Impl.Bignum.AArch64
+open VG.Impl.Ffdh.AArch64.Cached
+open VG.Proof.Bignum VG.Proof.Bignum.AArch64
+
+structure MaskPublic where
+ B : Addr
+ Z : Nat
+ N : Nat
+ room : 256≤Z
+ positive : 0<N
+ bound : N≤8192
+
+structure MaskReady (p : MaskPublic) (s : State) : Prop where
+ scratch : Scr s p.B p.Z
+ base : s.gpr .x0=p.B
+ bits : word s.mem p.B (8*sBits)=BitVec.ofNat 64 p.N
+
+theorem sampleMask_ct : RelCT isa (Two MaskReady) Generate.mask (fun _ _ => True) := by
+ unfold Generate.mask
+ refine RelCT.seq (two_piece (Ψ:=fun p s =>s.gpr .x0=p.B ∧ s.gpr .x3=BitVec.ofNat 64 (7-(p.N-1)%8))
+  [.x0] ?_ (by taint_decide) ?_) (two_taint [.x0,.x3] ?_ (by taint_decide))
+ · intro p s t hs ht r hr
+   have eq : r= .x0 := by simpa using hr
+   subst r
+   exact hs.base.trans ht.base.symm
+ · intro p s h
+   refine WP.mono (sampleMaskHead_ok h.scratch p.room h.base p.positive p.bound h.bits) ?_
+   rintro t ⟨⟨count,_,_⟩,rest⟩
+   exact ⟨(rest.gpr .x0 (by decide)).trans h.base,count⟩
+ · intro p s t hs ht r hr
+   simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
+   rcases hr with rfl|rfl
+   · exact hs.1.trans ht.1.symm
+   · exact hs.2.trans ht.2.symm
+
+end VG.Proof.Ffdh.AArch64.Cached
+
+end
+
+end
+
+/-! Sampling uses the public width and length for every draw, including rejected draws. -/
+@[expose] public section
+namespace VG.Proof.Ffdh.AArch64.Cached
+open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64
+open VG.Impl.Ffdh.AArch64.Cached
+open VG.Proof.Bignum VG.Proof.Bignum.AArch64
+open VG.Proof.MlKem.AArch64 (Keep)
+
+structure SamplePublic where
+ workspace : Ws
+ room : slot workspace.w 8≤workspace.Z
+ k : Nat
+ N : Nat
+ xp : Addr
+ rp : Addr
+ positive : 0<N
+ bound : N≤8192
+
+structure SampleReady (p : SamplePublic) (s : State) : Prop where
+ good : GoodW p.workspace s
+ bits : word s.mem p.workspace.B (8*sBits)=BitVec.ofNat 64 p.N
+ bytes : word s.mem p.workspace.B (8*sBytes)=BitVec.ofNat 64 ((p.N+7)/8)
+ length : word s.mem p.workspace.B (8*sLen)=BitVec.ofNat 64 p.k
+ x : word s.mem p.workspace.B (8*sX)=p.xp
+ random : word s.mem p.workspace.B (8*sRand)=p.rp
+
+structure SampleMasked (p : SamplePublic) (s : State) : Prop extends SampleReady p s where
+ mask : s.gpr .x12=sampleMask p.N
+
+theorem sample_ct : RelCT isa (Two SampleReady) Generate.sample (fun _ _ =>True) := by
+ unfold Generate.sample
+ refine RelCT.seq (two_post (Ψ:=SampleMasked) ?_ ?_) ?_
+ · exact two_map (fun p =>(⟨p.workspace.B,p.workspace.Z,p.N,by
+    have := p.room;dsimp only [slot,hdrBytes] at this;omega_using [this],p.positive,p.bound⟩ : MaskPublic))
+    (fun _ _ h =>by rcases h.good with ⟨mi,good,_⟩;exact ⟨good.scr,good.x0,h.bits⟩) sampleMask_ct
+ · intro p s h
+   obtain ⟨mi,good,room⟩ := h.good
+   have room256 : 256≤p.workspace.Z := by dsimp only [slot,hdrBytes] at room;omega_using [room]
+   refine WP.mono (sampleMask_ok good.scr room256 good.x0 p.positive p.bound h.bits) ?_
+   rintro t ⟨mask,_,_,frame,rest⟩
+   have goodT := good_after_header good (by decide) (by decide) frame rest ((rest.gpr .x0 (by decide)).trans good.x0)
+   have same (i : Nat) (hi : i<32) (ne : i≠sMask) := header_other frame (by decide) hi ne
+   exact ⟨⟨⟨mi,goodT,room⟩,(same sBits (by decide) (by decide)).trans h.bits,
+    (same sBytes (by decide) (by decide)).trans h.bytes,(same sLen (by decide) (by decide)).trans h.length,
+    (same sX (by decide) (by decide)).trans h.x,(same sRand (by decide) (by decide)).trans h.random⟩,mask⟩
+ · refine RelCT.seq (two_piece (Ψ:=fun p s =>
+    s.gpr .x1=p.rp ∧ s.gpr .x2=p.xp ∧ s.gpr .x10=0#64 ∧
+    s.gpr .x11=BitVec.ofNat 64 p.k-BitVec.ofNat 64 ((p.N+7)/8) ∧
+    s.gpr .x12=sampleMask p.N ∧ s.gpr .x14=BitVec.ofNat 64 p.k)
+    [.x0] (fun p s t hs ht r hr =>by
+     have eq : r= .x0 := by simpa using hr
+     subst r
+     obtain ⟨_,gs,_⟩ := hs.good;obtain ⟨_,gt,_⟩ := ht.good
+     exact gs.x0.trans gt.x0.symm) (by taint_decide) ?_)
+    (two_taint [.x1,.x2,.x10,.x11,.x12,.x14] ?_ (by taint_decide))
+   · intro p s h
+     obtain ⟨mi,good,room⟩ := h.good
+     brun [good.x0,hdr_enc (show sLen<32 by decide),hdr_enc (show sBytes<32 by decide),
+      hdr_enc (show sX<32 by decide),hdr_enc (show sRand<32 by decide),
+      header_read good room (show sLen<32 by decide),header_read good room (show sBytes<32 by decide),
+      header_read good room (show sX<32 by decide),header_read good room (show sRand<32 by decide),
+      h.length,h.bytes,h.x,h.random,h.mask]
+   · intro p s t hs ht r hr
+     simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
+     rcases hr with rfl|rfl|rfl|rfl|rfl|rfl
+     · exact hs.1.trans ht.1.symm
+     · exact hs.2.1.trans ht.2.1.symm
+     · exact hs.2.2.1.trans ht.2.2.1.symm
+     · exact hs.2.2.2.1.trans ht.2.2.2.1.symm
+     · exact hs.2.2.2.2.1.trans ht.2.2.2.2.1.symm
+     · exact hs.2.2.2.2.2.trans ht.2.2.2.2.2.symm
+
+end VG.Proof.Ffdh.AArch64.Cached
+
+end
+
+end
+
+/-! ### `Ffdh.AArch64.Cached.ImportPrefixTiming`, which only this module used -/
+
+section
+
+/-! ### `Ffdh.AArch64.Cached.ImportDataTiming`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Ffdh.AArch64.Cached.ImportFrame`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Ffdh.AArch64.Cached.ImportData`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Ffdh.AArch64.Cached.CopyFromContext`, which only this module used -/
+
+section
+
+/-! Import a pointer-free canonical limb range into a native arithmetic array. -/
+@[expose] public section
+namespace VG.Proof.Ffdh.AArch64.Cached
+open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64
+open VG.Proof.Bignum VG.Proof.Bignum.AArch64
+open VG.Proof.MlKem.AArch64 (Keep)
+
+theorem copyFromContext_ok {s : State} {B ctx : Addr} {Z w a d : Nat} {mi : BitVec 64}
+ (good : Good s B Z w mi) (room : slot w 8≤Z) (positive : 0<w) (size : w<2^31) (array : a<8)
+ (source : s.gpr .x16=off ctx d) (output : s.gpr .x17=off B (slot w a)) (count : s.gpr .x12=BitVec.ofNat 64 w)
+ (readable : ∀ i<w,InRegions (s.rd++s.wr) (off ctx (d+8*i)) 8)
+ (outside : ∀ i<8*w,Z≤ofs B (off ctx d+BitVec.ofNat 64 i)) :
+ WP isa copyWords s fun t =>
+ Good t B Z w mi ∧ wv t.mem B (slot w a) w=wv s.mem ctx d w ∧ Arrays B w [a] s.mem t.mem ∧
+ t.gpr .x16=off ctx (d+8*w) ∧ Keep mmRegs s t := by
+ have arrayRoom := Nat.le_trans (slot_le (w:=w) array) room
+ have fit : slot w a+8*w≤2^64 := by have := good.scr.nowrap;omega_using [arrayRoom, this]
+ refine WP.mono (copyWords_ok source output count (by omega_using [positive]) size fit readable
+  (fun i hi =>good.scr.st (by omega_using [arrayRoom, hi])) (fun i hi b hb =>Or.inr (by
+   have sep := outside (8*i+b) (by omega_using [hi, hb])
+   have eq : off ctx (d+8*i)+BitVec.ofNat 64 b=off ctx d+BitVec.ofNat 64 (8*i+b) := by
+    simp only [off,BitVec.ofNat_add,BitVec.add_assoc]
+   rw [eq]
+   omega_using [arrayRoom, sep]))) ?_
+ rintro t ⟨value,_,frame,pointer,_,rest⟩
+ have arrays : Arrays B w [a] s.mem t.mem :=
+  Arrays.of_outside (j:=a) (by simp) frame (by omega_using []) (by omega_using [])
+ have total : Keep mmRegs s t := rest.mono (by simp [mmRegs])
+ exact ⟨good_after_arrays good arrays total ((total.gpr .x0 (by simp [mmRegs])).trans good.x0),value,arrays,pointer,total⟩
+
+end VG.Proof.Ffdh.AArch64.Cached
+
+end
+
+end
+
+/-! ### `Ffdh.AArch64.Cached.ImportInverse`, which only this module used -/
+
+section
+
+/-! Reconstruct the native inverse from the imported odd low modulus limb. -/
+@[expose] public section
+namespace VG.Proof.Ffdh.AArch64.Cached
+open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64
+open VG.Proof.Bignum VG.Proof.Bignum.AArch64
+open VG.Proof.MlKem.AArch64 (Keep)
+
+theorem importInverse_ok {s : State} {B : Addr} {Z w : Nat} {old : BitVec 64}
+ (good : Good s B Z w old) (room : slot w 8≤Z) (positive : 0<w)
+ (odd : wv s.mem B (slot w 0) w%2=1) :
+ WP isa (.block ([ldh .x8 (sArr 0),ld .x3 .x8]++minv++[sth .x15 sMinv])) s fun t =>
+ ∃ mi,Good t B Z w mi ∧ ((word t.mem B (slot w 0)).toNat*mi.toNat+1)%2^64=0 ∧
+ Outside B (8*sMinv) 8 s.mem t.mem ∧ Keep mmRegs s t := by
+ have arrayRoom := Nat.le_trans (slot_le (w:=w) (show 0<8 by decide)) room
+ have low := wv_mod64 s.mem B (slot w 0) (by omega_using [positive] : 1≤w)
+ have lowOdd : (word s.mem B (slot w 0)).toNat%2=1 := by omega_using [odd, low]
+ rw [List.append_assoc,WP.block_append_iff]
+ refine WP.mono (WP.keep [.x8,.x3] (Q:=fun a =>a.gpr .x3=word s.mem B (slot w 0) ∧ a.mem=s.mem) ?_ rfl rfl rfl) ?_
+ · brun [good.x0,hdr_enc (show sArr 0<32 by decide),header_read good room (show sArr 0<32 by decide),
+    good.hdr.harr 0 (by decide),good.scr.ld (d:=slot w 0) (by omega_using [arrayRoom])]
+ · rintro a ⟨⟨lowA,memA⟩,restA⟩
+   rw [WP.block_append_iff]
+   refine WP.mono (minv_ok a (by rw [lowA];exact lowOdd)) ?_
+   rintro b ⟨inverseB,restB,memB⟩
+   rw [lowA] at inverseB
+   have total := restA.trans restB
+   refine WP.mono (WP.keep [] (Q:=fun t =>t.mem=b.mem.writeW (off B (8*sMinv)) (b.gpr .x15)) ?_ rfl rfl rfl) ?_
+   · brun [(total.gpr .x0 (by decide)).trans good.x0,hdr_enc (show sMinv<32 by decide),
+      (good.scr.congr total.wr).st (d:=8*sMinv) (by have := hdr_lt_slot w 8 (show sMinv<32 by decide);omega_using [room, this])]
+   · rintro t ⟨memT,restT⟩
+     have mem : t.mem=s.mem.writeW (off B (8*sMinv)) (b.gpr .x15) := by rw [memT,memB,memA]
+     have frame : Outside B (8*sMinv) 8 s.mem t.mem := by rw [mem];exact writeW_outside _ _ _ (by decide)
+     have rest : Keep mmRegs s t := (total.trans restT).mono (by simp [mmRegs])
+     have fixed (i : Nat) (hi : i<32) (different : i≠sMinv) : word t.mem B (8*i)=word s.mem B (8*i) :=
+      header_other frame (by decide) hi different
+     refine ⟨b.gpr .x15,⟨good.scr.congr rest.wr,(rest.gpr .x0 (by simp [mmRegs])).trans good.x0,
+      (fixed sW (by decide) (by decide)).trans good.hdr.hw,?_,fun i hi =>
+       (fixed (sArr i) (by unfold sArr;omega_using [hi]) (by unfold sArr sMinv;omega_using [])).trans (good.hdr.harr i hi)⟩,?_,frame,rest⟩
+     · rw [mem,word_writeW_self]
+     · rw [frame.word (Or.inr (hdr_lt_slot w 0 (show sMinv<32 by decide)))
+        (by have := good.scr.nowrap;omega_using [arrayRoom, this])]
+       exact inverseB
+
+end VG.Proof.Ffdh.AArch64.Cached
+
+end
+
+end
+
+
+/-! Import canonical p and R² and reconstruct the architecture-specific inverse. -/
+@[expose] public section
+namespace VG.Proof.Ffdh.AArch64.Cached
+open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64
+open VG.Impl.Ffdh.AArch64.Cached
+open VG.Proof.Bignum VG.Proof.Bignum.AArch64
+open VG.Proof.MlKem.AArch64 (Keep)
+
+def importData : Prog isa := seqs [
+ .block [ldh .x16 sCtx,.addImm .x .x16 .x16 24,ldh .x17 (sArr 0),ldh .x12 sW],copyWords,
+ .block [ldh .x17 (sArr 4),ldh .x12 sW],copyWords,
+ .block ([ldh .x8 (sArr 0),ld .x3 .x8]++minv++[sth .x15 sMinv])]
+
+def importDataRanges (w : Nat) : List (Nat × Nat) :=
+ [(slot w 0,8*(w+2)),(slot w 4,8*(w+2)),(8*sMinv,8)]
+
+theorem importData_ok {s : State} {B ctx : Addr} {Z w P : Nat} {old : BitVec 64}
+ (good : Good s B Z w old) (room : slot w 8≤Z) (positive : 0<w) (size : w<2^31)
+ (context : word s.mem B (8*sCtx)=ctx)
+ (readable : ∀ i<2*w,InRegions (s.rd++s.wr) (off ctx (24+8*i)) 8)
+ (outside : ∀ i<16*w,Z≤ofs B (off ctx 24+BitVec.ofNat 64 i))
+ (modulus : wv s.mem ctx 24 w=P) (r2 : wv s.mem ctx (24+8*w) w=2^(128*w)%P) (odd : P%2=1) :
+ WP isa importData s fun t =>
+ ∃ mi,Good t B Z w mi ∧ wv t.mem B (slot w 0) w=P ∧
+ ((word t.mem B (slot w 0)).toNat*mi.toNat+1)%2^64=0 ∧
+ wv t.mem B (slot w 4) w=2^(128*w)%P ∧ Frm B (importDataRanges w) s.mem t.mem ∧ Keep mmRegs s t := by
+ have nowrap : B.toNat+slot w 8≤2^64 := by have := good.scr.nowrap;omega_using [room, this]
+ have keepCtx (m : Mem) (frame : InScr B Z s.mem m) : wv m ctx (24+8*w) w=wv s.mem ctx (24+8*w) w := by
+  apply wv_congr
+  intro i hi
+  apply Mem.readW_congr
+  intro b hb
+  apply frame
+  have sep := outside (8*w+8*i+b) (by omega_using [hi, hb])
+  simpa only [off,BitVec.ofNat_add,BitVec.add_assoc] using sep
+ unfold importData
+ simp only [seqs]
+ rw [WP.seq_iff]
+ refine WP.mono (WP.keep [.x16,.x17,.x12] (Q:=fun a =>a.gpr .x16=off ctx 24 ∧
+  a.gpr .x17=off B (slot w 0) ∧ a.gpr .x12=BitVec.ofNat 64 w ∧ a.mem=s.mem) ?_ rfl rfl rfl) ?_
+ · brun [good.x0,hdr_enc (show sCtx<32 by decide),hdr_enc (show sArr 0<32 by decide),hdr_enc (show sW<32 by decide),
+    header_read good room (show sCtx<32 by decide),header_read good room (show sArr 0<32 by decide),
+    header_read good room (show sW<32 by decide),context,good.hdr.harr 0 (by decide),good.hdr.hw]
+ · rintro a ⟨⟨srcA,dstA,countA,memA⟩,restA⟩
+   have goodA : Good a B Z w old := ⟨good.scr.congr restA.wr,(restA.gpr .x0 (by decide)).trans good.x0,memA ▸ good.hdr⟩
+   rw [WP.seq_iff]
+   refine WP.mono (copyFromContext_ok goodA room positive size (by decide : 0<8) srcA dstA countA
+    (fun i hi =>by rw [restA.rd,restA.wr];exact readable i (by omega_using [hi]))
+    (fun i hi =>outside i (by omega_using [hi]))) ?_
+   rintro b ⟨goodB,valueB,frameB,pointerB,restB⟩
+   have modulusB : wv b.mem B (slot w 0) w=P := by rw [valueB,memA];exact modulus
+   have inscrB : InScr B Z s.mem b.mem := by
+    rw [←memA];exact InScr.of_arrays frameB room (by simp : ∀ i∈[0],i<8)
+   rw [WP.seq_iff]
+   refine WP.mono (WP.keep [.x17,.x12] (Q:=fun c =>c.gpr .x17=off B (slot w 4) ∧ c.gpr .x12=BitVec.ofNat 64 w ∧ c.mem=b.mem) ?_ rfl rfl rfl) ?_
+   · brun [goodB.x0,hdr_enc (show sArr 4<32 by decide),hdr_enc (show sW<32 by decide),
+      header_read goodB room (show sArr 4<32 by decide),header_read goodB room (show sW<32 by decide),
+      goodB.hdr.harr 4 (by decide),goodB.hdr.hw]
+   · rintro c ⟨⟨dstC,countC,memC⟩,restC⟩
+     have goodC : Good c B Z w old := ⟨goodB.scr.congr restC.wr,(restC.gpr .x0 (by decide)).trans goodB.x0,memC ▸ goodB.hdr⟩
+     have rest := (restA.trans restB).trans restC
+     rw [WP.seq_iff]
+     refine WP.mono (copyFromContext_ok goodC room positive size (by decide : 4<8)
+      ((restC.gpr .x16 (by decide)).trans pointerB) dstC countC
+      (fun i hi =>by
+       rw [rest.rd,rest.wr]
+       simpa only [Nat.mul_add,Nat.add_assoc] using readable (w+i) (by omega_using [hi]))
+      (fun i hi =>by
+       have sep := outside (8*w+i) (by omega_using [hi])
+       simpa only [off,BitVec.ofNat_add,BitVec.add_assoc] using sep)) ?_
+     rintro d ⟨goodD,valueD,frameD,_,restD⟩
+     have modulusD : wv d.mem B (slot w 0) w=P := by
+      rw [frameD.wv_of_not_mem (by decide) (by decide) nowrap,memC];exact modulusB
+     have r2D : wv d.mem B (slot w 4) w=2^(128*w)%P := by rw [valueD,memC,keepCtx b.mem inscrB];exact r2
+     refine WP.mono (importInverse_ok goodD room positive (by rw [modulusD];exact odd)) ?_
+     rintro t ⟨mi,goodT,inverseT,frameT,restT⟩
+     have field0 : wv t.mem B (slot w 0) w=P :=
+      (frameT.wv (Or.inr (hdr_lt_slot w 0 (show sMinv<32 by decide))) (by have := slot_le (w:=w) (show 0<8 by decide);omega_using [nowrap, this])).trans modulusD
+     have field4 : wv t.mem B (slot w 4) w=2^(128*w)%P :=
+      (frameT.wv (Or.inr (hdr_lt_slot w 4 (show sMinv<32 by decide))) (by have := slot_le (w:=w) (show 4<8 by decide);omega_using [nowrap, this])).trans r2D
+     have first : Frm B (importDataRanges w) s.mem b.mem := by rw [←memA];exact Frm.of_arrays frameB (by simp [importDataRanges])
+     have second : Frm B (importDataRanges w) b.mem d.mem := by rw [←memC];exact Frm.of_arrays frameD (by simp [importDataRanges])
+     exact ⟨mi,goodT,field0,inverseT,field4,(first.trans second).trans (Frm.of_outside frameT (by simp [importDataRanges])),
+      (((rest.trans restD).trans restT)).mono (by simp [mmRegs])⟩
+
+end VG.Proof.Ffdh.AArch64.Cached
+
+end
+
+end
+
+/-! ### `Ffdh.AArch64.Cached.ImportPrefix`, which only this module used -/
+
+section
+
+/-! Complete native context import starts with uninitialized scratch. -/
+@[expose] public section
+namespace VG.Proof.Ffdh.AArch64.Cached
+open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64
+open VG.Impl.Ffdh.AArch64.Cached
+open VG.Proof.Bignum VG.Proof.Bignum.AArch64
+open VG.Proof.MlKem.AArch64 (Keep)
+
+def importRanges (w : Nat) : List (Nat × Nat) := [(8*sW,8),(8*sArr 0,64)]++importDataRanges w
+
+theorem importPrefix_ok {s : State} {B ctx : Addr} {Z w k P : Nat}
+ (scratch : Scr s B Z) (base : s.gpr .x0=B) (room : slot w 8≤Z)
+ (words : w=(k+7)/8) (positive : 0<k) (size : k<2^31)
+ (length : word s.mem B (8*sLen)=BitVec.ofNat 64 k) (context : word s.mem B (8*sCtx)=ctx)
+ (readable : ∀ i<2*w,InRegions (s.rd++s.wr) (off ctx (24+8*i)) 8)
+ (outside : ∀ i<16*w,Z≤ofs B (off ctx 24+BitVec.ofNat 64 i))
+ (modulus : wv s.mem ctx 24 w=P) (r2 : wv s.mem ctx (24+8*w) w=2^(128*w)%P) (odd : P%2=1) :
+ WP isa importPrefix s fun t =>
+ ∃ mi,Good t B Z w mi ∧ wv t.mem B (slot w 0) w=P ∧
+ ((word t.mem B (slot w 0)).toNat*mi.toNat+1)%2^64=0 ∧
+ wv t.mem B (slot w 4) w=2^(128*w)%P ∧ Frm B (importRanges w) s.mem t.mem ∧ Keep mmRegs s t := by
+ unfold importPrefix
+ simp only [seqs]
+ rw [WP.seq_iff]
+ refine WP.mono (head_ok scratch base (by rw [←words];exact room) (by omega_using [size])
+  (by change word s.mem B (8*Public.sK)=_;exact length)) ?_
+ rintro a ⟨_,width,arrays,frameA,restA⟩
+ rw [←words] at width arrays
+ have goodA : Good a B Z w (word a.mem B (8*sMinv)) :=
+  ⟨scratch.congr restA.wr,(restA.gpr .x0 (by decide)).trans base,width,rfl,arrays⟩
+ have inscrA : InScr B Z s.mem a.mem :=
+  InScr.of_frm (frameA.mono (by simp [pcLoadRanges])) (fun r hr =>Nat.le_trans (pcLoadRanges_le w r hr) room)
+ have contextA : word a.mem B (8*sCtx)=ctx := by
+  rw [frameA.word_eq (by
+   simp only [List.mem_cons,List.not_mem_nil,or_false]
+   rintro _ (rfl|rfl) <;> decide) (by decide)]
+  exact context
+ have prefixValue (d : Nat) (bound : d+8*w≤24+16*w) (lower : 24≤d) : wv a.mem ctx d w=wv s.mem ctx d w := by
+  apply wv_congr
+  intro i hi
+  apply Mem.readW_congr
+  intro b hb
+  apply inscrA
+  have sep := outside (d-24+8*i+b) (by omega_using [bound, hi, hb])
+  have eq : off ctx (d+8*i)+BitVec.ofNat 64 b=off ctx 24+BitVec.ofNat 64 (d-24+8*i+b) := by
+   unfold off
+   rw [BitVec.add_assoc,←BitVec.ofNat_add,BitVec.add_assoc,←BitVec.ofNat_add]
+   congr 2
+   omega_using [lower]
+  rw [eq]
+  exact sep
+ change WP isa importData a _
+ refine WP.mono (importData_ok goodA room (by rw [words];omega_using [positive]) (by rw [words];omega_using [size]) contextA
+  (fun i hi =>by rw [restA.rd,restA.wr];exact readable i hi) outside
+  ((prefixValue 24 (by omega_using []) (by omega_using [])).trans modulus)
+  ((prefixValue (24+8*w) (by omega_using []) (by omega_using [])).trans r2) odd) ?_
+ rintro t ⟨mi,good,modulusT,inverseT,r2T,frameT,restT⟩
+ exact ⟨mi,good,modulusT,inverseT,r2T,
+  (frameA.mono (fun r hr =>List.mem_append_left _ hr)).trans
+   (frameT.mono (fun r hr =>List.mem_append_right _ hr)),(restA.trans restT).mono (by simp [mmRegs])⟩
+
+end VG.Proof.Ffdh.AArch64.Cached
+
+end
+
+end
+
+
+/-! Native context import preserves all cached API controls in the upper header. -/
+@[expose] public section
+namespace VG.Proof.Ffdh.AArch64.Cached
+open VG VG.Impl.Bignum VG.Impl.Bignum.AArch64 VG.Proof.Bignum
+
+theorem importRanges_le (w : Nat) : ∀ r∈importRanges w,r.1+r.2≤slot w 8 := by
+ simp only [importRanges,importDataRanges,List.mem_append,List.mem_cons,List.not_mem_nil,or_false]
+ rintro _ ((rfl|rfl)|(rfl|rfl|rfl))
+ all_goals dsimp only [sW,sArr,sMinv,slot,hdrBytes];omega_using []
+
+theorem importFrame_header {B : Addr} {w i : Nat} {m m' : Mem}
+ (frame : Frm B (importRanges w) m m') (lower : 16≤i) (upper : i<32) :
+ word m' B (8*i)=word m B (8*i) := by
+ apply frame.word_eq _ (by omega_using [upper])
+ simp only [importRanges,importDataRanges,List.mem_append,List.mem_cons,List.not_mem_nil,or_false]
+ rintro _ ((rfl|rfl)|(rfl|rfl|rfl))
+ all_goals dsimp only [sW,sArr,sMinv,slot,hdrBytes];omega_arith
+
+end VG.Proof.Ffdh.AArch64.Cached
+
+end
+
+end
+
+/-! ### `Ffdh.AArch64.Cached.ImportTimingState`, which only this module used -/
+
+section
+
+/-! Public geometry for importing canonical context limbs into fresh scratch. -/
+@[expose] public section
+namespace VG.Proof.Ffdh.AArch64.Cached
+open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64
+open VG.Impl.Ffdh.AArch64.Cached
+open VG.Proof.Bignum VG.Proof.Bignum.AArch64
+open VG.Proof.MlKem.AArch64 (Keep)
+
+structure ImportPublic where
+ workspace : Ws
+ k : Nat
+ ctx : Addr
+ room : slot workspace.w 8≤workspace.Z
+ words : workspace.w=(k+7)/8
+ positive : 0<k
+ size : k<2^31
+
+structure ImportReady (q : ImportPublic) (s : State) : Prop where
+ scratch : Scr s q.workspace.B q.workspace.Z
+ base : s.gpr .x0=q.workspace.B
+ length : word s.mem q.workspace.B (8*sLen)=BitVec.ofNat 64 q.k
+ context : word s.mem q.workspace.B (8*sCtx)=q.ctx
+ readable : ∀ i<2*q.workspace.w,InRegions (s.rd++s.wr) (off q.ctx (24+8*i)) 8
+ outside : ∀ i<16*q.workspace.w,q.workspace.Z≤ofs q.workspace.B (off q.ctx 24+BitVec.ofNat 64 i)
+
+structure ImportDataReady (q : ImportPublic) (s : State) : Prop where
+ good : GoodW q.workspace s
+ context : word s.mem q.workspace.B (8*sCtx)=q.ctx
+ readable : ∀ i<2*q.workspace.w,InRegions (s.rd++s.wr) (off q.ctx (24+8*i)) 8
+ outside : ∀ i<16*q.workspace.w,q.workspace.Z≤ofs q.workspace.B (off q.ctx 24+BitVec.ofNat 64 i)
+
+theorem ImportDataReady.after_arrays {q : ImportPublic} {s t : State} {js : List Nat} {mi : BitVec 64} {rs : List Reg}
+ (h : ImportDataReady q s) (good : Good t q.workspace.B q.workspace.Z q.workspace.w mi)
+ (frame : Arrays q.workspace.B q.workspace.w js s.mem t.mem) (rest : Keep rs s t) : ImportDataReady q t :=
+ ⟨⟨mi,good,q.room⟩,(arrays_header frame (by decide)).trans h.context,
+  fun i hi =>by rw [rest.rd,rest.wr];exact h.readable i hi,h.outside⟩
+
+def PrefixCopyReady (q : ImportPublic) (i a : Nat) (s : State) : Prop :=
+ ImportDataReady q s ∧ s.gpr .x16=off q.ctx (24+8*q.workspace.w*i) ∧
+ s.gpr .x17=off q.workspace.B (slot q.workspace.w a) ∧ s.gpr .x12=BitVec.ofNat 64 q.workspace.w
+
+theorem prefixCopy_ok {q : ImportPublic} {s : State} {a i : Nat}
+ (h : PrefixCopyReady q i a s) (array : a<8) (index : i<2) :
+ WP isa copyWords s fun t =>ImportDataReady q t ∧ s.gpr .x0=t.gpr .x0 ∧
+ t.gpr .x16=off q.ctx (24+8*q.workspace.w*i+8*q.workspace.w) := by
+ have mulBound : q.workspace.w*i≤q.workspace.w := by simpa using Nat.mul_le_mul_left q.workspace.w (by omega_using [index] : i≤1)
+ have bytesBound : 8*q.workspace.w*i≤8*q.workspace.w := by simpa using Nat.mul_le_mul_left (8*q.workspace.w) (by omega_using [index] : i≤1)
+ obtain ⟨ready,ptr,dst,count⟩:=h
+ obtain ⟨mi,good,_⟩:=ready.good
+ refine WP.mono (copyFromContext_ok good q.room (by rw [q.words];have :=q.positive;omega_using [this])
+  (by rw [q.words];have :=q.size;omega_using [this]) array ptr dst count
+  (fun j hj =>by
+   have rd :=ready.readable (q.workspace.w*i+j) (by omega_using [mulBound, hj])
+   simpa only [Nat.mul_add,Nat.add_assoc,Nat.mul_assoc] using rd)
+  (fun j hj =>by
+   have out :=ready.outside (8*q.workspace.w*i+j) (by omega_using [bytesBound, hj])
+   simpa only [off,BitVec.ofNat_add,BitVec.add_assoc] using out)) ?_
+ rintro t ⟨goodT,_,frame,ptrT,rest⟩
+ exact ⟨ready.after_arrays goodT frame rest,(rest.gpr .x0 (by simp [mmRegs])).symm,ptrT⟩
+
+end VG.Proof.Ffdh.AArch64.Cached
+
+end
+
+end
+
+
+/-! Both imported limb ranges and inverse reconstruction have fixed public schedules. -/
+@[expose] public section
+namespace VG.Proof.Ffdh.AArch64.Cached
+open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64
+open VG.Impl.Ffdh.AArch64.Cached
+open VG.Proof.Bignum VG.Proof.Bignum.AArch64
+open VG.Proof.MlKem.AArch64 (Keep)
+
+theorem prefixCopy_ct (i a : Nat) : RelCT isa (Two fun q s =>PrefixCopyReady q i a s) copyWords (fun _ _ =>True) :=
+ two_taint [.x16,.x17,.x12] (fun q s t hs ht r hr =>by
+  simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
+  rcases hr with rfl|rfl|rfl
+  · exact hs.2.1.trans ht.2.1.symm
+  · exact hs.2.2.1.trans ht.2.2.1.symm
+  · exact hs.2.2.2.trans ht.2.2.2.symm) (by taint_decide)
+
+theorem importInverse_ct : RelCT isa (Two GoodW)
+ (.block ([ldh .x8 (sArr 0),ld .x3 .x8]++minv++[sth .x15 sMinv])) (fun _ _ =>True) := by
+ change RelCT isa (Two GoodW) (.block ([ldh .x8 (sArr 0)]++([ld .x3 .x8]++minv++[sth .x15 sMinv]))) _
+ apply RelCT.block_append
+ refine RelCT.seq (two_piece (Ψ:=fun p s =>s.gpr .x0=p.B ∧ s.gpr .x8=off p.B (slot p.w 0)) [.x0] pins_goodW (by taint_decide) ?_)
+  (two_taint [.x0,.x8] (fun _ s t hs ht r hr =>by
+   simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
+   rcases hr with rfl|rfl
+   · exact hs.1.trans ht.1.symm
+   · exact hs.2.trans ht.2.symm) (by taint_decide))
+ rintro p s ⟨mi,good,room⟩
+ brun [good.x0,hdr_enc (show sArr 0<32 by decide),header_read good room (show sArr 0<32 by decide),good.hdr.harr 0 (by decide)]
+
+def PrefixSecond (q : ImportPublic) (s : State) : Prop :=
+ ImportDataReady q s ∧ s.gpr .x16=off q.ctx (24+8*q.workspace.w)
+
+theorem importData_ct : RelCT isa (Two ImportDataReady) importData (fun _ _ =>True) := by
+ unfold importData
+ simp only [seqs]
+ refine RelCT.seq (two_piece (Ψ:=fun q s =>PrefixCopyReady q 0 0 s) [.x0]
+  (fun q s t hs ht =>pins_goodW _ s t hs.good ht.good) (by taint_decide) ?_) ?_
+ · intro q s h
+   obtain ⟨mi,good,_⟩:=h.good
+   refine WP.mono (WP.keep [.x16,.x17,.x12] (Q:=fun t =>
+    t.gpr .x16=off q.ctx 24 ∧ t.gpr .x17=off q.workspace.B (slot q.workspace.w 0) ∧
+    t.gpr .x12=BitVec.ofNat 64 q.workspace.w ∧ t.mem=s.mem) ?_ rfl rfl rfl) ?_
+   · brun [good.x0,hdr_enc (show sCtx<32 by decide),hdr_enc (show sArr 0<32 by decide),hdr_enc (show sW<32 by decide),
+      header_read good q.room (show sCtx<32 by decide),header_read good q.room (show sArr 0<32 by decide),
+      header_read good q.room (show sW<32 by decide),h.context,good.hdr.harr 0 (by decide),good.hdr.hw]
+   · rintro t ⟨⟨ptr,dst,count,mem⟩,rest⟩
+     exact ⟨⟨⟨mi,⟨good.scr.congr rest.wr,(rest.gpr .x0 (by decide)).trans good.x0,mem ▸ good.hdr⟩,q.room⟩,
+      mem ▸ h.context,fun i hi =>by rw [rest.rd,rest.wr];exact h.readable i hi,h.outside⟩,
+      by simpa only [Nat.mul_zero,Nat.add_zero] using ptr,dst,count⟩
+ · refine RelCT.seq (two_post (Ψ:=PrefixSecond) (prefixCopy_ct 0 0) ?_) ?_
+   · intro q s h
+     refine WP.mono (prefixCopy_ok h (by decide : 0<8) (by decide : 0<2)) ?_
+     rintro t ⟨ready,_,ptr⟩
+     exact ⟨ready,by simpa only [Nat.mul_zero,Nat.add_zero] using ptr⟩
+   · refine RelCT.seq (two_piece (Ψ:=fun q s =>PrefixCopyReady q 1 4 s) [.x0]
+      (fun q s t hs ht =>pins_goodW _ s t hs.1.good ht.1.good) (by taint_decide) ?_) ?_
+     · rintro q s ⟨h,src⟩
+       obtain ⟨mi,good,_⟩:=h.good
+       refine WP.mono (WP.keep [.x17,.x12] (Q:=fun t =>
+        t.gpr .x17=off q.workspace.B (slot q.workspace.w 4) ∧ t.gpr .x12=BitVec.ofNat 64 q.workspace.w ∧ t.mem=s.mem) ?_ rfl rfl rfl) ?_
+       · brun [good.x0,hdr_enc (show sArr 4<32 by decide),hdr_enc (show sW<32 by decide),
+          header_read good q.room (show sArr 4<32 by decide),header_read good q.room (show sW<32 by decide),
+          good.hdr.harr 4 (by decide),good.hdr.hw]
+       · rintro t ⟨⟨dst,count,mem⟩,rest⟩
+         exact ⟨⟨⟨mi,⟨good.scr.congr rest.wr,(rest.gpr .x0 (by decide)).trans good.x0,mem ▸ good.hdr⟩,q.room⟩,
+          mem ▸ h.context,fun i hi =>by rw [rest.rd,rest.wr];exact h.readable i hi,h.outside⟩,
+          by simpa only [Nat.mul_one] using (rest.gpr .x16 (by decide)).trans src,dst,count⟩
+     · refine RelCT.seq (two_post (Ψ:=fun q s =>GoodW q.workspace s) (prefixCopy_ct 1 4) ?_)
+        (two_map ImportPublic.workspace (fun _ _ h =>h) importInverse_ct)
+       intro q s h
+       exact WP.mono (prefixCopy_ok h (by decide : 4<8) (by decide : 1<2)) (fun _ ⟨ready,_,_⟩ =>ready.good)
+
+end VG.Proof.Ffdh.AArch64.Cached
+
+end
+
+end
+
+/-! Context import starts from arbitrary scratch contents, with a public limb geometry. -/
+@[expose] public section
+namespace VG.Proof.Ffdh.AArch64.Cached
+open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64
+open VG.Impl.Ffdh.AArch64.Cached
+open VG.Proof.Bignum VG.Proof.Bignum.AArch64
+
+theorem importPrefix_ct : RelCT isa (Two ImportReady) importPrefix (fun _ _ =>True) := by
+ change RelCT isa (Two ImportReady) (.seq (.block VG.Impl.Rsa.AArch64.head) importData) _
+ refine RelCT.seq (two_piece (Ψ:=ImportDataReady) [.x0] (fun q s t hs ht r hr =>by
+  have eq : r= .x0 := by simpa using hr
+  subst r;exact hs.base.trans ht.base.symm) (by taint_decide) ?_) importData_ct
+ intro q s h
+ refine WP.mono (head_ok h.scratch h.base (by rw [←q.words];exact q.room) (by have :=q.size;omega_using [this])
+  (by change word s.mem q.workspace.B (8*Public.sK)=_;exact h.length)) ?_
+ rintro t ⟨_,width,arrays,frame,rest⟩
+ rw [←q.words] at width arrays
+ have context : word t.mem q.workspace.B (8*sCtx)=q.ctx := by
+  rw [frame.word_eq (by
+   simp only [List.mem_cons,List.not_mem_nil,or_false]
+   rintro _ (rfl|rfl) <;>decide) (by decide)]
+  exact h.context
+ exact ⟨⟨word t.mem q.workspace.B (8*sMinv),⟨h.scratch.congr rest.wr,
+  (rest.gpr .x0 (by decide)).trans h.base,width,rfl,arrays⟩,q.room⟩,context,
+  fun i hi =>by rw [rest.rd,rest.wr];exact h.readable i hi,h.outside⟩
+
+end VG.Proof.Ffdh.AArch64.Cached
+
+end
+
+end
 
 /-! ### `Ffdh.AArch64.Cached.GeneratePrepared`, which this module and modules that import it used -/
 

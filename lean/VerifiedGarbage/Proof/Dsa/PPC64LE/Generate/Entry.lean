@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Bignum.Octets
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Generate.Contract
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Random.Env
 public import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratch
-import VerifiedGarbage.Proof.Dsa.PPC64LE.RandomSign.Ctx
 
 /-! ### `Dsa.PPC64LE.Generate.Ctx`, which this module and modules that import it used -/
 

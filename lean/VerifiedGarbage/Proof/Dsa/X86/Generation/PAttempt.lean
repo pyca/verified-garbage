@@ -6,8 +6,7 @@ import VerifiedGarbage.Proof.Framework.X86.Syms
 public import VerifiedGarbage.Impl.Dsa.X86.Generation
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Mont.Words
-import VerifiedGarbage.Proof.Dsa.X86.Generation.Base
-import VerifiedGarbage.Proof.Dsa.X86.Generation.Words
+import VerifiedGarbage.Proof.Dsa.X86.Generation.Geo
 public import VerifiedGarbage.Proof.Dsa.Generation.PCandidate
 public import VerifiedGarbage.Spec.Ffdh
 import VerifiedGarbage.Proof.Dsa.Generation.Memory

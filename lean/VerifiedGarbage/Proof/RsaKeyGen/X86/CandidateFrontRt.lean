@@ -2,11 +2,9 @@ module
 
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.FrontRt
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.FrontRt.Load
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.ExponentRanges
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.ExponentRt.Code
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateSieveInput
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateFinishReady
-import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateDrawn
-import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateBranch
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateLoadInput
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateArrays
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateShape
@@ -43,13 +41,11 @@ public import VerifiedGarbage.Proof.Mont.X86.Words
 public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.RsaKeyGen.X86.WitnessRt.Blocks
 public import VerifiedGarbage.Proof.Framework.X86.AllocFrame
-import VerifiedGarbage.Proof.RsaKeyGen.X86.SieveLoop
-import VerifiedGarbage.Proof.RsaKeyGen.X86.SieveAdvancedMem
-import VerifiedGarbage.Proof.RsaKeyGen.TrialFilter
 import VerifiedGarbage.Proof.RsaKeyGen.X86.SieveFrame
+import VerifiedGarbage.Proof.RsaKeyGen.X86.SieveStep
+import VerifiedGarbage.Proof.RsaKeyGen.TrialFilter
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.ExponentRt
-import VerifiedGarbage.Proof.RsaKeyGen.X86.ExponentRt.Code
 
 /-! ### `RsaKeyGen.X86.CandidateExponentInput`, which this module and modules that import it used -/
 

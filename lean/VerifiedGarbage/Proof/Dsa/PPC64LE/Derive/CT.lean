@@ -4,8 +4,8 @@ public import VerifiedGarbage.Proof.Dsa.PPC64LE.CT.Key
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Derive.Front
 meta import VerifiedGarbage.Proof.Dsa.PPC64LE.CT.Key
 meta import VerifiedGarbage.Proof.Dsa.PPC64LE.Derive.Front
-import VerifiedGarbage.Proof.Dsa.PPC64LE.CT.SizesRest
-meta import VerifiedGarbage.Proof.Dsa.PPC64LE.CT.SizesRest
+import VerifiedGarbage.Proof.Dsa.PPC64LE.VerifyCT
+meta import VerifiedGarbage.Proof.Dsa.PPC64LE.VerifyCT
 import VerifiedGarbage.Proof.Dsa.PPC64LE.Params.CT
 meta import VerifiedGarbage.Proof.Dsa.PPC64LE.Params.CT
 import VerifiedGarbage.Proof.Dsa.PPC64LE.Derive.Fn
@@ -13,7 +13,6 @@ import VerifiedGarbage.Proof.Dsa.PPC64LE.CheckKey
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubCorrect
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.CT.Sizes
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.CT.Base
 
 /-!
 # DSA key derivation on PPC64LE: constant time

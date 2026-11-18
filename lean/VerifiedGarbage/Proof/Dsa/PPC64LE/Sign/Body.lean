@@ -24,7 +24,6 @@ public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Mont.Words
 public import VerifiedGarbage.TCB.PPC64LE.Isa
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMont
-import VerifiedGarbage.Proof.Dsa.PPC64LE.VerifyProd
 import VerifiedGarbage.Proof.Bignum.PPC64LE.ModArithReduce
 import VerifiedGarbage.Proof.Bignum.PPC64LE.MontRounds
 import VerifiedGarbage.Proof.Bignum.PPC64LE.MontCore

@@ -1,8 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86.DerivingLayout
+public import VerifiedGarbage.Proof.Dsa.X86.DerivingOperationCT
 import VerifiedGarbage.Proof.Dsa.X86.DerivingOperation
-import VerifiedGarbage.Proof.Dsa.X86.DerivingOperationCT
 
 /-! # The i686 key derivation meets its shared contract -/
 

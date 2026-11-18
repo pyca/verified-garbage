@@ -2,16 +2,15 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86.PrevalidatedVerified
 public import VerifiedGarbage.Impl.Dsa.X86.RandomSign
-public import VerifiedGarbage.Proof.Dsa.X86.RandomAttemptState
+public import VerifiedGarbage.Proof.Dsa.X86.RandomAttempt
 public import VerifiedGarbage.Proof.Framework.X86.CallWith
 public import VerifiedGarbage.Spec.Dsa.PrevalidatedSign
 public import VerifiedGarbage.Proof.Dsa.PrivateKeyWitness
 import VerifiedGarbage.Proof.Dsa.X86.ShapeCall
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-public import VerifiedGarbage.Proof.Dsa.X86.RandomCallCT
+public import VerifiedGarbage.Proof.Dsa.X86.RandomBodyCT
 public import VerifiedGarbage.Proof.Dsa.SignContractWith
-import VerifiedGarbage.Proof.Dsa.X86.RandomBodyCT
 import VerifiedGarbage.Proof.Dsa.X86.RandomSignCorrect
 public import VerifiedGarbage.Impl.Dsa.X86.PrevalidatedSign
 public import VerifiedGarbage.Proof.Framework.Contract

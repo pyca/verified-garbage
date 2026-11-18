@@ -3,7 +3,7 @@ module
 import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightCtContext
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareMath
 public import VerifiedGarbage.Impl.Bignum.AArch64.SquareEightRaw
-public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcCtContext
+public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcCtRow
 public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightRows
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightRows
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareLayout

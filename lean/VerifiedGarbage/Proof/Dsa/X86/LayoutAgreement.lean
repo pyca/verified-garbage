@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86.VerifyLayout
 public import VerifiedGarbage.Proof.Dsa.X86.SignLayout
 
 /-! # Identical public arguments and domain values select one call layout -/

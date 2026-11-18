@@ -9,11 +9,9 @@ meta import VerifiedGarbage.Proof.Dsa.RISCV64.RndSample
 meta import VerifiedGarbage.Proof.Dsa.SameTrace
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Alloc
-import VerifiedGarbage.Proof.Dsa.RISCV64.RndDraw
 import VerifiedGarbage.Proof.Dsa.RISCV64.Ctx
 import VerifiedGarbage.Proof.Dsa.RandomResult
 import VerifiedGarbage.Proof.Framework.RISCV64.Steps
-meta import VerifiedGarbage.Proof.Dsa.RISCV64.RndDraw
 meta import VerifiedGarbage.Proof.Dsa.RISCV64.Ctx
 meta import VerifiedGarbage.Proof.Dsa.RandomResult
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Steps
@@ -21,7 +19,7 @@ meta import VerifiedGarbage.Proof.Framework.RISCV64.Steps
 /-!
 # DSA sampling on RISC-V: constant time
 
-As on PPC64LE (`Proof/Dsa/PPC64LE/Random/CT.lean`). Two runs of the sampler
+As on PPC64LE (`Proof/Dsa/PPC64LE/RandomSign/CT.lean`). Two runs of the sampler
 with the same public data `E` (q's significant octets, the tape's place
 and length, the frame), from the same count of octets consumed and draws
 left, and with the same trace of `Random.sample` from there, leak the same

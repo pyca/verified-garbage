@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.SignCompute
+public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyCompute
 public import VerifiedGarbage.Proof.Dsa.AArch64.ShapeSpec
 public import VerifiedGarbage.Proof.Dsa.AArch64.InitializedLayout
 public import VerifiedGarbage.Spec.Dsa.Derive

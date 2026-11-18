@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.PX
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.PPart
 import VerifiedGarbage.Proof.Dsa.Generation.RandomSuffix
 import VerifiedGarbage.Proof.Framework.Omega
@@ -24,12 +23,11 @@ import VerifiedGarbage.Proof.Dsa.Generation.SearchDomain
 import VerifiedGarbage.Proof.Dsa.Generation.GeneratorDomain
 import VerifiedGarbage.Proof.Dsa.Generation.ParamsEncoding
 import VerifiedGarbage.Proof.Dsa.Generation.QCandidate
-import VerifiedGarbage.Proof.Dsa.Generation.SeedSuffix
+public import VerifiedGarbage.Proof.Dsa.Generation.RefillSearch
 import VerifiedGarbage.Proof.Dsa.Digest
 import VerifiedGarbage.Proof.Dsa.Encoding
 import VerifiedGarbage.Proof.Rsa.Octets
 public import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.ShapeOctets
-public import VerifiedGarbage.Proof.Dsa.Generation.RefillSearch
 
 /-! ### `Dsa.PPC64LE.Gen.Attempt`, which only this module used -/
 

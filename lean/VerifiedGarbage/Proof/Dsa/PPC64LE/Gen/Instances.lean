@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.Verified
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.PX
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.PPart
 public import VerifiedGarbage.Proof.Sha1.PPC64LE.Stream.Md
 public import VerifiedGarbage.Proof.Sha256.Md
 public import VerifiedGarbage.Proof.Sha256.PPC64LE.Compress

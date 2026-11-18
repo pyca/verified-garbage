@@ -3,15 +3,45 @@ module
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.HashPlan
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.PHash
 public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
-
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedAddCT
 import VerifiedGarbage.Proof.RsaOaep.AArch64.LabelCT
 import VerifiedGarbage.Proof.Dsa.AArch64.Run
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedAdd
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PHashArgs
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.SeedAdd
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Impl.Dsa.AArch64.Generation.SeedAdd
+meta import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
+
+/-! ### `Dsa.AArch64.Generation.SeedAddCT`, which only this module used -/
+
+section
+
+/-! # Wrapped-seed addition leaks only its buffer addresses -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.AArch64.Generation
+open VG VG.AArch64 VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
+
+theorem seedAdd20_ct {α : Type} {Φ : α → State → Prop} (hp : Pins Φ [.x1, .x2]) :
+    RelCT isa (Two Φ) (Impl.Dsa.AArch64.Generation.seedAdd 20) (fun _ _ => True) :=
+  two_taint _ hp (by taint_decide)
+
+theorem seedAdd32_ct {α : Type} {Φ : α → State → Prop} (hp : Pins Φ [.x1, .x2]) :
+    RelCT isa (Two Φ) (Impl.Dsa.AArch64.Generation.seedAdd 32) (fun _ _ => True) :=
+  two_taint _ hp (by taint_decide)
+
+end VG.Proof.Dsa.AArch64.Generation
+
+end
+
+end
+
 /-! # Streaming hash contributions for the public p-candidate search -/
 
 -- Formerly `VerifiedGarbage/Proof/Dsa/AArch64/Generation/PSeedCT.lean`, which only this module imported.

@@ -1,22 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.ChildBases
-public import VerifiedGarbage.Proof.Dsa.X86_64.ChildCount
+public import VerifiedGarbage.Proof.Dsa.X86_64.InitFrame
 public import VerifiedGarbage.Proof.Dsa.X86_64.InitInverse
 public import VerifiedGarbage.Proof.Dsa.X86_64.ReduceInitCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.Operands
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
-import VerifiedGarbage.Proof.Dsa.X86_64.NewChild
-import VerifiedGarbage.Proof.Dsa.X86_64.InitFrame
 import VerifiedGarbage.Proof.Dsa.X86_64.Load
-meta import VerifiedGarbage.Proof.Dsa.X86_64.ChildBases
-meta import VerifiedGarbage.Proof.Dsa.X86_64.ChildCount
+meta import VerifiedGarbage.Proof.Dsa.X86_64.InitFrame
 meta import VerifiedGarbage.Proof.Dsa.X86_64.InitInverse
 meta import VerifiedGarbage.Proof.Dsa.X86_64.ReduceInitCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Operands
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
-meta import VerifiedGarbage.Proof.Dsa.X86_64.NewChild
-meta import VerifiedGarbage.Proof.Dsa.X86_64.InitFrame
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Load
 meta import VerifiedGarbage.Impl.Dsa.X86_64.SignVerify
 public import VerifiedGarbage.Impl.Dsa.X86_64.SignVerify

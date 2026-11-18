@@ -2,19 +2,15 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Prevalidated.Contract
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.CT.Key
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.CT.Entry
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.VerifyCT
 public import VerifiedGarbage.Impl.Dsa.PPC64LE.Prevalidated
-import VerifiedGarbage.Proof.Dsa.PPC64LE.VerifyCT
-import VerifiedGarbage.Proof.Dsa.PPC64LE.CT.SizesRest
 import VerifiedGarbage.Proof.Dsa.PPC64LE.Validate.Spec
 import VerifiedGarbage.Proof.Dsa.PPC64LE.Elem
 import VerifiedGarbage.Proof.Dsa.SizeBounds
 meta import VerifiedGarbage.Proof.Dsa.PPC64LE.Prevalidated.Contract
 meta import VerifiedGarbage.Proof.Dsa.PPC64LE.CT.Key
-meta import VerifiedGarbage.Proof.Dsa.PPC64LE.CT.Entry
-meta import VerifiedGarbage.Impl.Dsa.PPC64LE.Prevalidated
 meta import VerifiedGarbage.Proof.Dsa.PPC64LE.VerifyCT
-meta import VerifiedGarbage.Proof.Dsa.PPC64LE.CT.SizesRest
+meta import VerifiedGarbage.Impl.Dsa.PPC64LE.Prevalidated
 
 /-!
 # DSA prevalidated verification on PPC64LE: constant time

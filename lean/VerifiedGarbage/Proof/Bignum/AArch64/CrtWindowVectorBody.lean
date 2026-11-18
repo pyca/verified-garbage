@@ -5,9 +5,8 @@ import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorLoop
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorSetup
-import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcGuard
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcMont
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-! ### `Bignum.AArch64.CrtWindowVectorFinish`, which only this module used -/
 

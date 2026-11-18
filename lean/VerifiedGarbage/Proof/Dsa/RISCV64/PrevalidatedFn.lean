@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.RISCV64.VerifyFront
-public import VerifiedGarbage.Proof.Dsa.RISCV64.CheckKey
+public import VerifiedGarbage.Proof.Dsa.RISCV64.VerifyComb
 public import VerifiedGarbage.Impl.Dsa.RISCV64.Prevalidated
 public import VerifiedGarbage.Spec.Dsa.Prevalidated
 import VerifiedGarbage.Proof.Dsa.RISCV64.ValidateFn

@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Rsa.X86_64.ExpCheck
 public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 public import VerifiedGarbage.Impl.Rsa.X86_64.Folded
 public import VerifiedGarbage.Proof.Bignum.X86_64.Exp
-import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCounter
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Offset

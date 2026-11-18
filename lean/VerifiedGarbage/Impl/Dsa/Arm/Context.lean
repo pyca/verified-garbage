@@ -13,7 +13,7 @@ The caller keeps its workspace in r4 across the call; r11 stays untouched.
 The setup's time depends on the modulus, some of whose bits choose where
 its doublings start (`rSquared`): DSA's moduli p and q are public, and each
 caller shows that the modulus is the same in two runs (`setupK`,
-Proof/Dsa/Arm/ContextBody.lean).
+Proof/Dsa/Arm/Pow.lean).
 -/
 
 @[expose] public section

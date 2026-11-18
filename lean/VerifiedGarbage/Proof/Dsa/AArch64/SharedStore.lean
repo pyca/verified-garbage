@@ -3,8 +3,6 @@ module
 public import VerifiedGarbage.Impl.Dsa.AArch64.SharedPower
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorLoop
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorSetup
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorInner
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorScan
 import VerifiedGarbage.Proof.Bignum.AArch64.Run
 import VerifiedGarbage.Proof.Bignum.AArch64.PubOut
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd

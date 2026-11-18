@@ -9,7 +9,6 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeTrial
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.DrawRound
 import VerifiedGarbage.Proof.Dsa.Generation.Primality
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrMain
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeInput
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeFrame
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec

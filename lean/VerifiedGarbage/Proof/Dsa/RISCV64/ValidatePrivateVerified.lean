@@ -1,7 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Dsa.RISCV64.ValidatePrivateCT
-public import VerifiedGarbage.Proof.Dsa.RISCV64.ValidatePrivateFn
+public import VerifiedGarbage.Proof.Dsa.RISCV64.ValidatePrivateCT
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Impl.Dsa.RISCV64.PrevalidatedSign
 public import VerifiedGarbage.Spec.Dsa.PrevalidatedSign

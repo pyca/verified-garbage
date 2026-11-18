@@ -1,12 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.KeygenEntry
-public import VerifiedGarbage.Proof.Dsa.X86_64.SignCompute
-public import VerifiedGarbage.Proof.Dsa.X86_64.ShapeSpec
-public import VerifiedGarbage.Proof.Dsa.X86_64.SigningOperands
+public import VerifiedGarbage.Proof.Dsa.X86_64.VerifyCompute
+public import VerifiedGarbage.Proof.Dsa.X86_64.SigningInput
+public import VerifiedGarbage.Proof.Dsa.X86_64.SigningShape
 public import VerifiedGarbage.Spec.Dsa.Derive
 import VerifiedGarbage.Proof.Dsa.Derive
-import VerifiedGarbage.Proof.Dsa.X86_64.SigningShape
 import VerifiedGarbage.Proof.Dsa.X86_64.Result
 import VerifiedGarbage.Proof.Dsa.X86_64.VerifyFailure
 import VerifiedGarbage.Proof.Dsa.SizeBounds

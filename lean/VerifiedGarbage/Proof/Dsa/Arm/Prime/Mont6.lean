@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Dsa.Arm.Prime.Mont5
 public import VerifiedGarbage.Proof.Dsa.Arm.Prime.Mont2
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Mont4
-import VerifiedGarbage.Proof.Dsa.Arm.Prime.Taint6
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.St
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
 import VerifiedGarbage.Proof.Framework.Arm.Exec

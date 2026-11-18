@@ -7,7 +7,7 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.ReadyCallCT
 import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleState
 import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleOperands
 import VerifiedGarbage.Proof.Dsa.AArch64.ReadyCalls
-import VerifiedGarbage.Proof.Dsa.AArch64.EnterLeave
+import VerifiedGarbage.Proof.Dsa.AArch64.Finish
 import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Composable streaming-reduction timing steps -/

@@ -1,7 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateBranch
-import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateDrawn
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.ExponentRt.Code
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Ptr
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.Candidate
@@ -23,7 +22,7 @@ public import VerifiedGarbage.Proof.RsaKeyGen.X86.PrepareRt.R2Timing
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.SieveStack
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.FilterStack
 import VerifiedGarbage.Proof.RsaKeyGen.X86.SigMask
-import VerifiedGarbage.Proof.RsaKeyGen.X86.HeaderStore
+import VerifiedGarbage.Proof.RsaKeyGen.X86.Gcd64Words
 import VerifiedGarbage.Proof.MillerRabin.X86.TimingCopy
 import VerifiedGarbage.Proof.MillerRabin.X86.TimingPointers
 public import VerifiedGarbage.Proof.Framework.X86.AllocFrame
@@ -43,7 +42,7 @@ import VerifiedGarbage.Proof.MillerRabin.X86.TimingMultiply
 import VerifiedGarbage.Proof.MillerRabin.X86.Multiply
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Loops2
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.WitnessRt.Loop
-import VerifiedGarbage.Proof.RsaKeyGen.X86.WitnessFrame
+import VerifiedGarbage.Proof.RsaKeyGen.X86.MillerRabinStep
 import VerifiedGarbage.Proof.RsaKeyGen.X86.ImportLoop
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Loops
 import VerifiedGarbage.Proof.Mont.RegionOutside
@@ -51,7 +50,6 @@ public import VerifiedGarbage.Impl.RsaKeyGen.X86.WitnessRt
 public import VerifiedGarbage.Proof.Framework.X86.Taint
 public import VerifiedGarbage.Proof.MillerRabin.X86.Context
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.ImportContext
-import VerifiedGarbage.Proof.RsaKeyGen.X86.MillerRabinStep
 public import VerifiedGarbage.Proof.MillerRabin.X86.Caller
 public import VerifiedGarbage.Proof.MillerRabin.Contract
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateShape
@@ -59,12 +57,10 @@ public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateLoadInput
 import VerifiedGarbage.Proof.RsaKeyGen.RandMemory
 import VerifiedGarbage.Proof.RsaKeyGen.X86.PreparedContext
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateArrays
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.ExponentRt.Code
 import Mathlib.Algebra.Group.Nat.Defs
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.ExponentRt
 public import VerifiedGarbage.Proof.Mont.Words32
 public import VerifiedGarbage.Spec.Rsa.Contract
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.Mod64
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.ExponentRt.Array
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.Gcd64
 public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
