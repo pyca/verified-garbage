@@ -26,7 +26,8 @@ curves), from the code of `Impl/Weierstrass/X86.lean`, as on x86-64
 2. the bits of `k`, `p - 2` and `n - 2` are expanded into tables;
 3. `R = [k]G` by the ladder from `R = O = (0 : 1 : 0)` (for coordinates of
    at most 6 words, calling the point functions,
-   `Impl/Weierstrass/X86/LadderP.lean`), then
+   `Impl/Weierstrass/X86/LadderP.lean`), or, for a curve with a comb's
+   tables (`CombData`), by the comb (`Impl/Weierstrass/X86/TComb.lean`), then
    `x = X Z^(p-2)` (Montgomery's form left by a multiplication by 1) and
    `r = x mod n` (a conditional subtraction, as `x < p < 2n`);
 4. `s = k^(n-2) (e + r d) mod n`, in Montgomery form modulo `n`, then left;
@@ -134,12 +135,16 @@ the ladder's calls of the point functions read it again from
 (`Impl/Weierstrass/X86/LadderP.lean`). -/
 abbrev Args.ao (A : Args) : Nat := 4 + 4 * A.sc
 
-/-- A fixed-base comb's digit width, affine tables, offset point and symbol. -/
+/-- A fixed-base comb's digit width, affine tables, offset point and symbol,
+and which comb reads them: the one with Booth's digits and Jacobian mixed
+additions (`TCombJ.lean`: for `a = -3`, and scalars of as many bits as the
+order of `G`), or the one by complete additions (`TComb.lean`: any curve). -/
 structure CombData where
   w : Nat
   tbl : List (List (Nat × Nat))
   start : Nat × Nat
   tsym : String
+  jac : Bool := true
 
 /-- A curve as the code has it: `n` words, its parameters, the functions
 of its arithmetic modulo `p` and `n` (`SP`, `SN`), and an optional
@@ -219,6 +224,12 @@ def combCfg (d : CombData) : TCombCfg where
 
 def combWords (d : CombData) : List (BitVec 64) := tcombWords c.n c.R c.C.p d.tbl
 
+/-- Whether the curve has the comb with Booth's digits and Jacobian additions. -/
+def combJac : Bool :=
+  match c.comb with
+  | none => false
+  | some d => d.jac
+
 def combConsts : List (String × List (BitVec 64)) :=
   match c.comb with
   | none => []
@@ -231,12 +242,15 @@ def tableAddr : Prog isa :=
   | none => .block []
   | some d => .frame (.symPush .eax d.tsym) (.block []) (.pop .ecx 1)
 
-/-- The fixed-base multiplication, after setup saved the table pointer. -/
+/-- The fixed-base multiplication, after setup saved the table pointer: the
+ladder, or the curve's comb, with what its addition reads in `EM` (`b`, or
+`3b` for the complete addition). -/
 def gMul : Prog isa :=
   match c.comb with
   | none => ladder c.ladderCfg c.SP
-  | some d => .seq (.block (setConst c.n (c.sl EM) (c.mont c.C.b)))
-      (c.combCfg d).combJ
+  | some d =>
+    if d.jac then .seq (.block (setConst c.n (c.sl EM) (c.mont c.C.b))) (c.combCfg d).combJ
+    else .seq (.block (setConst c.n (c.sl EM) (c.mont (3 * c.C.b)))) (c.combCfg d).comb
 
 def powP : PowCfg := ⟨c.MP', c.sl ACC, c.sl PT, c.sl RZ, c.sl ONEP, bitsAt c.n 1, 64 * c.n⟩
 def powN : PowCfg := ⟨c.MN', c.sl ACC, c.sl PT, c.sl KM, c.sl ONEN, bitsAt c.n 2, 64 * c.n⟩

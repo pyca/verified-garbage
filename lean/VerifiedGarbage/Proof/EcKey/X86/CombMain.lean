@@ -24,7 +24,7 @@ open VG.Impl.EcKey.X86 (YM Y Args.publicKey)
 variable {c : Cfg}
 
 theorem publicKeyCombBody_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c)
-    (hCo : ∀ d, c.comb = some d → CombOk c d) (ham3 : AM3 c.C)
+    (hCo : ∀ d, c.comb = some d → CombOk c d)
     {s₀ : State} {extra : List Region} (hp : PkPre c s₀ extra)
     (hTb : ∀ d, c.comb = some d → TblMem s₀ ((s₀.gpr .eax).setWidth 64) (c.combWords d) ∧
       (∀ i < (c.combWords d).length, ∀ b < 8,
@@ -37,7 +37,7 @@ theorem publicKeyCombBody_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c)
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   refine WP.seq (WP.mono (stage₁ hc hp.setup (rest := .block [])
     (Q := St₁ c Args.publicKey s₀ (ptr s₀ 2)) (fun _ h => WP.block_nil h)) fun s₁ S₁ => ?_)
-  refine stage₂Comb hc hC hT hCo ham3 S₁ hTb hsp₁ hsp₂ fun s₂ S₂ => ?_
+  refine stage₂Comb hc hC hT hCo S₁ hTb hsp₁ hsp₂ fun s₂ S₂ => ?_
   have h3 : (s₀.gpr .esp).toNat + 4 + 4 * 3 ≤ 2 ^ 32 := by have := hp.sp_fit; omega_using [this]
   refine WP.mono (middle_ok hc S₂.toKeep S₂.acc_lt S₂.flag hsp₃
     ⟨_, by rw [hp.rd]; simp, arg_containsN h3 (by decide)⟩ (pkArgs_disj hp)

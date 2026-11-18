@@ -3,7 +3,11 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombFrontCT
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.PublicValues
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafMulReady
 
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombStagesCT
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombCT
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombTailCT
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombPointTail
+import VerifiedGarbage.Proof.Ecdsa.X86.CombCT
+import VerifiedGarbage.Proof.Ecdsa.X86.CombCode
 import VerifiedGarbage.Proof.Ecdsa.X86.CombCT
 
 @[expose] public section

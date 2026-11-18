@@ -18,7 +18,4 @@ def p521 : Cfg where
   SN := Impl.Weierstrass.Mont.p521n
   mul := some Impl.Weierstrass.Mul.p521
 
-/-- `vg_ecdsa_p521_sign`. -/
-def signP521 : Prog isa := p521.sign
-
 end VG.Impl.Ecdsa.X86

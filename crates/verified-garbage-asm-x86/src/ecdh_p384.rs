@@ -70,6 +70,10 @@ call {vg_p384_mul_mod_p}
         vg_p384_mul_mod_p = sym super::ec_p384::vg_p384_mul_mod_p::vg_p384_mul_mod_p,
         vg_p384_add_mod_p = sym super::ec_p384::vg_p384_add_mod_p::vg_p384_add_mod_p,
         vg_p384_sub_mod_p = sym super::ec_p384::vg_p384_sub_mod_p::vg_p384_sub_mod_p,
-        vg_p384_mul = sym super::ec_p384::vg_p384_mul::vg_p384_mul,
+        vg_p384_mul = sym super::ecdh_p384::vg_p384_mul::vg_p384_mul,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_p384_mul.rs"]
+pub(crate) mod vg_p384_mul;

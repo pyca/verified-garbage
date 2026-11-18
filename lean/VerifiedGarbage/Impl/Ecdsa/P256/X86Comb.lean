@@ -11,7 +11,7 @@ namespace VG.Impl.Ecdsa.X86
 open VG.X86
 
 def p256Comb : Cfg := { p256 with
-  comb := some ⟨7, Impl.P256.p256Comb7, Impl.P256.p256Comb7Start, "VG_P256_COMB"⟩ }
+  comb := some ⟨7, Impl.P256.p256Comb7, Impl.P256.p256Comb7Start, "VG_P256_COMB", true⟩ }
 
 def signP256Comb : Prog isa := p256Comb.signComb
 

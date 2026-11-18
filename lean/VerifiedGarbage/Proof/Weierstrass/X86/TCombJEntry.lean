@@ -38,7 +38,9 @@ theorem tentryJ_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k i : Nat} {T 
     (hb1 : 1 ≤ K.bits) {c : Bool} (hc : (c = true ∧ 1 ≤ i) ∨ (c = false ∧ i = 0))
     (hbits : ∀ t < K.w * K.J, s.mem (off base (K.bits + t)) = if k.testBit t then 1 else 0)
     (hz : wordsVal s.mem base K.zero K.M.n = 0) (hT : (s.mem.readW (off base K.ptr) 32).setWidth 64 = T)
-    (hTM : TblMem s T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl)) :
+    (hTM : TblMem s T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl))
+    (hout : ∀ q < (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl).length, ∀ b < 8,
+      size ≤ ofs base (T + BitVec.ofNat 64 (8 * q) + BitVec.ofNat 64 b)) :
     WP isa (.block (K.bdigit c ++ K.select)) s fun s₂ =>
       WP isa K.bnegY s₂ (TEntryPostJ K C base size k i s) := by
   have hn := hs.nowrap
@@ -124,7 +126,8 @@ theorem tentryJ_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k i : Nat} {T 
       have := ap (x := K.E.x) (y := K.E.z) (by tcomb_mem) (by tcomb_mem) (by nd_ne hnd)
       have := ap (x := K.E.y) (y := K.E.z) (by tcomb_mem) (by tcomb_mem) (by nd_ne hnd); omega_arith) hzl (by dsimp only [TCombCfg.toComb] at h0x h0y; omega_using [hexy, h0x, h0y]) h0z (Nat.lt_trans hV.one_lt hpn)
     (by rw [k₁.2.1]; exact hz) hx₁ m₁ hmag (T := s.mem.readW (off base K.ptr) 32)
-    (by rw [k₁.2.1]) (by rw [haddr]; exact hreg) (by rw [haddr, haddrNat]; exact hbound)) fun s₂ S₂ => ?_
+    (by rw [k₁.2.1]) (by rw [haddr]; exact hreg) (by rw [haddr, haddrNat]; exact hbound)
+    (by rw [haddr]; exact tbl_out_at hout hbytes hi)) fun s₂ S₂ => ?_
   rw [haddr] at S₂
   obtain ⟨ex₂, ey₂, ez₂, k₂, U₂⟩ := S₂
   rw [k₁.2.1] at ex₂ ey₂ U₂
