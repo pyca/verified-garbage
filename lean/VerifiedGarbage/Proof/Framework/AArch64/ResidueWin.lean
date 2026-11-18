@@ -248,4 +248,110 @@ theorem stores_addrs {i : Instr} {s₁ s₂ : State} (h : addrs i s₁ = addrs i
          rw [BitVec.ofNat_add, ← BitVec.add_assoc, ← BitVec.add_assoc]
          exact this)
 
+/-! ## The registers that point into the window -/
+
+/-- The pointers into the window after `i`. -/
+def ptrStep (W d : Nat) (ptrs : List (Reg × Nat)) (i : Instr) : List (Reg × Nat) :=
+  let kept := ptrs.filter (fun e => !clobbers i e.1)
+  match i with
+  | .addSp dd imm => (dd, W - d + imm) :: kept
+  | .addImm .x dd n k =>
+    match offOf W d ptrs (.reg n) with
+    | some o => (dd, o + k) :: kept
+    | none => kept
+  | .subImm .x dd n k =>
+    match offOf W d ptrs (.reg n) with
+    | some o => if k ≤ o then (dd, o - k) :: kept else kept
+    | none => kept
+  | _ => kept
+
+theorem wbase_add {sp : Addr} {d W imm : Nat} (hd : d ≤ W) (hW : W < 2 ^ 64) :
+    wbase sp d W + BitVec.ofNat 64 (W - d + imm) = sp + BitVec.ofNat 64 imm := by
+  unfold wbase
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_add, BitVec.toNat_sub, BitVec.toNat_ofNat]
+  have := sp.isLt
+  rw [Nat.mod_eq_of_lt (show W < 2 ^ 64 by omega)]
+  omega
+
+theorem kept_ok {i : Instr} {w : Addr} {ptrs : List (Reg × Nat)} {s₁ s₂ s₁' s₂' : State}
+    (hp : PtrsOk w ptrs s₁ s₂) (e₁ : exec i s₁ = some s₁') (e₂ : exec i s₂ = some s₂') :
+    PtrsOk w (ptrs.filter (fun e => !clobbers i e.1)) s₁' s₂' := by
+  intro e he
+  obtain ⟨he, hc⟩ := List.mem_filter.mp he
+  have hc' : clobbers i e.1 = false := by simpa using hc
+  rw [exec_gpr hc' e₁, exec_gpr hc' e₂]
+  exact hp e he
+
+theorem exec_addSp_eq {d : Reg} {imm : Nat} {s s' : State} (h : exec (.addSp d imm) s = some s') :
+    s' = s.write .x d (s.sp + BitVec.ofNat 64 imm) := by
+  simp only [exec] at h
+  split at h
+  · exact (Option.some.inj h).symm
+  · cases h
+
+theorem exec_addImm_eq {d n : Reg} {k : Nat} {s s' : State} (h : exec (.addImm .x d n k) s = some s') :
+    s' = s.write .x d (s.read .x n + BitVec.ofNat _ k) := by
+  simp only [exec] at h
+  split at h
+  · exact (Option.some.inj h).symm
+  · cases h
+
+theorem exec_subImm_eq {d n : Reg} {k : Nat} {s s' : State} (h : exec (.subImm .x d n k) s = some s') :
+    s' = s.write .x d (s.read .x n - BitVec.ofNat _ k) := by
+  simp only [exec] at h
+  split at h
+  · exact (Option.some.inj h).symm
+  · cases h
+
+theorem ptrStep_sound {W d : Nat} {i : Instr} {w : Addr} {ptrs : List (Reg × Nat)}
+    {s₁ s₂ s₁' s₂' : State} (hp : PtrsOk w ptrs s₁ s₂) (hsp : s₁.sp = s₂.sp)
+    (hw : w = wbase s₂.sp d W) (hd : d ≤ W) (hW : W < 2 ^ 64)
+    (e₁ : exec i s₁ = some s₁') (e₂ : exec i s₂ = some s₂') :
+    PtrsOk w (ptrStep W d ptrs i) s₁' s₂' := by
+  have hk := kept_ok hp e₁ e₂
+  unfold ptrStep
+  split
+  · rename_i dd imm
+    intro e he
+    rcases List.mem_cons.mp he with rfl | he
+    · rw [exec_addSp_eq e₁, exec_addSp_eq e₂]
+      simp only [RegUpd.gpr_write_self, BitVec.setWidth_eq, hw, wbase_add hd hW, hsp]
+      constructor <;> first | trivial | rfl
+    · exact hk e he
+  · rename_i dd n k
+    split
+    · rename_i o ho
+      obtain ⟨hv₁, hv₂⟩ := offOf_val hp hsp hw hd hW ho
+      intro e he
+      rcases List.mem_cons.mp he with rfl | he
+      · rw [exec_addImm_eq e₁, exec_addImm_eq e₂]
+        simp only [Base.val] at hv₁ hv₂
+        simp only [RegUpd.gpr_write_self, State.read, Size.bits, BitVec.setWidth_eq, hv₁, hv₂,
+          BitVec.ofNat_add, BitVec.add_assoc]
+        constructor <;> first | trivial | rfl
+      · exact hk e he
+    · exact hk
+  · rename_i dd n k
+    split
+    · rename_i o ho
+      obtain ⟨hv₁, hv₂⟩ := offOf_val hp hsp hw hd hW ho
+      split
+      · rename_i hko
+        intro e he
+        rcases List.mem_cons.mp he with rfl | he
+        · rw [exec_subImm_eq e₁, exec_subImm_eq e₂]
+          simp only [Base.val] at hv₁ hv₂
+          have e : ∀ x : Addr, x + BitVec.ofNat 64 o - BitVec.ofNat 64 k = x + BitVec.ofNat 64 (o - k) := by
+            intro x
+            apply BitVec.eq_of_toNat_eq
+            simp only [BitVec.toNat_add, BitVec.toNat_sub, BitVec.toNat_ofNat]
+            omega
+          simp only [RegUpd.gpr_write_self, State.read, Size.bits, BitVec.setWidth_eq, hv₁, hv₂, e]
+          constructor <;> first | trivial | rfl
+        · exact hk e he
+      · exact hk
+    · exact hk
+  · exact hk
+
 end VG.AArch64.RTaintG
