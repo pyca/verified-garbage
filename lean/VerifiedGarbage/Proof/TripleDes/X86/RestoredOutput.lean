@@ -34,6 +34,14 @@ namespace VG.Proof.TripleDes.X86
 open VG VG.X86 VG.X86.RegUpd VG.X86.Straight VG.Impl.TripleDes.X86
 open VG.Proof.Rc2.X86 (addr32 Keep)
 
+/-- The round-key pointer and the count of rounds left, words 4 and 5 of
+the working space. -/
+def roundKeyPtr (s : State) : BitVec 32 := s.mem.readW (wordAddr (s.gpr .ebp) 4) 32
+def roundCount (s : State) : BitVec 32 := s.mem.readW (wordAddr (s.gpr .ebp) 5) 32
+
+/-- The working space past the saved registers. -/
+def workRegion (s : State) : Region := ⟨addr32 (s.gpr .ebp) + BitVec.ofNat 64 16, 432⟩
+
 def savedReg (i : Nat) : Reg := savedRegs.getD i .ebp
 
 def scratchArg (s : State) (slot : Nat) : BitVec 32 :=
@@ -129,6 +137,22 @@ theorem blockRestore_ok (original s : State) (hsaved : Saved original s)
   exact ⟨h₁.1, h₁.2.mem, h₁.2.rd, h₁.2.wr,
     (h₁.2.reg .esp (by decide)).trans (gpr_setReg_of_ne s _ (by decide)),
     (h₁.2.reg .eax (by decide)).trans hptr⟩
+
+theorem savedSlot_work_disjoint (s : State) (i : Nat) (hi : i < 4) :
+    (⟨addr32 (s.gpr .ebp) + BitVec.ofNat 64 (4 * i), 4⟩ : Region).Disjoint (workRegion s) :=
+  Offset.disjoint _ (by omega_using [hi]) (by omega_using [hi]) (by decide)
+
+theorem Saved.congr {original s t : State} (hs : Saved original s)
+    (hbase : t.gpr .ebp = s.gpr .ebp) (hf : Frame [workRegion s] s.mem t.mem) :
+    Saved original t := by
+  intro i hi
+  rw [hbase]
+  have hm := hf.readW (a := addr32 (s.gpr .ebp) + BitVec.ofNat 64 (4 * i)) (w := 32)
+    (r := ⟨addr32 (s.gpr .ebp) + BitVec.ofNat 64 (4 * i), 4⟩)
+    (Region.contains_self _ _) (fun q hq => by
+      obtain rfl := List.mem_singleton.mp hq
+      exact savedSlot_work_disjoint s i hi) (by decide)
+  exact hm.trans (hs i hi)
 
 end VG.Proof.TripleDes.X86
 
