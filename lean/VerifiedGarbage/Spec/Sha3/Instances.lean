@@ -47,7 +47,9 @@ arguments passed in memory, where the calling convention allows it
 with the fewest registers (the Rust sponge keeps it on its stack); the other
 functions keep theirs on the stack. `updateScrubbedContract` is `update`'s
 contract that also leaves nothing it computed in `scratch`
-(`Zeroize.scrubbed`); `updateApi` does not require it yet.
+(`Zeroize.scrubbed`); `updateApi` does not require it yet. `absorb`
+(`absorbApi`) is `update` without `scratch`: an implementation keeps its
+working space on its own stack, which its residue proof covers.
 -/
 
 @[expose] public section
@@ -154,6 +156,61 @@ def updateApi (name rust : String) (rate : Nat) : Api where
   safety := [
     s!"`pos` must be less than {rate}.",
     "The contents of `scratch` on return are unspecified."]
+
+/-! ## Absorbing, with the working space the implementation's own -/
+
+/-- `vg_<f>_absorb(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize) -> usize`:
+`update` without `scratch` (`updateSig` is `absorbSig` with `scratch` after its
+parameters). `pos` is public. -/
+def absorbSig : Sig where
+  params := [("state", .array true .u64 25), ("pos", .int .usize true),
+    ("data", .slice false .u8 "len")]
+  ret := some .usize
+
+/-- `pos < rate`. -/
+def absorbPre (rate pb : Nat) : Curry (absorbSig.words pb) (Mem → Prop) :=
+  fun _state pos _data _len _ => pos.toNat < rate
+
+/-- `updatePost` without `scratch`: if the state at `state` represents a
+message `msg` for `rate`, and `pos` is the length of `msg` modulo `rate`, then
+afterwards it represents `msg` followed by the `len` bytes at `data`. Returns
+`(pos + len) mod rate`, the position after them. -/
+def absorbPost (rate pb : Nat) : absorbSig.Post pb := fun state pos data len m m' ret =>
+  (∀ msg, Repr m state rate msg → pos.toNat = msg.length % rate →
+    Repr m' state rate (msg ++ bytesAt m data len.toNat)) ∧
+  ret.toNat = (pos.toNat + len.toNat) % rate
+
+/-- `absorbPre` and `absorbPost`, for the rate `rate`. The memory a function
+may write is its arguments' (`Sig.contract`): an implementation keeps its
+working space on the stack, within `stack` bytes below the stack pointer,
+which the implementations' residue proofs cover, so none is left in the
+caller's memory. -/
+def absorbContract {M : ISA} (A : Abi M) (rate : Nat) (stack : Nat := 0) : Contract M :=
+  absorbSig.contract A (pre := absorbPre rate A.ptrBits) (post := absorbPost rate A.ptrBits)
+    (writeArgs := true) (stack := stack)
+
+/-- `vg_<rust>_absorb`, which absorbs data into a computation of `name`, with
+the rate `rate`, on every target: `vg_<rust>_update` without `scratch`. -/
+def absorbApi (name rust : String) (rate : Nat) : Api where
+  module := "sha3"
+  name := s!"vg_{rust}_absorb"
+  sig := absorbSig
+  writeArgs := true
+  contracts := some fun A stack => absorbContract A rate stack
+  summary := s!"Absorbs data into a {name} computation: if the state `*state` represents a message \
+    whose length is `pos` modulo {rate} (`VG.Spec.Sha3.Repr` with {name}'s rate, {rate}), it then \
+    represents that message followed by the `len` bytes at `data`. Returns the position after them, \
+    `(pos + len) % {rate}`. A computation starts from the all-zero state, at position 0.\n\n\
+    Contract: `VG.Spec.Sha3.absorbContract` with the rate {rate}. Constant time: only the pointers, \
+    `pos` and `len` may affect timing, not the state or the data."
+  safety := [s!"`pos` must be less than {rate}."]
+
+def absorbSha3_224Api : Api := absorbApi hashSha3_224.name hashSha3_224.rust hashSha3_224.rate
+def absorbSha3_256Api : Api := absorbApi hashSha3_256.name hashSha3_256.rust hashSha3_256.rate
+def absorbSha3_384Api : Api := absorbApi hashSha3_384.name hashSha3_384.rust hashSha3_384.rate
+def absorbSha3_512Api : Api := absorbApi hashSha3_512.name hashSha3_512.rust hashSha3_512.rate
+def absorbShake128Api : Api := absorbApi xofShake128.name xofShake128.rust xofShake128.rate
+-- SHAKE256 absorbs with `vg_sha3_256_absorb`, SHA3-256's (the same rate, 136), as it updates.
 
 /-! ## SHA-3: the digest -/
 

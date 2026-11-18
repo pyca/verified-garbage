@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Seed.PPC64LE.Frame
 public import VerifiedGarbage.Proof.Seed.PPC64LE.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Seed.PPC64LE.Scrub
 public import VerifiedGarbage.TCB.PPC64LE.Print
 import VerifiedGarbage.Proof.Seed.PPC64LE.Lit
 
@@ -13,14 +14,8 @@ import VerifiedGarbage.Proof.Seed.PPC64LE.Lit
 namespace VG.Artifacts.Seed.PPC64LE
 
 def artifacts : List Artifact := [
-  Spec.Seed.expandKeyApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 1072 .r5 130 Impl.Seed.PPC64LE.expandKey
-    verified := Proof.Seed.PPC64LE.expandKey_framed },
-  Spec.Seed.ecbEncryptApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 1120 .r6 136 (Impl.Seed.PPC64LE.ecbCall .encrypt)
-    verified := Proof.Seed.PPC64LE.ecbCall_framed .encrypt },
-  Spec.Seed.ecbDecryptApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 1120 .r6 136 (Impl.Seed.PPC64LE.ecbCall .decrypt)
-    verified := Proof.Seed.PPC64LE.ecbCall_framed .decrypt }]
+  Spec.Seed.expandKeyApi.artifact PPC64LE.target Proof.Seed.PPC64LE.Scrub.expandKeyReg,
+  Spec.Seed.ecbEncryptApi.artifact PPC64LE.target Proof.Seed.PPC64LE.Scrub.ecbEncryptReg,
+  Spec.Seed.ecbDecryptApi.artifact PPC64LE.target Proof.Seed.PPC64LE.Scrub.ecbDecryptReg]
 
 end VG.Artifacts.Seed.PPC64LE
