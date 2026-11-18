@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Framework.AArch64.Depth
 import VerifiedGarbage.Proof.Framework.AArch64.ResidueCT
 import VerifiedGarbage.Proof.Framework.AArch64.ResidueTaint
 import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Framework.AArch64.Syms
+public import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.Framework.AArch64.Inline
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
@@ -296,15 +296,22 @@ theorem setLane_hi0 {x y : BitVec 128} (h : x.extractLsb' 0 64 = y.extractLsb' 0
     simp only [setLane]
     simp [hm]
 
-/-- The bits of `x0` above an `rb`-bit result are zero after `retFix rb`. -/
+/-- The bits of `x0` above an `rb`-bit result are zero after `retFix rb`, and
+its low `rb` bits are what they were. -/
 theorem retFix_hi {rb : Nat} (hrb : rb = 0 ∨ rb = 32 ∨ rb = 64) (s : State) :
     ∃ g, execBlock isa (retFix rb) s = some ({ s with gpr := g }, []) ∧ (∀ q, q ≠ .x0 → g q = s.gpr q) ∧
-      g .x0 >>> rb = 0 := by
+      g .x0 >>> rb = (0 : BitVec 64) ∧ (g .x0).setWidth rb = (s.gpr .x0).setWidth rb := by
   rcases hrb with rfl | rfl | rfl
-  · refine ⟨fun q => if q = .x0 then 0 else s.gpr q, ?_, fun q hq => by simp [hq], by simp⟩
-    simp [retFix, execBlock, isa, exec, addrs, State.write]
+  · refine ⟨fun q => if q = .x0 then 0 else s.gpr q, ?_, fun q hq => by simp [hq], by simp, ?_⟩
+    · simp [retFix, execBlock, isa, exec, addrs, State.write]
+    · apply BitVec.eq_of_toNat_eq
+      have h1 := ((0 : BitVec 64).setWidth 0).isLt
+      have h2 := ((s.gpr .x0).setWidth 0).isLt
+      simp only [Nat.pow_zero] at h1 h2
+      simp only [↓reduceIte]
+      omega
   · refine ⟨fun q => if q = .x0 then ((s.gpr .x0).setWidth 32 + 0).setWidth 64 else s.gpr q, ?_,
-      fun q hq => by simp [hq], ?_⟩
+      fun q hq => by simp [hq], ?_, by simp⟩
     · simp [retFix, execBlock, isa, exec, addrs, State.write, State.read]
     · apply BitVec.eq_of_toNat_eq
       have := ((s.gpr .x0).setWidth 32).isLt
@@ -313,10 +320,244 @@ theorem retFix_hi {rb : Nat} (hrb : rb = 0 ∨ rb = 32 ∨ rb = 64) (s : State) 
       simp only [BitVec.toNat_setWidth] at this
       apply Nat.div_eq_of_lt
       omega
-  · refine ⟨s.gpr, by simp [retFix, execBlock], fun _ _ => rfl, ?_⟩
+  · refine ⟨s.gpr, by simp [retFix, execBlock], fun _ _ => rfl, ?_, rfl⟩
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
     have := (s.gpr .x0).isLt
     exact Nat.div_eq_of_lt this
+
+/-! ## The theorem -/
+
+open VG.AArch64.Scrub VG.AArch64.RTaintG in
+theorem withScrubG_range {W : Nat} (hW : 0 < W ∧ W < 4096 ∧ W % 16 = 0) (c : Prog isa) :
+    withScrubG W (List.range (W / 16)) c = .seq c (scrubTailG W (List.range (W / 16))) := by
+  have : List.range (W / 16) ≠ [] := by simp; omega
+  cases h : List.range (W / 16) with
+  | nil => exact absurd h this
+  | cons a l => rfl
+
+theorem range_ok {W : Nat} : ∀ k ∈ List.range (W / 16), 16 * k + 16 ≤ W := by
+  intro k hk; have := List.mem_range.mp hk; omega
+
+open VG.AArch64.Scrub in
+theorem zeroG_all {W : Nat} (hW : W % 16 = 0) {b x : Addr} (m : Mem) (h : (x - b).toNat < W) :
+    zeroG b (List.range (W / 16)) m x = 0 := by
+  have hin : inG b (List.range (W / 16)) x = true := by
+    simp only [inG, List.any_eq_true, List.mem_range, decide_eq_true_eq]
+    exact ⟨(x - b).toNat / 16, by omega, by omega, by omega⟩
+  simp [zeroG, hin]
+
+/-- The bytes outside the `W` bytes below `sp` are outside the `n ≤ W` bytes below it. -/
+theorem not_below {sp x : Addr} {n W : Nat} (hn : n ≤ W) (hW : W ≤ sp.toNat)
+    (h : ¬ (x - (sp - BitVec.ofNat 64 W)).toNat < W) : ¬ (below sp n).Contains x 1 := by
+  intro hc
+  have hs := below_sub (sp := sp) hn (by have := sp.isLt; omega) x hc
+  simp only [Region.Contains] at hs
+  omega
+
+open VG.AArch64.Scrub VG.AArch64.RTaintG VG.AArch64.RTaintF in
+/-- Code verified against its contract, whose frames stay within the `W`
+bytes below the stack pointer (which the contract leaves it), that writes no
+PSTATE.DIT and calls nothing indirectly, run by `scrubAll W rb`, returns
+without secret residue with an `rb`-bit result. -/
+theorem noResidue_scrubAll {c : Prog isa} {k : Contract isa} {W rb : Nat}
+    (hv : Verified target c k) (hW : 0 < W ∧ W < 4096 ∧ W % 16 = 0)
+    (hsp : ∀ s, k.pre s → W ≤ s.sp.toNat) (hd : 16 * c.aarch64Depth ≤ W)
+    (hdit : c.all (fun i => !i.writesDit) = true) (hni : noIcall c = true)
+    (hrb : rb = 0 ∨ rb = 32 ∨ rb = 64) :
+    NoResidue (scrubAll W rb c) k rb := by
+  intro s₁ s₂ t₁ t₂ s₁'' s₂'' h₁ h₂ hp ho hu e₁ e₂
+  unfold scrubAll at e₁ e₂
+  rw [withScrubG_range hW] at e₁ e₂
+  -- One run: the code, the clearing, the result's fix and the tail.
+  have run : ∀ s t s'', k.pre s → Exec isa (.seq (withRet rb (.seq c (.block clearsAll)))
+      (scrubTailG W (List.range (W / 16)))) s t s'' →
+      ∃ (t' : List Leak) (u : State) (g : Reg → BitVec 64), Exec isa c s t' u ∧ abiPreserved s u ∧
+        (∀ q, q ≠ .x0 → g q = (cleared u).gpr q) ∧ g .x0 >>> rb = (0 : BitVec 64) ∧ TailRunG W (List.range (W / 16)) { cleared u with gpr := g } s'' := by
+    intro s t s'' hs e
+    obtain ⟨t', u, f, ha, -⟩ := hv.1 s hs
+    cases e with
+    | seq ea eb =>
+    cases ea with
+    | seq ea eb' =>
+    cases ea with
+    | seq ec ecl =>
+    obtain ⟨-, rfl⟩ := Exec.det f ec
+    cases ecl with
+    | block hb =>
+    rw [clearsAll_run] at hb
+    obtain ⟨rfl, -⟩ := Prod.mk.inj (Option.some.inj hb)
+    cases eb' with
+    | block hb' =>
+    obtain ⟨g, hg, hgq, hg0, -⟩ := retFix_hi hrb (cleared u)
+    rw [hg] at hb'
+    obtain ⟨rfl, -⟩ := Prod.mk.inj (Option.some.inj hb')
+    obtain ⟨u', x, tr⟩ := tailG_run hW range_ok { cleared u with gpr := g }
+      (by show W ≤ u.sp.toNat; rw [ha.2.1]; exact hsp s hs)
+    obtain ⟨-, rfl⟩ := Exec.det eb x
+    exact ⟨t', u, g, f, ha, hgq, hg0, tr⟩
+  obtain ⟨t₁', u₁, g₁, f₁, ha₁, hgq₁, hg0₁, tr₁⟩ := run s₁ t₁ s₁'' h₁ e₁
+  obtain ⟨t₂', u₂, g₂, f₂, ha₂, hgq₂, hg0₂, tr₂⟩ := run s₂ t₂ s₂'' h₂ e₂
+  obtain ⟨hrd, hwr, hg, -, hsp0, hc, hn, hz, hvf, hdi, hvv, hm⟩ := ho
+  obtain ⟨hrd₁, hwr₁, hsp₁⟩ := Exec.rdwr f₁
+  obtain ⟨hrd₂, hwr₂, hsp₂⟩ := Exec.rdwr f₂
+  have hU : u₁.unknowns = u₂.unknowns :=
+    (Exec.unknowns_agree hni f₁ [] [] f₂ hu
+      (by rw [List.append_nil, List.append_nil]; exact hv.2.1 _ _ _ _ _ _ h₁ h₂ hp f₁ f₂)).2
+  have hspu : u₁.sp = u₂.sp := by rw [hsp₁, hsp₂, hsp0]
+  refine ⟨by rw [tr₁.rd, tr₂.rd]; exact hrd₁.trans (hrd.trans hrd₂.symm),
+    by rw [tr₁.wr, tr₂.wr]; exact hwr₁.trans (hwr.trans hwr₂.symm), fun q hq0 => ?_, ?_,
+    by rw [tr₁.sp, tr₂.sp]; exact hspu, by rw [tr₁.c, tr₂.c]; rfl, by rw [tr₁.nf, tr₂.nf]; rfl,
+    by rw [tr₁.zf, tr₂.zf]; rfl, by rw [tr₁.vf, tr₂.vf]; rfl,
+    by rw [tr₁.dit, tr₂.dit]; exact (Exec.dit hdit f₁).trans (hdi.trans (Exec.dit hdit f₂).symm), ?_, ?_⟩
+  · rw [tr₁.gpr, tr₂.gpr]
+    by_cases h9 : q = .x9
+    · simp only [h9, ↓reduceIte]; show u₁.sp - _ = u₂.sp - _; rw [hspu]
+    · simp only [h9, ↓reduceIte, hgq₁ q hq0, hgq₂ q hq0, cleared]
+      by_cases hq : q ∈ allGprs
+      · simp [hq]
+      · simp only [hq, ↓reduceIte]
+        have := preserved_of hq0 hq
+        rw [ha₁.1 q this, ha₂.1 q this]; exact hg q hq0
+  · rw [tr₁.gpr, tr₂.gpr]
+    simp only [reduceCtorEq, ↓reduceIte, hg0₁, hg0₂]
+  · rw [tr₁.v, tr₂.v]
+    funext w
+    by_cases h31 : w = .v31
+    · simp [h31]
+    · simp only [h31, ↓reduceIte, cleared]
+      by_cases hh : w ∈ hiVecs
+      · simp only [hh, ↓reduceIte]
+        apply setLane_hi0
+        rw [ha₁.2.2 w (preservedV_of hh), ha₂.2.2 w (preservedV_of hh), hvv]
+      · simp [hh, vreg_cover w hh]
+  · intro x hx
+    rw [tr₁.rd, tr₁.wr] at hx
+    change ∀ r ∈ u₁.rd ++ u₁.wr, ¬ r.Contains x 1 at hx
+    rw [tr₁.mem, tr₂.mem]
+    show lose (zeroG (u₁.sp - _) _ u₁.mem) (u₁.sp - _) W u₁.unknowns x =
+      lose (zeroG (u₂.sp - _) _ u₂.mem) (u₂.sp - _) W u₂.unknowns x
+    rw [← hspu, ← hU]
+    by_cases hin : (x - (u₁.sp - BitVec.ofNat 64 W)).toNat < W
+    · exact lose_agree (by rw [zeroG_all hW.2.2 _ hin, zeroG_all hW.2.2 _ hin])
+    · rw [lose_out hin, lose_out hin, zeroG_out range_ok _ hin, zeroG_out range_ok _ hin]
+      have hd64 : 16 * c.aarch64Depth < 2 ^ 64 := by omega
+      have hout : ∀ (s u : State), u.sp = s.sp → u.wr = s.wr → W ≤ s.sp.toNat →
+          Frame (s.wr ++ [below s.sp (16 * c.aarch64Depth)]) s.mem u.mem →
+          (∀ r ∈ s.wr, ¬ r.Contains x 1) → ¬ (x - (u.sp - BitVec.ofNat 64 W)).toNat < W → u.mem x = s.mem x := by
+        intro s u hsp' _ hWs hf hw hn
+        refine hf x fun r hr => ?_
+        rcases List.mem_append.mp hr with hr | hr
+        · exact hw r hr
+        · simp only [List.mem_singleton] at hr; subst hr
+          rw [hsp'] at hn
+          exact not_below hd hWs hn
+      rw [hrd₁, hwr₁] at hx
+      have hx₂ : ∀ r ∈ s₂.wr, ¬ r.Contains x 1 := fun r hr => hx r (List.mem_append_right _ (hwr ▸ hr))
+      rw [hout s₁ u₁ hsp₁ hwr₁ (hsp s₁ h₁) (Exec.frameSp f₁ hd64)
+          (fun r hr => hx r (List.mem_append_right _ hr)) hin,
+        hout s₂ u₂ hsp₂ hwr₂ (hsp s₂ h₂) (Exec.frameSp f₂ hd64) hx₂ (by rw [← hspu]; exact hin)]
+      exact hm x hx
+
+/-! ## Keeping the code verified -/
+
+theorem setLane_lo (x : BitVec 128) : (setLane x 64 1 0).extractLsb' 0 64 = x.extractLsb' 0 64 := by
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
+  have hi' : i < 128 := by omega
+  simp [setLane, hi, hi']
+  have hm : (18446744073709551615#128).getLsbD i = true := by
+    rw [BitVec.getLsbD_ofNat, show (18446744073709551615 : Nat) = 2 ^ 64 - 1 by decide,
+      Nat.testBit_two_pow_sub_one]
+    simp [hi, hi']
+  simp [hm]
+
+/-- What `Verified.scrubAll` needs of a contract: room for the `W` bytes below
+the stack pointer, a postcondition that reads neither them, nor any register
+but the low `rb` bits of `x0`, and a public stack pointer. -/
+structure ScrubAllOk (k : Contract isa) (W rb : Nat) : Prop where
+  sp : ∀ s, k.pre s → W ≤ s.sp.toNat
+  post : ∀ s u u', k.pre s → k.post s u →
+    (∀ a, ¬ (a - (s.sp - BitVec.ofNat 64 W)).toNat < W → u'.mem a = u.mem a) →
+    (u'.gpr .x0).setWidth rb = (u.gpr .x0).setWidth rb → k.post s u'
+  pub : ∀ s₁ s₂, k.pub s₁ s₂ → s₁.sp = s₂.sp
+
+open VG.AArch64.Scrub VG.AArch64.RTaintG VG.AArch64.RTaintF in
+theorem Verified.scrubAll {c : Prog isa} {k : Contract isa} {W rb : Nat} (h : Verified target c k)
+    (hW : 0 < W ∧ W < 4096 ∧ W % 16 = 0) (hrb : rb = 0 ∨ rb = 32 ∨ rb = 64) (hk : ScrubAllOk k W rb) :
+    Verified target (scrubAll W rb c) k := by
+  obtain ⟨hcor, hct, hsat⟩ := h
+  have hrun : ∀ s, k.pre s → ∃ t u g u'',
+      Exec isa c s t u ∧ abiPreserved s u ∧ k.post s u ∧
+      execBlock isa (retFix rb) (cleared u) = some ({ cleared u with gpr := g }, []) ∧
+      (∀ q, q ≠ .x0 → g q = (cleared u).gpr q) ∧ (g .x0).setWidth rb = ((cleared u).gpr .x0).setWidth rb ∧
+      Exec isa (scrubTailG W (List.range (W / 16))) { cleared u with gpr := g }
+        (tailTraceG u.sp W (List.range (W / 16))) u'' ∧
+      TailRunG W (List.range (W / 16)) { cleared u with gpr := g } u'' := by
+    intro s hs
+    obtain ⟨t, u, he, ha, hq⟩ := hcor s hs
+    obtain ⟨g, hg, hgq, -, hgx⟩ := retFix_hi hrb (cleared u)
+    obtain ⟨u'', ex, tr⟩ := tailG_run hW range_ok { cleared u with gpr := g }
+      (by show W ≤ u.sp.toNat; rw [ha.2.1]; exact hk.sp s hs)
+    exact ⟨t, u, g, u'', he, ha, hq, hg, hgq, hgx, ex, tr⟩
+  have hx0 : Reg.x0 ∉ allGprs := by decide
+  refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂ => ?_, hsat⟩
+  · obtain ⟨t, u, g, u'', he, ha, hq, hg, hgq, hgx, ex, tr⟩ := hrun s hs
+    refine ⟨((t ++ []) ++ []) ++ tailTraceG u.sp W (List.range (W / 16)), u'', ?_,
+      ⟨fun q hq' => ?_, by rw [tr.sp]; exact ha.2.1, fun w hw => ?_⟩, ?_⟩
+    · unfold VG.Impl.Residue.AArch64.scrubAll
+      rw [withScrubG_range hW]
+      exact Exec.seq (Exec.seq (Exec.seq he (Exec.block (clearsAll_run u))) (Exec.block hg)) ex
+    · have h9 : q ≠ .x9 := by rintro rfl; simp [preserved] at hq'
+      have h0 : q ≠ .x0 := by rintro rfl; simp [preserved] at hq'
+      have hng : q ∉ allGprs := by cases q <;> simp_all [preserved, allGprs]
+      rw [tr.gpr]; simp only [h9, ↓reduceIte, hgq q h0, cleared, hng]; exact ha.1 q hq'
+    · have h31 : w ≠ .v31 := by rintro rfl; simp [preservedV] at hw
+      have hh : w ∈ hiVecs := by cases w <;> simp_all [preservedV, hiVecs]
+      rw [tr.v]; simp only [h31, ↓reduceIte, cleared, hh, setLane_lo]; exact ha.2.2 w hw
+    · refine hk.post s u u'' hs hq (fun a ha' => ?_) ?_
+      · have ha'' : ¬ (a - (u.sp - BitVec.ofNat 64 W)).toNat < W := by rw [ha.2.1]; exact ha'
+        rw [tr.mem]
+        show lose (zeroG (u.sp - BitVec.ofNat 64 W) _ u.mem) (u.sp - BitVec.ofNat 64 W) W _ a = u.mem a
+        rw [lose_out ha'', zeroG_out range_ok _ ha'']
+      · rw [tr.gpr]
+        simp only [reduceCtorEq, ↓reduceIte]
+        rw [hgx]
+        simp [cleared, hx0]
+  · unfold VG.Impl.Residue.AArch64.scrubAll at e₁ e₂
+    rw [withScrubG_range hW] at e₁ e₂
+    cases e₁ with
+    | seq a₁ b₁ =>
+    cases e₂ with
+    | seq a₂ b₂ =>
+    cases a₁ with
+    | seq a₁ r₁ =>
+    cases a₂ with
+    | seq a₂ r₂ =>
+    cases a₁ with
+    | seq c₁ l₁ =>
+    cases a₂ with
+    | seq c₂ l₂ =>
+    obtain ⟨_, u₁, g₁, _, f₁, p₁, -, hg₁, -, -, x₁, -⟩ := hrun s₁ h₁
+    obtain ⟨_, u₂, g₂, _, f₂, p₂, -, hg₂, -, -, x₂, -⟩ := hrun s₂ h₂
+    obtain ⟨rfl, rfl⟩ := Exec.det c₁ f₁
+    obtain ⟨rfl, rfl⟩ := Exec.det c₂ f₂
+    cases l₁ with
+    | block hl₁ =>
+    cases l₂ with
+    | block hl₂ =>
+    rw [clearsAll_run] at hl₁ hl₂
+    obtain ⟨rfl, rfl⟩ := Prod.mk.inj (Option.some.inj hl₁)
+    obtain ⟨rfl, rfl⟩ := Prod.mk.inj (Option.some.inj hl₂)
+    cases r₁ with
+    | block hr₁ =>
+    cases r₂ with
+    | block hr₂ =>
+    rw [hg₁] at hr₁
+    rw [hg₂] at hr₂
+    obtain ⟨rfl, rfl⟩ := Prod.mk.inj (Option.some.inj hr₁)
+    obtain ⟨rfl, rfl⟩ := Prod.mk.inj (Option.some.inj hr₂)
+    rw [(Exec.det b₁ x₁).1, (Exec.det b₂ x₂).1, p₁.2.1, p₂.2.1,
+      hct _ _ _ _ _ _ h₁ h₂ hp c₁ c₂, hk.pub s₁ s₂ hp]
 
 end VG.AArch64.ScrubAll
