@@ -75,5 +75,16 @@ vg_rc2_cbc_init:
 	stp x17, x17, [x16, #32]
 	stp x17, x17, [x16, #48]
 	add sp, sp, #576
+	movz x3, #0, lsl #0
+	movz x8, #0, lsl #0
+	movi v0.2d, #0
+	movi v1.2d, #0
+	movi v2.2d, #0
+	movi v3.2d, #0
+	sub sp, sp, #592
+	movi v31.2d, #0
+	add x9, sp, #0
+	str q31, [x9, #0]
+	add sp, sp, #592
 	ret
 	.p2align 6

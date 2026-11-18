@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Sm4.AArch64.Verified
 public import VerifiedGarbage.Proof.Sm4.AArch64.PreparedVerified
 public import VerifiedGarbage.Proof.Sm4.AArch64.Sm4e.Ecb
 public import VerifiedGarbage.Proof.Sm4.AArch64.Sm4e.Key
+public import VerifiedGarbage.Proof.Sm4.AArch64.EcbResidue
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.AArch64.Print
 
@@ -35,10 +36,12 @@ def artifacts : List Artifact := [
     verified := Proof.Sm4.AArch64.Sm4e.ecbCleared_verified .decrypt
     residue := some ⟨Proof.Sm4.AArch64.Sm4e.ecbCleared_noResidue _ .decrypt⟩ },
   Spec.Sm4.ecbEncryptApi.artifact AArch64.target {
-    code := Impl.Sm4.AArch64.ecbFew .encrypt Proof.Sm4.AArch64.ecbAnyFramed
-    verified := Proof.Sm4.AArch64.ecbFew_verified .encrypt },
+    code := Proof.Sm4.AArch64.EcbResidue.ecbEncryptCode
+    verified := Proof.Sm4.AArch64.EcbResidue.ecbEncryptCode_verified
+    residue := some ⟨Proof.Sm4.AArch64.EcbResidue.ecbEncryptCode_noResidue⟩ },
   Spec.Sm4.ecbDecryptApi.artifact AArch64.target {
-    code := Impl.Sm4.AArch64.ecbFew .decrypt Proof.Sm4.AArch64.ecbAnyFramed
-    verified := Proof.Sm4.AArch64.ecbFew_verified .decrypt }]
+    code := Proof.Sm4.AArch64.EcbResidue.ecbDecryptCode
+    verified := Proof.Sm4.AArch64.EcbResidue.ecbDecryptCode_verified
+    residue := some ⟨Proof.Sm4.AArch64.EcbResidue.ecbDecryptCode_noResidue⟩ }]
 
 end VG.Artifacts.Sm4.AArch64

@@ -293,7 +293,6 @@ aarch64 vg_pbkdf2_hmac_sha512_sha512
 aarch64 vg_poly1305_finalize
 aarch64 vg_poly1305_update
 aarch64 vg_poly1305_update_neon
-aarch64 vg_rc2_cbc_init
 aarch64 vg_rsa_pkcs1_decrypt_precomputed
 aarch64 vg_rsa_pkcs1_decrypt_precomputed_sha256_sha2
 aarch64 vg_rsa_pkcs1_sign_precomputed
@@ -366,8 +365,6 @@ aarch64 vg_sm4_ctr
 aarch64 vg_sm4_ctr_final
 aarch64 vg_sm4_ctr_final_sm4
 aarch64 vg_sm4_ctr_sm4
-aarch64 vg_sm4_ecb_decrypt
-aarch64 vg_sm4_ecb_encrypt
 aarch64 vg_sm4_expand_key
 aarch64 vg_sm4_gcm_init
 aarch64 vg_sm4_gcm_init_ctr32_sm4

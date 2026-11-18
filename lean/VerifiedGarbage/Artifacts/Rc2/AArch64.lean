@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Rc2.AArch64.Stream.Frame
 public import VerifiedGarbage.Proof.Rc2.AArch64.Key
 public import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.Chained
 public import VerifiedGarbage.Proof.Rc2.AArch64.CbcResidue
+public import VerifiedGarbage.Proof.Rc2.AArch64.InitResidue
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.AArch64.Print
 
@@ -16,8 +17,9 @@ namespace VG.Artifacts.Rc2.AArch64
 
 def artifacts : List Artifact := [
   Spec.Rc2.cbcInitApi.artifact AArch64.target {
-    code := Impl.StackScratch.AArch64.withStackScratchWiped 576 .x6 72 Impl.Rc2.AArch64.Stream.init
-    verified := Proof.Rc2.AArch64.Stream.init_framed },
+    code := Proof.Rc2.AArch64.InitResidue.cbcInitCode
+    verified := Proof.Rc2.AArch64.InitResidue.cbcInitCode_verified
+    residue := some ⟨Proof.Rc2.AArch64.InitResidue.cbcInitCode_noResidue⟩ },
   Spec.Rc2.cbcEncryptChainedApi.artifact AArch64.target {
     code := Proof.Rc2.AArch64.CbcResidue.cbcEncryptChainedCode
     verified := Proof.Rc2.AArch64.CbcResidue.cbcEncryptChainedCode_verified
