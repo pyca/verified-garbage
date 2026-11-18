@@ -621,4 +621,145 @@ theorem callG_sound {W : Nat} {τ : T} {s₁ s₂ s₁' s₂' : State} (ha : Agr
   simp only [hne.1.1, hne.1.2, hne.2, ↓reduceIte]
   exact hp e he
 
+/-! ## Meet and order -/
+
+/-- Every bit of `a` is set in `b`. -/
+def bsub (a b : Nat) : Bool := a &&& b == a
+
+theorem bsub_bit {a b k : Nat} (h : bsub a b = true) (hk : a.testBit k = true) : b.testBit k = true := by
+  have e : (a &&& b) = a := by simpa [bsub] using h
+  rw [← e, Nat.testBit_and, Bool.and_eq_true] at hk
+  exact hk.2
+
+def meetG (τ σ : T) : T :=
+  (rtaintB.meet τ.1 σ.1, match τ.2, σ.2 with
+    | some (d, P, p), some (d', P', p') =>
+      if d = d' then some (d, P &&& P', p.filter (fun e => p'.contains e)) else none
+    | _, _ => none)
+
+def leG (τ σ : T) : Bool :=
+  rtaintB.le τ.1 σ.1 && match τ.2, σ.2 with
+    | none, _ => true
+    | some (d, P, p), some (d', P', p') => d == d' && bsub P P' && p.all (fun e => p'.contains e)
+    | some _, none => false
+
+theorem agreeD_meet_left {W : Nat} {τ σ : RTaintB.T} {d : Nat} {s₁ s₂ : State} (h : AgreeD W τ d s₁ s₂) :
+    AgreeD W (rtaintB.meet τ σ) d s₁ s₂ := ⟨rtaintB.meet_left h.1, h.2⟩
+
+theorem agreeD_meet_right {W : Nat} {τ σ : RTaintB.T} {d : Nat} {s₁ s₂ : State} (h : AgreeD W σ d s₁ s₂) :
+    AgreeD W (rtaintB.meet τ σ) d s₁ s₂ := ⟨rtaintB.meet_right h.1, h.2⟩
+
+theorem AgreeG.forget {W : Nat} {τ : T} {s₁ s₂ : State} (h : AgreeG W τ s₁ s₂) :
+    ∃ d, AgreeD W τ.1 d s₁ s₂ := by
+  obtain ⟨τb, fi⟩ := τ
+  cases fi with
+  | none => exact h
+  | some f => exact ⟨f.1, h.1⟩
+
+theorem meetG_left {W : Nat} {τ σ : T} {s₁ s₂ : State} (h : AgreeG W τ s₁ s₂) :
+    AgreeG W (meetG τ σ) s₁ s₂ := by
+  obtain ⟨τb, fi⟩ := τ
+  obtain ⟨σb, gi⟩ := σ
+  cases fi with
+  | none => obtain ⟨d, hD⟩ := h; exact ⟨d, agreeD_meet_left hD⟩
+  | some f =>
+  obtain ⟨d, P, p⟩ := f
+  obtain ⟨hD, hP, hp⟩ := h
+  cases gi with
+  | none => exact ⟨d, agreeD_meet_left hD⟩
+  | some g =>
+  obtain ⟨d', P', p'⟩ := g
+  show AgreeG W (_, if d = d' then _ else none) s₁ s₂
+  split
+  · refine ⟨agreeD_meet_left hD, fun o ho hb => hP o ho ?_, fun e he => hp e (List.mem_filter.mp he).1⟩
+    rw [Nat.testBit_and, Bool.and_eq_true] at hb; exact hb.1
+  · exact ⟨d, agreeD_meet_left hD⟩
+
+theorem meetG_right {W : Nat} {τ σ : T} {s₁ s₂ : State} (h : AgreeG W σ s₁ s₂) :
+    AgreeG W (meetG τ σ) s₁ s₂ := by
+  obtain ⟨τb, fi⟩ := τ
+  obtain ⟨σb, gi⟩ := σ
+  cases gi with
+  | none =>
+    obtain ⟨d, hD⟩ := h
+    cases fi with
+    | none => exact ⟨d, agreeD_meet_right hD⟩
+    | some f => exact ⟨d, agreeD_meet_right hD⟩
+  | some g =>
+  obtain ⟨d', P', p'⟩ := g
+  obtain ⟨hD, hP, hp⟩ := h
+  cases fi with
+  | none => exact ⟨d', agreeD_meet_right hD⟩
+  | some f =>
+  obtain ⟨d, P, p⟩ := f
+  show AgreeG W (_, if d = d' then _ else none) s₁ s₂
+  split
+  · rename_i hdd
+    subst hdd
+    refine ⟨agreeD_meet_right hD, fun o ho hb => hP o ho ?_, fun e he => ?_⟩
+    · rw [Nat.testBit_and, Bool.and_eq_true] at hb; exact hb.2
+    · have := (List.mem_filter.mp he).2
+      exact hp e (List.contains_iff_mem.mp this)
+  · exact ⟨d', agreeD_meet_right hD⟩
+
+theorem leG_sound {W : Nat} {τ σ : T} {s₁ s₂ : State} (hl : leG τ σ = true) (h : AgreeG W σ s₁ s₂) :
+    AgreeG W τ s₁ s₂ := by
+  obtain ⟨τb, fi⟩ := τ
+  obtain ⟨σb, gi⟩ := σ
+  simp only [leG, Bool.and_eq_true] at hl
+  obtain ⟨hle, hr⟩ := hl
+  have hle' : ∀ {d}, AgreeD W σb d s₁ s₂ → AgreeD W τb d s₁ s₂ := fun hD => ⟨rtaintB.le_sound hle hD.1, hD.2⟩
+  cases fi with
+  | none =>
+    obtain ⟨d, hD⟩ := AgreeG.forget h
+    exact ⟨d, hle' hD⟩
+  | some f =>
+  obtain ⟨d, P, p⟩ := f
+  cases gi with
+  | none => simp at hr
+  | some g =>
+  obtain ⟨d', P', p'⟩ := g
+  simp only [Bool.and_eq_true, beq_iff_eq, List.all_eq_true] at hr
+  obtain ⟨⟨rfl, hPP⟩, hpp⟩ := hr
+  obtain ⟨hD, hP, hp⟩ := h
+  exact ⟨hle' hD, fun o ho hb => hP o ho (bsub_bit hPP hb),
+    fun e he => hp e (List.contains_iff_mem.mp (hpp e he))⟩
+
+end RTaintG
+
+open RTaintG in
+/-- `rtaintF W` with the mask of the window's bytes the runs agree on (see `RTaintG`). -/
+def rtaintG (W : Nat) : VG.TaintCT isa where
+  T := RTaintG.T
+  Agree := AgreeG W
+  step := stepG W
+  step_sound ha hs e₁ e₂ hadr := stepG_sound ha hs e₁ e₂ hadr
+  addrs_length := RTaintCT.addrs_length
+  meet := meetG
+  meet_left := meetG_left
+  meet_right := meetG_right
+  le := leG
+  le_sound := leG_sound
+  call τ := some (callG τ)
+  call_sound ha hs e₁ e₂ _ := by
+    obtain rfl := Option.some.inj hs
+    exact callG_sound ha e₁ e₂
+  callAddrs_length _ _ := rfl
+  ret τ := some τ
+  ret_sound ha hs e₁ e₂ _ := by
+    obtain rfl := Option.some.inj hs
+    simp only [isa, ret] at e₁ e₂
+    split at e₁ <;> [skip; cases e₁]
+    split at e₂ <;> [skip; cases e₂]
+    obtain rfl := Option.some.inj e₁
+    obtain rfl := Option.some.inj e₂
+    exact ha
+  retAddrs_length _ _ := rfl
+  push := pushG W
+  push_sound ha hs e₁ e₂ _ := pushG_sound ha hs e₁ e₂
+  pop := popG
+  pop_sound ha hs e₁ e₂ _ := popG_sound ha hs e₁ e₂
+
+namespace RTaintG
+
 end VG.AArch64.RTaintG
