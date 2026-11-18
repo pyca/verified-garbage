@@ -37,6 +37,8 @@ materialize_code encrypt4
 materialize_code decrypt4
 materialize_code ctr32
 materialize_code ctr32To
+materialize_code ctr32Bs
+materialize_code ctr32BsTo
 materialize_code encryptBlocks
 materialize_code decryptBlocks
 materialize_code expandKey
@@ -47,6 +49,12 @@ where its callers keep their pointers and counts: it writes none of them. -/
 open VG.RISCV64 in
 taint_summary encrypt4Sum : taint (Taint.ofRegs [.a0, .a5]) encrypt4
   keeping (Taint.ofRegs [.a2, .a3, .a4, .ra])
+
+/-! The same with the round keys bitsliced (`vg_aes_ctr32_bs`): the round loop's end is
+computed from `ra`, which is public too. -/
+open VG.RISCV64 in
+taint_summary encrypt4RaSum : taint (Taint.ofRegs [.a0, .a5, .ra]) (encrypt4K .ra)
+  keeping (Taint.ofRegs [.a2, .a3, .a4])
 
 /-! The same of the four blocks' decryption. -/
 open VG.RISCV64 in

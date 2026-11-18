@@ -124,18 +124,24 @@ def ctrBlocks : List Instr :=
   ([ldS t0 cNum, .addi t0 t0 4, stS cNum t0] : List Instr)
 
 /-- A middle round, with `kp` at the previous round key; loops until `kp`
-is at the last round key but one. -/
-def roundBody : List Instr :=
+is at the last round key but one, which is at byte `lastKey - 64` from `kb`
+(`sb`, or `ra` when the round keys are given bitsliced). -/
+def roundBodyK (kb : Reg) : List Instr :=
   ([.addi kp kp 64] : List Instr) ++ sboxCode ++ shiftRows ++ mixColumns ++ addRoundKey ++
-  [.sub t0 kp sb, .addi t0 t0 (-((lastKey - 64 : Nat) : Int))]
+  [.sub t0 kp kb, .addi t0 t0 (-((lastKey - 64 : Nat) : Int))]
+
+def roundBody : List Instr := roundBodyK sb
 
 /-- The last round. -/
 def lastRound : List Instr := ([.addi kp kp 64] : List Instr) ++ sboxCode ++ shiftRows ++ addRoundKey
 
-/-- Encrypt the four blocks in `q 0 … q 7` (as `toBs` takes them). -/
-def encrypt4 : Prog isa :=
+/-- Encrypt the four blocks in `q 0 … q 7` (as `toBs` takes them), with the
+round keys from `a0` on, the last at byte `lastKey` from `kb`. -/
+def encrypt4K (kb : Reg) : Prog isa :=
   .seq (.block (toBs ++ [movR kp .a0] ++ addRoundKey))
-    (.seq (.loop (.block roundBody) (.nonzero t0)) (.block (lastRound ++ fromBs)))
+    (.seq (.loop (.block (roundBodyK kb)) (.nonzero t0)) (.block (lastRound ++ fromBs)))
+
+def encrypt4 : Prog isa := encrypt4K sb
 
 /-- Where the data is read from: `a3` in place, `a2` out of place. -/
 def srcReg (o : Bool) : Reg := if o then .a2 else .a3
@@ -166,10 +172,12 @@ def xorTail (o w : Bool) : Prog isa :=
     (.block [.li .a4 0]))
 
 /-- One group of (up to) four blocks, by doublewords if `w`. -/
-def group (o w : Bool) : Prog isa :=
+def groupK (kb : Reg) (o w : Bool) : Prog isa :=
   .seq (.block ctrBlocks)
-    (.seq encrypt4
+    (.seq (encrypt4K kb)
       (.seq (.block [shrI t0 .a4 2]) (.ite (.nonzero t0) (.block (xorFull o w)) (xorTail o w))))
+
+def group (o w : Bool) : Prog isa := groupK sb o w
 
 /-- `t0 := ` the low three bits of the data's address, or out of place of
 both addresses. -/
@@ -178,9 +186,11 @@ def alignTest (o : Bool) : List Instr :=
 
 /-- The groups: by doublewords if the data's addresses are multiples of 8
 (`t0 = 0`, of public addresses), else a byte at a time. -/
-def ctrGroups (o : Bool) : Prog isa :=
+def ctrGroupsK (kb : Reg) (o : Bool) : Prog isa :=
   .seq (.block (alignTest o))
-    (.ite (.zero t0) (.loop (group o true) (.nonzero .a4)) (.loop (group o false) (.nonzero .a4)))
+    (.ite (.zero t0) (.loop (groupK kb o true) (.nonzero .a4)) (.loop (groupK kb o false) (.nonzero .a4)))
+
+def ctrGroups (o : Bool) : Prog isa := ctrGroupsK sb o
 
 /-- The slot that keeps our return address out of place. -/
 def srcSlot : Nat := 62
@@ -208,5 +218,39 @@ def ctr32 : Prog isa := ctr32With false
 
 /-- `vg_aes_ctr32_to`, from `src` (`a6`) to `dst` (`a3`). -/
 def ctr32To : Prog isa := ctr32With true
+
+/-! ## With the round keys bitsliced
+
+`vg_aes_ctr32_bs(keys = a0, rounds = a1, counter = a2, data = a3, n = a4,
+scratch = a5)`, and out of place `vg_aes_ctr32_bs_to(…, src = a6)`: as
+`vg_aes_ctr32`, but with the round keys already bitsliced, round key `j` the
+64 bytes at `keys + 64 j` (as `vg_aes_gcm_bitslice` leaves them,
+`Spec/Gcm/Bitsliced.lean`), so that there is no key loop and the round keys
+are not written to the scratch buffer. `encrypt4K .ra` reads them from `a0`
+on, and ends its round loop by comparing `kp` with `ra := keys + 64 rounds -
+lastKey`, where `vg_aes_ctr32` compares it with `a5`: our return address waits
+in slot `srcSlot`. Out of place, the source goes from `a6`, which the groups
+write, to `a2`, once the counter block is read. -/
+
+/-- Our return address into its slot. -/
+def bsSave : List Instr := [stS srcSlot .ra]
+
+/-- Out of place, the source (`a6`) into `a2`. -/
+def bsSrc (o : Bool) : List Instr := if o then [movR .a2 .a6] else []
+
+/-- `ra := a0 + 64 rounds - lastKey`. -/
+def bsKb : List Instr := [shlI t0 .a1 6, .add .ra .a0 t0, .addi .ra .ra (-(lastKey : Int))]
+
+/-- In place (`o` false) or out of place. -/
+def ctr32BsWith (o : Bool) : Prog isa :=
+  .seq (.block (roundSb ++ bsSave ++ saveRegs ++ maskInit ++ ctrSetup ++ bsSrc o ++ bsKb))
+    (.seq (.ite (.zero .a4) (.block []) (ctrGroupsK .ra o))
+      (.block (restoreRegs ++ [ldS .ra srcSlot])))
+
+/-- `vg_aes_ctr32_bs`, in place. -/
+def ctr32Bs : Prog isa := ctr32BsWith false
+
+/-- `vg_aes_ctr32_bs_to`, from `src` (`a6`) to `dst` (`a3`). -/
+def ctr32BsTo : Prog isa := ctr32BsWith true
 
 end VG.Impl.Aes.RISCV64
