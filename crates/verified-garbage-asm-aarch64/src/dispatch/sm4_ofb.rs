@@ -8,6 +8,8 @@
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sm4_ofb_sm4` if the CPU supports its features (`VG_SM4_OFB_SM4_FEATURES`); or else `vg_sm4_ofb`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.
@@ -56,6 +58,8 @@ pub unsafe fn vg_sm4_ofb_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *co
 /// Contract: `VG.Spec.Sm4.ofbFinalContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the chaining value or the data.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sm4_ofb_final_sm4` if the CPU supports its features (`VG_SM4_OFB_FINAL_SM4_FEATURES`); or else `vg_sm4_ofb_final`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
