@@ -257,3 +257,24 @@ pub unsafe fn vg_aes_gcm_open_to_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: 
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
     unsafe { crate::gcm::vg_aes_gcm_open_to(ctx, rounds, nonce, nonce_len, aad, aad_len, src, len, dst, dst_len, tag, tag_len) }
 }
+
+/// Writes to `*bk` the bitsliced form of the key context `*ctx` of `vg_aes_gcm_init`: at byte `64*j`, for `j` from 0 to 14, its 16 bytes at byte `16*j` (the round keys of its key schedule) in the bitsliced layout of BearSSL's `aes_ct64`, and at byte 960 the 36 words derived from its hash subkey `H` (its bytes 240 to 255) that GHASH's integer multiplications read (`VG.Spec.Gcm.SlicedRepr`), as the `*_bitsliced` functions require for that key context. It reads only `*ctx` and writes only `*bk`. The key context and the buffer are secret: only the pointers may affect timing.
+///
+/// Contract: `VG.Spec.Gcm.bitsliceContract`.
+///
+/// It runs `vg_aes_gcm_bitslice`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes, and aligned for `u64`.
+/// * `bk` must be valid for reads and writes of 1248 bytes, and aligned for `u64`.
+/// * `bk` must not overlap `ctx` (distinct Rust objects never do).
+/// * Neither `ctx` nor `bk` may overlap the 2048 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_aes_gcm_bitslice_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], bk: *mut [u64; 156]) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::gcm::vg_aes_gcm_bitslice(ctx, bk) }
+}
