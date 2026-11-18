@@ -59,8 +59,7 @@ def laneOf : Reg → Option Nat
 theorem laneOf_lane : ∀ i < 25, laneOf (lane i) = some i := by decide
 
 theorem laneOf_some {r : Reg} {i : Nat} (h : laneOf r = some i) : r = lane i ∧ i < 25 := by
-  cases r <;> simp only [laneOf, Option.some.injEq, reduceCtorEq] at h <;> subst h <;>
-    exact ⟨rfl, by decide⟩
+  cases r <;> cases h <;> exact ⟨rfl, by decide⟩
 
 /-- The lanes are in distinct registers, none of them a pointer or a temporary. -/
 theorem lane_inj : ∀ i < 25, ∀ j < 25, lane i = lane j → i = j := by decide

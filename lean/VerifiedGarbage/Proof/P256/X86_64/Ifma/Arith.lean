@@ -41,7 +41,7 @@ theorem normI_val (v0 v1 v2 v3 v4 : Int) :
     let o := normI v0 v1 v2 v3 v4
     val5 o.1 o.2.1 o.2.2.1 o.2.2.2.1 o.2.2.2.2 = val5 v0 v1 v2 v3 v4 - v4 / 2 ^ 48 * pI := by
   simp only [normI, val5, pI]
-  omega_using []
+  grind
 
 /-- The limbs after `norm` are below `2⁵²`, of a number in `[0, 2²⁶⁰)`. -/
 theorem normI_lt {v0 v1 v2 v3 v4 : Int} (h0 : -2 ^ 63 ≤ v0) (h1 : -2 ^ 63 ≤ v1) (h2 : -2 ^ 63 ≤ v2)
@@ -82,7 +82,7 @@ theorem lo52_add_hi52 {a b : Int} (ha : 0 ≤ a) (ga : a < 2 ^ 52) (hb : 0 ≤ b
   unfold lo52 hi52
   rw [Int.emod_eq_of_lt ha ga, Int.emod_eq_of_lt hb gb]
   generalize a * b = q
-  omega_using []
+  grind
 
 /-- A step of the reduction: `m = t₀ mod 2⁵²` times `p` added, which leaves a
 multiple of `2⁵²`. -/
@@ -92,7 +92,7 @@ theorem mont_step (t0 t1 t2 t3 t4 t5 : Int) :
         (t4 + hi52 m (2 ^ 36) + lo52 m (2 ^ 48 - 2 ^ 16)) * 2 ^ 156 + (t5 + hi52 m (2 ^ 48 - 2 ^ 16)) * 2 ^ 208) * 2 ^ 52 =
       t0 + t1 * 2 ^ 52 + t2 * 2 ^ 104 + t3 * 2 ^ 156 + t4 * 2 ^ 208 + t5 * 2 ^ 260 + m * pI := by
   simp only [lo52, hi52, pI]
-  omega_using []
+  grind
 
 /-- A step of the reduction on the columns `t`, at column `i`. -/
 def redI (t : List Int) (i : Nat) : List Int :=
@@ -249,7 +249,8 @@ theorem mulColsI_val {a0 a1 a2 a3 a4 b0 b1 b2 b3 b4 : Int} (ha0 : 0 ≤ a0 ∧ a
   have h44 := lo52_add_hi52 (ha4).1 (ha4).2 (hb4).1 (hb4).2
   rw [val5_mul]
   simp only [val10L, mulColsI, List.getD_cons_zero, List.getD_cons_succ, val10]
-  omega_using [ha0, ha1, ha2, ha3, ha4, hb0, hb1, hb2, hb3, hb4, h00, h01, h02, h03, h04, h10, h11, h12, h13, h14, h20, h21, h22, h23, h24, h30, h31, h32, h33, h34, h40, h41, h42, h43, h44]
+  rw [← h00, ← h01, ← h02, ← h03, ← h04, ← h10, ← h11, ← h12, ← h13, ← h14, ← h20, ← h21, ← h22, ← h23, ← h24, ← h30, ← h31, ← h32, ← h33, ← h34, ← h40, ← h41, ← h42, ← h43, ← h44]
+  grind
 
 /-- The columns of a square stand for the square. -/
 theorem sqrColsI_val {a0 a1 a2 a3 a4 : Int} (ha0 : 0 ≤ a0 ∧ a0 < 2 ^ 52) (ha1 : 0 ≤ a1 ∧ a1 < 2 ^ 52) (ha2 : 0 ≤ a2 ∧ a2 < 2 ^ 52) (ha3 : 0 ≤ a3 ∧ a3 < 2 ^ 52) (ha4 : 0 ≤ a4 ∧ a4 < 2 ^ 52) :
@@ -273,6 +274,7 @@ theorem sqrColsI_val {a0 a1 a2 a3 a4 : Int} (ha0 : 0 ≤ a0 ∧ a0 < 2 ^ 52) (ha
   simp only [val10L, sqrColsI, List.getD_cons_zero, List.getD_cons_succ, val10]
   have c (x y : Int) : y * x = x * y := Int.mul_comm y x
   rw [c a0 a1, c a0 a2, c a0 a3, c a0 a4, c a1 a2, c a1 a3, c a1 a4, c a2 a3, c a2 a4, c a3 a4]
-  omega_using [ha0, ha1, ha2, ha3, ha4, h00, h01, h02, h03, h04, h11, h12, h13, h14, h22, h23, h24, h33, h34, h44]
+  rw [← h00, ← h01, ← h02, ← h03, ← h04, ← h11, ← h12, ← h13, ← h14, ← h22, ← h23, ← h24, ← h33, ← h34, ← h44]
+  grind
 
 end VG.Proof.P256.X86_64.Ifma

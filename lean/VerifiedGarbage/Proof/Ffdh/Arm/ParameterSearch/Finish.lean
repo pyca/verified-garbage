@@ -129,6 +129,10 @@ open VG.Proof.Ffdh.Arm.KeySearch (usedMem_frame usedMem_words)
 
 def finishRestoreSlots : List (Reg × Nat) := [(.r9, 4), (.r10, 8), (.r11, 12), (.lr, 20)]
 
+/-- The registers `finish` keeps are not the popped one, nor restored, nor written by its head. -/
+private theorem finish_kept_regs : ∀ r ∈ [Reg.r5, .r6, .r7, .r8],
+    r ≠ .r4 ∧ r ∉ finishRestoreSlots.map Prod.fst ∧ r ∉ [Reg.r0, .r1, .r2, .r3] := by decide
+
 private theorem wordsAt_lost {m m' : Mem} {rs : List Region} (frame : Frame rs m m') {a : Addr} {n : Nat}
     (hd : ∀ w ∈ rs, (⟨a, 8 * n⟩ : Region).Disjoint w) (fit : 8 * n < 2 ^ 64) :
     Spec.Rsa.wordsAt m' a n = Spec.Rsa.wordsAt m a n := by
@@ -183,9 +187,9 @@ theorem finish_ok {p : SearchParams} {original s : State} {result : Spec.Ffdh.Pa
     simpa only [BitVec.add_zero] using saved (.r4, 0) (by simp [savedSlots])
   have kept (r : Reg) (member : r ∈ [.r5, .r6, .r7, .r8]) :
       (popped .r4 24 t).gpr r = original.gpr r := by
-    rw [popped_gpr (by cases r <;> simp_all [finishRestoreSlots])]
-    exact (restT.gpr r (by cases r <;> simp_all [finishRestoreSlots])).trans
-      ((rest.gpr r (by cases r <;> simp_all [finishRestoreSlots])).trans (h.kept r member))
+    obtain ⟨n4, nR, n0⟩ := finish_kept_regs r member
+    rw [popped_gpr n4]
+    exact (restT.gpr r nR).trans ((rest.gpr r n0).trans (h.kept r member))
   refine ⟨⟨?_, ?_⟩, ⟨?_, ?_, ?_, ?_⟩⟩ <;> dsimp only
   · intro r hr
     simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr

@@ -431,11 +431,13 @@ theorem encPre_of {f : MdFns} {g : Impl.RsaOaep.AArch64.Mgf1.Table.Fns} {tsH tsG
     rw [stackArgAddr, sp0]
   obtain hsy' : ∀ x : State, x.syms = s.syms → ∀ T' : FnTable, FnTable.words isa x T' = FnTable.words isa s T' :=
     fun x hx T' => VG.Proof.HashTable.AArch64.words_congr hx T'
+  obtain g0 := hg .x0 (by simp); obtain g1 := hg .x1 (by simp); obtain g2 := hg .x2 (by simp)
+  obtain g3 := hg .x3 (by simp); obtain g4 := hg .x4 (by simp); obtain g5 := hg .x5 (by simp)
+  obtain g6 := hg .x6 (by simp); obtain g7 := hg .x7 (by simp)
   refine ⟨⟨?sp1, ?sp2, ?tabH, ?tabG, ?hsy, rfl, rfl, ?ed, ?esa, ?es, ?etH, ?etG, ?eA, ?ds, ?sas, ?stH, ?stG, ?sA,
     ?ke, ?kd, ?ksa, ?ks, ?ktH, ?ktG, ?kA, ?we, ?wd, ?wsa, ?ws, ?wtH, ?wtG, ?b1, ?b2, ?hel, ?hs⟩, ?tabs⟩
   all_goals try simp only [Enc.emR, Enc.dgR, Enc.saR, Enc.sR, Enc.tHR, Enc.tGR, Enc.aR, Sgn.kR,
-    hg .x0 (by simp), hg .x1 (by simp), hg .x2 (by simp), hg .x3 (by simp), hg .x4 (by simp), hg .x5 (by simp),
-    hg .x6 (by simp), hg .x7 (by simp), a0, a1, aA, sp0, ha.x0, ha.x1, ha.x2, ha.x3, ha.x4, ha.x5, ha.x6, ha.x7, he, hb]
+    g0, g1, g2, g3, g4, g5, g6, g7, a0, a1, aA, sp0, ha.x0, ha.x1, ha.x2, ha.x3, ha.x4, ha.x5, ha.x6, ha.x7, he, hb]
   case sp1 => unfold Enc.encStack stk frameBytes at *; omega_using [h624, hfb, hkb]
   case sp2 => omega_using [hfb, hkb]
   case tabH =>

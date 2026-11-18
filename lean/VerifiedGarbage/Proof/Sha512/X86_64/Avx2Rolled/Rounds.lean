@@ -78,6 +78,12 @@ theorem exec_kSlot (s : State) (h : Reg) {i : Nat} (t : Nat) (hrdx : s.gpr .rdx 
     Nat.mul_div_right (16 * i + t) (by decide : 0 < 8), hl, and_self, ↓reduceIte]
   rfl
 
+theorem wSlotR_ea_eq {s s' : State} (hc : s'.gpr .rcx = s.gpr .rcx) (hd : s'.gpr .rdx = s.gpr .rdx) (j t' : Nat) :
+    s'.ea (wSlotR j t') = s.ea (wSlotR j t') := by
+  obtain ⟨ix, d, hix, e⟩ := wSlotR_shape j t'
+  rw [e]
+  rcases hix with rfl | rfl <;> simp only [State.ea, hc, hd]
+
 /-- The round is symbolically executed once, for any registers `a … h`. -/
 theorem roundR_ok (j t : Nat) (s : State) (v : HashValue) (k w : Word)
     (hv : Vars t s v)
@@ -88,7 +94,6 @@ theorem roundR_ok (j t : Nat) (s : State) (v : HashValue) (k w : Word)
   unfold Keeps
   have hd := round_nodup t
   have hd' := VG.nodup_reverse hd
-  obtain ⟨ix, dsp, hix, eaw⟩ := wSlotR_shape j t
   apply WP.of_runBlock
   rw [show roundR j t = .aluTbl .add (var t 7) (kSlot t) kSym Spec.Sha512.Ks :: (roundR j t).tail from rfl,
     runBlock_cons, hk]
@@ -98,47 +103,42 @@ theorem roundR_ok (j t : Nat) (s : State) (v : HashValue) (k w : Word)
     var_succ t _ (show 5 < 7 by omega_using []), var_succ t _ (show 6 < 7 by omega_using [])] at hv ⊢
   obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7, hc⟩ := hv
   simp only [roundR, List.tail_cons]
-  rw [eaw] at hin hw ⊢
-  rcases hix with rfl | rfl <;> simp only [State.ea] at hin hw
-  all_goals
-    generalize var t 0 = a at *
-    generalize var t 1 = b at *
-    generalize var t 2 = c at *
-    generalize var t 3 = d at *
-    generalize var t 4 = e at *
-    generalize var t 5 = f at *
-    generalize var t 6 = g at *
-    generalize var t 7 = h at *
-    generalize carry t = x at *
-    generalize carry (t + 1) = y at *
-    simp only [T, List.nodup_cons, List.mem_cons, List.not_mem_nil, List.reverse_cons,
-      List.reverse_nil, List.nil_append, List.cons_append, or_false, not_or,
-      List.nodup_nil, and_true] at hd hd' ⊢
-    simp only [↓reduceIte, Nat.reduceLeDiff, Nat.reducePow, runBlock_cons, runStep_some,
-      runBlock_nil, exec, execAlu, execAluW, execRorx, execAndn, readSrc, State.ea,
-      isa, State.load64, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg,
-      RegUpd.wr_setReg, RegUpd.xmm_setReg, RegUpd.ymmHi_setReg, arithFlags, RegUpd.gpr_setFlags,
-      RegUpd.mem_setFlags, RegUpd.rd_setFlags, RegUpd.wr_setFlags, RegUpd.xmm_setFlags,
-      RegUpd.ymmHi_setFlags,
-      hd, hd', h0, h1, h2, h3, h4, h5, h6, h7, hc, hin, hw, and_self, Option.bind_some,
-      Option.map_some, Option.some.injEq, exists_eq_left']
-    refine ⟨?_, trivial, trivial, trivial, fun r hr => ?_, trivial⟩
-    rotate_left
-    · simp only [pubRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl | rfl <;> simp [hd']
-    · simp only [roundKW, Vector.getElem_mk, List.getElem_toArray, List.getElem_cons_zero,
-        List.getElem_cons_succ, maj_carry, bsig0_rorx, t1_order, and_self]
-      exact ⟨BitVec.add_assoc _ _ _, trivial⟩
+  obtain ⟨A, hA⟩ : ∃ A, s.ea (wSlotR j t) = A := ⟨_, rfl⟩
+  have hea (st : State) (h1 : st.gpr .rcx = s.gpr .rcx) (h2 : st.gpr .rdx = s.gpr .rdx) :
+      st.ea (wSlotR j t) = A := (wSlotR_ea_eq h1 h2 j t).trans hA
+  rw [hA] at hin hw
+  generalize var t 0 = a at *
+  generalize var t 1 = b at *
+  generalize var t 2 = c at *
+  generalize var t 3 = d at *
+  generalize var t 4 = e at *
+  generalize var t 5 = f at *
+  generalize var t 6 = g at *
+  generalize var t 7 = h at *
+  generalize carry t = x at *
+  generalize carry (t + 1) = y at *
+  simp only [T, List.nodup_cons, List.mem_cons, List.not_mem_nil, List.reverse_cons,
+    List.reverse_nil, List.nil_append, List.cons_append, or_false, not_or,
+    List.nodup_nil, and_true] at hd hd' ⊢
+  simp only [↓reduceIte, Nat.reduceLeDiff, Nat.reducePow, runBlock_cons, runStep_some,
+    runBlock_nil, exec, execAlu, execAluW, execRorx, execAndn, readSrc, hea,
+    isa, State.load64, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg,
+    RegUpd.wr_setReg, RegUpd.xmm_setReg, RegUpd.ymmHi_setReg, arithFlags, RegUpd.gpr_setFlags,
+    RegUpd.mem_setFlags, RegUpd.rd_setFlags, RegUpd.wr_setFlags, RegUpd.xmm_setFlags,
+    RegUpd.ymmHi_setFlags,
+    hd, hd', h0, h1, h2, h3, h4, h5, h6, h7, hc, hin, hw, and_self, Option.bind_some,
+    Option.map_some, Option.some.injEq, exists_eq_left']
+  refine ⟨?_, trivial, trivial, trivial, fun r hr => ?_, trivial⟩
+  rotate_left
+  · simp only [pubRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl <;> simp [hd']
+  · simp only [roundKW, Vector.getElem_mk, List.getElem_toArray, List.getElem_cons_zero,
+      List.getElem_cons_succ, maj_carry, bsig0_rorx, t1_order, and_self]
+    exact ⟨BitVec.add_assoc _ _ _, trivial⟩
 
 /-- Round `t'` of an iteration of block `j` can read its word, `w`. -/
 def WR (j : Nat) (s : State) (t' : Nat) (w : Word) : Prop :=
   InRegions (s.rd ++ s.wr) (s.ea (wSlotR j t')) 8 ∧ s.mem.readW (s.ea (wSlotR j t')) 64 = w
-
-theorem wSlotR_ea_eq {s s' : State} (hc : s'.gpr .rcx = s.gpr .rcx) (hd : s'.gpr .rdx = s.gpr .rdx) (j t' : Nat) :
-    s'.ea (wSlotR j t') = s.ea (wSlotR j t') := by
-  obtain ⟨ix, d, hix, e⟩ := wSlotR_shape j t'
-  rw [e]
-  rcases hix with rfl | rfl <;> simp only [State.ea, hc, hd]
 
 theorem WR.keeps {j : Nat} {s s' : State} {t' : Nat} {w : Word} (h : WR j s t' w) (hk : Keeps s s') :
     WR j s' t' w := by
