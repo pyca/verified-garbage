@@ -26,7 +26,8 @@ x86-64 and AArch64 (`Impl/Ecdsa/Verify/AArch64.lean`):
 3. the masks of `r` and `s` in `[1, n-1]` into the flag, and
    `w = s^(n-2)`, in Montgomery form modulo `n`;
 4. `u = e w` and `v = r w` modulo `n`, out of Montgomery's form;
-5. `[u]G` by the signature's ladder (from the table of `u`'s bits), saved
+5. `[u]G` by the signature's ladder (from the table of `u`'s bits), or, for
+   a curve with a comb's tables (`verifyComb`), by its comb, saved
    to `U`, and `R` reset to `O`; then `[v]Q` by ECDH's ladder (from the
    table of `v`'s bits) and `[u]G + [v]Q` by the complete addition, into
    `R`;
@@ -160,10 +161,10 @@ def projectiveFinal : Prog isa :=
     (.seq (Mont.mulCall c.SP (c.sl XM) (c.sl K) (c.sl XM))
       (fprog c.SP (projectiveOps c.sl)))) (.block (projectiveChecks c))
 
-/-- P-256 compares projective coordinates directly (it reads `r` from `K`'s
-slot, which `vg_<curve>_mul`'s scalar replaces: so only for a curve without
-it, `Cfg.mul`); the other curves retain an affine conversion until the
-direct path has been benchmarked for them. -/
+/-- A 256-bit curve with `n < p ≤ 2n` and no `vg_<curve>_mul` (`Cfg.mul`: its
+scalar would replace `r`, which this reads from `K`'s slot) compares
+projective coordinates directly: P-256, secp256k1 and brainpoolP256r1. The
+other curves convert to affine coordinates. -/
 def tail : Prog isa :=
   if c.mul.isNone ∧ c.C.len = 32 ∧ c.C.n < c.C.p ∧ c.C.p ≤ 2 * c.C.n then projectiveFinal c
   else .seq c.pPow (final c)
