@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.Depth
 import VerifiedGarbage.Proof.Framework.AArch64.Clears
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Framework.AArch64.ScrubAll
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubAllW
 
 /-!
 # AES-CBC on AArch64, zeroing the scratch it writes
@@ -31,7 +32,11 @@ the Cryptographic Extension's, and the call wiping `scratch` otherwise; for
 decryption, none where `v` writes nothing in `scratch` (the Cryptographic
 Extension's decryptions are their own artifacts), the decryption in AdvSIMD
 registers (`Neon.decrypt`, wiping `scratch`: `decryptNeon`) where `v` is the
-one in AdvSIMD registers, and the call wiping `scratch` otherwise.
+one in AdvSIMD registers, and the call wiping `scratch` otherwise. Each
+returns with the registers it may write cleared and its stack, if any,
+zeroed (`ScrubAll.withScrubAll`; `ScrubAll.withScrubAllW` for the
+Cryptographic Extension's encryption, which states what it writes of
+`scratch`).
 -/
 
 @[expose] public section
@@ -199,6 +204,17 @@ theorem encryptOk : ScrubAll.ScrubAllOk (Spec.Cbc.aesEncryptContract abi 32) 32
     blocksAt_congr hd
   exact ⟨hb'.trans h1, (AesEcb.bytesAt_congr hc).trans h2⟩
 
+/-- `encryptOk` for the code without frames (`encrypt_free_scrubbed`). -/
+theorem encryptOk0 : ScrubAll.ScrubAllOk
+    (Spec.Cbc.aesSig.contract abi (pre 64) (scrubbedPost 64 (encPost 64)) false 0 none) 0
+    (Spec.Cbc.aesSig.retBits abi.ptrBits) := by
+  refine ScrubAll.scrubAllOk_regs0 (by decide) (scrubbedOut _ ?_)
+  intro a b c d e f m m₁ m₂ x _ hc hd h key hk
+  obtain ⟨h1, h2⟩ := h key hk
+  have hb' : Spec.Cbc.blocksAt m₂ d e.toNat = Spec.Cbc.blocksAt m₁ d e.toNat :=
+    blocksAt_congr hd
+  exact ⟨hb'.trans h1, (AesEcb.bytesAt_congr hc).trans h2⟩
+
 theorem decryptOk : ScrubAll.ScrubAllOk (Spec.Cbc.aesDecryptContract abi 32) 32
     (Spec.Cbc.aesSig.retBits abi.ptrBits) := by
   rw [decrypt_eq]
@@ -212,12 +228,12 @@ theorem decryptOk : ScrubAll.ScrubAllOk (Spec.Cbc.aesDecryptContract abi 32) 32
 /-- The implementation of `vg_aes_cbc_encrypt` over `v` that is emitted (see
 the module's documentation). -/
 def encryptRegs (v : BlocksImpl) : List (Registration Spec.Cbc.aesEncryptApi target) :=
-  if h : v.enc.name = "vg_aes_encrypt_blocks_aes" then [{
+  if h : v.enc.name = "vg_aes_encrypt_blocks_aes" then [ScrubAll.withScrubAllW {
     suffix := v.suffix
     code := Caller.encrypt v
     verified := encrypt_free_scrubbed v h
     written := Caller.written v
-    writtenOk := Caller.written_ok v }]
+    writtenOk := Caller.written_ok v } encryptOk0]
   else [ScrubAll.withScrubAll {
     suffix := v.suffix
     code := encrypt v

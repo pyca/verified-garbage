@@ -114,11 +114,11 @@ open VG.Impl.AesCfb.AArch64 (final finalSaved finalMoves finalSetup finalRestore
 `vg_aes_cfb128_encrypt` of the same suffix. -/
 def encryptCode (v : BlocksImpl) : Prog isa := Impl.AesCfb.AArch64.encryptFinal v.enc v.suffix
 
-/-- `vg_aes_cfb128_decrypt_final` for the implementation `v`, calling
-`vg_aes_cfb128_decrypt` of the same suffix, whose code is the one its
-registration emits (`Caller.decrypt`). -/
+/-- `vg_aes_cfb128_decrypt_final` for the implementation `v`, calling the
+code of `vg_aes_cfb128_decrypt` of the same suffix (`Caller.decrypt`) as an
+internal function of its own, `vg_aes_cfb128_decrypt<sfx>_core`. -/
 def decryptCode (v : BlocksImpl) : Prog isa :=
-  final ("vg_aes_cfb128_decrypt" ++ v.suffix) (Caller.decrypt v) v.enc
+  final ("vg_aes_cfb128_decrypt" ++ v.suffix ++ "_core") (Caller.decrypt v) v.enc
 
 /-! ## The contract -/
 

@@ -17,10 +17,10 @@ open VG.Proof.AesCtr.AArch64
 
 def artifacts : List Artifact :=
   VG.Proof.Variants.AesCtr32.AArch64.variants.flatMap fun (v : Proof.Aes.AArch64.Ctr32Impl) => [
-    Spec.Ctr.aesApi.artifact AArch64.target {
+    Spec.Ctr.aesApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
       suffix := v.suffix
       code := Impl.AesCtr.AArch64.crypt v.callee
-      verified := Proof.AesCtr.keyed (crypt_verified v) },
+      verified := Proof.AesCtr.keyed (crypt_verified v) } Proof.Aes.AArch64.ModesScrub.ctrOk),
     Spec.Ctr.aesFinalApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
       suffix := v.suffix
       code := Impl.StackScratch.AArch64.withStackScratchWiped 80 .x6 10 (Impl.AesCtr.AArch64.cryptFinal v.callee v.suffix)

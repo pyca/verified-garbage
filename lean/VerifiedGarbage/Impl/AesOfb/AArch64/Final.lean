@@ -36,9 +36,10 @@ namespace VG.Impl.AesOfb.AArch64
 open VG.AArch64
 open VG.Impl.Aes.AArch64 (Blocks)
 
-/-- `vg_aes_ofb_final`, calling `vg_aes_ofb` with the block function `b`,
-whose callers' names end in `sfx`. -/
+/-- `vg_aes_ofb_final`, calling `vg_aes_ofb`'s code with the block function
+`b`, whose callers' names end in `sfx`, as an internal function of its own,
+`vg_aes_ofb<sfx>_core`: `vg_aes_ofb` also clears the registers it leaves. -/
 def cryptFinal (b : Blocks) (sfx : String) : Prog isa :=
-  Impl.AesCfb.AArch64.final ("vg_aes_ofb" ++ sfx) (crypt b) b
+  Impl.AesCfb.AArch64.final ("vg_aes_ofb" ++ sfx ++ "_core") (crypt b) b
 
 end VG.Impl.AesOfb.AArch64

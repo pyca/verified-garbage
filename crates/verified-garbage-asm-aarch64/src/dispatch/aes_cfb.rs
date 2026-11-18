@@ -8,6 +8,8 @@
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_cfb128_encrypt_aes` if the CPU supports its features (`VG_AES_CFB128_ENCRYPT_AES_FEATURES`); `vg_aes_cfb128_encrypt_neon` if detection reports some CPU feature; or else `vg_aes_cfb128_encrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 240 bytes.
@@ -64,6 +66,8 @@ pub unsafe fn vg_aes_cfb128_encrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, sc
 /// Contract: `VG.Spec.Cfb.aesDecryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_cfb128_decrypt_aes` if the CPU supports its features (`VG_AES_CFB128_DECRYPT_AES_FEATURES`); `vg_aes_cfb128_decrypt_neon` if detection reports some CPU feature; or else `vg_aes_cfb128_decrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///

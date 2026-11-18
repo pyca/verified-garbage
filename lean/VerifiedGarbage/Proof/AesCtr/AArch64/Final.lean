@@ -308,7 +308,7 @@ theorem sv_bytes {s₀ : State} (hp : CPre s₀) :
       simp only [List.mem_singleton] at hr; subst hr; exact hp.data_sv.sub_left (blk_sub s₀))⟩
 
 theorem whole_wp (v : Ctr32Impl) {s₀ : State} (hp : CPre s₀) {s : State} (h : Setup s₀ s) :
-    WP isa (.call ("vg_aes_ctr" ++ v.suffix) (crypt v.callee)) s (Whole AesCtr.ctrMode s₀) := by
+    WP isa (.call ("vg_aes_ctr" ++ v.suffix ++ "_core") (crypt v.callee)) s (Whole AesCtr.ctrMode s₀) := by
   obtain ⟨eW, eIv, eB⟩ := sv_bytes hp
   obtain ⟨hpre, hc, hw⟩ := whole_pre hp h
   refine WP.call (k := wholeK) (crypt_correct v) (rd := [fSch s₀]) (wr := [fIvR s₀, fBlk s₀, fScr s₀]) hpre
@@ -532,7 +532,7 @@ structure TCall (s₀ s : State) : Prop where
   out : bytesAt s.mem (cBk s₀) 16 = Spec.Cbc.aesWith (fR s₀) (fWk s₀) (Spec.Ctr.next (fIv0 s₀) (fN s₀))
 
 theorem tail_call_wp (v : Ctr32Impl) {s₀ : State} (hp : CPre s₀) {s : State} (h : TArgs s₀ s) :
-    WP isa (.call ("vg_aes_ctr" ++ v.suffix) (crypt v.callee)) s (TCall s₀) := by
+    WP isa (.call ("vg_aes_ctr" ++ v.suffix ++ "_core") (crypt v.callee)) s (TCall s₀) := by
   obtain ⟨hpre, hc, hw⟩ := tail_pre hp h
   have big := big_of (cW1_cW h.frame)
   have eW : bytesAt s.mem (fW s₀) (16 * (fR s₀ + 1)) = fWk s₀ :=
@@ -663,7 +663,7 @@ theorem tail_xor_wp {s₀ : State} (hp : CPre s₀) {s : State} (h : TCall s₀ 
   · rw [ite_eq_right hu, Proof.Cmac.bytesAt_frame d.frame ivT (by decide), mem₁, h.ctr, ← AesCtr.next_add]
 
 theorem final_mid_wp (v : Ctr32Impl) {s₀ : State} (hp : CPre s₀) {s : State} (h : Whole AesCtr.ctrMode s₀ s) :
-    WP isa (.ite (.zero .x .x23) (.block []) (finalTail ("vg_aes_ctr" ++ v.suffix) (crypt v.callee))) s
+    WP isa (.ite (.zero .x .x23) (.block []) (finalTail ("vg_aes_ctr" ++ v.suffix ++ "_core") (crypt v.callee))) s
       (Done s₀) := by
   by_cases hu : fU s₀ = 0
   · exact WP.ite true (by rw [eval_u h, decide_eq_true hu]) (fun _ => WP.block_nil (done_of_zero h hu))
@@ -767,7 +767,7 @@ theorem final_rel (v : Ctr32Impl) {s₀ s₀' : State} (h0 : ctrFinalAArch64.pre
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption)
     fun a b h => by obtain ⟨rfl, rfl⟩ := h; exact ⟨final_setup_wp hp, final_setup_wp hp'⟩
   -- The whole blocks.
-  have r₂ := (RelCT.callEx (k := wholeK) (n := "vg_aes_ctr" ++ v.suffix) (crypt_correct v) (crypt_ct v)
+  have r₂ := (RelCT.callEx (k := wholeK) (n := "vg_aes_ctr" ++ v.suffix ++ "_core") (crypt_correct v) (crypt_ct v)
     (P := fun a b => Setup s₀ a ∧ Setup s₀' b) fun a b ⟨ha, hb⟩ => by
       obtain ⟨pa, ca, wa⟩ := whole_pre hp ha
       obtain ⟨pb, cb, wb⟩ := whole_pre hp' hb
@@ -785,7 +785,7 @@ theorem final_rel (v : Ctr32Impl) {s₀ s₀' : State} (h0 : ctrFinalAArch64.pre
     fun a b h => ⟨whole_wp v hp h.1, whole_wp v hp' h.2⟩
   -- The partial last block.
   have tail (hu : fU s₀ ≠ 0) : RelCT isa (fun a b => Whole AesCtr.ctrMode s₀ a ∧ Whole AesCtr.ctrMode s₀' b)
-      (finalTail ("vg_aes_ctr" ++ v.suffix) (crypt v.callee)) fun a b => Done s₀ a ∧ Done s₀' b := by
+      (finalTail ("vg_aes_ctr" ++ v.suffix ++ "_core") (crypt v.callee)) fun a b => Done s₀ a ∧ Done s₀' b := by
     have hu' : fU s₀' ≠ 0 := qU ▸ hu
     have a₁ := taint_rel (P := fun a b => Whole AesCtr.ctrMode s₀ a ∧ Whole AesCtr.ctrMode s₀' b)
       (F₁ := TArgs s₀) (F₂ := TArgs s₀') [.x19, .x20, .x21, .x24, .x25] tailArgs_taint
@@ -799,7 +799,7 @@ theorem final_rel (v : Ctr32Impl) {s₀ s₀' : State} (h0 : ctrFinalAArch64.pre
         · rw [h.1.x24, h.2.x24, fS, fS, qS]
         · rw [h.1.x25, h.2.x25, fV, fV, qV])
       fun a b h => ⟨tail_args_wp hp h.1, tail_args_wp hp' h.2⟩
-    have a₂ := (RelCT.callEx (k := wholeK) (n := "vg_aes_ctr" ++ v.suffix) (crypt_correct v) (crypt_ct v)
+    have a₂ := (RelCT.callEx (k := wholeK) (n := "vg_aes_ctr" ++ v.suffix ++ "_core") (crypt_correct v) (crypt_ct v)
       (P := fun a b => TArgs s₀ a ∧ TArgs s₀' b) fun a b ⟨ha, hb⟩ => by
         obtain ⟨pa, ca, wa⟩ := tail_pre hp ha
         obtain ⟨pb, cb, wb⟩ := tail_pre hp' hb
@@ -826,7 +826,7 @@ theorem final_rel (v : Ctr32Impl) {s₀ s₀' : State} (h0 : ctrFinalAArch64.pre
       fun a b h => ⟨tail_xor_wp hp h.1 hu, tail_xor_wp hp' h.2 hu'⟩
     exact a₁.seq ((a₂.mono (fun _ _ h => h) fun _ _ h => h.2).seq a₃)
   have r₃ : RelCT isa (fun a b => Whole AesCtr.ctrMode s₀ a ∧ Whole AesCtr.ctrMode s₀' b)
-      (.ite (.zero .x .x23) (.block []) (finalTail ("vg_aes_ctr" ++ v.suffix) (crypt v.callee)))
+      (.ite (.zero .x .x23) (.block []) (finalTail ("vg_aes_ctr" ++ v.suffix ++ "_core") (crypt v.callee)))
       (fun a b => Done s₀ a ∧ Done s₀' b) := by
     refine RelCT.ite (fun a b h => by rw [eval_u h.1, eval_u h.2, qU]) ?_ ?_
     · refine RelCT.block_nil fun a b h => ?_

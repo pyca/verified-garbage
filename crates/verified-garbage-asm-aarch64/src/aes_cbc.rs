@@ -397,6 +397,8 @@ pub const VG_AES_CBC_ENCRYPT_AES_SCRATCH_WRITTEN: usize = 0;
 ///
 /// Contract: `VG.Spec.Cbc.aesEncryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// It writes at most the first 0 bytes of `scratch` (`VG_AES_CBC_ENCRYPT_AES_SCRATCH_WRITTEN`): no byte of `scratch` beyond them changes.
 ///
 /// # Safety
@@ -491,7 +493,10 @@ b 215f
 215:
 .inst 0x6e3e1fff,0x3d80017f
 21:
-.inst 0xd65f03c0
+.inst 0xd2800002,0xd2800003,0xd2800004,0xd2800006,0xd2800007,0xd2800009,0xd280000a,0xd280000b
+.inst 0xd280000c,0xd280000d,0x6f00e400,0x6f00e401,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412
+.inst 0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a
+.inst 0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0xd2800000,0xd65f03c0
 .p2align 6",
     )
 }

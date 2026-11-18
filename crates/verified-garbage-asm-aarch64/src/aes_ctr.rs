@@ -10,6 +10,8 @@ pub const VG_AES_CTR_AES_FEATURES: verified_garbage_cpu::Features = verified_gar
 ///
 /// Contract: `VG.Spec.Ctr.aesContract`. Constant time: only the pointers, `rounds`, `n` and the last four bytes of `*ctr` (the 32-bit counter, public in OpenSSL, BoringSSL and AWS-LC, which split the blocks where it wraps) may affect timing, not the key schedule, the rest of the counter block or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 240 bytes.
@@ -42,7 +44,12 @@ cbnz x23, 22b
 b 21f
 20:
 21:
-.inst 0xf9440b13,0xf9440f14,0xf9441315,0xf9441716,0xf9441b17,0xf9441f1e,0xf9442318,0xd65f03c0
+.inst 0xf9440b13,0xf9440f14,0xf9441315,0xf9441716,0xf9441b17,0xf9441f1e,0xf9442318,0xd2800001
+.inst 0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800009,0xd280000a
+.inst 0xd280000b,0xd280000c,0xd280000d,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402
+.inst 0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412
+.inst 0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a
+.inst 0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0xd2800000,0xd65f03c0
 .p2align 6",
         vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
     )
@@ -74,11 +81,11 @@ pub(crate) unsafe extern "C" fn vg_aes_ctr_final_aes(schedule: *const [u8; 240],
         r".inst 0xd10143ff,0x910003e6,0xf90000d3,0xf90004d4,0xf90008d5,0xf9000cd6,0xf90010d7,0xf90014d8
 .inst 0xf90018de,0xf9001cd9,0x91000013,0x91000034,0x91000055,0x910000b8,0x910000d9,0xd344fc89
 .inst 0xd37ced2a,0x8b0a0076,0xcb0a0097,0x91000124
-bl {vg_aes_ctr_aes}
+bl {vg_aes_ctr_aes_core}
 cbz x23, 20f
 .inst 0xd2800009,0xf9002329,0xf9002729,0x91000260,0x91000281,0x910002a2,0x91010323,0xd2800024
 .inst 0x91000305
-bl {vg_aes_ctr_aes}
+bl {vg_aes_ctr_aes_core}
 .inst 0x91010329
 22:
 .inst 0x39400126,0x394002c7,0xca0600e7,0x390002c7,0x91000529,0x910006d6,0xd10006f7
@@ -96,13 +103,15 @@ b 21f
 .inst 0xd10143ff,0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f
 .inst 0x910143ff,0xd65f03c0
 .p2align 6",
-        vg_aes_ctr_aes = sym super::aes_ctr::vg_aes_ctr_aes,
+        vg_aes_ctr_aes_core = sym super::aes_ctr::vg_aes_ctr_aes_core::vg_aes_ctr_aes_core,
     )
 }
 
 /// AES-CTR encryption or decryption (NIST SP 800-38A §6.5) of whole blocks, in place: XORs the `n` 16-byte blocks at `data` with the output blocks `Oⱼ = CIPH_K(Tⱼ)`, where `T₁` is the block at `*ctr` and `Tⱼ₊₁ = Tⱼ + 1 mod 2¹²⁸` (Appendix B.1's standard incrementing function on the whole block, read as a big-endian integer), and replaces `*ctr` with `Tₙ₊₁` (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
 ///
 /// Contract: `VG.Spec.Ctr.aesContract`. Constant time: only the pointers, `rounds`, `n` and the last four bytes of `*ctr` (the 32-bit counter, public in OpenSSL, BoringSSL and AWS-LC, which split the blocks where it wraps) may affect timing, not the key schedule, the rest of the counter block or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -135,7 +144,12 @@ cbnz x23, 22b
 b 21f
 20:
 21:
-.inst 0xf9440b13,0xf9440f14,0xf9441315,0xf9441716,0xf9441b17,0xf9441f1e,0xf9442318,0xd65f03c0
+.inst 0xf9440b13,0xf9440f14,0xf9441315,0xf9441716,0xf9441b17,0xf9441f1e,0xf9442318,0xd2800001
+.inst 0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800008,0xd2800009
+.inst 0xd280000a,0xd280000b,0xd280000c,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402
+.inst 0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412
+.inst 0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a
+.inst 0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0xd2800000,0xd65f03c0
 .p2align 6",
         vg_aes_ctr32_neon = sym super::aes::vg_aes_ctr32_neon::vg_aes_ctr32_neon,
     )
@@ -163,11 +177,11 @@ pub(crate) unsafe extern "C" fn vg_aes_ctr_final_neon(schedule: *const [u8; 240]
         r".inst 0xd10143ff,0x910003e6,0xf90000d3,0xf90004d4,0xf90008d5,0xf9000cd6,0xf90010d7,0xf90014d8
 .inst 0xf90018de,0xf9001cd9,0x91000013,0x91000034,0x91000055,0x910000b8,0x910000d9,0xd344fc89
 .inst 0xd37ced2a,0x8b0a0076,0xcb0a0097,0x91000124
-bl {vg_aes_ctr_neon}
+bl {vg_aes_ctr_neon_core}
 cbz x23, 20f
 .inst 0xd2800009,0xf9002329,0xf9002729,0x91000260,0x91000281,0x910002a2,0x91010323,0xd2800024
 .inst 0x91000305
-bl {vg_aes_ctr_neon}
+bl {vg_aes_ctr_neon_core}
 .inst 0x91010329
 22:
 .inst 0x39400126,0x394002c7,0xca0600e7,0x390002c7,0x91000529,0x910006d6,0xd10006f7
@@ -185,13 +199,15 @@ b 21f
 .inst 0xd10143ff,0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f
 .inst 0x910143ff,0xd65f03c0
 .p2align 6",
-        vg_aes_ctr_neon = sym super::aes_ctr::vg_aes_ctr_neon,
+        vg_aes_ctr_neon_core = sym super::aes_ctr::vg_aes_ctr_neon_core::vg_aes_ctr_neon_core,
     )
 }
 
 /// AES-CTR encryption or decryption (NIST SP 800-38A §6.5) of whole blocks, in place: XORs the `n` 16-byte blocks at `data` with the output blocks `Oⱼ = CIPH_K(Tⱼ)`, where `T₁` is the block at `*ctr` and `Tⱼ₊₁ = Tⱼ + 1 mod 2¹²⁸` (Appendix B.1's standard incrementing function on the whole block, read as a big-endian integer), and replaces `*ctr` with `Tₙ₊₁` (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
 ///
 /// Contract: `VG.Spec.Ctr.aesContract`. Constant time: only the pointers, `rounds`, `n` and the last four bytes of `*ctr` (the 32-bit counter, public in OpenSSL, BoringSSL and AWS-LC, which split the blocks where it wraps) may affect timing, not the key schedule, the rest of the counter block or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -224,7 +240,12 @@ cbnz x23, 22b
 b 21f
 20:
 21:
-.inst 0xf9440b13,0xf9440f14,0xf9441315,0xf9441716,0xf9441b17,0xf9441f1e,0xf9442318,0xd65f03c0
+.inst 0xf9440b13,0xf9440f14,0xf9441315,0xf9441716,0xf9441b17,0xf9441f1e,0xf9442318,0xd2800001
+.inst 0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800008,0xd2800009,0xd280000a
+.inst 0xd280000b,0xd280000c,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403
+.inst 0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414
+.inst 0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c
+.inst 0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0xd2800000,0xd65f03c0
 .p2align 6",
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
     )
@@ -252,11 +273,11 @@ pub(crate) unsafe extern "C" fn vg_aes_ctr_final(schedule: *const [u8; 240], rou
         r".inst 0xd10143ff,0x910003e6,0xf90000d3,0xf90004d4,0xf90008d5,0xf9000cd6,0xf90010d7,0xf90014d8
 .inst 0xf90018de,0xf9001cd9,0x91000013,0x91000034,0x91000055,0x910000b8,0x910000d9,0xd344fc89
 .inst 0xd37ced2a,0x8b0a0076,0xcb0a0097,0x91000124
-bl {vg_aes_ctr}
+bl {vg_aes_ctr_core}
 cbz x23, 20f
 .inst 0xd2800009,0xf9002329,0xf9002729,0x91000260,0x91000281,0x910002a2,0x91010323,0xd2800024
 .inst 0x91000305
-bl {vg_aes_ctr}
+bl {vg_aes_ctr_core}
 .inst 0x91010329
 22:
 .inst 0x39400126,0x394002c7,0xca0600e7,0x390002c7,0x91000529,0x910006d6,0xd10006f7
@@ -274,6 +295,18 @@ b 21f
 .inst 0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x910143ff
 .inst 0xd65f03c0
 .p2align 6",
-        vg_aes_ctr = sym super::aes_ctr::vg_aes_ctr,
+        vg_aes_ctr_core = sym super::aes_ctr::vg_aes_ctr_core::vg_aes_ctr_core,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_ctr_aes_core.rs"]
+pub(crate) mod vg_aes_ctr_aes_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_ctr_core.rs"]
+pub(crate) mod vg_aes_ctr_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_ctr_neon_core.rs"]
+pub(crate) mod vg_aes_ctr_neon_core;

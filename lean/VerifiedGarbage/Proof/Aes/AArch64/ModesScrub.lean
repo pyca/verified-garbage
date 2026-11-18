@@ -6,6 +6,10 @@ public import VerifiedGarbage.Spec.Cfb.Final
 public import VerifiedGarbage.Spec.Cfb8.Contract
 public import VerifiedGarbage.Proof.Framework.AArch64.ScrubAll
 import VerifiedGarbage.Proof.AesEcb.Wipe
+import VerifiedGarbage.Proof.AesCbc.Wipe
+public import VerifiedGarbage.Spec.Ctr.Contract
+public import VerifiedGarbage.Spec.Ofb.Contract
+public import VerifiedGarbage.Spec.Cfb.Contract
 
 /-!
 # AES's streaming modes on AArch64, without secret residue
@@ -18,9 +22,11 @@ only within the block at `iv` (or `ctr`) and the data
 implementation it calls, returns with every register it may leave secret
 cleared, and its whole stack zeroed, if it has one (`ScrubAll.withScrubAll`).
 
-The whole-block functions of CTR, OFB and CFB128 are not converted here: the
-final functions call them by name, so their code changes only with the
-finals'.
+So do the whole-block functions of CTR, OFB and CFB128, `vg_aes_ctr`,
+`vg_aes_ofb`, `vg_aes_cfb128_encrypt` and `vg_aes_cfb128_decrypt`, which
+have no frames: each returns with the registers it may write cleared. The
+final functions call the code as it was, an internal function of its own
+(`vg_aes_ctr_core`, …), whose registers they clear themselves.
 -/
 
 @[expose] public section
@@ -106,6 +112,62 @@ theorem cfb8DecryptOk : ScrubAllOk (Spec.Cfb8.aesDecryptContract abi 0) 0 (Spec.
       dsimp only [ArgWord.ofRaw] at h' ⊢
       have hd := agree_of hb.2.2.1
       rw [bytesAt_congr fun i hi => hd i (by have := AesEcb.n_le (pb := abi.ptrBits) n; omega_using [hi, this]), bytesAt_congr (agree_of hb.2.1)]
+      exact h'
+
+theorem ctrOk : ScrubAllOk (Spec.Ctr.aesContract abi) 0 (Spec.Ctr.aesSig.retBits abi.ptrBits) :=
+  scrubAllOk_regs0 (sig := Spec.Ctr.aesSig) (by decide) fun vs m m₁ m₂ r hlen hb h => by
+    match vs, hlen with
+    | [_, _, _, _, n, _], _ =>
+      simp only [Spec.Ctr.aesSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+        forall_eq, Elem.size, Nat.mul_one] at hb
+      intro key hk
+      have h' := h key hk
+      dsimp only [ArgWord.ofRaw] at h' ⊢
+      have hd := agree_of hb.2.2.1
+      rw [AesCbc.Wipe.blocksAt_congr fun i hi => hd i (by have := AesEcb.n_le (pb := abi.ptrBits) n; omega_using [hi, this]),
+        bytesAt_congr (agree_of hb.2.1)]
+      exact h'
+
+theorem ofbOk : ScrubAllOk (Spec.Ofb.aesContract abi) 0 (Spec.Ofb.aesSig.retBits abi.ptrBits) :=
+  scrubAllOk_regs0 (sig := Spec.Ofb.aesSig) (by decide) fun vs m m₁ m₂ r hlen hb h => by
+    match vs, hlen with
+    | [_, _, _, _, n, _], _ =>
+      simp only [Spec.Ofb.aesSig, Spec.Cbc.aesSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+        forall_eq, Elem.size, Nat.mul_one] at hb
+      intro key hk
+      have h' := h key hk
+      dsimp only [ArgWord.ofRaw] at h' ⊢
+      have hd := agree_of hb.2.2.1
+      rw [AesCbc.Wipe.blocksAt_congr fun i hi => hd i (by have := AesEcb.n_le (pb := abi.ptrBits) n; omega_using [hi, this]),
+        bytesAt_congr (agree_of hb.2.1)]
+      exact h'
+
+theorem cfbEncryptOk : ScrubAllOk (Spec.Cfb.aesEncryptContract abi) 0 (Spec.Cfb.aesSig.retBits abi.ptrBits) :=
+  scrubAllOk_regs0 (sig := Spec.Cfb.aesSig) (by decide) fun vs m m₁ m₂ r hlen hb h => by
+    match vs, hlen with
+    | [_, _, _, _, n, _], _ =>
+      simp only [Spec.Cfb.aesSig, Spec.Cbc.aesSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+        forall_eq, Elem.size, Nat.mul_one] at hb
+      intro key hk
+      have h' := h key hk
+      dsimp only [ArgWord.ofRaw] at h' ⊢
+      have hd := agree_of hb.2.2.1
+      rw [AesCbc.Wipe.blocksAt_congr fun i hi => hd i (by have := AesEcb.n_le (pb := abi.ptrBits) n; omega_using [hi, this]),
+        bytesAt_congr (agree_of hb.2.1)]
+      exact h'
+
+theorem cfbDecryptOk : ScrubAllOk (Spec.Cfb.aesDecryptContract abi) 0 (Spec.Cfb.aesSig.retBits abi.ptrBits) :=
+  scrubAllOk_regs0 (sig := Spec.Cfb.aesSig) (by decide) fun vs m m₁ m₂ r hlen hb h => by
+    match vs, hlen with
+    | [_, _, _, _, n, _], _ =>
+      simp only [Spec.Cfb.aesSig, Spec.Cbc.aesSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+        forall_eq, Elem.size, Nat.mul_one] at hb
+      intro key hk
+      have h' := h key hk
+      dsimp only [ArgWord.ofRaw] at h' ⊢
+      have hd := agree_of hb.2.2.1
+      rw [AesCbc.Wipe.blocksAt_congr fun i hi => hd i (by have := AesEcb.n_le (pb := abi.ptrBits) n; omega_using [hi, this]),
+        bytesAt_congr (agree_of hb.2.1)]
       exact h'
 
 end VG.Proof.Aes.AArch64.ModesScrub

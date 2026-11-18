@@ -166,6 +166,30 @@ b 21f
 }
 
 #[rustfmt::skip]
+#[path = "internal/vg_aes_cfb128_decrypt_aes_core.rs"]
+pub(crate) mod vg_aes_cfb128_decrypt_aes_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_cfb128_decrypt_core.rs"]
+pub(crate) mod vg_aes_cfb128_decrypt_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_cfb128_decrypt_neon_core.rs"]
+pub(crate) mod vg_aes_cfb128_decrypt_neon_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_cfb128_encrypt_aes_core.rs"]
+pub(crate) mod vg_aes_cfb128_encrypt_aes_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_cfb128_encrypt_core.rs"]
+pub(crate) mod vg_aes_cfb128_encrypt_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_cfb128_encrypt_neon_core.rs"]
+pub(crate) mod vg_aes_cfb128_encrypt_neon_core;
+
+#[rustfmt::skip]
 #[path = "internal/vg_aes_ctr32.rs"]
 pub(crate) mod vg_aes_ctr32;
 

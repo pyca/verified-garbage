@@ -201,6 +201,8 @@ b 28f
 ///
 /// Contract: `VG.Spec.AesEcb.encryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 240 bytes.
@@ -216,7 +218,12 @@ pub(crate) unsafe extern "C" fn vg_aes_ecb_encrypt_neon(schedule: *const [u8; 24
 bl {vg_aes_encrypt_blocks_neon}
 .inst 0xf9000be0,0xf94007e0,0xd2810001
 bl {vg_zeroize}
-.inst 0xf9400be0,0xf94003fe,0x910083ff,0xd65f03c0
+.inst 0xf9400be0,0xf94003fe,0x910083ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005
+.inst 0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd2800010,0xd2800011,0x6f00e400
+.inst 0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410
+.inst 0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418
+.inst 0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f
+.inst 0xd2800000,0xd10083ff,0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f,0x910083ff,0xd65f03c0
 .p2align 6",
         vg_aes_encrypt_blocks_neon = sym super::aes::vg_aes_encrypt_blocks_neon::vg_aes_encrypt_blocks_neon,
         vg_zeroize = sym super::zeroize::vg_zeroize,
@@ -226,6 +233,8 @@ bl {vg_zeroize}
 /// AES-ECB decryption (NIST SP 800-38A §6.1) of whole blocks, in place: replaces each of the `n` 16-byte blocks at `data` with its decryption by AES (FIPS 197 §5.3, `INVCIPHER`) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (the forward cipher's schedule). No padding is removed. Each byte of `scratch` is unchanged or zero on return.
 ///
 /// Contract: `VG.Spec.AesEcb.decryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -242,7 +251,12 @@ pub(crate) unsafe extern "C" fn vg_aes_ecb_decrypt_neon(schedule: *const [u8; 24
 bl {vg_aes_decrypt_blocks_neon}
 .inst 0xf9000be0,0xf94007e0,0xd2810001
 bl {vg_zeroize}
-.inst 0xf9400be0,0xf94003fe,0x910083ff,0xd65f03c0
+.inst 0xf9400be0,0xf94003fe,0x910083ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005
+.inst 0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd2800010,0xd2800011,0x6f00e400
+.inst 0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410
+.inst 0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418
+.inst 0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f
+.inst 0xd2800000,0xd10083ff,0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f,0x910083ff,0xd65f03c0
 .p2align 6",
         vg_aes_decrypt_blocks_neon = sym super::aes::vg_aes_decrypt_blocks_neon::vg_aes_decrypt_blocks_neon,
         vg_zeroize = sym super::zeroize::vg_zeroize,
@@ -252,6 +266,8 @@ bl {vg_zeroize}
 /// AES-ECB encryption (NIST SP 800-38A §6.1) of whole blocks, in place: replaces each of the `n` 16-byte blocks at `data` with its encryption by AES (FIPS 197 §5.1, `CIPHER`) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it. No padding is added. Each byte of `scratch` is unchanged or zero on return.
 ///
 /// Contract: `VG.Spec.AesEcb.encryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -268,7 +284,12 @@ pub(crate) unsafe extern "C" fn vg_aes_ecb_encrypt(schedule: *const [u8; 240], r
 bl {vg_aes_encrypt_blocks}
 .inst 0xf9000be0,0xf94007e0,0xd2810001
 bl {vg_zeroize}
-.inst 0xf9400be0,0xf94003fe,0x910083ff,0xd65f03c0
+.inst 0xf9400be0,0xf94003fe,0x910083ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800006
+.inst 0xd2800009,0xd280000a,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403
+.inst 0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414
+.inst 0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c
+.inst 0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0xd2800000,0xd10083ff,0x6f00e41f,0x910003e9
+.inst 0x3d80013f,0x3d80053f,0x910083ff,0xd65f03c0
 .p2align 6",
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
         vg_zeroize = sym super::zeroize::vg_zeroize,
@@ -278,6 +299,8 @@ bl {vg_zeroize}
 /// AES-ECB decryption (NIST SP 800-38A §6.1) of whole blocks, in place: replaces each of the `n` 16-byte blocks at `data` with its decryption by AES (FIPS 197 §5.3, `INVCIPHER`) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (the forward cipher's schedule). No padding is removed. Each byte of `scratch` is unchanged or zero on return.
 ///
 /// Contract: `VG.Spec.AesEcb.decryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -294,7 +317,12 @@ pub(crate) unsafe extern "C" fn vg_aes_ecb_decrypt(schedule: *const [u8; 240], r
 bl {vg_aes_decrypt_blocks}
 .inst 0xf9000be0,0xf94007e0,0xd2810001
 bl {vg_zeroize}
-.inst 0xf9400be0,0xf94003fe,0x910083ff,0xd65f03c0
+.inst 0xf9400be0,0xf94003fe,0x910083ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800006
+.inst 0xd2800009,0xd280000a,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403
+.inst 0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413
+.inst 0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b
+.inst 0x6f00e41c,0x6f00e41d,0x6f00e41e,0xea01003f,0xd2800000,0xd10083ff,0x6f00e41f,0x910003e9
+.inst 0x3d80013f,0x3d80053f,0x910083ff,0xd65f03c0
 .p2align 6",
         vg_aes_decrypt_blocks = sym super::aes::vg_aes_decrypt_blocks::vg_aes_decrypt_blocks,
         vg_zeroize = sym super::zeroize::vg_zeroize,

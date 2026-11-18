@@ -10,6 +10,8 @@ pub const VG_AES_CFB128_ENCRYPT_AES_FEATURES: verified_garbage_cpu::Features = v
 ///
 /// Contract: `VG.Spec.Cfb.aesEncryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 240 bytes.
@@ -36,7 +38,12 @@ cbnz x23, 22b
 b 21f
 20:
 21:
-.inst 0xf9440b13,0xf9440f14,0xf9441315,0xf9441716,0xf9441b17,0xf9441f1e,0xf9442318,0xd65f03c0
+.inst 0xf9440b13,0xf9440f14,0xf9441315,0xf9441716,0xf9441b17,0xf9441f1e,0xf9442318,0xd2800001
+.inst 0xd2800002,0xd2800003,0xd2800004,0xd2800006,0xd2800007,0xd2800009,0xd280000a,0xd280000d
+.inst 0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405
+.inst 0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415
+.inst 0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d
+.inst 0x6f00e41e,0xea01003f,0xd2800000,0xd65f03c0
 .p2align 6",
         vg_aes_encrypt_blocks_aes = sym super::aes::vg_aes_encrypt_blocks_aes::vg_aes_encrypt_blocks_aes,
     )
@@ -51,6 +58,8 @@ pub const VG_AES_CFB128_DECRYPT_AES_SCRATCH_WRITTEN: usize = 0;
 /// AES-CFB128 decryption (NIST SP 800-38A §6.3, with 128-bit segments) of whole blocks, in place: replaces the `n` 16-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = Cⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
 ///
 /// Contract: `VG.Spec.Cfb.aesDecryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// It writes at most the first 0 bytes of `scratch` (`VG_AES_CFB128_DECRYPT_AES_SCRATCH_WRITTEN`): no byte of `scratch` beyond them changes.
 ///
@@ -170,7 +179,11 @@ cbnz x3, 215b
 b 214f
 213:
 214:
-.inst 0x3d80017f,0xd65f03c0
+.inst 0x3d80017f,0xd2800002,0xd2800003,0xd2800004,0xd2800006,0xd2800007,0xd2800009,0xd280000b
+.inst 0xd280000d,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406
+.inst 0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416
+.inst 0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e
+.inst 0x6f00e41f,0xea01003f,0xd2800000,0xd65f03c0
 .p2align 6",
     )
 }
@@ -201,7 +214,7 @@ pub(crate) unsafe extern "C" fn vg_aes_cfb128_encrypt_final_aes(schedule: *const
         r".inst 0xd10103ff,0x910003e6,0xf90000d3,0xf90004d4,0xf90008d5,0xf9000cd6,0xf90010d7,0xf90014d8
 .inst 0xf90018de,0xf9001cd9,0x91000013,0x91000034,0x91000055,0x910000b8,0x910000d9,0xd344fc89
 .inst 0xd37ced2a,0x8b0a0076,0xcb0a0097,0x91000124
-bl {vg_aes_cfb128_encrypt_aes}
+bl {vg_aes_cfb128_encrypt_aes_core}
 cbz x23, 20f
 .inst 0x91000260,0x91000281,0x910002a2,0xd2800023,0x91000304
 bl {vg_aes_encrypt_blocks_aes}
@@ -221,7 +234,7 @@ b 21f
 .inst 0x6f00e41e,0xea01003f,0xd2800000,0xd10103ff,0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f
 .inst 0x3d80093f,0x3d800d3f,0x910103ff,0xd65f03c0
 .p2align 6",
-        vg_aes_cfb128_encrypt_aes = sym super::aes_cfb::vg_aes_cfb128_encrypt_aes,
+        vg_aes_cfb128_encrypt_aes_core = sym super::aes::vg_aes_cfb128_encrypt_aes_core::vg_aes_cfb128_encrypt_aes_core,
         vg_aes_encrypt_blocks_aes = sym super::aes::vg_aes_encrypt_blocks_aes::vg_aes_encrypt_blocks_aes,
     )
 }
@@ -252,7 +265,7 @@ pub(crate) unsafe extern "C" fn vg_aes_cfb128_decrypt_final_aes(schedule: *const
         r".inst 0xd10103ff,0x910003e6,0xf90000d3,0xf90004d4,0xf90008d5,0xf9000cd6,0xf90010d7,0xf90014d8
 .inst 0xf90018de,0xf9001cd9,0x91000013,0x91000034,0x91000055,0x910000b8,0x910000d9,0xd344fc89
 .inst 0xd37ced2a,0x8b0a0076,0xcb0a0097,0x91000124
-bl {vg_aes_cfb128_decrypt_aes}
+bl {vg_aes_cfb128_decrypt_aes_core}
 cbz x23, 20f
 .inst 0x91000260,0x91000281,0x910002a2,0xd2800023,0x91000304
 bl {vg_aes_encrypt_blocks_aes}
@@ -272,7 +285,7 @@ b 21f
 .inst 0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0xd2800000,0xd10103ff,0x6f00e41f,0x910003e9
 .inst 0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x910103ff,0xd65f03c0
 .p2align 6",
-        vg_aes_cfb128_decrypt_aes = sym super::aes_cfb::vg_aes_cfb128_decrypt_aes,
+        vg_aes_cfb128_decrypt_aes_core = sym super::aes::vg_aes_cfb128_decrypt_aes_core::vg_aes_cfb128_decrypt_aes_core,
         vg_aes_encrypt_blocks_aes = sym super::aes::vg_aes_encrypt_blocks_aes::vg_aes_encrypt_blocks_aes,
     )
 }
@@ -280,6 +293,8 @@ b 21f
 /// AES-CFB128 encryption (NIST SP 800-38A §6.3, with 128-bit segments) of whole blocks, in place: replaces the `n` 16-byte blocks `P₁ … Pₙ` at `data` with `Cⱼ = Pⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ` (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
 ///
 /// Contract: `VG.Spec.Cfb.aesEncryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -306,7 +321,12 @@ cbnz x23, 22b
 b 21f
 20:
 21:
-.inst 0xf9440b13,0xf9440f14,0xf9441315,0xf9441716,0xf9441b17,0xf9441f1e,0xf9442318,0xd65f03c0
+.inst 0xf9440b13,0xf9440f14,0xf9441315,0xf9441716,0xf9441b17,0xf9441f1e,0xf9442318,0xd2800001
+.inst 0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800008,0xd2800009
+.inst 0xd280000a,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404
+.inst 0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414
+.inst 0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c
+.inst 0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0xd2800000,0xd65f03c0
 .p2align 6",
         vg_aes_encrypt_blocks_neon = sym super::aes::vg_aes_encrypt_blocks_neon::vg_aes_encrypt_blocks_neon,
     )
@@ -315,6 +335,8 @@ b 21f
 /// AES-CFB128 decryption (NIST SP 800-38A §6.3, with 128-bit segments) of whole blocks, in place: replaces the `n` 16-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = Cⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
 ///
 /// Contract: `VG.Spec.Cfb.aesDecryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -519,7 +541,11 @@ cbnz x1, 237b
 .inst 0x6e221c84,0x4e030222,0x4e040223,0x6e211c42,0x6e201c63,0x4e0203a0,0x4e0303c1,0x6e211c00
 .inst 0x4e170000,0x6e3f1ca5,0x6e251c00,0x3dc00061,0x6e211c00,0x3d800060,0x3d800041
 21:
-.inst 0xd65f03c0
+.inst 0xd2800001,0xd2800003,0xd2800004,0xd2800006,0xd2800007,0xd2800008,0xd2800009,0x6f00e400
+.inst 0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410
+.inst 0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418
+.inst 0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f
+.inst 0xd2800000,0xd65f03c0
 .p2align 6",
         VG_AES_VPERM = sym super::consts::VG_AES_VPERM,
     )
@@ -547,7 +573,7 @@ pub(crate) unsafe extern "C" fn vg_aes_cfb128_encrypt_final_neon(schedule: *cons
         r".inst 0xd10103ff,0x910003e6,0xf90000d3,0xf90004d4,0xf90008d5,0xf9000cd6,0xf90010d7,0xf90014d8
 .inst 0xf90018de,0xf9001cd9,0x91000013,0x91000034,0x91000055,0x910000b8,0x910000d9,0xd344fc89
 .inst 0xd37ced2a,0x8b0a0076,0xcb0a0097,0x91000124
-bl {vg_aes_cfb128_encrypt_neon}
+bl {vg_aes_cfb128_encrypt_neon_core}
 cbz x23, 20f
 .inst 0x91000260,0x91000281,0x910002a2,0xd2800023,0x91000304
 bl {vg_aes_encrypt_blocks_neon}
@@ -567,7 +593,7 @@ b 21f
 .inst 0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0xd2800000,0xd10103ff,0x6f00e41f,0x910003e9
 .inst 0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x910103ff,0xd65f03c0
 .p2align 6",
-        vg_aes_cfb128_encrypt_neon = sym super::aes_cfb::vg_aes_cfb128_encrypt_neon,
+        vg_aes_cfb128_encrypt_neon_core = sym super::aes::vg_aes_cfb128_encrypt_neon_core::vg_aes_cfb128_encrypt_neon_core,
         vg_aes_encrypt_blocks_neon = sym super::aes::vg_aes_encrypt_blocks_neon::vg_aes_encrypt_blocks_neon,
     )
 }
@@ -594,7 +620,7 @@ pub(crate) unsafe extern "C" fn vg_aes_cfb128_decrypt_final_neon(schedule: *cons
         r".inst 0xd10103ff,0x910003e6,0xf90000d3,0xf90004d4,0xf90008d5,0xf9000cd6,0xf90010d7,0xf90014d8
 .inst 0xf90018de,0xf9001cd9,0x91000013,0x91000034,0x91000055,0x910000b8,0x910000d9,0xd344fc89
 .inst 0xd37ced2a,0x8b0a0076,0xcb0a0097,0x91000124
-bl {vg_aes_cfb128_decrypt_neon}
+bl {vg_aes_cfb128_decrypt_neon_core}
 cbz x23, 20f
 .inst 0x91000260,0x91000281,0x910002a2,0xd2800023,0x91000304
 bl {vg_aes_encrypt_blocks_neon}
@@ -614,7 +640,7 @@ b 21f
 .inst 0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0xd2800000,0xd10103ff,0x6f00e41f,0x910003e9
 .inst 0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x910103ff,0xd65f03c0
 .p2align 6",
-        vg_aes_cfb128_decrypt_neon = sym super::aes_cfb::vg_aes_cfb128_decrypt_neon,
+        vg_aes_cfb128_decrypt_neon_core = sym super::aes::vg_aes_cfb128_decrypt_neon_core::vg_aes_cfb128_decrypt_neon_core,
         vg_aes_encrypt_blocks_neon = sym super::aes::vg_aes_encrypt_blocks_neon::vg_aes_encrypt_blocks_neon,
     )
 }
@@ -622,6 +648,8 @@ b 21f
 /// AES-CFB128 encryption (NIST SP 800-38A §6.3, with 128-bit segments) of whole blocks, in place: replaces the `n` 16-byte blocks `P₁ … Pₙ` at `data` with `Cⱼ = Pⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ` (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
 ///
 /// Contract: `VG.Spec.Cfb.aesEncryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -648,7 +676,12 @@ cbnz x23, 22b
 b 21f
 20:
 21:
-.inst 0xf9440b13,0xf9440f14,0xf9441315,0xf9441716,0xf9441b17,0xf9441f1e,0xf9442318,0xd65f03c0
+.inst 0xf9440b13,0xf9440f14,0xf9441315,0xf9441716,0xf9441b17,0xf9441f1e,0xf9442318,0xd2800001
+.inst 0xd2800002,0xd2800003,0xd2800004,0xd2800006,0xd2800009,0xd280000a,0xd2800010,0xd2800011
+.inst 0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e410
+.inst 0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418
+.inst 0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f
+.inst 0xd2800000,0xd65f03c0
 .p2align 6",
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
     )
@@ -657,6 +690,8 @@ b 21f
 /// AES-CFB128 decryption (NIST SP 800-38A §6.3, with 128-bit segments) of whole blocks, in place: replaces the `n` 16-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = Cⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
 ///
 /// Contract: `VG.Spec.Cfb.aesDecryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -706,7 +741,12 @@ b 26f
 b 21f
 20:
 21:
-.inst 0xf9440b13,0xf9440f14,0xf9441315,0xf9441716,0xf9441b17,0xf9441f1e,0xf9442318,0xd65f03c0
+.inst 0xf9440b13,0xf9440f14,0xf9441315,0xf9441716,0xf9441b17,0xf9441f1e,0xf9442318,0xd2800001
+.inst 0xd2800002,0xd2800003,0xd2800004,0xd2800006,0xd2800009,0xd280000a,0xd2800010,0xd2800011
+.inst 0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e410
+.inst 0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418
+.inst 0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f
+.inst 0xd2800000,0xd65f03c0
 .p2align 6",
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
     )
@@ -734,7 +774,7 @@ pub(crate) unsafe extern "C" fn vg_aes_cfb128_encrypt_final(schedule: *const [u8
         r".inst 0xd10103ff,0x910003e6,0xf90000d3,0xf90004d4,0xf90008d5,0xf9000cd6,0xf90010d7,0xf90014d8
 .inst 0xf90018de,0xf9001cd9,0x91000013,0x91000034,0x91000055,0x910000b8,0x910000d9,0xd344fc89
 .inst 0xd37ced2a,0x8b0a0076,0xcb0a0097,0x91000124
-bl {vg_aes_cfb128_encrypt}
+bl {vg_aes_cfb128_encrypt_core}
 cbz x23, 20f
 .inst 0x91000260,0x91000281,0x910002a2,0xd2800023,0x91000304
 bl {vg_aes_encrypt_blocks}
@@ -754,7 +794,7 @@ b 21f
 .inst 0xea01003f,0xd2800000,0xd10103ff,0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f
 .inst 0x3d800d3f,0x910103ff,0xd65f03c0
 .p2align 6",
-        vg_aes_cfb128_encrypt = sym super::aes_cfb::vg_aes_cfb128_encrypt,
+        vg_aes_cfb128_encrypt_core = sym super::aes::vg_aes_cfb128_encrypt_core::vg_aes_cfb128_encrypt_core,
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
     )
 }
@@ -781,7 +821,7 @@ pub(crate) unsafe extern "C" fn vg_aes_cfb128_decrypt_final(schedule: *const [u8
         r".inst 0xd10103ff,0x910003e6,0xf90000d3,0xf90004d4,0xf90008d5,0xf9000cd6,0xf90010d7,0xf90014d8
 .inst 0xf90018de,0xf9001cd9,0x91000013,0x91000034,0x91000055,0x910000b8,0x910000d9,0xd344fc89
 .inst 0xd37ced2a,0x8b0a0076,0xcb0a0097,0x91000124
-bl {vg_aes_cfb128_decrypt}
+bl {vg_aes_cfb128_decrypt_core}
 cbz x23, 20f
 .inst 0x91000260,0x91000281,0x910002a2,0xd2800023,0x91000304
 bl {vg_aes_encrypt_blocks}
@@ -801,7 +841,7 @@ b 21f
 .inst 0xea01003f,0xd2800000,0xd10103ff,0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f
 .inst 0x3d800d3f,0x910103ff,0xd65f03c0
 .p2align 6",
-        vg_aes_cfb128_decrypt = sym super::aes_cfb::vg_aes_cfb128_decrypt,
+        vg_aes_cfb128_decrypt_core = sym super::aes::vg_aes_cfb128_decrypt_core::vg_aes_cfb128_decrypt_core,
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
     )
 }

@@ -74,9 +74,11 @@ def final (name : String) (whole : Prog isa) (b : Blocks) : Prog isa :=
   .seq (.block finalSetup) (.seq (.call name whole)
     (.seq (.ite (.zero .x .x23) (.block []) (finalTail b)) (.block finalRestore)))
 
-/-- `vg_aes_cfb128_encrypt_final`, calling `vg_aes_cfb128_encrypt` with the
-block function `b`, whose callers' names end in `sfx`. -/
+/-- `vg_aes_cfb128_encrypt_final`, calling `vg_aes_cfb128_encrypt`'s code
+with the block function `b`, whose callers' names end in `sfx`, as an
+internal function of its own, `vg_aes_cfb128_encrypt<sfx>_core`:
+`vg_aes_cfb128_encrypt` also clears the registers it leaves. -/
 def encryptFinal (b : Blocks) (sfx : String) : Prog isa :=
-  final ("vg_aes_cfb128_encrypt" ++ sfx) (encrypt b) b
+  final ("vg_aes_cfb128_encrypt" ++ sfx ++ "_core") (encrypt b) b
 
 end VG.Impl.AesCfb.AArch64

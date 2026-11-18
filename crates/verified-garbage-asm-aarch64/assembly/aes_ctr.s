@@ -66,6 +66,46 @@ vg_aes_ctr_aes:
 	ldr x23, [x24, #2096]
 	ldr x30, [x24, #2104]
 	ldr x24, [x24, #2112]
+	movz x1, #0, lsl #0
+	movz x2, #0, lsl #0
+	movz x3, #0, lsl #0
+	movz x4, #0, lsl #0
+	movz x5, #0, lsl #0
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x12, #0, lsl #0
+	movz x13, #0, lsl #0
+	movz x16, #0, lsl #0
+	movz x17, #0, lsl #0
+	movi v0.2d, #0
+	movi v1.2d, #0
+	movi v2.2d, #0
+	movi v3.2d, #0
+	movi v4.2d, #0
+	movi v5.2d, #0
+	movi v6.2d, #0
+	movi v7.2d, #0
+	movi v16.2d, #0
+	movi v17.2d, #0
+	movi v18.2d, #0
+	movi v19.2d, #0
+	movi v20.2d, #0
+	movi v21.2d, #0
+	movi v22.2d, #0
+	movi v23.2d, #0
+	movi v24.2d, #0
+	movi v25.2d, #0
+	movi v26.2d, #0
+	movi v27.2d, #0
+	movi v28.2d, #0
+	movi v29.2d, #0
+	movi v30.2d, #0
+	movi v31.2d, #0
+	tst x1, x1
+	movz x0, #0, lsl #0
 	ret
 	.p2align 6
 
@@ -90,7 +130,7 @@ vg_aes_ctr_final_aes:
 	add x22, x3, x10
 	sub x23, x4, x10
 	add x4, x9, #0
-	bl {vg_aes_ctr_aes}
+	bl {vg_aes_ctr_aes_core}
 	cbz x23, 20f
 	movz x9, #0, lsl #0
 	str x9, [x25, #64]
@@ -101,7 +141,7 @@ vg_aes_ctr_final_aes:
 	add x3, x25, #64
 	movz x4, #1, lsl #0
 	add x5, x24, #0
-	bl {vg_aes_ctr_aes}
+	bl {vg_aes_ctr_aes_core}
 	add x9, x25, #64
 22:
 	ldrb w6, [x9, #0]
@@ -245,6 +285,46 @@ vg_aes_ctr_neon:
 	ldr x23, [x24, #2096]
 	ldr x30, [x24, #2104]
 	ldr x24, [x24, #2112]
+	movz x1, #0, lsl #0
+	movz x2, #0, lsl #0
+	movz x3, #0, lsl #0
+	movz x4, #0, lsl #0
+	movz x5, #0, lsl #0
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
+	movz x8, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x12, #0, lsl #0
+	movz x16, #0, lsl #0
+	movz x17, #0, lsl #0
+	movi v0.2d, #0
+	movi v1.2d, #0
+	movi v2.2d, #0
+	movi v3.2d, #0
+	movi v4.2d, #0
+	movi v5.2d, #0
+	movi v6.2d, #0
+	movi v7.2d, #0
+	movi v16.2d, #0
+	movi v17.2d, #0
+	movi v18.2d, #0
+	movi v19.2d, #0
+	movi v20.2d, #0
+	movi v21.2d, #0
+	movi v22.2d, #0
+	movi v23.2d, #0
+	movi v24.2d, #0
+	movi v25.2d, #0
+	movi v26.2d, #0
+	movi v27.2d, #0
+	movi v28.2d, #0
+	movi v29.2d, #0
+	movi v30.2d, #0
+	movi v31.2d, #0
+	tst x1, x1
+	movz x0, #0, lsl #0
 	ret
 	.p2align 6
 
@@ -269,7 +349,7 @@ vg_aes_ctr_final_neon:
 	add x22, x3, x10
 	sub x23, x4, x10
 	add x4, x9, #0
-	bl {vg_aes_ctr_neon}
+	bl {vg_aes_ctr_neon_core}
 	cbz x23, 20f
 	movz x9, #0, lsl #0
 	str x9, [x25, #64]
@@ -280,7 +360,7 @@ vg_aes_ctr_final_neon:
 	add x3, x25, #64
 	movz x4, #1, lsl #0
 	add x5, x24, #0
-	bl {vg_aes_ctr_neon}
+	bl {vg_aes_ctr_neon_core}
 	add x9, x25, #64
 22:
 	ldrb w6, [x9, #0]
@@ -424,6 +504,44 @@ vg_aes_ctr:
 	ldr x23, [x24, #2096]
 	ldr x30, [x24, #2104]
 	ldr x24, [x24, #2112]
+	movz x1, #0, lsl #0
+	movz x2, #0, lsl #0
+	movz x3, #0, lsl #0
+	movz x4, #0, lsl #0
+	movz x5, #0, lsl #0
+	movz x6, #0, lsl #0
+	movz x8, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x12, #0, lsl #0
+	movz x16, #0, lsl #0
+	movz x17, #0, lsl #0
+	movi v0.2d, #0
+	movi v1.2d, #0
+	movi v2.2d, #0
+	movi v3.2d, #0
+	movi v4.2d, #0
+	movi v5.2d, #0
+	movi v6.2d, #0
+	movi v16.2d, #0
+	movi v17.2d, #0
+	movi v18.2d, #0
+	movi v19.2d, #0
+	movi v20.2d, #0
+	movi v21.2d, #0
+	movi v22.2d, #0
+	movi v23.2d, #0
+	movi v24.2d, #0
+	movi v25.2d, #0
+	movi v26.2d, #0
+	movi v27.2d, #0
+	movi v28.2d, #0
+	movi v29.2d, #0
+	movi v30.2d, #0
+	movi v31.2d, #0
+	tst x1, x1
+	movz x0, #0, lsl #0
 	ret
 	.p2align 6
 
@@ -448,7 +566,7 @@ vg_aes_ctr_final:
 	add x22, x3, x10
 	sub x23, x4, x10
 	add x4, x9, #0
-	bl {vg_aes_ctr}
+	bl {vg_aes_ctr_core}
 	cbz x23, 20f
 	movz x9, #0, lsl #0
 	str x9, [x25, #64]
@@ -459,7 +577,7 @@ vg_aes_ctr_final:
 	add x3, x25, #64
 	movz x4, #1, lsl #0
 	add x5, x24, #0
-	bl {vg_aes_ctr}
+	bl {vg_aes_ctr_core}
 	add x9, x25, #64
 22:
 	ldrb w6, [x9, #0]

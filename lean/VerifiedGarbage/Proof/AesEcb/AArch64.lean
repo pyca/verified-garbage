@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Zeroize.AArch64Wide
 import VerifiedGarbage.Proof.Framework.AArch64.Depth
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Framework.AArch64.Clears
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubAll
 
 /-!
 # AES-ECB on AArch64
@@ -16,7 +17,10 @@ writes nothing in `scratch` (`BlocksImpl.free`), `vg_aes_ecb_encrypt` and
 `vg_aes_ecb_decrypt` are its code (`encrypt_free`, `decrypt_free`), with the
 vector registers it leaves cleared (`BlocksImpl.ecbClear`);
 otherwise a call of it by `callWipe`, which then zeroes the whole of
-`scratch` with `vg_zeroize` (`encrypt_verified`, `decrypt_verified`).
+`scratch` with `vg_zeroize` (`encrypt_verified`, `decrypt_verified`), which
+returns with the registers it may write cleared and its 32 bytes of stack
+zeroed (`ScrubAll.withScrubAll`: its postcondition reads the memory on
+return only within the buffers, `encryptOk`, `decryptOk`).
 Which is emitted for each (`encryptRegs`, `decryptRegs`): the first where it
 writes nothing, the second otherwise.
 -/
@@ -90,6 +94,35 @@ theorem decrypt_free (v : BlocksImpl) (h : v.free = true) :
     Verified target v.dec.code (Spec.AesEcb.decryptContract abi) :=
   Verified.ecb_of_unwritten (decBlocks v) (v.decFree h) args_length
 
+/-- ECB's postcondition reads the memory on return only within the buffers. -/
+theorem ecbPost_out (g : List Byte → Spec.Aes.State → Spec.Aes.State) : ∀ vs m m₁ m₂ x,
+    vs.length = (Spec.Aes.blocksSig.words abi.ptrBits).length →
+    (∀ b ∈ Sig.bufs Spec.Aes.blocksSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (Spec.Aes.blocksSig.words abi.ptrBits) (AesEcb.ecbPost abi.ptrBits g) vs m m₁ x →
+      Curry.apply (Spec.Aes.blocksSig.words abi.ptrBits) (AesEcb.ecbPost abi.ptrBits g) vs m m₂ x := by
+  intro vs m m₁ m₂ x hlen hb h
+  obtain ⟨a, b, c, d, e, rfl⟩ := AesEcb.vs_eq hlen
+  rw [AesEcb.bufs_eq] at hb
+  simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hb
+  obtain ⟨h1, h2⟩ := h
+  refine ⟨fun key hk => ?_, fun z hz => ?_⟩
+  · show Spec.Aes.statesAt m₂ c (d.setWidth abi.ptrBits).toNat = (Spec.Aes.statesAt m c (d.setWidth abi.ptrBits).toNat).map (g key)
+    have hd := AesEcb.agree_of hb.2.1
+    rw [AesEcb.statesAt_congr fun i hi => hd i (by have := AesEcb.n_le (pb := abi.ptrBits) d; omega_using [hi, this])]
+    exact h1 key hk
+  · rw [← hb.2.2 z hz]
+    exact h2 z hz
+
+theorem encryptOk : ScrubAll.ScrubAllOk (Spec.AesEcb.encryptContract abi 32) 32
+    (Spec.Aes.blocksSig.retBits abi.ptrBits) :=
+  ScrubAll.scrubAllOk_regs (sig := Spec.Aes.blocksSig) (by decide) (W := 32) (by decide) (Nat.le_refl _)
+    (ecbPost_out AesEcb.enc)
+
+theorem decryptOk : ScrubAll.ScrubAllOk (Spec.AesEcb.decryptContract abi 32) 32
+    (Spec.Aes.blocksSig.retBits abi.ptrBits) :=
+  ScrubAll.scrubAllOk_regs (sig := Spec.Aes.blocksSig) (by decide) (W := 32) (by decide) (Nat.le_refl _)
+    (ecbPost_out AesEcb.dec)
+
 /-- The implementation of `vg_aes_ecb_encrypt` over `v` that is emitted: its
 code where it writes nothing in `scratch`, the call wiping `scratch`
 otherwise. -/
@@ -99,11 +132,11 @@ def encryptRegs (v : BlocksImpl) : List (Registration Spec.AesEcb.encryptApi tar
     code := Impl.Residue.AArch64.withClears [] v.ecbClear none v.enc.code
     verified := Clears.Verified.withClears (encrypt_free v h) v.ecbClearOk
     residue := v.encRes.map fun r => ⟨r.down _⟩ }]
-  else [{
+  else [ScrubAll.withScrubAll {
     suffix := v.suffix
     code := encrypt v
     stack := 32
-    verified := encrypt_verified v }]
+    verified := encrypt_verified v } encryptOk]
 
 /-- The implementation of `vg_aes_ecb_decrypt` over `v` that is emitted: its
 code where it writes nothing in `scratch`, the call wiping `scratch`
@@ -114,10 +147,10 @@ def decryptRegs (v : BlocksImpl) : List (Registration Spec.AesEcb.decryptApi tar
     code := Impl.Residue.AArch64.withClears [] v.ecbClear none v.dec.code
     verified := Clears.Verified.withClears (decrypt_free v h) v.ecbClearOk
     residue := v.decRes.map fun r => ⟨r.down _⟩ }]
-  else [{
+  else [ScrubAll.withScrubAll {
     suffix := v.suffix
     code := decrypt v
     stack := 32
-    verified := decrypt_verified v }]
+    verified := decrypt_verified v } decryptOk]
 
 end VG.Proof.AesEcb.AArch64
