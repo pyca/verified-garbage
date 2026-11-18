@@ -17,7 +17,7 @@ registers, then a block of the code's own.
    `r19` (scratch), `r31` (the data after its whole blocks), `r30`
    (`u = len mod 16`, the bytes after them) and `r20` (`save`), as AES-CFB's
    final functions do (`Impl/AesCfb/PPC64LE/Final.lean`);
-2. a call of the whole-block function `vg_aes_ctr`
+2. a call of the whole-block function `vg_aes_ctr`'s code, as the internal `vg_aes_ctr_core`
    (`Impl/AesCtr/PPC64LE.lean`) on the `len / 16` whole blocks, which leaves
    `Tₙ₊₁` in `ctr`;
 3. if `u ≠ 0`, the block after the registers in `save` zeroed, a call of
@@ -60,7 +60,7 @@ def tailArgs : List Instr :=
 def tailKey : List Instr := [.addi .r8 .r20 64]
 
 /-- A call of the whole-block function. -/
-def wholeCall : Prog isa := .call "vg_aes_ctr" crypt
+def wholeCall : Prog isa := .call "vg_aes_ctr_core" crypt
 
 /-- The partial last block: the output block `CIPH_K(Tₙ₊₁)` in the block of
 `save`, by a call of the whole-block function on it, and its first `u`
@@ -69,7 +69,7 @@ def finalTail : Prog isa :=
   .seq (.block tailArgs) (.seq wholeCall
     (.seq (.block tailKey) (.loop (.block tailByte) (.nonzero .d .r30))))
 
-/-- `vg_aes_ctr_final`, calling `vg_aes_ctr`. -/
+/-- `vg_aes_ctr_final`, calling `vg_aes_ctr`'s code as `vg_aes_ctr_core`. -/
 def cryptFinal : Prog isa :=
   .seq (.block finalSetup) (.seq wholeCall
     (.seq (.ite (.zero .d .r30) (.block []) finalTail) (.block finalRestore)))
