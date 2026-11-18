@@ -92,6 +92,27 @@ theorem updatePost_out (rate pb : Nat) : ∀ vs m m₁ m₂ r, vs.length = (upda
   rw [stateAgree hb.1]
   exact h.1 msg hr hc
 
+/-- `absorbPost`, `updatePost` without `scratch`, reads only the state. -/
+theorem absorbPost_out (rate pb : Nat) : ∀ vs m m₁ m₂ r, vs.length = (absorbSig.words pb).length →
+    (∀ b ∈ Sig.bufs absorbSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (absorbSig.words pb) (absorbPost rate pb) vs m m₁ r →
+      Curry.apply (absorbSig.words pb) (absorbPost rate pb) vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen hb h
+  obtain ⟨st, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 3) hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨ps, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨dt, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨ln, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero (Nat.succ.inj hlen)
+  simp only [absorbSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+    forall_eq] at hb
+  refine ⟨fun msg hr hc => ?_, h.2⟩
+  show stateAt m₂ st = _
+  rw [stateAgree hb.1]
+  exact h.1 msg hr hc
+
 /-- A fixed digest's postcondition reads only its output buffer. -/
 theorem finalizePost_out (H : HashFn) (pb : Nat) (hlen : H.len < 2 ^ 64) :
     ∀ vs m m₁ m₂ r, vs.length = ((finalizeSig H.len).words pb).length →

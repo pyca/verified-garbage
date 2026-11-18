@@ -20,6 +20,12 @@ def artifacts : List Artifact :=
       code := Impl.Sha3.AArch64.Instances.update v.callee Spec.Sha3.hashSha3_224.rate
       verified := Proof.Sha3.AArch64.Instances.update_sha3_224 v }
       (Proof.Sha3.AArch64.Scrub.updateOk Spec.Sha3.hashSha3_224.rate 16)),
+    Spec.Sha3.absorbSha3_224Api.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
+      suffix := v.callee.suffix
+      vendor := v.vendor
+      code := Impl.Sha3.AArch64.Instances.absorb v.callee Spec.Sha3.hashSha3_224.rate
+      verified := Proof.Sha3.AArch64.Instances.absorb_sha3_224 v }
+      (Proof.Sha3.AArch64.Scrub.absorbOk Spec.Sha3.hashSha3_224.rate 656)),
     Spec.Sha3.finalizeSha3_224Api.artifact AArch64.target {
       suffix := v.callee.suffix
       vendor := v.vendor
@@ -32,6 +38,12 @@ def artifacts : List Artifact :=
       code := Impl.Sha3.AArch64.Instances.update v.callee Spec.Sha3.hashSha3_256.rate
       verified := Proof.Sha3.AArch64.Instances.update_sha3_256 v }
       (Proof.Sha3.AArch64.Scrub.updateOk Spec.Sha3.hashSha3_256.rate 16)),
+    Spec.Sha3.absorbSha3_256Api.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
+      suffix := v.callee.suffix
+      vendor := v.vendor
+      code := Impl.Sha3.AArch64.Instances.absorb v.callee Spec.Sha3.hashSha3_256.rate
+      verified := Proof.Sha3.AArch64.Instances.absorb_sha3_256 v }
+      (Proof.Sha3.AArch64.Scrub.absorbOk Spec.Sha3.hashSha3_256.rate 656)),
     Spec.Sha3.finalizeSha3_256Api.artifact AArch64.target {
       suffix := v.callee.suffix
       vendor := v.vendor
@@ -44,6 +56,12 @@ def artifacts : List Artifact :=
       code := Impl.Sha3.AArch64.Instances.update v.callee Spec.Sha3.hashSha3_384.rate
       verified := Proof.Sha3.AArch64.Instances.update_sha3_384 v }
       (Proof.Sha3.AArch64.Scrub.updateOk Spec.Sha3.hashSha3_384.rate 16)),
+    Spec.Sha3.absorbSha3_384Api.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
+      suffix := v.callee.suffix
+      vendor := v.vendor
+      code := Impl.Sha3.AArch64.Instances.absorb v.callee Spec.Sha3.hashSha3_384.rate
+      verified := Proof.Sha3.AArch64.Instances.absorb_sha3_384 v }
+      (Proof.Sha3.AArch64.Scrub.absorbOk Spec.Sha3.hashSha3_384.rate 656)),
     Spec.Sha3.finalizeSha3_384Api.artifact AArch64.target {
       suffix := v.callee.suffix
       vendor := v.vendor
@@ -56,6 +74,12 @@ def artifacts : List Artifact :=
       code := Impl.Sha3.AArch64.Instances.update v.callee Spec.Sha3.hashSha3_512.rate
       verified := Proof.Sha3.AArch64.Instances.update_sha3_512 v }
       (Proof.Sha3.AArch64.Scrub.updateOk Spec.Sha3.hashSha3_512.rate 16)),
+    Spec.Sha3.absorbSha3_512Api.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
+      suffix := v.callee.suffix
+      vendor := v.vendor
+      code := Impl.Sha3.AArch64.Instances.absorb v.callee Spec.Sha3.hashSha3_512.rate
+      verified := Proof.Sha3.AArch64.Instances.absorb_sha3_512 v }
+      (Proof.Sha3.AArch64.Scrub.absorbOk Spec.Sha3.hashSha3_512.rate 656)),
     Spec.Sha3.finalizeSha3_512Api.artifact AArch64.target {
       suffix := v.callee.suffix
       vendor := v.vendor
@@ -68,6 +92,12 @@ def artifacts : List Artifact :=
       code := Impl.Sha3.AArch64.Instances.update v.callee Spec.Sha3.xofShake128.rate
       verified := Proof.Sha3.AArch64.Instances.update_shake128 v }
       (Proof.Sha3.AArch64.Scrub.updateOk Spec.Sha3.xofShake128.rate 16)),
+    Spec.Sha3.absorbShake128Api.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
+      suffix := v.callee.suffix
+      vendor := v.vendor
+      code := Impl.Sha3.AArch64.Instances.absorb v.callee Spec.Sha3.xofShake128.rate
+      verified := Proof.Sha3.AArch64.Instances.absorb_shake128 v }
+      (Proof.Sha3.AArch64.Scrub.absorbOk Spec.Sha3.xofShake128.rate 656)),
     Spec.Sha3.finalizeShake128Api.artifact AArch64.target {
       suffix := v.callee.suffix
       vendor := v.vendor

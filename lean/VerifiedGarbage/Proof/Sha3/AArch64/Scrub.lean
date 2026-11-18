@@ -25,4 +25,9 @@ theorem updateOk (rate W : Nat) (hW : 0 < W := by decide) :
   scrubAllOk_regs (sig := updateSig) (Nat.le_of_ble_eq_true rfl) hW (Nat.le_refl _)
     (Proof.Sha3.PostOut.updatePost_out rate 64)
 
+theorem absorbOk (rate W : Nat) (hW : 0 < W := by decide) :
+    ScrubAllOk (absorbContract abi rate W) W (absorbSig.retBits abi.ptrBits) :=
+  scrubAllOk_regs (sig := absorbSig) (Nat.le_of_ble_eq_true rfl) hW (Nat.le_refl _)
+    (Proof.Sha3.PostOut.absorbPost_out rate 64)
+
 end VG.Proof.Sha3.AArch64.Scrub
