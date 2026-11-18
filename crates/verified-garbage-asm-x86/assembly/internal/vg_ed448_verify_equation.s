@@ -1433,13 +1433,10 @@ vg_ed448_verify_equation:
 	mov DWORD PTR [edi+16], ecx
 	mov eax, 1600
 	mov ecx, 960
-	mov edx, 960
-	push edx
 	push ecx
 	push eax
 	push edi
-	call {vg_gf448_r16_mul}
-	pop eax
+	call {vg_gf448_r16_sqr}
 	pop eax
 	pop eax
 	pop eax
@@ -1493,25 +1490,19 @@ vg_ed448_verify_equation:
 	pop eax
 	mov eax, 576
 	mov ecx, 576
-	mov edx, 576
-	push edx
 	push ecx
 	push eax
 	push edi
-	call {vg_gf448_r16_mul}
-	pop eax
+	call {vg_gf448_r16_sqr}
 	pop eax
 	pop eax
 	pop eax
 	mov eax, 704
 	mov ecx, 1728
-	mov edx, 1728
-	push edx
 	push ecx
 	push eax
 	push edi
-	call {vg_gf448_r16_mul}
-	pop eax
+	call {vg_gf448_r16_sqr}
 	pop eax
 	pop eax
 	pop eax
@@ -1611,13 +1602,10 @@ vg_ed448_verify_equation:
 24:
 	mov eax, 1856
 	mov ecx, 1856
-	mov edx, 1856
-	push edx
 	push ecx
 	push eax
 	push edi
-	call {vg_gf448_r16_mul}
-	pop eax
+	call {vg_gf448_r16_sqr}
 	pop eax
 	pop eax
 	pop eax
@@ -1695,13 +1683,10 @@ vg_ed448_verify_equation:
 25:
 	mov eax, 1984
 	mov ecx, 1984
-	mov edx, 1984
-	push edx
 	push ecx
 	push eax
 	push edi
-	call {vg_gf448_r16_mul}
-	pop eax
+	call {vg_gf448_r16_sqr}
 	pop eax
 	pop eax
 	pop eax
@@ -1779,13 +1764,10 @@ vg_ed448_verify_equation:
 26:
 	mov eax, 2112
 	mov ecx, 2112
-	mov edx, 2112
-	push edx
 	push ecx
 	push eax
 	push edi
-	call {vg_gf448_r16_mul}
-	pop eax
+	call {vg_gf448_r16_sqr}
 	pop eax
 	pop eax
 	pop eax
@@ -1863,13 +1845,10 @@ vg_ed448_verify_equation:
 27:
 	mov eax, 2240
 	mov ecx, 2240
-	mov edx, 2240
-	push edx
 	push ecx
 	push eax
 	push edi
-	call {vg_gf448_r16_mul}
-	pop eax
+	call {vg_gf448_r16_sqr}
 	pop eax
 	pop eax
 	pop eax
@@ -1947,13 +1926,10 @@ vg_ed448_verify_equation:
 28:
 	mov eax, 2368
 	mov ecx, 2368
-	mov edx, 2368
-	push edx
 	push ecx
 	push eax
 	push edi
-	call {vg_gf448_r16_mul}
-	pop eax
+	call {vg_gf448_r16_sqr}
 	pop eax
 	pop eax
 	pop eax
@@ -2031,13 +2007,10 @@ vg_ed448_verify_equation:
 29:
 	mov eax, 2496
 	mov ecx, 2496
-	mov edx, 2496
-	push edx
 	push ecx
 	push eax
 	push edi
-	call {vg_gf448_r16_mul}
-	pop eax
+	call {vg_gf448_r16_sqr}
 	pop eax
 	pop eax
 	pop eax
@@ -2115,13 +2088,10 @@ vg_ed448_verify_equation:
 210:
 	mov eax, 2624
 	mov ecx, 2624
-	mov edx, 2624
-	push edx
 	push ecx
 	push eax
 	push edi
-	call {vg_gf448_r16_mul}
-	pop eax
+	call {vg_gf448_r16_sqr}
 	pop eax
 	pop eax
 	pop eax
@@ -2143,13 +2113,10 @@ vg_ed448_verify_equation:
 211:
 	mov eax, 2624
 	mov ecx, 2624
-	mov edx, 2624
-	push edx
 	push ecx
 	push eax
 	push edi
-	call {vg_gf448_r16_mul}
-	pop eax
+	call {vg_gf448_r16_sqr}
 	pop eax
 	pop eax
 	pop eax
@@ -2171,13 +2138,10 @@ vg_ed448_verify_equation:
 212:
 	mov eax, 2624
 	mov ecx, 2624
-	mov edx, 2624
-	push edx
 	push ecx
 	push eax
 	push edi
-	call {vg_gf448_r16_mul}
-	pop eax
+	call {vg_gf448_r16_sqr}
 	pop eax
 	pop eax
 	pop eax
@@ -2199,13 +2163,10 @@ vg_ed448_verify_equation:
 213:
 	mov eax, 2624
 	mov ecx, 2624
-	mov edx, 2624
-	push edx
 	push ecx
 	push eax
 	push edi
-	call {vg_gf448_r16_mul}
-	pop eax
+	call {vg_gf448_r16_sqr}
 	pop eax
 	pop eax
 	pop eax
@@ -2227,13 +2188,10 @@ vg_ed448_verify_equation:
 214:
 	mov eax, 2624
 	mov ecx, 2624
-	mov edx, 2624
-	push edx
 	push ecx
 	push eax
 	push edi
-	call {vg_gf448_r16_mul}
-	pop eax
+	call {vg_gf448_r16_sqr}
 	pop eax
 	pop eax
 	pop eax
@@ -2255,13 +2213,10 @@ vg_ed448_verify_equation:
 215:
 	mov eax, 2624
 	mov ecx, 2624
-	mov edx, 2624
-	push edx
 	push ecx
 	push eax
 	push edi
-	call {vg_gf448_r16_mul}
-	pop eax
+	call {vg_gf448_r16_sqr}
 	pop eax
 	pop eax
 	pop eax
@@ -2339,13 +2294,10 @@ vg_ed448_verify_equation:
 216:
 	mov eax, 2752
 	mov ecx, 2752
-	mov edx, 2752
-	push edx
 	push ecx
 	push eax
 	push edi
-	call {vg_gf448_r16_mul}
-	pop eax
+	call {vg_gf448_r16_sqr}
 	pop eax
 	pop eax
 	pop eax
@@ -2367,13 +2319,10 @@ vg_ed448_verify_equation:
 217:
 	mov eax, 2752
 	mov ecx, 2752
-	mov edx, 2752
-	push edx
 	push ecx
 	push eax
 	push edi
-	call {vg_gf448_r16_mul}
-	pop eax
+	call {vg_gf448_r16_sqr}
 	pop eax
 	pop eax
 	pop eax
@@ -2405,13 +2354,10 @@ vg_ed448_verify_equation:
 	pop eax
 	mov eax, 1600
 	mov ecx, 832
-	mov edx, 832
-	push edx
 	push ecx
 	push eax
 	push edi
-	call {vg_gf448_r16_mul}
-	pop eax
+	call {vg_gf448_r16_sqr}
 	pop eax
 	pop eax
 	pop eax
@@ -4713,37 +4659,28 @@ vg_ed448_verify_equation:
 	pop eax
 	mov eax, 1600
 	mov ecx, 1600
-	mov edx, 1600
-	push edx
 	push ecx
 	push eax
 	push edi
-	call {vg_gf448_r16_mul}
-	pop eax
+	call {vg_gf448_r16_sqr}
 	pop eax
 	pop eax
 	pop eax
 	mov eax, 1728
 	mov ecx, 832
-	mov edx, 832
-	push edx
 	push ecx
 	push eax
 	push edi
-	call {vg_gf448_r16_mul}
-	pop eax
+	call {vg_gf448_r16_sqr}
 	pop eax
 	pop eax
 	pop eax
 	mov eax, 1856
 	mov ecx, 960
-	mov edx, 960
-	push edx
 	push ecx
 	push eax
 	push edi
-	call {vg_gf448_r16_mul}
-	pop eax
+	call {vg_gf448_r16_sqr}
 	pop eax
 	pop eax
 	pop eax
@@ -4761,13 +4698,10 @@ vg_ed448_verify_equation:
 	pop eax
 	mov eax, 2112
 	mov ecx, 2752
-	mov edx, 2752
-	push edx
 	push ecx
 	push eax
 	push edi
-	call {vg_gf448_r16_mul}
-	pop eax
+	call {vg_gf448_r16_sqr}
 	pop eax
 	pop eax
 	pop eax
@@ -4870,13 +4804,10 @@ vg_ed448_verify_equation:
 	pop eax
 	mov eax, 1728
 	mov ecx, 1600
-	mov edx, 1600
-	push edx
 	push ecx
 	push eax
 	push edi
-	call {vg_gf448_r16_mul}
-	pop eax
+	call {vg_gf448_r16_sqr}
 	pop eax
 	pop eax
 	pop eax
@@ -5566,37 +5497,28 @@ vg_ed448_verify_equation:
 	pop eax
 	mov eax, 1600
 	mov ecx, 1600
-	mov edx, 1600
-	push edx
 	push ecx
 	push eax
 	push edi
-	call {vg_gf448_r16_mul}
-	pop eax
+	call {vg_gf448_r16_sqr}
 	pop eax
 	pop eax
 	pop eax
 	mov eax, 1728
 	mov ecx, 64
-	mov edx, 64
-	push edx
 	push ecx
 	push eax
 	push edi
-	call {vg_gf448_r16_mul}
-	pop eax
+	call {vg_gf448_r16_sqr}
 	pop eax
 	pop eax
 	pop eax
 	mov eax, 1856
 	mov ecx, 192
-	mov edx, 192
-	push edx
 	push ecx
 	push eax
 	push edi
-	call {vg_gf448_r16_mul}
-	pop eax
+	call {vg_gf448_r16_sqr}
 	pop eax
 	pop eax
 	pop eax
@@ -5614,13 +5536,10 @@ vg_ed448_verify_equation:
 	pop eax
 	mov eax, 2112
 	mov ecx, 320
-	mov edx, 320
-	push edx
 	push ecx
 	push eax
 	push edi
-	call {vg_gf448_r16_mul}
-	pop eax
+	call {vg_gf448_r16_sqr}
 	pop eax
 	pop eax
 	pop eax
@@ -9475,13 +9394,10 @@ vg_ed448_verify_equation:
 	pop eax
 	mov eax, 1728
 	mov ecx, 1600
-	mov edx, 1600
-	push edx
 	push ecx
 	push eax
 	push edi
-	call {vg_gf448_r16_mul}
-	pop eax
+	call {vg_gf448_r16_sqr}
 	pop eax
 	pop eax
 	pop eax
@@ -10052,13 +9968,10 @@ vg_ed448_verify_equation:
 	pop eax
 	mov eax, 1728
 	mov ecx, 1600
-	mov edx, 1600
-	push edx
 	push ecx
 	push eax
 	push edi
-	call {vg_gf448_r16_mul}
-	pop eax
+	call {vg_gf448_r16_sqr}
 	pop eax
 	pop eax
 	pop eax
@@ -10621,37 +10534,28 @@ vg_ed448_verify_equation:
 	pop eax
 	mov eax, 1600
 	mov ecx, 1600
-	mov edx, 1600
-	push edx
 	push ecx
 	push eax
 	push edi
-	call {vg_gf448_r16_mul}
-	pop eax
+	call {vg_gf448_r16_sqr}
 	pop eax
 	pop eax
 	pop eax
 	mov eax, 1728
 	mov ecx, 64
-	mov edx, 64
-	push edx
 	push ecx
 	push eax
 	push edi
-	call {vg_gf448_r16_mul}
-	pop eax
+	call {vg_gf448_r16_sqr}
 	pop eax
 	pop eax
 	pop eax
 	mov eax, 1856
 	mov ecx, 832
-	mov edx, 832
-	push edx
 	push ecx
 	push eax
 	push edi
-	call {vg_gf448_r16_mul}
-	pop eax
+	call {vg_gf448_r16_sqr}
 	pop eax
 	pop eax
 	pop eax
@@ -10669,13 +10573,10 @@ vg_ed448_verify_equation:
 	pop eax
 	mov eax, 2112
 	mov ecx, 320
-	mov edx, 320
-	push edx
 	push ecx
 	push eax
 	push edi
-	call {vg_gf448_r16_mul}
-	pop eax
+	call {vg_gf448_r16_sqr}
 	pop eax
 	pop eax
 	pop eax
@@ -10777,37 +10678,28 @@ vg_ed448_verify_equation:
 	pop eax
 	mov eax, 1600
 	mov ecx, 1600
-	mov edx, 1600
-	push edx
 	push ecx
 	push eax
 	push edi
-	call {vg_gf448_r16_mul}
-	pop eax
+	call {vg_gf448_r16_sqr}
 	pop eax
 	pop eax
 	pop eax
 	mov eax, 1728
 	mov ecx, 1088
-	mov edx, 1088
-	push edx
 	push ecx
 	push eax
 	push edi
-	call {vg_gf448_r16_mul}
-	pop eax
+	call {vg_gf448_r16_sqr}
 	pop eax
 	pop eax
 	pop eax
 	mov eax, 1856
 	mov ecx, 1216
-	mov edx, 1216
-	push edx
 	push ecx
 	push eax
 	push edi
-	call {vg_gf448_r16_mul}
-	pop eax
+	call {vg_gf448_r16_sqr}
 	pop eax
 	pop eax
 	pop eax
@@ -10825,13 +10717,10 @@ vg_ed448_verify_equation:
 	pop eax
 	mov eax, 2112
 	mov ecx, 1344
-	mov edx, 1344
-	push edx
 	push ecx
 	push eax
 	push edi
-	call {vg_gf448_r16_mul}
-	pop eax
+	call {vg_gf448_r16_sqr}
 	pop eax
 	pop eax
 	pop eax

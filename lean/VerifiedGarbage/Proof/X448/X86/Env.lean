@@ -239,7 +239,7 @@ theorem call3_ok {name : String} {body : Prog isa} (hn : NoSp body) (h0 : stackU
     fun t ⟨hop, hbd, m, hm, hq⟩ => ⟨hop.of_movs k₃ m₃, hbd, ?_⟩
   rw [hq, F, F, hm.fe (by omega_arith), hm.fe (by omega_arith), m₃]
 
-/-- A call of `vg_gf448_r16_mul_a24`'s code `body`. -/
+/-- A call of a unary field function whose code is `body`. -/
 theorem call2_ok {name : String} {body : Prog isa} (hn : NoSp body) (h0 : stackUse body = 0)
     {s : State} {base : Addr} (hs : Scr s base) (hc : CallCtx s base) {o a : Nat}
     (ho : Slot o) (ha : Slot a) (ab : Bounded s.mem base a) {op : Spec.X448.Fe → Spec.X448.Fe}
@@ -269,12 +269,24 @@ theorem call2_ok {name : String} {body : Prog isa} (hn : NoSp body) (h0 : stackU
     fun t ⟨hop, hbd, m, hm, hq⟩ => ⟨hop.of_movs k₂ m₂, hbd, ?_⟩
   rw [hq, F, F, hm.fe (by omega_arith), m₂]
 
+theorem sqrCall_ok {s : State} {base : Addr} (hs : Scr s base) (hc : CallCtx s base) {o a : Nat}
+    (ho : Slot o) (ha : Slot a) (ab : Bounded s.mem base a) :
+    WP isa (sqrCall o a) s fun t =>
+      COp base o s t ∧ Bounded t.mem base o ∧ F t.mem base o = F s.mem base a * F s.mem base a :=
+  call2_ok (op := fun x => x * x) (NoSp.of_all (by lit_decide)) (by lit_decide) hs hc ho ha ab
+    fun _ he ab' => sqrFn_ok he ab'
+
 theorem mulCall_ok {s : State} {base : Addr} (hs : Scr s base) (hc : CallCtx s base) {o a b : Nat}
     (ho : Slot o) (ha : Slot a) (hb : Slot b) (ab : Bounded s.mem base a) (bb : Bounded s.mem base b) :
     WP isa (mulCall o a b) s fun t =>
-      COp base o s t ∧ Bounded t.mem base o ∧ F t.mem base o = F s.mem base a * F s.mem base b :=
-  call3_ok (op := (· * ·)) (NoSp.of_all (by lit_decide)) (by lit_decide) hs hc ho ha hb ab bb
-    fun _ he hvb ab' bb' => mulFn_ok he hvb hb ab' bb'
+      COp base o s t ∧ Bounded t.mem base o ∧ F t.mem base o = F s.mem base a * F s.mem base b := by
+  unfold mulCall
+  split
+  · rename_i h
+    subst h
+    exact sqrCall_ok hs hc ho ha ab
+  · exact call3_ok (op := (· * ·)) (NoSp.of_all (by lit_decide)) (by lit_decide) hs hc ho ha hb ab bb
+      fun _ he hvb ab' bb' => mulFn_ok he hvb hb ab' bb'
 
 theorem addCall_ok {s : State} {base : Addr} (hs : Scr s base) (hc : CallCtx s base) {o a b : Nat}
     (ho : Slot o) (ha : Slot a) (hb : Slot b) (ab : Bounded s.mem base a) (bb : Bounded s.mem base b) :

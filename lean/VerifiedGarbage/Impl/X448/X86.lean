@@ -8,7 +8,7 @@ public import VerifiedGarbage.Impl.X25519.X86
 # X448: x86 (32-bit) implementation
 
 Field elements are twenty-eight 16-bit limbs in 32-bit words. The field
-arithmetic is the functions `vg_gf448_r16_mul`, `vg_gf448_r16_add`,
+arithmetic is the functions `vg_gf448_r16_mul`, `vg_gf448_r16_sqr`, `vg_gf448_r16_add`,
 `vg_gf448_r16_sub` and `vg_gf448_r16_mul_a24` (`Proof/X448/X86/FnContract.lean`),
 which X448 and Ed448 call rather than inlining it; reduction uses
 `2^448 = 2^224 + 1` modulo the field prime. The product packs the limbs of
@@ -107,7 +107,7 @@ def subK (i : Nat) : BitVec 32 := if i = 14 then 131068 else 131070
 
 /-! ## The field functions
 
-`vg_gf448_r16_{mul,add,sub,mul_a24}(ws, o, a[, b])` (`Proof/X448/X86/FnContract.lean`),
+`vg_gf448_r16_{mul,add,sub,mul_a24,sqr}(ws, o, a[, b])` (`Proof/X448/X86/FnContract.lean`),
 cdecl: the arguments at `[esp + 4]` to `[esp + 16]`. Each loads `ws` into
 `edi` and saves the callee-saved registers in the last 16 bytes of its own
 working space (`SAVE`), points `esi` (and `ebp`) at its operands, writes the
@@ -184,10 +184,24 @@ def carryTerms (k : Nat) : List Impl.X25519.X86.Term :=
 def foldCarry : List Instr :=
   [st .ebx CW] ++ Impl.X25519.X86.zeroAcc ++ Impl.X25519.X86.cols RED 14 carryTerms
 
-/-- The words at `PA` and `PB` multiplied and reduced into the fourteen words at `RED`. -/
-def mulWords : List Instr :=
-  Impl.X25519.X86.zeroAcc ++ Impl.X25519.X86.cols PROD 28 prodTerms ++ Impl.X25519.X86.cols RED 14 foldTerms ++
+/-- The terms of column `k` of the square of the words at `PA`: the products
+`a_i a_j` with `i < j` and `i + j = k`, doubled, and `a_{k/2}²` for an even `k`. -/
+def sqrTerms (k : Nat) : List Impl.X25519.X86.Term :=
+  ((List.range 14).filter fun i => 2 * i < k && k - i < 14).map
+      (fun i => .mulM2 (PA + 4 * i) (PA + 4 * (k - i))) ++
+    if k % 2 = 0 ∧ k / 2 < 14 then [.mulM (PA + 4 * (k / 2)) (PA + 4 * (k / 2))] else []
+
+/-- The 28 columns `ts` of a product into `PROD`, reduced into the fourteen words at `RED`. -/
+def prodWords (ts : Nat → List Impl.X25519.X86.Term) : List Instr :=
+  Impl.X25519.X86.zeroAcc ++ Impl.X25519.X86.cols PROD 28 ts ++ Impl.X25519.X86.cols RED 14 foldTerms ++
     foldCarry ++ foldCarry
+
+/-- The words at `PA` and `PB` multiplied and reduced into the fourteen words at `RED`. -/
+def mulWords : List Instr := prodWords prodTerms
+
+/-- The words at `PA` squared and reduced into the fourteen words at `RED`: 105
+multiplications rather than 196. -/
+def sqrWords : List Instr := prodWords sqrTerms
 
 /-- Word `k` at `RED` to limbs `2k` and `2k + 1` of the element at `ebp`. -/
 def unpackWord (k : Nat) : List Instr :=
@@ -202,6 +216,11 @@ their words reduced, and its words unpacked into the element at `o`. -/
 def mulFn : Prog isa :=
   .block (fnEntry ++ argPtr .esi 2 ++ pack PA ++ argPtr .esi 3 ++ pack PB ++ mulWords ++ argPtr .ebp 1 ++
     unpack ++ fnExit)
+
+/-- `vg_gf448_r16_sqr(ws, o, a)`: as `vg_gf448_r16_mul` of `a` and `a`, with the
+operand packed once and the columns of a square. -/
+def sqrFn : Prog isa :=
+  .block (fnEntry ++ argPtr .esi 2 ++ pack PA ++ sqrWords ++ argPtr .ebp 1 ++ unpack ++ fnExit)
 
 def addCols : List Instr :=
   (List.range 28).flatMap fun i =>
@@ -240,7 +259,11 @@ def call2 (name : String) (body : Prog isa) (o a : Nat) : Prog isa :=
   .seq (.block [.mov .eax (.imm (BitVec.ofNat 32 o)), .mov .ecx (.imm (BitVec.ofNat 32 a))])
     (.frame (.push [.ecx, .eax, .edi]) (.call name body) (.pop .eax 3))
 
-def mulCall (o a b : Nat) : Prog isa := call3 "vg_gf448_r16_mul" mulFn o a b
+def sqrCall (o a : Nat) : Prog isa := call2 "vg_gf448_r16_sqr" sqrFn o a
+
+/-- A product is a call of `vg_gf448_r16_mul`, and a square of `vg_gf448_r16_sqr`. -/
+def mulCall (o a b : Nat) : Prog isa :=
+  if a = b then sqrCall o a else call3 "vg_gf448_r16_mul" mulFn o a b
 def addCall (o a b : Nat) : Prog isa := call3 "vg_gf448_r16_add" addFn o a b
 def subCall (o a b : Nat) : Prog isa := call3 "vg_gf448_r16_sub" subFn o a b
 def a24Call (o a : Nat) : Prog isa := call2 "vg_gf448_r16_mul_a24" mulA24Fn o a

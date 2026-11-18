@@ -399,10 +399,11 @@ section
 /-!
 # X448 on x86 (32-bit): numbers of 32-bit words
 
-The arithmetic of `vg_gf448_r16_mul`'s product (`Impl/X448/X86.lean`): the
-columns of a product of two numbers of `n` words (`conv_identity`), the
-fold of its 28 words by `2^448 = 2^224 + 1` (`foldCol_mod`), the two folds
-of the carry (`fold_carries`), and the words of an element from its limbs
+The arithmetic of `vg_gf448_r16_mul`'s product and `vg_gf448_r16_sqr`'s
+square (`Impl/X448/X86.lean`): the columns of a product of two numbers of
+`n` words (`conv_identity`) and of a square (`sqr_identity`), the fold of
+their 28 words by `2^448 = 2^224 + 1` (`foldCol_mod`), the two folds of the
+carry (`fold_carries`), and the words of an element from its limbs
 (`num_pack`).
 -/
 
@@ -470,6 +471,133 @@ theorem conv_identity (n : Nat) (fa fb : Nat → Nat) :
     num (convCol n fa fb) (2 * n) = num fa n * num fb n :=
   conv_rows n fa fb (2 * n) n (by omega_arith)
 
+/-! ## The columns of a square -/
+
+/-- A number whose words but the first are zero. -/
+theorem num_first {f : Nat → Nat} {n : Nat} (h : ∀ k < n + 1, k ≠ 0 → f k = 0) : num f (n + 1) = f 0 := by
+  rw [Nat.add_comm, num_split,
+    num_congr (g := fun _ => 0) (fun i hi => h (1 + i) (by omega_arith) (by omega_arith)), num_zero,
+    Nat.mul_zero, Nat.add_zero]
+  simp only [num, Nat.pow_zero, Nat.one_mul, Nat.zero_add]
+
+/-- A number whose words but word `m` are zero. -/
+theorem num_delta (c m : Nat) {N : Nat} (h : m < N) :
+    num (fun j => if j = m then c else 0) N = (2 ^ 32) ^ m * c := by
+  obtain ⟨d, rfl⟩ : ∃ d, N = m + (d + 1) := ⟨N - m - 1, by omega_arith⟩
+  rw [num_congr (g := fun k => if m ≤ k then (if k - m = 0 then c else 0) else 0) (fun k _ => ?_),
+    num_shift (fun i => if i = 0 then c else 0), num_first (fun k _ hk => ite_eq_right hk),
+    ite_eq_left rfl]
+  by_cases h1 : k = m
+  · rw [ite_eq_left h1, ite_eq_left (by omega_arith), ite_eq_left (by omega_arith)]
+  · rw [ite_eq_right h1]
+    by_cases h2 : m ≤ k
+    · rw [ite_eq_left h2, ite_eq_right (by omega_arith)]
+    · rw [ite_eq_right h2]
+
+/-- The words of a number of `n` words from word `m` on. -/
+def tailN (fa : Nat → Nat) (n m : Nat) : Nat := num (fun j => if m ≤ j then fa j else 0) n
+
+theorem tailN_zero (fa : Nat → Nat) (n : Nat) : tailN fa n 0 = num fa n :=
+  num_congr fun j _ => ite_eq_left (Nat.zero_le j)
+
+theorem tailN_succ (fa : Nat → Nat) {n m : Nat} (h : m < n) :
+    tailN fa n m = (2 ^ 32) ^ m * fa m + tailN fa n (m + 1) := by
+  rw [← num_delta (fa m) m h, tailN, tailN, ← num_add]
+  refine num_congr fun j _ => ?_
+  by_cases h1 : j = m
+  · rw [ite_eq_left h1, ite_eq_left (by omega_arith), ite_eq_right (by omega_arith), h1, Nat.add_zero]
+  · rw [ite_eq_right h1, Nat.zero_add]
+    by_cases h2 : m ≤ j
+    · rw [ite_eq_left h2, ite_eq_left (by omega_arith)]
+    · rw [ite_eq_right h2, ite_eq_right (by omega_arith)]
+
+/-- Row `m` of a square: `a_m` times twice the words above it, and its square. -/
+theorem sqr_row (fa : Nat → Nat) {n m N : Nat} (hm : m < n) (hN : m + n ≤ N) :
+    num (fun k => if m ≤ k then (if m < k - m ∧ k - m < n then 2 * (fa m * fa (k - m)) else 0) +
+        (if k - m = m then fa m * fa m else 0) else 0) N =
+      (2 ^ 32) ^ m * (fa m * ((2 ^ 32) ^ m * fa m + 2 * tailN fa n (m + 1))) := by
+  obtain ⟨d, rfl⟩ : ∃ d, N = m + (n + d) := ⟨N - m - n, by omega_arith⟩
+  rw [num_shift (fun j => (if m < j ∧ j < n then 2 * (fa m * fa j) else 0) + (if j = m then fa m * fa m else 0)),
+    num_add, num_delta _ _ (by omega_arith),
+    num_congr (g := fun j => if j < n then (2 * fa m) * (if m + 1 ≤ j then fa j else 0) else 0) (fun j _ => ?_),
+    num_trunc, num_mul]
+  · rw [tailN, Nat.mul_add (fa m), Nat.mul_left_comm (fa m) ((2 ^ 32) ^ m), Nat.mul_left_comm (fa m) 2,
+      Nat.mul_assoc 2, Nat.add_comm]
+  · by_cases h1 : j < n
+    · rw [ite_eq_left h1]
+      by_cases h2 : m < j
+      · rw [ite_eq_left ⟨h2, h1⟩, ite_eq_left (Nat.succ_le_of_lt h2), Nat.mul_assoc]
+      · rw [ite_eq_right (fun h => h2 h.1), ite_eq_right (by omega_arith), Nat.mul_zero]
+    · rw [ite_eq_right h1, ite_eq_right (fun h => h1 h.2)]
+
+/-- The columns of the first `m` rows of a square, and the words from `m` on squared. -/
+theorem sqr_rows (n : Nat) (fa : Nat → Nat) (N : Nat) (hN : 2 * n ≤ N) : ∀ m, m ≤ n →
+    num (fun k => (((List.range m).filter fun i => 2 * i < k && k - i < n).map
+        fun i => 2 * (fa i * fa (k - i))).sum +
+        if k % 2 = 0 ∧ k / 2 < m then fa (k / 2) * fa (k / 2) else 0) N + tailN fa n m * tailN fa n m =
+      num fa n * num fa n
+  | 0, _ => by
+    rw [num_congr (g := fun _ => 0) (fun k _ => by
+      rw [ite_eq_right (fun h => Nat.not_lt_zero _ h.2)]; rfl), num_zero, Nat.zero_add, tailN_zero]
+  | m + 1, h => by
+    have e : ∀ k < N, (((List.range (m + 1)).filter fun i => 2 * i < k && k - i < n).map
+          fun i => 2 * (fa i * fa (k - i))).sum +
+          (if k % 2 = 0 ∧ k / 2 < m + 1 then fa (k / 2) * fa (k / 2) else 0) =
+        ((((List.range m).filter fun i => 2 * i < k && k - i < n).map fun i => 2 * (fa i * fa (k - i))).sum +
+          if k % 2 = 0 ∧ k / 2 < m then fa (k / 2) * fa (k / 2) else 0) +
+          (if m ≤ k then (if m < k - m ∧ k - m < n then 2 * (fa m * fa (k - m)) else 0) +
+            (if k - m = m then fa m * fa m else 0) else 0) := by
+      intro k _
+      have hf : (List.filter (fun i => decide (2 * i < k) && decide (k - i < n)) [m]) =
+          if 2 * m < k ∧ k - m < n then [m] else [] := by
+        simp only [List.filter_cons, List.filter_nil, Bool.and_eq_true, decide_eq_true_eq]
+      rw [List.range_succ, List.filter_append, List.map_append, List.sum_append, hf]
+      by_cases hA : k = 2 * m
+      · subst hA
+        rw [ite_eq_right (by omega_arith), ite_eq_left (by omega_arith), ite_eq_right (by omega_arith),
+          ite_eq_left (by omega_arith), ite_eq_right (by omega_arith), ite_eq_left (by omega_arith),
+          show 2 * m / 2 = m by omega_arith]
+        simp only [List.map_nil, List.sum_nil, Nat.add_zero, Nat.zero_add]
+      · by_cases hB : 2 * m < k ∧ k - m < n
+        · rw [ite_eq_left hB, ite_eq_right (by omega_arith), ite_eq_right (by omega_arith),
+            ite_eq_left (by omega_arith), ite_eq_left (by omega_arith), ite_eq_right (by omega_arith)]
+          simp only [List.map_cons, List.map_nil, List.sum_cons, List.sum_nil, Nat.add_zero]
+        · rw [ite_eq_right hB]
+          by_cases hC : k % 2 = 0 ∧ k / 2 < m
+          · rw [ite_eq_left hC, ite_eq_left (by omega_arith)]
+            by_cases hD : m ≤ k
+            · rw [ite_eq_left hD, ite_eq_right (by omega_arith), ite_eq_right (by omega_arith)]
+              simp only [List.map_nil, List.sum_nil, Nat.add_zero]
+            · rw [ite_eq_right hD]
+              simp only [List.map_nil, List.sum_nil, Nat.add_zero]
+          · rw [ite_eq_right hC, ite_eq_right (by omega_arith)]
+            by_cases hD : m ≤ k
+            · rw [ite_eq_left hD, ite_eq_right (by omega_arith), ite_eq_right (by omega_arith)]
+              simp only [List.map_nil, List.sum_nil, Nat.add_zero]
+            · rw [ite_eq_right hD]
+              simp only [List.map_nil, List.sum_nil, Nat.add_zero]
+    rw [num_congr e, num_add, sqr_row fa (by omega_arith) (by omega_arith),
+      ← sqr_rows n fa N hN m (by omega_arith), tailN_succ fa (m := m) (by omega_arith),
+      ← Nat.mul_assoc ((2 ^ 32) ^ m) (fa m)]
+    generalize num (fun k => (((List.range m).filter fun i => 2 * i < k && k - i < n).map
+        fun i => 2 * (fa i * fa (k - i))).sum +
+        if k % 2 = 0 ∧ k / 2 < m then fa (k / 2) * fa (k / 2) else 0) N = r
+    generalize (2 ^ 32) ^ m * fa m = x
+    generalize tailN fa n (m + 1) = t
+    rw [Nat.add_mul, Nat.mul_add, Nat.mul_add, Nat.mul_add, Nat.mul_comm t x, Nat.mul_left_comm x 2 t]
+    omega_arith
+
+/-- The columns of `a²`, for a number of `n` words: the products of distinct
+words doubled, and the squares. -/
+theorem sqr_identity (n : Nat) (fa : Nat → Nat) :
+    num (fun k => (((List.range n).filter fun i => 2 * i < k && k - i < n).map
+        fun i => 2 * (fa i * fa (k - i))).sum +
+        if k % 2 = 0 ∧ k / 2 < n then fa (k / 2) * fa (k / 2) else 0) (2 * n) = num fa n * num fa n := by
+  have h := sqr_rows n fa (2 * n) (Nat.le_refl _) n (Nat.le_refl _)
+  have z : tailN fa n n = 0 := by
+    rw [tailN, num_congr (g := fun _ => 0) (fun j hj => ite_eq_right (by omega_arith)), num_zero]
+  rwa [z, Nat.mul_zero, Nat.add_zero] at h
+
 /-! ## The fold by the prime -/
 
 theorem pow7 : ((2 : Nat) ^ 32) ^ 7 = half := by decide +kernel
@@ -521,13 +649,6 @@ theorem foldCol_lt {p : Nat → Nat} (h : ∀ i < 28, p i < 2 ^ 32) : num (foldC
   generalize num (fun i => p (21 + i)) 7 = x3 at *
   simp only [full, half, radix, Nat.reducePow] at b0 b1 b2 b3 ⊢
   omega_using [b0, b1, b2, b3]
-
-/-- A number whose words but the first are zero. -/
-theorem num_first {f : Nat → Nat} {n : Nat} (h : ∀ k < n + 1, k ≠ 0 → f k = 0) : num f (n + 1) = f 0 := by
-  rw [Nat.add_comm, num_split,
-    num_congr (g := fun _ => 0) (fun i hi => h (1 + i) (by omega_arith) (by omega_arith)), num_zero,
-    Nat.mul_zero, Nat.add_zero]
-  simp only [num, Nat.pow_zero, Nat.one_mul, Nat.zero_add]
 
 /-- The carry `c` added to words 0 and 7. -/
 theorem carry_val (r : Nat → Nat) (c : Nat) :
@@ -592,11 +713,12 @@ end
 
 
 /-!
-# X448 on x86 (32-bit): the product of `vg_gf448_r16_mul`
+# X448 on x86 (32-bit): the products of `vg_gf448_r16_mul` and `vg_gf448_r16_sqr`
 
-The operands packed into words (`pack_ok`), their product by X25519's
-columns, folded by the prime with its carry (`mulWords_ok`), and the words
-unpacked into the limbs of the result (`unpack_ok`).
+The operands packed into words (`pack_ok`), 28 columns of X25519's folded
+by the prime with their carry (`prodWords_ok`), which are a product
+(`mulWords_ok`) or a square (`sqrWords_ok`), and the words unpacked into
+the limbs of the result (`unpack_ok`).
 -/
 
 @[expose] public section
@@ -820,49 +942,31 @@ theorem foldCarry_ok {x : BitVec 32} {s : State} (hc : Ctx 8192 x s false) (ha :
     rw [e₃, ← carry_val, ← hcw]
     exact num_congr fun k hk => by rw [carryTerms_colv, hw k hk]
 
-/-- The words at `PA` and `PB` multiplied, modulo the prime, into the fourteen words at `RED`. -/
-theorem mulWords_ok {s : State} {base : Addr} (hs : Scr s base) :
-    WP isa (.block mulWords) s fun t =>
-      num (fun k => (word t.mem base (RED + 4 * k)).toNat) 14 % Spec.X448.P =
-        num (fun k => (word s.mem base (PA + 4 * k)).toNat) 14 *
-          num (fun k => (word s.mem base (PB + 4 * k)).toNat) 14 % Spec.X448.P ∧
+/-- The 28 columns `ts`, of value `V`, reduced modulo the prime into the fourteen words at `RED`. -/
+theorem prodWords_ok {s : State} {base : Addr} (hs : Scr s base) {ts : Nat → List Impl.X25519.X86.Term}
+    {V : Nat} (hr : ∀ k < 28, ∀ t ∈ ts k, ∀ d ∈ treads t, d + 4 ≤ PROD)
+    (hb : ∀ k < 28, colv s.mem (s.gpr .edi) (ts k) < 2 ^ 68)
+    (hV : num (fun k => colv s.mem (s.gpr .edi) (ts k)) 28 = V) (hlt : V < (2 ^ 32) ^ 28) :
+    WP isa (.block (prodWords ts)) s fun t =>
+      num (fun k => (word t.mem base (RED + 4 * k)).toNat) 14 % Spec.X448.P = V % Spec.X448.P ∧
       Outside base PROD 204 s.mem t.mem ∧ Keeps clob s t := by
   have hc := hs.ctx
-  have eA : num (fun k => (word s.mem base (PA + 4 * k)).toNat) 14 =
-      num (fun k => wv s.mem (s.gpr .edi) (PA + 4 * k)) 14 :=
-    num_congr fun k hk => by rw [wv, wd_word hs _ (by simp only [PA, ACC]; omega_arith)]
-  have eB : num (fun k => (word s.mem base (PB + 4 * k)).toNat) 14 =
-      num (fun k => wv s.mem (s.gpr .edi) (PB + 4 * k)) 14 :=
-    num_congr fun k hk => by rw [wv, wd_word hs _ (by simp only [PB, ACC]; omega_arith)]
-  rw [eA, eB]
+  unfold prodWords
   refine WP.block_append (WP.block_append (WP.block_append (WP.block_append
     (WP.mono Proof.X25519.X86.zeroAcc_ok fun s₁ ⟨k₁, m₁, a₁⟩ => ?_))))
   have c₁ := k₁.ctx hc
-  refine WP.mono (cols_ok c₁ prodTerms 28 (by decide) (fun k hk t ht d hd => ?_)
-    (fun k hk => prodTerms_lt _ _ _) (by rw [a₁]; decide)) fun s₂ ⟨k₂, f₂, e₂, _⟩ => ?_
-  · have := prodTerms_reads t ht d hd
+  refine WP.mono (cols_ok c₁ ts 28 (by decide) (fun k hk t ht d hd => ?_)
+    (fun k hk => by rw [m₁]; exact hb k hk) (by rw [a₁]; decide)) fun s₂ ⟨k₂, f₂, e₂, _⟩ => ?_
+  · have := hr k hk t ht d hd
     simp only [PROD, ACC] at this ⊢
     exact ⟨by omega_using [this], .inl this⟩
-  rw [a₁, Nat.zero_add, m₁] at e₂
+  rw [a₁, Nat.zero_add, m₁, hV] at e₂
   rw [m₁] at f₂
-  have eP : num (fun k => colv s.mem (s.gpr .edi) (prodTerms k)) 28 =
-      num (fun i => wv s.mem (s.gpr .edi) (PA + 4 * i)) 14 *
-        num (fun j => wv s.mem (s.gpr .edi) (PB + 4 * j)) 14 := by
-    rw [← conv_identity 14]
-    exact num_congr fun k _ => prodTerms_colv _ _ _
-  rw [eP] at e₂
-  have hA := num_lt (f := fun i => wv s.mem (s.gpr .edi) (PA + 4 * i)) (n := 14) fun _ _ => wv_lt _ _ _
-  have hB := num_lt (f := fun j => wv s.mem (s.gpr .edi) (PB + 4 * j)) (n := 14) fun _ _ => wv_lt _ _ _
-  generalize num (fun i => wv s.mem (s.gpr .edi) (PA + 4 * i)) 14 = va at *
-  generalize num (fun j => wv s.mem (s.gpr .edi) (PB + 4 * j)) 14 = vb at *
-  have hAB : va * vb < (2 ^ 32) ^ 28 := by
-    have := Nat.mul_lt_mul_of_lt_of_lt hA hB
-    rwa [← Nat.pow_add] at this
   have z₂ : acc s₂ = 0 := by
     rcases Nat.eq_zero_or_pos (acc s₂) with h | h
     · exact h
     · have := Nat.mul_le_mul_left ((2 ^ 32) ^ 28) h
-      omega_using [this, e₂, hAB]
+      omega_using [this, e₂, hlt]
   rw [z₂, Nat.mul_zero, Nat.add_zero] at e₂
   have c₂ := k₂.ctx c₁
   refine WP.mono (cols_ok c₂ foldTerms 14 (by decide) (fun k hk t ht d hd => ?_)
@@ -878,7 +982,7 @@ theorem mulWords_ok {s : State} {base : Addr} (hs : Scr s base) :
   have hF := foldCol_mod fun j => wv s₂.mem (s.gpr .edi) (PROD + 4 * j)
   have hFlt := foldCol_lt (p := fun j => wv s₂.mem (s.gpr .edi) (PROD + 4 * j)) fun i _ => wv_lt _ _ _
   rw [e₂] at hF
-  generalize num (foldCol fun j => wv s₂.mem (s.gpr .edi) (PROD + 4 * j)) 14 = V at *
+  generalize num (foldCol fun j => wv s₂.mem (s.gpr .edi) (PROD + 4 * j)) 14 = W at *
   have r1 := num_lt (f := fun k => wv s₃.mem (s.gpr .edi) (RED + 4 * k)) (n := 14) fun _ _ => wv_lt _ _ _
   rw [pow14] at r1
   have hc1 : acc s₃ ≤ 3 := by
@@ -906,6 +1010,89 @@ theorem mulWords_ok {s : State} {base : Addr} (hs : Scr s base) :
     have o₅ := outside_of_frame hs (by decide) (by decide) f₅
     exact (o₂.mono (by decide) (by decide)).trans ((o₃.mono (by decide) (by decide)).trans
       ((o₄.mono (by decide) (by decide)).trans (o₅.mono (by decide) (by decide))))
+
+/-- The words at `PA` as the columns' proofs read them. -/
+theorem num_wv {s : State} {base : Addr} (hs : Scr s base) (m : Mem) {o : Nat} (ho : o + 56 ≤ 8192) :
+    num (fun k => wv m (s.gpr .edi) (o + 4 * k)) 14 = num (fun k => (word m base (o + 4 * k)).toNat) 14 :=
+  num_congr fun k hk => by rw [wv, wd_word hs _ (by omega_arith)]
+
+/-- The words at `PA` and `PB` multiplied, modulo the prime, into the fourteen words at `RED`. -/
+theorem mulWords_ok {s : State} {base : Addr} (hs : Scr s base) :
+    WP isa (.block mulWords) s fun t =>
+      num (fun k => (word t.mem base (RED + 4 * k)).toNat) 14 % Spec.X448.P =
+        num (fun k => (word s.mem base (PA + 4 * k)).toNat) 14 *
+          num (fun k => (word s.mem base (PB + 4 * k)).toNat) 14 % Spec.X448.P ∧
+      Outside base PROD 204 s.mem t.mem ∧ Keeps clob s t := by
+  rw [← num_wv hs _ (by decide), ← num_wv hs _ (by decide)]
+  have hA := num_lt (f := fun i => wv s.mem (s.gpr .edi) (PA + 4 * i)) (n := 14) fun _ _ => wv_lt _ _ _
+  have hB := num_lt (f := fun j => wv s.mem (s.gpr .edi) (PB + 4 * j)) (n := 14) fun _ _ => wv_lt _ _ _
+  refine prodWords_ok hs (fun k _ => prodTerms_reads) (fun k _ => prodTerms_lt _ _ _) ?_ ?_
+  · rw [← conv_identity 14]
+    exact num_congr fun k _ => prodTerms_colv _ _ _
+  · have := Nat.mul_lt_mul_of_lt_of_lt hA hB
+    rwa [← Nat.pow_add] at this
+
+theorem sqrTerms_reads {k : Nat} : ∀ t ∈ sqrTerms k, ∀ d ∈ treads t, d + 4 ≤ PROD := by
+  intro t ht d hd
+  simp only [sqrTerms, List.mem_append, List.mem_map, List.mem_filter, List.mem_range, Bool.and_eq_true,
+    decide_eq_true_eq] at ht
+  rcases ht with ⟨i, ⟨hi, -, hki⟩, rfl⟩ | ht
+  · simp only [treads, List.mem_cons, List.not_mem_nil, or_false] at hd
+    rcases hd with rfl | rfl <;> simp only [PA, PROD, ACC] <;> omega_arith
+  · split at ht
+    · rename_i hk2
+      simp only [List.mem_singleton] at ht
+      subst ht
+      simp only [treads, List.mem_cons, List.not_mem_nil, or_false] at hd
+      rcases hd with rfl | rfl <;> simp only [PA, PROD, ACC] <;> omega_arith
+    · exact absurd ht List.not_mem_nil
+
+theorem sqrTerms_colv (m : Mem) (x : BitVec 32) (k : Nat) :
+    colv m x (sqrTerms k) =
+      (((List.range 14).filter fun i => 2 * i < k && k - i < 14).map fun i =>
+        2 * (wv m x (PA + 4 * i) * wv m x (PA + 4 * (k - i)))).sum +
+      if k % 2 = 0 ∧ k / 2 < 14 then wv m x (PA + 4 * (k / 2)) * wv m x (PA + 4 * (k / 2)) else 0 := by
+  unfold colv sqrTerms
+  rw [List.map_append, List.sum_append, List.map_map]
+  split <;> rfl
+
+theorem sqrTerms_lt (m : Mem) (x : BitVec 32) {k : Nat} (hk : k < 28) : colv m x (sqrTerms k) < 2 ^ 68 := by
+  have hl := (by decide : ∀ k < 28,
+    ((List.range 14).filter fun i => 2 * i < k && k - i < 14).length ≤ 7) k hk
+  have hl' : (sqrTerms k).length ≤ 8 := by
+    simp only [sqrTerms, List.length_append, List.length_map]
+    split <;> simp only [List.length_cons, List.length_nil] <;> omega_using [hl]
+  have hw : ∀ a b, wv m x a * wv m x b ≤ 2 ^ 64 - 2 ^ 33 + 1 := fun a b =>
+    Nat.le_trans (Nat.mul_le_mul (Nat.le_pred_of_lt (wv_lt m x a)) (Nat.le_pred_of_lt (wv_lt m x b)))
+      (by decide)
+  have h1 := colv_le_len (m := m) (x := x) (B := 2 ^ 65 - 2) (ts := sqrTerms k) fun t ht => by
+    simp only [sqrTerms, List.mem_append, List.mem_map] at ht
+    rcases ht with ⟨i, -, rfl⟩ | ht
+    · have := hw (PA + 4 * i) (PA + 4 * (k - i))
+      simp only [tval]; omega_using [this]
+    · split at ht
+      · simp only [List.mem_singleton] at ht
+        subst ht
+        have := hw (PA + 4 * (k / 2)) (PA + 4 * (k / 2))
+        simp only [tval]; omega_using [this]
+      · exact absurd ht List.not_mem_nil
+  have h2 := Nat.mul_le_mul_right (2 ^ 65 - 2) hl'
+  omega_using [h1, h2]
+
+/-- The words at `PA` squared, modulo the prime, into the fourteen words at `RED`. -/
+theorem sqrWords_ok {s : State} {base : Addr} (hs : Scr s base) :
+    WP isa (.block sqrWords) s fun t =>
+      num (fun k => (word t.mem base (RED + 4 * k)).toNat) 14 % Spec.X448.P =
+        num (fun k => (word s.mem base (PA + 4 * k)).toNat) 14 *
+          num (fun k => (word s.mem base (PA + 4 * k)).toNat) 14 % Spec.X448.P ∧
+      Outside base PROD 204 s.mem t.mem ∧ Keeps clob s t := by
+  rw [← num_wv hs _ (by decide)]
+  have hA := num_lt (f := fun i => wv s.mem (s.gpr .edi) (PA + 4 * i)) (n := 14) fun _ _ => wv_lt _ _ _
+  refine prodWords_ok hs (fun k _ => sqrTerms_reads) (fun k hk => sqrTerms_lt _ _ hk) ?_ ?_
+  · rw [← sqr_identity 14]
+    exact num_congr fun k _ => sqrTerms_colv _ _ _
+  · have := Nat.mul_lt_mul_of_lt_of_lt hA hA
+    rwa [← Nat.pow_add] at this
 
 /-! ## Unpacking -/
 
@@ -1064,6 +1251,38 @@ theorem mulBody_ok {t : State} {base : Addr} {o a b : Nat} (tc : FnCtx t base 4 
   · exact k02.trans (k24.trans ((k5.mono (by decide)).trans ((k6.mono (by decide)).trans
       (k7.mono (by decide)))))
 
+/-- `vg_gf448_r16_sqr` between its entry and its exit. -/
+theorem sqrBody_ok {t : State} {base : Addr} {n o a : Nat} (tc : FnCtx t base n o a)
+    (ab : Bounded t.mem base a) :
+    WP isa (.block (argPtr .esi 2 ++ pack PA ++ sqrWords ++ argPtr .ebp 1 ++ unpack)) t fun w =>
+      FieldMem base o t.mem w.mem WORK ∧ Bounded w.mem base o ∧
+      F w.mem base o = F t.mem base a * F t.mem base a ∧ Keeps (.esi :: clob) t w := by
+  have hn := tc.n3
+  simp only [List.append_assoc]
+  rw [WP.block_append_iff]
+  refine WP.mono (argPtr_ok tc.args (by omega_arith) (by decide) tc.argA) fun s1 ⟨p1, m1, k1⟩ => ?_
+  have c1 := tc.keep k1 (by decide) (by decide) (by rw [m1]; exact Outside.refl _ _ _ _)
+  rw [WP.block_append_iff]
+  refine WP.mono (pack_ok c1.scr tc.slotA (by decide) (by decide) p1 (by rw [m1]; exact ab))
+    fun s2 ⟨v2, m2, k2⟩ => ?_
+  rw [m1] at v2 m2
+  have k02 : Keeps (.esi :: clob) t s2 := (k1.mono (by decide)).trans (k2.mono (by decide))
+  have c2 := tc.keep k02 (by decide) (by decide) (m2.mono (by decide) (by decide))
+  rw [WP.block_append_iff]
+  refine WP.mono (sqrWords_ok c2.scr) fun s5 ⟨v5, m5, k5⟩ => ?_
+  rw [v2] at v5
+  have c5 := c2.keep k5 (by decide) (by decide) (m5.mono (by decide) (by decide))
+  rw [WP.block_append_iff]
+  refine WP.mono (argPtr_ok c5.args (by omega_arith) (by decide) c5.argO) fun s6 ⟨p6, m6, k6⟩ => ?_
+  have c6 := c5.keep k6 (by decide) (by decide) (by rw [m6]; exact Outside.refl _ _ _ _)
+  refine WP.mono (unpack_ok c6.scr tc.slotO p6) fun s7 ⟨b7, v7, m7, k7⟩ => ⟨?_, b7, ?_, ?_⟩
+  · rw [m6] at m7
+    exact (FieldMem.work m2 (by decide) (by decide)).trans
+      ((FieldMem.work m5 (by decide) (by decide)).trans (FieldMem.output m7))
+  · rw [m6] at v7
+    exact toFe_mul (by rw [v7, v5])
+  · exact k02.trans ((k5.mono (by decide)).trans ((k6.mono (by decide)).trans (k7.mono (by decide))))
+
 end VG.Proof.X448.X86
 
 end
@@ -1074,7 +1293,7 @@ end
 /-!
 # X448 on x86 (32-bit): the field functions
 
-`vg_gf448_r16_{mul,add,sub,mul_a24}` (`Impl/X448/X86.lean`) from their entry
+`vg_gf448_r16_{mul,sqr,add,sub,mul_a24}` (`Impl/X448/X86.lean`) from their entry
 (`FnEntry`: the working space `ws` at `base` and the offsets on the stack):
 `fnEntry` loads `ws` into `edi` and saves the callee-saved registers in the
 last 16 bytes of the functions' own working space (`fnEntry_ok`), the
@@ -1284,6 +1503,19 @@ theorem mulFn_ok {s : State} {base : Addr} {o a b : Nat} (h : FnEntry s base 4 o
     fun x ⟨hx, xm⟩ => ⟨hx, ?_⟩
   rw [xm, wv, F, F, F, F, ea, eb]
 
+theorem sqrFn_ok {s : State} {base : Addr} {o a : Nat} (h : FnEntry s base 3 o a)
+    (ab : Bounded s.mem base a) :
+    WP isa sqrFn s fun t => FnOut base o s t ∧ F t.mem base o = F s.mem base a * F s.mem base a := by
+  rw [show sqrFn = .block (fnEntry ++ ((argPtr .esi 2 ++ pack PA ++ sqrWords ++ argPtr .ebp 1 ++ unpack) ++
+    fnExit)) by simp only [sqrFn, List.append_assoc], WP.block_append_iff]
+  refine WP.mono (fnEntry_ok h) fun t ⟨tc, tv, tm, tk⟩ => ?_
+  obtain ⟨ea, ba⟩ := entry_operand h.slotA tm
+  rw [WP.block_append_iff]
+  refine WP.mono (sqrBody_ok tc (ba ab)) fun w ⟨wm, wb, wv, wk⟩ => ?_
+  refine WP.mono (fnExit_out tc tv tm tk (by decide) wk (tc.scr.of_keeps wk (by decide)) wm wb)
+    fun x ⟨hx, xm⟩ => ⟨hx, ?_⟩
+  rw [xm, wv, F, F, ea]
+
 end VG.Proof.X448.X86
 
 end
@@ -1300,7 +1532,7 @@ section
 Not trusted: the representation of elements of `GF(p)`,
 `p = 2^448 - 2^224 - 1`, each twenty-eight 16-bit limbs, that the 32-bit
 targets' code of X448 and Ed448 keeps them in, and on which their field
-functions (`vg_gf448_r16_mul`, `_add`, `_sub` and `_mul_a24`) work.
+functions (`vg_gf448_r16_mul`, `_sqr`, `_add`, `_sub` and `_mul_a24`) work.
 
 An element is twenty-eight limbs, each a 32-bit little-endian word below
 `2^16`, least significant first (`Limbs`): the element `Σ lᵢ 2^(16 i)`
@@ -1366,7 +1598,7 @@ end
 /-!
 # X448 on x86 (32-bit): the field functions' contracts
 
-The contracts the field functions are proven against (`binX86`, `a24X86`):
+The contracts the field functions are proven against (`binX86`, `unX86`):
 the facts of the shared contracts of `Proof/X448/X86/FnContract.lean` stated for x86
 (`fnPre`: the working space, and the arguments on the stack), which the
 shared contracts imply (`sig_implies`, in `FnVerified.lean`). The entry
@@ -1401,16 +1633,21 @@ def binX86 (r : Nat → Nat → Nat → Prop) : Contract isa where
   pub s₁ s₂ := s₁.gpr .esp = s₂.gpr .esp ∧ arg s₁ 0 = arg s₂ 0 ∧ arg s₁ 1 = arg s₂ 1 ∧
     arg s₁ 2 = arg s₂ 2 ∧ arg s₁ 3 = arg s₂ 3
 
-/-- `vg_gf448_r16_mul_a24`'s contract. -/
-def a24X86 : Contract isa where
+/-- The unary functions' contract, for the relation `r` of the values. -/
+def unX86 (r : Nat → Nat → Prop) : Contract isa where
   pre s := fnPre 12 s ∧ Proof.X448.Field16.Fits (arg s 1) ∧ Proof.X448.Field16.Fits (arg s 2) ∧
     Proof.X448.Field16.Limbs s.mem (wsOf s) (arg s 2)
   post s s' := Proof.X448.Field16.Limbs s'.mem (wsOf s) (arg s 1) ∧
-    Proof.X448.Field16.valAt s'.mem (wsOf s) (arg s 1) % Spec.X448.P =
-      39081 * Proof.X448.Field16.valAt s.mem (wsOf s) (arg s 2) % Spec.X448.P ∧
+    r (Proof.X448.Field16.valAt s'.mem (wsOf s) (arg s 1)) (Proof.X448.Field16.valAt s.mem (wsOf s) (arg s 2)) ∧
     Proof.X448.Field16.Keeps (wsOf s) (arg s 1) s.mem s'.mem
   pub s₁ s₂ := s₁.gpr .esp = s₂.gpr .esp ∧ arg s₁ 0 = arg s₂ 0 ∧ arg s₁ 1 = arg s₂ 1 ∧
     arg s₁ 2 = arg s₂ 2
+
+/-- `vg_gf448_r16_mul_a24`'s contract. -/
+def a24X86 : Contract isa := unX86 fun o a => o % Spec.X448.P = 39081 * a % Spec.X448.P
+
+/-- `vg_gf448_r16_sqr`'s contract: what `vg_gf448_r16_mul`'s gives for equal operands. -/
+def sqrX86 : Contract isa := unX86 fun o a => o % Spec.X448.P = a * a % Spec.X448.P
 
 theorem not_contains_ofs {base x : Addr} (h : ¬ (⟨base, 8192⟩ : Region).Contains x 1) :
     8192 ≤ ofs base x := by

@@ -154,11 +154,11 @@ theorem callPre_bin {r : Nat → Nat → Nat → Prop} {s : State} {base : Addr}
     · rw [hw, a3]; exact limbs_slot hb (w.bounded (by omega_using [hb']) bb)
   exact ⟨pre, entryOf_cov hs, entryOf_covw hs⟩
 
-/-- `vg_gf448_r16_mul_a24`'s precondition, at its call after the offsets' `mov`s. -/
-theorem callPre_a24 {s : State} {base : Addr} (hs : Scr s base) (hc : CallCtx s base) {o a : Nat}
-    (ho : Slot o) (ha : Slot a) (ab : Bounded s.mem base a) (heax : s.gpr .eax = BitVec.ofNat 32 o)
-    (hecx : s.gpr .ecx = BitVec.ofNat 32 a) :
-    CallPre a24X86 [.ecx, .eax, .edi] [below (s.gpr .esp) (4 * [Reg.ecx, .eax, .edi].length)]
+/-- A unary field function's precondition, at its call after the offsets' `mov`s. -/
+theorem callPre_un {r : Nat → Nat → Prop} {s : State} {base : Addr} (hs : Scr s base) (hc : CallCtx s base)
+    {o a : Nat} (ho : Slot o) (ha : Slot a) (ab : Bounded s.mem base a)
+    (heax : s.gpr .eax = BitVec.ofNat 32 o) (hecx : s.gpr .ecx = BitVec.ofNat 32 a) :
+    CallPre (unX86 r) [.ecx, .eax, .edi] [below (s.gpr .esp) (4 * [Reg.ecx, .eax, .edi].length)]
       [⟨base, 8192⟩] s := by
   have ha' : a + 112 ≤ 3584 := ha
   have av := fun i (hi : i < 3) => entryOf_arg (rs := [.ecx, .eax, .edi]) (base := base) (by decide)
@@ -168,7 +168,7 @@ theorem callPre_a24 {s : State} {base : Addr} (hs : Scr s base) (hc : CallCtx s 
     rw [wsOf, av 0 (by decide)]; exact hs.edi
   have a1 : arg (entryOf [.ecx, .eax, .edi] s base) 1 = BitVec.ofNat 32 o := (av 1 (by decide)).trans heax
   have a2 : arg (entryOf [.ecx, .eax, .edi] s base) 2 = BitVec.ofNat 32 a := (av 2 (by decide)).trans hecx
-  have pre : a24X86.pre (entryOf [.ecx, .eax, .edi] s base) := by
+  have pre : (unX86 r).pre (entryOf [.ecx, .eax, .edi] s base) := by
     refine ⟨entryOf_fnPre (by decide) hs hc (av 0 (by decide)), ?_, ?_, ?_⟩
     · rw [a1]; exact fits_slot ho
     · rw [a2]; exact fits_slot ha
@@ -262,10 +262,10 @@ theorem call3_tr {name : String} {body : Prog isa} {r : Nat → Nat → Nat → 
         ae 0 (by decide), ae 1 (by decide), ae 2 (by decide), ae 3 (by decide)⟩
   exact (RelCT.exists_ fun sp => pre sp).mono (fun s₁ s₂ h => ⟨_, h, rfl⟩) fun _ _ h => h
 
-/-- The trace of a call of `vg_gf448_r16_mul_a24`, from `RF`. -/
-theorem call2_tr {name : String} {body : Prog isa}
-    (hv : ∀ s, a24X86.pre s → ∃ t s', Exec isa body s t s' ∧ abiPreserved s s' ∧ a24X86.post s s')
-    (hct : ConstantTime isa a24X86.pre a24X86.pub body) {base : Addr} (o a : Index) :
+/-- The trace of a call of a unary field function, from `RF`. -/
+theorem call2_tr {name : String} {body : Prog isa} {r : Nat → Nat → Prop}
+    (hv : ∀ s, (unX86 r).pre s → ∃ t s', Exec isa body s t s' ∧ abiPreserved s s' ∧ (unX86 r).post s s')
+    (hct : ConstantTime isa (unX86 r).pre (unX86 r).pub body) {base : Addr} (o a : Index) :
     RelCT isa (RF base) (call2 name body (slot o.val) (slot a.val)) fun _ _ => True := by
   have pre : ∀ sp, RelCT isa (fun s₁ s₂ => RF base s₁ s₂ ∧ s₁.gpr .esp = sp)
       (call2 name body (slot o.val) (slot a.val)) fun _ _ => True := by
@@ -280,8 +280,8 @@ theorem call2_tr {name : String} {body : Prog isa}
     have ga := hv' _ (List.mem_cons_self)
     have gc := hv' _ (List.mem_cons_of_mem _ List.mem_cons_self)
     refine ⟨?_, ?_, e₁.trans e₂.symm, ?_⟩
-    · rw [← e₁]; exact callPre_a24 f₁.scr f₁.ctx (slot_bound o) (slot_bound a) (f₁.bounded a) ga.1 gc.1
-    · rw [← e₂]; exact callPre_a24 f₂.scr f₂.ctx (slot_bound o) (slot_bound a) (f₂.bounded a) ga.2 gc.2
+    · rw [← e₁]; exact callPre_un f₁.scr f₁.ctx (slot_bound o) (slot_bound a) (f₁.bounded a) ga.1 gc.1
+    · rw [← e₂]; exact callPre_un f₂.scr f₂.ctx (slot_bound o) (slot_bound a) (f₂.bounded a) ga.2 gc.2
     · have hr : ∀ q ∈ [Reg.ecx, .eax, .edi], t₁.gpr q = t₂.gpr q := by
         intro q hq
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
@@ -312,10 +312,15 @@ theorem copy_check (o a : Nat) :
 theorem fieldOp_rel {base : Addr} (op : FieldOp) : RelCT isa (RF base) op.impl.code (RF base) := by
   refine RF.keep ?_ fun s h => WP.mono (fieldOp_ok h.scr h.ctx h.bounded op) fun _ ⟨k, b, _⟩ => ⟨k, b⟩
   cases op with
-  | mul o a b => exact call3_tr mulFn_correct (mulFn_ct bin_agree) o a b
+  | mul o a b =>
+    change RelCT isa (RF base) (mulCall (slot o.val) (slot a.val) (slot b.val)) _
+    unfold mulCall
+    split
+    · exact call2_tr sqrFn_correct (sqrFn_ct un_agree) o a
+    · exact call3_tr mulFn_correct (mulFn_ct bin_agree) o a b
   | add o a b => exact call3_tr addFn_correct (addFn_ct bin_agree) o a b
   | sub o a b => exact call3_tr subFn_correct (subFn_ct bin_agree) o a b
-  | mulSmall o a => exact call2_tr mulA24Fn_correct (mulA24Fn_ct a24_agree) o a
+  | mulSmall o a => exact call2_tr mulA24Fn_correct (mulA24Fn_ct un_agree) o a
   | copy o a =>
     exact RelCT.taint (A := taint) (τr [.esp, .edi]) (fun _ _ h => h.agree)
       (copy_check (slot o.val) (slot a.val))

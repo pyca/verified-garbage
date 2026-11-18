@@ -26,6 +26,7 @@ in every check that evaluates the code (constant time, the stack pointer,
 namespace VG.Impl.X448.X86
 
 materialize_code mulFn
+materialize_code sqrFn
 materialize_code addFn
 materialize_code subFn
 materialize_code mulA24Fn

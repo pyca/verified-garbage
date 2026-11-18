@@ -20,7 +20,7 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 /-!
 # X448 on x86 (32-bit): the field functions' `Verified`
 
-Correctness under `binX86` and `a24X86` (`FnContract.lean`), constant time
+Correctness under `binX86` and `unX86` (`FnContract.lean`), constant time
 by taint tracking (every branch is on the row pointer and every address is
 `ws`, an offset, the row pointer or `esp` plus a constant: only the
 arguments, which are public, and `esp` need be), satisfiability, and the
@@ -104,6 +104,16 @@ theorem mulA24Fn_correct (s : State) (hs : a24X86.pre s) :
   rw [valAt_eq, valAt_eq]
   exact toFe_eq_iff.mp (hv.trans (toFe_a24 rfl).symm)
 
+theorem sqrFn_correct (s : State) (hs : sqrX86.pre s) :
+    ∃ t s', Exec isa sqrFn s t s' ∧ abiPreserved s s' ∧ sqrX86.post s s' := by
+  obtain ⟨hp, ho, ha, la⟩ := hs
+  have he := FnEntry.of_pre (n := 3) (by decide) hp ho ha
+  obtain ⟨t, s', ex, hk, hv⟩ := sqrFn_ok he la
+  refine ⟨t, s', ex, hk.abi (NoSp.of_all (by lit_decide)) (by lit_decide) ex (fnPre_ret hp), hk.bounded, ?_,
+    hk.mem.keeps⟩
+  rw [valAt_eq, valAt_eq]
+  exact toFe_eq_iff.mp (hv.trans (toFe_mul rfl).symm)
+
 /-! ## Constant time -/
 
 /-- The analysis starts with `esp` and the `len` bytes of arguments public. -/
@@ -168,6 +178,14 @@ theorem mulA24Fn_ct {pre : State → Prop} {pub : State → State → Prop}
   let ⟨_, hc⟩ := mulA24Fn_check
   VG.Taint.constantTime (A := taint) (fnτ 12) h hc
 
+theorem sqrFn_check : ∃ h, (taint.check (fnτ 12) sqrFn h).isSome = true := ⟨_, by taint_decide⟩
+
+theorem sqrFn_ct {pre : State → Prop} {pub : State → State → Prop}
+    (h : ∀ s₁ s₂, pre s₁ → pre s₂ → pub s₁ s₂ → VG.X86.Taint.Agree (fnτ 12) s₁ s₂) :
+    ConstantTime isa pre pub sqrFn :=
+  let ⟨_, hc⟩ := sqrFn_check
+  VG.Taint.constantTime (A := taint) (fnτ 12) h hc
+
 theorem bin_agree {r : Nat → Nat → Nat → Prop} (s₁ s₂ : State) (h₁ : (binX86 r).pre s₁)
     (h₂ : (binX86 r).pre s₂) (hp : (binX86 r).pub s₁ s₂) : VG.X86.Taint.Agree (fnτ 16) s₁ s₂ := by
   obtain ⟨e, a0, a1, a2, a3⟩ := hp
@@ -176,8 +194,8 @@ theorem bin_agree {r : Nat → Nat → Nat → Prop} (s₁ s₂ : State) (h₁ :
   rcases this with rfl | rfl | rfl | rfl
   exacts [a0, a1, a2, a3]
 
-theorem a24_agree (s₁ s₂ : State) (h₁ : a24X86.pre s₁) (h₂ : a24X86.pre s₂) (hp : a24X86.pub s₁ s₂) :
-    VG.X86.Taint.Agree (fnτ 12) s₁ s₂ := by
+theorem un_agree {r : Nat → Nat → Prop} (s₁ s₂ : State) (h₁ : (unX86 r).pre s₁) (h₂ : (unX86 r).pre s₂)
+    (hp : (unX86 r).pub s₁ s₂) : VG.X86.Taint.Agree (fnτ 12) s₁ s₂ := by
   obtain ⟨e, a0, a1, a2⟩ := hp
   refine fn_agree h₁.1 h₂.1 e fun i hi => ?_
   have : i = 0 ∨ i = 1 ∨ i = 2 := by omega_using [hi]
