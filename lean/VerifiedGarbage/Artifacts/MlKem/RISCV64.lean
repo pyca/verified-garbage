@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.MlKem.RISCV64.Scrub
 public import VerifiedGarbage.Proof.MlKem.RISCV64.SampleCT
 public import VerifiedGarbage.Proof.MlKem.RISCV64.Add
 public import VerifiedGarbage.Proof.MlKem.RISCV64.Ntt
@@ -25,35 +26,15 @@ public import VerifiedGarbage.Proof.MlKem1024.RISCV64.Decompress
 namespace VG.Artifacts.MlKem.RISCV64
 
 def artifacts : List Artifact := [
-  Spec.MlKem.keyGenApi.artifact RISCV64.target {
-    code := Impl.MlKem.RISCV64.Wipe.keyGen
-    verified := Proof.MlKem.RISCV64.Wipe.keyGen_verified },
-  Spec.MlKem.encapsApi.artifact RISCV64.target {
-    code := Impl.MlKem.RISCV64.Wipe.encaps
-    verified := Proof.MlKem.RISCV64.Wipe.encaps_verified },
-  Spec.MlKem.encapsHApi.artifact RISCV64.target {
-    code := Impl.MlKem.RISCV64.Wipe.encapsH
-    verified := Proof.MlKem.RISCV64.Wipe.encapsH_verified },
-  Spec.MlKem.decapsApi.artifact RISCV64.target {
-    code := Impl.MlKem.RISCV64.Wipe.decaps
-    verified := Proof.MlKem.RISCV64.Wipe.decaps_verified },
-  Spec.MlKem.checkEkApi.artifact RISCV64.target {
-    code := Impl.MlKem.RISCV64.checkEk
-    verified := Proof.MlKem.RISCV64.CheckEk.verified },
-  Spec.MlKem1024.checkEkApi.artifact RISCV64.target {
-    code := Impl.MlKem1024.RISCV64.checkEk1024
-    verified := Proof.MlKem1024.RISCV64.CheckEk.verified },
-  Spec.MlKem1024.keyGenApi.artifact RISCV64.target {
-    code := Impl.MlKem.RISCV64.Wipe.keyGen1024
-    verified := Proof.MlKem.RISCV64.Wipe.keyGen1024_verified },
-  Spec.MlKem1024.encapsApi.artifact RISCV64.target {
-    code := Impl.MlKem.RISCV64.Wipe.encaps1024
-    verified := Proof.MlKem.RISCV64.Wipe.encaps1024_verified },
-  Spec.MlKem1024.encapsHApi.artifact RISCV64.target {
-    code := Impl.MlKem.RISCV64.Wipe.encapsH1024
-    verified := Proof.MlKem.RISCV64.Wipe.encapsH1024_verified },
-  Spec.MlKem1024.decapsApi.artifact RISCV64.target {
-    code := Impl.MlKem.RISCV64.Wipe.decaps1024
-    verified := Proof.MlKem.RISCV64.Wipe.decaps1024_verified }]
+  Spec.MlKem.keyGenApi.artifact RISCV64.target Proof.MlKem.RISCV64.Scrub.keyGenReg,
+  Spec.MlKem.encapsApi.artifact RISCV64.target Proof.MlKem.RISCV64.Scrub.encapsReg,
+  Spec.MlKem.encapsHApi.artifact RISCV64.target Proof.MlKem.RISCV64.Scrub.encapsHReg,
+  Spec.MlKem.decapsApi.artifact RISCV64.target Proof.MlKem.RISCV64.Scrub.decapsReg,
+  Spec.MlKem.checkEkApi.artifact RISCV64.target Proof.MlKem.RISCV64.Scrub.checkEkReg,
+  Spec.MlKem1024.checkEkApi.artifact RISCV64.target Proof.MlKem.RISCV64.Scrub.checkEk1024Reg,
+  Spec.MlKem1024.keyGenApi.artifact RISCV64.target Proof.MlKem.RISCV64.Scrub.keyGen1024Reg,
+  Spec.MlKem1024.encapsApi.artifact RISCV64.target Proof.MlKem.RISCV64.Scrub.encaps1024Reg,
+  Spec.MlKem1024.encapsHApi.artifact RISCV64.target Proof.MlKem.RISCV64.Scrub.encapsH1024Reg,
+  Spec.MlKem1024.decapsApi.artifact RISCV64.target Proof.MlKem.RISCV64.Scrub.decaps1024Reg]
 
 end VG.Artifacts.MlKem.RISCV64

@@ -1047,16 +1047,6 @@ riscv64 vg_mldsa87_verify
 riscv64 vg_mldsa87_verify_message_cached
 riscv64 vg_mldsa87_verify_message_prepared
 riscv64 vg_mldsa87_verify_prepared
-riscv64 vg_mlkem1024_check_ek
-riscv64 vg_mlkem1024_decaps
-riscv64 vg_mlkem1024_encaps
-riscv64 vg_mlkem1024_encaps_h
-riscv64 vg_mlkem1024_keygen
-riscv64 vg_mlkem768_check_ek
-riscv64 vg_mlkem768_decaps
-riscv64 vg_mlkem768_encaps
-riscv64 vg_mlkem768_encaps_h
-riscv64 vg_mlkem768_keygen
 riscv64 vg_rsa_check_key
 riscv64 vg_rsa_crt_values
 riscv64 vg_rsa_generate
