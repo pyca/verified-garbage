@@ -1185,32 +1185,37 @@ theorem out_below {sp x : Addr} {stack d : Nat} (hd : d ≤ stack) (hs : stack �
     (by rw [hq]; omega_using [h, hd, hs])
   omega_using [this]
 
-/-- Code verified against a contract that `Sig.contract` derives, whose
-frames use at most `stack` bytes, run by `scrub`, which clears the stack its
-frames may have written and the volatile registers: verified against the
-same contract, and without secret residue, if the postcondition reads the
-memory on return only within the buffers (`hpost`). -/
-theorem Verified.scrub {A : Abi isa} {sig : Sig} {pre : Curry (sig.words A.ptrBits) (Mem → Prop)}
+/-- Code `c` verified against a contract that `Sig.contract` derives,
+followed by the clearing of the volatile registers and of the stack below
+`r1` in the levels `cs` (`scrubTail`), within the contract's stack: verified
+against the same contract, and without secret residue, if the postcondition
+reads the memory on return only within the buffers (`hpost`) and two runs
+of `c` that may differ only in what the contract keeps secret leave the same
+unknowns and memories that agree outside the buffers and the stack the
+clearing zeroes (`hag`). `Verified.scrub` gives `hag` for code whose frames
+the clearing wipes whole (`Exec.agree`); code that clears its own frames
+needs none wiped (`cs = []`). -/
+theorem Verified.scrubOf {A : Abi isa} {sig : Sig} {pre : Curry (sig.words A.ptrBits) (Mem → Prop)}
     {post : sig.Post A.ptrBits} {wa : Bool} {stack : Nat}
-    {leak : Option (Curry (sig.words A.ptrBits) (Mem → List Nat))} {c : Prog isa}
+    {leak : Option (Curry (sig.words A.ptrBits) (Mem → List Nat))} {c : Prog isa} {cs : List Nat}
     (hA : ScrubAbi A) (h : Verified target c (sig.contract A pre post wa stack leak))
-    (hd : c.ppc64leDepth ≤ stack) (h16 : c.ppc64leDepth % 16 = 0)
-    (h48 : c.ppc64leDepth = 0 ∨ 48 ≤ c.ppc64leDepth)
-    (hic : icallFree c = true) (hrb : sig.retBits A.ptrBits ≤ 64)
-    (hpost : PostOut (sig.contract A pre post wa stack leak) (sig.retBits A.ptrBits)) :
-    Verified target (Impl.Scrub.PPC64LE.scrub (sig.retBits A.ptrBits) c.ppc64leDepth c)
-        (sig.contract A pre post wa stack leak) ∧
-      NoResidue (Impl.Scrub.PPC64LE.scrub (sig.retBits A.ptrBits) c.ppc64leDepth c)
+    (hv : ChunksOk cs) (hcs : cs.sum ≤ stack) (hrb : sig.retBits A.ptrBits ≤ 64)
+    (hpost : PostOut (sig.contract A pre post wa stack leak) (sig.retBits A.ptrBits))
+    (hag : ∀ s₁ s₂ t₁ t₂ u₁ u₂, (sig.contract A pre post wa stack leak).pre s₁ →
+      (sig.contract A pre post wa stack leak).pre s₂ → (sig.contract A pre post wa stack leak).pub s₁ s₂ →
+      Outside 0 s₁ s₂ → s₁.unknowns = s₂.unknowns → Exec isa c s₁ t₁ u₁ → Exec isa c s₂ t₂ u₂ →
+      u₁.unknowns = u₂.unknowns ∧
+        ∀ x, (∀ r ∈ s₁.rd ++ s₁.wr, ¬ r.Contains x 1) → ¬ Cover cs s₁.sp x → u₁.mem x = u₂.mem x) :
+    Verified target (.seq c (scrubTail (sig.retBits A.ptrBits) cs)) (sig.contract A pre post wa stack leak) ∧
+      NoResidue (.seq c (scrubTail (sig.retBits A.ptrBits) cs))
         (sig.contract A pre post wa stack leak) (sig.retBits A.ptrBits) := by
   obtain ⟨hcor, hct, hsat⟩ := h
-  have hv := chunks_ok h16 h48
-  have hsum := chunks_sum h16
-  -- The stack the code's frames use does not wrap around.
-  have hD : ∀ s, (sig.contract A pre post wa stack leak).pre s → c.ppc64leDepth ≤ s.sp.toNat := by
+  -- The stack the clearing wipes does not wrap around.
+  have hD : ∀ s, (sig.contract A pre post wa stack leak).pre s → cs.sum ≤ s.sp.toNat := by
     intro s hs
     rcases (contract_pre_scrub hA hs).1 with h0 | h0
-    · omega_using [h0, hd]
-    · omega_using [h0, hd]
+    · omega_using [h0, hcs]
+    · omega_using [h0, hcs]
   -- What a run of `c` gives.
   have run : ∀ s t u, (sig.contract A pre post wa stack leak).pre s → Exec isa c s t u →
       abiPreserved s u ∧ (sig.contract A pre post wa stack leak).post s u ∧ u.sp = s.sp := by
@@ -1220,23 +1225,22 @@ theorem Verified.scrub {A : Abi isa} {sig : Sig} {pre : Curry (sig.words A.ptrBi
     exact ⟨ha, hp, ha.2.1⟩
   -- The clearing's run after it.
   have tail : ∀ s t u, (sig.contract A pre post wa stack leak).pre s → Exec isa c s t u →
-      Exec isa (scrubTail (sig.retBits A.ptrBits) (chunks c.ppc64leDepth)) u
-        (tailTr (chunks c.ppc64leDepth) s.sp)
-        (finState (sig.retBits A.ptrBits) (chunks c.ppc64leDepth) s.sp u) := by
+      Exec isa (scrubTail (sig.retBits A.ptrBits) cs) u (tailTr cs s.sp)
+        (finState (sig.retBits A.ptrBits) cs s.sp u) := by
     intro s t u hs he
     obtain ⟨-, -, hsp⟩ := run s t u hs he
-    have e := tail_run (rb := sig.retBits A.ptrBits) hv u (by rw [hsum, hsp]; exact hD s hs)
+    have e := tail_run (rb := sig.retBits A.ptrBits) hv u (by rw [hsp]; exact hD s hs)
     rw [hsp] at e
     exact e
   -- The buffers are apart from the stack the clearing wipes.
   have outB : ∀ s, (sig.contract A pre post wa stack leak).pre s → ∀ x,
       (∃ r ∈ s.rd ++ s.wr, r.Contains x 1) →
-        ¬ (s.sp.toNat - c.ppc64leDepth ≤ x.toNat ∧ x.toNat < s.sp.toNat) := by
+        ¬ (s.sp.toNat - cs.sum ≤ x.toNat ∧ x.toNat < s.sp.toNat) := by
     intro s hs x ⟨r, hr, hx⟩
     obtain ⟨hst, hdis⟩ := contract_pre_scrub hA hs
     by_cases h0 : stack = 0
-    · intro h'; omega_using [h', hd, h0]
-    · exact out_below hd (by omega_using [hst, h0]) (hdis r hr h0) hx
+    · intro h'; omega_using [h', hcs, h0]
+    · exact out_below hcs (by omega_using [hst, h0]) (hdis r hr h0) hx
   refine ⟨⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂ => ?_, hsat⟩,
     fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp ho hun hund e₁ e₂ => ?_⟩
   · -- Correctness.
@@ -1247,8 +1251,8 @@ theorem Verified.scrub {A : Abi isa} {sig : Sig} {pre : Curry (sig.words A.ptrBi
       simp only [finState, finG, h1, h2, ite_false]
       exact ha.1 r hr
     · refine hpost s u _ hs hq (fun x hx => ?_) ?_
-      · show wipeM (chunks c.ppc64leDepth) s.sp u.unknowns u.mem x = u.mem x
-        exact wipeM_out _ _ _ _ _ hv (by rw [hsum]; exact hD s hs) (by rw [hsum]; exact outB s hs x hx)
+      · show wipeM cs s.sp u.unknowns u.mem x = u.mem x
+        exact wipeM_out _ _ _ _ _ hv (hD s hs) (outB s hs x hx)
       · show (finG (sig.retBits A.ptrBits) u.gpr .r3).setWidth _ = _
         simp only [finG, show ¬ (Reg.r3 = .r0 ∨ Reg.r3 ∈ scratchRegs) by decide, ite_false, ite_true]
         exact fixA_low hrb _
@@ -1266,18 +1270,10 @@ theorem Verified.scrub {A : Abi isa} {sig : Sig} {pre : Curry (sig.words A.ptrBi
     obtain ⟨-, rfl⟩ := Exec.det b₂ (tail s₂ _ _ h₂ a₂)
     obtain ⟨ha₁, -, hsp₁⟩ := run s₁ _ _ h₁ a₁
     obtain ⟨ha₂, -, hsp₂⟩ := run s₂ _ _ h₂ a₂
-    obtain ⟨hrd, hwr, hg, -, -, hlr, hsp, -, hm⟩ := ho
+    obtain ⟨hU, hA'⟩ := hag s₁ s₂ _ _ _ _ h₁ h₂ hp ho hun a₁ a₂
+    obtain ⟨hrd, hwr, hg, -, -, hlr, hsp, -, -⟩ := ho
     obtain ⟨rd₁, wr₁, -⟩ := Exec.rdwr a₁
     obtain ⟨rd₂, wr₂, -⟩ := Exec.rdwr a₂
-    -- The two runs of `c` have the same trace, end with the same unknowns, and
-    -- leave memories that agree but in the stack their frames may write.
-    have hD₁ := hD s₁ h₁
-    have hL : (s₁.sp - BitVec.ofNat 64 c.ppc64leDepth).toNat = s₁.sp.toNat - c.ppc64leDepth :=
-      toNat_sub_ofNat _ _ hD₁
-    obtain ⟨-, hU, hA'⟩ := Exec.agree (R := s₁.rd ++ s₁.wr) (L := s₁.sp - BitVec.ofNat 64 c.ppc64leDepth)
-      (T := s₁.sp) a₁ hic [] [] a₂ hsp hwr hun (fun r hr => .inl (List.mem_append_right _ hr))
-      (by rw [hL]; omega_using [hD₁]) (Nat.le_refl _) (fun x hx _ => hm x hx)
-      (by rw [List.append_nil, List.append_nil]; exact hct _ _ _ _ _ _ h₁ h₂ hp a₁ a₂)
     refine ⟨show u₁.rd = u₂.rd by simp only [rd₁, rd₂, hrd], show u₁.wr = u₂.wr by simp only [wr₁, wr₂, hwr],
       fun r hr => ?_, ?_, rfl, show u₁.lr = u₂.lr by rw [ha₁.2.2, ha₂.2.2, hlr],
       show u₁.sp = u₂.sp by rw [hsp₁, hsp₂, hsp], rfl, fun x hx => ?_⟩
@@ -1291,16 +1287,50 @@ theorem Verified.scrub {A : Abi isa} {sig : Sig} {pre : Curry (sig.words A.ptrBi
     · show finG _ u₁.gpr .r3 >>> _ = finG _ u₂.gpr .r3 >>> _
       simp only [finG, show ¬ (Reg.r3 = .r0 ∨ Reg.r3 ∈ scratchRegs) by decide, ite_false, ite_true]
       rw [fixA_hi hrb, fixA_hi hrb]
-    · show wipeM (chunks c.ppc64leDepth) s₁.sp u₁.unknowns u₁.mem x =
-        wipeM (chunks c.ppc64leDepth) s₂.sp u₂.unknowns u₂.mem x
+    · show wipeM cs s₁.sp u₁.unknowns u₁.mem x = wipeM cs s₂.sp u₂.unknowns u₂.mem x
       rw [← hsp, hU]
       have hx' : ∀ r ∈ s₁.rd ++ s₁.wr, ¬ r.Contains x 1 := by
         have := hx; simp only [finState, rd₁, wr₁] at this; exact this
-      refine wipeM_congr _ _ _ _ _ x hv (by rw [hsum]; exact hD₁) ?_
-      by_cases hz : InZ (s₁.sp - BitVec.ofNat 64 c.ppc64leDepth) s₁.sp x
-      · refine .inl ?_
-        simp only [Cover, hsum]; simp only [InZ, hL] at hz; exact hz
+      refine wipeM_congr _ _ _ _ _ x hv (hD s₁ h₁) ?_
+      by_cases hz : Cover cs s₁.sp x
+      · exact .inl hz
       · exact .inr (hA' x hx' hz)
+
+/-- Code verified against a contract that `Sig.contract` derives, whose
+frames use at most `stack` bytes, run by `scrub`, which clears the stack its
+frames may have written and the volatile registers: verified against the
+same contract, and without secret residue, if the postcondition reads the
+memory on return only within the buffers (`hpost`). -/
+theorem Verified.scrub {A : Abi isa} {sig : Sig} {pre : Curry (sig.words A.ptrBits) (Mem → Prop)}
+    {post : sig.Post A.ptrBits} {wa : Bool} {stack : Nat}
+    {leak : Option (Curry (sig.words A.ptrBits) (Mem → List Nat))} {c : Prog isa}
+    (hA : ScrubAbi A) (h : Verified target c (sig.contract A pre post wa stack leak))
+    (hd : c.ppc64leDepth ≤ stack) (h16 : c.ppc64leDepth % 16 = 0)
+    (h48 : c.ppc64leDepth = 0 ∨ 48 ≤ c.ppc64leDepth)
+    (hic : icallFree c = true) (hrb : sig.retBits A.ptrBits ≤ 64)
+    (hpost : PostOut (sig.contract A pre post wa stack leak) (sig.retBits A.ptrBits)) :
+    Verified target (Impl.Scrub.PPC64LE.scrub (sig.retBits A.ptrBits) c.ppc64leDepth c)
+        (sig.contract A pre post wa stack leak) ∧
+      NoResidue (Impl.Scrub.PPC64LE.scrub (sig.retBits A.ptrBits) c.ppc64leDepth c)
+        (sig.contract A pre post wa stack leak) (sig.retBits A.ptrBits) := by
+  have hsum := chunks_sum h16
+  refine Verified.scrubOf hA h (chunks_ok h16 h48) (by rw [hsum]; exact hd) hrb hpost ?_
+  -- The two runs of `c` have the same trace, end with the same unknowns, and
+  -- leave memories that agree but in the stack their frames may write.
+  intro s₁ s₂ t₁ t₂ u₁ u₂ h₁ h₂ hp ho hun a₁ a₂
+  have hD₁ : c.ppc64leDepth ≤ s₁.sp.toNat := by
+    rcases (contract_pre_scrub hA h₁).1 with h0 | h0
+    · omega_using [h0, hd]
+    · omega_using [h0, hd]
+  have hL : (s₁.sp - BitVec.ofNat 64 c.ppc64leDepth).toNat = s₁.sp.toNat - c.ppc64leDepth :=
+    toNat_sub_ofNat _ _ hD₁
+  obtain ⟨-, hwr, -, -, -, -, hsp, -, hm⟩ := ho
+  obtain ⟨-, hU, hA'⟩ := Exec.agree (R := s₁.rd ++ s₁.wr) (L := s₁.sp - BitVec.ofNat 64 c.ppc64leDepth)
+    (T := s₁.sp) a₁ hic [] [] a₂ hsp hwr hun (fun r hr => .inl (List.mem_append_right _ hr))
+    (by rw [hL]; omega_using [hD₁]) (Nat.le_refl _) (fun x hx _ => hm x hx)
+    (by rw [List.append_nil, List.append_nil]; exact (h.2.1) _ _ _ _ _ _ h₁ h₂ hp a₁ a₂)
+  refine ⟨hU, fun x hx hc => hA' x hx fun hz => hc ?_⟩
+  simp only [Cover, hsum]; simp only [InZ, hL] at hz; exact hz
 
 /-! ## Registering scrubbed code -/
 
