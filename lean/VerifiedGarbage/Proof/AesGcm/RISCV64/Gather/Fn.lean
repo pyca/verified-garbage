@@ -680,7 +680,7 @@ structure Called (s z : State) : Prop where
   wr : z.wr = FA s :: s.wr
 
 theorem called_wp (hv : SealOk) {s c : State} (h : Lay s) (hc : Ready s c) :
-    WP isa (.call "vg_aes_gcm_seal" sealCode) c (Called s) := by
+    WP isa (.call "vg_aes_gcm_seal_core" sealCode) c (Called s) := by
   obtain ⟨hcp, hcov, hw⟩ := hc.call h
   obtain ⟨c3, c4, c5, c6, c7, c8, c9, c10⟩ := hc.callGpr
   refine WP.callAny (k := Proof.AesGcm.sealRoundsContract RISCV64.abi 4624) hv (sealSpec_pre hcp) hcov hw

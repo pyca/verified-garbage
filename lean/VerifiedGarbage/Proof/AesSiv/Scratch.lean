@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Spec.Siv.Contract
 public import VerifiedGarbage.Proof.Framework.Scratch
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PlainSimp
@@ -535,5 +537,27 @@ theorem decryptLeak_local : Sig.LeakLocalL pb decryptSig (some (decryptLeak pb))
         (agree_of hb.2.2) hl
       simp only [e₁, e₂, e₃, e₄, e₅]; congr
     · simp only [hr, not_false_eq_true, ↓reduceIte]
+
+/-- The key context a postcondition states, from the memory's agreeing on
+its 512 bytes. -/
+theorem keyRepr_local {m₁ m₂ : Mem} {p : Addr} {key : List Byte}
+    (h : ∀ a, Region.Contains ⟨p, 512⟩ a 1 → m₁ a = m₂ a) (hr : Spec.Siv.KeyRepr m₁ p key) :
+    Spec.Siv.KeyRepr m₂ p key := by
+  have e {d n : Nat} (hn : d + n ≤ 512) :
+      Spec.Aes.bytesAt m₂ (p + BitVec.ofNat 64 d) n = Spec.Aes.bytesAt m₁ (p + BitVec.ofNat 64 d) n := by
+    simp only [Spec.Aes.bytesAt]
+    refine List.map_congr_left fun i hi => (h _ ?_).symm
+    have := List.mem_range.mp hi
+    rw [VG.Offset.add_add]; exact VG.Offset.contains_base _ (by omega_using [hn, this]) (by omega_using [hn, this])
+  obtain ⟨hl, h1, h2, h3, h4⟩ := hr
+  have hn : 16 * (Spec.Aes.rounds (key.length / 8) + 1) ≤ 240 := by
+    simp only [Spec.Aes.rounds]; rcases hl with h | h | h <;> rw [h] <;> decide
+  refine ⟨hl, ?_, ?_, ?_, ?_⟩
+  · have := e (d := 0) (n := 16 * (Spec.Aes.rounds (key.length / 8) + 1)) (by omega_using [hn])
+    rw [show p + BitVec.ofNat 64 0 = p from BitVec.add_zero p] at this
+    rw [this]; exact h1
+  · rw [show p + 240 = p + BitVec.ofNat 64 240 from rfl, e (by decide)]; exact h2
+  · rw [show p + 256 = p + BitVec.ofNat 64 256 from rfl, e (by decide)]; exact h3
+  · rw [show p + 272 = p + BitVec.ofNat 64 272 from rfl, e (by omega_using [hn])]; exact h4
 
 end VG.Proof.AesSiv

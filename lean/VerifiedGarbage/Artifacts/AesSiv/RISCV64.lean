@@ -1,7 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.AesSiv.RISCV64.Init
-public import VerifiedGarbage.Proof.AesSiv.RISCV64.Verified
+public import VerifiedGarbage.Proof.AesSiv.RISCV64.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.RISCV64.Print
 
@@ -11,17 +10,9 @@ public import VerifiedGarbage.TCB.RISCV64.Print
 
 namespace VG.Artifacts.AesSiv.RISCV64
 
-open VG.Proof.AesSiv.RISCV64
-
 def artifacts : List Artifact := [
-  Spec.Siv.initApi.artifact RISCV64.target {
-    code := Impl.StackScratch.RISCV64.withStackScratch 2560 .a3 Impl.AesSiv.RISCV64.init
-    verified := init_framed },
-  Spec.Siv.encryptApi.artifact RISCV64.target {
-    code := Impl.StackScratch.RISCV64.withStackScratch 2576 .a7 Impl.AesSiv.RISCV64.encrypt
-    verified := Proof.AesSiv.encrypt_keyed encrypt_framed },
-  Spec.Siv.decryptApi.artifact RISCV64.target {
-    code := Impl.StackScratch.RISCV64.withStackScratch 2576 .a7 Impl.AesSiv.RISCV64.decrypt
-    verified := Proof.AesSiv.decrypt_keyed decrypt_framed }]
+  Spec.Siv.initApi.artifact RISCV64.target Proof.AesSiv.RISCV64.Scrub.initReg,
+  Spec.Siv.encryptApi.artifact RISCV64.target Proof.AesSiv.RISCV64.Scrub.encryptReg,
+  Spec.Siv.decryptApi.artifact RISCV64.target Proof.AesSiv.RISCV64.Scrub.decryptReg]
 
 end VG.Artifacts.AesSiv.RISCV64

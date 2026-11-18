@@ -278,26 +278,6 @@ theorem decryptS_framed (v : UpdateImpl) (f : Proof.CmacAes.X86_64.UpdateSmall v
 section
 open VG.X86_64.Scrub
 
-theorem keyRepr_local {m₁ m₂ : Mem} {p : Addr} {key : List Byte}
-    (h : ∀ a, Region.Contains ⟨p, 512⟩ a 1 → m₁ a = m₂ a) (hr : Spec.Siv.KeyRepr m₁ p key) :
-    Spec.Siv.KeyRepr m₂ p key := by
-  have e {d n : Nat} (hn : d + n ≤ 512) :
-      Spec.Aes.bytesAt m₂ (p + BitVec.ofNat 64 d) n = Spec.Aes.bytesAt m₁ (p + BitVec.ofNat 64 d) n := by
-    simp only [Spec.Aes.bytesAt]
-    refine List.map_congr_left fun i hi => (h _ ?_).symm
-    have := List.mem_range.mp hi
-    rw [VG.Offset.add_add]; exact VG.Offset.contains_base _ (by omega_using [hn, this]) (by omega_using [hn, this])
-  obtain ⟨hl, h1, h2, h3, h4⟩ := hr
-  have hn : 16 * (Spec.Aes.rounds (key.length / 8) + 1) ≤ 240 := by
-    simp only [Spec.Aes.rounds]; rcases hl with h | h | h <;> rw [h] <;> decide
-  refine ⟨hl, ?_, ?_, ?_, ?_⟩
-  · have := e (d := 0) (n := 16 * (Spec.Aes.rounds (key.length / 8) + 1)) (by omega_using [hn])
-    rw [show p + BitVec.ofNat 64 0 = p from BitVec.add_zero p] at this
-    rw [this]; exact h1
-  · rw [show p + 240 = p + BitVec.ofNat 64 240 from rfl, e (by decide)]; exact h2
-  · rw [show p + 256 = p + BitVec.ofNat 64 256 from rfl, e (by decide)]; exact h3
-  · rw [show p + 272 = p + BitVec.ofNat 64 272 from rfl, e (by omega_using [hn])]; exact h4
-
 theorem initOut (stack : Nat) :
     PostOut (Spec.Siv.initContract X86_64.abi stack) (Spec.Siv.initSig.retBits 64) :=
   postOut_of_local (leak := none) ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by

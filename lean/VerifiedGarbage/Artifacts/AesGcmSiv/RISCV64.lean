@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Gcm.RISCV64.Law
 public import VerifiedGarbage.Proof.AesGcmSiv.RISCV64.Verified
+public import VerifiedGarbage.Proof.Gcm.RISCV64.Law
 public import VerifiedGarbage.Proof.GcmSiv.Polyval
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.RISCV64.Print
@@ -15,14 +15,8 @@ import VerifiedGarbage.Proof.Gcm.RISCV64.Lit
 
 namespace VG.Artifacts.AesGcmSiv.RISCV64
 
-open VG.Proof.AesGcmSiv.RISCV64
-
 def artifacts : List Artifact := [
-  Spec.GcmSiv.sealApi.artifact RISCV64.target {
-    code := Impl.StackScratch.RISCV64.withStackScratchArgs 3856 0 Impl.AesGcmSiv.RISCV64.«seal»
-    verified := Proof.AesGcmSiv.seal_keyed (seal_framed Proof.GcmSiv.Polyval.tagInput_eq_tagInputG) },
-  Spec.GcmSiv.openApi.artifact RISCV64.target {
-    code := Impl.StackScratch.RISCV64.withStackScratchArgs 3856 0 Impl.AesGcmSiv.RISCV64.«open»
-    verified := Proof.AesGcmSiv.open_keyed (open_framed Proof.GcmSiv.Polyval.tagInput_eq_tagInputG) }]
+  Spec.GcmSiv.sealApi.artifact RISCV64.target (Proof.AesGcmSiv.RISCV64.Scrub.sealReg Proof.GcmSiv.Polyval.tagInput_eq_tagInputG),
+  Spec.GcmSiv.openApi.artifact RISCV64.target (Proof.AesGcmSiv.RISCV64.Scrub.openReg Proof.GcmSiv.Polyval.tagInput_eq_tagInputG)]
 
 end VG.Artifacts.AesGcmSiv.RISCV64

@@ -10,6 +10,10 @@ import VerifiedGarbage.Proof.AesGcmSiv.RISCV64.TopCT
 import VerifiedGarbage.Proof.AesGcmSiv.RISCV64.Open
 import VerifiedGarbage.Proof.Framework.SigEval
 import VerifiedGarbage.Proof.Framework.RISCV64.StackScratchArgs
+public import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
+public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Aes.ScrubLocal
+import VerifiedGarbage.Proof.AesSiv.Scratch
 
 /-!
 # AES-GCM-SIV on RISC-V: `Verified`
@@ -197,3 +201,75 @@ theorem open_framed [VG.Proof.Gcm.RISCV64.GhashLaw] (hti : TagInputEq) :
     openFrameSat_pre (hleak := Proof.AesGcmSiv.openLeak_local _)
 
 end VG.Proof.AesGcmSiv.RISCV64
+
+/-! ## AES-GCM-SIV on RISC-V, without secret residue
+
+`vg_aes_gcm_siv_seal` and `vg_aes_gcm_siv_open`, each followed by `Impl.Scrub.RISCV64.scrubTail`
+(`RISCV64.Scrub.withScrub`), which clears the caller-saved registers and the
+stack its frames used, the working space of its callees with it. Their
+postconditions read the memory on return only within the data and the tag
+(`RISCV64.Scrub.PostOut`), as on x86-64 (`Proof/AesGcmSiv/X86_64/Instances.lean`).
+-/
+
+namespace VG.Proof.AesGcmSiv.RISCV64.Scrub
+
+open VG.RISCV64 VG.RISCV64.Scrub VG.Proof.Aes.ScrubLocal VG.Proof.AesGcmSiv.RISCV64
+
+/-! ## Postconditions -/
+
+theorem sealOut (stack : Nat) :
+    PostOut (Spec.GcmSiv.sealContract RISCV64.abi stack) (Spec.GcmSiv.sealSig.retBits 64) :=
+  postOut_of_local (leak := none) ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
+    match vs, hlen with
+    | [schedule, rounds, nonce, aad, aadLen, data, len, tag], _ =>
+      simp only [Spec.GcmSiv.sealSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+        forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+      change Curry.apply [ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.addr, ArgWord.int 64,
+        ArgWord.addr, ArgWord.int 64, ArgWord.addr] (Spec.GcmSiv.sealPost 64) _ m m₁ r at h
+      change Curry.apply [ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.addr, ArgWord.int 64,
+        ArgWord.addr, ArgWord.int 64, ArgWord.addr] (Spec.GcmSiv.sealPost 64) _ m m₂ r
+      dsimp only [Curry.apply, Spec.GcmSiv.sealPost, ArgWord.ofRaw, IntTy.bits] at h ⊢
+      intro key hl hk
+      rw [h key hl hk, Proof.AesSiv.bytesAt_congr fun i hi => Proof.AesSiv.agree_of hb.2.2.2.1 i (by simpa using hi),
+        Proof.AesSiv.bytesAt_congr fun i hi => Proof.AesSiv.agree_of hb.2.2.2.2 i hi]
+
+theorem openOut (stack : Nat) :
+    PostOut (Spec.GcmSiv.openContract RISCV64.abi stack) (Spec.GcmSiv.openSig.retBits 64) := by
+  -- The postcondition is a `match` on a decryption, which the elaborator evaluates (AES on symbolic
+  -- bytes, 2 s) wherever it reduces a type that ends in it to see what it is a function of: for the
+  -- expected type of a `fun` given to `postOut_of_local` (so `?_`), and for `h` applied or as it is (so `@h`).
+  refine postOut_of_local ScrubAbi.plain ?_
+  intro vs m m₁ m₂ r hlen hb h
+  match vs, hlen with
+  | [schedule, rounds, nonce, aad, aadLen, data, len, tag], _ =>
+    simp only [Spec.GcmSiv.openSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+      forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+    change Curry.apply [ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.addr, ArgWord.int 64,
+      ArgWord.addr, ArgWord.int 64, ArgWord.addr] (Spec.GcmSiv.openPost 64) _ m m₁ r at h
+    change Curry.apply [ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.addr, ArgWord.int 64,
+      ArgWord.addr, ArgWord.int 64, ArgWord.addr] (Spec.GcmSiv.openPost 64) _ m m₂ r
+    dsimp only [Curry.apply, Spec.GcmSiv.openPost, ArgWord.ofRaw, IntTy.bits] at h ⊢
+    have e := Proof.AesSiv.bytesAt_congr (n := (BitVec.setWidth 64 len).toNat) fun i hi =>
+      Proof.AesSiv.agree_of hb.2.2.2.1 i (by simpa using hi)
+    rw [e]
+    exact @h
+
+/-! ## The registrations -/
+
+variable [Gcm.RISCV64.GhashLaw]
+
+/-- `Spec.GcmSiv.sealApi`. -/
+def sealReg (hti : TagInputEq) : Registration Spec.GcmSiv.sealApi RISCV64.target :=
+  withScrub {
+      code := Impl.StackScratch.RISCV64.withStackScratchArgs 3856 0 Impl.AesGcmSiv.RISCV64.«seal»
+      verified := Proof.AesGcmSiv.seal_keyed (seal_framed hti) }
+    (sealOut _)
+
+/-- `Spec.GcmSiv.openApi`. -/
+def openReg (hti : TagInputEq) : Registration Spec.GcmSiv.openApi RISCV64.target :=
+  withScrub {
+      code := Impl.StackScratch.RISCV64.withStackScratchArgs 3856 0 Impl.AesGcmSiv.RISCV64.«open»
+      verified := Proof.AesGcmSiv.open_keyed (open_framed hti) }
+    (openOut _)
+
+end VG.Proof.AesGcmSiv.RISCV64.Scrub

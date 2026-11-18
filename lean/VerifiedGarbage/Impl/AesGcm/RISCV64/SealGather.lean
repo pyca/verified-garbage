@@ -51,7 +51,7 @@ def sealGather : Prog isa :=
     (.seq (.block entry)
     (.seq Gather.RISCV64.gather
     (.seq (.block callArgs)
-      (.call "vg_aes_gcm_seal" sealCode))))
+      (.call "vg_aes_gcm_seal_core" sealCode))))
     (.pop .ra)
 
 end VG.Impl.AesGcm.RISCV64.SealGather

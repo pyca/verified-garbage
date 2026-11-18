@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.AesCcm.RISCV64.Verified
+public import VerifiedGarbage.Proof.AesCcm.RISCV64.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.RISCV64.Print
 
@@ -10,14 +10,8 @@ public import VerifiedGarbage.TCB.RISCV64.Print
 
 namespace VG.Artifacts.AesCcm.RISCV64
 
-open VG.Proof.AesCcm.RISCV64
-
 def artifacts : List Artifact := [
-  Spec.Ccm.sealApi.artifact RISCV64.target {
-    code := Impl.StackScratch.RISCV64.withStackScratchArgs 2592 2 Impl.AesCcm.RISCV64.«seal»
-    verified := Proof.AesCcm.seal_keyed seal_framed },
-  Spec.Ccm.openApi.artifact RISCV64.target {
-    code := Impl.StackScratch.RISCV64.withStackScratchArgs 2592 2 Impl.AesCcm.RISCV64.«open»
-    verified := Proof.AesCcm.open_keyed open_framed }]
+  Spec.Ccm.sealApi.artifact RISCV64.target Proof.AesCcm.RISCV64.Scrub.sealReg,
+  Spec.Ccm.openApi.artifact RISCV64.target Proof.AesCcm.RISCV64.Scrub.openReg]
 
 end VG.Artifacts.AesCcm.RISCV64

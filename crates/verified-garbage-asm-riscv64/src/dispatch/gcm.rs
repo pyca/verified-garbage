@@ -8,6 +8,8 @@
 ///
 /// It runs `vg_aes_gcm_init`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
@@ -30,6 +32,8 @@ pub unsafe fn vg_aes_gcm_init_auto(_dit: verified_garbage_cpu::Dit<'_>, key: *co
 ///
 /// It runs `vg_aes_gcm_stream_init`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes, and aligned for `u64`.
@@ -49,6 +53,8 @@ pub unsafe fn vg_aes_gcm_stream_init_auto(_dit: verified_garbage_cpu::Dit<'_>, c
 /// Contract: `VG.Spec.Gcm.streamAadContract`. Constant time: only the pointers, `aad_len` and `len` may affect timing, not the key context, the state or the data.
 ///
 /// It runs `vg_aes_gcm_stream_aad`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -71,6 +77,8 @@ pub unsafe fn vg_aes_gcm_stream_aad_auto(_dit: verified_garbage_cpu::Dit<'_>, ct
 /// Contract: `VG.Spec.Gcm.streamEncryptContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the data.
 ///
 /// It runs `vg_aes_gcm_stream_encrypt`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -95,6 +103,8 @@ pub unsafe fn vg_aes_gcm_stream_encrypt_auto(_dit: verified_garbage_cpu::Dit<'_>
 ///
 /// It runs `vg_aes_gcm_stream_decrypt`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes, and aligned for `u64`.
@@ -115,6 +125,8 @@ pub unsafe fn vg_aes_gcm_stream_decrypt_auto(_dit: verified_garbage_cpu::Dit<'_>
 /// Contract: `VG.Spec.Gcm.streamFinishContract`. Constant time: only the pointers, `rounds`, `aad_len` and `text_len` may affect timing, not the key context or the state.
 ///
 /// It runs `vg_aes_gcm_stream_finish`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -137,6 +149,8 @@ pub unsafe fn vg_aes_gcm_stream_finish_auto(_dit: verified_garbage_cpu::Dit<'_>,
 /// Contract: `VG.Spec.Gcm.streamVerifyContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
 ///
 /// It runs `vg_aes_gcm_stream_verify`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -161,6 +175,8 @@ pub unsafe fn vg_aes_gcm_stream_verify_auto(_dit: verified_garbage_cpu::Dit<'_>,
 /// Contract: `VG.Spec.Gcm.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key context, the nonce, the additional data or the data.
 ///
 /// It runs `vg_aes_gcm_seal`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -187,6 +203,8 @@ pub unsafe fn vg_aes_gcm_seal_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *co
 ///
 /// It runs `vg_aes_gcm_open`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes, and aligned for `u64`.
@@ -211,6 +229,8 @@ pub unsafe fn vg_aes_gcm_open_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *co
 /// Contract: `VG.Spec.Gcm.sealGatherContract`. Constant time: only the pointers, `rounds`, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key context, the nonce, the additional data or the data.
 ///
 /// It runs `vg_aes_gcm_seal_gather`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -238,6 +258,8 @@ pub unsafe fn vg_aes_gcm_seal_gather_auto(_dit: verified_garbage_cpu::Dit<'_>, c
 /// Contract: `VG.Spec.Gcm.openToContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the additional data, the data or the tag.
 ///
 /// It runs `vg_aes_gcm_open_to`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
