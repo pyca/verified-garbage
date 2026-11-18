@@ -133,45 +133,4 @@ theorem linear_ok {k xb : Nat} {c : Cfg} {is : List Instr} {ins : List (Reg × N
   obtain ⟨h1, h2⟩ := outOk_spec (List.all_eq_true.mp hpost (r, g) hrg)
   exact outWord_rel_of_lt h2 (p.rel.reg r _ h1) q hq
 
-/-- Output slots of a register-input linear block. -/
-def linSlotPost (n k : Nat) (outs : List (Nat × (Nat → List Nat)))
-    (e : Env (Nat × Nat)) : Bool :=
-  outs.all fun o => decide (o.1 < n) && outOk k (e.slot o.1) o.2
-
-theorem linear_slots_ok {k xb : Nat} {c : Cfg} {is : List Instr}
-    {ins : List (Reg × Nat)} {outs : List (Nat × (Nat → List Nat))}
-    (hchk : check (lanes 32 k) c (linExt xb) is (linEnv ins)
-      (linSlotPost c.slots k outs) = true)
-    {s : State} (hok : Ok c s) (W : Nat → BitVec 32)
-    (hin : ∀ r i, (r, i) ∈ ins → 32 * i + 32 ≤ 2 ^ k ∧ W i = s.gpr r)
-    (hext : ∀ j < c.exts, 32 * (xb + j) + 32 ≤ 2 ^ k ∧
-      W (xb + j) = s.mem.readW (wordAddr (s.gpr c.ext) j) 32) :
-    ∃ s', runBlock isa is s = some s' ∧
-      (∀ j g, (j, g) ∈ outs → ∀ p < 32,
-        (s'.mem.readW (wordAddr (s.gpr c.base) j) 32).getLsbD p = xorBits W (g p)) ∧
-      s'.rd = s.rd ∧ s'.wr = s.wr ∧
-      (∀ r, (is.all fun i => i.dst != some r) = true → s'.gpr r = s.gpr r) ∧
-      Frame [slotRegion c s] s.mem s'.mem := by
-  obtain ⟨e', he, hpost⟩ := of_check _ _ _ hchk
-  have hrel : Rel (LaneRel k (assign W (2 ^ k))) c (linExt xb) (linEnv ins) s := by
-    refine ⟨fun r a h => ?_, (fun _ _ _ h => by cases h), fun j a hj h => ?_⟩
-    · simp only [linEnv, Option.map_eq_some_iff] at h
-      obtain ⟨⟨r', i⟩, hf, rfl⟩ := h
-      have hr : r' = r := by simpa using List.find?_some hf
-      subst hr
-      obtain ⟨h1, h2⟩ := hin r' i (List.mem_of_find?_eq_some hf)
-      rw [← h2]; exact inWord_rel W h1
-    · simp only [linExt, Option.some.injEq] at h; subst h
-      obtain ⟨h1, h2⟩ := hext j hj
-      rw [← h2]; exact inWord_rel W h1
-  obtain ⟨s', hs', p⟩ := run lanes_sound hok hrel he
-  refine ⟨s', hs', fun j g hjg q hq => ?_, p.rd, p.wr,
-    fun r hr => p.other r (by simp [hr]), p.frame⟩
-  have h := List.all_eq_true.mp hpost (j, g) hjg
-  simp only [Bool.and_eq_true, decide_eq_true_eq] at h
-  obtain ⟨h1, h2⟩ := outOk_spec h.2
-  have hb := p.base
-  have hh := p.rel.slot j _ h.1 h1
-  rw [hb] at hh
-  exact outWord_rel_of_lt h2 hh q hq
 end VG.Proof.TripleDes.X86.Linear

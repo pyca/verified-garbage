@@ -59,14 +59,14 @@ def decPost (s s' : State) : Prop :=
 
 theorem cfbEncryptFinal_wp {s₀ : State} (hp : (fbX86 118 1 encPost).pre s₀) :
     WP isa cfbEncryptFinal s₀ fun s' => abiPreserved s₀ s' ∧ (fbX86 118 1 encPost).post s₀ s' :=
-  WP.mono (Proof.Modes.X86.cfbEncFinal_wp (dirCoreSpec .encrypt)
-      (seqPre_of (M := byteMode) .encrypt rfl (by decide) (by decide) hp) rfl rfl (keyArgs_of .encrypt hp))
+  WP.mono (Proof.Modes.X86.cfbEncFinal_wp dirCoreSpec
+      (seqPre_of (M := byteMode) rfl (by decide) (by decide) hp) rfl rfl (keyArgs_of hp))
     fun _ ⟨h1, h2⟩ => ⟨h1, h2⟩
 
 theorem cfbDecryptFinal_wp {s₀ : State} (hp : (fbX86 118 1 decPost).pre s₀) :
     WP isa cfbDecryptFinal s₀ fun s' => abiPreserved s₀ s' ∧ (fbX86 118 1 decPost).post s₀ s' :=
-  WP.mono (Proof.Modes.X86.cfbDecFinal_wp (dirCoreSpec .encrypt)
-      (seqPre_of (M := byteMode) .encrypt rfl (by decide) (by decide) hp) rfl rfl (keyArgs_of .encrypt hp))
+  WP.mono (Proof.Modes.X86.cfbDecFinal_wp dirCoreSpec
+      (seqPre_of (M := byteMode) rfl (by decide) (by decide) hp) rfl rfl (keyArgs_of hp))
     fun _ ⟨h1, h2⟩ => ⟨h1, h2⟩
 
 /-! ## Constant time -/
@@ -208,8 +208,8 @@ def ofbPost (s s' : State) : Prop :=
 
 theorem ofbFinal_wp {s₀ : State} (hp : (fbX86 118 1 ofbPost).pre s₀) :
     WP isa ofbFinal s₀ fun s' => abiPreserved s₀ s' ∧ (fbX86 118 1 ofbPost).post s₀ s' :=
-  WP.mono (Proof.Modes.X86.ofbFinal_wp (dirCoreSpec .encrypt)
-      (seqPre_of (M := byteMode) .encrypt rfl (by decide) (by decide) hp) rfl rfl (keyArgs_of .encrypt hp))
+  WP.mono (Proof.Modes.X86.ofbFinal_wp dirCoreSpec
+      (seqPre_of (M := byteMode) rfl (by decide) (by decide) hp) rfl rfl (keyArgs_of hp))
     fun _ ⟨h1, h2⟩ => ⟨h1, h2⟩
 
 theorem ofbFinal_ct : ConstantTime isa (fbX86 118 1 ofbPost).pre (fbX86 118 1 ofbPost).pub ofbFinal := by

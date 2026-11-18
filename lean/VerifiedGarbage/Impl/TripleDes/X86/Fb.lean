@@ -20,19 +20,19 @@ namespace VG.Impl.TripleDes.X86
 open VG.X86
 
 /-- `vg_triple_des_ofb`. -/
-def ofb : Prog isa := (dirCore .encrypt).seq (Modes.Mode.ofb 2)
+def ofb : Prog isa := dirCore.seq (Modes.Mode.ofb 2)
 
 /-- `vg_triple_des_cfb64_encrypt`. -/
-def cfbEncrypt : Prog isa := (dirCore .encrypt).seq (Modes.Mode.cfbEnc 2)
+def cfbEncrypt : Prog isa := dirCore.seq (Modes.Mode.cfbEnc 2)
 
 /-- `vg_triple_des_cfb64_decrypt`. -/
 def cfbDecrypt : Prog isa :=
   (wideCore .encrypt).seqLevels (Modes.Mode.cfbDecWide 2) levels (Modes.Mode.cfbDecEarly 2)
 
 /-- `vg_triple_des_cfb8_encrypt`. -/
-def cfb8Encrypt : Prog isa := (dirCore .encrypt).seq (Modes.Mode.cfb8Enc 2)
+def cfb8Encrypt : Prog isa := dirCore.seq (Modes.Mode.cfb8Enc 2)
 
 /-- `vg_triple_des_cfb8_decrypt`. -/
-def cfb8Decrypt : Prog isa := (dirCore .encrypt).seq (Modes.Mode.cfb8Dec 2)
+def cfb8Decrypt : Prog isa := dirCore.seq (Modes.Mode.cfb8Dec 2)
 
 end VG.Impl.TripleDes.X86

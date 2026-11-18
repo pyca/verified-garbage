@@ -58,8 +58,8 @@ theorem invCipher_eq (s : State) :
 
 theorem cbcEncryptChained_wp {s₀ : State} (hp : (fbX86 118 8 encPost).pre s₀) :
     WP isa cbcEncryptChained s₀ fun s' => abiPreserved s₀ s' ∧ (fbX86 118 8 encPost).post s₀ s' :=
-  WP.mono (cbcEncChained_wp (dirCoreSpec .encrypt) (seqPre_of .encrypt rfl (by decide) (by decide) hp)
-      (keyArgs_of .encrypt hp))
+  WP.mono (cbcEncChained_wp dirCoreSpec (seqPre_of rfl (by decide) (by decide) hp)
+      (keyArgs_of hp))
     fun _ ⟨h1, h2, h3⟩ => by tdes_post_eq h2 h3; exact ⟨h1, h2, h3⟩
 
 theorem cbcDecryptChained_wp {s₀ : State} (hp : (fbX86 151 8 decPost).pre s₀) :
