@@ -29,6 +29,16 @@ def scrubBlock (W : Nat) : List Instr := .vop (.movi0 .v31) :: .addSp .x9 0 :: s
 /-- The frame of `W` bytes, zeroed. -/
 def scrubTail (W : Nat) : Prog isa := .frame (.alloc W) (.block (scrubBlock W)) (.free W)
 
+/-- What clears the bits of `x0` above an `rb`-bit result: all of it (`movz x0, #0`)
+for no result, its upper half (`add w0, w0, #0`) for a 32-bit one. -/
+def retFix : Nat → List Instr
+  | 0 => [.movz .x .x0 0 0]
+  | 32 => [.addImm .w .x0 .x0 0]
+  | _ => []
+
+/-- `c`, then the bits of `x0` above an `rb`-bit result cleared. -/
+def withRet (rb : Nat) (c : Prog isa) : Prog isa := .seq c (.block (retFix rb))
+
 /-- `c`, then the `W` bytes below the stack pointer zeroed. -/
 def withScrub (W : Nat) (c : Prog isa) : Prog isa := .seq c (scrubTail W)
 

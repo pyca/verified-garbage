@@ -229,4 +229,69 @@ theorem Verified.withScrub {c : Prog isa} {W : Nat}
 
 end
 
+/-! ## The result's upper bits -/
+
+theorem retFix_run (rb : Nat) (s : State) : ∃ g, execBlock isa (retFix rb) s =
+    some ({ s with gpr := g }, []) ∧ (∀ q, q ≠ .x0 → g q = s.gpr q) ∧
+    (g .x0).setWidth rb = (s.gpr .x0).setWidth rb := by
+  by_cases h0 : rb = 0
+  · subst h0
+    refine ⟨fun q => if q = .x0 then 0 else s.gpr q, ?_, fun q hq => by simp [hq], ?_⟩
+    · simp [retFix, execBlock, isa, exec, addrs, State.write]
+    · apply BitVec.eq_of_toNat_eq
+      have h1 := ((((fun q => if q = .x0 then (0 : BitVec 64) else s.gpr q) .x0)).setWidth 0).isLt
+      have h2 := ((s.gpr .x0).setWidth 0).isLt
+      simp only [Nat.pow_zero] at h1 h2
+      omega
+  by_cases h32 : rb = 32
+  · subst h32
+    refine ⟨fun q => if q = .x0 then ((s.gpr .x0).setWidth 32 + 0).setWidth 64 else s.gpr q, ?_,
+      fun q hq => by simp [hq], ?_⟩
+    · simp [retFix, execBlock, isa, exec, addrs, State.write, State.read]
+    · simp
+  · have : retFix rb = [] := by
+      unfold retFix; split <;> simp_all
+    exact ⟨s.gpr, by rw [this]; rfl, fun _ _ => rfl, rfl⟩
+
+section
+variable {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)} {post : sig.Post abi.ptrBits}
+  {wa : Bool} {stack : Nat} {leak : Option (Curry (sig.words abi.ptrBits) (Mem → List Nat))}
+
+/-- Clearing what `x0` holds beyond the result keeps code verified. -/
+theorem Verified.withRet {c : Prog isa}
+    (h : Verified target c (sig.contract abi pre post wa stack leak)) :
+    Verified target (withRet (sig.retBits abi.ptrBits) c) (sig.contract abi pre post wa stack leak) := by
+  obtain ⟨hcor, hct, hsat⟩ := h
+  refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂ => ?_, hsat⟩
+  · obtain ⟨t, s', he, ha, hq⟩ := hcor s hs
+    obtain ⟨g, hb, hg, hx⟩ := retFix_run (sig.retBits abi.ptrBits) s'
+    refine ⟨_, _, Exec.seq he (Exec.block hb), ⟨fun q hq' => ?_, ha.2.1, ha.2.2⟩, ?_⟩
+    · have : q ≠ .x0 := by rintro rfl; simp [preserved] at hq'
+      show g q = s.gpr q
+      rw [hg q this]; exact ha.1 q hq'
+    · revert hq
+      simp only [Sig.contract]
+      split
+      · exact id
+      · intro hq
+        have hr : (abi.ret { s' with gpr := g }).setWidth (sig.retBits abi.ptrBits) =
+            (abi.ret s').setWidth (sig.retBits abi.ptrBits) := hx
+        have hm : abi.mem { s' with gpr := g } = abi.mem s' := rfl
+        rw [hm, hr]; exact hq
+  · cases e₁ with
+    | seq a₁ b₁ =>
+    cases e₂ with
+    | seq a₂ b₂ =>
+    cases b₁ with
+    | block hb₁ =>
+    cases b₂ with
+    | block hb₂ =>
+    obtain ⟨_, hr₁, -, -⟩ := retFix_run (sig.retBits abi.ptrBits) _
+    obtain ⟨_, hr₂, -, -⟩ := retFix_run (sig.retBits abi.ptrBits) _
+    rw [hr₁] at hb₁; rw [hr₂] at hb₂
+    cases hb₁; cases hb₂
+    rw [hct _ _ _ _ _ _ h₁ h₂ hp a₁ a₂]
+
+end
+
 end VG.AArch64.RTaintF
