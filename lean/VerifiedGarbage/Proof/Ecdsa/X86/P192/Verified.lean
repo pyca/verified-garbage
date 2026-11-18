@@ -30,15 +30,11 @@ public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Ecdsa.Contract
 
 /-!
-# ECDSA over P-192 on x86 (32-bit): `Verified`
+# ECDSA over P-192 on x86 (32-bit): the curve
 
-P-192 is a curve the proof supports (`p192_ok`, and `Law` for its group law,
-which the registration file supplies: `Proof.P192.law`), so `sign_ok` gives
-the contract's postcondition; `ebx`, `esi`, `edi` and `ebp` are restored,
-`esp` kept, and the return address too, as every write is in the working
-space or `out`. Constant time by taint tracking: the only branches are on
-loop counters, and every address is an argument plus a constant or a
-counter.
+P-192 is a curve the proofs support (`p192_ok`), with the bits of its order;
+and the hints of the constant-time checks of the functions over it (`weak`).
+The signature, with the curve's comb, is `Proof/Ecdsa/X86/P192/Comb.lean`'s.
 -/
 
 @[expose] public section

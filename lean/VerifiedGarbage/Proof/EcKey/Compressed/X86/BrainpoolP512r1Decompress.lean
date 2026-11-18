@@ -1,9 +1,8 @@
 module
 
 import VerifiedGarbage.Proof.EcKey.Compressed.X86.DecompressVerified
-import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP512r1.Verified
-public import VerifiedGarbage.Spec.EcKey.BrainpoolP512r1
 import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP512r1.Config
+public import VerifiedGarbage.Spec.EcKey.BrainpoolP512r1
 import VerifiedGarbage.Proof.Weierstrass.Sqrt
 import VerifiedGarbage.Proof.Framework.LitShare
 import VerifiedGarbage.Proof.Framework.LitAlias

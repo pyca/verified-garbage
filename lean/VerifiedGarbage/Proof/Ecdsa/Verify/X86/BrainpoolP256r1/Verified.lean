@@ -21,7 +21,7 @@ import Mathlib.Data.Finset.Attr
 import Mathlib.Data.List.Forall2
 import Mathlib.Tactic.SetLike
 import Batteries.Data.List.Lemmas
-import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP256r1.Lit
+import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.BrainpoolP256r1
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Main
@@ -40,7 +40,7 @@ meta import Mathlib.Data.Finset.Attr
 meta import Mathlib.Data.List.Forall2
 meta import Mathlib.Tactic.SetLike
 meta import Batteries.Data.List.Lemmas
-meta import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP256r1.Lit
+meta import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.BrainpoolP256r1
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.Contract

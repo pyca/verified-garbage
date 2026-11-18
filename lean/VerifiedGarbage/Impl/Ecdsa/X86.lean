@@ -26,7 +26,8 @@ curves), from the code of `Impl/Weierstrass/X86.lean`, as on x86-64
 2. the bits of `k`, `p - 2` and `n - 2` are expanded into tables;
 3. `R = [k]G` by the ladder from `R = O = (0 : 1 : 0)` (for coordinates of
    at most 6 words, calling the point functions,
-   `Impl/Weierstrass/X86/LadderP.lean`), then
+   `Impl/Weierstrass/X86/LadderP.lean`), or, for a curve with a comb's
+   tables (`CombData`), by the comb (`Impl/Weierstrass/X86/TComb.lean`), then
    `x = X Z^(p-2)` (Montgomery's form left by a multiplication by 1) and
    `r = x mod n` (a conditional subtraction, as `x < p < 2n`);
 4. `s = k^(n-2) (e + r d) mod n`, in Montgomery form modulo `n`, then left;

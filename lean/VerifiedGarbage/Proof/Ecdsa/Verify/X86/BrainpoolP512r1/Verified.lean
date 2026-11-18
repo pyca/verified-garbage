@@ -19,7 +19,7 @@ import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP512r1.Config
 import VerifiedGarbage.Proof.Framework.X86.CallWith
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 public import VerifiedGarbage.Impl.Ecdsa.Verify.BrainpoolP512r1.X86
-import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP512r1.Lit
+import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.BrainpoolP512r1
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Main
@@ -33,7 +33,7 @@ meta import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP512r1.Config
 meta import VerifiedGarbage.Proof.Framework.X86.CallWith
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Impl.Ecdsa.Verify.BrainpoolP512r1.X86
-meta import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP512r1.Lit
+meta import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.BrainpoolP512r1
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.Contract
