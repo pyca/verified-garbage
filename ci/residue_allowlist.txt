@@ -163,12 +163,6 @@ aarch64 vg_camellia_ecb_encrypt
 aarch64 vg_camellia_expand_key
 aarch64 vg_camellia_ofb
 aarch64 vg_camellia_ofb_final
-aarch64 vg_cast5_cbc_decrypt_chained
-aarch64 vg_cast5_cbc_encrypt_chained
-aarch64 vg_cast5_cfb64_decrypt
-aarch64 vg_cast5_cfb64_decrypt_final
-aarch64 vg_cast5_cfb64_encrypt
-aarch64 vg_cast5_cfb64_encrypt_final
 aarch64 vg_cast5_expand_key
 aarch64 vg_chacha20_apply
 aarch64 vg_chacha20_apply_neon

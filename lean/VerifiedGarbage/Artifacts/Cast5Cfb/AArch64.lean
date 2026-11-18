@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Cast5.AArch64.TblModesVerified
 import VerifiedGarbage.Proof.Cast5.AArch64.ModesLit
 import VerifiedGarbage.Proof.Cast5.AArch64.FbFinalLit
 import VerifiedGarbage.Proof.Cast5.AArch64.TblLit
+public import VerifiedGarbage.Proof.Cast5.AArch64.ModesResidue
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.AArch64.Print
 
@@ -17,16 +18,20 @@ namespace VG.Artifacts.Cast5Cfb.AArch64
 
 def artifacts : List Artifact := [
   Spec.Cast5.cfbEncryptApi.artifact AArch64.target {
-    code := Impl.StackScratch.AArch64.withStackScratchWiped 112 .x5 13 Impl.Cast5.AArch64.cfbEncrypt
-    verified := Proof.Cast5.cfbEncrypt_keyed Proof.Cast5.AArch64.cfbEncrypt_framed },
+    code := Proof.Cast5.AArch64.ModesResidue.cfbEncryptCode
+    verified := Proof.Cast5.AArch64.ModesResidue.cfbEncryptCode_verified
+    residue := some ⟨Proof.Cast5.AArch64.ModesResidue.cfbEncryptCode_noResidue⟩ },
   Spec.Cast5.cfbDecryptApi.artifact AArch64.target {
-    code := Impl.StackScratch.AArch64.withStackScratchWiped 224 .x5 28 Impl.Cast5.AArch64.Tbl.cfbDecrypt
-    verified := Proof.Cast5.cfbDecrypt_keyed Proof.Cast5.AArch64.Tbl.cfbDecrypt_framed },
+    code := Proof.Cast5.AArch64.ModesResidue.cfbDecryptCode
+    verified := Proof.Cast5.AArch64.ModesResidue.cfbDecryptCode_verified
+    residue := some ⟨Proof.Cast5.AArch64.ModesResidue.cfbDecryptCode_noResidue⟩ },
   Spec.Cast5.cfbEncryptFinalApi.artifact AArch64.target {
-    code := Impl.StackScratch.AArch64.withStackScratchWiped 112 .x5 13 Impl.Cast5.AArch64.cfbEncryptFinal
-    verified := Proof.Cast5.cfbEncryptFinal_keyed Proof.Cast5.AArch64.cfbEncryptFinal_framed },
+    code := Proof.Cast5.AArch64.ModesResidue.cfbEncryptFinalCode
+    verified := Proof.Cast5.AArch64.ModesResidue.cfbEncryptFinalCode_verified
+    residue := some ⟨Proof.Cast5.AArch64.ModesResidue.cfbEncryptFinalCode_noResidue⟩ },
   Spec.Cast5.cfbDecryptFinalApi.artifact AArch64.target {
-    code := Impl.StackScratch.AArch64.withStackScratchWiped 112 .x5 13 Impl.Cast5.AArch64.cfbDecryptFinal
-    verified := Proof.Cast5.cfbDecryptFinal_keyed Proof.Cast5.AArch64.cfbDecryptFinal_framed }]
+    code := Proof.Cast5.AArch64.ModesResidue.cfbDecryptFinalCode
+    verified := Proof.Cast5.AArch64.ModesResidue.cfbDecryptFinalCode_verified
+    residue := some ⟨Proof.Cast5.AArch64.ModesResidue.cfbDecryptFinalCode_noResidue⟩ }]
 
 end VG.Artifacts.Cast5Cfb.AArch64
