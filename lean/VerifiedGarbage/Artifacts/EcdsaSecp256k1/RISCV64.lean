@@ -4,6 +4,7 @@ public import VerifiedGarbage.TCB.RISCV64.Target
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Proof.Ecdsa.RISCV64.Secp256k1.SignVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.EcKey.RISCV64.Scrub
 public import VerifiedGarbage.Spec.Ecdsa.Secp256k1
 public import VerifiedGarbage.Impl.Ecdsa.Secp256k1.RISCV64.Ecdsa
 public import VerifiedGarbage.Proof.Ecdsa.RISCV64.Secp256k1.VerifyVerified
@@ -46,10 +47,11 @@ namespace VG.Artifacts.EcdsaSecp256k1.RISCV64
 open VG.Proof.Secp256k1.RISCV64 (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.Ecdsa.Secp256k1.verifyHashApi.artifact RISCV64.target {
+  Spec.Ecdsa.Secp256k1.verifyHashApi.artifact RISCV64.target (RISCV64.Scrub.withScrub {
     code := Impl.Ecdsa.RISCV64.VerifyHash.verifyHash Spec.Ecdsa.Secp256k1.inst.curve.len false
       Impl.Ecdsa.RISCV64.verifySecp256k1
-    verified := Proof.Ecdsa.RISCV64.Secp256k1.verifyHash_verified hasLaw.law }] ++
+    verified := Proof.Ecdsa.RISCV64.Secp256k1.verifyHash_verified hasLaw.law }
+    (Proof.EcKey.RISCV64.Scrub.verifyHashOut _ Impl.Ecdsa.RISCV64.Comb.secp256k1CombConsts _))] ++
   Rfc6979.artifacts
 
 end VG.Artifacts.EcdsaSecp256k1.RISCV64

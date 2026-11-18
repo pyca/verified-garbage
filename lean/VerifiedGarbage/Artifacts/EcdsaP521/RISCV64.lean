@@ -4,6 +4,7 @@ public import VerifiedGarbage.TCB.RISCV64.Target
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Impl.Ecdsa.RISCV64.P521
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.EcKey.RISCV64.Scrub
 public import VerifiedGarbage.Proof.Ecdsa.RISCV64.P521.VerifyVerified
 public import VerifiedGarbage.Spec.Ecdsa.Verify.P521
 public import VerifiedGarbage.Impl.Ecdsa.RISCV64.VerifyHash
@@ -43,10 +44,11 @@ namespace VG.Artifacts.EcdsaP521.RISCV64
 open VG.Proof.P521.RISCV64 (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.Ecdsa.P521.verifyHashApi.artifact RISCV64.target {
+  Spec.Ecdsa.P521.verifyHashApi.artifact RISCV64.target (RISCV64.Scrub.withScrub {
     code := Impl.Ecdsa.RISCV64.VerifyHash.verifyHash Spec.Ecdsa.P521.inst.curve.len true
       Impl.Ecdsa.RISCV64.P521.verifyP521
-    verified := Proof.Ecdsa.RISCV64.P521.verifyHash_verified hasLaw.law }] ++
+    verified := Proof.Ecdsa.RISCV64.P521.verifyHash_verified hasLaw.law }
+    (Proof.EcKey.RISCV64.Scrub.verifyHashOut _ Impl.Ecdsa.RISCV64.CombU.p521CombConsts _))] ++
   Rfc6979.artifacts
 
 end VG.Artifacts.EcdsaP521.RISCV64

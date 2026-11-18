@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Ecdsa.Instance.verifyHashContract`. Every input is public: timing may depend on the pointers, `digest_len` and the contents of `public`, `digest` and `sig`.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `public` must be valid for reads of 133 bytes.
@@ -1912,7 +1914,7 @@ call {vg_p521_mul_mod_n}
 call {vg_p521_mul_mod_n}
 .base64 "IoWTBYBiEwaAWZMGAF4="
 call {vg_p521_sub_mod_n}
-.base64 "AU6DPgRMM27eAYM+hEwzbt4Bgz4ETTNu3gGDPoRNM27eAYM+BE4zbt4Bgz6ETjNu3gGDPgRPM27eAYM+hE8zbt4Bgz4EUDNu3gGBTrOOzkGz7s4Bk97+A5OI/v+TyPj/kwL0f4OyEkqz8hIBEwT0f6MwVEoTBBSAAU6DPoRiM27eAYM+BGMzbt4Bgz6EYzNu3gGDPgRkM27eAYM+hGQzbt4Bgz4EZTNu3gGDPoRlM27eAYM+BGYzbt4Bgz6EZjNu3gGBTrOOzkGz7s4Bk97+A5OI/v+TAvR/g7ISSrPyEgETBPR/ozBUShMEFIATBfR/AzUVSgWJgzCEAQM5BAEEZIM5BAIAYGFhgoA="
+.base64 "AU6DPgRMM27eAYM+hEwzbt4Bgz4ETTNu3gGDPoRNM27eAYM+BE4zbt4Bgz6ETjNu3gGDPgRPM27eAYM+hE8zbt4Bgz4EUDNu3gGBTrOOzkGz7s4Bk97+A5OI/v+TyPj/kwL0f4OyEkqz8hIBEwT0f6MwVEoTBBSAAU6DPoRiM27eAYM+BGMzbt4Bgz6EYzNu3gGDPgRkM27eAYM+hGQzbt4Bgz4EZTNu3gGDPoRlM27eAYM+BGYzbt4Bgz6EZjNu3gGBTrOOzkGz7s4Bk97+A5OI/v+TAvR/g7ISSrPyEgETBPR/ozBUShMEFIATBfR/AzUVSgWJgzCEAQM5BAEEZIM5BAIAYGFhgUJdcQqDIzBTACM0UwAjOFMAIzxTACMwUwIjNFMCIzhTAiM8UwIjMFMEIzRTBGFhAhUBkYFFAUaBRgFHgUcBSIFIgUIBQ4FDAU6BTgFPgU+CgA=="
 .option pop"#,
         vg_p521_check_point = sym super::ec_p521_compressed::vg_p521_check_point::vg_p521_check_point,
         vg_p521_mul_mod_n = sym super::ecdsa_p521::vg_p521_mul_mod_n::vg_p521_mul_mod_n,

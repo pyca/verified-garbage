@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Impl.Ecdh.P224.RISCV64
 public import VerifiedGarbage.Proof.Ecdh.RISCV64.P224.PublicKeyVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.EcKey.RISCV64.Scrub
 public import VerifiedGarbage.Spec.EcKey.P224
 public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.Ecdh.RISCV64.P224.EcdhLit
@@ -22,14 +23,17 @@ namespace VG.Artifacts.EcP224.RISCV64
 open VG.Proof.P224.RISCV64 (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.EcKey.P224.inst.compressPublicKeyApi.artifact RISCV64.target {
+  Spec.EcKey.P224.inst.compressPublicKeyApi.artifact RISCV64.target (RISCV64.Scrub.withScrub {
     code := Impl.EcKey.Compressed.RISCV64.compressP224
-    verified := Proof.EcKey.Compressed.RISCV64.P224.compress_verified },
-  Spec.EcKey.P224.inst.decompressPublicKeyApi.artifact RISCV64.target {
+    verified := Proof.EcKey.Compressed.RISCV64.P224.compress_verified }
+    (Proof.EcKey.RISCV64.Scrub.compressOut _ _ [])),
+  Spec.EcKey.P224.inst.decompressPublicKeyApi.artifact RISCV64.target (RISCV64.Scrub.withScrub {
     code := Impl.EcKey.Compressed.RISCV64.decompressP224
-    verified := Proof.EcKey.Compressed.RISCV64.P224.decompress_verified hasLaw.law },
-  Spec.EcKey.P224.publicKeyApi.artifact RISCV64.target {
+    verified := Proof.EcKey.Compressed.RISCV64.P224.decompress_verified hasLaw.law }
+    (Proof.EcKey.RISCV64.Scrub.decompressOut _ _ Impl.EcKey.Compressed.RISCV64.sqrtConsts)),
+  Spec.EcKey.P224.publicKeyApi.artifact RISCV64.target (RISCV64.Scrub.withScrub {
     code := Impl.Ecdh.RISCV64.publicKeyP224
-    verified := Proof.Ecdh.RISCV64.P224.pk_verified hasLaw.law }]
+    verified := Proof.Ecdh.RISCV64.P224.pk_verified hasLaw.law }
+    (Proof.EcKey.RISCV64.Scrub.publicKeyOut _ _ Impl.Ecdsa.RISCV64.Comb.p224CombConsts))]
 
 end VG.Artifacts.EcP224.RISCV64

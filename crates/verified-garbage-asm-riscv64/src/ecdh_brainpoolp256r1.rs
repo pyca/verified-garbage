@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Ecdh.Instance.exchangeContract`. Constant time but for the peer's public key: timing may depend on the pointers and the contents of `peer`, not on the private key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 32 bytes.
@@ -418,7 +420,7 @@ call {vg_brainpoolp256r1_mul_mod_p}
 call {vg_brainpoolp256r1_mul_mod_p}
 .base64 "IoWTBQAoEwYAJpMGAAw="
 call {vg_brainpoolp256r1_mul_mod_p}
-.base64 "AU6DPgQkM27eAYM+hCQzbt4Bgz4EJTNu3gGDPoQlM27eAYFOs47OQbPuzgGT3v4Dk4j+/5PI+P+DMgRcs/ISASMwVFyDOARcgzKEKbPyEgET04IDIwBpABPTAgOjAGkAE9OCAiMBaQAT0wICowFpABPTggEjAmkAE9MCAaMCaQAT04IAIwNpABPTAgCjA2kAgzIEKbPyEgET04IDIwRpABPTAgOjBGkAE9OCAiMFaQAT0wICowVpABPTggEjBmkAE9MCAaMGaQAT04IAIwdpABPTAgCjB2kAgzKEKLPyEgET04IDIwhpABPTAgOjCGkAE9OCAiMJaQAT0wICowlpABPTggEjCmkAE9MCAaMKaQAT04IAIwtpABPTAgCjC2kAgzIEKLPyEgET04IDIwxpABPTAgOjDGkAE9OCAiMNaQAT0wICow1pABPTggEjDmkAE9MCAaMOaQAT04IAIw9pABPTAgCjD2kAAzUEXAWJgzCEAQM5BAEEZIM5BAIAYIKA"
+.base64 "AU6DPgQkM27eAYM+hCQzbt4Bgz4EJTNu3gGDPoQlM27eAYFOs47OQbPuzgGT3v4Dk4j+/5PI+P+DMgRcs/ISASMwVFyDOARcgzKEKbPyEgET04IDIwBpABPTAgOjAGkAE9OCAiMBaQAT0wICowFpABPTggEjAmkAE9MCAaMCaQAT04IAIwNpABPTAgCjA2kAgzIEKbPyEgET04IDIwRpABPTAgOjBGkAE9OCAiMFaQAT0wICowVpABPTggEjBmkAE9MCAaMGaQAT04IAIwdpABPTAgCjB2kAgzKEKLPyEgET04IDIwhpABPTAgOjCGkAE9OCAiMJaQAT0wICowlpABPTggEjCmkAE9MCAaMKaQAT04IAIwtpABPTAgCjC2kAgzIEKLPyEgET04IDIwxpABPTAgOjDGkAE9OCAiMNaQAT0wICow1pABPTggEjDmkAE9MCAaMOaQAT04IAIw9pABPTAgCjD2kAAzUEXAWJgzCEAQM5BAEEZIM5BAIAYIFCAhUBkYFFAUaBRgFHgUcBSIFIgUIBQ4FDAU6BTgFPgU+CgA=="
 .option pop"#,
         vg_brainpoolp256r1_check_point = sym super::ec_brainpoolp256r1_compressed::vg_brainpoolp256r1_check_point::vg_brainpoolp256r1_check_point,
         vg_brainpoolp256r1_mul = sym super::ecdh_brainpoolp256r1::vg_brainpoolp256r1_mul::vg_brainpoolp256r1_mul,

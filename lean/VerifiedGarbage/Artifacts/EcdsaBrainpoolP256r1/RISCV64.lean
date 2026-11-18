@@ -4,6 +4,7 @@ public import VerifiedGarbage.TCB.RISCV64.Target
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Proof.Ecdsa.RISCV64.BrainpoolP256r1.SignVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.EcKey.RISCV64.Scrub
 public import VerifiedGarbage.Spec.Ecdsa.BrainpoolP256r1
 public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP256r1.RISCV64.Ecdsa
 public import VerifiedGarbage.Proof.Ecdsa.RISCV64.BrainpoolP256r1.VerifyVerified
@@ -46,10 +47,11 @@ namespace VG.Artifacts.EcdsaBrainpoolP256r1.RISCV64
 open VG.Proof.BrainpoolP256r1.RISCV64 (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.Ecdsa.BrainpoolP256r1.verifyHashApi.artifact RISCV64.target {
+  Spec.Ecdsa.BrainpoolP256r1.verifyHashApi.artifact RISCV64.target (RISCV64.Scrub.withScrub {
     code := Impl.Ecdsa.RISCV64.VerifyHash.verifyHash Spec.Ecdsa.BrainpoolP256r1.inst.curve.len false
       Impl.Ecdsa.RISCV64.verifyBrainpoolP256r1
-    verified := Proof.Ecdsa.RISCV64.BrainpoolP256r1.verifyHash_verified hasLaw.law }] ++
+    verified := Proof.Ecdsa.RISCV64.BrainpoolP256r1.verifyHash_verified hasLaw.law }
+    (Proof.EcKey.RISCV64.Scrub.verifyHashOut _ Impl.Ecdsa.RISCV64.Comb.brainpoolP256r1CombConsts _))] ++
   Rfc6979.artifacts
 
 end VG.Artifacts.EcdsaBrainpoolP256r1.RISCV64

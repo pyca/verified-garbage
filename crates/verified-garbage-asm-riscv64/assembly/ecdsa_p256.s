@@ -3126,6 +3126,36 @@ vg_ecdsa_p256_verify:
 	ld s3, 32(s0)
 	ld s0, 0(s0)
 	addi sp, sp, 80
+	addi t0, zero, 0
+	addi sp, sp, -80
+	addi t1, sp, 0
+	sd t0, 0(t1)
+	sd t0, 8(t1)
+	sd t0, 16(t1)
+	sd t0, 24(t1)
+	sd t0, 32(t1)
+	sd t0, 40(t1)
+	sd t0, 48(t1)
+	sd t0, 56(t1)
+	sd t0, 64(t1)
+	sd t0, 72(t1)
+	addi sp, sp, 80
+	slli a0, a0, 32
+	srli a0, a0, 32
+	addi a1, zero, 0
+	addi a2, zero, 0
+	addi a3, zero, 0
+	addi a4, zero, 0
+	addi a5, zero, 0
+	addi a6, zero, 0
+	addi a7, zero, 0
+	addi t0, zero, 0
+	addi t1, zero, 0
+	addi t2, zero, 0
+	addi t3, zero, 0
+	addi t4, zero, 0
+	addi t5, zero, 0
+	addi t6, zero, 0
 	ret
 	.option pop
 

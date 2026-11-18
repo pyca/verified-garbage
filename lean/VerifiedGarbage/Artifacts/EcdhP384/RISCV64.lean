@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Impl.Ecdsa.P384.RISCV64Window
 public import VerifiedGarbage.Proof.Ecdh.RISCV64.P384.EcdhVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.EcKey.RISCV64.Scrub
 public import VerifiedGarbage.Spec.Ecdh.P384
 public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.Ecdh.RISCV64.P384.EcdhLit
@@ -19,8 +20,9 @@ namespace VG.Artifacts.EcdhP384.RISCV64
 open VG.Proof.P384.RISCV64 (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.Ecdh.P384.exchangeApi.artifact RISCV64.target {
+  Spec.Ecdh.P384.exchangeApi.artifact RISCV64.target (RISCV64.Scrub.withScrub {
     code := Impl.Ecdh.RISCV64.ecdhP384
-    verified := Proof.Ecdh.RISCV64.P384.ecdh_verified hasLaw.law }]
+    verified := Proof.Ecdh.RISCV64.P384.ecdh_verified hasLaw.law }
+    (Proof.EcKey.RISCV64.Scrub.exchangeOut _ _ []))]
 
 end VG.Artifacts.EcdhP384.RISCV64

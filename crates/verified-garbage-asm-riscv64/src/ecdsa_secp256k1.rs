@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Ecdsa.Instance.verifyHashContract`. Every input is public: timing may depend on the pointers, `digest_len` and the contents of `public`, `digest` and `sig`.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `public` must be valid for reads of 65 bytes.
@@ -1021,7 +1023,7 @@ call {vg_secp256k1_add_mod_n}
 call {vg_secp256k1_add_mod_n}
 .base64 "IoWTBQAuEwYAKpMGACw="
 call {vg_secp256k1_sub_mod_n}
-.base64 "AU6DPgQkM27eAYM+hCQzbt4Bgz4EJTNu3gGDPoQlM27eAYFOs47OQbPuzgGT3v4Dk4j+/5PI+P+DMgRcs/ISASMwVFwBToM+BC4zbt4Bgz6ELjNu3gGDPgQvM27eAYM+hC8zbt4BgU6zjs5Bs+7OAZPe/gOTiP7/gzIEXLPyEgEjMFRcAzUEXAWJgzCEAQM5BAEEZIM5BAIAYGFhgoA="
+.base64 "AU6DPgQkM27eAYM+hCQzbt4Bgz4EJTNu3gGDPoQlM27eAYFOs47OQbPuzgGT3v4Dk4j+/5PI+P+DMgRcs/ISASMwVFwBToM+BC4zbt4Bgz6ELjNu3gGDPgQvM27eAYM+hC8zbt4BgU6zjs5Bs+7OAZPe/gOTiP7/gzIEXLPyEgEjMFRcAzUEXAWJgzCEAQM5BAEEZIM5BAIAYGFhgUJdcQqDIzBTACM0UwAjOFMAIzxTACMwUwIjNFMCIzhTAiM8UwIjMFMEIzRTBGFhAhUBkYFFAUaBRgFHgUcBSIFIgUIBQ4FDAU6BTgFPgU+CgA=="
 .option pop"#,
         vg_secp256k1_check_point = sym super::ec_secp256k1_compressed::vg_secp256k1_check_point::vg_secp256k1_check_point,
         vg_secp256k1_mul_mod_n = sym super::ecdsa_secp256k1::vg_secp256k1_mul_mod_n::vg_secp256k1_mul_mod_n,

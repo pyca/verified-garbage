@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Ecdh.Instance.exchangeContract`. Constant time but for the peer's public key: timing may depend on the pointers and the contents of `peer`, not on the private key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 28 bytes.
@@ -432,7 +434,7 @@ call {vg_p224_mul_mod_p}
 call {vg_p224_mul_mod_p}
 .base64 "IoWTBQAoEwYAJpMGAAw="
 call {vg_p224_mul_mod_p}
-.base64 "AU6DPgQkM27eAYM+hCQzbt4Bgz4EJTNu3gGDPoQlM27eAYFOs47OQbPuzgGT3v4Dk4j+/5PI+P+DMgRcs/ISASMwVFyDOARcgzKEKbPyEgET04IBIwBpABPTAgGjAGkAE9OCACMBaQAT0wIAowFpAIMyBCmz8hIBE9OCAyMCaQAT0wIDowJpABPTggIjA2kAE9MCAqMDaQAT04IBIwRpABPTAgGjBGkAE9OCACMFaQAT0wIAowVpAIMyhCiz8hIBE9OCAyMGaQAT0wIDowZpABPTggIjB2kAE9MCAqMHaQAT04IBIwhpABPTAgGjCGkAE9OCACMJaQAT0wIAowlpAIMyBCiz8hIBE9OCAyMKaQAT0wIDowppABPTggIjC2kAE9MCAqMLaQAT04IBIwxpABPTAgGjDGkAE9OCACMNaQAT0wIAow1pAAM1BFwFiYMwhAEDOQQBBGSDOQQCAGCCgA=="
+.base64 "AU6DPgQkM27eAYM+hCQzbt4Bgz4EJTNu3gGDPoQlM27eAYFOs47OQbPuzgGT3v4Dk4j+/5PI+P+DMgRcs/ISASMwVFyDOARcgzKEKbPyEgET04IBIwBpABPTAgGjAGkAE9OCACMBaQAT0wIAowFpAIMyBCmz8hIBE9OCAyMCaQAT0wIDowJpABPTggIjA2kAE9MCAqMDaQAT04IBIwRpABPTAgGjBGkAE9OCACMFaQAT0wIAowVpAIMyhCiz8hIBE9OCAyMGaQAT0wIDowZpABPTggIjB2kAE9MCAqMHaQAT04IBIwhpABPTAgGjCGkAE9OCACMJaQAT0wIAowlpAIMyBCiz8hIBE9OCAyMKaQAT0wIDowppABPTggIjC2kAE9MCAqMLaQAT04IBIwxpABPTAgGjDGkAE9OCACMNaQAT0wIAow1pAAM1BFwFiYMwhAEDOQQBBGSDOQQCAGCBQgIVAZGBRQFGgUYBR4FHAUiBSIFCAUOBQwFOgU4BT4FPgoA="
 .option pop"#,
         vg_p224_check_point = sym super::ec_p224_compressed::vg_p224_check_point::vg_p224_check_point,
         vg_p224_mul = sym super::ecdh_p224::vg_p224_mul::vg_p224_mul,
