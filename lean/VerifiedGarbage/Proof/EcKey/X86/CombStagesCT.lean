@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.EcKey.X86.Main
+public import VerifiedGarbage.Proof.EcKey.X86.CombCT
 public import VerifiedGarbage.Proof.Ecdsa.X86.CombStagesCT
 import VerifiedGarbage.Proof.Ecdsa.X86.CombCT
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
@@ -11,7 +11,7 @@ import Batteries.Data.List.Lemmas
 import VerifiedGarbage.Proof.Ecdsa.X86.CombFinishCT
 import VerifiedGarbage.Proof.Ecdsa.X86.CombLit
 import VerifiedGarbage.Proof.Ecdsa.X86.Lit
-meta import VerifiedGarbage.Proof.EcKey.X86.Main
+meta import VerifiedGarbage.Proof.EcKey.X86.CombCT
 meta import VerifiedGarbage.Proof.Ecdsa.X86.CombStagesCT
 meta import VerifiedGarbage.Proof.Ecdsa.X86.CombCT
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
@@ -28,7 +28,7 @@ meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 
-/-! # Constant-time public-key stages around the comb -/
+/-! # P-256 public keys on x86 (32-bit): the constant time of the stages around the comb -/
 
 @[expose] public section
 
@@ -50,100 +50,7 @@ theorem pkPrep_rel : RelCT isa (VG.X86.Taint.Agree (argτ [.esp] 3)) pkPrepCode 
 theorem pkTail_rel : RelCT isa (VG.X86.Taint.Agree (scratchArgτ 3 true)) pkTailCode (fun _ _ => True) :=
   RelCT.taint (A := taint) _ (fun _ _ h => h) (by native_taint_decide)
 
-/-- Writes within scratch leave all cdecl argument words unchanged. -/
-theorem pkKeep_arg {c : Cfg} {s₀ s : State} {extra : List Region}
-    (hp : PkPre c s₀ extra) (h : Keep c s₀ (ptr s₀ 2) s) {j : Nat} (hj : j < 3) :
-    arg s j = arg s₀ j := by
-  have he : argAddr s j = argAddr s₀ j := by simp only [argAddr, h.esp]
-  change s.mem.readW (argAddr s j) 32 = _
-  rw [he]
-  have h3 : (s₀.gpr .esp).toNat + 4 + 4 * 3 ≤ 2 ^ 32 := by have := hp.sp_fit; omega_using [this]
-  refine h.whole.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
-  rw [hp.wr] at hr
-  simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl
-  · exact hp.args_out.sub_left (arg_subN h3 hj)
-  · exact hp.args_sc.sub_left (arg_subN h3 hj)
-  · exact (below_disjoint_args hp.sp_lo (k := 12) (by omega_using [h3]) (by decide)).symm.sub_left (arg_subN h3 hj)
-
-/-- The public argument area is disjoint from every writable buffer. -/
-theorem pkArgWf {c : Cfg} {s₀ s : State} {extra : List Region} (rs : List Reg)
-    (hp : PkPre c s₀ extra) (he : s.gpr .esp = s₀.gpr .esp) (hw : s.wr = s₀.wr) :
-    VG.X86.Taint.Wf (argτ rs 3 c.stk) s := by
-  refine VG.X86.Taint.Wf.entryRoom rfl ⟨?_, ?_, ?_, ?_, ?_⟩ fun _ => ⟨by rw [he]; exact hp.sp_lo, ?_⟩
-  rotate_right
-  · rw [he, hw, hp.wr]
-    simp only [List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl)
-    · exact hp.stk_out
-    · exact hp.stk_sc
-  · intro h; cases h rfl
-  · intro p h; cases h
-  · intro p h; cases h
-  · intro _
-    rw [he, hw, hp.wr]
-    refine ⟨hp.sp_fit, ?_⟩
-    simp only [List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl)
-    · exact VG.X86.Taint.frame_disjoint (n := 12) (by have := hp.sp_fit; omega_using [this]) hp.ret_out hp.args_out
-    · exact VG.X86.Taint.frame_disjoint (n := 12) (by have := hp.sp_fit; omega_using [this]) hp.ret_sc hp.args_sc
-  · intro p h; cases h
-
-/-- The functional stage invariant restores public cdecl arguments. -/
-theorem pkKeepArgAgree {c : Cfg} {s₀ t₀ s t : State} {extra₁ extra₂ : List Region}
-    (hp : PkPre c s₀ extra₁) (hq : PkPre c t₀ extra₂)
-    (ks : Keep c s₀ (ptr s₀ 2) s) (kt : Keep c t₀ (ptr t₀ 2) t)
-    (he : s₀.gpr .esp = t₀.gpr .esp) (ha : ∀ j < 3, arg s₀ j = arg t₀ j) :
-    VG.X86.Taint.Agree (argτ [.esp, .edi] 3 c.stk) s t := by
-  have esp : s.gpr .esp = t.gpr .esp := ks.esp.trans (he.trans kt.esp.symm)
-  have edi : s.gpr .edi = t.gpr .edi := widen32_inj (ks.scr.edi.trans
-    ((congrArg (BitVec.setWidth 64) (ha 2 (by decide))).trans kt.scr.edi.symm))
-  refine argAgree (pkArgWf _ hp ks.esp ks.wr) (pkArgWf _ hq kt.esp kt.wr) ?_ esp ?_
-  · intro r hr
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
-    · exact esp
-    · exact edi
-  · intro j hj
-    rw [pkKeep_arg hp ks hj, pkKeep_arg hq kt hj, ha j hj]
-
-/-- The static-table scan's scratch region is the second writable argument. -/
-theorem pkKeepCombWf {s₀ s : State} {extra : List Region} (hp : PkPre p256Comb s₀ extra)
-    (ks : Keep p256Comb s₀ (ptr s₀ 2) s) : VG.X86.Taint.Wf combτ s := by
-  refine VG.X86.Taint.Wf.entryRoom rfl ⟨?_, ?_, ?_, ?_, ?_⟩ fun _ => ⟨?_, ?_⟩
-  rotate_right 2
-  · rw [ks.esp]; exact hp.sp_lo
-  · rw [ks.esp, ks.wr, hp.wr]
-    simp only [List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl)
-    · exact hp.stk_out
-    · exact hp.stk_sc
-  · intro _
-    rw [ks.wr, hp.wr]
-    refine ⟨by simp [combτ, combτAt, size], ?_, ?_⟩
-    · simpa using hp.out_sc
-    · simp only [List.mem_cons, List.not_mem_nil, or_false]
-      rintro r (rfl | rfl)
-      · simp only [ptr, BitVec.toNat_setWidth]; omega_using [hp.out_fit]
-      · simp only [ptr, BitVec.toNat_setWidth]; omega_using [hp.sc_fit]
-  · intro p h
-    rw [List.mem_singleton.mp h]
-    change addr (s.gpr .edi) 0 = (VG.X86.Taint.region s 1).base
-    simp only [VG.X86.Taint.region, ks.wr, hp.wr, List.getD_cons_succ, List.getD_cons_zero,
-      addr, BitVec.add_zero]
-    exact ks.scr.edi
-  · intro p h; cases h
-  · intro h; cases h
-  · intro p h; cases h
-
-
-theorem pkKeepScratchAgree {s₀ t₀ s t : State} {extra₁ extra₂ : List Region}
-    (hp : PkPre p256Comb s₀ extra₁) (hq : PkPre p256Comb t₀ extra₂)
-    (ks : Keep p256Comb s₀ (ptr s₀ 2) s) (kt : Keep p256Comb t₀ (ptr t₀ 2) t)
-    (he : s₀.gpr .esp = t₀.gpr .esp) (ha : ∀ j < 3, arg s₀ j = arg t₀ j) :
-    VG.X86.Taint.Agree (scratchArgτ 3 true) s t := by
-  refine scratchArgAgree (pkKeepArgAgree hp hq ks kt he ha) (pkKeepCombWf hp ks) (pkKeepCombWf hq kt) ?_
-  rw [ks.wr, kt.wr, hp.wr, hq.wr]
-  simp only [ptr, ha 2 (by decide), ha 0 (by decide)]
+/-- The taint checks of the stages of P-256's public key. -/
+theorem p256PkCT : PkStagesCT p256Comb := ⟨pkPrep_rel, pkTail_rel⟩
 
 end VG.Proof.EcKey.X86

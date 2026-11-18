@@ -214,12 +214,14 @@ def step : Prog isa :=
   .seq (.block [decCounter]) <| .seq K.entry <|
   .seq (fprog K.F (rcb K.S K.A K.E K.D)) (.block (copyPt K.M.n K.A K.D ++ [testCounter]))
 
+/-- `A = [c]G`, and `esi = J`. -/
+def init : List Instr :=
+  setConst K.M.n K.A.x K.start.1 ++ setConst K.M.n K.A.y K.start.2 ++
+    setConst K.M.n K.A.z K.one ++ [.mov .esi (.imm (BitVec.ofNat 32 K.J))]
+
 /-- `[k]G` into `A`, in projective coordinates: `A = [c]G`, then the `J`
 iterations. -/
-def comb : Prog isa :=
-  .seq (.block (setConst K.M.n K.A.x K.start.1 ++ setConst K.M.n K.A.y K.start.2 ++
-    setConst K.M.n K.A.z K.one ++ [.mov .esi (.imm (BitVec.ofNat 32 K.J))]))
-    (.loop K.step .ne)
+def comb : Prog isa := .seq (.block K.init) (.loop K.step .ne)
 
 end TCombCfg
 

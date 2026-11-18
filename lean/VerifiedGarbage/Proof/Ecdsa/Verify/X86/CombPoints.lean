@@ -19,7 +19,7 @@ abbrev combPtsW : List Nat :=
   [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TX, TY, TZ, TMP, UX, UY, UZ, PT, EM]
 
 theorem pointsCombLadder_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c)
-    (hCo : ∀ d, c.comb = some d → CombOk c d) (ham3 : AM3 c.C) {s₀ : State} {base : Addr} {s : State}
+    (hCo : ∀ d, c.comb = some d → CombOk c d) {s₀ : State} {base : Addr} {s : State}
     (hM : Mid c s₀ base s) {Q₂ : Nat → Fe c.C → Fe c.C → Fe c.C → Prop}
     (hTb : ∀ d, c.comb = some d → TblMem s ((s₀.gpr .eax).setWidth 64) (c.combWords d) ∧
       (∀ i < (c.combWords d).length, ∀ b < 8,
@@ -51,7 +51,7 @@ theorem pointsCombLadder_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c)
   obtain F₁ := F.unch h7 hn (fixedOk_tbl 0) U₁
   obtain v₁ : ∀ {i}, i < 45 → sv c base s₁ i = sv c base s i := fun hi => sv_unch U₁ h7 hn hi (tb hi)
   -- `[u]G`.
-  refine WP.seq (WP.mono (gMul_ok' hc hC hT hCo ham3 hs₁ F₁
+  refine WP.seq (WP.mono (gMul_ok' hc hC hT hCo hs₁ F₁
     (wordsVal_lt s.mem base (c.sl U) c.n)
     (by rw [v₁ (by decide), hM.rx]) (by rw [v₁ (by decide), hM.ry])
     (by rw [v₁ (by decide), hM.rz]) b₁ (fun d hd => by

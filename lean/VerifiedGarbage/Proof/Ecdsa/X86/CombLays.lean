@@ -3,6 +3,7 @@ public import VerifiedGarbage.Proof.Ecdsa.X86.Fixed
 public import VerifiedGarbage.Proof.Weierstrass.Booth
 public import VerifiedGarbage.Proof.Weierstrass.X86.TComb
 
+public import VerifiedGarbage.Proof.Weierstrass.Law3
 import VerifiedGarbage.Proof.Ecdsa.X86.Stages
 import VerifiedGarbage.Proof.Ecdsa.X86.Lays
 
@@ -15,16 +16,30 @@ open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Mont VG.Impl.Weierstrass.X86 VG.Impl.Wei
 open VG.Impl.Ecdsa.X86
 open VG.Proof.Mont.X86 VG.Proof.Mont VG.Proof.Weierstrass.X86 VG.Proof.Weierstrass Spec.Weierstrass
 
+/-- What the code needs of a comb's shape: its windows cover the scalar's
+`64 n` bits, the last one in part. The comb with Booth's digits clears the
+bits past them, in the word past the table of bits; the comb by complete
+additions reads only the scalar's bits, so its top window must be partial. -/
 structure CombOk (c : Cfg) (d : CombData) : Prop where
   w : 1 ≤ d.w ∧ d.w < 9
-  cover : 64 * c.n ≤ d.w * c.combJ d.w ∧ d.w * c.combJ d.w ≤ 64 * c.n + 4
-  n : c.n ≤ 6
+  cover : 64 * c.n ≤ d.w * c.combJ d.w ∧ d.w * c.combJ d.w ≤ 64 * c.n + 8
+  jac : d.jac = true → d.w * c.combJ d.w ≤ 64 * c.n + 4
+  top : d.jac = false → d.w * (c.combJ d.w - 1) ≤ 64 * c.n ∧ 64 * c.n < d.w * c.combJ d.w
 
+/-- What the comb needs of its tables: they are `G`'s, and for the comb with
+Booth's digits and Jacobian additions, `G` has the prime order `n` (no digit's
+term meets the sum below it) and `a = -3`. -/
 def CombTbls (c : Cfg) : Prop :=
   ∀ d, c.comb = some d → CombOkW c.C d.w (c.combJ d.w) d.tbl d.start ∧
-    BoothOk c.C d.w (c.combJ d.w) (2 ^ (64 * c.n))
+    (d.jac = true → BoothOk c.C d.w (c.combJ d.w) (2 ^ (64 * c.n)) ∧ AM3 c.C)
 
 variable {c : Cfg}
+
+/-- A curve the proof supports, with a comb: its tables change nothing of what the proof needs
+of the curve. -/
+theorem CfgOk.withComb (h : CfgOk c) (d : CombData) : CfgOk { c with comb := some d } := by
+  rcases h with ⟨a, b, c', d', e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t⟩
+  exact ⟨a, b, c', d', e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t⟩
 
 theorem combW_eq (c : Cfg) (d : CombData) : combW (c.combCfg d).toComb = slW c [RX, RY, RZ, TX, TY, TZ, PT,
     T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP] := rfl
@@ -32,10 +47,17 @@ theorem combW_eq (c : Cfg) (d : CombData) : combW (c.combCfg d).toComb = slW c [
 theorem combSlots_eq (c : Cfg) (d : CombData) : combSlots (c.combCfg d).toComb = [AP, EM, ZERO, RX, RY,
     RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ].map c.sl := rfl
 
-/-- The comb clears at most the word past the table of `k`'s bits. -/
-theorem zw_le {d : CombData} (hd : CombOk c d) : 4 * (c.combCfg d).zw ≤ 4 := by
+/-- The comb with Booth's digits clears at most the word past the table of `k`'s bits. -/
+theorem zw_le {d : CombData} (hd : CombOk c d) (hj : d.jac = true) : 4 * (c.combCfg d).zw ≤ 4 := by
   have := hd.cover
+  have := hd.jac hj
   show 4 * ((d.w * c.combJ d.w - 64 * c.n + 3) / 4) ≤ 4
+  omega_using [this]
+
+/-- The words past the scalar's bits that a comb's windows cover. -/
+theorem zw_le8 {d : CombData} (hd : CombOk c d) : 4 * (c.combCfg d).zw ≤ 8 := by
+  have := hd.cover
+  show 4 * ((d.w * c.combJ d.w - 64 * c.n + 3) / 4) ≤ 8
   omega_using [this]
 
 theorem combJ_bounds {d : CombData} (hc : CfgOk c) (hd : CombOk c d) :
@@ -82,13 +104,14 @@ theorem combWsl (hc : CfgOk c) (d : CombData) :
 theorem tcombLay {d : CombData} (hc : CfgOk c) (hd : CombOk c d) : TCombLay (c.combCfg d) size := by
   have hn := hc.n0
   have h7 := hc.n10
-  have hz := zw_le hd
+  have hz := zw_le8 hd
   have hbits : (c.combCfg d).bits = bitsAt c.n 0 := rfl
   have hk : (c.combCfg d).kbytes = 64 * c.n := rfl
   have hl : ∀ i ∈ [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP], i < 45 := by decide
   refine ⟨combLay hc hd, rfl, combWsl hc d, sl_below_wk c (i := MP) (by decide),
     sl_below_wk c (i := TMP) (by decide), .inr (wk_below_bits c 0), (by change 64 ≤ 8192; decide),
-    ?_, ?_, ?_, hd.w, hd.cover.1, ?_, ?_, ?_, ?_, ⟨hn, hd.n⟩, ?_, ?_⟩
+    ?_, ?_, ?_, hd.w, hd.cover.1, ?_, ?_, ?_, ?_,
+    ⟨hn, show c.n ≤ 12 by omega_using [h7]⟩, ?_, ?_⟩
   · intro x hx
     simp only [List.mem_cons] at hx
     rcases hx with rfl | rfl | hx
@@ -117,7 +140,7 @@ theorem tcombLay {d : CombData} (hc : CfgOk c) (hd : CombOk c d) : TCombLay (c.c
     rw [Nat.mul_succ]; omega_using []
   · show 16 * c.n * 2 ^ (d.w - 1) < 2 ^ 31
     have : 2 ^ (d.w - 1) ≤ 2 ^ 7 := Nat.pow_le_pow_right (by decide) (by have := hd.w; omega_using [this])
-    have : 16 * c.n * 2 ^ (d.w - 1) ≤ 16 * 6 * 2 ^ 7 := Nat.mul_le_mul (by have := hd.n; omega_using [this]) this
+    have : 16 * c.n * 2 ^ (d.w - 1) ≤ 16 * 9 * 2 ^ 7 := Nat.mul_le_mul (by omega_using [h7]) this
     omega_using [this]
 
 theorem mont_lt (hc : CfgOk c) (x : Nat) : c.mont x < c.C.p :=

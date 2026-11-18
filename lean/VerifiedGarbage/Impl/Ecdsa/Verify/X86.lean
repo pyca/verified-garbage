@@ -205,8 +205,10 @@ def pointsWindow : Prog isa :=
   .seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) <| .seq c.gMul <|
   .seq (.block (save c)) <| .seq (windowMulQ c) (sum c)
 
-/-- Use signed windows for the 256-bit field; retain the ladder for other sizes. -/
-def pointsComb : Prog isa := if c.n = 4 then pointsWindow c else pointsCombLadder c
+/-- Use signed windows for P-256 (four words, and the comb with Jacobian
+additions: `a = -3`); retain the ladder for the other curves. -/
+def pointsComb : Prog isa :=
+  if c.n = 4 ∧ c.combJac = true then pointsWindow c else pointsCombLadder c
 
 /-- Everything after the checks of the key. -/
 def back : Prog isa :=
