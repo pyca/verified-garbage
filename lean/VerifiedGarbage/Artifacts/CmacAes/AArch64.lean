@@ -25,11 +25,7 @@ public import VerifiedGarbage.Proof.Variants.CmacAesUpdate.AArch64
 -- Streaming CMAC absorb on AArch64, for each CMAC update
 namespace VG.Artifacts.CmacAes.AArch64.Absorb
 def artifactsFor (v : Proof.CmacAes.AArch64.UpdateImpl) : List Artifact := [
-  Spec.Cmac.aesAbsorbApi.artifact AArch64.target {
-    suffix := v.suffix
-    code := Impl.StackScratch.AArch64.withStackScratch 2304 .x5
-      (Impl.CmacAes.Stream.AArch64.absorb v.callee)
-    verified := Proof.CmacAes.Stream.AArch64.absorb_framed v }]
+  Spec.Cmac.aesAbsorbApi.artifact AArch64.target (Proof.CmacAes.Stream.AArch64.absorbReg v)]
 def artifacts : List Artifact :=
   VG.Proof.Variants.CmacAesUpdate.AArch64.variants.flatMap fun v => artifactsFor v
 

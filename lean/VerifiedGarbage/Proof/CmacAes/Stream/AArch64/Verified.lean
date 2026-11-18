@@ -64,10 +64,10 @@ structure AAfter₁ (s₀ : State) (St D S : Addr) (L : Nat) (s : State) : Prop 
   wr : s.wr = s₀.wr
 
 theorem call1_after (v : Proof.CmacAes.AArch64.UpdateImpl) {s₀ s : State} {St D S : Addr} {L R : Nat}
-    (h : AMid₁ s₀ St D S L R s) :
+    (h : AMid₁ v.scratch s₀ St D S L R s) :
     WP isa (.call v.callee.name v.callee.code) s
       (AAfter₁ s₀ St D S L) :=
-  WP.mono (upd_call v _ h.args) fun _ h₆ =>
+  WP.mono (upd_callW v _ h.args) fun _ h₆ =>
     ⟨by rw [h₆.saved .x19 (by simp [preserved]) (by decide), h.x19],
       by rw [h₆.saved .x20 (by simp [preserved]) (by decide), h.x20],
       by rw [h₆.saved .x21 (by simp [preserved]) (by decide), h.x21],
@@ -76,9 +76,9 @@ theorem call1_after (v : Proof.CmacAes.AArch64.UpdateImpl) {s₀ s : State} {St 
       by rw [h₆.sp, h.sp], by rw [h₆.rd, h.rd], by rw [h₆.wr, h.wr]⟩
 
 /-- What `chain2` leaves, for the second call. -/
-structure AMid₂ (s₀ : State) (St D S : Addr) (L R : Nat) (s : State) : Prop where
-  args : UArgs s St (St + BitVec.ofNat 64 272) (D + BitVec.ofNat 64 (fOf (s₀.gpr .x2).toNat L)) S R
-    (nbOf (s₀.gpr .x2).toNat L)
+structure AMid₂ (N : Nat) (s₀ : State) (St D S : Addr) (L R : Nat) (s : State) : Prop where
+  args : UArgsW N s St (St + BitVec.ofNat 64 272) (D + BitVec.ofNat 64 (fOf (s₀.gpr .x2).toNat L))
+    (S + BitVec.ofNat 64 64) R (nbOf (s₀.gpr .x2).toNat L)
   x19 : s.gpr .x19 = St
   x24 : s.gpr .x24 = BitVec.ofNat 64 (16 * nbOf (s₀.gpr .x2).toNat L)
   x21 : s.gpr .x21 = D + BitVec.ofNat 64 (fOf (s₀.gpr .x2).toNat L)
@@ -86,8 +86,8 @@ structure AMid₂ (s₀ : State) (St D S : Addr) (L R : Nat) (s : State) : Prop 
   x23 : s.gpr .x23 = S
   sp : s.sp = s₀.sp
 
-theorem chain2_mid {s₀ s : State} {St D S : Addr} {L R : Nat} (hp : APre s₀ St D S L R)
-    (h : AAfter₁ s₀ St D S L s) : WP isa chain2 s (AMid₂ s₀ St D S L R) := by
+theorem chain2_mid {N : Nat} {s₀ s : State} {St D S : Addr} {L R : Nat} (hp : APre N s₀ St D S L R)
+    (h : AAfter₁ s₀ St D S L s) : WP isa chain2 s (AMid₂ N s₀ St D S L R) := by
   obtain ⟨c, hc⟩ : ∃ c, (s₀.gpr .x2).toNat = c := ⟨_, rfl⟩
   have hL := hp.lt
   have ⟨hfL, _⟩ := f_le c L
@@ -106,7 +106,7 @@ theorem chain2_mid {s₀ s : State} {St D S : Addr} {L R : Nat} (hp : APre s₀ 
     (n := nbOf (s₀.gpr .x2).toNat L)
     (by rw [x0₇, x19₆]) (by rw [x1₇, x20₆]) (by rw [x2₇, x19₆]) (by rw [x3₇, x21₆]) x4₇
     (by rw [x5₇, x23₆]) (by rw [rd₇, rd₆]) (by rw [wr₇, wr₆]) (by omega_arith) ((hp.st_d.sub_left c272).symm.sub_left dD)
-    ((hp.d_s.sub_left dD).sub_right (Region.sub_prefix (by decide)))
+    ((hp.d_s.sub_left dD).sub_right (scrC S _))
     (by
       by_cases h0 : nbOf (s₀.gpr .x2).toNat L = 0
       · rw [h0]; have := (D + BitVec.ofNat 64 (fOf (s₀.gpr .x2).toNat L)).isLt; omega_arith
@@ -127,23 +127,25 @@ structure AAfter₂ (s₀ : State) (St D S : Addr) (L : Nat) (s : State) : Prop 
   sp : s.sp = s₀.sp
 
 theorem call2_after (v : Proof.CmacAes.AArch64.UpdateImpl) {s₀ s : State} {St D S : Addr} {L R : Nat}
-    (h : AMid₂ s₀ St D S L R s) :
+    (h : AMid₂ v.scratch s₀ St D S L R s) :
     WP isa (.call v.callee.name v.callee.code) s
       (AAfter₂ s₀ St D S L) :=
-  WP.mono (upd_call v _ h.args) fun _ h₈ =>
+  WP.mono (upd_callW v _ h.args) fun _ h₈ =>
     ⟨by rw [h₈.saved .x19 (by simp [preserved]) (by decide), h.x19],
       by rw [h₈.saved .x24 (by simp [preserved]) (by decide), h.x24],
       by rw [h₈.saved .x21 (by simp [preserved]) (by decide), h.x21],
       by rw [h₈.saved .x22 (by simp [preserved]) (by decide), h.x22],
       by rw [h₈.saved .x23 (by simp [preserved]) (by decide), h.x23], by rw [h₈.sp, h.sp]⟩
 
-theorem absorb_rel (v : Proof.CmacAes.AArch64.UpdateImpl) {s₀ s₀' : State} (h0 : absorbAArch64.pre s₀) (h0' : absorbAArch64.pre s₀')
-    (hq : absorbAArch64.pub s₀ s₀') :
+theorem absorb_rel (v : Proof.CmacAes.AArch64.UpdateImpl) {s₀ s₀' : State}
+    (h0 : (absorbAArch64 (64 + v.scratch)).pre s₀) (h0' : (absorbAArch64 (64 + v.scratch)).pre s₀')
+    (hq : (absorbAArch64 (64 + v.scratch)).pub s₀ s₀') :
     RelCT isa (fun a b => a = s₀ ∧ b = s₀') (absorb v.callee) fun _ _ => True := by
   obtain ⟨q0, q1, q2, q3, q4, q5, q6⟩ := hq
-  have hp := APre.of h0
-  have hp' : APre s₀' (s₀.gpr .x0) (s₀.gpr .x3) (s₀.gpr .x5) (s₀.gpr .x4).toNat (s₀.gpr .x1).toNat := by
-    rw [q0, q1, q3, q4, q5]; exact APre.of h0'
+  obtain hN : v.scratch ≤ 2176 := by rcases v.scratch_ok with h | h <;> omega_using [h]
+  have hp := APre.of h0 hN
+  have hp' : APre v.scratch s₀' (s₀.gpr .x0) (s₀.gpr .x3) (s₀.gpr .x5) (s₀.gpr .x4).toNat (s₀.gpr .x1).toNat := by
+    rw [q0, q1, q3, q4, q5]; exact APre.of h0' hN
   generalize s₀.gpr .x0 = St at hp hp'
   generalize s₀.gpr .x3 = D at hp hp'
   generalize s₀.gpr .x5 = S at hp hp'
@@ -161,9 +163,9 @@ theorem absorb_rel (v : Proof.CmacAes.AArch64.UpdateImpl) {s₀ s₀' : State} (
       refine agree_of q6 fun r hr => ?_
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption) hA).wp
-    (F₁ := AMid₁ s₀ St D S L R) (F₂ := AMid₁ s₀' St D S L R) fun a b h => by
+    (F₁ := AMid₁ v.scratch s₀ St D S L R) (F₂ := AMid₁ v.scratch s₀' St D S L R) fun a b h => by
       obtain ⟨rfl, rfl⟩ := h; exact ⟨absorbPre_wp hp, absorbPre_wp hp'⟩
-  have c₁ := (upd_rel v _ (P := fun a b => AMid₁ s₀ St D S L R a ∧ AMid₁ s₀' St D S L R b)
+  have c₁ := (upd_relW v _ (P := fun a b => AMid₁ v.scratch s₀ St D S L R a ∧ AMid₁ v.scratch s₀' St D S L R b)
     fun a b h => ⟨h.1.args, by rw [q2]; exact h.2.args, by rw [h.1.sp, h.2.sp, q6]⟩).wp
     (F₁ := AAfter₁ s₀ St D S L) (F₂ := AAfter₁ s₀' St D S L) fun a b h => ⟨call1_after v h.1, call1_after v h.2⟩
   have m := (RelCT.taint (A := taint) (P := fun a b => AAfter₁ s₀ St D S L a ∧ AAfter₁ s₀' St D S L b) _
@@ -176,8 +178,8 @@ theorem absorb_rel (v : Proof.CmacAes.AArch64.UpdateImpl) {s₀ s₀' : State} (
       · rw [h.1.x21, h.2.x21, q2]
       · rw [h.1.x22, h.2.x22, q2]
       · rw [h.1.x23, h.2.x23]) hB).wp
-    (F₁ := AMid₂ s₀ St D S L R) (F₂ := AMid₂ s₀' St D S L R) fun a b h => ⟨chain2_mid hp h.1, chain2_mid hp' h.2⟩
-  have c₂ := (upd_rel v _ (P := fun a b => AMid₂ s₀ St D S L R a ∧ AMid₂ s₀' St D S L R b)
+    (F₁ := AMid₂ v.scratch s₀ St D S L R) (F₂ := AMid₂ v.scratch s₀' St D S L R) fun a b h => ⟨chain2_mid hp h.1, chain2_mid hp' h.2⟩
+  have c₂ := (upd_relW v _ (P := fun a b => AMid₂ v.scratch s₀ St D S L R a ∧ AMid₂ v.scratch s₀' St D S L R b)
     fun a b h => ⟨h.1.args, by rw [q2]; exact h.2.args, by rw [h.1.sp, h.2.sp, q6]⟩).wp
     (F₁ := AAfter₂ s₀ St D S L) (F₂ := AAfter₂ s₀' St D S L) fun a b h =>
       ⟨call2_after v h.1, call2_after v h.2⟩
@@ -195,7 +197,7 @@ theorem absorb_rel (v : Proof.CmacAes.AArch64.UpdateImpl) {s₀ s₀' : State} (
     ((m.mono (fun _ _ h => h) fun _ _ h => h.2).seq ((c₂.mono (fun _ _ h => h) fun _ _ h => h.2).seq p)))
 
 theorem absorb_ct (v : Proof.CmacAes.AArch64.UpdateImpl) :
-    ConstantTime isa absorbAArch64.pre absorbAArch64.pub (absorb v.callee) :=
+    ConstantTime isa (absorbAArch64 (64 + v.scratch)).pre (absorbAArch64 (64 + v.scratch)).pub (absorb v.callee) :=
   fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ => (absorb_rel v h₁ h₂ hq _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
 
 end VG.Proof.CmacAes.Stream.AArch64
@@ -232,8 +234,9 @@ theorem init_correct (v : Ctr32Impl) (s : State) (hs : initAArch64.pre s) :
     ∃ t s', Exec isa (init v.expand v.callee v.suffix) s t s' ∧ abiPreserved s s' ∧ initAArch64.post s s' :=
   WP.withPreservedV (init_wp v hs) (init_keepsV v)
 
-theorem absorb_correct (v : Proof.CmacAes.AArch64.UpdateImpl) (s : State) (hs : absorbAArch64.pre s) :
-    ∃ t s', Exec isa (absorb v.callee) s t s' ∧ abiPreserved s s' ∧ absorbAArch64.post s s' :=
+theorem absorb_correct (v : Proof.CmacAes.AArch64.UpdateImpl) (s : State)
+    (hs : (absorbAArch64 (64 + v.scratch)).pre s) :
+    ∃ t s', Exec isa (absorb v.callee) s t s' ∧ abiPreserved s s' ∧ (absorbAArch64 (64 + v.scratch)).post s s' :=
   WP.withPreservedV (absorb_wp v hs) (absorb_keepsV v)
 
 theorem finish_correct (v : Ctr32Impl) (s : State) (hs : finishAArch64.pre s) :
@@ -264,11 +267,36 @@ def absorbSat : State where
   rd := [⟨0x3000, 0⟩]
   wr := [⟨0x1000, 304⟩, ⟨0x4000, 2304⟩]
 
+/-- `absorbSat` with `F` bytes of scratch. -/
+def absorbSatW (F : Nat) : State := { absorbSat with wr := [⟨0x1000, 304⟩, ⟨0x4000, F⟩] }
+
+/-- `vg_cmac_aes_absorb` with `scratch: *mut [u64; w]`: `w = 8 + n / 8` for a
+chaining implementation that needs `n` bytes (`UpdateImpl.scratch`). -/
+def absorbScratchSigW (w : Nat) : Sig where
+  params := [("state", .array true .u64 38), ("rounds", .int .usize true),
+    ("count", .int .u64 true), ("data", .slice false .u8 "len"),
+    ("scratch", .array true .u64 w)]
+
+/-- `aesAbsorbContract`, whatever `scratch` is (of `w` words). -/
+def absorbScratchContractW {M : ISA} (A : Abi M) (w : Nat) (stack : Nat := 0) : Contract M :=
+  (absorbScratchSigW w).contract A
+    (pre := fun state rounds count data len _scratch =>
+      Spec.Cmac.aesAbsorbPre A.ptrBits state rounds count data len)
+    (post := fun state rounds count data len _scratch =>
+      Spec.Cmac.aesAbsorbPost A.ptrBits state rounds count data len)
+    (stack := stack)
+
 theorem absorb_verified (v : Proof.CmacAes.AArch64.UpdateImpl) :
-    Verified AArch64.target (absorb v.callee) (absorbScratchContract AArch64.abi) :=
-  Verified.of_correct (absorb_correct v) (absorb_ct v) (by
-    sig_implies [absorbScratchContract, absorbScratchSig, Spec.Cmac.aesAbsorbPre, Spec.Cmac.aesAbsorbPost, absorbAArch64, AArch64.abi,
-      AArch64.argRegs] [absorbSat] using absorbSat)
+    Verified AArch64.target (absorb v.callee) (absorbScratchContractW AArch64.abi (8 + v.scratch / 8)) := by
+  obtain hc := absorb_correct v
+  obtain ht := absorb_ct v
+  rcases v.scratch_ok with h | h <;> simp only [h, Nat.reduceAdd, Nat.reduceDiv] at hc ht ⊢
+  · exact Verified.of_correct hc ht (by
+      sig_implies [absorbScratchContractW, absorbScratchSigW, Spec.Cmac.aesAbsorbPre, Spec.Cmac.aesAbsorbPost,
+        absorbAArch64, AArch64.abi, AArch64.argRegs] [absorbSatW, absorbSat] using absorbSatW 64)
+  · exact Verified.of_correct hc ht (by
+      sig_implies [absorbScratchContractW, absorbScratchSigW, Spec.Cmac.aesAbsorbPre, Spec.Cmac.aesAbsorbPost,
+        absorbAArch64, AArch64.abi, AArch64.argRegs] [absorbSatW, absorbSat] using absorbSatW 2240)
 
 /-- A state satisfying `vg_cmac_aes_finish`'s precondition. -/
 def finishSat : State where

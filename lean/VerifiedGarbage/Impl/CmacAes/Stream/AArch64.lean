@@ -19,10 +19,12 @@ loop reaches streaming callers without changing their buffering proof.
 The state (`VG.Spec.Cmac.Repr`) is the key schedule (bytes 0–239), the
 subkeys (240–271), the chaining value (272–287) and the bytes held back
 (288–303), so bytes 0–271 are `vg_cmac_aes_finalize`'s `key`. The scratch
-buffer (2304 bytes): `[0, 2176)` is the working space of the functions
-called, and `[2176, 2232)` our caller's callee-saved registers and our
-return address `x30`. A call (`bl`) stores nothing in memory, so no stack
-is used.
+buffer of `init` and `finish` (2304 bytes): `[0, 2176)` is the working space
+of the functions called, and `[2176, 2232)` our caller's callee-saved
+registers and our return address `x30`. `absorb`'s (`64 + n` bytes, for a
+chaining implementation that needs `n`): `[8, 64)` holds the registers and
+`[64, 64 + n)` is the working space of the function called. A call (`bl`)
+stores nothing in memory, so no stack is used.
 
 * `init` expands the key into the state, derives the subkeys after it and
   zeroes the chaining value, keeping the state (`x19`), the scratch buffer
@@ -95,7 +97,7 @@ def copy : Prog isa := .ite (.zero .x .x8) (.block []) Impl.CmacAes.AArch64.copy
 /-- The registers saved in the scratch buffer, and where (`x23`, the base of
 the restore, last). -/
 def saved : List (Reg × Nat) :=
-  [(.x19, 2176), (.x20, 2184), (.x21, 2192), (.x22, 2200), (.x24, 2208), (.x30, 2216), (.x23, 2224)]
+  [(.x19, 8), (.x20, 16), (.x21, 24), (.x22, 32), (.x24, 40), (.x30, 48), (.x23, 56)]
 
 /-- Saves the registers and keeps the arguments in them. -/
 def save : List Instr :=
@@ -128,7 +130,7 @@ def chain1 : Prog isa :=
   .seq (.block [.add .x .x21 .x21 .x10, .sub .x .x22 .x22 .x10, .movz .x .x4 0 0])
     (.seq (.ite (.zero .x .x22) (.block []) (.block [.movz .x .x4 1 0]))
       (.block [mov .x0 .x19, mov .x1 .x20, .addImm .x .x2 .x19 272, .addImm .x .x3 .x19 288,
-        mov .x5 .x23]))
+        .addImm .x .x5 .x23 64]))
 
 /-- `16 nb` in `x24` for the `nb` whole blocks of the data left but its last
 1 to 16 bytes (none if no data is left), and the arguments of
@@ -139,7 +141,7 @@ def chain2 : Prog isa :=
         (.block [.subImm .x .x24 .x22 1, .movz .x .x9 15 0, .logic .and .x .x9 .x24 .x9,
           .sub .x .x24 .x24 .x9]))
       (.block [.lsr .x .x4 .x24 4, mov .x0 .x19, mov .x1 .x20, .addImm .x .x2 .x19 272, mov .x3 .x21,
-        mov .x5 .x23]))
+        .addImm .x .x5 .x23 64]))
 
 /-- The data advanced past the blocks chained, and the arguments of the
 copy of the rest to the start of the bytes held back. -/

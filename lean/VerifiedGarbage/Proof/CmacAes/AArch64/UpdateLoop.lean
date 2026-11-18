@@ -163,6 +163,31 @@ def updateAArch64 : Contract isa where
     s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧ s₁.gpr .x2 = s₂.gpr .x2 ∧
       s₁.gpr .x3 = s₂.gpr .x3 ∧ s₁.gpr .x4 = s₂.gpr .x4 ∧ s₁.gpr .x5 = s₂.gpr .x5 ∧ s₁.sp = s₂.sp
 
+/-- `updateAArch64` with `n` bytes of working space at `scratch`: an
+implementation that needs fewer (`UpdateImpl.scratch`) is proven against it,
+so that its callers can allocate only those. -/
+def updateAArch64With (n : Nat) : Contract isa where
+  pre s :=
+    let sched : Region := ⟨s.gpr .x0, 240⟩
+    let state : Region := ⟨s.gpr .x2, 16⟩
+    let data : Region := ⟨s.gpr .x3, 16 * (s.gpr .x4).toNat⟩
+    let scr : Region := ⟨s.gpr .x5, n⟩
+    s.rd = [sched, data] ∧ s.wr = [state, scr] ∧
+      sched.Disjoint state ∧ sched.Disjoint scr ∧ data.Disjoint state ∧ data.Disjoint scr ∧
+      state.Disjoint scr ∧
+      (s.gpr .x2).toNat + 16 ≤ 2 ^ 64 ∧ (s.gpr .x3).toNat + 16 * (s.gpr .x4).toNat ≤ 2 ^ 64 ∧
+      (s.gpr .x5).toNat + n ≤ 2 ^ 64 ∧
+      ((s.gpr .x1).toNat = 10 ∨ (s.gpr .x1).toNat = 12 ∨ (s.gpr .x1).toNat = 14)
+  post s s' :=
+    Spec.Aes.bytesAt s'.mem (s.gpr .x2) 16 =
+      Spec.Cmac.chain (ciphAt s.mem (s.gpr .x0) (s.gpr .x1).toNat) (Spec.Aes.bytesAt s.mem (s.gpr .x2) 16)
+        (Spec.Cmac.blocksAt s.mem (s.gpr .x3) 16 (s.gpr .x4).toNat)
+  pub s₁ s₂ :=
+    s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧ s₁.gpr .x2 = s₂.gpr .x2 ∧
+      s₁.gpr .x3 = s₂.gpr .x3 ∧ s₁.gpr .x4 = s₂.gpr .x4 ∧ s₁.gpr .x5 = s₂.gpr .x5 ∧ s₁.sp = s₂.sp
+
+theorem updateAArch64With_2176 : updateAArch64With 2176 = updateAArch64 := rfl
+
 /-- `vg_cmac_aes_subkeys(schedule = x0, rounds = x1, subkeys = x2, scratch = x3)`. -/
 def subkeysAArch64 : Contract isa where
   pre s :=
@@ -326,6 +351,24 @@ structure UPre (s₀ : State) : Prop where
   rounds : R s₀ = 10 ∨ R s₀ = 12 ∨ R s₀ = 14
 
 theorem UPre.of {s₀ : State} (h : updateAArch64.pre s₀) : UPre s₀ :=
+  let ⟨a, b, c, d, e, f, g, h, i, j, k⟩ := h
+  ⟨a, b, c, d, e, f, g, h, i, j, k⟩
+
+/-- `UPre` with `n` bytes of working space. -/
+structure UPreW (n : Nat) (s₀ : State) : Prop where
+  rd : s₀.rd = [schR s₀, dataR s₀]
+  wr : s₀.wr = [stR s₀, ⟨S s₀, n⟩]
+  sch_st : (schR s₀).Disjoint (stR s₀)
+  sch_scr : (schR s₀).Disjoint (⟨S s₀, n⟩)
+  data_st : (dataR s₀).Disjoint (stR s₀)
+  data_scr : (dataR s₀).Disjoint (⟨S s₀, n⟩)
+  st_scr : (stR s₀).Disjoint (⟨S s₀, n⟩)
+  st_wrap : (St s₀).toNat + 16 ≤ 2 ^ 64
+  data_wrap : (Dp s₀).toNat + 16 * N s₀ ≤ 2 ^ 64
+  scr_wrap : (S s₀).toNat + n ≤ 2 ^ 64
+  rounds : R s₀ = 10 ∨ R s₀ = 12 ∨ R s₀ = 14
+
+theorem UPreW.of {n : Nat} {s₀ : State} (h : (updateAArch64With n).pre s₀) : UPreW n s₀ :=
   let ⟨a, b, c, d, e, f, g, h, i, j, k⟩ := h
   ⟨a, b, c, d, e, f, g, h, i, j, k⟩
 

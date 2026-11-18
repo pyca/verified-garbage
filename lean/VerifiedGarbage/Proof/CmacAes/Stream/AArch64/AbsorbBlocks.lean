@@ -20,8 +20,8 @@ What each piece of code between the copies and calls computes, in terms of
 `count` (`c`) and `len` (`L`): the bytes held back `h = held c`, the bytes
 copied after them `f = min L (16 - h)`, the data left `L - f`, whether to
 chain the block held back (`b1`), the blocks chained after it (`nb`), and the
-rest (`rest`); and the registers `absorb` saves at `scratch + 2176`, where the
-functions it calls do not write, and restores at the end.
+rest (`rest`); and the registers `absorb` saves at `scratch + 8`, below the
+working space of the functions it calls (`scratch + 64`), and restores at the end.
 -/
 
 @[expose] public section
@@ -84,7 +84,7 @@ theorem nb16_bv {x : Nat} (hx : 0 < x) (hx' : x < 2 ^ 64) :
 
 /-! ## Saving and restoring the registers -/
 
-/-- The memory after saving the registers at `S + 2176`. -/
+/-- The memory after saving the registers at `S + 8`. -/
 abbrev absSavedMem (s : State) (S : Addr) : Mem := Spill.saveMem s.mem S s.gpr saved
 
 /-- Each slot holds the register saved there. -/
@@ -94,11 +94,11 @@ theorem absSaved_slot (s : State) (S : Addr) {r : Reg} {d : Nat} (h : (r, d) ∈
 
 /-- Saving the registers changes only their slots. -/
 theorem absSavedMem_frame (s : State) (S : Addr) :
-    Frame [⟨S + BitVec.ofNat 64 2176, 56⟩] s.mem (absSavedMem s S) :=
+    Frame [⟨S + BitVec.ofNat 64 8, 56⟩] s.mem (absSavedMem s S) :=
   Spill.saveMem_frame (by decide) (by decide) _ _ _
 
 theorem save_ok (s : State) {S : Addr} (hS : s.gpr .x5 = S)
-    (hw : ∀ d, 2176 ≤ d → d + 8 ≤ 2232 → InRegions s.wr (S + BitVec.ofNat 64 d) 8) :
+    (hw : ∀ d, 8 ≤ d → d + 8 ≤ 64 → InRegions s.wr (S + BitVec.ofNat 64 d) 8) :
     ∃ s', runBlock isa save s = some s' ∧
       s'.gpr .x19 = s.gpr .x0 ∧ s'.gpr .x20 = s.gpr .x1 ∧ s'.gpr .x21 = s.gpr .x3 ∧
       s'.gpr .x22 = s.gpr .x4 ∧ s'.gpr .x23 = S ∧ s'.gpr .x2 = s.gpr .x2 ∧
@@ -109,9 +109,9 @@ theorem save_ok (s : State) {S : Addr} (hS : s.gpr .x5 = S)
     simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLT, Nat.reduceMul, Nat.reduceMod, and_self, save, saved, mov, List.map, List.cons_append,
       List.nil_append, runBlock_cons, runStep_some, runBlock_nil, exec, addr, State.store, Size.bytes,
       Size.bits, State.read, gpr_write, Option.bind_some,
-      hw 2176 (by decide) (by decide), hw 2184 (by decide) (by decide), hw 2192 (by decide) (by decide),
-      hw 2200 (by decide) (by decide), hw 2208 (by decide) (by decide), hw 2216 (by decide) (by decide),
-      hw 2224 (by decide) (by decide)]
+      hw 8 (by decide) (by decide), hw 16 (by decide) (by decide), hw 24 (by decide) (by decide),
+      hw 32 (by decide) (by decide), hw 40 (by decide) (by decide), hw 48 (by decide) (by decide),
+      hw 56 (by decide) (by decide)]
     rfl, ?_⟩
   refine ⟨by simp [gpr_write], by simp [gpr_write], by simp [gpr_write], by simp [gpr_write],
     by simp [gpr_write], by simp [gpr_write], fun r h₁ h₂ h₃ h₄ h₅ => ?_, rfl, ?_, rfl, rfl⟩
@@ -119,7 +119,7 @@ theorem save_ok (s : State) {S : Addr} (hS : s.gpr .x5 = S)
   · simp only [mem_write, absSavedMem, saved, Spill.saveMem, Mem.writeW, BitVec.setWidth_eq]
 
 theorem restore_ok (s : State) {B : Addr} (hb : s.gpr .x23 = B)
-    (hr : ∀ d, 2176 ≤ d → d + 8 ≤ 2232 → InRegions (s.rd ++ s.wr) (B + BitVec.ofNat 64 d) 8) :
+    (hr : ∀ d, 8 ≤ d → d + 8 ≤ 64 → InRegions (s.rd ++ s.wr) (B + BitVec.ofNat 64 d) 8) :
     ∃ s', runBlock isa restore s = some s' ∧
       (∀ r d, (r, d) ∈ saved → s'.gpr r = s.mem.readW (B + BitVec.ofNat 64 d) 64) ∧
       (∀ r, r ≠ .x19 → r ≠ .x20 → r ≠ .x21 → r ≠ .x22 → r ≠ .x24 → r ≠ .x30 → r ≠ .x23 →
@@ -129,9 +129,9 @@ theorem restore_ok (s : State) {B : Addr} (hb : s.gpr .x23 = B)
     simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLT, Nat.reduceMul, Nat.reduceMod, and_self, restore, saved, List.map, runBlock_cons, runStep_some,
       runBlock_nil, exec, addr, State.load, Size.bytes, Size.bits, gpr_write, mem_write, rd_write,
       wr_write, Option.bind_some, Option.map_some, hb,
-      hr 2176 (by decide) (by decide), hr 2184 (by decide) (by decide), hr 2192 (by decide) (by decide),
-      hr 2200 (by decide) (by decide), hr 2208 (by decide) (by decide), hr 2216 (by decide) (by decide),
-      hr 2224 (by decide) (by decide)]
+      hr 8 (by decide) (by decide), hr 16 (by decide) (by decide), hr 24 (by decide) (by decide),
+      hr 32 (by decide) (by decide), hr 40 (by decide) (by decide), hr 48 (by decide) (by decide),
+      hr 56 (by decide) (by decide)]
     rfl, ?_⟩
   refine ⟨fun r d h => ?_, fun r h₁ h₂ h₃ h₄ h₅ h₆ h₇ => ?_, rfl, rfl⟩
   · simp only [saved, List.mem_cons, List.not_mem_nil, or_false, Prod.mk.injEq] at h
@@ -266,7 +266,7 @@ theorem chain1_wp {s : State} {St D S : Addr} {f L : Nat} (hf : f ≤ L) (hL : L
     WP isa chain1 s fun s' => s'.gpr .x21 = D + BitVec.ofNat 64 f ∧ s'.gpr .x22 = BitVec.ofNat 64 (L - f) ∧
       s'.gpr .x4 = BitVec.ofNat 64 (if L - f = 0 then 0 else 1) ∧ s'.gpr .x0 = St ∧
       s'.gpr .x1 = s.gpr .x20 ∧ s'.gpr .x2 = St + BitVec.ofNat 64 272 ∧
-      s'.gpr .x3 = St + BitVec.ofNat 64 288 ∧ s'.gpr .x5 = S ∧
+      s'.gpr .x3 = St + BitVec.ofNat 64 288 ∧ s'.gpr .x5 = S + BitVec.ofNat 64 64 ∧
       (∀ r ∈ preserved, r ≠ .x21 → r ≠ .x22 → s'.gpr r = s.gpr r) ∧
       s'.sp = s.sp ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   obtain ⟨s₁, run₁, x21₁, x22₁, x4₁, g₁, sp₁, m₁, rd₁, wr₁⟩ : ∃ s₁, runBlock isa [.add .x .x21 .x21 .x10,
@@ -333,7 +333,7 @@ theorem chain2_wp {s : State} {x : Nat} (hx : x < 2 ^ 64) (h22 : s.gpr .x22 = Bi
       s'.gpr .x24 = BitVec.ofNat 64 (16 * (if x = 0 then 0 else (x - 1) / 16)) ∧
       s'.gpr .x4 = BitVec.ofNat 64 (if x = 0 then 0 else (x - 1) / 16) ∧ s'.gpr .x0 = s.gpr .x19 ∧
       s'.gpr .x1 = s.gpr .x20 ∧ s'.gpr .x2 = s.gpr .x19 + BitVec.ofNat 64 272 ∧
-      s'.gpr .x3 = s.gpr .x21 ∧ s'.gpr .x5 = s.gpr .x23 ∧
+      s'.gpr .x3 = s.gpr .x21 ∧ s'.gpr .x5 = s.gpr .x23 + BitVec.ofNat 64 64 ∧
       (∀ r ∈ preserved, r ≠ .x24 → s'.gpr r = s.gpr r) ∧
       s'.sp = s.sp ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   obtain ⟨s₁, run₁, x24₁, g₁⟩ : ∃ s₁, runBlock isa [.movz .x .x24 0 0] s = some s₁ ∧

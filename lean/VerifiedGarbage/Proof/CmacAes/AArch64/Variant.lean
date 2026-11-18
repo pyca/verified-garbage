@@ -19,6 +19,14 @@ structure UpdateImpl where
   ok : ∀ s, updateAArch64.pre s →
     ∃ t s', Exec isa callee.code s t s' ∧ abiPreserved s s' ∧ updateAArch64.post s s'
   ct : ConstantTime isa updateAArch64.pre updateAArch64.pub callee.code
+  /-- The bytes of working space it needs: none, or `updateAArch64`'s.
+  Streaming absorb allocates only these (`Stream/AArch64`), in a frame whose
+  proofs take each size in turn. -/
+  scratch : Nat
+  scratch_ok : scratch = 0 ∨ scratch = 2176
+  okW : ∀ s, (updateAArch64With scratch).pre s →
+    ∃ t s', Exec isa callee.code s t s' ∧ abiPreserved s s' ∧ (updateAArch64With scratch).post s s'
+  ctW : ConstantTime isa (updateAArch64With scratch).pre (updateAArch64With scratch).pub callee.code
   keepsV : callee.code.allInstrs AArch64.keepsV = true
   suffix : String
   features : List String
@@ -36,6 +44,10 @@ def UpdateImpl.ctr32 (v : Proof.Aes.AArch64.Ctr32Impl) : UpdateImpl where
     simp [Impl.CmacAes.AArch64.update, Impl.CmacAes.AArch64.body, Code.noFrames, v.noFrames]
   ok := update_correct v
   ct := update_ct v
+  scratch := 2176
+  scratch_ok := .inr rfl
+  okW := by rw [updateAArch64With_2176]; exact update_correct v
+  ctW := by rw [updateAArch64With_2176]; exact update_ct v
   keepsV := update_keepsV v
   suffix := v.suffix
   features := v.features
@@ -50,6 +62,10 @@ def UpdateImpl.aese : UpdateImpl where
   noFrames := by decide +kernel
   ok := Aese.correct
   ct := Aese.ct
+  scratch := 0
+  scratch_ok := .inl rfl
+  okW := Aese.correctW 0
+  ctW := Aese.ctW 0
   keepsV := by decide +kernel
   suffix := "_aes"
   features := ["aes"]

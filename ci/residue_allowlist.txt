@@ -137,7 +137,6 @@ aarch64 vg_chacha20_poly1305_seal_gather_sve2
 aarch64 vg_chacha20_poly1305_seal_neon
 aarch64 vg_chacha20_poly1305_seal_sve2
 aarch64 vg_cmac_aes_absorb
-aarch64 vg_cmac_aes_absorb_aes
 aarch64 vg_cmac_aes_absorb_neon
 aarch64 vg_cmac_aes_finish
 aarch64 vg_cmac_aes_finish_aes

@@ -10,19 +10,21 @@ pub const VG_CMAC_AES_ABSORB_AES_FEATURES: verified_garbage_cpu::Features = veri
 ///
 /// Contract: `VG.Spec.Cmac.aesAbsorbContract`. Constant time: only the pointers, `rounds`, `count` and `len` may affect timing, not the state or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 304 bytes.
 /// * `data` must be valid for reads of `len` bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * `state` must not overlap `data` (distinct Rust objects never do).
-/// * Neither `state` nor `data` may overlap the 2304 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `data` may overlap the 64 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_cmac_aes_absorb_aes(state: *mut [u64; 38], rounds: usize, count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        r".inst 0xd12403ff,0x910003e5,0xf90440b3,0xf90444b4,0xf90448b5,0xf9044cb6,0xf90450b8,0xf90454be
-.inst 0xf90458b7,0x91000013,0x91000034,0x91000075,0x91000096,0x910000b7
+        r".inst 0xd10103ff,0x910003e5,0xf90004b3,0xf90008b4,0xf9000cb5,0xf90010b6,0xf90014b8,0xf90018be
+.inst 0xf9001cb7,0x91000013,0x91000034,0x91000075,0x91000096,0x910000b7
 cbz x2, 20f
 .inst 0xd1000449,0xd28001ea,0x8a0a0129,0x91000529
 b 21f
@@ -56,7 +58,7 @@ cbz x22, 29f
 b 210f
 29:
 210:
-.inst 0x91000260,0x91000281,0x91044262,0x91048263,0x910002e5
+.inst 0x91000260,0x91000281,0x91044262,0x91048263,0x910102e5
 bl {vg_cmac_aes_update_aes}
 .inst 0xd2800018
 cbz x22, 211f
@@ -64,7 +66,7 @@ cbz x22, 211f
 b 212f
 211:
 212:
-.inst 0xd344ff04,0x91000260,0x91000281,0x91044262,0x910002a3,0x910002e5
+.inst 0xd344ff04,0x91000260,0x91000281,0x91044262,0x910002a3,0x910102e5
 bl {vg_cmac_aes_update_aes}
 .inst 0x8b1802b5,0xcb1802d6,0x91048266,0x910002a7,0x910002c8
 cbz x8, 213f
@@ -74,8 +76,13 @@ cbnz x8, 215b
 b 214f
 213:
 214:
-.inst 0xf94442f3,0xf94446f4,0xf9444af5,0xf9444ef6,0xf94452f8,0xf94456fe,0xf9445af7,0x912403ff
-.inst 0xd65f03c0
+.inst 0xf94006f3,0xf9400af4,0xf9400ef5,0xf94012f6,0xf94016f8,0xf9401afe,0xf9401ef7,0x910103ff
+.inst 0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800008
+.inst 0xd2800009,0xd280000a,0xd280000b,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e410
+.inst 0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418
+.inst 0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f
+.inst 0xd2800000,0xd10103ff,0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f
+.inst 0x910103ff,0xd65f03c0
 .p2align 6",
         vg_cmac_aes_update_aes = sym super::cmac_aes::vg_cmac_aes_update_aes::vg_cmac_aes_update_aes,
     )
@@ -91,12 +98,12 @@ b 214f
 /// * `data` must be valid for reads of `len` bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * `state` must not overlap `data` (distinct Rust objects never do).
-/// * Neither `state` nor `data` may overlap the 2304 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `data` may overlap the 2240 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_cmac_aes_absorb_neon(state: *mut [u64; 38], rounds: usize, count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        r".inst 0xd12403ff,0x910003e5,0xf90440b3,0xf90444b4,0xf90448b5,0xf9044cb6,0xf90450b8,0xf90454be
-.inst 0xf90458b7,0x91000013,0x91000034,0x91000075,0x91000096,0x910000b7
+        r".inst 0xd12303ff,0x910003e5,0xf90004b3,0xf90008b4,0xf9000cb5,0xf90010b6,0xf90014b8,0xf90018be
+.inst 0xf9001cb7,0x91000013,0x91000034,0x91000075,0x91000096,0x910000b7
 cbz x2, 20f
 .inst 0xd1000449,0xd28001ea,0x8a0a0129,0x91000529
 b 21f
@@ -130,7 +137,7 @@ cbz x22, 29f
 b 210f
 29:
 210:
-.inst 0x91000260,0x91000281,0x91044262,0x91048263,0x910002e5
+.inst 0x91000260,0x91000281,0x91044262,0x91048263,0x910102e5
 bl {vg_cmac_aes_update_neon}
 .inst 0xd2800018
 cbz x22, 211f
@@ -138,7 +145,7 @@ cbz x22, 211f
 b 212f
 211:
 212:
-.inst 0xd344ff04,0x91000260,0x91000281,0x91044262,0x910002a3,0x910002e5
+.inst 0xd344ff04,0x91000260,0x91000281,0x91044262,0x910002a3,0x910102e5
 bl {vg_cmac_aes_update_neon}
 .inst 0x8b1802b5,0xcb1802d6,0x91048266,0x910002a7,0x910002c8
 cbz x8, 213f
@@ -148,7 +155,7 @@ cbnz x8, 215b
 b 214f
 213:
 214:
-.inst 0xf94442f3,0xf94446f4,0xf9444af5,0xf9444ef6,0xf94452f8,0xf94456fe,0xf9445af7,0x912403ff
+.inst 0xf94006f3,0xf9400af4,0xf9400ef5,0xf94012f6,0xf94016f8,0xf9401afe,0xf9401ef7,0x912303ff
 .inst 0xd65f03c0
 .p2align 6",
         vg_cmac_aes_update_neon = sym super::cmac_aes::vg_cmac_aes_update_neon::vg_cmac_aes_update_neon,
@@ -165,12 +172,12 @@ b 214f
 /// * `data` must be valid for reads of `len` bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * `state` must not overlap `data` (distinct Rust objects never do).
-/// * Neither `state` nor `data` may overlap the 2304 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `data` may overlap the 2240 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_cmac_aes_absorb(state: *mut [u64; 38], rounds: usize, count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        r".inst 0xd12403ff,0x910003e5,0xf90440b3,0xf90444b4,0xf90448b5,0xf9044cb6,0xf90450b8,0xf90454be
-.inst 0xf90458b7,0x91000013,0x91000034,0x91000075,0x91000096,0x910000b7
+        r".inst 0xd12303ff,0x910003e5,0xf90004b3,0xf90008b4,0xf9000cb5,0xf90010b6,0xf90014b8,0xf90018be
+.inst 0xf9001cb7,0x91000013,0x91000034,0x91000075,0x91000096,0x910000b7
 cbz x2, 20f
 .inst 0xd1000449,0xd28001ea,0x8a0a0129,0x91000529
 b 21f
@@ -204,7 +211,7 @@ cbz x22, 29f
 b 210f
 29:
 210:
-.inst 0x91000260,0x91000281,0x91044262,0x91048263,0x910002e5
+.inst 0x91000260,0x91000281,0x91044262,0x91048263,0x910102e5
 bl {vg_cmac_aes_update}
 .inst 0xd2800018
 cbz x22, 211f
@@ -212,7 +219,7 @@ cbz x22, 211f
 b 212f
 211:
 212:
-.inst 0xd344ff04,0x91000260,0x91000281,0x91044262,0x910002a3,0x910002e5
+.inst 0xd344ff04,0x91000260,0x91000281,0x91044262,0x910002a3,0x910102e5
 bl {vg_cmac_aes_update}
 .inst 0x8b1802b5,0xcb1802d6,0x91048266,0x910002a7,0x910002c8
 cbz x8, 213f
@@ -222,7 +229,7 @@ cbnz x8, 215b
 b 214f
 213:
 214:
-.inst 0xf94442f3,0xf94446f4,0xf9444af5,0xf9444ef6,0xf94452f8,0xf94456fe,0xf9445af7,0x912403ff
+.inst 0xf94006f3,0xf9400af4,0xf9400ef5,0xf94012f6,0xf94016f8,0xf9401afe,0xf9401ef7,0x912303ff
 .inst 0xd65f03c0
 .p2align 6",
         vg_cmac_aes_update = sym super::cmac_aes::vg_cmac_aes_update::vg_cmac_aes_update,

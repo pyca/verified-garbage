@@ -5,15 +5,15 @@
 // gives.
 
 vg_cmac_aes_absorb_aes:
-	sub sp, sp, #2304
+	sub sp, sp, #64
 	add x5, sp, #0
-	str x19, [x5, #2176]
-	str x20, [x5, #2184]
-	str x21, [x5, #2192]
-	str x22, [x5, #2200]
-	str x24, [x5, #2208]
-	str x30, [x5, #2216]
-	str x23, [x5, #2224]
+	str x19, [x5, #8]
+	str x20, [x5, #16]
+	str x21, [x5, #24]
+	str x22, [x5, #32]
+	str x24, [x5, #40]
+	str x30, [x5, #48]
+	str x23, [x5, #56]
 	add x19, x0, #0
 	add x20, x1, #0
 	add x21, x3, #0
@@ -71,7 +71,7 @@ vg_cmac_aes_absorb_aes:
 	add x1, x20, #0
 	add x2, x19, #272
 	add x3, x19, #288
-	add x5, x23, #0
+	add x5, x23, #64
 	bl {vg_cmac_aes_update_aes}
 	movz x24, #0, lsl #0
 	cbz x22, 211f
@@ -87,7 +87,7 @@ vg_cmac_aes_absorb_aes:
 	add x1, x20, #0
 	add x2, x19, #272
 	add x3, x21, #0
-	add x5, x23, #0
+	add x5, x23, #64
 	bl {vg_cmac_aes_update_aes}
 	add x21, x21, x24
 	sub x22, x22, x24
@@ -105,27 +105,68 @@ vg_cmac_aes_absorb_aes:
 	b 214f
 213:
 214:
-	ldr x19, [x23, #2176]
-	ldr x20, [x23, #2184]
-	ldr x21, [x23, #2192]
-	ldr x22, [x23, #2200]
-	ldr x24, [x23, #2208]
-	ldr x30, [x23, #2216]
-	ldr x23, [x23, #2224]
-	add sp, sp, #2304
+	ldr x19, [x23, #8]
+	ldr x20, [x23, #16]
+	ldr x21, [x23, #24]
+	ldr x22, [x23, #32]
+	ldr x24, [x23, #40]
+	ldr x30, [x23, #48]
+	ldr x23, [x23, #56]
+	add sp, sp, #64
+	movz x1, #0, lsl #0
+	movz x2, #0, lsl #0
+	movz x3, #0, lsl #0
+	movz x4, #0, lsl #0
+	movz x5, #0, lsl #0
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
+	movz x8, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x16, #0, lsl #0
+	movz x17, #0, lsl #0
+	movi v0.2d, #0
+	movi v1.2d, #0
+	movi v16.2d, #0
+	movi v17.2d, #0
+	movi v18.2d, #0
+	movi v19.2d, #0
+	movi v20.2d, #0
+	movi v21.2d, #0
+	movi v22.2d, #0
+	movi v23.2d, #0
+	movi v24.2d, #0
+	movi v25.2d, #0
+	movi v26.2d, #0
+	movi v27.2d, #0
+	movi v28.2d, #0
+	movi v29.2d, #0
+	movi v30.2d, #0
+	movi v31.2d, #0
+	tst x1, x1
+	movz x0, #0, lsl #0
+	sub sp, sp, #64
+	movi v31.2d, #0
+	add x9, sp, #0
+	str q31, [x9, #0]
+	str q31, [x9, #16]
+	str q31, [x9, #32]
+	str q31, [x9, #48]
+	add sp, sp, #64
 	ret
 	.p2align 6
 
 vg_cmac_aes_absorb_neon:
-	sub sp, sp, #2304
+	sub sp, sp, #2240
 	add x5, sp, #0
-	str x19, [x5, #2176]
-	str x20, [x5, #2184]
-	str x21, [x5, #2192]
-	str x22, [x5, #2200]
-	str x24, [x5, #2208]
-	str x30, [x5, #2216]
-	str x23, [x5, #2224]
+	str x19, [x5, #8]
+	str x20, [x5, #16]
+	str x21, [x5, #24]
+	str x22, [x5, #32]
+	str x24, [x5, #40]
+	str x30, [x5, #48]
+	str x23, [x5, #56]
 	add x19, x0, #0
 	add x20, x1, #0
 	add x21, x3, #0
@@ -183,7 +224,7 @@ vg_cmac_aes_absorb_neon:
 	add x1, x20, #0
 	add x2, x19, #272
 	add x3, x19, #288
-	add x5, x23, #0
+	add x5, x23, #64
 	bl {vg_cmac_aes_update_neon}
 	movz x24, #0, lsl #0
 	cbz x22, 211f
@@ -199,7 +240,7 @@ vg_cmac_aes_absorb_neon:
 	add x1, x20, #0
 	add x2, x19, #272
 	add x3, x21, #0
-	add x5, x23, #0
+	add x5, x23, #64
 	bl {vg_cmac_aes_update_neon}
 	add x21, x21, x24
 	sub x22, x22, x24
@@ -217,27 +258,27 @@ vg_cmac_aes_absorb_neon:
 	b 214f
 213:
 214:
-	ldr x19, [x23, #2176]
-	ldr x20, [x23, #2184]
-	ldr x21, [x23, #2192]
-	ldr x22, [x23, #2200]
-	ldr x24, [x23, #2208]
-	ldr x30, [x23, #2216]
-	ldr x23, [x23, #2224]
-	add sp, sp, #2304
+	ldr x19, [x23, #8]
+	ldr x20, [x23, #16]
+	ldr x21, [x23, #24]
+	ldr x22, [x23, #32]
+	ldr x24, [x23, #40]
+	ldr x30, [x23, #48]
+	ldr x23, [x23, #56]
+	add sp, sp, #2240
 	ret
 	.p2align 6
 
 vg_cmac_aes_absorb:
-	sub sp, sp, #2304
+	sub sp, sp, #2240
 	add x5, sp, #0
-	str x19, [x5, #2176]
-	str x20, [x5, #2184]
-	str x21, [x5, #2192]
-	str x22, [x5, #2200]
-	str x24, [x5, #2208]
-	str x30, [x5, #2216]
-	str x23, [x5, #2224]
+	str x19, [x5, #8]
+	str x20, [x5, #16]
+	str x21, [x5, #24]
+	str x22, [x5, #32]
+	str x24, [x5, #40]
+	str x30, [x5, #48]
+	str x23, [x5, #56]
 	add x19, x0, #0
 	add x20, x1, #0
 	add x21, x3, #0
@@ -295,7 +336,7 @@ vg_cmac_aes_absorb:
 	add x1, x20, #0
 	add x2, x19, #272
 	add x3, x19, #288
-	add x5, x23, #0
+	add x5, x23, #64
 	bl {vg_cmac_aes_update}
 	movz x24, #0, lsl #0
 	cbz x22, 211f
@@ -311,7 +352,7 @@ vg_cmac_aes_absorb:
 	add x1, x20, #0
 	add x2, x19, #272
 	add x3, x21, #0
-	add x5, x23, #0
+	add x5, x23, #64
 	bl {vg_cmac_aes_update}
 	add x21, x21, x24
 	sub x22, x22, x24
@@ -329,14 +370,14 @@ vg_cmac_aes_absorb:
 	b 214f
 213:
 214:
-	ldr x19, [x23, #2176]
-	ldr x20, [x23, #2184]
-	ldr x21, [x23, #2192]
-	ldr x22, [x23, #2200]
-	ldr x24, [x23, #2208]
-	ldr x30, [x23, #2216]
-	ldr x23, [x23, #2224]
-	add sp, sp, #2304
+	ldr x19, [x23, #8]
+	ldr x20, [x23, #16]
+	ldr x21, [x23, #24]
+	ldr x22, [x23, #32]
+	ldr x24, [x23, #40]
+	ldr x30, [x23, #48]
+	ldr x23, [x23, #56]
+	add sp, sp, #2240
 	ret
 	.p2align 6
 
