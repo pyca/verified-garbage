@@ -17,6 +17,7 @@ public import VerifiedGarbage.Proof.Cast5.X86_64.CbcVerified
 public import VerifiedGarbage.Proof.Cast5.X86_64.FbVerified
 public import VerifiedGarbage.Proof.Cast5.X86_64.FbFinalVerified
 import VerifiedGarbage.Proof.Aes.X86_64.ModesScrub
+import VerifiedGarbage.Proof.Aes.ScrubLocal
 import VerifiedGarbage.Proof.Cast5.ModeScratch
 import VerifiedGarbage.Proof.Framework.AddrArith
 
@@ -36,7 +37,7 @@ schedule, the data and the chaining block.
 
 namespace VG.Proof.Cast5.X86_64.Scrub
 
-open VG.X86_64 VG.X86_64.Scrub VG.Proof.Aes.X86_64.ModesScrub
+open VG.X86_64 VG.X86_64.Scrub VG.Proof.Aes.X86_64.ModesScrub VG.Proof.Aes.ScrubLocal
 
 /-! ## Locality -/
 

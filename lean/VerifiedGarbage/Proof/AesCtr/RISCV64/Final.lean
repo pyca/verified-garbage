@@ -316,7 +316,7 @@ theorem sv_bytes {s₀ : State} (hp : CPre s₀) :
       simp only [List.mem_singleton] at hr; subst hr; exact hp.data_sv.sub_left (blk_sub s₀))⟩
 
 theorem whole_wp {s₀ : State} (hp : CPre s₀) {s : State} (h : Setup s₀ s) :
-    WP isa (.call "vg_aes_ctr" crypt) s (Whole AesCtr.ctrMode s₀) := by
+    WP isa (.call "vg_aes_ctr_core" crypt) s (Whole AesCtr.ctrMode s₀) := by
   obtain ⟨eW, eIv, eB⟩ := sv_bytes hp
   obtain ⟨hpre, hc, hw⟩ := whole_pre hp h
   refine WP.call (k := wholeK) crypt_correct (rd := [fSch s₀]) (wr := [fIvR s₀, fBlk s₀, fScr s₀]) hpre
@@ -547,7 +547,7 @@ structure TCall (s₀ s : State) : Prop where
   out : bytesAt s.mem (cBk s₀) 16 = Spec.Cbc.aesWith (fR s₀) (fWk s₀) (Spec.Ctr.next (fIv0 s₀) (fN s₀))
 
 theorem tail_call_wp {s₀ : State} (hp : CPre s₀) {s : State} (h : TArgs s₀ s) :
-    WP isa (.call "vg_aes_ctr" crypt) s (TCall s₀) := by
+    WP isa (.call "vg_aes_ctr_core" crypt) s (TCall s₀) := by
   obtain ⟨hpre, hc, hw⟩ := tail_pre hp h
   obtain big := big_of (cW1_cW h.frame)
   obtain eW : bytesAt s.mem (fW s₀) (16 * (fR s₀ + 1)) = fWk s₀ :=
@@ -783,7 +783,7 @@ theorem final_rel {s₀ s₀' : State} (h0 : ctrFinalRISCV64.pre s₀) (h0' : ct
     (F₁ := Setup s₀) (F₂ := Setup s₀')
     fun a b h => by obtain ⟨rfl, rfl⟩ := h; exact ⟨final_setup_wp hp, final_setup_wp hp'⟩
   -- The whole blocks.
-  obtain r₂ := (RelCT.callEx (k := wholeK) (n := "vg_aes_ctr") crypt_correct crypt_ct
+  obtain r₂ := (RelCT.callEx (k := wholeK) (n := "vg_aes_ctr_core") crypt_correct crypt_ct
     (P := fun a b => Setup s₀ a ∧ Setup s₀' b) fun a b ⟨ha, hb⟩ => by
       obtain ⟨pa, ca, wa⟩ := whole_pre hp ha
       obtain ⟨pb, cb, wb⟩ := whole_pre hp' hb
@@ -822,7 +822,7 @@ theorem final_rel {s₀ s₀' : State} (h0 : ctrFinalRISCV64.pre s₀) (h0' : ct
         · rw [h.1.s7, h.2.s7, fV, fV, qV]) t₃).wp
       (F₁ := TArgs s₀) (F₂ := TArgs s₀')
       fun a b h => ⟨tail_args_wp hp h.1, tail_args_wp hp' h.2⟩
-    obtain a₂ := (RelCT.callEx (k := wholeK) (n := "vg_aes_ctr") crypt_correct crypt_ct
+    obtain a₂ := (RelCT.callEx (k := wholeK) (n := "vg_aes_ctr_core") crypt_correct crypt_ct
       (P := fun a b => TArgs s₀ a ∧ TArgs s₀' b) fun a b ⟨ha, hb⟩ => by
         obtain ⟨pa, ca, wa⟩ := tail_pre hp ha
         obtain ⟨pb, cb, wb⟩ := tail_pre hp' hb

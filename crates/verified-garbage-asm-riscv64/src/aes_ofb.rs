@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Ofb.aesContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 240 bytes.
@@ -24,7 +26,7 @@ pub(crate) unsafe extern "C" fn vg_aes_ofb(schedule: *const [u8; 240], rounds: u
 .option arch, +m, +c
 .base64 "k4L3f6ECk/KC/yO4EgAjvJIAvoQ="
 call {vg_aes_ofb_chain}
-.base64 "k4L0f6ECk/KC/4OwAgGDtIIBgoA="
+.base64 "k4L0f6ECk/KC/4OwAgGDtIIBgUIBRYFFAUaBRgFHgUcBSIFIgUIBQ4FDAU6BTgFPgU+CgA=="
 .option pop"#,
         vg_aes_ofb_chain = sym super::aes_ofb::vg_aes_ofb_chain::vg_aes_ofb_chain,
     )
@@ -33,6 +35,8 @@ call {vg_aes_ofb_chain}
 /// AES-OFB encryption or decryption (NIST SP 800-38A §6.4) of the last piece of a message, of any length, in place: XORs the `len` bytes at `data` with the output blocks `Oⱼ = CIPH_K(Oⱼ₋₁)`, where `O₀` is the block at `*iv`, a partial last block `Pₙ*` of `u` bytes with `MSB_u(Oₙ)`, and replaces `*iv` with the last output block used, `Oₙ` (leaving it unchanged if `len = 0`): so that a further call continues the message if `len` is a multiple of 16, and otherwise keystream, to be wiped, after which the message must end. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
 ///
 /// Contract: `VG.Spec.Ofb.aesFinalContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the key schedule, the chaining value or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -50,7 +54,7 @@ pub(crate) unsafe extern "C" fn vg_aes_ofb_final(schedule: *const [u8; 240], rou
         r#".option push
 .option arch, +m, +c
 .base64 "OXEKiCMwGAAjNJgAIzgoASM8OAEjMEgDIzRYAyM4aAMjPHgDqoQuirKKPovCi5NSRwATk0IAM4lmALMJZ0AWhw=="
-call {vg_aes_ofb}
+call {vg_aes_ofb_core}
 beqz s3, 20f
 .base64 "JoXShVaGhUZahw=="
 call {vg_aes_encrypt_blocks}
@@ -61,9 +65,9 @@ bnez s3, 22b
 j 21f
 20:
 21:
-.base64 "g7ALAIO0iwADuQsBg7mLAQO6CwKDuosCA7sLA4O7iwMKj4FPIzD/ASM0/wEjOP8BIzz/ASMw/wMjNP8DIzj/AyM8/wMhYYKA"
+.base64 "g7ALAIO0iwADuQsBg7mLAQO6CwKDuosCA7sLA4O7iwMKj4FPIzD/ASM0/wEjOP8BIzz/ASMw/wMjNP8DIzj/AyM8/wMhYYFCOXEKgyMwUwAjNFMAIzhTACM8UwAjMFMCIzRTAiM4UwIjPFMCIWEBRYFFAUaBRgFHgUcBSIFIgUIBQ4FDAU6BTgFPgU+CgA=="
 .option pop"#,
-        vg_aes_ofb = sym super::aes_ofb::vg_aes_ofb,
+        vg_aes_ofb_core = sym super::aes_ofb::vg_aes_ofb_core::vg_aes_ofb_core,
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
     )
 }
@@ -71,3 +75,7 @@ j 21f
 #[rustfmt::skip]
 #[path = "internal/vg_aes_ofb_chain.rs"]
 pub(crate) mod vg_aes_ofb_chain;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_ofb_core.rs"]
+pub(crate) mod vg_aes_ofb_core;

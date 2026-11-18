@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Cmac.aesInitContract`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 304 bytes, and aligned for `u64`.
@@ -23,9 +25,9 @@ pub(crate) unsafe extern "C" fn vg_cmac_aes_init(state: *mut [u64; 38], key: *co
 call {vg_aes_expand_key_scratch}
 .base64 "JoXOhROGBA/Khg=="
 call {vg_cmac_aes_subkeys}
-.base64 "AUMjiGQQAUOjiGQQAUMjiWQQAUOjiWQQAUMjimQQAUOjimQQAUMji2QQAUOji2QQAUMjjGQQAUOjjGQQAUMjjWQQAUOjjWQQAUMjjmQQAUOjjmQQAUMjj2QQAUOjj2QQkwL5f5OCggiT8oL/g7ACAIO0ggADuQIBg7mCAVFhEwEBf4KA"
+.base64 "AUMjiGQQAUOjiGQQAUMjiWQQAUOjiWQQAUMjimQQAUOjimQQAUMji2QQAUOji2QQAUMjjGQQAUOjjGQQAUMjjWQQAUOjjWQQAUMjjmQQAUOjjmQQAUMjj2QQAUOjj2QQkwL5f5OCggiT8oL/g7ACAIO0ggADuQIBg7mCAVFhEwEBf4FCEwEBgUERCoMjMFMAIzRTACM4UwAjPFMAIzBTAiM0UwIjOFMCIzxTAiMwUwQjNFMEIzhTBCM8UwQjMFMGIzRTBiM4UwYjPFMGIzBTCCM0UwgjOFMIIzxTCCMwUwojNFMKIzhTCiM8UwojMFMMIzRTDCM4UwwjPFMMIzBTDiM0Uw4jOFMOIzxTDiMwUxAjNFMQIzhTECM8UxAjMFMSIzRTEiM4UxIjPFMSIzBTFCM0UxQjOFMUIzxTFCMwUxYjNFMWIzhTFiM8UxYjMFMYIzRTGCM4UxgjPFMYIzBTGiM0UxojOFMaIzxTGiMwUxwjNFMcIzhTHCM8UxwjMFMeIzRTHiM4Ux4jPFMeIzBTICM0UyAjOFMgIzxTICMwUyIjNFMiIzhTIiM8UyIjMFMkIzRTJCM4UyQjPFMkIzBTJiM0UyYjOFMmIzxTJiMwUygjNFMoIzhTKCM8UygjMFMqIzRTKiM4UyojPFMqIzBTLCM0UywjOFMsIzxTLCMwUy4jNFMuIzhTLiM8Uy4jMFMwIzRTMCM4UzAjPFMwIzBTMiM0UzIjOFMyIzxTMiMwUzQjNFM0IzhTNCM8UzQjMFM2IzRTNiM4UzYjPFM2IzBTOCM0UzgjOFM4IzxTOCMwUzojNFM6IzhTOiM8UzojMFM8IzRTPCM4UzwjPFM8IzBTPiM0Uz4jOFM+IzxTPiMwU0AjNFNAIzhTQCM8U0AjMFNCIzRTQiM4U0IjPFNCIzBTRCM0U0QjOFNEIzxTRCMwU0YjNFNGIzhTRiM8U0YjMFNIIzRTSCM4U0gjPFNIIzBTSiM0U0ojOFNKIzxTSiMwU0wjNFNMIzhTTCM8U0wjMFNOIzRTTiM4U04jPFNOIzBTUCM0U1AjOFNQIzxTUCMwU1IjNFNSIzhTUiM8U1IjMFNUIzRTVCM4U1QjPFNUIzBTViM0U1YjOFNWIzxTViMwU1gjNFNYIzhTWCM8U1gjMFNaIzRTWiM4U1ojPFNaIzBTXCM0U1wjOFNcIzxTXCMwU14jNFNeIzhTXiM8U14jMFNgIzRTYCM4U2AjPFNgIzBTYiM0U2IjOFNiIzxTYiMwU2QjNFNkIzhTZCM8U2QjMFNmIzRTZiM4U2YjPFNmIzBTaCM0U2gjOFNoIzxTaCMwU2ojNFNqIzhTaiM8U2ojMFNsIzRTbCM4U2wjPFNsIzBTbiM0U24jOFNuIzxTbiMwU3AjNFNwIzhTcCM8U3AjMFNyIzRTciM4U3IjPFNyIzBTdCM0U3QjOFN0IzxTdCMwU3YjNFN2IzhTdiM8U3YjMFN4IzRTeCM4U3gjPFN4IzBTeiM0U3ojOFN6IzxTeiMwU3wjNFN8IzhTfCM8U3wjMFN+IzRTfiM4U34jPFN+EXEKgyMwUwAjNFMAIzhTACM8UwAjMFMCIzRTAiM4UwIjPFMCIzBTBCM0UwQjOFMEIzxTBCMwUwYjNFMGIzhTBiM8UwYjMFMIIzRTCCM4UwgjPFMIIzBTCiM0UwojOFMKIzxTCiMwUwwjNFMMIzhTDCM8UwwjMFMOIzRTDiM4Uw4jPFMOEWFBARMBAX8BRYFFAUaBRgFHgUcBSIFIgUIBQ4FDAU6BTgFPgU+CgA=="
 .option pop"#,
-        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
+        vg_aes_expand_key_scratch = sym super::cmac_aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
         vg_cmac_aes_subkeys = sym super::cmac_aes::vg_cmac_aes_subkeys::vg_cmac_aes_subkeys,
     )
 }
@@ -33,6 +35,8 @@ call {vg_cmac_aes_subkeys}
 /// Absorbs data into an AES-CMAC computation (NIST SP 800-38B §6.2): if the streaming state `*state` represents a message of `count` bytes under an AES key with `rounds` rounds (as `vg_cmac_aes_init` set it up), it then represents that message followed by the `len` bytes at `data`, under the same key, provided that the two together are shorter than 2⁶⁴ bytes. It chains (step 6) every block of the message but its last bytes `Mₙ*` (step 3), which it holds back in the state, since only `vg_cmac_aes_finish` knows they are the last.
 ///
 /// Contract: `VG.Spec.Cmac.aesAbsorbContract`. Constant time: only the pointers, `rounds`, `count` and `len` may affect timing, not the state or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -98,7 +102,7 @@ bnez t2, 215b
 j 214f
 213:
 214:
-.base64 "kwL7f5OCggiT8oL/g7ACAIO0ggADuQIBg7mCAQO6AgKDuoICA7sCA1FhEwEBf4KA"
+.base64 "kwL7f5OCggiT8oL/g7ACAIO0ggADuQIBg7mCAQO6AgKDuoICA7sCA1FhEwEBf4FCEwEBgUERCoMjMFMAIzRTACM4UwAjPFMAIzBTAiM0UwIjOFMCIzxTAiMwUwQjNFMEIzhTBCM8UwQjMFMGIzRTBiM4UwYjPFMGIzBTCCM0UwgjOFMIIzxTCCMwUwojNFMKIzhTCiM8UwojMFMMIzRTDCM4UwwjPFMMIzBTDiM0Uw4jOFMOIzxTDiMwUxAjNFMQIzhTECM8UxAjMFMSIzRTEiM4UxIjPFMSIzBTFCM0UxQjOFMUIzxTFCMwUxYjNFMWIzhTFiM8UxYjMFMYIzRTGCM4UxgjPFMYIzBTGiM0UxojOFMaIzxTGiMwUxwjNFMcIzhTHCM8UxwjMFMeIzRTHiM4Ux4jPFMeIzBTICM0UyAjOFMgIzxTICMwUyIjNFMiIzhTIiM8UyIjMFMkIzRTJCM4UyQjPFMkIzBTJiM0UyYjOFMmIzxTJiMwUygjNFMoIzhTKCM8UygjMFMqIzRTKiM4UyojPFMqIzBTLCM0UywjOFMsIzxTLCMwUy4jNFMuIzhTLiM8Uy4jMFMwIzRTMCM4UzAjPFMwIzBTMiM0UzIjOFMyIzxTMiMwUzQjNFM0IzhTNCM8UzQjMFM2IzRTNiM4UzYjPFM2IzBTOCM0UzgjOFM4IzxTOCMwUzojNFM6IzhTOiM8UzojMFM8IzRTPCM4UzwjPFM8IzBTPiM0Uz4jOFM+IzxTPiMwU0AjNFNAIzhTQCM8U0AjMFNCIzRTQiM4U0IjPFNCIzBTRCM0U0QjOFNEIzxTRCMwU0YjNFNGIzhTRiM8U0YjMFNIIzRTSCM4U0gjPFNIIzBTSiM0U0ojOFNKIzxTSiMwU0wjNFNMIzhTTCM8U0wjMFNOIzRTTiM4U04jPFNOIzBTUCM0U1AjOFNQIzxTUCMwU1IjNFNSIzhTUiM8U1IjMFNUIzRTVCM4U1QjPFNUIzBTViM0U1YjOFNWIzxTViMwU1gjNFNYIzhTWCM8U1gjMFNaIzRTWiM4U1ojPFNaIzBTXCM0U1wjOFNcIzxTXCMwU14jNFNeIzhTXiM8U14jMFNgIzRTYCM4U2AjPFNgIzBTYiM0U2IjOFNiIzxTYiMwU2QjNFNkIzhTZCM8U2QjMFNmIzRTZiM4U2YjPFNmIzBTaCM0U2gjOFNoIzxTaCMwU2ojNFNqIzhTaiM8U2ojMFNsIzRTbCM4U2wjPFNsIzBTbiM0U24jOFNuIzxTbiMwU3AjNFNwIzhTcCM8U3AjMFNyIzRTciM4U3IjPFNyIzBTdCM0U3QjOFN0IzxTdCMwU3YjNFN2IzhTdiM8U3YjMFN4IzRTeCM4U3gjPFN4IzBTeiM0U3ojOFN6IzxTeiMwU3wjNFN8IzhTfCM8U3wjMFN+IzRTfiM4U34jPFN+EXEKgyMwUwAjNFMAIzhTACM8UwAjMFMCIzRTAiM4UwIjPFMCIzBTBCM0UwQjOFMEIzxTBCMwUwYjNFMGIzhTBiM8UwYjMFMIIzRTCCM4UwgjPFMIIzBTCiM0UwojOFMKIzxTCiMwUwwjNFMMIzhTDCM8UwwjMFMOIzRTDiM4Uw4jPFMOEWFBARMBAX8BRYFFAUaBRgFHgUcBSIFIgUIBQ4FDAU6BTgFPgU+CgA=="
 .option pop"#,
         vg_cmac_aes_update = sym super::cmac_aes::vg_cmac_aes_update::vg_cmac_aes_update,
     )
@@ -107,6 +111,8 @@ j 214f
 /// Finishes an AES-CMAC computation (NIST SP 800-38B §6.2, with `Tlen = 128`): if the streaming state `*state` represents a message of `count` bytes, shorter than 2⁶⁴ bytes, under an AES key with `rounds` rounds (as `vg_cmac_aes_init` and `vg_cmac_aes_absorb` set it up), writes the MAC of that message under that key to `*out`: `Cₙ = CIPH_K(Cₙ₋₁ ⊕ Mₙ)`, where `Mₙ = K1 ⊕ Mₙ*` if the message's last bytes `Mₙ*` are a complete block, and `Mₙ = K2 ⊕ (Mₙ* ‖ 10ʲ)` otherwise (step 4). The caller truncates it (step 7) and compares it (§6.3).
 ///
 /// Contract: `VG.Spec.Cmac.aesFinishContract`. Constant time: only the pointers, `rounds` and `count` may affect timing, not the state.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -128,11 +134,23 @@ j 21f
 20:
 21:
 call {vg_cmac_aes_finalize}
-.base64 "k4L0f5OCggiT8oL/g7ACAIO0ggBRYRMBAX+CgA=="
+.base64 "k4L0f5OCggiT8oL/g7ACAIO0ggBRYRMBAX+BQhMBAYFBEQqDIzBTACM0UwAjOFMAIzxTACMwUwIjNFMCIzhTAiM8UwIjMFMEIzRTBCM4UwQjPFMEIzBTBiM0UwYjOFMGIzxTBiMwUwgjNFMIIzhTCCM8UwgjMFMKIzRTCiM4UwojPFMKIzBTDCM0UwwjOFMMIzxTDCMwUw4jNFMOIzhTDiM8Uw4jMFMQIzRTECM4UxAjPFMQIzBTEiM0UxIjOFMSIzxTEiMwUxQjNFMUIzhTFCM8UxQjMFMWIzRTFiM4UxYjPFMWIzBTGCM0UxgjOFMYIzxTGCMwUxojNFMaIzhTGiM8UxojMFMcIzRTHCM4UxwjPFMcIzBTHiM0Ux4jOFMeIzxTHiMwUyAjNFMgIzhTICM8UyAjMFMiIzRTIiM4UyIjPFMiIzBTJCM0UyQjOFMkIzxTJCMwUyYjNFMmIzhTJiM8UyYjMFMoIzRTKCM4UygjPFMoIzBTKiM0UyojOFMqIzxTKiMwUywjNFMsIzhTLCM8UywjMFMuIzRTLiM4Uy4jPFMuIzBTMCM0UzAjOFMwIzxTMCMwUzIjNFMyIzhTMiM8UzIjMFM0IzRTNCM4UzQjPFM0IzBTNiM0UzYjOFM2IzxTNiMwUzgjNFM4IzhTOCM8UzgjMFM6IzRTOiM4UzojPFM6IzBTPCM0UzwjOFM8IzxTPCMwUz4jNFM+IzhTPiM8Uz4jMFNAIzRTQCM4U0AjPFNAIzBTQiM0U0IjOFNCIzxTQiMwU0QjNFNEIzhTRCM8U0QjMFNGIzRTRiM4U0YjPFNGIzBTSCM0U0gjOFNIIzxTSCMwU0ojNFNKIzhTSiM8U0ojMFNMIzRTTCM4U0wjPFNMIzBTTiM0U04jOFNOIzxTTiMwU1AjNFNQIzhTUCM8U1AjMFNSIzRTUiM4U1IjPFNSIzBTVCM0U1QjOFNUIzxTVCMwU1YjNFNWIzhTViM8U1YjMFNYIzRTWCM4U1gjPFNYIzBTWiM0U1ojOFNaIzxTWiMwU1wjNFNcIzhTXCM8U1wjMFNeIzRTXiM4U14jPFNeIzBTYCM0U2AjOFNgIzxTYCMwU2IjNFNiIzhTYiM8U2IjMFNkIzRTZCM4U2QjPFNkIzBTZiM0U2YjOFNmIzxTZiMwU2gjNFNoIzhTaCM8U2gjMFNqIzRTaiM4U2ojPFNqIzBTbCM0U2wjOFNsIzxTbCMwU24jNFNuIzhTbiM8U24jMFNwIzRTcCM4U3AjPFNwIzBTciM0U3IjOFNyIzxTciMwU3QjNFN0IzhTdCM8U3QjMFN2IzRTdiM4U3YjPFN2IzBTeCM0U3gjOFN4IzxTeCMwU3ojNFN6IzhTeiM8U3ojMFN8IzRTfCM4U3wjPFN8IzBTfiM0U34jOFN+IzxTfhFxCoMjMFMAIzRTACM4UwAjPFMAIzBTAiM0UwIjOFMCIzxTAiMwUwQjNFMEIzhTBCM8UwQjMFMGIzRTBiM4UwYjPFMGIzBTCCM0UwgjOFMIIzxTCCMwUwojNFMKIzhTCiM8UwojMFMMIzRTDCM4UwwjPFMMIzBTDiM0Uw4jOFMOIzxTDhFhQQETAQF/AUWBRQFGgUYBR4FHAUiBSIFCAUOBQwFOgU4BT4FPgoA="
 .option pop"#,
         vg_cmac_aes_finalize = sym super::cmac_aes::vg_cmac_aes_finalize::vg_cmac_aes_finalize,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_encrypt_blocks.rs"]
+pub(crate) mod vg_aes_encrypt_blocks;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_expand_key_scratch.rs"]
+pub(crate) mod vg_aes_expand_key_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_mac_chain.rs"]
+pub(crate) mod vg_aes_mac_chain;
 
 #[rustfmt::skip]
 #[path = "internal/vg_cmac_aes_finalize.rs"]

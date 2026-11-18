@@ -8,6 +8,8 @@
 ///
 /// It runs `vg_aes_cbc_encrypt`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 240 bytes.
@@ -30,6 +32,8 @@ pub unsafe fn vg_aes_cbc_encrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, sched
 /// Contract: `VG.Spec.Cbc.aesDecryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
 ///
 /// It runs `vg_aes_cbc_decrypt`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///

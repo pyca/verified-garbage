@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.AesEcb.encryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 240 bytes.
@@ -24,7 +26,7 @@ pub(crate) unsafe extern "C" fn vg_aes_ecb_encrypt(schedule: *const [u8; 240], r
 call {vg_aes_encrypt_blocks}
 .base64 "ioIjuKIAA7WCAJMF8H+FBQ=="
 call {vg_zeroize}
-.base64 "ioIDtQIBg7ACAAVhgoA="
+.base64 "ioIDtQIBg7ACAAVhgUIBEQqDIzBTACM0UwAjOFMAIzxTAAVhAUWBRQFGgUYBR4FHAUiBSIFCAUOBQwFOgU4BT4FPgoA="
 .option pop"#,
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
         vg_zeroize = sym super::zeroize::vg_zeroize,
@@ -34,6 +36,8 @@ call {vg_zeroize}
 /// AES-ECB decryption (NIST SP 800-38A §6.1) of whole blocks, in place: replaces each of the `n` 16-byte blocks at `data` with its decryption by AES (FIPS 197 §5.3, `INVCIPHER`) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (the forward cipher's schedule). No padding is removed. Each byte of `scratch` is unchanged or zero on return.
 ///
 /// Contract: `VG.Spec.AesEcb.decryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -52,7 +56,7 @@ pub(crate) unsafe extern "C" fn vg_aes_ecb_decrypt(schedule: *const [u8; 240], r
 call {vg_aes_decrypt_blocks}
 .base64 "ioIjuKIAA7WCAJMF8H+FBQ=="
 call {vg_zeroize}
-.base64 "ioIDtQIBg7ACAAVhgoA="
+.base64 "ioIDtQIBg7ACAAVhgUIBEQqDIzBTACM0UwAjOFMAIzxTAAVhAUWBRQFGgUYBR4FHAUiBSIFCAUOBQwFOgU4BT4FPgoA="
 .option pop"#,
         vg_aes_decrypt_blocks = sym super::aes::vg_aes_decrypt_blocks::vg_aes_decrypt_blocks,
         vg_zeroize = sym super::zeroize::vg_zeroize,

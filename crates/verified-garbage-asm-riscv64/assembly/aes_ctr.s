@@ -171,6 +171,22 @@ vg_aes_ctr:
 	ld s4, 48(t0)
 	ld s5, 56(t0)
 	ld s6, 64(t0)
+	addi t0, zero, 0
+	addi a0, zero, 0
+	addi a1, zero, 0
+	addi a2, zero, 0
+	addi a3, zero, 0
+	addi a4, zero, 0
+	addi a5, zero, 0
+	addi a6, zero, 0
+	addi a7, zero, 0
+	addi t0, zero, 0
+	addi t1, zero, 0
+	addi t2, zero, 0
+	addi t3, zero, 0
+	addi t4, zero, 0
+	addi t5, zero, 0
+	addi t6, zero, 0
 	ret
 	.option pop
 
@@ -197,7 +213,7 @@ vg_aes_ctr_final:
 	add s2, a3, t1
 	sub s3, a4, t1
 	addi a4, t0, 0
-	call {vg_aes_ctr}
+	call {vg_aes_ctr_core}
 	beqz s3, 20f
 	addi t0, zero, 0
 	sd t0, 64(s7)
@@ -208,7 +224,7 @@ vg_aes_ctr_final:
 	addi a3, s7, 64
 	addi a4, zero, 1
 	addi a5, s6, 0
-	call {vg_aes_ctr}
+	call {vg_aes_ctr_core}
 	addi t2, s7, 64
 22:
 	lbu t0, 0(s2)
@@ -243,5 +259,34 @@ vg_aes_ctr_final:
 	sd t6, 64(t5)
 	sd t6, 72(t5)
 	addi sp, sp, 80
+	addi t0, zero, 0
+	addi sp, sp, -80
+	addi t1, sp, 0
+	sd t0, 0(t1)
+	sd t0, 8(t1)
+	sd t0, 16(t1)
+	sd t0, 24(t1)
+	sd t0, 32(t1)
+	sd t0, 40(t1)
+	sd t0, 48(t1)
+	sd t0, 56(t1)
+	sd t0, 64(t1)
+	sd t0, 72(t1)
+	addi sp, sp, 80
+	addi a0, zero, 0
+	addi a1, zero, 0
+	addi a2, zero, 0
+	addi a3, zero, 0
+	addi a4, zero, 0
+	addi a5, zero, 0
+	addi a6, zero, 0
+	addi a7, zero, 0
+	addi t0, zero, 0
+	addi t1, zero, 0
+	addi t2, zero, 0
+	addi t3, zero, 0
+	addi t4, zero, 0
+	addi t5, zero, 0
+	addi t6, zero, 0
 	ret
 	.option pop
