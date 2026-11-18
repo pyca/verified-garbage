@@ -45,8 +45,7 @@ theorem scrubCodeMC_noResidue {api : Api} (r : Registration api target) (v : Vec
   have hr := hres
   rw [e] at hv hp hr ⊢
   have hrb' := hrb
-  rw [← withMode_ptrBits ((abi.withConsts r.consts).withTables api.sig r.tables) api.pubMode] at hrb' hp ⊢
-  exact (Verified.scrubM (ScrubAbi.of r.consts api.sig r.tables api.pubMode) hv (SpSafe.of_all r.spSafe) hd
+  exact (Verified.scrubM (ScrubAbi.of r.consts api.sig r.tables) hv (SpSafe.of_all r.spSafe) hd
     hcs hst hcv
     (fun i hi => by simpa using Code.all_instrs hlv i hi) (fun _ => MxSame.of_fun (mxFun_of hmx)) hrb' hp hr
     (tailOk_of _ _ _) (xs_of _ _) (fun e => absurd e hne) (fun _ _ e => absurd e hne) (gs_of _ _)).2 (tablesCall_syms hic rfl)
@@ -75,8 +74,7 @@ def scrubRegMC {api : Api} (r : Registration api target) (v : VecLevel) (ks cs :
     have hr := hres
     rw [e] at hv hp hr ⊢
     have hrb' := hrb
-    rw [← withMode_ptrBits ((abi.withConsts r.consts).withTables api.sig r.tables) api.pubMode] at hrb' hp ⊢
-    exact (Verified.scrubM (ScrubAbi.of r.consts api.sig r.tables api.pubMode) hv (SpSafe.of_all r.spSafe) hd
+    exact (Verified.scrubM (ScrubAbi.of r.consts api.sig r.tables) hv (SpSafe.of_all r.spSafe) hd
       hcs hst hcv
       (fun i hi => by simpa using Code.all_instrs hlv i hi) (fun _ => MxSame.of_fun (mxFun_of hmx)) hrb' hp hr
       (tailOk_of _ _ _) (xs_of _ _) (fun e => absurd e hne) (fun _ _ e => absurd e hne) (gs_of _ _)).1

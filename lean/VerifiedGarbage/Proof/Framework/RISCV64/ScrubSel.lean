@@ -309,8 +309,7 @@ theorem scrubSelCode_verified {api : Api} (r : Registration api target) (fs : Li
   unfold retBitsOf at hrb hp ⊢
   rw [e] at hv hp ⊢
   have hrb' := hrb
-  rw [← withMode_ptrBits ((abi.withConsts r.consts).withTables api.sig r.tables) api.pubMode] at hrb' hp ⊢
-  exact Verified.scrubSel (ScrubAbi.of r.consts api.sig r.tables api.pubMode) hv hfs hsz hrb' hp
+  exact Verified.scrubSel (ScrubAbi.of r.consts api.sig r.tables) hv hfs hsz hrb' hp
 
 /-- Where the residue analysis of `r`'s function starts holds of the states its contract
 starts from, if the `e.2` bytes from what each register `e.1` of `bp0` holds are in its
@@ -325,7 +324,7 @@ theorem scrubSel_pre {api : Api} (r : Registration api target) (bp0 : List (Reg 
   obtain ⟨pre, post, leak, e⟩ := r.ofSig
   have hs' := hs
   rw [e] at hs'
-  have hA := ScrubAbi.of r.consts api.sig r.tables api.pubMode
+  have hA := ScrubAbi.of r.consts api.sig r.tables
   have hout := regions_out hA hs'
   obtain ⟨-, hsts, -⟩ := contract_pre_scrub hA hs'
   refine ⟨?_, hout, fun e he i hi => ?_⟩
@@ -391,9 +390,9 @@ def withScrubSel {api : Api} (r : Registration api target) (fs : List (Nat × Li
 /-! ## A buffer the first argument points to -/
 
 theorem args_of (cs : List (String × List (BitVec 64))) (sig : Sig) (ts : List (String × List FnTable))
-    (b : Bool) : (((abi.withConsts cs).withTables sig ts).withMode b).args = abi.args := by
-  cases b <;> simp only [Abi.withMode] <;> unfold Abi.withTables <;> split <;> unfold Abi.withConsts <;>
-    split <;> rfl
+ :
+    ((abi.withConsts cs).withTables sig ts).args = abi.args := by
+  unfold Abi.withTables; split <;> unfold Abi.withConsts <;> split <;> rfl
 
 theorem abi_args_head {ws : List Nat} {f : State → List (BitVec 64)} (h : abi.args ws = some f)
     (hne : ws ≠ []) (s : State) : ∃ vs, f s = s.gpr .a0 :: vs := by
@@ -455,8 +454,8 @@ theorem hbp_firstArray {api : Api} (r : Registration api target) {nm : String} {
   subst hq
   obtain ⟨pre, post, leak, eq⟩ := r.ofSig
   rw [eq] at hs
-  refine ⟨_, firstArray_mem (ScrubAbi.of r.consts api.sig r.tables api.pubMode)
-    (args_of r.consts api.sig r.tables api.pubMode) hp hs, ?_⟩
+  refine ⟨_, firstArray_mem (ScrubAbi.of r.consts api.sig r.tables)
+    (args_of r.consts api.sig r.tables) hp hs, ?_⟩
   have e' : s.gpr .a0 + BitVec.ofNat 64 i - s.gpr .a0 = BitVec.ofNat 64 i := by bv_omega
   simp only [Region.Contains, e', BitVec.toNat_ofNat]
   have := Nat.mod_le i (2 ^ 64)

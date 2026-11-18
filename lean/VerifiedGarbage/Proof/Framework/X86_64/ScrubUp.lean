@@ -319,10 +319,9 @@ theorem scrubCodeU_verified {api : Api} (r : Registration api target)
   have hp := hpost
   rw [e] at hv hp ⊢
   have hrb' := hrb
-  rw [← withMode_ptrBits ((abi.withConsts r.consts).withTables api.sig r.tables) api.pubMode] at hrb' hp ⊢
-  have hr := resOk_all r.code (api.sig.contract (((abi.withConsts r.consts).withTables api.sig r.tables).withMode
-    api.pubMode) pre post api.writeArgs r.stack leak) h8
-  exact Verified.scrubU (ScrubAbi.of r.consts api.sig r.tables api.pubMode) hv (SpSafe.of_all r.spSafe) hd
+  have hr := resOk_all r.code (api.sig.contract ((abi.withConsts r.consts).withTables api.sig r.tables)
+    pre post api.writeArgs r.stack leak) h8
+  exact Verified.scrubU (ScrubAbi.of r.consts api.sig r.tables) hv (SpSafe.of_all r.spSafe) hd
     (chunks_sum r.stack) hst (chunks_valid h8) (fun _ => hl1)
     (upperOk_lock hv.2.1 (fun s₁ s₂ h f hf => tables_pub_syms h f (hnames f hf)) hup)
     hrb' hp hr (tailOk_of _ _ _) (xs_of _ _) (fun e => absurd e (by decide)) (evexReg_of_ne (c := r.code) (by decide)).2

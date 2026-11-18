@@ -771,7 +771,7 @@ theorem resOk_reg {api : Api} (r : Registration api target) (ks : List Nat) {pub
   have hv := r.verified
   have hp := hpub
   rw [e] at hv hp ⊢
-  exact resOk_of_check (ScrubAbi.of r.consts api.sig r.tables api.pubMode) hv (chunks_sum r.stack) hfit hp hc
+  exact resOk_of_check (ScrubAbi.of r.consts api.sig r.tables) hv (chunks_sum r.stack) hfit hp hc
 
 theorem pubOk_nil (k : Contract isa) : PubOk k [] := fun _ _ _ _ _ _ _ h => absurd h List.not_mem_nil
 

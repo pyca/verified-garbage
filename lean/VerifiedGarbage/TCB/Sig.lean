@@ -195,7 +195,7 @@ structure Abi (M : ISA) where
   the function sees does not wrap around). -/
   wf : List Nat → (n : Nat) → M.State → Prop
   /-- The part of the state other than the arguments that is public (the
-  stack pointer). -/
+  stack pointer, and whatever else the target's `abi` adds). -/
   pub : M.State → M.State → Prop
   /-- The memory of a state, and the regions it permits reading and writing. -/
   mem : M.State → Mem
@@ -215,12 +215,6 @@ structure Abi (M : ISA) where
   doublewords fault unless aligned (RISC-V), where those are the types'
   alignments, and on no other, whose contracts it leaves as they are. -/
   alignsBufs : Bool := false
-  /-- The mode the code runs in, as a number, on a target where code can
-  read one: on AArch64, PSTATE.DIT (data independent timing), 1 if on and 0
-  if off; on x86-64, MXCSR; 0 on the other targets. A contract makes it
-  public only under `A.withMode true`, which only the contracts of
-  `Spec/Dit.lean` and `Spec/Mcdt.lean` use. -/
-  mode : M.State → Nat := fun _ => 0
 
 /-! ## Tables of constants
 
@@ -256,21 +250,6 @@ little-endian) at the address plus `8 i`. -/
 def Abi.constsHeld (m : Mem) (f : String → BitVec 64) (cs : List (String × List (BitVec 64))) :
     Prop :=
   ∀ c ∈ cs, ∀ i < c.2.length, m.readW (f c.1 + BitVec.ofNat 64 (8 * i)) 64 = c.2.getD i 0
-
-/-! ## The mode
-
-`A.withMode true` is the calling convention `A` with its mode (`Abi.mode`)
-public too: two runs of a contract under it agree on the mode, so the code
-may branch on it. The Rust code sets the mode for the operation it runs
-(`src/dit.rs`), whatever data the operation is given: the mode depends on
-nothing secret. On x86-64 it is MXCSR, which the verified code loads only
-with `0x1FBF` and values it saved (see `Spec/Mcdt.lean` for what its status
-flags may record). `A.withMode false` is `A`, the calling convention of every
-other contract. An artifact states which it is (`Artifact.pubMode`). -/
-
-def Abi.withMode {M : ISA} (A : Abi M) : Bool → Abi M
-  | false => A
-  | true => { A with pub s₁ s₂ := A.pub s₁ s₂ ∧ A.mode s₁ = A.mode s₂ }
 
 def Abi.withConsts {M : ISA} (A : Abi M) (cs : List (String × List (BitVec 64))) : Abi M :=
   match A.sym, cs with

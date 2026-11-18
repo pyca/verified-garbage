@@ -1068,17 +1068,13 @@ theorem contract_pub {A : Abi isa} {sig : Sig} {pre : Curry (sig.words A.ptrBits
 
 /-- The functions of the tables have the same addresses in two runs that
 agree on what is public. -/
-theorem tables_pub_syms {A : Abi isa} {sig : Sig} {ts : List (String × List FnTable)} {pm : Bool}
-    {s₁ s₂ : State} (h : ((A.withTables sig ts).withMode pm).pub s₁ s₂) :
+theorem tables_pub_syms {A : Abi isa} {sig : Sig} {ts : List (String × List FnTable)}
+    {s₁ s₂ : State} (h : (A.withTables sig ts).pub s₁ s₂) :
     ∀ f ∈ tableFns ts, s₁.syms f = s₂.syms f := by
-  have h' : (A.withTables sig ts).pub s₁ s₂ := by
-    cases pm
-    · exact h
-    · exact h.1
   intro f hf
   cases ts with
   | nil => simp [tableFns] at hf
-  | cons t ts => exact h'.2.1 f hf
+  | cons t ts => exact h.2.1 f hf
 
 theorem tablesCall_syms {api : Api} {r : Registration api target} (h : tablesCall r.code r.tables = true) :
     ∀ s₁ s₂, r.contract.pub s₁ s₂ → ∀ n ∈ inames r.code, s₁.syms n = s₂.syms n := by

@@ -1114,18 +1114,10 @@ theorem ScrubAbi.tables {A : Abi isa} (hA : ScrubAbi A) (sig : Sig) (ts : List (
     exact ⟨hA.ptrBits, hA.reserved, hA.wr, fun ws n s h => hA.wf ws n s h.1,
       fun s₁ s₂ h => hA.pub s₁ s₂ h.1, hA.mem, hA.ret, hA.rdSub, hA.argsLen⟩
 
-theorem withMode_ptrBits (A : Abi isa) (b : Bool) : (A.withMode b).ptrBits = A.ptrBits := by
-  cases b <;> rfl
-
-theorem ScrubAbi.mode {A : Abi isa} (hA : ScrubAbi A) (b : Bool) : ScrubAbi (A.withMode b) := by
-  cases b with
-  | false => exact hA
-  | true => exact { hA with pub := fun s₁ s₂ h => hA.pub s₁ s₂ h.1 }
-
 /-- The calling convention of every PPC64LE artifact (`Api.artifact`). -/
-theorem ScrubAbi.of (cs : List (String × List (BitVec 64))) (sig : Sig) (ts : List (String × List FnTable))
-    (b : Bool) : ScrubAbi (((abi.withConsts cs).withTables sig ts).withMode b) :=
-  ((ScrubAbi.consts cs).tables sig ts).mode b
+theorem ScrubAbi.of (cs : List (String × List (BitVec 64))) (sig : Sig) (ts : List (String × List FnTable)) :
+    ScrubAbi ((abi.withConsts cs).withTables sig ts) :=
+  (ScrubAbi.consts cs).tables sig ts
 
 section
 variable {A : Abi isa} {sig : Sig} {pre : Curry (sig.words A.ptrBits) (Mem → Prop)}
@@ -1451,8 +1443,7 @@ theorem scrubCode_ok {api : Api} (r : Registration api target)
   unfold retBitsOf at hrb hp ⊢
   rw [e] at hv hp ⊢
   have hrb' := hrb
-  rw [← withMode_ptrBits ((abi.withConsts r.consts).withTables api.sig r.tables) api.pubMode] at hrb' hp ⊢
-  exact Verified.scrub (ScrubAbi.of r.consts api.sig r.tables api.pubMode) hv hd h16 h48 hic hrb' hp
+  exact Verified.scrub (ScrubAbi.of r.consts api.sig r.tables) hv hd h16 h48 hic hrb' hp
 
 /-- `r`, scrubbed: its code followed by the clearing (`scrub`) of the stack
 its frames use and its volatile registers. -/

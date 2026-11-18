@@ -232,8 +232,7 @@ theorem scrubWipedCode_ok {api : Api} (r : Registration api target) (sh : WipedS
   unfold retBitsOf at hrb hp ⊢
   rw [e] at hv hp ⊢
   have hrb' := hrb
-  rw [← withMode_ptrBits ((abi.withConsts r.consts).withTables api.sig r.tables) api.pubMode] at hrb' hp ⊢
-  have hA := ScrubAbi.of r.consts api.sig r.tables api.pubMode
+  have hA := ScrubAbi.of r.consts api.sig r.tables
   exact Verified.scrubOf hA hv ⟨fun _ h => by simp at h, fun _ h => by simp at h⟩ (Nat.zero_le _)
     (Clear.of_wf _ _) (Clear.of_keep _ _) hrb' hp (WipedShape.agree hA hv sh)
 

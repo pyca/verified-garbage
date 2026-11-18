@@ -470,7 +470,7 @@ theorem scrubCodeMCR_ok {api : Api} (r : Registration api target) (v : VecLevel)
   have hp := hpost
   have hr := hres
   rw [e] at hv hall hregs hp hr ⊢
-  exact Verified.scrubPart (ScrubAbi.of r.consts api.sig r.tables api.pubMode) hv
+  exact Verified.scrubPart (ScrubAbi.of r.consts api.sig r.tables) hv
     (by rw [← hcs]; exact wipeCs_sum ks cs) (wipeCs_valid hcv) (fun _ _ h => absurd h hne)
     (Nat.le_of_eq hcs) hcv (fun _ _ h => absurd h hne) (wipeCs_same ks cs) ht (tailOk_of _ _ _) hregs hp hr
     hst (fun hic => tablesCall_syms hic rfl) hall
@@ -1606,8 +1606,7 @@ theorem scrubCodeMCRH_ok {api : Api} (r : Registration api target) (ks cs : List
     have hr := hres
     rw [e] at hv hp hr ⊢
     have hrb' := hrb
-    rw [← withMode_ptrBits ((abi.withConsts r.consts).withTables api.sig r.tables) api.pubMode] at hrb' hp ⊢
-    have h := Verified.scrubM (v := .evex) (f := .avx) (ScrubAbi.of r.consts api.sig r.tables api.pubMode) hv
+    have h := Verified.scrubM (v := .evex) (f := .avx) (ScrubAbi.of r.consts api.sig r.tables) hv
       (SpSafe.of_all r.spSafe) hd hcs hst hcv (fun i _ => vecLevelR_le_two i) (fun _ => hmx) hrb' hp hr
       (tailOk_of _ _ _) (xs_of _ _) (fun _ => hxe) (fun _ _ e => absurd e (by decide)) (gs_of _ _)
     exact ⟨h.1, fun hic => h.2 (tablesCall_syms hic rfl)⟩
@@ -1616,7 +1615,7 @@ theorem scrubCodeMCRH_ok {api : Api} (r : Registration api target) (ks cs : List
   have hp := hpost
   have hr := hres
   rw [e] at hv hall hregs hH hp hr ⊢
-  exact Verified.scrubPartH (ScrubAbi.of r.consts api.sig r.tables api.pubMode) hv
+  exact Verified.scrubPartH (ScrubAbi.of r.consts api.sig r.tables) hv
     (by rw [← hcs]; exact wipeCs_sum ks cs) (wipeCs_valid hcv)
     (Nat.le_of_eq hcs) hcv (wipeCs_same ks cs) ht (tailOk_of _ _ _) hregs hH hp hr hst
     (fun hic => tablesCall_syms hic rfl) hall
