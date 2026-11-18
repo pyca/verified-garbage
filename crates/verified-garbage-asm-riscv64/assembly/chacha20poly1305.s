@@ -163,17 +163,17 @@ vg_chacha20_poly1305_seal:
 	call {vg_chacha20_block}
 	addi a1, a0, 64
 	addi a0, a0, 384
-	call {vg_poly1305_init}
+	call {vg_poly1305_init_core}
 	addi a1, zero, 0
 	addi a2, s7, 0
 	addi a3, s8, 0
-	call {vg_poly1305_update}
+	call {vg_poly1305_update_core}
 	addi a1, s8, 0
 	addi a3, zero, 0
 	sub a3, a3, s8
 	andi a3, a3, 15
 	addi a2, a0, 128
-	call {vg_poly1305_update}
+	call {vg_poly1305_update_core}
 	addi a0, a0, -384
 	addi t0, zero, 1
 	sb t0, 48(a0)
@@ -187,7 +187,7 @@ vg_chacha20_poly1305_seal:
 	andi a1, a1, -16
 	addi a2, s9, 0
 	addi a3, s10, 0
-	call {vg_poly1305_update}
+	call {vg_poly1305_update_core}
 	addi a1, s8, 15
 	andi a1, a1, -16
 	add a1, a1, s10
@@ -195,7 +195,7 @@ vg_chacha20_poly1305_seal:
 	sub a3, a3, s10
 	andi a3, a3, 15
 	addi a2, a0, 128
-	call {vg_poly1305_update}
+	call {vg_poly1305_update_core}
 	addi a1, s8, 15
 	andi a1, a1, -16
 	addi t0, s10, 15
@@ -203,7 +203,7 @@ vg_chacha20_poly1305_seal:
 	add a1, a1, t0
 	addi a2, a0, 144
 	addi a3, zero, 16
-	call {vg_poly1305_update}
+	call {vg_poly1305_update_core}
 	addi a1, s8, 15
 	andi a1, a1, -16
 	addi t0, s10, 15
@@ -211,7 +211,7 @@ vg_chacha20_poly1305_seal:
 	add a1, a1, t0
 	addi a1, a1, 16
 	addi a2, s11, 0
-	call {vg_poly1305_finalize}
+	call {vg_poly1305_finalize_core}
 	addi t0, a0, -384
 	ld s7, 560(t0)
 	ld s8, 568(t0)
@@ -301,6 +301,103 @@ vg_chacha20_poly1305_seal:
 	sd t6, 608(t5)
 	sd t6, 616(t5)
 	addi sp, sp, 624
+	addi t0, zero, 0
+	addi sp, sp, -624
+	addi t1, sp, 0
+	sd t0, 0(t1)
+	sd t0, 8(t1)
+	sd t0, 16(t1)
+	sd t0, 24(t1)
+	sd t0, 32(t1)
+	sd t0, 40(t1)
+	sd t0, 48(t1)
+	sd t0, 56(t1)
+	sd t0, 64(t1)
+	sd t0, 72(t1)
+	sd t0, 80(t1)
+	sd t0, 88(t1)
+	sd t0, 96(t1)
+	sd t0, 104(t1)
+	sd t0, 112(t1)
+	sd t0, 120(t1)
+	sd t0, 128(t1)
+	sd t0, 136(t1)
+	sd t0, 144(t1)
+	sd t0, 152(t1)
+	sd t0, 160(t1)
+	sd t0, 168(t1)
+	sd t0, 176(t1)
+	sd t0, 184(t1)
+	sd t0, 192(t1)
+	sd t0, 200(t1)
+	sd t0, 208(t1)
+	sd t0, 216(t1)
+	sd t0, 224(t1)
+	sd t0, 232(t1)
+	sd t0, 240(t1)
+	sd t0, 248(t1)
+	sd t0, 256(t1)
+	sd t0, 264(t1)
+	sd t0, 272(t1)
+	sd t0, 280(t1)
+	sd t0, 288(t1)
+	sd t0, 296(t1)
+	sd t0, 304(t1)
+	sd t0, 312(t1)
+	sd t0, 320(t1)
+	sd t0, 328(t1)
+	sd t0, 336(t1)
+	sd t0, 344(t1)
+	sd t0, 352(t1)
+	sd t0, 360(t1)
+	sd t0, 368(t1)
+	sd t0, 376(t1)
+	sd t0, 384(t1)
+	sd t0, 392(t1)
+	sd t0, 400(t1)
+	sd t0, 408(t1)
+	sd t0, 416(t1)
+	sd t0, 424(t1)
+	sd t0, 432(t1)
+	sd t0, 440(t1)
+	sd t0, 448(t1)
+	sd t0, 456(t1)
+	sd t0, 464(t1)
+	sd t0, 472(t1)
+	sd t0, 480(t1)
+	sd t0, 488(t1)
+	sd t0, 496(t1)
+	sd t0, 504(t1)
+	sd t0, 512(t1)
+	sd t0, 520(t1)
+	sd t0, 528(t1)
+	sd t0, 536(t1)
+	sd t0, 544(t1)
+	sd t0, 552(t1)
+	sd t0, 560(t1)
+	sd t0, 568(t1)
+	sd t0, 576(t1)
+	sd t0, 584(t1)
+	sd t0, 592(t1)
+	sd t0, 600(t1)
+	sd t0, 608(t1)
+	sd t0, 616(t1)
+	addi sp, sp, 624
+	addi a0, zero, 0
+	addi a1, zero, 0
+	addi a2, zero, 0
+	addi a3, zero, 0
+	addi a4, zero, 0
+	addi a5, zero, 0
+	addi a6, zero, 0
+	addi a7, zero, 0
+	addi t0, zero, 0
+	addi t1, zero, 0
+	addi t2, zero, 0
+	addi t3, zero, 0
+	addi t4, zero, 0
+	addi t5, zero, 0
+	addi t6, zero, 0
 	ret
 	.option pop
 
@@ -463,22 +560,22 @@ vg_chacha20_poly1305_open:
 	call {vg_chacha20_block}
 	addi a1, a0, 64
 	addi a0, a0, 384
-	call {vg_poly1305_init}
+	call {vg_poly1305_init_core}
 	addi a1, zero, 0
 	addi a2, s7, 0
 	addi a3, s8, 0
-	call {vg_poly1305_update}
+	call {vg_poly1305_update_core}
 	addi a1, s8, 0
 	addi a3, zero, 0
 	sub a3, a3, s8
 	andi a3, a3, 15
 	addi a2, a0, 128
-	call {vg_poly1305_update}
+	call {vg_poly1305_update_core}
 	addi a1, s8, 15
 	andi a1, a1, -16
 	addi a2, s9, 0
 	addi a3, s10, 0
-	call {vg_poly1305_update}
+	call {vg_poly1305_update_core}
 	addi a1, s8, 15
 	andi a1, a1, -16
 	add a1, a1, s10
@@ -486,7 +583,7 @@ vg_chacha20_poly1305_open:
 	sub a3, a3, s10
 	andi a3, a3, 15
 	addi a2, a0, 128
-	call {vg_poly1305_update}
+	call {vg_poly1305_update_core}
 	addi a1, s8, 15
 	andi a1, a1, -16
 	addi t0, s10, 15
@@ -494,7 +591,7 @@ vg_chacha20_poly1305_open:
 	add a1, a1, t0
 	addi a2, a0, 144
 	addi a3, zero, 16
-	call {vg_poly1305_update}
+	call {vg_poly1305_update_core}
 	addi a1, s8, 15
 	andi a1, a1, -16
 	addi t0, s10, 15
@@ -502,7 +599,7 @@ vg_chacha20_poly1305_open:
 	add a1, a1, t0
 	addi a1, a1, 16
 	addi a2, a0, 160
-	call {vg_poly1305_finalize}
+	call {vg_poly1305_finalize_core}
 	addi a0, a0, -384
 	addi t0, zero, 1
 	sb t0, 48(a0)
@@ -684,6 +781,104 @@ vg_chacha20_poly1305_open:
 	sd t6, 608(t5)
 	sd t6, 616(t5)
 	addi sp, sp, 624
+	addi t0, zero, 0
+	addi sp, sp, -624
+	addi t1, sp, 0
+	sd t0, 0(t1)
+	sd t0, 8(t1)
+	sd t0, 16(t1)
+	sd t0, 24(t1)
+	sd t0, 32(t1)
+	sd t0, 40(t1)
+	sd t0, 48(t1)
+	sd t0, 56(t1)
+	sd t0, 64(t1)
+	sd t0, 72(t1)
+	sd t0, 80(t1)
+	sd t0, 88(t1)
+	sd t0, 96(t1)
+	sd t0, 104(t1)
+	sd t0, 112(t1)
+	sd t0, 120(t1)
+	sd t0, 128(t1)
+	sd t0, 136(t1)
+	sd t0, 144(t1)
+	sd t0, 152(t1)
+	sd t0, 160(t1)
+	sd t0, 168(t1)
+	sd t0, 176(t1)
+	sd t0, 184(t1)
+	sd t0, 192(t1)
+	sd t0, 200(t1)
+	sd t0, 208(t1)
+	sd t0, 216(t1)
+	sd t0, 224(t1)
+	sd t0, 232(t1)
+	sd t0, 240(t1)
+	sd t0, 248(t1)
+	sd t0, 256(t1)
+	sd t0, 264(t1)
+	sd t0, 272(t1)
+	sd t0, 280(t1)
+	sd t0, 288(t1)
+	sd t0, 296(t1)
+	sd t0, 304(t1)
+	sd t0, 312(t1)
+	sd t0, 320(t1)
+	sd t0, 328(t1)
+	sd t0, 336(t1)
+	sd t0, 344(t1)
+	sd t0, 352(t1)
+	sd t0, 360(t1)
+	sd t0, 368(t1)
+	sd t0, 376(t1)
+	sd t0, 384(t1)
+	sd t0, 392(t1)
+	sd t0, 400(t1)
+	sd t0, 408(t1)
+	sd t0, 416(t1)
+	sd t0, 424(t1)
+	sd t0, 432(t1)
+	sd t0, 440(t1)
+	sd t0, 448(t1)
+	sd t0, 456(t1)
+	sd t0, 464(t1)
+	sd t0, 472(t1)
+	sd t0, 480(t1)
+	sd t0, 488(t1)
+	sd t0, 496(t1)
+	sd t0, 504(t1)
+	sd t0, 512(t1)
+	sd t0, 520(t1)
+	sd t0, 528(t1)
+	sd t0, 536(t1)
+	sd t0, 544(t1)
+	sd t0, 552(t1)
+	sd t0, 560(t1)
+	sd t0, 568(t1)
+	sd t0, 576(t1)
+	sd t0, 584(t1)
+	sd t0, 592(t1)
+	sd t0, 600(t1)
+	sd t0, 608(t1)
+	sd t0, 616(t1)
+	addi sp, sp, 624
+	slli a0, a0, 32
+	srli a0, a0, 32
+	addi a1, zero, 0
+	addi a2, zero, 0
+	addi a3, zero, 0
+	addi a4, zero, 0
+	addi a5, zero, 0
+	addi a6, zero, 0
+	addi a7, zero, 0
+	addi t0, zero, 0
+	addi t1, zero, 0
+	addi t2, zero, 0
+	addi t3, zero, 0
+	addi t4, zero, 0
+	addi t5, zero, 0
+	addi t6, zero, 0
 	ret
 	.option pop
 
@@ -854,22 +1049,22 @@ vg_chacha20_poly1305_open_to:
 	call {vg_chacha20_block}
 	addi a1, a0, 64
 	addi a0, a0, 384
-	call {vg_poly1305_init}
+	call {vg_poly1305_init_core}
 	addi a1, zero, 0
 	addi a2, s7, 0
 	addi a3, s8, 0
-	call {vg_poly1305_update}
+	call {vg_poly1305_update_core}
 	addi a1, s8, 0
 	addi a3, zero, 0
 	sub a3, a3, s8
 	andi a3, a3, 15
 	addi a2, a0, 128
-	call {vg_poly1305_update}
+	call {vg_poly1305_update_core}
 	addi a1, s8, 15
 	andi a1, a1, -16
 	addi a2, s9, 0
 	addi a3, s10, 0
-	call {vg_poly1305_update}
+	call {vg_poly1305_update_core}
 	addi a1, s8, 15
 	andi a1, a1, -16
 	add a1, a1, s10
@@ -877,7 +1072,7 @@ vg_chacha20_poly1305_open_to:
 	sub a3, a3, s10
 	andi a3, a3, 15
 	addi a2, a0, 128
-	call {vg_poly1305_update}
+	call {vg_poly1305_update_core}
 	addi a1, s8, 15
 	andi a1, a1, -16
 	addi t0, s10, 15
@@ -885,7 +1080,7 @@ vg_chacha20_poly1305_open_to:
 	add a1, a1, t0
 	addi a2, a0, 144
 	addi a3, zero, 16
-	call {vg_poly1305_update}
+	call {vg_poly1305_update_core}
 	addi a1, s8, 15
 	andi a1, a1, -16
 	addi t0, s10, 15
@@ -893,7 +1088,7 @@ vg_chacha20_poly1305_open_to:
 	add a1, a1, t0
 	addi a1, a1, 16
 	addi a2, a0, 160
-	call {vg_poly1305_finalize}
+	call {vg_poly1305_finalize_core}
 	addi a0, a0, -384
 	addi t0, zero, 1
 	sb t0, 48(a0)
@@ -1075,6 +1270,106 @@ vg_chacha20_poly1305_open_to:
 	sd t6, 608(t5)
 	sd t6, 616(t5)
 	addi sp, sp, 640
+	addi t0, zero, 0
+	addi sp, sp, -640
+	addi t1, sp, 0
+	sd t0, 0(t1)
+	sd t0, 8(t1)
+	sd t0, 16(t1)
+	sd t0, 24(t1)
+	sd t0, 32(t1)
+	sd t0, 40(t1)
+	sd t0, 48(t1)
+	sd t0, 56(t1)
+	sd t0, 64(t1)
+	sd t0, 72(t1)
+	sd t0, 80(t1)
+	sd t0, 88(t1)
+	sd t0, 96(t1)
+	sd t0, 104(t1)
+	sd t0, 112(t1)
+	sd t0, 120(t1)
+	sd t0, 128(t1)
+	sd t0, 136(t1)
+	sd t0, 144(t1)
+	sd t0, 152(t1)
+	sd t0, 160(t1)
+	sd t0, 168(t1)
+	sd t0, 176(t1)
+	sd t0, 184(t1)
+	sd t0, 192(t1)
+	sd t0, 200(t1)
+	sd t0, 208(t1)
+	sd t0, 216(t1)
+	sd t0, 224(t1)
+	sd t0, 232(t1)
+	sd t0, 240(t1)
+	sd t0, 248(t1)
+	sd t0, 256(t1)
+	sd t0, 264(t1)
+	sd t0, 272(t1)
+	sd t0, 280(t1)
+	sd t0, 288(t1)
+	sd t0, 296(t1)
+	sd t0, 304(t1)
+	sd t0, 312(t1)
+	sd t0, 320(t1)
+	sd t0, 328(t1)
+	sd t0, 336(t1)
+	sd t0, 344(t1)
+	sd t0, 352(t1)
+	sd t0, 360(t1)
+	sd t0, 368(t1)
+	sd t0, 376(t1)
+	sd t0, 384(t1)
+	sd t0, 392(t1)
+	sd t0, 400(t1)
+	sd t0, 408(t1)
+	sd t0, 416(t1)
+	sd t0, 424(t1)
+	sd t0, 432(t1)
+	sd t0, 440(t1)
+	sd t0, 448(t1)
+	sd t0, 456(t1)
+	sd t0, 464(t1)
+	sd t0, 472(t1)
+	sd t0, 480(t1)
+	sd t0, 488(t1)
+	sd t0, 496(t1)
+	sd t0, 504(t1)
+	sd t0, 512(t1)
+	sd t0, 520(t1)
+	sd t0, 528(t1)
+	sd t0, 536(t1)
+	sd t0, 544(t1)
+	sd t0, 552(t1)
+	sd t0, 560(t1)
+	sd t0, 568(t1)
+	sd t0, 576(t1)
+	sd t0, 584(t1)
+	sd t0, 592(t1)
+	sd t0, 600(t1)
+	sd t0, 608(t1)
+	sd t0, 616(t1)
+	sd t0, 624(t1)
+	sd t0, 632(t1)
+	addi sp, sp, 640
+	slli a0, a0, 32
+	srli a0, a0, 32
+	addi a1, zero, 0
+	addi a2, zero, 0
+	addi a3, zero, 0
+	addi a4, zero, 0
+	addi a5, zero, 0
+	addi a6, zero, 0
+	addi a7, zero, 0
+	addi t0, zero, 0
+	addi t1, zero, 0
+	addi t2, zero, 0
+	addi t3, zero, 0
+	addi t4, zero, 0
+	addi t5, zero, 0
+	addi t6, zero, 0
 	ret
 	.option pop
 
@@ -1152,8 +1447,107 @@ vg_chacha20_poly1305_seal_gather:
 	addi a4, t6, 0
 	addi a5, a7, 0
 	addi a6, t5, 0
-	call {vg_chacha20_poly1305_seal}
+	call {vg_chacha20_poly1305_seal_core}
 	ld ra, 8(sp)
 	addi sp, sp, 16
+	addi t0, zero, 0
+	addi sp, sp, -640
+	addi t1, sp, 0
+	sd t0, 0(t1)
+	sd t0, 8(t1)
+	sd t0, 16(t1)
+	sd t0, 24(t1)
+	sd t0, 32(t1)
+	sd t0, 40(t1)
+	sd t0, 48(t1)
+	sd t0, 56(t1)
+	sd t0, 64(t1)
+	sd t0, 72(t1)
+	sd t0, 80(t1)
+	sd t0, 88(t1)
+	sd t0, 96(t1)
+	sd t0, 104(t1)
+	sd t0, 112(t1)
+	sd t0, 120(t1)
+	sd t0, 128(t1)
+	sd t0, 136(t1)
+	sd t0, 144(t1)
+	sd t0, 152(t1)
+	sd t0, 160(t1)
+	sd t0, 168(t1)
+	sd t0, 176(t1)
+	sd t0, 184(t1)
+	sd t0, 192(t1)
+	sd t0, 200(t1)
+	sd t0, 208(t1)
+	sd t0, 216(t1)
+	sd t0, 224(t1)
+	sd t0, 232(t1)
+	sd t0, 240(t1)
+	sd t0, 248(t1)
+	sd t0, 256(t1)
+	sd t0, 264(t1)
+	sd t0, 272(t1)
+	sd t0, 280(t1)
+	sd t0, 288(t1)
+	sd t0, 296(t1)
+	sd t0, 304(t1)
+	sd t0, 312(t1)
+	sd t0, 320(t1)
+	sd t0, 328(t1)
+	sd t0, 336(t1)
+	sd t0, 344(t1)
+	sd t0, 352(t1)
+	sd t0, 360(t1)
+	sd t0, 368(t1)
+	sd t0, 376(t1)
+	sd t0, 384(t1)
+	sd t0, 392(t1)
+	sd t0, 400(t1)
+	sd t0, 408(t1)
+	sd t0, 416(t1)
+	sd t0, 424(t1)
+	sd t0, 432(t1)
+	sd t0, 440(t1)
+	sd t0, 448(t1)
+	sd t0, 456(t1)
+	sd t0, 464(t1)
+	sd t0, 472(t1)
+	sd t0, 480(t1)
+	sd t0, 488(t1)
+	sd t0, 496(t1)
+	sd t0, 504(t1)
+	sd t0, 512(t1)
+	sd t0, 520(t1)
+	sd t0, 528(t1)
+	sd t0, 536(t1)
+	sd t0, 544(t1)
+	sd t0, 552(t1)
+	sd t0, 560(t1)
+	sd t0, 568(t1)
+	sd t0, 576(t1)
+	sd t0, 584(t1)
+	sd t0, 592(t1)
+	sd t0, 600(t1)
+	sd t0, 608(t1)
+	sd t0, 616(t1)
+	sd t0, 624(t1)
+	sd t0, 632(t1)
+	addi sp, sp, 640
+	addi a0, zero, 0
+	addi a1, zero, 0
+	addi a2, zero, 0
+	addi a3, zero, 0
+	addi a4, zero, 0
+	addi a5, zero, 0
+	addi a6, zero, 0
+	addi a7, zero, 0
+	addi t0, zero, 0
+	addi t1, zero, 0
+	addi t2, zero, 0
+	addi t3, zero, 0
+	addi t4, zero, 0
+	addi t5, zero, 0
+	addi t6, zero, 0
 	ret
 	.option pop

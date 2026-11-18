@@ -12,6 +12,8 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 meta import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.ChaCha20.ScrubLocal
+meta import VerifiedGarbage.Proof.ChaCha20.ScrubLocal
 
 /-!
 # ChaCha20's `init` and `set_nonce` without secret residue (x86-64)
@@ -27,7 +29,7 @@ streaming state (`Scrub.stream_congr`).
 
 namespace VG.Proof.ChaCha20.X86_64.Scrub
 
-open VG.X86_64 VG.X86_64.Scrub VG.Spec.ChaCha20
+open VG.X86_64 VG.X86_64.Scrub VG.Spec.ChaCha20 VG.Proof.ChaCha20.ScrubLocal
 
 theorem initOut : PostOut (initContract X86_64.abi) (initSig.retBits 64) :=
   postOut_of_local (leak := none) ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
