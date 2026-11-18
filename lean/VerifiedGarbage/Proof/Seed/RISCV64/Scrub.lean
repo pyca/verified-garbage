@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
+public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubSel
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.Seed.Contract
 public import VerifiedGarbage.Spec.Seed.Cbc
@@ -20,6 +21,25 @@ import VerifiedGarbage.Proof.Seed.RISCV64.FbFinalLit
 import VerifiedGarbage.Proof.Seed.RISCV64.Lit
 import VerifiedGarbage.Proof.Seed.RISCV64.ModesLit
 
+meta import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
+meta import VerifiedGarbage.Proof.Framework.RISCV64.ScrubSel
+meta import VerifiedGarbage.Proof.Framework.Registration
+meta import VerifiedGarbage.Spec.Seed.Contract
+meta import VerifiedGarbage.Spec.Seed.Cbc
+meta import VerifiedGarbage.Spec.Seed.Cfb
+meta import VerifiedGarbage.Spec.Seed.CfbFinal
+meta import VerifiedGarbage.Spec.Seed.Ofb
+meta import VerifiedGarbage.Spec.Seed.OfbFinal
+meta import VerifiedGarbage.Proof.Seed.RISCV64.FbFinalVerified
+meta import VerifiedGarbage.Proof.Seed.RISCV64.Frame
+meta import VerifiedGarbage.Proof.Seed.RISCV64.ModesVerified
+meta import VerifiedGarbage.Proof.Seed.Scratch
+meta import VerifiedGarbage.Proof.Seed.CbcScratch
+meta import VerifiedGarbage.Proof.Seed.FbScratch
+meta import VerifiedGarbage.Proof.Modes.CfbFinalScratch
+meta import VerifiedGarbage.Proof.Seed.RISCV64.FbFinalLit
+meta import VerifiedGarbage.Proof.Seed.RISCV64.Lit
+meta import VerifiedGarbage.Proof.Seed.RISCV64.ModesLit
 /-!
 # Seed on RISC-V, without secret residue
 
@@ -28,6 +48,11 @@ Each function, followed by `Impl.Scrub.RISCV64.scrubTail`
 stack its frames used. Their postconditions read the memory on return only
 within their buffers (`RISCV64.Scrub.PostOut`), as on x86-64
 (`Proof/Seed/X86_64/Scrub.lean`).
+
+The key expansion and ECB instead clear only the runs of doublewords that the residue
+analysis (`RISCV64.rtaint`) finds may differ between two runs
+(`RISCV64.Scrub.withScrubSel`, `scrubSel_noResidue`). Their code wipes most of
+its own scratch space, which leaves few such doublewords, or none.
 -/
 
 @[expose] public section
@@ -75,18 +100,27 @@ theorem ofbFinalOut (stack : Nat) : PostOut (Spec.Seed.ofbFinalContract RISCV64.
 
 /-- `Spec.Seed.expandKeyApi`. -/
 def expandKeyReg : Registration Spec.Seed.expandKeyApi RISCV64.target :=
-  withScrub { code := Impl.StackScratch.RISCV64.withStackScratchWiped 1040 .a2 129 Impl.Seed.RISCV64.expandKey, verified := Proof.Seed.RISCV64.expandKey_framed }
+  withScrubSel { code := Impl.StackScratch.RISCV64.withStackScratchWiped 1040 .a2 129 Impl.Seed.RISCV64.expandKey, verified := Proof.Seed.RISCV64.expandKey_framed } [(1040, [(129, 1)])]
     (expandKeyOut _)
+    (fun hfs hsz hrb => scrubSel_noResidue _ _ [] hfs hsz hrb (expandKeyOut _) (hbp_nil _)
+      (Impl.StackScratch.RISCV64.withStackScratchWiped 1040 .a2 129 Impl.Seed.RISCV64.expandKey) 1040 0
+      rfl rfl rfl (by exact ⟨_, by taint_decide_ct⟩))
 
 /-- `Spec.Seed.ecbEncryptApi`. -/
 def ecbEncryptReg : Registration Spec.Seed.ecbEncryptApi RISCV64.target :=
-  withScrub { code := Impl.StackScratch.RISCV64.withStackScratchWiped 1040 .a3 129 (Impl.Seed.RISCV64.ecb .encrypt), verified := Proof.Seed.RISCV64.ecb_framed .encrypt }
+  withScrubSel { code := Impl.StackScratch.RISCV64.withStackScratchWiped 1040 .a3 129 (Impl.Seed.RISCV64.ecb .encrypt), verified := Proof.Seed.RISCV64.ecb_framed .encrypt } [(1040, [(129, 1)])]
     (ecbEncryptOut _)
+    (fun hfs hsz hrb => scrubSel_noResidue _ _ [] hfs hsz hrb (ecbEncryptOut _) (hbp_nil _)
+      (Impl.StackScratch.RISCV64.withStackScratchWiped 1040 .a3 129 (Impl.Seed.RISCV64.ecb .encrypt)) 1040 0
+      rfl rfl rfl (by exact ⟨_, by taint_decide_ct⟩))
 
 /-- `Spec.Seed.ecbDecryptApi`. -/
 def ecbDecryptReg : Registration Spec.Seed.ecbDecryptApi RISCV64.target :=
-  withScrub { code := Impl.StackScratch.RISCV64.withStackScratchWiped 1040 .a3 129 (Impl.Seed.RISCV64.ecb .decrypt), verified := Proof.Seed.RISCV64.ecb_framed .decrypt }
+  withScrubSel { code := Impl.StackScratch.RISCV64.withStackScratchWiped 1040 .a3 129 (Impl.Seed.RISCV64.ecb .decrypt), verified := Proof.Seed.RISCV64.ecb_framed .decrypt } [(1040, [(129, 1)])]
     (ecbDecryptOut _)
+    (fun hfs hsz hrb => scrubSel_noResidue _ _ [] hfs hsz hrb (ecbDecryptOut _) (hbp_nil _)
+      (Impl.StackScratch.RISCV64.withStackScratchWiped 1040 .a3 129 (Impl.Seed.RISCV64.ecb .decrypt)) 1040 0
+      rfl rfl rfl (by exact ⟨_, by taint_decide_ct⟩))
 
 /-- `Spec.Seed.cbcEncryptChainedApi`. -/
 def cbcEncryptChainedReg : Registration Spec.Seed.cbcEncryptChainedApi RISCV64.target :=

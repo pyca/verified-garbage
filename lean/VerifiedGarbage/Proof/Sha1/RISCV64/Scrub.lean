@@ -1,11 +1,18 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
+public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubSel
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Sha1.RISCV64.Shared
 public import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha1
 public import VerifiedGarbage.Proof.Sha1.PostOut
 
+meta import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
+meta import VerifiedGarbage.Proof.Framework.RISCV64.ScrubSel
+meta import VerifiedGarbage.Proof.Framework.Registration
+meta import VerifiedGarbage.Proof.Sha1.RISCV64.Shared
+meta import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha1
+meta import VerifiedGarbage.Proof.Sha1.PostOut
 /-!
 # SHA-1 on RISC-V, without secret residue
 
@@ -15,6 +22,11 @@ stack its frames used. Their postconditions read the memory on return only
 within their buffers (`Proof/Sha1/PostOut.lean`). HMAC-SHA-1,
 PBKDF2 and the digest call their code as the internal `vg_sha1_init_core`,
 … (an `_core` suffix to each name), not these functions.
+
+`digest` instead clears only the runs of doublewords that the residue
+analysis (`RISCV64.rtaint`) finds may differ between two runs
+(`RISCV64.Scrub.withScrubSel`, `scrubSel_noResidue`). Their code wipes most of
+its own scratch space, which leaves few such doublewords, or none.
 -/
 
 @[expose] public section
@@ -40,8 +52,11 @@ def finalizeReg : Registration Spec.Sha1.finalizeApi RISCV64.target :=
 
 /-- `vg_sha1_digest`. -/
 def digestReg : Registration Spec.Sha1.digestApi RISCV64.target :=
-  withScrub { code := Impl.MdStream.RISCV64.Digest.digest Proof.Hmac.Stream.RISCV64.Sha1.hash, verified := Proof.Hmac.Stream.RISCV64.Sha1.digest }
+  withScrubSel { code := Impl.MdStream.RISCV64.Digest.digest Proof.Hmac.Stream.RISCV64.Sha1.hash, verified := Proof.Hmac.Stream.RISCV64.Sha1.digest } [(288, [(0, 18), (29, 7)])]
     (postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha1.digestPost_out 64))
+    (fun hfs hsz hrb => scrubSel_noResidue _ _ [] hfs hsz hrb (postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha1.digestPost_out 64)) (hbp_nil _)
+      (Impl.MdStream.RISCV64.Digest.digest Proof.Hmac.Stream.RISCV64.Sha1.hash) 288 0
+      rfl rfl rfl (by exact ⟨_, by taint_decide_ct⟩))
 
 
 end VG.Proof.Sha1.RISCV64

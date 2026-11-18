@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
+public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubSel
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Aes.RISCV64.Frame
 public import VerifiedGarbage.Proof.AesEcb.RISCV64
@@ -18,6 +19,24 @@ import VerifiedGarbage.Proof.AesEcb.Wipe
 import VerifiedGarbage.Proof.AesCbc.Wipe
 import VerifiedGarbage.Proof.Framework.Omega
 
+meta import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
+meta import VerifiedGarbage.Proof.Framework.RISCV64.ScrubSel
+meta import VerifiedGarbage.Proof.Framework.Registration
+meta import VerifiedGarbage.Proof.Aes.RISCV64.Frame
+meta import VerifiedGarbage.Proof.AesEcb.RISCV64
+meta import VerifiedGarbage.Proof.AesCbc.RISCV64.Wiped
+meta import VerifiedGarbage.Proof.AesCtr.RISCV64.Verified
+meta import VerifiedGarbage.Proof.AesCtr.RISCV64.Final
+meta import VerifiedGarbage.Proof.AesCfb.RISCV64.Verified
+meta import VerifiedGarbage.Proof.AesCfb.RISCV64.Final
+meta import VerifiedGarbage.Proof.AesCfb8.RISCV64.Verified
+meta import VerifiedGarbage.Proof.AesOfb.RISCV64.Verified
+meta import VerifiedGarbage.Proof.AesOfb.RISCV64.Final
+meta import VerifiedGarbage.Proof.Aes.ScrubLocal
+meta import VerifiedGarbage.Proof.Aes.Scratch
+meta import VerifiedGarbage.Proof.AesEcb.Wipe
+meta import VerifiedGarbage.Proof.AesCbc.Wipe
+meta import VerifiedGarbage.Proof.Framework.Omega
 /-!
 # AES and its modes on RISC-V, without secret residue
 
@@ -34,6 +53,11 @@ read the memory on return only within their buffers
 `Proof/Aes/X86_64/ModesScrub.lean`, `Proof/Aes/X86_64/FinalScrub.lean`).
 The `_final` functions call the code of the whole-block ones as internal
 functions of their own, `vg_aes_ctr_core`, ….
+
+The key expansion and the final partial-block functions of CTR, CFB and OFB instead clear only the runs of doublewords that the residue
+analysis (`RISCV64.rtaint`) finds may differ between two runs
+(`RISCV64.Scrub.withScrubSel`, `scrubSel_noResidue`). Their code wipes most of
+its own scratch space, which leaves few such doublewords, or none.
 -/
 
 @[expose] public section
@@ -266,10 +290,13 @@ theorem ofbFinalOut (stack : Nat) :
 
 /-- `Spec.Aes.expandKeyApi`. -/
 def expandKeyReg : Registration Spec.Aes.expandKeyApi RISCV64.target :=
-  withScrub {
+  withScrubSel {
       code := Impl.StackScratch.RISCV64.withStackScratchWiped 512 .a3 64 Impl.Aes.RISCV64.expandKey
-      verified := Proof.Aes.RISCV64.expandKey_framed }
+      verified := Proof.Aes.RISCV64.expandKey_framed } []
     (expandKeyOut _)
+    (fun hfs hsz hrb => scrubSel_noResidue _ _ [] hfs hsz hrb (expandKeyOut _) (hbp_nil _)
+      (Impl.StackScratch.RISCV64.withStackScratchWiped 512 .a3 64 Impl.Aes.RISCV64.expandKey) 512 0
+      rfl rfl rfl (by exact ⟨_, by taint_decide_ct⟩))
 
 /-- `Spec.AesEcb.encryptApi`. -/
 def ecbEncryptReg : Registration Spec.AesEcb.encryptApi RISCV64.target :=
@@ -308,10 +335,13 @@ def ctrReg : Registration Spec.Ctr.aesApi RISCV64.target :=
 
 /-- `Spec.Ctr.aesFinalApi`. -/
 def ctrFinalReg : Registration Spec.Ctr.aesFinalApi RISCV64.target :=
-  withScrub {
+  withScrubSel {
       code := Impl.StackScratch.RISCV64.withStackScratchWiped 80 .a6 10 Impl.AesCtr.RISCV64.cryptFinal
-      verified := Proof.AesCtr.final_keyed Proof.AesCtr.RISCV64.Final.cryptFinal_framed }
+      verified := Proof.AesCtr.final_keyed Proof.AesCtr.RISCV64.Final.cryptFinal_framed } []
     (ctrFinalOut _)
+    (fun hfs hsz hrb => scrubSel_noResidue _ _ [] hfs hsz hrb (ctrFinalOut _) (hbp_nil _)
+      (Impl.StackScratch.RISCV64.withStackScratchWiped 80 .a6 10 Impl.AesCtr.RISCV64.cryptFinal) 80 0
+      rfl rfl rfl (by exact ⟨_, by taint_decide_ct⟩))
 
 /-- `Spec.Cfb.aesEncryptApi`. -/
 def cfbEncryptReg : Registration Spec.Cfb.aesEncryptApi RISCV64.target :=
@@ -329,17 +359,23 @@ def cfbDecryptReg : Registration Spec.Cfb.aesDecryptApi RISCV64.target :=
 
 /-- `Spec.Cfb.aesEncryptFinalApi`. -/
 def cfbEncryptFinalReg : Registration Spec.Cfb.aesEncryptFinalApi RISCV64.target :=
-  withScrub {
+  withScrubSel {
       code := Impl.StackScratch.RISCV64.withStackScratchWiped 64 .a6 8 Impl.AesCfb.RISCV64.encryptFinal
-      verified := Proof.AesCfb.encryptFinal_keyed Proof.AesCfb.RISCV64.Final.encryptFinal_framed }
+      verified := Proof.AesCfb.encryptFinal_keyed Proof.AesCfb.RISCV64.Final.encryptFinal_framed } []
     (cfbEncryptFinalOut _)
+    (fun hfs hsz hrb => scrubSel_noResidue _ _ [] hfs hsz hrb (cfbEncryptFinalOut _) (hbp_nil _)
+      (Impl.StackScratch.RISCV64.withStackScratchWiped 64 .a6 8 Impl.AesCfb.RISCV64.encryptFinal) 64 0
+      rfl rfl rfl (by exact ⟨_, by taint_decide_ct⟩))
 
 /-- `Spec.Cfb.aesDecryptFinalApi`. -/
 def cfbDecryptFinalReg : Registration Spec.Cfb.aesDecryptFinalApi RISCV64.target :=
-  withScrub {
+  withScrubSel {
       code := Impl.StackScratch.RISCV64.withStackScratchWiped 64 .a6 8 Impl.AesCfb.RISCV64.decryptFinal
-      verified := Proof.AesCfb.decryptFinal_keyed Proof.AesCfb.RISCV64.Final.decryptFinal_framed }
+      verified := Proof.AesCfb.decryptFinal_keyed Proof.AesCfb.RISCV64.Final.decryptFinal_framed } []
     (cfbDecryptFinalOut _)
+    (fun hfs hsz hrb => scrubSel_noResidue _ _ [] hfs hsz hrb (cfbDecryptFinalOut _) (hbp_nil _)
+      (Impl.StackScratch.RISCV64.withStackScratchWiped 64 .a6 8 Impl.AesCfb.RISCV64.decryptFinal) 64 0
+      rfl rfl rfl (by exact ⟨_, by taint_decide_ct⟩))
 
 /-- `Spec.Cfb8.aesEncryptApi`. -/
 def cfb8EncryptReg : Registration Spec.Cfb8.aesEncryptApi RISCV64.target :=
@@ -364,9 +400,12 @@ def ofbReg : Registration Spec.Ofb.aesApi RISCV64.target :=
 
 /-- `Spec.Ofb.aesFinalApi`. -/
 def ofbFinalReg : Registration Spec.Ofb.aesFinalApi RISCV64.target :=
-  withScrub {
+  withScrubSel {
       code := Impl.StackScratch.RISCV64.withStackScratchWiped 64 .a6 8 Impl.AesOfb.RISCV64.cryptFinal
-      verified := Proof.AesOfb.final_keyed Proof.AesOfb.RISCV64.cryptFinal_framed }
+      verified := Proof.AesOfb.final_keyed Proof.AesOfb.RISCV64.cryptFinal_framed } []
     (ofbFinalOut _)
+    (fun hfs hsz hrb => scrubSel_noResidue _ _ [] hfs hsz hrb (ofbFinalOut _) (hbp_nil _)
+      (Impl.StackScratch.RISCV64.withStackScratchWiped 64 .a6 8 Impl.AesOfb.RISCV64.cryptFinal) 64 0
+      rfl rfl rfl (by exact ⟨_, by taint_decide_ct⟩))
 
 end VG.Proof.Aes.RISCV64.Scrub

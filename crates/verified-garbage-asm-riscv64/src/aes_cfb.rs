@@ -94,7 +94,7 @@ bnez s3, 22b
 j 21f
 20:
 21:
-.base64 "g7ALAIO0iwADuQsBg7mLAQO6CwKDuosCA7sLA4O7iwMKj4FPIzD/ASM0/wEjOP8BIzz/ASMw/wMjNP8DIzj/AyM8/wMhYYFCOXEKgyMwUwAjNFMAIzhTACM8UwAjMFMCIzRTAiM4UwIjPFMCIWEBRYFFAUaBRgFHgUcBSIFIgUIBQ4FDAU6BTgFPgU+CgA=="
+.base64 "g7ALAIO0iwADuQsBg7mLAQO6CwKDuosCA7sLA4O7iwMKj4FPIzD/ASM0/wEjOP8BIzz/ASMw/wMjNP8DIzj/AyM8/wMhYYFCAUWBRQFGgUYBR4FHAUiBSIFCAUOBQwFOgU4BT4FPgoA="
 .option pop"#,
         vg_aes_cfb128_encrypt_core = sym super::aes::vg_aes_cfb128_encrypt_core::vg_aes_cfb128_encrypt_core,
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
@@ -134,7 +134,7 @@ bnez s3, 22b
 j 21f
 20:
 21:
-.base64 "g7ALAIO0iwADuQsBg7mLAQO6CwKDuosCA7sLA4O7iwMKj4FPIzD/ASM0/wEjOP8BIzz/ASMw/wMjNP8DIzj/AyM8/wMhYYFCOXEKgyMwUwAjNFMAIzhTACM8UwAjMFMCIzRTAiM4UwIjPFMCIWEBRYFFAUaBRgFHgUcBSIFIgUIBQ4FDAU6BTgFPgU+CgA=="
+.base64 "g7ALAIO0iwADuQsBg7mLAQO6CwKDuosCA7sLA4O7iwMKj4FPIzD/ASM0/wEjOP8BIzz/ASMw/wMjNP8DIzj/AyM8/wMhYYFCAUWBRQFGgUYBR4FHAUiBSIFCAUOBQwFOgU4BT4FPgoA="
 .option pop"#,
         vg_aes_cfb128_decrypt_core = sym super::aes::vg_aes_cfb128_decrypt_core::vg_aes_cfb128_decrypt_core,
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
