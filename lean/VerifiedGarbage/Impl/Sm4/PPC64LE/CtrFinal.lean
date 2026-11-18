@@ -43,11 +43,14 @@ open VG.Impl.AesCfb.PPC64LE (finalSaved finalRestore)
 open VG.Impl.AesCtr.PPC64LE (zeroSlots tailKey)
 open VG.Impl.Modes.PPC64LE (tailByte)
 
-/-- `vg_sm4_ctr`, with its working space on the stack. -/
+/-- `vg_sm4_ctr`'s code, with its working space on the stack: called as an
+internal function of its own, `vg_sm4_ctr_core`, rather than as `vg_sm4_ctr`,
+which also clears the registers it leaves
+(`Proof.Sm4.PPC64LE.Scrub.ctrReg`). -/
 def ctrFramed : Prog isa := Impl.StackScratch.PPC64LE.withStackScratchWiped 3296 .r7 408 ctr
 
-/-- A call of `vg_sm4_ctr`. -/
-def ctrCall : Prog isa := .call "vg_sm4_ctr" ctrFramed
+/-- A call of `vg_sm4_ctr`'s code, as `vg_sm4_ctr_core`. -/
+def ctrCall : Prog isa := .call "vg_sm4_ctr_core" ctrFramed
 
 /-- The return address and the registers saved in `save`, at `r7`. -/
 def ctrFinalSave : List Instr := .mflr .r0 :: finalSaved.map fun (r, d) => .store .d r .r7 d

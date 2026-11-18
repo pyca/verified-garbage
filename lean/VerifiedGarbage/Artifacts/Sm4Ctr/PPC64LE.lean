@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Sm4.PPC64LE.CtrVerified
 public import VerifiedGarbage.Proof.Sm4.PPC64LE.CtrFinal
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Sm4.PPC64LE.Scrub
 public import VerifiedGarbage.TCB.PPC64LE.Print
 import VerifiedGarbage.Proof.Sm4.PPC64LE.CtrLit
 import VerifiedGarbage.Proof.Sm4.PPC64LE.Lit
@@ -14,9 +15,7 @@ import VerifiedGarbage.Proof.Sm4.PPC64LE.Lit
 namespace VG.Artifacts.Sm4Ctr.PPC64LE
 
 def artifacts : List Artifact := [
-  Spec.Sm4.ctrApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 3296 .r7 408 Impl.Sm4.PPC64LE.ctr
-    verified := Proof.Sm4.PPC64LE.Modes.ctr_framed },
+  Spec.Sm4.ctrApi.artifact PPC64LE.target Proof.Sm4.PPC64LE.Scrub.ctrReg,
   Spec.Sm4.ctrFinalApi.artifact PPC64LE.target {
     code := Impl.StackScratch.PPC64LE.withStackScratchWiped 112 .r7 10 Impl.Sm4.PPC64LE.ctrFinal
     verified := Proof.Sm4.PPC64LE.CtrFinal.ctrFinal_framed }]

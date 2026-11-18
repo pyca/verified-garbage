@@ -1222,17 +1222,7 @@ powerpc64le vg_seed_ecb_encrypt
 powerpc64le vg_seed_expand_key
 powerpc64le vg_seed_ofb
 powerpc64le vg_seed_ofb_final
-powerpc64le vg_sm4_cbc_decrypt_chained
-powerpc64le vg_sm4_cbc_encrypt_chained
-powerpc64le vg_sm4_cfb128_decrypt
-powerpc64le vg_sm4_cfb128_decrypt_final
-powerpc64le vg_sm4_cfb128_encrypt
-powerpc64le vg_sm4_cfb128_encrypt_final
-powerpc64le vg_sm4_ctr
 powerpc64le vg_sm4_ctr_final
-powerpc64le vg_sm4_ecb_decrypt
-powerpc64le vg_sm4_ecb_encrypt
-powerpc64le vg_sm4_expand_key
 powerpc64le vg_sm4_gcm_init
 powerpc64le vg_sm4_gcm_open
 powerpc64le vg_sm4_gcm_seal
@@ -1242,8 +1232,6 @@ powerpc64le vg_sm4_gcm_stream_encrypt
 powerpc64le vg_sm4_gcm_stream_finish
 powerpc64le vg_sm4_gcm_stream_init
 powerpc64le vg_sm4_gcm_stream_verify
-powerpc64le vg_sm4_ofb
-powerpc64le vg_sm4_ofb_final
 powerpc64le vg_triple_des_cbc_decrypt_chained
 powerpc64le vg_triple_des_cbc_encrypt_chained
 powerpc64le vg_triple_des_cfb64_decrypt
