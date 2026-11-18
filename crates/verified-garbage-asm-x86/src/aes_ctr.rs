@@ -42,7 +42,7 @@ jmp 21f
 21:
 .base64 "i0QkGIuYEAgAAIuwFAgAAIu4GAgAAIuoHAgAAMM="
 .p2align 6"#,
-        vg_aes_ctr32_to_aesni = sym super::aes_ctr::vg_aes_ctr32_to_aesni::vg_aes_ctr32_to_aesni,
+        vg_aes_ctr32_to_aesni = sym super::aes::vg_aes_ctr32_to_aesni::vg_aes_ctr32_to_aesni,
     )
 }
 
@@ -81,7 +81,7 @@ jmp 21f
 21:
 .base64 "i0QkGIuYEAgAAIuwFAgAAIu4GAgAAIuoHAgAAMM="
 .p2align 6"#,
-        vg_aes_ctr32_to = sym super::aes_ctr::vg_aes_ctr32_to::vg_aes_ctr32_to,
+        vg_aes_ctr32_to = sym super::aes::vg_aes_ctr32_to::vg_aes_ctr32_to,
     )
 }
 
@@ -162,25 +162,9 @@ jmp 21f
 }
 
 #[rustfmt::skip]
-#[path = "internal/vg_aes_ctr32_to.rs"]
-pub(crate) mod vg_aes_ctr32_to;
-
-#[rustfmt::skip]
-#[path = "internal/vg_aes_ctr32_to_aesni.rs"]
-pub(crate) mod vg_aes_ctr32_to_aesni;
-
-#[rustfmt::skip]
 #[path = "internal/vg_aes_ctr_single.rs"]
 pub(crate) mod vg_aes_ctr_single;
 
 #[rustfmt::skip]
 #[path = "internal/vg_aes_ctr_single_aesni.rs"]
 pub(crate) mod vg_aes_ctr_single_aesni;
-
-#[rustfmt::skip]
-#[path = "internal/vg_aes_encrypt_blocks.rs"]
-pub(crate) mod vg_aes_encrypt_blocks;
-
-#[rustfmt::skip]
-#[path = "internal/vg_aes_encrypt_blocks_aesni.rs"]
-pub(crate) mod vg_aes_encrypt_blocks_aesni;
