@@ -115,6 +115,8 @@ pub unsafe fn vg_mldsa65_pk_tr_auto(_dit: verified_garbage_cpu::Dit<'_>, pk: *co
 ///
 /// It runs `vg_mldsa65_prepare_verifying_key`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `pk` must be valid for reads of 1952 bytes.
@@ -135,6 +137,8 @@ pub unsafe fn vg_mldsa65_prepare_verifying_key_auto(_dit: verified_garbage_cpu::
 /// Contract: `VG.Spec.MlDsa.prepareSecretKeyContract`. Constant time.
 ///
 /// It runs `vg_mldsa65_prepare_signing_key`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///

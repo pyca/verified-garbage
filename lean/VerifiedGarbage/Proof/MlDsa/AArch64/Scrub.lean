@@ -9,6 +9,7 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.PreparedKey.Message
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsEntry
 public import VerifiedGarbage.Proof.MlDsa.AArch64.PreparedKey.SignEntryTiming
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-DSA on AArch64, without secret residue
@@ -147,5 +148,80 @@ theorem preparedVerifyMessageSelectedOk : ScrubAllOk
     ((preparedVerifyMessageSig p).retBits abi.ptrBits) := by
   rw [messageVerifyK, ite_eq_left rfl]
   exact preparedVerifyMessageOk_consts p 64 _ _
+
+/-! ## Preparing keys -/
+
+theorem agreeBuf {m₁ m₂ : Mem} {q : Addr} {N : Nat} (hN : N < 2 ^ 64)
+    (h : ∀ a, Region.Contains ⟨q, N⟩ a 1 → m₁ a = m₂ a) :
+    ∀ i < N, m₂ (q + BitVec.ofNat 64 i) = m₁ (q + BitVec.ofNat 64 i) := fun i hi =>
+  (h _ (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hN, hi]))).symm
+
+theorem bytesAt_congr {m₁ m₂ : Mem} {q : Addr} {n N : Nat} (hn : n ≤ N)
+    (h : ∀ i < N, m₂ (q + BitVec.ofNat 64 i) = m₁ (q + BitVec.ofNat 64 i)) :
+    Spec.Sha3.bytesAt m₂ q n = Spec.Sha3.bytesAt m₁ q n :=
+  List.map_congr_left fun i hi => h i (by have := List.mem_range.mp hi; omega_using [hn, this])
+
+/-- A polynomial stored in the `1024` bytes at `q + d` of a buffer of `N`
+bytes at `q`, in memories that agree on the buffer. -/
+theorem polyStored_congr {m₁ m₂ : Mem} {q : Addr} {d N : Nat} {f : Poly} (hd : d + 4 * n ≤ N)
+    (h : ∀ i < N, m₂ (q + BitVec.ofNat 64 i) = m₁ (q + BitVec.ofNat 64 i))
+    (hf : PolyStored m₁ (q + BitVec.ofNat 64 d) f) : PolyStored m₂ (q + BitVec.ofNat 64 d) f := by
+  intro i hi
+  rw [← hf i hi]
+  congr 1
+  apply Mem.readW_congr
+  intro t ht
+  rw [BitVec.add_assoc, BitVec.add_assoc, ← BitVec.ofNat_add, ← BitVec.ofNat_add]
+  exact h _ (by simp only [n] at hi hd; omega_using [hd, hi, ht])
+
+theorem pub_bytes : ∀ p ∈ [mlDsa44, mlDsa65, mlDsa87], preparedPublicKeyBytes p < 2 ^ 64 := by decide
+theorem sec_bytes : ∀ p ∈ [mlDsa44, mlDsa65, mlDsa87], preparedSecretKeyBytes p < 2 ^ 64 := by decide
+
+theorem mem_of {p : Params} (hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) :
+    p ∈ [mlDsa44, mlDsa65, mlDsa87] := by
+  rcases hp with rfl | rfl | rfl <;> simp
+
+theorem preparePublicOk {p : Params} (hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) (W : Nat)
+    (hW : 0 < W := by decide) :
+    ScrubAllOk (preparePublicKeyContract p abi W) W ((preparePublicKeySig p).retBits abi.ptrBits) :=
+  scrubAllOk_regs (sig := preparePublicKeySig p) (Nat.le_of_ble_eq_true rfl) hW (Nat.le_refl _)
+    fun vs m m₁ m₂ r hlen hb h => by
+    match vs, hlen with
+    | [pk, prep, sc], _ =>
+      simp only [preparePublicKeySig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+        forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+      have hw := agreeBuf (pub_bytes p (mem_of hp)) hb.2.1
+      obtain ⟨h₁, h₂⟩ := h
+      change Spec.Sha3.bytesAt m₁ prep p.pkLen = Spec.Sha3.bytesAt m pk p.pkLen at h₁
+      change PreparedPublicKey p m₁ prep at h₂
+      change Spec.Sha3.bytesAt m₂ prep p.pkLen = Spec.Sha3.bytesAt m pk p.pkLen ∧ PreparedPublicKey p m₂ prep
+      have e := bytesAt_congr (n := p.pkLen) (by simp [preparedPublicKeyBytes]) hw
+      refine ⟨e.trans h₁, fun i hi => ?_⟩
+      rw [e]
+      exact polyStored_congr (N := preparedPublicKeyBytes p)
+        (by simp only [preparedPublicKeyBytes]; have := Nat.mul_le_mul_left (4 * n) (show i + 1 ≤ p.k by omega_using [hi])
+            rw [Nat.mul_add, Nat.mul_one] at this; omega_using [this]) hw (h₂ i hi)
+
+theorem prepareSecretOk {p : Params} (hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) (W : Nat)
+    (hW : 0 < W := by decide) :
+    ScrubAllOk (prepareSecretKeyContract p abi W) W ((prepareSecretKeySig p).retBits abi.ptrBits) :=
+  scrubAllOk_regs (sig := prepareSecretKeySig p) (Nat.le_of_ble_eq_true rfl) hW (Nat.le_refl _)
+    fun vs m m₁ m₂ r hlen hb h => by
+    match vs, hlen with
+    | [sk, prep, sc], _ =>
+      simp only [prepareSecretKeySig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+        forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+      have hw := agreeBuf (sec_bytes p (mem_of hp)) hb.2.1
+      obtain ⟨h₁, h₂⟩ := h
+      change Spec.Sha3.bytesAt m₁ prep p.skLen = Spec.Sha3.bytesAt m sk p.skLen at h₁
+      change PreparedSecretKey p m₁ prep at h₂
+      change Spec.Sha3.bytesAt m₂ prep p.skLen = Spec.Sha3.bytesAt m sk p.skLen ∧ PreparedSecretKey p m₂ prep
+      have e := bytesAt_congr (n := p.skLen) (by simp [preparedSecretKeyBytes]) hw
+      refine ⟨e.trans h₁, fun i hi => ?_⟩
+      rw [e]
+      exact polyStored_congr (N := preparedSecretKeyBytes p)
+        (by simp only [preparedSecretKeyBytes]
+            have := Nat.mul_le_mul_left (4 * n) (show i + 1 ≤ p.ℓ + 2 * p.k by omega_using [hi])
+            rw [Nat.mul_add, Nat.mul_one] at this; omega_using [this]) hw (h₂ i hi)
 
 end VG.Proof.MlDsa.AArch64.Scrub
