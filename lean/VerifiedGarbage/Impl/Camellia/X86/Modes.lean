@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Camellia.X86.Ecb
-public import VerifiedGarbage.Impl.Modes.X86.Seq
+public import VerifiedGarbage.Impl.Modes.X86.Wide
 public import VerifiedGarbage.Impl.Modes.CbcChained
 
 /-!
@@ -21,6 +21,13 @@ slots in all (`[u64; 341]`).
 
 CBC runs in the core's direction; OFB and CFB128 run the cipher forwards
 (encryption) in both directions. The number of rounds is public, as in ECB.
+
+CBC and CFB128 decryption, whose blocks can be deciphered independently,
+take the blocks in groups (`Impl/Modes/X86/Wide.lean`): of eight, the
+core's buffer, while eight are left, then of four and of two (`levels`),
+then one, each group one call of `vg_camellia_crypt_prepared`, which costs
+the same for any number of the buffer's blocks. The other modes, whose
+blocks each need the one before, call it once a block.
 -/
 
 @[expose] public section
@@ -44,11 +51,16 @@ def dirCore (d : Dir) : Modes.X86.Core where
   stack := 16
   ka := 2
 
+/-- The sizes of the groups of blocks the modes whose blocks are independent
+take, in turn, before single blocks. -/
+def levels : List Nat := [8, 4, 2]
+
 /-- `vg_camellia_cbc_encrypt_chained`, with its scratch buffer as the sixth argument. -/
 def cbcEncryptChained : Prog isa := (dirCore .encrypt).seq (Modes.Mode.cbcEncChained 4)
 
 /-- `vg_camellia_cbc_decrypt_chained`, with its scratch buffer as the sixth argument. -/
-def cbcDecryptChained : Prog isa := (dirCore .decrypt).seq (Modes.Mode.cbcDecChained 4)
+def cbcDecryptChained : Prog isa :=
+  (dirCore .decrypt).seqLevels (Modes.Mode.cbcDecWide 4) levels (Modes.Mode.cbcDecChained 4)
 
 /-- `vg_camellia_ofb`, with its scratch buffer as the sixth argument. -/
 def ofb : Prog isa := (dirCore .encrypt).seq (Modes.Mode.ofb 4)
@@ -57,6 +69,7 @@ def ofb : Prog isa := (dirCore .encrypt).seq (Modes.Mode.ofb 4)
 def cfbEncrypt : Prog isa := (dirCore .encrypt).seq (Modes.Mode.cfbEnc 4)
 
 /-- `vg_camellia_cfb128_decrypt`, with its scratch buffer as the sixth argument. -/
-def cfbDecrypt : Prog isa := (dirCore .encrypt).seq (Modes.Mode.cfbDec 4)
+def cfbDecrypt : Prog isa :=
+  (dirCore .encrypt).seqLevels (Modes.Mode.cfbDecWide 4) levels (Modes.Mode.cfbDecEarly 4)
 
 end VG.Impl.Camellia.X86
