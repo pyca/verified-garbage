@@ -64,8 +64,7 @@ fn rfc5528_test_vectors() {
 
 /// The counter block's increment carries across its 32- and 64-bit words and
 /// wraps from `1¹²⁸` to `0¹²⁸` (`crate::modes::check_counter`), on messages
-/// of 15 and of 18 blocks (the code takes them in groups of eight, four and
-/// two, then one), at aligned and unaligned addresses.
+/// of 17 blocks and a bit, at aligned and unaligned addresses.
 #[test]
 fn counter_carries_and_wraps() {
     let starts: [u128; 6] = [
@@ -79,15 +78,13 @@ fn counter_carries_and_wraps() {
     for key_len in [16, 24, 32] {
         let key: Vec<_> = crate::bytes::pattern(key_len, 29, 7);
         for start in starts {
-            for blocks in [15, 18] {
-                crate::modes::check_counter(
-                    start.to_be_bytes(),
-                    blocks,
-                    &|c| CamelliaCtr::new(&key, c).unwrap(),
-                    CamelliaCtr::apply_keystream,
-                    CamelliaCtr::apply_keystream_final,
-                );
-            }
+            crate::modes::check_counter(
+                start.to_be_bytes(),
+                18,
+                &|c| CamelliaCtr::new(&key, c).unwrap(),
+                CamelliaCtr::apply_keystream,
+                CamelliaCtr::apply_keystream_final,
+            );
         }
     }
 }

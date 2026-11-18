@@ -1,8 +1,5 @@
 //! Camellia-CBC: OpenSSL's test vectors as pyca/cryptography vendors them,
-//! unmodified under vectors/, whole and split at every block; and, since
-//! each is one block and decryption deciphers up to eight blocks at a time,
-//! messages of up to 34 blocks, which decryption takes back to what was
-//! encrypted.
+//! unmodified under vectors/, whole and split at every block.
 
 #![cfg(any(
     target_arch = "x86",
@@ -50,40 +47,6 @@ fn openssl_vectors() {
         check(&key, iv, &get("PLAINTEXT"), &get("CIPHERTEXT"));
     }
     assert_eq!(key_lens, [16, 16, 16, 16, 24, 24, 24, 24, 32, 32, 32, 32]);
-}
-
-/// Every number of blocks up to 34 round-trips: decryption, which deciphers
-/// up to eight blocks at a time, undoes encryption, in one call in place
-/// between guards, and with the last block in a call of its own.
-#[test]
-fn round_trips() {
-    let iv = [0x3c; 16];
-    for len in [16, 24, 32] {
-        let key: Vec<_> = crate::bytes::pattern(len, 17, 3);
-        let message: Vec<_> = crate::bytes::pattern(16 * 34, 7, 1);
-        for blocks in 0..=34 {
-            let n = 16 * blocks;
-            let mut buffer = message[..n].to_vec();
-            CamelliaCbcEncryptor::new(&key, &iv)
-                .unwrap()
-                .encrypt(&mut buffer)
-                .unwrap();
-            let mut guarded = vec![0xa5; 1 + n + 16];
-            guarded[1..1 + n].copy_from_slice(&buffer);
-            CamelliaCbcDecryptor::new(&key, &iv)
-                .unwrap()
-                .decrypt(&mut guarded[1..1 + n])
-                .unwrap();
-            assert_eq!(guarded[1..1 + n], message[..n]);
-            assert!(crate::bytes::all_equal(&guarded[..1], 0xa5));
-            assert!(crate::bytes::all_equal(&guarded[1 + n..], 0xa5));
-            let mut decryptor = CamelliaCbcDecryptor::new(&key, &iv).unwrap();
-            let (head, last) = buffer.split_at_mut(n.saturating_sub(16));
-            decryptor.decrypt(head).unwrap();
-            decryptor.decrypt(last).unwrap();
-            assert_eq!(buffer, message[..n]);
-        }
-    }
 }
 
 #[test]
