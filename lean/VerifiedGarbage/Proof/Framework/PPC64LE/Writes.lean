@@ -69,6 +69,11 @@ theorem exec_vpr_ca {i : Instr} (h : exec i s = some s') :
     obtain ⟨a, -, h⟩ := h
     obtain ⟨h1, h2⟩ := hst h
     exact ⟨fun v _ => by rw [h1], fun _ => h2⟩
+  | dcbz a b =>
+    simp only [exec, Option.bind_eq_some_iff] at h
+    obtain ⟨a, -, h⟩ := h
+    obtain ⟨h1, h2⟩ := hst h
+    exact ⟨fun v _ => by rw [h1], fun _ => h2⟩
   | storeRev sz t a b =>
     cases sz <;>
     · simp only [exec, Option.bind_eq_some_iff] at h
