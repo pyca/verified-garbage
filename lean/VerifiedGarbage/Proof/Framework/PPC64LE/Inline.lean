@@ -74,7 +74,7 @@ def dstOf : Instr → Option Reg
   | .logic _ d .. | .rotr _ d .. | .lsr _ d .. | .lsl d .. | .load _ d .. | .lbz d .. | .loadRev _ d ..
   | .mflr d | .pop d | .addSp d _ | .adrSym d _ | .mfvsrd d _ => some d
   | .store .. | .stb .. | .storeRev .. | .mtlr _ | .push _ | .alloc _ | .free _
-  | .vop .. | .lxvd2x .. | .lxvd2xTbl .. | .stxvd2x .. | .mtvsrd .. | .bctrl => none
+  | .vop .. | .lxvd2x .. | .lxvd2xTbl .. | .stxvd2x .. | .mtvsrd .. | .dcbz .. | .bctrl => none
 
 section
 variable {s s' : State} {rd wr : List Region}
@@ -107,6 +107,10 @@ theorem exec_widen (hc : Covers (s.rd ++ s.wr) (rd ++ wr)) (hw : Covers s.wr wr)
       obtain ⟨a, ha, v, hv, rfl⟩ := h
       exact ⟨a, ha, v, load_widen hc hv, rfl⟩
   | store sz t n off | stb t n off | stxvd2x t n off =>
+    simp only [reduceExec, Option.bind_eq_some_iff] at h ⊢
+    obtain ⟨a, ha, hs⟩ := h
+    exact ⟨a, ha, store_widen hw hs⟩
+  | dcbz a b =>
     simp only [reduceExec, Option.bind_eq_some_iff] at h ⊢
     obtain ⟨a, ha, hs⟩ := h
     exact ⟨a, ha, store_widen hw hs⟩
@@ -147,6 +151,10 @@ theorem exec_regions {i : Instr} (h : exec i s = some s') :
     simp only [exec, Option.bind_eq_some_iff] at h
     obtain ⟨a, -, h⟩ := h
     exact hst h
+  | dcbz a b =>
+    simp only [exec, Option.bind_eq_some_iff] at h
+    obtain ⟨a, -, h⟩ := h
+    exact hst h
   | storeRev sz t a b =>
     cases sz <;>
     · simp only [exec, Option.bind_eq_some_iff] at h
@@ -184,6 +192,10 @@ theorem exec_gpr {i : Instr} {r : Reg} (hi : dstOf i ≠ some r) (h : exec i s =
     split at h <;> cases h; rfl
   cases i with
   | store sz t n off | stb t n off | stxvd2x t n off =>
+    simp only [exec, Option.bind_eq_some_iff] at h
+    obtain ⟨a, -, h⟩ := h
+    exact hst h
+  | dcbz a b =>
     simp only [exec, Option.bind_eq_some_iff] at h
     obtain ⟨a, -, h⟩ := h
     exact hst h

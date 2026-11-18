@@ -447,6 +447,10 @@ theorem exec_vpr {i : Instr} {s s' : State} (hi : vWrites i = false) (h : exec i
     simp only [reduceExec, Option.bind_eq_some_iff] at h
     obtain ⟨a, -, h⟩ := h
     exact hst h
+  | dcbz a b =>
+    simp only [reduceExec, Option.bind_eq_some_iff] at h
+    obtain ⟨a, -, h⟩ := h
+    exact hst h
   | storeRev sz t a b =>
     cases sz <;>
     · simp only [reduceExec, Option.bind_eq_some_iff] at h

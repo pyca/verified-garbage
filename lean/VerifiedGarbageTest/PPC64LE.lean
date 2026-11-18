@@ -238,6 +238,19 @@ def sUnaligned : State := { sVec with wr := [⟨0x1000, 20⟩] }
 #guard addrs (.lxvd2x .v0 .r3 .r5) sVec == [0x1004]
 #guard addrs (.stxvd2x .v0 .r3 .r5) sVec == [0x1004]
 
+-- DCBZ zeroes the whole 128-byte block containing EA, aligned to its size,
+-- and nothing else; it faults unless the block is within one writable
+-- region, or with RA = 0.
+def sBlock : State := { s0 with wr := [⟨0xf80, 0x180⟩], gpr := fun r => if r = .r3 then 0x1040 else s0.gpr r }
+#guard (exec (.dcbz .r3 .r5) sBlock).map (fun s => s.mem.read 0x1000 128) == some 0
+#guard (exec (.dcbz .r3 .r5) sBlock).map (fun s => s.mem 0xfff) == some 0xff
+#guard (exec (.dcbz .r3 .r5) sBlock).map (fun s => s.mem 0x1080) == some 0x80
+#guard (exec (.dcbz .r3 .r5) s0).isNone -- the block is not within the region
+#guard (exec (.dcbz .r0 .r3) sBlock).isNone -- forbidden RA=0 encoding
+#guard addrs (.dcbz .r3 .r5) sBlock == [0x1044]
+#guard Instr.encode (.dcbz .r3 .r5) == some [0x7c032fec]
+#guard Instr.asm (.dcbz .r3 .r5) == ["dcbz %r3, %r5"]
+
 -- Modular addition carries between bits within a lane, never between lanes.
 def sOnes : State := { sVec with vpr := fun r => if r = .v0 then -1 else 1 }
 #guard (exec (.vop (.add false .v3 .v0 .v1)) sOnes).map (·.vpr .v3) ==
