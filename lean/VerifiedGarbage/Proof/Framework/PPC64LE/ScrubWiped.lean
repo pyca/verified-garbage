@@ -14,8 +14,9 @@ wipe covers the whole of the frame's region (`8 * words = bytes - 32`) and
 `c` has no frames of its own, nothing it wrote is left on the stack: two
 runs of it with the same trace end with memories that agree outside the
 buffers (`Exec.agreeWiped`). So it returns without secret residue followed
-only by the clearing of the volatile registers, `scrubTail rb []`, which
-wipes no stack (`Verified.scrubOf` with no levels; `withScrubWiped`).
+only by the clearing of the volatile registers it may write,
+`scrubTail rb [] (Clear.of c [])`, which wipes no stack (`Verified.scrubOf`
+with no levels; `withScrubWiped`).
 
 Inside the frame, the two runs agree outside the buffers and the frame's
 region (`Exec.agree`); the wipe then zeroes the region in both; and the
@@ -223,8 +224,8 @@ theorem WipedShape.agree {A : Abi isa} {sig : Sig} {pre : Curry (sig.words A.ptr
 verified against `r`'s contract and returns without secret residue. -/
 theorem scrubWipedCode_ok {api : Api} (r : Registration api target) (sh : WipedShape r.code r.stack)
     (hrb : retBitsOf r ≤ 64) (hpost : PostOut r.contract (retBitsOf r)) :
-    Verified target (.seq r.code (scrubTail (retBitsOf r) [])) r.contract ∧
-      NoResidue (.seq r.code (scrubTail (retBitsOf r) [])) r.contract (retBitsOf r) := by
+    Verified target (.seq r.code (scrubTail (retBitsOf r) [] (Clear.of r.code []))) r.contract ∧
+      NoResidue (.seq r.code (scrubTail (retBitsOf r) [] (Clear.of r.code []))) r.contract (retBitsOf r) := by
   obtain ⟨pre, post, leak, e⟩ := r.ofSig
   have hv := r.verified
   have hp := hpost
@@ -233,8 +234,8 @@ theorem scrubWipedCode_ok {api : Api} (r : Registration api target) (sh : WipedS
   have hrb' := hrb
   rw [← withMode_ptrBits ((abi.withConsts r.consts).withTables api.sig r.tables) api.pubMode] at hrb' hp ⊢
   have hA := ScrubAbi.of r.consts api.sig r.tables api.pubMode
-  exact Verified.scrubOf hA hv ⟨fun _ h => by simp at h, fun _ h => by simp at h⟩ (Nat.zero_le _) hrb' hp
-    (WipedShape.agree hA hv sh)
+  exact Verified.scrubOf hA hv ⟨fun _ h => by simp at h, fun _ h => by simp at h⟩ (Nat.zero_le _)
+    (Clear.of_wf _ _) (Clear.of_keep _ _) hrb' hp (WipedShape.agree hA hv sh)
 
 /-- `r`, its code followed by the clearing of the volatile registers alone:
 for code that wipes its own frame (`WipedShape`). -/
@@ -243,7 +244,7 @@ def scrubWipedReg {api : Api} (r : Registration api target) (sh : WipedShape r.c
     Registration api target where
   suffix := r.suffix
   tables := r.tables
-  code := .seq r.code (scrubTail (retBitsOf r) [])
+  code := .seq r.code (scrubTail (retBitsOf r) [] (Clear.of r.code []))
   contract := r.contract
   verified := (scrubWipedCode_ok r sh hrb hpost).1
   consts := r.consts

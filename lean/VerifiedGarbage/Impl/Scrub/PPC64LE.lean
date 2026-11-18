@@ -5,7 +5,7 @@ public import VerifiedGarbage.TCB.PPC64LE.Isa
 /-!
 # Returning without secret residue (64-bit little-endian PowerPC)
 
-`scrub retBits depth c` runs `c`, then clears everything `c` may have left
+`scrub retBits depth cl c` runs `c`, then clears everything `c` may have left
 where its Rust caller cannot clear it (`PPC64LE.NoResidue`), as
 `Impl/Scrub/X86_64.lean` and `Impl/Scrub/RISCV64.lean` do:
 
@@ -21,10 +21,16 @@ where its Rust caller cannot clear it (`PPC64LE.NoResidue`), as
   the last level is one frame of `c` bytes, whose header is the bottom 32
   bytes. Each frame's region is zeroed, from its base up, by `std r0, 8k(r12)`
   with `r0` zero and `r12` the region's base (`addi r12, r1, 32`);
-* the volatile registers (ELFv2 ABI §2.2.2.1, Table 2.21): `r0` and `r4`–
-  `r12` with `li r, 0`, the bits of `r3`, the result, above its `retBits` low
-  ones, `XER`'s carry bit CA with `addc r0, r0, r0` (of zeros, which carries
-  nothing), and `v0`–`v19` with `vxor v, v, v`.
+* of the volatile registers (ELFv2 ABI §2.2.2.1, Table 2.21), those `cl`
+  names (`Clear`): `r0` and others of `r4`–`r12` with `li r, 0`, the bits of
+  `r3`, the result, above its `retBits` low ones, `XER`'s carry bit CA with
+  `addc r0, r0, r0` (of zeros, which carries nothing), and vector registers
+  of `v0`–`v19` with `vxor v, v, v`.
+
+A register the code never writes holds on return what it held on entry, so
+it needs no clearing: `Proof/Framework/PPC64LE/Writes.lean` computes, from
+the code, which registers it may write (`Clear.of`), and `Clear.all` clears
+every volatile register.
 
 The model has no other register a function may change (see
 `TCB/PPC64LE/Residue.lean`).
@@ -88,15 +94,33 @@ def chunksAux : Nat → Nat → List Nat
 
 def chunks (n : Nat) : List Nat := chunksAux (n / 3968 + 1) n
 
+/-- Which of the volatile registers the clearing clears: `r0` (first, as
+the zero the wipe stores and `addc` adds; so it must be when there are
+levels or CA to clear), the bits of `r3` above the result's, the scratch
+registers `gs` (of `scratchRegs`; `r12` when there are levels, which the wipe
+writes), CA, and the vector registers `vs`. -/
+structure Clear where
+  r0 : Bool
+  r3 : Bool
+  gs : List Reg
+  ca : Bool
+  vs : List VReg
+
+/-- Every volatile register. -/
+def Clear.all : Clear := ⟨true, true, scratchRegs, true, vregs⟩
+
 /-- The clearing: `r0` zeroed, the stack in levels of the sizes `cs`, then
 the result's upper bits, the scratch registers, CA and the vector
-registers. -/
-def scrubTail (retBits : Nat) (cs : List Nat) : Prog isa :=
-  .seq (.block [zeroR .r0]) (.seq (wipe cs) (.seq (.block (retFix retBits))
-    (.seq (.block (scratchRegs.map zeroR)) (.block (.addc .r0 .r0 .r0 :: vregs.map zeroV)))))
+registers, as `cl` says. -/
+def scrubTail (retBits : Nat) (cs : List Nat) (cl : Clear) : Prog isa :=
+  .seq (.block (if cl.r0 then [zeroR .r0] else [])) (.seq (wipe cs) (.seq
+    (.block (if cl.r3 then retFix retBits else []))
+    (.seq (.block (cl.gs.map zeroR))
+      (.block ((if cl.ca then [.addc .r0 .r0 .r0] else []) ++ cl.vs.map zeroV)))))
 
-/-- `c`, then the clearing of the `depth` bytes of stack its frames use. -/
-def scrub (retBits depth : Nat) (c : Prog isa) : Prog isa :=
-  .seq c (scrubTail retBits (chunks depth))
+/-- `c`, then the clearing of the `depth` bytes of stack its frames use and
+of the registers `cl` names. -/
+def scrub (retBits depth : Nat) (cl : Clear) (c : Prog isa) : Prog isa :=
+  .seq c (scrubTail retBits (chunks depth) cl)
 
 end VG.Impl.Scrub.PPC64LE
