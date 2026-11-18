@@ -217,9 +217,9 @@ structure Abi (M : ISA) where
   alignsBufs : Bool := false
   /-- The mode the code runs in, as a number, on a target where code can
   read one: on AArch64, PSTATE.DIT (data independent timing), 1 if on and 0
-  if off; on x86-64, MXCSR; 0 on the other targets. A contract makes it
-  public only under `A.withMode true`, which only the contracts of
-  `Spec/Dit.lean` and `Spec/Mcdt.lean` use. -/
+  if off; on x86-64, MXCSR; 0 on the other targets. Where `pub` includes
+  it (x86-64 and AArch64), every contract makes it public; `A.withMode true`
+  adds it to a `pub` that leaves it out. -/
   mode : M.State → Nat := fun _ => 0
 
 /-! ## Tables of constants
@@ -265,8 +265,11 @@ may branch on it. The Rust code sets the mode for the operation it runs
 (`src/dit.rs`), whatever data the operation is given: the mode depends on
 nothing secret. On x86-64 it is MXCSR, which the verified code loads only
 with `0x1FBF` and values it saved (see `Spec/Mcdt.lean` for what its status
-flags may record). `A.withMode false` is `A`, the calling convention of every
-other contract. An artifact states which it is (`Artifact.pubMode`). -/
+flags may record). `A.withMode false` is `A`. The x86-64 and AArch64 calling
+conventions already put their mode in `pub` (`TCB/X86_64/Target.lean`,
+`TCB/AArch64/Target.lean`), so under them every contract assumes the two runs
+agree on it and `withMode true` changes nothing; it adds the mode to a `pub`
+that leaves it out. An artifact states which it is (`Artifact.pubMode`). -/
 
 def Abi.withMode {M : ISA} (A : Abi M) : Bool → Abi M
   | false => A
