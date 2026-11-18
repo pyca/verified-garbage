@@ -55,13 +55,6 @@ theorem fail_check : ACheck Impl.Ffdh.X86.GenerateKey.fail := by dsimp only [ACh
 theorem copy612_check : ACheck (copy (.slot .wide 6) (.slot .wide 12) (one .wide)) := by
   dsimp only [ACheck]; taint_decide
 theorem nil_check : ACheck (.block []) := by dsimp only [ACheck]; taint_decide
-theorem copy12_check : ACheck (copy (.slot .wide 12) (.slot .wide 5) (one .wide)) := by
-  dsimp only [ACheck]; taint_decide
-theorem copy16_check : ACheck (copy (.slot .wide 16) (.slot .wide 8) (one .wide)) := by
-  dsimp only [ACheck]; taint_decide
-theorem eqAnd_check : ACheck (.seq (equal (.slot .wide 6) (.slot .wide 3) (one .wide))
-    (.block [.alu .and .ecx (.mem (sc accOff)), .store (sc accOff) .ecx])) := by
-  dsimp only [ACheck]; taint_decide
 theorem outStat_check : ACheck (.seq Impl.Ffdh.X86.GenerateKey.outputs (.block statusOf)) := by
   dsimp only [ACheck]; taint_decide
 
@@ -80,36 +73,6 @@ theorem tp_step {x u : State} (T : TP Ex base bytes len dlen args sp x) (S : Ste
     TP Ex base bytes len dlen args sp u :=
   ⟨run_step T.1 S, T.2.keep ⟨rfl, rfl⟩ S.keeps⟩
 
-/-- A mask and-ed into a header word. -/
-theorem andStore_ok {x : State} (h : In Ex base bytes len args x) {d : Nat} (hd : d + 4 ≤ 32) :
-    WP isa (.block [.alu .and .ecx (.mem (sc d)), .store (sc d) .ecx]) x (Step Ex base bytes len args x) := by
-  have r := KeyScan.word_room h hd
-  refine wp_logicS (.inl rfl) (readSrc_sc h.scratch (d := d) r) fun u a => ?_
-  have su : Scr u base bytes := h.scratch.of_keeps a.keeps (by decide)
-  refine wp_storeS (su.ea (d := d) (by omega_using [r])) (su.write (d := d) (n := 4) r) fun t m => WP.block_nil ?_
-  have O : Outside base d 4 x.mem t.mem := by rw [m.mem, a.mem]; exact writeW32_outside _ _ _ (by omega_using [hd])
-  exact Step.word h hd O (a.keeps.widen (m.keeps []))
-
-theorem powP_tp {b e : Nat} (hb9 : 9 ≤ b) (hb : b ≤ 17) (he9 : 9 ≤ e) (he : e ≤ 17)
-    (hcb : ACheck (copy (.slot .wide b) (.slot .wide 5) (one .wide)))
-    (hce : ACheck (copy (.slot .wide e) (.slot .wide 8) (one .wide))) :
-    RelCT isa (Both (TP Ex base bytes len dlen args sp)) (Impl.Ffdh.X86.powP b e)
-      (Both (TP Ex base bytes len dlen args sp)) :=
-  VG.Proof.Bignum.X86.PublicRt.relCT_both
-    ((powP_trace hb9 hb he9 he hcb hce).mono (fun _ _ h => ⟨h.1.1, h.2.1⟩) fun _ _ _ => trivial)
-    fun x T => WP.mono (powP_ok T.1.1 (b := b) (e := e) hb9 (by omega_using [hb]) he9 (by omega_using [he]) rfl)
-      fun _ ⟨_, _, _, F, _, K⟩ => tp_step T (Step.ops T.1.1 F K)
-
-theorem qBranch_rel {Q : State → Prop} :
-    RelCT isa (Both fun x => TP Ex base bytes len dlen args sp x ∧ Q x) qBranch
-      (Both (TP Ex base bytes len dlen args sp)) := by
-  refine VG.RelCT.seq ((powP_tp (b := 12) (e := 16) (by decide) (by decide) (by decide) (by decide) copy12_check
-    copy16_check).mono (fun _ _ h => ⟨h.1.1, h.2.1⟩) fun _ _ h => h) ?_
-  refine aRel (fun _ T => T.1) eqAnd_check fun x T => ?_
-  refine WP.seq (WP.mono (eqW_ok T.1.1 (a := 6) (b := 3) (by decide) (by decide)) fun u ⟨m, _, K⟩ => ?_)
-  have Su := Step.regs T.1.1 m K
-  exact WP.mono (andStore_ok Su.inp (d := accOff) (by decide)) fun t St => tp_step T (Su.trans St)
-
 /-- The tail with the stage `pow`, whose runs are related. -/
 theorem tailWith_trace {Q : State → Prop} {pow : Prog isa}
     (hpow : RelCT isa (Both Q) pow (Both (TP Ex base bytes len dlen args sp))) :
@@ -117,7 +80,7 @@ theorem tailWith_trace {Q : State → Prop} {pow : Prog isa}
   have ao : accOff = 8 := rfl
   have nb : numBase = 3336 := rfl
   apply VG.RelCT.chain
-  refine VG.RelCT.seq (M := isa) (R := Both fun u => TP Ex base bytes len dlen args sp u ∧ Gate u (dlen = 2 * len)) ?_ ?_
+  refine VG.RelCT.seq (M := isa) (R := Both (TP Ex base bytes len dlen args sp)) ?_ ?_
   · refine VG.RelCT.seq hpow ?_
     refine VG.RelCT.seq (aRel (F := TP Ex base bytes len dlen args sp) (fun _ T => T.1) copy612_check fun x T =>
       WP.mono (KeyGen.copyW_ok T.1.1 (a := 6) (b := 12) (by decide) (by decide) (by decide))
@@ -130,16 +93,8 @@ theorem tailWith_trace {Q : State → Prop} {pow : Prog isa}
       VG.Proof.Ffdh.X86.CheckPrivate.store_check fun x ⟨T, c, e⟩ =>
         WP.mono (storeMask_ok T.1.1 (d := accOff) (by omega_using [ao, nb]) e) fun _ ⟨_, O, _, _, K⟩ =>
           tp_step T (Step.word T.1.1 (by omega_using [ao]) O K)) ?_
-    refine VG.RelCT.seq (aRel (F := fun u => TP Ex base bytes len dlen args sp u ∧ Gate u (dlen = 2 * len))
-      (fun _ T => T.1) VG.Proof.Ffdh.X86.CheckDomain.qTest_check fun x T =>
-        WP.mono (qTest_ok T.1.1 T.2.e3 T.2.e12 T.2.dl) fun _ ⟨z, m, K⟩ =>
-          ⟨tp_step T (Step.regs T.1.1 m K), Gate.of_eval z decide_eq_true_iff⟩) ?_
-    exact aRel (fun _ T => T.1.1) nil_check fun _ T => WP.block_nil T
-  · refine VG.RelCT.seq (gate_relCT (fun _ h => h.2)
-      (aRel (F := TP Ex base bytes len dlen args sp) (fun _ T => T.1.1.1) nil_check fun _ T => WP.block_nil T.1.1)
-      ((qBranch_rel (Q := fun _ => True)).mono (fun _ _ h => ⟨⟨h.1.1.1, trivial⟩, h.2.1.1, trivial⟩)
-        fun _ _ h => h)) ?_
-    exact aEnd (fun _ T => T.1) outStat_check
+    exact aRel (fun _ T => T.1) nil_check fun _ T => WP.block_nil T
+  · exact aEnd (fun _ T => T.1) outStat_check
 
 end
 

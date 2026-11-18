@@ -212,9 +212,6 @@ def comb : Prog isa := .seq combHead (.seq (.loop step .ne) (mul .wide 6 6 3))
 def tail : Prog isa :=
   .seq comb <| .seq (copy (sl 6) (sl 12) n1) <| .seq (rangeMask 12) <|
   .seq (.block [.store (sc accOff) .ecx]) <|
-  .seq (.block qTest) <|
-  .seq (.ite .e (.block []) (.seq (powP 12 16) (.seq (equal (sl 6) (sl 3) n1)
-    (.block [.alu .and .ecx (.mem (sc accOff)), .store (sc accOff) .ecx])))) <|
   .seq GenerateKey.outputs
     (.block [.alu .add .eax (.reg .eax), .mov .ecx (.imm 3), .alu .sub .ecx (.reg .eax), .mov .eax (.reg .ecx)])
 

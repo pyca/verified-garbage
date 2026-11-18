@@ -273,18 +273,12 @@ theorem body_ok (h : In Ex base bytes len args s) {dlen : Nat} (G : DomGeo args 
       · exact ctx_frameR CR cstk (fR_fit h) r hr
     obtain E : CombEnv Ex base bytes len args (comp s.mem args len 0) (comp s.mem args len 1) x bits u :=
       ⟨CR.keep Ku, by rw [spu]; exact cstk, CVu.ents, v13, sm⟩
-    refine WP.mono (tailWith_ok (G.keep ⟨rfl, rfl⟩ Ku) Ox' Oy' h9a xy v9 sP v13 F.v14 v15 v16 xlt ylt
+    refine WP.mono (tailWith_ok Ox' Oy' h9a xy v13 F.v14 v15 xlt ylt
       (combStage_ok F.inp E (by rw [v9, sP]) xb hR CVu.w16)) fun t ⟨E', Bx, By, Ft, Kt⟩ =>
       ⟨_, E', FF Ft, Ku.trans Kt, ?_⟩
     dsimp only [CachedKeyPost]
     obtain hpa := comp_p s.mem args h2
     obtain hga := comp_g s.mem args h2
-    obtain hqa : (CheckPrivate.params s.mem args len dlen).q =
-        if dlen = 2 * len then none else some (comp s.mem args len 2) := by
-      rcases dl with e | e
-      · simp only [e, ↓reduceIte]; exact VG.Proof.Ffdh.domainOf_q2 _ _ (by omega_arith)
-      · have : ¬ 3 * len = 2 * len := by omega_arith
-        simp only [e, this, ↓reduceIte]; exact comp_q s.mem args
     obtain pv : Spec.Ffdh.privateValid (CheckPrivate.params s.mem args len dlen) x = true := by
       cases c : Spec.Ffdh.privateValid (CheckPrivate.params s.mem args len dlen) x
       · exact absurd c val
@@ -292,18 +286,17 @@ theorem body_ok (h : In Ex base bytes len args s) {dlen : Nat} (G : DomGeo args 
     rw [vs]
     rw [VG.Proof.Ffdh.KeyScalar.keyStatus_eq pv0, pv]
     simp only [VG.Proof.Bignum.powMod_eq] at E' Bx By ⊢
-    obtain ai := accept_iff (len := len) (dlen := dlen) (y := comp s.mem args len 1 ^ x % comp s.mem args len 0)
-      hpa.symm p1 hqa
+    obtain ai := accept_iff (len := len) pv0 hpa.symm hga.symm p1 x
     rw [show (CheckPrivate.params s.mem args len dlen).g = comp s.mem args len 1 from hga.symm,
       show (CheckPrivate.params s.mem args len dlen).p = comp s.mem args len 0 from hpa.symm]
     simp only [Bool.true_eq_false, ↓reduceIte]
-    by_cases hc : accept len dlen (comp s.mem args len 0) (comp s.mem args len 2) (comp s.mem args len 0)
+    by_cases hc : accept len (comp s.mem args len 0)
       (comp s.mem args len 1 ^ x % comp s.mem args len 0) = true
     · rw [hc] at E' Bx By ⊢
       rw [ai.mp hc]
       simp only [↓reduceIte] at E' Bx By ⊢
       exact ⟨trivial, Bx, By⟩
-    · have hc' : accept len dlen (comp s.mem args len 0) (comp s.mem args len 2) (comp s.mem args len 0)
+    · have hc' : accept len (comp s.mem args len 0)
           (comp s.mem args len 1 ^ x % comp s.mem args len 0) = false := by simpa using hc
       obtain hv : Spec.Ffdh.publicValid ⟨CheckPrivate.params s.mem args len dlen,
           comp s.mem args len 1 ^ x % comp s.mem args len 0⟩ = false := by

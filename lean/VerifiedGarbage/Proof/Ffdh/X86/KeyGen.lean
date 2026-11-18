@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86.CheckPrivate
+import VerifiedGarbage.Proof.Ffdh.Power
 public import VerifiedGarbage.Impl.Ffdh.X86.KeyGen
 import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Export
 import VerifiedGarbage.Proof.Framework.Omega
@@ -549,15 +550,9 @@ theorem copyW_ok (h : In Ex base bytes len args s) {a b : Nat} (ha : a ≤ 19) (
   rw [cw1] at V
   exact ⟨Step.slot h (by omega_arith) O K, V, kept_slot h O⟩
 
-/-- The tail up to its branch on q, with the stage `pow` computing y into slot 6. -/
+/-- The tail up to the outputs, with the stage `pow` computing y into slot 6. -/
 abbrev tailFrontWith (pow : Prog isa) : List (Prog isa) :=
-  [pow, copy (.slot .wide 6) (.slot .wide 12) (one .wide), rangeMask 12, .block [.store (sc accOff) .ecx],
-    .block qTest]
-
-/-- The tail's branch on q. -/
-abbrev qBranch : Prog isa :=
-  .seq (powP 12 16) (.seq (equal (.slot .wide 6) (.slot .wide 3) (one .wide))
-    (.block [.alu .and .ecx (.mem (sc accOff)), .store (sc accOff) .ecx]))
+  [pow, copy (.slot .wide 6) (.slot .wide 12) (one .wide), rangeMask 12, .block [.store (sc accOff) .ecx]]
 
 /-- The status from the acceptance's low bit. -/
 abbrev statusOf : List Instr :=
@@ -565,20 +560,18 @@ abbrev statusOf : List Instr :=
 
 /-- The tail with the stage `pow`. -/
 abbrev tailWith (pow : Prog isa) : Prog isa :=
-  Prog.chain (tailFrontWith pow) (.seq (.ite .e (.block []) qBranch) (.seq GenerateKey.outputs (.block statusOf)))
+  Prog.chain (tailFrontWith pow) (.seq GenerateKey.outputs (.block statusOf))
 
-/-- y (from the stage `pow`, `Y` in slot 6) into the wide slot 12, its range into the acceptance word,
-and ZF telling whether there is no q. -/
-theorem tailFrontWith_ok {dlen : Nat} (G : DomGeo args base bytes len dlen s.rd s.wr)
-    {pow : Prog isa} {Y : Nat} {ds : List Nat}
+/-- y (from the stage `pow`, `Y` in slot 6) into the wide slot 12, and its range into the acceptance
+word. -/
+theorem tailFrontWith_ok {pow : Prog isa} {Y : Nat} {ds : List Nat}
     (hpow : WP isa pow s fun u => Step Ex base bytes len args s u ∧ Kept base len [] ds s.mem u.mem ∧
       sv u.mem base len .wide 6 = Y) :
     WP isa (Prog.chain (tailFrontWith pow) (.block [])) s fun u =>
       Step Ex base bytes len args s u ∧ Kept base len [12] (ds ++ [maskOff, accOff]) s.mem u.mem ∧
       sv u.mem base len .wide 12 = Y ∧
       w32 u.mem base accOff = (cmask (decide (sv u.mem base len .wide 12 < sv s.mem base len .wide 15) &&
-        decide (sv s.mem base len .wide 14 < sv u.mem base len .wide 12))).toNat ∧
-      isa.eval .e u = some (decide (dlen = 2 * len)) := by
+        decide (sv s.mem base len .wide 14 < sv u.mem base len .wide 12))).toNat := by
   have ao : accOff = 8 := rfl
   have mo : maskOff = 12 := rfl
   have nb : numBase = 3336 := rfl
@@ -592,52 +585,21 @@ theorem tailFrontWith_ok {dlen : Nat} (G : DomGeo args base bytes len dlen s.rd 
   refine WP.seq (WP.mono (rangeMask_ok S₂.inp (a := 12) (by decide)) fun u₃ ⟨I₃, e₃, O₃, K₃⟩ => ?_)
   obtain S₃ : Step Ex base bytes len args u₂ u₃ := Step.word S₂.inp (by decide) O₃ K₃
   obtain k₃ := kept_word S₂.inp (d := maskOff) (by decide) (by decide) O₃
-  refine WP.seq (WP.mono (storeMask_ok I₃ (d := accOff) (by omega_arith) e₃) fun u₄ ⟨I₄, O₄, W₄, _, K₄⟩ => ?_)
+  refine WP.seq (WP.mono (storeMask_ok I₃ (d := accOff) (by omega_arith) e₃) fun u₄ ⟨_, O₄, W₄, _, K₄⟩ =>
+    WP.block_nil ?_)
   obtain S₄ : Step Ex base bytes len args u₃ u₄ := Step.word I₃ (by omega_arith) O₄ K₄
   obtain k₄ := kept_word I₃ (d := accOff) (by omega_arith) (by decide) O₄
-  obtain S₁₄ := ((S₁.trans S₂).trans S₃).trans S₄
-  refine WP.seq (WP.mono (qTest_ok I₄ G.e3 G.e12 G.dl) fun t ⟨z, m, K⟩ => WP.block_nil ?_)
-  obtain S₅ : Step Ex base bytes len args u₄ t := Step.regs I₄ m K
-  obtain kk : Kept base len [12] (ds ++ [maskOff, accOff]) s.mem t.mem :=
-    ((((k₁.mono (by simp) m₁).trans (k₂.mono (by simp) m₀)).trans (k₃.mono (by simp) m₂)).trans
-      (k₄.mono (by simp) m₃)).trans (by rw [m]; exact (Kept.refl _).mono (by simp) m₀)
-  obtain v12 : sv t.mem base len .wide 12 = sv u₂.mem base len .wide 12 := by
-    rw [m, k₄.slot_eq, k₃.slot_eq]
-  refine ⟨S₁₄.trans S₅, kk, ?_, ?_, z⟩
+  obtain kk : Kept base len [12] (ds ++ [maskOff, accOff]) s.mem u₄.mem :=
+    (((k₁.mono (by simp) m₁).trans (k₂.mono (by simp) m₀)).trans (k₃.mono (by simp) m₂)).trans
+      (k₄.mono (by simp) m₃)
+  obtain v12 : sv u₄.mem base len .wide 12 = sv u₂.mem base len .wide 12 := by
+    rw [k₄.slot_eq, k₃.slot_eq]
+  refine ⟨((S₁.trans S₂).trans S₃).trans S₄, kk, ?_, ?_⟩
   · rw [v12, V₂, Y₁]
-  · rw [show w32 t.mem base accOff = w32 u₄.mem base accOff by rw [m], W₄, v12,
-      k₂.slot_eq (j := 15), k₂.slot_eq (j := 14), k₁.slot_eq (j := 15), k₁.slot_eq (j := 14)]
+  · rw [W₄, v12, k₂.slot_eq (j := 15), k₂.slot_eq (j := 14), k₁.slot_eq (j := 15), k₁.slot_eq (j := 14)]
 
-/-- With q: `y^q mod P = 1` and-ed into the acceptance word. -/
-theorem qBranch_ok (h : In Ex base bytes len args s) {P : Nat} (hP : safeM (sv s.mem base len .wide 9) = P)
-    {r : Bool} (hw : w32 s.mem base accOff = (cmask r).toNat) :
-    WP isa (.seq (powP 12 16) (.seq (equal (.slot .wide 6) (.slot .wide 3) (one .wide))
-      (.block [.alu .and .ecx (.mem (sc accOff)), .store (sc accOff) .ecx]))) s fun u =>
-      Step Ex base bytes len args s u ∧ Kept base len [] [accOff] s.mem u.mem ∧
-      w32 u.mem base accOff =
-        (cmask (decide (sv s.mem base len .wide 12 ^ sv s.mem base len .wide 16 % P = 1) && r)).toNat := by
-  have ao : accOff = 8 := rfl
-  have nb : numBase = 3336 := rfl
-  refine WP.seq (WP.mono (powP_ok h (P := P) (b := 12) (e := 16) (by decide) (by decide) (by decide) (by decide) hP)
-    fun u₁ ⟨C₁, Y₁, one₁, F₁, k₁, K₁⟩ => ?_)
-  obtain S₁ : Step Ex base bytes len args s u₁ := Step.ops h F₁ K₁
-  refine WP.seq (WP.mono (eqW_ok C₁.inp (a := 6) (b := 3) (by decide) (by decide)) fun u₂ ⟨m₂, e₂, K₂⟩ => ?_)
-  rw [Y₁, one₁] at e₂
-  obtain S₂ : Step Ex base bytes len args u₁ u₂ := Step.regs C₁.inp m₂ K₂
-  refine (show WP isa (.block ([.alu .and .ecx (.mem (sc accOff))] ++ [.store (sc accOff) .ecx])) u₂ _ from
-    WP.block_append (WP.mono (andMask_ok S₂.inp (d := accOff) (c' := r) (by omega_arith) e₂
-      (by rw [m₂, k₁.word_eq]; exact hw)) fun u₃ ⟨e₃, m₃, K₃⟩ => ?_))
-  obtain S₃ : Step Ex base bytes len args u₂ u₃ := Step.regs S₂.inp m₃ K₃
-  refine WP.mono (storeMask_ok S₃.inp (d := accOff) (by omega_arith) e₃) fun t ⟨_, O₄, W₄, _, K₄⟩ => ?_
-  obtain S₄ : Step Ex base bytes len args u₃ t := Step.word S₃.inp (by omega_arith) O₄ K₄
-  obtain k₄ := kept_word S₃.inp (d := accOff) (by omega_arith) (by decide) O₄
-  refine ⟨((S₁.trans S₂).trans S₃).trans S₄, k₁.mono.trans ?_, W₄⟩
-  rw [m₃, m₂] at k₄
-  exact k₄.mono
-
-/-- The acceptance of `y`: its range and, with q, `y^q mod P = 1`. -/
-abbrev accept (len dlen p q P y : Nat) : Bool :=
-  (decide (y < pm1 len p) && decide (1 < y)) && (if dlen = 2 * len then true else decide (y ^ q % P = 1))
+/-- The acceptance of `y`: its range. -/
+abbrev accept (len p y : Nat) : Bool := decide (y < pm1 len p) && decide (1 < y)
 
 theorem statusOf_ok {c : Bool} (he : s.gpr .eax = BitVec.ofNat 32 c.toNat) :
     WP isa (.block statusOf) s fun t => t.gpr .eax = BitVec.ofNat 32 (if c then 1 else 3) ∧ t.mem = s.mem ∧
@@ -652,42 +614,28 @@ theorem statusOf_ok {c : Bool} (he : s.gpr .eax = BitVec.ofNat 32 c.toNat) :
 
 /-- The tail with the stage `pow` computing y: y, its acceptance, x and y written (zeros unless accepted),
 and `3 − 2 flag`. -/
-theorem tailWith_ok {dlen : Nat} (G : DomGeo args base bytes len dlen s.rd s.wr)
-    (Ox : OutAt args base bytes len 0 (s.gpr .esp) s.wr) (Oy : OutAt args base bytes len 8 (s.gpr .esp) s.wr)
+theorem tailWith_ok (Ox : OutAt args base bytes len 0 (s.gpr .esp) s.wr)
+    (Oy : OutAt args base bytes len 8 (s.gpr .esp) s.wr)
     (h9a : args 9 = BitVec.ofNat 32 len) (xy : Region.Disjoint ⟨byteAddr (args 0), len⟩ ⟨byteAddr (args 8), len⟩)
-    {p x q P Y : Nat} (h9 : sv s.mem base len .wide 9 = p) (hP : safeM p = P)
-    (h13 : sv s.mem base len .wide 13 = x) (h14 : sv s.mem base len .wide 14 = 1)
-    (h15 : sv s.mem base len .wide 15 = pm1 len p) (h16 : ¬ dlen = 2 * len → sv s.mem base len .wide 16 = q)
+    {p x Y : Nat} (h13 : sv s.mem base len .wide 13 = x) (h14 : sv s.mem base len .wide 14 = 1)
+    (h15 : sv s.mem base len .wide 15 = pm1 len p)
     (xlt : x < 2 ^ (8 * len)) (ylt : Y < 2 ^ (8 * len)) {pow : Prog isa} {ds : List Nat}
     (hpow : WP isa pow s fun u => Step Ex base bytes len args s u ∧ Kept base len [] ds s.mem u.mem ∧
       sv u.mem base len .wide 6 = Y) :
     WP isa (tailWith pow) s fun t =>
-      t.gpr .eax = BitVec.ofNat 32 (if accept len dlen p q P Y then 1 else 3) ∧
+      t.gpr .eax = BitVec.ofNat 32 (if accept len p Y then 1 else 3) ∧
       Spec.Rsa.bytesAt t.mem (byteAddr (args 0)) len =
-        Spec.Rsa.i2osp (if accept len dlen p q P Y then x else 0) len ∧
+        Spec.Rsa.i2osp (if accept len p Y then x else 0) len ∧
       Spec.Rsa.bytesAt t.mem (byteAddr (args 8)) len =
-        Spec.Rsa.i2osp (if accept len dlen p q P Y then Y else 0) len ∧
+        Spec.Rsa.i2osp (if accept len p Y then Y else 0) len ∧
       Frame (⟨byteAddr (args 0), len⟩ :: ⟨byteAddr (args 8), len⟩ :: frameR base (s.gpr .esp) (fR len))
         s.mem t.mem ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := by
-  refine WP.chain_split (tailFrontWith_ok G hpow) fun u ⟨S, k, V12, W, z⟩ => ?_
+  refine WP.chain_split (tailFrontWith_ok hpow) fun u ⟨Su, k, V12, W⟩ => ?_
   rw [V12, h15, h14] at W
-  obtain mid : WP isa (.ite .e (.block []) qBranch) u fun v => Step Ex base bytes len args u v ∧
-      Kept base len [] [accOff] u.mem v.mem ∧
-      w32 v.mem base accOff = (cmask (accept len dlen p q P Y)).toNat := by
-    refine WP.ite _ z (fun hb => WP.block_nil ⟨⟨S.inp, Frame.refl _ _, Keeps.refl _ _⟩, (Kept.refl _).mono, ?_⟩)
-      (fun hb => WP.mono (qBranch_ok S.inp (P := P) (by rw [k.slot_eq, h9, hP]) W) fun v ⟨Sv, kv, Wv⟩ =>
-        ⟨Sv, kv, ?_⟩)
-    · have e : dlen = 2 * len := of_decide_eq_true hb
-      rw [W]; simp only [accept, e, ↓reduceIte, Bool.and_true]
-    · have e : ¬ dlen = 2 * len := of_decide_eq_false hb
-      rw [Wv, V12, k.slot_eq (j := 16), h16 e]
-      simp only [accept, e, ↓reduceIte]; rw [Bool.and_comm]
-  refine WP.seq (WP.mono mid fun v ⟨Sv, kv, Wv⟩ => ?_)
-  obtain Su := S.trans Sv
   refine WP.seq (WP.mono (outputs_ok Su.inp (by rw [Su.esp]; exact Ox.keep rfl Su.keeps)
-    (by rw [Su.esp]; exact Oy.keep rfl Su.keeps) h9a xy Wv (by rw [kv.slot_eq, k.slot_eq, h13])
-    (by rw [kv.slot_eq, V12]) (fun _ => xlt) (fun _ => ylt)) fun w ⟨Bx, By, A, F, K⟩ => ?_)
+    (by rw [Su.esp]; exact Oy.keep rfl Su.keeps) h9a xy W (by rw [k.slot_eq, h13])
+    V12 (fun _ => xlt) (fun _ => ylt)) fun w ⟨Bx, By, A, F, K⟩ => ?_)
   refine WP.mono (statusOf_ok A) fun t ⟨E, M, Kt⟩ => ⟨E, by rw [M]; exact Bx, by rw [M]; exact By, ?_,
     (Su.keeps.trans K).trans (Kt.mono (by decide))⟩
   rw [M, Su.esp] at *
@@ -964,18 +912,15 @@ theorem fail_ok (h : In Ex base bytes len args s) (Ox : OutAt args base bytes le
   · rw [M]; rw [S.esp] at F
     exact (S.frame.mono fun r hr => List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hr)).trans F
 
-/-- `y`'s acceptance is `publicValid`'s, for a valid p. -/
-theorem accept_iff {dlen : Nat} {a : Spec.Ffdh.Parameters} {p q y : Nat} (hp : a.p = p) (p1 : 1 < p)
-    (hq : a.q = if dlen = 2 * len then none else some q) :
-    accept len dlen p q p y = true ↔ Spec.Ffdh.publicValid ⟨a, y⟩ = true := by
-  simp only [accept]
-  rw [VG.Proof.Ffdh.publicValid_eq, hp, hq, pm1_of (by omega_arith)]
-  by_cases e : dlen = 2 * len
-  · simp only [e, ↓reduceIte, Bool.and_true, Bool.and_eq_true, decide_eq_true_eq, reduceCtorEq,
-      false_implies, implies_true, and_true]
-    exact ⟨fun ⟨a, b⟩ => ⟨b, a⟩, fun ⟨a, b⟩ => ⟨b, a⟩⟩
-  · simp only [e, ↓reduceIte, Bool.and_eq_true, decide_eq_true_eq, Option.some.injEq, forall_eq']
-    exact ⟨fun ⟨⟨a, b⟩, c⟩ => ⟨⟨b, a⟩, c⟩, fun ⟨⟨a, b⟩, c⟩ => ⟨⟨b, a⟩, c⟩⟩
+/-- A power of a valid domain's generator is accepted exactly when it is a valid public value: its
+range decides it, since `g^q mod p = 1` (`publicValid_power`). -/
+theorem accept_iff {a : Spec.Ffdh.Parameters} (hv : Spec.Ffdh.parametersValid a = true) {p g : Nat}
+    (hp : a.p = p) (hg : a.g = g) (p1 : 1 < p) (x : Nat) :
+    accept len p (g ^ x % p) = true ↔ Spec.Ffdh.publicValid ⟨a, g ^ x % p⟩ = true := by
+  subst hp hg
+  rw [VG.Proof.Ffdh.publicValid_power hv x]
+  simp only [accept, pm1_of (show 0 < a.p by omega_using [p1]), Bool.and_eq_true, decide_eq_true_eq]
+  exact ⟨fun ⟨a, b⟩ => ⟨b, a⟩, fun ⟨a, b⟩ => ⟨b, a⟩⟩
 
 /-- A component's number fits its `len` octets. -/
 theorem comp_lt (m : Mem) (k : Nat) : comp m args len k < 2 ^ (8 * len) := by
