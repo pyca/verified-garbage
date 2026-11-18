@@ -30,6 +30,8 @@ pub unsafe fn vg_blake2s_init_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *
 ///
 /// It runs `vg_blake2s_update`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 96 bytes.
@@ -49,6 +51,8 @@ pub unsafe fn vg_blake2s_update_auto(_dit: verified_garbage_cpu::Dit<'_>, state:
 /// Contract: `VG.Spec.Blake2.finalizeSContract`. Constant time: only the pointers and `count` may affect timing, not the state.
 ///
 /// It runs `vg_blake2s_finalize`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///

@@ -28,6 +28,8 @@ pub(crate) unsafe extern "C" fn vg_poly1305_init(state: *mut [u64; 16], key: *co
 ///
 /// Contract: `VG.Spec.Poly1305.updateContract`. The streaming state is the accumulator, the key and the message's last bytes that do not fill a block (`VG.Spec.Poly1305.Buffered`). Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 128 bytes.
@@ -95,7 +97,11 @@ b 215f
 215:
 .inst 0xd28000ad,0xd280000e,0xab0d0089,0xba0e00aa,0x9a0e00cb,0xd342fd6c,0xd280000e,0xcb0c01cc
 .inst 0xd280006e,0x8a0e016b,0xca04012d,0x8a0c01ad,0xca0d0084,0xca05014d,0x8a0c01ad,0xca0d00a5
-.inst 0xca06016d,0x8a0c01ad,0xca0d00c6,0xf9000004,0xf9000405,0xf9000806,0x910203ff,0xd65f03c0
+.inst 0xca06016d,0x8a0c01ad,0xca0d00c6,0xf9000004,0xf9000405,0xf9000806,0x910203ff,0xd2800001
+.inst 0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800008,0xd2800009
+.inst 0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f,0xd2800010,0xd2800011
+.inst 0xea01003f,0xd2800000,0xd10203ff,0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f
+.inst 0x3d800d3f,0x3d80113f,0x3d80153f,0x3d80193f,0x3d801d3f,0x910203ff,0xd65f03c0
 .p2align 6",
     )
 }
@@ -103,6 +109,8 @@ b 215f
 /// Absorbs data into a Poly1305 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴) under a key, it then represents that message followed by the `len` bytes at `data`, under the same key.
 ///
 /// Contract: `VG.Spec.Poly1305.updateContract`. The streaming state is the accumulator, the key and the message's last bytes that do not fill a block (`VG.Spec.Poly1305.Buffered`). Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -245,7 +253,15 @@ b 218f
 218:
 .inst 0xd28000ad,0xd280000e,0xab0d0089,0xba0e00aa,0x9a0e00cb,0xd342fd6c,0xd280000e,0xcb0c01cc
 .inst 0xd280006e,0x8a0e016b,0xca04012d,0x8a0c01ad,0xca0d0084,0xca05014d,0x8a0c01ad,0xca0d00a5
-.inst 0xca06016d,0x8a0c01ad,0xca0d00c6,0xf9000004,0xf9000405,0xf9000806,0x910203ff,0xd65f03c0
+.inst 0xca06016d,0x8a0c01ad,0xca0d00c6,0xf9000004,0xf9000405,0xf9000806,0x910203ff,0xd2800001
+.inst 0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800008,0xd2800009
+.inst 0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f,0xd2800010,0xd2800011
+.inst 0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407
+.inst 0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417
+.inst 0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f
+.inst 0xea01003f,0x4e181c28,0x4e181c29,0x4e181c2a,0x4e181c2b,0x4e181c2c,0x4e181c2d,0x4e181c2e
+.inst 0xd2800000,0xd10203ff,0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f
+.inst 0x3d80113f,0x3d80153f,0x3d80193f,0x3d801d3f,0x910203ff,0xd65f03c0
 .p2align 6",
     )
 }
@@ -253,6 +269,8 @@ b 218f
 /// Finishes a Poly1305 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴) under a key, writes the tag of that message, under that key, to `*out`.
 ///
 /// Contract: `VG.Spec.Poly1305.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -283,15 +301,11 @@ b 21f
 .inst 0xd28000ad,0xd280000e,0xab0d0089,0xba0e00aa,0x9a0e00cb,0xd342fd6c,0xd280000e,0xcb0c01cc
 .inst 0xd280006e,0x8a0e016b,0xca04012d,0x8a0c01ad,0xca0d0084,0xca05014d,0x8a0c01ad,0xca0d00a5
 .inst 0xca06016d,0x8a0c01ad,0xca0d00c6,0xf940140d,0xf940180e,0xab0d0084,0x9a0e00a5,0xf9000064
-.inst 0xf9000465,0x910203ff,0xd65f03c0
+.inst 0xf9000465,0x910203ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006
+.inst 0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e
+.inst 0xd280000f,0xd2800010,0xd2800011,0xea01003f,0xd2800000,0xd10203ff,0x6f00e41f,0x910003e9
+.inst 0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f,0x3d80193f,0x3d801d3f
+.inst 0x910203ff,0xd65f03c0
 .p2align 6",
     )
 }
-
-#[rustfmt::skip]
-#[path = "internal/vg_poly1305_blocks.rs"]
-pub(crate) mod vg_poly1305_blocks;
-
-#[rustfmt::skip]
-#[path = "internal/vg_poly1305_finalize_scratch.rs"]
-pub(crate) mod vg_poly1305_finalize_scratch;

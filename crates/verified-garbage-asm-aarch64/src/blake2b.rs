@@ -44,6 +44,8 @@ b 21f
 ///
 /// Contract: `VG.Spec.Blake2.updateBContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 192 bytes.
@@ -113,7 +115,14 @@ b 23f
 22:
 23:
 .inst 0xf9410293,0xf9410a95,0xf9410e96,0xf9411297,0xf9411698,0xf9410694,0xf84107fe,0x910903ff
-.inst 0xd65f03c0
+.inst 0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800008
+.inst 0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f,0xd2800010
+.inst 0xd2800011,0xea01003f,0xd2800000,0xd10943ff,0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f
+.inst 0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f,0x3d80193f,0x3d801d3f,0x3d80213f,0x3d80253f
+.inst 0x3d80293f,0x3d802d3f,0x3d80313f,0x3d80353f,0x3d80393f,0x3d803d3f,0x3d80413f,0x3d80453f
+.inst 0x3d80493f,0x3d804d3f,0x3d80513f,0x3d80553f,0x3d80593f,0x3d805d3f,0x3d80613f,0x3d80653f
+.inst 0x3d80693f,0x3d806d3f,0x3d80713f,0x3d80753f,0x3d80793f,0x3d807d3f,0x3d80813f,0x3d80853f
+.inst 0x3d80893f,0x3d808d3f,0x3d80913f,0x910943ff,0xd65f03c0
 .p2align 6",
         vg_blake2b_compress = sym super::blake2b::vg_blake2b_compress::vg_blake2b_compress,
     )
@@ -122,6 +131,8 @@ b 23f
 /// Finishes a BLAKE2b computation: if the streaming state `*state` represents data of `count` bytes, compresses its last block and writes the final state `h[0..7]` (64 bytes) to `*out`. The digest of `outlen` bytes (`init`'s) is its first `outlen` bytes.
 ///
 /// Contract: `VG.Spec.Blake2.finalizeBContract`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -155,7 +166,14 @@ bl {vg_blake2b_compress}
 .inst 0xf9400269,0xf90002a9,0xf9400669,0xf90006a9,0xf9400a69,0xf9000aa9,0xf9400e69,0xf9000ea9
 .inst 0xf9401269,0xf90012a9,0xf9401669,0xf90016a9,0xf9401a69,0xf9001aa9,0xf9401e69,0xf9001ea9
 .inst 0xf9410293,0xf9410a95,0xf9410e96,0xf9411297,0xf9411698,0xf9410694,0xf84107fe,0x910903ff
-.inst 0xd65f03c0
+.inst 0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800008
+.inst 0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f,0xd2800010
+.inst 0xd2800011,0xea01003f,0xd2800000,0xd10943ff,0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f
+.inst 0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f,0x3d80193f,0x3d801d3f,0x3d80213f,0x3d80253f
+.inst 0x3d80293f,0x3d802d3f,0x3d80313f,0x3d80353f,0x3d80393f,0x3d803d3f,0x3d80413f,0x3d80453f
+.inst 0x3d80493f,0x3d804d3f,0x3d80513f,0x3d80553f,0x3d80593f,0x3d805d3f,0x3d80613f,0x3d80653f
+.inst 0x3d80693f,0x3d806d3f,0x3d80713f,0x3d80753f,0x3d80793f,0x3d807d3f,0x3d80813f,0x3d80853f
+.inst 0x3d80893f,0x3d808d3f,0x3d80913f,0x910943ff,0xd65f03c0
 .p2align 6",
         vg_blake2b_compress = sym super::blake2b::vg_blake2b_compress::vg_blake2b_compress,
     )
@@ -164,11 +182,3 @@ bl {vg_blake2b_compress}
 #[rustfmt::skip]
 #[path = "internal/vg_blake2b_compress.rs"]
 pub(crate) mod vg_blake2b_compress;
-
-#[rustfmt::skip]
-#[path = "internal/vg_blake2b_finalize_scratch.rs"]
-pub(crate) mod vg_blake2b_finalize_scratch;
-
-#[rustfmt::skip]
-#[path = "internal/vg_blake2b_update_scratch.rs"]
-pub(crate) mod vg_blake2b_update_scratch;

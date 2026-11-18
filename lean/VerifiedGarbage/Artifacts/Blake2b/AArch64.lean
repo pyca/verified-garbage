@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Blake2.AArch64.Compress
 public import VerifiedGarbage.Proof.Blake2.AArch64.Stream.Verified
 public import VerifiedGarbage.Proof.Blake2.AArch64.Stream.CT
+public import VerifiedGarbage.Proof.Blake2.AArch64.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.AArch64.Print
 
@@ -17,11 +18,13 @@ def artifacts : List Artifact := [
     code := Impl.Residue.AArch64.withClears [.x9] [] none (Impl.Blake2.AArch64.Stream.init Spec.Blake2.b)
     verified := Proof.Blake2.AArch64.Stream.initBCleared_verified
     residue := some ⟨Proof.Blake2.AArch64.Stream.initBCleared_noResidue _⟩ },
-  Spec.Blake2.updateBApi.artifact AArch64.target {
+  Spec.Blake2.updateBApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
     code := Impl.StackScratch.AArch64.withStackScratch 576 .x4 (Impl.Blake2.AArch64.Stream.update Spec.Blake2.b)
-    verified := Proof.Blake2.AArch64.Stream.updateB_framed },
-  Spec.Blake2.finalizeBApi.artifact AArch64.target {
+    verified := Proof.Blake2.AArch64.Stream.updateB_framed }
+    (Proof.Blake2.AArch64.Scrub.updateBOk 592)),
+  Spec.Blake2.finalizeBApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
     code := Impl.StackScratch.AArch64.withStackScratch 576 .x3 (Impl.Blake2.AArch64.Stream.finalize Spec.Blake2.b)
-    verified := Proof.Blake2.AArch64.Stream.finalizeB_framed }]
+    verified := Proof.Blake2.AArch64.Stream.finalizeB_framed }
+    (Proof.Blake2.AArch64.Scrub.finalizeBOk 592))]
 
 end VG.Artifacts.Blake2b.AArch64

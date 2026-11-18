@@ -42,4 +42,50 @@ theorem stream_congr {m m' : Mem} {p : Addr}
   simp only [restAt, hl, hs]
   rw [hb _ _ (by omega_using [])]
 
+/-- `vg_chacha20_apply`'s postcondition (`Spec.ChaCha20.applyContract`). -/
+def applyPost (pb : Nat) : applySig.Post pb := fun state data len m m' r =>
+  keyAt m' state = keyAt m state ∧
+    if len.toNat ≤ leftAt m state then
+      r = 1 ∧
+        bytesAt m' data len.toNat =
+          List.zipWith (· ^^^ ·) (bytesAt m data len.toNat) ((restAt m state).take len.toNat) ∧
+        restAt m' state = (restAt m state).drop len.toNat
+    else
+      r = 0 ∧ bytesAt m' data len.toNat = bytesAt m data len.toNat ∧
+        restAt m' state = restAt m state
+
+/-- `applyPost` reads the memory on return only within the state and the data. -/
+theorem applyPost_out (pb : Nat) (hpb : pb = 64) : ∀ vs m m₁ m₂ r, vs.length = (applySig.words pb).length →
+    (∀ b ∈ Sig.bufs applySig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (applySig.words pb) (applyPost pb) vs m m₁ r →
+      Curry.apply (applySig.words pb) (applyPost pb) vs m m₂ r := by
+  subst hpb
+  intro vs m m₁ m₂ r hlen hb h
+  obtain ⟨st, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 2) hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨dt, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨ln, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero (Nat.succ.inj hlen)
+  simp only [applySig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+    forall_eq] at hb
+  have hs : ∀ i < 136, m₂ (st + BitVec.ofNat 64 i) = m₁ (st + BitVec.ofNat 64 i) := fun i hi =>
+    (hb.1 _ (Offset.contains_base _ (by simp only [Elem.size]; omega_using [hi]) (by omega_using [hi]))).symm
+  have hd : Spec.ChaCha20.bytesAt m₂ dt ln.toNat = Spec.ChaCha20.bytesAt m₁ dt ln.toNat := by
+    simp only [Spec.ChaCha20.bytesAt]
+    refine List.map_congr_left fun i hi => ?_
+    have := List.mem_range.mp hi
+    exact (hb.2 _ (Offset.contains_base _ (by simp only [Elem.size]; omega_using [this]) (by omega_using [this]))).symm
+  obtain ⟨k, rs, -⟩ := stream_congr hs
+  show keyAt m₂ st = _ ∧ _
+  obtain ⟨h1, h2⟩ := h
+  refine ⟨by rw [k]; exact h1, ?_⟩
+  have e64 : (ArgWord.int 64).ofRaw ln = ln := BitVec.setWidth_eq ln
+  rw [e64] at h2 ⊢
+  split at h2 <;> split <;> rename_i h₁ h₂
+  · obtain ⟨a, b, c⟩ := h2; exact ⟨a, hd.trans b, rs.trans c⟩
+  · exact absurd h₁ h₂
+  · exact absurd h₂ h₁
+  · obtain ⟨a, b, c⟩ := h2; exact ⟨a, hd.trans b, rs.trans c⟩
+
 end VG.Proof.ChaCha20.ScrubLocal

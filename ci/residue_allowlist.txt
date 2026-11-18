@@ -98,13 +98,6 @@ aarch64 vg_aes_siv_encrypt_neon
 aarch64 vg_aes_siv_init
 aarch64 vg_aes_siv_init_aes
 aarch64 vg_aes_siv_init_neon
-aarch64 vg_blake2b_finalize
-aarch64 vg_blake2b_update
-aarch64 vg_blake2s_finalize
-aarch64 vg_blake2s_update
-aarch64 vg_chacha20_apply
-aarch64 vg_chacha20_apply_neon
-aarch64 vg_chacha20_apply_sve2
 aarch64 vg_chacha20_poly1305_open
 aarch64 vg_chacha20_poly1305_open_neon
 aarch64 vg_chacha20_poly1305_open_sve2
@@ -172,9 +165,6 @@ aarch64 vg_pbkdf2_hmac_sha512_224_sha512
 aarch64 vg_pbkdf2_hmac_sha512_256
 aarch64 vg_pbkdf2_hmac_sha512_256_sha512
 aarch64 vg_pbkdf2_hmac_sha512_sha512
-aarch64 vg_poly1305_finalize
-aarch64 vg_poly1305_update
-aarch64 vg_poly1305_update_neon
 aarch64 vg_rsa_pkcs1_sign_precomputed
 aarch64 vg_sha1_digest
 aarch64 vg_sha1_digest_sha2
