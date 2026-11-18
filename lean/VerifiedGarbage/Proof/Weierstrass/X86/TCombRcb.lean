@@ -740,7 +740,7 @@ theorem init_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : Add
   · exact hF.tbl.of_unch (by rw [k₄.2.2.1, k₄.2.2.2, k₃.2.1, k₃.2.2, k₂.2.1, k₂.2.2, k₁.2.1, k₁.2.2]) UA
       (fun w hw => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
-        rcases hw with rfl | rfl | rfl <;> assumption) hF.out
+        rcases hw with rfl | rfl | rfl <;> with_reducible assumption) hF.out
   · rw [unch_read32 U₄ (by have := hL.ptr_le; omega_using [hn, this]) (combW_ptr hL)]
     exact hF.tsym
 

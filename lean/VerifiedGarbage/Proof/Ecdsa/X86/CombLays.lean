@@ -35,6 +35,9 @@ def CombTbls (c : Cfg) : Prop :=
 
 variable {c : Cfg}
 
+/-- A comb changes nothing of the bits the signature drops from its digest. -/
+theorem Cfg.sh_withComb (c : Cfg) (d : CombData) : Cfg.sh { c with comb := some d } = c.sh := rfl
+
 /-- A curve the proof supports, with a comb: its tables change nothing of what the proof needs
 of the curve. -/
 theorem CfgOk.withComb (h : CfgOk c) (d : CombData) : CfgOk { c with comb := some d } := by

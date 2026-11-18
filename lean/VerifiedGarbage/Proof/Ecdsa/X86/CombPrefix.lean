@@ -200,14 +200,5 @@ theorem tblMem_held {W : List (BitVec 64)} {bytes : Nat} (m : Mem) (hl : 8 * W.l
     rw [e, ite_eq_left (show 8 * i + j < bytes by omega_using [hi, hl, hj])]
   exact hm.trans (constMem_held 0x100000 W (by omega_using [hl, hb]) i hi)
 
-/-- A word outside the tables is the memory's. -/
-theorem tblMem_readW {W : List (BitVec 64)} {bytes : Nat} {m : Mem} {a : Addr} {w : Nat}
-    (h : ∀ b < w / 8, bytes ≤ (a + BitVec.ofNat 64 b - 0x100000).toNat) :
-    (tblMem W bytes m).readW a w = m.readW a w := by
-  apply Mem.readW_congr
-  intro b hb
-  change tblMem W bytes m (a + BitVec.ofNat 64 b) = m (a + BitVec.ofNat 64 b)
-  unfold tblMem
-  rw [ite_eq_right (by have := h b hb; omega_using [this])]
 
 end VG.Proof.Ecdsa.X86

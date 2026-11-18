@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Framework.X86.CallWith
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import VerifiedGarbage.Proof.Ecdh.X86.P224.Lit
 public import VerifiedGarbage.Impl.Ecdh.P224.X86
-import VerifiedGarbage.Proof.Ecdsa.X86.P224.Lit
+import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P224
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Ecdh.X86.Main
@@ -27,7 +27,7 @@ meta import VerifiedGarbage.Proof.Framework.X86.CallWith
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Ecdh.X86.P224.Lit
 meta import VerifiedGarbage.Impl.Ecdh.P224.X86
-meta import VerifiedGarbage.Proof.Ecdsa.X86.P224.Lit
+meta import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P224
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.Contract

@@ -9,7 +9,7 @@ public import VerifiedGarbage.Spec.Ecdh.Generic
 import VerifiedGarbage.Proof.Framework.X86.CallWith
 import VerifiedGarbage.Proof.Ecdh.X86.P521.Lit
 public import VerifiedGarbage.Impl.Ecdh.P521.X86
-import VerifiedGarbage.Proof.Ecdsa.X86.P521.Lit
+import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P521
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Ecdh.X86.Main
@@ -21,7 +21,7 @@ meta import VerifiedGarbage.Spec.Ecdh.Generic
 meta import VerifiedGarbage.Proof.Framework.X86.CallWith
 meta import VerifiedGarbage.Proof.Ecdh.X86.P521.Lit
 meta import VerifiedGarbage.Impl.Ecdh.P521.X86
-meta import VerifiedGarbage.Proof.Ecdsa.X86.P521.Lit
+meta import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P521
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.Contract
