@@ -7,7 +7,10 @@ public import VerifiedGarbage.Impl.TripleDes.X86.Modes
 
 The modes' OFB, CFB and CFB8 (`Impl/Modes/X86/Seq.lean`) over Triple DES's
 core in the encryption direction (`Modes.lean`), with the scratch buffer as
-the fifth argument.
+the fifth argument. CFB64 decryption, whose blocks can be deciphered
+independently, takes them in groups on the bitsliced core (`wideCore`,
+`Impl/Modes/X86/Wide.lean`); the others call the block function once a
+block.
 -/
 
 @[expose] public section
@@ -23,7 +26,8 @@ def ofb : Prog isa := (dirCore .encrypt).seq (Modes.Mode.ofb 2)
 def cfbEncrypt : Prog isa := (dirCore .encrypt).seq (Modes.Mode.cfbEnc 2)
 
 /-- `vg_triple_des_cfb64_decrypt`. -/
-def cfbDecrypt : Prog isa := (dirCore .encrypt).seq (Modes.Mode.cfbDec 2)
+def cfbDecrypt : Prog isa :=
+  (wideCore .encrypt).seqLevels (Modes.Mode.cfbDecWide 2) levels (Modes.Mode.cfbDecEarly 2)
 
 /-- `vg_triple_des_cfb8_encrypt`. -/
 def cfb8Encrypt : Prog isa := (dirCore .encrypt).seq (Modes.Mode.cfb8Enc 2)

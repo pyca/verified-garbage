@@ -1457,28 +1457,28 @@ theorem batchCall_eq (d : Spec.TripleDes.Direction) : Impl.TripleDes.X86.Ecb.bat
       (.call (match d with | .encrypt => "vg_triple_des_encrypt_batch" | .decrypt => "vg_triple_des_decrypt_batch")
         (batchCode d)) (.pop .eax 2) := by cases d <;> rfl
 
-/-- What a call of a bitsliced function needs: the schedule at `ebx` and the
-working space at `ebp`. -/
-structure BatchCallPre (s : State) : Prop where
-  reads : Covers [⟨addr32 (s.gpr .ebx), 384⟩, ⟨addr32 (s.gpr .ebp), 784⟩] (s.rd ++ s.wr)
-  writes : Covers [⟨addr32 (s.gpr .ebp), 784⟩] s.wr
-  keySpace : (Region.mk (addr32 (s.gpr .ebx)) 384).Disjoint ⟨addr32 (s.gpr .ebp), 784⟩
-  keyFit : (s.gpr .ebx).toNat + 384 ≤ 2 ^ 32
-  spaceFit : (s.gpr .ebp).toNat + 784 ≤ 2 ^ 32
+/-- What a call of a bitsliced function needs: the schedule at `rk` and the
+working space at `rw`. -/
+structure BatchCallPre (rk rw : Reg) (s : State) : Prop where
+  reads : Covers [⟨addr32 (s.gpr rk), 384⟩, ⟨addr32 (s.gpr rw), 784⟩] (s.rd ++ s.wr)
+  writes : Covers [⟨addr32 (s.gpr rw), 784⟩] s.wr
+  keySpace : (Region.mk (addr32 (s.gpr rk)) 384).Disjoint ⟨addr32 (s.gpr rw), 784⟩
+  keyFit : (s.gpr rk).toNat + 384 ≤ 2 ^ 32
+  spaceFit : (s.gpr rw).toNat + 784 ≤ 2 ^ 32
   stackLo : 12 ≤ (s.gpr .esp).toNat
-  stackKey : (below (s.gpr .esp) 12).Disjoint ⟨addr32 (s.gpr .ebx), 384⟩
-  stackSpace : (below (s.gpr .esp) 12).Disjoint ⟨addr32 (s.gpr .ebp), 784⟩
+  stackKey : (below (s.gpr .esp) 12).Disjoint ⟨addr32 (s.gpr rk), 384⟩
+  stackSpace : (below (s.gpr .esp) 12).Disjoint ⟨addr32 (s.gpr rw), 784⟩
 
-structure BatchCallPost (d : Spec.TripleDes.Direction) (s s' : State) : Prop where
+structure BatchCallPost (d : Spec.TripleDes.Direction) (rk rw : Reg) (s s' : State) : Prop where
   callee : ∀ r ∈ calleeSaved, s'.gpr r = s.gpr r
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
-  mem : Frame [⟨addr32 (s.gpr .ebp), 784⟩, below (s.gpr .esp) 12] s.mem s'.mem
-  blocks : ∀ b < 32, Spec.TripleDes.blockAt s'.mem (wordAddr (s.gpr .ebp) (bufSlot + 2 * b)) =
-    blockOut (Spec.TripleDes.scheduleAt s.mem (addr32 (s.gpr .ebx))) d
-      (Spec.TripleDes.blockAt s.mem (wordAddr (s.gpr .ebp) (bufSlot + 2 * b)))
+  mem : Frame [⟨addr32 (s.gpr rw), 784⟩, below (s.gpr .esp) 12] s.mem s'.mem
+  blocks : ∀ b < 32, Spec.TripleDes.blockAt s'.mem (wordAddr (s.gpr rw) (bufSlot + 2 * b)) =
+    blockOut (Spec.TripleDes.scheduleAt s.mem (addr32 (s.gpr rk))) d
+      (Spec.TripleDes.blockAt s.mem (wordAddr (s.gpr rw) (bufSlot + 2 * b)))
   mid : ∀ k, 87 ≤ k → k < bufSlot →
-    s'.mem.readW (wordAddr (s.gpr .ebp) k) 32 = s.mem.readW (wordAddr (s.gpr .ebp) k) 32
+    s'.mem.readW (wordAddr (s.gpr rw) k) 32 = s.mem.readW (wordAddr (s.gpr rw) k) 32
 
 /-- Words of the working space are in it. -/
 theorem space_sub {A : BitVec 32} (fit : A.toNat + 784 ≤ 2 ^ 32) {k n : Nat} (hk : 4 * k + n ≤ 784)
@@ -1486,23 +1486,29 @@ theorem space_sub {A : BitVec 32} (fit : A.toNat + 784 ≤ 2 ^ 32) {k n : Nat} (
   rw [wordAddr, addr_eq (by omega_using [fit, hk, hn])]
   exact Offset.sub_base _ hk
 
-theorem batchCall_ok (d : Spec.TripleDes.Direction) (s : State) (hp : BatchCallPre s) :
-    WP isa (Impl.TripleDes.X86.Ecb.batchCall d) s (BatchCallPost d s) := by
-  rw [batchCall_eq]
-  let rs : List Reg := [.ebx, .ebp]
-  obtain hrs : .esp ∉ rs := by decide
+/-- A call of a bitsliced function, its arguments pushed from `rw` and `rk`. -/
+theorem batchFrame_ok (d : Spec.TripleDes.Direction) {rk rw : Reg} (hk : rk ≠ .esp) (hw : rw ≠ .esp)
+    (s : State) (hp : BatchCallPre rk rw s) :
+    WP isa (.frame (.push [rk, rw])
+      (.call (match d with | .encrypt => "vg_triple_des_encrypt_batch" | .decrypt => "vg_triple_des_decrypt_batch")
+        (batchCode d)) (.pop .eax 2)) s (BatchCallPost d rk rw s) := by
+  let rs : List Reg := [rk, rw]
+  obtain hrs : .esp ∉ rs := fun h => by
+    rcases List.mem_cons.mp h with h | h
+    · exact hk h.symm
+    · exact hw (List.mem_singleton.mp h).symm
   have fit : 4 * rs.length + 4 ≤ (s.gpr .esp).toNat := hp.stackLo
   let sE := (pushed rs s).callEntry
-  obtain a0 : arg sE 0 = s.gpr .ebp := by rw [callEntry_arg fit hrs (by decide)]; rfl
-  obtain a1 : arg sE 1 = s.gpr .ebx := by rw [callEntry_arg fit hrs (by decide)]; rfl
+  obtain a0 : arg sE 0 = s.gpr rw := by rw [callEntry_arg fit hrs (Nat.zero_lt_succ 1)]; rfl
+  obtain a1 : arg sE 1 = s.gpr rk := by rw [callEntry_arg fit hrs (Nat.lt_succ_self 1)]; rfl
   obtain eA : argAddr sE 0 = ((s.gpr .esp) - BitVec.ofNat 32 8).setWidth 64 := by rw [callEntry_argAddr0]; rfl
   obtain eSp : sE.gpr .esp = s.gpr .esp - BitVec.ofNat 32 12 := by rw [callEntry_esp']; rfl
   obtain r4 : Region.Sub ⟨((s.gpr .esp) - BitVec.ofNat 32 12).setWidth 64, 4⟩ (below (s.gpr .esp) 12) :=
     Region.sub_prefix (by decide)
   refine callWithGpr (c := batchCode d) (k := batchContract d)
-    (batch_correct d) (batch_nosp d) (by decide) hrs
-    (by rw [batch_stack]; exact hp.stackLo) (rd := [⟨addr32 (s.gpr .ebx), 384⟩, ⟨argAddr sE 0, 8⟩])
-    (wr := [⟨addr32 (s.gpr .ebp), 784⟩]) ⟨?_, ?_, ?_⟩ ?_
+    (batch_correct d) (batch_nosp d) (List.cons_ne_nil _ _) hrs
+    (by rw [batch_stack]; exact hp.stackLo) (rd := [⟨addr32 (s.gpr rk), 384⟩, ⟨argAddr sE 0, 8⟩])
+    (wr := [⟨addr32 (s.gpr rw), 784⟩]) ⟨?_, ?_, ?_⟩ ?_
   · change (batchContract d).pre (sE.withRegions _ _)
     simp only [batchContract, State.withRegions_rd, State.withRegions_wr, State.withRegions_gpr,
       arg_withRegions, argAddr_withRegions, a0, a1, eA, eSp]
@@ -1530,21 +1536,26 @@ theorem batchCall_ok (d : Spec.TripleDes.Direction) (s : State) (hp : BatchCallP
     obtain stackFrame := callEntry_frame fit hrs
     change Frame [below (s.gpr .esp) 12] s.mem sE.mem at stackFrame
     obtain m12 : Frame [below (s.gpr .esp) 12] s₂.mem s'.mem :=
-      Frame.below_mono (wr := []) mem₂ (by decide) hp.stackLo
+      Frame.below_mono (wr := []) mem₂ (show (4 * 2 : Nat) ≤ 12 by decide) hp.stackLo
     have sep : ∀ {k n : Nat}, 4 * k + n ≤ 784 → 0 < n → ∀ r ∈ [below (s.gpr .esp) 12],
-        (⟨wordAddr (s.gpr .ebp) k, n⟩ : Region).Disjoint r := by
+        (⟨wordAddr (s.gpr rw) k, n⟩ : Region).Disjoint r := by
       intro k n hk hn r hr
       obtain rfl := List.mem_singleton.mp hr
       exact (hp.stackSpace.sub_right (space_sub hp.spaceFit hk hn)).symm
     refine ⟨cs, rd, wr, frame, fun b hb => ?_, fun k hlo hhi => ?_⟩
     · have hk : 4 * (bufSlot + 2 * b) + 8 ≤ 784 := by unfold bufSlot; omega_using [hb]
       rw [VG.Proof.TripleDes.blockAt_eq_of_frame _ m12 (sep hk (by decide)), blocks b hb,
-        VG.Proof.TripleDes.scheduleAt_eq_of_frame (p := addr32 (s.gpr .ebx)) stackFrame
+        VG.Proof.TripleDes.scheduleAt_eq_of_frame (p := addr32 (s.gpr rk)) stackFrame
           (by intro r hr; obtain rfl := List.mem_singleton.mp hr; exact hp.stackKey.symm),
         VG.Proof.TripleDes.blockAt_eq_of_frame _ stackFrame (sep hk (by decide))]
     · have hk : 4 * k + 4 ≤ 784 := by unfold bufSlot at hhi; omega_using [hhi]
       rw [m12.readW (Region.contains_self _ _) (sep hk (by decide)) (by decide), mid k hlo hhi,
         stackFrame.readW (Region.contains_self _ _) (sep hk (by decide)) (by decide)]
+
+theorem batchCall_ok (d : Spec.TripleDes.Direction) (s : State) (hp : BatchCallPre .ebx .ebp s) :
+    WP isa (Impl.TripleDes.X86.Ecb.batchCall d) s (BatchCallPost d .ebx .ebp s) := by
+  rw [batchCall_eq]
+  exact batchFrame_ok d (by decide) (by decide) s hp
 
 end VG.Proof.TripleDes.X86.Ecb
 
@@ -2001,7 +2012,7 @@ theorem advance_ok {s : State} {n : Nat} (bound : n < 2 ^ 32) (count : s.gpr .ed
   · simp only [h, decide_true, Bool.not_eq_true', decide_eq_false_iff_not]; omega_using [h]
   · simp only [h, decide_false, Bool.not_eq_false', decide_eq_true_eq]; omega_using [h]
 
-theorem StepPre.batch {s : State} {n : Nat} (hp : StepPre s n) : BatchCallPre s := by
+theorem StepPre.batch {s : State} {n : Nat} (hp : StepPre s n) : BatchCallPre .ebx .ebp s := by
   have sub : Region.Sub ⟨addr32 (s.gpr .ebp), 784⟩ (bufR s) := Region.sub_prefix (by decide)
   have b12 : Region.Sub (below (s.gpr .esp) 12) (below (s.gpr .esp) 16) := below_sub (by decide) hp.stackLo
   constructor
