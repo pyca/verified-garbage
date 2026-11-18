@@ -42,6 +42,12 @@ def roundCount (s : State) : BitVec 32 := s.mem.readW (wordAddr (s.gpr .ebp) 5) 
 /-- The working space past the saved registers. -/
 def workRegion (s : State) : Region := ⟨addr32 (s.gpr .ebp) + BitVec.ofNat 64 16, 432⟩
 
+theorem counter_ptr_sep (s : State) (fit : (s.gpr .ebp).toNat + 512 ≤ 2 ^ 32) :
+    Mem.Sep (wordAddr (s.gpr .ebp) 5) 4 (wordAddr (s.gpr .ebp) 4) 4 := by
+  change Mem.Sep (addr (s.gpr .ebp) 20) 4 (addr (s.gpr .ebp) 16) 4
+  rw [addr_eq (by omega_using [fit]), addr_eq (by omega_using [fit])]
+  exact Offset.sep _ (by decide) (by decide) (by decide)
+
 def savedReg (i : Nat) : Reg := savedRegs.getD i .ebp
 
 def scratchArg (s : State) (slot : Nat) : BitVec 32 :=

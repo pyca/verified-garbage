@@ -22,7 +22,6 @@ saves and restores the caller's registers as `saveWithArg` and
 
 namespace VG.Impl.TripleDes.X86
 open VG.X86
-open VG.Spec.TripleDes (Direction)
 
 def savedRegs : List Reg := [.ebp, .ebx, .esi, .edi]
 def saveWithArg (slot : Nat) : List Instr :=
