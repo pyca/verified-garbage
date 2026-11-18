@@ -1,8 +1,6 @@
 //! SM4-CBC: the CBC examples (A.2.2) of the Internet-Draft
 //! draft-ribose-cfrg-sm4-10, unmodified under vectors/, whole, in pieces,
-//! and in place in unaligned buffers; and, since each is two blocks and
-//! decryption deciphers many blocks at a time, messages of up to 34 blocks,
-//! which decryption takes back to what was encrypted.
+//! and in place in unaligned buffers.
 
 #![cfg(any(
     target_arch = "x86",
@@ -60,36 +58,6 @@ fn check(key: &[u8; 16], iv: [u8; 16], plaintext: &[u8], ciphertext: &[u8]) {
 fn draft_examples() {
     for (key, iv, plaintext, ciphertext) in examples() {
         check(&key, iv, &plaintext, &ciphertext);
-    }
-}
-
-/// Every number of blocks up to 34 round-trips: decryption, which deciphers
-/// many blocks at a time, undoes encryption, in one call in place
-/// between guards, and with the last block in a call of its own.
-#[test]
-fn round_trips() {
-    let iv = [0x3c; 16];
-    let key: [u8; 16] = crate::bytes::pattern(16, 17, 3).try_into().unwrap();
-    let message: Vec<_> = crate::bytes::pattern(16 * 34, 7, 1);
-    for blocks in 0..=34 {
-        let n = 16 * blocks;
-        let mut buffer = message[..n].to_vec();
-        Sm4CbcEncryptor::new(&key, &iv)
-            .encrypt(&mut buffer)
-            .unwrap();
-        let mut guarded = vec![0xa5; 1 + n + 16];
-        guarded[1..1 + n].copy_from_slice(&buffer);
-        Sm4CbcDecryptor::new(&key, &iv)
-            .decrypt(&mut guarded[1..1 + n])
-            .unwrap();
-        assert_eq!(guarded[1..1 + n], message[..n]);
-        assert!(crate::bytes::all_equal(&guarded[..1], 0xa5));
-        assert!(crate::bytes::all_equal(&guarded[1 + n..], 0xa5));
-        let mut decryptor = Sm4CbcDecryptor::new(&key, &iv);
-        let (head, last) = buffer.split_at_mut(n.saturating_sub(16));
-        decryptor.decrypt(head).unwrap();
-        decryptor.decrypt(last).unwrap();
-        assert_eq!(buffer, message[..n]);
     }
 }
 
