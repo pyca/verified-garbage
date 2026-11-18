@@ -3408,8 +3408,595 @@ vg_camellia_cbc_decrypt_chained:
 	mov eax, DWORD PTR [esp+20]
 	mov DWORD PTR [edi+2708], eax
 	test eax, eax
-	je 24f
+	mov eax, DWORD PTR [edi+2708]
+	cmp eax, 8
+	jb 24f
 26:
+	mov esi, DWORD PTR [edi+2704]
+	mov ebp, DWORD PTR [edi+2708]
+	mov eax, DWORD PTR [esi]
+	mov DWORD PTR [edi+288], eax
+	mov eax, DWORD PTR [esi+4]
+	mov DWORD PTR [edi+292], eax
+	mov eax, DWORD PTR [esi+8]
+	mov DWORD PTR [edi+296], eax
+	mov eax, DWORD PTR [esi+12]
+	mov DWORD PTR [edi+300], eax
+	mov eax, DWORD PTR [esi+16]
+	mov DWORD PTR [edi+304], eax
+	mov eax, DWORD PTR [esi+20]
+	mov DWORD PTR [edi+308], eax
+	mov eax, DWORD PTR [esi+24]
+	mov DWORD PTR [edi+312], eax
+	mov eax, DWORD PTR [esi+28]
+	mov DWORD PTR [edi+316], eax
+	mov eax, DWORD PTR [esi+32]
+	mov DWORD PTR [edi+320], eax
+	mov eax, DWORD PTR [esi+36]
+	mov DWORD PTR [edi+324], eax
+	mov eax, DWORD PTR [esi+40]
+	mov DWORD PTR [edi+328], eax
+	mov eax, DWORD PTR [esi+44]
+	mov DWORD PTR [edi+332], eax
+	mov eax, DWORD PTR [esi+48]
+	mov DWORD PTR [edi+336], eax
+	mov eax, DWORD PTR [esi+52]
+	mov DWORD PTR [edi+340], eax
+	mov eax, DWORD PTR [esi+56]
+	mov DWORD PTR [edi+344], eax
+	mov eax, DWORD PTR [esi+60]
+	mov DWORD PTR [edi+348], eax
+	mov eax, DWORD PTR [esi+64]
+	mov DWORD PTR [edi+352], eax
+	mov eax, DWORD PTR [esi+68]
+	mov DWORD PTR [edi+356], eax
+	mov eax, DWORD PTR [esi+72]
+	mov DWORD PTR [edi+360], eax
+	mov eax, DWORD PTR [esi+76]
+	mov DWORD PTR [edi+364], eax
+	mov eax, DWORD PTR [esi+80]
+	mov DWORD PTR [edi+368], eax
+	mov eax, DWORD PTR [esi+84]
+	mov DWORD PTR [edi+372], eax
+	mov eax, DWORD PTR [esi+88]
+	mov DWORD PTR [edi+376], eax
+	mov eax, DWORD PTR [esi+92]
+	mov DWORD PTR [edi+380], eax
+	mov eax, DWORD PTR [esi+96]
+	mov DWORD PTR [edi+384], eax
+	mov eax, DWORD PTR [esi+100]
+	mov DWORD PTR [edi+388], eax
+	mov eax, DWORD PTR [esi+104]
+	mov DWORD PTR [edi+392], eax
+	mov eax, DWORD PTR [esi+108]
+	mov DWORD PTR [edi+396], eax
+	mov eax, DWORD PTR [esi+112]
+	mov DWORD PTR [edi+400], eax
+	mov eax, DWORD PTR [esi+116]
+	mov DWORD PTR [edi+404], eax
+	mov eax, DWORD PTR [esi+120]
+	mov DWORD PTR [edi+408], eax
+	mov eax, DWORD PTR [esi+124]
+	mov DWORD PTR [edi+412], eax
+	mov eax, DWORD PTR [esp+8]
+	mov ecx, edi
+	mov edx, 336
+	push edx
+	push ecx
+	push eax
+	call {vg_camellia_crypt_prepared}
+	pop eax
+	pop eax
+	pop eax
+	mov esi, DWORD PTR [edi+2704]
+	mov ebp, DWORD PTR [edi+2708]
+	mov eax, DWORD PTR [edi+288]
+	xor eax, DWORD PTR [edi+2712]
+	mov DWORD PTR [edi+288], eax
+	mov eax, DWORD PTR [edi+292]
+	xor eax, DWORD PTR [edi+2716]
+	mov DWORD PTR [edi+292], eax
+	mov eax, DWORD PTR [edi+296]
+	xor eax, DWORD PTR [edi+2720]
+	mov DWORD PTR [edi+296], eax
+	mov eax, DWORD PTR [edi+300]
+	xor eax, DWORD PTR [edi+2724]
+	mov DWORD PTR [edi+300], eax
+	mov eax, DWORD PTR [esi]
+	mov DWORD PTR [edi+2712], eax
+	mov eax, DWORD PTR [esi+4]
+	mov DWORD PTR [edi+2716], eax
+	mov eax, DWORD PTR [esi+8]
+	mov DWORD PTR [edi+2720], eax
+	mov eax, DWORD PTR [esi+12]
+	mov DWORD PTR [edi+2724], eax
+	mov eax, DWORD PTR [edi+288]
+	mov DWORD PTR [esi], eax
+	mov eax, DWORD PTR [edi+292]
+	mov DWORD PTR [esi+4], eax
+	mov eax, DWORD PTR [edi+296]
+	mov DWORD PTR [esi+8], eax
+	mov eax, DWORD PTR [edi+300]
+	mov DWORD PTR [esi+12], eax
+	mov eax, DWORD PTR [edi+304]
+	xor eax, DWORD PTR [edi+2712]
+	mov DWORD PTR [edi+304], eax
+	mov eax, DWORD PTR [edi+308]
+	xor eax, DWORD PTR [edi+2716]
+	mov DWORD PTR [edi+308], eax
+	mov eax, DWORD PTR [edi+312]
+	xor eax, DWORD PTR [edi+2720]
+	mov DWORD PTR [edi+312], eax
+	mov eax, DWORD PTR [edi+316]
+	xor eax, DWORD PTR [edi+2724]
+	mov DWORD PTR [edi+316], eax
+	mov eax, DWORD PTR [esi+16]
+	mov DWORD PTR [edi+2712], eax
+	mov eax, DWORD PTR [esi+20]
+	mov DWORD PTR [edi+2716], eax
+	mov eax, DWORD PTR [esi+24]
+	mov DWORD PTR [edi+2720], eax
+	mov eax, DWORD PTR [esi+28]
+	mov DWORD PTR [edi+2724], eax
+	mov eax, DWORD PTR [edi+304]
+	mov DWORD PTR [esi+16], eax
+	mov eax, DWORD PTR [edi+308]
+	mov DWORD PTR [esi+20], eax
+	mov eax, DWORD PTR [edi+312]
+	mov DWORD PTR [esi+24], eax
+	mov eax, DWORD PTR [edi+316]
+	mov DWORD PTR [esi+28], eax
+	mov eax, DWORD PTR [edi+320]
+	xor eax, DWORD PTR [edi+2712]
+	mov DWORD PTR [edi+320], eax
+	mov eax, DWORD PTR [edi+324]
+	xor eax, DWORD PTR [edi+2716]
+	mov DWORD PTR [edi+324], eax
+	mov eax, DWORD PTR [edi+328]
+	xor eax, DWORD PTR [edi+2720]
+	mov DWORD PTR [edi+328], eax
+	mov eax, DWORD PTR [edi+332]
+	xor eax, DWORD PTR [edi+2724]
+	mov DWORD PTR [edi+332], eax
+	mov eax, DWORD PTR [esi+32]
+	mov DWORD PTR [edi+2712], eax
+	mov eax, DWORD PTR [esi+36]
+	mov DWORD PTR [edi+2716], eax
+	mov eax, DWORD PTR [esi+40]
+	mov DWORD PTR [edi+2720], eax
+	mov eax, DWORD PTR [esi+44]
+	mov DWORD PTR [edi+2724], eax
+	mov eax, DWORD PTR [edi+320]
+	mov DWORD PTR [esi+32], eax
+	mov eax, DWORD PTR [edi+324]
+	mov DWORD PTR [esi+36], eax
+	mov eax, DWORD PTR [edi+328]
+	mov DWORD PTR [esi+40], eax
+	mov eax, DWORD PTR [edi+332]
+	mov DWORD PTR [esi+44], eax
+	mov eax, DWORD PTR [edi+336]
+	xor eax, DWORD PTR [edi+2712]
+	mov DWORD PTR [edi+336], eax
+	mov eax, DWORD PTR [edi+340]
+	xor eax, DWORD PTR [edi+2716]
+	mov DWORD PTR [edi+340], eax
+	mov eax, DWORD PTR [edi+344]
+	xor eax, DWORD PTR [edi+2720]
+	mov DWORD PTR [edi+344], eax
+	mov eax, DWORD PTR [edi+348]
+	xor eax, DWORD PTR [edi+2724]
+	mov DWORD PTR [edi+348], eax
+	mov eax, DWORD PTR [esi+48]
+	mov DWORD PTR [edi+2712], eax
+	mov eax, DWORD PTR [esi+52]
+	mov DWORD PTR [edi+2716], eax
+	mov eax, DWORD PTR [esi+56]
+	mov DWORD PTR [edi+2720], eax
+	mov eax, DWORD PTR [esi+60]
+	mov DWORD PTR [edi+2724], eax
+	mov eax, DWORD PTR [edi+336]
+	mov DWORD PTR [esi+48], eax
+	mov eax, DWORD PTR [edi+340]
+	mov DWORD PTR [esi+52], eax
+	mov eax, DWORD PTR [edi+344]
+	mov DWORD PTR [esi+56], eax
+	mov eax, DWORD PTR [edi+348]
+	mov DWORD PTR [esi+60], eax
+	mov eax, DWORD PTR [edi+352]
+	xor eax, DWORD PTR [edi+2712]
+	mov DWORD PTR [edi+352], eax
+	mov eax, DWORD PTR [edi+356]
+	xor eax, DWORD PTR [edi+2716]
+	mov DWORD PTR [edi+356], eax
+	mov eax, DWORD PTR [edi+360]
+	xor eax, DWORD PTR [edi+2720]
+	mov DWORD PTR [edi+360], eax
+	mov eax, DWORD PTR [edi+364]
+	xor eax, DWORD PTR [edi+2724]
+	mov DWORD PTR [edi+364], eax
+	mov eax, DWORD PTR [esi+64]
+	mov DWORD PTR [edi+2712], eax
+	mov eax, DWORD PTR [esi+68]
+	mov DWORD PTR [edi+2716], eax
+	mov eax, DWORD PTR [esi+72]
+	mov DWORD PTR [edi+2720], eax
+	mov eax, DWORD PTR [esi+76]
+	mov DWORD PTR [edi+2724], eax
+	mov eax, DWORD PTR [edi+352]
+	mov DWORD PTR [esi+64], eax
+	mov eax, DWORD PTR [edi+356]
+	mov DWORD PTR [esi+68], eax
+	mov eax, DWORD PTR [edi+360]
+	mov DWORD PTR [esi+72], eax
+	mov eax, DWORD PTR [edi+364]
+	mov DWORD PTR [esi+76], eax
+	mov eax, DWORD PTR [edi+368]
+	xor eax, DWORD PTR [edi+2712]
+	mov DWORD PTR [edi+368], eax
+	mov eax, DWORD PTR [edi+372]
+	xor eax, DWORD PTR [edi+2716]
+	mov DWORD PTR [edi+372], eax
+	mov eax, DWORD PTR [edi+376]
+	xor eax, DWORD PTR [edi+2720]
+	mov DWORD PTR [edi+376], eax
+	mov eax, DWORD PTR [edi+380]
+	xor eax, DWORD PTR [edi+2724]
+	mov DWORD PTR [edi+380], eax
+	mov eax, DWORD PTR [esi+80]
+	mov DWORD PTR [edi+2712], eax
+	mov eax, DWORD PTR [esi+84]
+	mov DWORD PTR [edi+2716], eax
+	mov eax, DWORD PTR [esi+88]
+	mov DWORD PTR [edi+2720], eax
+	mov eax, DWORD PTR [esi+92]
+	mov DWORD PTR [edi+2724], eax
+	mov eax, DWORD PTR [edi+368]
+	mov DWORD PTR [esi+80], eax
+	mov eax, DWORD PTR [edi+372]
+	mov DWORD PTR [esi+84], eax
+	mov eax, DWORD PTR [edi+376]
+	mov DWORD PTR [esi+88], eax
+	mov eax, DWORD PTR [edi+380]
+	mov DWORD PTR [esi+92], eax
+	mov eax, DWORD PTR [edi+384]
+	xor eax, DWORD PTR [edi+2712]
+	mov DWORD PTR [edi+384], eax
+	mov eax, DWORD PTR [edi+388]
+	xor eax, DWORD PTR [edi+2716]
+	mov DWORD PTR [edi+388], eax
+	mov eax, DWORD PTR [edi+392]
+	xor eax, DWORD PTR [edi+2720]
+	mov DWORD PTR [edi+392], eax
+	mov eax, DWORD PTR [edi+396]
+	xor eax, DWORD PTR [edi+2724]
+	mov DWORD PTR [edi+396], eax
+	mov eax, DWORD PTR [esi+96]
+	mov DWORD PTR [edi+2712], eax
+	mov eax, DWORD PTR [esi+100]
+	mov DWORD PTR [edi+2716], eax
+	mov eax, DWORD PTR [esi+104]
+	mov DWORD PTR [edi+2720], eax
+	mov eax, DWORD PTR [esi+108]
+	mov DWORD PTR [edi+2724], eax
+	mov eax, DWORD PTR [edi+384]
+	mov DWORD PTR [esi+96], eax
+	mov eax, DWORD PTR [edi+388]
+	mov DWORD PTR [esi+100], eax
+	mov eax, DWORD PTR [edi+392]
+	mov DWORD PTR [esi+104], eax
+	mov eax, DWORD PTR [edi+396]
+	mov DWORD PTR [esi+108], eax
+	mov eax, DWORD PTR [edi+400]
+	xor eax, DWORD PTR [edi+2712]
+	mov DWORD PTR [edi+400], eax
+	mov eax, DWORD PTR [edi+404]
+	xor eax, DWORD PTR [edi+2716]
+	mov DWORD PTR [edi+404], eax
+	mov eax, DWORD PTR [edi+408]
+	xor eax, DWORD PTR [edi+2720]
+	mov DWORD PTR [edi+408], eax
+	mov eax, DWORD PTR [edi+412]
+	xor eax, DWORD PTR [edi+2724]
+	mov DWORD PTR [edi+412], eax
+	mov eax, DWORD PTR [esi+112]
+	mov DWORD PTR [edi+2712], eax
+	mov eax, DWORD PTR [esi+116]
+	mov DWORD PTR [edi+2716], eax
+	mov eax, DWORD PTR [esi+120]
+	mov DWORD PTR [edi+2720], eax
+	mov eax, DWORD PTR [esi+124]
+	mov DWORD PTR [edi+2724], eax
+	mov eax, DWORD PTR [edi+400]
+	mov DWORD PTR [esi+112], eax
+	mov eax, DWORD PTR [edi+404]
+	mov DWORD PTR [esi+116], eax
+	mov eax, DWORD PTR [edi+408]
+	mov DWORD PTR [esi+120], eax
+	mov eax, DWORD PTR [edi+412]
+	mov DWORD PTR [esi+124], eax
+	add esi, 128
+	sub ebp, 8
+	mov DWORD PTR [edi+2704], esi
+	mov DWORD PTR [edi+2708], ebp
+	cmp ebp, 8
+	jae 26b
+	jmp 25f
+24:
+25:
+	mov eax, DWORD PTR [edi+2708]
+	cmp eax, 4
+	jb 27f
+29:
+	mov esi, DWORD PTR [edi+2704]
+	mov ebp, DWORD PTR [edi+2708]
+	mov eax, DWORD PTR [esi]
+	mov DWORD PTR [edi+288], eax
+	mov eax, DWORD PTR [esi+4]
+	mov DWORD PTR [edi+292], eax
+	mov eax, DWORD PTR [esi+8]
+	mov DWORD PTR [edi+296], eax
+	mov eax, DWORD PTR [esi+12]
+	mov DWORD PTR [edi+300], eax
+	mov eax, DWORD PTR [esi+16]
+	mov DWORD PTR [edi+304], eax
+	mov eax, DWORD PTR [esi+20]
+	mov DWORD PTR [edi+308], eax
+	mov eax, DWORD PTR [esi+24]
+	mov DWORD PTR [edi+312], eax
+	mov eax, DWORD PTR [esi+28]
+	mov DWORD PTR [edi+316], eax
+	mov eax, DWORD PTR [esi+32]
+	mov DWORD PTR [edi+320], eax
+	mov eax, DWORD PTR [esi+36]
+	mov DWORD PTR [edi+324], eax
+	mov eax, DWORD PTR [esi+40]
+	mov DWORD PTR [edi+328], eax
+	mov eax, DWORD PTR [esi+44]
+	mov DWORD PTR [edi+332], eax
+	mov eax, DWORD PTR [esi+48]
+	mov DWORD PTR [edi+336], eax
+	mov eax, DWORD PTR [esi+52]
+	mov DWORD PTR [edi+340], eax
+	mov eax, DWORD PTR [esi+56]
+	mov DWORD PTR [edi+344], eax
+	mov eax, DWORD PTR [esi+60]
+	mov DWORD PTR [edi+348], eax
+	mov eax, DWORD PTR [esp+8]
+	mov ecx, edi
+	mov edx, 336
+	push edx
+	push ecx
+	push eax
+	call {vg_camellia_crypt_prepared}
+	pop eax
+	pop eax
+	pop eax
+	mov esi, DWORD PTR [edi+2704]
+	mov ebp, DWORD PTR [edi+2708]
+	mov eax, DWORD PTR [edi+288]
+	xor eax, DWORD PTR [edi+2712]
+	mov DWORD PTR [edi+288], eax
+	mov eax, DWORD PTR [edi+292]
+	xor eax, DWORD PTR [edi+2716]
+	mov DWORD PTR [edi+292], eax
+	mov eax, DWORD PTR [edi+296]
+	xor eax, DWORD PTR [edi+2720]
+	mov DWORD PTR [edi+296], eax
+	mov eax, DWORD PTR [edi+300]
+	xor eax, DWORD PTR [edi+2724]
+	mov DWORD PTR [edi+300], eax
+	mov eax, DWORD PTR [esi]
+	mov DWORD PTR [edi+2712], eax
+	mov eax, DWORD PTR [esi+4]
+	mov DWORD PTR [edi+2716], eax
+	mov eax, DWORD PTR [esi+8]
+	mov DWORD PTR [edi+2720], eax
+	mov eax, DWORD PTR [esi+12]
+	mov DWORD PTR [edi+2724], eax
+	mov eax, DWORD PTR [edi+288]
+	mov DWORD PTR [esi], eax
+	mov eax, DWORD PTR [edi+292]
+	mov DWORD PTR [esi+4], eax
+	mov eax, DWORD PTR [edi+296]
+	mov DWORD PTR [esi+8], eax
+	mov eax, DWORD PTR [edi+300]
+	mov DWORD PTR [esi+12], eax
+	mov eax, DWORD PTR [edi+304]
+	xor eax, DWORD PTR [edi+2712]
+	mov DWORD PTR [edi+304], eax
+	mov eax, DWORD PTR [edi+308]
+	xor eax, DWORD PTR [edi+2716]
+	mov DWORD PTR [edi+308], eax
+	mov eax, DWORD PTR [edi+312]
+	xor eax, DWORD PTR [edi+2720]
+	mov DWORD PTR [edi+312], eax
+	mov eax, DWORD PTR [edi+316]
+	xor eax, DWORD PTR [edi+2724]
+	mov DWORD PTR [edi+316], eax
+	mov eax, DWORD PTR [esi+16]
+	mov DWORD PTR [edi+2712], eax
+	mov eax, DWORD PTR [esi+20]
+	mov DWORD PTR [edi+2716], eax
+	mov eax, DWORD PTR [esi+24]
+	mov DWORD PTR [edi+2720], eax
+	mov eax, DWORD PTR [esi+28]
+	mov DWORD PTR [edi+2724], eax
+	mov eax, DWORD PTR [edi+304]
+	mov DWORD PTR [esi+16], eax
+	mov eax, DWORD PTR [edi+308]
+	mov DWORD PTR [esi+20], eax
+	mov eax, DWORD PTR [edi+312]
+	mov DWORD PTR [esi+24], eax
+	mov eax, DWORD PTR [edi+316]
+	mov DWORD PTR [esi+28], eax
+	mov eax, DWORD PTR [edi+320]
+	xor eax, DWORD PTR [edi+2712]
+	mov DWORD PTR [edi+320], eax
+	mov eax, DWORD PTR [edi+324]
+	xor eax, DWORD PTR [edi+2716]
+	mov DWORD PTR [edi+324], eax
+	mov eax, DWORD PTR [edi+328]
+	xor eax, DWORD PTR [edi+2720]
+	mov DWORD PTR [edi+328], eax
+	mov eax, DWORD PTR [edi+332]
+	xor eax, DWORD PTR [edi+2724]
+	mov DWORD PTR [edi+332], eax
+	mov eax, DWORD PTR [esi+32]
+	mov DWORD PTR [edi+2712], eax
+	mov eax, DWORD PTR [esi+36]
+	mov DWORD PTR [edi+2716], eax
+	mov eax, DWORD PTR [esi+40]
+	mov DWORD PTR [edi+2720], eax
+	mov eax, DWORD PTR [esi+44]
+	mov DWORD PTR [edi+2724], eax
+	mov eax, DWORD PTR [edi+320]
+	mov DWORD PTR [esi+32], eax
+	mov eax, DWORD PTR [edi+324]
+	mov DWORD PTR [esi+36], eax
+	mov eax, DWORD PTR [edi+328]
+	mov DWORD PTR [esi+40], eax
+	mov eax, DWORD PTR [edi+332]
+	mov DWORD PTR [esi+44], eax
+	mov eax, DWORD PTR [edi+336]
+	xor eax, DWORD PTR [edi+2712]
+	mov DWORD PTR [edi+336], eax
+	mov eax, DWORD PTR [edi+340]
+	xor eax, DWORD PTR [edi+2716]
+	mov DWORD PTR [edi+340], eax
+	mov eax, DWORD PTR [edi+344]
+	xor eax, DWORD PTR [edi+2720]
+	mov DWORD PTR [edi+344], eax
+	mov eax, DWORD PTR [edi+348]
+	xor eax, DWORD PTR [edi+2724]
+	mov DWORD PTR [edi+348], eax
+	mov eax, DWORD PTR [esi+48]
+	mov DWORD PTR [edi+2712], eax
+	mov eax, DWORD PTR [esi+52]
+	mov DWORD PTR [edi+2716], eax
+	mov eax, DWORD PTR [esi+56]
+	mov DWORD PTR [edi+2720], eax
+	mov eax, DWORD PTR [esi+60]
+	mov DWORD PTR [edi+2724], eax
+	mov eax, DWORD PTR [edi+336]
+	mov DWORD PTR [esi+48], eax
+	mov eax, DWORD PTR [edi+340]
+	mov DWORD PTR [esi+52], eax
+	mov eax, DWORD PTR [edi+344]
+	mov DWORD PTR [esi+56], eax
+	mov eax, DWORD PTR [edi+348]
+	mov DWORD PTR [esi+60], eax
+	add esi, 64
+	sub ebp, 4
+	mov DWORD PTR [edi+2704], esi
+	mov DWORD PTR [edi+2708], ebp
+	cmp ebp, 4
+	jae 29b
+	jmp 28f
+27:
+28:
+	mov eax, DWORD PTR [edi+2708]
+	cmp eax, 2
+	jb 210f
+212:
+	mov esi, DWORD PTR [edi+2704]
+	mov ebp, DWORD PTR [edi+2708]
+	mov eax, DWORD PTR [esi]
+	mov DWORD PTR [edi+288], eax
+	mov eax, DWORD PTR [esi+4]
+	mov DWORD PTR [edi+292], eax
+	mov eax, DWORD PTR [esi+8]
+	mov DWORD PTR [edi+296], eax
+	mov eax, DWORD PTR [esi+12]
+	mov DWORD PTR [edi+300], eax
+	mov eax, DWORD PTR [esi+16]
+	mov DWORD PTR [edi+304], eax
+	mov eax, DWORD PTR [esi+20]
+	mov DWORD PTR [edi+308], eax
+	mov eax, DWORD PTR [esi+24]
+	mov DWORD PTR [edi+312], eax
+	mov eax, DWORD PTR [esi+28]
+	mov DWORD PTR [edi+316], eax
+	mov eax, DWORD PTR [esp+8]
+	mov ecx, edi
+	mov edx, 336
+	push edx
+	push ecx
+	push eax
+	call {vg_camellia_crypt_prepared}
+	pop eax
+	pop eax
+	pop eax
+	mov esi, DWORD PTR [edi+2704]
+	mov ebp, DWORD PTR [edi+2708]
+	mov eax, DWORD PTR [edi+288]
+	xor eax, DWORD PTR [edi+2712]
+	mov DWORD PTR [edi+288], eax
+	mov eax, DWORD PTR [edi+292]
+	xor eax, DWORD PTR [edi+2716]
+	mov DWORD PTR [edi+292], eax
+	mov eax, DWORD PTR [edi+296]
+	xor eax, DWORD PTR [edi+2720]
+	mov DWORD PTR [edi+296], eax
+	mov eax, DWORD PTR [edi+300]
+	xor eax, DWORD PTR [edi+2724]
+	mov DWORD PTR [edi+300], eax
+	mov eax, DWORD PTR [esi]
+	mov DWORD PTR [edi+2712], eax
+	mov eax, DWORD PTR [esi+4]
+	mov DWORD PTR [edi+2716], eax
+	mov eax, DWORD PTR [esi+8]
+	mov DWORD PTR [edi+2720], eax
+	mov eax, DWORD PTR [esi+12]
+	mov DWORD PTR [edi+2724], eax
+	mov eax, DWORD PTR [edi+288]
+	mov DWORD PTR [esi], eax
+	mov eax, DWORD PTR [edi+292]
+	mov DWORD PTR [esi+4], eax
+	mov eax, DWORD PTR [edi+296]
+	mov DWORD PTR [esi+8], eax
+	mov eax, DWORD PTR [edi+300]
+	mov DWORD PTR [esi+12], eax
+	mov eax, DWORD PTR [edi+304]
+	xor eax, DWORD PTR [edi+2712]
+	mov DWORD PTR [edi+304], eax
+	mov eax, DWORD PTR [edi+308]
+	xor eax, DWORD PTR [edi+2716]
+	mov DWORD PTR [edi+308], eax
+	mov eax, DWORD PTR [edi+312]
+	xor eax, DWORD PTR [edi+2720]
+	mov DWORD PTR [edi+312], eax
+	mov eax, DWORD PTR [edi+316]
+	xor eax, DWORD PTR [edi+2724]
+	mov DWORD PTR [edi+316], eax
+	mov eax, DWORD PTR [esi+16]
+	mov DWORD PTR [edi+2712], eax
+	mov eax, DWORD PTR [esi+20]
+	mov DWORD PTR [edi+2716], eax
+	mov eax, DWORD PTR [esi+24]
+	mov DWORD PTR [edi+2720], eax
+	mov eax, DWORD PTR [esi+28]
+	mov DWORD PTR [edi+2724], eax
+	mov eax, DWORD PTR [edi+304]
+	mov DWORD PTR [esi+16], eax
+	mov eax, DWORD PTR [edi+308]
+	mov DWORD PTR [esi+20], eax
+	mov eax, DWORD PTR [edi+312]
+	mov DWORD PTR [esi+24], eax
+	mov eax, DWORD PTR [edi+316]
+	mov DWORD PTR [esi+28], eax
+	add esi, 32
+	sub ebp, 2
+	mov DWORD PTR [edi+2704], esi
+	mov DWORD PTR [edi+2708], ebp
+	cmp ebp, 2
+	jae 212b
+	jmp 211f
+210:
+211:
+	mov eax, DWORD PTR [edi+2708]
+	test eax, eax
+	je 213f
+215:
 	mov esi, DWORD PTR [edi+2704]
 	mov ebp, DWORD PTR [edi+2708]
 	mov eax, DWORD PTR [esi]
@@ -3464,10 +4051,10 @@ vg_camellia_cbc_decrypt_chained:
 	sub ebp, 1
 	mov DWORD PTR [edi+2704], esi
 	mov DWORD PTR [edi+2708], ebp
-	jne 26b
-	jmp 25f
-24:
-25:
+	jne 215b
+	jmp 214f
+213:
+214:
 	mov esi, DWORD PTR [esp+12]
 	mov eax, DWORD PTR [edi+2712]
 	mov DWORD PTR [esi], eax
