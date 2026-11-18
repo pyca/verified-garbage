@@ -13,9 +13,10 @@ are emitted with the shared contracts of `Spec/Sha3/Contract.lean`, which
 imply these, with the arguments where the psABI passes them. The
 permutation keeps its working space in a frame of 608 bytes below the stack
 pointer (`Impl.Sha3.RISCV64.frameBytes`); the streaming functions keep the
-permutation's scratch space and the registers they save in a frame of their
-own above it (`Impl.Sha3.RISCV64.Stream.frameBytes`, `padBytes`), but for
-`vg_keccak_absorb_scratch`, which keeps them in its working space.
+registers they save in a frame of their own above it
+(`Impl.Sha3.RISCV64.Stream.frameBytes`, `padBytes`), and the permutation's
+scratch space in a frame between the two, around its call (`scratchBytes`),
+but for `vg_keccak_absorb_scratch`, which keeps them in its working space.
 -/
 
 @[expose] public section

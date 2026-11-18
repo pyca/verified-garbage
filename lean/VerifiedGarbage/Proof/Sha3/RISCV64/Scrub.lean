@@ -61,7 +61,7 @@ def updateSha3_224Reg : Registration Spec.Sha3.updateSha3_224Api RISCV64.target 
 
 /-- `vg_sha3_224_finalize`. -/
 def finalizeSha3_224Reg : Registration Spec.Sha3.finalizeSha3_224Api RISCV64.target :=
-  withScrubSel { code := Impl.Sha3.RISCV64.Instances.finalize Spec.Sha3.hashSha3_224.rate Spec.Sha3.hashSha3_224.len, verified := Proof.Sha3.RISCV64.Instances.finalize_sha3_224 } [(1200, [(24, 126)])]
+  withScrubSel { code := Impl.Sha3.RISCV64.Instances.finalize Spec.Sha3.hashSha3_224.rate Spec.Sha3.hashSha3_224.len, verified := Proof.Sha3.RISCV64.Instances.finalize_sha3_224 } [(1200, [(24, 54), (140, 10)])]
     (finalizeOut Spec.Sha3.hashSha3_224 _ (by decide))
     (fun hfs hsz hrb => scrubSel_noResidue _ _ [(.a0, 25 * Elem.u64.size)] hfs hsz hrb (finalizeOut Spec.Sha3.hashSha3_224 _ (by decide)) (hbp_firstArray _ rfl)
       (Impl.Sha3.RISCV64.Instances.finalize Spec.Sha3.hashSha3_224.rate Spec.Sha3.hashSha3_224.len) 1200 0 rfl rfl rfl (by exact ⟨_, by taint_decide_ct⟩))
@@ -75,7 +75,7 @@ def updateSha3_256Reg : Registration Spec.Sha3.updateSha3_256Api RISCV64.target 
 
 /-- `vg_sha3_256_finalize`. -/
 def finalizeSha3_256Reg : Registration Spec.Sha3.finalizeSha3_256Api RISCV64.target :=
-  withScrubSel { code := Impl.Sha3.RISCV64.Instances.finalize Spec.Sha3.hashSha3_256.rate Spec.Sha3.hashSha3_256.len, verified := Proof.Sha3.RISCV64.Instances.finalize_sha3_256 } [(1200, [(24, 126)])]
+  withScrubSel { code := Impl.Sha3.RISCV64.Instances.finalize Spec.Sha3.hashSha3_256.rate Spec.Sha3.hashSha3_256.len, verified := Proof.Sha3.RISCV64.Instances.finalize_sha3_256 } [(1200, [(24, 54), (140, 10)])]
     (finalizeOut Spec.Sha3.hashSha3_256 _ (by decide))
     (fun hfs hsz hrb => scrubSel_noResidue _ _ [(.a0, 25 * Elem.u64.size)] hfs hsz hrb (finalizeOut Spec.Sha3.hashSha3_256 _ (by decide)) (hbp_firstArray _ rfl)
       (Impl.Sha3.RISCV64.Instances.finalize Spec.Sha3.hashSha3_256.rate Spec.Sha3.hashSha3_256.len) 1200 0 rfl rfl rfl (by exact ⟨_, by taint_decide_ct⟩))
@@ -89,7 +89,7 @@ def updateSha3_384Reg : Registration Spec.Sha3.updateSha3_384Api RISCV64.target 
 
 /-- `vg_sha3_384_finalize`. -/
 def finalizeSha3_384Reg : Registration Spec.Sha3.finalizeSha3_384Api RISCV64.target :=
-  withScrubSel { code := Impl.Sha3.RISCV64.Instances.finalize Spec.Sha3.hashSha3_384.rate Spec.Sha3.hashSha3_384.len, verified := Proof.Sha3.RISCV64.Instances.finalize_sha3_384 } [(1200, [(24, 126)])]
+  withScrubSel { code := Impl.Sha3.RISCV64.Instances.finalize Spec.Sha3.hashSha3_384.rate Spec.Sha3.hashSha3_384.len, verified := Proof.Sha3.RISCV64.Instances.finalize_sha3_384 } [(1200, [(24, 54), (140, 10)])]
     (finalizeOut Spec.Sha3.hashSha3_384 _ (by decide))
     (fun hfs hsz hrb => scrubSel_noResidue _ _ [(.a0, 25 * Elem.u64.size)] hfs hsz hrb (finalizeOut Spec.Sha3.hashSha3_384 _ (by decide)) (hbp_firstArray _ rfl)
       (Impl.Sha3.RISCV64.Instances.finalize Spec.Sha3.hashSha3_384.rate Spec.Sha3.hashSha3_384.len) 1200 0 rfl rfl rfl (by exact ⟨_, by taint_decide_ct⟩))
@@ -103,7 +103,7 @@ def updateSha3_512Reg : Registration Spec.Sha3.updateSha3_512Api RISCV64.target 
 
 /-- `vg_sha3_512_finalize`. -/
 def finalizeSha3_512Reg : Registration Spec.Sha3.finalizeSha3_512Api RISCV64.target :=
-  withScrubSel { code := Impl.Sha3.RISCV64.Instances.finalize Spec.Sha3.hashSha3_512.rate Spec.Sha3.hashSha3_512.len, verified := Proof.Sha3.RISCV64.Instances.finalize_sha3_512 } [(1200, [(24, 126)])]
+  withScrubSel { code := Impl.Sha3.RISCV64.Instances.finalize Spec.Sha3.hashSha3_512.rate Spec.Sha3.hashSha3_512.len, verified := Proof.Sha3.RISCV64.Instances.finalize_sha3_512 } [(1200, [(24, 54), (140, 10)])]
     (finalizeOut Spec.Sha3.hashSha3_512 _ (by decide))
     (fun hfs hsz hrb => scrubSel_noResidue _ _ [(.a0, 25 * Elem.u64.size)] hfs hsz hrb (finalizeOut Spec.Sha3.hashSha3_512 _ (by decide)) (hbp_firstArray _ rfl)
       (Impl.Sha3.RISCV64.Instances.finalize Spec.Sha3.hashSha3_512.rate Spec.Sha3.hashSha3_512.len) 1200 0 rfl rfl rfl (by exact ⟨_, by taint_decide_ct⟩))
@@ -117,28 +117,28 @@ def updateShake128Reg : Registration Spec.Sha3.updateShake128Api RISCV64.target 
 
 /-- `vg_shake128_finalize`. -/
 def finalizeShake128Reg : Registration Spec.Sha3.finalizeShake128Api RISCV64.target :=
-  withScrubSel { code := Impl.Sha3.RISCV64.Instances.xofFinalize Spec.Sha3.xofShake128.rate, verified := Proof.Sha3.RISCV64.Instances.finalize_shake128 } [(1136, [(24, 50), (76, 66)])]
+  withScrubSel { code := Impl.Sha3.RISCV64.Instances.xofFinalize Spec.Sha3.xofShake128.rate, verified := Proof.Sha3.RISCV64.Instances.finalize_shake128 } [(1136, [(24, 50), (140, 2)])]
     (xofFinalizeOut Spec.Sha3.xofShake128 _)
     (fun hfs hsz hrb => scrubSel_noResidue _ _ [(.a0, 25 * Elem.u64.size)] hfs hsz hrb (xofFinalizeOut Spec.Sha3.xofShake128 _) (hbp_firstArray _ rfl)
       (Impl.Sha3.RISCV64.Instances.xofFinalize Spec.Sha3.xofShake128.rate) 1136 0 rfl rfl rfl (by exact ⟨_, by taint_decide_ct⟩))
 
 /-- `vg_shake128_squeeze`. -/
 def squeezeShake128Reg : Registration Spec.Sha3.squeezeShake128Api RISCV64.target :=
-  withScrubSel { code := Impl.Sha3.RISCV64.Instances.xofSqueeze Spec.Sha3.xofShake128.rate, verified := Proof.Sha3.RISCV64.Instances.squeeze_shake128 } [(1168, [(24, 50), (76, 70)])]
+  withScrubSel { code := Impl.Sha3.RISCV64.Instances.xofSqueeze Spec.Sha3.xofShake128.rate, verified := Proof.Sha3.RISCV64.Instances.squeeze_shake128 } [(1168, [(24, 50), (140, 6)])]
     (xofSqueezeOut Spec.Sha3.xofShake128 _)
     (fun hfs hsz hrb => scrubSel_noResidue _ _ [(.a0, 25 * Elem.u64.size)] hfs hsz hrb (xofSqueezeOut Spec.Sha3.xofShake128 _) (hbp_firstArray _ rfl)
       (Impl.Sha3.RISCV64.Instances.xofSqueeze Spec.Sha3.xofShake128.rate) 1168 64 rfl rfl rfl (by exact ⟨_, by taint_decide_ct⟩))
 
 /-- `vg_shake256_finalize`. -/
 def finalizeShake256Reg : Registration Spec.Sha3.finalizeShake256Api RISCV64.target :=
-  withScrubSel { code := Impl.Sha3.RISCV64.Instances.xofFinalize Spec.Sha3.xofShake256.rate, verified := Proof.Sha3.RISCV64.Instances.finalize_shake256 } [(1136, [(24, 50), (76, 66)])]
+  withScrubSel { code := Impl.Sha3.RISCV64.Instances.xofFinalize Spec.Sha3.xofShake256.rate, verified := Proof.Sha3.RISCV64.Instances.finalize_shake256 } [(1136, [(24, 50), (140, 2)])]
     (xofFinalizeOut Spec.Sha3.xofShake256 _)
     (fun hfs hsz hrb => scrubSel_noResidue _ _ [(.a0, 25 * Elem.u64.size)] hfs hsz hrb (xofFinalizeOut Spec.Sha3.xofShake256 _) (hbp_firstArray _ rfl)
       (Impl.Sha3.RISCV64.Instances.xofFinalize Spec.Sha3.xofShake256.rate) 1136 0 rfl rfl rfl (by exact ⟨_, by taint_decide_ct⟩))
 
 /-- `vg_shake256_squeeze`. -/
 def squeezeShake256Reg : Registration Spec.Sha3.squeezeShake256Api RISCV64.target :=
-  withScrubSel { code := Impl.Sha3.RISCV64.Instances.xofSqueeze Spec.Sha3.xofShake256.rate, verified := Proof.Sha3.RISCV64.Instances.squeeze_shake256 } [(1168, [(24, 50), (76, 70)])]
+  withScrubSel { code := Impl.Sha3.RISCV64.Instances.xofSqueeze Spec.Sha3.xofShake256.rate, verified := Proof.Sha3.RISCV64.Instances.squeeze_shake256 } [(1168, [(24, 50), (140, 6)])]
     (xofSqueezeOut Spec.Sha3.xofShake256 _)
     (fun hfs hsz hrb => scrubSel_noResidue _ _ [(.a0, 25 * Elem.u64.size)] hfs hsz hrb (xofSqueezeOut Spec.Sha3.xofShake256 _) (hbp_firstArray _ rfl)
       (Impl.Sha3.RISCV64.Instances.xofSqueeze Spec.Sha3.xofShake256.rate) 1168 64 rfl rfl rfl (by exact ⟨_, by taint_decide_ct⟩))

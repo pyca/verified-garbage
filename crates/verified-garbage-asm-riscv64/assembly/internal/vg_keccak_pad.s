@@ -7,9 +7,9 @@
 vg_keccak_pad:
 	.option push
 	.option arch, +m, +c
-	addi sp, sp, -528
+	addi sp, sp, -16
 	addi t0, sp, 0
-	sd ra, 512(t0)
+	sd ra, 0(t0)
 	add t1, a0, a2
 	lbu t2, 0(t1)
 	xor t2, t2, a3
@@ -19,10 +19,12 @@ vg_keccak_pad:
 	lbu t2, 0(t1)
 	xori t2, t2, 128
 	sb t2, 0(t1)
+	addi sp, sp, -512
 	addi a1, sp, 0
 	call {vg_keccak_f1600}
+	addi sp, sp, 512
 	addi t0, sp, 0
-	ld ra, 512(t0)
-	addi sp, sp, 528
+	ld ra, 0(t0)
+	addi sp, sp, 16
 	ret
 	.option pop
