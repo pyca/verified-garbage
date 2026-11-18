@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Sm4.ctrContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the counter block or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.
@@ -60,7 +62,7 @@ b 29f
 29:
 .base64 "eOu/f7AMBYEAAB+RtAwFgQQAH5G4DAWBCAAfkbwMBYEMAB+RkAyl65gMxeugDOXrqAwF6KYDCHw="
 21:
-.base64 "IACBOQAAYDkAAGz5CABs+RAAbPkYAGz5IABs+SgAbPkwAGz5OABs+UAAbPlIAGz5UABs+VgAbPlgAGz5aABs+XAAbPl4AGz5gABs+YgAbPmQAGz5mABs+aAAbPmoAGz5sABs+bgAbPnAAGz5yABs+dAAbPnYAGz54ABs+egAbPnwAGz5+ABs+QABbPkIAWz5EAFs+RgBbPkgAWz5KAFs+TABbPk4AWz5QAFs+UgBbPlQAWz5WAFs+WABbPloAWz5cAFs+XgBbPmAAWz5iAFs+ZABbPmYAWz5oAFs+agBbPmwAWz5uAFs+cABbPnIAWz50AFs+dgBbPngAWz56AFs+fABbPn4AWz5AAJs+QgCbPkQAmz5GAJs+SACbPkoAmz5MAJs+TgCbPlAAmz5SAJs+VACbPlYAmz5YAJs+WgCbPlwAmz5eAJs+YACbPmIAmz5kAJs+ZgCbPmgAmz5qAJs+bACbPm4Amz5wAJs+cgCbPnQAmz52AJs+eACbPnoAmz58AJs+fgCbPkAA2z5CANs+RADbPkYA2z5IANs+SgDbPkwA2z5OANs+UADbPlIA2z5UANs+VgDbPlgA2z5aANs+XADbPl4A2z5gANs+YgDbPmQA2z5mANs+aADbPmoA2z5sANs+bgDbPnAA2z5yANs+dADbPnYA2z54ANs+egDbPnwA2z5+ANs+QAEbPkIBGz5EARs+RgEbPkgBGz5KARs+TAEbPk4BGz5QARs+UgEbPlQBGz5WARs+WAEbPloBGz5cARs+XgEbPmABGz5iARs+ZAEbPmYBGz5oARs+agEbPmwBGz5uARs+cAEbPnIBGz50ARs+dgEbPngBGz56ARs+fAEbPn4BGz5AAVs+QgFbPkQBWz5GAVs+SAFbPkoBWz5MAVs+TgFbPlABWz5SAVs+VAFbPlYBWz5YAVs+WgFbPlwBWz5eAVs+YAFbPmIBWz5kAVs+ZgFbPmgBWz5qAVs+bAFbPm4BWz5wAVs+cgFbPnQBWz52AVs+eAFbPnoBWz58AVs+fgFbPkABmz5CAZs+RAGbPkYBmz5IAZs+SgGbPkwBmz5OAZs+UAGbPlIBmz5UAZs+VgGbPlgBmz5aAZs+XAGbPl4Bmz5gAZs+YgGbPmQBmz5mAZs+aAGbPmoBmz5sAZs+bgGbPnABmz5yAZs+dAGbPnYBmz54AZs+egGbPnwBmz5+AZs+QAHbPkIB2z5EAds+RgHbPkgB2z5KAds+TAHbPk4B2z5QAds+UgHbPlQB2z5WAds+WAHbPloB2z5cAds+XgHbPmAB2z5iAds+ZAHbPmYB2z5oAds+agHbPmwB2z5uAds+cAHbPnIB2z50Ads+dgHbPngB2z56Ads+fAHbPn4B2z5AAhs+QgIbPkQCGz5GAhs+SAIbPkoCGz5MAhs+TgIbPlACGz5SAhs+VAIbPlYCGz5YAhs+WgIbPlwCGz5eAhs+YAIbPmICGz5kAhs+ZgIbPmgCGz5qAhs+bAIbPm4CGz5wAhs+cgIbPnQCGz52Ahs+eAIbPnoCGz58Ahs+fgIbPkACWz5CAls+RAJbPkYCWz5IAls+SgJbPkwCWz5OAls+UAJbPlICWz5UAls+VgJbPlgCWz5aAls+XAJbPl4CWz5gAls+YgJbPmQCWz5mAls+aAJbPmoCWz5sAls+bgJbPnACWz5yAls+dAJbPnYCWz54Als+egJbPnwCWz5+Als+QAKbPkICmz5EAps+RgKbPkgCmz5KAps+TAKbPk4Cmz5QAps+UgKbPlQCmz5WAps+WAKbPloCmz5cAps+XgKbPmACmz5iAps+ZAKbPmYCmz5oAps+agKbPmwCmz5uAps+cAKbPnICmz50Aps+dgKbPngCmz56Aps+fAKbPn4Cmz5AAts+QgLbPkQC2z5GAts+SALbPkoC2z5MAts+TgLbPlAC2z5SAts+VALbPlYC2z5YAts+WgLbPlwC2z5eAts+YALbPmIC2z5kAts+ZgLbPmgC2z5qAts+bALbPm4C2z5wAts+cgLbPnQC2z52Ats+eALbPnoC2z58Ats+fgLbPkADGz5CAxs+RAMbPkYDGz5IAxs+SgMbPkwDGz5OAxs+UAMbPlIDGz5UAxs+VgMbPlgDGz5aAxs+XAMbPl4DGz5gAxs+YgMbPmQDGz5mAxs+aAMbPmoDGz5sAxs+bgMbPngDCE4IACATg==""#,
+.base64 "IACBOQAAYDkAAGz5CABs+RAAbPkYAGz5IABs+SgAbPkwAGz5OABs+UAAbPlIAGz5UABs+VgAbPlgAGz5aABs+XAAbPl4AGz5gABs+YgAbPmQAGz5mABs+aAAbPmoAGz5sABs+bgAbPnAAGz5yABs+dAAbPnYAGz54ABs+egAbPnwAGz5+ABs+QABbPkIAWz5EAFs+RgBbPkgAWz5KAFs+TABbPk4AWz5QAFs+UgBbPlQAWz5WAFs+WABbPloAWz5cAFs+XgBbPmAAWz5iAFs+ZABbPmYAWz5oAFs+agBbPmwAWz5uAFs+cABbPnIAWz50AFs+dgBbPngAWz56AFs+fABbPn4AWz5AAJs+QgCbPkQAmz5GAJs+SACbPkoAmz5MAJs+TgCbPlAAmz5SAJs+VACbPlYAmz5YAJs+WgCbPlwAmz5eAJs+YACbPmIAmz5kAJs+ZgCbPmgAmz5qAJs+bACbPm4Amz5wAJs+cgCbPnQAmz52AJs+eACbPnoAmz58AJs+fgCbPkAA2z5CANs+RADbPkYA2z5IANs+SgDbPkwA2z5OANs+UADbPlIA2z5UANs+VgDbPlgA2z5aANs+XADbPl4A2z5gANs+YgDbPmQA2z5mANs+aADbPmoA2z5sANs+bgDbPnAA2z5yANs+dADbPnYA2z54ANs+egDbPnwA2z5+ANs+QAEbPkIBGz5EARs+RgEbPkgBGz5KARs+TAEbPk4BGz5QARs+UgEbPlQBGz5WARs+WAEbPloBGz5cARs+XgEbPmABGz5iARs+ZAEbPmYBGz5oARs+agEbPmwBGz5uARs+cAEbPnIBGz50ARs+dgEbPngBGz56ARs+fAEbPn4BGz5AAVs+QgFbPkQBWz5GAVs+SAFbPkoBWz5MAVs+TgFbPlABWz5SAVs+VAFbPlYBWz5YAVs+WgFbPlwBWz5eAVs+YAFbPmIBWz5kAVs+ZgFbPmgBWz5qAVs+bAFbPm4BWz5wAVs+cgFbPnQBWz52AVs+eAFbPnoBWz58AVs+fgFbPkABmz5CAZs+RAGbPkYBmz5IAZs+SgGbPkwBmz5OAZs+UAGbPlIBmz5UAZs+VgGbPlgBmz5aAZs+XAGbPl4Bmz5gAZs+YgGbPmQBmz5mAZs+aAGbPmoBmz5sAZs+bgGbPnABmz5yAZs+dAGbPnYBmz54AZs+egGbPnwBmz5+AZs+QAHbPkIB2z5EAds+RgHbPkgB2z5KAds+TAHbPk4B2z5QAds+UgHbPlQB2z5WAds+WAHbPloB2z5cAds+XgHbPmAB2z5iAds+ZAHbPmYB2z5oAds+agHbPmwB2z5uAds+cAHbPnIB2z50Ads+dgHbPngB2z56Ads+fAHbPn4B2z5AAhs+QgIbPkQCGz5GAhs+SAIbPkoCGz5MAhs+TgIbPlACGz5SAhs+VAIbPlYCGz5YAhs+WgIbPlwCGz5eAhs+YAIbPmICGz5kAhs+ZgIbPmgCGz5qAhs+bAIbPm4CGz5wAhs+cgIbPnQCGz52Ahs+eAIbPnoCGz58Ahs+fgIbPkACWz5CAls+RAJbPkYCWz5IAls+SgJbPkwCWz5OAls+UAJbPlICWz5UAls+VgJbPlgCWz5aAls+XAJbPl4CWz5gAls+YgJbPmQCWz5mAls+aAJbPmoCWz5sAls+bgJbPnACWz5yAls+dAJbPnYCWz54Als+egJbPnwCWz5+Als+QAKbPkICmz5EAps+RgKbPkgCmz5KAps+TAKbPk4Cmz5QAps+UgKbPlQCmz5WAps+WAKbPloCmz5cAps+XgKbPmACmz5iAps+ZAKbPmYCmz5oAps+agKbPmwCmz5uAps+cAKbPnICmz50Aps+dgKbPngCmz56Aps+fAKbPn4Cmz5AAts+QgLbPkQC2z5GAts+SALbPkoC2z5MAts+TgLbPlAC2z5SAts+VALbPlYC2z5YAts+WgLbPlwC2z5eAts+YALbPmIC2z5kAts+ZgLbPmgC2z5qAts+bALbPm4C2z5wAts+cgLbPnQC2z52Ats+eALbPnoC2z58Ats+fgLbPkADGz5CAxs+RAMbPkYDGz5IAxs+SgMbPkwDGz5OAxs+UAMbPlIDGz5UAxs+VgMbPlgDGz5aAxs+XAMbPl4DGz5gAxs+YgMbPmQDGz5mAxs+aAMbPmoDGz5sAxs+bgMbPngDCE4AAAAOAAAYDgAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDkUAAB8xAQAEMQMIRDEFEIQxBxjEMQkhBDELKUQxDTGEMQ85xDERAgRxEwpEcRUShHEXGsRxGSMEcRsrRHEdM4RxHzvEcSEEBLEjDESxJRSEsSccxIgAIBO""#,
         vg_sm4_prepare_keys = sym super::sm4::vg_sm4_prepare_keys::vg_sm4_prepare_keys,
         vg_sm4_crypt_prepared = sym super::sm4::vg_sm4_crypt_prepared::vg_sm4_crypt_prepared,
         VG_SM4_PPC64LE_AFFINE = sym super::consts::VG_SM4_PPC64LE_AFFINE,
@@ -82,11 +84,11 @@ b 29f
 pub(crate) unsafe extern "C" fn vg_sm4_ctr_final(schedule: *const [u8; 128], ctr: *mut [u8; 16], data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "kf8h+CAA4TimAgh8AAAH+AgAx/kQAOf5GAAH+iAAZ/ooAMf7MADn+zgAh/p4G258eCOQfHg79HwC4cp45CZLeRRa5X9QMMt/eFNGfQ=="
-bl {vg_sm4_ctr}
+bl {vg_sm4_ctr_core}
 .base64 "AAA+KA=="
 beq %cr0, 20f
 .base64 "AAAgOUAANPlIADT5eHPDfXiDBH5AALQ4AQDAOA=="
-bl {vg_sm4_ctr}
+bl {vg_sm4_ctr_core}
 .base64 "QAAUOQ=="
 22:
 .base64 "AAA/iQAASIl4Uil9AAA/mQEACDkBAP87///eOwAAPig="
@@ -95,6 +97,10 @@ b 21f
 20:
 21:
 .base64 "AAAU6AgA1OkQAPTpGAAU6iAAdOooANTrMAD06zgAlOqmAwh8IACBOQAAYDkAAGz5CABs+RAAbPkYAGz5IABs+SgAbPkwAGz5OABs+UAAbPlIAGz5cAAhOCAAgE4=""#,
-        vg_sm4_ctr = sym super::sm4_ctr::vg_sm4_ctr,
+        vg_sm4_ctr_core = sym super::sm4_ctr::vg_sm4_ctr_core::vg_sm4_ctr_core,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_sm4_ctr_core.rs"]
+pub(crate) mod vg_sm4_ctr_core;
