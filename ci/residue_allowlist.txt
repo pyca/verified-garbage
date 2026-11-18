@@ -179,15 +179,6 @@ aarch64 vg_cmac_triple_des_absorb
 aarch64 vg_cmac_triple_des_finish
 aarch64 vg_cmac_triple_des_stream_init
 aarch64 vg_ecdh_p521
-aarch64 vg_ecdsa_brainpoolp256r1_sign
-aarch64 vg_ecdsa_brainpoolp384r1_sign
-aarch64 vg_ecdsa_brainpoolp512r1_sign
-aarch64 vg_ecdsa_p192_sign
-aarch64 vg_ecdsa_p224_sign
-aarch64 vg_ecdsa_p256_sign
-aarch64 vg_ecdsa_p384_sign
-aarch64 vg_ecdsa_p521_sign
-aarch64 vg_ecdsa_secp256k1_sign
 aarch64 vg_ed448_public_key
 aarch64 vg_ed448_public_key_sha3
 aarch64 vg_ed448_sign_cached

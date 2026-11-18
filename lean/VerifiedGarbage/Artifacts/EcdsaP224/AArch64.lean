@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Scrub
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
 public import VerifiedGarbage.Impl.Ecdsa.AArch64.VerifyHash
 public import VerifiedGarbage.Proof.P224.Comb7
@@ -61,11 +62,13 @@ open VG.Proof.HmacTable.AArch64 (tables names)
 
 def artifactsFor (vs : List Proof.Pbkdf2.Md.AArch64.MdHash) : List Artifact :=
   if hv : OK vs ∧ "VG_P224_COMB" ∉ names vs then [
-    Spec.Ecdsa.Rfc6979.Curves.p224SignApi.artifact AArch64.target {
+    Spec.Ecdsa.Rfc6979.Curves.p224SignApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
       suffix := ""
       tables := [("hmac", tables vs)]
       code := signCodeT (p224 hasLaw.law hasLaw.inv (Proof.P224.combOk7 hasLaw.law)) Spec.Ecdsa.Rfc6979.Curves.p224.tries vs
-      verified := p224T_verified hasLaw.law hasLaw.inv (Proof.P224.combOk7 hasLaw.law) vs hv }]
+      verified := p224T_verified hasLaw.law hasLaw.inv (Proof.P224.combOk7 hasLaw.law) vs hv }
+      (Proof.Ecdsa.Rfc6979.AArch64.Scrub.signOk
+        Spec.Ecdsa.Rfc6979.Curves.p224 Impl.Ecdsa.AArch64.p224.combConsts vs))]
   else []
 
 def artifacts : List Artifact :=
