@@ -2,6 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Framework.AArch64.ResidueWin
 public import VerifiedGarbage.Proof.Framework.AArch64.Depth
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
+public import VerifiedGarbage.Proof.Framework.AArch64.StackScratchConsts
 import VerifiedGarbage.Proof.Framework.AArch64.ResidueCT
 import VerifiedGarbage.Proof.Framework.AArch64.ResidueTaint
 import VerifiedGarbage.Proof.Framework.AArch64.Call
@@ -559,5 +562,101 @@ theorem Verified.scrubAll {c : Prog isa} {k : Contract isa} {W rb : Nat} (h : Ve
     obtain ⟨rfl, rfl⟩ := Prod.mk.inj (Option.some.inj hr₂)
     rw [(Exec.det b₁ x₁).1, (Exec.det b₂ x₂).1, p₁.2.1, p₂.2.1,
       hct _ _ _ _ _ _ h₁ h₂ hp c₁ c₂, hk.pub s₁ s₂ hp]
+
+/-! ## Contracts that `Sig.contract` derives -/
+
+section
+variable {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)} {post : sig.Post abi.ptrBits}
+  {wa : Bool} {stack : Nat} {leak : Option (Curry (sig.words abi.ptrBits) (Mem → List Nat))}
+
+/-- `ScrubAllOk` of a contract whose arguments are all in registers, whose
+stack holds the `W` bytes and whose postcondition reads the memory on return
+only within the buffers. -/
+theorem scrubAllOk_regs (hk : (sig.words abi.ptrBits).length ≤ 8) {W : Nat} (hW : 0 < W)
+    (hWs : W ≤ stack)
+    (hpost : ∀ vs m m₁ m₂ r, vs.length = (sig.words abi.ptrBits).length →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) post vs m m₁ r →
+        Curry.apply (sig.words abi.ptrBits) post vs m m₂ r) :
+    ScrubAllOk (sig.contract abi pre post wa stack leak) W (sig.retBits abi.ptrBits) where
+  sp s hs := (RTaintF.scrubOk_regs (pre := pre) (post := post) (wa := wa) (leak := leak) hk hW hWs hpost).sp s hs
+  post s u u' hs hq hm hx := by
+    rw [post_regs hk] at hq ⊢
+    rw [hx]
+    refine hpost _ _ _ _ _ (regArgs_length sig s hk) (fun b hb a ha' => ?_) hq
+    have hd := RTaintF.scrub_disjoint hk hW hWs hs b hb a ha'
+    exact (hm a fun hlt => hd (show (a - (s.sp - BitVec.ofNat 64 W)).toNat + 1 ≤ W by omega)).symm
+  pub s₁ s₂ hp := ((pub_regs hk).mp hp).1.1.1
+
+/-- `ScrubAllOk` under the calling convention with tables of constants. -/
+theorem scrubAllOk_consts {c₀ : String × List (BitVec 64)} {cs : List (String × List (BitVec 64))}
+    (hk : (sig.words abi.ptrBits).length ≤ 8) {W : Nat} (hW : 0 < W) (hWs : W ≤ stack)
+    (hpost : ∀ vs m m₁ m₂ r, vs.length = (sig.words abi.ptrBits).length →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) post vs m m₁ r →
+        Curry.apply (sig.words abi.ptrBits) post vs m m₂ r) :
+    ScrubAllOk (sig.contract (abi.withConsts (c₀ :: cs)) pre post wa stack leak) W
+      (sig.retBits abi.ptrBits) where
+  sp s hs := (scrubAllOk_regs (pre := pre) (post := post) (wa := wa) (leak := leak) hk hW hWs hpost).sp
+    (stripConsts (c₀ :: cs) s) (pre_consts.mp hs).1
+  post s u u' hs hq hm hx := by
+    have e : ∀ v, (sig.contract abi pre post wa stack leak).post s v ↔
+        (sig.contract abi pre post wa stack leak).post (stripConsts (c₀ :: cs) s) v := fun v => by
+      rw [post_regs hk, post_regs hk]; rfl
+    exact post_consts.mpr ((e u').mpr
+      ((scrubAllOk_regs (pre := pre) (post := post) (wa := wa) (leak := leak) hk hW hWs hpost).post
+        _ u u' (pre_consts.mp hs).1 ((e u).mp (post_consts.mp hq)) hm hx))
+  pub s₁ s₂ hp := (scrubAllOk_regs (pre := pre) (post := post) (wa := wa) (leak := leak) hk hW hWs
+    hpost).pub s₁ s₂ (pub_consts.mp hp).1
+
+end
+
+/-! ## Registering scrubbed code -/
+
+theorem all_true : ∀ c : Prog isa, c.all (fun _ => true) = true
+  | .block is => by simp [Code.all]
+  | .seq a b => by simp [Code.all, all_true a, all_true b]
+  | .ite _ t e => by simp [Code.all, all_true t, all_true e]
+  | .loop b _ => by simp [Code.all, all_true b]
+  | .call _ b => by simp [Code.all, all_true b]
+  | .frame _ b _ => by simp [Code.all, all_true b]
+  | .icall _ _ b n => by simp [Code.all, all_true b, all_true n]
+
+theorem all_spSafe (c : Prog isa) : c.all (fun i => !isa.writesSp i) = true := by
+  simpa [isa] using all_true c
+
+/-- The result's bits of `r`'s function. -/
+abbrev retBitsOf {api : Api} (r : Registration api target) : Nat :=
+  api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits
+
+/-- `r`, its code run by `scrubAll` over its whole stack (`r.stack` bytes),
+returning without secret residue, if its side conditions hold (checked when
+the registration is evaluated); otherwise `r` itself, which then has no
+proof (`Registration.residue`), as the emitter allows only of what
+`ci/residue_allowlist.txt` lists. For a caller generic over the
+implementations of the functions it calls, whose code the residue analysis
+does not follow, as x86-64's `X86_64.Scrub.withScrubAll`. -/
+def withScrubAll {api : Api} (r : Registration api target) (hok : ScrubAllOk r.contract r.stack (retBitsOf r)) :
+    Registration api target :=
+  if h : (0 < r.stack ∧ r.stack < 4096 ∧ r.stack % 16 = 0) ∧ 16 * r.code.aarch64Depth ≤ r.stack ∧
+      r.code.all (fun i => !i.writesDit) = true ∧ noIcall r.code = true ∧
+      (retBitsOf r = 0 ∨ retBitsOf r = 32 ∨ retBitsOf r = 64) ∧ r.written = [] then
+    { suffix := r.suffix
+      tables := r.tables
+      code := scrubAll r.stack (retBitsOf r) r.code
+      contract := r.contract
+      verified := Verified.scrubAll r.verified h.1 h.2.2.2.2.1 hok
+      consts := r.consts
+      stack := r.stack
+      ofApi := r.ofApi
+      ofSig := r.ofSig
+      spSafe := all_spSafe _
+      written := r.written
+      writtenOk := by rw [h.2.2.2.2.2]; exact fun _ _ _ _ _ => True.intro
+      extra := r.extra
+      vendor := r.vendor
+      notWith := r.notWith
+      residue := some ⟨noResidue_scrubAll r.verified h.1 hok.sp h.2.1 h.2.2.1 h.2.2.2.1 h.2.2.2.2.1⟩ }
+  else r
 
 end VG.AArch64.ScrubAll
