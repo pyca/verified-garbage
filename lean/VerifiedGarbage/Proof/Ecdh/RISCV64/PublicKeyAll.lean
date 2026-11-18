@@ -18,11 +18,11 @@ import VerifiedGarbage.Proof.Weierstrass.Words
 law (`PkKit.pk_ok`), once for every curve. What the proof needs of a curve
 is its `Kit` (`ExchangeAll.lean`) and, in a `PkKit`, what the public key
 adds: `[d]G` after the point's setup (`tailG_ok`: by the comb, whose table
-the state holds, `GT`, or by the ladder, `tailG_of_tail`), and `y` out of
-Montgomery's form (`affine_ok`).
+the state holds, `GT`, or by the ladder, `tailG_of_tail`).
 
 The proof is the saves, `d` and the constants, `G` to `R`'s first two slots
-and the flag set, the kit's `tailG_ok`, `y`, and the point (`04`, `x` and
+and the flag set, the kit's `tailG_ok`, `y` out of Montgomery's form
+(`TKit.affine_ok`), and the point (`04`, `x` and
 `y`) under the flag (`Kit.pointOut_ok`, `Kit.finPk_ok`); the specification's
 public key is `publicKey_eq`'s (`Proof/EcKey/PublicKey.lean`). Each
 `<Curve>/PublicKey.lean` is the curve's `PkKit`, and the statements about it
@@ -44,11 +44,11 @@ open VG.WriteBytes (writeBytes writeBytes_snoc writeBytes_nil writeBytes_append)
 /-- Slot arithmetic: the offsets of slots given by number, with the kit's bound on the words. -/
 local macro "kit_slots" E:term : tactic => `(tactic| (
   simp only [Cfg.sl, slot, MP, MN, ZERO, ONE, ONEP, AP, B3P, GX, GY, EXPP, R2P, BP, K, FLAG, RX, RY, RZ, XO, YO, YM]
-  omega_using [Kit.n9 $E]))
+  omega_using [TKit.n9 (Kit.toTKit $E)]))
 
 /-- `∀ w ∈ W, P w` for ranges `W` given as a list of lists: `t` proves it of each. -/
 local macro "kit_ranges" t:tacticSeq : tactic =>
-  `(tactic| ((repeat' first | apply Kit.all_app | apply Kit.all_one); all_goals ($t)))
+  `(tactic| ((repeat' first | with_reducible apply Kit.all_app | with_reducible apply Kit.all_one); all_goals ($t)))
 
 /-- A slot apart from ranges that are other slots, the flag or the constants. -/
 local macro "kit_apart" : tactic =>
@@ -69,30 +69,10 @@ theorem byte_eq (b : Bool) : (BitVec.ofNat 64 4 &&& maskOf b).setWidth 8 = if b 
 theorem publicKey_none {C : Curve} {d : Nat} (h : ¬ (1 ≤ d ∧ d < C.n)) : Spec.EcKey.publicKey C d = none := by
   unfold Spec.EcKey.publicKey; simp only [h, ↓reduceIte]
 
-/-- A block keeps the symbols' addresses and changes memory only in the
-writable regions. -/
-theorem wp_syms_frame {is : List Instr} {s : State} {R : State → Prop}
-    (h : WP isa (.block is) s fun s' => s'.syms = s.syms → Frame s.wr s.mem s'.mem → R s') :
-    WP isa (.block is) s R := by
-  obtain ⟨t, s', he, hr⟩ := h
-  have hf := Exec.frameAny he (by simp [sdepth])
-  refine ⟨t, s', he, hr (Exec.syms he) fun x hx => hf x fun r hr' => ?_⟩
-  rcases List.mem_append.mp hr' with h | h
-  · exact hx r h
-  · simp only [List.mem_singleton] at h; subst h
-    simp only [sdepth, Region.Contains]
-    omega_using []
-
 /-- The zeros of a point that is not written. -/
 theorem zeros_eq (L : Nat) : (0 : Byte) :: (toBytes L 0 ++ toBytes L 0) = List.replicate (1 + 2 * L) 0 := by
   rw [toBytes_zero, List.replicate_append_replicate, show 1 + 2 * L = L + L + 1 by omega_using [],
     List.replicate_succ]
-
-/-- The own working space of the field's functions is past every slot. -/
-theorem own_ge {c : Cfg} (n9 : c.n ≤ 9) : c.sl 45 + 8 ≤ own c.n := by
-  obtain h := rvOwn_cases c.n
-  simp only [Cfg.sl, slot, own]
-  omega_using [h, n9]
 
 /-! ## The point to `out` -/
 
@@ -316,23 +296,7 @@ def pkPost (s s' : State) : Prop :=
   | _ => s'.gpr .a0 = 0 ∧ bytesAt s'.mem (s.gpr .a0) (1 + 2 * E.L) = List.replicate (1 + 2 * E.L) 0
 
 /-- What `tail` leaves: the kit's `tail_ok`'s. -/
-abbrev TailPost (base : Addr) (s s' : State) : Prop :=
-  Kc s s' ∧ Unch base E.tailW s.mem s'.mem ∧
-  word s'.mem base (E.c.sl FLAG) = word s.mem base (E.c.sl FLAG) &&& maskOf (decide (sv E.c base s K < E.c.C.n)) &&&
-    maskOf (!decide (sv E.c base s K = 0)) ∧
-  (1 ≤ sv E.c base s K → sv E.c base s K < E.c.C.n →
-    Rep E.c.C (toM E.c.C.p (2 ^ (64 * E.c.n)) (sv E.c base s' RX)) (toM E.c.C.p (2 ^ (64 * E.c.n)) (sv E.c base s' RY))
-      (toM E.c.C.p (2 ^ (64 * E.c.n)) (sv E.c base s' RZ))
-      (Spec.Weierstrass.mul (sv E.c base s K) (.affine (toM E.c.C.p (2 ^ (64 * E.c.n)) (sv E.c base s RX))
-        (toM E.c.C.p (2 ^ (64 * E.c.n)) (sv E.c base s RY)))) ∧
-    sv E.c base s' RX < E.c.C.p ∧ sv E.c base s' RY < E.c.C.p ∧ sv E.c base s' RZ < E.c.C.p) ∧
-  sv E.c base s' XO < E.c.C.p ∧
-  Fin.ofNat E.c.C.p (sv E.c base s' XO) =
-    toM E.c.C.p (2 ^ (64 * E.c.n)) (sv E.c base s' RX) * toM E.c.C.p (2 ^ (64 * E.c.n)) (sv E.c base s' RZ) ^
-      (E.c.C.p - 2) ∧
-  sv E.c base s' ACC < E.c.C.p ∧
-  toM E.c.C.p (2 ^ (64 * E.c.n)) (sv E.c base s' ACC) =
-    toM E.c.C.p (2 ^ (64 * E.c.n)) (sv E.c base s' RZ) ^ (E.c.C.p - 2)
+abbrev TailPost (base : Addr) (s s' : State) : Prop := TKit.TailPost E.c base s s'
 
 /-- What `y` out of Montgomery's form writes: its slots and the field's own
 working space. -/
@@ -382,21 +346,26 @@ structure PkKit where
     Kit.sv E.c base s RY = E.c.C.gy * 2 ^ (64 * E.c.n) % E.c.C.p →
     Kit.sv E.c base s BP = E.c.C.b * 2 ^ (64 * E.c.n) % E.c.C.p → GT base s →
     WP isa (tail E.c gmulN gmulC) s fun s' => E.TailPost base s s'
-  tail_one : ∀ w ∈ E.tailW, E.c.sl ONE + 8 * E.c.n ≤ w.1 ∨ w.1 + w.2 ≤ E.c.sl ONE
-  /-- `y = Y Z^(p-2)` out of Montgomery's form, `Z^(p-2) R` in `ACC`. -/
-  affine_ok : ∀ {s : State} {base : Addr}, WsReg s base → Kit.sv E.c base s ACC < E.c.C.p →
-    Kit.sv E.c base s ONE = 1 →
-    WP isa (affineCoord E.c YM YO RY) s fun s' =>
-      Kp s s' ∧ Unch base E.affW s.mem s'.mem ∧
-      Kit.sv E.c base s' YO < E.c.C.p ∧
-      Fin.ofNat E.c.C.p (Kit.sv E.c base s' YO) =
-        toM E.c.C.p (2 ^ (64 * E.c.n)) (Kit.sv E.c base s RY) * toM E.c.C.p (2 ^ (64 * E.c.n)) (Kit.sv E.c base s ACC)
 
 namespace PkKit
 
 open Kit
 
 variable (P : PkKit)
+
+/-- `tail` keeps one. -/
+theorem tail_one : ∀ w ∈ P.E.tailW, P.E.c.sl ONE + 8 * P.E.c.n ≤ w.1 ∨ w.1 + w.2 ≤ P.E.c.sl ONE :=
+  TKit.tailW_one P.E.c P.E.n9
+
+/-- `y = Y Z^(p-2)` out of Montgomery's form, `Z^(p-2) R` in `ACC`. -/
+theorem affine_ok {s : State} {base : Addr} (hw : WsReg s base) (hacc : sv P.E.c base s ACC < P.E.c.C.p)
+    (hone : sv P.E.c base s ONE = 1) :
+    WP isa (affineCoord P.E.c YM YO RY) s fun s' =>
+      Kp s s' ∧ Unch base P.E.affW s.mem s'.mem ∧
+      sv P.E.c base s' YO < P.E.c.C.p ∧
+      Fin.ofNat P.E.c.C.p (sv P.E.c base s' YO) =
+        toM P.E.c.C.p (2 ^ (64 * P.E.c.n)) (sv P.E.c base s RY) * toM P.E.c.C.p (2 ^ (64 * P.E.c.n)) (sv P.E.c base s ACC) :=
+  P.E.toTKit.affine_ok hw (t := YM) (o := YO) (a := RY) (by decide) (by decide) (by decide) (by decide) hacc hone
 
 /-- What the contract gives, by register, and of the table. -/
 structure Pre (P : PkKit) (s : State) : Prop where
@@ -432,7 +401,7 @@ theorem pk_ok (hL : Law P.E.c.C) {s : State} (hs : P.Pre s) :
   generalize hb : s.gpr .a2 = base at hwr hod hdd hfs hal
   obtain hwr' : (⟨base, 8192⟩ : Region) ∈ s.wr := by rw [hwr]; simp
   obtain hT₀ := P.gt_start hk hwr'
-  refine WP.seq (wp_syms_frame (WP.block_append (WP.mono (P.E.save_ok hb hwr' hfs hal)
+  refine WP.seq (wp_syms_frame (WP.block_append (WP.mono (TKit.save_ok hb hwr' hfs hal)
     fun s₁ ⟨hw₁, h3₁, o₁, g₁, rd₁, wr₁, sp₁, U₁, w0, w1, w2, w3, w4⟩ => ?_)))
   obtain a1 : s₁.gpr .a1 = s.gpr .a1 := g₁ _ (by decide) (by decide) (by decide)
   obtain rd1 : (⟨s.gpr .a1, P.E.L⟩ : Region) ∈ s₁.rd ++ s₁.wr := by
@@ -455,7 +424,7 @@ theorem pk_ok (hL : Law P.E.c.C) {s : State} (hs : P.Pre s) :
     rw [u₃.mem, word_writeW_self, u₂b.gpr, u₂a.gpr]; decide
   -- The constants, and `G` to `R`.
   rw [constCode_eq]
-  refine WP.block_append (WP.mono (P.E.consts_ok _ hw₃ P.E.consts_slots (consts_nodup _))
+  refine WP.block_append (WP.mono (TKit.consts_ok P.E.c P.E.n9 _ hw₃ (TKit.consts_le P.E.c) (consts_nodup _))
     fun s₄ ⟨r₄, U₄, e₄⟩ => ?_)
   obtain hw₄ := hw₃.of_rest r₄
   obtain cs₄ : ∀ e ∈ consts P.E.c, sv P.E.c base s₄ e.1 = e.2 := fun e he => by

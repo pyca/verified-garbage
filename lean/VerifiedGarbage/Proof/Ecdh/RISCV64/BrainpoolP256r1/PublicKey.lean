@@ -69,9 +69,6 @@ def pkit : PkKit where
   gt_frame := fun hk h sy rd F => h.of_frame sy rd F (Ecdsa.RISCV64.BrainpoolP256r1.Comb.tab_wr_of_consts hk)
   tailG_ok := fun hL _ _ hw h3 a1 a2 a3 a4 a5 a6 a7 a8 hx hy _ hT =>
     Ecdsa.RISCV64.BrainpoolP256r1.Comb.tailG_ok hL hw h3 ⟨a1, a2, a3, a4, a5, a6, a7, a8⟩ hx hy hT
-  tail_one := by decide
-  affine_ok := fun hw hacc hone =>
-    affine_ok hw (t := YM) (o := YO) (a := RY) (by decide) (by decide) (by decide) (by decide) hacc hone
 
 /-- `pointOut`: `04 ‖ x ‖ y` from the slots `xo` and `yo` (or zeros, by the
 mask `a7`, which the flag holds) to `out`, the flag's low bit to `a0`, and
