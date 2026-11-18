@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.TripleDes.expandKeyContract`. Constant time: only pointers and `key_len` may affect timing, not key bytes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
@@ -102,7 +104,8 @@ b 21f
 .inst 0xf9402044,0xf900a044,0xf9402444,0xf900a444,0xf9402844,0xf900a844,0xf9402c44,0xf900ac44
 .inst 0xf9403044,0xf900b044,0xf9403444,0xf900b444,0xf9403844,0xf900b844,0xf9403c44,0xf900bc44
 21:
-.inst 0xd65f03c0
+.inst 0xd2800004,0xd2800005,0xd2800006,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404
+.inst 0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0xd65f03c0
 .p2align 6",
         VG_TRIPLE_DES_KEY_SELECT = sym super::consts::VG_TRIPLE_DES_KEY_SELECT,
     )

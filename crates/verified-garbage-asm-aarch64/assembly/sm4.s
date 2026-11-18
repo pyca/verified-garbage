@@ -1046,6 +1046,22 @@ vg_sm4_ecb_encrypt_sm4:
 	b 24f
 23:
 24:
+	movi v0.2d, #0
+	movi v1.2d, #0
+	movi v2.2d, #0
+	movi v3.2d, #0
+	movi v4.2d, #0
+	movi v5.2d, #0
+	movi v6.2d, #0
+	movi v7.2d, #0
+	movi v16.2d, #0
+	movi v17.2d, #0
+	movi v18.2d, #0
+	movi v19.2d, #0
+	movi v20.2d, #0
+	movi v21.2d, #0
+	movi v22.2d, #0
+	movi v23.2d, #0
 	ret
 	.p2align 6
 
@@ -1209,6 +1225,22 @@ vg_sm4_ecb_decrypt_sm4:
 	b 24f
 23:
 24:
+	movi v0.2d, #0
+	movi v1.2d, #0
+	movi v2.2d, #0
+	movi v3.2d, #0
+	movi v4.2d, #0
+	movi v5.2d, #0
+	movi v6.2d, #0
+	movi v7.2d, #0
+	movi v16.2d, #0
+	movi v17.2d, #0
+	movi v18.2d, #0
+	movi v19.2d, #0
+	movi v20.2d, #0
+	movi v21.2d, #0
+	movi v22.2d, #0
+	movi v23.2d, #0
 	ret
 	.p2align 6
 

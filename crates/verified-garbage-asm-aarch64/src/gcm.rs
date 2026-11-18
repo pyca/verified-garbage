@@ -16749,6 +16749,8 @@ pub const VG_AES_GCM_STORE_POWERS_AES_FEATURES: verified_garbage_cpu::Features =
 ///
 /// Contract: `VG.Spec.Gcm.storePowersContract`.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
@@ -16772,7 +16774,10 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_store_powers_aes(ctx: *const [u64; 32
 .inst 0x6e034063,0x6e231c84,0x6e271c84,0x0ee1e087,0x6e0540a5,0x6e241ca5,0x6e0740e7,0x6e271cbe
 .inst 0x6e1e43d6,0x0efbe365,0x4efbe363,0x0ee1e067,0x6e034063,0x6e271c64,0x0ee1e087,0x6e0540a5
 .inst 0x6e241ca5,0x6e0740e7,0x6e271cbf,0x6e1f43f7,0x3d800430,0x3d800031,0x3d800c32,0x3d800833
-.inst 0x3d801434,0x3d801035,0x3d801c36,0x3d801837,0xd65f03c0
+.inst 0x3d801434,0x3d801035,0x3d801c36,0x3d801837,0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406
+.inst 0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416
+.inst 0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e
+.inst 0x6f00e41f,0xd65f03c0
 .p2align 6",
     )
 }

@@ -641,6 +641,21 @@ vg_triple_des_expand_key:
 	ldr x4, [x2, #120]
 	str x4, [x2, #376]
 21:
+	movz x4, #0, lsl #0
+	movz x5, #0, lsl #0
+	movz x6, #0, lsl #0
+	movi v0.2d, #0
+	movi v1.2d, #0
+	movi v2.2d, #0
+	movi v3.2d, #0
+	movi v4.2d, #0
+	movi v5.2d, #0
+	movi v6.2d, #0
+	movi v7.2d, #0
+	movi v16.2d, #0
+	movi v17.2d, #0
+	movi v18.2d, #0
+	movi v19.2d, #0
 	ret
 	.p2align 6
 
