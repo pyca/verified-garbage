@@ -115,12 +115,6 @@ aarch64 vg_aes_siv_encrypt_neon
 aarch64 vg_aes_siv_init
 aarch64 vg_aes_siv_init_aes
 aarch64 vg_aes_siv_init_neon
-aarch64 vg_aes_xts_decrypt_unit
-aarch64 vg_aes_xts_decrypt_unit_aes
-aarch64 vg_aes_xts_decrypt_unit_neon
-aarch64 vg_aes_xts_encrypt_unit
-aarch64 vg_aes_xts_encrypt_unit_aes
-aarch64 vg_aes_xts_encrypt_unit_neon
 aarch64 vg_blake2b_finalize
 aarch64 vg_blake2b_update
 aarch64 vg_blake2s_finalize
