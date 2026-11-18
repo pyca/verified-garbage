@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.TripleDes.AArch64.FbVerified
 public import VerifiedGarbage.Proof.TripleDes.AArch64.FbFinalVerified
+public import VerifiedGarbage.Proof.TripleDes.AArch64.ModesResidue
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.AArch64.Print
 import VerifiedGarbage.Proof.TripleDes.AArch64.FbLit
@@ -15,10 +16,12 @@ namespace VG.Artifacts.TripleDesOfb.AArch64
 
 def artifacts : List Artifact := [
   Spec.TripleDes.ofbApi.artifact AArch64.target {
-    code := Impl.StackScratch.AArch64.withStackScratchWiped 560 .x4 70 Impl.TripleDes.AArch64.ofb
-    verified := Proof.TripleDes.AArch64.ofb_framed },
+    code := Proof.TripleDes.AArch64.ModesResidue.ofbCode
+    verified := Proof.TripleDes.AArch64.ModesResidue.ofbCode_verified
+    residue := some ⟨Proof.TripleDes.AArch64.ModesResidue.ofbCode_noResidue⟩ },
   Spec.TripleDes.ofbFinalApi.artifact AArch64.target {
-    code := Impl.StackScratch.AArch64.withStackScratchWiped 560 .x4 70 Impl.TripleDes.AArch64.ofbFinal
-    verified := Proof.TripleDes.AArch64.ofbFinal_framed }]
+    code := Proof.TripleDes.AArch64.ModesResidue.ofbFinalCode
+    verified := Proof.TripleDes.AArch64.ModesResidue.ofbFinalCode_verified
+    residue := some ⟨Proof.TripleDes.AArch64.ModesResidue.ofbFinalCode_noResidue⟩ }]
 
 end VG.Artifacts.TripleDesOfb.AArch64

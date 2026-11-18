@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.TripleDes.AArch64.VerifiedBlock
 public import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Verified
 public import VerifiedGarbage.Proof.TripleDes.AArch64.Frame
 public import VerifiedGarbage.Proof.TripleDes.AArch64.ShortEcb
+public import VerifiedGarbage.Proof.TripleDes.AArch64.ModesResidue
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Impl.TripleDes.AArch64.BitsliceAlloc
 public import VerifiedGarbage.Proof.Framework.AArch64.Exec
@@ -39,12 +40,12 @@ def artifacts : List Artifact := [
     verified := Proof.TripleDes.AArch64.Key.verifiedCleared
     residue := some ⟨Proof.TripleDes.AArch64.expandKeyCleared_noResidue _⟩ },
   Spec.TripleDes.ecbEncryptApi.artifact AArch64.target {
-    code := Impl.StackScratch.AArch64.withStackScratchWiped 1024 .x3 128
-      Impl.TripleDes.AArch64.Short.ecbEncrypt
-    verified := Proof.TripleDes.AArch64.ecb_framed Proof.TripleDes.AArch64.Short.ecbEncrypt_verified },
+    code := Proof.TripleDes.AArch64.ModesResidue.ecbEncryptCode
+    verified := Proof.TripleDes.AArch64.ModesResidue.ecbEncryptCode_verified
+    residue := some ⟨Proof.TripleDes.AArch64.ModesResidue.ecbEncryptCode_noResidue⟩ },
   Spec.TripleDes.ecbDecryptApi.artifact AArch64.target {
-    code := Impl.StackScratch.AArch64.withStackScratchWiped 1024 .x3 128
-      Impl.TripleDes.AArch64.Short.ecbDecrypt
-    verified := Proof.TripleDes.AArch64.ecb_framed Proof.TripleDes.AArch64.Short.ecbDecrypt_verified }]
+    code := Proof.TripleDes.AArch64.ModesResidue.ecbDecryptCode
+    verified := Proof.TripleDes.AArch64.ModesResidue.ecbDecryptCode_verified
+    residue := some ⟨Proof.TripleDes.AArch64.ModesResidue.ecbDecryptCode_noResidue⟩ }]
 
 end VG.Artifacts.TripleDes.AArch64
