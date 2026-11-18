@@ -10,6 +10,8 @@ pub const VG_SHA3_224_UPDATE_SHA3_FEATURES: verified_garbage_cpu::Features = ver
 ///
 /// Contract: `VG.Spec.Sha3.updateContract` with the rate 144. Constant time: only the pointers, `pos` and `len` may affect timing, not the state or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 200 bytes.
@@ -320,7 +322,13 @@ b 214f
 213:
 214:
 .inst 0x910002c0,0xf9410293,0xf9410a95,0xf9410e96,0xf9411297,0xf9411698,0xf9410694,0xf84107fe
-.inst 0xd65f03c0
+.inst 0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800009
+.inst 0xd280000a,0xd280000b,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403
+.inst 0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413
+.inst 0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b
+.inst 0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0x4e181c28,0x4e181c29,0x4e181c2a
+.inst 0x4e181c2b,0x4e181c2c,0x4e181c2d,0x4e181c2e,0x4e181c2f,0xd10043ff,0x6f00e41f,0x910003e9
+.inst 0x3d80013f,0x910043ff,0xd65f03c0
 .p2align 6",
         vg_keccak_f1600_sha3 = sym super::ed448::vg_keccak_f1600_sha3::vg_keccak_f1600_sha3,
     )
@@ -363,6 +371,8 @@ pub const VG_SHA3_256_UPDATE_SHA3_FEATURES: verified_garbage_cpu::Features = ver
 /// Absorbs data into a SHA3-256 computation: if the state `*state` represents a message whose length is `pos` modulo 136 (`VG.Spec.Sha3.Repr` with SHA3-256's rate, 136), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % 136`. `*scratch` is its working space. A computation starts from the all-zero state, at position 0.
 ///
 /// Contract: `VG.Spec.Sha3.updateContract` with the rate 136. Constant time: only the pointers, `pos` and `len` may affect timing, not the state or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -674,7 +684,13 @@ b 214f
 213:
 214:
 .inst 0x910002c0,0xf9410293,0xf9410a95,0xf9410e96,0xf9411297,0xf9411698,0xf9410694,0xf84107fe
-.inst 0xd65f03c0
+.inst 0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800009
+.inst 0xd280000a,0xd280000b,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403
+.inst 0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413
+.inst 0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b
+.inst 0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0x4e181c28,0x4e181c29,0x4e181c2a
+.inst 0x4e181c2b,0x4e181c2c,0x4e181c2d,0x4e181c2e,0x4e181c2f,0xd10043ff,0x6f00e41f,0x910003e9
+.inst 0x3d80013f,0x910043ff,0xd65f03c0
 .p2align 6",
         vg_keccak_f1600_sha3 = sym super::ed448::vg_keccak_f1600_sha3::vg_keccak_f1600_sha3,
     )
@@ -717,6 +733,8 @@ pub const VG_SHA3_384_UPDATE_SHA3_FEATURES: verified_garbage_cpu::Features = ver
 /// Absorbs data into a SHA3-384 computation: if the state `*state` represents a message whose length is `pos` modulo 104 (`VG.Spec.Sha3.Repr` with SHA3-384's rate, 104), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % 104`. `*scratch` is its working space. A computation starts from the all-zero state, at position 0.
 ///
 /// Contract: `VG.Spec.Sha3.updateContract` with the rate 104. Constant time: only the pointers, `pos` and `len` may affect timing, not the state or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1028,7 +1046,13 @@ b 214f
 213:
 214:
 .inst 0x910002c0,0xf9410293,0xf9410a95,0xf9410e96,0xf9411297,0xf9411698,0xf9410694,0xf84107fe
-.inst 0xd65f03c0
+.inst 0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800009
+.inst 0xd280000a,0xd280000b,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403
+.inst 0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413
+.inst 0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b
+.inst 0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0x4e181c28,0x4e181c29,0x4e181c2a
+.inst 0x4e181c2b,0x4e181c2c,0x4e181c2d,0x4e181c2e,0x4e181c2f,0xd10043ff,0x6f00e41f,0x910003e9
+.inst 0x3d80013f,0x910043ff,0xd65f03c0
 .p2align 6",
         vg_keccak_f1600_sha3 = sym super::ed448::vg_keccak_f1600_sha3::vg_keccak_f1600_sha3,
     )
@@ -1071,6 +1095,8 @@ pub const VG_SHA3_512_UPDATE_SHA3_FEATURES: verified_garbage_cpu::Features = ver
 /// Absorbs data into a SHA3-512 computation: if the state `*state` represents a message whose length is `pos` modulo 72 (`VG.Spec.Sha3.Repr` with SHA3-512's rate, 72), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % 72`. `*scratch` is its working space. A computation starts from the all-zero state, at position 0.
 ///
 /// Contract: `VG.Spec.Sha3.updateContract` with the rate 72. Constant time: only the pointers, `pos` and `len` may affect timing, not the state or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1382,7 +1408,13 @@ b 214f
 213:
 214:
 .inst 0x910002c0,0xf9410293,0xf9410a95,0xf9410e96,0xf9411297,0xf9411698,0xf9410694,0xf84107fe
-.inst 0xd65f03c0
+.inst 0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800009
+.inst 0xd280000a,0xd280000b,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403
+.inst 0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413
+.inst 0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b
+.inst 0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0x4e181c28,0x4e181c29,0x4e181c2a
+.inst 0x4e181c2b,0x4e181c2c,0x4e181c2d,0x4e181c2e,0x4e181c2f,0xd10043ff,0x6f00e41f,0x910003e9
+.inst 0x3d80013f,0x910043ff,0xd65f03c0
 .p2align 6",
         vg_keccak_f1600_sha3 = sym super::ed448::vg_keccak_f1600_sha3::vg_keccak_f1600_sha3,
     )
@@ -1425,6 +1457,8 @@ pub const VG_SHAKE128_UPDATE_SHA3_FEATURES: verified_garbage_cpu::Features = ver
 /// Absorbs data into a SHAKE128 computation: if the state `*state` represents a message whose length is `pos` modulo 168 (`VG.Spec.Sha3.Repr` with SHAKE128's rate, 168), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % 168`. `*scratch` is its working space. A computation starts from the all-zero state, at position 0.
 ///
 /// Contract: `VG.Spec.Sha3.updateContract` with the rate 168. Constant time: only the pointers, `pos` and `len` may affect timing, not the state or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1736,7 +1770,13 @@ b 214f
 213:
 214:
 .inst 0x910002c0,0xf9410293,0xf9410a95,0xf9410e96,0xf9411297,0xf9411698,0xf9410694,0xf84107fe
-.inst 0xd65f03c0
+.inst 0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800009
+.inst 0xd280000a,0xd280000b,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403
+.inst 0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413
+.inst 0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b
+.inst 0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0x4e181c28,0x4e181c29,0x4e181c2a
+.inst 0x4e181c2b,0x4e181c2c,0x4e181c2d,0x4e181c2e,0x4e181c2f,0xd10043ff,0x6f00e41f,0x910003e9
+.inst 0x3d80013f,0x910043ff,0xd65f03c0
 .p2align 6",
         vg_keccak_f1600_sha3 = sym super::ed448::vg_keccak_f1600_sha3::vg_keccak_f1600_sha3,
     )
@@ -1893,6 +1933,8 @@ b 21f
 /// Absorbs data into a SHA3-224 computation: if the state `*state` represents a message whose length is `pos` modulo 144 (`VG.Spec.Sha3.Repr` with SHA3-224's rate, 144), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % 144`. `*scratch` is its working space. A computation starts from the all-zero state, at position 0.
 ///
 /// Contract: `VG.Spec.Sha3.updateContract` with the rate 144. Constant time: only the pointers, `pos` and `len` may affect timing, not the state or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -2323,7 +2365,12 @@ b 214f
 213:
 214:
 .inst 0x910002c0,0xf9410293,0xf9410a95,0xf9410e96,0xf9411297,0xf9411698,0xf9410694,0xf84107fe
-.inst 0xd65f03c0
+.inst 0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800008
+.inst 0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f,0xd2800010
+.inst 0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406
+.inst 0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e418
+.inst 0x6f00e419,0x6f00e41e,0x6f00e41f,0xea01003f,0xd10043ff,0x6f00e41f,0x910003e9,0x3d80013f
+.inst 0x910043ff,0xd65f03c0
 .p2align 6",
         vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
     )
@@ -2359,6 +2406,8 @@ bl {vg_keccak_squeeze_scratch}
 /// Absorbs data into a SHA3-256 computation: if the state `*state` represents a message whose length is `pos` modulo 136 (`VG.Spec.Sha3.Repr` with SHA3-256's rate, 136), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % 136`. `*scratch` is its working space. A computation starts from the all-zero state, at position 0.
 ///
 /// Contract: `VG.Spec.Sha3.updateContract` with the rate 136. Constant time: only the pointers, `pos` and `len` may affect timing, not the state or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -2789,7 +2838,12 @@ b 214f
 213:
 214:
 .inst 0x910002c0,0xf9410293,0xf9410a95,0xf9410e96,0xf9411297,0xf9411698,0xf9410694,0xf84107fe
-.inst 0xd65f03c0
+.inst 0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800008
+.inst 0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f,0xd2800010
+.inst 0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406
+.inst 0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e418
+.inst 0x6f00e419,0x6f00e41e,0x6f00e41f,0xea01003f,0xd10043ff,0x6f00e41f,0x910003e9,0x3d80013f
+.inst 0x910043ff,0xd65f03c0
 .p2align 6",
         vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
     )
@@ -2825,6 +2879,8 @@ bl {vg_keccak_squeeze_scratch}
 /// Absorbs data into a SHA3-384 computation: if the state `*state` represents a message whose length is `pos` modulo 104 (`VG.Spec.Sha3.Repr` with SHA3-384's rate, 104), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % 104`. `*scratch` is its working space. A computation starts from the all-zero state, at position 0.
 ///
 /// Contract: `VG.Spec.Sha3.updateContract` with the rate 104. Constant time: only the pointers, `pos` and `len` may affect timing, not the state or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -3255,7 +3311,12 @@ b 214f
 213:
 214:
 .inst 0x910002c0,0xf9410293,0xf9410a95,0xf9410e96,0xf9411297,0xf9411698,0xf9410694,0xf84107fe
-.inst 0xd65f03c0
+.inst 0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800008
+.inst 0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f,0xd2800010
+.inst 0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406
+.inst 0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e418
+.inst 0x6f00e419,0x6f00e41e,0x6f00e41f,0xea01003f,0xd10043ff,0x6f00e41f,0x910003e9,0x3d80013f
+.inst 0x910043ff,0xd65f03c0
 .p2align 6",
         vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
     )
@@ -3291,6 +3352,8 @@ bl {vg_keccak_squeeze_scratch}
 /// Absorbs data into a SHA3-512 computation: if the state `*state` represents a message whose length is `pos` modulo 72 (`VG.Spec.Sha3.Repr` with SHA3-512's rate, 72), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % 72`. `*scratch` is its working space. A computation starts from the all-zero state, at position 0.
 ///
 /// Contract: `VG.Spec.Sha3.updateContract` with the rate 72. Constant time: only the pointers, `pos` and `len` may affect timing, not the state or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -3721,7 +3784,12 @@ b 214f
 213:
 214:
 .inst 0x910002c0,0xf9410293,0xf9410a95,0xf9410e96,0xf9411297,0xf9411698,0xf9410694,0xf84107fe
-.inst 0xd65f03c0
+.inst 0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800008
+.inst 0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f,0xd2800010
+.inst 0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406
+.inst 0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e418
+.inst 0x6f00e419,0x6f00e41e,0x6f00e41f,0xea01003f,0xd10043ff,0x6f00e41f,0x910003e9,0x3d80013f
+.inst 0x910043ff,0xd65f03c0
 .p2align 6",
         vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
     )
@@ -3757,6 +3825,8 @@ bl {vg_keccak_squeeze_scratch}
 /// Absorbs data into a SHAKE128 computation: if the state `*state` represents a message whose length is `pos` modulo 168 (`VG.Spec.Sha3.Repr` with SHAKE128's rate, 168), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % 168`. `*scratch` is its working space. A computation starts from the all-zero state, at position 0.
 ///
 /// Contract: `VG.Spec.Sha3.updateContract` with the rate 168. Constant time: only the pointers, `pos` and `len` may affect timing, not the state or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -4187,7 +4257,12 @@ b 214f
 213:
 214:
 .inst 0x910002c0,0xf9410293,0xf9410a95,0xf9410e96,0xf9411297,0xf9411698,0xf9410694,0xf84107fe
-.inst 0xd65f03c0
+.inst 0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800008
+.inst 0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f,0xd2800010
+.inst 0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406
+.inst 0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e418
+.inst 0x6f00e419,0x6f00e41e,0x6f00e41f,0xea01003f,0xd10043ff,0x6f00e41f,0x910003e9,0x3d80013f
+.inst 0x910043ff,0xd65f03c0
 .p2align 6",
         vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
     )
