@@ -1,44 +1,79 @@
 module
 
 public import VerifiedGarbage.Proof.X448.X86.Verified
-public import VerifiedGarbage.Proof.Framework.X86.CallWith
-public import VerifiedGarbage.Proof.Framework.RelCT
-meta import VerifiedGarbage.Proof.X448.X86.Verified
-meta import VerifiedGarbage.Proof.Framework.X86.CallWith
-meta import VerifiedGarbage.Proof.Framework.RelCT
-import VerifiedGarbage.Proof.Framework.X86.RelCT
+public import VerifiedGarbage.Impl.X448.X86.Base
+public import VerifiedGarbage.Proof.Ed448.CombRef
+public import VerifiedGarbage.Proof.X448.X86.BaseLit
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Ed448.X86.BaseCT
+public import VerifiedGarbage.Proof.Ed448.X86.BaseMain
+public import VerifiedGarbage.Proof.Ed448.X86.ScalarIO
 import VerifiedGarbage.Proof.X448.X86.CT
-import VerifiedGarbage.Proof.Framework.Covers
+public import VerifiedGarbage.Proof.X448.X86.Runs
+import VerifiedGarbage.Proof.X448.X86.Main
+import VerifiedGarbage.Proof.X448.X86.Finish
+import VerifiedGarbage.Proof.X448.X86.Output
+import VerifiedGarbage.Proof.X448.X86.Freeze
+import VerifiedGarbage.Proof.X448.X86.Restore
+import VerifiedGarbage.Proof.X448.X86.Inv
+import VerifiedGarbage.Proof.X448.X86.Bits
+import VerifiedGarbage.Proof.X448.X86.ByteMem
+import VerifiedGarbage.Proof.X448.X86.Iter
+import VerifiedGarbage.Proof.X448.X86.Counters
+import VerifiedGarbage.Proof.X448.X86.Instr
+import VerifiedGarbage.Proof.X448.Bytes
+import VerifiedGarbage.Proof.Framework.X86.RelCT
+import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.X448.X86.Instr
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.X448.Bytes
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.RelCT
+meta import VerifiedGarbage.Proof.X448.X86.Verified
+meta import VerifiedGarbage.Impl.X448.X86.Base
+meta import VerifiedGarbage.Proof.Ed448.CombRef
+meta import VerifiedGarbage.Proof.X448.X86.BaseLit
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Ed448.X86.BaseCT
+meta import VerifiedGarbage.Proof.Ed448.X86.BaseMain
+meta import VerifiedGarbage.Proof.Ed448.X86.ScalarIO
 meta import VerifiedGarbage.Proof.X448.X86.CT
-meta import VerifiedGarbage.Proof.Framework.Covers
+meta import VerifiedGarbage.Proof.X448.X86.Runs
+meta import VerifiedGarbage.Proof.X448.X86.Main
+meta import VerifiedGarbage.Proof.X448.X86.Finish
+meta import VerifiedGarbage.Proof.X448.X86.Output
+meta import VerifiedGarbage.Proof.X448.X86.Freeze
+meta import VerifiedGarbage.Proof.X448.X86.Restore
+meta import VerifiedGarbage.Proof.X448.X86.Inv
+meta import VerifiedGarbage.Proof.X448.X86.Bits
+meta import VerifiedGarbage.Proof.X448.X86.ByteMem
+meta import VerifiedGarbage.Proof.X448.X86.Iter
+meta import VerifiedGarbage.Proof.X448.X86.Counters
+meta import VerifiedGarbage.Proof.X448.X86.Instr
+meta import VerifiedGarbage.Proof.X448.Bytes
+meta import VerifiedGarbage.Proof.Framework.X86.RelCT
+meta import VerifiedGarbage.Proof.Framework.Range
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.X448.X86.Instr
-meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
-meta import VerifiedGarbage.Proof.X448.Bytes
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
 
 /-!
-# X448 of the base point on x86 (32-bit)
+# X448 of the base point on x86 (32-bit): `Verified`
 
-`vg_x448_base(out, scalar, scratch)` calls `vg_x448(out, scalar, point,
-scratch)` (`Impl.X448.X86.x448Base`), with `point` the base point's
-u-coordinate, 5, in a frame of its own below the return address: the frame's
-push stores the caller's `ebx`, then the coordinate's fourteen words, which
-the call reads as 56 bytes (`basePoint`). `vg_x448`'s proofs (`x448_ok`,
-`x448_ct`) give the call's result and its trace (`WP.callWith`,
-`RelCT.callWith`), from the facts of its contract that the frames and the
-contract of `vg_x448_base` give (`callPre`). The frame's pop restores `ebx`,
-which nothing between the push and the pop writes.
+`vg_x448_base` is Ed448's base-point multiplication on this target, the
+four-column comb (`Proof/Ed448/X86/BaseMain.lean`'s `combLoop_ok`), on the
+bits of the decoded scalar (X448's `bitsData_ok`, and `zeroTop_ok` for the
+eight bits above them), then `Y² / X²` of the comb's point by the ladder's
+inversion and output (`invert_ok`, `finishX_ok`): `x448Base_main`, and
+`x448Base_ok` given that this is X448 of the base point
+(`Proof.Ed448.BaseCombUOk`, proven with the group law in
+`Proof/Ed448/CombFacts.lean`, which only the registration file imports).
+
+Constant time is run by run, as Ed448's base-point multiplication's
+(`Proof/Ed448/X86/BaseCT.lean`, whose `combLoopG_tr` relates the comb's rows):
+the entry by the taint analysis from the arguments (`τb`), the field
+operations by the field functions' constant time, and the last block by the
+taint analysis from what each run's correctness says of its own state.
 -/
 
 @[expose] public section
@@ -47,8 +82,8 @@ namespace VG.Proof.X448
 
 open VG VG.X86 in
 /-- `vg_x448_base(out, scalar, scratch)`, whose arguments are on the stack
-(cdecl), with the 100 bytes below the return address that the frames, the
-call of `vg_x448` and its own calls use. -/
+(cdecl), with the 20 bytes of stack below its return address that its calls
+of the field functions use. -/
 def x448BaseX86 : Contract X86.isa where
   pre s :=
     let out : Region := ⟨(arg s 0).setWidth 64, 56⟩
@@ -56,13 +91,13 @@ def x448BaseX86 : Contract X86.isa where
     let scratch : Region := ⟨(arg s 2).setWidth 64, 8192⟩
     let args : Region := ⟨argAddr s 0, 12⟩
     let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
-    let stk : Region := ⟨(s.gpr .esp).setWidth 64 - 100#64, 100⟩
+    let stk : Region := ⟨(s.gpr .esp).setWidth 64 - 20#64, 20⟩
     s.rd = [scalar, args] ∧ s.wr = [out, scratch] ∧ out.Disjoint scratch ∧
       scalar.Disjoint scratch ∧ args.Disjoint out ∧ args.Disjoint scratch ∧
       ret.Disjoint out ∧ ret.Disjoint scratch ∧ (arg s 0).toNat + 56 ≤ 2 ^ 32 ∧
       (arg s 1).toNat + 56 ≤ 2 ^ 32 ∧ (arg s 2).toNat + 8192 ≤ 2 ^ 32 ∧
-      (s.gpr .esp).toNat + 16 ≤ 2 ^ 32 ∧ 100 ≤ (s.gpr .esp).toNat ∧ stk.Disjoint out ∧
-      stk.Disjoint scratch ∧ stk.Disjoint scalar
+      (s.gpr .esp).toNat + 16 ≤ 2 ^ 32 ∧ 20 ≤ (s.gpr .esp).toNat ∧ stk.Disjoint out ∧
+      stk.Disjoint scratch
   post s s' := Spec.X448.bytesAt s'.mem ((arg s 0).setWidth 64) 56 =
     Spec.X448.x448 (Spec.X448.bytesAt s.mem ((arg s 1).setWidth 64) 56) Spec.X448.basePoint
   pub s₁ s₂ := s₁.gpr .esp = s₂.gpr .esp ∧ arg s₁ 0 = arg s₂ 0 ∧ arg s₁ 1 = arg s₂ 1 ∧
@@ -72,7 +107,12 @@ end VG.Proof.X448
 
 namespace VG.Proof.X448.X86
 
-open VG VG.X86 VG.Impl.X448.X86
+open VG VG.X86 VG.Impl.X448.X86 VG.Proof.X448.Radix16
+open VG.Proof.Ed448 (BaseCombUOk comb pt)
+open VG.Proof.Ed448.X86 (Args CombInv combLoop_ok initSlots_ok initSlots_E initSlots_bounded initE
+  stkR_below BitsG combLoopG_tr far_out Input)
+
+/-! ## The precondition -/
 
 /-- `vg_x448_base`'s precondition, by name. -/
 structure BPre (s : State) : Prop where
@@ -88,585 +128,434 @@ structure BPre (s : State) : Prop where
   scalar_fit : (arg s 1).toNat + 56 ≤ 2 ^ 32
   sc_fit : (arg s 2).toNat + 8192 ≤ 2 ^ 32
   sp_fit : (s.gpr .esp).toNat + 16 ≤ 2 ^ 32
-  sp_room : 100 ≤ (s.gpr .esp).toNat
-  stk_out : (⟨(s.gpr .esp).setWidth 64 - 100#64, 100⟩ : Region).Disjoint (outR s)
-  stk_sc : (⟨(s.gpr .esp).setWidth 64 - 100#64, 100⟩ : Region).Disjoint (scR (arg s 2))
-  stk_scalar : (⟨(s.gpr .esp).setWidth 64 - 100#64, 100⟩ : Region).Disjoint (scalarR s)
+  sp_room : 20 ≤ (s.gpr .esp).toNat
+  stk_out : (stkR s).Disjoint (outR s)
+  stk_sc : (stkR s).Disjoint (scR (arg s 2))
 
-theorem BPre.of (s : State) (h : Proof.X448.x448BaseX86.pre s) : BPre s := by
-  obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16⟩ := h
-  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16⟩
+theorem BPre.of {s : State} (h : Proof.X448.x448BaseX86.pre s) : BPre s := by
+  obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15⟩ := h
+  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15⟩
 
-namespace BPre
-variable {s : State} (hp : BPre s)
-include hp
+theorem BPre.stk_args {s : State} (h : BPre s) : (stkR s).Disjoint ⟨argAddr s 0, 12⟩ := by
+  have h1 := h.sp_room
+  have h2 := h.sp_fit
+  refine Region.disjoint_of_le (Or.inl ?_) ?_ ?_ <;> simp only [argAddr] <;> bv_omega
 
-/-- The stack the frames and the call use, as `below`. -/
-theorem stk_eq : (⟨(s.gpr .esp).setWidth 64 - 100#64, 100⟩ : Region) = below (s.gpr .esp) 100 := by
-  simp only [below]; rw [VG.X86.Taint.sub_setWidth hp.sp_room]
+theorem BPre.stk_ret {s : State} (h : BPre s) : (stkR s).Disjoint (retR s) := by
+  have h1 := h.sp_room
+  have h2 := h.sp_fit
+  refine Region.disjoint_of_le (Or.inl ?_) ?_ ?_ <;> bv_omega
 
-/-- A range of the stack below `esp - k`, among the 100 bytes. -/
-theorem stk_sub {a k : Nat} (h : a + k ≤ 100) :
-    Region.Sub (below (s.gpr .esp - BitVec.ofNat 32 k) a) (below (s.gpr .esp) 100) :=
-  below_inner h hp.sp_room
+theorem BPre.args {s : State} (h : BPre s) : Args s 3 2 :=
+  ⟨by rw [h.rd]; simp, by have := h.sp_fit; omega_using [this], by decide, by rw [h.wr]; simp, h.sc_fit,
+    h.args_sc, h.ret_sc⟩
 
-theorem below_out {a k : Nat} (h : a + k ≤ 100) :
-    (below (s.gpr .esp - BitVec.ofNat 32 k) a).Disjoint (outR s) := by
-  have := hp.stk_out; rw [hp.stk_eq] at this; exact this.sub_left (hp.stk_sub h)
+/-- The arguments lie apart from what the code writes. -/
+theorem BPre.args_wr {s : State} (h : BPre s) :
+    ∀ r ∈ s.wr ++ [below (s.gpr .esp) 20], (⟨argAddr s 0, 4 * 3⟩ : Region).Disjoint r := by
+  rw [h.wr, ← stkR_below h.sp_room]
+  simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false]
+  rintro r (rfl | rfl | rfl)
+  · exact h.args_out
+  · exact h.args_sc
+  · exact h.stk_args.symm
 
-theorem below_sc {a k : Nat} (h : a + k ≤ 100) :
-    (below (s.gpr .esp - BitVec.ofNat 32 k) a).Disjoint (scR (arg s 2)) := by
-  have := hp.stk_sc; rw [hp.stk_eq] at this; exact this.sub_left (hp.stk_sub h)
+section
+variable (σ : State)
+/-- The working space and the scalar, from the entry state `σ`. -/
+abbrev bsX : Addr := (arg σ 2).setWidth 64
+abbrev kX : Nat := Spec.X448.decodeScalar448 (Spec.X448.bytesAt σ.mem ((arg σ 1).setWidth 64) 56)
+end
 
-theorem below_scalar {a k : Nat} (h : a + k ≤ 100) :
-    (below (s.gpr .esp - BitVec.ofNat 32 k) a).Disjoint (scalarR s) := by
-  have := hp.stk_scalar; rw [hp.stk_eq] at this; exact this.sub_left (hp.stk_sub h)
+theorem pow256_le {a n t : Nat} (ha : a ≤ n) (ht : 8 * n ≤ t) : 256 ^ a ≤ 2 ^ t := by
+  refine Nat.le_trans (Nat.pow_le_pow_right (by decide) ha) ?_
+  rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul]
+  exact Nat.pow_le_pow_right (by decide) ht
 
-theorem top_out {a : Nat} (h : a ≤ 100) : (below (s.gpr .esp) a).Disjoint (outR s) := by
-  have := hp.below_out (a := a) (k := 0) (by omega_using [h]); rwa [BitVec.sub_zero] at this
+/-- The decoded scalar's bits from 448 up are zero. -/
+theorem decodeScalar448_top (kb : List Byte) {t : Nat} (ht : 448 ≤ t) :
+    (Spec.X448.decodeScalar448 kb >>> t) &&& 1 = 0 := by
+  have hlt : Spec.X448.decodeScalar448 kb < 2 ^ t := by
+    rw [Spec.X448.decodeScalar448, VG.Proof.X448.decodeLittleEndian_eq]
+    exact Nat.lt_of_lt_of_le (VG.Proof.X25519.leNum_lt _) (pow256_le (List.length_take_le _ _) ht)
+  rw [Nat.shiftRight_eq_div_pow, Nat.div_eq_of_lt hlt]
+  rfl
 
-theorem top_sc {a : Nat} (h : a ≤ 100) : (below (s.gpr .esp) a).Disjoint (scR (arg s 2)) := by
-  have := hp.below_sc (a := a) (k := 0) (by omega_using [h]); rwa [BitVec.sub_zero] at this
+/-! ## The entry -/
 
-theorem top_scalar {a : Nat} (h : a ≤ 100) : (below (s.gpr .esp) a).Disjoint (scalarR s) := by
-  have := hp.below_scalar (a := a) (k := 0) (by omega_using [h]); rwa [BitVec.sub_zero] at this
+/-- The bytes of bits 448–455 at `BITS` are zero. -/
+theorem zeroTop_ok {s : State} {base : Addr} (hs : Scr s base) :
+    WP isa (.block zeroTop) s fun t =>
+      (∀ j < 8, t.mem (off base (BITS + 448 + j)) = 0) ∧ Outside base (BITS + 448) 8 s.mem t.mem ∧
+        Keeps [.edx] s t := by
+  have hB : BITS = 3072 := rfl
+  unfold zeroTop
+  refine wp_mov rfl fun u hu => ?_
+  obtain ku : Keeps [.edx] s u := hu.rest (by decide)
+  obtain hsu := hs.of_keeps ku (by decide)
+  let inv := fun n (t : State) =>
+    (∀ j < n, t.mem (off base (BITS + 448 + j)) = 0) ∧ Outside base (BITS + 448) 8 u.mem t.mem ∧ Keeps [] u t
+  obtain step : ∀ n t, n < 8 → inv n t →
+      WP isa (.block [.store8 (sc (BITS + 448 + n)) .dl]) t (inv (n + 1)) := by
+    intro n t hn ⟨tf, tm, tk⟩
+    refine WP.mono (storeByte_ok (hsu.of_keeps tk (by decide)) (d := BITS + 448 + n) (by omega_using [hB, hn]))
+      fun v ⟨vm, vk⟩ => ⟨fun j hj => ?_, tm.trans ?_, tk.trans vk⟩
+    · rw [vm, writeW8_apply]
+      obtain eq : off base (BITS + 448 + j) = off base (BITS + 448 + n) ↔ j = n := by
+        rw [off_eq_iff base (by omega_using [hB, hj, hn]) (by omega_using [hB, hn])]
+        omega_using []
+      by_cases he : j = n
+      · rw [ite_eq_left (eq.mpr he), tk.1 _ (by decide), hu.gpr]; rfl
+      · rw [ite_eq_right (fun h => he (eq.mp h))]; exact tf j (by omega_using [hj, he])
+    · intro x hx
+      rw [vm]
+      exact writeW8_outside _ _ _ (by omega_using [hB, hn]) (by omega_using [hn, hx])
+  refine WP.mono (wp_range_flatMap (M := isa) (N := 8) inv step 8 (by decide) u
+    ⟨fun _ hj => absurd hj (Nat.not_lt_zero _), Outside.refl _ _ _ _, Keeps.refl _ _⟩) fun t ⟨tf, tm, tk⟩ =>
+    ⟨tf, by rw [← hu.mem]; exact tm, ku.trans (tk.mono (by simp))⟩
 
-end BPre
+/-- After the entry, from the entry state `σ`. -/
+structure XMid (σ s : State) : Prop where
+  pre : BPre σ
+  fe : FE bsX σ s
+  rd : s.rd = σ.rd
+  saved : Saved (bsX σ) σ.gpr s.mem
+  bits : BitsG bsX kX σ s
+  start : ∀ s', s'.gpr .esi = BitVec.ofNat 32 114 → (∀ r, r ≠ .esi → s'.gpr r = s.gpr r) →
+    s'.mem = s.mem → s'.rd = s.rd → s'.wr = s.wr → CombInv (bsX σ) (kX σ) s s' 114
 
-/-! ## The frame -/
+theorem entryB_stage {s₀ : State} (h : BPre s₀) : WP isa baseEntry s₀ (XMid s₀) := by
+  have hA := h.args
+  have hB : BITS = 3072 := rfl
+  obtain hin : Input s₀ (bsX s₀) (arg s₀ 1) 56 :=
+    Input.of_region h.scalar_fit (by rw [h.rd]; simp) h.scalar_sc
+  unfold baseEntry
+  refine WP.seq (WP.mono (Proof.Ed448.X86.save_ok hA) fun s₁ ⟨hs₁, sv₁, o₁, k₁⟩ => ?_)
+  refine WP.seq (WP.mono (initSlots_ok hs₁) fun s₂ ⟨l₂, o₂, k₂⟩ => ?_)
+  obtain hs₂ := hs₁.of_keeps k₂ (by decide)
+  refine WP.seq (WP.mono (zeroTop_ok hs₂) fun s₃ ⟨z₃, o₃, k₃⟩ => ?_)
+  obtain hs₃ := hs₂.of_keeps k₃ (by decide)
+  obtain k03 : Keeps [.eax, .ebx, .ebp, .edi, .edx] s₀ s₃ :=
+    (k₁.mono (by decide)).trans ((k₂.mono (by decide)).trans (k₃.mono (by decide)))
+  obtain o03 : Outside (bsX s₀) 0 8192 s₀.mem s₃.mem :=
+    (o₁.mono (by omega_using []) (by omega_using [])).trans ((o₂.mono (by omega_using []) (by omega_using [])).trans
+      (o₃.mono (by omega_using []) (by omega_using [hB])))
+  unfold bits
+  refine WP.seq (hA.load (i := 1) (k03.1 _ (by decide)) k03.2.1 k03.2.2 o03 (by decide)
+    fun s₄ u₄ => WP.block_nil ?_)
+  obtain hs₄ := hs₃.of_upd u₄ (by decide)
+  refine WP.mono (bitsData_ok (k := (arg s₀ 1).setWidth 64) hs₄ (by rw [u₄.gpr]) (by rw [u₄.gpr]; exact hin.fit)
+    (by rw [u₄.rd, u₄.wr, k03.2.1, k03.2.2]; exact hin.read) hin.far) fun s₅ ⟨k₅, o₅, bits₅⟩ => ?_
+  rw [u₄.mem, bytesAt_outside o03 hin.far] at bits₅
+  obtain hs₅ := hs₄.of_keeps k₅ (by decide)
+  obtain bits : BitsG bsX kX s₀ s₅ := fun t ht => by
+    rcases Nat.lt_or_ge t 448 with h448 | h448
+    · exact bits₅ t h448
+    · rw [o₅ _ (Or.inr (by rw [ofs_off' _ (by omega_using [hB, ht])]; omega_using [h448])), u₄.mem,
+        decodeScalar448_top _ h448, show BITS + t = BITS + 448 + (t - 448) by omega_using [h448]]
+      exact z₃ (t - 448) (by omega_using [ht, h448])
+  obtain slotOut : ∀ i : Index, ∀ j < 28,
+      limbs s₅.mem (bsX s₀) (slot i.val) j = limbs s₂.mem (bsX s₀) (slot i.val) j := fun i j hj => by
+    have hi := i.isLt
+    rw [o₅.limbs (d := slot i.val) (Or.inl (by simp only [slot]; omega_using [hB, hi]))
+        (by simp only [slot]; omega_using [hi]) hj, u₄.mem,
+      o₃.limbs (d := slot i.val) (Or.inl (by simp only [slot]; omega_using [hB, hi]))
+        (by simp only [slot]; omega_using [hi]) hj]
+  obtain e₅ : ∀ i : Index, E s₅.mem (bsX s₀) i = Proof.X448.toFe (Impl.Ed448.X86.initVal i.val) := fun i => by
+    rw [← initSlots_E l₂ i]
+    exact congrArg Proof.X448.toFe (valN_congr (slotOut i))
+  obtain b₅ : BoundedEnv s₅.mem (bsX s₀) := fun i j hj => by
+    rw [slotOut i j hj]; exact initSlots_bounded l₂ i j hj
+  obtain ⟨er, eq, ed⟩ := initE _ e₅
+  obtain k05 : Keeps [.eax, .ebx, .ebp, .edi, .edx, .esi, .ecx] s₀ s₅ :=
+    (k03.mono (by decide)).trans ((u₄.rest (by decide)).trans (k₅.mono (by decide)))
+  obtain sp₅ : s₅.gpr .esp = s₀.gpr .esp := k05.1 _ (by decide)
+  obtain hc₅ : CallCtx s₅ (bsX s₀) := ⟨by rw [sp₅]; exact h.sp_room, by
+    simp only [callStk, sp₅]; rw [← stkR_below h.sp_room]; exact h.stk_sc.symm⟩
+  obtain o35 : Outside (bsX s₀) 0 8192 s₃.mem s₅.mem := by
+    rw [← u₄.mem]; exact o₅.mono (by omega_using []) (by omega_using [hB])
+  obtain ws : (⟨bsX s₀, 8192⟩ : Region) ∈ s₀.wr ++ [below (s₀.gpr .esp) 20] := by
+    rw [h.wr]; simp
+  refine ⟨h, ⟨⟨hs₅, hc₅, b₅⟩, sp₅, k05.2.2, (Outside.frame (o03.trans o35)).mono fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact ws⟩, k05.2.1,
+    (((sv₁.outside o₂ (by decide)).outside o₃ (by decide)).outside (u₄.mem ▸ o₅) (by decide)), bits,
+    fun s' h1 h2 h3 h4 h5 => ?_⟩
+  have k' : Keeps (.esi :: workRegs) s₅ s' :=
+    ⟨fun r hr => h2 r (fun e => hr (by subst r; exact List.mem_cons_self)), h4, h5⟩
+  exact ⟨hs₅.of_keeps k' (by decide), hc₅.keep (h2 _ (by decide)), h3 ▸ b₅, k', h1,
+    h3 ▸ WsOut2.refl _ _ _ _ _ _, by rw [h3, er]; rfl, by rw [h3]; exact congrArg Spec.Ed448.Point.Z eq,
+    by rw [h3]; exact ed⟩
 
-theorem baseFrame_get : ∀ j (hj : j < 15),
-    baseFrame[j]'(by simpa [baseFrame] using hj) = if j = 0 then .ebx else if j = 14 then .edx else .eax := by
-  decide
+/-! ## The comb, the squares and the inversion -/
 
-theorem baseFrame_esp : Reg.esp ∉ baseFrame := by decide
+/-- After the comb, which started in `s₄`. -/
+def XL (σ s : State) : Prop := ∃ s₄, XMid σ s₄ ∧ CombInv (bsX σ) (kX σ) s₄ s 0 ∧ FE bsX σ s
 
-theorem baseFrame_length : baseFrame.length = 15 := rfl
+theorem loopB_stage {σ s : State} (h : XMid σ s) : WP isa Impl.Ed448.X86.combLoop s (XL σ) :=
+  WP.mono (h.fe.wp (NoSp.of_all (by lit_decide)) (by lit_decide)
+    (Q := fun t => CombInv (bsX σ) (kX σ) s t 0) (WP.mono (combLoop_ok h.bits h.start) fun t ht =>
+      ⟨⟨ht.scr, ht.ctx, ht.bounded⟩, ht.regs.1 _ (by decide), ht.regs.2.2, ht⟩))
+    fun t ⟨fe, ht⟩ => ⟨s, h, ht, fe⟩
 
-/-- The frame's base, 60 bytes below `esp`. -/
-theorem pushed_esp60 (s : State) :
-    (pushed baseFrame s).gpr .esp = s.gpr .esp - BitVec.ofNat 32 60 := by
-  rw [pushed_esp]; rfl
+/-- `X²` and `Y²`. -/
+def uFields : List FieldOp := [.mul 2 0 0, .mul 1 1 1]
 
-/-- Word `w` of the frame: the base point's word `w` (for `w < 14`), then the
-caller's `ebx`. -/
-theorem frame_word {s : State} (hn : 60 ≤ (s.gpr .esp).toNat) {w : Nat} (hw : w < 15) :
-    (pushed baseFrame s).mem.readW (((s.gpr .esp - BitVec.ofNat 32 60).setWidth 64) +
-      BitVec.ofNat 64 (4 * w)) 32 =
-      if w = 14 then s.gpr .ebx else if w = 0 then s.gpr .edx else s.gpr .eax := by
-  have h := pushed_word (s := s) baseFrame_esp (by rw [baseFrame_length]; omega_using [hn])
-    (i := w) (by rw [baseFrame_length]; exact hw)
-  rw [pushed_esp60] at h
-  rw [← addr_eq (x := s.gpr .esp - BitVec.ofNat 32 60) (k := 4 * w)
-    (by rw [sub_toNat (by omega_using [hn])]; have := (s.gpr .esp).isLt; omega_using [hw])]
-  refine h.trans ?_
-  simp only [baseFrame_length]
-  rw [baseFrame_get _ (by omega_using [])]
-  by_cases h14 : w = 14
-  · subst h14; rfl
-  · by_cases h0 : w = 0
-    · subst h0; rfl
-    · rw [ite_eq_right (by omega_using [hw, h14]), ite_eq_right (by omega_using [h0]), ite_eq_right h14, ite_eq_right h0]
+theorem uFields_impl : uOps = uFields.map FieldOp.impl := by decide +kernel
 
-/-- The base point's bytes, as the frame holds them. -/
-theorem five_bytes : ∀ i < 56,
-    ((if i / 4 = 0 then (5 : BitVec 32) else 0).extractLsb' (8 * (i % 4)) 8) =
-      Spec.X448.basePoint.getD i 0 := by decide
+/-- Before the last block: the field arithmetic's invariant, the saved registers, and the
+quotient's factors in slots 1 and 21. -/
+structure XI (σ s : State) : Prop where
+  pre : BPre σ
+  fe : FE bsX σ s
+  rd : s.rd = σ.rd
+  saved : Saved (bsX σ) σ.gpr s.mem
+  val : E s.mem (bsX σ) 1 * E s.mem (bsX σ) 21 =
+    (comb (kX σ) 114).Y * (comb (kX σ) 114).Y *
+      Proof.X448.invert ((comb (kX σ) 114).X * (comb (kX σ) 114).X)
 
-/-- The 56 bytes at the frame's base are the base point's u-coordinate, with
-`edx = 5` and `eax = 0` when it is pushed. -/
-theorem frame_bytes {s : State} (hn : 60 ≤ (s.gpr .esp).toNat) (h5 : s.gpr .edx = 5) (h0 : s.gpr .eax = 0) :
-    Spec.X448.bytesAt (pushed baseFrame s).mem ((s.gpr .esp - BitVec.ofNat 32 60).setWidth 64) 56 =
-      Spec.X448.basePoint := by
-  refine List.ext_getElem (by simp [Spec.X448.bytesAt, Spec.X448.basePoint]) fun i hi _ => ?_
-  have hi' : i < 56 := by simpa [Spec.X448.bytesAt] using hi
-  simp only [Spec.X448.bytesAt, List.getElem_map, List.getElem_range]
-  rw [List.getElem_eq_getD 0, ← five_bytes i hi']
-  have e : (s.gpr .esp - BitVec.ofNat 32 60).setWidth 64 + BitVec.ofNat 64 i =
-      (s.gpr .esp - BitVec.ofNat 32 60).setWidth 64 + BitVec.ofNat 64 (4 * (i / 4)) +
-        BitVec.ofNat 64 (i % 4) := by
-    rw [Offset.add_add]; congr 2; omega_using []
-  rw [e, Mem.readW_byte (pushed baseFrame s).mem _ (i := i % 4) (Nat.mod_lt _ (by decide)), frame_word hn (by omega_using [hi']),
-    ite_eq_right (by omega_using [hi'])]
-  by_cases h : i / 4 = 0
-  · rw [ite_eq_left h, ite_eq_left h, h5]
-  · rw [ite_eq_right h, ite_eq_right h, h0]
+/-- After the squares. -/
+structure XU (σ s : State) : Prop where
+  pre : BPre σ
+  fe : FE bsX σ s
+  rd : s.rd = σ.rd
+  saved : Saved (bsX σ) σ.gpr s.mem
+  x : E s.mem (bsX σ) 2 = (comb (kX σ) 114).X * (comb (kX σ) 114).X
+  y : E s.mem (bsX σ) 1 = (comb (kX σ) 114).Y * (comb (kX σ) 114).Y
 
-/-! ## The call of `vg_x448` -/
+theorem squaresB_stage {σ s : State} (h : XL σ s) :
+    WP isa (ops (uFields.map FieldOp.impl)) s (XU σ) := by
+  obtain ⟨s₄, m, L, fe⟩ := h
+  refine WP.mono (ops_FE fe uFields) fun t ⟨fe', k, e⟩ => ?_
+  obtain hX : E s.mem (bsX σ) 0 = (comb (kX σ) 114).X := congrArg Spec.Ed448.Point.X L.r
+  obtain hY : E s.mem (bsX σ) 1 = (comb (kX σ) 114).Y := congrArg Spec.Ed448.Point.Y L.r
+  exact ⟨m.pre, fe', k.regs.2.1.trans (L.regs.2.1.trans m.rd),
+    (m.saved.wsout2 L.mem (by decide) (by decide)).wsout2 k.mem (by decide) (by decide),
+    by rw [e, ← hX]; rfl, by rw [e, ← hY]; rfl⟩
 
-theorem sub_sub' (x : BitVec 32) (a b : Nat) :
-    x - BitVec.ofNat 32 a - BitVec.ofNat 32 b = x - BitVec.ofNat 32 (a + b) := by
-  rw [BitVec.sub_sub, BitVec.ofNat_add]
+theorem invertB_stage {σ s : State} (h : XU σ s) : WP isa Impl.X448.X86.invert s (XI σ) := by
+  have fe := h.fe
+  refine WP.mono (fe.wp (NoSp.of_all (by lit_decide)) (by lit_decide)
+    (Q := fun t => IKeep (bsX σ) s t ∧ E t.mem (bsX σ) = invEnv (E s.mem (bsX σ)))
+    (WP.mono (invert_ok fe.fin.scr fe.fin.ctx fe.fin.bounded) fun t ⟨k, b, e⟩ =>
+      ⟨⟨k.scr fe.fin.scr, k.ctx fe.fin.ctx, b⟩, k.regs.1 _ (by decide), k.regs.2.2, k, e⟩))
+    fun t ⟨fe', k, e⟩ => ?_
+  exact ⟨h.pre, fe', k.regs.2.1.trans h.rd, h.saved.wsout2 k.mem (by decide) (by decide),
+    by rw [e, invEnv_x2, invEnv_eval, h.x, h.y]⟩
 
-/-- The arguments of `vg_x448` pushed, last to first. -/
-abbrev callRegs : List Reg := [.edx, .ebx, .ecx, .eax]
+/-! ## The output -/
 
-/-- What `vg_x448` reads: the scalar, the base point in the frame, and its
-arguments, which the call's frame holds. -/
-abbrev rdC (s : State) : List Region :=
-  [scalarR s, below (s.gpr .esp - BitVec.ofNat 32 4) 56, below (s.gpr .esp - BitVec.ofNat 32 60) 16]
-
-/-- What `vg_x448` writes. -/
-abbrev wrC (s : State) : List Region := [outR s, scR (arg s 2)]
-
-/-- The state the call of `vg_x448` is made from, after `baseArgs`. -/
-structure AtCall (s q : State) : Prop where
-  esp : q.gpr .esp = s.gpr .esp - BitVec.ofNat 32 60
-  eax : q.gpr .eax = arg s 0
-  ecx : q.gpr .ecx = arg s 1
-  ebx : q.gpr .ebx = s.gpr .esp - BitVec.ofNat 32 60
-  edx : q.gpr .edx = arg s 2
-  rd : q.rd = s.rd
-  wr : q.wr = below (s.gpr .esp) 60 :: s.wr
-
-theorem callPre {s q : State} (hp : BPre s) (h : AtCall s q) :
-    CallPre Proof.X448.x448X86 callRegs (rdC s) (wrC s) q := by
-  have hn := hp.sp_room
-  have hs := hp.sp_fit
-  have he : 4 * callRegs.length + 4 ≤ (q.gpr .esp).toNat := by
-    rw [h.esp, sub_toNat (by omega_using [hn])]; simp only [List.length_cons, List.length_nil]; omega_using [hn]
-  have a : ∀ i (hi : i < 4), arg (pushed callRegs q).callEntry i = q.gpr callRegs[3 - i] :=
-    fun i hi => callEntry_arg he (by decide) hi
-  have a0 := a 0 (by decide); have a1 := a 1 (by decide)
-  have a2 := a 2 (by decide); have a3 := a 3 (by decide)
-  simp only [List.getElem_cons_succ, List.getElem_cons_zero, Nat.reduceSub] at a0 a1 a2 a3
-  rw [h.eax] at a0; rw [h.ecx] at a1; rw [h.ebx] at a2; rw [h.edx] at a3
-  have cesp : (pushed callRegs q).callEntry.gpr .esp = s.gpr .esp - BitVec.ofNat 32 80 := by
-    rw [callEntry_esp', h.esp, sub_sub']; rfl
-  have cargs : argAddr (pushed callRegs q).callEntry 0 =
-      (s.gpr .esp - BitVec.ofNat 32 60 - BitVec.ofNat 32 16).setWidth 64 := by
-    rw [callEntry_argAddr0, h.esp]; rfl
-  have aw : ∀ i, arg ((pushed callRegs q).callEntry.withRegions (rdC s) (wrC s)) i =
-      arg (pushed callRegs q).callEntry i := fun _ => rfl
-  have cesp' : ((pushed callRegs q).callEntry.withRegions (rdC s) (wrC s)).gpr .esp =
-      s.gpr .esp - BitVec.ofNat 32 80 := cesp
-  have cargs' : argAddr ((pushed callRegs q).callEntry.withRegions (rdC s) (wrC s)) 0 =
-      (s.gpr .esp - BitVec.ofNat 32 60 - BitVec.ofNat 32 16).setWidth 64 := cargs
-  refine ⟨?_, ?_, ?_⟩
-  · simp only [Proof.X448.x448X86, aw, a0, a1, a2, a3, cesp', cargs']
-    have rpt : (⟨(s.gpr .esp - BitVec.ofNat 32 60).setWidth 64, 56⟩ : Region) =
-        below (s.gpr .esp - BitVec.ofNat 32 4) 56 := by
-      show _ = (⟨(s.gpr .esp - BitVec.ofNat 32 4 - BitVec.ofNat 32 56).setWidth 64, 56⟩ : Region)
-      rw [sub_sub']
-    have rargs : (⟨(s.gpr .esp - BitVec.ofNat 32 60 - BitVec.ofNat 32 16).setWidth 64, 16⟩ : Region) =
-        below (s.gpr .esp - BitVec.ofNat 32 60) 16 := rfl
-    have rret : (⟨(s.gpr .esp - BitVec.ofNat 32 80).setWidth 64, 4⟩ : Region) =
-        below (s.gpr .esp - BitVec.ofNat 32 76) 4 := by
-      show _ = (⟨(s.gpr .esp - BitVec.ofNat 32 76 - BitVec.ofNat 32 4).setWidth 64, 4⟩ : Region)
-      rw [sub_sub']
-    have h80 : (s.gpr .esp - BitVec.ofNat 32 80).toNat = (s.gpr .esp).toNat - 80 := sub_toNat (by omega_using [hn])
-    have h60 : (s.gpr .esp - BitVec.ofNat 32 60).toNat = (s.gpr .esp).toNat - 60 := sub_toNat (by omega_using [hn])
-    have rstk : (⟨(s.gpr .esp - BitVec.ofNat 32 80).setWidth 64 - 20#64, 20⟩ : Region) =
-        below (s.gpr .esp - BitVec.ofNat 32 80) 20 := by
-      show _ = (⟨(s.gpr .esp - BitVec.ofNat 32 80 - BitVec.ofNat 32 20).setWidth 64, 20⟩ : Region)
-      rw [VG.X86.Taint.sub_setWidth (e := s.gpr .esp - BitVec.ofNat 32 80) (m := 20) (by omega_using [hn, h80])]
-    rw [rpt, rargs, rret, rstk]
-    refine ⟨?_, rfl, hp.out_sc, hp.scalar_sc, hp.below_sc (by omega_using []), hp.below_out (by omega_using []),
-      hp.below_sc (by omega_using []), hp.below_out (by omega_using []), hp.below_sc (by omega_using []), hp.out_fit, hp.scalar_fit,
-      by omega_using [h60], hp.sc_fit, by omega_using [h80], by omega_using [hn, h80], hp.below_out (by omega_using []), hp.below_sc (by omega_using [])⟩
-    show [scalarR s, below (s.gpr .esp - BitVec.ofNat 32 4) 56, below (s.gpr .esp - BitVec.ofNat 32 60) 16] = _
-    rw [← rpt, ← rargs]
-  · rw [h.rd, h.wr, h.esp, hp.rd, hp.wr, show 4 * callRegs.length = 16 from rfl]
-    refine Covers.of_sub fun r hr => ?_
-    simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with (rfl | rfl | rfl) | rfl | rfl
-    · exact ⟨_, List.mem_append_left _ List.mem_cons_self, 0, (BitVec.add_zero _).symm, Nat.le_of_eq (Nat.zero_add _)⟩
-    · refine ⟨below (s.gpr .esp) 60, List.mem_append_right _ (List.mem_cons_of_mem _ List.mem_cons_self),
-        0, ?_, by show 0 + 56 ≤ 60; omega_using []⟩
-      rw [BitVec.add_zero]; show (s.gpr .esp - BitVec.ofNat 32 4 - BitVec.ofNat 32 56).setWidth 64 = _
-      rw [sub_sub']
-    · exact ⟨_, List.mem_append_right _ List.mem_cons_self, 0, (BitVec.add_zero _).symm,
-        Nat.le_of_eq (Nat.zero_add _)⟩
-    · exact ⟨_, List.mem_append_right _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self)),
-        0, (BitVec.add_zero _).symm, Nat.le_of_eq (Nat.zero_add _)⟩
-    · exact ⟨_, List.mem_append_right _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _
-        (List.mem_cons_of_mem _ List.mem_cons_self))), 0, (BitVec.add_zero _).symm, Nat.le_of_eq (Nat.zero_add _)⟩
-  · rw [h.wr, hp.wr]
-    refine Covers.of_mem fun r hr => ?_
+/-- X448's `finish`, for a function of `n` arguments whose first is the output's address. -/
+theorem finishX_ok {s₀ s : State} {n sc : Nat} (hA : Args s₀ n sc) (h0 : 0 < n)
+    (hsp : s.gpr .esp = s₀.gpr .esp) (hr : s.rd = s₀.rd) (hwr : s.wr = s₀.wr)
+    {base : Addr} (hm : Frame (s₀.wr ++ [below (s₀.gpr .esp) 20]) s₀.mem s.mem)
+    (hawr : ∀ r ∈ s₀.wr ++ [below (s₀.gpr .esp) 20], (⟨argAddr s₀ 0, 4 * n⟩ : Region).Disjoint r)
+    (hs : Scr s base) (hc : CallCtx s base) (hb : BoundedEnv s.mem base)
+    (hout : outR s₀ ∈ s₀.wr) (hofit : (arg s₀ 0).toNat + 56 ≤ 2 ^ 32)
+    (hd : (outR s₀).Disjoint ⟨base, 8192⟩)
+    {g : Reg → BitVec 32} (sv : Saved base g s.mem) :
+    WP isa finish s fun t =>
+      Spec.X448.bytesAt t.mem ((arg s₀ 0).setWidth 64) 56 =
+        Spec.X448.encodeUCoordinate (E s.mem base 1 * E s.mem base 21) ∧
+      (∀ p ∈ savedSlots, t.gpr p.1 = g p.1) ∧ t.gpr .esp = s.gpr .esp ∧
+      Frame (s₀.wr ++ [below (s₀.gpr .esp) 20]) s.mem t.mem := by
+  obtain hfar : ∀ j < 8192, 56 ≤ ofs ((arg s₀ 0).setWidth 64) (off base j) := fun j hj => far_out hd hj
+  obtain hw56 : ∀ j < 56, InRegions s₀.wr (off ((arg s₀ 0).setWidth 64) j) 1 := fun j hj =>
+    ⟨_, hout, Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])⟩
+  obtain ws : (⟨base, 8192⟩ : Region) ∈ s₀.wr ++ [below (s₀.gpr .esp) 20] :=
+    List.mem_append_left _ (hwr ▸ hs.wr)
+  obtain ws1 : ∀ {m m' : Mem}, Outside base 0 8192 m m' → Frame (s₀.wr ++ [below (s₀.gpr .esp) 20]) m m' :=
+    fun h => (Outside.frame h).mono fun r hr => by rw [List.mem_singleton.mp hr]; exact ws
+  unfold finish
+  refine WP.seq (WP.mono (mulCall_ok hs hc (o := X2) (a := X2) (b := T7) (by decide) (by decide)
+    (by decide) (hb 1) (hb 21)) fun u ⟨uk, ub, uv⟩ => ?_)
+  have us := hs.of_keeps uk.keeps (by decide)
+  simp only [List.append_assoc]
+  rw [WP.block_append_iff]
+  refine WP.mono (freeze_ok us ub) fun v ⟨vb, vv, vm, vk⟩ => ?_
+  have vs := us.of_keeps vk (by decide)
+  obtain stk : callStk s = below (s₀.gpr .esp) 20 := by simp only [callStk, hsp]
+  obtain frames : Frame (s₀.wr ++ [below (s₀.gpr .esp) 20]) s.mem v.mem := by
+    refine (uk.ext.mono fun r hr => ?_).trans (ws1 (vm.whole (by decide)))
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self)
-    · exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self))
+    · exact ws
+    · rw [stk]; exact List.mem_append_right _ (List.mem_singleton_self _)
+  have ksv := uk.keeps.then vk
+  have hvsp : v.gpr .esp = s₀.gpr .esp := (ksv.1 _ (by decide)).trans hsp
+  refine hA.loadF hvsp (ksv.2.1.trans hr) (ksv.2.2.trans hwr) (hm.trans frames) hawr h0 fun v' hv => ?_
+  have vs' := vs.of_upd hv (by decide)
+  change WP isa (.block ((List.range 28).flatMap packLimb ++ restore)) v' _
+  rw [WP.block_append_iff]
+  refine WP.mono (output_ok vs' (hv.mem ▸ vb) (by rw [hv.gpr])
+    (by rw [hv.gpr]; exact hofit)
+    (by intro j hj; rw [hv.wr, ksv.2.2, hwr]; exact hw56 j hj) hfar) fun w ⟨wv, wm, wk⟩ => ?_
+  have ws' := vs'.of_keeps wk (by decide)
+  have svv := (sv.wsfield uk.mem (by decide)).field vm (by decide)
+  have svw : Saved base g w.mem := svv.of_readW fun p hp => by
+    have := savedSlots_bound p hp
+    rw [← hv.mem]; exact output_word wm (by decide) (by omega_using [this]) hfar
+  refine WP.mono (restore_ok ws' svw) fun t ⟨tr, tm, tk⟩ => ⟨?_, tr, ?_, ?_⟩
+  · rw [tm, wv, hv.mem, vv, encodeUCoordinate_eq]
+    refine congrArg (VG.Proof.X25519.leBytes 56) ?_
+    exact congrArg Fin.val uv
+  · rw [tk.1 _ (by decide), wk.1 _ (by decide), hv.other _ (by decide), ksv.1 _ (by decide)]
+  · rw [tm]
+    rw [hv.mem] at wm
+    exact frames.trans ((Outside.frame wm).mono fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact List.mem_append_left _ hout)
 
-/-! ## What the frames leave alone -/
-
-namespace BPre
-variable {s : State} (hp : BPre s)
-include hp
-
-theorem argAddr_eq (i : Nat) (hi : i < 3) :
-    argAddr s i = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 + BitVec.ofNat 64 (4 * i) := by
-  have := hp.sp_fit
-  rw [Offset.add_add, argAddr, ← addr_eq (by omega_using [hi, this])]; rfl
-
-/-- The `n ≤ 100` bytes below `esp` are apart from the arguments. -/
-theorem args_below {n : Nat} (hn : n ≤ 100) :
-    (⟨argAddr s 0, 12⟩ : Region).Disjoint (below (s.gpr .esp) n) := by
-  have := hp.sp_room
-  have h := Offset.disjoint_below_above ((s.gpr .esp).setWidth 64) (m := n) (a := 4) (l := 12) (by omega_using [hn])
-  have e : argAddr s 0 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 := by
-    rw [hp.argAddr_eq 0 (by decide)]; exact BitVec.add_zero _
-  rw [e]; simp only [below]; rw [VG.X86.Taint.sub_setWidth (by omega_using [hn, this])]; exact h.symm
-
-/-- The return address is apart from the `n ≤ 100` bytes below `esp`. -/
-theorem ret_below {n : Nat} (hn : n ≤ 100) :
-    (retR s).Disjoint (below (s.gpr .esp) n) := by
-  have := hp.sp_room
-  have h := Offset.disjoint_below_above ((s.gpr .esp).setWidth 64) (m := n) (a := 0) (l := 4) (by omega_using [hn])
-  rw [BitVec.add_zero] at h
-  simp only [below]; rw [VG.X86.Taint.sub_setWidth (by omega_using [hn, this])]; exact h.symm
-
-/-- An argument, in memory that differs from the entry's only below `esp`. -/
-theorem arg_same {m : Mem} {n : Nat} (hn : n ≤ 100) (hf : Frame [below (s.gpr .esp) n] s.mem m)
-    {i : Nat} (hi : i < 3) : m.readW (argAddr s i) 32 = arg s i := by
-  refine hf.readW (r := ⟨argAddr s 0, 12⟩) ?_ ?_ (by decide)
-  · rw [hp.argAddr_eq i hi, show argAddr s 0 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 by
-      rw [hp.argAddr_eq 0 (by decide)]; exact BitVec.add_zero _]
-    exact Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])
-  · intro r hr; rw [List.mem_singleton.mp hr]; exact hp.args_below hn
-
-/-- The arguments' region, in what the code may read. -/
-theorem arg_in {i : Nat} (hi : i < 3) {rd : List Region} (hrd : rd = s.rd) (wr : List Region) :
-    InRegions (rd ++ wr) (argAddr s i) 4 := by
-  refine ⟨⟨argAddr s 0, 12⟩, by rw [hrd, hp.rd]; simp, ?_⟩
-  rw [hp.argAddr_eq i hi, show argAddr s 0 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 by
-    rw [hp.argAddr_eq 0 (by decide)]; exact BitVec.add_zero _]
-  exact Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])
-
-omit hp in
-/-- The scalar's bytes, in memory that differs from the entry's only in
-regions apart from it. -/
-theorem scalar_same {m : Mem} {rs : List Region}
-    (hf : Frame rs s.mem m) (hd : ∀ r ∈ rs, (scalarR s).Disjoint r) :
-    Spec.X448.bytesAt m ((arg s 1).setWidth 64) 56 = Spec.X448.bytesAt s.mem ((arg s 1).setWidth 64) 56 := by
-  simp only [Spec.X448.bytesAt]
-  refine List.map_congr_left fun i hi => ?_
-  exact hf.bytes (R := scalarR s) hd (by show 56 ≤ 2 ^ 64; omega_using []) (by simpa using hi)
-
-end BPre
-
-/-- A frame's pop into `d` leaves in `d` the last word it pops. -/
-theorem popReg_last (d : Reg) (hd : d ≠ .esp) :
-    ∀ (k : Nat) (s : State), (popReg s d (k + 1)).gpr d =
-      s.mem.readW ((s.gpr .esp + BitVec.ofNat 32 (4 * k)).setWidth 64) 32
-  | 0, s => by
-    simp only [popReg, Nat.mul_zero, BitVec.add_zero]
-    rw [VG.X86.RegUpd.gpr_setReg_of_ne (s := s.setReg d _) _ hd, VG.X86.RegUpd.gpr_setReg_self]
-  | k + 1, s => by
-    rw [popReg, popReg_last d hd k]
-    rw [VG.X86.RegUpd.mem_setReg, VG.X86.RegUpd.mem_setReg, VG.X86.RegUpd.gpr_setReg_self, BitVec.add_assoc,
-      show (4 : BitVec 32) + BitVec.ofNat 32 (4 * k) = BitVec.ofNat 32 (4 * (k + 1)) by
-        rw [show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl, ← BitVec.ofNat_add]; congr 1; omega_using []]
-
-theorem popped_last (d : Reg) (hd : d ≠ .esp) (k : Nat) (s : State) :
-    (popped d (k + 1) s).gpr d = s.mem.readW ((s.gpr .esp + BitVec.ofNat 32 (4 * k)).setWidth 64) 32 :=
-  popReg_last d hd k s
+theorem finishB_stage {σ s : State} (h : XI σ s) :
+    WP isa finish s fun t => abiPreserved σ t ∧
+      Spec.X448.bytesAt t.mem ((arg σ 0).setWidth 64) 56 = Spec.X448.encodeUCoordinate
+        ((comb (kX σ) 114).Y * (comb (kX σ) 114).Y *
+          Proof.X448.invert ((comb (kX σ) 114).X * (comb (kX σ) 114).X)) := by
+  have hp := h.pre
+  have fe := h.fe
+  refine WP.mono (finishX_ok hp.args (by decide) fe.sp h.rd fe.wr fe.frame hp.args_wr fe.fin.scr fe.fin.ctx
+    fe.fin.bounded (by rw [hp.wr]; simp) hp.out_fit hp.out_sc h.saved) fun t ⟨bt, rt, spt, ft⟩ => ?_
+  refine ⟨⟨fun r hr => ?_, ?_⟩, by rw [bt, h.val]⟩
+  · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl
+    · exact rt (.ebx, 0) (by decide)
+    · exact rt (.esi, 4) (by decide)
+    · exact rt (.edi, 8) (by decide)
+    · exact rt (.ebp, 12) (by decide)
+    · rw [spt, fe.sp]
+  · have ret : (retR σ).Contains ((σ.gpr .esp).setWidth 64) 4 := by
+      simpa only [BitVec.add_zero] using
+        Offset.contains_base ((σ.gpr .esp).setWidth 64) (d := 0) (n := 4) (k := 4) (by decide)
+          (by decide)
+    refine (fe.frame.trans ft).readW ret ?_ (by decide)
+    rw [hp.wr, ← stkR_below hp.sp_room]
+    simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false]
+    rintro r (rfl | rfl | rfl)
+    · exact hp.ret_out
+    · exact hp.ret_sc
+    · exact hp.stk_ret.symm
 
 /-! ## The whole function -/
 
-theorem stackUse_x448 : stackUse Impl.X448.X86.x448 ≤ 20 := by lit_decide
-
-theorem noSp_x448 : NoSp Impl.X448.X86.x448 := NoSp.of_all (by lit_decide)
-
-/-- `baseArgs`, from the frame's push: the state of the call (`AtCall`). -/
-theorem baseArgs_ok {s p : State} (hp : BPre s) (esp : p.gpr .esp = s.gpr .esp - BitVec.ofNat 32 60)
-    (hf : Frame [below (s.gpr .esp) 60] s.mem p.mem) (rd : p.rd = s.rd)
-    (wr : p.wr = below (s.gpr .esp) 60 :: s.wr) :
-    WP isa (.block baseArgs) p fun q => AtCall s q ∧ q.mem = p.mem ∧
-      ∀ r, r ≠ .eax → r ≠ .ebx → r ≠ .ecx → r ≠ .edx → q.gpr r = p.gpr r := by
-  have hn := hp.sp_room
-  have hs := hp.sp_fit
-  have ea : ∀ (t : State) (i : Nat), t.gpr .esp = s.gpr .esp - BitVec.ofNat 32 60 → i < 3 →
-      t.ea (at_ .esp (64 + 4 * i)) = argAddr s i := fun t i ht hi => by
-    rw [ea_mk]
-    show (t.gpr .esp + BitVec.ofNat 32 (64 + 4 * i)).setWidth 64 = (s.gpr .esp + BitVec.ofNat 32 (4 + 4 * i)).setWidth 64
-    rw [ht]
-    rw [show 64 + 4 * i = 60 + (4 + 4 * i) by omega_using [], BitVec.ofNat_add, ← BitVec.add_assoc,
-      BitVec.sub_add_cancel]
-  unfold baseArgs
-  refine wp_mov rfl fun q1 v1 => ?_
-  have e1 : q1.gpr .esp = s.gpr .esp - BitVec.ofNat 32 60 := (v1.other _ (by decide)).trans esp
-  refine wp_load (a := argAddr s 0) (ea q1 0 e1 (by decide))
-    (hp.arg_in (by decide) (by rw [v1.rd, rd]) _) fun q2 v2 => ?_
-  have e2 : q2.gpr .esp = s.gpr .esp - BitVec.ofNat 32 60 := (v2.other _ (by decide)).trans e1
-  refine wp_load (a := argAddr s 1) (ea q2 1 e2 (by decide))
-    (hp.arg_in (by decide) (by rw [v2.rd, v1.rd, rd]) _) fun q3 v3 => ?_
-  have e3 : q3.gpr .esp = s.gpr .esp - BitVec.ofNat 32 60 := (v3.other _ (by decide)).trans e2
-  refine wp_load (a := argAddr s 2) (ea q3 2 e3 (by decide))
-    (hp.arg_in (by decide) (by rw [v3.rd, v2.rd, v1.rd, rd]) _) fun q4 v4 => WP.block_nil ?_
-  have m3 : q3.mem = p.mem := by rw [v3.mem, v2.mem, v1.mem]
-  have m2 : q2.mem = p.mem := by rw [v2.mem, v1.mem]
-  have m1 : q1.mem = p.mem := v1.mem
-  refine ⟨⟨(v4.other _ (by decide)).trans e3, ?_, ?_, ?_, ?_, by rw [v4.rd, v3.rd, v2.rd, v1.rd, rd],
-    by rw [v4.wr, v3.wr, v2.wr, v1.wr, wr]⟩, by rw [v4.mem, m3], fun r h0 h1 h2 h3 => ?_⟩
-  · rw [v4.other _ (by decide), v3.other _ (by decide), v2.gpr, m1, hp.arg_same (by decide) hf (by decide)]
-  · rw [v4.other _ (by decide), v3.gpr, m2, hp.arg_same (by decide) hf (by decide)]
-  · rw [v4.other _ (by decide), v3.other _ (by decide), v2.other _ (by decide), v1.gpr, esp]
-  · rw [v4.gpr, m3, hp.arg_same (by decide) hf (by decide)]
-  · rw [v4.other _ h3, v3.other _ h2, v2.other _ h0, v1.other _ h1]
-
-/-- The arguments `vg_x448` reads, from the state of the call. -/
-theorem call_args {s q : State} (hp : BPre s) (h : AtCall s q) :
-    arg (pushed callRegs q).callEntry 0 = arg s 0 ∧ arg (pushed callRegs q).callEntry 1 = arg s 1 ∧
-      arg (pushed callRegs q).callEntry 2 = s.gpr .esp - BitVec.ofNat 32 60 := by
-  have hn := hp.sp_room
-  have he : 4 * callRegs.length + 4 ≤ (q.gpr .esp).toNat := by
-    rw [h.esp, sub_toNat (by omega_using [hn])]; simp only [List.length_cons, List.length_nil]; omega_using [hn]
-  refine ⟨?_, ?_, ?_⟩
-  · rw [callEntry_arg he (by decide) (i := 0) (by decide)]; exact h.eax
-  · rw [callEntry_arg he (by decide) (i := 1) (by decide)]; exact h.ecx
-  · rw [callEntry_arg he (by decide) (i := 2) (by decide)]; exact h.ebx
-
-theorem correctBase {s : State} (hp : BPre s) :
-    WP isa x448Base s fun f => abiPreserved s f ∧ Proof.X448.x448BaseX86.post s f := by
-  have hn := hp.sp_room
-  have hs := hp.sp_fit
+theorem x448Base_main {s₀ : State} (h : BPre s₀) :
+    WP isa x448Base s₀ fun t => abiPreserved s₀ t ∧
+      Spec.X448.bytesAt t.mem ((arg s₀ 0).setWidth 64) 56 = Spec.X448.encodeUCoordinate
+        ((comb (kX s₀) 114).Y * (comb (kX s₀) 114).Y *
+          Proof.X448.invert ((comb (kX s₀) 114).X * (comb (kX s₀) 114).X)) := by
   unfold x448Base
-  refine WP.seq (wp_mov rfl fun t1 u1 => wp_mov rfl fun t2 u2 => WP.block_nil ?_)
-  have g2 : ∀ r, r ≠ .edx → r ≠ .eax → t2.gpr r = s.gpr r := fun r h1 h2 =>
-    (u2.other r h1).trans (u1.other r h2)
-  have esp2 : t2.gpr .esp = s.gpr .esp := g2 _ (by decide) (by decide)
-  have eax2 : t2.gpr .eax = 0 := (u2.other _ (by decide)).trans u1.gpr
-  have edx2 : t2.gpr .edx = 5 := u2.gpr
-  have m2 : t2.mem = s.mem := u2.mem.trans u1.mem
-  have rd2 : t2.rd = s.rd := u2.rd.trans u1.rd
-  have wr2 : t2.wr = s.wr := u2.wr.trans u1.wr
-  have hn2 : 4 * baseFrame.length ≤ (t2.gpr .esp).toNat := by rw [baseFrame_length, esp2]; omega_using [hn]
-  refine WP.frame (by decide) baseFrame_esp (by decide) hn2 (NoSp.of_all (by lit_decide)) ?_
-  -- The frame: the base point, below the caller's `ebx`.
-  have pesp : (pushed baseFrame t2).gpr .esp = s.gpr .esp - BitVec.ofNat 32 60 := by
-    rw [pushed_esp60, esp2]
-  have pf : Frame [below (s.gpr .esp) 60] s.mem (pushed baseFrame t2).mem := by
-    have := pushed_frame (s := t2) baseFrame_esp hn2; rwa [m2, esp2, baseFrame_length] at this
-  have pbytes := frame_bytes (s := t2) (by rw [esp2]; omega_using [hn]) edx2 eax2
-  have pebx := frame_word (s := t2) (by rw [esp2]; omega_using [hn]) (w := 14) (by decide)
-  rw [esp2] at pbytes pebx
-  rw [ite_eq_left rfl, g2 _ (by decide) (by decide)] at pebx
-  refine WP.seq (WP.mono (baseArgs_ok hp pesp pf (by rw [pushed_rd, rd2])
-    (by rw [pushed_wr, esp2, wr2, baseFrame_length])) fun q ⟨hq, qm, qg⟩ => ?_)
-  -- The call.
-  refine WP.callWith (k := Proof.X448.x448X86) x448_ok noSp_x448 (by decide) (by decide)
-    (by rw [hq.esp, sub_toNat (by omega_using [hn])]; have := stackUse_x448; simp only [List.length_cons, List.length_nil]; omega_using [hn, this])
-    (callPre hp hq) fun s' rd' wr' cs' fr' ⟨s₂, m₂, post₂⟩ => ?_
-  obtain ⟨a0, a1, a2⟩ := call_args hp hq
-  have hsu := stackUse_x448
-  have h60 : (s.gpr .esp - BitVec.ofNat 32 60).toNat = (s.gpr .esp).toNat - 60 := sub_toNat (by omega_using [hn])
-  -- The frame's base, and the regions near it.
-  have E60 : (below (s.gpr .esp) 60) = ⟨(s.gpr .esp - BitVec.ofNat 32 60).setWidth 64, 60⟩ := rfl
-  have hlen : 4 * callRegs.length + stackUse Impl.X448.X86.x448 + 4 ≤ 40 := by
-    simp only [List.length_cons, List.length_nil]; omega_using [hsu]
-  have lowE : below (q.gpr .esp) (4 * callRegs.length + stackUse Impl.X448.X86.x448 + 4) =
-      ⟨(s.gpr .esp - BitVec.ofNat 32 60).setWidth 64 -
-        BitVec.ofNat 64 (4 * callRegs.length + stackUse Impl.X448.X86.x448 + 4),
-        4 * callRegs.length + stackUse Impl.X448.X86.x448 + 4⟩ := by
-    simp only [below]; rw [hq.esp, VG.X86.Taint.sub_setWidth (by rw [h60]; omega_using [hn, hlen])]
-  -- What the call leaves of the frame and the arguments, which are apart from what it writes.
-  have keep : ∀ (d n : Nat), d ≤ 100 → n ≤ 100 →
-      (⟨(s.gpr .esp - BitVec.ofNat 32 60).setWidth 64 + BitVec.ofNat 64 d, n⟩ : Region).Disjoint
-        (below (q.gpr .esp) (4 * callRegs.length + stackUse Impl.X448.X86.x448 + 4)) := by
-    intro d n hd hn'
-    rw [lowE]; exact (Offset.disjoint_below_above _ (by omega_using [hlen, hd, hn'])).symm
-  have hE : ∀ k ≤ 60, ((s.gpr .esp - BitVec.ofNat 32 60) + BitVec.ofNat 32 k).setWidth 64 =
-      (s.gpr .esp - BitVec.ofNat 32 60).setWidth 64 + BitVec.ofNat 64 k := fun k hk =>
-    addr_eq (by rw [h60]; have := (s.gpr .esp).isLt; omega_using [hk])
-  have hsp : (s.gpr .esp).setWidth 64 = (s.gpr .esp - BitVec.ofNat 32 60).setWidth 64 + BitVec.ofNat 64 60 := by
-    rw [← hE 60 (by omega_using []), BitVec.sub_add_cancel]
-  have F' : Frame (wrC s ++ [below (q.gpr .esp) (4 * callRegs.length + stackUse Impl.X448.X86.x448 + 4)])
-      (pushed baseFrame t2).mem s'.mem := by rw [← qm]; exact fr'
-  -- The caller's `ebx`, at the top of the frame.
-  have topw : s'.mem.readW ((s.gpr .esp - BitVec.ofNat 32 60).setWidth 64 + BitVec.ofNat 64 56) 32 =
-      s.gpr .ebx := by
-    have sub : Region.Sub ⟨(s.gpr .esp - BitVec.ofNat 32 60).setWidth 64 + BitVec.ofNat 64 56, 4⟩
-        (below (s.gpr .esp) 60) := Offset.sub_base _ (by omega_using [])
-    rw [F'.readW (Region.contains_self _ _) (fun r hr => by
-      simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with (rfl | rfl) | rfl
-      · exact (hp.top_out (by omega_using [])).sub_left sub
-      · exact (hp.top_sc (by omega_using [])).sub_left sub
-      · exact keep 56 4 (by omega_using []) (by omega_using [])) (by decide)]
-    exact pebx
-  -- The return address.
-  have retw : s'.mem.readW ((s.gpr .esp).setWidth 64) 32 = s.mem.readW ((s.gpr .esp).setWidth 64) 32 := by
-    rw [F'.readW (r := retR s) (Region.contains_self _ _) (fun r hr => by
-      simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with (rfl | rfl) | rfl
-      · exact hp.ret_out
-      · exact hp.ret_sc
-      · show (⟨(s.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint _
-        rw [hsp]; exact keep 60 4 (by omega_using []) (by omega_using [])) (by decide)]
-    exact pf.readW (Region.contains_self _ _) (fun r hr => by
-      rw [List.mem_singleton.mp hr]; exact hp.ret_below (by omega_using [])) (by decide)
-  -- What `vg_x448` read: the scalar, and the base point in the frame.
-  have he : 4 * callRegs.length + 4 ≤ (q.gpr .esp).toNat := by
-    rw [hq.esp, h60]; simp only [List.length_cons, List.length_nil]; omega_using [hn]
-  have cf := callEntry_frame (s := q) he (by decide)
-  rw [qm, hq.esp] at cf
-  have cfE : below (s.gpr .esp - BitVec.ofNat 32 60) (4 * callRegs.length + 4) =
-      ⟨(s.gpr .esp - BitVec.ofNat 32 60).setWidth 64 - BitVec.ofNat 64 20, 20⟩ := by
-    simp only [below, List.length_cons, List.length_nil]
-    rw [VG.X86.Taint.sub_setWidth (by rw [h60]; omega_using [hn])]
-  have kb : Spec.X448.bytesAt (pushed callRegs q).callEntry.mem ((arg s 1).setWidth 64) 56 =
-      Spec.X448.bytesAt s.mem ((arg s 1).setWidth 64) 56 :=
-    BPre.scalar_same (rs := [below (s.gpr .esp) 60,
-        below (s.gpr .esp - BitVec.ofNat 32 60) (4 * callRegs.length + 4)])
-      ((pf.mono (by simp)).trans (cf.mono (by simp))) fun r hr => by
-        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl
-        · exact (hp.top_scalar (by omega_using [])).symm
-        · exact (hp.below_scalar (by simp only [List.length_cons, List.length_nil]; omega_using [])).symm
-  have pb : Spec.X448.bytesAt (pushed callRegs q).callEntry.mem
-      ((s.gpr .esp - BitVec.ofNat 32 60).setWidth 64) 56 = Spec.X448.basePoint := by
-    rw [← pbytes]
-    simp only [Spec.X448.bytesAt]
-    refine List.map_congr_left fun i hi => ?_
-    refine cf.bytes (R := ⟨(s.gpr .esp - BitVec.ofNat 32 60).setWidth 64, 56⟩) (fun r hr => ?_)
-      (by show 56 ≤ 2 ^ 64; omega_using []) (by simpa using hi)
-    rw [List.mem_singleton.mp hr, cfE]
-    have := (Offset.disjoint_below_above ((s.gpr .esp - BitVec.ofNat 32 60).setWidth 64)
-      (m := 20) (a := 0) (l := 56) (by omega_using [])).symm
-    rwa [BitVec.add_zero] at this
-  have p2 : Spec.X448.bytesAt s₂.mem ((arg s 0).setWidth 64) 56 =
-      Spec.X448.x448 (Spec.X448.bytesAt s.mem ((arg s 1).setWidth 64) 56) Spec.X448.basePoint := by
-    have := post₂
-    change Spec.X448.bytesAt s₂.mem ((arg (pushed callRegs q).callEntry 0).setWidth 64) 56 =
-      Spec.X448.x448 (Spec.X448.bytesAt (pushed callRegs q).callEntry.mem
-        ((arg (pushed callRegs q).callEntry 1).setWidth 64) 56)
-        (Spec.X448.bytesAt (pushed callRegs q).callEntry.mem
-          ((arg (pushed callRegs q).callEntry 2).setWidth 64) 56) at this
-    rwa [a0, a1, a2, kb, pb] at this
-  intro mm vv fl
-  rw [esp2, baseFrame_length] at fl
-  refine ⟨⟨fun r hr => ?_, ?_⟩, ?_⟩
-  · show (popped .ebx baseFrame.length s').gpr r = s.gpr r
-    simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
-    have qsave : ∀ r, r ∈ calleeSaved → r ≠ .eax → r ≠ .ebx → r ≠ .ecx → r ≠ .edx → r ≠ .esp →
-        (popped .ebx baseFrame.length s').gpr r = s.gpr r := fun r hc h0 h1 h2 h3 h4 => by
-      rw [popped_gpr _ _ _ h4 h1, cs' r hc, qg r h0 h1 h2 h3, pushed_gpr _ _ h4, g2 r h3 h0]
-    rcases hr with rfl | rfl | rfl | rfl | rfl
-    · rw [show baseFrame.length = 14 + 1 from rfl, popped_last .ebx (by decide) 14, cs' .esp (by decide),
-        hq.esp, hE 56 (by omega_using [])]
-      exact topw
-    · exact qsave _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    · exact qsave _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    · exact qsave _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    · rw [popped_esp, cs' .esp (by decide), hq.esp]
-      exact BitVec.sub_add_cancel _ _
-  · show mm.readW _ 32 = _
-    rw [fl.readW (r := retR s) (Region.contains_self _ _) (fun r hr => by
-      rw [List.mem_singleton.mp hr]; exact hp.ret_below (by omega_using [])) (by decide)]
-    exact retw
-  · show Spec.X448.bytesAt mm ((arg s 0).setWidth 64) 56 = _
-    rw [← p2, hq.esp] at *
-    simp only [Spec.X448.bytesAt]
-    refine List.map_congr_left fun i hi => ?_
-    rw [fl.bytes (R := outR s) (fun r hr => by
-      rw [List.mem_singleton.mp hr]; exact (hp.top_out (by omega_using [])).symm)
-      (by show 56 ≤ 2 ^ 64; omega_using []) (by simpa using hi)]
-    refine m₂.bytes (R := outR s) (fun r hr => ?_)
-      (by show 56 ≤ 2 ^ 64; omega_using []) (by simpa using hi)
-    rw [List.mem_singleton.mp hr]
-    exact (hp.below_out (by simp only [List.length_cons, List.length_nil]; omega_using [])).symm
+  rw [uFields_impl]
+  exact WP.seq (WP.mono (entryB_stage h) fun _ m => WP.seq (WP.mono (loopB_stage m) fun _ l =>
+    WP.seq (WP.mono (squaresB_stage l) fun _ u => WP.seq (WP.mono (invertB_stage u) fun _ i => finishB_stage i))))
+
+theorem x448Base_ok (hu : BaseCombUOk) (s : State) (hs : Proof.X448.x448BaseX86.pre s) :
+    ∃ t s', Exec isa Impl.X448.X86.x448Base s t s' ∧ abiPreserved s s' ∧
+      Proof.X448.x448BaseX86.post s s' := by
+  obtain ⟨tr, t, he, h1, h2⟩ := x448Base_main (BPre.of hs)
+  refine ⟨tr, t, he, h1, ?_⟩
+  change Spec.X448.bytesAt t.mem _ 56 = _
+  rw [h2, (hu _).2]
 
 /-! ## Constant time -/
 
 /-- Two entry states the constant-time statement relates. -/
-def Pb (σ₁ σ₂ : State) : Prop :=
+def XP₀ (σ₁ σ₂ : State) : Prop :=
   Proof.X448.x448BaseX86.pre σ₁ ∧ Proof.X448.x448BaseX86.pre σ₂ ∧ Proof.X448.x448BaseX86.pub σ₁ σ₂
 
-/-- Two runs, each in a state `F` says of its own run. -/
-def Wb (F : State → State → Prop) (s₁ s₂ : State) : Prop :=
-  ∃ σ₁ σ₂, Pb σ₁ σ₂ ∧ F σ₁ s₁ ∧ F σ₂ s₂
+theorem XP₀.hp {σ₁ σ₂ : State} (h : XP₀ σ₁ σ₂) : bsX σ₁ = bsX σ₂ ∧ σ₁.gpr .esp = σ₂.gpr .esp :=
+  ⟨by simp only [bsX, h.2.2.2.2.2], h.2.2.1⟩
 
-theorem Wb.step {F G : State → State → Prop} {R : State → State → Prop} {c : Prog isa}
-    (htr : RelCT isa (Wb F) c R) (hw : ∀ σ s, BPre σ → F σ s → WP isa c s (G σ)) :
-    RelCT isa (Wb F) c (Wb G) := by
-  intro s₁ s₂ t₁ t₂ s₁' s₂' hp e₁ e₂
-  obtain ⟨ht, -⟩ := htr _ _ _ _ _ _ hp e₁ e₂
-  obtain ⟨σ₁, σ₂, hP, f₁, f₂⟩ := hp
-  obtain ⟨_, u₁, x₁, g₁⟩ := hw _ _ (BPre.of _ hP.1) f₁
-  obtain ⟨_, u₂, x₂, g₂⟩ := hw _ _ (BPre.of _ hP.2.1) f₂
-  obtain ⟨-, rfl⟩ := Exec.det e₁ x₁
-  obtain ⟨-, rfl⟩ := Exec.det e₂ x₂
-  exact ⟨ht, σ₁, σ₂, hP, g₁, g₂⟩
+/-- The taint analysis starts with the stack arguments public, and the words holding `out` and
+`scratch` known to be the base addresses of the writable regions. -/
+def τb : VG.X86.Taint.T :=
+  { regs := .ofList [.esp], flags := false, lens := [56, 8192], argLen := 16, argBases := [(4, 0), (12, 1)] }
 
-/-- After the first block. -/
-def F1 (σ t : State) : Prop :=
-  t.gpr .esp = σ.gpr .esp ∧ t.gpr .eax = 0 ∧ t.gpr .edx = 5 ∧ t.mem = σ.mem ∧ t.rd = σ.rd ∧
-    t.wr = σ.wr ∧ ∀ r, r ≠ .edx → r ≠ .eax → t.gpr r = σ.gpr r
+theorem wfb {s : State} (hp : BPre s) : VG.X86.Taint.Wf τb s := by
+  have hsc := hp.sc_fit; have ho := hp.out_fit; have hs := hp.sp_fit
+  refine VG.X86.Taint.Wf.entry rfl rfl ⟨fun _ => ⟨by simp [hp.wr, τb], by simpa [hp.wr] using hp.out_sc, ?_⟩,
+    fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim,
+    fun _ => ⟨hs, ?_⟩, ?_⟩
+  · simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false]
+    rintro r (rfl | rfl) <;> simp only [BitVec.toNat_setWidth] <;> omega_using [hsc, ho]
+  · simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false]
+    rintro r (rfl | rfl)
+    · exact VG.X86.Taint.frame_disjoint (n := 12) (by omega_using [hs]) hp.ret_out hp.args_out
+    · exact VG.X86.Taint.frame_disjoint (n := 12) (by omega_using [hs]) hp.ret_sc hp.args_sc
+  · intro p hp'
+    simp only [τb, List.mem_cons, List.not_mem_nil, or_false] at hp'
+    rcases hp' with rfl | rfl <;> refine ⟨by decide, ?_⟩ <;>
+      simp [VG.X86.Taint.region, hp.wr, addr, arg, argAddr]
 
-theorem first_ok (σ : State) :
-    WP isa (.block ([.mov .eax (.imm 0), .mov .edx (.imm 5)] : List Instr)) σ (F1 σ) :=
-  wp_mov rfl fun t1 u1 => wp_mov rfl fun t2 u2 => WP.block_nil
-    ⟨(u2.other _ (by decide)).trans (u1.other _ (by decide)), (u2.other _ (by decide)).trans u1.gpr,
-      u2.gpr, u2.mem.trans u1.mem, u2.rd.trans u1.rd, u2.wr.trans u1.wr,
-      fun r h1 h2 => (u2.other r h1).trans (u1.other r h2)⟩
+theorem agreeb {s₁ s₂ : State} (h₁ : Proof.X448.x448BaseX86.pre s₁) (h₂ : Proof.X448.x448BaseX86.pre s₂)
+    (hpub : Proof.X448.x448BaseX86.pub s₁ s₂) : VG.X86.Taint.Agree τb s₁ s₂ := by
+  obtain ⟨hesp, a0, a1, a2⟩ := hpub
+  have hp₁ := BPre.of h₁; have hp₂ := BPre.of h₂
+  refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, wfb hp₁, wfb hp₂,
+    VG.X86.Taint.slotsOk_empty, VG.X86.Taint.slotsAgree_empty, fun _ => hesp,
+    fun k h4 hk => ?_⟩
+  · simp only [τb, RegSet.mem_ofList, List.mem_singleton] at hr
+    subst hr; exact hesp
+  · rw [hp₁.wr, hp₂.wr]; simp only [outR, a0, a2]
+  · simp only [τb] at hk
+    rw [show VG.X86.Taint.depth τb.stk = 0 from rfl, Nat.zero_add]
+    rw [VG.X86.Taint.argByte_eq hp₁.sp_fit h4 hk, VG.X86.Taint.argByte_eq hp₂.sp_fit h4 hk,
+      Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by decide)), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by decide))]
+    have : (k - 4) / 4 = 0 ∨ (k - 4) / 4 = 1 ∨ (k - 4) / 4 = 2 := by omega_using [hk]
+    rcases this with h | h | h <;> rw [h]
+    · exact congrArg _ a0
+    · exact congrArg _ a1
+    · exact congrArg _ a2
 
-/-- In the frame, before `baseArgs`. -/
-def F2 (σ a : State) : Prop := ∃ t, F1 σ t ∧ a = pushed baseFrame t
+theorem entryB_rel : RelCT isa (Runs XP₀ fun σ s => s = σ ∧ BPre σ) baseEntry (Runs XP₀ XMid) := by
+  refine Runs.step (RelCT.taint (A := taint) τb ?_ (by taint_decide))
+    fun σ s ⟨e, h⟩ => by subst e; exact entryB_stage h
+  rintro s₁ s₂ ⟨σ₁, σ₂, hP, ⟨rfl, -⟩, ⟨rfl, -⟩⟩
+  exact agreeb hP.1 hP.2.1 hP.2.2
 
-theorem Pb.sp {σ₁ σ₂ : State} (h : Pb σ₁ σ₂) : σ₁.gpr .esp = σ₂.gpr .esp := h.2.2.1
+theorem loopB_rel : RelCT isa (Runs XP₀ XMid) Impl.Ed448.X86.combLoop (Runs XP₀ XL) :=
+  Runs.step ((combLoopG_tr (bs := bsX) (k := kX) fun _ _ h => h.hp).mono
+      (fun _ _ ⟨σ₁, σ₂, hP, m₁, m₂⟩ => ⟨σ₁, σ₂, hP, ⟨m₁.fe, m₁.bits⟩, ⟨m₂.fe, m₂.bits⟩⟩) fun _ _ h => h)
+    fun _ _ m => loopB_stage m
+
+theorem squaresB_rel : RelCT isa (Runs XP₀ XL) (ops (uFields.map FieldOp.impl)) (Runs XP₀ XU) :=
+  Runs.step (ops_tr (fun _ _ h => h.hp) (fun _ _ ⟨_, _, _, fe⟩ => fe.fs) uFields) fun _ _ h => squaresB_stage h
+
+theorem invertB_rel : RelCT isa (Runs XP₀ XU) Impl.X448.X86.invert (Runs XP₀ XI) :=
+  Runs.step (rf_tr (fun _ _ h => h.hp) (fun _ _ h => h.fe.fs) invert_rel) fun _ _ h => invertB_stage h
+
+theorem finishB_tr : RelCT isa (Runs XP₀ XI) finish fun _ _ => True := by
+  unfold finish
+  refine RelCT.seq (Runs.step (G := FE bsX)
+    (rf_tr (fun _ _ h => h.hp) (fun _ _ h => h.fe.fs) finishMul_rel) ?_) ?_
+  · intro σ s h
+    have fe := h.fe
+    exact WP.mono (fe.wp (op_nosp (.mul 1 1 21)) (op_stack (.mul 1 1 21)) (Q := fun _ => True)
+      (WP.mono (mulE fe.fin.scr fe.fin.ctx fe.fin.bounded 1 1 21) fun t ⟨k, b, _⟩ =>
+        ⟨⟨k.scr fe.fin.scr, k.ctx fe.fin.ctx, b⟩, k.regs.1 _ (by decide), k.regs.2.2, trivial⟩))
+      fun t ⟨fe', _⟩ => fe'
+  · refine RelCT.taint (A := taint) (τa 16) ?_ (by taint_decide)
+    rintro s₁ s₂ ⟨σ₁, σ₂, hP, f₁, f₂⟩
+    have p₁ := BPre.of hP.1
+    have p₂ := BPre.of hP.2.1
+    have a := agreeb hP.1 hP.2.1 hP.2.2
+    have wr : ∀ {σ : State}, BPre σ → ∀ r ∈ σ.wr, Region.Disjoint ⟨(σ.gpr .esp).setWidth 64, 16⟩ r := by
+      intro σ p r hr
+      have := p.sp_fit
+      rw [p.wr] at hr
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact VG.X86.Taint.frame_disjoint (n := 12) (by omega_using [this]) p.ret_out p.args_out
+      · exact VG.X86.Taint.frame_disjoint (n := 12) (by omega_using [this]) p.ret_sc p.args_sc
+    exact f₁.agreeA f₂ hP.hp.1 hP.hp.2 p₁.sp_fit p₂.sp_fit (wr p₁) (wr p₂) p₁.args_wr p₂.args_wr
+      fun k h4 hk => by
+        have := a.argMem k h4 hk
+        simpa only [τb, VG.X86.Taint.depth, Nat.zero_add] using this
 
 theorem x448Base_ct : ConstantTime isa Proof.X448.x448BaseX86.pre Proof.X448.x448BaseX86.pub
     Impl.X448.X86.x448Base := by
   refine RelCT.constantTime (Q := fun _ _ => True)
-    ((?_ : RelCT isa (Wb fun σ s => s = σ) x448Base fun _ _ => True).mono
-      (fun s₁ s₂ h => ⟨s₁, s₂, h, rfl, rfl⟩) fun _ _ h => h)
+    ((?_ : RelCT isa (Runs XP₀ fun σ s => s = σ ∧ BPre σ) x448Base fun _ _ => True).mono
+      (fun s₁ s₂ h => ⟨s₁, s₂, h, ⟨rfl, BPre.of h.1⟩, ⟨rfl, BPre.of h.2.1⟩⟩) fun _ _ h => h)
   unfold x448Base
-  refine RelCT.seq (Wb.step (G := F1) (RelCT.taint (A := taint) (τr [.esp]) ?_ (by taint_decide))
-    fun σ s _ e => by rw [e]; exact first_ok σ) ?_
-  · rintro s₁ s₂ ⟨σ₁, σ₂, hP, rfl, rfl⟩
-    exact agree_regs fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hP.sp
-  refine RelCT.frame (R := fun _ _ => True) (fun s₁ s₂ h => by
-    obtain ⟨σ₁, σ₂, hP, f₁, f₂⟩ := h; exact f₁.1.trans (hP.sp.trans f₂.1.symm)) ?_
-  refine (?_ : RelCT isa (Wb F2) _ _).mono
-    (fun a b h => by
-      obtain ⟨s₁, s₂, ⟨σ₁, σ₂, hP, f₁, f₂⟩, ea, eb⟩ := h
-      exact ⟨σ₁, σ₂, hP, ⟨s₁, f₁, ea⟩, ⟨s₂, f₂, eb⟩⟩)
-    fun _ _ h => h
-  refine RelCT.seq (Wb.step (G := AtCall) (RelCT.taint (A := taint) (τr [.esp]) ?_ (by taint_decide))
-    fun σ a hp ⟨t, f, e⟩ => ?_) ?_
-  · rintro a b ⟨σ₁, σ₂, hP, ⟨t₁, f₁, rfl⟩, ⟨t₂, f₂, rfl⟩⟩
-    refine agree_regs fun r hr => ?_
-    simp only [List.mem_singleton] at hr; subst hr
-    rw [pushed_esp, pushed_esp, f₁.1, f₂.1, hP.sp]
-  · subst e
-    obtain ⟨esp, eax, edx, m, rd, wr, g⟩ := f
-    have hn := hp.sp_room
-    have hn2 : 4 * baseFrame.length ≤ (t.gpr .esp).toNat := by rw [baseFrame_length, esp]; omega_using [hn]
-    refine WP.mono (baseArgs_ok hp (by rw [pushed_esp60, esp])
-      (by have := pushed_frame (s := t) baseFrame_esp hn2; rwa [m, esp, baseFrame_length] at this)
-      (by rw [pushed_rd, rd]) (by rw [pushed_wr, esp, wr, baseFrame_length])) fun q h => h.1
-  · intro x y t₁ t₂ x' y' hxy e₁ e₂
-    obtain ⟨σ₁, σ₂, hP, h₁, h₂⟩ := hxy
-    have hp₁ := BPre.of _ hP.1
-    have hp₂ := BPre.of _ hP.2.1
-    obtain ⟨esp, a0, a1, a2⟩ := hP.2.2
-    have hR : rdC σ₁ = rdC σ₂ := by simp only [rdC, scalarR, esp, a1]
-    have hW : wrC σ₁ = wrC σ₂ := by simp only [wrC, outR, a0, a2]
-    refine RelCT.callWith (k := Proof.X448.x448X86) x448_ok x448_ct (rdC σ₁) (wrC σ₁)
-      (P := fun a b => AtCall σ₁ a ∧ AtCall σ₂ b) ?_ x y t₁ t₂ x' y' ⟨h₁, h₂⟩ e₁ e₂
-    clear h₁ h₂ e₁ e₂
-    intro x y ⟨h₁, h₂⟩
-    obtain ⟨c0, c1, c2⟩ := call_args hp₁ h₁
-    obtain ⟨d0, d1, d2⟩ := call_args hp₂ h₂
-    refine ⟨callPre hp₁ h₁, hR ▸ hW ▸ callPre hp₂ h₂, by rw [h₁.esp, h₂.esp, esp], ?_⟩
-    have he : ∀ {σ q : State}, BPre σ → AtCall σ q → 4 * callRegs.length + 4 ≤ (q.gpr .esp).toNat :=
-      fun {σ q} hp h => by
-        have := hp.sp_room
-        rw [h.esp, sub_toNat (by omega_using [this])]; simp only [List.length_cons, List.length_nil]; omega_using [this]
-    refine ⟨?_, ?_, ?_, ?_, ?_⟩
-    · show (pushed callRegs x).callEntry.gpr .esp = (pushed callRegs y).callEntry.gpr .esp
-      rw [callEntry_esp', callEntry_esp', h₁.esp, h₂.esp, esp]
-    · show arg (pushed callRegs x).callEntry 0 = arg (pushed callRegs y).callEntry 0
-      rw [c0, d0, a0]
-    · show arg (pushed callRegs x).callEntry 1 = arg (pushed callRegs y).callEntry 1
-      rw [c1, d1, a1]
-    · show arg (pushed callRegs x).callEntry 2 = arg (pushed callRegs y).callEntry 2
-      rw [c2, d2, esp]
-    · show arg (pushed callRegs x).callEntry 3 = arg (pushed callRegs y).callEntry 3
-      rw [callEntry_arg (he hp₁ h₁) (by decide) (i := 3) (by decide),
-        callEntry_arg (he hp₂ h₂) (by decide) (i := 3) (by decide)]
-      exact h₁.edx.trans (a2.trans h₂.edx.symm)
+  rw [uFields_impl]
+  exact entryB_rel.seq (loopB_rel.seq (squaresB_rel.seq (invertB_rel.seq finishB_tr)))
 
 /-! ## `Verified` -/
 
@@ -686,14 +575,9 @@ def satBaseState : State where
   rd := [⟨0x2000, 56⟩, ⟨0x8004, 12⟩]
   wr := [⟨0x1000, 56⟩, ⟨0x4000, 8192⟩]
 
-theorem x448Base_ok (s : State) (hs : Proof.X448.x448BaseX86.pre s) :
-    ∃ t s', Exec isa Impl.X448.X86.x448Base s t s' ∧ abiPreserved s s' ∧
-      Proof.X448.x448BaseX86.post s s' :=
-  correctBase (BPre.of s hs)
-
-theorem x448Base_verified :
-    Verified X86.target Impl.X448.X86.x448Base (Spec.X448.x448BaseContract X86.abi 100) :=
-  Verified.of_correct x448Base_ok x448Base_ct (by
+theorem x448Base_verified (hu : BaseCombUOk) :
+    Verified X86.target Impl.X448.X86.x448Base (Spec.X448.x448BaseContract X86.abi 20) :=
+  Verified.of_correct (x448Base_ok hu) x448Base_ct (by
     have a0 : arg satBaseState 0 = 0x1000 := by decide
     have a1 : arg satBaseState 1 = 0x2000 := by decide
     have a2 : arg satBaseState 2 = 0x4000 := by decide

@@ -877,25 +877,12 @@ theorem entry_stage {s₀ : State} (h : BasePre s₀) :
 def BL (σ s₄ s : State) (n : Nat) : Prop :=
   BMid σ s₄ ∧ CombInv (bsB σ) (kB σ) s₄ s n ∧ FE bsB σ s
 
-/-- `FE` from the loop's invariant, for code keeping it. -/
-theorem BL.fin {σ s₄ s t : State} {n m : Nat} (h : BL σ s₄ s n) (ht : CombInv (bsB σ) (kB σ) s₄ t m) :
-    FInv (bsB σ) t ∧ t.gpr .esp = s.gpr .esp ∧ t.wr = s.wr :=
-  ⟨⟨ht.scr, ht.ctx, ht.bounded⟩, (ht.regs.1 _ (by decide)).trans (h.2.1.regs.1 _ (by decide)).symm,
-    ht.regs.2.2.trans h.2.1.regs.2.2.symm⟩
-
 theorem loop_stage {σ s : State} (h : BMid σ s) :
     WP isa Impl.Ed448.X86.combLoop s fun t => BL σ s t 0 :=
   WP.mono (h.fe.wp (NoSp.of_all (by lit_decide)) (by lit_decide)
     (Q := fun t => CombInv (bsB σ) (kB σ) s t 0) (WP.mono (combLoop_ok h.bits h.start) fun t ht =>
       ⟨⟨ht.scr, ht.ctx, ht.bounded⟩, ht.regs.1 _ (by decide), ht.regs.2.2, ht⟩))
     fun t ⟨fe, ht⟩ => ⟨h, ht, fe⟩
-
-theorem step_stage {σ s₄ s : State} {n : Nat} (hn : n < 114) (h : BL σ s₄ s (n + 1)) :
-    WP isa Impl.Ed448.X86.combStep s fun t => BL σ s₄ t n ∧ t.zf = some (decide (n = 0)) :=
-  WP.mono (h.2.2.wp (NoSp.of_all (by lit_decide)) (by lit_decide)
-    (Q := fun t => CombInv (bsB σ) (kB σ) s₄ t n ∧ t.zf = some (decide (n = 0)))
-    (WP.mono (combStep_ok hn h.1.bits h.2.1) fun t ⟨ht, z⟩ => ⟨(BL.fin h ht).1, (BL.fin h ht).2.1, (BL.fin h ht).2.2, ht, z⟩))
-    fun t ⟨fe, ht, z⟩ => ⟨⟨h.1, ht, fe⟩, z⟩
 
 theorem encode_stage {σ s₄ s : State} (h : BL σ s₄ s 0) :
     WP isa Impl.Ed448.X86.baseEncode s fun t => abiPreserved σ t ∧

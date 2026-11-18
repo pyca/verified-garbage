@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.X448.Contract
 public import VerifiedGarbage.Proof.Xdh.X86
-public import VerifiedGarbage.Proof.X448.X86.Base
+public import VerifiedGarbage.Proof.X448.X86.Verified
 public import VerifiedGarbage.Spec.X448.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Sig
@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.X448.X86.CT
 
 meta import VerifiedGarbage.Proof.Xdh.X86
-meta import VerifiedGarbage.Proof.X448.X86.Base
+meta import VerifiedGarbage.Proof.X448.X86.Verified
 meta import VerifiedGarbage.Spec.X448.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Sig
@@ -31,6 +31,16 @@ calls and frames use (`exchange_verified`).
 -/
 
 @[expose] public section
+
+namespace VG.Proof.X448.X86
+
+open VG VG.X86
+
+theorem stackUse_x448 : stackUse Impl.X448.X86.x448 ≤ 20 := by lit_decide
+
+theorem noSp_x448 : NoSp Impl.X448.X86.x448 := NoSp.of_all (by lit_decide)
+
+end VG.Proof.X448.X86
 
 namespace VG.Proof.X448.X86.Exchange
 

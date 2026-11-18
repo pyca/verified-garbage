@@ -63,7 +63,8 @@ functions' constant time, the selection of the comb's entry (a scan of every
 entry under masks), the counter and the encoding's last block by the taint
 analysis from what each run's correctness says of its own state
 (`BaseMain.lean`'s stages), and the loop and the inversion's runs of
-squarings by `RelCT.loop`.
+squarings by `RelCT.loop`. The comb's rows are related for any function that
+runs them (`combLoopG_tr`), `vg_x448_base` too.
 -/
 
 @[expose] public section
@@ -100,105 +101,126 @@ theorem scalarBase_agree {s t : State} (hs : scalarBaseLocal.pre s) (ht : scalar
   rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl
   exacts [a0, a1, a2]
 
-/-! ## The loop -/
+/-! ## The loop
 
-/-- `n + 1` rows left. -/
-def LadB (n : Nat) (σ s : State) : Prop := n < 114 ∧ ∃ s₄, BL σ s₄ s (n + 1)
+The comb's rows leave the same trace in two runs whatever function runs them (`combLoopG_tr`,
+for `vg_x448_base` too): from the field arithmetic's invariant (`FE bs`) and the scalar's bits in
+the working space (`BitsG bs k`), for the working space `bs` and the scalar `k` of a run. -/
+
+section
+variable {P₀ : State → State → Prop} {bs : State → Addr} {k : State → Nat}
 
 /-- The scalar's bits, a byte each at `BITS`. -/
-def BitsB (σ t : State) : Prop :=
-  ∀ i < 456, t.mem (off (bsB σ) (BITS + i)) = BitVec.ofNat 8 ((kB σ >>> i) &&& 1)
+def BitsG (bs : State → Addr) (k : State → Nat) (σ t : State) : Prop :=
+  ∀ i < 456, t.mem (off (bs σ) (BITS + i)) = BitVec.ofNat 8 ((k σ >>> i) &&& 1)
 
 /-- The field operations keep the bytes at `BITS`. -/
-theorem BitsB.keep {σ s t : State} (h : BitsB σ s) (k : Keep (bsB σ) s t) : BitsB σ t := fun i hi => by
-  have hB : BITS = 3072 := rfl
-  have hA : ACC = 3584 := rfl
-  rw [k.mem _ (by rw [ofs_off' _ (by omega_using [hi, hB])]; omega_using [hi, hB])
-    (by rw [ofs_off' _ (by omega_using [hi, hB])]; omega_using [hB])
-    (by rw [ofs_off' _ (by omega_using [hi, hB])]; omega_using [hi, hB, hA])]
-  exact h i hi
+theorem BitsG.keep {σ s t : State} (h : BitsG bs k σ s) (kp : Keep (bs σ) s t) : BitsG bs k σ t :=
+  fun i hi => by
+    have hB : BITS = 3072 := rfl
+    have hA : ACC = 3584 := rfl
+    rw [kp.mem _ (by rw [ofs_off' _ (by omega_using [hi, hB])]; omega_using [hi, hB])
+      (by rw [ofs_off' _ (by omega_using [hi, hB])]; omega_using [hB])
+      (by rw [ofs_off' _ (by omega_using [hi, hB])]; omega_using [hi, hB, hA])]
+    exact h i hi
 
 /-- In row `n`, after its counter. -/
-def StepB (n : Nat) (σ t : State) : Prop :=
-  FE bsB σ t ∧ t.gpr .esi = BitVec.ofNat 32 n ∧ n < 114 ∧ BitsB σ t
+def RowG (bs : State → Addr) (k : State → Nat) (n : Nat) (σ t : State) : Prop :=
+  FE bs σ t ∧ t.gpr .esi = BitVec.ofNat 32 n ∧ n < 114 ∧ BitsG bs k σ t
 
-theorem fieldB_rel (n : Nat) (l : List Impl.X448.X86.Op) (xs : List FieldOp)
-    (hl : l = xs.map FieldOp.impl) :
-    RelCT isa (Runs BP₀ (StepB n)) (ops l) (Runs BP₀ (StepB n)) := by
+theorem fieldG_rel (hP : ∀ σ₁ σ₂, P₀ σ₁ σ₂ → bs σ₁ = bs σ₂ ∧ σ₁.gpr .esp = σ₂.gpr .esp) (n : Nat)
+    (l : List Impl.X448.X86.Op) (xs : List FieldOp) (hl : l = xs.map FieldOp.impl) :
+    RelCT isa (Runs P₀ (RowG bs k n)) (ops l) (Runs P₀ (RowG bs k n)) := by
   rw [hl]
-  exact Runs.step (ops_tr (fun _ _ h => h.hp) (fun _ _ h => h.1.fs) xs) fun σ s h =>
-    WP.mono (ops_FE h.1 xs) fun t ⟨fe, k, _⟩ => ⟨fe, (k.regs.1 _ (by decide)).trans h.2.1, h.2.2.1, h.2.2.2.keep k⟩
+  exact Runs.step (ops_tr hP (fun _ _ h => h.1.fs) xs) fun σ s h =>
+    WP.mono (ops_FE h.1 xs) fun t ⟨fe, kp, _⟩ =>
+      ⟨fe, (kp.regs.1 _ (by decide)).trans h.2.1, h.2.2.1, h.2.2.2.keep kp⟩
 
-theorem agreeB {n : Nat} {s₁ s₂ : State} (h : Runs BP₀ (StepB n) s₁ s₂) :
+theorem agreeG (hP : ∀ σ₁ σ₂, P₀ σ₁ σ₂ → bs σ₁ = bs σ₂ ∧ σ₁.gpr .esp = σ₂.gpr .esp) {n : Nat}
+    {s₁ s₂ : State} (h : Runs P₀ (RowG bs k n) s₁ s₂) :
     VG.X86.Taint.Agree (τr [.esp, .esi, .edi]) s₁ s₂ := by
-  obtain ⟨σ₁, σ₂, hP, ⟨f₁, c₁, -⟩, ⟨f₂, c₂, -⟩⟩ := h
+  obtain ⟨σ₁, σ₂, hp, ⟨f₁, c₁, -⟩, ⟨f₂, c₂, -⟩⟩ := h
   refine agree_regs fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
-  · exact f₁.sp.trans (hP.hp.2.trans f₂.sp.symm)
+  · exact f₁.sp.trans ((hP _ _ hp).2.trans f₂.sp.symm)
   · exact c₁.trans c₂.symm
-  · exact edi_eq f₁.fin.scr (hP.hp.1 ▸ f₂.fin.scr)
+  · exact edi_eq f₁.fin.scr ((hP _ _ hp).1 ▸ f₂.fin.scr)
 
 /-- The selection of the row's entry keeps what the field operations need. -/
-theorem selectB_ok {n : Nat} {σ s : State} (h : StepB n σ s) :
-    WP isa (.block (Impl.Ed448.X86.combDigit BITS ++ combSelect)) s (StepB n σ) := by
+theorem selectG_ok {n : Nat} {σ s : State} (h : RowG bs k n σ s) :
+    WP isa (.block (Impl.Ed448.X86.combDigit BITS ++ combSelect)) s (RowG bs k n σ) := by
   obtain ⟨fe, c, hn, bits⟩ := h
   have hB : BITS = 3072 := rfl
   refine WP.mono (fe.wp (NoSp.of_all (by lit_decide)) (by lit_decide)
-    (Q := fun t => Keep (bsB σ) s t) ?_) fun t ⟨fe', k⟩ =>
-      ⟨fe', (k.regs.1 _ (by decide)).trans c, hn, bits.keep k⟩
+    (Q := fun t => Keep (bs σ) s t) ?_) fun t ⟨fe', kp⟩ =>
+      ⟨fe', (kp.regs.1 _ (by decide)).trans c, hn, bits.keep kp⟩
   rw [WP.block_append_iff]
   refine WP.mono (combDigit_ok fe.fin.scr (by omega_using [hB]) hn c bits) fun u ⟨d, ku, mu⟩ => ?_
   obtain hsu := fe.fin.scr.of_keeps ku (by decide)
-  obtain K : Keep (bsB σ) s u := ⟨ku.mono (by decide), by rw [mu]; exact WsOut2.refl _ _ _ _ _ _⟩
-  refine WP.mono (combSelect_ok hsu (mu ▸ fe.fin.bounded) (Proof.Ed448.combDigit_lt (kB σ) n) d)
+  obtain K : Keep (bs σ) s u := ⟨ku.mono (by decide), by rw [mu]; exact WsOut2.refl _ _ _ _ _ _⟩
+  refine WP.mono (combSelect_ok hsu (mu ▸ fe.fin.bounded) (Proof.Ed448.combDigit_lt (k σ) n) d)
     fun t ⟨kt, bt, _⟩ => ?_
   obtain K' := K.trans kt
   exact ⟨⟨K'.scr fe.fin.scr, K'.ctx fe.fin.ctx, bt⟩, K'.regs.1 _ (by decide), K'.regs.2.2, K'⟩
 
-theorem combStep_tr (n : Nat) : RelCT isa (Runs BP₀ (LadB n)) combStep fun _ _ => True := by
+/-- A row's trace, and what the row leaves. -/
+theorem combStepG_rel (hP : ∀ σ₁ σ₂, P₀ σ₁ σ₂ → bs σ₁ = bs σ₂ ∧ σ₁.gpr .esp = σ₂.gpr .esp) (n : Nat) :
+    RelCT isa (Runs P₀ fun σ s => n < 114 ∧ FE bs σ s ∧ s.gpr .esi = BitVec.ofNat 32 (n + 1) ∧
+        BitsG bs k σ s) combStep
+      (Runs P₀ fun σ t => RowG bs k n σ t ∧ t.zf = some (decide (n = 0))) := by
   unfold combStep
-  refine RelCT.seq (Runs.step (G := StepB n) (RelCT.taint (A := taint) (τr [])
+  refine RelCT.seq (Runs.step (G := RowG bs k n) (RelCT.taint (A := taint) (τr [])
       (fun _ _ _ => agree_regs fun _ h => (List.not_mem_nil h).elim) (by taint_decide)) ?_)
-    (RelCT.seq (fieldB_rel n _ _ doubleFields_impl)
-      (RelCT.seq (Runs.step (G := StepB n)
-          (RelCT.taint (A := taint) (τr [.esp, .esi, .edi]) (fun _ _ h => agreeB h) (by taint_decide))
-          fun _ _ h => selectB_ok h)
-        (RelCT.seq (fieldB_rel n _ _ addTake_impl)
-          (RelCT.taint (A := taint) (τr [.esp, .esi, .edi]) (fun _ _ h => agreeB h) (by taint_decide)))))
-  rintro σ s ⟨hn, s₄, h⟩
-  have hB : BITS = 3072 := rfl
-  have hA : ACC = 3584 := rfl
-  obtain bits : BitsB σ s := fun i hi => by
-    rw [h.2.1.mem _ (by rw [ofs_off' _ (by omega_using [hi, hB])]; omega_using [hi, hB])
-      (by rw [ofs_off' _ (by omega_using [hi, hB])]; omega_using [hB])
-      (by rw [ofs_off' _ (by omega_using [hi, hB])]; omega_using [hi, hB, hA])]
-    exact h.1.bits i hi
-  refine WP.mono (h.2.2.wp (NoSp.of_all (by lit_decide)) (by lit_decide)
-    (Q := fun t => t.gpr .esi = BitVec.ofNat 32 n ∧ t.mem = s.mem)
-    (WP.mono (decCounter_ok (by omega_using [hn]) h.2.1.esi) fun t ⟨c, g, m, r, w, _⟩ =>
-      ⟨FInv.of_counter h.2.2.fin g m r w, g _ (by decide), w, c, m⟩)) fun t ⟨fe, c, m⟩ =>
-        ⟨fe, c, hn, fun i hi => by rw [m]; exact bits i hi⟩
+    (RelCT.seq (fieldG_rel hP n _ _ doubleFields_impl)
+      (RelCT.seq (Runs.step (G := RowG bs k n)
+          (RelCT.taint (A := taint) (τr [.esp, .esi, .edi]) (fun _ _ h => agreeG hP h) (by taint_decide))
+          fun _ _ h => selectG_ok h)
+        (RelCT.seq (fieldG_rel hP n _ _ addTake_impl)
+          (Runs.step (RelCT.taint (A := taint) (τr [])
+            (fun _ _ _ => agree_regs fun _ h => (List.not_mem_nil h).elim) (by taint_decide)) ?_))))
+  · rintro σ s ⟨hn, fe, he, bits⟩
+    refine WP.mono (fe.wp (NoSp.of_all (by lit_decide)) (by lit_decide)
+      (Q := fun t => t.gpr .esi = BitVec.ofNat 32 n ∧ t.mem = s.mem)
+      (WP.mono (decCounter_ok (by omega_using [hn]) he) fun t ⟨c, g, m, r, w, _⟩ =>
+        ⟨FInv.of_counter fe.fin g m r w, g _ (by decide), w, c, m⟩)) fun t ⟨fe', c, m⟩ =>
+          ⟨fe', c, hn, fun i hi => by rw [m]; exact bits i hi⟩
+  · rintro σ s ⟨fe, he, hn, bits⟩
+    refine WP.mono (fe.wp (NoSp.of_all (by lit_decide)) (by lit_decide)
+      (Q := fun t => t.gpr .esi = BitVec.ofNat 32 n ∧ t.mem = s.mem ∧ t.zf = some (decide (n = 0)))
+      (wp_cmp rfl fun t f hz => WP.block_nil
+        ⟨⟨fe.fin.scr.of_keeps (f.rest []) (by decide), fe.fin.ctx.keep (congrFun f.gpr _),
+            f.mem ▸ fe.fin.bounded⟩, congrFun f.gpr _, f.wr, (congrFun f.gpr _).trans he, f.mem, ?_⟩))
+      fun t ⟨fe', c, m, z⟩ => ⟨⟨fe', c, hn, fun i hi => by rw [m]; exact bits i hi⟩, z⟩
+    rw [hz, he, show BitVec.ofNat 32 n - (0 : BitVec 32) = BitVec.ofNat 32 n from BitVec.sub_zero _,
+      ofNat_beq_zero (by omega_using [hn])]
 
-theorem combLoop_rel : ∀ n, RelCT isa (Runs BP₀ (LadB n)) (.loop combStep .ne)
-    (Runs BP₀ fun σ s => ∃ s₄, BL σ s₄ s 0) := by
-  refine RelCT.loop (M := isa) (fun n => Runs BP₀ (LadB n)) fun n => ?_
-  refine Runs.then (G := fun σ t => (n < 114 ∧ ∃ s₄, BL σ s₄ t n) ∧ t.zf = some (decide (n = 0)))
-    (fun _ _ h => h) (combStep_tr n) ?_ ?_
-  · rintro σ s ⟨hn, s₄, h⟩
-    exact WP.mono (step_stage hn h) fun t ⟨l, z⟩ => ⟨⟨hn, s₄, l⟩, z⟩
-  · rintro σ₁ σ₂ t₁ t₂ hP - ⟨l₁, z₁⟩ ⟨l₂, z₂⟩
+/-- The trace of the comb's 114 rows. -/
+theorem combLoopG_tr (hP : ∀ σ₁ σ₂, P₀ σ₁ σ₂ → bs σ₁ = bs σ₂ ∧ σ₁.gpr .esp = σ₂.gpr .esp) :
+    RelCT isa (Runs P₀ fun σ s => FE bs σ s ∧ BitsG bs k σ s) combLoop fun _ _ => True := by
+  unfold combLoop
+  refine RelCT.seq (Runs.step (G := fun σ s => 113 < 114 ∧ FE bs σ s ∧
+        s.gpr .esi = BitVec.ofNat 32 (113 + 1) ∧ BitsG bs k σ s)
+      (RelCT.taint (A := taint) (τr []) (fun _ _ _ => agree_regs fun _ h => (List.not_mem_nil h).elim)
+        (by taint_decide)) ?_)
+    (RelCT.loop (M := isa) (fun n => Runs P₀ fun σ s => n < 114 ∧ FE bs σ s ∧
+      s.gpr .esi = BitVec.ofNat 32 (n + 1) ∧ BitsG bs k σ s) (fun n => ?_) 113)
+  · rintro σ s ⟨fe, bits⟩
+    exact WP.mono (setCounter_ok s 114 (by decide)) fun t ⟨h1, h2, h3, h4, h5⟩ =>
+      ⟨by decide, ⟨FInv.of_counter fe.fin h2 h3 h4 h5, (h2 _ (by decide)).trans fe.sp, h5.trans fe.wr,
+        by rw [h3]; exact fe.frame⟩, h1, fun i hi => by rw [h3]; exact bits i hi⟩
+  · refine (combStepG_rel hP n).mono (fun _ _ h => h) ?_
+    rintro t₁ t₂ ⟨σ₁, σ₂, hp, ⟨r₁, z₁⟩, ⟨r₂, z₂⟩⟩
     rw [eval_ne z₁, eval_ne z₂]
-    refine ⟨rfl, fun hz => ⟨σ₁, σ₂, hP, ?_, ?_⟩, fun hz => ?_⟩
-    · have : n = 0 := by simpa using hz
-      subst this; exact l₁.2
-    · have : n = 0 := by simpa using hz
-      subst this; exact l₂.2
-    · have hn0 : n ≠ 0 := fun h0 => by simp [h0] at hz
-      obtain ⟨hn, a₁, L₁⟩ := l₁
-      obtain ⟨-, a₂, L₂⟩ := l₂
-      have e : n - 1 + 1 = n := by omega_using [hn0]
-      exact ⟨n - 1, by omega_using [hn0], σ₁, σ₂, hP, ⟨by omega_using [hn], a₁, e ▸ L₁⟩, ⟨by omega_using [hn], a₂, e ▸ L₂⟩⟩
+    refine ⟨rfl, fun _ => trivial, fun hz => ?_⟩
+    have hn0 : n ≠ 0 := fun h0 => by simp [h0] at hz
+    have e : n - 1 + 1 = n := by omega_using [hn0]
+    have hn := r₁.2.2.1
+    exact ⟨n - 1, by omega_using [hn0], σ₁, σ₂, hp,
+      ⟨by omega_using [hn], r₁.1, by rw [e]; exact r₁.2.1, r₁.2.2.2⟩,
+      ⟨by omega_using [hn], r₂.1, by rw [e]; exact r₂.2.1, r₂.2.2.2⟩⟩
+
+end
 
 /-! ## The whole function -/
 
@@ -210,15 +232,10 @@ theorem baseEntry_rel :
   rintro s₁ s₂ ⟨σ₁, σ₂, hP, ⟨rfl, -⟩, ⟨rfl, -⟩⟩
   exact scalarBase_agree hP.1 hP.2.1 hP.2.2
 
-theorem combLoopAll_rel : RelCT isa (Runs BP₀ BMid) combLoop (Runs BP₀ fun σ s => ∃ s₄, BL σ s₄ s 0) := by
-  unfold combLoop
-  refine RelCT.seq (Runs.step (G := LadB 113) (RelCT.taint (A := taint) (τr [])
-    (fun _ _ _ => agree_regs fun _ h => (List.not_mem_nil h).elim) (by taint_decide)) ?_) (combLoop_rel 113)
-  intro σ s m
-  refine WP.mono (setCounter_ok s 114 (by decide)) fun t ⟨h1, h2, h3, h4, h5⟩ =>
-    ⟨by decide, s, m, m.start t h1 h2 h3 h4 h5, ?_⟩
-  exact ⟨FInv.of_counter m.fe.fin h2 h3 h4 h5, (h2 _ (by decide)).trans m.fe.sp, h5.trans m.fe.wr,
-    by rw [h3]; exact m.fe.frame⟩
+theorem combLoopAll_rel : RelCT isa (Runs BP₀ BMid) combLoop (Runs BP₀ fun σ s => ∃ s₄, BL σ s₄ s 0) :=
+  Runs.step ((combLoopG_tr (bs := bsB) (k := kB) fun _ _ h => h.hp).mono
+      (fun _ _ ⟨σ₁, σ₂, hP, m₁, m₂⟩ => ⟨σ₁, σ₂, hP, ⟨m₁.fe, m₁.bits⟩, ⟨m₂.fe, m₂.bits⟩⟩) fun _ _ h => h)
+    fun _ s m => WP.mono (loop_stage m) fun _ l => ⟨s, l⟩
 
 theorem baseEncode_tr : RelCT isa (Runs BP₀ fun σ s => ∃ s₄, BL σ s₄ s 0) baseEncode fun _ _ => True := by
   unfold baseEncode
