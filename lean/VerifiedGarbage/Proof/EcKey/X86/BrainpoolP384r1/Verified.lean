@@ -58,11 +58,7 @@ theorem pk_sp : SpOk publicKeyBrainpoolP384r1 brainpoolp384r1.stk := ⟨NoSp.of_
 
 theorem post_of {s s' : State} (h : PkPost brainpoolp384r1 s s') : pkX86.post s s' := by
   unfold PkPost at h
-  show match pk s.mem ((arg s 1).setWidth 64) with
-    | some (.affine x y) => BitVec.setWidth 32 (s'.gpr .edx ++ s'.gpr .eax) = 1 ∧
-        Spec.EcKey.bytesAt s'.mem ((arg s 0).setWidth 64) 97 = Spec.EcKey.encodePoint (.affine x y)
-    | _ => BitVec.setWidth 32 (s'.gpr .edx ++ s'.gpr .eax) = 0 ∧
-        Spec.EcKey.bytesAt s'.mem ((arg s 0).setWidth 64) 97 = List.replicate 97 0
+  dsimp only [pkX86]
   rw [BitVec.setWidth_append_eq_right]
   revert h
   generalize hq : pk s.mem ((arg s 1).setWidth 64) = q

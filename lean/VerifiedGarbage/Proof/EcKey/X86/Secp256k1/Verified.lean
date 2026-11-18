@@ -66,11 +66,7 @@ theorem pk_sp : SpOk publicKeySecp256k1 secp256k1.stk := ⟨NoSp.of_all (by lit_
 
 theorem post_of {s s' : State} (h : PkPost secp256k1 s s') : pkX86.post s s' := by
   unfold PkPost at h
-  show match pk s.mem ((arg s 1).setWidth 64) with
-    | some (.affine x y) => BitVec.setWidth 32 (s'.gpr .edx ++ s'.gpr .eax) = 1 ∧
-        Spec.EcKey.bytesAt s'.mem ((arg s 0).setWidth 64) 65 = Spec.EcKey.encodePoint (.affine x y)
-    | _ => BitVec.setWidth 32 (s'.gpr .edx ++ s'.gpr .eax) = 0 ∧
-        Spec.EcKey.bytesAt s'.mem ((arg s 0).setWidth 64) 65 = List.replicate 65 0
+  dsimp only [pkX86]
   rw [BitVec.setWidth_append_eq_right]
   revert h
   generalize hq : pk s.mem ((arg s 1).setWidth 64) = q

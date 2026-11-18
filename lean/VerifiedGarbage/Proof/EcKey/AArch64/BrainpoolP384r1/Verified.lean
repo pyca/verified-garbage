@@ -35,11 +35,7 @@ theorem pre_of {s : State} (h : pkAArch64.pre s) : PkPre brainpoolp384r1 s := by
 
 theorem post_of {s s' : State} (h : PkPost brainpoolp384r1 s s') : pkAArch64.post s s' := by
   unfold PkPost at h
-  show match pk s.mem (s.gpr .x1) with
-    | some (.affine x y) => (s'.gpr .x0).setWidth 32 = 1 ∧
-        Spec.EcKey.bytesAt s'.mem (s.gpr .x0) 97 = Spec.EcKey.encodePoint (.affine x y)
-    | _ => (s'.gpr .x0).setWidth 32 = 0 ∧
-        Spec.EcKey.bytesAt s'.mem (s.gpr .x0) 97 = List.replicate 97 0
+  dsimp only [pkAArch64]
   revert h
   generalize hq : pk s.mem (s.gpr .x1) = q
   rw [show Spec.EcKey.publicKey brainpoolp384r1.C (dk brainpoolp384r1 s) = pk s.mem (s.gpr .x1) from rfl, hq]
