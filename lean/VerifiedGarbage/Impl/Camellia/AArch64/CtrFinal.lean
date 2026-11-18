@@ -14,7 +14,10 @@ the caller's callee-saved registers and the return address, then a block of
 the code's own. It is AES-CTR's final function's
 (`Impl/AesCtr/AArch64/Final.lean`) with Camellia's arguments, around calls
 of `vg_camellia_ctr`, framed by its own working space on the stack
-(`ctrFramed`):
+(`ctrFramed`), as an internal function of its own, `vg_camellia_ctr_core`,
+which does not zero that space: the final function's registration zeroes the
+whole of its stack on return (`ScrubAll.withScrubAll`), as
+`vg_camellia_ctr`'s does:
 
 1. the registers saved in `save` (AES-CFB's final functions' slots,
    `finalSaved`), and the arguments kept in `x19` (schedule), `x20`
@@ -44,7 +47,7 @@ open VG.Impl.AesCtr.AArch64 (zeroSlots tailKey)
 open VG.Impl.Modes.AArch64 (xorByte)
 
 /-- `vg_camellia_ctr`, with its working space on the stack. -/
-def ctrFramed : Prog isa := Impl.StackScratch.AArch64.withStackScratchWiped 3344 .x5 418 ctr
+def ctrFramed : Prog isa := Impl.StackScratch.AArch64.withStackScratch 3344 .x5 ctr
 
 /-- The registers saved in `save`, at `x5`. -/
 def ctrFinalSave : List Instr := finalSaved.map fun (r, d) => .str .x r .x5 d
@@ -72,12 +75,12 @@ def ctrFinalTailArgs : List Instr :=
 /-- The partial last block: the output block `CIPH_K(Tₙ₊₁)` in the block of
 `save`, and its first `u` bytes XORed into the data. -/
 def ctrFinalTail : Prog isa :=
-  .seq (.block ctrFinalTailArgs) (.seq (.call "vg_camellia_ctr" ctrFramed)
+  .seq (.block ctrFinalTailArgs) (.seq (.call "vg_camellia_ctr_core" ctrFramed)
     (.seq (.block tailKey) (.loop (.block (xorByte .x22 .x23)) (.nonzero .x .x23))))
 
 /-- `vg_camellia_ctr_final`. -/
 def ctrFinal : Prog isa :=
-  .seq (.block ctrFinalSetup) (.seq (.call "vg_camellia_ctr" ctrFramed)
+  .seq (.block ctrFinalSetup) (.seq (.call "vg_camellia_ctr_core" ctrFramed)
     (.seq (.ite (.zero .x .x23) (.block []) ctrFinalTail) (.block finalRestore)))
 
 end VG.Impl.Camellia.AArch64

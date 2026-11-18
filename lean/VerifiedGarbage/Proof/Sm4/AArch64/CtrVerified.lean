@@ -5,7 +5,7 @@ import VerifiedGarbage.Proof.Modes.AArch64.Ctr
 import VerifiedGarbage.Proof.Modes.AArch64.Steps
 public import VerifiedGarbage.Proof.Sm4.AArch64.Serial.ModeCore
 public import VerifiedGarbage.Proof.Sm4.Scratch
-import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
+import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
 public import VerifiedGarbage.Proof.Sm4.AArch64.ModeCore
 public import VerifiedGarbage.Impl.StackScratch.AArch64
 import VerifiedGarbage.Proof.Framework.Offset
@@ -15,7 +15,7 @@ meta import VerifiedGarbage.Proof.Modes.AArch64.Ctr
 meta import VerifiedGarbage.Proof.Modes.AArch64.Steps
 meta import VerifiedGarbage.Proof.Sm4.AArch64.Serial.ModeCore
 meta import VerifiedGarbage.Proof.Sm4.Scratch
-meta import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
+meta import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
 meta import VerifiedGarbage.Proof.Sm4.AArch64.ModeCore
 meta import VerifiedGarbage.Impl.StackScratch.AArch64
 meta import VerifiedGarbage.Proof.Framework.Offset
@@ -199,13 +199,14 @@ def ctrFrameSat : State where
 theorem ctrFrameSat_pre : ∃ s, (Spec.Sm4.ctrContract AArch64.abi 3264).pre s := by
   implies_sat [Spec.Sm4.ctrContract, Spec.Sm4.ctrSig, AArch64.abi, AArch64.argRegs] [ctrFrameSat] using ctrFrameSat
 
-/-- CTR with its working space on the stack. -/
+/-- CTR with its working space on the stack, which its registration zeroes
+(`ScrubAll.withScrubAll`). -/
 theorem ctr_framed :
-    Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratchWiped 3264 .x4 408 ctr)
+    Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratch 3264 .x4 ctr)
       (Spec.Sm4.ctrContract AArch64.abi 3264) :=
-  AArch64.Verified.stackScratchWiped (sig := Spec.Sm4.ctrSig) (nm := "scratch") (e := .u64)
+  AArch64.Verified.stackScratch (sig := Spec.Sm4.ctrSig) (nm := "scratch") (e := .u64)
     (n := 408) (post := Proof.Sm4.ctrPost AArch64.abi.ptrBits) (wa := true) (stack := 0)
-    (bytes := 3264) ctr_verified
-    (by decide) (by decide) (by decide) (Proof.Sm4.ctrPostOut_local _) ctrFrameSat_pre
+    (bytes := 3264) ctr_verified (by decide) (by decide)
+    (fun vs m m₁ m₂ r hl _ hb h => Proof.Sm4.ctrPostOut_local _ vs m m₁ m₂ r hl hb h) ctrFrameSat_pre
 
 end VG.Proof.Sm4.AArch64

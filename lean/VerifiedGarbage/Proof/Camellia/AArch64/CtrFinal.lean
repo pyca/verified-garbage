@@ -30,6 +30,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.Framework.AArch64.Taint
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
 import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
+import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Impl.Camellia.AArch64.CtrFinal
@@ -63,6 +64,7 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
+meta import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 
@@ -136,11 +138,13 @@ def ctrF : Contract isa where
 
 /-- `vg_camellia_ctr` meets its contract on the subkeys. -/
 theorem ctrFramed_sk : Verified AArch64.target ctrFramed (Proof.Camellia.ctrContractSk AArch64.abi 3344) :=
-  AArch64.Verified.stackScratchWiped (sig := Spec.Camellia.ctrSig) (nm := "scratch") (e := .u64)
+  AArch64.Verified.stackScratch (sig := Spec.Camellia.ctrSig) (nm := "scratch") (e := .u64)
     (n := 418) (pre := Spec.Camellia.ctrPre AArch64.abi.ptrBits)
     (post := Proof.Camellia.ctrPostSk AArch64.abi.ptrBits) (wa := true) (stack := 0)
     (bytes := 3344) (by rw [← Proof.Camellia.ctrScratchContract_eq]; exact Camellia.AArch64.ctr_verified)
-    (by decide) (by decide) (by decide) (Proof.Camellia.ctrPostOut_local _) Camellia.AArch64.ctrFrameSat_pre
+    (by decide) (by decide)
+    (fun vs m m₁ m₂ r hl _ hb h => Proof.Camellia.ctrPostOut_local _ vs m m₁ m₂ r hl hb h)
+    Camellia.AArch64.ctrFrameSat_pre
 
 theorem ctrF_implies : (Proof.Camellia.ctrContractSk AArch64.abi 3344).Implies ctrF where
   pre s hs := by
@@ -485,7 +489,7 @@ theorem call_frame {s₀ s s' : State} (hsp : s.sp = s₀.sp) {wr : List Region}
       exact ⟨kStk s₀, by simp, by rw [hsp]; exact stk_sub s₀⟩
 
 theorem whole_wp {s₀ : State} (hp : KPre s₀) {s : State} (h : KSetup s₀ s) :
-    WP isa (.call "vg_camellia_ctr" ctrFramed) s (KWhole s₀) := by
+    WP isa (.call "vg_camellia_ctr_core" ctrFramed) s (KWhole s₀) := by
   refine WP.of_dit (c := .call _ ctrFramed) ctr_noDit ?_
   obtain ⟨eK, eIv, eB⟩ := sv_bytes hp
   obtain ⟨hpre, hc, hw⟩ := whole_pre hp h
@@ -643,7 +647,7 @@ theorem cipher_length (sk : Spec.Camellia.Subkeys) (b : List Byte) : (Spec.Camel
   simp [Spec.Camellia.cipher]
 
 theorem tail_call_wp {s₀ : State} (hp : KPre s₀) {s : State} (h : KArgs s₀ s) :
-    WP isa (.call "vg_camellia_ctr" ctrFramed) s (KCall s₀) := by
+    WP isa (.call "vg_camellia_ctr_core" ctrFramed) s (KCall s₀) := by
   obtain ⟨hpre, hc, hw⟩ := tail_pre hp h
   have big := big_of (kW1_kW h.frame)
   have eK := subkeys_of hp big hp.sch_big
@@ -866,7 +870,7 @@ theorem final_rel {s₀ s₀' : State} (h0 : ctrFinalAArch64.pre s₀) (h0' : ct
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption)
     fun a b h => by obtain ⟨rfl, rfl⟩ := h; exact ⟨setup_wp hp, setup_wp hp'⟩
   -- The whole blocks.
-  have r₂ := (RelCT.callEx (k := ctrF) (n := "vg_camellia_ctr") ctr_ok ctr_ct
+  have r₂ := (RelCT.callEx (k := ctrF) (n := "vg_camellia_ctr_core") ctr_ok ctr_ct
     (P := fun a b => KSetup s₀ a ∧ KSetup s₀' b) fun a b ⟨ha, hb⟩ => by
       obtain ⟨pa, ca, wa⟩ := whole_pre hp ha
       obtain ⟨pb, cb, wb⟩ := whole_pre hp' hb
@@ -894,7 +898,7 @@ theorem final_rel {s₀ s₀' : State} (h0 : ctrFinalAArch64.pre s₀) (h0' : ct
         · rw [h.1.x21, h.2.x21, fIv, fIv, qIv]
         · rw [h.1.x25, h.2.x25, kV, kV, qV])
       fun a b h => ⟨tail_args_wp hp h.1, tail_args_wp hp' h.2⟩
-    have a₂ := (RelCT.callEx (k := ctrF) (n := "vg_camellia_ctr") ctr_ok ctr_ct
+    have a₂ := (RelCT.callEx (k := ctrF) (n := "vg_camellia_ctr_core") ctr_ok ctr_ct
       (P := fun a b => KArgs s₀ a ∧ KArgs s₀' b) fun a b ⟨ha, hb⟩ => by
         obtain ⟨pa, ca, wa⟩ := tail_pre hp ha
         obtain ⟨pb, cb, wb⟩ := tail_pre hp' hb

@@ -5,7 +5,7 @@ import VerifiedGarbage.Proof.Camellia.AArch64.Link
 import VerifiedGarbage.Proof.Modes.AArch64.Ctr
 public import VerifiedGarbage.Proof.Camellia.CtrScratch
 public import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
-import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
+import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
 public import VerifiedGarbage.Impl.StackScratch.AArch64
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Camellia.AArch64.Lit
@@ -16,7 +16,7 @@ meta import VerifiedGarbage.Proof.Camellia.AArch64.Link
 meta import VerifiedGarbage.Proof.Modes.AArch64.Ctr
 meta import VerifiedGarbage.Proof.Camellia.CtrScratch
 meta import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
-meta import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
+meta import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
 meta import VerifiedGarbage.Impl.StackScratch.AArch64
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
 meta import VerifiedGarbage.Proof.Camellia.AArch64.Lit
@@ -161,15 +161,17 @@ theorem ctrFrameSat_pre : ∃ s, (Proof.Camellia.ctrContractSk AArch64.abi 3344)
   implies_sat [Proof.Camellia.ctrContractSk, Spec.Camellia.ctrSig, Spec.Camellia.ctrPre,
     Proof.Camellia.ctrPostSk, AArch64.abi, AArch64.argRegs] [ctrFrameSat] using ctrFrameSat
 
-/-- CTR with its working space on the stack. -/
+/-- CTR with its working space on the stack, which its registration zeroes
+(`ScrubAll.withScrubAll`). -/
 theorem ctr_framed :
-    Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratchWiped 3344 .x5 418 ctr)
+    Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratch 3344 .x5 ctr)
       (Spec.Camellia.ctrContract AArch64.abi 3344) :=
   Proof.Camellia.ctr_of_sk <|
-  AArch64.Verified.stackScratchWiped (sig := Spec.Camellia.ctrSig) (nm := "scratch") (e := .u64)
+  AArch64.Verified.stackScratch (sig := Spec.Camellia.ctrSig) (nm := "scratch") (e := .u64)
     (n := 418) (pre := Spec.Camellia.ctrPre AArch64.abi.ptrBits)
     (post := Proof.Camellia.ctrPostSk AArch64.abi.ptrBits) (wa := true) (stack := 0)
     (bytes := 3344) (by rw [← Proof.Camellia.ctrScratchContract_eq]; exact ctr_verified)
-    (by decide) (by decide) (by decide) (Proof.Camellia.ctrPostOut_local _) ctrFrameSat_pre
+    (by decide) (by decide)
+    (fun vs m m₁ m₂ r hl _ hb h => Proof.Camellia.ctrPostOut_local _ vs m m₁ m₂ r hl hb h) ctrFrameSat_pre
 
 end VG.Proof.Camellia.AArch64

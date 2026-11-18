@@ -222,9 +222,11 @@ structure KeyImpl where
 
 namespace KeyImpl
 
-/-- `vg_sm4_expand_key`, in the baseline ISA. -/
+/-- `vg_sm4_expand_key`, in the baseline ISA, as an internal function of its
+own, `vg_sm4_expand_key_core`: `vg_sm4_expand_key` also clears the registers
+it leaves. -/
 def scalar : KeyImpl where
-  fn := ⟨"vg_sm4_expand_key", keyCode⟩
+  fn := ⟨"vg_sm4_expand_key_core", keyCode⟩
   ok := key_ok
   ct := key_ct
   depth := key_depth

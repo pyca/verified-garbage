@@ -38,6 +38,8 @@ pub(crate) unsafe extern "C" fn vg_sm4_expand_key_sm4(key: *const [u8; 16], sche
 ///
 /// Contract: `VG.Spec.Sm4.expandKeyContract`. Constant time: only pointers may affect timing, not key bytes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `key` must be valid for reads of 16 bytes.
@@ -154,7 +156,11 @@ pub(crate) unsafe extern "C" fn vg_sm4_expand_key(key: *const [u8; 16], schedule
 .inst 0x0e043c0a,0x4aca4d4b,0x4aca256b,0x4a0b0108,0xb9007828,0x528e4f2a,0x72ac8d6a,0x4a06014a
 .inst 0x4a07014a,0x4a08014a,0x4e040d40,0x6e241c01,0x6e251c02,0x6e261c03,0x4e006200,0x4e016281
 .inst 0x4e026302,0x4e036383,0x4ea31c42,0x4ea11c00,0x4ea21c00,0x0e043c0a,0x4aca4d4b,0x4aca256b
-.inst 0x4a0b0129,0xb9007c29,0xd65f03c0
+.inst 0x4a0b0129,0xb9007c29,0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b
+.inst 0xd280000f,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406
+.inst 0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417
+.inst 0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f
+.inst 0xea01003f,0xd2800000,0xd65f03c0
 .p2align 6",
     )
 }
@@ -704,6 +710,10 @@ pub(crate) mod vg_sm4_ctr32_sm4;
 #[rustfmt::skip]
 #[path = "internal/vg_sm4_ecb.rs"]
 pub(crate) mod vg_sm4_ecb;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sm4_expand_key_core.rs"]
+pub(crate) mod vg_sm4_expand_key_core;
 
 #[rustfmt::skip]
 #[path = "internal/vg_sm4_prepare_keys.rs"]

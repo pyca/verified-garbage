@@ -216,7 +216,7 @@ namespace CtrImpl
 
 /-- `vg_sm4_ctr`, bitsliced, in the baseline ISA. -/
 def scalar : CtrImpl where
-  name := "vg_sm4_ctr"
+  name := "vg_sm4_ctr_core"
   code := ctrFramed
   ok := ctr_ok
   ct := ctr_ct
@@ -227,7 +227,7 @@ def scalar : CtrImpl where
 
 /-- `vg_sm4_ctr_sm4`, with the Armv8 SM4 instructions. -/
 def sm4 : CtrImpl where
-  name := "vg_sm4_ctr_sm4"
+  name := "vg_sm4_ctr_sm4_core"
   code := ctrFramedSm4
   ok := ctrSm4_ok
   ct := ctrSm4_ct

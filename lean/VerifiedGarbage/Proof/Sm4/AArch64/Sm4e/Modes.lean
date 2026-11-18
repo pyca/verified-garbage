@@ -24,6 +24,7 @@ import VerifiedGarbage.Proof.Modes.AArch64.Ctr32
 import VerifiedGarbage.Proof.Modes.AArch64.CbcDecChained
 import VerifiedGarbage.Proof.Modes.AArch64.CfbDec.Whole
 import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
+import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
 import VerifiedGarbage.Proof.Framework.AArch64.Inline
 import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -53,6 +54,7 @@ meta import VerifiedGarbage.Proof.Modes.AArch64.Ctr32
 meta import VerifiedGarbage.Proof.Modes.AArch64.CbcDecChained
 meta import VerifiedGarbage.Proof.Modes.AArch64.CfbDec.Whole
 meta import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
+meta import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.AArch64.Inline
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -515,14 +517,15 @@ theorem cfbDecFrameSat_pre : ∃ s, (Spec.Sm4.cfbDecryptContract AArch64.abi 224
   implies_sat [Spec.Sm4.cfbDecryptContract, Spec.Sm4.cfbSig, Spec.Sm4.ofbSig, AArch64.abi, AArch64.argRegs]
     [frameSat] using frameSat
 
-/-- `vg_sm4_ctr_sm4`: CTR with its working space on the stack. -/
+/-- `vg_sm4_ctr_sm4`: CTR with its working space on the stack, which its
+registration zeroes (`ScrubAll.withScrubAll`). -/
 theorem ctr_framed :
-    Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratchWiped 224 .x4 28 ctr)
+    Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratch 224 .x4 ctr)
       (Spec.Sm4.ctrContract AArch64.abi 224) :=
-  AArch64.Verified.stackScratchWiped (sig := Spec.Sm4.ctrSig) (nm := "scratch") (e := .u64)
+  AArch64.Verified.stackScratch (sig := Spec.Sm4.ctrSig) (nm := "scratch") (e := .u64)
     (n := 28) (post := Proof.Sm4.ctrPost AArch64.abi.ptrBits) (wa := true) (stack := 0)
-    (bytes := 224) ctr_verified
-    (by decide) (by decide) (by decide) (Proof.Sm4.ctrPostOut_local _) ctrFrameSat_pre
+    (bytes := 224) ctr_verified (by decide) (by decide)
+    (fun vs m m₁ m₂ r hl _ hb h => Proof.Sm4.ctrPostOut_local _ vs m m₁ m₂ r hl hb h) ctrFrameSat_pre
 
 /-- `vg_sm4_ctr32_sm4`: counter mode with `inc₃₂`, with its working space on
 the stack. -/

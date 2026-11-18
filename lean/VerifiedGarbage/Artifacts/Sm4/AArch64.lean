@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.Sm4.AArch64.Sm4e.Ecb
 public import VerifiedGarbage.Proof.Sm4.AArch64.Sm4e.Key
 public import VerifiedGarbage.Proof.Sm4.AArch64.EcbResidue
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Sm4.AArch64.CtrScrub
 public import VerifiedGarbage.TCB.AArch64.Print
 
 /-! # SM4 on AArch64 -/
@@ -22,9 +23,9 @@ def artifacts : List Artifact := [
     code := Impl.Sm4.AArch64.Sm4e.expandKey
     verified := Proof.Sm4.AArch64.Sm4e.expandKey_verified
     residue := some ⟨Proof.Sm4.AArch64.Sm4e.expandKey_noResidue _⟩ },
-  Spec.Sm4.expandKeyApi.artifact AArch64.target {
+  Spec.Sm4.expandKeyApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
     code := Impl.Sm4.AArch64.Serial.expandKey
-    verified := Proof.Sm4.AArch64.Serial.expandKey_verified },
+    verified := Proof.Sm4.AArch64.Serial.expandKey_verified } Proof.Sm4.AArch64.CtrScrub.expandKeyOk),
   Spec.Sm4.ecbEncryptApi.artifact AArch64.target {
     suffix := "_sm4"
     code := Proof.Sm4.AArch64.Sm4e.ecbCleared .encrypt
