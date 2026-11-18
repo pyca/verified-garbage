@@ -354,4 +354,271 @@ theorem ptrStep_sound {W d : Nat} {i : Instr} {w : Addr} {ptrs : List (Reg × Na
     · exact hk
   · exact hk
 
+/-! ## The analysis -/
+
+/-- `rtaintB`'s taint, and, unless forgotten, the depth in the window, the
+mask of its bytes the runs agree on, and the pointers into it. -/
+abbrev T := RTaintB.T × Option (Nat × Nat × List (Reg × Nat))
+
+def AgreeG (W : Nat) (τ : T) (s₁ s₂ : State) : Prop :=
+  match τ.2 with
+  | some (d, P, ptrs) => AgreeD W τ.1 d s₁ s₂ ∧ PAgree W (wbase s₂.sp d W) P s₁.mem s₂.mem ∧
+      PtrsOk (wbase s₂.sp d W) ptrs s₁ s₂
+  | none => ∃ d, AgreeD W τ.1 d s₁ s₂
+
+theorem writeAll_congr {s t : State} (hg : s.gpr = t.gpr) (hsp : s.sp = t.sp) (hv : s.v = t.v) :
+    ∀ (l : List (Base × Nat × Nat × Src)) (m : Mem), writeAll s l m = writeAll t l m
+  | [], _ => rfl
+  | (b, off, n, src) :: l, m => by
+    have hb : b.val s = b.val t := by cases b <;> simp [Base.val, hg, hsp]
+    have hs : src.val n s = src.val n t := by cases src <;> simp [Src.val, hg, hv]
+    simp only [writeAll, hb, hs]
+    exact writeAll_congr hg hsp hv l _
+
+def stepG (W : Nat) (τ : T) (i : Instr) : Option T :=
+  (RTaintB.step τ.1 i).map fun τb => (τb, τ.2.map fun (d, P, ptrs) =>
+    (d, storesP W d ptrs τ.1 P (stores i), ptrStep W d ptrs i))
+
+theorem stepG_sound {W : Nat} {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha : AgreeG W τ s₁ s₂)
+    (hs : stepG W τ i = some τ') (e₁ : exec i s₁ = some s₁') (e₂ : exec i s₂ = some s₂')
+    (hadr : addrs i s₁ = addrs i s₂) : AgreeG W τ' s₁' s₂' := by
+  obtain ⟨τb, fi⟩ := τ
+  obtain ⟨σ, hσ, rfl⟩ := Option.map_eq_some_iff.mp hs
+  cases fi with
+  | none =>
+    obtain ⟨d, hD⟩ := ha
+    exact ⟨d, step_sound hD hσ e₁ e₂ hadr⟩
+  | some f =>
+    obtain ⟨d, P, ptrs⟩ := f
+    obtain ⟨hD, hP, hp⟩ := ha
+    obtain ⟨hsp, -, -, -, -⟩ := AgreeD.rest hD
+    have sp₂ := exec_sp e₂
+    refine ⟨step_sound hD hσ e₁ e₂ hadr, ?_, ?_⟩
+    · show PAgree W (wbase s₂'.sp d W) (storesP W d ptrs τb P (stores i)) s₁'.mem s₂'.mem
+      rw [sp₂, exec_mem e₁, exec_mem e₂]
+      have hg := storesP_sound (s₂ := ghost s₁ s₂) hD.2.2.1 hD.2.1 hsp rfl hD.1 hp (stores i)
+        (stores_addrs (by rw [hadr]; exact (addrs_withMS i s₂ _ _).symm)) hP
+      rw [writeAll_congr (s := ghost s₁ s₂) (t := s₂) rfl rfl rfl] at hg
+      exact hg
+    · show PtrsOk (wbase s₂'.sp d W) (ptrStep W d ptrs i) s₁' s₂'
+      rw [sp₂]
+      exact ptrStep_sound hp hsp rfl hD.2.1 hD.2.2.1 e₁ e₂
+
+/-! ## Calls, returns and frames -/
+
+def pushG (W : Nat) (τ : T) (i : Instr) : Option T :=
+  match τ.2, i with
+  | some (d, P, ptrs), .alloc b => if d + b ≤ W then some (τ.1, some (d + b, P, ptrs)) else none
+  | some (d, P, ptrs), .push r =>
+    if d + 16 ≤ W then
+      some (τ.1, some (d + 16, (if τ.1.1.1.1.1.mem r then bset P (W - d - 16) 8 else bclr P (W - d - 16) 8),
+        ptrs))
+    else none
+  | _, _ => none
+
+def popG (τ : T) (j : Instr) : Option T :=
+  match τ.2, j with
+  | some (d, P, ptrs), .free b => if b ≤ d then some (τ.1, some (d - b, P, ptrs)) else none
+  | some (d, P, ptrs), .pop r =>
+    if 16 ≤ d then some (eraseT τ.1 r, some (d - 16, P, ptrs.filter (·.1 != r))) else none
+  | _, _ => none
+
+def callG (τ : T) : T :=
+  (callT τ.1, τ.2.map fun (d, P, ptrs) =>
+    (d, P, ptrs.filter (fun e => e.1 != .x30 && e.1 != .x16 && e.1 != .x17)))
+
+theorem wbase_sub {sp : Addr} {b d W : Nat} :
+    wbase (sp - BitVec.ofNat 64 b) (d + b) W = wbase sp d W := by
+  unfold wbase; rw [sp_sub_add]
+
+theorem wbase_sub16 {sp : Addr} {d W : Nat} : wbase (sp - 16) (d + 16) W = wbase sp d W := by
+  unfold wbase; rw [sp_sub16_add]
+
+theorem wbase_add' {sp : Addr} {b d W : Nat} (h : b ≤ d) :
+    wbase (sp + BitVec.ofNat 64 b) (d - b) W = wbase sp d W := by
+  unfold wbase; rw [sp_add_sub h]
+
+theorem lose_agree {m₁ m₂ : Mem} {a x : Addr} {n : Nat} {u : Nat → BitVec 64} (h : m₁ x = m₂ x) :
+    lose m₁ a n u x = lose m₂ a n u x := by
+  simp only [lose]; split <;> [split <;> [exact h; rfl]; exact h]
+
+end RTaintG
+end VG.AArch64
+
+namespace VG.AArch64.RTaintG
+open VG.AArch64 VG.AArch64.Residue VG.AArch64.MemEffect VG.AArch64.RTaintF
+
+theorem wbase_push {sp : Addr} {d W : Nat} (hd : d + 16 ≤ W) (hW : W < 2 ^ 64) :
+    sp - 16 = wbase sp d W + BitVec.ofNat 64 (W - d - 16) := by
+  unfold wbase
+  rw [show (16 : Addr) = BitVec.ofNat 64 16 from rfl]
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_add, BitVec.toNat_sub, BitVec.toNat_ofNat]
+  have := sp.isLt
+  rw [Nat.mod_eq_of_lt (show W < 2 ^ 64 by omega), Nat.mod_eq_of_lt (show d < 2 ^ 64 by omega),
+    Nat.mod_eq_of_lt (show W - d - 16 < 2 ^ 64 by omega)]
+  omega
+
+theorem pushG_sound {W : Nat} {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha : AgreeG W τ s₁ s₂)
+    (hs : pushG W τ i = some τ') (e₁ : push i s₁ = some s₁') (e₂ : push i s₂ = some s₂') :
+    AgreeG W τ' s₁' s₂' := by
+  obtain ⟨τb, fi⟩ := τ
+  cases fi with
+  | none => simp only [pushG] at hs; cases hs
+  | some f =>
+  obtain ⟨d, P, ptrs⟩ := f
+  obtain ⟨hD, hP, hp⟩ := ha
+  obtain ⟨hsp, -, -, -, -⟩ := AgreeD.rest hD
+  cases i <;> simp only [pushG, reduceCtorEq] at hs
+  case alloc b =>
+    split at hs <;> [rename_i hle; cases hs]
+    obtain rfl := Option.some.inj hs
+    obtain ⟨d', hd', hD'⟩ := pushF_sound (τ := (τb, some d)) (τ' := (τb, some (d + b)))
+      ⟨d, Or.inl rfl, hD⟩ (by simp only [pushF, hle, ↓reduceIte]) e₁ e₂
+    have : d' = d + b := by
+      rcases hd' with h | h
+      · exact (Option.some.inj h).symm
+      · cases h
+    subst this
+    simp only [push] at e₁ e₂
+    split at e₁ <;> [skip; cases e₁]
+    split at e₂ <;> [skip; cases e₂]
+    obtain rfl := Option.some.inj e₁
+    obtain rfl := Option.some.inj e₂
+    refine ⟨hD', ?_, ?_⟩
+    · show PAgree W (wbase (s₂.sp - BitVec.ofNat 64 b) (d + b) W) P s₁.mem s₂.mem
+      rw [wbase_sub]; exact hP
+    · show PtrsOk (wbase (s₂.sp - BitVec.ofNat 64 b) (d + b) W) ptrs s₁ s₂
+      rw [wbase_sub]; exact hp
+  case push r =>
+    split at hs <;> [rename_i hle; cases hs]
+    obtain rfl := Option.some.inj hs
+    obtain ⟨d', hd', hD'⟩ := pushF_sound (τ := (τb, some d)) (τ' := (τb, some (d + 16)))
+      ⟨d, Or.inl rfl, hD⟩ (by simp only [pushF, hle, ↓reduceIte]) e₁ e₂
+    have : d' = d + 16 := by
+      rcases hd' with h | h
+      · exact (Option.some.inj h).symm
+      · cases h
+    subst this
+    have hW := hD.2.2.1
+    simp only [push] at e₁ e₂
+    split at e₁ <;> [skip; cases e₁]
+    split at e₂ <;> [skip; cases e₂]
+    obtain rfl := Option.some.inj e₁
+    obtain rfl := Option.some.inj e₂
+    refine ⟨hD', ?_, ?_⟩
+    · show PAgree W (wbase (s₂.sp - 16) (d + 16) W) _ (s₁.mem.write (s₁.sp - 16) 8 (s₁.gpr r))
+        (s₂.mem.write (s₂.sp - 16) 8 (s₂.gpr r))
+      rw [wbase_sub16, hsp, wbase_push hle hW]
+      intro o' ho' hb
+      rw [write_at hW (by omega) ho', write_at hW (by omega) ho']
+      split at hb
+      · rename_i hpub
+        rw [testBit_bset] at hb
+        have hr : s₁.gpr r = s₂.gpr r := hD.1.1.1.1.1.2 r (Taint.pub_iff.mp hpub)
+        split
+        · rw [hr]
+        · rename_i hn
+          simp only [Bool.or_eq_true, Bool.and_eq_true, decide_eq_true_eq] at hb
+          rcases hb with hb | hb
+          · exact hP o' ho' hb
+          · exact absurd hb hn
+      · rw [testBit_bclr] at hb
+        simp only [Bool.and_eq_true, Bool.not_eq_true', Bool.and_eq_false_iff, decide_eq_false_iff_not] at hb
+        have hn : ¬ (W - d - 16 ≤ o' ∧ o' < W - d - 16 + 8) := by
+          rintro ⟨h₁, h₂⟩; rcases hb.2 with h | h <;> omega
+        simp only [hn, ↓reduceIte]
+        exact hP o' ho' hb.1
+    · show PtrsOk (wbase (s₂.sp - 16) (d + 16) W) ptrs _ _
+      rw [wbase_sub16]; exact hp
+
+theorem popG_sound {W : Nat} {τ τ' : T} {j : Instr} {a₁ a₂ b₁ b₂ c₁ c₂ : State}
+    (ha : AgreeG W τ b₁ b₂) (hs : popG τ j = some τ') (e₁ : pop j a₁ b₁ = some c₁)
+    (e₂ : pop j a₂ b₂ = some c₂) : AgreeG W τ' c₁ c₂ := by
+  obtain ⟨τb, fi⟩ := τ
+  cases fi with
+  | none => simp only [popG] at hs; cases hs
+  | some f =>
+  obtain ⟨d, P, ptrs⟩ := f
+  obtain ⟨hD, hP, hp⟩ := ha
+  obtain ⟨hsp, -, -, -, hu⟩ := AgreeD.rest hD
+  cases j <;> simp only [popG, reduceCtorEq] at hs
+  case free n =>
+    split at hs <;> [rename_i hle; cases hs]
+    obtain rfl := Option.some.inj hs
+    obtain ⟨d', hd', hD'⟩ := popF_sound (τ := (τb, some d)) (τ' := (τb, some (d - n)))
+      ⟨d, Or.inl rfl, hD⟩ (by simp only [popF, hle, ↓reduceIte]) e₁ e₂
+    have : d' = d - n := by
+      rcases hd' with h | h
+      · exact (Option.some.inj h).symm
+      · cases h
+    subst this
+    simp only [pop] at e₁ e₂
+    split at e₁ <;> [skip; cases e₁]
+    split at e₂ <;> [skip; cases e₂]
+    obtain rfl := Option.some.inj e₁
+    obtain rfl := Option.some.inj e₂
+    refine ⟨hD', ?_, ?_⟩
+    · show PAgree W (wbase (b₂.sp + BitVec.ofNat 64 n) (d - n) W) P
+        (lose b₁.mem b₁.sp n b₁.unknowns) (lose b₂.mem b₂.sp n b₂.unknowns)
+      rw [wbase_add' hle, hsp, hu]
+      intro o' ho' hb
+      exact lose_agree (hP o' ho' hb)
+    · show PtrsOk (wbase (b₂.sp + BitVec.ofNat 64 n) (d - n) W) ptrs _ _
+      rw [wbase_add' hle]; exact hp
+  case pop r =>
+    split at hs <;> [rename_i hle; cases hs]
+    obtain rfl := Option.some.inj hs
+    obtain ⟨d', hd', hD'⟩ := popF_sound (τ := (τb, some d)) (τ' := (eraseT τb r, some (d - 16)))
+      ⟨d, Or.inl rfl, hD⟩ (by simp only [popF, hle, ↓reduceIte]) e₁ e₂
+    have : d' = d - 16 := by
+      rcases hd' with h | h
+      · exact (Option.some.inj h).symm
+      · cases h
+    subst this
+    simp only [pop] at e₁ e₂
+    split at e₁ <;> [skip; cases e₁]
+    split at e₂ <;> [skip; cases e₂]
+    obtain rfl := Option.some.inj e₁
+    obtain rfl := Option.some.inj e₂
+    refine ⟨hD', ?_, ?_⟩
+    · show PAgree W (wbase (b₂.sp + 16) (d - 16) W) P
+        (lose b₁.mem b₁.sp 16 b₁.unknowns) (lose b₂.mem b₂.sp 16 b₂.unknowns)
+      rw [show (16 : Addr) = BitVec.ofNat 64 16 from rfl, wbase_add' hle, hsp, hu]
+      intro o' ho' hb
+      exact lose_agree (hP o' ho' hb)
+    · show PtrsOk (wbase (b₂.sp + 16) (d - 16) W) _ _ _
+      rw [show (16 : Addr) = BitVec.ofNat 64 16 from rfl, wbase_add' hle]
+      intro e he
+      obtain ⟨he, hne⟩ := List.mem_filter.mp he
+      have hne' : ¬ e.1 = r := by simpa using hne
+      show (b₁.write .x r _).gpr e.1 = _ ∧ (b₂.write .x r _).gpr e.1 = _
+      rw [RegUpd.gpr_write_of_ne b₁ .x _ hne', RegUpd.gpr_write_of_ne b₂ .x _ hne']
+      exact hp e he
+
+theorem callG_sound {W : Nat} {τ : T} {s₁ s₂ s₁' s₂' : State} (ha : AgreeG W τ s₁ s₂)
+    (e₁ : call s₁ = some s₁') (e₂ : call s₂ = some s₂') : AgreeG W (callG τ) s₁' s₂' := by
+  obtain ⟨τb, fi⟩ := τ
+  cases fi with
+  | none =>
+    obtain ⟨d, hD⟩ := ha
+    obtain ⟨d', hd', hD'⟩ := callF_sound (τ := (τb, some d)) ⟨d, Or.inl rfl, hD⟩ e₁ e₂
+    exact ⟨d', hD'⟩
+  | some f =>
+  obtain ⟨d, P, ptrs⟩ := f
+  obtain ⟨hD, hP, hp⟩ := ha
+  obtain ⟨d', hd', hD'⟩ := callF_sound (τ := (τb, some d)) ⟨d, Or.inl rfl, hD⟩ e₁ e₂
+  have : d' = d := by
+    rcases hd' with h | h
+    · exact (Option.some.inj h).symm
+    · cases h
+  subst this
+  simp only [call, Option.some.injEq] at e₁ e₂
+  subst e₁ e₂
+  refine ⟨hD', hP, fun e he => ?_⟩
+  obtain ⟨he, hne⟩ := List.mem_filter.mp he
+  simp only [Bool.and_eq_true, bne_iff_ne, ne_eq] at hne
+  simp only [hne.1.1, hne.1.2, hne.2, ↓reduceIte]
+  exact hp e he
+
 end VG.AArch64.RTaintG
