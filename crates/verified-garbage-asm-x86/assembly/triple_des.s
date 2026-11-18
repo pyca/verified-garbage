@@ -2044,15 +2044,66 @@ vg_triple_des_ecb_encrypt:
 	cmp edi, 0
 	je 20f
 22:
-	push ebp
-	push esi
-	push ebx
-	call {vg_triple_des_encrypt_block}
-	pop eax
-	pop eax
-	pop eax
+	mov ecx, edi
+	cmp edi, 32
+	jb 23f
+	mov ecx, 32
+	jmp 24f
+23:
+24:
+	mov edx, ebp
+	add edx, 528
+25:
+	mov eax, DWORD PTR [esi]
+	mov DWORD PTR [edx], eax
+	mov eax, DWORD PTR [esi+4]
+	mov DWORD PTR [edx+4], eax
 	add esi, 8
-	sub edi, 1
+	add edx, 8
+	sub ecx, 1
+	jne 25b
+	mov ecx, edi
+	cmp edi, 32
+	jb 26f
+	mov ecx, 32
+	jmp 27f
+26:
+27:
+	add ecx, ecx
+	add ecx, ecx
+	add ecx, ecx
+	sub esi, ecx
+	push ebx
+	push ebp
+	call {vg_triple_des_encrypt_batch}
+	pop eax
+	pop eax
+	mov ecx, edi
+	cmp edi, 32
+	jb 28f
+	mov ecx, 32
+	jmp 29f
+28:
+29:
+	mov edx, ebp
+	add edx, 528
+210:
+	mov eax, DWORD PTR [edx]
+	mov DWORD PTR [esi], eax
+	mov eax, DWORD PTR [edx+4]
+	mov DWORD PTR [esi+4], eax
+	add edx, 8
+	add esi, 8
+	sub ecx, 1
+	jne 210b
+	mov ecx, edi
+	cmp edi, 32
+	jb 211f
+	mov ecx, 32
+	jmp 212f
+211:
+212:
+	sub edi, ecx
 	jne 22b
 	jmp 21f
 20:
@@ -2346,15 +2397,66 @@ vg_triple_des_ecb_decrypt:
 	cmp edi, 0
 	je 20f
 22:
-	push ebp
-	push esi
-	push ebx
-	call {vg_triple_des_decrypt_block}
-	pop eax
-	pop eax
-	pop eax
+	mov ecx, edi
+	cmp edi, 32
+	jb 23f
+	mov ecx, 32
+	jmp 24f
+23:
+24:
+	mov edx, ebp
+	add edx, 528
+25:
+	mov eax, DWORD PTR [esi]
+	mov DWORD PTR [edx], eax
+	mov eax, DWORD PTR [esi+4]
+	mov DWORD PTR [edx+4], eax
 	add esi, 8
-	sub edi, 1
+	add edx, 8
+	sub ecx, 1
+	jne 25b
+	mov ecx, edi
+	cmp edi, 32
+	jb 26f
+	mov ecx, 32
+	jmp 27f
+26:
+27:
+	add ecx, ecx
+	add ecx, ecx
+	add ecx, ecx
+	sub esi, ecx
+	push ebx
+	push ebp
+	call {vg_triple_des_decrypt_batch}
+	pop eax
+	pop eax
+	mov ecx, edi
+	cmp edi, 32
+	jb 28f
+	mov ecx, 32
+	jmp 29f
+28:
+29:
+	mov edx, ebp
+	add edx, 528
+210:
+	mov eax, DWORD PTR [edx]
+	mov DWORD PTR [esi], eax
+	mov eax, DWORD PTR [edx+4]
+	mov DWORD PTR [esi+4], eax
+	add edx, 8
+	add esi, 8
+	sub ecx, 1
+	jne 210b
+	mov ecx, edi
+	cmp edi, 32
+	jb 211f
+	mov ecx, 32
+	jmp 212f
+211:
+212:
+	sub edi, ecx
 	jne 22b
 	jmp 21f
 20:
