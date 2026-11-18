@@ -97,27 +97,6 @@ vg_sha3_224_update:
 	li %r10, 0
 	li %r11, 0
 	li %r12, 0
-	addc %r0, %r0, %r0
-	vxor %v0, %v0, %v0
-	vxor %v1, %v1, %v1
-	vxor %v2, %v2, %v2
-	vxor %v3, %v3, %v3
-	vxor %v4, %v4, %v4
-	vxor %v5, %v5, %v5
-	vxor %v6, %v6, %v6
-	vxor %v7, %v7, %v7
-	vxor %v8, %v8, %v8
-	vxor %v9, %v9, %v9
-	vxor %v10, %v10, %v10
-	vxor %v11, %v11, %v11
-	vxor %v12, %v12, %v12
-	vxor %v13, %v13, %v13
-	vxor %v14, %v14, %v14
-	vxor %v15, %v15, %v15
-	vxor %v16, %v16, %v16
-	vxor %v17, %v17, %v17
-	vxor %v18, %v18, %v18
-	vxor %v19, %v19, %v19
 	blr
 
 vg_sha3_224_finalize:
@@ -253,27 +232,6 @@ vg_sha3_224_finalize:
 	li %r10, 0
 	li %r11, 0
 	li %r12, 0
-	addc %r0, %r0, %r0
-	vxor %v0, %v0, %v0
-	vxor %v1, %v1, %v1
-	vxor %v2, %v2, %v2
-	vxor %v3, %v3, %v3
-	vxor %v4, %v4, %v4
-	vxor %v5, %v5, %v5
-	vxor %v6, %v6, %v6
-	vxor %v7, %v7, %v7
-	vxor %v8, %v8, %v8
-	vxor %v9, %v9, %v9
-	vxor %v10, %v10, %v10
-	vxor %v11, %v11, %v11
-	vxor %v12, %v12, %v12
-	vxor %v13, %v13, %v13
-	vxor %v14, %v14, %v14
-	vxor %v15, %v15, %v15
-	vxor %v16, %v16, %v16
-	vxor %v17, %v17, %v17
-	vxor %v18, %v18, %v18
-	vxor %v19, %v19, %v19
 	blr
 
 vg_sha3_256_update:
@@ -369,27 +327,6 @@ vg_sha3_256_update:
 	li %r10, 0
 	li %r11, 0
 	li %r12, 0
-	addc %r0, %r0, %r0
-	vxor %v0, %v0, %v0
-	vxor %v1, %v1, %v1
-	vxor %v2, %v2, %v2
-	vxor %v3, %v3, %v3
-	vxor %v4, %v4, %v4
-	vxor %v5, %v5, %v5
-	vxor %v6, %v6, %v6
-	vxor %v7, %v7, %v7
-	vxor %v8, %v8, %v8
-	vxor %v9, %v9, %v9
-	vxor %v10, %v10, %v10
-	vxor %v11, %v11, %v11
-	vxor %v12, %v12, %v12
-	vxor %v13, %v13, %v13
-	vxor %v14, %v14, %v14
-	vxor %v15, %v15, %v15
-	vxor %v16, %v16, %v16
-	vxor %v17, %v17, %v17
-	vxor %v18, %v18, %v18
-	vxor %v19, %v19, %v19
 	blr
 
 vg_sha3_256_finalize:
@@ -525,27 +462,6 @@ vg_sha3_256_finalize:
 	li %r10, 0
 	li %r11, 0
 	li %r12, 0
-	addc %r0, %r0, %r0
-	vxor %v0, %v0, %v0
-	vxor %v1, %v1, %v1
-	vxor %v2, %v2, %v2
-	vxor %v3, %v3, %v3
-	vxor %v4, %v4, %v4
-	vxor %v5, %v5, %v5
-	vxor %v6, %v6, %v6
-	vxor %v7, %v7, %v7
-	vxor %v8, %v8, %v8
-	vxor %v9, %v9, %v9
-	vxor %v10, %v10, %v10
-	vxor %v11, %v11, %v11
-	vxor %v12, %v12, %v12
-	vxor %v13, %v13, %v13
-	vxor %v14, %v14, %v14
-	vxor %v15, %v15, %v15
-	vxor %v16, %v16, %v16
-	vxor %v17, %v17, %v17
-	vxor %v18, %v18, %v18
-	vxor %v19, %v19, %v19
 	blr
 
 vg_sha3_384_update:
@@ -641,27 +557,6 @@ vg_sha3_384_update:
 	li %r10, 0
 	li %r11, 0
 	li %r12, 0
-	addc %r0, %r0, %r0
-	vxor %v0, %v0, %v0
-	vxor %v1, %v1, %v1
-	vxor %v2, %v2, %v2
-	vxor %v3, %v3, %v3
-	vxor %v4, %v4, %v4
-	vxor %v5, %v5, %v5
-	vxor %v6, %v6, %v6
-	vxor %v7, %v7, %v7
-	vxor %v8, %v8, %v8
-	vxor %v9, %v9, %v9
-	vxor %v10, %v10, %v10
-	vxor %v11, %v11, %v11
-	vxor %v12, %v12, %v12
-	vxor %v13, %v13, %v13
-	vxor %v14, %v14, %v14
-	vxor %v15, %v15, %v15
-	vxor %v16, %v16, %v16
-	vxor %v17, %v17, %v17
-	vxor %v18, %v18, %v18
-	vxor %v19, %v19, %v19
 	blr
 
 vg_sha3_384_finalize:
@@ -797,27 +692,6 @@ vg_sha3_384_finalize:
 	li %r10, 0
 	li %r11, 0
 	li %r12, 0
-	addc %r0, %r0, %r0
-	vxor %v0, %v0, %v0
-	vxor %v1, %v1, %v1
-	vxor %v2, %v2, %v2
-	vxor %v3, %v3, %v3
-	vxor %v4, %v4, %v4
-	vxor %v5, %v5, %v5
-	vxor %v6, %v6, %v6
-	vxor %v7, %v7, %v7
-	vxor %v8, %v8, %v8
-	vxor %v9, %v9, %v9
-	vxor %v10, %v10, %v10
-	vxor %v11, %v11, %v11
-	vxor %v12, %v12, %v12
-	vxor %v13, %v13, %v13
-	vxor %v14, %v14, %v14
-	vxor %v15, %v15, %v15
-	vxor %v16, %v16, %v16
-	vxor %v17, %v17, %v17
-	vxor %v18, %v18, %v18
-	vxor %v19, %v19, %v19
 	blr
 
 vg_sha3_512_update:
@@ -913,27 +787,6 @@ vg_sha3_512_update:
 	li %r10, 0
 	li %r11, 0
 	li %r12, 0
-	addc %r0, %r0, %r0
-	vxor %v0, %v0, %v0
-	vxor %v1, %v1, %v1
-	vxor %v2, %v2, %v2
-	vxor %v3, %v3, %v3
-	vxor %v4, %v4, %v4
-	vxor %v5, %v5, %v5
-	vxor %v6, %v6, %v6
-	vxor %v7, %v7, %v7
-	vxor %v8, %v8, %v8
-	vxor %v9, %v9, %v9
-	vxor %v10, %v10, %v10
-	vxor %v11, %v11, %v11
-	vxor %v12, %v12, %v12
-	vxor %v13, %v13, %v13
-	vxor %v14, %v14, %v14
-	vxor %v15, %v15, %v15
-	vxor %v16, %v16, %v16
-	vxor %v17, %v17, %v17
-	vxor %v18, %v18, %v18
-	vxor %v19, %v19, %v19
 	blr
 
 vg_sha3_512_finalize:
@@ -1069,27 +922,6 @@ vg_sha3_512_finalize:
 	li %r10, 0
 	li %r11, 0
 	li %r12, 0
-	addc %r0, %r0, %r0
-	vxor %v0, %v0, %v0
-	vxor %v1, %v1, %v1
-	vxor %v2, %v2, %v2
-	vxor %v3, %v3, %v3
-	vxor %v4, %v4, %v4
-	vxor %v5, %v5, %v5
-	vxor %v6, %v6, %v6
-	vxor %v7, %v7, %v7
-	vxor %v8, %v8, %v8
-	vxor %v9, %v9, %v9
-	vxor %v10, %v10, %v10
-	vxor %v11, %v11, %v11
-	vxor %v12, %v12, %v12
-	vxor %v13, %v13, %v13
-	vxor %v14, %v14, %v14
-	vxor %v15, %v15, %v15
-	vxor %v16, %v16, %v16
-	vxor %v17, %v17, %v17
-	vxor %v18, %v18, %v18
-	vxor %v19, %v19, %v19
 	blr
 
 vg_shake128_update:
@@ -1185,27 +1017,6 @@ vg_shake128_update:
 	li %r10, 0
 	li %r11, 0
 	li %r12, 0
-	addc %r0, %r0, %r0
-	vxor %v0, %v0, %v0
-	vxor %v1, %v1, %v1
-	vxor %v2, %v2, %v2
-	vxor %v3, %v3, %v3
-	vxor %v4, %v4, %v4
-	vxor %v5, %v5, %v5
-	vxor %v6, %v6, %v6
-	vxor %v7, %v7, %v7
-	vxor %v8, %v8, %v8
-	vxor %v9, %v9, %v9
-	vxor %v10, %v10, %v10
-	vxor %v11, %v11, %v11
-	vxor %v12, %v12, %v12
-	vxor %v13, %v13, %v13
-	vxor %v14, %v14, %v14
-	vxor %v15, %v15, %v15
-	vxor %v16, %v16, %v16
-	vxor %v17, %v17, %v17
-	vxor %v18, %v18, %v18
-	vxor %v19, %v19, %v19
 	blr
 
 vg_shake128_finalize:
@@ -1324,7 +1135,6 @@ vg_shake128_finalize:
 	std %r0, 672(%r12)
 	std %r0, 680(%r12)
 	addi %r1, %r1, 720
-	li %r3, 0
 	li %r4, 0
 	li %r5, 0
 	li %r6, 0
@@ -1334,27 +1144,6 @@ vg_shake128_finalize:
 	li %r10, 0
 	li %r11, 0
 	li %r12, 0
-	addc %r0, %r0, %r0
-	vxor %v0, %v0, %v0
-	vxor %v1, %v1, %v1
-	vxor %v2, %v2, %v2
-	vxor %v3, %v3, %v3
-	vxor %v4, %v4, %v4
-	vxor %v5, %v5, %v5
-	vxor %v6, %v6, %v6
-	vxor %v7, %v7, %v7
-	vxor %v8, %v8, %v8
-	vxor %v9, %v9, %v9
-	vxor %v10, %v10, %v10
-	vxor %v11, %v11, %v11
-	vxor %v12, %v12, %v12
-	vxor %v13, %v13, %v13
-	vxor %v14, %v14, %v14
-	vxor %v15, %v15, %v15
-	vxor %v16, %v16, %v16
-	vxor %v17, %v17, %v17
-	vxor %v18, %v18, %v18
-	vxor %v19, %v19, %v19
 	blr
 
 vg_shake128_squeeze:
@@ -1532,27 +1321,6 @@ vg_shake128_squeeze:
 	li %r10, 0
 	li %r11, 0
 	li %r12, 0
-	addc %r0, %r0, %r0
-	vxor %v0, %v0, %v0
-	vxor %v1, %v1, %v1
-	vxor %v2, %v2, %v2
-	vxor %v3, %v3, %v3
-	vxor %v4, %v4, %v4
-	vxor %v5, %v5, %v5
-	vxor %v6, %v6, %v6
-	vxor %v7, %v7, %v7
-	vxor %v8, %v8, %v8
-	vxor %v9, %v9, %v9
-	vxor %v10, %v10, %v10
-	vxor %v11, %v11, %v11
-	vxor %v12, %v12, %v12
-	vxor %v13, %v13, %v13
-	vxor %v14, %v14, %v14
-	vxor %v15, %v15, %v15
-	vxor %v16, %v16, %v16
-	vxor %v17, %v17, %v17
-	vxor %v18, %v18, %v18
-	vxor %v19, %v19, %v19
 	blr
 
 vg_shake256_finalize:
@@ -1671,7 +1439,6 @@ vg_shake256_finalize:
 	std %r0, 672(%r12)
 	std %r0, 680(%r12)
 	addi %r1, %r1, 720
-	li %r3, 0
 	li %r4, 0
 	li %r5, 0
 	li %r6, 0
@@ -1681,27 +1448,6 @@ vg_shake256_finalize:
 	li %r10, 0
 	li %r11, 0
 	li %r12, 0
-	addc %r0, %r0, %r0
-	vxor %v0, %v0, %v0
-	vxor %v1, %v1, %v1
-	vxor %v2, %v2, %v2
-	vxor %v3, %v3, %v3
-	vxor %v4, %v4, %v4
-	vxor %v5, %v5, %v5
-	vxor %v6, %v6, %v6
-	vxor %v7, %v7, %v7
-	vxor %v8, %v8, %v8
-	vxor %v9, %v9, %v9
-	vxor %v10, %v10, %v10
-	vxor %v11, %v11, %v11
-	vxor %v12, %v12, %v12
-	vxor %v13, %v13, %v13
-	vxor %v14, %v14, %v14
-	vxor %v15, %v15, %v15
-	vxor %v16, %v16, %v16
-	vxor %v17, %v17, %v17
-	vxor %v18, %v18, %v18
-	vxor %v19, %v19, %v19
 	blr
 
 vg_shake256_squeeze:
@@ -1879,25 +1625,4 @@ vg_shake256_squeeze:
 	li %r10, 0
 	li %r11, 0
 	li %r12, 0
-	addc %r0, %r0, %r0
-	vxor %v0, %v0, %v0
-	vxor %v1, %v1, %v1
-	vxor %v2, %v2, %v2
-	vxor %v3, %v3, %v3
-	vxor %v4, %v4, %v4
-	vxor %v5, %v5, %v5
-	vxor %v6, %v6, %v6
-	vxor %v7, %v7, %v7
-	vxor %v8, %v8, %v8
-	vxor %v9, %v9, %v9
-	vxor %v10, %v10, %v10
-	vxor %v11, %v11, %v11
-	vxor %v12, %v12, %v12
-	vxor %v13, %v13, %v13
-	vxor %v14, %v14, %v14
-	vxor %v15, %v15, %v15
-	vxor %v16, %v16, %v16
-	vxor %v17, %v17, %v17
-	vxor %v18, %v18, %v18
-	vxor %v19, %v19, %v19
 	blr

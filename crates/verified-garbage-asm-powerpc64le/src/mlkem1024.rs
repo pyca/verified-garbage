@@ -20,7 +20,7 @@ pub(crate) unsafe extern "C" fn vg_mlkem1024_check_ek(ek: *const [u8; 1568]) -> 
 20:
 .base64 "AQDDiMbgxnggZcZ4AADjiBQ6xnwADeA4UDjmfOAP53gUOqV8AQDDiALhxngCAOOI5CbneBQ6xnwADeA4UDjmfOAP53gUOqV8AwBjOP//hDgAACQo"
 bne %cr0, 20b
-.base64 "AADAOFAwxXzgD8Z4AQBgOFAYZnwAAAA4xgdjeCIAY3gAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDkUAAB8xAQAEMQMIRDEFEIQxBxjEMQkhBDELKUQxDTGEMQ85xDERAgRxEwpEcRUShHEXGsRxGSMEcRsrRHEdM4RxHzvEcSEEBLEjDESxJRSEsSccxIgAIBO""#,
+.base64 "AADAOFAwxXzgD8Z4AQBgOFAYZnzGB2N4IgBjeAAAgDgAAKA4AADAOAAA4DggAIBO""#,
     )
 }
 
@@ -47,7 +47,7 @@ pub(crate) unsafe extern "C" fn vg_mlkem1024_keygen(seed: *const [u8; 64], ek: *
 bl {vg_mlkem1024_keygen_body}
 .base64 "eBtrfHj7438AAIA4AACEZADAhGB4W399"
 bl {vg_zeroize}
-.base64 "ePvjfygAgTkAAOzrIAAB6DAAITimAwh8AAAAOKH/IfggAIE5AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhgACE4xgdjeCIAY3gAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDkUAAB8xAQAEMQMIRDEFEIQxBxjEMQkhBDELKUQxDTGEMQ85xDERAgRxEwpEcRUShHEXGsRxGSMEcRsrRHEdM4RxHzvEcSEEBLEjDESxJRSEsSccxIgAIBO""#,
+.base64 "ePvjfygAgTkAAOzrIAAB6DAAITimAwh8AAAAOKH/IfggAIE5AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhgACE4xgdjeCIAY3gAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDnEBAAQxAwhEMQUQhDEHGMQxCSEEMQspRDENMYQxDznEMRECBHETCkRxFRKEcRcaxHEZIwRxGytEcR0zhHEfO8RIACATg==""#,
         vg_mlkem1024_keygen_body = sym super::mlkem1024::vg_mlkem1024_keygen_body::vg_mlkem1024_keygen_body,
         vg_zeroize = sym super::zeroize::vg_zeroize,
     )
@@ -78,7 +78,7 @@ pub(crate) unsafe extern "C" fn vg_mlkem1024_encaps(ek: *const [u8; 1568], m: *c
 bl {vg_mlkem1024_encaps_body}
 .base64 "eBtrfHj7438AAIA4AACEZADAhGB4W399"
 bl {vg_zeroize}
-.base64 "ePvjfygAgTkAAOzrIAAB6DAAITimAwh8AAAAOKH/IfggAIE5AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhgACE4xgdjeCIAY3gAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDkUAAB8xAQAEMQMIRDEFEIQxBxjEMQkhBDELKUQxDTGEMQ85xDERAgRxEwpEcRUShHEXGsRxGSMEcRsrRHEdM4RxHzvEcSEEBLEjDESxJRSEsSccxIgAIBO""#,
+.base64 "ePvjfygAgTkAAOzrIAAB6DAAITimAwh8AAAAOKH/IfggAIE5AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhgACE4xgdjeCIAY3gAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDnEBAAQxAwhEMQUQhDEHGMQxCSEEMQspRDENMYQxDznEMRECBHETCkRxFRKEcRcaxHEZIwRxGytEcR0zhHEfO8RIACATg==""#,
         vg_mlkem1024_encaps_body = sym super::mlkem1024::vg_mlkem1024_encaps_body::vg_mlkem1024_encaps_body,
         vg_zeroize = sym super::zeroize::vg_zeroize,
     )
@@ -111,7 +111,7 @@ pub(crate) unsafe extern "C" fn vg_mlkem1024_encaps_h(ek: *const [u8; 1568], h: 
 bl {vg_mlkem1024_encaps_h_body}
 .base64 "eBtrfHj7438AAIA4AACEZADAhGB4W399"
 bl {vg_zeroize}
-.base64 "ePvjfygAgTkAAOzrIAAB6DAAITimAwh8AAAAOKH/IfggAIE5AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhgACE4xgdjeCIAY3gAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDkUAAB8xAQAEMQMIRDEFEIQxBxjEMQkhBDELKUQxDTGEMQ85xDERAgRxEwpEcRUShHEXGsRxGSMEcRsrRHEdM4RxHzvEcSEEBLEjDESxJRSEsSccxIgAIBO""#,
+.base64 "ePvjfygAgTkAAOzrIAAB6DAAITimAwh8AAAAOKH/IfggAIE5AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhgACE4xgdjeCIAY3gAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDnEBAAQxAwhEMQUQhDEHGMQxCSEEMQspRDENMYQxDznEMRECBHETCkRxFRKEcRcaxHEZIwRxGytEcR0zhHEfO8RIACATg==""#,
         vg_mlkem1024_encaps_h_body = sym super::mlkem1024::vg_mlkem1024_encaps_h_body::vg_mlkem1024_encaps_h_body,
         vg_zeroize = sym super::zeroize::vg_zeroize,
     )
@@ -140,7 +140,7 @@ pub(crate) unsafe extern "C" fn vg_mlkem1024_decaps(dk: *const [u8; 3168], ct: *
 bl {vg_mlkem1024_decaps_body}
 .base64 "eBtrfHj7438AAIA4AACEZADAhGB4W399"
 bl {vg_zeroize}
-.base64 "ePvjfygAgTkAAOzrIAAB6DAAITimAwh8AAAAOKH/IfggAIE5AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhgACE4xgdjeCIAY3gAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDkUAAB8xAQAEMQMIRDEFEIQxBxjEMQkhBDELKUQxDTGEMQ85xDERAgRxEwpEcRUShHEXGsRxGSMEcRsrRHEdM4RxHzvEcSEEBLEjDESxJRSEsSccxIgAIBO""#,
+.base64 "ePvjfygAgTkAAOzrIAAB6DAAITimAwh8AAAAOKH/IfggAIE5AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhgACE4xgdjeCIAY3gAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDnEBAAQxAwhEMQUQhDEHGMQxCSEEMQspRDENMYQxDznEMRECBHETCkRxFRKEcRcaxHEZIwRxGytEcR0zhHEfO8RIACATg==""#,
         vg_mlkem1024_decaps_body = sym super::mlkem1024::vg_mlkem1024_decaps_body::vg_mlkem1024_decaps_body,
         vg_zeroize = sym super::zeroize::vg_zeroize,
     )
