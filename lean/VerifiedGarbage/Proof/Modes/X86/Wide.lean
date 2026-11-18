@@ -10,8 +10,6 @@ import VerifiedGarbage.Proof.Modes.StepsChained
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.Framework.X86.Syms
 
 /-!
 # Block cipher modes on x86 (32-bit), a group of blocks at a time

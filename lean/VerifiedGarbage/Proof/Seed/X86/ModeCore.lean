@@ -75,8 +75,9 @@ apart from every writable region and from the core's 20 bytes of stack
 (`KeyIn`), so nothing the modes or the core write changes them; the fifth
 argument, the scratch buffer's address, likewise (`ScrArg`).
 
-`crypt` calls the blocks function on the buffer's block (`WP.callWith`,
-with ECB's code, `ecb_correct`), in a frame of its arguments, which with the
+`crypt` calls the blocks function on the buffer's eight blocks, with the
+scratch buffer's first `modeWs` slots for its working space (`WP.callWith`,
+with ECB's code, `ecb_correctW`), in a frame of its arguments, which with the
 call's return address are the core's 20 bytes of stack, apart from the
 scratch buffer; the function restores `esi` and `ebp`, which the core
 stores back to the modes' slots (the words they were loaded from, so memory
@@ -90,7 +91,7 @@ namespace VG.Proof.Seed.X86
 open VG VG.X86 VG.X86.Straight VG.X86.Wp VG.Impl.Seed.X86
 open VG.Impl.Aes.X86 (argOp sb)
 open VG.Proof.Modes.X86 (coreRegion blkRegion blkAddr stkRegion slotA CoreSpec Layout write4_apply)
-open VG.Proof.Seed (dirCipher dirCipher_bytes dirKeys bytesAt_eq ecbX86)
+open VG.Proof.Seed (dirCipher dirCipher_bytes dirKeys bytesAt_eq ecbX86W)
 open VG.Spec.Seed (Direction)
 open VG.Spec.Aes (bytesAt)
 
@@ -195,14 +196,17 @@ theorem writeW_readW (m : Mem) (a : Addr) : m.writeW a (m.readW a 32) = m := by
 
 theorem modeDSlot_eq : modeDSlot = 280 := rfl
 theorem modeNSlot_eq : modeNSlot = 281 := rfl
-theorem bufSlot_eq : bufSlot = 272 := rfl
+theorem bufSlot_eq : bufSlot = 244 := rfl
+theorem modeWs_eq : modeWs = 244 := rfl
 
-/-- The one block ECB transforms. -/
-theorem block_of_ecb {d : Direction} {m m' : Mem} {K : Spec.Seed.Schedule} {P : Addr}
-    (h : Spec.Seed.blocksAt m' P 1 = Spec.Seed.ecb K d (Spec.Seed.blocksAt m P 1)) :
-    Spec.Seed.blockAt m' P = Spec.Seed.crypt (dirKeys d K) (Spec.Seed.blockAt m P) := by
+/-- Block `j` of those ECB transforms. -/
+theorem block_of_ecb {d : Direction} {m m' : Mem} {K : Spec.Seed.Schedule} {P : Addr} {n j : Nat} (hj : j < n)
+    (h : Spec.Seed.blocksAt m' P n = Spec.Seed.ecb K d (Spec.Seed.blocksAt m P n)) :
+    Spec.Seed.blockAt m' (P + BitVec.ofNat 64 (16 * j)) =
+      Spec.Seed.crypt (dirKeys d K) (Spec.Seed.blockAt m (P + BitVec.ofNat 64 (16 * j))) := by
+  have e := congrArg (·[j]?) h
   cases d <;> simpa [Spec.Seed.blocksAt, Spec.Seed.ecb, Spec.Seed.encryptBlock, Spec.Seed.decryptBlock,
-    dirKeys] using h
+    dirKeys, hj] using e
 
 theorem crypt_wp (d : Direction) {s : State} {B : BitVec 32} {k : Spec.Seed.Schedule}
     (hB : s.gpr VG.Impl.Modes.X86.sb = B) (hs : VG.Proof.Modes.X86.ScrIn s B (dirCore d).total)
@@ -250,7 +254,7 @@ theorem crypt_wp (d : Direction) {s : State} {B : BitVec 32} {k : Spec.Seed.Sche
     rw [u₆.other _ (by decide), u₅.gpr, u₄.gpr, u₃.other _ (by decide), u₂.other _ (by decide),
       u₁.other _ (by decide)]
     exact congrArg (· + BitVec.ofNat 32 (4 * bufSlot)) hB'
-  have edx₆ : s₆.gpr .edx = 1 := u₆.gpr
+  have edx₆ : s₆.gpr .edx = 8 := u₆.gpr
   obtain esi₆ : s₆.gpr .esi = s.mem.readW (addr B (4 * modeDSlot)) 32 := by
     rw [g₆ .esi |> fun _ => u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide),
       u₃.other _ (by decide), u₂.other _ (by decide), u₁.gpr]
@@ -265,7 +269,7 @@ theorem crypt_wp (d : Direction) {s : State} {B : BitVec 32} {k : Spec.Seed.Sche
     rw [callEntry_arg fit hrs (i := 0) (by decide)]; exact eax₆
   obtain a1 : arg (pushed [Reg.edi, .edx, .ecx, .eax] s₆).callEntry 1 = B + BitVec.ofNat 32 (4 * bufSlot) := by
     rw [callEntry_arg fit hrs (i := 1) (by decide)]; exact ecx₆
-  obtain a2 : arg (pushed [Reg.edi, .edx, .ecx, .eax] s₆).callEntry 2 = 1 := by
+  obtain a2 : arg (pushed [Reg.edi, .edx, .ecx, .eax] s₆).callEntry 2 = 8 := by
     rw [callEntry_arg fit hrs (i := 2) (by decide)]; exact edx₆
   obtain a3 : arg (pushed [Reg.edi, .edx, .ecx, .eax] s₆).callEntry 3 = B := by
     rw [callEntry_arg fit hrs (i := 3) (by decide)]; exact edi₆
@@ -285,23 +289,22 @@ theorem crypt_wp (d : Direction) {s : State} {B : BitVec 32} {k : Spec.Seed.Sche
     exact below_inner (a := 4) (k := 16) (b := 20) (by decide) hst'
   obtain hbufA : (B + BitVec.ofNat 32 (4 * bufSlot)).setWidth 64 = B.setWidth 64 + BitVec.ofNat 64 (4 * bufSlot) :=
     addr_eq (by rw [bufSlot_eq]; omega_arith)
-  obtain bufSub : Region.Sub ⟨(B + BitVec.ofNat 32 (4 * bufSlot)).setWidth 64, 16 * 1⟩ ⟨B.setWidth 64, 4 * 286⟩ := by
+  obtain bufSub : Region.Sub ⟨(B + BitVec.ofNat 32 (4 * bufSlot)).setWidth 64, 16 * 8⟩ ⟨B.setWidth 64, 4 * 286⟩ := by
     rw [hbufA]; exact VG.Offset.sub_base _ (by rw [bufSlot_eq]; omega_arith)
-  obtain wsSub : Region.Sub ⟨B.setWidth 64, 4 * wsSlots⟩ ⟨B.setWidth 64, 4 * 286⟩ := Region.sub_prefix (by decide)
-  obtain bufWs : Region.Disjoint ⟨(B + BitVec.ofNat 32 (4 * bufSlot)).setWidth 64, 16 * 1⟩ ⟨B.setWidth 64, 4 * wsSlots⟩ := by
+  obtain wsSub : Region.Sub ⟨B.setWidth 64, 4 * modeWs⟩ ⟨B.setWidth 64, 4 * 286⟩ := Region.sub_prefix (by decide)
+  obtain bufWs : Region.Disjoint ⟨(B + BitVec.ofNat 32 (4 * bufSlot)).setWidth 64, 16 * 8⟩ ⟨B.setWidth 64, 4 * modeWs⟩ := by
     rw [hbufA]; exact VG.Offset.disjoint_base _ (by rw [bufSlot_eq]; decide) (by rw [bufSlot_eq]; omega_arith)
   obtain fE : Frame [stkRegion (s.gpr .esp) 20] s.mem (pushed [Reg.edi, .edx, .ecx, .eax] s₆).callEntry.mem := by
     have := callEntry_frame fit hrs
     rw [esp₆, m₆] at this
     exact this
-  obtain hblkE : Spec.Seed.blockAt (pushed [Reg.edi, .edx, .ecx, .eax] s₆).callEntry.mem
-      ((B + BitVec.ofNat 32 (4 * bufSlot)).setWidth 64) =
-      Spec.Seed.blockAt s.mem ((B + BitVec.ofNat 32 (4 * bufSlot)).setWidth 64) := by
-    have := Proof.Seed.blocksAt_frame fE (p := (B + BitVec.ofNat 32 (4 * bufSlot)).setWidth 64) (n := 1)
+  obtain hblkE : Spec.Seed.blocksAt (pushed [Reg.edi, .edx, .ecx, .eax] s₆).callEntry.mem
+      ((B + BitVec.ofNat 32 (4 * bufSlot)).setWidth 64) 8 =
+      Spec.Seed.blocksAt s.mem ((B + BitVec.ofNat 32 (4 * bufSlot)).setWidth 64) 8 :=
+    Proof.Seed.blocksAt_frame fE (p := (B + BitVec.ofNat 32 (4 * bufSlot)).setWidth 64) (n := 8)
       (fun r hr => by
         rw [List.mem_singleton] at hr; subst hr
-        exact (hsS.sub_right (by rw [Nat.mul_comm] at bufSub ⊢; exact bufSub)).symm) (by decide)
-    simpa [Spec.Seed.blocksAt] using this
+        exact (hsS.sub_right bufSub).symm) (by decide)
   obtain hschE : Spec.Seed.scheduleAt (pushed [Reg.edi, .edx, .ecx, .eax] s₆).callEntry.mem (p.setWidth 64) =
       Spec.Seed.scheduleAt s.mem (p.setWidth 64) :=
     Proof.Seed.scheduleAt_frame fE fun r hr => by
@@ -309,25 +312,26 @@ theorem crypt_wp (d : Direction) {s : State} {B : BitVec 32} {k : Spec.Seed.Sche
   obtain hbuf32 : (B + BitVec.ofNat 32 (4 * bufSlot)).toNat = B.toNat + 4 * bufSlot := by
     rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 4 * bufSlot) (by rw [bufSlot_eq]; decide),
       Nat.mod_eq_of_lt (by rw [bufSlot_eq]; omega_arith)]
-  obtain ha : ∀ d' : Direction, blkAddr (dirCore d') B 0 = (B + BitVec.ofNat 32 (4 * bufSlot)).setWidth 64 :=
-    fun _ => by rw [hbufA]; simp only [blkAddr, dirCore, Nat.mul_zero, BitVec.add_zero]
+  obtain ha : ∀ (d' : Direction) (j : Nat), blkAddr (dirCore d') B j =
+      (B + BitVec.ofNat 32 (4 * bufSlot)).setWidth 64 + BitVec.ofNat 64 (16 * j) :=
+    fun _ _ => by rw [hbufA]; rfl
   obtain hbw : ∀ d' : Direction, 4 * (dirCore d').bw = 16 := fun _ => rfl
   refine WP.seq ?_
   cases d <;>
-  · refine WP.callWith (k := ecbX86 _) (ecb_correct _) (ecb_noSp _) (by decide) hrs
+  · refine WP.callWith (k := ecbX86W modeWs _) (ecb_correctW _ (by decide)) (ecb_noSp _) (by decide) hrs
       (by rw [ecb_stackUse, esp₆]; show 20 ≤ _; omega_arith)
       (rd := [⟨p.setWidth 64, 128⟩, ⟨argAddr (pushed [Reg.edi, .edx, .ecx, .eax] s₆).callEntry 0, 16⟩])
-      (wr := [⟨(B + BitVec.ofNat 32 (4 * bufSlot)).setWidth 64, 16 * 1⟩, ⟨B.setWidth 64, 4 * wsSlots⟩])
+      (wr := [⟨(B + BitVec.ofNat 32 (4 * bufSlot)).setWidth 64, 16 * 8⟩, ⟨B.setWidth 64, 4 * modeWs⟩])
       ⟨?_, ?_, ?_⟩ fun s' rd' wr' cs f ⟨s₃', m₃', post⟩ => ?_
-    · simp only [ecbX86, State.withRegions_rd, State.withRegions_wr, State.withRegions_gpr, arg_withRegions,
+    · simp only [ecbX86W, State.withRegions_rd, State.withRegions_wr, State.withRegions_gpr, arg_withRegions,
         argAddr_withRegions, a0, a1, a2, a3]
       refine ⟨trivial, rfl, hK.sub_right bufSub, hK.sub_right wsSub, bufWs, ?_, ?_, ?_, ?_, hfitK, ?_,
-        by rw [show wsSlots = 272 from rfl]; omega_arith, by rw [espE]; omega_arith⟩
+        by rw [modeWs_eq]; omega_arith, by rw [espE]; omega_arith⟩
       · exact (hsS.sub_right bufSub).sub_left argsSub
       · exact (hsS.sub_right wsSub).sub_left argsSub
       · exact (hsS.sub_right bufSub).sub_left retSub
       · exact (hsS.sub_right wsSub).sub_left retSub
-      · rw [hbuf32, bufSlot_eq, show (1 : BitVec 32).toNat = 1 from rfl]; omega_arith
+      · rw [hbuf32, bufSlot_eq, show (8 : BitVec 32).toNat = 8 from rfl]; omega_arith
     · refine Covers.append_left (Covers.of_mem fun r hr => ?_) (Covers.right (Covers.of_sub fun r hr => ?_))
       · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
@@ -338,39 +342,38 @@ theorem crypt_wp (d : Direction) {s : State} {B : BitVec 32} {k : Spec.Seed.Sche
       · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
         · exact ⟨⟨B.setWidth 64, 4 * 286⟩, List.mem_cons_of_mem _ (by rw [wr₆]; exact hw), 4 * bufSlot, hbufA,
-            by show 4 * 272 + 16 * 1 ≤ 4 * 286; decide⟩
+            by show 4 * 244 + 16 * 8 ≤ 4 * 286; decide⟩
         · exact ⟨⟨B.setWidth 64, 4 * 286⟩, List.mem_cons_of_mem _ (by rw [wr₆]; exact hw), 0, by simp,
-            by show 0 + 4 * 272 ≤ 4 * 286; decide⟩
+            by show 0 + 4 * 244 ≤ 4 * 286; decide⟩
     · refine Covers.of_sub fun r hr => ?_
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact ⟨⟨B.setWidth 64, 4 * 286⟩, List.mem_cons_of_mem _ (by rw [wr₆]; exact hw), 4 * bufSlot, hbufA,
-          by show 4 * 272 + 16 * 1 ≤ 4 * 286; decide⟩
-      · exact ⟨⟨B.setWidth 64, 4 * 286⟩, List.mem_cons_of_mem _ (by rw [wr₆]; exact hw), 0, by simp, by show 0 + 4 * 272 ≤ 4 * 286; decide⟩
+          by show 4 * 244 + 16 * 8 ≤ 4 * 286; decide⟩
+      · exact ⟨⟨B.setWidth 64, 4 * 286⟩, List.mem_cons_of_mem _ (by rw [wr₆]; exact hw), 0, by simp, by show 0 + 4 * 244 ≤ 4 * 286; decide⟩
     -- After the call.
     · simp only [ecb_stackUse, List.length_cons, List.length_nil, Nat.reduceMul, Nat.reduceAdd, Nat.add_zero] at f
-      simp only [ecbX86, State.withRegions_mem, arg_withRegions, a0, a1, a2] at post
-      obtain hblk₃ : Spec.Seed.blockAt s'.mem ((B + BitVec.ofNat 32 (4 * bufSlot)).setWidth 64) =
-          Spec.Seed.blockAt s₃'.mem ((B + BitVec.ofNat 32 (4 * bufSlot)).setWidth 64) := by
+      simp only [ecbX86W, State.withRegions_mem, arg_withRegions, a0, a1, a2] at post
+      obtain hblk₃ : Spec.Seed.blocksAt s'.mem ((B + BitVec.ofNat 32 (4 * bufSlot)).setWidth 64) 8 =
+          Spec.Seed.blocksAt s₃'.mem ((B + BitVec.ofNat 32 (4 * bufSlot)).setWidth 64) 8 := by
         have f₃ : Frame [stkRegion (s.gpr .esp) 20] s₃'.mem s'.mem := by
           have := Frame.below_mono (wr := []) m₃' (b := 20) (by decide) fit
           rw [esp₆] at this; exact this
-        have := Proof.Seed.blocksAt_frame f₃ (p := (B + BitVec.ofNat 32 (4 * bufSlot)).setWidth 64) (n := 1)
+        exact Proof.Seed.blocksAt_frame f₃ (p := (B + BitVec.ofNat 32 (4 * bufSlot)).setWidth 64) (n := 8)
           (fun r hr => by
             rw [List.mem_singleton] at hr; subst hr
-            exact (hsS.sub_right (by rw [Nat.mul_comm] at bufSub ⊢; exact bufSub)).symm) (by decide)
-        simpa [Spec.Seed.blocksAt] using this
+            exact (hsS.sub_right bufSub).symm) (by decide)
       obtain esp' : s'.gpr .esp = s.gpr .esp := (cs .esp (by decide)).trans esp₆
       obtain rd'' : s'.rd = s.rd := rd'.trans rd₆
       obtain wr'' : s'.wr = s.wr := wr'.trans wr₆
-      obtain fr' : Frame [⟨(B + BitVec.ofNat 32 (4 * bufSlot)).setWidth 64, 16 * 1⟩, ⟨B.setWidth 64, 4 * wsSlots⟩,
+      obtain fr' : Frame [⟨(B + BitVec.ofNat 32 (4 * bufSlot)).setWidth 64, 16 * 8⟩, ⟨B.setWidth 64, 4 * modeWs⟩,
           stkRegion (s.gpr .esp) 20] s.mem s'.mem := by
         rw [← m₆]
         obtain e : below (s₆.gpr .esp) 20 = stkRegion (s.gpr .esp) 20 := by rw [esp₆]
         rw [e] at f
         exact f
       obtain outSlot : ∀ o, 4 * coreSlots ≤ o → o + 4 ≤ 4 * 286 →
-          ∀ r ∈ [(⟨(B + BitVec.ofNat 32 (4 * bufSlot)).setWidth 64, 16 * 1⟩ : Region), ⟨B.setWidth 64, 4 * wsSlots⟩,
+          ∀ r ∈ [(⟨(B + BitVec.ofNat 32 (4 * bufSlot)).setWidth 64, 16 * 8⟩ : Region), ⟨B.setWidth 64, 4 * modeWs⟩,
             stkRegion (s.gpr .esp) 20], Region.Disjoint ⟨addr B o, 4⟩ r := fun o h₁ h₂ r hr => by
         rw [addr_eq (by omega_arith)]
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -378,7 +381,7 @@ theorem crypt_wp (d : Direction) {s : State} {B : BitVec 32} {k : Spec.Seed.Sche
         · rw [hbufA]
           exact (VG.Offset.disjoint _ (.inr (by rw [bufSlot_eq]; simp only [coreSlots, bufSlot_eq] at h₁; omega_arith))
             (by omega_arith) (by rw [bufSlot_eq]; omega_arith))
-        · exact VG.Offset.disjoint_base _ (by simp only [coreSlots, bufSlot_eq, wsSlots] at h₁ ⊢; omega_arith)
+        · exact VG.Offset.disjoint_base _ (by simp only [coreSlots, bufSlot_eq, modeWs_eq] at h₁ ⊢; omega_arith)
             (by omega_arith)
         · exact (hsS.sub_right (VG.Offset.sub_base _ (by rw [show coreSlots + 10 = 286 from rfl]; omega_arith))).symm
       obtain keepD : s'.mem.readW (addr B (4 * modeDSlot)) 32 = s.mem.readW (addr B (4 * modeDSlot)) 32 :=
@@ -387,14 +390,14 @@ theorem crypt_wp (d : Direction) {s : State} {B : BitVec 32} {k : Spec.Seed.Sche
       obtain keepN : s'.mem.readW (addr B (4 * modeNSlot)) 32 = s.mem.readW (addr B (4 * modeNSlot)) 32 :=
         fr'.readW (Region.contains_self _ _) (outSlot _ (by rw [modeNSlot_eq]; decide)
           (by rw [modeNSlot_eq]; omega_arith)) (by decide)
-      obtain hs' : ∀ r ∈ [(⟨(B + BitVec.ofNat 32 (4 * bufSlot)).setWidth 64, 16 * 1⟩ : Region),
-          ⟨B.setWidth 64, 4 * wsSlots⟩], ∃ r' ∈ s.wr, Region.Sub r r' := fun r hr => by
+      obtain hs' : ∀ r ∈ [(⟨(B + BitVec.ofNat 32 (4 * bufSlot)).setWidth 64, 16 * 8⟩ : Region),
+          ⟨B.setWidth 64, 4 * modeWs⟩], ∃ r' ∈ s.wr, Region.Sub r r' := fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
         · exact ⟨_, hw, bufSub⟩
         · exact ⟨_, hw, wsSub⟩
       obtain dis3 : ∀ {R : Region}, (∀ r ∈ s.wr, Region.Disjoint R r) → Region.Disjoint (stkRegion (s.gpr .esp) 20) R →
-          ∀ r ∈ [(⟨(B + BitVec.ofNat 32 (4 * bufSlot)).setWidth 64, 16 * 1⟩ : Region), ⟨B.setWidth 64, 4 * wsSlots⟩,
+          ∀ r ∈ [(⟨(B + BitVec.ofNat 32 (4 * bufSlot)).setWidth 64, 16 * 8⟩ : Region), ⟨B.setWidth 64, 4 * modeWs⟩,
             stkRegion (s.gpr .esp) 20], Region.Disjoint R r := fun hW hS r hr => by
         rcases List.mem_cons.mp hr with rfl | hr
         · exact disj_sub hW hs' _ List.mem_cons_self
@@ -421,7 +424,7 @@ theorem crypt_wp (d : Direction) {s : State} {B : BitVec 32} {k : Spec.Seed.Sche
       obtain esp₉ : s₉.gpr .esp = s.gpr .esp := by rw [g₉, u₇.other _ (by decide), esp']
       obtain rd₉ : s₉.rd = s.rd := by rw [u₉.rd, u₈.rd, u₇.rd, rd'']
       obtain wr₉ : s₉.wr = s.wr := by rw [u₉.wr, u₈.wr, u₇.wr, wr'']
-      obtain fr₉ : Frame [⟨(B + BitVec.ofNat 32 (4 * bufSlot)).setWidth 64, 16 * 1⟩, ⟨B.setWidth 64, 4 * wsSlots⟩,
+      obtain fr₉ : Frame [⟨(B + BitVec.ofNat 32 (4 * bufSlot)).setWidth 64, 16 * 8⟩, ⟨B.setWidth 64, 4 * modeWs⟩,
           stkRegion (s.gpr .esp) 20] s.mem s₉.mem := by rw [m₉]; exact fr'
       refine ⟨by rw [g₉]; exact edi₇, esp₉, ⟨keyIn_frame hkey esp₉ rd₉ wr₉ fr₉ (by rw [hp]; exact dis3 hwK hsK)
           (dis3 hwA hsA), scrArg_frame ⟨hin4, h4, hw4, hs4⟩ esp₉ rd₉ wr₉ fr₉ (dis3 hw4 hs4), hfB,
@@ -431,14 +434,11 @@ theorem crypt_wp (d : Direction) {s : State} {B : BitVec 32} {k : Spec.Seed.Sche
         rcases hr with rfl | rfl | rfl
         · refine ⟨_, List.mem_cons_self, ?_⟩
           rw [hbufA]; exact VG.Offset.sub_base _ (by simp only [dirCore, coreSlots, bufSlot_eq]; omega_arith)
-        · exact ⟨_, List.mem_cons_self, Region.sub_prefix (by simp only [dirCore, coreSlots, bufSlot_eq]; decide)⟩
+        · exact ⟨_, List.mem_cons_self, Region.sub_prefix (by simp only [dirCore, coreSlots, bufSlot_eq, modeWs_eq]; decide)⟩
         · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, fun _ h => h⟩
-      · have hj0 : j = 0 := by simp only [dirCore] at hj; omega_arith
-        subst hj0
-        rw [show (1 : BitVec 32).toNat = 1 from rfl] at post
-        obtain hb := block_of_ecb post
-        rw [hschE, hblkE] at hb
-        rw [hbw, ha, dirCipher_bytes, bytesAt_eq, m₉, hblk₃, hb]
+      · rw [show (8 : BitVec 32).toNat = 8 from rfl, hschE, hblkE, ← hblk₃] at post
+        obtain hb := block_of_ecb (show j < 8 from hj) post
+        rw [hbw, ha, dirCipher_bytes, bytesAt_eq, m₉, hb]
 
 /-- SEED's core for the direction `d` meets what the modes need. -/
 def dirCoreSpec (d : Direction) : CoreSpec (dirCore d) where

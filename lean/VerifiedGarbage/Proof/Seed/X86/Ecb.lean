@@ -469,8 +469,9 @@ end
 /-!
 # SEED ECB on x86 (32-bit): the whole function
 
-`ecb_wp`: with the working space as an argument (`ecbX86`, the
-`wsSlots` slots of the blocks functions), `ecb d` saves the callee-saved
+`ecb_wp`: with the working space as an argument (`ecbX86W w`, of any `w`
+slots that hold the code's `slots`; `ecbX86`, the `wsSlots` slots of the
+blocks functions), `ecb d` saves the callee-saved
 registers, copies the round keys to the table in the order the rounds of
 `d` use them (`keyTable_ok`), transforms the blocks a group at a time
 (`dataLoop_wp`), from the data pointer in `ebx`, and restores `ebx` and
@@ -483,24 +484,28 @@ namespace VG.Proof.Seed
 
 open VG VG.X86 VG.Impl.Seed.X86
 
-/-- ECB on x86 with its working space as the fourth argument. -/
-def ecbX86 (d : Spec.Seed.Direction) : Contract X86.isa where
+/-- ECB on x86 with its working space, of `w` slots, as the fourth argument. -/
+def ecbX86W (w : Nat) (d : Spec.Seed.Direction) : Contract X86.isa where
   pre s :=
     let sched : Region := ⟨(arg s 0).setWidth 64, 128⟩
     let data : Region := ⟨(arg s 1).setWidth 64, 16 * (arg s 2).toNat⟩
-    let scratch : Region := ⟨(arg s 3).setWidth 64, 4 * wsSlots⟩
+    let scratch : Region := ⟨(arg s 3).setWidth 64, 4 * w⟩
     let args : Region := ⟨argAddr s 0, 16⟩
     let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
     s.rd = [sched, args] ∧ s.wr = [data, scratch] ∧
     sched.Disjoint data ∧ sched.Disjoint scratch ∧ data.Disjoint scratch ∧
     args.Disjoint data ∧ args.Disjoint scratch ∧ ret.Disjoint data ∧ ret.Disjoint scratch ∧
     (arg s 0).toNat + 128 ≤ 2 ^ 32 ∧ (arg s 1).toNat + 16 * (arg s 2).toNat ≤ 2 ^ 32 ∧
-    (arg s 3).toNat + 4 * wsSlots ≤ 2 ^ 32 ∧ (s.gpr .esp).toNat + 20 ≤ 2 ^ 32
+    (arg s 3).toNat + 4 * w ≤ 2 ^ 32 ∧ (s.gpr .esp).toNat + 20 ≤ 2 ^ 32
   post s s' :=
     Spec.Seed.blocksAt s'.mem ((arg s 1).setWidth 64) (arg s 2).toNat =
       Spec.Seed.ecb (Spec.Seed.scheduleAt s.mem ((arg s 0).setWidth 64)) d
         (Spec.Seed.blocksAt s.mem ((arg s 1).setWidth 64) (arg s 2).toNat)
   pub s₁ s₂ := s₁.gpr .esp = s₂.gpr .esp ∧ ∀ i < 4, arg s₁ i = arg s₂ i
+
+/-- ECB on x86 with its working space, the `wsSlots` slots of the blocks
+functions, as the fourth argument. -/
+def ecbX86 (d : Spec.Seed.Direction) : Contract X86.isa := ecbX86W wsSlots d
 
 end VG.Proof.Seed
 
@@ -508,7 +513,7 @@ namespace VG.Proof.Seed.X86
 
 open VG VG.X86 VG.X86.Straight VG.Impl.Seed.X86
 open VG.Impl.Aes.X86 (sb slotAt st argOp at_ movS)
-open VG.Proof.Seed (ecbX86 crypt_congr)
+open VG.Proof.Seed (ecbX86W ecbX86 crypt_congr)
 
 /-! ## The arguments -/
 
@@ -673,19 +678,20 @@ theorem outF_spec (d : Spec.Seed.Direction) (m : Mem) {sched : BitVec 32} (hfit 
 
 /-! ## The function -/
 
-theorem ecb_wp (dir : Spec.Seed.Direction) {s₀ : State} (hp : (ecbX86 dir).pre s₀) :
-    WP isa (ecb dir) s₀ fun s' => abiPreserved s₀ s' ∧ (ecbX86 dir).post s₀ s' := by
+theorem ecb_wpW (dir : Spec.Seed.Direction) {w : Nat} (hw : slots ≤ w) {s₀ : State}
+    (hp : (ecbX86W w dir).pre s₀) :
+    WP isa (ecb dir) s₀ fun s' => abiPreserved s₀ s' ∧ (ecbX86W w dir).post s₀ s' := by
   obtain ⟨hrd, hwr, dKD, dKS, dDS, dAD, dAS, dRD, dRS, fitK, fitD, fitB, fitE⟩ := hp
   let sched := arg s₀ 0
   let D := arg s₀ 1
   let n := (arg s₀ 2).toNat
   let b := arg s₀ 3
   obtain hfit' : b.toNat + 4 * slots ≤ 2 ^ 32 := by
-    have : b.toNat + 4 * wsSlots ≤ 2 ^ 32 := fitB
-    rw [slots_eq]; rw [show wsSlots = 272 from rfl] at this; omega_arith
-  obtain hwS : ScrIn s₀.wr b := ⟨⟨wsSlots, by decide, fitB, by rw [hwr]; simp [b]⟩, hfit'⟩
-  obtain subWs : Region.Sub ⟨b.setWidth 64, 4 * slots⟩ ⟨b.setWidth 64, 4 * wsSlots⟩ :=
-    Region.sub_prefix (by decide)
+    have : b.toNat + 4 * w ≤ 2 ^ 32 := fitB
+    omega_using [this, hw]
+  obtain hwS : ScrIn s₀.wr b := ⟨⟨w, hw, fitB, by rw [hwr]; simp [b]⟩, hfit'⟩
+  obtain subWs : Region.Sub ⟨b.setWidth 64, 4 * slots⟩ ⟨b.setWidth 64, 4 * w⟩ :=
+    Region.sub_prefix (Nat.mul_le_mul_left 4 hw)
   obtain dDS' : Region.Disjoint ⟨D.setWidth 64, 16 * n⟩ ⟨b.setWidth 64, 4 * slots⟩ := dDS.sub_right subWs
   obtain dAS' : Region.Disjoint ⟨argAddr s₀ 0, 16⟩ ⟨b.setWidth 64, 4 * slots⟩ := dAS.sub_right subWs
   obtain dKS' : Region.Disjoint ⟨sched.setWidth 64, 128⟩ ⟨b.setWidth 64, 4 * slots⟩ := dKS.sub_right subWs
@@ -815,5 +821,9 @@ theorem ecb_wp (dir : Spec.Seed.Direction) {s₀ : State} (hp : (ecbX86 dir).pre
     simp only [Spec.Seed.blocksAt, List.map_map]
     refine List.map_congr_left fun j _ => ?_
     exact outF_spec dir s₀.mem hfK _ j
+
+theorem ecb_wp (dir : Spec.Seed.Direction) {s₀ : State} (hp : (ecbX86 dir).pre s₀) :
+    WP isa (ecb dir) s₀ fun s' => abiPreserved s₀ s' ∧ (ecbX86 dir).post s₀ s' :=
+  ecb_wpW dir (by decide) hp
 
 end VG.Proof.Seed.X86

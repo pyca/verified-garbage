@@ -8,6 +8,8 @@ public import VerifiedGarbage.Proof.Sm4.X86.CallSum
 meta import VerifiedGarbage.Proof.Sm4.X86.CallSum
 import VerifiedGarbage.Proof.Modes.X86.Modes
 meta import VerifiedGarbage.Proof.Modes.X86.Modes
+import VerifiedGarbage.Proof.Modes.X86.Wide
+meta import VerifiedGarbage.Proof.Modes.X86.Wide
 import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
 meta import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
 public import VerifiedGarbage.Proof.Framework.Contract
@@ -55,7 +57,8 @@ meta import VerifiedGarbage.Proof.Sm4.X86.PreparedBody
 # SM4-OFB and SM4-CFB128 on x86 (32-bit) meet their contracts
 
 `ofb_wp`, `cfbEncrypt_wp`, `cfbDecrypt_wp`: the modes' OFB and CFB
-(`Proof.Modes.X86.ofb_wp`, `cfbEnc_wp`, `cfbDec_wp`) over SM4's core in the
+(`Proof.Modes.X86.ofb_wp`, `cfbEnc_wp`, and `cfbDecLevels_wp`, which deciphers
+the blocks in groups) over SM4's core in the
 encryption direction (`dirCoreSpec .encrypt`), with the working space as a
 fifth argument (`fbX86`). The chaining value is written back, so it is
 writable, and the taint analysis knows the argument words holding the
@@ -96,7 +99,7 @@ end VG.Proof.Sm4.X86
 namespace VG.Proof.Sm4.X86.Fb
 
 open VG VG.X86 VG.Impl.Sm4.X86 VG.Impl.Modes
-open VG.Proof.Modes.X86 (SeqPre stkRegion ofb_wp cfbEnc_wp cfbDec_wp)
+open VG.Proof.Modes.X86 (SeqPre stkRegion ofb_wp cfbEnc_wp cfbDecLevels_wp)
 open VG.Proof.Sm4.X86 (scr_eq stk_apart KeyArgs dirCoreSpec dirCoreSpec_cipher)
 
 /-- SM4 under the schedule at the first argument. -/
@@ -211,7 +214,7 @@ theorem cfbEncrypt_wp {s₀ : State} (hp : (fbX86 cfbEncPost).pre s₀) :
 
 theorem cfbDecrypt_wp {s₀ : State} (hp : (fbX86 cfbDecPost).pre s₀) :
     WP isa cfbDecrypt s₀ fun s' => abiPreserved s₀ s' ∧ (fbX86 cfbDecPost).post s₀ s' :=
-  WP.mono (cfbDec_wp (dirCoreSpec .encrypt) (seqPre_of .encrypt rfl hp) (keyArgs_of .encrypt hp))
+  WP.mono (cfbDecLevels_wp (dirCoreSpec .encrypt) (by decide) (seqPre_of .encrypt rfl hp) (keyArgs_of .encrypt hp))
     fun _ ⟨h1, h2, h3⟩ => by
       simp only [Proof.Modes.X86.blocks0, Proof.Modes.X86.iv0, Proof.Modes.X86.Dp, Proof.Modes.X86.P,
         Proof.Modes.X86.N, dirCore_ka, Nat.reduceAdd, data_eq, iv_eq, cipher_eq] at h2 h3

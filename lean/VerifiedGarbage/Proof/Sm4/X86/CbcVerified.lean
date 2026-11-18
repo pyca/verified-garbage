@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Sm4.X86.FbVerified
 import VerifiedGarbage.Proof.Modes.X86.CbcChained
+import VerifiedGarbage.Proof.Modes.X86.Wide
 public import VerifiedGarbage.Proof.Sm4.CbcScratch
 import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
 import VerifiedGarbage.Proof.Sm4.X86.CbcLit
@@ -9,6 +10,8 @@ import VerifiedGarbage.Proof.Sm4.X86.Lit
 import VerifiedGarbage.Proof.Sm4.X86.LayersLit
 meta import VerifiedGarbage.Proof.Sm4.X86.FbVerified
 meta import VerifiedGarbage.Proof.Modes.X86.CbcChained
+meta import VerifiedGarbage.Proof.Modes.X86.Wide
+import VerifiedGarbage.Proof.Modes.X86.Wide
 meta import VerifiedGarbage.Proof.Sm4.CbcScratch
 meta import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
 meta import VerifiedGarbage.Proof.Sm4.X86.CbcLit
@@ -19,7 +22,8 @@ meta import VerifiedGarbage.Proof.Sm4.X86.LayersLit
 # SM4-CBC on x86 (32-bit) meets its contracts
 
 `cbcEncryptChained_wp`, `cbcDecryptChained_wp`: the modes' CBC that updates
-the chaining value (`Proof.Modes.X86.cbcEncChained_wp`, `cbcDecChained_wp`)
+the chaining value (`Proof.Modes.X86.cbcEncChained_wp`, and `cbcDecLevels_wp`,
+which deciphers the blocks in groups)
 over SM4's core for each direction (`dirCoreSpec`), with the working space
 as a fifth argument. The chaining value is written back, so it is writable,
 as for OFB and CFB (`Fb.fbX86`), whose contract, taint and narrowing these
@@ -34,7 +38,7 @@ space on the stack, zeroed on return.
 namespace VG.Proof.Sm4.X86.Cbc
 
 open VG VG.X86 VG.Impl.Sm4.X86 VG.Impl.Modes
-open VG.Proof.Modes.X86 (SeqPre cbcEncChained_wp cbcDecChained_wp)
+open VG.Proof.Modes.X86 (SeqPre cbcEncChained_wp cbcDecLevels_wp)
 open VG.Proof.Sm4.X86 (dirCoreSpec dirCoreSpec_cipher)
 open VG.Proof.Sm4.X86.Fb (fbX86 ciph ivAt dataAt fbTaint fbTaint_agree wideContract fb_verified satState frameSat
   seqPre_of keyArgs_of)
@@ -74,7 +78,7 @@ theorem cbcEncryptChained_wp {s₀ : State} (hp : (fbX86 encPost).pre s₀) :
 
 theorem cbcDecryptChained_wp {s₀ : State} (hp : (fbX86 decPost).pre s₀) :
     WP isa cbcDecryptChained s₀ fun s' => abiPreserved s₀ s' ∧ (fbX86 decPost).post s₀ s' :=
-  WP.mono (cbcDecChained_wp (dirCoreSpec .decrypt) (seqPre_of .decrypt rfl hp) (keyArgs_of .decrypt hp))
+  WP.mono (cbcDecLevels_wp (dirCoreSpec .decrypt) (by decide) (seqPre_of .decrypt rfl hp) (keyArgs_of .decrypt hp))
     fun _ ⟨h1, h2, h3⟩ => by
       simp only [Proof.Modes.X86.blocks0, Proof.Modes.X86.iv0, Proof.Modes.X86.Dp, Proof.Modes.X86.P,
         Proof.Modes.X86.N, dirCore_ka, Nat.reduceAdd, data_eq, iv_eq, cipher_dec] at h2 h3
