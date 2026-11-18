@@ -36,7 +36,7 @@ public import VerifiedGarbage.Impl.AesGcm.PPC64LE
 # AES-GCM on PPC64LE: the pieces of `seal` and `open` are constant time
 
 Untrusted: everything here is checked by Lean. As on ARMv7
-(`Proof/AesGcm/Arm/CTOne.lean`): the invariants fix the context, the state
+(`Proof/AesGcm/Arm/CTOpen.lean`): the invariants fix the context, the state
 at `W + 16`, `W`, the stack pointer, the rounds, the nonce, the additional
 data and the data (their addresses and lengths, held in registers the
 environment pins), and leave the rest existential; their correctness

@@ -7,7 +7,7 @@ public import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Verified
 import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Stitch.Taint
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Crypt
-import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Polyval
+public import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Polyval
 import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Keys
 import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Derive
 import VerifiedGarbage.Proof.AesGcm.AArch64.Rel
@@ -17,7 +17,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Cmac.Spec
 public import VerifiedGarbage.Impl.AesGcmSiv.AArch64.Stitch
-public import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Absorb
 public import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Stitch.Poly
 public import VerifiedGarbage.Proof.Framework.AArch64.Interleave
 public import VerifiedGarbage.Proof.Framework.Interleave
@@ -28,7 +27,6 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.AesGcm.AArch64.Loops
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Gcm.Stream
-public import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Fn
 import VerifiedGarbage.Proof.AesGcm.AArch64.Tag
 
 /-! ### `AesGcmSiv.AArch64.Stitch.Fn`, which only this module used -/

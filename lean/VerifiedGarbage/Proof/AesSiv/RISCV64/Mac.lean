@@ -20,8 +20,6 @@ public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Framework.RISCV64.Steps
 public import VerifiedGarbage.Spec.Aes
 public import VerifiedGarbage.TCB.RISCV64.Target
-public import VerifiedGarbage.Proof.CmacAes.RISCV64.Finalize
-import VerifiedGarbage.Proof.CmacAes.RISCV64.Subkeys
 import VerifiedGarbage.Proof.Aes.RISCV64.BlocksVerified
 import VerifiedGarbage.Proof.AesCbc.RISCV64.Loop
 import VerifiedGarbage.Proof.AesCbc.RISCV64.Body
@@ -39,7 +37,7 @@ section
 Untrusted: everything here is checked by Lean. `vg_cmac_aes_finalize`'s
 contract states the MAC only when the subkeys after the key schedule are
 the schedule's own; S2V's PRF (`Spec.Siv.ctxMac`) uses whatever subkeys the
-key context holds. Its proof (`Proof/CmacAes/RISCV64/Finalize.lean`) shows
+key context holds. Its proof (`Proof/CmacAes/Stream/RISCV64/Common.lean`) shows
 more: the state becomes `CIPH_K(C ⊕ Mₙ)` with `Mₙ` the last block formed
 from the subkeys in memory (`mn`). That is the contract here
 (`finRawRISCV64`), proven the same way, and the call lemma `fin_call_raw`,

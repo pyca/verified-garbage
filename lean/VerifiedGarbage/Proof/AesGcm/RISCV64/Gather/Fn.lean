@@ -139,7 +139,7 @@ gathers the slices to `dst` (`gathered_wp`); and calls `vg_aes_gcm_seal`
 on them in place, by its contract (`sealSpec_pre`, `sealSpec_post`), whose
 frame is in the 4624 bytes below ours, so the return address comes back
 from it (`sealGather_wp`). As for ChaCha20-Poly1305
-(`Proof/ChaCha20Poly1305/RISCV64/Gather/Fn.lean`), with the call's stack
+(`Proof/ChaCha20Poly1305/RISCV64/Gather/Verified.lean`), with the call's stack
 argument as on PPC64LE (`Proof/AesGcm/PPC64LE/Gather/Fn.lean`).
 -/
 

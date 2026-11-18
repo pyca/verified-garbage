@@ -16,7 +16,6 @@ meta import VerifiedGarbage.Proof.AesOcb.X86.Run
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.AesGcm.X86.Absorb
 meta import VerifiedGarbage.Proof.AesGcm.X86.Absorb
-meta import VerifiedGarbage.Proof.AesGcm.X86.CT
 meta import VerifiedGarbage.Proof.AesGcm.X86.Callee
 meta import VerifiedGarbage.Proof.AesGcm.X86.Common
 meta import VerifiedGarbage.Proof.AesGcm.X86.Fn

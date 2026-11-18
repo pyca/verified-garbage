@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Impl.AesCtr.PPC64LE.Final
 public import VerifiedGarbage.Proof.AesCtr.Final
 public import VerifiedGarbage.Proof.AesCtr.PPC64LE.Verified
-public import VerifiedGarbage.Proof.AesCtr.PPC64LE.CT
 public import VerifiedGarbage.Proof.AesCfb.PPC64LE.Final
 public import VerifiedGarbage.Proof.Framework.Scratch
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Spill
@@ -30,7 +29,6 @@ import VerifiedGarbage.Proof.AesCbc.PPC64LE.CT
 meta import VerifiedGarbage.Impl.AesCtr.PPC64LE.Final
 meta import VerifiedGarbage.Proof.AesCtr.Final
 meta import VerifiedGarbage.Proof.AesCtr.PPC64LE.Verified
-meta import VerifiedGarbage.Proof.AesCtr.PPC64LE.CT
 meta import VerifiedGarbage.Proof.AesCfb.PPC64LE.Final
 meta import VerifiedGarbage.Proof.Framework.Scratch
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Spill

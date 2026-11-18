@@ -1,15 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Gcm.PPC64LE.Ghash
-public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Contract
-public import VerifiedGarbage.Proof.AesGcm.PPC64LE.FinTag
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Fn
+public import VerifiedGarbage.Proof.AesGcm.PPC64LE.FinTag
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamInit
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamCrypt
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.TextAbsorb
 import VerifiedGarbage.Proof.Gcm.Be64
 import VerifiedGarbage.Proof.Cmac.Frame
-import VerifiedGarbage.Proof.Gcm.PPC64LE.Ghash
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.AesGcm.PPC64LE

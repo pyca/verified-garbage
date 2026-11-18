@@ -2,12 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Gcm.PPC64LE.Ghash
 public import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.Contract
-import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.FinTag
-import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.CTCrypt
-public import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTBase
-import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.Tag
 import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.StreamFinish
 import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.InitCT
+public import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTBase
+import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.Tag
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTAbsorb
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTFin
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Absorb
@@ -17,12 +15,10 @@ import VerifiedGarbage.Proof.AesGcm.PPC64LE.TextAbsorb
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Run
 meta import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.Contract
-meta import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.FinTag
-meta import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.CTCrypt
-meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTBase
-meta import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.Tag
 meta import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.StreamFinish
 meta import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.InitCT
+meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTBase
+meta import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.Tag
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTAbsorb
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.Absorb
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.Flush

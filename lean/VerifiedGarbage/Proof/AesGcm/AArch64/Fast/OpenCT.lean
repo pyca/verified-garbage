@@ -23,9 +23,7 @@ import VerifiedGarbage.Proof.AesGcm.AArch64.Cmp
 import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Entry
 import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Pad
 import VerifiedGarbage.Proof.AesGcm.AArch64.Tail.Crypt
-import VerifiedGarbage.Proof.AesGcm.AArch64.Tail.CT
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.Tail.Crypt
-meta import VerifiedGarbage.Proof.AesGcm.AArch64.Tail.CT
 import VerifiedGarbage.Proof.AesGcm.AArch64.Fn
 import VerifiedGarbage.Proof.AesGcm.AArch64.PieceCT
 import VerifiedGarbage.Proof.AesGcm.AArch64.StreamCryptCT

@@ -4,8 +4,7 @@ public import VerifiedGarbage.Proof.AesGcm.Rounds
 public import VerifiedGarbage.Impl.StackScratch.AArch64
 public import VerifiedGarbage.Impl.AesGcm.AArch64.SealGather
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Callee
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.Callee
-import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.Fn
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.Fn
 import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.CT
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Aes.AArch64.CodeLit

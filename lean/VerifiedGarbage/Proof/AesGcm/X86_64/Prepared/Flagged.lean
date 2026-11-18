@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.AesGcm.Scratch
 import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.BlkCall
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Fn
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.SplitCall
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.FrontFast
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Callee
 public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Context
 import VerifiedGarbage.Proof.Aes.X86_64.CodeLit

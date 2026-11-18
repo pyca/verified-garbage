@@ -2,19 +2,16 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.Arm.CTBase
 public import VerifiedGarbage.Proof.AesGcm.Arm.Fn
-import VerifiedGarbage.Proof.AesGcm.Arm.CTAbsorb
-meta import VerifiedGarbage.Proof.AesGcm.Arm.CTAbsorb
+import VerifiedGarbage.Proof.AesGcm.Arm.CTCrypt
+meta import VerifiedGarbage.Proof.AesGcm.Arm.CTCrypt
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 meta import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 meta import VerifiedGarbage.Proof.Framework.Arm.Exec
-import VerifiedGarbage.Proof.AesGcm.Arm.CTCrypt
 import VerifiedGarbage.Proof.AesGcm.Arm.CryptOk
 import VerifiedGarbage.Proof.AesGcm.Arm.Entry
 import VerifiedGarbage.Proof.AesGcm.Arm.Ghash1
 import VerifiedGarbage.Proof.AesGcm.Arm.Loops
-import VerifiedGarbage.Proof.AesGcm.Arm.Open
-import VerifiedGarbage.Proof.AesGcm.Arm.Seal
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Cmac.Mem
 import VerifiedGarbage.Proof.Cmac.Spec
@@ -26,13 +23,10 @@ import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Sha256.Stream
 meta import VerifiedGarbage.Impl.Aes.Arm.Alloc
-meta import VerifiedGarbage.Proof.AesGcm.Arm.CTCrypt
 meta import VerifiedGarbage.Proof.AesGcm.Arm.CryptOk
 meta import VerifiedGarbage.Proof.AesGcm.Arm.Entry
 meta import VerifiedGarbage.Proof.AesGcm.Arm.Ghash1
 meta import VerifiedGarbage.Proof.AesGcm.Arm.Loops
-meta import VerifiedGarbage.Proof.AesGcm.Arm.Open
-meta import VerifiedGarbage.Proof.AesGcm.Arm.Seal
 meta import VerifiedGarbage.Proof.Cmac.Frame
 meta import VerifiedGarbage.Proof.Cmac.Mem
 meta import VerifiedGarbage.Proof.Cmac.Spec

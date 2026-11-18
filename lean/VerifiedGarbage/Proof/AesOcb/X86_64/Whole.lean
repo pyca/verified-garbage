@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesOcb.X86_64.Pass
-public import VerifiedGarbage.Proof.AesOcb.X86_64.Args
+public import VerifiedGarbage.Proof.AesOcb.X86_64.Words
 import VerifiedGarbage.Proof.AesOcb.X86_64.Nonce
 import VerifiedGarbage.Proof.AesOcb.X86_64.Run
 import VerifiedGarbage.Proof.AesCcm.X86_64.Run

@@ -1,13 +1,12 @@
 module
+
 public import VerifiedGarbage.Impl.AesXts.X86_64AesNi
 public import VerifiedGarbage.Proof.AesCbc.X86_64.Call
 public import VerifiedGarbage.Proof.AesXts.Spec
 public import VerifiedGarbage.Spec.Xts.Contract
-
 import VerifiedGarbage.Proof.AesXts.X86_64.AesNi.Loop
 import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Dec
 import VerifiedGarbage.Proof.AesCbc.X86_64.Verified
-import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Enc
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Impl.AesXts.X86_64AesNi
@@ -17,7 +16,6 @@ meta import VerifiedGarbage.Spec.Xts.Contract
 meta import VerifiedGarbage.Proof.AesXts.X86_64.AesNi.Loop
 meta import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Dec
 meta import VerifiedGarbage.Proof.AesCbc.X86_64.Verified
-meta import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Enc
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Contract

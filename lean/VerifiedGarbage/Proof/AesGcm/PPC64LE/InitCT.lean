@@ -1,10 +1,10 @@
 module
 
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTBase
-public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Contract
+public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Fn
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Init
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTBase
-meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.Contract
+meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.Fn
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.Init
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 public import VerifiedGarbage.Impl.AesGcm.PPC64LE

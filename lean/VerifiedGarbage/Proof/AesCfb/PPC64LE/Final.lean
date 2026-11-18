@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.AesCfb.PPC64LE.Final
 public import VerifiedGarbage.Proof.AesCfb.Final
 public import VerifiedGarbage.Proof.AesCfb.PPC64LE.Verified
-public import VerifiedGarbage.Proof.AesCbc.PPC64LE.Call
+public import VerifiedGarbage.Proof.AesCbc.PPC64LE.Loop
 public import VerifiedGarbage.Proof.Framework.Scratch
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Spill
 public import VerifiedGarbage.Impl.StackScratch.PPC64LE
@@ -20,12 +20,11 @@ import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Aes.PPC64LE.Blocks
 import VerifiedGarbage.Proof.AesCbc.PPC64LE.Body
 import VerifiedGarbage.Proof.AesCbc.PPC64LE.CT
-import VerifiedGarbage.Proof.AesCfb.PPC64LE.Body
 import VerifiedGarbage.Proof.Modes.PPC64LE.SeqFinal
 meta import VerifiedGarbage.Impl.AesCfb.PPC64LE.Final
 meta import VerifiedGarbage.Proof.AesCfb.Final
 meta import VerifiedGarbage.Proof.AesCfb.PPC64LE.Verified
-meta import VerifiedGarbage.Proof.AesCbc.PPC64LE.Call
+meta import VerifiedGarbage.Proof.AesCbc.PPC64LE.Loop
 meta import VerifiedGarbage.Proof.Framework.Scratch
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Spill
 meta import VerifiedGarbage.Impl.StackScratch.PPC64LE
@@ -42,7 +41,6 @@ meta import VerifiedGarbage.Proof.Cmac.Frame
 meta import VerifiedGarbage.Proof.Aes.PPC64LE.Blocks
 meta import VerifiedGarbage.Proof.AesCbc.PPC64LE.Body
 meta import VerifiedGarbage.Proof.AesCbc.PPC64LE.CT
-meta import VerifiedGarbage.Proof.AesCfb.PPC64LE.Body
 meta import VerifiedGarbage.Proof.Modes.PPC64LE.SeqFinal
 
 /-!

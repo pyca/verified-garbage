@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Cmac.Dbl64
 public import VerifiedGarbage.Proof.Cmac.Block
 public import VerifiedGarbage.Impl.CmacAes.PPC64LE
-public import VerifiedGarbage.Proof.AesCbc.PPC64LE.Call
+public import VerifiedGarbage.Proof.AesCbc.PPC64LE.Loop
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Spill
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.AesCbc.PPC64LE.Body

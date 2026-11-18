@@ -11,8 +11,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 public import VerifiedGarbage.Impl.AesSiv.Arm
-public import VerifiedGarbage.Proof.AesSiv.Arm.Env
-import VerifiedGarbage.Proof.CmacAes.Arm.Subkeys
+import VerifiedGarbage.Proof.CmacAes.Arm.Verified
 
 /-! ### `AesSiv.Arm.S2vAd`, which this module and modules that import it used -/
 

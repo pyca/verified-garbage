@@ -12,7 +12,6 @@ import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Callee
-import VerifiedGarbage.Proof.AesCcm.AArch64.Contract
 
 /-! ### `AesCcm.AArch64.Callee`, which this module and modules that import it used -/
 

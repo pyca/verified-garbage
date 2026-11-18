@@ -8,7 +8,6 @@ public import VerifiedGarbage.Proof.Framework.X86_64.ResidueMx
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Init
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Frame
-public import VerifiedGarbage.Proof.Poly1305.X86_64.UpdateVerified
 public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 public import VerifiedGarbage.Proof.Framework.X86_64.Registration
 import VerifiedGarbage.Proof.Poly1305.Scratch
@@ -22,7 +21,6 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.ScrubOr
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Proof.Poly1305.X86_64.Init
 meta import VerifiedGarbage.Proof.Poly1305.X86_64.Frame
-meta import VerifiedGarbage.Proof.Poly1305.X86_64.UpdateVerified
 meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 meta import VerifiedGarbage.Proof.Framework.X86_64.Registration
 meta import VerifiedGarbage.Proof.Poly1305.Scratch

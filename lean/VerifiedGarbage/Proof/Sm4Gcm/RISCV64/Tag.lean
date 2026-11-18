@@ -2,8 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Sm4Gcm.RISCV64.Crypt
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.Tag
-import VerifiedGarbage.Proof.AesGcm.RISCV64.Absorb
-import VerifiedGarbage.Proof.AesGcm.RISCV64.Ghash1
+import VerifiedGarbage.Proof.AesGcm.RISCV64.Flush
 import VerifiedGarbage.Proof.AesGcm.RISCV64.Init
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Cmac.Spec

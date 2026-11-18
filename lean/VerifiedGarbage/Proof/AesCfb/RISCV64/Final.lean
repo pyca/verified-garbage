@@ -3,13 +3,12 @@ module
 public import VerifiedGarbage.Impl.AesCfb.RISCV64.Final
 public import VerifiedGarbage.Proof.AesCfb.Final
 public import VerifiedGarbage.Proof.AesCfb.Spec
-public import VerifiedGarbage.Proof.AesCbc.RISCV64.Call
+public import VerifiedGarbage.Proof.AesCbc.RISCV64.Loop
 public import VerifiedGarbage.Proof.Framework.Scratch
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.RISCV64.Spill
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 public import VerifiedGarbage.Impl.StackScratch.RISCV64
-import VerifiedGarbage.Proof.AesCfb.RISCV64.Verified
 import VerifiedGarbage.Proof.AesCbc.RISCV64.CT
 import VerifiedGarbage.Proof.AesCbc.RISCV64.Body
 import VerifiedGarbage.Proof.Aes.RISCV64.BlocksVerified
@@ -28,13 +27,12 @@ import VerifiedGarbage.Proof.Cmac.Frame
 meta import VerifiedGarbage.Impl.AesCfb.RISCV64.Final
 meta import VerifiedGarbage.Proof.AesCfb.Final
 meta import VerifiedGarbage.Proof.AesCfb.Spec
-meta import VerifiedGarbage.Proof.AesCbc.RISCV64.Call
+meta import VerifiedGarbage.Proof.AesCbc.RISCV64.Loop
 meta import VerifiedGarbage.Proof.Framework.Scratch
 meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Spill
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 meta import VerifiedGarbage.Impl.StackScratch.RISCV64
-meta import VerifiedGarbage.Proof.AesCfb.RISCV64.Verified
 meta import VerifiedGarbage.Proof.AesCbc.RISCV64.CT
 meta import VerifiedGarbage.Proof.AesCbc.RISCV64.Body
 meta import VerifiedGarbage.Proof.Aes.RISCV64.BlocksVerified
@@ -50,6 +48,82 @@ meta import VerifiedGarbage.Proof.Framework.RISCV64.StackScratch
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Cmac.Frame
+public import VerifiedGarbage.Proof.AesCfb.Rounds
+public import VerifiedGarbage.Impl.AesCfb.RISCV64
+public import VerifiedGarbage.Spec.Cfb.Contract
+import VerifiedGarbage.Proof.AesCbc.RISCV64.Verified
+import VerifiedGarbage.Proof.Aes.RISCV64.ChainModes
+import VerifiedGarbage.Proof.Aes.RISCV64.WideCfb
+meta import VerifiedGarbage.Proof.AesCfb.Rounds
+meta import VerifiedGarbage.Impl.AesCfb.RISCV64
+meta import VerifiedGarbage.Spec.Cfb.Contract
+meta import VerifiedGarbage.Proof.AesCbc.RISCV64.Verified
+meta import VerifiedGarbage.Proof.Aes.RISCV64.ChainModes
+meta import VerifiedGarbage.Proof.Aes.RISCV64.WideCfb
+
+/-! ### `AesCfb.RISCV64.Verified`, which this module and modules that import it used -/
+
+section
+
+/-!
+# AES-CFB128 on RISC-V: `Verified`
+
+Correctness and constant time, of encryption from the CFB128 chain's
+(`Proof/Aes/RISCV64/ChainModes.lean`) and of decryption from the wide CFB128
+decryption's (`Proof/Aes/RISCV64/WideCfb.lean`), and their calls'
+(`wrap_wp`, `wrap_ct`, `Proof/AesCbc/RISCV64/Chain.lean`), a state
+satisfying the precondition, and the shared contracts of
+`Spec/Cfb/Contract.lean` (with no stack: a call stores nothing in memory, and
+the return address is saved in the scratch buffer).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.AesCfb.RISCV64
+
+open VG VG.RISCV64 VG.Impl.AesCfb.RISCV64
+open VG.Proof.AesCbc (cts)
+open VG.Proof.AesCbc.RISCV64
+
+theorem encrypt_correct (s : State) (hs : (modeRISCV64 (cfbMode true)).pre s) :
+    ∃ t s', Exec isa encrypt s t s' ∧ abiPreserved s s' ∧ (modeRISCV64 (cfbMode true)).post s s' := by
+  obtain ⟨t, s', he, hg, hra, hsp, hp⟩ :=
+    wrap_wp Proof.Aes.RISCV64.cfbChain_k (name := "vg_aes_cfb_chain") (encrypt_wpre hs)
+  exact ⟨t, s', he, ⟨hg, hsp, hra⟩, hp⟩
+
+theorem encrypt_ct : ConstantTime isa (modeRISCV64 (cfbMode true)).pre (modeRISCV64 (cfbMode true)).pub
+    encrypt :=
+  fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ =>
+    wrap_ct Proof.Aes.RISCV64.cfbChain_k "vg_aes_cfb_chain" _ _ _ _ _ _ (encrypt_wpre h₁) (encrypt_wpre h₂)
+      hq e₁ e₂
+
+theorem decrypt_correct (s : State) (hs : (modeRISCV64 (cfbMode false)).pre s) :
+    ∃ t s', Exec isa decrypt s t s' ∧ abiPreserved s s' ∧ (modeRISCV64 (cfbMode false)).post s s' := by
+  obtain ⟨t, s', he, hg, hra, hsp, hp⟩ :=
+    wrap_wp Proof.Aes.RISCV64.cfbDecWide_k (name := "vg_aes_cfb_dec_wide") (encrypt_wpre hs)
+  exact ⟨t, s', he, ⟨hg, hsp, hra⟩, hp⟩
+
+theorem decrypt_ct : ConstantTime isa (modeRISCV64 (cfbMode false)).pre (modeRISCV64 (cfbMode false)).pub
+    decrypt :=
+  fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ =>
+    wrap_ct Proof.Aes.RISCV64.cfbDecWide_k "vg_aes_cfb_dec_wide" _ _ _ _ _ _ (encrypt_wpre h₁) (encrypt_wpre h₂)
+      hq e₁ e₂
+
+theorem encrypt_verified : Verified RISCV64.target encrypt (Proof.AesCfb.encryptRoundsContract RISCV64.abi) :=
+  Verified.of_correct encrypt_correct encrypt_ct (by
+    sig_implies [Proof.AesCfb.encryptRoundsContract, Spec.Cfb.aesSig, Spec.Cbc.aesSig, modeRISCV64, cfbMode, cfb, cts,
+      RISCV64.abi, RISCV64.argRegs] [sat] using sat)
+
+theorem decrypt_verified : Verified RISCV64.target decrypt (Proof.AesCfb.decryptRoundsContract RISCV64.abi) :=
+  Verified.of_correct decrypt_correct decrypt_ct (by
+    sig_implies [Proof.AesCfb.decryptRoundsContract, Spec.Cfb.aesSig, Spec.Cbc.aesSig, modeRISCV64, cfbMode, cfb, cts,
+      RISCV64.abi, RISCV64.argRegs] [sat] using sat)
+
+end VG.Proof.AesCfb.RISCV64
+
+end
+
+end
 
 /-!
 # AES-CFB128 of a message's last piece on RISC-V
@@ -84,7 +158,7 @@ Constant time (`final_rel`): the blocks by the taint analysis, the calls by
 their contracts' constant time (`RelCT.callEx`, `blk_rel`), every address
 and branch from the pointers and `len`, which agree in both runs.
 `final_wp` and `final_rel` hold for any mode `M` of the whole-block
-function, so AES-OFB's final function (`Proof/AesOfb/RISCV64/Final.lean`)
+function, so AES-OFB's final function (`Proof/Aes/RISCV64/Scrub.lean`)
 reuses them. `encryptFinal_framed` runs the code with `save` in a frame of 64 bytes on
 the stack (`RISCV64.Verified.stackScratchWiped`), zeroed on return.
 -/

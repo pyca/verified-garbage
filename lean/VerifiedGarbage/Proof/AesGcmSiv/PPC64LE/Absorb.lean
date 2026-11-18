@@ -23,7 +23,7 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 # AES-GCM-SIV on PPC64LE: POLYVAL's whole blocks (`chunk`)
 
 Untrusted: everything here is checked by Lean. As on ARMv7
-(`Proof/AesGcmSiv/Arm/Absorb.lean`): `revLoop` copies blocks to `W + 496`,
+(`Proof/AesGcmSiv/Arm/Polyval.lean`): `revLoop` copies blocks to `W + 496`,
 each with its bytes reversed (`ldbrx`), so that GHASH reads POLYVAL's field
 elements of them (`revMem_block`); `chunk` absorbs up to 64 of them by a
 call of `vg_ghash` (`chunk_wp`), and a loop of chunks the whole blocks of a

@@ -1,8 +1,7 @@
 module
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Loops
-public import VerifiedGarbage.Proof.AesGcm.AArch64.OneShot
 
-import VerifiedGarbage.Proof.AesGcm.AArch64.Seal
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Loops
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Seal
 import VerifiedGarbage.Proof.AesGcm.AArch64.Cmp
 import VerifiedGarbage.Proof.AesGcm.AArch64.StreamInit
 import VerifiedGarbage.Proof.AesGcm.AArch64.StreamVerify

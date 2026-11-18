@@ -37,7 +37,7 @@ code wipes its working space, which leaves none, or two (`open_to`'s and
 
 `postOut_of_local_pre` is `postOut_of_local` for a postcondition that reads
 the memory on return only within the buffers when the precondition holds, as
-on Arm (`Proof/ChaCha20Poly1305/Arm/Scrub.lean`).
+on Arm (`Proof/ChaCha20Poly1305/Arm/Gather/Verified.lean`).
 -/
 
 @[expose] public section

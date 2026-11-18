@@ -1,7 +1,6 @@
 module
 
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-public import VerifiedGarbage.Proof.AesOcb.Arm.PadTo
 public import VerifiedGarbage.Proof.AesOcb.Arm.HashChunk
 public import VerifiedGarbage.Proof.AesOcb.Arm.Words
 import VerifiedGarbage.Proof.Ocb.Bytes

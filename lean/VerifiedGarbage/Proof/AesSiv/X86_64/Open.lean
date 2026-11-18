@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.AesSiv.X86_64.Seal
 import VerifiedGarbage.Proof.AesSiv.Mask
 import VerifiedGarbage.Proof.AesSiv.X86_64.Common
 import VerifiedGarbage.Proof.AesSiv.X86_64.Crypt
-import VerifiedGarbage.Proof.AesSiv.X86_64.Finish
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.AesSiv.Ctr32
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd

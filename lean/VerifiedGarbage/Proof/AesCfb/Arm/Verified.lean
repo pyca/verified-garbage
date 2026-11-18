@@ -1,15 +1,332 @@
 module
+
 public import VerifiedGarbage.Impl.AesCfb.Arm
 public import VerifiedGarbage.Proof.AesCfb.Rounds
 public import VerifiedGarbage.Spec.Cfb.Contract
 public import VerifiedGarbage.TCB.Arm.Target
-
 import VerifiedGarbage.Proof.AesCbc.Arm.Verified
-import VerifiedGarbage.Proof.AesCfb.Arm.Body
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.AesCfb.Spec
+public import VerifiedGarbage.Proof.AesOfb.Arm.Body
+public import VerifiedGarbage.Proof.AesCbc.Arm.GroupsCT
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.AesCfb.Spec
+meta import VerifiedGarbage.Proof.AesOfb.Arm.Body
+meta import VerifiedGarbage.Impl.AesCfb.Arm
+meta import VerifiedGarbage.Proof.AesCbc.Arm.GroupsCT
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Cmac.Frame
+meta import VerifiedGarbage.Proof.Cmac.Frame
+
+/-! ### `AesCfb.Arm.Body`, which this module and modules that import it used -/
+
+section
+
+/-!
+# AES-CFB128 on ARMv7: one block, and constant time
+
+`encBody_ok` and `decBody_ok`: one run of `body` takes the loop invariant
+AES-CBC's proofs share (`Proof/AesCbc/Arm/Body.lean`) from `k` blocks to
+`k + 1`, for `cfbMode`: encryption's from the round keys in the working
+space (`BodyOkK`), decryption's with `vg_aes_encrypt_blocks`. The code
+before the call is AES-OFB's (`Proof/AesOfb/Arm/Body.lean`), and what
+follows the call is the same for either (`head_tail`). `encBody_ct` and
+`decBody_ct`: they are constant time, by the shared framework, with the call
+on the block at `iv`.
+
+`decrypt_wp`, `decrypt_ct`: decryption, which first takes the blocks in
+groups (`Proof/AesCbc/Arm/Groups.lean`, `GroupsCT.lean`): a group of
+`cfbDecG` leaves the data and the chaining value as CFB decryption of its
+blocks does (`cfbDecG_sim`), which evaluating both on any blocks shows.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.AesCfb.Arm
+
+open VG VG.Arm VG.Impl.AesCfb.Arm
+open VG.Impl.CmacAes.Arm (advance xor4)
+open VG.Impl.AesCbc.Arm (wholeG cfbDecG groupLevels encFrame zero4)
+open VG.Impl.Aes.Arm (keyedFrame)
+open VG.Impl.AesOfb.Arm (ivArgs)
+open VG.Proof.CmacAes.Arm (W R Dp N S schR dataR scrR argsR belowR savedMem add0)
+open VG.Proof.AesOcb.Arm (BlkFn BlkCall BlkPost blkFrame blk_call encF)
+open VG.Proof.AesGcm.Arm (below)
+open VG.Proof.AesOfb.Arm (IvA ivA_wp ivA_keys keptIv mid_of)
+open VG.Proof.Aes.Arm (kblk_call)
+open VG.Proof.AesCbc
+open VG.Proof.AesCbc.Arm
+open VG.Spec.Aes (bytesAt)
+
+/-- What the code before the call, the call and the output block into the
+data block leave, for either direction. -/
+structure AfterXor (s₀ : State) (k : Nat) (s s₃ : State) : Prop where
+  regs : Regs s₀ k s₃
+  r8 : s₃.gpr .r8 = s.gpr .r8
+  r11 : s₃.gpr .r11 = s.gpr .r11
+  rw : s₃.rd ++ s₃.wr = [schR s₀, argsR s₀, ivR s₀, dataR s₀, scrR s₀]
+  w : s₃.wr = [ivR s₀, dataR s₀, scrR s₀]
+  frame : Frame [⟨blk s₀ k, 16⟩, ivR s₀, ⟨State.addr (S s₀), 2064⟩, belowR s₀] s.mem s₃.mem
+  blk : bytesAt s₃.mem (blk s₀ k) 16 =
+    Spec.Cbc.xor (bytesAt s.mem (blk s₀ k) 16) (bytesAt s₃.mem (State.addr (Iv s₀)) 16)
+  iv : bytesAt s₃.mem (State.addr (Iv s₀)) 16 =
+    Spec.Cbc.aesWith (R s₀) (wK s₀) (bytesAt s.mem (State.addr (Iv s₀)) 16)
+
+/-- The output block into the data block, after the call of either
+function: what it leaves, having written only the data block. -/
+theorem head_tail {M : Mode} {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k < N s₀) {s s₁ s₂ : State}
+    (h : LInv M s₀ k s) (a : IvA s₀ s s₁) (c : BlkPost encF s₁ (W s₀) (Iv s₀) (S s₀) (R s₀) 1 s₂)
+    (rest : List Instr) {Q : State → Prop}
+    (hq : ∀ s₃, AfterXor s₀ k s s₃ → Frame [⟨blk s₀ k, 16⟩] s₂.mem s₃.mem → WP isa (.block rest) s₃ Q) :
+    WP isa (.block (xor4 .r7 .r6 .r7 0 0 0 ++ rest)) s₂ Q := by
+  have hd := hp.dataA hk
+  have qN := hp.dataN hk
+  have hdf := hp.data_fit
+  have hiv := hp.iv_fit
+  have hb : below s₁.sp = belowR s₀ := by rw [a.sp, h.sp]; rfl
+  have rg₂ : Regs s₀ k s₂ :=
+    ⟨by rw [keptIv a c (by simp [preserved]) (by decide), h.r4],
+      by rw [keptIv a c (by simp [preserved]) (by decide), h.r5],
+      by rw [keptIv a c (by simp [preserved]) (by decide), h.r6],
+      by rw [keptIv a c (by simp [preserved]) (by decide), h.r7],
+      by rw [keptIv a c (by simp [preserved]) (by decide), h.r10], by rw [c.sp, a.sp, h.sp],
+      by rw [c.rd, a.rd, h.rd], by rw [c.wr, a.wr, h.wr]⟩
+  have f₂ : Frame [ivR s₀, ⟨State.addr (S s₀), 2048⟩, belowR s₀] s.mem s₂.mem := by
+    have fr := c.frame; rw [hb, a.mem] at fr; exact fr
+  have w₂ : s₂.wr = [ivR s₀, dataR s₀, scrR s₀] := by rw [rg₂.wr, hp.wr]
+  have rw₂ : s₂.rd ++ s₂.wr = [schR s₀, argsR s₀, ivR s₀, dataR s₀, scrR s₀] := by
+    rw [rg₂.rd, rg₂.wr, hp.rd, hp.wr]; rfl
+  refine xorIn_wp (by decide) (by decide) (by decide) (by decide) (by rw [rg₂.r6]; omega_using [hiv])
+    (by rw [rg₂.r7, qN]; omega_using [hk, hdf]) (by rw [rg₂.r6, add0, rw₂]; exact covIv (by simp))
+    (by rw [rg₂.r7, add0, hd, w₂]; exact covBlk hk (by simp)) fun s₃ g₃ => ?_
+  have m₃ : s₃.mem = Proof.Cmac.xor4Mem s₂.mem (blk s₀ k) (blk s₀ k) (State.addr (Iv s₀)) := by
+    rw [g₃.mem, rg₂.r7, rg₂.r6, add0, add0, hd]
+  have f₃ : Frame [⟨blk s₀ k, 16⟩] s₂.mem s₃.mem := by rw [m₃]; exact Proof.Cmac.xor4Mem_frame _ _ _ _
+  refine hq s₃ ?_ f₃
+  have big : Frame (Big s₀) s₀.mem s.mem := UPre.big_of h.frame
+  have iv₃ : bytesAt s₃.mem (State.addr (Iv s₀)) 16 = bytesAt s₂.mem (State.addr (Iv s₀)) 16 :=
+    Proof.Cmac.bytesAt_frame f₃ (one (hp.blk_iv hk).symm) (by decide)
+  refine ⟨rg₂.of g₃.gpr g₃.sp g₃.rd g₃.wr,
+    by rw [g₃.gpr _ (by decide) (by decide), keptIv a c (by simp [preserved]) (by decide)],
+    by rw [g₃.gpr _ (by decide) (by decide), keptIv a c (by simp [preserved]) (by decide)],
+    by rw [g₃.rd, g₃.wr, rw₂], by rw [g₃.wr, w₂],
+    (f₂.sub fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact stepIn (.inr (.inl rfl))
+      · exact stepIn (.inr (.inr (.inl (Region.sub_prefix (by decide)))))
+      · exact stepIn (.inr (.inr (.inr rfl)))).trans
+      (f₃.sub fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact stepIn (.inl rfl)), ?_, ?_⟩
+  · rw [iv₃, m₃, xorIn4_bytes _ (hp.blk_iv hk),
+      Proof.Cmac.bytesAt_frame f₂ (fun r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl
+        · exact hp.blk_iv hk
+        · exact (hp.data_scr.sub_left (UPre.data_sub hk)).sub_right (Region.sub_prefix (by decide))
+        · exact hp.b_data.symm.sub_left (UPre.data_sub hk)) (by decide)]
+  · rw [iv₃, bytesAt_of_statesAt c.out, show encF.f = Spec.Aes.cipher from rfl, a.mem, UPre.sched_bytes hp big,
+      ← aesWith_state]
+
+/-- One block with `vg_aes_encrypt_blocks`: the code before the call, the
+call, and the output block into the data block. -/
+theorem head_ok {M : Mode} {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k < N s₀) {s : State}
+    (h : LInv M s₀ k s) (rest : List Instr) {Q : State → Prop}
+    (hq : ∀ s₃, AfterXor s₀ k s s₃ → WP isa (.block rest) s₃ Q) :
+    WP isa (body encFrame (xor4 .r7 .r6 .r7 0 0 0 ++ rest)) s Q := by
+  refine WP.seq (WP.mono (ivA_wp hp h) fun s₁ a => ?_)
+  rw [encFrame_eq]
+  exact WP.seq (WP.mono (blk_call encF a.pre) fun s₂ c => head_tail hp hk h a c rest fun s₃ x _ => hq s₃ x)
+
+/-- One block from the round keys in the working space, which stay there. -/
+theorem head_okK {M : Mode} {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k < N s₀) {s : State}
+    (h : LInv M s₀ k s) (hkeys : Keys s₀ s.mem) (rest : List Instr) {Q : State → Prop}
+    (hq : ∀ s₃, AfterXor s₀ k s s₃ → Keys s₀ s₃.mem → WP isa (.block rest) s₃ Q) :
+    WP isa (body keyedFrame (xor4 .r7 .r6 .r7 0 0 0 ++ rest)) s Q := by
+  refine WP.seq (WP.mono (ivA_wp hp h) fun s₁ a => ?_)
+  exact WP.seq (WP.mono (kblk_call a.pre (ivA_keys hp h a hkeys)) fun s₂ ⟨c, k₂⟩ =>
+    head_tail hp hk h a c rest fun s₃ x f₃ => hq s₃ x (Keys.frame hp f₃ (hp.work_blk hk)
+      (Keys.of_call hp (by rw [a.mem]; exact UPre.big_of h.frame) k₂)))
+
+/-- The invariant after a block, from what the block leaves; `advance`
+keeps the memory. -/
+theorem linv_succ_mem {M : Mode} {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k < N s₀) {s s₃ s₄ : State}
+    (h : LInv M s₀ k s) (x : AfterXor s₀ k s s₃) (g₄ : Moved s₃ s₄.mem s₄)
+    (f₄ : Frame [ivR s₀] s₃.mem s₄.mem)
+    (hout : outK M s₀ (k + 1) = outK M s₀ k ++ [bytesAt s₄.mem (blk s₀ k) 16])
+    (hiv : bytesAt s₄.mem (State.addr (Iv s₀)) 16 = chainK M s₀ (k + 1)) :
+    WP isa (.block advance) s₄ fun s' =>
+      (LInv M s₀ (k + 1) s' ∧ s'.z = decide (N s₀ - (k + 1) = 0)) ∧ s'.mem = s₄.mem := by
+  have fStep : Frame [⟨blk s₀ k, 16⟩, ivR s₀, ⟨State.addr (S s₀), 2064⟩, belowR s₀] s.mem s₄.mem :=
+    x.frame.trans (f₄.sub fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact stepIn (.inr (.inl rfl)))
+  have hl' : (outK M s₀ k).length = k := by
+    rw [outK, Mode.length_out]; simp [Spec.Cbc.blocksAt]; omega_using [hk]
+  refine advance_mem hp hk (x.regs.of g₄.gpr g₄.sp g₄.rd g₄.wr)
+    (by rw [g₄.gpr _ (by decide) (by decide), x.r8, h.r8])
+    (by rw [g₄.gpr _ (by decide) (by decide), x.r11, h.r11])
+    (h.frame.trans (stepFrame hk fStep)) ?_ hiv
+  rw [hp.blocksAt_step hk fStep, h.data, hout, set_prefix _ _ _ hl' (by simp [Spec.Cbc.blocksAt]; exact hk)]
+
+/-- The invariant after a block, from what the block leaves. -/
+theorem linv_succ {M : Mode} {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k < N s₀) {s s₃ s₄ : State}
+    (h : LInv M s₀ k s) (x : AfterXor s₀ k s s₃) (g₄ : Moved s₃ s₄.mem s₄)
+    (f₄ : Frame [ivR s₀] s₃.mem s₄.mem)
+    (hout : outK M s₀ (k + 1) = outK M s₀ k ++ [bytesAt s₄.mem (blk s₀ k) 16])
+    (hiv : bytesAt s₄.mem (State.addr (Iv s₀)) 16 = chainK M s₀ (k + 1)) :
+    WP isa (.block advance) s₄ fun s' => LInv M s₀ (k + 1) s' ∧ s'.z = decide (N s₀ - (k + 1) = 0) :=
+  WP.mono (linv_succ_mem hp hk h x g₄ f₄ hout hiv) fun _ h' => h'.1
+
+theorem encPost_eq : encPost = xor4 .r7 .r6 .r7 0 0 0 ++ (zero4 .r6 0 ++ (xor4 .r6 .r7 .r6 0 0 0 ++ advance)) := by
+  simp only [encPost, List.append_assoc]
+
+theorem decPost_eq : decPost = xor4 .r7 .r6 .r7 0 0 0 ++ (xor4 .r6 .r7 .r6 0 0 0 ++ advance) := by
+  simp only [decPost, List.append_assoc]
+
+theorem encBody_ok : BodyOkK (cfbMode true) (body keyedFrame encPost) := by
+  intro s₀ hp k hk s h hkeys
+  have hd := hp.dataA hk
+  have qN := hp.dataN hk
+  have hdf := hp.data_fit
+  have hiv := hp.iv_fit
+  rw [encPost_eq]
+  refine head_okK hp hk h hkeys _ fun s₃ x k₃ => ?_
+  refine copy_wp (by decide) (by decide) (by decide) (by decide) (by rw [x.regs.r7, qN]; omega_using [hk, hdf])
+    (by rw [x.regs.r6]; omega_using [hiv]) (by rw [x.regs.r7, add0, hd, x.rw]; exact covBlk hk (by simp))
+    (by rw [x.regs.r6, add0, x.w]; exact covIv (by simp)) fun s₄ g₄ => ?_
+  have m₄ : s₄.mem = copy4Mem s₃.mem (State.addr (Iv s₀)) (blk s₀ k) := by
+    rw [g₄.mem, x.regs.r6, x.regs.r7, add0, add0, hd]
+  have f₄ : Frame [ivR s₀] s₃.mem s₄.mem := by rw [m₄]; exact copy4Mem_frame _ _ _
+  have b₄ : bytesAt s₄.mem (blk s₀ k) 16 = bytesAt s₃.mem (blk s₀ k) 16 :=
+    Proof.Cmac.bytesAt_frame f₄ (one (hp.blk_iv hk)) (by decide)
+  have i₄ : bytesAt s₄.mem (State.addr (Iv s₀)) 16 = bytesAt s₄.mem (blk s₀ k) 16 := by
+    rw [b₄, m₄, copy4Mem_bytes _ (hp.blk_iv hk).symm]
+  have newBlk : bytesAt s₄.mem (blk s₀ k) 16 =
+      Spec.Cbc.xor ((blks s₀)[k]'(by simp [Spec.Cbc.blocksAt]; exact hk))
+        (Spec.Cbc.aesWith (R s₀) (wK s₀) (chainK (cfbMode true) s₀ k)) := by
+    rw [b₄, x.blk, h.block hk, x.iv, h.iv]
+  have outSucc :
+      outK (cfbMode true) s₀ (k + 1) = outK (cfbMode true) s₀ k ++ [bytesAt s₄.mem (blk s₀ k) 16] := by
+    rw [newBlk]
+    simp only [outK, chainK, cfbMode_out, cfbMode_chain, cfb, cts, ite_true, take_succ_blks s₀ hk,
+      encrypt_snoc]
+  refine WP.mono (linv_succ_mem hp hk h x ⟨g₄.gpr, rfl, g₄.rd, g₄.wr, g₄.sp⟩ f₄ outSucc ?_) fun _ h' =>
+    ⟨h'.1, by rw [h'.2]; exact Keys.frame hp f₄ hp.work_iv k₃⟩
+  rw [i₄]
+  simp only [chainK, cfbMode_chain, cts, ite_true, outSucc, next_snoc]
+
+theorem decBody_ok : BodyOk (cfbMode false) (body encFrame decPost) := by
+  intro s₀ hp k hk s h
+  have hd := hp.dataA hk
+  have qN := hp.dataN hk
+  have hdf := hp.data_fit
+  have hiv := hp.iv_fit
+  rw [decPost_eq]
+  refine head_ok hp hk h _ fun s₃ x => ?_
+  refine xorIn_wp (by decide) (by decide) (by decide) (by decide) (by rw [x.regs.r7, qN]; omega_using [hk, hdf])
+    (by rw [x.regs.r6]; omega_using [hiv]) (by rw [x.regs.r7, add0, hd, x.rw]; exact covBlk hk (by simp))
+    (by rw [x.regs.r6, add0, x.w]; exact covIv (by simp)) fun s₄ g₄ => ?_
+  have m₄ : s₄.mem = Proof.Cmac.xor4Mem s₃.mem (State.addr (Iv s₀)) (State.addr (Iv s₀)) (blk s₀ k) := by
+    rw [g₄.mem, x.regs.r6, x.regs.r7, add0, add0, hd]
+  have f₄ : Frame [ivR s₀] s₃.mem s₄.mem := by rw [m₄]; exact Proof.Cmac.xor4Mem_frame _ _ _ _
+  have b₄ : bytesAt s₄.mem (blk s₀ k) 16 = bytesAt s₃.mem (blk s₀ k) 16 :=
+    Proof.Cmac.bytesAt_frame f₄ (one (hp.blk_iv hk)) (by decide)
+  have hb := h.block hk
+  have i₄ : bytesAt s₄.mem (State.addr (Iv s₀)) 16 = (blks s₀)[k]'(by simp [Spec.Cbc.blocksAt]; exact hk) := by
+    rw [m₄, xorIn4_bytes _ (hp.blk_iv hk).symm, x.blk, hb]
+    exact xor_xor_cancel (by simp [Spec.Aes.bytesAt, ← hb])
+  have newBlk : bytesAt s₄.mem (blk s₀ k) 16 =
+      Spec.Cbc.xor ((blks s₀)[k]'(by simp [Spec.Cbc.blocksAt]; exact hk))
+        (Spec.Cbc.aesWith (R s₀) (wK s₀) (chainK (cfbMode false) s₀ k)) := by
+    rw [b₄, x.blk, hb, x.iv, h.iv]
+  have outSucc :
+      outK (cfbMode false) s₀ (k + 1) = outK (cfbMode false) s₀ k ++ [bytesAt s₄.mem (blk s₀ k) 16] := by
+    rw [newBlk]
+    simp only [outK, chainK, cfbMode_out, cfbMode_chain, cfb, cts, Bool.false_eq_true, ite_false,
+      take_succ_blks s₀ hk, decrypt_snoc]
+  refine linv_succ hp hk h x ⟨g₄.gpr, rfl, g₄.rd, g₄.wr, g₄.sp⟩ f₄ outSucc ?_
+  rw [i₄]
+  simp only [chainK, cfbMode_chain, cts, Bool.false_eq_true, ite_false, take_succ_blks s₀ hk, next_snoc]
+
+/-! ## Constant time -/
+
+theorem pre_taint : ∃ h, (taint.check (Taint.ofRegs vars) (.block ivArgs) h).isSome = true :=
+  ⟨_, by taint_decide⟩
+
+theorem encPost_taint : ∃ h, (taint.check (Taint.ofRegs postVars) (.block encPost) h).isSome = true :=
+  ⟨_, by taint_decide⟩
+
+theorem decPost_taint : ∃ h, (taint.check (Taint.ofRegs postVars) (.block decPost) h).isSome = true :=
+  ⟨_, by taint_decide⟩
+
+theorem encBody_ct : BodyCtK (cfbMode true) (body keyedFrame encPost) := fun hp hp' hq k => by
+  rw [body]
+  exact VG.Proof.AesCbc.Arm.body_ctK (D := fun s₀ _ => Iv s₀) (fun hq _ => pub_Iv hq) pre_taint
+    encPost_taint (@fun _ hp _ _ _ h hkeys => WP.mono (ivA_wp hp h) fun _ a =>
+      ⟨mid_of h a, ivA_keys hp h a hkeys⟩) hp hp' hq k
+
+theorem decBody_ct : BodyCt (cfbMode false) (body encFrame decPost) := fun hp hp' hq k => by
+  rw [body, encFrame_eq]
+  exact VG.Proof.AesCbc.Arm.body_ct encF (D := fun s₀ _ => Iv s₀) (fun hq _ => pub_Iv hq) pre_taint
+    decPost_taint (@fun _ hp _ _ _ h => WP.mono (ivA_wp hp h) fun _ a => mid_of h a) hp hp' hq k
+
+/-! ## Decryption, in groups -/
+
+theorem decrypt_append (ciph : Spec.Cbc.Cipher) (iv : List Byte) (xs ys : List (List Byte)) :
+    Spec.Cfb.decrypt ciph iv (xs ++ ys) =
+      Spec.Cfb.decrypt ciph iv xs ++ Spec.Cfb.decrypt ciph (Spec.Cbc.next iv xs) ys := by
+  induction xs generalizing iv with
+  | nil => rfl
+  | cons p ps ih => simp only [List.cons_append, Spec.Cfb.decrypt, ih, next_cons]
+
+/-- A group of `cfbDecG` computes CFB decryption of its blocks. -/
+theorem cfbDecG_sim : ∀ lg ∈ groupLevels, GSim (cfbMode false) Spec.Cbc.aesWith cfbDecG (2 ^ lg) := by
+  intro lg h R w iv xs ys b hy hiv hd
+  simp only [groupLevels, List.mem_cons, List.not_mem_nil, or_false] at h
+  simp only [cfbMode, cfb, cts, Bool.false_eq_true, ↓reduceIte, decrypt_append, next_append] at hiv ⊢
+  rcases h with rfl | rfl
+  · match ys, hy with
+    | [y0, y1, y2, y3], _ =>
+      have h0 := hd 0 (by decide)
+      have h1 := hd 1 (by decide)
+      have h2 := hd 2 (by decide)
+      have h3 := hd 3 (by decide)
+      simp only [List.getElem?_cons_zero, List.getElem?_cons_succ, Option.some.injEq] at h0 h1 h2 h3
+      simp [gstep, cfbDecG, grunOps, grunOp, gset, gciph, gtgt, List.range_succ, Spec.Cfb.decrypt, Spec.Cbc.next,
+        ← h0, ← h1, ← h2, ← h3, hiv]
+  · match ys, hy with
+    | [y0, y1], _ =>
+      have h0 := hd 0 (by decide)
+      have h1 := hd 1 (by decide)
+      simp only [List.getElem?_cons_zero, List.getElem?_cons_succ, Option.some.injEq] at h0 h1
+      simp [gstep, cfbDecG, grunOps, grunOp, gset, gciph, gtgt, List.range_succ, Spec.Cfb.decrypt, Spec.Cbc.next,
+        ← h0, ← h1, hiv]
+
+theorem cfbDecG_levels : ∀ lg ∈ groupLevels, LevelOk (cfbMode false) encF Spec.Cbc.aesWith cfbDecG lg :=
+  levels_of (by decide) (by decide) cfbDecG_sim fun _ _ _ _ => (aesWith_state _ _ _ _).symm
+
+theorem cfbDecG_taint : ∀ lg ∈ groupLevels, LevelTaint cfbDecG lg := by
+  intro lg h
+  simp only [groupLevels, List.mem_cons, List.not_mem_nil, or_false] at h
+  rcases h with rfl | rfl <;> exact ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+
+theorem decrypt_eq : decrypt = wholeG (blkFrame encF) cfbDecG groupLevels (body encFrame decPost) := rfl
+
+/-- `vg_aes_cfb128_decrypt`, in groups, meets `whole`'s contract. -/
+theorem decrypt_wp {s₀ : State} (h0 : (modeArm (cfbMode false)).pre s₀) :
+    WP isa decrypt s₀ fun s' => abiPreserved s₀ s' ∧ (modeArm (cfbMode false)).post s₀ s' := by
+  rw [decrypt_eq]; exact wholeG_wp cfbDecG_levels decBody_ok h0
+
+theorem decrypt_ct : ConstantTime isa (modeArm (cfbMode false)).pre (modeArm (cfbMode false)).pub decrypt := by
+  rw [decrypt_eq]; exact wholeG_ct cfbDecG_levels cfbDecG_taint decBody_ok decBody_ct
+
+end VG.Proof.AesCfb.Arm
+
+end
+
+end
 
 /-!
 # AES-CFB128 on ARMv7: `Verified`

@@ -1,8 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Bulk
-import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.TailK
-import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Pad
 import VerifiedGarbage.Proof.ChaCha20.X86_64.XorBufX
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Xor
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
@@ -11,9 +9,174 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Chunk
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.StoreRow
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.Rounds
 import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Xor
+public import VerifiedGarbage.Impl.ChaCha20Poly1305.X86_64.Stitch
+public import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
+
+/-! ### `ChaCha20Poly1305.X86_64.Stitch.Pad`, which this module and modules that import it used -/
+
+section
+
+/-!
+# ChaCha20-Poly1305 with the AVX2 code (x86-64): padding
+
+`Stitch.padIns r n` writes only `r` (`pad_ok`): each of its instructions is
+`mov r32, 0`, `mov r64, r64` or `mov r32, r32` (`IsPad`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.ChaCha20Poly1305.X86_64.Stitch
+
+open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.ChaCha20Poly1305.X86_64.Stitch
+
+/-- An instruction of a padding of `r`. -/
+def IsPad (r : Reg) (i : Instr) : Prop :=
+  i = .mov32 r (.imm 0) ∨ i = .mov r (.reg r) ∨ i = .mov32 r (.reg r)
+
+/-- What a padding of `r` leaves from `s`: all but `r` as it was. -/
+structure PadPost (r : Reg) (s t : State) : Prop where
+  gpr : ∀ q, q ≠ r → t.gpr q = s.gpr q
+  mem : t.mem = s.mem
+  rd : t.rd = s.rd
+  wr : t.wr = s.wr
+  mx : t.mxcsr = s.mxcsr
+
+theorem PadPost.trans {r : Reg} {s t u : State} (h : PadPost r s t) (h' : PadPost r t u) : PadPost r s u :=
+  ⟨fun q hq => (h'.gpr q hq).trans (h.gpr q hq), h'.mem.trans h.mem, h'.rd.trans h.rd, h'.wr.trans h.wr,
+    h'.mx.trans h.mx⟩
+
+theorem pad1_ok {r : Reg} {i : Instr} (hi : IsPad r i) (s : State) :
+    WP isa (.block [i]) s (PadPost r s) := by
+  apply WP.of_runBlock
+  rcases hi with rfl | rfl | rfl
+  · simp only [runBlock_cons, runStep_some, runBlock_nil, reduceExec, readSrc32, State.setReg32, Option.map_some,
+      Option.some.injEq, exists_eq_left']
+    exact ⟨fun q hq => by simp [gpr_setReg, hq], rfl, rfl, rfl, rfl⟩
+  · simp only [runBlock_cons, runStep_some, runBlock_nil, reduceExec, readSrc, Option.map_some,
+      Option.some.injEq, exists_eq_left']
+    exact ⟨fun q hq => by simp [gpr_setReg, hq], rfl, rfl, rfl, rfl⟩
+  · simp only [runBlock_cons, runStep_some, runBlock_nil, reduceExec, readSrc32, State.setReg32, Option.map_some,
+      Option.some.injEq, exists_eq_left']
+    exact ⟨fun q hq => by simp [gpr_setReg, hq], rfl, rfl, rfl, rfl⟩
+
+/-- A block of padding instructions writes only `r`. -/
+theorem pad_ok (r : Reg) : ∀ (l : List Instr), (∀ i ∈ l, IsPad r i) → ∀ s,
+    WP isa (.block l) s (PadPost r s)
+  | [], _, _ => WP.block_nil ⟨fun _ _ => rfl, rfl, rfl, rfl, rfl⟩
+  | i :: l, h, s => by
+    rw [show i :: l = [i] ++ l from rfl]
+    exact WP.block_append (WP.mono (pad1_ok (h i (List.mem_cons_self ..)) s) fun t ht =>
+      WP.mono (pad_ok r l (fun j hj => h j (List.mem_cons_of_mem _ hj)) t) fun u hu => ht.trans hu)
+
+theorem padIns_ok (r : Reg) {n : Nat} (hn : n ∈ [3, 5, 8, 9, 18, 19, 20, 29, 35, 36, 49]) (s : State) :
+    WP isa (.block (padIns r n)) s (PadPost r s) :=
+  pad_ok r _ (by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hn
+    rcases hn with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [padIns, IsPad]) s
+
+end VG.Proof.ChaCha20Poly1305.X86_64.Stitch
+
+end
+
+end
+
+/-! ### `ChaCha20Poly1305.X86_64.Stitch.TailK`, which this module and modules that import it used -/
+
+section
+
+/-!
+# ChaCha20 and Poly1305 together (x86-64): `tailK`'s rounds
+
+`Stitch.tailKMain` is a chunk (`chunkMain_ok`) but for its output: the eight
+blocks' keystream stored at `kA buf` (`finishK_ok`) rather than XORed into
+the data, while the 512 bytes at `rsi` (or, `pre`, the 448 before the
+first chunk) are absorbed (`tailKMain_ok`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.ChaCha20Poly1305.X86_64.Stitch
+
+open VG VG.X86_64 VG.Impl.ChaCha20Poly1305.X86_64.Stitch
+open VG.Proof.ChaCha20.X86_64.Avx2 (Holds Consts Incs stR bufR slotsR dR5 plus
+  setup_ok W2_frame incs_frame hiR_slots slotsR_sub)
+open VG.Proof.ChaCha20 (CState ctr)
+open VG.Proof.Poly1305.X86_64 (hval absorbRegs)
+open VG.Spec.ChaCha20 (stateAt serialize innerBlock)
+open VG.Spec.Poly1305 (P bytesAt)
+open VG.Proof.Poly1305 (absorbAll)
+
+/-- The eight blocks of keystream from the state at `st` stored at `kA buf`,
+while the 512 bytes at `q` (the last chunk), or (`pre`) the 448 there before
+the first chunk, are absorbed. -/
+theorem tailKMain_ok (vl pre : Bool) {R0 R1 : BitVec 64} (hk : Key R0 R1) {X : Nat} {st buf q : Addr} {s : State}
+    (hrdi : s.gpr .rdi = st) (hrcx : s.gpr .rcx = buf) (hrsi : s.gpr .rsi = q)
+    (hst : stR st ∈ s.wr) (hb : bufR buf ∈ s.wr) (hkr : kR buf ∈ s.wr)
+    (hin : ∀ off n, off + n ≤ 16 * total pre → InRegions (s.rd ++ s.wr) (q + BitVec.ofNat 64 off) n)
+    (hc : Consts s.mem buf) (dsb : (stR st).Disjoint (bufR buf)) (dsk : (stR st).Disjoint (kR buf))
+    (dbk : (bufR buf).Disjoint (kR buf)) (dqs : (⟨q, 16 * total pre⟩ : Region).Disjoint (slotsR buf))
+    (hacc : Acc R0 R1 X s) :
+    WP isa (tailKMain vl pre) s fun s' =>
+        (∀ k < 512, s'.mem (kA buf + BitVec.ofNat 64 k) =
+          (serialize (plus (fun j => Nat.repeat innerBlock 10 (ctr (stateAt s.mem st) j))
+            (stateAt s.mem st) (k / 64))).getD (k % 64) 0) ∧
+        Acc R0 R1 (absorbAll (rN R0 R1) X (bytesAt s.mem q (16 * total pre))) s' ∧
+        Frame [slotsR buf, kR buf] s.mem s'.mem ∧
+        (∀ r, r ∉ absorbRegs → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  unfold tailKMain
+  refine WP.seq (WP.mono (setup_ok hrdi hrcx hst hb hc)
+    fun s₁ ⟨hh, h15, g₁, rd₁, wr₁, y₁, y₂, m₁⟩ => ?_)
+  have c₁ : Consts s₁.mem buf := by rw [m₁]; exact hc.w2 (by decide) y₁ y₂
+  have F₁ : Frame [slotsR buf] s.mem s₁.mem := by
+    rw [m₁]; exact W2_frame _ (by decide) y₁ y₂ (Frame.refl _ _)
+  have q₁ : bytesAt s₁.mem q (16 * total pre) = bytesAt s.mem q (16 * total pre) := by
+    have := bytes_frame F₁ dqs (by cases pre <;> decide) (j := 0) (n := 16 * total pre) (by omega_using [])
+    simpa using this
+  have h0 : SR pre buf q R0 R1 X (fun j => ctr (stateAt s.mem st) j) s₁ 0 s₁ :=
+    ⟨hh, h15, Frame.refl _ _, fun _ _ => rfl, rfl, rfl, by
+      rw [show 16 * firstBlock pre 0 = 0 by cases pre <;> rfl, show bytesAt s₁.mem q 0 = [] from rfl,
+        VG.Proof.Poly1305.absorbAll_nil]
+      exact ⟨by rw [g₁]; exact hacc.r8, by rw [g₁]; exact hacc.r9, by rw [g₁]; exact hacc.r10,
+        by rw [g₁]; exact hacc.h2, by simp only [hval, g₁]; exact hacc.val⟩⟩
+  refine WP.seq (WP.mono (sroundsFor_ok hk (by rw [g₁, hrsi]) (by rw [rd₁, wr₁]; exact hin) vl pre (Nat.le_refl _) (total_le pre)
+    (by rw [g₁, hrcx]) (by rw [wr₁]; exact hb) c₁.m8 ⟨c₁.lo16, c₁.hi16⟩ dqs h0) fun s₂ h₂ => ?_)
+  have F₂ : Frame [slotsR buf] s.mem s₂.mem := F₁.trans h₂.frame
+  have hh₂ : Holds buf false (fun j => Nat.repeat innerBlock 10 (ctr (stateAt s.mem st) j)) s₂ := by
+    intro k hk' l q' hl hq
+    have e := h₂.holds k hk' l q' hl hq
+    split
+    · rename_i hreg
+      simp only [hreg, ite_true] at e
+      simpa only [Proof.ChaCha20.X86_64.Avx2.vw] using e
+    · rename_i hreg
+      simp only [hreg] at e
+      exact e
+  have gk : ∀ r, r ∉ absorbRegs → s₂.gpr r = s.gpr r := fun r hr => by rw [h₂.gpr r hr, g₁]
+  have wr₂ : s₂.wr = s.wr := by rw [h₂.wr, wr₁]
+  have inc₂ : Incs buf s₂.mem := incs_frame hc.inc F₂ (by
+    intro r hr; simp only [List.mem_singleton] at hr; subst hr; exact hiR_slots _)
+  refine WP.mono (finishK_ok hh₂ (st := st) (by rw [gk _ (by decide), hrdi]) (by rw [gk _ (by decide), hrcx])
+    (by rw [wr₂]; exact hst) (by rw [wr₂]; exact hb) (by rw [wr₂]; exact hkr) inc₂ dsb dsk dbk)
+    fun s₃ ⟨d₃, f₃, g₃, rd₃, wr₃⟩ => ?_
+  have hS : stateAt s₂.mem st = stateAt s.mem st :=
+    Proof.ChaCha20.X86_64.Xor.stateAt_frame F₂ (by simpa using dsb.sub_right (slotsR_sub buf))
+  refine ⟨fun k hk' => by rw [d₃ k hk', hS], ?_, (F₂.mono (by simp)).trans f₃,
+    fun r hr => by rw [g₃, gk r hr], by rw [rd₃, h₂.rd, rd₁], by rw [wr₃, wr₂]⟩
+  have a₂ := h₂.acc
+  rw [firstBlock_ten, q₁] at a₂
+  exact ⟨by rw [g₃]; exact a₂.r8, by rw [g₃]; exact a₂.r9, by rw [g₃]; exact a₂.r10, by rw [g₃]; exact a₂.h2,
+    by simp only [hval, g₃]; exact a₂.val⟩
+
+end VG.Proof.ChaCha20Poly1305.X86_64.Stitch
+
+end
+
+end
 
 /-! ### `ChaCha20Poly1305.X86_64.Stitch.TailRounds`, which this module and modules that import it used -/
 

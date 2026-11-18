@@ -3,11 +3,9 @@ module
 public import VerifiedGarbage.Proof.Gcm.RISCV64.Ghash
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.Crypt
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.Flush
-import VerifiedGarbage.Proof.AesGcm.RISCV64.Ghash1
 import VerifiedGarbage.Proof.AesGcm.RISCV64.Init
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Cmac.Spec
-import VerifiedGarbage.Proof.Gcm.RISCV64.Ghash
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.RISCV64.Steps
 import VerifiedGarbage.Proof.Framework.Offset

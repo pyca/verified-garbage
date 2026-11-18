@@ -7,8 +7,7 @@ import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.RISCV64.Run
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.AesGcm.RISCV64.Absorb
-import VerifiedGarbage.Proof.AesGcm.RISCV64.Ghash1
+import VerifiedGarbage.Proof.AesGcm.RISCV64.Flush
 public import VerifiedGarbage.Impl.AesGcm.RISCV64
 
 /-!

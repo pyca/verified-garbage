@@ -1,11 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Verified
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.SealPw
 public import VerifiedGarbage.Proof.AesGcm.Rounds
-public import VerifiedGarbage.Proof.Gcm.Prepared8Contract
+public import VerifiedGarbage.Proof.Gcm.AArch64.Ghash
 public import VerifiedGarbage.Impl.AesGcm.AArch64.Fast
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Frame
-public import VerifiedGarbage.Proof.AesGcm.AArch64.OneShot
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Seal
 public import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.Groups
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.Verified
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.OpenVerified

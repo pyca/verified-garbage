@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.GatherSplit.TailCT
-public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Gather.CT
+public import VerifiedGarbage.Proof.AesGcm.PPC64LE.GatherSplit.Contract
 public import VerifiedGarbage.Proof.Gcm.OutOfPlaceContract
 meta import VerifiedGarbage.Impl.AesGcm.PPC64LE.GatherSplit
 meta import VerifiedGarbage.Proof.Gather.PPC64LE.LoopCT

@@ -2,14 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.AesCbc.Rounds
 public import VerifiedGarbage.Impl.AesCbc.RISCV64
-public import VerifiedGarbage.Proof.AesCbc.RISCV64.Call
+public import VerifiedGarbage.Proof.AesCbc.RISCV64.Loop
 public import VerifiedGarbage.Spec.Cbc.Contract
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 public import VerifiedGarbage.Proof.AesCbc.RISCV64.Chain
 import VerifiedGarbage.Proof.Aes.RISCV64.WideCbc
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
-meta import VerifiedGarbage.Proof.AesCbc.RISCV64.Call
+meta import VerifiedGarbage.Proof.AesCbc.RISCV64.Loop
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Spec.Cbc.Contract

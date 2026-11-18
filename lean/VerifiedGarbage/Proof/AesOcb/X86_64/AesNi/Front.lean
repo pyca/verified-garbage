@@ -18,10 +18,11 @@ import VerifiedGarbage.Proof.AesCcm.X86_64.Env
 import VerifiedGarbage.Proof.Ocb.State
 import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Ctr32
 import VerifiedGarbage.Proof.Cmac.Frame
-import VerifiedGarbage.Proof.AesOcb.X86_64.Args
+import VerifiedGarbage.Proof.AesOcb.X86_64.Words
 import VerifiedGarbage.Proof.AesCcm.X86_64.Bytes
 import VerifiedGarbage.Proof.AesCcm.X86_64.Callee
 import VerifiedGarbage.Proof.Framework.WriteBytes
+
 -- separate module: the one-pass proofs are a chain of modules (`Pass`, `Front`, `Top`), so that a change rebuilds only the modules after it
 
 /-!

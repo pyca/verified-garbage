@@ -2,11 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.SealLeaves
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Open
-import VerifiedGarbage.Proof.AesGcm.X86_64.Undo
 import VerifiedGarbage.Proof.AesGcm.X86_64.Cmp
 import VerifiedGarbage.Proof.AesGcm.X86_64.Tag
 import VerifiedGarbage.Proof.AesGcm.X86_64.Flush
-import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks
+import VerifiedGarbage.Proof.AesGcm.X86_64.Absorb
 import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Leaves
 import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd

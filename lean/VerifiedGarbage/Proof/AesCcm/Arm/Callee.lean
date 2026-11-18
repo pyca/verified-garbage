@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.CmacAes.Stream.Arm.Call
 public import VerifiedGarbage.Impl.AesCcm.Arm
-import VerifiedGarbage.Proof.CmacAes.Arm.UpdateCT
+import VerifiedGarbage.Proof.CmacAes.Arm.Verified
 import VerifiedGarbage.Proof.CmacAes.Arm.UpdateCorrect
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Framework.Offset

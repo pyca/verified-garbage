@@ -45,7 +45,7 @@ constant time by the taint analysis, and the calls by their own proofs
 argument (`init_verified`) and in a frame on the stack (`init_framed`). As on
 PPC64LE (`Proof/AesSiv/PPC64LE/Init.lean`), with the
 registers saved as streaming AES-CMAC's `init` saves them
-(`Proof/CmacAes/Stream/RISCV64/Init.lean`).
+(`Proof/CmacAes/Stream/RISCV64/Scrub.lean`).
 -/
 
 @[expose] public section

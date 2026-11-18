@@ -3,9 +3,7 @@ module
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.Loops
 import VerifiedGarbage.Proof.AesGcm.RISCV64.Callee
 public import VerifiedGarbage.Proof.Gcm.Ctr
-import VerifiedGarbage.Proof.AesGcm.RISCV64.Absorb
 import VerifiedGarbage.Proof.AesGcm.RISCV64.Flush
-import VerifiedGarbage.Proof.AesGcm.RISCV64.Ghash1
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 public import VerifiedGarbage.Proof.Framework.RISCV64.Run
 import VerifiedGarbage.Proof.Framework.Offset

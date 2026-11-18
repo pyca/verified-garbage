@@ -1,15 +1,13 @@
 module
-public import VerifiedGarbage.Proof.AesGcmSiv.X86.Env
+
+public import VerifiedGarbage.Proof.AesGcmSiv.X86.Run
 public import VerifiedGarbage.Proof.Cmac.Block32
 public import VerifiedGarbage.Proof.GcmSiv.Words
-
 import VerifiedGarbage.Proof.AesGcmSiv.X86.Derive
 import VerifiedGarbage.Proof.GcmSiv.Words32
 import VerifiedGarbage.Proof.AesGcm.X86.J0
 import VerifiedGarbage.Proof.AesGcm.X86.Cmp
 import VerifiedGarbage.Proof.Cmac.Dbl32
-import VerifiedGarbage.Proof.AesGcmSiv.X86.Callee
-import VerifiedGarbage.Proof.AesGcmSiv.X86.Run
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset

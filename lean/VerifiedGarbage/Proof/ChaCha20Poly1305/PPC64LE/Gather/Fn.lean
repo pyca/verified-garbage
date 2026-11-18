@@ -31,7 +31,7 @@ below the stack pointer that its frame and its call use) implies
 (`Gather/Verified.lean`): `(key = r3, nonce = r4, aad = r5, aad_len = r6,
 src = r7, src_count = r8, dst = r9, len = r10, tag)`, `tag` the first
 argument in memory (`stackArg s 0`). As on AArch64
-(`Proof/ChaCha20Poly1305/AArch64/Gather/Contract.lean`).
+(`Proof/ChaCha20Poly1305/AArch64/Gather/CT.lean`).
 -/
 
 @[expose] public section
@@ -128,7 +128,7 @@ own, by its shared contract (`Spec.ChaCha20Poly1305.sealContract`, with 848
 bytes of stack, which its frames use: `seal_sdepth`): its precondition from
 the layout the call gives it (`callPre`, `sealSpec_pre`), its postcondition
 (`sealSpec_post`) and its public data (`sealSpec_pub`). As on AArch64
-(`Proof/ChaCha20Poly1305/AArch64/Gather/Callee.lean`).
+(`Proof/ChaCha20Poly1305/AArch64/Gather/CT.lean`).
 -/
 
 @[expose] public section
@@ -211,7 +211,7 @@ in `r11` (`entered_wp`); gathers the slices to `dst` (`gather_wp`); and
 calls `vg_chacha20_poly1305_seal` on them in place, by its contract
 (`sealSpec_pre`, `sealSpec_post`), whose frames are in the 848 bytes below
 our frame, so the return address comes back from it (`sealGather_wp`). As on
-AArch64 (`Proof/ChaCha20Poly1305/AArch64/Gather/Fn.lean`).
+AArch64 (`Proof/ChaCha20Poly1305/AArch64/Gather/CT.lean`).
 -/
 
 @[expose] public section

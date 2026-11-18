@@ -1,15 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTextS
+public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTextSCT
 public import VerifiedGarbage.Proof.AesGcm.X86_64.SealLeaves
 public import VerifiedGarbage.Proof.AesGcm.X86_64.OpenLeaves
 public import VerifiedGarbage.Proof.Framework.X86_64.Leaves
 public import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamClrVerified
 import VerifiedGarbage.Proof.AesGcm.X86_64.CryptOk
-import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks
-import VerifiedGarbage.Proof.AesGcm.X86_64.Ghash1
 import VerifiedGarbage.Proof.AesGcm.X86_64.Absorb
+import VerifiedGarbage.Proof.AesGcm.X86_64.Ghash1
 import VerifiedGarbage.Proof.AesGcm.X86_64.Flush
 import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
 import VerifiedGarbage.Proof.AesGcm.X86_64.StreamCrypt

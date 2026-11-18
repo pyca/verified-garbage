@@ -1,7 +1,6 @@
 module
-public import VerifiedGarbage.Proof.AesSiv.AArch64.Env
 
-import VerifiedGarbage.Proof.AesSiv.AArch64.Call
+public import VerifiedGarbage.Proof.AesSiv.AArch64.Call
 meta import VerifiedGarbage.Proof.AesSiv.AArch64.Call
 import VerifiedGarbage.Proof.AesSiv.CtrPart
 meta import VerifiedGarbage.Proof.AesSiv.CtrPart
@@ -23,7 +22,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Gcm.Spec
 meta import VerifiedGarbage.Impl.Aes.AArch64.Alloc
-meta import VerifiedGarbage.Proof.AesSiv.AArch64.Env
 meta import VerifiedGarbage.Proof.AesSiv.AArch64.Init
 meta import VerifiedGarbage.Proof.AesSiv.Key
 meta import VerifiedGarbage.Proof.AesSiv.Words

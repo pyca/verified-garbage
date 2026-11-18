@@ -1,10 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Save
-import VerifiedGarbage.Proof.Cmac.Frame
-public import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Block
-public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Contract
+import VerifiedGarbage.Proof.Cmac.Frame
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.Framework.Bswap
 import VerifiedGarbage.Proof.CmacTripleDes.Bytes
 import VerifiedGarbage.Proof.Cmac.Spec

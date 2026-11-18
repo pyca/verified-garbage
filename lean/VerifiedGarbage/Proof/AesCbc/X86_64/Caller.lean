@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.AesCbc.Rounds
-public import VerifiedGarbage.Proof.AesCbc.X86_64.Encrypt
 public import VerifiedGarbage.Proof.AesCbc.X86_64.Decrypt
 public import VerifiedGarbage.Proof.AesCbc.X86_64.VaesDecrypt
 public import VerifiedGarbage.Proof.AesCbc.X86_64.Verified

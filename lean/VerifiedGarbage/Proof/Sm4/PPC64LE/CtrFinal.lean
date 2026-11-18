@@ -19,7 +19,7 @@ import VerifiedGarbage.Proof.Modes.PPC64LE.SeqFinal
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.AesCbc.Spec
-import VerifiedGarbage.Proof.AesCbc.PPC64LE.Call
+import VerifiedGarbage.Proof.AesCbc.PPC64LE.Loop
 import VerifiedGarbage.Proof.AesCbc.PPC64LE.CT
 import VerifiedGarbage.Proof.AesCtr.Ctr32
 import VerifiedGarbage.Proof.Framework.Contract
@@ -52,7 +52,7 @@ meta import VerifiedGarbage.Proof.Modes.PPC64LE.SeqFinal
 meta import VerifiedGarbage.Proof.Cmac.Spec
 meta import VerifiedGarbage.Proof.Cmac.Frame
 meta import VerifiedGarbage.Proof.AesCbc.Spec
-meta import VerifiedGarbage.Proof.AesCbc.PPC64LE.Call
+meta import VerifiedGarbage.Proof.AesCbc.PPC64LE.Loop
 meta import VerifiedGarbage.Proof.AesCbc.PPC64LE.CT
 meta import VerifiedGarbage.Proof.AesCtr.Ctr32
 meta import VerifiedGarbage.Proof.Framework.Contract

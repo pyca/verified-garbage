@@ -1,10 +1,9 @@
 module
 
-import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Derive
+public import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Derive
 public import VerifiedGarbage.Proof.GcmSiv.Words
 public import VerifiedGarbage.Impl.AesGcmSiv.AArch64
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Callee
-public import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Env
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec

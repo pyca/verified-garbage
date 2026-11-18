@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZH
 public import VerifiedGarbage.Proof.Aes.X86_64.VaesZH.Rounds
-public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemGKs
+public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemSetup
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Loop
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Loop
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Loop48
@@ -16,8 +16,6 @@ import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Group
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemMask
 import VerifiedGarbage.Proof.Framework.X86_64.Sse
 public import VerifiedGarbage.Proof.Framework.X86_64.HighKeep
-import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Rem
-import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemSetup
 import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith

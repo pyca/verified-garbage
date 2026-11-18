@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Gcm.PPC64LE.Ghash
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTBase
-public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Contract
+public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Fn
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTFin
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Absorb
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Compare
@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.AesGcm.PPC64LE.TextAbsorb
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Run
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTBase
-meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.Contract
+meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.Fn
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTFin
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.Absorb
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.Compare
@@ -32,7 +32,7 @@ public import VerifiedGarbage.Impl.AesGcm.PPC64LE
 # AES-GCM on PPC64LE: `vg_aes_gcm_stream_verify` is constant time
 
 Untrusted: everything here is checked by Lean. As on ARMv7
-(`Proof/AesGcm/Arm/CTVerify.lean`): the invariant fixes what `finish`'s
+(`Proof/AesGcm/Arm/CTOpen.lean`): the invariant fixes what `finish`'s
 does (`FinI`), and the received tag's address and length (`r20`, `r19`);
 the branch on the tag length is on that public length, and the comparison
 does not branch.

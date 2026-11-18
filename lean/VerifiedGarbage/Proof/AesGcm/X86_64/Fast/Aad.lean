@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.AesGcm.X86_64.OneShot
 public import VerifiedGarbage.Impl.AesGcm.X86_64.Fast
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Tab
-import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks
+import VerifiedGarbage.Proof.AesGcm.X86_64.Absorb
 import VerifiedGarbage.Proof.AesGcm.X86_64.Cmp
 import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
 import VerifiedGarbage.Proof.Gcm.Spec

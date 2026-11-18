@@ -15,7 +15,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.AesOfb.X86_64.Body
 import VerifiedGarbage.Proof.Modes.X86_64.FbFinal
-import VerifiedGarbage.Proof.AesCfb.X86_64.Body
 import VerifiedGarbage.Proof.AesCbc.X86_64.CT
 import VerifiedGarbage.Proof.AesCbc.X86_64.Group
 import VerifiedGarbage.Proof.AesCfb.X86_64.Group
@@ -36,7 +35,6 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.AesOfb.X86_64.Body
 meta import VerifiedGarbage.Proof.Modes.X86_64.FbFinal
-meta import VerifiedGarbage.Proof.AesCfb.X86_64.Body
 meta import VerifiedGarbage.Proof.AesCbc.X86_64.CT
 meta import VerifiedGarbage.Proof.AesCbc.X86_64.Group
 meta import VerifiedGarbage.Proof.AesCfb.X86_64.Group

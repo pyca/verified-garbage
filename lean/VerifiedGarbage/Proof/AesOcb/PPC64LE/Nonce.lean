@@ -630,7 +630,7 @@ Untrusted: everything here is checked by Lean. `nonce` writes `Nonce` with
 its last 6 bits cleared and `bottom` (`nonceBlock_ok`), enciphers the block
 (`Ktop`, `encOne_ok`), and computes `Offset_0` (`offset0_ok`), to
 `W + ofsO` and `W + o0O` (`nonce_ok`): §4.2's `Offset_0`
-(`Proof.Ocb.offset0_eq`). As on AArch64 (`Proof/AesOcb/AArch64/Nonce.lean`).
+(`Proof.Ocb.offset0_eq`). As on AArch64 (`Proof/AesOcb/AArch64/LNtz.lean`).
 -/
 
 @[expose] public section

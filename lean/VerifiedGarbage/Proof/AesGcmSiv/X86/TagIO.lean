@@ -1,8 +1,6 @@
 module
-public import VerifiedGarbage.Proof.AesGcmSiv.X86.Env
 
-import VerifiedGarbage.Proof.AesGcmSiv.X86.Run
-meta import VerifiedGarbage.Proof.AesGcmSiv.X86.Env
+public import VerifiedGarbage.Proof.AesGcmSiv.X86.Run
 meta import VerifiedGarbage.Proof.AesGcmSiv.X86.Run
 import VerifiedGarbage.Proof.AesGcm.X86.Flush
 import VerifiedGarbage.Proof.Framework.X86.RegUpd

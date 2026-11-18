@@ -1,10 +1,8 @@
 module
-public import VerifiedGarbage.Impl.AesCcm.AArch64
-public import VerifiedGarbage.Proof.AesCcm.AArch64.Contract
-public import VerifiedGarbage.Proof.CmacAes.AArch64.Variant
 
-import VerifiedGarbage.Proof.AesCcm.AArch64.EntryCT
-import VerifiedGarbage.Proof.AesCcm.AArch64.MacCT
+public import VerifiedGarbage.Impl.AesCcm.AArch64
+public import VerifiedGarbage.Proof.AesCcm.AArch64.Env
+public import VerifiedGarbage.Proof.CmacAes.AArch64.Variant
 import VerifiedGarbage.Proof.AesCcm.AArch64.CtrCT
 import VerifiedGarbage.Proof.AesCcm.AArch64.Rel
 import VerifiedGarbage.Proof.AesCcm.AArch64.Seal
@@ -13,10 +11,8 @@ import VerifiedGarbage.Proof.AesCcm.AArch64.Tag
 import VerifiedGarbage.Proof.AesCcm.AArch64.Mac
 import VerifiedGarbage.Proof.AesCcm.BytesAt
 meta import VerifiedGarbage.Impl.AesCcm.AArch64
-meta import VerifiedGarbage.Proof.AesCcm.AArch64.Contract
+meta import VerifiedGarbage.Proof.AesCcm.AArch64.Env
 meta import VerifiedGarbage.Proof.CmacAes.AArch64.Variant
-meta import VerifiedGarbage.Proof.AesCcm.AArch64.EntryCT
-meta import VerifiedGarbage.Proof.AesCcm.AArch64.MacCT
 meta import VerifiedGarbage.Proof.AesCcm.AArch64.CtrCT
 meta import VerifiedGarbage.Proof.AesCcm.AArch64.Rel
 meta import VerifiedGarbage.Proof.AesCcm.AArch64.Seal

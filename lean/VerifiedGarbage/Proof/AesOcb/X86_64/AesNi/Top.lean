@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.AesOcb.X86_64.AesNi.Front
 public import VerifiedGarbage.Proof.AesOcb.X86_64.Seal
 public import VerifiedGarbage.Proof.AesOcb.X86_64.Open
-import VerifiedGarbage.Proof.AesOcb.X86_64.CmpMask
 import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Dec
 import VerifiedGarbage.Proof.Framework.X86_64.Exec

@@ -1,22 +1,20 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Verified
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.SealPw
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.OpenVerified
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.OpenTo
 public import VerifiedGarbage.Proof.Framework.AArch64.TrailingRo
 public import VerifiedGarbage.Spec.Gcm.Powers8
 import VerifiedGarbage.Proof.AesGcm.Rounds
-import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.SealPw
 import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.OpenPw
 import VerifiedGarbage.Proof.AesGcm.ScratchPowers8
 import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Verified
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.SealPw
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.OpenVerified
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.OpenTo
 meta import VerifiedGarbage.Proof.Framework.AArch64.TrailingRo
 meta import VerifiedGarbage.Spec.Gcm.Powers8
 meta import VerifiedGarbage.Proof.AesGcm.Rounds
-meta import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.SealPw
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.OpenPw
 meta import VerifiedGarbage.Proof.AesGcm.ScratchPowers8
 meta import VerifiedGarbage.Proof.Framework.Contract

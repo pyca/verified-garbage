@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.AesSiv.PPC64LE.Mac
 public import VerifiedGarbage.Spec.Siv.Contract
 public import VerifiedGarbage.Proof.CmacAes.PPC64LE.Subkeys
 import VerifiedGarbage.Proof.AesCbc.PPC64LE.CT
-import VerifiedGarbage.Proof.CmacAes.PPC64LE.Finalize
+import VerifiedGarbage.Proof.CmacAes.PPC64LE.Verified
 import VerifiedGarbage.Proof.Siv.Spec
 import VerifiedGarbage.Proof.Cmac.Block
 import VerifiedGarbage.Proof.Cmac.Frame

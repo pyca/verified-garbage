@@ -1,11 +1,10 @@
 module
+
 public import VerifiedGarbage.Proof.Sm4Gcm.X86_64.Crypt
 import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
-
 import VerifiedGarbage.Proof.Sm4Gcm.X86_64.CryptOk
 import VerifiedGarbage.Proof.AesGcm.X86_64.AbsorbCT
 import VerifiedGarbage.Proof.AesGcm.X86_64.Absorb
-import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks
 import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
@@ -16,7 +15,6 @@ meta import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 meta import VerifiedGarbage.Proof.Sm4Gcm.X86_64.CryptOk
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.AbsorbCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Absorb
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
@@ -30,7 +28,7 @@ public import VerifiedGarbage.Proof.Framework.RelCT
 # SM4-GCM on x86-64: `crypt` in two runs
 
 Untrusted: everything here is checked by Lean. As AES-GCM's
-(`Proof/AesGcm/X86_64/CryptCT.lean`): two runs of `crypt` over data at the
+(`Proof/AesGcm/X86_64/OneCT.lean`): two runs of `crypt` over data at the
 same address, of the same length, after the same number of bytes modulo 16,
 leak the same: the code between the calls of `vg_sm4_ctr32` is checked by the
 taint analysis, from the registers `CrIn` and `CrMid` fix, and each call has

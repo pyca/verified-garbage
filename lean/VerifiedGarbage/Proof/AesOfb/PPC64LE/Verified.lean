@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesOfb.Rounds
 public import VerifiedGarbage.Impl.AesOfb.PPC64LE
-public import VerifiedGarbage.Proof.AesCbc.PPC64LE.Call
+public import VerifiedGarbage.Proof.AesCbc.PPC64LE.Loop
 public import VerifiedGarbage.Proof.AesOfb.Spec
 public import VerifiedGarbage.Spec.Ofb.Contract
 import VerifiedGarbage.Proof.AesOfb.PPC64LE.Body

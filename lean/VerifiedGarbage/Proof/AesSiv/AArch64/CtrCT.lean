@@ -1,14 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.AesSiv.AArch64.Ctr
-meta import VerifiedGarbage.Proof.AesSiv.AArch64.Ctr
+public import VerifiedGarbage.Proof.AesSiv.AArch64.Finish
+meta import VerifiedGarbage.Proof.AesSiv.AArch64.Finish
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.AesCcm.Mac
 import VerifiedGarbage.Proof.AesSiv.AArch64.Call
-import VerifiedGarbage.Proof.AesSiv.AArch64.Finish
 import VerifiedGarbage.Proof.AesSiv.AArch64.FinishLong
 import VerifiedGarbage.Proof.AesSiv.AArch64.Init
 import VerifiedGarbage.Proof.AesSiv.AArch64.S2vAd
@@ -28,7 +27,6 @@ import VerifiedGarbage.Proof.Gcm.Stream
 meta import VerifiedGarbage.Impl.Aes.AArch64.Alloc
 meta import VerifiedGarbage.Proof.AesCcm.Mac
 meta import VerifiedGarbage.Proof.AesSiv.AArch64.Call
-meta import VerifiedGarbage.Proof.AesSiv.AArch64.Finish
 meta import VerifiedGarbage.Proof.AesSiv.AArch64.FinishLong
 meta import VerifiedGarbage.Proof.AesSiv.AArch64.Init
 meta import VerifiedGarbage.Proof.AesSiv.AArch64.S2vAd

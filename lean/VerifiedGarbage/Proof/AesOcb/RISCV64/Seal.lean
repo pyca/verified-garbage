@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesOcb.RISCV64.Body
 public import VerifiedGarbage.Proof.AesOcb.RISCV64.Entry
-import VerifiedGarbage.Proof.AesOcb.RISCV64.Hash
+public import VerifiedGarbage.Proof.AesOcb.RISCV64.Hash
 import VerifiedGarbage.Proof.Ocb.Bytes
 import VerifiedGarbage.Proof.Ocb.State
 import VerifiedGarbage.Proof.AesGcm.RISCV64.Loops
@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.RISCV64.Steps
 import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.AesOcb.RISCV64.HashChunk
 public import VerifiedGarbage.Proof.AesOcb.RISCV64.RestTag
 public import VerifiedGarbage.TCB.RISCV64.Target
 public import VerifiedGarbage.Proof.Framework.PowLit
@@ -26,7 +25,7 @@ section
 Untrusted: everything here is checked by Lean. The artifacts' contracts are
 the shared ones of `Spec/Ocb/Contract.lean`, with the working space as a
 last argument (`Proof/AesOcb/Scratch.lean`), which imply these
-(`Verified.lean`). As on PPC64LE (`Proof/AesOcb/PPC64LE/Seal.lean`): a
+(`Verified.lean`). As on PPC64LE (`Proof/AesOcb/PPC64LE/FnCT.lean`): a
 call (`jal`) stores nothing in memory, so no stack is used; `seal` and `open`
 read `tag`, `tag_len` and `work` from the stack, at the stack pointer, which
 they may only read; the stack pointer is aligned, and so are `ctx` and
@@ -143,7 +142,7 @@ and `openPreA` give the facts the proofs use about the arguments (`FnArgs`,
 then the copy of the tag to `tag` (`tagOut`), and `restore` (`seal_wp`). The
 environment after the entry is the state's own registers (`EntryPost`), and
 the addresses of the associated data and the data are in their slots in `W`
-(`Slots`). As on PPC64LE (`Proof/AesOcb/PPC64LE/Seal.lean`).
+(`Slots`). As on PPC64LE (`Proof/AesOcb/PPC64LE/FnCT.lean`).
 -/
 
 @[expose] public section

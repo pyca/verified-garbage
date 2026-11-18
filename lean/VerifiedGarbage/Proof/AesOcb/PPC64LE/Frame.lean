@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesOcb.Scratch
-public import VerifiedGarbage.Proof.AesOcb.PPC64LE.Seal
+public import VerifiedGarbage.Proof.AesOcb.PPC64LE.FnCT
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Impl.AesOcb.PPC64LE
 public import VerifiedGarbage.Proof.AesOcb.PPC64LE.Env
@@ -9,7 +9,7 @@ public import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Spec.Ocb
 import VerifiedGarbage.Proof.AesOcb.PPC64LE.Words
 import VerifiedGarbage.Proof.AesOcb.PPC64LE.PadTo
-public import VerifiedGarbage.Proof.AesOcb.PPC64LE.RestTag
+public import VerifiedGarbage.Proof.AesOcb.PPC64LE.Body
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Compare
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Loops
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Absorb
@@ -26,7 +26,6 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.OneEntry
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.TCB.PPC64LE.Target
-import VerifiedGarbage.Proof.AesOcb.PPC64LE.FnCT
 import VerifiedGarbage.Proof.Framework.SigEval
 public import VerifiedGarbage.Impl.StackScratch.PPC64LE.Args
 import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratchArgs
@@ -350,7 +349,7 @@ Untrusted: everything here is checked by Lean. `open` is `front` with the
 tag at `W + t2O`, then the received tag padded at `W` (`recv`), the
 comparison of the padded tags (`cmp`), the mask of the data (`mask`) and
 `restore`, which keeps the result in `r3` (`open_wp`). As on AArch64
-(`Proof/AesOcb/AArch64/Open.lean`).
+(`Proof/AesOcb/AArch64/Frame.lean`).
 -/
 
 @[expose] public section

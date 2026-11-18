@@ -1,13 +1,13 @@
 module
+
 public import VerifiedGarbage.Impl.AesGcm.X86_64
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Env
 public import VerifiedGarbage.Proof.Cmac.Mem
 public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Spec.Gcm
-
 import VerifiedGarbage.Proof.AesGcm.X86_64.CopyTag
-import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks
+import VerifiedGarbage.Proof.AesGcm.X86_64.Absorb
 import VerifiedGarbage.Proof.AesGcm.X86_64.Flush
 import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd

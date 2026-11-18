@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.AesOcb.X86_64.Args
+public import VerifiedGarbage.Proof.AesOcb.X86_64.Words
 public import VerifiedGarbage.Spec.Ocb
 import VerifiedGarbage.Proof.Ocb.Spec
 import VerifiedGarbage.Proof.Framework.InstancePriority
@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Gcm.X86_64.Rev
 public import VerifiedGarbage.Proof.AesOcb.X86_64.Env
-public import VerifiedGarbage.Proof.AesOcb.X86_64.Words
 import VerifiedGarbage.Proof.AesOcb.X86_64.Run
 import VerifiedGarbage.Proof.AesCcm.X86_64.Run
 import VerifiedGarbage.Proof.AesCcm.X86_64.Env

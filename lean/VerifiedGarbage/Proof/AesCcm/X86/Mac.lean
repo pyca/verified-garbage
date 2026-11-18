@@ -4,7 +4,6 @@ import VerifiedGarbage.Proof.AesCcm.X86.Aad
 public import VerifiedGarbage.Proof.AesCcm.Ctr
 public import VerifiedGarbage.Proof.AesCcm.X86.Absorb
 public import VerifiedGarbage.Proof.AesCcm.X86.Callee
-import VerifiedGarbage.Proof.AesCcm.Words32
 import VerifiedGarbage.Proof.AesCcm.X86.Blocks
 import VerifiedGarbage.Proof.AesCcm.X86.Run
 import VerifiedGarbage.Proof.AesCcm.BytesAt

@@ -27,10 +27,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.PowLit
 meta import VerifiedGarbage.Proof.Framework.PowLit
-meta import VerifiedGarbage.Proof.ChaCha20Poly1305.PPC64LE.Contract
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.PPC64LE.Contract
-import VerifiedGarbage.Proof.ChaCha20Poly1305.PPC64LE.Prologue
-meta import VerifiedGarbage.Proof.ChaCha20Poly1305.PPC64LE.Prologue
 
 /-!
 # ChaCha20-Poly1305 on PPC64LE: `Verified`

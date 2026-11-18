@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Gcm.PPC64LE.Ghash
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTBase
-public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Contract
+public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Fn
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTAbsorb
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTCrypt
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Absorb
@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.AesGcm.PPC64LE.TextAbsorb
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Run
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTBase
-meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.Contract
+meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.Fn
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTAbsorb
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTCrypt
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.Absorb
@@ -36,7 +36,7 @@ public import VerifiedGarbage.Impl.AesGcm.PPC64LE
 # AES-GCM on PPC64LE: `tag`, `finTag` and `vg_aes_gcm_stream_finish` are constant time
 
 Untrusted: everything here is checked by Lean. As on ARMv7
-(`Proof/AesGcm/Arm/CTFin.lean`): the invariants fix the context, the state,
+(`Proof/AesGcm/Arm/CTOpen.lean`): the invariants fix the context, the state,
 `W`, the stack pointer, the number of rounds (`r28`), the lengths of the
 additional data (`r22`) and of the text (`r23`), and the tag's address
 (`r20`), all held in registers the environment pins.

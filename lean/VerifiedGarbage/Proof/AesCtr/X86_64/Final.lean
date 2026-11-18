@@ -7,7 +7,6 @@ public import VerifiedGarbage.Proof.AesCfb.X86_64.Final
 public import VerifiedGarbage.Proof.Framework.Scratch
 public import VerifiedGarbage.Proof.Framework.X86_64.Spill
 public import VerifiedGarbage.Impl.StackScratch.X86_64
-public import VerifiedGarbage.Proof.AesCtr.X86_64.CT
 import VerifiedGarbage.Proof.AesCtr.Ctr32
 import VerifiedGarbage.Proof.AesCtr.Spec
 import VerifiedGarbage.Proof.AesCbc.Spec
@@ -30,7 +29,6 @@ meta import VerifiedGarbage.Proof.AesCfb.X86_64.Final
 meta import VerifiedGarbage.Proof.Framework.Scratch
 meta import VerifiedGarbage.Proof.Framework.X86_64.Spill
 meta import VerifiedGarbage.Impl.StackScratch.X86_64
-meta import VerifiedGarbage.Proof.AesCtr.X86_64.CT
 meta import VerifiedGarbage.Proof.AesCtr.Ctr32
 meta import VerifiedGarbage.Proof.AesCtr.Spec
 meta import VerifiedGarbage.Proof.AesCbc.Spec

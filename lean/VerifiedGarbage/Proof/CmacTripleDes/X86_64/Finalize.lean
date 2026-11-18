@@ -4,7 +4,6 @@ import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Update
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Proof.Cmac.Mem
 public import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Contract
-public import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Save
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Taint

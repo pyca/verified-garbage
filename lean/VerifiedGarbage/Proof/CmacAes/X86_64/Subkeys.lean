@@ -1,10 +1,9 @@
 module
-public import VerifiedGarbage.Proof.CmacAes.X86_64.UpdateLoop
+
+public import VerifiedGarbage.Proof.CmacAes.X86_64.UpdateCorrect
 public import VerifiedGarbage.Proof.Cmac.Dbl
 public import VerifiedGarbage.Proof.Cmac.Mem
-
 import VerifiedGarbage.Proof.CmacAes.X86_64.Dbl
-import VerifiedGarbage.Proof.CmacAes.X86_64.UpdateCorrect
 import VerifiedGarbage.Proof.Gcm.X86_64.Bits
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd

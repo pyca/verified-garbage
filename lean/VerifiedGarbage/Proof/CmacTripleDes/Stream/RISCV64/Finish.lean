@@ -14,7 +14,6 @@ import VerifiedGarbage.Proof.Cmac.Stream
 import VerifiedGarbage.Proof.CmacTripleDes.Cmac
 import VerifiedGarbage.Proof.CmacTripleDes.Bytes
 import VerifiedGarbage.Proof.TripleDes.Schedule
-public import VerifiedGarbage.Proof.CmacTripleDes.Stream.RISCV64.Calls
 
 /-!
 # Streaming TDEA-CMAC on RISC-V: `finish`

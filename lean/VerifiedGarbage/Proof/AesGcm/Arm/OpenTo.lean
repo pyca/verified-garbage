@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.Arm.Open
+public import VerifiedGarbage.Proof.AesGcm.Arm.CTCrypt
 public import VerifiedGarbage.Proof.AesGcm.RoundsTo
 public import VerifiedGarbage.Proof.Framework.Scratch
 public import VerifiedGarbage.Impl.StackScratch.Arm

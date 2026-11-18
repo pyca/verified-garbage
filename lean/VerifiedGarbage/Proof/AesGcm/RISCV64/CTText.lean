@@ -2,16 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.Gcm.RISCV64.Ghash
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.CTBase
-import VerifiedGarbage.Proof.AesGcm.RISCV64.Absorb
-import VerifiedGarbage.Proof.AesGcm.RISCV64.CTAbsorb
 import VerifiedGarbage.Proof.AesGcm.RISCV64.Flush
+import VerifiedGarbage.Proof.AesGcm.RISCV64.CTAbsorb
 import VerifiedGarbage.Proof.AesGcm.RISCV64.TextAbsorb
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 public import VerifiedGarbage.Proof.Framework.RISCV64.Run
 meta import VerifiedGarbage.Proof.AesGcm.RISCV64.CTBase
-meta import VerifiedGarbage.Proof.AesGcm.RISCV64.Absorb
-meta import VerifiedGarbage.Proof.AesGcm.RISCV64.CTAbsorb
 meta import VerifiedGarbage.Proof.AesGcm.RISCV64.Flush
+meta import VerifiedGarbage.Proof.AesGcm.RISCV64.CTAbsorb
 meta import VerifiedGarbage.Proof.AesGcm.RISCV64.TextAbsorb
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Run

@@ -2,15 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Prologue
 import VerifiedGarbage.Proof.Framework.X86_64.Abi
-import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.SmallTest
-import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.TailK
-import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Lit
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Tail3O
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Pad
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Tail
+import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Lit
 public import VerifiedGarbage.Impl.StackScratch.X86_64
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.Scratch
-import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Verified
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.OpenTail
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Verified
 import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratchWipe
 import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Prefix
 import VerifiedGarbage.Proof.ChaCha20.X86_64.XorBufX
@@ -19,15 +16,12 @@ import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Prologue
-meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.SmallTest
-meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.TailK
-meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Lit
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Tail3O
-meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Pad
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Tail
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Lit
 meta import VerifiedGarbage.Impl.StackScratch.X86_64
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.Scratch
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Verified
-meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.OpenTail
 meta import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratchWipe
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Prefix
 meta import VerifiedGarbage.Proof.ChaCha20.X86_64.XorBufX

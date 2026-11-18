@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.AesGcm.RISCV64.Contract
 import VerifiedGarbage.Proof.AesGcm.RISCV64.FinTag
 import VerifiedGarbage.Proof.AesGcm.RISCV64.Fn
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.StreamInit
-import VerifiedGarbage.Proof.AesGcm.RISCV64.Absorb
+import VerifiedGarbage.Proof.AesGcm.RISCV64.Flush
 import VerifiedGarbage.Proof.AesGcm.RISCV64.Compare
 import VerifiedGarbage.Proof.AesGcm.RISCV64.StreamCrypt
 import VerifiedGarbage.Proof.AesGcm.RISCV64.StreamFinish
@@ -22,7 +22,7 @@ public import VerifiedGarbage.Impl.AesGcm.RISCV64
 # AES-GCM on RISC-V: `vg_aes_gcm_stream_verify`
 
 Untrusted: everything here is checked by Lean. As on ARMv7
-(`Proof/AesGcm/Arm/StreamVerify.lean`): the entry saves our caller's
+(`Proof/AesGcm/Arm/CTCrypt.lean`): the entry saves our caller's
 registers and keeps the arguments in `s1`–`s3` and `s8`–`s11` (`ver1_wp`); a tag length
 `tagLenOk` rejects returns 0; otherwise `recv` pads the received tag, `finTag 0`
 puts the tag into `W` and `cmp 0` compares its first bytes with the

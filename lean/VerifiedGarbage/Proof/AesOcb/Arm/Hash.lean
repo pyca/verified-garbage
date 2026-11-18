@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.AesOcb.Arm.HashChunk
-import VerifiedGarbage.Proof.AesOcb.Arm.PadTo
 import VerifiedGarbage.Proof.Ocb.Bytes
 import VerifiedGarbage.Proof.Ocb.State
 import VerifiedGarbage.Proof.AesOcb.Arm.Words

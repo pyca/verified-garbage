@@ -1,10 +1,9 @@
 module
+
 public import VerifiedGarbage.Proof.Sm4Gcm.AArch64.Flush
 public import VerifiedGarbage.Proof.Sm4Gcm.AArch64.Tag
-
 import VerifiedGarbage.Proof.Sm4Gcm.AArch64.Body
 import VerifiedGarbage.Proof.Gcm.Be64
-import VerifiedGarbage.Proof.Sm4Gcm.AArch64.Fn
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset

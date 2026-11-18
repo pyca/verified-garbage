@@ -1,11 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.CmacAes.X86_64.UpdateLoop
+public import VerifiedGarbage.Proof.CmacAes.X86_64.UpdateCorrect
 public import VerifiedGarbage.Proof.CmacAes.X86_64.Variant
 import VerifiedGarbage.Proof.CmacAes.X86_64.KeyedLit
-import VerifiedGarbage.Proof.CmacAes.X86_64.UpdateCorrect
-public import VerifiedGarbage.Proof.CmacAes.X86_64.Verified
-meta import VerifiedGarbage.Proof.CmacAes.X86_64.Verified
+meta import VerifiedGarbage.Proof.CmacAes.X86_64.Variant
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -16,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.CmacAes.X86_64.KeyedLit
-meta import VerifiedGarbage.Proof.CmacAes.X86_64.UpdateLoop
+meta import VerifiedGarbage.Proof.CmacAes.X86_64.UpdateCorrect
 meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
 public import VerifiedGarbage.Proof.Aes.X86_64.Ctr32
 public import VerifiedGarbage.Impl.CmacAes.X86_64.Keyed

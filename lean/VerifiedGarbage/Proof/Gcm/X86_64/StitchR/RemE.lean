@@ -4,7 +4,6 @@ import VerifiedGarbage.Proof.Gcm.X86_64.StitchR.RemPairE
 public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Enc
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx.Reduction
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemSetup
-import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemGKs
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemD
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
 import VerifiedGarbage.Proof.Framework.Offset
@@ -17,7 +16,6 @@ public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Powers
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Cvt
 import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Load
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Setup
-import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Rem
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Aes
 public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Spec
 public import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Ctr32
@@ -27,7 +25,6 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Dec
 public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemLoopOneD
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchR.RemPair
 
 /-! ### `Gcm.X86_64.StitchR.Rem`, which this module and modules that import it used -/
 

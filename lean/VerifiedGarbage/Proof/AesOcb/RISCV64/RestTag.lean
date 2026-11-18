@@ -26,7 +26,7 @@ Untrusted: everything here is checked by Lean. `rest` computes
 padded plaintext to the checksum (`padCk_ok`), in the order of `seal` or
 `open` (`rest_ok`). `tag d` writes
 `ENCIPHER(K, Checksum ⊕ Offset ⊕ L_$) ⊕ HASH(K, A)` to `W + d` (`tag_ok`).
-As on PPC64LE (`Proof/AesOcb/PPC64LE/RestTag.lean`).
+As on PPC64LE (`Proof/AesOcb/PPC64LE/Body.lean`).
 -/
 
 @[expose] public section

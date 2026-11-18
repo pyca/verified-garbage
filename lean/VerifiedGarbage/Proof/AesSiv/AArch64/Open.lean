@@ -1,13 +1,12 @@
 module
 
 import VerifiedGarbage.Proof.AesSiv.Mask
-import VerifiedGarbage.Proof.AesSiv.AArch64.Finish
+public import VerifiedGarbage.Proof.AesSiv.AArch64.Finish
 import VerifiedGarbage.Proof.AesSiv.Ctr32
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-public import VerifiedGarbage.Proof.AesSiv.AArch64.Ctr
 public import VerifiedGarbage.Proof.AesSiv.AArch64.FinishLong
 public import VerifiedGarbage.Proof.AesSiv.Words
 import VerifiedGarbage.Proof.Cmac.Dbl32

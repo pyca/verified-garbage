@@ -4,7 +4,8 @@ public import VerifiedGarbage.Proof.Ocb.Spec
 public import VerifiedGarbage.Proof.AesOcb.X86_64.LNtz
 public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Rounds
 import VerifiedGarbage.Proof.Ocb.State
-import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Blocks
+import VerifiedGarbage.Proof.Aes.X86_64.BlocksVariant
+
 -- separate module: the one-pass proofs are a chain of modules (`Offsets`, `Setup`, `Pass`, `Front`, `Top`), so that a change rebuilds only the modules after it
 
 /-!

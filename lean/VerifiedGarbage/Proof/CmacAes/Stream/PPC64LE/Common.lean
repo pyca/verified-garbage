@@ -11,10 +11,8 @@ public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Call
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Spill
 import VerifiedGarbage.Proof.CmacAes.PPC64LE.Verified
-import VerifiedGarbage.Proof.CmacAes.PPC64LE.CT
-import VerifiedGarbage.Proof.CmacAes.PPC64LE.Finalize
 import VerifiedGarbage.Proof.AesCbc.PPC64LE.Body
-import VerifiedGarbage.Proof.AesCbc.PPC64LE.Call
+import VerifiedGarbage.Proof.AesCbc.PPC64LE.Loop
 import VerifiedGarbage.Proof.Aes.PPC64LE.CodeLit
 import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
 import VerifiedGarbage.Proof.Framework.PPC64LE.Lit

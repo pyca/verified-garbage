@@ -1,10 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Gcm.PPC64LE.Ghash
-public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Contract
+public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Fn
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.CryptOk
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.TextAbsorb
-public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Fn
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamInit
 import VerifiedGarbage.Proof.Gcm.Compose
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
@@ -17,7 +16,7 @@ public import VerifiedGarbage.Impl.AesGcm.PPC64LE
 # AES-GCM on PPC64LE: `vg_aes_gcm_stream_encrypt` and `vg_aes_gcm_stream_decrypt`
 
 Untrusted: everything here is checked by Lean. As on ARMv7
-(`Proof/AesGcm/Arm/StreamCrypt.lean`): the entry saves our caller's
+(`Proof/AesGcm/Arm/StreamFinish.lean`): the entry saves our caller's
 registers and keeps the arguments in `r19`–`r30` (`sc1_wp`); `encrypt` runs
 `crypt` on the data and then absorbs what it wrote (`textAbsorb`), `decrypt`
 absorbs the data first; both keep `J₀` (`enc_run`, `dec_run`), which is a

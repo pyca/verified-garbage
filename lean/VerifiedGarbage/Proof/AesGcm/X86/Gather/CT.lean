@@ -1,14 +1,14 @@
 module
+
 public import VerifiedGarbage.Impl.AesGcm.X86.SealGather
 public import VerifiedGarbage.Proof.AesGcm.X86.Gather.Callee
-public import VerifiedGarbage.Proof.AesGcm.X86.Gather.Contract
-
+public import VerifiedGarbage.Proof.AesGcm.X86.Gather.Loop
 import VerifiedGarbage.Proof.AesGcm.X86.Gather.Fn
 import VerifiedGarbage.Proof.AesGcm.X86.Gather.LoopCT
 import VerifiedGarbage.Proof.Framework.TacticTemplate
 meta import VerifiedGarbage.Impl.AesGcm.X86.SealGather
 meta import VerifiedGarbage.Proof.AesGcm.X86.Gather.Callee
-meta import VerifiedGarbage.Proof.AesGcm.X86.Gather.Contract
+meta import VerifiedGarbage.Proof.AesGcm.X86.Gather.Loop
 meta import VerifiedGarbage.Proof.AesGcm.X86.Gather.Fn
 meta import VerifiedGarbage.Proof.AesGcm.X86.Gather.LoopCT
 meta import VerifiedGarbage.Proof.Framework.TacticTemplate

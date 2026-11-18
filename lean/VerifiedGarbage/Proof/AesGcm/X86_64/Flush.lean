@@ -5,7 +5,6 @@ import VerifiedGarbage.Proof.Gcm.Be64
 import VerifiedGarbage.Proof.Cmac.Frame
 public import VerifiedGarbage.Proof.Gcm.Compose
 public import VerifiedGarbage.Proof.Framework.Bswap
-import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks
 import VerifiedGarbage.Proof.AesGcm.X86_64.Ghash1
 import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
 import VerifiedGarbage.Proof.AesGcm.X86_64.Loops

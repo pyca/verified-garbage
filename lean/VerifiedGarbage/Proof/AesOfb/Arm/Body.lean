@@ -23,7 +23,7 @@ meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 # AES-OFB on ARMv7: one block, and constant time
 
 `body_ok`: one run of `body` takes the loop invariant AES-CBC's proofs
-share (`Proof/AesCbc/Arm/Loop.lean`) from `k` blocks to `k + 1`, for
+share (`Proof/AesCbc/Arm/Body.lean`) from `k` blocks to `k + 1`, for
 `ofbMode`, with the round keys in the working space. `body_ct`: it is
 constant time, by the shared framework, with the call on the block at `iv`.
 -/

@@ -11,8 +11,8 @@ public import VerifiedGarbage.Proof.AesGcm.AArch64.Open
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.Open
 import VerifiedGarbage.Proof.AesGcm.AArch64.OpenCT
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.OpenCT
-import VerifiedGarbage.Proof.AesGcm.AArch64.OneCT
-meta import VerifiedGarbage.Proof.AesGcm.AArch64.OneCT
+import VerifiedGarbage.Proof.AesGcm.AArch64.SealCT
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.SealCT
 public import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Env

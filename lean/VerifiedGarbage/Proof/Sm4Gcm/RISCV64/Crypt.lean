@@ -1,14 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.CryptOk
-public import VerifiedGarbage.Proof.Sm4Gcm.RISCV64.Callee
-public import VerifiedGarbage.Proof.Sm4Gcm.RISCV64.Contract
 public import VerifiedGarbage.Impl.Sm4Gcm.RISCV64
 public import VerifiedGarbage.Spec.Sm4.Gcm
 import VerifiedGarbage.Proof.Sm4.Scratch
-import VerifiedGarbage.Proof.AesGcm.RISCV64.Absorb
 import VerifiedGarbage.Proof.AesGcm.RISCV64.Flush
-import VerifiedGarbage.Proof.AesGcm.RISCV64.Ghash1
 import VerifiedGarbage.Proof.AesGcm.RISCV64.Loops
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Cmac.Spec
@@ -16,6 +12,469 @@ import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.RISCV64.Run
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Spec.Sm4.Gcm.Contract
+public import VerifiedGarbage.Proof.AesGcm.RISCV64.Contract
+public import VerifiedGarbage.TCB.RISCV64.Target
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Proof.Framework.RISCV64.Call
+public import VerifiedGarbage.Proof.AesGcm.RISCV64.Callee
+public import VerifiedGarbage.Proof.AesGcm.RISCV64.CTBase
+public import VerifiedGarbage.Proof.Sm4.RISCV64.Ctr32Verified
+public import VerifiedGarbage.Proof.Sm4.RISCV64.KeyVerified
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.AesGcm.RISCV64.Env
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RISCV64.RelCT
+import VerifiedGarbage.Proof.Sm4.RISCV64.ModesLit
+import VerifiedGarbage.Proof.Sm4.RISCV64.Lit
+
+/-! ### `Sm4Gcm.RISCV64.Callee`, which this module and modules that import it used -/
+
+section
+
+/-!
+# SM4-GCM on RISC-V: the calls of SM4
+
+Untrusted: everything here is checked by Lean. SM4-GCM calls
+`vg_sm4_ctr32` and `vg_sm4_expand_key` by their contracts, as AES-GCM calls
+AES's (`Proof/AesGcm/RISCV64/Callee.lean`): what the arguments in `a0`–`a3`
+must be (`CtrCall`, `KeyCall`), and what the call leaves (`CtrPost`,
+`KeyPost`): the callee's postcondition, memory changed only in the buffers
+it writes and in its frame below the stack pointer (3248 and 3168 bytes),
+and the callee-saved registers kept. `ctr_rel` and `key_rel`: such calls,
+with the same public arguments in both runs, are constant time (and so
+`CT.sctr`, `CT.skey`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Sm4Gcm.RISCV64
+
+open VG VG.RISCV64
+open VG.Proof.AesGcm.RISCV64 (callEntry_gpr' toNat64)
+open VG.Spec.Gcm (Block blockAt blocksAt ctr32 inc32)
+
+/-! ## `vg_sm4_ctr32` -/
+
+/-- `vg_sm4_ctr32`'s frame uses the 3248 bytes of stack its contract reserves. -/
+theorem ctr32_sdepth : sdepth Impl.Sm4.RISCV64.ctr32 = 3248 := by lit_decide
+
+/-- What a call of `vg_sm4_ctr32(schedule, counter, data, n)` needs. -/
+structure CtrCall (s : State) (K C D : Addr) (n : Nat) : Prop where
+  a0 : s.gpr .a0 = K
+  a1 : s.gpr .a1 = C
+  a2 : s.gpr .a2 = D
+  a3 : s.gpr .a3 = BitVec.ofNat 64 n
+  n_lt : n < 2 ^ 64
+  kc : (⟨K, 128⟩ : Region).Disjoint ⟨C, 16⟩
+  kd : (⟨K, 128⟩ : Region).Disjoint ⟨D, 16 * n⟩
+  cd : (⟨C, 16⟩ : Region).Disjoint ⟨D, 16 * n⟩
+  fK : K.toNat + 128 ≤ 2 ^ 64
+  fC : C.toNat + 16 ≤ 2 ^ 64
+  fD : D.toNat + 16 * n ≤ 2 ^ 64
+  spal : s.sp.toNat % 16 = 0
+  spge : 3248 ≤ s.sp.toNat
+  bk : (below s.sp 3248).Disjoint ⟨K, 128⟩
+  bc : (below s.sp 3248).Disjoint ⟨C, 16⟩
+  bd : (below s.sp 3248).Disjoint ⟨D, 16 * n⟩
+  reads : Covers ([⟨K, 128⟩] ++ [⟨C, 16⟩, ⟨D, 16 * n⟩]) (s.rd ++ s.wr)
+  writes : Covers [⟨C, 16⟩, ⟨D, 16 * n⟩] s.wr
+
+/-- What a call of `vg_sm4_ctr32` leaves. -/
+structure CtrPost (s : State) (K C D : Addr) (n : Nat) (s' : State) : Prop where
+  rd : s'.rd = s.rd
+  wr : s'.wr = s.wr
+  sp : s'.sp = s.sp
+  saved : ∀ r ∈ preserved, s'.gpr r = s.gpr r
+  frame : Frame [⟨C, 16⟩, ⟨D, 16 * n⟩, below s.sp 3248] s.mem s'.mem
+  out : blocksAt s'.mem D n =
+    ctr32 (Spec.Sm4.gcmCipher (Spec.Sm4.scheduleAt s.mem K)) (blockAt s.mem C) (blocksAt s.mem D n)
+  ctr : blockAt s'.mem C = Nat.repeat inc32 n (blockAt s.mem C)
+
+theorem CtrCall.pre {s : State} {K C D : Addr} {n : Nat} (h : CtrCall s K C D n) :
+    (Proof.Sm4.RISCV64.Modes.modeContract Proof.Sm4.RISCV64.Modes.ctr32Post).pre
+      (s.callEntry.withRegions [⟨K, 128⟩] [⟨C, 16⟩, ⟨D, 16 * n⟩]) := by
+  simp only [Proof.Sm4.RISCV64.Modes.modeContract, State.withRegions_gpr, State.withRegions_rd,
+    State.withRegions_wr, State.withRegions_sp, State.callEntry_sp,
+    callEntry_gpr' s (by decide : Reg.a0 ∉ linkRegs), callEntry_gpr' s (by decide : Reg.a1 ∉ linkRegs),
+    callEntry_gpr' s (by decide : Reg.a2 ∉ linkRegs), callEntry_gpr' s (by decide : Reg.a3 ∉ linkRegs),
+    h.a0, h.a1, h.a2, h.a3, toNat64 h.n_lt]
+  exact ⟨trivial, trivial, h.kc, h.kd, h.cd, h.fK, h.fC, h.fD, h.spal, h.spge, h.bk, h.bc, h.bd⟩
+
+theorem ctr_call {name : String} {s : State} {K C D : Addr} {n : Nat} (h : CtrCall s K C D n) :
+    WP isa (.call name Impl.Sm4.RISCV64.ctr32) s (CtrPost s K C D n) := by
+  refine WP.callAny (k := Proof.Sm4.RISCV64.Modes.modeContract Proof.Sm4.RISCV64.Modes.ctr32Post)
+    Proof.Sm4.RISCV64.Modes.ctr32_correct (rd := [⟨K, 128⟩]) (wr := [⟨C, 16⟩, ⟨D, 16 * n⟩]) h.pre
+    h.reads h.writes ?_ (by rw [ctr32_sdepth]; decide)
+  intro s' hrd hwr hsp hf hcs hpost
+  rw [ctr32_sdepth] at hf
+  refine ⟨hrd, hwr, hsp, hcs, hf, ?_, ?_⟩ <;>
+  simp only [Proof.Sm4.RISCV64.Modes.modeContract, Proof.Sm4.RISCV64.Modes.ctr32Post,
+    State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem,
+    callEntry_gpr' s (by decide : Reg.a0 ∉ linkRegs), callEntry_gpr' s (by decide : Reg.a1 ∉ linkRegs),
+    callEntry_gpr' s (by decide : Reg.a2 ∉ linkRegs), callEntry_gpr' s (by decide : Reg.a3 ∉ linkRegs),
+    h.a0, h.a1, h.a2, h.a3, toNat64 h.n_lt] at hpost
+  exacts [hpost.1, hpost.2]
+
+/-- Calls of `vg_sm4_ctr32` with the same arguments in both runs are constant time. -/
+theorem ctr_rel {name : String} {P : State → State → Prop}
+    (h : ∀ s₁ s₂, P s₁ s₂ → ∃ K C D n, CtrCall s₁ K C D n ∧ CtrCall s₂ K C D n ∧ s₁.sp = s₂.sp) :
+    RelCT isa P (.call name Impl.Sm4.RISCV64.ctr32) fun _ _ => True := by
+  refine RelCT.exists_ (P := fun (x : Addr × Addr × Addr × Nat) (s₁ s₂ : State) =>
+      CtrCall s₁ x.1 x.2.1 x.2.2.1 x.2.2.2 ∧ CtrCall s₂ x.1 x.2.1 x.2.2.1 x.2.2.2 ∧ s₁.sp = s₂.sp)
+      (fun x => ?_) |>.mono (fun s₁ s₂ hp => by
+      obtain ⟨K, C, D, n, h₁, h₂, hsp⟩ := h s₁ s₂ hp
+      exact ⟨(K, C, D, n), h₁, h₂, hsp⟩) fun _ _ h => h
+  obtain ⟨K, C, D, n⟩ := x
+  refine RelCT.call Proof.Sm4.RISCV64.Modes.ctr32_correct (Proof.Sm4.RISCV64.ctr32_constantTime _)
+    [⟨K, 128⟩] [⟨C, 16⟩, ⟨D, 16 * n⟩] fun s₁ s₂ ⟨h₁, h₂, hsp⟩ => ?_
+  refine ⟨h₁.pre, h₂.pre, ?_, h₁.reads, h₁.writes, h₂.reads, h₂.writes⟩
+  simp only [Proof.Sm4.RISCV64.Modes.modeContract, Proof.Sm4.RISCV64.modePub, State.withRegions_gpr,
+    State.withRegions_sp, State.callEntry_sp, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+    forall_eq, callEntry_gpr' _ (by decide : Reg.a0 ∉ linkRegs), callEntry_gpr' _ (by decide : Reg.a1 ∉ linkRegs),
+    callEntry_gpr' _ (by decide : Reg.a2 ∉ linkRegs), callEntry_gpr' _ (by decide : Reg.a3 ∉ linkRegs),
+    h₁.a0, h₁.a1, h₁.a2, h₁.a3, h₂.a0, h₂.a1, h₂.a2, h₂.a3, hsp]
+  exact ⟨trivial, trivial, trivial, trivial, trivial⟩
+
+/-! ## `vg_sm4_expand_key` -/
+
+/-- `vg_sm4_expand_key`, in its frame. -/
+abbrev keyCode : Prog isa :=
+  Impl.StackScratch.RISCV64.withStackScratchWiped 3168 .a2 396 Impl.Sm4.RISCV64.expandKey
+
+theorem key_sdepth : sdepth keyCode = 3168 := by lit_decide
+
+/-- What a call of `vg_sm4_expand_key(key, schedule)` needs. -/
+structure KeyCall (s : State) (K C : Addr) : Prop where
+  a0 : s.gpr .a0 = K
+  a1 : s.gpr .a1 = C
+  kc : (⟨K, 16⟩ : Region).Disjoint ⟨C, 128⟩
+  fK : K.toNat + 16 ≤ 2 ^ 64
+  fC : C.toNat + 128 ≤ 2 ^ 64
+  spal : s.sp.toNat % 16 = 0
+  spge : 3168 ≤ s.sp.toNat
+  bk : (below s.sp 3168).Disjoint ⟨K, 16⟩
+  bc : (below s.sp 3168).Disjoint ⟨C, 128⟩
+  reads : Covers ([⟨K, 16⟩] ++ [⟨C, 128⟩]) (s.rd ++ s.wr)
+  writes : Covers [⟨C, 128⟩] s.wr
+
+/-- What a call of `vg_sm4_expand_key` leaves. -/
+structure KeyPost (s : State) (K C : Addr) (s' : State) : Prop where
+  rd : s'.rd = s.rd
+  wr : s'.wr = s.wr
+  sp : s'.sp = s.sp
+  saved : ∀ r ∈ preserved, s'.gpr r = s.gpr r
+  frame : Frame [⟨C, 128⟩, below s.sp 3168] s.mem s'.mem
+  out : Spec.Sm4.scheduleAt s'.mem C = Spec.Sm4.expandKey (Spec.Sm4.blockAt s.mem K)
+
+theorem KeyCall.pre {s : State} {K C : Addr} (h : KeyCall s K C) :
+    (Spec.Sm4.expandKeyContract RISCV64.abi 3168).pre (s.callEntry.withRegions [⟨K, 16⟩] [⟨C, 128⟩]) := by
+  have g0 := callEntry_gpr' s (by decide : Reg.a0 ∉ linkRegs)
+  have g1 := callEntry_gpr' s (by decide : Reg.a1 ∉ linkRegs)
+  sig_pre [Spec.Sm4.expandKeyContract, Spec.Sm4.expandKeySig, RISCV64.abi, RISCV64.argRegs]
+  sig_reduce [Spec.Sm4.expandKeyContract, Spec.Sm4.expandKeySig, RISCV64.abi, RISCV64.argRegs, List.getD,
+    State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr, State.withRegions_sp, State.callEntry_sp,
+    g0, g1, h.a0, h.a1]
+  simp only [h.a0, h.a1]
+  sig_and_intros
+  all_goals first
+    | with_reducible assumption
+    | trivial
+    | exact h.kc
+    | exact h.fK
+    | exact h.fC
+    | exact h.spal
+    | exact h.spge
+    | exact h.bk
+    | exact h.bc
+    | exact h.kc.symm
+    | exact h.bk.symm
+    | exact h.bc.symm
+    | omega
+
+theorem key_call {name : String} {s : State} {K C : Addr} (h : KeyCall s K C) :
+    WP isa (.call name keyCode) s (KeyPost s K C) := by
+  refine WP.callAny (k := Spec.Sm4.expandKeyContract RISCV64.abi 3168) Proof.Sm4.RISCV64.expandKey_framed.1
+    (rd := [⟨K, 16⟩]) (wr := [⟨C, 128⟩]) h.pre h.reads h.writes ?_ (by rw [key_sdepth]; decide)
+  intro s' hrd hwr hsp hf hcs hpost
+  rw [key_sdepth] at hf
+  refine ⟨hrd, hwr, hsp, hcs, hf, ?_⟩
+  sig_post [Spec.Sm4.expandKeyContract, Spec.Sm4.expandKeySig, RISCV64.abi, RISCV64.argRegs] at hpost
+  simp only [h.a0, h.a1] at hpost
+  exact hpost
+
+/-- Calls of `vg_sm4_expand_key` with the same arguments in both runs are
+constant time. -/
+theorem key_rel {name : String} {P : State → State → Prop}
+    (h : ∀ s₁ s₂, P s₁ s₂ → ∃ K C, KeyCall s₁ K C ∧ KeyCall s₂ K C ∧ s₁.sp = s₂.sp) :
+    RelCT isa P (.call name keyCode) fun _ _ => True := by
+  refine RelCT.exists_ (P := fun (x : Addr × Addr) (s₁ s₂ : State) =>
+      KeyCall s₁ x.1 x.2 ∧ KeyCall s₂ x.1 x.2 ∧ s₁.sp = s₂.sp)
+      (fun x => ?_) |>.mono (fun s₁ s₂ hp => by
+      obtain ⟨K, C, h₁, h₂, hsp⟩ := h s₁ s₂ hp
+      exact ⟨(K, C), h₁, h₂, hsp⟩) fun _ _ h => h
+  obtain ⟨K, C⟩ := x
+  refine RelCT.call Proof.Sm4.RISCV64.expandKey_framed.1 Proof.Sm4.RISCV64.expandKey_framed.2.1
+    [⟨K, 16⟩] [⟨C, 128⟩] fun s₁ s₂ ⟨h₁, h₂, hsp⟩ => ?_
+  refine ⟨h₁.pre, h₂.pre, ?_, h₁.reads, h₁.writes, h₂.reads, h₂.writes⟩
+  have e0 := callEntry_gpr' s₁ (by decide : Reg.a0 ∉ linkRegs)
+  have e1 := callEntry_gpr' s₁ (by decide : Reg.a1 ∉ linkRegs)
+  have f0 := callEntry_gpr' s₂ (by decide : Reg.a0 ∉ linkRegs)
+  have f1 := callEntry_gpr' s₂ (by decide : Reg.a1 ∉ linkRegs)
+  sig_pub [Spec.Sm4.expandKeyContract, Spec.Sm4.expandKeySig, RISCV64.abi, RISCV64.argRegs]
+  sig_reduce [Spec.Sm4.expandKeyContract, Spec.Sm4.expandKeySig, RISCV64.abi, RISCV64.argRegs,
+    State.withRegions_gpr, State.withRegions_sp, State.callEntry_sp, e0, e1, f0, f1, h₁.a0, h₁.a1, h₂.a0, h₂.a1,
+    hsp]
+  sig_and_intros
+  all_goals first | with_reducible assumption | trivial | exact h₁.a0.trans h₂.a0.symm |
+    exact h₁.a1.trans h₂.a1.symm
+
+/-- SM4's counter mode with the same arguments in both runs is constant time. -/
+theorem CT.sctr {I : State → Prop} {name : String}
+    (h : ∀ s₁ s₂, I s₁ → I s₂ → ∃ K C D : Addr, ∃ n : Nat,
+      CtrCall s₁ K C D n ∧ CtrCall s₂ K C D n ∧ s₁.sp = s₂.sp) :
+    Proof.AesGcm.RISCV64.CT I (.call name Impl.Sm4.RISCV64.ctr32) :=
+  ctr_rel fun _ _ hh => h _ _ hh.1 hh.2
+
+/-- SM4's key expansion with the same arguments in both runs is constant time. -/
+theorem CT.skey {I : State → Prop} {name : String}
+    (h : ∀ s₁ s₂, I s₁ → I s₂ → ∃ K C : Addr, KeyCall s₁ K C ∧ KeyCall s₂ K C ∧ s₁.sp = s₂.sp) :
+    Proof.AesGcm.RISCV64.CT I (.call name keyCode) :=
+  key_rel fun _ _ hh => h _ _ hh.1 hh.2
+
+end VG.Proof.Sm4Gcm.RISCV64
+
+end
+
+end
+
+/-! ### `Sm4Gcm.RISCV64.Contract`, which this module and modules that import it used -/
+
+section
+
+/-!
+# SM4-GCM on RISC-V: the contracts the proofs are written against
+
+Untrusted: everything here is checked by Lean. The artifacts' contracts are
+the shared ones of `Spec/Sm4/Gcm/Contract.lean`, which imply these
+(`Verified.lean`). They are AES-GCM's (`Proof/AesGcm/RISCV64/Contract.lean`)
+with SM4's key context and no number of rounds, so with the arguments one
+register earlier. The functions call `vg_sm4_ctr32`, whose frame takes 3248
+bytes of stack below the stack pointer, `vg_sm4_expand_key` (3168) and
+`vg_ghash` (2048) (`stkOk3`); the buffers of `u64` are 8-byte aligned.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Sm4Gcm.RISCV64
+
+open VG VG.RISCV64
+open VG.Spec.Aes (bytesAt)
+open VG.Spec.Gcm (StreamRepr ctxH gctr inc32 j0 fullTag tagLenOk encryptWith openResult)
+open VG.Spec.Sm4.Gcm (KeyRepr ctxCiph)
+open VG.Proof.AesGcm.RISCV64 (args onePub)
+
+/-- The 3248 bytes below `sp` are apart from each of `rs`. -/
+def stkAll3 (sp : Addr) : List Region → Prop
+  | [] => True
+  | r :: rs => (below sp 3248).Disjoint r ∧ stkAll3 sp rs
+
+theorem stkAll3_mem {sp : Addr} : ∀ {rs : List Region}, stkAll3 sp rs → ∀ {r : Region}, r ∈ rs →
+    (below sp 3248).Disjoint r
+  | _ :: _, h, _, .head _ => h.1
+  | _ :: _, h, _, .tail _ hr => stkAll3_mem h.2 hr
+
+/-- The stack pointer is aligned, and the 3248 bytes below it, which the
+callees' frames use, are apart from the buffers `rs`. -/
+def stkOk3 (s : State) (rs : List Region) : Prop :=
+  s.sp.toNat % 16 = 0 ∧ 3248 ≤ s.sp.toNat ∧ stkAll3 s.sp rs
+
+/-- `vg_sm4_gcm_init(key = a0, ctx = a1, scratch = a2)`. -/
+def initRISCV64 : Contract isa where
+  pre s :=
+    let key : Region := ⟨s.gpr .a0, 16⟩
+    let ctx : Region := ⟨s.gpr .a1, 256⟩
+    let scr : Region := ⟨s.gpr .a2, 2560⟩
+    s.rd = [key] ∧ s.wr = [ctx, scr] ∧
+      key.Disjoint ctx ∧ key.Disjoint scr ∧ ctx.Disjoint scr ∧
+      (s.gpr .a0).toNat + 16 ≤ 2 ^ 64 ∧ (s.gpr .a1).toNat + 256 ≤ 2 ^ 64 ∧
+      (s.gpr .a2).toNat + 2560 ≤ 2 ^ 64 ∧ stkOk3 s [key, ctx, scr] ∧
+      (s.gpr .a1).toNat % 8 = 0 ∧ (s.gpr .a2).toNat % 8 = 0
+  post s s' := KeyRepr s'.mem (s.gpr .a1) (bytesAt s.mem (s.gpr .a0) 16)
+  pub s₁ s₂ := s₁.gpr .a0 = s₂.gpr .a0 ∧ s₁.gpr .a1 = s₂.gpr .a1 ∧ s₁.gpr .a2 = s₂.gpr .a2 ∧
+    s₁.sp = s₂.sp
+
+/-- What `vg_sm4_gcm_stream_encrypt` and `vg_sm4_gcm_stream_decrypt` need:
+`(ctx = a0, state = a1, aad_len = a2, text_len = a3, data = a4, len = a5, scratch = a6)`. -/
+def streamCryptPre (s : State) : Prop :=
+  let ctx : Region := ⟨s.gpr .a0, 256⟩
+  let st : Region := ⟨s.gpr .a1, 80⟩
+  let data : Region := ⟨s.gpr .a4, (s.gpr .a5).toNat⟩
+  let scr : Region := ⟨s.gpr .a6, 2560⟩
+  s.rd = [ctx] ∧ s.wr = [st, data, scr] ∧
+    ctx.Disjoint st ∧ ctx.Disjoint data ∧ ctx.Disjoint scr ∧
+    st.Disjoint data ∧ st.Disjoint scr ∧ data.Disjoint scr ∧
+    (s.gpr .a0).toNat + 256 ≤ 2 ^ 64 ∧ (s.gpr .a1).toNat + 80 ≤ 2 ^ 64 ∧
+    (s.gpr .a4).toNat + (s.gpr .a5).toNat ≤ 2 ^ 64 ∧ (s.gpr .a6).toNat + 2560 ≤ 2 ^ 64 ∧
+    stkOk3 s [ctx, st, data, scr] ∧ (s.gpr .a0).toNat % 8 = 0 ∧
+    (s.gpr .a1).toNat % 8 = 0 ∧ (s.gpr .a6).toNat % 8 = 0
+
+def streamCryptPub (s₁ s₂ : State) : Prop :=
+  s₁.gpr .a0 = s₂.gpr .a0 ∧ s₁.gpr .a1 = s₂.gpr .a1 ∧ s₁.gpr .a2 = s₂.gpr .a2 ∧
+    s₁.gpr .a3 = s₂.gpr .a3 ∧ s₁.gpr .a4 = s₂.gpr .a4 ∧ s₁.gpr .a5 = s₂.gpr .a5 ∧
+    s₁.gpr .a6 = s₂.gpr .a6 ∧ s₁.sp = s₂.sp
+
+/-- `vg_sm4_gcm_stream_encrypt`. -/
+def streamEncryptRISCV64 : Contract isa where
+  pre := streamCryptPre
+  post s s' :=
+    let ciph := ctxCiph s.mem (s.gpr .a0)
+    let h := ctxH s.mem (s.gpr .a0)
+    ∀ iv a p, StreamRepr s.mem (s.gpr .a1) ciph h iv a (gctr ciph (inc32 (j0 h iv)) p) →
+      s.gpr .a2 = BitVec.ofNat 64 a.length → (s.gpr .a3).toNat = p.length →
+      let c := gctr ciph (inc32 (j0 h iv)) (p ++ bytesAt s.mem (s.gpr .a4) (s.gpr .a5).toNat)
+      StreamRepr s'.mem (s.gpr .a1) ciph h iv a c ∧ bytesAt s'.mem (s.gpr .a4) (s.gpr .a5).toNat = c.drop p.length
+  pub := streamCryptPub
+
+/-- `vg_sm4_gcm_stream_decrypt`. -/
+def streamDecryptRISCV64 : Contract isa where
+  pre := streamCryptPre
+  post s s' :=
+    let ciph := ctxCiph s.mem (s.gpr .a0)
+    let h := ctxH s.mem (s.gpr .a0)
+    ∀ iv a c, StreamRepr s.mem (s.gpr .a1) ciph h iv a c →
+      s.gpr .a2 = BitVec.ofNat 64 a.length → (s.gpr .a3).toNat = c.length →
+      let c' := c ++ bytesAt s.mem (s.gpr .a4) (s.gpr .a5).toNat
+      StreamRepr s'.mem (s.gpr .a1) ciph h iv a c' ∧
+        bytesAt s'.mem (s.gpr .a4) (s.gpr .a5).toNat = (gctr ciph (inc32 (j0 h iv)) c').drop c.length
+  pub := streamCryptPub
+
+/-- What `vg_sm4_gcm_stream_finish` needs: `(ctx = a0, state = a1, aad_len = a2, text_len = a3,
+tag = a4, scratch = a5)`. -/
+def finPre (s : State) : Prop :=
+  let ctx : Region := ⟨s.gpr .a0, 256⟩
+  let st : Region := ⟨s.gpr .a1, 80⟩
+  let tag : Region := ⟨s.gpr .a4, 16⟩
+  let scr : Region := ⟨s.gpr .a5, 2560⟩
+  s.rd = [ctx] ∧ s.wr = [st, tag, scr] ∧
+    ctx.Disjoint st ∧ ctx.Disjoint tag ∧ ctx.Disjoint scr ∧ st.Disjoint tag ∧ st.Disjoint scr ∧
+    tag.Disjoint scr ∧
+    (s.gpr .a0).toNat + 256 ≤ 2 ^ 64 ∧ (s.gpr .a1).toNat + 80 ≤ 2 ^ 64 ∧ (s.gpr .a4).toNat + 16 ≤ 2 ^ 64 ∧
+    (s.gpr .a5).toNat + 2560 ≤ 2 ^ 64 ∧ stkOk3 s [ctx, st, tag, scr] ∧
+    (s.gpr .a0).toNat % 8 = 0 ∧ (s.gpr .a1).toNat % 8 = 0 ∧ (s.gpr .a5).toNat % 8 = 0
+
+/-- `vg_sm4_gcm_stream_finish`. -/
+def streamFinishRISCV64 : Contract isa where
+  pre := finPre
+  post s s' :=
+    let ciph := ctxCiph s.mem (s.gpr .a0)
+    let h := ctxH s.mem (s.gpr .a0)
+    ∀ iv a c, StreamRepr s.mem (s.gpr .a1) ciph h iv a c →
+      s.gpr .a2 = BitVec.ofNat 64 a.length → (s.gpr .a3).toNat = c.length →
+      bytesAt s'.mem (s.gpr .a4) 16 = fullTag ciph h iv a c
+  pub s₁ s₂ := s₁.gpr .a0 = s₂.gpr .a0 ∧ s₁.gpr .a1 = s₂.gpr .a1 ∧ s₁.gpr .a2 = s₂.gpr .a2 ∧
+    s₁.gpr .a3 = s₂.gpr .a3 ∧ s₁.gpr .a4 = s₂.gpr .a4 ∧ s₁.gpr .a5 = s₂.gpr .a5 ∧ s₁.sp = s₂.sp
+
+/-- What `vg_sm4_gcm_stream_verify` needs: `(ctx = a0, state = a1, aad_len = a2, text_len = a3,
+tag = a4, tag_len = a5, scratch = a6)`. -/
+def verPre (s : State) : Prop :=
+  let ctx : Region := ⟨s.gpr .a0, 256⟩
+  let st : Region := ⟨s.gpr .a1, 80⟩
+  let tag : Region := ⟨s.gpr .a4, (s.gpr .a5).toNat⟩
+  let scr : Region := ⟨s.gpr .a6, 2560⟩
+  s.rd = [ctx, tag] ∧ s.wr = [st, scr] ∧
+    ctx.Disjoint st ∧ ctx.Disjoint scr ∧ st.Disjoint tag ∧ st.Disjoint scr ∧ tag.Disjoint scr ∧
+    (s.gpr .a0).toNat + 256 ≤ 2 ^ 64 ∧ (s.gpr .a1).toNat + 80 ≤ 2 ^ 64 ∧
+    (s.gpr .a4).toNat + (s.gpr .a5).toNat ≤ 2 ^ 64 ∧ (s.gpr .a6).toNat + 2560 ≤ 2 ^ 64 ∧
+    stkOk3 s [ctx, tag, st, scr] ∧ (s.gpr .a0).toNat % 8 = 0 ∧ (s.gpr .a1).toNat % 8 = 0 ∧
+    (s.gpr .a6).toNat % 8 = 0
+
+/-- `vg_sm4_gcm_stream_verify`. -/
+def streamVerifyRISCV64 : Contract isa where
+  pre := verPre
+  post s s' :=
+    let ciph := ctxCiph s.mem (s.gpr .a0)
+    let h := ctxH s.mem (s.gpr .a0)
+    let tl := (s.gpr .a5).toNat
+    ∀ iv a c, StreamRepr s.mem (s.gpr .a1) ciph h iv a c →
+      s.gpr .a2 = BitVec.ofNat 64 a.length → (s.gpr .a3).toNat = c.length →
+      let t := fullTag ciph h iv a c
+      if tagLenOk tl ∧ t.take tl = bytesAt s.mem (s.gpr .a4) tl then (s'.gpr .a0).setWidth 32 = 1
+      else (s'.gpr .a0).setWidth 32 = 0
+  pub s₁ s₂ := s₁.gpr .a0 = s₂.gpr .a0 ∧ s₁.gpr .a1 = s₂.gpr .a1 ∧ s₁.gpr .a2 = s₂.gpr .a2 ∧
+    s₁.gpr .a3 = s₂.gpr .a3 ∧ s₁.gpr .a4 = s₂.gpr .a4 ∧ s₁.gpr .a5 = s₂.gpr .a5 ∧
+    s₁.gpr .a6 = s₂.gpr .a6 ∧ s₁.sp = s₂.sp
+
+/-- What `vg_sm4_gcm_seal` needs: `(ctx = a0, nonce = a1, nonce_len = a2, aad = a3,
+aad_len = a4, data = a5, len = a6, tag = a7, scratch = [sp])`. -/
+def sealPre (s : State) : Prop :=
+  let ctx : Region := ⟨s.gpr .a0, 256⟩
+  let nonce : Region := ⟨s.gpr .a1, (s.gpr .a2).toNat⟩
+  let aad : Region := ⟨s.gpr .a3, (s.gpr .a4).toNat⟩
+  let data : Region := ⟨s.gpr .a5, (s.gpr .a6).toNat⟩
+  let tag : Region := ⟨s.gpr .a7, 16⟩
+  let scr : Region := ⟨stackArg s 0, 2560⟩
+  s.rd = [ctx, nonce, aad, args s 1] ∧ s.wr = [data, tag, scr] ∧
+    ctx.Disjoint data ∧ ctx.Disjoint scr ∧ nonce.Disjoint data ∧ nonce.Disjoint scr ∧
+    aad.Disjoint data ∧ aad.Disjoint scr ∧ data.Disjoint tag ∧
+    data.Disjoint scr ∧ data.Disjoint (args s 1) ∧ tag.Disjoint scr ∧ scr.Disjoint (args s 1) ∧
+    (s.gpr .a0).toNat + 256 ≤ 2 ^ 64 ∧ (s.gpr .a1).toNat + (s.gpr .a2).toNat ≤ 2 ^ 64 ∧
+    (s.gpr .a3).toNat + (s.gpr .a4).toNat ≤ 2 ^ 64 ∧ (s.gpr .a5).toNat + (s.gpr .a6).toNat ≤ 2 ^ 64 ∧
+    (s.gpr .a7).toNat + 16 ≤ 2 ^ 64 ∧ (stackArg s 0).toNat + 2560 ≤ 2 ^ 64 ∧ s.sp.toNat + 8 ≤ 2 ^ 64 ∧
+    stkOk3 s [ctx, nonce, aad, data, tag, scr, args s 1] ∧ (s.gpr .a0).toNat % 8 = 0 ∧
+    (stackArg s 0).toNat % 8 = 0
+
+/-- `vg_sm4_gcm_seal`. -/
+def sealRISCV64 : Contract isa where
+  pre := sealPre
+  post s s' :=
+    encryptWith (ctxCiph s.mem (s.gpr .a0)) (ctxH s.mem (s.gpr .a0)) 16
+        (bytesAt s.mem (s.gpr .a1) (s.gpr .a2).toNat) (bytesAt s.mem (s.gpr .a5) (s.gpr .a6).toNat)
+        (bytesAt s.mem (s.gpr .a3) (s.gpr .a4).toNat) =
+      (bytesAt s'.mem (s.gpr .a5) (s.gpr .a6).toNat, bytesAt s'.mem (s.gpr .a7) 16)
+  pub := onePub 1
+
+/-- What `vg_sm4_gcm_open` needs: `(ctx = a0, nonce = a1, nonce_len = a2, aad = a3,
+aad_len = a4, data = a5, len = a6, tag = a7, tag_len = [sp], scratch = [sp + 8])`. -/
+def openPre (s : State) : Prop :=
+  let ctx : Region := ⟨s.gpr .a0, 256⟩
+  let nonce : Region := ⟨s.gpr .a1, (s.gpr .a2).toNat⟩
+  let aad : Region := ⟨s.gpr .a3, (s.gpr .a4).toNat⟩
+  let data : Region := ⟨s.gpr .a5, (s.gpr .a6).toNat⟩
+  let tag : Region := ⟨s.gpr .a7, (stackArg s 0).toNat⟩
+  let scr : Region := ⟨stackArg s 1, 2560⟩
+  s.rd = [ctx, nonce, aad, tag, args s 2] ∧ s.wr = [data, scr] ∧
+    ctx.Disjoint data ∧ ctx.Disjoint scr ∧ nonce.Disjoint data ∧ nonce.Disjoint scr ∧
+    aad.Disjoint data ∧ aad.Disjoint scr ∧ data.Disjoint tag ∧
+    data.Disjoint scr ∧ data.Disjoint (args s 2) ∧ tag.Disjoint scr ∧ scr.Disjoint (args s 2) ∧
+    (s.gpr .a0).toNat + 256 ≤ 2 ^ 64 ∧ (s.gpr .a1).toNat + (s.gpr .a2).toNat ≤ 2 ^ 64 ∧
+    (s.gpr .a3).toNat + (s.gpr .a4).toNat ≤ 2 ^ 64 ∧ (s.gpr .a5).toNat + (s.gpr .a6).toNat ≤ 2 ^ 64 ∧
+    (s.gpr .a7).toNat + (stackArg s 0).toNat ≤ 2 ^ 64 ∧ (stackArg s 1).toNat + 2560 ≤ 2 ^ 64 ∧
+    s.sp.toNat + 16 ≤ 2 ^ 64 ∧ stkOk3 s [ctx, nonce, aad, data, tag, scr, args s 2] ∧
+    (s.gpr .a0).toNat % 8 = 0 ∧ (stackArg s 1).toNat % 8 = 0
+
+/-- What `vg_sm4_gcm_open` computes, in a state. -/
+abbrev openRes (s : State) : Option (List Byte) :=
+  openResult (ctxCiph s.mem (s.gpr .a0)) (ctxH s.mem (s.gpr .a0)) (stackArg s 0).toNat
+    (bytesAt s.mem (s.gpr .a1) (s.gpr .a2).toNat) (bytesAt s.mem (s.gpr .a5) (s.gpr .a6).toNat)
+    (bytesAt s.mem (s.gpr .a3) (s.gpr .a4).toNat) (bytesAt s.mem (s.gpr .a7) (stackArg s 0).toNat)
+
+/-- `vg_sm4_gcm_open`: the result in the low 32 bits of `a0`. It may leak
+whether it succeeds. -/
+def openRISCV64 : Contract isa where
+  pre := openPre
+  post s s' :=
+    match openRes s with
+    | some pt => (s'.gpr .a0).setWidth 32 = 1 ∧ bytesAt s'.mem (s.gpr .a5) (s.gpr .a6).toNat = pt
+    | none => (s'.gpr .a0).setWidth 32 = 0 ∧
+        bytesAt s'.mem (s.gpr .a5) (s.gpr .a6).toNat = bytesAt s.mem (s.gpr .a5) (s.gpr .a6).toNat
+  pub s₁ s₂ := onePub 2 s₁ s₂ ∧ (openRes s₁).isSome = (openRes s₂).isSome
+
+end VG.Proof.Sm4Gcm.RISCV64
+
+end
+
+end
 
 /-!
 # SM4-GCM on RISC-V: counter mode over a piece (`crypt`)

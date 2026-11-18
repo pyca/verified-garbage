@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.AesGcm.RISCV64.Env
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.Loops
 public import VerifiedGarbage.Proof.Cmac.Mem
 public import VerifiedGarbage.Spec.Gcm
-import VerifiedGarbage.Proof.AesGcm.RISCV64.Absorb
 import VerifiedGarbage.Proof.AesGcm.RISCV64.Flush
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Gcm.RISCV64.Ghash

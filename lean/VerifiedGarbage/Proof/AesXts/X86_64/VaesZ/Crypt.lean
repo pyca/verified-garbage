@@ -18,13 +18,12 @@ import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
 import VerifiedGarbage.Proof.Aes.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Enc
 import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Dec
 import VerifiedGarbage.Proof.Aes.X86_64.VaesZ.Rounds
 import VerifiedGarbage.Proof.Aes.X86_64.VaesZ.Dec
 import VerifiedGarbage.Proof.Aes.X86_64.VaesBlocks.Dec
 import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Rounds
-import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Blocks
+import VerifiedGarbage.Proof.Aes.X86_64.BlocksVariant
 import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Dec
 import VerifiedGarbage.Proof.AesCbc.X86_64.Body
 import VerifiedGarbage.Proof.AesCbc.X86_64.Call

@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.AesGcm.X86.Gather.Loop
 import VerifiedGarbage.Proof.AesGcm.ScratchGather
 import VerifiedGarbage.Proof.AesGcm.CtxFrame
 public import VerifiedGarbage.Proof.AesGcm.X86.Gather.Callee
-public import VerifiedGarbage.Proof.AesGcm.X86.Gather.Contract
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.AesGcm.X86.Loops
 import VerifiedGarbage.Proof.AesGcm.X86.Env
