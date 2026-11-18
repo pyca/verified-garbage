@@ -16,7 +16,7 @@ vg_cmac_triple_des_stream_init:
 	or %r3, %r4, %r4
 	or %r4, %r5, %r5
 	or %r5, %r31, %r31
-	bl {vg_triple_des_expand_key}
+	bl {vg_triple_des_expand_key_core}
 	or %r3, %r31, %r31
 	or %r5, %r30, %r30
 	addi %r4, %r30, 512

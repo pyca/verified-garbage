@@ -135,6 +135,16 @@ vg_triple_des_cfb64_encrypt:
 	std %r11, 560(%r12)
 	std %r11, 568(%r12)
 	addi %r1, %r1, 608
+	li %r0, 0
+	li %r4, 0
+	li %r5, 0
+	li %r6, 0
+	li %r7, 0
+	li %r8, 0
+	li %r9, 0
+	li %r10, 0
+	li %r11, 0
+	li %r12, 0
 	blr
 
 vg_triple_des_cfb64_decrypt:
@@ -2465,6 +2475,17 @@ vg_triple_des_cfb64_decrypt:
 	std %r11, 1584(%r12)
 	std %r11, 1592(%r12)
 	addi %r1, %r1, 1632
+	li %r0, 0
+	li %r3, 0
+	li %r4, 0
+	li %r5, 0
+	li %r6, 0
+	li %r7, 0
+	li %r8, 0
+	li %r9, 0
+	li %r10, 0
+	li %r11, 0
+	li %r12, 0
 	blr
 
 vg_triple_des_cfb64_encrypt_final:
@@ -2619,6 +2640,16 @@ vg_triple_des_cfb64_encrypt_final:
 	std %r11, 560(%r12)
 	std %r11, 568(%r12)
 	addi %r1, %r1, 608
+	li %r0, 0
+	li %r4, 0
+	li %r5, 0
+	li %r6, 0
+	li %r7, 0
+	li %r8, 0
+	li %r9, 0
+	li %r10, 0
+	li %r11, 0
+	li %r12, 0
 	blr
 
 vg_triple_des_cfb64_decrypt_final:
@@ -2773,4 +2804,14 @@ vg_triple_des_cfb64_decrypt_final:
 	std %r11, 560(%r12)
 	std %r11, 568(%r12)
 	addi %r1, %r1, 608
+	li %r0, 0
+	li %r4, 0
+	li %r5, 0
+	li %r6, 0
+	li %r7, 0
+	li %r8, 0
+	li %r9, 0
+	li %r10, 0
+	li %r11, 0
+	li %r12, 0
 	blr
