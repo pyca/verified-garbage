@@ -1273,7 +1273,6 @@ riscv64 vg_x25519_base
 riscv64 vg_x25519_exchange
 riscv64 vg_x448_base
 riscv64 vg_x448_exchange
-riscv64 vg_zeroize
 x86 vg_aes_cbc_decrypt
 x86 vg_aes_cbc_decrypt_aesni
 x86 vg_aes_cbc_encrypt
