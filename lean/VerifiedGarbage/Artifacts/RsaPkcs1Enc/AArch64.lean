@@ -36,10 +36,10 @@ open VG.Proof.RsaPkcs1Enc.AArch64.Dec (HH decP_verified)
 
 def artifacts (h : Proof.Sha256.AArch64.Compress) (c : Proof.Rsa.AArch64.CrtImpl) : List Artifact :=
   [
-    Spec.RsaPkcs1Enc.decryptPrecomputedApi.artifact AArch64.target {
+    Spec.RsaPkcs1Enc.decryptPrecomputedApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
       suffix := qualifiedName "" [("sha256", h.suffix), ("crt", c.suffix)]
       code := Impl.RsaPkcs1Enc.AArch64.Decrypt.codeP (HH h) (privPOf c).name (privPOf c).code
-      verified := decP_verified h (privPOf c) (decP_sat' c) }]
+      verified := decP_verified h (privPOf c) (decP_sat' c) } (Proof.Rsa.AArch64.Scrub.pkcs1DecryptOk _))]
 
 end VG.Artifacts.RsaPkcs1Enc.AArch64.Sha256RsaPrivateCrt
 

@@ -225,10 +225,7 @@ aarch64 vg_pbkdf2_hmac_sha512_sha512
 aarch64 vg_poly1305_finalize
 aarch64 vg_poly1305_update
 aarch64 vg_poly1305_update_neon
-aarch64 vg_rsa_pkcs1_decrypt_precomputed
-aarch64 vg_rsa_pkcs1_decrypt_precomputed_sha256_sha2
 aarch64 vg_rsa_pkcs1_sign_precomputed
-aarch64 vg_rsa_private_precompute
 aarch64 vg_sha1_digest
 aarch64 vg_sha1_digest_sha2
 aarch64 vg_sha1_finalize

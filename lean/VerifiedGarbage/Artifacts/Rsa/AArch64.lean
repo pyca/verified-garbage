@@ -24,9 +24,9 @@ def artifacts : List Artifact := [
   Spec.Rsa.publicPrecomputeApi.artifact AArch64.target (VG.AArch64.ScrubAll.withScrubAll {
     code := Impl.Rsa.AArch64.Precompute.code Proof.Bignum.AArch64.Mont.base.mm
     verified := Proof.Bignum.AArch64.precompute_verified _ } (Proof.Rsa.AArch64.Scrub.publicPrecomputeOk _)),
-  Spec.Rsa.privatePrecomputeApi.artifact AArch64.target {
+  Spec.Rsa.privatePrecomputeApi.artifact AArch64.target (VG.AArch64.ScrubAll.withScrubAll {
     code := Impl.Rsa.AArch64.PrivPre.code Proof.Bignum.AArch64.Mont.base.mm
-    verified := Proof.Bignum.AArch64.PrivPre.privPre_verified _ },
+    verified := Proof.Bignum.AArch64.PrivPre.privPre_verified _ } (Proof.Rsa.AArch64.Scrub.privatePrecomputeOk _)),
   Spec.Rsa.crtValuesApi.artifact AArch64.target (VG.AArch64.ScrubAll.withScrubAll {
     code := Impl.Rsa.AArch64.Keys.CrtValues.code
     verified := Proof.Rsa.AArch64.cv_verified } (Proof.Rsa.AArch64.Scrub.crtValuesOk _)),
