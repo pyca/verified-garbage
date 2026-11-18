@@ -12,8 +12,8 @@ meta import VerifiedGarbage.Impl.TripleDes.X86.BitsliceAlloc
 
 `batch d` (cdecl: the working space at `[esp + 4]`, the schedule at
 `[esp + 8]`): `vg_triple_des_encrypt_batch` and
-`vg_triple_des_decrypt_batch`, internal functions that take the blocks as
-the 64 state words of the working space and leave their results there.
+`vg_triple_des_decrypt_batch`, internal functions that encrypt or decrypt
+in place the 32 blocks in the working space, from its word `bufSlot` on.
 
 Constant-time Triple DES on 32 blocks at a time, bitsliced in 32-bit words
 (Biham's bitslicing; the S-box circuits are Rusakov's, `BitsliceCircuit`),
@@ -22,12 +22,13 @@ everything lives in the working space, at `ebp`, which no instruction
 between the entry and the exit writes: the circuits' inputs and spilled
 values (`spills` words), the 64 state words (`stSlot`), the round key's two
 words (`kloSlot`, `khiSlot`), its pointer (`kpSlot`), the count of pairs of
-rounds left (`cntSlot`), the schedule's address (`schedSlot`) and the
-caller's registers (`saved`).
+rounds left (`cntSlot`), the schedule's address (`schedSlot`), the
+caller's registers (`saved`) and, from word `bufSlot` on, the 32 blocks. The
+words between are the caller's.
 
 * Block `b`'s low word (its first four bytes, as a little-endian word) is
-  state word `b` and its high word state word `32 + b` on entry; each half
-  is transposed in place, so that word `j` holds bit `j` of every block
+  copied to state word `b` and its high word to state word `32 + b`; each
+  half is transposed in place, so that word `j` holds bit `j` of every block
   (`BitsliceLayout`, with 32-bit words); IP only renames words.
 * A round copies its key's two words into the working space and steps the
   key pointer. S-box `j`'s input `i` is key bit `inBit j i` as a mask (the
@@ -39,7 +40,7 @@ caller's registers (`saved`).
   (`.ab`), so no word moves; a pass of sixteen rounds, eight times both,
   ends by exchanging the halves, as DES's swap and the next pass's IP do.
 * The three passes are unrolled, each with its schedule component and key
-  direction; then the state is transposed back.
+  direction; then the state is transposed back and copied to the blocks.
 
 Every address and branch depends only on the pointers and the loop
 counters, which are in registers or in words of the working space that only
@@ -79,8 +80,16 @@ def schedSlot : Nat := 82
 /-- The registers the function saves, and their words in the working space. -/
 def saved : List (Reg × Nat) := [(.ebx, 83), (.esi, 84), (.edi, 85), (.ebp, 86)]
 
+/-- The 32 blocks: block `b`'s words are words `bufSlot + 2 b` and
+`bufSlot + 2 b + 1`. -/
+def bufSlot : Nat := 132
+
+/-- The word of the blocks that state word `j` is: block `j % 32`'s low
+word for `j < 32`, its high word otherwise. -/
+def bufWord (j : Nat) : Nat := bufSlot + 2 * (j % 32) + j / 32
+
 /-- The words of the working space. -/
-def wsWords : Nat := 87
+def wsWords : Nat := 196
 
 /-! ## S-boxes -/
 
@@ -421,22 +430,29 @@ def transpose : List Instr :=
 
 /-! ## The functions -/
 
-/-- The working space's address into `ebp`, with the caller's registers and
-the schedule's address in it. -/
+/-- The working space's address into `ebp`, with the schedule's address and
+the caller's registers in it. -/
 def enter : List Instr :=
-  ([.mov .eax (.mem { base := .esp, disp := 4 })] : List Instr) ++
-    saved.map (fun p => .store { base := .eax, disp := 4 * p.2 } p.1) ++
-    [.mov .ecx (.mem { base := .esp, disp := 8 }), .store { base := .eax, disp := 4 * schedSlot } .ecx,
-     .mov .ebp (.reg .eax)]
+  [.mov .eax (.mem { base := .esp, disp := 4 }), .mov .ecx (.mem { base := .esp, disp := 8 }),
+   .mov .edx (.reg .ebp), .mov .ebp (.reg .eax), .store (ws schedSlot) .ecx, .store (ws 83) .ebx,
+   .store (ws 84) .esi, .store (ws 85) .edi, .store (ws 86) .edx]
 
 /-- The caller's registers back, `ebp` last. -/
-def leave : List Instr :=
-  ([.mov .eax (.reg .ebp)] : List Instr) ++ saved.map fun p => .mov p.1 (.mem { base := .eax, disp := 4 * p.2 })
+def leave : List Instr := saved.map fun p => .mov p.1 (.mem (ws p.2))
 
-/-- The state words through the transposition, the three passes of the
-direction `d` and the transposition back. -/
+/-- The blocks' words to the state words. -/
+def loadState : List Instr :=
+  (List.range 64).flatMap fun j => [.mov .eax (.mem (ws (bufWord j))), .store (ws (stSlot j)) .eax]
+
+/-- The state words back to the blocks. -/
+def storeState : List Instr :=
+  (List.range 64).flatMap fun j => [.mov .eax (.mem (ws (stSlot j))), .store (ws (bufWord j)) .eax]
+
+/-- The blocks into the state words, through the transposition, the three
+passes of the direction `d` and the transposition back, and out again. -/
 def batch (d : Direction) : Prog isa :=
-  .seq (.block enter) (.seq (.block transpose) (.seq (passes d) (.seq (.block transpose) (.block leave))))
+  .seq (.block (enter ++ loadState)) (.seq (.block transpose) (.seq (passes d)
+    (.seq (.block transpose) (.block (storeState ++ leave)))))
 
 def encryptBatch : Prog isa := batch .encrypt
 def decryptBatch : Prog isa := batch .decrypt
