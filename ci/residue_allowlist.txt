@@ -254,12 +254,6 @@ aarch64 vg_ecdsa_p521_sign
 aarch64 vg_ecdsa_p521_verify
 aarch64 vg_ecdsa_secp256k1_sign
 aarch64 vg_ecdsa_secp256k1_verify
-aarch64 vg_ed25519_key_pair
-aarch64 vg_ed25519_key_pair_sha512
-aarch64 vg_ed25519_sign_expanded
-aarch64 vg_ed25519_sign_expanded_sha512
-aarch64 vg_ed25519_verify
-aarch64 vg_ed25519_verify_sha512
 aarch64 vg_ed448_public_key
 aarch64 vg_ed448_public_key_sha3
 aarch64 vg_ed448_sign_cached
