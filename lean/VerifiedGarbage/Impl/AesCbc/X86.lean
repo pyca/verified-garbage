@@ -12,7 +12,9 @@ on the stack (cdecl), composed of calls of the verified
 `vg_aes_encrypt_blocks` or `vg_aes_decrypt_blocks` on one block at a time,
 in place. They are generic over the implementation they call (`Blocks`):
 each is emitted once for each implementation (e.g.
-`vg_aes_cbc_encrypt_aesni` calls `vg_aes_encrypt_blocks_aesni`).
+`vg_aes_cbc_encrypt_aesni` calls `vg_aes_encrypt_blocks_aesni`), but
+`vg_aes_cbc_decrypt` with AES-NI, which deciphers the blocks itself, six at
+a time (`Impl/AesCbc/X86/Decrypt.lean`).
 
 They are built from AES-CMAC's pieces (`Impl/CmacAes/X86.lean`), whose
 arguments are in the same places: `setup` saves our caller's `ebx`, `esi`,
