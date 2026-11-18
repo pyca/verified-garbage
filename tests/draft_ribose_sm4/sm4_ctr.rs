@@ -1,6 +1,9 @@
 //! SM4-CTR: the CTR examples (A.2.5) of the Internet-Draft
 //! draft-ribose-cfrg-sm4-10, unmodified under vectors/, whole, in pieces,
-//! truncated, and in place in unaligned buffers.
+//! truncated, and in place in unaligned buffers; and, since neither is
+//! longer than four blocks, the increment of the counter block across its
+//! words and past `2¹²⁸` on longer messages, each block of a keystream being
+//! the one its counter block gives alone (`tests/modes.rs`).
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -32,6 +35,34 @@ fn draft_examples() {
             crate::modes::check(
                 iv,
                 io,
+                &|c| Sm4Ctr::new(&key, c),
+                Sm4Ctr::apply_keystream,
+                Sm4Ctr::apply_keystream_final,
+            );
+        }
+    }
+}
+
+/// The counter block's increment carries across its 32- and 64-bit words and
+/// wraps from `1¹²⁸` to `0¹²⁸` (`crate::modes::check_counter`), on messages
+/// of 15 and of 18 blocks (the code takes them in groups, then singly), at
+/// aligned and unaligned addresses.
+#[test]
+fn counter_carries_and_wraps() {
+    let starts: [u128; 6] = [
+        u128::MAX - 2,
+        u128::MAX,
+        (1 << 32) - 2,
+        (1 << 64) - 3,
+        (1 << 96) - 1,
+        0x0123_4567_89ab_cdef_ffff_ffff_ffff_fffe,
+    ];
+    let key: [u8; 16] = crate::bytes::pattern(16, 29, 7).try_into().unwrap();
+    for start in starts {
+        for blocks in [15, 18] {
+            crate::modes::check_counter(
+                start.to_be_bytes(),
+                blocks,
                 &|c| Sm4Ctr::new(&key, c),
                 Sm4Ctr::apply_keystream,
                 Sm4Ctr::apply_keystream_final,
