@@ -2,11 +2,9 @@ module
 
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.LitAdx
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.LitAdx
-
 import VerifiedGarbage.Proof.P384.Order
-import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Verified
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.MulBase
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Contract
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Verified
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.MulFn
 public import VerifiedGarbage.Proof.Ecdsa.Contract
 import VerifiedGarbage.Proof.P384.Prime
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
@@ -16,8 +14,7 @@ import VerifiedGarbage.Proof.P384.Point
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.LitEraseAdx
 import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Verified
-meta import VerifiedGarbage.Proof.Ecdsa.X86_64.MulBase
-meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.MulFn
 meta import VerifiedGarbage.Proof.P384.Prime
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 meta import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig

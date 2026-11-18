@@ -2,11 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.RISCV64.SignAll
 public import VerifiedGarbage.Proof.Ecdh.RISCV64.BrainpoolP384r1.Exchange
-public import VerifiedGarbage.Proof.Ecdh.RISCV64.BrainpoolP384r1.Tail
 public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP384r1.RISCV64.Ecdsa
 public import VerifiedGarbage.Spec.Ecdsa
 public import VerifiedGarbage.Proof.Ecdsa.Sign
-import VerifiedGarbage.Proof.Weierstrass.RISCV64.Gen6
+import VerifiedGarbage.Proof.Ecdsa.RISCV64.BrainpoolP384r1.MulFn
 import VerifiedGarbage.Proof.Weierstrass.RISCV64.BrainpoolP384r1Order.Lit
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 public meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint

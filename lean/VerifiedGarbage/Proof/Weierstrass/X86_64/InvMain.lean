@@ -7,8 +7,6 @@ import VerifiedGarbage.Proof.Divstep.Iter
 import Mathlib.Data.Nat.Prime.Basic
 import Mathlib.Tactic.FieldSimp
 public import VerifiedGarbage.Proof.Weierstrass.InvMask
-import VerifiedGarbage.Proof.Weierstrass.X86_64.InvRed
-import VerifiedGarbage.Proof.Weierstrass.X86_64.InvWords
 import VerifiedGarbage.Proof.Divstep.Tc
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
 import VerifiedGarbage.Proof.Mont.X86_64.Ops

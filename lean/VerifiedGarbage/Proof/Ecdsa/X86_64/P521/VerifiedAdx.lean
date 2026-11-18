@@ -1,8 +1,7 @@
 module
 
-import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Verified
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Verified
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.Layout
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Contract
 public import VerifiedGarbage.Proof.Ecdsa.Contract
 import VerifiedGarbage.Proof.P521.X86_64.TaintSumsAdx
 import VerifiedGarbage.Proof.Ecdsa.X86_64.RspMxcsr
@@ -15,7 +14,6 @@ import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.LitAdx
 import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.Layout
-meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Contract
 meta import VerifiedGarbage.Proof.P521.X86_64.TaintSumsAdx
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.RspMxcsr
 meta import VerifiedGarbage.Proof.P521.Prime

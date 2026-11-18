@@ -14,14 +14,13 @@ import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Setup
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Flags
 public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.SlotOps
 import VerifiedGarbage.Proof.Weierstrass.PPC64LE.BytesLen
-import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Keep
+import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Pow
 import VerifiedGarbage.Proof.Weierstrass.BytesLen
 import VerifiedGarbage.Proof.Weierstrass.Words
 import VerifiedGarbage.Proof.Mont.PPC64LE.Step
 import VerifiedGarbage.Proof.Mont.PPC64LE.Row
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Weierstrass.PPC64LE.PointFprog
 import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Copy
 public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Layout
 

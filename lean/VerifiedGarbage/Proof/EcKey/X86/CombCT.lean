@@ -1,11 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.EcKey.X86.Main
+public import VerifiedGarbage.Proof.EcKey.X86.CombMain
 public import VerifiedGarbage.Proof.Ecdsa.X86.CombTaint
 public import VerifiedGarbage.Proof.Ecdsa.X86.CombLays
-public import VerifiedGarbage.Proof.Ecdsa.X86.CombPrefix
 public import VerifiedGarbage.Proof.Ecdsa.X86.CombFunctionCT
-import VerifiedGarbage.Proof.EcKey.X86.CombMain
 import VerifiedGarbage.Proof.Ecdsa.X86.CombMain
 
 /-!

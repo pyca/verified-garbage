@@ -9,7 +9,7 @@ public import VerifiedGarbage.Impl.EcKey.Compressed.Root
 public import VerifiedGarbage.Spec.EcKey.Compressed
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.Layout
 import VerifiedGarbage.Proof.EcKey.X86_64.Main
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Finish
+import VerifiedGarbage.Proof.Ecdsa.X86_64.Scalar
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Inline
 import VerifiedGarbage.Proof.Weierstrass.Words
@@ -17,7 +17,6 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 import VerifiedGarbage.Proof.EcKey.Compressed.Decode
 import VerifiedGarbage.Proof.EcKey.Validate.X86_64.Front
 import VerifiedGarbage.Proof.Ecdsa.X86_64.SharedSlots
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Scalar
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Stages
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Unch
 import VerifiedGarbage.Proof.Ecdh.X86_64.Peer

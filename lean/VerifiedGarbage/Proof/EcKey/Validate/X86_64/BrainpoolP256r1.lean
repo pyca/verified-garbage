@@ -7,7 +7,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Proof.EcKey.X86_64.Scrub.Out
 meta import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
 meta import VerifiedGarbage.Proof.Framework.Registration
-import VerifiedGarbage.Proof.EcKey.Validate.X86_64.Main
+public import VerifiedGarbage.Proof.EcKey.Validate.X86_64.Main
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP256r1.InverseVerified
 public import VerifiedGarbage.Spec.EcKey.BrainpoolP256r1
 import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP256r1.InverseLit
@@ -21,8 +21,7 @@ meta import VerifiedGarbage.Impl.EcKey.Validate.X86_64
 meta import VerifiedGarbage.Impl.Ecdsa.BrainpoolP256r1.X86_64
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP256r1.InverseVerified
 public import VerifiedGarbage.Impl.EcKey.Validate.X86_64
-public import VerifiedGarbage.Proof.EcKey.Validate.X86_64.Contract
-meta import VerifiedGarbage.Proof.EcKey.Validate.X86_64.Contract
+meta import VerifiedGarbage.Proof.EcKey.Validate.X86_64.Main
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInline

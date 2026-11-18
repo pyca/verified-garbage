@@ -7,7 +7,7 @@ public import VerifiedGarbage.Proof.Weierstrass.RISCV64.Copy
 public import VerifiedGarbage.Proof.Weierstrass.Unch
 public import VerifiedGarbage.Proof.Weierstrass.Env
 import VerifiedGarbage.Proof.Ecdh.RISCV64.P224.Check
-import VerifiedGarbage.Proof.Ecdh.RISCV64.Masks
+import VerifiedGarbage.Proof.Ecdh.RISCV64.Bytes
 import VerifiedGarbage.Proof.Weierstrass.Words
 import VerifiedGarbage.Proof.Weierstrass.Law
 import VerifiedGarbage.Proof.Weierstrass.RootTable

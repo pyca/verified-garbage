@@ -43,8 +43,7 @@ import VerifiedGarbage.Proof.Weierstrass.Words
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Bits
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
 import VerifiedGarbage.Proof.Weierstrass.X86_64.InvPacked
-import VerifiedGarbage.Proof.Weierstrass.X86_64.InvRed
-import VerifiedGarbage.Proof.Weierstrass.X86_64.InvWords
+import VerifiedGarbage.Proof.Weierstrass.X86_64.InvBatch
 import VerifiedGarbage.Proof.Weierstrass.X86_64.MontWide8
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Unch
 

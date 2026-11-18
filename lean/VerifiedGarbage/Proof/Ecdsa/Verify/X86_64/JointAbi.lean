@@ -1,32 +1,29 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.GContract
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointContract
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Impl.Ecdsa.Verify.P256.X86_64.Joint
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
 public import VerifiedGarbage.Proof.Weierstrass.CombW
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 public import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
-
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointErased
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointContract
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointLit
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.LitShare
 import VerifiedGarbage.Impl.P256.X86_64.Joint
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointFrame
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointMain
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointChecks
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Main
 import VerifiedGarbage.Proof.Ecdsa.X86_64.VerifiedAdx
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
-import VerifiedGarbage.Proof.P256.X86_64.JointInitLayout
 import VerifiedGarbage.Proof.P256.X86_64.JointPrep
 import VerifiedGarbage.Proof.P256.X86_64.JointLayout
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
+
 /-! The joint verifier restores registers and keeps the caller's return address. -/
 
 -- Formerly `VerifiedGarbage/Proof/P256/X86_64/JointFrame.lean`, which only this module imported.

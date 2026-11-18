@@ -4,7 +4,7 @@ public import VerifiedGarbage.Impl.Weierstrass.X86_64.DoubleCms
 public import VerifiedGarbage.Proof.Weierstrass.Cms
 public import VerifiedGarbage.Impl.Mont.X86_64.Cms
 import VerifiedGarbage.Proof.Mont.X86_64.MulS
-public import VerifiedGarbage.Proof.Mont.X86_64.OpsReg
+public import VerifiedGarbage.Proof.Mont.X86_64.MulP
 import VerifiedGarbage.Proof.Mont.X86_64.CsubS
 import VerifiedGarbage.Proof.Mont.X86_64.Chain
 import VerifiedGarbage.Proof.Mont.X86_64.Rounds

@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
 import VerifiedGarbage.Proof.Mont.X86_64.Ops
 import VerifiedGarbage.Proof.Weierstrass.WinJacMath
 import VerifiedGarbage.Proof.Framework.Block
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacLay
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelect
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelectY
 import VerifiedGarbage.Proof.Mont.Words128

@@ -13,7 +13,6 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
 public import VerifiedGarbage.Impl.Ecdsa.Verify.P256.X86_64.Joint
 public import VerifiedGarbage.Proof.Weierstrass.CombW
 public import VerifiedGarbage.TCB.X86_64.Target
-
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointAbi
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointErased
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
@@ -26,7 +25,6 @@ import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointContract
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Ecdsa.X86_64.VerifiedAdx
-import VerifiedGarbage.Proof.P256.X86_64.JointInitLayout
 import VerifiedGarbage.Proof.P256.X86_64.JointPrep
 import VerifiedGarbage.Proof.P256.X86_64.JointLayout
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
@@ -47,10 +45,10 @@ meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointChecks
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.LitErase
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointContract
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.VerifiedAdx
-meta import VerifiedGarbage.Proof.P256.X86_64.JointInitLayout
 meta import VerifiedGarbage.Proof.P256.X86_64.JointPrep
 meta import VerifiedGarbage.Proof.P256.X86_64.JointLayout
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
+
 /-! The joint implementation satisfies the unchanged shared verification contract. -/
 
 -- Formerly `VerifiedGarbage/Proof/Ecdsa/Verify/X86_64/JointCT.lean`, which only this module imported.

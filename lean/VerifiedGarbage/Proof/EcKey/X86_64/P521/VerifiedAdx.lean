@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.P521.X86_64.TaintSumsAdx
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 import VerifiedGarbage.Proof.EcKey.X86_64.P521.LitAdx
 public import VerifiedGarbage.Impl.EcKey.P521.X86_64
-public import VerifiedGarbage.Proof.EcKey.X86_64.P521.Contract
+public import VerifiedGarbage.Proof.EcKey.X86_64.P521.Verified
 import VerifiedGarbage.Proof.Framework.LitShare
 public import VerifiedGarbage.Proof.EcKey.X86_64.Main
 import VerifiedGarbage.Proof.EcKey.X86_64.P521.Lit
@@ -21,13 +21,11 @@ meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 meta import VerifiedGarbage.Proof.EcKey.X86_64.P521.LitAdx
 meta import VerifiedGarbage.Proof.EcKey.X86_64.P521.Verified
 meta import VerifiedGarbage.Impl.EcKey.P521.X86_64
-meta import VerifiedGarbage.Proof.EcKey.X86_64.P521.Contract
 meta import VerifiedGarbage.Proof.Framework.LitShare
 meta import VerifiedGarbage.Proof.EcKey.X86_64.Main
 meta import VerifiedGarbage.Proof.EcKey.X86_64.P521.Lit
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.LitAdx
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
-public import VerifiedGarbage.Proof.EcKey.X86_64.P521.Verified
 
 /-!
 # P-521 public keys on x86-64 with BMI2 and ADX: `Verified`

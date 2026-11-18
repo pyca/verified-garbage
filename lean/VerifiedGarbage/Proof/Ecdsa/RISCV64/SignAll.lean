@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Ecdh.RISCV64.ExchangeAll
 public import VerifiedGarbage.Impl.Ecdsa.RISCV64.Sign
 public import VerifiedGarbage.Spec.Ecdsa
 import VerifiedGarbage.Proof.Ecdsa.Sign
-import VerifiedGarbage.Proof.Ecdh.RISCV64.Masks
+import VerifiedGarbage.Proof.Ecdh.RISCV64.Bytes
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec

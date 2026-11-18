@@ -2,8 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointLayout
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.ProjectiveFlags
-
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Main
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointPrep
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointFixedBridge
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointFixedTable

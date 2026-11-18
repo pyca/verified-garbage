@@ -15,7 +15,6 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.VerifiedAdx
 import VerifiedGarbage.Proof.Ecdh.X86_64.MulJ4
-import VerifiedGarbage.Proof.Ecdh.X86_64.P521.MulF
 import VerifiedGarbage.Proof.Ecdh.X86_64.P521.FastAdx
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
@@ -24,7 +23,7 @@ import VerifiedGarbage.Proof.P521.X86_64.TaintSumsWinAdx
 public import VerifiedGarbage.Impl.Ecdh.P521.X86_64
 import VerifiedGarbage.Proof.Ecdh.X86_64.P521.Lit
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.LitAdx
-import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJStep
+import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJLoop
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.P521.Verified
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.Main
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.P521.Contract
@@ -32,7 +31,6 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
 meta import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.VerifiedAdx
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.MulJ4
-meta import VerifiedGarbage.Proof.Ecdh.X86_64.P521.MulF
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.P521.FastAdx
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 meta import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
@@ -41,7 +39,7 @@ meta import VerifiedGarbage.Proof.P521.X86_64.TaintSumsWinAdx
 meta import VerifiedGarbage.Impl.Ecdh.P521.X86_64
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.P521.Lit
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.LitAdx
-meta import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJStep
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJLoop
 public import VerifiedGarbage.Proof.P521.X86_64.TaintSumsWin
 
 /-!

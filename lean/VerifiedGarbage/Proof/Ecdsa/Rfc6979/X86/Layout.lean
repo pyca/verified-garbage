@@ -25,7 +25,7 @@ section
 /-!
 # Tables of the interface `Hmac` on x86 (32-bit)
 
-As on x86-64 (`Proof/HmacTable/X86_64.lean`), with the hash functions as
+As on x86-64 (`Proof/Ecdsa/Rfc6979/X86_64/Regs.lean`), with the hash functions as
 PBKDF2 on x86 has them (`Proof.Pbkdf2.Whole.X86.FnsOK`), each with the
 suffix and the CPU features of its variant (`HVar`): MD5, SHA-1 with each of
 its backends, SHA-224 and SHA-256 with each of theirs, and the SHA-512

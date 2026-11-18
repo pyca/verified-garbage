@@ -46,7 +46,7 @@ public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 public import VerifiedGarbage.Proof.Mont.Words
 public import VerifiedGarbage.Proof.Mont.X86_64.Csub
-public import VerifiedGarbage.Proof.Mont.X86_64.OpsReg
+public import VerifiedGarbage.Proof.Mont.X86_64.MulP
 public import VerifiedGarbage.Proof.Mont.X86_64.Words
 public import VerifiedGarbage.Proof.Weierstrass.Booth
 public import VerifiedGarbage.Proof.Weierstrass.Env

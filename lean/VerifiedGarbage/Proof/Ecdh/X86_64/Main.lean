@@ -4,10 +4,9 @@ import VerifiedGarbage.Proof.Ecdh.X86_64.Check
 public import VerifiedGarbage.Proof.Ecdh.X86_64.MulOk
 public import VerifiedGarbage.Proof.Ecdh.Exchange
 public import VerifiedGarbage.Proof.Ecdh.X86_64.Validate
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Finish
+import VerifiedGarbage.Proof.Ecdsa.X86_64.Scalar
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Stages
 import VerifiedGarbage.Proof.Ecdh.X86_64.Peer
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Scalar
 import VerifiedGarbage.Proof.Ecdsa.X86_64.SharedSlots
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Unch
 import VerifiedGarbage.Proof.EcKey.PublicKey

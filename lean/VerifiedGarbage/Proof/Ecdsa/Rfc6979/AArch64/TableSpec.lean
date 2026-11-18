@@ -10,7 +10,7 @@ meta import VerifiedGarbage.Proof.Framework.Sig
 /-!
 # Deterministic ECDSA on AArch64: the contract with the hash function as a table
 
-As on x86-64 (`Proof/Ecdsa/Rfc6979/X86_64/TableSpec.lean`):
+As on x86-64 (`Proof/Ecdsa/Rfc6979/X86_64/TableSat.lean`):
 `TableInstance.signContract`, with the tables of `vs` for `hmac`, the
 curve's comb tables and `stackT` bytes of stack, implies `tabK`
 (`tab_implies`): the table `hmac` points to is one of `vs`', whose words

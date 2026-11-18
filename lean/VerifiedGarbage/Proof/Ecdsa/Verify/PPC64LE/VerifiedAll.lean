@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Ecdsa.PPC64LE.CombAll
 import VerifiedGarbage.Proof.Ecdh.PPC64LE.VerifiedAll
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Stages
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.LadPow
-import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Keep
+import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Pow
 import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 import VerifiedGarbage.Proof.Ecdh.PPC64LE.Main
 import VerifiedGarbage.Proof.Framework.Omega

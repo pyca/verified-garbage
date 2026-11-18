@@ -1,9 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.Ecdh.X86_64
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Finish
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.Fixed
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Scalar
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.Fixed
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
 import VerifiedGarbage.Proof.Mont.X86_64.CsubS
 import VerifiedGarbage.Proof.Framework.Offset

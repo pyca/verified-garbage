@@ -2,10 +2,9 @@ module
 
 public import VerifiedGarbage.Impl.Ecdsa.P521.Arm
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Layout
-public import VerifiedGarbage.Proof.Ecdsa.Arm.P521.Contract
+public import VerifiedGarbage.Proof.Ecdsa.Arm.P521.Verified
 import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 public import VerifiedGarbage.Proof.Weierstrass.Law
-import VerifiedGarbage.Proof.Ecdsa.Arm.P521.Verified
 import VerifiedGarbage.Proof.Ecdsa.Arm.P521.UmaalLit
 import VerifiedGarbage.Proof.P521.Point
 import VerifiedGarbage.Proof.Weierstrass.Arm.MontModuli

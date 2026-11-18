@@ -1,8 +1,7 @@
 module
 
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Finish
-import VerifiedGarbage.Proof.Ecdh.X86_64.Peer
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Scalar
+import VerifiedGarbage.Proof.Ecdh.X86_64.Peer
 import VerifiedGarbage.Proof.Ecdsa.X86_64.SharedSlots
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Unch
 import VerifiedGarbage.Proof.Mont.X86_64.Ops
@@ -11,7 +10,6 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Scalars
 public import VerifiedGarbage.Proof.Ecdh.X86_64.Window
 import VerifiedGarbage.Proof.Ecdsa.X86_64.MulFn
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Fixed
-import VerifiedGarbage.Proof.Ecdsa.X86_64.MulBase
 import VerifiedGarbage.Proof.Ecdsa.X86_64.CombLays
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
 import VerifiedGarbage.Proof.Weierstrass.JacMadd

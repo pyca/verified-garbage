@@ -4,24 +4,97 @@ public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.TableSat
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.TableSat
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
 meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
-public import VerifiedGarbage.Proof.BrainpoolP512r1.Arm.Comb
+public import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP512r1.CombGenerator
 import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.BrainpoolP512r1
 public import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP512r1.Comb
 import VerifiedGarbage.Proof.Ecdsa.Arm.SavedAbi
 import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP512r1.CombLit
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Impl.Ecdsa.BrainpoolP512r1.ArmComb
-meta import VerifiedGarbage.Proof.BrainpoolP512r1.Arm.Comb
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP512r1.CombGenerator
 meta import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.BrainpoolP512r1
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP512r1.Comb
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.SavedAbi
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP512r1.CombLit
 meta import VerifiedGarbage.Proof.Framework.PlainSimp
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Impl.Ecdsa.BrainpoolP512r1.ArmComb
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Curve
+public import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP512r1.Verified
+public import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP512r1.Config
+import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP512r1.Lit
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Weierstrass.Arm.LadderP
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Curve
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP512r1.Verified
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP512r1.Config
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP512r1.Lit
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Weierstrass.Arm.LadderP
+
+/-! ### `Ecdsa.Rfc6979.Arm.BrainpoolP512r1`, which only this module used -/
+
+section
+
+/-!
+# Deterministic ECDSA on 32-bit ARM: brainpoolP512r1
+
+brainpoolP512r1 as the proof's curve (`brainpoolp512r1`): scalars of 8 64-bit words, the order
+`n` of exactly 512 bits with `2^512 < 2 n`, and `vg_ecdsa_brainpoolp512r1_sign_k`, proven
+correct (given the group law) and constant time against its contract
+(`coreK` at brainpoolP512r1's sizes, which is `Proof.Ecdsa.Arm.BrainpoolP512r1.signArm`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ecdsa.Rfc6979.Arm
+
+open VG VG.Arm
+
+theorem brainpoolp512r1_nBits : Spec.Ecdsa.nBits Spec.BrainpoolP512r1.curve = 512 := by
+  show Spec.BrainpoolP512r1.curve.n.log2 + 1 = 512
+  have h₁ : 511 ≤ Spec.BrainpoolP512r1.curve.n.log2 := (Nat.le_log2 (by decide +kernel)).mpr (by decide +kernel)
+  have h₂ : Spec.BrainpoolP512r1.curve.n.log2 < 512 := (Nat.log2_lt (by decide +kernel)).mpr (by decide +kernel)
+  omega_using [h₁, h₂]
+
+/-- brainpoolP512r1, with the group law `hL`. -/
+def brainpoolp512r1 (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) : RfcCurve where
+  E := Impl.Ecdsa.Arm.brainpoolp512r1
+  inst := Spec.Ecdsa.BrainpoolP512r1.inst
+  curve := rfl
+  big := false
+  sizes := ⟨.inr (.inr (.inr rfl)), .inl rfl, brainpoolp512r1_nBits, by decide +kernel⟩
+  n_lt := by decide +kernel
+  sh := 0
+  sh_eq := Proof.Ecdsa.Arm.BrainpoolP512r1.brainpoolp512r1_sh
+  coreN := "vg_ecdsa_brainpoolp512r1_sign_k"
+  coreC := Impl.Ecdsa.Arm.signBrainpoolP512r1
+  coreConsts := []
+  coreX := by
+    intro s hs
+    have pre : Proof.Ecdsa.Arm.BrainpoolP512r1.signArm.pre s := by
+      simpa only [coreK,TablesOk,Impl.Ecdsa.Arm.brainpoolp512r1,Impl.Ecdsa.Arm.brainpoolp512r1With,Spec.BrainpoolP512r1.curve,Nat.reduceMul,List.not_mem_nil,forall_const,
+        false_implies,implies_true,and_true,Abi.constRegions,List.map_nil,List.append_nil,Proof.Ecdsa.Arm.BrainpoolP512r1.signArm] using hs
+    obtain ⟨tr,t,exec,abi,post⟩ := Proof.Ecdsa.Arm.BrainpoolP512r1.sign_arm hL s pre
+    refine ⟨tr,t,exec,abi,?_⟩
+    change Proof.Ecdsa.Arm.BrainpoolP512r1.signArm.post s t
+    exact post
+  coreCT := by
+    simpa only [coreK,coreSigOf,Spec.BrainpoolP512r1.curve,Nat.reduceMul,Impl.Ecdsa.Arm.brainpoolp512r1,Impl.Ecdsa.Arm.brainpoolp512r1With,Proof.Ecdsa.Arm.BrainpoolP512r1.sig,TablesOk,List.not_mem_nil,forall_const,false_implies,implies_true,and_true,Abi.constRegions,List.map_nil,List.append_nil,
+      Proof.Ecdsa.Arm.BrainpoolP512r1.signArm] using Proof.Ecdsa.Arm.BrainpoolP512r1.sign_ct
+  coreStack := by lit_decide
+  blk := by rfcT_decide
+
+end VG.Proof.Ecdsa.Rfc6979.Arm
+
+end
+
+end
 
 /-! Deterministic brainpoolP512r1 signing through the generator comb: the comb
 signer as RFC 6979's core (`brainpoolp512r1CombCurve`), and the contract with its table. -/

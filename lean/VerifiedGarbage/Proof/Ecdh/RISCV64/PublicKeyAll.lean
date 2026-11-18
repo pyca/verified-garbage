@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ecdh.RISCV64.ExchangeAll
 public import VerifiedGarbage.Spec.EcKey
-import VerifiedGarbage.Proof.Ecdh.RISCV64.Masks
+import VerifiedGarbage.Proof.Ecdh.RISCV64.Bytes
 import VerifiedGarbage.Proof.EcKey.PublicKey
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset

@@ -1,12 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.DecompressContract
+public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.DecompressFront
 import VerifiedGarbage.Proof.Weierstrass.Words
 import VerifiedGarbage.Proof.EcKey.Compressed.Decode
 public import VerifiedGarbage.Impl.EcKey.Compressed.Arm.Decompress
 import VerifiedGarbage.Proof.EcKey.Arm.Finish
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Layout
-public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.DecompressFront
 import VerifiedGarbage.Proof.EcKey.Compressed.Arm.Frame
 public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.Candidate
 import VerifiedGarbage.Proof.Ecdsa.Arm.SlotOps
@@ -16,7 +15,7 @@ import VerifiedGarbage.Proof.Weierstrass.Arm.Copy
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Main
 import VerifiedGarbage.Proof.Ecdsa.Arm.Fixed
 import VerifiedGarbage.Proof.Ecdsa.Arm.Lays
-import VerifiedGarbage.Proof.Weierstrass.Arm.Fprog
+import VerifiedGarbage.Proof.Weierstrass.Arm.Bits
 import VerifiedGarbage.Proof.Ecdh.Arm.Peer
 import VerifiedGarbage.Proof.Ecdsa.Arm.Scalar
 public import VerifiedGarbage.Proof.Mont.Words

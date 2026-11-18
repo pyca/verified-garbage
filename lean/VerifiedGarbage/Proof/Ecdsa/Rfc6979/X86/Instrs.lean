@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Curve
 /-!
 # Deterministic ECDSA on x86 (32-bit): no instruction writes `esp`
 
-As on x86-64 (`Proof/Ecdsa/Rfc6979/X86_64/Instrs.lean`): for code `c`
+As on x86-64 (`Proof/Ecdsa/Rfc6979/X86_64/Table.lean`): for code `c`
 (`Impl.Ecdsa.Rfc6979.X86.Cfg`) whose blocks of the curve write no `esp`
 (`RfcT`, which each curve's file checks), whose table's functions write
 none (`FnsOk`) and whose `core` writes none: the frame's body (`body_okP`),

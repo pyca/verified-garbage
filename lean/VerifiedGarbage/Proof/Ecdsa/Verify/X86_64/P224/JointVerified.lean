@@ -6,47 +6,41 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Hash
 import VerifiedGarbage.Proof.Ecdsa.Verify.Curves
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Hash
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.Curves
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P224.Contract
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P224.JointCT
 public import VerifiedGarbage.Impl.Ecdsa.Verify.P224.X86_64
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
 public import VerifiedGarbage.Proof.Weierstrass.CombW
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
-
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P224.JointErased
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P224.JointCT
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P224.JointLit
 import Batteries.Data.List.Lemmas
 import VerifiedGarbage.Proof.Framework.LitShare
 import VerifiedGarbage.Impl.P224.X86_64.Joint
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointFrame
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointMain
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P224.JointChecks
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Main
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P224.JointContract
 import VerifiedGarbage.Proof.P224.X86_64.JointLayout
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P224.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P224.JointCT
 meta import VerifiedGarbage.Impl.Ecdsa.Verify.P224.X86_64
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
 meta import VerifiedGarbage.Proof.Weierstrass.CombW
 meta import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P224.JointErased
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P224.JointCT
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P224.JointLit
 meta import Batteries.Data.List.Lemmas
 meta import VerifiedGarbage.Proof.Framework.LitShare
 meta import VerifiedGarbage.Impl.P224.X86_64.Joint
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointFrame
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointMain
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P224.JointChecks
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Main
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P224.JointContract
 meta import VerifiedGarbage.Proof.P224.X86_64.JointLayout
+
 /-!
 # ECDSA verification over P-224 on x86-64: `Verified`
 

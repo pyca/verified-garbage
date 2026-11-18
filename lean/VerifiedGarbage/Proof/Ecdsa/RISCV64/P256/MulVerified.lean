@@ -23,7 +23,7 @@ meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 
 The facts of `Impl.Weierstrass.Mul.Curve.mulInRangeContract` for P-256 on
 RISC-V, by register (`mulRVc`: `ws` in `a0`), which the windowed
-`vg_p256_mul` meets (`Proof/Ecdsa/RISCV64/P256/Window.lean`), and a state
+`vg_p256_mul` meets (`Proof/Ecdh/RISCV64/P256/Tail.lean`), and a state
 satisfying the precondition (`satState`: the constants and `G` in
 Montgomery's form at their slots).
 -/

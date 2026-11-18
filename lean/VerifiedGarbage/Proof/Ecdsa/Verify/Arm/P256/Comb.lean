@@ -13,9 +13,8 @@ meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Proof.Framework.Taint
 public import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
 public import VerifiedGarbage.Spec.Ecdsa.P256
-public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Front
-public import VerifiedGarbage.Impl.Ecdsa.P256.ArmComb
 public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Main
+public import VerifiedGarbage.Impl.Ecdsa.P256.ArmComb
 public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.CT
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.CT
 import VerifiedGarbage.Proof.Framework.Lit
@@ -26,12 +25,11 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.StackScratchConsts
 public import VerifiedGarbage.Proof.Weierstrass.Law
 import VerifiedGarbage.Proof.Ecdsa.Arm.Verified
-import VerifiedGarbage.Proof.Ecdsa.Arm.P256.CombGenerator
+public import VerifiedGarbage.Proof.Ecdsa.Arm.P256.CombGenerator
 import VerifiedGarbage.Proof.Ecdsa.Arm.P256.CombLit
 import VerifiedGarbage.Proof.Ecdsa.Arm.SavedAbi
-public import VerifiedGarbage.Proof.P256.Arm.Comb
 import VerifiedGarbage.Proof.Weierstrass.Arm.TCombConsts
-import VerifiedGarbage.Proof.Weierstrass.Arm.TCombScan
+import VerifiedGarbage.Proof.Weierstrass.Arm.TCombConfig
 import VerifiedGarbage.Proof.Framework.Arm.Syms
 import VerifiedGarbage.Proof.Framework.Arm.TaintSym
 import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
@@ -48,7 +46,6 @@ meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
 meta import VerifiedGarbage.Proof.Framework.Taint
 meta import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
 meta import VerifiedGarbage.Spec.Ecdsa.P256
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Front
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Main
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchConsts
@@ -56,9 +53,8 @@ meta import VerifiedGarbage.Proof.Weierstrass.Law
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.P256.CombGenerator
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.SavedAbi
-meta import VerifiedGarbage.Proof.P256.Arm.Comb
 meta import VerifiedGarbage.Proof.Weierstrass.Arm.TCombConsts
-meta import VerifiedGarbage.Proof.Weierstrass.Arm.TCombScan
+meta import VerifiedGarbage.Proof.Weierstrass.Arm.TCombConfig
 meta import VerifiedGarbage.Proof.Framework.Arm.Syms
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.P256.Umaal
 meta import VerifiedGarbage.Proof.Framework.Contract

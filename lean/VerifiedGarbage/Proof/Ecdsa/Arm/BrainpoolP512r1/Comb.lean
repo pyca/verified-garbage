@@ -6,16 +6,14 @@ public import VerifiedGarbage.Impl.NatPairs
 public import VerifiedGarbage.Spec.Ecdsa.BrainpoolP512r1
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Layout
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Main
-public import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP512r1.Contract
+public import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP512r1.Verified
 public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP512r1.ArmComb
 public import VerifiedGarbage.Proof.Framework.Arm.StackScratchConsts
 public import VerifiedGarbage.Proof.Weierstrass.Law
-import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP512r1.Verified
 import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP512r1.Config
-import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP512r1.CombGenerator
+public import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP512r1.CombGenerator
 import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP512r1.CombLit
 import VerifiedGarbage.Proof.Ecdsa.Arm.SavedAbi
-public import VerifiedGarbage.Proof.BrainpoolP512r1.Arm.Comb
 public import VerifiedGarbage.Proof.Ecdsa.Contract
 import VerifiedGarbage.Proof.Weierstrass.Arm.TCombConsts
 import VerifiedGarbage.Proof.Framework.Arm.TaintSym

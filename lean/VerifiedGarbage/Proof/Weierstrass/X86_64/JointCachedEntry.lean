@@ -16,7 +16,7 @@ public import VerifiedGarbage.Impl.Weierstrass.Slots
 public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Mont.X86_64.MulPX
-public import VerifiedGarbage.Proof.Mont.X86_64.OpsReg
+public import VerifiedGarbage.Proof.Mont.X86_64.MulP
 public import VerifiedGarbage.Proof.Weierstrass.Env
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.Fprog
 public import VerifiedGarbage.Proof.X25519.X86_64.Step

@@ -1,6 +1,5 @@
 module
 
-import VerifiedGarbage.Proof.Weierstrass.X86.MontBrainpoolP384r1
 import VerifiedGarbage.Proof.Ecdsa.X86.Main
 public import VerifiedGarbage.Proof.Ecdsa.X86.Layout
 public import VerifiedGarbage.Proof.Framework.X86.NativeHintData
@@ -12,7 +11,6 @@ import VerifiedGarbage.Proof.Framework.NativeTaintCore
 public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP384r1.X86
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Weierstrass.X86.MontBrainpoolP384r1
 meta import VerifiedGarbage.Proof.Ecdsa.X86.Main
 meta import VerifiedGarbage.Proof.Ecdsa.X86.Layout
 meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
@@ -28,6 +26,53 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Ecdsa.Contract
+import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.BrainpoolP384r1
+public import VerifiedGarbage.Proof.Weierstrass.X86.MontContract
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P224
+meta import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.BrainpoolP384r1
+meta import VerifiedGarbage.Proof.Weierstrass.X86.MontContract
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P224
+
+/-! ### `Weierstrass.X86.MontBrainpoolP384r1`, which only this module used -/
+
+section
+
+/-!
+# Montgomery arithmetic modulo brainpoolP384r1's `p` and `n`, as functions, on x86 (32-bit): verified
+
+brainpoolP384r1's moduli, in six 64-bit words, are ones the functions support
+(`FnOk`), so each of their functions meets the contract of its `Api`, as the
+other curves' do (`MontVerified.lean`). Apart from the other curves', so
+that adding them rebuilds none of their proofs.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Weierstrass.X86.Mont
+
+open VG VG.X86 VG.Impl.Weierstrass.X86.Mont Impl.Weierstrass.Mont
+
+theorem brainpoolp384r1p_ok : FnOk brainpoolp384r1p where
+  mul := ⟨by decide, by decide +kernel, by decide +kernel⟩
+  k9 := by decide
+  nsMul := NoSp.of_all (by lit_decide)
+  nsAdd := NoSp.of_all (by lit_decide)
+  nsSub := NoSp.of_all (by lit_decide)
+
+theorem brainpoolp384r1n_ok : FnOk brainpoolp384r1n where
+  mul := ⟨by decide, by decide +kernel, by decide +kernel⟩
+  k9 := by decide
+  nsMul := NoSp.of_all (by lit_decide)
+  nsAdd := NoSp.of_all (by lit_decide)
+  nsSub := NoSp.of_all (by lit_decide)
+
+end VG.Proof.Weierstrass.X86.Mont
+
+end
+
+end
 
 /-!
 # ECDSA over brainpoolP384r1 on x86 (32-bit): the curve

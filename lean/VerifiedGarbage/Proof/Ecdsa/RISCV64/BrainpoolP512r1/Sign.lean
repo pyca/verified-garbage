@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.RISCV64.SignAll
 public import VerifiedGarbage.Proof.Ecdh.RISCV64.BrainpoolP512r1.Exchange
-public import VerifiedGarbage.Proof.Ecdh.RISCV64.BrainpoolP512r1.Tail
 public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP512r1.RISCV64.Ecdsa
 public import VerifiedGarbage.Spec.Ecdsa
 public import VerifiedGarbage.Proof.Ecdsa.Sign

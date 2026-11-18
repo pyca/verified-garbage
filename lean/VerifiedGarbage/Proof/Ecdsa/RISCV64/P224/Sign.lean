@@ -8,7 +8,7 @@ public import VerifiedGarbage.Proof.Ecdsa.RISCV64.P224.CombVerified
 public import VerifiedGarbage.Proof.Framework.RISCV64.Consts
 public import VerifiedGarbage.Spec.Ecdsa
 public import VerifiedGarbage.Proof.Ecdsa.Sign
-import VerifiedGarbage.Proof.Weierstrass.RISCV64.P224Field.Verified
+import VerifiedGarbage.Proof.Ecdsa.RISCV64.P224.MulFn
 import VerifiedGarbage.Proof.Weierstrass.RISCV64.P224Field.Lit
 
 /-!

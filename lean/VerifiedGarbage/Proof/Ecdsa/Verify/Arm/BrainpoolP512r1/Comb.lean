@@ -15,9 +15,8 @@ meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Proof.Framework.Taint
 public import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
 public import VerifiedGarbage.Spec.Ecdsa.BrainpoolP512r1
-public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Front
-public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP512r1.ArmComb
 public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Main
+public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP512r1.ArmComb
 public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.CT
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.CT
 import VerifiedGarbage.Proof.Framework.Lit
@@ -29,12 +28,11 @@ public import VerifiedGarbage.Proof.Framework.Arm.StackScratchConsts
 public import VerifiedGarbage.Proof.Weierstrass.Law
 import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP512r1.Verified
 import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP512r1.Config
-import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP512r1.CombGenerator
+public import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP512r1.CombGenerator
 import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP512r1.CombLit
 import VerifiedGarbage.Proof.Ecdsa.Arm.SavedAbi
-public import VerifiedGarbage.Proof.BrainpoolP512r1.Arm.Comb
 import VerifiedGarbage.Proof.Weierstrass.Arm.TCombConsts
-import VerifiedGarbage.Proof.Weierstrass.Arm.TCombScan
+import VerifiedGarbage.Proof.Weierstrass.Arm.TCombConfig
 import VerifiedGarbage.Proof.Framework.Arm.TaintSym
 import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
@@ -49,7 +47,6 @@ meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
 meta import VerifiedGarbage.Proof.Framework.Taint
 meta import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
 meta import VerifiedGarbage.Spec.Ecdsa.BrainpoolP512r1
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Front
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Main
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.BrainpoolP512r1.Contract
 meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchConsts
@@ -57,9 +54,8 @@ meta import VerifiedGarbage.Proof.Weierstrass.Law
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP512r1.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP512r1.CombGenerator
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.SavedAbi
-meta import VerifiedGarbage.Proof.BrainpoolP512r1.Arm.Comb
 meta import VerifiedGarbage.Proof.Weierstrass.Arm.TCombConsts
-meta import VerifiedGarbage.Proof.Weierstrass.Arm.TCombScan
+meta import VerifiedGarbage.Proof.Weierstrass.Arm.TCombConfig
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.PlainSimp
 

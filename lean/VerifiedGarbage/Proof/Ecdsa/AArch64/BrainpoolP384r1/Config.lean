@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP384r1.AArch64
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Layout
-import VerifiedGarbage.Proof.Weierstrass.AArch64.MontBrainpoolP384r1
 import VerifiedGarbage.Proof.BrainpoolP384r1.Point
 import VerifiedGarbage.Proof.BrainpoolP384r1.Prime
 import VerifiedGarbage.Proof.Weierstrass.AArch64.BrainpoolP384r1Literals
@@ -11,6 +10,44 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Proof.Weierstrass.CombLay
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFnG
+import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+public meta import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFnG
+
+/-! ### `Weierstrass.AArch64.MontBrainpoolP384r1`, which only this module used -/
+
+section
+
+/-! # Shared BrainpoolP384r1 Montgomery multiplication on AArch64 -/
+
+@[expose] public section
+namespace VG.Proof.Weierstrass.AArch64.Mont
+open VG VG.AArch64 VG.Impl.Weierstrass.AArch64.Mont Impl.Weierstrass.Mont
+
+theorem brainpoolp384r1p_ok : ModOk brainpoolp384r1p.k brainpoolp384r1p.m := .inr {
+  hn := by decide
+  m_lt := by decide +kernel
+  inv := by decide +kernel
+  red := by decide +kernel
+  g := by decide +kernel
+  novec := by decide +kernel }
+
+theorem brainpoolp384r1n_ok : ModOk brainpoolp384r1n.k brainpoolp384r1n.m := .inr {
+  hn := by decide
+  m_lt := by decide +kernel
+  inv := by decide +kernel
+  red := by decide +kernel
+  g := by decide +kernel
+  novec := by decide +kernel }
+
+end VG.Proof.Weierstrass.AArch64.Mont
+
+end
+
+end
 
 /-! # brainpoolP384r1 parameters for the AArch64 arithmetic -/
 

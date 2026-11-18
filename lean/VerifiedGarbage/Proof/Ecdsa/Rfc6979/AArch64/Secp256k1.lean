@@ -4,8 +4,7 @@ public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Curve
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.TableSat
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Secp256k1.Config
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.Secp256k1.Contract
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Secp256k1.Verified
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Secp256k1.Verified
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Secp256k1.Lit
 import Mathlib.Data.Finset.Attr
 import Mathlib.Tactic.SetLike
@@ -15,7 +14,6 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Curve
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.TableSat
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Secp256k1.Config
-meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Secp256k1.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Secp256k1.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Secp256k1.Lit
 meta import Mathlib.Data.Finset.Attr

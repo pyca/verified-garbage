@@ -16,7 +16,7 @@ import VerifiedGarbage.Proof.Ecdsa.AArch64.CombLays
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.ProjectiveFlags
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Main
 public import VerifiedGarbage.Proof.P256.EcdhDouble.Certificate
 public import VerifiedGarbage.Proof.P256.Linear.WeakCertificate
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticJacHead

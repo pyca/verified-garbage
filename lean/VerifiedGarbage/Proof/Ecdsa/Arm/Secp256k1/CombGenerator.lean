@@ -7,11 +7,9 @@ public import VerifiedGarbage.Impl.Weierstrass.Arm.TCombSecp256k1
 public import VerifiedGarbage.Proof.Weierstrass.Arm.LadderP
 import VerifiedGarbage.Proof.Secp256k1.Comb7
 import VerifiedGarbage.Proof.Secp256k1.Point
-import VerifiedGarbage.Proof.Weierstrass.Arm.MontSecp256k1
 import VerifiedGarbage.Proof.Ecdsa.Arm.Secp256k1.Verified
 import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Main
-import VerifiedGarbage.Proof.Weierstrass.Arm.TCombScan
 
 /-! ### `Secp256k1.Arm.CombCorrect`, which only this module used -/
 

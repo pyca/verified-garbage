@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 /-!
 # P-384's field on RISC-V, for `vg_p384_mul` and its callers
 
-The facts the proofs of `vg_p384_mul` (`Proof/Ecdsa/RISCV64/P384/Window.lean`)
+The facts the proofs of `vg_p384_mul` (`Proof/Ecdh/RISCV64/P384/Tail.lean`)
 and its callers share: P-384's field functions meet the contracts by register
 (`field_ok`), and `R = 2³⁸⁴` is a unit modulo `p` (`unit`).
 -/

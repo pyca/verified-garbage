@@ -7,7 +7,7 @@ meta import VerifiedGarbage.Proof.Ecdsa.X86.CombCode
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombBodyCT
 import VerifiedGarbage.Proof.Ecdsa.X86.CombFacts
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Main
-public import VerifiedGarbage.Proof.Ecdsa.X86.CombPrefix
+public import VerifiedGarbage.Proof.Ecdsa.X86.CombFunctionCT
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombMain
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafDigitChecks
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafPrepChecks
@@ -18,7 +18,7 @@ import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombBodyCT
 meta import VerifiedGarbage.Proof.Ecdsa.X86.CombFacts
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Main
-meta import VerifiedGarbage.Proof.Ecdsa.X86.CombPrefix
+meta import VerifiedGarbage.Proof.Ecdsa.X86.CombFunctionCT
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombMain
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafDigitChecks
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafPrepChecks

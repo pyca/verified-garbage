@@ -7,14 +7,11 @@ public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Impl.Ecdsa.P384.ArmComb
 public import VerifiedGarbage.Proof.EcKey.Arm.Main
-public import VerifiedGarbage.Proof.EcKey.Arm.P384.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.StackScratchConsts
-import VerifiedGarbage.Proof.EcKey.Arm.P384.Verified
 import VerifiedGarbage.Proof.Ecdsa.Arm.P384.Verified
-import VerifiedGarbage.Proof.Ecdsa.Arm.P384.CombGenerator
+public import VerifiedGarbage.Proof.Ecdsa.Arm.P384.CombGenerator
 import VerifiedGarbage.Proof.Ecdsa.Arm.P384.CombLit
 import VerifiedGarbage.Proof.Ecdsa.Arm.SavedAbi
-public import VerifiedGarbage.Proof.P384.Arm.Comb
 import VerifiedGarbage.Proof.Weierstrass.Arm.TCombConsts
 import VerifiedGarbage.Proof.Framework.Arm.TaintSym
 import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
@@ -28,6 +25,112 @@ meta import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Impl.Ecdsa.P384.ArmComb
 meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
+import VerifiedGarbage.Proof.EcKey.Arm.P384.Lit
+public import VerifiedGarbage.Impl.EcKey.P384.Arm
+public import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Ecdsa.Arm.P384.Lit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Weierstrass.Arm.LadderP
+meta import VerifiedGarbage.Proof.EcKey.Arm.Main
+meta import VerifiedGarbage.Proof.EcKey.Arm.P384.Lit
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.P384.Verified
+meta import VerifiedGarbage.Impl.EcKey.P384.Arm
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Spec.EcKey.P384
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.P384.Lit
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Weierstrass.Arm.LadderP
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.EcKey.Generic
+public import VerifiedGarbage.Spec.P384
+public import VerifiedGarbage.TCB.Arm.Isa
+public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.GetElem
+meta import VerifiedGarbage.Spec.EcKey.Generic
+meta import VerifiedGarbage.Spec.P384
+meta import VerifiedGarbage.TCB.Arm.Isa
+meta import VerifiedGarbage.Proof.Framework.PowLit
+meta import VerifiedGarbage.Proof.Framework.GetElem
+
+/-! ### `EcKey.Arm.P384.Verified`, which only this module used -/
+
+section
+
+/-! ### `EcKey.Arm.P384.Contract`, which this module and modules that import it used -/
+
+section
+
+/-!
+# P-384 public keys on 32-bit ARM: the contract the proof is written against
+
+The facts of `Spec.EcKey.P384.inst.publicKeyContract` for 32-bit ARM, by
+name: `vg_ec_p384_public_key(out, d, scratch)`, with the arguments in
+`r0`–`r2` (AAPCS), the result in `r0` (the low word of `r1:r0`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.EcKey.Arm.P384
+
+open VG VG.Arm Spec.Weierstrass Spec.EcKey
+
+/-- The public key of the private key at `d`, as the specification computes it. -/
+abbrev pk (m : Mem) (d : Addr) : Option (Point Spec.P384.curve) :=
+  publicKey Spec.P384.curve (ofBytes (bytesAt m d 48))
+
+def pkArm : Contract Arm.isa where
+  pre s :=
+    let out : Region := ⟨State.addr (s.gpr .r0), 97⟩
+    let d : Region := ⟨State.addr (s.gpr .r1), 48⟩
+    let scratch : Region := ⟨State.addr (s.gpr .r2), 8192⟩
+    s.rd = [d] ∧ s.wr = [out, scratch] ∧ out.Disjoint scratch ∧ d.Disjoint scratch ∧
+      (s.gpr .r0).toNat + 97 ≤ 2 ^ 32 ∧ (s.gpr .r1).toNat + 48 ≤ 2 ^ 32 ∧ (s.gpr .r2).toNat + 8192 ≤ 2 ^ 32
+  post s s' :=
+    match pk s.mem (State.addr (s.gpr .r1)) with
+    | some (.affine x y) => BitVec.setWidth 32 (s'.gpr .r1 ++ s'.gpr .r0) = 1 ∧
+      bytesAt s'.mem (State.addr (s.gpr .r0)) 97 = encodePoint (.affine x y)
+    | _ => BitVec.setWidth 32 (s'.gpr .r1 ++ s'.gpr .r0) = 0 ∧
+      bytesAt s'.mem (State.addr (s.gpr .r0)) 97 = List.replicate 97 0
+  pub s₁ s₂ := s₁.sp = s₂.sp ∧ s₁.gpr .r0 = s₂.gpr .r0 ∧ s₁.gpr .r1 = s₂.gpr .r1 ∧ s₁.gpr .r2 = s₂.gpr .r2
+
+end VG.Proof.EcKey.Arm.P384
+
+end
+
+end
+
+/-!
+# P-384 public keys on 32-bit ARM: `Verified`
+
+`publicKey_ok` for P-384 (`p384_ok`, and `Law` for its group law, which the
+registration file supplies) gives the contract's postcondition; `r4`–`r11`
+and `lr` are restored and `sp` kept. Constant time by taint tracking from
+the arguments' registers: the only branches are on loop counters, and every
+address is `r12` (`scratch`) or `lr` (`out`) plus a constant or a counter.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.EcKey.Arm.P384
+
+open VG VG.Arm VG.Impl.Ecdsa.Arm VG.Proof.Ecdsa.Arm VG.Proof.Ecdsa.Arm.P384 Spec.Weierstrass
+
+theorem post_of {u : Bool} {s s' : State} (h : PkPost (p384With u) s s') : pkArm.post s s' := by
+  unfold PkPost at h
+  simp only [pkArm, BitVec.setWidth_append_eq_right]
+  revert h
+  generalize hq : pk s.mem (State.addr (s.gpr .r1)) = q
+  rw [show Spec.EcKey.publicKey (p384With u).C (dk (p384With u) s) = pk s.mem (State.addr (s.gpr .r1)) from rfl,
+    hq]
+  rcases q with _ | _ | ⟨x, y⟩ <;> exact id
+
+end VG.Proof.EcKey.Arm.P384
+
+end
+
+end
 
 /-!
 # P-384 public keys on 32-bit ARM with the generator comb

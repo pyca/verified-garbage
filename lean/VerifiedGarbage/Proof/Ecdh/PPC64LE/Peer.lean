@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Setup
 import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Pow
 import VerifiedGarbage.Proof.Weierstrass.PPC64LE.BytesLen
 import VerifiedGarbage.Proof.Weierstrass.Words
-import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Keep
 import VerifiedGarbage.Proof.Mont.PPC64LE.Step
 import VerifiedGarbage.Proof.Mont.PPC64LE.Row
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec

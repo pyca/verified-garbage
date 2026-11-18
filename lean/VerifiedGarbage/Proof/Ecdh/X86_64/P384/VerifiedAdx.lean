@@ -10,7 +10,6 @@ meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Spec.Ecdh.P384
 import VerifiedGarbage.Proof.Ecdh.X86_64.P384.LitAdx
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.P384.LitAdx
-
 import VerifiedGarbage.Proof.Ecdh.X86_64.P384.Verified
 public import VerifiedGarbage.Proof.Ecdh.X86_64.Main
 public import VerifiedGarbage.Proof.Ecdh.X86_64.P384.Contract
@@ -23,7 +22,7 @@ import VerifiedGarbage.Proof.Ecdh.X86_64.P384.LitEraseAdx
 public import VerifiedGarbage.Impl.Ecdh.P384.X86_64
 import VerifiedGarbage.Proof.Ecdh.X86_64.P384.LitErase
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.LitEraseAdx
-import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJStep
+import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJLoop
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.P384.Verified
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.Main
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.P384.Contract
@@ -36,7 +35,7 @@ meta import VerifiedGarbage.Proof.Ecdh.X86_64.P384.LitEraseAdx
 meta import VerifiedGarbage.Impl.Ecdh.P384.X86_64
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.P384.LitErase
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.LitEraseAdx
-meta import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJStep
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJLoop
 
 /-!
 # ECDH over P-384 on x86-64 with BMI2 and ADX: `Verified`

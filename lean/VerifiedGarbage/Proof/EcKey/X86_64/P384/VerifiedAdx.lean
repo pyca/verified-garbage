@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 import VerifiedGarbage.Proof.Framework.LitShare
 import VerifiedGarbage.Proof.EcKey.X86_64.P384.LitAdx
 public import VerifiedGarbage.Impl.EcKey.P384.X86_64
-public import VerifiedGarbage.Proof.EcKey.X86_64.P384.Contract
+public import VerifiedGarbage.Proof.EcKey.X86_64.P384.Verified
 public import VerifiedGarbage.Proof.EcKey.X86_64.Main
 import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
 import VerifiedGarbage.Proof.EcKey.X86_64.P384.Lit
@@ -20,7 +20,6 @@ meta import VerifiedGarbage.Proof.Framework.LitShare
 meta import VerifiedGarbage.Proof.EcKey.X86_64.P384.LitAdx
 meta import VerifiedGarbage.Proof.EcKey.X86_64.P384.Verified
 meta import VerifiedGarbage.Impl.EcKey.P384.X86_64
-meta import VerifiedGarbage.Proof.EcKey.X86_64.P384.Contract
 meta import VerifiedGarbage.Proof.EcKey.X86_64.Main
 meta import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
 meta import VerifiedGarbage.Proof.EcKey.X86_64.P384.Lit
@@ -29,7 +28,6 @@ import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
-public import VerifiedGarbage.Proof.EcKey.X86_64.P384.Verified
 
 /-!
 # P-384 public keys on x86-64 with BMI2 and ADX: `Verified`

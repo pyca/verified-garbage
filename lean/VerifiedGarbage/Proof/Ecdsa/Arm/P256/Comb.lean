@@ -6,15 +6,13 @@ public import VerifiedGarbage.Impl.NatPairs
 public import VerifiedGarbage.Spec.Ecdsa.P256
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Layout
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Main
-public import VerifiedGarbage.Proof.Ecdsa.Arm.Contract
+public import VerifiedGarbage.Proof.Ecdsa.Arm.Verified
 public import VerifiedGarbage.Impl.Ecdsa.P256.ArmComb
 public import VerifiedGarbage.Proof.Framework.Arm.StackScratchConsts
 public import VerifiedGarbage.Proof.Weierstrass.Law
-import VerifiedGarbage.Proof.Ecdsa.Arm.Verified
-import VerifiedGarbage.Proof.Ecdsa.Arm.P256.CombGenerator
+public import VerifiedGarbage.Proof.Ecdsa.Arm.P256.CombGenerator
 import VerifiedGarbage.Proof.Ecdsa.Arm.P256.CombLit
 import VerifiedGarbage.Proof.Ecdsa.Arm.SavedAbi
-public import VerifiedGarbage.Proof.P256.Arm.Comb
 public import VerifiedGarbage.Proof.Ecdsa.Contract
 import VerifiedGarbage.Proof.Weierstrass.Arm.TCombConsts
 import VerifiedGarbage.Proof.Framework.Arm.TaintSym

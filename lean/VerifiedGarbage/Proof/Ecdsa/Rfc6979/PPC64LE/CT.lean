@@ -19,10 +19,8 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 import VerifiedGarbage.Proof.Mont.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Step
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Hmac
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Prep
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Reduce
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Copy
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Correct
 meta import VerifiedGarbage.Proof.Hmac.Contract
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
@@ -42,10 +40,8 @@ meta import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 meta import VerifiedGarbage.Proof.Mont.PPC64LE.Step
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
-meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Step
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Hmac
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Prep
-meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Reduce
-meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Copy
 meta import VerifiedGarbage.Impl.Ecdsa.Rfc6979.PPC64LE
 meta import VerifiedGarbage.TCB.Code
 

@@ -2,12 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.Rcb0
 import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
-import VerifiedGarbage.Proof.Weierstrass.Arm.Bits
+public import VerifiedGarbage.Proof.Weierstrass.Arm.Bits
 import VerifiedGarbage.Proof.Weierstrass.Arm.Loop
 import VerifiedGarbage.Proof.Weierstrass.Arm.Copy
 import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Weierstrass.Layout
-public import VerifiedGarbage.Proof.Weierstrass.Arm.Fprog
 import VerifiedGarbage.Proof.Weierstrass.Pow
 
 /-! ### `Weierstrass.Arm.Pow`, which this module and modules that import it used -/

@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP512r1.AArch64
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Layout
-import VerifiedGarbage.Proof.Weierstrass.AArch64.MontBrainpoolP512r1
 import VerifiedGarbage.Proof.BrainpoolP512r1.Point
 import VerifiedGarbage.Proof.BrainpoolP512r1.Prime
 import VerifiedGarbage.Proof.Weierstrass.AArch64.BrainpoolP512r1Literals
@@ -10,6 +9,46 @@ import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Weierstrass.CombLay
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFnG
+public import VerifiedGarbage.Proof.Framework.Lit -- shake: keep (passes `lit_decide` on to ECDSA's `Config`, as the removed `MontContract` did)
+import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+public meta import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFnG
+public meta import VerifiedGarbage.Proof.Framework.Lit
+
+/-! ### `Weierstrass.AArch64.MontBrainpoolP512r1`, which only this module used -/
+
+section
+
+/-! # Shared BrainpoolP512r1 Montgomery multiplication on AArch64 -/
+
+@[expose] public section
+namespace VG.Proof.Weierstrass.AArch64.Mont
+open VG VG.AArch64 VG.Impl.Weierstrass.AArch64.Mont Impl.Weierstrass.Mont
+
+theorem brainpoolp512r1p_ok : ModOk brainpoolp512r1p.k brainpoolp512r1p.m := .inr {
+  hn := by decide
+  m_lt := by decide +kernel
+  inv := by decide +kernel
+  red := by decide +kernel
+  g := by decide +kernel
+  novec := by decide +kernel }
+
+theorem brainpoolp512r1n_ok : ModOk brainpoolp512r1n.k brainpoolp512r1n.m := .inr {
+  hn := by decide
+  m_lt := by decide +kernel
+  inv := by decide +kernel
+  red := by decide +kernel
+  g := by decide +kernel
+  novec := by decide +kernel }
+
+end VG.Proof.Weierstrass.AArch64.Mont
+
+end
+
+end
 
 /-! # brainpoolP512r1 parameters for the AArch64 arithmetic -/
 

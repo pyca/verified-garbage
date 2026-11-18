@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Hash
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Regs
 public import VerifiedGarbage.Proof.Framework.ICall
 import VerifiedGarbage.Proof.Framework.X86.Syms

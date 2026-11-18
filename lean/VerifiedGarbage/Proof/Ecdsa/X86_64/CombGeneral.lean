@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.TComb
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Loop
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.Main
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.CombLays
-import VerifiedGarbage.Proof.Ecdsa.X86_64.MulBase
+import VerifiedGarbage.Proof.Ecdsa.X86_64.MulFn
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Fixed
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Stages
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy

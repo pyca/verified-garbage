@@ -7,7 +7,6 @@ public import VerifiedGarbage.Proof.Mont.Arm.Words
 import VerifiedGarbage.Proof.Weierstrass.Arm.Const
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Weierstrass.Arm.TCombScan
 public import VerifiedGarbage.Proof.Mont.Words32
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset

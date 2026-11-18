@@ -2,7 +2,6 @@ module
 
 -- separate module: brainpoolP384r1's verification is its only importer, but it builds on both
 -- the joint ladder's proofs and the windows', which its importers need not re-check
-
 public import VerifiedGarbage.Impl.Ecdsa.RISCV64.VerifyJ
 public import VerifiedGarbage.Proof.Ecdsa.RISCV64.BrainpoolP384r1.Joint
 public import VerifiedGarbage.Proof.Ecdsa.RISCV64.BrainpoolP384r1.Window
@@ -12,7 +11,7 @@ import VerifiedGarbage.Proof.BrainpoolP384r1.Point
 import VerifiedGarbage.Proof.Weierstrass.PointFacts
 import VerifiedGarbage.Proof.Mont.Read
 import VerifiedGarbage.Proof.Weierstrass.RISCV64.Ladder
-import VerifiedGarbage.Proof.Ecdh.RISCV64.Masks
+import VerifiedGarbage.Proof.Ecdh.RISCV64.Bytes
 
 /-!
 # ECDSA verification over brainpoolP384r1 on RISC-V: the joint ladder with Jacobian doublings

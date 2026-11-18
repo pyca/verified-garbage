@@ -4,7 +4,7 @@ public import VerifiedGarbage.Impl.Weierstrass.X86_64.ForwardField
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.Fprog
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardStores
 public import VerifiedGarbage.Impl.Mont.X86_64.Double4
-public import VerifiedGarbage.Proof.Mont.X86_64.OpsReg
+public import VerifiedGarbage.Proof.Mont.X86_64.MulP
 import VerifiedGarbage.Proof.Mont.X86_64.Chain
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec

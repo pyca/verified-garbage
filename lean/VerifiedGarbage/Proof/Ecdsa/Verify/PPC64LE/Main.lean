@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.EcKey.PPC64LE.Finish
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Flags
 import VerifiedGarbage.Proof.Ecdh.PPC64LE.Peer
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Setup
-import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Keep
 import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Pow
 import VerifiedGarbage.Proof.Mont.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
@@ -18,7 +17,7 @@ import VerifiedGarbage.Proof.Weierstrass.Words
 import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 public import VerifiedGarbage.Proof.Weierstrass.MulContract
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.LadPow
-public import VerifiedGarbage.Proof.Weierstrass.PPC64LE.PointFprog
+public import VerifiedGarbage.Proof.Weierstrass.PPC64LE.LadderP
 import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Copy
 import VerifiedGarbage.Proof.Mont.PPC64LE.Const
 import VerifiedGarbage.Proof.Mont.PPC64LE.Row
@@ -45,7 +44,7 @@ section
 /-!
 # ECDSA verification on PPC64LE: up to the key's checks
 
-As on 32-bit ARM (`Proof/Ecdsa/Verify/Arm/Front.lean`). `front_ok`: the
+As on 32-bit ARM (`Proof/Ecdsa/Verify/Arm/Main.lean`). `front_ok`: the
 signature's setup with verification's arguments (`r` into `K`, the hash
 into `D` shifted, `public` kept in `r14` and `sig` in `r12`), its tables,
 `s` into `PT`, and ECDH's checks of the key (`peer_ok` on `r14`,
@@ -277,7 +276,7 @@ end
 /-!
 # ECDSA verification on PPC64LE: `u` and `v`
 
-As on 32-bit ARM (`Proof/Ecdsa/Verify/Arm/Final.lean`). `mid_ok`: the
+As on 32-bit ARM (`Proof/Ecdsa/Verify/Arm/Main.lean`). `mid_ok`: the
 masks of `r` and `s` in `[1, n-1]` into the flag, `w = s^(n-2)` in
 Montgomery form modulo `n`, and `u = e w` and `v = r w`, out of it.
 -/
@@ -1143,7 +1142,7 @@ section
 /-!
 # ECDSA verification on PPC64LE: `x` and the result
 
-As on 32-bit ARM (`Proof/Ecdsa/Verify/Arm/Final.lean`). `vtail_ok`: from
+As on 32-bit ARM (`Proof/Ecdsa/Verify/Arm/Main.lean`). `vtail_ok`: from
 what `points_ok` leaves, the signature's power gives `Z^(p-2)`, and `final`
 computes `x = X Z^(p-2)` out of Montgomery's form, `x R mod n` and
 `x R - r R mod n`, ands the masks of `Z ≠ 0` and of that difference being

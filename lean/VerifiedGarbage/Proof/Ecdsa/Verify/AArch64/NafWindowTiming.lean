@@ -35,7 +35,7 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
 public import VerifiedGarbage.Proof.Framework.AArch64.Inline
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAddTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeStore
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeArithmetic
+import VerifiedGarbage.Proof.Weierstrass.AArch64.NafNeg
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowState
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
@@ -43,7 +43,6 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTableTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowLoadTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Ladder
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowLoad
 import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.Naf
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowDouble

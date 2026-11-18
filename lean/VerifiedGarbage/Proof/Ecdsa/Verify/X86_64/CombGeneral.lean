@@ -12,7 +12,6 @@ import VerifiedGarbage.Proof.Ecdsa.X86_64.Stages
 import VerifiedGarbage.Proof.Ecdsa.X86_64.SharedSlots
 import VerifiedGarbage.Proof.Ecdsa.X86_64.MulFn
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Fixed
-import VerifiedGarbage.Proof.Ecdsa.X86_64.MulBase
 import VerifiedGarbage.Proof.Ecdsa.X86_64.CombLays
 import VerifiedGarbage.Proof.Ecdh.X86_64.Peer
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy

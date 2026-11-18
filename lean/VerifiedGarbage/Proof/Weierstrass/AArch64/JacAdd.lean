@@ -10,8 +10,6 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.Copy
 import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
 public import VerifiedGarbage.Proof.Weierstrass.PointOpsContract
 public import VerifiedGarbage.Proof.Weierstrass.InverseContract
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256RD
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256DR
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256ED
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
 

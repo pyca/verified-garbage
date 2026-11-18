@@ -7,14 +7,12 @@ import VerifiedGarbage.Proof.Ecdsa.Verify.Curves
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Hash
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.Curves
 public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.Contract
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointCT
 public import VerifiedGarbage.Impl.Ecdsa.Verify.P384.X86_64
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
 public import VerifiedGarbage.Proof.Weierstrass.CombW
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
-
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointCT
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointLitAdx
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointLit
@@ -22,9 +20,7 @@ import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointErased
 import Batteries.Data.List.Lemmas
 import VerifiedGarbage.Proof.Framework.LitShare
 import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointContract
 import VerifiedGarbage.Impl.P384.X86_64.Joint
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointFrame
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointMain
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointChecks
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Main
@@ -32,13 +28,12 @@ import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.P384.X86_64.JointLayout
 meta import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointCT
 meta import VerifiedGarbage.Impl.Ecdsa.Verify.P384.X86_64
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
 meta import VerifiedGarbage.Proof.Weierstrass.CombW
 meta import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointCT
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointLitAdx
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointLit
@@ -46,13 +41,12 @@ meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointErased
 meta import Batteries.Data.List.Lemmas
 meta import VerifiedGarbage.Proof.Framework.LitShare
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointContract
 meta import VerifiedGarbage.Impl.P384.X86_64.Joint
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointFrame
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointMain
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointChecks
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Main
 meta import VerifiedGarbage.Proof.P384.X86_64.JointLayout
+
 /-!
 # ECDSA verification over P-384 on x86-64: `Verified`
 

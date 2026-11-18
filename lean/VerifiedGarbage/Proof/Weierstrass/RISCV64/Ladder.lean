@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 
 A loop counted down in `s1` (`countLoop_ok`), and the mask of bit `s1` of a
 number, which `bitMask` reads (`bitMask_ok`), as on PPC64LE
-(`Proof/Weierstrass/PPC64LE/Ladder.lean`). The field arithmetic is calls of
+(`Proof/Weierstrass/PPC64LE/LadderP.lean`). The field arithmetic is calls of
 the functions of `F`.
 
 `pow P F` leaves `[acc]` reading (in Montgomery form) as `[base]^e`, for the

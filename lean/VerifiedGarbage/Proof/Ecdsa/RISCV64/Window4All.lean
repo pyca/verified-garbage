@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Weierstrass.PointFacts
 import VerifiedGarbage.Proof.Mont.Read
 import VerifiedGarbage.Proof.Weierstrass.RISCV64.Ladder
-import VerifiedGarbage.Proof.Ecdh.RISCV64.Masks
 import VerifiedGarbage.Proof.Ecdh.RISCV64.Bytes
 
 /-!

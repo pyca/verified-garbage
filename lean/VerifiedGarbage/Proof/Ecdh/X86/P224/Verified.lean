@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Ecdh.X86.Main
 public import VerifiedGarbage.Proof.Framework.X86.SseTaintMono
 meta import VerifiedGarbage.Proof.Framework.X86.SseTaintMono
-public import VerifiedGarbage.Proof.Ecdh.X86.P224.Contract
 public import VerifiedGarbage.Proof.Ecdh.X86.CallTaint
 public import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 public import VerifiedGarbage.Proof.Framework.X86.TaintMono
@@ -18,7 +17,6 @@ import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P224
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Ecdh.X86.Main
-meta import VerifiedGarbage.Proof.Ecdh.X86.P224.Contract
 meta import VerifiedGarbage.Proof.Ecdh.X86.CallTaint
 meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 meta import VerifiedGarbage.Proof.Framework.X86.TaintMono
@@ -34,6 +32,72 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Spec.EcKey.Generic
+public import VerifiedGarbage.Spec.Ecdh
+public import VerifiedGarbage.Spec.P224
+public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.GetElem
+meta import VerifiedGarbage.TCB.X86.Target
+meta import VerifiedGarbage.Spec.EcKey.Generic
+meta import VerifiedGarbage.Spec.Ecdh
+meta import VerifiedGarbage.Spec.P224
+meta import VerifiedGarbage.Proof.Framework.PowLit
+meta import VerifiedGarbage.Proof.Framework.GetElem
+
+/-! ### `Ecdh.X86.P224.Contract`, which only this module used -/
+
+section
+
+/-!
+# ECDH over P-224 on x86 (32-bit): the contract the proof is written against
+
+The facts of `Spec.Ecdh.P224.inst.exchangeContract` for x86, by name:
+`vg_ecdh_p224(out, d, peer, scratch)`, whose arguments are on the stack
+(cdecl), the result in `eax`. Its arguments' slots are readable here; the
+shared contract makes them writable (`Verified.narrowTo`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ecdh.X86.P224
+
+open VG VG.X86 Spec.Weierstrass Spec.EcKey
+
+/-- The shared secret of the private key at `d` and the public key at
+`peer`, as the specification computes it. -/
+abbrev ex (m : Mem) (d peer : Addr) : Option (List Byte) :=
+  Spec.Ecdh.exchange Spec.P224.curve (ofBytes (bytesAt m d 28)) (bytesAt m peer 57)
+
+def ecdhX86 : Contract X86.isa where
+  pre s :=
+    let out : Region := ⟨(arg s 0).setWidth 64, 28⟩
+    let d : Region := ⟨(arg s 1).setWidth 64, 28⟩
+    let peer : Region := ⟨(arg s 2).setWidth 64, 57⟩
+    let scratch : Region := ⟨(arg s 3).setWidth 64, 8192⟩
+    let args : Region := ⟨argAddr s 0, 16⟩
+    let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
+    let stack : Region := ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 28, 28⟩
+    s.rd = [d, peer, args] ∧ s.wr = [out, scratch] ∧ out.Disjoint scratch ∧ out.Disjoint d ∧
+      out.Disjoint peer ∧ d.Disjoint scratch ∧ peer.Disjoint scratch ∧
+      args.Disjoint out ∧ args.Disjoint scratch ∧ ret.Disjoint out ∧ ret.Disjoint scratch ∧
+      (arg s 0).toNat + 28 ≤ 2 ^ 32 ∧ (arg s 1).toNat + 28 ≤ 2 ^ 32 ∧ (arg s 2).toNat + 57 ≤ 2 ^ 32 ∧
+      (arg s 3).toNat + 8192 ≤ 2 ^ 32 ∧ (s.gpr .esp).toNat + 20 ≤ 2 ^ 32 ∧
+      28 ≤ (s.gpr .esp).toNat ∧ stack.Disjoint out ∧ stack.Disjoint scratch
+  post s s' :=
+    match ex s.mem ((arg s 1).setWidth 64) ((arg s 2).setWidth 64) with
+    | some z => BitVec.setWidth 32 (s'.gpr .edx ++ s'.gpr .eax) = 1 ∧
+      bytesAt s'.mem ((arg s 0).setWidth 64) 28 = z
+    | none => BitVec.setWidth 32 (s'.gpr .edx ++ s'.gpr .eax) = 0 ∧
+      bytesAt s'.mem ((arg s 0).setWidth 64) 28 = List.replicate 28 0
+  pub s₁ s₂ := s₁.gpr .esp = s₂.gpr .esp ∧ arg s₁ 0 = arg s₂ 0 ∧ arg s₁ 1 = arg s₂ 1 ∧
+    arg s₁ 2 = arg s₂ 2 ∧ arg s₁ 3 = arg s₂ 3
+
+end VG.Proof.Ecdh.X86.P224
+
+end
+
+end
 
 /-!
 # ECDH over P-224 on x86 (32-bit): `Verified`

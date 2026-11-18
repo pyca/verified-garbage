@@ -4,7 +4,6 @@ module
 import VerifiedGarbage.Proof.Framework.Arm.Syms
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Prep
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Blocks
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Regs
 import VerifiedGarbage.Proof.AesGcm.Arm.Run
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
 import VerifiedGarbage.Proof.Hmac.Common

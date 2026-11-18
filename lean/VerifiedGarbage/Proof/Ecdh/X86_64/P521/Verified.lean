@@ -16,10 +16,10 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
-import VerifiedGarbage.Proof.P521.X86_64.TaintSumsWin
+public import VerifiedGarbage.Proof.P521.X86_64.TaintSumsWin
 import VerifiedGarbage.Proof.Ecdh.X86_64.P521.Lit
 public import VerifiedGarbage.Impl.Ecdh.P521.X86_64
-import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJStep
+import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJLoop
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.Main
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.MulJ4
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.P521.Contract
@@ -31,8 +31,7 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 meta import VerifiedGarbage.Proof.P521.X86_64.TaintSumsWin
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.P521.Lit
 meta import VerifiedGarbage.Impl.Ecdh.P521.X86_64
-meta import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJStep
-public import VerifiedGarbage.Proof.P521.X86_64.TaintSumsWin
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJLoop
 
 /-!
 # ECDH over P-521 on x86-64: `Verified`

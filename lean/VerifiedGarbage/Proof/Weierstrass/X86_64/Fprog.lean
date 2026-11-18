@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.Env
 public import VerifiedGarbage.Impl.Weierstrass.X86_64
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
-public import VerifiedGarbage.Proof.Mont.X86_64.OpsReg
+public import VerifiedGarbage.Proof.Mont.X86_64.MulP
 import VerifiedGarbage.Proof.Mont.X86_64.Ops
 import VerifiedGarbage.Proof.Weierstrass.X86_64.MontCall
 import VerifiedGarbage.Proof.Framework.Block

@@ -2,14 +2,13 @@ module
 
 import VerifiedGarbage.Proof.P256.EcdhJac.Timing
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-public import VerifiedGarbage.Proof.P256.EcdhJac.Finish
+public import VerifiedGarbage.Proof.P256.EcdhJac.Window
 public import VerifiedGarbage.Proof.Ecdh.AArch64.MulOk
 public import VerifiedGarbage.Proof.P256.EcdhJac.State
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
 public import VerifiedGarbage.Proof.P256.EcdhJac.Lit
 import VerifiedGarbage.Proof.Weierstrass.AArch64.AddConst
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Bits
-import VerifiedGarbage.Proof.P256.EcdhJac.Window
 import VerifiedGarbage.Proof.P256.EcdhJac.Exchange
 import VerifiedGarbage.Proof.P256.EcdhInverse.Inverse
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Verified

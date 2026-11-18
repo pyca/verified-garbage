@@ -3,7 +3,7 @@ module
 import VerifiedGarbage.Proof.Ecdh.X86_64.Check
 public import VerifiedGarbage.Impl.Ecdsa.Verify.X86_64
 public import VerifiedGarbage.Proof.Ecdh.X86_64.Validate
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Finish
+import VerifiedGarbage.Proof.Ecdsa.X86_64.Scalar
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Stages
 import VerifiedGarbage.Proof.Ecdh.X86_64.Peer

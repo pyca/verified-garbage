@@ -1,6 +1,5 @@
 module
 
-
 public import VerifiedGarbage.Proof.EcKey.X86_64.Scrub.Out
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -8,7 +7,7 @@ meta import VerifiedGarbage.Proof.EcKey.X86_64.Scrub.Out
 meta import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Spec.EcKey.P384
-import VerifiedGarbage.Proof.EcKey.Validate.X86_64.Main
+public import VerifiedGarbage.Proof.EcKey.Validate.X86_64.Main
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.InverseVerified
 public import VerifiedGarbage.Spec.EcKey.P384
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.InverseLit
@@ -22,8 +21,7 @@ meta import VerifiedGarbage.Impl.EcKey.Validate.X86_64
 meta import VerifiedGarbage.Impl.Ecdsa.P384.X86_64
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.InverseVerified
 public import VerifiedGarbage.Impl.EcKey.Validate.X86_64
-public import VerifiedGarbage.Proof.EcKey.Validate.X86_64.Contract
-meta import VerifiedGarbage.Proof.EcKey.Validate.X86_64.Contract
+meta import VerifiedGarbage.Proof.EcKey.Validate.X86_64.Main
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInline

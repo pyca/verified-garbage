@@ -1,14 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.EcKey.X86.CombStagesCT
-public import VerifiedGarbage.Proof.Ecdsa.X86.CombPrefix
+public import VerifiedGarbage.Proof.Ecdsa.X86.CombFunctionCT
 import VerifiedGarbage.Proof.EcKey.X86.CombMain
 import VerifiedGarbage.Proof.Ecdsa.X86.CombFacts
 import VerifiedGarbage.Proof.Ecdsa.X86.CombFinishCT
 import VerifiedGarbage.Proof.Ecdsa.X86.CombLit
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.EcKey.X86.CombStagesCT
-meta import VerifiedGarbage.Proof.Ecdsa.X86.CombPrefix
+meta import VerifiedGarbage.Proof.Ecdsa.X86.CombFunctionCT
 meta import VerifiedGarbage.Proof.EcKey.X86.CombMain
 meta import VerifiedGarbage.Proof.Ecdsa.X86.CombFacts
 meta import VerifiedGarbage.Proof.Ecdsa.X86.CombFinishCT

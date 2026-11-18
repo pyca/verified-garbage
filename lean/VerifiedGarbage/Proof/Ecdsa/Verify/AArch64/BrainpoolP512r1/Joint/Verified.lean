@@ -2,17 +2,15 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP512r1.Joint.Timing
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP512r1.Joint.Prefix
 import VerifiedGarbage.Proof.Ecdh.AArch64.Main
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP512r1.Joint.Points
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP512r1.Joint.Points
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Main
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPrefix
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP512r1.Joint.State
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Front
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP512r1.Contract
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP512r1.Verified
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP512r1.Verified
 import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP512r1.Config
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP512r1.Joint.Lit
@@ -21,7 +19,6 @@ import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP512r1.Joint.Main
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Hash
 public import VerifiedGarbage.Impl.Ecdsa.AArch64.VerifyHash
 import VerifiedGarbage.Proof.Ecdsa.Verify.Curves
@@ -31,6 +28,56 @@ meta import VerifiedGarbage.Impl.Ecdsa.AArch64.VerifyHash
 meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
 public import VerifiedGarbage.Spec.Ecdsa.BrainpoolP512r1
 meta import VerifiedGarbage.Spec.Ecdsa.BrainpoolP512r1
+public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Framework.Taint
+meta import VerifiedGarbage.Proof.Framework.Taint
+
+/-! ### `Ecdsa.Verify.AArch64.BrainpoolP512r1.Joint.Timing`, which only this module used -/
+
+section
+
+/-! The curve's rounds run in constant time (`taint_decide` on its code), and so does its loop, whatever
+the peer: `JointKit.loop_ct` (`Proof/Ecdsa/Verify/AArch64/JointAll.lean`). -/
+
+@[expose] public section
+namespace VG.Proof.Ecdsa.Verify.AArch64.BrainpoolP512r1.Joint
+open VG VG.AArch64 VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64
+open VG.Proof.Mont VG.Proof.Mont.AArch64 VG.Proof.Weierstrass VG.Proof.Weierstrass.AArch64
+open VG.Impl.Ecdsa.AArch64 VG.Proof.Ecdsa.AArch64 VG.Spec.Weierstrass
+open VG.Impl.Ecdsa.Verify.AArch64.BrainpoolP512r1.Joint
+
+private theorem front_ct : ConstantTime isa (fun _ => True)
+    (AArch64.Taint.Agree (Taint.ofRegs [.x0,.x19])) stepFront :=
+  VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.x0,.x19])
+    (fun _ _ _ _ h => h) (by taint_decide)
+
+private theorem tail_ct : ConstantTime isa (fun _ => True)
+    (AArch64.Taint.Agree (Taint.ofRegs [.x0,.x2])) digitTail :=
+  VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.x0,.x2])
+    (fun _ _ _ _ h => h) (by taint_decide)
+
+theorem setup_ct : ConstantTime isa (fun _ => True)
+    (AArch64.Taint.Agree (Taint.ofRegs [.x0])) setup :=
+  VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.x0])
+    (fun _ _ _ _ h => h) (by taint_decide)
+
+/-- The two pieces of a round run in constant time. -/
+theorem stepCt : JointKit.StepCt cfg := ⟨front_ct, tail_ct⟩
+
+/-- The peers may differ: only the public digit pairs control the loop's trace. -/
+theorem loop_ct {base : Addr} {P Q₁ Q₂ : Point C} {u v : Nat}
+    (hc : BaseCfgOk cfg) (hC : Law C) (hP : onCurve C P=true)
+    (hQ₁ : onCurve C Q₁=true) (hQ₂ : onCurve C Q₂=true) :
+    RelCT isa (fun s t => Running base P Q₁ u v 256 s ∧ Running base P Q₂ u v 256 t ∧ s.sp=t.sp)
+      (.loop step (.nonzero .x .x19))
+      (fun s t => Running base P Q₁ u v 0 s ∧ Running base P Q₂ u v 0 t ∧ s.sp=t.sp) :=
+  JointKit.loop_ct stepCt rounds hc hC hP hQ₁ hQ₂
+
+end VG.Proof.Ecdsa.Verify.AArch64.BrainpoolP512r1.Joint
+
+end
+
+end
 
 /-! ### `Ecdsa.Verify.AArch64.BrainpoolP512r1.Joint.Public`, which only this module used -/
 

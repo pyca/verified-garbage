@@ -912,7 +912,7 @@ The loop's state with the table affine (`WinStR`), `R = 16 R` in place in
 Jacobian coordinates (`quadJ_ok`: two pairs of doublings between `R` and
 `D`), and the mixed addition of the affine entry `E` into `D` with the
 selection of `E`, `R` or `D` (`sumJ_ok`), for an iteration but the last
-(`winStepJ_ok`): as on x86-64 (`Proof/Weierstrass/X86_64/WinJStep.lean`).
+(`winStepJ_ok`): as on x86-64 (`Proof/Weierstrass/X86_64/WinJLoop.lean`).
 -/
 
 @[expose] public section

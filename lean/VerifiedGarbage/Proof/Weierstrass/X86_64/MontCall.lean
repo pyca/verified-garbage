@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 import VerifiedGarbage.Proof.Mont.X86_64.Ops
-public import VerifiedGarbage.Proof.Mont.X86_64.SqrP
+public import VerifiedGarbage.Proof.Mont.X86_64.Sub256
 import VerifiedGarbage.Proof.Mont.X86_64.Rounds
 import Batteries.Logic
 import VerifiedGarbage.Proof.Mont.X86_64.SqrS

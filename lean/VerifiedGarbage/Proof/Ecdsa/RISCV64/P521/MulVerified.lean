@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.RISCV64.P521.MulFn
-public import VerifiedGarbage.Proof.Ecdsa.RISCV64.P521.Window
 public import VerifiedGarbage.TCB.RISCV64.Target
 import VerifiedGarbage.Proof.Weierstrass.PointFacts
 import VerifiedGarbage.Proof.P521.Point
@@ -13,7 +12,6 @@ import VerifiedGarbage.Proof.Weierstrass.RISCV64.Copy
 import VerifiedGarbage.Proof.Ecdsa.RISCV64.P521.MulLit
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.P521.MulFn
-meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.P521.Window
 meta import VerifiedGarbage.TCB.RISCV64.Target
 meta import VerifiedGarbage.Proof.Weierstrass.PointFacts
 meta import VerifiedGarbage.Proof.Framework.Contract
@@ -24,6 +22,802 @@ meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.P521.MulLit
 public meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 public import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
 public meta import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
+public import VerifiedGarbage.Impl.Ecdsa.RISCV64.WindowU
+public import VerifiedGarbage.Proof.Weierstrass.RISCV64.P521Unsat.Fprog
+public import VerifiedGarbage.Proof.Weierstrass.Jac
+public import VerifiedGarbage.Proof.Ecdsa.RISCV64.WindowA
+public import VerifiedGarbage.Proof.Ecdsa.RISCV64.Joint.Table
+import VerifiedGarbage.Proof.Weierstrass.RISCV64.Ladder
+import VerifiedGarbage.Proof.Ecdh.RISCV64.Bytes
+meta import VerifiedGarbage.Impl.Ecdsa.RISCV64.WindowU
+meta import VerifiedGarbage.Proof.Weierstrass.RISCV64.P521Unsat.Fprog
+meta import VerifiedGarbage.Proof.Weierstrass.Jac
+meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.WindowA
+meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.Joint.Table
+meta import VerifiedGarbage.Proof.Weierstrass.RISCV64.Ladder
+meta import VerifiedGarbage.Proof.Ecdh.RISCV64.Bytes
+
+/-! ### `Ecdsa.RISCV64.P521.Window`, which this module and modules that import it used -/
+
+section
+
+/-!
+# `vg_p521_mul` by four-bit windows in 58-bit limbs on RISC-V: the body
+
+`WindowU.body` leaves in `R` a representative of `[k]Q` (`body_ok`), for `k`
+at `K`'s slot and `Q` in limbs in `R`'s first two slots, as
+`WindowA.Cfg.body` does in Montgomery's form, the coordinates being what
+tight limbs stand for (`uf`, `PtOk`), and the field programs'
+`Proof/Weierstrass/RISCV64/P521Unsat/Fprog.lean`'s:
+
+* `quad_ok`: `R = 16 R`: `R`'s representative of `P` into Jacobian
+  coordinates stands for `P` (`InvJ.of_toJ`), each doubling `dblJ`, for
+  `a = -3`, doubles it (`InvJ.dbl'`), and back in projective coordinates,
+  with `Y = 1` where `Z`'s residue is zero, it is a representative of `16 P`
+  again (`InvJ.out`);
+* `build_ok`: the table of `[e]Q` from byte 4096, stored through `a6` as
+  verification's is (`addPt_ok`, the complete addition for any `a`);
+* `select_ok`: the nibble's entry to `E`, by verification's selection;
+* `step_ok`, `body_ok`: the windows, from `R = O`.
+-/
+
+@[expose] public section
+
+-- `p`, below `2^576`, is evaluated.
+set_option exponentiation.threshold 1024
+
+namespace VG.Proof.Ecdsa.RISCV64.P521.Window
+
+open VG VG.RISCV64 VG.RISCV64.Steps VG.Proof.Mont VG.Impl.Ecdsa.RISCV64 VG.Impl.Ecdsa.RISCV64.WindowU
+open VG.Impl.Weierstrass VG.Impl.Weierstrass.RISCV64 VG.Impl.Ecdh.RISCV64
+open VG.Proof.Weierstrass VG.Proof.Weierstrass.RISCV64
+open VG.Proof.Weierstrass.RISCV64.P521Unsat (W uf LInv ULay urcb_ok uofN_ok Tight uv packCall_ok lw)
+open VG.Proof.Ecdsa.RISCV64.WindowA
+open VG.Proof.X25519.RISCV64 (Rest)
+open VG.Spec.Weierstrass (Point Fe mul onCurve)
+open VG.Impl.Ecdsa.RISCV64.Window (windows)
+open VG.Impl.Ecdsa.RISCV64.WindowA.Cfg (copyPt zeroPt select)
+
+/-! ## Zero -/
+
+theorem lw_zero (i : Nat) : lw 0 i = 0 := by simp [lw]
+
+theorem tight_zero : Tight 0 := ⟨fun i _ => by rw [lw_zero]; decide, by rw [lw_zero]; decide⟩
+
+theorem uf_zero : uf 0 = 0 := by
+  apply Fin.ext
+  simp [uf, uv, P521Unsat.lv, lw_zero]
+
+/-- P-521's `a` is `-3`, as the doublings need. -/
+theorem am3 : AM3 W := by unfold AM3; decide
+
+theorem mul_zero' {C : Spec.Weierstrass.Curve} (P : Point C) : mul 0 P = .infinity := by
+  rw [Spec.Weierstrass.mul]; rfl
+
+theorem mul_one' {C : Spec.Weierstrass.Curve} (P : Point C) : mul 1 P = P := by
+  rw [Spec.Weierstrass.mul, ite_eq_right (by decide), show (1 : Nat) / 2 = 0 from rfl, mul_zero',
+    ite_eq_right (by decide)]
+  rfl
+
+/-- The registers the selection writes. -/
+abbrev selRegs : List Reg := [.t0, .t1, .t2, .t3, .t4, .t5, .t6, .a0, .a1, .a2, .a3, .a4]
+
+/-- The element at slot `x`. -/
+abbrev ev (base : Addr) (s : State) (x : Nat) : Fe W := uf (wordsVal s.mem base x 9)
+
+/-- A point in the slots `p`: its coordinates tight limbs, representing `P`. -/
+structure PtOk (base : Addr) (s : State) (p : Pt) (P : Point W) : Prop where
+  rep : Rep W (ev base s p.x) (ev base s p.y) (ev base s p.z) P
+  x : Tight (wordsVal s.mem base p.x 9)
+  y : Tight (wordsVal s.mem base p.y 9)
+  z : Tight (wordsVal s.mem base p.z 9)
+
+theorem PtOk.of_eq {base : Addr} {s s' : State} {p : Pt} {P : Point W} (h : PtOk base s p P)
+    (hx : wordsVal s'.mem base p.x 9 = wordsVal s.mem base p.x 9)
+    (hy : wordsVal s'.mem base p.y 9 = wordsVal s.mem base p.y 9)
+    (hz : wordsVal s'.mem base p.z 9 = wordsVal s.mem base p.z 9) : PtOk base s' p P :=
+  ⟨by simp only [ev]; rw [hx, hy, hz]; exact h.rep, by rw [hx]; exact h.x, by rw [hy]; exact h.y,
+    by rw [hz]; exact h.z⟩
+
+/-- A point copied to other slots. -/
+theorem PtOk.move {base : Addr} {s s' : State} {p q : Pt} {P : Point W} (h : PtOk base s p P)
+    (hx : wordsVal s'.mem base q.x 9 = wordsVal s.mem base p.x 9)
+    (hy : wordsVal s'.mem base q.y 9 = wordsVal s.mem base p.y 9)
+    (hz : wordsVal s'.mem base q.z 9 = wordsVal s.mem base p.z 9) : PtOk base s' q P :=
+  ⟨by simp only [ev]; rw [hx, hy, hz]; exact h.rep, by rw [hx]; exact h.x, by rw [hy]; exact h.y,
+    by rw [hz]; exact h.z⟩
+
+theorem keepU {base : Addr} {Wl : List (Nat × Nat)} {m m' : Mem} (U : Unch base Wl m m') {D : List Nat}
+    (hD : ∀ d ∈ D, (∀ w ∈ Wl, d + 8 * 9 ≤ w.1 ∨ w.1 + w.2 ≤ d) ∧ d + 72 ≤ 4095) :
+    ∀ d ∈ D, wordsVal m' base d 9 = wordsVal m base d 9 := fun d hd =>
+  U.wordsVal (hD d hd).1 (by have := (hD d hd).2; omega_using [this])
+
+/-! ## The constants -/
+
+/-- The constants the windows read: `a`, `3 b` and one in limbs, and zero. -/
+structure KC (base : Addr) (s : State) : Prop where
+  ta : Tight (wordsVal s.mem base (c.sl UA) 9)
+  va : ev base s (c.sl UA) = Fin.ofNat W.p W.a
+  tb : Tight (wordsVal s.mem base (c.sl UB) 9)
+  vb : ev base s (c.sl UB) = Fin.ofNat W.p (3 * W.b)
+  zero : wordsVal s.mem base (c.sl ZERO) 9 = 0
+  to : Tight (wordsVal s.mem base (c.sl UONE) 9)
+  vo : ev base s (c.sl UONE) = 1
+
+/-- The constants' slots. -/
+abbrev kSl : List Nat := [c.sl UA, c.sl UB, c.sl ZERO, c.sl UONE]
+
+theorem KC.of_eq {base : Addr} {s s' : State} (h : KC base s)
+    (e : ∀ d ∈ kSl, wordsVal s'.mem base d 9 = wordsVal s.mem base d 9) : KC base s' := by
+  obtain ea := e (c.sl UA) (by simp)
+  obtain eb := e (c.sl UB) (by simp)
+  obtain ez := e (c.sl ZERO) (by simp)
+  obtain eo := e (c.sl UONE) (by simp)
+  exact ⟨by rw [ea]; exact h.ta, by simp only [ev]; rw [ea]; exact h.va, by rw [eb]; exact h.tb,
+    by simp only [ev]; rw [eb]; exact h.vb, ez.trans h.zero, by rw [eo]; exact h.to,
+    by simp only [ev]; rw [eo]; exact h.vo⟩
+
+/-! ## The complete additions -/
+
+/-- The slots of the windows' additions. -/
+abbrev jSl : List Nat :=
+  [c.sl UA, c.sl UB, c.sl T0, c.sl T1, c.sl T2, c.sl T3, c.sl T4, c.sl T5,
+    c.sl RX, c.sl RY, c.sl RZ, c.sl DX, c.sl DY, c.sl DZ, c.sl TX, c.sl TY, c.sl TZ,
+    c.sl UONE, c.sl c.EX, c.sl c.EY, c.sl c.EZ]
+
+theorem jLay : ULay (· ∈ jSl) :=
+  ⟨by decide, fun x y hx hy => (by decide : ∀ x ∈ jSl, ∀ y ∈ jSl, x ≠ y → x + 72 ≤ y ∨ y + 72 ≤ x)
+    x hx y hy, by decide⟩
+
+/-- What the additions write. -/
+abbrev addW (o : Pt) : List (Nat × Nat) :=
+  (rcbW S o).map (fun w => (w, 8 * 9)) ++ [(own 9, 64 * 9)]
+
+/-- `o = p + q` by the complete addition, for points in slots of `jSl`. -/
+theorem addPt_ok (hL : Law W) {base : Addr} {s : State} (hw : WsReg s base) (hK : KC base s)
+    {p q o : Pt} (hA : RcbApart S p q o)
+    (hsl : ∀ x ∈ rcbW S o ++ rcbR S p q, x ∈ jSl)
+    {P P' : Point W} (hP : onCurve W P = true) (hP' : onCurve W P' = true)
+    (hp : PtOk base s p P) (hq : PtOk base s q P') :
+    WP isa (addPt p q o) s fun s' =>
+      Kp s s' ∧ Unch base (addW o) s.mem s'.mem ∧ PtOk base s' o (Spec.Weierstrass.add P P') := by
+  rw [addPt]
+  obtain hI : LInv base (· ∈ jSl) (rcbR S p q) (fun x => ev base s x) s := by
+    refine ⟨hw, fun x hx => hsl x (List.mem_append_right _ hx), fun x hx => ?_, fun x _ => rfl⟩
+    simp only [rcbR, List.mem_cons, List.not_mem_nil, or_false] at hx
+    rcases hx with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    exacts [hK.ta, hK.tb, hp.x, hp.y, hp.z, hq.x, hq.y, hq.z]
+  refine WP.mono (urcb_ok jLay hA hsl hI (fun x hx => hx)) fun s₁ ⟨k₁, I₁, t₁⟩ => ?_
+  generalize hE : (fun x => ev base s x) = E at I₁ t₁
+  obtain hrep := Rep.add hL hP hP' hp.rep hq.rep (X3 := runOps (rcb S p q o) E o.x)
+    (Y3 := runOps (rcb S p q o) E o.y) (Z3 := runOps (rcb S p q o) E o.z)
+    (by
+      subst hE
+      show rcbAdd (Fin.ofNat W.p W.a) (Fin.ofNat W.p (3 * W.b)) _ _ _ _ _ _ = _
+      rw [← hK.va, ← hK.vb]
+      exact t₁.1.symm)
+  obtain hm : ∀ x ∈ [o.x, o.y, o.z], x ∈ rcbW S o ++ rcbR S p q :=
+    fun x hx => List.mem_append_left _ (by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
+      rcases hx with rfl | rfl | rfl <;> simp [rcbW])
+  refine ⟨k₁.kp, k₁.mem, ⟨?_, I₁.tight _ (hm _ (by simp)), I₁.tight _ (hm _ (by simp)),
+    I₁.tight _ (hm _ (by simp))⟩⟩
+  obtain vx : ev base s₁ o.x = _ := I₁.val _ (hm _ (by simp))
+  obtain vy : ev base s₁ o.y = _ := I₁.val _ (hm _ (by simp))
+  obtain vz : ev base s₁ o.z = _ := I₁.val _ (hm _ (by simp))
+  rw [vx, vy, vz]
+  exact hrep
+
+/-! ## The slots -/
+
+/-- The slots of `R = 16 R`'s arithmetic. -/
+abbrev wSl : List Nat :=
+  [c.sl UA, c.sl UB, c.sl ZERO, c.sl T0, c.sl T1, c.sl T2, c.sl T3, c.sl T4, c.sl T5,
+    c.sl RX, c.sl RY, c.sl RZ, c.sl DX, c.sl DY, c.sl DZ, c.sl TX, c.sl TY, c.sl TZ]
+
+theorem wLay : ULay (· ∈ wSl) :=
+  ⟨by decide, fun x y hx hy => (by decide : ∀ x ∈ wSl, ∀ y ∈ wSl, x ≠ y → x + 72 ≤ y ∨ y + 72 ≤ x)
+    x hx y hy, by decide⟩
+
+/-- What the field operations of `R = 16 R` write: `R`, `D`, `T`, the
+temporaries and the functions' own working space. -/
+abbrev quadW : List (Nat × Nat) := [(1072, 1080), (7616, 576)]
+
+/-- The slots they write. -/
+abbrev quadWl : List Nat :=
+  [c.sl T0, c.sl T1, c.sl T2, c.sl T3, c.sl T4, c.sl T5, c.sl RX, c.sl RY, c.sl RZ,
+    c.sl DX, c.sl DY, c.sl DZ, c.sl TX, c.sl TY, c.sl TZ]
+
+/-! ## `R = 16 R` -/
+
+theorem dbl_apart_DT : RcbApart S (c.pt DX DY DZ) (c.pt DX DY DZ) (c.pt TX TY TZ) := ⟨by decide, by decide⟩
+theorem dbl_apart_TD : RcbApart S (c.pt TX TY TZ) (c.pt TX TY TZ) (c.pt DX DY DZ) := ⟨by decide, by decide⟩
+theorem toJ_apart : RcbApart S (c.pt RX RY RZ) (zeroPt c) (c.pt DX DY DZ) := ⟨by decide, by decide⟩
+theorem fromJ_apart : RcbApart S (c.pt DX DY DZ) (zeroPt c) (c.pt RX RY RZ) := ⟨by decide, by decide⟩
+
+/-- A Jacobian doubling from `p` to `o` (`D` to `T` or back). -/
+theorem dblStep_ok (hL : Law W) {base : Addr} {s : State} {p o : Pt} (hA : RcbApart S p p o)
+    (hsl : ∀ x ∈ rcbW S o ++ rcbR S p p, x ∈ wSl) {V : List Nat} {E : Nat → Fe W}
+    (hI : LInv base (· ∈ wSl) V E s) (hV : ∀ x ∈ rcbR S p p, x ∈ V) {P : Point W}
+    (hP : onCurve W P = true) (hJ : InvJ W (E p.x) (E p.y) (E p.z) P) :
+    WP isa (fprog F (dblJ S p o)) s fun s' => KeepR 9 base (rcbW S o) s s' ∧
+      ∃ E', LInv base (· ∈ wSl) ([o.x, o.y, o.z] ++ V) E' s' ∧ InvJ W (E' o.x) (E' o.y) (E' o.z) (d2 P) ∧
+        ∀ x, x ∉ rcbW S o → E' x = E x := by
+  rw [dblJ_eq]
+  refine WP.mono (uofN_ok wLay dblJN_ok hA hsl hI hV)
+    fun s' ⟨k, I, v, kp⟩ => ⟨k, _, I, InvJ.dbl' hL am3 hP hJ (v.trans (dblJN_run _)), kp⟩
+
+/-- `R` into Jacobian coordinates in `D`. -/
+theorem toJStep_ok (hL : Law W) {base : Addr} {s : State} {V : List Nat} {E : Nat → Fe W}
+    (hI : LInv base (· ∈ wSl) V E s) (hV : ∀ x ∈ rcbR S (c.pt RX RY RZ) (zeroPt c), x ∈ V) {P : Point W}
+    (hR : Rep W (E (c.sl RX)) (E (c.sl RY)) (E (c.sl RZ)) P) (hz : E (c.sl ZERO) = 0) :
+    WP isa (fprog F (toJ S (c.pt RX RY RZ) (zeroPt c) (c.pt DX DY DZ))) s fun s' =>
+      KeepR 9 base (rcbW S (c.pt DX DY DZ)) s s' ∧
+      ∃ E', LInv base (· ∈ wSl) ([c.sl DX, c.sl DY, c.sl DZ] ++ V) E' s' ∧
+        InvJ W (E' (c.sl DX)) (E' (c.sl DY)) (E' (c.sl DZ)) P ∧
+        ∀ x, x ∉ rcbW S (c.pt DX DY DZ) → E' x = E x := by
+  rw [toJ_eq]
+  refine WP.mono (uofN_ok wLay toJN_ok toJ_apart (by decide) hI hV)
+    fun s' ⟨k, I, v, kp⟩ => ⟨k, _, I, InvJ.of_toJ hL hR hz (v.trans (toJN_run _)), kp⟩
+
+/-- `D` back in projective coordinates in `R`. -/
+theorem fromJStep_ok {base : Addr} {s : State} {V : List Nat} {E : Nat → Fe W}
+    (hI : LInv base (· ∈ wSl) V E s) (hV : ∀ x ∈ rcbR S (c.pt DX DY DZ) (zeroPt c), x ∈ V) :
+    WP isa (fprog F (fromJ S (c.pt DX DY DZ) (zeroPt c) (c.pt RX RY RZ))) s fun s' =>
+      KeepR 9 base (rcbW S (c.pt RX RY RZ)) s s' ∧
+      ∃ E', LInv base (· ∈ wSl) ([c.sl RX, c.sl RY, c.sl RZ] ++ V) E' s' ∧
+        (E' (c.sl RX), E' (c.sl RY), E' (c.sl RZ)) =
+          (E (c.sl DX) * E (c.sl DZ), E (c.sl DY) + E (c.sl ZERO),
+            E (c.sl DZ) * E (c.sl DZ) * E (c.sl DZ)) ∧
+        ∀ x, x ∉ rcbW S (c.pt RX RY RZ) → E' x = E x := by
+  rw [fromJ_eq]
+  refine WP.mono (uofN_ok wLay fromJN_ok fromJ_apart (by decide) hI hV)
+    fun s' ⟨k, I, v, kp⟩ => ⟨k, _, I, v.trans (fromJN_run _), kp⟩
+
+/-- The residue packed is zero exactly where the element is. -/
+theorem pack_zero_iff {X : Nat} : X % P521Unsat.p = 0 ↔ (Fin.ofNat W.p X : Fe W) = 0 := by
+  rw [Fin.ext_iff]
+  simp only [Fin.val_ofNat]
+  rfl
+
+/-- `R = 16 R`, for `R` representing `P`. -/
+theorem quad_ok (hL : Law W) {base : Addr} {s : State} (hw : WsReg s base) (hK : KC base s) {P : Point W}
+    (hP : onCurve W P = true) (hR : PtOk base s (c.pt RX RY RZ) P) :
+    WP isa quad s fun s' => Kp s s' ∧ Unch base quadW s.mem s'.mem ∧
+      PtOk base s' (c.pt RX RY RZ) (d16 P) := by
+  have hn := hw.nowrap
+  rw [quad]
+  simp only [progs]
+  -- The start: `a`, `b`, zero and `R`.
+  obtain hI : LInv base (· ∈ wSl) [c.sl UA, c.sl UB, c.sl ZERO, c.sl RX, c.sl RY, c.sl RZ]
+      (fun x => ev base s x) s := by
+    refine ⟨hw, by decide, fun x hx => ?_, fun x _ => rfl⟩
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
+    rcases hx with rfl | rfl | rfl | rfl | rfl | rfl
+    · exact hK.ta
+    · exact hK.tb
+    · show Tight (wordsVal s.mem base (c.sl ZERO) 9); rw [hK.zero]; exact tight_zero
+    exacts [hR.x, hR.y, hR.z]
+  obtain e0 : ev base s (c.sl ZERO) = 0 := by simp only [ev]; rw [hK.zero]; exact uf_zero
+  -- To Jacobian coordinates.
+  refine WP.seq (WP.mono (toJStep_ok hL hI (by decide) hR.rep e0) fun s₁ ⟨k₁, E₁, I₁, J₁, p₁⟩ => ?_)
+  -- Four doublings.
+  refine WP.seq (WP.mono (dblStep_ok hL dbl_apart_DT (by decide) I₁ (by decide) hP J₁)
+    fun s₂ ⟨k₂, E₂, I₂, J₂, p₂⟩ => ?_)
+  refine WP.seq (WP.mono (dblStep_ok hL dbl_apart_TD (by decide) I₂ (by decide) (hL.onCurve_add hP hP) J₂)
+    fun s₃ ⟨k₃, E₃, I₃, J₃, p₃⟩ => ?_)
+  obtain h4 := hL.onCurve_add (hL.onCurve_add hP hP) (hL.onCurve_add hP hP)
+  refine WP.seq (WP.mono (dblStep_ok hL dbl_apart_DT (by decide) I₃ (by decide) h4 J₃)
+    fun s₄ ⟨k₄, E₄, I₄, J₄, p₄⟩ => ?_)
+  refine WP.seq (WP.mono (dblStep_ok hL dbl_apart_TD (by decide) I₄ (by decide) (hL.onCurve_add h4 h4) J₄)
+    fun s₅ ⟨k₅, E₅, I₅, J₅, p₅⟩ => ?_)
+  -- Back to projective coordinates.
+  refine WP.seq (WP.mono (fromJStep_ok I₅ (by decide)) fun s₆ ⟨k₆, E₆, I₆, v₆, p₆⟩ => ?_)
+  obtain z₅ : E₅ (c.sl ZERO) = 0 := by
+    rw [p₅ _ (by decide), p₄ _ (by decide), p₃ _ (by decide), p₂ _ (by decide), p₁ _ (by decide)]; exact e0
+  simp only [Prod.mk.injEq] at v₆
+  obtain ⟨vx, vy, vz⟩ := v₆
+  rw [z₅, Lean.Grind.AddCommMonoid.add_zero] at vy
+  have hw₆ := I₆.ws
+  obtain ltx := I₆.tight (c.sl RX) (by decide)
+  obtain lty := I₆.tight (c.sl RY) (by decide)
+  obtain ltz := I₆.tight (c.sl RZ) (by decide)
+  obtain vx' : ev base s₆ (c.sl RX) = E₆ (c.sl RX) := I₆.val (c.sl RX) (by decide)
+  obtain vy' : ev base s₆ (c.sl RY) = E₆ (c.sl RY) := I₆.val (c.sl RY) (by decide)
+  obtain vz' : ev base s₆ (c.sl RZ) = E₆ (c.sl RZ) := I₆.val (c.sl RZ) (by decide)
+  obtain KK₆ : KeepR 9 base quadWl s s₆ :=
+    ((((k₁.mono (by decide)).trans (k₂.mono (by decide))).trans ((k₃.mono (by decide)).trans
+      (k₄.mono (by decide)))).trans ((k₅.mono (by decide)).trans (k₆.mono (by decide))))
+  -- `Z`'s residue into `T0`.
+  refine WP.seq (WP.mono (packCall_ok (f := F.S.fn "pack") hw₆ (o := c.sl T0) (a := c.sl RZ) (b := 0)
+    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) ltz) fun s₇ ⟨C₇, e₇⟩ => ?_)
+  obtain hw₇ := hw₆.of_kp C₇.kp
+  obtain KK : KeepR 9 base quadWl s s₇ := KK₆.trans ((KeepR.of_call C₇).mono (by decide))
+  have UK : Unch base (quadWl.map (fun w => (w, 8 * 9)) ++ [(own 9, 64 * 9)]) s.mem s₇.mem := KK.mem
+  obtain k₇ : ∀ d ∈ [c.sl RX, c.sl RY, c.sl RZ], wordsVal s₇.mem base d 9 = wordsVal s₆.mem base d 9 :=
+    fun d hd => outs_wordsVal C₇.mem (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hd hr
+      rcases hd with rfl | rfl | rfl <;> rcases hr with rfl | rfl <;> decide) (by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
+      rcases hd with rfl | rfl | rfl <;> decide)
+  obtain onep₇ : wordsVal s₇.mem base (c.sl UONE) 9 = wordsVal s.mem base (c.sl UONE) 9 :=
+    UK.wordsVal (by decide) (by decide)
+  -- `Y = 1` where `Z` is zero.
+  refine WP.block_append (WP.mono (zeroMask_ok hw₇ (n := 9) (a := c.sl T0) (by decide) (by decide))
+    fun s₈ ⟨r₈, m₈, a7₈⟩ => ?_)
+  obtain hw₈ := hw₇.of_rest r₈
+  refine WP.mono (sel_ok (decide (wordsVal s₇.mem base (c.sl T0) 9 = 0)) 9 hw₈ a7₈
+    (o := c.sl RY) (a := c.sl RY) (b := c.sl UONE) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (Or.inl (Nat.le_refl _)) (by decide)) fun s₉ ⟨e₉, r₉, O₉⟩ => ?_
+  rw [m₈] at e₉ O₉
+  obtain ex : wordsVal s₉.mem base (c.sl RX) 9 = wordsVal s₆.mem base (c.sl RX) 9 :=
+    (O₉.wordsVal (by decide) (by decide)).trans (k₇ _ (by simp))
+  obtain ez : wordsVal s₉.mem base (c.sl RZ) 9 = wordsVal s₆.mem base (c.sl RZ) 9 :=
+    (O₉.wordsVal (by decide) (by decide)).trans (k₇ _ (by simp))
+  obtain ey : wordsVal s₇.mem base (c.sl RY) 9 = wordsVal s₆.mem base (c.sl RY) 9 := k₇ _ (by simp)
+  obtain hZ : (wordsVal s₇.mem base (c.sl T0) 9 = 0) ↔ E₅ (c.sl DZ) = 0 := by
+    rw [show wordsVal s₇.mem base (c.sl T0) 9 = _ from e₇, pack_zero_iff]
+    show ev base s₆ (c.sl RZ) = 0 ↔ _
+    rw [vz', vz]
+    exact ⟨fun h => by_contra fun hz => cube_ne_zero hL hz h, fun h => by rw [h]; grind⟩
+  obtain hrep := InvJ.out hL J₅
+  refine ⟨KK.kp.trans ((Kp.of_rest r₈).trans (Kp.of_rest r₉)), (UK.trans O₉.unch).cover (by decide),
+    ⟨?_, ?_, ?_, ?_⟩⟩
+  · show Rep W (ev base s₉ (c.sl RX)) (ev base s₉ (c.sl RY)) (ev base s₉ (c.sl RZ)) _
+    simp only [ev]
+    rw [ex, ez]
+    show Rep W (ev base s₆ (c.sl RX)) _ (ev base s₆ (c.sl RZ)) _
+    rw [vx', vz', vx, vz, e₉]
+    by_cases h0 : E₅ (c.sl DZ) = 0
+    · have hc : decide (wordsVal s₇.mem base (c.sl T0) 9 = 0) = true := decide_eq_true (hZ.mpr h0)
+      have h0' : E₅ (c.pt DX DY DZ).z = 0 := h0
+      rw [show (if E₅ (c.pt DX DY DZ).z = 0 then (1 : Fe W) else E₅ (c.pt DX DY DZ).y) = 1 from
+        by simp [h0']] at hrep
+      simp only [hc, ↓reduceIte]
+      rw [onep₇]
+      rw [show uf (wordsVal s.mem base (c.sl UONE) 9) = 1 from hK.vo]
+      exact hrep
+    · have hc : decide (wordsVal s₇.mem base (c.sl T0) 9 = 0) = false :=
+        decide_eq_false fun h => h0 (hZ.mp h)
+      have h0' : ¬E₅ (c.pt DX DY DZ).z = 0 := h0
+      rw [show (if E₅ (c.pt DX DY DZ).z = 0 then (1 : Fe W) else E₅ (c.pt DX DY DZ).y) =
+        E₅ (c.pt DX DY DZ).y from by simp [h0']] at hrep
+      simp only [hc, ↓reduceIte, Bool.false_eq_true]
+      rw [ey]
+      show Rep W _ (ev base s₆ (c.sl RY)) _ _
+      rw [vy', vy]
+      exact hrep
+  · show Tight (wordsVal s₉.mem base (c.sl RX) 9)
+    rw [ex]; exact ltx
+  · show Tight (wordsVal s₉.mem base (c.sl RY) 9)
+    rw [e₉]; split
+    · rw [onep₇]; exact hK.to
+    · rw [ey]; exact lty
+  · show Tight (wordsVal s₉.mem base (c.sl RZ) 9)
+    rw [ez]; exact ltz
+
+/-! ## The table -/
+
+/-- Entry `e`'s slots. -/
+abbrev ent (e : Nat) : Pt := ⟨4096 + 216 * e, 4096 + 216 * e + 72, 4096 + 216 * e + 144⟩
+
+/-- The table up to entry `m`: `[e]Q` in entry `e`. -/
+abbrev TabTo (base : Addr) (s : State) (Q : Point W) (m : Nat) : Prop := ∀ e ≤ m, PtOk base s (ent e) (mul e Q)
+
+theorem TabTo.of_eq {base : Addr} {s s' : State} {Q : Point W} {m : Nat} (h : TabTo base s Q m)
+    (he : ∀ d, 4096 ≤ d → d + 72 ≤ 7552 → wordsVal s'.mem base d 9 = wordsVal s.mem base d 9) (hm : m ≤ 15) :
+    TabTo base s' Q m :=
+  fun e hlt => (h e hlt).of_eq (he (4096 + 216 * e) (by omega_using []) (by omega_using [hm, hlt]))
+    (he (4096 + 216 * e + 72) (by omega_using []) (by omega_using [hm, hlt])) (he (4096 + 216 * e + 144) (by omega_using []) (by omega_using [hm, hlt]))
+
+/-- `o = p`, the three coordinates one after the other, for `o`'s slots in
+order and `p`'s apart from them all. -/
+theorem copyPt_ok {s : State} {base : Addr} (hw : WsReg s base) {o p : Pt}
+    (h8 : ∀ x ∈ [o.x, o.y, o.z, p.x, p.y, p.z], x % 8 = 0 ∧ x + 72 ≤ 4096)
+    (hxy : o.x + 72 ≤ o.y) (hyz : o.y + 72 ≤ o.z)
+    (hp : ∀ a ∈ [p.x, p.y, p.z], a + 72 ≤ o.x ∨ o.z + 72 ≤ a) :
+    WP isa (.block (copyPt c o p)) s fun s' =>
+      wordsVal s'.mem base o.x 9 = wordsVal s.mem base p.x 9 ∧ wordsVal s'.mem base o.y 9 = wordsVal s.mem base p.y 9 ∧
+      wordsVal s'.mem base o.z 9 = wordsVal s.mem base p.z 9 ∧ Rest [.t0] s s' ∧
+      Unch base [(o.x, 72), (o.y, 72), (o.z, 72)] s.mem s'.mem := by
+  have hn := hw.nowrap
+  obtain g := fun x hx => h8 x hx
+  obtain gp := fun x hx => hp x hx
+  simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at g gp
+  obtain ⟨⟨ox8, ox⟩, ⟨oy8, oy⟩, ⟨oz8, oz⟩, ⟨px8, px⟩, ⟨py8, py⟩, ⟨pz8, pz⟩⟩ := g
+  obtain ⟨hpx, hpy, hpz⟩ := gp
+  rw [copyPt, show c.n = 9 from rfl, List.append_assoc]
+  refine WP.block_append (WP.mono (copy_ok 9 hw (o := o.x) (a := p.x) ox8 px8 (by omega_using [ox]) (by omega_using [px]) (by omega_using [hxy, hyz, ox8, ox, oy8, oy, oz8, oz, px8, px, py8, py, pz8, pz, hpx, hpy, hpz]))
+    fun s₁ ⟨e₁, r₁, O₁⟩ => ?_)
+  obtain hw₁ := hw.of_rest r₁
+  refine WP.block_append (WP.mono (copy_ok 9 hw₁ (o := o.y) (a := p.y) oy8 py8 (by omega_using [oy]) (by omega_using [py]) (by omega_using [hxy, hyz, hpy]))
+    fun s₂ ⟨e₂, r₂, O₂⟩ => ?_)
+  obtain hw₂ := hw₁.of_rest r₂
+  refine WP.mono (copy_ok 9 hw₂ (o := o.z) (a := p.z) oz8 pz8 (by omega_using [oz]) (by omega_using [pz]) (by omega_using [hxy, hyz, ox8, ox, oy8, oy, oz8, oz, px8, px, py8, py, pz8, pz, hpx, hpy, hpz]))
+    fun s₃ ⟨e₃, r₃, O₃⟩ => ⟨?_, ?_, ?_, (r₁.trans r₂).trans r₃ |>.mono (by simp), ?_⟩
+  · rw [O₃.wordsVal (by omega_using [hxy, hyz]) (by omega_using [ox]), O₂.wordsVal (by omega_using [hxy]) (by omega_using [ox]), e₁]
+  · rw [O₃.wordsVal (by omega_using [hyz]) (by omega_using [oy]), e₂, O₁.wordsVal (by omega_using [hxy, hyz, ox8, ox, oy8, oy, oz8, oz, px8, px, py8, py, pz8, pz, hpx, hpy, hpz]) (by omega_using [py])]
+  · rw [e₃, O₂.wordsVal (by omega_using [hxy, hyz, hpz]) (by omega_using [pz]), O₁.wordsVal (by omega_using [hxy, hyz, ox8, ox, oy8, oy, oz8, oz, px8, px, py8, py, pz8, pz, hpx, hpy, hpz]) (by omega_using [pz])]
+  · exact ((O₁.unch.trans O₂.unch).trans O₃.unch).mono (by simp)
+
+/-- `D`'s slots, as `copyPt` writes them. -/
+theorem dSl : ∀ w ∈ ([((c.pt DX DY DZ).x, 72), ((c.pt DX DY DZ).y, 72), ((c.pt DX DY DZ).z, 72)] : List (Nat × Nat)),
+    1288 ≤ w.1 ∧ w.1 + w.2 ≤ 1504 := by decide
+
+/-- A point in slots below byte 4095 to entry `e`. -/
+theorem store_ok {s : State} {base : Addr} (hw : WsReg s base) {e : Nat} (he : e < 16) {p : Pt}
+    (hs : ∀ x ∈ [p.x, p.y, p.z], x % 8 = 0 ∧ x + 72 ≤ 4095) {P : Point W} (hp : PtOk base s p P) :
+    WP isa (.block (Verify.Cfg.storePt c e p)) s fun s' => PtOk base s' (ent e) P ∧ Rest [.t0, .a6] s s' ∧
+      Outside base (4096 + 216 * e) 216 s.mem s'.mem := by
+  have hn := hw.nowrap
+  obtain g := fun x hx => hs x hx
+  simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at g
+  obtain ⟨⟨hx8, hx⟩, ⟨hy8, hy⟩, ⟨hz8, hz⟩⟩ := g
+  refine WP.mono (VG.Proof.Ecdsa.RISCV64.Joint.storePt_ok c hw (e := e) (by decide) (by show 4096 + 216 * e + 216 ≤ 8192; omega_using [he])
+    (by show 216 * e + 216 ≤ 4095; omega_using [he]) ⟨hx8, by show _ + 72 ≤ 4095; omega_using [hx], by show _ + 72 ≤ 4096; omega_using [hx]⟩
+    ⟨hy8, by show _ + 72 ≤ 4095; omega_using [hy], by show _ + 72 ≤ 4096; omega_using [hy]⟩
+    ⟨hz8, by show _ + 72 ≤ 4095; omega_using [hz], by show _ + 72 ≤ 4096; omega_using [hz]⟩) fun s' ⟨ex, ey, ez, r, O⟩ => ?_
+  simp only [show Verify.Cfg.jb c = 216 from rfl, Nat.reduceMul] at ex ey ez O
+  exact ⟨hp.move ex ey ez, r, O⟩
+
+/-- While the table is built: the constants, the table up to entry `m + 1`,
+`[m + 1]Q` in `D` and `Q` in `R`'s first two slots and one's. -/
+structure AI (base : Addr) (s : State) (Q : Point W) (m : Nat) : Prop where
+  ws : WsReg s base
+  kc : KC base s
+  tab : TabTo base s Q (m + 1)
+  d : PtOk base s (c.pt DX DY DZ) (mul (m + 1) Q)
+  q : PtOk base s (c.pt RX RY UONE) Q
+
+/-- What the table's additions write. -/
+abbrev addsW : List (Nat × Nat) := [(1288, 864), (4096, 3456), (7616, 576)]
+
+/-- An addition's writes into `T`, within `addsW`, and apart from the table. -/
+theorem addW_T : ∀ w ∈ addW (c.pt TX TY TZ), (∃ w' ∈ addsW, w'.1 ≤ w.1 ∧ w.1 + w.2 ≤ w'.1 + w'.2) ∧
+    (w.1 + w.2 ≤ 4096 ∨ 7552 ≤ w.1) := by decide
+
+/-- `copyPt`'s writes into `D`, within `addsW`. -/
+theorem dW : ∀ w ∈ ([((c.pt DX DY DZ).x, 72), ((c.pt DX DY DZ).y, 72), ((c.pt DX DY DZ).z, 72)] : List (Nat × Nat)),
+    ∃ w' ∈ addsW, w'.1 ≤ w.1 ∧ w.1 + w.2 ≤ w'.1 + w'.2 := by decide
+
+/-- Entry `e`'s bytes, within `addsW`. -/
+theorem entW {e : Nat} (he : e < 16) : ∃ w' ∈ addsW, w'.1 ≤ 4096 + 216 * e ∧ 4096 + 216 * e + 216 ≤ w'.1 + w'.2 :=
+  ⟨(4096, 3456), List.mem_cons_of_mem _ List.mem_cons_self, by simp only; omega_using [], by simp only; omega_using [he]⟩
+
+/-- Entry `e`, kept by memory unchanged there. -/
+theorem ent_of {base : Addr} {s s' : State} {e : Nat} {P : Point W} (h : PtOk base s (ent e) P)
+    (k : ∀ d, 4096 + 216 * e ≤ d → d + 72 ≤ 4096 + 216 * e + 216 → wordsVal s'.mem base d 9 = wordsVal s.mem base d 9) :
+    PtOk base s' (ent e) P :=
+  h.of_eq (k (4096 + 216 * e) (Nat.le_refl _) (by omega_using [])) (k (4096 + 216 * e + 72) (by omega_using []) (by omega_using []))
+    (k (4096 + 216 * e + 144) (by omega_using []) (by omega_using []))
+
+/-- The constants and `Q`'s slots: apart from `D` and below the table. -/
+abbrev cqSl : List Nat := kSl ++ [c.sl RX, c.sl RY]
+
+/-- The additions of `[e]Q` for `e = 2 … m + 1`. -/
+theorem adds_ok (hL : Law W) {base : Addr} {Q : Point W} (hQ : onCurve W Q = true) :
+    ∀ m ≤ 14, ∀ {s : State}, AI base s Q 0 →
+      WP isa (adds m) s fun s' => Kp s s' ∧ Unch base addsW s.mem s'.mem ∧ AI base s' Q m
+  | 0, _, s, h => WP.block_nil ⟨Kp.refl _, Unch.refl _ _ _, h⟩
+  | m + 1, hm, s, h => by
+    rw [adds]
+    refine WP.seq (WP.mono (adds_ok hL hQ m (by omega_using [hm]) h) fun s₁ ⟨k₁, U₁, A₁⟩ => ?_)
+    have hw₁ := A₁.ws
+    have hn := hw₁.nowrap
+    -- `T = D + Q`.
+    refine WP.seq (WP.mono (addPt_ok hL hw₁ A₁.kc (p := c.pt DX DY DZ) (q := c.pt RX RY UONE)
+      (o := c.pt TX TY TZ) ⟨by decide, by decide⟩ (by decide) (hL.onCurve_mul hQ _) hQ A₁.d A₁.q)
+      fun s₂ ⟨k₂, U₂, p₂⟩ => ?_)
+    rw [mul_succ' hL hQ, show m + 1 + 1 = m + 2 by omega_using []] at p₂
+    obtain hw₂ := hw₁.of_kp k₂
+    obtain e₂ : ∀ d ∈ cqSl, wordsVal s₂.mem base d 9 = wordsVal s₁.mem base d 9 := keepU U₂ (by decide)
+    obtain far₂ : ∀ d, 4096 ≤ d → d + 72 ≤ 7552 → wordsVal s₂.mem base d 9 = wordsVal s₁.mem base d 9 :=
+      fun d h1 h2 => U₂.wordsVal (fun w hw => by have := (addW_T w hw).2; omega_using [h1, h2, this]) (by omega_using [h2])
+    -- Stored to entry `m + 2`.
+    refine WP.block_append (WP.mono (store_ok hw₂ (e := m + 2) (by omega_using [hm]) (by decide) p₂)
+      fun s₃ ⟨p₃, r₃, O₃⟩ => ?_)
+    obtain hw₃ := hw₂.of_rest r₃
+    obtain e₃ : ∀ d, d + 72 ≤ 4095 → wordsVal s₃.mem base d 9 = wordsVal s₂.mem base d 9 := fun d hd =>
+      O₃.wordsVal (by omega_using [hd]) (by omega_using [hd])
+    obtain pT₃ : PtOk base s₃ (c.pt TX TY TZ) (mul (m + 2) Q) :=
+      p₂.of_eq (e₃ _ (by decide)) (e₃ _ (by decide)) (e₃ _ (by decide))
+    -- `D = T`.
+    refine WP.mono (copyPt_ok hw₃ (o := c.pt DX DY DZ) (p := c.pt TX TY TZ) (by decide) (by decide) (by decide)
+      (by decide)) fun s₄ ⟨x₄, y₄, z₄, r₄, U₄⟩ => ?_
+    obtain e₄ : ∀ d, (d + 72 ≤ 1288 ∨ 1504 ≤ d) → d + 72 ≤ 8192 → wordsVal s₄.mem base d 9 = wordsVal s₃.mem base d 9 :=
+      fun d h1 h2 => U₄.wordsVal (fun w hw => by have := dSl w hw; omega_using [h1, this]) (by omega_using [h2])
+    obtain kd : ∀ d ∈ cqSl, wordsVal s₄.mem base d 9 = wordsVal s₁.mem base d 9 := fun d hd => by
+      obtain hd' : (d + 72 ≤ 1288 ∨ 1504 ≤ d) ∧ d + 72 ≤ 4095 :=
+        (by decide : ∀ d ∈ cqSl, (d + 72 ≤ 1288 ∨ 1504 ≤ d) ∧ d + 72 ≤ 4095) d hd
+      rw [e₄ d hd'.1 (by omega_using [hd']), e₃ d hd'.2, e₂ d hd]
+    refine ⟨k₁.trans (k₂.trans ((Kp.of_rest r₃).trans (Kp.of_rest r₄))), ?_, ⟨hw₃.of_rest r₄, ?_, ?_, ?_, ?_⟩⟩
+    · refine (((U₁.trans U₂).trans O₃.unch).trans U₄).cover fun w hw => ?_
+      rcases List.mem_append.mp hw with hw | hw
+      · rcases List.mem_append.mp hw with hw | hw
+        · rcases List.mem_append.mp hw with hw | hw
+          · exact ⟨w, hw, Nat.le_refl _, Nat.le_refl _⟩
+          · exact (addW_T w hw).1
+        · rw [List.mem_singleton] at hw
+          subst hw
+          exact entW (by omega_using [hm])
+      · exact dW w hw
+    · exact A₁.kc.of_eq fun d hd => kd d (List.mem_append_left _ hd)
+    · intro e he
+      rcases Nat.lt_or_ge e (m + 2) with h | h
+      · have pe := A₁.tab e (by omega_using [h])
+        exact ent_of pe fun d h1 h2 => by
+          rw [e₄ d (.inr (by omega_using [h1])) (by omega_using [hm, he, h2]), O₃.wordsVal (by omega_using [h, h2]) (by omega_using [hm, he, h2]), far₂ d (by omega_using [h1]) (by omega_using [hm, he, h2])]
+      · obtain rfl : e = m + 2 := by omega_using [he, h]
+        exact ent_of p₃ fun d h1 h2 => e₄ d (.inr (by omega_using [h1])) (by omega_using [h2, hm])
+    · exact pT₃.move x₄ y₄ z₄
+    · exact A₁.q.of_eq (kd _ (by decide)) (kd _ (by decide)) (kd _ (by decide))
+
+/-- `Q`, the affine point of `R`'s first two slots. -/
+abbrev qOf (base : Addr) (s : State) : Point W := .affine (ev base s (c.sl RX)) (ev base s (c.sl RY))
+
+/-- What the table's construction writes. -/
+abbrev buildW : List (Nat × Nat) := [(1288, 864), (4096, 3456), (7616, 576)]
+
+/-- What the body reads at the start. -/
+structure WPre (base : Addr) (s : State) : Prop where
+  ws : WsReg s base
+  kc : KC base s
+  x : Tight (wordsVal s.mem base (c.sl RX) 9)
+  y : Tight (wordsVal s.mem base (c.sl RY) 9)
+  on : onCurve W (qOf base s) = true
+
+/-- The table of `[e]Q`. -/
+theorem build_ok (hL : Law W) {base : Addr} {s : State} (hp : WPre base s) :
+    WP isa build s fun s' => Kp s s' ∧ Unch base buildW s.mem s'.mem ∧ KC base s' ∧
+      TabTo base s' (qOf base s) 15 ∧
+      ∀ d, d + 72 ≤ 1288 ∨ (2152 ≤ d ∧ d + 72 ≤ 4095) → wordsVal s'.mem base d 9 = wordsVal s.mem base d 9 := by
+  have hw := hp.ws
+  have hn := hw.nowrap
+  have hK := hp.kc
+  obtain h0 : ev base s (c.sl ZERO) = 0 := by simp only [ev]; rw [hK.zero]; exact uf_zero
+  obtain t0 : Tight (wordsVal s.mem base (c.sl ZERO) 9) := by rw [hK.zero]; exact tight_zero
+  obtain pO : PtOk base s (c.pt ZERO UONE ZERO) (mul 0 (qOf base s)) := by
+    refine ⟨?_, t0, hK.to, t0⟩
+    show Rep W (ev base s (c.sl ZERO)) (ev base s (c.sl UONE)) (ev base s (c.sl ZERO)) _
+    rw [h0, hK.vo, mul_zero']
+    exact rep_infinity' hL
+  obtain pQ : PtOk base s (c.pt RX RY UONE) (qOf base s) := by
+    refine ⟨?_, hp.x, hp.y, hK.to⟩
+    show Rep W (ev base s (c.sl RX)) (ev base s (c.sl RY)) (ev base s (c.sl UONE)) _
+    rw [hK.vo]
+    exact rep_affine' hL _ _
+  rw [build, List.append_assoc]
+  refine WP.seq (WP.block_append (WP.mono (store_ok hw (e := 0) (by decide) (by decide) pO)
+    fun s₁ ⟨p₁, r₁, O₁⟩ => ?_))
+  obtain hw₁ := hw.of_rest r₁
+  obtain e₁ : ∀ d, d + 72 ≤ 4095 → wordsVal s₁.mem base d 9 = wordsVal s.mem base d 9 := fun d hd =>
+    O₁.wordsVal (by omega_using [hd]) (by omega_using [hd])
+  refine WP.block_append (WP.mono (store_ok hw₁ (e := 1) (by decide) (by decide)
+    (pQ.of_eq (e₁ _ (by decide)) (e₁ _ (by decide)) (e₁ _ (by decide)))) fun s₂ ⟨p₂, r₂, O₂⟩ => ?_)
+  obtain hw₂ := hw₁.of_rest r₂
+  obtain e₂ : ∀ d, d + 72 ≤ 4095 → wordsVal s₂.mem base d 9 = wordsVal s.mem base d 9 := fun d hd => by
+    rw [O₂.wordsVal (by omega_using [hd]) (by omega_using [hd]), e₁ d hd]
+  refine WP.mono (copyPt_ok hw₂ (o := c.pt DX DY DZ) (p := c.pt RX RY UONE) (by decide) (by decide) (by decide)
+    (by decide)) fun s₃ ⟨x₃, y₃, z₃, r₃, U₃⟩ => ?_
+  obtain hw₃ := hw₂.of_rest r₃
+  obtain e₃ : ∀ d, (d + 72 ≤ 1288 ∨ 1504 ≤ d) → d + 72 ≤ 8192 → wordsVal s₃.mem base d 9 = wordsVal s₂.mem base d 9 :=
+    fun d h1 h2 => U₃.wordsVal (fun w hw => by have := dSl w hw; omega_using [h1, this]) (by omega_using [h2])
+  obtain e₃₀ : ∀ d, d + 72 ≤ 1288 ∨ (1504 ≤ d ∧ d + 72 ≤ 4095) →
+      wordsVal s₃.mem base d 9 = wordsVal s.mem base d 9 := fun d hd => by
+    rw [e₃ d (by omega_using [hd]) (by omega_using [hd]), e₂ d (by omega_using [hd])]
+  obtain pQ₃ : PtOk base s₃ (c.pt RX RY UONE) (qOf base s) :=
+    pQ.of_eq (e₃₀ _ (.inl (by decide))) (e₃₀ _ (.inl (by decide))) (e₃₀ _ (.inr (by decide)))
+  obtain hA : AI base s₃ (qOf base s) 0 := by
+    refine ⟨hw₃, hK.of_eq fun d hd => e₃₀ d ((by decide : ∀ d ∈ kSl, d + 72 ≤ 1288 ∨ (1504 ≤ d ∧ d + 72 ≤ 4095))
+      d hd), fun e he => ?_, ?_, pQ₃⟩
+    · rcases Nat.lt_or_ge e 1 with h | h
+      · obtain rfl : e = 0 := by omega_using [h]
+        exact p₁.of_eq ((e₃ _ (.inr (by decide)) (by decide)).trans (O₂.wordsVal (by decide) (by decide)))
+          ((e₃ _ (.inr (by decide)) (by decide)).trans (O₂.wordsVal (by decide) (by decide)))
+          ((e₃ _ (.inr (by decide)) (by decide)).trans (O₂.wordsVal (by decide) (by decide)))
+      · obtain rfl : e = 1 := by omega_using [he, h]
+        rw [mul_one']
+        exact p₂.of_eq (e₃ _ (.inr (by decide)) (by decide)) (e₃ _ (.inr (by decide)) (by decide))
+          (e₃ _ (.inr (by decide)) (by decide))
+    · rw [mul_one']
+      exact (pQ.of_eq (e₂ _ (by decide)) (e₂ _ (by decide)) (e₂ _ (by decide))).move x₃ y₃ z₃
+  refine WP.mono (adds_ok hL hp.on 14 (Nat.le_refl _) hA) fun s₄ ⟨k₄, U₄, A₄⟩ => ?_
+  refine ⟨((Kp.of_rest r₁).trans (Kp.of_rest r₂)).trans ((Kp.of_rest r₃).trans k₄), ?_, A₄.kc, A₄.tab, ?_⟩
+  · refine (((O₁.unch.trans O₂.unch).trans U₃).trans U₄).cover fun w hw => ?_
+    simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hw
+    rcases hw with (((hw | hw) | hw) | hw)
+    · subst hw; exact ⟨(4096, 3456), by simp, by decide, by decide⟩
+    · subst hw; exact ⟨(4096, 3456), by simp, by decide, by decide⟩
+    · rcases hw with rfl | rfl | rfl <;> exact ⟨(1288, 864), by simp, by decide, by decide⟩
+    · exact ⟨w, by simpa using hw, Nat.le_refl _, Nat.le_refl _⟩
+  · intro d hd
+    rw [U₄.wordsVal (by simp; omega_using [hd]) (by omega_using [hd]), e₃₀ d (by omega_using [hd])]
+
+/-! ## The nibble's entry -/
+
+open VG.Proof.Ecdsa.RISCV64.Joint (scansJ_ok masks4_ok wordsVal_of_words wp_addAt) in
+open VG.Impl.Ecdsa.RISCV64.Comb (maskReg treeRegs) in
+/-- The window's entry `[k_j]Q` to `E`. -/
+theorem select_ok {s : State} {base : Addr} (hw : WsReg s base) {j : Nat} (hj : j < 144)
+    (h1 : s.gpr .s1 = BitVec.ofNat 64 j) {Q : Point W} (hT : TabTo base s Q 15) :
+    WP isa (.block (select c)) s fun s' =>
+      PtOk base s' (c.pt c.EX c.EY c.EZ) (mul ((wordsVal s.mem base (c.sl K) 9 >>> (4 * j)) % 16) Q) ∧
+      Outside base 3376 216 s.mem s'.mem ∧ Rest selRegs s s' := by
+  have hn := hw.nowrap
+  rw [select]
+  simp only [List.append_assoc]
+  refine WP.block_append (WP.mono (nibble_ok c hw hj (by decide) h1) fun s₁ ⟨v₁, r₁, m₁⟩ => ?_)
+  generalize ha : (wordsVal s.mem base (c.sl K) 9 >>> (4 * j)) % 16 = a at v₁
+  obtain ha16 : a < 16 := ha ▸ Nat.mod_lt _ (by decide)
+  obtain hw₁ := hw.of_rest r₁
+  refine WP.block_append (WP.mono masks4_ok fun s₂ ⟨v₂, r₂, m₂⟩ => ?_)
+  obtain hw₂ := hw₁.of_rest r₂
+  refine wp_addAt (by decide) fun s₄ u₄ => ?_
+  obtain r₄ : Rest [.a0] s₂ s₄ := u₄.rest (by decide)
+  obtain hw₄ := hw₂.of_rest r₄
+  obtain h0 : s₄.gpr .a0 = base + BitVec.ofNat 64 c.jt := by
+    rw [u₄.gpr, r₂.gpr _ (by decide), r₁.gpr _ (by decide), hw.s0]
+  obtain hm : ∀ b < 4, s₄.gpr (maskReg b) = maskOf (a.testBit b) := fun b hb => by
+    rw [r₄.gpr _ (by
+      have : b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3 := by omega_using [hb]
+      rcases this with rfl | rfl | rfl | rfl <;> decide), v₂ b hb, v₁, BitVec.getLsbD_ofNat]
+    simp [show b < 64 by omega_using [hb]]
+  refine WP.mono (WP.rdwr (scansJ_ok c (by decide) (by decide) (by decide) (by decide) (by decide) 27
+    (Nat.le_refl _) hw₄ h0 hm)) fun s₅ ⟨⟨v₅, O₅, k₅⟩, rd₅, wr₅, sp₅⟩ => ?_
+  simp only [show c.sl c.EX = 3376 from rfl, Nat.reduceMul] at v₅ O₅
+  obtain m₄ : s₄.mem = s.mem := by rw [u₄.mem, m₂, m₁]
+  rw [m₄] at v₅ O₅
+  rw [Nat.mod_eq_of_lt ha16] at v₅
+  obtain he : PtOk base s (ent a) (mul a Q) := hT a (by omega_using [ha])
+  obtain wv : ∀ b < 3, wordsVal s₅.mem base (3376 + 72 * b) 9 = wordsVal s.mem base (4096 + 216 * a + 72 * b) 9 :=
+    fun b hb => wordsVal_of_words 9 fun q hq => by
+      rw [show 3376 + 72 * b + 8 * q = 3376 + 8 * (9 * b + q) by omega_using [], v₅ _ (by omega_using [hb, hq])]
+      congr 1; omega_using []
+  refine ⟨he.move (wv 0 (by decide)) (wv 1 (by decide)) (wv 2 (by decide)), O₅.mono (Nat.le_refl _) (by omega_using []), ?_⟩
+  exact ((r₁.mono (by decide)).trans ((r₂.mono (by decide)).trans ((r₄.mono (by decide)).trans
+    ⟨fun r hr => k₅.1 r (fun h => hr ((by decide : ∀ r ∈ treeRegs, r ∈ selRegs) r h)),
+      rd₅, wr₅, sp₅⟩)))
+
+/-! ## The windows -/
+
+/-- What the windows read and keep, from `s₀`. -/
+structure WFix (base : Addr) (s₀ : State) (Q : Point W) (k : Nat) : Prop where
+  kc : KC base s₀
+  tab : TabTo base s₀ Q 15
+  kk : wordsVal s₀.mem base (c.sl K) 9 = k
+  q : onCurve W Q = true
+
+/-- What the windows write. -/
+abbrev stepW : List (Nat × Nat) := [(1072, 1080), (3376, 216), (7616, 576)]
+
+/-- The loop's invariant at `s1 = j`: `R` represents `[k >>> 4 j]Q`. -/
+structure WInv (base : Addr) (s₀ s : State) (Q : Point W) (k j : Nat) : Prop where
+  ws : WsReg s base
+  ctr : s.gpr .s1 = BitVec.ofNat 64 j
+  keep : Kc s₀ s
+  unch : Unch base stepW s₀.mem s.mem
+  rep : PtOk base s (c.pt RX RY RZ) (wpt Q k j)
+
+/-- Slots apart from what a window writes. -/
+theorem stepW_far {base : Addr} {m m' : Mem} (U : Unch base stepW m m') {d : Nat}
+    (h1 : d + 72 ≤ 1072 ∨ 2152 ≤ d) (h2 : d + 72 ≤ 3376 ∨ 3592 ≤ d) (h3 : d + 72 ≤ 7616) :
+    wordsVal m' base d 9 = wordsVal m base d 9 :=
+  U.wordsVal (by simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]; omega_using [h1, h2, h3]) (by omega_using [h3])
+
+/-- A window. -/
+theorem step_ok (hL : Law W) {base : Addr} {s₀ : State} {Q : Point W} {k : Nat} (hP : WFix base s₀ Q k)
+    {j : Nat} (hj1 : 1 ≤ j) (hj : j ≤ 144) {s : State} (hI : WInv base s₀ s Q k j) :
+    WP isa step s fun s' => WInv base s₀ s' Q k (j - 1) := by
+  have hn := hI.ws.nowrap
+  obtain hT : TabTo base s Q 15 := hP.tab.of_eq (fun d h1 h2 => stepW_far hI.unch (.inr (by omega_using [h1]))
+    (.inr (by omega_using [h1])) (by omega_using [h2])) (by decide)
+  rw [step]
+  refine WP.seq (wp_decCounter hj1 hI.ctr fun s₁ u₁ => ?_)
+  obtain hw₁ := hI.ws.of_kc (Kc.of_rest (u₁.rest (ws := [.s1]) (by decide)))
+  refine WP.mono (select_ok hw₁ (j := j - 1) (by omega_using [hj]) u₁.gpr
+    (hT.of_eq (fun d _ _ => by rw [u₁.mem]) (by decide))) fun s₂ ⟨pE, O₂, r₂⟩ => ?_
+  rw [u₁.mem, stepW_far hI.unch (d := c.sl K) (.inr (by decide)) (.inl (by decide)) (by decide), hP.kk] at pE
+  rw [u₁.mem] at O₂
+  obtain hw₂ := hw₁.of_rest r₂
+  obtain e₂ : ∀ d, (d + 72 ≤ 1072 ∨ 2152 ≤ d) → (d + 72 ≤ 3376 ∨ 3592 ≤ d) → d + 72 ≤ 7616 →
+      wordsVal s₂.mem base d 9 = wordsVal s₀.mem base d 9 := fun d h1 h2 h3 => by
+    rw [O₂.wordsVal (by omega_using [h2]) (by omega_using [h3]), stepW_far hI.unch h1 h2 h3]
+  obtain pR₂ : PtOk base s₂ (c.pt RX RY RZ) (wpt Q k j) :=
+    hI.rep.of_eq (O₂.wordsVal (by decide) (by decide)) (O₂.wordsVal (by decide) (by decide))
+      (O₂.wordsVal (by decide) (by decide))
+  obtain hK₂ : KC base s₂ := hP.kc.of_eq fun d hd => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
+    rcases hd with rfl | rfl | rfl | rfl <;> exact e₂ _ (by decide) (by decide) (by decide)
+  obtain hX := hL.onCurve_mul hP.q (k >>> (4 * j))
+  obtain h2 := hL.onCurve_add hX hX
+  obtain h4 := hL.onCurve_add h2 h2
+  obtain h8 := hL.onCurve_add h4 h4
+  obtain h16 := hL.onCurve_add h8 h8
+  obtain hE := hL.onCurve_mul hP.q ((k >>> (4 * (j - 1))) % 16)
+  -- `R = 16 R`.
+  refine WP.seq (WP.mono (quad_ok hL hw₂ hK₂ hX pR₂) fun s₃ ⟨K₃, U₃, pR₃⟩ => ?_)
+  obtain hw₃ := hw₂.of_kp K₃
+  obtain k₃ : ∀ d, (d + 72 ≤ 1072 ∨ 2152 ≤ d) → d + 72 ≤ 7616 → wordsVal s₃.mem base d 9 = wordsVal s₂.mem base d 9 :=
+    fun d h1 h2 => U₃.wordsVal (by simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]; omega_using [h1, h2])
+      (by omega_using [h2])
+  obtain pE₃ := pE.of_eq (k₃ _ (by decide) (by decide)) (k₃ _ (by decide) (by decide)) (k₃ _ (by decide) (by decide))
+  obtain hK₃ : KC base s₃ := hK₂.of_eq fun d hd => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
+    rcases hd with rfl | rfl | rfl | rfl <;> exact k₃ _ (by decide) (by decide)
+  -- `T = R + E`.
+  refine WP.seq (WP.mono (addPt_ok hL hw₃ hK₃ (p := c.pt RX RY RZ) (q := c.pt c.EX c.EY c.EZ)
+    (o := c.pt TX TY TZ) ⟨by decide, by decide⟩ (by decide) h16 hE pR₃ pE₃) fun s₄ ⟨K₄, U₄, pT⟩ => ?_)
+  obtain hw₄ := hw₃.of_kp K₄
+  -- `R = T`.
+  refine WP.mono (copyPt_ok hw₄ (o := c.pt RX RY RZ) (p := c.pt TX TY TZ) (by decide) (by decide)
+    (by decide) (by decide)) fun s₅ ⟨x₅, y₅, z₅, r₅, U₅⟩ => ?_
+  refine ⟨hw₄.of_rest r₅, ?_, ?_, ?_, ?_⟩
+  · rw [r₅.gpr _ (by decide), K₄.gpr _ (by decide), K₃.gpr _ (by decide), r₂.gpr _ (by decide), u₁.gpr]
+  · exact ((hI.keep.trans (Kc.of_rest (u₁.rest (ws := [.s1]) (by decide)))).trans (Kc.of_rest r₂)).trans
+      (K₃.kc.trans (K₄.kc.trans (Kc.of_rest r₅)))
+  · exact ((((hI.unch.trans (show Unch base [(3376, 216)] s.mem s₂.mem from O₂.unch)).trans U₃).trans U₄).trans
+      U₅).cover (by decide)
+  · have e := wstep hL hP.q k (j - 1)
+    rw [show j - 1 + 1 = j by omega_using [hj1]] at e
+    rw [← e]
+    exact pT.move x₅ y₅ z₅
+
+/-! ## The body -/
+
+/-- What the body writes. -/
+abbrev bodyW : List (Nat × Nat) := [(1072, 1080), (3376, 216), (4096, 3456), (7616, 576)]
+
+/-- `R = [k]Q`, for `k` at `K`'s slot and `Q` affine in `R`'s first two. -/
+theorem body_ok (hL : Law W) {base : Addr} {s : State} (hp : WPre base s) :
+    WP isa body s fun s' => Kc s s' ∧ Unch base bodyW s.mem s'.mem ∧
+      PtOk base s' (c.pt RX RY RZ) (mul (wordsVal s.mem base (c.sl K) 9) (qOf base s)) := by
+  have hn := hp.ws.nowrap
+  rw [body]
+  refine WP.seq (WP.mono (build_ok hL hp) fun s₁ ⟨K₁, U₁, hK₁, T₁, e₁⟩ => ?_)
+  obtain hw₁ := hp.ws.of_kp K₁
+  refine WP.seq (WP.block_append (WP.mono (copyPt_ok hw₁ (o := c.pt RX RY RZ) (p := c.pt ZERO UONE ZERO)
+    (by decide) (by decide) (by decide) (by decide)) fun s₂ ⟨x₂, y₂, z₂, r₂, U₂⟩ => ?_))
+  obtain hw₂ := hw₁.of_rest r₂
+  refine wp_li (imm := 144) (by decide) fun s₃ u₃ => WP.block_nil ?_
+  obtain hw₃ : WsReg s₃ base := hw₂.of_kc (Kc.of_rest (u₃.rest (ws := [.s1]) (by decide)))
+  obtain U₃ : Unch base [(1072, 216)] s₁.mem s₃.mem := by rw [u₃.mem]; exact U₂.cover (by decide)
+  obtain k₃ : ∀ d, d + 72 ≤ 1072 ∨ 1288 ≤ d → d + 72 ≤ 8192 → wordsVal s₃.mem base d 9 = wordsVal s₁.mem base d 9 :=
+    fun d h h' => U₃.wordsVal (by simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq]; omega_using [h])
+      (by omega_using [h'])
+  obtain hP : WFix base s₃ (qOf base s) (wordsVal s.mem base (c.sl K) 9) :=
+    ⟨hK₁.of_eq fun d hd => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
+      rcases hd with rfl | rfl | rfl | rfl <;> exact k₃ _ (by decide) (by decide),
+     T₁.of_eq (fun d h1 h2 => k₃ d (by omega_using [h1]) (by omega_using [h2])) (by decide),
+     by rw [k₃ _ (by decide) (by decide), U₁.wordsVal (by decide) (by decide)], hp.on⟩
+  have zv : wordsVal s₁.mem base (c.sl ZERO) 9 = 0 := hK₁.zero
+  obtain rx : wordsVal s₃.mem base (c.sl RX) 9 = 0 := by rw [u₃.mem]; exact x₂.trans zv
+  obtain ry : wordsVal s₃.mem base (c.sl RY) 9 = wordsVal s₁.mem base (c.sl UONE) 9 := by rw [u₃.mem]; exact y₂
+  obtain rz : wordsVal s₃.mem base (c.sl RZ) 9 = 0 := by rw [u₃.mem]; exact z₂.trans zv
+  obtain hk : wordsVal s.mem base (c.sl K) 9 < 2 ^ (64 * 9) := wordsVal_lt _ _ _ _
+  obtain hI : WInv base s₃ s₃ (qOf base s) (wordsVal s.mem base (c.sl K) 9) 144 := by
+    refine ⟨hw₃, u₃.gpr, ⟨fun _ _ _ => rfl, rfl, rfl, rfl⟩, Unch.refl _ _ _, ⟨?_, ?_, ?_, ?_⟩⟩
+    · rw [show (144 : Nat) = 16 * 9 from rfl, wpt_top _ hk]
+      show Rep W (ev base s₃ (c.sl RX)) (ev base s₃ (c.sl RY)) (ev base s₃ (c.sl RZ)) _
+      simp only [ev]
+      rw [rx, ry, rz, uf_zero, show uf (wordsVal s₁.mem base (c.sl UONE) 9) = 1 from hK₁.vo]
+      exact rep_infinity' hL
+    · show Tight (wordsVal _ _ (c.sl RX) 9); rw [rx]; exact tight_zero
+    · show Tight (wordsVal _ _ (c.sl RY) 9); rw [ry]; exact hK₁.to
+    · show Tight (wordsVal _ _ (c.sl RZ) 9); rw [rz]; exact tight_zero
+  refine countLoop_ok (Inv := fun j s' => WInv base s₃ s' (qOf base s) (wordsVal s.mem base (c.sl K) 9) j)
+    (n := 144) (fun j s' hi => hi.ctr) (fun j s' h1 h2 hi => step_ok hL hP h1 h2 hi) (fun s' hi => ?_)
+    (by decide) (by decide) hI
+  refine ⟨(K₁.kc.trans (Kc.of_rest ((r₂.mono (by decide)).trans (u₃.rest (ws := [.t0, .s1]) (by decide))))).trans
+    hi.keep, ((U₁.trans U₃).trans hi.unch).cover (by decide), ?_⟩
+  rw [← wpt_zero]
+  exact hi.rep
+
+end VG.Proof.Ecdsa.RISCV64.P521.Window
+
+end
+
+end
 
 /-!
 # `vg_p521_mul` on RISC-V: the contract

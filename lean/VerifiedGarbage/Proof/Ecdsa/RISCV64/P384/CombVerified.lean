@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.RISCV64.P384.Comb
-public import VerifiedGarbage.Proof.Ecdsa.RISCV64.P384.MulVerified
 public import VerifiedGarbage.Proof.Ecdh.RISCV64.P384.Tail
 public import VerifiedGarbage.Proof.Framework.RISCV64.TaintSym
 public import VerifiedGarbage.Proof.Framework.RISCV64.CallAny
@@ -15,7 +14,6 @@ import VerifiedGarbage.Proof.Framework.Covers
 import VerifiedGarbage.Proof.Framework.RISCV64.Syms
 import VerifiedGarbage.Proof.Ecdsa.RISCV64.Comb.Tail
 meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.P384.Comb
-meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.P384.MulVerified
 meta import VerifiedGarbage.Proof.Ecdh.RISCV64.P384.Tail
 meta import VerifiedGarbage.Proof.Framework.RISCV64.CallAny
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Consts

@@ -2,15 +2,12 @@ module
 
 -- separate module: P-256's verification is its only importer, but it builds on both callees' proofs
 -- (the windows' and the comb's), which then build in parallel with the rest of its imports
-
 public import VerifiedGarbage.Proof.Ecdsa.RISCV64.JointCombAll
 public import VerifiedGarbage.Proof.Ecdh.RISCV64.P256.Exchange
 public import VerifiedGarbage.Impl.Ecdsa.RISCV64.VerifyComb
 public import VerifiedGarbage.Proof.Ecdsa.RISCV64.P256.Joint
-public import VerifiedGarbage.Proof.Ecdsa.RISCV64.P256.Window
-public import VerifiedGarbage.Proof.Ecdsa.RISCV64.Comb.Tail
 public import VerifiedGarbage.Proof.Ecdh.RISCV64.P256.Tail
-import VerifiedGarbage.Proof.Ecdsa.RISCV64.Comb.Verified
+public import VerifiedGarbage.Proof.Ecdsa.RISCV64.Comb.Tail
 import VerifiedGarbage.Proof.Framework.Covers
 import VerifiedGarbage.Proof.Framework.RISCV64.Inline
 import VerifiedGarbage.Proof.Framework.RISCV64.Syms

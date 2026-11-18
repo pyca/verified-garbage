@@ -1,7 +1,7 @@
 module
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Front
-public import VerifiedGarbage.Spec.Ecdsa.Verify
 
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Points
+public import VerifiedGarbage.Spec.Ecdsa.Verify
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Final
 import VerifiedGarbage.Proof.Ecdsa.Verify
 import VerifiedGarbage.Proof.Ecdh.X86.Main

@@ -2,7 +2,6 @@ module
 
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Secp256k1.Main
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Secp256k1.Config
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.Secp256k1.Contract
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Layout
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Bytes
@@ -11,12 +10,65 @@ public import VerifiedGarbage.Impl.Ecdsa.Secp256k1.AArch64
 public import VerifiedGarbage.Proof.Ecdsa.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Secp256k1.Main
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Secp256k1.Config
-meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Secp256k1.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Layout
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Bytes
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Secp256k1.Lit
 meta import VerifiedGarbage.Impl.Ecdsa.Secp256k1.AArch64
+public import VerifiedGarbage.Spec.Ecdsa.Secp256k1
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Spec.Ecdsa.Secp256k1
+meta import VerifiedGarbage.TCB.AArch64.Target
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.Contract
+
+/-! ### `Ecdsa.AArch64.Secp256k1.Contract`, which this module and modules that import it used -/
+
+section
+
+/-!
+# ECDSA over secp256k1 on AArch64: the contract the proof is written against
+
+The facts of `Proof.Ecdsa.Instance.signContract Spec.Ecdsa.Secp256k1.inst` for AArch64, by name:
+`vg_ecdsa_secp256k1_sign(out = x0, d = x1, digest = x2, k = x3, scratch = x4)`,
+the result in `w0`.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ecdsa.AArch64.Secp256k1
+
+open VG VG.AArch64 Spec.Weierstrass Spec.Ecdsa
+
+/-- The signature of the arguments, as the specification computes it. -/
+abbrev sig (m : Mem) (d digest k : Addr) : Option (Nat × Nat) :=
+  signWith Spec.Secp256k1.curve (ofBytes (bytesAt m d 32)) (hashToInt Spec.Secp256k1.curve (bytesAt m digest 32))
+    (ofBytes (bytesAt m k 32))
+
+def signAArch64 : Contract AArch64.isa where
+  pre s :=
+    let out : Region := ⟨s.gpr .x0, 64⟩
+    let d : Region := ⟨s.gpr .x1, 32⟩
+    let digest : Region := ⟨s.gpr .x2, 32⟩
+    let k : Region := ⟨s.gpr .x3, 32⟩
+    let scratch : Region := ⟨s.gpr .x4, 8192⟩
+    s.rd = [d, digest, k] ∧ s.wr = [out, scratch] ∧ out.Disjoint scratch ∧
+      out.Disjoint d ∧ out.Disjoint digest ∧ out.Disjoint k ∧
+      d.Disjoint scratch ∧ digest.Disjoint scratch ∧ k.Disjoint scratch ∧
+      (s.gpr .x0).toNat + 64 ≤ 2 ^ 64 ∧ (s.gpr .x4).toNat + 8192 ≤ 2 ^ 64
+  post s s' :=
+    match sig s.mem (s.gpr .x1) (s.gpr .x2) (s.gpr .x3) with
+    | some rs => (s'.gpr .x0).setWidth 32 = 1 ∧ bytesAt s'.mem (s.gpr .x0) 64 = encode Spec.Secp256k1.curve rs
+    | none => (s'.gpr .x0).setWidth 32 = 0 ∧ bytesAt s'.mem (s.gpr .x0) 64 = List.replicate 64 0
+  pub s₁ s₂ := s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧ s₁.gpr .x2 = s₂.gpr .x2 ∧
+    s₁.gpr .x3 = s₂.gpr .x3 ∧ s₁.gpr .x4 = s₂.gpr .x4 ∧ s₁.sp = s₂.sp
+
+end VG.Proof.Ecdsa.AArch64.Secp256k1
+
+end
+
+end
 
 /-! # secp256k1 signing on AArch64: correctness and constant time -/
 

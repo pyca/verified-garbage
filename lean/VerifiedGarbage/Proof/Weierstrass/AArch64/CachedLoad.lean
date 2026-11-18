@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.CachedJac
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Ladder
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowState
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowLoad
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombSelectV
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec

@@ -1,16 +1,105 @@
 module
 
 import VerifiedGarbage.Proof.Ecdsa.Arm.P384.Umaal
-
 import VerifiedGarbage.Proof.Weierstrass.Arm.TCombCorrect
 public import VerifiedGarbage.Impl.NatPairs
 public import VerifiedGarbage.Proof.Weierstrass.Arm.TCombConfig
 public import VerifiedGarbage.Impl.Ecdsa.P384.ArmComb
-import VerifiedGarbage.Proof.P384.Arm.Comb
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Main
 import VerifiedGarbage.Proof.Ecdsa.Arm.P384.Verified
-import VerifiedGarbage.Proof.Weierstrass.Arm.TCombScan
 import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Weierstrass.Arm.LadderP
+public import VerifiedGarbage.Proof.Framework.ConstMem
+public import VerifiedGarbage.TCB.Arm.Target
+import VerifiedGarbage.Proof.Weierstrass.TCombWords
+import VerifiedGarbage.Proof.P384.Comb7
+import VerifiedGarbage.Proof.Weierstrass.Arm.MontModuli
+import VerifiedGarbage.Proof.Framework.Offset
+
+/-! ### `P384.Arm.Comb`, which this module and modules that import it used -/
+
+section
+
+/-!
+# P-384's seven-bit comb on 32-bit ARM
+
+Its layout (it reuses the ladder's accumulator and addition temporary), the
+configuration the comb's proof takes, and the memory of satisfiable
+contracts with its table: the table at 1 MiB, the working space at zero.
+-/
+
+@[expose] public section
+namespace VG.Proof.P384.Arm
+open VG VG.Arm VG.Impl.Weierstrass VG.Impl.Weierstrass.Arm VG.Impl.P384
+open VG.Proof.Weierstrass VG.Proof.Weierstrass.Arm VG.Proof.Weierstrass.Arm.TComb
+
+theorem comb_layout (u : Bool := false) : Layout (p384CombWith u) := by
+  refine ⟨by decide +revert,by decide +revert,?_,?_,?_,?_,?_⟩
+  · exact ⟨by decide +revert,by decide +revert⟩
+  all_goals decide +kernel +revert
+
+set_option exponentiation.threshold 512 in
+theorem comb_config (hC : Law Spec.P384.curve) (u : Bool := false) :
+    Config (p384CombWith u) Spec.P384.curve p384Comb7 p384Comb7Start where
+  layout := comb_layout u
+  fieldK := rfl
+  fieldM := rfl
+  modulus := Mont.p384p_ok
+  unit := unitMod_pow_two (by decide +kernel +revert) _
+  tables := VG.Proof.P384.combOk7 hC
+  one_lt := by decide +kernel +revert
+  one := toM_one (unitMod_pow_two (by decide +kernel +revert) _)
+  startX := rfl
+  startY := rfl
+  w1 := by decide +revert
+  w9 := by decide +revert
+  J1 := by decide +revert
+  J32 := by decide +revert
+  startBits := by decide +revert
+  coverBits := by decide +revert
+  bitsLow := by decide +revert
+  bitsHigh := by decide +revert
+  bitsFit := by decide +revert
+  windowFit := by decide +revert
+  encJ := by decide +revert
+  encLast := by decide +revert
+  encRow := by decide +revert
+  encEntry := by decide +revert
+  encH := by decide +revert
+
+theorem comb_words_length : p384CombWords.length=42240 := by
+  have len := VG.Proof.Weierstrass.tcombWords_length (n := 6) (R := 2^384)
+    (p := Spec.P384.curve.p) (tbl := p384Comb7)
+    (J := 55) (H := 64) (by decide +kernel) (by decide +kernel)
+  unfold p384CombWords
+  exact len
+
+@[irreducible] def combSatMem : Mem := constMem 0x100000 p384CombWords
+
+theorem combSat_held : ∀ i<p384CombWords.length,
+    combSatMem.readW (0x100000+BitVec.ofNat 64 (8*i)) 64=p384CombWords.getD i 0 :=
+  by
+    unfold combSatMem
+    exact constMem_held _ _ (by rw [comb_words_length]; decide)
+
+def combSatState : State where
+  gpr r := match r with
+    | .r0 => 0x10000 | .r1 => 0x12000 | .r2 => 0x14000 | .r3 => 0x16000 | _ => 0
+  sp := 0x20000
+  n := false
+  z := false
+  c := false
+  v := false
+  mem := combSatMem
+  rd := [⟨0x12000,48⟩,⟨0x14000,48⟩,⟨0x16000,48⟩,⟨0x20000,4⟩,⟨0x100000,337920⟩]
+  wr := [⟨0x10000,96⟩,⟨0,8192⟩]
+  syms _ := 0x100000
+
+end VG.Proof.P384.Arm
+
+end
+
+end
 
 /-! P-384's comb meets the ECDSA generator result and write frame, which
 signing, public-key derivation and verification share. -/

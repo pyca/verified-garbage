@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTiming
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.Jacobian
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Blocks
 public import VerifiedGarbage.Proof.Weierstrass.PointOpsContract
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Selected
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Double
 import VerifiedGarbage.Proof.Weierstrass.JacMul
 

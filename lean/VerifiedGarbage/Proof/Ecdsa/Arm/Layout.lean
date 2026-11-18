@@ -1,9 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Flags
-public import VerifiedGarbage.Proof.Weierstrass.Arm.Fprog
+public import VerifiedGarbage.Proof.Weierstrass.Arm.Bits
 public import VerifiedGarbage.Spec.Ecdsa.Generic
-import VerifiedGarbage.Proof.Weierstrass.Arm.Bits
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Lit
 

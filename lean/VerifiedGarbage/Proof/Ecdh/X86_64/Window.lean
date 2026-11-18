@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinEntry
 import VerifiedGarbage.Proof.Ecdh.X86_64.Validate
 import VerifiedGarbage.Proof.Ecdsa.X86_64.MulFn
 import VerifiedGarbage.Proof.Weierstrass.X86_64.WinLoop
-import VerifiedGarbage.Proof.Ecdsa.X86_64.MulBase
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Fixed
 import VerifiedGarbage.Proof.Weierstrass.JacMadd
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.Window

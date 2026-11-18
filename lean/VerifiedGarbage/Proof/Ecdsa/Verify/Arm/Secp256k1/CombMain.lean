@@ -4,16 +4,15 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
 public import VerifiedGarbage.Proof.Framework.Taint
 public import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
 public import VerifiedGarbage.Spec.Ecdsa.Secp256k1
-public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Front
+public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Main
 public import VerifiedGarbage.Impl.Ecdsa.Secp256k1.Arm
 public import VerifiedGarbage.Impl.Ecdsa.Secp256k1.ArmComb
-public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Main
 public import VerifiedGarbage.Proof.Framework.Arm.StackScratchConsts
 import VerifiedGarbage.Proof.Framework.Arm.Syms
 import VerifiedGarbage.Proof.Ecdsa.Arm.Secp256k1.CombGenerator
 import VerifiedGarbage.Proof.Ecdsa.Arm.Secp256k1.Verified
 import VerifiedGarbage.Proof.Weierstrass.Arm.TCombConsts
-import VerifiedGarbage.Proof.Weierstrass.Arm.TCombScan
+import VerifiedGarbage.Proof.Weierstrass.Arm.TCombConfig
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.PlainSimp
 

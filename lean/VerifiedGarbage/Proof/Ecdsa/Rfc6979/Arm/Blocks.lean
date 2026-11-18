@@ -1,10 +1,8 @@
 module
 
 import VerifiedGarbage.Proof.Framework.Arm.Syms
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Hash
 import VerifiedGarbage.Proof.Weierstrass.Words32
 import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Regs
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Block
@@ -26,6 +24,309 @@ import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.OmegaLit
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Weierstrass.PointContract
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Loop
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Curve
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Layout
+
+/-! ### `Ecdsa.Rfc6979.Arm.Regs`, which this module and modules that import it used -/
+
+section
+
+/-!
+# Deterministic ECDSA on 32-bit ARM: addresses and registers
+
+The code that sets one register to an address in `scratch` or the frame
+(`scrAt_ok`, `fpAdd_ok`), and the addresses those registers hold.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ecdsa.Rfc6979.Arm
+
+open VG VG.Arm VG.Impl.Ecdsa.Rfc6979.Arm
+open VG.Impl.Pbkdf2.Stream.Arm (scrAt)
+open VG.Proof.HmacTable.Arm (tA)
+open VG.Proof.X25519.Arm (Upd Mupd wp_movw wp_mov wp_dp op2_reg op2_imm dpVal)
+
+section
+variable {is : List Instr} {s : State} {Q : State → Prop}
+
+/-- `add d, sp, #imm`. -/
+theorem wp_addSp {d : Reg} {imm : Nat} (h : imm < 256)
+    (k : ∀ s', Upd s s' d (s.sp + BitVec.ofNat 32 imm) → WP isa (.block is) s' Q) :
+    WP isa (.block (.addSp d imm :: is)) s Q :=
+  VG.Proof.X25519.Arm.WP.cons (s' := s.setReg d (s.sp + BitVec.ofNat 32 imm))
+    (by simp only [exec, h, ↓reduceIte]) (k _ (Upd.setReg _ _ _))
+
+end
+
+/-- An immediate below 256 is encodable (rotation 0). -/
+theorem encodable_lt {n : Nat} (h : n < 256) : encodable (BitVec.ofNat 32 n) = true :=
+  List.any_eq_true.2 ⟨0, by simp, by
+    have h0 : (BitVec.ofNat 32 n).rotateLeft (2 * 0) = BitVec.ofNat 32 n := by ext i; simp
+    simpa only [h0, decide_eq_true_eq, BitVec.toNat_ofNat] using (by omega_using [h] : n % 2 ^ 32 < 256)⟩
+
+theorem bytesAt_frame {ws : List Region} {m m' : Mem} (hf : Frame ws m m') {p : Addr} {n : Nat}
+    (hd : ∀ r ∈ ws, Region.Disjoint ⟨p, n⟩ r) (hn : n ≤ 2 ^ 64) :
+    Spec.Sha256.bytesAt m' p n = Spec.Sha256.bytesAt m p n := by
+  simp only [Spec.Sha256.bytesAt]
+  exact List.map_congr_left fun i hi => Frame.bytes (R := ⟨p, n⟩) hf hd hn (List.mem_range.mp hi)
+
+theorem sub_refl (r : Region) : Region.Sub r r := fun _ h => h
+
+theorem sub_trans {a b c : Region} (h₁ : Region.Sub a b) (h₂ : Region.Sub b c) : Region.Sub a c :=
+  fun x hx => h₂ x (h₁ x hx)
+
+variable {dn : Nat} {L : Lay dn} {g : Reg → BitVec 32} {m₀ : Mem}
+
+/-- `scratch + o` as an address. -/
+theorem scrA (hL : L.Ok) {o : Nat} (ho : o < 8192) :
+    State.addr (L.scr + BitVec.ofNat 32 o) = State.addr L.scr + BitVec.ofNat 64 o :=
+  addr_add (by have := hL.nc; omega_using [ho, this])
+
+theorem movw_val {o : Nat} (ho : o < 2 ^ 16) : (BitVec.ofNat 16 o).setWidth 32 = BitVec.ofNat 32 o := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
+  omega_using [ho]
+
+/-- `d ← scratch + o`, through `r12`. -/
+theorem scrAt_ok {t : State} (hc : Ctx L g m₀ t) {d : Reg} (hd : d ∉ ptrRegs) {o : Nat} (ho : o < 2 ^ 16)
+    {is : List Instr} {Q : State → Prop}
+    (k : ∀ t', Ctx L g m₀ t' → t'.mem = t.mem → t'.gpr d = L.scr + BitVec.ofNat 32 o →
+      (∀ r, r ≠ d → r ≠ .r12 → t'.gpr r = t.gpr r) → WP isa (.block is) t' Q) :
+    WP isa (.block (scrAt d o ++ is)) t Q := by
+  simp only [scrAt, List.cons_append, List.nil_append]
+  refine wp_movwS fun t₁ u₁ => ?_
+  refine wp_dpS (op2_reg _ _) fun t₂ u₂ => ?_
+  have c₁ := hc.upd u₁ (by decide)
+  refine k t₂ (c₁.upd u₂ hd) (by rw [u₂.mem, u₁.mem]) ?_ fun r h1 h2 => by rw [u₂.other _ h1, u₁.other _ h2]
+  rw [u₂.gpr, u₁.gpr, u₁.other _ (by decide), hc.r11, movw_val ho]
+  rfl
+
+/-- `d ← r8 + o`, an address in the frame. -/
+theorem fpAdd_ok {t : State} (hc : Ctx L g m₀ t) {d : Reg} (hd : d ∉ ptrRegs) {o : Nat}
+    (ho : encodable (BitVec.ofNat 32 o) = true) {is : List Instr} {Q : State → Prop}
+    (k : ∀ t', Ctx L g m₀ t' → t'.mem = t.mem → t'.gpr d = L.fp + BitVec.ofNat 32 o →
+      (∀ r, r ≠ d → t'.gpr r = t.gpr r) → WP isa (.block is) t' Q) :
+    WP isa (.block (.dp .add d .r8 (.imm (BitVec.ofNat 32 o)) :: is)) t Q :=
+  wp_dpS (op2_imm ho) fun t₁ u₁ => k t₁ (hc.upd u₁ hd) u₁.mem (by rw [u₁.gpr, dpVal, hc.r8]) u₁.other
+
+/-- `d ← v`, a register set to a 16-bit constant. -/
+theorem movw_ok {t : State} (hc : Ctx L g m₀ t) {d : Reg} (hd : d ∉ ptrRegs) {v : Nat} (hv : v < 2 ^ 16)
+    {is : List Instr} {Q : State → Prop}
+    (k : ∀ t', Ctx L g m₀ t' → t'.mem = t.mem → t'.gpr d = BitVec.ofNat 32 v →
+      (∀ r, r ≠ d → t'.gpr r = t.gpr r) → WP isa (.block is) t' Q) :
+    WP isa (.block (.movw d (BitVec.ofNat 16 v) :: is)) t Q :=
+  wp_movwS fun t₁ u₁ => k t₁ (hc.upd u₁ hd) u₁.mem (by rw [u₁.gpr, movw_val hv]) u₁.other
+
+/-- `d ← 0`. -/
+theorem mov0_ok {t : State} (hc : Ctx L g m₀ t) {d : Reg} (hd : d ∉ ptrRegs) {is : List Instr}
+    {Q : State → Prop}
+    (k : ∀ t', Ctx L g m₀ t' → t'.mem = t.mem → t'.gpr d = 0 →
+      (∀ r, r ≠ d → t'.gpr r = t.gpr r) → WP isa (.block is) t' Q) :
+    WP isa (.block (.mov d (.imm 0) :: is)) t Q :=
+  wp_movS (op2_imm (by decide)) fun t₁ u₁ => k t₁ (hc.upd u₁ hd) u₁.mem u₁.gpr u₁.other
+
+/-- `d ← s`, a copy of a register. -/
+theorem movr_ok {t : State} (hc : Ctx L g m₀ t) {d r : Reg} (hd : d ∉ ptrRegs) {is : List Instr}
+    {Q : State → Prop}
+    (k : ∀ t', Ctx L g m₀ t' → t'.mem = t.mem → t'.gpr d = t.gpr r →
+      (∀ q, q ≠ d → t'.gpr q = t.gpr q) → WP isa (.block is) t' Q) :
+    WP isa (.block (.mov d (.reg r) :: is)) t Q :=
+  wp_movS (op2_reg _ _) fun t₁ u₁ => k t₁ (hc.upd u₁ hd) u₁.mem u₁.gpr u₁.other
+
+/-- `d ← [r6 + o]`, a word of the table, as on entry. -/
+theorem tabLd_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {d : Reg} (hd : d ∉ ptrRegs) {o : Nat}
+    (ho : o + 4 ≤ 24) {is : List Instr} {Q : State → Prop}
+    (k : ∀ t', Ctx L g m₀ t' → t'.mem = t.mem → t'.gpr d = m₀.readW (tA L.tab o) 32 →
+      (∀ r, r ≠ d → t'.gpr r = t.gpr r) → WP isa (.block is) t' Q) :
+    WP isa (.block (.ldr d .r6 o :: is)) t Q :=
+  wp_ldrS (a := tA L.tab o) (by omega_using [ho]) (by rw [hc.r6]) (hc.inTab hL ho) fun t₁ u₁ =>
+    k t₁ (hc.upd u₁ hd) u₁.mem (by rw [u₁.gpr, hc.tabWord hL ho]) u₁.other
+
+/-- `d ← D`, the table's digest length. -/
+theorem ldD_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {d : Reg} (hd : d ∉ ptrRegs) {is : List Instr}
+    {Q : State → Prop}
+    (k : ∀ t', Ctx L g m₀ t' → t'.mem = t.mem → t'.gpr d = BitVec.ofNat 32 L.F.H.D →
+      (∀ r, r ≠ d → t'.gpr r = t.gpr r) → WP isa (.block is) t' Q) :
+    WP isa (.block (.ldr d .r6 tD :: is)) t Q :=
+  tabLd_ok hL hc hd (by decide) fun t' c' m' v' k' => k t' c' m' (v'.trans hc.tabD) k'
+
+/-- `d ← B`, HMAC's block size. -/
+theorem ldB_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {d : Reg} (hd : d ∉ ptrRegs) {is : List Instr}
+    {Q : State → Prop}
+    (k : ∀ t', Ctx L g m₀ t' → t'.mem = t.mem → t'.gpr d = BitVec.ofNat 32 L.F.H.B →
+      (∀ r, r ≠ d → t'.gpr r = t.gpr r) → WP isa (.block is) t' Q) :
+    WP isa (.block (.ldr d .r6 tB :: is)) t Q :=
+  tabLd_ok hL hc hd (by decide) fun t' c' m' v' k' => k t' c' m' (v'.trans hc.tabB) k'
+
+/-- `d ← [r8 + o]`, a word of the frame. -/
+theorem frLd_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {d : Reg} (hd : d ∉ ptrRegs) {o : Nat}
+    (ho : o + 4 ≤ 512) {is : List Instr} {Q : State → Prop}
+    (k : ∀ t', Ctx L g m₀ t' → t'.mem = t.mem → t'.gpr d = t.mem.readW (L.B + BitVec.ofNat 64 (24 + o)) 32 →
+      (∀ r, r ≠ d → t'.gpr r = t.gpr r) → WP isa (.block is) t' Q) :
+    WP isa (.block (.ldr d .r8 o :: is)) t Q :=
+  wp_ldrS (a := L.B + BitVec.ofNat 64 (24 + o)) (by omega_using [ho]) (by rw [hc.r8]; exact hL.fpA (by omega_using [ho]))
+    (hc.inFr (by omega_using []) (by omega_using [ho])) fun t₁ u₁ => k t₁ (hc.upd u₁ hd) u₁.mem u₁.gpr u₁.other
+
+end VG.Proof.Ecdsa.Rfc6979.Arm
+
+end
+
+end
+
+/-! ### `Ecdsa.Rfc6979.Arm.Hash`, which this module and modules that import it used -/
+
+section
+
+/-!
+# Deterministic ECDSA on 32-bit ARM: the hash function
+
+What the proof needs of the hash function, for any one of them (`RfcHash`),
+as on x86-64 (`Proof/Ecdsa/Rfc6979/X86_64/Reduce.lean`): the curve
+(`RfcCurve`, with what is proven of `vg_ecdsa_<curve>_sign_k`, which each
+candidate calls), the instance of the contract it implements (the curve's,
+the hash function's HMAC, its output length, the bound on candidates), the
+functions PBKDF2's code calls and what its proofs know of them (`FnsOK`:
+HMAC's `init` and `finalize` and the streaming `update`, which the table
+holds), the functions an indirect call of a table's functions may reach
+(`f`), and the sizes the frame and `scratch` hold: the output and block
+sizes of one of the hash functions of `shapes` (MD5's, SHA-1's or the SHA-2
+family's), and states and working space no larger than SHA-512's.
+
+The code is the same for every hash function (`cfgOf`): the proof is
+written for each one, with the table's digest length `D` and block size `B`
+the values the table holds.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ecdsa.Rfc6979.Arm
+
+open VG VG.Arm VG.Impl.Ecdsa.Rfc6979.Arm
+open VG.Proof.Pbkdf2.Whole.Arm (FnsOK)
+
+/-- The digest lengths and block sizes of the hash functions with HMAC on
+ARMv7: MD5, SHA-1, SHA-224, SHA-256, SHA-384, SHA-512, SHA-512/224 and
+SHA-512/256. -/
+def shapes : List (Nat × Nat) := [(16, 64), (20, 64), (28, 64), (32, 64), (48, 128), (64, 128), (28, 128), (32, 128)]
+
+/-- A curve and a hash function, for RFC 6979 on 32-bit ARM. -/
+structure RfcHash where
+  /-- The curve. -/
+  R : RfcCurve
+  /-- The instance of the contract, with the hash function fixed. -/
+  I : Proof.Ecdsa.Rfc6979.Instance
+  /-- The functions PBKDF2's code calls, of the hash function. -/
+  F : Impl.Pbkdf2.Whole.Arm.Fns
+  ok : FnsOK F
+  /-- The functions an indirect call of a table's functions may reach. -/
+  f : Fns
+  /-- The instance is of the curve, with this hash function's HMAC and its
+  output length. -/
+  ecdsa : I.ecdsa = R.inst
+  hash : I.hash = ok.hH.SH.H
+  len : I.hashLen = F.H.D
+  /-- The hash function's digests have `F.H.D` bytes. -/
+  macLen : ∀ x, (ok.hH.SH.H.hash x).length = F.H.D
+  /-- It tries at least one candidate, as many as a 16-bit immediate holds. -/
+  tries_pos : 0 < I.tries
+  tries_lt : I.tries < 2 ^ 16
+  /-- The sizes the frame and `scratch` hold. -/
+  hDB : (F.H.D, F.H.B) ∈ shapes
+  hS : F.H.S ≤ 192
+  hWi : ok.Wi * 8 ≤ 1872
+  hWf : ok.Wf * 8 ≤ 1872
+  hWb : ok.hH.Wb ≤ 1872
+
+namespace RfcHash
+
+variable (P : RfcHash)
+
+/-- HMAC with the hash function. -/
+abbrev mac (K text : List Byte) : List Byte := Spec.Hmac.hmac P.ok.hH.SH.H K text
+
+/-- The 64-bit words of the curve's scalars. -/
+abbrev w : Nat := P.R.E.n
+
+/-- Their 32-bit words: seven for P-224, otherwise two per 64-bit word. -/
+abbrev k : Nat := 2 * P.R.E.n - (if P.R.E.C.len = 28 then 1 else 0)
+
+/-- The bytes of the curve's scalars. -/
+abbrev Q : Nat := P.R.E.C.len
+
+theorem shape (h : (P.F.H.D, P.F.H.B) ∈ shapes) :
+    16 ≤ P.F.H.D ∧ P.F.H.D ≤ 64 ∧ P.F.H.D % 4 = 0 ∧ P.F.H.D < P.F.H.B ∧ P.F.H.B ≤ 128 ∧ 64 ≤ P.F.H.B := by
+  simp only [shapes, List.mem_cons, List.not_mem_nil, or_false, Prod.mk.injEq] at h
+  rcases h with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;> omega_using [h, h']
+
+/-- The sizes, as the proofs use them. -/
+theorem sizes : P.F.H.S ≤ 192 ∧ P.ok.Wi * 8 ≤ 1872 ∧ P.ok.Wf * 8 ≤ 1872 ∧ P.ok.hH.Wb ≤ 1872 ∧
+    16 ≤ P.F.H.D ∧ P.F.H.D ≤ 64 ∧ P.F.H.D % 4 = 0 ∧ P.F.H.D < P.F.H.B ∧ P.F.H.B ≤ 128 ∧ 64 ≤ P.F.H.B ∧
+    P.ok.hH.SH.stateBytes = P.F.H.S ∧ P.ok.hH.SH.digestBytes = P.F.H.D ∧
+    P.ok.hH.SH.H.blockSize = P.F.H.B := by
+  have hs := P.shape P.hDB
+  exact ⟨P.hS, P.hWi, P.hWf, P.hWb, hs.1, hs.2.1, hs.2.2.1, hs.2.2.2.1, hs.2.2.2.2.1, hs.2.2.2.2.2,
+    P.ok.hH.hS, P.ok.hH.hD, P.ok.hH.hB⟩
+
+/-- The sizes of the scalars, as the proofs use them. -/
+theorem wsizes : 3 ≤ P.w ∧ P.w ≤ 9 ∧ 6 ≤ P.k ∧ P.k ≤ 2 * P.w ∧ 8 ≤ P.Q ∧ P.Q ≤ 66 ∧ P.Q ≤ 8 * P.w ∧
+    8 * P.w < P.Q + 8 := by
+  have hw : 8 ≤ P.Q ∧ 8 * P.w < P.Q + 8 ∧ P.Q ≤ 8 * P.w := P.R.len_words
+  have hQ : P.Q ≤ 66 := by
+    cases hb : P.R.big
+    · have := P.R.sizesA hb; simp only [Q]; omega_using [this]
+    · have := P.R.sizesW hb; simp only [Q]; omega_using [this]
+  exact ⟨P.R.n3, P.R.n9, (by have := P.R.len_words; have := P.R.n3; simp only [k]; split <;> omega_arith),
+    (by simp only [k, w]; omega_using []), hw.1, hQ, hw.2.2, hw.2.1⟩
+
+/-- Unless `big`, the scalars fill at most sixteen 32-bit words. -/
+theorem sizesA (h : P.R.big = false) : P.Q = 4 * P.k ∧ P.k ≤ 16 ∧ P.Q ≤ 64 := by
+  have := P.R.sizesA h
+  rcases this.1 with h' | h' | h' | h' <;> simp only [Q, k] <;> split <;> omega_arith
+
+/-- If `big`, P-521's sizes, longer than any digest. -/
+theorem sizesW (h : P.R.big = true) : P.w = 9 ∧ P.Q = 66 ∧ P.k = 18 ∧ P.F.H.D < P.Q := by
+  have h₁ := P.R.sizesW h
+  have h₂ := (P.shape P.hDB).2.1
+  refine ⟨h₁.1, h₁.2.1, ?_, by simp only [Q]; omega_using [h₁, h₂]⟩
+  simp only [k, h₁.1, h₁.2.1]; decide
+
+theorem mac_length (K t : List Byte) : (P.mac K t).length = P.F.H.D := by
+  simp only [mac, Spec.Hmac.hmac, Spec.Hmac.hmacBlockKey, P.macLen]
+
+/-- The curve's scalars are `Q` bytes. -/
+theorem curveLen : P.I.ecdsa.curve.len = P.Q := by rw [P.ecdsa, P.R.curve]
+
+end RfcHash
+
+/-- Facts about the sizes of the hash function `‹RfcHash›`'s states, working
+space, block and output, and of the scalars, and the arithmetic they decide. -/
+tactic_template "anums" : tactic => `(tactic| first | omega |
+  (obtain ⟨_, _, _, _, _, _, _, _, _, _, _, _, _⟩ := RfcHash.sizes ‹RfcHash›
+   obtain ⟨_, _, _, _, _, _, _, _⟩ := RfcHash.wsizes ‹RfcHash›; omega))
+
+/-- The code, for the curve of `P` and the functions an indirect call may reach. -/
+def cfgOf (P : RfcHash) : Cfg where
+  f := P.f
+  w := 2 * P.R.E.n - (if P.R.E.C.len = 28 then 1 else 0)
+  len := P.R.E.C.len
+  big := P.R.big
+  sh := P.R.sh
+  n := P.R.E.C.n
+  tries := P.I.tries
+  coreN := P.R.coreN
+  coreC := P.R.coreC
+
+theorem cfgOf_len (P : RfcHash) : (cfgOf P).len = P.Q := rfl
+
+end VG.Proof.Ecdsa.Rfc6979.Arm
+
+end
+
+end
 
 /-! ### `Ecdsa.Rfc6979.Arm.Copy`, which this module and modules that import it used -/
 

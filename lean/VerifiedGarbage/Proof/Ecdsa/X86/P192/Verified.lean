@@ -1,7 +1,6 @@
 module
 
 import VerifiedGarbage.Proof.Ecdsa.X86.Main
-import VerifiedGarbage.Proof.Weierstrass.X86.MontP192
 public import VerifiedGarbage.Proof.Ecdsa.X86.Layout
 public import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 public import VerifiedGarbage.Proof.Weierstrass.X86.CallOps
@@ -13,7 +12,6 @@ public import VerifiedGarbage.Impl.Ecdsa.P192.X86
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Ecdsa.X86.Main
-meta import VerifiedGarbage.Proof.Weierstrass.X86.MontP192
 meta import VerifiedGarbage.Proof.Ecdsa.X86.Layout
 meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 meta import VerifiedGarbage.Proof.Weierstrass.X86.CallOps
@@ -28,6 +26,53 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Ecdsa.Contract
+import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P192
+public import VerifiedGarbage.Proof.Weierstrass.X86.MontContract
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P224
+meta import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P192
+meta import VerifiedGarbage.Proof.Weierstrass.X86.MontContract
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P224
+
+/-! ### `Weierstrass.X86.MontP192`, which only this module used -/
+
+section
+
+/-!
+# Montgomery arithmetic modulo P-192's `p` and `n`, as functions, on x86 (32-bit): verified
+
+P-192's moduli, in three 64-bit words, are ones the functions support
+(`FnOk`), so each of their functions meets the contract of its `Api`, as the
+other curves' do (`MontVerified.lean`). Apart from the other curves', so
+that adding them rebuilds none of their proofs.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Weierstrass.X86.Mont
+
+open VG VG.X86 VG.Impl.Weierstrass.X86.Mont Impl.Weierstrass.Mont
+
+theorem p192p_ok : FnOk p192p where
+  mul := ⟨by decide, by decide +kernel, by decide +kernel⟩
+  k9 := by decide
+  nsMul := NoSp.of_all (by lit_decide)
+  nsAdd := NoSp.of_all (by lit_decide)
+  nsSub := NoSp.of_all (by lit_decide)
+
+theorem p192n_ok : FnOk p192n where
+  mul := ⟨by decide, by decide +kernel, by decide +kernel⟩
+  k9 := by decide
+  nsMul := NoSp.of_all (by lit_decide)
+  nsAdd := NoSp.of_all (by lit_decide)
+  nsSub := NoSp.of_all (by lit_decide)
+
+end VG.Proof.Weierstrass.X86.Mont
+
+end
+
+end
 
 /-!
 # ECDSA over P-192 on x86 (32-bit): the curve

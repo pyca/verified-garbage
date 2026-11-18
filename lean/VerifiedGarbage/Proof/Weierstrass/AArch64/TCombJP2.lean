@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJStep
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJP
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombSelectV
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.TCombJ
-import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombSelect
 import VerifiedGarbage.Proof.Framework.AArch64.Simd64
 import VerifiedGarbage.Proof.Weierstrass.Words
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd

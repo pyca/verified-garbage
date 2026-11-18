@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Ecdh.RISCV64.ExchangeAll
 import VerifiedGarbage.Proof.Ecdsa.RISCV64.SignAll
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Weierstrass.RISCV64.Copy
-import VerifiedGarbage.Proof.Ecdh.RISCV64.Masks
 import VerifiedGarbage.Proof.Ecdh.RISCV64.Bytes
 import VerifiedGarbage.Proof.Framework.RISCV64.Syms
 

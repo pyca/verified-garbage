@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 /-!
 # secp256k1's field on RISC-V, for `vg_secp256k1_mul` and its callers
 
-The facts the proofs of `vg_secp256k1_mul` (`Proof/Ecdsa/RISCV64/Secp256k1/Window.lean`)
+The facts the proofs of `vg_secp256k1_mul` (`Proof/Ecdh/RISCV64/Secp256k1/Tail.lean`)
 and its callers share: secp256k1's field functions meet the contracts by register
 (`field_ok`), and `R = 2²⁵⁶` is a unit modulo `p` (`unit`).
 -/

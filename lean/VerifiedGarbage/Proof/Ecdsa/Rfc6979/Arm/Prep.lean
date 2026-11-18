@@ -2,10 +2,9 @@ module
 
 import VerifiedGarbage.Proof.Framework.Arm.Syms
 public import VerifiedGarbage.Proof.Mont.Arm.Words
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Blocks
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Blocks
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
 import VerifiedGarbage.Proof.Weierstrass.Arm.BytesLen
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Regs
 import VerifiedGarbage.Proof.Hmac.Common
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -18,7 +17,6 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.AesGcm.Arm.Loops
 import VerifiedGarbage.Proof.AesGcm.Arm.Run
 import VerifiedGarbage.Proof.Framework.WriteBytes
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Hash
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Upd
 public import VerifiedGarbage.Proof.Framework.ICall
 

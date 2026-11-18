@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Weierstrass.Layout
 public import VerifiedGarbage.Impl.Weierstrass.X86_64
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Lit
-public import VerifiedGarbage.Proof.Mont.X86_64.OpsReg
+public import VerifiedGarbage.Proof.Mont.X86_64.MulP
 public import VerifiedGarbage.Proof.Weierstrass.Unch
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Loop
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Unch

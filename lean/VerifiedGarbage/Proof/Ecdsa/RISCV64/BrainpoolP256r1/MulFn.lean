@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 /-!
 # brainpoolP256r1's field on RISC-V, for `vg_brainpoolp256r1_mul` and its callers
 
-The facts the proofs of `vg_brainpoolp256r1_mul` (`Proof/Ecdsa/RISCV64/BrainpoolP256r1/Window.lean`)
+The facts the proofs of `vg_brainpoolp256r1_mul` (`Proof/Ecdh/RISCV64/BrainpoolP256r1/Tail.lean`)
 and its callers share: brainpoolP256r1's field functions meet the contracts by register
 (`field_ok`), and `R = 2²⁵⁶` is a unit modulo `p` (`unit`).
 -/

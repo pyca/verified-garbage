@@ -5,7 +5,7 @@ public import VerifiedGarbage.Impl.Ecdsa.PPC64LE.WindowA
 public import VerifiedGarbage.Impl.Ecdsa.PPC64LE.Window3
 public import VerifiedGarbage.Impl.Ecdsa.PPC64LE.Window3A
 public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Layout
-public import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Ladder
+public import VerifiedGarbage.Proof.Weierstrass.PPC64LE.LadderP
 public import VerifiedGarbage.Proof.Weierstrass.Jac
 public import VerifiedGarbage.Proof.Weierstrass.Law3
 public import VerifiedGarbage.Impl.Ecdh.PPC64LE

@@ -10,7 +10,7 @@ public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Curve
 # Deterministic ECDSA on AArch64: the hash function
 
 What the proof needs of the hash function, for any one of them (`RfcHash`),
-as on x86-64 (`Proof/Ecdsa/Rfc6979/X86_64/Hash.lean`): the curve
+as on x86-64 (`Proof/Ecdsa/Rfc6979/X86_64/Reduce.lean`): the curve
 (`RfcCurve`, with what is proven of `vg_ecdsa_<curve>_sign_k`, which each
 candidate calls), the instance of the contract it implements (the curve's,
 the hash function's HMAC, its output length, the bound on candidates), its

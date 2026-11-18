@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Keep
+import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Pow
 public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Stages
 public import VerifiedGarbage.Proof.Weierstrass.MulContract
 public import VerifiedGarbage.Proof.Weierstrass.Law
@@ -19,7 +19,6 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.LadPow
 import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.SlotOps
-import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Pow
 
 /-! ### `Ecdsa.PPC64LE.Middle`, which this module and modules that import it used -/
 

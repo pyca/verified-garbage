@@ -1,16 +1,14 @@
 module
--- separate module: its proofs (the candidate loop) build in parallel with `Core`'s, which `Loop` also imports
 
+-- separate module: its proofs (the candidate loop) build in parallel with `Core`'s, which `Loop` also imports
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Prep
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Hmac
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Copy
 import VerifiedGarbage.Proof.Hmac.Common
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Step
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 
@@ -189,7 +187,7 @@ end
 /-!
 # Deterministic ECDSA on PPC64LE: the steps on `K` and `V`
 
-As on x86-64 (`Proof/Ecdsa/Rfc6979/X86_64/Steps.lean`): each HMAC with the
+As on x86-64 (`Proof/Ecdsa/Rfc6979/X86_64/Prep.lean`): each HMAC with the
 key `K` and `V` (both of the digest length `D`, at the start of the frame)
 is HMAC's states for `K` (by `init`, then saved, or restored from the copy),
 the table's `update` with `V` and, for a new `K`, with the message at

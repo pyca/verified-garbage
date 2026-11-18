@@ -10,7 +10,6 @@ meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Spec.Ecdh.P384
 import VerifiedGarbage.Proof.Ecdh.X86_64.P384.Lit
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.P384.Lit
-
 public import VerifiedGarbage.Proof.Ecdh.X86_64.Main
 public import VerifiedGarbage.Proof.Ecdh.X86_64.P384.Contract
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Verified
@@ -20,7 +19,7 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 import VerifiedGarbage.Proof.Ecdh.X86_64.P384.LitErase
 public import VerifiedGarbage.Impl.Ecdh.P384.X86_64
-import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJStep
+import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJLoop
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.Main
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.P384.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Verified
@@ -30,7 +29,7 @@ meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 meta import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.P384.LitErase
 meta import VerifiedGarbage.Impl.Ecdh.P384.X86_64
-meta import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJStep
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJLoop
 
 /-!
 # ECDH over P-384 on x86-64: `Verified`

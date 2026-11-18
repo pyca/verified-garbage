@@ -2,10 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Layout
 public import VerifiedGarbage.Impl.EcKey.Compressed.PPC64LE.Decompress
-public import VerifiedGarbage.Proof.Weierstrass.PPC64LE.PointFprog
+public import VerifiedGarbage.Proof.Weierstrass.PPC64LE.LadderP
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.SlotOps
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Stages
-public import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Keep
+public import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Pow
 public import VerifiedGarbage.Impl.Ecdsa.PPC64LE
 public import VerifiedGarbage.Proof.Weierstrass.Env
 public import VerifiedGarbage.Proof.Weierstrass.Unch

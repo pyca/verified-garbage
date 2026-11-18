@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Hmac.Common
 import VerifiedGarbage.Proof.Framework.X86.Syms
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Hash
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Regs
 import VerifiedGarbage.Proof.Weierstrass.Words32
 import VerifiedGarbage.Proof.Mont.X86.Instr

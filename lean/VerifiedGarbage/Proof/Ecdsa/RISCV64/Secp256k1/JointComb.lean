@@ -6,10 +6,9 @@ public import VerifiedGarbage.Proof.Ecdsa.RISCV64.JointCombAll
 public import VerifiedGarbage.Proof.Ecdh.RISCV64.Secp256k1.Exchange
 public import VerifiedGarbage.Impl.Ecdsa.RISCV64.VerifyComb
 public import VerifiedGarbage.Proof.Ecdsa.RISCV64.Secp256k1.Joint
-public import VerifiedGarbage.Proof.Ecdsa.RISCV64.Secp256k1.Window
+public import VerifiedGarbage.Proof.Ecdh.RISCV64.Secp256k1.Tail
 public import VerifiedGarbage.Proof.Ecdsa.RISCV64.Comb.Tail
 public import VerifiedGarbage.Proof.Ecdsa.RISCV64.Secp256k1.CombVerified
-public import VerifiedGarbage.Proof.Ecdh.RISCV64.Secp256k1.Tail
 import VerifiedGarbage.Proof.Framework.Covers
 import VerifiedGarbage.Proof.Framework.RISCV64.Inline
 import VerifiedGarbage.Proof.Framework.RISCV64.Syms

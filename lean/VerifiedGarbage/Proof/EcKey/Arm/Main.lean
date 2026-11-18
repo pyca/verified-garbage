@@ -16,7 +16,7 @@ import VerifiedGarbage.Proof.Framework.Block
 /-!
 # Elliptic curve public keys on 32-bit ARM: the whole function
 
-As on x86 (`Proof/EcKey/X86/Main.lean`).
+As on x86 (`Proof/EcKey/X86/CombMain.lean`).
 
 `middle_ok`: `middle` computes `x = X Z^(p-2)` and `y = Y Z^(p-2)` from the
 power in `ACC`, each left Montgomery's form (`pkOps_ok`), ands the masks of

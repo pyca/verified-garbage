@@ -6,7 +6,6 @@ public import VerifiedGarbage.Impl.P256.X86_64.Ifma.Ecdh
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacOddWin
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacOddState
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Loop
-import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacOddBuild
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Unch
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import VerifiedGarbage.Proof.Framework.AddrArith

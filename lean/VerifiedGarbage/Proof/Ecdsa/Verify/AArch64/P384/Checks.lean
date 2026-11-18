@@ -67,7 +67,6 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Refine
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTableTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowDouble
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowLoad
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowState
 import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall
 import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall521
@@ -85,7 +84,6 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.TableCoZ
 import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Window
 import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombDigit
-import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombSelect
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombSelectV
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Window
 import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
@@ -150,7 +148,6 @@ meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Refine
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTableTiming
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowDouble
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowLoad
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowState
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall521
@@ -168,7 +165,6 @@ meta import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.TableCoZ
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Window
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombDigit
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombSelect
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombSelectV
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Window
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad

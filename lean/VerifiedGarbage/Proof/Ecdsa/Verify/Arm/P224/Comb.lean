@@ -13,25 +13,22 @@ meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Proof.Framework.Taint
 public import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
 public import VerifiedGarbage.Spec.Ecdsa.P224
-public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Front
-public import VerifiedGarbage.Impl.Ecdsa.P224.ArmComb
 public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Main
+public import VerifiedGarbage.Impl.Ecdsa.P224.ArmComb
 public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.CT
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.CT
 import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Arm.Lit
 meta import VerifiedGarbage.Proof.Framework.Arm.Lit
-public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.P224.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.StackScratchConsts
 public import VerifiedGarbage.Proof.Weierstrass.Law
 import VerifiedGarbage.Proof.Ecdsa.Arm.P224.Verified
-import VerifiedGarbage.Proof.Ecdsa.Arm.P224.CombGenerator
+public import VerifiedGarbage.Proof.Ecdsa.Arm.P224.CombGenerator
 import VerifiedGarbage.Proof.Ecdsa.Arm.P224.CombLit
 import VerifiedGarbage.Proof.Ecdsa.Arm.SavedAbi
-public import VerifiedGarbage.Proof.P224.Arm.Comb
 import VerifiedGarbage.Proof.Weierstrass.Arm.TCombConsts
-import VerifiedGarbage.Proof.Weierstrass.Arm.TCombScan
+import VerifiedGarbage.Proof.Weierstrass.Arm.TCombConfig
 import VerifiedGarbage.Proof.Framework.Arm.Syms
 import VerifiedGarbage.Proof.Framework.Arm.TaintSym
 import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
@@ -48,21 +45,75 @@ meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
 meta import VerifiedGarbage.Proof.Framework.Taint
 meta import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
 meta import VerifiedGarbage.Spec.Ecdsa.P224
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Front
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Main
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.P224.Contract
 meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchConsts
 meta import VerifiedGarbage.Proof.Weierstrass.Law
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.P224.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.P224.CombGenerator
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.SavedAbi
-meta import VerifiedGarbage.Proof.P224.Arm.Comb
 meta import VerifiedGarbage.Proof.Weierstrass.Arm.TCombConsts
-meta import VerifiedGarbage.Proof.Weierstrass.Arm.TCombScan
+meta import VerifiedGarbage.Proof.Weierstrass.Arm.TCombConfig
 meta import VerifiedGarbage.Proof.Framework.Arm.Syms
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.P224.Umaal
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Spec.Ecdsa.Generic
+public import VerifiedGarbage.Spec.Ecdsa.Verify
+public import VerifiedGarbage.Spec.P224
+public import VerifiedGarbage.TCB.Arm.Isa
+public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.GetElem
+meta import VerifiedGarbage.Spec.Ecdsa.Generic
+meta import VerifiedGarbage.Spec.Ecdsa.Verify
+meta import VerifiedGarbage.Spec.P224
+meta import VerifiedGarbage.TCB.Arm.Isa
+meta import VerifiedGarbage.Proof.Framework.PowLit
+meta import VerifiedGarbage.Proof.Framework.GetElem
+
+/-! ### `Ecdsa.Verify.Arm.P224.Contract`, which only this module used -/
+
+section
+
+/-!
+# ECDSA verification over P-224 on 32-bit ARM: the contract the proof is written against
+
+The facts of `Proof.Ecdsa.verifyContract Spec.Ecdsa.P224.inst` for 32-bit ARM, by name:
+`vg_ecdsa_p224_verify(public, digest, sig, scratch)`, with the arguments in
+`r0`–`r3` (AAPCS), the result in `r0` (the low word of `r1:r0`). Only the
+pointers are public here: the proof shows that nothing else affects timing,
+although the contract would let the contents of the three buffers.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ecdsa.Verify.Arm.P224
+
+open VG VG.Arm Spec.Weierstrass Spec.Ecdsa
+
+/-- Whether the signature at `sig` of the hash at `digest` is valid for the
+public key at `pk`, as the specification says. -/
+abbrev vf (m : Mem) (pk digest sig : Addr) : Bool :=
+  verify Spec.P224.curve (bytesAt m pk 57) (hashToInt Spec.P224.curve (bytesAt m digest 28)) (bytesAt m sig 56)
+
+def verifyArm : Contract Arm.isa where
+  pre s :=
+    let pk : Region := ⟨State.addr (s.gpr .r0), 57⟩
+    let digest : Region := ⟨State.addr (s.gpr .r1), 28⟩
+    let sig : Region := ⟨State.addr (s.gpr .r2), 56⟩
+    let scratch : Region := ⟨State.addr (s.gpr .r3), 8192⟩
+    s.rd = [pk, digest, sig] ∧ s.wr = [scratch] ∧ pk.Disjoint scratch ∧ digest.Disjoint scratch ∧
+      sig.Disjoint scratch ∧ (s.gpr .r0).toNat + 57 ≤ 2 ^ 32 ∧ (s.gpr .r1).toNat + 28 ≤ 2 ^ 32 ∧
+      (s.gpr .r2).toNat + 56 ≤ 2 ^ 32 ∧ (s.gpr .r3).toNat + 8192 ≤ 2 ^ 32
+  post s s' := BitVec.setWidth 32 (s'.gpr .r1 ++ s'.gpr .r0) =
+    if vf s.mem (State.addr (s.gpr .r0)) (State.addr (s.gpr .r1)) (State.addr (s.gpr .r2)) then 1 else 0
+  pub s₁ s₂ := s₁.sp = s₂.sp ∧ s₁.gpr .r0 = s₂.gpr .r0 ∧ s₁.gpr .r1 = s₂.gpr .r1 ∧
+    s₁.gpr .r2 = s₂.gpr .r2 ∧ s₁.gpr .r3 = s₂.gpr .r3
+
+end VG.Proof.Ecdsa.Verify.Arm.P224
+
+end
+
+end
 
 /-!
 # ECDSA verification over P-224 on 32-bit ARM with the generator comb

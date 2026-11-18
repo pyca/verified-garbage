@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdh.RISCV64.Bytes
-public import VerifiedGarbage.Proof.Ecdh.RISCV64.Masks
 public import VerifiedGarbage.Proof.Weierstrass.CheckPointContract
 public import VerifiedGarbage.Proof.Weierstrass.MulContract
 public import VerifiedGarbage.Proof.Weierstrass.RISCV64.Ladder

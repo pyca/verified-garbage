@@ -108,7 +108,7 @@ section
 /-!
 # Tables of the interface `Hmac` on ARMv7
 
-As on x86-64 (`Proof/HmacTable/X86_64.lean`), with every hash function that
+As on x86-64 (`Proof/Ecdsa/Rfc6979/X86_64/Regs.lean`), with every hash function that
 has HMAC on ARMv7, each with one implementation (`vars`: MD5, SHA-1,
 SHA-224, SHA-256, SHA-384, SHA-512, SHA-512/224 and SHA-512/256, the
 functions PBKDF2's code calls, `Proof.Pbkdf2.Whole.Arm`): the table of a

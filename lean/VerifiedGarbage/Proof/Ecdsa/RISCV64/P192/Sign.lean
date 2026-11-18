@@ -2,11 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.RISCV64.SignAll
 public import VerifiedGarbage.Proof.Ecdh.RISCV64.P192.Exchange
-public import VerifiedGarbage.Proof.Ecdh.RISCV64.P192.Tail
 public import VerifiedGarbage.Impl.Ecdsa.RISCV64.P192
 public import VerifiedGarbage.Spec.Ecdsa
 public import VerifiedGarbage.Proof.Ecdsa.Sign
-import VerifiedGarbage.Proof.Weierstrass.RISCV64.P192Field.Verified
+import VerifiedGarbage.Proof.Ecdsa.RISCV64.P192.MulFn
 import VerifiedGarbage.Proof.Weierstrass.RISCV64.P192Field.Lit
 
 /-!

@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.P224.X86_64.JacTiming
-import VerifiedGarbage.Proof.P224.X86_64.FieldTmpl
 public import VerifiedGarbage.Proof.Framework.TaintMap
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableTimingInit
 import VerifiedGarbage.Proof.Framework.Offset
@@ -11,7 +10,6 @@ import VerifiedGarbage.Proof.Mont.X86_64.Wide
 import VerifiedGarbage.Proof.Weierstrass.CombLay
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
 meta import VerifiedGarbage.Proof.P224.X86_64.JacTiming
-meta import VerifiedGarbage.Proof.P224.X86_64.FieldTmpl
 meta import VerifiedGarbage.Proof.Framework.TaintMap
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableTimingInit
 meta import VerifiedGarbage.Proof.Framework.Offset

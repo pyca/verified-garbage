@@ -11,8 +11,7 @@ import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 public import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
 public import VerifiedGarbage.Proof.Framework.AArch64.Syms
 public import VerifiedGarbage.Proof.Framework.Range
-public import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Core
-public import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Words
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Fprog
 public import VerifiedGarbage.Proof.Mont.AArch64.RowInit
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
@@ -24,7 +23,6 @@ import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Copy
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombDigit
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombSelect
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombSelectV
 public import VerifiedGarbage.Proof.Weierstrass.Law3
 public import VerifiedGarbage.Proof.Weierstrass.CombDigitW

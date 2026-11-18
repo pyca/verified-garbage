@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Ecdh.RISCV64.TailAll
 public import VerifiedGarbage.Proof.Ecdh.RISCV64.Bytes
-import VerifiedGarbage.Proof.Ecdh.RISCV64.Masks
 public import VerifiedGarbage.Proof.Weierstrass.CheckPointContract
 public import VerifiedGarbage.Proof.Weierstrass.RISCV64.Ladder
 public import VerifiedGarbage.Proof.Ecdh.Exchange

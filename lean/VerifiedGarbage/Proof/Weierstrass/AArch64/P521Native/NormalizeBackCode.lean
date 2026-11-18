@@ -7,14 +7,12 @@ import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Native.NormalizeStoreCopy
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Native.FieldEnv
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Native.FieldSquare
 public import VerifiedGarbage.Proof.Mont.AArch64.P521Field.RepresentationFin
 import VerifiedGarbage.Proof.Weierstrass.AArch64.MontSaves
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Native.NormalizePrefixInv
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.AddrArith
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Native.FieldMul
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Native.FieldSquare
 
 /-! ### `Weierstrass.AArch64.P521Native.NormalizeBackWork`, which this module and modules that import it used -/
 

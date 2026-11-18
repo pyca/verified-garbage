@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.EcKey.Compressed.Decode
 import VerifiedGarbage.Impl.EcKey.Compressed.Root
 import VerifiedGarbage.Proof.Weierstrass.Sqrt
 import VerifiedGarbage.Proof.EcKey.Compressed.Parity
-import VerifiedGarbage.Proof.Ecdh.RISCV64.Masks
+import VerifiedGarbage.Proof.Ecdh.RISCV64.Bytes
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith

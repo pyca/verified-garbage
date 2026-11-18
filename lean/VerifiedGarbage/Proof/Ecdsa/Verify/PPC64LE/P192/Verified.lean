@@ -8,14 +8,12 @@ import VerifiedGarbage.Proof.Ecdsa.Verify.Curves
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.Hash
 meta import VerifiedGarbage.Impl.Ecdsa.PPC64LE.VerifyHash
 public import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.Main
-public import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.P192.Contract
 public import VerifiedGarbage.Impl.Ecdsa.Verify.P192.PPC64LE
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.P192.Lit
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.P192
 import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.Main
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.P192.Contract
 meta import VerifiedGarbage.Impl.Ecdsa.Verify.P192.PPC64LE
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 meta import VerifiedGarbage.Spec.Ecdsa.Verify.P192
@@ -24,6 +22,60 @@ meta import VerifiedGarbage.Proof.Ecdsa.PPC64LE.P192
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Ecdsa.P192
 public import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
+public import VerifiedGarbage.Spec.Ecdsa.Generic
+public import VerifiedGarbage.Spec.Ecdsa.Verify
+public import VerifiedGarbage.Spec.P192
+public import VerifiedGarbage.TCB.PPC64LE.Isa
+public import VerifiedGarbage.Proof.Framework.PowLit
+meta import VerifiedGarbage.Spec.Ecdsa.Generic
+meta import VerifiedGarbage.Spec.Ecdsa.Verify
+meta import VerifiedGarbage.Spec.P192
+meta import VerifiedGarbage.TCB.PPC64LE.Isa
+meta import VerifiedGarbage.Proof.Framework.PowLit
+
+/-! ### `Ecdsa.Verify.PPC64LE.P192.Contract`, which only this module used -/
+
+section
+
+/-!
+# ECDSA verification over P-192 on PPC64LE: the contract the proof is written against
+
+The facts of `Proof.Ecdsa.verifyContract Spec.Ecdsa.P192.inst` for PPC64LE, by name:
+`vg_ecdsa_p192_verify(public, digest, sig, scratch)`, with the arguments in
+`r3`–`r6` and the result in `r3` (ELFv2). Only the pointers are public here:
+the proof shows that nothing else affects timing, although the contract
+would let the contents of the three buffers.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ecdsa.Verify.PPC64LE.P192
+
+open VG VG.PPC64LE Spec.Weierstrass Spec.Ecdsa
+
+/-- Whether the signature at `sig` of the hash at `digest` is valid for the
+public key at `pk`, as the specification says. -/
+abbrev vf (m : Mem) (pk digest sig : Addr) : Bool :=
+  verify Spec.P192.curve (bytesAt m pk 49) (hashToInt Spec.P192.curve (bytesAt m digest 24)) (bytesAt m sig 48)
+
+def verifyPPC : Contract PPC64LE.isa where
+  pre s :=
+    let pk : Region := ⟨s.gpr .r3, 49⟩
+    let digest : Region := ⟨s.gpr .r4, 24⟩
+    let sig : Region := ⟨s.gpr .r5, 48⟩
+    let scratch : Region := ⟨s.gpr .r6, 8192⟩
+    s.rd = [pk, digest, sig] ∧ s.wr = [scratch] ∧ pk.Disjoint scratch ∧ digest.Disjoint scratch ∧
+      sig.Disjoint scratch ∧ (s.gpr .r3).toNat + 49 ≤ 2 ^ 64 ∧ (s.gpr .r4).toNat + 24 ≤ 2 ^ 64 ∧
+      (s.gpr .r5).toNat + 48 ≤ 2 ^ 64 ∧ (s.gpr .r6).toNat + 8192 ≤ 2 ^ 64
+  post s s' := s'.gpr .r3 = if vf s.mem (s.gpr .r3) (s.gpr .r4) (s.gpr .r5) then 1 else 0
+  pub s₁ s₂ := s₁.sp = s₂.sp ∧ s₁.gpr .r3 = s₂.gpr .r3 ∧ s₁.gpr .r4 = s₂.gpr .r4 ∧
+    s₁.gpr .r5 = s₂.gpr .r5 ∧ s₁.gpr .r6 = s₂.gpr .r6
+
+end VG.Proof.Ecdsa.Verify.PPC64LE.P192
+
+end
+
+end
 
 /-!
 # ECDSA verification over P-192 on PPC64LE: `Verified`

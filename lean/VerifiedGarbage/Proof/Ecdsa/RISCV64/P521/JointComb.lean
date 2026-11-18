@@ -2,12 +2,11 @@ module
 
 -- separate module: P-521's verification is its only importer, but it builds on both callees' proofs
 -- (the windows' and the comb's), which then build in parallel with the rest of its imports
-
 public import VerifiedGarbage.Proof.Ecdsa.RISCV64.JointCombAll
 public import VerifiedGarbage.Proof.Ecdh.RISCV64.P521.Exchange
 public import VerifiedGarbage.Impl.Ecdsa.RISCV64.VerifyComb
 public import VerifiedGarbage.Proof.Ecdsa.RISCV64.P521.Joint
-public import VerifiedGarbage.Proof.Ecdsa.RISCV64.P521.Window
+public import VerifiedGarbage.Proof.Ecdsa.RISCV64.P521.MulVerified
 public import VerifiedGarbage.Proof.Ecdsa.RISCV64.Comb.Tail
 public import VerifiedGarbage.Proof.Ecdsa.RISCV64.P521.CombVerified
 public import VerifiedGarbage.Proof.Ecdh.RISCV64.P521.Tail

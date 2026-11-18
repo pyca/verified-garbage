@@ -7,15 +7,12 @@ public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP512r1.ArmComb
 public import VerifiedGarbage.Proof.EcKey.Arm.Main
-public import VerifiedGarbage.Proof.EcKey.Arm.BrainpoolP512r1.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.StackScratchConsts
-import VerifiedGarbage.Proof.EcKey.Arm.BrainpoolP512r1.Verified
 import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP512r1.Verified
 import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP512r1.Config
-import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP512r1.CombGenerator
+public import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP512r1.CombGenerator
 import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP512r1.CombLit
 import VerifiedGarbage.Proof.Ecdsa.Arm.SavedAbi
-public import VerifiedGarbage.Proof.BrainpoolP512r1.Arm.Comb
 import VerifiedGarbage.Proof.Weierstrass.Arm.TCombConsts
 import VerifiedGarbage.Proof.Framework.Arm.TaintSym
 import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
@@ -30,6 +27,114 @@ meta import VerifiedGarbage.Impl.Ecdsa.BrainpoolP512r1.ArmComb
 meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
 public import VerifiedGarbage.Proof.Weierstrass.MulContract
 meta import VerifiedGarbage.Proof.Weierstrass.MulContract
+import VerifiedGarbage.Proof.EcKey.Arm.BrainpoolP512r1.Lit
+public import VerifiedGarbage.Impl.EcKey.BrainpoolP512r1.Arm
+public import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP512r1.Lit
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Weierstrass.Arm.LadderP
+meta import VerifiedGarbage.Proof.EcKey.Arm.Main
+meta import VerifiedGarbage.Proof.EcKey.Arm.BrainpoolP512r1.Lit
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP512r1.Config
+meta import VerifiedGarbage.Impl.EcKey.BrainpoolP512r1.Arm
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Spec.EcKey.BrainpoolP512r1
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP512r1.Lit
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Weierstrass.Arm.LadderP
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.BrainpoolP512r1
+public import VerifiedGarbage.Spec.EcKey.Generic
+public import VerifiedGarbage.TCB.Arm.Isa
+public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.GetElem
+meta import VerifiedGarbage.Spec.BrainpoolP512r1
+meta import VerifiedGarbage.Spec.EcKey.Generic
+meta import VerifiedGarbage.TCB.Arm.Isa
+meta import VerifiedGarbage.Proof.Framework.PowLit
+meta import VerifiedGarbage.Proof.Framework.GetElem
+
+/-! ### `EcKey.Arm.BrainpoolP512r1.Verified`, which only this module used -/
+
+section
+
+/-! ### `EcKey.Arm.BrainpoolP512r1.Contract`, which this module and modules that import it used -/
+
+section
+
+/-!
+# brainpoolP512r1 public keys on 32-bit ARM: the contract the proof is written against
+
+The facts of `Spec.EcKey.BrainpoolP512r1.inst.publicKeyContract` for 32-bit ARM, by
+name: `vg_ec_brainpoolp512r1_public_key(out, d, scratch)`, with the arguments in
+`r0`–`r2` (AAPCS), the result in `r0` (the low word of `r1:r0`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.EcKey.Arm.BrainpoolP512r1
+
+open VG VG.Arm Spec.Weierstrass Spec.EcKey
+
+/-- The public key of the private key at `d`, as the specification computes it. -/
+abbrev pk (m : Mem) (d : Addr) : Option (Point Spec.BrainpoolP512r1.curve) :=
+  publicKey Spec.BrainpoolP512r1.curve (ofBytes (bytesAt m d 64))
+
+def pkArm : Contract Arm.isa where
+  pre s :=
+    let out : Region := ⟨State.addr (s.gpr .r0), 129⟩
+    let d : Region := ⟨State.addr (s.gpr .r1), 64⟩
+    let scratch : Region := ⟨State.addr (s.gpr .r2), 8192⟩
+    s.rd = [d] ∧ s.wr = [out, scratch] ∧ out.Disjoint scratch ∧ d.Disjoint scratch ∧
+      (s.gpr .r0).toNat + 129 ≤ 2 ^ 32 ∧ (s.gpr .r1).toNat + 64 ≤ 2 ^ 32 ∧ (s.gpr .r2).toNat + 8192 ≤ 2 ^ 32
+  post s s' :=
+    match pk s.mem (State.addr (s.gpr .r1)) with
+    | some (.affine x y) => BitVec.setWidth 32 (s'.gpr .r1 ++ s'.gpr .r0) = 1 ∧
+      bytesAt s'.mem (State.addr (s.gpr .r0)) 129 = encodePoint (.affine x y)
+    | _ => BitVec.setWidth 32 (s'.gpr .r1 ++ s'.gpr .r0) = 0 ∧
+      bytesAt s'.mem (State.addr (s.gpr .r0)) 129 = List.replicate 129 0
+  pub s₁ s₂ := s₁.sp = s₂.sp ∧ s₁.gpr .r0 = s₂.gpr .r0 ∧ s₁.gpr .r1 = s₂.gpr .r1 ∧ s₁.gpr .r2 = s₂.gpr .r2
+
+end VG.Proof.EcKey.Arm.BrainpoolP512r1
+
+end
+
+end
+
+/-!
+# brainpoolP512r1 public keys on 32-bit ARM: `Verified`
+
+`publicKey_ok` for brainpoolP512r1 (`brainpoolp512r1_ok`, and `Law` for its group law, which the
+registration file supplies) gives the contract's postcondition; `r4`–`r11`
+and `lr` are restored and `sp` kept. Constant time by taint tracking from
+the arguments' registers: the only branches are on loop counters, and every
+address is `r12` (`scratch`) or `lr` (`out`) plus a constant or a counter.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.EcKey.Arm.BrainpoolP512r1
+
+open VG VG.Arm VG.Impl.Ecdsa.Arm VG.Proof.Ecdsa.Arm VG.Proof.Ecdsa.Arm.BrainpoolP512r1 Spec.Weierstrass
+
+theorem post_of {u : Bool} {s s' : State} (h : PkPost (brainpoolp512r1With u) s s') : pkArm.post s s' := by
+  unfold PkPost at h
+  simp only [pkArm, BitVec.setWidth_append_eq_right]
+  revert h
+  generalize hq : pk s.mem (State.addr (s.gpr .r1)) = q
+  rw [show Spec.EcKey.publicKey (brainpoolp512r1With u).C (dk (brainpoolp512r1With u) s) = pk s.mem (State.addr (s.gpr .r1)) from rfl,
+    hq]
+  rcases q with _ | _ | ⟨x, y⟩ <;> exact id
+
+end VG.Proof.EcKey.Arm.BrainpoolP512r1
+
+end
+
+end
 
 /-!
 # brainpoolP512r1 public keys on 32-bit ARM with the generator comb
