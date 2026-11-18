@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Inst
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Scrub
 public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.OptimizedPrims
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Lit
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Lit
@@ -255,18 +256,18 @@ arithmetic, which needs no CPU feature. Where the paired-state kernels may
 use the SHA3 instructions (`pairedSha3`), the matrix entries left after the
 groups of four are sampled as a pair; otherwise one at a time. -/
 def artifactsFor (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
-  Spec.MlDsa.keyGen44Api.artifact AArch64.target {
+  Spec.MlDsa.keyGen44Api.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
     suffix := v.callee.suffix
     code := Impl.MlDsa.AArch64.KeyGen.Optimized.keyGenWith v.callee Spec.MlDsa.mlDsa44
-    verified := Proof.MlDsa.AArch64.KeyGen.Optimized.keyGen_verified v (.inl rfl) },
-  Spec.MlDsa.keyGen65Api.artifact AArch64.target {
+    verified := Proof.MlDsa.AArch64.KeyGen.Optimized.keyGen_verified v (.inl rfl) } (Proof.MlDsa.AArch64.Scrub.keyGenOk_consts _ 16 _ _)),
+  Spec.MlDsa.keyGen65Api.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
     suffix := v.callee.suffix
     code := Impl.MlDsa.AArch64.KeyGen.Optimized.keyGenWith v.callee Spec.MlDsa.mlDsa65
-    verified := Proof.MlDsa.AArch64.KeyGen.Optimized.keyGen_verified v (.inr (.inl rfl)) },
-  Spec.MlDsa.keyGen87Api.artifact AArch64.target {
+    verified := Proof.MlDsa.AArch64.KeyGen.Optimized.keyGen_verified v (.inr (.inl rfl)) } (Proof.MlDsa.AArch64.Scrub.keyGenOk_consts _ 16 _ _)),
+  Spec.MlDsa.keyGen87Api.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
     suffix := v.callee.suffix
     code := Impl.MlDsa.AArch64.KeyGen.Optimized.keyGenWith v.callee Spec.MlDsa.mlDsa87
-    verified := Proof.MlDsa.AArch64.KeyGen.Optimized.keyGen_verified v (.inr (.inr rfl)) }]
+    verified := Proof.MlDsa.AArch64.KeyGen.Optimized.keyGen_verified v (.inr (.inr rfl)) } (Proof.MlDsa.AArch64.Scrub.keyGenOk_consts _ 16 _ _))]
 
 def artifacts : List Artifact :=
   VG.Proof.Variants.Keccak.AArch64.variants.flatMap fun v => artifactsFor v
@@ -277,21 +278,21 @@ end VG.Artifacts.MlDsa.AArch64.KeyGen
 namespace VG.Artifacts.MlDsa.AArch64.PkTr
 
 def artifactsFor (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
-  Spec.MlDsa.pkTr44Api.artifact AArch64.target {
+  Spec.MlDsa.pkTr44Api.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
     suffix := v.callee.suffix
     vendor := v.vendor
     code := Impl.MlDsa.AArch64.PkTr.pkTrWith v.callee Spec.MlDsa.mlDsa44
-    verified := Proof.MlDsa.AArch64.PkTr.pkTr_verified v _ (.inl rfl) },
-  Spec.MlDsa.pkTr65Api.artifact AArch64.target {
+    verified := Proof.MlDsa.AArch64.PkTr.pkTr_verified v _ (.inl rfl) } (Proof.MlDsa.AArch64.Scrub.pkTrOk _ 16)),
+  Spec.MlDsa.pkTr65Api.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
     suffix := v.callee.suffix
     vendor := v.vendor
     code := Impl.MlDsa.AArch64.PkTr.pkTrWith v.callee Spec.MlDsa.mlDsa65
-    verified := Proof.MlDsa.AArch64.PkTr.pkTr_verified v _ (.inr (.inl rfl)) },
-  Spec.MlDsa.pkTr87Api.artifact AArch64.target {
+    verified := Proof.MlDsa.AArch64.PkTr.pkTr_verified v _ (.inr (.inl rfl)) } (Proof.MlDsa.AArch64.Scrub.pkTrOk _ 16)),
+  Spec.MlDsa.pkTr87Api.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
     suffix := v.callee.suffix
     vendor := v.vendor
     code := Impl.MlDsa.AArch64.PkTr.pkTrWith v.callee Spec.MlDsa.mlDsa87
-    verified := Proof.MlDsa.AArch64.PkTr.pkTr_verified v _ (.inr (.inr rfl)) }]
+    verified := Proof.MlDsa.AArch64.PkTr.pkTr_verified v _ (.inr (.inr rfl)) } (Proof.MlDsa.AArch64.Scrub.pkTrOk _ 16))]
 
 def artifacts : List Artifact :=
   VG.Proof.Variants.Keccak.AArch64.variants.flatMap fun v => artifactsFor v
@@ -338,19 +339,19 @@ open VG.Proof.MlDsa.AArch64.Sign
 def entry (v : Proof.Sha3.AArch64.Permutation) (p : Params) (hp : Ok3 p)
     (module label : String) (prepared : Bool) : Artifact :=
   if prepared then
-    (preparedSignMessageApi p module label).artifact AArch64.target {
+    (preparedSignMessageApi p module label).artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
       suffix := v.callee.suffix
       code := Impl.MlDsa.AArch64.Message.signMessage v.callee
         (preparedSignName module ++ v.callee.suffix)
         (signCode v p (signWithCacheName module ++ v.callee.suffix) true) p
-      verified := message_sign_verified v hp (message_sign_fn v hp _ true) }
+      verified := message_sign_verified v hp (message_sign_fn v hp _ true) } (Proof.MlDsa.AArch64.Scrub.preparedSignMessagePairedOk p))
   else
-    (signMessageApi p module label).artifact AArch64.target {
+    (signMessageApi p module label).artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
       suffix := v.callee.suffix
       code := Impl.MlDsa.AArch64.Message.signMessage v.callee
         ((signApi p module label).name ++ v.callee.suffix)
         (signCode v p (signWithCacheName module ++ v.callee.suffix) false) p
-      verified := message_sign_verified v hp (message_sign_fn v hp _ false) }
+      verified := message_sign_verified v hp (message_sign_fn v hp _ false) } (Proof.MlDsa.AArch64.Scrub.signMessagePairedOk p))
 
 def entries (v : Proof.Sha3.AArch64.Permutation) (p : Params) (hp : Ok3 p)
     (module label : String) : List Artifact := [entry v p hp module label false,entry v p hp module label true]
@@ -407,19 +408,19 @@ open VG.Proof.MlDsa.AArch64.Verify.OptimizedSelected
 def entry (v : Proof.Sha3.AArch64.Permutation) (p : Params) (hp : Ok3 p)
     (module label : String) (prepared : Bool) : Artifact :=
   if prepared then
-    (preparedVerifyMessageApi p module label).artifact AArch64.target {
+    (preparedVerifyMessageApi p module label).artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
       suffix := v.callee.suffix
       code := Impl.MlDsa.AArch64.Optimized.verifyMessageCached v.callee
         (preparedVerifyName module ++ v.callee.suffix)
         (verifyCode v p (verifyWithCacheName module ++ v.callee.suffix) true) p
-      verified := message_verify_verified v hp (message_verify_fn v hp _ true) }
+      verified := message_verify_verified v hp (message_verify_fn v hp _ true) } (Proof.MlDsa.AArch64.Scrub.preparedVerifyMessageSelectedOk p))
   else
-    (verifyMessageCachedApi p module label).artifact AArch64.target {
+    (verifyMessageCachedApi p module label).artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
       suffix := v.callee.suffix
       code := Impl.MlDsa.AArch64.Optimized.verifyMessageCached v.callee
         ((verifyApi p module label).name ++ v.callee.suffix)
         (verifyCode v p (verifyWithCacheName module ++ v.callee.suffix) false) p
-      verified := message_verify_verified v hp (message_verify_fn v hp _ false) }
+      verified := message_verify_verified v hp (message_verify_fn v hp _ false) } (Proof.MlDsa.AArch64.Scrub.verifyMessageCachedSelectedOk p))
 
 def entries (v : Proof.Sha3.AArch64.Permutation) (p : Params) (hp : Ok3 p)
     (module label : String) : List Artifact := [entry v p hp module label false,entry v p hp module label true]
