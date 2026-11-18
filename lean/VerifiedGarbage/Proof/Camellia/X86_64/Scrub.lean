@@ -54,6 +54,8 @@ meta import VerifiedGarbage.Proof.Camellia.X86_64.ModesLit
 meta import VerifiedGarbage.Proof.Camellia.X86_64.FbFinalLit
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Camellia.ScrubLocal
+meta import VerifiedGarbage.Proof.Camellia.ScrubLocal
 
 /-!
 # Camellia on x86-64, without secret residue
@@ -78,49 +80,15 @@ loses track of.
 
 namespace VG.Proof.Camellia.X86_64.Scrub
 
-open VG.X86_64 VG.X86_64.Scrub VG.Spec.Camellia
+open VG.X86_64 VG.X86_64.Scrub VG.Spec.Camellia VG.Proof.Camellia.ScrubLocal
 
-/-! ## Locality -/
-
-section
-
-variable {m₁ m₂ : Mem} {p : Addr} {L : Nat}
-
-/-- The memory agrees on the `n` bytes at `p`, from its agreeing on a
-region of at least `n` bytes there. -/
-theorem agree_le (h : ∀ a, Region.Contains ⟨p, L⟩ a 1 → m₁ a = m₂ a) {n : Nat} (hn : n ≤ L) :
-    ∀ i < n, m₂ (p + BitVec.ofNat 64 i) = m₁ (p + BitVec.ofNat 64 i) :=
-  fun i hi => Proof.Camellia.agree_of h i (by omega_using [hn, hi])
-
-theorem aesBytesAt_of (h : ∀ a, Region.Contains ⟨p, L⟩ a 1 → m₁ a = m₂ a) {n : Nat} (hn : n ≤ L) :
-    Spec.Aes.bytesAt m₂ p n = Spec.Aes.bytesAt m₁ p n := by
-  simp only [Spec.Aes.bytesAt]
-  exact List.map_congr_left fun i hi => agree_le h hn i (List.mem_range.mp hi)
-
-theorem cbcBlocksAt_of (h : ∀ a, Region.Contains ⟨p, L⟩ a 1 → m₁ a = m₂ a) {n : Nat} (hn : n * 16 ≤ L) :
-    Spec.Cbc.blocksAt m₂ p n = Spec.Cbc.blocksAt m₁ p n := by
-  simp only [Spec.Cbc.blocksAt]
-  refine List.map_congr_left fun i hi => ?_
-  have := List.mem_range.mp hi
-  simp only [Spec.Aes.bytesAt]
-  refine List.map_congr_left fun j hj => ?_
-  have := List.mem_range.mp hj
-  rw [VG.Offset.add_add]
-  exact agree_le h hn _ (by omega_arith)
-
-theorem blocksAt_of (h : ∀ a, Region.Contains ⟨p, L⟩ a 1 → m₁ a = m₂ a) {n : Nat} (hn : n * 16 ≤ L) :
-    blocksAt m₂ p n = blocksAt m₁ p n :=
-  Proof.Camellia.blocksAt_congr fun i hi => agree_le h hn i (by omega_using [hi])
-
-end
-
+/-! ## Postconditions -/
 theorem len_le (x : BitVec 64) (k : Nat) : ((ArgWord.int abi.ptrBits).ofRaw x).toNat * k ≤ x.toNat * k :=
   Nat.le_refl _
 
 theorem len_le1 (x : BitVec 64) : ((ArgWord.int abi.ptrBits).ofRaw x).toNat ≤ x.toNat * Elem.u8.size :=
   Nat.le_of_eq (Nat.mul_one _).symm
 
-/-! ## Postconditions -/
 
 theorem expandKeyOut : PostOut (expandKeyContract X86_64.abi 3216) (expandKeySig.retBits 64) :=
   postOut_of_local (leak := none) ScrubAbi.plain (Proof.Camellia.expandKeyPostOut_local _)
