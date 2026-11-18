@@ -118,6 +118,8 @@ pub unsafe fn vg_ffdh_check_domain_auto(_dit: verified_garbage_cpu::Dit<'_>, dom
 ///
 /// It runs `vg_ffdh_exchange`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of `out_len` bytes.
@@ -148,6 +150,8 @@ pub unsafe fn vg_ffdh_exchange_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *m
 ///
 /// It runs `vg_ffdh_check_private`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `domain` must be valid for reads of `domain_len` bytes.
@@ -175,6 +179,8 @@ pub unsafe fn vg_ffdh_check_private_auto(_dit: verified_garbage_cpu::Dit<'_>, do
 /// Contract: `VG.Spec.Ffdh.derivePublicContract`. Timing may depend on the pointers, the lengths, the domain and the value returned, not otherwise on x; the exponentiation may run over all `x_len` bytes of x, leading zeros included.
 ///
 /// It runs `vg_ffdh_derive_public`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///

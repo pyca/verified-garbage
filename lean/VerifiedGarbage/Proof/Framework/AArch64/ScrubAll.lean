@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Framework.AArch64.Depth
 public import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
 public import VerifiedGarbage.Proof.Framework.AArch64.StackScratchConsts
+public import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 import VerifiedGarbage.Proof.Framework.AArch64.ResidueCT
 import VerifiedGarbage.Proof.Framework.AArch64.ResidueTaint
 import VerifiedGarbage.Proof.Framework.AArch64.Call
@@ -742,6 +743,102 @@ theorem scrubAllOk_regs_pre (hk : (sig.words abi.ptrBits).length ≤ 8) {W : Nat
     have hd := RTaintF.scrub_disjoint hk hW hWs hs b hb a ha'
     exact (hm a fun hlt => hd (show (a - (s.sp - BitVec.ofNat 64 W)).toNat + 1 ≤ W by omega)).symm
   pub s₁ s₂ hp := ((pub_regs hk).mp hp).1.1.1
+
+/-- The `W ≤ stack` bytes below the stack pointer on entry are apart from the
+buffers, for a signature with arguments on the stack too. -/
+theorem args_disjoint (hl : Sig.noLists sig.params = true) {W : Nat} (hW : 0 < W) (hWs : W ≤ stack)
+    {s : State} (hs : (sig.contract abi pre post wa stack leak).pre s) :
+    ∀ b ∈ Sig.bufs sig.params (allArgs sig s), b.1.Disjoint ⟨s.sp - BitVec.ofNat 64 W, W⟩ := by
+  intro b hb
+  obtain ⟨-, -, -, -, hres, -, -⟩ := (pre_args (argsOk_of_pre hs) hl).mp hs
+  have hst : stackBelow s.sp stack = [⟨s.sp - BitVec.ofNat 64 stack, stack⟩] := by
+    cases stack with
+    | zero => omega
+    | succ n => rfl
+  have hr := hres ⟨s.sp - BitVec.ofNat 64 stack, stack⟩ (by rw [hst]; exact List.mem_singleton_self _)
+    b (List.mem_append_left _ hb)
+  exact hr.symm.sub_right (Offset.sub_below _ hWs (by omega))
+
+/-- `scrubAllOk_regs` for a signature with arguments on the stack too
+(`allArgs`): they are above the stack pointer, apart from the `W` bytes below
+it, and the postcondition reads them from the memory on entry. -/
+theorem scrubAllOk_args (hl : Sig.noLists sig.params = true) {W : Nat} (hW : 0 < W) (hWs : W ≤ stack)
+    (hpost : ∀ vs m m₁ m₂ r, vs.length = (sig.words abi.ptrBits).length →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) post vs m m₁ r →
+        Curry.apply (sig.words abi.ptrBits) post vs m m₂ r) :
+    ScrubAllOk (sig.contract abi pre post wa stack leak) W (sig.retBits abi.ptrBits) where
+  sp s hs := by
+    obtain ⟨⟨h0, -⟩, -⟩ := (pre_args (argsOk_of_pre hs) hl).mp hs
+    rcases h0 with h0 | h0 <;> omega
+  post s u u' hs hq hm hx := by
+    have hA := argsOk_of_pre hs
+    rw [post_args hA] at hq ⊢
+    rw [hx]
+    refine hpost _ _ _ _ _ (allArgs_length sig s) (fun b hb a ha' => ?_) hq
+    have hd := args_disjoint hl hW hWs hs b hb a ha'
+    exact (hm a fun hlt => hd (show (a - (s.sp - BitVec.ofNat 64 W)).toNat + 1 ≤ W by omega)).symm
+  pub s₁ s₂ hp := by
+    rcases args_cases sig with h | h
+    · simp only [Sig.contract, h] at hp
+    · exact ((pub_args h hl).mp hp).1.1.1
+
+/-- `scrubAllOk_args` with no stack zeroed, for code without frames. -/
+theorem scrubAllOk_args0 (hl : Sig.noLists sig.params = true)
+    (hpost : ∀ vs m m₁ m₂ r, vs.length = (sig.words abi.ptrBits).length →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) post vs m m₁ r →
+        Curry.apply (sig.words abi.ptrBits) post vs m m₂ r) :
+    ScrubAllOk (sig.contract abi pre post wa stack leak) 0 (sig.retBits abi.ptrBits) where
+  sp _ _ := Nat.zero_le _
+  post s u u' hs hq hm hx := by
+    have hA := argsOk_of_pre hs
+    rw [post_args hA] at hq ⊢
+    rw [hx]
+    exact hpost _ _ _ _ _ (allArgs_length sig s) (fun _ _ a _ => (hm a (Nat.not_lt_zero _)).symm) hq
+  pub s₁ s₂ hp := by
+    rcases args_cases sig with h | h
+    · simp only [Sig.contract, h] at hp
+    · exact ((pub_args h hl).mp hp).1.1.1
+
+/-- `scrubAllOk_args` over the whole stack, whatever its size. -/
+theorem scrubAllOk_args_any (hl : Sig.noLists sig.params = true)
+    (hpost : ∀ vs m m₁ m₂ r, vs.length = (sig.words abi.ptrBits).length →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) post vs m m₁ r →
+        Curry.apply (sig.words abi.ptrBits) post vs m m₂ r) :
+    ScrubAllOk (sig.contract abi pre post wa stack leak) stack (sig.retBits abi.ptrBits) := by
+  cases stack with
+  | zero => exact scrubAllOk_args0 hl hpost
+  | succ n => exact scrubAllOk_args hl (Nat.succ_pos n) (Nat.le_refl _) hpost
+
+/-- `scrubAllOk_args_any` for a postcondition that reads the memory on return
+only within the buffers given the precondition. -/
+theorem scrubAllOk_args_pre_any (hl : Sig.noLists sig.params = true)
+    (hpost : ∀ vs m m₁ m₂ r, vs.length = (sig.words abi.ptrBits).length →
+      Curry.apply (sig.words abi.ptrBits) pre vs m →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) post vs m m₁ r →
+        Curry.apply (sig.words abi.ptrBits) post vs m m₂ r) :
+    ScrubAllOk (sig.contract abi pre post wa stack leak) stack (sig.retBits abi.ptrBits) where
+  sp s hs := by
+    obtain ⟨⟨h0, -⟩, -⟩ := (pre_args (argsOk_of_pre hs) hl).mp hs
+    rcases h0 with h0 | h0 <;> omega
+  post s u u' hs hq hm hx := by
+    have hA := argsOk_of_pre hs
+    have hp := ((pre_args hA hl).mp hs).2.2.2.2.2.2
+    rw [post_args hA] at hq ⊢
+    rw [hx]
+    refine hpost _ _ _ _ _ (allArgs_length sig s) hp (fun b hb a ha' => ?_) hq
+    cases stack with
+    | zero => exact (hm a (Nat.not_lt_zero _)).symm
+    | succ n =>
+      have hd := args_disjoint hl (Nat.succ_pos n) (Nat.le_refl _) hs b hb a ha'
+      exact (hm a fun hlt => hd (show (a - (s.sp - BitVec.ofNat 64 (n + 1))).toNat + 1 ≤ n + 1 by omega)).symm
+  pub s₁ s₂ hp := by
+    rcases args_cases sig with h | h
+    · simp only [Sig.contract, h] at hp
+    · exact ((pub_args h hl).mp hp).1.1.1
 
 /-- `scrubAllOk_regs` with no stack zeroed, for code without frames. -/
 theorem scrubAllOk_regs0 (hk : (sig.words abi.ptrBits).length ≤ 8)

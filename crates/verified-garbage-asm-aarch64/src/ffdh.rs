@@ -2466,6 +2466,8 @@ b 27f
 ///
 /// Contract: `VG.Spec.Ffdh.exchangeContract`. Timing may depend on the pointers, the lengths, the domain, y and the value returned, not otherwise on x; the exponentiation may run over all `x_len` bytes of x, leading zeros included.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of `out_len` bytes.
@@ -2987,7 +2989,13 @@ b 21f
 20:
 .inst 0xd2800000
 21:
-.inst 0xd65f03c0
+.inst 0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800008
+.inst 0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f,0xd2800010
+.inst 0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406
+.inst 0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416
+.inst 0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e
+.inst 0x6f00e41f,0xea01003f,0x4e181c28,0x4e181c29,0x4e181c2a,0x4e181c2b,0x4e181c2c,0x4e181c2d
+.inst 0x4e181c2e,0x4e181c2f,0x11000000,0xd65f03c0
 .p2align 6",
         vg_rsa_square_4_4 = sym super::rsa::vg_rsa_square_4_4::vg_rsa_square_4_4,
         vg_rsa_square_window5 = sym super::rsa::vg_rsa_square_window5::vg_rsa_square_window5,
@@ -2998,6 +3006,8 @@ b 21f
 /// Checks an imported finite-field Diffie–Hellman key pair (SP 800-56A Rev. 3 §5.6.2.1.2 and §5.6.2.1.4). With `domain` as `vg_ffdh_check_domain` takes it, y (`p_len` bytes) and x (`x_len` bytes), most significant first: returns 2 if x is not in `1..q` (`1..p − 1` without q); 1 if y is a valid public value (as `vg_ffdh_check_public` checks it) and `y = g^x mod p`; 0 otherwise.
 ///
 /// Contract: `VG.Spec.Ffdh.checkPrivateContract`. Timing may depend on the pointers, the lengths, the domain, y and the value returned, not otherwise on x; the exponentiation may run over all `x_len` bytes of x, leading zeros included.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -3598,7 +3608,13 @@ b 21f
 20:
 .inst 0xd2800000
 21:
-.inst 0xd65f03c0
+.inst 0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800008
+.inst 0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f,0xd2800010
+.inst 0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406
+.inst 0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416
+.inst 0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e
+.inst 0x6f00e41f,0xea01003f,0x4e181c28,0x4e181c29,0x4e181c2a,0x4e181c2b,0x4e181c2c,0x4e181c2d
+.inst 0x4e181c2e,0x4e181c2f,0x11000000,0xd65f03c0
 .p2align 6",
         vg_rsa_square_4_4 = sym super::rsa::vg_rsa_square_4_4::vg_rsa_square_4_4,
         vg_rsa_square_window5 = sym super::rsa::vg_rsa_square_window5::vg_rsa_square_window5,
@@ -3609,6 +3625,8 @@ b 21f
 /// Derives the public value of an imported finite-field Diffie–Hellman private key (SP 800-56A Rev. 3 §5.6.2.1.2 for x's range, §5.6.1.1 for `y = g^x mod p`). With `domain` as `vg_ffdh_check_domain` takes it and x (`x_len` bytes, most significant first): returns 2 if x is not in `1..q` (`1..p − 1` without q); 1 if `y = g^x mod p` is a valid public value (as `vg_ffdh_check_public` checks it), writing y (`p_len` bytes, most significant first) to `y`; 3 otherwise. Writes zeros to `y` unless it returns 1.
 ///
 /// Contract: `VG.Spec.Ffdh.derivePublicContract`. Timing may depend on the pointers, the lengths, the domain and the value returned, not otherwise on x; the exponentiation may run over all `x_len` bytes of x, leading zeros included.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -4189,7 +4207,13 @@ b 21f
 20:
 .inst 0xd2800000
 21:
-.inst 0xd65f03c0
+.inst 0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800008
+.inst 0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f,0xd2800010
+.inst 0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406
+.inst 0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416
+.inst 0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e
+.inst 0x6f00e41f,0xea01003f,0x4e181c28,0x4e181c29,0x4e181c2a,0x4e181c2b,0x4e181c2c,0x4e181c2d
+.inst 0x4e181c2e,0x4e181c2f,0x11000000,0xd65f03c0
 .p2align 6",
         vg_rsa_square_4_4 = sym super::rsa::vg_rsa_square_4_4::vg_rsa_square_4_4,
         vg_rsa_square_window5 = sym super::rsa::vg_rsa_square_window5::vg_rsa_square_window5,

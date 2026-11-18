@@ -45,6 +45,8 @@ b 21f
 
 /// Randomized DSA signing of a prehashed digest, for an already validated packed private key (big-endian p||q||g||y||x; vg_dsa_validate_private_key validates it). Up to eight signing attempts, each with 128 nonce draws. Returns 1 with fixed-width r||s, 0 for retry exhaustion, or 2 for insufficient random bytes; out is zero on failure and used counts consumed complete draws on every return. Timing may depend on public p,q,g,y, sampling decisions, signing success bits and consumption, not otherwise on secrets. Contract: `VG.Spec.Dsa.randomSignPrevalidatedContract`.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of `out_len` bytes.
@@ -165,7 +167,16 @@ b 226f
 cbnz x9, 227b
 226:
 .inst 0xd2800000,0x910323ef,0xf90001e0,0x910343ef,0xf90001e0,0x910363ef,0xf90001e0,0x910383ef
-.inst 0xf90001e0,0xf9401fe2,0xf9404be0,0xf9000040,0xf94063e0,0x910403ff,0xd65f03c0
+.inst 0xf90001e0,0xf9401fe2,0xf9404be0,0xf9000040,0xf94063e0,0x910403ff,0xd2800001,0xd2800002
+.inst 0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a
+.inst 0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f,0xd2800010,0xd2800011,0x6f00e400
+.inst 0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410
+.inst 0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418
+.inst 0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f
+.inst 0x4e181c28,0x4e181c29,0x4e181c2a,0x4e181c2b,0x4e181c2c,0x4e181c2d,0x4e181c2e,0x4e181c2f
+.inst 0x11000000,0xd10403ff,0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f
+.inst 0x3d80113f,0x3d80153f,0x3d80193f,0x3d801d3f,0x3d80213f,0x3d80253f,0x3d80293f,0x3d802d3f
+.inst 0x3d80313f,0x3d80353f,0x3d80393f,0x3d803d3f,0x910403ff,0xd65f03c0
 .p2align 6",
         vg_dsa_sign_prevalidated = sym super::dsa::vg_dsa_sign_prevalidated::vg_dsa_sign_prevalidated,
     )
@@ -1737,6 +1748,8 @@ b 217f
 
 /// DSA verification of a prehashed digest, for an already validated packed public key (big-endian p||q||g||y with widths p_len, q_len, p_len, p_len; vg_dsa_validate_public_key validates it). The signature is r||s with q_len bytes each. Returns 1 if verification succeeds, otherwise 0: the result of fully checked verification (`VG.Spec.Dsa.verifyContract`), whose checks of the signature scalars and digest handling it keeps. Timing may depend on p,q,g,y and the result, not otherwise on signature or digest. Contract: `VG.Spec.Dsa.verifyPrevalidatedContract`.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
@@ -3117,7 +3130,13 @@ b 217f
 216:
 .inst 0xd2800000
 217:
-.inst 0xd65f03c0
+.inst 0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800008
+.inst 0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f,0xd2800010
+.inst 0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406
+.inst 0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416
+.inst 0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e
+.inst 0x6f00e41f,0xea01003f,0x4e181c28,0x4e181c29,0x4e181c2a,0x4e181c2b,0x4e181c2c,0x4e181c2d
+.inst 0x4e181c2e,0x4e181c2f,0x11000000,0xd65f03c0
 .p2align 6",
         vg_rsa_square_4_4 = sym super::rsa::vg_rsa_square_4_4::vg_rsa_square_4_4,
         vg_rsa_mul_6_4_7 = sym super::rsa::vg_rsa_mul_6_4_7::vg_rsa_mul_6_4_7,
@@ -3133,6 +3152,8 @@ b 217f
 }
 
 /// Generate a DSA private key from p||q||g and fresh independent random bytes. Uses at most 128 rejection-sampling draws, computes y=g^x mod p, and checks algebraic consistency, not primality. Returns 1 with p||q||g||y||x, 0 for invalid input/draw limit, or 2 for insufficient randomness. Failure zeros out; used counts consumed complete draws on every return. Timing may depend on public parameters, sampling decisions, consumption and success, not otherwise on x or randomness. Contract: `VG.Spec.Dsa.generateKeyContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -3244,7 +3265,16 @@ b 223f
 cbnz x9, 224b
 223:
 .inst 0xd2800000,0x910323ef,0xf90001e0,0x910343ef,0xf90001e0,0x910363ef,0xf90001e0,0x910383ef
-.inst 0xf90001e0,0xf9401fe2,0xf9404be0,0xf9000040,0xf94063e0,0x910403ff,0xd65f03c0
+.inst 0xf90001e0,0xf9401fe2,0xf9404be0,0xf9000040,0xf94063e0,0x910403ff,0xd2800001,0xd2800002
+.inst 0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a
+.inst 0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f,0xd2800010,0xd2800011,0x6f00e400
+.inst 0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410
+.inst 0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418
+.inst 0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f
+.inst 0x4e181c28,0x4e181c29,0x4e181c2a,0x4e181c2b,0x4e181c2c,0x4e181c2d,0x4e181c2e,0x4e181c2f
+.inst 0x11000000,0xd10403ff,0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f
+.inst 0x3d80113f,0x3d80153f,0x3d80193f,0x3d801d3f,0x3d80213f,0x3d80253f,0x3d80293f,0x3d802d3f
+.inst 0x3d80313f,0x3d80353f,0x3d80393f,0x3d803d3f,0x910403ff,0xd65f03c0
 .p2align 6",
         vg_dsa_check_parameters = sym super::dsa::vg_dsa_check_parameters::vg_dsa_check_parameters,
         vg_dsa_derive_key_checked = sym super::dsa::vg_dsa_derive_key_checked::vg_dsa_derive_key_checked,
@@ -3252,6 +3282,8 @@ cbnz x9, 224b
 }
 
 /// Derive a DSA private key from big-endian p||q||g and a supplied q_len-byte scalar x, as key generation does after sampling x: checks the domain and 0 < x < q, computes y = g^x mod p and checks the key. Returns 1 with p||q||g||y||x, or 0 and zero output. Checks algebraic consistency, not primality. x must be a fresh uniform scalar the caller sampled. Timing may depend on p, q, g and success, not otherwise on x. Contract: `VG.Spec.Dsa.deriveKeyContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -3979,7 +4011,13 @@ b 217f
 cbnz x2, 2162b
 .inst 0xd2800000
 217:
-.inst 0xd65f03c0
+.inst 0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800008
+.inst 0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f,0xd2800010
+.inst 0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406
+.inst 0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416
+.inst 0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e
+.inst 0x6f00e41f,0xea01003f,0x4e181c28,0x4e181c29,0x4e181c2a,0x4e181c2b,0x4e181c2c,0x4e181c2d
+.inst 0x4e181c2e,0x4e181c2f,0x11000000,0xd65f03c0
 .p2align 6",
         vg_rsa_square_4_4 = sym super::rsa::vg_rsa_square_4_4::vg_rsa_square_4_4,
         vg_rsa_mul_6_4_7 = sym super::rsa::vg_rsa_mul_6_4_7::vg_rsa_mul_6_4_7,

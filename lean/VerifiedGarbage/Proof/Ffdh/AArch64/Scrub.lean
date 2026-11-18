@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Ffdh.Contract
+public import VerifiedGarbage.Spec.Ffdh.DerivePublicContract
 public import VerifiedGarbage.Spec.Ffdh.CachedKeyGenerationContract
 public import VerifiedGarbage.Proof.Framework.AArch64.ScrubAll
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -86,6 +87,46 @@ theorem generationPrecomputeOk (stack : Nat) (c₀ : String × List (BitVec 64))
       obtain ⟨h1, h2⟩ := h
       refine ⟨h1, ?_⟩
       exact h2.trans (congrArg some (e _ (toNat_sw ctxLen)).symm)
+
+
+/-! ## With arguments on the stack -/
+
+theorem written_of {m₁ m₂ : Mem} {o : Addr} {n : Nat} {r : BitVec 32} {v : Option (List Byte)}
+    (e : Spec.Rsa.bytesAt m₂ o n = Spec.Rsa.bytesAt m₁ o n) (h : Spec.Rsa.written m₁ o n r v) :
+    Spec.Rsa.written m₂ o n r v := by
+  cases v <;> simpa only [Spec.Rsa.written, e] using h
+
+theorem checkPrivateOk (stack : Nat) :
+    ScrubAllOk (Spec.Ffdh.checkPrivateContract abi stack) stack (Spec.Ffdh.checkPrivateSig.retBits abi.ptrBits) :=
+  scrubAllOk_args_any (sig := Spec.Ffdh.checkPrivateSig) (by decide) fun
+    | [_, _, _, _, _, _, _, _, _], _, _, _, _, _, _, h => h
+
+theorem exchangeOk (stack : Nat) :
+    ScrubAllOk (Spec.Ffdh.exchangeContract abi stack) stack (Spec.Ffdh.exchangeSig.retBits abi.ptrBits) :=
+  scrubAllOk_args_any (sig := Spec.Ffdh.exchangeSig) (by decide) fun
+    | [out, outLen, _, _, _, _, _, _, _, _, _], m, m₁, m₂, r, _, hb, h => by
+      simp only [Spec.Ffdh.exchangeSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+        forall_eq_or_imp, forall_eq, Elem.size] at hb
+      have e := bytesAt_of hb.1
+      change @Curry.apply (Mem → Mem → BitVec (Spec.Ffdh.exchangeSig.retBits abi.ptrBits) → Prop) [_, _, _, _, _, _, _, _, _, _, _] _ _ _ m₁ r at h
+      change @Curry.apply (Mem → Mem → BitVec (Spec.Ffdh.exchangeSig.retBits abi.ptrBits) → Prop) [_, _, _, _, _, _, _, _, _, _, _] _ _ _ m₂ r
+      dsimp only [Curry.apply, ArgWord.ofRaw] at h ⊢
+      exact fun hd hp => written_of (by rw [toNat_sw]; exact e) (h hd hp)
+
+theorem derivePublicOk (stack : Nat) :
+    ScrubAllOk (Spec.Ffdh.derivePublicContract abi stack) stack (Spec.Ffdh.derivePublicSig.retBits abi.ptrBits) :=
+  scrubAllOk_args_pre_any (sig := Spec.Ffdh.derivePublicSig) (by decide) fun
+    | [y, yLen, _, _, pLen, _, _, _, _], m, m₁, m₂, r, _, hp, hb, h => by
+      simp only [Spec.Ffdh.derivePublicSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+        forall_eq_or_imp, forall_eq, Elem.size] at hb
+      change @Curry.apply (Mem → Prop) [_, _, _, _, _, _, _, _, _] _ _ m at hp
+      change @Curry.apply (Mem → Mem → BitVec (Spec.Ffdh.derivePublicSig.retBits abi.ptrBits) → Prop) [_, _, _, _, _, _, _, _, _] _ _ _ m₁ r at h
+      change @Curry.apply (Mem → Mem → BitVec (Spec.Ffdh.derivePublicSig.retBits abi.ptrBits) → Prop) [_, _, _, _, _, _, _, _, _] _ _ _ m₂ r
+      dsimp only [Curry.apply, ArgWord.ofRaw] at hp h ⊢
+      have e : ∀ X, X = yLen.toNat → Spec.Rsa.bytesAt m₂ y X = Spec.Rsa.bytesAt m₁ y X :=
+        fun X hX => hX ▸ bytesAt_of hb.1
+      rw [e _ (by rw [← hp.2.2.1]; exact toNat_sw yLen)]
+      exact h
 
 
 /-! ## The registrations with tables of constants -/

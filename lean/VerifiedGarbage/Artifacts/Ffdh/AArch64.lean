@@ -36,18 +36,18 @@ def direct : List Artifact := [
       Proof.Bignum.AArch64.WindowVector.selector.code Proof.Bignum.AArch64.Mont.base.mm
     verified := Proof.Ffdh.AArch64.CheckPublic.cp_verified _ _ _ } (Proof.Ffdh.AArch64.Scrub.checkPublicOk _)),
   Spec.Ffdh.checkDomainApi.artifact target Proof.Ffdh.AArch64.Scrub.checkDomainReg,
-  Spec.Ffdh.exchangeApi.artifact target {
+  Spec.Ffdh.exchangeApi.artifact target (VG.AArch64.ScrubAll.withScrubAll {
     code := Impl.Ffdh.AArch64.Domain.Exchange.code Proof.Bignum.AArch64.WindowFive.called.code
       Proof.Bignum.AArch64.WindowVector.selector.code Proof.Bignum.AArch64.Mont.base.mm
-    verified := Proof.Ffdh.AArch64.Exchange.ex_verified _ _ _ },
-  Spec.Ffdh.checkPrivateApi.artifact target {
+    verified := Proof.Ffdh.AArch64.Exchange.ex_verified _ _ _ } (Proof.Ffdh.AArch64.Scrub.exchangeOk _)),
+  Spec.Ffdh.checkPrivateApi.artifact target (VG.AArch64.ScrubAll.withScrubAll {
     code := Impl.Ffdh.AArch64.Domain.CheckPrivate.code Proof.Bignum.AArch64.WindowFive.called.code
       Proof.Bignum.AArch64.WindowVector.selector.code Proof.Bignum.AArch64.Mont.base.mm
-    verified := Proof.Ffdh.AArch64.CheckPrivate.kp_verified _ _ _ },
-  Spec.Ffdh.derivePublicApi.artifact target {
+    verified := Proof.Ffdh.AArch64.CheckPrivate.kp_verified _ _ _ } (Proof.Ffdh.AArch64.Scrub.checkPrivateOk _)),
+  Spec.Ffdh.derivePublicApi.artifact target (VG.AArch64.ScrubAll.withScrubAll {
     code := Impl.Ffdh.AArch64.Domain.DerivePublic.code Proof.Bignum.AArch64.WindowFive.called.code
       Proof.Bignum.AArch64.WindowVector.selector.code Proof.Bignum.AArch64.Mont.base.mm
-    verified := Proof.Ffdh.AArch64.Derive.dv_verified _ _ _ },
+    verified := Proof.Ffdh.AArch64.Derive.dv_verified _ _ _ } (Proof.Ffdh.AArch64.Scrub.derivePublicOk _)),
   Spec.Ffdh.parameterInitApi.artifact target {
     code := Impl.Ffdh.AArch64.Generation.init
     verified := Proof.Ffdh.AArch64.Generation.init_verified

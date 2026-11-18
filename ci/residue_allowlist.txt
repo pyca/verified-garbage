@@ -179,10 +179,6 @@ aarch64 vg_cmac_aes_init_neon
 aarch64 vg_cmac_triple_des_absorb
 aarch64 vg_cmac_triple_des_finish
 aarch64 vg_cmac_triple_des_stream_init
-aarch64 vg_dsa_derive_key
-aarch64 vg_dsa_generate_key
-aarch64 vg_dsa_sign_random_prevalidated
-aarch64 vg_dsa_verify_prevalidated
 aarch64 vg_ecdh_p521
 aarch64 vg_ecdsa_brainpoolp256r1_sign
 aarch64 vg_ecdsa_brainpoolp384r1_sign
@@ -199,9 +195,6 @@ aarch64 vg_ed448_sign_cached
 aarch64 vg_ed448_sign_cached_sha3
 aarch64 vg_ed448_verify
 aarch64 vg_ed448_verify_sha3
-aarch64 vg_ffdh_check_private
-aarch64 vg_ffdh_derive_public
-aarch64 vg_ffdh_exchange
 aarch64 vg_ffdh_generate_key_search_cached
 aarch64 vg_ffdh_generate_parameters
 aarch64 vg_hmac_md5_finalize
@@ -331,8 +324,6 @@ aarch64 vg_poly1305_update_neon
 aarch64 vg_rc2_cbc_decrypt_chained
 aarch64 vg_rc2_cbc_encrypt_chained
 aarch64 vg_rc2_cbc_init
-aarch64 vg_rsa_check_key
-aarch64 vg_rsa_crt_values
 aarch64 vg_rsa_oaep_decrypt_precomputed
 aarch64 vg_rsa_oaep_encrypt_precomputed
 aarch64 vg_rsa_pkcs1_decrypt_precomputed
@@ -344,7 +335,6 @@ aarch64 vg_rsa_pkcs1_verify_precomputed
 aarch64 vg_rsa_private_precompute
 aarch64 vg_rsa_pss_sign_precomputed
 aarch64 vg_rsa_pss_verify_precomputed
-aarch64 vg_rsa_recover_primes_det
 aarch64 vg_scrypt
 aarch64 vg_scrypt_sha2
 aarch64 vg_seed_cbc_decrypt_chained
