@@ -279,8 +279,7 @@ permutation keeps its working space in a frame of 608 bytes below the stack
 pointer (`Impl.Sha3.RISCV64.frameBytes`); the streaming functions keep the
 registers they save in a frame of their own above it
 (`Impl.Sha3.RISCV64.Stream.frameBytes`, `padBytes`), and the permutation's
-scratch space in a frame between the two, around its call (`scratchBytes`),
-but for `vg_keccak_absorb_scratch`, which keeps them in its working space.
+scratch space in a frame between the two, around its call (`scratchBytes`).
 -/
 
 @[expose] public section
@@ -336,29 +335,30 @@ def absorbRISCV64 : Contract RISCV64.isa where
     s₁.gpr .a3 = s₂.gpr .a3 ∧ s₁.gpr .a4 = s₂.gpr .a4 ∧ s₁.sp = s₂.sp
 
 open VG.RISCV64 in
-/-- RISC-V contract for `vg_keccak_absorb_scratch(state = a0, rate = a1,
-pos = a2, data = a3, len = a4, scratch = a5) -> a0`: `absorbRISCV64`, with
-the working space in `scratch` (640 bytes, 8-byte aligned, whose contents on
-exit are unspecified).
+/-- `absorbRISCV64` with a working space `scratch` (`a5`, 640 bytes, 8-byte
+aligned) that the code may write and leaves unchanged: SHA-3's `update`,
+which runs `absorb` with its frames on the stack and does not touch
+`scratch`.
 
 The code may read `data`, and read and write `state` (200 bytes) and
-`scratch`, none of which overlap each other or the 608 bytes below the stack
-pointer (the permutation's frame), which do not wrap around, nor does
+`scratch`, none of which overlap each other or the 1168 bytes below the
+stack pointer (`absorb`'s frames), which do not wrap around, nor does
 `scratch`. The stack pointer is 16-byte aligned. `rate` is one of `rates`,
 and `pos < rate`. -/
-def absorbWsRISCV64 : Contract RISCV64.isa where
+def absorbScrRISCV64 : Contract RISCV64.isa where
   pre s :=
     let state : Region := ⟨s.gpr .a0, 200⟩
     let data : Region := ⟨s.gpr .a3, (s.gpr .a4).toNat⟩
     let scratch : Region := ⟨s.gpr .a5, 640⟩
-    let stack : Region := ⟨s.sp - 608, 608⟩
+    let stack : Region := ⟨s.sp - 1168, 1168⟩
     s.rd = [data] ∧ s.wr = [state, scratch] ∧
     state.Disjoint scratch ∧ data.Disjoint state ∧ data.Disjoint scratch ∧
     (s.gpr .a5).toNat % 8 = 0 ∧ (s.gpr .a5).toNat + 640 ≤ 2 ^ 64 ∧
-    s.sp.toNat % 16 = 0 ∧ 608 ≤ s.sp.toNat ∧
+    s.sp.toNat % 16 = 0 ∧ 1168 ≤ s.sp.toNat ∧
     stack.Disjoint state ∧ stack.Disjoint data ∧ stack.Disjoint scratch ∧
     (s.gpr .a1).toNat ∈ rates ∧ (s.gpr .a2).toNat < (s.gpr .a1).toNat
-  post := absorbRISCV64.post
+  post s s' := absorbRISCV64.post s s' ∧
+    ∀ a, Region.Contains ⟨s.gpr .a5, 640⟩ a 1 → s'.mem a = s.mem a
   pub s₁ s₂ :=
     s₁.gpr .a0 = s₂.gpr .a0 ∧ s₁.gpr .a1 = s₂.gpr .a1 ∧ s₁.gpr .a2 = s₂.gpr .a2 ∧
     s₁.gpr .a3 = s₂.gpr .a3 ∧ s₁.gpr .a4 = s₂.gpr .a4 ∧ s₁.gpr .a5 = s₂.gpr .a5 ∧

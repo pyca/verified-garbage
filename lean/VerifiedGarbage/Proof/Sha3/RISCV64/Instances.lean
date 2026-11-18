@@ -6,6 +6,8 @@ public import VerifiedGarbage.Proof.Framework.RISCV64.StackScratch
 public import VerifiedGarbage.Impl.Sha3.RISCV64.Instances
 public import VerifiedGarbage.Spec.Sha3.Instances
 import VerifiedGarbage.Proof.Framework.Prologue
+public import VerifiedGarbage.Proof.Sha3.RISCV64.Stream.Calls
+import VerifiedGarbage.Proof.Framework.PostMono
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Sha3.Stream
 import VerifiedGarbage.Proof.Framework.Offset
@@ -23,6 +25,8 @@ meta import VerifiedGarbage.Proof.Framework.RISCV64.StackScratch
 meta import VerifiedGarbage.Impl.Sha3.RISCV64.Instances
 meta import VerifiedGarbage.Spec.Sha3.Instances
 meta import VerifiedGarbage.Proof.Framework.Prologue
+meta import VerifiedGarbage.Proof.Sha3.RISCV64.Stream.Calls
+meta import VerifiedGarbage.Proof.Framework.PostMono
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Sha3.Stream
 meta import VerifiedGarbage.Proof.Framework.Offset
@@ -65,23 +69,25 @@ theorem preserved_ne : ∀ r ∈ preserved, r ≠ .a1 ∧ r ≠ .a2 ∧ r ≠ .a
 
 /-- `update rate`'s contract on RISC-V, with the arguments in registers
 (`state = a0, pos = a1, data = a2, len = a3, scratch = a4`): that of
-`absorbWs` (`Proof.Sha3.absorbWsRISCV64`), with the rate `rate`. -/
+`absorb` with `scratch` left unchanged (`Proof.Sha3.absorbScrRISCV64`), with
+the rate `rate`, and so `scratch` scrubbed (`Spec.Zeroize.scrubbed`). -/
 def updateRISCV64 (rate : Nat) : Contract RISCV64.isa where
   pre s :=
     let state : Region := ⟨s.gpr .a0, 200⟩
     let data : Region := ⟨s.gpr .a2, (s.gpr .a3).toNat⟩
     let scratch : Region := ⟨s.gpr .a4, 640⟩
-    let stack : Region := ⟨s.sp - 608, 608⟩
+    let stack : Region := ⟨s.sp - 1168, 1168⟩
     s.rd = [data] ∧ s.wr = [state, scratch] ∧
     state.Disjoint scratch ∧ data.Disjoint state ∧ data.Disjoint scratch ∧
     (s.gpr .a4).toNat % 8 = 0 ∧ (s.gpr .a4).toNat + 640 ≤ 2 ^ 64 ∧
-    s.sp.toNat % 16 = 0 ∧ 608 ≤ s.sp.toNat ∧
+    s.sp.toNat % 16 = 0 ∧ 1168 ≤ s.sp.toNat ∧
     stack.Disjoint state ∧ stack.Disjoint data ∧ stack.Disjoint scratch ∧
     (s.gpr .a1).toNat < rate
   post s s' :=
     (∀ msg, Repr s.mem (s.gpr .a0) rate msg → (s.gpr .a1).toNat = msg.length % rate →
       Repr s'.mem (s.gpr .a0) rate (msg ++ bytesAt s.mem (s.gpr .a2) (s.gpr .a3).toNat)) ∧
-    (s'.gpr .a0).toNat = ((s.gpr .a1).toNat + (s.gpr .a3).toNat) % rate
+    (s'.gpr .a0).toNat = ((s.gpr .a1).toNat + (s.gpr .a3).toNat) % rate ∧
+    Spec.Zeroize.scrubbed s.mem s'.mem (s.gpr .a4) 640
   pub s₁ s₂ :=
     s₁.gpr .a0 = s₂.gpr .a0 ∧ s₁.gpr .a1 = s₂.gpr .a1 ∧ s₁.gpr .a2 = s₂.gpr .a2 ∧
     s₁.gpr .a3 = s₂.gpr .a3 ∧ s₁.gpr .a4 = s₂.gpr .a4 ∧ s₁.sp = s₂.sp
@@ -117,13 +123,13 @@ theorem updateState_keep (rate : Nat) (s : State) {r : Reg} (hr : r ∈ preserve
 
 /-- A state satisfying `updateRISCV64`'s precondition (with no data). -/
 def updateSat : State :=
-  { Stream.absorbWsSat with
+  { Stream.absorbScrSat with
     gpr := fun r => match r with | .a0 => 0x1000 | .a2 => 0x2000 | .a4 => 0x3000 | _ => 0 }
 
 theorem update_verified' {rate : Nat} (hr : rate ∈ rates) :
     Verified RISCV64.target (update rate) (updateRISCV64 rate) := by
   obtain h0 : 0 < rate := by simp [rates] at hr; omega_using [hr]
-  refine Verified.of_prologue Stream.absorbWs_verified' (updateState rate)
+  refine Verified.of_prologue Stream.absorbScr_verified' (updateState rate)
     (fun s _ => updateArgs_run (rate_lt hr) s)
     (fun s hs => ?_) (fun s s' _ ha => ?_) (fun s s' _ hq => ?_) (fun s₁ s₂ _ _ hp => ?_)
     ⟨updateSat, rfl, rfl, Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide),
@@ -131,41 +137,47 @@ theorem update_verified' {rate : Nat} (hr : rate ∈ rates) :
       Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide),
       Region.disjoint_of_sep (by decide), h0⟩
   · obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13⟩ := hs
-    simp only [Proof.Sha3.absorbWsRISCV64, updateState_gpr, updateState_rd, updateState_wr,
+    simp only [Proof.Sha3.absorbScrRISCV64, updateState_gpr, updateState_rd, updateState_wr,
       updateState_sp, reduceCtorEq, ite_false, ite_true, toNat_rate hr]
     exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, hr, h13⟩
   · obtain ⟨h1, h2, h3⟩ := ha
     exact ⟨fun r hr => by rw [h1 r hr, updateState_keep _ _ (.inl hr)], h2,
       by rw [h3, updateState_keep _ _ (.inr rfl)]⟩
-  · obtain ⟨h1, h2⟩ := hq
+  · obtain ⟨⟨h1, h2⟩, h3⟩ := hq
     simp only [updateState_gpr, updateState_mem, reduceCtorEq, ite_false, ite_true,
-      toNat_rate hr] at h1 h2
-    exact ⟨h1, h2⟩
+      toNat_rate hr] at h1 h2 h3
+    exact ⟨h1, h2, fun a ha => .inl (h3 a ha)⟩
   · obtain ⟨p1, p2, p3, p4, p5, p6⟩ := hp
-    simp only [Proof.Sha3.absorbWsRISCV64, updateState_gpr, updateState_sp, reduceCtorEq, ite_false,
+    simp only [Proof.Sha3.absorbScrRISCV64, updateState_gpr, updateState_sp, reduceCtorEq, ite_false,
       ite_true]
     exact ⟨p1, trivial, p2, p3, p4, p5, p6⟩
 
 theorem update_verified {rate : Nat} (hr : rate ∈ rates) :
-    Verified RISCV64.target (update rate) (Spec.Sha3.updateContract RISCV64.abi rate 608) := by
+    Verified RISCV64.target (update rate) (Spec.Sha3.updateScrubbedContract RISCV64.abi rate 1168) := by
   obtain h0 : 0 < rate := by simp [rates] at hr; omega_using [hr]
   refine (update_verified' hr).of_implies
-    { pre := by sig_implies_pre [Spec.Sha3.updateContract, Spec.Sha3.updateSig, Spec.Sha3.updatePre,
-          Spec.Sha3.updatePost, updateRISCV64, RISCV64.abi, RISCV64.argRegs]
-      post := by sig_implies_post [Spec.Sha3.updateContract, Spec.Sha3.updateSig, Spec.Sha3.updatePre,
-          Spec.Sha3.updatePost, updateRISCV64, RISCV64.abi, RISCV64.argRegs]
-      pub := by sig_implies_pub [Spec.Sha3.updateContract, Spec.Sha3.updateSig, Spec.Sha3.updatePre,
-          Spec.Sha3.updatePost, updateRISCV64, RISCV64.abi, RISCV64.argRegs]
+    { pre := by sig_implies_pre [Spec.Sha3.updateScrubbedContract, Spec.Sha3.updateScrubbedPost, Spec.Sha3.updateSig,
+          Spec.Sha3.updatePre, Spec.Sha3.updatePost, updateRISCV64, RISCV64.abi, RISCV64.argRegs]
+      post := by sig_implies_post [Spec.Sha3.updateScrubbedContract, Spec.Sha3.updateScrubbedPost, Spec.Sha3.updateSig,
+          Spec.Sha3.updatePre, Spec.Sha3.updatePost, updateRISCV64, RISCV64.abi, RISCV64.argRegs]
+      pub := by sig_implies_pub [Spec.Sha3.updateScrubbedContract, Spec.Sha3.updateScrubbedPost, Spec.Sha3.updateSig,
+          Spec.Sha3.updatePre, Spec.Sha3.updatePost, updateRISCV64, RISCV64.abi, RISCV64.argRegs]
       sat := ?_ }
   refine ⟨updateSat, ?_⟩
-  sig_pre [Spec.Sha3.updateContract, Spec.Sha3.updateSig, Spec.Sha3.updatePre, Spec.Sha3.updatePost,
-    RISCV64.abi, RISCV64.argRegs, updateSat, Stream.absorbWsSat]
+  sig_pre [Spec.Sha3.updateScrubbedContract, Spec.Sha3.updateSig, Spec.Sha3.updatePre,
+    Spec.Sha3.updatePost, RISCV64.abi, RISCV64.argRegs, updateSat, Stream.absorbScrSat]
   sig_and_intros
   all_goals first
     | rfl
     | decide
     | exact Region.disjoint_of_sep (by decide)
     | exact h0
+
+/-- `update_verified` against `updateApi`'s contract, which does not yet
+require `scratch` scrubbed. -/
+theorem update_verified_api {rate : Nat} (hr : rate ∈ rates) :
+    Verified RISCV64.target (update rate) (Spec.Sha3.updateContract RISCV64.abi rate 1168) :=
+  (update_verified hr).post_mono fun _ _ _ _ _ _ _ _ h => h.1
 
 /-! ## SHAKE's `finalize` -/
 
@@ -841,8 +853,8 @@ macro "fin_ct" : term => `(finBody_ct (by decide) (by decide) (by taint_decide) 
   (by taint_decide))
 
 theorem update_sha3_224 :
-    Verified RISCV64.target (update Spec.Sha3.hashSha3_224.rate) (Spec.Sha3.updateContract RISCV64.abi Spec.Sha3.hashSha3_224.rate 608) :=
-  update_verified (by decide)
+    Verified RISCV64.target (update Spec.Sha3.hashSha3_224.rate) (Spec.Sha3.updateContract RISCV64.abi Spec.Sha3.hashSha3_224.rate 1168) :=
+  update_verified_api (by decide)
 
 theorem finalize_sha3_224 :
     Verified RISCV64.target (finalize Spec.Sha3.hashSha3_224.rate Spec.Sha3.hashSha3_224.len)
@@ -857,8 +869,8 @@ theorem finalize_sha3_224 :
       using { finSat 28 with wr := [⟨0x1000, 200⟩, ⟨0x2000, 28⟩] })
 
 theorem update_sha3_256 :
-    Verified RISCV64.target (update Spec.Sha3.hashSha3_256.rate) (Spec.Sha3.updateContract RISCV64.abi Spec.Sha3.hashSha3_256.rate 608) :=
-  update_verified (by decide)
+    Verified RISCV64.target (update Spec.Sha3.hashSha3_256.rate) (Spec.Sha3.updateContract RISCV64.abi Spec.Sha3.hashSha3_256.rate 1168) :=
+  update_verified_api (by decide)
 
 theorem finalize_sha3_256 :
     Verified RISCV64.target (finalize Spec.Sha3.hashSha3_256.rate Spec.Sha3.hashSha3_256.len)
@@ -873,8 +885,8 @@ theorem finalize_sha3_256 :
       using { finSat 32 with wr := [⟨0x1000, 200⟩, ⟨0x2000, 32⟩] })
 
 theorem update_sha3_384 :
-    Verified RISCV64.target (update Spec.Sha3.hashSha3_384.rate) (Spec.Sha3.updateContract RISCV64.abi Spec.Sha3.hashSha3_384.rate 608) :=
-  update_verified (by decide)
+    Verified RISCV64.target (update Spec.Sha3.hashSha3_384.rate) (Spec.Sha3.updateContract RISCV64.abi Spec.Sha3.hashSha3_384.rate 1168) :=
+  update_verified_api (by decide)
 
 theorem finalize_sha3_384 :
     Verified RISCV64.target (finalize Spec.Sha3.hashSha3_384.rate Spec.Sha3.hashSha3_384.len)
@@ -889,8 +901,8 @@ theorem finalize_sha3_384 :
       using { finSat 48 with wr := [⟨0x1000, 200⟩, ⟨0x2000, 48⟩] })
 
 theorem update_sha3_512 :
-    Verified RISCV64.target (update Spec.Sha3.hashSha3_512.rate) (Spec.Sha3.updateContract RISCV64.abi Spec.Sha3.hashSha3_512.rate 608) :=
-  update_verified (by decide)
+    Verified RISCV64.target (update Spec.Sha3.hashSha3_512.rate) (Spec.Sha3.updateContract RISCV64.abi Spec.Sha3.hashSha3_512.rate 1168) :=
+  update_verified_api (by decide)
 
 theorem finalize_sha3_512 :
     Verified RISCV64.target (finalize Spec.Sha3.hashSha3_512.rate Spec.Sha3.hashSha3_512.len)
@@ -905,8 +917,8 @@ theorem finalize_sha3_512 :
       using { finSat 64 with wr := [⟨0x1000, 200⟩, ⟨0x2000, 64⟩] })
 
 theorem update_shake128 :
-    Verified RISCV64.target (update Spec.Sha3.xofShake128.rate) (Spec.Sha3.updateContract RISCV64.abi Spec.Sha3.xofShake128.rate 608) :=
-  update_verified (by decide)
+    Verified RISCV64.target (update Spec.Sha3.xofShake128.rate) (Spec.Sha3.updateContract RISCV64.abi Spec.Sha3.xofShake128.rate 1168) :=
+  update_verified_api (by decide)
 
 theorem finalize_shake128 :
     Verified RISCV64.target (xofFinalize Spec.Sha3.xofShake128.rate) (Spec.Sha3.xofFinalizeContract RISCV64.abi Spec.Sha3.xofShake128 1136) :=

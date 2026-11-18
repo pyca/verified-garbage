@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Sha3.RISCV64.Permute
 public import VerifiedGarbage.Impl.Sha3.RISCV64.Stream
 public import VerifiedGarbage.TCB.RISCV64.Target
-public import VerifiedGarbage.Proof.Sha3.RISCV64.Stream.AbsorbWs
+public import VerifiedGarbage.Proof.Sha3.RISCV64.Stream.Absorb
 public import VerifiedGarbage.Proof.Framework.RISCV64.Alloc
 public import VerifiedGarbage.Proof.Sha3.Stream
 import VerifiedGarbage.Proof.Sha3.Arith
@@ -756,12 +756,11 @@ end
 /-!
 # The SHA-3 sponge on RISC-V: `Verified`
 
-`absorb`, `absorbWs`, `pad` and `squeeze` (`Stream/`): correctness,
+`absorb`, `pad` and `squeeze` (`Stream/`): correctness,
 constant time (by taint tracking, `taint_decide`), and a state satisfying
 each precondition, against the per-target contracts, then moved to the
 shared ones of `Spec/Sha3/Contract.lean` with the stack they use: their
-frame and the permutation's (608 bytes), or for `absorbWs`, which has no
-frame, the permutation's alone. `absorb` has no shared contract: it is an internal
+frame and the permutation's (608 bytes). `absorb` has no shared contract: it is an internal
 function, which RISC-V's verified code (ML-KEM, ML-DSA, Ed448, the SHA-3
 pieces) calls by its per-target contract (`Calls.lean`).
 -/
@@ -797,35 +796,6 @@ theorem absorb_verified' :
   refine ⟨fun s hs => ?_, absorb_ct, absorbSat, rfl, rfl, ?_, by decide, by decide, ?_, ?_,
     by decide, by decide⟩
   · obtain ⟨t, s', he, h⟩ := Absorb.correct (Absorb.pre_of hs)
-    exact ⟨t, s', he, h⟩
-  all_goals exact Region.disjoint_of_sep (by decide)
-
-/-! ## `absorbWs` -/
-
-theorem absorbWs_ct : ConstantTime isa Proof.Sha3.absorbWsRISCV64.pre Proof.Sha3.absorbWsRISCV64.pub
-    Impl.Sha3.RISCV64.Stream.absorbWs := by
-  refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3, .a4, .a5]) ?_
-    (by taint_decide)
-  intro s₁ s₂ _ _ ⟨h0, h1, h2, h3, h4, h5, hsp⟩
-  refine ⟨hsp, fun r hr => ?_⟩
-  simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
-  exacts [h0, h1, h2, h3, h4, h5]
-
-/-- A state satisfying `absorbWs`'s precondition, with no data. -/
-def absorbWsSat : State where
-  gpr r := match r with
-    | .a0 => 0x1000 | .a1 => 72 | .a3 => 0x2000 | .a5 => 0x3000 | _ => 0
-  sp := 0x5000
-  mem _ := 0
-  rd := [⟨0x2000, 0⟩]
-  wr := [⟨0x1000, 200⟩, ⟨0x3000, 640⟩]
-
-theorem absorbWs_verified' :
-    Verified RISCV64.target Impl.Sha3.RISCV64.Stream.absorbWs Proof.Sha3.absorbWsRISCV64 := by
-  refine ⟨fun s hs => ?_, absorbWs_ct, absorbWsSat, rfl, rfl, ?_, ?_, ?_, by decide, by decide,
-    by decide, by decide, ?_, ?_, ?_, by decide, by decide⟩
-  · obtain ⟨t, s', he, h⟩ := AbsorbWs.correct (AbsorbWs.pre_of hs)
     exact ⟨t, s', he, h⟩
   all_goals exact Region.disjoint_of_sep (by decide)
 

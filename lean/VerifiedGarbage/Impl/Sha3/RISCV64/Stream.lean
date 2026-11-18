@@ -15,8 +15,6 @@ block is kept by the caller.
 * `absorb(state = a0, rate = a1, pos = a2, data = a3, len = a4)` XORs the
   bytes of `data` into the state from byte `pos`, permuting the state
   whenever a block is complete, and returns the position after them.
-* `absorbWs(state = a0, rate = a1, pos = a2, data = a3, len = a4, scratch =
-  a5)` is `absorb` with its working space in `scratch`, below.
 * `pad(state = a0, rate = a1, pos = a2, suffix = a3)` XORs the suffix into
   byte `pos` and `0x80` into byte `rate - 1`, and permutes the state.
 * `squeeze(state = a0, rate = a1, pos = a2, out = a3, outlen = a4)` copies
@@ -47,12 +45,6 @@ scratch space (`vg_keccak_f1600`, `Impl.Sha3.RISCV64.permute`, which they
 call) is a frame of its own below it, allocated only around the call
 (`permuteAt`), so that the frames live while the functions write the state
 and the output hold only the saved registers.
-
-`absorbWs` has no frame of its own: its working space `scratch` (640
-bytes, 8-byte aligned) holds the permutation's scratch space and then the
-registers of `saved`, with `s7`, in which it keeps `scratch`, after them
-(`savedWs`). The permutation
-does not write `s7` either.
 
 The comparison of the position with the rate is a subtraction tested against
 zero. Every address and branch, the choice of a lane or a byte included,
@@ -142,42 +134,6 @@ def absorbBody : Prog isa :=
   .seq (.block laneCheck) (.seq (step absorbLane absorbByte) permuteIfFull)
 
 def absorb : Prog isa := withLoop absorbBody
-
-/-! ## `absorbWs` -/
-
-/-- The registers `absorbWs` saves, and where in `scratch`, after the
-permutation's scratch space: those of `saved`, and `s7`, in which it keeps
-`scratch`. -/
-def savedWs : List (Reg × Nat) :=
-  [(.ra, 512), (.s2, 520), (.s3, 528), (.s4, 536), (.s5, 544), (.s6, 552), (.s7, 560)]
-
-/-- Save them in `scratch` (`a5`), with its address in `t0`. -/
-def saveWs : List Instr := mov .t0 .a5 :: savedWs.map fun (r, d) => .store .d r .t0 d
-
-/-- Restore them from `scratch` (`s7`), with its address in `t0`. -/
-def restoreWs : List Instr := mov .t0 .s7 :: savedWs.map fun (r, d) => .load .d r .t0 d
-
-/-- Permute the state at `s2`, with the first 512 bytes of `scratch` (`s7`)
-as scratch space. -/
-def permuteAtWs : Prog isa :=
-  .seq (.block [mov .a0 .s2, mov .a1 .s7]) (.call "vg_keccak_f1600" Impl.Sha3.RISCV64.permute)
-
-/-- If the position has reached the rate, back to 0 and permute
-(`permuteAtWs`). -/
-def permuteIfFullWs : Prog isa :=
-  .seq (.block [.sub .t1 .s4 .s3]) (.ite (.zero .t1) (.seq (.block [.li .s4 0]) permuteAtWs) (.block []))
-
-/-- Save registers in `scratch` and set up ours. -/
-def setupWs : List Instr :=
-  saveWs ++ [mov .s2 .a0, mov .s3 .a1, mov .s4 .a2, mov .s5 .a3, mov .s6 .a4, mov .s7 .a5]
-
-def absorbWsBody : Prog isa :=
-  .seq (.block laneCheck) (.seq (step absorbLane absorbByte) permuteIfFullWs)
-
-def absorbWs : Prog isa :=
-  .seq (.block setupWs)
-    (.seq (.ite (.zero .s6) (.block []) (.loop absorbWsBody (.nonzero .s6)))
-      (.block (mov .a0 .s4 :: restoreWs)))
 
 /-! ## `pad` -/
 

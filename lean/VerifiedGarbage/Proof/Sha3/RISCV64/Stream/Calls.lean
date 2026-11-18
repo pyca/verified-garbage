@@ -7,6 +7,7 @@ public import VerifiedGarbage.Spec.Sha3.Contract
 import VerifiedGarbage.Proof.Sha3.RISCV64.Stream.Verified
 import VerifiedGarbage.Proof.Sha3.RISCV64.Stream.Lit
 import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # The SHA-3 sponge on RISC-V: calling it
@@ -30,6 +31,51 @@ open VG.Spec.Sha3 (stateAt bytesAt absorb pad rates squeezeFrom)
 theorem absorb_sdepth : sdepth Impl.Sha3.RISCV64.Stream.absorb ≤ 1168 := by lit_decide
 theorem pad_sdepth : sdepth Impl.Sha3.RISCV64.Stream.pad ≤ 1168 := by lit_decide
 theorem squeeze_sdepth : sdepth Impl.Sha3.RISCV64.Stream.squeeze ≤ 1168 := by lit_decide
+
+/-! ## `absorb` with a working space it does not touch -/
+
+/-- A state satisfying `absorbScrRISCV64`'s precondition, with no data. -/
+def absorbScrSat : State where
+  gpr r := match r with
+    | .a0 => 0x1000 | .a1 => 72 | .a3 => 0x2000 | .a5 => 0x3000 | _ => 0
+  sp := 0x5000
+  mem _ := 0
+  rd := [⟨0x2000, 0⟩]
+  wr := [⟨0x1000, 200⟩, ⟨0x3000, 640⟩]
+
+/-- `absorb`, run with `scratch` (`a5`) writable too, leaves it unchanged:
+from the state with only the state writable (`Verified.of_narrow`), it
+changes memory only within the state and the 1168 bytes below the stack
+pointer (`Exec.frameAny`, `absorb_sdepth`), both apart from `scratch`. -/
+theorem absorbScr_verified' :
+    Verified RISCV64.target Impl.Sha3.RISCV64.Stream.absorb Proof.Sha3.absorbScrRISCV64 := by
+  refine absorb_verified'.of_narrow (fun s => s.withRegions s.rd [⟨s.gpr .a0, 200⟩])
+    (fun s s₁ => s₁.withRegions s.rd s.wr) (fun s hs => ?_) (fun s t s₁ hs he => ?_)
+    (fun s t s₁ hs he ha hq => ?_) (fun s₁ s₂ _ _ hp => ?_) ⟨absorbScrSat, ?_⟩
+  · obtain ⟨h1, -, -, h4, -, -, -, h8, h9, h10, h11, -, h13, h14⟩ := hs
+    exact ⟨h1, rfl, h4, h8, h9, h10, h11, h13, h14⟩
+  · obtain ⟨-, h2, -⟩ := hs
+    have hw : Covers [⟨s.gpr .a0, 200⟩] s.wr := by
+      rw [h2]
+      exact fun a n ⟨r, hr, hc⟩ => ⟨r, List.mem_cons.mpr (.inl (List.mem_singleton.mp hr)), hc⟩
+    have := Exec.widen he (rd := s.rd) (wr := s.wr) (Covers.append (fun _ _ h => h) hw) hw
+    rwa [State.withRegions_withRegions, State.withRegions_self] at this
+  · obtain ⟨-, -, h3, -, -, -, -, -, -, -, -, h12, -, -⟩ := hs
+    refine ⟨ha, hq, fun a hc => ?_⟩
+    have hf := Frame.below_mono (Exec.frameAny he (by have := absorb_sdepth; omega_using [this]))
+      absorb_sdepth (by decide)
+    simp only [State.withRegions_wr, State.withRegions_sp, State.withRegions_mem] at hf
+    refine hf _ fun r hr => ?_
+    simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact fun h => h3 _ h hc
+    · exact fun h => h12 _ h hc
+  · obtain ⟨p0, p1, p2, p3, p4, -, psp⟩ := hp
+    exact ⟨p0, p1, p2, p3, p4, psp⟩
+  · exact ⟨rfl, rfl, Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide),
+      Region.disjoint_of_sep (by decide), by decide, by decide, by decide, by decide,
+      Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide),
+      Region.disjoint_of_sep (by decide), by decide, by decide⟩
 
 theorem rate_lt {rate : Nat} (h : rate ∈ rates) : rate < 2 ^ 64 := by
   simp only [rates, List.mem_cons, List.not_mem_nil, or_false] at h; omega_using [h]

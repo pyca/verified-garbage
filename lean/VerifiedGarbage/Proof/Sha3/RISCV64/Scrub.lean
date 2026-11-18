@@ -54,10 +54,10 @@ theorem xofSqueezeOut (X : Spec.Sha3.Xof) (stack : Nat) :
 
 /-- `vg_sha3_224_update`. -/
 def updateSha3_224Reg : Registration Spec.Sha3.updateSha3_224Api RISCV64.target :=
-  withScrubSel { code := Impl.Sha3.RISCV64.Instances.update Spec.Sha3.hashSha3_224.rate, verified := Proof.Sha3.RISCV64.Instances.update_sha3_224 } [(608, [(24, 50)])]
+  withScrubSel { code := Impl.Sha3.RISCV64.Instances.update Spec.Sha3.hashSha3_224.rate, verified := Proof.Sha3.RISCV64.Instances.update_sha3_224 } [(1168, [(24, 50), (140, 6)])]
     (updateOut Spec.Sha3.hashSha3_224.rate _)
     (fun hfs hsz hrb => scrubSel_noResidue _ _ [(.a0, 25 * Elem.u64.size)] hfs hsz hrb (updateOut Spec.Sha3.hashSha3_224.rate _) (hbp_firstArray _ rfl)
-      (Impl.Sha3.RISCV64.Instances.update Spec.Sha3.hashSha3_224.rate) 608 64 rfl rfl rfl (by exact ⟨_, by taint_decide_ct⟩))
+      (Impl.Sha3.RISCV64.Instances.update Spec.Sha3.hashSha3_224.rate) 1168 64 rfl rfl rfl (by exact ⟨_, by taint_decide_ct⟩))
 
 /-- `vg_sha3_224_finalize`. -/
 def finalizeSha3_224Reg : Registration Spec.Sha3.finalizeSha3_224Api RISCV64.target :=
@@ -68,10 +68,10 @@ def finalizeSha3_224Reg : Registration Spec.Sha3.finalizeSha3_224Api RISCV64.tar
 
 /-- `vg_sha3_256_update`. -/
 def updateSha3_256Reg : Registration Spec.Sha3.updateSha3_256Api RISCV64.target :=
-  withScrubSel { code := Impl.Sha3.RISCV64.Instances.update Spec.Sha3.hashSha3_256.rate, verified := Proof.Sha3.RISCV64.Instances.update_sha3_256 } [(608, [(24, 50)])]
+  withScrubSel { code := Impl.Sha3.RISCV64.Instances.update Spec.Sha3.hashSha3_256.rate, verified := Proof.Sha3.RISCV64.Instances.update_sha3_256 } [(1168, [(24, 50), (140, 6)])]
     (updateOut Spec.Sha3.hashSha3_256.rate _)
     (fun hfs hsz hrb => scrubSel_noResidue _ _ [(.a0, 25 * Elem.u64.size)] hfs hsz hrb (updateOut Spec.Sha3.hashSha3_256.rate _) (hbp_firstArray _ rfl)
-      (Impl.Sha3.RISCV64.Instances.update Spec.Sha3.hashSha3_256.rate) 608 64 rfl rfl rfl (by exact ⟨_, by taint_decide_ct⟩))
+      (Impl.Sha3.RISCV64.Instances.update Spec.Sha3.hashSha3_256.rate) 1168 64 rfl rfl rfl (by exact ⟨_, by taint_decide_ct⟩))
 
 /-- `vg_sha3_256_finalize`. -/
 def finalizeSha3_256Reg : Registration Spec.Sha3.finalizeSha3_256Api RISCV64.target :=
@@ -82,10 +82,10 @@ def finalizeSha3_256Reg : Registration Spec.Sha3.finalizeSha3_256Api RISCV64.tar
 
 /-- `vg_sha3_384_update`. -/
 def updateSha3_384Reg : Registration Spec.Sha3.updateSha3_384Api RISCV64.target :=
-  withScrubSel { code := Impl.Sha3.RISCV64.Instances.update Spec.Sha3.hashSha3_384.rate, verified := Proof.Sha3.RISCV64.Instances.update_sha3_384 } [(608, [(24, 50)])]
+  withScrubSel { code := Impl.Sha3.RISCV64.Instances.update Spec.Sha3.hashSha3_384.rate, verified := Proof.Sha3.RISCV64.Instances.update_sha3_384 } [(1168, [(24, 50), (140, 6)])]
     (updateOut Spec.Sha3.hashSha3_384.rate _)
     (fun hfs hsz hrb => scrubSel_noResidue _ _ [(.a0, 25 * Elem.u64.size)] hfs hsz hrb (updateOut Spec.Sha3.hashSha3_384.rate _) (hbp_firstArray _ rfl)
-      (Impl.Sha3.RISCV64.Instances.update Spec.Sha3.hashSha3_384.rate) 608 64 rfl rfl rfl (by exact ⟨_, by taint_decide_ct⟩))
+      (Impl.Sha3.RISCV64.Instances.update Spec.Sha3.hashSha3_384.rate) 1168 64 rfl rfl rfl (by exact ⟨_, by taint_decide_ct⟩))
 
 /-- `vg_sha3_384_finalize`. -/
 def finalizeSha3_384Reg : Registration Spec.Sha3.finalizeSha3_384Api RISCV64.target :=
@@ -96,10 +96,10 @@ def finalizeSha3_384Reg : Registration Spec.Sha3.finalizeSha3_384Api RISCV64.tar
 
 /-- `vg_sha3_512_update`. -/
 def updateSha3_512Reg : Registration Spec.Sha3.updateSha3_512Api RISCV64.target :=
-  withScrubSel { code := Impl.Sha3.RISCV64.Instances.update Spec.Sha3.hashSha3_512.rate, verified := Proof.Sha3.RISCV64.Instances.update_sha3_512 } [(608, [(24, 50)])]
+  withScrubSel { code := Impl.Sha3.RISCV64.Instances.update Spec.Sha3.hashSha3_512.rate, verified := Proof.Sha3.RISCV64.Instances.update_sha3_512 } [(1168, [(24, 50), (140, 6)])]
     (updateOut Spec.Sha3.hashSha3_512.rate _)
     (fun hfs hsz hrb => scrubSel_noResidue _ _ [(.a0, 25 * Elem.u64.size)] hfs hsz hrb (updateOut Spec.Sha3.hashSha3_512.rate _) (hbp_firstArray _ rfl)
-      (Impl.Sha3.RISCV64.Instances.update Spec.Sha3.hashSha3_512.rate) 608 64 rfl rfl rfl (by exact ⟨_, by taint_decide_ct⟩))
+      (Impl.Sha3.RISCV64.Instances.update Spec.Sha3.hashSha3_512.rate) 1168 64 rfl rfl rfl (by exact ⟨_, by taint_decide_ct⟩))
 
 /-- `vg_sha3_512_finalize`. -/
 def finalizeSha3_512Reg : Registration Spec.Sha3.finalizeSha3_512Api RISCV64.target :=
@@ -110,10 +110,10 @@ def finalizeSha3_512Reg : Registration Spec.Sha3.finalizeSha3_512Api RISCV64.tar
 
 /-- `vg_shake128_update`. -/
 def updateShake128Reg : Registration Spec.Sha3.updateShake128Api RISCV64.target :=
-  withScrubSel { code := Impl.Sha3.RISCV64.Instances.update Spec.Sha3.xofShake128.rate, verified := Proof.Sha3.RISCV64.Instances.update_shake128 } [(608, [(24, 50)])]
+  withScrubSel { code := Impl.Sha3.RISCV64.Instances.update Spec.Sha3.xofShake128.rate, verified := Proof.Sha3.RISCV64.Instances.update_shake128 } [(1168, [(24, 50), (140, 6)])]
     (updateOut Spec.Sha3.xofShake128.rate _)
     (fun hfs hsz hrb => scrubSel_noResidue _ _ [(.a0, 25 * Elem.u64.size)] hfs hsz hrb (updateOut Spec.Sha3.xofShake128.rate _) (hbp_firstArray _ rfl)
-      (Impl.Sha3.RISCV64.Instances.update Spec.Sha3.xofShake128.rate) 608 64 rfl rfl rfl (by exact ⟨_, by taint_decide_ct⟩))
+      (Impl.Sha3.RISCV64.Instances.update Spec.Sha3.xofShake128.rate) 1168 64 rfl rfl rfl (by exact ⟨_, by taint_decide_ct⟩))
 
 /-- `vg_shake128_finalize`. -/
 def finalizeShake128Reg : Registration Spec.Sha3.finalizeShake128Api RISCV64.target :=

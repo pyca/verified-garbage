@@ -17,13 +17,13 @@
 /// * `pos` must be less than 144.
 /// * The contents of `scratch` on return are unspecified.
 /// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
-/// * None of `state`, `data` and `scratch` may overlap the 608 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `state`, `data` and `scratch` may overlap the 1168 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha3_224_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
     core::arch::naked_asm!(
         r#".option push
 .option arch, +m, +c
-.base64 "uoc2h7KGLoaTBQAJvoIjsBIgI7QiISO4MiEjvEIhI7BSIyO0YiMjuHIjKomuiTKKtoo6i76L"
+.base64 "uoc2h7KGLoaTBQAJeXGKgiOwEgAjtCIBI7gyASO8QgEjsFIDI7RiAyqJrokyiraKOos="
 beqz s6, 20f
 22:
 .base64 "swNJATPjQwETc3MAoU4zPtsBM2PDAZP+egA="
@@ -42,14 +42,15 @@ j 26f
 beqz t1, 27f
 j 28f
 27:
-.base64 "AUpKhd6F"
+.base64 "AUoBcUqFioU="
 call {vg_keccak_f1600}
+.base64 "EwEBIA=="
 28:
 bnez s6, 22b
 j 21f
 20:
 21:
-.base64 "UoXegoOwAiADuYIgg7kCIQO6giGDugIiA7uCIoO7AiOBQhMBAdoKgyMwUwwjNFMMIzhTDCM8UwwjMFMOIzRTDiM4Uw4jPFMOIzBTECM0UxAjOFMQIzxTECMwUxIjNFMSIzhTEiM8UxIjMFMUIzRTFCM4UxQjPFMUIzBTFiM0UxYjOFMWIzxTFiMwUxgjNFMYIzhTGCM8UxgjMFMaIzRTGiM4UxojPFMaIzBTHCM0UxwjOFMcIzxTHCMwUx4jNFMeIzhTHiM8Ux4jMFMgIzRTICM4UyAjPFMgIzBTIiM0UyIjOFMiIzxTIiMwUyQjNFMkEwEBJoFFAUaBRgFHgUcBSIFIgUIBQ4FDAU6BTgFPgU+CgA=="
+.base64 "UoWKgoOwAgADuYIAg7kCAQO6ggGDugICA7uCAkVhgUITAQG3CoMjMFMMIzRTDCM4UwwjPFMMIzBTDiM0Uw4jOFMOIzxTDiMwUxAjNFMQIzhTECM8UxAjMFMSIzRTEiM4UxIjPFMSIzBTFCM0UxQjOFMUIzxTFCMwUxYjNFMWIzhTFiM8UxYjMFMYIzRTGCM4UxgjPFMYIzBTGiM0UxojOFMaIzxTGiMwUxwjNFMcIzhTHCM8UxwjMFMeIzRTHiM4Ux4jPFMeIzBTICM0UyAjOFMgIzxTICMwUyIjNFMiIzhTIiM8UyIjMFMkIzRTJCMwU0YjNFNGIzhTRiM8U0YjMFNIIzRTSBMBAUmBRQFGgUYBR4FHAUiBSIFCAUOBQwFOgU4BT4FPgoA="
 .option pop"#,
         vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
     )
@@ -99,13 +100,13 @@ call {vg_keccak_squeeze}
 /// * `pos` must be less than 136.
 /// * The contents of `scratch` on return are unspecified.
 /// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
-/// * None of `state`, `data` and `scratch` may overlap the 608 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `state`, `data` and `scratch` may overlap the 1168 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha3_256_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
     core::arch::naked_asm!(
         r#".option push
 .option arch, +m, +c
-.base64 "uoc2h7KGLoaTBYAIvoIjsBIgI7QiISO4MiEjvEIhI7BSIyO0YiMjuHIjKomuiTKKtoo6i76L"
+.base64 "uoc2h7KGLoaTBYAIeXGKgiOwEgAjtCIBI7gyASO8QgEjsFIDI7RiAyqJrokyiraKOos="
 beqz s6, 20f
 22:
 .base64 "swNJATPjQwETc3MAoU4zPtsBM2PDAZP+egA="
@@ -124,14 +125,15 @@ j 26f
 beqz t1, 27f
 j 28f
 27:
-.base64 "AUpKhd6F"
+.base64 "AUoBcUqFioU="
 call {vg_keccak_f1600}
+.base64 "EwEBIA=="
 28:
 bnez s6, 22b
 j 21f
 20:
 21:
-.base64 "UoXegoOwAiADuYIgg7kCIQO6giGDugIiA7uCIoO7AiOBQhMBAdoKgyMwUwwjNFMMIzhTDCM8UwwjMFMOIzRTDiM4Uw4jPFMOIzBTECM0UxAjOFMQIzxTECMwUxIjNFMSIzhTEiM8UxIjMFMUIzRTFCM4UxQjPFMUIzBTFiM0UxYjOFMWIzxTFiMwUxgjNFMYIzhTGCM8UxgjMFMaIzRTGiM4UxojPFMaIzBTHCM0UxwjOFMcIzxTHCMwUx4jNFMeIzhTHiM8Ux4jMFMgIzRTICM4UyAjPFMgIzBTIiM0UyIjOFMiIzxTIiMwUyQjNFMkEwEBJoFFAUaBRgFHgUcBSIFIgUIBQ4FDAU6BTgFPgU+CgA=="
+.base64 "UoWKgoOwAgADuYIAg7kCAQO6ggGDugICA7uCAkVhgUITAQG3CoMjMFMMIzRTDCM4UwwjPFMMIzBTDiM0Uw4jOFMOIzxTDiMwUxAjNFMQIzhTECM8UxAjMFMSIzRTEiM4UxIjPFMSIzBTFCM0UxQjOFMUIzxTFCMwUxYjNFMWIzhTFiM8UxYjMFMYIzRTGCM4UxgjPFMYIzBTGiM0UxojOFMaIzxTGiMwUxwjNFMcIzhTHCM8UxwjMFMeIzRTHiM4Ux4jPFMeIzBTICM0UyAjOFMgIzxTICMwUyIjNFMiIzhTIiM8UyIjMFMkIzRTJCMwU0YjNFNGIzhTRiM8U0YjMFNIIzRTSBMBAUmBRQFGgUYBR4FHAUiBSIFCAUOBQwFOgU4BT4FPgoA="
 .option pop"#,
         vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
     )
@@ -181,13 +183,13 @@ call {vg_keccak_squeeze}
 /// * `pos` must be less than 104.
 /// * The contents of `scratch` on return are unspecified.
 /// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
-/// * None of `state`, `data` and `scratch` may overlap the 608 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `state`, `data` and `scratch` may overlap the 1168 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha3_384_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
     core::arch::naked_asm!(
         r#".option push
 .option arch, +m, +c
-.base64 "uoc2h7KGLoaTBYAGvoIjsBIgI7QiISO4MiEjvEIhI7BSIyO0YiMjuHIjKomuiTKKtoo6i76L"
+.base64 "uoc2h7KGLoaTBYAGeXGKgiOwEgAjtCIBI7gyASO8QgEjsFIDI7RiAyqJrokyiraKOos="
 beqz s6, 20f
 22:
 .base64 "swNJATPjQwETc3MAoU4zPtsBM2PDAZP+egA="
@@ -206,14 +208,15 @@ j 26f
 beqz t1, 27f
 j 28f
 27:
-.base64 "AUpKhd6F"
+.base64 "AUoBcUqFioU="
 call {vg_keccak_f1600}
+.base64 "EwEBIA=="
 28:
 bnez s6, 22b
 j 21f
 20:
 21:
-.base64 "UoXegoOwAiADuYIgg7kCIQO6giGDugIiA7uCIoO7AiOBQhMBAdoKgyMwUwwjNFMMIzhTDCM8UwwjMFMOIzRTDiM4Uw4jPFMOIzBTECM0UxAjOFMQIzxTECMwUxIjNFMSIzhTEiM8UxIjMFMUIzRTFCM4UxQjPFMUIzBTFiM0UxYjOFMWIzxTFiMwUxgjNFMYIzhTGCM8UxgjMFMaIzRTGiM4UxojPFMaIzBTHCM0UxwjOFMcIzxTHCMwUx4jNFMeIzhTHiM8Ux4jMFMgIzRTICM4UyAjPFMgIzBTIiM0UyIjOFMiIzxTIiMwUyQjNFMkEwEBJoFFAUaBRgFHgUcBSIFIgUIBQ4FDAU6BTgFPgU+CgA=="
+.base64 "UoWKgoOwAgADuYIAg7kCAQO6ggGDugICA7uCAkVhgUITAQG3CoMjMFMMIzRTDCM4UwwjPFMMIzBTDiM0Uw4jOFMOIzxTDiMwUxAjNFMQIzhTECM8UxAjMFMSIzRTEiM4UxIjPFMSIzBTFCM0UxQjOFMUIzxTFCMwUxYjNFMWIzhTFiM8UxYjMFMYIzRTGCM4UxgjPFMYIzBTGiM0UxojOFMaIzxTGiMwUxwjNFMcIzhTHCM8UxwjMFMeIzRTHiM4Ux4jPFMeIzBTICM0UyAjOFMgIzxTICMwUyIjNFMiIzhTIiM8UyIjMFMkIzRTJCMwU0YjNFNGIzhTRiM8U0YjMFNIIzRTSBMBAUmBRQFGgUYBR4FHAUiBSIFCAUOBQwFOgU4BT4FPgoA="
 .option pop"#,
         vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
     )
@@ -263,13 +266,13 @@ call {vg_keccak_squeeze}
 /// * `pos` must be less than 72.
 /// * The contents of `scratch` on return are unspecified.
 /// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
-/// * None of `state`, `data` and `scratch` may overlap the 608 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `state`, `data` and `scratch` may overlap the 1168 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha3_512_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
     core::arch::naked_asm!(
         r#".option push
 .option arch, +m, +c
-.base64 "uoc2h7KGLoaTBYAEvoIjsBIgI7QiISO4MiEjvEIhI7BSIyO0YiMjuHIjKomuiTKKtoo6i76L"
+.base64 "uoc2h7KGLoaTBYAEeXGKgiOwEgAjtCIBI7gyASO8QgEjsFIDI7RiAyqJrokyiraKOos="
 beqz s6, 20f
 22:
 .base64 "swNJATPjQwETc3MAoU4zPtsBM2PDAZP+egA="
@@ -288,14 +291,15 @@ j 26f
 beqz t1, 27f
 j 28f
 27:
-.base64 "AUpKhd6F"
+.base64 "AUoBcUqFioU="
 call {vg_keccak_f1600}
+.base64 "EwEBIA=="
 28:
 bnez s6, 22b
 j 21f
 20:
 21:
-.base64 "UoXegoOwAiADuYIgg7kCIQO6giGDugIiA7uCIoO7AiOBQhMBAdoKgyMwUwwjNFMMIzhTDCM8UwwjMFMOIzRTDiM4Uw4jPFMOIzBTECM0UxAjOFMQIzxTECMwUxIjNFMSIzhTEiM8UxIjMFMUIzRTFCM4UxQjPFMUIzBTFiM0UxYjOFMWIzxTFiMwUxgjNFMYIzhTGCM8UxgjMFMaIzRTGiM4UxojPFMaIzBTHCM0UxwjOFMcIzxTHCMwUx4jNFMeIzhTHiM8Ux4jMFMgIzRTICM4UyAjPFMgIzBTIiM0UyIjOFMiIzxTIiMwUyQjNFMkEwEBJoFFAUaBRgFHgUcBSIFIgUIBQ4FDAU6BTgFPgU+CgA=="
+.base64 "UoWKgoOwAgADuYIAg7kCAQO6ggGDugICA7uCAkVhgUITAQG3CoMjMFMMIzRTDCM4UwwjPFMMIzBTDiM0Uw4jOFMOIzxTDiMwUxAjNFMQIzhTECM8UxAjMFMSIzRTEiM4UxIjPFMSIzBTFCM0UxQjOFMUIzxTFCMwUxYjNFMWIzhTFiM8UxYjMFMYIzRTGCM4UxgjPFMYIzBTGiM0UxojOFMaIzxTGiMwUxwjNFMcIzhTHCM8UxwjMFMeIzRTHiM4Ux4jPFMeIzBTICM0UyAjOFMgIzxTICMwUyIjNFMiIzhTIiM8UyIjMFMkIzRTJCMwU0YjNFNGIzhTRiM8U0YjMFNIIzRTSBMBAUmBRQFGgUYBR4FHAUiBSIFCAUOBQwFOgU4BT4FPgoA="
 .option pop"#,
         vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
     )
@@ -345,13 +349,13 @@ call {vg_keccak_squeeze}
 /// * `pos` must be less than 168.
 /// * The contents of `scratch` on return are unspecified.
 /// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
-/// * None of `state`, `data` and `scratch` may overlap the 608 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `state`, `data` and `scratch` may overlap the 1168 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_shake128_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
     core::arch::naked_asm!(
         r#".option push
 .option arch, +m, +c
-.base64 "uoc2h7KGLoaTBYAKvoIjsBIgI7QiISO4MiEjvEIhI7BSIyO0YiMjuHIjKomuiTKKtoo6i76L"
+.base64 "uoc2h7KGLoaTBYAKeXGKgiOwEgAjtCIBI7gyASO8QgEjsFIDI7RiAyqJrokyiraKOos="
 beqz s6, 20f
 22:
 .base64 "swNJATPjQwETc3MAoU4zPtsBM2PDAZP+egA="
@@ -370,14 +374,15 @@ j 26f
 beqz t1, 27f
 j 28f
 27:
-.base64 "AUpKhd6F"
+.base64 "AUoBcUqFioU="
 call {vg_keccak_f1600}
+.base64 "EwEBIA=="
 28:
 bnez s6, 22b
 j 21f
 20:
 21:
-.base64 "UoXegoOwAiADuYIgg7kCIQO6giGDugIiA7uCIoO7AiOBQhMBAdoKgyMwUwwjNFMMIzhTDCM8UwwjMFMOIzRTDiM4Uw4jPFMOIzBTECM0UxAjOFMQIzxTECMwUxIjNFMSIzhTEiM8UxIjMFMUIzRTFCM4UxQjPFMUIzBTFiM0UxYjOFMWIzxTFiMwUxgjNFMYIzhTGCM8UxgjMFMaIzRTGiM4UxojPFMaIzBTHCM0UxwjOFMcIzxTHCMwUx4jNFMeIzhTHiM8Ux4jMFMgIzRTICM4UyAjPFMgIzBTIiM0UyIjOFMiIzxTIiMwUyQjNFMkEwEBJoFFAUaBRgFHgUcBSIFIgUIBQ4FDAU6BTgFPgU+CgA=="
+.base64 "UoWKgoOwAgADuYIAg7kCAQO6ggGDugICA7uCAkVhgUITAQG3CoMjMFMMIzRTDCM4UwwjPFMMIzBTDiM0Uw4jOFMOIzxTDiMwUxAjNFMQIzhTECM8UxAjMFMSIzRTEiM4UxIjPFMSIzBTFCM0UxQjOFMUIzxTFCMwUxYjNFMWIzhTFiM8UxYjMFMYIzRTGCM4UxgjPFMYIzBTGiM0UxojOFMaIzxTGiMwUxwjNFMcIzhTHCM8UxwjMFMeIzRTHiM4Ux4jPFMeIzBTICM0UyAjOFMgIzxTICMwUyIjNFMiIzhTIiM8UyIjMFMkIzRTJCMwU0YjNFNGIzhTRiM8U0YjMFNIIzRTSBMBAUmBRQFGgUYBR4FHAUiBSIFCAUOBQwFOgU4BT4FPgoA="
 .option pop"#,
         vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
     )

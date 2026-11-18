@@ -14,7 +14,9 @@ constants. `pad` and `squeeze` keep their working space in a frame of their
 own.
 
 * `update rate (state = a0, pos = a1, data = a2, len = a3, scratch = a4)`
-  runs `absorbWs(state, rate, pos, data, len, scratch)`.
+  runs `absorb(state, rate, pos, data, len)`, which keeps its working space
+  in frames on the stack: it never writes `scratch`, which it leaves in
+  `a5`.
 * `xofFinalize rate (state = a0, pos = a1)` runs `pad(state, rate, pos,
   0x1f)` (SHAKE's suffix).
 * `xofSqueeze rate (state = a0, pos = a1, out = a2, outlen = a3)` runs
@@ -38,7 +40,7 @@ open VG.Impl.Sha3.RISCV64.Stream (mov)
 def updateArgs (rate : Nat) : List Instr :=
   [mov .a5 .a4, mov .a4 .a3, mov .a3 .a2, mov .a2 .a1, .li .a1 rate]
 
-def update (rate : Nat) : Prog isa := .seq (.block (updateArgs rate)) Stream.absorbWs
+def update (rate : Nat) : Prog isa := .seq (.block (updateArgs rate)) Stream.absorb
 
 /-- SHAKE's `finalize`'s arguments, moved to `pad`'s: `pos` to `a2`, `rate`
 into `a1` and SHAKE's suffix into `a3`. -/

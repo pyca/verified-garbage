@@ -12,20 +12,19 @@ vg_sha3_224_update:
 	addi a3, a2, 0
 	addi a2, a1, 0
 	addi a1, zero, 144
-	addi t0, a5, 0
-	sd ra, 512(t0)
-	sd s2, 520(t0)
-	sd s3, 528(t0)
-	sd s4, 536(t0)
-	sd s5, 544(t0)
-	sd s6, 552(t0)
-	sd s7, 560(t0)
+	addi sp, sp, -48
+	addi t0, sp, 0
+	sd ra, 0(t0)
+	sd s2, 8(t0)
+	sd s3, 16(t0)
+	sd s4, 24(t0)
+	sd s5, 32(t0)
+	sd s6, 40(t0)
 	addi s2, a0, 0
 	addi s3, a1, 0
 	addi s4, a2, 0
 	addi s5, a3, 0
 	addi s6, a4, 0
-	addi s7, a5, 0
 	beqz s6, 20f
 22:
 	add t2, s2, s4
@@ -91,25 +90,27 @@ vg_sha3_224_update:
 	j 28f
 27:
 	addi s4, zero, 0
+	addi sp, sp, -512
 	addi a0, s2, 0
-	addi a1, s7, 0
+	addi a1, sp, 0
 	call {vg_keccak_f1600}
+	addi sp, sp, 512
 28:
 	bnez s6, 22b
 	j 21f
 20:
 21:
 	addi a0, s4, 0
-	addi t0, s7, 0
-	ld ra, 512(t0)
-	ld s2, 520(t0)
-	ld s3, 528(t0)
-	ld s4, 536(t0)
-	ld s5, 544(t0)
-	ld s6, 552(t0)
-	ld s7, 560(t0)
+	addi t0, sp, 0
+	ld ra, 0(t0)
+	ld s2, 8(t0)
+	ld s3, 16(t0)
+	ld s4, 24(t0)
+	ld s5, 32(t0)
+	ld s6, 40(t0)
+	addi sp, sp, 48
 	addi t0, zero, 0
-	addi sp, sp, -608
+	addi sp, sp, -1168
 	addi t1, sp, 0
 	sd t0, 192(t1)
 	sd t0, 200(t1)
@@ -161,7 +162,13 @@ vg_sha3_224_update:
 	sd t0, 568(t1)
 	sd t0, 576(t1)
 	sd t0, 584(t1)
-	addi sp, sp, 608
+	sd t0, 1120(t1)
+	sd t0, 1128(t1)
+	sd t0, 1136(t1)
+	sd t0, 1144(t1)
+	sd t0, 1152(t1)
+	sd t0, 1160(t1)
+	addi sp, sp, 1168
 	addi a1, zero, 0
 	addi a2, zero, 0
 	addi a3, zero, 0
@@ -300,20 +307,19 @@ vg_sha3_256_update:
 	addi a3, a2, 0
 	addi a2, a1, 0
 	addi a1, zero, 136
-	addi t0, a5, 0
-	sd ra, 512(t0)
-	sd s2, 520(t0)
-	sd s3, 528(t0)
-	sd s4, 536(t0)
-	sd s5, 544(t0)
-	sd s6, 552(t0)
-	sd s7, 560(t0)
+	addi sp, sp, -48
+	addi t0, sp, 0
+	sd ra, 0(t0)
+	sd s2, 8(t0)
+	sd s3, 16(t0)
+	sd s4, 24(t0)
+	sd s5, 32(t0)
+	sd s6, 40(t0)
 	addi s2, a0, 0
 	addi s3, a1, 0
 	addi s4, a2, 0
 	addi s5, a3, 0
 	addi s6, a4, 0
-	addi s7, a5, 0
 	beqz s6, 20f
 22:
 	add t2, s2, s4
@@ -379,25 +385,27 @@ vg_sha3_256_update:
 	j 28f
 27:
 	addi s4, zero, 0
+	addi sp, sp, -512
 	addi a0, s2, 0
-	addi a1, s7, 0
+	addi a1, sp, 0
 	call {vg_keccak_f1600}
+	addi sp, sp, 512
 28:
 	bnez s6, 22b
 	j 21f
 20:
 21:
 	addi a0, s4, 0
-	addi t0, s7, 0
-	ld ra, 512(t0)
-	ld s2, 520(t0)
-	ld s3, 528(t0)
-	ld s4, 536(t0)
-	ld s5, 544(t0)
-	ld s6, 552(t0)
-	ld s7, 560(t0)
+	addi t0, sp, 0
+	ld ra, 0(t0)
+	ld s2, 8(t0)
+	ld s3, 16(t0)
+	ld s4, 24(t0)
+	ld s5, 32(t0)
+	ld s6, 40(t0)
+	addi sp, sp, 48
 	addi t0, zero, 0
-	addi sp, sp, -608
+	addi sp, sp, -1168
 	addi t1, sp, 0
 	sd t0, 192(t1)
 	sd t0, 200(t1)
@@ -449,7 +457,13 @@ vg_sha3_256_update:
 	sd t0, 568(t1)
 	sd t0, 576(t1)
 	sd t0, 584(t1)
-	addi sp, sp, 608
+	sd t0, 1120(t1)
+	sd t0, 1128(t1)
+	sd t0, 1136(t1)
+	sd t0, 1144(t1)
+	sd t0, 1152(t1)
+	sd t0, 1160(t1)
+	addi sp, sp, 1168
 	addi a1, zero, 0
 	addi a2, zero, 0
 	addi a3, zero, 0
@@ -588,20 +602,19 @@ vg_sha3_384_update:
 	addi a3, a2, 0
 	addi a2, a1, 0
 	addi a1, zero, 104
-	addi t0, a5, 0
-	sd ra, 512(t0)
-	sd s2, 520(t0)
-	sd s3, 528(t0)
-	sd s4, 536(t0)
-	sd s5, 544(t0)
-	sd s6, 552(t0)
-	sd s7, 560(t0)
+	addi sp, sp, -48
+	addi t0, sp, 0
+	sd ra, 0(t0)
+	sd s2, 8(t0)
+	sd s3, 16(t0)
+	sd s4, 24(t0)
+	sd s5, 32(t0)
+	sd s6, 40(t0)
 	addi s2, a0, 0
 	addi s3, a1, 0
 	addi s4, a2, 0
 	addi s5, a3, 0
 	addi s6, a4, 0
-	addi s7, a5, 0
 	beqz s6, 20f
 22:
 	add t2, s2, s4
@@ -667,25 +680,27 @@ vg_sha3_384_update:
 	j 28f
 27:
 	addi s4, zero, 0
+	addi sp, sp, -512
 	addi a0, s2, 0
-	addi a1, s7, 0
+	addi a1, sp, 0
 	call {vg_keccak_f1600}
+	addi sp, sp, 512
 28:
 	bnez s6, 22b
 	j 21f
 20:
 21:
 	addi a0, s4, 0
-	addi t0, s7, 0
-	ld ra, 512(t0)
-	ld s2, 520(t0)
-	ld s3, 528(t0)
-	ld s4, 536(t0)
-	ld s5, 544(t0)
-	ld s6, 552(t0)
-	ld s7, 560(t0)
+	addi t0, sp, 0
+	ld ra, 0(t0)
+	ld s2, 8(t0)
+	ld s3, 16(t0)
+	ld s4, 24(t0)
+	ld s5, 32(t0)
+	ld s6, 40(t0)
+	addi sp, sp, 48
 	addi t0, zero, 0
-	addi sp, sp, -608
+	addi sp, sp, -1168
 	addi t1, sp, 0
 	sd t0, 192(t1)
 	sd t0, 200(t1)
@@ -737,7 +752,13 @@ vg_sha3_384_update:
 	sd t0, 568(t1)
 	sd t0, 576(t1)
 	sd t0, 584(t1)
-	addi sp, sp, 608
+	sd t0, 1120(t1)
+	sd t0, 1128(t1)
+	sd t0, 1136(t1)
+	sd t0, 1144(t1)
+	sd t0, 1152(t1)
+	sd t0, 1160(t1)
+	addi sp, sp, 1168
 	addi a1, zero, 0
 	addi a2, zero, 0
 	addi a3, zero, 0
@@ -876,20 +897,19 @@ vg_sha3_512_update:
 	addi a3, a2, 0
 	addi a2, a1, 0
 	addi a1, zero, 72
-	addi t0, a5, 0
-	sd ra, 512(t0)
-	sd s2, 520(t0)
-	sd s3, 528(t0)
-	sd s4, 536(t0)
-	sd s5, 544(t0)
-	sd s6, 552(t0)
-	sd s7, 560(t0)
+	addi sp, sp, -48
+	addi t0, sp, 0
+	sd ra, 0(t0)
+	sd s2, 8(t0)
+	sd s3, 16(t0)
+	sd s4, 24(t0)
+	sd s5, 32(t0)
+	sd s6, 40(t0)
 	addi s2, a0, 0
 	addi s3, a1, 0
 	addi s4, a2, 0
 	addi s5, a3, 0
 	addi s6, a4, 0
-	addi s7, a5, 0
 	beqz s6, 20f
 22:
 	add t2, s2, s4
@@ -955,25 +975,27 @@ vg_sha3_512_update:
 	j 28f
 27:
 	addi s4, zero, 0
+	addi sp, sp, -512
 	addi a0, s2, 0
-	addi a1, s7, 0
+	addi a1, sp, 0
 	call {vg_keccak_f1600}
+	addi sp, sp, 512
 28:
 	bnez s6, 22b
 	j 21f
 20:
 21:
 	addi a0, s4, 0
-	addi t0, s7, 0
-	ld ra, 512(t0)
-	ld s2, 520(t0)
-	ld s3, 528(t0)
-	ld s4, 536(t0)
-	ld s5, 544(t0)
-	ld s6, 552(t0)
-	ld s7, 560(t0)
+	addi t0, sp, 0
+	ld ra, 0(t0)
+	ld s2, 8(t0)
+	ld s3, 16(t0)
+	ld s4, 24(t0)
+	ld s5, 32(t0)
+	ld s6, 40(t0)
+	addi sp, sp, 48
 	addi t0, zero, 0
-	addi sp, sp, -608
+	addi sp, sp, -1168
 	addi t1, sp, 0
 	sd t0, 192(t1)
 	sd t0, 200(t1)
@@ -1025,7 +1047,13 @@ vg_sha3_512_update:
 	sd t0, 568(t1)
 	sd t0, 576(t1)
 	sd t0, 584(t1)
-	addi sp, sp, 608
+	sd t0, 1120(t1)
+	sd t0, 1128(t1)
+	sd t0, 1136(t1)
+	sd t0, 1144(t1)
+	sd t0, 1152(t1)
+	sd t0, 1160(t1)
+	addi sp, sp, 1168
 	addi a1, zero, 0
 	addi a2, zero, 0
 	addi a3, zero, 0
@@ -1164,20 +1192,19 @@ vg_shake128_update:
 	addi a3, a2, 0
 	addi a2, a1, 0
 	addi a1, zero, 168
-	addi t0, a5, 0
-	sd ra, 512(t0)
-	sd s2, 520(t0)
-	sd s3, 528(t0)
-	sd s4, 536(t0)
-	sd s5, 544(t0)
-	sd s6, 552(t0)
-	sd s7, 560(t0)
+	addi sp, sp, -48
+	addi t0, sp, 0
+	sd ra, 0(t0)
+	sd s2, 8(t0)
+	sd s3, 16(t0)
+	sd s4, 24(t0)
+	sd s5, 32(t0)
+	sd s6, 40(t0)
 	addi s2, a0, 0
 	addi s3, a1, 0
 	addi s4, a2, 0
 	addi s5, a3, 0
 	addi s6, a4, 0
-	addi s7, a5, 0
 	beqz s6, 20f
 22:
 	add t2, s2, s4
@@ -1243,25 +1270,27 @@ vg_shake128_update:
 	j 28f
 27:
 	addi s4, zero, 0
+	addi sp, sp, -512
 	addi a0, s2, 0
-	addi a1, s7, 0
+	addi a1, sp, 0
 	call {vg_keccak_f1600}
+	addi sp, sp, 512
 28:
 	bnez s6, 22b
 	j 21f
 20:
 21:
 	addi a0, s4, 0
-	addi t0, s7, 0
-	ld ra, 512(t0)
-	ld s2, 520(t0)
-	ld s3, 528(t0)
-	ld s4, 536(t0)
-	ld s5, 544(t0)
-	ld s6, 552(t0)
-	ld s7, 560(t0)
+	addi t0, sp, 0
+	ld ra, 0(t0)
+	ld s2, 8(t0)
+	ld s3, 16(t0)
+	ld s4, 24(t0)
+	ld s5, 32(t0)
+	ld s6, 40(t0)
+	addi sp, sp, 48
 	addi t0, zero, 0
-	addi sp, sp, -608
+	addi sp, sp, -1168
 	addi t1, sp, 0
 	sd t0, 192(t1)
 	sd t0, 200(t1)
@@ -1313,7 +1342,13 @@ vg_shake128_update:
 	sd t0, 568(t1)
 	sd t0, 576(t1)
 	sd t0, 584(t1)
-	addi sp, sp, 608
+	sd t0, 1120(t1)
+	sd t0, 1128(t1)
+	sd t0, 1136(t1)
+	sd t0, 1144(t1)
+	sd t0, 1152(t1)
+	sd t0, 1160(t1)
+	addi sp, sp, 1168
 	addi a1, zero, 0
 	addi a2, zero, 0
 	addi a3, zero, 0

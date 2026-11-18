@@ -18,7 +18,7 @@
 /// * `pos` must be less than 144.
 /// * The contents of `scratch` on return are unspecified.
 /// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
-/// * None of `state`, `data` and `scratch` may overlap the 608 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `state`, `data` and `scratch` may overlap the 1168 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_sha3_224_update_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
@@ -65,7 +65,7 @@ pub unsafe fn vg_sha3_224_finalize_auto(_dit: verified_garbage_cpu::Dit<'_>, sta
 /// * `pos` must be less than 136.
 /// * The contents of `scratch` on return are unspecified.
 /// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
-/// * None of `state`, `data` and `scratch` may overlap the 608 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `state`, `data` and `scratch` may overlap the 1168 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_sha3_256_update_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
@@ -112,7 +112,7 @@ pub unsafe fn vg_sha3_256_finalize_auto(_dit: verified_garbage_cpu::Dit<'_>, sta
 /// * `pos` must be less than 104.
 /// * The contents of `scratch` on return are unspecified.
 /// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
-/// * None of `state`, `data` and `scratch` may overlap the 608 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `state`, `data` and `scratch` may overlap the 1168 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_sha3_384_update_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
@@ -159,7 +159,7 @@ pub unsafe fn vg_sha3_384_finalize_auto(_dit: verified_garbage_cpu::Dit<'_>, sta
 /// * `pos` must be less than 72.
 /// * The contents of `scratch` on return are unspecified.
 /// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
-/// * None of `state`, `data` and `scratch` may overlap the 608 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `state`, `data` and `scratch` may overlap the 1168 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_sha3_512_update_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
@@ -206,7 +206,7 @@ pub unsafe fn vg_sha3_512_finalize_auto(_dit: verified_garbage_cpu::Dit<'_>, sta
 /// * `pos` must be less than 168.
 /// * The contents of `scratch` on return are unspecified.
 /// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
-/// * None of `state`, `data` and `scratch` may overlap the 608 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `state`, `data` and `scratch` may overlap the 1168 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_shake128_update_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
