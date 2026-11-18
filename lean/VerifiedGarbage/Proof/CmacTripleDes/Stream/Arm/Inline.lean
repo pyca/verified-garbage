@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.CmacTripleDes.Arm.Update
 public import VerifiedGarbage.Impl.CmacTripleDes.Arm
 public import VerifiedGarbage.Proof.Framework.Semantics
-import VerifiedGarbage.Proof.CmacTripleDes.Arm.Finalize
+import VerifiedGarbage.Proof.CmacTripleDes.Arm.Init
 import VerifiedGarbage.Proof.CmacTripleDes.Cmac
 import VerifiedGarbage.Proof.CmacTripleDes.Words
 import VerifiedGarbage.Proof.Cmac.Block

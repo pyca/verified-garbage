@@ -9,9 +9,9 @@ public import VerifiedGarbage.Impl.StackScratch.Arm
 public import VerifiedGarbage.Proof.Framework.Arm.Spill
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.MdStream.Arm.Common
-public import VerifiedGarbage.Proof.AesCbc.Arm.Loop
+public import VerifiedGarbage.Proof.AesCbc.Arm.Body
 public import VerifiedGarbage.Proof.Framework.Arm.CallF
-public import VerifiedGarbage.Proof.AesGcm.Arm.Callee
+public import VerifiedGarbage.Proof.AesGcm.Arm.Env
 public import VerifiedGarbage.Proof.AesOcb.Arm.Callee
 public import VerifiedGarbage.Proof.Modes.Arm.SeqFinal
 public import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
@@ -23,7 +23,6 @@ import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Modes.Words
 import VerifiedGarbage.Proof.AesOfb.Arm.Body
-import VerifiedGarbage.Proof.AesCfb.Arm.Body
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Frame
@@ -36,14 +35,13 @@ meta import VerifiedGarbage.Impl.StackScratch.Arm
 meta import VerifiedGarbage.Proof.Framework.Arm.Spill
 meta import VerifiedGarbage.Proof.Framework.Semantics
 meta import VerifiedGarbage.Proof.MdStream.Arm.Common
-meta import VerifiedGarbage.Proof.AesCbc.Arm.Loop
+meta import VerifiedGarbage.Proof.AesCbc.Arm.Body
 meta import VerifiedGarbage.Proof.Framework.Arm.CallF
-meta import VerifiedGarbage.Proof.AesGcm.Arm.Callee
+meta import VerifiedGarbage.Proof.AesGcm.Arm.Env
 meta import VerifiedGarbage.Proof.AesOcb.Arm.Callee
 meta import VerifiedGarbage.Proof.Modes.Arm.SeqFinal
 meta import VerifiedGarbage.Proof.Modes.Words
 meta import VerifiedGarbage.Proof.AesOfb.Arm.Body
-meta import VerifiedGarbage.Proof.AesCfb.Arm.Body
 meta import VerifiedGarbage.Proof.Framework.Arm.RelCT
 meta import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
 meta import VerifiedGarbage.Proof.Cmac.Frame

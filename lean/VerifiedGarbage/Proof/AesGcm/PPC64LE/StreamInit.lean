@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Gcm.PPC64LE.Ghash
-public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Contract
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Fn
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Absorb
 import VerifiedGarbage.Proof.Gcm.Compose

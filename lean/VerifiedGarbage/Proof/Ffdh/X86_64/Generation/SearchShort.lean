@@ -2,12 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.EntropyRequest
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchDone
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchData
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchLayout
 public import VerifiedGarbage.Impl.Ffdh.X86_64.Generation.Search
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.ControlMemory
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.InitValues
-import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchLayout
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.WitnessState
 import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchRestore
 import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchTerminate

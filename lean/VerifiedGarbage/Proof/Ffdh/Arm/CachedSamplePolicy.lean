@@ -1,13 +1,12 @@
 module
 
-import VerifiedGarbage.Proof.Ffdh.Arm.VettedCapPolicy
+import VerifiedGarbage.Proof.Ffdh.Arm.VettedCapStore
 public import VerifiedGarbage.Proof.Ffdh.Arm.CachedSampleHead
 public import VerifiedGarbage.Proof.Ffdh.Arm.ScalarLayout
 public import VerifiedGarbage.Impl.Ffdh.Arm.CachedSample
 public import VerifiedGarbage.Proof.X25519.Arm.Instr
 public import VerifiedGarbage.Impl.Ffdh.Arm.GenerateKey
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
-import VerifiedGarbage.Proof.Ffdh.Arm.VettedCapStore
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Ffdh.GenerationPrecomputeWidth
 import VerifiedGarbage.Proof.Framework.Semantics

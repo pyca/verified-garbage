@@ -6,7 +6,6 @@ public import Batteries.Tactic.SeqFocus
 public import VerifiedGarbage.Proof.Framework.GetElem
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
-import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Bounds
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Geometry
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Arm.Syms

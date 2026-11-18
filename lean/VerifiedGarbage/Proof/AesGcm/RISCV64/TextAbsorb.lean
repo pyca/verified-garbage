@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Gcm.RISCV64.Ghash
-public import VerifiedGarbage.Proof.AesGcm.RISCV64.Absorb
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.Flush
 import VerifiedGarbage.Proof.Gcm.Compose
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec

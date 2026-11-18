@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyMessage.CT
-import VerifiedGarbage.Proof.Ed25519.X86_64.BaseHeld
+import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCall
 import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarVerified
 import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombLit
 import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCTLit

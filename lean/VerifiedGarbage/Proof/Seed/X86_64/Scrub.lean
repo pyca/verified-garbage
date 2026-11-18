@@ -10,7 +10,7 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Seed.X86_64.Frame
-public import VerifiedGarbage.Proof.Seed.X86_64.EcbCall
+public import VerifiedGarbage.Proof.Seed.X86_64.ModeCore
 public import VerifiedGarbage.Proof.Seed.X86_64.CbcVerified
 public import VerifiedGarbage.Proof.Seed.X86_64.FbVerified
 public import VerifiedGarbage.Proof.Seed.X86_64.FbFinalVerified
@@ -31,7 +31,7 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 meta import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Proof.Seed.X86_64.Frame
-meta import VerifiedGarbage.Proof.Seed.X86_64.EcbCall
+meta import VerifiedGarbage.Proof.Seed.X86_64.ModeCore
 meta import VerifiedGarbage.Proof.Seed.X86_64.CbcVerified
 meta import VerifiedGarbage.Proof.Seed.X86_64.FbVerified
 meta import VerifiedGarbage.Proof.Seed.X86_64.FbFinalVerified

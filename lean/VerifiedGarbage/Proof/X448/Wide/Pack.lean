@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.X448.Wide.Bridge
 public import VerifiedGarbage.Impl.X448.AArch64.Wide
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.X448.AArch64.Mem
@@ -8,6 +7,173 @@ import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Impl.X448.AArch64.Tail
+public import VerifiedGarbage.Proof.X448.Wide.Pass
+public import VerifiedGarbage.Proof.X448.Wide.Column
+import VerifiedGarbage.Proof.X448.Wide.Fold
+import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.X448.Wide.Limbs
+public import VerifiedGarbage.Proof.X448.Limbs
+import VerifiedGarbage.Proof.Framework.Omega
+
+/-! ### `X448.Wide.Bridge`, which only this module used -/
+
+section
+
+/-! Untrusted: the exact-value bridge between the old and wide limb layouts. -/
+
+@[expose] public section
+
+namespace VG.Proof.X448.Wide
+
+/-- Combine two neighboring 28-bit limbs. -/
+def paired (f : Nat → Nat) (i : Nat) : Nat :=
+  f (2 * i) + VG.Proof.X448.radix * f (2 * i + 1)
+
+theorem radix_pair : VG.Proof.X448.radix ^ 2 = radix := by decide
+
+theorem paired_val (f : Nat → Nat) (n : Nat) :
+    valN (paired f) n = VG.Proof.X448.valN f (2 * n) := by
+  induction n with
+  | zero => rfl
+  | succ n ih =>
+    rw [show 2 * (n + 1) = (2 * n + 1) + 1 by omega_using [],
+      VG.Proof.X448.valN_succ, VG.Proof.X448.valN_succ, valN_succ, ih, paired,
+      Nat.pow_succ, Nat.pow_mul, radix_pair, Nat.mul_add, Nat.add_assoc, Nat.mul_assoc]
+
+theorem paired_bound {f : Nat → Nat} (h : ∀ i < 16, f i < VG.Proof.X448.radix) :
+    ∀ i < 8, paired f i < radix := by
+  intro i hi
+  have h0 := h (2 * i) (by omega_using [hi])
+  have h1 := h (2 * i + 1) (by omega_using [hi])
+  simp only [paired, VG.Proof.X448.radix, radix] at *
+  omega_using [h0, h1]
+
+/-- Split a normalized wide limb back into the existing field-slot layout. -/
+def unpacked (f : Nat → Nat) (i : Nat) : Nat :=
+  if i % 2 = 0 then f (i / 2) % VG.Proof.X448.radix else f (i / 2) / VG.Proof.X448.radix
+
+theorem paired_unpacked (f : Nat → Nat) (i : Nat) : paired (unpacked f) i = f i := by
+  simp only [paired, unpacked, show (2 * i) % 2 = 0 by omega_using [],
+    show (2 * i + 1) % 2 = 1 by omega_using [], show (2 * i) / 2 = i by omega_using [],
+    show (2 * i + 1) / 2 = i by omega_using [], ite_true, ite_false, Nat.one_ne_zero]
+  exact Nat.mod_add_div _ _
+
+theorem unpacked_val (f : Nat → Nat) :
+    VG.Proof.X448.valN (unpacked f) 16 = valN f 8 := by
+  rw [← paired_val (unpacked f) 8]
+  exact valN_congr (fun i _ => paired_unpacked f i)
+
+theorem unpacked_bound {f : Nat → Nat} (h : ∀ i < 8, f i < radix) :
+    ∀ i < 16, unpacked f i < VG.Proof.X448.radix := by
+  intro i hi
+  have hf := h (i / 2) (by omega_using [hi])
+  simp only [unpacked]
+  split
+  · exact Nat.mod_lt _ (by decide)
+  · simp only [radix] at hf
+    simp only [VG.Proof.X448.radix]
+    omega_using [hf]
+
+end VG.Proof.X448.Wide
+
+end
+
+end
+
+/-! ### `X448.Wide.TailNormalize`, which the modules that import this one used -/
+
+section
+
+/-! ### `X448.Wide.Encoded`, which the modules that import this one used -/
+
+section
+
+/-! Untrusted: interpreting the normalized wide output in the original slots. -/
+
+@[expose] public section
+
+namespace VG.Proof.X448.Wide
+
+open VG VG.AArch64 VG.Proof.X448.AArch64
+
+theorem decode_encoded (lo hi : BitVec 64) {v : Nat} (h : pair lo hi = encoded v true) :
+    lo.toNat = v % VG.Proof.X448.radix ∧ hi.toNat = v / VG.Proof.X448.radix := by
+  have hl := lo.isLt
+  have hm := Nat.mod_lt v (show 0 < VG.Proof.X448.radix by decide)
+  simp only [pair, encoded, ite_true, VG.Proof.X448.radix] at h hm ⊢
+  omega_using [h]
+
+theorem encoded_limbs {m : Mem} {base : Addr} {o : Nat} {f : Nat → Nat}
+    (hf : ∀ i < 8, coeff m base o i = encoded (f i) true) :
+    ∀ i < 16, limbs m base o i = unpacked f i := by
+  intro i hi
+  have hq : i / 2 < 8 := by omega_using [hi]
+  have dec := decode_encoded _ _ (hf (i / 2) hq)
+  have e0 : o + 16 * (i / 2) = o + 8 * (2 * (i / 2)) := by omega_using []
+  simp only [e0] at dec
+  change limbs m base o (2 * (i / 2)) = _ ∧ limbs m base o (2 * (i / 2) + 1) = _ at dec
+  simp only [unpacked]
+  split
+  · rename_i h
+    rw [show i = 2 * (i / 2) from by omega_using [h]]
+    simpa only [show (2 * (i / 2)) / 2 = i / 2 by omega_using []] using dec.1
+  · rename_i h
+    rw [show i = 2 * (i / 2) + 1 from by omega_using [h]]
+    simpa only [show (2 * (i / 2) + 1) / 2 = i / 2 by omega_using []] using dec.2
+
+end VG.Proof.X448.Wide
+
+end
+
+end
+
+/-! Untrusted: normalize wide coefficients and restore the field-slot interface. -/
+
+@[expose] public section
+
+namespace VG.Proof.X448.Wide
+
+open VG VG.AArch64
+open VG.Impl.X448.AArch64 (ACC TMP)
+open VG.Impl.X448.AArch64.Wide VG.Proof.X448.AArch64
+
+theorem tailNormalize_ok {s : State} {base : Addr} (hs : Scr s base) {o : Nat}
+    (ho : o + 128 ≤ ACC) (ho8 : o % 8 = 0) {f : Nat → Nat}
+    (hf : ∀ i < 8, coeff s.mem base TMP i = f i) (hb : ∀ i < 8, f i < 2 ^ 118) :
+    WP isa (.block (Impl.X448.AArch64.Tail.normalize o)) s fun t =>
+      (∀ i < 8, coeff t.mem base o i = encoded (normalized f i) true) ∧
+      FieldMem base o s.mem t.mem ∧ Keeps colRegs s t := by
+  have htmp : TMP + 128 ≤ 8192 := by decide
+  have hwork : ∀ {m m' : Mem}, Outside base TMP 128 m m' → FieldMem base o m m' :=
+    fun h => FieldMem.work h (by decide) (by decide)
+  have keep : ∀ {a b : State}, Keeps [.x4] a b → Keeps colRegs a b :=
+    fun h => h.mono (by decide)
+  rw [Impl.X448.AArch64.Tail.normalize, List.append_assoc, List.append_assoc, List.append_assoc, WP.block_append_iff]
+  refine WP.mono (pass_ok hs htmp (by decide) (Or.inl rfl) false hf hb) fun s₁ ⟨f₁, c₁, m₁, k₁⟩ => ?_
+  simp only [encoded, Bool.false_eq_true, ite_false] at f₁
+  have hs₁ := hs.of_keeps k₁ (by decide)
+  rw [WP.block_append_iff]
+  refine WP.mono (fold_ok hs₁ f₁ c₁ (carry_bound hb)) fun s₂ ⟨f₂, m₂, k₂⟩ => ?_
+  have hs₂ := hs₁.of_keeps k₂ (by decide)
+  rw [WP.block_append_iff]
+  refine WP.mono (tailPass_ok hs₂ htmp (by decide) (Or.inl rfl) false (fun _ => rfl) f₂ (folded_small hb)) fun s₃ ⟨f₃, c₃, m₃, k₃⟩ => ?_
+  simp only [encoded, Bool.false_eq_true, ite_false] at f₃
+  have hs₃ := hs₂.of_keeps k₃ (by decide)
+  rw [WP.block_append_iff]
+  refine WP.mono (fold_ok hs₃ f₃ c₃ (Nat.lt_trans (carry_small (folded_small hb)) (by decide))) fun s₄ ⟨f₄, m₄, k₄⟩ => ?_
+  have hs₄ := hs₃.of_keeps k₄ (by decide)
+  refine WP.mono (tailPass_ok hs₄ (Nat.le_trans ho (by decide)) ho8
+    (Or.inr (Or.inl (Nat.le_trans ho (by decide)))) true (by intro h; cases h) f₄
+    (folded_small (folded_bound hb))) fun s₅ ⟨f₅, _, m₅, k₅⟩ => ?_
+  exact ⟨f₅, (hwork m₁).trans ((hwork m₂).trans ((hwork m₃).trans ((hwork m₄).trans (.output m₅)))),
+    k₁.trans ((keep k₂).trans (k₃.trans ((keep k₄).trans k₅)))⟩
+
+end VG.Proof.X448.Wide
+
+end
+
+end
 
 /-! Untrusted: staging normalized 28-bit field slots for the wide kernel. -/
 

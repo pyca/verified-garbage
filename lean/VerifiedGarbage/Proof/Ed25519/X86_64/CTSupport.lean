@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.Mul
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.A24
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.Field
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.FieldMemory
@@ -28,8 +28,6 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
 meta import VerifiedGarbage.Proof.X25519.Invert
 meta import VerifiedGarbage.Proof.X25519.X86_64.AddSub
 meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.A24
-meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.Mul
-meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.Sqr
 meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 meta import VerifiedGarbage.Proof.X25519.X86_64.Sqr
 

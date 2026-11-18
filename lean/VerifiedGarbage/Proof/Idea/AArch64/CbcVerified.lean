@@ -6,14 +6,12 @@ import VerifiedGarbage.Proof.Modes.AArch64.CbcEncChained
 public import VerifiedGarbage.Proof.Idea.CbcScratch
 import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
 import VerifiedGarbage.Proof.Idea.AArch64.ModesLit
-import VerifiedGarbage.Proof.Idea.AArch64.ModeCore
 meta import VerifiedGarbage.Proof.Idea.AArch64.FbVerified
 meta import VerifiedGarbage.Proof.Modes.AArch64.CbcDecChained
 meta import VerifiedGarbage.Proof.Modes.AArch64.CbcEncChained
 meta import VerifiedGarbage.Proof.Idea.CbcScratch
 meta import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
 meta import VerifiedGarbage.Proof.Idea.AArch64.ModesLit
-meta import VerifiedGarbage.Proof.Idea.AArch64.ModeCore
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Idea.ModeBytes
 meta import VerifiedGarbage.Proof.Framework.Contract

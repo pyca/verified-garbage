@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Gather.CT
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Gather.CT
 public import VerifiedGarbage.Impl.StackScratch.AArch64
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Lit
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Lit
@@ -9,10 +9,7 @@ public import VerifiedGarbage.Proof.ChaCha20.AArch64.XorVariant
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Lit
 public import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64.SealGather
 public import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Gather.Callee
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Gather.Contract
-import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Gather.Fn
-import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Rest
+import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.Rest
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Verified

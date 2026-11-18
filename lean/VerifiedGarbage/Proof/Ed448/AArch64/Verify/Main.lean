@@ -1,9 +1,8 @@
 module
-public import VerifiedGarbage.Proof.Ed448.AArch64.Verify.Body
+
+public import VerifiedGarbage.Proof.Ed448.AArch64.Verify.Correct
 public import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.Local
 public import VerifiedGarbage.Proof.Sha3.AArch64.Variant
-
-import VerifiedGarbage.Proof.Ed448.AArch64.Verify.Correct
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset

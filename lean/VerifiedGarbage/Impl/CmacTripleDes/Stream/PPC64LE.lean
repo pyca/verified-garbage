@@ -7,7 +7,7 @@ public import VerifiedGarbage.Impl.TripleDes.PPC64LE.ExpandKey
 # Streaming TDEA-CMAC on PPC64LE
 
 The streaming functions over the verified Triple DES key expansion
-(`vg_triple_des_expand_key`) and block encryption
+(`vg_triple_des_expand_key`, as the internal `vg_triple_des_expand_key_core`) and block encryption
 (`vg_triple_des_encrypt_block`), which they call, with the streaming state's
 layout of `Spec.Cmac.tdesRepr`: the key schedule at 0, the subkeys at 384
 and 392, the chaining value at 400 and the bytes held back at 408.
@@ -58,7 +58,7 @@ def encCall : Prog isa := .call "vg_triple_des_encrypt_block" Impl.TripleDes.PPC
 
 /-- A call of the key expansion, with the key at `r3`, its length in `r4` and
 the schedule's address in `r5`. -/
-def keyCall : Prog isa := .call "vg_triple_des_expand_key" Impl.TripleDes.PPC64LE.Key.expandKey
+def keyCall : Prog isa := .call "vg_triple_des_expand_key_core" Impl.TripleDes.PPC64LE.Key.expandKey
 
 /-- `r7 := dbl64 r7`, through `r8`–`r10`, with `r6 = 0`. -/
 def dblCode : List Instr :=

@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.X25519.RISCV64.Field
-import VerifiedGarbage.Proof.X25519.RISCV64.Pass
 
 /-!
 # Ed448 on RISCV64: the selection

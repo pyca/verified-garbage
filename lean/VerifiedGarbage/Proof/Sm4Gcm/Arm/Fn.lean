@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Sm4Gcm.Arm.Tag
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
@@ -9,11 +8,593 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.Sm4Gcm.Arm.Flush
 import VerifiedGarbage.Proof.Cmac.Dbl32
-public import VerifiedGarbage.Proof.Sm4Gcm.Arm.Ghash1
-public import VerifiedGarbage.Proof.Sm4Gcm.Arm.Env
 public import VerifiedGarbage.Proof.Sm4Gcm.Arm.Run
 public import VerifiedGarbage.Proof.Gcm.Stream
-import VerifiedGarbage.Proof.Sm4Gcm.Arm.Loops
+public import VerifiedGarbage.Spec.Sm4.Gcm.Contract
+public import VerifiedGarbage.TCB.Arm.Target
+import VerifiedGarbage.Proof.Framework.SigEval
+import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Proof.Sm4Gcm.Arm.Crypt
+import VerifiedGarbage.Proof.Cmac.Spec
+
+/-! ### `Sm4Gcm.Arm.Tag`, which this module and modules that import it used -/
+
+section
+
+/-!
+# SM4-GCM on ARMv7: the tag (`tag o`)
+
+Untrusted: everything here is checked by Lean. `tag o` absorbs the lengths
+block of `r5:r4` and `r7:r6` bytes, copies the accumulator `S` to `W + o`
+and XORs `CIPH_K(J₀)` into it with `vg_sm4_ctr32`, from the counter block
+`J₀` at the state (`tag_ok`).
+-/
+
+@[expose] public section
+
+set_option linter.unusedSimpArgs false
+
+namespace VG.Proof.Sm4Gcm.Arm
+
+open VG VG.Arm VG.Arm.RegUpd VG.Impl.Sm4Gcm.Arm VG.WriteBytes
+open VG.Spec.Aes (bytesAt)
+open VG.Spec.Gcm (Block blockAt blocksAt ghashFrom toBytes ofBytes)
+open VG.Proof.Gcm (lensBlock)
+open VG.Proof.Cmac (store4)
+
+/-- The regions `tag o` writes. -/
+abbrev tagFrame (st w sp : BitVec 32) (o : Nat) : List Region :=
+  [⟨State.addr st, 32⟩, ⟨State.addr w + BitVec.ofNat 64 96, 16⟩, ⟨State.addr w + BitVec.ofNat 64 o, 16⟩,
+    ⟨State.addr w + BitVec.ofNat 64 512, 256⟩, below sp]
+
+/-- After `tag o`, from `m₀`: the tag of the accumulator `Y` (before the
+lengths block) and the counter block `J`. -/
+structure TagOut (c st w sp k7 k8 : BitVec 32) (o : Nat) (H Y J : Block) (aLen cLen : Nat) (m₀ : Mem) (s : State) :
+    Prop where
+  env : Env c st w sp k7 k8 s
+  out : bytesAt s.mem (State.addr w + BitVec.ofNat 64 o) 16 =
+    toBytes (ghashFrom H Y [ofBytes (lensBlock aLen cLen)] ^^^ ciphOf m₀ (State.addr c) J)
+  frame : Frame (tagFrame st w sp o) m₀ s.mem
+
+/-- After the lengths block: what the arguments of the call need. -/
+structure TagMid (c st w sp k7 k8 : BitVec 32) (H Y J : Block) (aLen cLen : Nat) (m₀ : Mem) (s : State) :
+    Prop where
+  env : Env c st w sp k7 k8 s
+  hY : blockAt s.mem (State.addr st + BitVec.ofNat 64 16) = ghashFrom H Y [ofBytes (lensBlock aLen cLen)]
+  hJ : blockAt s.mem (State.addr st) = J
+  hc : ciphOf s.mem (State.addr c) = ciphOf m₀ (State.addr c)
+  frame : Frame (Proof.Sm4Gcm.Arm.tFrame st w sp 16) m₀ s.mem
+
+theorem bytesAt_copy4 (m : Mem) (p q : Addr) :
+    bytesAt (store4 m p (m.readW q 32) (m.readW (q + BitVec.ofNat 64 4) 32) (m.readW (q + BitVec.ofNat 64 8) 32)
+      (m.readW (q + BitVec.ofNat 64 12) 32)) p 16 = bytesAt m q 16 := by
+  rw [Cmac.bytesAt_store4, Cmac.le4_readW, Cmac.le4_readW, Cmac.le4_readW, Cmac.le4_readW, ← Cmac.bytesAt_split4]
+
+section
+variable {c st w sp k7 k8 : BitVec 32} (L : Lay c st w sp)
+include L
+
+/-- The lengths block absorbed, before the copy. -/
+theorem tagLens_ok [VG.Proof.Gcm.Arm.GhashLaw] {H J : Block} {s : State} (he : Env c st w sp k7 k8 s)
+    (hH : blockAt s.mem (State.addr c + BitVec.ofNat 64 240) = H) (hJ : blockAt s.mem (State.addr st) = J) :
+    WP isa (lens 16) s (TagMid c st w sp k7 k8 H (blockAt s.mem (State.addr st + BitVec.ofNat 64 16)) J
+      (s.gpr .r5 ++ s.gpr .r4).toNat (s.gpr .r7 ++ s.gpr .r6).toNat s.mem) := by
+  refine WP.mono (lens_ok L (yo := 16) (.inr rfl) he hH) fun s₁ ⟨he₁, _, hY₁, f₁⟩ => ?_
+  have dJ : ∀ r ∈ Proof.Sm4Gcm.Arm.tFrame st w sp 16, (⟨State.addr st, 16⟩ : Region).Disjoint r := by
+    intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl
+    · simpa using Lay.st_st (st := st) (a := 0) (n := 16) (d := 16) (k := 16) (.inl (by decide)) (by decide)
+        (by decide)
+    · simpa using L.st_w (a := 0) (n := 16) (d := 96) (k := 16) (by decide) (.inr ⟨by decide, by decide⟩)
+    · simpa using L.st_w (a := 0) (n := 16) (d := 512) (k := 256) (by decide) (.inr ⟨by decide, by decide⟩)
+    · simpa using (L.stk_st (a := 0) (n := 16) (by decide)).symm
+  refine ⟨he₁, hY₁, by rw [blockAt_frame f₁ dJ, hJ], ciph_frame f₁ (fun r hr => ?_), f₁⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl
+  · exact L.cs.sub_right (Lay.stSub (by decide))
+  · exact L.cw'.sub_right (Lay.wSub (by decide))
+  · exact L.cw'.sub_right (Lay.wSub (by decide))
+  · exact L.kc.symm
+
+omit L in
+theorem sepW {m : Mem} {a b : Addr} {v : BitVec 32} (h : (⟨a, 4⟩ : Region).Disjoint ⟨b, 4⟩) :
+    (m.writeW b v).readW a 32 = m.readW a 32 :=
+  Mem.readW_writeW_sep (h.sep (Region.contains_self _ _) (Region.contains_self _ _)) (by decide)
+
+/-- The accumulator copied to `W + o`, and the arguments of `vg_sm4_ctr32`. -/
+theorem tagArgs_ok {o : Nat} (ho : o = 0 ∨ o = 112) {s : State} (he : Env c st w sp k7 k8 s) :
+    ∃ s', runBlock isa (tagArgs o) s = some s' ∧
+      s'.mem = store4 s.mem (State.addr w + BitVec.ofNat 64 o) (s.mem.readW (State.addr st + BitVec.ofNat 64 16) 32)
+        (s.mem.readW (State.addr st + BitVec.ofNat 64 16 + BitVec.ofNat 64 4) 32)
+        (s.mem.readW (State.addr st + BitVec.ofNat 64 16 + BitVec.ofNat 64 8) 32)
+        (s.mem.readW (State.addr st + BitVec.ofNat 64 16 + BitVec.ofNat 64 12) 32) ∧
+      s'.gpr .r0 = c ∧ s'.gpr .r2 = st ∧ s'.gpr .r3 = w + BitVec.ofNat 32 o ∧
+      s'.gpr .r12 = BitVec.ofNat 32 1 ∧
+      (∀ r, r ≠ .r0 → r ≠ .r2 → r ≠ .r3 → r ≠ .r12 → s'.gpr r = s.gpr r) ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by
+  have h9 := he.r9; have h10 := he.r10; have h11 := he.r11
+  have hoW : o + 16 ≤ 16 ∨ (96 ≤ o ∧ o + 16 ≤ 768) := by omega_arith
+  have r₀ := he.perm.stR (show 16 + 4 ≤ 80 by decide)
+  have r₁ := he.perm.stR (show 20 + 4 ≤ 80 by decide)
+  have r₂ := he.perm.stR (show 24 + 4 ≤ 80 by decide)
+  have r₃ := he.perm.stR (show 28 + 4 ≤ 80 by decide)
+  have w₀ := he.perm.wW (show o + 4 ≤ 768 by omega_arith)
+  have w₁ := he.perm.wW (show o + 4 + 4 ≤ 768 by omega_arith)
+  have w₂ := he.perm.wW (show o + 8 + 4 ≤ 768 by omega_arith)
+  have w₃ := he.perm.wW (show o + 12 + 4 ≤ 768 by omega_arith)
+  have q : ∀ a d, a + 4 ≤ 80 → d + 4 ≤ o + 16 → o ≤ d →
+      (⟨State.addr st + BitVec.ofNat 64 a, 4⟩ : Region).Disjoint ⟨State.addr w + BitVec.ofNat 64 d, 4⟩ :=
+    fun a d h₁ h₂ h₃ => L.st_w h₁ (by omega_arith)
+  have o₀ : o < 4096 := by omega_arith
+  have o₁ : o + 4 < 4096 := by omega_arith
+  have o₂ : o + 8 < 4096 := by omega_arith
+  have o₃ : o + 12 < 4096 := by omega_arith
+  have eo : encodable (BitVec.ofNat 32 o) = true := by rcases ho with rfl | rfl <;> decide
+  have e₁ := L.wA (d := o) (by omega_arith)
+  have e₂ := L.wA (d := o + 4) (by omega_arith)
+  have e₃ := L.wA (d := o + 8) (by omega_arith)
+  have e₄ := L.wA (d := o + 12) (by omega_arith)
+  have p₁ := fun m v => sepW (m := m) (v := v) (q 20 o (by decide) (by omega_arith) (by omega_arith))
+  have p₂ := fun m v => sepW (m := m) (v := v) (q 24 o (by decide) (by omega_arith) (by omega_arith))
+  have p₃ := fun m v => sepW (m := m) (v := v) (q 24 (o + 4) (by decide) (by omega_arith) (by omega_arith))
+  have p₄ := fun m v => sepW (m := m) (v := v) (q 28 o (by decide) (by omega_arith) (by omega_arith))
+  have p₅ := fun m v => sepW (m := m) (v := v) (q 28 (o + 4) (by decide) (by omega_arith) (by omega_arith))
+  have p₆ := fun m v => sepW (m := m) (v := v) (q 28 (o + 8) (by decide) (by omega_arith) (by omega_arith))
+  refine ⟨_, by simp only [tagArgs]; arun [h10, h11, L.stA, e₁, e₂, e₃, e₄, r₀, r₁, r₂, r₃, w₀, w₁, w₂, w₃, o₀, o₁, o₂,
+    o₃, eo, p₁, p₂, p₃, p₄, p₅, p₆], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · simp only [mem_setReg, mem_store, store4_eq, add_ofNat_assoc]
+  · simp [gpr_setReg, h9]
+  · simp [gpr_setReg, h10]
+  · simp [gpr_setReg, h11]
+  · simp [gpr_setReg]
+  · intro r a b d e; simp [gpr_setReg, a, b, d, e]
+  all_goals rfl
+
+/-- The arguments of `vg_sm4_ctr32` on the tag at `W + o`, with the counter block `J₀` at the state. -/
+theorem ctrTag_mk {o : Nat} (ho : o = 0 ∨ o = 112) {s : State} (he : Env c st w sp k7 k8 s)
+    (h0 : s.gpr .r0 = c) (h2 : s.gpr .r2 = st)
+    (h3 : s.gpr .r3 = w + BitVec.ofNat 32 o) (h12 : s.gpr .r12 = BitVec.ofNat 32 1) :
+    CtrCall s c st (w + BitVec.ofNat 32 o) 1 := by
+  have hoW : o + 16 ≤ 16 ∨ (96 ≤ o ∧ o + 16 ≤ 768) := by omega_arith
+  have hk := he.sp
+  have eT := L.wA (d := o) (by omega_arith)
+  have dJo : (⟨State.addr st, 16⟩ : Region).Disjoint ⟨State.addr w + BitVec.ofNat 64 o, 16⟩ := by
+    simpa using L.st_w (a := 0) (n := 16) (by decide) hoW
+  refine ⟨h0, h2, h3, h12, by rw [hk]; exact L.sp8, by have := L.cw; omega_arith,
+    by have := L.sw; omega_arith, by rw [L.wN (by omega_arith)]; have := L.ww; omega_arith,
+    ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  all_goals try simp only [eT, hk, Nat.mul_one]
+  · exact L.cs.sub_left (Region.sub_prefix (by decide)) |>.sub_right (Region.sub_prefix (by decide))
+  · exact (L.cw'.sub_left (Region.sub_prefix (by decide))).sub_right (Lay.wSub (by omega_arith))
+  · exact dJo
+  · exact L.kc.sub_right (Region.sub_prefix (by decide))
+  · simpa using L.stk_st (a := 0) (n := 16) (by decide)
+  · simpa using L.stk_w (a := o) (n := 16) (by omega_arith)
+  · exact covers_prefix he.perm.ctx (by decide)
+  · exact covers_cons (covers_prefix he.perm.st (by decide)) (he.perm.wC (by omega_arith))
+
+/-- The copy and the call of `vg_sm4_ctr32` on it. -/
+theorem tagCall_ok {o : Nat} (ho : o = 0 ∨ o = 112) {H Y J : Block} {aLen cLen : Nat} {m₀ : Mem} {s : State}
+    (h : TagMid c st w sp k7 k8 H Y J aLen cLen m₀ s) :
+    WP isa (.seq (.block (tagArgs o)) ctrCall) s (TagOut c st w sp k7 k8 o H Y J aLen cLen m₀) := by
+  have he := h.env
+  have hoW : o + 16 ≤ 16 ∨ (96 ≤ o ∧ o + 16 ≤ 768) := by omega_arith
+  obtain ⟨s₂, run₂, hm₂, h0, h2, h3, h12, hg₂, hrd₂, hwr₂, hsp₂⟩ := tagArgs_ok L ho he
+  refine WP.seq (WP.of_runBlock ⟨s₂, run₂, ?_⟩)
+  have he₂ : Env c st w sp k7 k8 s₂ := he.keep (fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl <;>
+      exact hg₂ _ (by decide) (by decide) (by decide) (by decide)) hsp₂ hrd₂ hwr₂
+  have hk := he₂.sp
+  have eT := L.wA (d := o) (by omega_arith)
+  have f₂ : Frame [⟨State.addr w + BitVec.ofNat 64 o, 16⟩] s.mem s₂.mem := by rw [hm₂]; exact Cmac.frame_store4 _ _ _ _ _
+  have hT : bytesAt s₂.mem (State.addr w + BitVec.ofNat 64 o) 16 = bytesAt s.mem (State.addr st + BitVec.ofNat 64 16) 16 := by
+    rw [hm₂, bytesAt_copy4]
+  have dJo : (⟨State.addr st, 16⟩ : Region).Disjoint ⟨State.addr w + BitVec.ofNat 64 o, 16⟩ := by
+    simpa using L.st_w (a := 0) (n := 16) (by decide) hoW
+  have hJ₂ : blockAt s₂.mem (State.addr st) = J := by
+    rw [blockAt_frame f₂ fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact dJo, h.hJ]
+  have hc₂ : ciphOf s₂.mem (State.addr c) = ciphOf m₀ (State.addr c) := by
+    rw [ciph_frame f₂ (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact L.cw'.sub_right (Lay.wSub (by omega_arith))), h.hc]
+  have hcall : CtrCall s₂ c st (w + BitVec.ofNat 32 o) 1 := ctrTag_mk L ho he₂ h0 h2 h3 h12
+  refine WP.mono (ctr_call hcall) fun s₃ g => ?_
+  have gout := g.out; have gframe := g.frame
+  simp only [eT, hk] at gout gframe
+  rw [blocksAt_one, blocksAt_one, ctr32_single, List.cons.injEq] at gout
+  refine ⟨he₂.of_saved g.saved g.sp g.rd g.wr, ?_, ?_⟩
+  · rw [Cmac.bytesAt_blockAt, gout.1, hJ₂,
+      show Spec.Sm4.Gcm.ctxCiph s₂.mem (State.addr c) = ciphOf s₂.mem (State.addr c) from rfl,
+      hc₂, show blockAt s₂.mem (State.addr w + BitVec.ofNat 64 o) = blockAt s.mem (State.addr st + BitVec.ofNat 64 16)
+        by rw [blockAt, blockAt, hT], h.hY]
+  · have fA : Frame (tagFrame st w sp o) m₀ s.mem := h.frame.sub fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl
+      · exact ⟨_, List.mem_cons_self .., by simpa using Offset.sub_base (State.addr st) (show 16 + 16 ≤ 32 by decide)⟩
+      · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), fun _ h => h⟩
+      · exact ⟨⟨State.addr w + BitVec.ofNat 64 512, 256⟩, by simp, fun _ h => h⟩
+      · exact ⟨_, by simp, fun _ h => h⟩
+    refine (fA.trans (f₂.sub fun r hr => ?_)).trans (gframe.sub fun r hr => ?_)
+    · simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, by simp, fun _ h => h⟩
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact ⟨_, List.mem_cons_self .., Region.sub_prefix (by decide)⟩
+      · exact ⟨⟨State.addr w + BitVec.ofNat 64 o, 16⟩, by simp, fun _ h => h⟩
+      · exact ⟨_, by simp, fun _ h => h⟩
+
+/-- `tag o`, for `o` of 0 or 112. -/
+theorem tag_ok [VG.Proof.Gcm.Arm.GhashLaw] {o : Nat} (ho : o = 0 ∨ o = 112) {H J : Block} {s : State} (he : Env c st w sp k7 k8 s)
+    (hH : blockAt s.mem (State.addr c + BitVec.ofNat 64 240) = H) (hJ : blockAt s.mem (State.addr st) = J) :
+    WP isa (tag o) s (TagOut c st w sp k7 k8 o H (blockAt s.mem (State.addr st + BitVec.ofNat 64 16)) J
+      (s.gpr .r5 ++ s.gpr .r4).toNat (s.gpr .r7 ++ s.gpr .r6).toNat s.mem) :=
+  WP.seq (WP.mono (tagLens_ok L he hH hJ) fun _ hm => tagCall_ok L ho hm)
+
+end
+
+end VG.Proof.Sm4Gcm.Arm
+
+end
+
+end
+
+/-! ### `Sm4Gcm.Arm.Contract`, which the modules that import this one used -/
+
+section
+
+/-!
+# SM4-GCM on ARMv7: the contracts the proofs are written against
+
+Untrusted: everything here is checked by Lean. The artifacts' contracts are
+the shared ones of `Spec/Sm4/Gcm/Contract.lean`, which imply these
+(`Verified.lean`). Every function calls others that use the 1520 bytes below
+the stack pointer (`bel`), which no buffer overlaps.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Sm4Gcm.Arm
+
+open VG VG.Arm
+open VG.Spec.Aes (bytesAt)
+open VG.Spec.Gcm (StreamRepr gctr inc32 j0 fullTag tagLenOk zeros encryptWith openResult)
+open VG.Spec.Sm4.Gcm (KeyRepr ctxCiph)
+open VG.Spec.Gcm (ctxH)
+
+/-- The 1520 bytes below the stack pointer. -/
+abbrev bel (s : State) : Region := ⟨State.addr s.sp - BitVec.ofNat 64 1520, 1520⟩
+
+/-- The `i`-th argument on the stack. -/
+abbrev arg (s : State) (i : Nat) : BitVec 32 := stackArg s i
+
+/-- The arguments on the stack, `n` words of them. -/
+abbrev args (s : State) (n : Nat) : Region := ⟨stackArgAddr s 0, 4 * n⟩
+
+/-- A 64-bit argument on the stack, from word `i`. -/
+abbrev arg64 (s : State) (i : Nat) : BitVec 64 := stackArg s (i + 1) ++ stackArg s i
+
+/-- `vg_sm4_gcm_init(key = r0, ctx = r1, scratch = r2)`. -/
+def initArm : Contract isa where
+  pre s :=
+    let key : Region := ⟨State.addr (s.gpr .r0), 16⟩
+    let ctx : Region := ⟨State.addr (s.gpr .r1), 256⟩
+    let scr : Region := ⟨State.addr (s.gpr .r2), 768⟩
+    s.rd = [key] ∧ s.wr = [ctx, scr] ∧
+      key.Disjoint ctx ∧ key.Disjoint scr ∧ ctx.Disjoint scr ∧
+      (bel s).Disjoint key ∧ (bel s).Disjoint ctx ∧ (bel s).Disjoint scr ∧
+      (s.gpr .r0).toNat + 16 ≤ 2 ^ 32 ∧ (s.gpr .r1).toNat + 256 ≤ 2 ^ 32 ∧
+      (s.gpr .r2).toNat + 768 ≤ 2 ^ 32 ∧ 1520 ≤ s.sp.toNat
+  post s s' := KeyRepr s'.mem (State.addr (s.gpr .r1)) (bytesAt s.mem (State.addr (s.gpr .r0)) 16)
+  pub s₁ s₂ := s₁.sp = s₂.sp ∧ s₁.gpr .r0 = s₂.gpr .r0 ∧ s₁.gpr .r1 = s₂.gpr .r1 ∧ s₁.gpr .r2 = s₂.gpr .r2
+
+/-- `vg_sm4_gcm_stream_init(ctx = r0, nonce = r1, nonce_len = r2, state = r3, scratch = [sp])`. -/
+def streamInitArm : Contract isa where
+  pre s :=
+    let ctx : Region := ⟨State.addr (s.gpr .r0), 256⟩
+    let nonce : Region := ⟨State.addr (s.gpr .r1), (s.gpr .r2).toNat⟩
+    let st : Region := ⟨State.addr (s.gpr .r3), 80⟩
+    let scr : Region := ⟨State.addr (arg s 0), 768⟩
+    s.rd = [ctx, nonce, args s 1] ∧ s.wr = [st, scr] ∧
+      ctx.Disjoint st ∧ ctx.Disjoint scr ∧ nonce.Disjoint st ∧ nonce.Disjoint scr ∧ st.Disjoint scr ∧
+      st.Disjoint (args s 1) ∧ scr.Disjoint (args s 1) ∧
+      (bel s).Disjoint ctx ∧ (bel s).Disjoint nonce ∧ (bel s).Disjoint st ∧ (bel s).Disjoint scr ∧
+      (s.gpr .r0).toNat + 256 ≤ 2 ^ 32 ∧ (s.gpr .r1).toNat + (s.gpr .r2).toNat ≤ 2 ^ 32 ∧
+      (s.gpr .r3).toNat + 80 ≤ 2 ^ 32 ∧ (arg s 0).toNat + 768 ≤ 2 ^ 32 ∧ 1520 ≤ s.sp.toNat ∧
+      s.sp.toNat + 4 ≤ 2 ^ 32
+  post s s' := ∀ ciph, StreamRepr s'.mem (State.addr (s.gpr .r3)) ciph (ctxH s.mem (State.addr (s.gpr .r0)))
+    (bytesAt s.mem (State.addr (s.gpr .r1)) (s.gpr .r2).toNat) [] []
+  pub s₁ s₂ := s₁.sp = s₂.sp ∧ s₁.gpr .r0 = s₂.gpr .r0 ∧ s₁.gpr .r1 = s₂.gpr .r1 ∧ s₁.gpr .r2 = s₂.gpr .r2 ∧
+    s₁.gpr .r3 = s₂.gpr .r3 ∧ arg s₁ 0 = arg s₂ 0
+
+/-- `vg_sm4_gcm_stream_aad(ctx = r0, state = r1, aad_len = r3:r2, data = [sp], len = [sp + 4],
+scratch = [sp + 8])`. -/
+def streamAadArm : Contract isa where
+  pre s :=
+    let ctx : Region := ⟨State.addr (s.gpr .r0), 256⟩
+    let st : Region := ⟨State.addr (s.gpr .r1), 80⟩
+    let data : Region := ⟨State.addr (arg s 0), (arg s 1).toNat⟩
+    let scr : Region := ⟨State.addr (arg s 2), 768⟩
+    s.rd = [ctx, data, args s 3] ∧ s.wr = [st, scr] ∧
+      ctx.Disjoint st ∧ ctx.Disjoint scr ∧ data.Disjoint st ∧ data.Disjoint scr ∧ st.Disjoint scr ∧
+      st.Disjoint (args s 3) ∧ scr.Disjoint (args s 3) ∧
+      (bel s).Disjoint ctx ∧ (bel s).Disjoint data ∧ (bel s).Disjoint st ∧ (bel s).Disjoint scr ∧
+      (s.gpr .r0).toNat + 256 ≤ 2 ^ 32 ∧ (s.gpr .r1).toNat + 80 ≤ 2 ^ 32 ∧
+      (arg s 0).toNat + (arg s 1).toNat ≤ 2 ^ 32 ∧ (arg s 2).toNat + 768 ≤ 2 ^ 32 ∧ 1520 ≤ s.sp.toNat ∧
+      s.sp.toNat + 12 ≤ 2 ^ 32
+  post s s' := ∀ ciph iv a, StreamRepr s.mem (State.addr (s.gpr .r1)) ciph (ctxH s.mem (State.addr (s.gpr .r0))) iv a [] →
+    (s.gpr .r3 ++ s.gpr .r2) = BitVec.ofNat 64 a.length →
+    StreamRepr s'.mem (State.addr (s.gpr .r1)) ciph (ctxH s.mem (State.addr (s.gpr .r0))) iv
+      (a ++ bytesAt s.mem (State.addr (arg s 0)) (arg s 1).toNat) []
+  pub s₁ s₂ := s₁.sp = s₂.sp ∧ s₁.gpr .r0 = s₂.gpr .r0 ∧ s₁.gpr .r1 = s₂.gpr .r1 ∧ s₁.gpr .r2 = s₂.gpr .r2 ∧
+    s₁.gpr .r3 = s₂.gpr .r3 ∧ arg s₁ 0 = arg s₂ 0 ∧ arg s₁ 1 = arg s₂ 1 ∧ arg s₁ 2 = arg s₂ 2
+
+/-- What `vg_sm4_gcm_stream_encrypt` and `vg_sm4_gcm_stream_decrypt` need:
+`(ctx = r0, state = r1, aad_len = r3:r2, text_len = [sp + 4]:[sp], data = [sp + 8], len = [sp + 12],
+scratch = [sp + 16])`. -/
+def streamCryptPre (s : State) : Prop :=
+  let ctx : Region := ⟨State.addr (s.gpr .r0), 256⟩
+  let st : Region := ⟨State.addr (s.gpr .r1), 80⟩
+  let data : Region := ⟨State.addr (arg s 2), (arg s 3).toNat⟩
+  let scr : Region := ⟨State.addr (arg s 4), 768⟩
+  s.rd = [ctx, args s 5] ∧ s.wr = [st, data, scr] ∧
+    ctx.Disjoint st ∧ ctx.Disjoint data ∧ ctx.Disjoint scr ∧
+    st.Disjoint data ∧ st.Disjoint scr ∧ st.Disjoint (args s 5) ∧ data.Disjoint scr ∧
+    data.Disjoint (args s 5) ∧ scr.Disjoint (args s 5) ∧
+    (bel s).Disjoint ctx ∧ (bel s).Disjoint st ∧ (bel s).Disjoint data ∧ (bel s).Disjoint scr ∧
+    (s.gpr .r0).toNat + 256 ≤ 2 ^ 32 ∧ (s.gpr .r1).toNat + 80 ≤ 2 ^ 32 ∧
+    (arg s 2).toNat + (arg s 3).toNat ≤ 2 ^ 32 ∧ (arg s 4).toNat + 768 ≤ 2 ^ 32 ∧ 1520 ≤ s.sp.toNat ∧
+    s.sp.toNat + 20 ≤ 2 ^ 32
+
+def streamCryptPub (s₁ s₂ : State) : Prop :=
+  s₁.sp = s₂.sp ∧ s₁.gpr .r0 = s₂.gpr .r0 ∧ s₁.gpr .r1 = s₂.gpr .r1 ∧ s₁.gpr .r2 = s₂.gpr .r2 ∧
+    s₁.gpr .r3 = s₂.gpr .r3 ∧ ∀ i < 5, arg s₁ i = arg s₂ i
+
+/-- `vg_sm4_gcm_stream_encrypt`. -/
+def streamEncryptArm : Contract isa where
+  pre := streamCryptPre
+  post s s' :=
+    let ciph := ctxCiph s.mem (State.addr (s.gpr .r0))
+    let h := ctxH s.mem (State.addr (s.gpr .r0))
+    ∀ iv a p, StreamRepr s.mem (State.addr (s.gpr .r1)) ciph h iv a (gctr ciph (inc32 (j0 h iv)) p) →
+      (s.gpr .r3 ++ s.gpr .r2) = BitVec.ofNat 64 a.length → (arg64 s 0).toNat = p.length →
+      let c := gctr ciph (inc32 (j0 h iv)) (p ++ bytesAt s.mem (State.addr (arg s 2)) (arg s 3).toNat)
+      StreamRepr s'.mem (State.addr (s.gpr .r1)) ciph h iv a c ∧
+        bytesAt s'.mem (State.addr (arg s 2)) (arg s 3).toNat = c.drop p.length
+  pub := streamCryptPub
+
+/-- `vg_sm4_gcm_stream_decrypt`. -/
+def streamDecryptArm : Contract isa where
+  pre := streamCryptPre
+  post s s' :=
+    let ciph := ctxCiph s.mem (State.addr (s.gpr .r0))
+    let h := ctxH s.mem (State.addr (s.gpr .r0))
+    ∀ iv a c, StreamRepr s.mem (State.addr (s.gpr .r1)) ciph h iv a c →
+      (s.gpr .r3 ++ s.gpr .r2) = BitVec.ofNat 64 a.length → (arg64 s 0).toNat = c.length →
+      let c' := c ++ bytesAt s.mem (State.addr (arg s 2)) (arg s 3).toNat
+      StreamRepr s'.mem (State.addr (s.gpr .r1)) ciph h iv a c' ∧
+        bytesAt s'.mem (State.addr (arg s 2)) (arg s 3).toNat = (gctr ciph (inc32 (j0 h iv)) c').drop c.length
+  pub := streamCryptPub
+
+/-- What `vg_sm4_gcm_stream_finish` and `vg_sm4_gcm_stream_verify` both need:
+`(ctx = r0, state = r1, aad_len = r3:r2, text_len = [sp + 4]:[sp], …)`, with `n` words of stack
+arguments and `work` the `wi`-th (`streamFinishPreArm.fin`, `streamVerifyPreArm.fin`). -/
+def finPre (n wi : Nat) (s : State) : Prop :=
+  let ctx : Region := ⟨State.addr (s.gpr .r0), 256⟩
+  let st : Region := ⟨State.addr (s.gpr .r1), 80⟩
+  let work : Region := ⟨State.addr (arg s wi), 768⟩
+  (ctx ∈ s.rd ∧ args s n ∈ s.rd) ∧ (st ∈ s.wr ∧ work ∈ s.wr ∧ ∀ r ∈ s.wr, (args s n).Disjoint r) ∧
+    ctx.Disjoint st ∧ ctx.Disjoint work ∧ st.Disjoint work ∧ st.Disjoint (args s n) ∧
+    work.Disjoint (args s n) ∧
+    (bel s).Disjoint ctx ∧ (bel s).Disjoint st ∧ (bel s).Disjoint work ∧
+    (s.gpr .r0).toNat + 256 ≤ 2 ^ 32 ∧ (s.gpr .r1).toNat + 80 ≤ 2 ^ 32 ∧ (arg s wi).toNat + 768 ≤ 2 ^ 32 ∧
+    1520 ≤ s.sp.toNat ∧ s.sp.toNat + 4 * n ≤ 2 ^ 32
+
+def finPub (n : Nat) (s₁ s₂ : State) : Prop :=
+  s₁.sp = s₂.sp ∧ s₁.gpr .r0 = s₂.gpr .r0 ∧ s₁.gpr .r1 = s₂.gpr .r1 ∧ s₁.gpr .r2 = s₂.gpr .r2 ∧
+    s₁.gpr .r3 = s₂.gpr .r3 ∧ ∀ i < n, arg s₁ i = arg s₂ i
+
+/-- What `vg_sm4_gcm_stream_finish` needs: `(ctx = r0, state = r1, aad_len = r3:r2,
+text_len = [sp + 4]:[sp], tag = [sp + 8], work = [sp + 12])`. -/
+def streamFinishPreArm (s : State) : Prop :=
+  let ctx : Region := ⟨State.addr (s.gpr .r0), 256⟩
+  let st : Region := ⟨State.addr (s.gpr .r1), 80⟩
+  let tag : Region := ⟨State.addr (arg s 2), 16⟩
+  let work : Region := ⟨State.addr (arg s 3), 768⟩
+  s.rd = [ctx, args s 4] ∧ s.wr = [st, tag, work] ∧
+    ctx.Disjoint st ∧ ctx.Disjoint tag ∧ ctx.Disjoint work ∧ st.Disjoint tag ∧ st.Disjoint work ∧
+    st.Disjoint (args s 4) ∧ tag.Disjoint work ∧ tag.Disjoint (args s 4) ∧ work.Disjoint (args s 4) ∧
+    (bel s).Disjoint ctx ∧ (bel s).Disjoint st ∧ (bel s).Disjoint tag ∧ (bel s).Disjoint work ∧
+    (s.gpr .r0).toNat + 256 ≤ 2 ^ 32 ∧ (s.gpr .r1).toNat + 80 ≤ 2 ^ 32 ∧ (arg s 2).toNat + 16 ≤ 2 ^ 32 ∧
+    (arg s 3).toNat + 768 ≤ 2 ^ 32 ∧ 1520 ≤ s.sp.toNat ∧ s.sp.toNat + 16 ≤ 2 ^ 32
+
+/-- `vg_sm4_gcm_stream_finish`. -/
+def streamFinishArm : Contract isa where
+  pre := streamFinishPreArm
+  post s s' :=
+    let ciph := ctxCiph s.mem (State.addr (s.gpr .r0))
+    let h := ctxH s.mem (State.addr (s.gpr .r0))
+    ∀ iv a c, StreamRepr s.mem (State.addr (s.gpr .r1)) ciph h iv a c →
+      (s.gpr .r3 ++ s.gpr .r2) = BitVec.ofNat 64 a.length → (arg64 s 0).toNat = c.length →
+      bytesAt s'.mem (State.addr (arg s 2)) 16 = fullTag ciph h iv a c
+  pub := finPub 4
+
+/-- What `vg_sm4_gcm_stream_verify` needs: `(ctx = r0, state = r1, aad_len = r3:r2,
+text_len = [sp + 4]:[sp], tag = [sp + 8], tag_len = [sp + 12], work = [sp + 16])`. -/
+def streamVerifyPreArm (s : State) : Prop :=
+  let ctx : Region := ⟨State.addr (s.gpr .r0), 256⟩
+  let st : Region := ⟨State.addr (s.gpr .r1), 80⟩
+  let tag : Region := ⟨State.addr (arg s 2), (arg s 3).toNat⟩
+  let work : Region := ⟨State.addr (arg s 4), 768⟩
+  s.rd = [ctx, tag, args s 5] ∧ s.wr = [st, work] ∧
+    ctx.Disjoint st ∧ ctx.Disjoint work ∧ st.Disjoint tag ∧ st.Disjoint work ∧ st.Disjoint (args s 5) ∧
+    tag.Disjoint work ∧ work.Disjoint (args s 5) ∧
+    (bel s).Disjoint ctx ∧ (bel s).Disjoint st ∧ (bel s).Disjoint tag ∧ (bel s).Disjoint work ∧
+    (s.gpr .r0).toNat + 256 ≤ 2 ^ 32 ∧ (s.gpr .r1).toNat + 80 ≤ 2 ^ 32 ∧
+    (arg s 2).toNat + (arg s 3).toNat ≤ 2 ^ 32 ∧ (arg s 4).toNat + 768 ≤ 2 ^ 32 ∧ 1520 ≤ s.sp.toNat ∧
+    s.sp.toNat + 20 ≤ 2 ^ 32
+
+/-- `vg_sm4_gcm_stream_verify`. -/
+def streamVerifyArm : Contract isa where
+  pre := streamVerifyPreArm
+  post s s' :=
+    let ciph := ctxCiph s.mem (State.addr (s.gpr .r0))
+    let h := ctxH s.mem (State.addr (s.gpr .r0))
+    let tl := (arg s 3).toNat
+    ∀ iv a c, StreamRepr s.mem (State.addr (s.gpr .r1)) ciph h iv a c →
+      (s.gpr .r3 ++ s.gpr .r2) = BitVec.ofNat 64 a.length → (arg64 s 0).toNat = c.length →
+      let t := fullTag ciph h iv a c
+      if tagLenOk tl ∧ t.take tl = bytesAt s.mem (State.addr (arg s 2)) tl then s'.gpr .r0 = 1
+      else s'.gpr .r0 = 0
+  pub := finPub 5
+
+/-- What `vg_sm4_gcm_seal` and `vg_sm4_gcm_open` both need: `(ctx = r0, nonce = r1, nonce_len = r2,
+aad = r3, aad_len = [sp], data = [sp + 4], len = [sp + 8], …)`, with `n` words of stack arguments and
+`work` the `wi`-th (`sealPreArm.one`, `openPreArm.one`). -/
+def onePre (n wi : Nat) (s : State) : Prop :=
+  let ctx : Region := ⟨State.addr (s.gpr .r0), 256⟩
+  let nonce : Region := ⟨State.addr (s.gpr .r1), (s.gpr .r2).toNat⟩
+  let aad : Region := ⟨State.addr (s.gpr .r3), (arg s 0).toNat⟩
+  let data : Region := ⟨State.addr (arg s 1), (arg s 2).toNat⟩
+  let work : Region := ⟨State.addr (arg s wi), 768⟩
+  (ctx ∈ s.rd ∧ nonce ∈ s.rd ∧ aad ∈ s.rd ∧ args s n ∈ s.rd) ∧
+    (data ∈ s.wr ∧ work ∈ s.wr ∧ ∀ r ∈ s.wr, (args s n).Disjoint r) ∧
+    ctx.Disjoint data ∧ ctx.Disjoint work ∧ nonce.Disjoint data ∧ nonce.Disjoint work ∧
+    aad.Disjoint data ∧ aad.Disjoint work ∧
+    data.Disjoint work ∧ data.Disjoint (args s n) ∧ work.Disjoint (args s n) ∧
+    (bel s).Disjoint ctx ∧ (bel s).Disjoint nonce ∧ (bel s).Disjoint aad ∧ (bel s).Disjoint data ∧
+    (bel s).Disjoint work ∧
+    (s.gpr .r0).toNat + 256 ≤ 2 ^ 32 ∧ (s.gpr .r1).toNat + (s.gpr .r2).toNat ≤ 2 ^ 32 ∧
+    (s.gpr .r3).toNat + (arg s 0).toNat ≤ 2 ^ 32 ∧ (arg s 1).toNat + (arg s 2).toNat ≤ 2 ^ 32 ∧
+    (arg s wi).toNat + 768 ≤ 2 ^ 32 ∧ 1520 ≤ s.sp.toNat ∧ s.sp.toNat + 4 * n ≤ 2 ^ 32
+
+def onePub (n : Nat) (s₁ s₂ : State) : Prop :=
+  s₁.sp = s₂.sp ∧ s₁.gpr .r0 = s₂.gpr .r0 ∧ s₁.gpr .r1 = s₂.gpr .r1 ∧ s₁.gpr .r2 = s₂.gpr .r2 ∧
+    s₁.gpr .r3 = s₂.gpr .r3 ∧ ∀ i < n, arg s₁ i = arg s₂ i
+
+/-- What `vg_sm4_gcm_seal` needs: `(ctx = r0, nonce = r1, nonce_len = r2, aad = r3, aad_len = [sp],
+data = [sp + 4], len = [sp + 8], tag = [sp + 12], work = [sp + 16])`. -/
+def sealPreArm (s : State) : Prop :=
+  let ctx : Region := ⟨State.addr (s.gpr .r0), 256⟩
+  let nonce : Region := ⟨State.addr (s.gpr .r1), (s.gpr .r2).toNat⟩
+  let aad : Region := ⟨State.addr (s.gpr .r3), (arg s 0).toNat⟩
+  let data : Region := ⟨State.addr (arg s 1), (arg s 2).toNat⟩
+  let tag : Region := ⟨State.addr (arg s 3), 16⟩
+  let work : Region := ⟨State.addr (arg s 4), 768⟩
+  s.rd = [ctx, nonce, aad, args s 5] ∧ s.wr = [data, tag, work] ∧
+    ctx.Disjoint data ∧ ctx.Disjoint tag ∧ ctx.Disjoint work ∧ nonce.Disjoint data ∧ nonce.Disjoint tag ∧
+    nonce.Disjoint work ∧ aad.Disjoint data ∧ aad.Disjoint tag ∧ aad.Disjoint work ∧
+    data.Disjoint tag ∧ data.Disjoint work ∧ data.Disjoint (args s 5) ∧ tag.Disjoint work ∧
+    tag.Disjoint (args s 5) ∧ work.Disjoint (args s 5) ∧
+    (bel s).Disjoint ctx ∧ (bel s).Disjoint nonce ∧ (bel s).Disjoint aad ∧ (bel s).Disjoint data ∧
+    (bel s).Disjoint tag ∧ (bel s).Disjoint work ∧
+    (s.gpr .r0).toNat + 256 ≤ 2 ^ 32 ∧ (s.gpr .r1).toNat + (s.gpr .r2).toNat ≤ 2 ^ 32 ∧
+    (s.gpr .r3).toNat + (arg s 0).toNat ≤ 2 ^ 32 ∧ (arg s 1).toNat + (arg s 2).toNat ≤ 2 ^ 32 ∧
+    (arg s 3).toNat + 16 ≤ 2 ^ 32 ∧ (arg s 4).toNat + 768 ≤ 2 ^ 32 ∧ 1520 ≤ s.sp.toNat ∧
+    s.sp.toNat + 20 ≤ 2 ^ 32
+
+/-- `vg_sm4_gcm_seal`. -/
+def sealArm : Contract isa where
+  pre := sealPreArm
+  post s s' :=
+    encryptWith (ctxCiph s.mem (State.addr (s.gpr .r0))) (ctxH s.mem (State.addr (s.gpr .r0))) 16
+        (bytesAt s.mem (State.addr (s.gpr .r1)) (s.gpr .r2).toNat) (bytesAt s.mem (State.addr (arg s 1)) (arg s 2).toNat)
+        (bytesAt s.mem (State.addr (s.gpr .r3)) (arg s 0).toNat) =
+      (bytesAt s'.mem (State.addr (arg s 1)) (arg s 2).toNat, bytesAt s'.mem (State.addr (arg s 3)) 16)
+  pub := onePub 5
+
+/-- What `vg_sm4_gcm_open` needs: `(ctx = r0, nonce = r1, nonce_len = r2, aad = r3, aad_len = [sp],
+data = [sp + 4], len = [sp + 8], tag = [sp + 12], tag_len = [sp + 16], work = [sp + 20])`. -/
+def openPreArm (s : State) : Prop :=
+  let ctx : Region := ⟨State.addr (s.gpr .r0), 256⟩
+  let nonce : Region := ⟨State.addr (s.gpr .r1), (s.gpr .r2).toNat⟩
+  let aad : Region := ⟨State.addr (s.gpr .r3), (arg s 0).toNat⟩
+  let data : Region := ⟨State.addr (arg s 1), (arg s 2).toNat⟩
+  let tag : Region := ⟨State.addr (arg s 3), (arg s 4).toNat⟩
+  let work : Region := ⟨State.addr (arg s 5), 768⟩
+  s.rd = [ctx, nonce, aad, tag, args s 6] ∧ s.wr = [data, work] ∧
+    ctx.Disjoint data ∧ ctx.Disjoint work ∧ nonce.Disjoint data ∧ nonce.Disjoint work ∧
+    aad.Disjoint data ∧ aad.Disjoint work ∧ data.Disjoint tag ∧ data.Disjoint work ∧
+    data.Disjoint (args s 6) ∧ tag.Disjoint work ∧ work.Disjoint (args s 6) ∧
+    (bel s).Disjoint ctx ∧ (bel s).Disjoint nonce ∧ (bel s).Disjoint aad ∧ (bel s).Disjoint data ∧
+    (bel s).Disjoint tag ∧ (bel s).Disjoint work ∧
+    (s.gpr .r0).toNat + 256 ≤ 2 ^ 32 ∧ (s.gpr .r1).toNat + (s.gpr .r2).toNat ≤ 2 ^ 32 ∧
+    (s.gpr .r3).toNat + (arg s 0).toNat ≤ 2 ^ 32 ∧ (arg s 1).toNat + (arg s 2).toNat ≤ 2 ^ 32 ∧
+    (arg s 3).toNat + (arg s 4).toNat ≤ 2 ^ 32 ∧ (arg s 5).toNat + 768 ≤ 2 ^ 32 ∧ 1520 ≤ s.sp.toNat ∧
+    s.sp.toNat + 24 ≤ 2 ^ 32
+
+/-- What `vg_sm4_gcm_open` computes, in a state. -/
+abbrev openRes (s : State) : Option (List Byte) :=
+  openResult (ctxCiph s.mem (State.addr (s.gpr .r0))) (ctxH s.mem (State.addr (s.gpr .r0)))
+    (arg s 4).toNat (bytesAt s.mem (State.addr (s.gpr .r1)) (s.gpr .r2).toNat)
+    (bytesAt s.mem (State.addr (arg s 1)) (arg s 2).toNat) (bytesAt s.mem (State.addr (s.gpr .r3)) (arg s 0).toNat)
+    (bytesAt s.mem (State.addr (arg s 3)) (arg s 4).toNat)
+
+/-- `vg_sm4_gcm_open`. -/
+def openArm : Contract isa where
+  pre := openPreArm
+  post s s' :=
+    match openRes s with
+    | some pt => s'.gpr .r0 = 1 ∧ bytesAt s'.mem (State.addr (arg s 1)) (arg s 2).toNat = pt
+    | none => s'.gpr .r0 = 0 ∧
+        bytesAt s'.mem (State.addr (arg s 1)) (arg s 2).toNat = bytesAt s.mem (State.addr (arg s 1)) (arg s 2).toNat
+  pub s₁ s₂ := onePub 6 s₁ s₂ ∧ (openRes s₁).isSome = (openRes s₂).isSome
+
+/-! ## The shared preconditions, from each function's -/
+
+theorem streamFinishPreArm.fin {s : State} (h : streamFinishPreArm s) : finPre 4 3 s := by
+  obtain ⟨hrd, hwr, cs, -, cw, -, sw, sa, -, ta, wa, bc, bs, -, bw, fc, fs, -, fw, sp8, spf⟩ := h
+  refine ⟨⟨by rw [hrd]; simp, by rw [hrd]; simp⟩, ⟨by rw [hwr]; simp, by rw [hwr]; simp, fun r hr => ?_⟩,
+    cs, cw, sw, sa, wa, bc, bs, bw, fc, fs, fw, sp8, spf⟩
+  rw [hwr] at hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl
+  · exact sa.symm
+  · exact ta.symm
+  · exact wa.symm
+
+theorem streamVerifyPreArm.fin {s : State} (h : streamVerifyPreArm s) : finPre 5 4 s := by
+  obtain ⟨hrd, hwr, cs, cw, -, sw, sa, -, wa, bc, bs, -, bw, fc, fs, -, fw, sp8, spf⟩ := h
+  refine ⟨⟨by rw [hrd]; simp, by rw [hrd]; simp⟩, ⟨by rw [hwr]; simp, by rw [hwr]; simp, fun r hr => ?_⟩,
+    cs, cw, sw, sa, wa, bc, bs, bw, fc, fs, fw, sp8, spf⟩
+  rw [hwr] at hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl
+  · exact sa.symm
+  · exact wa.symm
+
+theorem sealPreArm.one {s : State} (h : sealPreArm s) : onePre 5 4 s := by
+  obtain ⟨hrd, hwr, cd, -, cw, nd, -, nw, ad, -, aw, -, dw, da, -, ta, wa, bc, bn, ba, bd, -, bw,
+    fc, fn, fa, fd, -, fw, sp8, spf⟩ := h
+  refine ⟨⟨by rw [hrd]; simp, by rw [hrd]; simp, by rw [hrd]; simp, by rw [hrd]; simp⟩,
+    ⟨by rw [hwr]; simp, by rw [hwr]; simp, fun r hr => ?_⟩,
+    cd, cw, nd, nw, ad, aw, dw, da, wa, bc, bn, ba, bd, bw, fc, fn, fa, fd, fw, sp8, spf⟩
+  rw [hwr] at hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl
+  · exact da.symm
+  · exact ta.symm
+  · exact wa.symm
+
+theorem openPreArm.one {s : State} (h : openPreArm s) : onePre 6 5 s := by
+  obtain ⟨hrd, hwr, cd, cw, nd, nw, ad, aw, -, dw, da, -, wa, bc, bn, ba, bd, -, bw, fc, fn, fa, fd, -, fw,
+    sp8, spf⟩ := h
+  refine ⟨⟨by rw [hrd]; simp, by rw [hrd]; simp, by rw [hrd]; simp, by rw [hrd]; simp⟩,
+    ⟨by rw [hwr]; simp, by rw [hwr]; simp, fun r hr => ?_⟩,
+    cd, cw, nd, nw, ad, aw, dw, da, wa, bc, bn, ba, bd, bw, fc, fn, fa, fd, fw, sp8, spf⟩
+  rw [hwr] at hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl
+  · exact da.symm
+  · exact wa.symm
+
+end VG.Proof.Sm4Gcm.Arm
+
+end
+
+end
 
 /-! ### `Sm4Gcm.Arm.J0`, which this module and modules that import it used -/
 

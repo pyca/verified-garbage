@@ -1,11 +1,11 @@
 module
+
 import VerifiedGarbage.Proof.Sm4Gcm.X86_64.Tag
 public import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Flush
-
 import VerifiedGarbage.Proof.AesGcm.X86_64.TagCT
 import VerifiedGarbage.Proof.AesGcm.X86_64.FinTagCT
-import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks
+import VerifiedGarbage.Proof.AesGcm.X86_64.Absorb
 import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
@@ -15,7 +15,7 @@ meta import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Flush
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.TagCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.FinTagCT
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Absorb
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd

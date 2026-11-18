@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Aes.AArch64.Neon.Crypt8
-public import VerifiedGarbage.Proof.Aes.AArch64.Blocks
+public import VerifiedGarbage.Proof.Aes.AArch64.Aese.Blocks
 public import VerifiedGarbage.Proof.Aes.Vector
 public import VerifiedGarbage.Proof.Framework.AArch64.Tbl
 import VerifiedGarbage.Proof.Aes.AArch64.OneBlock
@@ -16,7 +16,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Aes.AArch64.Neon.Crypt8
-meta import VerifiedGarbage.Proof.Aes.AArch64.Blocks
+meta import VerifiedGarbage.Proof.Aes.AArch64.Aese.Blocks
 meta import VerifiedGarbage.Proof.Aes.Vector
 meta import VerifiedGarbage.Proof.Framework.AArch64.Tbl
 meta import VerifiedGarbage.Proof.Aes.AArch64.OneBlock

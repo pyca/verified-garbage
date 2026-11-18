@@ -4,7 +4,6 @@ import VerifiedGarbage.Proof.Ed25519.X86.FreezeField
 import VerifiedGarbage.Proof.Ed25519.X86.PrepareAdd
 public import VerifiedGarbage.Impl.Ed25519.X86.RecoverSign
 public import VerifiedGarbage.Proof.Ed25519.X86.Field
-import VerifiedGarbage.Proof.Ed25519.X86.PointEncodeSign
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Offset

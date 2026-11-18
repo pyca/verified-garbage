@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcmSiv.Scratch
-public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Reg.Env
+public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Reg.Entry
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Reg.Polyval
 public import VerifiedGarbage.Impl.AesGcmSiv.X86_64Reg
 public import VerifiedGarbage.Impl.StackScratch.X86_64

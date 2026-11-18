@@ -3,7 +3,7 @@ module
 import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Aad
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.Body
 public import VerifiedGarbage.Impl.AesGcm.X86_64.Fast
-import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks
+import VerifiedGarbage.Proof.AesGcm.X86_64.Absorb
 import VerifiedGarbage.Proof.AesGcm.X86_64.Cmp
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset

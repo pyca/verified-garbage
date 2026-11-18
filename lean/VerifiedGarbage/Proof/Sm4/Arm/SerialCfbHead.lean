@@ -5,7 +5,7 @@ public import VerifiedGarbage.Impl.Sm4.Arm.Prepared
 import VerifiedGarbage.Proof.Sm4.Arm.CfbFill
 import VerifiedGarbage.Proof.Sm4.Arm.BatchPrologue
 public import VerifiedGarbage.Proof.Sm4.Arm.BatchGroup
-public import VerifiedGarbage.Proof.Sm4.Arm.PreparedBody
+public import VerifiedGarbage.Proof.Sm4.Arm.PreparedVerified
 import VerifiedGarbage.Proof.Sm4.Arm.Group
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -16,7 +16,6 @@ public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Sm4.Prepared
 public import VerifiedGarbage.Spec.Cfb
 public import VerifiedGarbage.Spec.Sm4.Ctr
-import VerifiedGarbage.Proof.Sm4.Arm.Core
 import VerifiedGarbage.Spec.Sm4.Cfb
 import VerifiedGarbage.Proof.Modes.CbcNext
 public import VerifiedGarbage.Proof.Modes.Fb

@@ -26,7 +26,7 @@ meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.TextAbsorb
 meta import VerifiedGarbage.Proof.Framework.Block
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTBase
-public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Contract
+public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Fn
 public import VerifiedGarbage.Impl.AesGcm.PPC64LE
 
 /-!

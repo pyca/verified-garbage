@@ -1,9 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Gcm.PPC64LE.Ghash
-public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Contract
+public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Fn
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.FinTag
-import VerifiedGarbage.Proof.AesGcm.PPC64LE.Fn
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamInit
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Absorb
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Compare
@@ -22,7 +21,7 @@ public import VerifiedGarbage.Impl.AesGcm.PPC64LE
 # AES-GCM on PPC64LE: `vg_aes_gcm_stream_verify`
 
 Untrusted: everything here is checked by Lean. As on ARMv7
-(`Proof/AesGcm/Arm/StreamVerify.lean`): the entry saves our caller's
+(`Proof/AesGcm/Arm/CTCrypt.lean`): the entry saves our caller's
 registers and keeps the arguments in `r19`–`r30` (`ver1_wp`); a tag length
 `tagLenOk` rejects returns 0; otherwise `recv` pads the received tag, `finTag 0`
 puts the tag into `W` and `cmp 0` compares its first bytes with the

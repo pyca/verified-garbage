@@ -3,13 +3,10 @@ module
 public import VerifiedGarbage.Proof.EntropyRequest
 public import VerifiedGarbage.Spec.Ffdh.SievedContract
 import VerifiedGarbage.Proof.Ffdh.SievedBounds
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchData
-import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchEntryCT
-import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchFinishCT
-import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchCTData
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchLayout
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchCTData
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Safety
 import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchBranch
-import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchIterationCT
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Ffdh.Contract
 import VerifiedGarbage.Proof.Framework.Offset
@@ -22,8 +19,303 @@ public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchShort
 import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchGuards
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchCandidatePost
 import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchRestore
-import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchLayout
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchEntry
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.RsaKeyGen.Hdr
+meta import VerifiedGarbage.Impl.Ffdh.X86_64.Generation.Search
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchLayout
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.RsaKeyGen.Hdr
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.ControlMemory
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.ControlMemory
+meta import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchDone
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchCallCT
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchClearCT
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Safety
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchCTData
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchBranch
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchCallCT
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchClearCT
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchShortCT
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchLeafCT
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchShortCT
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchClassify
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchLeafCT
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchGuards
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchRestore
+meta import VerifiedGarbage.Proof.Ffdh.Contract
+
+/-! ### `Ffdh.X86_64.Generation.SearchIterationCT`, which only this module used -/
+
+section
+
+/-! ### `Ffdh.X86_64.Generation.SearchClassifyCT`, which only this module used -/
+
+section
+
+/-! # Candidate classification leaks only its public-tape result -/
+
+@[expose] public section
+
+namespace VG.Proof.Ffdh.X86_64.Generation
+
+open VG VG.X86_64 VG.Proof.Bignum.X86_64
+open VG.Impl.Ffdh.X86_64.Generation.Search
+
+def SearchFirstGuard (p : SearchPoint) (s : State) : Prop := SearchCTL p s ∧
+  s.gpr .rax = BitVec.ofNat 64 (Proof.Ffdh.candidateStatus (searchCandidate p.inputs p.used)) ∧
+  eval .e s = some (decide (Proof.Ffdh.candidateStatus (searchCandidate p.inputs p.used) = 1))
+
+def SearchSecondGuard (p : SearchPoint) (s : State) : Prop := SearchCTL p s ∧
+  eval .e s = some (decide (Proof.Ffdh.candidateStatus (searchCandidate p.inputs p.used) = 2))
+
+private theorem first_guard_ready (p : SearchPoint) (s : State) (h : SearchCandidateCT p s) :
+    WP isa (.block [.mov32 .rax (.reg .rax), .alu .cmp .rax (.imm 1)]) s (SearchFirstGuard p) := by
+  obtain ⟨original, h, hp⟩ := h
+  refine WP.mono (candidate_status_guard s) fun t ⟨⟨he, ha, hm⟩, k⟩ => ?_
+  exact ⟨⟨original, h.keep k hm (by decide)⟩, normalized_status hp.1 ha, by rw [hp.1] at he; exact he⟩
+
+private theorem second_guard_ready (p : SearchPoint) (s : State) (h : SearchFirstGuard p s) :
+    WP isa (.block [.alu .cmp .rax (.imm 2)]) s (SearchSecondGuard p) := by
+  obtain ⟨⟨original, hl⟩, ha, _⟩ := h
+  have hb : Proof.Ffdh.candidateStatus (searchCandidate p.inputs p.used) < 2 ^ 64 := by
+    cases hc : searchCandidate p.inputs p.used with
+    | none => decide
+    | some pair =>
+      obtain ⟨value, rest⟩ := pair
+      cases value <;> dsimp only [Proof.Ffdh.candidateStatus] <;> decide
+  exact WP.mono (second_status_guard ha hb) fun _ ⟨⟨he, hm⟩, k⟩ =>
+    ⟨⟨original, hl.keep k hm (by decide)⟩, he⟩
+
+theorem search_classify_ct : RelCT isa (Two SearchCandidateCT) classify (fun _ _ => True) := by
+  unfold classify
+  refine RelCT.seq (two_piece [] (fun _ _ _ _ _ _ h => by cases h) (by taint_decide) first_guard_ready) ?_
+  refine two_ite (fun _ _ _ h₁ h₂ => h₁.2.2.trans h₂.2.2.symm) ?_ ?_
+  · exact search_accept_ct.mono (fun _ _ ⟨p, h₁, h₂⟩ => ⟨p, h₁.1.1, h₂.1.1⟩) (fun _ _ h => h)
+  · refine RelCT.seq (R := Two SearchSecondGuard) ?_ ?_
+    · exact (two_piece [] (fun _ _ _ _ _ _ h => by cases h) (by taint_decide) second_guard_ready).mono
+        (fun _ _ ⟨p, h₁, h₂⟩ => ⟨p, h₁.1, h₂.1⟩) (fun _ _ h => h)
+    · refine two_ite (fun _ _ _ h₁ h₂ => h₁.2.trans h₂.2.symm) ?_ ?_
+      · exact search_reject_ct.mono (fun _ _ ⟨p, h₁, h₂⟩ => ⟨p, h₁.1.1, h₂.1.1⟩) (fun _ _ h => h)
+      · exact search_short_ct.mono (fun _ _ ⟨p, h₁, h₂⟩ => ⟨p, h₁.1.1, h₂.1.1⟩) (fun _ _ h => h)
+
+end VG.Proof.Ffdh.X86_64.Generation
+
+end
+
+end
+
+/-! # Constant-time native search iterations, including internal candidate calls -/
+
+@[expose] public section
+
+namespace VG.Proof.Ffdh.X86_64.Generation
+
+open VG VG.X86_64 VG.Proof.Bignum.X86_64 VG.Proof.MillerRabin.X86_64
+open VG.Proof.Ffdh.X86_64.ParameterCandidate VG.Impl.Ffdh.X86_64.Generation.Search
+
+private theorem branch_ct (v : RoundImpl) :
+    RelCT isa (Two SearchRemainingGuard)
+      (.ite .e exhausted (.seq (candidateRun (candidateCode v)) classify)) (fun _ _ => True) := by
+  refine two_ite (fun _ _ _ h₁ h₂ => h₁.2.trans h₂.2.symm) ?_ ?_
+  · exact search_exhausted_ct.mono (fun _ _ ⟨p, h₁, h₂⟩ => ⟨p, h₁.1.1, h₂.1.1⟩) (fun _ _ h => h)
+  · exact (RelCT.seq (two_post (search_candidate_run_ct v) (candidate_ready v)) search_classify_ct).mono
+      (fun _ _ ⟨p, h₁, h₂⟩ => ⟨p, h₁.1.1, h₂.1.1⟩) (fun _ _ h => h)
+
+theorem search_iteration_ct (v : RoundImpl) :
+    RelCT isa (Two SearchCTL) (iteration (candidateCode v)) (fun _ _ => True) := by
+  unfold iteration
+  change RelCT isa _ (.seq _ (.seq _ _)) _
+  refine RelCT.seq (two_piece [.r12, .rsp] search_ctl_pins (by taint_decide) remaining_ready) ?_
+  exact RelCT.seq (two_post (branch_ct v) (branch_ready v))
+    (two_taint [.r12] (fun _ _ _ h₁ h₂ r hr => by
+      simp only [List.mem_singleton] at hr
+      subst r
+      exact (branch_result_r12 h₁).trans (branch_result_r12 h₂).symm) (by taint_decide))
+
+end VG.Proof.Ffdh.X86_64.Generation
+
+end
+
+end
+
+/-! ### `Ffdh.X86_64.Generation.SearchFinishCT`, which only this module used -/
+
+section
+
+/-! # Returning a native search does not expose private saved register values -/
+
+@[expose] public section
+
+namespace VG.Proof.Ffdh.X86_64.Generation
+
+open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
+open VG.Impl.Ffdh.X86_64.Generation.Search VG.Proof.MlKem.X86_64
+
+structure SearchEndPoint where
+  inputs : SearchPublic
+  result : Spec.Ffdh.ParameterSearchResult
+
+def SearchCTDone (p : SearchEndPoint) (s : State) : Prop :=
+  ∃ original, SearchDone p.inputs original p.result s
+
+private theorem finish_pointer (p : SearchEndPoint) (s : State) (h : SearchCTDone p s) :
+    WP isa (.block (finish.take 4)) s fun t => t.gpr .rdx = p.inputs.c.up := by
+  obtain ⟨original, h⟩ := h
+  have scr := h.input.control_scr h.wr
+  have hl : ∀ d, d + 8 ≤ 128 → InRegions (s.rd ++ s.wr) (p.inputs.control + BitVec.ofNat 64 d) 8 :=
+    fun _ hd => scr.ld hd
+  unfold finish
+  simp only [List.take_succ_cons, List.take_zero]
+  xrun [State.ea, field, off, h.r12, h.usedPtr, Nat.reduceMul, BitVec.ofInt_natCast,
+    hl 56 (by decide), hl 96 (by decide), hl 112 (by decide), hl 32 (by decide)]
+
+theorem search_finish_ct : RelCT isa (Two SearchCTDone) (.block finish) (fun _ _ => True) := by
+  change RelCT isa (Two SearchCTDone) (.block (finish.take 4 ++ finish.drop 4)) _
+  refine RelCT.block_append (RelCT.seq (two_piece [.r12] ?_ (by taint_decide) finish_pointer) ?_)
+  · intro p s t ⟨_, h₁⟩ ⟨_, h₂⟩ r hr
+    simp only [List.mem_singleton] at hr
+    subst r
+    exact h₁.r12.trans h₂.r12.symm
+  · exact two_taint [.rdx] (fun _ _ _ h₁ h₂ r hr => by
+      simp only [List.mem_singleton] at hr
+      subst r
+      exact h₁.trans h₂.symm) (by taint_decide)
+
+end VG.Proof.Ffdh.X86_64.Generation
+
+end
+
+end
+
+/-! ### `Ffdh.X86_64.Generation.SearchEntryCT`, which only this module used -/
+
+section
+
+/-! ### `Ffdh.X86_64.Generation.SearchEntry`, which this module and modules that import it used -/
+
+section
+
+/-! # Capture register arguments before loading the stack arguments -/
+
+@[expose] public section
+
+namespace VG.Proof.Ffdh.X86_64.Generation
+
+open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
+open VG.Impl.Ffdh.X86_64.Generation.Search
+
+def searchHeadValues (s : State) : List (Nat × BitVec 64) :=
+  [(4, s.gpr .r12), (5, s.gpr .rdi), (6, s.gpr .rsi), (7, s.gpr .rdx),
+    (8, s.gpr .rcx), (9, ((s.gpr .r8).setWidth 32).setWidth 64), (10, s.gpr .r9)]
+
+def searchTailValues (s : State) : List (Nat × BitVec 64) :=
+  [(11, stackArg s 0), (13, stackArg s 1), (15, stackArg s 2), (12, 0)]
+
+def searchEntryValues (s : State) : List (Nat × BitVec 64) := searchHeadValues s ++ searchTailValues s
+
+theorem searchHeadValues_bound (s : State) : ∀ e ∈ searchHeadValues s, e.1 < 16 := by
+  simp only [searchHeadValues, List.mem_cons, List.not_mem_nil, or_false]
+  rintro _ (rfl | rfl | rfl | rfl | rfl | rfl | rfl) <;> dsimp only <;> decide
+
+theorem searchTailValues_bound (s : State) : ∀ e ∈ searchTailValues s, e.1 < 16 := by
+  simp only [searchTailValues, List.mem_cons, List.not_mem_nil, or_false]
+  rintro _ (rfl | rfl | rfl | rfl) <;> dsimp only <;> decide
+
+theorem input_arg_contains (s : State) {j : Nat} (hj : j < 4) :
+    (inputArgs s).Contains (stackArgAddr s j) 8 := by
+  rw [show stackArgAddr s j = stackArgAddr s 0 + BitVec.ofNat 64 (8 * j) by
+    simp only [stackArgAddr, Nat.zero_add, Nat.mul_one, Offset.add_add]
+    congr 2
+    omega_using [hj]]
+  exact Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])
+
+theorem input_args {p : SearchPublic} {s : State} (h : SearchInput p s) :
+    ∀ j < 4, InRegions (s.rd ++ s.wr) (stackArgAddr s j) 8 := by
+  intro j hj
+  refine ⟨inputArgs s, ?_, input_arg_contains s hj⟩
+  rw [h.1.2.2.1]
+  exact List.mem_append_left _ (List.mem_cons_of_mem _ (List.mem_singleton_self _))
+
+theorem search_entry_head_ok {p : SearchPublic} {s : State} (h : SearchInput p s) :
+    WP isa (.block entryHead) s fun t =>
+      t.gpr .r12 = p.control ∧
+      t.mem = writeController s.mem p.control (searchHeadValues s) ∧
+      Keep [.rax, .r8, .r12] s t := by
+  have scr := h.control_scr (s := s) rfl
+  have hd : s.mem.readW (s.gpr .rsp + BitVec.ofNat 64 32) 64 = p.control := congrArg SearchPublic.control h.2
+  have hs : ∀ d, d + 8 ≤ 128 → InRegions s.wr (p.control + BitVec.ofNat 64 d) 8 :=
+    fun _ hd => scr.st hd
+  have ha : InRegions (s.rd ++ s.wr) (s.gpr .rsp + BitVec.ofNat 64 32) 8 := input_args h 3 (by decide)
+  refine WP.mono (WP.keep [.rax, .r8, .r12] (Q := fun t =>
+    t.gpr .r12 = p.control ∧ t.mem = writeController s.mem p.control (searchHeadValues s)) ?_ rfl)
+    fun _ ⟨⟨hr, hm⟩, k⟩ => ⟨hr, hm, k⟩
+  unfold entryHead writeController searchHeadValues
+  simp only [List.foldl_cons, List.foldl_nil]
+  xrun [State.ea, field, off, BitVec.ofInt_ofNat, BitVec.ofInt_natCast, Nat.reduceMul, hd, ha,
+    hs 32 (by decide), hs 40 (by decide), hs 48 (by decide), hs 56 (by decide),
+    hs 64 (by decide), hs 72 (by decide), hs 80 (by decide)]
+
+end VG.Proof.Ffdh.X86_64.Generation
+
+end
+
+end
+
+/-! # Native search entry exposes pointers and public policy, never saved registers -/
+
+@[expose] public section
+
+namespace VG.Proof.Ffdh.X86_64.Generation
+
+open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
+open VG.Impl.Ffdh.X86_64.Generation.Search
+
+private theorem entry_pointer (p : SearchPublic) (s : State) (h : SearchInput p s) :
+    WP isa (.block (entryHead.take 2)) s fun t => t.gpr .rax = p.control := by
+  have hd : s.mem.readW (s.gpr .rsp + BitVec.ofNat 64 32) 64 = p.control :=
+    congrArg SearchPublic.control h.2
+  have ha : InRegions (s.rd ++ s.wr) (s.gpr .rsp + BitVec.ofNat 64 32) 8 := input_args h 3 (by decide)
+  unfold entryHead
+  simp only [List.take_succ_cons, List.take_zero]
+  xrun [State.ea, BitVec.ofInt_ofNat, hd, ha]
+
+private theorem entry_head_ct : RelCT isa (Two SearchInput) (.block entryHead) (fun _ _ => True) := by
+  change RelCT isa (Two SearchInput) (.block (entryHead.take 2 ++ entryHead.drop 2)) _
+  refine RelCT.block_append (RelCT.seq (two_piece [.rsp] ?_ (by taint_decide) entry_pointer) ?_)
+  · intro p s t h₁ h₂ r hr
+    simp only [List.mem_singleton] at hr
+    subst r
+    exact (congrArg (fun q => q.c.sp) h₁.2).trans (congrArg (fun q => q.c.sp) h₂.2).symm
+  · exact two_taint [.rax] (fun _ _ _ h₁ h₂ r hr => by
+      simp only [List.mem_singleton] at hr
+      subst r
+      exact h₁.trans h₂.symm) (by taint_decide)
+
+def SearchEntryPins (p : SearchPublic) (s : State) : Prop := s.gpr .r12 = p.control ∧ s.gpr .rsp = p.c.sp
+
+private theorem entry_head_pins (p : SearchPublic) (s : State) (h : SearchInput p s) :
+    WP isa (.block entryHead) s (SearchEntryPins p) := by
+  refine WP.mono (search_entry_head_ok h) fun t ⟨hr, _, k⟩ => ⟨hr, ?_⟩
+  exact (k.gpr (by decide)).trans (congrArg (fun q => q.c.sp) h.2)
+
+theorem search_entry_ct : RelCT isa (Two SearchInput) (.block entry) (fun _ _ => True) := by
+  unfold entry
+  refine RelCT.block_append (RelCT.seq (two_post entry_head_ct entry_head_pins) ?_)
+  exact two_taint [.r12, .rsp] (fun _ _ _ h₁ h₂ r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    exacts [h₁.1.trans h₂.1.symm, h₁.2.trans h₂.2.symm]) (by taint_decide)
+
+end VG.Proof.Ffdh.X86_64.Generation
+
+end
+
+end
 
 /-! ### `Ffdh.X86_64.Generation.SearchStart`, which only this module used -/
 

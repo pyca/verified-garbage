@@ -3,7 +3,7 @@ module
 import VerifiedGarbage.Proof.Modes.AArch64.CbcGroup
 public import VerifiedGarbage.Proof.Modes.CbcEnc
 public import VerifiedGarbage.Impl.Modes.AArch64.CbcEnc
-public import VerifiedGarbage.Proof.Modes.AArch64.Group
+public import VerifiedGarbage.Proof.Modes.AArch64.Setup
 import VerifiedGarbage.Proof.Modes.AArch64.Xor
 import VerifiedGarbage.Proof.Modes.AArch64.Words
 import VerifiedGarbage.Proof.Modes.AArch64.Steps

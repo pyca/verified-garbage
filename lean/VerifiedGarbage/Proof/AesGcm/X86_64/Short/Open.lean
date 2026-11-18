@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Seal
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Seal
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.AesGcm.X86_64.Open
-import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks
+import VerifiedGarbage.Proof.AesGcm.X86_64.Absorb
 import VerifiedGarbage.Proof.AesGcm.X86_64.StreamVerify
 import VerifiedGarbage.Proof.AesGcm.X86_64.Cmp
 import VerifiedGarbage.Proof.AesGcm.X86_64.Arith

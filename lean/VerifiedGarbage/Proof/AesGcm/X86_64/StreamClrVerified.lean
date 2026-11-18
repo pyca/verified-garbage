@@ -3,8 +3,7 @@ module
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Frame
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared16.Verified
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Verified
-public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTextS
-import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTextSCT
+public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTextSCT
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 import VerifiedGarbage.Proof.AesGcm.X86_64.VerifiedP
@@ -16,6 +15,7 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Call
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubChecks
 public import VerifiedGarbage.TCB.Artifact
 public import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Call
+
 /-!
 # AES-GCM on x86-64: `stream_encrypt` and `stream_decrypt`, clearing by path
 

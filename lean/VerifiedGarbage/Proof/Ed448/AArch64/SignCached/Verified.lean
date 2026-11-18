@@ -1,27 +1,1131 @@
 module
 
-import VerifiedGarbage.Proof.Ed448.AArch64.SignCached.Main
-import VerifiedGarbage.Proof.Ed448.AArch64.Whole.CallsCT
+public import VerifiedGarbage.Proof.Ed448.AArch64.Whole.CallsCT
 import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.WrapCT
-public import VerifiedGarbage.Proof.Ed448.AArch64.Whole.CT
-public import VerifiedGarbage.Proof.Ed448.AArch64.SignCached.Body
 public import VerifiedGarbage.Proof.Sha3.AArch64.Variant
 import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.CallCT
-import VerifiedGarbage.Proof.Ed448.AArch64.SignCached.Correct
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Ed448.AArch64.SignCached.Main
 meta import VerifiedGarbage.Proof.Ed448.AArch64.Whole.CallsCT
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.WrapCT
-meta import VerifiedGarbage.Proof.Ed448.AArch64.Whole.CT
-meta import VerifiedGarbage.Proof.Ed448.AArch64.SignCached.Body
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Variant
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.CallCT
-meta import VerifiedGarbage.Proof.Ed448.AArch64.SignCached.Correct
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Ed448.AArch64.BaseContract
+public import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Calls
+import VerifiedGarbage.Proof.Ed448.AArch64.ScalarLit
+import VerifiedGarbage.Proof.Ed448.Signing
+import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Prune
+import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wipe
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+public import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Sponge
+import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Impl.Ed448.AArch64.SignCached
+public import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Entry
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wrap
+public import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Ctx
+public import VerifiedGarbage.Proof.X448.AArch64.Base.Comb
+public import VerifiedGarbage.Spec.Ed448.Contract
+import VerifiedGarbage.Proof.Framework.OffsetBelow
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Sha3.AArch64.Sums
+meta import VerifiedGarbage.Proof.Ed448.AArch64.BaseContract
+meta import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Calls
+meta import VerifiedGarbage.Proof.Ed448.AArch64.ScalarLit
+meta import VerifiedGarbage.Proof.Ed448.Signing
+meta import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Prune
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wipe
+meta import VerifiedGarbage.Proof.Framework.AArch64.Syms
+meta import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Sponge
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Impl.Ed448.AArch64.SignCached
+meta import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Entry
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wrap
+meta import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Ctx
+meta import VerifiedGarbage.Proof.X448.AArch64.Base.Comb
+meta import VerifiedGarbage.Spec.Ed448.Contract
+meta import VerifiedGarbage.Proof.Framework.OffsetBelow
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.Block
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Sums
+
+/-! ### `Ed448.AArch64.SignCached.Main`, which only this module used -/
+
+section
+
+/-! ### `Ed448.AArch64.SignCached.Correct`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Ed448.AArch64.SignCached.Body`, which this module and modules that import it used -/
+
+section
+
+/-!
+# Ed448 signing with a cached public key on AArch64: the frame's entry
+
+The saved arguments (`Args`) as the body reads them (`arg_src`), the inputs'
+bytes as on entry (`in_bytes`), and the entry, which keeps `len` and
+`scratch` and writes the header of `dom4` in the locals (`entry_ok`).
+-/
+
+-- Formerly `VerifiedGarbage/Proof/Ed448/AArch64/SignCached/Layout.lean`, which only this module imported.
+section
+
+/-!
+# Ed448 signing with a cached public key on AArch64: where everything is
+
+The contract the proof is written against (`scLocal`: the facts of
+`Spec.Ed448.signCachedContract` for 352 bytes of stack, stated for AArch64),
+and the layout of a call (`Lay`): the buffers, the frame's base `E`, and the
+`Env` of the frame's body, which keeps `len`, `scratch` and the header of
+`dom4` in its locals.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ed448.AArch64.SignCached
+
+open VG VG.AArch64 VG.Impl.Ed448.AArch64.SignCached
+open VG.Proof.Ed448.AArch64.Whole (Env sigWord TBL)
+open VG.Impl.X448.AArch64.Base (combSym combWords)
+open VG.Proof.X448.AArch64.Base (CombHeld)
+open VG.Proof.Ed25519.AArch64.Whole (FR ARGS CK)
+
+/-- `vg_ed448_sign_cached(out = x0, seed = x1, pk = x2, context = x3,
+ctxlen = x4, message = x5, len = x6, scratch = x7)`, with 352 bytes of stack. -/
+def scLocal : Contract isa where
+  pre s :=
+    let out : Region := ⟨s.gpr .x0, 114⟩
+    let seed : Region := ⟨s.gpr .x1, 57⟩
+    let pk : Region := ⟨s.gpr .x2, 57⟩
+    let ctx : Region := ⟨s.gpr .x3, (s.gpr .x4).toNat⟩
+    let msg : Region := ⟨s.gpr .x5, (s.gpr .x6).toNat⟩
+    let scr : Region := ⟨s.gpr .x7, 8192⟩
+    let stk : Region := below s.sp 352
+    s.rd = [seed, pk, ctx, msg, TBL (s.syms combSym)] ∧ s.wr = [out, scr] ∧
+      out.Disjoint seed ∧ out.Disjoint pk ∧ out.Disjoint ctx ∧ out.Disjoint msg ∧ out.Disjoint scr ∧
+      seed.Disjoint scr ∧ pk.Disjoint scr ∧ ctx.Disjoint scr ∧ msg.Disjoint scr ∧
+      stk.Disjoint out ∧ stk.Disjoint seed ∧ stk.Disjoint pk ∧ stk.Disjoint ctx ∧ stk.Disjoint msg ∧
+      stk.Disjoint scr ∧
+      (s.gpr .x0).toNat + 114 ≤ 2 ^ 64 ∧ (s.gpr .x1).toNat + 57 ≤ 2 ^ 64 ∧
+      (s.gpr .x2).toNat + 57 ≤ 2 ^ 64 ∧ (s.gpr .x7).toNat + 8192 ≤ 2 ^ 64 ∧ 352 ≤ s.sp.toNat ∧
+      Spec.Ed448.bytesAt s.mem (s.gpr .x2) 57 = Spec.Ed448.publicKey (Spec.Ed448.bytesAt s.mem (s.gpr .x1) 57) ∧
+      (s.gpr .x4).toNat ≤ 255 ∧ CombHeld s [out, scr, stk]
+  post s t := Spec.Ed448.bytesAt t.mem (s.gpr .x0) 114 = Spec.Ed448.sign
+    (Spec.Ed448.bytesAt s.mem (s.gpr .x1) 57) (Spec.Ed448.bytesAt s.mem (s.gpr .x3) (s.gpr .x4).toNat)
+    (Spec.Ed448.bytesAt s.mem (s.gpr .x5) (s.gpr .x6).toNat)
+  pub s t := s.sp = t.sp ∧ s.gpr .x0 = t.gpr .x0 ∧ s.gpr .x1 = t.gpr .x1 ∧ s.gpr .x2 = t.gpr .x2 ∧
+    s.gpr .x3 = t.gpr .x3 ∧ s.gpr .x4 = t.gpr .x4 ∧ s.gpr .x5 = t.gpr .x5 ∧ s.gpr .x6 = t.gpr .x6 ∧
+    s.gpr .x7 = t.gpr .x7 ∧ s.syms combSym = t.syms combSym
+
+structure Lay where
+  out : Addr
+  seed : Addr
+  pk : Addr
+  ctx : Addr
+  ctxLen : BitVec 64
+  msg : Addr
+  len : BitVec 64
+  scr : Addr
+  E : Addr
+  /-- The comb's tables (the static `combSym`), which `vg_ed448_scalar_base` reads. -/
+  T : Addr
+
+namespace Lay
+variable (L : Lay)
+abbrev OUT : Region := ⟨L.out, 114⟩
+abbrev SEED : Region := ⟨L.seed, 57⟩
+abbrev PK : Region := ⟨L.pk, 57⟩
+abbrev CTX : Region := ⟨L.ctx, L.ctxLen.toNat⟩
+abbrev MSG : Region := ⟨L.msg, L.len.toNat⟩
+abbrev SCR : Region := ⟨L.scr, 8192⟩
+abbrev STK : Region := ⟨L.E, 336⟩
+abbrev TB : Region := TBL L.T
+
+/-- The saved argument `j`. -/
+def arg (j : Nat) : Addr :=
+  match j with | 0 => L.out | 1 => L.seed | 2 => L.pk | 3 => L.ctx | 4 => L.ctxLen | _ => L.msg
+
+def inputs : List Region := [L.SEED, L.PK, L.CTX, L.MSG, L.TB]
+
+/-- The frame's body: it reads the inputs and the saved arguments, writes
+`out` and `scratch`, and keeps `len`, `scratch` and the header of `dom4` in
+its locals. -/
+def env : Env where
+  E := L.E
+  ins := L.inputs ++ [ARGS L.E]
+  outs := [L.OUT, L.SCR]
+  ls := [(fLen, L.len), (fScr, L.scr), (fHdr, sigWord), (fHdr + 8, L.ctxLen <<< 8)]
+  T := L.T
+  sym := VG.Impl.X448.AArch64.Base.combSym
+  words := VG.Impl.X448.AArch64.Base.combWords
+
+structure Ok : Prop where
+  os : L.OUT.Disjoint L.SEED
+  op : L.OUT.Disjoint L.PK
+  ox : L.OUT.Disjoint L.CTX
+  om : L.OUT.Disjoint L.MSG
+  oc : L.OUT.Disjoint L.SCR
+  sc : L.SEED.Disjoint L.SCR
+  pc : L.PK.Disjoint L.SCR
+  xc : L.CTX.Disjoint L.SCR
+  mc : L.MSG.Disjoint L.SCR
+  ko : L.STK.Disjoint L.OUT
+  ks : L.STK.Disjoint L.SEED
+  kp : L.STK.Disjoint L.PK
+  kx : L.STK.Disjoint L.CTX
+  km : L.STK.Disjoint L.MSG
+  kc : L.STK.Disjoint L.SCR
+  co : (CK L.E).Disjoint L.OUT
+  cs : (CK L.E).Disjoint L.SEED
+  cp : (CK L.E).Disjoint L.PK
+  cx : (CK L.E).Disjoint L.CTX
+  cm : (CK L.E).Disjoint L.MSG
+  cc : (CK L.E).Disjoint L.SCR
+  no : L.out.toNat + 114 ≤ 2 ^ 64
+  ns : L.seed.toNat + 57 ≤ 2 ^ 64
+  np : L.pk.toNat + 57 ≤ 2 ^ 64
+  nc : L.scr.toNat + 8192 ≤ 2 ^ 64
+  e16 : 16 ≤ L.E.toNat
+  cl : L.ctxLen.toNat < 256
+  tbo : L.TB.Disjoint L.OUT
+  tbc : L.TB.Disjoint L.SCR
+  tbk : L.TB.Disjoint L.STK
+  tbck : L.TB.Disjoint (CK L.E)
+  tbfit : L.T.toNat + 8 * combWords.length ≤ 2 ^ 64
+
+end Lay
+
+theorem frame_sub (L : Lay) : Region.Sub (FR L.E) L.STK := Region.sub_prefix (by decide : 256 ≤ 336)
+
+attribute [local irreducible] VG.Impl.X448.AArch64.Base.combWords
+
+theorem env_ok {L : Lay} (hL : L.Ok) : L.env.Ok where
+  args := by simp [Lay.env]
+  ls := by simp [Lay.env, fLen, fScr, fHdr]
+  fo := by
+    intro R hR
+    simp only [Lay.env, List.mem_cons, List.not_mem_nil, or_false] at hR
+    rcases hR with rfl | rfl
+    · exact hL.ko.sub_left (frame_sub L)
+    · exact hL.kc.sub_left (frame_sub L)
+  co := by
+    intro R hR
+    simp only [Lay.env, List.mem_cons, List.not_mem_nil, or_false] at hR
+    rcases hR with rfl | rfl
+    · exact hL.co
+    · exact hL.cc
+  e16 := hL.e16
+  tin := by simp [Lay.env, Lay.inputs]
+  tfr := hL.tbk.sub_right (frame_sub L)
+  tck := hL.tbck
+  tout := by
+    intro R hR
+    simp only [Lay.env, List.mem_cons, List.not_mem_nil, or_false] at hR
+    rcases hR with rfl | rfl
+    exacts [hL.tbo, hL.tbc]
+  tfit := hL.tbfit
+
+/-- The layout of a call from `s`. -/
+def lay (s : State) : Lay :=
+  ⟨s.gpr .x0, s.gpr .x1, s.gpr .x2, s.gpr .x3, s.gpr .x4, s.gpr .x5, s.gpr .x6, s.gpr .x7,
+    VG.Proof.Ed25519.AArch64.Whole.base s, s.syms combSym⟩
+
+theorem lay_ok {s : State} (h : scLocal.pre s) : (lay s).Ok := by
+  obtain ⟨_, _, os, op, ox, om, oc, sc, pc, xc, mc, ko, ks, kp, kx, km, kc, no, ns, np, nc, hsp, _, hc,
+    -, fit, dj⟩ := h
+  have st := VG.Proof.Ed25519.AArch64.Whole.stk_sub s
+  have ck := VG.Proof.Ed25519.AArch64.Whole.ck_sub s
+  have dk := dj (below s.sp 352) (by simp)
+  exact ⟨os, op, ox, om, oc, sc, pc, xc, mc, ko.sub_left st, ks.sub_left st, kp.sub_left st, kx.sub_left st,
+    km.sub_left st, kc.sub_left st, ko.sub_left ck, ks.sub_left ck, kp.sub_left ck, kx.sub_left ck,
+    km.sub_left ck, kc.sub_left ck, no, ns, np, nc, VG.Proof.Ed25519.AArch64.Whole.base_16 hsp,
+    show (s.gpr .x4).toNat < 256 by omega_using [hc], dj ⟨s.gpr .x0, 114⟩ (by simp), dj ⟨s.gpr .x7, 8192⟩ (by simp),
+    dk.sub_right st,
+    dk.sub_right ck, fit⟩
+
+end VG.Proof.Ed448.AArch64.SignCached
+end
+
+end
+
+@[expose] public section
+
+namespace VG.Proof.Ed448.AArch64.SignCached
+
+open VG VG.AArch64 VG.Impl.Ed448.AArch64.SignCached
+open VG.Impl.Ed448.AArch64.Whole (Src setupS keep hdr)
+open VG.Proof.Ed448.AArch64.Whole (Env WCtx Kept sigWord srcValue readW_eq_read)
+open VG.Proof.Ed25519.AArch64.Whole (Within FR ARGS CK)
+
+variable {L : Lay} {g : Reg → Addr} {vec : VReg → BitVec 128} {m₀ : Mem} {t : State}
+
+/-- The saved arguments, and the comb's words. -/
+def Args (L : Lay) (m : Mem) : Prop :=
+  (∀ j < 6, m.readW (L.E + BitVec.ofNat 64 (256 + 8 * j)) 64 = L.arg j) ∧
+    VG.Proof.Ed448.AArch64.Whole.TblWords L.T m
+
+abbrev Ctx0 (L : Lay) (g : Reg → Addr) (vec : VReg → BitVec 128) (m₀ : Mem) (t : State) : Prop :=
+  VG.Proof.Ed25519.AArch64.Whole.Ctx L.E g vec m₀ L.env.ins L.env.outs t
+
+theorem args_sub (L : Lay) : Region.Sub (ARGS L.E) L.STK := Offset.sub_base _ (by decide : 256 + 48 ≤ 336)
+
+/-- What the body may write misses the saved arguments. -/
+theorem args_apart (hL : L.Ok) : ∀ r ∈ L.env.outs ++ [FR L.E, CK L.E], (ARGS L.E).Disjoint r := by
+  simp only [Lay.env, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false]
+  rintro r (rfl | rfl | rfl | rfl)
+  · exact hL.ko.sub_left (args_sub L)
+  · exact hL.kc.sub_left (args_sub L)
+  · exact Offset.disjoint_base _ (by decide : 256 ≤ 256) (by decide : 256 + 48 ≤ 2 ^ 64)
+  · exact ((Offset.below_disjoint L.E (m := 16) (l := 304) (by decide)).sub_right
+      (Offset.sub_base _ (by decide : 256 + 48 ≤ 304))).symm
+
+theorem arg_word (hL : L.Ok) (hc : Ctx0 L g vec m₀ t) (ha : Args L m₀) {j : Nat} (hj : j < 6) :
+    t.mem.read (L.E + BitVec.ofNat 64 (256 + 8 * j)) 8 = L.arg j := by
+  rw [← readW_eq_read, ← ha.1 j hj]
+  exact hc.frame.readW (r := ARGS L.E) (Offset.contains _ (e := 256) (k := 48) (by omega_using []) (by omega_using [hj])
+    (by decide)) (args_apart hL) (by decide)
+
+theorem arg_src (hL : L.Ok) (hc : Ctx0 L g vec m₀ t) (ha : Args L m₀) {j : Nat} (hj : j < 6)
+    (x0 : BitVec 64) : srcValue L.E t.mem x0 (.val (.caller j 0)) = L.arg j := by
+  simp only [srcValue, VG.Proof.Ed25519.AArch64.Whole.value]
+  rw [arg_word hL hc ha hj, BitVec.add_zero]
+
+/-- An input's bytes, as on entry. -/
+theorem in_bytes (hL : L.Ok) (hc : Ctx0 L g vec m₀ t) {R : Region} (hR : R ∈ L.inputs)
+    {n : Nat} (hn : n ≤ R.len) (hl : R.len ≤ 2 ^ 64) :
+    Spec.Sha3.bytesAt t.mem R.base n = Spec.Sha3.bytesAt m₀ R.base n := by
+  unfold Spec.Sha3.bytesAt
+  refine List.map_congr_left fun i hi => hc.frame.bytes (R := R) ?_ hl (by
+    have := List.mem_range.mp hi; omega_using [hn, this])
+  simp only [Lay.inputs, List.mem_cons, List.not_mem_nil, or_false] at hR
+  simp only [Lay.env, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false]
+  rintro r (rfl | rfl | rfl | rfl) <;> rcases hR with rfl | rfl | rfl | rfl | rfl
+  exacts [hL.os.symm, hL.op.symm, hL.ox.symm, hL.om.symm, hL.tbo, hL.sc, hL.pc, hL.xc, hL.mc, hL.tbc,
+    (hL.ks.sub_left (frame_sub L)).symm, (hL.kp.sub_left (frame_sub L)).symm,
+    (hL.kx.sub_left (frame_sub L)).symm, (hL.km.sub_left (frame_sub L)).symm,
+    hL.tbk.sub_right (frame_sub L), hL.cs.symm, hL.cp.symm, hL.cx.symm, hL.cm.symm, hL.tbck]
+
+/-- `len` and `scratch` kept, and the header of `dom4`. -/
+theorem entry_ok (hL : L.Ok) (hc : Ctx0 L g vec m₀ t) (ha : Args L m₀) (h6 : t.gpr .x6 = L.len)
+    (h7 : t.gpr .x7 = L.scr) (hsy : t.syms Impl.X448.AArch64.Base.combSym = L.T) :
+    WP isa (.block entry) t fun u => WCtx L.env g vec m₀ u := by
+  have hfr : (⟨t.sp, 256⟩ : Region) ∈ t.wr := by rw [hc.sp, hc.wr]; exact List.mem_cons_self
+  rw [entry, WP.block_append_iff, WP.block_append_iff]
+  refine WP.mono_syms (VG.Proof.Ed448.AArch64.Whole.keep_ok (r := .x6) (d := fLen) (by decide)
+    ⟨_, hfr, Offset.contains_base _ (by decide) (by decide)⟩) fun a ⟨ka, _, am⟩ sa => ?_
+  have hfa : (⟨a.sp, 256⟩ : Region) ∈ a.wr := by rw [ka.sp, ka.wr]; exact hfr
+  refine WP.mono_syms (VG.Proof.Ed448.AArch64.Whole.keep_ok (r := .x7) (d := fScr) (by decide)
+    ⟨_, hfa, Offset.contains_base _ (by decide) (by decide)⟩) fun b ⟨kb, _, bm⟩ sb => ?_
+  have hfb : (⟨b.sp, 256⟩ : Region) ∈ b.wr := by rw [kb.sp, kb.wr]; exact hfa
+  refine WP.mono_syms (VG.Proof.Ed448.AArch64.Whole.hdr_ok (d := fHdr) (j := 4) (by decide) (by decide) hfb (by
+    rw [kb.rd, kb.wr, ka.rd, ka.wr, kb.sp, ka.sp, hc.rd, hc.wr, hc.sp]
+    exact ⟨ARGS L.E, List.mem_append_left _ (by simp [Lay.env]),
+      Offset.contains _ (e := 256) (k := 48) (by omega_using []) (by omega_using []) (by decide)⟩)) fun u ⟨ku, um⟩ su => ?_
+  rw [RegUpd.gpr_write_of_ne _ _ _ (by decide : Reg.x6 ≠ .x15), h6, hc.sp] at am
+  rw [RegUpd.gpr_write_of_ne _ _ _ (by decide : Reg.x7 ≠ .x15), ka.regs .x7 (by decide) (by decide), h7,
+    ka.sp, hc.sp] at bm
+  rw [kb.sp, ka.sp, hc.sp] at um
+  have hread : b.mem.read (L.E + BitVec.ofNat 64 (256 + 8 * 4)) 8 = L.ctxLen := by
+    rw [bm, VG.Proof.Ed448.AArch64.Whole.read_writeW_sep (Offset.sep _ (by decide) (by decide) (by decide)),
+      am, VG.Proof.Ed448.AArch64.Whole.read_writeW_sep (Offset.sep _ (by decide) (by decide) (by decide))]
+    exact arg_word hL hc ha (j := 4) (by decide)
+  rw [hread] at um
+  have hf : Frame [FR L.E] t.mem u.mem := by
+    rw [um, bm, am]
+    refine (((Frame.refl _ _).writeW (List.mem_singleton_self _) _ ?_ |>.writeW (List.mem_singleton_self _) _ ?_)
+      |>.writeW (List.mem_singleton_self _) _ ?_) |>.writeW (List.mem_singleton_self _) _ ?_
+    all_goals exact Offset.contains_base _ (by decide) (by decide)
+  refine ⟨hc.of_frame (ku.rd.trans (kb.rd.trans ka.rd)) (ku.wr.trans (kb.wr.trans ka.wr))
+    (ku.sp.trans (kb.sp.trans ka.sp)) (fun r hr _ => ?_)
+    (fun r _ => by rw [ku.v, kb.v, ka.v]) hf (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inl fun _ h => h),
+    ?_, by rw [su, sb, sa]; exact hsy⟩
+  · rw [ku.regs r (by rintro rfl; simp [preserved] at hr) (by rintro rfl; simp [preserved] at hr),
+      kb.regs r (by rintro rfl; simp [preserved] at hr) (by rintro rfl; simp [preserved] at hr),
+      ka.regs r (by rintro rfl; simp [preserved] at hr) (by rintro rfl; simp [preserved] at hr)]
+  · intro p hp
+    simp only [Lay.env, List.mem_cons, List.not_mem_nil, or_false] at hp
+    rcases hp with rfl | rfl | rfl | rfl
+    · show u.mem.read (L.E + BitVec.ofNat 64 fLen) 8 = L.len
+      rw [um, VG.Proof.Ed448.AArch64.Whole.read_writeW_sep (Offset.sep _ (by decide) (by decide) (by decide)),
+        VG.Proof.Ed448.AArch64.Whole.read_writeW_sep (Offset.sep _ (by decide) (by decide) (by decide)), bm,
+        VG.Proof.Ed448.AArch64.Whole.read_writeW_sep (Offset.sep _ (by decide) (by decide) (by decide)), am,
+        VG.Proof.Ed448.AArch64.Whole.read_writeW_self]
+    · show u.mem.read (L.E + BitVec.ofNat 64 fScr) 8 = L.scr
+      rw [um, VG.Proof.Ed448.AArch64.Whole.read_writeW_sep (Offset.sep _ (by decide) (by decide) (by decide)),
+        VG.Proof.Ed448.AArch64.Whole.read_writeW_sep (Offset.sep _ (by decide) (by decide) (by decide)), bm,
+        VG.Proof.Ed448.AArch64.Whole.read_writeW_self]
+    · show u.mem.read (L.E + BitVec.ofNat 64 fHdr) 8 = sigWord
+      rw [um, VG.Proof.Ed448.AArch64.Whole.read_writeW_sep (Offset.sep _ (by decide) (by decide) (by decide)),
+        VG.Proof.Ed448.AArch64.Whole.read_writeW_self]
+    · show u.mem.read (L.E + BitVec.ofNat 64 (fHdr + 8)) 8 = L.ctxLen <<< 8
+      rw [um, VG.Proof.Ed448.AArch64.Whole.read_writeW_self]
+
+end VG.Proof.Ed448.AArch64.SignCached
+
+end
+
+end
+
+/-! ### `Ed448.AArch64.SignCached.Hash`, which this module and modules that import it used -/
+
+section
+
+/-!
+# Ed448 signing with a cached public key on AArch64: the hashes
+
+Each into the locals at `fH`: `SHAKE256(seed, 114)` (`seedHash_ok`),
+`SHAKE256(dom4(0, C) ‖ prefix ‖ M, 114)` with the prefix in the locals
+(`nonceHash_ok`), and `SHAKE256(dom4(0, C) ‖ R ‖ A ‖ M, 114)` with `R` in the
+first half of `out` (`chalHash_ok`). The header of `dom4` is kept in the
+locals; each absorption starts from the position the previous one returned.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ed448.AArch64.SignCached
+
+open VG VG.AArch64 VG.Impl.Ed448.AArch64.SignCached
+open VG.Impl.Ed448.AArch64.Whole (Src)
+open VG.Proof.Ed448.AArch64.Whole (Env WCtx Kept sigWord srcValue srcValid noRet ScrOk ST KS
+  st_within ks_within kabs_chain kpad_ok ksqz_ok zeroSt_ok repr_nil hdr_bytes shake256_eq ofNat_toNat64
+  srcValue_loc Apart)
+open VG.Proof.Ed25519.AArch64.Whole (Within FR ARGS CK ck_frame)
+
+variable {L : Lay} {g : Reg → Addr} {vec : VReg → BitVec 128} {m₀ : Mem} {t : State}
+
+/-- `"SigEd448" ‖ 0 ‖ ctx_len`, the first ten bytes of `dom4(0, context)`. -/
+abbrev hdrBytes (L : Lay) : List Byte :=
+  "SigEd448".toList.map (fun ch => BitVec.ofNat 8 ch.toNat) ++ [BitVec.ofNat 8 0, BitVec.ofNat 8 L.ctxLen.toNat]
+
+/-- What is hashed for `r` and for `k`: `dom4(0, C) ‖ X ‖ M`. -/
+abbrev domIn (L : Lay) (m : Mem) (X : List Byte) : List Byte :=
+  hdrBytes L ++ Spec.Sha3.bytesAt m L.ctx L.ctxLen.toNat ++ X ++ Spec.Sha3.bytesAt m L.msg L.len.toNat
+
+theorem scrOk (hL : L.Ok) : ScrOk L.env fScr L.scr := ⟨by simp [Lay.env], by simp [Lay.env], hL.nc⟩
+
+/-- A region of the locals misses `scratch`. -/
+theorem fr_st (hL : L.Ok) {d n : Nat} (h : d + n ≤ 336) :
+    Region.Disjoint ⟨L.E + BitVec.ofNat 64 d, n⟩ (ST L.scr) :=
+  (hL.kc.sub_left (Offset.sub_base _ h)).sub_right (st_within L.scr).sub
+theorem fr_ks (hL : L.Ok) {d n : Nat} (h : d + n ≤ 336) :
+    Region.Disjoint ⟨L.E + BitVec.ofNat 64 d, n⟩ (KS L.scr) :=
+  (hL.kc.sub_left (Offset.sub_base _ h)).sub_right (ks_within L.scr).sub
+
+theorem within_self (p : Addr) (n : Nat) : Within ⟨p, n⟩ ⟨p, n⟩ := ⟨0, (BitVec.add_zero _).symm, by simp⟩
+
+theorem in_readable (R : Region) (hR : R ∈ L.inputs) :
+    Within R (FR L.E) ∨ ∃ R' ∈ L.env.ins ++ L.env.outs, Within R R' :=
+  .inr ⟨R, by simp [Lay.env, hR], within_self R.base R.len⟩
+
+/-- Bytes apart from what a step writes are kept. -/
+theorem keep_bytes {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {R : Region}
+    (hd : ∀ r ∈ rs, R.Disjoint r) {n : Nat} (hn : n ≤ R.len) (hl : R.len ≤ 2 ^ 64) :
+    Spec.Sha3.bytesAt m' R.base n = Spec.Sha3.bytesAt m R.base n := by
+  unfold Spec.Sha3.bytesAt
+  exact List.map_congr_left fun i hi => hf.bytes hd hl (by have := List.mem_range.mp hi; omega_using [hn, this])
+
+/-- A region apart from the sponge's writes. -/
+theorem sponge_apart {R : Region} (hS : R.Disjoint (ST L.scr)) (hK : R.Disjoint (KS L.scr))
+    (hC : (CK L.E).Disjoint R) : ∀ r ∈ [ST L.scr, KS L.scr, CK L.E], R.Disjoint r := by
+  simp only [List.mem_cons, List.not_mem_nil, or_false]
+  rintro r (rfl | rfl | rfl)
+  exacts [hS, hK, hC.symm]
+
+theorem len_src (hc : WCtx L.env g vec m₀ t) :
+    srcValue L.env.E t.mem (t.gpr .x0) aLen = BitVec.ofNat 64 L.len.toNat := by
+  rw [aLen, srcValue_loc hc.2.1 (show (fLen, L.len) ∈ L.env.ls by simp [Lay.env]) 0, BitVec.add_zero]
+  exact (ofNat_toNat64 L.len).symm
+
+/-- `SHAKE256(seed, 114)`. -/
+theorem seedHash_ok (v : Proof.Sha3.AArch64.Permutation) (hL : L.Ok) (hc : WCtx L.env g vec m₀ t)
+    (ha : Args L m₀) :
+    WP isa (seedHash v.callee) t fun u => WCtx L.env g vec m₀ u ∧
+      Spec.Sha3.bytesAt u.mem (L.E + BitVec.ofNat 64 fH) 114 =
+        Spec.Sha3.shake256 (Spec.Sha3.bytesAt m₀ L.seed 57) 114 := by
+  obtain hV := env_ok hL
+  obtain hs := scrOk hL
+  refine WP.seq (WP.mono (zeroSt_ok hV hs hc) fun t₁ ⟨hc₁, _, hz₁⟩ => ?_)
+  obtain a1 : srcValue L.env.E t₁.mem (t₁.gpr .x0) aSeed = L.seed := arg_src hL hc₁.1 ha (j := 1) (by decide) _
+  refine WP.seq (WP.mono (kabs_chain (msg := []) v hV hs hc₁ (src := aSeed) (len := .val (.const 57))
+    (pos := .val (.const 0)) ⟨by decide, by decide⟩ (show 57 < 65536 by decide) (show 0 < 65536 by decide)
+    rfl rfl a1 rfl rfl (by decide) (in_readable L.SEED (by simp [Lay.inputs]))
+    (hL.sc.sub_right (st_within L.scr).sub) (hL.sc.sub_right (ks_within L.scr).sub) hL.cs (repr_nil hz₁))
+    fun t₂ ⟨hc₂, _, hr₂, hx₂⟩ => ?_)
+  obtain eS : Spec.Sha3.bytesAt t₁.mem L.seed 57 = Spec.Sha3.bytesAt m₀ L.seed 57 :=
+    in_bytes hL hc₁.1 (R := L.SEED) (by simp [Lay.inputs]) (Nat.le_refl _) (show 57 ≤ 2 ^ 64 by decide)
+  rw [eS, List.nil_append] at hr₂ hx₂
+  refine WP.seq (WP.mono (kpad_ok v hV hs hc₂ (pos := .ret) trivial hx₂ (Nat.mod_lt _ (by decide)))
+    fun t₃ ⟨hc₃, _, hp₃⟩ => ?_)
+  obtain hst := hp₃ _ hr₂ rfl
+  refine WP.mono (ksqz_ok v hV hs hc₃ (out := .val (.frame fH)) (op := L.E + BitVec.ofNat 64 fH)
+    (show fH < 4096 by decide) rfl rfl
+    (.inl ⟨⟨fH, rfl, show fH + 114 ≤ 256 by decide⟩, fun p hp => by
+      simp only [Lay.env, List.mem_cons, List.not_mem_nil, or_false] at hp
+      rcases hp with rfl | rfl | rfl | rfl <;>
+        exact Offset.disjoint _ (by simp [fLen, fScr, fHdr, fH]) (by simp [fLen, fScr, fHdr]) (by simp [fH])⟩)
+    (fr_st hL (by decide)) (fr_ks hL (by decide)) (ck_frame (by decide))) fun u ⟨hu, _, hb⟩ => ⟨hu, ?_⟩
+  rw [hb, hst, ← shake256_eq]
+
+/-- What a hash into the locals writes: `scratch`, the 16 bytes below the
+frame, and the hash. -/
+abbrev HW (L : Lay) : List Region := [L.SCR, CK L.E, ⟨L.E + BitVec.ofNat 64 fH, 114⟩]
+
+theorem hw_sub {rs : List Region} {m m' : Mem} (hf : Frame rs m m')
+    (h : ∀ r ∈ rs, r ∈ [ST L.scr, KS L.scr, CK L.E, ⟨L.E + BitVec.ofNat 64 fH, 114⟩]) :
+    Frame (HW L) m m' := by
+  refine hf.sub fun r hr => ?_
+  obtain h' := h r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at h'
+  rcases h' with rfl | rfl | rfl | rfl
+  · exact ⟨L.SCR, by simp, (st_within L.scr).sub⟩
+  · exact ⟨L.SCR, by simp, (ks_within L.scr).sub⟩
+  · exact ⟨CK L.E, by simp, fun _ h => h⟩
+  · exact ⟨_, by simp, fun _ h => h⟩
+
+/-- The hash of `dom4(0, C) ‖ X ‖ M` into the locals, for `X` the 57 bytes
+`xs` at `xp` (`x`), which the sponge's writes miss. -/
+theorem domHash_ok (v : Proof.Sha3.AArch64.Permutation) (hL : L.Ok) (hc : WCtx L.env g vec m₀ t)
+    (ha : Args L m₀) {x : Src} (hvx : srcValid x) (hrx : noRet x = true) {xp : Addr}
+    (hxp : ∀ {u : State}, WCtx L.env g vec m₀ u → srcValue L.env.E u.mem (u.gpr .x0) x = xp)
+    (hin : Within ⟨xp, 57⟩ (FR L.E) ∨ ∃ R ∈ L.env.ins ++ L.env.outs, Within ⟨xp, 57⟩ R)
+    (dS : Region.Disjoint ⟨xp, 57⟩ (ST L.scr)) (dK : Region.Disjoint ⟨xp, 57⟩ (KS L.scr))
+    (kD : (CK L.E).Disjoint ⟨xp, 57⟩) :
+    WP isa (.seq (VG.Impl.Ed448.AArch64.Whole.zeroSt fScr) <|
+      .seq (VG.Impl.Ed448.AArch64.Whole.kabs v.callee fScr (.val (.frame fHdr)) (.val (.const 10)) (.val (.const 0))) <|
+      .seq (VG.Impl.Ed448.AArch64.Whole.kabs v.callee fScr aCtx aCtxLen .ret) <|
+      .seq (VG.Impl.Ed448.AArch64.Whole.kabs v.callee fScr x (.val (.const 57)) .ret) <|
+      .seq (VG.Impl.Ed448.AArch64.Whole.kabs v.callee fScr aMsg aLen .ret) <|
+      .seq (VG.Impl.Ed448.AArch64.Whole.kpad v.callee fScr .ret)
+        (VG.Impl.Ed448.AArch64.Whole.ksqz v.callee fScr (.val (.frame fH)))) t fun u =>
+      WCtx L.env g vec m₀ u ∧ Frame (HW L) t.mem u.mem ∧
+        Spec.Sha3.bytesAt u.mem (L.E + BitVec.ofNat 64 fH) 114 =
+        Spec.Sha3.shake256 (domIn L m₀ (Spec.Sha3.bytesAt t.mem xp 57)) 114 := by
+  obtain hV := env_ok hL
+  obtain hs := scrOk hL
+  obtain hx := sponge_apart dS dK kD
+  -- The state zeroed.
+  refine WP.seq (WP.mono (zeroSt_ok hV hs hc) fun t₁ ⟨hc₁, hf₁, hz₁⟩ => ?_)
+  obtain eX₁ : Spec.Sha3.bytesAt t₁.mem xp 57 = Spec.Sha3.bytesAt t.mem xp 57 :=
+    keep_bytes (R := ⟨xp, 57⟩) hf₁ (fun r hr => by rw [List.mem_singleton.mp hr]; exact dS)
+      (Nat.le_refl _) (show 57 ≤ 2 ^ 64 by decide)
+  -- The header.
+  obtain k0 := hc₁.2.1 (fHdr, sigWord) (by simp [Lay.env])
+  obtain k8 := hc₁.2.1 (fHdr + 8, L.ctxLen <<< 8) (by simp [Lay.env])
+  simp only [Lay.env] at k0 k8
+  obtain hb₁ : Spec.Sha3.bytesAt t₁.mem (L.E + BitVec.ofNat 64 fHdr) 10 = hdrBytes L :=
+    hdr_bytes _ _ _ hL.cl k0 (by rw [Offset.add_add]; exact k8)
+  refine WP.seq (WP.mono (kabs_chain (msg := []) v hV hs hc₁ (src := .val (.frame fHdr)) (len := .val (.const 10))
+    (pos := .val (.const 0)) (dp := L.E + BitVec.ofNat 64 fHdr) (n := 10) (show fHdr < 4096 by decide)
+    (show 10 < 65536 by decide) (show 0 < 65536 by decide) rfl rfl rfl rfl rfl (by decide)
+    (.inl ⟨fHdr, rfl, show fHdr + 10 ≤ 256 by decide⟩) (fr_st hL (by decide)) (fr_ks hL (by decide))
+    (ck_frame (by decide)) (repr_nil hz₁)) fun t₂ ⟨hc₂, hf₂, hr₂, hx₂⟩ => ?_)
+  rw [hb₁, List.nil_append] at hr₂ hx₂
+  obtain eX₂ := keep_bytes (R := ⟨xp, 57⟩) hf₂ hx (Nat.le_refl _) (show 57 ≤ 2 ^ 64 by decide)
+  -- The context.
+  obtain a1 : srcValue L.env.E t₂.mem (t₂.gpr .x0) aCtx = L.ctx := arg_src hL hc₂.1 ha (j := 3) (by decide) _
+  obtain a2 : srcValue L.env.E t₂.mem (t₂.gpr .x0) aCtxLen = BitVec.ofNat 64 L.ctxLen.toNat :=
+    (arg_src hL hc₂.1 ha (j := 4) (by decide) _).trans (ofNat_toNat64 L.ctxLen).symm
+  refine WP.seq (WP.mono (kabs_chain v hV hs hc₂ (src := aCtx) (len := aCtxLen) (pos := .ret)
+    ⟨by decide, by decide⟩ ⟨by decide, by decide⟩ trivial rfl rfl a1 a2
+    hx₂ L.ctxLen.isLt (in_readable L.CTX (by simp [Lay.inputs])) (hL.xc.sub_right (st_within L.scr).sub)
+    (hL.xc.sub_right (ks_within L.scr).sub) hL.cx hr₂) fun t₃ ⟨hc₃, hf₃, hr₃, hx₃⟩ => ?_)
+  obtain eC : Spec.Sha3.bytesAt t₂.mem L.ctx L.ctxLen.toNat = Spec.Sha3.bytesAt m₀ L.ctx L.ctxLen.toNat :=
+    in_bytes hL hc₂.1 (R := L.CTX) (by simp [Lay.inputs]) (Nat.le_refl _) (Nat.le_of_lt L.ctxLen.isLt)
+  rw [eC] at hr₃ hx₃
+  obtain eX₃ := keep_bytes (R := ⟨xp, 57⟩) hf₃ hx (Nat.le_refl _) (show 57 ≤ 2 ^ 64 by decide)
+  -- `X`.
+  refine WP.seq (WP.mono (kabs_chain v hV hs hc₃ (src := x) (len := .val (.const 57)) (pos := .ret)
+    hvx (show 57 < 65536 by decide) trivial hrx rfl (hxp hc₃) rfl hx₃ (by decide) hin dS dK kD hr₃)
+    fun t₄ ⟨hc₄, hf₄, hr₄, hx₄⟩ => ?_)
+  rw [eX₃, eX₂, eX₁] at hr₄ hx₄
+  -- The message.
+  obtain a3 : srcValue L.env.E t₄.mem (t₄.gpr .x0) aMsg = L.msg := arg_src hL hc₄.1 ha (j := 5) (by decide) _
+  refine WP.seq (WP.mono (kabs_chain v hV hs hc₄ (src := aMsg) (len := aLen) (pos := .ret)
+    ⟨by decide, by decide⟩ ⟨by decide, by decide, by decide⟩ trivial rfl rfl a3 (len_src hc₄)
+    hx₄ L.len.isLt (in_readable L.MSG (by simp [Lay.inputs])) (hL.mc.sub_right (st_within L.scr).sub)
+    (hL.mc.sub_right (ks_within L.scr).sub) hL.cm hr₄) fun t₅ ⟨hc₅, hf₅, hr₅, hx₅⟩ => ?_)
+  obtain eM : Spec.Sha3.bytesAt t₄.mem L.msg L.len.toNat = Spec.Sha3.bytesAt m₀ L.msg L.len.toNat :=
+    in_bytes hL hc₄.1 (R := L.MSG) (by simp [Lay.inputs]) (Nat.le_refl _) (Nat.le_of_lt L.len.isLt)
+  rw [eM] at hr₅ hx₅
+  -- The padding.
+  refine WP.seq (WP.mono (kpad_ok v hV hs hc₅ (pos := .ret) trivial hx₅ (Nat.mod_lt _ (by decide)))
+    fun t₆ ⟨hc₆, hf₆, hp₆⟩ => ?_)
+  obtain hst := hp₆ _ hr₅ rfl
+  -- The output.
+  refine WP.mono (ksqz_ok v hV hs hc₆ (out := .val (.frame fH)) (op := L.E + BitVec.ofNat 64 fH)
+    (show fH < 4096 by decide) rfl rfl
+    (.inl ⟨⟨fH, rfl, show fH + 114 ≤ 256 by decide⟩, fun p hp => by
+      simp only [Lay.env, List.mem_cons, List.not_mem_nil, or_false] at hp
+      rcases hp with rfl | rfl | rfl | rfl <;>
+        exact Offset.disjoint _ (by simp [fLen, fScr, fHdr, fH]) (by simp [fLen, fScr, fHdr]) (by simp [fH])⟩)
+    (fr_st hL (by decide)) (fr_ks hL (by decide)) (ck_frame (by decide))) fun u ⟨hu, hf₇, hb⟩ => ⟨hu, ?_, ?_⟩
+  · have w₁ := hw_sub (L := L) hf₁ (by simp)
+    obtain w₂ := hw_sub (L := L) hf₂ (by simp [Lay.env])
+    obtain w₃ := hw_sub (L := L) hf₃ (by simp [Lay.env])
+    obtain w₄ := hw_sub (L := L) hf₄ (by simp [Lay.env])
+    obtain w₅ := hw_sub (L := L) hf₅ (by simp [Lay.env])
+    obtain w₆ := hw_sub (L := L) hf₆ (by simp [Lay.env])
+    obtain w₇ := hw_sub (L := L) hf₇ (by simp [Lay.env])
+    exact (((((w₁.trans w₂).trans w₃).trans w₄).trans w₅).trans w₆).trans w₇
+  · rw [hb, hst, ← shake256_eq]
+
+/-- The hash of `dom4(0, C) ‖ R ‖ A ‖ M` into the locals, `R` in the first
+half of `out`. -/
+theorem chalHash_ok (v : Proof.Sha3.AArch64.Permutation) (hL : L.Ok) (hc : WCtx L.env g vec m₀ t)
+    (ha : Args L m₀) :
+    WP isa (chalHash v.callee) t fun u =>
+      WCtx L.env g vec m₀ u ∧ Frame (HW L) t.mem u.mem ∧
+        Spec.Sha3.bytesAt u.mem (L.E + BitVec.ofNat 64 fH) 114 =
+        Spec.Sha3.shake256 (domIn L m₀ (Spec.Sha3.bytesAt t.mem L.out 57 ++
+          Spec.Sha3.bytesAt m₀ L.pk 57)) 114 := by
+  obtain hV := env_ok hL
+  obtain hs := scrOk hL
+  obtain dS : Region.Disjoint ⟨L.out, 57⟩ (ST L.scr) :=
+    (hL.oc.sub_right (st_within L.scr).sub).sub_left (Region.sub_prefix (by decide))
+  obtain dK : Region.Disjoint ⟨L.out, 57⟩ (KS L.scr) :=
+    (hL.oc.sub_right (ks_within L.scr).sub).sub_left (Region.sub_prefix (by decide))
+  obtain kD : (CK L.E).Disjoint ⟨L.out, 57⟩ := hL.co.sub_right (Region.sub_prefix (by decide))
+  obtain hx := sponge_apart dS dK kD
+  -- The state zeroed.
+  refine WP.seq (WP.mono (zeroSt_ok hV hs hc) fun t₁ ⟨hc₁, hf₁, hz₁⟩ => ?_)
+  obtain eX₁ : Spec.Sha3.bytesAt t₁.mem L.out 57 = Spec.Sha3.bytesAt t.mem L.out 57 :=
+    keep_bytes (R := ⟨L.out, 57⟩) hf₁ (fun r hr => by rw [List.mem_singleton.mp hr]; exact dS)
+      (Nat.le_refl _) (show 57 ≤ 2 ^ 64 by decide)
+  -- The header.
+  obtain k0 := hc₁.2.1 (fHdr, sigWord) (by simp [Lay.env])
+  obtain k8 := hc₁.2.1 (fHdr + 8, L.ctxLen <<< 8) (by simp [Lay.env])
+  simp only [Lay.env] at k0 k8
+  obtain hb₁ : Spec.Sha3.bytesAt t₁.mem (L.E + BitVec.ofNat 64 fHdr) 10 = hdrBytes L :=
+    hdr_bytes _ _ _ hL.cl k0 (by rw [Offset.add_add]; exact k8)
+  refine WP.seq (WP.mono (kabs_chain (msg := []) v hV hs hc₁ (src := .val (.frame fHdr)) (len := .val (.const 10))
+    (pos := .val (.const 0)) (dp := L.E + BitVec.ofNat 64 fHdr) (n := 10) (show fHdr < 4096 by decide)
+    (show 10 < 65536 by decide) (show 0 < 65536 by decide) rfl rfl rfl rfl rfl (by decide)
+    (.inl ⟨fHdr, rfl, show fHdr + 10 ≤ 256 by decide⟩) (fr_st hL (by decide)) (fr_ks hL (by decide))
+    (ck_frame (by decide)) (repr_nil hz₁)) fun t₂ ⟨hc₂, hf₂, hr₂, hx₂⟩ => ?_)
+  rw [hb₁, List.nil_append] at hr₂ hx₂
+  obtain eX₂ := keep_bytes (R := ⟨L.out, 57⟩) hf₂ hx (Nat.le_refl _) (show 57 ≤ 2 ^ 64 by decide)
+  -- The context.
+  obtain a1 : srcValue L.env.E t₂.mem (t₂.gpr .x0) aCtx = L.ctx := arg_src hL hc₂.1 ha (j := 3) (by decide) _
+  obtain a2 : srcValue L.env.E t₂.mem (t₂.gpr .x0) aCtxLen = BitVec.ofNat 64 L.ctxLen.toNat :=
+    (arg_src hL hc₂.1 ha (j := 4) (by decide) _).trans (ofNat_toNat64 L.ctxLen).symm
+  refine WP.seq (WP.mono (kabs_chain v hV hs hc₂ (src := aCtx) (len := aCtxLen) (pos := .ret)
+    ⟨by decide, by decide⟩ ⟨by decide, by decide⟩ trivial rfl rfl a1 a2
+    hx₂ L.ctxLen.isLt (in_readable L.CTX (by simp [Lay.inputs])) (hL.xc.sub_right (st_within L.scr).sub)
+    (hL.xc.sub_right (ks_within L.scr).sub) hL.cx hr₂) fun t₃ ⟨hc₃, hf₃, hr₃, hx₃⟩ => ?_)
+  obtain eC : Spec.Sha3.bytesAt t₂.mem L.ctx L.ctxLen.toNat = Spec.Sha3.bytesAt m₀ L.ctx L.ctxLen.toNat :=
+    in_bytes hL hc₂.1 (R := L.CTX) (by simp [Lay.inputs]) (Nat.le_refl _) (Nat.le_of_lt L.ctxLen.isLt)
+  rw [eC] at hr₃ hx₃
+  obtain eX₃ := keep_bytes (R := ⟨L.out, 57⟩) hf₃ hx (Nat.le_refl _) (show 57 ≤ 2 ^ 64 by decide)
+  -- `R`.
+  obtain a0 : srcValue L.env.E t₃.mem (t₃.gpr .x0) aOut = L.out := arg_src hL hc₃.1 ha (j := 0) (by decide) _
+  refine WP.seq (WP.mono (kabs_chain v hV hs hc₃ (src := aOut) (len := .val (.const 57)) (pos := .ret)
+    ⟨by decide, by decide⟩ (show 57 < 65536 by decide) trivial rfl rfl a0 rfl hx₃ (by decide)
+    (.inr ⟨L.OUT, by simp [Lay.env], ⟨0, (BitVec.add_zero _).symm, by show 0 + 57 ≤ 114; decide⟩⟩) dS dK kD hr₃)
+    fun t₄ ⟨hc₄, hf₄, hr₄, hx₄⟩ => ?_)
+  rw [eX₃, eX₂, eX₁] at hr₄ hx₄
+  -- The public key.
+  obtain a2 : srcValue L.env.E t₄.mem (t₄.gpr .x0) aPk = L.pk := arg_src hL hc₄.1 ha (j := 2) (by decide) _
+  refine WP.seq (WP.mono (kabs_chain v hV hs hc₄ (src := aPk) (len := .val (.const 57)) (pos := .ret)
+    ⟨by decide, by decide⟩ (show 57 < 65536 by decide) trivial rfl rfl a2 rfl hx₄ (by decide)
+    (in_readable L.PK (by simp [Lay.inputs])) (hL.pc.sub_right (st_within L.scr).sub)
+    (hL.pc.sub_right (ks_within L.scr).sub) hL.cp hr₄) fun t₄' ⟨hc₄', hf₄', hr₄', hx₄'⟩ => ?_)
+  obtain eP : Spec.Sha3.bytesAt t₄.mem L.pk 57 = Spec.Sha3.bytesAt m₀ L.pk 57 :=
+    in_bytes hL hc₄.1 (R := L.PK) (by simp [Lay.inputs]) (Nat.le_refl _) (show 57 ≤ 2 ^ 64 by decide)
+  rw [eP] at hr₄' hx₄'
+  -- The message.
+  obtain a3 : srcValue L.env.E t₄'.mem (t₄'.gpr .x0) aMsg = L.msg := arg_src hL hc₄'.1 ha (j := 5) (by decide) _
+  refine WP.seq (WP.mono (kabs_chain v hV hs hc₄' (src := aMsg) (len := aLen) (pos := .ret)
+    ⟨by decide, by decide⟩ ⟨by decide, by decide, by decide⟩ trivial rfl rfl a3 (len_src hc₄')
+    hx₄' L.len.isLt (in_readable L.MSG (by simp [Lay.inputs])) (hL.mc.sub_right (st_within L.scr).sub)
+    (hL.mc.sub_right (ks_within L.scr).sub) hL.cm hr₄') fun t₅ ⟨hc₅, hf₅, hr₅, hx₅⟩ => ?_)
+  obtain eM : Spec.Sha3.bytesAt t₄'.mem L.msg L.len.toNat = Spec.Sha3.bytesAt m₀ L.msg L.len.toNat :=
+    in_bytes hL hc₄'.1 (R := L.MSG) (by simp [Lay.inputs]) (Nat.le_refl _) (Nat.le_of_lt L.len.isLt)
+  rw [eM] at hr₅ hx₅
+  -- The padding.
+  refine WP.seq (WP.mono (kpad_ok v hV hs hc₅ (pos := .ret) trivial hx₅ (Nat.mod_lt _ (by decide)))
+    fun t₆ ⟨hc₆, hf₆, hp₆⟩ => ?_)
+  obtain hst := hp₆ _ hr₅ rfl
+  -- The output.
+  refine WP.mono (ksqz_ok v hV hs hc₆ (out := .val (.frame fH)) (op := L.E + BitVec.ofNat 64 fH)
+    (show fH < 4096 by decide) rfl rfl
+    (.inl ⟨⟨fH, rfl, show fH + 114 ≤ 256 by decide⟩, fun p hp => by
+      simp only [Lay.env, List.mem_cons, List.not_mem_nil, or_false] at hp
+      rcases hp with rfl | rfl | rfl | rfl <;>
+        exact Offset.disjoint _ (by simp [fLen, fScr, fHdr, fH]) (by simp [fLen, fScr, fHdr]) (by simp [fH])⟩)
+    (fr_st hL (by decide)) (fr_ks hL (by decide)) (ck_frame (by decide))) fun u ⟨hu, hf₇, hb⟩ => ⟨hu, ?_, ?_⟩
+  · have w₁ := hw_sub (L := L) hf₁ (by simp)
+    obtain w₂ := hw_sub (L := L) hf₂ (by simp [Lay.env])
+    obtain w₃ := hw_sub (L := L) hf₃ (by simp [Lay.env])
+    obtain w₄ := hw_sub (L := L) hf₄ (by simp [Lay.env])
+    obtain w₄' := hw_sub (L := L) hf₄' (by simp [Lay.env])
+    obtain w₅ := hw_sub (L := L) hf₅ (by simp [Lay.env])
+    obtain w₆ := hw_sub (L := L) hf₆ (by simp [Lay.env])
+    obtain w₇ := hw_sub (L := L) hf₇ (by simp [Lay.env])
+    exact ((((((w₁.trans w₂).trans w₃).trans w₄).trans w₄').trans w₅).trans w₆).trans w₇
+  · rw [hb, hst, ← shake256_eq, domIn, List.append_assoc _ (Spec.Sha3.bytesAt t.mem L.out 57)]
+
+end VG.Proof.Ed448.AArch64.SignCached
+
+end
+
+end
+
+/-!
+# Ed448 signing with a cached public key on AArch64: the frame's body
+
+Pruning (`prune_step`), the calls of the Ed448 primitives (`reduceR_step`,
+`base_step`, `reduceK_step`, `mulAdd_step`), each with what it writes, the
+locals cleared (`wipe_step`), and the body (`body_ok`): the signature in
+`out`, for the inputs as on entry (`Proof.Ed448.sign_pipeline`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ed448.AArch64.SignCached
+
+open VG VG.AArch64 VG.Impl.Ed448.AArch64.SignCached
+open VG.Impl.Ed448.AArch64.Whole (Src setupS callS)
+open VG.Proof.Ed448.AArch64.Whole (Env WCtx srcValue srcValid ScrOk wsetup_ok reduce_call base_call
+  mulAdd_call Readable Writable Apart kept_frame prune_run sha3_bytesAt_length)
+open VG.Proof.Ed25519.AArch64.Whole (Within FR CK ck_frame)
+
+attribute [local irreducible] VG.Impl.X448.AArch64.Base.combWords
+
+variable {L : Lay} {g : Reg → Addr} {vec : VReg → BitVec 128} {m₀ : Mem} {t : State}
+
+theorem ed448_bytesAt (m : Mem) (p : Addr) (n : Nat) :
+    Spec.Ed448.bytesAt m p n = Spec.Sha3.bytesAt m p n := rfl
+
+theorem scr_writable (L : Lay) : Writable L.env L.SCR := .inr ⟨L.SCR, by simp [Lay.env], within_self _ _⟩
+
+theorem outR_within (L : Lay) : Within ⟨L.out, 57⟩ L.OUT := ⟨0, (BitVec.add_zero _).symm, by show 0 + 57 ≤ 114; decide⟩
+theorem outS_within (L : Lay) : Within ⟨L.out + BitVec.ofNat 64 57, 57⟩ L.OUT :=
+  ⟨57, rfl, by show 57 + 57 ≤ 114; decide⟩
+
+theorem outR_writable (L : Lay) : Writable L.env ⟨L.out, 57⟩ := .inr ⟨L.OUT, by simp [Lay.env], outR_within L⟩
+theorem outS_writable (L : Lay) : Writable L.env ⟨L.out + BitVec.ofNat 64 57, 57⟩ :=
+  .inr ⟨L.OUT, by simp [Lay.env], outS_within L⟩
+
+theorem fr_scr (hL : L.Ok) {d n : Nat} (h : d + n ≤ 336) :
+    Region.Disjoint ⟨L.E + BitVec.ofNat 64 d, n⟩ L.SCR :=
+  hL.kc.sub_left (Offset.sub_base _ h)
+
+theorem fr_out (hL : L.Ok) {d n : Nat} (h : d + n ≤ 336) :
+    Region.Disjoint ⟨L.E + BitVec.ofNat 64 d, n⟩ L.OUT :=
+  hL.ko.sub_left (Offset.sub_base _ h)
+
+/-- A region of the locals apart from the kept words. -/
+theorem fr_apart {d n : Nat} (h₁ : 16 ≤ d) (h₂ : d + n ≤ 200) : Apart L.env ⟨L.E + BitVec.ofNat 64 d, n⟩ :=
+  ⟨⟨d, rfl, by show d + n ≤ 256; omega_using [h₂]⟩, fun p hp => by
+    simp only [Lay.env, List.mem_cons, List.not_mem_nil, or_false] at hp
+    rcases hp with rfl | rfl | rfl | rfl <;>
+      exact Offset.disjoint _ (by simp [fLen, fScr, fHdr]; omega_arith) (by simp [fLen, fScr, fHdr]) (by omega_using [h₂])⟩
+
+theorem out_sep (hL : L.Ok) : Region.Disjoint ⟨L.out, 57⟩ ⟨L.out + BitVec.ofNat 64 57, 57⟩ := by
+  have h := Offset.disjoint (L.out) (d := 0) (n := 57) (e := 57) (k := 57) (by omega_using []) (by omega_using [])
+    (by have := hL.no; omega_using [])
+  rwa [BitVec.add_zero] at h
+
+/-- The word of `out` at 57. -/
+theorem outS_src (hL : L.Ok) (hc : WCtx L.env g vec m₀ t) (ha : Args L m₀) (x0 : BitVec 64) :
+    srcValue L.env.E t.mem x0 aR = L.out + BitVec.ofNat 64 57 := by
+  show t.mem.read (L.E + BitVec.ofNat 64 (256 + 8 * 0)) 8 + BitVec.ofNat 64 57 = _
+  rw [arg_word hL hc.1 ha (j := 0) (by decide)]
+  rfl
+
+/-- `s`: the hash pruned. -/
+theorem prune_step (hL : L.Ok) (hc : WCtx L.env g vec m₀ t) {hb : List Byte}
+    (hh : Spec.Sha3.bytesAt t.mem (L.E + BitVec.ofNat 64 fH) 114 = hb) :
+    WP isa (.block prune) t fun u => WCtx L.env g vec m₀ u ∧
+      Frame [⟨L.E + BitVec.ofNat 64 fS, 64⟩] t.mem u.mem ∧
+      Spec.Ed448.decodeLE (Spec.Ed448.bytesAt u.mem (L.E + BitVec.ofNat 64 fS) 57) = Spec.Ed448.prune hb := by
+  have hV := env_ok hL
+  have hwrite : (⟨t.sp, 256⟩ : Region) ∈ t.wr := by rw [hc.1.sp, hc.1.wr]; exact List.mem_cons_self
+  have hh' : Spec.Sha3.bytesAt t.mem (t.sp + BitVec.ofNat 64 fH) 114 = hb := by rw [hc.1.sp]; exact hh
+  refine WP.mono_syms (prune_run (h := fH) (d := fS) hwrite (by decide) (by decide) (by decide) (by decide)
+    (by decide) hh') fun u ⟨hu, hf, hp⟩ hsy => ?_
+  rw [hc.1.sp] at hf hp
+  refine ⟨hc.of_frame hV hu.rd hu.wr hu.sp (fun r hr _ => ?_) (fun r _ => by rw [hu.v]) hf ?_ hsy, hf, hp⟩
+  · apply hu.regs r <;> intro h <;> subst r <;> simp [preserved] at hr
+  · intro r hr
+    rw [List.mem_singleton.mp hr]
+    exact .inl (fr_apart (by decide) (by decide))
+
+/-- `r`, into the second half of `out`. -/
+theorem reduceR_step (hL : L.Ok) (hc : WCtx L.env g vec m₀ t) (ha : Args L m₀) :
+    WP isa (callS reduceRArgs "vg_ed448_scalar_reduce" Impl.Ed448.AArch64.scalarReduce) t fun u =>
+      WCtx L.env g vec m₀ u ∧
+      Frame [⟨L.out + BitVec.ofNat 64 57, 57⟩, L.SCR, CK L.E] t.mem u.mem ∧
+      Spec.Ed448.bytesAt u.mem (L.out + BitVec.ofNat 64 57) 57 =
+        Spec.Ed448.scalarReduce (Spec.Ed448.bytesAt t.mem (L.E + BitVec.ofNat 64 fH) 114) := by
+  have hV := env_ok hL
+  refine WP.seq (WP.mono (wsetup_ok hV hc (args := reduceRArgs) (by decide)
+    (by simp [reduceRArgs, aR, srcValid, VG.Proof.Ed25519.AArch64.Whole.valid, fH, fScr]) rfl
+    (by decide)) fun u ⟨hu, hm, hv⟩ => ?_)
+  have h0 : u.gpr .x0 = L.out + BitVec.ofNat 64 57 :=
+    (hv (.x0, aR) (List.mem_of_getElem? (i := 0) rfl)).trans (outS_src hL hc ha _)
+  have h1 : u.gpr .x1 = L.E + BitVec.ofNat 64 fH := hv (.x1, .val (.frame fH)) (List.mem_of_getElem? (i := 1) rfl)
+  have h2 : u.gpr .x2 = L.scr := by
+    rw [hv (.x2, .loc fScr 0) (List.mem_of_getElem? (i := 2) rfl), (scrOk hL).loc hc, BitVec.add_zero]
+  refine WP.mono (reduce_call hV hu h0 h1 h2 (fr_scr hL (by decide)) (.inl ⟨fH, rfl, show fH + 114 ≤ 256 by decide⟩)
+    (outS_writable L) (scr_writable L)) fun w ⟨hw, hf, hk⟩ => ⟨hw, by rw [← hm]; exact hf, by rw [hk, hm]⟩
+
+/-- `R = [r]B`, into the first half of `out`. -/
+theorem base_step (hb : Proof.Ed448.AArch64.BaseOk) (hL : L.Ok) (hc : WCtx L.env g vec m₀ t) (ha : Args L m₀) :
+    WP isa (callS baseArgs "vg_ed448_scalar_base" Impl.Ed448.AArch64.scalarBase) t fun u =>
+      WCtx L.env g vec m₀ u ∧ Frame [⟨L.out, 57⟩, L.SCR, CK L.E] t.mem u.mem ∧
+      Spec.Ed448.bytesAt u.mem L.out 57 =
+        Spec.Ed448.scalarBase (Spec.Ed448.bytesAt t.mem (L.out + BitVec.ofNat 64 57) 57) := by
+  have hV := env_ok hL
+  refine WP.seq (WP.mono (wsetup_ok hV hc (args := baseArgs) (by decide)
+    (by simp [baseArgs, aOut, aR, srcValid, VG.Proof.Ed25519.AArch64.Whole.valid, fScr]) rfl
+    (by decide)) fun u ⟨hu, hm, hv⟩ => ?_)
+  have h0 : u.gpr .x0 = L.out :=
+    (hv (.x0, aOut) (List.mem_of_getElem? (i := 0) rfl)).trans (arg_src hL hc.1 ha (j := 0) (by decide) _)
+  have h1 : u.gpr .x1 = L.out + BitVec.ofNat 64 57 :=
+    (hv (.x1, aR) (List.mem_of_getElem? (i := 1) rfl)).trans (outS_src hL hc ha _)
+  have h2 : u.gpr .x2 = L.scr := by
+    rw [hv (.x2, .loc fScr 0) (List.mem_of_getElem? (i := 2) rfl), (scrOk hL).loc hc, BitVec.add_zero]
+  refine WP.mono (base_call hb hV ⟨rfl,rfl⟩ hu h0 h1 h2 (hL.oc.sub_left (outR_within L).sub)
+    (hL.oc.sub_left (outS_within L).sub) hL.nc (.inr ⟨L.OUT, by simp [Lay.env], outS_within L⟩)
+    (outR_writable L) (scr_writable L) ha.2) fun w ⟨hw, hf, hk⟩ => ⟨hw, by rw [← hm]; exact hf, by rw [hk, hm]⟩
+
+/-- `k`, over the hash. -/
+theorem reduceK_step (hL : L.Ok) (hc : WCtx L.env g vec m₀ t) :
+    WP isa (callS reduceKArgs "vg_ed448_scalar_reduce" Impl.Ed448.AArch64.scalarReduce) t fun u =>
+      WCtx L.env g vec m₀ u ∧ Frame [⟨L.E + BitVec.ofNat 64 fH, 57⟩, L.SCR, CK L.E] t.mem u.mem ∧
+      Spec.Ed448.bytesAt u.mem (L.E + BitVec.ofNat 64 fH) 57 =
+        Spec.Ed448.scalarReduce (Spec.Ed448.bytesAt t.mem (L.E + BitVec.ofNat 64 fH) 114) := by
+  have hV := env_ok hL
+  refine WP.seq (WP.mono (wsetup_ok hV hc (args := reduceKArgs) (by decide)
+    (by simp [reduceKArgs, srcValid, VG.Proof.Ed25519.AArch64.Whole.valid, fH, fScr]) rfl
+    (by decide)) fun u ⟨hu, hm, hv⟩ => ?_)
+  have h0 : u.gpr .x0 = L.E + BitVec.ofNat 64 fH := hv (.x0, .val (.frame fH)) (List.mem_of_getElem? (i := 0) rfl)
+  have h1 : u.gpr .x1 = L.E + BitVec.ofNat 64 fH := hv (.x1, .val (.frame fH)) (List.mem_of_getElem? (i := 1) rfl)
+  have h2 : u.gpr .x2 = L.scr := by
+    rw [hv (.x2, .loc fScr 0) (List.mem_of_getElem? (i := 2) rfl), (scrOk hL).loc hc, BitVec.add_zero]
+  refine WP.mono (reduce_call hV hu h0 h1 h2 (fr_scr hL (by decide)) (.inl ⟨fH, rfl, show fH + 114 ≤ 256 by decide⟩)
+    (.inl (fr_apart (by decide) (by decide))) (scr_writable L)) fun w ⟨hw, hf, hk⟩ =>
+      ⟨hw, by rw [← hm]; exact hf, by rw [hk, hm]⟩
+
+/-- `S = (r + k s) mod L`, into the second half of `out`. -/
+theorem mulAdd_step (hL : L.Ok) (hc : WCtx L.env g vec m₀ t) (ha : Args L m₀) :
+    WP isa (callS mulAddArgs "vg_ed448_scalar_mul_add" Impl.Ed448.AArch64.scalarMulAdd) t fun u =>
+      WCtx L.env g vec m₀ u ∧ Frame [⟨L.out + BitVec.ofNat 64 57, 57⟩, L.SCR, CK L.E] t.mem u.mem ∧
+      Spec.Ed448.bytesAt u.mem (L.out + BitVec.ofNat 64 57) 57 =
+        Spec.Ed448.scalarMulAdd (Spec.Ed448.bytesAt t.mem (L.out + BitVec.ofNat 64 57) 57)
+          (Spec.Ed448.bytesAt t.mem (L.E + BitVec.ofNat 64 fH) 57)
+          (Spec.Ed448.bytesAt t.mem (L.E + BitVec.ofNat 64 fS) 57) := by
+  have hV := env_ok hL
+  refine WP.seq (WP.mono (wsetup_ok hV hc (args := mulAddArgs) (by decide)
+    (by simp [mulAddArgs, aR, srcValid, VG.Proof.Ed25519.AArch64.Whole.valid, fH, fS, fScr]) rfl
+    (by decide)) fun u ⟨hu, hm, hv⟩ => ?_)
+  have h0 : u.gpr .x0 = L.out + BitVec.ofNat 64 57 :=
+    (hv (.x0, aR) (List.mem_of_getElem? (i := 0) rfl)).trans (outS_src hL hc ha _)
+  have h1 : u.gpr .x1 = L.out + BitVec.ofNat 64 57 :=
+    (hv (.x1, aR) (List.mem_of_getElem? (i := 1) rfl)).trans (outS_src hL hc ha _)
+  have h2 : u.gpr .x2 = L.E + BitVec.ofNat 64 fH := hv (.x2, .val (.frame fH)) (List.mem_of_getElem? (i := 2) rfl)
+  have h3 : u.gpr .x3 = L.E + BitVec.ofNat 64 fS := hv (.x3, .val (.frame fS)) (List.mem_of_getElem? (i := 3) rfl)
+  have h4 : u.gpr .x4 = L.scr := by
+    rw [hv (.x4, .loc fScr 0) (List.mem_of_getElem? (i := 4) rfl), (scrOk hL).loc hc, BitVec.add_zero]
+  refine WP.mono (mulAdd_call hV hu h0 h1 h2 h3 h4 (hL.oc.sub_left (outS_within L).sub)
+    (fr_scr hL (by decide)) (fr_scr hL (by decide)) (.inr ⟨L.OUT, by simp [Lay.env], outS_within L⟩)
+    (.inl ⟨fH, rfl, show fH + 57 ≤ 256 by decide⟩) (.inl ⟨fS, rfl, show fS + 57 ≤ 256 by decide⟩)
+    (outS_writable L) (scr_writable L)) fun w ⟨hw, hf, hk⟩ => ⟨hw, by rw [← hm]; exact hf, by rw [hk, hm]⟩
+
+/-- The hash, `k` and `s` cleared. -/
+theorem wipe_step (hL : L.Ok) (hc : WCtx L.env g vec m₀ t) :
+    WP isa (.block wipe) t fun u => WCtx L.env g vec m₀ u ∧
+      Frame [⟨L.E + BitVec.ofNat 64 16, 184⟩] t.mem u.mem := by
+  have hV := env_ok hL
+  refine WP.mono_syms (VG.Proof.Ed25519.AArch64.Whole.Ctx.zeroWords hc.1 (start := 2) (count := 23) (by decide))
+    fun u ⟨hu, hf, _⟩ hsy => ⟨⟨hu, kept_frame hV hc.2.1 (hf.mono fun r hr => List.mem_append_left _ hr)
+      fun r hr => ?_, by rw [hsy]; exact hc.2.2⟩, hf⟩
+  rw [List.mem_singleton.mp hr]
+  exact .inl (fr_apart (by decide) (by decide))
+
+/-- The specification's hash input. -/
+theorem dom_eq (L : Lay) (m : Mem) (X : List Byte) :
+    domIn L m X = Spec.Ed448.dom4 0 (Spec.Sha3.bytesAt m L.ctx L.ctxLen.toNat) ++
+      (X ++ Spec.Sha3.bytesAt m L.msg L.len.toNat) := by
+  simp only [domIn, hdrBytes, Spec.Ed448.dom4, sha3_bytesAt_length, List.append_assoc, List.cons_append,
+    List.nil_append]
+
+theorem bytes_split (m : Mem) (p : Addr) :
+    Spec.Sha3.bytesAt m p 114 = Spec.Sha3.bytesAt m p 57 ++ Spec.Sha3.bytesAt m (p + BitVec.ofNat 64 57) 57 :=
+  Proof.X25519.bytesAt_add m p 57 57
+
+end VG.Proof.Ed448.AArch64.SignCached
+
+end
+
+end
+
+/-!
+# Ed448 signing with a cached public key on AArch64: the whole function
+
+`vg_ed448_sign_cached` meets `scLocal` and the ABI (`signCached_ok`), for any
+implementation `v` of the Keccak permutation, given that
+`vg_ed448_scalar_base` meets its contract (`BaseOk`): the frame
+(`Proof.Ed25519.AArch64.Whole.wrap_ok`) runs the body, whose signature is
+RFC 8032's for the inputs as on entry.
+-/
+
+-- Formerly `VerifiedGarbage/Proof/Ed448/AArch64/SignCached/Run.lean`, which only this module imported.
+section
+
+/-!
+# Ed448 signing with a cached public key on AArch64: the body's run
+
+The body's steps in turn (`body_ok`), each keeping what later steps read
+(`s`, `r` and `R`, apart from what each step writes), and the signature
+`R ‖ S` in `out`: `Proof.Ed448.sign_pipeline`.
+-/
+
+section
+
+namespace VG.Proof.Ed448.AArch64.SignCached
+
+open VG VG.AArch64 VG.Impl.Ed448.AArch64.SignCached
+open VG.Proof.Ed448.AArch64.Whole (WCtx ST KS st_within ks_within sha3_bytesAt_length)
+open VG.Proof.Ed25519.AArch64.Whole (Within FR CK ck_frame)
+
+variable {L : Lay} {g : Reg → Addr} {vec : VReg → BitVec 128} {m₀ : Mem} {t : State}
+
+/-- 57 bytes apart from what a step writes are kept. -/
+theorem keep57 {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : Addr}
+    (hd : ∀ r ∈ rs, Region.Disjoint ⟨p, 57⟩ r) : Spec.Ed448.bytesAt m' p 57 = Spec.Ed448.bytesAt m p 57 :=
+  keep_bytes (R := ⟨p, 57⟩) hf hd (Nat.le_refl _) (show 57 ≤ 2 ^ 64 by decide)
+
+/-- `s`, `r` and `R` miss what the steps after they are written write. -/
+structure Apart57 (L : Lay) (p : Addr) : Prop where
+  scr : Region.Disjoint ⟨p, 57⟩ L.SCR
+  ck : Region.Disjoint ⟨p, 57⟩ (CK L.E)
+  h : Region.Disjoint ⟨p, 57⟩ ⟨L.E + BitVec.ofNat 64 fH, 114⟩
+  k : Region.Disjoint ⟨p, 57⟩ ⟨L.E + BitVec.ofNat 64 fH, 57⟩
+
+theorem Apart57.hw {p : Addr} (h : Apart57 L p) : ∀ r ∈ HW L, Region.Disjoint ⟨p, 57⟩ r := by
+  simp only [List.mem_cons, List.not_mem_nil, or_false]
+  rintro r (rfl | rfl | rfl)
+  exacts [h.scr, h.ck, h.h]
+
+theorem Apart57.call {p q : Addr} (h : Apart57 L p) (hq : Region.Disjoint ⟨p, 57⟩ ⟨q, 57⟩) :
+    ∀ r ∈ [⟨q, 57⟩, L.SCR, CK L.E], Region.Disjoint ⟨p, 57⟩ r := by
+  simp only [List.mem_cons, List.not_mem_nil, or_false]
+  rintro r (rfl | rfl | rfl)
+  exacts [hq, h.scr, h.ck]
+
+theorem apart_out (hL : L.Ok) : Apart57 L L.out where
+  scr := hL.oc.sub_left (outR_within L).sub
+  ck := (hL.co.sub_right (outR_within L).sub).symm
+  h := (fr_out hL (by decide)).symm.sub_left (outR_within L).sub
+  k := (fr_out hL (by decide)).symm.sub_left (outR_within L).sub
+
+theorem apart_outS (hL : L.Ok) : Apart57 L (L.out + BitVec.ofNat 64 57) where
+  scr := hL.oc.sub_left (outS_within L).sub
+  ck := (hL.co.sub_right (outS_within L).sub).symm
+  h := (fr_out hL (by decide)).symm.sub_left (outS_within L).sub
+  k := (fr_out hL (by decide)).symm.sub_left (outS_within L).sub
+
+theorem apart_s (hL : L.Ok) : Apart57 L (L.E + BitVec.ofNat 64 fS) where
+  scr := fr_scr hL (by decide)
+  ck := (ck_frame (by decide)).symm
+  h := Offset.disjoint _ (by decide) (by decide) (by decide)
+  k := Offset.disjoint _ (by decide) (by decide) (by decide)
+
+/-- `H(dom4(0, C) ‖ X ‖ M)` as the specification writes it. -/
+theorem hash_eq (L : Lay) (m : Mem) (X : List Byte) :
+    Spec.Sha3.shake256 (domIn L m X) 114 =
+      Spec.Ed448.hash (Spec.Ed448.bytesAt m L.ctx L.ctxLen.toNat) (X ++ Spec.Ed448.bytesAt m L.msg L.len.toNat) := by
+  rw [dom_eq]
+  rfl
+
+theorem body_ok (v : Proof.Sha3.AArch64.Permutation) (hb : Proof.Ed448.AArch64.BaseOk) (hL : L.Ok)
+    (hc : Ctx0 L g vec m₀ t) (ha : Args L m₀) (h6 : t.gpr .x6 = L.len) (h7 : t.gpr .x7 = L.scr)
+    (hsy : t.syms Impl.X448.AArch64.Base.combSym = L.T)
+    (hpk : Spec.Ed448.bytesAt m₀ L.pk 57 = Spec.Ed448.publicKey (Spec.Ed448.bytesAt m₀ L.seed 57)) :
+    WP isa (body v.callee) t fun u => Ctx0 L g vec m₀ u ∧
+      Spec.Ed448.bytesAt u.mem L.out 114 = Spec.Ed448.sign (Spec.Ed448.bytesAt m₀ L.seed 57)
+        (Spec.Ed448.bytesAt m₀ L.ctx L.ctxLen.toNat) (Spec.Ed448.bytesAt m₀ L.msg L.len.toNat) := by
+  have aR := apart_out hL
+  have ar := apart_outS hL
+  have as := apart_s hL
+  refine WP.seq (WP.mono (entry_ok hL hc ha h6 h7 hsy) fun t₁ hc₁ => ?_)
+  refine WP.seq (WP.mono (seedHash_ok v hL hc₁ ha) fun t₂ ⟨hc₂, hH₂⟩ => ?_)
+  refine WP.seq (WP.mono (prune_step hL hc₂ hH₂) fun t₃ ⟨hc₃, hf₃, hs₃⟩ => ?_)
+  have hp₃ : Spec.Sha3.bytesAt t₃.mem (L.E + BitVec.ofNat 64 (fH + 57)) 57 =
+      (Spec.Sha3.shake256 (Spec.Sha3.bytesAt m₀ L.seed 57) 114).drop 57 := by
+    rw [keep_bytes (R := ⟨L.E + BitVec.ofNat 64 (fH + 57), 57⟩) hf₃ (fun r hr => by
+        rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (by decide) (by decide) (by decide))
+      (Nat.le_refl _) (show 57 ≤ 2 ^ 64 by decide), ← hH₂, bytes_split, Offset.add_add,
+      List.drop_left' (sha3_bytesAt_length _ _ _)]
+  -- `r`.
+  refine WP.seq (WP.mono (domHash_ok v hL hc₃ ha (x := .val (.frame (fH + 57)))
+    (show fH + 57 < 4096 by decide) rfl (xp := L.E + BitVec.ofNat 64 (fH + 57)) (fun _ => rfl)
+    (.inl ⟨fH + 57, rfl, show fH + 57 + 57 ≤ 256 by decide⟩) (fr_st hL (by decide)) (fr_ks hL (by decide))
+    (ck_frame (by decide))) fun t₄ ⟨hc₄, hf₄, hH₄⟩ => ?_)
+  rw [hp₃] at hH₄
+  have hs₄ := keep57 hf₄ as.hw
+  refine WP.seq (WP.mono (reduceR_step hL hc₄ ha) fun t₅ ⟨hc₅, hf₅, hr₅⟩ => ?_)
+  have hs₅ := keep57 hf₅ (as.call ((fr_out hL (by decide)).sub_right (outS_within L).sub))
+  -- `R`.
+  refine WP.seq (WP.mono (base_step hb hL hc₅ ha) fun t₆ ⟨hc₆, hf₆, hR₆⟩ => ?_)
+  have hs₆ := keep57 hf₆ (as.call ((fr_out hL (by decide)).sub_right (outR_within L).sub))
+  have hr₆ := keep57 hf₆ (ar.call (out_sep hL).symm)
+  -- `k`.
+  refine WP.seq (WP.mono (chalHash_ok v hL hc₆ ha) fun t₇ ⟨hc₇, hf₇, hH₇⟩ => ?_)
+  have hs₇ := keep57 hf₇ as.hw
+  have hr₇ := keep57 hf₇ ar.hw
+  have hR₇ := keep57 hf₇ aR.hw
+  refine WP.seq (WP.mono (reduceK_step hL hc₇) fun t₈ ⟨hc₈, hf₈, hk₈⟩ => ?_)
+  have hs₈ := keep57 hf₈ (as.call as.k)
+  have hr₈ := keep57 hf₈ (ar.call ar.k)
+  have hR₈ := keep57 hf₈ (aR.call aR.k)
+  -- `S`.
+  refine WP.seq (WP.mono (mulAdd_step hL hc₈ ha) fun t₉ ⟨hc₉, hf₉, hS₉⟩ => ?_)
+  have hR₉ := keep57 hf₉ (aR.call (out_sep hL))
+  refine WP.mono (wipe_step hL hc₉) fun u ⟨hu, hf⟩ => ⟨hu.1, ?_⟩
+  have hRu := keep57 hf fun r hr => by rw [List.mem_singleton.mp hr]; exact (fr_out hL (by decide)).symm.sub_left (outR_within L).sub
+  have hSu := keep57 hf fun r hr => by rw [List.mem_singleton.mp hr]; exact (fr_out hL (by decide)).symm.sub_left (outS_within L).sub
+  rw [ed448_bytesAt, bytes_split, ← ed448_bytesAt, ← ed448_bytesAt, hRu, hSu, hS₉, hR₉, hR₈, hR₇, hR₆,
+    hr₈, hr₇, hr₆, hk₈, hs₈, hs₇, hs₆, hs₅, hs₄, hr₅, ed448_bytesAt _ _ 114, hH₄, ed448_bytesAt _ _ 114, hH₇,
+    hash_eq, hash_eq, ← ed448_bytesAt, ← ed448_bytesAt _ L.out, hR₆, hr₅, ed448_bytesAt _ _ 114, hH₄, hash_eq]
+  exact Proof.Ed448.sign_pipeline _ _ _ _ _ hpk hs₃
+
+end VG.Proof.Ed448.AArch64.SignCached
+end
+
+end
+
+@[expose] public section
+
+namespace VG.Proof.Ed448.AArch64.SignCached
+
+open VG VG.AArch64 VG.Impl.Ed448.AArch64.SignCached
+open VG.Proof.Ed25519.AArch64.Whole (entered bodyRd bodyWr)
+open VG.Impl.X448.AArch64.Base (combSym)
+
+theorem entry_writes {s : State} (h : scLocal.pre s) : ∀ r ∈ s.wr, (below s.sp 352).Disjoint r := by
+  intro r hr
+  rw [h.2.1] at hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl
+  · exact h.2.2.2.2.2.2.2.2.2.2.2.1
+  · exact h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
+
+theorem entry_below {s : State} (h : scLocal.pre s) : 352 ≤ s.sp.toNat :=
+  h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
+
+theorem entry_ctx {s p : State} (h : scLocal.pre s) (hp : VG.Proof.Ed25519.AArch64.Whole.Saved (entered s) 6 p) :
+    Ctx0 (lay s) s.gpr s.v p.mem (p.withRegions (bodyRd s) (bodyWr s)) := by
+  have hc := VG.Proof.Ed25519.AArch64.Whole.saved_ctx hp
+  simpa only [bodyRd, bodyWr, h.1, h.2.1, Ctx0, Lay.env, Lay.inputs, Lay.OUT, Lay.SEED, Lay.PK, Lay.CTX,
+    Lay.MSG, Lay.SCR, Lay.TB, lay, List.cons_append, List.nil_append] using hc
+
+theorem entry_args {s p : State} (h : scLocal.pre s)
+    (hp : VG.Proof.Ed25519.AArch64.Whole.Saved (entered s) 6 p) : Args (lay s) p.mem := by
+  refine ⟨fun j hj => ?_, fun i hi => ?_⟩
+  · have hw := VG.Proof.Ed25519.AArch64.Whole.saved_words hp hj
+    rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5) with
+      rfl | rfl | rfl | rfl | rfl | rfl <;> exact hw
+  · obtain ⟨held, fit, dj⟩ := h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2
+    have hf := VG.Proof.Ed25519.AArch64.Whole.saved_frame hp
+    rw [← held i hi]
+    refine hf.readW (r := VG.Proof.Ed448.AArch64.Whole.TBL (s.syms combSym))
+      (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi, fit])) (fun r hr => ?_) (by decide)
+    rw [List.mem_singleton.mp hr]
+    exact (dj (below s.sp 352) (by simp)).sub_right (VG.Proof.Ed25519.AArch64.Whole.stk_sub s)
+
+theorem entry_syms {s p : State} (hp : VG.Proof.Ed25519.AArch64.Whole.Saved (entered s) 6 p) :
+    (p.withRegions (bodyRd s) (bodyWr s)).syms combSym = (lay s).T :=
+  congrFun hp.step.syms combSym
+
+theorem entry_x6 {s p : State} (hp : VG.Proof.Ed25519.AArch64.Whole.Saved (entered s) 6 p) :
+    (p.withRegions (bodyRd s) (bodyWr s)).gpr .x6 = (lay s).len :=
+  hp.step.regs .x6 (by decide)
+
+theorem entry_x7 {s p : State} (hp : VG.Proof.Ed25519.AArch64.Whole.Saved (entered s) 6 p) :
+    (p.withRegions (bodyRd s) (bodyWr s)).gpr .x7 = (lay s).scr :=
+  hp.step.regs .x7 (by decide)
+
+theorem body_ctx {s p u : State} (h : scLocal.pre s) (hu : Ctx0 (lay s) s.gpr s.v p.mem u) :
+    VG.Proof.Ed25519.AArch64.Whole.Ctx (VG.Proof.Ed25519.AArch64.Whole.base s) s.gpr s.v p.mem (bodyRd s)
+      s.wr u := by
+  simpa only [bodyRd, bodyWr, h.1, h.2.1, Ctx0, Lay.env, Lay.inputs, Lay.OUT, Lay.SEED, Lay.PK, Lay.CTX,
+    Lay.MSG, Lay.SCR, Lay.TB, lay, List.cons_append, List.nil_append] using hu
+
+/-- An input's bytes after the frame's writes, as on entry. -/
+theorem below_bytes {m m' : Mem} {s : State} (hf : Frame [below s.sp 336] m m') {R : Region}
+    (hd : (below s.sp 352).Disjoint R) {n : Nat} (hn : n ≤ R.len) (hl : R.len ≤ 2 ^ 64) :
+    Spec.Ed448.bytesAt m' R.base n = Spec.Ed448.bytesAt m R.base n :=
+  keep_bytes hf (fun r hr => by
+    rw [List.mem_singleton.mp hr]
+    exact (hd.sub_left (VG.Proof.Ed25519.AArch64.Whole.stk_sub s)).symm) hn hl
+
+theorem body_depth (v : Proof.Sha3.AArch64.Permutation) : (body v.callee).aarch64Depth ≤ 1 := by
+  have ha := v.absorb_depth
+  have hp := v.pad_depth
+  have hs := v.squeeze_depth
+  have hr := VG.Proof.Ed25519.AArch64.Whole.depth_zero_of_noFrames VG.Proof.Ed448.AArch64.Whole.reduce_noFrames
+  have hb := VG.Proof.Ed25519.AArch64.Whole.depth_zero_of_noFrames VG.Proof.Ed448.AArch64.Whole.base_noFrames
+  have hm := VG.Proof.Ed25519.AArch64.Whole.depth_zero_of_noFrames VG.Proof.Ed448.AArch64.Whole.mulAdd_noFrames
+  simp only [body, seedHash, nonceHash, chalHash, Impl.Ed448.AArch64.Whole.zeroSt,
+    Impl.Ed448.AArch64.Whole.kabs, Impl.Ed448.AArch64.Whole.kpad, Impl.Ed448.AArch64.Whole.ksqz,
+    Impl.Ed448.AArch64.Whole.callS, Code.aarch64Depth, Nat.max_le, ha, hp, hs, hr, hb, hm]
+  omega_using []
+
+theorem entry_pk {s p : State} (h : scLocal.pre s)
+    (hp : VG.Proof.Ed25519.AArch64.Whole.Saved (entered s) 6 p) :
+    Spec.Ed448.bytesAt p.mem (lay s).pk 57 = Spec.Ed448.publicKey (Spec.Ed448.bytesAt p.mem (lay s).seed 57) := by
+  have hf := VG.Proof.Ed25519.AArch64.Whole.saved_frame hp
+  show Spec.Ed448.bytesAt p.mem (s.gpr .x2) 57 = Spec.Ed448.publicKey (Spec.Ed448.bytesAt p.mem (s.gpr .x1) 57)
+  rw [below_bytes hf h.2.2.2.2.2.2.2.2.2.2.2.2.2.1 (R := ⟨s.gpr .x2, 57⟩) (n := 57) (Nat.le_refl _)
+      (show 57 ≤ 2 ^ 64 by decide),
+    below_bytes hf h.2.2.2.2.2.2.2.2.2.2.2.2.1 (R := ⟨s.gpr .x1, 57⟩) (n := 57) (Nat.le_refl _)
+      (show 57 ≤ 2 ^ 64 by decide)]
+  exact h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
+
+/-- The frame's body, from the state the frame enters it in. -/
+theorem signCached_ok_body (v : Proof.Sha3.AArch64.Permutation) (hb : Proof.Ed448.AArch64.BaseOk) {s p : State}
+    (h : scLocal.pre s) (hp : VG.Proof.Ed25519.AArch64.Whole.Saved (entered s) 6 p) :
+    WP isa (body v.callee) (p.withRegions (bodyRd s) (bodyWr s)) fun u => Ctx0 (lay s) s.gpr s.v p.mem u ∧
+      Spec.Ed448.bytesAt u.mem (lay s).out 114 = Spec.Ed448.sign (Spec.Ed448.bytesAt p.mem (lay s).seed 57)
+        (Spec.Ed448.bytesAt p.mem (lay s).ctx (lay s).ctxLen.toNat)
+        (Spec.Ed448.bytesAt p.mem (lay s).msg (lay s).len.toNat) :=
+  body_ok v hb (lay_ok h) (entry_ctx h hp) (entry_args h hp) (entry_x6 hp) (entry_x7 hp) (entry_syms hp)
+    (entry_pk h hp)
+
+theorem signCached_ok (v : Proof.Sha3.AArch64.Permutation) (hb : Proof.Ed448.AArch64.BaseOk) {s : State}
+    (h : scLocal.pre s) :
+    WP isa (signCachedWith v.callee) s fun u => abiPreserved s u ∧ scLocal.post s u := by
+  have hw := VG.Proof.Ed25519.AArch64.Whole.wrap_ok (body_depth v) (entry_below h) (entry_writes h)
+    (P := fun m m' _ => Spec.Ed448.bytesAt m' (s.gpr .x0) 114 = Spec.Ed448.sign
+      (Spec.Ed448.bytesAt m (s.gpr .x1) 57) (Spec.Ed448.bytesAt m (s.gpr .x3) (s.gpr .x4).toNat)
+      (Spec.Ed448.bytesAt m (s.gpr .x5) (s.gpr .x6).toNat))
+    (hP := fun _ _ _ _ f hq => (List.map_congr_left fun i hi => VG.AArch64.lost_byte f
+      ((entry_writes h ⟨s.gpr .x0, 114⟩ (by rw [h.2.1]; simp)).symm.sub_right
+        (VG.AArch64.below_sub (by decide) (by decide))) (List.mem_range.mp hi)).trans hq)
+    (fun p hp => WP.mono (signCached_ok_body v hb h hp) fun u ⟨hu, ho⟩ => ⟨body_ctx h hu, ho⟩)
+  refine WP.mono hw fun u ⟨hu, m, hf, hp⟩ => ⟨hu, ?_⟩
+  change Spec.Ed448.bytesAt u.mem (s.gpr .x0) 114 = _
+  rw [hp, below_bytes hf h.2.2.2.2.2.2.2.2.2.2.2.2.1 (R := ⟨s.gpr .x1, 57⟩) (n := 57) (Nat.le_refl _)
+      (show 57 ≤ 2 ^ 64 by decide),
+    below_bytes hf h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1 (R := ⟨s.gpr .x3, (s.gpr .x4).toNat⟩) (n := (s.gpr .x4).toNat)
+      (Nat.le_refl _) (Nat.le_of_lt (BitVec.isLt _)),
+    below_bytes hf h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1 (R := ⟨s.gpr .x5, (s.gpr .x6).toNat⟩) (n := (s.gpr .x6).toNat)
+      (Nat.le_refl _) (Nat.le_of_lt (BitVec.isLt _))]
+
+end VG.Proof.Ed448.AArch64.SignCached
+
+end
+
+end
 
 /-!
 # Ed448 signing with a cached public key on AArch64: `Verified`

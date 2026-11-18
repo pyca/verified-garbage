@@ -1,8 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.CmacAes.Stream.X86.Call
-public import VerifiedGarbage.Proof.CmacAes.X86.Finalize
-import VerifiedGarbage.Proof.CmacAes.X86.FinalizeCT
+public import VerifiedGarbage.Proof.CmacAes.X86.Verified
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith

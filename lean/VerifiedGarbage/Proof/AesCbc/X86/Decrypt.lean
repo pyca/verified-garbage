@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.AesCbc.X86.Decrypt
 public import VerifiedGarbage.Proof.AesCbc.X86.Body
 public import VerifiedGarbage.Proof.AesCbc.Rounds
-public import VerifiedGarbage.Proof.Aes.X86.AesNi.Dec
+public import VerifiedGarbage.Proof.Aes.X86.AesNi.BlocksLoop
 public import VerifiedGarbage.Proof.Framework.X86.Wp
 public import VerifiedGarbage.Proof.Framework.X86.Exec
 public import VerifiedGarbage.Proof.Framework.X86.Taint
@@ -11,9 +11,7 @@ public import VerifiedGarbage.Proof.Framework.X86.Call
 public import VerifiedGarbage.Proof.Framework.Covers
 import VerifiedGarbage.Proof.AesCbc.X86.Verified
 import VerifiedGarbage.Proof.AesCbc.Decrypt
-import VerifiedGarbage.Proof.Aes.X86.AesNi.Imc
-import VerifiedGarbage.Proof.Aes.X86.AesNi.BlocksLoop
-import VerifiedGarbage.Proof.Aes.X86.AesNi.Blocks
+import VerifiedGarbage.Proof.Aes.X86.AesNi.BlocksMain
 import VerifiedGarbage.Proof.Aes.X86.Common
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Cmac.Frame

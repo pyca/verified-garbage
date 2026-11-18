@@ -23,7 +23,7 @@ section
 /-!
 # The start of the SM4 key schedule on x86 (32-bit)
 
-As on ARMv7 (`Proof/Sm4/Arm/KeyEk.lean`): the planes of `CK` stored as
+As on ARMv7 (`Proof/Sm4/Arm/KeyVerified.lean`): the planes of `CK` stored as
 constants (`constStores_ok`), and `MK ⊕ FK` stored to the eight blocks of
 the tail buffer (`loadKeyWord_ok`), whose words, bitsliced, are the key
 schedule's initial state `keyInit` (`keyInit_rel`).
@@ -378,7 +378,7 @@ end
 /-!
 # The SM4 key schedule on x86 (32-bit): the whole function
 
-As on ARMv7 (`Proof/Sm4/Arm/KeyEk.lean`): `expandKey_wp`, with the working
+As on ARMv7 (`Proof/Sm4/Arm/KeyVerified.lean`): `expandKey_wp`, with the working
 space as an argument (`expandKeyX86`): `expandKey` saves the callee-saved
 registers, keeps the schedule's pointer in its slot, stores the table of
 `CK`'s planes, bitslices eight copies of `MK ⊕ FK`, runs the loop

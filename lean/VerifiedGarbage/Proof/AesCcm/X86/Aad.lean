@@ -2,9 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.AesCcm.X86.Absorb
 public import VerifiedGarbage.Proof.AesCcm.Mac
-import VerifiedGarbage.Proof.AesCcm.Words32
-import VerifiedGarbage.Proof.AesGcm.X86.Cmp
 import VerifiedGarbage.Proof.AesCcm.X86.Blocks
+import VerifiedGarbage.Proof.AesGcm.X86.Cmp
 import VerifiedGarbage.Proof.AesCcm.Words
 import VerifiedGarbage.Proof.AesCcm.X86.Run
 import VerifiedGarbage.Proof.AesCcm.Bytes

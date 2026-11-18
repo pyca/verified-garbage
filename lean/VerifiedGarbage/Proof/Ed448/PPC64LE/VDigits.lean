@@ -1,12 +1,11 @@
 module
--- separate module: its proofs take about 8 s, which `VJoint.lean`'s edits need not re-check
 
+-- separate module: its proofs take about 8 s, which `VJoint.lean`'s edits need not re-check
 public import VerifiedGarbage.Proof.Ed448.PPC64LE.VChecks
-public import VerifiedGarbage.Proof.Ed448.PPC64LE.BaseBits
+public import VerifiedGarbage.Proof.Ed448.PPC64LE.BaseSel
 public import VerifiedGarbage.Proof.Ed448.WnafWide.Recoding
-public import VerifiedGarbage.Proof.Ed448.WnafWide.Bits
-public import VerifiedGarbage.Spec.Ed448.Contract
 public import VerifiedGarbage.Proof.Ed448.WnafWide.Word
+public import VerifiedGarbage.Spec.Ed448.Contract
 import VerifiedGarbage.Proof.Ed448.Scalar
 import VerifiedGarbage.Proof.X448.PPC64LE.Invert
 import VerifiedGarbage.Proof.Framework.Offset

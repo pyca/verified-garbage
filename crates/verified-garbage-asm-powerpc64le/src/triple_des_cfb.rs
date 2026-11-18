@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.TripleDes.cfbEncryptContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 384 bytes.
@@ -27,7 +29,7 @@ bne %cr0, 22b
 b 21f
 20:
 21:
-.base64 "eOu/fygCBYEAAB+RLAIFgQQAH5EIAqXrEALF6xgC5esgAgXopgMIfCAAgTkAAGA5AABs+QgAbPkQAGz5GABs+SAAbPkoAGz5MABs+TgAbPlAAGz5SABs+VAAbPlYAGz5YABs+WgAbPlwAGz5eABs+YAAbPmIAGz5kABs+ZgAbPmgAGz5qABs+bAAbPm4AGz5wABs+cgAbPnQAGz52ABs+eAAbPnoAGz58ABs+fgAbPkAAWz5CAFs+RABbPkYAWz5IAFs+SgBbPkwAWz5OAFs+UABbPlIAWz5UAFs+VgBbPlgAWz5aAFs+XABbPl4AWz5gAFs+YgBbPmQAWz5mAFs+aABbPmoAWz5sAFs+bgBbPnAAWz5yAFs+dABbPnYAWz54AFs+egBbPnwAWz5+AFs+QACbPkIAmz5EAJs+RgCbPkgAmz5KAJs+TACbPk4Amz5YAIhOCAAgE4=""#,
+.base64 "eOu/fygCBYEAAB+RLAIFgQQAH5EIAqXrEALF6xgC5esgAgXopgMIfCAAgTkAAGA5AABs+QgAbPkQAGz5GABs+SAAbPkoAGz5MABs+TgAbPlAAGz5SABs+VAAbPlYAGz5YABs+WgAbPlwAGz5eABs+YAAbPmIAGz5kABs+ZgAbPmgAGz5qABs+bAAbPm4AGz5wABs+cgAbPnQAGz52ABs+eAAbPnoAGz58ABs+fgAbPkAAWz5CAFs+RABbPkYAWz5IAFs+SgBbPkwAWz5OAFs+UABbPlIAWz5UAFs+VgBbPlgAWz5aAFs+XABbPl4AWz5gAFs+YgBbPmQAWz5mAFs+aABbPmoAWz5sAFs+bgBbPnAAWz5yAFs+dABbPnYAWz54AFs+egBbPnwAWz5+AFs+QACbPkIAmz5EAJs+RgCbPkgAmz5KAJs+TACbPk4Amz5YAIhOAAAADgAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDkgAIBO""#,
         vg_triple_des_encrypt_block = sym super::triple_des::vg_triple_des_encrypt_block::vg_triple_des_encrypt_block,
     )
 }
@@ -35,6 +37,8 @@ b 21f
 /// Triple DES-CFB64 decryption (NIST SP 800-38A §6.3, with 64-bit segments; FIPS 46-3) of whole blocks, in place: replaces the `n` 8-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = Cⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is Triple DES encryption (also for decryption) under the schedule written by `vg_triple_des_expand_key`.
 ///
 /// Contract: `VG.Spec.TripleDes.cfbDecryptContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -106,7 +110,7 @@ bne %cr0, 217b
 b 216f
 215:
 216:
-.base64 "eOu/fyAGBYEAAB+RJAYFgQQAH5EABqXrCAbF6xAG5esYBgXopgMIfCAAgTkAAGA5AABs+QgAbPkQAGz5GABs+SAAbPkoAGz5MABs+TgAbPlAAGz5SABs+VAAbPlYAGz5YABs+WgAbPlwAGz5eABs+YAAbPmIAGz5kABs+ZgAbPmgAGz5qABs+bAAbPm4AGz5wABs+cgAbPnQAGz52ABs+eAAbPnoAGz58ABs+fgAbPkAAWz5CAFs+RABbPkYAWz5IAFs+SgBbPkwAWz5OAFs+UABbPlIAWz5UAFs+VgBbPlgAWz5aAFs+XABbPl4AWz5gAFs+YgBbPmQAWz5mAFs+aABbPmoAWz5sAFs+bgBbPnAAWz5yAFs+dABbPnYAWz54AFs+egBbPnwAWz5+AFs+QACbPkIAmz5EAJs+RgCbPkgAmz5KAJs+TACbPk4Amz5QAJs+UgCbPlQAmz5WAJs+WACbPloAmz5cAJs+XgCbPmAAmz5iAJs+ZACbPmYAmz5oAJs+agCbPmwAmz5uAJs+cACbPnIAmz50AJs+dgCbPngAmz56AJs+fACbPn4Amz5AANs+QgDbPkQA2z5GANs+SADbPkoA2z5MANs+TgDbPlAA2z5SANs+VADbPlYA2z5YANs+WgDbPlwA2z5eANs+YADbPmIA2z5kANs+ZgDbPmgA2z5qANs+bADbPm4A2z5wANs+cgDbPnQA2z52ANs+eADbPnoA2z58ANs+fgDbPkABGz5CARs+RAEbPkYBGz5IARs+SgEbPkwBGz5OARs+UAEbPlIBGz5UARs+VgEbPlgBGz5aARs+XAEbPl4BGz5gARs+YgEbPmQBGz5mARs+aAEbPmoBGz5sARs+bgEbPnABGz5yARs+dAEbPnYBGz54ARs+egEbPnwBGz5+ARs+QAFbPkIBWz5EAVs+RgFbPkgBWz5KAVs+TAFbPk4BWz5QAVs+UgFbPlQBWz5WAVs+WAFbPloBWz5cAVs+XgFbPmABWz5iAVs+ZAFbPmYBWz5oAVs+agFbPmwBWz5uAVs+cAFbPnIBWz50AVs+dgFbPngBWz56AVs+fAFbPn4BWz5AAZs+QgGbPkQBmz5GAZs+SAGbPkoBmz5MAZs+TgGbPlgBiE4IACATg==""#,
+.base64 "eOu/fyAGBYEAAB+RJAYFgQQAH5EABqXrCAbF6xAG5esYBgXopgMIfCAAgTkAAGA5AABs+QgAbPkQAGz5GABs+SAAbPkoAGz5MABs+TgAbPlAAGz5SABs+VAAbPlYAGz5YABs+WgAbPlwAGz5eABs+YAAbPmIAGz5kABs+ZgAbPmgAGz5qABs+bAAbPm4AGz5wABs+cgAbPnQAGz52ABs+eAAbPnoAGz58ABs+fgAbPkAAWz5CAFs+RABbPkYAWz5IAFs+SgBbPkwAWz5OAFs+UABbPlIAWz5UAFs+VgBbPlgAWz5aAFs+XABbPl4AWz5gAFs+YgBbPmQAWz5mAFs+aABbPmoAWz5sAFs+bgBbPnAAWz5yAFs+dABbPnYAWz54AFs+egBbPnwAWz5+AFs+QACbPkIAmz5EAJs+RgCbPkgAmz5KAJs+TACbPk4Amz5QAJs+UgCbPlQAmz5WAJs+WACbPloAmz5cAJs+XgCbPmAAmz5iAJs+ZACbPmYAmz5oAJs+agCbPmwAmz5uAJs+cACbPnIAmz50AJs+dgCbPngAmz56AJs+fACbPn4Amz5AANs+QgDbPkQA2z5GANs+SADbPkoA2z5MANs+TgDbPlAA2z5SANs+VADbPlYA2z5YANs+WgDbPlwA2z5eANs+YADbPmIA2z5kANs+ZgDbPmgA2z5qANs+bADbPm4A2z5wANs+cgDbPnQA2z52ANs+eADbPnoA2z58ANs+fgDbPkABGz5CARs+RAEbPkYBGz5IARs+SgEbPkwBGz5OARs+UAEbPlIBGz5UARs+VgEbPlgBGz5aARs+XAEbPl4BGz5gARs+YgEbPmQBGz5mARs+aAEbPmoBGz5sARs+bgEbPnABGz5yARs+dAEbPnYBGz54ARs+egEbPnwBGz5+ARs+QAFbPkIBWz5EAVs+RgFbPkgBWz5KAVs+TAFbPk4BWz5QAVs+UgFbPlQBWz5WAVs+WAFbPloBWz5cAVs+XgFbPmABWz5iAVs+ZAFbPmYBWz5oAVs+agFbPmwBWz5uAVs+cAFbPnIBWz50AVs+dgFbPngBWz56AVs+fAFbPn4BWz5AAZs+QgGbPkQBmz5GAZs+SAGbPkoBmz5MAZs+TgGbPlgBiE4AAAAOAAAYDgAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDkgAIBO""#,
         vg_triple_des_ecb64_encrypt = sym super::triple_des::vg_triple_des_ecb64_encrypt::vg_triple_des_ecb64_encrypt,
         vg_triple_des_encrypt_block = sym super::triple_des::vg_triple_des_encrypt_block::vg_triple_des_encrypt_block,
     )
@@ -115,6 +119,8 @@ b 216f
 /// Triple DES-CFB64 encryption (NIST SP 800-38A §6.3, with 64-bit segments; FIPS 46-3) of the last piece of a message, of any length, in place: replaces its whole 8-byte blocks `P₁ … Pₙ₋₁` at `data` with `Cⱼ = Pⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and a partial last segment `Pₙ*` of `u` bytes with `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`, `Oₙ = CIPH_K(Cₙ₋₁)` (an extension of SP 800-38A, which defines CFB only for whole segments, by the rule of §6.4 and §6.5). Replaces `*iv` with the last ciphertext block, so that a further call continues the message, if `len` is a multiple of 8 (leaving it unchanged if `len = 0`), and otherwise with `Oₙ`: keystream, to be wiped, after which the message must end. `CIPH_K` is Triple DES encryption under the schedule written by `vg_triple_des_expand_key`.
 ///
 /// Contract: `VG.Spec.TripleDes.cfbEncryptFinalContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the chaining value or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -146,7 +152,7 @@ bne %cr0, 22b
 b 21f
 20:
 21:
-.base64 "eOu/fygCBYEAAB+RLAIFgQQAH5EIAqXrEALF6xgC5esgAgXopgMIfCAAgTkAAGA5AABs+QgAbPkQAGz5GABs+SAAbPkoAGz5MABs+TgAbPlAAGz5SABs+VAAbPlYAGz5YABs+WgAbPlwAGz5eABs+YAAbPmIAGz5kABs+ZgAbPmgAGz5qABs+bAAbPm4AGz5wABs+cgAbPnQAGz52ABs+eAAbPnoAGz58ABs+fgAbPkAAWz5CAFs+RABbPkYAWz5IAFs+SgBbPkwAWz5OAFs+UABbPlIAWz5UAFs+VgBbPlgAWz5aAFs+XABbPl4AWz5gAFs+YgBbPmQAWz5mAFs+aABbPmoAWz5sAFs+bgBbPnAAWz5yAFs+dABbPnYAWz54AFs+egBbPnwAWz5+AFs+QACbPkIAmz5EAJs+RgCbPkgAmz5KAJs+TACbPk4Amz5YAIhOCAAgE4=""#,
+.base64 "eOu/fygCBYEAAB+RLAIFgQQAH5EIAqXrEALF6xgC5esgAgXopgMIfCAAgTkAAGA5AABs+QgAbPkQAGz5GABs+SAAbPkoAGz5MABs+TgAbPlAAGz5SABs+VAAbPlYAGz5YABs+WgAbPlwAGz5eABs+YAAbPmIAGz5kABs+ZgAbPmgAGz5qABs+bAAbPm4AGz5wABs+cgAbPnQAGz52ABs+eAAbPnoAGz58ABs+fgAbPkAAWz5CAFs+RABbPkYAWz5IAFs+SgBbPkwAWz5OAFs+UABbPlIAWz5UAFs+VgBbPlgAWz5aAFs+XABbPl4AWz5gAFs+YgBbPmQAWz5mAFs+aABbPmoAWz5sAFs+bgBbPnAAWz5yAFs+dABbPnYAWz54AFs+egBbPnwAWz5+AFs+QACbPkIAmz5EAJs+RgCbPkgAmz5KAJs+TACbPk4Amz5YAIhOAAAADgAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDkgAIBO""#,
         vg_triple_des_encrypt_block = sym super::triple_des::vg_triple_des_encrypt_block::vg_triple_des_encrypt_block,
     )
 }
@@ -154,6 +160,8 @@ b 21f
 /// Triple DES-CFB64 decryption (NIST SP 800-38A §6.3, with 64-bit segments; FIPS 46-3) of the last piece of a message, of any length, in place: replaces its whole 8-byte blocks `C₁ … Cₙ₋₁` at `data` with `Pⱼ = Cⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and a partial last segment `Cₙ*` of `u` bytes with `Pₙ* = Cₙ* ⊕ MSB_u(Oₙ)`, `Oₙ = CIPH_K(Cₙ₋₁)` (an extension of SP 800-38A, which defines CFB only for whole segments, by the rule of §6.4 and §6.5). Replaces `*iv` with the last ciphertext block, the last whole block at `data` on entry, so that a further call continues the message, if `len` is a multiple of 8 (leaving it unchanged if `len = 0`), and otherwise with `Oₙ`: keystream, to be wiped, after which the message must end. `CIPH_K` is Triple DES encryption under the schedule written by `vg_triple_des_expand_key`.
 ///
 /// Contract: `VG.Spec.TripleDes.cfbDecryptFinalContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the chaining value or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -185,7 +193,7 @@ bne %cr0, 22b
 b 21f
 20:
 21:
-.base64 "eOu/fygCBYEAAB+RLAIFgQQAH5EIAqXrEALF6xgC5esgAgXopgMIfCAAgTkAAGA5AABs+QgAbPkQAGz5GABs+SAAbPkoAGz5MABs+TgAbPlAAGz5SABs+VAAbPlYAGz5YABs+WgAbPlwAGz5eABs+YAAbPmIAGz5kABs+ZgAbPmgAGz5qABs+bAAbPm4AGz5wABs+cgAbPnQAGz52ABs+eAAbPnoAGz58ABs+fgAbPkAAWz5CAFs+RABbPkYAWz5IAFs+SgBbPkwAWz5OAFs+UABbPlIAWz5UAFs+VgBbPlgAWz5aAFs+XABbPl4AWz5gAFs+YgBbPmQAWz5mAFs+aABbPmoAWz5sAFs+bgBbPnAAWz5yAFs+dABbPnYAWz54AFs+egBbPnwAWz5+AFs+QACbPkIAmz5EAJs+RgCbPkgAmz5KAJs+TACbPk4Amz5YAIhOCAAgE4=""#,
+.base64 "eOu/fygCBYEAAB+RLAIFgQQAH5EIAqXrEALF6xgC5esgAgXopgMIfCAAgTkAAGA5AABs+QgAbPkQAGz5GABs+SAAbPkoAGz5MABs+TgAbPlAAGz5SABs+VAAbPlYAGz5YABs+WgAbPlwAGz5eABs+YAAbPmIAGz5kABs+ZgAbPmgAGz5qABs+bAAbPm4AGz5wABs+cgAbPnQAGz52ABs+eAAbPnoAGz58ABs+fgAbPkAAWz5CAFs+RABbPkYAWz5IAFs+SgBbPkwAWz5OAFs+UABbPlIAWz5UAFs+VgBbPlgAWz5aAFs+XABbPl4AWz5gAFs+YgBbPmQAWz5mAFs+aABbPmoAWz5sAFs+bgBbPnAAWz5yAFs+dABbPnYAWz54AFs+egBbPnwAWz5+AFs+QACbPkIAmz5EAJs+RgCbPkgAmz5KAJs+TACbPk4Amz5YAIhOAAAADgAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDkgAIBO""#,
         vg_triple_des_encrypt_block = sym super::triple_des::vg_triple_des_encrypt_block::vg_triple_des_encrypt_block,
     )
 }

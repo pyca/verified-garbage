@@ -1,9 +1,8 @@
 module
-public import VerifiedGarbage.Proof.AesGcmSiv.X86.Env
-public import VerifiedGarbage.Proof.Framework.WriteBytes
 
+public import VerifiedGarbage.Proof.AesGcmSiv.X86.Run
+public import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.AesGcm.X86.Cmp
-import VerifiedGarbage.Proof.AesGcmSiv.X86.Run
 import VerifiedGarbage.Proof.AesGcm.X86.Loops
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit

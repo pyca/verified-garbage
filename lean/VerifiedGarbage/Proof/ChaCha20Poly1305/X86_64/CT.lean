@@ -53,11 +53,9 @@ public import VerifiedGarbage.Proof.Framework.TaintOps
 meta import VerifiedGarbage.Proof.Framework.TaintOps
 import VerifiedGarbage.Proof.Framework.X86_64.Abi
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
-meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Last8
-meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.RoundsVL
 meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Verified
+meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.RoundsVL
 meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.Last3
-meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.RoundsVL
 meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Last
 meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Xor
 meta import VerifiedGarbage.Proof.Framework.Range
@@ -65,9 +63,7 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.X86_64.Frame
 meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
-meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Final
 meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Gpr
-meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.StoreY
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd

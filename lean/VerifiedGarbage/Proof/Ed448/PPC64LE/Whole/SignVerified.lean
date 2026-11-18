@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.SignCT
-import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.SignCached
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 public import VerifiedGarbage.Proof.Framework.Scratch
 public import VerifiedGarbage.Proof.Ed448.WholeLocal

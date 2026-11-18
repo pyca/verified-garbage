@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.X25519.Bytes
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.X25519.RISCV64.Mul
-import VerifiedGarbage.Proof.X25519.RISCV64.Pass
+import VerifiedGarbage.Proof.X25519.RISCV64.Field
 import VerifiedGarbage.Proof.X448.RISCV64.R64.Invert
 public import VerifiedGarbage.Proof.X448.RISCV64.Slots
 

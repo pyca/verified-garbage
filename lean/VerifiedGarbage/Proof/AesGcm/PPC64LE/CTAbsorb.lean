@@ -24,7 +24,7 @@ public import VerifiedGarbage.Impl.AesGcm.PPC64LE
 # AES-GCM on PPC64LE: `ghash1`, `absorb`, `flush` and `lens` are constant time
 
 Untrusted: everything here is checked by Lean. As on ARMv7
-(`Proof/AesGcm/Arm/CTAbsorb.lean`): the invariants fix the context, the
+(`Proof/AesGcm/Arm/CTCrypt.lean`): the invariants fix the context, the
 state, `W` (`EnvC`), the stack pointer, the data's address and length and
 the number of bytes absorbed so far modulo 16, and leave the rest
 existential.

@@ -20,7 +20,6 @@ import VerifiedGarbage.Proof.MdStream.X86.Common
 import VerifiedGarbage.Proof.Modes.X86.SeqFinal
 import VerifiedGarbage.Proof.AesCbc.X86.CT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.AesCfb.X86.Body
 import VerifiedGarbage.Proof.AesCbc.X86.Verified
 import VerifiedGarbage.Proof.Framework.X86.RelCT
 public import VerifiedGarbage.Proof.Framework.X86.ArgTaint
@@ -44,7 +43,6 @@ meta import VerifiedGarbage.Proof.MdStream.X86.Common
 meta import VerifiedGarbage.Proof.Modes.X86.SeqFinal
 meta import VerifiedGarbage.Proof.AesCbc.X86.CT
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
-meta import VerifiedGarbage.Proof.AesCfb.X86.Body
 meta import VerifiedGarbage.Proof.AesCbc.X86.Verified
 meta import VerifiedGarbage.Proof.Framework.X86.RelCT
 meta import VerifiedGarbage.Proof.Framework.X86.ArgTaint

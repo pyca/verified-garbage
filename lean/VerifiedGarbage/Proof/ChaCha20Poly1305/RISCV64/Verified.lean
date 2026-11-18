@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.RISCV64.Calls
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.RISCV64.Contract
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.RISCV64.CT
 public import VerifiedGarbage.Proof.Framework.RISCV64.Align
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -17,7 +17,6 @@ public import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
 import VerifiedGarbage.Proof.ChaCha20.Keystream
 import VerifiedGarbage.Proof.Poly1305.RISCV64.Buffer
 import VerifiedGarbage.Proof.Framework.WriteBytes
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.RISCV64.CT
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.Scratch
 public import VerifiedGarbage.Impl.StackScratch.RISCV64
 import VerifiedGarbage.Proof.Framework.RISCV64.StackScratch
@@ -28,7 +27,7 @@ import VerifiedGarbage.Proof.Framework.ContractPost
 meta import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Sig
 meta import VerifiedGarbage.Proof.Framework.Sig
-meta import VerifiedGarbage.Proof.ChaCha20Poly1305.RISCV64.Contract
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.RISCV64.CT
 meta import VerifiedGarbage.TCB.RISCV64.Target
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.RISCV64.Spill

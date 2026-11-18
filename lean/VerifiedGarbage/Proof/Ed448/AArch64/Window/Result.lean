@@ -1,18 +1,14 @@
 module
 
 import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Prelude
-import VerifiedGarbage.Proof.Curve448.AArch64.Copy
-
+import VerifiedGarbage.Proof.Curve448.AArch64.Stage
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Block
-
 public import VerifiedGarbage.Proof.Ed448.AArch64.Window.Move
-
 import VerifiedGarbage.Proof.Ed448.AArch64.Window.Checks
 public import VerifiedGarbage.Impl.Ed448.AArch64.VerifyWindow
-import VerifiedGarbage.Proof.Ed448.AArch64.Window.CopyK
-public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyEntry
+public import VerifiedGarbage.Proof.Ed448.AArch64.Window.CopyK
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Impl.Ed448.AArch64.ScalarBase
 import VerifiedGarbage.Proof.X448.AArch64.Finish
@@ -22,7 +18,6 @@ public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyChecks
 public import VerifiedGarbage.Impl.Ed448.AArch64.VerifyEquation
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.X448.AArch64.Mem
-public import VerifiedGarbage.Proof.X448.AArch64.Fast.SaveX
 public import VerifiedGarbage.Proof.X448.AArch64.Fast.VSave
 public import VerifiedGarbage.Proof.X448.AArch64.Env
 public import VerifiedGarbage.Proof.X448.AArch64.Weak.Env

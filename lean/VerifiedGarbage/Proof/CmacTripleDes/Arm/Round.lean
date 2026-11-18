@@ -17,7 +17,7 @@ import VerifiedGarbage.Proof.Framework.Taint
 
 Untrusted: everything here is checked by Lean.
 
-As on x86-64 (`Proof/CmacTripleDes/X86_64/Block.lean`): the round's parts are
+As on x86-64 (`Proof/CmacTripleDes/X86_64/Contract.lean`): the round's parts are
 checked by evaluation (`Straight.check`), the broadcast inputs (`inputs`)
 and the output (`output`) over the lane domain, and each half's S-boxes
 (`mux`) over the row domain (`Bitslice.rows`), on all 64 values of a box's

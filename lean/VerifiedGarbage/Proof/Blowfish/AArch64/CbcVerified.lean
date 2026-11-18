@@ -18,12 +18,12 @@ meta import VerifiedGarbage.Proof.Blowfish.AArch64.ModesLit
 meta import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Blowfish.AArch64.Exec
+import VerifiedGarbage.Proof.Blowfish.AArch64.Batch
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Blowfish.AArch64.Exec
+meta import VerifiedGarbage.Proof.Blowfish.AArch64.Batch
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
 meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.AddrArith

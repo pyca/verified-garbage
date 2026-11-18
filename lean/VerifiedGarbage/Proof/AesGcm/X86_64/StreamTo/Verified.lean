@@ -1,18 +1,14 @@
 module
 
-import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.CT
+public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.CT
 public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Verified
 public import VerifiedGarbage.Proof.Gcm.OutOfPlaceContract
 import Mathlib.Data.List.Dedup
 public import VerifiedGarbage.Impl.StackScratch.X86_64
-public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.CT
 public import VerifiedGarbage.Impl.AesGcm.X86_64.StreamTo
 public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.BlkCall
 public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Contract
 import VerifiedGarbage.Proof.AesGcm.X86_64.VerifiedP
-public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Rest
-import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Blocks
-import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Head
 import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
 import VerifiedGarbage.Proof.Aes.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.Contract

@@ -1,4 +1,5 @@
 module
+
 public import VerifiedGarbage.Impl.Seed.AArch64.Modes
 public import VerifiedGarbage.Proof.Seed.Contract
 public import VerifiedGarbage.Proof.Seed.Scratch
@@ -6,12 +7,10 @@ public import VerifiedGarbage.Impl.StackScratch.AArch64
 public import VerifiedGarbage.Proof.Framework.AArch64.Depth
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 public import VerifiedGarbage.TCB.AArch64.Target
-
 import VerifiedGarbage.Proof.Seed.AArch64.Verified
-public import VerifiedGarbage.Proof.Seed.AArch64.ModeCore
+public import VerifiedGarbage.Proof.Seed.AArch64.Link
 public import VerifiedGarbage.Proof.Modes.Ctr
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-import VerifiedGarbage.Proof.Seed.AArch64.Link
 import VerifiedGarbage.Proof.Seed.AArch64.ModesLit
 import VerifiedGarbage.Proof.Modes.AArch64.Ecb
 import VerifiedGarbage.Proof.Modes.AArch64.Steps
@@ -31,10 +30,9 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.Depth
 meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
 meta import VerifiedGarbage.TCB.AArch64.Target
 meta import VerifiedGarbage.Proof.Seed.AArch64.Verified
-meta import VerifiedGarbage.Proof.Seed.AArch64.ModeCore
+meta import VerifiedGarbage.Proof.Seed.AArch64.Link
 meta import VerifiedGarbage.Proof.Modes.Ctr
 meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-meta import VerifiedGarbage.Proof.Seed.AArch64.Link
 meta import VerifiedGarbage.Proof.Seed.AArch64.ModesLit
 meta import VerifiedGarbage.Proof.Modes.AArch64.Ecb
 meta import VerifiedGarbage.Proof.Modes.AArch64.Steps

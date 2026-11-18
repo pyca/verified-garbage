@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.OpenB
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Front
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Open
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.Pre
@@ -8,12 +7,435 @@ import VerifiedGarbage.Proof.AesGcm.AArch64.Cmp
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Run
 import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Pad
-import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.PadT
 import VerifiedGarbage.Proof.AesGcm.AArch64.StreamVerify
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.AesGcm.AArch64.Tail.Crypt
+public import VerifiedGarbage.Impl.AesGcm.AArch64.Stitch
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Open
+import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.Ok
+
+/-! ### `AesGcm.AArch64.Stitch.OpenB`, which this module and modules that import it used -/
+
+section
+
+/-!
+# AES-GCM on AArch64, interleaved: `open`'s branch on the tag
+
+Untrusted: everything here is checked by Lean. `openRunWithSG c to` is
+`openRunAS`, up to the branch on the tag, then `omBS` (`openRunWithS_split`).
+Before the branch (`MidSG`), the interleaved loop has decrypted the first `P`
+bytes of the text to the output (over the text in place, to `dst` out of
+place), and in place kept the first counter block at `W + cbO`; `omBS`
+decrypts the rest if the tag is right, and if not encrypts the first `P`
+bytes again from the kept counter block in place, which leaves them as they
+were, or zeroes the output out of place (`omBS_ok`).
+-/
+
+@[expose] public section
+
+set_option linter.unusedSimpArgs false
+
+namespace VG.Proof.AesGcm.AArch64.Fast
+
+open VG VG.AArch64 VG.AArch64.RegUpd VG.Impl.AesGcm.AArch64 VG.WriteBytes
+open VG.Proof.AesGcm.AArch64
+open VG.Impl.Gcm.AArch64.Pmull (Y)
+open VG.Spec.Aes (bytesAt)
+open VG.Spec.Gcm (Block blockAt ghashFrom ghash blocks zeros padLen ofBytes inc32 ctxH ctxCiph gctr)
+open VG.Proof.Gcm (Absorbed Ctr xorKs lensBlock)
+
+section
+variable (c : Callees) (cl : Prog isa) (tb : List Instr) (to : Bool)
+
+/-- `openRunWithSG` up to the branch on the tag. -/
+def openRunAS : Prog isa :=
+  .seq Impl.AesGcm.AArch64.Fast.front
+  (.seq (.block (Impl.AesGcm.AArch64.Stitch.decPre to))
+  (.seq (Impl.AesGcm.AArch64.Stitch.stitched [] tb (Impl.Gcm.AArch64.Stitch.dec to))
+  (.seq (.block (Impl.AesGcm.AArch64.Stitch.whole ++ [.add .x .x23 .x23 .x9, .sub .x .x24 .x26 .x9, imm .x25 0] ++
+      absSeg2 16))
+  (.seq cl
+  (.seq (.block (Impl.AesGcm.AArch64.Fast.hReload ++ Impl.Gcm.AArch64.Pmull.loadRev Y .x20 16 ++
+      [mov .x13 .x24, mov .x12 .x23]))
+  (.seq Impl.AesGcm.AArch64.Fast.padMulT
+  (.seq (.block (Impl.AesGcm.AArch64.Fast.lensTagAt uO))
+  (.seq (ctrCall c)
+  (.seq cmp
+    (.block [imm .x27 1, .sub .x .x27 .x27 .x10]))))))))))
+
+/-- The branch on the tag. -/
+def omBS : Prog isa :=
+  .seq (.ite (.zero .x .x27) (Impl.AesGcm.AArch64.Stitch.failS c to) (Impl.AesGcm.AArch64.Stitch.okS c to))
+    (.block [mov .x0 .x27])
+
+/-- `openRunWithSG` is `openRunAS` then `omBS`. -/
+theorem openRunWithS_split :
+    PEq (.seq (openRunAS c cl tb to) (omBS c to)) (Impl.AesGcm.AArch64.Stitch.openRunWithSG c to tb cl) := by
+  unfold openRunAS omBS Impl.AesGcm.AArch64.Stitch.openRunWithSG
+  refine (PEq.assoc _ _ _).trans (PEq.seq_right _ ?_)
+  refine (PEq.assoc _ _ _).trans (PEq.seq_right _ ?_)
+  refine (PEq.assoc _ _ _).trans (PEq.seq_right _ ?_)
+  refine (PEq.assoc _ _ _).trans (PEq.seq_right _ ?_)
+  refine (PEq.assoc _ _ _).trans (PEq.seq_right _ ?_)
+  refine (PEq.assoc _ _ _).trans (PEq.seq_right _ ?_)
+  refine (PEq.assoc _ _ _).trans (PEq.seq_right _ ?_)
+  refine (PEq.assoc _ _ _).trans (PEq.seq_right _ ?_)
+  refine (PEq.assoc _ _ _).trans (PEq.seq_right _ ?_)
+  exact PEq.assoc _ _ _
+
+end
+
+/-- XORing with the keystream twice leaves the text. -/
+theorem xorKs_xorKs (ciph : Block → Block) (icb : Block) (k : Nat) (d : List Byte) :
+    xorKs ciph icb k (xorKs ciph icb k d) = d := by
+  refine Proof.Gcm.list_ext (by rw [Proof.Gcm.length_xorKs, Proof.Gcm.length_xorKs]) fun i hi => ?_
+  simp only [Proof.Gcm.length_xorKs] at hi
+  rw [Proof.Gcm.getD_xorKs _ _ _ _ (by simpa only [Proof.Gcm.length_xorKs] using hi),
+    Proof.Gcm.getD_xorKs _ _ _ _ hi, BitVec.xor_assoc, BitVec.xor_self, BitVec.xor_zero]
+
+/-- A block copied. -/
+theorem blockAt_copy (m : Mem) (a b : Addr) : blockAt (m.write a 16 (m.read b 16)) a = blockAt m b := by
+  simp only [blockAt, Spec.Aes.bytesAt]
+  congr 1
+  refine List.map_congr_left fun i hi => ?_
+  obtain hi' := List.mem_range.mp hi
+  simp only [Mem.write, Mem.sub_ofNat_toNat a (show i < 2 ^ 64 by omega_using [hi']), hi', ite_true]
+  exact Mem.extractLsb'_read m b hi'
+
+/-- Before the branch on the tag, from `s` (after `open`'s entry): `MidOG`,
+but for the first `P` bytes of the text at `D`, decrypted to the output at
+`O`, and the counter block past them; in place (`O = D`), the first counter
+block at `W + cbO`. The ciphertext is `C₁ ++ C₂`, of which `D` holds `C₂`
+after its first `P` bytes. -/
+structure MidSG (to : Bool) (fr : List Region) (Ctx W SP D O Np A : Addr) (R nl al n tl P : Nat)
+    (C₁ C₂ : List Byte) (s s₇ : State) : Prop where
+  env : Env Ctx (W + BitVec.ofNat 64 16) W SP s₇
+  frame : Frame fr s.mem s₇.mem
+  x22 : s₇.gpr .x22 = BitVec.ofNat 64 R
+  x27 : s₇.gpr .x27 = BitVec.ofNat 64 (if decide ((Spec.Gcm.fullTag (ciphOf s.mem Ctx R)
+    (blockAt s.mem (Ctx + BitVec.ofNat 64 240)) (bytesAt s.mem Np nl) (bytesAt s.mem A al)
+    (C₁ ++ C₂)).take tl = bytesAt s.mem W tl) then 1 else 0)
+  data : cond to (DataOk (W + BitVec.ofNat 64 16) W s₇ D n) (DataW Ctx (W + BitVec.ofNat 64 16) W s₇ D n)
+  sD : s₇.mem.readW (W + BitVec.ofNat 64 232) 64 = D
+  sN : s₇.mem.readW (W + BitVec.ofNat 64 240) 64 = BitVec.ofNat 64 n
+  hP : P = 128 * (n / 128)
+  len₁ : C₁.length = P
+  pre : bytesAt s₇.mem O P = xorKs (ciphOf s.mem Ctx R)
+    (inc32 (Spec.Gcm.j0 (blockAt s.mem (Ctx + BitVec.ofNat 64 240)) (bytesAt s.mem Np nl))) 0 C₁
+  rest : bytesAt s₇.mem (D + BitVec.ofNat 64 P) (n - P) = C₂
+  cb : blockAt s₇.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48) =
+    Nat.repeat inc32 (P / 16) (inc32 (Spec.Gcm.j0 (blockAt s.mem (Ctx + BitVec.ofNat 64 240)) (bytesAt s.mem Np nl)))
+  cbs : cond to True (blockAt s₇.mem (W + BitVec.ofNat 64 Impl.AesGcm.AArch64.Stitch.cbO) =
+    inc32 (Spec.Gcm.j0 (blockAt s.mem (Ctx + BitVec.ofNat 64 240)) (bytesAt s.mem Np nl)))
+  ciph : ciphOf s₇.mem Ctx R = ciphOf s.mem Ctx R
+  out : cond to (OutIn Ctx W D O n s₇) (O = D)
+
+theorem MidSG.dataOk {to : Bool} {fr : List Region} {Ctx W SP D O Np A : Addr} {R nl al n tl P : Nat}
+    {C₁ C₂ : List Byte} {s s₇ : State} (mo : MidSG to fr Ctx W SP D O Np A R nl al n tl P C₁ C₂ s s₇) :
+    DataOk (W + BitVec.ofNat 64 16) W s₇ D n := dataOk_of mo.data
+
+theorem MidSG.outW {to : Bool} {fr : List Region} {Ctx W SP D O Np A : Addr} {R nl al n tl P : Nat}
+    {C₁ C₂ : List Byte} {s s₇ : State} (mo : MidSG to fr Ctx W SP D O Np A R nl al n tl P C₁ C₂ s s₇) :
+    DataW Ctx (W + BitVec.ofNat 64 16) W s₇ O n := outG_dataW mo.out mo.data
+
+section
+variable {Ctx W SP D O Np A : Addr} {R nl al n tl P : Nat} {C₁ C₂ : List Byte}
+  (L : Lay Ctx (W + BitVec.ofNat 64 16) W)
+include L
+
+omit L in
+theorem failArgs_ok {fr : List Region} {s s₇ : State}
+    (mo : MidSG false fr Ctx W SP D O Np A R nl al n tl P C₁ C₂ s s₇) :
+    ∃ s₈, runBlock isa (([.ldrq .v0 .x19 Impl.AesGcm.AArch64.Stitch.cbO, .strq .v0 .x20 48,
+      .ldr .x .x23 .x19 dataO, .ldr .x .x26 .x19 lenO] : List Instr) ++ Impl.AesGcm.AArch64.Stitch.whole ++
+      [mov .x24 .x9, imm .x25 0]) s₇ = some s₈ ∧
+      s₈.mem = s₇.mem.write (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48) 16
+        (s₇.mem.read (W + BitVec.ofNat 64 Impl.AesGcm.AArch64.Stitch.cbO) 16) ∧
+      s₈.gpr .x23 = D ∧ s₈.gpr .x24 = BitVec.ofNat 64 P ∧ s₈.gpr .x25 = BitVec.ofNat 64 (0 % 16) ∧
+      s₈.gpr .x26 = BitVec.ofNat 64 n ∧
+      Others [.x9, .x23, .x24, .x25, .x26] s₇ s₈ ∧ s₈.sp = s₇.sp ∧ s₈.rd = s₇.rd ∧ s₈.wr = s₇.wr := by
+  have he := mo.env
+  have hn := mo.dataOk.lt
+  obtain q₀ := he.perm.wR (show 320 + 16 ≤ 2560 by decide)
+  obtain q₁ := he.perm.wR (show 232 + 8 ≤ 2560 by decide)
+  obtain q₂ := he.perm.wR (show 240 + 8 ≤ 2560 by decide)
+  obtain w₀ := he.perm.stW (show 48 + 16 ≤ 80 by decide)
+  obtain e₁ : s₇.mem.read (W + 232#64) 8 = D := by
+    rw [show s₇.mem.read (W + 232#64) 8 = s₇.mem.readW (W + BitVec.ofNat 64 232) 64 from rfl, mo.sD]
+  obtain e₂ : s₇.mem.read (W + 240#64) 8 = BitVec.ofNat 64 n := by
+    rw [show s₇.mem.read (W + 240#64) 8 = s₇.mem.readW (W + BitVec.ofNat 64 240) 64 from rfl, mo.sN]
+  obtain rs : ∀ {v : BitVec (8 * 16)} (d : Nat), 80 ≤ d → d + 8 ≤ 2560 →
+      (s₇.mem.write (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48) 16 v).read (W + BitVec.ofNat 64 d) 8 =
+        s₇.mem.read (W + BitVec.ofNat 64 d) 8 := fun d h₁ h₂ => by
+    rw [add_ofNat_assoc]
+    exact Mem.read_write_sep (Offset.sep W (.inr (by omega_using [h₁])) (by omega_using [h₂]) (by decide)) (by decide)
+  obtain e₉ : (BitVec.ofNat 64 n >>> 7) <<< 7 = BitVec.ofNat 64 P := by
+    rw [Gcm.AArch64.Stitch.ushr7 hn, Stitch.shl7 (by have := Nat.mul_div_le n 128; omega_using [hn]), ← mo.hP]
+  refine ⟨_, by arun [Impl.AesGcm.AArch64.Stitch.whole, Impl.AesGcm.AArch64.Stitch.cbO, he.x19, he.x20, q₀, q₁,
+    q₂, w₀, gpr_setV, wr_setV, rd_setV, mem_setV, sp_setV, v_setV_self], ?_⟩
+  refine ⟨?_, ?_, ?_, ?_, ?_, by others_tac, rfl, rfl, rfl⟩
+  · simp [mem_write, he.x20, Impl.AesGcm.AArch64.Stitch.cbO]
+  · simp only [gpr_write, ite_true, ite_false, reduceCtorEq, BitVec.setWidth_eq]
+    rw [rs 232 (by decide) (by decide), e₁]
+  · simp only [gpr_write, ite_true, ite_false, reduceCtorEq, BitVec.setWidth_eq]
+    rw [rs 240 (by decide) (by decide), e₂, e₉, BitVec.add_zero]
+  · simp [gpr_write]
+  · simp only [gpr_write, ite_true, ite_false, reduceCtorEq, BitVec.setWidth_eq]
+    rw [rs 240 (by decide) (by decide), e₂]
+
+omit L in
+/-- `okS`'s loads: the rest of the text, and out of place the output past the
+first bytes in `x26`. -/
+theorem okArgsG_ok (to : Bool) {fr : List Region} {s s₇ : State}
+    (mo : MidSG to fr Ctx W SP D O Np A R nl al n tl P C₁ C₂ s s₇) :
+    ∃ s₈, runBlock isa (([.ldr .x .x23 .x19 dataO, .ldr .x .x26 .x19 lenO] : List Instr) ++
+      Impl.AesGcm.AArch64.Stitch.whole ++ ([.add .x .x23 .x23 .x9, .sub .x .x24 .x26 .x9, imm .x25 0] : List Instr) ++
+      cond to ([.ldr .x .x26 .x19 dstO, .add .x .x26 .x26 .x9] : List Instr) []) s₇ = some s₈ ∧
+      s₈.gpr .x23 = D + BitVec.ofNat 64 P ∧ s₈.gpr .x24 = BitVec.ofNat 64 (n - P) ∧
+      s₈.gpr .x25 = BitVec.ofNat 64 (P % 16) ∧
+      cond to (s₈.gpr .x26 = O + BitVec.ofNat 64 P) (s₈.gpr .x26 = BitVec.ofNat 64 n) ∧
+      Regs [.x9, .x23, .x24, .x25, .x26] s₇ s₈ := by
+  have he := mo.env
+  have hn := mo.dataOk.lt
+  obtain hPn : P ≤ n := mo.hP ▸ Nat.mul_div_le n 128
+  obtain q₁ := he.perm.wR (show 232 + 8 ≤ 2560 by decide)
+  obtain q₂ := he.perm.wR (show 240 + 8 ≤ 2560 by decide)
+  obtain q₃ := he.perm.wR (show 320 + 8 ≤ 2560 by decide)
+  obtain e₁ : s₇.mem.read (W + 232#64) 8 = D := by
+    rw [show s₇.mem.read (W + 232#64) 8 = s₇.mem.readW (W + BitVec.ofNat 64 232) 64 from rfl, mo.sD]
+  obtain e₂ : s₇.mem.read (W + 240#64) 8 = BitVec.ofNat 64 n := by
+    rw [show s₇.mem.read (W + 240#64) 8 = s₇.mem.readW (W + BitVec.ofNat 64 240) 64 from rfl, mo.sN]
+  obtain e₉ : (BitVec.ofNat 64 n >>> 7) <<< 7 = BitVec.ofNat 64 P := by
+    rw [Gcm.AArch64.Stitch.ushr7 hn, Stitch.shl7 (by have := Nat.mul_div_le n 128; omega_using [hn]), ← mo.hP]
+  cases to with
+  | false =>
+    refine ⟨_, by arun [Impl.AesGcm.AArch64.Stitch.whole, he.x19, q₁, q₂, Bool.cond_false, List.append_nil], ?_⟩
+    refine ⟨?_, ?_, ?_, ?_, ⟨by others_tac, rfl, rfl, rfl, rfl⟩⟩
+    · simp [gpr_write, e₁, e₂, e₉]
+    · simp [gpr_write, e₂, e₉]
+      rw [Offset.ofNat_sub_ofNat hPn]
+    · simp [gpr_write]
+      rw [mo.hP, show 128 * (n / 128) % 16 = 0 by omega_using []]
+    · show _ = _
+      simp [gpr_write, e₂]
+  | true =>
+    have ou : OutIn Ctx W D O n s₇ := mo.out
+    obtain e₃ : s₇.mem.read (W + 320#64) 8 = O := by
+      rw [show s₇.mem.read (W + 320#64) 8 = s₇.mem.readW (W + BitVec.ofNat 64 320) 64 from rfl, ou.sO]
+    refine ⟨_, by arun [Impl.AesGcm.AArch64.Stitch.whole, he.x19, q₁, q₂, q₃, dstO, Bool.cond_true], ?_⟩
+    refine ⟨?_, ?_, ?_, ?_, ⟨by others_tac, rfl, rfl, rfl, rfl⟩⟩
+    · simp [gpr_write, e₁, e₂, e₉]
+    · simp [gpr_write, e₂, e₉]
+      rw [Offset.ofNat_sub_ofNat hPn]
+    · simp [gpr_write]
+      rw [mo.hP, show 128 * (n / 128) % 16 = 0 by omega_using []]
+    · show _ = _
+      simp [gpr_write, e₂, e₃, e₉]
+
+/-- `omBS to`: the rest decrypted if the tag is right; if not, in place the
+text as it was, out of place the output zeroed. -/
+theorem omBS_ok (v : GcmImpl) (to : Bool) {fr : List Region} {s s₇ : State} (hR : R = 10 ∨ R = 12 ∨ R = 14)
+    (mo : MidSG to fr Ctx W SP D O Np A R nl al n tl P C₁ C₂ s s₇) :
+    WP isa (omBS v.callees to) s₇ fun s' =>
+      let ciph := ciphOf s.mem Ctx R
+      let H := blockAt s.mem (Ctx + BitVec.ofNat 64 240)
+      let T := Spec.Gcm.fullTag ciph H (bytesAt s.mem Np nl) (bytesAt s.mem A al) (C₁ ++ C₂)
+      let b := decide (T.take tl = bytesAt s.mem W tl)
+      (Env Ctx (W + BitVec.ofNat 64 16) W SP s' ∧
+      s'.gpr .x0 = BitVec.ofNat 64 (if b then 1 else 0) ∧
+      bytesAt s'.mem O n = if b then gctr ciph (inc32 (Spec.Gcm.j0 H (bytesAt s.mem Np nl))) (C₁ ++ C₂)
+        else cond to (List.replicate n 0) (C₁ ++ C₂)) ∧ Frame (crFrame (W + BitVec.ofNat 64 16) W O n) s₇.mem s'.mem := by
+  have hdk := mo.dataOk
+  have hn := hdk.lt
+  have hwrap := hdk.wrap
+  have ow := mo.outW
+  obtain hPn : P ≤ n := mo.hP ▸ Nat.mul_div_le n 128
+  obtain hP16 : P % 16 = 0 := by rw [mo.hP]; omega_using []
+  have x27₇ := mo.x27
+  obtain dPr : ∀ E : Addr, (⟨E, P⟩ : Region).Disjoint ⟨E + BitVec.ofNat 64 P, n - P⟩ :=
+    fun E => Offset.base_disjoint E (Nat.le_refl _) (by omega_using [hn, hPn])
+  obtain subP : ∀ E : Addr, Region.Sub ⟨E, P⟩ ⟨E, n⟩ := fun _ => Region.sub_prefix hPn
+  obtain subR : ∀ E : Addr, Region.Sub ⟨E + BitVec.ofNat 64 P, n - P⟩ ⟨E, n⟩ := fun E => Offset.sub_base E (by omega_using [hPn])
+  obtain hsplit : ∀ (m : Mem) (E : Addr), bytesAt m E n = bytesAt m E P ++ bytesAt m (E + BitVec.ofNat 64 P) (n - P) :=
+    fun m E => by rw [← bytesAt_add, Nat.add_sub_cancel' hPn]
+  obtain crSub : ∀ {E : Addr} {k : Nat}, Region.Sub ⟨E, k⟩ ⟨O, n⟩ →
+      ∀ r ∈ crFrame (W + BitVec.ofNat 64 16) W E k, ∃ r' ∈ crFrame (W + BitVec.ofNat 64 16) W O n, Region.Sub r r' :=
+    fun {E k} hE r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact ⟨_, List.mem_cons_self .., hE⟩
+      · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), fun _ h => h⟩
+      · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)), fun _ h => h⟩
+  dsimp only
+  generalize hJ : inc32 (Spec.Gcm.j0 (blockAt s.mem (Ctx + BitVec.ofNat 64 240)) (bytesAt s.mem Np nl)) = J at mo ⊢
+  have pre₇ := mo.pre
+  have cb₇ := mo.cb
+  have cbs₇ := mo.cbs
+  rw [hJ] at pre₇ cb₇ cbs₇
+  generalize decide ((Spec.Gcm.fullTag (ciphOf s.mem Ctx R) (blockAt s.mem (Ctx + BitVec.ofNat 64 240))
+    (bytesAt s.mem Np nl) (bytesAt s.mem A al) (C₁ ++ C₂)).take tl = bytesAt s.mem W tl) = B at x27₇ ⊢
+  unfold omBS
+  obtain hite : WP isa (.ite (.zero .x .x27) (Impl.AesGcm.AArch64.Stitch.failS v.callees to)
+      (Impl.AesGcm.AArch64.Stitch.okS v.callees to)) s₇
+      (fun (s₉ : State) => Env Ctx (W + BitVec.ofNat 64 16) W SP s₉ ∧ s₉.gpr .x27 = s₇.gpr .x27 ∧
+      Frame (crFrame (W + BitVec.ofNat 64 16) W O n) s₇.mem s₉.mem ∧
+      bytesAt s₉.mem O n = if B then gctr (ciphOf s.mem Ctx R) J (C₁ ++ C₂)
+        else cond to (List.replicate n 0) (C₁ ++ C₂)) := by
+    refine WP.ite (decide ((if B then 1 else 0) = 0)) (eval_zero x27₇ (by cases B <;> decide)) (fun ht => ?_)
+      (fun hf => ?_)
+    · have hB : B = false := by revert ht; cases B <;> simp
+      subst hB
+      cases to with
+      | true =>
+        have ou : OutIn Ctx W D O n s₇ := mo.out
+        refine WP.mono (wipeTo_ok mo.env ou.sO mo.sN ou.dw) fun s₉ ⟨z, f, g, sp, rd, wr⟩ =>
+          ⟨mo.env.keep (fun r hr => g r (by
+              simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+              rcases hr with rfl | rfl | rfl <;> decide) (by
+              simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+              rcases hr with rfl | rfl | rfl <;> decide) (by
+              simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+              rcases hr with rfl | rfl | rfl <;> decide)) sp rd wr,
+            g _ (by decide) (by decide) (by decide),
+            f.sub fun r hr => ⟨r, by simp only [List.mem_singleton] at hr; subst hr; simp, fun _ h => h⟩,
+            by rw [z]; rfl⟩
+      | false =>
+        have eO : O = D := mo.out
+        subst eO
+        have hdw : DataW Ctx (W + BitVec.ofNat 64 16) W s₇ O n := mo.data
+        simp only [Impl.AesGcm.AArch64.Stitch.failS, Bool.cond_false]
+        obtain ⟨s₈, run₈, m₈, x23₈, x24₈, x25₈, x26₈, og₈, sp₈, rd₈, wr₈⟩ := failArgs_ok mo
+        refine WP.seq (WP.of_runBlock ⟨s₈, run₈, ?_⟩)
+        obtain he₈ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₈ := mo.env.keep (fun r hr => og₈ r (by
+          simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+          rcases hr with rfl | rfl | rfl <;> decide)) sp₈ rd₈ wr₈
+        obtain f₈ : Frame [⟨W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48, 16⟩] s₇.mem s₈.mem := by
+          rw [m₈]; exact (Frame.refl _ _).write (List.mem_singleton_self _) _ (Region.contains_self _ _)
+        obtain dS : ∀ {E : Addr} {k : Nat}, Region.Sub ⟨E, k⟩ ⟨O, n⟩ →
+            ∀ r ∈ [(⟨W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48, 16⟩ : Region)], (⟨E, k⟩ : Region).Disjoint r :=
+          fun hE r hr => by
+            simp only [List.mem_singleton] at hr; subst hr
+            exact (hdw.ok.st.sub_left hE).sub_right (Lay.stSub (by decide))
+        obtain hCr : CrIn Ctx (W + BitVec.ofNat 64 16) W SP s₈.gpr R 0 O P s₈ :=
+          ⟨he₈, fun _ _ => rfl, by rw [og₈ _ (by decide), mo.x22], hR, x23₈, x24₈, x25₈,
+            (hdw.take hPn).of_eq rd₈ wr₈, rfl⟩
+        obtain hcb₈ : blockAt s₈.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48) = J := by
+          rw [m₈, blockAt_copy]; exact cbs₇
+        obtain hc₈ : ciphOf s₈.mem Ctx R = ciphOf s.mem Ctx R := by
+          rw [ciph_frame f₈ (fun r hr => by
+            simp only [List.mem_singleton] at hr; subst hr
+            exact L.cs.sub_right (Lay.stSub (by decide))) hR, mo.ciph]
+        refine WP.mono (cryptAlT_ok L v (icb := J) hCr rfl x26₈ hn fun _ h => absurd (by omega_using [hP16]) h)
+          fun s₉ h₉ => ⟨h₉.env, ?_, ?_, ?_⟩
+        · rw [h₉.kept .x27 (by decide), og₈ _ (by decide)]
+        · refine (f₈.sub fun r hr => ?_).trans (h₉.frame.sub (crSub (subP O)))
+          simp only [List.mem_singleton] at hr; subst hr
+          exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), Region.sub_prefix (by decide)⟩
+        · have e₁ : bytesAt s₉.mem O P = C₁ := by
+            rw [h₉.out (Proof.Gcm.ctr_zero _ _ _ _ hcb₈), hc₈, bytesAt_frame f₈ (dS (subP O)) (by omega_using [hn, hPn]), pre₇,
+              xorKs_xorKs]
+          obtain e₂ : bytesAt s₉.mem (O + BitVec.ofNat 64 P) (n - P) = C₂ := by
+            rw [bytesAt_frame h₉.frame (fun r hr => by
+                simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+                rcases hr with rfl | rfl | rfl
+                · exact (dPr O).symm
+                · exact (hdw.ok.st.sub_left (subR O)).sub_right (Lay.stSub (by decide))
+                · exact (hdw.ok.w.sub_left (subR O)).sub_right (Lay.wSub (by decide))) (by omega_using [hn]),
+              bytesAt_frame f₈ (dS (subR O)) (by omega_using [hn]), mo.rest]
+          rw [hsplit, e₁, e₂]; rfl
+    · have hB : B = true := by revert hf; cases B <;> simp
+      subst hB
+      unfold Impl.AesGcm.AArch64.Stitch.okS
+      obtain ⟨s₈, run₈, x23₈, x24₈, x25₈, x26₈, r₈⟩ := okArgsG_ok to mo
+      refine WP.seq (WP.of_runBlock ⟨s₈, run₈, ?_⟩)
+      obtain he₈ := mo.env.of_regs r₈
+      obtain hctr : Ctr s₈.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48) (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 64)
+          (ciphOf s₈.mem Ctx R) J P :=
+        ⟨by rw [r₈.mem, cb₇]; congr 1; omega_using [hP16], fun h => absurd hP16 h⟩
+      obtain hfin : ∀ {s₉ : State}, Frame (crFrame (W + BitVec.ofNat 64 16) W (O + BitVec.ofNat 64 P) (n - P)) s₈.mem s₉.mem →
+          bytesAt s₉.mem (O + BitVec.ofNat 64 P) (n - P) =
+            xorKs (ciphOf s₈.mem Ctx R) J P (bytesAt s₈.mem (D + BitVec.ofNat 64 P) (n - P)) →
+          bytesAt s₉.mem O n = gctr (ciphOf s.mem Ctx R) J (C₁ ++ C₂) := fun {s₉} f₉ o₉ => by
+        obtain e₁ : bytesAt s₉.mem O P = bytesAt s₇.mem O P := by
+          rw [bytesAt_frame f₉ (fun r hr => by
+              simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+              rcases hr with rfl | rfl | rfl
+              · exact dPr O
+              · exact (ow.ok.st.sub_left (subP O)).sub_right (Lay.stSub (by decide))
+              · exact (ow.ok.w.sub_left (subP O)).sub_right (Lay.wSub (by decide))) (by omega_using [hn, hPn]), r₈.mem]
+        rw [hsplit, e₁, pre₇, o₉, r₈.mem, mo.ciph, mo.rest, Proof.Gcm.gctr_eq, Proof.Gcm.xorKs_append, mo.len₁,
+          Nat.zero_add]
+      cases to with
+      | false =>
+        have eO : O = D := mo.out
+        subst eO
+        have hdw : DataW Ctx (W + BitVec.ofNat 64 16) W s₇ O n := mo.data
+        have x26f : s₈.gpr .x26 = BitVec.ofNat 64 n := x26₈
+        obtain hCr : CrIn Ctx (W + BitVec.ofNat 64 16) W SP s₈.gpr R P (O + BitVec.ofNat 64 P) (n - P) s₈ :=
+          ⟨he₈, fun _ _ => rfl, by rw [r₈.others _ (by decide), mo.x22], hR, x23₈, x24₈, x25₈,
+            (hdw.drop hPn).of_eq r₈.rd r₈.wr, rfl⟩
+        simp only [Bool.cond_false]
+        refine WP.mono (cryptAlT_ok L v (icb := J) hCr hP16 x26f hn
+            (tail_big (by rw [r₈.wr]; exact hdw.wr) hn rfl (by omega_using [hPn])))
+          fun s₉ h₉ => ⟨h₉.env, ?_, ?_, ?_⟩
+        · rw [h₉.kept .x27 (by decide), r₈.others _ (by decide)]
+        · rw [← r₈.mem]; exact h₉.frame.sub (crSub (subR O))
+        · rw [hfin h₉.frame (h₉.out hctr)]; rfl
+      | true =>
+        have ou : OutIn Ctx W D O n s₇ := mo.out
+        have x26t : s₈.gpr .x26 = O + BitVec.ofNat 64 P := x26₈
+        obtain hCr : CrInG true Ctx (W + BitVec.ofNat 64 16) W SP s₈.gpr R P (D + BitVec.ofNat 64 P)
+            (O + BitVec.ofNat 64 P) (n - P) s₈ :=
+          ⟨he₈, (fun _ _ => rfl : KeptTo s₈.gpr s₈), by rw [r₈.others _ (by decide), mo.x22], hR, x23₈, x24₈,
+            x25₈, ((dataOk_of mo.data).drop hPn).of_eq r₈.rd r₈.wr,
+            OutAt.mkTo ((ou.dw.drop hPn).of_eq r₈.rd r₈.wr)
+              ((ou.dd.sub_left (subR D)).sub_right (subR O)) (by rw [x26t, BitVec.add_zero])⟩
+        simp only [Bool.cond_true]
+        refine WP.mono (cryptAlG_ok L v true (icb := J) hCr hP16) fun s₉ h₉ => ⟨h₉.env, ?_, ?_, ?_⟩
+        · rw [keptG_x27 h₉.kept, r₈.others _ (by decide)]
+        · rw [← r₈.mem]; exact h₉.frame.sub (crSub (subR O))
+        · rw [hfin h₉.frame (h₉.out hctr)]; rfl
+  refine WP.seq (WP.mono hite fun s₉ ⟨he₉, x27₉, f₉, d₉⟩ => ?_)
+  refine WP.run ⟨_, by arun [], rfl⟩ fun s' hs' => ?_
+  subst hs'
+  refine ⟨⟨he₉.keep (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl <;> simp [gpr_write]) rfl rfl rfl, by simp [gpr_write, x27₉, x27₇], d₉⟩, f₉⟩
+
+omit L in
+/-- The first counter block kept at `W + cbO`. -/
+theorem saveCb_ok {s : State} (he : Env Ctx (W + BitVec.ofNat 64 16) W SP s) :
+    ∃ t, runBlock isa [.ldrq .v0 .x20 48, .strq .v0 .x19 Impl.AesGcm.AArch64.Stitch.cbO] s = some t ∧
+      t.mem = s.mem.write (W + BitVec.ofNat 64 Impl.AesGcm.AArch64.Stitch.cbO) 16
+        (s.mem.read (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48) 16) ∧
+      t.gpr = s.gpr ∧ t.sp = s.sp ∧ t.rd = s.rd ∧ t.wr = s.wr := by
+  obtain q₀ := he.perm.stR (show 48 + 16 ≤ 80 by decide)
+  obtain w₀ := he.perm.wW (show 320 + 16 ≤ 2560 by decide)
+  refine ⟨_, by arun [Impl.AesGcm.AArch64.Stitch.cbO, he.x19, he.x20, q₀, w₀, gpr_setV, wr_setV, rd_setV,
+    mem_setV, sp_setV, v_setV_self], ?_⟩
+  exact ⟨by simp [Impl.AesGcm.AArch64.Stitch.cbO, he.x19, he.x20], rfl, rfl, rfl, rfl⟩
+
+omit L in
+/-- Out of place, the destination (kept at `W + dstO`) loaded into `x15`. -/
+theorem ldrDst_ok {s : State} {O : Addr} (he : Env Ctx (W + BitVec.ofNat 64 16) W SP s)
+    (sO : s.mem.readW (W + BitVec.ofNat 64 320) 64 = O) :
+    ∃ t, runBlock isa [.ldr .x .x15 .x19 dstO] s = some t ∧ t.gpr .x15 = O ∧ Regs [.x15] s t := by
+  obtain q₃ := he.perm.wR (show 320 + 8 ≤ 2560 by decide)
+  obtain e₃ : s.mem.read (W + 320#64) 8 = O := by
+    rw [show s.mem.read (W + 320#64) 8 = s.mem.readW (W + BitVec.ofNat 64 320) 64 from rfl, sO]
+  refine ⟨_, by arun [he.x19, q₃, dstO], ?_⟩
+  exact ⟨by simp [gpr_write, e₃], ⟨by others_tac, rfl, rfl, rfl, rfl⟩⟩
+
+end
+
+end VG.Proof.AesGcm.AArch64.Fast
+
+end
+
+end
 
 /-!
 # AES-GCM on AArch64, interleaved: `open` up to the branch on the tag

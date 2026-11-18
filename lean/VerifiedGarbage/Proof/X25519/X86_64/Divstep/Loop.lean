@@ -1,12 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.X25519.X86_64.Mem
-import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Step
-public import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Spec
+public import VerifiedGarbage.Proof.X25519.X86_64.Divstep.FRow
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.PlainSimp
-public import VerifiedGarbage.Proof.X25519.X86_64.Divstep.FRow
 
 /-! ### `X25519.X86_64.Divstep.Packed`, which only this module used -/
 

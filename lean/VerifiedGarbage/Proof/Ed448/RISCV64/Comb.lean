@@ -13,7 +13,6 @@ import VerifiedGarbage.Proof.Ed448.RISCV64.BaseInit
 import VerifiedGarbage.Proof.X448.RISCV64.R64.Basic
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.X25519.RISCV64.Pass
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.RISCV64.Wp
 import VerifiedGarbage.Proof.Framework.AddrArith

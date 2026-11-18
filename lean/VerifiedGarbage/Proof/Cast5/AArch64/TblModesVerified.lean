@@ -1,9 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Cast5.AArch64.TblBatch
-public import VerifiedGarbage.Proof.Cast5.AArch64.ModeCore
 public import VerifiedGarbage.Proof.Cast5.AArch64.FbVerified
-public import VerifiedGarbage.Proof.Blowfish.AArch64.KeepV
+public import VerifiedGarbage.Proof.Blowfish.AArch64.ModeCore
 public import VerifiedGarbage.Proof.Cast5.ModeScratch
 public import VerifiedGarbage.Proof.Cast5.Rounds
 public import VerifiedGarbage.Impl.Cast5.AArch64.TblModes
@@ -11,7 +10,6 @@ public import VerifiedGarbage.Impl.StackScratch.AArch64
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Cast5.Contract
 public import VerifiedGarbage.TCB.AArch64.Target
-public import VerifiedGarbage.Proof.Blowfish.AArch64.ModeCore
 public import VerifiedGarbage.Proof.Blowfish.AArch64.EcbMain
 import VerifiedGarbage.Proof.Blowfish.AArch64.ConstantTime
 import VerifiedGarbage.Proof.Modes.AArch64.Steps
@@ -25,9 +23,8 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.Taint
 import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Cast5.AArch64.TblBatch
-meta import VerifiedGarbage.Proof.Cast5.AArch64.ModeCore
 meta import VerifiedGarbage.Proof.Cast5.AArch64.FbVerified
-meta import VerifiedGarbage.Proof.Blowfish.AArch64.KeepV
+meta import VerifiedGarbage.Proof.Blowfish.AArch64.ModeCore
 meta import VerifiedGarbage.Proof.Cast5.ModeScratch
 meta import VerifiedGarbage.Proof.Cast5.Rounds
 meta import VerifiedGarbage.Impl.Cast5.AArch64.TblModes
@@ -35,7 +32,6 @@ meta import VerifiedGarbage.Impl.StackScratch.AArch64
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Spec.Cast5.Contract
 meta import VerifiedGarbage.TCB.AArch64.Target
-meta import VerifiedGarbage.Proof.Blowfish.AArch64.ModeCore
 meta import VerifiedGarbage.Proof.Blowfish.AArch64.EcbMain
 meta import VerifiedGarbage.Proof.Blowfish.AArch64.ConstantTime
 meta import VerifiedGarbage.Proof.Modes.AArch64.Steps

@@ -3,12 +3,11 @@ module
 public import VerifiedGarbage.Proof.Modes.AArch64.ViaV
 public import VerifiedGarbage.Impl.Sm4.AArch64.Ctr
 public import VerifiedGarbage.Spec.Sm4.Cbc
-public import VerifiedGarbage.Proof.Sm4.AArch64.PreparedBody
+public import VerifiedGarbage.Proof.Sm4.AArch64.PreparedVerified
 import VerifiedGarbage.Proof.Modes.AArch64.Steps
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Sm4.CtrCipher
-import VerifiedGarbage.Proof.Sm4.AArch64.PreparedVerified
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd

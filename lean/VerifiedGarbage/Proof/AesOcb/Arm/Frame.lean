@@ -6,13 +6,11 @@ public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import Batteries.Logic
 public import VerifiedGarbage.Impl.AesOcb.Arm
-public import VerifiedGarbage.Proof.AesOcb.Arm.Contract
+public import VerifiedGarbage.Proof.AesOcb.Arm.Env
 public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.AesGcm.Arm.Blocks
 public import VerifiedGarbage.Proof.AesOcb.Arm.Body
-import VerifiedGarbage.Proof.AesOcb.Arm.Seal
 import VerifiedGarbage.Proof.AesGcm.Arm.Compare
-import VerifiedGarbage.Proof.AesOcb.Arm.Front
 import VerifiedGarbage.Proof.AesOcb.Arm.RestTag
 import VerifiedGarbage.Proof.Ocb.Bytes
 import VerifiedGarbage.Proof.Ocb.State
@@ -25,7 +23,7 @@ import VerifiedGarbage.Proof.Aes.Ct32.Layers
 import VerifiedGarbage.Proof.AesGcm.Arm.CryptOk
 import VerifiedGarbage.Proof.AesGcm.Arm.Ghash1
 import VerifiedGarbage.Proof.AesOcb.Arm.Hash
-import VerifiedGarbage.Proof.AesOcb.Arm.HashFill
+import VerifiedGarbage.Proof.AesOcb.Arm.HashChunk
 import VerifiedGarbage.Proof.Cmac.Mem
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -36,7 +34,6 @@ import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Sha256.Stream
 import VerifiedGarbage.Spec.Ocb.Contract
-import VerifiedGarbage.Proof.AesOcb.Arm.Nonce
 public import VerifiedGarbage.Impl.StackScratch.Arm
 import VerifiedGarbage.Proof.Framework.Arm.StackScratch
 

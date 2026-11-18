@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Base
+public import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Base
 public import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Hash
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
@@ -10,7 +10,6 @@ public import VerifiedGarbage.Impl.Ed25519.X86_64.SignCached
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 public import VerifiedGarbage.Proof.Ed25519.X86_64.MulAddVerified
-public import VerifiedGarbage.Proof.Ed25519.X86_64.BaseCallee
 public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarMain
 import VerifiedGarbage.Proof.Ed25519.Signing
 import VerifiedGarbage.Proof.Ed25519.VerifyBytes

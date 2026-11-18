@@ -17,15 +17,15 @@ public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Callee
 public import VerifiedGarbage.Proof.Gcm.PreparedContract
 public import VerifiedGarbage.Proof.Gcm.OutOfPlaceContract
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.SplitCall
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Verified
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.FrontFast
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.StreamTo
 public import VerifiedGarbage.Proof.AesGcm.X86_64.VerifiedP
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Variant
 public import VerifiedGarbage.Proof.AesGcm.X86_64.GhashImpls
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Short
 public import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Ghash
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Pow
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.OkP
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchR.Ok
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Tab
 public import VerifiedGarbage.Proof.Gcm.Poly
 import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Bcast
@@ -39,7 +39,6 @@ import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Gcm.Stream
 import VerifiedGarbage.Proof.Gcm.Split
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchR.Ok
 import VerifiedGarbage.Proof.Framework.TacticTemplate
 import VerifiedGarbage.Proof.Framework.TaintBatch
 public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Verified
@@ -50,7 +49,6 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.Short.SealFin
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Ok
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Ct
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Ok
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.StreamTo
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Verified
 public import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
@@ -60,8 +58,6 @@ public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksVerifiedP
 public import VerifiedGarbage.Proof.Gcm.Prepared16Contract
 public import VerifiedGarbage.Impl.StackScratch.X86_64
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared16.Verified
-import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.OpenCT
-import VerifiedGarbage.Proof.AesGcm.X86_64.Short.KsA
 public import VerifiedGarbage.Proof.AesGcm.ScratchSplit
 import VerifiedGarbage.Proof.AesGcm.ScratchPrepared16
 import VerifiedGarbage.Proof.AesGcm.Scratch
@@ -82,7 +78,7 @@ public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared16.BlocksVerified
 public import VerifiedGarbage.Proof.AesGcm.X86_64.OpenTo.Verified
 public import VerifiedGarbage.Proof.AesGcm.X86_64.OpenToSplit.Verified
 public import VerifiedGarbage.Proof.AesGcm.X86_64.OpenSplit.Fn
-public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksToDec.Fn
+public import VerifiedGarbage.Proof.AesGcm.X86_64.OpenSplit.Prefix
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchToDec.Loop
 public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.DecTo
 public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Contract

@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Bignum.Arm.WindowPhase
 import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Bignum.Arm.SharedWindowArithmetic
-import VerifiedGarbage.Proof.Bignum.Arm.WindowState
+public import VerifiedGarbage.Proof.Bignum.Arm.WindowBuild
 import VerifiedGarbage.Proof.Bignum.Arm.ExpControl
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.CallLay
@@ -16,7 +16,6 @@ import VerifiedGarbage.Proof.Bignum.Arm.WindowScan
 import VerifiedGarbage.Proof.Bignum.Arm.WindowCtl
 import VerifiedGarbage.Proof.Bignum.Math
 public import VerifiedGarbage.Proof.Bignum.Arm.ExpState
-public import VerifiedGarbage.Proof.Bignum.Arm.WindowBuild
 
 /-! ### `Bignum.Arm.SharedWindowBuild`, which this module and modules that import it used -/
 

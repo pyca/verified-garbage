@@ -1,11 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.Ops
+public import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.Groups
 public import VerifiedGarbage.Proof.Gcm.Clmul.Arith
 public import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.PrepKey
 import VerifiedGarbage.Proof.Gcm.Powers
 public import VerifiedGarbage.Proof.Gcm.AArch64.Ghash
-public import VerifiedGarbage.Proof.Gcm.Prepared8Contract
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.Framework.Range
@@ -15,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.Ops
+meta import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.Groups
 meta import VerifiedGarbage.Proof.Gcm.Clmul.Arith
 meta import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.PrepKey
 meta import VerifiedGarbage.Proof.Gcm.Powers
@@ -40,7 +39,6 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.ResidueTaint
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 public import VerifiedGarbage.Spec.Gcm.Powers8
-
 
 @[expose] public section
 

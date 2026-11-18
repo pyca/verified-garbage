@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.X448.AArch64.Init
+import VerifiedGarbage.Proof.X448.AArch64.Mul
 import VerifiedGarbage.Proof.Curve448.AArch64.Fast.MOp
 public import VerifiedGarbage.Proof.Curve448.AArch64.Swap
 public import VerifiedGarbage.Impl.Ed448.AArch64.VerifyWindow

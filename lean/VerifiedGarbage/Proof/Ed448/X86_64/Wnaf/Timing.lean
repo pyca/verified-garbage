@@ -3,10 +3,9 @@ module
 import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Joint
 public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Timing
 public import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Loop
-public import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.ReadDigit
+public import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Math
 import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Recode
 import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Init
-import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Add
 import VerifiedGarbage.Proof.Ed448.X86_64.Window.Table
 import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Coords
 import VerifiedGarbage.Proof.Ed448.Wnaf.Recoding
@@ -18,10 +17,9 @@ import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 meta import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Joint
 meta import VerifiedGarbage.Proof.Ed448.X86_64.Window.Timing
 meta import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Loop
-meta import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.ReadDigit
+meta import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Math
 meta import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Recode
 meta import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Init
-meta import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Add
 meta import VerifiedGarbage.Proof.Ed448.X86_64.Window.Table
 meta import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Coords
 meta import VerifiedGarbage.Proof.Ed448.Wnaf.Recoding

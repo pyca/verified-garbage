@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Idea.ModeBytes
 import VerifiedGarbage.Proof.Idea.X86.Ecb
-import VerifiedGarbage.Proof.Idea.X86.Block
 import Mathlib.Data.Finset.Attr
 import Mathlib.Tactic.SetLike
 import Mathlib.Order.RelClasses

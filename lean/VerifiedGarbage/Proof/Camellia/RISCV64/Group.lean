@@ -21,7 +21,7 @@ section
 /-!
 # Bitslicing a subkey on RISC-V, by evaluation
 
-As on PPC64LE (`Proof/Camellia/PPC64LE/KeyChecks.lean`): `keyOne d` loads
+As on PPC64LE (`Proof/Camellia/PPC64LE/Group.lean`): `keyOne d` loads
 the subkey at `[a0 + d]` (a byte at a time, `Words64.loadLE64_ok`) into
 `q 0`, copies it to the other state registers and bitslices them as `toBs`
 does eight blocks' halves (`keyRest`), and stores the planes to the entry

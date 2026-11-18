@@ -17,7 +17,7 @@ public import VerifiedGarbage.Impl.AesGcm.RISCV64
 # AES-GCM on RISC-V: `vg_aes_gcm_open`
 
 Untrusted: everything here is checked by Lean. As on ARMv7
-(`Proof/AesGcm/Arm/Open.lean`): `open` checks the tag length; if it is
+(`Proof/AesGcm/Arm/CTCrypt.lean`): `open` checks the tag length; if it is
 allowed, it computes the tag of the ciphertext into `W + 112` (`oneAad`,
 `oneTag 112`), copies the received tag to `W + 256` and compares the first
 `tag_len` bytes of each (`recv`, `cmp 112`), and decrypts the data in place

@@ -1,17 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.AttemptVerified
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.AttemptContract
-import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.AttemptCorrect
-import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.AttemptCT
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 import VerifiedGarbage.Proof.Bignum.X86_64.CallPost
 import VerifiedGarbage.Proof.Bignum.X86_64.Template
 import VerifiedGarbage.Proof.Bignum.X86_64.R2Impl
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.AttemptVerified
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.AttemptContract
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.AttemptCorrect
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.AttemptCT
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CallPost
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Template

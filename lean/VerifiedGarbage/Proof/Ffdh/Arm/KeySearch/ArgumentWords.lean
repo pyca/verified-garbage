@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Arguments
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Regions
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.AttemptPost
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Bounds
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Geometry
 import VerifiedGarbage.Proof.MlKem.Mem
 import VerifiedGarbage.Proof.Framework.Arm.Exec

@@ -3,20 +3,18 @@ module
 import VerifiedGarbage.Proof.Modes.Arm.CbcChained
 public import VerifiedGarbage.Proof.TripleDes.Arm.ModeCore
 public import VerifiedGarbage.Proof.TripleDes.CbcScratch
-public import VerifiedGarbage.Proof.Modes.Arm.SeqCT
+public import VerifiedGarbage.Proof.Modes.Arm.Cbc
 import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
 import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
-import VerifiedGarbage.Proof.Modes.Arm.Cbc
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Modes.Arm.CbcChained
 meta import VerifiedGarbage.Proof.TripleDes.Arm.ModeCore
 meta import VerifiedGarbage.Proof.TripleDes.CbcScratch
-meta import VerifiedGarbage.Proof.Modes.Arm.SeqCT
+meta import VerifiedGarbage.Proof.Modes.Arm.Cbc
 meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
 meta import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
-meta import VerifiedGarbage.Proof.Modes.Arm.Cbc
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub

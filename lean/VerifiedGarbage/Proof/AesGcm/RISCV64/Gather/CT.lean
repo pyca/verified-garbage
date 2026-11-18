@@ -20,7 +20,7 @@ call's arguments are at the stack pointer, our frame and our stack
 arguments; the gathering is constant time by `gather_rel`
 (`Proof/Gather/RISCV64/LoopCT.lean`); and the call is constant time by its
 callee's contract, whose public arguments agree (`sealGather_ct`). As for
-ChaCha20-Poly1305 (`Proof/ChaCha20Poly1305/RISCV64/Gather/CT.lean`).
+ChaCha20-Poly1305 (`Proof/ChaCha20Poly1305/RISCV64/Gather/Verified.lean`).
 -/
 
 @[expose] public section

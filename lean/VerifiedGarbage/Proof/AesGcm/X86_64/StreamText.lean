@@ -1,8 +1,8 @@
 module
+
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Flush
 public import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Piece
-
-import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks
+import VerifiedGarbage.Proof.AesGcm.X86_64.Absorb
 import VerifiedGarbage.Proof.AesGcm.X86_64.CryptOk
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.AesGcm.X86_64.Fn

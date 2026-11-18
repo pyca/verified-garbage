@@ -13,10 +13,8 @@ import VerifiedGarbage.Proof.AesCcm.X86_64.Env
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.AesOcb.X86_64.Hash
-public import VerifiedGarbage.Proof.AesOcb.X86_64.HashChunk
+public import VerifiedGarbage.Proof.AesOcb.X86_64.Hash
 public import VerifiedGarbage.Proof.Framework.WriteBytes
-import VerifiedGarbage.Proof.AesOcb.X86_64.RestTag
 import VerifiedGarbage.Proof.AesOcb.X86_64.PadTo
 import VerifiedGarbage.Proof.AesCcm.X86_64.Bytes
 import VerifiedGarbage.Proof.AesCcm.X86_64.Callee

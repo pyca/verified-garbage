@@ -21,7 +21,7 @@ public import VerifiedGarbage.Impl.Ed448.RISCV64.Scalar
 public import VerifiedGarbage.Proof.Ed448.RISCV64.VVerified
 public import VerifiedGarbage.Proof.Framework.RISCV64.Call
 public import VerifiedGarbage.Proof.Ed25519.RISCV64.Base
-import VerifiedGarbage.Proof.X25519.RISCV64.Pass
+import VerifiedGarbage.Proof.X25519.RISCV64.Field
 public import VerifiedGarbage.Proof.Ed448.RISCV64.ScalarBit
 public import VerifiedGarbage.Impl.X25519.RISCV64
 public import VerifiedGarbage.Impl.X448.RISCV64

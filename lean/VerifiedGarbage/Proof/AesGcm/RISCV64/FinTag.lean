@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Gcm.RISCV64.Ghash
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.Tag
 public import VerifiedGarbage.Proof.Gcm.Compose
-import VerifiedGarbage.Proof.AesGcm.RISCV64.Absorb
+import VerifiedGarbage.Proof.AesGcm.RISCV64.Flush
 import VerifiedGarbage.Proof.AesGcm.RISCV64.TextAbsorb
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.RISCV64.Run
@@ -14,7 +14,7 @@ public import VerifiedGarbage.Impl.AesGcm.RISCV64
 # AES-GCM on RISC-V: the tag after the last piece (`finTag o`)
 
 Untrusted: everything here is checked by Lean. As on ARMv7
-(`Proof/AesGcm/Arm/FinTag.lean`): `finTag o` pads and absorbs the buffered
+(`Proof/AesGcm/Arm/StreamFinish.lean`): `finTag o` pads and absorbs the buffered
 bytes (`flush`), of the text if there is any and else of the additional
 data, then puts the tag into `W + o` (`tag`), for `aad_len` (`s10`) bytes
 of additional data and `text_len` (`s11`) of text (`finTag_ok`).

@@ -1,8 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Camellia.Arm.Prologue
+public import VerifiedGarbage.Proof.Camellia.Arm.Crypt8
 import VerifiedGarbage.Proof.Framework.Arm.Bytes
-public import VerifiedGarbage.Proof.Camellia.Arm.Core
 public import VerifiedGarbage.Proof.Camellia.Common
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
@@ -13,7 +12,6 @@ import VerifiedGarbage.Proof.Camellia.Layout32
 public import VerifiedGarbage.Impl.Camellia.Arm.ExpandKey
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Camellia.Planes32
-public import VerifiedGarbage.Proof.Camellia.Arm.Crypt8
 public import VerifiedGarbage.Proof.Camellia.Arm.Round
 
 /-! ### `Camellia.Arm.KeyPair`, which only this module used -/

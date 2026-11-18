@@ -1,10 +1,10 @@
 module
+
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Ghash1
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Crypt
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Flush
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Tag
-
-import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks
+import VerifiedGarbage.Proof.AesGcm.X86_64.Absorb
 import VerifiedGarbage.Proof.AesGcm.X86_64.TagCT
 import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
@@ -13,7 +13,7 @@ meta import VerifiedGarbage.Proof.AesGcm.X86_64.Ghash1
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Crypt
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Flush
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Tag
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Absorb
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.TagCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc

@@ -1,17 +1,15 @@
 module
-public import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Absorb
-public import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
 
+public import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Polyval
+public import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
 import VerifiedGarbage.Proof.AesGcm.AArch64.Rel
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Polyval
 import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Keys
 import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Derive
-meta import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Absorb
+meta import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Polyval
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.Rel
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
-meta import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Polyval
 meta import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Keys
 meta import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Derive
 import VerifiedGarbage.Proof.Framework.AArch64.Exec

@@ -1,9 +1,8 @@
 module
+
 public import VerifiedGarbage.Impl.Ed25519.X86_64.PointMul
 public import VerifiedGarbage.Proof.Ed25519.X86_64.PointPowers
-
 import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCounter
-import VerifiedGarbage.Proof.Ed25519.X86_64.PointAccumulateLoop
 import VerifiedGarbage.Proof.Ed25519.X86_64.FieldMemory
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.PlainSimp

@@ -3,12 +3,7 @@ module
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Shared
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.OpenTo
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Instance
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Whole.Fn
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Contract
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Fn
-import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.CT
-import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Whole.CT
-import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.By
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.CT
 import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Verified
 import VerifiedGarbage.Proof.ChaCha20Poly1305.OpenToScratch
 public import VerifiedGarbage.Proof.Framework.X86_64.Leaves

@@ -2,26 +2,22 @@ module
 
 public import VerifiedGarbage.Proof.Seed.Arm.ModeCore
 public import VerifiedGarbage.Proof.Seed.CbcScratch
-public import VerifiedGarbage.Proof.Modes.Arm.SeqCT
-public import VerifiedGarbage.Proof.Modes.Arm.WideCT
-import VerifiedGarbage.Proof.Modes.Arm.WideModes
+public import VerifiedGarbage.Proof.Modes.Arm.Cbc
+public import VerifiedGarbage.Proof.Modes.Arm.WideModes
 import VerifiedGarbage.Proof.Modes.Arm.CbcChained
 import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
 import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
-import VerifiedGarbage.Proof.Modes.Arm.Cbc
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Seed.Arm.ModeCore
 meta import VerifiedGarbage.Proof.Seed.CbcScratch
-meta import VerifiedGarbage.Proof.Modes.Arm.SeqCT
-meta import VerifiedGarbage.Proof.Modes.Arm.WideCT
+meta import VerifiedGarbage.Proof.Modes.Arm.Cbc
 meta import VerifiedGarbage.Proof.Modes.Arm.WideModes
 meta import VerifiedGarbage.Proof.Modes.Arm.CbcChained
 meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
 meta import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
-meta import VerifiedGarbage.Proof.Modes.Arm.Cbc
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset

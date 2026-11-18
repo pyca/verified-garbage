@@ -1,11 +1,9 @@
 module
 
-import VerifiedGarbage.Proof.AesCcm.RISCV64.B0
+public import VerifiedGarbage.Proof.AesCcm.RISCV64.B0
 import VerifiedGarbage.Proof.AesCcm.BytesAt
 public import VerifiedGarbage.Proof.AesCcm.Mac
 import VerifiedGarbage.Proof.Cmac.Spec
-public import VerifiedGarbage.Proof.AesCcm.RISCV64.Absorb
-import VerifiedGarbage.Proof.AesCcm.RISCV64.Header
 import VerifiedGarbage.Proof.AesCcm.RISCV64.Wp
 
 /-!

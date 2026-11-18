@@ -1,8 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
-public import VerifiedGarbage.Proof.Sm4Gcm.Arm.Env
-import VerifiedGarbage.Proof.Sm4Gcm.Arm.Run
+public import VerifiedGarbage.Proof.Sm4Gcm.Arm.Run
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset

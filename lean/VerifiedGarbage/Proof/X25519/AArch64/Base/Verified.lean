@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.X25519.AArch64.Base.Main
 public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseVerified
-public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseCTEngine
 import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarMemory
 import VerifiedGarbage.Proof.X25519.AArch64.Base.Engine
 import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseEngine
@@ -13,7 +12,6 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.X25519.AArch64.Ladder
 meta import VerifiedGarbage.Proof.X25519.AArch64.Base.Main
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseVerified
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseCTEngine
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarMemory
 meta import VerifiedGarbage.Proof.X25519.AArch64.Base.Engine
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseEngine

@@ -1,12 +1,11 @@
 module
-public import VerifiedGarbage.Proof.AesCcm.X86.Env
+
+public import VerifiedGarbage.Proof.AesCcm.X86.Run
 public import VerifiedGarbage.Proof.Cmac.Block32
 public import VerifiedGarbage.Spec.Ccm
-
 import VerifiedGarbage.Proof.AesCcm.X86.Blocks
 import VerifiedGarbage.Proof.AesCcm.BytesAt
 import VerifiedGarbage.Proof.AesCcm.X86.Callee
-import VerifiedGarbage.Proof.AesCcm.X86.Run
 import VerifiedGarbage.Proof.AesCcm.Mac
 import VerifiedGarbage.Proof.Cmac.Stream
 import VerifiedGarbage.Proof.Cmac.Spec

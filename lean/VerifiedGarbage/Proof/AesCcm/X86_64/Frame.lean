@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Impl.AesCcm.X86_64
 public import VerifiedGarbage.Proof.AesCcm.X86_64.Contract
 public import VerifiedGarbage.Proof.CmacAes.X86_64.Variant
-import VerifiedGarbage.Proof.AesCcm.X86_64.Open
 import VerifiedGarbage.Proof.AesCcm.X86_64.Seal
 public import VerifiedGarbage.Impl.StackScratch.X86_64
 public import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch

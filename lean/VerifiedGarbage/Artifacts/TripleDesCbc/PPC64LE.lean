@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.TripleDes.PPC64LE.ModesVerified
 public import VerifiedGarbage.Proof.TripleDes.PPC64LE.ModesFrame
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.TripleDes.PPC64LE.Scrub
 public import VerifiedGarbage.TCB.PPC64LE.Print
 import VerifiedGarbage.Proof.TripleDes.PPC64LE.ModesLit
 import VerifiedGarbage.Proof.TripleDes.PPC64LE.FunctionsLit
@@ -14,11 +15,7 @@ import VerifiedGarbage.Proof.TripleDes.PPC64LE.FunctionsLit
 namespace VG.Artifacts.TripleDesCbc.PPC64LE
 
 def artifacts : List Artifact := [
-  Spec.TripleDes.cbcEncryptChainedApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 608 .r7 72 Impl.TripleDes.PPC64LE.cbcEncryptChained
-    verified := Proof.TripleDes.PPC64LE.cbcEnc_framed Proof.TripleDes.PPC64LE.Modes.cbcEncryptChained_verified },
-  Spec.TripleDes.cbcDecryptChainedApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 1632 .r7 200 Impl.TripleDes.PPC64LE.cbcDecryptChained
-    verified := Proof.TripleDes.PPC64LE.cbcDec_framed Proof.TripleDes.PPC64LE.Modes.cbcDecryptChained_verified }]
+  Spec.TripleDes.cbcEncryptChainedApi.artifact PPC64LE.target Proof.TripleDes.PPC64LE.Scrub.cbcEncryptChainedReg,
+  Spec.TripleDes.cbcDecryptChainedApi.artifact PPC64LE.target Proof.TripleDes.PPC64LE.Scrub.cbcDecryptChainedReg]
 
 end VG.Artifacts.TripleDesCbc.PPC64LE

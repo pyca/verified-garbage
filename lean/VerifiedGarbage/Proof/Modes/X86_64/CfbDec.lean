@@ -1,9 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.Modes.X86_64.CfbDec
-public import VerifiedGarbage.Proof.Modes.X86_64.Copy
-public import VerifiedGarbage.Proof.Modes.Ctr
 public import VerifiedGarbage.Proof.Modes.X86_64.CbcGroup
+public import VerifiedGarbage.Proof.Modes.Ctr
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Modes.Cbc

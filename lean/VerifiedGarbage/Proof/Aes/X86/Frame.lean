@@ -1,13 +1,11 @@
 module
+
 public import VerifiedGarbage.Impl.Aes.X86.ExpandKey
 public import VerifiedGarbage.Spec.Aes.Contract
 public import VerifiedGarbage.Proof.Aes.Contract
 public import VerifiedGarbage.Impl.StackScratch.X86
 public import VerifiedGarbage.Proof.Framework.X86.Call
-
-import VerifiedGarbage.Proof.Aes.X86.ExpandKey
 import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyBlocks
-import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyVerified
 import VerifiedGarbage.Proof.Aes.Scratch
 import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
 import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit

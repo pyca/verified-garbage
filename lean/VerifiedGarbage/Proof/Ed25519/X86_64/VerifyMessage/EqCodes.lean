@@ -2,7 +2,6 @@ module
 
 import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyLit
 public import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCall
-import VerifiedGarbage.Proof.Ed25519.X86_64.WindowSlideCT
 import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.VerifyCT
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 public import VerifiedGarbage.Impl.Ed25519.X86_64.VerifyIfma

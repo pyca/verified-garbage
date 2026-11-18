@@ -1,6 +1,5 @@
 module
 
-import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.ArgumentBlocks
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Fields
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Controller
@@ -8,6 +7,65 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Contract
 public import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+
+/-! ### `Ffdh.Arm.KeySearch.ArgumentBlocks`, which this module and modules that import it used -/
+
+section
+
+/-! Small native blocks used to place the selected attempt's stack arguments. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm.KeySearch
+
+open VG VG.Arm VG.Proof.Mont VG.Proof.Bignum.Arm
+open VG.Proof.X25519.Arm (Rest)
+
+theorem argumentHead_ok (s : State) {base x y : BitVec 32} {n : Nat}
+    (h : Controller base s) (xvalue : lowWord s.mem base 5 = x)
+    (yvalue : lowWord s.mem base 6 = y) (width : lowWord s.mem base 2 = BitVec.ofNat 32 n) :
+    WP isa (.block [VG.Impl.Ffdh.Arm.KeySearch.ldf .r0 5, VG.Impl.Ffdh.Arm.KeySearch.ldf .r1 2,
+      VG.Impl.Ffdh.Arm.KeySearch.ldf .r2 6, VG.Impl.Ffdh.Arm.KeySearch.ldf .r3 2, .addSp .r12 0]) s fun t =>
+      (t.gpr .r0 = x ∧ t.gpr .r1 = BitVec.ofNat 32 n ∧ t.gpr .r2 = y ∧
+        t.gpr .r3 = BitVec.ofNat 32 n ∧ t.gpr .r12 = s.sp ∧ t.mem = s.mem) ∧
+      Rest [.r0, .r1, .r2, .r3, .r12] s t := by
+  refine withRest_all [.r0, .r1, .r2, .r3, .r12] ?_ (by rfl) (by rfl)
+  unfold VG.Impl.Ffdh.Arm.KeySearch.ldf lowWord at *
+  ffrun [h.addr (by decide : 5 < 16), h.addr (by decide : 6 < 16), h.addr (by decide : 2 < 16),
+    h.read (by decide : 5 < 16), h.read (by decide : 6 < 16), h.read (by decide : 2 < 16),
+    xvalue, yvalue, width, BitVec.add_zero]
+
+theorem argumentCopyAt_ok (s : State) {base value : BitVec 32} {offset d bytes : Nat}
+    (h : Controller base s) (sourceFit : offset + 4 ≤ 128)
+    (stack : Workspace s s.sp bytes) (fit : d + 4 ≤ bytes)
+    (stackBase : s.gpr .r12 = s.sp)
+    (source : s.mem.readW (off (State.addr base) offset) 32 = value)
+    (small : d < 4096 := by omega) :
+    WP isa (.block [.ldr .r9 .r4 offset, .str .r9 .r12 d]) s fun t =>
+      t.mem = s.mem.writeW (off (State.addr s.sp) d) value ∧ Rest [.r9] s t := by
+  refine withRest_all [.r9] ?_ (by rfl) (by rfl)
+  have address : State.addr (s.sp + BitVec.ofNat 32 d) = off (State.addr s.sp) d :=
+    VG.Arm.addr_add (by have := stack.nowrap; omega_using [fit, this])
+  have sourceAddress : State.addr (base + BitVec.ofNat 32 offset) = off (State.addr base) offset :=
+    VG.Arm.addr_add (by have := h.space.nowrap; omega_using [sourceFit, this])
+  ffrun [(by omega_using [sourceFit] : offset < 4096), small, h.ptr, sourceAddress, h.space.read sourceFit,
+    stackBase, address, stack.write fit, source]
+
+theorem argumentStore_ok (s : State) {value : BitVec 32} {d bytes : Nat} (r : Reg)
+    (stack : Workspace s s.sp bytes) (fit : d + 4 ≤ bytes) (stackBase : s.gpr .r12 = s.sp)
+    (source : s.gpr r = value) (small : d < 4096 := by omega) :
+    WP isa (.block [.str r .r12 d]) s fun t =>
+      t.mem = s.mem.writeW (off (State.addr s.sp) d) value ∧ Rest [] s t := by
+  refine withRest_all [] ?_ (by rfl) (by rfl)
+  have address : State.addr (s.sp + BitVec.ofNat 32 d) = off (State.addr s.sp) d :=
+    VG.Arm.addr_add (by have := stack.nowrap; omega_using [fit, this])
+  ffrun [small, stackBase, address, stack.write fit, source]
+
+end VG.Proof.Ffdh.Arm.KeySearch
+
+end
+
+end
 
 /-! ### `Ffdh.Arm.KeySearch.ArgumentContext`, which only this module used -/
 

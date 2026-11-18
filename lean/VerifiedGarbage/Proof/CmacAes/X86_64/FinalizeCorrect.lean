@@ -1,6 +1,6 @@
 module
-public import VerifiedGarbage.Proof.CmacAes.X86_64.UpdateLoop
 
+public import VerifiedGarbage.Proof.CmacAes.X86_64.UpdateCorrect
 import VerifiedGarbage.Proof.CmacAes.X86_64.Finalize
 import VerifiedGarbage.Proof.CmacAes.X86_64.Subkeys
 import VerifiedGarbage.Proof.Cmac.Spec

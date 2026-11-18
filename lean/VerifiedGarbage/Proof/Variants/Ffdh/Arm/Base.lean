@@ -1,15 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.Arm.Backend
-public import VerifiedGarbage.Proof.Ffdh.Arm.VettedValidation.Fn
 public import VerifiedGarbage.Proof.Framework.Arm.StackScratchConsts
 public import VerifiedGarbage.Spec.Ffdh.Contract
-import VerifiedGarbage.Proof.Ffdh.Arm.DomainPre
 import VerifiedGarbage.Proof.Ffdh.Arm.DomainSpec
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Ffdh.Arm.DomainFn
 public import VerifiedGarbage.Proof.Ffdh.Arm.Context
 public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 import VerifiedGarbage.Proof.Ffdh.Arm.Entered
@@ -18,8 +15,6 @@ import VerifiedGarbage.Proof.Ffdh.Arm.VettedGroupsBytes
 import VerifiedGarbage.Proof.Bignum.Arm.PcDimensions
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Ffdh.Arm.VettedValidation.Sat
-import VerifiedGarbage.Proof.Ffdh.Arm.VettedValidation.RecognitionTiming
 import VerifiedGarbage.Impl.Ffdh.Arm.VettedValidation
 import VerifiedGarbage.Proof.Ffdh.Arm.VettedGroups
 public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
@@ -33,7 +28,6 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Ffdh.Arm.ImportAt
 import VerifiedGarbage.Proof.Ffdh.Arm.ImportAtCT
 import VerifiedGarbage.Proof.Ffdh.Arm.RangeCT
-import VerifiedGarbage.Proof.Ffdh.Arm.OddCT
 import VerifiedGarbage.Proof.Ffdh.Arm.Odd
 import VerifiedGarbage.Proof.Ffdh.Arm.CheckFlag
 import VerifiedGarbage.Proof.Ffdh.Arm.EqualCT
@@ -53,13 +47,9 @@ import VerifiedGarbage.Proof.Ffdh.Arm.Branch
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 import VerifiedGarbage.Proof.Ffdh.Arm.SampleEnvironment
 import VerifiedGarbage.Proof.Ffdh.Arm.VettedGroupsState
-import VerifiedGarbage.Proof.Ffdh.Arm.DomainEntryCT
 import VerifiedGarbage.Proof.Ffdh.Arm.FrameCT
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
 import VerifiedGarbage.Proof.Framework.Arm.Syms
-public import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicVerified
-public import VerifiedGarbage.Proof.Ffdh.Arm.PrivateVerified
-public import VerifiedGarbage.Proof.Ffdh.Arm.ExchangeVerified
 
 /-! ### `Ffdh.Arm.VettedValidation.Verified`, which only this module used -/
 

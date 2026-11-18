@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Contract
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Fn
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Callee
 import VerifiedGarbage.Proof.Cmac.Frame

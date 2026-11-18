@@ -5,7 +5,6 @@ import VerifiedGarbage.Proof.X25519.RISCV64.Cswap
 import VerifiedGarbage.Proof.X448.RISCV64.Cswap
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.X25519.RISCV64.Field
-import VerifiedGarbage.Proof.X25519.RISCV64.Pass
 public import VerifiedGarbage.Proof.X25519.RISCV64.Mul
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith

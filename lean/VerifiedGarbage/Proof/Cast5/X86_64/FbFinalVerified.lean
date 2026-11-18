@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Cast5.X86_64.FbVerified
 public import VerifiedGarbage.Proof.Cast5.CfbFinal
 import VerifiedGarbage.Proof.Cast5.Rounds
 public import VerifiedGarbage.Proof.Cast5.ModeScratch
-import VerifiedGarbage.Proof.Cast5.X86_64.ModeCore
 public import VerifiedGarbage.Proof.Cast5.X86_64.EcbVerified
 import VerifiedGarbage.Proof.Modes.X86_64.FbFinal
 public import VerifiedGarbage.Proof.Modes.FbFinal
@@ -20,7 +19,6 @@ meta import VerifiedGarbage.Proof.Cast5.X86_64.FbVerified
 meta import VerifiedGarbage.Proof.Cast5.CfbFinal
 meta import VerifiedGarbage.Proof.Cast5.Rounds
 meta import VerifiedGarbage.Proof.Cast5.ModeScratch
-meta import VerifiedGarbage.Proof.Cast5.X86_64.ModeCore
 meta import VerifiedGarbage.Proof.Cast5.X86_64.EcbVerified
 meta import VerifiedGarbage.Proof.Modes.X86_64.FbFinal
 meta import VerifiedGarbage.Proof.Modes.FbFinal

@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Cmac.Mem32
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Flush
 import VerifiedGarbage.Proof.Cmac.Dbl32
-import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks
+import VerifiedGarbage.Proof.AesGcm.X86_64.Absorb
 import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset

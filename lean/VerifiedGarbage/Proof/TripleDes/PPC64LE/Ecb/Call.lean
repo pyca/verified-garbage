@@ -14,15 +14,12 @@ public import VerifiedGarbage.Proof.TripleDes.PPC64LE.RoundLit
 import VerifiedGarbage.Proof.TripleDes.Bytes
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.PPC64LE.MovImm
-import VerifiedGarbage.Proof.TripleDes.PPC64LE.Write
-import VerifiedGarbage.Proof.TripleDes.PPC64LE.Word
-import VerifiedGarbage.Proof.TripleDes.PPC64LE.Bytes
+import VerifiedGarbage.Proof.TripleDes.PPC64LE.Permutation
 import VerifiedGarbage.Proof.TripleDes.Word
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
 public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.TripleDes.PPC64LE.Lit
 public import VerifiedGarbage.Impl.TripleDes.PPC64LE.Block
-import VerifiedGarbage.Proof.TripleDes.PPC64LE.Permutation
 public import VerifiedGarbage.Proof.TripleDes.Core
 import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Semantics

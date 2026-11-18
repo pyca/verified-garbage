@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Gcm.PPC64LE.Ghash
-public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Contract
+public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Fn
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.OneShot
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.OneEntry
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Compare
@@ -17,7 +17,7 @@ public import VerifiedGarbage.Impl.AesGcm.PPC64LE
 # AES-GCM on PPC64LE: `vg_aes_gcm_open`
 
 Untrusted: everything here is checked by Lean. As on ARMv7
-(`Proof/AesGcm/Arm/Open.lean`): `open` checks the tag length; if it is
+(`Proof/AesGcm/Arm/CTCrypt.lean`): `open` checks the tag length; if it is
 allowed, it computes the tag of the ciphertext into `W + 112` (`oneAad`,
 `oneTag 112`), copies the received tag to `W + 256` and compares the first
 `tag_len` bytes of each (`recv`, `cmp 112`), and decrypts the data in place

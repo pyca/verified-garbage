@@ -1,8 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Sm4Gcm.Arm.Contract
 public import VerifiedGarbage.Proof.Sm4Gcm.Arm.Fn
-import VerifiedGarbage.Proof.Sm4Gcm.Arm.Ghash1
+import VerifiedGarbage.Proof.Sm4Gcm.Arm.Flush
 import VerifiedGarbage.Proof.Sm4.CtrCipher
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec

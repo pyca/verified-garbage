@@ -1,12 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.AesOcb.X86_64.Seal
-import VerifiedGarbage.Proof.AesOcb.X86_64.NonceCT
-import VerifiedGarbage.Proof.AesOcb.X86_64.HashCT
-public import VerifiedGarbage.Proof.AesOcb.X86_64.BodyCT
 import VerifiedGarbage.Proof.AesCcm.X86_64.CTBase
-import VerifiedGarbage.Proof.AesOcb.X86_64.RestTag
-import VerifiedGarbage.Proof.AesOcb.X86_64.TagCT
+import VerifiedGarbage.Proof.AesOcb.X86_64.Body
 import VerifiedGarbage.Proof.AesOcb.X86_64.Run
 import VerifiedGarbage.Proof.AesCcm.X86_64.Run
 import VerifiedGarbage.Proof.AesCcm.X86_64.Bytes
@@ -17,12 +13,8 @@ import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.AesOcb.X86_64.Seal
-meta import VerifiedGarbage.Proof.AesOcb.X86_64.NonceCT
-meta import VerifiedGarbage.Proof.AesOcb.X86_64.HashCT
-meta import VerifiedGarbage.Proof.AesOcb.X86_64.BodyCT
 meta import VerifiedGarbage.Proof.AesCcm.X86_64.CTBase
-meta import VerifiedGarbage.Proof.AesOcb.X86_64.RestTag
-meta import VerifiedGarbage.Proof.AesOcb.X86_64.TagCT
+meta import VerifiedGarbage.Proof.AesOcb.X86_64.Body
 meta import VerifiedGarbage.Proof.AesOcb.X86_64.Run
 meta import VerifiedGarbage.Proof.AesCcm.X86_64.Run
 meta import VerifiedGarbage.Proof.AesCcm.X86_64.Bytes
@@ -32,6 +24,985 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.AesOcb.X86_64.CTBase
+public import VerifiedGarbage.Proof.AesOcb.X86_64.Nonce
+import VerifiedGarbage.Proof.AesOcb.X86_64.NonceBlock
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.AesOcb.X86_64.CTBase
+meta import VerifiedGarbage.Proof.AesOcb.X86_64.Nonce
+meta import VerifiedGarbage.Proof.AesOcb.X86_64.NonceBlock
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+public import VerifiedGarbage.Proof.AesOcb.X86_64.Hash
+import VerifiedGarbage.Proof.AesOcb.X86_64.PadTo
+meta import VerifiedGarbage.Proof.AesOcb.X86_64.Hash
+meta import VerifiedGarbage.Proof.AesOcb.X86_64.PadTo
+public import VerifiedGarbage.Proof.AesOcb.X86_64.Pass
+meta import VerifiedGarbage.Proof.AesOcb.X86_64.Pass
+meta import VerifiedGarbage.Impl.AesOcb.X86_64
+meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.TCB.X86_64.Isa
+meta import VerifiedGarbage.TCB.X86_64.State
+meta import VerifiedGarbage.TCB.X86_64.Target
+import VerifiedGarbage.Proof.AesOcb.X86_64.Whole
+meta import VerifiedGarbage.Proof.AesOcb.X86_64.Whole
+import VerifiedGarbage.Proof.AesOcb.X86_64.Words
+meta import VerifiedGarbage.Proof.AesOcb.X86_64.Words
+
+/-! ### `AesOcb.X86_64.BodyCT`, which only this module used -/
+
+section
+
+/-! ### `AesOcb.X86_64.RestCT`, which this module and modules that import it used -/
+
+section
+
+/-! ### `AesOcb.X86_64.TagCT`, which this module and modules that import it used -/
+
+section
+
+/-!
+# AES-OCB on x86-64: the tag is constant time
+
+Untrusted: everything here is checked by Lean. The blocks before and after
+the call pass the taint analysis from the public slots (`rel_taintC`); the
+call of `vg_aes_encrypt_blocks` has the same arguments in both runs
+(`callBlocks_rel`).
+-/
+
+@[expose] public section
+
+set_option linter.unusedSimpArgs false
+
+namespace VG.Proof.AesOcb.X86_64
+
+open VG VG.X86_64 VG.Impl.AesOcb.X86_64
+open VG.Proof.Aes.X86_64 (BlocksImpl)
+open VG.Proof.AesCcm.X86_64 (runBlock_append)
+
+/-- A call of `vg_aes_encrypt_blocks` on the block at `W + tmpO` keeps the
+public arguments. -/
+theorem callTmp_one (v : BlocksImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14)
+    {N A D : Addr} {nl n tl : Nat} (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3584⟩) {s : State}
+    (o : One K W SP R N A D nl n tl s) :
+    WP isa (callBlocks (callees v).enc (oneBlock tmpO)) s (One K W SP R N A D nl n tl) :=
+  WP.mono (callBlocks_ok (f := Spec.Aes.cipher) v.encOk v.encNosp v.encDepth L o.env hR o.sl.rounds
+    (oneBlock_ok o.env.r15 tmpO (by decide)) (dstW L o.env.perm (d := tmpO) (n := 1) (by decide))) fun s' Q => by
+    have E' := o.env.of_saved Q.saved Q.rd Q.wr
+    refine o.step L hDW E' Q.wr (Q.frame.sub fun r hr => ?_)
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact ⟨_, List.mem_cons_self .., sub_wA (by decide)⟩
+    · exact ⟨_, by simp, sub_wC (by decide) (by decide)⟩
+    · rw [o.env.rsp]; exact ⟨_, by simp, fun _ h => h⟩
+
+/-- The call on the block at `W + tmpO`, in two runs. -/
+theorem callTmp_rel (v : BlocksImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14)
+    {N A D : Addr} {nl n tl : Nat} (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3584⟩) (hn : n ≤ 2 ^ 64)
+    {P : State → State → Prop}
+    (hP : ∀ s₁ s₂, P s₁ s₂ → One K W SP R N A D nl n tl s₁ ∧ One K W SP R N A D nl n tl s₂) :
+    RelCT isa P (callBlocks (callees v).enc (oneBlock tmpO)) fun s₁ s₂ =>
+      One K W SP R N A D nl n tl s₁ ∧ One K W SP R N A D nl n tl s₂ :=
+  ((callBlocks_rel (b := (callees v).enc) v.encOk v.encCt L hR hDW hn [] [] (args := oneBlock tmpO)
+    ⟨_, by taint_decide⟩ (D' := W + BitVec.ofNat 64 tmpO) (k := 1) fun s₁ s₂ h =>
+      ⟨Both.of (hP s₁ s₂ h).1 (hP s₁ s₂ h).2, oneBlock_ok (hP s₁ s₂ h).1.env.r15 tmpO (by decide),
+        oneBlock_ok (hP s₁ s₂ h).2.env.r15 tmpO (by decide), dstW L (hP s₁ s₂ h).1.env.perm (by decide),
+        dstW L (hP s₁ s₂ h).2.env.perm (by decide)⟩).wp
+    (F₁ := One K W SP R N A D nl n tl) (F₂ := One K W SP R N A D nl n tl)
+    fun s₁ s₂ h => ⟨callTmp_one v L hR hDW (hP s₁ s₂ h).1, callTmp_one v L hR hDW (hP s₁ s₂ h).2⟩).mono
+    (fun _ _ h => h) fun _ _ h => h.2
+
+/-- The checksum, the offset and `L_$` at `W + tmpO`. -/
+theorem tagHead_one {K W SP : Addr} (L : Lay K W SP) {N A D : Addr} {R nl n tl : Nat}
+    (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3584⟩) {s : State} (o : One K W SP R N A D nl n tl s) :
+    WP isa (.block (copy16 ckO tmpO ++ xor16 .r15 ofsO tmpO ++ xor16 .r15 ldO tmpO)) s
+      (One K W SP R N A D nl n tl) := by
+  have E := o.env
+  obtain ⟨t₁, run₁, B₁⟩ := copy16_ok (s := s) (a := ckO) (d := tmpO) E.r15
+    (E.perm.wR (by decide)) (E.perm.wR (by decide)) (E.perm.wW (by decide)) (E.perm.wW (by decide))
+  have nE : ∀ r ∈ [Reg.r14, .r15, .rsp], r ∉ [Reg.rax, .rdx] := by decide
+  have E₁ : Env K W SP t₁ := E.keep (fun r hr => B₁.gpr r (nE r hr)) B₁.rd B₁.wr
+  obtain ⟨t₂, run₂, B₂⟩ := xor16_ok (s := t₁) (b := .r15) (a := ofsO) (d := tmpO) E₁.r15 E₁.r15 (by decide) (by decide)
+    (E₁.perm.wR (by decide)) (E₁.perm.wR (by decide)) (E₁.perm.wW (by decide)) (E₁.perm.wW (by decide))
+  have E₂ : Env K W SP t₂ := E₁.keep (fun r hr => B₂.gpr r (nE r hr)) B₂.rd B₂.wr
+  obtain ⟨t₃, run₃, B₃⟩ := xor16_ok (s := t₂) (b := .r15) (a := ldO) (d := tmpO) E₂.r15 E₂.r15 (by decide) (by decide)
+    (E₂.perm.wR (by decide)) (E₂.perm.wR (by decide)) (E₂.perm.wW (by decide)) (E₂.perm.wW (by decide))
+  have E₃ : Env K W SP t₃ := E₂.keep (fun r hr => B₃.gpr r (nE r hr)) B₃.rd B₃.wr
+  refine WP.of_runBlock ⟨t₃, by rw [runBlock_append, runBlock_append, run₁, Option.bind_some, run₂,
+    Option.bind_some, run₃], o.step L hDW E₃ (by rw [B₃.wr, B₂.wr, B₁.wr])
+      (((B₁.frame.trans B₂.frame).trans B₃.frame).sub fun r hr => ?_)⟩
+  simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, List.mem_cons_self .., sub_wA (by decide)⟩
+
+/-- `tag d` in two runs. -/
+theorem tag_rel (v : BlocksImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14)
+    {N A D : Addr} {nl n tl : Nat} (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3584⟩) (hn : n ≤ 2 ^ 64)
+    {d : Nat} (hd : d = tagO ∨ d = t2O) {P : State → State → Prop}
+    (hP : ∀ s₁ s₂, P s₁ s₂ → One K W SP R N A D nl n tl s₁ ∧ One K W SP R N A D nl n tl s₂) :
+    RelCT isa P (tag (callees v) d) fun _ _ => True := by
+  have a := (rel_taintC [] [] hDW hn (fun s₁ s₂ h => Both.of (hP s₁ s₂ h).1 (hP s₁ s₂ h).2)
+    (c := .block (copy16 ckO tmpO ++ xor16 .r15 ofsO tmpO ++ xor16 .r15 ldO tmpO)) ⟨_, by taint_decide⟩).wp
+    (F₁ := One K W SP R N A D nl n tl) (F₂ := One K W SP R N A D nl n tl)
+    fun s₁ s₂ h => ⟨tagHead_one L hDW (hP s₁ s₂ h).1, tagHead_one L hDW (hP s₁ s₂ h).2⟩
+  have b := callTmp_rel v L hR hDW hn (P := fun s₁ s₂ => True ∧ One K W SP R N A D nl n tl s₁ ∧
+    One K W SP R N A D nl n tl s₂) fun _ _ h => h.2
+  have c := rel_taintC [] [] hDW hn (fun s₁ s₂ (h : One K W SP R N A D nl n tl s₁ ∧ One K W SP R N A D nl n tl s₂) =>
+    Both.of h.1 h.2) (c := .block (copy16 tmpO d ++ xor16 .r15 sumO d))
+    (by rcases hd with rfl | rfl <;> exact ⟨_, by taint_decide⟩)
+  exact RelCT.seq a (RelCT.seq b c)
+
+end VG.Proof.AesOcb.X86_64
+
+end
+
+end
+
+/-!
+# AES-OCB on x86-64: the rest of the data is constant time
+
+Untrusted: everything here is checked by Lean. The code around the call
+passes the taint analysis from the public slots and the address and length
+of the rest in `rbx` and `r12` (`rel_taintC`); the call of
+`vg_aes_encrypt_blocks` has the same arguments in both runs (`callTmp_rel`).
+-/
+
+@[expose] public section
+
+set_option linter.unusedSimpArgs false
+
+namespace VG.Proof.AesOcb.X86_64
+
+open VG VG.X86_64 VG.Impl.AesOcb.X86_64
+open VG.Proof.Aes.X86_64 (BlocksImpl)
+open VG.Proof.AesCcm.X86_64 (runBlock_append)
+
+/-- A run before the rest: the public arguments, its address and length. -/
+def RRun (K W SP : Addr) (R : Nat) (N A D : Addr) (nl n tl : Nat) (P : Addr) (r : Nat) (s : State) : Prop :=
+  One K W SP R N A D nl n tl s ∧ s.gpr .rbx = P ∧ s.gpr .r12 = BitVec.ofNat 64 r
+
+theorem both_rr {K W SP : Addr} {R : Nat} {N A D : Addr} {nl n tl : Nat} {P : Addr} {r : Nat} {s₁ s₂ : State}
+    (h₁ : RRun K W SP R N A D nl n tl P r s₁) (h₂ : RRun K W SP R N A D nl n tl P r s₂) :
+    Both K W SP R N A D nl n tl [.rbx, .r12] [] s₁ s₂ :=
+  ⟨h₁.1.env, h₂.1.env, h₁.1.sl, h₂.1.sl, h₁.1.wr, h₂.1.wr, fun x hx => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
+    rcases hx with rfl | rfl
+    · rw [h₁.2.1, h₂.2.1]
+    · rw [h₁.2.2, h₂.2.2], fun _ h => (nomatch h)⟩
+
+/-- `Offset_*` and a copy of it at `W + tmpO`. -/
+theorem restHead1_one {K W SP : Addr} (L : Lay K W SP) {N A D : Addr} {R nl n tl : Nat}
+    (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3584⟩) {P : Addr} {r : Nat} {s : State}
+    (h : RRun K W SP R N A D nl n tl P r s) :
+    WP isa (.block (xor16 .r14 240 ofsO ++ copy16 ofsO tmpO)) s (RRun K W SP R N A D nl n tl P r) := by
+  have E := h.1.env
+  obtain ⟨t₁, run₁, B₁⟩ := xor16_ok (s := s) (b := .r14) (a := 240) (d := ofsO) E.r15 E.r14 (by decide) (by decide)
+    (E.perm.kR (by decide)) (E.perm.kR (by decide)) (E.perm.wW (by decide)) (E.perm.wW (by decide))
+  have nE : ∀ r ∈ [Reg.r14, .r15, .rsp], r ∉ [Reg.rax, .rdx] := by decide
+  have E₁ : Env K W SP t₁ := E.keep (fun r hr => B₁.gpr r (nE r hr)) B₁.rd B₁.wr
+  obtain ⟨t₂, run₂, B₂⟩ := copy16_ok (s := t₁) (a := ofsO) (d := tmpO) E₁.r15
+    (E₁.perm.wR (by decide)) (E₁.perm.wR (by decide)) (E₁.perm.wW (by decide)) (E₁.perm.wW (by decide))
+  have E₂ : Env K W SP t₂ := E₁.keep (fun r hr => B₂.gpr r (nE r hr)) B₂.rd B₂.wr
+  refine WP.of_runBlock ⟨t₂, by rw [runBlock_append, run₁, Option.bind_some, run₂],
+    h.1.step L hDW E₂ (by rw [B₂.wr, B₁.wr]) (((B₁.frame.sub fun r hr => ?_).trans (B₂.frame.sub fun r hr => ?_))),
+    by rw [B₂.gpr _ (by decide), B₁.gpr _ (by decide), h.2.1], by rw [B₂.gpr _ (by decide), B₁.gpr _ (by decide), h.2.2]⟩
+  all_goals simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, List.mem_cons_self .., sub_wA (by decide)⟩
+
+/-- The call on the block at `W + tmpO` keeps the callee-saved registers. -/
+theorem callTmp_rr (v : BlocksImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14)
+    {N A D : Addr} {nl n tl : Nat} (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3584⟩) {P : Addr} {r : Nat} {s : State}
+    (h : RRun K W SP R N A D nl n tl P r s) :
+    WP isa (callBlocks (callees v).enc (oneBlock tmpO)) s (RRun K W SP R N A D nl n tl P r) :=
+  WP.mono (callBlocks_ok (f := Spec.Aes.cipher) v.encOk v.encNosp v.encDepth L h.1.env hR h.1.sl.rounds
+    (oneBlock_ok h.1.env.r15 tmpO (by decide)) (dstW L h.1.env.perm (d := tmpO) (n := 1) (by decide))) fun s' Q => by
+    have E' := h.1.env.of_saved Q.saved Q.rd Q.wr
+    refine ⟨h.1.step L hDW E' Q.wr (Q.frame.sub fun r hr => ?_), by rw [Q.saved _ (by decide), h.2.1],
+      by rw [Q.saved _ (by decide), h.2.2]⟩
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact ⟨_, List.mem_cons_self .., sub_wA (by decide)⟩
+    · exact ⟨_, by simp, sub_wC (by decide) (by decide)⟩
+    · rw [h.1.env.rsp]; exact ⟨_, by simp, fun _ h => h⟩
+
+/-- `rest enc` in two runs. -/
+theorem rest_rel (v : BlocksImpl) (enc : Bool) {K W SP : Addr} (L : Lay K W SP) {R : Nat}
+    (hR : R = 10 ∨ R = 12 ∨ R = 14) {N A D : Addr} {nl n tl : Nat} (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3584⟩)
+    (hn : n ≤ 2 ^ 64) {P : Addr} {r : Nat} {Q : State → State → Prop}
+    (hQ : ∀ s₁ s₂, Q s₁ s₂ → RRun K W SP R N A D nl n tl P r s₁ ∧ RRun K W SP R N A D nl n tl P r s₂) :
+    RelCT isa Q (rest (callees v) enc) fun _ _ => True := by
+  unfold rest
+  have a := (rel_taintC [.rbx, .r12] [] hDW hn (fun s₁ s₂ h => both_rr (hQ s₁ s₂ h).1 (hQ s₁ s₂ h).2)
+    (c := .block (xor16 .r14 240 ofsO ++ copy16 ofsO tmpO)) ⟨_, by taint_decide⟩).wp
+    (F₁ := RRun K W SP R N A D nl n tl P r) (F₂ := RRun K W SP R N A D nl n tl P r)
+    fun s₁ s₂ h => ⟨restHead1_one L hDW (hQ s₁ s₂ h).1, restHead1_one L hDW (hQ s₁ s₂ h).2⟩
+  have b := ((callTmp_rel v L hR hDW hn (P := fun s₁ s₂ => True ∧ RRun K W SP R N A D nl n tl P r s₁ ∧
+    RRun K W SP R N A D nl n tl P r s₂) fun _ _ h => ⟨h.2.1.1, h.2.2.1⟩).wp
+    (F₁ := RRun K W SP R N A D nl n tl P r) (F₂ := RRun K W SP R N A D nl n tl P r)
+    fun s₁ s₂ h => ⟨callTmp_rr v L hR hDW h.2.1, callTmp_rr v L hR hDW h.2.2⟩)
+  have c := rel_taintC [.rbx, .r12] [] hDW hn (fun s₁ s₂ (h : (One K W SP R N A D nl n tl s₁ ∧
+      One K W SP R N A D nl n tl s₂) ∧ RRun K W SP R N A D nl n tl P r s₁ ∧ RRun K W SP R N A D nl n tl P r s₂) =>
+    both_rr h.2.1 h.2.2) (c := if enc then .seq padCk xorPad else .seq xorPad padCk)
+    (by cases enc <;> exact ⟨_, by taint_decide⟩)
+  exact RelCT.seq a (RelCT.seq b c)
+
+end VG.Proof.AesOcb.X86_64
+
+end
+
+end
+
+/-! ### `AesOcb.X86_64.WholeCT`, which only this module used -/
+
+section
+
+/-!
+# AES-OCB on x86-64: the whole blocks are constant time
+
+Untrusted: everything here is checked by Lean. Each pass passes the taint
+analysis from the public slots and the number of blocks in `r13`
+(`rel_taintC`); the call of `vg_aes_encrypt_blocks` or
+`vg_aes_decrypt_blocks` between them has the same arguments in both runs
+(`callBlocks_rel`). A pass keeps the public arguments, whatever the offsets
+and the checksum (`pass_one`).
+-/
+
+@[expose] public section
+
+set_option linter.unusedSimpArgs false
+
+namespace VG.Proof.AesOcb.X86_64
+
+open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesOcb.X86_64
+open VG.Spec.Ocb (Block blockAtMem lAt)
+open VG.Proof.Ocb (offAt)
+open VG.Proof.AesCcm.X86_64 (runBlock_append)
+
+/-- The checksums of a pass, from `c₀`. -/
+def ckRec (c₀ : Block) (f : Nat → Block → Block) : Nat → Block
+  | 0 => c₀
+  | i + 1 => f i (ckRec c₀ f i)
+
+/-- A pass keeps the public arguments, the table and the registers it does
+not use. -/
+theorem pass_one {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {nl n tl m : Nat}
+    (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3584⟩) (hmn : 16 * m ≤ n) {body : List Instr}
+    {fB : Block → Block → Block} {fC : Block → Block → Block → Block} (hB : BodyOk body fB fC)
+    {t : State} (o : One K W SP R N A D nl n tl t) (hD : DBuf K W SP t D (16 * m)) (hm0 : 0 < m)
+    {l : Block} (hT : ∃ M, Tbl W l M t.mem ∧ m ≤ M)
+    (hbx : t.gpr .rbx = D) (hbp : t.gpr .rbp = BitVec.ofNat 64 1) (h12 : t.gpr .r12 = BitVec.ofNat 64 m) :
+    WP isa (pass body) t fun t' => One K W SP R N A D nl n tl t' ∧ (∃ M, Tbl W l M t'.mem ∧ m ≤ M) ∧
+      ∀ r, r ≠ .rax → r ≠ .rdx → r ≠ .rcx → r ≠ .rbx → r ≠ .rbp → r ≠ .r12 → t'.gpr r = t.gpr r := by
+  let O0 := blockAtMem t.mem (W + BitVec.ofNat 64 ofsO)
+  let X := fun k => blockAtMem t.mem (D + BitVec.ofNat 64 (16 * k))
+  let ckF := ckRec (blockAtMem t.mem (W + BitVec.ofNat 64 ckO)) fun i c => fC c (X i) (offAt O0 l (i + 1))
+  refine WP.mono (pass_ok hB (ckF := ckF) (O0 := O0) (fun i _ => rfl) ⟨L, hD, hT⟩ o.env hm0 hbx hbp h12 rfl rfl)
+    fun t' P => ⟨?_, ?_, P.gpr⟩
+  · refine o.step L hDW P.env P.wr (P.frame.sub fun r hr => ?_)
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact ⟨_, List.mem_cons_self .., sub_wA (by decide)⟩
+    · exact ⟨_, List.mem_cons_self .., sub_wA (by decide)⟩
+    · exact ⟨_, by simp, Region.sub_prefix hmn⟩
+  · obtain ⟨M, T, hM⟩ := hT
+    exact ⟨M, T.frame P.frame fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact L.wT_w (by decide)
+      · exact L.wT_w (by decide)
+      · exact hD.w.symm.sub_left (Lay.wSub (by decide)), hM⟩
+
+/-- What the whole blocks need of a run, and what their first pass keeps:
+the public arguments, the number of blocks in `r13`, the table and the
+data. -/
+def WRun (K W SP : Addr) (R : Nat) (N A D : Addr) (nl n tl m : Nat) (s : State) : Prop :=
+  One K W SP R N A D nl n tl s ∧ s.gpr .r13 = BitVec.ofNat 64 m ∧
+    (∃ l M, Tbl W l M s.mem ∧ m ≤ M) ∧ DBuf K W SP s D n
+
+/-- The first pass. -/
+theorem wholeA_one {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {nl n tl m : Nat}
+    (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3584⟩) (hmn : 16 * m ≤ n) (hm0 : 0 < m)
+    {body : List Instr} {fB : Block → Block → Block} {fC : Block → Block → Block → Block}
+    (hB : BodyOk body fB fC) {s : State} (h : WRun K W SP R N A D nl n tl m s) :
+    WP isa (.seq (.block [ld .rbx .r15 dataO, mvr .r12 .r13, .mov .rbp (.imm 1)]) (pass body)) s
+      (WRun K W SP R N A D nl n tl m) := by
+  obtain ⟨o, h13, ⟨l, M, T, hM⟩, hD⟩ := h
+  have r₁ : InRegions (s.rd ++ s.wr) (W + BitVec.ofNat 64 208) 8 := o.env.perm.wR (by decide)
+  have hdata := o.sl.data
+  obtain ⟨s₁, run₁, rbx₁, r12₁, rbp₁, g₁, m₁, rd₁, wr₁⟩ : ∃ s₁, runBlock isa
+      [ld .rbx .r15 dataO, mvr .r12 .r13, .mov .rbp (.imm 1)] s = some s₁ ∧
+      s₁.gpr .rbx = D ∧ s₁.gpr .r12 = BitVec.ofNat 64 m ∧ s₁.gpr .rbp = BitVec.ofNat 64 1 ∧
+      (∀ r, r ≠ .rbx → r ≠ .r12 → r ≠ .rbp → s₁.gpr r = s.gpr r) ∧ s₁.mem = s.mem ∧ s₁.rd = s.rd ∧
+      s₁.wr = s.wr := by
+    refine ⟨_, by orun [o.env.r15, r₁, hdata], ?_, ?_, ?_, fun r h1 h2 h3 => ?_, ?_, ?_, ?_⟩
+    · simp only [gpr_setReg, ite_true, ite_false, reduceCtorEq]
+    · simp only [gpr_setReg, ite_true, ite_false, reduceCtorEq, h13]
+    · simp only [gpr_setReg, ite_true, sext1]
+    · simp only [gpr_setReg, h1, h2, h3, ite_false]
+    all_goals rfl
+  have E₁ : Env K W SP s₁ := o.env.keep (fun r hr => g₁ r (by simp at hr; rcases hr with rfl | rfl | rfl <;> decide)
+    (by simp at hr; rcases hr with rfl | rfl | rfl <;> decide) (by simp at hr; rcases hr with rfl | rfl | rfl <;> decide))
+    rd₁ wr₁
+  have o₁ : One K W SP R N A D nl n tl s₁ := ⟨E₁, by rw [m₁]; exact o.sl, by rw [wr₁]; exact o.wr⟩
+  have hD₁ : DBuf K W SP s₁ D n := hD.of_eq rd₁ wr₁
+  refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
+  refine WP.mono (pass_one L hDW hmn hB o₁ (hD₁.take' hmn) hm0 (l := l) ⟨M, by rw [m₁]; exact T, hM⟩ rbx₁ rbp₁ r12₁)
+    fun t ⟨o', hT', g'⟩ => ⟨o', ?_, ⟨l, hT'⟩, hD₁.of_one o'⟩
+  rw [g' _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide),
+    g₁ _ (by decide) (by decide) (by decide), h13]
+
+/-- Both runs with the number of blocks in `r13`. -/
+theorem both_r13 {K W SP : Addr} {R : Nat} {N A D : Addr} {nl n tl m : Nat} {s₁ s₂ : State}
+    (o₁ : One K W SP R N A D nl n tl s₁) (o₂ : One K W SP R N A D nl n tl s₂)
+    (h₁ : s₁.gpr .r13 = BitVec.ofNat 64 m) (h₂ : s₂.gpr .r13 = BitVec.ofNat 64 m) :
+    Both K W SP R N A D nl n tl [.r13] [] s₁ s₂ :=
+  ⟨o₁.env, o₂.env, o₁.sl, o₂.sl, o₁.wr, o₂.wr, fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr; rw [h₁, h₂], fun _ h => (nomatch h)⟩
+
+/-- `whole f pre post` in two runs. -/
+theorem whole_rel {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {b : Impl.Aes.X86_64.Blocks}
+    (ok : ∀ s, (Proof.Aes.blocksX86_64 f).pre s →
+      ∃ t s', Exec isa b.code s t s' ∧ abiPreserved s s' ∧ (Proof.Aes.blocksX86_64 f).post s s')
+    (ct : ConstantTime isa (Proof.Aes.blocksX86_64 f).pre (Proof.Aes.blocksX86_64 f).pub b.code)
+    (nosp : NoSp b.code) (depth : b.code.depth = 0)
+    {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14) {N A D : Addr} {nl n tl m : Nat}
+    (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3584⟩) (hn : n ≤ 2 ^ 64) (hmn : 16 * m ≤ n) (hm0 : 0 < m)
+    {pre post : List Instr} {fB : Block → Block → Block} {fC : Block → Block → Block → Block}
+    (hB : BodyOk pre fB fC)
+    (hc₁ : ∃ hc, (taint.check (ocbT [.r13] [])
+      (.seq (.block [ld .rbx .r15 dataO, mvr .r12 .r13, .mov .rbp (.imm 1)]) (pass pre)) hc).isSome = true)
+    (hc₂ : ∃ hc, (taint.check (ocbT [.r13] [])
+      (.seq (.block (copy16 o0O ofsO ++ [ld .rbx .r15 dataO, mvr .r12 .r13, .mov .rbp (.imm 1)])) (pass post)) hc).isSome
+        = true)
+    {P : State → State → Prop}
+    (hP : ∀ s₁ s₂, P s₁ s₂ → WRun K W SP R N A D nl n tl m s₁ ∧ WRun K W SP R N A D nl n tl m s₂) :
+    RelCT isa P (whole b pre post) fun _ _ => True := by
+  unfold whole
+  have a := (rel_taintC [.r13] [] hDW hn (fun s₁ s₂ h => both_r13 (hP s₁ s₂ h).1.1 (hP s₁ s₂ h).2.1
+    (hP s₁ s₂ h).1.2.1 (hP s₁ s₂ h).2.2.1) hc₁).wp
+    (F₁ := WRun K W SP R N A D nl n tl m) (F₂ := WRun K W SP R N A D nl n tl m)
+    fun s₁ s₂ h => ⟨wholeA_one L hDW hmn hm0 hB (hP s₁ s₂ h).1, wholeA_one L hDW hmn hm0 hB (hP s₁ s₂ h).2⟩
+  have args : ∀ {s : State}, WRun K W SP R N A D nl n tl m s → ArgsOk [ld .rdx .r15 dataO, mvr .rcx .r13] s D m :=
+    fun h => dataArgs_ok h.1.env.r15 h.1.sl.data h.2.1 (h.1.env.perm.wR (by decide))
+  have call : ∀ s, WRun K W SP R N A D nl n tl m s →
+      WP isa (callBlocks b [ld .rdx .r15 dataO, mvr .rcx .r13]) s fun s' =>
+        One K W SP R N A D nl n tl s' ∧ s'.gpr .r13 = BitVec.ofNat 64 m := fun s h =>
+    WP.mono (callBlocks_ok ok nosp depth L h.1.env hR h.1.sl.rounds (args h) (dstD (h.2.2.2.take' hmn)))
+      fun s' Q => by
+      refine ⟨h.1.step L hDW (h.1.env.of_saved Q.saved Q.rd Q.wr) Q.wr (Q.frame.sub fun r hr => ?_),
+        by rw [Q.saved _ (by decide), h.2.1]⟩
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact ⟨_, by simp, Region.sub_prefix hmn⟩
+      · exact ⟨_, by simp, sub_wC (by decide) (by decide)⟩
+      · rw [h.1.env.rsp]; exact ⟨_, by simp, fun _ h => h⟩
+  have bb := (callBlocks_rel ok ct L hR hDW hn [.r13] [] (args := [ld .rdx .r15 dataO, mvr .rcx .r13])
+    ⟨_, by taint_decide⟩ (D' := D) (k := m)
+    (P := fun s₁ s₂ => True ∧ WRun K W SP R N A D nl n tl m s₁ ∧ WRun K W SP R N A D nl n tl m s₂) fun s₁ s₂ h =>
+      ⟨both_r13 h.2.1.1 h.2.2.1 h.2.1.2.1 h.2.2.2.1, args h.2.1, args h.2.2, dstD (h.2.1.2.2.2.take' hmn),
+        dstD (h.2.2.2.2.2.take' hmn)⟩).wp
+    (F₁ := fun (s : State) => One K W SP R N A D nl n tl s ∧ s.gpr .r13 = BitVec.ofNat 64 m)
+    (F₂ := fun (s : State) => One K W SP R N A D nl n tl s ∧ s.gpr .r13 = BitVec.ofNat 64 m)
+    fun s₁ s₂ h => ⟨call s₁ h.2.1, call s₂ h.2.2⟩
+  have c := rel_taintC [.r13] [] hDW hn (fun s₁ s₂ (h : True ∧ (One K W SP R N A D nl n tl s₁ ∧
+      s₁.gpr .r13 = BitVec.ofNat 64 m) ∧ (One K W SP R N A D nl n tl s₂ ∧ s₂.gpr .r13 = BitVec.ofNat 64 m)) =>
+    both_r13 h.2.1.1 h.2.2.1 h.2.1.2 h.2.2.2) hc₂
+  exact Proof.AesCcm.X86_64.rel_assoc (RelCT.seq a (RelCT.seq bb c))
+
+end VG.Proof.AesOcb.X86_64
+
+end
+
+end
+
+/-!
+# AES-OCB on x86-64: the data is constant time
+
+Untrusted: everything here is checked by Lean. The number of whole blocks
+and the length of the rest come from the public slots, so the branches agree
+in both runs (`rel_flagsC`); the whole blocks and the rest are related by
+`whole_rel` and `rest_rel`.
+-/
+
+@[expose] public section
+
+set_option linter.unusedSimpArgs false
+
+namespace VG.Proof.AesOcb.X86_64
+
+open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesOcb.X86_64
+open VG.Spec.Aes (bytesAt)
+open VG.Spec.Ocb (Block Cipher blockAtMem lAt)
+open VG.Proof.Ocb (offAt)
+open VG.Proof.Aes.X86_64 (BlocksImpl)
+open VG.Proof.AesCcm.X86_64 (eval_e)
+
+/-- What `body` needs of a run: the public arguments, the data, the table of
+`L_j`, and the offset equal to `Offset_0`. -/
+def BRun (K W SP : Addr) (R : Nat) (N A D : Addr) (nl n tl : Nat) (s : State) : Prop :=
+  One K W SP R N A D nl n tl s ∧ DBuf K W SP s D n ∧ (∃ l, TblL W l n s.mem) ∧
+    blockAtMem s.mem (W + BitVec.ofNat 64 ofsO) = blockAtMem s.mem (W + BitVec.ofNat 64 o0O)
+
+/-- The whole blocks, if any, keep the public arguments. -/
+theorem wholeIte_one {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {b : Impl.Aes.X86_64.Blocks}
+    (ok : ∀ s, (Proof.Aes.blocksX86_64 f).pre s →
+      ∃ t s', Exec isa b.code s t s' ∧ abiPreserved s s' ∧ (Proof.Aes.blocksX86_64 f).post s s')
+    (nosp : NoSp b.code) (depth : b.code.depth = 0) {G : List Byte → Cipher}
+    (hcall : ∀ {s s' : State} {K D S : Addr} {R n : Nat}, BPost f s K D S R n s' → ∀ i < n,
+      blockAtMem s'.mem (D + BitVec.ofNat 64 (16 * i)) = G (bytesAt s.mem K (16 * (R + 1)))
+        (blockAtMem s.mem (D + BitVec.ofNat 64 (16 * i))))
+    {pre post : List Instr} {fC1 fC2 : Block → Block → Block → Block}
+    (hB1 : BodyOk pre (fun b o => b ^^^ o) fC1) (hB2 : BodyOk post (fun b o => b ^^^ o) fC2)
+    {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14) {N A D : Addr} {nl n tl : Nat}
+    (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3584⟩) {s : State} (h : BRun K W SP R N A D nl n tl s) :
+    WP isa (.seq (.block [ld .r13 .r15 lenO, .shift .shr .r13 4, .alu .test .r13 (.reg .r13)])
+        (.ite .e (.block []) (whole b pre post))) s (One K W SP R N A D nl n tl) := by
+  obtain ⟨o, hD, ⟨l, hT⟩, ho⟩ := h
+  let O0 := blockAtMem s.mem (W + BitVec.ofNat 64 ofsO)
+  let ckF1 := ckRec (blockAtMem s.mem (W + BitVec.ofNat 64 ckO))
+    fun i c => fC1 c (blockAtMem s.mem (D + BitVec.ofNat 64 (16 * i))) (offAt O0 l (i + 1))
+  let ckF2 := ckRec (ckF1 (n / 16)) fun i c => fC2 c
+    (G (bytesAt s.mem K (16 * (R + 1))) (blockAtMem s.mem (D + BitVec.ofNat 64 (16 * i)) ^^^ offAt O0 l (i + 1)))
+    (offAt O0 l (i + 1))
+  refine WP.mono (wholeIte_ok (O0 := O0) (l := l) (ckF1 := ckF1) (ckF2 := ckF2) ok nosp depth hcall hB1 hB2 L o.env hR
+    hD o.sl.data o.sl.len o.sl.rounds rfl ho.symm rfl hT (fun _ => rfl) rfl (fun _ => rfl)) fun t P =>
+    o.step L hDW P.env P.wr (bodyR_mut (P.frame.sub (wholeR_sub (Nat.mul_div_le n 16))))
+
+/-- `body`, for its whole blocks `whole b pre post` and its rest `rest enc`, in two runs. -/
+theorem body_rel' (v : BlocksImpl) (enc : Bool) {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State}
+    {b : Impl.Aes.X86_64.Blocks}
+    (ok : ∀ s, (Proof.Aes.blocksX86_64 f).pre s →
+      ∃ t s', Exec isa b.code s t s' ∧ abiPreserved s s' ∧ (Proof.Aes.blocksX86_64 f).post s s')
+    (ct : ConstantTime isa (Proof.Aes.blocksX86_64 f).pre (Proof.Aes.blocksX86_64 f).pub b.code)
+    (nosp : NoSp b.code) (depth : b.code.depth = 0) {G : List Byte → Cipher}
+    (hcall : ∀ {s s' : State} {K D S : Addr} {R n : Nat}, BPost f s K D S R n s' → ∀ i < n,
+      blockAtMem s'.mem (D + BitVec.ofNat 64 (16 * i)) = G (bytesAt s.mem K (16 * (R + 1)))
+        (blockAtMem s.mem (D + BitVec.ofNat 64 (16 * i))))
+    {pre post : List Instr} {fC1 fC2 : Block → Block → Block → Block}
+    (hB1 : BodyOk pre (fun b o => b ^^^ o) fC1) (hB2 : BodyOk post (fun b o => b ^^^ o) fC2)
+    (hc₁ : ∃ hc, (taint.check (ocbT [.r13] [])
+      (.seq (.block [ld .rbx .r15 dataO, mvr .r12 .r13, .mov .rbp (.imm 1)]) (pass pre)) hc).isSome = true)
+    (hc₂ : ∃ hc, (taint.check (ocbT [.r13] [])
+      (.seq (.block (copy16 o0O ofsO ++ [ld .rbx .r15 dataO, mvr .r12 .r13, .mov .rbp (.imm 1)])) (pass post)) hc).isSome
+        = true)
+    {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14) {N A D : Addr} {nl n tl : Nat}
+    (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3584⟩) (hn : n < 2 ^ 64) {P : State → State → Prop}
+    (hP : ∀ s₁ s₂, P s₁ s₂ → BRun K W SP R N A D nl n tl s₁ ∧ BRun K W SP R N A D nl n tl s₂) :
+    RelCT isa P (.seq (.block [ld .r13 .r15 lenO, .shift .shr .r13 4, .alu .test .r13 (.reg .r13)])
+      (.seq (.ite .e (.block []) (whole b pre post))
+        (.seq (.block [ld .rbx .r15 dataO, ld .rax .r15 lenO, mvr .r12 .rax, .alu .and .r12 (.imm 15),
+            .alu .sub .rax (.reg .r12), .alu .add .rbx (.reg .rax), .alu .test .r12 (.reg .r12)])
+          (.ite .e (.block []) (rest (callees v) enc))))) fun _ _ => True := by
+  have hn' : n ≤ 2 ^ 64 := Nat.le_of_lt hn
+  let m := n / 16
+  -- The number of whole blocks.
+  have head : ∀ s, BRun K W SP R N A D nl n tl s →
+      WP isa (.block [ld .r13 .r15 lenO, .shift .shr .r13 4, .alu .test .r13 (.reg .r13)]) s fun s₁ =>
+        WRun K W SP R N A D nl n tl m s₁ ∧ s₁.zf = some (decide (m = 0)) := fun s ⟨o, hD, ⟨l, hT⟩, _⟩ => by
+    obtain ⟨s₁, run₁, r13₁, zf₁, m₁, g₁, rd₁, wr₁⟩ := bodyHead_ok o.env hn o.sl.len
+    have E₁ : Env K W SP s₁ := o.env.keep (fun r hr => g₁ r (by simp at hr; rcases hr with rfl | rfl | rfl <;> decide))
+      rd₁ wr₁
+    have o₁ : One K W SP R N A D nl n tl s₁ := ⟨E₁, by rw [m₁]; exact o.sl, by rw [wr₁]; exact o.wr⟩
+    exact WP.of_runBlock ⟨s₁, run₁, ⟨o₁, r13₁, ⟨l, by rw [m₁]; exact hT⟩, hD.of_one o₁⟩, zf₁⟩
+  have a := (rel_flagsC [] [] hDW hn' (fun s₁ s₂ h => Both.of (hP s₁ s₂ h).1.1 (hP s₁ s₂ h).2.1)
+    (c := .block [ld .r13 .r15 lenO, .shift .shr .r13 4, .alu .test .r13 (.reg .r13)]) ⟨_, by taint_decide⟩).wp
+    (F₁ := fun (s : State) => WRun K W SP R N A D nl n tl m s ∧ s.zf = some (decide (m = 0)))
+    (F₂ := fun (s : State) => WRun K W SP R N A D nl n tl m s ∧ s.zf = some (decide (m = 0)))
+    fun s₁ s₂ h => ⟨head s₁ (hP s₁ s₂ h).1, head s₂ (hP s₁ s₂ h).2⟩
+  have i₁ := RelCT.ite (M := isa) (c := .e) (t := .block []) (e := whole b pre post) (Q := fun _ _ => True)
+    (P := fun s₁ s₂ => (s₁.cf = s₂.cf ∧ s₁.zf = s₂.zf) ∧
+      (WRun K W SP R N A D nl n tl m s₁ ∧ s₁.zf = some (decide (m = 0))) ∧
+      (WRun K W SP R N A D nl n tl m s₂ ∧ s₂.zf = some (decide (m = 0))))
+    (fun s₁ s₂ h => Proof.AesCcm.X86_64.eval_e_eq h.1.2) (RelCT.block_nil fun _ _ _ => trivial) (by
+      by_cases hm : m = 0
+      · refine RelCT.of_false fun s₁ s₂ h => ?_
+        have := (eval_e h.1.2.1.2).symm.trans h.2
+        simp [hm] at this
+      · exact whole_rel ok ct nosp depth L hR hDW hn' (Nat.mul_div_le n 16) (Nat.pos_of_ne_zero hm) hB1
+          hc₁ hc₂ fun s₁ s₂ h => ⟨h.1.2.1.1, h.1.2.2.1⟩)
+  have x := (RelCT.seq a i₁).wp (F₁ := One K W SP R N A D nl n tl) (F₂ := One K W SP R N A D nl n tl)
+    fun s₁ s₂ h => ⟨wholeIte_one ok nosp depth hcall hB1 hB2 L hR hDW (hP s₁ s₂ h).1,
+      wholeIte_one ok nosp depth hcall hB1 hB2 L hR hDW (hP s₁ s₂ h).2⟩
+  -- The rest.
+  let Pr := D + BitVec.ofNat 64 (16 * (n / 16))
+  have tail : ∀ s, One K W SP R N A D nl n tl s →
+      WP isa (.block [ld .rbx .r15 dataO, ld .rax .r15 lenO, mvr .r12 .rax, .alu .and .r12 (.imm 15),
+          .alu .sub .rax (.reg .r12), .alu .add .rbx (.reg .rax), .alu .test .r12 (.reg .r12)]) s fun t =>
+        RRun K W SP R N A D nl n tl Pr (n % 16) t ∧ t.zf = some (decide (n % 16 = 0)) := fun s o => by
+    obtain ⟨t₁, run₁, rbx₁, r12₁, zf₁, m₁, g₁, rd₁, wr₁⟩ := bodyTail_ok o.env hn o.sl.data o.sl.len
+    have E₁ : Env K W SP t₁ := o.env.keep (fun r hr => g₁ r (by simp at hr; rcases hr with rfl | rfl | rfl <;> decide)
+      (by simp at hr; rcases hr with rfl | rfl | rfl <;> decide) (by simp at hr; rcases hr with rfl | rfl | rfl <;> decide))
+      rd₁ wr₁
+    exact WP.of_runBlock ⟨t₁, run₁, ⟨⟨E₁, by rw [m₁]; exact o.sl, by rw [wr₁]; exact o.wr⟩, rbx₁, r12₁⟩, zf₁⟩
+  have y₁ := (rel_flagsC [] [] hDW hn' (fun s₁ s₂ (h : True ∧ One K W SP R N A D nl n tl s₁ ∧
+      One K W SP R N A D nl n tl s₂) => Both.of h.2.1 h.2.2)
+    (c := .block [ld .rbx .r15 dataO, ld .rax .r15 lenO, mvr .r12 .rax, .alu .and .r12 (.imm 15),
+      .alu .sub .rax (.reg .r12), .alu .add .rbx (.reg .rax), .alu .test .r12 (.reg .r12)]) ⟨_, by taint_decide⟩).wp
+    (F₁ := fun (t : State) => RRun K W SP R N A D nl n tl Pr (n % 16) t ∧ t.zf = some (decide (n % 16 = 0)))
+    (F₂ := fun (t : State) => RRun K W SP R N A D nl n tl Pr (n % 16) t ∧ t.zf = some (decide (n % 16 = 0)))
+    fun s₁ s₂ h => ⟨tail s₁ h.2.1, tail s₂ h.2.2⟩
+  have i₂ := RelCT.ite (M := isa) (c := .e) (t := .block []) (e := rest (callees v) enc) (Q := fun _ _ => True)
+    (P := fun s₁ s₂ => (s₁.cf = s₂.cf ∧ s₁.zf = s₂.zf) ∧
+      (RRun K W SP R N A D nl n tl Pr (n % 16) s₁ ∧ s₁.zf = some (decide (n % 16 = 0))) ∧
+      (RRun K W SP R N A D nl n tl Pr (n % 16) s₂ ∧ s₂.zf = some (decide (n % 16 = 0))))
+    (fun s₁ s₂ h => Proof.AesCcm.X86_64.eval_e_eq h.1.2) (RelCT.block_nil fun _ _ _ => trivial) (by
+      by_cases hr : n % 16 = 0
+      · refine RelCT.of_false fun s₁ s₂ h => ?_
+        have := (eval_e h.1.2.1.2).symm.trans h.2
+        simp [hr] at this
+      · exact rest_rel v enc L hR hDW hn' fun s₁ s₂ h => ⟨h.1.2.1.1, h.1.2.2.1⟩)
+  exact Proof.AesCcm.X86_64.rel_assoc (RelCT.seq x (RelCT.seq y₁ i₂))
+
+/-- `body` for `seal`, in two runs. -/
+theorem bodySeal_rel (v : BlocksImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14)
+    {N A D : Addr} {nl n tl : Nat} (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3584⟩) (hn : n < 2 ^ 64)
+    {P : State → State → Prop}
+    (hP : ∀ s₁ s₂, P s₁ s₂ → BRun K W SP R N A D nl n tl s₁ ∧ BRun K W SP R N A D nl n tl s₂) :
+    RelCT isa P (body (callees v) true) fun _ _ => True := by
+  simp only [body, ↓reduceIte]
+  exact body_rel' v true v.encOk v.encCt v.encNosp v.encDepth hcall_enc sealPre_ok xorOfs_ok ⟨_, by taint_decide⟩
+    ⟨_, by taint_decide⟩ L hR hDW hn hP
+
+/-- `body` for `open`, in two runs. -/
+theorem bodyOpen_rel (v : BlocksImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14)
+    {N A D : Addr} {nl n tl : Nat} (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3584⟩) (hn : n < 2 ^ 64)
+    {P : State → State → Prop}
+    (hP : ∀ s₁ s₂, P s₁ s₂ → BRun K W SP R N A D nl n tl s₁ ∧ BRun K W SP R N A D nl n tl s₂) :
+    RelCT isa P (body (callees v) false) fun _ _ => True := by
+  simp only [body, Bool.false_eq_true, ↓reduceIte]
+  exact body_rel' v false v.decOk v.decCt v.decNosp v.decDepth hcall_dec xorOfs_ok openPost_ok ⟨_, by taint_decide⟩
+    ⟨_, by taint_decide⟩ L hR hDW hn hP
+
+end VG.Proof.AesOcb.X86_64
+
+end
+
+end
+
+/-! ### `AesOcb.X86_64.HashCT`, which only this module used -/
+
+section
+
+/-!
+# AES-OCB on x86-64: `HASH` is constant time
+
+Untrusted: everything here is checked by Lean. Each chunk fills its buffer
+and adds it to the sum by code that passes the taint analysis from the
+public slots, the number of blocks left (at `W + alenO`) and the position
+in the associated data (`rbx`, `rbp`); the call between has the same
+arguments in both runs (`callBlocks_rel`), and so does the rest's. Both runs
+are at the same chunk at each iteration (`chunk_rel`).
+-/
+
+@[expose] public section
+
+set_option linter.unusedSimpArgs false
+
+namespace VG.Proof.AesOcb.X86_64
+
+open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesOcb.X86_64
+open VG.Spec.Aes (bytesAt)
+open VG.Spec.Ocb (Block Cipher blockAtMem lAt)
+open VG.Proof.Aes.X86_64 (BlocksImpl)
+open VG.Proof.AesCcm.X86_64 (runBlock_append eval_e eval_ne)
+
+section
+variable {K W SP D : Addr} {n R : Nat} {ciph : Cipher} {l : Block} {A : Addr} {a : List Byte} {s₀ : State}
+
+/-- A run of `HASH` keeps the public arguments. -/
+theorem HInv.one {N : Addr} {nl tl : Nat} (C : HCtx K W SP D n R ciph l A a s₀)
+    (o : One K W SP R N A D nl n tl s₀) {t : State} {j : Nat} (H : HInv K W SP D n ciph l A a s₀ t j) :
+    One K W SP R N A D nl n tl t :=
+  ⟨H.env, Slots.of_mut C.lay C.dw (hashR_mut H.frame) o.sl, H.wr.trans o.wr⟩
+
+theorem FillInv.one {N : Addr} {nl tl : Nat} (C : HCtx K W SP D n R ciph l A a s₀)
+    (o : One K W SP R N A D nl n tl s₀) {t : State} {j c i : Nat} (F : FillInv K W SP D n ciph l A a s₀ j c t i) :
+    One K W SP R N A D nl n tl t :=
+  ⟨F.env, Slots.of_mut C.lay C.dw (hashR_mut F.frame) o.sl, F.wr.trans o.wr⟩
+
+/-- The first block and the chunks, if any. -/
+theorem hashHI_ok (v : BlocksImpl) (C : HCtx K W SP D n R ciph l A a s₀) (E : Env K W SP s₀)
+    (haad : s₀.mem.readW (W + BitVec.ofNat 64 aadO) 64 = A)
+    (halen : s₀.mem.readW (W + BitVec.ofNat 64 alenO) 64 = BitVec.ofNat 64 a.length) :
+    WP isa (.seq (.block (zero16 sumO ++ zero16 ohO ++
+      [ld .rbx .r15 aadO, ld .rax .r15 alenO, mvr .rcx .rax, .alu .and .rcx (.imm 15),
+       st .r15 tmpO .rcx, .shift .shr .rax 4, st .r15 alenO .rax, .mov .rbp (.imm 1),
+       .alu .test .rax (.reg .rax)])) (.ite .e (.block []) (.loop (hashChunk (callees v)) .ne))) s₀
+      fun t => HInv K W SP D n ciph l A a s₀ t (a.length / 16) := by
+  refine WP.seq (WP.mono (hashHead_ok C E haad halen) fun s₃ ⟨H₀, zf₃⟩ => ?_)
+  refine WP.ite (decide (a.length / 16 = 0)) (eval_e zf₃) (fun hb => WP.block_nil ?_) (fun hb => ?_)
+  · exact (of_decide_eq_true hb) ▸ H₀
+  · exact hashLoop_ok v C H₀ (Nat.pos_of_ne_zero (of_decide_eq_false hb))
+
+/-- The length of the rest. -/
+theorem tailHead_ok {t : State} (H : HInv K W SP D n ciph l A a s₀ t (a.length / 16)) :
+    WP isa (.block [ld .r12 .r15 tmpO, .alu .test .r12 (.reg .r12)]) t fun t₁ =>
+      HInv K W SP D n ciph l A a s₀ t₁ (a.length / 16) ∧ t₁.gpr .r12 = BitVec.ofNat 64 (a.length % 16) ∧
+        t₁.zf = some (decide (a.length % 16 = 0)) := by
+  have r₁ : InRegions (t.rd ++ t.wr) (W + BitVec.ofNat 64 112) 8 := H.env.perm.wR (by decide)
+  have rest := H.rest
+  simp only [tmpO] at rest
+  obtain ⟨t₁, run₁, r12₁, zf₁, g₁, m₁, rd₁, wr₁⟩ : ∃ t₁, runBlock isa [ld .r12 .r15 tmpO, .alu .test .r12 (.reg .r12)] t =
+      some t₁ ∧ t₁.gpr .r12 = BitVec.ofNat 64 (a.length % 16) ∧ t₁.zf = some (decide (a.length % 16 = 0)) ∧
+      (∀ r, r ≠ .r12 → t₁.gpr r = t.gpr r) ∧ t₁.mem = t.mem ∧ t₁.rd = t.rd ∧ t₁.wr = t.wr := by
+    refine ⟨_, by orun [H.env.r15, r₁, rest], ?_, ?_, fun r h => ?_, ?_, ?_, ?_⟩
+    · simp only [gpr_setReg, gpr_arithFlags, ite_true]
+    · simp only [zf_arithFlags, gpr_setReg, ite_true,
+        Proof.AesCcm.X86_64.and_self_beq (show a.length % 16 < 2 ^ 64 by omega_arith)]
+    · simp only [gpr_setReg, gpr_arithFlags, h, ite_false]
+    all_goals rfl
+  exact WP.of_runBlock ⟨t₁, run₁,
+    { H with
+      env := H.env.keep (fun r hr => g₁ r (by simp at hr; rcases hr with rfl | rfl | rfl <;> decide)) rd₁ wr₁
+      frame := by rw [m₁]; exact H.frame
+      rd := by rw [rd₁, H.rd]
+      wr := by rw [wr₁, H.wr]
+      sum := by rw [m₁, H.sum]
+      oh := by rw [m₁, H.oh]
+      rbx := by rw [g₁ _ (by decide), H.rbx]
+      rbp := by rw [g₁ _ (by decide), H.rbp]
+      alen := by rw [m₁, H.alen]
+      rest := by rw [m₁, H.rest] }, r12₁, zf₁⟩
+
+/-- The rest of the associated data, before its call, keeps the public arguments. -/
+theorem hashRestPre_one {N : Addr} {nl tl : Nat} (C : HCtx K W SP D n R ciph l A a s₀)
+    (o : One K W SP R N A D nl n tl s₀) {t : State} (H : HInv K W SP D n ciph l A a s₀ t (a.length / 16))
+    (hr : 0 < a.length % 16) (h12 : t.gpr .r12 = BitVec.ofNat 64 (a.length % 16)) :
+    WP isa (.seq (.block (xor16 .r14 240 ohO)) (.seq (padTo bufO) (.block (xor16 .r15 ohO bufO)))) t
+      (One K W SP R N A D nl n tl) := by
+  have L := C.lay
+  have E := H.env
+  have hs := C.short
+  have o₀ := H.one C o
+  generalize hm : a.length / 16 = m at H
+  obtain ⟨t₁, run₁, B₁⟩ := xor16_ok (s := t) (b := .r14) (a := 240) (d := ohO) E.r15 E.r14 (by decide) (by decide)
+    (E.perm.kR (by decide)) (E.perm.kR (by decide)) (E.perm.wW (by decide)) (E.perm.wW (by decide))
+  have E₁ : Env K W SP t₁ := E.keep (fun r hr => B₁.gpr r (by simp at hr; rcases hr with rfl | rfl | rfl <;> decide))
+    B₁.rd B₁.wr
+  have hB := C.buf.slice (a := 16 * m) (k := a.length % 16) (by omega_arith)
+  have hS : Covers [⟨A + BitVec.ofNat 64 (16 * m), a.length % 16⟩] (t₁.rd ++ t₁.wr) := by
+    rw [B₁.rd, B₁.wr, H.rd, H.wr]; exact hB.rd
+  have hSD : (⟨A + BitVec.ofNat 64 (16 * m), a.length % 16⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 bufO, 16⟩ :=
+    hB.w.sub_right (Lay.wSub (by decide))
+  refine WP.seq (WP.of_runBlock ⟨t₁, run₁, ?_⟩)
+  refine WP.seq (WP.mono (padTo_ok E₁ hr (by omega_arith) (by decide) (by rw [B₁.gpr _ (by decide), H.rbx])
+    (by rw [B₁.gpr _ (by decide), h12]) hS hSD) fun t₂ ⟨fr₂, _, g₂, rd₂, wr₂⟩ => ?_)
+  have E₂ : Env K W SP t₂ := E₁.keep (fun r hr => g₂ r (by simp at hr; rcases hr with rfl | rfl | rfl <;> decide)
+    (by simp at hr; rcases hr with rfl | rfl | rfl <;> decide) (by simp at hr; rcases hr with rfl | rfl | rfl <;> decide))
+    rd₂ wr₂
+  obtain ⟨t₃, run₃, B₃⟩ := xor16_ok (s := t₂) (b := .r15) (a := ohO) (d := bufO) E₂.r15 E₂.r15 (by decide) (by decide)
+    (E₂.perm.wR (by decide)) (E₂.perm.wR (by decide)) (E₂.perm.wW (by decide)) (E₂.perm.wW (by decide))
+  have E₃ : Env K W SP t₃ := E₂.keep (fun r hr => B₃.gpr r (by simp at hr; rcases hr with rfl | rfl | rfl <;> decide))
+    B₃.rd B₃.wr
+  refine WP.of_runBlock ⟨t₃, run₃, o₀.step L C.dw E₃ (by rw [B₃.wr, wr₂, B₁.wr])
+    (((B₁.frame.sub fun r hr => ?_).trans (fr₂.sub fun r hr => ?_)).trans (B₃.frame.sub fun r hr => ?_))⟩
+  · simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, List.mem_cons_self .., sub_wA (by decide)⟩
+  all_goals simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, by simp, sub_wC (by decide) (by decide)⟩
+
+end
+
+/-- One chunk, at the same position in both runs. -/
+theorem chunk_rel (v : BlocksImpl) {K W SP D : Addr} {n R : Nat} {ciph₁ ciph₂ : Cipher} {l₁ l₂ : Block} {A : Addr}
+    {a₁ a₂ : List Byte} {s₀₁ s₀₂ : State} {N : Addr} {nl tl : Nat}
+    (C₁ : HCtx K W SP D n R ciph₁ l₁ A a₁ s₀₁) (C₂ : HCtx K W SP D n R ciph₂ l₂ A a₂ s₀₂)
+    (o₁ : One K W SP R N A D nl n tl s₀₁) (o₂ : One K W SP R N A D nl n tl s₀₂) (hal : a₂.length = a₁.length)
+    (hn : n ≤ 2 ^ 64) (k j : Nat) :
+    RelCT isa (fun s₁ s₂ => k = a₁.length / 16 - j ∧ j < a₁.length / 16 ∧
+        HInv K W SP D n ciph₁ l₁ A a₁ s₀₁ s₁ j ∧ HInv K W SP D n ciph₂ l₂ A a₂ s₀₂ s₂ j)
+      (hashChunk (callees v)) fun s₁ s₂ => isa.eval .ne s₁ = isa.eval .ne s₂ ∧
+        (isa.eval .ne s₁ = some false → HInv K W SP D n ciph₁ l₁ A a₁ s₀₁ s₁ (a₁.length / 16) ∧
+          HInv K W SP D n ciph₂ l₂ A a₂ s₀₂ s₂ (a₂.length / 16)) ∧
+        (isa.eval .ne s₁ = some true → ∃ m < k, ∃ j', m = a₁.length / 16 - j' ∧ j' < a₁.length / 16 ∧
+          HInv K W SP D n ciph₁ l₁ A a₁ s₀₁ s₁ j' ∧ HInv K W SP D n ciph₂ l₂ A a₂ s₀₂ s₂ j') := by
+  have L := C₁.lay
+  have hDW := C₁.dw
+  have hM : a₂.length / 16 = a₁.length / 16 := by rw [hal]
+  obtain ⟨M, hMd⟩ : ∃ M, M = a₁.length / 16 := ⟨_, rfl⟩
+  obtain ⟨c, hcd⟩ : ∃ c, c = min 8 (M - j) := ⟨_, rfl⟩
+  rw [← hMd]
+  rw [← hMd] at hM
+  by_cases hkj : k = M - j ∧ j < M
+  swap
+  · exact RelCT.of_false fun s₁ s₂ h => hkj ⟨h.1, h.2.1⟩
+  obtain ⟨hk, hjM⟩ := hkj
+  have pre : ∀ {ciph : Cipher} {l : Block} {a : List Byte} {s₀ s : State}, HCtx K W SP D n R ciph l A a s₀ →
+      a.length / 16 = M → j < M → HInv K W SP D n ciph l A a s₀ s j →
+      WP isa (.seq (.block [ld .r12 .r15 alenO, .alu .cmp .r12 (.imm 8)])
+        (.seq (.ite .b (.block []) (.block [.mov .r12 (.imm 8)])) (.seq (.block bufStart) (.loop hashFill .ne)))) s
+        (FillInv K W SP D n ciph l A a s₀ j c · c) := fun {ciph l a s₀ s} C hm hj H => by
+    have hc : min 8 (a.length / 16 - j) = c := by rw [hm, hcd]
+    refine wp_seq_assoc (WP.seq (WP.mono (chunkHead_ok C H (by omega_arith)) fun t ⟨H', h12⟩ => ?_))
+    rw [hc] at h12
+    exact chunkFill_ok C H' (by omega_arith) (by omega_arith) (by omega_arith) h12
+  have bX : ∀ s₁ s₂, (k = M - j ∧ j < M ∧ HInv K W SP D n ciph₁ l₁ A a₁ s₀₁ s₁ j ∧
+      HInv K W SP D n ciph₂ l₂ A a₂ s₀₂ s₂ j) → Both K W SP R N A D nl n tl [.rbx, .rbp] [248] s₁ s₂ :=
+    fun s₁ s₂ ⟨_, _, H₁, H₂⟩ => by
+      have O₁ := H₁.one C₁ o₁
+      have O₂ := H₂.one C₂ o₂
+      refine ⟨O₁.env, O₂.env, O₁.sl, O₂.sl, O₁.wr, O₂.wr, fun x hx => ?_, fun d hd => ?_⟩
+      · simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
+        rcases hx with rfl | rfl
+        · rw [H₁.rbx, H₂.rbx]
+        · rw [H₁.rbp, H₂.rbp]
+      · simp only [List.mem_singleton] at hd; subst hd
+        exact ⟨by decide, by rw [show (248 : Nat) = alenO from rfl, H₁.alen, H₂.alen, hM, hMd]⟩
+  have X := (rel_taintC [.rbx, .rbp] [248] hDW hn bX
+    (c := .seq (.block [ld .r12 .r15 alenO, .alu .cmp .r12 (.imm 8)])
+      (.seq (.ite .b (.block []) (.block [.mov .r12 (.imm 8)])) (.seq (.block bufStart) (.loop hashFill .ne))))
+    ⟨_, by taint_decide⟩).wp
+    (F₁ := (FillInv K W SP D n ciph₁ l₁ A a₁ s₀₁ j c · c)) (F₂ := (FillInv K W SP D n ciph₂ l₂ A a₂ s₀₂ j c · c))
+    fun s₁ s₂ ⟨_, hj, H₁, H₂⟩ => ⟨pre C₁ hMd.symm hj H₁, pre C₂ hM hj H₂⟩
+  have hc8 : c ≤ 8 := by omega_arith
+  have call : ∀ {ciph : Cipher} {l : Block} {a : List Byte} {s₀ s : State}, HCtx K W SP D n R ciph l A a s₀ →
+      One K W SP R N A D nl n tl s₀ → FillInv K W SP D n ciph l A a s₀ j c s c →
+      WP isa (callBlocks (callees v).enc [mvr .rdx .r15, addi .rdx bufO, mvr .rcx .r12]) s fun s' =>
+        One K W SP R N A D nl n tl s' ∧ s'.gpr .r12 = BitVec.ofNat 64 c := fun {ciph l a s₀ s} C o F => by
+    have O := F.one C o
+    exact WP.mono (callBlocks_ok (f := Spec.Aes.cipher) v.encOk v.encNosp v.encDepth L O.env C.rounds O.sl.rounds
+      (bufArgs_ok F.env.r15 F.r12) (dstW L F.env.perm (d := 384) (n := c) (by omega_arith))) fun s' Q => by
+      refine ⟨O.step L hDW (O.env.of_saved Q.saved Q.rd Q.wr) Q.wr (Q.frame.sub fun r hr => ?_),
+        by rw [Q.saved _ (by decide), F.r12]⟩
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact ⟨_, by simp, sub_wC (by decide) (by omega_arith)⟩
+      · exact ⟨_, by simp, sub_wC (by decide) (by decide)⟩
+      · rw [O.env.rsp]; exact ⟨_, by simp, fun _ h => h⟩
+  have B := (callBlocks_rel (b := (callees v).enc) v.encOk v.encCt L C₁.rounds hDW hn [] []
+    (args := [mvr .rdx .r15, addi .rdx bufO, mvr .rcx .r12]) ⟨_, by taint_decide⟩
+    (D' := W + BitVec.ofNat 64 384) (k := c)
+    (P := fun s₁ s₂ => True ∧ FillInv K W SP D n ciph₁ l₁ A a₁ s₀₁ j c s₁ c ∧
+      FillInv K W SP D n ciph₂ l₂ A a₂ s₀₂ j c s₂ c) fun s₁ s₂ h =>
+      ⟨Both.of (h.2.1.one C₁ o₁) (h.2.2.one C₂ o₂), bufArgs_ok h.2.1.env.r15 h.2.1.r12,
+        bufArgs_ok h.2.2.env.r15 h.2.2.r12, dstW L h.2.1.env.perm (d := 384) (n := c) (by omega_arith),
+        dstW L h.2.2.env.perm (d := 384) (n := c) (by omega_arith)⟩).wp
+    (F₁ := fun (s : State) => One K W SP R N A D nl n tl s ∧ s.gpr .r12 = BitVec.ofNat 64 c)
+    (F₂ := fun (s : State) => One K W SP R N A D nl n tl s ∧ s.gpr .r12 = BitVec.ofNat 64 c)
+    fun s₁ s₂ h => ⟨call C₁ o₁ h.2.1, call C₂ o₂ h.2.2⟩
+  have Y := rel_taintC [.r12] [] hDW hn (fun s₁ s₂ (h : True ∧ (One K W SP R N A D nl n tl s₁ ∧
+      s₁.gpr .r12 = BitVec.ofNat 64 c) ∧ (One K W SP R N A D nl n tl s₂ ∧ s₂.gpr .r12 = BitVec.ofNat 64 c)) =>
+    (⟨h.2.1.1.env, h.2.2.1.env, h.2.1.1.sl, h.2.2.1.sl, h.2.1.1.wr, h.2.2.1.wr, fun x hx => by
+      simp only [List.mem_singleton] at hx; subst hx; rw [h.2.1.2, h.2.2.2], fun _ h => (nomatch h)⟩ :
+      Both K W SP R N A D nl n tl [.r12] [] s₁ s₂))
+    (c := .seq hashSum (.block [ld .rax .r15 alenO, .alu .sub .rax (.reg .r12), st .r15 alenO .rax]))
+    ⟨_, by taint_decide⟩
+  have T : RelCT isa (fun s₁ s₂ => k = M - j ∧ j < M ∧ HInv K W SP D n ciph₁ l₁ A a₁ s₀₁ s₁ j ∧
+      HInv K W SP D n ciph₂ l₂ A a₂ s₀₂ s₂ j) (hashChunk (callees v)) fun _ _ => True := by
+    unfold hashChunk; exact Proof.AesCcm.X86_64.rel_assoc4 (RelCT.seq X (RelCT.seq B Y))
+  refine (T.wp (F₁ := fun (t : State) => HInv K W SP D n ciph₁ l₁ A a₁ s₀₁ t (j + c) ∧
+      t.zf = some (decide (M - (j + c) = 0)))
+    (F₂ := fun (t : State) => HInv K W SP D n ciph₂ l₂ A a₂ s₀₂ t (j + c) ∧ t.zf = some (decide (M - (j + c) = 0)))
+    fun s₁ s₂ ⟨_, hj, H₁, H₂⟩ => ⟨?_, ?_⟩).mono (fun _ _ h => h) fun s₁ s₂ ⟨_, ⟨H₁, z₁⟩, ⟨H₂, z₂⟩⟩ => ?_
+  · have := hashChunk_ok v C₁ H₁ (by omega_arith)
+    rw [← hMd, ← hcd] at this
+    exact this
+  · have := hashChunk_ok v C₂ H₂ (by omega_arith)
+    rw [hM, ← hcd] at this
+    exact this
+  · rw [eval_ne z₁, eval_ne z₂]
+    refine ⟨rfl, fun h => ?_, fun h => ?_⟩
+    · have he : j + c = M := by simp at h; omega_arith
+      rw [hM, ← he]; exact ⟨H₁, H₂⟩
+    · have he : ¬ M - (j + c) = 0 := by simpa using h
+      exact ⟨M - (j + c), by omega_arith, j + c, rfl, by omega_arith, H₁, H₂⟩
+
+/-- The call on the block at `W + bufO` keeps the public arguments. -/
+theorem callBuf_one (v : BlocksImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14)
+    {N A D : Addr} {nl n tl : Nat} (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3584⟩) {s : State}
+    (o : One K W SP R N A D nl n tl s) :
+    WP isa (callBlocks (callees v).enc (oneBlock bufO)) s (One K W SP R N A D nl n tl) :=
+  WP.mono (callBlocks_ok (f := Spec.Aes.cipher) v.encOk v.encNosp v.encDepth L o.env hR o.sl.rounds
+    (oneBlock_ok o.env.r15 bufO (by decide)) (dstW L o.env.perm (d := bufO) (n := 1) (by decide))) fun s' Q => by
+    refine o.step L hDW (o.env.of_saved Q.saved Q.rd Q.wr) Q.wr (Q.frame.sub fun r hr => ?_)
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact ⟨_, by simp, sub_wC (by decide) (by decide)⟩
+    · exact ⟨_, by simp, sub_wC (by decide) (by decide)⟩
+    · rw [o.env.rsp]; exact ⟨_, by simp, fun _ h => h⟩
+
+/-- `HASH` in two runs, from the starts `s₀₁` and `s₀₂` of the same length of associated data. -/
+theorem hash_rel (v : BlocksImpl) {K W SP D : Addr} {n R : Nat} {ciph₁ ciph₂ : Cipher} {l₁ l₂ : Block} {A : Addr}
+    {a₁ a₂ : List Byte} {s₀₁ s₀₂ : State} {N : Addr} {nl tl : Nat}
+    (C₁ : HCtx K W SP D n R ciph₁ l₁ A a₁ s₀₁) (C₂ : HCtx K W SP D n R ciph₂ l₂ A a₂ s₀₂)
+    (o₁ : One K W SP R N A D nl n tl s₀₁) (o₂ : One K W SP R N A D nl n tl s₀₂) (hal : a₂.length = a₁.length)
+    (hn : n ≤ 2 ^ 64)
+    (halen₁ : s₀₁.mem.readW (W + BitVec.ofNat 64 alenO) 64 = BitVec.ofNat 64 a₁.length)
+    (halen₂ : s₀₂.mem.readW (W + BitVec.ofNat 64 alenO) 64 = BitVec.ofNat 64 a₂.length) :
+    RelCT isa (fun s₁ s₂ => s₁ = s₀₁ ∧ s₂ = s₀₂) (Impl.AesOcb.X86_64.hash (callees v)) fun _ _ => True := by
+  have L := C₁.lay
+  have hDW := C₁.dw
+  have hM : a₂.length / 16 = a₁.length / 16 := by rw [hal]
+  have hr : a₂.length % 16 = a₁.length % 16 := by rw [hal]
+  have haad₁ := o₁.sl.aad
+  have haad₂ := o₂.sl.aad
+  -- The first block.
+  have a := (rel_flagsC [] [248] hDW hn (fun s₁ s₂ (h : s₁ = s₀₁ ∧ s₂ = s₀₂) => by
+      obtain ⟨rfl, rfl⟩ := h
+      exact ⟨o₁.env, o₂.env, o₁.sl, o₂.sl, o₁.wr, o₂.wr, fun _ h => (nomatch h), fun d hd => by
+        simp only [List.mem_singleton] at hd; subst hd
+        exact ⟨by decide, by rw [show (248 : Nat) = alenO from rfl, halen₁, halen₂, hal]⟩⟩)
+    (c := .block (zero16 sumO ++ zero16 ohO ++
+      [ld .rbx .r15 aadO, ld .rax .r15 alenO, mvr .rcx .rax, .alu .and .rcx (.imm 15),
+       st .r15 tmpO .rcx, .shift .shr .rax 4, st .r15 alenO .rax, .mov .rbp (.imm 1),
+       .alu .test .rax (.reg .rax)])) ⟨_, by taint_decide⟩).wp
+    (F₁ := fun (s : State) => HInv K W SP D n ciph₁ l₁ A a₁ s₀₁ s 0 ∧ s.zf = some (decide (a₁.length / 16 = 0)))
+    (F₂ := fun (s : State) => HInv K W SP D n ciph₂ l₂ A a₂ s₀₂ s 0 ∧ s.zf = some (decide (a₂.length / 16 = 0)))
+    fun s₁ s₂ h => by
+      obtain ⟨rfl, rfl⟩ := h
+      exact ⟨hashHead_ok C₁ o₁.env haad₁ halen₁, hashHead_ok C₂ o₂.env haad₂ halen₂⟩
+  -- The chunks.
+  have lp : RelCT isa (fun s₁ s₂ => ∃ j, a₁.length / 16 - 0 = a₁.length / 16 - j ∧ j < a₁.length / 16 ∧
+      HInv K W SP D n ciph₁ l₁ A a₁ s₀₁ s₁ j ∧ HInv K W SP D n ciph₂ l₂ A a₂ s₀₂ s₂ j)
+      (.loop (hashChunk (callees v)) .ne) fun _ _ => True :=
+    (RelCT.loop (Q := fun s₁ s₂ => HInv K W SP D n ciph₁ l₁ A a₁ s₀₁ s₁ (a₁.length / 16) ∧
+        HInv K W SP D n ciph₂ l₂ A a₂ s₀₂ s₂ (a₂.length / 16))
+      (fun k s₁ s₂ => ∃ j, k = a₁.length / 16 - j ∧ j < a₁.length / 16 ∧
+        HInv K W SP D n ciph₁ l₁ A a₁ s₀₁ s₁ j ∧ HInv K W SP D n ciph₂ l₂ A a₂ s₀₂ s₂ j)
+      (fun k => RelCT.exists_ fun j => chunk_rel v C₁ C₂ o₁ o₂ hal hn k j) _).mono (fun _ _ h => h)
+      fun _ _ _ => trivial
+  have i₁ := RelCT.ite (M := isa) (c := .e) (t := .block []) (e := .loop (hashChunk (callees v)) .ne)
+    (Q := fun _ _ => True)
+    (P := fun s₁ s₂ => (s₁.cf = s₂.cf ∧ s₁.zf = s₂.zf) ∧
+      (HInv K W SP D n ciph₁ l₁ A a₁ s₀₁ s₁ 0 ∧ s₁.zf = some (decide (a₁.length / 16 = 0))) ∧
+      (HInv K W SP D n ciph₂ l₂ A a₂ s₀₂ s₂ 0 ∧ s₂.zf = some (decide (a₂.length / 16 = 0))))
+    (fun s₁ s₂ h => Proof.AesCcm.X86_64.eval_e_eq h.1.2) (RelCT.block_nil fun _ _ _ => trivial) (by
+      by_cases h0 : a₁.length / 16 = 0
+      · refine RelCT.of_false fun s₁ s₂ h => ?_
+        have := (eval_e h.1.2.1.2).symm.trans h.2
+        simp [h0] at this
+      · exact lp.mono (fun s₁ s₂ h => ⟨0, rfl, Nat.pos_of_ne_zero h0, h.1.2.1.1, h.1.2.2.1⟩) fun _ _ h => h)
+  have X := (RelCT.seq a i₁).wp
+    (F₁ := fun s => HInv K W SP D n ciph₁ l₁ A a₁ s₀₁ s (a₁.length / 16))
+    (F₂ := fun s => HInv K W SP D n ciph₂ l₂ A a₂ s₀₂ s (a₂.length / 16)) fun s₁ s₂ h => by
+      obtain ⟨rfl, rfl⟩ := h
+      exact ⟨hashHI_ok v C₁ o₁.env haad₁ halen₁, hashHI_ok v C₂ o₂.env haad₂ halen₂⟩
+  -- The rest.
+  have t₁ := (rel_flagsC [] [112] hDW hn (fun s₁ s₂ (h : True ∧ HInv K W SP D n ciph₁ l₁ A a₁ s₀₁ s₁ (a₁.length / 16) ∧
+      HInv K W SP D n ciph₂ l₂ A a₂ s₀₂ s₂ (a₂.length / 16)) => by
+      have O₁ := h.2.1.one C₁ o₁
+      have O₂ := h.2.2.one C₂ o₂
+      exact ⟨O₁.env, O₂.env, O₁.sl, O₂.sl, O₁.wr, O₂.wr, fun _ h => (nomatch h), fun d hd => by
+        simp only [List.mem_singleton] at hd; subst hd
+        exact ⟨by decide, by rw [show (112 : Nat) = tmpO from rfl, h.2.1.rest, h.2.2.rest, hr]⟩⟩)
+    (c := .block [ld .r12 .r15 tmpO, .alu .test .r12 (.reg .r12)]) ⟨_, by taint_decide⟩).wp
+    (F₁ := fun (t : State) => HInv K W SP D n ciph₁ l₁ A a₁ s₀₁ t (a₁.length / 16) ∧
+      t.gpr .r12 = BitVec.ofNat 64 (a₁.length % 16) ∧ t.zf = some (decide (a₁.length % 16 = 0)))
+    (F₂ := fun (t : State) => HInv K W SP D n ciph₂ l₂ A a₂ s₀₂ t (a₂.length / 16) ∧
+      t.gpr .r12 = BitVec.ofNat 64 (a₂.length % 16) ∧ t.zf = some (decide (a₂.length % 16 = 0)))
+    fun s₁ s₂ h => ⟨tailHead_ok h.2.1, tailHead_ok h.2.2⟩
+  have rr : (0 < a₁.length % 16) → RelCT isa (fun s₁ s₂ =>
+      (HInv K W SP D n ciph₁ l₁ A a₁ s₀₁ s₁ (a₁.length / 16) ∧ s₁.gpr .r12 = BitVec.ofNat 64 (a₁.length % 16)) ∧
+      (HInv K W SP D n ciph₂ l₂ A a₂ s₀₂ s₂ (a₂.length / 16) ∧ s₂.gpr .r12 = BitVec.ofNat 64 (a₂.length % 16)))
+      (hashRest (callees v)) fun _ _ => True := fun hr0 => by
+    have p := (rel_taintC [.rbx, .r12] [] hDW hn (fun s₁ s₂ (h :
+        (HInv K W SP D n ciph₁ l₁ A a₁ s₀₁ s₁ (a₁.length / 16) ∧ s₁.gpr .r12 = BitVec.ofNat 64 (a₁.length % 16)) ∧
+        (HInv K W SP D n ciph₂ l₂ A a₂ s₀₂ s₂ (a₂.length / 16) ∧ s₂.gpr .r12 = BitVec.ofNat 64 (a₂.length % 16))) =>
+      (⟨(h.1.1.one C₁ o₁).env, (h.2.1.one C₂ o₂).env,
+        (h.1.1.one C₁ o₁).sl, (h.2.1.one C₂ o₂).sl, (h.1.1.one C₁ o₁).wr, (h.2.1.one C₂ o₂).wr, fun x hx => by
+          simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
+          rcases hx with rfl | rfl
+          · rw [h.1.1.rbx, h.2.1.rbx, hM]
+          · rw [h.1.2, h.2.2, hr], fun _ h => (nomatch h)⟩ : Both K W SP R N A D nl n tl [.rbx, .r12] [] s₁ s₂))
+      (c := .seq (.block (xor16 .r14 240 ohO)) (.seq (padTo bufO) (.block (xor16 .r15 ohO bufO))))
+      ⟨_, by taint_decide⟩).wp (F₁ := One K W SP R N A D nl n tl) (F₂ := One K W SP R N A D nl n tl)
+      fun s₁ s₂ h => ⟨hashRestPre_one C₁ o₁ h.1.1 hr0 h.1.2, hashRestPre_one C₂ o₂ h.2.1 (by omega_arith) h.2.2⟩
+    have c := (callBlocks_rel (b := (callees v).enc) v.encOk v.encCt L C₁.rounds hDW hn [] [] (args := oneBlock bufO)
+      ⟨_, by taint_decide⟩ (D' := W + BitVec.ofNat 64 bufO) (k := 1)
+      (P := fun s₁ s₂ => True ∧ One K W SP R N A D nl n tl s₁ ∧ One K W SP R N A D nl n tl s₂) fun s₁ s₂ h =>
+        ⟨Both.of h.2.1 h.2.2, oneBlock_ok h.2.1.env.r15 bufO (by decide), oneBlock_ok h.2.2.env.r15 bufO (by decide),
+          dstW L h.2.1.env.perm (by decide), dstW L h.2.2.env.perm (by decide)⟩).wp
+      (F₁ := One K W SP R N A D nl n tl) (F₂ := One K W SP R N A D nl n tl)
+      fun s₁ s₂ h => ⟨callBuf_one v L C₁.rounds hDW h.2.1, callBuf_one v L C₁.rounds hDW h.2.2⟩
+    have e := rel_taintC [] [] hDW hn (fun s₁ s₂ (h : True ∧ One K W SP R N A D nl n tl s₁ ∧
+      One K W SP R N A D nl n tl s₂) => Both.of h.2.1 h.2.2) (c := .block (xor16 .r15 bufO sumO)) ⟨_, by taint_decide⟩
+    unfold hashRest
+    exact Proof.AesCcm.X86_64.rel_assoc3 (RelCT.seq p (RelCT.seq c e))
+  have i₂ := RelCT.ite (M := isa) (c := .e) (t := .block []) (e := hashRest (callees v)) (Q := fun _ _ => True)
+    (P := fun s₁ s₂ => (s₁.cf = s₂.cf ∧ s₁.zf = s₂.zf) ∧
+      (HInv K W SP D n ciph₁ l₁ A a₁ s₀₁ s₁ (a₁.length / 16) ∧ s₁.gpr .r12 = BitVec.ofNat 64 (a₁.length % 16) ∧
+        s₁.zf = some (decide (a₁.length % 16 = 0))) ∧
+      (HInv K W SP D n ciph₂ l₂ A a₂ s₀₂ s₂ (a₂.length / 16) ∧ s₂.gpr .r12 = BitVec.ofNat 64 (a₂.length % 16) ∧
+        s₂.zf = some (decide (a₂.length % 16 = 0))))
+    (fun s₁ s₂ h => Proof.AesCcm.X86_64.eval_e_eq h.1.2) (RelCT.block_nil fun _ _ _ => trivial) (by
+      by_cases h0 : a₁.length % 16 = 0
+      · refine RelCT.of_false fun s₁ s₂ h => ?_
+        have := (eval_e h.1.2.1.2.2).symm.trans h.2
+        simp [h0] at this
+      · exact (rr (Nat.pos_of_ne_zero h0)).mono (fun s₁ s₂ h => ⟨⟨h.1.2.1.1, h.1.2.1.2.1⟩, ⟨h.1.2.2.1, h.1.2.2.2.1⟩⟩)
+          fun _ _ h => h)
+  unfold Impl.AesOcb.X86_64.hash
+  exact Proof.AesCcm.X86_64.rel_assoc (RelCT.seq X (RelCT.seq t₁ i₂))
+
+end VG.Proof.AesOcb.X86_64
+
+end
+
+end
+
+/-! ### `AesOcb.X86_64.NonceCT`, which only this module used -/
+
+section
+
+/-!
+# AES-OCB on x86-64: `Offset_0` is constant time
+
+Untrusted: everything here is checked by Lean. The nonce block and the
+stretch pass the taint analysis from the public slots (`rel_taintC`); the
+call of `vg_aes_encrypt_blocks` has the same arguments in both runs
+(`callBlocks_rel`).
+-/
+
+@[expose] public section
+
+set_option linter.unusedSimpArgs false
+
+namespace VG.Proof.AesOcb.X86_64
+
+open VG VG.X86_64 VG.Impl.AesOcb.X86_64
+open VG.Proof.Aes.X86_64 (BlocksImpl)
+
+theorem nonce_rel (v : BlocksImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14)
+    {N A D : Addr} {nl n tl : Nat} (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3584⟩) (hn : n ≤ 2 ^ 64)
+    (h1 : 1 ≤ nl) (h15 : nl ≤ 15) (ht : tl < 2 ^ 64) {P : State → State → Prop}
+    (hP : ∀ s₁ s₂, P s₁ s₂ → One K W SP R N A D nl n tl s₁ ∧ One K W SP R N A D nl n tl s₂ ∧
+      Buf W SP s₁ N nl ∧ Buf W SP s₂ N nl) :
+    RelCT isa P (nonce (callees v)) fun _ _ => True := by
+  have step : ∀ s, One K W SP R N A D nl n tl s → Buf W SP s N nl →
+      WP isa nonceBlock s (One K W SP R N A D nl n tl) := fun s o hB =>
+    WP.mono (nonceBlock_ok L o.env o.sl.nonce o.sl.nlen o.sl.tl h1 h15 ht hB) fun s' Q =>
+      o.step L hDW (o.env.keep (fun r hr => Q.gpr r (by simp at hr; rcases hr with rfl | rfl | rfl <;> decide)
+        (by simp at hr; rcases hr with rfl | rfl | rfl <;> decide) (by simp at hr; rcases hr with rfl | rfl | rfl <;> decide)
+        (by simp at hr; rcases hr with rfl | rfl | rfl <;> decide) (by simp at hr; rcases hr with rfl | rfl | rfl <;> decide))
+        Q.rd Q.wr) Q.wr (Q.frame.sub fun r hr => by
+          simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+          rcases hr with rfl | rfl
+          · exact ⟨_, List.mem_cons_self .., sub_wA (by decide)⟩
+          · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), sub_wB (by decide) (by decide)⟩)
+  have a := (rel_taintC [] [] hDW hn (fun s₁ s₂ h => Both.of (hP s₁ s₂ h).1 (hP s₁ s₂ h).2.1)
+    (c := nonceBlock) ⟨_, by taint_decide⟩).wp (F₁ := One K W SP R N A D nl n tl) (F₂ := One K W SP R N A D nl n tl)
+    fun s₁ s₂ h => ⟨step s₁ (hP s₁ s₂ h).1 (hP s₁ s₂ h).2.2.1, step s₂ (hP s₁ s₂ h).2.1 (hP s₁ s₂ h).2.2.2⟩
+  have call : ∀ s, One K W SP R N A D nl n tl s →
+      WP isa (callBlocks (callees v).enc (oneBlock tmpO)) s (One K W SP R N A D nl n tl) := fun s o =>
+    WP.mono (callBlocks_ok (f := Spec.Aes.cipher) v.encOk v.encNosp v.encDepth L o.env hR o.sl.rounds
+      (oneBlock_ok o.env.r15 tmpO (by decide)) (dstW L o.env.perm (d := tmpO) (n := 1) (by decide))) fun s' Q => by
+      have E' := o.env.of_saved Q.saved Q.rd Q.wr
+      refine o.step L hDW E' Q.wr (Q.frame.sub fun r hr => ?_)
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact ⟨_, List.mem_cons_self .., sub_wA (by decide)⟩
+      · exact ⟨_, by simp, sub_wC (by decide) (by decide)⟩
+      · rw [o.env.rsp]; exact ⟨_, by simp, fun _ h => h⟩
+  have b := (callBlocks_rel (b := (callees v).enc) v.encOk v.encCt L hR hDW hn [] [] (args := oneBlock tmpO) ⟨_, by taint_decide⟩
+    (D' := W + BitVec.ofNat 64 tmpO) (k := 1)
+    (P := fun s₁ s₂ => True ∧ One K W SP R N A D nl n tl s₁ ∧ One K W SP R N A D nl n tl s₂) fun s₁ s₂ h =>
+      ⟨Both.of h.2.1 h.2.2, oneBlock_ok h.2.1.env.r15 tmpO (by decide), oneBlock_ok h.2.2.env.r15 tmpO (by decide),
+        dstW L h.2.1.env.perm (by decide), dstW L h.2.2.env.perm (by decide)⟩).wp
+    (F₁ := One K W SP R N A D nl n tl) (F₂ := One K W SP R N A D nl n tl)
+    fun s₁ s₂ h => ⟨call s₁ h.2.1, call s₂ h.2.2⟩
+  have c := rel_taintC [] [] hDW hn (fun s₁ s₂ (h : True ∧ One K W SP R N A D nl n tl s₁ ∧ One K W SP R N A D nl n tl s₂) =>
+    Both.of h.2.1 h.2.2) (c := .block offset0) ⟨_, by taint_decide⟩
+  exact RelCT.seq a (RelCT.seq b c)
+
+end VG.Proof.AesOcb.X86_64
+
+end
+
+end
 
 /-!
 # AES-OCB on x86-64: `vg_aes_ocb_seal` is constant time

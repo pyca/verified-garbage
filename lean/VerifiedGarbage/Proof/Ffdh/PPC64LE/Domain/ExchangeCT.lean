@@ -1,16 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.ExchangeFn
+public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.ExchangeCorrect
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckDomainCT
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.MontCT
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
-meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.ExchangeFn
+meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.ExchangeCorrect
 meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckDomainCT
 meta import VerifiedGarbage.Proof.Bignum.PPC64LE.MontCT
 meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
-import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.ExchangeCorrect
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreLoad
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreCheck
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubCorrect
@@ -20,8 +19,6 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Ffdh.Domain
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.ExchangeBody
-meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.ExchangeBody
 
 /-!
 # `vg_ffdh_exchange` on PPC64LE: constant time

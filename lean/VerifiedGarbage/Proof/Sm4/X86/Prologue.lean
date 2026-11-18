@@ -402,7 +402,7 @@ end
 /-!
 # Slots, and saving and restoring registers, on x86 (32-bit)
 
-As on ARMv7 (`Proof/Sm4/Arm/Prologue.lean`): loads and stores of the
+As on ARMv7 (`Proof/Sm4/Arm/Group.lean`): loads and stores of the
 scratch buffer's slots through a base register (`ldSlot_ok`, `stSlot_ok`,
 and lists of them), and the prologue and epilogue's saving and restoring
 of the callee-saved registers (`save_ok`, `restore_ok`) in the slots from

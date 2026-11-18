@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.AesCbc.Rounds
 public import VerifiedGarbage.Impl.AesCbc.X86_64.VaesDecrypt
 public import VerifiedGarbage.Proof.AesCbc.X86_64.Decrypt
-import VerifiedGarbage.Proof.Aes.X86_64.VaesBlocks.Blocks
+import VerifiedGarbage.Proof.Aes.X86_64.BlocksVariant
 import VerifiedGarbage.Proof.Aes.X86_64.VaesBlocks.Dec
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd

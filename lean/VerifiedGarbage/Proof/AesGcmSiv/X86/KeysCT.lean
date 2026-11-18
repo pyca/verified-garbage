@@ -1,11 +1,9 @@
 module
-public import VerifiedGarbage.Proof.AesGcmSiv.X86.Callee
-public import VerifiedGarbage.Proof.AesGcmSiv.X86.Derive
 
+public import VerifiedGarbage.Proof.AesGcmSiv.X86.Derive
 import VerifiedGarbage.Proof.AesGcmSiv.X86.Keys
 import VerifiedGarbage.Proof.AesGcmSiv.X86.Run
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-meta import VerifiedGarbage.Proof.AesGcmSiv.X86.Callee
 meta import VerifiedGarbage.Proof.AesGcmSiv.X86.Derive
 meta import VerifiedGarbage.Proof.AesGcmSiv.X86.Keys
 meta import VerifiedGarbage.Proof.AesGcmSiv.X86.Run

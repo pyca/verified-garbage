@@ -18,7 +18,6 @@ import VerifiedGarbage.Proof.Camellia.PPC64LE.Lit
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.Framework.Block
-public import VerifiedGarbage.Proof.Camellia.PPC64LE.KeyChecks
 
 /-! ### `Camellia.PPC64LE.KeyPair`, which only this module used -/
 

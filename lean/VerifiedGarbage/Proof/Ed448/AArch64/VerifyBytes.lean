@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ed448.AArch64.VerifyEquation
-public import VerifiedGarbage.Proof.X448.AArch64.Decode
+public import VerifiedGarbage.Proof.X448.AArch64.Setup
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.X448.AArch64.Mem
 import VerifiedGarbage.Proof.Framework.AArch64.Tbl
@@ -17,7 +17,7 @@ public import VerifiedGarbage.Spec.Ed448.Contract
 import VerifiedGarbage.Proof.Ed448.AArch64.VerifyChecks
 import VerifiedGarbage.Proof.Ed448.Scalar
 import VerifiedGarbage.Proof.X448.AArch64.Weak.Main
-import VerifiedGarbage.Proof.X448.AArch64.Init
+import VerifiedGarbage.Proof.X448.AArch64.Mul
 
 /-! ### `Ed448.AArch64.VerifyChunks`, which only this module used -/
 

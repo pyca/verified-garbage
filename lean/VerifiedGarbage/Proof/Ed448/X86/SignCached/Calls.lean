@@ -3,10 +3,9 @@ module
 public import VerifiedGarbage.Proof.Ed448.X86.SignCached.Hash
 public import VerifiedGarbage.Proof.Ed448.X86.BaseLocal
 public import VerifiedGarbage.Proof.Ed448.X86.Callee
-import VerifiedGarbage.Proof.Ed448.X86.ScalarVerified
+public import VerifiedGarbage.Proof.Ed448.X86.ScalarVerified
 public import VerifiedGarbage.Proof.Ed448.X86.ScalarLit
 public import VerifiedGarbage.Proof.Ed448.X86.ScalarMain
-public import VerifiedGarbage.Proof.Ed448.X86.ScalarMulAddMain
 import VerifiedGarbage.Proof.Framework.X86.CallWith
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Ed25519.X86.Whole.BlocksCT

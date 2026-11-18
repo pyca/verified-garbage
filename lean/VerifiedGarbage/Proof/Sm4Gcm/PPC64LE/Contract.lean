@@ -8,7 +8,7 @@ public import VerifiedGarbage.Proof.Framework.PowLit
 # SM4-GCM on PPC64LE: the contracts the proofs are written against
 
 Untrusted: everything here is checked by Lean. As AES-GCM's
-(`Proof/AesGcm/PPC64LE/Contract.lean`), for SM4-GCM's signatures, which have
+(`Proof/AesGcm/PPC64LE/Fn.lean`), for SM4-GCM's signatures, which have
 no number of rounds, with AES-GCM's working space of 2560 bytes and SM4's of
 3264 (`sm4`), the argument after it. The artifacts'
 contracts are the shared ones of `Spec/Sm4/Gcm/Contract.lean`, which imply

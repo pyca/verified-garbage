@@ -18,11 +18,11 @@
 pub(crate) unsafe extern "C" fn vg_cmac_triple_des_stream_init(state: *mut [u64; 52], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
         r#".base64 "Yf0h+CAAwTimAgh8EAIG+CACxvsoAub7eBt/fHgz3nx4I4N8eCukfHj75X8="
-bl {vg_triple_des_expand_key}
+bl {vg_triple_des_expand_key_core}
 .base64 "ePvjf3jzxX8AAp44AAAAOAAABPg="
 bl {vg_triple_des_encrypt_block}
 .base64 "AADAOCg05HzgD+h4UDAofRsAQDk4UCl9pA/neHhK53yAAWA5KF3jfOAP6HhQMCh9GwBAOThQKX2kD+d4eErnfIgBYDkoXeN8AAAAOJABA/gQAh7oKAL+6yAC3uumAwh8oAIhOCAAgE4=""#,
-        vg_triple_des_expand_key = sym super::triple_des::vg_triple_des_expand_key,
+        vg_triple_des_expand_key_core = sym super::triple_des::vg_triple_des_expand_key_core::vg_triple_des_expand_key_core,
         vg_triple_des_encrypt_block = sym super::triple_des::vg_triple_des_encrypt_block::vg_triple_des_encrypt_block,
     )
 }

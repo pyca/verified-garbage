@@ -2,11 +2,10 @@ module
 
 import VerifiedGarbage.Proof.Rc2.Memory
 import VerifiedGarbage.Proof.Rc2.Word
-import VerifiedGarbage.Proof.Rc2.PPC64LE.Lookup
+public import VerifiedGarbage.Proof.Rc2.PPC64LE.Lookup
 public import VerifiedGarbage.Impl.Rc2.PPC64LE.Block
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
-public import VerifiedGarbage.Proof.Rc2.PPC64LE.Run
 public import VerifiedGarbage.Spec.Rc2
 
 /-! ### `Rc2.PPC64LE.Mix`, which this module and modules that import it used -/

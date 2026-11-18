@@ -15,7 +15,7 @@ public import VerifiedGarbage.Impl.AesGcm.RISCV64
 # AES-GCM on RISC-V: `vg_aes_gcm_seal`
 
 Untrusted: everything here is checked by Lean. As on ARMv7
-(`Proof/AesGcm/Arm/Seal.lean`): the entry, `oneAad`, `oneCrypt`, `oneTag 0`
+(`Proof/AesGcm/Arm/CTCrypt.lean`): the entry, `oneAad`, `oneCrypt`, `oneTag 0`
 and the tag copied out to `tag` (`seal_wp`).
 -/
 

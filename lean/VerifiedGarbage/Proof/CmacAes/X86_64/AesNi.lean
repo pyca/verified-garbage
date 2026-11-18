@@ -1,9 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.CmacAes.X86_64.AesNi
-import VerifiedGarbage.Proof.CmacAes.X86_64.UpdateCorrect
+public import VerifiedGarbage.Proof.CmacAes.X86_64.UpdateCorrect
 public import VerifiedGarbage.Spec.Cmac.Contract
-public import VerifiedGarbage.Proof.CmacAes.X86_64.UpdateLoop
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
@@ -16,7 +15,6 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Impl.CmacAes.X86_64.AesNi
 meta import VerifiedGarbage.Proof.CmacAes.X86_64.UpdateCorrect
 meta import VerifiedGarbage.Spec.Cmac.Contract
-meta import VerifiedGarbage.Proof.CmacAes.X86_64.UpdateLoop
 meta import VerifiedGarbage.Proof.Cmac.Spec
 meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.Offset

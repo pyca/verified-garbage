@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Sm4Gcm.X86_64.Crypt
 import VerifiedGarbage.Proof.AesGcm.X86_64.CryptOk
 import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
-import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks
 import VerifiedGarbage.Proof.AesGcm.X86_64.Absorb
 import VerifiedGarbage.Proof.AesGcm.X86_64.Flush
 import VerifiedGarbage.Proof.AesGcm.X86_64.Ghash1

@@ -1,9 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.Crypt
-import VerifiedGarbage.Proof.AesGcm.RISCV64.Absorb
 import VerifiedGarbage.Proof.AesGcm.RISCV64.Flush
-import VerifiedGarbage.Proof.AesGcm.RISCV64.Ghash1
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec

@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Impl.Ed448.RISCV64.ScalarBase
-import VerifiedGarbage.Proof.X25519.RISCV64.Pass
+import VerifiedGarbage.Proof.X25519.RISCV64.Field
 public import VerifiedGarbage.Proof.X448.RISCV64.R64.Ladder
 
 /-!

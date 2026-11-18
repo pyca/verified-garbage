@@ -14,9 +14,8 @@ public import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Env
 public import VerifiedGarbage.Impl.StackScratch.X86_64
 public import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
-import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.SealCT
+public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.SealCT
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.VaesLoops
-public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.StitchAvx
 public import VerifiedGarbage.Impl.AesGcmSiv.X86_64Stitch
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Reg.Verified
 import Mathlib.Algebra.Field.ZMod

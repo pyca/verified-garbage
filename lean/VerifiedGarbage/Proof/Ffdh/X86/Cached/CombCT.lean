@@ -3,14 +3,12 @@ module
 public import VerifiedGarbage.Proof.Ffdh.X86.Cached.Comb
 public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimeWindow
 import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimePower
-import VerifiedGarbage.Proof.Ffdh.X86.Cached.Digit
 import VerifiedGarbage.Proof.Ffdh.X86.Cached.Select
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Ffdh.X86.StagesCT
 meta import VerifiedGarbage.Proof.Ffdh.X86.Cached.Comb
 meta import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimeWindow
 meta import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimePower
-meta import VerifiedGarbage.Proof.Ffdh.X86.Cached.Digit
 meta import VerifiedGarbage.Proof.Ffdh.X86.Cached.Select
 meta import VerifiedGarbage.Proof.Framework.Omega
 

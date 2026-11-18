@@ -14,7 +14,7 @@ public import VerifiedGarbage.Impl.AesGcm.PPC64LE
 # AES-GCM on PPC64LE: the tag after the last piece (`finTag o`)
 
 Untrusted: everything here is checked by Lean. As on ARMv7
-(`Proof/AesGcm/Arm/FinTag.lean`): `finTag o` pads and absorbs the buffered
+(`Proof/AesGcm/Arm/StreamFinish.lean`): `finTag o` pads and absorbs the buffered
 bytes (`flush`), of the text if there is any and else of the additional
 data, then puts the tag into `W + o` (`tag`), for `aad_len` (`r22`) bytes
 of additional data and `text_len` (`r23`) of text (`finTag_ok`).

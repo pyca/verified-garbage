@@ -5,9 +5,8 @@ public import VerifiedGarbage.Proof.AesGcm.RISCV64.CTBase
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.Contract
 import VerifiedGarbage.Proof.AesGcm.RISCV64.CTAbsorb
 import VerifiedGarbage.Proof.AesGcm.RISCV64.CTCrypt
-import VerifiedGarbage.Proof.AesGcm.RISCV64.Absorb
-import VerifiedGarbage.Proof.AesGcm.RISCV64.FinTag
 import VerifiedGarbage.Proof.AesGcm.RISCV64.Flush
+import VerifiedGarbage.Proof.AesGcm.RISCV64.FinTag
 import VerifiedGarbage.Proof.AesGcm.RISCV64.InitCT
 import VerifiedGarbage.Proof.AesGcm.RISCV64.StreamFinish
 import VerifiedGarbage.Proof.AesGcm.RISCV64.Tag
@@ -18,9 +17,8 @@ meta import VerifiedGarbage.Proof.AesGcm.RISCV64.CTBase
 meta import VerifiedGarbage.Proof.AesGcm.RISCV64.Contract
 meta import VerifiedGarbage.Proof.AesGcm.RISCV64.CTAbsorb
 meta import VerifiedGarbage.Proof.AesGcm.RISCV64.CTCrypt
-meta import VerifiedGarbage.Proof.AesGcm.RISCV64.Absorb
-meta import VerifiedGarbage.Proof.AesGcm.RISCV64.FinTag
 meta import VerifiedGarbage.Proof.AesGcm.RISCV64.Flush
+meta import VerifiedGarbage.Proof.AesGcm.RISCV64.FinTag
 meta import VerifiedGarbage.Proof.AesGcm.RISCV64.InitCT
 meta import VerifiedGarbage.Proof.AesGcm.RISCV64.StreamFinish
 meta import VerifiedGarbage.Proof.AesGcm.RISCV64.Tag
@@ -35,7 +33,7 @@ public import VerifiedGarbage.Impl.AesGcm.RISCV64
 # AES-GCM on RISC-V: `tag`, `finTag` and `vg_aes_gcm_stream_finish` are constant time
 
 Untrusted: everything here is checked by Lean. As on ARMv7
-(`Proof/AesGcm/Arm/CTFin.lean`): the invariants fix the context, the state,
+(`Proof/AesGcm/Arm/CTOpen.lean`): the invariants fix the context, the state,
 `W`, the stack pointer, the number of rounds (`s3`), the lengths of the
 additional data (`s10`) and of the text (`s11`), and the tag's address
 (`s9`), all held in registers the environment pins.

@@ -1,8 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.X448.X86_64.Swap
-public import Mathlib.Logic.Function.Basic
 public import VerifiedGarbage.Proof.X448.X86_64.AddSub
+public import Mathlib.Logic.Function.Basic
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PlainSimp
 

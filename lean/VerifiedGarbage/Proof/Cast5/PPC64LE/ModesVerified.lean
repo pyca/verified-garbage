@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Cast5.PPC64LE.ModesConstantTime
 public import VerifiedGarbage.Proof.Cast5.PPC64LE.ModeCore
 public import VerifiedGarbage.Proof.Cast5.ModeScratch
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Consts

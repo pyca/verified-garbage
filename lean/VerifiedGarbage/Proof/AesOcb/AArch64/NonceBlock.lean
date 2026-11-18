@@ -3,7 +3,6 @@ module
 import VerifiedGarbage.Proof.AesOcb.AArch64.PadTo
 public import VerifiedGarbage.Proof.Ocb.Nonce
 public import VerifiedGarbage.Proof.AesOcb.AArch64.Env
-import VerifiedGarbage.Proof.AesOcb.AArch64.Words
 import VerifiedGarbage.Proof.Ocb.Bytes
 import VerifiedGarbage.Proof.Ocb.Spec
 import VerifiedGarbage.Proof.AesGcm.AArch64.Loops

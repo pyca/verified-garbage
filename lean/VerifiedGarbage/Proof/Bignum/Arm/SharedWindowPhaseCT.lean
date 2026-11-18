@@ -19,7 +19,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.WindowBitCT
 import VerifiedGarbage.Proof.Bignum.Arm.ExpControl
 import VerifiedGarbage.Proof.Bignum.Layout
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Bignum.Arm.ExpByteHeadCT
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.CallLay
 

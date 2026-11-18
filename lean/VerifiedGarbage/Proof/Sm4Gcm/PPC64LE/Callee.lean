@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTBase
 public import VerifiedGarbage.Proof.Sm4.PPC64LE.Ctr32Verified
-import VerifiedGarbage.Proof.Sm4.PPC64LE.KeyVerified
+public import VerifiedGarbage.Proof.Sm4.PPC64LE.KeyVerified
 import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
 import VerifiedGarbage.Proof.Framework.PPC64LE.Lit
 import VerifiedGarbage.Proof.Sm4.PPC64LE.Ctr32Lit
@@ -14,7 +14,6 @@ meta import VerifiedGarbage.Impl.Sm4.PPC64LE.Ctr32
 meta import VerifiedGarbage.Impl.Sm4.PPC64LE.ExpandKey
 public import VerifiedGarbage.Impl.Sm4.PPC64LE.Ctr32
 public import VerifiedGarbage.Impl.Sm4.PPC64LE.ExpandKey
-public import VerifiedGarbage.Proof.Sm4.PPC64LE.KeyEk
 
 /-!
 # SM4-GCM on PPC64LE: SM4's code, inlined

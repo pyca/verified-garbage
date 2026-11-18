@@ -11,7 +11,6 @@ import VerifiedGarbage.Proof.Camellia.X86.Crypt8
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Taint
-import VerifiedGarbage.Proof.Camellia.X86.PreparedVerified
 public import VerifiedGarbage.Proof.Framework.X86.CallWith
 import VerifiedGarbage.Proof.Framework.X86.Inline
 import VerifiedGarbage.Proof.Camellia.X86.Lit

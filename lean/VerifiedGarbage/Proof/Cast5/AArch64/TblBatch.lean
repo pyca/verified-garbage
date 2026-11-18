@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Blowfish.AArch64.Batch
 public import VerifiedGarbage.Proof.Framework.AArch64.Tbl
 import VerifiedGarbage.Proof.Blowfish.AArch64.Lanes
 import VerifiedGarbage.Proof.Cast5.Table
-import VerifiedGarbage.Proof.Blowfish.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec

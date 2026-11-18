@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.Ffdh.Arm.KeyInit
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Spec.Ffdh.KeyGenerationContract
-import VerifiedGarbage.Proof.Ffdh.Arm.InitCT
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.TCB.Arm.Target
@@ -19,6 +18,38 @@ public import Init.Data.BitVec.BasicAux
 public import Init.Data.List.Basic
 public import VerifiedGarbage.Impl.Ffdh.Arm.Init
 public import VerifiedGarbage.Spec.Ffdh.KeyGeneration
+public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Impl.Ffdh.Arm.Init
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+
+/-! ### `Ffdh.Arm.InitCT`, which this module and modules that import it used -/
+
+section
+
+/-! Controller initialization depends only on its public arguments. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm
+open VG VG.Arm VG.Impl.Ffdh.Arm
+
+theorem keyInit_ct : RelCT isa (fun s t => ∀ r ∈ [.r0, .r1], s.gpr r = t.gpr r)
+    KeyGeneration.init (fun _ _ => True) := by
+  apply RelCT.taint (A := taint) (Taint.ofRegs [.r0, .r1]) _ (by taint_decide)
+  intro s t h
+  exact Taint.agree_ofRegs h
+
+theorem parameterInit_ct : RelCT isa (fun s t => ∀ r ∈ [.r0, .r1, .r2], s.gpr r = t.gpr r)
+    Generation.init (fun _ _ => True) := by
+  apply RelCT.taint (A := taint) (Taint.ofRegs [.r0, .r1, .r2]) _ (by taint_decide)
+  intro s t h
+  exact Taint.agree_ofRegs h
+
+end VG.Proof.Ffdh.Arm
+
+end
+
+end
 
 /-! The native key initializer implements the shared public FFDH ABI. -/
 

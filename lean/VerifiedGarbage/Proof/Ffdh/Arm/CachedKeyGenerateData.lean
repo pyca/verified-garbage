@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicSpec
 public import VerifiedGarbage.TCB.Arm.Isa
 public import VerifiedGarbage.TCB.Code
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeyPrepareLaw
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeyTailLaw
+public import VerifiedGarbage.Proof.Ffdh.Arm.SampleEnvironment
 public import VerifiedGarbage.Impl.Ffdh.Arm.KeyGenerate
 import VerifiedGarbage.Proof.Ffdh.Arm.Entered
 import VerifiedGarbage.Proof.Framework.Sig
@@ -32,25 +32,22 @@ import VerifiedGarbage.Proof.Framework.Arm.Syms
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
 import VerifiedGarbage.Proof.Ffdh.Arm.SampleMemory
 public import VerifiedGarbage.Impl.Ffdh.Arm.SampleKeyGenerate
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeyTail
 public import VerifiedGarbage.Proof.Ffdh.Arm.ScalarRange
 import VerifiedGarbage.Proof.Ffdh.Arm.Branch
 import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
 import VerifiedGarbage.Proof.Framework.Block
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeyOutputs
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeyByteCT
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeyScalarSpec
 public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
 import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicMain
 import VerifiedGarbage.Proof.Ffdh.Arm.ImportAt
 public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 import VerifiedGarbage.Proof.Ffdh.Arm.Head
-public import VerifiedGarbage.Proof.Ffdh.Arm.SampleEnvironment
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeyCallMemory
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
 public import VerifiedGarbage.Proof.Ffdh.Arm.ScalarLayout
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeyScalarCT
 public import VerifiedGarbage.Proof.Framework.Arm.CallF
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
 public import VerifiedGarbage.Proof.Framework.Taint

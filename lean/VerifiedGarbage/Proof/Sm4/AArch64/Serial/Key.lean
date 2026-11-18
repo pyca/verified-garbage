@@ -1,11 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.Sm4.AArch64.Serial.Key
-public import VerifiedGarbage.Proof.Sm4.AArch64.Serial.Round
-public import VerifiedGarbage.Proof.Sm4.Rounds
 public import VerifiedGarbage.Proof.Sm4.AArch64.Serial.ModeCore
+public import VerifiedGarbage.Proof.Sm4.Rounds
 public import VerifiedGarbage.Spec.Sm4.Contract
-import VerifiedGarbage.Proof.Sm4.AArch64.Serial.State
 import VerifiedGarbage.Proof.Sm4.Layout
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
@@ -21,11 +19,9 @@ import VerifiedGarbage.Proof.Sm4.AArch64.Lit
 import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Impl.Sm4.AArch64.Serial.Key
-meta import VerifiedGarbage.Proof.Sm4.AArch64.Serial.Round
-meta import VerifiedGarbage.Proof.Sm4.Rounds
 meta import VerifiedGarbage.Proof.Sm4.AArch64.Serial.ModeCore
+meta import VerifiedGarbage.Proof.Sm4.Rounds
 meta import VerifiedGarbage.Spec.Sm4.Contract
-meta import VerifiedGarbage.Proof.Sm4.AArch64.Serial.State
 meta import VerifiedGarbage.Proof.Sm4.Layout
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
 meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd

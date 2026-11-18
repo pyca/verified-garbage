@@ -1,14 +1,13 @@
 module
+
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Front
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Seal
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.Tbl
-
 import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Run
 import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.Pre
 import VerifiedGarbage.Proof.AesGcm.AArch64.Cmp
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Pad
-import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.PadT
 import VerifiedGarbage.Proof.AesGcm.AArch64.Tail.Crypt
 import VerifiedGarbage.Proof.AesGcm.AArch64.Fn
 import VerifiedGarbage.Proof.Cmac.Spec

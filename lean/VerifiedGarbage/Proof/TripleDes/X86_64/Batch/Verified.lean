@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.TripleDes.X86_64.Batch.Call
 public import VerifiedGarbage.Proof.Modes.Cbc
 public import VerifiedGarbage.Proof.Modes.Fb
 public import VerifiedGarbage.Proof.Framework.Block
-public import VerifiedGarbage.Proof.Modes.X86_64.Copy
+public import VerifiedGarbage.Proof.Modes.X86_64.CbcGroup
 import VerifiedGarbage.Proof.Modes.X86_64.Group
 import VerifiedGarbage.Proof.Modes.X86_64.Words
 import VerifiedGarbage.Proof.Modes.X86_64.Steps
@@ -19,7 +19,6 @@ import VerifiedGarbage.Proof.Framework.Covers
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Spec.Cfb
-import VerifiedGarbage.Proof.Modes.X86_64.CbcGroup
 public import VerifiedGarbage.Proof.Modes.X86_64.Setup
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
@@ -44,7 +43,7 @@ meta import VerifiedGarbage.Proof.TripleDes.X86_64.Batch.Call
 meta import VerifiedGarbage.Proof.Modes.Cbc
 meta import VerifiedGarbage.Proof.Modes.Fb
 meta import VerifiedGarbage.Proof.Framework.Block
-meta import VerifiedGarbage.Proof.Modes.X86_64.Copy
+meta import VerifiedGarbage.Proof.Modes.X86_64.CbcGroup
 meta import VerifiedGarbage.Proof.Modes.X86_64.Group
 meta import VerifiedGarbage.Proof.Modes.X86_64.Words
 meta import VerifiedGarbage.Proof.Modes.X86_64.Steps
@@ -58,7 +57,6 @@ meta import VerifiedGarbage.Proof.Framework.Covers
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
 meta import VerifiedGarbage.Spec.Cfb
-meta import VerifiedGarbage.Proof.Modes.X86_64.CbcGroup
 meta import VerifiedGarbage.Proof.Modes.X86_64.Setup
 meta import VerifiedGarbage.Spec.TripleDes.Cfb
 meta import VerifiedGarbage.Proof.TripleDes.CbcBlocks

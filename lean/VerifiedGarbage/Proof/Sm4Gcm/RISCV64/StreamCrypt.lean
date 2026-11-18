@@ -1,10 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Sm4Gcm.RISCV64.Contract
 public import VerifiedGarbage.Proof.Sm4Gcm.RISCV64.Crypt
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.StreamCrypt
-import VerifiedGarbage.Proof.AesGcm.RISCV64.Absorb
-import VerifiedGarbage.Proof.AesGcm.RISCV64.Ghash1
+import VerifiedGarbage.Proof.AesGcm.RISCV64.Flush
 import VerifiedGarbage.Proof.Gcm.Compose
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.RISCV64.Run

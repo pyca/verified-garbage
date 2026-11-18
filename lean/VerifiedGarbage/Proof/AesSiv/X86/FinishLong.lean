@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.AesSiv.Long
 import VerifiedGarbage.Proof.AesGcm.X86.Cmp
 import VerifiedGarbage.Proof.Cmac.Stream
-import VerifiedGarbage.Proof.AesSiv.X86.S2v
+public import VerifiedGarbage.Proof.AesSiv.X86.S2v
 import VerifiedGarbage.Proof.AesSiv.X86.Callee
 import VerifiedGarbage.Proof.AesSiv.X86.Run
 import VerifiedGarbage.Proof.AesSiv.CtrPart
@@ -13,7 +13,6 @@ import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
 import VerifiedGarbage.Proof.Framework.RegionsSub
-public import VerifiedGarbage.Proof.AesSiv.X86.CmacOf
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Siv.Spec
 import VerifiedGarbage.Proof.Cmac.Block

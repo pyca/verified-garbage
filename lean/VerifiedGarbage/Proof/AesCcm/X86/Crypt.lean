@@ -1,13 +1,12 @@
 module
-public import VerifiedGarbage.Proof.AesCcm.Ctr
-public import VerifiedGarbage.Proof.AesCcm.X86.Env
 
+public import VerifiedGarbage.Proof.AesCcm.Ctr
+public import VerifiedGarbage.Proof.AesCcm.X86.Run
 import VerifiedGarbage.Proof.AesCcm.BytesAt
 import VerifiedGarbage.Proof.AesGcm.X86.Cmp
 import VerifiedGarbage.Proof.AesCcm.X86.Absorb
 import VerifiedGarbage.Proof.AesCcm.X86.Blocks
 import VerifiedGarbage.Proof.AesCcm.X86.Callee
-import VerifiedGarbage.Proof.AesCcm.X86.Run
 import VerifiedGarbage.Proof.AesGcm.X86.Flush
 import VerifiedGarbage.Proof.AesGcm.X86.Loops
 import VerifiedGarbage.Proof.Cmac.Stream

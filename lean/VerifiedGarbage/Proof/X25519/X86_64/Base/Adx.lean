@@ -1,12 +1,10 @@
 module
-public import VerifiedGarbage.Proof.X25519.X86_64.Base.Main
 
-import VerifiedGarbage.Proof.X25519.X86_64.Base.Verified
+public import VerifiedGarbage.Proof.X25519.X86_64.Base.Verified
 import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBaseAdx
 import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Lit
 import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCTLit
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
-import VerifiedGarbage.Proof.X25519.X86_64.Base.CT
 import VerifiedGarbage.Proof.X25519.X86_64.Base.Lit
 import VerifiedGarbage.Proof.Framework.Offset
 

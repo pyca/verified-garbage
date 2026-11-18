@@ -1,8 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Rest
-import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.Rest
-import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.Main
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.Rest
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.Main
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Correct
 import VerifiedGarbage.Proof.Poly1305.AArch64.Lit
 import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Lit
@@ -10,7 +9,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Backends
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Counter
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Rounds
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Save
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Scalar
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Tail
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Check
@@ -57,9 +55,8 @@ import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Tail.Lit
 public import VerifiedGarbage.Proof.ChaCha20.Keystream
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Setup
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Finish
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.Zero
 public import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64.Stitched
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitch.Phase
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitch.Bulk
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Rounds
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Xar
 

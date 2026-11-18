@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.AesCcm.Arm.Aad
 import VerifiedGarbage.Proof.AesCcm.Bytes
 import VerifiedGarbage.Proof.AesGcm.Arm.Compare
 import VerifiedGarbage.Proof.Cmac.Stream
-import VerifiedGarbage.Proof.AesCcm.Arm.Ctrs
 import VerifiedGarbage.Proof.AesGcm.Arm.Run
 import VerifiedGarbage.Proof.AesCcm.BytesAt
 import VerifiedGarbage.Proof.Cmac.Spec

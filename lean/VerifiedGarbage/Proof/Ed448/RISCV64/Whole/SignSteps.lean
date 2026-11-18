@@ -1,10 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.SignSetup
-import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.Prune
+import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.Common
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.Common
 public import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.Hash
 import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.Ed448.RISCV64.Whole

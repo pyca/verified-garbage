@@ -1,14 +1,12 @@
 module
 
 public import VerifiedGarbage.Impl.ChaCha20Poly1305.X86_64.OpenTo
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.OpenTail
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.CallOpen
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Verified
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Shared
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.OpenToScratch
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.Frame
-import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Shared
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Verified
-import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Verified
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.LoopCT
 import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.CT
 import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Verified
@@ -21,14 +19,12 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Sig
 meta import VerifiedGarbage.Impl.ChaCha20Poly1305.X86_64.OpenTo
-meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.OpenTail
-meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.CallOpen
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Verified
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Shared
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.OpenToScratch
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.X86_64.Frame
-meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Shared
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Verified
-meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Verified
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.LoopCT
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.CT
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Verified

@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Aes.AArch64.Variant
 public import VerifiedGarbage.Proof.Gcm.AArch64.Ghash
 public import VerifiedGarbage.Proof.Framework.AArch64.Call
 public import VerifiedGarbage.Proof.Framework.RelCT
-public import VerifiedGarbage.Proof.Gcm.Prepared8Contract
 import VerifiedGarbage.Proof.Gcm.Stream
 import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 import VerifiedGarbage.Proof.Cmac.Frame

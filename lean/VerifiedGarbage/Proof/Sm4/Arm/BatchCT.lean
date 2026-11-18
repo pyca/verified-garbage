@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Proof.Framework.RelCT
-public import VerifiedGarbage.Proof.Sm4.Arm.PreparedBody
+public import VerifiedGarbage.Proof.Sm4.Arm.PreparedVerified
 public import VerifiedGarbage.Proof.Sm4.Prepared
 
 /-! # Constant-time composition for batched SM4-CTR -/

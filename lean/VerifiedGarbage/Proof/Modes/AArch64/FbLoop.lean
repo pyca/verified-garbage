@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Modes.Fb
 public import VerifiedGarbage.Impl.Modes.AArch64.Fb
 public import VerifiedGarbage.Proof.Framework.AArch64.LaneRestore
-public import VerifiedGarbage.Proof.Modes.AArch64.Group
+public import VerifiedGarbage.Proof.Modes.AArch64.Setup
 import VerifiedGarbage.Proof.Modes.AArch64.Xor
 import VerifiedGarbage.Proof.Modes.AArch64.CbcGroup
 import VerifiedGarbage.Proof.Modes.AArch64.Words

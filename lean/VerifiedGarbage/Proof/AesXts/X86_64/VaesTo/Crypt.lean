@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Loop
 public import VerifiedGarbage.Impl.AesXts.X86_64VaesTo
 public import VerifiedGarbage.Proof.AesXts.X86_64.Steps
 public import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Top
-public import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Enc
 public import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Dec
 public import VerifiedGarbage.Proof.AesXts.X86_64.AesNi.Loop
 import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Ctr32
@@ -26,7 +25,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.AesCbc.X86_64.Body
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Blocks
+import VerifiedGarbage.Proof.Aes.X86_64.BlocksVariant
 import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Rounds
 import VerifiedGarbage.Proof.Aes.X86_64.VaesBlocks.Dec
 import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Dec

@@ -2,12 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.CTBase
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.Crypt
-import VerifiedGarbage.Proof.AesGcm.RISCV64.Absorb
+import VerifiedGarbage.Proof.AesGcm.RISCV64.Flush
 import VerifiedGarbage.Proof.AesGcm.RISCV64.CryptOk
 import VerifiedGarbage.Proof.Framework.RISCV64.Run
 meta import VerifiedGarbage.Proof.AesGcm.RISCV64.CTBase
 meta import VerifiedGarbage.Proof.AesGcm.RISCV64.Crypt
-meta import VerifiedGarbage.Proof.AesGcm.RISCV64.Absorb
+meta import VerifiedGarbage.Proof.AesGcm.RISCV64.Flush
 meta import VerifiedGarbage.Proof.AesGcm.RISCV64.CryptOk
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Run

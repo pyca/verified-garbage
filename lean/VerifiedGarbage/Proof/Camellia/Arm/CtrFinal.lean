@@ -10,7 +10,7 @@ public import VerifiedGarbage.Proof.Framework.Arm.Spill
 public import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
 public import VerifiedGarbage.Proof.Framework.Arm.CallF
 public import VerifiedGarbage.Proof.CmacAes.Arm.Words
-public import VerifiedGarbage.Proof.AesGcm.Arm.Callee
+public import VerifiedGarbage.Proof.AesGcm.Arm.Env
 import VerifiedGarbage.Proof.AesCfb.Arm.Final
 import VerifiedGarbage.Proof.Modes.CtrFinal
 import VerifiedGarbage.Proof.Cmac.Block32
@@ -34,7 +34,7 @@ meta import VerifiedGarbage.Proof.Framework.Arm.Spill
 meta import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
 meta import VerifiedGarbage.Proof.Framework.Arm.CallF
 meta import VerifiedGarbage.Proof.CmacAes.Arm.Words
-meta import VerifiedGarbage.Proof.AesGcm.Arm.Callee
+meta import VerifiedGarbage.Proof.AesGcm.Arm.Env
 meta import VerifiedGarbage.Proof.AesCfb.Arm.Final
 meta import VerifiedGarbage.Proof.Modes.CtrFinal
 meta import VerifiedGarbage.Proof.Cmac.Block32

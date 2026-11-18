@@ -2,12 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.StageCTData
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.LinkCT
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Sieve
-import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.CheckPrime
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.CheckPrime
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.StageCTData
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Sieve
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.CheckPrime
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub

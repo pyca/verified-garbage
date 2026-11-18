@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.Aes.X86.VariantProof
-public import VerifiedGarbage.Proof.AesGcm.X86.CT
+public import VerifiedGarbage.Proof.AesGcm.X86.Callee
 meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Impl.AesOcb.X86

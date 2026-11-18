@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Modes.Arm.Ops
 public import VerifiedGarbage.Impl.Modes.Arm.Wide
-import VerifiedGarbage.Proof.Modes.Arm.Counter
 import VerifiedGarbage.Proof.Modes.Addr
 import VerifiedGarbage.Proof.Modes.Ctr
 import VerifiedGarbage.Proof.Framework.Arm.Exec

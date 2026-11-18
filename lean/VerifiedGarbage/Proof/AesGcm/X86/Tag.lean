@@ -1,7 +1,7 @@
 module
+
 public import VerifiedGarbage.Proof.AesGcm.X86.CtrCall
 public import VerifiedGarbage.Proof.AesGcm.X86.Flush
-
 import VerifiedGarbage.Proof.AesGcm.X86.Loops
 import VerifiedGarbage.Proof.Cmac.Spec
 meta import VerifiedGarbage.Proof.AesGcm.X86.CtrCall
@@ -16,8 +16,8 @@ meta import VerifiedGarbage.Proof.Framework.X86.Call
 meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
 meta import VerifiedGarbage.TCB.X86.Isa
 meta import VerifiedGarbage.TCB.X86.State
-import VerifiedGarbage.Proof.Aes.X86.AesNi.Context
-meta import VerifiedGarbage.Proof.Aes.X86.AesNi.Context
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Tail
+meta import VerifiedGarbage.Proof.Aes.X86.AesNi.Tail
 
 /-!
 # AES-GCM on x86: the tag (`tag`)

@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.X25519.RISCV64.Field
-public import VerifiedGarbage.Proof.X25519.RISCV64.Pass
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-!

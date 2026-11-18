@@ -1,19 +1,11 @@
 module
-public import VerifiedGarbage.Proof.AesOcb.Arm.CTBase
-public import VerifiedGarbage.Proof.AesOcb.Arm.Front
 
-import VerifiedGarbage.Proof.AesOcb.Arm.CTBody
-import VerifiedGarbage.Proof.AesOcb.Arm.CTPre
-import VerifiedGarbage.Proof.AesOcb.Arm.Seal
-import VerifiedGarbage.Proof.AesOcb.Arm.Body
+public import VerifiedGarbage.Proof.AesOcb.Arm.CTBase
+public import VerifiedGarbage.Proof.AesOcb.Arm.Body
 import VerifiedGarbage.Proof.AesOcb.Arm.RestTag
 import VerifiedGarbage.Proof.Ocb.State
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.AesOcb.Arm.CTBase
-meta import VerifiedGarbage.Proof.AesOcb.Arm.Front
-meta import VerifiedGarbage.Proof.AesOcb.Arm.CTBody
-meta import VerifiedGarbage.Proof.AesOcb.Arm.CTPre
-meta import VerifiedGarbage.Proof.AesOcb.Arm.Seal
 meta import VerifiedGarbage.Proof.AesOcb.Arm.Body
 meta import VerifiedGarbage.Proof.AesOcb.Arm.RestTag
 meta import VerifiedGarbage.Proof.Ocb.State
@@ -29,7 +21,7 @@ import VerifiedGarbage.Proof.AesGcm.Arm.CryptOk
 import VerifiedGarbage.Proof.AesGcm.Arm.Ghash1
 import VerifiedGarbage.Proof.AesGcm.Arm.Loops
 import VerifiedGarbage.Proof.AesOcb.Arm.Hash
-import VerifiedGarbage.Proof.AesOcb.Arm.HashFill
+public import VerifiedGarbage.Proof.AesOcb.Arm.HashChunk
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Cmac.Mem
 import VerifiedGarbage.Proof.Cmac.Spec
@@ -50,7 +42,7 @@ meta import VerifiedGarbage.Proof.AesGcm.Arm.CryptOk
 meta import VerifiedGarbage.Proof.AesGcm.Arm.Ghash1
 meta import VerifiedGarbage.Proof.AesGcm.Arm.Loops
 meta import VerifiedGarbage.Proof.AesOcb.Arm.Hash
-meta import VerifiedGarbage.Proof.AesOcb.Arm.HashFill
+meta import VerifiedGarbage.Proof.AesOcb.Arm.HashChunk
 meta import VerifiedGarbage.Proof.Cmac.Frame
 meta import VerifiedGarbage.Proof.Cmac.Mem
 meta import VerifiedGarbage.Proof.Cmac.Spec
@@ -65,6 +57,1014 @@ meta import VerifiedGarbage.Proof.Framework.Range
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Sha256.Stream
 meta import VerifiedGarbage.Spec.Ocb.Contract
+import VerifiedGarbage.Proof.AesGcm.Arm.Run
+meta import VerifiedGarbage.Proof.AesGcm.Arm.Run
+import VerifiedGarbage.Proof.Gcm.Stream
+meta import VerifiedGarbage.Proof.Gcm.Stream
+public import VerifiedGarbage.Proof.AesOcb.Arm.Env
+import VerifiedGarbage.Proof.Ocb.Bytes
+public import VerifiedGarbage.Proof.AesGcm.Arm.Fn
+import VerifiedGarbage.Proof.AesGcm.Arm.Entry
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.AesOcb.Arm.Words
+import VerifiedGarbage.Proof.Framework.SigEval
+meta import VerifiedGarbage.Proof.AesOcb.Arm.Env
+meta import VerifiedGarbage.Proof.Ocb.Bytes
+meta import VerifiedGarbage.Proof.AesGcm.Arm.Fn
+meta import VerifiedGarbage.Proof.AesGcm.Arm.Entry
+meta import VerifiedGarbage.Proof.AesOcb.Arm.Words
+meta import VerifiedGarbage.Proof.Framework.SigEval
+import VerifiedGarbage.Proof.AesGcm.Arm.Env
+meta import VerifiedGarbage.Proof.AesGcm.Arm.Env
+
+/-! ### `AesOcb.Arm.CTBody`, which only this module used -/
+
+section
+
+/-!
+# AES-OCB on ARMv7: the data and the tag in two runs
+
+Untrusted: everything here is checked by Lean. `body` and `tag d`, in two
+runs with the same public arguments: the passes over the whole blocks and
+the rest by the taint analysis, from the registers holding the data's
+pointer, its blocks and the block index, the same in both runs; the calls of
+`vg_aes_encrypt_blocks` and `vg_aes_decrypt_blocks` with the same arguments
+in both runs (`body_rel`, `tag_rel`).
+-/
+
+@[expose] public section
+
+set_option linter.unusedSimpArgs false
+
+namespace VG.Proof.AesOcb.Arm
+
+open VG VG.Arm VG.Arm.RegUpd VG.Impl.AesOcb.Arm
+open VG.Spec.Aes (bytesAt)
+open VG.Spec.Ocb (Block blockAtMem lAt)
+open VG.Proof.Ocb (offAt)
+open VG.Impl.AesGcm.Arm (imm addI)
+open VG.Proof.AesGcm.Arm (eval_eq' eval_ne' z_subFlags z_cmp0 and15 ofNat_sub32)
+
+/-! ## The whole blocks -/
+
+theorem passStart_check : ∃ h, (VG.Taint.check VG.Arm.taint (VG.Arm.Taint.ofRegs (pubRegs [.r7, .r8]))
+    (.block passStart) h).isSome = true := ⟨_, by taint_decide⟩
+
+theorem pass_check {b : List Instr} (hb : b = addCk ++ xorOfs ∨ b = xorOfs ∨ b = xorOfs ++ addCk) :
+    ∃ h, (VG.Taint.check VG.Arm.taint (VG.Arm.Taint.ofRegs (pubRegs [.r4, .r5, .r6, .r7, .r8])) (pass b) h).isSome =
+      true := by
+  rcases hb with rfl | rfl | rfl <;> exact ⟨_, by taint_decide⟩
+
+theorem wholeArgs_check : ∃ h, (VG.Taint.check VG.Arm.taint (VG.Arm.Taint.ofRegs (pubRegs []))
+    (.block (callArgs ++ ([.mov .r2 (.reg .r8), .mov .r3 (.reg .r7)] : List Instr))) h).isSome = true := ⟨_, by taint_decide⟩
+
+theorem wholeTail_check {b : List Instr} (hb : b = addCk ++ xorOfs ∨ b = xorOfs ∨ b = xorOfs ++ addCk) :
+    ∃ h, (VG.Taint.check VG.Arm.taint (VG.Arm.Taint.ofRegs (pubRegs [.r7, .r8]))
+      (.seq (.block (copy16 o0O ofsO ++ passStart)) (pass b)) h).isSome = true := by
+  rcases hb with rfl | rfl | rfl <;> exact ⟨_, by taint_decide⟩
+
+theorem pass_kept {p : Prm} (L : Lay p) {τ : State} (E : Env p τ) {b : List Instr}
+    (hb : b = addCk ++ xorOfs ∨ b = xorOfs ∨ b = xorOfs ++ addCk) :
+    ∀ t τ', Exec isa (pass b) τ t τ' → Kept p [.r7, .r8] τ τ' := by
+  rcases hb with rfl | rfl | rfl <;>
+    exact kept_of L E [.r7, .r8] (by decide +kernel) (by decide +kernel) (by decide +kernel)
+
+/-- The call between the passes, set up. -/
+theorem wholeArgs_ok {p : Prm} (L : Lay p) {τ : State} (E : Env p τ) {m : Nat} (hmn : 16 * m ≤ p.n)
+    (h8 : τ.gpr .r8 = p.D) (h7 : τ.gpr .r7 = BitVec.ofNat 32 m) :
+    WP isa (.block (callArgs ++ ([.mov .r2 (.reg .r8), .mov .r3 (.reg .r7)] : List Instr))) τ fun t =>
+      BlkCall t p.K p.D (p.W + BitVec.ofNat 32 scrO) p.R m ∧ Env p t ∧ t.gpr .r8 = p.D ∧
+        t.gpr .r7 = BitVec.ofNat 32 m := by
+  have fd := L.dw
+  refine WP.of_runBlock ⟨_, by orun [callArgs, E.r9, E.r10, E.r11, h8, h7], ?_⟩
+  have E' := E.of_others (s' := ((((τ.setReg .r0 p.K).setReg .r1 (BitVec.ofNat 32 p.R)).setReg .r12
+    (p.W + BitVec.ofNat 32 scrO)).setReg .r2 p.D).setReg .r3 (BitVec.ofNat 32 m))
+    (rs := [.r0, .r1, .r2, .r3, .r12]) (by others_tac) (by rfl) (by rfl) (by rfl)
+  exact ⟨blkCall_of L E' (by simp [gpr_setReg]) (by simp [gpr_setReg]) (by simp [gpr_setReg])
+    (by simp [gpr_setReg]) (by simp [gpr_setReg]) (by omega_using [hmn, fd])
+    (Proof.AesGcm.Arm.covers_prefix E.perm.d hmn) (L.k_d.sub_right (Region.sub_prefix hmn))
+    ((L.d_w' (d := scrO) (k := 2048) (by decide)).sub_left (Region.sub_prefix hmn))
+    (L.bd.sub_right (Region.sub_prefix hmn)), E', by simp [gpr_setReg, h8], by simp [gpr_setReg, h7]⟩
+
+/-- The whole blocks, in two runs with the same public arguments. -/
+theorem whole_rel (F : BlkFn) {pre post : List Instr}
+    (hpre : pre = addCk ++ xorOfs ∨ pre = xorOfs ∨ pre = xorOfs ++ addCk)
+    (hpost : post = addCk ++ xorOfs ∨ post = xorOfs ∨ post = xorOfs ++ addCk)
+    {p : Prm} (L : Lay p) {τ₁ τ₂ : State} (E₁ : Env p τ₁) (E₂ : Env p τ₂) {m : Nat} (hmn : 16 * m ≤ p.n)
+    (h8₁ : τ₁.gpr .r8 = p.D) (h8₂ : τ₂.gpr .r8 = p.D) (h7₁ : τ₁.gpr .r7 = BitVec.ofNat 32 m)
+    (h7₂ : τ₂.gpr .r7 = BitVec.ofNat 32 m) : RelCT isa (Eq2 τ₁ τ₂) (whole (blkFrame F) pre post) TT := by
+  unfold whole
+  obtain ⟨s₁, run₁, r4₁, r5₁, r6₁, R₁⟩ := passStart_run h8₁ h7₁
+  obtain ⟨s₂, run₂, r4₂, r5₂, r6₂, R₂⟩ := passStart_run h8₂ h7₂
+  refine rel_seq (F₁ := (s₁ = ·)) (F₂ := (s₂ = ·)) (rel_env E₁ E₂ [.r7, .r8] (by simp [h7₁, h7₂, h8₁, h8₂])
+    passStart_check) (WP.of_runBlock ⟨s₁, run₁, rfl⟩) (WP.of_runBlock ⟨s₂, run₂, rfl⟩) fun u₁ u₂ e₁ e₂ => ?_
+  subst e₁ e₂
+  have Es₁ : Env p s₁ := E₁.of_others R₁.gpr R₁.sp R₁.rd R₁.wr
+  have Es₂ : Env p s₂ := E₂.of_others R₂.gpr R₂.sp R₂.rd R₂.wr
+  have g₁ : ∀ r ∈ [Reg.r7, .r8], s₁.gpr r = τ₁.gpr r := fun r hr => R₁.gpr r (by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with rfl | rfl <;> decide)
+  have g₂ : ∀ r ∈ [Reg.r7, .r8], s₂.gpr r = τ₂.gpr r := fun r hr => R₂.gpr r (by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with rfl | rfl <;> decide)
+  refine rel_seqX (rel_env Es₁ Es₂ [.r4, .r5, .r6, .r7, .r8] (by
+      simp [r4₁, r4₂, r5₁, r5₂, r6₁, r6₂, g₁ .r7 (by simp), g₂ .r7 (by simp), g₁ .r8 (by simp), g₂ .r8 (by simp),
+        h7₁, h7₂, h8₁, h8₂]) (pass_check hpre))
+    (pass_kept L Es₁ hpre) (pass_kept L Es₂ hpre) fun v₁ v₂ K₁ K₂ => ?_
+  have h8v₁ : v₁.gpr .r8 = p.D := by rw [K₁.gpr _ (by simp), g₁ _ (by simp), h8₁]
+  have h8v₂ : v₂.gpr .r8 = p.D := by rw [K₂.gpr _ (by simp), g₂ _ (by simp), h8₂]
+  have h7v₁ : v₁.gpr .r7 = BitVec.ofNat 32 m := by rw [K₁.gpr _ (by simp), g₁ _ (by simp), h7₁]
+  have h7v₂ : v₂.gpr .r7 = BitVec.ofNat 32 m := by rw [K₂.gpr _ (by simp), g₂ _ (by simp), h7₂]
+  refine rel_seq (rel_env K₁.env K₂.env [] (by simp) wholeArgs_check) (wholeArgs_ok L K₁.env hmn h8v₁ h7v₁)
+    (wholeArgs_ok L K₂.env hmn h8v₂ h7v₂) fun w₁ w₂ ⟨B₁, Ew₁, h8w₁, h7w₁⟩ ⟨B₂, Ew₂, h8w₂, h7w₂⟩ => ?_
+  refine rel_seq (rel_blk F B₁ B₂ (Ew₁.sp_eq Ew₂)) (blk_call F B₁) (blk_call F B₂) fun x₁ x₂ C₁ C₂ => ?_
+  exact rel_env (Ew₁.of_saved C₁.saved C₁.sp C₁.rd C₁.wr) (Ew₂.of_saved C₂.saved C₂.sp C₂.rd C₂.wr) [.r7, .r8]
+    (by simp [C₁.saved .r7 (by decide) (by decide), C₂.saved .r7 (by decide) (by decide),
+      C₁.saved .r8 (by decide) (by decide), C₂.saved .r8 (by decide) (by decide), h7w₁, h7w₂, h8w₁, h8w₂])
+    (wholeTail_check hpost)
+
+/-! ## The rest of the data -/
+
+theorem restA_check : ∃ h, (VG.Taint.check VG.Arm.taint (VG.Arm.Taint.ofRegs (pubRegs []))
+    (.block (xorB .r11 .r10 .r11 ofsO 240 ofsO ++ copy16 ofsO tmpO)) h).isSome = true := ⟨_, by taint_decide⟩
+
+theorem restTail_check (enc : Bool) : ∃ h, (VG.Taint.check VG.Arm.taint (VG.Arm.Taint.ofRegs (pubRegs [.r4, .r5]))
+    (if enc then .seq padCk xorPad else .seq xorPad padCk) h).isSome = true := by
+  cases enc <;> exact ⟨_, by taint_decide⟩
+
+/-- The rest of the data, in two runs with the same pointer and length. -/
+theorem rest_rel (enc : Bool) {p : Prm} (L : Lay p) {τ₁ τ₂ : State} (E₁ : Env p τ₁) (E₂ : Env p τ₂)
+    (h4 : τ₁.gpr .r4 = τ₂.gpr .r4) (h5 : τ₁.gpr .r5 = τ₂.gpr .r5) : RelCT isa (Eq2 τ₁ τ₂) (rest enc) TT :=
+  rel_seqX (rel_env E₁ E₂ [] (by simp) restA_check)
+    (kept_of L E₁ [.r4, .r5] (by decide +kernel) (by decide +kernel) (by decide +kernel))
+    (kept_of L E₂ [.r4, .r5] (by decide +kernel) (by decide +kernel) (by decide +kernel)) fun _ _ K₁ K₂ =>
+  rel_seqX (encOne_rel L K₁.env K₂.env (.inl rfl))
+    (exec_of_wp (encOne_ok L K₁.env (d := tmpO) (by decide) (by decide)))
+    (exec_of_wp (encOne_ok L K₂.env (d := tmpO) (by decide) (by decide))) fun _ _ C₁ C₂ =>
+  rel_env (C₁.env K₁.env) (C₂.env K₂.env) [.r4, .r5] (by
+    simp [C₁.saved .r4 (by decide), C₂.saved .r4 (by decide), C₁.saved .r5 (by decide), C₂.saved .r5 (by decide),
+      K₁.gpr .r4 (by simp), K₂.gpr .r4 (by simp), K₁.gpr .r5 (by simp), K₂.gpr .r5 (by simp), h4, h5])
+    (restTail_check enc)
+
+/-! ## The data -/
+
+/-- The start of `body`: the data in `r8`, its whole blocks in `r7`. -/
+theorem bodyHead_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) (A : Args p t.mem) :
+    WP isa (.block [.ldrSp .r8 8, .ldrSp .r7 12, .mov .r7 (.shifted .r7 .lsr 4), .cmp .r7 (imm 0)]) t fun t' =>
+      Env p t' ∧ t'.gpr .r8 = p.D ∧ t'.gpr .r7 = BitVec.ofNat 32 (p.n / 16) ∧ t'.z = decide (p.n / 16 = 0) := by
+  have n32 := L.n_lt
+  have a₈ := E.perm.argR' L (k := 8) (by decide)
+  have a₁₂ := E.perm.argR' L (k := 12) (by decide)
+  refine WP.of_runBlock ⟨_, by orun [E.sp, a₈, a₁₂, A.a8, A.a12], ?_, ?_, ?_, ?_⟩
+  · exact E.of_others (rs := [.r7, .r8]) (by others_tac) (by rfl) (by rfl) (by rfl)
+  · simp [Proof.AesGcm.Arm.gpr_subFlags, gpr_setReg]
+  · simp [Proof.AesGcm.Arm.gpr_subFlags, gpr_setReg, ofNat_lsr32 n32]
+  · simp only [z_subFlags, Proof.AesGcm.Arm.gpr_subFlags, gpr_setReg, ite_true, BitVec.sub_zero, ofNat_lsr32 n32,
+      Nat.reducePow, z_cmp0 (show p.n / 16 < 2 ^ 32 by omega_using [n32])]
+
+/-- Where the rest of the data is. -/
+theorem restBlk_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) (A : Args p t.mem) (h8 : t.gpr .r8 = p.D) :
+    WP isa (.block [.ldrSp .r5 12, .dp .and .r5 .r5 (imm 15), .ldrSp .r4 12, .dp .sub .r4 .r4 (.reg .r5),
+        .dp .add .r4 .r4 (.reg .r8), .cmp .r5 (imm 0)]) t fun t' =>
+      Env p t' ∧ t'.gpr .r4 = p.D + BitVec.ofNat 32 (16 * (p.n / 16)) ∧ t'.gpr .r5 = BitVec.ofNat 32 (p.n % 16) ∧
+        t'.z = decide (p.n % 16 = 0) := by
+  have n32 := L.n_lt
+  have a₁₂ := E.perm.argR' L (k := 12) (by decide)
+  refine WP.of_runBlock ⟨_, by orun [E.sp, a₁₂, A.a12, h8], ?_, ?_, ?_, ?_⟩
+  · exact E.of_others (rs := [.r4, .r5]) (by others_tac) (by rfl) (by rfl) (by rfl)
+  · simp only [Proof.AesGcm.Arm.gpr_subFlags, gpr_setReg, ite_true, ite_false, reduceCtorEq, and15,
+      toNat_ofNat32 n32, h8]
+    rw [ofNat_sub32 (Nat.mod_le _ _) n32, BitVec.add_comm, show p.n - p.n % 16 = 16 * (p.n / 16) by omega_using []]
+  · simp only [Proof.AesGcm.Arm.gpr_subFlags, gpr_setReg, ite_true, ite_false, reduceCtorEq, and15,
+      toNat_ofNat32 n32]
+  · simp only [z_subFlags, Proof.AesGcm.Arm.gpr_subFlags, gpr_setReg, ite_true, BitVec.sub_zero, and15,
+      toNat_ofNat32 n32, z_cmp0 (show p.n % 16 < 2 ^ 32 by omega_using [])]
+
+theorem bodyHead_check : ∃ h, (VG.Taint.check VG.Arm.taint (argTaint (pubRegs []) 24)
+    (.block [.ldrSp .r8 8, .ldrSp .r7 12, .mov .r7 (.shifted .r7 .lsr 4), .cmp .r7 (imm 0)]) h).isSome = true :=
+  ⟨_, by taint_decide⟩
+
+theorem restBlk_check : ∃ h, (VG.Taint.check VG.Arm.taint (argTaint (pubRegs [.r8]) 24)
+    (.block [.ldrSp .r5 12, .dp .and .r5 .r5 (imm 15), .ldrSp .r4 12, .dp .sub .r4 .r4 (.reg .r5),
+      .dp .add .r4 .r4 (.reg .r8), .cmp .r5 (imm 0)]) h).isSome = true := ⟨_, by taint_decide⟩
+
+/-- The whole blocks, if there are any, in two runs. -/
+theorem wholeIte_rel (F : BlkFn) {pre post : List Instr}
+    (hpre : pre = addCk ++ xorOfs ∨ pre = xorOfs ∨ pre = xorOfs ++ addCk)
+    (hpost : post = addCk ++ xorOfs ∨ post = xorOfs ∨ post = xorOfs ++ addCk)
+    {p : Prm} (L : Lay p) {τ₁ τ₂ : State} (E₁ : Env p τ₁) (E₂ : Env p τ₂) (A₁ : Args p τ₁.mem)
+    (A₂ : Args p τ₂.mem) :
+    RelCT isa (Eq2 τ₁ τ₂) (.seq (.block [.ldrSp .r8 8, .ldrSp .r7 12, .mov .r7 (.shifted .r7 .lsr 4),
+      .cmp .r7 (imm 0)]) (.ite .eq (.block []) (whole (blkFrame F) pre post))) TT :=
+  rel_seq (rel_envArg L E₁ E₂ A₁ A₂ [] (by simp) bodyHead_check) (bodyHead_ok L E₁ A₁) (bodyHead_ok L E₂ A₂)
+    fun _ _ ⟨U₁, h8₁, h7₁, z₁⟩ ⟨U₂, h8₂, h7₂, z₂⟩ =>
+  rel_ite (eval_eq' z₁) (eval_eq' z₂) (fun _ => rel_skip)
+    (fun _ => whole_rel F hpre hpost L U₁ U₂ (Nat.mul_div_le p.n 16) h8₁ h8₂ h7₁ h7₂)
+
+/-- The rest of the data, if there is any, in two runs. -/
+theorem restIte_rel (enc : Bool) {p : Prm} (L : Lay p) {τ₁ τ₂ : State} (E₁ : Env p τ₁) (E₂ : Env p τ₂)
+    (A₁ : Args p τ₁.mem) (A₂ : Args p τ₂.mem) (h8₁ : τ₁.gpr .r8 = p.D) (h8₂ : τ₂.gpr .r8 = p.D) :
+    RelCT isa (Eq2 τ₁ τ₂) (.seq (.block [.ldrSp .r5 12, .dp .and .r5 .r5 (imm 15), .ldrSp .r4 12,
+      .dp .sub .r4 .r4 (.reg .r5), .dp .add .r4 .r4 (.reg .r8), .cmp .r5 (imm 0)]) (.ite .eq (.block []) (rest enc)))
+      TT :=
+  rel_seq (rel_envArg L E₁ E₂ A₁ A₂ [.r8] (by simp [h8₁, h8₂]) restBlk_check) (restBlk_ok L E₁ A₁ h8₁)
+    (restBlk_ok L E₂ A₂ h8₂) fun _ _ ⟨U₁, h4₁, h5₁, z₁⟩ ⟨U₂, h4₂, h5₂, z₂⟩ =>
+  rel_ite (eval_eq' z₁) (eval_eq' z₂) (fun _ => rel_skip)
+    (fun _ => rest_rel enc L U₁ U₂ (by rw [h4₁, h4₂]) (by rw [h5₁, h5₂]))
+
+/-- `body` for `seal`, in two runs from the states `body` starts from. -/
+theorem bodySeal_rel {p : Prm} (L : Lay p) {τ₁ τ₂ : State} (E₁ : Env p τ₁) (E₂ : Env p τ₂)
+    (A₁ : Args p τ₁.mem) (A₂ : Args p τ₂.mem) {O₁ O₂ : Block}
+    (hofs₁ : blockAtMem τ₁.mem (State.addr p.W + BitVec.ofNat 64 ofsO) = O₁)
+    (ho0₁ : blockAtMem τ₁.mem (State.addr p.W + BitVec.ofNat 64 o0O) = O₁)
+    (hck₁ : blockAtMem τ₁.mem (State.addr p.W + BitVec.ofNat 64 ckO) = 0)
+    (hl0₁ : blockAtMem τ₁.mem (State.addr p.W + BitVec.ofNat 64 l0O) = lAt (lstarOf p τ₁.mem) 0)
+    (hofs₂ : blockAtMem τ₂.mem (State.addr p.W + BitVec.ofNat 64 ofsO) = O₂)
+    (ho0₂ : blockAtMem τ₂.mem (State.addr p.W + BitVec.ofNat 64 o0O) = O₂)
+    (hck₂ : blockAtMem τ₂.mem (State.addr p.W + BitVec.ofNat 64 ckO) = 0)
+    (hl0₂ : blockAtMem τ₂.mem (State.addr p.W + BitVec.ofNat 64 l0O) = lAt (lstarOf p τ₂.mem) 0) :
+    RelCT isa (Eq2 τ₁ τ₂) (body true) TT := by
+  simp only [body, ↓reduceIte]
+  refine RelCT.assoc (rel_seq (wholeIte_rel encF (.inl rfl) (.inr (.inl rfl)) L E₁ E₂ A₁ A₂)
+    (wholeIte_ok encF (O0 := O₁) (l := lstarOf p τ₁.mem)
+      (ckF1 := ckOf fun i => blockAtMem τ₁.mem (State.addr p.D + BitVec.ofNat 64 (16 * i)))
+      (ckF2 := fun _ => ckOf (fun i => blockAtMem τ₁.mem (State.addr p.D + BitVec.ofNat 64 (16 * i))) (p.n / 16))
+      L (sealPre_ok L) (xorOfs_ok L) E₁ A₁ hofs₁ ho0₁ hck₁ hl0₁ (fun _ => rfl) rfl (fun _ => rfl))
+    (wholeIte_ok encF (O0 := O₂) (l := lstarOf p τ₂.mem)
+      (ckF1 := ckOf fun i => blockAtMem τ₂.mem (State.addr p.D + BitVec.ofNat 64 (16 * i)))
+      (ckF2 := fun _ => ckOf (fun i => blockAtMem τ₂.mem (State.addr p.D + BitVec.ofNat 64 (16 * i))) (p.n / 16))
+      L (sealPre_ok L) (xorOfs_ok L) E₂ A₂ hofs₂ ho0₂ hck₂ hl0₂ (fun _ => rfl) rfl (fun _ => rfl))
+    fun _ _ W₁ W₂ => ?_)
+  exact restIte_rel true L W₁.env W₂.env (A₁.mut L (wholeR_mut L (Nat.mul_div_le p.n 16) W₁.frame))
+    (A₂.mut L (wholeR_mut L (Nat.mul_div_le p.n 16) W₂.frame)) W₁.r8 W₂.r8
+
+/-- `body` for `open`, in two runs from the states `body` starts from. -/
+theorem bodyOpen_rel {p : Prm} (L : Lay p) {τ₁ τ₂ : State} (E₁ : Env p τ₁) (E₂ : Env p τ₂)
+    (A₁ : Args p τ₁.mem) (A₂ : Args p τ₂.mem) {O₁ O₂ : Block}
+    (hofs₁ : blockAtMem τ₁.mem (State.addr p.W + BitVec.ofNat 64 ofsO) = O₁)
+    (ho0₁ : blockAtMem τ₁.mem (State.addr p.W + BitVec.ofNat 64 o0O) = O₁)
+    (hck₁ : blockAtMem τ₁.mem (State.addr p.W + BitVec.ofNat 64 ckO) = 0)
+    (hl0₁ : blockAtMem τ₁.mem (State.addr p.W + BitVec.ofNat 64 l0O) = lAt (lstarOf p τ₁.mem) 0)
+    (hofs₂ : blockAtMem τ₂.mem (State.addr p.W + BitVec.ofNat 64 ofsO) = O₂)
+    (ho0₂ : blockAtMem τ₂.mem (State.addr p.W + BitVec.ofNat 64 o0O) = O₂)
+    (hck₂ : blockAtMem τ₂.mem (State.addr p.W + BitVec.ofNat 64 ckO) = 0)
+    (hl0₂ : blockAtMem τ₂.mem (State.addr p.W + BitVec.ofNat 64 l0O) = lAt (lstarOf p τ₂.mem) 0) :
+    RelCT isa (Eq2 τ₁ τ₂) (body false) TT := by
+  simp only [body, Bool.false_eq_true, ↓reduceIte]
+  refine RelCT.assoc (rel_seq (wholeIte_rel decF (.inr (.inl rfl)) (.inr (.inr rfl)) L E₁ E₂ A₁ A₂)
+    (wholeIte_ok decF (O0 := O₁) (l := lstarOf p τ₁.mem) (ckF1 := fun _ => 0)
+      (ckF2 := ckOf fun i => invOf p τ₁.mem
+        (blockAtMem τ₁.mem (State.addr p.D + BitVec.ofNat 64 (16 * i)) ^^^ offAt O₁ (lstarOf p τ₁.mem) (i + 1)) ^^^
+          offAt O₁ (lstarOf p τ₁.mem) (i + 1))
+      L (xorOfs_ok L) (openPost_ok L) E₁ A₁ hofs₁ ho0₁ hck₁ hl0₁ (fun _ => rfl) rfl (fun _ => rfl))
+    (wholeIte_ok decF (O0 := O₂) (l := lstarOf p τ₂.mem) (ckF1 := fun _ => 0)
+      (ckF2 := ckOf fun i => invOf p τ₂.mem
+        (blockAtMem τ₂.mem (State.addr p.D + BitVec.ofNat 64 (16 * i)) ^^^ offAt O₂ (lstarOf p τ₂.mem) (i + 1)) ^^^
+          offAt O₂ (lstarOf p τ₂.mem) (i + 1))
+      L (xorOfs_ok L) (openPost_ok L) E₂ A₂ hofs₂ ho0₂ hck₂ hl0₂ (fun _ => rfl) rfl (fun _ => rfl))
+    fun _ _ W₁ W₂ => ?_)
+  exact restIte_rel false L W₁.env W₂.env (A₁.mut L (wholeR_mut L (Nat.mul_div_le p.n 16) W₁.frame))
+    (A₂.mut L (wholeR_mut L (Nat.mul_div_le p.n 16) W₂.frame)) W₁.r8 W₂.r8
+
+/-! ## The tag -/
+
+theorem tagA_check : ∃ h, (VG.Taint.check VG.Arm.taint (VG.Arm.Taint.ofRegs (pubRegs []))
+    (.block (copy16 ckO tmpO ++ xorW ofsO tmpO ++ xorW ldO tmpO)) h).isSome = true := ⟨_, by taint_decide⟩
+
+theorem tagB_check {d : Nat} (hd : d = tagO ∨ d = t2O) : ∃ h, (VG.Taint.check VG.Arm.taint
+    (VG.Arm.Taint.ofRegs (pubRegs [])) (.block (copy16 tmpO d ++ xorW sumO d)) h).isSome = true := by
+  rcases hd with rfl | rfl <;> exact ⟨_, by taint_decide⟩
+
+/-- `tag d`, in two runs with the same public arguments. -/
+theorem tag_rel {p : Prm} (L : Lay p) {τ₁ τ₂ : State} (E₁ : Env p τ₁) (E₂ : Env p τ₂) {d : Nat}
+    (hd : d = tagO ∨ d = t2O) : RelCT isa (Eq2 τ₁ τ₂) (tag d) TT :=
+  rel_seqX (rel_env E₁ E₂ [] (by simp) tagA_check)
+    (kept_of L E₁ [] (by decide +kernel) (by decide +kernel) (by decide +kernel))
+    (kept_of L E₂ [] (by decide +kernel) (by decide +kernel) (by decide +kernel)) fun _ _ K₁ K₂ =>
+  rel_seqX (encOne_rel L K₁.env K₂.env (.inl rfl))
+    (exec_of_wp (encOne_ok L K₁.env (d := tmpO) (by decide) (by decide)))
+    (exec_of_wp (encOne_ok L K₂.env (d := tmpO) (by decide) (by decide))) fun _ _ C₁ C₂ =>
+  rel_env (C₁.env K₁.env) (C₂.env K₂.env) [] (by simp) (tagB_check hd)
+
+end VG.Proof.AesOcb.Arm
+
+end
+
+end
+
+/-! ### `AesOcb.Arm.Seal`, which this module and modules that import it used -/
+
+section
+
+/-! ### `AesOcb.Arm.Front`, which this module and modules that import it used -/
+
+section
+
+/-!
+# AES-OCB on ARMv7: before the data
+
+Untrusted: everything here is checked by Lean. What the contracts'
+preconditions give about the arguments (`prmOf`, `lay_of`, `perm_of`,
+`args_of`); the entry, which saves our caller's registers in `W`, keeps `W`,
+the key context and the rounds in registers, and computes `L_$` and `L_0`
+(`entry_wp`); and the entry, `Offset_0` (`nonce`) and `HASH` (`hash`)
+together (`pre_wp`), as on AArch64 (`Proof.AesOcb.AArch64.pre_wp`).
+-/
+
+@[expose] public section
+
+set_option linter.unusedSimpArgs false
+
+namespace VG.Proof.AesOcb.Arm
+
+open VG VG.Arm VG.Arm.RegUpd VG.Impl.AesOcb.Arm
+open VG.Spec.Aes (bytesAt)
+open VG.Spec.Ocb (Block blockAtMem lAt)
+open VG.Proof.Ocb (blockAtMem_frame)
+open VG.Proof.AesGcm.Arm (below SavedAt savedR entry_ok covers_of_mem covers_left)
+
+/-! ## The arguments -/
+
+/-- The public arguments of a call. -/
+def prmOf (s : State) : Prm where
+  K := s.gpr .r0
+  W := arg s 6
+  N := s.gpr .r2
+  A := arg s 0
+  D := arg s 2
+  T := arg s 4
+  SP := s.sp
+  R := (s.gpr .r1).toNat
+  nl := (s.gpr .r3).toNat
+  al := (arg s 1).toNat
+  n := (arg s 3).toNat
+  tl := (arg s 5).toNat
+
+theorem ofNat_toNat32' (x : BitVec 32) : BitVec.ofNat 32 x.toNat = x := by simp
+
+theorem argR_eq (s : State) : args s 7 = argR s.sp := by
+  simp only [args, argR, stackArgAddr, Nat.mul_zero, BitVec.add_zero]
+
+theorem lay_of {s : State} (h : oneLay s) : Lay (prmOf s) := by
+  sig_split h
+  rename_i d1 d2 d3 d4 d5 d6 d7 d8 d9 b1 b2 b3 b4 b5 f1 f2 f3 f4 f5 sp8 spf hR hv t1 t2 t3
+  have t4 := h
+  clear h
+  simp only [Spec.Ocb.lengthsOk, Bool.and_eq_true, decide_eq_true_eq] at hv
+  obtain ⟨⟨⟨ht1, ht16⟩, hn1⟩, hn15⟩ := hv
+  rw [argR_eq] at d8 d9
+  exact ⟨f1, f5, f2, f3, f4, t4, BitVec.isLt _, BitVec.isLt _, sp8, spf, d2, d1, d4, d3, d6, d5, t2, t1, d7, d8, d9,
+    b1, b2, b3, b4, t3, b5, hR, hn1, hn15, ht1, ht16⟩
+
+/-- The permissions, from the regions each function may read and write. -/
+theorem perm_of {s : State} (_h : oneLay s)
+    (mrd : ∀ r ∈ [(⟨State.addr (s.gpr .r0), 256⟩ : Region), ⟨State.addr (s.gpr .r2), (s.gpr .r3).toNat⟩,
+      ⟨State.addr (arg s 0), (arg s 1).toNat⟩, ⟨State.addr (arg s 4), (arg s 5).toNat⟩, args s 7],
+      Covers [r] (s.rd ++ s.wr))
+    (mwr : ∀ r ∈ [(⟨State.addr (arg s 2), (arg s 3).toNat⟩ : Region), ⟨State.addr (arg s 6), 2560⟩], Covers [r] s.wr)
+    (hwr : ∀ r ∈ s.wr, (args s 7).Disjoint r) : Perm (prmOf s) s := by
+  rw [argR_eq] at mrd hwr
+  exact ⟨mrd _ (by simp [prmOf]), mrd _ (by simp [prmOf]), mrd _ (by simp [prmOf]), mrd _ (by simp [prmOf]),
+    mwr _ (by simp [prmOf]), mwr _ (by simp [prmOf]), mrd _ (by simp [prmOf]), hwr⟩
+
+theorem args_of (s : State) : Args (prmOf s) s.mem :=
+  ⟨rfl, by rw [prmOf, ofNat_toNat32']; rfl, rfl, by rw [prmOf, ofNat_toNat32']; rfl, rfl,
+    by rw [prmOf, ofNat_toNat32']; rfl⟩
+
+theorem sealPerm {s : State} (h : sealPre s) : Perm (prmOf s) s := by
+  obtain ⟨hrd, hwr, hl, ht⟩ := h
+  have d8 := hl.2.2.2.2.2.2.2.1
+  have d9 := hl.2.2.2.2.2.2.2.2.1
+  refine perm_of hl (fun r hr => ?_) (fun r hr => ?_) fun r hr => ?_
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl
+    · exact covers_of_mem (List.mem_append_left _ (by rw [hrd]; simp))
+    · exact covers_of_mem (List.mem_append_left _ (by rw [hrd]; simp))
+    · exact covers_of_mem (List.mem_append_left _ (by rw [hrd]; simp))
+    · exact covers_left (covers_of_mem (by rw [hwr]; simp))
+    · exact covers_of_mem (List.mem_append_left _ (by rw [hrd]; simp))
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl <;> exact covers_of_mem (by rw [hwr]; simp)
+  · rw [hwr] at hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact d8.symm
+    · exact ht.symm
+    · exact d9.symm
+
+theorem openPerm {s : State} (h : openPre s) : Perm (prmOf s) s := by
+  obtain ⟨hrd, hwr, hl⟩ := h
+  have d8 := hl.2.2.2.2.2.2.2.1
+  have d9 := hl.2.2.2.2.2.2.2.2.1
+  refine perm_of hl (fun r hr => ?_) (fun r hr => ?_) fun r hr => ?_
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl <;> exact covers_of_mem (List.mem_append_left _ (by rw [hrd]; simp))
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl <;> exact covers_of_mem (by rw [hwr]; simp)
+  rw [hwr] at hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl
+  · exact d8.symm
+  · exact d9.symm
+
+/-! ## Frames within `W` -/
+
+section
+variable {p : Prm} (L : Lay p) {m m' : Mem} (h : Frame [⟨State.addr p.W, 2560⟩] m m')
+include L h
+
+theorem sched_W : sched p m' = sched p m :=
+  Proof.Cmac.bytesAt_frame h (fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr
+    exact L.k_w.sub_left (Region.sub_prefix (by have := L.rounds_le; omega_using [this]))) (by have := L.rounds_le; omega_using [this])
+
+theorem lstar_W : lstarOf p m' = lstarOf p m := by
+  unfold lstarOf Spec.Ocb.ctxLstar
+  exact blockAtMem_frame h fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr; exact L.k_w.sub_left (Offset.sub_base _ (by decide))
+
+theorem nonce_W : bytesAt m' (State.addr p.N) p.nl = bytesAt m (State.addr p.N) p.nl :=
+  Proof.Cmac.bytesAt_frame h (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact L.n_w)
+    (by have := L.nl15; omega_using [this])
+
+theorem aad_W : bytesAt m' (State.addr p.A) p.al = bytesAt m (State.addr p.A) p.al :=
+  Proof.Cmac.bytesAt_frame h (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact L.a_w)
+    (by have := L.al_lt; omega_using [this])
+
+theorem data_W : bytesAt m' (State.addr p.D) p.n = bytesAt m (State.addr p.D) p.n :=
+  Proof.Cmac.bytesAt_frame h (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact L.d_w)
+    (by have := L.n_lt; omega_using [this])
+
+theorem tag_W : bytesAt m' (State.addr p.T) p.tl = bytesAt m (State.addr p.T) p.tl :=
+  Proof.Cmac.bytesAt_frame h (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact L.t_w)
+    (by have := L.tl16; omega_using [this])
+
+theorem args_W (A : Args p m) : Args p m' :=
+  A.frame L h fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact L.w_args.symm
+
+end
+
+/-- Proves that a block of `W` misses a frame of parts of `W` and the stack
+below `sp`. -/
+tactic_template "wdisj" L:term : tactic => `(tactic| plain_simp_names (
+                   simp only [nonceR, hashR, bodyR, List.forall_mem_cons, List.not_mem_nil, false_implies, implies_true, and_true]
+                   and_intros
+                   all_goals first
+                     | (with_reducible refine Lay.w_w $L ?_ ?_ ?_) <;> decide
+                     | (with_reducible refine (Lay.bw' $L ?_).symm) <;> decide
+                     | (with_reducible refine (Lay.d_w' $L ?_).symm) <;> decide))
+
+/-- Proves that the data misses a frame of parts of `W` and the stack below
+`sp`. -/
+tactic_template "ddisj" L:term : tactic => `(tactic| plain_simp_names (
+                   simp only [nonceR, hashR, bodyR, List.forall_mem_cons, List.not_mem_nil, false_implies, implies_true, and_true]
+                   and_intros
+                   all_goals first
+                     | (with_reducible refine Lay.d_w' $L ?_) <;> decide
+                     | with_reducible exact (Lay.bd $L).symm))
+
+/-! ## The entry -/
+
+/-- What the entry leaves. -/
+structure EntryPost (p : Prm) (s₀ s : State) : Prop where
+  env : Env p s
+  rd : s.rd = s₀.rd
+  wr : s.wr = s₀.wr
+  r4 : s.gpr .r4 = p.N
+  r5 : s.gpr .r5 = BitVec.ofNat 32 p.nl
+  frame : Frame [⟨State.addr p.W, 2560⟩] s₀.mem s.mem
+  saved : SavedAt s.mem p.W s₀
+  ld : blockAtMem s.mem (State.addr p.W + BitVec.ofNat 64 ldO) = Spec.Ocb.lDollar (lstarOf p s₀.mem)
+  l0 : blockAtMem s.mem (State.addr p.W + BitVec.ofNat 64 l0O) = lAt (lstarOf p s₀.mem) 0
+  ck : blockAtMem s.mem (State.addr p.W + BitVec.ofNat 64 ckO) = 0
+
+theorem entry_wp {p : Prm} (L : Lay p) {s₀ : State} (P : Perm p s₀) (hsp : s₀.sp = p.SP)
+    (h0 : s₀.gpr .r0 = p.K) (h1 : s₀.gpr .r1 = BitVec.ofNat 32 p.R) (h2 : s₀.gpr .r2 = p.N)
+    (h3 : s₀.gpr .r3 = BitVec.ofNat 32 p.nl) (hW : s₀.mem.readW (State.addr (s₀.sp + BitVec.ofNat 32 24)) 32 = p.W) :
+    WP isa (.block entry) s₀ (EntryPost p s₀) := by
+  have fw := L.ww
+  have fk := L.kw
+  have i24 : InRegions (s₀.rd ++ s₀.wr) (State.addr (s₀.sp + BitVec.ofNat 32 24)) 4 := by
+    rw [hsp]; exact P.argR' L (k := 24) (by decide)
+  simp only [entry, lsetup, List.append_assoc]
+  refine entry_ok (off := 24) (by decide) i24 (by rw [hW]; exact L.ww) (by rw [hW]; exact P.w)
+    fun s₁ g12 g rd₁ wr₁ sp₁ sv₁ fr₁ => ?_
+  rw [hW] at g12 sv₁ fr₁
+  obtain ⟨s₂, run₂, E₂, r4₂, r5₂, m₂, rd₂, wr₂⟩ : ∃ s₂, runBlock isa [.mov .r11 (.reg .r12), .mov .r10 (.reg .r0),
+      .mov .r9 (.reg .r1), .mov .r4 (.reg .r2), .mov .r5 (.reg .r3)] s₁ = some s₂ ∧ Env p s₂ ∧
+      s₂.gpr .r4 = p.N ∧ s₂.gpr .r5 = BitVec.ofNat 32 p.nl ∧ s₂.mem = s₁.mem ∧ s₂.rd = s₀.rd ∧ s₂.wr = s₀.wr := by
+    refine ⟨_, by orun [], ⟨?_, ?_, ?_, ?_, ?_⟩, ?_, ?_, by rfl, by simp [rd_setReg, rd₁], by simp [wr_setReg, wr₁]⟩
+    · simp [gpr_setReg, g .r1 (by decide), h1]
+    · simp [gpr_setReg, g .r0 (by decide), h0]
+    · simp [gpr_setReg, g12]
+    · simp [sp_setReg, sp₁, hsp]
+    · exact P.of_eq (by simp [rd_setReg, rd₁]) (by simp [wr_setReg, wr₁])
+    · simp [gpr_setReg, g .r2 (by decide), h2]
+    · simp [gpr_setReg, g .r3 (by decide), h3]
+  refine WP.block_append (WP.of_runBlock ⟨s₂, run₂, ?_⟩)
+  -- `L_$`
+  refine WP.block_append (WP.mono (dbl_wp (b := .r10) (t := s₂) (P := State.addr p.K) (W := State.addr p.W)
+    (sO := 240) (dO := ldO) ⟨by decide, by decide, by decide⟩ (by rw [E₂.r10]) (by rw [E₂.r11]) (by decide)
+    (by decide) (by rw [E₂.r10]; omega_using [fk]) (by rw [E₂.r11]; simp only [ldO]; omega_using [fw]) (E₂.perm.kC (by decide))
+    (E₂.perm.wC (by decide))) fun s₃ R₃ => ?_)
+  have E₃ := E₂.of_others R₃.gpr R₃.sp R₃.rd R₃.wr
+  -- `L_0`
+  refine WP.block_append (WP.mono (dbl_wp (b := .r11) (t := s₃) (P := State.addr p.W) (W := State.addr p.W)
+    (sO := ldO) (dO := l0O) ⟨by decide, by decide, by decide⟩ (by rw [E₃.r11]) (by rw [E₃.r11]) (by decide)
+    (by decide) (by rw [E₃.r11]; simp only [ldO]; omega_using [fw]) (by rw [E₃.r11]; simp only [l0O]; omega_using [fw])
+    (E₃.perm.wCR (by decide)) (E₃.perm.wC (by decide))) fun s₄ R₄ => ?_)
+  have E₄ := E₃.of_others R₄.gpr R₄.sp R₄.rd R₄.wr
+  -- the checksum
+  refine WP.mono (zero16_wp (s := s₄) (o := ckO) (by decide) (by rw [E₄.r11]; simp only [ckO]; omega_using [fw])
+    (by rw [E₄.r11]; exact E₄.perm.wC (by decide))) fun s₅ R₅ => ?_
+  rw [E₄.r11] at R₅
+  have f₃ : Frame [⟨State.addr p.W + BitVec.ofNat 64 ldO, 16⟩] s₂.mem s₃.mem := by
+    rw [R₃.mem]; exact dblMem_frame _ _ _
+  have f₄ : Frame [⟨State.addr p.W + BitVec.ofNat 64 l0O, 16⟩] s₃.mem s₄.mem := by
+    rw [R₄.mem]; exact dblMem_frame _ _ _
+  have f₅ : Frame [⟨State.addr p.W + BitVec.ofNat 64 ckO, 16⟩] s₄.mem s₅.mem := by
+    rw [R₅.mem]; exact Proof.Cmac.frame_store4 _ _ _ _ _
+  have inW : ∀ {d k : Nat}, d + k ≤ 2560 → ∀ r ∈ [(⟨State.addr p.W + BitVec.ofNat 64 d, k⟩ : Region)],
+      ∃ r' ∈ [(⟨State.addr p.W, 2560⟩ : Region)], Region.Sub r r' := fun h r hr => by
+    simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, List.mem_singleton_self _, Lay.wSub h⟩
+  have F₂ : Frame [⟨State.addr p.W, 2560⟩] s₀.mem s₂.mem := by rw [m₂]; exact fr₁.sub (inW (by decide))
+  have F₅ : Frame [⟨State.addr p.W, 2560⟩] s₂.mem s₅.mem :=
+    ((f₃.sub (inW (by decide))).trans (f₄.sub (inW (by decide)))).trans (f₅.sub (inW (by decide)))
+  have hl : blockAtMem s₂.mem (State.addr p.K + BitVec.ofNat 64 240) = lstarOf p s₀.mem :=
+    (lstar_W L F₂).symm ▸ rfl
+  have ld₃ : blockAtMem s₃.mem (State.addr p.W + BitVec.ofNat 64 ldO) = Spec.Ocb.lDollar (lstarOf p s₀.mem) := by
+    rw [R₃.mem, blockAtMem_dbl, hl]; rfl
+  have ld₄ : blockAtMem s₄.mem (State.addr p.W + BitVec.ofNat 64 ldO) = Spec.Ocb.lDollar (lstarOf p s₀.mem) := by
+    rw [blockAtMem_frame f₄ (by wdisj L), ld₃]
+  have l0₄ : blockAtMem s₄.mem (State.addr p.W + BitVec.ofNat 64 l0O) = lAt (lstarOf p s₀.mem) 0 := by
+    rw [R₄.mem, blockAtMem_dbl, ld₃]; rfl
+  refine ⟨E₄.of_others R₅.gpr R₅.sp R₅.rd R₅.wr, by rw [R₅.rd, R₄.rd, R₃.rd, rd₂],
+    by rw [R₅.wr, R₄.wr, R₃.wr, wr₂], by rw [R₅.gpr _ (by decide), R₄.gpr _ (by decide), R₃.gpr _ (by decide), r4₂],
+    by rw [R₅.gpr _ (by decide), R₄.gpr _ (by decide), R₃.gpr _ (by decide), r5₂], F₂.trans F₅, ?_,
+    by rw [blockAtMem_frame f₅ (by wdisj L), ld₄], by rw [blockAtMem_frame f₅ (by wdisj L), l0₄],
+    by rw [R₅.mem, blockAtMem_zero4]⟩
+  rw [← m₂] at sv₁
+  exact ((sv₁.frame f₃ (by wdisj L)).frame f₄ (by wdisj L)).frame f₅ (by wdisj L)
+
+/-! ## Before the data -/
+
+theorem nonceR_mut {p : Prm} (L : Lay p) {m m' : Mem} (h : Frame (nonceR p) m m') : Frame (mutR p) m m' :=
+  h.sub fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
+    · exact w_mut L (.inl (by decide))
+    · exact w_mut L (.inr ⟨by decide, by decide⟩)
+    · exact w_mut L (.inl (by decide))
+    · exact w_mut L (.inr ⟨by decide, by decide⟩)
+    · exact w_mut L (.inr ⟨by decide, by decide⟩)
+    · exact below_mut L
+
+/-- What the pieces before the data leave: the offset, the checksum, `L_$`,
+`L_0` and `HASH`, and the inputs as they were. -/
+structure Pre (p : Prm) (s₀ s : State) : Prop where
+  env : Env p s
+  rd : s.rd = s₀.rd
+  wr : s.wr = s₀.wr
+  args : Args p s.mem
+  saved : SavedAt s.mem p.W s₀
+  sched : sched p s.mem = sched p s₀.mem
+  lstar : lstarOf p s.mem = lstarOf p s₀.mem
+  data : bytesAt s.mem (State.addr p.D) p.n = bytesAt s₀.mem (State.addr p.D) p.n
+  tag : bytesAt s.mem (State.addr p.T) p.tl = bytesAt s₀.mem (State.addr p.T) p.tl
+  ofs : blockAtMem s.mem (State.addr p.W + BitVec.ofNat 64 ofsO) =
+    Spec.Ocb.offset0 (ciphOf p s₀.mem) p.tl (bytesAt s₀.mem (State.addr p.N) p.nl)
+  o0 : blockAtMem s.mem (State.addr p.W + BitVec.ofNat 64 o0O) =
+    Spec.Ocb.offset0 (ciphOf p s₀.mem) p.tl (bytesAt s₀.mem (State.addr p.N) p.nl)
+  ck : blockAtMem s.mem (State.addr p.W + BitVec.ofNat 64 ckO) = 0
+  ld : blockAtMem s.mem (State.addr p.W + BitVec.ofNat 64 ldO) = Spec.Ocb.lDollar (lstarOf p s₀.mem)
+  l0 : blockAtMem s.mem (State.addr p.W + BitVec.ofNat 64 l0O) = lAt (lstarOf p s₀.mem) 0
+  sum : blockAtMem s.mem (State.addr p.W + BitVec.ofNat 64 sumO) =
+    Spec.Ocb.hash (ciphOf p s₀.mem) (lstarOf p s₀.mem) (aadOf p s₀.mem)
+
+/-- `entry`, `nonce` and `hash`. -/
+theorem pre_wp' {p : Prm} (L : Lay p) {s₀ : State} (P : Perm p s₀) (A : Args p s₀.mem) (hsp : s₀.sp = p.SP)
+    (h0 : s₀.gpr .r0 = p.K) (h1 : s₀.gpr .r1 = BitVec.ofNat 32 p.R) (h2 : s₀.gpr .r2 = p.N)
+    (h3 : s₀.gpr .r3 = BitVec.ofNat 32 p.nl) (hW : s₀.mem.readW (State.addr (s₀.sp + BitVec.ofNat 32 24)) 32 = p.W) :
+    WP isa (.seq (.block entry) (.seq nonce Impl.AesOcb.Arm.hash)) s₀ (Pre p s₀) := by
+  refine WP.seq (WP.mono (entry_wp L P hsp h0 h1 h2 h3 hW) fun s₁ P₁ => ?_)
+  have A₁ := args_W L P₁.frame A
+  refine WP.seq (WP.mono (nonce_ok L P₁.env A₁ P₁.r4 P₁.r5) fun s₂ N₂ => ?_)
+  have F₂ := nonceR_mut L N₂.frame
+  have l₂ : lstarOf p s₂.mem = lstarOf p s₀.mem := (lstar_mut L F₂).trans (lstar_W L P₁.frame)
+  have l0₂ : blockAtMem s₂.mem (State.addr p.W + BitVec.ofNat 64 l0O) =
+      blockAtMem s₁.mem (State.addr p.W + BitVec.ofNat 64 l0O) := blockAtMem_frame N₂.frame (by wdisj L)
+  refine WP.mono (hash_ok L N₂.env (A₁.mut L F₂) (by rw [l0₂, P₁.l0, l₂])) fun s₃ H₃ => ?_
+  have F₃ := hashR_mut L H₃.frame
+  have sc₂ : sched p s₂.mem = sched p s₀.mem := (sched_mut L F₂).trans (sched_W L P₁.frame)
+  have c₂ : ciphOf p s₂.mem = ciphOf p s₀.mem := by simp only [ciphOf, sc₂]
+  have c₁ : ciphOf p s₁.mem = ciphOf p s₀.mem := by simp only [ciphOf, sched_W L P₁.frame]
+  have k₃ : ∀ {d : Nat}, (d + 16 ≤ 48 ∨ (64 ≤ d ∧ d + 16 ≤ 96) ∨ (112 ≤ d ∧ d + 16 ≤ 192) ∨
+      (216 ≤ d ∧ d + 16 ≤ 256)) →
+      blockAtMem s₃.mem (State.addr p.W + BitVec.ofNat 64 d) = blockAtMem s₂.mem (State.addr p.W + BitVec.ofNat 64 d) :=
+    fun {d} hd => blockAtMem_frame H₃.frame fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl
+      · exact L.w_w (by omega_using [hd]) (by omega_using [hd]) (by decide)
+      · exact L.w_w (by omega_using [hd]) (by omega_using [hd]) (by decide)
+      · exact L.w_w (by omega_using [hd]) (by omega_using [hd]) (by decide)
+      · exact L.w_w (by omega_using [hd]) (by omega_using [hd]) (by decide)
+      · exact (L.bw' (by omega_using [hd])).symm
+  have k₂ : ∀ {d : Nat}, d ∈ [ckO, ldO, l0O] →
+      blockAtMem s₂.mem (State.addr p.W + BitVec.ofNat 64 d) = blockAtMem s₁.mem (State.addr p.W + BitVec.ofNat 64 d) :=
+    fun {d} hd => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
+      rcases hd with rfl | rfl | rfl <;> exact blockAtMem_frame N₂.frame (by wdisj L)
+  refine ⟨H₃.env, by rw [H₃.rd, N₂.rd, P₁.rd], by rw [H₃.wr, N₂.wr, P₁.wr], (A₁.mut L F₂).mut L F₃,
+    ((P₁.saved.frame N₂.frame (by wdisj L)).frame H₃.frame (by wdisj L)),
+    (sched_mut L F₃).trans sc₂, (lstar_mut L F₃).trans l₂,
+    by rw [Proof.Cmac.bytesAt_frame H₃.frame (by ddisj L) (by have := L.n_lt; omega_using [this]),
+      Proof.Cmac.bytesAt_frame N₂.frame (by ddisj L) (by have := L.n_lt; omega_using [this]), data_W L P₁.frame],
+    by rw [tag_mut L F₃, tag_mut L F₂, tag_W L P₁.frame], ?_, ?_,
+    by rw [k₃ (by decide), k₂ (by simp), P₁.ck], by rw [k₃ (by decide), k₂ (by simp), P₁.ld],
+    by rw [k₃ (by decide), k₂ (by simp), P₁.l0], ?_⟩
+  · rw [k₃ (by decide), N₂.ofs]
+    show Spec.Ocb.offset0 (ciphOf p s₁.mem) _ _ = _
+    rw [c₁, nonce_W L P₁.frame]
+  · rw [k₃ (by decide), N₂.o0]
+    show Spec.Ocb.offset0 (ciphOf p s₁.mem) _ _ = _
+    rw [c₁, nonce_W L P₁.frame]
+  · rw [H₃.sum, c₂, l₂, aadOf, aad_mut L F₂, aad_W L P₁.frame]
+
+end VG.Proof.AesOcb.Arm
+
+end
+
+end
+
+/-!
+# AES-OCB on ARMv7: `vg_aes_ocb_seal`
+
+Untrusted: everything here is checked by Lean. `seal` is `front`: `entry`,
+`Offset_0` (`nonce`), `HASH` (`hash`), the data (`body`) and the tag at `W`
+(`tag`); then the copy of the tag to `tag`, whose address is on the stack
+(`tagOut_ok`), and `restore` (`seal_wp`), as on AArch64
+(`Proof.AesOcb.AArch64.seal_wp`).
+-/
+
+@[expose] public section
+
+set_option linter.unusedSimpArgs false
+
+namespace VG.Proof.AesOcb.Arm
+
+open VG VG.Arm VG.Arm.RegUpd VG.Impl.AesOcb.Arm VG.WriteBytes
+open VG.Spec.Aes (bytesAt)
+open VG.Spec.Ocb (Block blockAtMem lAt)
+open VG.Proof.Ocb (blockAtMem_frame length_bytesAt)
+open VG.Proof.AesGcm.Arm (below SavedAt restore_ok copyLoop_ok covers_left covers_prefix covers_of_mem)
+
+/-- `tagOut`: the first `tl` bytes at `W` copied to the tag at `T`. -/
+theorem tagOut_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) (A : Args p s.mem)
+    (hTw : Covers [⟨State.addr p.T, p.tl⟩] s.wr) :
+    WP isa tagOut s fun t => t.mem = writeBytes s.mem (State.addr p.T) (bytesAt s.mem (State.addr p.W) p.tl) ∧
+      Env p t ∧ t.rd = s.rd ∧ t.wr = s.wr := by
+  have fw := L.ww
+  have t16 := L.tl16
+  have a₁₆ := E.perm.argR' L (k := 16) (by decide)
+  have a₂₀ := E.perm.argR' L (k := 20) (by decide)
+  unfold tagOut
+  refine WP.seq (WP.of_runBlock ⟨_, by orun [E.sp, a₁₆, a₂₀, A.a16, A.a20], ?_⟩)
+  refine WP.mono (copyLoop_ok _ (S := p.W) (D := p.T) (n := p.tl)
+    ⟨by simp [gpr_setReg, E.r11], by simp [gpr_setReg, E.sp, A.a16], by simp [gpr_setReg, E.sp, A.a20], L.tl1,
+      by omega_using [t16], by omega_using [fw, t16], L.tw, by simp only [rd_setReg, wr_setReg]; exact covers_left (covers_prefix E.perm.w (by omega_using [t16])),
+      by simp only [wr_setReg]; exact hTw, (L.t_w.sub_right (Region.sub_prefix (by omega_using [t16]))).symm⟩)
+    fun t ⟨m, O⟩ => ⟨by rw [m]; rfl, E.keep (fun r hr => ?_) (by rw [O.sp]; rfl) (by rw [O.rd]; rfl)
+      (by rw [O.wr]; rfl), by rw [O.rd]; rfl, by rw [O.wr]; rfl⟩
+  simp only [envRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl <;>
+    (rw [O.other _ (by decide) (by decide) (by decide) (by decide) (by decide)]; simp [gpr_setReg])
+
+/-- The first `t ≤ 16` bytes of a block. -/
+theorem bytesAt_take_block (m : Mem) (q : Addr) {t : Nat} (h : t ≤ 16) :
+    bytesAt m q t = (Spec.Ocb.toBytes (blockAtMem m q)).take t := by
+  rw [blockAtMem, Proof.Ocb.toBytes_ofBytes (length_bytesAt _ _ _), show (16 : Nat) = t + (16 - t) by omega_using [h],
+    Proof.Ocb.bytesAt_append, List.take_left' (length_bytesAt _ _ _)]
+
+/-- What `tag d` writes, within the parts the pieces write. -/
+theorem tagR_mut {p : Prm} (L : Lay p) {d : Nat} (hd : d + 16 ≤ 128 ∨ (164 ≤ d ∧ d + 16 ≤ 2560)) {m m' : Mem}
+    (h : Frame [⟨State.addr p.W + BitVec.ofNat 64 tmpO, 16⟩, ⟨State.addr p.W + BitVec.ofNat 64 d, 16⟩,
+      ⟨State.addr p.W + BitVec.ofNat 64 scrO, 2048⟩, below p.SP] m m') :
+    Frame (mutR p) m m' := h.sub fun r hr => by
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl
+  · exact w_mut L (.inl (by decide))
+  · exact w_mut L hd
+  · exact w_mut L (.inr ⟨by decide, by decide⟩)
+  · exact below_mut L
+
+/-- `vg_aes_ocb_seal`, for its arguments. -/
+theorem seal_wp' {p : Prm} (L : Lay p) {s₀ : State} (P : Perm p s₀) (A : Args p s₀.mem) (hsp : s₀.sp = p.SP)
+    (h0 : s₀.gpr .r0 = p.K) (h1 : s₀.gpr .r1 = BitVec.ofNat 32 p.R) (h2 : s₀.gpr .r2 = p.N)
+    (h3 : s₀.gpr .r3 = BitVec.ofNat 32 p.nl) (hW : s₀.mem.readW (State.addr (s₀.sp + BitVec.ofNat 32 24)) 32 = p.W)
+    (hTw : Covers [⟨State.addr p.T, p.tl⟩] s₀.wr) :
+    WP isa «seal» s₀ fun s' => abiPreserved s₀ s' ∧
+      Spec.Ocb.encryptWith (ciphOf p s₀.mem) (lstarOf p s₀.mem) p.tl (bytesAt s₀.mem (State.addr p.N) p.nl)
+        (aadOf p s₀.mem) (bytesAt s₀.mem (State.addr p.D) p.n) =
+        (bytesAt s'.mem (State.addr p.D) p.n, bytesAt s'.mem (State.addr p.T) p.tl) := by
+  unfold «seal» front
+  refine WP.seq (WP.assoc (WP.assoc (WP.seq (WP.mono (WP.assoc' (pre_wp' L P A hsp h0 h1 h2 h3 hW))
+    fun s₃ P₃ => ?_))))
+  refine WP.seq (WP.mono (bodySeal_ok L P₃.env P₃.args P₃.ofs P₃.o0 P₃.ck (by rw [P₃.l0, P₃.lstar]))
+    fun s₄ B => ?_)
+  have F₄ : Frame (mutR p) s₃.mem s₄.mem := bodyR_mut L B.frame
+  refine WP.mono (tag_ok L B.env (.inl rfl)) fun s₅ T₅ => ?_
+  have F₅ : Frame (mutR p) s₄.mem s₅.mem := tagR_mut L (.inl (by decide)) T₅.frame
+  refine WP.seq (WP.mono (tagOut_ok L T₅.env ((P₃.args.mut L F₄).mut L F₅)
+    (by rw [T₅.wr, B.wr, P₃.wr]; exact hTw)) fun s₆ ⟨m₆, E₆, rd₆, wr₆⟩ => ?_)
+  have hx : (bytesAt s₅.mem (State.addr p.W) p.tl).length = p.tl := length_bytesAt _ _ _
+  have f₆ : Frame [⟨State.addr p.T, p.tl⟩] s₅.mem s₆.mem := by
+    rw [m₆]; exact writeBytes_frame _ _ _ (by rw [hx]; exact Region.contains_self _ _)
+  have sv₆ : SavedAt s₆.mem p.W s₀ :=
+    ((P₃.saved.frame F₄ (saved_mut L)).frame F₅ (saved_mut L)).frame f₆ fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact (L.t_w' (by decide)).symm
+  refine WP.mono (restore_ok E₆.r11 L.ww (covers_left E₆.perm.w) sv₆ (by rw [E₆.sp, hsp]))
+    fun s' ⟨ab, hm, _, _, _⟩ => ⟨ab, ?_⟩
+  have c₄ : ciphOf p s₄.mem = ciphOf p s₀.mem := by simp only [ciphOf, sched_mut L F₄, P₃.sched]
+  have c₃ : ciphOf p s₃.mem = ciphOf p s₀.mem := by simp only [ciphOf, P₃.sched]
+  have hout := B.out
+  rw [c₃, P₃.lstar, P₃.data] at hout
+  have hofs := B.ofs
+  rw [P₃.lstar] at hofs
+  have hck := B.ck
+  rw [P₃.data] at hck
+  have ld₄ : blockAtMem s₄.mem (State.addr p.W + BitVec.ofNat 64 ldO) = Spec.Ocb.lDollar (lstarOf p s₀.mem) := by
+    rw [blockAtMem_frame B.frame (by wdisj L), P₃.ld]
+  have sum₄ : blockAtMem s₄.mem (State.addr p.W + BitVec.ofNat 64 sumO) =
+      Spec.Ocb.hash (ciphOf p s₀.mem) (lstarOf p s₀.mem) (aadOf p s₀.mem) := by
+    rw [blockAtMem_frame B.frame (by wdisj L), P₃.sum]
+  have d₆ : bytesAt s'.mem (State.addr p.D) p.n = bytesAt s₄.mem (State.addr p.D) p.n := by
+    rw [hm, Proof.Cmac.bytesAt_frame f₆ (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact L.t_d.symm) (by have := L.n_lt; omega_using [this])]
+    exact Proof.Cmac.bytesAt_frame T₅.frame (by ddisj L) (by have := L.n_lt; omega_using [this])
+  have tv := T₅.val
+  rw [show State.addr p.W + BitVec.ofNat 64 tagO = State.addr p.W from BitVec.add_zero _] at tv
+  have t₆ : bytesAt s'.mem (State.addr p.T) p.tl = (Spec.Ocb.toBytes (blockAtMem s₅.mem (State.addr p.W))).take p.tl := by
+    rw [hm, m₆, Proof.Ocb.bytesAt_writeBytes_base _ _ _ (by rw [hx]) (by have := L.tl16; omega_using [this]), hx,
+      List.drop_of_length_le (by rw [length_bytesAt]), List.append_nil, bytesAt_take_block _ _ L.tl16]
+  rw [Proof.Ocb.encryptWith_eq, d₆, hout, t₆, tv, hck, hofs, ld₄, sum₄, c₄]
+  simp only [length_bytesAt, List.length_drop]
+  by_cases hr : 0 < p.n % 16
+  · have h' : p.n - 16 * (p.n / 16) > 0 := by omega_using [hr]
+    simp only [h', hr, ↓reduceIte]
+  · have h' : ¬ (p.n - 16 * (p.n / 16) > 0) := by omega_using [hr]
+    simp only [h', hr, ↓reduceIte]
+
+/-- `vg_aes_ocb_seal`. -/
+theorem seal_wp {s : State} (h : sealArm.pre s) :
+    WP isa «seal» s fun s' => abiPreserved s s' ∧ sealArm.post s s' :=
+  seal_wp' (lay_of h.2.2.1) (sealPerm h) (args_of s) rfl rfl (ofNat_toNat32' _).symm rfl (ofNat_toNat32' _).symm rfl
+    (covers_of_mem (by rw [h.2.1]; simp [prmOf]))
+
+end VG.Proof.AesOcb.Arm
+
+end
+
+end
+
+/-! ### `AesOcb.Arm.CTPre`, which only this module used -/
+
+section
+
+/-!
+# AES-OCB on ARMv7: `Offset_0` and `HASH` in two runs
+
+Untrusted: everything here is checked by Lean. `nonce` and `hash`, in two
+runs with the same public arguments: the code between the calls by the taint
+analysis, from the registers holding the public arguments and those pinned
+to the same values in both runs (the nonce and its length, the associated
+data's pointer and its blocks, the count of a chunk), and each call of
+`vg_aes_encrypt_blocks` with the same arguments in both runs (`nonce_rel`,
+`hash_rel`).
+-/
+
+@[expose] public section
+
+set_option linter.unusedSimpArgs false
+
+namespace VG.Proof.AesOcb.Arm
+
+open VG VG.Arm VG.Arm.RegUpd VG.Impl.AesOcb.Arm
+open VG.Spec.Aes (bytesAt)
+open VG.Spec.Ocb (blockAtMem)
+open VG.Proof.Ocb (blockAtMem_frame)
+open VG.Impl.AesGcm.Arm (imm addI)
+open VG.Proof.AesGcm.Arm (eval_eq' eval_ne' z_subFlags z_cmp0)
+
+/-! ## `Offset_0` -/
+
+theorem nonceBlock_check :
+    ∃ h, (VG.Taint.check VG.Arm.taint (argTaint (pubRegs [.r4, .r5]) 24) nonceBlock h).isSome = true :=
+  ⟨_, by taint_decide⟩
+
+theorem offset0_check :
+    ∃ h, (VG.Taint.check VG.Arm.taint (VG.Arm.Taint.ofRegs (pubRegs [])) (.block offset0) h).isSome = true :=
+  ⟨_, by taint_decide⟩
+
+/-- `nonce`, in two runs with the same public arguments, nonce pointer and
+length. -/
+theorem nonce_rel {p : Prm} (L : Lay p) {τ₁ τ₂ : State} (E₁ : Env p τ₁) (E₂ : Env p τ₂) (A₁ : Args p τ₁.mem)
+    (A₂ : Args p τ₂.mem) (h4 : τ₁.gpr .r4 = τ₂.gpr .r4) (h5 : τ₁.gpr .r5 = τ₂.gpr .r5) :
+    RelCT isa (Eq2 τ₁ τ₂) nonce TT :=
+  rel_seqX (rel_envArg L E₁ E₂ A₁ A₂ [.r4, .r5] (by simp [h4, h5]) nonceBlock_check)
+    (kept_of L E₁ [] (by decide +kernel) (by decide +kernel) (by decide +kernel))
+    (kept_of L E₂ [] (by decide +kernel) (by decide +kernel) (by decide +kernel)) fun _ _ K₁ K₂ =>
+  rel_seqX (encOne_rel L K₁.env K₂.env (.inl rfl)) (exec_of_wp (encOne_ok L K₁.env (d := tmpO) (by decide) (by decide)))
+    (exec_of_wp (encOne_ok L K₂.env (d := tmpO) (by decide) (by decide))) fun _ _ C₁ C₂ =>
+  rel_env (C₁.env K₁.env) (C₂.env K₂.env) [] (by simp) offset0_check
+
+/-! ## A chunk of `HASH` -/
+
+/-- The start of a chunk: `Z` set if fewer than 16 blocks are left. -/
+theorem chunkB0_ok {p : Prm} (L : Lay p) {t₀ t : State} {j : Nat} (H : HInv p t₀ t j) :
+    WP isa (.block [.mov .r12 (.shifted .r7 .lsr 4), .cmp .r12 (imm 0)]) t fun t' =>
+      HInv p t₀ t' j ∧ t'.z = decide (p.al / 16 - j < 16) := by
+  have al32 := L.al_lt
+  have m32 : p.al / 16 - j < 2 ^ 32 := by omega_using [al32]
+  have z₁ : (BitVec.ofNat 32 (p.al / 16 - j) >>> 4 == 0) = decide (p.al / 16 - j < 16) := by
+    rw [ofNat_lsr32 m32, z_cmp0 (by omega_using [al32])]; congr 1; apply propext; omega_using []
+  refine WP.of_runBlock ⟨_, by orun [H.r7], ?_, ?_⟩
+  · exact ⟨H.env.of_others (rs := [.r12]) (by others_tac) (by rfl) (by rfl) (by rfl), H.frame, H.rd, H.wr, H.le,
+      H.sum, H.oh, by simp [gpr_setReg, H.r4], by simp [gpr_setReg, H.r6], by simp [gpr_setReg, H.r7], H.l0⟩
+  · simp only [z_subFlags, gpr_setReg, ite_true, H.r7, BitVec.sub_zero, z₁]
+
+/-- The count of a chunk, `min(16, r7)`, in `r5`. -/
+theorem chunkSel_ok {p : Prm} {t₀ t : State} {j : Nat} (H : HInv p t₀ t j)
+    (hz : t.z = decide (p.al / 16 - j < 16)) :
+    WP isa (.ite .eq (.block [.mov .r5 (.reg .r7)]) (.block [.mov .r5 (imm 16)])) t fun t' =>
+      HInv p t₀ t' j ∧ t'.gpr .r5 = BitVec.ofNat 32 (min 16 (p.al / 16 - j)) := by
+  have Hk : ∀ {t' : State}, t'.mem = t.mem → t'.rd = t.rd → t'.wr = t.wr → t'.sp = t.sp →
+      Others [.r5] t t' → HInv p t₀ t' j := fun hm hrd hwr hsp ho =>
+    ⟨H.env.of_others ho hsp hrd hwr, by rw [hm]; exact H.frame, by rw [hrd, H.rd], by rw [hwr, H.wr], H.le,
+      by rw [hm]; exact H.sum, by rw [hm]; exact H.oh, by rw [ho _ (by decide), H.r4], by rw [ho _ (by decide), H.r6],
+      by rw [ho _ (by decide), H.r7], by rw [hm]; exact H.l0⟩
+  refine WP.ite (decide (p.al / 16 - j < 16)) (eval_eq' hz) (fun hb => ?_) (fun hb => ?_)
+  · have hlt : p.al / 16 - j < 16 := of_decide_eq_true hb
+    refine WP.of_runBlock ⟨_, by orun [H.r7], Hk (by rfl) (by rfl) (by rfl) (by rfl) (by others_tac), ?_⟩
+    simp [gpr_setReg, H.r7, show min 16 (p.al / 16 - j) = p.al / 16 - j by omega_using [hlt]]
+  · have hlt : ¬ p.al / 16 - j < 16 := by simpa using hb
+    refine WP.of_runBlock ⟨_, by orun [], Hk (by rfl) (by rfl) (by rfl) (by rfl) (by others_tac), ?_⟩
+    simp [gpr_setReg, show min 16 (p.al / 16 - j) = 16 by omega_using [hlt]]
+
+/-- After a chunk's call: the count back in `r5`, the buffer in `r8`. -/
+theorem chunkB4_ok {p : Prm} (L : Lay p) {t₀ t₂ t₃ : State} {j c : Nat} (F : FillInv p t₀ j c t₂ c)
+    (hc : c ≤ 16) (C : BlkPost encF (chunkCallSt p c t₂) p.K (p.W + BitVec.ofNat 32 bufO)
+      (p.W + BitVec.ofNat 32 scrO) p.R c t₃) :
+    WP isa (.block [addI .r8 .r11 bufO, .ldr .r5 .r11 cnO]) t₃ fun t' =>
+      Env p t' ∧ t'.gpr .r5 = BitVec.ofNat 32 c ∧ t'.gpr .r8 = p.W + BitVec.ofNat 32 bufO := by
+  have fw := L.ww
+  have E₂ : Env p (chunkCallSt p c t₂) := (chunkCall_blk L F hc).2
+  have E₃ : Env p t₃ := E₂.of_saved C.saved C.sp C.rd C.wr
+  have eC : State.addr (p.W + BitVec.ofNat 32 212) = State.addr p.W + BitVec.ofNat 64 212 := L.wA (by decide)
+  have eB : State.addr (p.W + BitVec.ofNat 32 bufO) = State.addr p.W + BitVec.ofNat 64 bufO := L.wA (by decide)
+  have eS : State.addr (p.W + BitVec.ofNat 32 scrO) = State.addr p.W + BitVec.ofNat 64 scrO := L.wA (by decide)
+  have fr := C.frame
+  rw [eB, eS, E₂.sp] at fr
+  have cnt₃ : t₃.mem.readW (State.addr p.W + BitVec.ofNat 64 212) 32 = BitVec.ofNat 32 c := by
+    rw [fr.readW (r := ⟨State.addr p.W + BitVec.ofNat 64 212, 4⟩) (Region.contains_self _ _) (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact L.w_w (.inl (by decide)) (by decide) (by simp only [bufO]; omega_using [hc])
+      · exact L.w_w (.inl (by decide)) (by decide) (by decide)
+      · exact (L.bw' (by decide)).symm) (by decide)]
+    exact F.cnt
+  have rC₃ : InRegions (t₃.rd ++ t₃.wr) (State.addr p.W + BitVec.ofNat 64 212) 4 := E₃.perm.wR (by decide)
+  refine WP.of_runBlock ⟨_, by orun [E₃.r11, eC, rC₃, cnt₃], ?_, ?_, ?_⟩
+  · exact E₃.of_others (rs := [.r5, .r8]) (by others_tac) (by rfl) (by rfl) (by rfl)
+  · simp [gpr_setReg]
+  · simp [gpr_setReg, E₃.r11, bufO]
+
+theorem chunkB0_check : ∃ h, (VG.Taint.check VG.Arm.taint (VG.Arm.Taint.ofRegs (pubRegs [.r7]))
+    (.block [.mov .r12 (.shifted .r7 .lsr 4), .cmp .r12 (imm 0)]) h).isSome = true := ⟨_, by taint_decide⟩
+
+theorem chunkSelT_check : ∃ h, (VG.Taint.check VG.Arm.taint (VG.Arm.Taint.ofRegs (pubRegs []))
+    (.block [.mov .r5 (.reg .r7)]) h).isSome = true := ⟨_, by taint_decide⟩
+
+theorem chunkSelF_check : ∃ h, (VG.Taint.check VG.Arm.taint (VG.Arm.Taint.ofRegs (pubRegs []))
+    (.block [.mov .r5 (imm 16)]) h).isSome = true := ⟨_, by taint_decide⟩
+
+theorem chunkB1_check : ∃ h, (VG.Taint.check VG.Arm.taint (VG.Arm.Taint.ofRegs (pubRegs []))
+    (.block [.str .r5 .r11 cnO, .dp .sub .r7 .r7 (.reg .r5), addI .r8 .r11 bufO]) h).isSome = true :=
+  ⟨_, by taint_decide⟩
+
+theorem chunkFill_check : ∃ h, (VG.Taint.check VG.Arm.taint (VG.Arm.Taint.ofRegs (pubRegs [.r4, .r5, .r6, .r8]))
+    (.loop hashFill .ne) h).isSome = true := ⟨_, by taint_decide⟩
+
+theorem chunkB3_check : ∃ h, (VG.Taint.check VG.Arm.taint (VG.Arm.Taint.ofRegs (pubRegs []))
+    (.block (callArgs ++ [addI .r2 .r11 bufO, .ldr .r3 .r11 cnO])) h).isSome = true := ⟨_, by taint_decide⟩
+
+theorem chunkB4_check : ∃ h, (VG.Taint.check VG.Arm.taint (VG.Arm.Taint.ofRegs (pubRegs []))
+    (.block [addI .r8 .r11 bufO, .ldr .r5 .r11 cnO]) h).isSome = true := ⟨_, by taint_decide⟩
+
+theorem chunkSum_check : ∃ h, (VG.Taint.check VG.Arm.taint (VG.Arm.Taint.ofRegs (pubRegs [.r5, .r8]))
+    (.seq hashSum (.block [.cmp .r7 (imm 0)])) h).isSome = true := ⟨_, by taint_decide⟩
+
+/-- A chunk, in two runs at the same block of the associated data. -/
+theorem chunk_rel {p : Prm} (L : Lay p) {a b τ₁ τ₂ : State} {j : Nat} (H₁ : HInv p a τ₁ j) (H₂ : HInv p b τ₂ j)
+    (hj : j < p.al / 16) : RelCT isa (Eq2 τ₁ τ₂) hashChunk TT := by
+  have hc0 : 0 < min 16 (p.al / 16 - j) := by omega_using [hj]
+  have hc : min 16 (p.al / 16 - j) ≤ 16 := Nat.min_le_left _ _
+  have hjc : j + min 16 (p.al / 16 - j) ≤ p.al / 16 := by omega_using [hj]
+  unfold hashChunk
+  refine rel_seq (rel_env H₁.env H₂.env [.r7] (by simp [H₁.r7, H₂.r7]) chunkB0_check) (chunkB0_ok L H₁)
+    (chunkB0_ok L H₂) fun u₁ u₂ ⟨U₁, z₁⟩ ⟨U₂, z₂⟩ => ?_
+  refine rel_seq (rel_ite (eval_eq' z₁) (eval_eq' z₂) (fun _ => rel_env U₁.env U₂.env [] (by simp) chunkSelT_check)
+    (fun _ => rel_env U₁.env U₂.env [] (by simp) chunkSelF_check)) (chunkSel_ok U₁ z₁) (chunkSel_ok U₂ z₂)
+    fun v₁ v₂ ⟨V₁, h5₁⟩ ⟨V₂, h5₂⟩ => ?_
+  refine rel_seq (rel_env V₁.env V₂.env [] (by simp) chunkB1_check) (chunkHead_ok L V₁ hc hjc h5₁)
+    (chunkHead_ok L V₂ hc hjc h5₂) fun w₁ w₂ F₁ F₂ => ?_
+  refine rel_seq (rel_env F₁.env F₂.env [.r4, .r5, .r6, .r8] (by simp [F₁.r4, F₂.r4, F₁.r5, F₂.r5, F₁.r6, F₂.r6,
+    F₁.r8, F₂.r8]) chunkFill_check) (fill_ok L hc0 hc hjc F₁) (fill_ok L hc0 hc hjc F₂) fun x₁ x₂ G₁ G₂ => ?_
+  refine rel_seq (F₁ := fun y => y = chunkCallSt p _ x₁) (F₂ := fun y => y = chunkCallSt p _ x₂)
+    (rel_env G₁.env G₂.env [] (by simp) chunkB3_check) (WP.of_runBlock ⟨_, chunkArgs_run L G₁, rfl⟩)
+    (WP.of_runBlock ⟨_, chunkArgs_run L G₂, rfl⟩) fun y₁ y₂ e₁ e₂ => ?_
+  subst e₁ e₂
+  have B₁ := chunkCall_blk L G₁ hc
+  have B₂ := chunkCall_blk L G₂ hc
+  refine rel_seq (rel_blk encF B₁.1 B₂.1 (B₁.2.sp_eq B₂.2)) (blk_call encF B₁.1) (blk_call encF B₂.1)
+    fun z₁ z₂ C₁ C₂ => ?_
+  have E₁ : Env p z₁ := B₁.2.of_saved C₁.saved C₁.sp C₁.rd C₁.wr
+  have E₂ : Env p z₂ := B₂.2.of_saved C₂.saved C₂.sp C₂.rd C₂.wr
+  exact rel_seq (rel_env E₁ E₂ [] (by simp) chunkB4_check) (chunkB4_ok L G₁ hc C₁) (chunkB4_ok L G₂ hc C₂)
+    fun _ _ ⟨D₁, r5₁, r8₁⟩ ⟨D₂, r5₂, r8₂⟩ => rel_env D₁ D₂ [.r5, .r8] (by simp [r5₁, r5₂, r8₁, r8₂]) chunkSum_check
+
+/-! ## `HASH` -/
+
+theorem hashHead_check : ∃ h, (VG.Taint.check VG.Arm.taint (argTaint (pubRegs []) 24)
+    (.block (Impl.AesGcm.Arm.zero16 sumO ++ Impl.AesGcm.Arm.zero16 ohO ++
+      ([.ldrSp .r4 0, .ldrSp .r7 4, .mov .r7 (.shifted .r7 .lsr 4), .mov .r6 (imm 1), .cmp .r7 (imm 0)] :
+        List Instr))) h).isSome =
+      true := ⟨_, by taint_decide⟩
+
+theorem hashMid_check : ∃ h, (VG.Taint.check VG.Arm.taint (argTaint (pubRegs []) 24)
+    (.block [.ldrSp .r5 4, .dp .and .r5 .r5 (imm 15), .cmp .r5 (imm 0)]) h).isSome = true := ⟨_, by taint_decide⟩
+
+theorem hashRestA_check : ∃ h, (VG.Taint.check VG.Arm.taint (VG.Arm.Taint.ofRegs (pubRegs []))
+    (.block (xorB .r11 .r10 .r11 ohO 240 ohO)) h).isSome = true := ⟨_, by taint_decide⟩
+
+theorem hashRestPad_check : ∃ h, (VG.Taint.check VG.Arm.taint (VG.Arm.Taint.ofRegs (pubRegs [.r4, .r5]))
+    (padTo bufO) h).isSome = true := ⟨_, by taint_decide⟩
+
+theorem hashRestB_check : ∃ h, (VG.Taint.check VG.Arm.taint (VG.Arm.Taint.ofRegs (pubRegs []))
+    (.block (xorW ohO bufO)) h).isSome = true := ⟨_, by taint_decide⟩
+
+theorem hashRestC_check : ∃ h, (VG.Taint.check VG.Arm.taint (VG.Arm.Taint.ofRegs (pubRegs []))
+    (.block (xorW bufO sumO)) h).isSome = true := ⟨_, by taint_decide⟩
+
+/-- The rest of the associated data, in two runs with the same pointer and
+length. -/
+theorem hashRest_rel {p : Prm} (L : Lay p) {τ₁ τ₂ : State} (E₁ : Env p τ₁) (E₂ : Env p τ₂)
+    (h4 : τ₁.gpr .r4 = τ₂.gpr .r4) (h5 : τ₁.gpr .r5 = τ₂.gpr .r5) : RelCT isa (Eq2 τ₁ τ₂) hashRest TT :=
+  rel_seqX (rel_env E₁ E₂ [] (by simp) hashRestA_check)
+    (kept_of L E₁ [.r4, .r5] (by decide +kernel) (by decide +kernel) (by decide +kernel))
+    (kept_of L E₂ [.r4, .r5] (by decide +kernel) (by decide +kernel) (by decide +kernel)) fun _ _ K₁ K₂ =>
+  rel_seqX (rel_env K₁.env K₂.env [.r4, .r5] (by
+      simp [K₁.gpr .r4 (by simp), K₂.gpr .r4 (by simp), K₁.gpr .r5 (by simp), K₂.gpr .r5 (by simp), h4, h5])
+      hashRestPad_check)
+    (kept_of L K₁.env [] (by decide +kernel) (by decide +kernel) (by decide +kernel))
+    (kept_of L K₂.env [] (by decide +kernel) (by decide +kernel) (by decide +kernel)) fun _ _ M₁ M₂ =>
+  rel_seqX (rel_env M₁.env M₂.env [] (by simp) hashRestB_check)
+    (kept_of L M₁.env [] (by decide +kernel) (by decide +kernel) (by decide +kernel))
+    (kept_of L M₂.env [] (by decide +kernel) (by decide +kernel) (by decide +kernel)) fun _ _ N₁ N₂ =>
+  rel_seqX (encOne_rel L N₁.env N₂.env (.inr rfl))
+    (exec_of_wp (encOne_ok L N₁.env (d := bufO) (by decide) (by decide)))
+    (exec_of_wp (encOne_ok L N₂.env (d := bufO) (by decide) (by decide))) fun _ _ C₁ C₂ =>
+  rel_env (C₁.env N₁.env) (C₂.env N₂.env) [] (by simp) hashRestC_check
+
+/-- `HASH`, in two runs with the same public arguments. -/
+theorem hash_rel {p : Prm} (L : Lay p) {τ₁ τ₂ : State} (E₁ : Env p τ₁) (E₂ : Env p τ₂) (A₁ : Args p τ₁.mem)
+    (A₂ : Args p τ₂.mem)
+    (hl₁ : blockAtMem τ₁.mem (State.addr p.W + BitVec.ofNat 64 l0O) = Spec.Ocb.lAt (lstarOf p τ₁.mem) 0)
+    (hl₂ : blockAtMem τ₂.mem (State.addr p.W + BitVec.ofNat 64 l0O) = Spec.Ocb.lAt (lstarOf p τ₂.mem) 0) :
+    RelCT isa (Eq2 τ₁ τ₂) Impl.AesOcb.Arm.hash TT := by
+  unfold Impl.AesOcb.Arm.hash
+  refine rel_seq (rel_envArg L E₁ E₂ A₁ A₂ [] (by simp) hashHead_check) (hashHead_ok L E₁ A₁ hl₁)
+    (hashHead_ok L E₂ A₂ hl₂) fun u₁ u₂ ⟨U₁, z₁⟩ ⟨U₂, z₂⟩ => ?_
+  refine rel_seq ?_ (hashWhole_ok L U₁ z₁) (hashWhole_ok L U₂ z₂) fun v₁ v₂ V₁ V₂ => ?_
+  · refine rel_ite (eval_eq' z₁) (eval_eq' z₂) (fun _ => rel_skip) fun hb => ?_
+    have hm : p.al / 16 ≠ 0 := by simpa using hb
+    refine rel_loop (fun k σ₁ σ₂ => ∃ j, k = p.al / 16 - j ∧ j < p.al / 16 ∧ HInv p τ₁ σ₁ j ∧ HInv p τ₂ σ₂ j)
+      (fun k σ₁ σ₂ ⟨j, hk, hj, H₁, H₂⟩ => ?_) (p.al / 16 - 0) ⟨0, rfl, by omega_using [hm], U₁, U₂⟩
+    refine rel_wpQ (chunk_rel L H₁ H₂ hj) (hashChunk_ok L H₁ hj) (hashChunk_ok L H₂ hj)
+      fun x y ⟨X, zx⟩ ⟨Y, zy⟩ => ⟨by rw [eval_ne' zx, eval_ne' zy], fun hc => ?_⟩
+    rw [eval_ne' zx] at hc
+    have hlt : j + min 16 (p.al / 16 - j) < p.al / 16 := by
+      simp only [Option.some.injEq, Bool.not_eq_eq_eq_not, Bool.not_true, decide_eq_false_iff_not] at hc; omega_using [hc]
+    exact ⟨p.al / 16 - (j + min 16 (p.al / 16 - j)), by omega_using [hk, hj], _, rfl, hlt, X, Y⟩
+  · have Av₁ : Args p v₁.mem := A₁.mut L (hashR_mut L V₁.frame)
+    have Av₂ : Args p v₂.mem := A₂.mut L (hashR_mut L V₂.frame)
+    refine rel_seq (rel_envArg L V₁.env V₂.env Av₁ Av₂ [] (by simp) hashMid_check) (hashMid_ok L V₁ Av₁)
+      (hashMid_ok L V₂ Av₂) fun w₁ w₂ ⟨W₁, h5₁, z₁'⟩ ⟨W₂, h5₂, z₂'⟩ => ?_
+    exact rel_ite (eval_eq' z₁') (eval_eq' z₂') (fun _ => rel_skip)
+      (fun _ => hashRest_rel L W₁.env W₂.env (by rw [W₁.r4, W₂.r4]) (by rw [h5₁, h5₂]))
+
+end VG.Proof.AesOcb.Arm
+
+end
+
+end
 
 /-!
 # AES-OCB on ARMv7: `vg_aes_ocb_seal` and `vg_aes_ocb_open` are constant time

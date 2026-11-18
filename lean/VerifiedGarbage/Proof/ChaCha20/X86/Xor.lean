@@ -1,25 +1,23 @@
 module
 
 public import VerifiedGarbage.Proof.ChaCha20.X86.Block
-public import VerifiedGarbage.Proof.ChaCha20.X86.Quad
+public import VerifiedGarbage.Proof.ChaCha20.X86.Kernels
 import VerifiedGarbage.Proof.Framework.X86.SseTaint
 public import VerifiedGarbage.Proof.Framework.X86.Call
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.ChaCha20.X86.Lit
 import VerifiedGarbage.Proof.ChaCha20.X86.Bytes
-import VerifiedGarbage.Proof.ChaCha20.X86.Kernels
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.ChaCha20.X86.Block
-meta import VerifiedGarbage.Proof.ChaCha20.X86.Quad
+meta import VerifiedGarbage.Proof.ChaCha20.X86.Kernels
 meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
 meta import VerifiedGarbage.Proof.Framework.X86.Call
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.ChaCha20.X86.Lit
 meta import VerifiedGarbage.Proof.ChaCha20.X86.Bytes
-meta import VerifiedGarbage.Proof.ChaCha20.X86.Kernels
 meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.Contract

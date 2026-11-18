@@ -3,12 +3,11 @@ module
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterBackend
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CallPost
 public import VerifiedGarbage.Impl.Ffdh.Arm.ParameterSearch
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CallGeometry
+public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CallGeometry
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CallParams
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CallPreserves
-public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Arguments
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.State
@@ -22,7 +21,6 @@ import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Arm.Call
 public import VerifiedGarbage.Spec.Ffdh.SievedContract
 import VerifiedGarbage.Proof.Framework.CallLay
-public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Params
 
 /-! ### `Ffdh.Arm.ParameterSearch.CallRegions`, which this module and modules that import it used -/
 

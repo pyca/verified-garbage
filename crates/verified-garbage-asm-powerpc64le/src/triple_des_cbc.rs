@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.TripleDes.cbcEncryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 384 bytes.
@@ -27,7 +29,7 @@ bne %cr0, 22b
 b 21f
 20:
 21:
-.base64 "eOu/fygCBYEAAB+RLAIFgQQAH5EIAqXrEALF6xgC5esgAgXopgMIfCAAgTkAAGA5AABs+QgAbPkQAGz5GABs+SAAbPkoAGz5MABs+TgAbPlAAGz5SABs+VAAbPlYAGz5YABs+WgAbPlwAGz5eABs+YAAbPmIAGz5kABs+ZgAbPmgAGz5qABs+bAAbPm4AGz5wABs+cgAbPnQAGz52ABs+eAAbPnoAGz58ABs+fgAbPkAAWz5CAFs+RABbPkYAWz5IAFs+SgBbPkwAWz5OAFs+UABbPlIAWz5UAFs+VgBbPlgAWz5aAFs+XABbPl4AWz5gAFs+YgBbPmQAWz5mAFs+aABbPmoAWz5sAFs+bgBbPnAAWz5yAFs+dABbPnYAWz54AFs+egBbPnwAWz5+AFs+QACbPkIAmz5EAJs+RgCbPkgAmz5KAJs+TACbPk4Amz5YAIhOCAAgE4=""#,
+.base64 "eOu/fygCBYEAAB+RLAIFgQQAH5EIAqXrEALF6xgC5esgAgXopgMIfCAAgTkAAGA5AABs+QgAbPkQAGz5GABs+SAAbPkoAGz5MABs+TgAbPlAAGz5SABs+VAAbPlYAGz5YABs+WgAbPlwAGz5eABs+YAAbPmIAGz5kABs+ZgAbPmgAGz5qABs+bAAbPm4AGz5wABs+cgAbPnQAGz52ABs+eAAbPnoAGz58ABs+fgAbPkAAWz5CAFs+RABbPkYAWz5IAFs+SgBbPkwAWz5OAFs+UABbPlIAWz5UAFs+VgBbPlgAWz5aAFs+XABbPl4AWz5gAFs+YgBbPmQAWz5mAFs+aABbPmoAWz5sAFs+bgBbPnAAWz5yAFs+dABbPnYAWz54AFs+egBbPnwAWz5+AFs+QACbPkIAmz5EAJs+RgCbPkgAmz5KAJs+TACbPk4Amz5YAIhOAAAADgAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDkgAIBO""#,
         vg_triple_des_encrypt_block = sym super::triple_des::vg_triple_des_encrypt_block::vg_triple_des_encrypt_block,
     )
 }
@@ -35,6 +37,8 @@ b 21f
 /// Triple DES-CBC decryption (NIST SP 800-38A §6.2, FIPS 46-3) of whole blocks, in place: replaces the `n` 8-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH⁻¹_K` is Triple DES decryption under the schedule written by `vg_triple_des_expand_key`. No padding is removed.
 ///
 /// Contract: `VG.Spec.TripleDes.cbcDecryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -106,7 +110,7 @@ bne %cr0, 217b
 b 216f
 215:
 216:
-.base64 "eOu/fyAGBYEAAB+RJAYFgQQAH5EABqXrCAbF6xAG5esYBgXopgMIfCAAgTkAAGA5AABs+QgAbPkQAGz5GABs+SAAbPkoAGz5MABs+TgAbPlAAGz5SABs+VAAbPlYAGz5YABs+WgAbPlwAGz5eABs+YAAbPmIAGz5kABs+ZgAbPmgAGz5qABs+bAAbPm4AGz5wABs+cgAbPnQAGz52ABs+eAAbPnoAGz58ABs+fgAbPkAAWz5CAFs+RABbPkYAWz5IAFs+SgBbPkwAWz5OAFs+UABbPlIAWz5UAFs+VgBbPlgAWz5aAFs+XABbPl4AWz5gAFs+YgBbPmQAWz5mAFs+aABbPmoAWz5sAFs+bgBbPnAAWz5yAFs+dABbPnYAWz54AFs+egBbPnwAWz5+AFs+QACbPkIAmz5EAJs+RgCbPkgAmz5KAJs+TACbPk4Amz5QAJs+UgCbPlQAmz5WAJs+WACbPloAmz5cAJs+XgCbPmAAmz5iAJs+ZACbPmYAmz5oAJs+agCbPmwAmz5uAJs+cACbPnIAmz50AJs+dgCbPngAmz56AJs+fACbPn4Amz5AANs+QgDbPkQA2z5GANs+SADbPkoA2z5MANs+TgDbPlAA2z5SANs+VADbPlYA2z5YANs+WgDbPlwA2z5eANs+YADbPmIA2z5kANs+ZgDbPmgA2z5qANs+bADbPm4A2z5wANs+cgDbPnQA2z52ANs+eADbPnoA2z58ANs+fgDbPkABGz5CARs+RAEbPkYBGz5IARs+SgEbPkwBGz5OARs+UAEbPlIBGz5UARs+VgEbPlgBGz5aARs+XAEbPl4BGz5gARs+YgEbPmQBGz5mARs+aAEbPmoBGz5sARs+bgEbPnABGz5yARs+dAEbPnYBGz54ARs+egEbPnwBGz5+ARs+QAFbPkIBWz5EAVs+RgFbPkgBWz5KAVs+TAFbPk4BWz5QAVs+UgFbPlQBWz5WAVs+WAFbPloBWz5cAVs+XgFbPmABWz5iAVs+ZAFbPmYBWz5oAVs+agFbPmwBWz5uAVs+cAFbPnIBWz50AVs+dgFbPngBWz56AVs+fAFbPn4BWz5AAZs+QgGbPkQBmz5GAZs+SAGbPkoBmz5MAZs+TgGbPlgBiE4IACATg==""#,
+.base64 "eOu/fyAGBYEAAB+RJAYFgQQAH5EABqXrCAbF6xAG5esYBgXopgMIfCAAgTkAAGA5AABs+QgAbPkQAGz5GABs+SAAbPkoAGz5MABs+TgAbPlAAGz5SABs+VAAbPlYAGz5YABs+WgAbPlwAGz5eABs+YAAbPmIAGz5kABs+ZgAbPmgAGz5qABs+bAAbPm4AGz5wABs+cgAbPnQAGz52ABs+eAAbPnoAGz58ABs+fgAbPkAAWz5CAFs+RABbPkYAWz5IAFs+SgBbPkwAWz5OAFs+UABbPlIAWz5UAFs+VgBbPlgAWz5aAFs+XABbPl4AWz5gAFs+YgBbPmQAWz5mAFs+aABbPmoAWz5sAFs+bgBbPnAAWz5yAFs+dABbPnYAWz54AFs+egBbPnwAWz5+AFs+QACbPkIAmz5EAJs+RgCbPkgAmz5KAJs+TACbPk4Amz5QAJs+UgCbPlQAmz5WAJs+WACbPloAmz5cAJs+XgCbPmAAmz5iAJs+ZACbPmYAmz5oAJs+agCbPmwAmz5uAJs+cACbPnIAmz50AJs+dgCbPngAmz56AJs+fACbPn4Amz5AANs+QgDbPkQA2z5GANs+SADbPkoA2z5MANs+TgDbPlAA2z5SANs+VADbPlYA2z5YANs+WgDbPlwA2z5eANs+YADbPmIA2z5kANs+ZgDbPmgA2z5qANs+bADbPm4A2z5wANs+cgDbPnQA2z52ANs+eADbPnoA2z58ANs+fgDbPkABGz5CARs+RAEbPkYBGz5IARs+SgEbPkwBGz5OARs+UAEbPlIBGz5UARs+VgEbPlgBGz5aARs+XAEbPl4BGz5gARs+YgEbPmQBGz5mARs+aAEbPmoBGz5sARs+bgEbPnABGz5yARs+dAEbPnYBGz54ARs+egEbPnwBGz5+ARs+QAFbPkIBWz5EAVs+RgFbPkgBWz5KAVs+TAFbPk4BWz5QAVs+UgFbPlQBWz5WAVs+WAFbPloBWz5cAVs+XgFbPmABWz5iAVs+ZAFbPmYBWz5oAVs+agFbPmwBWz5uAVs+cAFbPnIBWz50AVs+dgFbPngBWz56AVs+fAFbPn4BWz5AAZs+QgGbPkQBmz5GAZs+SAGbPkoBmz5MAZs+TgGbPlgBiE4AAAAOAAAYDgAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDkgAIBO""#,
         vg_triple_des_ecb64_decrypt = sym super::triple_des::vg_triple_des_ecb64_decrypt::vg_triple_des_ecb64_decrypt,
         vg_triple_des_decrypt_block = sym super::triple_des::vg_triple_des_decrypt_block::vg_triple_des_decrypt_block,
     )

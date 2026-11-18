@@ -1,7 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.AesGcmSiv.X86.Callee
+public import VerifiedGarbage.Proof.AesGcmSiv.X86.Derive
 public import VerifiedGarbage.Proof.Cmac.Block32
 import VerifiedGarbage.Proof.AesGcm.X86.Cmp
 import VerifiedGarbage.Proof.AesGcmSiv.X86.Run

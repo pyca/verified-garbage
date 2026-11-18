@@ -6,8 +6,6 @@ import VerifiedGarbage.Proof.Modes.AArch64.CbcEncChained
 public import VerifiedGarbage.Proof.TripleDes.CbcScratch
 import VerifiedGarbage.Proof.TripleDes.AArch64.CbcLit
 import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
-public import VerifiedGarbage.Proof.TripleDes.AArch64.ModeCore
-import VerifiedGarbage.Proof.TripleDes.AArch64.Link
 import VerifiedGarbage.Proof.TripleDes.AArch64.BlockSum
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.TripleDes.AArch64.SboxTable
@@ -19,8 +17,6 @@ meta import VerifiedGarbage.Proof.Modes.AArch64.CbcEncChained
 meta import VerifiedGarbage.Proof.TripleDes.CbcScratch
 meta import VerifiedGarbage.Proof.TripleDes.AArch64.CbcLit
 meta import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
-meta import VerifiedGarbage.Proof.TripleDes.AArch64.ModeCore
-meta import VerifiedGarbage.Proof.TripleDes.AArch64.Link
 meta import VerifiedGarbage.Proof.TripleDes.AArch64.BlockSum
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.TripleDes.AArch64.SboxTable

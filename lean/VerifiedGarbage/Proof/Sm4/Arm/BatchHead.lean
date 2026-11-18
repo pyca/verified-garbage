@@ -2,8 +2,8 @@ module
 
 import VerifiedGarbage.Proof.Sm4.Arm.BatchGroup
 public import VerifiedGarbage.Proof.Sm4.Arm.BatchPrologue
-public import VerifiedGarbage.Proof.Sm4.Arm.PreparedBody
-import VerifiedGarbage.Proof.Sm4.Arm.Core
+public import VerifiedGarbage.Proof.Sm4.Arm.PreparedVerified
+import VerifiedGarbage.Proof.Sm4.Arm.Group
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.Sm4.Arm.BatchCtr
 public import VerifiedGarbage.Proof.Framework.Covers

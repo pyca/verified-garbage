@@ -8,7 +8,6 @@ public import VerifiedGarbage.Impl.Blowfish.X86
 public import VerifiedGarbage.Proof.Blowfish.F
 public import VerifiedGarbage.Proof.MlDsa.X86.Pack.Run
 import VerifiedGarbage.Proof.Rc4.Dword
-public import VerifiedGarbage.Proof.Blowfish.Feistel
 
 /-! ### `Blowfish.X86.Cipher`, which this module and modules that import it used -/
 

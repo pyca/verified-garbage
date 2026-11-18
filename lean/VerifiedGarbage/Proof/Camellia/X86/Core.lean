@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 /-!
 # Eight blocks of bitsliced Camellia on x86 (32-bit): the rounds
 
-As on ARMv7 (`Proof/Camellia/Arm/Core.lean`): with the table of bitsliced
+As on ARMv7 (`Proof/Camellia/Arm/Crypt8.lean`): with the table of bitsliced
 subkeys `E 0 … E (8 g + 1)` in the scratch buffer (`CorePre`), the groups
 of rounds of `crypt8` take the halves in their slots through `groups g E`.
 They write only the slots below the table and the slot of the group's end

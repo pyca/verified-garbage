@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Gcm.PPC64LE.Ghash
-public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Contract
+public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Fn
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.OneShot
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.OneEntry
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.SealFused
@@ -16,7 +16,7 @@ public import VerifiedGarbage.Impl.AesGcm.PPC64LE
 # AES-GCM on PPC64LE: `vg_aes_gcm_seal`
 
 Untrusted: everything here is checked by Lean. As on ARMv7
-(`Proof/AesGcm/Arm/Seal.lean`): the entry, `oneAad`, a body for the text
+(`Proof/AesGcm/Arm/CTCrypt.lean`): the entry, `oneAad`, a body for the text
 and the tag copied out to `tag` (`sealBody_wp`), with `SealFused`'s body
 (`sealFused_wp`).
 -/

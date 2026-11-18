@@ -2,14 +2,11 @@ module
 
 public import VerifiedGarbage.Impl.Ffdh.X86_64.CheckDomain
 public import VerifiedGarbage.Proof.Bignum.X86_64.R2Impl
-public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Context
+public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Start
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Start
 import VerifiedGarbage.Proof.Ffdh.X86_64.Moves
 public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Setup
 import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Divides
-import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Range
-import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Loads
 import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Work
 import VerifiedGarbage.Proof.Ffdh.Domain
 import VerifiedGarbage.Proof.Bignum.Octets
