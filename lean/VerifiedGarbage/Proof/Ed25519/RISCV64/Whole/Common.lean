@@ -35,11 +35,11 @@ def shaHash : Impl.Hmac.Stream.RISCV64.Hash where
   N := 64
   D := 64
   F := 208
-  initN := Spec.Sha512.init512Api.name
+  initN := Spec.Sha512.init512Api.name ++ "_core"
   initC := Impl.Sha512.RISCV64.Stream.initWith Spec.Sha512.H0_512
-  updN := Spec.Sha512.updateApi.name
+  updN := Spec.Sha512.updateApi.name ++ "_core"
   updC := Impl.Sha512.RISCV64.Stream.update
-  finN := Spec.Sha512.finalizeApi.name
+  finN := Spec.Sha512.finalizeApi.name ++ "_core"
   finC := Impl.Sha512.RISCV64.Stream.finalize
 
 /-- What the proofs need of SHA-512's streaming functions: HMAC's facts about them

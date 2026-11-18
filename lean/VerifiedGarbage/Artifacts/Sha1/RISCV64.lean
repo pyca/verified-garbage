@@ -1,9 +1,8 @@
 module
 
 public import VerifiedGarbage.TCB.RISCV64.Target
-public import VerifiedGarbage.Proof.Sha1.RISCV64.Shared
+public import VerifiedGarbage.Proof.Sha1.RISCV64.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha1
 public import VerifiedGarbage.TCB.RISCV64.Print
 
 /-! # SHA-1 (FIPS 180-4) on RISC-V -/
@@ -13,17 +12,9 @@ public import VerifiedGarbage.TCB.RISCV64.Print
 namespace VG.Artifacts.Sha1.RISCV64
 
 def artifacts : List Artifact := [
-  Spec.Sha1.initApi.artifact RISCV64.target {
-    code := Impl.Sha1.RISCV64.Stream.init
-    verified := Proof.Sha1.RISCV64.Shared.init },
-  Spec.Sha1.updateApi.artifact RISCV64.target {
-    code := Impl.Sha1.RISCV64.Stream.update
-    verified := Proof.Sha1.RISCV64.Shared.update },
-  Spec.Sha1.finalizeApi.artifact RISCV64.target {
-    code := Impl.Sha1.RISCV64.Stream.finalize
-    verified := Proof.Sha1.RISCV64.Shared.finalize },
-  Spec.Sha1.digestApi.artifact RISCV64.target {
-    code := Impl.MdStream.RISCV64.Digest.digest Proof.Hmac.Stream.RISCV64.Sha1.hash
-    verified := Proof.Hmac.Stream.RISCV64.Sha1.digest }]
+  Spec.Sha1.initApi.artifact RISCV64.target Proof.Sha1.RISCV64.initReg,
+  Spec.Sha1.updateApi.artifact RISCV64.target Proof.Sha1.RISCV64.updateReg,
+  Spec.Sha1.finalizeApi.artifact RISCV64.target Proof.Sha1.RISCV64.finalizeReg,
+  Spec.Sha1.digestApi.artifact RISCV64.target Proof.Sha1.RISCV64.digestReg]
 
 end VG.Artifacts.Sha1.RISCV64

@@ -27,25 +27,25 @@ vg_hmac_md5_init:
 	add t1, t1, t2
 	beqz t1, 20f
 	addi a0, s8, 0
-	call {vg_md5_init}
+	call {vg_md5_init_core}
 	addi a0, s8, 0
 	addi a1, zero, 0
 	addi a2, s10, 0
 	addi a3, s11, 0
-	call {vg_md5_update}
+	call {vg_md5_update_core}
 	addi a0, s8, 0
 	addi a1, s11, 0
 	addi a2, s8, 80
-	call {vg_md5_finalize}
+	call {vg_md5_finalize_core}
 	addi s10, s8, 80
 	addi s11, zero, 16
 	j 21f
 20:
 21:
 	addi a0, s7, 0
-	call {vg_md5_init}
+	call {vg_md5_init_core}
 	addi a0, s9, 0
-	call {vg_md5_init}
+	call {vg_md5_init_core}
 	addi t5, zero, 54
 	addi t6, zero, 0
 	addi t2, s10, 0
@@ -79,7 +79,7 @@ vg_hmac_md5_init:
 	addi a1, zero, 0
 	addi a2, s9, 16
 	addi a3, zero, 64
-	call {vg_md5_update}
+	call {vg_md5_update_core}
 	addi t5, zero, 92
 	addi t6, zero, 0
 	addi t2, s10, 0
@@ -113,7 +113,7 @@ vg_hmac_md5_init:
 	addi a1, zero, 0
 	addi a2, s7, 16
 	addi a3, zero, 64
-	call {vg_md5_update}
+	call {vg_md5_update_core}
 	addi t1, zero, 0
 	sd t1, 0(s8)
 	sd t1, 8(s8)
@@ -154,7 +154,7 @@ vg_hmac_md5_finalize:
 	addi s10, a3, 0
 	addi a1, a2, 0
 	addi a2, t0, 0
-	call {vg_md5_finalize}
+	call {vg_md5_finalize_core}
 	lbu t1, 0(s9)
 	sb t1, 0(s7)
 	lbu t1, 1(s9)
@@ -191,11 +191,11 @@ vg_hmac_md5_finalize:
 	addi a1, zero, 64
 	addi a2, s8, 0
 	addi a3, zero, 16
-	call {vg_md5_update}
+	call {vg_md5_update_core}
 	addi a0, s7, 0
 	addi a1, zero, 80
 	addi a2, s10, 0
-	call {vg_md5_finalize}
+	call {vg_md5_finalize_core}
 	ld ra, 16(s8)
 	ld s7, 24(s8)
 	ld s9, 40(s8)

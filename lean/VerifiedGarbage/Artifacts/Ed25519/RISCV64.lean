@@ -15,7 +15,7 @@ namespace VG.Artifacts.Ed25519.RISCV64
 
 def artifacts : List Artifact := [
   Spec.Ed25519.keyPairApi.artifact RISCV64.target {
-    code := Impl.Ed25519.RISCV64.KeyPair.keyPair Spec.Sha512.digest512Api.name
+    code := Impl.Ed25519.RISCV64.KeyPair.keyPair (Spec.Sha512.digest512Api.name ++ "_core")
       Proof.Ed25519.RISCV64.KeyPair.dgCode "vg_ed25519_public_key_expanded"
       Impl.Ed25519.RISCV64.Whole.publicKeyExpandedCode
     verified := Proof.Ed25519.RISCV64.KeyPair.verified },

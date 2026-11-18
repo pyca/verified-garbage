@@ -27,25 +27,25 @@ vg_hmac_sha384_init:
 	add t1, t1, t2
 	beqz t1, 20f
 	addi a0, s8, 0
-	call {vg_sha384_init}
+	call {vg_sha384_init_core}
 	addi a0, s8, 0
 	addi a1, zero, 0
 	addi a2, s10, 0
 	addi a3, s11, 0
-	call {vg_sha512_update}
+	call {vg_sha512_update_core}
 	addi a0, s8, 0
 	addi a1, s11, 0
 	addi a2, s8, 192
-	call {vg_sha384_finalize}
+	call {vg_sha384_finalize_core}
 	addi s10, s8, 192
 	addi s11, zero, 48
 	j 21f
 20:
 21:
 	addi a0, s7, 0
-	call {vg_sha384_init}
+	call {vg_sha384_init_core}
 	addi a0, s9, 0
-	call {vg_sha384_init}
+	call {vg_sha384_init_core}
 	addi t5, zero, 54
 	addi t6, zero, 0
 	addi t2, s10, 0
@@ -79,7 +79,7 @@ vg_hmac_sha384_init:
 	addi a1, zero, 0
 	addi a2, s9, 64
 	addi a3, zero, 128
-	call {vg_sha512_update}
+	call {vg_sha512_update_core}
 	addi t5, zero, 92
 	addi t6, zero, 0
 	addi t2, s10, 0
@@ -113,7 +113,7 @@ vg_hmac_sha384_init:
 	addi a1, zero, 0
 	addi a2, s7, 64
 	addi a3, zero, 128
-	call {vg_sha512_update}
+	call {vg_sha512_update_core}
 	addi t1, zero, 0
 	sd t1, 0(s8)
 	sd t1, 8(s8)
@@ -172,7 +172,7 @@ vg_hmac_sha384_finalize:
 	addi s10, a3, 0
 	addi a1, a2, 0
 	addi a2, t0, 0
-	call {vg_sha384_finalize}
+	call {vg_sha384_finalize_core}
 	lbu t1, 0(s9)
 	sb t1, 0(s7)
 	lbu t1, 1(s9)
@@ -305,11 +305,11 @@ vg_hmac_sha384_finalize:
 	addi a1, zero, 128
 	addi a2, s8, 0
 	addi a3, zero, 48
-	call {vg_sha512_update}
+	call {vg_sha512_update_core}
 	addi a0, s7, 0
 	addi a1, zero, 176
 	addi a2, s10, 0
-	call {vg_sha384_finalize}
+	call {vg_sha384_finalize_core}
 	ld ra, 48(s8)
 	ld s7, 56(s8)
 	ld s9, 72(s8)

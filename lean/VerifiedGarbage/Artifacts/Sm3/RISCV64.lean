@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.TCB.RISCV64.Target
-public import VerifiedGarbage.Proof.Sm3.RISCV64.Shared
+public import VerifiedGarbage.Proof.Sm3.RISCV64.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.RISCV64.Print
 
@@ -12,14 +12,8 @@ public import VerifiedGarbage.TCB.RISCV64.Print
 namespace VG.Artifacts.Sm3.RISCV64
 
 def artifacts : List Artifact := [
-  Spec.Sm3.initApi.artifact RISCV64.target {
-    code := Impl.Sm3.RISCV64.Stream.init
-    verified := Proof.Sm3.RISCV64.Shared.init },
-  Spec.Sm3.updateApi.artifact RISCV64.target {
-    code := Impl.Sm3.RISCV64.Stream.update
-    verified := Proof.Sm3.RISCV64.Shared.update },
-  Spec.Sm3.finalizeApi.artifact RISCV64.target {
-    code := Impl.Sm3.RISCV64.Stream.finalize
-    verified := Proof.Sm3.RISCV64.Shared.finalize }]
+  Spec.Sm3.initApi.artifact RISCV64.target Proof.Sm3.RISCV64.initReg,
+  Spec.Sm3.updateApi.artifact RISCV64.target Proof.Sm3.RISCV64.updateReg,
+  Spec.Sm3.finalizeApi.artifact RISCV64.target Proof.Sm3.RISCV64.finalizeReg]
 
 end VG.Artifacts.Sm3.RISCV64

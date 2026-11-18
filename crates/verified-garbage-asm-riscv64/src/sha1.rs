@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Sha1.initContract`. The streaming state is the hash value followed by a buffered partial block (`VG.Spec.Sha1.Repr`).
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 84 bytes.
@@ -16,7 +18,7 @@ pub(crate) unsafe extern "C" fn vg_sha1_init(state: *mut [u8; 84]) {
     core::arch::naked_asm!(
         r#".option push
 .option arch, +m, +c
-.base64 "tyJFZ5uCEjAjAFUAE9OCAKMAZQAT0wIBIwFlABPTggGjAWUAt7LN75uCkrgjAlUAE9OCAKMCZQAT0wIBIwNlABPTggGjA2UAt+K6mJuC4s8jBFUAE9OCAKMEZQAT0wIBIwVlABPTggGjBWUAt1IyEJuCYkcjBlUAE9OCAKMGZQAT0wIBIwdlABPTggGjB2UAt+LSw5uCAh8jCFUAE9OCAKMIZQAT0wIBIwllABPTggGjCWUAgoA="
+.base64 "tyJFZ5uCEjAjAFUAE9OCAKMAZQAT0wIBIwFlABPTggGjAWUAt7LN75uCkrgjAlUAE9OCAKMCZQAT0wIBIwNlABPTggGjA2UAt+K6mJuC4s8jBFUAE9OCAKMEZQAT0wIBIwVlABPTggGjBWUAt1IyEJuCYkcjBlUAE9OCAKMGZQAT0wIBIwdlABPTggGjB2UAt+LSw5uCAh8jCFUAE9OCAKMIZQAT0wIBIwllABPTggGjCWUAgUIBRYFFAUaBRgFHgUcBSIFIgUIBQ4FDAU6BTgFPgU+CgA=="
 .option pop"#,
     )
 }
@@ -24,6 +26,8 @@ pub(crate) unsafe extern "C" fn vg_sha1_init(state: *mut [u8; 84]) {
 /// Absorbs data into a SHA-1 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), it then represents that message followed by the `len` bytes at `data`.
 ///
 /// Contract: `VG.Spec.Sha1.updateContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -102,7 +106,7 @@ bnez s4, 22b
 j 21f
 20:
 21:
-.base64 "gzAJBYM0iQWDOYkGAzoJB4M6iQcDOwkIAzkJBklhgoA="
+.base64 "gzAJBYM0iQWDOYkGAzoJB4M6iQcDOwkIAzkJBklhgUJ1cQqDIzBTACM0UwAjOFMAIzxTACMwUwIjNFMCIzhTAiM8UwIjMFMEIzRTBCM4UwQjPFMEIzBTBiM0UwYjOFMGIzxTBiMwUwgjNFMISWEBRYFFAUaBRgFHgUcBSIFIgUIBQ4FDAU6BTgFPgU+CgA=="
 .option pop"#,
         vg_sha1_compress = sym super::sha1::vg_sha1_compress::vg_sha1_compress,
     )
@@ -111,6 +115,8 @@ j 21f
 /// Finishes a SHA-1 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), writes the SHA-1 digest of that message to `*out`.
 ///
 /// Contract: `VG.Spec.Sha1.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -149,7 +155,7 @@ j 27f
 call {vg_sha1_compress}
 .base64 "gUp9Gw=="
 beqz s6, 20b
-.base64 "A8MEAIPDFACiAzNjcwCDwyQAwgMzY3MAg8M0AOIDM2NzAJNTgwEjgHkAk1MDAaOAeQCTU4MAI4F5AJNTAwCjgXkAA8NEAIPDVACiAzNjcwCDw2QAwgMzY3MAg8N0AOIDM2NzAJNTgwEjgnkAk1MDAaOCeQCTU4MAI4N5AJNTAwCjg3kAA8OEAIPDlACiAzNjcwCDw6QAwgMzY3MAg8O0AOIDM2NzAJNTgwEjhHkAk1MDAaOEeQCTU4MAI4V5AJNTAwCjhXkAA8PEAIPD1ACiAzNjcwCDw+QAwgMzY3MAg8P0AOIDM2NzAJNTgwEjhnkAk1MDAaOGeQCTU4MAI4d5AJNTAwCjh3kAA8MEAYPDFAGiAzNjcwCDwyQBwgMzY3MAg8M0AeIDM2NzAJNTgwEjiHkAk1MDAaOIeQCTU4MAI4l5AJNTAwCjiXkAgzAJBYM0iQWDOYkGAzoJB4M6iQcDOwkIAzkJBklhgoA="
+.base64 "A8MEAIPDFACiAzNjcwCDwyQAwgMzY3MAg8M0AOIDM2NzAJNTgwEjgHkAk1MDAaOAeQCTU4MAI4F5AJNTAwCjgXkAA8NEAIPDVACiAzNjcwCDw2QAwgMzY3MAg8N0AOIDM2NzAJNTgwEjgnkAk1MDAaOCeQCTU4MAI4N5AJNTAwCjg3kAA8OEAIPDlACiAzNjcwCDw6QAwgMzY3MAg8O0AOIDM2NzAJNTgwEjhHkAk1MDAaOEeQCTU4MAI4V5AJNTAwCjhXkAA8PEAIPD1ACiAzNjcwCDw+QAwgMzY3MAg8P0AOIDM2NzAJNTgwEjhnkAk1MDAaOGeQCTU4MAI4d5AJNTAwCjh3kAA8MEAYPDFAGiAzNjcwCDwyQBwgMzY3MAg8M0AeIDM2NzAJNTgwEjiHkAk1MDAaOIeQCTU4MAI4l5AJNTAwCjiXkAgzAJBYM0iQWDOYkGAzoJB4M6iQcDOwkIAzkJBklhgUJ1cQqDIzBTACM0UwAjOFMAIzxTACMwUwIjNFMCIzhTAiM8UwIjMFMEIzRTBCM4UwQjPFMEIzBTBiM0UwYjOFMGIzxTBiMwUwgjNFMISWEBRYFFAUaBRgFHgUcBSIFIgUIBQ4FDAU6BTgFPgU+CgA=="
 .option pop"#,
         vg_sha1_compress = sym super::sha1::vg_sha1_compress::vg_sha1_compress,
     )
@@ -158,6 +164,8 @@ beqz s6, 20b
 /// Computes the SHA-1 digest of the `len` bytes at `data` (20 bytes, `VG.Spec.Sha1.hash`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-1 computation with that message.
 ///
 /// Contract: `VG.Spec.Sha1.digestContract`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -171,16 +179,16 @@ pub(crate) unsafe extern "C" fn vg_sha1_digest(data: *const u8, len: usize, out:
         r#".option push
 .option arch, +m, +c
 .base64 "dXGKgiO8EgQjsHIHI7SCByO4kgcjvKIHI7CyCRaMsowqja6NYoU="
-call {vg_sha1_init}
+call {vg_sha1_init_core}
 .base64 "YoWBRWqG7oY="
-call {vg_sha1_update}
+call {vg_sha1_update_core}
 .base64 "YoXuhWaG"
-call {vg_sha1_finalize}
-.base64 "AUMjMGwAIzRsACM4bAAjPGwAIzBsAiM0bAIjOGwCIzxsAiMwbAQjNGwEIzhsBIMwjAWDOwwGgzwMBwM9jAeDPQwIAzyMBklhgoA="
+call {vg_sha1_finalize_core}
+.base64 "AUMjMGwAIzRsACM4bAAjPGwAIzBsAiM0bAIjOGwCIzxsAiMwbAQjNGwEIzhsBIMwjAWDOwwGgzwMBwM9jAeDPQwIAzyMBklhgUItcQqDIzBTACM0UwAjOFMAIzxTACMwUwIjNFMCIzhTAiM8UwIjMFMEIzRTBCM4UwQjPFMEIzBTBiM0UwYjOFMGIzxTBiMwUwgjNFMIIzhTCCM8UwgjMFMKIzRTCiM4UwojPFMKIzBTDCM0UwwjOFMMIzxTDCMwUw4jNFMOIzhTDiM8Uw4jMFMQIzRTECM4UxAjPFMQFWEBRYFFAUaBRgFHgUcBSIFIgUIBQ4FDAU6BTgFPgU+CgA=="
 .option pop"#,
-        vg_sha1_init = sym super::sha1::vg_sha1_init,
-        vg_sha1_update = sym super::sha1::vg_sha1_update,
-        vg_sha1_finalize = sym super::sha1::vg_sha1_finalize,
+        vg_sha1_init_core = sym super::sha1::vg_sha1_init_core::vg_sha1_init_core,
+        vg_sha1_update_core = sym super::sha1::vg_sha1_update_core::vg_sha1_update_core,
+        vg_sha1_finalize_core = sym super::sha1::vg_sha1_finalize_core::vg_sha1_finalize_core,
     )
 }
 
@@ -189,5 +197,17 @@ call {vg_sha1_finalize}
 pub(crate) mod vg_sha1_compress;
 
 #[rustfmt::skip]
+#[path = "internal/vg_sha1_finalize_core.rs"]
+pub(crate) mod vg_sha1_finalize_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha1_init_core.rs"]
+pub(crate) mod vg_sha1_init_core;
+
+#[rustfmt::skip]
 #[path = "internal/vg_sha1_state_digest.rs"]
 pub(crate) mod vg_sha1_state_digest;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha1_update_core.rs"]
+pub(crate) mod vg_sha1_update_core;

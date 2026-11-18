@@ -22,19 +22,19 @@ pub(crate) unsafe extern "C" fn vg_hmac_sha512_256_init(inner: *mut [u8; 192], o
 .base64 "bXGKgiOwEg4jtHIPI7iCDyO8kg8jsKIRI7SyEaqLFoyujDKNto0T04YAk/P2D5OD8weT04MAHpM="
 beqz t1, 20f
 .base64 "YoU="
-call {vg_sha512_256_init}
+call {vg_sha512_256_init_core}
 .base64 "YoWBRWqG7oY="
-call {vg_sha512_update}
+call {vg_sha512_update_core}
 .base64 "YoXuhRMGDAw="
-call {vg_sha512_256_finalize}
+call {vg_sha512_256_finalize_core}
 .base64 "Ew0MDJMNAAI="
 j 21f
 20:
 21:
 .base64 "XoU="
-call {vg_sha512_256_init}
+call {vg_sha512_256_init_core}
 .base64 "ZoU="
-call {vg_sha512_256_init}
+call {vg_sha512_256_init_core}
 .base64 "Ew9gA4FP6oNujg=="
 beqz t3, 22f
 24:
@@ -52,7 +52,7 @@ j 26f
 25:
 26:
 .base64 "XoWBRROGDASTBgAI"
-call {vg_sha512_update}
+call {vg_sha512_update_core}
 .base64 "Ew/ABYFP6oNujg=="
 beqz t3, 28f
 210:
@@ -70,12 +70,12 @@ j 212f
 211:
 212:
 .base64 "ZoWBRROGCwSTBgAI"
-call {vg_sha512_update}
+call {vg_sha512_update_core}
 .base64 "AUMjMGwAIzRsACM4bAAjPGwAIzBsAiM0bAIjOGwCIzxsAiMwbAQjNGwEIzhsBCM8bAQjMGwGIzRsBiM4bAYjPGwGIzBsCCM0bAgjOGwIIzxsCCMwbAojNGwKIzhsCiM8bAojMGwMIzRsDCM4bAwjPGwMgzAMDoM7jA6DPIwPAz0MEIM9jBADPAwPUWGCgA=="
 .option pop"#,
-        vg_sha512_256_init = sym super::sha512::vg_sha512_256_init,
-        vg_sha512_update = sym super::sha512::vg_sha512_update,
-        vg_sha512_256_finalize = sym super::sha512::vg_sha512_256_finalize,
+        vg_sha512_256_init_core = sym super::sha512::vg_sha512_256_init_core::vg_sha512_256_init_core,
+        vg_sha512_update_core = sym super::sha512::vg_sha512_update_core::vg_sha512_update_core,
+        vg_sha512_256_finalize_core = sym super::sha512::vg_sha512_256_finalize_core::vg_sha512_256_finalize_core,
     )
 }
 
@@ -97,14 +97,14 @@ pub(crate) unsafe extern "C" fn vg_hmac_sha512_256_finalize(inner: *mut [u8; 192
         r#".option push
 .option arch, +m, +c
 .base64 "XXGKgiOwEgIjtHIDI7iCAyO8kgMjsKIFI7SyBaqLFoyujDaNsoUWhg=="
-call {vg_sha512_256_finalize}
+call {vg_sha512_256_finalize_core}
 .base64 "A8MMACOAawADwxwAo4BrAAPDLAAjgWsAA8M8AKOBawADw0wAI4JrAAPDXACjgmsAA8NsACODawADw3wAo4NrAAPDjAAjhGsAA8OcAKOEawADw6wAI4VrAAPDvACjhWsAA8PMACOGawADw9wAo4ZrAAPD7AAjh2sAA8P8AKOHawADwwwBI4hrAAPDHAGjiGsAA8MsASOJawADwzwBo4lrAAPDTAEjimsAA8NcAaOKawADw2wBI4trAAPDfAGji2sAA8OMASOMawADw5wBo4xrAAPDrAEjjWsAA8O8AaONawADw8wBI45rAAPD3AGjjmsAA8PsASOPawADw/wBo49rAAPDDAIjgGsCA8McAqOAawIDwywCI4FrAgPDPAKjgWsCA8NMAiOCawIDw1wCo4JrAgPDbAIjg2sCA8N8AqODawIDw4wCI4RrAgPDnAKjhGsCA8OsAiOFawIDw7wCo4VrAgPDzAIjhmsCA8PcAqOGawIDw+wCI4drAgPD/AKjh2sCA8MMAyOIawIDwxwDo4hrAgPDLAMjiWsCA8M8A6OJawIDw0wDI4prAgPDXAOjimsCA8NsAyOLawIDw3wDo4trAgPDjAMjjGsCA8OcA6OMawIDw6wDI41rAgPDvAOjjWsCA8PMAyOOawIDw9wDo45rAgPD7AMjj2sCA8P8A6OPawJehZMFAAhihpMGAAI="
-call {vg_sha512_update}
+call {vg_sha512_update_core}
 .base64 "XoWTBQAKaoY="
-call {vg_sha512_256_finalize}
+call {vg_sha512_256_finalize_core}
 .base64 "gzAMAoM7jAKDPIwDAz0MBIM9jAQDPAwDYWGCgA=="
 .option pop"#,
-        vg_sha512_256_finalize = sym super::sha512::vg_sha512_256_finalize,
-        vg_sha512_update = sym super::sha512::vg_sha512_update,
+        vg_sha512_256_finalize_core = sym super::sha512::vg_sha512_256_finalize_core::vg_sha512_256_finalize_core,
+        vg_sha512_update_core = sym super::sha512::vg_sha512_update_core::vg_sha512_update_core,
     )
 }

@@ -8,6 +8,8 @@
 ///
 /// It runs `vg_sha384_init`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 192 bytes.
@@ -24,6 +26,8 @@ pub unsafe fn vg_sha384_init_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *m
 /// Contract: `VG.Spec.Sha512.initContract` for `VG.Spec.Sha512.H0_512`. The streaming state is the hash value followed by a buffered partial block (`VG.Spec.Sha512.Repr`).
 ///
 /// It runs `vg_sha512_init`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -42,6 +46,8 @@ pub unsafe fn vg_sha512_init_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *m
 ///
 /// It runs `vg_sha512_224_init`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 192 bytes.
@@ -59,6 +65,8 @@ pub unsafe fn vg_sha512_224_init_auto(_dit: verified_garbage_cpu::Dit<'_>, state
 ///
 /// It runs `vg_sha512_256_init`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 192 bytes.
@@ -75,6 +83,8 @@ pub unsafe fn vg_sha512_256_init_auto(_dit: verified_garbage_cpu::Dit<'_>, state
 /// Contract: `VG.Spec.Sha512.updateContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
 ///
 /// It runs `vg_sha512_update`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -94,6 +104,8 @@ pub unsafe fn vg_sha512_update_auto(_dit: verified_garbage_cpu::Dit<'_>, state: 
 /// Contract: `VG.Spec.Sha512.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
 ///
 /// It runs `vg_sha512_finalize`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -116,6 +128,8 @@ pub unsafe fn vg_sha512_finalize_auto(_dit: verified_garbage_cpu::Dit<'_>, state
 ///
 /// It runs `vg_sha384_finalize`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 192 bytes.
@@ -136,6 +150,8 @@ pub unsafe fn vg_sha384_finalize_auto(_dit: verified_garbage_cpu::Dit<'_>, state
 /// Contract: `VG.Spec.Sha512.finalizeDigestContract` for `VG.Spec.Sha512.H0_512_256` and `VG.Spec.Sha512.sha512_256`. Constant time: only the pointers and `count` may affect timing, not the state.
 ///
 /// It runs `vg_sha512_256_finalize`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -158,6 +174,8 @@ pub unsafe fn vg_sha512_256_finalize_auto(_dit: verified_garbage_cpu::Dit<'_>, s
 ///
 /// It runs `vg_sha512_224_finalize`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 192 bytes.
@@ -179,6 +197,8 @@ pub unsafe fn vg_sha512_224_finalize_auto(_dit: verified_garbage_cpu::Dit<'_>, s
 ///
 /// It runs `vg_sha384_digest`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `data` must be valid for reads of `len` bytes.
@@ -197,6 +217,8 @@ pub unsafe fn vg_sha384_digest_auto(_dit: verified_garbage_cpu::Dit<'_>, data: *
 /// Contract: `VG.Spec.Sha512.digestContract` for `VG.Spec.Sha512.sha512`. Constant time: only the pointers and `len` may affect timing, not the data.
 ///
 /// It runs `vg_sha512_digest`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -217,6 +239,8 @@ pub unsafe fn vg_sha512_digest_auto(_dit: verified_garbage_cpu::Dit<'_>, data: *
 ///
 /// It runs `vg_sha512_224_digest`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `data` must be valid for reads of `len` bytes.
@@ -235,6 +259,8 @@ pub unsafe fn vg_sha512_224_digest_auto(_dit: verified_garbage_cpu::Dit<'_>, dat
 /// Contract: `VG.Spec.Sha512.digestContract` for `VG.Spec.Sha512.sha512_256`. Constant time: only the pointers and `len` may affect timing, not the data.
 ///
 /// It runs `vg_sha512_256_digest`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///

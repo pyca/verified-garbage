@@ -16,7 +16,7 @@ vg_ed25519_key_pair:
 	addi a0, a2, 0
 	addi a2, a1, 0
 	addi a1, zero, 32
-	call {vg_sha512_digest}
+	call {vg_sha512_digest_core}
 	addi t0, sp, 0
 	ld a0, 8(t0)
 	ld a1, 16(t0)
@@ -262,21 +262,21 @@ vg_ed25519_sign_expanded:
 	ld a5, 184(s11)
 	sd a5, 56(s11)
 	addi a0, s10, 0
-	call {vg_sha512_init}
+	call {vg_sha512_init_core}
 	addi a0, s10, 0
 	addi a1, zero, 0
 	addi a2, s11, 32
 	addi a3, zero, 32
-	call {vg_sha512_update}
+	call {vg_sha512_update_core}
 	addi a0, s10, 0
 	addi a1, zero, 32
 	addi a2, s8, 0
 	addi a3, s9, 0
-	call {vg_sha512_update}
+	call {vg_sha512_update_core}
 	addi a0, s10, 0
 	addi a1, s9, 32
 	addi a2, s11, 128
-	call {vg_sha512_finalize}
+	call {vg_sha512_finalize_core}
 	addi a0, s11, 64
 	addi a1, s11, 128
 	addi a2, s10, 0
@@ -286,26 +286,26 @@ vg_ed25519_sign_expanded:
 	addi a2, s10, 0
 	call {vg_ed25519_scalar_base}
 	addi a0, s10, 0
-	call {vg_sha512_init}
+	call {vg_sha512_init_core}
 	addi a0, s10, 0
 	addi a1, zero, 0
 	addi a2, s7, 0
 	addi a3, zero, 32
-	call {vg_sha512_update}
+	call {vg_sha512_update_core}
 	addi a0, s10, 0
 	addi a1, zero, 32
 	addi a2, s11, 192
 	addi a3, zero, 32
-	call {vg_sha512_update}
+	call {vg_sha512_update_core}
 	addi a0, s10, 0
 	addi a1, zero, 64
 	addi a2, s8, 0
 	addi a3, s9, 0
-	call {vg_sha512_update}
+	call {vg_sha512_update_core}
 	addi a0, s10, 0
 	addi a1, s9, 64
 	addi a2, s11, 128
-	call {vg_sha512_finalize}
+	call {vg_sha512_finalize_core}
 	addi a0, s11, 96
 	addi a1, s11, 128
 	addi a2, s10, 0
@@ -564,26 +564,26 @@ vg_ed25519_verify:
 	lbu a5, 31(a0)
 	sb a5, 223(s10)
 	addi a0, s9, 0
-	call {vg_sha512_init}
+	call {vg_sha512_init_core}
 	addi a0, s9, 0
 	addi a1, zero, 0
 	addi a2, s10, 128
 	addi a3, zero, 32
-	call {vg_sha512_update}
+	call {vg_sha512_update_core}
 	addi a0, s9, 0
 	addi a1, zero, 32
 	addi a2, s10, 192
 	addi a3, zero, 32
-	call {vg_sha512_update}
+	call {vg_sha512_update_core}
 	addi a0, s9, 0
 	addi a1, zero, 64
 	addi a2, s7, 0
 	addi a3, s8, 0
-	call {vg_sha512_update}
+	call {vg_sha512_update_core}
 	addi a0, s9, 0
 	addi a1, s8, 64
 	addi a2, s10, 64
-	call {vg_sha512_finalize}
+	call {vg_sha512_finalize_core}
 	addi a0, s10, 0
 	addi a1, s10, 64
 	addi a2, s9, 0

@@ -2,8 +2,8 @@
 //! The table of functions `VG_HMAC_SHA512_256` of the verified functions for `riscv64` (`Artifact.tables`).
 #![allow(dead_code)]
 
-/// The table of functions `VG_HMAC_SHA512_256` of the interface `Hmac`: `vg_hmac_sha512_256_init`, `vg_sha512_update`, `vg_hmac_sha512_256_finalize`, then the data 7, 32, 128.
+/// The table of functions `VG_HMAC_SHA512_256` of the interface `Hmac`: `vg_hmac_sha512_256_init`, `vg_sha512_update_core`, `vg_hmac_sha512_256_finalize`, then the data 7, 32, 128.
 pub static VG_HMAC_SHA512_256: super::Hmac = super::Hmac {
-    fns: [crate::hmac_sha512_256::vg_hmac_sha512_256_init as *const (), crate::sha512::vg_sha512_update as *const (), crate::hmac_sha512_256::vg_hmac_sha512_256_finalize as *const ()],
+    fns: [crate::hmac_sha512_256::vg_hmac_sha512_256_init as *const (), crate::sha512::vg_sha512_update_core::vg_sha512_update_core as *const (), crate::hmac_sha512_256::vg_hmac_sha512_256_finalize as *const ()],
     data: [7, 32, 128],
 };
