@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Seed.AArch64.Frame
 public import VerifiedGarbage.Proof.Seed.AArch64.EcbCall
 public import VerifiedGarbage.Proof.Seed.AArch64.Verified
 public import VerifiedGarbage.Proof.Seed.AArch64.ModesResidue
+public import VerifiedGarbage.Proof.Seed.AArch64.EcbResidue
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.AArch64.Print
 
@@ -19,10 +20,12 @@ def artifacts : List Artifact := [
     verified := Proof.Seed.AArch64.ModesResidue.expandKeyCode_verified
     residue := some ⟨Proof.Seed.AArch64.ModesResidue.expandKeyCode_noResidue⟩ },
   Spec.Seed.ecbEncryptApi.artifact AArch64.target {
-    code := Impl.StackScratch.AArch64.withStackScratchWiped 1456 .x3 182 Impl.Seed.AArch64.ecbEncrypt
-    verified := Proof.Seed.AArch64.ecbFew_framed .encrypt },
+    code := Proof.Seed.AArch64.EcbResidue.ecbEncryptCode
+    verified := Proof.Seed.AArch64.EcbResidue.ecbEncryptCode_verified
+    residue := some ⟨Proof.Seed.AArch64.EcbResidue.ecbEncryptCode_noResidue⟩ },
   Spec.Seed.ecbDecryptApi.artifact AArch64.target {
-    code := Impl.StackScratch.AArch64.withStackScratchWiped 1456 .x3 182 Impl.Seed.AArch64.ecbDecrypt
-    verified := Proof.Seed.AArch64.ecbFew_framed .decrypt }]
+    code := Proof.Seed.AArch64.EcbResidue.ecbDecryptCode
+    verified := Proof.Seed.AArch64.EcbResidue.ecbDecryptCode_verified
+    residue := some ⟨Proof.Seed.AArch64.EcbResidue.ecbDecryptCode_noResidue⟩ }]
 
 end VG.Artifacts.Seed.AArch64

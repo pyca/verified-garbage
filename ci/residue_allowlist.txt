@@ -300,8 +300,6 @@ aarch64 vg_rsa_pkcs1_decrypt_precomputed
 aarch64 vg_rsa_pkcs1_decrypt_precomputed_sha256_sha2
 aarch64 vg_rsa_pkcs1_sign_precomputed
 aarch64 vg_rsa_private_precompute
-aarch64 vg_seed_ecb_decrypt
-aarch64 vg_seed_ecb_encrypt
 aarch64 vg_sha1_digest
 aarch64 vg_sha1_digest_sha2
 aarch64 vg_sha1_finalize
