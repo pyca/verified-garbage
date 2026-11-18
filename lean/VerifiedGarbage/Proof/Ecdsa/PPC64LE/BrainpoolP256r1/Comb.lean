@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Main
+public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.CombAll
 public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.BrainpoolP256r1.Contract
 public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP256r1.PPC64LEComb
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
@@ -15,6 +16,7 @@ import VerifiedGarbage.Proof.Ecdsa.PPC64LE.BrainpoolP256r1
 public import VerifiedGarbage.Proof.BrainpoolP256r1.PPC64LE.Comb
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Main
+meta import VerifiedGarbage.Proof.Ecdsa.PPC64LE.CombAll
 meta import VerifiedGarbage.Proof.Ecdsa.PPC64LE.BrainpoolP256r1.Contract
 meta import VerifiedGarbage.Impl.Ecdsa.BrainpoolP256r1.PPC64LEComb
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
@@ -95,30 +97,14 @@ theorem signPPC_implies : signPPC.Implies (Proof.Ecdsa.Instance.signContract Spe
 
 
 /-- The signature's contract with the table, as the proof states it. -/
-def signPC : Contract isa where
-  pre s := signPPC.pre (stripConsts brainpoolp256r1CombConsts s) ∧ ConstsOk brainpoolp256r1CombConsts 0 s
-  post := signPPC.post
-  pub s₁ s₂ := signPPC.pub s₁ s₂ ∧ s₁.syms brainpoolp256r1Comb.tsym = s₂.syms brainpoolp256r1Comb.tsym
+def signPC : Contract isa := Tab.withTable signPPC brainpoolp256r1CombConsts brainpoolp256r1Comb.tsym
 
 theorem combSign_ok (hL : Weierstrass.Law Spec.BrainpoolP256r1.curve) (s : State) (hs : signPC.pre s) :
     ∃ t s', Exec isa signBrainpoolP256r1Comb s t s' ∧ abiPreserved s s' ∧ signPC.post s s' := by
   obtain ⟨hp, hk⟩ := hs
-  have p := pre_of hp
-  have hpre : Pre brainpoolp256r1 s (constRegs brainpoolp256r1CombConsts s) := by
-    refine ⟨?_, p.wr, p.out_sc, p.d_sc, p.digest_sc, p.k_sc, p.out_fit, p.d_fit, p.digest_fit, p.k_fit, p.sc_fit⟩
-    rw [← List.take_append_drop (s.rd.length - brainpoolp256r1CombConsts.length) s.rd, hk.1]
-    exact congrArg (fun rs => rs ++ constRegs brainpoolp256r1CombConsts s) p.rd
-  have member : (brainpoolp256r1Comb.tsym, brainpoolp256r1CombWords) ∈ brainpoolp256r1CombConsts := List.mem_singleton_self _
-  have ht : TableMem s (s.syms brainpoolp256r1Comb.tsym) brainpoolp256r1CombWords :=
-    ⟨hk.fit member, ⟨_, List.mem_append_left _ (hk.mem_rd member), Region.contains_self _ _⟩,
-      fun i hi => hk.readW member hi⟩
-  have hd : Region.Disjoint ⟨s.syms brainpoolp256r1Comb.tsym, 8 * brainpoolp256r1CombWords.length⟩ ⟨s.gpr .r7, 8192⟩ :=
-    hk.disjoint_wr member (by rw [hpre.wr]; simp)
-  obtain ⟨t, s', he, K, hpost⟩ := signWith_ok brainpoolp256r1_ok (by decide) hL hpre fun s₁ S₁ sy =>
-    Proof.BrainpoolP256r1.PPC64LE.comb_generator_ok hL S₁
-      (ht.unch (by rw [S₁.rk.rd, S₁.rk.wr]) S₁.whole (fun w hw => by
-        rw [List.mem_singleton] at hw; subst hw; decide) hd) (by rw [sy]) hd
-  exact ⟨t, s', he, ⟨K.saved, K.sp, K.lr⟩, post_of hpost⟩
+  obtain ⟨t, s', he, K, hpost⟩ := Tab.sign_ok brainpoolp256r1_ok (by decide) hL
+    (Proof.BrainpoolP256r1.PPC64LE.comb_generator_ok hL) (pre_of hp) hk
+  exact ⟨t, s', he, K, Tab.post_intro (post_of hpost)⟩
 
 theorem combSign_ct : ConstantTime isa signPC.pre signPC.pub signBrainpoolP256r1Comb :=
   VG.Taint.constantTime (A := vectorTaintSym [brainpoolp256r1Comb.tsym]) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7])
@@ -163,13 +149,7 @@ theorem combSign_sat :
 
 theorem signPC_implies :
     signPC.Implies (Proof.Ecdsa.Instance.signContract Spec.Ecdsa.BrainpoolP256r1.inst (abi.withConsts brainpoolp256r1CombConsts)) :=
-  { pre := fun _ hs => ⟨signPPC_implies.pre _ (pre_consts.mp hs).1, (pre_consts.mp hs).2⟩
-    post := fun s s' hs hp => post_consts.mpr (signPPC_implies.post (stripConsts brainpoolp256r1CombConsts s) s'
-      (pre_consts.mp hs).1 hp)
-    pub := fun s₁ s₂ h₁ h₂ hp => ⟨signPPC_implies.pub (stripConsts brainpoolp256r1CombConsts s₁)
-        (stripConsts brainpoolp256r1CombConsts s₂) (pre_consts.mp h₁).1 (pre_consts.mp h₂).1 (pub_consts.mp hp).1,
-      (pub_consts.mp hp).2 _ List.mem_cons_self⟩
-    sat := ⟨combSatC, combSign_sat⟩ }
+  Tab.implies signPPC_implies ⟨combSatC, combSign_sat⟩
 
 theorem combSign_verified (hL : Weierstrass.Law Spec.BrainpoolP256r1.curve) :
     Verified PPC64LE.target signBrainpoolP256r1Comb

@@ -640,10 +640,8 @@ theorem ladPowWith_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) {s₀ : State} {base : Add
     by rw [e₆ (by decide) (by decide) (by decide)]; exact lx₅,
     by rw [e₆ (by decide) (by decide) (by decide)]; exact ly₅,
     by rw [e₆ (by decide) (by decide) (by decide)]; exact lz₅, lt₆, ?_⟩
-  · rw [e₆ hi (by intro h; subst h; simp at hl) (by
-      simp only [List.mem_cons, ladIx, not_or] at hl
-      simp only [DX, T2, DY, DZ, TX, TY, TZ, T0, T1] at hl ⊢
-      omega), e₅ hi hl]
+  · rw [e₆ hi (by intro h; subst h; simp at hl)
+      ((by decide : ∀ i < 45, i ∉ ACC :: PT :: ladIx → i < DX ∨ T2 < i) _ hi hl), e₅ hi hl]
   · intro t ht
     rw [tbl_unch U₆ h7 (j := 2) (by decide) ht (tbl_apart_chainW h7 2 t),
       tbl_unch U₅ h7 (j := 2) (by decide) ht (tA₅ (by decide) ht)]

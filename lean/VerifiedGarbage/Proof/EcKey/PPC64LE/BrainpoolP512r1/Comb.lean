@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.EcKey.PPC64LE.BrainpoolP512r1.Contract
+public import VerifiedGarbage.Proof.EcKey.PPC64LE.CombAll
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Spec.EcKey.BrainpoolP512r1
 public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP512r1.PPC64LEComb
@@ -17,6 +18,7 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.EcKey.PPC64LE.BrainpoolP512r1.Contract
+meta import VerifiedGarbage.Proof.EcKey.PPC64LE.CombAll
 meta import VerifiedGarbage.Proof.Weierstrass.Law
 meta import VerifiedGarbage.Spec.EcKey.BrainpoolP512r1
 meta import VerifiedGarbage.Impl.Ecdsa.BrainpoolP512r1.PPC64LEComb
@@ -99,30 +101,14 @@ theorem pkPPC_implies : pkPPC.Implies (Spec.EcKey.BrainpoolP512r1.inst.publicKey
           PPC64LE.argRegs] [satState] using satState }
 
 /-- The public key's contract with the table, as the proof states it. -/
-def pkPC : Contract isa where
-  pre s := pkPPC.pre (stripConsts brainpoolp512r1CombConsts s) ∧ ConstsOk brainpoolp512r1CombConsts 0 s
-  post := pkPPC.post
-  pub s₁ s₂ := pkPPC.pub s₁ s₂ ∧ s₁.syms brainpoolp512r1Comb.tsym = s₂.syms brainpoolp512r1Comb.tsym
+def pkPC : Contract isa := Tab.withTable pkPPC brainpoolp512r1CombConsts brainpoolp512r1Comb.tsym
 
 theorem combPk_ok (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) (s : State) (hs : pkPC.pre s) :
     ∃ t s', Exec isa Impl.EcKey.PPC64LE.publicKeyBrainpoolP512r1Comb s t s' ∧ abiPreserved s s' ∧ pkPC.post s s' := by
   obtain ⟨hp, hk⟩ := hs
-  have p := pre_of hp
-  have hpre : PkPre brainpoolp512r1 s (constRegs brainpoolp512r1CombConsts s) := by
-    refine ⟨?_, p.wr, p.out_sc, p.d_sc, p.out_fit, p.d_fit, p.sc_fit⟩
-    rw [← List.take_append_drop (s.rd.length - brainpoolp512r1CombConsts.length) s.rd, hk.1]
-    exact congrArg (fun rs => rs ++ constRegs brainpoolp512r1CombConsts s) p.rd
-  have member : (brainpoolp512r1Comb.tsym, brainpoolp512r1CombWords) ∈ brainpoolp512r1CombConsts := List.mem_singleton_self _
-  have ht : TableMem s (s.syms brainpoolp512r1Comb.tsym) brainpoolp512r1CombWords :=
-    ⟨hk.fit member, ⟨_, List.mem_append_left _ (hk.mem_rd member), Region.contains_self _ _⟩,
-      fun i hi => hk.readW member hi⟩
-  have hd : Region.Disjoint ⟨s.syms brainpoolp512r1Comb.tsym, 8 * brainpoolp512r1CombWords.length⟩ ⟨s.gpr .r5, 8192⟩ :=
-    hk.disjoint_wr member (by rw [hpre.wr]; simp)
-  obtain ⟨t, s', he, K, hpost⟩ := publicKeyWith_ok brainpoolp512r1_ok (by decide) hL hpre fun s₁ S₁ sy =>
-    Proof.BrainpoolP512r1.PPC64LE.comb_generator_ok hL S₁
-      (ht.unch (by rw [S₁.rk.rd, S₁.rk.wr]) S₁.whole (fun w hw => by
-        rw [List.mem_singleton] at hw; subst hw; decide) hd) (by rw [sy]) hd
-  exact ⟨t, s', he, ⟨K.saved, K.sp, K.lr⟩, post_of hpost⟩
+  obtain ⟨t, s', he, K, hpost⟩ := Tab.pk_ok brainpoolp512r1_ok (by decide) hL
+    (Proof.BrainpoolP512r1.PPC64LE.comb_generator_ok hL) (pre_of hp) hk
+  exact ⟨t, s', he, K, Tab.post_intro (post_of hpost)⟩
 
 theorem combPk_ct : ConstantTime isa pkPC.pre pkPC.pub Impl.EcKey.PPC64LE.publicKeyBrainpoolP512r1Comb :=
   VG.Taint.constantTime (A := vectorTaintSym [brainpoolp512r1Comb.tsym]) (Taint.ofRegs [.r3, .r4, .r5])
@@ -160,13 +146,7 @@ theorem combPk_sat : (Spec.EcKey.BrainpoolP512r1.inst.publicKeyContract (abi.wit
     all_goals first | exact Region.disjoint_of_sep (by decide) | decide | rfl
 
 theorem pkPC_implies : pkPC.Implies (Spec.EcKey.BrainpoolP512r1.inst.publicKeyContract (abi.withConsts brainpoolp512r1CombConsts)) :=
-  { pre := fun _ hs => ⟨pkPPC_implies.pre _ (pre_consts.mp hs).1, (pre_consts.mp hs).2⟩
-    post := fun s s' hs hp => post_consts.mpr (pkPPC_implies.post (stripConsts brainpoolp512r1CombConsts s) s'
-      (pre_consts.mp hs).1 hp)
-    pub := fun s₁ s₂ h₁ h₂ hp => ⟨pkPPC_implies.pub (stripConsts brainpoolp512r1CombConsts s₁) (stripConsts brainpoolp512r1CombConsts s₂)
-        (pre_consts.mp h₁).1 (pre_consts.mp h₂).1 (pub_consts.mp hp).1,
-      (pub_consts.mp hp).2 _ List.mem_cons_self⟩
-    sat := ⟨combSatC, combPk_sat⟩ }
+  Tab.implies pkPPC_implies ⟨combSatC, combPk_sat⟩
 
 theorem combPk_verified (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) :
     Verified PPC64LE.target Impl.EcKey.PPC64LE.publicKeyBrainpoolP512r1Comb
