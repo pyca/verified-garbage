@@ -28,7 +28,7 @@ vg_pbkdf2_hmac_sha256:
 	addi a3, a1, 0
 	addi a0, s1, 64
 	addi a1, s1, 160
-	call {vg_hmac_sha256_init}
+	call {vg_hmac_sha256_init_core}
 	addi s7, zero, 1
 	beqz s5, 20f
 22:
@@ -245,7 +245,7 @@ vg_pbkdf2_hmac_sha256:
 	addi a1, s1, 160
 	addi a2, s2, 68
 	addi a3, s1, 352
-	call {vg_hmac_sha256_finalize}
+	call {vg_hmac_sha256_finalize_core}
 	lbu t1, 352(s1)
 	sb t1, 384(s1)
 	lbu t1, 353(s1)
@@ -350,5 +350,148 @@ vg_pbkdf2_hmac_sha256:
 	ld s1, 8(s1)
 	addi sp, sp, 432
 	addi sp, sp, 240
+	addi t0, zero, 0
+	addi sp, sp, -992
+	addi t1, sp, 0
+	sd t0, 0(t1)
+	sd t0, 8(t1)
+	sd t0, 16(t1)
+	sd t0, 24(t1)
+	sd t0, 32(t1)
+	sd t0, 40(t1)
+	sd t0, 48(t1)
+	sd t0, 56(t1)
+	sd t0, 64(t1)
+	sd t0, 72(t1)
+	sd t0, 80(t1)
+	sd t0, 88(t1)
+	sd t0, 96(t1)
+	sd t0, 104(t1)
+	sd t0, 112(t1)
+	sd t0, 120(t1)
+	sd t0, 128(t1)
+	sd t0, 136(t1)
+	sd t0, 144(t1)
+	sd t0, 152(t1)
+	sd t0, 160(t1)
+	sd t0, 168(t1)
+	sd t0, 176(t1)
+	sd t0, 184(t1)
+	sd t0, 192(t1)
+	sd t0, 200(t1)
+	sd t0, 208(t1)
+	sd t0, 216(t1)
+	sd t0, 224(t1)
+	sd t0, 232(t1)
+	sd t0, 240(t1)
+	sd t0, 248(t1)
+	sd t0, 256(t1)
+	sd t0, 264(t1)
+	sd t0, 272(t1)
+	sd t0, 280(t1)
+	sd t0, 288(t1)
+	sd t0, 296(t1)
+	sd t0, 304(t1)
+	sd t0, 312(t1)
+	sd t0, 320(t1)
+	sd t0, 328(t1)
+	sd t0, 336(t1)
+	sd t0, 344(t1)
+	sd t0, 352(t1)
+	sd t0, 360(t1)
+	sd t0, 368(t1)
+	sd t0, 376(t1)
+	sd t0, 384(t1)
+	sd t0, 392(t1)
+	sd t0, 400(t1)
+	sd t0, 408(t1)
+	sd t0, 416(t1)
+	sd t0, 424(t1)
+	sd t0, 432(t1)
+	sd t0, 440(t1)
+	sd t0, 448(t1)
+	sd t0, 456(t1)
+	sd t0, 464(t1)
+	sd t0, 472(t1)
+	sd t0, 480(t1)
+	sd t0, 488(t1)
+	sd t0, 496(t1)
+	sd t0, 504(t1)
+	sd t0, 512(t1)
+	sd t0, 520(t1)
+	sd t0, 528(t1)
+	sd t0, 536(t1)
+	sd t0, 544(t1)
+	sd t0, 552(t1)
+	sd t0, 560(t1)
+	sd t0, 568(t1)
+	sd t0, 576(t1)
+	sd t0, 584(t1)
+	sd t0, 592(t1)
+	sd t0, 600(t1)
+	sd t0, 608(t1)
+	sd t0, 616(t1)
+	sd t0, 624(t1)
+	sd t0, 632(t1)
+	sd t0, 640(t1)
+	sd t0, 648(t1)
+	sd t0, 656(t1)
+	sd t0, 664(t1)
+	sd t0, 672(t1)
+	sd t0, 680(t1)
+	sd t0, 688(t1)
+	sd t0, 696(t1)
+	sd t0, 704(t1)
+	sd t0, 712(t1)
+	sd t0, 720(t1)
+	sd t0, 728(t1)
+	sd t0, 736(t1)
+	sd t0, 744(t1)
+	sd t0, 752(t1)
+	sd t0, 760(t1)
+	sd t0, 768(t1)
+	sd t0, 776(t1)
+	sd t0, 784(t1)
+	sd t0, 792(t1)
+	sd t0, 800(t1)
+	sd t0, 808(t1)
+	sd t0, 816(t1)
+	sd t0, 824(t1)
+	sd t0, 832(t1)
+	sd t0, 840(t1)
+	sd t0, 848(t1)
+	sd t0, 856(t1)
+	sd t0, 864(t1)
+	sd t0, 872(t1)
+	sd t0, 880(t1)
+	sd t0, 888(t1)
+	sd t0, 896(t1)
+	sd t0, 904(t1)
+	sd t0, 912(t1)
+	sd t0, 920(t1)
+	sd t0, 928(t1)
+	sd t0, 936(t1)
+	sd t0, 944(t1)
+	sd t0, 952(t1)
+	sd t0, 960(t1)
+	sd t0, 968(t1)
+	sd t0, 976(t1)
+	sd t0, 984(t1)
+	addi sp, sp, 992
+	addi a0, zero, 0
+	addi a1, zero, 0
+	addi a2, zero, 0
+	addi a3, zero, 0
+	addi a4, zero, 0
+	addi a5, zero, 0
+	addi a6, zero, 0
+	addi a7, zero, 0
+	addi t0, zero, 0
+	addi t1, zero, 0
+	addi t2, zero, 0
+	addi t3, zero, 0
+	addi t4, zero, 0
+	addi t5, zero, 0
+	addi t6, zero, 0
 	ret
 	.option pop

@@ -55,29 +55,29 @@ call {vg_sha256_update_core}
 .base64 "IoWmhRMGBA0="
 call {vg_sha256_finalize_core}
 .base64 "IoWTBQQGEwYEDZMGAAI="
-call {vg_hmac_sha256_init}
+call {vg_hmac_sha256_init_core}
 .base64 "IoWTBQAEWoamhg=="
 call {vg_sha256_update_core}
 .base64 "IoWTBQQGE4YEBJMGBA8="
-call {vg_hmac_sha256_finalize}
+call {vg_hmac_sha256_finalize_core}
 .base64 "AUyTjPQBk9xcAA=="
 22:
 .base64 "EwMEDIFDIwBzAKMAgwGTA8AGIwFzAJMDUAajAXMAkwPgBiMCcwCTA3AGowJzAJMDQAcjA3MAkwOABqMDcwChQyMEcwCBQ6MEcwAihZMFBAYTBgQPkwYAAg=="
-call {vg_hmac_sha256_init}
+call {vg_hmac_sha256_init_core}
 .base64 "IoWTBQAEEwYEDKlG"
 call {vg_sha256_update_core}
 .base64 "IoWTBQQGEwagBJMWXACilpOGBhE="
-call {vg_hmac_sha256_finalize}
+call {vg_hmac_sha256_finalize_core}
 .base64 "BQwhQzMDg0E="
 bnez t1, 22b
 .base64 "AUw="
 23:
 .base64 "EwMEDIFDIwBzAKMAgwGTA9AGIwFzAJMDUAajAXMAkwMwByMCcwCTAzAHowJzAJMDEAYjA3MAkwNwBqMDcwCTA1AGIwRzAJOTNAAjBXMAk9ODAKMEcwAihZMFBAYTBgQPkwYAAg=="
-call {vg_hmac_sha256_init}
+call {vg_hmac_sha256_init_core}
 .base64 "IoWTBQAEEwYEDK1G"
 call {vg_sha256_update_core}
 .base64 "IoWTBQQGEwawBJMWXACilpOGBiE="
-call {vg_hmac_sha256_finalize}
+call {vg_hmac_sha256_finalize_core}
 .base64 "BQxmgzMDg0E="
 bnez t1, 23b
 .base64 "E45U/4FO"
@@ -102,8 +102,8 @@ bnez t2, 27b
         vg_sha256_init_core = sym super::sha256::vg_sha256_init_core::vg_sha256_init_core,
         vg_sha256_update_core = sym super::sha256::vg_sha256_update_core::vg_sha256_update_core,
         vg_sha256_finalize_core = sym super::sha256::vg_sha256_finalize_core::vg_sha256_finalize_core,
-        vg_hmac_sha256_init = sym super::hmac_sha256::vg_hmac_sha256_init,
-        vg_hmac_sha256_finalize = sym super::hmac_sha256::vg_hmac_sha256_finalize,
+        vg_hmac_sha256_init_core = sym super::hmac_sha256::vg_hmac_sha256_init_core::vg_hmac_sha256_init_core,
+        vg_hmac_sha256_finalize_core = sym super::hmac_sha256::vg_hmac_sha256_finalize_core::vg_hmac_sha256_finalize_core,
     )
 }
 

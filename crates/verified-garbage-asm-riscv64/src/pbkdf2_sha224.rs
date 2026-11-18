@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Hmac.Instance.pbkdf2Contract` of `VG.Spec.Hmac.sha224I`. Constant time: only the pointers, the lengths and `c` may affect timing, not the password, the salt or the key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `password` must be valid for reads of `password_len` bytes.
@@ -21,7 +23,7 @@ pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha224(password: *const u8, passw
         r#".option push
 .option arch, +m, +c
 .base64 "UXElcYqCI7ASACO0kgAjuCIBI7wyASOwQgMjtFIDI7hiAyO8cgOWhDaJuok+isKKMosqhq6GE4UEBJOFBAo="
-call {vg_hmac_sha224_init}
+call {vg_hmac_sha224_init_core}
 .base64 "hUs="
 beqz s5, 20f
 22:
@@ -30,7 +32,7 @@ call {vg_sha256_update_core}
 .base64 "E9OLASOMZBgT0wsBo4xkGBPTiwAjjWQYo410GROFBBCTBQkEE4aEGZFG"
 call {vg_sha256_update_core}
 .base64 "E4UEEJOFBAoTBkkEk4YEFg=="
-call {vg_hmac_sha224_finalize}
+call {vg_hmac_sha224_finalize_core}
 .base64 "A8MEFiOOZBYDwxQWo45kFgPDJBYjj2QWA8M0FqOPZBYDw0QWI4BkGAPDVBajgGQYA8NkFiOBZBgDw3QWo4FkGAPDhBYjgmQYA8OUFqOCZBgDw6QWI4NkGAPDtBajg2QYA8PEFiOEZBgDw9QWo4RkGAPD5BYjhWQYA8P0FqOFZBgDwwQXI4ZkGAPDFBejhmQYA8MkFyOHZBgDwzQXo4dkGAPDRBcjiGQYA8NUF6OIZBgDw2QXI4lkGAPDdBejiWQYA8OEFyOKZBgDw5QXo4pkGAPDpBcji2QYA8O0F6OLZBgThQQEk4UEFhOG+f+ThsQXE4cEGg=="
 call {vg_pbkdf2_hmac_sha224_iterate}
 .base64 "E4NK/hNT8wPWgw=="
@@ -48,11 +50,11 @@ bnez s5, 22b
 j 21f
 20:
 21:
-.base64 "g7AEAAO5BAGDuYQBA7oEAoO6hAIDuwQDg7uEA4RkHWFtYYKA"
+.base64 "g7AEAAO5BAGDuYQBA7oEAoO6hAIDuwQDg7uEA4RkHWFtYYFCEwEBwwqDIzBTACM0UwAjOFMAIzxTACMwUwIjNFMCIzhTAiM8UwIjMFMEIzRTBCM4UwQjPFMEIzBTBiM0UwYjOFMGIzxTBiMwUwgjNFMIIzhTCCM8UwgjMFMKIzRTCiM4UwojPFMKIzBTDCM0UwwjOFMMIzxTDCMwUw4jNFMOIzhTDiM8Uw4jMFMQIzRTECM4UxAjPFMQIzBTEiM0UxIjOFMSIzxTEiMwUxQjNFMUIzhTFCM8UxQjMFMWIzRTFiM4UxYjPFMWIzBTGCM0UxgjOFMYIzxTGCMwUxojNFMaIzhTGiM8UxojMFMcIzRTHCM4UxwjPFMcIzBTHiM0Ux4jOFMeIzxTHiMwUyAjNFMgIzhTICM8UyAjMFMiIzRTIiM4UyIjPFMiIzBTJCM0UyQjOFMkIzxTJCMwUyYjNFMmIzhTJiM8UyYjMFMoIzRTKCM4UygjPFMoIzBTKiM0UyojOFMqIzxTKiMwUywjNFMsIzhTLCM8UywjMFMuIzRTLiM4Uy4jPFMuIzBTMCM0UzAjOFMwIzxTMCMwUzIjNFMyIzhTMiM8UzIjMFM0IzRTNCM4UzQjPFM0IzBTNiM0UzYjOFM2IzxTNiMwUzgjNFM4IzhTOCM8UzgjMFM6IzRTOiM4UzojPFM6IzBTPCM0UzwTAQE9AUWBRQFGgUYBR4FHAUiBSIFCAUOBQwFOgU4BT4FPgoA="
 .option pop"#,
-        vg_hmac_sha224_init = sym super::hmac_sha224::vg_hmac_sha224_init,
+        vg_hmac_sha224_init_core = sym super::hmac_sha224::vg_hmac_sha224_init_core::vg_hmac_sha224_init_core,
         vg_sha256_update_core = sym super::sha256::vg_sha256_update_core::vg_sha256_update_core,
-        vg_hmac_sha224_finalize = sym super::hmac_sha224::vg_hmac_sha224_finalize,
+        vg_hmac_sha224_finalize_core = sym super::hmac_sha224::vg_hmac_sha224_finalize_core::vg_hmac_sha224_finalize_core,
         vg_pbkdf2_hmac_sha224_iterate = sym super::pbkdf2_sha224::vg_pbkdf2_hmac_sha224_iterate::vg_pbkdf2_hmac_sha224_iterate,
     )
 }

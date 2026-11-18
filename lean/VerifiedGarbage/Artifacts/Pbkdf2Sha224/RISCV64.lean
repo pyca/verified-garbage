@@ -1,7 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.RISCV64.Scrub
 public import VerifiedGarbage.TCB.RISCV64.Target
-public import VerifiedGarbage.Proof.Pbkdf2.Whole.RISCV64.Sha224
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.RISCV64.Print
 
@@ -12,8 +12,6 @@ public import VerifiedGarbage.TCB.RISCV64.Print
 namespace VG.Artifacts.Pbkdf2Sha224.RISCV64
 
 def artifacts : List Artifact := [
-  Spec.Hmac.sha224I.pbkdf2Api.artifact RISCV64.target {
-    code := Proof.Pbkdf2.Whole.RISCV64.Sha224.F.pbkdf2
-    verified := Proof.Pbkdf2.Whole.RISCV64.Sha224.pbkdf2 }]
+  Spec.Hmac.sha224I.pbkdf2Api.artifact RISCV64.target Proof.Pbkdf2.Whole.RISCV64.Scrub.sha224Pbkdf2Reg]
 
 end VG.Artifacts.Pbkdf2Sha224.RISCV64

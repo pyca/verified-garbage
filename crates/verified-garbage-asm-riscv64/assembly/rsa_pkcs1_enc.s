@@ -101,7 +101,7 @@ vg_rsa_pkcs1_decrypt_precomputed:
 	addi a1, s0, 96
 	addi a2, s0, 208
 	addi a3, zero, 32
-	call {vg_hmac_sha256_init}
+	call {vg_hmac_sha256_init_core}
 	addi a0, s0, 0
 	addi a1, zero, 64
 	addi a2, s6, 0
@@ -111,7 +111,7 @@ vg_rsa_pkcs1_decrypt_precomputed:
 	addi a1, s0, 96
 	addi a2, s1, 64
 	addi a3, s0, 240
-	call {vg_hmac_sha256_finalize}
+	call {vg_hmac_sha256_finalize_core}
 	addi s8, zero, 0
 	addi s9, s1, 31
 	srli s9, s9, 5
@@ -140,7 +140,7 @@ vg_rsa_pkcs1_decrypt_precomputed:
 	addi a1, s0, 96
 	addi a2, s0, 240
 	addi a3, zero, 32
-	call {vg_hmac_sha256_init}
+	call {vg_hmac_sha256_init_core}
 	addi a0, s0, 0
 	addi a1, zero, 64
 	addi a2, s0, 192
@@ -152,7 +152,7 @@ vg_rsa_pkcs1_decrypt_precomputed:
 	slli a3, s8, 5
 	add a3, a3, s0
 	addi a3, a3, 272
-	call {vg_hmac_sha256_finalize}
+	call {vg_hmac_sha256_finalize_core}
 	addi s8, s8, 1
 	addi t1, zero, 8
 	sub t1, t1, s8
@@ -185,7 +185,7 @@ vg_rsa_pkcs1_decrypt_precomputed:
 	addi a1, s0, 96
 	addi a2, s0, 240
 	addi a3, zero, 32
-	call {vg_hmac_sha256_init}
+	call {vg_hmac_sha256_init_core}
 	addi a0, s0, 0
 	addi a1, zero, 64
 	addi a2, s0, 192
@@ -197,7 +197,7 @@ vg_rsa_pkcs1_decrypt_precomputed:
 	slli a3, s8, 5
 	add a3, a3, s0
 	addi a3, a3, 528
-	call {vg_hmac_sha256_finalize}
+	call {vg_hmac_sha256_finalize_core}
 	addi s8, s8, 1
 	addi t1, s9, 0
 	sub t1, t1, s8
