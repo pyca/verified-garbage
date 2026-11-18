@@ -138,14 +138,11 @@ vg_aes_ctr_final_aes:
 	movz x5, #0, lsl #0
 	movz x6, #0, lsl #0
 	movz x7, #0, lsl #0
-	movz x8, #0, lsl #0
 	movz x9, #0, lsl #0
 	movz x10, #0, lsl #0
 	movz x11, #0, lsl #0
 	movz x12, #0, lsl #0
 	movz x13, #0, lsl #0
-	movz x14, #0, lsl #0
-	movz x15, #0, lsl #0
 	movz x16, #0, lsl #0
 	movz x17, #0, lsl #0
 	movi v0.2d, #0
@@ -173,14 +170,6 @@ vg_aes_ctr_final_aes:
 	movi v30.2d, #0
 	movi v31.2d, #0
 	tst x1, x1
-	mov v8.d[1], x1
-	mov v9.d[1], x1
-	mov v10.d[1], x1
-	mov v11.d[1], x1
-	mov v12.d[1], x1
-	mov v13.d[1], x1
-	mov v14.d[1], x1
-	mov v15.d[1], x1
 	movz x0, #0, lsl #0
 	sub sp, sp, #80
 	movi v31.2d, #0
@@ -333,9 +322,6 @@ vg_aes_ctr_final_neon:
 	movz x10, #0, lsl #0
 	movz x11, #0, lsl #0
 	movz x12, #0, lsl #0
-	movz x13, #0, lsl #0
-	movz x14, #0, lsl #0
-	movz x15, #0, lsl #0
 	movz x16, #0, lsl #0
 	movz x17, #0, lsl #0
 	movi v0.2d, #0
@@ -363,14 +349,6 @@ vg_aes_ctr_final_neon:
 	movi v30.2d, #0
 	movi v31.2d, #0
 	tst x1, x1
-	mov v8.d[1], x1
-	mov v9.d[1], x1
-	mov v10.d[1], x1
-	mov v11.d[1], x1
-	mov v12.d[1], x1
-	mov v13.d[1], x1
-	mov v14.d[1], x1
-	mov v15.d[1], x1
 	movz x0, #0, lsl #0
 	sub sp, sp, #80
 	movi v31.2d, #0
@@ -523,9 +501,6 @@ vg_aes_ctr_final:
 	movz x10, #0, lsl #0
 	movz x11, #0, lsl #0
 	movz x12, #0, lsl #0
-	movz x13, #0, lsl #0
-	movz x14, #0, lsl #0
-	movz x15, #0, lsl #0
 	movz x16, #0, lsl #0
 	movz x17, #0, lsl #0
 	movi v0.2d, #0
@@ -535,7 +510,6 @@ vg_aes_ctr_final:
 	movi v4.2d, #0
 	movi v5.2d, #0
 	movi v6.2d, #0
-	movi v7.2d, #0
 	movi v16.2d, #0
 	movi v17.2d, #0
 	movi v18.2d, #0
@@ -553,14 +527,6 @@ vg_aes_ctr_final:
 	movi v30.2d, #0
 	movi v31.2d, #0
 	tst x1, x1
-	mov v8.d[1], x1
-	mov v9.d[1], x1
-	mov v10.d[1], x1
-	mov v11.d[1], x1
-	mov v12.d[1], x1
-	mov v13.d[1], x1
-	mov v14.d[1], x1
-	mov v15.d[1], x1
 	movz x0, #0, lsl #0
 	sub sp, sp, #80
 	movi v31.2d, #0

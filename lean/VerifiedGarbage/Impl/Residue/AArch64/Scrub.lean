@@ -68,18 +68,34 @@ def allVecs : List VReg :=
 /-- The vector registers whose low halves the calling convention preserves. -/
 def hiVecs : List VReg := [.v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15]
 
-/-- `movz` of each of `allGprs`, `movi` of each of `allVecs`, the flags from
-`x1` (zero by then, `tst x1, x1`), and the high halves of `hiVecs` from `x1`
-(`mov v.d[1], x1`). -/
-def clearsAll : List Instr :=
-  allGprs.map (fun r => .movz .x r 0 0) ++ allVecs.map (fun v => .vop (.movi0 v)) ++
-    [.tst .x .x1 .x1] ++ hiVecs.map (fun v => .vop (.ins .d2 v 1 .x1))
+/-- What the tail clears: the general-purpose registers `gprs` (of
+`allGprs`), the vector registers `vecs` (of `allVecs`), and the high halves
+of `his` (of `hiVecs`). `Proof/Framework/AArch64/Writes.lean` computes it from
+the code (`Clear.of`): the registers the code may write. -/
+structure Clear where
+  gprs : List Reg
+  vecs : List VReg
+  his : List VReg
 
-/-- `c`, then every register the calling convention does not preserve
-cleared but the result's `rb` bits of `x0`, and the `W` bytes below the stack
-pointer zeroed: what returns without secret residue whatever `c` leaves, for
-code whose frames stay within those `W` bytes (`ScrubAll.noResidue_scrubAll`). -/
-def scrubAll (W rb : Nat) (c : Prog isa) : Prog isa :=
-  withScrubG W (List.range (W / 16)) (withRet rb (.seq c (.block clearsAll)))
+/-- Every register the calling convention does not preserve. -/
+def Clear.all : Clear := ⟨allGprs, allVecs, hiVecs⟩
+
+/-- `movz` of each of `gprs`, `movi` of each of `vecs`, the flags from `x1`
+(`tst x1, x1`), and the high halves of `his` from `x1` (`mov v.d[1], x1`).
+`x1` is either cleared or holds what it held on entry, the same in two runs
+that agree on what is public. -/
+def clearsOf (cl : Clear) : List Instr :=
+  cl.gprs.map (fun r => .movz .x r 0 0) ++ cl.vecs.map (fun v => .vop (.movi0 v)) ++
+    [.tst .x .x1 .x1] ++ cl.his.map (fun v => .vop (.ins .d2 v 1 .x1))
+
+/-- `clearsOf Clear.all`. -/
+abbrev clearsAll : List Instr := clearsOf Clear.all
+
+/-- `c`, then the registers of `cl` cleared but the result's `rb` bits of
+`x0`, and the `W` bytes below the stack pointer zeroed: what returns without
+secret residue whatever `c` leaves, for code whose frames stay within those
+`W` bytes and that writes no register `cl` leaves (`ScrubAll.noResidue_scrubAll`). -/
+def scrubAll (W rb : Nat) (cl : Clear) (c : Prog isa) : Prog isa :=
+  withScrubG W (List.range (W / 16)) (withRet rb (.seq c (.block (clearsOf cl))))
 
 end VG.Impl.Residue.AArch64

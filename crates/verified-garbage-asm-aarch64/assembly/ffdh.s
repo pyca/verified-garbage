@@ -5152,14 +5152,6 @@ vg_ffdh_generate_key_precompute:
 	movz x15, #0, lsl #0
 	movz x16, #0, lsl #0
 	movz x17, #0, lsl #0
-	movi v0.2d, #0
-	movi v1.2d, #0
-	movi v2.2d, #0
-	movi v3.2d, #0
-	movi v4.2d, #0
-	movi v5.2d, #0
-	movi v6.2d, #0
-	movi v7.2d, #0
 	movi v16.2d, #0
 	movi v17.2d, #0
 	movi v18.2d, #0
@@ -5171,20 +5163,8 @@ vg_ffdh_generate_key_precompute:
 	movi v24.2d, #0
 	movi v25.2d, #0
 	movi v26.2d, #0
-	movi v27.2d, #0
-	movi v28.2d, #0
-	movi v29.2d, #0
-	movi v30.2d, #0
 	movi v31.2d, #0
 	tst x1, x1
-	mov v8.d[1], x1
-	mov v9.d[1], x1
-	mov v10.d[1], x1
-	mov v11.d[1], x1
-	mov v12.d[1], x1
-	mov v13.d[1], x1
-	mov v14.d[1], x1
-	mov v15.d[1], x1
 	add w0, w0, #0
 	ret
 	.p2align 6
@@ -5408,14 +5388,6 @@ vg_ffdh_generate_key_search_cached:
 	movz x15, #0, lsl #0
 	movz x16, #0, lsl #0
 	movz x17, #0, lsl #0
-	movi v0.2d, #0
-	movi v1.2d, #0
-	movi v2.2d, #0
-	movi v3.2d, #0
-	movi v4.2d, #0
-	movi v5.2d, #0
-	movi v6.2d, #0
-	movi v7.2d, #0
 	movi v16.2d, #0
 	movi v17.2d, #0
 	movi v18.2d, #0
@@ -5427,20 +5399,8 @@ vg_ffdh_generate_key_search_cached:
 	movi v24.2d, #0
 	movi v25.2d, #0
 	movi v26.2d, #0
-	movi v27.2d, #0
-	movi v28.2d, #0
-	movi v29.2d, #0
-	movi v30.2d, #0
 	movi v31.2d, #0
 	tst x1, x1
-	mov v8.d[1], x1
-	mov v9.d[1], x1
-	mov v10.d[1], x1
-	mov v11.d[1], x1
-	mov v12.d[1], x1
-	mov v13.d[1], x1
-	mov v14.d[1], x1
-	mov v15.d[1], x1
 	add w0, w0, #0
 	sub sp, sp, #64
 	movi v31.2d, #0
@@ -7178,14 +7138,6 @@ vg_ffdh_check_public:
 	movi v30.2d, #0
 	movi v31.2d, #0
 	tst x1, x1
-	mov v8.d[1], x1
-	mov v9.d[1], x1
-	mov v10.d[1], x1
-	mov v11.d[1], x1
-	mov v12.d[1], x1
-	mov v13.d[1], x1
-	mov v14.d[1], x1
-	mov v15.d[1], x1
 	add w0, w0, #0
 	ret
 	.p2align 6
@@ -9661,14 +9613,6 @@ vg_ffdh_check_domain:
 	movi v30.2d, #0
 	movi v31.2d, #0
 	tst x1, x1
-	mov v8.d[1], x1
-	mov v9.d[1], x1
-	mov v10.d[1], x1
-	mov v11.d[1], x1
-	mov v12.d[1], x1
-	mov v13.d[1], x1
-	mov v14.d[1], x1
-	mov v15.d[1], x1
 	add w0, w0, #0
 	ret
 	.p2align 6
@@ -11345,14 +11289,6 @@ vg_ffdh_exchange:
 	movi v30.2d, #0
 	movi v31.2d, #0
 	tst x1, x1
-	mov v8.d[1], x1
-	mov v9.d[1], x1
-	mov v10.d[1], x1
-	mov v11.d[1], x1
-	mov v12.d[1], x1
-	mov v13.d[1], x1
-	mov v14.d[1], x1
-	mov v15.d[1], x1
 	add w0, w0, #0
 	ret
 	.p2align 6
@@ -13235,14 +13171,6 @@ vg_ffdh_check_private:
 	movi v30.2d, #0
 	movi v31.2d, #0
 	tst x1, x1
-	mov v8.d[1], x1
-	mov v9.d[1], x1
-	mov v10.d[1], x1
-	mov v11.d[1], x1
-	mov v12.d[1], x1
-	mov v13.d[1], x1
-	mov v14.d[1], x1
-	mov v15.d[1], x1
 	add w0, w0, #0
 	ret
 	.p2align 6
@@ -15078,14 +15006,6 @@ vg_ffdh_derive_public:
 	movi v30.2d, #0
 	movi v31.2d, #0
 	tst x1, x1
-	mov v8.d[1], x1
-	mov v9.d[1], x1
-	mov v10.d[1], x1
-	mov v11.d[1], x1
-	mov v12.d[1], x1
-	mov v13.d[1], x1
-	mov v14.d[1], x1
-	mov v15.d[1], x1
 	add w0, w0, #0
 	ret
 	.p2align 6
@@ -15319,14 +15239,6 @@ vg_ffdh_generate_parameters:
 	movz x15, #0, lsl #0
 	movz x16, #0, lsl #0
 	movz x17, #0, lsl #0
-	movi v0.2d, #0
-	movi v1.2d, #0
-	movi v2.2d, #0
-	movi v3.2d, #0
-	movi v4.2d, #0
-	movi v5.2d, #0
-	movi v6.2d, #0
-	movi v7.2d, #0
 	movi v16.2d, #0
 	movi v17.2d, #0
 	movi v18.2d, #0
@@ -15338,20 +15250,8 @@ vg_ffdh_generate_parameters:
 	movi v24.2d, #0
 	movi v25.2d, #0
 	movi v26.2d, #0
-	movi v27.2d, #0
-	movi v28.2d, #0
-	movi v29.2d, #0
-	movi v30.2d, #0
 	movi v31.2d, #0
 	tst x1, x1
-	mov v8.d[1], x1
-	mov v9.d[1], x1
-	mov v10.d[1], x1
-	mov v11.d[1], x1
-	mov v12.d[1], x1
-	mov v13.d[1], x1
-	mov v14.d[1], x1
-	mov v15.d[1], x1
 	add w0, w0, #0
 	sub sp, sp, #32
 	movi v31.2d, #0

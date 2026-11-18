@@ -10,7 +10,8 @@ import VerifiedGarbage.Proof.Framework.AArch64.ResidueCT
 import VerifiedGarbage.Proof.Framework.AArch64.ResidueTaint
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 public import VerifiedGarbage.Proof.Framework.AArch64.Syms
-import VerifiedGarbage.Proof.Framework.AArch64.Inline
+public import VerifiedGarbage.Proof.Framework.AArch64.Inline
+public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 
@@ -312,50 +313,133 @@ theorem movis_run : ∀ (vs : List VReg) (u : State),
       · subst hw; simp
       · simp [h, hw]
 
-theorem inss_run (z : Reg) : ∀ (vs : List VReg) (u : State), u.gpr z = 0 →
+theorem setLane_twice (x : BitVec 128) (z : BitVec 64) :
+    setLane (setLane x 64 1 z) 64 1 z = setLane x 64 1 z := by
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
+  simp only [setLane, BitVec.getLsbD_or, BitVec.getLsbD_and, BitVec.getLsbD_not, hi, decide_true,
+    Bool.true_and]
+  cases (x.getLsbD i) <;> cases (((BitVec.allOnes 64).setWidth 128 <<< (64 * 1)).getLsbD i) <;>
+    cases ((z.setWidth 128 <<< (64 * 1)).getLsbD i) <;> rfl
+
+theorem inss_run (z : Reg) : ∀ (vs : List VReg) (u : State),
     execBlock isa (vs.map fun v => .vop (.ins .d2 v 1 z)) u =
-      some ({ u with v := fun w => if w ∈ vs then setLane (u.v w) 64 1 0 else u.v w }, [])
-  | [], u, _ => by
+      some ({ u with v := fun w => if w ∈ vs then setLane (u.v w) 64 1 (u.gpr z) else u.v w }, [])
+  | [], u => by
     simp only [List.map_nil, execBlock, List.not_mem_nil, ↓reduceIte]
-  | v :: vs, u, hz => by
+  | v :: vs, u => by
     simp only [List.map_cons, execBlock, isa, exec, VOp.eval, show 1 < 2 by decide, ↓reduceIte,
-      Option.map_some, hz]
-    rw [inss_run z vs _ (by simp only [State.setV]; exact hz)]
+      Option.map_some]
+    rw [inss_run z vs _]
     simp only [addrs, List.map_nil, List.nil_append, Option.map_some, State.setV, List.mem_cons,
       Option.some.injEq, Prod.mk.injEq, and_true]
     congr 1
     funext w
     by_cases h : w ∈ vs
     · by_cases hw : w = v
-      · subst hw; simp [h, setLane, BitVec.and_assoc]
+      · subst hw; simp [h, setLane_twice]
       · simp [h, hw]
     · by_cases hw : w = v
       · subst hw; simp [h]
       · simp [h, hw]
 
-/-- The state after `clearsAll` from `u`. -/
-def cleared (u : State) : State :=
-  { u with
-    gpr := fun q => if q ∈ allGprs then 0 else u.gpr q
-    v := fun w => if w ∈ hiVecs then setLane (u.v w) 64 1 0 else if w ∈ allVecs then 0 else u.v w
-    nf := false, zf := true, c := false, vf := false }
+/-- What `x1` holds after the `movz`s of `cl`: zero if `cl` clears it,
+else what it held. -/
+def clearedX1 (cl : Clear) (u : State) : BitVec 64 := if Reg.x1 ∈ cl.gprs then 0 else u.gpr .x1
 
-theorem clearsAll_run (u : State) : execBlock isa clearsAll u = some (cleared u, []) := by
-  unfold clearsAll
+/-- The state after `clearsOf cl` from `u`. -/
+def cleared (cl : Clear) (u : State) : State :=
+  { u with
+    gpr := fun q => if q ∈ cl.gprs then 0 else u.gpr q
+    v := fun w => if w ∈ cl.his then setLane (u.v w) 64 1 (clearedX1 cl u) else if w ∈ cl.vecs then 0 else u.v w
+    nf := (clearedX1 cl u &&& clearedX1 cl u).msb
+    zf := decide ((clearedX1 cl u &&& clearedX1 cl u) = 0)
+    c := false
+    vf := false }
+
+/-- What a `Clear` must be: within the registers the calling convention does
+not preserve, the high halves of `his` apart from `vecs`. -/
+structure _root_.VG.Impl.Residue.AArch64.Clear.WF (cl : Clear) : Prop where
+  gprs : ∀ q ∈ cl.gprs, q ∈ allGprs
+  vecs : ∀ w ∈ cl.vecs, w ∈ allVecs
+  his : ∀ w ∈ cl.his, w ∈ hiVecs
+
+theorem hi_not_all : ∀ w, w ∈ hiVecs → w ∉ allVecs := by decide
+
+theorem _root_.VG.Impl.Residue.AArch64.Clear.WF.disj {cl : Clear} (h : cl.WF) {w : VReg} (hw : w ∈ cl.his) : w ∉ cl.vecs :=
+  fun hv => hi_not_all w (h.his w hw) (h.vecs w hv)
+
+theorem clearAll_wf : Clear.all.WF := ⟨fun _ h => h, fun _ h => h, fun _ h => h⟩
+
+/-- `c` writes none of the registers the calling convention does not
+preserve but those of `cl`: they hold on return what they held on entry. -/
+structure _root_.VG.Impl.Residue.AArch64.Clear.Keeps (cl : Clear) (c : Prog isa) : Prop where
+  gpr : ∀ q ∈ allGprs, q ∉ cl.gprs → ∀ {s t u}, Exec isa c s t u → u.gpr q = s.gpr q
+  vec : ∀ w, (w ∈ allVecs ∧ w ∉ cl.vecs) ∨ (w ∈ hiVecs ∧ w ∉ cl.his) →
+    ∀ {s t u}, Exec isa c s t u → u.v w = s.v w
+
+theorem clearAll_keeps (c : Prog isa) : Clear.all.Keeps c :=
+  ⟨fun _ h h' => absurd h h', fun _ h => by
+    rcases h with ⟨h, h'⟩ | ⟨h, h'⟩ <;> exact absurd h h'⟩
+
+/-- What the tail after `c` clears: the general-purpose registers of
+`allGprs` that an instruction of `c` (callees included) may write, and the
+link registers if `c` calls; the vector registers of `allVecs` and of
+`hiVecs` that one may write. -/
+def _root_.VG.Impl.Residue.AArch64.Clear.of (c : Prog isa) : Clear where
+  gprs := allGprs.filter fun q => (instrs c).any (fun i => clobbers i q) || (!c.noCalls && linkRegs.contains q)
+  vecs := allVecs.filter fun w => (instrs c).any fun i => vdstOf i == some w
+  his := hiVecs.filter fun w => (instrs c).any fun i => vdstOf i == some w
+
+theorem _root_.VG.Impl.Residue.AArch64.Clear.of_wf (c : Prog isa) : (Clear.of c).WF :=
+  ⟨fun _ h => (List.mem_filter.mp h).1, fun _ h => (List.mem_filter.mp h).1,
+    fun _ h => (List.mem_filter.mp h).1⟩
+
+theorem _root_.VG.Impl.Residue.AArch64.Clear.of_keeps (c : Prog isa) : (Clear.of c).Keeps c := by
+  refine ⟨fun q hq hn s t u e => ?_, fun w hw s t u e => ?_⟩
+  · have hf : ¬ ((instrs c).any (fun i => clobbers i q) || (!c.noCalls && linkRegs.contains q)) = true :=
+      fun h => hn (List.mem_filter.mpr ⟨hq, h⟩)
+    simp only [Bool.or_eq_true, Bool.and_eq_true, Bool.not_eq_true', List.any_eq_true, not_or,
+      not_exists, not_and, Bool.not_eq_true, List.contains_iff_mem] at hf
+    refine Exec.gpr (fun i hi => ?_) e ?_
+    · exact hf.1 i hi
+    · by_cases hc : c.noCalls = true
+      · exact .inl hc
+      · exact .inr (fun hl => hf.2 (by simpa using hc) hl)
+  · refine Exec.vec (fun i hi he => ?_) e
+    rcases hw with ⟨ha, hn⟩ | ⟨ha, hn⟩
+    · exact hn (List.mem_filter.mpr ⟨ha, List.any_eq_true.mpr ⟨i, hi, by simp [he]⟩⟩)
+    · exact hn (List.mem_filter.mpr ⟨ha, List.any_eq_true.mpr ⟨i, hi, by simp [he]⟩⟩)
+
+/-- `x1` after the clearing agrees in two runs whose registers agree on entry. -/
+theorem clearedX1_agree {cl : Clear} {c : Prog isa} (hk : cl.Keeps c) {s₁ s₂ u₁ u₂ : State}
+    {t₁ t₂ : List Leak} (f₁ : Exec isa c s₁ t₁ u₁) (f₂ : Exec isa c s₂ t₂ u₂)
+    (hg : s₁.gpr .x1 = s₂.gpr .x1) : clearedX1 cl u₁ = clearedX1 cl u₂ := by
+  unfold clearedX1
+  by_cases h1 : Reg.x1 ∈ cl.gprs
+  · simp [h1]
+  · simp only [h1, ↓reduceIte]
+    rw [hk.gpr .x1 (by decide) h1 f₁, hk.gpr .x1 (by decide) h1 f₂]; exact hg
+
+theorem clears_run {cl : Clear} (hwf : cl.WF) (u : State) :
+    execBlock isa (clearsOf cl) u = some (cleared cl u, []) := by
+  unfold clearsOf
   rw [execBlock_append (M := isa), execBlock_append (M := isa), execBlock_append (M := isa), movzs_run,
     Option.bind_some, movis_run, Option.map_some, Option.bind_some]
-  have hx1 : Reg.x1 ∈ allGprs := by decide
-  have ht : ∀ w : State, w.gpr .x1 = 0 → execBlock isa [.tst .x .x1 .x1] w =
-      some ({ w with nf := false, zf := true, c := false, vf := false }, []) := by
-    intro w hw
-    simp [execBlock, isa, exec, State.read, hw, addrs]
-  rw [ht _ (by simp [hx1]), Option.map_some, Option.bind_some, inss_run .x1 hiVecs _ (by simp [hx1])]
-  simp only [Option.map_some, List.append_nil, cleared, Option.some.injEq, Prod.mk.injEq, and_true]
+  have ht : ∀ w : State, execBlock isa [.tst .x .x1 .x1] w =
+      some ({ w with
+        nf := (w.gpr .x1 &&& w.gpr .x1).msb
+        zf := decide ((w.gpr .x1 &&& w.gpr .x1) = 0)
+        c := false
+        vf := false }, []) := by
+    intro w
+    simp [execBlock, isa, exec, State.read, addrs]
+  rw [ht, Option.map_some, Option.bind_some, inss_run .x1 cl.his _]
+  simp only [Option.map_some, List.append_nil, cleared, clearedX1, Option.some.injEq, Prod.mk.injEq, and_true]
   congr 1
   funext w
-  by_cases h : w ∈ hiVecs
-  · have : w ∉ allVecs := by revert h; revert w; decide
-    simp [h, this]
+  by_cases h : w ∈ cl.his
+  · simp [h, hwf.disj h]
   · simp [h]
 
 theorem preserved_of {q : Reg} (h0 : q ≠ .x0) (h : q ∉ allGprs) : q ∈ preserved := by
@@ -367,8 +451,8 @@ theorem vreg_cover (w : VReg) (h : w ∉ hiVecs) : w ∈ allVecs := by
 theorem preservedV_of {w : VReg} (h : w ∈ hiVecs) : w ∈ preservedV := by
   cases w <;> simp_all [hiVecs, preservedV]
 
-theorem setLane_hi0 {x y : BitVec 128} (h : x.extractLsb' 0 64 = y.extractLsb' 0 64) :
-    setLane x 64 1 0 = setLane y 64 1 0 := by
+theorem setLane_hi0 {x y : BitVec 128} {z : BitVec 64} (h : x.extractLsb' 0 64 = y.extractLsb' 0 64) :
+    setLane x 64 1 z = setLane y 64 1 z := by
   apply BitVec.eq_of_getLsbD_eq
   intro i hi
   have hb : i < 64 → x.getLsbD i = y.getLsbD i := fun h64 => by
@@ -448,21 +532,22 @@ bytes below the stack pointer (which the contract leaves it), that writes no
 PSTATE.DIT and calls indirectly only functions whose addresses two runs
 that agree on what is public agree on, run by `scrubAll W rb`, returns
 without secret residue with an `rb`-bit result. -/
-theorem noResidue_scrubAll {c : Prog isa} {k : Contract isa} {W rb : Nat}
+theorem noResidue_scrubAll {c : Prog isa} {k : Contract isa} {W rb : Nat} {cl : Clear}
+    (hwf : cl.WF) (hkp : cl.Keeps c)
     (hv : Verified target c k) (hW : 0 < W ∧ W < 4096 ∧ W % 16 = 0)
     (hsp : ∀ s, k.pre s → W ≤ s.sp.toNat) (hd : 16 * c.aarch64Depth ≤ W)
     (hdit : c.all (fun i => !i.writesDit) = true)
     (hsy : ∀ s₁ s₂, k.pub s₁ s₂ → ∀ n ∈ inames c, s₁.syms n = s₂.syms n)
     (hrb : rb = 0 ∨ rb = 32 ∨ rb = 64) :
-    NoResidue (scrubAll W rb c) k rb := by
+    NoResidue (scrubAll W rb cl c) k rb := by
   intro s₁ s₂ t₁ t₂ s₁'' s₂'' h₁ h₂ hp ho hu e₁ e₂
   unfold scrubAll at e₁ e₂
   rw [withScrubG_range hW] at e₁ e₂
   -- One run: the code, the clearing, the result's fix and the tail.
-  have run : ∀ s t s'', k.pre s → Exec isa (.seq (withRet rb (.seq c (.block clearsAll)))
+  have run : ∀ s t s'', k.pre s → Exec isa (.seq (withRet rb (.seq c (.block (clearsOf cl))))
       (scrubTailG W (List.range (W / 16)))) s t s'' →
       ∃ (t' : List Leak) (u : State) (g : Reg → BitVec 64), Exec isa c s t' u ∧ abiPreserved s u ∧
-        (∀ q, q ≠ .x0 → g q = (cleared u).gpr q) ∧ g .x0 >>> rb = (0 : BitVec 64) ∧ TailRunG W (List.range (W / 16)) { cleared u with gpr := g } s'' := by
+        (∀ q, q ≠ .x0 → g q = (cleared cl u).gpr q) ∧ g .x0 >>> rb = (0 : BitVec 64) ∧ TailRunG W (List.range (W / 16)) { cleared cl u with gpr := g } s'' := by
     intro s t s'' hs e
     obtain ⟨t', u, f, ha, -⟩ := hv.1 s hs
     cases e with
@@ -474,14 +559,14 @@ theorem noResidue_scrubAll {c : Prog isa} {k : Contract isa} {W rb : Nat}
     obtain ⟨-, rfl⟩ := Exec.det f ec
     cases ecl with
     | block hb =>
-    rw [clearsAll_run] at hb
+    rw [clears_run hwf] at hb
     obtain ⟨rfl, -⟩ := Prod.mk.inj (Option.some.inj hb)
     cases eb' with
     | block hb' =>
-    obtain ⟨g, hg, hgq, hg0, -⟩ := retFix_hi hrb (cleared u)
+    obtain ⟨g, hg, hgq, hg0, -⟩ := retFix_hi hrb (cleared cl u)
     rw [hg] at hb'
     obtain ⟨rfl, -⟩ := Prod.mk.inj (Option.some.inj hb')
-    obtain ⟨u', x, tr⟩ := tailG_run hW range_ok { cleared u with gpr := g }
+    obtain ⟨u', x, tr⟩ := tailG_run hW range_ok { cleared cl u with gpr := g }
       (by show W ≤ u.sp.toNat; rw [ha.2.1]; exact hsp s hs)
     obtain ⟨-, rfl⟩ := Exec.det eb x
     exact ⟨t', u, g, f, ha, hgq, hg0, tr⟩
@@ -494,32 +579,46 @@ theorem noResidue_scrubAll {c : Prog isa} {k : Contract isa} {W rb : Nat}
     (Exec.unknowns_agreeS f₁ [] [] f₂ (hsy s₁ s₂ hp) hu
       (by rw [List.append_nil, List.append_nil]; exact hv.2.1 _ _ _ _ _ _ h₁ h₂ hp f₁ f₂)).2
   have hspu : u₁.sp = u₂.sp := by rw [hsp₁, hsp₂, hsp0]
+  have hX := clearedX1_agree hkp f₁ f₂ (hg .x1 (by decide))
   refine ⟨by rw [tr₁.rd, tr₂.rd]; exact hrd₁.trans (hrd.trans hrd₂.symm),
     by rw [tr₁.wr, tr₂.wr]; exact hwr₁.trans (hwr.trans hwr₂.symm), fun q hq0 => ?_, ?_,
-    by rw [tr₁.sp, tr₂.sp]; exact hspu, by rw [tr₁.c, tr₂.c]; rfl, by rw [tr₁.nf, tr₂.nf]; rfl,
-    by rw [tr₁.zf, tr₂.zf]; rfl, by rw [tr₁.vf, tr₂.vf]; rfl,
+    by rw [tr₁.sp, tr₂.sp]; exact hspu, by rw [tr₁.c, tr₂.c]; rfl,
+    by rw [tr₁.nf, tr₂.nf]; show (cleared cl u₁).nf = (cleared cl u₂).nf; simp only [cleared, hX],
+    by rw [tr₁.zf, tr₂.zf]; show (cleared cl u₁).zf = (cleared cl u₂).zf; simp only [cleared, hX],
+    by rw [tr₁.vf, tr₂.vf]; rfl,
     by rw [tr₁.dit, tr₂.dit]; exact (Exec.dit hdit f₁).trans (hdi.trans (Exec.dit hdit f₂).symm), ?_, ?_⟩
   · rw [tr₁.gpr, tr₂.gpr]
     by_cases h9 : q = .x9
     · simp only [h9, ↓reduceIte]; show u₁.sp - _ = u₂.sp - _; rw [hspu]
     · simp only [h9, ↓reduceIte, hgq₁ q hq0, hgq₂ q hq0, cleared]
-      by_cases hq : q ∈ allGprs
+      by_cases hq : q ∈ cl.gprs
       · simp [hq]
       · simp only [hq, ↓reduceIte]
-        have := preserved_of hq0 hq
-        rw [ha₁.1 q this, ha₂.1 q this]; exact hg q hq0
+        by_cases hga : q ∈ allGprs
+        · rw [hkp.gpr q hga hq f₁, hkp.gpr q hga hq f₂]; exact hg q hq0
+        · have := preserved_of hq0 hga
+          rw [ha₁.1 q this, ha₂.1 q this]; exact hg q hq0
   · rw [tr₁.gpr, tr₂.gpr]
     simp only [reduceCtorEq, ↓reduceIte, hg0₁, hg0₂]
   · rw [tr₁.v, tr₂.v]
     funext w
     by_cases h31 : w = .v31
     · simp [h31]
-    · simp only [h31, ↓reduceIte, cleared]
-      by_cases hh : w ∈ hiVecs
+    · simp only [h31, ↓reduceIte, cleared, hX]
+      by_cases hh : w ∈ cl.his
       · simp only [hh, ↓reduceIte]
         apply setLane_hi0
-        rw [ha₁.2.2 w (preservedV_of hh), ha₂.2.2 w (preservedV_of hh), hvv]
-      · simp [hh, vreg_cover w hh]
+        have hw := preservedV_of (hwf.his w hh)
+        rw [ha₁.2.2 w hw, ha₂.2.2 w hw, hvv]
+      · simp only [hh, ↓reduceIte]
+        by_cases hvc : w ∈ cl.vecs
+        · simp [hvc]
+        · simp only [hvc, ↓reduceIte]
+          have hk : (w ∈ allVecs ∧ w ∉ cl.vecs) ∨ (w ∈ hiVecs ∧ w ∉ cl.his) := by
+            by_cases hi : w ∈ hiVecs
+            · exact .inr ⟨hi, hh⟩
+            · exact .inl ⟨vreg_cover w hi, hvc⟩
+          rw [hkp.vec w hk f₁, hkp.vec w hk f₂, hvv]
   · intro x hx
     rw [tr₁.rd, tr₁.wr] at hx
     change ∀ r ∈ u₁.rd ++ u₁.wr, ¬ r.Contains x 1 at hx
@@ -553,15 +652,15 @@ theorem noResidue_scrubAll {c : Prog isa} {k : Contract isa} {W rb : Nat}
 open VG.AArch64.Scrub VG.AArch64.RTaintG VG.AArch64.RTaintF in
 /-- `noResidue_scrubAll` for code without frames, which `scrubAll 0` runs
 with no stack zeroed. -/
-theorem noResidue_scrubAll0 {c : Prog isa} {k : Contract isa} {rb : Nat}
-    (hv : Verified target c k) (hd : c.aarch64Depth = 0)
+theorem noResidue_scrubAll0 {c : Prog isa} {k : Contract isa} {rb : Nat} {cl : Clear}
+    (hwf : cl.WF) (hkp : cl.Keeps c) (hv : Verified target c k) (hd : c.aarch64Depth = 0)
     (hdit : c.all (fun i => !i.writesDit) = true) (hrb : rb = 0 ∨ rb = 32 ∨ rb = 64) :
-    NoResidue (scrubAll 0 rb c) k rb := by
+    NoResidue (scrubAll 0 rb cl c) k rb := by
   intro s₁ s₂ t₁ t₂ s₁'' s₂'' h₁ h₂ hp ho hu e₁ e₂
-  have run : ∀ s t s'', k.pre s → Exec isa (withRet rb (.seq c (.block clearsAll))) s t s'' →
+  have run : ∀ s t s'', k.pre s → Exec isa (withRet rb (.seq c (.block (clearsOf cl)))) s t s'' →
       ∃ (t' : List Leak) (u : State) (g : Reg → BitVec 64), Exec isa c s t' u ∧ abiPreserved s u ∧
-        (∀ q, q ≠ .x0 → g q = (cleared u).gpr q) ∧ g .x0 >>> rb = (0 : BitVec 64) ∧
-        s'' = { cleared u with gpr := g } := by
+        (∀ q, q ≠ .x0 → g q = (cleared cl u).gpr q) ∧ g .x0 >>> rb = (0 : BitVec 64) ∧
+        s'' = { cleared cl u with gpr := g } := by
     intro s t s'' hs e
     obtain ⟨t', u, f, ha, -⟩ := hv.1 s hs
     cases e with
@@ -571,11 +670,11 @@ theorem noResidue_scrubAll0 {c : Prog isa} {k : Contract isa} {rb : Nat}
     obtain ⟨-, rfl⟩ := Exec.det f ec
     cases ecl with
     | block hb =>
-    rw [clearsAll_run] at hb
+    rw [clears_run hwf] at hb
     obtain ⟨rfl, -⟩ := Prod.mk.inj (Option.some.inj hb)
     cases eb' with
     | block hb' =>
-    obtain ⟨g, hg, hgq, hg0, -⟩ := retFix_hi hrb (cleared u)
+    obtain ⟨g, hg, hgq, hg0, -⟩ := retFix_hi hrb (cleared cl u)
     rw [hg] at hb'
     obtain ⟨rfl, -⟩ := Prod.mk.inj (Option.some.inj hb')
     exact ⟨t', u, g, f, ha, hgq, hg0, rfl⟩
@@ -585,25 +684,37 @@ theorem noResidue_scrubAll0 {c : Prog isa} {k : Contract isa} {rb : Nat}
   obtain ⟨hrd₁, hwr₁, hsp₁⟩ := Exec.rdwr f₁
   obtain ⟨hrd₂, hwr₂, hsp₂⟩ := Exec.rdwr f₂
   have hspu : u₁.sp = u₂.sp := by rw [hsp₁, hsp₂, hsp0]
+  have hX := clearedX1_agree hkp f₁ f₂ (hg .x1 (by decide))
   refine ⟨hrd₁.trans (hrd.trans hrd₂.symm), hwr₁.trans (hwr.trans hwr₂.symm), fun q hq0 => ?_,
-    by simp only [hg0₁, hg0₂], hspu, rfl, rfl, rfl, rfl,
+    by simp only [hg0₁, hg0₂], hspu, rfl, by simp only [cleared, hX], by simp only [cleared, hX], rfl,
     (Exec.dit hdit f₁).trans (hdi.trans (Exec.dit hdit f₂).symm), ?_, ?_⟩
   · show g₁ q = g₂ q
     rw [hgq₁ q hq0, hgq₂ q hq0]
     simp only [cleared]
-    by_cases hq : q ∈ allGprs
+    by_cases hq : q ∈ cl.gprs
     · simp [hq]
     · simp only [hq, ↓reduceIte]
-      have := preserved_of hq0 hq
-      rw [ha₁.1 q this, ha₂.1 q this]; exact hg q hq0
-  · show (cleared u₁).v = (cleared u₂).v
+      by_cases hga : q ∈ allGprs
+      · rw [hkp.gpr q hga hq f₁, hkp.gpr q hga hq f₂]; exact hg q hq0
+      · have := preserved_of hq0 hga
+        rw [ha₁.1 q this, ha₂.1 q this]; exact hg q hq0
+  · show (cleared cl u₁).v = (cleared cl u₂).v
     funext w
-    simp only [cleared]
-    by_cases hh : w ∈ hiVecs
+    simp only [cleared, hX]
+    by_cases hh : w ∈ cl.his
     · simp only [hh, ↓reduceIte]
       apply setLane_hi0
-      rw [ha₁.2.2 w (preservedV_of hh), ha₂.2.2 w (preservedV_of hh), hvv]
-    · simp [hh, vreg_cover w hh]
+      have hw := preservedV_of (hwf.his w hh)
+      rw [ha₁.2.2 w hw, ha₂.2.2 w hw, hvv]
+    · simp only [hh, ↓reduceIte]
+      by_cases hvc : w ∈ cl.vecs
+      · simp [hvc]
+      · simp only [hvc, ↓reduceIte]
+        have hk : (w ∈ allVecs ∧ w ∉ cl.vecs) ∨ (w ∈ hiVecs ∧ w ∉ cl.his) := by
+          by_cases hi : w ∈ hiVecs
+          · exact .inr ⟨hi, hh⟩
+          · exact .inl ⟨vreg_cover w hi, hvc⟩
+        rw [hkp.vec w hk f₁, hkp.vec w hk f₂, hvv]
   · intro x hx
     change ∀ r ∈ u₁.rd ++ u₁.wr, ¬ r.Contains x 1 at hx
     show u₁.mem x = u₂.mem x
@@ -625,7 +736,7 @@ theorem noResidue_scrubAll0 {c : Prog isa} {k : Contract isa} {rb : Nat}
 
 /-! ## Keeping the code verified -/
 
-theorem setLane_lo (x : BitVec 128) : (setLane x 64 1 0).extractLsb' 0 64 = x.extractLsb' 0 64 := by
+theorem setLane_lo (x : BitVec 128) (z : BitVec 64) : (setLane x 64 1 z).extractLsb' 0 64 = x.extractLsb' 0 64 := by
   apply BitVec.eq_of_getLsbD_eq
   intro i hi
   have hi' : i < 128 := by omega
@@ -647,38 +758,43 @@ structure ScrubAllOk (k : Contract isa) (W rb : Nat) : Prop where
   pub : ∀ s₁ s₂, k.pub s₁ s₂ → s₁.sp = s₂.sp
 
 open VG.AArch64.Scrub VG.AArch64.RTaintG VG.AArch64.RTaintF in
-theorem Verified.scrubAll {c : Prog isa} {k : Contract isa} {W rb : Nat} (h : Verified target c k)
+theorem Verified.scrubAll {c : Prog isa} {k : Contract isa} {W rb : Nat} {cl : Clear} (hwf : cl.WF)
+    (h : Verified target c k)
     (hW : 0 < W ∧ W < 4096 ∧ W % 16 = 0) (hrb : rb = 0 ∨ rb = 32 ∨ rb = 64) (hk : ScrubAllOk k W rb) :
-    Verified target (scrubAll W rb c) k := by
+    Verified target (scrubAll W rb cl c) k := by
   obtain ⟨hcor, hct, hsat⟩ := h
   have hrun : ∀ s, k.pre s → ∃ t u g u'',
       Exec isa c s t u ∧ abiPreserved s u ∧ k.post s u ∧
-      execBlock isa (retFix rb) (cleared u) = some ({ cleared u with gpr := g }, []) ∧
-      (∀ q, q ≠ .x0 → g q = (cleared u).gpr q) ∧ (g .x0).setWidth rb = ((cleared u).gpr .x0).setWidth rb ∧
-      Exec isa (scrubTailG W (List.range (W / 16))) { cleared u with gpr := g }
+      execBlock isa (retFix rb) (cleared cl u) = some ({ cleared cl u with gpr := g }, []) ∧
+      (∀ q, q ≠ .x0 → g q = (cleared cl u).gpr q) ∧ (g .x0).setWidth rb = ((cleared cl u).gpr .x0).setWidth rb ∧
+      Exec isa (scrubTailG W (List.range (W / 16))) { cleared cl u with gpr := g }
         (tailTraceG u.sp W (List.range (W / 16))) u'' ∧
-      TailRunG W (List.range (W / 16)) { cleared u with gpr := g } u'' := by
+      TailRunG W (List.range (W / 16)) { cleared cl u with gpr := g } u'' := by
     intro s hs
     obtain ⟨t, u, he, ha, hq⟩ := hcor s hs
-    obtain ⟨g, hg, hgq, -, hgx⟩ := retFix_hi hrb (cleared u)
-    obtain ⟨u'', ex, tr⟩ := tailG_run hW range_ok { cleared u with gpr := g }
+    obtain ⟨g, hg, hgq, -, hgx⟩ := retFix_hi hrb (cleared cl u)
+    obtain ⟨u'', ex, tr⟩ := tailG_run hW range_ok { cleared cl u with gpr := g }
       (by show W ≤ u.sp.toNat; rw [ha.2.1]; exact hk.sp s hs)
     exact ⟨t, u, g, u'', he, ha, hq, hg, hgq, hgx, ex, tr⟩
-  have hx0 : Reg.x0 ∉ allGprs := by decide
+  have hx0 : Reg.x0 ∉ cl.gprs := fun h => absurd (hwf.gprs _ h) (by decide)
   refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂ => ?_, hsat⟩
   · obtain ⟨t, u, g, u'', he, ha, hq, hg, hgq, hgx, ex, tr⟩ := hrun s hs
     refine ⟨((t ++ []) ++ []) ++ tailTraceG u.sp W (List.range (W / 16)), u'', ?_,
       ⟨fun q hq' => ?_, by rw [tr.sp]; exact ha.2.1, fun w hw => ?_⟩, ?_⟩
     · unfold VG.Impl.Residue.AArch64.scrubAll
       rw [withScrubG_range hW]
-      exact Exec.seq (Exec.seq (Exec.seq he (Exec.block (clearsAll_run u))) (Exec.block hg)) ex
+      exact Exec.seq (Exec.seq (Exec.seq he (Exec.block (clears_run hwf u))) (Exec.block hg)) ex
     · have h9 : q ≠ .x9 := by rintro rfl; simp [preserved] at hq'
       have h0 : q ≠ .x0 := by rintro rfl; simp [preserved] at hq'
-      have hng : q ∉ allGprs := by cases q <;> simp_all [preserved, allGprs]
+      have hng : q ∉ cl.gprs := fun h => absurd (hwf.gprs q h) (by cases q <;> simp_all [preserved, allGprs])
       rw [tr.gpr]; simp only [h9, ↓reduceIte, hgq q h0, cleared, hng]; exact ha.1 q hq'
     · have h31 : w ≠ .v31 := by rintro rfl; simp [preservedV] at hw
       have hh : w ∈ hiVecs := by cases w <;> simp_all [preservedV, hiVecs]
-      rw [tr.v]; simp only [h31, ↓reduceIte, cleared, hh, setLane_lo]; exact ha.2.2 w hw
+      have hnv : w ∉ cl.vecs := fun h' => hi_not_all w hh (hwf.vecs w h')
+      rw [tr.v]; simp only [h31, ↓reduceIte, cleared]
+      by_cases hc : w ∈ cl.his
+      · simp only [hc, ↓reduceIte, setLane_lo]; exact ha.2.2 w hw
+      · simp only [hc, hnv, ↓reduceIte]; exact ha.2.2 w hw
     · refine hk.post s u u'' hs hq (fun a ha' => ?_) ?_
       · have ha'' : ¬ (a - (u.sp - BitVec.ofNat 64 W)).toNat < W := by rw [ha.2.1]; exact ha'
         rw [tr.mem]
@@ -710,7 +826,7 @@ theorem Verified.scrubAll {c : Prog isa} {k : Contract isa} {W rb : Nat} (h : Ve
     | block hl₁ =>
     cases l₂ with
     | block hl₂ =>
-    rw [clearsAll_run] at hl₁ hl₂
+    rw [clears_run hwf] at hl₁ hl₂
     obtain ⟨rfl, rfl⟩ := Prod.mk.inj (Option.some.inj hl₁)
     obtain ⟨rfl, rfl⟩ := Prod.mk.inj (Option.some.inj hl₂)
     cases r₁ with
@@ -726,31 +842,36 @@ theorem Verified.scrubAll {c : Prog isa} {k : Contract isa} {W rb : Nat} (h : Ve
 
 open VG.AArch64.Scrub VG.AArch64.RTaintG VG.AArch64.RTaintF in
 /-- `Verified.scrubAll` for code without frames, under `scrubAll 0`. -/
-theorem Verified.scrubAll0 {c : Prog isa} {k : Contract isa} {rb : Nat} (h : Verified target c k)
+theorem Verified.scrubAll0 {c : Prog isa} {k : Contract isa} {rb : Nat} {cl : Clear} (hwf : cl.WF)
+    (h : Verified target c k)
     (hrb : rb = 0 ∨ rb = 32 ∨ rb = 64) (hk : ScrubAllOk k 0 rb) :
-    Verified target (VG.Impl.Residue.AArch64.scrubAll 0 rb c) k := by
+    Verified target (VG.Impl.Residue.AArch64.scrubAll 0 rb cl c) k := by
   obtain ⟨hcor, hct, hsat⟩ := h
   have hrun : ∀ s, k.pre s → ∃ t u g,
       Exec isa c s t u ∧ abiPreserved s u ∧ k.post s u ∧
-      execBlock isa (retFix rb) (cleared u) = some ({ cleared u with gpr := g }, []) ∧
-      (∀ q, q ≠ .x0 → g q = (cleared u).gpr q) ∧ (g .x0).setWidth rb = ((cleared u).gpr .x0).setWidth rb := by
+      execBlock isa (retFix rb) (cleared cl u) = some ({ cleared cl u with gpr := g }, []) ∧
+      (∀ q, q ≠ .x0 → g q = (cleared cl u).gpr q) ∧ (g .x0).setWidth rb = ((cleared cl u).gpr .x0).setWidth rb := by
     intro s hs
     obtain ⟨t, u, he, ha, hq⟩ := hcor s hs
-    obtain ⟨g, hg, hgq, -, hgx⟩ := retFix_hi hrb (cleared u)
+    obtain ⟨g, hg, hgq, -, hgx⟩ := retFix_hi hrb (cleared cl u)
     exact ⟨t, u, g, he, ha, hq, hg, hgq, hgx⟩
-  have hx0 : Reg.x0 ∉ allGprs := by decide
+  have hx0 : Reg.x0 ∉ cl.gprs := fun h => absurd (hwf.gprs _ h) (by decide)
   refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂ => ?_, hsat⟩
   · obtain ⟨t, u, g, he, ha, hq, hg, hgq, hgx⟩ := hrun s hs
-    refine ⟨(t ++ []) ++ [], { cleared u with gpr := g }, ?_,
+    refine ⟨(t ++ []) ++ [], { cleared cl u with gpr := g }, ?_,
       ⟨fun q hq' => ?_, ha.2.1, fun w hw => ?_⟩, ?_⟩
-    · exact Exec.seq (Exec.seq he (Exec.block (clearsAll_run u))) (Exec.block hg)
+    · exact Exec.seq (Exec.seq he (Exec.block (clears_run hwf u))) (Exec.block hg)
     · have h0 : q ≠ .x0 := by rintro rfl; simp [preserved] at hq'
-      have hng : q ∉ allGprs := by cases q <;> simp_all [preserved, allGprs]
+      have hng : q ∉ cl.gprs := fun h => absurd (hwf.gprs q h) (by cases q <;> simp_all [preserved, allGprs])
       show g q = _
       simp only [hgq q h0, cleared, hng, ↓reduceIte]; exact ha.1 q hq'
     · have hh : w ∈ hiVecs := by cases w <;> simp_all [preservedV, hiVecs]
-      show BitVec.extractLsb' 0 64 ((cleared u).v w) = _
-      simp only [cleared, hh, ↓reduceIte, setLane_lo]; exact ha.2.2 w hw
+      have hnv : w ∉ cl.vecs := fun h' => hi_not_all w hh (hwf.vecs w h')
+      show BitVec.extractLsb' 0 64 ((cleared cl u).v w) = _
+      simp only [cleared]
+      by_cases hc : w ∈ cl.his
+      · simp only [hc, ↓reduceIte, setLane_lo]; exact ha.2.2 w hw
+      · simp only [hc, hnv, ↓reduceIte]; exact ha.2.2 w hw
     · refine hk.post s u _ hs hq (fun a _ => rfl) ?_
       show (g .x0).setWidth rb = _
       rw [hgx]
@@ -771,7 +892,7 @@ theorem Verified.scrubAll0 {c : Prog isa} {k : Contract isa} {rb : Nat} (h : Ver
     | block hl₁ =>
     cases l₂ with
     | block hl₂ =>
-    rw [clearsAll_run] at hl₁ hl₂
+    rw [clears_run hwf] at hl₁ hl₂
     obtain ⟨rfl, rfl⟩ := Prod.mk.inj (Option.some.inj hl₁)
     obtain ⟨rfl, rfl⟩ := Prod.mk.inj (Option.some.inj hl₂)
     cases r₁ with
@@ -1115,9 +1236,9 @@ def withScrubAll {api : Api} (r : Registration api target) (hok : ScrubAllOk r.c
       (retBitsOf r = 0 ∨ retBitsOf r = 32 ∨ retBitsOf r = 64) ∧ r.written = [] then
     { suffix := r.suffix
       tables := r.tables
-      code := scrubAll r.stack (retBitsOf r) r.code
+      code := scrubAll r.stack (retBitsOf r) (Clear.of r.code) r.code
       contract := r.contract
-      verified := Verified.scrubAll r.verified h.1 h.2.2.2.2.1 hok
+      verified := Verified.scrubAll (Clear.of_wf _) r.verified h.1 h.2.2.2.2.1 hok
       consts := r.consts
       stack := r.stack
       ofApi := r.ofApi
@@ -1128,15 +1249,15 @@ def withScrubAll {api : Api} (r : Registration api target) (hok : ScrubAllOk r.c
       extra := r.extra
       vendor := r.vendor
       notWith := r.notWith
-      residue := some ⟨noResidue_scrubAll r.verified h.1 hok.sp h.2.1 h.2.2.1 (tablesCall_syms h.2.2.2.1)
+      residue := some ⟨noResidue_scrubAll (Clear.of_wf _) (Clear.of_keeps _) r.verified h.1 hok.sp h.2.1 h.2.2.1 (tablesCall_syms h.2.2.2.1)
         h.2.2.2.2.1⟩ }
   else if h : r.stack = 0 ∧ r.code.aarch64Depth = 0 ∧ r.code.all (fun i => !i.writesDit) = true ∧
       (retBitsOf r = 0 ∨ retBitsOf r = 32 ∨ retBitsOf r = 64) ∧ r.written = [] then
     { suffix := r.suffix
       tables := r.tables
-      code := scrubAll 0 (retBitsOf r) r.code
+      code := scrubAll 0 (retBitsOf r) (Clear.of r.code) r.code
       contract := r.contract
-      verified := Verified.scrubAll0 r.verified h.2.2.2.1 (h.1 ▸ hok)
+      verified := Verified.scrubAll0 (Clear.of_wf _) r.verified h.2.2.2.1 (h.1 ▸ hok)
       consts := r.consts
       stack := r.stack
       ofApi := r.ofApi
@@ -1147,7 +1268,7 @@ def withScrubAll {api : Api} (r : Registration api target) (hok : ScrubAllOk r.c
       extra := r.extra
       vendor := r.vendor
       notWith := r.notWith
-      residue := some ⟨noResidue_scrubAll0 r.verified h.2.1 h.2.2.1 h.2.2.2.1⟩ }
+      residue := some ⟨noResidue_scrubAll0 (Clear.of_wf _) (Clear.of_keeps _) r.verified h.2.1 h.2.2.1 h.2.2.2.1⟩ }
   else r
 
 end VG.AArch64.ScrubAll
