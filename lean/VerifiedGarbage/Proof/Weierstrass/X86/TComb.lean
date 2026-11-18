@@ -164,7 +164,7 @@ theorem select_ok (K : TCombCfg) {s : State} {base : Addr} {size : Nat} (hs : Sc
     have := Nat.mul_le_mul_left (16 * K.M.n) (show e + 1 ≤ K.H by omega_using [he])
     rw [Nat.mul_add, Nat.mul_one] at this; omega_using [hn, htb, hy, hz, hxz, hzero, h0xy, h0z, hX, htbe, he, hc, this]
   refine WP.mono (selPass_ok K hs₁ hn.2 hH (by omega_using [hH, ha]) h8₁ (congrArg (BitVec.setWidth 64) x₁)
-    hr hX (by omega_using [hexy, hy]) hout) fun s₂ ⟨a₂, O₂, k₂⟩ => ?_
+    hr hX (by omega_using [hexy, hy]) (fun _ => hout)) fun s₂ ⟨a₂, O₂, k₂⟩ => ?_
   have hs₂ := hs₁.of_keeps k₂ (by decide)
   have h8₂ : s₂.gpr .ebx = BitVec.ofNat 32 a := by rw [k₂.1 _ (by decide), h8₁]
   have h0₂ : wordsVal s₂.mem base K.zero K.M.n = 0 := by

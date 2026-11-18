@@ -317,15 +317,15 @@ theorem accVal_outside {mem mem' : Mem} {base X : Addr} {size o len n a H c : Na
   next => rfl
 
 /-- The entry of the table at `edx = X` for the magnitude `ebx = a` stored to the `16 n` bytes
-at `E.x`: in one scan of the table, or in two for more than six pieces (the table is past the
-working space, so the first scan's stores leave it as it was). -/
+at `E.x`: in one scan of the table, or in two for more than six pieces (when the table is to be
+past the working space, so that the first scan's stores leave it as it was). -/
 theorem selPass_ok (K : TCombCfg) {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
     {X : Addr} {a : Nat} (hn : K.M.n ≤ 12) (hH : K.H < 2 ^ 31) (ha : a < 2 ^ 31)
     (h8 : s.gpr .ebx = BitVec.ofNat 32 a) (hx : (s.gpr .edx).setWidth 64 = X)
     (hr : ∀ e < K.H, ∀ c < K.M.n, InRegions (s.rd ++ s.wr) (X + BitVec.ofNat 64 (16 * K.M.n * e + 16 * c)) 16)
     (hX : X.toNat + 16 * K.M.n * K.H ≤ 2 ^ 32)
     (hE : K.E.x + 16 * K.M.n ≤ size)
-    (hout : ∀ d < 16 * K.M.n * K.H, size ≤ ofs base (X + BitVec.ofNat 64 d)) :
+    (hout : 6 < K.M.n → ∀ d < 16 * K.M.n * K.H, size ≤ ofs base (X + BitVec.ofNat 64 d)) :
     WP isa (.block K.selPass) s fun t =>
       (∀ c < K.M.n, t.mem.readW (off base (K.E.x + 16 * c)) 128 = accVal s.mem X K.M.n a K.H c) ∧
       Outside base K.E.x (16 * K.M.n) s.mem t.mem ∧ KeepRegs [.ecx] s t := by
@@ -354,7 +354,7 @@ theorem selPass_ok (K : TCombCfg) {s : State} {base : Addr} {size : Nat} (hs : S
       · have := a₂ (c - 6) (by omega_arith)
         rw [show 6 + (c - 6) = c by omega_arith] at this
         rw [this]
-        exact accVal_outside O₁ (by omega_arith) hc hout
+        exact accVal_outside O₁ (by omega_arith) hc (hout (by omega_arith))
     · exact (O₁.mono (Nat.le_refl _) (by omega_arith)).trans (O₂.mono (by omega_arith) (by omega_arith))
 
 end VG.Proof.Weierstrass.X86

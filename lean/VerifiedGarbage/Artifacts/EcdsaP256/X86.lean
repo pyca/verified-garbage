@@ -15,7 +15,7 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombBodyCT
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombMain
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombPoints
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombStagesCT
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombCT
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Final
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafCallerCT
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafLayout
