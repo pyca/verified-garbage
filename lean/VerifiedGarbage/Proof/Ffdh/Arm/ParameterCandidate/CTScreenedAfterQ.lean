@@ -2,13 +2,12 @@ module
 
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTLimitedFinal
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateTest
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateReturn
+public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTResult
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateMemory
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.Status
 import VerifiedGarbage.Proof.Bignum.Arm.StackOnlyCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTCandidateTest
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.WitnessEnd
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTCandidateResult
 

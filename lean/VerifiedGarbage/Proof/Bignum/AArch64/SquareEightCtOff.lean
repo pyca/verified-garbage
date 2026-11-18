@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCtHead
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightRows
-import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightOffDiagonal
+import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightHead
 import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightCtContext
 
 @[expose] public section

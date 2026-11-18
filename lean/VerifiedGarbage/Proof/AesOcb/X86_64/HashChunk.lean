@@ -2,7 +2,7 @@ module
 
 import VerifiedGarbage.Proof.AesOcb.X86_64.HashFill
 public import VerifiedGarbage.Proof.AesOcb.X86_64.Nonce
-public import VerifiedGarbage.Proof.AesOcb.X86_64.Args
+public import VerifiedGarbage.Proof.AesOcb.X86_64.Words
 public import VerifiedGarbage.Proof.AesOcb.X86_64.LNtz
 public import VerifiedGarbage.Proof.Ocb.Spec
 import VerifiedGarbage.Proof.Framework.Omega

@@ -20,7 +20,7 @@ import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Counter
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Rounds
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Save
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Scalar
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Tail
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Tail
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Check
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Last
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.LoopRounds
@@ -54,7 +54,6 @@ import VerifiedGarbage.Proof.Poly1305.Stream
 import VerifiedGarbage.Spec.ChaCha20Poly1305.Contract
 import VerifiedGarbage.Impl.ChaCha20.AArch64.Rows6
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Xor
-public import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Spill
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Store
 import VerifiedGarbage.Proof.Framework.Block

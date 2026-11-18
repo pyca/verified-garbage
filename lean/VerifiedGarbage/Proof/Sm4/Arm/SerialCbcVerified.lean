@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Sm4.Arm.BatchPrologue
 public import VerifiedGarbage.Proof.Sm4.Arm.SerialCbcLoop
-import VerifiedGarbage.Proof.Sm4.Arm.Core
+import VerifiedGarbage.Proof.Sm4.Arm.Prologue
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.Sm4.Arm.SerialCbc
 public import VerifiedGarbage.Proof.Framework.Semantics

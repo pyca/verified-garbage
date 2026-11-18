@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.InvLaw
-public import VerifiedGarbage.Proof.Rsa.Arm.CvWords
+public import VerifiedGarbage.Proof.Rsa.Arm.CvSpec
 public import VerifiedGarbage.Proof.Rsa.Arm.CvFail
 public import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
 public import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
@@ -23,7 +23,6 @@ meta import VerifiedGarbage.Spec.Rsa.Contract
 meta import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Rsa.Arm.KcBodyW
 import VerifiedGarbage.Proof.Rsa.KeyCheckMath
-import VerifiedGarbage.Proof.Rsa.Arm.CvSpec
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Bignum.Arm.UmaalArithmetic
 

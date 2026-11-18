@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Blowfish.Feistel
+public import VerifiedGarbage.Proof.Blowfish.F
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Blowfish.AArch64.Exec
 import VerifiedGarbage.Proof.Blowfish.Schedule
@@ -14,7 +14,6 @@ import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Proof.Blowfish.Blocks
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Blowfish.F
 public import VerifiedGarbage.TCB.AArch64.Isa
 import VerifiedGarbage.Proof.Framework.InstancePriority
 import VerifiedGarbage.Proof.Framework.GetElem

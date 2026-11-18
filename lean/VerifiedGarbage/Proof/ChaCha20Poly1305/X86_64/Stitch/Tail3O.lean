@@ -13,7 +13,6 @@ public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.Rounds3
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.Last3
 public import VerifiedGarbage.Impl.ChaCha20Poly1305.X86_64.Stitch
 import VerifiedGarbage.Proof.Framework.Taint
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Chunk
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.StoreRow
 import VerifiedGarbage.Proof.ChaCha20.X86_64.Xor
 public import VerifiedGarbage.Proof.Framework.Semantics

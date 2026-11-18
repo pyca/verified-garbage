@@ -12,11 +12,10 @@ public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Response
 public import VerifiedGarbage.Proof.MlDsa.CanonicalizeContract
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.LazyInv
 import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseVec
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseVec
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseAdd
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Mem
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLoop
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseWord
 public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd

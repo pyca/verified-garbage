@@ -1,10 +1,10 @@
 module
+
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCtContext
 public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightCtSetup
-
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightRows
 import VerifiedGarbage.Proof.Bignum.AArch64.WideDiagonal
-import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightSave
+import VerifiedGarbage.Proof.Bignum.AArch64.WideZero
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.SquareEight

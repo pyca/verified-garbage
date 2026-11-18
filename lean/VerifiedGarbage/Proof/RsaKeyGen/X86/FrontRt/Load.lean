@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.Spec.RsaKeyGen
 import VerifiedGarbage.Proof.RsaKeyGen.X86.ImportLoop
-import VerifiedGarbage.Proof.RsaKeyGen.X86.ImportEncoding
 import VerifiedGarbage.Proof.RsaKeyGen.X86.ImportWorkspace
 import VerifiedGarbage.Proof.RsaKeyGen.Bits32
 import VerifiedGarbage.Proof.Bignum.ByteWords

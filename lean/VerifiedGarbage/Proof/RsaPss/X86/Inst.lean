@@ -802,7 +802,7 @@ end
 /-!
 # RSASSA-PSS verification with a precomputed public key on x86: a salt of any length
 
-As on ARMv7 (`Proof/RsaPss/Arm/VfAny.lean`): `DB` after `mHash` in `Y`
+As on ARMv7 (`Proof/RsaPss/Arm/VfFixed.lean`): `DB` after `mHash` in `Y`
 (`cpDb_vp`), shifted left by `pos + 1` bytes, so that `M'` is in `Y`
 (`Ma`); its length and the blocks of the longest salt (`anyLen_vp`); and the
 end of the paths (`any_vp`).

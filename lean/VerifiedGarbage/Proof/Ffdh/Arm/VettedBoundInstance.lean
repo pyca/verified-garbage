@@ -4,13 +4,12 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.VettedGroupsEnvironment
 public import VerifiedGarbage.Proof.Ffdh.Arm.SampleBoundLaw
 public import VerifiedGarbage.Impl.Ffdh.Arm.VettedCap
 import VerifiedGarbage.Proof.Ffdh.Arm.VettedGroupsCT
-import VerifiedGarbage.Proof.Ffdh.Arm.VettedCapPolicy
+import VerifiedGarbage.Proof.Ffdh.Arm.VettedCapStore
 public import VerifiedGarbage.Proof.Ffdh.Arm.ScalarLayout
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.X25519.Arm.Instr
 import VerifiedGarbage.Proof.Bignum.Arm.RoundState
-import VerifiedGarbage.Proof.Ffdh.Arm.VettedCapStore
 import VerifiedGarbage.Proof.Ffdh.Arm.VettedCapCT
 import VerifiedGarbage.Proof.Ffdh.Arm.KeyBound
 import VerifiedGarbage.Proof.Ffdh.Arm.KeyBoundCT

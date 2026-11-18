@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.Stack
 import VerifiedGarbage.Proof.Rsa.Arm.KcStart
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineRounds
+import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineBase
 public import VerifiedGarbage.Impl.MillerRabin.Arm.Arithmetic
 import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineFnBody
 import VerifiedGarbage.Proof.Bignum.Arm.FiosFastRound

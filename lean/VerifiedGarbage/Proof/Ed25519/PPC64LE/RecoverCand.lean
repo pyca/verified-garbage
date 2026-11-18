@@ -4,7 +4,7 @@ public import VerifiedGarbage.Impl.Ed25519.PPC64LE.Recover
 public import VerifiedGarbage.Proof.Ed25519.PPC64LE.PointTable
 public import VerifiedGarbage.Proof.Ed25519.Recover
 import VerifiedGarbage.Proof.Ed25519.PPC64LE.Encode
-import VerifiedGarbage.Proof.Ed25519.PPC64LE.SpecConv
+import VerifiedGarbage.Proof.Ed25519.PPC64LE.Packed
 import VerifiedGarbage.Proof.X25519.Invert
 import VerifiedGarbage.Proof.Framework.Offset
 

@@ -1,7 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.CT
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256RD
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256ED
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.CT
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacChecks
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacChecks

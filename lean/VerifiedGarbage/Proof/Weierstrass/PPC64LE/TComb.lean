@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Weierstrass.TCombWords
 import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Copy
 import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Keep
 public import VerifiedGarbage.Proof.Weierstrass.PPC64LE.MontCall
-import VerifiedGarbage.Proof.Weierstrass.PPC64LE.LadderPCall
+import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Ladder
 import VerifiedGarbage.Proof.Mont.PPC64LE.Const
 import VerifiedGarbage.Proof.Mont.PPC64LE.Csub
 import VerifiedGarbage.Proof.Mont.Words32

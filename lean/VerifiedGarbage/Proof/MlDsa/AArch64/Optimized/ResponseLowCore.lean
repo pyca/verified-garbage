@@ -7,13 +7,12 @@ import VerifiedGarbage.Proof.Framework.AArch64.Simd
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseFlags
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseZInit
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLoop
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseInit
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Basic
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowWord
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseZInit
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseAdd
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintVec
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseFinish

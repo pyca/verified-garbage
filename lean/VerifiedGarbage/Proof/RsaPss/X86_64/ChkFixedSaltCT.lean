@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPss.X86_64.ChkCtBack
-import VerifiedGarbage.Proof.RsaPss.X86_64.FixedSaltCopy
 import VerifiedGarbage.Proof.RsaPss.X86_64.FixedHash
 import VerifiedGarbage.Proof.RsaPss.X86_64.CtComp
 import VerifiedGarbage.Proof.Framework.Offset

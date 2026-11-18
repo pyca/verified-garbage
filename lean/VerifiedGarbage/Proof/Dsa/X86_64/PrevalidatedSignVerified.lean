@@ -17,7 +17,6 @@ import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Dsa.Encoding
 public import VerifiedGarbage.Impl.Dsa.X86_64.SignVerify
 public import VerifiedGarbage.Spec.Dsa.SignVerify
-public import VerifiedGarbage.Proof.Dsa.X86_64.SigningABI
 public import VerifiedGarbage.Proof.Dsa.X86_64.PrevalidatedSign
 import VerifiedGarbage.Proof.Dsa.X86_64.Sequences
 import VerifiedGarbage.Proof.Framework.RelCTAssoc

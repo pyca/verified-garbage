@@ -2,7 +2,7 @@ module
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductInit
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedMiddle
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFirstLoop
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCheckSource
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowLoop
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFirstMemory
 import VerifiedGarbage.Proof.Framework.RelCTAssoc

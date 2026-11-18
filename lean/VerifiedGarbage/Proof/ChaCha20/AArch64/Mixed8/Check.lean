@@ -35,7 +35,6 @@ import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Setup
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Xor
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Rounds
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Finish
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Spill
 import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Store
 import VerifiedGarbage.Proof.Framework.AArch64.Simd

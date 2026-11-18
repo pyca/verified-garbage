@@ -5,14 +5,13 @@ import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.BlockTr
 import VerifiedGarbage.Proof.MlKem.X86_64.SampleLoop
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseCCT
 import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseK
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseKCT
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseD
 import VerifiedGarbage.Proof.MlDsa.Round.Decompose
 import VerifiedGarbage.Proof.MlKem.Mem
 public import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseA4
 import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseKCT
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Rel
 import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 

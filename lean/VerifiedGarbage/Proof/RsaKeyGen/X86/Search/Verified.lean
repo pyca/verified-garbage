@@ -2,8 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.Search.CT
 public import VerifiedGarbage.Proof.MillerRabin.X86.Backend
-public import VerifiedGarbage.Proof.MillerRabin.X86.Baseline
-public import VerifiedGarbage.Proof.MillerRabin.X86.MontInstance
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateABI
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.Candidate
 public import VerifiedGarbage.Proof.Framework.Contract
@@ -13,13 +11,12 @@ public import VerifiedGarbage.Proof.Framework.ConstMem
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Rsa.BytesFrame
 public import VerifiedGarbage.Proof.RsaKeyGen.CandidateContract
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateBody
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateABIValid
 public import VerifiedGarbage.Proof.Mont.X86.Compact.Frame
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateEnvironment
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidatePreparedResult
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateNoSpLoop
 import VerifiedGarbage.Proof.Framework.X86.CallWith
-import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateABIValid
 import VerifiedGarbage.Proof.Mont.X86.Compact.EntryArgs
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateLoadInput
@@ -32,7 +29,7 @@ import VerifiedGarbage.Impl.RsaKeyGen.X86.CandidateClear
 import VerifiedGarbage.Proof.Mont.X86.Words
 import VerifiedGarbage.Proof.Framework.X86.RelCT
 import VerifiedGarbage.Proof.Mont.X86.Instr
-import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateBranch
+import VerifiedGarbage.Proof.RsaKeyGen.X86.ExponentRt.Code
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateResultTiming
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateTimingBranch

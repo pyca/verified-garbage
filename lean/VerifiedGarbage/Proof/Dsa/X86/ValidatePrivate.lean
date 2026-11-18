@@ -19,14 +19,12 @@ import VerifiedGarbage.Proof.Dsa.X86.ABIResources
 import VerifiedGarbage.Proof.Dsa.X86.InstallArguments
 import VerifiedGarbage.Proof.Dsa.X86.InstalledInputs
 import VerifiedGarbage.Proof.Dsa.X86.PackedKeyBuffers
-import VerifiedGarbage.Proof.Dsa.X86.PublicKey
 import VerifiedGarbage.Proof.Dsa.X86.PrivateKey
 import VerifiedGarbage.Proof.Dsa.X86.ShapeModuli
 import VerifiedGarbage.Proof.Dsa.X86.ShapeSavedFrame
 import VerifiedGarbage.Proof.Dsa.X86.SavedFrame
 import VerifiedGarbage.Proof.Dsa.X86.VerifyingOperation
 import VerifiedGarbage.Proof.Dsa.X86.Result
-import VerifiedGarbage.Proof.Dsa.X86.CheckingDispatch
 import VerifiedGarbage.Proof.Dsa.X86.EntrySave
 import VerifiedGarbage.Proof.Dsa.X86.Layout
 import VerifiedGarbage.Proof.Mont.X86.Instr

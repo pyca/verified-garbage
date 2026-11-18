@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Native.FieldMul
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Native.FieldSquare
 public import VerifiedGarbage.Proof.Mont.AArch64.P521Linear
 public import VerifiedGarbage.Proof.Mont.AArch64.P521Field.PointOps
 import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Product
@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.Weierstrass.AArch64.MontSaves
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Native.FieldSquare
 
 @[expose] public section
 namespace VG.Proof.Weierstrass.AArch64.P521Native

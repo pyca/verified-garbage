@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Framework.RISCV64.Keep
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.TripleDes.RISCV64.Bytes
+import VerifiedGarbage.Proof.TripleDes.RISCV64.Permutation
 import VerifiedGarbage.Proof.TripleDes.Bytes
 public import VerifiedGarbage.Impl.TripleDes.RISCV64.Feistel
 import VerifiedGarbage.Proof.Framework.RISCV64.Wp
@@ -35,7 +35,6 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.TripleDes.Word
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Proof.Framework.RISCV64.ByteLoad
-import VerifiedGarbage.Proof.TripleDes.RISCV64.Permutation
 
 /-! ### `TripleDes.RISCV64.BlockOk`, which this module and modules that import it used -/
 

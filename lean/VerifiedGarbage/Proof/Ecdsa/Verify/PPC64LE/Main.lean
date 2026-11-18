@@ -277,7 +277,7 @@ end
 /-!
 # ECDSA verification on PPC64LE: `u` and `v`
 
-As on 32-bit ARM (`Proof/Ecdsa/Verify/Arm/Final.lean`). `mid_ok`: the
+As on 32-bit ARM (`Proof/Ecdsa/Verify/Arm/Main.lean`). `mid_ok`: the
 masks of `r` and `s` in `[1, n-1]` into the flag, `w = s^(n-2)` in
 Montgomery form modulo `n`, and `u = e w` and `v = r w`, out of it.
 -/
@@ -1143,7 +1143,7 @@ section
 /-!
 # ECDSA verification on PPC64LE: `x` and the result
 
-As on 32-bit ARM (`Proof/Ecdsa/Verify/Arm/Final.lean`). `vtail_ok`: from
+As on 32-bit ARM (`Proof/Ecdsa/Verify/Arm/Main.lean`). `vtail_ok`: from
 what `points_ok` leaves, the signature's power gives `Z^(p-2)`, and `final`
 computes `x = X Z^(p-2)` out of Montgomery's form, `x R mod n` and
 `x R - r R mod n`, ands the masks of `Z ≠ 0` and of that difference being

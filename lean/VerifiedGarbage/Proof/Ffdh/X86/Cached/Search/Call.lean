@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.CachedGenerateKeyContract
-import VerifiedGarbage.Proof.Ffdh.X86.Cached.AttemptVerified
+public import VerifiedGarbage.Proof.Ffdh.X86.Cached.AttemptVerified
 import VerifiedGarbage.Proof.Rsa.X86.StackTactic
 meta import VerifiedGarbage.Proof.Rsa.X86.StackTactic
 import VerifiedGarbage.Proof.Framework.X86.CallWith
@@ -13,7 +13,6 @@ import VerifiedGarbage.Proof.Mont.X86.Sse2.Shape
 public import VerifiedGarbage.Impl.Ffdh.X86.KeyGen
 public import VerifiedGarbage.Proof.Dsa.X86.VerifyingABI
 public import VerifiedGarbage.Spec.Ffdh.Contract
-public import VerifiedGarbage.Proof.Ffdh.X86.Cached.Search.Frame
 public import VerifiedGarbage.Proof.Framework.X86.Call
 public import VerifiedGarbage.Proof.Framework.X86.Inline
 public import VerifiedGarbage.Proof.Ffdh.X86.Entry

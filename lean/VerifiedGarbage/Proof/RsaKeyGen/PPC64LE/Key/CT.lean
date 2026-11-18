@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.InvLaw
-import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Key.Correct
+public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Key.Correct
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.MontCT
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
@@ -14,7 +14,6 @@ import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.Seqs
-public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Key.Body
 public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Key.Stores
 
 /-!

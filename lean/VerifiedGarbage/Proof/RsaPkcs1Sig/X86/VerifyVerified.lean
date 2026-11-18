@@ -11,7 +11,6 @@ import VerifiedGarbage.Proof.Rsa.BytesFrame
 public import VerifiedGarbage.Proof.Weierstrass.PointContract
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyRegions
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignRestore
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyNoSp
 import VerifiedGarbage.Proof.Bignum.X86.ReverseRegion
 import VerifiedGarbage.Proof.Framework.X86.CallWith
 import VerifiedGarbage.Proof.Dsa.X86.RandomSignCorrect

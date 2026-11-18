@@ -18,7 +18,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
 import VerifiedGarbage.Proof.Ffdh.Arm.ValueChecksCT
 import VerifiedGarbage.Proof.Bignum.Arm.TwoExpSharedCT
 public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
-public import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicMainCT
+public import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicEntryCT
 import VerifiedGarbage.Proof.Ffdh.Arm.BranchCT
 public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
 import VerifiedGarbage.Proof.Framework.RelCT
@@ -48,7 +48,6 @@ import VerifiedGarbage.Proof.Ffdh.Arm.HeadCT
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
-import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicEntryCT
 import VerifiedGarbage.Proof.Ffdh.Arm.FrameCT
 import VerifiedGarbage.Proof.Ffdh.Arm.Entered
 public import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicPre

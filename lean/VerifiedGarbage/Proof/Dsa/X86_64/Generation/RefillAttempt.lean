@@ -5,10 +5,8 @@ public import VerifiedGarbage.Proof.Dsa.Generation.RefillSeed
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.RefillOutcome
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Hashes
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedAttempt
-
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedSubgroup
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedPrime
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedGenerator
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextSuccess
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextFrame
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeometryWork

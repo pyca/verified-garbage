@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.X86.PrivCrtCall
 public import VerifiedGarbage.Proof.Rsa.X86.PrivPrecomputePre
-public import VerifiedGarbage.Proof.Rsa.X86.PrivPublicPre
 import VerifiedGarbage.Proof.Rsa.X86.PrivCallInput
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Contract

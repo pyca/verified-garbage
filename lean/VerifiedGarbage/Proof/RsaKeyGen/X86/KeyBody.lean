@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyScratchFrame
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyDerive
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyGeometry
 import VerifiedGarbage.Proof.Mont.X86.Instr
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.Key
@@ -9,8 +9,6 @@ public import VerifiedGarbage.Proof.Mont.X86.Rt.Base
 import VerifiedGarbage.Proof.Mont.Words
 import VerifiedGarbage.Proof.MillerRabin.X86.Caller
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyExport
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyInput
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyDerive
 import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyWorkspace
 import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Rsa.X86.KeyWs

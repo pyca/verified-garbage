@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.RsaPss.Arm.VfAny
 public import VerifiedGarbage.Proof.RsaPss.Arm.VfFixed
 import all Init.Data.Nat.Bitwise.Basic
 import VerifiedGarbage.Proof.RsaPss.EncBytes

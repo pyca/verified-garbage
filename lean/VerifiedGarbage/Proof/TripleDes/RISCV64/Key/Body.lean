@@ -16,7 +16,6 @@ public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Impl.TripleDes.RISCV64.ExpandKey
 public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Framework.PowLit
-import VerifiedGarbage.Proof.TripleDes.RISCV64.Bytes
 import VerifiedGarbage.Proof.TripleDes.RISCV64.Permutation
 import VerifiedGarbage.Proof.TripleDes.Word
 import VerifiedGarbage.Proof.Framework.RISCV64.ByteLoad64

@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignSingle
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignPublic
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Dsa.X86_64.SigningABI
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCall
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignRetryCT
 import VerifiedGarbage.Proof.Bignum.X86_64.FoldedExp
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCallMemory

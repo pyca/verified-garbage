@@ -3,9 +3,8 @@ module
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Pbkdf2CT
 public import VerifiedGarbage.Proof.Pbkdf2.Contract
 public import VerifiedGarbage.Proof.Hmac.Contract
-public import VerifiedGarbage.Proof.Pbkdf2.AArch64.IterateCT
-public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.HmacFin
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.HmacInit
+public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.HmacFin
 
 /-!
 # HMAC and PBKDF2-HMAC over any Merkle–Damgård hash function on AArch64: the functions, verified

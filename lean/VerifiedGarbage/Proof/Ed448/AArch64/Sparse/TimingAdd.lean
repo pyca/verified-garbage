@@ -12,7 +12,6 @@ meta import VerifiedGarbage.Proof.X448.AArch64.Fast.Erase
 meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSymMono
 meta import VerifiedGarbage.Impl.Ed448.AArch64.Sparse.Recode
 public import VerifiedGarbage.Impl.Ed448.AArch64.Sparse.Recode
-import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.DigitLoads
 import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.Magnitude
 public import VerifiedGarbage.Proof.Framework.RelCT
 

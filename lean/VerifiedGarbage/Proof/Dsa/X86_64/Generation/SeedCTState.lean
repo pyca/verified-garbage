@@ -10,10 +10,9 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeCallCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HeaderCT
 import VerifiedGarbage.Proof.Framework.Omega
 public import Mathlib.Algebra.Group.Nat.Defs
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextSeed
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.QBuild
 import VerifiedGarbage.Proof.Dsa.Arithmetic
 import VerifiedGarbage.Proof.Dsa.Generation.QCandidate
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.QBuild
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SourceFrame
 
 /-! ### `Dsa.X86_64.Generation.SubgroupCTState`, which only this module used -/

@@ -18,7 +18,6 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignSaved
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignInputs
-import VerifiedGarbage.Proof.Dsa.X86_64.SigningABI
 
 /-! ### `Dsa.X86_64.RandomSignCallValue`, which this module and modules that import it used -/
 

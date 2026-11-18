@@ -31,7 +31,7 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InnerBank
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.InverseTable
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductMemory
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversalCorrect
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseBankFieldStage
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotField
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Representation
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.SliceFrame

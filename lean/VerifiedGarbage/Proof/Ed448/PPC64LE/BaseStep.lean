@@ -1,7 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Ed448.PPC64LE.BaseSel
-public import VerifiedGarbage.Proof.Ed448.PPC64LE.BaseBits
+public import VerifiedGarbage.Proof.Ed448.PPC64LE.BaseSel
 public import VerifiedGarbage.Proof.X448.PPC64LE.Invert
 public import VerifiedGarbage.Proof.Ed448.Ref
 public import VerifiedGarbage.Proof.X448.PPC64LE.Slots

@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.State
 public import VerifiedGarbage.Impl.Ffdh.Arm.ParameterSearch
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Controller
-public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Params
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
 import VerifiedGarbage.Proof.Framework.Arm.Exec

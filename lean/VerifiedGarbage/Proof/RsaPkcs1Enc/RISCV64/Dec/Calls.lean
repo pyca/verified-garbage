@@ -18,7 +18,6 @@ import VerifiedGarbage.Proof.Framework.Covers
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
 import VerifiedGarbage.Proof.RsaPkcs1Enc.Steps
-import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.InitMain
 import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Finalize
 import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Init
 

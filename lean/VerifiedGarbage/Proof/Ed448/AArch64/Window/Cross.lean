@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Impl.Ed448.AArch64.VerifyWindow
 public import VerifiedGarbage.Proof.X448.AArch64.Base.AddDefs
 import VerifiedGarbage.Proof.X448.AArch64.Fast.Weave
-import VerifiedGarbage.Proof.Ed448.AArch64.Window.Dbl
+import VerifiedGarbage.Proof.Ed448.AArch64.Point56.AsFn
 import VerifiedGarbage.Proof.Ed448.AArch64.Window.Table
 import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.X448.AArch64.Mem

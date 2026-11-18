@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Ed25519.RISCV64.Whole.Prune
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.Calls
 import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.Common
-import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.Prune
 public import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.SignSetup
 public import VerifiedGarbage.Proof.Ed448.Ref
 public import VerifiedGarbage.Proof.X448.RISCV64.Ladder

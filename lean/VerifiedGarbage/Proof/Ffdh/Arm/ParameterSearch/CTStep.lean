@@ -21,8 +21,8 @@ public import VerifiedGarbage.TCB.Code
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CTClassify
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CTLeaf
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CTRequest
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.LiveGuards
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Outputs
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CompareResult
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.LivePolicy
 meta import VerifiedGarbage.Impl.Ffdh.Arm.ParameterSearch
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CTState

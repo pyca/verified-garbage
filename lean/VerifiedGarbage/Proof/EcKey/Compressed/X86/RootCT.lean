@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.EcKey.Compressed.X86.Tonelli
 import VerifiedGarbage.Proof.EcKey.Compressed.X86.DecompressContract
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.EcKey.Compressed.X86.Frame
+import VerifiedGarbage.Proof.EcKey.Compressed.X86.SlotOps
 public import VerifiedGarbage.Proof.Framework.X86.Taint
 import VerifiedGarbage.Proof.Weierstrass.X86.Copy
 import VerifiedGarbage.Proof.Mont.X86.Instr

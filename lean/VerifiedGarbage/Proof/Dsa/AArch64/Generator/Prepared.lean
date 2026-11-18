@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generator.Geometry
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generator.Entry
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorSearchMemory
 import VerifiedGarbage.Proof.Dsa.Encoding

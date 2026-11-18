@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.PPC64LE.LadderPCall
 public import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Ladder
 public import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Pow
 public import VerifiedGarbage.Impl.Weierstrass.PPC64LE.LadderP

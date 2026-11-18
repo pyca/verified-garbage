@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.Argon2.Arm.Derive.Locals
 import VerifiedGarbage.Proof.Blake2.Arm.Stream.Common
 import VerifiedGarbage.Proof.Argon2.FillStep
 public import VerifiedGarbage.Proof.Argon2.Contract
-public import VerifiedGarbage.Proof.Argon2.Arm.Derive.Parameters
+public import VerifiedGarbage.Proof.Argon2.Arm.Derive.Initial
 import VerifiedGarbage.Proof.Argon2.Arm.Mix
 import VerifiedGarbage.Proof.Argon2.Dimensions
 public import VerifiedGarbage.Proof.Sha512.Arm.Rounds

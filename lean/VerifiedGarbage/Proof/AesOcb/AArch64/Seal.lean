@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.AesOcb.AArch64.Hash
-public import VerifiedGarbage.Proof.AesOcb.AArch64.Nonce
+public import VerifiedGarbage.Proof.AesOcb.AArch64.LNtz
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Loops
 public import VerifiedGarbage.Proof.AesOcb.AArch64.Contract
 public import VerifiedGarbage.Proof.AesOcb.AArch64.HashChunk

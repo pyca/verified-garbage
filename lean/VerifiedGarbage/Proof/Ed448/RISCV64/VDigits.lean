@@ -4,9 +4,8 @@ module
 public import VerifiedGarbage.Proof.Ed448.RISCV64.VChecks
 public import VerifiedGarbage.Proof.Ed448.RISCV64.BaseBits
 public import VerifiedGarbage.Proof.Ed448.WnafWide.Recoding
-public import VerifiedGarbage.Proof.Ed448.WnafWide.Bits
-public import VerifiedGarbage.Spec.Ed448.Contract
 public import VerifiedGarbage.Proof.Ed448.WnafWide.Word
+public import VerifiedGarbage.Spec.Ed448.Contract
 import VerifiedGarbage.Proof.Ed448.Scalar
 import VerifiedGarbage.Proof.X448.RISCV64.Invert
 import VerifiedGarbage.Proof.Framework.Offset

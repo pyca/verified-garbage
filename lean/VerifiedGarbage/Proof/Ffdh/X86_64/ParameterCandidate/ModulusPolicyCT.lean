@@ -8,10 +8,8 @@ public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.RoundRun
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.RoundBody
 public import Mathlib.Algebra.Group.Nat.Defs
-import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Rounds
-import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PrepareCT
-import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PrepareState
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PhaseWitness
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PrepareCT
 import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! ### `Ffdh.X86_64.ParameterCandidate.RoundsCT`, which only this module used -/

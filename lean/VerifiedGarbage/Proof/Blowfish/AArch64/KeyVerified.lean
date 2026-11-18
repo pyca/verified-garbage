@@ -21,7 +21,7 @@ public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.ConstMem
 public import VerifiedGarbage.Spec.Blowfish.Contract
 import VerifiedGarbage.Proof.Blowfish.AArch64.Lit
-import VerifiedGarbage.Proof.Blowfish.Feistel
+import VerifiedGarbage.Proof.Blowfish.F
 
 /-! ### `Blowfish.AArch64.KeyMain`, which only this module used -/
 

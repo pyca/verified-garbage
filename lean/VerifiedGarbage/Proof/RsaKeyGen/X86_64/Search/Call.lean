@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Search.Data
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedSafety
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedContract
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedCode
 public import VerifiedGarbage.Impl.RsaKeyGen.X86_64.Search
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.Frame
 import VerifiedGarbage.Proof.Framework.Omega

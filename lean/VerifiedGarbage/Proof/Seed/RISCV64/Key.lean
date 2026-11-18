@@ -2,14 +2,13 @@ module
 
 public import VerifiedGarbage.Impl.Seed.RISCV64.ExpandKey
 public import VerifiedGarbage.Proof.Seed.RISCV64.Lanes
-public import VerifiedGarbage.Proof.Seed.RISCV64.Round
+public import VerifiedGarbage.Proof.Seed.RISCV64.Ecb
 import VerifiedGarbage.Proof.Seed.RISCV64.Steps
 import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.RISCV64.ByteLoad
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Seed.KeySchedule
-import VerifiedGarbage.Proof.Seed.RISCV64.Ecb
 import VerifiedGarbage.Proof.Framework.RISCV64.Steps
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Framework.RISCV64.ByteLoad64

@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Proof.Ffdh.Arm.EqualCT
 import VerifiedGarbage.Proof.Ffdh.Arm.Range
-import VerifiedGarbage.Proof.Ffdh.Arm.BelowP
 import VerifiedGarbage.Proof.Ffdh.Arm.SetLowBitCT
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
 import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT

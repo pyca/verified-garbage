@@ -1,12 +1,11 @@
 module
 
 import VerifiedGarbage.Proof.Rc4.AArch64.ApplyCT
-import VerifiedGarbage.Proof.Rc4.AArch64.ApplyFinish
+import VerifiedGarbage.Proof.Rc4.AArch64.Group
 public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Impl.Rc4.AArch64
 public import VerifiedGarbage.Proof.Rc4.AArch64.Lanes
 import VerifiedGarbage.Proof.Rc4.AArch64.ApplySetup
-import VerifiedGarbage.Proof.Rc4.AArch64.Group
 import VerifiedGarbage.Proof.Rc4.Memory
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Semantics

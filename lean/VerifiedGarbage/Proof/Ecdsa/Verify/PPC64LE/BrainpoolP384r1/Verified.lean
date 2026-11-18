@@ -44,7 +44,7 @@ import VerifiedGarbage.Proof.Framework.PowLit
 
 `vg_ecdsa_brainpoolp384r1_verify` with `[u]G` by the comb, from its table, a
 constant (`abi.withConsts brainpoolp384r1CombConsts`), and `[v]Q` by the windows for any
-`a`, as P-256's (`Proof/Ecdsa/Verify/PPC64LE/P256Comb.lean`, `Verified.lean`):
+`a`, as P-256's (`Proof/Ecdsa/Verify/PPC64LE/Contract.lean`, `Verified.lean`):
 `combPts_ok`, `pointsBrainpoolP384r1` as `PtsOk` states; `verify_ppc`, from
 `verifyWith_ok`; `verify_ct`: the time depends only on the pointers and the
 table's address (`taint_decide` with `vectorTaintSym` on the code's literal).

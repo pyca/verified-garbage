@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P192.Joint.Points
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Main
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPrefix
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Front
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P192.Joint.Math
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P192.Joint.Main
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P192.Joint.State
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P192.Contract
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P192.Verified
@@ -22,7 +22,6 @@ import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P192.Joint.Main
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Hash
 public import VerifiedGarbage.Impl.Ecdsa.AArch64.VerifyHash
 import VerifiedGarbage.Proof.Ecdsa.Verify.Curves

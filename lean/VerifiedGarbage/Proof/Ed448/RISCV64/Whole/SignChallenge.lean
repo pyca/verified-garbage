@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.Calls
 import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.Common
 import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.Hash
-import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.Prune
 
 /-!
 # `vg_ed448_sign_cached` on RISCV64: the challenge and `S`

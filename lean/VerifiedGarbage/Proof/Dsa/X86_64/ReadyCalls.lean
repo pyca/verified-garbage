@@ -2,12 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.Call
-import VerifiedGarbage.Proof.Dsa.X86_64.Power
-import VerifiedGarbage.Proof.Dsa.X86_64.Multiply
+import VerifiedGarbage.Proof.Dsa.X86_64.Add
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Dsa.X86_64.CallHeader
-import VerifiedGarbage.Proof.Dsa.X86_64.Reduce
-import VerifiedGarbage.Proof.Dsa.X86_64.Add
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 public import VerifiedGarbage.Proof.Dsa.X86_64.Execution
 import VerifiedGarbage.Proof.Dsa.Layout

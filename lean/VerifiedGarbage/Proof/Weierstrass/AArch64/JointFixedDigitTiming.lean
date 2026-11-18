@@ -5,7 +5,7 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.JointEntryTiming
 public import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeArithmetic
+import VerifiedGarbage.Proof.Weierstrass.AArch64.NafNeg
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.CachedJac
 public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionArithmetic
 public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Rotate
@@ -13,13 +13,6 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.FoldOk
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFixedDigit
 public import VerifiedGarbage.Proof.Weierstrass.MulContract
-import VerifiedGarbage.Impl.Weierstrass.AArch64.CachedJac
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionArithmetic
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Rotate
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.FoldOk
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFixedDigit
-import VerifiedGarbage.Proof.Weierstrass.MulContract
 public import VerifiedGarbage.Impl.Mont.Mod
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.Comb
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.Joint

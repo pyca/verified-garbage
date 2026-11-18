@@ -38,7 +38,6 @@ import VerifiedGarbage.Proof.Framework.AArch64.LaneSave
 import VerifiedGarbage.Proof.Framework.AArch64.LaneTaint
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Native.WindowFiveDoubles
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Native.WindowLookupCode
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Native.WindowCompleteAdd
 

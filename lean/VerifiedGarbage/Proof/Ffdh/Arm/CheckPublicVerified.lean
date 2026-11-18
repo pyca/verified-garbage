@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicPre
 import VerifiedGarbage.Proof.Ffdh.Arm.Head
-import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicMainCT
+import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicEntryCT
 import VerifiedGarbage.Proof.Ffdh.Arm.HeadCT
 import VerifiedGarbage.Proof.Ffdh.Arm.BranchCT
 import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
@@ -18,7 +18,6 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
 import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
-import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicEntryCT
 import VerifiedGarbage.Proof.Ffdh.Arm.FrameCT
 import VerifiedGarbage.Proof.Ffdh.Arm.Entered
 public import VerifiedGarbage.Proof.Framework.Contract

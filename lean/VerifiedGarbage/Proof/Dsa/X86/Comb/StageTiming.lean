@@ -21,7 +21,6 @@ import Mathlib.Logic.Function.Basic
 import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Mont.Words32
 import VerifiedGarbage.Proof.Dsa.X86.Comb.PublicVerified
-import VerifiedGarbage.Proof.Dsa.X86.Comb.StagePower
 import VerifiedGarbage.Proof.Dsa.X86.Comb.CanonicalFrame
 import VerifiedGarbage.Proof.Dsa.X86.Comb.SelectTable
 import VerifiedGarbage.Proof.Dsa.X86.CorePowerLoad

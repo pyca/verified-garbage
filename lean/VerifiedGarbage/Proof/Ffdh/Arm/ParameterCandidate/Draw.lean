@@ -12,7 +12,6 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Impl.Ffdh.Arm.Checks
 import VerifiedGarbage.Proof.Ffdh.Arm.Range
 import VerifiedGarbage.Proof.Ffdh.Arm.Checks
-import VerifiedGarbage.Proof.Ffdh.Arm.BelowP
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
 import VerifiedGarbage.Proof.Bignum.Arm.HeaderStore
 import VerifiedGarbage.Spec.Rsa.Contract

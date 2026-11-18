@@ -2,11 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.EcKey.Compressed.X86.RootCT
 public import VerifiedGarbage.Proof.EcKey.Compressed.X86.CT
-public import VerifiedGarbage.Proof.EcKey.Compressed.X86.Candidate
+public import VerifiedGarbage.Proof.EcKey.Compressed.X86.SlotOps
 public import VerifiedGarbage.Proof.EcKey.Compressed.X86.DecompressContract
 public import VerifiedGarbage.Proof.EcKey.Compressed.X86.DecompressMain
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.EcKey.Compressed.X86.Pre
+import VerifiedGarbage.Proof.EcKey.Compressed.X86.Front
 import VerifiedGarbage.Proof.Framework.X86.Call
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.EcKey.Compressed.X86.Contract

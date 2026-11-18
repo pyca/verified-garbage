@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Ecdsa.Arm.SlotOps
 import VerifiedGarbage.Proof.Ecdsa.Arm.Middle
 import VerifiedGarbage.Proof.Weierstrass.Arm.Copy
 import VerifiedGarbage.Proof.Ecdh.Arm.Peer
-import VerifiedGarbage.Proof.Weierstrass.Arm.Fprog
+import VerifiedGarbage.Proof.Weierstrass.Arm.Bits
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Fixed
 import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
 import VerifiedGarbage.Proof.Ecdsa.Arm.Lays

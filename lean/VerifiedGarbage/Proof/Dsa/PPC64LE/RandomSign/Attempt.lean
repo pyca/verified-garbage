@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Impl.Dsa.PPC64LE.RandomSign
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.Run
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Ctx
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.RandomSign.Ctx
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.Random.Save
 public import VerifiedGarbage.Spec.RsaPss
 public import VerifiedGarbage.Proof.Dsa.RandomSignTraceResult
 import VerifiedGarbage.Proof.Dsa.RandomSign

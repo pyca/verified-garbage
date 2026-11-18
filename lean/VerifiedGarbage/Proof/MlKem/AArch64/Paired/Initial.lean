@@ -1,12 +1,11 @@
 module
+
 public import VerifiedGarbage.Proof.MlKem.AArch64.Lay
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
 public import VerifiedGarbage.Impl.MlKem.AArch64.Paired
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Checkpoint
 public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Vector
 public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Segment
-
-import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Store
 import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Keep
 import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
 import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Memory
@@ -14,6 +13,7 @@ import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Cover
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Paired
 open VG VG.AArch64 VG.Proof.MlKem.AArch64 VG.Spec.MlKem VG.Proof.MlKem

@@ -7,7 +7,6 @@ public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Rsa.X86.KeyWs
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyInverseLoad
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Workspace
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.StackRange
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.InverseCall
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Address
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Copy

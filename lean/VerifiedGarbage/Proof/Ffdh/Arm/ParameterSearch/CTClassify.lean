@@ -5,10 +5,8 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CallPost
 public import VerifiedGarbage.Impl.Ffdh.Arm.ParameterSearch
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CTLeaf
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CTRequest
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.LiveGuards
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Live
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CandidateFacts
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CompareResult
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Live
 public import VerifiedGarbage.Proof.Ffdh.Contract
 meta import VerifiedGarbage.Impl.Ffdh.Arm.ParameterSearch
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint

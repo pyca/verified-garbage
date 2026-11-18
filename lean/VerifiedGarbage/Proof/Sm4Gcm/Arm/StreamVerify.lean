@@ -1,9 +1,9 @@
 module
+
 public import VerifiedGarbage.Proof.Gcm.Arm.Ghash
 public import VerifiedGarbage.Impl.Sm4Gcm.Arm
-public import VerifiedGarbage.Proof.Sm4Gcm.Arm.Contract
+public import VerifiedGarbage.Proof.Sm4Gcm.Arm.Fn
 public import VerifiedGarbage.Proof.Framework.Semantics
-
 import VerifiedGarbage.Proof.Sm4Gcm.Arm.StreamFinish
 import VerifiedGarbage.Proof.Sm4Gcm.Arm.Compare
 import VerifiedGarbage.Proof.Sm4Gcm.Arm.StreamCrypt

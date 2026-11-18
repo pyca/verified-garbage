@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.PPC64LE.SpecConv
+public import VerifiedGarbage.Proof.Ed25519.PPC64LE.Packed
 public import VerifiedGarbage.Proof.Ed25519.BaseTable
 public import VerifiedGarbage.Proof.Ed25519.DblPoint
 public import VerifiedGarbage.Impl.Ed25519.PPC64LE.VerifyWindow
@@ -11,7 +11,6 @@ public import VerifiedGarbage.Proof.Ed25519.PPC64LE.VerifyPoints
 public import VerifiedGarbage.Proof.Ed25519.Group.Double
 import Mathlib.Tactic.Ring
 import Mathlib.Data.ZMod.Defs
-import VerifiedGarbage.Proof.Ed25519.PPC64LE.Packed
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith

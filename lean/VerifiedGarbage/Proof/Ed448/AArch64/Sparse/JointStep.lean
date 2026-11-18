@@ -23,7 +23,6 @@ public import VerifiedGarbage.Proof.Ed448.AArch64.Window.Select
 import VerifiedGarbage.Proof.X448.AArch64.Weak.Counters
 import VerifiedGarbage.Proof.Ed448.AArch64.Window.Move
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
-import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.DigitLoads
 import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.Magnitude
 import VerifiedGarbage.Proof.X448.AArch64.Base.AddEnv
 import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.SelectCopy

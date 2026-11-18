@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Native.NormalizeLayo
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Native.BuildSeedStore
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Offset

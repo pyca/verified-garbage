@@ -2,12 +2,11 @@ module
 
 public import VerifiedGarbage.Impl.RsaPss.X86_64.Encoding
 public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyBody
-import VerifiedGarbage.Proof.RsaPss.X86_64.SignCall
+public import VerifiedGarbage.Proof.RsaPss.X86_64.SignCorrect
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.RsaPss.X86_64.Safe
 import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.RsaPss.X86_64.SignCCorrect
-public import VerifiedGarbage.Proof.RsaPss.X86_64.SignCorrect
 import VerifiedGarbage.Proof.RsaPss.SignEncode
 import VerifiedGarbage.Proof.RsaPss.VerifyCases
 import VerifiedGarbage.Proof.RsaPss.Params

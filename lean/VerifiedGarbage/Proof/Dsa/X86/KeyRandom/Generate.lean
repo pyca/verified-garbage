@@ -8,6 +8,106 @@ import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Copy
 import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.CallArgs
 import VerifiedGarbage.Proof.Dsa.X86.RandomAttempt
 import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.CallResult
+public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.CheckCall
+import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.State
+import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Impl.Dsa.X86.GenerateKey
+public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.CheckPre
+public import VerifiedGarbage.Proof.Mont.Words32
+
+/-! ### `Dsa.X86.KeyRandom.CheckFrame`, which the modules that import this one used -/
+
+section
+
+/-! ### `Dsa.X86.KeyRandom.CheckArgs`, which the modules that import this one used -/
+
+section
+
+/-! # The domain checker's six outgoing arguments -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.X86.KeyRandom.CheckCall
+open VG VG.X86 VG.X86.Wp VG.Proof.Mont VG.Proof.Mont.X86 VG.Impl.Mont.X86
+open VG.Impl.Dsa.X86 VG.Impl.Dsa.X86.KeyRandom VG.Impl.Dsa.X86.GenerateKey
+
+def argsMem (s₀ : State) (m : Mem) : Mem :=
+  ((((((m.writeW (off (rBase s₀) 0) (X86.arg s₀ 3)).writeW (off (rBase s₀) 4) (X86.arg s₀ 4)).writeW (off (rBase s₀) 8) (X86.arg s₀ 5)).writeW (off (rBase s₀) 12) (X86.arg s₀ 6)).writeW (off (rBase s₀) 16) (X86.arg s₀ 9)).writeW (off (rBase s₀) 20) (X86.arg s₀ 10))
+
+theorem argsMem_slots (s₀ : State) (m : Mem) (sp : BitVec 32) :
+    ∀ i < 6, slot (argsMem s₀ m) (rBase s₀) (4 * i) = callVal s₀ sp i := by
+  intro i hi
+  unfold argsMem
+  match i, hi with
+  | 0, _ | 1, _ | 2, _ | 3, _ | 4, _ | 5, _ =>
+    simp (disch := decide) only [slot_write_self, slot_write_ne, Nat.reduceMul, callVal]
+
+theorem argsMem_outs (s₀ : State) (m : Mem) : Outs (rBase s₀) [(0, 24)] m (argsMem s₀ m) := by
+  unfold argsMem
+  have e := fun {m : Mem} {d : Nat} (v : BitVec 32) (h : d + 4 ≤ 24) =>
+    KeyRandom.store_in (rBase s₀) m (rs := [(0, 24)]) (o := 0) (n := 24) (d := d) v
+      (List.mem_singleton_self _) (Nat.zero_le _) h (by omega_using [h])
+  exact (((((e _ (by decide)).trans (e _ (by decide))).trans (e _ (by decide))).trans
+    (e _ (by decide))).trans (e _ (by decide))).trans (e _ (by decide))
+
+theorem checkArgs_ok {s₀ t : State} (A : KeyABI s₀) (h : Ready s₀ t) {is : List Instr}
+    {Q : State → Prop}
+    (k : ∀ u, Ready s₀ u → u.mem = argsMem s₀ t.mem → Keeps [.eax] t u → WP isa (.block is) u Q) :
+    WP isa (.block (checkArgs ++ is)) t Q := by
+  unfold checkArgs
+  simp only [List.append_assoc]
+  refine KeyRandom.copyArg_ok A h (by decide) (by decide) fun u1 h1 m1 k1 => ?_
+  refine KeyRandom.copyArg_ok A h1 (by decide) (by decide) fun u2 h2 m2 k2 => ?_
+  refine KeyRandom.copyArg_ok A h2 (by decide) (by decide) fun u3 h3 m3 k3 => ?_
+  refine KeyRandom.copyArg_ok A h3 (by decide) (by decide) fun u4 h4 m4 k4 => ?_
+  refine KeyRandom.copyArg_ok A h4 (by decide) (by decide) fun u5 h5 m5 k5 => ?_
+  refine KeyRandom.copyArg_ok A h5 (by decide) (by decide) fun u6 h6 m6 k6 => ?_
+  refine k u6 h6 ?_ ((((((k1).trans k2).trans k3).trans k4).trans k5).trans k6)
+  rw [m6, m5, m4, m3, m2, m1]
+  rfl
+
+end VG.Proof.Dsa.X86.KeyRandom.CheckCall
+
+end
+
+end
+
+/-! # The checker leaves the saved registers and consumption slots untouched -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.X86.KeyRandom.CheckCall
+open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86
+open VG.Impl.Dsa.X86 VG.Impl.Dsa.X86.KeyRandom
+
+/-- The frame above its argument words is apart from where the call writes. -/
+theorem call_frame_byte {s₀ : State} (A : KeyABI s₀) {m m' : Mem} (hf : Frame (callWrites s₀) m m')
+    {d : Nat} (h₁ : 44 ≤ d) (h₂ : d < 120) : m' (off (rBase s₀) d) = m (off (rBase s₀) d) := by
+  rw [rBase_off, rLow_off]
+  have hs : (rStack s₀).Contains (off (rCall s₀) (88 + (24 + d))) 1 :=
+    Offset.contains_base _ (by omega_using [h₂]) (by omega_using [h₂])
+  refine hf _ fun r hr => ?_
+  simp only [callWrites, callWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
+    or_false] at hr
+  rcases hr with rfl | rfl | rfl
+  · exact A.stackScratchWide _ hs
+  · rw [rLow_off]
+    exact (Offset.disjoint (rCall s₀) (d := 88 + (24 + d)) (n := 1) (e := 88 + 24) (k := 24) (by omega_using [h₁])
+      (by omega_using [h₂]) (by omega_using [])) _ (self_contains _)
+  · exact (Offset.disjoint_base (rCall s₀) (d := 88 + (24 + d)) (n := 1) (k := 112) (by omega_using [])
+      (by omega_using [h₂])) _ (self_contains _)
+
+theorem call_frame_slot {s₀ : State} (A : KeyABI s₀) {m m' : Mem} (hf : Frame (callWrites s₀) m m')
+    {d : Nat} (h₁ : 44 ≤ d) (h₂ : d + 4 ≤ 120) : slot m' (rBase s₀) d = slot m (rBase s₀) d :=
+  Mem.readW_congr fun i hi => by
+    have : i < 4 := hi
+    rw [show off (rBase s₀) d + BitVec.ofNat 64 i = off (rBase s₀) (d + i) by
+      rw [off, off, BitVec.add_assoc, BitVec.ofNat_add_ofNat]]
+    exact call_frame_byte A hf (by omega_using [h₁]) (by omega_using [h₂, hi])
+
+end VG.Proof.Dsa.X86.KeyRandom.CheckCall
+
+end
+
+end
 
 /-! # Prepare and sample a private scalar after accepting the domain -/
 

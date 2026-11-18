@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Blowfish.Feistel
+public import VerifiedGarbage.Proof.Blowfish.F
 import VerifiedGarbage.Proof.Blowfish.Schedule
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Impl.Blowfish.RISCV64
@@ -12,7 +12,6 @@ public import VerifiedGarbage.Spec.Blowfish
 import VerifiedGarbage.Proof.Framework.InstancePriority
 import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.PlainSimp
-public import VerifiedGarbage.Proof.Blowfish.F
 import VerifiedGarbage.Proof.Framework.RISCV64.ByteLoad
 
 /-! ### `Blowfish.RISCV64.Lookup`, which this module and modules that import it used -/

@@ -11,7 +11,6 @@ import VerifiedGarbage.Proof.Sha256.RISCV64.Stream.Init
 import VerifiedGarbage.Proof.Sha256.RISCV64.Stream.Update
 import VerifiedGarbage.Proof.Sha256.RISCV64.Stream.Finalize
 import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha256
-import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.InitMain
 import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Finalize
 import VerifiedGarbage.Proof.Framework.Covers
 

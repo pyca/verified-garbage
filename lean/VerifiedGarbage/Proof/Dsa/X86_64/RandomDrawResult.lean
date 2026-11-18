@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomState
 public import VerifiedGarbage.Spec.Dsa.Random
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomDrawCopy
-import VerifiedGarbage.Proof.Dsa.X86_64.RandomDrawRange
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomDrawControl
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomMask
 public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup

@@ -1,8 +1,7 @@
 module
+
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Reduce
 public import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
-
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Division
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Subtract
 import Mathlib.Order.RelClasses
 import Mathlib.Tactic.Finiteness.Attr

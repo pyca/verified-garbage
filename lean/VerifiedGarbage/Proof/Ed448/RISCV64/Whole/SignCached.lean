@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.Common
 import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.Hash
-import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.Prune
 import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.SignNonce
 public import VerifiedGarbage.Proof.Ed448.Ref

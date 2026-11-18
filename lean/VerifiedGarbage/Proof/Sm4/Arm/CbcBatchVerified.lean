@@ -2,9 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Sm4.Arm.BatchGroup
 public import VerifiedGarbage.Proof.Sm4.Arm.BatchPrologue
-import VerifiedGarbage.Proof.Sm4.Arm.CbcPrologue
 public import VerifiedGarbage.Proof.Sm4.Arm.CbcLoop
-import VerifiedGarbage.Proof.Sm4.Arm.Core
+import VerifiedGarbage.Proof.Sm4.Arm.Prologue
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.Sm4.Arm.BatchCbc
 public import VerifiedGarbage.Proof.Framework.Semantics

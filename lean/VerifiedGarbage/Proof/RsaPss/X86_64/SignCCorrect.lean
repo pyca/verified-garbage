@@ -20,7 +20,6 @@ import VerifiedGarbage.Proof.RsaPss.X86_64.EncParams
 public import VerifiedGarbage.Spec.RsaPss
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.RsaPss.X86_64.Basic
-public import VerifiedGarbage.Proof.RsaPss.X86_64.SignCall
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
 public import VerifiedGarbage.Proof.RsaPss.EncodingContract

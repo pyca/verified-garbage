@@ -1,12 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
-import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.JointFinish
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.JointFinish
 import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Window
 import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.CacheBuild
 import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.TableCoZ
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.JointDouble
 public import VerifiedGarbage.Proof.Weierstrass.Joint
 public import Mathlib.Data.Nat.Prime.Defs
 import Mathlib.Tactic.ClearExcept

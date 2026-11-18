@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.TimingPair
 public import VerifiedGarbage.Impl.Ed448.AArch64.Sparse
 import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.Normalize
-import VerifiedGarbage.Proof.Ed448.AArch64.Window.Persist
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Impl.Ed448.AArch64.Sparse
@@ -11,7 +10,7 @@ meta import VerifiedGarbage.Proof.Ed448.AArch64.VerifyCT.Erase
 meta import VerifiedGarbage.Proof.X448.AArch64.Fast.Erase
 meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSymMono
 import VerifiedGarbage.Proof.X448.AArch64.Iter
-import VerifiedGarbage.Proof.Ed448.WnafWide.Bits
+import VerifiedGarbage.Proof.Ed448.WnafWide.Word
 import VerifiedGarbage.Impl.Ed448.AArch64.VerifyWindow
 import VerifiedGarbage.Proof.Framework.AArch64.TaintSymMono
 import VerifiedGarbage.Proof.Framework.AArch64.TaintSplit

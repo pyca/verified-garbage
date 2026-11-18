@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.EcKey.Compressed.X86_64.Contract
 public import VerifiedGarbage.Proof.EcKey.Compressed.X86_64.Front
 public import VerifiedGarbage.Impl.EcKey.Compressed.X86_64
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.Layout
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Finish
+import VerifiedGarbage.Proof.Ecdsa.X86_64.Scalar
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.EcKey.Compressed.Parity

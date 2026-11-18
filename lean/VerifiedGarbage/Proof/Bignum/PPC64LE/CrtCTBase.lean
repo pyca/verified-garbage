@@ -9,7 +9,7 @@ meta import VerifiedGarbage.Proof.Bignum.PPC64LE.MontCT
 meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtSave
+import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtArgs
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-!

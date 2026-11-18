@@ -7,7 +7,6 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.R2Impl
 public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPublic.Contract
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Front
 public import VerifiedGarbage.Proof.Ffdh.X86_64.SetupCT
-import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPublic.Entry
 import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPublic.Context
 import VerifiedGarbage.Proof.Ffdh.X86_64.Scan
 import VerifiedGarbage.Proof.Ffdh.X86_64.R2

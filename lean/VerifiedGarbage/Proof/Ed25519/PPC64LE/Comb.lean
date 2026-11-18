@@ -4,7 +4,7 @@ module
 public import VerifiedGarbage.Impl.Ed25519.PPC64LE.Comb
 public import VerifiedGarbage.Proof.Ed25519.PPC64LE.WindowDigit
 public import VerifiedGarbage.Proof.Ed25519.PPC64LE.BaseContract
-public import VerifiedGarbage.Proof.Ed25519.PPC64LE.SpecConv
+public import VerifiedGarbage.Proof.Ed25519.PPC64LE.Packed
 public import VerifiedGarbage.Proof.Ed25519.PPC64LE.PointTable
 public import VerifiedGarbage.Proof.Ed25519.CombDigits64
 public import VerifiedGarbage.Proof.Ed25519.Group.Extended

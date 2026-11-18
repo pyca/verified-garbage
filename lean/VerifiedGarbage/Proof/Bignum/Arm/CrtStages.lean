@@ -10,10 +10,8 @@ public import VerifiedGarbage.Proof.Bignum.Arm.SanitizeModulusCT
 import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtValidateProduct
 import VerifiedGarbage.Impl.Bignum.Arm.MergeAcceptance
-import VerifiedGarbage.Proof.Bignum.Arm.CrtValidationPreserved
-import VerifiedGarbage.Proof.Bignum.Arm.CrtProductValues
-import VerifiedGarbage.Proof.Bignum.Arm.MergeAcceptanceLayout
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtValidationGeometry
+import VerifiedGarbage.Proof.Bignum.Arm.MergeAcceptanceLayout
 import VerifiedGarbage.Proof.Bignum.Arm.CrtStorage
 import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
 import VerifiedGarbage.Proof.Framework.Offset

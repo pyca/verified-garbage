@@ -2,11 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.PrfUsing
 public import VerifiedGarbage.Impl.MlKem.AArch64.Kem16
-public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.DotReady
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.DotSpec
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TransformTables
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Layout
-import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.DotSpec
 public import VerifiedGarbage.Proof.MlKem.AArch64.KemEnc
 public import VerifiedGarbage.Impl.MlKem.AArch64.NoiseWith
 public import VerifiedGarbage.Impl.MlKem.AArch64.Ntt16.ReadonlyCalls
@@ -15,7 +14,6 @@ public import VerifiedGarbage.Impl.MlKem.AArch64.Noise
 public import VerifiedGarbage.Proof.MlKem.AArch64.Lay
 import VerifiedGarbage.Proof.MlKem.AArch64.KemCommon
 import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.W.Call
-import VerifiedGarbage.Proof.MlKem.AArch64.AddSubW
 public import VerifiedGarbage.Proof.MlKem.AArch64.Coeff16
 public import VerifiedGarbage.Impl.MlKem.AArch64.Codec12W
 public import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.DecBase
@@ -39,7 +37,6 @@ public import VerifiedGarbage.Impl.MlKem.AArch64.Narrow16
 import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Vec
 public import VerifiedGarbage.Proof.MlKem.AArch64.KemOps
 public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Result
-import VerifiedGarbage.Proof.MlKem.AArch64.DotW
 public import VerifiedGarbage.Impl.MlKem.AArch64.Hybrid
 public import VerifiedGarbage.Impl.MlKem.AArch64.Ops16
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit

@@ -14,7 +14,6 @@ import VerifiedGarbage.Proof.Mont.AArch64.Chain
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.P256.Linear.WeakWords
-import VerifiedGarbage.Proof.P256.Linear.Words
 public import VerifiedGarbage.Proof.P256.Linear.Arithmetic
 import Std.Data.DTreeMap.Internal.Operations
 import VerifiedGarbage.TCB.AArch64.Simd

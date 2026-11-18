@@ -1,11 +1,9 @@
 module
 
 -- separate module: its proofs (about 5 s, the doubling's stages) are not checked again when `AddOk` changes
-
 public import VerifiedGarbage.Proof.P256.X86_64.Ifma.Step
 public import VerifiedGarbage.Proof.Weierstrass.Jac
 public import VerifiedGarbage.Proof.Weierstrass.Env
-public import VerifiedGarbage.Proof.P256.X86_64.Ifma.Glue
 
 /-! ### `P256.X86_64.Ifma.StageFacts`, which only this module used -/
 

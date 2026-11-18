@@ -8,7 +8,6 @@ public import VerifiedGarbage.Proof.Dsa.FixedBaseCombContract
 import VerifiedGarbage.Proof.Dsa.X86.Comb.SelectTable
 public import VerifiedGarbage.Impl.Mont.X86.Context
 public import VerifiedGarbage.Proof.Mont.X86.PowerStep
-import VerifiedGarbage.Proof.Dsa.X86.Comb.PowerInit
 import VerifiedGarbage.Proof.Dsa.X86.Comb.PowerLoop
 import VerifiedGarbage.Proof.Mont.X86.ContextMul
 import VerifiedGarbage.Proof.Mont.X86.ContextMath

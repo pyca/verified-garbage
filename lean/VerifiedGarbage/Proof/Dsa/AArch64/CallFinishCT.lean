@@ -6,9 +6,6 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.ReduceCallCT
 public import VerifiedGarbage.Spec.Dsa
 import VerifiedGarbage.Proof.Dsa.AArch64.AddCallCT
 import VerifiedGarbage.Proof.Dsa.AArch64.Add
-import VerifiedGarbage.Proof.Dsa.AArch64.Multiply
-import VerifiedGarbage.Proof.Dsa.AArch64.Reduce
-import VerifiedGarbage.Proof.Dsa.AArch64.Power
 
 /-! # Retaining public result bindings across arithmetic calls -/
 

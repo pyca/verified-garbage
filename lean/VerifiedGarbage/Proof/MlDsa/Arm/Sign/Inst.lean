@@ -11,10 +11,10 @@ public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.HintPackCT
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sample.RejNttCT
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sample.ExpandMask
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sample.BallCT
-public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Prims
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseA
 import VerifiedGarbage.Proof.MlDsa.Arm.Sample.Ball
 import VerifiedGarbage.Proof.MlDsa.Sign.Leak
-import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
+public import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
 import VerifiedGarbage.Proof.MlDsa.Arm.Sign.SignCT
 import VerifiedGarbage.Proof.MlDsa.Arm.Arith.AddSub
 import VerifiedGarbage.Proof.MlDsa.Arm.Pack.BitPack
@@ -23,12 +23,10 @@ import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseCCT
 import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseDCT
 import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseKCT
 import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseOCT
-public import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
 public import VerifiedGarbage.Proof.MlKem.Encode
 public import VerifiedGarbage.Proof.Sha256.Stream
 import VerifiedGarbage.Proof.MlKem.Arm.HashTop
 import VerifiedGarbage.Proof.MlKem.Arm.Loops
-import VerifiedGarbage.Proof.Sha256.Stream
 import VerifiedGarbage.Proof.Sha3.Arith
 public import VerifiedGarbage.Impl.MlDsa.Arm.Sample.Ball
 public import VerifiedGarbage.Proof.Framework.Sig

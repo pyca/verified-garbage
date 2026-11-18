@@ -9,7 +9,6 @@ public import VerifiedGarbage.Proof.RsaPss.X86_64.SignCorrect
 import VerifiedGarbage.Proof.RsaPss.EncodeEq
 public import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
 import VerifiedGarbage.Proof.RsaPss.X86_64.Params
-import VerifiedGarbage.Proof.RsaPss.X86_64.SignCall
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
 public import VerifiedGarbage.Proof.RsaPss.X86_64.EncCtx
 public import VerifiedGarbage.Proof.RsaPss.X86_64.EncParams

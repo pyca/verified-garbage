@@ -3,7 +3,7 @@ module
 import VerifiedGarbage.Proof.Rc4.AArch64.ApplySetup
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
-import VerifiedGarbage.Proof.Rc4.AArch64.ApplyFinish
+import VerifiedGarbage.Proof.Rc4.AArch64.Group
 public import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.Proof.Rc4.AArch64.Rows
 import VerifiedGarbage.Proof.Rc4.Memory
@@ -18,7 +18,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Rc4.AArch64.Prga
 public import VerifiedGarbage.Proof.Rc4.Schedule
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Rc4.AArch64.Group
 
 /-! ### `Rc4.AArch64.KsaGroup`, which only this module used -/
 

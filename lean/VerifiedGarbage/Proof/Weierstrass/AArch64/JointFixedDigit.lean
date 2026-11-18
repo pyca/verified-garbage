@@ -11,12 +11,10 @@ import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Core
 import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Words
 import VerifiedGarbage.Proof.Mont.AArch64.RowInit
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256DR
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256ED
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256RD
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacMixedAdd
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeArithmetic
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafNeg
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowNeg
 public import VerifiedGarbage.Impl.Mont.Mod
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.Comb

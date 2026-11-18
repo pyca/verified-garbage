@@ -18,7 +18,6 @@ public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Fn
 import VerifiedGarbage.Proof.Framework.Scratch
 import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Copy
 import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Calls
-import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Steps
 import VerifiedGarbage.Proof.Framework.TaintBatch
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Callee
 public import VerifiedGarbage.Proof.Gcm.OutOfPlaceContract

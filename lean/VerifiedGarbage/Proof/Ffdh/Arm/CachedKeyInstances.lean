@@ -20,7 +20,7 @@ import VerifiedGarbage.Proof.Ffdh.Arm.StackCT
 import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
 public import VerifiedGarbage.Impl.Ffdh.Arm.SampleScalar
 import VerifiedGarbage.Proof.Ffdh.Arm.CachedSamplePolicy
-import VerifiedGarbage.Proof.Ffdh.Arm.KeyScalarSpec
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeyScalarSpec
 import VerifiedGarbage.Proof.Ffdh.Arm.SampleScalarArgs
 import VerifiedGarbage.Proof.Bignum.Arm.PcDimensions
 public import VerifiedGarbage.Proof.Ffdh.Arm.Octets
@@ -56,7 +56,6 @@ import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticExternal
 public import VerifiedGarbage.TCB.Code
 public import VerifiedGarbage.Proof.Ffdh.Arm.Context
 public import VerifiedGarbage.Proof.Ffdh.Arm.SampleBoundLaw
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeyScalarCT
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Ffdh.Arm.KeyArgsCT
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
@@ -81,12 +80,10 @@ import VerifiedGarbage.Proof.Bignum.Arm.CombExpKernelAt
 import VerifiedGarbage.Proof.Bignum.Arm.CombExpTiming
 import VerifiedGarbage.Proof.Ffdh.Arm.CachedPowerArgsCT
 import VerifiedGarbage.Proof.Ffdh.Arm.SampleEnvironment
-import VerifiedGarbage.Proof.Ffdh.Arm.KeyTail
 import VerifiedGarbage.Proof.Ffdh.Arm.ExportResult
 import VerifiedGarbage.Proof.Ffdh.Arm.ExchangeMain
 import VerifiedGarbage.Proof.Ffdh.Arm.Range
 import VerifiedGarbage.Proof.Bignum.Math
-import VerifiedGarbage.Proof.Ffdh.Arm.KeyTailLaw
 import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Proof.Ffdh.Arm.RangeCT
 public import VerifiedGarbage.Spec.Ffdh.CachedKeyGenerationContract

@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.PreparedR2Timing
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.ConstantsTiming
 public import VerifiedGarbage.Proof.Framework.X86.Call
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.PrepareRt.R2

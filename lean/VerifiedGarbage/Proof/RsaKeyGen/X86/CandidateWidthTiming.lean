@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Framework.X86.Wp
 public import VerifiedGarbage.Proof.Mont.X86.Words
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
-import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateDrawn
+import VerifiedGarbage.Proof.RsaKeyGen.X86.ExponentRt.Code
 public import VerifiedGarbage.TCB.X86.Isa
 public import VerifiedGarbage.TCB.X86.State
 public import VerifiedGarbage.TCB.Mem
@@ -46,7 +46,6 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.Framework.X86.Taint
 public import VerifiedGarbage.Proof.Mont.X86.Rt.Base
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.Candidate
-import VerifiedGarbage.Proof.RsaKeyGen.X86.ExponentRt.Code
 import VerifiedGarbage.Impl.RsaKeyGen.X86.ExponentImport
 import VerifiedGarbage.Proof.MillerRabin.X86.TimingBase
 import VerifiedGarbage.Proof.Bignum.X86.PublicDataTiming

@@ -10,13 +10,12 @@ public import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Rc2.X86_64.Lookup
 import VerifiedGarbage.Proof.Framework.X86_64.Sse
-public import VerifiedGarbage.Proof.Blowfish.Feistel
+public import VerifiedGarbage.Proof.Blowfish.F
 import VerifiedGarbage.Proof.Framework.X86_64.LaneSse
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.X86_64.Words
 import VerifiedGarbage.Impl.Rc2.X86_64.Sse2Lookup
 import VerifiedGarbage.Proof.Framework.X86_64.Reduce
-public import VerifiedGarbage.Proof.Blowfish.F
 import VerifiedGarbage.Proof.Framework.InstancePriority
 import Std.Data.DTreeMap.Internal.Operations
 import VerifiedGarbage.Proof.Framework.GetElem

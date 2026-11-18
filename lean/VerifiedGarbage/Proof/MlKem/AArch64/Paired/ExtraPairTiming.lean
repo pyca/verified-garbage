@@ -17,7 +17,6 @@ import VerifiedGarbage.Proof.MlKem.AArch64.Shared
 import VerifiedGarbage.Proof.MlKem.AArch64.Lay
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
 import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Memory
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Context
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.NextBlock
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Continue
 import VerifiedGarbage.Proof.MlKem.AArch64.Paired.SqueezeTiming

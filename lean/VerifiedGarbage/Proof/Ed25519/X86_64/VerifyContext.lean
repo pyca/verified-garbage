@@ -1,7 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyFrame
-public import VerifiedGarbage.Proof.Ed25519.X86_64.BaseEntry
+public import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyFrame
 public import VerifiedGarbage.Impl.Ed25519.X86_64.Verify
 import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulBatch
 public import VerifiedGarbage.Impl.Ed25519.X86_64.PointDecode

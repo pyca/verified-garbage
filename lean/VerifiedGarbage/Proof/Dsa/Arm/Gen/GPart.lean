@@ -1,12 +1,11 @@
 module
 
-import VerifiedGarbage.Proof.Dsa.Arm.Gen.Intro
+public import VerifiedGarbage.Proof.Dsa.Arm.Gen.PArith
 import VerifiedGarbage.Proof.Dsa.Generation.Chunks
 public import VerifiedGarbage.Proof.Dsa.Generation.GeneratorCount
 import VerifiedGarbage.Proof.Dsa.Arithmetic
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.Dsa.Arm.Gen.PArith
 public import VerifiedGarbage.Proof.Dsa.Arm.Gen.Test
 import VerifiedGarbage.Proof.Dsa.Encoding
 import VerifiedGarbage.Proof.Framework.Offset

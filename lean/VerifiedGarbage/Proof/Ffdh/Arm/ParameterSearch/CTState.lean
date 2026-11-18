@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.State
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTBase
-public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Params
 
 /-! Native parameter timing depends on the shared public tape, consumed offset and u64 budget. -/
 

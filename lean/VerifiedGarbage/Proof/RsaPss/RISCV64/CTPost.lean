@@ -17,7 +17,7 @@ public import VerifiedGarbage.Proof.RsaPss.RISCV64.Prefix
 # RSASSA-PSS verification on RISC-V: constant time after the public operation
 
 Untrusted: everything here is checked by Lean. As on PPC64LE
-(`Proof/RsaPss/PPC64LE/CTMain.lean`): two runs from states with `BL` for the
+(`Proof/RsaPss/PPC64LE/Sg/CTBase.lean`): two runs from states with `BL` for the
 same anchor, `c`, `salt_len` and the salt-length mode in `s5`–`s7` (`Xa`),
 and a salt length that fits if one is given (`Fit`), leak alike (`post_ct`):
 the blocks and call-free loops by the taint analysis (`CTBlocks`), MGF1 by

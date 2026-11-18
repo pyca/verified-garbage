@@ -45,7 +45,7 @@ import VerifiedGarbage.Proof.Framework.PowLit
 `vg_ecdsa_p521_verify` with `[u]G` by the comb with the addition inlined
 (`combI_ok`), from its table, a constant (`abi.withConsts p521CombConsts`),
 and `[v]Q` by the three-bit windows, as P-256's
-(`Proof/Ecdsa/Verify/PPC64LE/P256Comb.lean`, `Verified.lean`): `combPts_ok`,
+(`Proof/Ecdsa/Verify/PPC64LE/Contract.lean`, `Verified.lean`): `combPts_ok`,
 `pointsP521` as `PtsOk` states; `verify_ppc`, from `verifyWith_ok`;
 `verify_ct`: the time depends only on the pointers and the table's address
 (`taint_decide` with `vectorTaintSym` on the code's literal).

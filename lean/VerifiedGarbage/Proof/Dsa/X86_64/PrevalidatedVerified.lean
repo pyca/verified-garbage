@@ -25,7 +25,7 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Dsa.X86_64.PublicSlices
 import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingPublic
-public import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingInput
+public import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingInitialize
 
 /-! ### `Dsa.X86_64.VerifyingABIPre`, which this module and modules that import it used -/
 

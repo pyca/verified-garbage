@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignSingle
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignPublic
 import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Dsa.AArch64.SigningABI
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCall
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignRetryCT
 import VerifiedGarbage.Proof.Dsa.AArch64.CallFinishCT
 import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCallMemory

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Modes.AArch64.Group
+public import VerifiedGarbage.Proof.Modes.AArch64.Setup
 public import VerifiedGarbage.Proof.Modes.Ctr32
 public import VerifiedGarbage.Impl.Modes.AArch64.Ctr32
 import VerifiedGarbage.Proof.Modes.AArch64.Xor
@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.Modes.Addr
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-public import VerifiedGarbage.Proof.Modes.AArch64.Setup
 import VerifiedGarbage.Proof.Modes.AArch64.Ctr
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec

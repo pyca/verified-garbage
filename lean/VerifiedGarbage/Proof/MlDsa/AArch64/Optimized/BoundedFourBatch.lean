@@ -5,8 +5,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourBatchGeometry
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourLoop
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourScalarLoop
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourInit
 
 /-! ### `MlDsa.AArch64.Optimized.BoundedFourBatchState`, which this module and modules that import it used -/
 

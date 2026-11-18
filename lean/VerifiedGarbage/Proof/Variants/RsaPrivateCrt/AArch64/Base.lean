@@ -32,7 +32,7 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowDispatch
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowExp
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowFinish
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowFinishSquare
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowGroups
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTails
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowHead
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowP
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTakeBit

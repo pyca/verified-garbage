@@ -9,9 +9,8 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.PreparedContext
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.FastR2
 public import VerifiedGarbage.Impl.MillerRabin.X86.Round
 public import VerifiedGarbage.Proof.MillerRabin.X86.MontFrame
-import VerifiedGarbage.Proof.RsaKeyGen.X86.PreparedR2Doubles
-public import VerifiedGarbage.Impl.Rsa.X86.KeyWs
 import VerifiedGarbage.Proof.RsaKeyGen.X86.FastR2Square
+public import VerifiedGarbage.Impl.Rsa.X86.KeyWs
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.TCB.X86.State

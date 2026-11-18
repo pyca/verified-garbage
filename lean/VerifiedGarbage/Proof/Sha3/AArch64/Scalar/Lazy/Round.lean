@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.CoreExec
+import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Lower
 import VerifiedGarbage.Proof.Framework.Bitslice.Anf
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.Lazy

@@ -2,13 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedAddField
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeArithmetic
+import VerifiedGarbage.Proof.Weierstrass.AArch64.NafNeg
 import VerifiedGarbage.Proof.Weierstrass.Comb
 public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Joint
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointInvariant
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafDigitRead
-import VerifiedGarbage.Proof.Weierstrass.AArch64.NafNeg
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
 public import VerifiedGarbage.Proof.Weierstrass.CheckPointContract
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticCachedHead

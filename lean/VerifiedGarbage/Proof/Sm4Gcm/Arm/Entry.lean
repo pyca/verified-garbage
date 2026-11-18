@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Sm4Gcm.Arm.Contract
 public import VerifiedGarbage.Proof.Sm4Gcm.Arm.Fn
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec

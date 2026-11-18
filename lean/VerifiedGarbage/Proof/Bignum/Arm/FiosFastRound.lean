@@ -3,13 +3,12 @@ module
 public import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineRound
 public import VerifiedGarbage.Impl.Bignum.Arm.FiosFast
 import VerifiedGarbage.Proof.Bignum.Arm.FiosArgs
-import VerifiedGarbage.Proof.Bignum.Arm.FiosRoundFinish
+import VerifiedGarbage.Proof.Bignum.Arm.FiosCode
 import VerifiedGarbage.Proof.Bignum.Arm.RoundMath
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
 public import VerifiedGarbage.Proof.Bignum.Arm.FiosState
-import VerifiedGarbage.Proof.Bignum.Arm.FiosCode
 public import VerifiedGarbage.Impl.Bignum.Arm.FiosPipelined
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.X25519.Arm.Instr

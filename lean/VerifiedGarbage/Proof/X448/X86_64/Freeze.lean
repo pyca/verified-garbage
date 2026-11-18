@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.X448.X86_64.AddSub
-public import VerifiedGarbage.Proof.X448.X86_64.Swap
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd

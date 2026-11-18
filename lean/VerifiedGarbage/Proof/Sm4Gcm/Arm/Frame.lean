@@ -9,7 +9,7 @@ public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Spec.Sm4.Gcm.Contract
 public import VerifiedGarbage.Impl.Sm4Gcm.Arm
-public import VerifiedGarbage.Proof.Sm4Gcm.Arm.Contract
+public import VerifiedGarbage.Proof.Sm4Gcm.Arm.Fn
 import VerifiedGarbage.Proof.Sm4Gcm.Arm.StreamFinish
 import VerifiedGarbage.Proof.Sm4Gcm.Arm.StreamInit
 import VerifiedGarbage.Proof.Sm4Gcm.Arm.StreamVerify

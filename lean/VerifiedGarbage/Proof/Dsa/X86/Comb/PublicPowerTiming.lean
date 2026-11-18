@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Framework.X86.RelCT
 public import VerifiedGarbage.Proof.Dsa.X86.Comb.Layout
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
-import VerifiedGarbage.Proof.Dsa.X86.Comb.PowerInit
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Impl.Dsa.X86.Comb
 meta import VerifiedGarbage.Impl.Mont.X86.CombPower

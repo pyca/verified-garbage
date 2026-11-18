@@ -2,9 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.KeygenRound
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Power2Round
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseWord
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseVec
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseVec
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseFrame
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
 import VerifiedGarbage.Proof.Framework.Block

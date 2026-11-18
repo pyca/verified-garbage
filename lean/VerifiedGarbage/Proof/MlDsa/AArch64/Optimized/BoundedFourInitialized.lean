@@ -16,7 +16,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourRead
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Load
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejState
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentSeed
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejCounts
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejPro
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentAbsorb
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.AbsorbPair

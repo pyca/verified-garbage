@@ -1,7 +1,6 @@
 module
-public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.DdLoop
 
-import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.DdStore
+public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.DdStore
 import VerifiedGarbage.Proof.MlKem.AArch64.NttVec
 import VerifiedGarbage.Proof.MlKem.Encode
 import VerifiedGarbage.Proof.Framework.Block

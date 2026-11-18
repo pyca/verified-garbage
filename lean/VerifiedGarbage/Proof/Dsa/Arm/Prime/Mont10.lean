@@ -1,10 +1,9 @@
 module
+
 public import VerifiedGarbage.Proof.Dsa.Arm.Prime.Exp7
 public import VerifiedGarbage.Proof.Dsa.Arm.Prime.Mont2
-
-import VerifiedGarbage.Proof.Dsa.Arm.Prime.Mont9
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Mont8
+import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Mont5
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Taint6
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Inv

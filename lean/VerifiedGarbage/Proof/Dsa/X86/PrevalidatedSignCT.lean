@@ -14,8 +14,8 @@ import VerifiedGarbage.Proof.Dsa.X86.EntryTiming
 import VerifiedGarbage.Proof.Dsa.X86.FailureTiming
 import VerifiedGarbage.Proof.Dsa.X86.LayoutAgreement
 import VerifiedGarbage.Proof.Dsa.X86.OutputTiming
-import VerifiedGarbage.Proof.Dsa.X86.SignSizedTiming
-import VerifiedGarbage.Proof.Dsa.X86.SignTiming
+import VerifiedGarbage.Proof.Dsa.X86.WriteSignature
+import VerifiedGarbage.Proof.Dsa.X86.VerifyTiming
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Dsa.X86.VerifyingOperation
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
@@ -30,13 +30,10 @@ public import VerifiedGarbage.Proof.Dsa.X86.Installed
 public import VerifiedGarbage.Proof.Dsa.X86.OutputFrame
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Framework.X86.Spill
-import VerifiedGarbage.Proof.Dsa.X86.SignCompute
 import VerifiedGarbage.Proof.Dsa.X86.StageMinus
 import VerifiedGarbage.Proof.Dsa.X86.StageChecks
 import VerifiedGarbage.Proof.Dsa.X86.Persistent
 import VerifiedGarbage.Proof.Dsa.X86.Result
-import VerifiedGarbage.Proof.Dsa.X86.WriteSignature
-import VerifiedGarbage.Proof.Dsa.X86.CheckingDispatch
 import VerifiedGarbage.Proof.Dsa.X86.EntrySave
 import VerifiedGarbage.Proof.Dsa.X86.CallerBuffer
 import VerifiedGarbage.Proof.Dsa.X86.ShapeModuli

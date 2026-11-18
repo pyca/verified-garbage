@@ -19,7 +19,6 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Dsa.AArch64.Run
 import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignInputs
-import VerifiedGarbage.Proof.Dsa.AArch64.SigningABI
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-! ### `Dsa.AArch64.RandomSignCallValue`, which this module and modules that import it used -/

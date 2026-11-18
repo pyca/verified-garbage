@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PolicyBound
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PolicyLoop
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PolicyTableFrame
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-! ### `Ffdh.AArch64.Cached.PolicyRecognize`, which this module and modules that import it used -/

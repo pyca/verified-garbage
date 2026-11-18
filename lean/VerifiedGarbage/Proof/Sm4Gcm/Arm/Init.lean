@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Sm4Gcm.Arm.Contract
 public import VerifiedGarbage.Proof.Sm4Gcm.Arm.Fn
 import VerifiedGarbage.Proof.Sm4Gcm.Arm.Ghash1
 import VerifiedGarbage.Proof.Sm4.CtrCipher

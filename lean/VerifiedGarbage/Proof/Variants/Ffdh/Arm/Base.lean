@@ -1,10 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.Arm.Backend
-public import VerifiedGarbage.Proof.Ffdh.Arm.VettedValidation.Fn
 public import VerifiedGarbage.Proof.Framework.Arm.StackScratchConsts
 public import VerifiedGarbage.Spec.Ffdh.Contract
-import VerifiedGarbage.Proof.Ffdh.Arm.DomainPre
 import VerifiedGarbage.Proof.Ffdh.Arm.DomainSpec
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Arm.Contract

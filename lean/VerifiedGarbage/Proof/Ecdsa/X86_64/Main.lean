@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Ecdsa.X86_64.MulBase
 import VerifiedGarbage.Proof.Ecdsa.X86_64.MulFn
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Inv
 import VerifiedGarbage.Proof.Ecdsa.Sign
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Finish
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Scalar
 
 /-!

@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Dsa.Arm.Prime.TaintD
 import VerifiedGarbage.Proof.Dsa.Generation.WitnessSlice
 import VerifiedGarbage.Proof.Dsa.Generation.Primality
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Seqs
-import VerifiedGarbage.Proof.Dsa.Arm.Prime.Ops
+import VerifiedGarbage.Proof.Dsa.Arm.Prime.Loads
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.St
 import VerifiedGarbage.Proof.Rsa.Arm.KeyWord
 import VerifiedGarbage.Proof.Framework.Block

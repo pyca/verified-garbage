@@ -3,10 +3,40 @@ module
 public import VerifiedGarbage.Impl.Curve448.AArch64
 public import VerifiedGarbage.Proof.X448.Wide.Column
 import VerifiedGarbage.Proof.X448.Wide.Fold
-import VerifiedGarbage.Proof.X448.Wide.TailPass
-import VerifiedGarbage.Proof.Curve448.AArch64.Collect
 import VerifiedGarbage.Proof.X448.Wide.Pass
+import VerifiedGarbage.Proof.Curve448.AArch64.Collect
 import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.X448.Wide.Representation
+public import VerifiedGarbage.Proof.X448.AArch64.Mem
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
+
+/-! ### `Curve448.AArch64.Memory`, which the modules that import this one used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.Curve448.AArch64
+open VG VG.AArch64 VG.Proof.X448.Wide VG.Proof.X448.Wide.Representation
+open VG.Proof.X448.AArch64
+
+abbrev fe (m : Mem) (base : Addr) (o : Nat) : Nat := VG.Proof.X448.Wide.valN (limbs m base o) 8
+abbrev F (m : Mem) (base : Addr) (o : Nat) : Spec.X448.Fe := VG.Proof.X448.toFe (fe m base o)
+def Bounded (m : Mem) (base : Addr) (o : Nat) : Prop := Within weakBound (limbs m base o)
+
+theorem field_fe {base : Addr} {o : Nat} {m m' : Mem}
+    (h : FieldMem base o m m') {d : Nat}
+    (hd : d + 128 ≤ o ∨ o + 128 ≤ d) (hw : d + 128 ≤ Impl.X448.AArch64.ACC) :
+    fe m' base d = fe m base d :=
+  VG.Proof.X448.Wide.valN_congr (fun i hi => h.limbs hd hw (by omega_using [hi] : i < 16))
+
+end VG.Proof.Curve448.AArch64
+
+end
+
+end
 
 /-! Untrusted: reduce wide coefficients to eight limbs with explicit headroom. -/
 

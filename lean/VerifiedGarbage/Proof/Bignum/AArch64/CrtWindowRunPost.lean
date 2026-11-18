@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowRunContext
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTails
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowGroups
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowAdvance
 import VerifiedGarbage.Proof.Bignum.AArch64.MulAdd
 

@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Dsa.X86.OutputFrame
 public import VerifiedGarbage.Impl.Dsa.X86.Generate
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Dsa.X86.Installed
-import VerifiedGarbage.Proof.Dsa.X86.CheckingDispatch
+import VerifiedGarbage.Proof.Dsa.X86.Result
 import VerifiedGarbage.Proof.Dsa.X86.VerifyingOperation
 import VerifiedGarbage.Proof.Dsa.X86.InstalledInputs
 import VerifiedGarbage.Proof.Dsa.X86.CheckingResources
@@ -20,7 +20,6 @@ public import VerifiedGarbage.Proof.Dsa.X86.Checks
 public import VerifiedGarbage.Proof.Framework.X86.Spill
 import VerifiedGarbage.Proof.Dsa.X86.ShapeModuli
 import VerifiedGarbage.Proof.Dsa.X86.ShapeSavedFrame
-import VerifiedGarbage.Proof.Dsa.X86.Result
 public import VerifiedGarbage.Proof.Dsa.X86.CallerBuffer
 import VerifiedGarbage.Proof.Dsa.X86.GenerateParameters
 import Mathlib.Logic.Function.Basic

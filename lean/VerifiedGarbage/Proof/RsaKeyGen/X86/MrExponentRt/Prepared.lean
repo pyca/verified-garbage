@@ -23,7 +23,7 @@ import VerifiedGarbage.Proof.MillerRabin.X86.Copy
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Loops
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Power
 import VerifiedGarbage.Proof.Mont.X86.Rt.Step
-import VerifiedGarbage.Proof.RsaKeyGen.X86.HeaderStore
+import VerifiedGarbage.Proof.RsaKeyGen.X86.Gcd64Words
 import VerifiedGarbage.Proof.RsaKeyGen.X86.SigMask
 public import VerifiedGarbage.Proof.RsaKeyGen.MrWindow
 import VerifiedGarbage.Proof.MillerRabin.X86.Caller

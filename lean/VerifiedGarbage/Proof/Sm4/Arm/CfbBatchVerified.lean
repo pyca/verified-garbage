@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Sm4.Arm.BatchPrologue
 public import VerifiedGarbage.Proof.Sm4.Arm.CfbLoop
-import VerifiedGarbage.Proof.Sm4.Arm.Core
+import VerifiedGarbage.Proof.Sm4.Arm.Prologue
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.Sm4.Arm.BatchCfb
 public import VerifiedGarbage.Proof.Framework.Semantics

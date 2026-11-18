@@ -11,7 +11,6 @@ public import VerifiedGarbage.Impl.Dsa.AArch64.SignVerify
 public import VerifiedGarbage.Proof.Dsa.AArch64.Run
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Dsa.SignVerify
-public import VerifiedGarbage.Proof.Dsa.AArch64.SigningABI
 import VerifiedGarbage.Proof.Dsa.AArch64.Sequences
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Block

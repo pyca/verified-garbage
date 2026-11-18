@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.AArch64.Window.Table
-import VerifiedGarbage.Proof.Curve448.AArch64.Copy
+import VerifiedGarbage.Proof.Curve448.AArch64.Stage
 import VerifiedGarbage.Proof.X448.AArch64.Weak.Counters
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.X448.AArch64.Base.Const

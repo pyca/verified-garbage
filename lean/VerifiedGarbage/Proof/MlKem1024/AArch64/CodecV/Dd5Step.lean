@@ -1,13 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.DdLoop
+public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.DdStore
 import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Lane
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.MlKem.AArch64.NttVec
 import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Blocks
 import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Dd10Step
 public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Dword
-import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.DdStore
 public import VerifiedGarbage.Proof.MlKem.AArch64.Common
 public import VerifiedGarbage.Impl.MlKem1024.AArch64.Compress
 import VerifiedGarbage.Proof.Rc4.AArch64.Vec

@@ -13,7 +13,6 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.MontSaves
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Native.NormalizePrefixInv
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.AddrArith
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Native.FieldMul
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Native.FieldSquare
 
 /-! ### `Weierstrass.AArch64.P521Native.NormalizeBackWork`, which this module and modules that import it used -/

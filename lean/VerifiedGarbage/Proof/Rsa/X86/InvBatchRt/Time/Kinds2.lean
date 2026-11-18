@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Slots
-import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Start
 import VerifiedGarbage.Proof.Rsa.X86.GcdBatch.Count
 import VerifiedGarbage.Proof.Weierstrass.X86.InvLoop
 import VerifiedGarbage.Proof.Weierstrass.X86.Loop

@@ -15,7 +15,7 @@ public import VerifiedGarbage.Proof.Rsa.X86_64.PublicImpl
 import VerifiedGarbage.Proof.RsaPss.X86_64.SignCFixed
 import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyFixed
 import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyBody
-import VerifiedGarbage.Proof.RsaPss.X86_64.SignCall
+import VerifiedGarbage.Proof.RsaPss.X86_64.SignCorrect
 import VerifiedGarbage.Proof.RsaPss.Params
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 import VerifiedGarbage.Proof.Framework.X86_64.Syms

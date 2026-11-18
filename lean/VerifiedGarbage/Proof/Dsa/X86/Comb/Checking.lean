@@ -12,7 +12,6 @@ import VerifiedGarbage.Proof.Dsa.X86.CheckingResources
 import VerifiedGarbage.Proof.Dsa.X86.InstalledInputs
 import VerifiedGarbage.Proof.Dsa.X86.ParameterBuffers
 import VerifiedGarbage.Proof.Dsa.X86.ABIResources
-import VerifiedGarbage.Proof.Dsa.X86.Comb.StagePower
 import VerifiedGarbage.Proof.Dsa.X86.Comb.CanonicalFrame
 import VerifiedGarbage.Proof.Dsa.X86.StageChecks
 import VerifiedGarbage.Proof.Dsa.X86.Persistent

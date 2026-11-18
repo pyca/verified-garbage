@@ -2,9 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Framework.X86.Exec
 import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
-public import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Spec
+public import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Memory
 public import VerifiedGarbage.Impl.Sha256.X86.ShaNi
-import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Memory
 import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Const
 import VerifiedGarbage.Proof.Framework.X86.Sse
 import VerifiedGarbage.Proof.Framework.X86.RegUpd

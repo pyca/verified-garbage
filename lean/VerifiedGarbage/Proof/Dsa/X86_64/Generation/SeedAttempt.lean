@@ -3,13 +3,11 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedOutcome
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.SeedSearch
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Hashes
-
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedSubgroup
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextSuccess
 import VerifiedGarbage.Proof.Dsa.Generation.RandomSuffix
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedPack
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedValidate
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedPrime
 import VerifiedGarbage.Proof.Dsa.Generation.ParamsEncoding
 import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 import Mathlib.Tactic.Set
@@ -23,11 +21,10 @@ import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
 import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
 import VerifiedGarbage.Proof.Dsa.Encoding
 import VerifiedGarbage.Spec.Ffdh
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedGenerator
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedPrime
 import VerifiedGarbage.Proof.Dsa.Generation.QCandidate
 import Mathlib.Algebra.Group.Nat.Defs
 public import VerifiedGarbage.Spec.Dsa
+
 /-! # A complete native seed attempt implements all parameter-generation decisions -/
 
 -- Formerly `VerifiedGarbage/Proof/Dsa/X86_64/Generation/FinishDomain.lean`, which only this module imported.

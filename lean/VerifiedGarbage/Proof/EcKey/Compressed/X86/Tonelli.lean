@@ -1,8 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.EcKey.Compressed.X86.Candidate
+public import VerifiedGarbage.Proof.EcKey.Compressed.X86.SlotOps
 public import VerifiedGarbage.Impl.EcKey.Compressed.Root
-import VerifiedGarbage.Proof.EcKey.Compressed.X86.Frame
 import VerifiedGarbage.Proof.Weierstrass.RootTonelli
 import VerifiedGarbage.Proof.Weierstrass.Law
 import VerifiedGarbage.Proof.Weierstrass.X86.Loop
@@ -12,7 +11,6 @@ public import VerifiedGarbage.Impl.Ecdh.X86
 public import VerifiedGarbage.Proof.Ecdsa.X86.Layout
 public import VerifiedGarbage.Proof.Weierstrass.X86.Pow
 import VerifiedGarbage.Proof.Ecdsa.X86.SlotOps
-import VerifiedGarbage.Proof.EcKey.Compressed.X86.SlotOps
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Ecdsa.X86.Middle
 import VerifiedGarbage.Proof.Weierstrass.X86.Copy

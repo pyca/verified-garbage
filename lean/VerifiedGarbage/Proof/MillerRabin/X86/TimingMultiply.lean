@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MillerRabin.X86.Caller
-import VerifiedGarbage.Proof.MillerRabin.X86.Multiply
+public import VerifiedGarbage.Proof.MillerRabin.X86.Multiply
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 public import VerifiedGarbage.Impl.MillerRabin.X86.Round
 public import VerifiedGarbage.Proof.Framework.X86.Call
@@ -10,7 +10,6 @@ public import VerifiedGarbage.Proof.MillerRabin.X86.TimingBase
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.X86.RelCT
 public import VerifiedGarbage.Proof.Framework.RelCT
-public import VerifiedGarbage.Proof.MillerRabin.X86.CallPre
 public import VerifiedGarbage.Proof.MillerRabin.X86.Context
 public import VerifiedGarbage.Proof.Rsa.MontContract
 import VerifiedGarbage.Proof.Framework.Sig

@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.PrivPreD
-import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtSave
+import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtArgs
 
 /-! ### `Bignum.PPC64LE.PrivPreE`, which this module and modules that import it used -/
 

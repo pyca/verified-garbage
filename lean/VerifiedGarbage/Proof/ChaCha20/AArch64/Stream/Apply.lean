@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.ChaCha20.Stream
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Xor
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.XorVariant
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Lit
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Stream.Bytes
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Stream.Init
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset

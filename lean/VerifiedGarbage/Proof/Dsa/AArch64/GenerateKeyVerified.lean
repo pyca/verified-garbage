@@ -7,9 +7,8 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyBlockCT
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomPrepareCT
 import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-import VerifiedGarbage.Proof.Dsa.AArch64.DeriveCheckedVerified
-import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCallMemory
 import VerifiedGarbage.Proof.Dsa.AArch64.ParametersVerified
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCallMemory
 public import VerifiedGarbage.Proof.Dsa.Contract
 import VerifiedGarbage.Proof.Dsa.AArch64.RandomSampleAgreement
 import VerifiedGarbage.Proof.Dsa.RandomTraceResult

@@ -7,7 +7,7 @@ public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Mont.X86.PowerStep
 public import VerifiedGarbage.Proof.Dsa.X86.Installed
 import VerifiedGarbage.Proof.Dsa.X86.VerifyingOperation
-import VerifiedGarbage.Proof.Dsa.X86.CheckingDispatch
+import VerifiedGarbage.Proof.Dsa.X86.Result
 import VerifiedGarbage.Proof.Dsa.X86.InstalledInputs
 import VerifiedGarbage.Proof.Dsa.X86.EntrySave
 import VerifiedGarbage.Proof.Dsa.X86.DerivingEntry
@@ -35,7 +35,6 @@ import Mathlib.Logic.Function.Basic
 import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Dsa.X86.KeyCopyParts
 import VerifiedGarbage.Proof.Mont.X86.Instr
-import VerifiedGarbage.Proof.Dsa.X86.Result
 public import VerifiedGarbage.Proof.Dsa.Accepted
 import VerifiedGarbage.Proof.Dsa.Derive
 import VerifiedGarbage.Proof.Dsa.Arithmetic

@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.SboxLit
 import VerifiedGarbage.Proof.TripleDes.Bitslice.LayoutLit
 import VerifiedGarbage.Proof.TripleDes.SboxTables
-public import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Machine
+public import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Sbox
 public import VerifiedGarbage.Proof.TripleDes.Bitslice.Io
 public import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
 import VerifiedGarbage.Proof.TripleDes.Bitslice.TransposeIdx

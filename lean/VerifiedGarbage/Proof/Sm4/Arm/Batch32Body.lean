@@ -5,7 +5,7 @@ public import VerifiedGarbage.Impl.Sm4.Arm.BatchCtr32
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Spec.Sm4.Gcm
 public import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Sm4.Arm.Core
+import VerifiedGarbage.Proof.Sm4.Arm.Prologue
 import VerifiedGarbage.Proof.Sm4.Arm.BatchChain
 public import VerifiedGarbage.Proof.Modes.Ctr32
 import VerifiedGarbage.Proof.Cmac.Spec

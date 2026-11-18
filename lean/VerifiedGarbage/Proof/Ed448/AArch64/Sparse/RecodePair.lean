@@ -16,7 +16,7 @@ public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.X448.AArch64.Mem
 import VerifiedGarbage.Proof.X448.AArch64.BitWrite
 import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.Step
-public import VerifiedGarbage.Proof.Ed448.WnafWide.Bits
+public import VerifiedGarbage.Proof.Ed448.WnafWide.Word
 
 /-! ### `Ed448.AArch64.Sparse.Copy`, which only this module used -/
 

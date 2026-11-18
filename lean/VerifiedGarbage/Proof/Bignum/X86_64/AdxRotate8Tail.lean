@@ -1,12 +1,11 @@
 module
+
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Core
 public import VerifiedGarbage.Proof.Bignum.X86_64.Words
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
-
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Accumulate
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Store
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxDualAddChain
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxDualAddClose
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Digit
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Memory

@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Blake2.RISCV64.Stream.Common
 import VerifiedGarbage.Proof.Blake2.RISCV64.Stream.Verified
 import VerifiedGarbage.Proof.Blake2.RISCV64.Stream.CT
 import VerifiedGarbage.Proof.Blake2.RISCV64.Stream.Lit
-import VerifiedGarbage.Proof.Blake2.RISCV64.Stream.Update
 import VerifiedGarbage.Proof.Blake2.RISCV64.Stream.Finalize
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Lit

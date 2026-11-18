@@ -1,11 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.Arm.PrivContractGeometry
+public import VerifiedGarbage.Proof.Rsa.Arm.PrivEntryReady
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivFnInput
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Rsa.Contract
-import VerifiedGarbage.Proof.Rsa.Arm.PrivEntryReady
 import VerifiedGarbage.Proof.Rsa.Arm.PrivRegions
 import VerifiedGarbage.Proof.Rsa.Arm.PrivFn
 import VerifiedGarbage.Proof.Rsa.Arm.PrivFnCT

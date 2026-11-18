@@ -13,9 +13,8 @@ import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
 import VerifiedGarbage.Proof.Ffdh.Arm.ExchangeMain
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Ffdh.Arm.SharedExchangeMemory
-import VerifiedGarbage.Proof.Ffdh.Arm.DomainNormalizedPrepareAt
 import VerifiedGarbage.Proof.Ffdh.Arm.SharedCheckPublicPower
+import VerifiedGarbage.Proof.Ffdh.Arm.DomainNormalizedPrepareAt
 import VerifiedGarbage.Proof.Ffdh.Arm.ExchangeMainCT
 import VerifiedGarbage.Proof.Ffdh.Arm.SharedCheckPublicPowerCT
 import VerifiedGarbage.Proof.Ffdh.Arm.DomainNormalizedPrepareAtCT

@@ -6,9 +6,8 @@ import VerifiedGarbage.Proof.Framework.AArch64.Simd64
 import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Blocks
 public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Dd10Step
 import VerifiedGarbage.Proof.MlKem1024.AArch64.CodecV.Dword88
-public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.DdLoop
+public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.DdStore
 public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Ce10
-import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.DdStore
 public import VerifiedGarbage.Proof.MlKem.AArch64.Common
 public import VerifiedGarbage.Impl.MlKem1024.AArch64.Compress
 import VerifiedGarbage.Proof.Rc4.AArch64.Vec

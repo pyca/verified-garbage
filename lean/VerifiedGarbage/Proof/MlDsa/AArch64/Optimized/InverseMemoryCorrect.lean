@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TraversalBank
 public import VerifiedGarbage.Proof.MlDsa.MontgomeryContract
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MemoryOuterPass
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversalCorrect
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseBankFieldStage
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFinalSlice
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Residue
 import VerifiedGarbage.Proof.Framework.Omega
@@ -21,7 +21,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InversePackedBank
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TailBank
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseArithmetic
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InnerBank
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseBankFieldStage
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.MlDsa.Arith.VectorNtt
 import VerifiedGarbage.Proof.Framework.InstancePriority

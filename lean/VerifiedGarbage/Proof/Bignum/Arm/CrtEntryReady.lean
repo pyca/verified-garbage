@@ -89,7 +89,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.Workspace
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Bignum.Arm.PcDimensions
 import VerifiedGarbage.Proof.Bignum.Arm.CrtPrepare
-import VerifiedGarbage.Proof.Bignum.Arm.CrtProductState
+import VerifiedGarbage.Proof.Bignum.Arm.CrtProductGeometry
 import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFn
 import VerifiedGarbage.Proof.Bignum.Arm.CrtHeaderCopiesCT
 import VerifiedGarbage.Proof.Bignum.Arm.StageCT

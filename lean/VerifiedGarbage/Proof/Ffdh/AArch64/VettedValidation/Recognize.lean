@@ -10,7 +10,6 @@ public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PolicyLoop
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PolicyTable
 public import VerifiedGarbage.Proof.Ffdh.AArch64.VettedValidation.Contract
 import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.SourceSlices
-import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PolicyTableFrame
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.Bit
 public import VerifiedGarbage.Spec.Rsa.Contract
 

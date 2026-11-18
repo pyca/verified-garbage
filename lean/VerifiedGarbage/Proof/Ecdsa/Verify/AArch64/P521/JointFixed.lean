@@ -1,14 +1,16 @@
 module
+
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointFixedSource
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.JointDigit
 public import VerifiedGarbage.Proof.Weierstrass.FastNaf
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointFixedEntry
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacMixedAddB
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeStore
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeArithmetic
+import VerifiedGarbage.Proof.Weierstrass.AArch64.NafNeg
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowInvariant
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
+
 @[expose] public section
 namespace VG.Proof.Ecdsa.Verify.AArch64.P521.Joint
 open VG VG.AArch64 VG.Impl.Mont VG.Impl.Mont.AArch64 VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64

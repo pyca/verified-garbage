@@ -1,11 +1,10 @@
 module
 
-import VerifiedGarbage.Proof.Dsa.Arm.Prime.Ops
+public import VerifiedGarbage.Proof.Dsa.Arm.Prime.Loads
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Vals
 public import VerifiedGarbage.Proof.Dsa.Arm.Prime.St
 public import VerifiedGarbage.Proof.Dsa.Arm.Prime.Taint1
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.TaintD
-public import VerifiedGarbage.Proof.Dsa.Arm.Prime.Loads
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.St
 import VerifiedGarbage.Proof.Rsa.Arm.CvLoad
 import VerifiedGarbage.Proof.Framework.Offset

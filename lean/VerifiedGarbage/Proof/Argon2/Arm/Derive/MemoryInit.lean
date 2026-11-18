@@ -2,8 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Argon2.MemoryInit
 public import VerifiedGarbage.Proof.Argon2.Matrix
-public import VerifiedGarbage.Proof.Argon2.Arm.Derive.Parameters
-import VerifiedGarbage.Proof.Argon2.Arm.Derive.Initial
+public import VerifiedGarbage.Proof.Argon2.Arm.Derive.Initial
 public import VerifiedGarbage.Proof.Argon2.Arm.Derive.Locals
 import VerifiedGarbage.Proof.Blake2.Stream
 import VerifiedGarbage.Proof.Framework.Arm.Exec

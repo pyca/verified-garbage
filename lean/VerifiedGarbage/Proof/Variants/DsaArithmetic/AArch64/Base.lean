@@ -23,10 +23,9 @@ import Mathlib.Algebra.Group.Nat.Defs
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingInitialize
-public import VerifiedGarbage.Proof.Dsa.AArch64.DeriveCheckedVerified
+public import VerifiedGarbage.Proof.Dsa.AArch64.ParametersVerified
 import Mathlib.Data.Nat.Basic
 public import VerifiedGarbage.Proof.Dsa.AArch64.ValidateCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.ParametersVerified
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Dsa.AArch64.ABIRegions
 public import VerifiedGarbage.Proof.Bignum.Octets

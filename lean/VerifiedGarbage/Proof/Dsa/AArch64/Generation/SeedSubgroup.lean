@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ContextSeed
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.QBuild
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Hashes
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Context
 public import VerifiedGarbage.Proof.MillerRabin.AArch64.Kernel
@@ -11,7 +11,6 @@ public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Subgroup
 import VerifiedGarbage.Proof.Dsa.Generation.QCandidate
 import VerifiedGarbage.Proof.Dsa.Arithmetic
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SourceFrame
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.QBuild
 import VerifiedGarbage.Proof.Dsa.Generation.Memory
 import VerifiedGarbage.Proof.Bignum.Octets
 

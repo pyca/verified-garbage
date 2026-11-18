@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86_64.KeygenEntry
 public import VerifiedGarbage.Proof.Dsa.X86_64.SignCompute
 public import VerifiedGarbage.Proof.Dsa.X86_64.ShapeSpec
-public import VerifiedGarbage.Proof.Dsa.X86_64.SourceSlices
 public import VerifiedGarbage.Proof.Dsa.X86_64.CoreSign
 public import VerifiedGarbage.Proof.Dsa.X86_64.SigningOperands
 public import VerifiedGarbage.Impl.Dsa.X86_64.PrevalidatedSign

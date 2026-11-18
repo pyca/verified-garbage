@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Rsa.Arm.InvParts
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Rsa.Arm.CvFail
 import VerifiedGarbage.Proof.Rsa.Octets
-public import VerifiedGarbage.Proof.Rsa.Arm.KcShape
 public import VerifiedGarbage.Impl.Rsa.Arm.CheckKey
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Bignum.Arm.UmaalArithmetic

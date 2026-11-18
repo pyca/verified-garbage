@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Rsa.X86.Rd.TimeBaseW
 public import VerifiedGarbage.Impl.Rsa.X86.RecoverDetRt
 public import VerifiedGarbage.Proof.Framework.X86.Taint
 public import VerifiedGarbage.Proof.Framework.X86.SseTaint
-import VerifiedGarbage.Proof.Rsa.X86.Rd.DetPartsW
+import VerifiedGarbage.Proof.Rsa.X86.Rd.ProdW
 import VerifiedGarbage.Proof.Rsa.X86.Rd.Ops
 import VerifiedGarbage.Proof.Rsa.X86.Rd.TimeW1
 import VerifiedGarbage.Proof.Rsa.X86.Rd.TimeW2B

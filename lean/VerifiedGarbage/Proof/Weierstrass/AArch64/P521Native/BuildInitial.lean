@@ -1,11 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Native.BuildSeedStore
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Native.BuildCounter
 public import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Native.BuildCounter
 import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd

@@ -3,7 +3,7 @@ module
 import VerifiedGarbage.Proof.EcKey.Validate.X86_64.Front
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Fixed
 import VerifiedGarbage.Proof.Ecdh.X86_64.Peer
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Finish
+import VerifiedGarbage.Proof.Ecdsa.X86_64.Scalar
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.EcKey.Compressed.X86_64
 public import VerifiedGarbage.Proof.Ecdh.X86_64.Validate

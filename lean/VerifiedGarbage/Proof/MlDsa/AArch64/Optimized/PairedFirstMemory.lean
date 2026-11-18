@@ -9,11 +9,10 @@ import VerifiedGarbage.Proof.Framework.AArch64.Simd64
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.PlainSimp
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedStageRun
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedStore
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InversePackedRun
 import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFive
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedStore
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedState
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Slice
 import VerifiedGarbage.Proof.Framework.Offset

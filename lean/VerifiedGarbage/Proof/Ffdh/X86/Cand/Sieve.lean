@@ -3,10 +3,9 @@ module
 import VerifiedGarbage.Proof.Ffdh.X86.Cand.Divides
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.SieveContext
 public import VerifiedGarbage.Proof.RsaKeyGen.TrialFilter
-import VerifiedGarbage.Proof.RsaKeyGen.X86.SieveLoop
 import VerifiedGarbage.Proof.RsaKeyGen.X86.SieveFrame
 import VerifiedGarbage.Proof.RsaKeyGen.X86.SieveStack
-import VerifiedGarbage.Proof.RsaKeyGen.X86.SieveAdvancedMem
+import VerifiedGarbage.Proof.RsaKeyGen.X86.SieveStep
 import VerifiedGarbage.Proof.Framework.X86.SymFrame
 import VerifiedGarbage.Proof.Framework.X86.Syms
 import VerifiedGarbage.Proof.Framework.Omega

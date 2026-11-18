@@ -3,16 +3,15 @@ module
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Reduce
 public import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
 public import VerifiedGarbage.Proof.Rsa.Ranges
-
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Division
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Subtract
 import VerifiedGarbage.Proof.Bignum.CrtFrame
 import Mathlib.Order.RelClasses
 import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.Push
 import VerifiedGarbage.Proof.Dsa.Generation.PReduction
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Subtract
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Increment
 import Mathlib.Tactic.Attr.Core
+
 /-! # Complete native p-candidate reduction, retaining the quotient -/
 
 -- Formerly `VerifiedGarbage/Proof/Dsa/X86_64/Generation/Reduce.lean`, which only this module imported.

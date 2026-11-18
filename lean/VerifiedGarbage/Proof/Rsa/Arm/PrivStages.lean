@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivCrtPre
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivPdCall
-public import VerifiedGarbage.Proof.Rsa.Arm.PrivPdPre
+public import VerifiedGarbage.Proof.Rsa.Arm.PrivPcPre
 import VerifiedGarbage.Proof.Rsa.Arm.PrivStatusPreserved
 import VerifiedGarbage.Proof.Rsa.Arm.PrivCrtCall
 import VerifiedGarbage.Proof.Rsa.BytesFrame

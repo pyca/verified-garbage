@@ -2,8 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86.Comb.Checking
 public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Invoke
-
-import VerifiedGarbage.Proof.Dsa.X86.Comb.StagePower
+import VerifiedGarbage.Proof.Dsa.X86.Comb.CanonicalFrame
 import VerifiedGarbage.Proof.Dsa.X86.Comb.Core
 import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Context
 import VerifiedGarbage.Proof.Mont.OutsFrame
@@ -11,6 +10,7 @@ import VerifiedGarbage.Proof.Rsa.BytesFrame
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Mont.Words32
+
 /-! The checked domain and canonical table retained across rejection sampling. -/
 
 -- Formerly `VerifiedGarbage/Proof/Dsa/X86/Comb/SamplerFrame.lean`, which only this module imported.

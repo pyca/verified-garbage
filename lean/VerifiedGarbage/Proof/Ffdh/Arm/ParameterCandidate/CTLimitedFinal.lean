@@ -2,10 +2,9 @@ module
 
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTLimitedResult
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTShape
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateShape
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateResidue
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTCandidateTest
+public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTResult
 
 /-! Restore and test p using the public original entropy prefix. -/
 

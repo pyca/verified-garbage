@@ -7,9 +7,6 @@ public import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.Spec.Dsa
 import VerifiedGarbage.Proof.Dsa.X86_64.AddCallCT
 import VerifiedGarbage.Proof.Dsa.X86_64.Add
-import VerifiedGarbage.Proof.Dsa.X86_64.Multiply
-import VerifiedGarbage.Proof.Dsa.X86_64.Reduce
-import VerifiedGarbage.Proof.Dsa.X86_64.Power
 
 /-! # Retaining public result bindings across arithmetic calls -/
 

@@ -9,10 +9,9 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.AesOcb.AArch64.Args
 import VerifiedGarbage.Proof.AesOcb.AArch64.RestTag
 import VerifiedGarbage.Proof.Ocb.Bytes
-import VerifiedGarbage.Proof.AesOcb.AArch64.Nonce
+public import VerifiedGarbage.Proof.AesOcb.AArch64.LNtz
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.AesOcb.AArch64.Env
-public import VerifiedGarbage.Proof.AesOcb.AArch64.LNtz
 public import VerifiedGarbage.Proof.AesOcb.AArch64.Words
 public import VerifiedGarbage.Proof.Ocb.Spec
 

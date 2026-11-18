@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.SieveContext
 public import VerifiedGarbage.Proof.Framework.X86.AllocFrame
 public import VerifiedGarbage.Spec.RsaKeyGen
-import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.Width
+public import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.Width
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateSieveInput
 import VerifiedGarbage.Proof.RsaKeyGen.X86.FilterStack
 import VerifiedGarbage.Proof.RsaKeyGen.X86.WorkspaceDisjoint
@@ -11,7 +11,6 @@ import VerifiedGarbage.Proof.Bignum.ByteWords
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86.Syms
-public import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.Enter
 import VerifiedGarbage.Proof.RsaKeyGen.X86.ImportLoad
 import VerifiedGarbage.Proof.RsaKeyGen.X86.ImportRegions
 import VerifiedGarbage.Proof.RsaKeyGen.X86.WitnessZeros

@@ -3,16 +3,15 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashPlan
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.LabelCT
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PHash
-
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedAddCT
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
 import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
 import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedAdd
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PHashArgs
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
+
 /-! # Streaming hash contributions for the public p-candidate search -/
 
 -- Formerly `VerifiedGarbage/Proof/Dsa/X86_64/Generation/PSeedCT.lean`, which only this module imported.

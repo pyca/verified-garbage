@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.Tonelli
 public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.DecompressFront
-public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.DecompressContract
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.EcKey.Compressed.Arm.Frame

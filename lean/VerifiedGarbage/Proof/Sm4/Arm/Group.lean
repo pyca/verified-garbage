@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Sm4.Arm.Prologue
 public import VerifiedGarbage.Proof.Sm4.Common
-public import VerifiedGarbage.Proof.Sm4.Arm.Core
 public import VerifiedGarbage.Impl.Sm4.Arm.Ecb
 public import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd

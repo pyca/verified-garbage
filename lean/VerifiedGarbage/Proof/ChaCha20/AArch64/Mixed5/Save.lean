@@ -5,11 +5,10 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
-public import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Spill
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Tail
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Chunk
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Counter
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Feed
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Tail
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Rounds
 
 /-! ### `ChaCha20.AArch64.Mixed5.Chunk`, which this module and modules that import it used -/

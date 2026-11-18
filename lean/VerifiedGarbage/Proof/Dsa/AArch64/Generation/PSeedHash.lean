@@ -1,7 +1,6 @@
 module
 
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PHashArgs
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedAdd
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Memory
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.PHash
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.Label

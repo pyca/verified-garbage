@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.EcKey.Validate.X86_64.Front
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Finish
+import VerifiedGarbage.Proof.Ecdsa.X86_64.Scalar
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.EcKey.Validate.X86_64.Contract
 import VerifiedGarbage.Proof.Ecdh.X86_64.Main

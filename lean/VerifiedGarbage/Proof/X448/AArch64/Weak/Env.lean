@@ -2,22 +2,20 @@ module
 
 import VerifiedGarbage.Proof.Curve448.AArch64.Swap
 public import VerifiedGarbage.Proof.X448.AArch64.Env
-public import VerifiedGarbage.Proof.Curve448.AArch64.Memory
+public import VerifiedGarbage.Proof.Curve448.AArch64.Normalize
 public import VerifiedGarbage.Impl.Curve448.AArch64
-import VerifiedGarbage.Proof.Curve448.AArch64.Copy
+import VerifiedGarbage.Proof.Curve448.AArch64.Stage
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Impl.X448.AArch64.Weak
 import VerifiedGarbage.Proof.Curve448.AArch64.AddEval
 public import VerifiedGarbage.Proof.X448.AArch64.Mul
-import VerifiedGarbage.Proof.Curve448.AArch64.Stage
 public import VerifiedGarbage.Proof.X448.Wide.Representation
 public import VerifiedGarbage.Proof.X448.Wide.Word
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Curve448.AArch64.Product
 import VerifiedGarbage.Proof.X448.Wide.Reduce
 import VerifiedGarbage.Proof.Curve448.AArch64.Bounds
-import VerifiedGarbage.Proof.Curve448.AArch64.Normalize
 import VerifiedGarbage.Proof.X448.Wide.LoadCached
 import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Impl.X448.AArch64.Symmetric

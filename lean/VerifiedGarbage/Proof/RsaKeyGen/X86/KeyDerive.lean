@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.Key
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyOutcome
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyPrepare
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyEvenFrame
 public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRetry
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyExponent
@@ -12,11 +12,141 @@ public import VerifiedGarbage.Spec.Rsa
 public import Init.Data.Nat.Coprime
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyWorkspace
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyStageFrame
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyEvenFrame
 import VerifiedGarbage.Proof.Rsa.X86.KeySelect
 import VerifiedGarbage.Impl.Rsa.X86.Inverse
 import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyDivision
 import Aesop.BuiltinRules
+import VerifiedGarbage.Proof.Bignum.MemoryFrame
+import VerifiedGarbage.Proof.Rsa.BytesFrame
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyGeometry
+import VerifiedGarbage.Proof.Framework.Omega
+
+/-! ### `RsaKeyGen.X86.KeyScratchFrame`, which the modules that import this one used -/
+
+section
+
+/-! ### `RsaKeyGen.X86.KeyInput`, which this module and modules that import it used -/
+
+section
+
+/-! # The retained header and buffer permissions survive scratch arithmetic -/
+
+@[expose] public section
+namespace VG.Proof.RsaKeyGen.X86.Key
+open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Rsa.X86.Keys
+open VG.Impl.Rsa.X86.Keys hiding slot
+
+structure Input (E : Environment) (s : State) : Prop where
+  valid : E.Valid
+  ws : Ws s E.base E.size E.n 32
+  arguments : ∀ i < 18, s.mem.readW (off E.base (4 * i)) 32 = E.argument i
+  outWrite : ∀ i < 7, InRegions s.wr (E.outputRegion i).base (E.outputRegion i).len
+  exponentRead : InRegions (s.rd ++ s.wr) E.exponentRegion.base E.exponentRegion.len
+
+theorem Input.outputs {E : Environment} {s : State} (h : Input E s) : OutputInput E.outputs s := by
+  refine ⟨h.ws, h.valid.outputs, fun i hi => h.arguments i (by omega_using [hi]), ?_⟩
+  intro i hi
+  rw [h.valid.outputRegion hi]
+  exact h.outWrite i hi
+
+theorem Input.keep {E : Environment} {s t : State} {rs : List Reg} (h : Input E s)
+    (ws : Ws t E.base E.size E.n 32) (K : Keeps rs s t)
+    (header : ∀ d, d + 4 ≤ 72 → t.mem.readW (off E.base d) 32 = s.mem.readW (off E.base d) 32) : Input E t := by
+  refine ⟨h.valid, ws, ?_, ?_, ?_⟩
+  · intro i hi
+    rw [header (4 * i) (by omega_using [hi])]
+    exact h.arguments i hi
+  · intro i hi
+    rw [K.2.2]
+    exact h.outWrite i hi
+  · rw [K.2.1, K.2.2]
+    exact h.exponentRead
+
+theorem Input.afterOuts {E : Environment} {s t : State} {regs : List Reg} {rs : List (Nat × Nat)}
+    (h : Input E s) (ws : Ws t E.base E.size E.n 32) (K : Keeps regs s t)
+    (lower : ∀ r ∈ rs, 72 ≤ r.1) (O : Outs E.base rs s.mem t.mem) : Input E t := by
+  apply h.keep ws K
+  intro d hd
+  apply BitVec.eq_of_toNat_eq
+  have H : val32 t.mem E.base d 1 = val32 s.mem E.base d 1 :=
+    O.val32 (d := d) (k := 1) (fun r hr => Or.inl (Nat.le_trans hd (lower r hr))) (by omega_using [hd])
+  simpa only [val32, Nat.mul_zero, Nat.add_zero] using H
+
+theorem Input.afterStage {E : Environment} {s t : State} {regs : List Reg} {js : List Nat}
+    (h : Input E s) (ws : Ws t E.base E.size E.n 32) (K : Keeps regs s t)
+    (O : Outs E.base (stageRanges E.n js) s.mem t.mem) : Input E t := by
+  apply h.keep ws K
+  intro d hd
+  apply BitVec.eq_of_toNat_eq
+  have H := stage_preserves_header (n := E.n) (d := d) (count := 1)
+    (by change d + 4 ≤ VG.Impl.RsaKeyGen.X86.Key.kOk; unfold VG.Impl.RsaKeyGen.X86.Key.kOk; omega_using [hd]) O
+  simpa only [val32, Nat.mul_zero, Nat.add_zero] using H
+
+end VG.Proof.RsaKeyGen.X86.Key
+
+end
+
+end
+
+/-! # Scratch-local steps preserve the encoded primes and public exponent -/
+
+@[expose] public section
+namespace VG.Proof.RsaKeyGen.X86.Key
+open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Rsa.X86.Keys
+open VG.Impl.Rsa.X86.Keys hiding slot
+open VG.Impl.RsaKeyGen.X86.Key
+
+theorem outs_scratch_frame {B : Addr} {Z : Nat} {rs : List (Nat × Nat)} {m m' : Mem}
+    (size : Z ≤ 2 ^ 64) (O : Outs B rs m m') (fit : ∀ r ∈ rs, r.1 + r.2 ≤ Z) :
+    Frame [⟨B, Z⟩] m m' := by
+  have outside : Outside B 0 Z m m' := by
+    intro a ha
+    apply O a
+    intro r hr
+    have H := fit r hr
+    omega_using [ha, H]
+  simpa only [off, BitVec.ofNat_eq_ofNat, BitVec.add_zero] using
+    VG.Proof.Bignum.outside_frame outside (by simpa only [Nat.zero_add] using size)
+
+theorem stage_scratch_frame {s : State} {B : Addr} {Z n : Nat} {js : List Nat} {m m' : Mem}
+    (h : Ws s B Z n 32) (indices : ∀ j ∈ js, j < 32) (O : Outs B (stageRanges n js) m m') :
+    Frame [⟨B, Z⟩] m m' := by
+  have head := h.hdr_le
+  apply outs_scratch_frame (by have := h.workspace.nowrap; omega_using [this]) O
+  intro r hr
+  rcases List.mem_append.mp hr with temp | output
+  · simp only [exponentTemps, List.mem_cons, List.not_mem_nil, or_false] at temp
+    rcases temp with rfl | rfl
+    · unfold kOk hdr at *
+      omega_using [head]
+    · exact Nat.le_trans (arr_mono (by decide : 15 ≤ 32)) h.fits
+  · simp only [ranges, List.map_nil, List.append_nil, List.mem_map] at output
+    obtain ⟨j, hj, rfl⟩ := output
+    exact h.arr_fit (indices j hj)
+
+theorem Input.output_preserved {E : Environment} {s : State} {m m' : Mem} {i : Nat}
+    (h : Input E s) (hi : i < 7) (F : Frame [E.workspaceRegion] m m') :
+    Spec.Rsa.bytesAt m' (E.outputRegion i).base (E.outputRegion i).len =
+      Spec.Rsa.bytesAt m (E.outputRegion i).base (E.outputRegion i).len := by
+  apply VG.Proof.Rsa.rsa_bytes_frame F (by change E.outputLength i < 2 ^ 64; have H := h.valid.outFit i hi; omega_using [H])
+  intro r hr
+  obtain rfl := List.mem_singleton.mp hr
+  exact h.valid.outputScratch i hi
+
+theorem Input.exponent_preserved {E : Environment} {s : State} {m m' : Mem}
+    (h : Input E s) (F : Frame [E.workspaceRegion] m m') :
+    Spec.Rsa.bytesAt m' E.exponentRegion.base E.exponentRegion.len =
+      Spec.Rsa.bytesAt m E.exponentRegion.base E.exponentRegion.len := by
+  apply VG.Proof.Rsa.rsa_bytes_frame F (by change E.exponentLength < 2 ^ 64; have H := h.valid.exponentLength; omega_using [H])
+  intro r hr
+  obtain rfl := List.mem_singleton.mp hr
+  exact h.valid.exponentScratch
+
+end VG.Proof.RsaKeyGen.X86.Key
+
+end
+
+end
 
 /-! ### `RsaKeyGen.X86.KeyPartOutcome`, which this module and modules that import it used -/
 

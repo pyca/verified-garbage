@@ -7,7 +7,7 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.State
 public import VerifiedGarbage.Proof.Weierstrass.FastNaf
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeStore
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JointEntry
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeArithmetic
+import VerifiedGarbage.Proof.Weierstrass.AArch64.NafNeg
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch

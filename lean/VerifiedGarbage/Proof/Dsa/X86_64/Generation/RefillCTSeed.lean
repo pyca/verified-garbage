@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.RefillAttempt
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedSubgroup
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedPrime
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedGenerator
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextSuccess
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextFrame
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeometryWork

@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverNoSp
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverFnInput
 import VerifiedGarbage.Proof.Rsa.X86.PrivStackSafety
 import VerifiedGarbage.Proof.Weierstrass.PointContract
 

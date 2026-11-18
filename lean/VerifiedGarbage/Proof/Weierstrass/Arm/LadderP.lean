@@ -10,13 +10,12 @@ import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Weierstrass.Point0Contract
 public import VerifiedGarbage.Proof.Weierstrass.Env
 import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
-import VerifiedGarbage.Proof.Weierstrass.Arm.Fprog
+import VerifiedGarbage.Proof.Weierstrass.Arm.Bits
 import VerifiedGarbage.Proof.Weierstrass.Arm.Copy
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
 public import VerifiedGarbage.Impl.Weierstrass.Arm.LadderP
 import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Weierstrass.Arm.Ladder
-import VerifiedGarbage.Proof.Weierstrass.Arm.Bits
 import VerifiedGarbage.Proof.Weierstrass.Arm.Loop
 import VerifiedGarbage.Spec.X25519
 

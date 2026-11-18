@@ -8,12 +8,10 @@ import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 public import VerifiedGarbage.Spec.Ffdh.SievedContract
-public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Arguments
+public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CallGeometry
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.ArgumentWords
-public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Params
-public import VerifiedGarbage.Proof.Framework.Arm.Call
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.State
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CallGeometry
+public import VerifiedGarbage.Proof.Framework.Arm.Call
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CallParams
 import VerifiedGarbage.Proof.Framework.Omega
 

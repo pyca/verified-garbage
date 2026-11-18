@@ -1,10 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.RangeFrame
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.SourceEncoding
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.BoundTiming
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.NonzeroTiming
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.MemoryState
+public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.SetLowBit
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.LessTiming
 import VerifiedGarbage.Proof.Framework.AArch64.Exec

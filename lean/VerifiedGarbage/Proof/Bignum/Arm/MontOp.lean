@@ -1,6 +1,5 @@
 module
 
-import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineRounds
 import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineBase
 public import VerifiedGarbage.Impl.Bignum.Arm.MontOp
 public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady

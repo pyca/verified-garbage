@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyOutcome
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyDerive
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyDerive
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyGeometry
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyFinal
@@ -13,10 +13,8 @@ public import VerifiedGarbage.Proof.Rsa.X86.KeyWs
 public import VerifiedGarbage.Impl.Rsa.X86.Inverse
 import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyDivision
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyWorkspace
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyInput
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyScratchFrame
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyPrepare
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyEvenFrame
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.Key
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming

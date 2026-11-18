@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Ffdh.Arm.SharedDeriveCorrect
+public import VerifiedGarbage.Proof.Ffdh.Arm.SharedDerivePrograms
 public import VerifiedGarbage.Proof.Bignum.Arm.MontBackend
 public import VerifiedGarbage.Impl.Bignum.Arm.MontCall
 public import VerifiedGarbage.Impl.Ffdh.Arm.SharedDerive
@@ -38,7 +38,6 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Spec.Ffdh.DerivePublicContract
 meta import VerifiedGarbage.TCB.Arm.Target
 public import Init.Core
-public import VerifiedGarbage.Proof.Ffdh.Arm.SharedDerivePrograms
 
 /-! ### `Ffdh.Arm.SharedDeriveContractCT`, which only this module used -/
 

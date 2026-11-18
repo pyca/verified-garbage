@@ -3,30 +3,19 @@ module
 public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafDigitRead
 import VerifiedGarbage.Proof.Weierstrass.AArch64.NafNeg
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeArithmetic
 public import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowNeg
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowState
-import VerifiedGarbage.Proof.Weierstrass.AArch64.NafInvariant
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafInvariant
 public import VerifiedGarbage.Proof.Framework.AArch64.Call
 public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionArithmetic
 public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Rotate
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Comb
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.FoldOk
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombDigit
 public import VerifiedGarbage.Proof.Weierstrass.MulContract
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionArithmetic
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Rotate
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Comb
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.FoldOk
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
-import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombDigit
-import VerifiedGarbage.Proof.Weierstrass.MulContract
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.Mont.AArch64
 public import VerifiedGarbage.Impl.Mont.Mod

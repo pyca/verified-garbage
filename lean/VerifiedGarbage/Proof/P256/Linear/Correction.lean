@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.P256.Linear
-public import VerifiedGarbage.Proof.P256.Linear.Words
 public import VerifiedGarbage.Proof.P256.Linear.Arithmetic
 import VerifiedGarbage.Proof.Framework.InstancePriority
 import VerifiedGarbage.Impl.NatPairs

@@ -15,7 +15,7 @@ meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 /-!
 # ML-DSA signing on PPC64LE: the checks of an iteration
 
-As on 32-bit ARM (`Proof/MlDsa/Arm/Sign/PhaseK.lean`), once `SampleInBall`
+As on 32-bit ARM (`Proof/MlDsa/Arm/Sign/PhaseKCT.lean`), once `SampleInBall`
 succeeded (`KB`): `ĉ = NTT(c)`, and each check of the iteration, their
 results ANDed into `r24`: the norm of each `z[r]` (`IZ`), of each `r₀[i]`
 (`IQ`) and of each `ct₀[i]`, with each hint `h[i]` and the number of its 1s

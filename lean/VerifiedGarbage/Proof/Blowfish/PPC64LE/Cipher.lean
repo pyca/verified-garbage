@@ -1,12 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Blowfish.Feistel
+public import VerifiedGarbage.Proof.Blowfish.F
 import VerifiedGarbage.Proof.Blowfish.Schedule
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Impl.Blowfish.PPC64LE
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
 public import VerifiedGarbage.Proof.Blowfish.PPC64LE.Run
-public import VerifiedGarbage.Proof.Blowfish.F
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
 
 /-! ### `Blowfish.PPC64LE.Lookup`, which this module and modules that import it used -/

@@ -1,12 +1,11 @@
 module
 
-import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseKCT
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseKCT
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Rel
 import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseCCT
 import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseDCT
 import VerifiedGarbage.Proof.MlDsa.Arm.Sign.BlockTr
 import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
-public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseK
 
 /-! ### `MlDsa.Arm.Sign.PhaseL`, which this module and modules that import it used -/
 

@@ -18,12 +18,10 @@ import Mathlib.Tactic.Ring
 import VerifiedGarbage.Proof.Bignum.Arm.LayoutPreserved
 import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeInput
-import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputePrefix
+public import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeCTState
 import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeMontgomeryOut
 public import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeCore
-public import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeBasis
 import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeInitialStore
-import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeTableInit
 import VerifiedGarbage.Proof.Rsa.FixedBaseCombTable
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Ffdh.Arm.CachedSamplePolicy
@@ -35,7 +33,6 @@ import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Ffdh.Arm.Context
 import Init.Core
 import VerifiedGarbage.Impl.Ffdh.Arm.VettedGroups
-import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeCTState
 import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeEntryCT
 import VerifiedGarbage.Proof.Ffdh.Arm.FrameCT
 import VerifiedGarbage.Proof.Ffdh.Arm.Entered

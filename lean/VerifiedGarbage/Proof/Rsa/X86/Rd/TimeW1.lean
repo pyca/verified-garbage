@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Rsa.X86.Rd.TimeW2
 public import VerifiedGarbage.Proof.Rsa.X86.Rd.TimeBaseW
 public import VerifiedGarbage.Proof.Bignum.ShiftStages
-import VerifiedGarbage.Proof.Rsa.X86.Rd.DetPartsW
 import VerifiedGarbage.Proof.Rsa.X86.Rd.ProdW
 import VerifiedGarbage.Proof.Rsa.X86.Rd.TwosW
 import VerifiedGarbage.Proof.Rsa.X86.Rd.Ops

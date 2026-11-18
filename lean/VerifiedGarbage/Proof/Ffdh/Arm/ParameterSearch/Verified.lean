@@ -31,12 +31,10 @@ import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Push
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.State
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Step
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.LoopGuard
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.LiveGuards
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CandidateFacts
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CompareResult
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Framework.Arm.Inline
-public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Params
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidatePre
 
 /-! ### `Ffdh.Arm.ParameterSearch.Public`, which only this module used -/

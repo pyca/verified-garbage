@@ -3,9 +3,8 @@ module
 public import Mathlib.Data.Fintype.Fin
 import Mathlib.Tactic.FinCases
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.PairedConsts
-public import VerifiedGarbage.Proof.MlDsa.PairedResponseContract
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Call
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowCorrect
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Call
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedTiming
 import VerifiedGarbage.Proof.MlKem.AArch64.Common
 public import VerifiedGarbage.Proof.Framework.Contract
@@ -21,7 +20,6 @@ import Mathlib.Basic.IsEmpty.Defs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttCallTiming
 import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFirstMemory
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCheckSlot
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseZ
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintVec
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseWord

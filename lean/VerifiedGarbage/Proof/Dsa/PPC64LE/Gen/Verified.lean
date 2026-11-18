@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.SLoop
 import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.PX
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.PPart
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.Test
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Dsa.Generation.Memory

@@ -840,7 +840,7 @@ end
 /-!
 # PBKDF2-HMAC's iteration over a Merkle–Damgård hash function on ARMv7: constant time
 
-As on AArch64 (`Proof/Pbkdf2/AArch64/IterateCT.lean`): this holds for any
+As on AArch64 (`Proof/Pbkdf2/Md/AArch64/HmacInit.lean`): this holds for any
 compression function (`CompOk`), so it is proven once. The taint analysis
 cannot prove it without looking into the compression function (it would lose
 our registers, which the compression function saves and restores in a scratch

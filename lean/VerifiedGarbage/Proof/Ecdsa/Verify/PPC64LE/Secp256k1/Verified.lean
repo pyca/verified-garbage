@@ -43,7 +43,7 @@ import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Keep
 
 `vg_ecdsa_secp256k1_verify` with `[u]G` by the comb, from its table, a
 constant (`abi.withConsts secp256k1CombConsts`), and `[v]Q` by the windows for any
-`a`, as P-256's (`Proof/Ecdsa/Verify/PPC64LE/P256Comb.lean`, `Verified.lean`):
+`a`, as P-256's (`Proof/Ecdsa/Verify/PPC64LE/Contract.lean`, `Verified.lean`):
 `combPts_ok`, `pointsSecp256k1` as `PtsOk` states; `verify_ppc`, from
 `verifyWith_ok`; `verify_ct`: the time depends only on the pointers and the
 table's address (`taint_decide` with `vectorTaintSym` on the code's literal).

@@ -4,14 +4,12 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCheckSource
 import Mathlib.Tactic.FinCases
 import Mathlib.Data.Fintype.Fin
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFinalMemory
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFirstLoop
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedTableMemory
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
 import VerifiedGarbage.Proof.MlKem.Arith
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackInit
 public import Mathlib.Algebra.Group.Nat.Defs
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedSaved
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFinalCheck
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseInit
 import VerifiedGarbage.Proof.Framework.Block
 import Mathlib.Data.Fintype.Basic

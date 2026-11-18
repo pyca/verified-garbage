@@ -9,7 +9,6 @@ public import VerifiedGarbage.Proof.Gcm.X86_64.StitchR.SetupFin
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx.Reduction
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemSetup
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemGKs
-import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Rem
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
 public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Setup
 import VerifiedGarbage.Proof.Framework.Offset

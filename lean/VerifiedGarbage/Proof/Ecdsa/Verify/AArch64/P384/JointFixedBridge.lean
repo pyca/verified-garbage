@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.Joint
 public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.P384Joint
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.JointDouble
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.JointFinish
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.WinJStep
 import Mathlib.Data.Nat.Prime.Defs
 import Mathlib.Tactic.ClearExcept
@@ -16,9 +16,8 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.JointDigit
 public import VerifiedGarbage.Proof.Weierstrass.FastNaf
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacMixedAddB
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeStore
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeArithmetic
+import VerifiedGarbage.Proof.Weierstrass.AArch64.NafNeg
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JointRead
-import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.JointFinish
 import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Window
 import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.CacheBuild
 import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.TableCoZ

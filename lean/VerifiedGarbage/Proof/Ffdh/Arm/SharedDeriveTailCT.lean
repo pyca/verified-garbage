@@ -3,7 +3,7 @@ module
 import VerifiedGarbage.Proof.Ffdh.Arm.SharedDeriveTail
 public import VerifiedGarbage.Proof.Ffdh.Arm.ExchangeMainCT
 public import VerifiedGarbage.Proof.Framework.RelCT
-import VerifiedGarbage.Proof.Ffdh.Arm.SharedCheckPublicPower
+public import VerifiedGarbage.Proof.Ffdh.Arm.SharedCheckPublicPower
 import VerifiedGarbage.Proof.Ffdh.Arm.SharedCheckPublicPowerCT
 import VerifiedGarbage.Proof.Ffdh.Arm.MaskOutputCT
 import VerifiedGarbage.Proof.Ffdh.Arm.RangeCT
@@ -20,7 +20,6 @@ meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import Init.Prelude
 public import VerifiedGarbage.Impl.Ffdh.Arm.SharedDerive
 public import VerifiedGarbage.Proof.Bignum.Arm.MontBackend
-public import VerifiedGarbage.Proof.Ffdh.Arm.SharedExchangeMemory
 
 /-! After the scalar test, both paths' traces depend only on the domain and lengths: the power
 of g over x's `x_len` bytes, y's range, export and masking for any flag, and the status in

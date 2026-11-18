@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Dsa.RISCV64.PSearch.GCheck
 public import VerifiedGarbage.Proof.Dsa.RISCV64.PSearch.Top
 public import VerifiedGarbage.Proof.Dsa.Generation.PDomain
 import VerifiedGarbage.Proof.Dsa.Generation.RandomSuffix
-import VerifiedGarbage.Proof.Dsa.Generation.SeedSuffix
+import VerifiedGarbage.Proof.Dsa.Generation.RefillSearch
 import VerifiedGarbage.Proof.Dsa.Generation.SearchDomain
 import VerifiedGarbage.Proof.Dsa.Generation.QCandidate
 import VerifiedGarbage.Proof.Dsa.Generation.GeneratorCount

@@ -23,7 +23,7 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFixedTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacMixedAdd
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAddTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeArithmetic
+import VerifiedGarbage.Proof.Weierstrass.AArch64.NafNeg
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.AArch64.Syms

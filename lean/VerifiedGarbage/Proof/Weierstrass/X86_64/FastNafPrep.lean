@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafState
 import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafOdd
 import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafChoose
 import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafSubtract
-import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafShift
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Mem
 

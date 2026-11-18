@@ -5,8 +5,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineFnBody
 import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineCTFnBody
 public import VerifiedGarbage.Proof.Bignum.Arm.MontCallWithLaw
 public import VerifiedGarbage.Proof.Bignum.Arm.MontBackend
-public import VerifiedGarbage.Proof.Bignum.Arm.MontCallWithFn
-public import VerifiedGarbage.Proof.Bignum.Arm.MontCallWithCT
+public import VerifiedGarbage.Proof.Bignum.Arm.Fios2.Value
 public import VerifiedGarbage.Impl.Bignum.Arm.MontCallWith
 public import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Proof.Bignum.Arm.MontCallContract
@@ -23,13 +22,9 @@ import VerifiedGarbage.Proof.Bignum.Arm.UmaalArithmetic
 import VerifiedGarbage.Impl.Bignum.Arm.DownRow
 public import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineLoop
 public import VerifiedGarbage.Proof.Framework.RelCT
-public import VerifiedGarbage.Proof.Bignum.Arm.MontPipelinePair
 public import VerifiedGarbage.Impl.Bignum.Arm.Fios2
-import VerifiedGarbage.Proof.Bignum.Arm.Fios2.Args
-public import VerifiedGarbage.Proof.Bignum.Arm.Fios2.State
+import VerifiedGarbage.Proof.Bignum.Arm.Fios2.Taint
 public import VerifiedGarbage.Proof.Bignum.Arm.FiosState
-import VerifiedGarbage.Proof.Bignum.Arm.Fios2.Mac
-import VerifiedGarbage.Proof.Bignum.Arm.Fios2.Value
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import Init.Data.BitVec.Lemmas

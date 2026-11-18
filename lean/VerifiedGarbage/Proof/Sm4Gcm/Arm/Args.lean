@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4Gcm.Arm.Env
-public import VerifiedGarbage.Proof.Sm4Gcm.Arm.Contract
+public import VerifiedGarbage.Proof.Sm4Gcm.Arm.Fn
 import VerifiedGarbage.Proof.Sm4Gcm.Arm.Entry
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Arm.Contract

@@ -8,7 +8,7 @@ public import VerifiedGarbage.Proof.Ed25519.Word64
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 public import VerifiedGarbage.Proof.Bignum.Square
-import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcMath
+import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcWord
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareMath
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightBound
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightLoad

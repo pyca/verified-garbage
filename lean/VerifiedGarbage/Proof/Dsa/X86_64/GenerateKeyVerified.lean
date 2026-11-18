@@ -1,9 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.GenerateKeySample
+public import VerifiedGarbage.Proof.Dsa.X86_64.GenerateKeyCorrect
 import VerifiedGarbage.Proof.Dsa.X86_64.GenerateKeyBlockCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomPrepareCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.GenerateKeyCorrect
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.X86_64.DeriveCheckedVerified

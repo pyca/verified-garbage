@@ -21,7 +21,6 @@ import VerifiedGarbage.Proof.Mont.X86.WordOps
 public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Spec.Rsa
 public import VerifiedGarbage.Spec.Rsa.Contract
-public import VerifiedGarbage.Proof.Dsa.X86.Generation.TestPre
 import VerifiedGarbage.Proof.Framework.X86.CallReturn
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Bignum.ReadPrefix

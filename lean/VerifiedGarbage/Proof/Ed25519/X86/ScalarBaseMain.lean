@@ -2,11 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.X86.CommonInput
 public import VerifiedGarbage.Proof.Ed25519.X86.CommonFinish
-import VerifiedGarbage.Proof.Ed25519.X86.PointEncodeSign
+import VerifiedGarbage.Proof.Ed25519.X86.FreezeField
 public import VerifiedGarbage.Impl.Ed25519.X86.ScalarBase
 public import VerifiedGarbage.Proof.Ed25519.X86.CombTbl
 public import VerifiedGarbage.Proof.Ed25519.X86.PointMultiplyFrame
-import VerifiedGarbage.Proof.Ed25519.X86.FreezeField
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub

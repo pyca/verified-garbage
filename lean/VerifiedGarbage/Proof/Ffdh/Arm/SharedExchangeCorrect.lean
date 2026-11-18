@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Ffdh.Arm.ExchangeSpec
+public import VerifiedGarbage.Proof.Ffdh.Arm.ExchangePre
 import VerifiedGarbage.Proof.Ffdh.Domain
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Arm.Contract
@@ -12,7 +12,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.MontBackend
 public import VerifiedGarbage.Impl.Bignum.Arm.MontCall
 public import VerifiedGarbage.Impl.Ffdh.Arm.SharedExchange
 public import VerifiedGarbage.TCB.Arm.Target
-public import VerifiedGarbage.Proof.Ffdh.Arm.ExchangePre
 import VerifiedGarbage.Proof.Ffdh.Arm.Entered
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.OffsetBelow
@@ -22,11 +21,10 @@ import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Ffdh.Arm.Frame
 public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 public import VerifiedGarbage.Proof.Ffdh.Arm.ExchangeBody
-public import VerifiedGarbage.Proof.Ffdh.Arm.SharedExchangeMemory
+public import VerifiedGarbage.Proof.Ffdh.Arm.SharedCheckPublicPower
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
 public import VerifiedGarbage.Proof.Ffdh.Arm.ExchangeMain
 import VerifiedGarbage.Proof.Ffdh.Arm.DomainNormalizedPrepareAt
-import VerifiedGarbage.Proof.Ffdh.Arm.SharedCheckPublicPower
 import VerifiedGarbage.Proof.Ffdh.Arm.PowerAt
 import VerifiedGarbage.Proof.Ffdh.Arm.Range
 import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout

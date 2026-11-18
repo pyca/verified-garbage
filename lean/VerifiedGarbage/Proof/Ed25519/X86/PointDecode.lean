@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.X86.PointDecode
-import VerifiedGarbage.Proof.Ed25519.X86.PointEncodeSign
+import VerifiedGarbage.Proof.Ed25519.X86.FreezeField
 public import VerifiedGarbage.Proof.Ed25519.X86.PointMultiplyFrame
 public import VerifiedGarbage.Proof.Ed25519.X86.RecoverPoint
 import VerifiedGarbage.Proof.Ed25519.X86.ScalarBody

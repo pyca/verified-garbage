@@ -4,9 +4,8 @@ public import VerifiedGarbage.Proof.RsaPss.X86_64.Params
 public import VerifiedGarbage.Proof.RsaPss.X86_64.SignPro
 public import VerifiedGarbage.Proof.RsaPss.X86_64.CtBase
 import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
-public import VerifiedGarbage.Proof.RsaPss.X86_64.SignCall
+public import VerifiedGarbage.Proof.RsaPss.X86_64.SignCorrect
 public import VerifiedGarbage.Proof.RsaPss.X86_64.SignCCorrect
-import VerifiedGarbage.Proof.RsaPss.X86_64.SignCorrect
 import VerifiedGarbage.Proof.RsaPss.MgfBytes
 import VerifiedGarbage.Proof.RsaPss.X86_64.Safe
 import VerifiedGarbage.Proof.RsaPss.X86_64.SignCFixed

@@ -1,10 +1,10 @@
 module
+
 public import VerifiedGarbage.Impl.Ecdsa.Verify.X86_64
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.Layout
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
-
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Final
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Finish
+import VerifiedGarbage.Proof.Ecdsa.X86_64.Scalar
 import VerifiedGarbage.Proof.Ecdh.X86_64.Peer
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 

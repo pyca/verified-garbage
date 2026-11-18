@@ -1,8 +1,7 @@
 module
 
-import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyFrame
+public import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyFrame
 import VerifiedGarbage.Proof.Ed25519.X86_64.BaseOdd
-public import VerifiedGarbage.Proof.Ed25519.X86_64.BaseEntry
 import VerifiedGarbage.Proof.Ed25519.X86_64.CachedPoint
 import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulBatch
 public import VerifiedGarbage.Proof.Ed25519.Group.Double

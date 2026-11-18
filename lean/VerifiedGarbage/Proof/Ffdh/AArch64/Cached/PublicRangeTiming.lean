@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.LessTiming
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.CopyTiming
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.SetLowBit
-import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.MemoryState
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd

@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Ed25519.X86.PointEncodeSign
+import VerifiedGarbage.Proof.Ed25519.X86.FreezeField
 public import VerifiedGarbage.Proof.Ed25519.Recover
 public import VerifiedGarbage.Proof.Ed25519.X86.PowerEnv
 import VerifiedGarbage.Proof.Ed25519.X86.AccumulateStep
@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.Ed25519.X86.RecoverParity
 import VerifiedGarbage.Proof.Ed25519.X86.PrepareAdd
-import VerifiedGarbage.Proof.Ed25519.X86.FreezeField
 
 /-! ### `Ed25519.X86.RecoverSign`, which this module and modules that import it used -/
 

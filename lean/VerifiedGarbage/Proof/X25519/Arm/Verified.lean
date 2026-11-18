@@ -12,7 +12,6 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.X25519.Arm.Mul
 public import VerifiedGarbage.Proof.X25519.Bytes
-public import VerifiedGarbage.Proof.X25519.Arm.Slots
 import VerifiedGarbage.Proof.X25519.Arm.AddSub
 import VerifiedGarbage.Proof.X25519.Arm.CT
 import VerifiedGarbage.Proof.Framework.Contract

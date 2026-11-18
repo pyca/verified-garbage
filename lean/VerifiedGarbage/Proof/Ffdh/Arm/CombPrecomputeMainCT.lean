@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeCTState
-public import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputePrefix
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeMetadataCT
 public import VerifiedGarbage.Impl.Bignum.Arm.MontCall
@@ -22,7 +21,6 @@ import VerifiedGarbage.Proof.Ffdh.Arm.CachedSamplePolicy
 public import VerifiedGarbage.Impl.Ffdh.Arm.CombPrecompute
 public import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeCore
 public import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeTableState
-public import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeBasis
 public import VerifiedGarbage.Proof.Ffdh.Arm.Context
 import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeControlCT
 import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeProductLoadCT
@@ -31,7 +29,6 @@ import VerifiedGarbage.Proof.Bignum.Arm.MontCallOpCT
 import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeSquareState
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeInitialCT
-import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeTableInit
 import VerifiedGarbage.Proof.Rsa.FixedBaseCombTable
 import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeInitialStore
 import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeMontgomeryOutCT

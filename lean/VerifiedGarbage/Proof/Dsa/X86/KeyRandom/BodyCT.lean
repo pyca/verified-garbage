@@ -1,7 +1,7 @@
 module
+
 public meta import VerifiedGarbage.Proof.Framework.X86.RelCT
-import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.CheckArgs
-import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.CheckFrame
+import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Generate
 import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Entry
 public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.InvokeTiming
 public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.CheckCall
@@ -10,7 +10,6 @@ public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Result
 import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.CallResult
 import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.DrawCT
 import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.FinishCT
-import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Generate
 import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.GenerateCT
 import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Public
 import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.SampledCT

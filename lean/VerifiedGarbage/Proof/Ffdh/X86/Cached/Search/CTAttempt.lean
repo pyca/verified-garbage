@@ -9,8 +9,7 @@ meta import VerifiedGarbage.Proof.Ffdh.X86.Cached.Search.Call
 meta import VerifiedGarbage.Proof.Ffdh.X86.Cached.Search.Entry
 meta import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.Ffdh.X86.Entry
-public import VerifiedGarbage.Proof.Ffdh.X86.Cached.Search.Frame
-import VerifiedGarbage.Proof.Ffdh.X86.Cached.AttemptVerified
+public import VerifiedGarbage.Proof.Ffdh.X86.Cached.AttemptVerified
 meta import VerifiedGarbage.Proof.Ffdh.X86.Cached.AttemptVerified
 meta import VerifiedGarbage.Proof.Mont.X86.Instr
 meta import VerifiedGarbage.Proof.Mont.X86.Words

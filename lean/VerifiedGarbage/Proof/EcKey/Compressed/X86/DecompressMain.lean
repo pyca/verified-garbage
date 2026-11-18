@@ -4,14 +4,13 @@ public import VerifiedGarbage.Proof.EcKey.Compressed.X86.DecompressContract
 import VerifiedGarbage.Proof.Weierstrass.Words
 import VerifiedGarbage.Proof.EcKey.Compressed.Decode
 import VerifiedGarbage.Proof.Ecdsa.X86.Setup
-import VerifiedGarbage.Proof.EcKey.Compressed.X86.Pre
+public import VerifiedGarbage.Proof.EcKey.Compressed.X86.Front
 public import VerifiedGarbage.Impl.EcKey.Compressed.X86.Decompress
 import VerifiedGarbage.Proof.EcKey.X86.Finish
 public import VerifiedGarbage.Proof.Ecdsa.X86.Layout
-public import VerifiedGarbage.Proof.EcKey.Compressed.X86.Candidate
+public import VerifiedGarbage.Proof.EcKey.Compressed.X86.SlotOps
 public import VerifiedGarbage.Impl.EcKey.Compressed.Root
 public import VerifiedGarbage.Spec.EcKey.Compressed
-import VerifiedGarbage.Proof.EcKey.Compressed.X86.Frame
 import VerifiedGarbage.Proof.Ecdsa.X86.Lays
 import VerifiedGarbage.Proof.Ecdsa.X86.Stages
 import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
@@ -23,9 +22,7 @@ import VerifiedGarbage.Proof.Ecdsa.X86.SlotOps
 public import VerifiedGarbage.Proof.Mont.Words
 public import VerifiedGarbage.Spec.Weierstrass
 import VerifiedGarbage.Proof.Ecdsa.X86.Middle
-import VerifiedGarbage.Proof.EcKey.Compressed.X86.SlotOps
 import VerifiedGarbage.Proof.Weierstrass.X86.Copy
-public import VerifiedGarbage.Proof.EcKey.Compressed.X86.Front
 import VerifiedGarbage.Proof.Ecdh.X86.Validate
 public import VerifiedGarbage.Impl.Weierstrass.X86
 public import VerifiedGarbage.Proof.Mont.X86.Loop

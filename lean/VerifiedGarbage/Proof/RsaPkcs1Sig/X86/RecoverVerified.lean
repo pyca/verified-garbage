@@ -3,20 +3,16 @@ module
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverNoSp
 public import VerifiedGarbage.Spec.RsaPkcs1Sig.Precomputed
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverSpec
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverZero
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverZero
 import VerifiedGarbage.Proof.Rsa.BytesFrame
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverFnInput
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverRegions
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverRegions
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignRestore
 import VerifiedGarbage.Proof.Bignum.X86.ReverseRegion
 import VerifiedGarbage.Proof.Framework.X86.CallWith
 import VerifiedGarbage.Proof.Dsa.X86.RandomSignCorrect
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.EncodeTiming
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverEncoding
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverCmpArgs
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverReleaseArgs
 public import VerifiedGarbage.Proof.Weierstrass.PointContract
 import VerifiedGarbage.Proof.Rsa.X86.PrivSetupTiming
 public import VerifiedGarbage.Impl.RsaPkcs1Sig.X86.Recover
@@ -38,7 +34,6 @@ import VerifiedGarbage.Proof.Rsa.X86.PrivFnTiming
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyPublicBytes
 import VerifiedGarbage.Spec.Weierstrass
 public import VerifiedGarbage.Proof.Dsa.X86.VerifyingABI
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverGeometry
 public import VerifiedGarbage.Proof.Rsa.Contract
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverStackWord
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.EncodeDispatch

@@ -17,7 +17,6 @@ public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
 import VerifiedGarbage.Proof.Dsa.X86.CoreSetup
 public import VerifiedGarbage.Proof.Dsa.X86.CoreFrame
-import VerifiedGarbage.Proof.Dsa.X86.CoreInputs
 public import VerifiedGarbage.Impl.Dsa.X86.Core
 import VerifiedGarbage.Proof.Dsa.X86.BytesTiming
 import VerifiedGarbage.Proof.Framework.PlainSimp

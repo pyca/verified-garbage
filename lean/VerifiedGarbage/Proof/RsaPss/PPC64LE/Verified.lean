@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.RsaPss.PPC64LE.CTMain
+public import VerifiedGarbage.Proof.RsaPss.PPC64LE.Sg.CTBase
 public import VerifiedGarbage.Proof.MdHashTable.PPC64LE.Tables
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
@@ -29,7 +29,6 @@ public import VerifiedGarbage.Proof.Sha1.Md
 public import VerifiedGarbage.Proof.Sha256.Md
 public import VerifiedGarbage.Proof.Sha256.Digest
 public import VerifiedGarbage.Proof.Sha512.Md
-public import VerifiedGarbage.Proof.RsaPss.PPC64LE.Sg.CTBase
 public import VerifiedGarbage.Proof.RsaPss.PPC64LE.Sg.Correct
 import VerifiedGarbage.Proof.RsaPss.PPC64LE.Sg.CTBlocks
 import VerifiedGarbage.Proof.Rsa.PPC64LE.PrivCT
@@ -43,7 +42,6 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 import VerifiedGarbage.Proof.Framework.RelSplit
 import VerifiedGarbage.Proof.RsaPss.PPC64LE.ByIdx
 import VerifiedGarbage.Proof.RsaPss.PPC64LE.CTBlocks
-import VerifiedGarbage.Proof.RsaPss.PPC64LE.Sg.Spec
 import VerifiedGarbage.Proof.RsaPss.PPC64LE.Fixed
 import VerifiedGarbage.Proof.RsaOaep.PPC64LE.CTBlocks
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.PreCore

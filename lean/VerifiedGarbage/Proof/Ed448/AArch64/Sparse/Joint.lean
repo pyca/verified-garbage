@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.BufferFrame
 public import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.RecodePair
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.X448.AArch64.Iter
-public import VerifiedGarbage.Proof.Ed448.WnafWide.Bits
+public import VerifiedGarbage.Proof.Ed448.WnafWide.Word
 
 /-! Recode both complete public scalars and run the shared sparse multiplier. -/
 

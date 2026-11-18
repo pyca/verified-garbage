@@ -4,7 +4,6 @@ import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8ProductStep
 public import VerifiedGarbage.Impl.Bignum.X86_64.AdxRect8
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Core
 public import VerifiedGarbage.Proof.Bignum.X86_64.Words
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxDualAddChain
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxDualAddClose
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd

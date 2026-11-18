@@ -1,8 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.Dsa.X86.CheckingOperation
-import VerifiedGarbage.Proof.Dsa.X86.CheckingOperationCT
-public import VerifiedGarbage.Proof.Dsa.X86.CheckingLayout
+public import VerifiedGarbage.Proof.Dsa.X86.CheckingOperationCT
 public import VerifiedGarbage.Proof.Dsa.Contract
 
 /-! # The i686 domain checker meets the shared generation contract -/

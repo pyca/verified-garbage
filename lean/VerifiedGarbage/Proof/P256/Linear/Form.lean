@@ -4,12 +4,11 @@ public import VerifiedGarbage.Impl.P256.Linear
 public import VerifiedGarbage.Proof.Mont.AArch64.Words
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.P256.Linear.Words
+public import VerifiedGarbage.Proof.P256.Linear.Arithmetic
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Impl.NatPairs
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Weierstrass.PointContract
-public import VerifiedGarbage.Proof.P256.Linear.Arithmetic
 import VerifiedGarbage.Proof.Mont.AArch64.Chain
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Mem

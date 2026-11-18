@@ -4,24 +4,21 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Matrix
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TableApart
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.MlKem.AArch64.KgB
+public import VerifiedGarbage.Proof.MlKem.AArch64.KgEnd
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Last
 public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Correct
-public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.DotReady
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.DotSpec
 public import VerifiedGarbage.Impl.MlKem.AArch64.Kem16
 public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Layout
 public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Table
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TransformTables
 public import VerifiedGarbage.Proof.MlKem.AArch64.DotW.Loop
 public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Result
-import VerifiedGarbage.Proof.MlKem.AArch64.AddSubW
-import VerifiedGarbage.Proof.MlKem.AArch64.DotW
 public import VerifiedGarbage.Impl.MlKem.AArch64.Hybrid
 public import VerifiedGarbage.Impl.MlKem.AArch64.KeyGen
 public import VerifiedGarbage.Impl.MlKem.AArch64.Ops16
 import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.KeyGenPrefix
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Tables
-import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.DotSpec
 import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Dd10Step
 import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.DdStore
@@ -35,7 +32,6 @@ import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
 import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Common
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Interface
-public import VerifiedGarbage.Proof.MlKem.AArch64.KgEnd
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.TCB.AArch64.Target
@@ -44,12 +40,10 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.BeginTiming
 import VerifiedGarbage.Proof.MlKem.AArch64.Paired.PairTiming
 import VerifiedGarbage.Proof.MlKem.AArch64.Paired.LastTiming
 import VerifiedGarbage.Proof.MlKem.AArch64.Paired.RejectTiming
-import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Pair
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.LastSpecPost
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.SpecPost
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.FullSample
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Context
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Restore
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemMatrixCall
+public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.LastStart
+public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Resume
+public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.FastFinish
 public import VerifiedGarbage.Proof.MlKem.AArch64.KgCommon
 
 /-! ### `MlKem.AArch64.Optimized.KeyGenMatrixLast`, which this module and modules that import it used -/

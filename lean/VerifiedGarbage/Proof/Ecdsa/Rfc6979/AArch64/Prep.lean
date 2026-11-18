@@ -594,7 +594,7 @@ HMAC's two states just after `init` with the key `K` depend only on `K`, so
 the code keeps a copy of them at `scratch + 3072` (`SavedB`) after an `init`
 (`save_ok`), and, for a later HMAC with the same `K`, copies them back in
 place of `init` (`restore_ok`). A state moves with its bytes
-(`StreamOK.repr`), as on x86-64 (`Proof/Ecdsa/Rfc6979/X86_64/Steps.lean`).
+(`StreamOK.repr`), as on x86-64 (`Proof/Ecdsa/Rfc6979/X86_64/Prep.lean`).
 -/
 
 @[expose] public section

@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.Ffdh.Arm.ParameterCandidate
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTKeyRegisters
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTPolicy
 import VerifiedGarbage.Proof.Bignum.Arm.StackOnlyCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTKeyRegisters

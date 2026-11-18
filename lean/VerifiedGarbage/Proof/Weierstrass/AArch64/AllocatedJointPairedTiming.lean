@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointPairedTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedJointLoop
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JointLoopTiming
 

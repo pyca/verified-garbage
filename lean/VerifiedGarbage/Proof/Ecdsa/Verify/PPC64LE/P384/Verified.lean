@@ -44,7 +44,7 @@ import VerifiedGarbage.Proof.Framework.PowLit
 
 `vg_ecdsa_p384_verify` with `[u]G` by the comb (`comb_ok`), from its table, a constant (`abi.withConsts p384CombConsts`),
 and `[v]Q` by the four-bit windows, as P-256's
-(`Proof/Ecdsa/Verify/PPC64LE/P256Comb.lean`, `Verified.lean`): `combPts_ok`,
+(`Proof/Ecdsa/Verify/PPC64LE/Contract.lean`, `Verified.lean`): `combPts_ok`,
 `pointsP384` as `PtsOk` states; `verify_ppc`, from `verifyWith_ok`;
 `verify_ct`: the time depends only on the pointers and the table's address
 (`taint_decide` with `vectorTaintSym` on the code's literal).

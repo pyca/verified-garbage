@@ -16,7 +16,7 @@ public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Sm4.Prepared
 public import VerifiedGarbage.Spec.Cfb
 public import VerifiedGarbage.Spec.Sm4.Ctr
-import VerifiedGarbage.Proof.Sm4.Arm.Core
+import VerifiedGarbage.Proof.Sm4.Arm.Prologue
 import VerifiedGarbage.Spec.Sm4.Cfb
 import VerifiedGarbage.Proof.Modes.CbcNext
 public import VerifiedGarbage.Proof.Modes.Fb

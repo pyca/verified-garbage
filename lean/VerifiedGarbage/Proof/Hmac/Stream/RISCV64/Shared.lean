@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.InitMain
 public import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Finalize
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint

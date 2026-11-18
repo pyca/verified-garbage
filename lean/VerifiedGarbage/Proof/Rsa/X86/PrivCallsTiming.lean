@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.Rsa.X86.PrivCrtCall
 import VerifiedGarbage.Proof.Framework.X86.RelCT
 import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Rsa.X86.PrivCrtArgs
-public import VerifiedGarbage.Proof.Rsa.X86.PrivPublicPre
+public import VerifiedGarbage.Proof.Rsa.X86.PrivPrecomputePre
 import VerifiedGarbage.Proof.Rsa.X86.PrivRetained
 import VerifiedGarbage.Proof.Rsa.BytesFrame
 

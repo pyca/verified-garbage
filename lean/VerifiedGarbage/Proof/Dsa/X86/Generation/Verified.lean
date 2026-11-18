@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.Instances
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.Correct
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.SearchCT
-public import VerifiedGarbage.Proof.Dsa.X86.Generation.HashCT
 import VerifiedGarbage.Proof.Dsa.X86.Generation.Words
 import VerifiedGarbage.Proof.Dsa.X86.Generation.Base
 import VerifiedGarbage.Proof.Framework.KernelRfl

@@ -1,13 +1,12 @@
 module
+
 public import VerifiedGarbage.Impl.AesOcb.X86_64
 public import VerifiedGarbage.Proof.AesOcb.X86_64.Env
 public import VerifiedGarbage.Spec.Ocb
 public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Framework.WriteBytes
-
-import VerifiedGarbage.Proof.AesOcb.X86_64.Args
-import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
 import VerifiedGarbage.Proof.AesOcb.X86_64.Words
+import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
 import VerifiedGarbage.Proof.AesOcb.X86_64.Run
 import VerifiedGarbage.Proof.AesCcm.X86_64.Run
 import VerifiedGarbage.Proof.AesCcm.X86_64.Bytes

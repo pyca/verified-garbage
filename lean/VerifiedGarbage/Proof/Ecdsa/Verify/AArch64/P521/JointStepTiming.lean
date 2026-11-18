@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointFixedEntry
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.DigitTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacMixedTiming
-
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointFixedBridge
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointLayout
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
@@ -16,7 +15,7 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTableTiming
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointFixedSignTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacMixedTimingB
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeArithmetic
+import VerifiedGarbage.Proof.Weierstrass.AArch64.NafNeg
 
 -- Formerly `VerifiedGarbage/Proof/Ecdsa/Verify/AArch64/P521/JointFixedLookupTiming.lean`, which only this module imported.
 section

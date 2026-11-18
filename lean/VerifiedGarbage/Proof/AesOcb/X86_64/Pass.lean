@@ -1,8 +1,8 @@
 module
+
 public import VerifiedGarbage.Proof.AesOcb.X86_64.LNtz
 public import VerifiedGarbage.Proof.Ocb.Spec
-
-import VerifiedGarbage.Proof.AesOcb.X86_64.Args
+import VerifiedGarbage.Proof.AesOcb.X86_64.Words
 import VerifiedGarbage.Proof.AesOcb.X86_64.Run
 import VerifiedGarbage.Proof.AesCcm.X86_64.Run
 import VerifiedGarbage.Proof.AesCcm.X86_64.Env

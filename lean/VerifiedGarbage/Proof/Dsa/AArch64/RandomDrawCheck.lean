@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomState
 public import VerifiedGarbage.Spec.Dsa.Random
-import VerifiedGarbage.Proof.Dsa.AArch64.RandomDrawRange
 import VerifiedGarbage.Proof.Dsa.AArch64.RandomDrawCopy
 import VerifiedGarbage.Proof.Dsa.AArch64.RandomMemory
 import VerifiedGarbage.Proof.Dsa.AArch64.Run

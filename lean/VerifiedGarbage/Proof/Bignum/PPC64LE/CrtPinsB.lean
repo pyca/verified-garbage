@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtCorrect
 import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtSetup
 import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtExport
 import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtCopy
-import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtRecX
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMont
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreLoad

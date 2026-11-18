@@ -1,11 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTCandidateTest
+public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTResult
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.WitnessProgress
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateTest
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateBuffers
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateReturn
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTResult
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.WitnessEnd
 
 /-! Final return timing depends on public status and buffer addresses. -/

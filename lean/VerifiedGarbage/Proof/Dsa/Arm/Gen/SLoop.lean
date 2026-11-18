@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Dsa.Arm.Gen.Intro
+import VerifiedGarbage.Proof.Dsa.Arm.Gen.PArith
 public import VerifiedGarbage.Proof.Dsa.Generation.RefillSearch
 import VerifiedGarbage.Proof.Dsa.Generation.RandomSuffix
 import VerifiedGarbage.Proof.Framework.Arm.Exec
@@ -14,7 +14,6 @@ import VerifiedGarbage.Proof.Dsa.Generation.SearchDomain
 import VerifiedGarbage.Proof.Dsa.Generation.GeneratorDomain
 import VerifiedGarbage.Proof.Dsa.Generation.ParamsEncoding
 import VerifiedGarbage.Proof.Dsa.Generation.QCandidate
-import VerifiedGarbage.Proof.Dsa.Generation.SeedSuffix
 import VerifiedGarbage.Proof.Dsa.Digest
 import VerifiedGarbage.Proof.Dsa.Encoding
 import VerifiedGarbage.Proof.Rsa.Octets

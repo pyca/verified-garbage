@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.EcKey.Compressed.X86.Contract
 public import VerifiedGarbage.Proof.Ecdsa.X86.Layout
 public import VerifiedGarbage.Proof.Weierstrass.X86.CallOps
 public import VerifiedGarbage.Proof.Weierstrass.X86.LadderP
-import VerifiedGarbage.Proof.EcKey.Compressed.X86.Pre
 import VerifiedGarbage.Proof.EcKey.Compressed.X86.Front
 import VerifiedGarbage.Proof.EcKey.X86.Finish
 import VerifiedGarbage.Proof.Ecdsa.X86.Finish

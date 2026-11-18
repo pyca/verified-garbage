@@ -1,9 +1,7 @@
 module
 
 -- separate module: The mixed-add arithmetic/context induction over the checked instruction groups (mixed_body_arith) costs 2.32s of proof versus 0.42s of imports; MixedFunction composition edits reuse this checked computation.
-
 public import VerifiedGarbage.Proof.Mont.AArch64.P521Field.MixedBlocks
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Field.PointResult
 public import VerifiedGarbage.Proof.Mont.AArch64.P521Field.PointRebase
 import VerifiedGarbage.Proof.Framework.Omega
 import Mathlib.Tactic.SplitIfs

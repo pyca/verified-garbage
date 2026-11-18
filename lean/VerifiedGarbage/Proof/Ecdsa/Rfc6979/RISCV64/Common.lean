@@ -16,7 +16,6 @@ public import VerifiedGarbage.Proof.Ecdsa.RISCV64.Comb.Tail
 public import VerifiedGarbage.Proof.Framework.RISCV64.Consts
 public import VerifiedGarbage.Proof.Weierstrass.RISCV64.Call
 import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Init
-import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.InitMain
 import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Finalize
 import VerifiedGarbage.Proof.Framework.RISCV64.CallAny
 import VerifiedGarbage.Proof.Framework.Offset

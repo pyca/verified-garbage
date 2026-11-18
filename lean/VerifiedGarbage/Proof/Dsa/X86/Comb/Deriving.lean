@@ -9,7 +9,6 @@ public import VerifiedGarbage.Proof.Dsa.X86.Installed
 import VerifiedGarbage.Proof.Dsa.X86.InstalledInputs
 import VerifiedGarbage.Proof.Dsa.X86.ParameterBuffers
 import VerifiedGarbage.Proof.Dsa.X86.Comb.CanonicalFrame
-import VerifiedGarbage.Proof.Dsa.X86.Comb.StagePower
 import VerifiedGarbage.Proof.Dsa.X86.DerivingOperation
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Dsa.X86.ABIResources

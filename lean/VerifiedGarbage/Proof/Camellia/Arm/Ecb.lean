@@ -1,9 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Camellia.Arm.Prologue
+public import VerifiedGarbage.Proof.Camellia.Arm.Crypt8
 public import VerifiedGarbage.Proof.Camellia.Common
 public import VerifiedGarbage.Proof.Camellia.Arm.Core
-import VerifiedGarbage.Proof.Camellia.Arm.Crypt8
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset

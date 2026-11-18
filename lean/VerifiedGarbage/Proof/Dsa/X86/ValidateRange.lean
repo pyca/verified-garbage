@@ -1,10 +1,9 @@
 module
+
 public import VerifiedGarbage.Impl.Dsa.X86.Validate
 public import VerifiedGarbage.Proof.Dsa.X86.Checks
 public import VerifiedGarbage.Proof.Dsa.X86.CoreFrame
 public import VerifiedGarbage.Proof.Mont.X86.PowerStep
-
-import VerifiedGarbage.Proof.Dsa.X86.ValidateRangeMask
 import VerifiedGarbage.Proof.Dsa.X86.RawInputs
 import VerifiedGarbage.Proof.Dsa.X86.Layout
 

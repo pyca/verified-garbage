@@ -1,10 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.Unch
-public import VerifiedGarbage.Proof.Weierstrass.X86.InvState
+public import VerifiedGarbage.Proof.Weierstrass.X86.InvFinishPrep
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import Mathlib.Data.Nat.Prime.Defs
-import VerifiedGarbage.Proof.Weierstrass.X86.InvFinishPrep
 public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
 public import VerifiedGarbage.Proof.Weierstrass.X86.MontCall
 public import VerifiedGarbage.Proof.Weierstrass.Env

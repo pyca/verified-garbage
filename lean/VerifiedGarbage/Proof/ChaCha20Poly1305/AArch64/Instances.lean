@@ -12,7 +12,7 @@ public import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Gather.Callee
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Gather.Contract
 import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Gather.Fn
-import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Rest
+import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.Rest
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Verified

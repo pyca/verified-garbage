@@ -24,9 +24,8 @@ import VerifiedGarbage.Proof.Dsa.X86.BodyTiming
 import VerifiedGarbage.Proof.Dsa.X86.OutputTiming
 import VerifiedGarbage.Proof.Dsa.X86.FailureTiming
 import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
-public import VerifiedGarbage.Proof.Dsa.X86.CheckingLayout
+public import VerifiedGarbage.Proof.Dsa.X86.CheckingOperationCT
 import VerifiedGarbage.Proof.Dsa.X86.Comb.Checking
-import VerifiedGarbage.Proof.Dsa.X86.CheckingOperationCT
 import VerifiedGarbage.Proof.Dsa.X86.ParameterBuffers
 import VerifiedGarbage.Proof.Dsa.X86.InstalledInputs
 import VerifiedGarbage.Proof.Dsa.X86.ABIResources
@@ -48,13 +47,11 @@ public import VerifiedGarbage.Proof.Dsa.X86.KeyOutputReady
 public import VerifiedGarbage.Proof.Dsa.X86.Comb.Core
 import VerifiedGarbage.Proof.Dsa.X86.Comb.DeriveCompute
 import VerifiedGarbage.Proof.Dsa.X86.Comb.CanonicalFrame
-import VerifiedGarbage.Proof.Dsa.X86.Comb.StagePower
 import VerifiedGarbage.Proof.Dsa.X86.ValidateRange
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Dsa.X86.ShapeSavedFrame
 public import VerifiedGarbage.Proof.Dsa.X86.Comb.Deriving
-public import VerifiedGarbage.Proof.Dsa.X86.DerivingLayout
-import VerifiedGarbage.Proof.Dsa.X86.DerivingOperationCT
+public import VerifiedGarbage.Proof.Dsa.X86.DerivingOperationCT
 import VerifiedGarbage.Proof.Dsa.X86.GenerateParameters
 public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Invoke
 public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.CallPre

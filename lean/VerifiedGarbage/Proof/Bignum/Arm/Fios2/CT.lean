@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.Fios2
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundCT
-import VerifiedGarbage.Proof.Bignum.Arm.Fios2.Args
 import VerifiedGarbage.Proof.Bignum.Arm.Fios2.Taint
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub

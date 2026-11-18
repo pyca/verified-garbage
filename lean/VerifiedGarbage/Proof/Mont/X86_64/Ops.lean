@@ -1,12 +1,9 @@
 module
-public import VerifiedGarbage.Proof.Mont.X86_64.OpsReg
 
-import VerifiedGarbage.Proof.Mont.X86_64.MulF
-import VerifiedGarbage.Proof.Mont.X86_64.SqrP
-import VerifiedGarbage.Proof.Mont.X86_64.AddSubP
-import VerifiedGarbage.Proof.Mont.X86_64.SqrPX
+public import VerifiedGarbage.Proof.Mont.X86_64.OpsReg
 import VerifiedGarbage.Proof.Mont.X86_64.Sub256
 import VerifiedGarbage.Proof.Mont.X86_64.Sub384
+import VerifiedGarbage.Proof.Mont.X86_64.SqrPX
 import VerifiedGarbage.Proof.Mont.X86_64.WideOps
 import VerifiedGarbage.Proof.Mont.X86_64.CsubS
 import VerifiedGarbage.Proof.Mont.X86_64.Wide

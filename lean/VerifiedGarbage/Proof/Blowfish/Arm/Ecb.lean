@@ -10,10 +10,9 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Impl.Blowfish.Arm
 import VerifiedGarbage.Proof.Framework.Arm.Exec
-public import VerifiedGarbage.Proof.Blowfish.Feistel
+public import VerifiedGarbage.Proof.Blowfish.F
 public import VerifiedGarbage.Proof.Blowfish.Arm.Run
 public import VerifiedGarbage.Proof.Blowfish.Scan32
-public import VerifiedGarbage.Proof.Blowfish.F
 public import VerifiedGarbage.Proof.Scan.Arm
 
 /-! ### `Blowfish.Arm.Cipher`, which this module and modules that import it used -/

@@ -5,7 +5,7 @@ import all Init.Data.Nat.Bitwise.Basic
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
-import VerifiedGarbage.Proof.RsaPss.Arm.YDig
+import VerifiedGarbage.Proof.RsaPss.Arm.SgEnc1
 
 /-! ### `RsaPss.Arm.VfTail`, which only this module used -/
 

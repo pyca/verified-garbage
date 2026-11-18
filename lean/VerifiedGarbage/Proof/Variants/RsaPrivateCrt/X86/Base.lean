@@ -40,8 +40,6 @@ public import VerifiedGarbage.Proof.Bignum.X86.PrecomputeInstalled
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputeOperation
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedArgumentsEq
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedExponentArgs
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedExponentTiming
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedFailureTiming
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedInstalled
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedPostFrame
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedResources
@@ -68,7 +66,6 @@ public import VerifiedGarbage.Proof.Dsa.X86.ABIResources
 public import VerifiedGarbage.Proof.Dsa.X86.Bytes
 public import VerifiedGarbage.Proof.Dsa.X86.StageChecks
 public import VerifiedGarbage.Proof.Dsa.X86.ChecksTiming
-public import VerifiedGarbage.Proof.Dsa.X86.CoreInputs
 public import VerifiedGarbage.Proof.Dsa.X86.CoreSetup
 public import VerifiedGarbage.Proof.Dsa.X86.InstallArguments
 public import VerifiedGarbage.Proof.Dsa.X86.EntrySave
@@ -90,7 +87,6 @@ public import VerifiedGarbage.Proof.Dsa.X86.RunBytes
 public import VerifiedGarbage.Proof.Dsa.X86.SaveArgument
 public import VerifiedGarbage.Proof.Dsa.X86.SavedFrame
 public import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
-public import VerifiedGarbage.Proof.Dsa.X86.ValidateRangeMask
 public import VerifiedGarbage.Proof.Dsa.X86.ValidateRange
 public import VerifiedGarbage.Proof.Dsa.X86.WidthConstant
 public import VerifiedGarbage.Proof.Dsa.Zero

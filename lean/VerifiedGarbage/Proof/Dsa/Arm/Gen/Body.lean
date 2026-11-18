@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Dsa.Arm.Gen.Search
 public import VerifiedGarbage.Proof.Dsa.Arm.Gen.Finish
 public import VerifiedGarbage.Proof.Dsa.Arm.Gen.Entry
-public import VerifiedGarbage.Proof.Dsa.Arm.Gen.Intro
+public import VerifiedGarbage.Proof.Dsa.Arm.Gen.PArith
 import VerifiedGarbage.Proof.Dsa.Arm.Gen.SpCT
 import VerifiedGarbage.Proof.Bignum.Arm.Stack
 import VerifiedGarbage.Proof.Framework.RelCTAssoc

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.EcKey.Compressed.X86.DecompressMain
 public import VerifiedGarbage.Proof.Framework.X86.CallWith
-public import VerifiedGarbage.Proof.EcKey.Compressed.X86.Candidate
+public import VerifiedGarbage.Proof.EcKey.Compressed.X86.SlotOps
 public import VerifiedGarbage.Proof.EcKey.Compressed.X86.DecompressContract
 public import VerifiedGarbage.Spec.EcKey.Compressed.Contract
 public import VerifiedGarbage.TCB.X86.Target

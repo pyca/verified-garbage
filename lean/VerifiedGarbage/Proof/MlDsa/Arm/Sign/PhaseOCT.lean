@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseLCT
 import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseDCT
 import VerifiedGarbage.Proof.MlDsa.Arm.Sign.CopyTr
 import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseCCT
-public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseK
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseKCT
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseD
 import VerifiedGarbage.Proof.MlDsa.Round.Decompose
 import VerifiedGarbage.Proof.MlDsa.Sign.Bounds

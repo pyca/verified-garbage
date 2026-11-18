@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Chunk
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.StoreRow
 import VerifiedGarbage.Proof.ChaCha20.X86_64.Xor
 import VerifiedGarbage.Proof.Framework.Contract

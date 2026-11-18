@@ -11,14 +11,13 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.Main
 import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.VerifiedAll
 public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.CombAll
 meta import VerifiedGarbage.Proof.Ecdsa.PPC64LE.CombAll
-import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.P256Comb
+public import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.Contract
 import VerifiedGarbage.Proof.P256.PPC64LE.Comb
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Consts
 public import VerifiedGarbage.Proof.Framework.PPC64LE.VectorTaintSym
 public import VerifiedGarbage.Proof.Framework.ConstMem
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.VectorTaintSym
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Consts
-public import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.Contract
 public import VerifiedGarbage.Impl.Ecdsa.Verify.P256.PPC64LE
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.Lit

@@ -372,7 +372,7 @@ end
 /-!
 # Deterministic ECDSA on x86 (32-bit): the steps on `K` and `V`
 
-As on x86-64 (`Proof/Ecdsa/Rfc6979/X86_64/Steps.lean`): each HMAC with the
+As on x86-64 (`Proof/Ecdsa/Rfc6979/X86_64/Prep.lean`): each HMAC with the
 key `K` and `V` (both of the digest length `D`, at the start of the frame)
 is HMAC's states for `K` (by `init`, then saved, or restored from the copy),
 the table's `update` with `V` and, for a new `K`, with the message at

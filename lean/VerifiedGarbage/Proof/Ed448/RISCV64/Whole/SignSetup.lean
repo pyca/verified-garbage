@@ -5,7 +5,6 @@ import VerifiedGarbage.Proof.Ed448.RISCV64.VChecks
 public import VerifiedGarbage.TCB.RISCV64.Target
 public import VerifiedGarbage.Spec.Ed448.Contract
 import VerifiedGarbage.Proof.Sha3.Arith
-import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.Prune
 import VerifiedGarbage.Proof.Ed25519.RISCV64.Whole.Prune
 import VerifiedGarbage.Proof.Framework.RISCV64.ByteLoad
 import VerifiedGarbage.Proof.Framework.Block

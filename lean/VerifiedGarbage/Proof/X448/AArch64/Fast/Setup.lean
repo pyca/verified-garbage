@@ -1,8 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.X448.AArch64.Fast.SaveX
-public import VerifiedGarbage.Proof.X448.AArch64.Weak.Setup
 public import VerifiedGarbage.Proof.X448.AArch64.Fast.VSave
+public import VerifiedGarbage.Proof.X448.AArch64.Weak.Setup
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Proof.Curve448.AArch64.Legacy

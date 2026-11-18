@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Resume
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Context
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.NextBlock
 import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Output
 import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Cover
@@ -28,7 +27,6 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Checkpoint
 public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Vector
 import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Keep
 import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Segment
-import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Store
 import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Continue
 import VerifiedGarbage.Proof.MlKem.Arith
 

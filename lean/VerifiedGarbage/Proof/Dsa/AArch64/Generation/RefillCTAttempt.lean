@@ -11,9 +11,8 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorCallCT
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PConstructCT
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.RefillAttempt
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorCall
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedPrimeCT
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.OnSuccessCT
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedPhaseStableCT
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.OnSuccessCT
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ContextSuccess
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedSubgroupCT

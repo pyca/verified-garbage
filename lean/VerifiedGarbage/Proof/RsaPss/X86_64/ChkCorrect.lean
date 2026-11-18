@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.RsaPss.X86_64.PrefixCheck
 public import VerifiedGarbage.Proof.RsaPss.X86_64.Safe
 public import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
 import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyBody
-import VerifiedGarbage.Proof.RsaPss.X86_64.SignCall
+public import VerifiedGarbage.Proof.RsaPss.X86_64.SignCorrect
 import VerifiedGarbage.Proof.RsaPss.X86_64.Loops
 import VerifiedGarbage.Proof.RsaPss.EncBytes
 import VerifiedGarbage.Proof.RsaPss.VerifyCases
@@ -13,7 +13,6 @@ import VerifiedGarbage.Proof.RsaPss.MgfBytes
 import VerifiedGarbage.Proof.Framework.Offset
 import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.RsaPss.X86_64.EncParams
-public import VerifiedGarbage.Proof.RsaPss.X86_64.SignCorrect
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
 
 /-!

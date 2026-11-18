@@ -11,7 +11,6 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.JacMixedAdd
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
 import Mathlib.Basic.IsEmpty.Defs
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointCacheTiming
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointPairedTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedJointLoop
 import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedState
 import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedJointDigits

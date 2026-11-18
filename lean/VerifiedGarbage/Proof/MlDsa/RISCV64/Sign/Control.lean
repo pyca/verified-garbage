@@ -19,7 +19,7 @@ public import VerifiedGarbage.TCB.RISCV64.Target
 
 What the proofs need of the implementations of the primitives (`SPrimsOk`):
 verified with at most `S` bytes of stack, and, as on 32-bit ARM
-(`Proof/MlDsa/Arm/Sign/Prims.lean`), for the two samplers whose results the
+(`Proof/MlDsa/Arm/Sign/PhaseA.lean`), for the two samplers whose results the
 function branches on, that the result is a function of their public data
 (`RetPub`) and that they succeed only if the sampling finishes within
 `maxBounds`. A call of such a sampler gives the same result in two runs

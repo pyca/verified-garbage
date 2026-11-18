@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Env
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejSqueezeSetup
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejCounts
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejPro
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentRejSqueeze
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejStart
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejSqueeze

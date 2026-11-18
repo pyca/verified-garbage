@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Dsa.AArch64.RandomSample
 import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Dsa.AArch64.DeriveCheckedVerified
+import VerifiedGarbage.Proof.Dsa.AArch64.ParametersVerified
 public import VerifiedGarbage.Spec.Dsa.Derive
 public import VerifiedGarbage.Spec.Dsa.DomainChecked
 import VerifiedGarbage.Proof.Framework.AArch64.Call
@@ -26,7 +26,6 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignRunning
 import VerifiedGarbage.Proof.Dsa.SizeBounds
 import VerifiedGarbage.Proof.Framework.TaintBatch
 public import VerifiedGarbage.Proof.Dsa.AArch64.Backend
-import VerifiedGarbage.Proof.Dsa.AArch64.ParametersVerified
 import Mathlib.Algebra.Group.Nat.Defs
 public import VerifiedGarbage.Proof.Dsa.Contract
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignSaved

@@ -1,8 +1,7 @@
 module
+
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivContext
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivSlots
-
-import VerifiedGarbage.Proof.Rsa.Arm.PrivPcPrefix
 import VerifiedGarbage.Proof.Rsa.Arm.PrivPreWords
 import VerifiedGarbage.Proof.Bignum.Arm.Stack
 import VerifiedGarbage.Proof.Framework.Arm.Exec

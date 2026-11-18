@@ -34,12 +34,12 @@ import VerifiedGarbage.Proof.Rsa.Octets
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTCandidateResult
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTShape
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateShape
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTLimitedResult
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateResidue
-public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTCandidateTest
+public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTResult
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTFinish
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateCount
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTPolicy
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTKeyRegisters
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTStackBlocks
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateMemory
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.Room
@@ -81,8 +81,6 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateScreenM
 import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Shape
 import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.ScreenedStream
 import Mathlib.Data.Option.Basic
-public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateReturn
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.LimitedTest
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidatePhaseFrame
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.Status
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.LimitedParams

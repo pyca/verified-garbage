@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.Sm4.Arm.SerialCbc
 public import VerifiedGarbage.Spec.Sm4.Ctr
 public import VerifiedGarbage.Proof.Sm4.Arm.BatchGroup
-import VerifiedGarbage.Proof.Sm4.Arm.Core
+import VerifiedGarbage.Proof.Sm4.Arm.Prologue
 import VerifiedGarbage.Proof.Modes.CbcNext
 public import VerifiedGarbage.Proof.Modes.CbcEnc
 import VerifiedGarbage.Proof.Framework.Arm.Exec

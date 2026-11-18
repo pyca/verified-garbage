@@ -1,11 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.PrivPrecomputePre
-public import VerifiedGarbage.Proof.Rsa.X86.PrivPublicPre
-
 import VerifiedGarbage.Proof.Rsa.X86.PrivRegions
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Contract
+
 /-! # Saved return bits and private buffers survive the subsequent calls -/
 
 -- Formerly `VerifiedGarbage/Proof/Rsa/X86/PrivCheckRegions.lean`, which only this module imported.

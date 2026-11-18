@@ -9,9 +9,7 @@ import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Core
 import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Words
 import VerifiedGarbage.Proof.Mont.AArch64.RowInit
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256DR
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256ED
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256RD
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAddTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop

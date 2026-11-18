@@ -17,9 +17,8 @@ import VerifiedGarbage.Proof.Dsa.PackedBytes
 import VerifiedGarbage.Proof.Dsa.Accepted
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubCorrect
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreWrite
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.RandomSign.Ctx
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.Random.Save
 public import VerifiedGarbage.Impl.Dsa.PPC64LE.RandomSign
-import VerifiedGarbage.Proof.Dsa.PPC64LE.Random.Save
 import VerifiedGarbage.Proof.Dsa.PPC64LE.Random.Sample
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Random.Prepare
 import VerifiedGarbage.Proof.Dsa.RandomEncoding

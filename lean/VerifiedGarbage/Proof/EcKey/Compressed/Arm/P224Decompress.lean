@@ -20,7 +20,7 @@ meta import VerifiedGarbage.Impl.Ecdsa.P224.Arm
 meta import VerifiedGarbage.Proof.EcKey.Compressed.Arm.Contract
 public import VerifiedGarbage.Impl.EcKey.Compressed.Arm.Decompress
 public import VerifiedGarbage.Impl.Ecdsa.P224.Arm
-public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.DecompressContract
+public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.DecompressFront
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Proof.Weierstrass.Law

@@ -1,13 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.CallPack
-public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.CallArith
 public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.CallSample
 public import VerifiedGarbage.Impl.MlDsa.Arm.KeyGen.KeyGen
 public import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.MlDsa.Verify.Mem
 import VerifiedGarbage.Proof.MlKem.Arm.Prf
-import VerifiedGarbage.Spec.MlDsa.Contract
 public import VerifiedGarbage.Spec.MlDsa.Contract
 public import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Framework.Arm.RelCT
@@ -24,21 +22,6 @@ public import VerifiedGarbage.Proof.Sha3.Arith
 public import VerifiedGarbage.Proof.Sha3.Arm.Stream.Absorb
 public import VerifiedGarbage.Proof.Sha3.Arm.Stream.Pad
 public import VerifiedGarbage.Proof.Sha3.Arm.Stream.Squeeze
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Arm.RelCT
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Contracts
-import VerifiedGarbage.Proof.MlKem.Arm.Loops
-import VerifiedGarbage.Proof.MlKem.Arm.NttInv
-import VerifiedGarbage.Proof.MlKem.Arm.RowSum
-import VerifiedGarbage.Proof.MlKem.Arm.SampleCT
-import VerifiedGarbage.Proof.Sha256.Stream
-import VerifiedGarbage.Proof.Sha3.Arith
-import VerifiedGarbage.Proof.Sha3.Arm.Stream.Absorb
-import VerifiedGarbage.Proof.Sha3.Arm.Stream.Pad
-import VerifiedGarbage.Proof.Sha3.Arm.Stream.Squeeze
 
 /-!
 # ML-DSA key generation on 32-bit ARM: its parameters, precondition and buffers

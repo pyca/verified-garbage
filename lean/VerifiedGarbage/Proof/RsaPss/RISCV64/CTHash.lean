@@ -21,7 +21,7 @@ public import VerifiedGarbage.Proof.RsaPss.RISCV64.Mid
 # RSASSA-PSS on RISC-V: hashing `M'`, twice
 
 Untrusted: everything here is checked by Lean. As on PPC64LE
-(`Proof/RsaPss/PPC64LE/CTMain.lean`, `CTHash.lean`). For any function
+(`Proof/RsaPss/PPC64LE/Sg/CTBase.lean`, `CTHash.lean`). For any function
 whose shared code compares runs through an anchor `a` (`Ok S vf Pre Pub`,
 `B`) and keeps a salt length `sl a` in `s6`: the arguments of the hash calls
 from the anchor's (`upd_argsG`, `fin_argsG`), the calls in both runs

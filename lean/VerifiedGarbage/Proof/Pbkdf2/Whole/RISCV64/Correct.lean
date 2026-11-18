@@ -21,7 +21,6 @@ public import VerifiedGarbage.Proof.Framework.RISCV64.Call
 public import VerifiedGarbage.Spec.Hmac.Generic
 public import VerifiedGarbage.Proof.Framework.RISCV64.RelCT
 public import VerifiedGarbage.Proof.Framework.RelCT
-import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.InitMain
 import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Finalize
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Common
 import VerifiedGarbage.Proof.Pbkdf2.RISCV64.Bytes

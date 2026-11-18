@@ -12,7 +12,6 @@ import VerifiedGarbage.Proof.Sha3.Arith
 public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Pad
 public import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
 public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
-import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.WordSemantic
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.MlKem.Mem

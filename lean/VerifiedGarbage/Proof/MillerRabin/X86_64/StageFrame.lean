@@ -5,8 +5,6 @@ public import VerifiedGarbage.Proof.MillerRabin.X86_64.Stack
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 import VerifiedGarbage.Proof.MillerRabin.X86_64.CallStack
-import VerifiedGarbage.Proof.MillerRabin.X86_64.StageContext
-import VerifiedGarbage.Proof.MillerRabin.X86_64.StackPrepared
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTBase
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega

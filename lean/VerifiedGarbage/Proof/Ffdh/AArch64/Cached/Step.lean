@@ -1,11 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.ReadEnv
+public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.Stable
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.Controls
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.Stable
 
 /-! ### `Ffdh.AArch64.Cached.Digit`, which only this module used -/
 

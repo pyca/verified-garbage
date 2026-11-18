@@ -1,8 +1,7 @@
 module
-public import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Machine
-public import VerifiedGarbage.Proof.TripleDes.Bitslice.Pass
 
-import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Sbox
+public import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Sbox
+public import VerifiedGarbage.Proof.TripleDes.Bitslice.Pass
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.TripleDes.Bitslice.Layout
 import VerifiedGarbage.Proof.Framework.AArch64.Exec

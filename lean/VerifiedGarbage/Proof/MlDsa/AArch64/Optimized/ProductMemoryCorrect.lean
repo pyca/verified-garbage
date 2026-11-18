@@ -10,7 +10,7 @@ public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversalCorrect
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseBankFieldStage
 public import VerifiedGarbage.Proof.MlDsa.Arith.Representation
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InnerBank
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductMemory

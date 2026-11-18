@@ -1,9 +1,9 @@
 module
+
 public import VerifiedGarbage.Proof.Gcm.Arm.Ghash
 public import VerifiedGarbage.Impl.Sm4Gcm.Arm
-public import VerifiedGarbage.Proof.Sm4Gcm.Arm.Contract
+public import VerifiedGarbage.Proof.Sm4Gcm.Arm.Fn
 public import VerifiedGarbage.Proof.Framework.RelCT
-
 import VerifiedGarbage.Proof.Sm4Gcm.Arm.CTFn
 meta import VerifiedGarbage.Proof.Sm4Gcm.Arm.CTFn
 import VerifiedGarbage.Proof.Sm4Gcm.Arm.StreamAad

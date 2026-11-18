@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Dsa.X86.Moduli
 public import VerifiedGarbage.Proof.Dsa.X86.StageFrame
 import VerifiedGarbage.Proof.Dsa.X86.LocalOperand
 import VerifiedGarbage.Proof.Dsa.X86.Layout
-public import VerifiedGarbage.Proof.Dsa.X86.StreamFrame
+public import VerifiedGarbage.Proof.Dsa.X86.CallerBuffer
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Dsa.X86.StackFrame

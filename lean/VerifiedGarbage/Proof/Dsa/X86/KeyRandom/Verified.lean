@@ -1,8 +1,8 @@
 module
+
 public import VerifiedGarbage.Impl.Dsa.X86.GenerateKey
 public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.InvokeTiming
 public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.CheckCall
-import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.ConstantTime
 import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Correct
 
 /-! # The x86 key generator meets the existing bounded-tape contract -/

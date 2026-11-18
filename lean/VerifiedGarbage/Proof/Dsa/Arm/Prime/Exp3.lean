@@ -1,10 +1,9 @@
 module
-public import VerifiedGarbage.Proof.Dsa.Arm.Prime.Exp1
 
-import VerifiedGarbage.Proof.Dsa.Arm.Prime.Exp2
+public import VerifiedGarbage.Proof.Dsa.Arm.Prime.Exp1
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Seqs
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Taint5
-import VerifiedGarbage.Proof.Dsa.Arm.Prime.Ops
+import VerifiedGarbage.Proof.Dsa.Arm.Prime.Loads
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.St
 import VerifiedGarbage.Proof.Rsa.Arm.RdTwos
 import VerifiedGarbage.Proof.Rsa.TwosMath

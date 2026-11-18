@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.SignLayout
-public import VerifiedGarbage.Proof.Dsa.X86.VerifyLayout
 import Mathlib.Logic.Function.Basic
 import Mathlib.Tactic.Set
 import Mathlib.Tactic.SplitIfs
