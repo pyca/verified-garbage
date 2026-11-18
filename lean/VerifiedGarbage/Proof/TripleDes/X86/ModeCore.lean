@@ -23,6 +23,10 @@ first stack argument, its cipher `Spec.TripleDes.cipher` for encryption and
 `Spec.TripleDes.invCipher` for decryption, and the key ready when the copy of
 the schedule in the core's slots is the key. The block function's call
 (`cryptCall_ok`) is from its contract (`blockContract`).
+
+`wideCoreSpec d`: the same for the bitsliced core
+(`Impl.TripleDes.X86.wideCore d`), whose `crypt` is a call of the bitsliced
+function (`Ecb.batchFrame_ok`) on the buffer's 32 blocks.
 -/
 
 @[expose] public section

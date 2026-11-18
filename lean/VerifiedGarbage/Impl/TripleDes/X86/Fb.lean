@@ -7,7 +7,10 @@ public import VerifiedGarbage.Impl.TripleDes.X86.Modes
 
 The modes' OFB, CFB and CFB8 (`Impl/Modes/X86/Seq.lean`) over Triple DES's
 core in the encryption direction (`Modes.lean`), with the scratch buffer as
-the fifth argument.
+the fifth argument. CFB64 decryption, whose blocks can be deciphered
+independently, takes them in groups on the bitsliced core (`wideCore`,
+`Impl/Modes/X86/Wide.lean`); the others call the block function once a
+block.
 -/
 
 @[expose] public section

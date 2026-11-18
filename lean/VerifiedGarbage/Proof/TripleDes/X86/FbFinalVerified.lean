@@ -57,29 +57,29 @@ def encPost (s s' : State) : Prop :=
 def decPost (s s' : State) : Prop :=
   Spec.Cfb.DecryptFinal (ciph s) 8 s.mem s'.mem ((arg s 1).setWidth 64) ((arg s 2).setWidth 64) (arg s 3).toNat
 
-theorem cfbEncryptFinal_wp {s₀ : State} (hp : (fbX86 1 encPost).pre s₀) :
-    WP isa cfbEncryptFinal s₀ fun s' => abiPreserved s₀ s' ∧ (fbX86 1 encPost).post s₀ s' :=
+theorem cfbEncryptFinal_wp {s₀ : State} (hp : (fbX86 118 1 encPost).pre s₀) :
+    WP isa cfbEncryptFinal s₀ fun s' => abiPreserved s₀ s' ∧ (fbX86 118 1 encPost).post s₀ s' :=
   WP.mono (Proof.Modes.X86.cfbEncFinal_wp (dirCoreSpec .encrypt)
       (seqPre_of (M := byteMode) .encrypt rfl (by decide) (by decide) hp) rfl rfl (keyArgs_of .encrypt hp))
     fun _ ⟨h1, h2⟩ => ⟨h1, h2⟩
 
-theorem cfbDecryptFinal_wp {s₀ : State} (hp : (fbX86 1 decPost).pre s₀) :
-    WP isa cfbDecryptFinal s₀ fun s' => abiPreserved s₀ s' ∧ (fbX86 1 decPost).post s₀ s' :=
+theorem cfbDecryptFinal_wp {s₀ : State} (hp : (fbX86 118 1 decPost).pre s₀) :
+    WP isa cfbDecryptFinal s₀ fun s' => abiPreserved s₀ s' ∧ (fbX86 118 1 decPost).post s₀ s' :=
   WP.mono (Proof.Modes.X86.cfbDecFinal_wp (dirCoreSpec .encrypt)
       (seqPre_of (M := byteMode) .encrypt rfl (by decide) (by decide) hp) rfl rfl (keyArgs_of .encrypt hp))
     fun _ ⟨h1, h2⟩ => ⟨h1, h2⟩
 
 /-! ## Constant time -/
 
-theorem cfbEncryptFinal_ct : ConstantTime isa (fbX86 1 encPost).pre (fbX86 1 encPost).pub cfbEncryptFinal := by
-  obtain ⟨_, h⟩ : ∃ h, (VG.X86.taint.check fbTaint cfbEncryptFinal h).isSome = true :=
+theorem cfbEncryptFinal_ct : ConstantTime isa (fbX86 118 1 encPost).pre (fbX86 118 1 encPost).pub cfbEncryptFinal := by
+  obtain ⟨_, h⟩ : ∃ h, (VG.X86.taint.check (fbTaint 118) cfbEncryptFinal h).isSome = true :=
     by taint_decide_sum [encSum]
-  exact VG.Taint.constantTime (A := VG.X86.taint) fbTaint (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp) h
+  exact VG.Taint.constantTime (A := VG.X86.taint) (fbTaint 118) (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp) h
 
-theorem cfbDecryptFinal_ct : ConstantTime isa (fbX86 1 decPost).pre (fbX86 1 decPost).pub cfbDecryptFinal := by
-  obtain ⟨_, h⟩ : ∃ h, (VG.X86.taint.check fbTaint cfbDecryptFinal h).isSome = true :=
+theorem cfbDecryptFinal_ct : ConstantTime isa (fbX86 118 1 decPost).pre (fbX86 118 1 decPost).pub cfbDecryptFinal := by
+  obtain ⟨_, h⟩ : ∃ h, (VG.X86.taint.check (fbTaint 118) cfbDecryptFinal h).isSome = true :=
     by taint_decide_sum [encSum]
-  exact VG.Taint.constantTime (A := VG.X86.taint) fbTaint (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp) h
+  exact VG.Taint.constantTime (A := VG.X86.taint) (fbTaint 118) (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp) h
 
 /-! ## The contracts -/
 
@@ -111,7 +111,7 @@ abbrev decScratch : Contract isa :=
   Sig.scratchContract X86.abi finalSig "scratch" .u64 118 (Curry.const (fun _ => True) _)
     (Proof.Modes.decFinalPost ciphAt 8 X86.abi.ptrBits) true 16
 
-theorem wide_implies_enc : (wideContract 1 encPost).Implies encScratch := by
+theorem wide_implies_enc : (wideContract 118 1 encPost).Implies encScratch := by
   refine { pre := ?_, post := ?_, pub := ?_, sat := ?_ }
   · intro s h
     sig_pre [Sig.scratchContract, Sig.withScratch, Curry.withScratch, Curry.app, Proof.Modes.finalSig,
@@ -138,7 +138,7 @@ theorem wide_implies_enc : (wideContract 1 encPost).Implies encScratch := by
       Proof.Modes.encFinalPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, below, encPost]
       [satState, arg, argAddr, Mem.readW, Mem.read] using satState
 
-theorem wide_implies_dec : (wideContract 1 decPost).Implies decScratch := by
+theorem wide_implies_dec : (wideContract 118 1 decPost).Implies decScratch := by
   refine { pre := ?_, post := ?_, pub := ?_, sat := ?_ }
   · intro s h
     sig_pre [Sig.scratchContract, Sig.withScratch, Curry.withScratch, Curry.app, Proof.Modes.finalSig,
@@ -206,23 +206,23 @@ theorem cfbDecryptFinal_framed :
 def ofbPost (s s' : State) : Prop :=
   Spec.Ofb.CryptFinal (ciph s) 8 s.mem s'.mem ((arg s 1).setWidth 64) ((arg s 2).setWidth 64) (arg s 3).toNat
 
-theorem ofbFinal_wp {s₀ : State} (hp : (fbX86 1 ofbPost).pre s₀) :
-    WP isa ofbFinal s₀ fun s' => abiPreserved s₀ s' ∧ (fbX86 1 ofbPost).post s₀ s' :=
+theorem ofbFinal_wp {s₀ : State} (hp : (fbX86 118 1 ofbPost).pre s₀) :
+    WP isa ofbFinal s₀ fun s' => abiPreserved s₀ s' ∧ (fbX86 118 1 ofbPost).post s₀ s' :=
   WP.mono (Proof.Modes.X86.ofbFinal_wp (dirCoreSpec .encrypt)
       (seqPre_of (M := byteMode) .encrypt rfl (by decide) (by decide) hp) rfl rfl (keyArgs_of .encrypt hp))
     fun _ ⟨h1, h2⟩ => ⟨h1, h2⟩
 
-theorem ofbFinal_ct : ConstantTime isa (fbX86 1 ofbPost).pre (fbX86 1 ofbPost).pub ofbFinal := by
-  obtain ⟨_, h⟩ : ∃ h, (VG.X86.taint.check fbTaint ofbFinal h).isSome = true :=
+theorem ofbFinal_ct : ConstantTime isa (fbX86 118 1 ofbPost).pre (fbX86 118 1 ofbPost).pub ofbFinal := by
+  obtain ⟨_, h⟩ : ∃ h, (VG.X86.taint.check (fbTaint 118) ofbFinal h).isSome = true :=
     by taint_decide_sum [encSum]
-  exact VG.Taint.constantTime (A := VG.X86.taint) fbTaint (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp) h
+  exact VG.Taint.constantTime (A := VG.X86.taint) (fbTaint 118) (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp) h
 
 /-- The final OFB function's contract with the working space as an argument. -/
 abbrev ofbScratch : Contract isa :=
   Sig.scratchContract X86.abi finalSig "scratch" .u64 118 (Curry.const (fun _ => True) _)
     (Proof.Modes.ofbFinalPost ciphAt 8 X86.abi.ptrBits) true 16
 
-theorem wide_implies_ofb : (wideContract 1 ofbPost).Implies ofbScratch := by
+theorem wide_implies_ofb : (wideContract 118 1 ofbPost).Implies ofbScratch := by
   refine { pre := ?_, post := ?_, pub := ?_, sat := ?_ }
   · intro s h
     sig_pre [Sig.scratchContract, Sig.withScratch, Curry.withScratch, Curry.app, Proof.Modes.finalSig,

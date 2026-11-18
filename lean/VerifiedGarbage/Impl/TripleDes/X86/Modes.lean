@@ -6,7 +6,12 @@ public import VerifiedGarbage.Impl.TripleDes.X86.Block
 public import VerifiedGarbage.Impl.TripleDes.X86.Bitsliced
 
 /-!
-# Triple DES's core for the modes on x86 (32-bit)
+# Triple DES's cores for the modes on x86 (32-bit)
+
+Two cores: `dirCore`, a block at a time, for the modes whose blocks each
+need the one before (CBC encryption, OFB, CFB64 encryption, CFB8), and
+`wideCore` (below), the bitsliced function on 32 blocks, for CBC and CFB64
+decryption.
 
 `dirCore d`: the verified block function of the direction `d`, called one
 block at a time, as a core for the modes (`Impl/Modes/X86/Seq.lean`). Its
