@@ -127,7 +127,6 @@ aarch64 vg_aes_xts_decrypt_unit_neon
 aarch64 vg_aes_xts_encrypt_unit
 aarch64 vg_aes_xts_encrypt_unit_aes
 aarch64 vg_aes_xts_encrypt_unit_neon
-aarch64 vg_argon2
 aarch64 vg_blake2b_finalize
 aarch64 vg_blake2b_update
 aarch64 vg_blake2s_finalize
@@ -330,8 +329,6 @@ aarch64 vg_rsa_pkcs1_sign_precomputed
 aarch64 vg_rsa_private_precompute
 aarch64 vg_rsa_pss_sign_precomputed
 aarch64 vg_rsa_pss_verify_precomputed
-aarch64 vg_scrypt
-aarch64 vg_scrypt_sha2
 aarch64 vg_seed_cbc_decrypt_chained
 aarch64 vg_seed_cbc_encrypt_chained
 aarch64 vg_seed_cfb128_decrypt

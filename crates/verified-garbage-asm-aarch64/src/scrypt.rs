@@ -10,6 +10,8 @@ pub const VG_SCRYPT_SHA2_FEATURES: verified_garbage_cpu::Features = verified_gar
 ///
 /// Contract: `VG.Spec.Scrypt.scryptContract`. Not constant time in the indices: timing may depend on the pointers, the lengths, `r`, `N`, `p` and the indices `j` of step 3 of each scryptROMix, which are derived from the password and the salt and so leak information about them (as in every scrypt that indexes `V` directly), but on nothing else.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `password` must be valid for reads of `password_len` bytes.
@@ -39,7 +41,14 @@ cbnz x11, 20b
 .inst 0xf94007e0,0xf9400be1,0xf94013e2,0xf94017e3,0xd379e063,0xd2800024,0xf94037e5,0xf9403be6
 .inst 0xf9402fe7
 bl {vg_pbkdf2_hmac_sha256_scratch_sha2}
-.inst 0x910103ff,0xf84107fe,0xd65f03c0
+.inst 0x910103ff,0xf84107fe,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006
+.inst 0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e
+.inst 0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404
+.inst 0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414
+.inst 0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c
+.inst 0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0x4e181c28,0x4e181c29,0x4e181c2a,0x4e181c2b
+.inst 0x4e181c2c,0x4e181c2d,0x4e181c2e,0x4e181c2f,0xd2800000,0xd10183ff,0x6f00e41f,0x910003e9
+.inst 0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f,0x910183ff,0xd65f03c0
 .p2align 6",
         vg_pbkdf2_hmac_sha256_scratch_sha2 = sym super::scrypt::vg_pbkdf2_hmac_sha256_scratch_sha2::vg_pbkdf2_hmac_sha256_scratch_sha2,
         vg_scrypt_romix = sym super::scrypt::vg_scrypt_romix::vg_scrypt_romix,
@@ -49,6 +58,8 @@ bl {vg_pbkdf2_hmac_sha256_scratch_sha2}
 /// scrypt (RFC 7914 §6) with block size parameter `r`, cost parameter `N = vlen / r` and parallelization parameter `p = blen / r`: writes the `out_len`-byte key derived from the `password_len` bytes at `password` and the `salt_len` bytes at `salt` to `out`.
 ///
 /// Contract: `VG.Spec.Scrypt.scryptContract`. Not constant time in the indices: timing may depend on the pointers, the lengths, `r`, `N`, `p` and the indices `j` of step 3 of each scryptROMix, which are derived from the password and the salt and so leak information about them (as in every scrypt that indexes `V` directly), but on nothing else.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -78,7 +89,14 @@ cbnz x11, 20b
 .inst 0xf94007e0,0xf9400be1,0xf94013e2,0xf94017e3,0xd379e063,0xd2800024,0xf94037e5,0xf9403be6
 .inst 0xf9402fe7
 bl {vg_pbkdf2_hmac_sha256_scratch}
-.inst 0x910103ff,0xf84107fe,0xd65f03c0
+.inst 0x910103ff,0xf84107fe,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006
+.inst 0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e
+.inst 0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404
+.inst 0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414
+.inst 0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c
+.inst 0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0x4e181c28,0x4e181c29,0x4e181c2a,0x4e181c2b
+.inst 0x4e181c2c,0x4e181c2d,0x4e181c2e,0x4e181c2f,0xd2800000,0xd10183ff,0x6f00e41f,0x910003e9
+.inst 0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f,0x910183ff,0xd65f03c0
 .p2align 6",
         vg_pbkdf2_hmac_sha256_scratch = sym super::scrypt::vg_pbkdf2_hmac_sha256_scratch::vg_pbkdf2_hmac_sha256_scratch,
         vg_scrypt_romix = sym super::scrypt::vg_scrypt_romix::vg_scrypt_romix,
