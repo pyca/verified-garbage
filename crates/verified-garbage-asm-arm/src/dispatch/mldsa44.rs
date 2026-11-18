@@ -2,31 +2,6 @@
 //! The dispatchers of the verified `mldsa44` functions for `arm`
 //! (`crate::mldsa44`, `VG.Rust.dispatcher`).
 
-/// ML-DSA-44 key generation from a seed, `ML-DSA.KeyGen_internal(ξ)` (FIPS 204 Algorithm 6): with the 32-byte seed `ξ` at `seed`, writes the public key to `*pk` and the private key to `*sk`. Returns 1 on success. Returns 0 if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
-///
-/// Contract: `VG.Spec.MlDsa.keyGenContract`. Constant time but for `ρ` and rejections: timing may depend on the pointers, on `ρ` (the first 32 bytes of the public key), and on which half-bytes of the SHAKE256 outputs `RejBoundedPoly` rejects (`rejBoundedLeak`, which is independent of the coefficients it samples), but not on anything else of the seed or the keys.
-///
-/// It runs `vg_mldsa44_keygen`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
-///
-/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
-///
-/// # Safety
-///
-/// * `seed` must be valid for reads of 32 bytes.
-/// * `pk` must be valid for reads and writes of 1312 bytes.
-/// * `sk` must be valid for reads and writes of 2560 bytes.
-/// * `scratch` must be valid for reads and writes of 77824 bytes.
-/// * `seed` must be random bytes from an approved RBG (FIPS 204 §3.6.1), or a seed so generated before.
-/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
-/// * `pk`, `sk` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
-/// * None of `seed`, `pk`, `sk` and `scratch` may overlap the 40 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[allow(clippy::too_many_arguments)]
-#[inline]
-pub unsafe fn vg_mldsa44_keygen_auto(_dit: verified_garbage_cpu::Dit<'_>, seed: *const [u8; 32], pk: *mut [u8; 1312], sk: *mut [u8; 2560], scratch: *mut [u64; 9728]) -> u32 {
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::mldsa44::vg_mldsa44_keygen(seed, pk, sk, scratch) }
-}
-
 /// ML-DSA-44 public-key hash: writes `tr = H(pk, 64)` (FIPS 204 Algorithm 8, line 6), SHAKE256 of the public key `*pk` to 64 bytes, to `*tr`, the digest `vg_mldsa44_verify_message_cached` takes.
 ///
 /// Contract: `VG.Spec.MlDsa.pkTrContract`. Constant time: only the pointers may affect timing, not the key, the digest or the working space.
@@ -50,11 +25,66 @@ pub unsafe fn vg_mldsa44_pk_tr_auto(_dit: verified_garbage_cpu::Dit<'_>, pk: *co
     unsafe { crate::mldsa44::vg_mldsa44_pk_tr(pk, tr, scratch) }
 }
 
+/// ML-DSA-44 key generation from a seed, `ML-DSA.KeyGen_internal(ξ)` (FIPS 204 Algorithm 6): with the 32-byte seed `ξ` at `seed`, writes the public key to `*pk` and the private key to `*sk`. Returns 1 on success. Returns 0 if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
+///
+/// Contract: `VG.Spec.MlDsa.keyGenContract`. Constant time but for `ρ` and rejections: timing may depend on the pointers, on `ρ` (the first 32 bytes of the public key), and on which half-bytes of the SHAKE256 outputs `RejBoundedPoly` rejects (`rejBoundedLeak`, which is independent of the coefficients it samples), but not on anything else of the seed or the keys.
+///
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_mldsa44_keygen_umaal` if it is compiled (`any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd")`) and the CPU supports its features (`VG_MLDSA44_KEYGEN_UMAAL_FEATURES`); or else `vg_mldsa44_keygen`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `seed` must be valid for reads of 32 bytes.
+/// * `pk` must be valid for reads and writes of 1312 bytes.
+/// * `sk` must be valid for reads and writes of 2560 bytes.
+/// * `scratch` must be valid for reads and writes of 77824 bytes.
+/// * `seed` must be random bytes from an approved RBG (FIPS 204 §3.6.1), or a seed so generated before.
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `pk`, `sk` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
+/// * None of `seed`, `pk`, `sk` and `scratch` may overlap the 40 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_mldsa44_keygen_auto(_dit: verified_garbage_cpu::Dit<'_>, seed: *const [u8; 32], pk: *mut [u8; 1312], sk: *mut [u8; 2560], scratch: *mut [u64; 9728]) -> u32 {
+    /// The type of the implementations.
+    type Impl = unsafe extern "C" fn(seed: *const [u8; 32], pk: *mut [u8; 1312], sk: *mut [u8; 2560], scratch: *mut [u64; 9728]) -> u32;
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
+        if const { verified_garbage_cpu::target_contains(crate::mldsa44::VG_MLDSA44_KEYGEN_UMAAL_FEATURES) }
+            || cpu.contains(crate::mldsa44::VG_MLDSA44_KEYGEN_UMAAL_FEATURES)
+        {
+            return crate::mldsa44::vg_mldsa44_keygen_umaal;
+        }
+        crate::mldsa44::vg_mldsa44_keygen
+    }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "C" fn first(seed: *const [u8; 32], pk: *mut [u8; 1312], sk: *mut [u8; 2560], scratch: *mut [u64; 9728]) -> u32 {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(seed, pk, sk, scratch) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(seed, pk, sk, scratch) }
+}
+
 /// ML-DSA-44 public-key preparation: with the public key `*pk`, writes to `*prepared` the key, followed by the `k` polynomials `NTT(t₁ · 2^d)` that verification (FIPS 204 Algorithm 8, line 9) computes from it, for `vg_mldsa44_verify_message_prepared`.
 ///
 /// Contract: `VG.Spec.MlDsa.preparePublicKeyContract`. Constant time.
 ///
-/// It runs `vg_mldsa44_prepare_verifying_key`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_mldsa44_prepare_verifying_key_umaal` if it is compiled (`any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd")`) and the CPU supports its features (`VG_MLDSA44_PREPARE_VERIFYING_KEY_UMAAL_FEATURES`); or else `vg_mldsa44_prepare_verifying_key`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
@@ -69,15 +99,45 @@ pub unsafe fn vg_mldsa44_pk_tr_auto(_dit: verified_garbage_cpu::Dit<'_>, pk: *co
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_mldsa44_prepare_verifying_key_auto(_dit: verified_garbage_cpu::Dit<'_>, pk: *const [u8; 1312], prepared: *mut [u8; 5408], scratch: *mut [u64; 128]) {
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::mldsa44::vg_mldsa44_prepare_verifying_key(pk, prepared, scratch) }
+    /// The type of the implementations.
+    type Impl = unsafe extern "C" fn(pk: *const [u8; 1312], prepared: *mut [u8; 5408], scratch: *mut [u64; 128]);
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
+        if const { verified_garbage_cpu::target_contains(crate::mldsa44::VG_MLDSA44_PREPARE_VERIFYING_KEY_UMAAL_FEATURES) }
+            || cpu.contains(crate::mldsa44::VG_MLDSA44_PREPARE_VERIFYING_KEY_UMAAL_FEATURES)
+        {
+            return crate::mldsa44::vg_mldsa44_prepare_verifying_key_umaal;
+        }
+        crate::mldsa44::vg_mldsa44_prepare_verifying_key
+    }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "C" fn first(pk: *const [u8; 1312], prepared: *mut [u8; 5408], scratch: *mut [u64; 128]) {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(pk, prepared, scratch) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(pk, prepared, scratch) }
 }
 
 /// ML-DSA-44 private-key preparation: with the private key `*sk`, writes to `*prepared` the key, followed by the `ℓ + 2k` polynomials `NTT(s₁)`, `NTT(s₂)` and `NTT(t₀)` that signing (FIPS 204 Algorithm 7, lines 2–4) computes from it, for `vg_mldsa44_sign_message_prepared`.
 ///
 /// Contract: `VG.Spec.MlDsa.prepareSecretKeyContract`. Constant time.
 ///
-/// It runs `vg_mldsa44_prepare_signing_key`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_mldsa44_prepare_signing_key_umaal` if it is compiled (`any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd")`) and the CPU supports its features (`VG_MLDSA44_PREPARE_SIGNING_KEY_UMAAL_FEATURES`); or else `vg_mldsa44_prepare_signing_key`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
@@ -93,15 +153,45 @@ pub unsafe fn vg_mldsa44_prepare_verifying_key_auto(_dit: verified_garbage_cpu::
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_mldsa44_prepare_signing_key_auto(_dit: verified_garbage_cpu::Dit<'_>, sk: *const [u8; 2560], prepared: *mut [u8; 14848], scratch: *mut [u64; 128]) {
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::mldsa44::vg_mldsa44_prepare_signing_key(sk, prepared, scratch) }
+    /// The type of the implementations.
+    type Impl = unsafe extern "C" fn(sk: *const [u8; 2560], prepared: *mut [u8; 14848], scratch: *mut [u64; 128]);
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
+        if const { verified_garbage_cpu::target_contains(crate::mldsa44::VG_MLDSA44_PREPARE_SIGNING_KEY_UMAAL_FEATURES) }
+            || cpu.contains(crate::mldsa44::VG_MLDSA44_PREPARE_SIGNING_KEY_UMAAL_FEATURES)
+        {
+            return crate::mldsa44::vg_mldsa44_prepare_signing_key_umaal;
+        }
+        crate::mldsa44::vg_mldsa44_prepare_signing_key
+    }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "C" fn first(sk: *const [u8; 2560], prepared: *mut [u8; 14848], scratch: *mut [u64; 128]) {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(sk, prepared, scratch) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(sk, prepared, scratch) }
 }
 
 /// ML-DSA-44 signing of a message representative, `ML-DSA.Sign_internal(sk, M′, rnd)` (FIPS 204 Algorithm 7) with `μ` computed by the caller: with the private key `*sk`, the 64-byte message representative `μ = H(tr ‖ M′, 64)` at `mu` (for the public key hash `tr`, bytes 64–127 of `*sk`) and the randomness `*rnd`, writes the signature to `*sig`. Returns 1 on success. Returns 0 if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlDsa.signContract`. Constant time but for `ρ` and the rejection sampling: timing may depend on the pointers, on `ρ` (the first 32 bytes of `*sk`), on the number of iterations of the signing loop, the commitment hash of each and which validity check rejected it, and on the hint of the signature (`signLeak`), but not on anything else of the key, the message representative or the randomness.
 ///
-/// It runs `vg_mldsa44_sign`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_mldsa44_sign_umaal` if it is compiled (`any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd")`) and the CPU supports its features (`VG_MLDSA44_SIGN_UMAAL_FEATURES`); or else `vg_mldsa44_sign`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
@@ -120,15 +210,45 @@ pub unsafe fn vg_mldsa44_prepare_signing_key_auto(_dit: verified_garbage_cpu::Di
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_mldsa44_sign_auto(_dit: verified_garbage_cpu::Dit<'_>, sk: *const [u8; 2560], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 2420], scratch: *mut [u64; 9728]) -> u32 {
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::mldsa44::vg_mldsa44_sign(sk, mu, rnd, sig, scratch) }
+    /// The type of the implementations.
+    type Impl = unsafe extern "C" fn(sk: *const [u8; 2560], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 2420], scratch: *mut [u64; 9728]) -> u32;
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
+        if const { verified_garbage_cpu::target_contains(crate::mldsa44::VG_MLDSA44_SIGN_UMAAL_FEATURES) }
+            || cpu.contains(crate::mldsa44::VG_MLDSA44_SIGN_UMAAL_FEATURES)
+        {
+            return crate::mldsa44::vg_mldsa44_sign_umaal;
+        }
+        crate::mldsa44::vg_mldsa44_sign
+    }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "C" fn first(sk: *const [u8; 2560], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 2420], scratch: *mut [u64; 9728]) -> u32 {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(sk, mu, rnd, sig, scratch) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(sk, mu, rnd, sig, scratch) }
 }
 
 /// ML-DSA-44 signing of an external 64-byte message representative `*mu` with a prepared private key: `vg_mldsa44_sign` (with its results, timing and leakage) of the private key that `*sk` begins with.
 ///
 /// Contract: `VG.Spec.MlDsa.preparedSignContract`.
 ///
-/// It runs `vg_mldsa44_sign_prepared`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_mldsa44_sign_prepared_umaal` if it is compiled (`any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd")`) and the CPU supports its features (`VG_MLDSA44_SIGN_PREPARED_UMAAL_FEATURES`); or else `vg_mldsa44_sign_prepared`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
@@ -148,15 +268,45 @@ pub unsafe fn vg_mldsa44_sign_auto(_dit: verified_garbage_cpu::Dit<'_>, sk: *con
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_mldsa44_sign_prepared_auto(_dit: verified_garbage_cpu::Dit<'_>, sk: *const [u8; 14848], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 2420], scratch: *mut [u64; 9728]) -> u32 {
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::mldsa44::vg_mldsa44_sign_prepared(sk, mu, rnd, sig, scratch) }
+    /// The type of the implementations.
+    type Impl = unsafe extern "C" fn(sk: *const [u8; 14848], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 2420], scratch: *mut [u64; 9728]) -> u32;
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
+        if const { verified_garbage_cpu::target_contains(crate::mldsa44::VG_MLDSA44_SIGN_PREPARED_UMAAL_FEATURES) }
+            || cpu.contains(crate::mldsa44::VG_MLDSA44_SIGN_PREPARED_UMAAL_FEATURES)
+        {
+            return crate::mldsa44::vg_mldsa44_sign_prepared_umaal;
+        }
+        crate::mldsa44::vg_mldsa44_sign_prepared
+    }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "C" fn first(sk: *const [u8; 14848], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 2420], scratch: *mut [u64; 9728]) -> u32 {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(sk, mu, rnd, sig, scratch) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(sk, mu, rnd, sig, scratch) }
 }
 
 /// ML-DSA-44 signing, `ML-DSA.Sign(sk, M, ctx)` (FIPS 204 Algorithm 2) on the randomness `*rnd` (line 5): with the private key `*sk`, the `msg_len` bytes of the message at `msg` and the `ctx_len` bytes of the context string at `ctx`, writes the signature of the formatted message `M′ = 0 ‖ ctx_len ‖ ctx ‖ M` (line 10), `ML-DSA.Sign_internal(sk, M′, rnd)` (Algorithm 7), to `*sig`. Returns 1 on success. Returns 0 if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed. Returns 2 if `ctx_len` is greater than 255 (FIPS 204 returns the error indication `⊥`): `*sig` is then unspecified.
 ///
 /// Contract: `VG.Spec.MlDsa.signMessageContract`. Constant time but for `ρ` and the rejection sampling: timing may depend on the pointers, on `msg_len` and `ctx_len`, on `ρ` (the first 32 bytes of `*sk`), on the number of iterations of the signing loop, the commitment hash of each and which validity check rejected it, and on the hint of the signature (`signMessageLeak`), but not on anything else of the key, the message, the context string or the randomness.
 ///
-/// It runs `vg_mldsa44_sign_message`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_mldsa44_sign_message_umaal` if it is compiled (`any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd")`) and the CPU supports its features (`VG_MLDSA44_SIGN_MESSAGE_UMAAL_FEATURES`); or else `vg_mldsa44_sign_message`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
@@ -176,15 +326,45 @@ pub unsafe fn vg_mldsa44_sign_prepared_auto(_dit: verified_garbage_cpu::Dit<'_>,
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_mldsa44_sign_message_auto(_dit: verified_garbage_cpu::Dit<'_>, sk: *const [u8; 2560], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 2420], scratch: *mut [u64; 9856]) -> u32 {
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::mldsa44::vg_mldsa44_sign_message(sk, msg, msg_len, ctx, ctx_len, rnd, sig, scratch) }
+    /// The type of the implementations.
+    type Impl = unsafe extern "C" fn(sk: *const [u8; 2560], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 2420], scratch: *mut [u64; 9856]) -> u32;
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
+        if const { verified_garbage_cpu::target_contains(crate::mldsa44::VG_MLDSA44_SIGN_MESSAGE_UMAAL_FEATURES) }
+            || cpu.contains(crate::mldsa44::VG_MLDSA44_SIGN_MESSAGE_UMAAL_FEATURES)
+        {
+            return crate::mldsa44::vg_mldsa44_sign_message_umaal;
+        }
+        crate::mldsa44::vg_mldsa44_sign_message
+    }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "C" fn first(sk: *const [u8; 2560], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 2420], scratch: *mut [u64; 9856]) -> u32 {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(sk, msg, msg_len, ctx, ctx_len, rnd, sig, scratch) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(sk, msg, msg_len, ctx, ctx_len, rnd, sig, scratch) }
 }
 
 /// ML-DSA-44 signing with a prepared private key: `vg_mldsa44_sign_message` (with its results, timing and leakage) of the private key that `*sk` begins with.
 ///
 /// Contract: `VG.Spec.MlDsa.preparedSignMessageContract`.
 ///
-/// It runs `vg_mldsa44_sign_message_prepared`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_mldsa44_sign_message_prepared_umaal` if it is compiled (`any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd")`) and the CPU supports its features (`VG_MLDSA44_SIGN_MESSAGE_PREPARED_UMAAL_FEATURES`); or else `vg_mldsa44_sign_message_prepared`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
@@ -205,15 +385,45 @@ pub unsafe fn vg_mldsa44_sign_message_auto(_dit: verified_garbage_cpu::Dit<'_>, 
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_mldsa44_sign_message_prepared_auto(_dit: verified_garbage_cpu::Dit<'_>, sk: *const [u8; 14848], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 2420], scratch: *mut [u64; 9856]) -> u32 {
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::mldsa44::vg_mldsa44_sign_message_prepared(sk, msg, msg_len, ctx, ctx_len, rnd, sig, scratch) }
+    /// The type of the implementations.
+    type Impl = unsafe extern "C" fn(sk: *const [u8; 14848], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 2420], scratch: *mut [u64; 9856]) -> u32;
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
+        if const { verified_garbage_cpu::target_contains(crate::mldsa44::VG_MLDSA44_SIGN_MESSAGE_PREPARED_UMAAL_FEATURES) }
+            || cpu.contains(crate::mldsa44::VG_MLDSA44_SIGN_MESSAGE_PREPARED_UMAAL_FEATURES)
+        {
+            return crate::mldsa44::vg_mldsa44_sign_message_prepared_umaal;
+        }
+        crate::mldsa44::vg_mldsa44_sign_message_prepared
+    }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "C" fn first(sk: *const [u8; 14848], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 2420], scratch: *mut [u64; 9856]) -> u32 {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(sk, msg, msg_len, ctx, ctx_len, rnd, sig, scratch) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(sk, msg, msg_len, ctx, ctx_len, rnd, sig, scratch) }
 }
 
 /// ML-DSA-44 verification of a signature of a message representative, `ML-DSA.Verify_internal(pk, M′, σ)` (FIPS 204 Algorithm 8) with `μ` computed by the caller: with the public key `*pk`, the 64-byte message representative `μ = H(H(pk, 64) ‖ M′, 64)` at `mu` and the signature `*sig`, returns 1 if the signature is valid, and 0 if it is not or if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less).
 ///
 /// Contract: `VG.Spec.MlDsa.verifyContract`. Not constant time: timing may depend on the public key, the message representative and the signature.
 ///
-/// It runs `vg_mldsa44_verify`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_mldsa44_verify_umaal` if it is compiled (`any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd")`) and the CPU supports its features (`VG_MLDSA44_VERIFY_UMAAL_FEATURES`); or else `vg_mldsa44_verify`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
@@ -229,15 +439,45 @@ pub unsafe fn vg_mldsa44_sign_message_prepared_auto(_dit: verified_garbage_cpu::
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_mldsa44_verify_auto(_dit: verified_garbage_cpu::Dit<'_>, pk: *const [u8; 1312], mu: *const [u8; 64], sig: *const [u8; 2420], scratch: *mut [u64; 9728]) -> u32 {
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::mldsa44::vg_mldsa44_verify(pk, mu, sig, scratch) }
+    /// The type of the implementations.
+    type Impl = unsafe extern "C" fn(pk: *const [u8; 1312], mu: *const [u8; 64], sig: *const [u8; 2420], scratch: *mut [u64; 9728]) -> u32;
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
+        if const { verified_garbage_cpu::target_contains(crate::mldsa44::VG_MLDSA44_VERIFY_UMAAL_FEATURES) }
+            || cpu.contains(crate::mldsa44::VG_MLDSA44_VERIFY_UMAAL_FEATURES)
+        {
+            return crate::mldsa44::vg_mldsa44_verify_umaal;
+        }
+        crate::mldsa44::vg_mldsa44_verify
+    }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "C" fn first(pk: *const [u8; 1312], mu: *const [u8; 64], sig: *const [u8; 2420], scratch: *mut [u64; 9728]) -> u32 {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(pk, mu, sig, scratch) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(pk, mu, sig, scratch) }
 }
 
 /// ML-DSA-44 verification of an external 64-byte message representative `*mu` with a prepared public key: `vg_mldsa44_verify` (with its results, timing and leakage) of the public key that `*pk` begins with.
 ///
 /// Contract: `VG.Spec.MlDsa.preparedVerifyContract`.
 ///
-/// It runs `vg_mldsa44_verify_prepared`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_mldsa44_verify_prepared_umaal` if it is compiled (`any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd")`) and the CPU supports its features (`VG_MLDSA44_VERIFY_PREPARED_UMAAL_FEATURES`); or else `vg_mldsa44_verify_prepared`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
@@ -254,15 +494,45 @@ pub unsafe fn vg_mldsa44_verify_auto(_dit: verified_garbage_cpu::Dit<'_>, pk: *c
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_mldsa44_verify_prepared_auto(_dit: verified_garbage_cpu::Dit<'_>, pk: *const [u8; 5408], mu: *const [u8; 64], sig: *const [u8; 2420], scratch: *mut [u64; 9728]) -> u32 {
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::mldsa44::vg_mldsa44_verify_prepared(pk, mu, sig, scratch) }
+    /// The type of the implementations.
+    type Impl = unsafe extern "C" fn(pk: *const [u8; 5408], mu: *const [u8; 64], sig: *const [u8; 2420], scratch: *mut [u64; 9728]) -> u32;
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
+        if const { verified_garbage_cpu::target_contains(crate::mldsa44::VG_MLDSA44_VERIFY_PREPARED_UMAAL_FEATURES) }
+            || cpu.contains(crate::mldsa44::VG_MLDSA44_VERIFY_PREPARED_UMAAL_FEATURES)
+        {
+            return crate::mldsa44::vg_mldsa44_verify_prepared_umaal;
+        }
+        crate::mldsa44::vg_mldsa44_verify_prepared
+    }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "C" fn first(pk: *const [u8; 5408], mu: *const [u8; 64], sig: *const [u8; 2420], scratch: *mut [u64; 9728]) -> u32 {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(pk, mu, sig, scratch) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(pk, mu, sig, scratch) }
 }
 
 /// ML-DSA-44 message verification with a cached public-key digest. Returns 1 for a valid signature, 0 for an invalid signature or exhausted sampling bound, and 2 if the context exceeds 255 bytes. It is `ML-DSA.Verify(pk, M, σ, ctx)` (FIPS 204 Algorithm 3) with `H(pk, 64)` read from `*tr`: with the public key `*pk`, the `msg_len` bytes of the message at `msg`, the `ctx_len` bytes of the context string at `ctx` and the signature `*sig`, it formats the message `M′ = 0 ‖ ctx_len ‖ ctx ‖ M` (line 5), computes `μ = H(tr ‖ M′, 64)`, and verifies `*sig` on `μ` with `*pk`, `ML-DSA.Verify_internal(pk, M′, σ)` (Algorithm 8).
 ///
 /// Contract: `VG.Spec.MlDsa.verifyMessageCachedContract`. Timing may depend on the public key, message, context string and signature, and on argument addresses and lengths.
 ///
-/// It runs `vg_mldsa44_verify_message_cached`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_mldsa44_verify_message_cached_umaal` if it is compiled (`any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd")`) and the CPU supports its features (`VG_MLDSA44_VERIFY_MESSAGE_CACHED_UMAAL_FEATURES`); or else `vg_mldsa44_verify_message_cached`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
@@ -281,15 +551,45 @@ pub unsafe fn vg_mldsa44_verify_prepared_auto(_dit: verified_garbage_cpu::Dit<'_
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_mldsa44_verify_message_cached_auto(_dit: verified_garbage_cpu::Dit<'_>, pk: *const [u8; 1312], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 2420], scratch: *mut [u64; 9856], tr: *const [u8; 64]) -> u32 {
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::mldsa44::vg_mldsa44_verify_message_cached(pk, msg, msg_len, ctx, ctx_len, sig, scratch, tr) }
+    /// The type of the implementations.
+    type Impl = unsafe extern "C" fn(pk: *const [u8; 1312], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 2420], scratch: *mut [u64; 9856], tr: *const [u8; 64]) -> u32;
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
+        if const { verified_garbage_cpu::target_contains(crate::mldsa44::VG_MLDSA44_VERIFY_MESSAGE_CACHED_UMAAL_FEATURES) }
+            || cpu.contains(crate::mldsa44::VG_MLDSA44_VERIFY_MESSAGE_CACHED_UMAAL_FEATURES)
+        {
+            return crate::mldsa44::vg_mldsa44_verify_message_cached_umaal;
+        }
+        crate::mldsa44::vg_mldsa44_verify_message_cached
+    }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "C" fn first(pk: *const [u8; 1312], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 2420], scratch: *mut [u64; 9856], tr: *const [u8; 64]) -> u32 {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(pk, msg, msg_len, ctx, ctx_len, sig, scratch, tr) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(pk, msg, msg_len, ctx, ctx_len, sig, scratch, tr) }
 }
 
 /// ML-DSA-44 verification with a prepared public key: `vg_mldsa44_verify_message_cached` (with its results, timing and leakage) of the public key that `*pk` begins with.
 ///
 /// Contract: `VG.Spec.MlDsa.preparedVerifyMessageContract`.
 ///
-/// It runs `vg_mldsa44_verify_message_prepared`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_mldsa44_verify_message_prepared_umaal` if it is compiled (`any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd")`) and the CPU supports its features (`VG_MLDSA44_VERIFY_MESSAGE_PREPARED_UMAAL_FEATURES`); or else `vg_mldsa44_verify_message_prepared`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
@@ -309,6 +609,36 @@ pub unsafe fn vg_mldsa44_verify_message_cached_auto(_dit: verified_garbage_cpu::
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_mldsa44_verify_message_prepared_auto(_dit: verified_garbage_cpu::Dit<'_>, pk: *const [u8; 5408], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 2420], scratch: *mut [u64; 9856], tr: *const [u8; 64]) -> u32 {
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::mldsa44::vg_mldsa44_verify_message_prepared(pk, msg, msg_len, ctx, ctx_len, sig, scratch, tr) }
+    /// The type of the implementations.
+    type Impl = unsafe extern "C" fn(pk: *const [u8; 5408], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 2420], scratch: *mut [u64; 9856], tr: *const [u8; 64]) -> u32;
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
+        if const { verified_garbage_cpu::target_contains(crate::mldsa44::VG_MLDSA44_VERIFY_MESSAGE_PREPARED_UMAAL_FEATURES) }
+            || cpu.contains(crate::mldsa44::VG_MLDSA44_VERIFY_MESSAGE_PREPARED_UMAAL_FEATURES)
+        {
+            return crate::mldsa44::vg_mldsa44_verify_message_prepared_umaal;
+        }
+        crate::mldsa44::vg_mldsa44_verify_message_prepared
+    }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "C" fn first(pk: *const [u8; 5408], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 2420], scratch: *mut [u64; 9856], tr: *const [u8; 64]) -> u32 {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(pk, msg, msg_len, ctx, ctx_len, sig, scratch, tr) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(pk, msg, msg_len, ctx, ctx_len, sig, scratch, tr) }
 }

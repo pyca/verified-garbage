@@ -261,7 +261,7 @@ def setCache (p : Params) (prepared : Bool) : List Instr :=
 (`prepared` true, with a prepared private key at `sk`), `(sk = r0, mu = r1,
 rnd = r2, sig = r3, scratch = [sp]) -> r0`: the kernel. -/
 def signEntry (P : Prims) (p : Params) (prepared : Bool) : Prog isa :=
-  entry (withCacheName p) (withCache P p) (setCache p prepared)
+  entry (withCacheName p ++ P.sfx) (withCache P p) (setCache p prepared)
 
 /-- `vg_mldsa{44,65,87}_sign(sk = r0, mu = r1, rnd = r2, sig = r3, scratch = [sp]) -> r0`. -/
 def sign (P : Prims) (p : Params) : Prog isa := signEntry P p false

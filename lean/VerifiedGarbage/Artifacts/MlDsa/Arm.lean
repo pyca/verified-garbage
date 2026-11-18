@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.Scrub
+public import VerifiedGarbage.Proof.Variants.MlDsaArith.Arm
 public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Inst
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
@@ -48,67 +49,75 @@ open VG
 open VG.Proof.MlDsa.Arm.Scrub
 
 def artifacts : List Artifact := [
-  Spec.MlDsa.keyGen44Api.artifact Arm.target (keyGenReg Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44" (.inl rfl)),
-  Spec.MlDsa.keyGen65Api.artifact Arm.target (keyGenReg Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65" (.inr (.inl rfl))),
-  Spec.MlDsa.keyGen87Api.artifact Arm.target (keyGenReg Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87" (.inr (.inr rfl))),
   Spec.MlDsa.pkTr44Api.artifact Arm.target (pkTrReg Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44" (.inl rfl)),
   Spec.MlDsa.pkTr65Api.artifact Arm.target (pkTrReg Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65" (.inr (.inl rfl))),
   Spec.MlDsa.pkTr87Api.artifact Arm.target (pkTrReg Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87" (.inr (.inr rfl)))] ++
-  [
+  Proof.Variants.MlDsaArith.Arm.variants.flatMap fun (v : Proof.Variants.MlDsaArith.Arm.Variant) => [
+    Spec.MlDsa.keyGen44Api.artifact Arm.target
+      (keyGenReg Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44" (.inl rfl) v.um v.suffix),
+    Spec.MlDsa.keyGen65Api.artifact Arm.target
+      (keyGenReg Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65" (.inr (.inl rfl)) v.um v.suffix),
+    Spec.MlDsa.keyGen87Api.artifact Arm.target
+      (keyGenReg Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87" (.inr (.inr rfl)) v.um v.suffix),
     (Spec.MlDsa.preparePublicKeyApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact Arm.target
-      (preparePublicReg Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44" (.inl rfl)),
+      (preparePublicReg Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44" (.inl rfl) v.um v.suffix),
     (Spec.MlDsa.prepareSecretKeyApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact Arm.target
-      (prepareSecretReg Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44" (.inl rfl)),
+      (prepareSecretReg Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44" (.inl rfl) v.um v.suffix),
     (Spec.MlDsa.preparePublicKeyApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").artifact Arm.target
-      (preparePublicReg Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65" (.inr (.inl rfl))),
+      (preparePublicReg Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65" (.inr (.inl rfl)) v.um v.suffix),
     (Spec.MlDsa.prepareSecretKeyApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").artifact Arm.target
-      (prepareSecretReg Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65" (.inr (.inl rfl))),
+      (prepareSecretReg Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65" (.inr (.inl rfl)) v.um v.suffix),
     (Spec.MlDsa.preparePublicKeyApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").artifact Arm.target
-      (preparePublicReg Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87" (.inr (.inr rfl))),
+      (preparePublicReg Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87" (.inr (.inr rfl)) v.um v.suffix),
     (Spec.MlDsa.prepareSecretKeyApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").artifact Arm.target
-      (prepareSecretReg Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87" (.inr (.inr rfl)))] ++
-  [
-    Spec.MlDsa.sign44Api.artifact Arm.target (signReg Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44" (.inl rfl)),
-    Spec.MlDsa.sign65Api.artifact Arm.target (signReg Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65" (.inr (.inl rfl))),
-    Spec.MlDsa.sign87Api.artifact Arm.target (signReg Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87" (.inr (.inr rfl))),
+      (prepareSecretReg Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87" (.inr (.inr rfl)) v.um v.suffix),
+    Spec.MlDsa.sign44Api.artifact Arm.target
+      (signReg Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44" (.inl rfl) v.um v.suffix),
+    Spec.MlDsa.sign65Api.artifact Arm.target
+      (signReg Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65" (.inr (.inl rfl)) v.um v.suffix),
+    Spec.MlDsa.sign87Api.artifact Arm.target
+      (signReg Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87" (.inr (.inr rfl)) v.um v.suffix),
     (Spec.MlDsa.preparedSignApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact Arm.target
-      (signPreparedReg Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44" (.inl rfl)),
+      (signPreparedReg Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44" (.inl rfl) v.um v.suffix),
     (Spec.MlDsa.preparedSignApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").artifact Arm.target
-      (signPreparedReg Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65" (.inr (.inl rfl))),
+      (signPreparedReg Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65" (.inr (.inl rfl)) v.um v.suffix),
     (Spec.MlDsa.preparedSignApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").artifact Arm.target
-      (signPreparedReg Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87" (.inr (.inr rfl)))] ++
-  [
-    Spec.MlDsa.signMessage44Api.artifact Arm.target (signMessageReg Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44" (.inl rfl)),
-    Spec.MlDsa.signMessage65Api.artifact Arm.target (signMessageReg Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65" (.inr (.inl rfl))),
-    Spec.MlDsa.signMessage87Api.artifact Arm.target (signMessageReg Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87" (.inr (.inr rfl))),
+      (signPreparedReg Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87" (.inr (.inr rfl)) v.um v.suffix),
+    Spec.MlDsa.signMessage44Api.artifact Arm.target
+      (signMessageReg Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44" (.inl rfl) v.um v.suffix),
+    Spec.MlDsa.signMessage65Api.artifact Arm.target
+      (signMessageReg Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65" (.inr (.inl rfl)) v.um v.suffix),
+    Spec.MlDsa.signMessage87Api.artifact Arm.target
+      (signMessageReg Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87" (.inr (.inr rfl)) v.um v.suffix),
     (Spec.MlDsa.preparedSignMessageApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact Arm.target
-      (preparedSignMessageReg Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44" (.inl rfl)),
+      (preparedSignMessageReg Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44" (.inl rfl) v.um v.suffix),
     (Spec.MlDsa.preparedSignMessageApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").artifact Arm.target
-      (preparedSignMessageReg Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65" (.inr (.inl rfl))),
+      (preparedSignMessageReg Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65" (.inr (.inl rfl)) v.um v.suffix),
     (Spec.MlDsa.preparedSignMessageApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").artifact Arm.target
-      (preparedSignMessageReg Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87" (.inr (.inr rfl)))] ++
-  [
-    Spec.MlDsa.verify44Api.artifact Arm.target (verifyReg Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44" (.inl rfl)),
-    Spec.MlDsa.verify65Api.artifact Arm.target (verifyReg Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65" (.inr (.inl rfl))),
-    Spec.MlDsa.verify87Api.artifact Arm.target (verifyReg Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87" (.inr (.inr rfl))),
+      (preparedSignMessageReg Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87" (.inr (.inr rfl)) v.um v.suffix),
+    Spec.MlDsa.verify44Api.artifact Arm.target
+      (verifyReg Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44" (.inl rfl) v.um v.suffix),
+    Spec.MlDsa.verify65Api.artifact Arm.target
+      (verifyReg Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65" (.inr (.inl rfl)) v.um v.suffix),
+    Spec.MlDsa.verify87Api.artifact Arm.target
+      (verifyReg Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87" (.inr (.inr rfl)) v.um v.suffix),
     (Spec.MlDsa.preparedVerifyApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact Arm.target
-      (verifyPreparedReg Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44" (.inl rfl)),
+      (verifyPreparedReg Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44" (.inl rfl) v.um v.suffix),
     (Spec.MlDsa.preparedVerifyApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").artifact Arm.target
-      (verifyPreparedReg Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65" (.inr (.inl rfl))),
+      (verifyPreparedReg Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65" (.inr (.inl rfl)) v.um v.suffix),
     (Spec.MlDsa.preparedVerifyApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").artifact Arm.target
-      (verifyPreparedReg Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87" (.inr (.inr rfl)))] ++
-  [
+      (verifyPreparedReg Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87" (.inr (.inr rfl)) v.um v.suffix),
     (Spec.MlDsa.verifyMessageCachedApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact Arm.target
-      (verifyMessageCachedReg Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44" (.inl rfl)),
+      (verifyMessageCachedReg Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44" (.inl rfl) v.um v.suffix),
     (Spec.MlDsa.verifyMessageCachedApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").artifact Arm.target
-      (verifyMessageCachedReg Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65" (.inr (.inl rfl))),
+      (verifyMessageCachedReg Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65" (.inr (.inl rfl)) v.um v.suffix),
     (Spec.MlDsa.verifyMessageCachedApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").artifact Arm.target
-      (verifyMessageCachedReg Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87" (.inr (.inr rfl))),
+      (verifyMessageCachedReg Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87" (.inr (.inr rfl)) v.um v.suffix),
     (Spec.MlDsa.preparedVerifyMessageApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact Arm.target
-      (preparedVerifyMessageReg Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44" (.inl rfl)),
+      (preparedVerifyMessageReg Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44" (.inl rfl) v.um v.suffix),
     (Spec.MlDsa.preparedVerifyMessageApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").artifact Arm.target
-      (preparedVerifyMessageReg Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65" (.inr (.inl rfl))),
+      (preparedVerifyMessageReg Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65" (.inr (.inl rfl)) v.um v.suffix),
     (Spec.MlDsa.preparedVerifyMessageApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").artifact Arm.target
-      (preparedVerifyMessageReg Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87" (.inr (.inr rfl)))]
+      (preparedVerifyMessageReg Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87" (.inr (.inr rfl)) v.um v.suffix)]
 
 end VG.Artifacts.MlDsa.Arm

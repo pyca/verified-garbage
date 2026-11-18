@@ -63,10 +63,11 @@ open VG.Proof.MlDsa.Sign
 open VG.Spec.MlDsa
 open VG.Spec.Sha3 (bytesAt)
 
-/-- The ARMv7 implementations of the primitives. -/
-def prims : Prims where
-  ntt := Impl.MlDsa.Arm.Arith.ntt
-  invNtt := Impl.MlDsa.Arm.Arith.nttInv
+/-- The ARMv7 implementations of the primitives, the transforms with `umaal`
+if `u`. -/
+def prims (u : Bool) : Prims where
+  ntt := Impl.MlDsa.Arm.Arith.ntt u
+  invNtt := Impl.MlDsa.Arm.Arith.nttInv u
   mul := Impl.MlDsa.Arm.Arith.mul
   mulAdd := Impl.MlDsa.Arm.Arith.mulAdd
   add := Impl.MlDsa.Arm.Arith.add
@@ -82,6 +83,7 @@ def prims : Prims where
   bitPack := Impl.MlDsa.Arm.Pack.bitPack
   bitUnpack := Impl.MlDsa.Arm.Pack.bitUnpack
   hintBitPack := Impl.MlDsa.Arm.Pack.hintBitPack
+  sfx := Impl.MlDsa.Arm.Arith.suffix u
 
 /-- The stack signing may use below its stack pointer. -/
 abbrev signStack : Nat := 28
@@ -126,24 +128,24 @@ end
 theorem one_ne_zero32 : (1 : BitVec 32) ≠ 0 := by decide
 
 /-- The primitives satisfy what the proofs of signing need of them. -/
-def prims_ok : PrimsOk prims signStack where
-  ntt := ⟨28, by decide, Proof.MlDsa.Arm.Arith.Ntt.verified, by decide +kernel⟩
-  invNtt := ⟨28, by decide, Proof.MlDsa.Arm.Arith.NttInv.verified, by decide +kernel⟩
-  mul := ⟨24, by decide, Proof.MlDsa.Arm.Arith.Mul.mul_verified, by decide +kernel⟩
-  mulAdd := ⟨24, by decide, Proof.MlDsa.Arm.Arith.Mul.mulAdd_verified, by decide +kernel⟩
-  add := ⟨0, by decide, Proof.MlDsa.Arm.Arith.AddSub.add_verified, by decide +kernel⟩
-  sub := ⟨0, by decide, Proof.MlDsa.Arm.Arith.AddSub.sub_verified, by decide +kernel⟩
-  rejNTT := ⟨8, by decide, Proof.MlDsa.Arm.Sample.rejNTT_verified, by decide +kernel⟩
-  expandMask := ⟨8, by decide, Proof.MlDsa.Arm.Sample.expandMask_verified, by decide +kernel⟩
-  ball := ⟨8, by decide, Proof.MlDsa.Arm.Sample.sampleInBall_verified, by decide +kernel⟩
-  highBits := ⟨0, by decide, Proof.MlDsa.Arm.Round.Bits.high_verified, by decide +kernel⟩
-  lowBits := ⟨0, by decide, Proof.MlDsa.Arm.Round.Bits.low_verified, by decide +kernel⟩
-  normLt := ⟨4, by decide, Proof.MlDsa.Arm.Round.NormLt.verified, by decide +kernel⟩
-  makeHint := ⟨12, by decide, Proof.MlDsa.Arm.Round.MakeHint.verified, by decide +kernel⟩
-  simpleBitPack := ⟨0, by decide, Proof.MlDsa.Arm.Pack.simpleBitPack_verified, by decide +kernel⟩
-  bitPack := ⟨4, by decide, Proof.MlDsa.Arm.Pack.bitPack_verified, by decide +kernel⟩
-  bitUnpack := ⟨4, by decide, Proof.MlDsa.Arm.Pack.bitUnpack_verified, by decide +kernel⟩
-  hintBitPack := ⟨8, by decide, Proof.MlDsa.Arm.Pack.Hint.hintBitPack_verified, by decide +kernel⟩
+def prims_ok (u : Bool) : PrimsOk (prims u) signStack where
+  ntt := ⟨28, by decide, Proof.MlDsa.Arm.Arith.Ntt.verified u, by cases u <;> decide +kernel⟩
+  invNtt := ⟨28, by decide, Proof.MlDsa.Arm.Arith.NttInv.verified u, by cases u <;> decide +kernel⟩
+  mul := ⟨24, by decide, Proof.MlDsa.Arm.Arith.Mul.mul_verified, by cases u <;> decide +kernel⟩
+  mulAdd := ⟨24, by decide, Proof.MlDsa.Arm.Arith.Mul.mulAdd_verified, by cases u <;> decide +kernel⟩
+  add := ⟨0, by decide, Proof.MlDsa.Arm.Arith.AddSub.add_verified, by cases u <;> decide +kernel⟩
+  sub := ⟨0, by decide, Proof.MlDsa.Arm.Arith.AddSub.sub_verified, by cases u <;> decide +kernel⟩
+  rejNTT := ⟨8, by decide, Proof.MlDsa.Arm.Sample.rejNTT_verified, by cases u <;> decide +kernel⟩
+  expandMask := ⟨8, by decide, Proof.MlDsa.Arm.Sample.expandMask_verified, by cases u <;> decide +kernel⟩
+  ball := ⟨8, by decide, Proof.MlDsa.Arm.Sample.sampleInBall_verified, by cases u <;> decide +kernel⟩
+  highBits := ⟨0, by decide, Proof.MlDsa.Arm.Round.Bits.high_verified, by cases u <;> decide +kernel⟩
+  lowBits := ⟨0, by decide, Proof.MlDsa.Arm.Round.Bits.low_verified, by cases u <;> decide +kernel⟩
+  normLt := ⟨4, by decide, Proof.MlDsa.Arm.Round.NormLt.verified, by cases u <;> decide +kernel⟩
+  makeHint := ⟨12, by decide, Proof.MlDsa.Arm.Round.MakeHint.verified, by cases u <;> decide +kernel⟩
+  simpleBitPack := ⟨0, by decide, Proof.MlDsa.Arm.Pack.simpleBitPack_verified, by cases u <;> decide +kernel⟩
+  bitPack := ⟨4, by decide, Proof.MlDsa.Arm.Pack.bitPack_verified, by cases u <;> decide +kernel⟩
+  bitUnpack := ⟨4, by decide, Proof.MlDsa.Arm.Pack.bitUnpack_verified, by cases u <;> decide +kernel⟩
+  hintBitPack := ⟨8, by decide, Proof.MlDsa.Arm.Pack.Hint.hintBitPack_verified, by cases u <;> decide +kernel⟩
   rejRet := by exact (fun s₁ s₂ t₁ t₂ s₁' s₂' ⟨h₁, h₂, hp⟩ e₁ e₂ =>
     ⟨Proof.MlDsa.Arm.Sample.rejNTT_verified.2.1 s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂,
       show _ = _ by rw [rn_ret h₁ e₁, rn_ret h₂ e₂, rn_pub s₁ s₂ hp]⟩)

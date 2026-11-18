@@ -70,12 +70,12 @@ theorem verifyE_implies {p : Params} (h3 : Ok3 p) :
   verifyE_implies_of (Arm.Scrub.sat_stack_le (by decide) (verify_sat h3))
 
 /-- `vg_mldsa*_verify` against the contract `verify_message` calls it with. -/
-theorem verifyE_verified {p : Params} (h3 : Ok3 p) :
-    Verified Arm.target (verify prims p) (verifyE p false entryStack) :=
-  ⟨entry_correct h3 false, entry_ct h3 false, (verifyE_implies h3).sat_left⟩
+theorem verifyE_verified (u : Bool) {p : Params} (h3 : Ok3 p) :
+    Verified Arm.target (verify (prims u) p) (verifyE p false entryStack) :=
+  ⟨entry_correct u h3 false, entry_ct u h3 false, (verifyE_implies h3).sat_left⟩
 
-theorem verify_verified {p : Params} (h3 : Ok3 p) :
-    Verified Arm.target (verify prims p) (verifyContract p Arm.abi entryStack) :=
-  Verified.of_correct (entry_correct h3 false) (entry_ct h3 false) (verifyE_implies h3)
+theorem verify_verified (u : Bool) {p : Params} (h3 : Ok3 p) :
+    Verified Arm.target (verify (prims u) p) (verifyContract p Arm.abi entryStack) :=
+  Verified.of_correct (entry_correct u h3 false) (entry_ct u h3 false) (verifyE_implies h3)
 
 end VG.Proof.MlDsa.Arm.Verify

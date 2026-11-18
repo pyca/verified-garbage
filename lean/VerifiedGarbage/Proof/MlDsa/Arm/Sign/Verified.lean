@@ -323,8 +323,9 @@ end
 
 /-! ## The entries -/
 
-theorem withCache_stack {p : Params} (h3 : Ok3 p) : FrameStack.armStack (withCache prims p) ≤ signStack := by
-  rcases h3 with rfl | rfl | rfl <;> decide +kernel
+theorem withCache_stack (u : Bool) {p : Params} (h3 : Ok3 p) :
+    FrameStack.armStack (withCache (prims u) p) ≤ signStack := by
+  rcases h3 with rfl | rfl | rfl <;> cases u <;> decide +kernel
 
 theorem cacheLen_pos {p : Params} (h3 : Ok3 p) : 0 < cacheLen p := by
   rcases h3 with rfl | rfl | rfl <;> decide
@@ -360,9 +361,9 @@ theorem r4_kept {p : Params} {prepared : Bool} {σ s s₃ : State} (hpre : (sign
         ⟨State.addr (σ.sp - BitVec.ofNat 32 8) - BitVec.ofNat 64 36, 36⟩
       exact Offset.base_disjoint_below (State.addr (σ.sp - BitVec.ofNat 32 8)) (n := 36) (k := 4) (by omega_using [])
 
-theorem entry_correct {p : Params} (h3 : Ok3 p) (prepared : Bool) (σ : State)
+theorem entry_correct (u : Bool) {p : Params} (h3 : Ok3 p) (prepared : Bool) (σ : State)
     (hpre : (signE p prepared entryStack).pre σ) :
-    ∃ t s', Exec isa (signEntry prims p prepared) σ t s' ∧ abiPreserved σ s' ∧
+    ∃ t s', Exec isa (signEntry (prims u) p prepared) σ t s' ∧ abiPreserved σ s' ∧
       (signE p prepared entryStack).post σ s' := by
   have hpre' := hpre
   obtain ⟨-, -, -, -, -, -, -, -, -, -, -, k1, k2, k3, k4, -, n1, -, -, n4, -, hsp, -, -⟩ := hpre'
@@ -376,8 +377,9 @@ theorem entry_correct {p : Params} (h3 : Ok3 p) (prepared : Bool) (σ : State)
   obtain hc := cacheLen_pos h3
   obtain cov := kE_covers hpre hm hc
   refine WP.seq (Argon2.Arm.frameCall_ok (rs := [.r12, .lr]) (t := .r12) (by decide) (by decide) (by decide)
-    (sign_correct prims_ok h3) (K := 36) (by have := withCache_stack h3; simp only [List.length_cons,
-      List.length_nil, signStack] at this ⊢; omega_using [this])
+    (sign_correct (prims_ok u) h3) (K := 36) (by
+      have := withCache_stack u h3
+      simp only [List.length_cons, List.length_nil, signStack] at this ⊢; omega_using [this])
     (by rw [hm.sp, FrameStack.sub_toNat' (by omega_using [h16])]; simp only [entryStack] at hσ; omega_arith)
     (kE_pre hpre hm hc) cov.1 cov.2 fun s₂ mL uL hfl hA hpost => ?_)
   refine VG.Proof.MdStream.Arm.wp_mov (VG.Proof.MdStream.Arm.op2_reg _ _) fun σ₄ u₄ => WP.block_nil ?_
@@ -455,9 +457,9 @@ theorem blockA_tr {p : Params} {prepared : Bool} {P : State → State → Prop} 
   rw [← k₁.2, ← k₂.2, ldrSp_leak h₁, ldrSp_leak h₂, execBlock_nomem (setCache_nomem p prepared) f₁,
     execBlock_nomem (setCache_nomem p prepared) f₂, hP _ _ hp]
 
-theorem entry_ct {p : Params} (h3 : Ok3 p) (prepared : Bool) :
+theorem entry_ct (u : Bool) {p : Params} (h3 : Ok3 p) (prepared : Bool) :
     ConstantTime isa (signE p prepared entryStack).pre (signE p prepared entryStack).pub
-      (signEntry prims p prepared) := by
+      (signEntry (prims u) p prepared) := by
   unfold signEntry entry
   refine RelCT.constantTime (RelCT.frame (fun s₁ s₂ h => h.2.2.2.2.2.2.2.1) ?_)
   refine RelCT.mono (P := fun a b => ∃ q : State × State, ((signE p prepared entryStack).pre q.1 ∧
@@ -474,7 +476,7 @@ theorem entry_ct {p : Params} (h3 : Ok3 p) (prepared : Bool) :
       hb ▸ blockA_ok h.2.1 (by decide)⟩) ?_
   obtain hc := cacheLen_pos h3
   refine RelCT.seq (Argon2.Arm.frameCall_rel (rs := [.r12, .lr]) (t := .r12) (by decide)
-    (sign_correct prims_ok h3) (sign_ct prims_ok h3) (kRd p prepared σ₁) σ₁.wr
+    (sign_correct (prims_ok u) h3) (sign_ct (prims_ok u) h3) (kRd p prepared σ₁) σ₁.wr
     fun x y ⟨_, ⟨⟨h₁, h₂, hp⟩, m₁⟩, m₂⟩ => ?_)
     (block_nomem_tr fun i hi s => by simp only [List.mem_singleton] at hi; subst hi; rfl)
   obtain ⟨p0, p1, p2, p3, pa, psp, pl⟩ := hp
@@ -595,12 +597,12 @@ theorem signE_implies {p : Params} (h3 : Ok3 p) :
   signE_implies_of (Arm.Scrub.sat_stack_le (by decide) (sign_sat h3))
 
 /-- `vg_mldsa*_sign` against the contract `sign_message` calls it with. -/
-theorem signE_verified {p : Params} (h3 : Ok3 p) :
-    Verified Arm.target (Impl.MlDsa.Arm.Sign.sign prims p) (signE p false entryStack) :=
-  ⟨entry_correct h3 false, entry_ct h3 false, (signE_implies h3).sat_left⟩
+theorem signE_verified (u : Bool) {p : Params} (h3 : Ok3 p) :
+    Verified Arm.target (Impl.MlDsa.Arm.Sign.sign (prims u) p) (signE p false entryStack) :=
+  ⟨entry_correct u h3 false, entry_ct u h3 false, (signE_implies h3).sat_left⟩
 
-theorem sign_verified {p : Params} (h3 : Ok3 p) :
-    Verified Arm.target (Impl.MlDsa.Arm.Sign.sign prims p) (signContract p Arm.abi entryStack) :=
-  Verified.of_correct (entry_correct h3 false) (entry_ct h3 false) (signE_implies h3)
+theorem sign_verified (u : Bool) {p : Params} (h3 : Ok3 p) :
+    Verified Arm.target (Impl.MlDsa.Arm.Sign.sign (prims u) p) (signContract p Arm.abi entryStack) :=
+  Verified.of_correct (entry_correct u h3 false) (entry_ct u h3 false) (signE_implies h3)
 
 end VG.Proof.MlDsa.Arm.Sign

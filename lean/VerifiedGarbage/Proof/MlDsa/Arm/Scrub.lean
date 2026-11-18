@@ -50,6 +50,10 @@ The message functions call the functions on `μ` (`vg_mldsa*_sign`, …) as
 they are verified, without the wipe, under names of their own
 (`signEntryName`, …), which the emitter writes as internal functions: their
 own wipe covers the frames of those calls.
+
+Every function but `pk_tr` calls the transforms, and is registered with
+each implementation of them (`u`: with `umaal` or without,
+`Proof/Variants/MlDsaArith/Arm.lean`), as the variant's suffix.
 -/
 
 @[expose] public section
@@ -260,36 +264,37 @@ theorem frameOk_40 : FrameOk 40 := by decide
 theorem frameOk_48 : FrameOk 48 := by decide
 theorem frameOk_56 : FrameOk 56 := by decide
 
-section
-variable (h3 : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87)
-include h3
-
-theorem mem_params : p ∈ Message.params := by
+theorem mem_params (h3 : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) : p ∈ Message.params := by
   simp only [Message.params, List.mem_cons, List.not_mem_nil, or_false]; exact h3
 
-theorem keyGen_code : armStack (Impl.MlDsa.Arm.KeyGen.keyGen Impl.MlDsa.Arm.KeyGen.prims p) ≤ 40 ∧
-    noIcall (Impl.MlDsa.Arm.KeyGen.keyGen Impl.MlDsa.Arm.KeyGen.prims p) = true := by
+theorem pkTr_code (h3 : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) :
+    armStack (Impl.MlDsa.Arm.PkTr.pkTr p) ≤ 8 ∧ noIcall (Impl.MlDsa.Arm.PkTr.pkTr p) = true := by
   rcases h3 with rfl | rfl | rfl <;> lit_decide
 
-theorem pkTr_code : armStack (Impl.MlDsa.Arm.PkTr.pkTr p) ≤ 8 ∧ noIcall (Impl.MlDsa.Arm.PkTr.pkTr p) = true := by
-  rcases h3 with rfl | rfl | rfl <;> lit_decide
+section
+variable (u : Bool) (h3 : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87)
+include h3
 
-theorem preparePublic_code : armStack (Impl.MlDsa.Arm.PreparedKey.preparePublic Sign.prims p) ≤ 48 ∧
-    noIcall (Impl.MlDsa.Arm.PreparedKey.preparePublic Sign.prims p) = true := by
-  rcases h3 with rfl | rfl | rfl <;> lit_decide
+theorem keyGen_code : armStack (Impl.MlDsa.Arm.KeyGen.keyGen (Impl.MlDsa.Arm.KeyGen.prims u) p) ≤ 40 ∧
+    noIcall (Impl.MlDsa.Arm.KeyGen.keyGen (Impl.MlDsa.Arm.KeyGen.prims u) p) = true := by
+  rcases h3 with rfl | rfl | rfl <;> cases u <;> lit_decide
 
-theorem prepareSecret_code : armStack (Impl.MlDsa.Arm.PreparedKey.prepareSecret Sign.prims p) ≤ 48 ∧
-    noIcall (Impl.MlDsa.Arm.PreparedKey.prepareSecret Sign.prims p) = true := by
-  rcases h3 with rfl | rfl | rfl <;> lit_decide
+theorem preparePublic_code : armStack (Impl.MlDsa.Arm.PreparedKey.preparePublic (Sign.prims u) p) ≤ 48 ∧
+    noIcall (Impl.MlDsa.Arm.PreparedKey.preparePublic (Sign.prims u) p) = true := by
+  rcases h3 with rfl | rfl | rfl <;> cases u <;> lit_decide
 
-theorem signEntry_code (prepared : Bool) : armStack (Impl.MlDsa.Arm.Sign.signEntry Sign.prims p prepared) ≤ 44 ∧
-    noIcall (Impl.MlDsa.Arm.Sign.signEntry Sign.prims p prepared) = true := by
-  rcases h3 with rfl | rfl | rfl <;> cases prepared <;> lit_decide
+theorem prepareSecret_code : armStack (Impl.MlDsa.Arm.PreparedKey.prepareSecret (Sign.prims u) p) ≤ 48 ∧
+    noIcall (Impl.MlDsa.Arm.PreparedKey.prepareSecret (Sign.prims u) p) = true := by
+  rcases h3 with rfl | rfl | rfl <;> cases u <;> lit_decide
+
+theorem signEntry_code (prepared : Bool) : armStack (Impl.MlDsa.Arm.Sign.signEntry (Sign.prims u) p prepared) ≤ 44 ∧
+    noIcall (Impl.MlDsa.Arm.Sign.signEntry (Sign.prims u) p prepared) = true := by
+  rcases h3 with rfl | rfl | rfl <;> cases u <;> cases prepared <;> lit_decide
 
 theorem verifyEntry_code (prepared : Bool) :
-    armStack (Impl.MlDsa.Arm.Verify.verifyEntry Impl.MlDsa.Arm.Verify.prims p prepared) ≤ 52 ∧
-      noIcall (Impl.MlDsa.Arm.Verify.verifyEntry Impl.MlDsa.Arm.Verify.prims p prepared) = true := by
-  rcases h3 with rfl | rfl | rfl <;> cases prepared <;> lit_decide
+    armStack (Impl.MlDsa.Arm.Verify.verifyEntry (Impl.MlDsa.Arm.Verify.prims u) p prepared) ≤ 52 ∧
+      noIcall (Impl.MlDsa.Arm.Verify.verifyEntry (Impl.MlDsa.Arm.Verify.prims u) p prepared) = true := by
+  rcases h3 with rfl | rfl | rfl <;> cases u <;> cases prepared <;> lit_decide
 
 end
 
@@ -317,65 +322,63 @@ theorem verifyMessageCached_code {n : String} {c : Prog isa} (p : Params) (hc : 
 
 /-- The names the message functions call `vg_<module>_sign`,
 `vg_<module>_sign_prepared`, `vg_<module>_verify` and
-`vg_<module>_verify_prepared` by, as they are verified, without the wipe. -/
-def signEntryName (module : String) : String := s!"vg_{module}_sign_entry"
-def signPreparedEntryName (module : String) : String := s!"vg_{module}_sign_prepared_entry"
-def verifyEntryName (module : String) : String := s!"vg_{module}_verify_entry"
-def verifyPreparedEntryName (module : String) : String := s!"vg_{module}_verify_prepared_entry"
+`vg_<module>_verify_prepared` by, as they are verified, without the wipe:
+each followed by the transforms' suffix (`Arith.suffix`), since it calls them. -/
+def signEntryName (module : String) (u : Bool) : String :=
+  s!"vg_{module}_sign_entry" ++ Impl.MlDsa.Arm.Arith.suffix u
+def signPreparedEntryName (module : String) (u : Bool) : String :=
+  s!"vg_{module}_sign_prepared_entry" ++ Impl.MlDsa.Arm.Arith.suffix u
+def verifyEntryName (module : String) (u : Bool) : String :=
+  s!"vg_{module}_verify_entry" ++ Impl.MlDsa.Arm.Arith.suffix u
+def verifyPreparedEntryName (module : String) (u : Bool) : String :=
+  s!"vg_{module}_verify_prepared_entry" ++ Impl.MlDsa.Arm.Arith.suffix u
 
 section
-variable (h3 : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87)
+variable (u : Bool) (h3 : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87)
 include h3
-
-theorem signFn : Message.SignFn p false (Impl.MlDsa.Arm.Sign.sign Sign.prims p) := by
-  rcases h3 with rfl | rfl | rfl
-  exacts [Message.sign44Fn, Message.sign65Fn, Message.sign87Fn]
-
-theorem verifyFn : Message.VerifyFn p false (Impl.MlDsa.Arm.Verify.verify Impl.MlDsa.Arm.Verify.prims p) := by
-  rcases h3 with rfl | rfl | rfl
-  exacts [Message.verify44Fn, Message.verify65Fn, Message.verify87Fn]
 
 /-! ## With a frame size of the model -/
 
 theorem sign_verified :
-    Verified Arm.target (Impl.MlDsa.Arm.Sign.sign Sign.prims p) (signContract p Arm.abi 48) :=
-  Verified.stack_le (by decide) (Sign.sign_verified h3) (Sign.sign_sat h3)
+    Verified Arm.target (Impl.MlDsa.Arm.Sign.sign (Sign.prims u) p) (signContract p Arm.abi 48) :=
+  Verified.stack_le (by decide) (Sign.sign_verified u h3) (Sign.sign_sat h3)
 
 theorem signPrepared_verified :
-    Verified Arm.target (Impl.MlDsa.Arm.Sign.signPrepared Sign.prims p) (Spec.MlDsa.preparedSignContract p Arm.abi 48) :=
-  Verified.stack_le (by decide) (Message.externalSign_verified (mem_params h3)) (Message.externalSign_sat (mem_params h3))
+    Verified Arm.target (Impl.MlDsa.Arm.Sign.signPrepared (Sign.prims u) p) (Spec.MlDsa.preparedSignContract p Arm.abi 48) :=
+  Verified.stack_le (by decide) (Message.externalSign_verified u (mem_params h3))
+    (Message.externalSign_sat (mem_params h3))
 
 theorem verify_verified :
-    Verified Arm.target (Impl.MlDsa.Arm.Verify.verify Impl.MlDsa.Arm.Verify.prims p) (verifyContract p Arm.abi 56) :=
-  Verified.stack_le (by decide) (Verify.verify_verified h3) (Verify.verify_sat h3)
+    Verified Arm.target (Impl.MlDsa.Arm.Verify.verify (Impl.MlDsa.Arm.Verify.prims u) p) (verifyContract p Arm.abi 56) :=
+  Verified.stack_le (by decide) (Verify.verify_verified u h3) (Verify.verify_sat h3)
 
 theorem verifyPrepared_verified :
-    Verified Arm.target (Impl.MlDsa.Arm.Verify.verifyPrepared Impl.MlDsa.Arm.Verify.prims p)
+    Verified Arm.target (Impl.MlDsa.Arm.Verify.verifyPrepared (Impl.MlDsa.Arm.Verify.prims u) p)
       (Spec.MlDsa.preparedVerifyContract p Arm.abi 56) :=
-  Verified.stack_le (by decide) (Message.externalVerify_verified (mem_params h3))
+  Verified.stack_le (by decide) (Message.externalVerify_verified u (mem_params h3))
     (Message.externalVerify_sat (mem_params h3))
 
 theorem signMessage_verified (n : String) :
-    Verified Arm.target (signMessage n (Impl.MlDsa.Arm.Sign.sign Sign.prims p) p) (signMessageContract p Arm.abi 56) :=
-  Verified.stack_le (by decide) (Message.signMessage_verified (signFn h3) (mem_params h3))
+    Verified Arm.target (signMessage n (Impl.MlDsa.Arm.Sign.sign (Sign.prims u) p) p) (signMessageContract p Arm.abi 56) :=
+  Verified.stack_le (by decide) (Message.signMessage_verified (Message.signFn u h3) (mem_params h3))
     (Message.signMessage_sat (mem_params h3))
 
 theorem preparedSignMessage_verified (n : String) :
-    Verified Arm.target (signMessage n (Impl.MlDsa.Arm.Sign.signPrepared Sign.prims p) p)
+    Verified Arm.target (signMessage n (Impl.MlDsa.Arm.Sign.signPrepared (Sign.prims u) p) p)
       (preparedSignMessageContract p Arm.abi 56) :=
-  Verified.stack_le (by decide) (Message.preparedSignMessage_verified (Message.signPreparedFn h3) (mem_params h3))
+  Verified.stack_le (by decide) (Message.preparedSignMessage_verified (Message.signPreparedFn u h3) (mem_params h3))
     (Message.preparedSignMessage_sat (mem_params h3))
 
 theorem verifyMessageCached_verified (n : String) :
-    Verified Arm.target (verifyMessageCached n (Impl.MlDsa.Arm.Verify.verify Impl.MlDsa.Arm.Verify.prims p) p)
+    Verified Arm.target (verifyMessageCached n (Impl.MlDsa.Arm.Verify.verify (Impl.MlDsa.Arm.Verify.prims u) p) p)
       (verifyMessageCachedContract p Arm.abi 56) :=
-  Verified.stack_le (by decide) (Message.verifyMessageCached_verified (verifyFn h3) (mem_params h3))
+  Verified.stack_le (by decide) (Message.verifyMessageCached_verified (Message.verifyFn u h3) (mem_params h3))
     (Message.verifyMessageCached_sat (mem_params h3))
 
 theorem preparedVerifyMessage_verified (n : String) :
-    Verified Arm.target (verifyMessageCached n (Impl.MlDsa.Arm.Verify.verifyPrepared Impl.MlDsa.Arm.Verify.prims p) p)
+    Verified Arm.target (verifyMessageCached n (Impl.MlDsa.Arm.Verify.verifyPrepared (Impl.MlDsa.Arm.Verify.prims u) p) p)
       (preparedVerifyMessageContract p Arm.abi 56) :=
-  Verified.stack_le (by decide) (Message.preparedVerifyMessage_verified (Message.verifyPreparedFn h3) (mem_params h3))
+  Verified.stack_le (by decide) (Message.preparedVerifyMessage_verified (Message.verifyPreparedFn u h3) (mem_params h3))
     (Message.preparedVerifyMessage_sat (mem_params h3))
 
 end
@@ -385,98 +388,114 @@ end
 section
 variable (p : Params) (module name : String) (h3 : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87)
 
-/-- `vg_<module>_keygen`. -/
-def keyGenReg : Registration (keyGenApi p module name) Arm.target :=
-  scrubRegF {
-      code := Impl.MlDsa.Arm.KeyGen.keyGen Impl.MlDsa.Arm.KeyGen.prims p
-      verified := KeyGen.keyGen_verified KeyGen.prims_ok p h3 }
-    (keyGen_code h3).1 (keyGen_code h3).2 frameOk_40 (keyGenOut p _) rfl
-
-/-- `vg_<module>_pk_tr`. -/
+/-- `vg_<module>_pk_tr`, which calls no transform. -/
 def pkTrReg : Registration (pkTrApi p module name) Arm.target :=
   scrubRegF {
       code := Impl.MlDsa.Arm.PkTr.pkTr p
       verified := PkTr.pkTr_verified p h3 }
     (pkTr_code h3).1 (pkTr_code h3).2 frameOk_8 (pkTrOut p _) rfl
 
+/-! Each of the others, with the transforms with `umaal` (`u`) or without, as `suffix`. -/
+
+variable (u : Bool) (suffix : String)
+
+/-- `vg_<module>_keygen`. -/
+def keyGenReg : Registration (keyGenApi p module name) Arm.target :=
+  scrubRegF {
+      suffix := suffix
+      code := Impl.MlDsa.Arm.KeyGen.keyGen (Impl.MlDsa.Arm.KeyGen.prims u) p
+      verified := KeyGen.keyGen_verified (KeyGen.prims_ok u) p h3 }
+    (keyGen_code u h3).1 (keyGen_code u h3).2 frameOk_40 (keyGenOut p _) rfl
+
 /-- `vg_<module>_prepare_verifying_key`. -/
 def preparePublicReg : Registration (preparePublicKeyApi p module name) Arm.target :=
   scrubRegF {
-      code := Impl.MlDsa.Arm.PreparedKey.preparePublic Sign.prims p
-      verified := PreparedKey.preparePublic_verified h3 }
-    (preparePublic_code h3).1 (preparePublic_code h3).2 frameOk_48 (preparePublicOut h3 _) rfl
+      suffix := suffix
+      code := Impl.MlDsa.Arm.PreparedKey.preparePublic (Sign.prims u) p
+      verified := PreparedKey.preparePublic_verified u h3 }
+    (preparePublic_code u h3).1 (preparePublic_code u h3).2 frameOk_48 (preparePublicOut h3 _) rfl
 
 /-- `vg_<module>_prepare_signing_key`. -/
 def prepareSecretReg : Registration (prepareSecretKeyApi p module name) Arm.target :=
   scrubRegF {
-      code := Impl.MlDsa.Arm.PreparedKey.prepareSecret Sign.prims p
-      verified := PreparedKey.prepareSecret_verified h3 }
-    (prepareSecret_code h3).1 (prepareSecret_code h3).2 frameOk_48 (prepareSecretOut h3 _) rfl
+      suffix := suffix
+      code := Impl.MlDsa.Arm.PreparedKey.prepareSecret (Sign.prims u) p
+      verified := PreparedKey.prepareSecret_verified u h3 }
+    (prepareSecret_code u h3).1 (prepareSecret_code u h3).2 frameOk_48 (prepareSecretOut h3 _) rfl
 
 /-- `vg_<module>_sign`. -/
 def signReg : Registration (signApi p module name) Arm.target :=
   scrubRegF {
-      code := Impl.MlDsa.Arm.Sign.sign Sign.prims p
-      verified := sign_verified h3 }
-    (Nat.le_trans (signEntry_code h3 false).1 (Nat.le_add_right 44 4)) (signEntry_code h3 false).2 frameOk_48 (signOut p _) rfl
+      suffix := suffix
+      code := Impl.MlDsa.Arm.Sign.sign (Sign.prims u) p
+      verified := sign_verified u h3 }
+    (Nat.le_trans (signEntry_code u h3 false).1 (Nat.le_add_right 44 4)) (signEntry_code u h3 false).2 frameOk_48
+    (signOut p _) rfl
 
 /-- `vg_<module>_sign_prepared`. -/
 def signPreparedReg : Registration (preparedSignApi p module name) Arm.target :=
   scrubRegF {
-      code := Impl.MlDsa.Arm.Sign.signPrepared Sign.prims p
-      verified := signPrepared_verified h3 }
-    (Nat.le_trans (signEntry_code h3 true).1 (Nat.le_add_right 44 4)) (signEntry_code h3 true).2 frameOk_48
+      suffix := suffix
+      code := Impl.MlDsa.Arm.Sign.signPrepared (Sign.prims u) p
+      verified := signPrepared_verified u h3 }
+    (Nat.le_trans (signEntry_code u h3 true).1 (Nat.le_add_right 44 4)) (signEntry_code u h3 true).2 frameOk_48
     (preparedSignOut p _) rfl
 
 /-- `vg_<module>_sign_message`. -/
 def signMessageReg : Registration (signMessageApi p module name) Arm.target :=
   scrubRegF {
-      code := signMessage (signEntryName module) (Impl.MlDsa.Arm.Sign.sign Sign.prims p) p
-      verified := signMessage_verified h3 _ }
-    (signMessage_code p (signEntry_code h3 false)).1 (signMessage_code p (signEntry_code h3 false)).2 frameOk_56
+      suffix := suffix
+      code := signMessage (signEntryName module u) (Impl.MlDsa.Arm.Sign.sign (Sign.prims u) p) p
+      verified := signMessage_verified u h3 _ }
+    (signMessage_code p (signEntry_code u h3 false)).1 (signMessage_code p (signEntry_code u h3 false)).2 frameOk_56
     (signMessageOut p _) rfl
 
 /-- `vg_<module>_sign_message_prepared`. -/
 def preparedSignMessageReg : Registration (preparedSignMessageApi p module name) Arm.target :=
   scrubRegF {
-      code := signMessage (signPreparedEntryName module) (Impl.MlDsa.Arm.Sign.signPrepared Sign.prims p) p
-      verified := preparedSignMessage_verified h3 _ }
-    (signMessage_code p (signEntry_code h3 true)).1 (signMessage_code p (signEntry_code h3 true)).2 frameOk_56
+      suffix := suffix
+      code := signMessage (signPreparedEntryName module u) (Impl.MlDsa.Arm.Sign.signPrepared (Sign.prims u) p) p
+      verified := preparedSignMessage_verified u h3 _ }
+    (signMessage_code p (signEntry_code u h3 true)).1 (signMessage_code p (signEntry_code u h3 true)).2 frameOk_56
     (preparedSignMessageOut p _) rfl
 
 /-- `vg_<module>_verify`. -/
 def verifyReg : Registration (verifyApi p module name) Arm.target :=
   scrubRegF {
-      code := Impl.MlDsa.Arm.Verify.verify Impl.MlDsa.Arm.Verify.prims p
-      verified := verify_verified h3 }
-    (Nat.le_trans (verifyEntry_code h3 false).1 (Nat.le_add_right 52 4)) (verifyEntry_code h3 false).2 frameOk_56
+      suffix := suffix
+      code := Impl.MlDsa.Arm.Verify.verify (Impl.MlDsa.Arm.Verify.prims u) p
+      verified := verify_verified u h3 }
+    (Nat.le_trans (verifyEntry_code u h3 false).1 (Nat.le_add_right 52 4)) (verifyEntry_code u h3 false).2 frameOk_56
     (verifyOut p _) rfl
 
 /-- `vg_<module>_verify_prepared`. -/
 def verifyPreparedReg : Registration (preparedVerifyApi p module name) Arm.target :=
   scrubRegF {
-      code := Impl.MlDsa.Arm.Verify.verifyPrepared Impl.MlDsa.Arm.Verify.prims p
-      verified := verifyPrepared_verified h3 }
-    (Nat.le_trans (verifyEntry_code h3 true).1 (Nat.le_add_right 52 4)) (verifyEntry_code h3 true).2 frameOk_56
+      suffix := suffix
+      code := Impl.MlDsa.Arm.Verify.verifyPrepared (Impl.MlDsa.Arm.Verify.prims u) p
+      verified := verifyPrepared_verified u h3 }
+    (Nat.le_trans (verifyEntry_code u h3 true).1 (Nat.le_add_right 52 4)) (verifyEntry_code u h3 true).2 frameOk_56
     (preparedVerifyOut p _) rfl
 
 /-- `vg_<module>_verify_message_cached`. -/
 def verifyMessageCachedReg : Registration (verifyMessageCachedApi p module name) Arm.target :=
   scrubRegF {
-      code := verifyMessageCached (verifyEntryName module)
-        (Impl.MlDsa.Arm.Verify.verify Impl.MlDsa.Arm.Verify.prims p) p
-      verified := verifyMessageCached_verified h3 _ }
-    (verifyMessageCached_code p (verifyEntry_code h3 false)).1
-    (verifyMessageCached_code p (verifyEntry_code h3 false)).2 frameOk_56 (verifyMessageCachedOut p _) rfl
+      suffix := suffix
+      code := verifyMessageCached (verifyEntryName module u)
+        (Impl.MlDsa.Arm.Verify.verify (Impl.MlDsa.Arm.Verify.prims u) p) p
+      verified := verifyMessageCached_verified u h3 _ }
+    (verifyMessageCached_code p (verifyEntry_code u h3 false)).1
+    (verifyMessageCached_code p (verifyEntry_code u h3 false)).2 frameOk_56 (verifyMessageCachedOut p _) rfl
 
 /-- `vg_<module>_verify_message_prepared`. -/
 def preparedVerifyMessageReg : Registration (preparedVerifyMessageApi p module name) Arm.target :=
   scrubRegF {
-      code := verifyMessageCached (verifyPreparedEntryName module)
-        (Impl.MlDsa.Arm.Verify.verifyPrepared Impl.MlDsa.Arm.Verify.prims p) p
-      verified := preparedVerifyMessage_verified h3 _ }
-    (verifyMessageCached_code p (verifyEntry_code h3 true)).1
-    (verifyMessageCached_code p (verifyEntry_code h3 true)).2 frameOk_56 (preparedVerifyMessageOut p _) rfl
+      suffix := suffix
+      code := verifyMessageCached (verifyPreparedEntryName module u)
+        (Impl.MlDsa.Arm.Verify.verifyPrepared (Impl.MlDsa.Arm.Verify.prims u) p) p
+      verified := preparedVerifyMessage_verified u h3 _ }
+    (verifyMessageCached_code p (verifyEntry_code u h3 true)).1
+    (verifyMessageCached_code p (verifyEntry_code u h3 true)).2 frameOk_56 (preparedVerifyMessageOut p _) rfl
 
 end
 

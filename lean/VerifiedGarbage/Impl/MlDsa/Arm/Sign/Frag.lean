@@ -51,6 +51,9 @@ structure Prims where
   bitPack : Prog isa
   bitUnpack : Prog isa
   hintBitPack : Prog isa
+  /-- What follows the names of the transforms, and of the functions that
+  call them (`Arith.suffix`): nothing, or `_umaal`. -/
+  sfx : String
 
 /-! ## The layout of the working space (in bytes)
 
@@ -174,9 +177,9 @@ Each takes its working space (if any) at `PS`. -/
 section
 variable (P : Prims)
 
-def nttAt (f : Ptr) : Prog isa := callR "vg_mldsa_ntt" P.ntt [.ptr f, .ptr (sc oPS)]
+def nttAt (f : Ptr) : Prog isa := callR ("vg_mldsa_ntt" ++ P.sfx) P.ntt [.ptr f, .ptr (sc oPS)]
 
-def invNttAt (f : Ptr) : Prog isa := callR "vg_mldsa_inv_ntt" P.invNtt [.ptr f, .ptr (sc oPS)]
+def invNttAt (f : Ptr) : Prog isa := callR ("vg_mldsa_inv_ntt" ++ P.sfx) P.invNtt [.ptr f, .ptr (sc oPS)]
 
 def mulAt (h f g : Ptr) : Prog isa := callR "vg_mldsa_multiply_ntt" P.mul [.ptr h, .ptr f, .ptr g]
 

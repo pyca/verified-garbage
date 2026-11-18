@@ -25,7 +25,8 @@ Untrusted: everything here is checked by Lean. `signMessage n c p` and
 `verifyMessageCached n c p`, for any functions on `μ` `c` they can call
 (`SignFn`, `VerifyFn`), are verified against `signMessageContract p Arm.abi
 52` and `verifyMessageCachedContract p Arm.abi 52`; `vg_mldsa*_sign` and
-`vg_mldsa*_verify` are such functions (`sign44Fn`, …). The preconditions
+`vg_mldsa*_verify` are such functions (`signFn`, `verifyFn`), with the
+transforms with `umaal` or without (`u`). The preconditions
 are satisfiable with 56 bytes of stack (48 for `sign_prepared`), the frame
 sizes of the model the functions are registered with
 (`Proof/MlDsa/Arm/Scrub.lean`), so with less (`Arm.Scrub.sat_stack_le`).
@@ -148,19 +149,15 @@ theorem verifyMessageCached_verified {p : Params} {n : String} {c : Prog isa} (h
 
 /-! ## The functions on `μ` -/
 
-theorem sign44Fn : SignFn mlDsa44 false (Impl.MlDsa.Arm.Sign.sign Sign.prims mlDsa44) :=
-  ⟨(Sign.signE_verified (.inl rfl)).1, (Sign.signE_verified (.inl rfl)).2.1, by decide +kernel⟩
-theorem sign65Fn : SignFn mlDsa65 false (Impl.MlDsa.Arm.Sign.sign Sign.prims mlDsa65) :=
-  ⟨(Sign.signE_verified (.inr (.inl rfl))).1, (Sign.signE_verified (.inr (.inl rfl))).2.1, by decide +kernel⟩
-theorem sign87Fn : SignFn mlDsa87 false (Impl.MlDsa.Arm.Sign.sign Sign.prims mlDsa87) :=
-  ⟨(Sign.signE_verified (.inr (.inr rfl))).1, (Sign.signE_verified (.inr (.inr rfl))).2.1, by decide +kernel⟩
+theorem signFn (u : Bool) {p : Params} (h3 : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) :
+    SignFn p false (Impl.MlDsa.Arm.Sign.sign (Sign.prims u) p) :=
+  ⟨(Sign.signE_verified u h3).1, (Sign.signE_verified u h3).2.1,
+    by rcases h3 with rfl | rfl | rfl <;> cases u <;> decide +kernel⟩
 
-theorem verify44Fn : VerifyFn mlDsa44 false Impl.MlDsa.Arm.Verify.verify44 :=
-  ⟨(Verify.verifyE_verified (.inl rfl)).1, (Verify.verifyE_verified (.inl rfl)).2.1, by decide +kernel⟩
-theorem verify65Fn : VerifyFn mlDsa65 false Impl.MlDsa.Arm.Verify.verify65 :=
-  ⟨(Verify.verifyE_verified (.inr (.inl rfl))).1, (Verify.verifyE_verified (.inr (.inl rfl))).2.1, by decide +kernel⟩
-theorem verify87Fn : VerifyFn mlDsa87 false Impl.MlDsa.Arm.Verify.verify87 :=
-  ⟨(Verify.verifyE_verified (.inr (.inr rfl))).1, (Verify.verifyE_verified (.inr (.inr rfl))).2.1, by decide +kernel⟩
+theorem verifyFn (u : Bool) {p : Params} (h3 : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) :
+    VerifyFn p false (Impl.MlDsa.Arm.Verify.verify (Impl.MlDsa.Arm.Verify.prims u) p) :=
+  ⟨(Verify.verifyE_verified u h3).1, (Verify.verifyE_verified u h3).2.1,
+    by rcases h3 with rfl | rfl | rfl <;> cases u <;> decide +kernel⟩
 
 /-! ## Prepared keys -/
 
@@ -357,13 +354,15 @@ theorem preparedVerifyMessage_verified {p : Params} {n : String} {c : Prog isa} 
 
 /-! ## The functions on `μ` with prepared keys -/
 
-theorem signPreparedFn {p : Params} (h3 : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) :
-    SignFn p true (Impl.MlDsa.Arm.Sign.signPrepared Sign.prims p) :=
-  ⟨Sign.entry_correct h3 true, Sign.entry_ct h3 true, by rcases h3 with rfl | rfl | rfl <;> decide +kernel⟩
+theorem signPreparedFn (u : Bool) {p : Params} (h3 : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) :
+    SignFn p true (Impl.MlDsa.Arm.Sign.signPrepared (Sign.prims u) p) :=
+  ⟨Sign.entry_correct u h3 true, Sign.entry_ct u h3 true,
+    by rcases h3 with rfl | rfl | rfl <;> cases u <;> decide +kernel⟩
 
-theorem verifyPreparedFn {p : Params} (h3 : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) :
-    VerifyFn p true (Impl.MlDsa.Arm.Verify.verifyPrepared Impl.MlDsa.Arm.Verify.prims p) :=
-  ⟨Verify.entry_correct h3 true, Verify.entry_ct h3 true, by rcases h3 with rfl | rfl | rfl <;> decide +kernel⟩
+theorem verifyPreparedFn (u : Bool) {p : Params} (h3 : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) :
+    VerifyFn p true (Impl.MlDsa.Arm.Verify.verifyPrepared (Impl.MlDsa.Arm.Verify.prims u) p) :=
+  ⟨Verify.entry_correct u h3 true, Verify.entry_ct u h3 true,
+    by rcases h3 with rfl | rfl | rfl <;> cases u <;> decide +kernel⟩
 
 /-! ## Public external-μ contracts -/
 
@@ -392,12 +391,12 @@ theorem externalSign_sat {p : Params} (hp : p ∈ params) :
     simp only [ha] <;> sig_and_intros <;> (try dsimp only [externalSignSat, Sign.signSat, stackArgAddr])
   all_goals first | exact hk' | rfl | decide | exact Region.disjoint_of_sep (by decide)
 
-theorem externalSign_verified {p : Params} (hp : p ∈ params) :
-    Verified Arm.target (Impl.MlDsa.Arm.Sign.signPrepared Sign.prims p)
+theorem externalSign_verified (u : Bool) {p : Params} (hp : p ∈ params) :
+    Verified Arm.target (Impl.MlDsa.Arm.Sign.signPrepared (Sign.prims u) p)
       (preparedSignContract p Arm.abi 44) := by
   have h3 : Sign.Ok3 p := by
     simp only [params, List.mem_cons, List.not_mem_nil, or_false] at hp; exact hp
-  refine Verified.of_correct (Sign.entry_correct h3 true) (Sign.entry_ct h3 true) ?_
+  refine Verified.of_correct (Sign.entry_correct u h3 true) (Sign.entry_ct u h3 true) ?_
   refine { pre := ?_, post := ?_, pub := ?_, sat := Arm.Scrub.sat_stack_le (by decide) (externalSign_sat hp) }
   · intro s h
     sig_pre [preparedSignContract, preparedSignSig, Sign.signE, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] at h
@@ -431,12 +430,12 @@ theorem externalVerify_sat {p : Params} (hp : p ∈ params) :
     sig_and_intros
   all_goals first | exact hk | rfl | decide | exact Region.disjoint_of_sep (by decide)
 
-theorem externalVerify_verified {p : Params} (hp : p ∈ params) :
-    Verified Arm.target (Impl.MlDsa.Arm.Verify.verifyPrepared Impl.MlDsa.Arm.Verify.prims p)
+theorem externalVerify_verified (u : Bool) {p : Params} (hp : p ∈ params) :
+    Verified Arm.target (Impl.MlDsa.Arm.Verify.verifyPrepared (Impl.MlDsa.Arm.Verify.prims u) p)
       (preparedVerifyContract p Arm.abi 52) := by
   have h3 : Verify.Ok3 p := by
     simp only [params, List.mem_cons, List.not_mem_nil, or_false] at hp; exact hp
-  refine Verified.of_correct (Verify.entry_correct h3 true) (Verify.entry_ct h3 true) ?_
+  refine Verified.of_correct (Verify.entry_correct u h3 true) (Verify.entry_ct u h3 true) ?_
   refine { pre := ?_, post := ?_, pub := ?_, sat := Arm.Scrub.sat_stack_le (by decide) (externalVerify_sat hp) }
   · intro s h
     sig_pre [preparedVerifyContract, preparedVerifySig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] at h

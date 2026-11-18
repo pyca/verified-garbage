@@ -37,7 +37,7 @@ def entry (body : Prog isa) : Prog isa :=
 
 /-- `NTT` of the polynomial at `offset` in `prepared`, in place. -/
 def transform (P : Prims) (offset : Nat) : Prog isa :=
-  callR "vg_mldsa_ntt" P.ntt [.ptr (.r8, offset), .ptr (.r7, 0)]
+  callR ("vg_mldsa_ntt" ++ P.sfx) P.ntt [.ptr (.r8, offset), .ptr (.r7, 0)]
 
 /-- `NTT(t₁[i] · 2ᵈ)` of the public key, to its place in `prepared`. -/
 def publicPoly (P : Prims) (p : Params) (i : Nat) : Prog isa :=

@@ -10,8 +10,9 @@ public import VerifiedGarbage.Impl.MlDsa.Arm.Arith.Common
 # ML-DSA on 32-bit ARM: the values of the arithmetic modulo `q`
 
 What the pieces of code of `Impl/MlDsa/Arm/Arith/Common.lean` compute, as
-functions on words (`bred`, `bcsub`, `bquot`, `bmulq`, `bmulz`), and their
-values (`bmulz_toNat`: `mulz` is `mulzN`, congruent to the product and less
+functions on words (`bred`, `bcsub`, `bquot`, `bmulq`, `bmulz`, and
+`bmulzU` for `mulzU`), and their values (`bmulz_toNat`: `mulz` is `mulzN`,
+`bmulzU_toNat`: `mulzU` is `mulzUN`, each congruent to the product and less
 than `2q`), from the arithmetic of `Proof/MlDsa/Arith/Mul32.lean`; and the
 symbolic execution of `mulz`, once for any state (`mulz_ok`).
 -/
@@ -91,6 +92,32 @@ theorem bmulz_toNat (b : BitVec 32) {z : BitVec 32} (hz : z.toNat < q) :
     (bmulz b z (bquot z)).toNat = mulzN b.toNat z.toNat := by
   unfold bmulz mulzN
   rw [bred_toNat, bmulq_toNat (by rw [bred_toNat]; exact red23_le b.isLt) hz, bred_toNat]
+
+/-- What `mulzU acc b t Z ZS` leaves in `acc`, for `z` in `Z` and `zs` in `ZS`. -/
+def bmulzU (b z zs : BitVec 32) : BitVec 32 :=
+  BitVec.ofNat 32 ((b.toNat * zs.toNat + b.toNat + (0 : BitVec 32).toNat) / 2 ^ 32) * Nw + (b * z + Qw)
+
+/-- `zsN z`, as a word. -/
+abbrev bzs (z : BitVec 32) : BitVec 32 := BitVec.ofNat 32 (zsN z.toNat)
+
+theorem bzs_toNat {z : BitVec 32} (hz : z.toNat < q) : (bzs z).toNat = zsN z.toNat := by
+  rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (zsN_lt hz)
+
+theorem bmulzU_toNat (b : BitVec 32) {z : BitVec 32} (hz : z.toNat < q) :
+    (bmulzU b z (bzs z)).toNat = mulzUN b.toNat z.toNat := by
+  obtain ⟨h1, h2⟩ := mulzUN_bounds (b := b.toNat) (z := z.toNat) b.isLt
+  have hQ : (b.toNat * zsN z.toNat + b.toNat) / 2 ^ 32 < 2 ^ 32 := by
+    have := Nat.mul_le_mul (Nat.le_sub_one_of_lt b.isLt) (Nat.le_sub_one_of_lt (zsN_lt hz))
+    have hb := b.isLt
+    generalize b.toNat * zsN z.toNat = X at this ⊢
+    omega_using [this, hb]
+  have hX : (b * z + Qw).toNat = (b.toNat * z.toNat + q) % 2 ^ 32 := by
+    rw [BitVec.toNat_add, BitVec.toNat_mul, q_eq, show Qw.toNat = 8380417 from rfl, Nat.mod_add_mod]
+  unfold bmulzU mulzUN
+  rw [BitVec.toNat_add, BitVec.toNat_mul, hX, bzs_toNat hz, show (0 : BitVec 32).toNat = 0 from rfl, Nat.add_zero,
+    BitVec.toNat_ofNat, Nat.mod_eq_of_lt hQ,
+    show Nw.toNat = 4286586879 from rfl]
+  exact sub_mul_low h1 (by unfold mulzUN at h2; rw [q_eq] at h2 ⊢; omega_using [h2])
 
 /-- A word is the element of `ℤ_q` it represents, once reduced. -/
 theorem ofNat_val_eq {v : BitVec 32} {x : Zq} (h : v.toNat = x.val) : v = BitVec.ofNat 32 x.val := by

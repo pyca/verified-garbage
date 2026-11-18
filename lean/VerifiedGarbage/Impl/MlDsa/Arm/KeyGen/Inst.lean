@@ -21,10 +21,11 @@ namespace VG.Impl.MlDsa.Arm.KeyGen
 
 open VG.Arm
 
-/-- The ARM implementations of the primitives key generation calls. -/
-def prims : Prims where
-  ntt := Arith.ntt
-  invNtt := Arith.nttInv
+/-- The ARM implementations of the primitives key generation calls, the
+transforms with `umaal` if `u`. -/
+def prims (u : Bool) : Prims where
+  ntt := Arith.ntt u
+  invNtt := Arith.nttInv u
   mul := Arith.mul
   mulAdd := Arith.mulAdd
   add := Arith.add
@@ -33,12 +34,6 @@ def prims : Prims where
   power2Round := Round.power2Round
   simpleBitPack := Pack.simpleBitPack
   bitPack := Pack.bitPack
-
-/-- `vg_mldsa44_keygen` -/
-def keyGen44 : Prog isa := keyGen prims Spec.MlDsa.mlDsa44
-/-- `vg_mldsa65_keygen` -/
-def keyGen65 : Prog isa := keyGen prims Spec.MlDsa.mlDsa65
-/-- `vg_mldsa87_keygen` -/
-def keyGen87 : Prog isa := keyGen prims Spec.MlDsa.mlDsa87
+  sfx := Arith.suffix u
 
 end VG.Impl.MlDsa.Arm.KeyGen

@@ -14,9 +14,10 @@ import VerifiedGarbage.Proof.MlDsa.Arm.Pack.BitPack
 /-!
 # ML-DSA key generation on 32-bit ARM, with this library's primitives
 
-The ARM implementations of the primitives (`prims`) are verified with at most
-28 bytes of stack, and their frames use no more (`prims_ok`), so key
-generation with them is verified with 40 (`keyGen_verified`).
+The ARM implementations of the primitives (`prims u`, the transforms with
+`umaal` or without) are verified with at most 28 bytes of stack, and their
+frames use no more (`prims_ok`), so key generation with them is verified
+with 40 (`keyGen_verified`).
 -/
 
 @[expose] public section
@@ -26,16 +27,16 @@ namespace VG.Proof.MlDsa.Arm.KeyGen
 open VG VG.Arm
 open VG.Impl.MlDsa.Arm.KeyGen
 
-theorem prims_ok : PrimsOk prims 28 where
-  ntt := ⟨⟨28, by decide, Arith.Ntt.verified⟩, by decide +kernel⟩
-  invNtt := ⟨⟨28, by decide, Arith.NttInv.verified⟩, by decide +kernel⟩
-  mul := ⟨⟨24, by decide, Arith.Mul.mul_verified⟩, by decide +kernel⟩
-  mulAdd := ⟨⟨24, by decide, Arith.Mul.mulAdd_verified⟩, by decide +kernel⟩
-  add := ⟨⟨0, by decide, Arith.AddSub.add_verified⟩, by decide +kernel⟩
-  rejNtt := ⟨⟨8, by decide, Sample.rejNTT_verified⟩, by decide +kernel⟩
-  rejBounded := ⟨⟨8, by decide, Sample.rejBounded_verified⟩, by decide +kernel⟩
-  power2Round := ⟨⟨4, by decide, Round.P2R.verified⟩, by decide +kernel⟩
-  simpleBitPack := ⟨⟨0, by decide, Pack.simpleBitPack_verified⟩, by decide +kernel⟩
-  bitPack := ⟨⟨4, by decide, Pack.bitPack_verified⟩, by decide +kernel⟩
+theorem prims_ok (u : Bool) : PrimsOk (prims u) 28 where
+  ntt := ⟨⟨28, by decide, Arith.Ntt.verified u⟩, by cases u <;> decide +kernel⟩
+  invNtt := ⟨⟨28, by decide, Arith.NttInv.verified u⟩, by cases u <;> decide +kernel⟩
+  mul := ⟨⟨24, by decide, Arith.Mul.mul_verified⟩, by cases u <;> decide +kernel⟩
+  mulAdd := ⟨⟨24, by decide, Arith.Mul.mulAdd_verified⟩, by cases u <;> decide +kernel⟩
+  add := ⟨⟨0, by decide, Arith.AddSub.add_verified⟩, by cases u <;> decide +kernel⟩
+  rejNtt := ⟨⟨8, by decide, Sample.rejNTT_verified⟩, by cases u <;> decide +kernel⟩
+  rejBounded := ⟨⟨8, by decide, Sample.rejBounded_verified⟩, by cases u <;> decide +kernel⟩
+  power2Round := ⟨⟨4, by decide, Round.P2R.verified⟩, by cases u <;> decide +kernel⟩
+  simpleBitPack := ⟨⟨0, by decide, Pack.simpleBitPack_verified⟩, by cases u <;> decide +kernel⟩
+  bitPack := ⟨⟨4, by decide, Pack.bitPack_verified⟩, by cases u <;> decide +kernel⟩
 
 end VG.Proof.MlDsa.Arm.KeyGen

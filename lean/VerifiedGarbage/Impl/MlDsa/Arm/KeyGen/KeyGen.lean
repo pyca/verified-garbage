@@ -68,6 +68,9 @@ structure Prims where
   simpleBitPack : Prog isa
   /-- `vg_mldsa_bit_pack` -/
   bitPack : Prog isa
+  /-- What follows the names of the transforms, and of the functions that
+  call them (`Arith.suffix`): nothing, or `_umaal`. -/
+  sfx : String
 
 /-! ## The layout of the working space -/
 
@@ -99,10 +102,10 @@ def oT0 (p : Params) : Nat := 128 + lenS p * (p.ℓ + p.k)
 section
 variable (P : Prims)
 
-def nttAt (f : Ptr) : Prog isa := callAt "vg_mldsa_ntt" P.ntt [(.r0, .ptr f), (.r1, .ptr (sc oSS))]
+def nttAt (f : Ptr) : Prog isa := callAt ("vg_mldsa_ntt" ++ P.sfx) P.ntt [(.r0, .ptr f), (.r1, .ptr (sc oSS))]
 
 def invNttAt (f : Ptr) : Prog isa :=
-  callAt "vg_mldsa_inv_ntt" P.invNtt [(.r0, .ptr f), (.r1, .ptr (sc oSS))]
+  callAt ("vg_mldsa_inv_ntt" ++ P.sfx) P.invNtt [(.r0, .ptr f), (.r1, .ptr (sc oSS))]
 
 def mulAt (h f g : Ptr) : Prog isa :=
   callAt "vg_mldsa_multiply_ntt" P.mul [(.r0, .ptr h), (.r1, .ptr f), (.r2, .ptr g)]

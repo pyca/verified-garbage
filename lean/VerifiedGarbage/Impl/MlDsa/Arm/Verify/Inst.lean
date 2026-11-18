@@ -23,9 +23,9 @@ namespace VG.Impl.MlDsa.Arm.Verify
 open VG.Arm
 
 /-- The ARM implementations of the primitives verification calls. -/
-def prims : Prims where
-  ntt := Arith.ntt
-  invNtt := Arith.nttInv
+def prims (u : Bool) : Prims where
+  ntt := Arith.ntt u
+  invNtt := Arith.nttInv u
   mul := Arith.mul
   mulAdd := Arith.mulAdd
   sub := Arith.sub
@@ -37,12 +37,6 @@ def prims : Prims where
   unpackT1 := Pack.unpackT1
   hintUnpack := Pack.hintBitUnpack
   normLt := Round.normLt
-
-/-- `vg_mldsa44_verify` -/
-def verify44 : Prog isa := verify prims Spec.MlDsa.mlDsa44
-/-- `vg_mldsa65_verify` -/
-def verify65 : Prog isa := verify prims Spec.MlDsa.mlDsa65
-/-- `vg_mldsa87_verify` -/
-def verify87 : Prog isa := verify prims Spec.MlDsa.mlDsa87
+  sfx := Arith.suffix u
 
 end VG.Impl.MlDsa.Arm.Verify

@@ -25,6 +25,13 @@ leaves `b · z - Q · q` where that is less than `2³²`:
   (`mulqN_mod`);
 * `mulzN b z = red23 (mulqN (red23 b) z)` is congruent to `b · z`
   (`mulzN_mod`) and at most `redMax`, less than `2q`, for any `b < 2³²`.
+
+A target that also has the high word of a 64-bit product (32-bit ARM's
+`umaal`) takes the quotient from it: with `zsN z = ⌊2³² z / q⌋`,
+`Q = ⌊b (zsN z + 1) / 2³²⌋` is `⌊b z / q⌋` or one more for any `b < 2³²`
+and `z < q`, so `mulzUN b z = b · z + q - Q · q` is congruent to `b · z` and
+less than `2q` (`mulzUN_bounds`, `mulzUN_mod`); and `z` is the high word of
+`zsN z · q + 2³² - 1` (`zsN_zeta`).
 -/
 
 @[expose] public section
@@ -104,5 +111,45 @@ theorem mulzN_le {b z : Nat} (hb : b < 2 ^ 32) (hz : z < q) : mulzN b z ≤ redM
 theorem mulzN_mod {b z : Nat} (hb : b < 2 ^ 32) (hz : z < q) : mulzN b z % q = b * z % q := by
   unfold mulzN
   rw [red23_mod, mulqN_mod (red23_le hb) hz, Nat.mul_mod, red23_mod, ← Nat.mul_mod]
+
+/-! ## With the high word of a 64-bit product -/
+
+/-- `⌊2³² z / q⌋`. -/
+def zsN (z : Nat) : Nat := 2 ^ 32 * z / q
+
+theorem zsN_lt {z : Nat} (hz : z < q) : zsN z < 2 ^ 32 := by
+  unfold zsN
+  rw [q_eq] at *
+  omega_using [hz]
+
+/-- `z` from `zsN z`: `⌈zsN z · q / 2³²⌉`. -/
+theorem zsN_zeta {z : Nat} (hz : z < q) : (zsN z * q + (2 ^ 32 - 1)) / 2 ^ 32 = z := by
+  unfold zsN
+  rw [q_eq] at *
+  omega_using [hz]
+
+/-- `b · z + q - Q · q`, for `Q` the high word of `b · (zsN z + 1)`. -/
+def mulzUN (b z : Nat) : Nat := b * z + q - (b * zsN z + b) / 2 ^ 32 * q
+
+theorem mulzUN_bounds {b z : Nat} (hb : b < 2 ^ 32) :
+    (b * zsN z + b) / 2 ^ 32 * q ≤ b * z + q ∧ mulzUN b z < 2 * q := by
+  have h1 : zsN z * q ≤ 2 ^ 32 * z := Nat.div_mul_le_self _ _
+  have h2 : 2 ^ 32 * z < zsN z * q + q := Nat.lt_div_mul_add (by decide)
+  obtain h3 : b * zsN z * q ≤ 2 ^ 32 * (b * z) := by
+    have := Nat.mul_le_mul_left b h1
+    rwa [← Nat.mul_assoc b (zsN z) q, Nat.mul_left_comm b (2 ^ 32) z] at this
+  obtain h4 : 2 ^ 32 * (b * z) ≤ b * zsN z * q + b * q := by
+    have := Nat.mul_le_mul_left b (Nat.le_of_lt h2)
+    rwa [Nat.mul_left_comm b (2 ^ 32) z, Nat.mul_add, ← Nat.mul_assoc b (zsN z) q] at this
+  unfold mulzUN
+  rw [q_eq] at *
+  generalize b * zsN z = X at h3 h4 ⊢
+  generalize b * z = A at h3 h4 ⊢
+  omega_using [hb, h3, h4]
+
+theorem mulzUN_mod {b z : Nat} (hb : b < 2 ^ 32) : mulzUN b z % q = b * z % q := by
+  unfold mulzUN
+  rw [Nat.mul_comm ((b * zsN z + b) / 2 ^ 32), Nat.sub_mul_mod (by rw [Nat.mul_comm]; exact (mulzUN_bounds hb).1),
+    Nat.add_mod_right]
 
 end VG.Proof.MlDsa.Arith

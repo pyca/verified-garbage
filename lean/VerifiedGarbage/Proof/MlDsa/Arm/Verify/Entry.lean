@@ -320,8 +320,9 @@ end
 /-- One of the parameter sets of Table 1. -/
 abbrev Ok3 (p : Params) : Prop := p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87
 
-theorem withCache_stack {p : Params} (h3 : Ok3 p) : FrameStack.armStack (withCache prims p) ≤ kernStack := by
-  rcases h3 with rfl | rfl | rfl <;> decide +kernel
+theorem withCache_stack (u : Bool) {p : Params} (h3 : Ok3 p) :
+    FrameStack.armStack (withCache (prims u) p) ≤ kernStack := by
+  rcases h3 with rfl | rfl | rfl <;> cases u <;> decide +kernel
 
 /-- The word `r4` was pushed to, by the entry's frame, is kept by the call. -/
 theorem r4_kept {p : Params} {prepared : Bool} {σ s s₃ : State} (hpre : VE p prepared entryStack σ)
@@ -351,9 +352,9 @@ theorem r4_kept {p : Params} {prepared : Bool} {σ s s₃ : State} (hpre : VE p 
         ⟨State.addr (σ.sp - BitVec.ofNat 32 8) - BitVec.ofNat 64 44, 44⟩
       exact Offset.base_disjoint_below (State.addr (σ.sp - BitVec.ofNat 32 8)) (n := 44) (k := 4) (by omega_using [])
 
-theorem entry_correct {p : Params} (h3 : Ok3 p) (prepared : Bool) (σ : State)
+theorem entry_correct (u : Bool) {p : Params} (h3 : Ok3 p) (prepared : Bool) (σ : State)
     (hpre : (verifyE p prepared entryStack).pre σ) :
-    ∃ t s', Exec isa (verifyEntry prims p prepared) σ t s' ∧ abiPreserved σ s' ∧
+    ∃ t s', Exec isa (verifyEntry (prims u) p prepared) σ t s' ∧ abiPreserved σ s' ∧
       (verifyE p prepared entryStack).post σ s' := by
   have hpre' : VE p prepared entryStack σ := hpre
   have hσ := hpre'.stk
@@ -367,8 +368,8 @@ theorem entry_correct {p : Params} (h3 : Ok3 p) (prepared : Bool) (σ : State)
   refine WP.seq (WP.mono (blockA_ok p prepared σ) fun s₁ hm => ?_)
   have cov := kE_covers hpre' hm hc
   refine WP.seq (Argon2.Arm.frameCall_ok (rs := [.r12, .lr]) (t := .r12) (by decide) (by decide) (by decide)
-    (withCache_correct prims_ok hF (STK := kernStack) (by decide)) (K := 44) (by
-      have := withCache_stack h3; simp only [List.length_cons, List.length_nil, kernStack] at this ⊢; omega_using [this])
+    (withCache_correct (prims_ok u) hF (STK := kernStack) (by decide)) (K := 44) (by
+      have := withCache_stack u h3; simp only [List.length_cons, List.length_nil, kernStack] at this ⊢; omega_using [this])
     (by rw [hm.sp, FrameStack.sub_toNat' (by omega_using [h16])]; simp only [entryStack] at hσ; omega_arith)
     (kE_pre hpre' hm hc) cov.1 cov.2 fun s₂ _ _ _ hA hpost => ?_)
   refine VG.Proof.MdStream.Arm.wp_mov (VG.Proof.MdStream.Arm.op2_reg _ _) fun σ₄ u₄ => WP.block_nil ?_
@@ -410,9 +411,9 @@ theorem setC_nomem (p : Params) (prepared : Bool) :
       List.mem_cons, List.not_mem_nil, or_false] at hi <;>
     rcases hi with rfl | rfl | rfl | rfl <;> rfl
 
-theorem entry_ct {p : Params} (h3 : Ok3 p) (prepared : Bool) :
+theorem entry_ct (u : Bool) {p : Params} (h3 : Ok3 p) (prepared : Bool) :
     ConstantTime isa (verifyE p prepared entryStack).pre (verifyE p prepared entryStack).pub
-      (verifyEntry prims p prepared) := by
+      (verifyEntry (prims u) p prepared) := by
   have hF := vfacts h3
   have hc : 0 < p.k := by have := hF.k; omega_using [this]
   unfold verifyEntry
@@ -429,7 +430,7 @@ theorem entry_ct {p : Params} (h3 : Ok3 p) (prepared : Bool) :
     fun a b ⟨h, ha, hb⟩ => ⟨ha ▸ WP.mono (blockA_ok p prepared σ₁) fun _ e => ⟨h, e⟩,
       hb ▸ blockA_ok p prepared σ₂⟩) ?_
   refine RelCT.seq (Argon2.Arm.frameCall_rel (rs := [.r12, .lr]) (t := .r12) (by decide)
-    (withCache_correct prims_ok hF (STK := kernStack) (by decide)) (withCache_ct prims_ok hF (by decide))
+    (withCache_correct (prims_ok u) hF (STK := kernStack) (by decide)) (withCache_ct (prims_ok u) hF (by decide))
     (kRd p prepared σ₁) σ₁.wr fun x y ⟨_, ⟨⟨h₁, h₂, hp⟩, m₁⟩, m₂⟩ => ?_)
     (block_nomem_tr fun i hi s => by simp only [List.mem_singleton] at hi; subst hi; rfl)
   have hp0 := hp

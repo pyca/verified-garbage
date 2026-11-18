@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.MlDsa.Arm.Arith.NttLoop
 public import VerifiedGarbage.Proof.MlDsa.Arm.Arith.Saving
 import VerifiedGarbage.Proof.MlDsa.Arm.Arith.AddSub
+public import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Arm.Contract
@@ -11,6 +12,7 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.MlDsa.Arm.Arith.NttLoop
 meta import VerifiedGarbage.Proof.MlDsa.Arm.Arith.Saving
 meta import VerifiedGarbage.Proof.MlDsa.Arm.Arith.AddSub
+meta import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
@@ -27,7 +29,9 @@ or `blkS_ok` for its blocks), which leaves words congruent to the
 specification's (`layersF_rel`), and the last is `layerFC`, which leaves its
 coefficients (`layerFC_val`, `ntt_split`), all in the frames that save
 `r4`–`r10` (`wp_saving`). `LI`, `pro_ok`, `PreE` and `pre_entry` serve `NTT⁻¹`
-too.
+too. All of it is for either product by a zeta (`u`: with `umaal` or
+without); with `umaal` the code is constant time by `taintU`, for which what
+a `umaal` writes is secret (`ct_of_savingU`).
 -/
 
 @[expose] public section
@@ -39,6 +43,32 @@ open VG.Spec.MlDsa (q n Poly Zq zetas)
 open VG.Proof.MlDsa (coeffAt polyAt Reduced PolyIs)
 open VG.Proof.MlDsa.Arith
 open VG.Proof.MlDsa.Arm.Arith.AddSub (reduced_zero)
+
+/-- `ct_saving`, with `umaal`: `saving rs body` is constant time if `taintU`
+proves `body` constant time from the registers `ps` public. -/
+theorem ct_savingU (rs : List Reg) (body : Prog isa) (ps : List Reg) {hc : VG.Taint.Hint VG.Arm.taintU.T}
+    (h : (VG.Arm.taintU.check (Taint.ofRegs ps) body hc).isSome = true) :
+    ∀ P : State → State → Prop, (∀ s₁ s₂, P s₁ s₂ → s₁.sp = s₂.sp ∧ ∀ r ∈ ps, s₁.gpr r = s₂.gpr r) →
+      RelCT isa P (saving rs body) fun _ _ => True := by
+  induction rs with
+  | nil =>
+    intro P hP
+    exact RelCT.taint (A := VG.Arm.taintU) (Taint.ofRegs ps)
+      (fun s₁ s₂ hp => Taint.agree_ofRegs (hP s₁ s₂ hp).2) h
+  | cons r rs ih =>
+    intro P hP
+    refine RelCT.frame (fun s₁ s₂ hp => (hP s₁ s₂ hp).1) (ih _ fun a b ⟨s₁, s₂, hp, h₁, h₂⟩ => ?_)
+    obtain ⟨rfl, -⟩ := push_pushed' h₁
+    obtain ⟨rfl, -⟩ := push_pushed' h₂
+    obtain ⟨hsp, hg⟩ := hP s₁ s₂ hp
+    exact ⟨by rw [pushed_sp, pushed_sp, hsp], fun r hr => by rw [pushed_gpr, pushed_gpr]; exact hg r hr⟩
+
+/-- `ct_of_saving`, with `umaal`. -/
+theorem ct_of_savingU {k : Contract isa} (rs : List Reg) (body : Prog isa) (ps : List Reg)
+    (hpub : ∀ s₁ s₂, k.pub s₁ s₂ → s₁.sp = s₂.sp ∧ ∀ r ∈ ps, s₁.gpr r = s₂.gpr r)
+    {hc : VG.Taint.Hint VG.Arm.taintU.T} (h : (VG.Arm.taintU.check (Taint.ofRegs ps) body hc).isSome = true) :
+    ConstantTime isa k.pre k.pub (saving rs body) :=
+  RelCT.constantTime (ct_savingU rs body ps h _ fun s₁ s₂ hp => hpub s₁ s₂ hp.2.2)
 
 section
 variable (s : State)
@@ -125,11 +155,12 @@ theorem zetaTab_of : TabOf zetaTab zetas := fun k _ => zetaNat_eq k
 theorem zetaTab_lt : ∀ k < 256, zetaTab k < q := fun k _ => zetaNat_lt k
 
 /-- A layer of `NTT` whose blocks are `blk`, with the butterfly `op`. -/
-theorem layF_ok {s₁ : State} (hp : PreB s₁) {blk : Prog isa} {op : Word → Word → Zq → Word × Word} {len : Nat}
-    (hlen : len ∈ nttLens) (hblk : BlockOk blk op zetaTab zetas .add len (pf s₁) (ps s₁)) {G : LPoly}
-    {s : State} (hI : LI zetaTab s₁ G (128 / len) s) :
+theorem layF_ok {u : Bool} {s₁ : State} (hp : PreB s₁) {blk : Prog isa} {op : Word → Word → Zq → Word × Word}
+    {len : Nat} (hlen : len ∈ nttLens) (hblk : BlockOk blk op (tabOf u zetaTab) zetas .add len (pf s₁) (ps s₁))
+    {G : LPoly} {s : State} (hI : LI (tabOf u zetaTab) s₁ G (128 / len) s) :
     WP isa (nttLay blk len) s fun s' =>
-      LI zetaTab s₁ (Lazy.layF (lblk op zetas) G len (fun c => 128 / len + c) (128 / len)) (256 / len) s' := by
+      LI (tabOf u zetaTab) s₁ (Lazy.layF (lblk op zetas) G len (fun c => 128 / len + c) (128 / len))
+        (256 / len) s' := by
   obtain ⟨h1, h2⟩ := lens_fwd len hlen
   refine WP.mono (lay_ok hblk hlen (fun c => 128 / len + c) (fun c hc => by omega_using [h1, h2, hc])
     (fun c _ => by
@@ -140,11 +171,11 @@ theorem layF_ok {s₁ : State} (hp : PreB s₁) {blk : Prog isa} {op : Word → 
     (by rw [hI.keep.wr]; exact List.mem_append_right _ hp.wS) hp.fs.symm hI.tab)
     fun s' ⟨hP, hf, h0, h1', hk'⟩ => hI.step hP hf h0 (by rw [h1', ← h1]) hk' hp.fs.symm
 
-theorem lays_ok {s₁ : State} (hp : PreB s₁) (blk : Nat → Prog isa) :
+theorem lays_ok {u : Bool} {s₁ : State} (hp : PreB s₁) (blk : Nat → Prog isa) :
     ∀ (ls : List Nat) (G : LPoly) (k : Nat) (s : State),
-      (∀ len ∈ ls, len ∈ nttLens ∧ BlockOk (blk len) opF zetaTab zetas .add len (pf s₁) (ps s₁)) → Chain k ls →
-      LI zetaTab s₁ G k s →
-      WP isa (lays blk ls) s fun s' => LI zetaTab s₁ (ls.foldl layerF G) (chainEnd k ls) s'
+      (∀ len ∈ ls, len ∈ nttLens ∧ BlockOk (blk len) (opF u) (tabOf u zetaTab) zetas .add len (pf s₁) (ps s₁)) →
+      Chain k ls → LI (tabOf u zetaTab) s₁ G k s →
+      WP isa (lays blk ls) s fun s' => LI (tabOf u zetaTab) s₁ (ls.foldl (layerF u) G) (chainEnd k ls) s'
   | [], _, _, _, _, _, hI => WP.block_nil hI
   | len :: ls, G, k, s, hls, ⟨hk, hc⟩, hI => by
     obtain ⟨hlen, hblk⟩ := hls len (List.mem_cons_self ..)
@@ -153,7 +184,7 @@ theorem lays_ok {s₁ : State} (hp : PreB s₁) (blk : Nat → Prog isa) :
 
 /-- The table `tab` to `scratch`, `-q` to `r4`, `q` to `r5`, and `r1` at
 entry `k`. -/
-theorem pro_ok {s : State} (hp : PreB s) (tab : Nat → Nat) (ht : ∀ k < 256, tab k < q) (d : BitVec 32) (k : Nat)
+theorem pro_ok {s : State} (hp : PreB s) (tab : Nat → Nat) (ht : ∀ k < 256, tab k < 2 ^ 32) (d : BitVec 32) (k : Nat)
     (hd : BitVec.ofNat 32 (4 * k) = d) (he : encodable d = true) :
     WP isa (.block (storeTab tab 256 ++ loadNQ .r4 ++ loadQ .r5 ++ ([.dp .add .r1 .r1 (.imm d)] : List Instr))) s
       (LI tab s (lift (polyAt s.mem (F s))) k) := by
@@ -199,8 +230,8 @@ theorem preserved_of {s s' s₂ : State}
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp at hn
     exacts [h11, hlr]
 
-theorem correct {s : State} (hp : PreE s) :
-    WP isa Impl.MlDsa.Arm.Arith.ntt s fun s' => (∀ r ∈ preserved, s'.gpr r = s.gpr r) ∧ s'.sp = s.sp ∧
+theorem correct (u : Bool) {s : State} (hp : PreE s) :
+    WP isa (Impl.MlDsa.Arm.Arith.ntt u) s fun s' => (∀ r ∈ preserved, s'.gpr r = s.gpr r) ∧ s'.sp = s.sp ∧
       PolyIs s'.mem (F s) (Spec.MlDsa.ntt (polyAt s.mem (F s))) := by
   refine WP.mono (wp_saving nttSaved _ (W := [polyRegion (F s), polyRegion (S s)])
     (fun s₂ => s₂.gpr .r11 = s.gpr .r11 ∧ s₂.gpr .lr = s.gpr .lr ∧
@@ -210,30 +241,30 @@ theorem correct {s : State} (hp : PreE s) :
       rw [List.mem_singleton.mp hr]; exact (stack_disj hp _ (List.mem_cons_self ..)).symm) hq⟩) fun s₁ hE => ?_)
     fun s' ⟨s₂, ⟨h11, hlr, hq⟩, hm, _, hsp, _, hg⟩ => ⟨preserved_of hg h11 hlr, hsp, hm ▸ hq⟩
   obtain ⟨hpB, eP, eF, eS⟩ := pre_entry hp hE
-  refine WP.seq (WP.mono (pro_ok hpB zetaTab zetaTab_lt 4 1 rfl (by decide)) fun s₂ hI => ?_)
-  refine WP.seq (WP.mono (lays_ok hpB (fun len => nttBlkL (Impl.MlDsa.Arm.Arith.bfly len) len .add)
+  refine WP.seq (WP.mono (pro_ok hpB (tabOf u zetaTab) (tabOf_lt u zetaTab_lt) 4 1 rfl (by decide)) fun s₂ hI => ?_)
+  refine WP.seq (WP.mono (lays_ok hpB (fun len => nttBlkL u (Impl.MlDsa.Arm.Arith.bfly u len) len .add)
     [128, 64, 32, 16, 8] _ 1 s₂ (fun len hl => ?_) (by simp only [Chain]; decide) hI) fun s₃ hI₃ => ?_)
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hl
     rcases hl with rfl | rfl | rfl | rfl | rfl <;>
-      exact ⟨by decide, blkL_ok bfly_core zetaTab_of hpB.fitF hpB.fitS (by decide) .add (.inl rfl) (by decide)
+      exact ⟨by decide, blkL_ok (bfly_core u) zetaTab_of hpB.fitF hpB.fitS (by decide) .add (.inl rfl) (by decide)
         (by decide)⟩
-  refine WP.seq (WP.mono (lays_ok hpB (fun len => nttBlkS (Impl.MlDsa.Arm.Arith.bfly len) len .add)
+  refine WP.seq (WP.mono (lays_ok hpB (fun len => nttBlkS u (Impl.MlDsa.Arm.Arith.bfly u len) len .add)
     [4, 2] _ 32 s₃ (fun len hl => ?_) (by simp only [Chain]; decide) hI₃) fun s₄ hI₄ => ?_)
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hl
     rcases hl with rfl | rfl <;>
-      exact ⟨by decide, blkS_ok bfly_core zetaTab_of hpB.fitF hpB.fitS (by decide) .add (.inl rfl) (by decide)⟩
+      exact ⟨by decide, blkS_ok (bfly_core u) zetaTab_of hpB.fitF hpB.fitS (by decide) .add (.inl rfl) (by decide)⟩
   refine WP.mono (layF_ok hpB (len := 1) (by decide)
-    (blkS_ok bflyC_core zetaTab_of hpB.fitF hpB.fitS (by decide) .add (.inl rfl) (by decide)) hI₄)
+    (blkS_ok (bflyC_core u) zetaTab_of hpB.fitF hpB.fitS (by decide) .add (.inl rfl) (by decide)) hI₄)
     fun s₅ hI₅ => ⟨?_, ?_, ?_, ?_⟩
   · rw [← eF, ← eS]; exact hI₅.frame
   · rw [hI₅.keep.gpr .r11 (by decide)]; exact congrFun hE.gpr _
   · rw [hI₅.keep.gpr .lr (by decide)]; exact congrFun hE.gpr _
-  · have hr := layersF_rel [4, 2] _ _ _ (by decide) (by decide)
-      (layersF_rel [128, 64, 32, 16, 8] 1 _ _ (by decide) (by decide) (lift_rel (polyAt s₁.mem (F s₁))))
+  · have hr := layersF_rel u [4, 2] _ _ _ (by decide) (by decide)
+      (layersF_rel u [128, 64, 32, 16, 8] 1 _ _ (by decide) (by decide) (lift_rel (polyAt s₁.mem (F s₁))))
     rw [← eP, ← eF, ntt_split]
     refine polyIs_of_toNat fun j hj => ?_
     rw [hI₅.poly j hj]
-    exact layerFC_val (by decide) hr (by decide) (by rw [n_eq] at hj; exact hj)
+    exact layerFC_val u (by decide) hr (by decide) (by rw [n_eq] at hj; exact hj)
 
 /-- A state satisfying the precondition. -/
 def satState : State where
@@ -248,19 +279,33 @@ def satState : State where
   rd := []
   wr := [⟨0x1000, 1024⟩, ⟨0x2000, 1024⟩]
 
-theorem verified : Verified Arm.target Impl.MlDsa.Arm.Arith.ntt (Proof.MlDsa.nttContract Arm.abi 28) := by
-  refine ⟨fun s hs => ?_, ct_of_saving nttSaved _ [.r0, .r1] (fun s₁ s₂ h => ?_) (by native_taint_decide), ?_⟩
-  · obtain ⟨t, s', he, hpres, hsp, h⟩ := correct (pre_of hs)
+/-- The public data of the transforms' contract are the stack pointer and
+the two pointers. -/
+theorem pub_of {t : Poly → Poly} {s₁ s₂ : State} (h : (Proof.MlDsa.inPlaceContract Arm.abi t 28).pub s₁ s₂) :
+    s₁.sp = s₂.sp ∧ ∀ r ∈ [Reg.r0, Reg.r1], s₁.gpr r = s₂.gpr r := by
+  sig_pub [Proof.MlDsa.inPlaceContract, Proof.MlDsa.inPlaceSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+    Arm.Loc.val] at h
+  obtain ⟨hsp, h0, h1⟩ := h
+  refine ⟨hsp, fun r hr => ?_⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl <;> with_reducible assumption
+
+theorem ct_base : ConstantTime isa (Proof.MlDsa.nttContract Arm.abi 28).pre (Proof.MlDsa.nttContract Arm.abi 28).pub
+    (Impl.MlDsa.Arm.Arith.ntt false) :=
+  ct_of_saving nttSaved _ [.r0, .r1] (fun _ _ h => pub_of h) (by native_taint_decide)
+
+theorem ct_umaal : ConstantTime isa (Proof.MlDsa.nttContract Arm.abi 28).pre (Proof.MlDsa.nttContract Arm.abi 28).pub
+    (Impl.MlDsa.Arm.Arith.ntt true) :=
+  ct_of_savingU nttSaved _ [.r0, .r1] (fun _ _ h => pub_of h) (by taint_decide)
+
+theorem verified (u : Bool) :
+    Verified Arm.target (Impl.MlDsa.Arm.Arith.ntt u) (Proof.MlDsa.nttContract Arm.abi 28) := by
+  refine ⟨fun s hs => ?_, by cases u <;> [exact ct_base; exact ct_umaal], ?_⟩
+  · obtain ⟨t, s', he, hpres, hsp, h⟩ := correct u (pre_of hs)
     refine ⟨t, s', he, ⟨hpres, hsp⟩, ?_⟩
     sig_post [Proof.MlDsa.nttContract, Proof.MlDsa.inPlaceContract, Proof.MlDsa.inPlaceSig, Arm.abi,
       Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
     exact h
-  · sig_pub [Proof.MlDsa.nttContract, Proof.MlDsa.inPlaceContract, Proof.MlDsa.inPlaceSig, Arm.abi,
-      Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] at h
-    obtain ⟨hsp, h0, h1⟩ := h
-    refine ⟨hsp, fun r hr => ?_⟩
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> with_reducible assumption
   · refine ⟨satState, ?_⟩
     sig_apply_check
     · decide +kernel

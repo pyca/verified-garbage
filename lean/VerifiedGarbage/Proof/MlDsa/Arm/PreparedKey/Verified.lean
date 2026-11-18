@@ -12,7 +12,8 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 # ML-DSA on ARMv7, preparing keys: verified
 
 `vg_mldsa*_prepare_verifying_key` and `vg_mldsa*_prepare_signing_key`, with
-the ARM implementations of the primitives, are verified against
+the ARM implementations of the primitives (`prims um`, the transforms with
+`umaal` or without), are verified against
 `preparePublicKeyContract` and `prepareSecretKeyContract` with 48 bytes of
 stack.
 -/
@@ -51,20 +52,21 @@ theorem writes_sub (bytes count : Nat) (u : State) :
   exact ⟨_, hn, hs⟩
 
 /-- The body of `vg_mldsa*_prepare_verifying_key`, as `entry_correct` takes it. -/
-theorem public_wp {p : Params} (hp : Ok3 p) (u : State) (L : Lay callStack (input p.pkLen) (output p.pkLen p.k) u) :
-    WP isa (.seq (copy (.r8, 0) (.r4, 0) p.pkLen) (seqR (publicPoly prims p) 0 p.k)) u fun t =>
+theorem public_wp (um : Bool) {p : Params} (hp : Ok3 p) (u : State)
+    (L : Lay callStack (input p.pkLen) (output p.pkLen p.k) u) :
+    WP isa (.seq (copy (.r8, 0) (.r4, 0) p.pkLen) (seqR (publicPoly (prims um) p) 0 p.k)) u fun t =>
       PostB callStack u t ((writes p.pkLen p.k).map (toR u)) ∧ CS u t ∧
       bytesAt t.mem (pa t (.r8, 0)) p.pkLen = bytesAt u.mem (pa u (.r4, 0)) p.pkLen ∧
       PreparedPublicKey p t.mem (pa t (.r8, 0)) :=
-  WP.mono (public_body prims_ok t1Callee hp u L) fun _ ⟨h, hk⟩ => ⟨h.post, h.cs, h.encoded, hk⟩
+  WP.mono (public_body (prims_ok um) t1Callee hp u L) fun _ ⟨h, hk⟩ => ⟨h.post, h.cs, h.encoded, hk⟩
 
-theorem secret_wp {p : Params} (hp : Ok3 p) (u : State)
+theorem secret_wp (um : Bool) {p : Params} (hp : Ok3 p) (u : State)
     (L : Lay callStack (input p.skLen) (output p.skLen (p.ℓ + 2 * p.k)) u) :
-    WP isa (.seq (copy (.r8, 0) (.r4, 0) p.skLen) (seqR (secretPoly prims p) 0 (p.ℓ + 2 * p.k))) u fun t =>
+    WP isa (.seq (copy (.r8, 0) (.r4, 0) p.skLen) (seqR (secretPoly (prims um) p) 0 (p.ℓ + 2 * p.k))) u fun t =>
       PostB callStack u t ((writes p.skLen (p.ℓ + 2 * p.k)).map (toR u)) ∧ CS u t ∧
       bytesAt t.mem (pa t (.r8, 0)) p.skLen = bytesAt u.mem (pa u (.r4, 0)) p.skLen ∧
       PreparedSecretKey p t.mem (pa t (.r8, 0)) :=
-  WP.mono (secret_body prims_ok hp u L) fun _ ⟨h, hk⟩ => ⟨h.post, h.cs, h.encoded, hk⟩
+  WP.mono (secret_body (prims_ok um) hp u L) fun _ ⟨h, hk⟩ => ⟨h.post, h.cs, h.encoded, hk⟩
 
 theorem sizes {p : Params} (hp : Ok3 p) :
     p.pkLen < 2 ^ 32 ∧ p.pkLen + 1024 * p.k < 2 ^ 32 ∧ p.skLen < 2 ^ 32 ∧
@@ -96,36 +98,36 @@ theorem prepSat_secret {p : Params} (hp : Ok3 p) :
   sig_sat_check [prepareSecretKeyContract, prepareSecretKeySig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
     Arm.Loc.val, prepSat]
 
-theorem preparePublic_verified {p : Params} (hp : Ok3 p) :
-    Verified Arm.target (preparePublic prims p) (preparePublicKeyContract p Arm.abi prepStack) := by
+theorem preparePublic_verified (um : Bool) {p : Params} (hp : Ok3 p) :
+    Verified Arm.target (preparePublic (prims um) p) (preparePublicKeyContract p Arm.abi prepStack) := by
   obtain ⟨s1, s2, -, -⟩ := sizes hp
   refine ⟨fun σ hσ => ?_, ?_, ?_⟩
   · obtain ⟨t, s', he, ha, hb, hk⟩ := entry_correct (B := fun m a => PreparedPublicKey p m a) _ s1 s2
-      (writes_sub _ _) (public_wp hp)
+      (writes_sub _ _) (public_wp um hp)
       (fun _ _ _ hb h => VG.Proof.MlDsa.PreparedKey.preparedPublicKey_of_bytes hb h) (public_pre hσ)
     refine ⟨t, s', he, ha, ?_⟩
     sig_post [preparePublicKeyContract, preparePublicKeySig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
       Arm.Loc.val]
     exact ⟨hb, hk⟩
-  · refine RelCT.constantTime (RelCT.mono (entry_tr s1 s2 (public_rel prims_ok t1Callee hp))
+  · refine RelCT.constantTime (RelCT.mono (entry_tr s1 s2 (public_rel (prims_ok um) t1Callee hp))
       (fun x y ⟨hx, hy, hpub⟩ => ?_) fun _ _ h => h)
     sig_pub [preparePublicKeyContract, preparePublicKeySig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
       Arm.Loc.val] at hpub
     exact ⟨public_pre hx, public_pre hy, hpub⟩
   · exact ⟨_, prepSat_public hp⟩
 
-theorem prepareSecret_verified {p : Params} (hp : Ok3 p) :
-    Verified Arm.target (prepareSecret prims p) (prepareSecretKeyContract p Arm.abi prepStack) := by
+theorem prepareSecret_verified (um : Bool) {p : Params} (hp : Ok3 p) :
+    Verified Arm.target (prepareSecret (prims um) p) (prepareSecretKeyContract p Arm.abi prepStack) := by
   obtain ⟨-, -, s1, s2⟩ := sizes hp
   refine ⟨fun σ hσ => ?_, ?_, ?_⟩
   · obtain ⟨t, s', he, ha, hb, hk⟩ := entry_correct (B := fun m a => PreparedSecretKey p m a) _ s1 s2
-      (writes_sub _ _) (secret_wp hp)
+      (writes_sub _ _) (secret_wp um hp)
       (fun _ _ _ hb h => VG.Proof.MlDsa.PreparedKey.preparedSecretKey_of_bytes hb h) (secret_pre hσ)
     refine ⟨t, s', he, ha, ?_⟩
     sig_post [prepareSecretKeyContract, prepareSecretKeySig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
       Arm.Loc.val]
     exact ⟨hb, hk⟩
-  · refine RelCT.constantTime (RelCT.mono (entry_tr s1 s2 (secret_rel prims_ok hp))
+  · refine RelCT.constantTime (RelCT.mono (entry_tr s1 s2 (secret_rel (prims_ok um) hp))
       (fun x y ⟨hx, hy, hpub⟩ => ?_) fun _ _ h => h)
     sig_pub [prepareSecretKeyContract, prepareSecretKeySig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
       Arm.Loc.val] at hpub
@@ -135,14 +137,14 @@ theorem prepareSecret_verified {p : Params} (hp : Ok3 p) :
 /-- Memory holding a prepared public key at `0x200000`, of the key of zeros. -/
 theorem prepared_public_mem {p : Params} (hp : Ok3 p) : ∃ m : Mem,
     bytesAt m 0x200000 p.pkLen = bytesAt (fun _ => 0) 0x1000 p.pkLen ∧ PreparedPublicKey p m 0x200000 := by
-  obtain ⟨_, s', -, -, hq⟩ := (preparePublic_verified hp).1 _ (prepSat_public hp)
+  obtain ⟨_, s', -, -, hq⟩ := (preparePublic_verified false hp).1 _ (prepSat_public hp)
   sig_post [preparePublicKeyContract, preparePublicKeySig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
     Arm.Loc.val] at hq
   exact ⟨s'.mem, hq.1, hq.2⟩
 
 /-- Memory holding a prepared private key at `0x200000`. -/
 theorem prepared_secret_mem {p : Params} (hp : Ok3 p) : ∃ m : Mem, PreparedSecretKey p m 0x200000 := by
-  obtain ⟨_, s', -, -, hq⟩ := (prepareSecret_verified hp).1 _ (prepSat_secret hp)
+  obtain ⟨_, s', -, -, hq⟩ := (prepareSecret_verified false hp).1 _ (prepSat_secret hp)
   sig_post [prepareSecretKeyContract, prepareSecretKeySig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
     Arm.Loc.val] at hq
   exact ⟨s'.mem, hq.2⟩

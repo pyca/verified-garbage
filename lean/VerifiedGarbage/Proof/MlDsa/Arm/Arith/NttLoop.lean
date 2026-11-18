@@ -15,7 +15,9 @@ section
 # ML-DSA on 32-bit ARM: the butterflies of `NTT` and `NTT⁻¹`
 
 The butterflies of `Impl/MlDsa/Arm/Arith/Ntt.lean` reduce only the product,
-to `mulz`'s value (`bprod`, at most `redMax < 2q`), and store the sum and
+to `mulzV u`'s value (`bprod u`: `mulz`'s or, with `umaal`, `mulzU`'s, each
+less than `2q` and congruent to the product, `bprod_lt` and `bprod_mod`, which
+is all the layers below use of it), and store the sum and
 the difference as they are: the coefficients between layers are words
 (`Proof/MlDsa/Arith/Lazy.lean`'s `Word`) congruent to the specification's,
 and bounded by a multiple of `q` that grows with each layer, as on RISC-V
@@ -87,82 +89,101 @@ theorem toW_val (v : BitVec 32) : (toW v).val = v.toNat := by
 theorem wb_of {v : BitVec 32} {x : Word} (h : v.toNat = x.val) : v = wb x :=
   BitVec.eq_of_toNat_eq (by rw [wb_toNat, h])
 
-/-- The reduced product of `y` and the zeta `z`, as `mulz` leaves it. -/
-abbrev bprod (y : BitVec 32) (z : Zq) : BitVec 32 := bmulz y (zb z) (bquot (zb z))
+/-- What the code keeps beside the multiplier `z`: its `zp`, or with `umaal`
+(`u`) its `zsN`. -/
+def zw (u : Bool) (z : BitVec 32) : BitVec 32 := if u then bzs z else bquot z
 
-theorem bprod_toNat (y : BitVec 32) (z : Zq) : (bprod y z).toNat = mulzN y.toNat z.val := by
-  rw [bmulz_toNat y (by rw [toNat_val]; exact z.isLt), toNat_val]
+theorem zw_false (z : BitVec 32) : zw false z = bquot z := rfl
+
+theorem zw_true (z : BitVec 32) : zw true z = bzs z := rfl
+
+/-- What `mulzV u acc b t Z ZS` leaves in `acc`, for `z` in `Z` and `zs` in `ZS`. -/
+def bmulzV (u : Bool) (b z zs : BitVec 32) : BitVec 32 := if u then bmulzU b z zs else bmulz b z zs
+
+/-- The reduced product of `y` and the zeta `z`, as `mulzV u` leaves it. -/
+abbrev bprod (u : Bool) (y : BitVec 32) (z : Zq) : BitVec 32 := bmulzV u y (zb z) (zw u (zb z))
+
+/-- The reduced product is less than `2q`. -/
+theorem bprod_lt (u : Bool) (y : BitVec 32) (z : Zq) : (bprod u y z).toNat < 2 * q := by
+  have hz : (zb z).toNat < q := by rw [toNat_val]; exact z.isLt
+  cases u
+  · exact (bmulz_toNat y hz).symm ▸ Nat.lt_of_le_of_lt (mulzN_le y.isLt hz) redMax_lt
+  · exact (bmulzU_toNat y hz).symm ▸ (mulzUN_bounds y.isLt).2
+
+/-- The reduced product is congruent to the product. -/
+theorem bprod_mod (u : Bool) (y : BitVec 32) (z : Zq) : (bprod u y z).toNat % q = y.toNat * z.val % q := by
+  have hz : (zb z).toNat < q := by rw [toNat_val]; exact z.isLt
+  cases u
+  · exact (congrArg (· % q) (bmulz_toNat y hz)).trans (by rw [mulzN_mod y.isLt hz, toNat_val])
+  · exact (congrArg (· % q) (bmulzU_toNat y hz)).trans (by rw [mulzUN_mod y.isLt, toNat_val])
 
 /-! ## The forward butterfly -/
 
 /-- The reduced product of the word `y` and the zeta. -/
-def prodF (y : Word) (z : Zq) : Nat := mulzN y.val z.val
+def prodF (u : Bool) (y : Word) (z : Zq) : Nat := (bprod u (wb y) z).toNat
 
-theorem prodF_lt (y : Word) (z : Zq) : prodF y z < 2 * q :=
-  Nat.lt_of_le_of_lt (mulzN_le y.isLt z.isLt) redMax_lt
+theorem prodF_lt (u : Bool) (y : Word) (z : Zq) : prodF u y z < 2 * q := bprod_lt u _ z
 
-theorem prodF_mod (y : Word) (z : Zq) : prodF y z % q = z.val * y.val % q := by
-  rw [prodF, mulzN_mod y.isLt z.isLt, Nat.mul_comm]
+theorem prodF_mod (u : Bool) (y : Word) (z : Zq) : prodF u y z % q = z.val * y.val % q := by
+  rw [prodF, bprod_mod, wb_toNat, Nat.mul_comm]
 
 /-- What the forward butterfly stores: `x + t` and `x + 2q - t`, as words. -/
-def opF (x y : Word) (z : Zq) : Word × Word :=
-  (toW (wb x + bprod (wb y) z), toW (wb x + 16760834 - bprod (wb y) z))
+def opF (u : Bool) (x y : Word) (z : Zq) : Word × Word :=
+  (toW (wb x + bprod u (wb y) z), toW (wb x + 16760834 - bprod u (wb y) z))
 
-theorem opF_values (x y : Word) (z : Zq) (hx : x.val < 15 * q) :
-    (opF x y z).1.val = x.val + prodF y z ∧ (opF x y z).2.val = x.val + 2 * q - prodF y z := by
-  have ht : prodF y z < 2 * 8380417 := prodF_lt y z
-  have e := bprod_toNat (wb y) z
-  rw [wb_toNat] at e
+theorem opF_values (u : Bool) (x y : Word) (z : Zq) (hx : x.val < 15 * q) :
+    (opF u x y z).1.val = x.val + prodF u y z ∧ (opF u x y z).2.val = x.val + 2 * q - prodF u y z := by
+  have ht : prodF u y z < 2 * 8380417 := prodF_lt u y z
+  obtain e : (bprod u (wb y) z).toNat = prodF u y z := rfl
   have hx' := wb_toNat x
   simp only [opF, toW_val]
-  unfold prodF at ht ⊢
-  generalize mulzN y.val z.val = P at e ht ⊢
-  generalize bprod (wb y) z = T at e ⊢
+  generalize prodF u y z = P at e ht ⊢
+  generalize bprod u (wb y) z = T at e ⊢
   generalize wb x = X at hx' ⊢
   rw [q_eq] at hx ⊢
   constructor <;> bv_omega
 
-theorem opF_bound (x y : Word) (z : Zq) {b : Nat} (hb : b ≤ 15) (hx : x.val < b * q) :
-    (opF x y z).1.val < (b + 2) * q ∧ (opF x y z).2.val < (b + 2) * q := by
-  have hv := opF_values x y z (Nat.lt_of_lt_of_le hx (Nat.mul_le_mul_right q hb))
-  have ht := prodF_lt y z
+theorem opF_bound (u : Bool) (x y : Word) (z : Zq) {b : Nat} (hb : b ≤ 15) (hx : x.val < b * q) :
+    (opF u x y z).1.val < (b + 2) * q ∧ (opF u x y z).2.val < (b + 2) * q := by
+  have hv := opF_values u x y z (Nat.lt_of_lt_of_le hx (Nat.mul_le_mul_right q hb))
+  have ht := prodF_lt u y z
   rw [hv.1, hv.2, Nat.add_mul]
   omega_using [hx, ht]
 
-theorem opF_residue (x y : Word) (z : Zq) (hx : x.val < 15 * q) :
-    residue (opF x y z).1 = residue x + z * residue y ∧
-    residue (opF x y z).2 = residue x - z * residue y := by
-  have hv := opF_values x y z hx
-  have ht := prodF_lt y z
-  have hm' : (z * residue y).val = prodF y z % q := by
+theorem opF_residue (u : Bool) (x y : Word) (z : Zq) (hx : x.val < 15 * q) :
+    residue (opF u x y z).1 = residue x + z * residue y ∧
+    residue (opF u x y z).2 = residue x - z * residue y := by
+  have hv := opF_values u x y z hx
+  have ht := prodF_lt u y z
+  have hm' : (z * residue y).val = prodF u y z % q := by
     rw [Fin.val_mul, residue, Fin.val_ofNat, Nat.mul_mod_mod, prodF_mod]
   constructor
   · apply Fin.ext
     rw [Fin.val_add, hm']
-    change (opF x y z).1.val % q = (x.val % q + prodF y z % q) % q
+    change (opF u x y z).1.val % q = (x.val % q + prodF u y z % q) % q
     rw [hv.1, Nat.add_mod]
   · apply Fin.ext
     rw [Fin.val_sub, hm']
-    change (opF x y z).2.val % q = (q - prodF y z % q + x.val % q) % q
+    change (opF u x y z).2.val % q = (q - prodF u y z % q + x.val % q) % q
     rw [hv.2]
-    have ht' : prodF y z < 2 * 8380417 := ht
-    change (x.val + 2 * 8380417 - prodF y z) % 8380417 =
-      (8380417 - prodF y z % 8380417 + x.val % 8380417) % 8380417
+    have ht' : prodF u y z < 2 * 8380417 := ht
+    generalize prodF u y z = P at ht' ⊢
+    change (x.val + 2 * 8380417 - P) % 8380417 = (8380417 - P % 8380417 + x.val % 8380417) % 8380417
     omega_using [ht']
 
 /-! ## The inverse butterfly -/
 
 /-- The reduced product of the zeta and `x + 128 q - y`. -/
-def prodI (x y : Word) (z : Zq) : Nat := mulzN (x.val + 128 * q - y.val) z.val
+def prodI (u : Bool) (x y : Word) (z : Zq) : Nat := (bprod u (wb x + 1072693376 - wb y) z).toNat
 
 /-- What the inverse butterfly stores: `x + y`, and the reduced product of
 the zeta and `x + 128 q - y`, as words. -/
-def opI (x y : Word) (z : Zq) : Word × Word :=
-  (toW (wb x + wb y), toW (bprod (wb x + 1072693376 - wb y) z))
+def opI (u : Bool) (x y : Word) (z : Zq) : Word × Word :=
+  (toW (wb x + wb y), toW (bprod u (wb x + 1072693376 - wb y) z))
 
-theorem opI_values (x y : Word) (z : Zq) (hx : x.val < 128 * q) (hy : y.val < 128 * q) :
-    (opI x y z).1.val = x.val + y.val ∧ (opI x y z).2.val = prodI x y z ∧
-      prodI x y z < 2 * q ∧ prodI x y z % q = z.val * (x.val + 128 * q - y.val) % q := by
+theorem opI_values (u : Bool) (x y : Word) (z : Zq) (hx : x.val < 128 * q) (hy : y.val < 128 * q) :
+    (opI u x y z).1.val = x.val + y.val ∧ (opI u x y z).2.val = prodI u x y z ∧
+      prodI u x y z < 2 * q ∧ prodI u x y z % q = z.val * (x.val + 128 * q - y.val) % q := by
   have hx' := wb_toNat x
   have hy' := wb_toNat y
   have hx2 : x.val < 128 * 8380417 := hx
@@ -172,36 +193,34 @@ theorem opI_values (x y : Word) (z : Zq) (hx : x.val < 128 * q) (hy : y.val < 12
     generalize wb x = X at hx' ⊢
     generalize wb y = Y at hy' ⊢
     bv_omega
-  have hlt : x.val + 128 * q - y.val < 2 ^ 32 := by rw [q_eq]; omega_using [hx2]
-  refine ⟨?_, ?_, Nat.lt_of_le_of_lt (mulzN_le hlt z.isLt) redMax_lt, ?_⟩
+  refine ⟨?_, ?_, bprod_lt u _ z, ?_⟩
   · simp only [opI, toW_val]
     generalize wb x = X at hx' ⊢
     generalize wb y = Y at hy' ⊢
     bv_omega
-  · simp only [opI, toW_val]
-    rw [bprod_toNat, hd, prodI]
-  · rw [prodI, mulzN_mod hlt z.isLt, Nat.mul_comm]
+  · simp only [opI, toW_val, prodI]
+  · rw [prodI, bprod_mod, hd, Nat.mul_comm]
 
-theorem opI_bound (x y : Word) (z : Zq) {b : Nat} (hb : 1 ≤ b) (hb' : b ≤ 128) (hx : x.val < b * q)
-    (hy : y.val < b * q) : (opI x y z).1.val < 2 * b * q ∧ (opI x y z).2.val < 2 * b * q := by
-  have hv := opI_values x y z (Nat.lt_of_lt_of_le hx (Nat.mul_le_mul_right q hb'))
+theorem opI_bound (u : Bool) (x y : Word) (z : Zq) {b : Nat} (hb : 1 ≤ b) (hb' : b ≤ 128) (hx : x.val < b * q)
+    (hy : y.val < b * q) : (opI u x y z).1.val < 2 * b * q ∧ (opI u x y z).2.val < 2 * b * q := by
+  have hv := opI_values u x y z (Nat.lt_of_lt_of_le hx (Nat.mul_le_mul_right q hb'))
     (Nat.lt_of_lt_of_le hy (Nat.mul_le_mul_right q hb'))
   rw [hv.1, hv.2.1, Nat.mul_assoc]
   constructor
   · omega_using [hx, hy]
   · exact Nat.lt_of_lt_of_le hv.2.2.1 (Nat.mul_le_mul_left 2 (Nat.le_mul_of_pos_left q hb))
 
-theorem opI_residue (x y : Word) (z : Zq) (hx : x.val < 128 * q) (hy : y.val < 128 * q) :
-    residue (opI x y z).1 = residue x + residue y ∧
-    residue (opI x y z).2 = z * (residue x - residue y) := by
-  have hv := opI_values x y z hx hy
+theorem opI_residue (u : Bool) (x y : Word) (z : Zq) (hx : x.val < 128 * q) (hy : y.val < 128 * q) :
+    residue (opI u x y z).1 = residue x + residue y ∧
+    residue (opI u x y z).2 = z * (residue x - residue y) := by
+  have hv := opI_values u x y z hx hy
   constructor
   · apply Fin.ext
     rw [Fin.val_add]
-    change (opI x y z).1.val % q = (x.val % q + y.val % q) % q
+    change (opI u x y z).1.val % q = (x.val % q + y.val % q) % q
     rw [hv.1, Nat.add_mod]
   · apply Fin.ext
-    change (opI x y z).2.val % q = (z * (residue x - residue y)).val
+    change (opI u x y z).2.val % q = (z * (residue x - residue y)).val
     rw [hv.2.1, hv.2.2.2, Fin.val_mul, Fin.val_sub, residue, residue, Fin.val_ofNat, Fin.val_ofNat]
     have hl : (x.val + 128 * q - y.val) % q = (q - y.val % q + x.val % q) % q := by
       rw [q_eq] at hx hy ⊢; omega_using [hy]
@@ -209,7 +228,7 @@ theorem opI_residue (x y : Word) (z : Zq) (hx : x.val < 128 * q) (hy : y.val < 1
 
 /-- The inverse butterfly with the negated zeta, as the code multiplies by
 `negZetaTab`. -/
-def opIn (x y : Word) (z : Zq) : Word × Word := opI x y (-z)
+def opIn (u : Bool) (x y : Word) (z : Zq) : Word × Word := opI u x y (-z)
 
 /-! ## Layers -/
 
@@ -234,18 +253,18 @@ abbrev lblk (op : Word → Word → Zq → Word × Word) (Z : Nat → Zq) : LPol
   fun f len k st t => Lazy.blockN (Lazy.bfly op) f len (Z k) st t
 
 /-- A layer of the forward butterflies on words. -/
-def layerF (F : LPoly) (len : Nat) : LPoly :=
-  Lazy.layF (lblk opF zetas) F len (fun c => 128 / len + c) (128 / len)
+def layerF (u : Bool) (F : LPoly) (len : Nat) : LPoly :=
+  Lazy.layF (lblk (opF u) zetas) F len (fun c => 128 / len + c) (128 / len)
 
 /-- A layer of the inverse butterflies on words. -/
-def layerI (F : LPoly) (len : Nat) : LPoly :=
-  Lazy.layF (lblk opI fun k => -zetas k) F len (fun c => 256 / len - 1 - c) (128 / len)
+def layerI (u : Bool) (F : LPoly) (len : Nat) : LPoly :=
+  Lazy.layF (lblk (opI u) fun k => -zetas k) F len (fun c => 256 / len - 1 - c) (128 / len)
 
-theorem lblkF_ok : Lazy.BlkOk (lblk opF zetas) opF := Lazy.block_ok opF
+theorem lblkF_ok (u : Bool) : Lazy.BlkOk (lblk (opF u) zetas) (opF u) := Lazy.block_ok (opF u)
 
-theorem lblkI_ok : Lazy.BlkOk (lblk opI fun k => -zetas k) opIn :=
+theorem lblkI_ok (u : Bool) : Lazy.BlkOk (lblk (opI u) fun k => -zetas k) (opIn u) :=
   ⟨fun _ _ _ _ => rfl, fun _ _ _ _ _ _ => Lazy.blockN_add _ _ _ _ _ _ _,
-    fun f _ _ _ _ hl ht hs _ hi => Lazy.blockN_bfly_get' opI f hl ht hs hi⟩
+    fun f _ _ _ _ hl ht hs _ hi => Lazy.blockN_bfly_get' (opI u) f hl ht hs hi⟩
 
 /-- The facts of the layers' sizes. -/
 theorem len_facts {len : Nat} (hlen : len ∈ nttLens) :
@@ -263,69 +282,69 @@ theorem nttInvLayer_eq (F : Poly) (len : Nat) :
     nttInvLayer F len = layF (fun f len k st t => blockN VG.Proof.MlDsa.Arith.bflyInv f len (-zetas k) st t)
       F len (fun c => 256 / len - 1 - c) (128 / len) := rfl
 
-theorem layerF_rel {b : Nat} (hb : b ≤ 15) {F : LPoly} {f : Poly} (hF : Rel b F f)
-    {len : Nat} (hlen : len ∈ nttLens) : Rel (b + 2) (layerF F len) (nttLayer f len) := by
+theorem layerF_rel (u : Bool) {b : Nat} (hb : b ≤ 15) {F : LPoly} {f : Poly} (hF : Rel b F f)
+    {len : Nat} (hlen : len ∈ nttLens) : Rel (b + 2) (layerF u F len) (nttLayer f len) := by
   have hl := len_facts hlen
   intro i hi
-  rw [layerF, Lazy.layF_get lblkF_ok F hl.1 _ (by omega) hi,
+  rw [layerF, Lazy.layF_get (lblkF_ok u) F hl.1 _ (by omega) hi,
     nttLayer_eq, layF_get nttBlk_ok f hl.1 _ (by omega) hi]
   simp only [ite_eq_left (show i < 2 * len * (128 / len) by omega)]
   by_cases h : i % (2 * len) < len
   · simp only [ite_eq_left h]
     have h0 := hF i hi
     have h1 := hF (i + len) ((hl.2.2 i hi).1 h)
-    exact ⟨(opF_bound _ _ _ hb h0.1).1, by
-      rw [(opF_residue _ _ _ (Nat.lt_of_lt_of_le h0.1 (Nat.mul_le_mul_right q hb))).1, h0.2, h1.2]⟩
+    exact ⟨(opF_bound u _ _ _ hb h0.1).1, by
+      rw [(opF_residue u _ _ _ (Nat.lt_of_lt_of_le h0.1 (Nat.mul_le_mul_right q hb))).1, h0.2, h1.2]⟩
   · simp only [ite_eq_right h]
     have h0 := hF (i - len) (by omega_using [hi])
     have h1 := hF i hi
-    exact ⟨(opF_bound _ _ _ hb h0.1).2, by
-      rw [(opF_residue _ _ _ (Nat.lt_of_lt_of_le h0.1 (Nat.mul_le_mul_right q hb))).2, h0.2, h1.2]⟩
+    exact ⟨(opF_bound u _ _ _ hb h0.1).2, by
+      rw [(opF_residue u _ _ _ (Nat.lt_of_lt_of_le h0.1 (Nat.mul_le_mul_right q hb))).2, h0.2, h1.2]⟩
 
-theorem layerI_rel {b : Nat} (hb : 1 ≤ b) (hb' : b ≤ 128) {F : LPoly} {f : Poly}
-    (hF : Rel b F f) {len : Nat} (hlen : len ∈ nttLens) : Rel (2 * b) (layerI F len) (nttInvLayer f len) := by
+theorem layerI_rel (u : Bool) {b : Nat} (hb : 1 ≤ b) (hb' : b ≤ 128) {F : LPoly} {f : Poly}
+    (hF : Rel b F f) {len : Nat} (hlen : len ∈ nttLens) : Rel (2 * b) (layerI u F len) (nttInvLayer f len) := by
   have hl := len_facts hlen
   have lt : ∀ {x : Word}, x.val < b * q → x.val < 128 * q := fun h =>
     Nat.lt_of_lt_of_le h (Nat.mul_le_mul_right q hb')
   intro i hi
-  rw [layerI, Lazy.layF_get lblkI_ok F hl.1 _ (by omega) hi,
+  rw [layerI, Lazy.layF_get (lblkI_ok u) F hl.1 _ (by omega) hi,
     nttInvLayer_eq, layF_get nttInvBlk_ok f hl.1 _ (by omega) hi]
   simp only [ite_eq_left (show i < 2 * len * (128 / len) by omega)]
   by_cases h : i % (2 * len) < len
   · simp only [ite_eq_left h]
     have h0 := hF i hi
     have h1 := hF (i + len) ((hl.2.2 i hi).1 h)
-    exact ⟨(opI_bound _ _ (-_) hb hb' h0.1 h1.1).1, by
-      rw [opIn, (opI_residue _ _ _ (lt h0.1) (lt h1.1)).1, h0.2, h1.2]⟩
+    exact ⟨(opI_bound u _ _ (-_) hb hb' h0.1 h1.1).1, by
+      rw [opIn, (opI_residue u _ _ _ (lt h0.1) (lt h1.1)).1, h0.2, h1.2]⟩
   · simp only [ite_eq_right h]
     have h0 := hF (i - len) (by omega_using [hi])
     have h1 := hF i hi
-    refine ⟨(opI_bound _ _ (-_) hb hb' h0.1 h1.1).2, ?_⟩
-    rw [opIn, (opI_residue _ _ _ (lt h0.1) (lt h1.1)).2, h0.2, h1.2]
+    refine ⟨(opI_bound u _ _ (-_) hb hb' h0.1 h1.1).2, ?_⟩
+    rw [opIn, (opI_residue u _ _ _ (lt h0.1) (lt h1.1)).2, h0.2, h1.2]
     exact neg_mul_sub _ _ _
 
 /-- The layers `ls` of `NTT`, from words less than `b q`. -/
-theorem layersF_rel : ∀ (ls : List Nat) (b : Nat) (F : LPoly) (f : Poly), (∀ len ∈ ls, len ∈ nttLens) →
-    b + 2 * ls.length ≤ 17 → Rel b F f → Rel (b + 2 * ls.length) (ls.foldl layerF F) (ls.foldl nttLayer f)
+theorem layersF_rel (u : Bool) : ∀ (ls : List Nat) (b : Nat) (F : LPoly) (f : Poly), (∀ len ∈ ls, len ∈ nttLens) →
+    b + 2 * ls.length ≤ 17 → Rel b F f → Rel (b + 2 * ls.length) (ls.foldl (layerF u) F) (ls.foldl nttLayer f)
   | [], _, _, _, _, _, h => h
   | len :: ls, b, F, f, hls, hb, h => by
     rw [List.length_cons] at hb
-    have := layersF_rel ls (b + 2) (layerF F len) (nttLayer f len) (fun l hl => hls l (List.mem_cons_of_mem _ hl))
-      (by omega_using [hb]) (layerF_rel (by omega_using [hb]) h (hls len (List.mem_cons_self ..)))
+    have := layersF_rel u ls (b + 2) (layerF u F len) (nttLayer f len) (fun l hl => hls l (List.mem_cons_of_mem _ hl))
+      (by omega_using [hb]) (layerF_rel u (by omega_using [hb]) h (hls len (List.mem_cons_self ..)))
     rw [List.length_cons, show b + 2 * (ls.length + 1) = b + 2 + 2 * ls.length by omega_arith]
     exact this
 
 /-- The layers `ls` of `NTT⁻¹`, from words less than `b q`. -/
-theorem layersI_rel : ∀ (ls : List Nat) (b : Nat) (F : LPoly) (f : Poly), (∀ len ∈ ls, len ∈ nttLens) →
+theorem layersI_rel (u : Bool) : ∀ (ls : List Nat) (b : Nat) (F : LPoly) (f : Poly), (∀ len ∈ ls, len ∈ nttLens) →
     1 ≤ b → b * 2 ^ ls.length ≤ 256 → Rel b F f →
-    Rel (b * 2 ^ ls.length) (ls.foldl layerI F) (ls.foldl nttInvLayer f)
+    Rel (b * 2 ^ ls.length) (ls.foldl (layerI u) F) (ls.foldl nttInvLayer f)
   | [], b, _, _, _, _, _, h => by rw [List.length_nil, Nat.pow_zero, Nat.mul_one]; exact h
   | len :: ls, b, F, f, hls, hb1, hb, h => by
     rw [List.length_cons, Nat.pow_succ, Nat.mul_comm _ 2, ← Nat.mul_assoc, Nat.mul_comm b 2] at hb ⊢
     have h2 : 2 * b ≤ 256 := Nat.le_trans (Nat.le_mul_of_pos_right _ (Nat.two_pow_pos _)) hb
-    exact layersI_rel ls (2 * b) (layerI F len) (nttInvLayer f len)
+    exact layersI_rel u ls (2 * b) (layerI u F len) (nttInvLayer f len)
       (fun l hl => hls l (List.mem_cons_of_mem _ hl)) (by omega_using [hb1]) hb
-      (layerI_rel hb1 (by omega_using [h2]) h (hls len (List.mem_cons_self ..)))
+      (layerI_rel u hb1 (by omega_using [h2]) h (hls len (List.mem_cons_self ..)))
 
 /-! ## The last layers -/
 
@@ -336,65 +355,63 @@ theorem canon_val {v : BitVec 32} {x : Word} (hv : v.toNat = x.val) : (bcsub (br
     Fin.val_ofNat]
 
 /-- A word times a zeta, reduced, is the product of its residue and the zeta. -/
-theorem scale_val {v : BitVec 32} {x : Word} (hv : v.toNat = x.val) (z : Zq) :
-    (bcsub (bprod v z)).toNat = (residue x * z).val := by
-  have hr := mulzN_le (b := v.toNat) v.isLt z.isLt
-  rw [bcsub_toNat (by rw [bprod_toNat]; exact Nat.lt_of_le_of_lt hr redMax_lt), bprod_toNat,
-    mulzN_mod v.isLt z.isLt, hv, Fin.val_mul, Fin.val_ofNat, Nat.mod_mul_mod]
+theorem scale_val (u : Bool) {v : BitVec 32} {x : Word} (hv : v.toNat = x.val) (z : Zq) :
+    (bcsub (bprod u v z)).toNat = (residue x * z).val := by
+  rw [bcsub_toNat (bprod_lt u v z), bprod_mod, hv, Fin.val_mul, Fin.val_ofNat, Nat.mod_mul_mod]
 
 /-- The multiplier of the scaling of `NTT⁻¹`. -/
 abbrev cInv : Zq := 8347681
 
 /-- What a butterfly of the last layer of `NTT` stores: `opF`, reduced. -/
-def opFC (x y : Word) (z : Zq) : Word × Word :=
-  (toW (bcsub (bred (wb x + bprod (wb y) z))), toW (bcsub (bred (wb x + 16760834 - bprod (wb y) z))))
+def opFC (u : Bool) (x y : Word) (z : Zq) : Word × Word :=
+  (toW (bcsub (bred (wb x + bprod u (wb y) z))), toW (bcsub (bred (wb x + 16760834 - bprod u (wb y) z))))
 
-theorem opFC_val (x y : Word) (z : Zq) :
-    (opFC x y z).1.val = (residue (opF x y z).1).val ∧ (opFC x y z).2.val = (residue (opF x y z).2).val := by
+theorem opFC_val (u : Bool) (x y : Word) (z : Zq) :
+    (opFC u x y z).1.val = (residue (opF u x y z).1).val ∧ (opFC u x y z).2.val = (residue (opF u x y z).2).val := by
   constructor
-  · show (toW (bcsub (bred (wb x + bprod (wb y) z)))).val = _
+  · show (toW (bcsub (bred (wb x + bprod u (wb y) z)))).val = _
     rw [toW_val, canon_val (toW_val _).symm]; rfl
-  · show (toW (bcsub (bred (wb x + 16760834 - bprod (wb y) z)))).val = _
+  · show (toW (bcsub (bred (wb x + 16760834 - bprod u (wb y) z)))).val = _
     rw [toW_val, canon_val (toW_val _).symm]; rfl
 
 /-- The last layer of `NTT` on words. -/
-def layerFC (F : LPoly) (len : Nat) : LPoly :=
-  Lazy.layF (lblk opFC zetas) F len (fun c => 128 / len + c) (128 / len)
+def layerFC (u : Bool) (F : LPoly) (len : Nat) : LPoly :=
+  Lazy.layF (lblk (opFC u) zetas) F len (fun c => 128 / len + c) (128 / len)
 
-theorem lblkFC_ok : Lazy.BlkOk (lblk opFC zetas) opFC := Lazy.block_ok opFC
+theorem lblkFC_ok (u : Bool) : Lazy.BlkOk (lblk (opFC u) zetas) (opFC u) := Lazy.block_ok (opFC u)
 
 /-- The last layer of `NTT` leaves the specification's coefficients. -/
-theorem layerFC_val {b : Nat} (hb : b ≤ 15) {F : LPoly} {f : Poly} (hF : Rel b F f) {len : Nat}
+theorem layerFC_val (u : Bool) {b : Nat} (hb : b ≤ 15) {F : LPoly} {f : Poly} (hF : Rel b F f) {len : Nat}
     (hlen : len ∈ nttLens) {i : Nat} (hi : i < 256) :
-    ((layerFC F len)[i]!).val = ((nttLayer f len)[i]!).val := by
+    ((layerFC u F len)[i]!).val = ((nttLayer f len)[i]!).val := by
   have hl := len_facts hlen
   have lt : ∀ {x : Word}, x.val < b * q → x.val < 15 * q := fun h =>
     Nat.lt_of_lt_of_le h (Nat.mul_le_mul_right q hb)
-  rw [layerFC, Lazy.layF_get lblkFC_ok F hl.1 _ (by omega) hi,
+  rw [layerFC, Lazy.layF_get (lblkFC_ok u) F hl.1 _ (by omega) hi,
     nttLayer_eq, layF_get nttBlk_ok f hl.1 _ (by omega) hi]
   simp only [ite_eq_left (show i < 2 * len * (128 / len) by omega)]
   by_cases h : i % (2 * len) < len
   · simp only [ite_eq_left h]
     have h0 := hF i hi
     have h1 := hF (i + len) ((hl.2.2 i hi).1 h)
-    rw [(opFC_val _ _ _).1, (opF_residue _ _ _ (lt h0.1)).1, h0.2, h1.2]
+    rw [(opFC_val u _ _ _).1, (opF_residue u _ _ _ (lt h0.1)).1, h0.2, h1.2]
   · simp only [ite_eq_right h]
     have h0 := hF (i - len) (by omega_using [hi])
     have h1 := hF i hi
-    rw [(opFC_val _ _ _).2, (opF_residue _ _ _ (lt h0.1)).2, h0.2, h1.2]
+    rw [(opFC_val u _ _ _).2, (opF_residue u _ _ _ (lt h0.1)).2, h0.2, h1.2]
 
 /-- What a butterfly of the last layer of `NTT⁻¹` stores: the sum times
 `256⁻¹`, and the difference times the zeta and `256⁻¹`, reduced. -/
-def opIS (x y : Word) (z : Zq) : Word × Word :=
-  (toW (bcsub (bprod (wb x + wb y) cInv)), toW (bcsub (bprod (wb x + 1072693376 - wb y) (z * cInv))))
+def opIS (u : Bool) (x y : Word) (z : Zq) : Word × Word :=
+  (toW (bcsub (bprod u (wb x + wb y) cInv)), toW (bcsub (bprod u (wb x + 1072693376 - wb y) (z * cInv))))
 
-theorem opIS_val (x y : Word) (z : Zq) (hx : x.val < 128 * q) (hy : y.val < 128 * q) :
-    (opIS x y z).1.val = ((residue x + residue y) * cInv).val ∧
-    (opIS x y z).2.val = ((residue x - residue y) * (z * cInv)).val := by
-  have hr := opI_residue x y z hx hy
+theorem opIS_val (u : Bool) (x y : Word) (z : Zq) (hx : x.val < 128 * q) (hy : y.val < 128 * q) :
+    (opIS u x y z).1.val = ((residue x + residue y) * cInv).val ∧
+    (opIS u x y z).2.val = ((residue x - residue y) * (z * cInv)).val := by
+  have hr := opI_residue u x y z hx hy
   constructor
-  · show (toW (bcsub (bprod (wb x + wb y) cInv))).val = _
-    rw [toW_val, scale_val (x := (opI x y z).1) (toW_val _).symm, hr.1]
+  · show (toW (bcsub (bprod u (wb x + wb y) cInv))).val = _
+    rw [toW_val, scale_val u (x := (opI u x y z).1) (toW_val _).symm, hr.1]
   · have hx' := wb_toNat x
     have hy' := wb_toNat y
     have hx2 : x.val < 128 * 8380417 := hx
@@ -409,8 +426,8 @@ theorem opIS_val (x y : Word) (z : Zq) (hx : x.val < 128 * q) (hy : y.val < 128 
       show (toW (wb x + 1072693376 - wb y)).val % 8380417 = (8380417 - y.val % 8380417 + x.val % 8380417) % 8380417
       rw [toW_val, hd]
       omega_using [hy2]
-    show (toW (bcsub (bprod (wb x + 1072693376 - wb y) (z * cInv)))).val = _
-    rw [toW_val, scale_val (toW_val _).symm, e]
+    show (toW (bcsub (bprod u (wb x + 1072693376 - wb y) (z * cInv)))).val = _
+    rw [toW_val, scale_val u (toW_val _).symm, e]
 
 /-- Algorithm 42 multiplies the difference `x - y` by `-ζ`, and the result by
 `256⁻¹`. -/
@@ -426,21 +443,21 @@ theorem lastInv_get (g : Poly) {i : Nat} (hi : i < 256) :
 
 /-- The last layer of `NTT⁻¹` and the scaling leave the specification's
 coefficients. -/
-theorem lastInv_val {F : LPoly} {f : Poly} (hF : Rel 128 F f) {i : Nat} (hi : i < 256) :
-    ((Lazy.blockN (Lazy.bfly opIS) F 128 (-zetas 1) 0 128)[i]!).val =
+theorem lastInv_val (u : Bool) {F : LPoly} {f : Poly} (hF : Rel 128 F f) {i : Nat} (hi : i < 256) :
+    ((Lazy.blockN (Lazy.bfly (opIS u)) F 128 (-zetas 1) 0 128)[i]!).val =
       (((nttInvLayer f 128).map (· * cInv))[i]!).val := by
-  rw [Lazy.blockN_bfly_get' opIS F (by decide) (Nat.le_refl _) (by decide) hi,
+  rw [Lazy.blockN_bfly_get' (opIS u) F (by decide) (Nat.le_refl _) (by decide) hi,
     map_mul_get _ _ (by rw [n_eq]; exact hi), lastInv_get f hi]
   by_cases h : i < 128
   · have h0 := hF i hi
     have h1 := hF (i + 128) (by omega_using [h])
     rw [ite_eq_left (show 0 ≤ i ∧ i < 0 + 128 from ⟨Nat.zero_le _, by omega_using [h]⟩), ite_eq_left h,
-      (opIS_val _ _ _ h0.1 h1.1).1, h0.2, h1.2]
+      (opIS_val u _ _ _ h0.1 h1.1).1, h0.2, h1.2]
   · have h0 := hF (i - 128) (by omega_using [hi])
     have h1 := hF i hi
     rw [ite_eq_right (show ¬ (0 ≤ i ∧ i < 0 + 128) from fun e => h (by omega_using [e.2])),
       ite_eq_left (show 0 + 128 ≤ i ∧ i < 0 + 128 + 128 from ⟨by omega_using [h], by omega_using [hi]⟩),
-      ite_eq_right h, (opIS_val _ _ _ h0.1 h1.1).2, h0.2, h1.2, neg_mul_scale]
+      ite_eq_right h, (opIS_val u _ _ _ h0.1 h1.1).2, h0.2, h1.2, neg_mul_scale]
 
 /-! ## Words in memory -/
 
@@ -478,14 +495,14 @@ theorem lp_bflyInv {m : Mem} {F : Addr} {W : LPoly} (h : LP m F W) (op : Word �
 
 /-! ## Butterflies -/
 
-/-- `-q`, `q`, and the zeta `z` with its `zp`, in `r4`–`r7`. -/
-def ZetaIn (z : Zq) (s : State) : Prop :=
-  s.gpr .r4 = Nw ∧ s.gpr .r5 = Qw ∧ s.gpr .r6 = zb z ∧ s.gpr .r7 = bquot (zb z)
+/-- `-q`, `q`, and the zeta `z` with what goes with it (`zw`), in `r4`–`r7`. -/
+def ZetaIn (u : Bool) (z : Zq) (s : State) : Prop :=
+  s.gpr .r4 = Nw ∧ s.gpr .r5 = Qw ∧ s.gpr .r6 = zb z ∧ s.gpr .r7 = zw u (zb z)
 
 /-- The registers of the last layer of `NTT⁻¹`: `ZetaIn` of the zeta times
-`256⁻¹`, and `256⁻¹` with its `zp` in `r1` and `r2`. -/
-def ScaleIn (z : Zq) (s : State) : Prop :=
-  ZetaIn (z * cInv) s ∧ s.gpr .r1 = zb cInv ∧ s.gpr .r2 = bquot (zb cInv)
+`256⁻¹`, and `256⁻¹` with what goes with it in `r1` and `r2`. -/
+def ScaleIn (u : Bool) (z : Zq) (s : State) : Prop :=
+  ZetaIn u (z * cInv) s ∧ s.gpr .r1 = zb cInv ∧ s.gpr .r2 = zw u (zb cInv)
 
 /-- The registers the loops of the transforms keep. -/
 abbrev bflyKeep : List Reg := [.r1, .r2, .r4, .r5, .r6, .r7, .r11, .lr]
@@ -493,11 +510,13 @@ abbrev bflyKeep : List Reg := [.r1, .r2, .r4, .r5, .r6, .r7, .r11, .lr]
 /-- The registers a butterfly keeps. -/
 abbrev coreKeep : List Reg := [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r11, .lr]
 
-theorem ZetaIn.keep {z : Zq} {s s' : State} (hk : Keep bflyKeep s s') (h : ZetaIn z s) : ZetaIn z s' :=
+theorem ZetaIn.keep {u : Bool} {z : Zq} {s s' : State} (hk : Keep bflyKeep s s') (h : ZetaIn u z s) :
+    ZetaIn u z s' :=
   ⟨(hk.gpr .r4 (by decide)).trans h.1, (hk.gpr .r5 (by decide)).trans h.2.1,
     (hk.gpr .r6 (by decide)).trans h.2.2.1, (hk.gpr .r7 (by decide)).trans h.2.2.2⟩
 
-theorem ScaleIn.keep {z : Zq} {s s' : State} (hk : Keep bflyKeep s s') (h : ScaleIn z s) : ScaleIn z s' :=
+theorem ScaleIn.keep {u : Bool} {z : Zq} {s s' : State} (hk : Keep bflyKeep s s') (h : ScaleIn u z s) :
+    ScaleIn u z s' :=
   ⟨h.1.keep hk, (hk.gpr .r1 (by decide)).trans h.2.1, (hk.gpr .r2 (by decide)).trans h.2.2⟩
 
 /-- The code `code len o` stores what the butterfly `op` gives of the words
@@ -542,7 +561,8 @@ theorem q_shl7 : Qw <<< 7 = 1072693376 := by decide
 /-! ## The butterflies, symbolically -/
 
 section
-variable {s : State} {x z zp f fp : BitVec 32} {len o : Nat} (ho : 4 * (o + len) < 4096) (h0 : s.gpr .r0 = x)
+variable (u : Bool) {s : State} {x z zp f fp : BitVec 32} {len o : Nat} (ho : 4 * (o + len) < 4096)
+  (h0 : s.gpr .r0 = x)
   (h4 : s.gpr .r4 = Nw) (h5 : s.gpr .r5 = Qw) (h6 : s.gpr .r6 = z) (h7 : s.gpr .r7 = zp)
   (iA : InRegions (s.rd ++ s.wr) (State.addr (x + BitVec.ofNat 32 (4 * o))) 4)
   (iB : InRegions (s.rd ++ s.wr) (State.addr (x + BitVec.ofNat 32 (4 * (o + len)))) 4)
@@ -551,66 +571,70 @@ variable {s : State} {x z zp f fp : BitVec 32} {len o : Nat} (ho : 4 * (o + len)
 include ho h0 h4 h5 h6 h7 iA iB oA oB
 
 theorem bfly_run :
-    WP isa (.block (Impl.MlDsa.Arm.Arith.bfly len o)) s fun s' =>
+    WP isa (.block (Impl.MlDsa.Arm.Arith.bfly u len o)) s fun s' =>
       s'.mem = (s.mem.writeW (State.addr (x + BitVec.ofNat 32 (4 * (o + len))))
           (s.mem.readW (State.addr (x + BitVec.ofNat 32 (4 * o))) 32 + 16760834 -
-            bmulz (s.mem.readW (State.addr (x + BitVec.ofNat 32 (4 * (o + len)))) 32) z zp)).writeW
+            bmulzV u (s.mem.readW (State.addr (x + BitVec.ofNat 32 (4 * (o + len)))) 32) z zp)).writeW
         (State.addr (x + BitVec.ofNat 32 (4 * o)))
           (s.mem.readW (State.addr (x + BitVec.ofNat 32 (4 * o))) 32 +
-            bmulz (s.mem.readW (State.addr (x + BitVec.ofNat 32 (4 * (o + len)))) 32) z zp) ∧
+            bmulzV u (s.mem.readW (State.addr (x + BitVec.ofNat 32 (4 * (o + len)))) 32) z zp) ∧
       Keep coreKeep s s' := by
   have ho' : 4 * o < 4096 := by omega_using [ho]
-  run_block [Impl.MlDsa.Arm.Arith.bfly, mulz, red, mulq, bmulz, bmulq, bred, h0, h4, h5, h6, h7, iA, iB, oA, oB,
-    ho, ho', q_shl1]
-  keep_simp
+  cases u <;>
+  · run_block [Impl.MlDsa.Arm.Arith.bfly, mulzV, mulzU, red, mulq, bmulzV, bmulzU, bmulz, bmulq, bred, h0, h4, h5, h6,
+      h7, iA, iB, oA, oB, ho, ho', q_shl1, Bool.false_eq_true]
+    keep_simp
 
 theorem bflyC_run :
-    WP isa (.block (bflyC len o)) s fun s' =>
+    WP isa (.block (bflyC u len o)) s fun s' =>
       s'.mem = (s.mem.writeW (State.addr (x + BitVec.ofNat 32 (4 * (o + len))))
           (bcsub (bred (s.mem.readW (State.addr (x + BitVec.ofNat 32 (4 * o))) 32 + 16760834 -
-            bmulz (s.mem.readW (State.addr (x + BitVec.ofNat 32 (4 * (o + len)))) 32) z zp)))).writeW
+            bmulzV u (s.mem.readW (State.addr (x + BitVec.ofNat 32 (4 * (o + len)))) 32) z zp)))).writeW
         (State.addr (x + BitVec.ofNat 32 (4 * o)))
           (bcsub (bred (s.mem.readW (State.addr (x + BitVec.ofNat 32 (4 * o))) 32 +
-            bmulz (s.mem.readW (State.addr (x + BitVec.ofNat 32 (4 * (o + len)))) 32) z zp))) ∧
+            bmulzV u (s.mem.readW (State.addr (x + BitVec.ofNat 32 (4 * (o + len)))) 32) z zp))) ∧
       Keep coreKeep s s' := by
   have ho' : 4 * o < 4096 := by omega_using [ho]
-  run_block [bflyC, mulz, red, mulq, csub, bmulz, bmulq, bred, bcsub, h0, h4, h5, h6, h7, iA, iB, oA, oB,
-    ho, ho', q_shl1]
-  keep_simp
+  cases u <;>
+  · run_block [bflyC, mulzV, mulzU, red, mulq, csub, bmulzV, bmulzU, bmulz, bmulq, bred, bcsub, h0, h4, h5, h6, h7,
+      iA, iB, oA, oB, ho, ho', q_shl1, Bool.false_eq_true]
+    keep_simp
 
 theorem bflyInv_run :
-    WP isa (.block (Impl.MlDsa.Arm.Arith.bflyInv len o)) s fun s' =>
+    WP isa (.block (Impl.MlDsa.Arm.Arith.bflyInv u len o)) s fun s' =>
       s'.mem = (s.mem.writeW (State.addr (x + BitVec.ofNat 32 (4 * o)))
           (s.mem.readW (State.addr (x + BitVec.ofNat 32 (4 * o))) 32 +
             s.mem.readW (State.addr (x + BitVec.ofNat 32 (4 * (o + len)))) 32)).writeW
         (State.addr (x + BitVec.ofNat 32 (4 * (o + len))))
-          (bmulz (s.mem.readW (State.addr (x + BitVec.ofNat 32 (4 * o))) 32 + 1072693376 -
+          (bmulzV u (s.mem.readW (State.addr (x + BitVec.ofNat 32 (4 * o))) 32 + 1072693376 -
             s.mem.readW (State.addr (x + BitVec.ofNat 32 (4 * (o + len)))) 32) z zp) ∧
       Keep coreKeep s s' := by
   have ho' : 4 * o < 4096 := by omega_using [ho]
-  run_block [Impl.MlDsa.Arm.Arith.bflyInv, mulz, red, mulq, bmulz, bmulq, bred, h0, h4, h5, h6, h7, iA, iB, oA,
-    oB, ho, ho', q_shl7]
-  keep_simp
+  cases u <;>
+  · run_block [Impl.MlDsa.Arm.Arith.bflyInv, mulzV, mulzU, red, mulq, bmulzV, bmulzU, bmulz, bmulq, bred, h0, h4, h5,
+      h6, h7, iA, iB, oA, oB, ho, ho', q_shl7, Bool.false_eq_true]
+    keep_simp
 
 theorem bflyInvS_run (h1 : s.gpr .r1 = f) (h2 : s.gpr .r2 = fp) :
-    WP isa (.block (bflyInvS len o)) s fun s' =>
+    WP isa (.block (bflyInvS u len o)) s fun s' =>
       s'.mem = (s.mem.writeW (State.addr (x + BitVec.ofNat 32 (4 * o)))
-          (bcsub (bmulz (s.mem.readW (State.addr (x + BitVec.ofNat 32 (4 * o))) 32 +
+          (bcsub (bmulzV u (s.mem.readW (State.addr (x + BitVec.ofNat 32 (4 * o))) 32 +
             s.mem.readW (State.addr (x + BitVec.ofNat 32 (4 * (o + len)))) 32) f fp))).writeW
         (State.addr (x + BitVec.ofNat 32 (4 * (o + len))))
-          (bcsub (bmulz (s.mem.readW (State.addr (x + BitVec.ofNat 32 (4 * o))) 32 + 1072693376 -
+          (bcsub (bmulzV u (s.mem.readW (State.addr (x + BitVec.ofNat 32 (4 * o))) 32 + 1072693376 -
             s.mem.readW (State.addr (x + BitVec.ofNat 32 (4 * (o + len)))) 32) z zp)) ∧
       Keep coreKeep s s' := by
   have ho' : 4 * o < 4096 := by omega_using [ho]
-  run_block [bflyInvS, mulzF, mulz, red, mulq, csub, bmulz, bmulq, bred, bcsub, h0, h1, h2, h4, h5, h6, h7, iA,
-    iB, oA, oB, ho, ho', q_shl7]
-  keep_simp
+  cases u <;>
+  · run_block [bflyInvS, mulzV, mulzU, red, mulq, csub, bmulzV, bmulzU, bmulz, bmulq, bred, bcsub, h0, h1, h2, h4,
+      h5, h6, h7, iA, iB, oA, oB, ho, ho', q_shl7, Bool.false_eq_true]
+    keep_simp
 
 end
 
 /-! ## What the butterflies store -/
 
-theorem bfly_core : CoreOk Impl.MlDsa.Arm.Arith.bfly opF ZetaIn := by
+theorem bfly_core (u : Bool) : CoreOk (Impl.MlDsa.Arm.Arith.bfly u) (opF u) (ZetaIn u) := by
   intro p len j o hl hl' ho hj hp z G s h0 ⟨z4, z5, z6, z7⟩ hG hw
   have eA := addr_at hp (j := j) (k := o) (by omega_using [hj])
   have eB := addr_at hp (j := j) (k := o + len) (by omega_using [hj])
@@ -618,16 +642,16 @@ theorem bfly_core : CoreOk Impl.MlDsa.Arm.Arith.bfly opF ZetaIn := by
   have hjn : j + o < n := by rw [n_eq]; exact hjo
   have hjl : j + o + len < n := by rw [n_eq]; exact hj
   rw [← Nat.add_assoc] at eB
-  refine WP.mono (bfly_run (len := len) (o := o) (by omega_using [hl', ho]) h0 z4 z5 z6 z7
+  refine WP.mono (bfly_run u (len := len) (o := o) (by omega_using [hl', ho]) h0 z4 z5 z6 z7
     (by rw [eA]; exact rd_at hw hjo) (by rw [eB]; exact rd_at hw hj)
     (by rw [eA]; exact wr_at hw hjo) (by rw [eB]; exact wr_at hw hj)) fun s' ⟨hm, hk⟩ => ⟨?_, ?_, hk⟩
   · rw [hm, eA, eB, word_val hG hjo, word_val hG hj]
-    exact lp_bfly hG opF hl hjl z (toW_val _).symm (toW_val _).symm
+    exact lp_bfly hG (opF u) hl hjl z (toW_val _).symm (toW_val _).symm
   · rw [hm, eA, eB]
     exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (coeff_contains _ hjl)).writeW
       (List.mem_singleton_self _) _ (coeff_contains _ hjn)
 
-theorem bflyC_core : CoreOk bflyC opFC ZetaIn := by
+theorem bflyC_core (u : Bool) : CoreOk (bflyC u) (opFC u) (ZetaIn u) := by
   intro p len j o hl hl' ho hj hp z G s h0 ⟨z4, z5, z6, z7⟩ hG hw
   have eA := addr_at hp (j := j) (k := o) (by omega_using [hj])
   have eB := addr_at hp (j := j) (k := o + len) (by omega_using [hj])
@@ -635,16 +659,16 @@ theorem bflyC_core : CoreOk bflyC opFC ZetaIn := by
   have hjn : j + o < n := by rw [n_eq]; exact hjo
   have hjl : j + o + len < n := by rw [n_eq]; exact hj
   rw [← Nat.add_assoc] at eB
-  refine WP.mono (bflyC_run (len := len) (o := o) (by omega_using [hl', ho]) h0 z4 z5 z6 z7
+  refine WP.mono (bflyC_run u (len := len) (o := o) (by omega_using [hl', ho]) h0 z4 z5 z6 z7
     (by rw [eA]; exact rd_at hw hjo) (by rw [eB]; exact rd_at hw hj)
     (by rw [eA]; exact wr_at hw hjo) (by rw [eB]; exact wr_at hw hj)) fun s' ⟨hm, hk⟩ => ⟨?_, ?_, hk⟩
   · rw [hm, eA, eB, word_val hG hjo, word_val hG hj]
-    exact lp_bfly hG opFC hl hjl z (toW_val _).symm (toW_val _).symm
+    exact lp_bfly hG (opFC u) hl hjl z (toW_val _).symm (toW_val _).symm
   · rw [hm, eA, eB]
     exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (coeff_contains _ hjl)).writeW
       (List.mem_singleton_self _) _ (coeff_contains _ hjn)
 
-theorem bflyInv_core : CoreOk Impl.MlDsa.Arm.Arith.bflyInv opI ZetaIn := by
+theorem bflyInv_core (u : Bool) : CoreOk (Impl.MlDsa.Arm.Arith.bflyInv u) (opI u) (ZetaIn u) := by
   intro p len j o hl hl' ho hj hp z G s h0 ⟨z4, z5, z6, z7⟩ hG hw
   have eA := addr_at hp (j := j) (k := o) (by omega_using [hj])
   have eB := addr_at hp (j := j) (k := o + len) (by omega_using [hj])
@@ -652,16 +676,16 @@ theorem bflyInv_core : CoreOk Impl.MlDsa.Arm.Arith.bflyInv opI ZetaIn := by
   have hjn : j + o < n := by rw [n_eq]; exact hjo
   have hjl : j + o + len < n := by rw [n_eq]; exact hj
   rw [← Nat.add_assoc] at eB
-  refine WP.mono (bflyInv_run (len := len) (o := o) (by omega_using [hl', ho]) h0 z4 z5 z6 z7
+  refine WP.mono (bflyInv_run u (len := len) (o := o) (by omega_using [hl', ho]) h0 z4 z5 z6 z7
     (by rw [eA]; exact rd_at hw hjo) (by rw [eB]; exact rd_at hw hj)
     (by rw [eA]; exact wr_at hw hjo) (by rw [eB]; exact wr_at hw hj)) fun s' ⟨hm, hk⟩ => ⟨?_, ?_, hk⟩
   · rw [hm, eA, eB, word_val hG hjo, word_val hG hj]
-    exact lp_bflyInv hG opI hl hjl z (toW_val _).symm (toW_val _).symm
+    exact lp_bflyInv hG (opI u) hl hjl z (toW_val _).symm (toW_val _).symm
   · rw [hm, eA, eB]
     exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (coeff_contains _ hjn)).writeW
       (List.mem_singleton_self _) _ (coeff_contains _ hjl)
 
-theorem bflyInvS_core : CoreOk bflyInvS opIS ScaleIn := by
+theorem bflyInvS_core (u : Bool) : CoreOk (bflyInvS u) (opIS u) (ScaleIn u) := by
   intro p len j o hl hl' ho hj hp z G s h0 ⟨⟨z4, z5, z6, z7⟩, z1, z2⟩ hG hw
   have eA := addr_at hp (j := j) (k := o) (by omega_using [hj])
   have eB := addr_at hp (j := j) (k := o + len) (by omega_using [hj])
@@ -669,11 +693,11 @@ theorem bflyInvS_core : CoreOk bflyInvS opIS ScaleIn := by
   have hjn : j + o < n := by rw [n_eq]; exact hjo
   have hjl : j + o + len < n := by rw [n_eq]; exact hj
   rw [← Nat.add_assoc] at eB
-  refine WP.mono (bflyInvS_run (len := len) (o := o) (by omega_using [hl', ho]) h0 z4 z5 z6 z7
+  refine WP.mono (bflyInvS_run u (len := len) (o := o) (by omega_using [hl', ho]) h0 z4 z5 z6 z7
     (by rw [eA]; exact rd_at hw hjo) (by rw [eB]; exact rd_at hw hj)
     (by rw [eA]; exact wr_at hw hjo) (by rw [eB]; exact wr_at hw hj) z1 z2) fun s' ⟨hm, hk⟩ => ⟨?_, ?_, hk⟩
   · rw [hm, eA, eB, word_val hG hjo, word_val hG hj]
-    exact lp_bflyInv hG opIS hl hjl z (toW_val _).symm (toW_val _).symm
+    exact lp_bflyInv hG (opIS u) hl hjl z (toW_val _).symm (toW_val _).symm
   · rw [hm, eA, eB]
     exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (coeff_contains _ hjn)).writeW
       (List.mem_singleton_self _) _ (coeff_contains _ hjl)
@@ -690,7 +714,9 @@ end
 # ML-DSA on 32-bit ARM: the table, blocks and layers of `NTT` and `NTT⁻¹`
 
 `storeTab t 256` leaves the `u32`s `t 0, …, t 255` at `r1` (`Tab`,
-`storeTab_ok`). The rest is for any butterfly code that does what a butterfly
+`storeTab_ok`): of the zeta `z`, `z` itself or with `umaal` its `zsN`
+(`tabOf`, `tw`), from which a block takes `z` and what goes with it
+(`zetaPre_ok`, `zw`). The rest is for any butterfly code that does what a butterfly
 `op` does (`CoreOk`): butterflies in a row (`grp_ok`, `Lazy.blockN`), the
 loop over groups of four (`grpLoop_ok`), a block of either kind (`blkS_ok`,
 `blkL_ok`, which prove `BlockOk`), and a layer of any program that is such a
@@ -716,18 +742,36 @@ def Tab (t : Nat → Nat) (m : Mem) (P : Addr) : Prop := ∀ k < 256, coeffAt m 
 /-- The table `tab` holds the values of the zetas `Z`. -/
 def TabOf (tab : Nat → Nat) (Z : Nat → Zq) : Prop := ∀ k < 256, tab k = (Z k).val
 
-theorem tab_word {t : Nat → Nat} (ht : ∀ k < 256, t k < q) (i : Nat) (hi : i < 256) :
+/-- What the code's table holds of the zeta `z`: `z`, or with `umaal` its `zsN`. -/
+def tw (u : Bool) (z : Zq) : BitVec 32 := if u then bzs (zb z) else zb z
+
+/-- The entries of the code's table of the zetas `Z` are `tw`. -/
+theorem tabOf_word (u : Bool) {tab : Nat → Nat} {Z : Nat → Zq} (hZ : TabOf tab Z) {k : Nat} (hk : k < 256) :
+    BitVec.ofNat 32 (tabOf u tab k) = tw u (Z k) := by
+  cases u
+  · simp only [tabOf, tw, Bool.false_eq_true, ite_false, hZ k hk]
+  · simp only [tabOf, tw, ite_true, hZ k hk, bzs, toNat_val]
+    rfl
+
+/-- The entries of the code's table of values less than `q` fit in a word. -/
+theorem tabOf_lt (u : Bool) {tab : Nat → Nat} (ht : ∀ k < 256, tab k < q) : ∀ k < 256, tabOf u tab k < 2 ^ 32 := by
+  intro k hk
+  cases u
+  · simp only [tabOf, Bool.false_eq_true, ite_false]
+    exact Nat.lt_trans (ht k hk) (by decide)
+  · exact zsN_lt (ht k hk)
+
+theorem tab_word {t : Nat → Nat} (ht : ∀ k < 256, t k < 2 ^ 32) (i : Nat) (hi : i < 256) :
     (BitVec.ofNat 16 (t i / 65536) ++ ((BitVec.ofNat 16 (t i % 65536)).setWidth 32).extractLsb' 0 16 : BitVec 32) =
       BitVec.ofNat 32 (t i) := by
   have := ht i hi
-  rw [q_eq] at this
   generalize t i = v at *
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_append, BitVec.extractLsb'_toNat, BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
     BitVec.toNat_ofNat, Nat.shiftLeft_eq, Nat.shiftRight_zero, Nat.mul_comm, ← Nat.two_pow_add_eq_or_of_lt (by omega_using [])]
   omega_using []
 
-theorem tabStep_ok (t : Nat → Nat) (ht : ∀ k < 256, t k < q) {i : Nat} (hi : i < 256) (s : State) {zB : BitVec 32}
+theorem tabStep_ok (t : Nat → Nat) (ht : ∀ k < 256, t k < 2 ^ 32) {i : Nat} (hi : i < 256) (s : State) {zB : BitVec 32}
     (h1 : s.gpr .r1 = zB) (hw : InRegions s.wr (State.addr (zB + BitVec.ofNat 32 (4 * i))) 4) :
     WP isa (.block (tabStep t i)) s fun s' =>
       s'.mem = s.mem.writeW (State.addr (zB + BitVec.ofNat 32 (4 * i))) (BitVec.ofNat 32 (t i)) ∧
@@ -739,7 +783,7 @@ theorem tabStep_ok (t : Nat → Nat) (ht : ∀ k < 256, t k < q) {i : Nat} (hi :
   rcases hr with h | h | h | h | h | h | h | h | h | h | h | h | h <;> subst h <;> rfl
 
 /-- The table, stored in the 1024 bytes at `r1`. -/
-theorem storeTab_ok (t : Nat → Nat) (ht : ∀ k < 256, t k < q) (s : State) {zB : BitVec 32}
+theorem storeTab_ok (t : Nat → Nat) (ht : ∀ k < 256, t k < 2 ^ 32) (s : State) {zB : BitVec 32}
     (h1 : s.gpr .r1 = zB) (hfit : zB.toNat + 1024 ≤ 2 ^ 32) (hw : polyRegion (State.addr zB) ∈ s.wr) :
     WP isa (.block (storeTab t 256)) s fun s' =>
       Tab t s'.mem (State.addr zB) ∧ Frame [polyRegion (State.addr zB)] s.mem s'.mem ∧
@@ -836,15 +880,32 @@ end
 /-- The pointer to the next zeta. -/
 def nextZ (op : DpOp) (x : BitVec 32) : BitVec 32 := if op = .add then x + 4 else x - 4
 
-theorem zetaPre_ok (op : DpOp) (hop : op = .add ∨ op = .sub) (s : State) {x : BitVec 32} (h1 : s.gpr .r1 = x)
-    (hi : InRegions (s.rd ++ s.wr) (State.addr (x + BitVec.ofNat 32 0)) 4) :
-    WP isa (.block (zetaPre op)) s fun s' =>
-      s'.gpr .r6 = s.mem.readW (State.addr (x + BitVec.ofNat 32 0)) 32 ∧
-      s'.gpr .r7 = bquot (s.mem.readW (State.addr (x + BitVec.ofNat 32 0)) 32) ∧
+/-- The zeta `z < q` from `zsN z`, as `zetaPre` takes it with `umaal`: the
+high word of `zsN z · q + 2³² - 1`. -/
+theorem bzs_zeta {z : BitVec 32} (hz : z.toNat < q) :
+    BitVec.ofNat 32 (((bzs z).toNat * Qw.toNat + (0 : BitVec 32).toNat + (~~~(0 : BitVec 32)).toNat) / 2 ^ 32) = z := by
+  apply BitVec.eq_of_toNat_eq
+  have h := zsN_zeta hz
+  rw [q_eq] at h
+  rw [BitVec.toNat_ofNat, bzs_toNat hz, BitVec.toNat_not, show Qw.toNat = 8380417 from rfl,
+    show (0 : BitVec 32).toNat = 0 from rfl]
+  obtain h' : (zsN z.toNat * 8380417 + 0 + (2 ^ 32 - 1 - 0)) / 2 ^ 32 = z.toNat := by
+    generalize zsN z.toNat = S at h ⊢
+    omega_using [h]
+  rw [h']
+  exact Nat.mod_eq_of_lt z.isLt
+
+theorem zetaPre_ok (u : Bool) (op : DpOp) (hop : op = .add ∨ op = .sub) (s : State) {x : BitVec 32} (z : Zq)
+    (h1 : s.gpr .r1 = x) (h5 : s.gpr .r5 = Qw)
+    (hi : InRegions (s.rd ++ s.wr) (State.addr (x + BitVec.ofNat 32 0)) 4)
+    (hw : s.mem.readW (State.addr (x + BitVec.ofNat 32 0)) 32 = tw u z) :
+    WP isa (.block (zetaPre u op)) s fun s' =>
+      s'.gpr .r6 = zb z ∧ s'.gpr .r7 = zw u (zb z) ∧
       s'.gpr .r1 = (if op = .add then x + 4 else x - 4) ∧ s'.mem = s.mem ∧
       Keep [.r0, .r2, .r3, .r4, .r5, .r11, .lr] s s' := by
-  rcases hop with rfl | rfl <;>
-  · run_block [zetaPre, quot, bquot, h1, hi]
+  have hz : (zb z).toNat < q := by rw [toNat_val]; exact z.isLt
+  cases u <;> rcases hop with rfl | rfl <;>
+  · run_block [zetaPre, quot, bquot, zw, tw, h1, h5, hi, hw, Bool.false_eq_true, bzs_zeta hz]
     keep_simp
 
 theorem blkEnd_ok (c : Nat) (he : encodable (BitVec.ofNat 32 c) = true) (s : State) :
@@ -879,26 +940,26 @@ def BlockOk (blk : Prog isa) (op : Word → Word → Zq → Word × Word) (tab :
         s'.gpr .r2 = s.gpr .r2 - 1 ∧ s'.z = (s.gpr .r2 - 1 == 0) ∧ Keep [.r4, .r5, .r11, .lr] s s'
 
 section
-variable {code : Nat → Nat → List Instr} {op : Word → Word → Zq → Word × Word} (hb : CoreOk code op ZetaIn)
+variable {u : Bool} {code : Nat → Nat → List Instr} {op : Word → Word → Zq → Word × Word}
+  (hb : CoreOk code op (ZetaIn u))
   {tab : Nat → Nat} {Z : Nat → Zq} (hZ : TabOf tab Z) {p zB : BitVec 32} (hp : p.toNat + 1024 ≤ 2 ^ 32)
   (hzf : zB.toNat + 1024 ≤ 2 ^ 32) {len : Nat} (hlen : 0 < len) (dop : DpOp) (hop : dop = .add ∨ dop = .sub)
 include hb hZ hp hzf hlen hop
 
 /-- A block of at most four butterflies, in a row. -/
-theorem blkS_ok (hl : len ≤ 4) : BlockOk (nttBlkS (code len) len dop) op tab Z dop len p zB := by
+theorem blkS_ok (hl : len ≤ 4) : BlockOk (nttBlkS u (code len) len dop) op (tabOf u tab) Z dop len p zB := by
   intro start k hs hk G s h0 h1 h4 h5 hG hw hzw ht
   have eZ : State.addr (zB + BitVec.ofNat 32 (4 * k) + BitVec.ofNat 32 0) = coeffAddr (State.addr zB) k :=
     addr_at0 hzf hk
-  have hwv : s.mem.readW (State.addr (zB + BitVec.ofNat 32 (4 * k) + BitVec.ofNat 32 0)) 32 = zb (Z k) := by
-    rw [eZ, ← coeffAt_eq, ht k hk, hZ k hk]
+  have hwv : s.mem.readW (State.addr (zB + BitVec.ofNat 32 (4 * k) + BitVec.ofNat 32 0)) 32 = tw u (Z k) := by
+    rw [eZ, ← coeffAt_eq, ht k hk, tabOf_word u hZ hk]
   have he : encodable (BitVec.ofNat 32 (8 * len)) = true := by
     have : ∀ l < 5, encodable (BitVec.ofNat 32 (8 * l)) = true := by decide
     exact this len (by omega_using [hl])
   rw [nttBlkS, WP.block_append_iff, WP.block_append_iff]
-  refine WP.mono (zetaPre_ok dop hop s h1 (by
-    rw [eZ]; exact inRegions_of hzw (coeff_contains _ (show k < n by rw [n_eq]; exact hk))))
+  refine WP.mono (zetaPre_ok u dop hop s (Z k) h1 h5 (by
+    rw [eZ]; exact inRegions_of hzw (coeff_contains _ (show k < n by rw [n_eq]; exact hk))) hwv)
     fun s₁ ⟨e6, e7, e1, m₁, k₁⟩ => ?_
-  rw [hwv] at e6 e7
   refine WP.mono (grp_ok hb (fun _ _ _ hk h => h.keep hk) hp hlen (by omega_using [hl]) hl (by omega_using [hs])
     (Z k) G s₁ ((k₁.gpr .r0 (by decide)).trans h0)
     ⟨(k₁.gpr .r4 (by decide)).trans h4, (k₁.gpr .r5 (by decide)).trans h5, e6, e7⟩ (by rw [m₁]; exact hG)
@@ -915,12 +976,12 @@ theorem blkS_ok (hl : len ≤ 4) : BlockOk (nttBlkS (code len) len dop) op tab Z
 
 /-- A longer block, four butterflies at a time. -/
 theorem blkL_ok (hl : len ≤ 128) (hl4 : 4 * (len / 4) = len) :
-    BlockOk (nttBlkL (code len) len dop) op tab Z dop len p zB := by
+    BlockOk (nttBlkL u (code len) len dop) op (tabOf u tab) Z dop len p zB := by
   intro start k hs hk G s h0 h1 h4 h5 hG hw hzw ht
   have eZ : State.addr (zB + BitVec.ofNat 32 (4 * k) + BitVec.ofNat 32 0) = coeffAddr (State.addr zB) k :=
     addr_at0 hzf hk
-  have hwv : s.mem.readW (State.addr (zB + BitVec.ofNat 32 (4 * k) + BitVec.ofNat 32 0)) 32 = zb (Z k) := by
-    rw [eZ, ← coeffAt_eq, ht k hk, hZ k hk]
+  have hwv : s.mem.readW (State.addr (zB + BitVec.ofNat 32 (4 * k) + BitVec.ofNat 32 0)) 32 = tw u (Z k) := by
+    rw [eZ, ← coeffAt_eq, ht k hk, tabOf_word u hZ hk]
   have he : encodable (BitVec.ofNat 32 (4 * len)) = true := by
     have : ∀ l < 129, encodable (BitVec.ofNat 32 (4 * l)) = true := by decide
     exact this len (by omega_using [hl])
@@ -930,10 +991,9 @@ theorem blkL_ok (hl : len ≤ 128) (hl4 : 4 * (len / 4) = len) :
   rw [nttBlkL]
   refine WP.seq ?_
   rw [WP.block_append_iff]
-  refine WP.mono (zetaPre_ok dop hop s h1 (by
-    rw [eZ]; exact inRegions_of hzw (coeff_contains _ (show k < n by rw [n_eq]; exact hk))))
+  refine WP.mono (zetaPre_ok u dop hop s (Z k) h1 h5 (by
+    rw [eZ]; exact inRegions_of hzw (coeff_contains _ (show k < n by rw [n_eq]; exact hk))) hwv)
     fun s₁ ⟨e6, e7, e1, m₁, k₁⟩ => ?_
-  rw [hwv] at e6 e7
   refine WP.mono (movR3_ok (len / 4) he3 s₁) fun s₂ ⟨e3, m₂, k₂⟩ => ?_
   refine WP.seq (WP.mono (grpLoop_ok hb (fun _ _ _ hk h => h.keep hk) hp hlen hl (N := len / 4) (start := start)
     (by omega_using [hl4, hlen]) (by omega_using [hl]) (by omega_using [hl4, hs]) (Z k) G s₂
