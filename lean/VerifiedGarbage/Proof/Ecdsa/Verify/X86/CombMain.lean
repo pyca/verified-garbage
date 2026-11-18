@@ -423,7 +423,7 @@ theorem VCSp.of (h : SpOk (Impl.Ecdsa.Verify.X86.Cfg.verifyCombBody c) c.stk) : 
   have h₃ := h.right.right
   exact ⟨h₁, h₂.left, h₂.right.left, h₂.right.right.left, h₃.left, h₃.right⟩
 
-theorem verifyCombBody_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c)
+theorem verifyCombBody_ok (hc : CfgOk c) (hC : Law c.C) (hne : c.C.n < 2 ^ (8 * c.C.len)) (hT : CombTbls c)
     (hCo : ∀ d, c.comb = some d → CombOk c d) (ham3 : c.n = 4 ∧ c.combJac = true → AM3 c.C)
     {s₀ : State} {extra : List Region} (hp : VPre c s₀ extra)
     (hTb : ∀ d, c.comb = some d → TblMem s₀ ((s₀.gpr .eax).setWidth 64) (c.combWords d) ∧
@@ -448,7 +448,7 @@ theorem verifyCombBody_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c)
       (tmv c.C c.n (ptr s₀ 3) s₂ (c.sl ONEP)) P := by
     rw [h1]
     exact peerPt_rep hC _ _ _ hM.px hM.py
-  refine pointsComb_ok hc hC hT hCo ham3 hM
+  refine pointsComb_ok hc hC hne hT hCo ham3 hM
     (fun d hd => by
       obtain ⟨ht, ho, hap⟩ := hTb d hd
       exact ⟨ht.of_frame (by rw [hM.rd, hM.wr]) hM.whole hap, ho, hap⟩)

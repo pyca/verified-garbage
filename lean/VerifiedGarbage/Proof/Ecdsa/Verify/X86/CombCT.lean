@@ -20,7 +20,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 give (`vFrontAgree`, `vKeepArgAgree`, `vKeepScratchAgree`), the body's
 constant time from its stages' taint checks and its points'
 (`vCombBody_rel`), and, for a curve whose comb is by complete additions, the
-points by the comb and the ladder (`vPointsLadder_rel`) and the whole
+points by the comb and ECDH's windows (`vPointsLadder_rel`) and the whole
 function: correct (`verifyComb_ok`) and constant time (`verifyComb_ct`) in
 the pointers alone.
 -/
@@ -210,7 +210,8 @@ theorem vTables_keep {s₀ s : State} (ht : VCombTables c d s₀) (K : Keep c s�
         Region.Disjoint ⟨(s₀.gpr .eax).setWidth 64, 8 * (c.combWords d).length⟩ r :=
   K.tbls ht.1 ht.2.2
 
-theorem vPoints_keep (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c) (hcd : c.comb = some d)
+theorem vPoints_keep (hc : CfgOk c) (hC : Law c.C) (hne : c.C.n < 2 ^ (8 * c.C.len)) (hT : CombTbls c)
+    (hcd : c.comb = some d)
     (hCo : ∀ d, c.comb = some d → CombOk c d) (ham3 : c.n = 4 ∧ c.combJac = true → AM3 c.C)
     {s₀ s : State} (ht : VCombTables c d s₀) (h : Mid c s₀ (ptr s₀ 3) s)
     (hspG : SpOk c.gMul 20) (hsp : SpOk (Impl.Ecdsa.Verify.X86.Cfg.pointsComb c) c.stk) :
@@ -224,7 +225,7 @@ theorem vPoints_keep (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c) (hcd : c.co
     obtain ⟨_, _, h1⟩ := consts_tmv hc h.fixed
     rw [h1]
     exact Ecdh.X86.peerPt_rep hC _ _ _ h.px h.py
-  have H := pointsComb_ok hc hC hT hCo ham3 h
+  have H := pointsComb_ok hc hC hne hT hCo ham3 h
     (fun d' hd => by
       have e : d = d' := Option.some.inj (hcd.symm.trans hd)
       subst d'
@@ -297,7 +298,7 @@ structure VerifyStagesCT (c : Cfg) : Prop where
   final : RelCT isa (VG.X86.Taint.Agree (scratchArgτ 4 false c.stk))
     (Impl.Ecdsa.Verify.X86.Cfg.tail c) (fun _ _ => True)
 
-/-- The taint checks of `[u]G + [v]Q` by the comb and the ladder, around the comb: the table of
+/-- The taint checks of `[u]G + [v]Q` by the comb and the windows, around the comb: the table of
 `u`'s bits, and all that follows `[u]G`. -/
 structure VerifyLadderCT (c : Cfg) : Prop where
   bits : RelCT isa (VG.X86.Taint.Agree (argτ [.esp, .edi] 4 c.stk))
@@ -305,10 +306,10 @@ structure VerifyLadderCT (c : Cfg) : Prop where
   ladder : RelCT isa (VG.X86.Taint.Agree (scratchArgτ 4 false c.stk))
     (.seq (.block (Impl.Ecdsa.Verify.X86.Cfg.save c))
       (.seq (Impl.Weierstrass.X86.bits (c.sl V) (bitsAt c.n 0) (8 * c.n))
-        (.seq (Impl.Weierstrass.X86.ladder (Impl.Ecdh.X86.Cfg.ladderQ c) c.SP)
+        (.seq (c.winMul Impl.Ecdh.X86.PX Impl.Ecdh.X86.PY)
           (Impl.Ecdsa.Verify.X86.Cfg.sum c)))) (fun _ _ => True)
 
-/-- `[u]G + [v]Q` by the comb and the ladder leaks the same in two runs, whatever their
+/-- `[u]G + [v]Q` by the comb and ECDH's windows leaks the same in two runs, whatever their
 scalars and keys. -/
 theorem vPointsLadder_rel (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c) (hcd : c.comb = some d)
     (hd : CombOk c d) (hG : GMulRel c d false) (ct : VerifyLadderCT c)
@@ -367,7 +368,8 @@ theorem vPointsLadder_rel (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c) (hcd :
 
 /-- Verification's body with a comb is constant time, given its points' (`hPts`: the comb with
 the ladder, `vPointsLadder_rel`, or with P-256's windows). -/
-theorem vCombBody_rel (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c) (hcd : c.comb = some d)
+theorem vCombBody_rel (hc : CfgOk c) (hC : Law c.C) (hne : c.C.n < 2 ^ (8 * c.C.len)) (hT : CombTbls c)
+    (hcd : c.comb = some d)
     (hd : CombOk c d) (ham3 : c.n = 4 ∧ c.combJac = true → AM3 c.C) (ct : VerifyStagesCT c)
     {s₀ t₀ : State} {extra₁ extra₂ : List Region}
     (hp : VPre c s₀ extra₁) (hq : VPre c t₀ extra₂)
@@ -403,21 +405,23 @@ theorem vCombBody_rel (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c) (hcd : c.c
   have hCo : ∀ d', c.comb = some d' → CombOk c d' := by
     intro d' h; have e : d = d' := Option.some.inj (hcd.symm.trans h); rw [← e]; exact hd
   have pts' := pts.wp (F₁ := Keep c s₀ (ptr s₀ 3)) (F₂ := Keep c t₀ (ptr t₀ 3))
-    (fun _ _ h => ⟨vPoints_keep hc hC hT hcd hCo ham3 ht₁ h.2.1 hspG H.points,
-      vPoints_keep hc hC hT hcd hCo ham3 ht₂ h.2.2 hspG H.points⟩)
+    (fun _ _ h => ⟨vPoints_keep hc hC hne hT hcd hCo ham3 ht₁ h.2.1 hspG H.points,
+      vPoints_keep hc hC hne hT hcd hCo ham3 ht₂ h.2.2 hspG H.points⟩)
   exact front'.seq (mid'.seq (pts'.seq (ct.final.mono
     (fun _ _ h => vKeepScratchAgree hp hq h.2.1 h.2.2 he ha) (fun _ _ _ => trivial))))
 
-/-! ## Verification with the comb for `[u]G` and the ladder for `[v]Q` -/
+/-! ## Verification with the comb for `[u]G` and ECDH's windows for `[v]Q` -/
 
-/-- A curve whose comb is by complete additions multiplies `Q` by the ladder. -/
+/-- A curve whose comb is by complete additions multiplies `Q` by ECDH's windows
+(`pointsCombLadder`, which ran the ladder). -/
 theorem pointsComb_ladder (hcd : c.comb = some d) (hj : d.jac = false) :
     Impl.Ecdsa.Verify.X86.Cfg.pointsComb c = Impl.Ecdsa.Verify.X86.Cfg.pointsCombLadder c := by
   unfold Impl.Ecdsa.Verify.X86.Cfg.pointsComb
   rw [ite_eq_right (by simp [Cfg.combJac, hcd, hj])]
 
-/-- Verification with the comb and the ladder: the specification's result, the cdecl ABI kept. -/
-theorem verifyComb_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c) (hcd : c.comb = some d)
+/-- Verification with the comb and the windows: the specification's result, the cdecl ABI kept. -/
+theorem verifyComb_ok (hc : CfgOk c) (hC : Law c.C) (hne : c.C.n < 2 ^ (8 * c.C.len)) (hT : CombTbls c)
+    (hcd : c.comb = some d)
     (hd : CombOk c d) (hj : d.jac = false) (hspG : SpOk c.gMul 20)
     (hsp : SpOk (Impl.Ecdsa.Verify.X86.Cfg.verifyCombBody c) c.stk) {s₀ : State} (hp : VCombPre c s₀) :
     WP isa (Impl.Ecdsa.Verify.X86.Cfg.verifyComb c) s₀ fun s' => abiPreserved s₀ s' ∧ VPost c s₀ s' := by
@@ -428,7 +432,7 @@ theorem verifyComb_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c) (hcd : c.c
   refine WP.seq (WP.mono (symFrame_ok d.tsym s₀ hp.sp4) fun s₁ P => ?_)
   have hp₁ := hp.toVPre.symAddr P hp.sp4
   have ht := vPrefixTables hcd hp P
-  refine WP.mono (verifyCombBody_ok hc hC hT hCo
+  refine WP.mono (verifyCombBody_ok hc hC hne hT hCo
     (fun h => absurd h.2 (by simp [Cfg.combJac, hcd, hj])) hp₁
     (fun d' hd' => by have e : d = d' := Option.some.inj (hcd.symm.trans hd'); subst d'; exact ht)
     hspG hsp) fun s₂ ⟨K, post⟩ => ?_
@@ -446,13 +450,14 @@ theorem verifyComb_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c) (hcd : c.c
     have hsig := prefix_bytesAt P hp.sig_stack (by have := hp.sig_fit; change 2 * c.C.len ≤ 2 ^ 64; omega_using [this])
     simpa only [VPost, ptr, harg 0 (by decide), harg 1 (by decide), harg 2 (by decide), hpk, hdg, hsig] using post
 
-/-- What may affect the timing of verification with the comb and the ladder: the pointers, the
+/-- What may affect the timing of verification with the comb and the windows: the pointers, the
 stack and the tables' address (the contract would let the key, the hash and the signature
 affect it too). -/
 def VCombPubL (d : CombData) (s t : State) : Prop :=
   s.gpr .esp = t.gpr .esp ∧ (∀ j < 4, arg s j = arg t j) ∧ s.syms d.tsym = t.syms d.tsym
 
-theorem verifyComb_ct (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c) (hcd : c.comb = some d)
+theorem verifyComb_ct (hc : CfgOk c) (hC : Law c.C) (hne : c.C.n < 2 ^ (8 * c.C.len)) (hT : CombTbls c)
+    (hcd : c.comb = some d)
     (hd : CombOk c d) (hj : d.jac = false) (hG : GMulRel c d false) (ct : VerifyStagesCT c)
     (cl : VerifyLadderCT c) (hspG : SpOk c.gMul 20)
     (hsp : SpOk (Impl.Ecdsa.Verify.X86.Cfg.verifyCombBody c) c.stk) :
@@ -480,7 +485,7 @@ theorem verifyComb_ct (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c) (hcd : c.c
   have hq₁ := hq.toVPre.symAddr Q hq.sp4
   have ht₁ := vPrefixTables hcd hp P
   have ht₂ := vPrefixTables hcd hq Q
-  exact vCombBody_rel hc hC hT hcd hd (fun h => absurd h.2 (by simp [Cfg.combJac, hcd, hj])) ct
+  exact vCombBody_rel hc hC hne hT hcd hd (fun h => absurd h.2 (by simp [Cfg.combJac, hcd, hj])) ct
     hp₁ hq₁ ht₁ ht₂ he' ha'
     (by rw [pointsComb_ladder hcd hj]
         exact vPointsLadder_rel hc hC hT hcd hd hG cl hp₁ hq₁ ht₁ ht₂ he' ha' hg' hspG)

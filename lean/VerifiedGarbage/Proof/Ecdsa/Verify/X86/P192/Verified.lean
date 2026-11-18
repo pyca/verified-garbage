@@ -33,12 +33,14 @@ meta import VerifiedGarbage.Proof.Ecdsa.X86.P192.CombLit
 meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
+public import VerifiedGarbage.Proof.Framework.X86.SseTaintMono
+meta import VerifiedGarbage.Proof.Framework.X86.SseTaintMono
 
 /-!
 # ECDSA verification over P-192 on x86 (32-bit): `Verified`
 
 `verifyComb_ok` for P-192 with its comb (`p192Comb`: `[u]G` by the
-comb, `[v]Q` by the ladder) gives the postcondition, and `verifyComb_ct` the
+comb, `[v]Q` by ECDH's windows) gives the postcondition, and `verifyComb_ct` the
 constant time, in the pointers alone, from the taint checks of the stages.
 The proof is against `vLocal`, whose arguments' slots are readable, and
 moves to the shared contract, which makes them writable and holds the
@@ -63,7 +65,7 @@ def vBitsCode : Prog isa :=
 def vLadderCode : Prog isa :=
   .seq (.block (Impl.Ecdsa.Verify.X86.Cfg.save p192Comb))
     (.seq (Impl.Weierstrass.X86.bits (p192Comb.sl V) (bitsAt p192Comb.n 0) (8 * p192Comb.n))
-      (.seq (Impl.Weierstrass.X86.ladder (Impl.Ecdh.X86.Cfg.ladderQ p192Comb) p192Comb.SP)
+      (.seq (p192Comb.winMul Impl.Ecdh.X86.PX Impl.Ecdh.X86.PY)
         (Impl.Ecdsa.Verify.X86.Cfg.sum p192Comb)))
 materialize_code vFrontCode
 materialize_code vMidCode
@@ -90,7 +92,7 @@ theorem ladderCT : VerifyLadderCT p192Comb where
     exact RelCT.taint (A := taint) _ (fun _ _ h => h) (by native_taint_decide)
   ladder := by
     change RelCT isa _ vLadderCode _
-    exact RelCT.taint (A := taint) _ (fun _ _ h => h) (by native_taint_decide)
+    exact RelCT.taint (A := sseTaint) _ (fun _ _ h => h) (by taint_decide)
 
 /-- No instruction writes `esp`, and the calls use 20 bytes of stack. -/
 theorem verify_sp : SpOk verifyP192 p192Comb.stk := ⟨NoSp.of_all (by lit_decide), by lit_decide⟩
@@ -101,15 +103,18 @@ theorem verifyBody_sp : SpOk (Impl.Ecdsa.Verify.X86.Cfg.verifyCombBody p192Comb)
 theorem gMul_sp : SpOk p192Comb.gMul 20 :=
   SpOk.left (SpOk.right (a := p192Comb.signPrep) (SpOk.right (a := p192Comb.tableAddr) signComb_sp))
 
+/-- The order of the base point is below `2^(8 len)`. -/
+theorem nEnc : p192Comb.C.n < 2 ^ (8 * p192Comb.C.len) := by decide +kernel
+
 theorem verify_ok (hC : Weierstrass.Law Spec.P192.curve) {s₀ : State}
     (hp : VCombPre p192Comb s₀) :
     WP isa verifyP192 s₀ fun s' => abiPreserved s₀ s' ∧ VPost p192Comb s₀ s' :=
-  verifyComb_ok (d := p192d) (p192Comb_ok) hC (p192Comb_tables hC) rfl p192Comb_shape rfl
+  verifyComb_ok (d := p192d) (p192Comb_ok) hC nEnc (p192Comb_tables hC) rfl p192Comb_shape rfl
     gMul_sp verifyBody_sp hp
 
 theorem verify_ct (hC : Weierstrass.Law Spec.P192.curve) :
     ConstantTime isa (VCombPre p192Comb) (VCombPubL p192d) verifyP192 :=
-  verifyComb_ct (d := p192d) (p192Comb_ok) hC (p192Comb_tables hC) rfl p192Comb_shape rfl
+  verifyComb_ct (d := p192d) (p192Comb_ok) hC nEnc (p192Comb_tables hC) rfl p192Comb_shape rfl
     (p192Comb_gMul hC) stagesCT ladderCT gMul_sp verifyBody_sp
 
 abbrev vSpec : Contract isa :=

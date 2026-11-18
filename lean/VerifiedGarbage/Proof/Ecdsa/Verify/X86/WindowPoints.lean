@@ -160,7 +160,7 @@ theorem pointsWindow_ok (hc : CfgOk c) (hn4 : c.n = 4) (hC : Law c.C) (hT : Comb
       ((v₅ (by decide) (by decide)).trans
         ((W₃ (by decide) (by decide)).trans hM.k))
 
-theorem pointsComb_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c)
+theorem pointsComb_ok (hc : CfgOk c) (hC : Law c.C) (hne : c.C.n < 2 ^ (8 * c.C.len)) (hT : CombTbls c)
     (hCo : ∀ d, c.comb = some d → CombOk c d) (ham3 : c.n = 4 ∧ c.combJac = true → AM3 c.C)
     {s₀ : State} {base : Addr} {s : State}
     (hM : Mid c s₀ base s) {P : Point c.C}
@@ -181,14 +181,11 @@ theorem pointsComb_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c)
   · rw [ite_eq_left h4] at hsp ⊢
     exact pointsWindow_ok hc h4.1 hC hT hCo (ham3 h4) hM hTb hPc hQ hspG hsp h
   · rw [ite_eq_right h4] at hsp ⊢
-    obtain ha : tmv c.C c.n base s (c.sl AP) = Fin.ofNat c.C.p c.C.a := by
-      change toM _ _ (wordsVal s.mem base (c.sl AP) c.n) = _
-      rw [hM.fixed.ap]; exact toM_cmont hc _
-    obtain hb : tmv c.C c.n base s (c.sl B3P) = Fin.ofNat c.C.p (3 * c.C.b) := by
-      change toM _ _ (wordsVal s.mem base (c.sl B3P) c.n) = _
-      rw [hM.fixed.b3p]; exact toM_cmont hc _
-    exact pointsCombLadder_ok hc hC hT hCo hM hTb (step_rep hC hPc ha hb hQ)
-      (by rw [shiftRight_eq_zero (wordsVal_lt s.mem base (c.sl V) c.n), mul_zero_pt]; exact rep_infinity' hC)
-      hspG hsp h
+    obtain hQ' : Rep c.C (tmv c.C c.n base s (c.sl PX)) (tmv c.C c.n base s (c.sl PY)) 1 P := by
+      have h1 : tmv c.C c.n base s (c.sl ONEP) = 1 := by
+        change toM _ _ (wordsVal s.mem base (c.sl ONEP) c.n) = _
+        rw [hM.fixed.onep]; exact toM_one (unitMod_pow_two hc.p_odd _)
+      rw [← h1]; exact hQ
+    exact pointsCombLadder_ok hc hC hne hT hCo hM hTb hPc hQ' hspG hsp h
 
 end VG.Proof.Ecdsa.Verify.X86

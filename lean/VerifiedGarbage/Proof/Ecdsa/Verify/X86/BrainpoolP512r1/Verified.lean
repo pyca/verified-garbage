@@ -33,12 +33,14 @@ meta import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP512r1.CombLit
 meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
+public import VerifiedGarbage.Proof.Framework.X86.SseTaintMono
+meta import VerifiedGarbage.Proof.Framework.X86.SseTaintMono
 
 /-!
 # ECDSA verification over brainpoolP512r1 on x86 (32-bit): `Verified`
 
 `verifyComb_ok` for brainpoolP512r1 with its comb (`brainpoolp512r1Comb`: `[u]G` by the
-comb, `[v]Q` by the ladder) gives the postcondition, and `verifyComb_ct` the
+comb, `[v]Q` by ECDH's windows) gives the postcondition, and `verifyComb_ct` the
 constant time, in the pointers alone, from the taint checks of the stages.
 The proof is against `vLocal`, whose arguments' slots are readable, and
 moves to the shared contract, which makes them writable and holds the
@@ -63,7 +65,7 @@ def vBitsCode : Prog isa :=
 def vLadderCode : Prog isa :=
   .seq (.block (Impl.Ecdsa.Verify.X86.Cfg.save brainpoolp512r1Comb))
     (.seq (Impl.Weierstrass.X86.bits (brainpoolp512r1Comb.sl V) (bitsAt brainpoolp512r1Comb.n 0) (8 * brainpoolp512r1Comb.n))
-      (.seq (Impl.Weierstrass.X86.ladder (Impl.Ecdh.X86.Cfg.ladderQ brainpoolp512r1Comb) brainpoolp512r1Comb.SP)
+      (.seq (brainpoolp512r1Comb.winMul Impl.Ecdh.X86.PX Impl.Ecdh.X86.PY)
         (Impl.Ecdsa.Verify.X86.Cfg.sum brainpoolp512r1Comb)))
 materialize_code vFrontCode
 materialize_code vMidCode
@@ -90,7 +92,7 @@ theorem ladderCT : VerifyLadderCT brainpoolp512r1Comb where
     exact RelCT.taint (A := taint) _ (fun _ _ h => h) (by native_taint_decide)
   ladder := by
     change RelCT isa _ vLadderCode _
-    exact RelCT.taint (A := taint) _ (fun _ _ h => h) (by native_taint_decide)
+    exact RelCT.taint (A := sseTaint) _ (fun _ _ h => h) (by taint_decide)
 
 /-- No instruction writes `esp`, and the calls use 20 bytes of stack. -/
 theorem verify_sp : SpOk verifyBrainpoolP512r1 brainpoolp512r1Comb.stk := ⟨NoSp.of_all (by lit_decide), by lit_decide⟩
@@ -101,15 +103,18 @@ theorem verifyBody_sp : SpOk (Impl.Ecdsa.Verify.X86.Cfg.verifyCombBody brainpool
 theorem gMul_sp : SpOk brainpoolp512r1Comb.gMul 20 :=
   SpOk.left (SpOk.right (a := brainpoolp512r1Comb.signPrep) (SpOk.right (a := brainpoolp512r1Comb.tableAddr) signComb_sp))
 
+/-- The order of the base point is below `2^(8 len)`. -/
+theorem nEnc : brainpoolp512r1Comb.C.n < 2 ^ (8 * brainpoolp512r1Comb.C.len) := by decide +kernel
+
 theorem verify_ok (hC : Weierstrass.Law Spec.BrainpoolP512r1.curve) {s₀ : State}
     (hp : VCombPre brainpoolp512r1Comb s₀) :
     WP isa verifyBrainpoolP512r1 s₀ fun s' => abiPreserved s₀ s' ∧ VPost brainpoolp512r1Comb s₀ s' :=
-  verifyComb_ok (d := brainpoolp512r1d) (brainpoolp512r1Comb_ok) hC (brainpoolp512r1Comb_tables hC) rfl brainpoolp512r1Comb_shape rfl
+  verifyComb_ok (d := brainpoolp512r1d) (brainpoolp512r1Comb_ok) hC nEnc (brainpoolp512r1Comb_tables hC) rfl brainpoolp512r1Comb_shape rfl
     gMul_sp verifyBody_sp hp
 
 theorem verify_ct (hC : Weierstrass.Law Spec.BrainpoolP512r1.curve) :
     ConstantTime isa (VCombPre brainpoolp512r1Comb) (VCombPubL brainpoolp512r1d) verifyBrainpoolP512r1 :=
-  verifyComb_ct (d := brainpoolp512r1d) (brainpoolp512r1Comb_ok) hC (brainpoolp512r1Comb_tables hC) rfl brainpoolp512r1Comb_shape rfl
+  verifyComb_ct (d := brainpoolp512r1d) (brainpoolp512r1Comb_ok) hC nEnc (brainpoolp512r1Comb_tables hC) rfl brainpoolp512r1Comb_shape rfl
     (brainpoolp512r1Comb_gMul hC) stagesCT ladderCT gMul_sp verifyBody_sp
 
 abbrev vSpec : Contract isa :=

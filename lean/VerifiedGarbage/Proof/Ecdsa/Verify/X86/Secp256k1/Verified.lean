@@ -33,12 +33,14 @@ meta import VerifiedGarbage.Proof.Ecdsa.X86.Secp256k1.CombLit
 meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
+public import VerifiedGarbage.Proof.Framework.X86.SseTaintMono
+meta import VerifiedGarbage.Proof.Framework.X86.SseTaintMono
 
 /-!
 # ECDSA verification over secp256k1 on x86 (32-bit): `Verified`
 
 `verifyComb_ok` for secp256k1 with its comb (`secp256k1Comb`: `[u]G` by the
-comb, `[v]Q` by the ladder) gives the postcondition, and `verifyComb_ct` the
+comb, `[v]Q` by ECDH's windows) gives the postcondition, and `verifyComb_ct` the
 constant time, in the pointers alone, from the taint checks of the stages.
 The proof is against `vLocal`, whose arguments' slots are readable, and
 moves to the shared contract, which makes them writable and holds the
@@ -63,7 +65,7 @@ def vBitsCode : Prog isa :=
 def vLadderCode : Prog isa :=
   .seq (.block (Impl.Ecdsa.Verify.X86.Cfg.save secp256k1Comb))
     (.seq (Impl.Weierstrass.X86.bits (secp256k1Comb.sl V) (bitsAt secp256k1Comb.n 0) (8 * secp256k1Comb.n))
-      (.seq (Impl.Weierstrass.X86.ladder (Impl.Ecdh.X86.Cfg.ladderQ secp256k1Comb) secp256k1Comb.SP)
+      (.seq (secp256k1Comb.winMul Impl.Ecdh.X86.PX Impl.Ecdh.X86.PY)
         (Impl.Ecdsa.Verify.X86.Cfg.sum secp256k1Comb)))
 materialize_code vFrontCode
 materialize_code vMidCode
@@ -90,7 +92,7 @@ theorem ladderCT : VerifyLadderCT secp256k1Comb where
     exact RelCT.taint (A := taint) _ (fun _ _ h => h) (by native_taint_decide)
   ladder := by
     change RelCT isa _ vLadderCode _
-    exact RelCT.taint (A := taint) _ (fun _ _ h => h) (by native_taint_decide)
+    exact RelCT.taint (A := sseTaint) _ (fun _ _ h => h) (by taint_decide)
 
 /-- No instruction writes `esp`, and the calls use 20 bytes of stack. -/
 theorem verify_sp : SpOk verifySecp256k1 secp256k1Comb.stk := ⟨NoSp.of_all (by lit_decide), by lit_decide⟩
@@ -101,15 +103,18 @@ theorem verifyBody_sp : SpOk (Impl.Ecdsa.Verify.X86.Cfg.verifyCombBody secp256k1
 theorem gMul_sp : SpOk secp256k1Comb.gMul 20 :=
   SpOk.left (SpOk.right (a := secp256k1Comb.signPrep) (SpOk.right (a := secp256k1Comb.tableAddr) signComb_sp))
 
+/-- The order of the base point is below `2^(8 len)`. -/
+theorem nEnc : secp256k1Comb.C.n < 2 ^ (8 * secp256k1Comb.C.len) := by decide +kernel
+
 theorem verify_ok (hC : Weierstrass.Law Spec.Secp256k1.curve) (hI : Weierstrass.X86.Inv.InvSounds) {s₀ : State}
     (hp : VCombPre secp256k1Comb s₀) :
     WP isa verifySecp256k1 s₀ fun s' => abiPreserved s₀ s' ∧ VPost secp256k1Comb s₀ s' :=
-  verifyComb_ok (d := secp256k1d) (secp256k1Comb_ok hI) hC (secp256k1Comb_tables hC) rfl secp256k1Comb_shape rfl
+  verifyComb_ok (d := secp256k1d) (secp256k1Comb_ok hI) hC nEnc (secp256k1Comb_tables hC) rfl secp256k1Comb_shape rfl
     gMul_sp verifyBody_sp hp
 
 theorem verify_ct (hC : Weierstrass.Law Spec.Secp256k1.curve) (hI : Weierstrass.X86.Inv.InvSounds) :
     ConstantTime isa (VCombPre secp256k1Comb) (VCombPubL secp256k1d) verifySecp256k1 :=
-  verifyComb_ct (d := secp256k1d) (secp256k1Comb_ok hI) hC (secp256k1Comb_tables hC) rfl secp256k1Comb_shape rfl
+  verifyComb_ct (d := secp256k1d) (secp256k1Comb_ok hI) hC nEnc (secp256k1Comb_tables hC) rfl secp256k1Comb_shape rfl
     (secp256k1Comb_gMul hC hI) stagesCT ladderCT gMul_sp verifyBody_sp
 
 abbrev vSpec : Contract isa :=

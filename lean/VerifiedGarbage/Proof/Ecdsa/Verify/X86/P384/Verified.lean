@@ -33,12 +33,14 @@ meta import VerifiedGarbage.Proof.Ecdsa.X86.P384.CombLit
 meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
+public import VerifiedGarbage.Proof.Framework.X86.SseTaintMono
+meta import VerifiedGarbage.Proof.Framework.X86.SseTaintMono
 
 /-!
 # ECDSA verification over P-384 on x86 (32-bit): `Verified`
 
 `verifyComb_ok` for P-384 with its comb (`p384Comb`: `[u]G` by the
-comb, `[v]Q` by the ladder) gives the postcondition, and `verifyComb_ct` the
+comb, `[v]Q` by ECDH's windows) gives the postcondition, and `verifyComb_ct` the
 constant time, in the pointers alone, from the taint checks of the stages.
 The proof is against `vLocal`, whose arguments' slots are readable, and
 moves to the shared contract, which makes them writable and holds the
@@ -63,7 +65,7 @@ def vBitsCode : Prog isa :=
 def vLadderCode : Prog isa :=
   .seq (.block (Impl.Ecdsa.Verify.X86.Cfg.save p384Comb))
     (.seq (Impl.Weierstrass.X86.bits (p384Comb.sl V) (bitsAt p384Comb.n 0) (8 * p384Comb.n))
-      (.seq (Impl.Weierstrass.X86.ladder (Impl.Ecdh.X86.Cfg.ladderQ p384Comb) p384Comb.SP)
+      (.seq (p384Comb.winMul Impl.Ecdh.X86.PX Impl.Ecdh.X86.PY)
         (Impl.Ecdsa.Verify.X86.Cfg.sum p384Comb)))
 materialize_code vFrontCode
 materialize_code vMidCode
@@ -90,7 +92,7 @@ theorem ladderCT : VerifyLadderCT p384Comb where
     exact RelCT.taint (A := taint) _ (fun _ _ h => h) (by native_taint_decide)
   ladder := by
     change RelCT isa _ vLadderCode _
-    exact RelCT.taint (A := taint) _ (fun _ _ h => h) (by native_taint_decide)
+    exact RelCT.taint (A := sseTaint) _ (fun _ _ h => h) (by taint_decide)
 
 /-- No instruction writes `esp`, and the calls use 20 bytes of stack. -/
 theorem verify_sp : SpOk verifyP384 p384Comb.stk := ⟨NoSp.of_all (by lit_decide), by lit_decide⟩
@@ -101,15 +103,18 @@ theorem verifyBody_sp : SpOk (Impl.Ecdsa.Verify.X86.Cfg.verifyCombBody p384Comb)
 theorem gMul_sp : SpOk p384Comb.gMul 20 :=
   SpOk.left (SpOk.right (a := p384Comb.signPrep) (SpOk.right (a := p384Comb.tableAddr) signComb_sp))
 
+/-- The order of the base point is below `2^(8 len)`. -/
+theorem nEnc : p384Comb.C.n < 2 ^ (8 * p384Comb.C.len) := by decide +kernel
+
 theorem verify_ok (hC : Weierstrass.Law Spec.P384.curve) {s₀ : State}
     (hp : VCombPre p384Comb s₀) :
     WP isa verifyP384 s₀ fun s' => abiPreserved s₀ s' ∧ VPost p384Comb s₀ s' :=
-  verifyComb_ok (d := p384d) (p384Comb_ok) hC (p384Comb_tables hC) rfl p384Comb_shape rfl
+  verifyComb_ok (d := p384d) (p384Comb_ok) hC nEnc (p384Comb_tables hC) rfl p384Comb_shape rfl
     gMul_sp verifyBody_sp hp
 
 theorem verify_ct (hC : Weierstrass.Law Spec.P384.curve) :
     ConstantTime isa (VCombPre p384Comb) (VCombPubL p384d) verifyP384 :=
-  verifyComb_ct (d := p384d) (p384Comb_ok) hC (p384Comb_tables hC) rfl p384Comb_shape rfl
+  verifyComb_ct (d := p384d) (p384Comb_ok) hC nEnc (p384Comb_tables hC) rfl p384Comb_shape rfl
     (p384Comb_gMul hC) stagesCT ladderCT gMul_sp verifyBody_sp
 
 abbrev vSpec : Contract isa :=

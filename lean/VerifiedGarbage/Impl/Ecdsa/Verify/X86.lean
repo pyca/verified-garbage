@@ -29,8 +29,9 @@ x86-64 and AArch64 (`Impl/Ecdsa/Verify/AArch64.lean`):
 5. `[u]G` by the signature's ladder (from the table of `u`'s bits), or, for
    a curve with a comb's tables (`verifyComb`), by its comb, saved
    to `U`, and `R` reset to `O`; then `[v]Q` by ECDH's ladder (from the
-   table of `v`'s bits) and `[u]G + [v]Q` by the complete addition, into
-   `R`;
+   table of `v`'s bits), or with the comb by ECDH's windows (`Cfg.winMul`,
+   `Impl/Ecdsa/X86/Window.lean`), and `[u]G + [v]Q` by the complete
+   addition, into `R`;
 6. `Z^(p-2)` by the signature's power, `x = X Z^(p-2)` out of Montgomery's
    form, and the masks of `Z ≠ 0` and `x R ≡ r R` modulo `n` into the
    flag, which is returned as 0 or 1.
@@ -195,11 +196,12 @@ def windowMulQ : Prog isa :=
   .seq (Naf.prep 3580 (c.sl V) 3520) <|
   .seq (Naf.window (nafQ c) c.SP) (Naf.finish (nafQ c) c.SP)
 
-/-- Fixed-base comb for `[u]G`, followed by the existing variable-base ladder. -/
+/-- Fixed-base comb for `[u]G`, followed by ECDH's windows for `[v]Q`, from
+the table of `v`'s bits: constant time, although `v` and `Q` are public. -/
 def pointsCombLadder : Prog isa :=
   .seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) <| .seq c.gMul <|
   .seq (.block (save c)) <| .seq (bits (c.sl V) (bitsAt c.n 0) (8 * c.n)) <|
-  .seq (ladder (Impl.Ecdh.X86.Cfg.ladderQ c) c.SP) (sum c)
+  .seq (c.winMul Impl.Ecdh.X86.PX Impl.Ecdh.X86.PY) (sum c)
 
 /-- Fixed-base comb and signed-window variable-base multiplication. -/
 def pointsWindow : Prog isa :=
@@ -207,7 +209,7 @@ def pointsWindow : Prog isa :=
   .seq (.block (save c)) <| .seq (windowMulQ c) (sum c)
 
 /-- Use signed windows for P-256 (four words, and the comb with Jacobian
-additions: `a = -3`); retain the ladder for the other curves. -/
+additions: `a = -3`), and ECDH's windows for the other curves. -/
 def pointsComb : Prog isa :=
   if c.n = 4 ∧ c.combJac = true then pointsWindow c else pointsCombLadder c
 

@@ -49,6 +49,9 @@ theorem vComb_sp : SpOk vCombCode p256Comb.stk := ⟨NoSp.of_all (by lit_decide)
 theorem vCombBody_sp : SpOk (Impl.Ecdsa.Verify.X86.Cfg.verifyCombBody p256Comb) p256Comb.stk :=
   SpOk.right (a := p256Comb.tableAddr) vComb_sp
 
+/-- The order of P-256's base point is below `2^(8 len)`. -/
+theorem p256Comb_nEnc : p256Comb.C.n < 2 ^ (8 * p256Comb.C.len) := by decide +kernel
+
 theorem vComb_ok (hC : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86.Inv.InvSounds) {s₀ : State} (hp : VCombPre p256Comb s₀) :
     WP isa vCombCode s₀ fun s' => abiPreserved s₀ s' ∧ VPost p256Comb s₀ s' := by
   have hCo : ∀ d, p256Comb.comb = some d → CombOk p256Comb d := by
@@ -56,7 +59,8 @@ theorem vComb_ok (hC : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86.In
   refine WP.seq (WP.mono (symFrame_ok p256d.tsym s₀ hp.sp4) fun s₁ P => ?_)
   have hp₁ := hp.toVPre.symAddr P hp.sp4
   have ht := vPrefixTables (d := p256d) rfl hp P
-  refine WP.mono (verifyCombBody_ok (p256Comb_ok hI) hC (p256Comb_tables hC) hCo (fun _ => p256Comb_am3) hp₁
+  refine WP.mono (verifyCombBody_ok (p256Comb_ok hI) hC p256Comb_nEnc (p256Comb_tables hC) hCo
+    (fun _ => p256Comb_am3) hp₁
     (fun d hd => by have e : p256d = d := Option.some.inj hd; subst d; exact ht) signComb_spG vCombBody_sp)
     fun s₂ ⟨K, post⟩ => ?_
   have ha := K.abi hp₁
@@ -112,7 +116,7 @@ theorem vComb_ct (hC : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86.In
   have ht₁ := vPrefixTables (d := p256d) rfl hp P
   have ht₂ := vPrefixTables (d := p256d) rfl hq Q
   have hg' : s.gpr .eax = t.gpr .eax := by rw [P.addr, Q.addr, hg]
-  exact vCombBody_rel (d := p256d) (p256Comb_ok hI) hC (p256Comb_tables hC) rfl p256Comb_shape
+  exact vCombBody_rel (d := p256d) (p256Comb_ok hI) hC p256Comb_nEnc (p256Comb_tables hC) rfl p256Comb_shape
     (fun _ => p256Comb_am3) p256VerifyCT hp₁ hq₁ ht₁ ht₂ he' ha'
     (vPoints_rel (p256Comb_ok hI) hC (p256Comb_tables hC) p256Comb_shape p256Comb_am3 hp₁ hq₁ ht₁ ht₂
       he' ha' hpub hg' signComb_spG)
