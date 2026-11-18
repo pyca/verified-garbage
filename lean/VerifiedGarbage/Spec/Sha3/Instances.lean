@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Sha3
+public import VerifiedGarbage.Spec.Zeroize
 public import VerifiedGarbage.TCB.Artifact
 
 /-!
@@ -44,7 +45,9 @@ for one that uses none: it depends on the target. They may overwrite their
 arguments passed in memory, where the calling convention allows it
 (`writeArgs`). `scratch` is `update`'s working space, sized for the target
 with the fewest registers (the Rust sponge keeps it on its stack); the other
-functions keep theirs on the stack.
+functions keep theirs on the stack. `updateScrubbedContract` is `update`'s
+contract that also leaves nothing it computed in `scratch`
+(`Zeroize.scrubbed`); `updateApi` does not require it yet.
 -/
 
 @[expose] public section
@@ -119,6 +122,19 @@ def updatePost (rate pb : Nat) : updateSig.Post pb := fun state pos data len _sc
 def updateContract {M : ISA} (A : Abi M) (rate : Nat) (stack : Nat := 0) : Contract M :=
   updateSig.contract A (pre := updatePre rate A.ptrBits) (post := updatePost rate A.ptrBits)
     (writeArgs := true) (stack := stack)
+
+/-- `updatePost`, and each byte of `scratch` on return is unchanged or zero
+(`Zeroize.scrubbed`): nothing `update` computed is left in its working space,
+which the Rust sponge releases on return. -/
+def updateScrubbedPost (rate pb : Nat) : updateSig.Post pb :=
+  fun state pos data len scratch m m' ret =>
+    updatePost rate pb state pos data len scratch m m' ret ∧
+      Zeroize.scrubbed m m' scratch 640
+
+/-- `updatePre` and `updateScrubbedPost`, for the rate `rate`. -/
+def updateScrubbedContract {M : ISA} (A : Abi M) (rate : Nat) (stack : Nat := 0) : Contract M :=
+  updateSig.contract A (pre := updatePre rate A.ptrBits)
+    (post := updateScrubbedPost rate A.ptrBits) (writeArgs := true) (stack := stack)
 
 /-- `vg_<rust>_update`, which absorbs data into a computation of `name`, with
 the rate `rate`, on every target. -/
