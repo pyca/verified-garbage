@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Rc2.cbcEncryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.
@@ -29,7 +31,7 @@ bnez s4, 22b
 j 21f
 20:
 21:
-.base64 "g7QKEAO5ihCDuQoRA7qKEQO7ihKDsAoTg7oKEgqPgU8jMP8BIzT/ASM4/wEjPP8BIzD/AyM0/wMjOP8DIzz/AyMw/wUjNP8FIzj/BSM8/wUjMP8HIzT/ByM4/wcjPP8HIzD/CSM0/wkjOP8JIzz/CSMw/wsjNP8LIzj/CyM8/wsjMP8NIzT/DSM4/w0jPP8NIzD/DyM0/w8jOP8PIzz/DyMw/xEjNP8RIzj/ESM8/xEjMP8TIzT/EyM4/xMjPP8TIzD/FSM0/xUjOP8VIzz/FSMw/xcjNP8XIzj/FyM8/xcjMP8ZIzT/GSM4/xkjPP8ZIzD/GyM0/xsjOP8bIzz/GyMw/x0jNP8dIzj/HSM8/x0jMP8fIzT/HyM4/x8jPP8fEwEBIIKA"
+.base64 "g7QKEAO5ihCDuQoRA7qKEQO7ihKDsAoTg7oKEgqPgU8jMP8BIzT/ASM4/wEjPP8BIzD/AyM0/wMjOP8DIzz/AyMw/wUjNP8FIzj/BSM8/wUjMP8HIzT/ByM4/wcjPP8HIzD/CSM0/wkjOP8JIzz/CSMw/wsjNP8LIzj/CyM8/wsjMP8NIzT/DSM4/w0jPP8NIzD/DyM0/w8jOP8PIzz/DyMw/xEjNP8RIzj/ESM8/xEjMP8TIzT/EyM4/xMjPP8TIzD/FSM0/xUjOP8VIzz/FSMw/xcjNP8XIzj/FyM8/xcjMP8ZIzT/GSM4/xkjPP8ZIzD/GyM0/xsjOP8bIzz/GyMw/x0jNP8dIzj/HSM8/x0jMP8fIzT/HyM4/x8jPP8fEwEBIIFCAXEKgyMwUwAjNFMAIzhTACM8UwAjMFMCIzRTAiM4UwIjPFMCIzBTBCM0UwQjOFMEIzxTBCMwUwYjNFMGIzhTBiM8UwYjMFMIIzRTCCM4UwgjPFMIIzBTCiM0UwojOFMKIzxTCiMwUwwjNFMMIzhTDCM8UwwjMFMOIzRTDiM4Uw4jPFMOIzBTECM0UxAjOFMQIzxTECMwUxIjNFMSIzhTEiM8UxIjMFMUIzRTFCM4UxQjPFMUIzBTFiM0UxYjOFMWIzxTFiMwUxgjNFMYIzhTGCM8UxgjMFMaIzRTGiM4UxojPFMaIzBTHCM0UxwjOFMcIzxTHCMwUx4jNFMeIzhTHiM8Ux4TAQEgAUWBRQFGgUYBR4FHAUiBSIFCAUOBQwFOgU4BT4FPgoA="
 .option pop"#,
         vg_rc2_encrypt_block = sym super::rc2::vg_rc2_encrypt_block::vg_rc2_encrypt_block,
     )
@@ -38,6 +40,8 @@ j 21f
 /// RC2-CBC decryption (RFC 2268 §§3–4, NIST SP 800-38A §6.2) of whole blocks, in place: replaces the `n` 8-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH⁻¹_K` is RC2 decryption under the same 128-byte little-endian schedule as encryption, as written at the start of the context by `vg_rc2_cbc_init`. No padding is removed.
 ///
 /// Contract: `VG.Spec.Rc2.cbcDecryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -61,7 +65,7 @@ bnez s4, 22b
 j 21f
 20:
 21:
-.base64 "g7QKEAO5ihCDuQoRA7qKEQO7ihKDsAoTg7oKEgqPgU8jMP8BIzT/ASM4/wEjPP8BIzD/AyM0/wMjOP8DIzz/AyMw/wUjNP8FIzj/BSM8/wUjMP8HIzT/ByM4/wcjPP8HIzD/CSM0/wkjOP8JIzz/CSMw/wsjNP8LIzj/CyM8/wsjMP8NIzT/DSM4/w0jPP8NIzD/DyM0/w8jOP8PIzz/DyMw/xEjNP8RIzj/ESM8/xEjMP8TIzT/EyM4/xMjPP8TIzD/FSM0/xUjOP8VIzz/FSMw/xcjNP8XIzj/FyM8/xcjMP8ZIzT/GSM4/xkjPP8ZIzD/GyM0/xsjOP8bIzz/GyMw/x0jNP8dIzj/HSM8/x0jMP8fIzT/HyM4/x8jPP8fEwEBIIKA"
+.base64 "g7QKEAO5ihCDuQoRA7qKEQO7ihKDsAoTg7oKEgqPgU8jMP8BIzT/ASM4/wEjPP8BIzD/AyM0/wMjOP8DIzz/AyMw/wUjNP8FIzj/BSM8/wUjMP8HIzT/ByM4/wcjPP8HIzD/CSM0/wkjOP8JIzz/CSMw/wsjNP8LIzj/CyM8/wsjMP8NIzT/DSM4/w0jPP8NIzD/DyM0/w8jOP8PIzz/DyMw/xEjNP8RIzj/ESM8/xEjMP8TIzT/EyM4/xMjPP8TIzD/FSM0/xUjOP8VIzz/FSMw/xcjNP8XIzj/FyM8/xcjMP8ZIzT/GSM4/xkjPP8ZIzD/GyM0/xsjOP8bIzz/GyMw/x0jNP8dIzj/HSM8/x0jMP8fIzT/HyM4/x8jPP8fEwEBIIFCAXEKgyMwUwAjNFMAIzhTACM8UwAjMFMCIzRTAiM4UwIjPFMCIzBTBCM0UwQjOFMEIzxTBCMwUwYjNFMGIzhTBiM8UwYjMFMIIzRTCCM4UwgjPFMIIzBTCiM0UwojOFMKIzxTCiMwUwwjNFMMIzhTDCM8UwwjMFMOIzRTDiM4Uw4jPFMOIzBTECM0UxAjOFMQIzxTECMwUxIjNFMSIzhTEiM8UxIjMFMUIzRTFCM4UxQjPFMUIzBTFiM0UxYjOFMWIzxTFiMwUxgjNFMYIzhTGCM8UxgjMFMaIzRTGiM4UxojPFMaIzBTHCM0UxwjOFMcIzxTHCMwUx4jNFMeIzhTHiM8Ux4TAQEgAUWBRQFGgUYBR4FHAUiBSIFCAUOBQwFOgU4BT4FPgoA="
 .option pop"#,
         vg_rc2_decrypt_block = sym super::rc2::vg_rc2_decrypt_block::vg_rc2_decrypt_block,
     )

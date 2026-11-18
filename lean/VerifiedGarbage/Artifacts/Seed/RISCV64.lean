@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Seed.RISCV64.Frame
+public import VerifiedGarbage.Proof.Seed.RISCV64.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.Seed.RISCV64.Lit
@@ -12,14 +12,8 @@ import VerifiedGarbage.Proof.Seed.RISCV64.Lit
 namespace VG.Artifacts.Seed.RISCV64
 
 def artifacts : List Artifact := [
-  Spec.Seed.expandKeyApi.artifact RISCV64.target {
-    code := Impl.StackScratch.RISCV64.withStackScratchWiped 1040 .a2 129 Impl.Seed.RISCV64.expandKey
-    verified := Proof.Seed.RISCV64.expandKey_framed },
-  Spec.Seed.ecbEncryptApi.artifact RISCV64.target {
-    code := Impl.StackScratch.RISCV64.withStackScratchWiped 1040 .a3 129 (Impl.Seed.RISCV64.ecb .encrypt)
-    verified := Proof.Seed.RISCV64.ecb_framed .encrypt },
-  Spec.Seed.ecbDecryptApi.artifact RISCV64.target {
-    code := Impl.StackScratch.RISCV64.withStackScratchWiped 1040 .a3 129 (Impl.Seed.RISCV64.ecb .decrypt)
-    verified := Proof.Seed.RISCV64.ecb_framed .decrypt }]
+  Spec.Seed.expandKeyApi.artifact RISCV64.target Proof.Seed.RISCV64.Scrub.expandKeyReg,
+  Spec.Seed.ecbEncryptApi.artifact RISCV64.target Proof.Seed.RISCV64.Scrub.ecbEncryptReg,
+  Spec.Seed.ecbDecryptApi.artifact RISCV64.target Proof.Seed.RISCV64.Scrub.ecbDecryptReg]
 
 end VG.Artifacts.Seed.RISCV64

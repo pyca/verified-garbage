@@ -369,7 +369,7 @@ end
 abbrev pbkCode : Prog isa := Proof.Pbkdf2.Whole.RISCV64.Sha256.F.pbkdf2
 
 /-- Its name. -/
-abbrev pbkName : String := Spec.Hmac.sha256I.pbkdf2Api.name
+abbrev pbkName : String := Spec.Hmac.sha256I.pbkdf2Api.name ++ "_core"
 
 theorem pbk_ok : PbkOk pbkCode := fun _ hs =>
   Proof.Pbkdf2.Whole.RISCV64.correct Proof.Pbkdf2.Whole.RISCV64.Sha256.okF hs

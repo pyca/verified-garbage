@@ -1,7 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Camellia.RISCV64.Verified
-public import VerifiedGarbage.Proof.Camellia.RISCV64.KeyVerified
+public import VerifiedGarbage.Proof.Camellia.RISCV64.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.Camellia.RISCV64.Lit
@@ -16,13 +15,7 @@ def artifacts : List Artifact := [
   Spec.Camellia.expandKeyApi.artifact RISCV64.target {
     code := Impl.StackScratch.RISCV64.withStackScratchWiped 3200 .a3 400 Impl.Camellia.RISCV64.expandKey
     verified := Proof.Camellia.RISCV64.expandKey_framed },
-  Spec.Camellia.ecbEncryptApi.artifact RISCV64.target {
-    code := Impl.StackScratch.RISCV64.withStackScratchWiped 3200 .a4 400
-      (Impl.Camellia.RISCV64.ecb .encrypt)
-    verified := Proof.Camellia.RISCV64.ecb_framed .encrypt },
-  Spec.Camellia.ecbDecryptApi.artifact RISCV64.target {
-    code := Impl.StackScratch.RISCV64.withStackScratchWiped 3200 .a4 400
-      (Impl.Camellia.RISCV64.ecb .decrypt)
-    verified := Proof.Camellia.RISCV64.ecb_framed .decrypt }]
+  Spec.Camellia.ecbEncryptApi.artifact RISCV64.target Proof.Camellia.RISCV64.Scrub.ecbEncryptReg,
+  Spec.Camellia.ecbDecryptApi.artifact RISCV64.target Proof.Camellia.RISCV64.Scrub.ecbDecryptReg]
 
 end VG.Artifacts.Camellia.RISCV64

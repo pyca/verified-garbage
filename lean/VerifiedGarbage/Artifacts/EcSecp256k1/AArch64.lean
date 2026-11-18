@@ -25,6 +25,7 @@ public import VerifiedGarbage.TCB.AArch64.Print
 public import VerifiedGarbage.Proof.Secp256k1.AArch64.Law
 public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.Secp256k1
 public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.Secp256k1Decompress
+public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.Residue
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
 
 /-! # secp256k1 public keys (FIPS 186-5 §A.2) on AArch64 -/
@@ -40,8 +41,10 @@ def artifacts : List Artifact := [
     code := Proof.EcKey.Compressed.AArch64.Secp256k1.code
     verified := Proof.EcKey.Compressed.AArch64.Secp256k1.verified hasLaw.inv },
   Spec.EcKey.Secp256k1.inst.decompressPublicKeyApi.artifact AArch64.target {
-    code := Proof.EcKey.Compressed.AArch64.Secp256k1Decompress.code
-    verified := Proof.EcKey.Compressed.AArch64.Secp256k1Decompress.verified hasLaw.law hasLaw.inv },
+    code := Proof.EcKey.Compressed.AArch64.Residue.cleared [.x16, .x17] []
+      Proof.EcKey.Compressed.AArch64.Secp256k1Decompress.code
+    verified := Proof.EcKey.Compressed.AArch64.Residue.Secp256k1.verified hasLaw.law hasLaw.inv
+    residue := some ⟨Proof.EcKey.Compressed.AArch64.Residue.Secp256k1.noResidue hasLaw.law hasLaw.inv⟩ },
   Spec.EcKey.Secp256k1.publicKeyApi.artifact AArch64.target {
     code := Impl.EcKey.AArch64.publicKeySecp256k1
     verified := Proof.EcKey.AArch64.Secp256k1.pk_verified hasLaw.law hasLaw.inv }]

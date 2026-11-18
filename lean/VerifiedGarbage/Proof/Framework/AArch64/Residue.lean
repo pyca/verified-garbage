@@ -88,7 +88,7 @@ and `y`. -/
 theorem exec_withMS {i : Instr} (hi : regOnly i = true) (s : State) (m : Mem)
     (y : String → BitVec 64) :
     exec i (s.withMS m y) = (exec i s).map fun t => t.withMS m y := by
-  cases i <;> simp only [regOnly, Bool.false_eq_true] at hi
+  cases i <;> cases hi
   all_goals first
     | rfl
     | (simp only [exec]; split <;> rfl)
@@ -98,7 +98,7 @@ theorem exec_withMS {i : Instr} (hi : regOnly i = true) (s : State) (m : Mem)
 /-- A register-only instruction changes neither the regions nor the memory. -/
 theorem exec_regOnly {i : Instr} (hi : regOnly i = true) {s t : State} (h : exec i s = some t) :
     t.rd = s.rd ∧ t.wr = s.wr ∧ t.mem = s.mem := by
-  cases i <;> simp only [regOnly, Bool.false_eq_true] at hi
+  cases i <;> cases hi
   all_goals
     simp only [exec] at h
     first

@@ -13010,5 +13010,17 @@ vg_ec_p192_decompress_public_key:
 	ldr x30, [x0, #56]
 	movz x1, #1, lsl #0
 	and x0, x3, x1
+	movz x2, #0, lsl #0
+	movz x3, #0, lsl #0
+	movz x4, #0, lsl #0
+	movz x8, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x12, #0, lsl #0
+	movz x13, #0, lsl #0
+	movz x16, #0, lsl #0
+	movz x17, #0, lsl #0
+	tst x2, x2
 	ret
 	.p2align 6

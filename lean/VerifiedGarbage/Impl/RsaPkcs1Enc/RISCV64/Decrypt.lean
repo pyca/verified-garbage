@@ -104,8 +104,8 @@ def privCall : Bool → Prog isa
 /-- The private-key operation's stack arguments: twelve, or with `pc`
 fourteen (`pre` and `pre_len` too). -/
 def nCallArgs (pc : Bool) : Nat := if pc then 14 else 12
-def macInitCall : Prog isa := .call Spec.Hmac.sha256I.initAnyKeyApi.name sha256.init
-def macFinCall : Prog isa := .call Spec.Hmac.sha256I.finalizeApi.name sha256.finalize
+def macInitCall : Prog isa := .call (Spec.Hmac.sha256I.initAnyKeyApi.name ++ "_core") sha256.init
+def macFinCall : Prog isa := .call (Spec.Hmac.sha256I.finalizeApi.name ++ "_core") sha256.finalize
 
 /-! ## 1. The private-key operation -/
 

@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Camellia.ctrContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys, the counter block or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 272 bytes.
@@ -205,7 +207,7 @@ j 253f
 bnez t2, 255b
 .base64 "EwEBTRMBAX8="
 21:
-.base64 "goA="
+.base64 "gUITAQGBQREKgyMwUwAjNFMAIzhTACM8UwAjMFMCIzRTAiM4UwIjPFMCIzBTBCM0UwQjOFMEIzxTBCMwUwYjNFMGIzhTBiM8UwYjMFMIIzRTCCM4UwgjPFMIIzBTCiM0UwojOFMKIzxTCiMwUwwjNFMMIzhTDCM8UwwjMFMOIzRTDiM4Uw4jPFMOIzBTECM0UxAjOFMQIzxTECMwUxIjNFMSIzhTEiM8UxIjMFMUIzRTFCM4UxQjPFMUIzBTFiM0UxYjOFMWIzxTFiMwUxgjNFMYIzhTGCM8UxgjMFMaIzRTGiM4UxojPFMaIzBTHCM0UxwjOFMcIzxTHCMwUx4jNFMeIzhTHiM8Ux4jMFMgIzRTICM4UyAjPFMgIzBTIiM0UyIjOFMiIzxTIiMwUyQjNFMkIzhTJCM8UyQjMFMmIzRTJiM4UyYjPFMmIzBTKCM0UygjOFMoIzxTKCMwUyojNFMqIzhTKiM8UyojMFMsIzRTLCM4UywjPFMsIzBTLiM0Uy4jOFMuIzxTLiMwUzAjNFMwIzhTMCM8UzAjMFMyIzRTMiM4UzIjPFMyIzBTNCM0UzQjOFM0IzxTNCMwUzYjNFM2IzhTNiM8UzYjMFM4IzRTOCM4UzgjPFM4IzBTOiM0UzojOFM6IzxTOiMwUzwjNFM8IzhTPCM8UzwjMFM+IzRTPiM4Uz4jPFM+IzBTQCM0U0AjOFNAIzxTQCMwU0IjNFNCIzhTQiM8U0IjMFNEIzRTRCM4U0QjPFNEIzBTRiM0U0YjOFNGIzxTRiMwU0gjNFNIIzhTSCM8U0gjMFNKIzRTSiM4U0ojPFNKIzBTTCM0U0wjOFNMIzxTTCMwU04jNFNOIzhTTiM8U04jMFNQIzRTUCM4U1AjPFNQIzBTUiM0U1IjOFNSIzxTUiMwU1QjNFNUIzhTVCM8U1QjMFNWIzRTViM4U1YjPFNWIzBTWCM0U1gjOFNYIzxTWCMwU1ojNFNaIzhTWiM8U1ojMFNcIzRTXCM4U1wjPFNcIzBTXiM0U14jOFNeIzxTXiMwU2AjNFNgIzhTYCM8U2AjMFNiIzRTYiM4U2IjPFNiIzBTZCM0U2QjOFNkIzxTZCMwU2YjNFNmIzhTZiM8U2YjMFNoIzRTaCM4U2gjPFNoIzBTaiM0U2ojOFNqIzxTaiMwU2wjNFNsIzhTbCM8U2wjMFNuIzRTbiM4U24jPFNuIzBTcCM0U3AjOFNwIzxTcCMwU3IjNFNyIzhTciM8U3IjMFN0IzRTdCM4U3QjPFN0IzBTdiM0U3YjOFN2IzxTdiMwU3gjNFN4IzhTeCM8U3gjMFN6IzRTeiM4U3ojPFN6IzBTfCM0U3wjOFN8IzxTfCMwU34jNFN+IzhTfiM8U34TAQG0CoMjMFMAIzRTACM4UwAjPFMAIzBTAiM0UwIjOFMCIzxTAiMwUwQjNFMEIzhTBCM8UwQjMFMGIzRTBiM4UwYjPFMGIzBTCCM0UwgjOFMIIzxTCCMwUwojNFMKIzhTCiM8UwojMFMMIzRTDCM4UwwjPFMMIzBTDiM0Uw4jOFMOIzxTDiMwUxAjNFMQIzhTECM8UxAjMFMSIzRTEiM4UxIjPFMSIzBTFCM0UxQjOFMUIzxTFCMwUxYjNFMWIzhTFiM8UxYjMFMYIzRTGCM4UxgjPFMYIzBTGiM0UxojOFMaIzxTGiMwUxwjNFMcIzhTHCM8UxwjMFMeIzRTHiM4Ux4jPFMeIzBTICM0UyAjOFMgIzxTICMwUyIjNFMiIzhTIiM8UyIjMFMkIzRTJCM4UyQjPFMkIzBTJiM0UyYjOFMmIzxTJiMwUygjNFMoIzhTKCM8UygjMFMqIzRTKiM4UyojPFMqIzBTLCM0UywjOFMsIzxTLCMwUy4jNFMuIzhTLiM8Uy4jMFMwIzRTMCM4UzAjPFMwIzBTMiM0UzIjOFMyIzxTMiMwUzQjNFM0IzhTNCM8UzQjMFM2IzRTNiM4UzYjPFM2IzBTOCM0UzgjOFM4IzxTOCMwUzojNFM6IzhTOiM8UzojMFM8IzRTPCM4UzwjPFM8IzBTPiM0Uz4jOFM+IzxTPiMwU0AjNFNAIzhTQCM8U0AjMFNCIzRTQiM4U0IjPFNCIzBTRCM0U0QjOFNEIzxTRCMwU0YjNFNGIzhTRiM8U0YjMFNIIzRTSCM4U0gjPFNIIzBTSiM0U0ojOFNKIzxTShMBAUxBARMBAX8BRYFFAUaBRgFHgUcBSIFIgUIBQ4FDAU6BTgFPgU+CgA=="
 .option pop"#,
         vg_camellia_modes_prepare_encrypt_24 = sym super::camellia::vg_camellia_modes_prepare_encrypt_24::vg_camellia_modes_prepare_encrypt_24,
         vg_camellia_modes_crypt_24 = sym super::camellia::vg_camellia_modes_crypt_24::vg_camellia_modes_crypt_24,
@@ -232,10 +234,10 @@ pub(crate) unsafe extern "C" fn vg_camellia_ctr_final(schedule: *const [u8; 272]
         r#".option push
 .option arch, +m, +c
 .base64 "XXGKhyOwFwCE5yO4JwEjvDcBI7BHAyO0VwMjuGcDI7x3A6qELoqyir6Lk1JHABOTQgAziWYAswlnQBaH"
-call {vg_camellia_ctr}
+call {vg_camellia_ctr_core}
 beqz s3, 20f
 .base64 "gUIjsFsEI7RbBCaF0oVWhpOGCwQFRw=="
-call {vg_camellia_ctr}
+call {vg_camellia_ctr_core}
 .base64 "k4MLBA=="
 22:
 .base64 "g0IJAAPDAwCzwmIAIwBZAAUJhQP9GQ=="
@@ -245,6 +247,10 @@ j 21f
 21:
 .base64 "g7ALAIO0iwADuQsBg7mLAQO6CwKDuosCA7sLA4O7iwMKj4FPIzD/ASM0/wEjOP8BIzz/ASMw/wMjNP8DIzj/AyM8/wMjMP8FIzT/BWFhgoA="
 .option pop"#,
-        vg_camellia_ctr = sym super::camellia_ctr::vg_camellia_ctr,
+        vg_camellia_ctr_core = sym super::camellia_ctr::vg_camellia_ctr_core::vg_camellia_ctr_core,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_camellia_ctr_core.rs"]
+pub(crate) mod vg_camellia_ctr_core;

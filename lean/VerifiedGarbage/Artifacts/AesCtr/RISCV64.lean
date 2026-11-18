@@ -1,7 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.AesCtr.RISCV64.Verified
-public import VerifiedGarbage.Proof.AesCtr.RISCV64.Final
+public import VerifiedGarbage.Proof.Aes.RISCV64.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.AesCtr.RISCV64.Lit
@@ -13,11 +12,7 @@ import VerifiedGarbage.Proof.AesCtr.RISCV64.Lit
 namespace VG.Artifacts.AesCtr.RISCV64
 
 def artifacts : List Artifact := [
-  Spec.Ctr.aesApi.artifact RISCV64.target {
-    code := Impl.AesCtr.RISCV64.crypt
-    verified := Proof.AesCtr.keyed Proof.AesCtr.RISCV64.crypt_verified },
-  Spec.Ctr.aesFinalApi.artifact RISCV64.target {
-    code := Impl.StackScratch.RISCV64.withStackScratchWiped 80 .a6 10 Impl.AesCtr.RISCV64.cryptFinal
-    verified := Proof.AesCtr.final_keyed Proof.AesCtr.RISCV64.Final.cryptFinal_framed }]
+  Spec.Ctr.aesApi.artifact RISCV64.target Proof.Aes.RISCV64.Scrub.ctrReg,
+  Spec.Ctr.aesFinalApi.artifact RISCV64.target Proof.Aes.RISCV64.Scrub.ctrFinalReg]
 
 end VG.Artifacts.AesCtr.RISCV64

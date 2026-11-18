@@ -3659,7 +3659,11 @@ theorem restore_ok (h : GenFrame p o used st s) :
     h.saved q hq
   refine withRest_all [.r5, .r6, .r7, .r8, .r9, .r10, .r11, .lr] ?_ (by rfl) (by rfl)
   unfold restore
-  ffrun [a 4 (by decide), a 8 (by decide), a 12 (by decide), a 16 (by decide), a 20 (by decide), a 24 (by decide),
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, Proof.Ffdh.Arm.ldrSp_exec,
+    RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.sp_setReg,
+    Option.some.injEq, exists_eq_left', ↓reduceIte, and_true, Nat.reduceLT,
+    a 4 (by decide), a 8 (by decide), a 12 (by decide), a 16 (by decide), a 20 (by decide), a 24 (by decide),
     a 28 (by decide), a 36 (by decide), r 4 (by decide), r 8 (by decide), r 12 (by decide), r 16 (by decide),
     r 20 (by decide), r 24 (by decide), r 28 (by decide), r 36 (by decide),
     v (.r5, 4) (by simp), v (.r6, 8) (by simp), v (.r7, 12) (by simp), v (.r8, 16) (by simp), v (.r9, 20) (by simp),

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.AesCbc.RISCV64.Wiped
+public import VerifiedGarbage.Proof.Aes.RISCV64.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.AesCbc.RISCV64.Lit
@@ -11,14 +11,8 @@ import VerifiedGarbage.Proof.AesCbc.RISCV64.Lit
 
 namespace VG.Artifacts.AesCbc.RISCV64
 
-open VG.Proof.AesCbc.RISCV64
-
 def artifacts : List Artifact := [
-  Spec.Cbc.aesEncryptApi.artifact RISCV64.target {
-    code := Wiped.encrypt
-    verified := Wiped.encrypt_verified },
-  Spec.Cbc.aesDecryptApi.artifact RISCV64.target {
-    code := Wiped.decrypt
-    verified := Wiped.decrypt_verified }]
+  Spec.Cbc.aesEncryptApi.artifact RISCV64.target Proof.Aes.RISCV64.Scrub.cbcEncryptReg,
+  Spec.Cbc.aesDecryptApi.artifact RISCV64.target Proof.Aes.RISCV64.Scrub.cbcDecryptReg]
 
 end VG.Artifacts.AesCbc.RISCV64

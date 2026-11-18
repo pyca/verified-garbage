@@ -13,6 +13,7 @@ public import VerifiedGarbage.Proof.AesXts.X86_64.Variant
 import VerifiedGarbage.Proof.AesXts.X86_64.Unit.Dec
 public import VerifiedGarbage.Proof.AesXts.X86_64.UnitTo.Verified
 import VerifiedGarbage.Proof.Aes.X86_64.ModesScrub
+import VerifiedGarbage.Proof.Aes.ScrubLocal
 
 /-! ### `AesXts.X86_64.Unit.Verified`, which only this module used -/
 
@@ -111,7 +112,7 @@ functions' precondition requires.
 
 namespace VG.Proof.AesXts.X86_64.Scrub
 
-open VG.X86_64 VG.X86_64.Scrub VG.Proof.Aes.X86_64.ModesScrub
+open VG.X86_64 VG.X86_64.Scrub VG.Proof.Aes.X86_64.ModesScrub VG.Proof.Aes.ScrubLocal
 
 /-! ## Postconditions -/
 

@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Ctr.aesContract`. Constant time: only the pointers, `rounds`, `n` and the last four bytes of `*ctr` (the 32-bit counter, public in OpenSSL, BoringSSL and AWS-LC, which split the blocks where it wraps) may affect timing, not the key schedule, the rest of the counter block or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 240 bytes.
@@ -37,7 +39,7 @@ bnez s5, 22b
 j 21f
 20:
 21:
-.base64 "kwL7f6ECk/KC/4OwAgGDtIIBA7kCAoO5ggIDugIDg7qCAwO7AgSCgA=="
+.base64 "kwL7f6ECk/KC/4OwAgGDtIIBA7kCAoO5ggIDugIDg7qCAwO7AgSBQgFFgUUBRoFGAUeBRwFIgUiBQgFDgUMBToFOAU+BT4KA"
 .option pop"#,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
     )
@@ -46,6 +48,8 @@ j 21f
 /// AES-CTR encryption or decryption (NIST SP 800-38A §6.5) of the last piece of a message, of any length, in place: XORs the `len` bytes at `data` with the output blocks `Oⱼ = CIPH_K(Tⱼ)`, where `T₁` is the block at `*ctr` and `Tⱼ₊₁ = Tⱼ + 1 mod 2¹²⁸` (Appendix B.1's standard incrementing function on the whole block, read as a big-endian integer), a partial last block `Pₙ*` of `u` bytes with `MSB_u(Oₙ)`, and replaces `*ctr` with `Tₙ₊₁` (leaving it unchanged if `len = 0`), so that a further call continues the message if `len` is a multiple of 16; after a partial last block the message must end. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
 ///
 /// Contract: `VG.Spec.Ctr.aesFinalContract`. Constant time: only the pointers, `rounds`, `len` and the last four bytes of `*ctr` (the 32-bit counter, public in OpenSSL, BoringSSL and AWS-LC, which split the blocks where it wraps) may affect timing, not the key schedule, the rest of the counter block or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -63,10 +67,10 @@ pub(crate) unsafe extern "C" fn vg_aes_ctr_final(schedule: *const [u8; 240], rou
         r#".option push
 .option arch, +m, +c
 .base64 "XXEKiCMwGAAjNJgAIzgoASM8OAEjMEgDIzRYAyM4aAMjPHgDqoQuirKKPovCi5NSRwATk0IAM4lmALMJZ0AWhw=="
-call {vg_aes_ctr}
+call {vg_aes_ctr_core}
 beqz s3, 20f
 .base64 "gUIjsFsEI7RbBCaF0oVWhpOGCwQFR9qH"
-call {vg_aes_ctr}
+call {vg_aes_ctr_core}
 .base64 "k4MLBA=="
 22:
 .base64 "g0IJAAPDAwCzwmIAIwBZAAUJhQP9GQ=="
@@ -74,8 +78,12 @@ bnez s3, 22b
 j 21f
 20:
 21:
-.base64 "g7ALAIO0iwADuQsBg7mLAQO6CwKDuosCA7sLA4O7iwMKj4FPIzD/ASM0/wEjOP8BIzz/ASMw/wMjNP8DIzj/AyM8/wMjMP8FIzT/BWFhgoA="
+.base64 "g7ALAIO0iwADuQsBg7mLAQO6CwKDuosCA7sLA4O7iwMKj4FPIzD/ASM0/wEjOP8BIzz/ASMw/wMjNP8DIzj/AyM8/wMjMP8FIzT/BWFhgUJdcQqDIzBTACM0UwAjOFMAIzxTACMwUwIjNFMCIzhTAiM8UwIjMFMEIzRTBGFhAUWBRQFGgUYBR4FHAUiBSIFCAUOBQwFOgU4BT4FPgoA="
 .option pop"#,
-        vg_aes_ctr = sym super::aes_ctr::vg_aes_ctr,
+        vg_aes_ctr_core = sym super::aes_ctr::vg_aes_ctr_core::vg_aes_ctr_core,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_ctr_core.rs"]
+pub(crate) mod vg_aes_ctr_core;

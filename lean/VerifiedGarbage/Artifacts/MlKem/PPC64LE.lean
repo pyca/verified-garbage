@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.MlKem.PPC64LE.Scrub
 public import VerifiedGarbage.Proof.MlKem.PPC64LE.SampleCT
 public import VerifiedGarbage.Proof.MlKem.PPC64LE.Add
 public import VerifiedGarbage.Proof.MlKem.PPC64LE.Ntt
@@ -25,35 +26,15 @@ public import VerifiedGarbage.Proof.MlKem1024.PPC64LE.Decompress
 namespace VG.Artifacts.MlKem.PPC64LE
 
 def artifacts : List Artifact := [
-  Spec.MlKem.keyGenApi.artifact PPC64LE.target {
-    code := Impl.MlKem.PPC64LE.Wipe.keyGen
-    verified := Proof.MlKem.PPC64LE.Wipe.keyGen_verified },
-  Spec.MlKem.encapsApi.artifact PPC64LE.target {
-    code := Impl.MlKem.PPC64LE.Wipe.encaps
-    verified := Proof.MlKem.PPC64LE.Wipe.encaps_verified },
-  Spec.MlKem.encapsHApi.artifact PPC64LE.target {
-    code := Impl.MlKem.PPC64LE.Wipe.encapsH
-    verified := Proof.MlKem.PPC64LE.Wipe.encapsH_verified },
-  Spec.MlKem.decapsApi.artifact PPC64LE.target {
-    code := Impl.MlKem.PPC64LE.Wipe.decaps
-    verified := Proof.MlKem.PPC64LE.Wipe.decaps_verified },
-  Spec.MlKem.checkEkApi.artifact PPC64LE.target {
-    code := Impl.MlKem.PPC64LE.checkEk
-    verified := Proof.MlKem.PPC64LE.CheckEk.verified },
-  Spec.MlKem1024.checkEkApi.artifact PPC64LE.target {
-    code := Impl.MlKem1024.PPC64LE.checkEk1024
-    verified := Proof.MlKem1024.PPC64LE.CheckEk.verified },
-  Spec.MlKem1024.keyGenApi.artifact PPC64LE.target {
-    code := Impl.MlKem.PPC64LE.Wipe.keyGen1024
-    verified := Proof.MlKem.PPC64LE.Wipe.keyGen1024_verified },
-  Spec.MlKem1024.encapsApi.artifact PPC64LE.target {
-    code := Impl.MlKem.PPC64LE.Wipe.encaps1024
-    verified := Proof.MlKem.PPC64LE.Wipe.encaps1024_verified },
-  Spec.MlKem1024.encapsHApi.artifact PPC64LE.target {
-    code := Impl.MlKem.PPC64LE.Wipe.encapsH1024
-    verified := Proof.MlKem.PPC64LE.Wipe.encapsH1024_verified },
-  Spec.MlKem1024.decapsApi.artifact PPC64LE.target {
-    code := Impl.MlKem.PPC64LE.Wipe.decaps1024
-    verified := Proof.MlKem.PPC64LE.Wipe.decaps1024_verified }]
+  Spec.MlKem.keyGenApi.artifact PPC64LE.target Proof.MlKem.PPC64LE.Scrub.keyGenReg,
+  Spec.MlKem.encapsApi.artifact PPC64LE.target Proof.MlKem.PPC64LE.Scrub.encapsReg,
+  Spec.MlKem.encapsHApi.artifact PPC64LE.target Proof.MlKem.PPC64LE.Scrub.encapsHReg,
+  Spec.MlKem.decapsApi.artifact PPC64LE.target Proof.MlKem.PPC64LE.Scrub.decapsReg,
+  Spec.MlKem.checkEkApi.artifact PPC64LE.target Proof.MlKem.PPC64LE.Scrub.checkEkReg,
+  Spec.MlKem1024.checkEkApi.artifact PPC64LE.target Proof.MlKem.PPC64LE.Scrub.checkEk1024Reg,
+  Spec.MlKem1024.keyGenApi.artifact PPC64LE.target Proof.MlKem.PPC64LE.Scrub.keyGen1024Reg,
+  Spec.MlKem1024.encapsApi.artifact PPC64LE.target Proof.MlKem.PPC64LE.Scrub.encaps1024Reg,
+  Spec.MlKem1024.encapsHApi.artifact PPC64LE.target Proof.MlKem.PPC64LE.Scrub.encapsH1024Reg,
+  Spec.MlKem1024.decapsApi.artifact PPC64LE.target Proof.MlKem.PPC64LE.Scrub.decaps1024Reg]
 
 end VG.Artifacts.MlKem.PPC64LE

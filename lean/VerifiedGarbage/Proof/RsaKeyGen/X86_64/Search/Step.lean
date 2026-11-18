@@ -164,6 +164,10 @@ theorem SearchPublic.headers_zero {p : SearchPublic} {used k : Nat} {e : Nat × 
   rcases he with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
     first | rfl | (simp at h0)
 
+/-- A callee-saved register is none of the registers the search's blocks write. -/
+private theorem saved_not : ∀ r ∈ calleeSaved,
+    r ∉ [Reg.rax, .rcx] ∧ r ∉ [Reg.rax] ∧ r ∉ [Reg.rcx] ++ [Reg.rax] := by decide
+
 /-- Through the frame's stores but the saved r12, a loop state with no
 counted candidates left. -/
 theorem SearchLive.terminated {p : SearchPublic} {original s t : State} {used remaining : Nat}
@@ -176,7 +180,7 @@ theorem SearchLive.terminated {p : SearchPublic} {original s t : State} {used re
   refine h.update h.used_le (Nat.zero_le _) _ hb (by
       simp only [List.mem_cons, List.not_mem_nil, or_false]
       rintro _ (rfl | rfl | rfl) <;> dsimp only <;> decide) hm kt.2.1 kt.2.2
-    (fun r hr => kt.gpr (by cases r <;> simp_all [calleeSaved])) ?_
+    (fun r hr => kt.gpr (saved_not r hr).2.1) ?_
   intro e he
   rw [hm, writeFrame_word _ _ _ hb e.1 (SearchPublic.headers_bound _ _ _ e he)]
   by_cases h0 : e.1 = 0
@@ -401,7 +405,7 @@ theorem search_accept {p : SearchPublic} {original s : State} {final : PrimeSear
       rintro _ (rfl | rfl | rfl | rfl) <;> dsimp only <;> decide) (by
       simp only [List.mem_cons, List.not_mem_nil, or_false]
       rintro _ (rfl | rfl | rfl | rfl) <;> dsimp only <;> decide) ht (ku.trans kt)
-    (by intro r hr; cases r <;> simp_all [calleeSaved]) rfl rfl ?_ rfl ?_
+    (by intro r hr; exact (saved_not r hr).2.2) rfl rfl ?_ rfl ?_
   · simp only [frameValue, List.foldl_cons, List.foldl_nil, Nat.reduceEqDiff, ↓reduceIte]
     rw [add_ofNat_ofNat, hu]
   · have ho := hc.2.1
@@ -523,7 +527,7 @@ theorem search_short {p : SearchPublic} {original s : State} {final : PrimeSearc
         rintro _ (rfl | rfl) <;> dsimp only <;> decide) (by
         simp only [List.mem_cons, List.not_mem_nil, or_false]
         rintro _ (rfl | rfl) <;> dsimp only <;> decide) ht kt
-      (by intro r hr; cases r <;> simp_all [calleeSaved]) ?_ rfl ?_ rfl ?_
+      (by intro r hr; exact (saved_not r hr).1) ?_ rfl ?_ rfl ?_
     · simp only [frameValue, List.foldl_cons, List.foldl_nil, Nat.reduceEqDiff, ↓reduceIte]
       rw [hu.slot (j := 0) (v := BitVec.ofNat 64 remaining) (by simp [SearchPublic.headers])]
       rfl
@@ -906,7 +910,7 @@ theorem iter_test {p : SearchPublic} {original s : State} {final : PrimeSearchRe
   · exact .inl ⟨by rw [he, h17]; rfl, hc.keep k hm (by decide)⟩
   · refine .inr ⟨by rw [he]; simp only [beq_eq_false_iff_ne.mpr h17], hn, ?_⟩
     exact ⟨hd.input, k.2.1.trans hd.rd, k.2.2.trans hd.wr, (k.gpr (by decide)).trans hd.rsp,
-      (k.gpr (by decide)).trans hd.r12, fun r hr hn hs => (k.gpr (by cases r <;> simp_all [calleeSaved])).trans
+      (k.gpr (by decide)).trans hd.r12, fun r hr hn hs => (k.gpr (saved_not r hr).2.1).trans
         (hd.saved r hr hn hs), by rw [hm]; exact hd.savedR12, by rw [hm]; exact hd.usedPtr,
       by rw [hm]; exact hd.stp, by rw [hm]; exact hd.len, by rw [hm]; exact hd.cap, by rw [hm]; exact hd.remaining,
       by rw [hm]; exact hd.request, by rw [hm]; exact hd.used, by rw [hm]; exact hd.status,

@@ -46,23 +46,43 @@ open VG.Proof.MlKem.Arm (wp_loop_ne count_z count_sub addr_ptr inRegions_of)
 /-- What `fixupS r t` leaves in `r`. -/
 def fixS (u : BitVec 32) : BitVec 32 := u + (u >>> 31) <<< 23 - (u >>> 31) <<< 13 + u >>> 31
 
+/-- `fixupS` leaves a value below `2³¹` as it is: its sign bit is zero. -/
+theorem fixS_of_lt {u : BitVec 32} (h : u.toNat < 2 ^ 31) : fixS u = u := by
+  obtain e : u >>> 31 = 0#32 := by
+    apply BitVec.eq_of_toNat_eq
+    rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
+    exact Nat.div_eq_of_lt h
+  unfold fixS
+  rw [e]
+  bv_omega
+
+/-- `fixupS` adds `q` to a value from `2³¹`: its sign bit is one. -/
+theorem fixS_of_ge {u : BitVec 32} (h : 2 ^ 31 ≤ u.toNat) : fixS u = u + 8380417#32 := by
+  obtain e : u >>> 31 = 1#32 := by
+    apply BitVec.eq_of_toNat_eq
+    rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
+    have := u.isLt
+    show u.toNat / 2 ^ 31 = 1
+    omega
+  unfold fixS
+  rw [e]
+  bv_omega
+
 /-- `fixupS (a + b - q)`: the sum of reduced values, reduced. -/
 theorem fixS_add {a b : BitVec 32} (ha : a.toNat < q) (hb : b.toNat < q) :
     (fixS (a + b - 0x800000 + 0x2000 - 1)).toNat = (a.toNat + b.toNat) % q := by
-  unfold fixS
   rw [q_eq] at *
   by_cases h : a.toNat + b.toNat < 8380417
-  · rw [Nat.mod_eq_of_lt h]; bv_omega
-  · bv_omega
+  · rw [Nat.mod_eq_of_lt h, fixS_of_ge (by bv_omega)]; bv_omega
+  · rw [fixS_of_lt (by bv_omega)]; bv_omega
 
 /-- `fixupS (a - b)`: the difference of reduced values, reduced. -/
 theorem fixS_sub {a b : BitVec 32} (ha : a.toNat < q) (hb : b.toNat < q) :
     (fixS (a - b)).toNat = (a.toNat + q - b.toNat) % q := by
-  unfold fixS
   rw [q_eq] at *
   by_cases h : b.toNat ≤ a.toNat
-  · bv_omega
-  · bv_omega
+  · rw [fixS_of_lt (by bv_omega)]; bv_omega
+  · rw [fixS_of_ge (by bv_omega)]; bv_omega
 
 /-! ## The loop bodies -/
 

@@ -19,6 +19,22 @@ vg_aes_cfb128_encrypt:
 	andi t0, t0, -8
 	ld ra, 16(t0)
 	ld s1, 24(t0)
+	addi t0, zero, 0
+	addi a0, zero, 0
+	addi a1, zero, 0
+	addi a2, zero, 0
+	addi a3, zero, 0
+	addi a4, zero, 0
+	addi a5, zero, 0
+	addi a6, zero, 0
+	addi a7, zero, 0
+	addi t0, zero, 0
+	addi t1, zero, 0
+	addi t2, zero, 0
+	addi t3, zero, 0
+	addi t4, zero, 0
+	addi t5, zero, 0
+	addi t6, zero, 0
 	ret
 	.option pop
 
@@ -37,6 +53,22 @@ vg_aes_cfb128_decrypt:
 	andi t0, t0, -8
 	ld ra, 16(t0)
 	ld s1, 24(t0)
+	addi t0, zero, 0
+	addi a0, zero, 0
+	addi a1, zero, 0
+	addi a2, zero, 0
+	addi a3, zero, 0
+	addi a4, zero, 0
+	addi a5, zero, 0
+	addi a6, zero, 0
+	addi a7, zero, 0
+	addi t0, zero, 0
+	addi t1, zero, 0
+	addi t2, zero, 0
+	addi t3, zero, 0
+	addi t4, zero, 0
+	addi t5, zero, 0
+	addi t6, zero, 0
 	ret
 	.option pop
 
@@ -63,7 +95,7 @@ vg_aes_cfb128_encrypt_final:
 	add s2, a3, t1
 	sub s3, a4, t1
 	addi a4, t0, 0
-	call {vg_aes_cfb128_encrypt}
+	call {vg_aes_cfb128_encrypt_core}
 	beqz s3, 20f
 	addi a0, s1, 0
 	addi a1, s4, 0
@@ -103,6 +135,33 @@ vg_aes_cfb128_encrypt_final:
 	sd t6, 48(t5)
 	sd t6, 56(t5)
 	addi sp, sp, 64
+	addi t0, zero, 0
+	addi sp, sp, -64
+	addi t1, sp, 0
+	sd t0, 0(t1)
+	sd t0, 8(t1)
+	sd t0, 16(t1)
+	sd t0, 24(t1)
+	sd t0, 32(t1)
+	sd t0, 40(t1)
+	sd t0, 48(t1)
+	sd t0, 56(t1)
+	addi sp, sp, 64
+	addi a0, zero, 0
+	addi a1, zero, 0
+	addi a2, zero, 0
+	addi a3, zero, 0
+	addi a4, zero, 0
+	addi a5, zero, 0
+	addi a6, zero, 0
+	addi a7, zero, 0
+	addi t0, zero, 0
+	addi t1, zero, 0
+	addi t2, zero, 0
+	addi t3, zero, 0
+	addi t4, zero, 0
+	addi t5, zero, 0
+	addi t6, zero, 0
 	ret
 	.option pop
 
@@ -129,7 +188,7 @@ vg_aes_cfb128_decrypt_final:
 	add s2, a3, t1
 	sub s3, a4, t1
 	addi a4, t0, 0
-	call {vg_aes_cfb128_decrypt}
+	call {vg_aes_cfb128_decrypt_core}
 	beqz s3, 20f
 	addi a0, s1, 0
 	addi a1, s4, 0
@@ -169,5 +228,32 @@ vg_aes_cfb128_decrypt_final:
 	sd t6, 48(t5)
 	sd t6, 56(t5)
 	addi sp, sp, 64
+	addi t0, zero, 0
+	addi sp, sp, -64
+	addi t1, sp, 0
+	sd t0, 0(t1)
+	sd t0, 8(t1)
+	sd t0, 16(t1)
+	sd t0, 24(t1)
+	sd t0, 32(t1)
+	sd t0, 40(t1)
+	sd t0, 48(t1)
+	sd t0, 56(t1)
+	addi sp, sp, 64
+	addi a0, zero, 0
+	addi a1, zero, 0
+	addi a2, zero, 0
+	addi a3, zero, 0
+	addi a4, zero, 0
+	addi a5, zero, 0
+	addi a6, zero, 0
+	addi a7, zero, 0
+	addi t0, zero, 0
+	addi t1, zero, 0
+	addi t2, zero, 0
+	addi t3, zero, 0
+	addi t4, zero, 0
+	addi t5, zero, 0
+	addi t6, zero, 0
 	ret
 	.option pop

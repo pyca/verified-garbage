@@ -2,8 +2,8 @@
 //! The table of functions `VG_HMAC_MD5` of the verified functions for `riscv64` (`Artifact.tables`).
 #![allow(dead_code)]
 
-/// The table of functions `VG_HMAC_MD5` of the interface `Hmac`: `vg_hmac_md5_init`, `vg_md5_update_core`, `vg_hmac_md5_finalize`, then the data 0, 16, 64.
+/// The table of functions `VG_HMAC_MD5` of the interface `Hmac`: `vg_hmac_md5_init_core`, `vg_md5_update_core`, `vg_hmac_md5_finalize_core`, then the data 0, 16, 64.
 pub static VG_HMAC_MD5: super::Hmac = super::Hmac {
-    fns: [crate::hmac_md5::vg_hmac_md5_init as *const (), crate::md5::vg_md5_update_core::vg_md5_update_core as *const (), crate::hmac_md5::vg_hmac_md5_finalize as *const ()],
+    fns: [crate::hmac_md5::vg_hmac_md5_init_core::vg_hmac_md5_init_core as *const (), crate::md5::vg_md5_update_core::vg_md5_update_core as *const (), crate::hmac_md5::vg_hmac_md5_finalize_core::vg_hmac_md5_finalize_core as *const ()],
     data: [0, 16, 64],
 };

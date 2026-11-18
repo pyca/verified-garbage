@@ -20,7 +20,7 @@ vg_scrypt:
 	addi s3, t0, 0
 	addi a4, zero, 1
 	slli a6, a6, 7
-	call {vg_pbkdf2_hmac_sha256}
+	call {vg_pbkdf2_hmac_sha256_core}
 	ld a0, 40(s3)
 	sd a0, 64(s3)
 	ld t0, 40(s3)
@@ -79,7 +79,7 @@ vg_scrypt:
 	addi a4, zero, 1
 	ld a5, 280(s3)
 	ld a6, 288(s3)
-	call {vg_pbkdf2_hmac_sha256}
+	call {vg_pbkdf2_hmac_sha256_core}
 	ld ra, 0(s3)
 	ld s3, 8(s3)
 	addi sp, sp, 256

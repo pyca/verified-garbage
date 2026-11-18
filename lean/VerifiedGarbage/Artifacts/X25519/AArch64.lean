@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ed25519.AArch64.DivstepSound
 public import VerifiedGarbage.Proof.X25519.AArch64.AltLadder.Verified
 public import VerifiedGarbage.Proof.X25519.AArch64.Base.Verified
+public import VerifiedGarbage.Proof.X25519.AArch64.Base.Residue
 import Mathlib.Algebra.Order.Field.Basic
 import Mathlib.Data.Nat.Totient
 import Mathlib.Data.Sym.Sym2.Init
@@ -26,8 +27,9 @@ def artifacts : List Artifact := [
     verified := Proof.X25519.AArch64.Exchange.exchange_verified },
   Spec.X25519.x25519BaseApi.artifact AArch64.target {
     written := [("scratch", 1024)]
-    code := Impl.X25519.AArch64.Base.x25519Base
-    verified := Proof.X25519.AArch64.Base.x25519Base_verified
-    writtenOk := Proof.X25519.AArch64.Base.x25519Base_written }]
+    code := Proof.X25519.AArch64.Base.x25519BaseCleared
+    verified := Proof.X25519.AArch64.Base.x25519BaseCleared_verified
+    writtenOk := Proof.X25519.AArch64.Base.x25519BaseCleared_written
+    residue := some ⟨Proof.X25519.AArch64.Base.x25519BaseCleared_noResidue⟩ }]
 
 end VG.Artifacts.X25519.AArch64

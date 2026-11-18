@@ -25,6 +25,7 @@ public import VerifiedGarbage.TCB.AArch64.Print
 public import VerifiedGarbage.Proof.P192.AArch64.Law
 public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.P192
 public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.P192Decompress
+public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.Residue
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
 
 /-! # P-192 public keys (FIPS 186-5 §A.2) on AArch64 -/
@@ -40,8 +41,10 @@ def artifacts : List Artifact := [
     code := Proof.EcKey.Compressed.AArch64.P192.code
     verified := Proof.EcKey.Compressed.AArch64.P192.verified hasLaw.inv },
   Spec.EcKey.P192.inst.decompressPublicKeyApi.artifact AArch64.target {
-    code := Proof.EcKey.Compressed.AArch64.P192Decompress.code
-    verified := Proof.EcKey.Compressed.AArch64.P192Decompress.verified hasLaw.law hasLaw.inv },
+    code := Proof.EcKey.Compressed.AArch64.Residue.cleared [.x16, .x17] []
+      Proof.EcKey.Compressed.AArch64.P192Decompress.code
+    verified := Proof.EcKey.Compressed.AArch64.Residue.P192.verified hasLaw.law hasLaw.inv
+    residue := some ⟨Proof.EcKey.Compressed.AArch64.Residue.P192.noResidue hasLaw.law hasLaw.inv⟩ },
   Spec.EcKey.P192.publicKeyApi.artifact AArch64.target {
     code := Impl.EcKey.AArch64.publicKeyP192
     verified := Proof.EcKey.AArch64.P192.pk_verified hasLaw.law hasLaw.inv }]

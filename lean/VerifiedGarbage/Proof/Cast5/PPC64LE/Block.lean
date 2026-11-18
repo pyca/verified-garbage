@@ -133,8 +133,19 @@ theorem start_ok (s : State) :
       t.gpr ep = s.gpr tbl ∧ t.gpr num = 16#64 ∧ t.gpr .r19 = 32#64 ∧ t.gpr .r21 = 48#64 ∧
       t.mem = s.mem := by
   unfold scanStart lanes lane rep
-  c5run [reduceVOpEval, lowV, grpV, aV, bV, tV, zV, hotLo, hotHi, bitV, vpr_writeV, gpr_writeV, mem_writeV,
-    sldoi8_eq, hi64, lo64, pack, rep4, BitVec.xor_self]
+  obtain vw : ∀ (u : State) (r : Reg) (v : BitVec 64), (u.write r v).vpr = u.vpr := fun _ _ _ => rfl
+  obtain gw : ∀ (u : State) (r : Reg) (v : BitVec 64) (r' : Reg),
+      (u.write r v).gpr r' = if r' = r then v else u.gpr r' := fun _ _ _ _ => rfl
+  obtain mw : ∀ (u : State) (r : Reg) (v : BitVec 64), (u.write r v).mem = u.mem := fun _ _ _ => rfl
+  apply WP.of_runBlock
+  -- The writes stay folded and the registers are read through them: unfolded (`crun`), every
+  -- earlier register function is simplified again at each of the block's instructions.
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, ↓gw, mw, vw, State.read, Size.bits, Size.ext,
+    BitVec.setWidth_eq, Option.map_some, Option.some.injEq, exists_eq_left', reduceCtorEq,
+    BitVec.ofNat_eq_ofNat, Nat.reduceMul, Nat.reduceLT, Nat.reduceAdd, Nat.reducePow, ↓reduceIte, and_self,
+    true_and, and_true, List.cons_append, List.nil_append, tbl, num, ep, tmp, wd, mov, idxReg_0, idxReg_1,
+    idxReg_2, idxReg_3, BitVec.or_self, reduceVOpEval, lowV, grpV, aV, bV, tV, zV, hotLo, hotHi, bitV,
+    vpr_writeV, gpr_writeV, mem_writeV, sldoi8_eq, hi64, lo64, pack, rep4, BitVec.xor_self]
   exact ⟨⟨_, rfl⟩, ⟨_, rfl⟩, ⟨_, rfl⟩, by decide⟩
 
 /-! ## A group -/

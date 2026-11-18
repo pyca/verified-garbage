@@ -25,7 +25,7 @@ vg_sm4_gcm_init:
 	sd ra, 224(a2)
 	addi s0, a2, 0
 	addi s2, a1, 0
-	call {vg_sm4_expand_key}
+	call {vg_sm4_expand_key_core}
 	addi t0, zero, 0
 	sd t0, 240(s2)
 	sd t0, 248(s2)

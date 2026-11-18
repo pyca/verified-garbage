@@ -15,84 +15,162 @@ vg_aes_ctr_aesni:
 	test eax, eax
 	je 20f
 22:
-	mov ebp, DWORD PTR [esp+24]
-	mov ebx, DWORD PTR [esp+12]
-	mov eax, 0
-	mov DWORD PTR [ebp+2048], eax
-	mov DWORD PTR [ebp+2052], eax
-	mov DWORD PTR [ebp+2056], eax
-	mov DWORD PTR [ebp+2060], eax
-	mov eax, DWORD PTR [ebp+2048]
-	mov ecx, DWORD PTR [ebx]
-	xor eax, ecx
-	mov DWORD PTR [ebp+2048], eax
-	mov eax, DWORD PTR [ebp+2052]
-	mov ecx, DWORD PTR [ebx+4]
-	xor eax, ecx
-	mov DWORD PTR [ebp+2052], eax
-	mov eax, DWORD PTR [ebp+2056]
-	mov ecx, DWORD PTR [ebx+8]
-	xor eax, ecx
-	mov DWORD PTR [ebp+2056], eax
-	mov eax, DWORD PTR [ebp+2060]
-	mov ecx, DWORD PTR [ebx+12]
-	xor eax, ecx
-	mov DWORD PTR [ebp+2060], eax
+	mov edx, DWORD PTR [esp+12]
+	mov ecx, DWORD PTR [edx+12]
+	bswap ecx
+	xor ecx, -1
+	mov edi, DWORD PTR [esp+20]
+	mov eax, esi
+	sub eax, DWORD PTR [esp+16]
+	shr eax, 4
+	sub edi, eax
+	sub edi, 1
+	cmp ecx, edi
+	sbb eax, eax
+	xor ecx, edi
+	and ecx, eax
+	xor edi, ecx
+	add edi, 1
 	mov eax, DWORD PTR [esp+4]
 	mov ecx, DWORD PTR [esp+8]
-	mov ebx, ebp
-	add ebx, 2048
-	mov edi, 1
+	mov ebx, esi
+	mov ebp, DWORD PTR [esp+24]
+	push ebx
 	push ebp
 	push edi
 	push ebx
+	push edx
 	push ecx
 	push eax
-	call {vg_aes_encrypt_blocks_aesni}
+	call {vg_aes_ctr32_to_aesni}
 	pop eax
 	pop eax
 	pop eax
 	pop eax
 	pop eax
-	mov ebp, DWORD PTR [esp+24]
-	mov eax, DWORD PTR [esi]
-	mov ecx, DWORD PTR [ebp+2048]
-	xor eax, ecx
-	mov DWORD PTR [esi], eax
-	mov eax, DWORD PTR [esi+4]
-	mov ecx, DWORD PTR [ebp+2052]
-	xor eax, ecx
-	mov DWORD PTR [esi+4], eax
-	mov eax, DWORD PTR [esi+8]
-	mov ecx, DWORD PTR [ebp+2056]
-	xor eax, ecx
-	mov DWORD PTR [esi+8], eax
-	mov eax, DWORD PTR [esi+12]
-	mov ecx, DWORD PTR [ebp+2060]
-	xor eax, ecx
-	mov DWORD PTR [esi+12], eax
-	mov ebx, DWORD PTR [esp+12]
-	mov eax, DWORD PTR [ebx+12]
+	pop eax
+	pop eax
+	mov eax, edi
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add esi, eax
+	mov edx, DWORD PTR [esp+12]
+	mov eax, DWORD PTR [edx+12]
+	test eax, eax
+	je 23f
+	jmp 24f
+23:
+	mov eax, DWORD PTR [edx+8]
 	bswap eax
 	add eax, 1
-	mov ecx, DWORD PTR [ebx+8]
+	mov ecx, DWORD PTR [edx+4]
 	bswap ecx
 	adc ecx, 0
-	mov edx, DWORD PTR [ebx+4]
-	bswap edx
-	adc edx, 0
-	mov edi, DWORD PTR [ebx]
-	bswap edi
-	adc edi, 0
+	mov ebx, DWORD PTR [edx]
+	bswap ebx
+	adc ebx, 0
 	bswap eax
-	mov DWORD PTR [ebx+12], eax
+	mov DWORD PTR [edx+8], eax
 	bswap ecx
-	mov DWORD PTR [ebx+8], ecx
-	bswap edx
-	mov DWORD PTR [ebx+4], edx
-	bswap edi
-	mov DWORD PTR [ebx], edi
-	add esi, 16
+	mov DWORD PTR [edx+4], ecx
+	bswap ebx
+	mov DWORD PTR [edx], ebx
+24:
+	mov eax, DWORD PTR [esp+20]
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, DWORD PTR [esp+16]
+	cmp esi, eax
+	jne 22b
+	jmp 21f
+20:
+21:
+	mov eax, DWORD PTR [esp+24]
+	mov ebx, DWORD PTR [eax+2064]
+	mov esi, DWORD PTR [eax+2068]
+	mov edi, DWORD PTR [eax+2072]
+	mov ebp, DWORD PTR [eax+2076]
+	ret
+	.p2align 6
+
+vg_aes_ctr:
+	mov eax, DWORD PTR [esp+24]
+	mov DWORD PTR [eax+2064], ebx
+	mov DWORD PTR [eax+2068], esi
+	mov DWORD PTR [eax+2072], edi
+	mov DWORD PTR [eax+2076], ebp
+	mov esi, DWORD PTR [esp+16]
+	mov eax, DWORD PTR [esp+20]
+	test eax, eax
+	je 20f
+22:
+	mov edx, DWORD PTR [esp+12]
+	mov ecx, DWORD PTR [edx+12]
+	bswap ecx
+	xor ecx, -1
+	mov edi, DWORD PTR [esp+20]
+	mov eax, esi
+	sub eax, DWORD PTR [esp+16]
+	shr eax, 4
+	sub edi, eax
+	sub edi, 1
+	cmp ecx, edi
+	sbb eax, eax
+	xor ecx, edi
+	and ecx, eax
+	xor edi, ecx
+	add edi, 1
+	mov eax, DWORD PTR [esp+4]
+	mov ecx, DWORD PTR [esp+8]
+	mov ebx, esi
+	mov ebp, DWORD PTR [esp+24]
+	push ebx
+	push ebp
+	push edi
+	push ebx
+	push edx
+	push ecx
+	push eax
+	call {vg_aes_ctr32_to}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov eax, edi
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	add esi, eax
+	mov edx, DWORD PTR [esp+12]
+	mov eax, DWORD PTR [edx+12]
+	test eax, eax
+	je 23f
+	jmp 24f
+23:
+	mov eax, DWORD PTR [edx+8]
+	bswap eax
+	add eax, 1
+	mov ecx, DWORD PTR [edx+4]
+	bswap ecx
+	adc ecx, 0
+	mov ebx, DWORD PTR [edx]
+	bswap ebx
+	adc ebx, 0
+	bswap eax
+	mov DWORD PTR [edx+8], eax
+	bswap ecx
+	mov DWORD PTR [edx+4], ecx
+	bswap ebx
+	mov DWORD PTR [edx], ebx
+24:
 	mov eax, DWORD PTR [esp+20]
 	add eax, eax
 	add eax, eax
@@ -147,7 +225,7 @@ vg_aes_ctr_final_aesni:
 	push edx
 	push ecx
 	push eax
-	call {vg_aes_ctr_aesni}
+	call {vg_aes_ctr_single_aesni}
 	pop eax
 	pop eax
 	pop eax
@@ -177,7 +255,7 @@ vg_aes_ctr_final_aesni:
 	push edx
 	push ecx
 	push eax
-	call {vg_aes_ctr_aesni}
+	call {vg_aes_ctr_single_aesni}
 	pop eax
 	pop eax
 	pop eax
@@ -222,114 +300,6 @@ vg_aes_ctr_final_aesni:
 	ret
 	.p2align 6
 
-vg_aes_ctr:
-	mov eax, DWORD PTR [esp+24]
-	mov DWORD PTR [eax+2064], ebx
-	mov DWORD PTR [eax+2068], esi
-	mov DWORD PTR [eax+2072], edi
-	mov DWORD PTR [eax+2076], ebp
-	mov esi, DWORD PTR [esp+16]
-	mov eax, DWORD PTR [esp+20]
-	test eax, eax
-	je 20f
-22:
-	mov ebp, DWORD PTR [esp+24]
-	mov ebx, DWORD PTR [esp+12]
-	mov eax, 0
-	mov DWORD PTR [ebp+2048], eax
-	mov DWORD PTR [ebp+2052], eax
-	mov DWORD PTR [ebp+2056], eax
-	mov DWORD PTR [ebp+2060], eax
-	mov eax, DWORD PTR [ebp+2048]
-	mov ecx, DWORD PTR [ebx]
-	xor eax, ecx
-	mov DWORD PTR [ebp+2048], eax
-	mov eax, DWORD PTR [ebp+2052]
-	mov ecx, DWORD PTR [ebx+4]
-	xor eax, ecx
-	mov DWORD PTR [ebp+2052], eax
-	mov eax, DWORD PTR [ebp+2056]
-	mov ecx, DWORD PTR [ebx+8]
-	xor eax, ecx
-	mov DWORD PTR [ebp+2056], eax
-	mov eax, DWORD PTR [ebp+2060]
-	mov ecx, DWORD PTR [ebx+12]
-	xor eax, ecx
-	mov DWORD PTR [ebp+2060], eax
-	mov eax, DWORD PTR [esp+4]
-	mov ecx, DWORD PTR [esp+8]
-	mov ebx, ebp
-	add ebx, 2048
-	mov edi, 1
-	push ebp
-	push edi
-	push ebx
-	push ecx
-	push eax
-	call {vg_aes_encrypt_blocks}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	mov ebp, DWORD PTR [esp+24]
-	mov eax, DWORD PTR [esi]
-	mov ecx, DWORD PTR [ebp+2048]
-	xor eax, ecx
-	mov DWORD PTR [esi], eax
-	mov eax, DWORD PTR [esi+4]
-	mov ecx, DWORD PTR [ebp+2052]
-	xor eax, ecx
-	mov DWORD PTR [esi+4], eax
-	mov eax, DWORD PTR [esi+8]
-	mov ecx, DWORD PTR [ebp+2056]
-	xor eax, ecx
-	mov DWORD PTR [esi+8], eax
-	mov eax, DWORD PTR [esi+12]
-	mov ecx, DWORD PTR [ebp+2060]
-	xor eax, ecx
-	mov DWORD PTR [esi+12], eax
-	mov ebx, DWORD PTR [esp+12]
-	mov eax, DWORD PTR [ebx+12]
-	bswap eax
-	add eax, 1
-	mov ecx, DWORD PTR [ebx+8]
-	bswap ecx
-	adc ecx, 0
-	mov edx, DWORD PTR [ebx+4]
-	bswap edx
-	adc edx, 0
-	mov edi, DWORD PTR [ebx]
-	bswap edi
-	adc edi, 0
-	bswap eax
-	mov DWORD PTR [ebx+12], eax
-	bswap ecx
-	mov DWORD PTR [ebx+8], ecx
-	bswap edx
-	mov DWORD PTR [ebx+4], edx
-	bswap edi
-	mov DWORD PTR [ebx], edi
-	add esi, 16
-	mov eax, DWORD PTR [esp+20]
-	add eax, eax
-	add eax, eax
-	add eax, eax
-	add eax, eax
-	add eax, DWORD PTR [esp+16]
-	cmp esi, eax
-	jne 22b
-	jmp 21f
-20:
-21:
-	mov eax, DWORD PTR [esp+24]
-	mov ebx, DWORD PTR [eax+2064]
-	mov esi, DWORD PTR [eax+2068]
-	mov edi, DWORD PTR [eax+2072]
-	mov ebp, DWORD PTR [eax+2076]
-	ret
-	.p2align 6
-
 vg_aes_ctr_final:
 	lea esp, [esp-64]
 	mov eax, DWORD PTR [esp+68]
@@ -365,7 +335,7 @@ vg_aes_ctr_final:
 	push edx
 	push ecx
 	push eax
-	call {vg_aes_ctr}
+	call {vg_aes_ctr_single}
 	pop eax
 	pop eax
 	pop eax
@@ -395,7 +365,7 @@ vg_aes_ctr_final:
 	push edx
 	push ecx
 	push eax
-	call {vg_aes_ctr}
+	call {vg_aes_ctr_single}
 	pop eax
 	pop eax
 	pop eax

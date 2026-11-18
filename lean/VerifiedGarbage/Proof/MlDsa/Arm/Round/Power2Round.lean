@@ -41,7 +41,7 @@ open VG VG.Arm VG.Impl.MlDsa.Arm.Round VG.Proof.MlDsa.Round
 open VG.Spec.MlDsa (q n Poly Zq power2Round ofInt)
 open VG.Proof.MlDsa (coeffAt polyAt Reduced PolyIs NatPolyIs natPolyAt)
 open VG.Proof.MlDsa.Arm.Arith (Entry wp_saving ct_of_saving preserved_of_saving)
-open VG.Proof.MlDsa.Arm.Arith.AddSub (fixS)
+open VG.Proof.MlDsa.Arm.Arith.AddSub (fixS fixS_of_lt fixS_of_ge)
 open VG.Impl.MlDsa.Arm.Arith (fixupS)
 
 /-! ## Values -/
@@ -66,8 +66,10 @@ theorem t0_val (r : Zq) : (bt0 (BitVec.ofNat 32 r.val)).toNat = (ofInt (power2Ro
   have h := r.isLt
   generalize r.val = v at h ⊢
   rw [q_eq] at h ⊢
-  unfold bt0 fixS
-  split <;> bv_omega
+  unfold bt0
+  split
+  · rw [fixS_of_ge (by bv_omega)]; bv_omega
+  · rw [fixS_of_lt (by bv_omega)]; bv_omega
 
 /-! ## The body -/
 

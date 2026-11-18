@@ -83,6 +83,8 @@ bl {vg_p256_check_point}
 ///
 /// Contract: `VG.Spec.EcKey.Instance.decompressPublicKeyContract`. The input is public: timing may depend on the pointers and the contents of `public`.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 65 bytes.
@@ -763,7 +765,8 @@ cbnz x19, 29b
 .inst 0x8a030021,0xdac00c21,0xf9001cc1,0xf9426401,0x8a030021,0xdac00c21,0xf90018c1,0xf9426801
 .inst 0x8a030021,0xdac00c21,0xf90014c1,0xf9426c01,0x8a030021,0xdac00c21,0xf90010c1,0xf9400013
 .inst 0xf9400414,0xf9400815,0xf9400c16,0xf9401017,0xf9401418,0xf9401819,0xf9401c1e,0xd2800021
-.inst 0x8a010060,0xd65f03c0
+.inst 0x8a010060,0xd2800002,0xd2800003,0xd2800004,0xd2800008,0xd2800009,0xd280000a,0xd280000b
+.inst 0xd280000c,0xd280000d,0xd280000e,0xd280000f,0xd2800010,0xd2800011,0xea02005f,0xd65f03c0
 .p2align 6",
     )
 }

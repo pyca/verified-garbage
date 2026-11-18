@@ -12,6 +12,7 @@ public import VerifiedGarbage.Proof.AesOcb.Scratch
 public import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 import VerifiedGarbage.Proof.Aes.X86_64.Scrub
 import VerifiedGarbage.Proof.Aes.X86_64.ModesScrub
+import VerifiedGarbage.Proof.Aes.ScrubLocal
 
 /-!
 # AES-OCB's key setup on x86-64, without secret residue
@@ -54,13 +55,13 @@ theorem ocbInitOut (stack : Nat) :
       change _ ∨ _ at hpre
       obtain ⟨h1, h2⟩ := h
       refine ⟨?_, ?_⟩
-      · rw [ModesScrub.bytesAt_of0 hb.2 ?_]
+      · rw [Proof.Aes.ScrubLocal.bytesAt_of0 hb.2 ?_]
         · exact h1
         · simp only [Spec.Aes.bytesAt, List.length_map, List.length_range, Spec.Aes.rounds, Elem.size]
           rcases hpre with h | h | h <;> rw [h] <;> decide
       · simp only [Spec.Ocb.ctxLstar, Spec.Ocb.blockAtMem] at h2 ⊢
         rw [show (240 : BitVec 64) = BitVec.ofNat 64 240 from rfl] at h2 ⊢
-        rw [ModesScrub.bytesAt_of hb.2 (by decide)]
+        rw [Proof.Aes.ScrubLocal.bytesAt_of hb.2 (by decide)]
         exact h2
 
 open VG.X86_64.RScrub in
@@ -101,8 +102,8 @@ theorem sealOut (stack : Nat) :
         (Spec.Ocb.sealPost 64) _ m m₂ r
       dsimp only [Curry.apply, Spec.Ocb.sealPost, ArgWord.ofRaw, IntTy.bits] at h ⊢
       intro key hk
-      rw [h key hk, ModesScrub.bytesAt_of0 hb.2.2.2.1 (by simp),
-        ModesScrub.bytesAt_of0 hb.2.2.2.2 (by simp)]
+      rw [h key hk, Proof.Aes.ScrubLocal.bytesAt_of0 hb.2.2.2.1 (by simp),
+        Proof.Aes.ScrubLocal.bytesAt_of0 hb.2.2.2.2 (by simp)]
 
 theorem openOut (stack : Nat) :
     PostOut (Spec.Ocb.openContract X86_64.abi stack) (Spec.Ocb.openSig.retBits 64) :=
@@ -119,7 +120,7 @@ theorem openOut (stack : Nat) :
         (Spec.Ocb.openPost 64) _ m m₂ r
       dsimp only [Curry.apply, Spec.Ocb.openPost, ArgWord.ofRaw, IntTy.bits] at h ⊢
       intro key hk
-      rw [ModesScrub.bytesAt_of0 hb.2.2.2.1 (by simp)]
+      rw [Proof.Aes.ScrubLocal.bytesAt_of0 hb.2.2.2.1 (by simp)]
       exact h key hk
 
 /-- `vg_aes_ocb_seal` over `v`: over an implementation of AES that needs

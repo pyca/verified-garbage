@@ -25,7 +25,7 @@ pub(crate) unsafe extern "C" fn vg_scrypt(password: *const u8, password_len: usi
         r#".option push
 .option arch, +m, +c
 .base64 "EXGKgiOwEgAjtDIBI7iiACO8sgAjsOICI7TyAiO4AgMjvBIDlokFRx4I"
-call {vg_pbkdf2_hmac_sha256}
+call {vg_pbkdf2_hmac_sha256_core}
 .base64 "A7WJAiOwqQSDsokCA7OJA7PiYgADs4kQs+JiAJPycgA="
 beqz t0, 20f
 22:
@@ -42,14 +42,18 @@ call {vg_scrypt_romix}
 bnez t0, 23b
 21:
 .base64 "A7UJAYO1iQEDtokCg7YJA54GBUeDt4kRA7gJEg=="
-call {vg_pbkdf2_hmac_sha256}
+call {vg_pbkdf2_hmac_sha256_core}
 .base64 "g7AJAIO5iQARYYKA"
 .option pop"#,
-        vg_pbkdf2_hmac_sha256 = sym super::pbkdf2_sha256::vg_pbkdf2_hmac_sha256,
+        vg_pbkdf2_hmac_sha256_core = sym super::scrypt::vg_pbkdf2_hmac_sha256_core::vg_pbkdf2_hmac_sha256_core,
         vg_scrypt_romix_bytes = sym super::scrypt::vg_scrypt_romix_bytes::vg_scrypt_romix_bytes,
         vg_scrypt_romix = sym super::scrypt::vg_scrypt_romix::vg_scrypt_romix,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_pbkdf2_hmac_sha256_core.rs"]
+pub(crate) mod vg_pbkdf2_hmac_sha256_core;
 
 #[rustfmt::skip]
 #[path = "internal/vg_salsa20_8.rs"]

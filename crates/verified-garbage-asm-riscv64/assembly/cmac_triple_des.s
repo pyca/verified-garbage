@@ -19,7 +19,7 @@ vg_cmac_triple_des_stream_init:
 	addi a0, a1, 0
 	addi a1, a2, 0
 	addi a2, s1, 0
-	call {vg_triple_des_expand_key}
+	call {vg_triple_des_expand_key_core}
 	addi t0, zero, 0
 	sb t0, 384(s1)
 	addi t0, zero, 0

@@ -13,6 +13,17 @@ theorem allOut_value (s : State) : regsVal s uRegs = (s.gpr .x11).toNat + 184467
 theorem allIn_value (s : State) : regsVal s aRegs = (s.gpr .x2).toNat + 18446744073709551616*(s.gpr .x3).toNat + 340282366920938463463374607431768211456*(s.gpr .x4).toNat + 6277101735386680763835789423207666416102355444464034512896*(s.gpr .x5).toNat + 115792089237316195423570985008687907853269984665640564039457584007913129639936*(s.gpr .x6).toNat + 2135987035920910082395021706169552114602704522356652769947041607822219725780640550022962086936576*(s.gpr .x7).toNat + 39402006196394479212279040100143613805079739270465446667948293404245721771497210611414266254884915640806627990306816*(s.gpr .x8).toNat + 726838724295606890549323807888004534353641360687318060281490199180639288113397923326191050713763565560762521606266177933534601628614656*(s.gpr .x9).toNat + 13407807929942597099574024998205846127479365820592393377723561443721764030073546976801874298166903427690031858186486050853753882811946569946433649006084096*(s.gpr .x28).toNat := by
  simp only [aRegs,regsVal]; omega_arith
 abbrev productClob : List Reg := [.x1,.x10,.x11,.x12,.x13,.x14,.x15,.x16,.x17,.x19,.x20,.x21,.x22,.x23,.x24,.x25,.x26,.x27,.x28]
+/-- The low product, the top's contribution and the expansion of the square, each value one atom:
+the carry out of the seventeen words is zero, since the square is below their range. -/
+private theorem square_combine {L P8 P9 T c N r0 r1 r2 r3 r4 r5 r6 r7 r8 : Nat} (lo : L = P8)
+    (et : T + N * c = L + r0 + r1 + r2 + r3 + r4 + r5 + r6 + r7 + r8)
+    (exp : P9 = P8 + r0 + r1 + r2 + r3 + r4 + r5 + r6 + r7 + r8) (hb : P9 < N) : T = P9 := by
+  obtain e : T + N * c = P9 := by omega
+  cases c with
+  | zero => rw [Nat.mul_zero, Nat.add_zero] at e; exact e
+  | succ k =>
+    obtain hN : N ≤ N * (k + 1) := Nat.le_mul_of_pos_right N (Nat.succ_pos k)
+    omega
 theorem product_small_top (s : State) (hz : s.gpr .x30=0) (ht : (s.gpr .x28).toNat<512) :
  WP isa (.block product) s fun t => regsVal t uRegs = regsVal s aRegs * regsVal s aRegs ∧ Keeps productClob s t := by
  unfold product
@@ -35,7 +46,7 @@ theorem product_small_top (s : State) (hz : s.gpr .x30=0) (ht : (s.gpr .x28).toN
   have h7 := (s.gpr .x9).isLt
   omega_arith
  have hb2 := Nat.mul_lt_mul'' hb hb
- omega_using [lo,et,exp,hb2]
+ exact square_combine lo et exp (Nat.lt_of_lt_of_le hb2 (by decide))
 theorem prime_value : (2:Nat)^521-1 = 6864797660130609714981900799081393217269435300143305409394463459185543183397656052122559640661454554977296311391480858037121987999716643812574028291115057151 := by
  decide +kernel
 

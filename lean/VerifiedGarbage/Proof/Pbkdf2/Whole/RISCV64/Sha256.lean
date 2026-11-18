@@ -33,8 +33,8 @@ open VG.Proof.Hmac.Stream.RISCV64.Sha256Family (hash256 ok256)
 /-- The functions `pbkdf2` calls. -/
 def F : Impl.Pbkdf2.Whole.RISCV64.Fns where
   H := hash256
-  hiN := Spec.Hmac.sha256I.initAnyKeyApi.name
-  hfN := Spec.Hmac.sha256I.finalizeApi.name
+  hiN := Spec.Hmac.sha256I.initAnyKeyApi.name ++ "_core"
+  hfN := Spec.Hmac.sha256I.finalizeApi.name ++ "_core"
   itN := "vg_pbkdf2_hmac_sha256_iterate"
   itC := Pbkdf2.RISCV64.Sha256.code
   itW := 240

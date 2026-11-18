@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Blowfish.expandKeyContract`. Constant time: only pointers and `key_len` may affect timing, not the key, including the S-box indices of the key schedule's encryptions.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
@@ -177,6 +179,9 @@ b 213f
 .inst 0x4ea41c80,0x4ea81d04,0x4ea01c08,0xd10005ef
 cbnz x15, 210b
 .inst 0x4e080c08,0x4e080c29,0x4e080c6a,0x4e080c8b,0x4e080d6c,0x4e080e0d,0x4e080e2e,0x4ebb1f6f
+.inst 0xd2800006,0xd2800008,0xd280000d,0x6f00e400,0x6f00e401,0x6f00e404,0x6f00e405,0x6f00e406
+.inst 0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416
+.inst 0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f
 .inst 0xd65f03c0
 .p2align 6",
         VG_BLOWFISH_INIT = sym super::consts::VG_BLOWFISH_INIT,

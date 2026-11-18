@@ -446,7 +446,7 @@ structure KWhole (s₀ s : State) : Prop where
   ctr : bytesAt s.mem (fIv s₀) 16 = Spec.Ctr.next (fIv0 s₀) (fN s₀)
 
 theorem whole_wp {s₀ : State} (hp : KPre s₀) {s : State} (h : KSetup s₀ s) :
-    WP isa (.call "vg_sm4_ctr" ctr) s (KWhole s₀) := by
+    WP isa (.call "vg_sm4_ctr_core" ctr) s (KWhole s₀) := by
   obtain ⟨eK, eIv, eB⟩ := sv_bytes hp
   obtain ⟨hpre, hc, hw⟩ := whole_pre hp h
   refine WP.callAny (k := ctrK) ctr_ok (rd := [kSch s₀]) (wr := [kIv s₀, fBlk s₀]) hpre hc hw ?_
@@ -603,7 +603,7 @@ theorem cipher_length (k : Spec.Sm4.Schedule) (b : List Byte) : (Spec.Sm4.cipher
   simp [Spec.Sm4.cipher]
 
 theorem tail_call_wp {s₀ : State} (hp : KPre s₀) {s : State} (h : KArgs s₀ s) :
-    WP isa (.call "vg_sm4_ctr" ctr) s (KCall s₀) := by
+    WP isa (.call "vg_sm4_ctr_core" ctr) s (KCall s₀) := by
   obtain ⟨hpre, hc, hw⟩ := tail_pre hp h
   obtain big := big_of (kW1_kW h.frame)
   obtain eK := sched_of big hp.sch_big
@@ -836,7 +836,7 @@ theorem final_rel {s₀ s₀' : State} (h0 : ctrFinalRISCV64.pre s₀) (h0' : ct
     (F₁ := KSetup s₀) (F₂ := KSetup s₀')
     fun a b h => by obtain ⟨rfl, rfl⟩ := h; exact ⟨setup_wp hp, setup_wp hp'⟩
   -- The whole blocks.
-  obtain r₂ := (RelCT.callEx (k := ctrK) (n := "vg_sm4_ctr") ctr_ok ctr_ct
+  obtain r₂ := (RelCT.callEx (k := ctrK) (n := "vg_sm4_ctr_core") ctr_ok ctr_ct
     (P := fun a b => KSetup s₀ a ∧ KSetup s₀' b) fun a b ⟨ha, hb⟩ => by
       obtain ⟨pa, ca, wa⟩ := whole_pre hp ha
       obtain ⟨pb, cb, wb⟩ := whole_pre hp' hb
@@ -866,7 +866,7 @@ theorem final_rel {s₀ s₀' : State} (h0 : ctrFinalRISCV64.pre s₀) (h0' : ct
         · rw [h.1.s5, h.2.s5, fIv, fIv, qIv]
         · rw [h.1.s7, h.2.s7, kV, kV, qV]) t₃).wp
       (F₁ := KArgs s₀) (F₂ := KArgs s₀') fun a b h => ⟨tail_args_wp hp h.1, tail_args_wp hp' h.2⟩
-    obtain a₂ := (RelCT.callEx (k := ctrK) (n := "vg_sm4_ctr") ctr_ok ctr_ct
+    obtain a₂ := (RelCT.callEx (k := ctrK) (n := "vg_sm4_ctr_core") ctr_ok ctr_ct
       (P := fun a b => KArgs s₀ a ∧ KArgs s₀' b) fun a b ⟨ha, hb⟩ => by
         obtain ⟨pa, ca, wa⟩ := tail_pre hp ha
         obtain ⟨pb, cb, wb⟩ := tail_pre hp' hb

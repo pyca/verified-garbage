@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Hmac.Instance.initAnyKeyContract` of `VG.Spec.Hmac.sha512_256I`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `inner` must be valid for reads and writes of 192 bytes.
@@ -71,7 +73,7 @@ j 212f
 212:
 .base64 "ZoWBRROGCwSTBgAI"
 call {vg_sha512_update_core}
-.base64 "AUMjMGwAIzRsACM4bAAjPGwAIzBsAiM0bAIjOGwCIzxsAiMwbAQjNGwEIzhsBCM8bAQjMGwGIzRsBiM4bAYjPGwGIzBsCCM0bAgjOGwIIzxsCCMwbAojNGwKIzhsCiM8bAojMGwMIzRsDCM4bAwjPGwMgzAMDoM7jA6DPIwPAz0MEIM9jBADPAwPUWGCgA=="
+.base64 "AUMjMGwAIzRsACM4bAAjPGwAIzBsAiM0bAIjOGwCIzxsAiMwbAQjNGwEIzhsBCM8bAQjMGwGIzRsBiM4bAYjPGwGIzBsCCM0bAgjOGwIIzxsCCMwbAojNGwKIzhsCiM8bAojMGwMIzRsDCM4bAwjPGwMgzAMDoM7jA6DPIwPAz0MEIM9jBADPAwPUWGBQgVxCoMjMFMAIzRTACM4UwAjPFMAIzBTAiM0UwIjOFMCIzxTAiMwUwQjNFMEIzhTBCM8UwQjMFMGIzRTBiM4UwYjPFMGIzBTCCM0UwgjOFMIIzxTCCMwUwojNFMKIzhTCiM8UwojMFMMIzRTDCM4UwwjPFMMIzBTDiM0Uw4jOFMOIzxTDiMwUxAjNFMQIzhTECM8UxAjMFMSIzRTEiM4UxIjPFMSIzBTFCM0UxQjOFMUIzxTFCMwUxYjNFMWIzhTFiM8UxYjMFMYIzRTGCM4UxgjPFMYIzBTGiM0UxojOFMaIzxTGiMwUxwjNFMcIzhTHCM8Uxw9YQFFgUUBRoFGAUeBRwFIgUiBQgFDgUMBToFOAU+BT4KA"
 .option pop"#,
         vg_sha512_256_init_core = sym super::sha512::vg_sha512_256_init_core::vg_sha512_256_init_core,
         vg_sha512_update_core = sym super::sha512::vg_sha512_update_core::vg_sha512_update_core,
@@ -82,6 +84,8 @@ call {vg_sha512_update_core}
 /// Finishes an HMAC-SHA-512/256 computation: if, for a 128-byte key `K₀` and a text of fewer than 2⁶⁴ − 128 bytes, the SHA-512/256 streaming state `*inner` represents `(K₀ ⊕ ipad) ‖ text`, of `count` bytes, and `*outer` represents `K₀ ⊕ opad`, writes the HMAC-SHA-512/256 of the text under `K₀` (32 bytes) to `*out`.
 ///
 /// Contract: `VG.Spec.Hmac.Instance.finalizeContract` of `VG.Spec.Hmac.sha512_256I`. Constant time: only the pointers and `count` may affect timing, not the states.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -102,9 +106,17 @@ call {vg_sha512_256_finalize_core}
 call {vg_sha512_update_core}
 .base64 "XoWTBQAKaoY="
 call {vg_sha512_256_finalize_core}
-.base64 "gzAMAoM7jAKDPIwDAz0MBIM9jAQDPAwDYWGCgA=="
+.base64 "gzAMAoM7jAKDPIwDAz0MBIM9jAQDPAwDYWGBQi1xCoMjMFMAIzRTACM4UwAjPFMAIzBTAiM0UwIjOFMCIzxTAiMwUwQjNFMEIzhTBCM8UwQjMFMGIzRTBiM4UwYjPFMGIzBTCCM0UwgjOFMIIzxTCCMwUwojNFMKIzhTCiM8UwojMFMMIzRTDCM4UwwjPFMMIzBTDiM0Uw4jOFMOIzxTDiMwUxAjNFMQIzhTECM8UxAVYQFFgUUBRoFGAUeBRwFIgUiBQgFDgUMBToFOAU+BT4KA"
 .option pop"#,
         vg_sha512_256_finalize_core = sym super::sha512::vg_sha512_256_finalize_core::vg_sha512_256_finalize_core,
         vg_sha512_update_core = sym super::sha512::vg_sha512_update_core::vg_sha512_update_core,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_hmac_sha512_256_finalize_core.rs"]
+pub(crate) mod vg_hmac_sha512_256_finalize_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_hmac_sha512_256_init_core.rs"]
+pub(crate) mod vg_hmac_sha512_256_init_core;

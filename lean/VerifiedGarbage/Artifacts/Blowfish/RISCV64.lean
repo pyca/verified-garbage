@@ -1,7 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Blowfish.RISCV64.EcbVerified
-public import VerifiedGarbage.Proof.Blowfish.RISCV64.KeyVerified
+public import VerifiedGarbage.Proof.Blowfish.RISCV64.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.Blowfish.RISCV64.Lit
@@ -13,14 +12,8 @@ import VerifiedGarbage.Proof.Blowfish.RISCV64.Lit
 namespace VG.Artifacts.Blowfish.RISCV64
 
 def artifacts : List Artifact := [
-  Spec.Blowfish.expandKeyApi.artifact RISCV64.target {
-    code := Impl.Blowfish.RISCV64.expandKey
-    verified := Proof.Blowfish.RISCV64.expandKey_verified },
-  Spec.Blowfish.ecbEncryptApi.artifact RISCV64.target {
-    code := Impl.Blowfish.RISCV64.encrypt
-    verified := Proof.Blowfish.RISCV64.encrypt_verified },
-  Spec.Blowfish.ecbDecryptApi.artifact RISCV64.target {
-    code := Impl.Blowfish.RISCV64.decrypt
-    verified := Proof.Blowfish.RISCV64.decrypt_verified }]
+  Spec.Blowfish.expandKeyApi.artifact RISCV64.target Proof.Blowfish.RISCV64.Scrub.expandKeyReg,
+  Spec.Blowfish.ecbEncryptApi.artifact RISCV64.target Proof.Blowfish.RISCV64.Scrub.ecbEncryptReg,
+  Spec.Blowfish.ecbDecryptApi.artifact RISCV64.target Proof.Blowfish.RISCV64.Scrub.ecbDecryptReg]
 
 end VG.Artifacts.Blowfish.RISCV64

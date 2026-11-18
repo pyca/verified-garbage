@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Hmac.Instance.pbkdf2Contract` of `VG.Spec.Hmac.md5I`. Constant time: only the pointers, the lengths and `c` may affect timing, not the password, the salt or the key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `password` must be valid for reads of `password_len` bytes.
@@ -21,7 +23,7 @@ pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_md5(password: *const u8, password
         r#".option push
 .option arch, +m, +c
 .base64 "FXENcYqCI7ASACO0kgAjuCIBI7wyASOwQgMjtFIDI7hiAyO8cgOWhDaJuok+isKKMosqhq6GE4UEBJOFBAk="
-call {vg_hmac_md5_init}
+call {vg_hmac_md5_init_core}
 .base64 "hUs="
 beqz s5, 20f
 22:
@@ -30,7 +32,7 @@ call {vg_md5_update_core}
 .base64 "E9OLASOIZBQT0wsBo4hkFBPTiwAjiWQUo4l0FROFBA6TBQkEE4YEFZFG"
 call {vg_md5_update_core}
 .base64 "E4UEDpOFBAkTBkkEk4YEEw=="
-call {vg_hmac_md5_finalize}
+call {vg_hmac_md5_finalize_core}
 .base64 "A8MEEyOAZBQDwxQTo4BkFAPDJBMjgWQUA8M0E6OBZBQDw0QTI4JkFAPDVBOjgmQUA8NkEyODZBQDw3QTo4NkFAPDhBMjhGQUA8OUE6OEZBQDw6QTI4VkFAPDtBOjhWQUA8PEEyOGZBQDw9QTo4ZkFAPD5BMjh2QUA8P0E6OHZBQThQQEk4UEExOG+f+ThgQUE4cEFg=="
 call {vg_pbkdf2_hmac_md5_iterate}
 .base64 "E4MK/xNT8wPWgw=="
@@ -48,11 +50,11 @@ bnez s5, 22b
 j 21f
 20:
 21:
-.base64 "g7AEAAO5BAGDuYQBA7oEAoO6hAIDuwQDg7uEA4RkNWEtYYKA"
+.base64 "g7AEAAO5BAGDuYQBA7oEAoO6hAIDuwQDg7uEA4RkNWEtYYFCEwEBygqDIzBTACM0UwAjOFMAIzxTACMwUwIjNFMCIzhTAiM8UwIjMFMEIzRTBCM4UwQjPFMEIzBTBiM0UwYjOFMGIzxTBiMwUwgjNFMIIzhTCCM8UwgjMFMKIzRTCiM4UwojPFMKIzBTDCM0UwwjOFMMIzxTDCMwUw4jNFMOIzhTDiM8Uw4jMFMQIzRTECM4UxAjPFMQIzBTEiM0UxIjOFMSIzxTEiMwUxQjNFMUIzhTFCM8UxQjMFMWIzRTFiM4UxYjPFMWIzBTGCM0UxgjOFMYIzxTGCMwUxojNFMaIzhTGiM8UxojMFMcIzRTHCM4UxwjPFMcIzBTHiM0Ux4jOFMeIzxTHiMwUyAjNFMgIzhTICM8UyAjMFMiIzRTIiM4UyIjPFMiIzBTJCM0UyQjOFMkIzxTJCMwUyYjNFMmIzhTJiM8UyYjMFMoIzRTKCM4UygjPFMoIzBTKiM0UyojOFMqIzxTKiMwUywjNFMsIzhTLCM8UywjMFMuIzRTLiM4Uy4jPFMuIzBTMCM0UzAjOFMwIzxTMCMwUzIjNFMyIzhTMiM8UzIjMFM0IzRTNCM4UzQjPFM0EwEBNgFFgUUBRoFGAUeBRwFIgUiBQgFDgUMBToFOAU+BT4KA"
 .option pop"#,
-        vg_hmac_md5_init = sym super::hmac_md5::vg_hmac_md5_init,
+        vg_hmac_md5_init_core = sym super::hmac_md5::vg_hmac_md5_init_core::vg_hmac_md5_init_core,
         vg_md5_update_core = sym super::md5::vg_md5_update_core::vg_md5_update_core,
-        vg_hmac_md5_finalize = sym super::hmac_md5::vg_hmac_md5_finalize,
+        vg_hmac_md5_finalize_core = sym super::hmac_md5::vg_hmac_md5_finalize_core::vg_hmac_md5_finalize_core,
         vg_pbkdf2_hmac_md5_iterate = sym super::pbkdf2_md5::vg_pbkdf2_hmac_md5_iterate::vg_pbkdf2_hmac_md5_iterate,
     )
 }

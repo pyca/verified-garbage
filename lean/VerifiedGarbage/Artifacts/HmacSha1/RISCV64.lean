@@ -1,7 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Scrub
 public import VerifiedGarbage.TCB.RISCV64.Target
-public import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha1
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.RISCV64.Print
 
@@ -12,11 +12,7 @@ public import VerifiedGarbage.TCB.RISCV64.Print
 namespace VG.Artifacts.HmacSha1.RISCV64
 
 def artifacts : List Artifact := [
-  Spec.Hmac.sha1I.initAnyKeyApi.artifact RISCV64.target {
-    code := Proof.Hmac.Stream.RISCV64.Sha1.hash.init
-    verified := Proof.Hmac.Stream.RISCV64.Sha1.init },
-  Spec.Hmac.sha1I.finalizeApi.artifact RISCV64.target {
-    code := Proof.Hmac.Stream.RISCV64.Sha1.hash.finalize
-    verified := Proof.Hmac.Stream.RISCV64.Sha1.finalize }]
+  Spec.Hmac.sha1I.initAnyKeyApi.artifact RISCV64.target Proof.Hmac.Stream.RISCV64.Scrub.sha1InitAnyKeyReg,
+  Spec.Hmac.sha1I.finalizeApi.artifact RISCV64.target Proof.Hmac.Stream.RISCV64.Scrub.sha1FinalizeReg]
 
 end VG.Artifacts.HmacSha1.RISCV64

@@ -12,6 +12,7 @@ public import VerifiedGarbage.Proof.AesCtr.X86_64.Final
 public import VerifiedGarbage.Proof.AesCfb.X86_64.Final
 public import VerifiedGarbage.Proof.AesOfb.X86_64.Final
 import VerifiedGarbage.Proof.Aes.X86_64.ModesScrub
+import VerifiedGarbage.Proof.Aes.ScrubLocal
 
 /-!
 # AES-CTR and the AES final functions on x86-64, without secret residue
@@ -33,7 +34,7 @@ whole-block functions' code as internal functions of their own,
 
 namespace VG.Proof.Aes.X86_64.FinalScrub
 
-open VG.X86_64 VG.X86_64.Scrub VG.Proof.Aes.X86_64.ModesScrub
+open VG.X86_64 VG.X86_64.Scrub VG.Proof.Aes.X86_64.ModesScrub VG.Proof.Aes.ScrubLocal
 
 /-! ## Postconditions -/
 

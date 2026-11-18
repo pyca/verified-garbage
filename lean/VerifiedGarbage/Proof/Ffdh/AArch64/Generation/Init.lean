@@ -79,6 +79,13 @@ theorem zext32 (x : BitVec 64) :
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.add_zero, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
 
+/-- The six comparisons of `validate`, combined as its code combines them. -/
+private theorem validate_bits : ∀ a b c d e f : Bool,
+    ((if a = true then 1#64 else 0#64) &&& if b = true then 0#64 else 1#64) &&&
+      (((if c = true then 1#64 else 0#64) &&& if d = true then 0#64 else 1#64) |||
+        (if e = true then 1#64 else 0#64) &&& if f = true then 0#64 else 1#64) =
+    if (a && !b && ((c && !d) || (e && !f))) = true then 1 else 0 := by decide
+
 /-- `validate`: `x13` is 1 exactly for valid parameters. -/
 theorem validate_ok (s : State) :
     WP isa (.block validate) s fun t =>
@@ -100,13 +107,10 @@ theorem validate_ok (s : State) :
     subs_ge (show g < 2 ^ 64 by omega_using [hg]) (show 3 < 2 ^ 64 by decide),
     subs_ge (show g < 2 ^ 64 by omega_using [hg]) (show 5 < 2 ^ 64 by decide),
     subs_ge (show g < 2 ^ 64 by omega_using [hg]) (show 6 < 2 ^ 64 by decide)]
-  by_cases hv : initValid n g
-  · rw [ite_eq_left hv]
-    obtain ⟨h1, h2, h3⟩ := hv
-    split_ifs <;> simp only [decide_eq_true_eq] at * <;> first | rfl | (exfalso; omega_arith)
-  · rw [ite_eq_right hv]
-    simp only [initValid, not_and, not_or] at hv
-    split_ifs <;> simp only [decide_eq_true_eq] at * <;> first | rfl | (exfalso; omega_arith)
+  refine (validate_bits _ _ _ _ _ _).trans (ite_congr (propext ?_) (fun _ => rfl) (fun _ => rfl))
+  simp only [initValid, Bool.and_eq_true, Bool.or_eq_true, Bool.not_eq_true', decide_eq_true_eq,
+    decide_eq_false_iff_not]
+  omega_using []
 
 theorem clear_ok {s : State} {B : Addr} (scr : Scr s B 128) (h0 : s.gpr .x0 = B) :
     WP isa (.block clear) s fun t => t.gpr .x0 = 0 ∧ t.mem = initWritten s.mem B 0 0 0 0 := by
