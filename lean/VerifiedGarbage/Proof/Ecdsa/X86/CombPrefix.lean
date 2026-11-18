@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Framework.X86.SymFrame
 public import VerifiedGarbage.Proof.Ecdsa.X86.Main
 public import VerifiedGarbage.Proof.Weierstrass.X86.TCombDigit
 public import VerifiedGarbage.Proof.Weierstrass.X86.TCombLay
+public import VerifiedGarbage.Proof.Framework.ConstMem
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 
@@ -178,6 +179,26 @@ theorem prefix_bytesAt {name : String} {s t : State} (h : SymAddrPost name s t)
   apply List.map_congr_left
   intro i hi
   exact h.frame.bytes (fun r' hr' => by rw [List.mem_singleton.mp hr']; exact hd) hn (List.mem_range.mp hi)
+
+/-- The memory `m` with the words `W` at `0x100000`: the memory of a witness of a contract
+with a comb's tables. `bytes` is `8 * W.length` as a literal: as the product, the kernel would
+evaluate the tables' length in every definitional check of the bound. -/
+def tblMem (W : List (BitVec 64)) (bytes : Nat) (m : Mem) : Mem := fun a =>
+  if (a - 0x100000).toNat < bytes then constMem 0x100000 W a else m a
+
+theorem tblMem_held {W : List (BitVec 64)} {bytes : Nat} (m : Mem) (hl : 8 * W.length = bytes)
+    (hb : bytes ≤ 2 ^ 32) : ∀ i < W.length,
+    (tblMem W bytes m).readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = W.getD i 0 := by
+  intro i hi
+  have hm : (tblMem W bytes m).readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 =
+      (constMem 0x100000 W).readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 := by
+    apply Mem.readW_congr
+    intro j hj
+    have e : ((0x100000 : Addr) + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 j - 0x100000).toNat = 8 * i + j := by
+      rw [Offset.add_add, Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hi, hl, hj, hb])]
+    unfold tblMem
+    rw [e, ite_eq_left (show 8 * i + j < bytes by omega_using [hi, hl, hj])]
+  exact hm.trans (constMem_held 0x100000 W (by omega_using [hl, hb]) i hi)
 
 
 end VG.Proof.Ecdsa.X86

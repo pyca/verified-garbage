@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.TripleDes.AArch64.FbVerified
 public import VerifiedGarbage.Proof.TripleDes.AArch64.FbFinalVerified
+public import VerifiedGarbage.Proof.TripleDes.AArch64.ModesResidue
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.AArch64.Print
 import VerifiedGarbage.Proof.TripleDes.AArch64.FbLit
@@ -16,17 +17,20 @@ namespace VG.Artifacts.TripleDesCfb.AArch64
 
 def artifacts : List Artifact := [
   Spec.TripleDes.cfbEncryptApi.artifact AArch64.target {
-    code := Impl.StackScratch.AArch64.withStackScratchWiped 560 .x4 70 Impl.TripleDes.AArch64.cfbEncrypt
-    verified := Proof.TripleDes.AArch64.cfbEncrypt_framed },
+    code := Proof.TripleDes.AArch64.ModesResidue.cfbEncryptCode
+    verified := Proof.TripleDes.AArch64.ModesResidue.cfbEncryptCode_verified
+    residue := some ⟨Proof.TripleDes.AArch64.ModesResidue.cfbEncryptCode_noResidue⟩ },
   Spec.TripleDes.cfbDecryptApi.artifact AArch64.target {
-    code := Impl.StackScratch.AArch64.withStackScratchWiped 1120 .x4 140
-      Impl.TripleDes.AArch64.Short.cfb64Decrypt
-    verified := Proof.TripleDes.AArch64.Short.Cbc.Cfb.cfb64Decrypt_framed },
+    code := Proof.TripleDes.AArch64.ModesResidue.cfbDecryptCode
+    verified := Proof.TripleDes.AArch64.ModesResidue.cfbDecryptCode_verified
+    residue := some ⟨Proof.TripleDes.AArch64.ModesResidue.cfbDecryptCode_noResidue⟩ },
   Spec.TripleDes.cfbEncryptFinalApi.artifact AArch64.target {
-    code := Impl.StackScratch.AArch64.withStackScratchWiped 560 .x4 70 Impl.TripleDes.AArch64.cfbEncryptFinal
-    verified := Proof.TripleDes.AArch64.cfbEncryptFinal_framed },
+    code := Proof.TripleDes.AArch64.ModesResidue.cfbEncryptFinalCode
+    verified := Proof.TripleDes.AArch64.ModesResidue.cfbEncryptFinalCode_verified
+    residue := some ⟨Proof.TripleDes.AArch64.ModesResidue.cfbEncryptFinalCode_noResidue⟩ },
   Spec.TripleDes.cfbDecryptFinalApi.artifact AArch64.target {
-    code := Impl.StackScratch.AArch64.withStackScratchWiped 560 .x4 70 Impl.TripleDes.AArch64.cfbDecryptFinal
-    verified := Proof.TripleDes.AArch64.cfbDecryptFinal_framed }]
+    code := Proof.TripleDes.AArch64.ModesResidue.cfbDecryptFinalCode
+    verified := Proof.TripleDes.AArch64.ModesResidue.cfbDecryptFinalCode_verified
+    residue := some ⟨Proof.TripleDes.AArch64.ModesResidue.cfbDecryptFinalCode_noResidue⟩ }]
 
 end VG.Artifacts.TripleDesCfb.AArch64

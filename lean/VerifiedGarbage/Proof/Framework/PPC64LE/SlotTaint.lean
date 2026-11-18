@@ -181,7 +181,7 @@ def step (τ : T) : Instr → Option T
   | .mfvsrd d _ => some (wr τ d false)
   | .lxvd2xTbl _ _ b .. => if pub τ b then some τ else none
   | .adrSym d _ => some (wr τ d false)
-  | .push _ | .pop _ | .alloc _ | .free _ | .bctrl | .lxvd2x .. | .stxvd2x .. => none
+  | .push _ | .pop _ | .alloc _ | .free _ | .bctrl | .lxvd2x .. | .stxvd2x .. | .dcbz .. => none
 
 def condPub (τ : T) : Cond → Bool
   | .zero _ r | .nonzero _ r => pub τ r
@@ -549,7 +549,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     (hs : step τ i = some τ') (e₁ : exec i s₁ = some s₁') (e₂ : exec i s₂ = some s₂') :
     addrs i s₁ = addrs i s₂ ∧ Agree τ' s₁' s₂' := by
   cases i with
-  | push | pop | alloc | free | bctrl | lxvd2x | stxvd2x => simp only [step, reduceCtorEq] at hs
+  | push | pop | alloc | free | bctrl | lxvd2x | stxvd2x | dcbz => simp only [step, reduceCtorEq] at hs
   | vop op =>
     simp only [step, Option.some.injEq] at hs; subst hs
     simp only [reduceExec, Option.map_eq_some_iff] at e₁ e₂
@@ -921,7 +921,7 @@ def stepK (τ : T) : Instr → Option T
   | .mfvsrd d _ => some (wrK τ d false)
   | .lxvd2xTbl _ _ b .. => bif pub τ b then some τ else none
   | .adrSym d _ => some (wrK τ d false)
-  | .push _ | .pop _ | .alloc _ | .free _ | .bctrl | .lxvd2x .. | .stxvd2x .. => none
+  | .push _ | .pop _ | .alloc _ | .free _ | .bctrl | .lxvd2x .. | .stxvd2x .. | .dcbz .. => none
 
 theorem wrK_eq (τ : T) (d : Reg) (p : Bool) : wrK τ d p = wr τ d p := by
   simp only [wrK, wr, killK_eq]

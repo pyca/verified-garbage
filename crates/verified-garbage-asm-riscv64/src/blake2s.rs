@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Blake2.initSContract`. The streaming state is the hash state followed by a buffered last block (`VG.Spec.Blake2.Repr`). Constant time: only the pointers, `outlen` and `keylen` may affect timing, not the key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 96 bytes.
@@ -28,7 +30,7 @@ bnez a3, 22b
 j 21f
 20:
 21:
-.base64 "goA="
+.base64 "gUIBRYFFAUaBRgFHgUcBSIFIgUIBQ4FDAU6BTgFPgU+CgA=="
 .option pop"#,
     )
 }
@@ -36,6 +38,8 @@ j 21f
 /// Absorbs data into a BLAKE2s computation: if the streaming state `*state` represents data of `count` bytes, it then represents that data followed by the `len` bytes at `data`.
 ///
 /// Contract: `VG.Spec.Blake2.updateSContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -105,7 +109,7 @@ j 216f
 j 23f
 22:
 23:
-.base64 "gzAMIIM7jCCDPAwhAz2MIYM9DCIDPIwiEwEBJIKA"
+.base64 "gzAMIIM7jCCDPAwhAz2MIYM9DCIDPIwiEwEBJIFCEwEB3AqDIzBTACM0UwAjOFMAIzxTACMwUwIjNFMCIzhTAiM8UwIjMFMEIzRTBCM4UwQjPFMEIzBTBiM0UwYjOFMGIzxTBiMwUwgjNFMIIzhTCCM8UwgjMFMKIzRTCiM4UwojPFMKIzBTDCM0UwwjOFMMIzxTDCMwUw4jNFMOIzhTDiM8Uw4jMFMQIzRTECM4UxAjPFMQIzBTEiM0UxIjOFMSIzxTEiMwUxQjNFMUIzhTFCM8UxQjMFMWIzRTFiM4UxYjPFMWIzBTGCM0UxgjOFMYIzxTGCMwUxojNFMaIzhTGiM8UxojMFMcIzRTHCM4UxwjPFMcIzBTHiM0Ux4jOFMeIzxTHiMwUyAjNFMgIzhTICM8UyAjMFMiIzRTIiM4UyIjPFMiEwEBJAFFgUUBRoFGAUeBRwFIgUiBQgFDgUMBToFOAU+BT4KA"
 .option pop"#,
         vg_blake2s_compress = sym super::blake2s::vg_blake2s_compress::vg_blake2s_compress,
     )
@@ -114,6 +118,8 @@ j 23f
 /// Finishes a BLAKE2s computation: if the streaming state `*state` represents data of `count` bytes, compresses its last block and writes the final state `h[0..7]` (32 bytes) to `*out`. The digest of `outlen` bytes (`init`'s) is its first `outlen` bytes.
 ///
 /// Contract: `VG.Spec.Blake2.finalizeSContract`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -144,7 +150,7 @@ j 23f
 23:
 .base64 "XoWThQsCBUbuhgVH4oc="
 call {vg_blake2s_compress}
-.base64 "A8MLACOAbAADwxsAo4BsAAPDKwAjgWwAA8M7AKOBbAADw0sAI4JsAAPDWwCjgmwAA8NrACODbAADw3sAo4NsAAPDiwAjhGwAA8ObAKOEbAADw6sAI4VsAAPDuwCjhWwAA8PLACOGbAADw9sAo4ZsAAPD6wAjh2wAA8P7AKOHbAADwwsBI4hsAAPDGwGjiGwAA8MrASOJbAADwzsBo4lsAAPDSwEjimwAA8NbAaOKbAADw2sBI4tsAAPDewGji2wAA8OLASOMbAADw5sBo4xsAAPDqwEjjWwAA8O7AaONbAADw8sBI45sAAPD2wGjjmwAA8PrASOPbAADw/sBo49sAIMwDCCDO4wggzwMIQM9jCGDPQwiAzyMIhMBASSCgA=="
+.base64 "A8MLACOAbAADwxsAo4BsAAPDKwAjgWwAA8M7AKOBbAADw0sAI4JsAAPDWwCjgmwAA8NrACODbAADw3sAo4NsAAPDiwAjhGwAA8ObAKOEbAADw6sAI4VsAAPDuwCjhWwAA8PLACOGbAADw9sAo4ZsAAPD6wAjh2wAA8P7AKOHbAADwwsBI4hsAAPDGwGjiGwAA8MrASOJbAADwzsBo4lsAAPDSwEjimwAA8NbAaOKbAADw2sBI4tsAAPDewGji2wAA8OLASOMbAADw5sBo4xsAAPDqwEjjWwAA8O7AaONbAADw8sBI45sAAPD2wGjjmwAA8PrASOPbAADw/sBo49sAIMwDCCDO4wggzwMIQM9jCGDPQwiAzyMIhMBASSBQhMBAdwKgyMwUwAjNFMAIzhTACM8UwAjMFMCIzRTAiM4UwIjPFMCIzBTBCM0UwQjOFMEIzxTBCMwUwYjNFMGIzhTBiM8UwYjMFMIIzRTCCM4UwgjPFMIIzBTCiM0UwojOFMKIzxTCiMwUwwjNFMMIzhTDCM8UwwjMFMOIzRTDiM4Uw4jPFMOIzBTECM0UxAjOFMQIzxTECMwUxIjNFMSIzhTEiM8UxIjMFMUIzRTFCM4UxQjPFMUIzBTFiM0UxYjOFMWIzxTFiMwUxgjNFMYIzhTGCM8UxgjMFMaIzRTGiM4UxojPFMaIzBTHCM0UxwjOFMcIzxTHCMwUx4jNFMeIzhTHiM8Ux4jMFMgIzRTICM4UyAjPFMgIzBTIiM0UyIjOFMiIzxTIhMBASQBRYFFAUaBRgFHgUcBSIFIgUIBQ4FDAU6BTgFPgU+CgA=="
 .option pop"#,
         vg_blake2s_compress = sym super::blake2s::vg_blake2s_compress::vg_blake2s_compress,
     )

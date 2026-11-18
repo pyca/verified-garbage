@@ -694,9 +694,7 @@ theorem keygen_check_step (v : Backend) {s t : State} {h : GenerateKeyABI v.stac
     by_cases hl : r = .x30
     · subst r
       exact (hwl.trans hul).trans (ht.callee .x30 (by decide)).symm
-    · exact (hkw.gpr r (by
-        simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp_all)).trans (huc r hr hl)
+    · exact (hkw.gpr r (by revert hr hl; cases r <;> decide)).trans (huc r hr hl)
   obtain ⟨hw, hwords⟩ := ht.after_call (wr := keygenCheckWr s) hwrs
     (fun r hr => by simp only [keygenCheckWr, List.mem_singleton] at hr; subst hr; exact h.paramsScratch.symm)
     (fun r hr => by simp only [keygenCheckWr, List.mem_singleton] at hr; subst hr; exact h.randScratch.symm)
@@ -1210,9 +1208,7 @@ theorem keygen_derive_step (v : Backend) {s t : State} {h : GenerateKeyABI v.sta
     by_cases hl : r = .x30
     · subst r
       exact (hcl.trans hbl).trans (ha.callee .x30 (by decide)).symm
-    · exact (hkc.gpr r (by
-        simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp_all)).trans (hbc r hr hl)
+    · exact (hkc.gpr r (by revert hr hl; cases r <;> decide)).trans (hbc r hr hl)
   obtain ⟨hc, _⟩ := ha.after_call (wr := keygenDeriveWr s) hwrs
     (fun r hr => by
       simp only [keygenDeriveWr, List.mem_cons, List.not_mem_nil, or_false] at hr

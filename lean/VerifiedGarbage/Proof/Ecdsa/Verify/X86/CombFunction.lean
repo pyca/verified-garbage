@@ -1,8 +1,11 @@
 module
 
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombCT
+public import VerifiedGarbage.Proof.Ecdsa.X86.CombCode
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombCT
+meta import VerifiedGarbage.Proof.Ecdsa.X86.CombCode
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombBodyCT
 import VerifiedGarbage.Proof.Ecdsa.X86.CombFacts
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombInput
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Main
 public import VerifiedGarbage.Proof.Ecdsa.X86.CombPrefix
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombMain
@@ -14,7 +17,6 @@ import VerifiedGarbage.Proof.Ecdsa.X86.CombLit
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombBodyCT
 meta import VerifiedGarbage.Proof.Ecdsa.X86.CombFacts
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombInput
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Main
 meta import VerifiedGarbage.Proof.Ecdsa.X86.CombPrefix
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombMain
@@ -38,60 +40,6 @@ open VG VG.X86 VG.Impl.Ecdsa.X86 VG.Proof.Mont.X86 VG.Proof.Mont
 open VG.Proof.Weierstrass.X86 VG.Proof.Weierstrass Spec.Weierstrass
 open VG.Proof.Ecdsa.X86
 
-structure VCombPre (c : Cfg) (s : State) : Prop extends
-    VPre c s (Abi.constRegions (fun n => (s.syms n).setWidth 64) c.combConsts) where
-  tbls : TblsHeld c s (below (s.gpr .esp) c.stk :: s.wr)
-  pk_stack : Region.Disjoint ⟨ptr s 0, 1 + 2 * c.C.len⟩ (below (s.gpr .esp) 4)
-  dg_stack : Region.Disjoint ⟨ptr s 1, c.C.len⟩ (below (s.gpr .esp) 4)
-  sig_stack : Region.Disjoint ⟨ptr s 2, 2 * c.C.len⟩ (below (s.gpr .esp) 4)
-
-variable {c : Cfg}
-
-theorem VCombPre.sp4 {s : State} (hp : VCombPre c s) : 4 ≤ (s.gpr .esp).toNat := by
-  have := Cfg.stk_ge c; have := hp.toVPre.sp_lo; omega_arith
-
-theorem VPre.symAddr {s t : State} {extra : List Region} {name : String}
-    (hp : VPre c s extra) (h : SymAddrPost name s t) (hsp : 4 ≤ (s.gpr .esp).toNat) : VPre c t extra := by
-  have he := h.gpr .esp (by decide)
-  have ha : ∀ j < 4, arg t j = arg s j := fun j hj => h.arg hsp (by have := hp.sp_fit; omega_using [hj, this])
-  have haa : argAddr t 0 = argAddr s 0 := by simp only [argAddr, he]
-  exact {
-    rd := by simpa only [ptr, ha 0 (by decide), ha 1 (by decide), ha 2 (by decide), haa, h.rd] using hp.rd
-    wr := by simpa only [ptr, ha 3 (by decide), h.wr] using hp.wr
-    pk_sc := by simpa only [ptr, ha 0 (by decide), ha 3 (by decide)] using hp.pk_sc
-    dg_sc := by simpa only [ptr, ha 1 (by decide), ha 3 (by decide)] using hp.dg_sc
-    sig_sc := by simpa only [ptr, ha 2 (by decide), ha 3 (by decide)] using hp.sig_sc
-    args_sc := by simpa only [ptr, haa, ha 3 (by decide)] using hp.args_sc
-    ret_sc := by simpa only [ptr, he, ha 3 (by decide)] using hp.ret_sc
-    pk_fit := by rw [ha 0 (by decide)]; exact hp.pk_fit
-    dg_fit := by rw [ha 1 (by decide)]; exact hp.dg_fit
-    sig_fit := by rw [ha 2 (by decide)]; exact hp.sig_fit
-    sc_fit := by rw [ha 3 (by decide)]; exact hp.sc_fit
-    sp_fit := by rw [he]; exact hp.sp_fit
-    sp_lo := by rw [he]; exact hp.sp_lo
-    stk_sc := by simpa only [stkR, ptr, he, ha 3 (by decide)] using hp.stk_sc }
-
-theorem VKeep.abi {s₀ s : State} {extra : List Region} (hp : VPre c s₀ extra) (K : VKeep c s₀ s) :
-    abiPreserved s₀ s := by
-  refine ⟨?_, ?_⟩
-  · intro r hr
-    simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl
-    · exact K.saved (.ebx, 0) (by decide)
-    · exact K.saved (.esi, 4) (by decide)
-    · exact K.saved (.edi, 8) (by decide)
-    · exact K.saved (.ebp, 12) (by decide)
-    · exact K.esp
-  · exact K.ret hp
-
-theorem vPrefixTables {s t : State} (hp : VCombPre p256Comb s) (P : SymAddrPost p256d.tsym s t) :
-    VCombTables t := by
-  have hp' := hp.toVPre.symAddr P hp.sp4
-  have held := hp.tbls.symAddr (Nat.le_trans (by decide) (Cfg.stk_ge _)) hp.toVPre.sp_lo P
-  have ht := tbl_of_held (c := p256Comb) (d := p256d) (base := ptr t 3) rfl held
-    (by rw [hp'.wr]; simp) (fun r hr => by rw [hp'.rd]; simp only [P.syms] at hr; simp [hr]) (Unch.refl _ _ _)
-  simpa only [VCombTables, P.addr, P.syms] using ht
-
 def vCombCode : Prog isa := Impl.Ecdsa.Verify.X86.Cfg.verifyComb p256Comb
 materialize_code vCombCode
 
@@ -101,14 +49,18 @@ theorem vComb_sp : SpOk vCombCode p256Comb.stk := ⟨NoSp.of_all (by lit_decide)
 theorem vCombBody_sp : SpOk (Impl.Ecdsa.Verify.X86.Cfg.verifyCombBody p256Comb) p256Comb.stk :=
   SpOk.right (a := p256Comb.tableAddr) vComb_sp
 
+/-- The order of P-256's base point is below `2^(8 len)`. -/
+theorem p256Comb_nEnc : p256Comb.C.n < 2 ^ (8 * p256Comb.C.len) := by decide +kernel
+
 theorem vComb_ok (hC : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86.Inv.InvSounds) {s₀ : State} (hp : VCombPre p256Comb s₀) :
     WP isa vCombCode s₀ fun s' => abiPreserved s₀ s' ∧ VPost p256Comb s₀ s' := by
   have hCo : ∀ d, p256Comb.comb = some d → CombOk p256Comb d := by
     intro d h; have e : p256d = d := Option.some.inj h; rw [← e]; exact p256Comb_shape
   refine WP.seq (WP.mono (symFrame_ok p256d.tsym s₀ hp.sp4) fun s₁ P => ?_)
   have hp₁ := hp.toVPre.symAddr P hp.sp4
-  have ht := vPrefixTables hp P
-  refine WP.mono (verifyCombBody_ok (p256Comb_ok hI) hC (p256Comb_tables hC) hCo p256Comb_am3 hp₁
+  have ht := vPrefixTables (d := p256d) rfl hp P
+  refine WP.mono (verifyCombBody_ok (p256Comb_ok hI) hC p256Comb_nEnc (p256Comb_tables hC) hCo
+    (fun _ => p256Comb_am3) hp₁
     (fun d hd => by have e : p256d = d := Option.some.inj hd; subst d; exact ht) signComb_spG vCombBody_sp)
     fun s₂ ⟨K, post⟩ => ?_
   have ha := K.abi hp₁
@@ -159,9 +111,15 @@ theorem vComb_ct (hC : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86.In
       have pt := prefix_bytesAt Q hq.sig_stack (by change 64≤2^64; decide)
       simpa only [ptr,P.arg (j:=2) hp.sp4 (by have:=hp.sp_fit; omega_using [this]),
         Q.arg (j:=2) hq.sp4 (by have:=hq.sp_fit; omega_using [this]),ps,pt] using sig
-  exact vCombBody_rel (p256Comb_ok hI) hC (p256Comb_tables hC) p256Comb_shape p256Comb_am3
-    (hp.toVPre.symAddr P hp.sp4) (hq.toVPre.symAddr Q hq.sp4)
-    (vPrefixTables hp P) (vPrefixTables hq Q) he' ha' hpub (by rw [P.addr, Q.addr, hg]) signComb_spG vCombBody_sp
-    _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂
+  have hp₁ := hp.toVPre.symAddr P hp.sp4
+  have hq₁ := hq.toVPre.symAddr Q hq.sp4
+  have ht₁ := vPrefixTables (d := p256d) rfl hp P
+  have ht₂ := vPrefixTables (d := p256d) rfl hq Q
+  have hg' : s.gpr .eax = t.gpr .eax := by rw [P.addr, Q.addr, hg]
+  exact vCombBody_rel (d := p256d) (p256Comb_ok hI) hC p256Comb_nEnc (p256Comb_tables hC) rfl p256Comb_shape
+    (fun _ => p256Comb_am3) p256VerifyCT hp₁ hq₁ ht₁ ht₂ he' ha'
+    (vPoints_rel (p256Comb_ok hI) hC (p256Comb_tables hC) p256Comb_shape p256Comb_am3 hp₁ hq₁ ht₁ ht₂
+      he' ha' hpub hg' signComb_spG)
+    signComb_spG vCombBody_sp _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂
 
 end VG.Proof.Ecdsa.Verify.X86

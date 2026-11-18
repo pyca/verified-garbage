@@ -59,10 +59,7 @@ theorem pre_of_x {s : State} (h : ecdhX86_64.pre s) : EPre p384x s := by
 
 theorem post_of_x {s s' : State} (h : EPost p384x s s') : ecdhX86_64.post s s' := by
   unfold EPost at h
-  show match ex s.mem (s.gpr .rsi) (s.gpr .rdx) with
-    | some z => (s'.gpr .rax).setWidth 32 = 1 ∧ Spec.EcKey.bytesAt s'.mem (s.gpr .rdi) 48 = z
-    | none => (s'.gpr .rax).setWidth 32 = 0 ∧
-        Spec.EcKey.bytesAt s'.mem (s.gpr .rdi) 48 = List.replicate 48 0
+  dsimp only [ecdhX86_64]
   revert h
   generalize hq : ex s.mem (s.gpr .rsi) (s.gpr .rdx) = q
   rw [show Spec.Ecdh.exchange p384x.C (dk p384x s)

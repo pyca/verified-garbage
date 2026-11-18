@@ -223,7 +223,6 @@ vg_sha224_finalize:
 	li %r10, 0
 	li %r11, 0
 	li %r12, 0
-	addc %r0, %r0, %r0
 	vxor %v0, %v0, %v0
 	vxor %v1, %v1, %v1
 	vxor %v2, %v2, %v2
@@ -424,7 +423,6 @@ vg_sha224_digest:
 	li %r10, 0
 	li %r11, 0
 	li %r12, 0
-	addc %r0, %r0, %r0
 	vxor %v0, %v0, %v0
 	vxor %v1, %v1, %v1
 	vxor %v2, %v2, %v2
@@ -701,7 +699,6 @@ vg_sha256_update:
 	li %r10, 0
 	li %r11, 0
 	li %r12, 0
-	addc %r0, %r0, %r0
 	vxor %v0, %v0, %v0
 	vxor %v1, %v1, %v1
 	vxor %v2, %v2, %v2
@@ -919,7 +916,6 @@ vg_sha256_finalize:
 	li %r10, 0
 	li %r11, 0
 	li %r12, 0
-	addc %r0, %r0, %r0
 	vxor %v0, %v0, %v0
 	vxor %v1, %v1, %v1
 	vxor %v2, %v2, %v2
@@ -1122,7 +1118,6 @@ vg_sha256_digest:
 	li %r10, 0
 	li %r11, 0
 	li %r12, 0
-	addc %r0, %r0, %r0
 	vxor %v0, %v0, %v0
 	vxor %v1, %v1, %v1
 	vxor %v2, %v2, %v2

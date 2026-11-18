@@ -367,7 +367,7 @@ theorem resOk_noStack_reg {api : Api} (r : Registration api target) (hd : r.code
     ResOk r.code r.contract r.stack [] (chunks r.stack) := by
   obtain ⟨pre, post, leak, e⟩ := r.ofSig
   rw [e]
-  exact resOk_noStack (ScrubAbi.of r.consts api.sig r.tables api.pubMode) r.spSafe hd
+  exact resOk_noStack (ScrubAbi.of r.consts api.sig r.tables) r.spSafe hd
 
 /-- `r`'s code, with no VEX or EVEX instruction, no frame and no call,
 followed by the clearing of the SSE registers it may write, is verified and
@@ -389,8 +389,7 @@ theorem scrubXs_ok {api : Api} (r : Registration api target)
   have hp := hpost
   rw [e] at hv hp hr ⊢
   have hrb' := hrb
-  rw [← withMode_ptrBits ((abi.withConsts r.consts).withTables api.sig r.tables) api.pubMode] at hrb' hp ⊢
-  have hA := ScrubAbi.of r.consts api.sig r.tables api.pubMode
+  have hA := ScrubAbi.of r.consts api.sig r.tables
   have ht := tailOk_of 0 r.code []
   refine Verified.scrubXs hA hv (chunks_sum r.stack) (chunks_valid h8) hp ht.gsOk ht.gne (xsW_keep r.code) ?_
   have hall := Verified.scrubM (v := .sse) (f := .sse) hA hv (SpSafe.of_all r.spSafe) (by rw [hd]; exact Nat.zero_le _)
@@ -430,7 +429,7 @@ def scrubRegXs {api : Api} (r : Registration api target)
     intro s t s' hs he
     have hs : r.contract.pre s := hs
     rw [e] at hv hW hs
-    exact writtenWithin_scrub (v := .sse) (f := .sse) (ScrubAbi.of r.consts api.sig r.tables api.pubMode) hv (chunks_sum r.stack)
+    exact writtenWithin_scrub (v := .sse) (f := .sse) (ScrubAbi.of r.consts api.sig r.tables) hv (chunks_sum r.stack)
       (chunks_valid h8) (tailOk_nil _ _ (tailOk_of 0 r.code []).gsOk (tailOk_of 0 r.code []).gne)
       (fun _ _ h => nomatch h) hW s t s' hs he
   extra := r.extra

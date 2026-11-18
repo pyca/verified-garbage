@@ -1024,20 +1024,10 @@ theorem ScrubAbi.tables {A : Abi isa} (hA : ScrubAbi A) (sig : Sig) (ts : List (
       fun s₁ s₂ h => hA.pub s₁ s₂ h.1, hA.mem, hA.ret, hA.rdSub, hA.argsLen, hA.args, hA.argRo, hA.argArea,
       fun ws n s h => hA.wfAbi ws n s h.1⟩
 
-theorem withMode_ptrBits (A : Abi isa) (b : Bool) : (A.withMode b).ptrBits = A.ptrBits := by
-  cases b <;> rfl
-
-/-- With what two runs must also agree on to be related as public
-(`Abi.withMode`). -/
-theorem ScrubAbi.mode {A : Abi isa} (hA : ScrubAbi A) (b : Bool) : ScrubAbi (A.withMode b) := by
-  cases b with
-  | false => exact hA
-  | true => exact { hA with pub := fun s₁ s₂ h => hA.pub s₁ s₂ h.1 }
-
 /-- The calling convention of every x86-64 artifact (`Api.artifact`). -/
-theorem ScrubAbi.of (cs : List (String × List (BitVec 64))) (sig : Sig) (ts : List (String × List FnTable))
-    (b : Bool) : ScrubAbi (((abi.withConsts cs).withTables sig ts).withMode b) :=
-  ((ScrubAbi.consts cs).tables sig ts).mode b
+theorem ScrubAbi.of (cs : List (String × List (BitVec 64))) (sig : Sig) (ts : List (String × List FnTable)) :
+    ScrubAbi ((abi.withConsts cs).withTables sig ts) :=
+  (ScrubAbi.consts cs).tables sig ts
 
 /-! ## What `Sig.contract` gives -/
 
@@ -2103,17 +2093,13 @@ theorem contract_pub {A : Abi isa} {sig : Sig} {pre : Curry (sig.words A.ptrBits
     | some f => exact h.1.1
 
 /-- The functions of the tables have the same addresses in two runs that agree on what is public. -/
-theorem tables_pub_syms {A : Abi isa} {sig : Sig} {ts : List (String × List FnTable)} {pm : Bool}
-    {s₁ s₂ : State} (h : ((A.withTables sig ts).withMode pm).pub s₁ s₂) :
+theorem tables_pub_syms {A : Abi isa} {sig : Sig} {ts : List (String × List FnTable)}
+    {s₁ s₂ : State} (h : (A.withTables sig ts).pub s₁ s₂) :
     ∀ f ∈ tableFns ts, s₁.syms f = s₂.syms f := by
-  have h' : (A.withTables sig ts).pub s₁ s₂ := by
-    cases pm
-    · exact h
-    · exact h.1
   intro f hf
   cases ts with
   | nil => simp [tableFns] at hf
-  | cons t ts => exact h'.2.1 f hf
+  | cons t ts => exact h.2.1 f hf
 
 /-- The code calls indirectly only the functions of the tables `ts`, whose
 addresses two runs agree on (`tables_pub_syms`). -/
@@ -2123,7 +2109,7 @@ def tablesCall (c : Prog isa) (ts : List (String × List FnTable)) : Bool :=
 theorem tablesCall_syms {api : Api} {r : Registration api target} (h : tablesCall r.code r.tables = true)
     {A : Abi isa} {pre : Curry (api.sig.words A.ptrBits) (Mem → Prop)} {post : api.sig.Post A.ptrBits}
     {wa : Bool} {stack : Nat} {leak : Option (Curry (api.sig.words A.ptrBits) (Mem → List Nat))}
-    (hA : A = ((abi.withConsts r.consts).withTables api.sig r.tables).withMode api.pubMode) :
+    (hA : A = ((abi.withConsts r.consts).withTables api.sig r.tables)) :
     ∀ s₁ s₂, (api.sig.contract A pre post wa stack leak).pub s₁ s₂ →
       ∀ n ∈ UpperLock.inames r.code, s₁.syms n = s₂.syms n := by
   subst hA
@@ -2150,8 +2136,7 @@ theorem scrubCodeE_noResidue {api : Api} (r : Registration api target) (v : VecL
   have hr := hres
   rw [e] at hv hp hr ⊢
   have hrb' := hrb
-  rw [← withMode_ptrBits ((abi.withConsts r.consts).withTables api.sig r.tables) api.pubMode] at hrb' hp ⊢
-  exact (Verified.scrubM (ScrubAbi.of r.consts api.sig r.tables api.pubMode) hv (SpSafe.of_all r.spSafe) hd
+  exact (Verified.scrubM (ScrubAbi.of r.consts api.sig r.tables) hv (SpSafe.of_all r.spSafe) hd
     (chunks_sum r.stack) hst (chunks_valid h8)
     (fun i hi => by simpa using Code.all_instrs hlv i hi) (fun hne => MxSame.of_fun (mxFun_of (hmx hne))) hrb' hp hr (tailOk_of _ _ _) (xs_of _ _) he.1 he.2
     (gs_of _ _)).2 (tablesCall_syms hic rfl)
@@ -2180,8 +2165,7 @@ def scrubRegE {api : Api} (r : Registration api target) (v : VecLevel) (ks : Lis
     have hr := hres
     rw [e] at hv hp hr ⊢
     have hrb' := hrb
-    rw [← withMode_ptrBits ((abi.withConsts r.consts).withTables api.sig r.tables) api.pubMode] at hrb' hp ⊢
-    exact (Verified.scrubM (ScrubAbi.of r.consts api.sig r.tables api.pubMode) hv (SpSafe.of_all r.spSafe) hd
+    exact (Verified.scrubM (ScrubAbi.of r.consts api.sig r.tables) hv (SpSafe.of_all r.spSafe) hd
       (chunks_sum r.stack) hst (chunks_valid h8)
       (fun i hi => by simpa using Code.all_instrs hlv i hi) (fun hne => MxSame.of_fun (mxFun_of (hmx hne))) hrb' hp hr (tailOk_of _ _ _) (xs_of _ _) he.1 he.2
       (gs_of _ _)).1

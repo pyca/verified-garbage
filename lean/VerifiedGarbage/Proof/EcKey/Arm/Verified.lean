@@ -46,12 +46,7 @@ open VG VG.Arm VG.Impl.Ecdsa.Arm VG.Proof.Ecdsa.Arm Spec.Weierstrass
 
 theorem post_of {u : Bool} {s s' : State} (h : PkPost (p256With u) s s') : pkArm.post s s' := by
   unfold PkPost at h
-  show match pk s.mem (State.addr (s.gpr .r1)) with
-    | some (.affine x y) => BitVec.setWidth 32 (s'.gpr .r1 ++ s'.gpr .r0) = 1 ∧
-        Spec.EcKey.bytesAt s'.mem (State.addr (s.gpr .r0)) 65 = Spec.EcKey.encodePoint (.affine x y)
-    | _ => BitVec.setWidth 32 (s'.gpr .r1 ++ s'.gpr .r0) = 0 ∧
-        Spec.EcKey.bytesAt s'.mem (State.addr (s.gpr .r0)) 65 = List.replicate 65 0
-  rw [BitVec.setWidth_append_eq_right]
+  simp only [pkArm, BitVec.setWidth_append_eq_right]
   revert h
   generalize hq : pk s.mem (State.addr (s.gpr .r1)) = q
   rw [show Spec.EcKey.publicKey (p256With u).C (dk (p256With u) s) = pk s.mem (State.addr (s.gpr .r1)) from rfl,

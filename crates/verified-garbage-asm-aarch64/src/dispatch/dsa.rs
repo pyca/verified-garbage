@@ -25,6 +25,8 @@ pub unsafe fn vg_dsa_parameter_search_init_auto(_dit: verified_garbage_cpu::Dit<
 ///
 /// It runs `vg_dsa_sign_random_prevalidated`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of `out_len` bytes.
@@ -51,6 +53,8 @@ pub unsafe fn vg_dsa_sign_random_prevalidated_auto(_dit: verified_garbage_cpu::D
 ///
 /// It runs `vg_dsa_validate_private_key`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
@@ -70,6 +74,8 @@ pub unsafe fn vg_dsa_validate_private_key_auto(_dit: verified_garbage_cpu::Dit<'
 ///
 /// It runs `vg_dsa_validate_public_key`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
@@ -88,6 +94,8 @@ pub unsafe fn vg_dsa_validate_public_key_auto(_dit: verified_garbage_cpu::Dit<'_
 /// DSA verification of a prehashed digest, for an already validated packed public key (big-endian p||q||g||y with widths p_len, q_len, p_len, p_len; vg_dsa_validate_public_key validates it). The signature is r||s with q_len bytes each. Returns 1 if verification succeeds, otherwise 0: the result of fully checked verification (`VG.Spec.Dsa.verifyContract`), whose checks of the signature scalars and digest handling it keeps. Timing may depend on p,q,g,y and the result, not otherwise on signature or digest. Contract: `VG.Spec.Dsa.verifyPrevalidatedContract`.
 ///
 /// It runs `vg_dsa_verify_prevalidated`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -111,6 +119,8 @@ pub unsafe fn vg_dsa_verify_prevalidated_auto(_dit: verified_garbage_cpu::Dit<'_
 /// Generate a DSA private key from p||q||g and fresh independent random bytes. Uses at most 128 rejection-sampling draws, computes y=g^x mod p, and checks algebraic consistency, not primality. Returns 1 with p||q||g||y||x, 0 for invalid input/draw limit, or 2 for insufficient randomness. Failure zeros out; used counts consumed complete draws on every return. Timing may depend on public parameters, sampling decisions, consumption and success, not otherwise on x or randomness. Contract: `VG.Spec.Dsa.generateKeyContract`.
 ///
 /// It runs `vg_dsa_generate_key`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -136,6 +146,8 @@ pub unsafe fn vg_dsa_generate_key_auto(_dit: verified_garbage_cpu::Dit<'_>, out:
 ///
 /// It runs `vg_dsa_derive_key`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of `out_len` bytes.
@@ -159,6 +171,8 @@ pub unsafe fn vg_dsa_derive_key_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *
 /// Contract: `VG.Spec.Dsa.parameterSearchContract`. Timing may depend on everything, `rand` included: these are public domain parameters.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_dsa_parameter_search_sha1_sha2_sha256_sha2` if the CPU supports its features (`VG_DSA_PARAMETER_SEARCH_SHA1_SHA2_SHA256_SHA2_FEATURES`); or else `vg_dsa_parameter_search`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///

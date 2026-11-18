@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Idea.PPC64LE.Invert
 public import VerifiedGarbage.Proof.Idea.PPC64LE.Key
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Idea.PPC64LE.Scrub
 public import VerifiedGarbage.TCB.PPC64LE.Print
 import VerifiedGarbage.Proof.Idea.PPC64LE.Lit
 
@@ -13,14 +14,8 @@ import VerifiedGarbage.Proof.Idea.PPC64LE.Lit
 namespace VG.Artifacts.Idea.PPC64LE
 
 def artifacts : List Artifact := [
-  Spec.Idea.expandKeyApi.artifact PPC64LE.target {
-    code := Impl.Idea.PPC64LE.expandKey
-    verified := Proof.Idea.PPC64LE.expandKey_verified },
-  Spec.Idea.invertKeyApi.artifact PPC64LE.target {
-    code := Impl.Idea.PPC64LE.invertKey
-    verified := Proof.Idea.PPC64LE.invertKey_verified },
-  Spec.Idea.ecbApi.artifact PPC64LE.target {
-    code := Impl.Idea.PPC64LE.ecb
-    verified := Proof.Idea.PPC64LE.ecb_verified }]
+  Spec.Idea.expandKeyApi.artifact PPC64LE.target Proof.Idea.PPC64LE.Scrub.expandKeyReg,
+  Spec.Idea.invertKeyApi.artifact PPC64LE.target Proof.Idea.PPC64LE.Scrub.invertKeyReg,
+  Spec.Idea.ecbApi.artifact PPC64LE.target Proof.Idea.PPC64LE.Scrub.ecbReg]
 
 end VG.Artifacts.Idea.PPC64LE

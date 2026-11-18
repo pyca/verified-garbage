@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Blowfish.PPC64LE.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Blowfish.PPC64LE.Scrub
 public import VerifiedGarbage.TCB.PPC64LE.Print
 
 /-! # Blowfish on PPC64LE -/
@@ -11,14 +12,8 @@ public import VerifiedGarbage.TCB.PPC64LE.Print
 namespace VG.Artifacts.Blowfish.PPC64LE
 
 def artifacts : List Artifact := [
-  Spec.Blowfish.expandKeyApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 64 .r6 4 Impl.Blowfish.PPC64LE.expandKey
-    verified := Proof.Blowfish.PPC64LE.expandKey_framed },
-  Spec.Blowfish.ecbEncryptApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 288 .r6 4 Impl.Blowfish.PPC64LE.encrypt
-    verified := Proof.Blowfish.PPC64LE.ecb_framed Proof.Blowfish.PPC64LE.encrypt_verified },
-  Spec.Blowfish.ecbDecryptApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 288 .r6 4 Impl.Blowfish.PPC64LE.decrypt
-    verified := Proof.Blowfish.PPC64LE.ecb_framed Proof.Blowfish.PPC64LE.decrypt_verified }]
+  Spec.Blowfish.expandKeyApi.artifact PPC64LE.target Proof.Blowfish.PPC64LE.Scrub.expandKeyReg,
+  Spec.Blowfish.ecbEncryptApi.artifact PPC64LE.target Proof.Blowfish.PPC64LE.Scrub.ecbEncryptReg,
+  Spec.Blowfish.ecbDecryptApi.artifact PPC64LE.target Proof.Blowfish.PPC64LE.Scrub.ecbDecryptReg]
 
 end VG.Artifacts.Blowfish.PPC64LE

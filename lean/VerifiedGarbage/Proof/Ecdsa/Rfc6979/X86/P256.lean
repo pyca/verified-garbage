@@ -55,7 +55,7 @@ private theorem core_pre_256 {s : State} (h : (coreK p256Comb).pre s) : CombSign
     ht⟩ := h
   exact ⟨⟨rd, wr, oc, od, og, ok, dc, gc, kc, ao, ac, ro, rc, no, nd, ng, nk, nc, sp, lo, so, ss⟩, ht, ds, gs, ks⟩
 
-private theorem core_pub_256 {s t : State} (h : (coreK p256Comb).pub s t) : CombSignPub s t := by
+private theorem core_pub_256 {s t : State} (h : (coreK p256Comb).pub s t) : CombSignPub p256d s t := by
   obtain ⟨he, a0, a1, a2, a3, a4, sy⟩ := h
   refine ⟨he, ?_, sy ("VG_P256_COMB", p256W) (by rw [p256Comb_consts]; simp)⟩
   intro j hj
@@ -84,7 +84,7 @@ def p256 (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86.Inv.InvSou
       intro d hd
       have he : p256d = d := Option.some.inj hd
       rw [← he]; exact p256Comb_shape
-    obtain ⟨tr, t, he, ha, hp⟩ := signComb_ok (p256Comb_ok hI) hL (p256Comb_tables hL) co p256Comb_am3 rfl signComb_spG
+    obtain ⟨tr, t, he, ha, hp⟩ := signComb_ok (p256Comb_ok hI) hL (p256Comb_tables hL) co rfl signComb_spG
       signComb_spTail (core_pre_256 h)
     refine ⟨tr, t, he, ha, ?_⟩
     simp only [coreK, coreSigOf, SignPost, ptr, BitVec.setWidth_append_eq_right] at hp ⊢
@@ -95,7 +95,8 @@ def p256 (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86.Inv.InvSou
     cases r <;> exact hp
   coreCT := by
     intro s t tr₁ tr₂ s' t' hs ht hp
-    exact signComb_ct (p256Comb_ok hI) hL (p256Comb_tables hL) p256Comb_shape p256Comb_am3 signComb_spMul
+    exact signComb_ct (d := p256d) (p256Comb_ok hI) hL (p256Comb_tables hL) rfl p256Comb_shape (p256Comb_gMul hL hI)
+      p256SignCT signComb_spMul
       s t tr₁ tr₂ s' t' (core_pre_256 hs) (core_pre_256 ht) (core_pub_256 hp)
   coreNs := NoSp.of_all (by lit_decide)
   coreStack := by lit_decide

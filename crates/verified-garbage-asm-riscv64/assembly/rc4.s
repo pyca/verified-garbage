@@ -967,41 +967,6 @@ vg_rc4_init:
 	addi a0, zero, 1
 21:
 	addi t0, zero, 0
-	addi sp, sp, -256
-	addi t1, sp, 0
-	sd t0, 0(t1)
-	sd t0, 8(t1)
-	sd t0, 16(t1)
-	sd t0, 24(t1)
-	sd t0, 32(t1)
-	sd t0, 40(t1)
-	sd t0, 48(t1)
-	sd t0, 56(t1)
-	sd t0, 64(t1)
-	sd t0, 72(t1)
-	sd t0, 80(t1)
-	sd t0, 88(t1)
-	sd t0, 96(t1)
-	sd t0, 104(t1)
-	sd t0, 112(t1)
-	sd t0, 120(t1)
-	sd t0, 128(t1)
-	sd t0, 136(t1)
-	sd t0, 144(t1)
-	sd t0, 152(t1)
-	sd t0, 160(t1)
-	sd t0, 168(t1)
-	sd t0, 176(t1)
-	sd t0, 184(t1)
-	sd t0, 192(t1)
-	sd t0, 200(t1)
-	sd t0, 208(t1)
-	sd t0, 216(t1)
-	sd t0, 224(t1)
-	sd t0, 232(t1)
-	sd t0, 240(t1)
-	sd t0, 248(t1)
-	addi sp, sp, 256
 	slli a0, a0, 32
 	srli a0, a0, 32
 	addi a1, zero, 0
@@ -2648,41 +2613,6 @@ vg_rc4_apply:
 20:
 21:
 	addi t0, zero, 0
-	addi sp, sp, -256
-	addi t1, sp, 0
-	sd t0, 0(t1)
-	sd t0, 8(t1)
-	sd t0, 16(t1)
-	sd t0, 24(t1)
-	sd t0, 32(t1)
-	sd t0, 40(t1)
-	sd t0, 48(t1)
-	sd t0, 56(t1)
-	sd t0, 64(t1)
-	sd t0, 72(t1)
-	sd t0, 80(t1)
-	sd t0, 88(t1)
-	sd t0, 96(t1)
-	sd t0, 104(t1)
-	sd t0, 112(t1)
-	sd t0, 120(t1)
-	sd t0, 128(t1)
-	sd t0, 136(t1)
-	sd t0, 144(t1)
-	sd t0, 152(t1)
-	sd t0, 160(t1)
-	sd t0, 168(t1)
-	sd t0, 176(t1)
-	sd t0, 184(t1)
-	sd t0, 192(t1)
-	sd t0, 200(t1)
-	sd t0, 208(t1)
-	sd t0, 216(t1)
-	sd t0, 224(t1)
-	sd t0, 232(t1)
-	sd t0, 240(t1)
-	sd t0, 248(t1)
-	addi sp, sp, 256
 	addi a0, zero, 0
 	addi a1, zero, 0
 	addi a2, zero, 0

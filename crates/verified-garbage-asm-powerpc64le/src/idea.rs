@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Idea.expandKeyContract`. Constant time: only pointers may affect timing, not the key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `key` must be valid for reads of 16 bytes.
@@ -16,13 +18,15 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_idea_expand_key(key: *const [u8; 16], schedule: *mut [u8; 104]) {
     core::arch::naked_asm!(
-        r#".base64 "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""#,
+        r#".base64 "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""#,
     )
 }
 
 /// IDEA decryption key schedule (Lai, 1992, §3.3): writes to `*inverse` the 52 decryption subkeys of the 52 encryption subkeys at `schedule` (both as little-endian 16-bit words, as `vg_idea_expand_key` writes them): the multiplicative inverses modulo 2^16 + 1 (with 0 standing for 2^16), additive inverses modulo 2^16 and copies of the encryption subkeys, in reverse round order.
 ///
 /// Contract: `VG.Spec.Idea.invertKeyContract`. Constant time: only pointers may affect timing, not the subkeys, including those that are 0 or 1.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -105,13 +109,15 @@ bne %cr0, 216b
 217:
 .base64 "eDvrfHg77Hz//2s5OABrfQEAazn//4w5OACMfQEAjDnSYWt9OABsfQKEa3lQYIt94A+LeRRajH3kg2t5FFqMfTgAjH14Y4t9eDPMfP//azk4AGt9AQBrOf//jDk4AIx9AQCMOdJha304AGx9AoRreVBgi33gD4t5FFqMfeSDa3kUWox9OACMfXhjh33//6U4AAAlKA=="
 bne %cr0, 217b
-.base64 "eDvsfMaDjHl4Ywh9YAAE+SAAgE4=""#,
+.base64 "eDvsfMaDjHl4Ywh9YAAE+QAAADgAAKA4AADAOAAA4DgAAAA5AAAgOQAAYDkAAIA5IACATg==""#,
     )
 }
 
 /// IDEA in ECB mode (Lai, 1992, §3.3; SP 800-38A §6.1) on `n` complete 8-byte blocks at `data`, in place, under the 52 subkeys at `schedule`: encryption under the subkeys `vg_idea_expand_key` writes, decryption under those `vg_idea_invert_key` writes. No padding is added or removed. For `n = 0`, no data is transformed.
 ///
 /// Contract: `VG.Spec.Idea.ecbContract`. Constant time: only pointers and `n` may affect timing, not the subkeys or data, including words or subkeys that are 0.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -130,6 +136,6 @@ bne %cr0, 22b
 b 21f
 20:
 21:
-.base64 "IACATg==""#,
+.base64 "AAAAOAAAgDgAAKA4AADAOAAA4DgAAAA5AAAgOQAAQDkAAGA5AACAOSAAgE4=""#,
     )
 }

@@ -100,11 +100,11 @@ def keyGen : Prog isa :=
 /-- The Poly1305 state for the one-time key, and `a0` to it. -/
 def polyInit : Prog isa :=
   .seq (.block [.addi .a1 .a0 bufOff, .addi .a0 .a0 polyOff])
-    (.call "vg_poly1305_init" Impl.Poly1305.RISCV64.init)
+    (.call "vg_poly1305_init_core" Impl.Poly1305.RISCV64.init)
 
 /-- `vg_poly1305_update` of the `a3` bytes at `a2`, the message so far `a1`
 bytes long. -/
-def update : Prog isa := .call "vg_poly1305_update" Impl.Poly1305.RISCV64.update
+def update : Prog isa := .call "vg_poly1305_update_core" Impl.Poly1305.RISCV64.update
 
 /-- `n` rounded up to a multiple of 16, into `d`. -/
 def round16 (d n : Reg) : List Instr := [.addi d n 15, .logicImm .and d d (-16)]
@@ -126,7 +126,7 @@ def macData (out : Instr) : Prog isa :=
   (.seq (.block (round16 .a1 .s8 ++ round16 .t0 .s10 ++
     [.add .a1 .a1 .t0, .addi .a2 .a0 (lenOff - polyOff), .li .a3 16])) (.seq update
   (.seq (.block (round16 .a1 .s8 ++ round16 .t0 .s10 ++ [.add .a1 .a1 .t0, .addi .a1 .a1 16, out]))
-    (.call "vg_poly1305_finalize" Impl.Poly1305.RISCV64.finalize)))))))
+    (.call "vg_poly1305_finalize_core" Impl.Poly1305.RISCV64.finalize)))))))
 
 /-- The ChaCha20 counter set to 1, and the source encrypted or decrypted to
 the destination (`vg_chacha20_xor` from `s9` to `s6`), from `a0` at the

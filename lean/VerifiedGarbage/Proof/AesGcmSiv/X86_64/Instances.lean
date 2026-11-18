@@ -1345,6 +1345,9 @@ theorem open_resOk {θ : Nat} {c : Prog isa}
       (leak := some (Spec.GcmSiv.openLeak X86_64.abi.ptrBits)) (Proof.AesGcmSiv.Verified.of_openScratch hv) hk
       (by decide) (by decide) hsp hd
       (fun vs m₁ m₂ hl hb _ => Proof.AesGcmSiv.openPre_local _ vs m₁ m₂ hl hb) hs ex
+    obtain q : (Proof.AesGcmSiv.openScratchContract X86_64.abi 93 8).pre
+        (narrowS Spec.GcmSiv.openSig .u64 93 776 s) := by
+      rw [Proof.AesGcmSiv.openScratchContract_eq]; exact q
     obtain ⟨_, b', j, -, -, fr, z, kp⟩ := hw (Proof.AesGcmSivReg.X86_64.open_impl.pre _ q)
     obtain ⟨-, rfl⟩ := i.det j
     exact ⟨q, b, m, (innerU_eq i).symm, fr, z, kp⟩

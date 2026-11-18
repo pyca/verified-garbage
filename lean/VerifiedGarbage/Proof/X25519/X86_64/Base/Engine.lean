@@ -89,7 +89,17 @@ theorem clampBits_ok {s : State} {base : Addr} (hs : Scratch s base) :
       off_eq_iff base he (by decide : 770 < 2 ^ 64),
       off_eq_iff base he (by decide : 769 < 2 ^ 64),
       off_eq_iff base he (by decide : 768 < 2 ^ 64)]
-    split_ifs <;> first | rfl | (exfalso; omega_arith)
+    rcases (by omega_using [hq] : q = 0 ∨ q = 1 ∨ q = 2 ∨ q = 254 ∨ q = 255 ∨ (3 ≤ q ∧ q < 254)) with
+      rfl | rfl | rfl | rfl | rfl | ⟨h1, h2⟩
+    · rfl
+    · rfl
+    · rfl
+    · rfl
+    · rfl
+    · simp only [show ¬ 768 + q = 1022 by omega_using [h2], show ¬ 768 + q = 1023 by omega_using [h2],
+        show ¬ 768 + q = 770 by omega_using [h1], show ¬ 768 + q = 769 by omega_using [h1],
+        show ¬ 768 + q = 768 by omega_using [h1], show ¬ (q < 3 ∨ q = 255) by omega_using [h1, h2],
+        show ¬ q = 254 by omega_using [h2], ↓reduceIte]
 
 theorem uOps_eval (e : Ed25519.X86_64.Env) :
     evalOps uOps e 0 = e 2 + e 1 ∧ evalOps uOps e 2 = e 2 - e 1 := by
@@ -152,7 +162,9 @@ theorem engineOf_ok [DivstepInv] {comb comb' : Prog isa} (hcomb : CombOk comb') 
   refine WP.seq (WP.mono (hcomb.ok hsc hS (cd.trans bd) cb tc hfar) fun d ⟨dp, kd⟩ => ?_)
   refine WP.mono (uEncode_ok (kd.scratch hsc)) fun t ⟨kt, tv⟩ => ?_
   refine ⟨((kab.trans kbc).trans kd).trans (PowersKeep.of_rbx kt), _, tv, ?_⟩
-  exact VG.Proof.X25519.Edwards.x25519_basePoint hk _ (u_rep dp)
+  -- stated first: as an argument, `u_rep dp` is compared with the expected type before its point is known
+  have ur := u_rep dp
+  exact VG.Proof.X25519.Edwards.x25519_basePoint hk _ ur
 
 theorem engine_ok [DivstepInv] : UEngineOk (engine fld).inline := engineOf_ok combOk combMultiply_inline
 

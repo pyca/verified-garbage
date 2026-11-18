@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86.InvInterface
 public import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP256r1.Verified
-public import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP256r1.Lit
+public import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP256r1.CombLit
 import VerifiedGarbage.Impl.Ecdsa.Verify.BrainpoolP256r1.X86
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.BrainpoolP256r1.Verified
 public import VerifiedGarbage.Proof.Framework.TaintSum
@@ -81,7 +81,7 @@ open VG.Proof.HmacTable.X86 (tables names vars)
 
 def artifactsFor (vs1 : List Proof.Sha1.X86.Variants.Backend)
     (vs256 : List Proof.Sha256.X86.Variants.Backend) : List Artifact :=
-  if hv : OK (vars vs1 vs256) then [
+  if hv : OK (vars vs1 vs256) ∧ "VG_BRAINPOOLP256R1_COMB" ∉ names (vars vs1 vs256) then [
     Spec.Ecdsa.Rfc6979.Curves.brainpoolp256r1SignApi.artifact X86.target {
       tables := [("hmac", tables (vars vs1 vs256))]
       code := signCodeT (brainpoolp256r1 hasLaw.law hasLaw.inv) Spec.Ecdsa.Rfc6979.Curves.brainpoolp256r1.tries (vars vs1 vs256)

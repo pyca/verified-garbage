@@ -81,6 +81,26 @@ vg_x25519_exchange:
 	movz x11, #1, lsl #0
 	eor x0, x0, x11
 	ldr x30, [sp], #16
+	movz x3, #0, lsl #0
+	movz x4, #0, lsl #0
+	movz x5, #0, lsl #0
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
+	movz x8, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x12, #0, lsl #0
+	movz x13, #0, lsl #0
+	movz x14, #0, lsl #0
+	movz x15, #0, lsl #0
+	movz x16, #0, lsl #0
+	movz x17, #0, lsl #0
+	tst x3, x3
+	add w0, w0, #0
+	sub sp, sp, #16
+	movi v31.2d, #0
+	add x9, sp, #0
+	str q31, [x9, #0]
+	add sp, sp, #16
 	ret
 	.p2align 6
 

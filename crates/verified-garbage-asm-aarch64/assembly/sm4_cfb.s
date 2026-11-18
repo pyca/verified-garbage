@@ -90,6 +90,17 @@ vg_sm4_cfb128_encrypt_sm4:
 	stp x17, x17, [x16, #80]
 	stp x17, x17, [x16, #96]
 	add sp, sp, #112
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
+	movi v0.2d, #0
+	movi v16.2d, #0
+	movi v17.2d, #0
+	movi v18.2d, #0
+	movi v19.2d, #0
+	movi v20.2d, #0
+	movi v21.2d, #0
+	movi v22.2d, #0
+	movi v23.2d, #0
 	ret
 	.p2align 6
 
@@ -1275,6 +1286,34 @@ vg_sm4_cfb128_encrypt:
 	stp x17, x17, [x16, #160]
 	stp x17, x17, [x16, #176]
 	add sp, sp, #3264
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
+	movz x8, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x12, #0, lsl #0
+	movz x13, #0, lsl #0
+	movi v0.2d, #0
+	movi v1.2d, #0
+	movi v2.2d, #0
+	movi v3.2d, #0
+	movi v16.2d, #0
+	movi v17.2d, #0
+	movi v18.2d, #0
+	movi v19.2d, #0
+	movi v20.2d, #0
+	movi v21.2d, #0
+	movi v22.2d, #0
+	movi v23.2d, #0
+	movi v24.2d, #0
+	movi v25.2d, #0
+	movi v26.2d, #0
+	movi v27.2d, #0
+	movi v28.2d, #0
+	movi v29.2d, #0
+	movi v30.2d, #0
+	movi v31.2d, #0
 	ret
 	.p2align 6
 
@@ -1512,6 +1551,25 @@ vg_sm4_cfb128_decrypt_sm4:
 	stp x17, x17, [x16, #192]
 	stp x17, x17, [x16, #208]
 	add sp, sp, #224
+	movz x6, #0, lsl #0
+	movz x8, #0, lsl #0
+	movz x9, #0, lsl #0
+	movi v0.2d, #0
+	movi v1.2d, #0
+	movi v2.2d, #0
+	movi v3.2d, #0
+	movi v4.2d, #0
+	movi v5.2d, #0
+	movi v6.2d, #0
+	movi v7.2d, #0
+	movi v16.2d, #0
+	movi v17.2d, #0
+	movi v18.2d, #0
+	movi v19.2d, #0
+	movi v20.2d, #0
+	movi v21.2d, #0
+	movi v22.2d, #0
+	movi v23.2d, #0
 	ret
 	.p2align 6
 
@@ -2831,6 +2889,34 @@ vg_sm4_cfb128_decrypt:
 	stp x17, x17, [x16, #160]
 	stp x17, x17, [x16, #176]
 	add sp, sp, #3264
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
+	movz x8, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x12, #0, lsl #0
+	movz x13, #0, lsl #0
+	movi v0.2d, #0
+	movi v1.2d, #0
+	movi v2.2d, #0
+	movi v3.2d, #0
+	movi v16.2d, #0
+	movi v17.2d, #0
+	movi v18.2d, #0
+	movi v19.2d, #0
+	movi v20.2d, #0
+	movi v21.2d, #0
+	movi v22.2d, #0
+	movi v23.2d, #0
+	movi v24.2d, #0
+	movi v25.2d, #0
+	movi v26.2d, #0
+	movi v27.2d, #0
+	movi v28.2d, #0
+	movi v29.2d, #0
+	movi v30.2d, #0
+	movi v31.2d, #0
 	ret
 	.p2align 6
 
@@ -2935,6 +3021,17 @@ vg_sm4_cfb128_encrypt_final_sm4:
 	stp x17, x17, [x16, #80]
 	stp x17, x17, [x16, #96]
 	add sp, sp, #112
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
+	movi v0.2d, #0
+	movi v16.2d, #0
+	movi v17.2d, #0
+	movi v18.2d, #0
+	movi v19.2d, #0
+	movi v20.2d, #0
+	movi v21.2d, #0
+	movi v22.2d, #0
+	movi v23.2d, #0
 	ret
 	.p2align 6
 
@@ -4135,6 +4232,33 @@ vg_sm4_cfb128_encrypt_final:
 	stp x17, x17, [x16, #160]
 	stp x17, x17, [x16, #176]
 	add sp, sp, #3264
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x12, #0, lsl #0
+	movz x13, #0, lsl #0
+	movi v0.2d, #0
+	movi v1.2d, #0
+	movi v2.2d, #0
+	movi v3.2d, #0
+	movi v16.2d, #0
+	movi v17.2d, #0
+	movi v18.2d, #0
+	movi v19.2d, #0
+	movi v20.2d, #0
+	movi v21.2d, #0
+	movi v22.2d, #0
+	movi v23.2d, #0
+	movi v24.2d, #0
+	movi v25.2d, #0
+	movi v26.2d, #0
+	movi v27.2d, #0
+	movi v28.2d, #0
+	movi v29.2d, #0
+	movi v30.2d, #0
+	movi v31.2d, #0
 	ret
 	.p2align 6
 
@@ -4243,6 +4367,17 @@ vg_sm4_cfb128_decrypt_final_sm4:
 	stp x17, x17, [x16, #80]
 	stp x17, x17, [x16, #96]
 	add sp, sp, #112
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
+	movi v0.2d, #0
+	movi v16.2d, #0
+	movi v17.2d, #0
+	movi v18.2d, #0
+	movi v19.2d, #0
+	movi v20.2d, #0
+	movi v21.2d, #0
+	movi v22.2d, #0
+	movi v23.2d, #0
 	ret
 	.p2align 6
 
@@ -5447,5 +5582,32 @@ vg_sm4_cfb128_decrypt_final:
 	stp x17, x17, [x16, #160]
 	stp x17, x17, [x16, #176]
 	add sp, sp, #3264
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x12, #0, lsl #0
+	movz x13, #0, lsl #0
+	movi v0.2d, #0
+	movi v1.2d, #0
+	movi v2.2d, #0
+	movi v3.2d, #0
+	movi v16.2d, #0
+	movi v17.2d, #0
+	movi v18.2d, #0
+	movi v19.2d, #0
+	movi v20.2d, #0
+	movi v21.2d, #0
+	movi v22.2d, #0
+	movi v23.2d, #0
+	movi v24.2d, #0
+	movi v25.2d, #0
+	movi v26.2d, #0
+	movi v27.2d, #0
+	movi v28.2d, #0
+	movi v29.2d, #0
+	movi v30.2d, #0
+	movi v31.2d, #0
 	ret
 	.p2align 6

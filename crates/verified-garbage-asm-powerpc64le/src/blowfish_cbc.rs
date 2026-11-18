@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Blowfish.cbcEncryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 4168 bytes.
@@ -45,13 +47,15 @@ bne %cr0, 22b
 b 21f
 20:
 21:
-.base64 "eOu/f0gABYEAAB+RTAAFgQQAH5EoAKXrMADF6zgA5etAAAXopgMIfCAAgTkAAGA5AABs+QgAbPkQAGz5GABs+SAAbPkoAGz5MABs+TgAbPlAAGz5SABs+VAAbPlYAGz5gAAhOCAAgE4=""#,
+.base64 "eOu/f0gABYEAAB+RTAAFgQQAH5EoAKXrMADF6zgA5etAAAXopgMIfCAAgTkAAGA5AABs+QgAbPkQAGz5GABs+SAAbPkoAGz5MABs+TgAbPlAAGz5SABs+VAAbPlYAGz5gAAhOAAAADgAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDnEBAAQxAwhEMQUQhDEHGMQxCSEEMQspRDENMYQxDznEMRECBHETCkRxFRKEcRcaxHEZIwRxGytEcR0zhHEfO8RxIQQEsSMMRIgAIBO""#,
     )
 }
 
 /// Blowfish-CBC decryption (NIST SP 800-38A §6.2, Schneier, FSE 1994) of whole blocks, in place: replaces the `n` 8-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH⁻¹_K` is Blowfish decryption under the schedule written by `vg_blowfish_expand_key`. No padding is removed.
 ///
 /// Contract: `VG.Spec.Blowfish.cbcDecryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -91,6 +95,6 @@ bne %cr0, 22b
 b 21f
 20:
 21:
-.base64 "eOu/f0gABYEAAB+RTAAFgQQAH5EoAKXrMADF6zgA5etAAAXopgMIfCAAgTkAAGA5AABs+QgAbPkQAGz5GABs+SAAbPkoAGz5MABs+TgAbPlAAGz5SABs+VAAbPlYAGz5gAAhOCAAgE4=""#,
+.base64 "eOu/f0gABYEAAB+RTAAFgQQAH5EoAKXrMADF6zgA5etAAAXopgMIfCAAgTkAAGA5AABs+QgAbPkQAGz5GABs+SAAbPkoAGz5MABs+TgAbPlAAGz5SABs+VAAbPlYAGz5gAAhOAAAADgAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDnEBAAQxAwhEMQUQhDEHGMQxCSEEMQspRDENMYQxDznEMRECBHETCkRxFRKEcRcaxHEZIwRxGytEcR0zhHEfO8RxIQQEsSMMRIgAIBO""#,
     )
 }

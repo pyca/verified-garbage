@@ -83,6 +83,28 @@ vg_x25519_exchange:
 	sltu a0, t2, t1
 	ld ra, 8(sp)
 	addi sp, sp, 16
+	addi t0, zero, 0
+	addi sp, sp, -16
+	addi t1, sp, 0
+	sd t0, 0(t1)
+	sd t0, 8(t1)
+	addi sp, sp, 16
+	slli a0, a0, 32
+	srli a0, a0, 32
+	addi a1, zero, 0
+	addi a2, zero, 0
+	addi a3, zero, 0
+	addi a4, zero, 0
+	addi a5, zero, 0
+	addi a6, zero, 0
+	addi a7, zero, 0
+	addi t0, zero, 0
+	addi t1, zero, 0
+	addi t2, zero, 0
+	addi t3, zero, 0
+	addi t4, zero, 0
+	addi t5, zero, 0
+	addi t6, zero, 0
 	ret
 	.option pop
 
@@ -3545,5 +3567,21 @@ vg_x25519_base:
 	ld s5, 1056(a3)
 	ld s6, 1064(a3)
 	ld ra, 1072(a3)
+	addi t0, zero, 0
+	addi a0, zero, 0
+	addi a1, zero, 0
+	addi a2, zero, 0
+	addi a3, zero, 0
+	addi a4, zero, 0
+	addi a5, zero, 0
+	addi a6, zero, 0
+	addi a7, zero, 0
+	addi t0, zero, 0
+	addi t1, zero, 0
+	addi t2, zero, 0
+	addi t3, zero, 0
+	addi t4, zero, 0
+	addi t5, zero, 0
+	addi t6, zero, 0
 	ret
 	.option pop

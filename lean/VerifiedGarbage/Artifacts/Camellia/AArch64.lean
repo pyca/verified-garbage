@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Camellia.AArch64.Verified
 public import VerifiedGarbage.Proof.Camellia.AArch64.KeyVerified
 public import VerifiedGarbage.Proof.Camellia.AArch64.Serial.Verified
 public import VerifiedGarbage.Proof.Camellia.AArch64.Lit
+public import VerifiedGarbage.Proof.Camellia.AArch64.Residue
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.AArch64.Print
 
@@ -15,15 +16,16 @@ namespace VG.Artifacts.Camellia.AArch64
 
 def artifacts : List Artifact := [
   Spec.Camellia.expandKeyApi.artifact AArch64.target {
-    code := Impl.StackScratch.AArch64.withStackScratchWiped 160 .x3 20 Impl.Camellia.AArch64.expandKey
-    verified := Proof.Camellia.AArch64.expandKey_framed },
+    code := Proof.Camellia.AArch64.Residue.expandKeyCode
+    verified := Proof.Camellia.AArch64.Residue.expandKeyCode_verified
+    residue := some ⟨Proof.Camellia.AArch64.Residue.expandKeyCode_noResidue⟩ },
   Spec.Camellia.ecbEncryptApi.artifact AArch64.target {
-    code := Impl.StackScratch.AArch64.withStackScratchWiped 3248 .x4 406
-      (Impl.Camellia.AArch64.ecb .encrypt)
-    verified := Proof.Camellia.AArch64.ecb_framed .encrypt },
+    code := Proof.Camellia.AArch64.Residue.ecbEncryptCode
+    verified := Proof.Camellia.AArch64.Residue.ecbEncryptCode_verified
+    residue := some ⟨Proof.Camellia.AArch64.Residue.ecbEncryptCode_noResidue⟩ },
   Spec.Camellia.ecbDecryptApi.artifact AArch64.target {
-    code := Impl.StackScratch.AArch64.withStackScratchWiped 3248 .x4 406
-      (Impl.Camellia.AArch64.ecb .decrypt)
-    verified := Proof.Camellia.AArch64.ecb_framed .decrypt }]
+    code := Proof.Camellia.AArch64.Residue.ecbDecryptCode
+    verified := Proof.Camellia.AArch64.Residue.ecbDecryptCode_verified
+    residue := some ⟨Proof.Camellia.AArch64.Residue.ecbDecryptCode_noResidue⟩ }]
 
 end VG.Artifacts.Camellia.AArch64

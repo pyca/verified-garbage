@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
 public import VerifiedGarbage.Proof.P256.EcdhJac.Verified
 public import VerifiedGarbage.Proof.P256.EcdhDouble.Certificate
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.EcKey.AArch64.Scrub
 public import Mathlib.Data.BitVec
 public import Mathlib.Data.Int.ModEq
 public import Mathlib.Tactic.Linarith
@@ -111,8 +112,8 @@ namespace VG.Artifacts.EcdhP256.AArch64
 open VG.Proof.P256.AArch64 (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.Ecdh.P256.exchangeApi.artifact AArch64.target {
+  Spec.Ecdh.P256.exchangeApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
     code := Impl.P256.EcdhJac.exchange
-    verified := Proof.P256.EcdhJac.verified hasLaw.law hasLaw.inv hasLaw.prime hasLaw.invToMP }]
+    verified := Proof.P256.EcdhJac.verified hasLaw.law hasLaw.inv hasLaw.prime hasLaw.invToMP } (Proof.EcKey.AArch64.Scrub.exchangeOk _))]
 
 end VG.Artifacts.EcdhP256.AArch64

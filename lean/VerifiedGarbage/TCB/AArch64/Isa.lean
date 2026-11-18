@@ -77,8 +77,7 @@ Modelling choices:
   the other instructions' timing depends on nothing but what they leak is what
   Arm specifies for code run with PSTATE.DIT 1, and the model does not check
   that it is. `Target.abiPreserved` says nothing about it. The calling
-  convention gives it as the mode (`Abi.mode`, `TCB/AArch64/Target.lean`),
-  which a contract may make public.
+  convention makes it public (`TCB/AArch64/Target.lean`).
 * Barriers, `barrier` (DSB SY, ISB and SB): the model has no memory ordering,
   pipeline or speculation, which is all they act on, so each leaves the state
   as it is and leaks nothing (DDI 0602 2026-03: "DSB", whose operation for

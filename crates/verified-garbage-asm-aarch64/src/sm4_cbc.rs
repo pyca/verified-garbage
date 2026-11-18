@@ -10,6 +10,8 @@ pub const VG_SM4_CBC_ENCRYPT_CHAINED_SM4_FEATURES: verified_garbage_cpu::Feature
 ///
 /// Contract: `VG.Spec.Sm4.cbcEncryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.
@@ -48,7 +50,8 @@ b 23f
 23:
 .inst 0xf94008b3,0xf9400cb4,0xf94010b5,0xf94014b6,0xf94018b7,0xf9401cb8,0xf94020b9,0xf94024ba
 .inst 0xf94028bb,0xf9402cbc,0xd2800011,0x910003f0,0xa9004611,0xa9014611,0xa9024611,0xa9034611
-.inst 0xa9044611,0xa9054611,0xa9064611,0x9101c3ff,0xd65f03c0
+.inst 0xa9044611,0xa9054611,0xa9064611,0x9101c3ff,0xd2800006,0xd2800007,0x6f00e400,0x6f00e410
+.inst 0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0xd65f03c0
 .p2align 6",
     )
 }
@@ -56,6 +59,8 @@ b 23f
 /// SM4-CBC encryption (NIST SP 800-38A §6.2, GB/T 32907-2016 §7.1) of whole blocks, in place: replaces the `n` 16-byte blocks `P₁ … Pₙ` at `data` with `Cⱼ = CIPH_K(Pⱼ ⊕ Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ` (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is SM4 under the schedule written by `vg_sm4_expand_key`. No padding is added.
 ///
 /// Contract: `VG.Spec.Sm4.cbcEncryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -232,7 +237,11 @@ b 24f
 .inst 0xa90f4611,0xa9104611,0xa9114611,0xa9124611,0xa9134611,0xa9144611,0xa9154611,0xa9164611
 .inst 0xa9174611,0xa9184611,0xa9194611,0xa91a4611,0xa91b4611,0xa91c4611,0xa91d4611,0xa91e4611
 .inst 0xa91f4611,0x913003f0,0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611
-.inst 0xa9064611,0xa9074611,0xa9084611,0xa9094611,0xa90a4611,0xa90b4611,0x913303ff,0xd65f03c0
+.inst 0xa9064611,0xa9074611,0xa9084611,0xa9094611,0xa90a4611,0xa90b4611,0x913303ff,0xd2800006
+.inst 0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0x6f00e400
+.inst 0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414
+.inst 0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c
+.inst 0x6f00e41d,0x6f00e41e,0x6f00e41f,0xd65f03c0
 .p2align 6",
     )
 }
@@ -243,6 +252,8 @@ pub const VG_SM4_CBC_DECRYPT_CHAINED_SM4_FEATURES: verified_garbage_cpu::Feature
 /// SM4-CBC decryption (NIST SP 800-38A §6.2, GB/T 32907-2016 §7.2) of whole blocks, in place: replaces the `n` 16-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH⁻¹_K` is SM4's decryption under the schedule written by `vg_sm4_expand_key`. No padding is removed.
 ///
 /// Contract: `VG.Spec.Sm4.cbcDecryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -314,7 +325,9 @@ b 23f
 .inst 0xf94040b3,0xf94044b4,0xf94048b5,0xf9404cb6,0xf94050b7,0xf94054b8,0xf94058b9,0xf9405cba
 .inst 0xf94060bb,0xf94064bc,0xd2800011,0x910003f0,0xa9004611,0xa9014611,0xa9024611,0xa9034611
 .inst 0xa9044611,0xa9054611,0xa9064611,0xa9074611,0xa9084611,0xa9094611,0xa90a4611,0xa90b4611
-.inst 0xa90c4611,0xa90d4611,0x910383ff,0xd65f03c0
+.inst 0xa90c4611,0xa90d4611,0x910383ff,0xd2800006,0xd2800008,0xd2800009,0x6f00e400,0x6f00e401
+.inst 0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411
+.inst 0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0xd65f03c0
 .p2align 6",
     )
 }
@@ -322,6 +335,8 @@ b 23f
 /// SM4-CBC decryption (NIST SP 800-38A §6.2, GB/T 32907-2016 §7.2) of whole blocks, in place: replaces the `n` 16-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH⁻¹_K` is SM4's decryption under the schedule written by `vg_sm4_expand_key`. No padding is removed.
 ///
 /// Contract: `VG.Spec.Sm4.cbcDecryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -566,7 +581,11 @@ b 217f
 .inst 0xa9114611,0xa9124611,0xa9134611,0xa9144611,0xa9154611,0xa9164611,0xa9174611,0xa9184611
 .inst 0xa9194611,0xa91a4611,0xa91b4611,0xa91c4611,0xa91d4611,0xa91e4611,0xa91f4611,0x913003f0
 .inst 0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611,0xa9074611
-.inst 0xa9084611,0xa9094611,0xa90a4611,0xa90b4611,0x913303ff,0xd65f03c0
+.inst 0xa9084611,0xa9094611,0xa90a4611,0xa90b4611,0x913303ff,0xd2800006,0xd2800007,0xd2800008
+.inst 0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0x6f00e400,0x6f00e401,0x6f00e402
+.inst 0x6f00e403,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416
+.inst 0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e
+.inst 0x6f00e41f,0xd65f03c0
 .p2align 6",
         vg_sm4_prepare_keys = sym super::sm4::vg_sm4_prepare_keys::vg_sm4_prepare_keys,
         vg_sm4_crypt_prepared = sym super::sm4::vg_sm4_crypt_prepared::vg_sm4_crypt_prepared,

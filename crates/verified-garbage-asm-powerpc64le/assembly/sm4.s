@@ -5067,6 +5067,14 @@ vg_sm4_expand_key:
 	std %r11, 3200(%r12)
 	std %r11, 3208(%r12)
 	addi %r1, %r1, 3248
+	li %r0, 0
+	li %r4, 0
+	li %r5, 0
+	li %r8, 0
+	li %r9, 0
+	li %r10, 0
+	li %r11, 0
+	li %r12, 0
 	blr
 
 vg_sm4_ecb_encrypt:
@@ -12220,6 +12228,17 @@ vg_sm4_ecb_encrypt:
 	std %r11, 3200(%r12)
 	std %r11, 3208(%r12)
 	addi %r1, %r1, 3248
+	li %r0, 0
+	li %r3, 0
+	li %r4, 0
+	li %r5, 0
+	li %r6, 0
+	li %r7, 0
+	li %r8, 0
+	li %r9, 0
+	li %r10, 0
+	li %r11, 0
+	li %r12, 0
 	blr
 
 vg_sm4_ecb_decrypt:
@@ -19373,4 +19392,15 @@ vg_sm4_ecb_decrypt:
 	std %r11, 3200(%r12)
 	std %r11, 3208(%r12)
 	addi %r1, %r1, 3248
+	li %r0, 0
+	li %r3, 0
+	li %r4, 0
+	li %r5, 0
+	li %r6, 0
+	li %r7, 0
+	li %r8, 0
+	li %r9, 0
+	li %r10, 0
+	li %r11, 0
+	li %r12, 0
 	blr

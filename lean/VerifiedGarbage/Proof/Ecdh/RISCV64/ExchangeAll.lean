@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ecdh.RISCV64.TailAll
 public import VerifiedGarbage.Proof.Ecdh.RISCV64.Bytes
 import VerifiedGarbage.Proof.Ecdh.RISCV64.Masks
 public import VerifiedGarbage.Proof.Weierstrass.CheckPointContract
@@ -19,10 +20,11 @@ import VerifiedGarbage.Proof.Weierstrass.Words
 
 `vg_ecdh_<curve>` meets its contract by register, given the group law
 (`Kit.ecdh_ok`), once for every curve: what the proof needs of a curve is its
-`Kit`: the code's configuration, the bytes of its numbers, how the code reads
-and writes them (`load`, `store`: whole words, or a top word of fewer bytes),
-the check of the peer's point and what follows the point's setup
-(`<Curve>/Tail.lean`), and the layout facts of its working space.
+`Kit`: its `TKit` (`TailAll.lean`, which proves of it the check of the peer's
+point and what follows the point's setup), the bytes of its numbers, how the
+code reads and writes them (`load`, `store`: whole words, or a top word of
+fewer bytes), its multiplication, which meets its contract, and its chain of
+`p - 2`.
 
 The proof is the setup (`setup_ok`: the saves, `d`, the peer's `x` and `y`
 and the mask of its first byte, the constants), the check of the peer's
@@ -47,138 +49,7 @@ open VG.WriteBytes (writeBytes)
 
 namespace Kit
 
-/-- The number at slot `i`. -/
-abbrev sv (c : Cfg) (base : Addr) (s : State) (i : Nat) : Nat := wordsVal s.mem base (c.sl i) c.n
-
-/-- `vg_<curve>_check_point(ws = a0)`. -/
-def checkRVc (CC : Impl.Weierstrass.CheckPoint.Curve) : Contract isa where
-  pre s := s.rd = [] ∧ s.wr = [⟨s.gpr .a0, 8192⟩] ∧ (s.gpr .a0).toNat + 8192 ≤ 2 ^ 64 ∧
-    (s.gpr .a0).toNat % 8 = 0 ∧ CC.pre (s.gpr .a0) s.mem
-  post s s' := CC.post (s.gpr .a0) s.mem s'.mem
-  pub s₁ s₂ := s₁.sp = s₂.sp ∧ s₁.gpr .a0 = s₂.gpr .a0
-
-/-! ## Slots -/
-
-theorem sl8 (c : Cfg) (i : Nat) : c.sl i % 8 = 0 := by
-  simp only [Cfg.sl, slot, Nat.mul_assoc]; omega
-
-theorem sl_lo (c : Cfg) (i : Nat) : 64 ≤ c.sl i := Nat.le_add_right _ _
-
-theorem sl_le (c : Cfg) {i j : Nat} (h : i < j) : c.sl i + 8 * c.n ≤ c.sl j := by
-  have := Nat.mul_le_mul_left (8 * c.n) (Nat.succ_le_of_lt h)
-  rw [Nat.mul_succ] at this
-  simp only [Cfg.sl, slot]; omega
-
-theorem sl_sep (c : Cfg) {i j : Nat} (h : i ≠ j) : c.sl i + 8 * c.n ≤ c.sl j ∨ c.sl j + 8 * c.n ≤ c.sl i :=
-  (Nat.lt_or_gt_of_ne h).imp (sl_le c) (sl_le c)
-
-theorem sl_top {c : Cfg} (n9 : c.n ≤ 9) {i : Nat} (hi : i ≤ 55) : c.sl i + 8 * c.n ≤ 4096 := by
-  have := Nat.mul_le_mul (Nat.mul_le_mul_left 8 n9) (Nat.succ_le_succ hi)
-  rw [Nat.mul_succ] at this
-  simp only [Cfg.sl, slot]; omega
-
-/-! ## Ranges of offsets -/
-
-theorem all_app {P : Nat × Nat → Prop} {W W' : List (Nat × Nat)} (h : ∀ w ∈ W, P w) (h' : ∀ w ∈ W', P w) :
-    ∀ w ∈ W ++ W', P w :=
-  fun w hw => (List.mem_append.mp hw).elim (h w) (h' w)
-
-theorem all_one {P : Nat × Nat → Prop} {a : Nat × Nat} (h : P a) : ∀ w ∈ [a], P w :=
-  fun _ hw => List.mem_singleton.mp hw ▸ h
-
-/-- The constants' slots. -/
-abbrev cslots : List Nat := [MP, MN, ZERO, ONE, ONEP, AP, B3P, GX, GY, EXPP, R2P, BP]
-
-theorem consts_fst (c : Cfg) : (consts c).map Prod.fst = cslots := rfl
-
-theorem consts_len (c : Cfg) : (consts c).length = 12 := rfl
-
-theorem mem_cslots {c : Cfg} {e : Nat × Nat} (he : e ∈ consts c) : e.1 ∈ cslots := by
-  rw [← consts_fst c]; exact List.mem_map_of_mem he
-
-theorem consts_nodup (c : Cfg) : ((consts c).map Prod.fst).Nodup := by rw [consts_fst]; decide
-
-/-- The constants, as the kit's `consts_ok` takes them. -/
-theorem constCode_eq (c : Cfg) : constCode c = (consts c).flatMap fun e => setConst c.n (c.sl e.1) e.2 := rfl
-
-/-- A slot that is not a constant's is apart from the constants. -/
-theorem apart_consts (c : Cfg) {i : Nat} (hi : ∀ j ∈ cslots, i ≠ j) :
-    ∀ w ∈ (consts c).map (fun e => (c.sl e.1, 8 * c.n)), c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i :=
-  fun w hw => by
-    obtain ⟨e, he, rfl⟩ := List.mem_map.mp hw
-    exact sl_sep c (hi _ (mem_cslots he))
-
-/-- The flag is apart from the constants. -/
-theorem flag_consts (c : Cfg) :
-    ∀ w ∈ (consts c).map (fun e => (c.sl e.1, 8 * c.n)), c.sl FLAG + 8 ≤ w.1 ∨ w.1 + w.2 ≤ c.sl FLAG :=
-  fun w hw => by
-    obtain ⟨e, he, rfl⟩ := List.mem_map.mp hw
-    exact .inr (sl_le c ((by decide : ∀ j ∈ cslots, j < FLAG) _ (mem_cslots he)))
-
-theorem lo_consts (c : Cfg) : ∀ w ∈ (consts c).map (fun e => (c.sl e.1, 8 * c.n)), 40 ≤ w.1 :=
-  fun w hw => by
-    obtain ⟨e, he, rfl⟩ := List.mem_map.mp hw
-    exact Nat.le_trans (by decide) (sl_lo c e.1)
-
-/-! ## What does not depend on the curve -/
-
-theorem maskOf_and (a b : Bool) : maskOf a &&& maskOf b = maskOf (a && b) := by
-  cases a <;> cases b <;> decide
-
-theorem not_mask (b : Bool) : maskOf b ^^^ BitVec.ofInt 64 (-1) = maskOf (!b) := by cases b <;> decide
-
-theorem and_one (b : Bool) : maskOf b &&& BitVec.ofInt 64 1 = if b then 1 else 0 := by cases b <;> decide
-
-/-- A byte of a region apart from the working space. -/
-theorem out_of_disj {p base : Addr} {n : Nat} (hd : (⟨p, n⟩ : Region).Disjoint ⟨base, 8192⟩) (hn : p.toNat + n ≤ 2 ^ 64)
-    {off i : Nat} (hi : off + i < n) : ¬ (⟨base, 8192⟩ : Region).Contains (p + BitVec.ofNat 64 (off + i)) 1 :=
-  hd _ (Offset.contains_base p (by omega_using [hi]) (by omega_using [hn, hi]))
-
-/-- Bytes of a region apart from the working space, from an offset. -/
-theorem sep_at' {p base : Addr} {n : Nat} (hd : (⟨p, n⟩ : Region).Disjoint ⟨base, 8192⟩) (hn : p.toNat + n ≤ 2 ^ 64)
-    {off k : Nat} (hk : off + k ≤ n) :
-    ∀ i < k, ¬ (⟨base, 8192⟩ : Region).Contains (p + BitVec.ofNat 64 off + BitVec.ofNat 64 i) 1 := fun i hi => by
-  rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-  exact out_of_disj hd hn (by omega_using [hk, hi])
-
-/-- Bytes apart from the working space survive changes within it. -/
-theorem bytesAt_unch {base q : Addr} {W : List (Nat × Nat)} {n : Nat} {m m' : Mem} (U : Unch base W m m')
-    (hW : ∀ w ∈ W, w.1 + w.2 ≤ 8192)
-    (hsep : ∀ i < n, ¬ (⟨base, 8192⟩ : Region).Contains (q + BitVec.ofNat 64 i) 1) :
-    bytesAt m' q n = bytesAt m q n := by
-  simp only [bytesAt]
-  apply List.map_congr_left
-  intro i hi
-  rw [List.mem_range] at hi
-  have := hsep i hi
-  simp only [Region.Contains] at this
-  exact U _ fun w hw => .inr (by have := hW w hw; simp only [ofs]; omega_arith)
-
-/-- The bytes just written. -/
-theorem bytesAt_writeBytes (m : Mem) (q : Addr) (xs : List Byte) (h : xs.length ≤ 2 ^ 64) :
-    bytesAt (writeBytes m q xs) q xs.length = xs := by
-  apply List.ext_getElem
-  · simp [bytesAt]
-  · intro i h₁ h₂
-    have hi : i < xs.length := h₂
-    simp only [bytesAt, List.getElem_map, List.getElem_range, writeBytes,
-      Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le hi h), hi,
-      ite_true, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hi, Option.getD_some]
-
-/-- A call on the working space, then `s0` from `s3`. -/
-theorem wsCallR_ok {f : String} {body : Prog isa} (hn : body.noFrames = true) {K : Contract isa}
-    (hK : Meets body K) {s : State} {base : Addr} (hw : WsReg s base) (h3 : s.gpr .s3 = base)
-    (hpre : ∀ t : State, t.rd = [] → t.wr = [⟨base, 8192⟩] → t.gpr .a0 = base → t.mem = s.mem → K.pre t)
-    {Q : State → Prop}
-    (hQ : ∀ s' s'' : State, Kp s s'' → s''.mem = s'.mem → ∀ t : State, t.gpr .a0 = base → t.mem = s.mem →
-      K.post t (s'.withRegions [] [⟨base, 8192⟩]) → Q s'') :
-    WP isa (Cfg.wsCall f body) s Q := by
-  rw [Cfg.wsCall]
-  refine WP.seq (wsCall_ok hn hK hw hpre fun s' K' t a m hp => wp_mv fun s'' u => WP.block_nil ?_)
-  refine hQ s' s'' ⟨fun r hr => ?_, by rw [u.rd, K'.rd], by rw [u.wr, K'.wr], by rw [u.sp, K'.sp]⟩ u.mem t a m hp
-  by_cases h : r = .s0
-  · subst h; rw [u.gpr, K'.gpr _ (by decide), h3, hw.s0]
-  · rw [u.other _ h, K'.gpr _ hr]
+/-! ## What only the exchange uses -/
 
 /-- The peer's key: `04`, `x` and `y`. -/
 theorem peer_bytes (m : Mem) (p : Addr) (L : Nat) :
@@ -193,38 +64,6 @@ theorem peer_bytes (m : Mem) (p : Addr) (L : Nat) :
 theorem exchange_none {C : Curve} {d : Nat} (bs : List Byte) (h : ¬ (1 ≤ d ∧ d < C.n)) :
     Spec.Ecdh.exchange C d bs = none := by
   unfold Spec.Ecdh.exchange; simp only [h, ↓reduceIte]
-
-theorem mask_eq (P : Prop) [Decidable P] : Impl.Weierstrass.CheckPoint.Curve.mask P = maskOf (decide P) := by
-  unfold Impl.Weierstrass.CheckPoint.Curve.mask maskOf; by_cases h : P <;> simp [h]
-
-/-- The check's validity is the specification's, but for the first byte. -/
-theorem valid_iff_of {CC : Impl.Weierstrass.CheckPoint.Curve} {C : Curve} (hC : CC.W = C) (x y : Nat) :
-    CC.Valid x y ↔ x < C.p ∧ y < C.p ∧ VG.Proof.Ecdh.OnCurveF C x y := by
-  subst hC
-  unfold Impl.Weierstrass.CheckPoint.Curve.Valid
-  constructor
-  · rintro ⟨hx, hy, h⟩
-    refine ⟨hx, hy, (VG.Proof.Ecdh.onCurve_iff hx hy).mp ?_⟩
-    rw [VG.Proof.EcKey.fe_eq hx rfl, VG.Proof.EcKey.fe_eq hy rfl] at h; exact h
-  · rintro ⟨hx, hy, h⟩
-    refine ⟨hx, hy, ?_⟩
-    have := (VG.Proof.Ecdh.onCurve_iff hx hy).mpr h
-    show Spec.Weierstrass.onCurve CC.W (.affine (Fin.ofNat CC.W.p x) (Fin.ofNat CC.W.p y)) = true
-    rw [VG.Proof.EcKey.fe_eq hx rfl, VG.Proof.EcKey.fe_eq hy rfl]; exact this
-
-/-- A valid point is on the curve. -/
-theorem valid_on {CC : Impl.Weierstrass.CheckPoint.Curve} {C : Curve} (hC : CC.W = C) {x y : Nat}
-    (h : CC.Valid x y) : Spec.Weierstrass.onCurve C (.affine (Fin.ofNat C.p x) (Fin.ofNat C.p y)) = true := by
-  subst hC; exact h.2.2
-
-theorem toBytes_zero (L : Nat) : toBytes L 0 = List.replicate L 0 := by
-  rw [List.eq_replicate_iff]
-  simp [toBytes]
-
-/-- A word below the ranges that changed. -/
-theorem lo_word {base : Addr} {W : List (Nat × Nat)} {m m' : Mem} (U : Unch base W m m')
-    (hW : ∀ w ∈ W, 40 ≤ w.1) {d : Nat} (hd : d + 8 ≤ 40) : word m' base d = word m base d :=
-  U.word (fun w hw => .inl (by have := hW w hw; omega_using [hd, this])) (by omega_using [hd])
 
 /-! ## Numbers of whole words, and of a top word of fewer bytes -/
 
@@ -278,15 +117,12 @@ end Kit
 
 /-! ## The kit -/
 
-/-- What the proof needs of a curve. -/
-structure Kit where
-  c : Cfg
+/-- What the proof needs of a curve, beside what `TailAll.lean` proves of every one. -/
+structure Kit extends TKit where
   /-- The bytes of a number. -/
   L : Nat
   len : c.C.len = L
-  n9 : c.n ≤ 9
   Ln : L ≤ 8 * c.n
-  unit : UnitMod c.C.p (2 ^ (64 * c.n))
   onG : Spec.Weierstrass.onCurve c.C (Spec.Weierstrass.G c.C) = true
   /-- A number read from `L` bytes to a slot, and written from one. -/
   load : Nat → Reg → Nat → List Instr
@@ -304,85 +140,82 @@ structure Kit where
     WP isa (.block (store (c.sl i) q off)) s fun s' =>
       Rest [.t0, .t1] s s' ∧ s'.mem = writeBytes s.mem (s.gpr q + BitVec.ofNat 64 off)
         (toBytes L (if b then wordsVal s.mem base (c.sl i) c.n else 0))
-  /-- The check of the peer's point. -/
-  CC : Impl.Weierstrass.CheckPoint.Curve
-  CCW : CC.W = c.C
-  CCk : CC.k = c.n
+  /-- The check of the peer's point: its name, and that its code pushes no frames. -/
   checkN : String
-  checkC : Prog isa
-  checkNF : checkC.noFrames = true
-  check_rv : Meets checkC (Kit.checkRVc CC)
-  num_eq : ∀ (m : Mem) (ws : Addr) (i : Nat), i < 100 → CC.num ws m (CC.slot i) = wordsVal m ws (c.sl i) c.n
-  flag_eq : ∀ (m : Mem) (ws : Addr), CC.flag ws m = word m ws (c.sl FLAG)
-  /-- What the check may write. -/
-  checkKW : List (Nat × Nat)
-  check_unch : ∀ {base : Addr} {m m' : Mem}, CC.Keeps base m m' → Unch base checkKW m m'
-  check_lo : ∀ w ∈ checkKW, 40 ≤ w.1
-  check_keep : ∀ i ∈ [MP, MN, ZERO, ONE, ONEP, AP, B3P, EXPP, K], ∀ w ∈ checkKW,
-    c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i
-  /-- What follows the point's setup. -/
+  checkNF : (Cfg.checkFn c).noFrames = true
+  /-- The multiplication: its name and its code, which meets its contract. -/
   mulN : String
   mulC : Prog isa
-  tailW : List (Nat × Nat)
-  tail_lo : ∀ w ∈ tailW, 40 ≤ w.1
-  tail_ok : Law c.C → ∀ {s : State} {base : Addr}, WsReg s base → s.gpr .s3 = base →
-    Kit.sv c base s MP = c.C.p → Kit.sv c base s MN = c.C.n → Kit.sv c base s ZERO = 0 → Kit.sv c base s ONE = 1 →
-    Kit.sv c base s ONEP = 1 * 2 ^ (64 * c.n) % c.C.p → Kit.sv c base s AP = c.C.a * 2 ^ (64 * c.n) % c.C.p →
-    Kit.sv c base s B3P = 3 * c.C.b * 2 ^ (64 * c.n) % c.C.p → Kit.sv c base s EXPP = c.C.p - 2 →
-    Kit.sv c base s RX < c.C.p → Kit.sv c base s RY < c.C.p →
-    Spec.Weierstrass.onCurve c.C (.affine (toM c.C.p (2 ^ (64 * c.n)) (Kit.sv c base s RX))
-      (toM c.C.p (2 ^ (64 * c.n)) (Kit.sv c base s RY))) = true →
-    WP isa (tail c mulN mulC) s fun s' =>
-      Kc s s' ∧ Unch base tailW s.mem s'.mem ∧
-      word s'.mem base (c.sl FLAG) = word s.mem base (c.sl FLAG) &&& maskOf (decide (Kit.sv c base s K < c.C.n)) &&&
-        maskOf (!decide (Kit.sv c base s K = 0)) ∧
-      (1 ≤ Kit.sv c base s K → Kit.sv c base s K < c.C.n →
-        Rep c.C (toM c.C.p (2 ^ (64 * c.n)) (Kit.sv c base s' RX)) (toM c.C.p (2 ^ (64 * c.n)) (Kit.sv c base s' RY))
-          (toM c.C.p (2 ^ (64 * c.n)) (Kit.sv c base s' RZ))
-          (Spec.Weierstrass.mul (Kit.sv c base s K) (.affine (toM c.C.p (2 ^ (64 * c.n)) (Kit.sv c base s RX))
-            (toM c.C.p (2 ^ (64 * c.n)) (Kit.sv c base s RY)))) ∧
-        Kit.sv c base s' RX < c.C.p ∧ Kit.sv c base s' RY < c.C.p ∧ Kit.sv c base s' RZ < c.C.p) ∧
-      Kit.sv c base s' XO < c.C.p ∧
-      Fin.ofNat c.C.p (Kit.sv c base s' XO) =
-        toM c.C.p (2 ^ (64 * c.n)) (Kit.sv c base s' RX) * toM c.C.p (2 ^ (64 * c.n)) (Kit.sv c base s' RZ) ^ (c.C.p - 2) ∧
-      Kit.sv c base s' ACC < c.C.p ∧
-      toM c.C.p (2 ^ (64 * c.n)) (Kit.sv c base s' ACC) = toM c.C.p (2 ^ (64 * c.n)) (Kit.sv c base s' RZ) ^ (c.C.p - 2)
-  /-- The flag `&=` the mask `a7`. -/
-  andFlag_ok : ∀ {s : State} {base : Addr}, WsReg s base →
-    WP isa (.block (Cfg.andFlag c)) s fun s' =>
-      word s'.mem base (c.sl FLAG) = word s.mem base (c.sl FLAG) &&& s.gpr .a7 ∧ Rest [.t0] s s' ∧
-        Outside base (c.sl FLAG) 8 s.mem s'.mem
-  /-- The saves, `s0 = s3 = r` and `s2 = a0`. -/
-  save_ok : ∀ {s : State} {r : Reg} {base : Addr}, s.gpr r = base → (⟨base, 8192⟩ : Region) ∈ s.wr →
-    base.toNat + 8192 ≤ 2 ^ 64 → base.toNat % 8 = 0 →
-    WP isa (.block (saveCode r)) s fun s' => WsReg s' base ∧ s'.gpr .s3 = base ∧ s'.gpr .s2 = s.gpr .a0 ∧
-      (∀ x, x ≠ .s0 → x ≠ .s2 → x ≠ .s3 → s'.gpr x = s.gpr x) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
-      s'.sp = s.sp ∧ Unch base [(0, 40)] s.mem s'.mem ∧
-      word s'.mem base 0 = s.gpr .s0 ∧ word s'.mem base 8 = s.gpr .s1 ∧ word s'.mem base 16 = s.gpr .s2 ∧
-      word s'.mem base 24 = s.gpr .ra ∧ word s'.mem base 32 = s.gpr .s3
-  /-- The constants: slots below `cs`, each its own. -/
-  cs : Nat
-  consts_ok : ∀ (l : List (Nat × Nat)) {s : State} {base : Addr}, WsReg s base → (∀ e ∈ l, e.1 < cs) →
-    (l.map Prod.fst).Nodup →
-    WP isa (.block (l.flatMap fun e => setConst c.n (c.sl e.1) e.2)) s fun s' =>
-      Rest [.t0, .t1] s s' ∧ Unch base (l.map fun e => (c.sl e.1, 8 * c.n)) s.mem s'.mem ∧
-      ∀ e ∈ l, Kit.sv c base s' e.1 = e.2 % 2 ^ (64 * c.n)
-  consts_slots : ∀ e ∈ consts c, e.1 < cs
+  mulNF : mulC.noFrames = true
+  mul_rv : Law c.C → Meets mulC (TKit.mulRVc toTKit.MC)
+  /-- The chain of `p - 2`. -/
+  chainP_ok : ChainOkR (chainP c) (c.C.p - 2)
+  /-- The constants are below `2^(64 n)`. -/
   consts_lt : ∀ e ∈ consts c, e.2 < 2 ^ (64 * c.n)
 
 namespace Kit
 
 variable (E : Kit)
 
+/-! What `TailAll.lean` proves of the curve, as the proofs below name it. -/
+
+abbrev CC : Impl.Weierstrass.CheckPoint.Curve := E.toTKit.CC
+
+theorem CCW : E.CC.W = E.c.C := rfl
+
+theorem CCk : E.CC.k = E.c.n := rfl
+
+abbrev checkC : Prog isa := Cfg.checkFn E.c
+
+theorem check_rv : Meets E.checkC (checkRVc E.CC) := E.toTKit.check_rv
+
+theorem num_eq (m : Mem) (ws : Addr) (i : Nat) (hi : i < 100) :
+    E.CC.num ws m (E.CC.slot i) = wordsVal m ws (E.c.sl i) E.c.n := E.toTKit.num_eq m ws i hi
+
+theorem flag_eq (m : Mem) (ws : Addr) : E.CC.flag ws m = word m ws (E.c.sl FLAG) := E.toTKit.flag_eq m ws
+
+def checkKW : List (Nat × Nat) := TKit.checkKW E.c
+
+theorem check_unch {base : Addr} {m m' : Mem} (h : E.CC.Keeps base m m') : Unch base E.checkKW m m' :=
+  E.toTKit.unch_of_checkKeeps h
+
+theorem check_lo : ∀ w ∈ E.checkKW, 40 ≤ w.1 := TKit.checkKW_lo E.c E.n9
+
+theorem check_keep : ∀ i ∈ [MP, MN, ZERO, ONE, ONEP, AP, B3P, EXPP, K], ∀ w ∈ E.checkKW,
+    E.c.sl i + 8 * E.c.n ≤ w.1 ∨ w.1 + w.2 ≤ E.c.sl i := TKit.checkKW_keep E.c E.n9
+
+def tailW : List (Nat × Nat) := TKit.tailW E.c
+
+theorem tail_lo : ∀ w ∈ E.tailW, 40 ≤ w.1 := TKit.tailW_lo E.c E.n9
+
+/-- `tail` with the curve's multiplication. -/
+theorem tail_ok (hL : Law E.c.C) {s : State} {base : Addr} (hw : WsReg s base) (h3 : s.gpr .s3 = base)
+    (a1 : sv E.c base s MP = E.c.C.p) (a2 : sv E.c base s MN = E.c.C.n) (a3 : sv E.c base s ZERO = 0)
+    (a4 : sv E.c base s ONE = 1) (a5 : sv E.c base s ONEP = 1 * 2 ^ (64 * E.c.n) % E.c.C.p)
+    (a6 : sv E.c base s AP = E.c.C.a * 2 ^ (64 * E.c.n) % E.c.C.p)
+    (a7 : sv E.c base s B3P = 3 * E.c.C.b * 2 ^ (64 * E.c.n) % E.c.C.p) (a8 : sv E.c base s EXPP = E.c.C.p - 2)
+    (hx : sv E.c base s RX < E.c.C.p) (hy : sv E.c base s RY < E.c.C.p)
+    (hon : Spec.Weierstrass.onCurve E.c.C (.affine (toM E.c.C.p (2 ^ (64 * E.c.n)) (sv E.c base s RX))
+      (toM E.c.C.p (2 ^ (64 * E.c.n)) (sv E.c base s RY))) = true) :
+    WP isa (tail E.c E.mulN E.mulC) s fun s' => TKit.TailPost E.c base s s' :=
+  E.toTKit.tail_ok E.chainP_ok E.mulNF (E.mul_rv hL) hL hw h3 ⟨a1, a2, a3, a4, a5, a6, a7, a8⟩ hx hy hon
+
+/-- The flag `&=` the mask `a7`. -/
+theorem andFlag_ok {s : State} {base : Addr} (hw : WsReg s base) :
+    WP isa (.block (Cfg.andFlag E.c)) s fun s' =>
+      word s'.mem base (E.c.sl FLAG) = word s.mem base (E.c.sl FLAG) &&& s.gpr .a7 ∧ Rest [.t0] s s' ∧
+        Outside base (E.c.sl FLAG) 8 s.mem s'.mem :=
+  TKit.andFlag_ok E.c E.n9 hw
+
 /-- Slot arithmetic: the offsets of slots given by number, with the kit's bound on the words. -/
 local macro "kit_slots" E:term : tactic => `(tactic| (
   simp only [Cfg.sl, slot, MP, MN, ZERO, ONE, ONEP, AP, B3P, GX, GY, EXPP, R2P, BP, K, CX, CY, CPX, CPY, FLAG, RX,
     RY, RZ, XO]
-  omega_using [Kit.n9 $E]))
+  omega_using [TKit.n9 (Kit.toTKit $E)]))
 
 /-- `∀ w ∈ W, P w` for ranges `W` given as a list of lists: `t` proves it of each. -/
 local macro "kit_ranges" t:tacticSeq : tactic =>
-  `(tactic| ((repeat' first | apply all_app | apply all_one); all_goals ($t)))
+  `(tactic| ((repeat' first | with_reducible apply all_app | with_reducible apply all_one); all_goals ($t)))
 
 /-- A slot apart from ranges that are other slots, the flag or the constants. -/
 local macro "kit_apart" : tactic =>
@@ -452,7 +285,7 @@ theorem peerLoad_ok {s : State} {base : Addr} {q : Reg} (hw : WsReg s base) (hq 
   obtain hw₆ := hw₅.of_kp (Kp.of_mupd u₆)
   -- The constants.
   rw [constCode_eq]
-  refine WP.mono (E.consts_ok _ hw₆ E.consts_slots (consts_nodup E.c)) fun s₇ ⟨r₇, U₇, e₇⟩ => ?_
+  refine WP.mono (TKit.consts_ok E.c E.n9 _ hw₆ (TKit.consts_le E.c) (consts_nodup E.c)) fun s₇ ⟨r₇, U₇, e₇⟩ => ?_
   obtain O₆ : Outside base (E.c.sl FLAG) 8 s₅.mem s₆.mem := by
     rw [u₆.mem]; exact writeW_outside _ _ _ (by kit_slots E)
   obtain m₄₆ : Unch base [(E.c.sl FLAG, 8)] s₄.mem s₆.mem := by rw [← m₅]; exact O₆.unch
@@ -517,7 +350,7 @@ theorem setup_ok {s : State} (hs : E.EPre s) :
   generalize hb : s.gpr .a3 = base
   obtain hwr : (⟨base, 8192⟩ : Region) ∈ s.wr := by rw [hs.wr, ← hb]; simp
   simp only [List.append_assoc]
-  refine WP.block_append (WP.mono (E.save_ok hb hwr (by rw [← hb]; exact hs.fs) (by rw [← hb]; exact hs.al))
+  refine WP.block_append (WP.mono (TKit.save_ok hb hwr (by rw [← hb]; exact hs.fs) (by rw [← hb]; exact hs.al))
     fun s₁ ⟨hw₁, h3₁, o₁, g₁, rd₁, wr₁, sp₁, U₁, w0, w1, w2, w3, w4⟩ => ?_)
   obtain a1 : s₁.gpr .a1 = s.gpr .a1 := g₁ _ (by decide) (by decide) (by decide)
   obtain a2 : s₁.gpr .a2 = s.gpr .a2 := g₁ _ (by decide) (by decide) (by decide)

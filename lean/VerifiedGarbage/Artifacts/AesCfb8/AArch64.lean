@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesCfb8.AArch64.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Aes.AArch64.ModesScrub
 public import VerifiedGarbage.TCB.AArch64.Print
 public import VerifiedGarbage.Proof.Variants.AesBlocks.AArch64
 
@@ -15,13 +16,13 @@ open VG.Proof.AesCfb8.AArch64
 
 def artifacts : List Artifact :=
   VG.Proof.Variants.AesBlocks.AArch64.variants.flatMap fun (v : Proof.Aes.AArch64.BlocksImpl) => [
-    Spec.Cfb8.aesEncryptApi.artifact AArch64.target {
+    Spec.Cfb8.aesEncryptApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
       suffix := v.suffix
       code := Impl.AesCfb8.AArch64.encrypt v.enc
-      verified := Proof.AesCfb8.encrypt_keyed (encrypt_verified v) },
-    Spec.Cfb8.aesDecryptApi.artifact AArch64.target {
+      verified := Proof.AesCfb8.encrypt_keyed (encrypt_verified v) } Proof.Aes.AArch64.ModesScrub.cfb8EncryptOk),
+    Spec.Cfb8.aesDecryptApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
       suffix := v.suffix
       code := Impl.AesCfb8.AArch64.decrypt v.enc
-      verified := Proof.AesCfb8.decrypt_keyed (decrypt_verified v) }]
+      verified := Proof.AesCfb8.decrypt_keyed (decrypt_verified v) } Proof.Aes.AArch64.ModesScrub.cfb8DecryptOk)]
 
 end VG.Artifacts.AesCfb8.AArch64

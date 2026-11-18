@@ -88,6 +88,10 @@ theorem toNat_byte_dword (x : BitVec 128) (k e : Nat) (he : e < 4) :
   generalize x.toNat / 2 ^ (32 * k) = z
   rcases (by omega_arith : e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3) with rfl | rfl | rfl | rfl <;> omega_arith
 
+/-- A number below `2²⁴` from its three bytes. -/
+private theorem bytes3 {d : Nat} (hd : d < 2 ^ 24) :
+    d / 1 % 256 + 2 ^ 8 * (d / 256 % 256) + 2 ^ 16 * (d / 65536 % 256) = d := by omega_using [hd]
+
 theorem toNat_shufV (P : BitVec 128) (h : ∀ k < 4, (dword P k).toNat < 2 ^ 24) :
     (shufV P).toNat = (dword P 0).toNat + 2 ^ 24 * (dword P 1).toNat + 2 ^ 48 * (dword P 2).toNat +
       2 ^ 72 * (dword P 3).toNat := by
@@ -120,7 +124,24 @@ theorem toNat_shufV (P : BitVec 128) (h : ∀ k < 4, (dword P k).toNat < 2 ^ 24)
   simp only [show (0 : BitVec 8).msb = false by decide, show (1 : BitVec 8).msb = false by decide, show (2 : BitVec 8).msb = false by decide, show (4 : BitVec 8).msb = false by decide, show (5 : BitVec 8).msb = false by decide, show (6 : BitVec 8).msb = false by decide, show (8 : BitVec 8).msb = false by decide, show (9 : BitVec 8).msb = false by decide, show (10 : BitVec 8).msb = false by decide, show (12 : BitVec 8).msb = false by decide, show (13 : BitVec 8).msb = false by decide, show (14 : BitVec 8).msb = false by decide, show (0x80 : BitVec 8).msb = true by decide, Bool.false_eq_true, ite_true, ite_false]
   simp only [show (BitVec.extractLsb' 0 4 (0 : BitVec 8)).toNat = 0 by decide, show (BitVec.extractLsb' 0 4 (1 : BitVec 8)).toNat = 1 by decide, show (BitVec.extractLsb' 0 4 (2 : BitVec 8)).toNat = 2 by decide, show (BitVec.extractLsb' 0 4 (4 : BitVec 8)).toNat = 4 by decide, show (BitVec.extractLsb' 0 4 (5 : BitVec 8)).toNat = 5 by decide, show (BitVec.extractLsb' 0 4 (6 : BitVec 8)).toNat = 6 by decide, show (BitVec.extractLsb' 0 4 (8 : BitVec 8)).toNat = 8 by decide, show (BitVec.extractLsb' 0 4 (9 : BitVec 8)).toNat = 9 by decide, show (BitVec.extractLsb' 0 4 (10 : BitVec 8)).toNat = 10 by decide, show (BitVec.extractLsb' 0 4 (12 : BitVec 8)).toNat = 12 by decide, show (BitVec.extractLsb' 0 4 (13 : BitVec 8)).toNat = 13 by decide, show (BitVec.extractLsb' 0 4 (14 : BitVec 8)).toNat = 14 by decide]
   rw [e00, e01, e02, e10, e11, e12, e20, e21, e22, e30, e31, e32, show (0 : BitVec 8).toNat = 0 from rfl]
-  omega_arith
+  -- each doubleword from its bytes, the bytes then atoms: `omega`'s problem is linear
+  obtain s0 := bytes3 h0
+  generalize (dword P 0).toNat / 1 % 256 = a0 at s0 ⊢
+  generalize (dword P 0).toNat / 256 % 256 = b0 at s0 ⊢
+  generalize (dword P 0).toNat / 65536 % 256 = c0 at s0 ⊢
+  obtain s1 := bytes3 h1
+  generalize (dword P 1).toNat / 1 % 256 = a1 at s1 ⊢
+  generalize (dword P 1).toNat / 256 % 256 = b1 at s1 ⊢
+  generalize (dword P 1).toNat / 65536 % 256 = c1 at s1 ⊢
+  obtain s2 := bytes3 h2
+  generalize (dword P 2).toNat / 1 % 256 = a2 at s2 ⊢
+  generalize (dword P 2).toNat / 256 % 256 = b2 at s2 ⊢
+  generalize (dword P 2).toNat / 65536 % 256 = c2 at s2 ⊢
+  obtain s3 := bytes3 h3
+  generalize (dword P 3).toNat / 1 % 256 = a3 at s3 ⊢
+  generalize (dword P 3).toNat / 256 % 256 = b3 at s3 ⊢
+  generalize (dword P 3).toNat / 65536 % 256 = c3 at s3 ⊢
+  omega_using [s0, s1, s2, s3]
 
 /-- A lane of a half: the eight 12-bit words as one number. -/
 theorem lane_val {Y : BitVec 128} (h : ∀ e < 8, (word Y e).toNat < 4096) :

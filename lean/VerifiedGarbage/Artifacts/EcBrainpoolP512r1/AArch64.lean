@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.EcKey.AArch64.BrainpoolP512r1.Verified
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.EcKey.AArch64.Scrub
 public import Mathlib.Tactic.ClearExcept
 public import VerifiedGarbage.Proof.EcKey.AArch64.BrainpoolP512r1.Lit
 public import VerifiedGarbage.Proof.Framework.Contract
@@ -36,14 +37,14 @@ namespace VG.Artifacts.EcBrainpoolP512r1.AArch64
 open VG.Proof.BrainpoolP512r1.AArch64 (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.EcKey.BrainpoolP512r1.publicKeyApi.artifact AArch64.target {
+  Spec.EcKey.BrainpoolP512r1.publicKeyApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
     code := Impl.EcKey.AArch64.publicKeyBrainpoolP512r1
-    verified := Proof.EcKey.AArch64.BrainpoolP512r1.pk_verified hasLaw.law hasLaw.inv },
-  Spec.EcKey.BrainpoolP512r1.inst.compressPublicKeyApi.artifact AArch64.target {
+    verified := Proof.EcKey.AArch64.BrainpoolP512r1.pk_verified hasLaw.law hasLaw.inv } (Proof.EcKey.AArch64.Scrub.publicKeyOk _)),
+  Spec.EcKey.BrainpoolP512r1.inst.compressPublicKeyApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
     code := Proof.EcKey.Compressed.AArch64.BrainpoolP512r1.code
-    verified := Proof.EcKey.Compressed.AArch64.BrainpoolP512r1.verified hasLaw.inv },
-  Spec.EcKey.BrainpoolP512r1.inst.decompressPublicKeyApi.artifact AArch64.target {
+    verified := Proof.EcKey.Compressed.AArch64.BrainpoolP512r1.verified hasLaw.inv } (Proof.EcKey.AArch64.Scrub.compressOk _)),
+  Spec.EcKey.BrainpoolP512r1.inst.decompressPublicKeyApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
     code := Proof.EcKey.Compressed.AArch64.BrainpoolP512r1Decompress.code
-    verified := Proof.EcKey.Compressed.AArch64.BrainpoolP512r1Decompress.verified hasLaw.law hasLaw.inv }]
+    verified := Proof.EcKey.Compressed.AArch64.BrainpoolP512r1Decompress.verified hasLaw.law hasLaw.inv } (Proof.EcKey.AArch64.Scrub.decompressOk _))]
 
 end VG.Artifacts.EcBrainpoolP512r1.AArch64

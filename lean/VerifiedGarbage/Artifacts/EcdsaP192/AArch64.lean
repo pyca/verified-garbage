@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Scrub
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P192.Joint.Verified
 public import VerifiedGarbage.Impl.Ecdsa.AArch64.VerifyHash
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
@@ -8,6 +9,7 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P192.Verified
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.EcKey.AArch64.Scrub
 public import Mathlib.Tactic.ClearExcept
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P192.Lit
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
@@ -55,11 +57,13 @@ open VG.Proof.HmacTable.AArch64 (tables names)
 
 def artifactsFor (vs : List Proof.Pbkdf2.Md.AArch64.MdHash) : List Artifact :=
   if hv : OK vs then [
-    Spec.Ecdsa.Rfc6979.Curves.p192SignApi.artifact AArch64.target {
+    Spec.Ecdsa.Rfc6979.Curves.p192SignApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
       suffix := ""
       tables := [("hmac", tables vs)]
       code := signCodeT (p192 hasLaw.law hasLaw.inv) Spec.Ecdsa.Rfc6979.Curves.p192.tries vs
-      verified := p192T_verified hasLaw.law hasLaw.inv vs hv }]
+      verified := p192T_verified hasLaw.law hasLaw.inv vs hv }
+      (Proof.Ecdsa.Rfc6979.AArch64.Scrub.signOk
+        Spec.Ecdsa.Rfc6979.Curves.p192 [] vs))]
   else []
 
 def artifacts : List Artifact :=
@@ -72,10 +76,10 @@ namespace VG.Artifacts.EcdsaP192.AArch64
 open VG.Proof.P192.AArch64 (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.Ecdsa.P192.verifyHashApi.artifact AArch64.target {
+  Spec.Ecdsa.P192.verifyHashApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
     code := Impl.Ecdsa.AArch64.VerifyHash.verifyHash Spec.Ecdsa.P192.inst.curve.len false
       Impl.Ecdsa.Verify.AArch64.P192.Joint.verify
-    verified := Proof.Ecdsa.Verify.AArch64.P192.Joint.verifyHash_verified hasLaw.law hasLaw.inv }] ++
+    verified := Proof.Ecdsa.Verify.AArch64.P192.Joint.verifyHash_verified hasLaw.law hasLaw.inv } (Proof.EcKey.AArch64.Scrub.verifyHashOk _))] ++
   Rfc6979.artifacts
 
 end VG.Artifacts.EcdsaP192.AArch64

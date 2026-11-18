@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.TripleDes.cfbEncryptContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 384 bytes.
@@ -197,7 +199,8 @@ b 21f
 .inst 0xa90a4611,0xa90b4611,0xa90c4611,0xa90d4611,0xa90e4611,0xa90f4611,0xa9104611,0xa9114611
 .inst 0xa9124611,0xa9134611,0xa9144611,0xa9154611,0xa9164611,0xa9174611,0xa9184611,0xa9194611
 .inst 0xa91a4611,0xa91b4611,0xa91c4611,0xa91d4611,0xa91e4611,0xa91f4611,0x910803f0,0xa9004611
-.inst 0xa9014611,0xa9024611,0x9108c3ff,0xd65f03c0
+.inst 0xa9014611,0xa9024611,0x9108c3ff,0xd2800006,0xd2800007,0xd2800009,0xd280000b,0xd280000c
+.inst 0xd280000d,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0xd65f03c0
 .p2align 6",
     )
 }
@@ -205,6 +208,8 @@ b 21f
 /// Triple DES-CFB64 decryption (NIST SP 800-38A §6.3, with 64-bit segments; FIPS 46-3) of whole blocks, in place: replaces the `n` 8-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = Cⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is Triple DES encryption (also for decryption) under the schedule written by `vg_triple_des_expand_key`.
 ///
 /// Contract: `VG.Spec.TripleDes.cfbDecryptContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1093,7 +1098,11 @@ b 223f
 .inst 0xa90d4611,0xa90e4611,0xa90f4611,0xa9104611,0xa9114611,0xa9124611,0xa9134611,0xa9144611
 .inst 0xa9154611,0xa9164611,0xa9174611,0xa9184611,0xa9194611,0xa91a4611,0xa91b4611,0xa91c4611
 .inst 0xa91d4611,0xa91e4611,0xa91f4611,0x911003f0,0xa9004611,0xa9014611,0xa9024611,0xa9034611
-.inst 0xa9044611,0xa9054611,0x911183ff,0xd65f03c0
+.inst 0xa9044611,0xa9054611,0x911183ff,0xd2800005,0xd2800006,0xd2800008,0xd2800009,0xd280000b
+.inst 0xd280000c,0xd280000d,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405
+.inst 0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415
+.inst 0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41d,0x6f00e41e,0x6f00e41f
+.inst 0xd65f03c0
 .p2align 6",
     )
 }
@@ -1101,6 +1110,8 @@ b 223f
 /// Triple DES-CFB64 encryption (NIST SP 800-38A §6.3, with 64-bit segments; FIPS 46-3) of the last piece of a message, of any length, in place: replaces its whole 8-byte blocks `P₁ … Pₙ₋₁` at `data` with `Cⱼ = Pⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and a partial last segment `Pₙ*` of `u` bytes with `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`, `Oₙ = CIPH_K(Cₙ₋₁)` (an extension of SP 800-38A, which defines CFB only for whole segments, by the rule of §6.4 and §6.5). Replaces `*iv` with the last ciphertext block, so that a further call continues the message, if `len` is a multiple of 8 (leaving it unchanged if `len = 0`), and otherwise with `Oₙ`: keystream, to be wiped, after which the message must end. `CIPH_K` is Triple DES encryption under the schedule written by `vg_triple_des_expand_key`.
 ///
 /// Contract: `VG.Spec.TripleDes.cfbEncryptFinalContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the chaining value or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1300,7 +1311,8 @@ b 21f
 .inst 0xa90a4611,0xa90b4611,0xa90c4611,0xa90d4611,0xa90e4611,0xa90f4611,0xa9104611,0xa9114611
 .inst 0xa9124611,0xa9134611,0xa9144611,0xa9154611,0xa9164611,0xa9174611,0xa9184611,0xa9194611
 .inst 0xa91a4611,0xa91b4611,0xa91c4611,0xa91d4611,0xa91e4611,0xa91f4611,0x910803f0,0xa9004611
-.inst 0xa9014611,0xa9024611,0x9108c3ff,0xd65f03c0
+.inst 0xa9014611,0xa9024611,0x9108c3ff,0xd2800006,0xd2800007,0xd2800009,0xd280000b,0xd280000c
+.inst 0xd280000d,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0xd65f03c0
 .p2align 6",
     )
 }
@@ -1308,6 +1320,8 @@ b 21f
 /// Triple DES-CFB64 decryption (NIST SP 800-38A §6.3, with 64-bit segments; FIPS 46-3) of the last piece of a message, of any length, in place: replaces its whole 8-byte blocks `C₁ … Cₙ₋₁` at `data` with `Pⱼ = Cⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and a partial last segment `Cₙ*` of `u` bytes with `Pₙ* = Cₙ* ⊕ MSB_u(Oₙ)`, `Oₙ = CIPH_K(Cₙ₋₁)` (an extension of SP 800-38A, which defines CFB only for whole segments, by the rule of §6.4 and §6.5). Replaces `*iv` with the last ciphertext block, the last whole block at `data` on entry, so that a further call continues the message, if `len` is a multiple of 8 (leaving it unchanged if `len = 0`), and otherwise with `Oₙ`: keystream, to be wiped, after which the message must end. `CIPH_K` is Triple DES encryption under the schedule written by `vg_triple_des_expand_key`.
 ///
 /// Contract: `VG.Spec.TripleDes.cfbDecryptFinalContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the chaining value or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1508,7 +1522,8 @@ b 21f
 .inst 0xa90a4611,0xa90b4611,0xa90c4611,0xa90d4611,0xa90e4611,0xa90f4611,0xa9104611,0xa9114611
 .inst 0xa9124611,0xa9134611,0xa9144611,0xa9154611,0xa9164611,0xa9174611,0xa9184611,0xa9194611
 .inst 0xa91a4611,0xa91b4611,0xa91c4611,0xa91d4611,0xa91e4611,0xa91f4611,0x910803f0,0xa9004611
-.inst 0xa9014611,0xa9024611,0x9108c3ff,0xd65f03c0
+.inst 0xa9014611,0xa9024611,0x9108c3ff,0xd2800006,0xd2800007,0xd2800009,0xd280000b,0xd280000c
+.inst 0xd280000d,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0xd65f03c0
 .p2align 6",
     )
 }

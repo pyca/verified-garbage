@@ -130,8 +130,8 @@ theorem scanPart_ok (K : TCombCfg) {s : State} {base : Addr} {size tbl a : Nat}
   have hbNat : (off base tbl).toNat=base.toNat+tbl := by
     simp only [off,BitVec.toNat_add,BitVec.toNat_ofNat]
     omega_arith
-  refine WP.mono (selPass_ok K hu hn.2 (by rw [hH]; decide) (by omega_arith) hb' pu hr
-    (by rw [hbNat,hH]; omega_arith) ho) fun t ⟨et,ot,kt⟩ => ?_
+  refine WP.mono (selPass_ok K hu (Nat.le_trans hn.2 (by decide)) (by rw [hH]; decide) (by omega_arith) hb' pu hr
+    (by rw [hbNat,hH]; omega_arith) ho (fun h => absurd h (by omega_using [hn]))) fun t ⟨et,ot,kt⟩ => ?_
   refine ⟨?_,?_,⟨fun r h => ?_,kt.rd.trans ku.2.2.1,kt.wr.trans ku.2.2.2⟩⟩
   · intro c hc
     rw [et c hc,ku.2.1,hH]

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ecdsa.X86
+public import VerifiedGarbage.Impl.Ecdsa.X86.Window
 
 /-!
 # ECDH on x86 (32-bit)
@@ -18,9 +19,12 @@ space it uses, as on x86-64 and AArch64 (`Impl/Ecdh/AArch64.lean`):
    the masks of the peer's first byte being `04`, `x < p` and `y < p`;
 3. `x` and `y` into Montgomery's form, and the mask of `y² = x³ + a x + b`
    into the flag;
-4. the peer's point, or `G` if the flag is clear (so the ladder always runs
-   on a point of the curve), to the slots the ladder takes its point from;
-5. `[d]P` by the signature's ladder, and `Z^(p-2)` by its power;
+4. the peer's point, or `G` if the flag is clear (so the multiplication
+   always runs on a point of the curve), to the slots it takes its point
+   from;
+5. `[d]P` by windows of `d`, from a table of the point's multiples that is
+   read whole for each window (`Cfg.winMul`, `Impl/Ecdsa/X86/Window.lean`),
+   and `Z^(p-2)` by the signature's power;
 6. `x = X Z^(p-2)`, out of Montgomery's form, and the masks of `d` in
    `[1, n-1]` and `Z ≠ 0` into the flag, which selects `x` or zeros for
    `out` (big-endian) and is returned as 0 or 1.
@@ -54,7 +58,7 @@ def W0 : Nat := KM
 def W1 : Nat := TT
 def W2 : Nat := SM
 def W3 : Nat := RM
-/-- The point the ladder multiplies: the peer's, or `G`. -/
+/-- The point multiplied: the peer's, or `G`. -/
 def PX : Nat := RM
 def PY : Nat := SS
 
@@ -114,20 +118,21 @@ def curveOps : List FOp :=
     .add (c.sl W3) (c.sl W2) (c.sl W1), .add (c.sl W2) (c.sl W3) (c.sl BP),
     .sub (c.sl W1) (c.sl W0) (c.sl W2)]
 
-/-- The point to the ladder's slots: the peer's if the flag is set, else
-`G` (the flag is the mask `ecx`). -/
+/-- The point to the multiplication's slots: the peer's if the flag is set,
+else `G` (the flag is the mask `ecx`). -/
 def select : List Instr :=
   ([.mov .ecx (.mem (sc (c.sl FLAG)))] : List Instr) ++
   sel (2 * c.n) (c.sl PX) (c.sl GX) (c.sl QXM) ++ sel (2 * c.n) (c.sl PY) (c.sl GY) (c.sl QYM)
 
 /-- `x` and `y` into Montgomery's form, the check that the point is on the
-curve, and the point the ladder multiplies. -/
+curve, and the point multiplied. -/
 def validate : Prog isa :=
   .seq (Mont.mulCall c.SP (c.sl QXM) (c.sl E) (c.sl R2P)) <|
   .seq (Mont.mulCall c.SP (c.sl QYM) (c.sl QY) (c.sl R2P)) <|
   .seq (fprog c.SP (curveOps c)) (.block (checkZero c (c.sl W1) ++ select c))
 
-/-- The ladder of the signature, from the point at `PX`, `PY`, `ONEP`. -/
+/-- The ladder of the signature, from the point at `PX`, `PY`, `ONEP`
+(verification's `[v]Q`). -/
 def ladderQ : LadderCfg := { c.ladderCfg with G := c.pt PX PY ONEP }
 
 /-- `x` (or zeros) to `out` (through `ebx`), the flag's low bit to `eax`,
@@ -146,7 +151,7 @@ def middle : Prog isa :=
 /-- `vg_ecdh_<curve>`. -/
 def exchange : Prog isa :=
   .seq (prefix' c) <| .seq (.block (peer c)) <| .seq (validate c) <|
-  .seq (c.qMul PX PY Args.ecdh.ao) <| .seq c.pPow (middle c)
+  .seq (c.winMul PX PY) <| .seq c.pPow (middle c)
 
 end Cfg
 

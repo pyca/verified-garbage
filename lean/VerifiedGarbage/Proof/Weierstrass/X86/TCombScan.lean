@@ -2,6 +2,7 @@ module
 
 import VerifiedGarbage.Proof.Mont.Words128
 public import VerifiedGarbage.Proof.Weierstrass.X86.TCombDigit
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # The comb from tables in memory on x86 (32-bit): the selection
@@ -11,7 +12,8 @@ The entry of table `j` for the magnitude `a` in `ebx`, in constant time
 `m = 1 … H` the mask of `a = m` in both quadwords of `xmm7` (`dup_bmask`)
 keeps the entry's 16-byte pieces (`selStep_ok`), so that after entry `m`
 accumulator `c` holds piece `c` of entry `a` if `1 ≤ a ≤ m`, else zero
-(`accVal`, `selEntry_ok`); they are stored to `E`'s `x` and `y`, which are
+(`accVal`, `selEntryAt_ok`), six pieces to a scan of the table
+(`selPassAt_ok`); they are stored to `E`'s `x` and `y`, which are
 adjacent. `selOne_ok` then sets `y = R` for `a = 0` and `Z = R` unless
 `a = 0`.
 -/
@@ -98,17 +100,18 @@ theorem selStep_ok (s : State) {X : Addr} (hx : (s.gpr .edx).setWidth 64 = X) {d
   simp only [not_or] at hr
   rw [RegUpd.xmm_setXmm_of_ne _ _ hr.1, RegUpd.xmm_setXmm_of_ne _ _ hr.2, RegUpd.xmm_setXmm_of_ne _ _ hr.2]
 
-/-- The pieces `c < k` of entry `m` of the table at `edx = X` kept under the
+/-- The pieces `c < k` at `D + 16 c` of the table at `edx = X` kept under the
 mask `xmm7` in their accumulators. -/
-theorem selSteps_ok {n m : Nat} (hn : n ≤ 6) {X : Addr} (hX : X.toNat + 16 * n * (m - 1) + 16 * n ≤ 2 ^ 32) : ∀ k ≤ n, ∀ (s : State), (s.gpr .edx).setWidth 64 = X →
-    (∀ c < n, InRegions (s.rd ++ s.wr) (X + BitVec.ofNat 64 (16 * n * (m - 1) + 16 * c)) 16) →
+theorem selSteps_ok {cnt : Nat} (hn : cnt ≤ 6) {X : Addr} {D : Nat} (hX : X.toNat + D + 16 * cnt ≤ 2 ^ 32) :
+    ∀ k ≤ cnt, ∀ (s : State), (s.gpr .edx).setWidth 64 = X →
+    (∀ c < cnt, InRegions (s.rd ++ s.wr) (X + BitVec.ofNat 64 (D + 16 * c)) 16) →
     WP isa (.block ((List.range k).flatMap fun c =>
-        [.movdquLoad .xmm6 (TCombCfg.tblAt (16 * n * (m - 1) + 16 * c)), .xop (.bin .pand .xmm6 .xmm7),
+        [.movdquLoad .xmm6 (TCombCfg.tblAt (D + 16 * c)), .xop (.bin .pand .xmm6 .xmm7),
           .xop (.bin .por (selAcc c) .xmm6)])) s fun t =>
       (∀ c < 6, t.xmm (selAcc c) = if c < k then s.xmm (selAcc c) |||
-          (s.mem.readW (X + BitVec.ofNat 64 (16 * n * (m - 1) + 16 * c)) 128 &&& s.xmm .xmm7)
+          (s.mem.readW (X + BitVec.ofNat 64 (D + 16 * c)) 128 &&& s.xmm .xmm7)
         else s.xmm (selAcc c)) ∧
-      XKeep [] (fun r => (∃ c < n, r = selAcc c) ∨ r = .xmm6) s t
+      XKeep [] (fun r => (∃ c < cnt, r = selAcc c) ∨ r = .xmm6) s t
   | 0, _, s, _, _ => WP.block_nil ⟨fun c _ => by simp, XKeep.refl _ _ _⟩
   | k + 1, hk, s, hx, hr => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
@@ -169,25 +172,28 @@ theorem accVal_step (mem : Mem) (X : Addr) (n a m c : Nat) (hm : 1 ≤ m) :
     · rw [ite_eq_left_of_eq_true _ _ (eq_true h'), ite_eq_left_of_eq_true _ _ (eq_true (by omega_arith))]
     · rw [ite_eq_right_of_eq_false _ _ (eq_false h'), ite_eq_right_of_eq_false _ _ (eq_false (by omega_arith))]
 
-/-- Entry `m` of the table at `edx = X` kept in the accumulators under the
-mask of `ebx = a`. -/
-theorem selEntry_ok (K : TCombCfg) {s : State} {X : Addr} {a m : Nat} (hn : K.M.n ≤ 6) (hm1 : 1 ≤ m)
+/-- The pieces `c₀ …` (`cnt` of them) of entry `m` of the table at `edx = X` kept in the
+accumulators under the mask of `ebx = a`. -/
+theorem selEntryAt_ok (K : TCombCfg) {s : State} {X : Addr} {a m c₀ cnt : Nat} (hn : cnt ≤ 6) (hm1 : 1 ≤ m)
     (hm : m < 2 ^ 31) (ha : a < 2 ^ 31) (h8 : s.gpr .ebx = BitVec.ofNat 32 a) (hx : (s.gpr .edx).setWidth 64 = X)
-    (hr : ∀ c < K.M.n, InRegions (s.rd ++ s.wr) (X + BitVec.ofNat 64 (16 * K.M.n * (m - 1) + 16 * c)) 16)
-    (hX : X.toNat + 16 * K.M.n * (m - 1) + 16 * K.M.n ≤ 2 ^ 32)
-    (hacc : ∀ c < K.M.n, s.xmm (selAcc c) = accVal s.mem X K.M.n a (m - 1) c) :
-    WP isa (.block (K.selEntry m)) s fun t =>
-      (∀ c < K.M.n, t.xmm (selAcc c) = accVal s.mem X K.M.n a m c) ∧
-      XKeep [.ecx] (fun r => (∃ c < K.M.n, r = selAcc c) ∨ r = .xmm6 ∨ r = .xmm7) s t := by
-  rw [TCombCfg.selEntry, WP.block_append_iff, WP.block_append_iff]
+    (hr : ∀ c < cnt, InRegions (s.rd ++ s.wr) (X + BitVec.ofNat 64 (16 * K.M.n * (m - 1) + 16 * (c₀ + c))) 16)
+    (hX : X.toNat + 16 * K.M.n * (m - 1) + 16 * (c₀ + cnt) ≤ 2 ^ 32)
+    (hacc : ∀ c < cnt, s.xmm (selAcc c) = accVal s.mem X K.M.n a (m - 1) (c₀ + c)) :
+    WP isa (.block (K.selEntryAt c₀ cnt m)) s fun t =>
+      (∀ c < cnt, t.xmm (selAcc c) = accVal s.mem X K.M.n a m (c₀ + c)) ∧
+      XKeep [.ecx] (fun r => (∃ c < cnt, r = selAcc c) ∨ r = .xmm6 ∨ r = .xmm7) s t := by
+  have e : ∀ c, 16 * K.M.n * (m - 1) + 16 * c₀ + 16 * c = 16 * K.M.n * (m - 1) + 16 * (c₀ + c) := fun c => by
+    rw [Nat.mul_add, Nat.add_assoc]
+  rw [TCombCfg.selEntryAt, WP.block_append_iff, WP.block_append_iff]
   refine WP.mono (eqMask_ok s hm ha h8) fun s₁ ⟨c₁, k₁, x₁⟩ => ?_
   refine WP.mono (dupMask_ok s₁ c₁) fun s₂ ⟨x₂, k₂⟩ => ?_
   have hx₂ : (s₂.gpr .edx).setWidth 64 = X := by rw [k₂.gpr _ List.not_mem_nil, k₁.1 _ (by decide), hx]
   have hm₂ : s₂.mem = s.mem := k₂.mem.trans k₁.2.1
-  refine WP.mono (selSteps_ok hn hX K.M.n (Nat.le_refl _) s₂ hx₂ (by
-      rw [k₂.rd, k₂.wr, k₁.2.2.1, k₁.2.2.2]; exact hr)) fun t ⟨a₃, k₃⟩ => ⟨fun c hc => ?_, ?_⟩
+  refine WP.mono (selSteps_ok (D := 16 * K.M.n * (m - 1) + 16 * c₀) hn
+      (by rw [Nat.mul_add] at hX; omega_using [hX]) cnt (Nat.le_refl _) s₂ hx₂ (fun c hc => by
+      rw [k₂.rd, k₂.wr, k₁.2.2.1, k₁.2.2.2, e]; exact hr c hc)) fun t ⟨a₃, k₃⟩ => ⟨fun c hc => ?_, ?_⟩
   · rw [a₃ c (by omega_arith), ite_eq_left_of_eq_true _ _ (eq_true hc), x₂, hm₂,
-      k₂.xmm _ (fun h => (selAcc_ne c (by omega_arith)).2 h), x₁, hacc c hc]
+      k₂.xmm _ (fun h => (selAcc_ne c (by omega_arith)).2 h), x₁, hacc c hc, e]
     exact accVal_step _ _ _ _ _ _ hm1
   · refine ⟨fun r hr => ?_, k₃.mem.trans hm₂, by rw [k₃.rd, k₂.rd, k₁.2.2.1],
       by rw [k₃.wr, k₂.wr, k₁.2.2.2], fun r hr => ?_⟩
@@ -195,30 +201,31 @@ theorem selEntry_ok (K : TCombCfg) {s : State} {X : Addr} {a m : Nat} (hn : K.M.
     · simp only [not_or] at hr
       rw [k₃.xmm r (by rintro (h | h); exacts [hr.1 h, hr.2.1 h]), k₂.xmm r hr.2.2, x₁]
 
-/-- The entries `1 … h` of the table at `edx = X` kept in the cleared
+/-- The pieces `c₀ …` of the entries `1 … h` of the table at `edx = X` kept in the cleared
 accumulators under the masks of `ebx = a`. -/
-theorem selEntries_ok (K : TCombCfg) {X : Addr} {a : Nat} (hn : K.M.n ≤ 6) (ha : a < 2 ^ 31) :
+theorem selEntriesAt_ok (K : TCombCfg) {X : Addr} {a c₀ cnt : Nat} (hn : cnt ≤ 6) (hc : c₀ + cnt ≤ K.M.n)
+    (ha : a < 2 ^ 31) :
     ∀ h, h < 2 ^ 31 → ∀ (s : State), s.gpr .ebx = BitVec.ofNat 32 a → (s.gpr .edx).setWidth 64 = X →
     (∀ e < h, ∀ c < K.M.n, InRegions (s.rd ++ s.wr) (X + BitVec.ofNat 64 (16 * K.M.n * e + 16 * c)) 16) →
     X.toNat + 16 * K.M.n * h ≤ 2 ^ 32 →
-    (∀ c < K.M.n, s.xmm (selAcc c) = 0) →
-    WP isa (.block ((List.range h).flatMap fun m => K.selEntry (m + 1))) s fun t =>
-      (∀ c < K.M.n, t.xmm (selAcc c) = accVal s.mem X K.M.n a h c) ∧
-      XKeep [.ecx] (fun r => (∃ c < K.M.n, r = selAcc c) ∨ r = .xmm6 ∨ r = .xmm7) s t
+    (∀ c < cnt, s.xmm (selAcc c) = 0) →
+    WP isa (.block ((List.range h).flatMap fun m => K.selEntryAt c₀ cnt (m + 1))) s fun t =>
+      (∀ c < cnt, t.xmm (selAcc c) = accVal s.mem X K.M.n a h (c₀ + c)) ∧
+      XKeep [.ecx] (fun r => (∃ c < cnt, r = selAcc c) ∨ r = .xmm6 ∨ r = .xmm7) s t
   | 0, _, s, _, _, _, _, h0 => WP.block_nil ⟨fun c hc => by
       rw [h0 c hc, accVal, ite_eq_right_of_eq_false _ _ (eq_false (by omega_arith))], XKeep.refl _ _ _⟩
   | h + 1, hh, s, h8, hx, hr, hX, h0 => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
     have hX' := hX
     rw [Nat.mul_add, Nat.mul_one] at hX'
-    refine WP.mono (selEntries_ok K hn ha h (by omega_arith) s h8 hx (fun e he => hr e (by omega_arith)) (by omega_arith) h0)
+    refine WP.mono (selEntriesAt_ok K hn hc ha h (by omega_arith) s h8 hx (fun e he => hr e (by omega_arith)) (by omega_arith) h0)
       fun s₁ ⟨a₁, k₁⟩ => ?_
-    refine WP.mono (selEntry_ok K (X := X) (m := h + 1) hn (by omega_arith) hh ha
+    refine WP.mono (selEntryAt_ok K (X := X) (m := h + 1) hn (by omega_arith) hh ha
       (by rw [k₁.gpr _ (by decide), h8]) (by rw [k₁.gpr _ (by decide), hx])
-      (fun c hc => by rw [k₁.rd, k₁.wr, Nat.add_sub_cancel]; exact hr h (by omega_arith) c hc)
-      (by simpa only [Nat.add_sub_cancel, Nat.add_assoc] using hX')
-      (fun c hc => by rw [a₁ c hc, k₁.mem, Nat.add_sub_cancel])) fun t ⟨a₂, k₂⟩ =>
-      ⟨fun c hc => by rw [a₂ c hc, k₁.mem], k₁.trans k₂⟩
+      (fun c hc' => by rw [k₁.rd, k₁.wr, Nat.add_sub_cancel]; exact hr h (by omega_arith) (c₀ + c) (by omega_arith))
+      (by rw [Nat.add_sub_cancel]; omega_using [hX', hc])
+      (fun c hc' => by rw [a₁ c hc', k₁.mem, Nat.add_sub_cancel])) fun t ⟨a₂, k₂⟩ =>
+      ⟨fun c hc' => by rw [a₂ c hc', k₁.mem], k₁.trans k₂⟩
 
 /-- The accumulators `c < k` cleared. -/
 theorem clearAcc_ok : ∀ k ≤ 6, ∀ (s : State),
@@ -263,28 +270,91 @@ theorem storeAcc_ok {base : Addr} {size o : Nat} : ∀ k, ∀ (s : State), Scr s
       rw [x₁]; exact Mem.readW_writeW_self (n := 16) _ _ _ (by decide)
     · rw [O₂.read128 (by omega_arith) (by omega_arith), a₁ c (by omega_arith)]
 
-/-- The accumulators cleared, entries `1 … H` of the table at `edx = X` kept
-under the masks of `ebx = a`, and stored to the `16 n` bytes at `E.x`. -/
-theorem selPass_ok (K : TCombCfg) {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
-    {X : Addr} {a : Nat} (hn : K.M.n ≤ 6) (hH : K.H < 2 ^ 31) (ha : a < 2 ^ 31)
+/-- The accumulators cleared, the pieces `c₀ …` (`cnt` of them) of the entries `1 … H` of the
+table at `edx = X` kept under the masks of `ebx = a`, and stored to the `16 cnt` bytes at
+`E.x + 16 c₀`. -/
+theorem selPassAt_ok (K : TCombCfg) {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
+    {X : Addr} {a c₀ cnt : Nat} (hn : cnt ≤ 6) (hc : c₀ + cnt ≤ K.M.n) (hH : K.H < 2 ^ 31) (ha : a < 2 ^ 31)
     (h8 : s.gpr .ebx = BitVec.ofNat 32 a) (hx : (s.gpr .edx).setWidth 64 = X)
     (hr : ∀ e < K.H, ∀ c < K.M.n, InRegions (s.rd ++ s.wr) (X + BitVec.ofNat 64 (16 * K.M.n * e + 16 * c)) 16)
     (hX : X.toNat + 16 * K.M.n * K.H ≤ 2 ^ 32)
     (hE : K.E.x + 16 * K.M.n ≤ size) :
-    WP isa (.block K.selPass) s fun t =>
-      (∀ c < K.M.n, t.mem.readW (off base (K.E.x + 16 * c)) 128 = accVal s.mem X K.M.n a K.H c) ∧
-      Outside base K.E.x (16 * K.M.n) s.mem t.mem ∧ KeepRegs [.ecx] s t := by
-  unfold TCombCfg.selPass
+    WP isa (.block (K.selPassAt c₀ cnt)) s fun t =>
+      (∀ c < cnt, t.mem.readW (off base (K.E.x + 16 * (c₀ + c))) 128 = accVal s.mem X K.M.n a K.H (c₀ + c)) ∧
+      Outside base (K.E.x + 16 * c₀) (16 * cnt) s.mem t.mem ∧ KeepRegs [.ecx] s t := by
+  unfold TCombCfg.selPassAt
   rw [WP.block_append_iff, WP.block_append_iff]
-  refine WP.mono (clearAcc_ok K.M.n hn s) fun s₁ ⟨a₁, k₁⟩ => ?_
-  refine WP.mono (selEntries_ok K (X := X) hn ha K.H hH s₁ (by rw [k₁.gpr _ List.not_mem_nil, h8])
+  refine WP.mono (clearAcc_ok cnt hn s) fun s₁ ⟨a₁, k₁⟩ => ?_
+  refine WP.mono (selEntriesAt_ok K (X := X) hn hc ha K.H hH s₁ (by rw [k₁.gpr _ List.not_mem_nil, h8])
     (by rw [k₁.gpr _ List.not_mem_nil, hx]) (by rw [k₁.rd, k₁.wr]; exact hr) hX a₁) fun s₂ ⟨a₂, k₂⟩ => ?_
   have hs₂ : Scr s₂ base size :=
     hs.of_eq (by rw [k₂.gpr _ (by decide), k₁.gpr _ List.not_mem_nil])
       (by rw [k₂.gpr _ (by decide), k₁.gpr _ List.not_mem_nil]) (by rw [k₂.wr, k₁.wr])
-  refine WP.mono (storeAcc_ok (o := K.E.x) K.M.n s₂ hs₂ hE) fun t ⟨a₃, O₃, g₃, r₃, w₃, _⟩ =>
-    ⟨fun c hc => by rw [a₃ c hc, a₂ c hc, k₁.mem], by rw [k₂.mem, k₁.mem] at O₃; exact O₃,
+  refine WP.mono (storeAcc_ok (o := K.E.x + 16 * c₀) cnt s₂ hs₂ (by omega_using [hE, hc])) fun t ⟨a₃, O₃, g₃, r₃, w₃, _⟩ =>
+    ⟨fun c hc' => by
+        rw [show K.E.x + 16 * (c₀ + c) = K.E.x + 16 * c₀ + 16 * c by rw [Nat.mul_add, Nat.add_assoc],
+          a₃ c hc', a₂ c hc', k₁.mem],
+      by rw [k₂.mem, k₁.mem] at O₃; exact O₃,
       ⟨fun r hr => by rw [g₃, k₂.gpr r hr, k₁.gpr r List.not_mem_nil], by rw [r₃, k₂.rd, k₁.rd],
         by rw [w₃, k₂.wr, k₁.wr]⟩⟩
+
+/-- The pieces of an entry are the same after a change of the working space, which the table
+is past. -/
+theorem accVal_outside {mem mem' : Mem} {base X : Addr} {size o len n a H c : Nat}
+    (hO : Outside base o len mem mem') (hlen : o + len ≤ size) (hc : c < n)
+    (hout : ∀ d < 16 * n * H, size ≤ ofs base (X + BitVec.ofNat 64 d)) :
+    accVal mem' X n a H c = accVal mem X n a H c := by
+  unfold accVal
+  split
+  next h =>
+    refine Mem.readW_congr fun b hb => ?_
+    rw [Offset.add_add]
+    refine hO _ (Or.inr ?_)
+    have h1 := Nat.mul_le_mul_left (16 * n) (show a - 1 + 1 ≤ H by omega_using [h])
+    rw [Nat.mul_add, Nat.mul_one] at h1
+    have := hout (16 * n * (a - 1) + 16 * c + b) (by omega_using [h1, hc, hb])
+    omega_using [this, hlen]
+  next => rfl
+
+/-- The entry of the table at `edx = X` for the magnitude `ebx = a` stored to the `16 n` bytes
+at `E.x`: in one scan of the table, or in two for more than six pieces (when the table is to be
+past the working space, so that the first scan's stores leave it as it was). -/
+theorem selPass_ok (K : TCombCfg) {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
+    {X : Addr} {a : Nat} (hn : K.M.n ≤ 12) (hH : K.H < 2 ^ 31) (ha : a < 2 ^ 31)
+    (h8 : s.gpr .ebx = BitVec.ofNat 32 a) (hx : (s.gpr .edx).setWidth 64 = X)
+    (hr : ∀ e < K.H, ∀ c < K.M.n, InRegions (s.rd ++ s.wr) (X + BitVec.ofNat 64 (16 * K.M.n * e + 16 * c)) 16)
+    (hX : X.toNat + 16 * K.M.n * K.H ≤ 2 ^ 32)
+    (hE : K.E.x + 16 * K.M.n ≤ size)
+    (hout : 6 < K.M.n → ∀ d < 16 * K.M.n * K.H, size ≤ ofs base (X + BitVec.ofNat 64 d)) :
+    WP isa (.block K.selPass) s fun t =>
+      (∀ c < K.M.n, t.mem.readW (off base (K.E.x + 16 * c)) 128 = accVal s.mem X K.M.n a K.H c) ∧
+      Outside base K.E.x (16 * K.M.n) s.mem t.mem ∧ KeepRegs [.ecx] s t := by
+  have hnw := hs.nowrap
+  unfold TCombCfg.selPass
+  split
+  next h6 =>
+    refine WP.mono (selPassAt_ok K hs (c₀ := 0) (cnt := K.M.n) h6 (by omega_arith) hH ha h8 hx hr hX hE)
+      fun t ⟨a₁, O₁, k₁⟩ => ⟨fun c hc => ?_, ?_, k₁⟩
+    · have := a₁ c hc
+      rwa [Nat.zero_add] at this
+    · rwa [Nat.mul_zero, Nat.add_zero] at O₁
+  next h6 =>
+    rw [WP.block_append_iff]
+    refine WP.mono (selPassAt_ok K hs (c₀ := 0) (cnt := 6) (Nat.le_refl _) (by omega_arith) hH ha h8 hx hr hX hE)
+      fun s₁ ⟨a₁, O₁, k₁⟩ => ?_
+    rw [Nat.mul_zero, Nat.add_zero] at O₁
+    have hs₁ := hs.of_keeps k₁ (by decide)
+    refine WP.mono (selPassAt_ok K hs₁ (X := X) (a := a) (c₀ := 6) (cnt := K.M.n - 6) (by omega_arith)
+      (by omega_arith) hH ha (by rw [k₁.1 _ (by decide), h8]) (by rw [k₁.1 _ (by decide), hx])
+      (by rw [k₁.2.1, k₁.2.2]; exact hr) hX hE) fun t ⟨a₂, O₂, k₂⟩ => ⟨fun c hc => ?_, ?_, k₁.trans k₂⟩
+    · by_cases h : c < 6
+      · rw [O₂.read128 (Or.inl (by omega_arith)) (by omega_arith)]
+        have := a₁ c h
+        rwa [Nat.zero_add] at this
+      · have := a₂ (c - 6) (by omega_arith)
+        rw [show 6 + (c - 6) = c by omega_arith] at this
+        rw [this]
+        exact accVal_outside O₁ (by omega_arith) hc (hout (by omega_arith))
+    · exact (O₁.mono (Nat.le_refl _) (by omega_arith)).trans (O₂.mono (by omega_arith) (by omega_arith))
 
 end VG.Proof.Weierstrass.X86

@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Blowfish.PPC64LE.ModesVerified
 public import VerifiedGarbage.Proof.Blowfish.PPC64LE.ModesFrame
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Blowfish.PPC64LE.Scrub
 public import VerifiedGarbage.TCB.PPC64LE.Print
 import VerifiedGarbage.Proof.Blowfish.PPC64LE.ModesLit
 
@@ -13,11 +14,7 @@ import VerifiedGarbage.Proof.Blowfish.PPC64LE.ModesLit
 namespace VG.Artifacts.BlowfishCbc.PPC64LE
 
 def artifacts : List Artifact := [
-  Spec.Blowfish.cbcEncryptChainedApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 128 .r7 12 Impl.Blowfish.PPC64LE.cbcEncryptChained
-    verified := Proof.Blowfish.PPC64LE.cbcEnc_framed Proof.Blowfish.PPC64LE.Modes.cbcEncryptChained_verified },
-  Spec.Blowfish.cbcDecryptChainedApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 128 .r7 12 Impl.Blowfish.PPC64LE.cbcDecryptChained
-    verified := Proof.Blowfish.PPC64LE.cbcDec_framed Proof.Blowfish.PPC64LE.Modes.cbcDecryptChained_verified }]
+  Spec.Blowfish.cbcEncryptChainedApi.artifact PPC64LE.target Proof.Blowfish.PPC64LE.Scrub.cbcEncryptChainedReg,
+  Spec.Blowfish.cbcDecryptChainedApi.artifact PPC64LE.target Proof.Blowfish.PPC64LE.Scrub.cbcDecryptChainedReg]
 
 end VG.Artifacts.BlowfishCbc.PPC64LE

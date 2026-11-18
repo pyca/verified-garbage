@@ -1548,6 +1548,22 @@ vg_sm4_cbc_encrypt_chained:
 	std %r11, 3248(%r12)
 	std %r11, 3256(%r12)
 	addi %r1, %r1, 3296
+	li %r0, 0
+	li %r4, 0
+	li %r5, 0
+	li %r6, 0
+	li %r7, 0
+	li %r8, 0
+	li %r9, 0
+	li %r10, 0
+	li %r11, 0
+	li %r12, 0
+	vxor %v0, %v0, %v0
+	vxor %v1, %v1, %v1
+	vxor %v12, %v12, %v12
+	vxor %v13, %v13, %v13
+	vxor %v14, %v14, %v14
+	vxor %v15, %v15, %v15
 	blr
 
 vg_sm4_cbc_decrypt_chained:
@@ -3858,4 +3874,21 @@ vg_sm4_cbc_decrypt_chained:
 	std %r11, 3248(%r12)
 	std %r11, 3256(%r12)
 	addi %r1, %r1, 3296
+	li %r0, 0
+	li %r3, 0
+	li %r4, 0
+	li %r5, 0
+	li %r6, 0
+	li %r7, 0
+	li %r8, 0
+	li %r9, 0
+	li %r10, 0
+	li %r11, 0
+	li %r12, 0
+	vxor %v0, %v0, %v0
+	vxor %v1, %v1, %v1
+	vxor %v12, %v12, %v12
+	vxor %v13, %v13, %v13
+	vxor %v14, %v14, %v14
+	vxor %v15, %v15, %v15
 	blr

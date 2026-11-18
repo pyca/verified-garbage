@@ -81,13 +81,11 @@ theorem lay_pre {H : Spec.Mgf1.Hash} {ts : List FnTable} {P : Nat} {s : State} (
       s.wr = [(lay H.len P s).OUT, (lay H.len P s).SCR] ∧
       (stackArg s 7).toNat = Spec.Rsa.precomputedWords (s.gpr .x3).toNat ∧ P + 288 ≤ s.sp.toNat := by
   enc_pre at h
-  obtain ⟨hsp, hsp2, -, -, -, hrd, hwr,
-    oN, oE, oL, oM, oSd, oS, oQ, oTL, oT, oA,
-    nS, eS, lS, mS, sdS, sQ, sTL, sT, sA,
-    kO, kN, kE, kL, kM, kSd, kS, kQ, kTL, kT, -,
-    bO, bN, bE, bL, bM, bSd, bS, bQ, bTL, bT,
-    kv, hk1, el1, elk, slk, pl, hsd⟩ := h
-  obtain hl := hsd H hH
+  sig_split h
+  rename_i hsp hsp2 hd1 hd2 hd3 hrd hwr oN oE oL oM oSd oS oQ oTL oT oA nS eS lS mS sdS sQ sTL sT sA
+    kO kN kE kL kM kSd kS kQ kTL kT hd4 bO bN bE bL bM bSd bS bQ bTL bT kv hk1 el1 elk slk pl
+  clear hd1 hd2 hd3 hd4
+  obtain hl := h H hH
   simp only [hk1] at oA oN oE oL oM oSd oS oQ oTL oT kO bO hwr
   rw [hl] at hrd oSd sdS kSd bSd
   obtain eA : (lay H.len P s).ARGS = ⟨stackArgAddr s 0, 80⟩ := by simp only [ELay.ARGS, lay_args]; rfl

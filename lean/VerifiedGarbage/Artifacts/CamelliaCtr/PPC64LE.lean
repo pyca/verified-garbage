@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Camellia.PPC64LE.ModesVerified
 public import VerifiedGarbage.Proof.Camellia.PPC64LE.ModesFrame
 public import VerifiedGarbage.Proof.Camellia.PPC64LE.CtrFinal
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Camellia.PPC64LE.Scrub
 public import VerifiedGarbage.TCB.PPC64LE.Print
 import VerifiedGarbage.Proof.Camellia.PPC64LE.ModesLit
 import VerifiedGarbage.Proof.Camellia.PPC64LE.Lit
@@ -15,9 +16,7 @@ import VerifiedGarbage.Proof.Camellia.PPC64LE.Lit
 namespace VG.Artifacts.CamelliaCtr.PPC64LE
 
 def artifacts : List Artifact := [
-  Spec.Camellia.ctrApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 3408 .r8 422 Impl.Camellia.PPC64LE.ctr
-    verified := Proof.Camellia.PPC64LE.ctr_framed Proof.Camellia.PPC64LE.Modes.ctr_verified },
+  Spec.Camellia.ctrApi.artifact PPC64LE.target Proof.Camellia.PPC64LE.Scrub.ctrReg,
   Spec.Camellia.ctrFinalApi.artifact PPC64LE.target {
     code := Impl.StackScratch.PPC64LE.withStackScratchWiped 112 .r8 10 Impl.Camellia.PPC64LE.ctrFinal
     verified := Proof.Camellia.PPC64LE.CtrFinal.ctrFinal_framed }]

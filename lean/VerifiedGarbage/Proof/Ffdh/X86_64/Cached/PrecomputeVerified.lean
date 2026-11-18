@@ -56,13 +56,15 @@ private theorem template_instrs (p : Instr → Bool) (mul : Nat → Nat → Nat 
     VG.Impl.Ffdh.X86_64.Cached.Precompute.column VG.Impl.Ffdh.X86_64.Cached.Precompute.product VG.Impl.Ffdh.X86_64.Cached.Precompute.squares R2Words.choice R2Words.fast R2Words.old
     VG.Impl.Bignum.X86_64.Public.R2Squares.run VG.Impl.Bignum.X86_64.Public.R2Squares.init
     VG.Impl.Bignum.X86_64.Public.R2Squares.next at hp ⊢
-  repeat' first
-    | rw [all_seqs] at *
-    | rw [i_seq] at *
-    | rw [i_ite] at *
-    | rw [i_loop] at *
-    | rw [List.all_append] at *
-    | rw [List.all_cons] at *
+  -- the lemmas at the instructions' own type, where `simp` finds them
+  obtain e₁ : ∀ a b : Code Instr Cond, Code.allInstrs p (Code.seq a b) = (Code.allInstrs p a && Code.allInstrs p b) :=
+    i_seq p
+  obtain e₂ : ∀ (c : Cond) (a b : Code Instr Cond),
+      Code.allInstrs p (Code.ite c a b) = (Code.allInstrs p a && Code.allInstrs p b) := i_ite p
+  obtain e₃ : ∀ (a : Code Instr Cond) (c : Cond), Code.allInstrs p (Code.loop a c) = Code.allInstrs p a := i_loop p
+  obtain e₄ : ∀ l : List (Code Instr Cond), Code.allInstrs p (seqs l) = l.all (fun c => Code.allInstrs p c) :=
+    all_seqs p
+  simp only [e₁, e₂, e₃, e₄, List.all_append, List.all_cons] at hp ⊢
   repeat' rw [hm]
   repeat' rw [i_empty] at hp
   exact hp
@@ -80,13 +82,11 @@ private theorem template_inlineOk (mul : Nat → Nat → Nat → Prog isa)
     VG.Impl.Ffdh.X86_64.Cached.Precompute.column VG.Impl.Ffdh.X86_64.Cached.Precompute.product VG.Impl.Ffdh.X86_64.Cached.Precompute.squares R2Words.choice R2Words.fast R2Words.old
     VG.Impl.Bignum.X86_64.Public.R2Squares.run VG.Impl.Bignum.X86_64.Public.R2Squares.init
     VG.Impl.Bignum.X86_64.Public.R2Squares.next at hp ⊢
-  repeat' first
-    | rw [inlineOk_seqs] at *
-    | rw [k_seq] at *
-    | rw [k_ite] at *
-    | rw [k_loop] at *
-    | rw [List.all_append] at *
-    | rw [List.all_cons] at *
+  obtain e₁ : ∀ a b : Code Instr Cond, (Code.seq a b).InlineOk = (a.InlineOk && b.InlineOk) := k_seq
+  obtain e₂ : ∀ (c : Cond) (a b : Code Instr Cond), (Code.ite c a b).InlineOk = (a.InlineOk && b.InlineOk) := k_ite
+  obtain e₃ : ∀ (a : Code Instr Cond) (c : Cond), (Code.loop a c).InlineOk = a.InlineOk := k_loop
+  obtain e₄ : ∀ l : List (Code Instr Cond), (seqs l).InlineOk = l.all Code.InlineOk := inlineOk_seqs
+  simp only [e₁, e₂, e₃, e₄, List.all_append, List.all_cons] at hp ⊢
   repeat' rw [hm]
   repeat' rw [k_empty] at hp
   exact hp

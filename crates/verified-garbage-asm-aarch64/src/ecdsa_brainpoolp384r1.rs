@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Ecdsa.Instance.verifyHashContract`. Every input is public: timing may depend on the pointers, `digest_len` and the contents of `public`, `digest` and `sig`.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `public` must be valid for reads of 97 bytes.
@@ -1363,7 +1365,14 @@ bl {vg_brainpoolp384r1_mul_mod_p}
 .inst 0xf941a402,0xaa020021,0xf941a802,0xaa020021,0xf941ac02,0xaa020021,0xf941b002,0xaa020021
 .inst 0xf941b402,0xaa020021,0xeb0100f0,0xda0700e2,0xf9444001,0x8a020021,0xf9044001,0xf9444003
 .inst 0xf9400013,0xf9400414,0xf9400815,0xf9400c16,0xf9401017,0xf9401418,0xf9401819,0xf9401c1e
-.inst 0xd2800021,0x8a010060,0x910143ff,0xd65f03c0
+.inst 0xd2800021,0x8a010060,0x910143ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005
+.inst 0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d
+.inst 0xd280000e,0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403
+.inst 0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413
+.inst 0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b
+.inst 0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0x4e181c28,0x4e181c29,0x4e181c2a
+.inst 0x4e181c2b,0x4e181c2c,0x4e181c2d,0x4e181c2e,0x4e181c2f,0x11000000,0xd10143ff,0x6f00e41f
+.inst 0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x910143ff,0xd65f03c0
 .p2align 6",
         vg_brainpoolp384r1_check_point = sym super::ec_brainpoolp384r1_compressed::vg_brainpoolp384r1_check_point::vg_brainpoolp384r1_check_point,
         vg_brainpoolp384r1_mul_mod_n = sym super::ecdsa_brainpoolp384r1::vg_brainpoolp384r1_mul_mod_n::vg_brainpoolp384r1_mul_mod_n,
@@ -1375,6 +1384,8 @@ bl {vg_brainpoolp384r1_mul_mod_p}
 /// Deterministic ECDSA signature generation over brainpoolP384r1 with HMAC over the hash function of the table `hmac` (RFC 6979 §3.2; FIPS 186-5 §6.4.1): with the private key `d` (48 bytes, most significant first), signs the hash at `digest` (`digest_len` bytes, the hash function's output), deriving the per-message secret number `k` from the key and the hash. Returns 1 and writes `r` then `s` (48 bytes each, most significant first) to `*out`; or returns 0 and writes zeros to `*out` if `d` is not in `[1, n-1]`, or if none of the first 128 candidates for `k` is suitable (which does not happen in practice).
 ///
 /// Contract: `VG.Spec.Ecdsa.Rfc6979.TableInstance.signContract`. Constant time but for the number of candidates for `k` tried (almost always 1) and which table `hmac` is: timing may depend on the pointers, that number and the table, not otherwise on the key or the hash.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1505,7 +1516,19 @@ cbnz x12, 24b
 .inst 0xf900cdee,0xf900d1ee,0xf900d5ee,0xf900d9ee,0xf900ddee,0xf900e1ee,0xf900e5ee,0xf900e9ee
 .inst 0xf900edee,0xf900f1ee,0xf900f5ee,0xf900f9ee,0xf900fdee,0xf90101ee,0xf90105ee,0xf90109ee
 .inst 0xf9010dee,0xf90111ee,0xf90115ee,0xf90119ee,0xf9011dee,0xf90121ee,0xf90125ee,0xf90129ee
-.inst 0x910983ff,0xf84107fe,0xd65f03c0
+.inst 0x910983ff,0xf84107fe,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006
+.inst 0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e
+.inst 0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404
+.inst 0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414
+.inst 0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c
+.inst 0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0x4e181c28,0x4e181c29,0x4e181c2a,0x4e181c2b
+.inst 0x4e181c2c,0x4e181c2d,0x4e181c2e,0x4e181c2f,0x11000000,0xd10a03ff,0x6f00e41f,0x910003e9
+.inst 0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f,0x3d80193f,0x3d801d3f
+.inst 0x3d80213f,0x3d80253f,0x3d80293f,0x3d802d3f,0x3d80313f,0x3d80353f,0x3d80393f,0x3d803d3f
+.inst 0x3d80413f,0x3d80453f,0x3d80493f,0x3d804d3f,0x3d80513f,0x3d80553f,0x3d80593f,0x3d805d3f
+.inst 0x3d80613f,0x3d80653f,0x3d80693f,0x3d806d3f,0x3d80713f,0x3d80753f,0x3d80793f,0x3d807d3f
+.inst 0x3d80813f,0x3d80853f,0x3d80893f,0x3d808d3f,0x3d80913f,0x3d80953f,0x3d80993f,0x3d809d3f
+.inst 0x910a03ff,0xd65f03c0
 .p2align 6",
         vg_ecdsa_brainpoolp384r1_sign_k = sym super::ecdsa_brainpoolp384r1::vg_ecdsa_brainpoolp384r1_sign_k::vg_ecdsa_brainpoolp384r1_sign_k,
     )

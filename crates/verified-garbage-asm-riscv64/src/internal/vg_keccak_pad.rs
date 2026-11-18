@@ -13,9 +13,9 @@ pub(crate) unsafe extern "C" fn vg_keccak_pad() {
     core::arch::naked_asm!(
         r#".option push
 .option arch, +m, +c
-.base64 "EwEB34qCI7ASIDMDxQCDQwMAs8PTACMAcwAzA7UAfRODQwMAk8MDCCMAcwCKhQ=="
+.base64 "QRGKgiOwEgAzA8UAg0MDALPD0wAjAHMAMwO1AH0Tg0MDAJPDAwgjAHMAAXGKhQ=="
 call {vg_keccak_f1600}
-.base64 "ioKDsAIgEwEBIYKA"
+.base64 "EwEBIIqCg7ACAEEBgoA="
 .option pop"#,
         vg_keccak_f1600 = sym crate::ed448::vg_keccak_f1600::vg_keccak_f1600,
     )

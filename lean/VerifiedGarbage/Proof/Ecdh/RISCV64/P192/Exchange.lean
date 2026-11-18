@@ -81,40 +81,22 @@ theorem store_kit (b : Bool) {s : State} {base : Addr}
 
 /-- The curve's kit. -/
 def kit : Kit where
-  c := p192
+  toTKit := tkit
   L := 24
   len := rfl
-  n9 := by decide
   Ln := by decide
-  unit := unit
   onG := onG
   load := loadNum0 3
   store := storeNum 3
   load_ok := load_kit
   store_ok := store_kit
-  CC := CC
-  CCW := rfl
-  CCk := rfl
   checkN := "vg_p192_check_point"
-  checkC := checkP192
   checkNF := checkNF
-  check_rv := check_rv
-  num_eq := fun m ws i hi => num_eq m ws i hi
-  flag_eq := flag_eq
-  checkKW := checkKW
-  check_unch := unch_of_checkKeeps
-  check_lo := by decide
-  check_keep := by decide
   mulN := "vg_p192_mul"
   mulC := mulP192
-  tailW := tailW
-  tail_lo := by decide
-  tail_ok := fun hL _ _ hw h3 a1 a2 a3 a4 a5 a6 a7 a8 => tail_ok hL hw h3 ⟨a1, a2, a3, a4, a5, a6, a7, a8⟩
-  andFlag_ok := andFlag_ok
-  save_ok := save_ok
-  cs := 44
-  consts_ok := consts_ok
-  consts_slots := consts_slots
+  mulNF := mulNF
+  mul_rv := mul_meets
+  chainP_ok := chainP_ok
   consts_lt := consts_lt
 
 /-- What the contract gives, by register. -/

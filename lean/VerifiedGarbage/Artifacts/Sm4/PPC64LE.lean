@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Sm4.PPC64LE.KeyVerified
 public import VerifiedGarbage.Proof.Sm4.PPC64LE.Verified
 public import VerifiedGarbage.Proof.Sm4.PPC64LE.PreparedVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Sm4.PPC64LE.Scrub
 public import VerifiedGarbage.TCB.PPC64LE.Print
 import VerifiedGarbage.Proof.Sm4.PPC64LE.Lit
 
@@ -14,14 +15,8 @@ import VerifiedGarbage.Proof.Sm4.PPC64LE.Lit
 namespace VG.Artifacts.Sm4.PPC64LE
 
 def artifacts : List Artifact := [
-  Spec.Sm4.expandKeyApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 3248 .r5 402 Impl.Sm4.PPC64LE.expandKey
-    verified := Proof.Sm4.PPC64LE.expandKey_framed },
-  Spec.Sm4.ecbEncryptApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 3248 .r6 402 (Impl.Sm4.PPC64LE.ecb .encrypt)
-    verified := Proof.Sm4.PPC64LE.ecb_framed .encrypt },
-  Spec.Sm4.ecbDecryptApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 3248 .r6 402 (Impl.Sm4.PPC64LE.ecb .decrypt)
-    verified := Proof.Sm4.PPC64LE.ecb_framed .decrypt }]
+  Spec.Sm4.expandKeyApi.artifact PPC64LE.target Proof.Sm4.PPC64LE.Scrub.expandKeyReg,
+  Spec.Sm4.ecbEncryptApi.artifact PPC64LE.target Proof.Sm4.PPC64LE.Scrub.ecbEncryptReg,
+  Spec.Sm4.ecbDecryptApi.artifact PPC64LE.target Proof.Sm4.PPC64LE.Scrub.ecbDecryptReg]
 
 end VG.Artifacts.Sm4.PPC64LE

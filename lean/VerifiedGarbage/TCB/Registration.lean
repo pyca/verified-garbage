@@ -211,15 +211,13 @@ structure Artifact where
   /-- `Sig.contract`'s `writeArgs` and `stack` for `contract` (see `ofSig`). -/
   writeArgs : Bool := false
   stack : Nat := 0
-  /-- Whether `contract` makes the mode public (`Abi.withMode`, see `ofSig`). -/
-  pubMode : Bool := false
   /-- `contract` is one that `Sig.contract` derives from `sig` for the
   target's calling convention, `writeArgs` and `stack`: so it reads the
   arguments and writes the return value where the calling convention places
   them for `sig`, and requires what `Sig.layoutDoc` documents of where the
   buffers are. -/
   ofSig : ∃ pre post leak,
-      contract = sig.contract (((target.abi.withConsts consts).withTables sig tables).withMode pubMode)
+      contract = sig.contract ((target.abi.withConsts consts).withTables sig tables)
         pre post writeArgs stack leak := by
     exact ⟨_, _, _, rfl⟩
   /-- The contract of the function on every target, which an artifact made
@@ -423,7 +421,7 @@ structure Registration (api : Api) (target : Target) where
   /-- `Artifact.ofSig`. -/
   ofSig : ∃ pre post leak,
       contract = api.sig.contract
-        (((target.abi.withConsts consts).withTables api.sig tables).withMode api.pubMode) pre post
+        ((target.abi.withConsts consts).withTables api.sig tables) pre post
         api.writeArgs stack leak := by
     of_sig
   /-- `Artifact.spSafe`. -/
@@ -449,7 +447,7 @@ structure Registration (api : Api) (target : Target) where
 signature and `writeArgs` are `api`'s, its name `api`'s followed by
 `r.suffix` (its `base` `api`'s), its documentation `api`'s (`Api.doc`), and its
 contract `api`'s on `target`, for `r.consts`, `r.tables` and `r.stack`
-(`Api.contract`), which makes the mode public if `api.pubMode`; its CPU
+(`Api.contract`); its CPU
 features those its code requires (`Code.requiresDedup`); its code is
 printed and documented with `target`'s ISA's `Emitter` (`EmitTarget.of`). -/
 def Api.artifact (api : Api) (target : Target) [Emitter target.isa] (r : Registration api target) :
@@ -467,7 +465,6 @@ def Api.artifact (api : Api) (target : Target) [Emitter target.isa] (r : Registr
   verified := r.verified
   writeArgs := api.writeArgs
   stack := r.stack
-  pubMode := api.pubMode
   ofSig := r.ofSig
   contracts := api.contracts
   ofApi := by

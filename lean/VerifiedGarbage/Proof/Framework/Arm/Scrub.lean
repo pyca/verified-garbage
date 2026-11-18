@@ -339,18 +339,10 @@ theorem ScrubAbi.tables {A : Abi isa} (hA : ScrubAbi A) (sig : Sig) (ts : List (
     exact ⟨hA.ptrBits, hA.mem, hA.ret, hA.reserved, hA.wr, fun ws n s h => hA.wf ws n s h.1,
       fun s₁ s₂ h => hA.pub s₁ s₂ h.1, hA.rdSub, hA.argsLen⟩
 
-theorem withMode_ptrBits (A : Abi isa) (b : Bool) : (A.withMode b).ptrBits = A.ptrBits := by
-  cases b <;> rfl
-
-theorem ScrubAbi.mode {A : Abi isa} (hA : ScrubAbi A) (b : Bool) : ScrubAbi (A.withMode b) := by
-  cases b with
-  | false => exact hA
-  | true => exact { hA with pub := fun s₁ s₂ h => hA.pub s₁ s₂ h.1 }
-
 /-- The calling convention of every ARM artifact (`Api.artifact`). -/
-theorem ScrubAbi.of (cs : List (String × List (BitVec 64))) (sig : Sig) (ts : List (String × List FnTable))
-    (b : Bool) : ScrubAbi (((abi.withConsts cs).withTables sig ts).withMode b) :=
-  ((ScrubAbi.consts cs).tables sig ts).mode b
+theorem ScrubAbi.of (cs : List (String × List (BitVec 64))) (sig : Sig) (ts : List (String × List FnTable)) :
+    ScrubAbi ((abi.withConsts cs).withTables sig ts) :=
+  (ScrubAbi.consts cs).tables sig ts
 
 /-- A postcondition of `Sig.contract` reads of the state on return its
 memory and the bits of its result. -/
@@ -868,8 +860,8 @@ def scrubReg {api : Api} (r : Registration api target) (hn : r.code.noFrames = t
     obtain ⟨pre, post, leak, e⟩ := r.ofSig
     have hv := r.verified
     rw [e] at hv ⊢
-    exact (Verified.scrub (ScrubAbi.of r.consts api.sig r.tables api.pubMode) hv hn
-      (by rw [withMode_ptrBits])).1
+    exact (Verified.scrub (ScrubAbi.of r.consts api.sig r.tables) hv hn
+      rfl).1
   ofApi := r.ofApi
   ofSig := r.ofSig
   spSafe := spSafe_any _
@@ -891,8 +883,8 @@ def scrubReg {api : Api} (r : Registration api target) (hn : r.code.noFrames = t
     obtain ⟨pre, post, leak, e⟩ := r.ofSig
     have hv := r.verified
     rw [e] at hv ⊢
-    exact (Verified.scrub (ScrubAbi.of r.consts api.sig r.tables api.pubMode) hv hn
-      (by rw [withMode_ptrBits])).2⟩
+    exact (Verified.scrub (ScrubAbi.of r.consts api.sig r.tables) hv hn
+      rfl).2⟩
 
 /-- `r`, a registration of code whose frames use at most the `stack` bytes
 its contract reserves and which makes no indirect call, scrubbed: its code,
@@ -915,8 +907,8 @@ def scrubRegF {api : Api} (r : Registration api target) (hd : armStack r.code �
     have hv := r.verified
     have hp := hpost
     rw [e] at hv hp ⊢
-    exact (Verified.scrubF (ScrubAbi.of r.consts api.sig r.tables api.pubMode) hv hd hni hn
-      (by rw [withMode_ptrBits]) hp).1
+    exact (Verified.scrubF (ScrubAbi.of r.consts api.sig r.tables) hv hd hni hn
+      rfl hp).1
   ofApi := r.ofApi
   ofSig := r.ofSig
   spSafe := spSafe_any _
@@ -931,7 +923,7 @@ def scrubRegF {api : Api} (r : Registration api target) (hd : armStack r.code �
     have hv := r.verified
     have hp := hpost
     rw [e] at hv hp ⊢
-    exact (Verified.scrubF (ScrubAbi.of r.consts api.sig r.tables api.pubMode) hv hd hni hn
-      (by rw [withMode_ptrBits]) hp).2⟩
+    exact (Verified.scrubF (ScrubAbi.of r.consts api.sig r.tables) hv hd hni hn
+      rfl hp).2⟩
 
 end VG.Arm.Scrub

@@ -148,7 +148,7 @@ theorem setup_ok {s₀ : State} (hp : Pre s₀) {s₁ : State} (g : ∀ r, r ≠
       uc.other .eax (by decide), e64, o _ (by decide) (by decide) (by decide), bx, add32,
       sub32 _ (by omega_using [pos])]
     show _ = bP s₀ + BitVec.ofNat 32 (128 * rr s₀ - 64)
-    congr 2; omega_using []
+    exact congrArg (HAdd.hAdd _) (congrArg (BitVec.ofNat 32) (by omega_using []))
   · rw [ml]; exact hf'
   · rw [ml]; exact hsv
   · rw [ml]

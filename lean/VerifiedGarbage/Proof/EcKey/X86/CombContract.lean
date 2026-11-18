@@ -19,7 +19,7 @@ abbrev pkCombSpec : Contract isa := Spec.EcKey.P256.inst.publicKeyContract (X86.
 def pkCombLocal : Contract isa where
   pre := PkCombPre p256Comb
   post := PkPost p256Comb
-  pub := PkCombPub
+  pub := PkCombPub p256d
 
 def pkCombRd (s : State) : List Region := [⟨ptr s 1, 32⟩, ⟨argAddr s 0, 12⟩] ++
   Abi.constRegions (fun n => (s.syms n).setWidth 64) p256Comb.combConsts

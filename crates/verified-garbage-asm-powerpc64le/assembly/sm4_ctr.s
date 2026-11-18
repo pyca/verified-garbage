@@ -2276,6 +2276,23 @@ vg_sm4_ctr:
 	std %r11, 3248(%r12)
 	std %r11, 3256(%r12)
 	addi %r1, %r1, 3296
+	li %r0, 0
+	li %r3, 0
+	li %r4, 0
+	li %r5, 0
+	li %r6, 0
+	li %r7, 0
+	li %r8, 0
+	li %r9, 0
+	li %r10, 0
+	li %r11, 0
+	li %r12, 0
+	vxor %v0, %v0, %v0
+	vxor %v1, %v1, %v1
+	vxor %v12, %v12, %v12
+	vxor %v13, %v13, %v13
+	vxor %v14, %v14, %v14
+	vxor %v15, %v15, %v15
 	blr
 
 vg_sm4_ctr_final:
@@ -2298,7 +2315,7 @@ vg_sm4_ctr_final:
 	add %r31, %r5, %r11
 	subf %r30, %r11, %r6
 	or %r6, %r10, %r10
-	bl {vg_sm4_ctr}
+	bl {vg_sm4_ctr_core}
 	cmpldi %cr0, %r30, 0
 	beq %cr0, 20f
 	li %r9, 0
@@ -2308,7 +2325,7 @@ vg_sm4_ctr_final:
 	or %r4, %r16, %r16
 	addi %r5, %r20, 64
 	li %r6, 1
-	bl {vg_sm4_ctr}
+	bl {vg_sm4_ctr_core}
 	addi %r8, %r20, 64
 22:
 	lbz %r9, 0(%r31)

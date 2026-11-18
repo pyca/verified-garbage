@@ -11,6 +11,7 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.MulFixedCallMont
 public import VerifiedGarbage.Proof.Bignum.AArch64.PrivPreVerified
 import Mathlib.Tactic.Finiteness.Attr
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Rsa.AArch64.Scrub
 public import VerifiedGarbage.TCB.AArch64.Print
 
 /-! # RSA (RFC 8017) on AArch64 -/
@@ -20,20 +21,20 @@ public import VerifiedGarbage.TCB.AArch64.Print
 namespace VG.Artifacts.Rsa.AArch64
 
 def artifacts : List Artifact := [
-  Spec.Rsa.publicPrecomputeApi.artifact AArch64.target {
+  Spec.Rsa.publicPrecomputeApi.artifact AArch64.target (VG.AArch64.ScrubAll.withScrubAll {
     code := Impl.Rsa.AArch64.Precompute.code Proof.Bignum.AArch64.Mont.base.mm
-    verified := Proof.Bignum.AArch64.precompute_verified _ },
+    verified := Proof.Bignum.AArch64.precompute_verified _ } (Proof.Rsa.AArch64.Scrub.publicPrecomputeOk _)),
   Spec.Rsa.privatePrecomputeApi.artifact AArch64.target {
     code := Impl.Rsa.AArch64.PrivPre.code Proof.Bignum.AArch64.Mont.base.mm
     verified := Proof.Bignum.AArch64.PrivPre.privPre_verified _ },
-  Spec.Rsa.crtValuesApi.artifact AArch64.target {
+  Spec.Rsa.crtValuesApi.artifact AArch64.target (VG.AArch64.ScrubAll.withScrubAll {
     code := Impl.Rsa.AArch64.Keys.CrtValues.code
-    verified := Proof.Rsa.AArch64.cv_verified },
-  Spec.Rsa.recoverPrimesDetApi.artifact AArch64.target {
+    verified := Proof.Rsa.AArch64.cv_verified } (Proof.Rsa.AArch64.Scrub.crtValuesOk _)),
+  Spec.Rsa.recoverPrimesDetApi.artifact AArch64.target (VG.AArch64.ScrubAll.withScrubAll {
     code := Impl.Rsa.AArch64.RecoverDet.code
-    verified := Proof.Rsa.AArch64.Rd.rd_verified },
-  Spec.Rsa.checkKeyApi.artifact AArch64.target {
+    verified := Proof.Rsa.AArch64.Rd.rd_verified } (Proof.Rsa.AArch64.Scrub.recoverPrimesDetOk _)),
+  Spec.Rsa.checkKeyApi.artifact AArch64.target (VG.AArch64.ScrubAll.withScrubAll {
     code := Impl.Rsa.AArch64.CheckKey.code
-    verified := Proof.Rsa.AArch64.ck_verified }]
+    verified := Proof.Rsa.AArch64.ck_verified } (Proof.Rsa.AArch64.Scrub.checkKeyOk _))]
 
 end VG.Artifacts.Rsa.AArch64

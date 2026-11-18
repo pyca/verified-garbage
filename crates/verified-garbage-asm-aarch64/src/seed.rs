@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Seed.expandKeyContract`. Constant time: only pointers may affect timing, not key bytes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `key` must be valid for reads of 16 bytes.
@@ -146,7 +148,8 @@ cbnz x3, 20b
 .inst 0xa9034611,0xa9044611,0xa9054611,0xa9064611,0xa9074611,0xa9084611,0xa9094611,0xa90a4611
 .inst 0xa90b4611,0xa90c4611,0xa90d4611,0xa90e4611,0xa90f4611,0xa9104611,0xa9114611,0xa9124611
 .inst 0xa9134611,0xa9144611,0xa9154611,0xa9164611,0xa9174611,0xa9184611,0xa9194611,0xa91a4611
-.inst 0xa91b4611,0xa91c4611,0x910f43ff,0xd65f03c0
+.inst 0xa91b4611,0xa91c4611,0x910f43ff,0xd2800004,0xd2800006,0xd2800007,0xd2800008,0xd2800009
+.inst 0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd65f03c0
 .p2align 6",
     )
 }
@@ -154,6 +157,8 @@ cbnz x3, 20b
 /// SEED ECB encryption (RFC 4269 §2, SP 800-38A §6.1) of `n` complete 16-byte blocks at `data`, in place, under the schedule written by `vg_seed_expand_key`. No padding is added or removed. For `n = 0`, no data is transformed.
 ///
 /// Contract: `VG.Spec.Seed.ecbEncryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data, including S-box inputs.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -439,7 +444,9 @@ b 23f
 .inst 0xa9044611,0xa9054611,0xa9064611,0xa9074611,0xa9084611,0xa9094611,0xa90a4611,0xa90b4611
 .inst 0xa90c4611,0xa90d4611,0xa90e4611,0xa90f4611,0xa9104611,0xa9114611,0xa9124611,0xa9134611
 .inst 0xa9144611,0xa9154611,0xa9164611,0xa9174611,0xa9184611,0xa9194611,0xa91a4611,0x9116c3ff
-.inst 0xd65f03c0
+.inst 0xd2800001,0xd2800002,0xd2800003,0xd2800006,0xd2800007,0xd2800008,0xd280000a,0xd280000b
+.inst 0xd280000c,0xd280000d,0xd280000e,0x6f00e400,0x6f00e401,0x6f00e403,0xd2800000,0xd11703ff
+.inst 0x6f00e41f,0x910003e9,0x3d80013f,0x911703ff,0xd65f03c0
 .p2align 6",
         vg_seed_encrypt_blocks = sym super::seed::vg_seed_encrypt_blocks::vg_seed_encrypt_blocks,
     )
@@ -448,6 +455,8 @@ b 23f
 /// SEED ECB decryption (RFC 4269 §2.4, SP 800-38A §6.1) of `n` complete 16-byte blocks at `data`, in place, under the schedule written by `vg_seed_expand_key`: the encryption procedure with the round keys in reverse order. No padding is added or removed. For `n = 0`, no data is transformed.
 ///
 /// Contract: `VG.Spec.Seed.ecbDecryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data, including S-box inputs.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -733,7 +742,9 @@ b 23f
 .inst 0xa9044611,0xa9054611,0xa9064611,0xa9074611,0xa9084611,0xa9094611,0xa90a4611,0xa90b4611
 .inst 0xa90c4611,0xa90d4611,0xa90e4611,0xa90f4611,0xa9104611,0xa9114611,0xa9124611,0xa9134611
 .inst 0xa9144611,0xa9154611,0xa9164611,0xa9174611,0xa9184611,0xa9194611,0xa91a4611,0x9116c3ff
-.inst 0xd65f03c0
+.inst 0xd2800001,0xd2800002,0xd2800003,0xd2800006,0xd2800007,0xd2800008,0xd280000a,0xd280000b
+.inst 0xd280000c,0xd280000d,0xd280000e,0x6f00e400,0x6f00e401,0x6f00e403,0xd2800000,0xd11703ff
+.inst 0x6f00e41f,0x910003e9,0x3d80013f,0x911703ff,0xd65f03c0
 .p2align 6",
         vg_seed_decrypt_blocks = sym super::seed::vg_seed_decrypt_blocks::vg_seed_decrypt_blocks,
     )

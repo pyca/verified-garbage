@@ -508,8 +508,7 @@ def scrubRegF {api : Api} (r : Registration api target) (v : VecLevel) (ks : Lis
     have hr := hres
     rw [e] at hv hp hr ⊢
     have hrb' := hrb
-    rw [← withMode_ptrBits ((abi.withConsts r.consts).withTables api.sig r.tables) api.pubMode] at hrb' hp ⊢
-    have h := Verified.scrubM (f := .avx) (ScrubAbi.of r.consts api.sig r.tables api.pubMode) hv
+    have h := Verified.scrubM (f := .avx) (ScrubAbi.of r.consts api.sig r.tables) hv
       (SpSafe.of_all r.spSafe) hd (chunks_sum r.stack) hst (chunks_valid h8)
       (fun i hi => by simpa using Code.all_instrs hlv i hi) (fun _ => hmx) hrb' hp hr (tailOk_of _ _ _)
       (xs_of _ _) hxe (fun _ _ e => absurd e (by decide)) (gs_of _ _)

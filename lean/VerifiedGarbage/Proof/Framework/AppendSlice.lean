@@ -351,7 +351,7 @@ theorem Verified.withSlice {T : Target} (R : RegionModel T.isa)
       leakAgree leak (vals s₁) (A.mem s₁) (vals s₂) (A.mem s₂))
     (hsat : ∃ s, ((sig.withSlice nm e ln).contract A' pre' post' writeArgs stack leak').pre s) :
     Verified T c ((sig.withSlice nm e ln).contract A' pre' post' writeArgs stack leak') := by
-  obtain ⟨pb', args', argArea', reserved', wf', pub', mem', rd', wr', ret', sym', align', mode'⟩ := A'
+  obtain ⟨pb', args', argArea', reserved', wf', pub', mem', rd', wr', ret', sym', align'⟩ := A'
   dsimp only at hpb hrd hwr hmem' hret hpubA hres halign hargs' hwf harea hpre hpost hleak
   subst hpb halign
   have hl : ∀ s, (vals s).length = (sig.params.flatMap fun p => p.2.words A.ptrBits).length := hlen

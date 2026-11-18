@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Arm.Frame
 public import VerifiedGarbage.Proof.Framework.Arm.Call
+import VerifiedGarbage.Proof.Framework.Arm.CallF
 import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
@@ -49,22 +50,15 @@ theorem belowA_sub {sp : BitVec 32} {a b : Nat} (hab : a ≤ b) :
 /-- The bytes below a pushed stack pointer are below the stack pointer. -/
 theorem belowA_push {sp : BitVec 32} {k a : Nat} (h : k + a ≤ sp.toNat) :
     Region.Sub (belowA (sp - BitVec.ofNat 32 k) a) (belowA sp (k + a)) := by
-  intro x hx
-  have := addr_toNat' sp
-  have := addr_toNat' (sp - BitVec.ofNat 32 k)
-  have := sp.isLt
-  simp only [belowA, Region.Contains] at hx ⊢
-  bv_omega
+  rw [belowA, belowA, FrameStack.addr_sub' (Nat.le_trans (Nat.le_add_right k a) h), BitVec.sub_sub,
+    ← BitVec.ofNat_add]
+  exact Region.sub_prefix (Nat.le_add_left a k)
 
 /-- A frame's region is below the stack pointer. -/
 theorem frame_belowA {sp : BitVec 32} {k a : Nat} (h : k + a ≤ sp.toNat) :
     Region.Sub ⟨State.addr (sp - BitVec.ofNat 32 k), k⟩ (belowA sp (k + a)) := by
-  intro x hx
-  have := addr_toNat' sp
-  have := addr_toNat' (sp - BitVec.ofNat 32 k)
-  have := sp.isLt
-  simp only [belowA, Region.Contains] at hx ⊢
-  bv_omega
+  rw [FrameStack.addr_sub' (Nat.le_trans (Nat.le_add_right k a) h)]
+  exact belowA_sub (Nat.le_add_right k a)
 
 theorem storeWords_frame (m : Mem) (a : BitVec 32) (vs : List (BitVec 32)) (h : a.toNat + 4 * vs.length ≤ 2 ^ 32) :
     Frame [⟨State.addr a, 4 * vs.length⟩] m (storeWords m a vs) := by

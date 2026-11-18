@@ -26,10 +26,12 @@ x86-64 and AArch64 (`Impl/Ecdsa/Verify/AArch64.lean`):
 3. the masks of `r` and `s` in `[1, n-1]` into the flag, and
    `w = s^(n-2)`, in Montgomery form modulo `n`;
 4. `u = e w` and `v = r w` modulo `n`, out of Montgomery's form;
-5. `[u]G` by the signature's ladder (from the table of `u`'s bits), saved
+5. `[u]G` by the signature's ladder (from the table of `u`'s bits), or, for
+   a curve with a comb's tables (`verifyComb`), by its comb, saved
    to `U`, and `R` reset to `O`; then `[v]Q` by ECDH's ladder (from the
-   table of `v`'s bits) and `[u]G + [v]Q` by the complete addition, into
-   `R`;
+   table of `v`'s bits), or with the comb by ECDH's windows (`Cfg.winMul`,
+   `Impl/Ecdsa/X86/Window.lean`), and `[u]G + [v]Q` by the complete
+   addition, into `R`;
 6. `Z^(p-2)` by the signature's power, `x = X Z^(p-2)` out of Montgomery's
    form, and the masks of `Z ≠ 0` and `x R ≡ r R` modulo `n` into the
    flag, which is returned as 0 or 1.
@@ -160,10 +162,10 @@ def projectiveFinal : Prog isa :=
     (.seq (Mont.mulCall c.SP (c.sl XM) (c.sl K) (c.sl XM))
       (fprog c.SP (projectiveOps c.sl)))) (.block (projectiveChecks c))
 
-/-- P-256 compares projective coordinates directly (it reads `r` from `K`'s
-slot, which `vg_<curve>_mul`'s scalar replaces: so only for a curve without
-it, `Cfg.mul`); the other curves retain an affine conversion until the
-direct path has been benchmarked for them. -/
+/-- A 256-bit curve with `n < p ≤ 2n` and no `vg_<curve>_mul` (`Cfg.mul`: its
+scalar would replace `r`, which this reads from `K`'s slot) compares
+projective coordinates directly: P-256, secp256k1 and brainpoolP256r1. The
+other curves convert to affine coordinates. -/
 def tail : Prog isa :=
   if c.mul.isNone ∧ c.C.len = 32 ∧ c.C.n < c.C.p ∧ c.C.p ≤ 2 * c.C.n then projectiveFinal c
   else .seq c.pPow (final c)
@@ -194,19 +196,22 @@ def windowMulQ : Prog isa :=
   .seq (Naf.prep 3580 (c.sl V) 3520) <|
   .seq (Naf.window (nafQ c) c.SP) (Naf.finish (nafQ c) c.SP)
 
-/-- Fixed-base comb for `[u]G`, followed by the existing variable-base ladder. -/
+/-- Fixed-base comb for `[u]G`, followed by ECDH's windows for `[v]Q`, from
+the table of `v`'s bits: constant time, although `v` and `Q` are public. -/
 def pointsCombLadder : Prog isa :=
   .seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) <| .seq c.gMul <|
   .seq (.block (save c)) <| .seq (bits (c.sl V) (bitsAt c.n 0) (8 * c.n)) <|
-  .seq (ladder (Impl.Ecdh.X86.Cfg.ladderQ c) c.SP) (sum c)
+  .seq (c.winMul Impl.Ecdh.X86.PX Impl.Ecdh.X86.PY) (sum c)
 
 /-- Fixed-base comb and signed-window variable-base multiplication. -/
 def pointsWindow : Prog isa :=
   .seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) <| .seq c.gMul <|
   .seq (.block (save c)) <| .seq (windowMulQ c) (sum c)
 
-/-- Use signed windows for the 256-bit field; retain the ladder for other sizes. -/
-def pointsComb : Prog isa := if c.n = 4 then pointsWindow c else pointsCombLadder c
+/-- Use signed windows for P-256 (four words, and the comb with Jacobian
+additions: `a = -3`), and ECDH's windows for the other curves. -/
+def pointsComb : Prog isa :=
+  if c.n = 4 ∧ c.combJac = true then pointsWindow c else pointsCombLadder c
 
 /-- Everything after the checks of the key. -/
 def back : Prog isa :=

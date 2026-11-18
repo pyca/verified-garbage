@@ -1,7 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Poly1305.RISCV64.Scrub
 public import VerifiedGarbage.TCB.RISCV64.Target
-public import VerifiedGarbage.Proof.Poly1305.RISCV64.Shared
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.Poly1305.RISCV64.Lit
@@ -13,14 +13,8 @@ import VerifiedGarbage.Proof.Poly1305.RISCV64.Lit
 namespace VG.Artifacts.Poly1305.RISCV64
 
 def artifacts : List Artifact := [
-  Spec.Poly1305.initApi.artifact RISCV64.target {
-    code := Impl.Poly1305.RISCV64.init
-    verified := Proof.Poly1305.RISCV64.Shared.init },
-  Spec.Poly1305.updateApi.artifact RISCV64.target {
-    code := Impl.Poly1305.RISCV64.update
-    verified := Proof.Poly1305.RISCV64.Shared.update },
-  Spec.Poly1305.finalizeApi.artifact RISCV64.target {
-    code := Impl.Poly1305.RISCV64.finalize
-    verified := Proof.Poly1305.RISCV64.Shared.finalize }]
+  Spec.Poly1305.initApi.artifact RISCV64.target Proof.Poly1305.RISCV64.Scrub.initReg,
+  Spec.Poly1305.updateApi.artifact RISCV64.target Proof.Poly1305.RISCV64.Scrub.updateReg,
+  Spec.Poly1305.finalizeApi.artifact RISCV64.target Proof.Poly1305.RISCV64.Scrub.finalizeReg]
 
 end VG.Artifacts.Poly1305.RISCV64

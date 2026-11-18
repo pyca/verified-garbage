@@ -33,6 +33,10 @@ to and return from a public interface (AAPCS64 §6.1.1). N, Z and V are not
 observable by modelled instructions. FPCR and FPSR are not modelled (no
 modelled instruction reads or writes them), nor is memory below `sp`
 (never granted to a function).
+
+PSTATE.DIT is public (`abi.pub`): every contract assumes that two runs start
+with the same PSTATE.DIT. The Rust code sets it for an operation whatever
+data the operation is given (`src/dit.rs`), so it depends on nothing secret.
 -/
 
 @[expose] public section
@@ -131,7 +135,6 @@ def abi : Abi isa where
   wr s := s.wr
   ret s := s.gpr .x0
   sym := some fun s name => s.syms name
-  mode s := if s.dit then 1 else 0
 
 /-- Reducible, as an `abbrev` would be, but not inlined: an `abbrev` is compiled into
 every module that names it, which then builds a target of its own, so the emitter

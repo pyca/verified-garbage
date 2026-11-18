@@ -277,6 +277,8 @@ b 24f
 ///
 /// Contract: `VG.Spec.Sm4.ecbEncryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data, including S-box inputs.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.
@@ -469,7 +471,11 @@ b 24f
 .inst 0xa91f4611,0x913003f0,0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611
 .inst 0xa9064611,0xa9074611,0xa9084611,0xa9094611,0xa90a4611,0xa90b4611,0x913303ff
 21:
-.inst 0xd65f03c0
+.inst 0xd2800006,0xd2800007,0xd2800008,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0x6f00e400
+.inst 0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414
+.inst 0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c
+.inst 0x6f00e41d,0x6f00e41e,0xd13303ff,0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f
+.inst 0x3d800d3f,0x3d80113f,0x3d832d3f,0x913303ff,0xd65f03c0
 .p2align 6",
         vg_sm4_ecb = sym super::sm4::vg_sm4_ecb::vg_sm4_ecb,
     )
@@ -478,6 +484,8 @@ b 24f
 /// SM4 ECB decryption (draft-ribose-cfrg-sm4-10 §7.2, SP 800-38A §6.1) of `n` complete 16-byte blocks at `data`, in place, under the schedule written by `vg_sm4_expand_key`: the encryption procedure with the round keys in reverse order. No padding is added or removed. For `n = 0`, no data is transformed.
 ///
 /// Contract: `VG.Spec.Sm4.ecbDecryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data, including S-box inputs.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -671,7 +679,11 @@ b 24f
 .inst 0xa91f4611,0x913003f0,0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611
 .inst 0xa9064611,0xa9074611,0xa9084611,0xa9094611,0xa90a4611,0xa90b4611,0x913303ff
 21:
-.inst 0xd65f03c0
+.inst 0xd2800006,0xd2800007,0xd2800008,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0x6f00e400
+.inst 0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414
+.inst 0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c
+.inst 0x6f00e41d,0x6f00e41e,0xd13303ff,0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f
+.inst 0x3d800d3f,0x3d80113f,0x3d832d3f,0x913303ff,0xd65f03c0
 .p2align 6",
         vg_sm4_ecb = sym super::sm4::vg_sm4_ecb::vg_sm4_ecb,
     )

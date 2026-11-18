@@ -311,6 +311,11 @@ inductive Instr
   | mtvsrd (d : VReg) (n : Reg)
   /-- `mfvsrd RA, XS`, XS = vector register + 32: the high doubleword. -/
   | mfvsrd (d : Reg) (n : VReg)
+  /-- `dcbz RA, RB` (Book II, "Data Cache Block set to Zero"): every
+  byte of the block containing `EA = (RA) + (RB)` set to zero, the block
+  being `dcbzBytes` bytes aligned to its size. RA must not be r0, as for
+  `addrX`; the whole block must be in one writable region. See `exec`. -/
+  | dcbz (a b : Reg)
   deriving DecidableEq, Repr
 
 /-- Branch conditions: a comparison with zero into `CR0`, then the branch. -/
@@ -383,6 +388,18 @@ in architectural doubleword 0 (the HIGH half) and MEM(EA+8,8) in doubleword
 1. `stxvd2x` is the inverse (Book I §7.6.2.1.2, load/store doubleword*2 indexed).
 This is not a byte reversal, nor a plain 128-bit little-endian load. -/
 def swapDwords (x : BitVec 128) : BitVec 128 := vdword x 1 ++ vdword x 0
+
+/-- The size of the block `dcbz` zeroes. Power ISA (v2.07, the POWER8
+baseline, and later), Book II, "Data Cache Block set to Zero" (`dcbz`): "All
+bytes in the block containing the byte addressed by EA are set to zero",
+where the block is a data cache block, whose size is
+implementation-dependent and which the processor reports to the program
+(Linux's `AT_DCACHEBSIZE`, the device tree's `d-cache-block-size`). It is
+128 bytes on the processors `powerpc64le-unknown-linux-gnu` runs on, which
+requires POWER8 or later: POWER8, POWER9 and POWER10 all have 128-byte data
+cache blocks. On a processor whose block were smaller, `dcbz` would zero
+less than this model says. -/
+def dcbzBytes : Nat := 128
 
 /-- Semantics, transcribing the Power ISA 3.1C, Book I:
 * §3.3.9 "Add" (`RT ← (RA) + (RB)`), "Subtract From" (`RT ← ¬(RA) + (RB)
@@ -467,6 +484,10 @@ def exec : Instr → State → Option State
     some { s.writeV d (s.gpr n ++ s.undef (s.unknowns 0) (s.gpr n) (s.vpr d)) with
       unknowns := fun i => s.unknowns (i + 1) }
   | .mfvsrd d n, s => some (s.write d (vdword (s.vpr n) 0))
+  -- The block's address: `EA` with its low `log₂ dcbzBytes` bits cleared.
+  | .dcbz a b, s =>
+    (addrX s a b).bind fun ea =>
+      s.store (ea &&& ~~~BitVec.ofNat 64 (dcbzBytes - 1)) dcbzBytes 0
   | .add d n m, s => some (s.write d (s.gpr n + s.gpr m))
   | .sub d n m, s => some (s.write d (s.gpr n - s.gpr m))
   | .mul d n m, s => some (s.write d (s.gpr n * s.gpr m))
@@ -526,7 +547,7 @@ def exec : Instr → State → Option State
 
 def addrs : Instr → State → List Addr
   | .lxvd2xTbl _ _ b .., s => [s.gpr b]
-  | .lxvd2x _ a b, s | .stxvd2x _ a b, s => [s.gpr a + s.gpr b]
+  | .lxvd2x _ a b, s | .stxvd2x _ a b, s | .dcbz a b, s => [s.gpr a + s.gpr b]
   | .load _ _ n off, s => [s.gpr n + BitVec.ofNat 64 off]
   | .store _ _ n off, s => [s.gpr n + BitVec.ofNat 64 off]
   | .lbz _ n off, s => [s.gpr n + BitVec.ofNat 64 off]

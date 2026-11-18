@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.EcKey.AArch64.BrainpoolP256r1.Verified
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.EcKey.AArch64.Scrub
 public import Mathlib.Tactic.ClearExcept
 public import VerifiedGarbage.Proof.EcKey.AArch64.BrainpoolP256r1.Lit
 public import VerifiedGarbage.Proof.Framework.Contract
@@ -37,12 +38,12 @@ namespace VG.Artifacts.EcBrainpoolP256r1.AArch64
 open VG.Proof.BrainpoolP256r1.AArch64 (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.EcKey.BrainpoolP256r1.publicKeyApi.artifact AArch64.target {
+  Spec.EcKey.BrainpoolP256r1.publicKeyApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
     code := Impl.EcKey.AArch64.publicKeyBrainpoolP256r1
-    verified := Proof.EcKey.AArch64.BrainpoolP256r1.pk_verified hasLaw.law hasLaw.inv },
-  Spec.EcKey.BrainpoolP256r1.inst.compressPublicKeyApi.artifact AArch64.target {
+    verified := Proof.EcKey.AArch64.BrainpoolP256r1.pk_verified hasLaw.law hasLaw.inv } (Proof.EcKey.AArch64.Scrub.publicKeyOk _)),
+  Spec.EcKey.BrainpoolP256r1.inst.compressPublicKeyApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
     code := Proof.EcKey.Compressed.AArch64.BrainpoolP256r1.code
-    verified := Proof.EcKey.Compressed.AArch64.BrainpoolP256r1.verified hasLaw.inv },
+    verified := Proof.EcKey.Compressed.AArch64.BrainpoolP256r1.verified hasLaw.inv } (Proof.EcKey.AArch64.Scrub.compressOk _)),
   Spec.EcKey.BrainpoolP256r1.inst.decompressPublicKeyApi.artifact AArch64.target {
     code := Proof.EcKey.Compressed.AArch64.Residue.cleared [.x16, .x17] []
       Proof.EcKey.Compressed.AArch64.BrainpoolP256r1Decompress.code

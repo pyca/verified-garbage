@@ -46,7 +46,7 @@ container = { image = "ghcr.io/pyca/verified-garbage-runner:armv7-cross" }
 # names for the sparse checkout (`arch` is the `target_arch`).
 [[rust]]
 name = "Linux, PPC64LE"
-os = "ubuntu-24.04-ppc64le"
+os = "ubuntu-24.04-ppc64le-p10"
 arch = "powerpc64"
 asm = "powerpc64le"
 rust = "stable"

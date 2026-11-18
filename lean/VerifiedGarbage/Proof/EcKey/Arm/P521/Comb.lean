@@ -136,6 +136,7 @@ theorem combPkWith_verified (hC : Weierstrass.Law Spec.P521.curve) (u : Bool)
     sig_post [combPkSpec,Spec.EcKey.P521.inst,Spec.EcKey.Instance.publicKeyContract,
       Spec.EcKey.Instance.publicKeySig,Spec.P521.curve,Spec.EcKey.scratchWords,abi,argRegs,reduceClassify,
       Loc.val,State.addr,Abi.withConsts]
+    dsimp only [combPkLocal] at post
     have pp := post_of (u := u) post
     simp only [pkArm,pk,Spec.P521.curve,State.addr] at pp
     revert pp

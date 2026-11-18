@@ -10,6 +10,8 @@ pub const VG_SM4_OFB_SM4_FEATURES: verified_garbage_cpu::Features = verified_gar
 ///
 /// Contract: `VG.Spec.Sm4.ofbContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.
@@ -37,7 +39,8 @@ b 21f
 .inst 0xf94000a6,0xf9000266,0xf94004a6,0xf9000666,0xf94008b3,0xf9400cb4,0xf94010b5,0xf94014b6
 .inst 0xf94018b7,0xf9401cb8,0xf94020b9,0xf94024ba,0xf94028bb,0xf9402cbc,0xd2800011,0x910003f0
 .inst 0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611,0x9101c3ff
-.inst 0xd65f03c0
+.inst 0xd2800006,0xd2800007,0x6f00e400,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414
+.inst 0x6f00e415,0x6f00e416,0x6f00e417,0xd65f03c0
 .p2align 6",
     )
 }
@@ -45,6 +48,8 @@ b 21f
 /// SM4-OFB encryption or decryption (NIST SP 800-38A §6.4, GB/T 32907-2016 §7.1) of whole blocks, in place: XORs the `n` 16-byte blocks at `data` with the output blocks `Oⱼ = CIPH_K(Oⱼ₋₁)`, where `O₀` is the block at `*iv`, and replaces `*iv` with `Oₙ` (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is SM4 under the schedule written by `vg_sm4_expand_key`.
 ///
 /// Contract: `VG.Spec.Sm4.ofbContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -211,7 +216,10 @@ b 22f
 .inst 0xa9134611,0xa9144611,0xa9154611,0xa9164611,0xa9174611,0xa9184611,0xa9194611,0xa91a4611
 .inst 0xa91b4611,0xa91c4611,0xa91d4611,0xa91e4611,0xa91f4611,0x913003f0,0xa9004611,0xa9014611
 .inst 0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611,0xa9074611,0xa9084611,0xa9094611
-.inst 0xa90a4611,0xa90b4611,0x913303ff,0xd65f03c0
+.inst 0xa90a4611,0xa90b4611,0x913303ff,0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a
+.inst 0xd280000b,0xd280000c,0xd280000d,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e410
+.inst 0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418
+.inst 0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xd65f03c0
 .p2align 6",
     )
 }
@@ -222,6 +230,8 @@ pub const VG_SM4_OFB_FINAL_SM4_FEATURES: verified_garbage_cpu::Features = verifi
 /// SM4-OFB encryption or decryption (NIST SP 800-38A §6.4, GB/T 32907-2016 §7.1) of the last piece of a message, of any length, in place: XORs the `len` bytes at `data` with the output blocks `Oⱼ = CIPH_K(Oⱼ₋₁)`, where `O₀` is the block at `*iv`, a partial last block `Pₙ*` of `u` bytes with `MSB_u(Oₙ)`, and replaces `*iv` with the last output block used, `Oₙ` (leaving it unchanged if `len = 0`): so that a further call continues the message if `len` is a multiple of 16, and otherwise keystream, to be wiped, after which the message must end. `CIPH_K` is SM4 encryption under the schedule written by `vg_sm4_expand_key`.
 ///
 /// Contract: `VG.Spec.Sm4.ofbFinalContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the chaining value or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -259,7 +269,8 @@ b 21f
 .inst 0xf94000a6,0xf9000266,0xf94004a6,0xf9000666,0xf94008b3,0xf9400cb4,0xf94010b5,0xf94014b6
 .inst 0xf94018b7,0xf9401cb8,0xf94020b9,0xf94024ba,0xf94028bb,0xf9402cbc,0xd2800011,0x910003f0
 .inst 0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611,0x9101c3ff
-.inst 0xd65f03c0
+.inst 0xd2800006,0xd2800007,0x6f00e400,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414
+.inst 0x6f00e415,0x6f00e416,0x6f00e417,0xd65f03c0
 .p2align 6",
     )
 }
@@ -267,6 +278,8 @@ b 21f
 /// SM4-OFB encryption or decryption (NIST SP 800-38A §6.4, GB/T 32907-2016 §7.1) of the last piece of a message, of any length, in place: XORs the `len` bytes at `data` with the output blocks `Oⱼ = CIPH_K(Oⱼ₋₁)`, where `O₀` is the block at `*iv`, a partial last block `Pₙ*` of `u` bytes with `MSB_u(Oₙ)`, and replaces `*iv` with the last output block used, `Oₙ` (leaving it unchanged if `len = 0`): so that a further call continues the message if `len` is a multiple of 16, and otherwise keystream, to be wiped, after which the message must end. `CIPH_K` is SM4 encryption under the schedule written by `vg_sm4_expand_key`.
 ///
 /// Contract: `VG.Spec.Sm4.ofbFinalContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the chaining value or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -442,7 +455,10 @@ b 22f
 .inst 0xa9134611,0xa9144611,0xa9154611,0xa9164611,0xa9174611,0xa9184611,0xa9194611,0xa91a4611
 .inst 0xa91b4611,0xa91c4611,0xa91d4611,0xa91e4611,0xa91f4611,0x913003f0,0xa9004611,0xa9014611
 .inst 0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611,0xa9074611,0xa9084611,0xa9094611
-.inst 0xa90a4611,0xa90b4611,0x913303ff,0xd65f03c0
+.inst 0xa90a4611,0xa90b4611,0x913303ff,0xd2800006,0xd2800007,0xd2800009,0xd280000a,0xd280000b
+.inst 0xd280000c,0xd280000d,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e410,0x6f00e411
+.inst 0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419
+.inst 0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xd65f03c0
 .p2align 6",
     )
 }

@@ -17,7 +17,4 @@ def secp256k1 : Cfg where
   SP := Impl.Weierstrass.Mont.secp256k1p
   SN := Impl.Weierstrass.Mont.secp256k1n
 
-/-- `vg_ecdsa_secp256k1_sign`. -/
-def signSecp256k1 : Prog isa := secp256k1.sign
-
 end VG.Impl.Ecdsa.X86

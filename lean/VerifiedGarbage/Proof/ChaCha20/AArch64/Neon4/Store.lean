@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Rounds
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 
@@ -38,9 +39,9 @@ theorem xorRowTo_ok (s : State) (d : Reg) (r j : Fin 4)
           s.v (vreg (rowWord r j))) ∧ StoreSame s s' := by
   have ha : (64 * j.val + 16 * r.val) % 16 = 0 ∧ 64 * j.val + 16 * r.val < 4096 * 16 := by omega_using []
   apply WP.of_runBlock
-  simp only [xorRowTo, runBlock_cons, runBlock_nil, exec, addr, ha, and_self, ite_true, State.load, hin,
+  simp only [xorRowTo, runBlock_cons, runBlock_nil, reduceExec, addr, ha, and_self, ite_true, State.load, hin,
     Option.bind_some, Option.map_some, isa, runStep_some, RegUpd.gpr_setV, RegUpd.v_setV,
-    vreg_ne, ite_false, VOp.eval, State.store,
+    vreg_ne, ite_false, reduceVOpEval, State.store,
     RegUpd.wr_setV, hout, Option.some.injEq, exists_eq_left']
   refine ⟨rfl, rfl, ?_, rfl, rfl, rfl⟩
   intro k; simp only [RegUpd.v_setV, vreg_ne, ite_false]

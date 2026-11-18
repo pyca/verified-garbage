@@ -3,41 +3,28 @@ module
 -- separate module: P-224's verification is its only importer, but it builds on both callees' proofs
 -- (the windows' and the comb's), which then build in parallel with the rest of its imports
 
+public import VerifiedGarbage.Proof.Ecdsa.RISCV64.JointCombAll
+public import VerifiedGarbage.Proof.Ecdh.RISCV64.P224.Exchange
 public import VerifiedGarbage.Impl.Ecdsa.RISCV64.VerifyComb
 public import VerifiedGarbage.Proof.Ecdsa.RISCV64.P224.Joint
 public import VerifiedGarbage.Proof.Ecdsa.RISCV64.P224.Window
 public import VerifiedGarbage.Proof.Ecdsa.RISCV64.Comb.Tail
 public import VerifiedGarbage.Proof.Ecdsa.RISCV64.P224.CombVerified
 public import VerifiedGarbage.Proof.Ecdh.RISCV64.P224.Tail
-import VerifiedGarbage.Proof.Ecdsa.RISCV64.P224.MulVerified
-import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Covers
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.P224.Point
-import VerifiedGarbage.Proof.Weierstrass.RISCV64.Copy
-import VerifiedGarbage.Proof.Ecdh.RISCV64.Masks
-import VerifiedGarbage.Proof.Ecdh.RISCV64.Bytes
 import VerifiedGarbage.Proof.Framework.RISCV64.Inline
 import VerifiedGarbage.Proof.Framework.RISCV64.Syms
 import VerifiedGarbage.Proof.Ecdsa.RISCV64.P224.CombLit
-import VerifiedGarbage.Proof.Ecdsa.RISCV64.P224.MulLit
-import VerifiedGarbage.Proof.Ecdh.RISCV64.P224.Check
 
 /-!
 # ECDSA verification over P-224 on RISC-V: `[u]G` by the comb and `[v]Q` by windows
 
 `VerifyComb.Cfg.joint p224` leaves in `R` a representative of `[u]G + [v]Q`
-(`jointComb_ok`), as the joint ladder's `JointJ.jointJ_ok` does: `[v]Q` by the
-call of `vg_p224_mul` (`Window.mul_rv`), `O` instead if `v = 0` (`zeroR_ok`),
-moved to `P = (GX : CPX : CPY)`; `[u]G` by the call of `vg_p224_mul_g`
-(`Comb.mulG_rv`), with the comb's table, which the first call leaves alone
-(`wp_tab`: code without frames changes memory only in its writable regions),
-and `O` instead if `u = 0`; then their sum by the complete addition
-(`Joint.addPt_ok`). The calls' contracts give their results for scalars in
-`[1, n - 1]` and keep the rest of the working space but `b`'s slot, which
-`zeroR` sets again.
+(`jointComb_ok`). The proof is the one of every curve with a comb, `JointCombAll.Kit.jointComb_ok`
+(`Proof/Ecdsa/RISCV64/JointCombAll.lean`), from what `jkit` says of this one: the call of the
+comb's multiplication of `G` (`combCall_ok`, by `Comb.mulG_rv`), with the comb's table, which code
+without frames leaves alone (`wp_tab`), and the complete addition (`Joint.addPt_ok`).
 -/
-
 
 @[expose] public section
 
@@ -51,6 +38,7 @@ open VG.Proof.Ecdsa.RISCV64.P224 (W unit mulRVc MC)
 open VG.Proof.Ecdsa.RISCV64.P224.Joint (PtOk addPt_ok JPre jSl addW mul_zero')
 open VG.Proof.Ecdh.RISCV64.P224 (TailConsts sv_unch sl_eq FL mulKW unch_of_mulKeeps coord_sv point_eq dq
   rep_of_represents wsCallR_ok)
+
 open VG.Proof.Ecdsa.RISCV64.P224.Comb (TabAt)
 open VG.Proof.Ecdsa.RISCV64.P224.Window (copyPt_ok)
 open VG.Proof.X25519.RISCV64 (Rest)
@@ -64,151 +52,9 @@ theorem wp_tab {cd : Prog isa} (hn : cd.noFrames = true) {s : State} {base : Add
   obtain ⟨r, -, -, f⟩ := Exec.regions he hn
   exact ⟨t, s', he, hq, hT.of_frame (Exec.syms he) r f (by rw [hwr]; simpa using hT.disj)⟩
 
-/-- `b` in Montgomery's form, as `zeroR` sets it. -/
-theorem bp_val : Cfg.mont p224 p224.C.b % 2 ^ (64 * 4) = W.b * 2 ^ 256 % W.p := by decide
-
 /-- What `zeroR` writes. -/
 abbrev zW : List (Nat × Nat) :=
   [(p224.sl RX, 32), (p224.sl RY, 32), (p224.sl RZ, 32), (p224.sl BP, 32)]
-
-/-- The slots of `R`, and those of `O`'s coordinates. -/
-theorem slR : ∀ i ∈ [RX, RY, RZ, ZERO, ONEP], p224.sl i % 8 = 0 ∧ p224.sl i + 8 * 4 ≤ 4096 := by decide
-
-/-- One coordinate of `R`, at slot `o`, set to the one at slot `b` if the mask
-`a7` is all ones (`z`), as it is if it is zero. -/
-theorem selR_ok {s : State} {base : Addr} (hw : WsReg s base) (z : Bool)
-    (hc : s.gpr .a7 = (if z then BitVec.allOnes 64 else 0)) {o b : Nat}
-    (ho : o ∈ [RX, RY, RZ]) (hb : b ∈ [ZERO, ONEP]) :
-    WP isa (.block (sel 4 (p224.sl o) (p224.sl o) (p224.sl b))) s fun s' =>
-      sv base s' o = (if z then sv base s b else sv base s o) ∧ Rest [.t0, .t1] s s' ∧
-      Outside base (p224.sl o) (8 * 4) s.mem s'.mem := by
-  obtain h1 := slR o (by simp at ho ⊢; omega_using [ho])
-  obtain h2 := slR b (by simp at hb ⊢; omega_using [hb])
-  obtain hsep : p224.sl o ≤ p224.sl b ∨ p224.sl b + 8 * 4 ≤ p224.sl o := by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at ho hb
-    rcases ho with rfl | rfl | rfl <;> rcases hb with rfl | rfl <;> decide
-  exact sel_ok z 4 hw hc h1.1 h1.1 h2.1 h1.2 h1.2 h2.2 (.inl (Nat.le_refl _)) hsep
-
-/-- `R = O` if the number at slot `a` is zero, else `R` as it is, and `b` to `BP`. -/
-theorem zeroR_ok (hL : Law W) {s : State} {base : Addr} (hw : WsReg s base) (hz : sv base s ZERO = 0)
-    (ho : sv base s ONEP = 1 * 2 ^ 256 % W.p) {a : Nat} (ha : a = UU ∨ a = VV) {P : Point W}
-    (hR : sv base s a ≠ 0 → PtOk base s (p224.pt RX RY RZ) P) :
-    WP isa (.block (VerifyComb.Cfg.zeroR p224 a)) s fun s' =>
-      Rest [.t0, .t1, .t3, .t4, .a7] s s' ∧ Unch base zW s.mem s'.mem ∧
-      PtOk base s' (p224.pt RX RY RZ) (if sv base s a = 0 then .infinity else P) ∧
-      sv base s' BP = W.b * 2 ^ 256 % W.p := by
-  obtain hp0 : 0 < W.p := by decide
-  obtain hsa : p224.sl a % 8 = 0 ∧ p224.sl a + 8 * 4 ≤ 4096 := by rcases ha with rfl | rfl <;> decide
-  rw [VerifyComb.Cfg.zeroR, List.append_assoc]
-  refine WP.block_append (WP.mono (zeroMask_ok (n := 4) hw hsa.1 hsa.2) fun s₁ ⟨r₁, m₁, k₁⟩ => ?_)
-  obtain hw₁ := hw.of_rest r₁
-  generalize hzb : decide (sv base s a = 0) = z
-  obtain hc₁ : s₁.gpr .a7 = (if z then BitVec.allOnes 64 else 0) := by
-    rw [k₁, ← hzb]
-  obtain e₁ : ∀ i ∈ [RX, RY, RZ, ZERO, ONEP], sv base s₁ i = sv base s i := fun i _ => by
-    show wordsVal s₁.mem _ _ _ = wordsVal s.mem _ _ _; rw [m₁]
-  rw [show VerifyComb.Cfg.oPt p224 = p224.pt ZERO ONEP ZERO from rfl, selPt, List.append_assoc,
-    List.append_assoc]
-  refine WP.block_append (WP.mono (selR_ok hw₁ z hc₁ (o := RX) (b := ZERO) (by simp) (by simp))
-    fun s₂ ⟨x₂, r₂, O₂⟩ => ?_)
-  obtain hw₂ := hw₁.of_rest r₂
-  obtain hc₂ : s₂.gpr .a7 = _ := (r₂.gpr .a7 (by decide)).trans hc₁
-  refine WP.block_append (WP.mono (selR_ok hw₂ z hc₂ (o := RY) (b := ONEP) (by simp) (by simp))
-    fun s₃ ⟨y₃, r₃, O₃⟩ => ?_)
-  obtain hw₃ := hw₂.of_rest r₃
-  obtain hc₃ : s₃.gpr .a7 = _ := (r₃.gpr .a7 (by decide)).trans hc₂
-  refine WP.block_append (WP.mono (selR_ok hw₃ z hc₃ (o := RZ) (b := ZERO) (by simp) (by simp))
-    fun s₄ ⟨z₄, r₄, O₄⟩ => ?_)
-  obtain hw₄ := hw₃.of_rest r₄
-  refine WP.mono (setConst_ok 4 hw₄ (o := p224.sl BP) (x := Cfg.mont p224 p224.C.b) (by decide) (by decide))
-    fun s₅ ⟨r₅, O₅, b₅⟩ => ⟨?_, ?_, ?_, by rw [← bp_val]; exact b₅⟩
-  · exact (r₁.mono (ws' := [.t0, .t1, .t3, .t4, .a7]) (by decide)).trans
-      ((r₂.mono (by decide)).trans ((r₃.mono (by decide)).trans ((r₄.mono (by decide)).trans (r₅.mono (by decide)))))
-  · rw [← m₁]
-    exact (((O₂.unch.trans O₃.unch).trans O₄.unch).trans O₅.unch).mono (by decide)
-  · -- Each coordinate, through the later steps.
-    obtain U₂₅ := ((O₃.unch.trans O₄.unch).trans O₅.unch)
-    obtain U₃₅ := (O₄.unch.trans O₅.unch)
-    obtain fx : sv base s₅ RX = sv base s₂ RX := sv_unch U₂₅ RX (by decide)
-    obtain fy : sv base s₅ RY = sv base s₃ RY := sv_unch U₃₅ RY (by decide)
-    obtain fz : sv base s₅ RZ = sv base s₄ RZ := sv_unch O₅.unch RZ (by decide)
-    obtain gy : sv base s₂ RY = sv base s₁ RY := sv_unch O₂.unch RY (by decide)
-    obtain gz : sv base s₃ RZ = sv base s₁ RZ := sv_unch (O₂.unch.trans O₃.unch) RZ (by decide)
-    obtain g0 : sv base s₂ ZERO = sv base s₁ ZERO := sv_unch O₂.unch ZERO (by decide)
-    obtain g1 : sv base s₂ ONEP = sv base s₁ ONEP := sv_unch O₂.unch ONEP (by decide)
-    obtain g0' : sv base s₃ ZERO = sv base s₁ ZERO := sv_unch (O₂.unch.trans O₃.unch) ZERO (by decide)
-    obtain ex : sv base s₅ RX = if z then 0 else sv base s RX := by
-      rw [fx, x₂, e₁ ZERO (by simp), e₁ RX (by simp), hz]
-    obtain ey : sv base s₅ RY = if z then 1 * 2 ^ 256 % W.p else sv base s RY := by
-      rw [fy, y₃, g1, gy, e₁ ONEP (by simp), e₁ RY (by simp), ho]
-    obtain ez : sv base s₅ RZ = if z then 0 else sv base s RZ := by
-      rw [fz, z₄, g0', gz, e₁ ZERO (by simp), e₁ RZ (by simp), hz]
-    by_cases h0 : sv base s a = 0
-    · rw [ite_eq_left h0]
-      obtain hz' : z = true := by rw [← hzb]; exact decide_eq_true h0
-      rw [hz'] at ex ey ez
-      simp only [↓reduceIte] at ex ey ez
-      refine ⟨?_, by show sv base s₅ RX < W.p; rw [ex]; exact hp0,
-        by show sv base s₅ RY < W.p; rw [ey]; exact Nat.mod_lt _ hp0,
-        by show sv base s₅ RZ < W.p; rw [ez]; exact hp0⟩
-      show Rep W (tmv W 4 base s₅ (p224.sl RX)) (tmv W 4 base s₅ (p224.sl RY)) (tmv W 4 base s₅ (p224.sl RZ)) _
-      obtain t0 : tmv W 4 base s₅ (p224.sl RX) = 0 := by simp only [tmv]; rw [show wordsVal _ _ _ _ = 0 from ex]; exact toM_zero _ _
-      obtain t1 : tmv W 4 base s₅ (p224.sl RY) = 1 := by
-        simp only [tmv]; rw [show wordsVal _ _ _ _ = 1 * 2 ^ 256 % W.p from ey]; exact toM_one unit
-      obtain t2 : tmv W 4 base s₅ (p224.sl RZ) = 0 := by simp only [tmv]; rw [show wordsVal _ _ _ _ = 0 from ez]; exact toM_zero _ _
-      rw [t0, t1, t2]
-      exact rep_infinity' hL
-    · rw [ite_eq_right h0]
-      obtain hz' : z = false := by rw [← hzb]; exact decide_eq_false h0
-      rw [hz'] at ex ey ez
-      simp only [Bool.false_eq_true, ↓reduceIte] at ex ey ez
-      exact (hR h0).of_eq ex ey ez
-
-/-! ## The calls -/
-
-/-- The result of a call, as the contracts give it, in `R`'s slots. -/
-theorem ptOk_of_result (hL : Law W) {base : Addr} {m : Mem} {s' : State} {k : Nat} {P : Point W}
-    (hR : MC.ResultInRange k P base m s'.mem) (h1 : 1 ≤ k) (hn : k < W.n) :
-    PtOk base s' (p224.pt RX RY RZ) (mul k P) := by
-  obtain ⟨⟨bx, by', bz⟩, hrep⟩ := hR.1 h1 hn
-  simp only [Impl.Weierstrass.Point.Curve.pointAt] at bx by' bz hrep
-  obtain c0 : MC.toPoint.coordAt s'.mem base MC.pAt = sv base s' RX := coord_sv _ _ RX
-  obtain c1 : MC.toPoint.coordAt s'.mem base (MC.pAt + Impl.Weierstrass.Point.elemBytes MC.toPoint.k) =
-    sv base s' RY := coord_sv _ _ RY
-  obtain c2 : MC.toPoint.coordAt s'.mem base (MC.pAt + 2 * Impl.Weierstrass.Point.elemBytes MC.toPoint.k) =
-    sv base s' RZ := coord_sv _ _ RZ
-  rw [c0, c1, c2] at hrep
-  rw [c0] at bx; rw [c1] at by'; rw [c2] at bz
-  rw [dq hL, dq hL, dq hL] at hrep
-  exact ⟨rep_of_represents hrep, bx, by', bz⟩
-
-/-- `R = [k]Q` by the call of `vg_p224_mul`, for `k` at `K` and `Q` in `R`'s
-first two slots. -/
-theorem mulCall_ok (hL : Law W) {s : State} {base : Addr} (hw : WsReg s base) (h3 : s.gpr .s3 = base)
-    (hc : TailConsts base s) (hx : sv base s RX < W.p) (hy : sv base s RY < W.p) {P : Point W}
-    (hP : Point.affine (toM W.p (2 ^ 256) (sv base s RX)) (toM W.p (2 ^ 256) (sv base s RY)) = P)
-    (hon : onCurve W P = true) :
-    WP isa (Cfg.wsCall "vg_p224_mul" mulP224) s fun s' => Kp s s' ∧
-      MC.ResultInRange (sv base s K) P base s.mem s'.mem := by
-  refine wsCallR_ok Impl.Ecdsa.RISCV64.mulP224_noFrames (VG.Proof.Ecdsa.RISCV64.P224.Window.mul_rv hL) hw h3
-    (fun t r w a m => ?_) fun s₂' s₂ K₂ mm₂ t a₂ m₂ hp₂ => ⟨K₂, ?_⟩
-  · refine ⟨r, by rw [w, a], by rw [a]; exact hw.nowrap, by rw [a]; exact hw.al, ?_, ?_⟩
-    · rw [a, m]
-      exact ⟨(coord_sv _ _ MP).trans hc.mp, (coord_sv _ _ ZERO).trans hc.zero,
-        (coord_sv _ _ ONEP).trans hc.onep, (coord_sv _ _ AP).trans hc.ap, (coord_sv _ _ B3P).trans hc.b3p⟩
-    · rw [a, m]
-      refine ⟨?_, ?_, ?_⟩
-      · show MC.toPoint.coordAt s.mem base (p224.sl RX) < W.p
-        rw [coord_sv _ _ RX]; exact hx
-      · show MC.toPoint.coordAt s.mem base (p224.sl RY) < W.p
-        rw [coord_sv _ _ RY]; exact hy
-      rw [point_eq hL]; exact hP ▸ hon
-  · have := hp₂
-    simp only [mulRVc, State.withRegions_mem] at this
-    rw [a₂, m₂, ← mm₂] at this
-    obtain hk : MC.scalar base s.mem = sv base s K := coord_sv _ _ K
-    rw [hk, point_eq hL] at this
-    exact hP ▸ this
 
 /-- `R = [k]G` by the call of `vg_p224_mul_g`, for `k` at `K`, with the
 table its readable region. -/
@@ -259,25 +105,32 @@ theorem combCall_ok (hL : Law W) {s : State} {base : Addr} (hw : WsReg s base) (
     rw [u₄.mem]
     exact this
 
-/-! ## `[u]G + [v]Q` -/
-
 /-- What `joint` writes. -/
 abbrev combW : List (Nat × Nat) :=
   [(p224.sl K, 32), (p224.sl RX, 32), (p224.sl RY, 32)] ++ mulKW ++ zW ++
     [(p224.sl GX, 32), (p224.sl CPX, 32), (p224.sl CPY, 32), (p224.sl K, 32)] ++ mulKW ++ zW ++
     addW (p224.pt TX TY TZ) ++ [(p224.sl RX, 32), (p224.sl RY, 32), (p224.sl RZ, 32)]
 
-theorem wsCall_noFrames {f : String} {b : Prog isa} (h : b.noFrames = true) : (Cfg.wsCall f b).noFrames = true := by
-  simp only [Cfg.wsCall, Code.noFrames, h, Bool.and_self]
+theorem wsCall_noFrames {f : String} {b : Prog isa} (h : b.noFrames = true) : (Cfg.wsCall f b).noFrames = true :=
+  JointCombAll.wsCall_noFrames h
 
-/-- A copy of a number between slots below the flag's. -/
-theorem copySl_ok {s : State} {base : Addr} (hw : WsReg s base) {o a : Nat} (ho : o < 44) (ha : a < 44)
-    (hsep : p224.sl o ≤ p224.sl a ∨ p224.sl a + 8 * 4 ≤ p224.sl o) :
-    WP isa (.block (copy 4 (p224.sl o) (p224.sl a))) s fun s' =>
-      sv base s' o = sv base s a ∧ Rest [.t0] s s' ∧ Unch base [(p224.sl o, 32)] s.mem s'.mem := by
-  obtain h1 : p224.sl o % 8 = 0 ∧ p224.sl o + 8 * 4 ≤ 4096 := by rw [sl_eq]; omega_using [ho]
-  obtain h2 : p224.sl a % 8 = 0 ∧ p224.sl a + 8 * 4 ≤ 4096 := by rw [sl_eq]; omega_using [ha]
-  exact WP.mono (copy_ok 4 hw h1.1 h2.1 h1.2 h2.2 hsep) fun s' ⟨e, r, O⟩ => ⟨e, r, O.unch⟩
+/-- What the proof shared by every curve (`JointCombAll.lean`) needs of this one: ECDH's kit, the
+comb's call with its table, and the complete addition of `R` and `P`. -/
+def jkit : JointCombAll.Kit where
+  toKit := VG.Proof.Ecdh.RISCV64.P224.kit
+  gN := Comb.mulGP224Name
+  gC := Comb.mulGP224
+  Tab := TabAt
+  tab_frame := fun hn => fun hT hwr h => wp_tab hn hT hwr h
+  tab_unch := fun hT sy rd hW U => hT.of_unch sy rd hW U
+  comb_ok := fun hL => fun hw h3 hc hbp hT =>
+    combCall_ok hL hw h3 ⟨hc.mp, hc.mn, hc.zero, hc.one, hc.onep, hc.ap, hc.b3p, hc.expp⟩ hbp hT
+  addW := addW (p224.pt TX TY TZ)
+  add_ok := fun hL => fun hw hc hbp => fun hP hP' hp hq =>
+    WP.mono (addPt_ok hL hw hc.ap hbp (p := p224.pt RX RY RZ) (q := p224.pt GX CPX CPY)
+        (o := p224.pt TX TY TZ) ⟨by decide, by decide⟩ (by decide) hP hP' ⟨hp.rep, hp.x, hp.y, hp.z⟩
+        ⟨hq.rep, hq.x, hq.y, hq.z⟩)
+      fun _ ⟨k, u, p⟩ => ⟨k, u, ⟨p.rep, p.x, p.y, p.z⟩⟩
 
 theorem jointComb_ok (hL : Law W) {base : Addr} {s : State} {Q : Point W} (hp : JPre base s Q)
     (h3 : s.gpr .s3 = base) (hc : TailConsts base s) (hT : TabAt base s) (hwr : s.wr = [⟨base, 8192⟩])
@@ -285,115 +138,9 @@ theorem jointComb_ok (hL : Law W) {base : Addr} {s : State} {Q : Point W} (hp : 
     WP isa (VerifyComb.Cfg.joint p224 "vg_p224_mul" mulP224 Comb.mulGP224Name Comb.mulGP224) s fun s' =>
       Kc s s' ∧ Unch base combW s.mem s'.mem ∧
       PtOk base s' (p224.pt RX RY RZ) (Spec.Weierstrass.add (mul (sv base s UU) (Spec.Weierstrass.G W))
-        (mul (sv base s VV) Q)) := by
-  have hw := hp.ws
-  obtain hp0 : 0 < W.p := by decide
-  rw [VerifyComb.Cfg.joint, show p224.n = 4 from rfl]
-  -- `K = v`, `Q` to `R`'s first two slots.
-  obtain B1 : WP isa (.block (copy 4 (p224.sl K) (p224.sl VV) ++ copy 4 (p224.sl RX) (p224.sl CPX) ++
-      copy 4 (p224.sl RY) (p224.sl CPY))) s fun s₁ =>
-      sv base s₁ K = sv base s VV ∧ sv base s₁ RX = sv base s CPX ∧ sv base s₁ RY = sv base s CPY ∧
-      Rest [.t0] s s₁ ∧ Unch base [(p224.sl K, 32), (p224.sl RX, 32), (p224.sl RY, 32)] s.mem s₁.mem := by
-    rw [List.append_assoc]
-    refine WP.block_append (WP.mono (copySl_ok hw (o := K) (a := VV) (by decide) (by decide) (by decide))
-      fun t₁ ⟨k₁, r₁, U₁⟩ => ?_)
-    refine WP.block_append (WP.mono (copySl_ok (hw.of_rest r₁) (o := RX) (a := CPX) (by decide) (by decide)
-      (by decide)) fun t₂ ⟨x₂, r₂, U₂⟩ => ?_)
-    refine WP.mono (copySl_ok ((hw.of_rest r₁).of_rest r₂) (o := RY) (a := CPY) (by decide) (by decide)
-      (by decide)) fun t₃ ⟨y₃, r₃, U₃⟩ => ⟨?_, ?_, ?_, r₁.trans (r₂.trans r₃), (U₁.trans U₂).trans U₃⟩
-    · exact (sv_unch (U₂.trans U₃) K (by decide)).trans k₁
-    · exact ((sv_unch U₃ RX (by decide)).trans x₂).trans (sv_unch U₁ CPX (by decide))
-    · exact y₃.trans (sv_unch (U₁.trans U₂) CPY (by decide))
-  refine WP.seq (WP.mono (wp_tab rfl hT hwr B1) fun s₁ ⟨⟨k₁, x₁, y₁, r₁, U₁⟩, T₁⟩ => ?_)
-  obtain hw₁ := hw.of_rest r₁
-  obtain hwr₁ : s₁.wr = [⟨base, 8192⟩] := r₁.wr.trans hwr
-  obtain hc₁ := hc.of_unch U₁ (by decide)
-  obtain eQ : Point.affine (toM W.p (2 ^ 256) (sv base s₁ RX)) (toM W.p (2 ^ 256) (sv base s₁ RY)) = Q := by
-    rw [x₁, y₁]; exact hp.q
-  -- `[v]Q`.
-  refine WP.seq (WP.mono (wp_tab (wsCall_noFrames Impl.Ecdsa.RISCV64.mulP224_noFrames) T₁ hwr₁
-    (mulCall_ok hL hw₁ ((r₁.gpr .s3 (by decide)).trans h3) hc₁ (by rw [x₁]; exact hp.qx) (by rw [y₁]; exact hp.qy)
-      eQ hp.on)) fun s₂ ⟨⟨K₂, R₂⟩, T₂⟩ => ?_)
-  rw [k₁] at R₂
-  obtain U₂ : Unch base mulKW s₁.mem s₂.mem := unch_of_mulKeeps R₂.2
-  obtain hw₂ := hw₁.of_kp K₂
-  obtain hc₂ := hc₁.of_unch U₂ (by decide)
-  obtain v₂ : sv base s₂ VV = sv base s VV := (sv_unch U₂ VV (by decide)).trans (sv_unch U₁ VV (by decide))
-  -- `O` if `v = 0`, `P = R`, `K = u`.
-  simp only [List.append_assoc]
-  refine WP.seq (WP.block_append (Comb.WP.mono_syms (zeroR_ok hL hw₂ hc₂.zero hc₂.onep (a := VV) (.inr rfl) (P := mul (sv base s VV) Q)
-    (fun h0 => ptOk_of_result hL R₂ (by rw [v₂] at h0; omega_using [h0]) hv)) fun s₃ ⟨r₃, U₃, pR₃, bp₃⟩ sy₃ => ?_))
-  rw [v₂] at pR₃
-  obtain pR₃' : PtOk base s₃ (p224.pt RX RY RZ) (mul (sv base s VV) Q) := by
-    by_cases h0 : sv base s VV = 0
-    · rw [ite_eq_left h0] at pR₃; rw [h0, mul_zero']; exact pR₃
-    · rw [ite_eq_right h0] at pR₃; exact pR₃
-  obtain hw₃ := hw₂.of_rest r₃
-  rw [WindowA.Cfg.copyPt, show p224.n = 4 from rfl, List.append_assoc, List.append_assoc]
-  refine WP.block_append (Comb.WP.mono_syms (copySl_ok hw₃ (o := GX) (a := RX) (by decide) (by decide) (by decide))
-    fun t₁ ⟨cx, q₁, V₁⟩ sy₄a => ?_)
-  refine WP.block_append (Comb.WP.mono_syms (copySl_ok (hw₃.of_rest q₁) (o := CPX) (a := RY) (by decide) (by decide)
-    (by decide)) fun t₂ ⟨cy, q₂, V₂⟩ sy₄b => ?_)
-  refine WP.block_append (Comb.WP.mono_syms (copySl_ok ((hw₃.of_rest q₁).of_rest q₂) (o := CPY) (a := RZ) (by decide)
-    (by decide) (by decide)) fun s₄ ⟨cz, q₃, V₃⟩ sy₄c => ?_)
-  obtain r₄ : Rest [.t0] s₃ s₄ := q₁.trans (q₂.trans q₃)
-  obtain U₄ : Unch base [(p224.sl GX, 32), (p224.sl CPX, 32), (p224.sl CPY, 32)] s₃.mem s₄.mem :=
-    (V₁.trans V₂).trans V₃
-  obtain ex₄ : sv base s₄ GX = sv base s₃ RX :=
-    ((sv_unch (V₂.trans V₃) GX (by decide)).trans cx)
-  obtain ey₄ : sv base s₄ CPX = sv base s₃ RY :=
-    ((sv_unch V₃ CPX (by decide)).trans cy).trans (sv_unch V₁ RY (by decide))
-  obtain ez₄ : sv base s₄ CPY = sv base s₃ RZ := cz.trans (sv_unch (V₁.trans V₂) RZ (by decide))
-  obtain pP₄ : PtOk base s₄ (p224.pt GX CPX CPY) (mul (sv base s VV) Q) := pR₃'.move ex₄ ey₄ ez₄
-  obtain hw₄ := hw₃.of_rest r₄
-  refine Comb.WP.mono_syms (copySl_ok hw₄ (o := K) (a := UU) (by decide) (by decide) (by decide))
-    fun s₅ ⟨k₅, r₅, U₅⟩ sy₅ => ?_
-  obtain hw₅ := hw₄.of_rest r₅
-  obtain sy₂₅ : s₅.syms = s₂.syms := by rw [sy₅, sy₄c, sy₄b, sy₄a, sy₃]
-  obtain rd₂₅ : s₅.rd = s₂.rd := by rw [r₅.rd, r₄.rd, r₃.rd]
-  obtain U₃₅ := (U₃.trans U₄).trans U₅
-  obtain T₅ : TabAt base s₅ := T₂.of_unch sy₂₅ rd₂₅ (by decide) U₃₅
-  obtain hc₅ := hc₂.of_unch U₃₅ (by decide)
-  obtain bp₅ : sv base s₅ BP = W.b * 2 ^ 256 % W.p := (sv_unch (U₄.trans U₅) BP (by decide)).trans bp₃
-  obtain uU : sv base s₄ UU = sv base s UU :=
-    (sv_unch ((U₁.trans U₂).trans (U₃.trans U₄)) UU (by decide))
-  obtain u₅ : sv base s₅ K = sv base s UU := k₅.trans uU
-  obtain h3₅ : s₅.gpr .s3 = base := by
-    rw [r₅.gpr .s3 (by decide), r₄.gpr .s3 (by decide), r₃.gpr .s3 (by decide), K₂.gpr _ (by decide),
-      r₁.gpr .s3 (by decide), h3]
-  -- `[u]G`.
-  refine WP.seq (WP.mono (combCall_ok hL hw₅ h3₅ hc₅ bp₅ T₅) fun s₆ ⟨K₆, R₆⟩ => ?_)
-  rw [u₅] at R₆
-  obtain U₆ : Unch base mulKW s₅.mem s₆.mem := unch_of_mulKeeps R₆.2
-  obtain hw₆ := hw₅.of_kp K₆
-  obtain hc₆ := hc₅.of_unch U₆ (by decide)
-  obtain u₆ : sv base s₆ UU = sv base s UU :=
-    ((sv_unch (U₅.trans U₆) UU (by decide))).trans uU
-  -- `O` if `u = 0`.
-  refine WP.seq (WP.mono (zeroR_ok hL hw₆ hc₆.zero hc₆.onep (a := UU) (.inl rfl)
-    (P := mul (sv base s UU) (Spec.Weierstrass.G W))
-    (fun h0 => ptOk_of_result hL R₆ (by rw [u₆] at h0; omega_using [h0]) hu)) fun s₇ ⟨r₇, U₇, pR₇, bp₇⟩ => ?_)
-  rw [u₆] at pR₇
-  obtain pR₇' : PtOk base s₇ (p224.pt RX RY RZ) (mul (sv base s UU) (Spec.Weierstrass.G W)) := by
-    by_cases h0 : sv base s UU = 0
-    · rw [ite_eq_left h0] at pR₇; rw [h0, mul_zero']; exact pR₇
-    · rw [ite_eq_right h0] at pR₇; exact pR₇
-  obtain hw₇ := hw₆.of_rest r₇
-  obtain U₅₇ := (U₅.trans U₆).trans U₇
-  obtain pP₇ : PtOk base s₇ (p224.pt GX CPX CPY) (mul (sv base s VV) Q) :=
-    pP₄.of_eq (sv_unch U₅₇ GX (by decide)) (sv_unch U₅₇ CPX (by decide)) (sv_unch U₅₇ CPY (by decide))
-  obtain hc₇ := hc₆.of_unch U₇ (by decide)
-  -- `T = R + P`.
-  refine WP.seq (WP.mono (addPt_ok hL hw₇ hc₇.ap bp₇ (p := p224.pt RX RY RZ) (q := p224.pt GX CPX CPY)
-    (o := p224.pt TX TY TZ) ⟨by decide, by decide⟩ (by decide)
-    (hL.onCurve_mul VG.Proof.P224.onCurve_G _) (hL.onCurve_mul hp.on _) pR₇' pP₇) fun s₈ ⟨K₈, U₈, pT₈⟩ => ?_)
-  obtain hw₈ := hw₇.of_kp K₈
-  -- `R = T`.
-  refine WP.mono (copyPt_ok hw₈ (o := p224.pt RX RY RZ) (p := p224.pt TX TY TZ) (by decide) (by decide)
-    (by decide) (by decide)) fun s₉ ⟨ex₉, ey₉, ez₉, r₉, U₉⟩ => ⟨?_, ?_, pT₈.move ex₉ ey₉ ez₉⟩
-  · exact (Kc.of_rest r₁).trans (K₂.kc.trans ((Kc.of_rest r₃).trans ((Kc.of_rest r₄).trans ((Kc.of_rest r₅).trans
-      (K₆.kc.trans ((Kc.of_rest r₇).trans (K₈.kc.trans (Kc.of_rest r₉))))))))
-  · exact (((((((U₁.trans U₂).trans U₃).trans U₄).trans U₅).trans U₆).trans U₇).trans U₈ |>.trans U₉).cover
-      (by decide)
+        (mul (sv base s VV) Q)) :=
+  WP.mono (jkit.jointComb_ok hL hp.ws h3 ⟨hc.mp, hc.mn, hc.zero, hc.one, hc.onep, hc.ap, hc.b3p, hc.expp⟩ hT hwr
+      hp.qx hp.qy hp.q hp.on hu hv)
+    fun _ ⟨K, U, p⟩ => ⟨K, U.cover (by decide), ⟨p.rep, p.x, p.y, p.z⟩⟩
 
 end VG.Proof.Ecdsa.RISCV64.P224.JointComb

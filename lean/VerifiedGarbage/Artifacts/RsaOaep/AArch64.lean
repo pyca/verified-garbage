@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.Scrub
 public import VerifiedGarbage.TCB.Emit
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.Inst
 public import VerifiedGarbage.Spec.RsaOaep.MdTables
@@ -40,11 +41,11 @@ open VG.Proof.HashTable.AArch64 (fnsOf)
 
 def artifacts (c : Proof.Rsa.AArch64.CrtImpl) (vs : List Proof.Pbkdf2.Md.AArch64.MdHash) : List Artifact :=
   if h : OK vs then [
-    Spec.RsaOaep.decryptPrecomputedMdTablesApi.artifact AArch64.target {
+    Spec.RsaOaep.decryptPrecomputedMdTablesApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
       suffix := qualifiedName "" [("crt", c.suffix)]
       tables := [("hash", tables vs), ("mgf1", tables vs)]
       code := Impl.RsaOaep.AArch64.decryptP (fnsOf vs) (privPOf c).name (privPOf c).code
-      verified := decP_ok vs h c }]
+      verified := decP_ok vs h c } (Proof.RsaOaep.AArch64.Scrub.decryptOk vs _))]
   else []
 
 end VG.Artifacts.RsaOaep.AArch64.RsaPrivateCrtAllMdHash
@@ -59,11 +60,11 @@ open VG.Proof.HashTable.AArch64 (fnsOf)
 
 def artifacts (c : Proof.Rsa.AArch64.PublicImpl) (vs : List Proof.Pbkdf2.Md.AArch64.MdHash) : List Artifact :=
   if h : OK vs then [
-    Spec.RsaOaep.encryptMdTablesApi.artifact AArch64.target {
+    Spec.RsaOaep.encryptMdTablesApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
       suffix := qualifiedName "" [("rsa", c.suffix)]
       tables := [("hash", tables vs), ("mgf1", tables vs)]
       code := Impl.RsaOaep.AArch64.Precomputed.encrypt (fnsOf vs) (pdOf c).name (pdOf c).code
-      verified := enc_ok vs h c }]
+      verified := enc_ok vs h c } (Proof.RsaOaep.AArch64.Scrub.encryptOk vs _))]
   else []
 
 end VG.Artifacts.RsaOaep.AArch64.RsaPublicPrecomputedAllMdHash

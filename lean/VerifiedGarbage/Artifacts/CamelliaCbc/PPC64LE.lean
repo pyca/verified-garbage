@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Camellia.PPC64LE.Scrub
 public import VerifiedGarbage.Proof.Camellia.PPC64LE.ModesVerified
 public import VerifiedGarbage.Proof.Camellia.PPC64LE.ModesFrame
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -14,11 +15,7 @@ import VerifiedGarbage.Proof.Camellia.PPC64LE.Lit
 namespace VG.Artifacts.CamelliaCbc.PPC64LE
 
 def artifacts : List Artifact := [
-  Spec.Camellia.cbcEncryptChainedApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 3408 .r8 422 Impl.Camellia.PPC64LE.cbcEncryptChained
-    verified := Proof.Camellia.PPC64LE.cbcEnc_framed Proof.Camellia.PPC64LE.Modes.cbcEncryptChained_verified },
-  Spec.Camellia.cbcDecryptChainedApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 3408 .r8 422 Impl.Camellia.PPC64LE.cbcDecryptChained
-    verified := Proof.Camellia.PPC64LE.cbcDec_framed Proof.Camellia.PPC64LE.Modes.cbcDecryptChained_verified }]
+  Spec.Camellia.cbcEncryptChainedApi.artifact PPC64LE.target Proof.Camellia.PPC64LE.Scrub.cbcEncReg,
+  Spec.Camellia.cbcDecryptChainedApi.artifact PPC64LE.target Proof.Camellia.PPC64LE.Scrub.cbcDecReg]
 
 end VG.Artifacts.CamelliaCbc.PPC64LE

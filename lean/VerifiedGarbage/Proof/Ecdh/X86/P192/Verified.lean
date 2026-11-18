@@ -1,6 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdh.X86.Main
+public import VerifiedGarbage.Proof.Ecdh.X86.CallTaint
+public import VerifiedGarbage.Proof.Framework.X86.SseTaintMono
+meta import VerifiedGarbage.Proof.Ecdh.X86.CallTaint
+meta import VerifiedGarbage.Proof.Framework.X86.SseTaintMono
 public import VerifiedGarbage.Proof.Ecdh.X86.P192.Contract
 public import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 public import VerifiedGarbage.Spec.EcKey.P192
@@ -10,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.X86.CallWith
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import VerifiedGarbage.Proof.Ecdh.X86.P192.Lit
 public import VerifiedGarbage.Impl.Ecdh.P192.X86
-import VerifiedGarbage.Proof.Ecdsa.X86.P192.Lit
+import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P192
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Ecdh.X86.Main
@@ -23,7 +27,7 @@ meta import VerifiedGarbage.Proof.Framework.X86.CallWith
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Ecdh.X86.P192.Lit
 meta import VerifiedGarbage.Impl.Ecdh.P192.X86
-meta import VerifiedGarbage.Proof.Ecdsa.X86.P192.Lit
+meta import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P192
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.Contract
@@ -57,11 +61,7 @@ theorem pre_of {s : State} (h : ecdhX86.pre s) : EPre p192 s := by
 
 theorem post_of {s s' : State} (h : EPost p192 s s') : ecdhX86.post s s' := by
   unfold EPost at h
-  show match ex s.mem ((arg s 1).setWidth 64) ((arg s 2).setWidth 64) with
-    | some z => BitVec.setWidth 32 (s'.gpr .edx ++ s'.gpr .eax) = 1 ∧
-        Spec.EcKey.bytesAt s'.mem ((arg s 0).setWidth 64) 24 = z
-    | none => BitVec.setWidth 32 (s'.gpr .edx ++ s'.gpr .eax) = 0 ∧
-        Spec.EcKey.bytesAt s'.mem ((arg s 0).setWidth 64) 24 = List.replicate 24 0
+  dsimp only [ecdhX86]
   rw [BitVec.setWidth_append_eq_right]
   revert h
   generalize hq : ex s.mem ((arg s 1).setWidth 64) ((arg s 2).setWidth 64) = q
@@ -76,7 +76,7 @@ theorem ecdh_sp : SpOk exchangeP192 p192.stk := ⟨NoSp.of_all (by lit_decide), 
 theorem ecdh_x86 (hL : Weierstrass.Law Spec.P192.curve) (s : State) (hs : ecdhX86.pre s) :
     ∃ t s', Exec isa exchangeP192 s t s' ∧ abiPreserved s s' ∧ ecdhX86.post s s' := by
   have hp := pre_of hs
-  obtain ⟨t, s', he, K, hpost⟩ := exchange_ok p192_ok hL rfl ecdh_sp hp
+  obtain ⟨t, s', he, K, hpost⟩ := exchange_ok p192_ok hL ecdh_sp hp
   refine ⟨t, s', he, ⟨fun r hr => ?_, K.ret hp⟩, post_of hpost⟩
   simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl
@@ -137,9 +137,22 @@ theorem agree₀ {s₁ s₂ : State} (h₁ : ecdhX86.pre s₁) (h₂ : ecdhX86.p
     · exact congrArg _ a2
     · exact congrArg _ a3
 
-theorem ecdh_ct : ConstantTime isa ecdhX86.pre ecdhX86.pub exchangeP192 :=
-  VG.Taint.constantTime (A := taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp)
-    (by native_taint_decide_weak VG.Proof.Ecdsa.X86.P192.weak)
+/-! The field functions, analysed once from what is public on entry to
+their calls (`CallTaint`), in place of each call. The windows select their
+table's entries with SSE2 instructions, so the analysis is the one that
+follows the `xmm` registers. -/
+
+taint_summary mulSum : sseTaint (callτ 24)
+  (Impl.Weierstrass.X86.Mont.mulFn Impl.Weierstrass.Mont.p192p.k Impl.Weierstrass.Mont.p192p.m)
+taint_summary addSum : sseTaint (callτ 24)
+  (Impl.Weierstrass.X86.Mont.addFn Impl.Weierstrass.Mont.p192p.k Impl.Weierstrass.Mont.p192p.m)
+taint_summary subSum : sseTaint (callτ 24)
+  (Impl.Weierstrass.X86.Mont.subFn Impl.Weierstrass.Mont.p192p.k Impl.Weierstrass.Mont.p192p.m)
+
+theorem ecdh_ct : ConstantTime isa ecdhX86.pre ecdhX86.pub exchangeP192 := by
+  obtain ⟨_, hc⟩ : ∃ h, (sseTaint.check τ₀ exchangeP192 h).isSome = true := by
+    taint_decide_sum [mulSum, addSum, subSum]
+  exact VG.Taint.constantTime (A := sseTaint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp) hc
 
 /-- The contract with the regions the shared one gives: the arguments'
 slots writable rather than readable. -/

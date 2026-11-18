@@ -165,6 +165,22 @@ vg_chacha20_init:
 	sb t1, 134(a0)
 	srli t1, t3, 24
 	sb t1, 135(a0)
+	addi t0, zero, 0
+	addi a0, zero, 0
+	addi a1, zero, 0
+	addi a2, zero, 0
+	addi a3, zero, 0
+	addi a4, zero, 0
+	addi a5, zero, 0
+	addi a6, zero, 0
+	addi a7, zero, 0
+	addi t0, zero, 0
+	addi t1, zero, 0
+	addi t2, zero, 0
+	addi t3, zero, 0
+	addi t4, zero, 0
+	addi t5, zero, 0
+	addi t6, zero, 0
 	ret
 	.option pop
 
@@ -264,6 +280,22 @@ vg_chacha20_set_nonce:
 	sb t1, 134(a0)
 	srli t1, t3, 24
 	sb t1, 135(a0)
+	addi t0, zero, 0
+	addi a0, zero, 0
+	addi a1, zero, 0
+	addi a2, zero, 0
+	addi a3, zero, 0
+	addi a4, zero, 0
+	addi a5, zero, 0
+	addi a6, zero, 0
+	addi a7, zero, 0
+	addi t0, zero, 0
+	addi t1, zero, 0
+	addi t2, zero, 0
+	addi t3, zero, 0
+	addi t4, zero, 0
+	addi t5, zero, 0
+	addi t6, zero, 0
 	ret
 	.option pop
 
@@ -556,5 +588,22 @@ vg_chacha20_apply:
 20:
 	addi a0, zero, 0
 21:
+	addi t0, zero, 0
+	slli a0, a0, 32
+	srli a0, a0, 32
+	addi a1, zero, 0
+	addi a2, zero, 0
+	addi a3, zero, 0
+	addi a4, zero, 0
+	addi a5, zero, 0
+	addi a6, zero, 0
+	addi a7, zero, 0
+	addi t0, zero, 0
+	addi t1, zero, 0
+	addi t2, zero, 0
+	addi t3, zero, 0
+	addi t4, zero, 0
+	addi t5, zero, 0
+	addi t6, zero, 0
 	ret
 	.option pop

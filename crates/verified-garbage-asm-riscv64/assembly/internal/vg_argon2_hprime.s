@@ -30,7 +30,7 @@ vg_argon2_hprime:
 	addi a0, s4, 0
 	addi a2, s4, 832
 	addi a3, zero, 0
-	call {vg_blake2b_init}
+	call {vg_blake2b_init_core}
 	addi a1, zero, 0
 	addi a2, s4, 832
 	addi a3, zero, 4
@@ -69,7 +69,7 @@ vg_argon2_hprime:
 	addi a0, s4, 0
 	addi a2, s4, 832
 	addi a3, zero, 0
-	call {vg_blake2b_init}
+	call {vg_blake2b_init_core}
 	addi a1, zero, 0
 	addi a2, s4, 768
 	addi a3, zero, 64
@@ -101,7 +101,7 @@ vg_argon2_hprime:
 	addi a0, s4, 0
 	addi a2, s4, 832
 	addi a3, zero, 0
-	call {vg_blake2b_init}
+	call {vg_blake2b_init_core}
 	addi a1, zero, 0
 	addi a2, s4, 768
 	addi a3, zero, 64

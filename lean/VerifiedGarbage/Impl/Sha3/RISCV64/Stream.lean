@@ -35,21 +35,23 @@ position still moves a lane at a time. Otherwise it moves a byte (`lbu`,
 `sb`). Byte `pos` of the state is addressed as `0(t2)` with `t2 = state +
 pos` computed just before the access.
 
-Each function runs in a frame on the stack (`alloc`), whose first 512 bytes
-are the permutation's scratch space (`vg_keccak_f1600`,
-`Impl.Sha3.RISCV64.permute`, which they call), and in which they save the
+Each function runs in a frame on the stack (`alloc`), in which it saves the
 return address, which each call replaces, and, for `absorb` and `squeeze`,
 our caller's values of the callee-saved registers they use, `s2`–`s6`,
 which the permutation never writes (it saves and restores `s0` and `s1`, so
 it would leave values loaded from memory in those): their variables live there (`s2` =
 `state`, `s3` = `rate`, `s4` = the position in the block, `s5` = `data` or
 `out`, `s6` = bytes of it left). The stack pointer is 16-byte aligned, so
-the saves and restores are aligned doubleword accesses.
+the saves and restores are aligned doubleword accesses. The permutation's
+scratch space (`vg_keccak_f1600`, `Impl.Sha3.RISCV64.permute`, which they
+call) is a frame of its own below it, allocated only around the call
+(`permuteAt`), so that the frames live while the functions write the state
+and the output hold only the saved registers.
 
 `absorbWs` has no frame of its own: its working space `scratch` (640
-bytes, 8-byte aligned) is laid out as `absorb`'s frame, the permutation's
-scratch space and then the same saved registers at the same offsets, with
-`s7`, in which it keeps `scratch`, after them (`savedWs`). The permutation
+bytes, 8-byte aligned) holds the permutation's scratch space and then the
+registers of `saved`, with `s7`, in which it keeps `scratch`, after them
+(`savedWs`). The permutation
 does not write `s7` either.
 
 The comparison of the position with the rate is a subtraction tested against
@@ -67,12 +69,11 @@ open VG.Impl.Words64.RISCV64 (loadLE64 storeLE64)
 /-- `mv d, n` (`addi d, n, 0`). -/
 def mov (d n : Reg) : Instr := .addi d n 0
 
-/-- The bytes of `absorb`'s and `squeeze`'s frames: the permutation's scratch
-space (512 bytes), then the saved registers. -/
-def frameBytes : Nat := 560
+/-- The bytes of `absorb`'s and `squeeze`'s frames: the saved registers. -/
+def frameBytes : Nat := 48
 
 /-- The registers `absorb` and `squeeze` save, and where in the frame. -/
-def saved : List (Reg × Nat) := [(.ra, 512), (.s2, 520), (.s3, 528), (.s4, 536), (.s5, 544), (.s6, 552)]
+def saved : List (Reg × Nat) := [(.ra, 0), (.s2, 8), (.s3, 16), (.s4, 24), (.s5, 32), (.s6, 40)]
 
 /-- Save them, with the frame's address in `t0`. -/
 def save : List Instr := .addSp .t0 0 :: saved.map fun (r, d) => .store .d r .t0 d
@@ -80,10 +81,16 @@ def save : List Instr := .addSp .t0 0 :: saved.map fun (r, d) => .store .d r .t0
 /-- Restore them, with the frame's address in `t0`. -/
 def restore : List Instr := .addSp .t0 0 :: saved.map fun (r, d) => .load .d r .t0 d
 
-/-- Permute the state at `s2`, with the frame's first 512 bytes as scratch
-space. -/
+/-- The bytes of the permutation's scratch space, a frame of its own
+around its call. -/
+def scratchBytes : Nat := 512
+
+/-- Permute the state at `s2`, with a frame of `scratchBytes` as scratch
+space, allocated only for the call. -/
 def permuteAt : Prog isa :=
-  .seq (.block [mov .a0 .s2, .addSp .a1 0]) (.call "vg_keccak_f1600" Impl.Sha3.RISCV64.permute)
+  .frame (.alloc scratchBytes)
+    (.seq (.block [mov .a0 .s2, .addSp .a1 0]) (.call "vg_keccak_f1600" Impl.Sha3.RISCV64.permute))
+    (.free scratchBytes)
 
 /-- Save registers and set up ours. -/
 def setup : List Instr :=
@@ -138,9 +145,11 @@ def absorb : Prog isa := withLoop absorbBody
 
 /-! ## `absorbWs` -/
 
-/-- The registers `absorbWs` saves, and where in `scratch`: those of
-`saved`, and `s7`, in which it keeps `scratch`. -/
-def savedWs : List (Reg × Nat) := saved ++ [(.s7, 560)]
+/-- The registers `absorbWs` saves, and where in `scratch`, after the
+permutation's scratch space: those of `saved`, and `s7`, in which it keeps
+`scratch`. -/
+def savedWs : List (Reg × Nat) :=
+  [(.ra, 512), (.s2, 520), (.s3, 528), (.s4, 536), (.s5, 544), (.s6, 552), (.s7, 560)]
 
 /-- Save them in `scratch` (`a5`), with its address in `t0`. -/
 def saveWs : List Instr := mov .t0 .a5 :: savedWs.map fun (r, d) => .store .d r .t0 d
@@ -172,21 +181,22 @@ def absorbWs : Prog isa :=
 
 /-! ## `pad` -/
 
-/-- The bytes of `pad`'s frame: the permutation's scratch space, then the
-saved return address. -/
-def padBytes : Nat := 528
+/-- The bytes of `pad`'s frame: the saved return address. -/
+def padBytes : Nat := 16
 
 def padMain : List Instr :=
-  [.addSp .t0 0, .store .d .ra .t0 512,
+  [.addSp .t0 0, .store .d .ra .t0 0,
     .add .t1 .a0 .a2, .load .b .t2 .t1 0, .logic .xor .t2 .t2 .a3, .store .b .t2 .t1 0,
     .add .t1 .a0 .a1, .addi .t1 .t1 (-1), .load .b .t2 .t1 0, .logicImm .xor .t2 .t2 0x80,
-    .store .b .t2 .t1 0, .addSp .a1 0]
+    .store .b .t2 .t1 0]
 
 def pad : Prog isa :=
   .frame (.alloc padBytes)
     (.seq (.block padMain)
-      (.seq (.call "vg_keccak_f1600" Impl.Sha3.RISCV64.permute)
-        (.block [.addSp .t0 0, .load .d .ra .t0 512])))
+      (.seq (.frame (.alloc scratchBytes)
+          (.seq (.block [.addSp .a1 0]) (.call "vg_keccak_f1600" Impl.Sha3.RISCV64.permute))
+          (.free scratchBytes))
+        (.block [.addSp .t0 0, .load .d .ra .t0 0])))
     (.free padBytes)
 
 /-! ## `squeeze` -/

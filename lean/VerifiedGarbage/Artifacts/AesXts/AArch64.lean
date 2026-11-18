@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesXts.AArch64.Variant
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.AesXts.AArch64.Scrub
 public import VerifiedGarbage.Proof.AesXts.AArch64.Unit.Verified
 public import VerifiedGarbage.TCB.AArch64.Print
 public import VerifiedGarbage.Proof.Variants.AesXts.AArch64
@@ -19,13 +20,13 @@ open VG.Proof.AesXts.AArch64
 def artifacts : List Artifact := [
   ] ++
   (VG.Proof.Variants.AesXts.AArch64.variants.flatMap fun (v : Proof.AesXts.AArch64.XtsImpl) => [
-    Spec.Xts.aesEncryptUnitApi.artifact AArch64.target {
+    Spec.Xts.aesEncryptUnitApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
       suffix := v.suffix
       code := Impl.AesXts.AArch64Unit.encrypt v.enc
-      verified := encrypt_verified v },
-    Spec.Xts.aesDecryptUnitApi.artifact AArch64.target {
+      verified := encrypt_verified v } Proof.AesXts.AArch64.Scrub.encryptOk),
+    Spec.Xts.aesDecryptUnitApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
       suffix := v.suffix
       code := Impl.AesXts.AArch64Unit.decrypt v.enc v.dec
-      verified := decrypt_verified v }])
+      verified := decrypt_verified v } Proof.AesXts.AArch64.Scrub.decryptOk)])
 
 end VG.Artifacts.AesXts.AArch64

@@ -159,6 +159,8 @@ def Instr.encode : Instr → Option (List Nat)
   | .stxvd2x s a b => some [xx1 972 (s.ctorIdx + 32) a.index b.index]
   | .mtvsrd t a => some [xx1 179 (t.ctorIdx + 32) a.index 0]
   | .mfvsrd a s => some [xx1 51 (s.ctorIdx + 32) a.index 0]
+  -- "dcbz" (X, 1014, the `RT` field reserved and zero).
+  | .dcbz a b => some [x 1014 0 a.index b.index]
   -- "add" (XO, 266), "subf" (XO, 40: `RT = RB - RA`, printed `subf d, m,
   -- n`), "mulld" (XO, 233), "mulhdu" (XO, 9), "addc" (XO, 10), "adde" (XO,
   -- 138), "addze" (XO, 202, `RB = 0`), "subfc" (XO, 8), "subfe" (XO, 136).

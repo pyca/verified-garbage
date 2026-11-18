@@ -56,40 +56,22 @@ theorem checkNF : checkP256.noFrames = true := checkP256_noFrames
 
 /-- The curve's kit. -/
 def kit : Kit where
-  c := p256
+  toTKit := tkit
   L := 32
   len := rfl
-  n9 := by decide
   Ln := by decide
-  unit := unit
   onG := onG
   load := loadNum 4
   store := storeNum 4
   load_ok := Kit.loadNum_kit (c := p256) (by decide)
   store_ok := Kit.storeNum_kit (c := p256) (by decide)
-  CC := CC
-  CCW := rfl
-  CCk := rfl
   checkN := "vg_p256_check_point"
-  checkC := checkP256
   checkNF := checkNF
-  check_rv := check_rv
-  num_eq := fun m ws i hi => num_eq m ws i hi
-  flag_eq := flag_eq
-  checkKW := checkKW
-  check_unch := unch_of_checkKeeps
-  check_lo := by decide
-  check_keep := by decide
   mulN := "vg_p256_mul"
   mulC := Window.mulP256
-  tailW := tailW
-  tail_lo := by decide
-  tail_ok := fun hL _ _ hw h3 a1 a2 a3 a4 a5 a6 a7 a8 => tail_ok hL hw h3 ⟨a1, a2, a3, a4, a5, a6, a7, a8⟩
-  andFlag_ok := andFlag_ok
-  save_ok := save_ok
-  cs := 44
-  consts_ok := consts_ok
-  consts_slots := consts_slots
+  mulNF := mulNF
+  mul_rv := mul_meets
+  chainP_ok := chainP_ok
   consts_lt := consts_lt
 
 /-- What the contract gives, by register. -/

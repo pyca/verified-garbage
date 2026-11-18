@@ -448,7 +448,8 @@ theorem mulFn_ok (hc : CfgOk c) {s : State} {base : Addr} (hp : Point.ArgP s bas
     show toM _ _ (sv c base s₂ _) = toM _ _ (sv c base s _); rw [e₂ hi]
   obtain hstep₂ : Step (ladAt c RX RY) c.C base s₂ (sv c base s₂ K) Q := by
     rw [e₂ (by decide)]
-    exact step_congr rfl (tv (by decide)) (tv (by decide)) (tv (by decide)) (tv (by decide)) (tv (by decide)) hstep
+    exact step_congr (L := ladAt c RX RY) (L' := ladAt c RX RY) (s := s) rfl (tv (by decide)) (tv (by decide))
+      (tv (by decide)) (tv (by decide)) (tv (by decide)) hstep
   obtain hO₂ : Q c.ladderCfg.nbits (tmv c.C c.n base s₂ (c.sl ZERO)) (tmv c.C c.n base s₂ (c.sl ONEP))
       (tmv c.C c.n base s₂ (c.sl ZERO)) := by
     rw [tv (by decide), tv (by decide)]; exact hO
@@ -615,7 +616,8 @@ theorem mulK_ok (hc : CfgOk c) (hsp : SpOk c.mulFn 20) {s₀ : State} {base : Ad
     show toM _ _ (sv c base u _) = toM _ _ (sv c base s₀ _); rw [sv_u hi]
   obtain hstepu : Step (ladAt c RX RY) c.C base u (sv c base u K) Q := by
     rw [sv_u (by decide)]
-    exact step_congr rfl (tv (by decide)) (tv (by decide)) (tv (by decide)) (tv (by decide)) (tv (by decide)) hstep
+    exact step_congr (L := ladAt c RX RY) (L' := ladAt c RX RY) (s := s₀) rfl (tv (by decide)) (tv (by decide))
+      (tv (by decide)) (tv (by decide)) (tv (by decide)) hstep
   obtain hOu : Q c.ladderCfg.nbits (tmv c.C c.n base u (c.sl ZERO)) (tmv c.C c.n base u (c.sl ONEP))
       (tmv c.C c.n base u (c.sl ZERO)) := by
     rw [tv (by decide), tv (by decide)]; exact hO

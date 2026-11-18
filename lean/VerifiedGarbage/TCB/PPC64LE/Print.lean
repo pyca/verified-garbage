@@ -71,6 +71,7 @@ def Instr.asm : Instr → List String
   | .stxvd2x n a b => [s!"stxvd2x {n.vsx}, {a.name}, {b.name}"]
   | .mtvsrd d n => [s!"mtvsrd {d.vsx}, {n.name}"]
   | .mfvsrd d n => [s!"mfvsrd {d.name}, {n.vsx}"]
+  | .dcbz a b => [s!"dcbz {a.name}, {b.name}"]
   | .add d n m => [s!"add {d.name}, {n.name}, {m.name}"]
   | .sub d n m => [s!"subf {d.name}, {m.name}, {n.name}"]
   | .mul d n m => [s!"mulld {d.name}, {n.name}, {m.name}"]

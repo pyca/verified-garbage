@@ -13,15 +13,16 @@ pub(crate) unsafe extern "C" fn vg_keccak_squeeze() {
     core::arch::naked_asm!(
         r#".option push
 .option arch, +m, +c
-.base64 "EwEB3YqCI7ASICO0IiEjuDIhI7xCISOwUiMjtGIjKomuiTKKtoo6iw=="
+.base64 "eXGKgiOwEgAjtCIBI7gyASO8QgEjsFIDI7RiAyqJrokyiraKOos="
 beqz s6, 20f
 22:
 .base64 "MwM6QQ=="
 beqz t1, 23f
 j 24f
 23:
-.base64 "AUpKhYqF"
+.base64 "AUoBcUqFioU="
 call {vg_keccak_f1600}
+.base64 "EwEBIA=="
 24:
 .base64 "swNJATPjQwETc3MAoU4zPtsBM2PDAZP+egA="
 beqz t1, 25f
@@ -39,7 +40,7 @@ bnez s6, 22b
 j 21f
 20:
 21:
-.base64 "UoWKgoOwAiADuYIgg7kCIQO6giGDugIiA7uCIhMBASOCgA=="
+.base64 "UoWKgoOwAgADuYIAg7kCAQO6ggGDugICA7uCAkVhgoA="
 .option pop"#,
         vg_keccak_f1600 = sym crate::ed448::vg_keccak_f1600::vg_keccak_f1600,
     )

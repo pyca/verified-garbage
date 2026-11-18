@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.Verified
 public import VerifiedGarbage.Proof.Rc2.AArch64.Stream.Frame
 public import VerifiedGarbage.Proof.Rc2.AArch64.Key
 public import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.Chained
+public import VerifiedGarbage.Proof.Rc2.AArch64.CbcResidue
+public import VerifiedGarbage.Proof.Rc2.AArch64.InitResidue
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.AArch64.Print
 
@@ -15,13 +17,16 @@ namespace VG.Artifacts.Rc2.AArch64
 
 def artifacts : List Artifact := [
   Spec.Rc2.cbcInitApi.artifact AArch64.target {
-    code := Impl.StackScratch.AArch64.withStackScratchWiped 576 .x6 72 Impl.Rc2.AArch64.Stream.init
-    verified := Proof.Rc2.AArch64.Stream.init_framed },
+    code := Proof.Rc2.AArch64.InitResidue.cbcInitCode
+    verified := Proof.Rc2.AArch64.InitResidue.cbcInitCode_verified
+    residue := some ⟨Proof.Rc2.AArch64.InitResidue.cbcInitCode_noResidue⟩ },
   Spec.Rc2.cbcEncryptChainedApi.artifact AArch64.target {
-    code := Impl.StackScratch.AArch64.withStackScratchWiped 512 .x4 64 Impl.Rc2.AArch64.Cbc.encrypt
-    verified := Proof.Rc2.AArch64.Cbc.encryptChained_framed },
+    code := Proof.Rc2.AArch64.CbcResidue.cbcEncryptChainedCode
+    verified := Proof.Rc2.AArch64.CbcResidue.cbcEncryptChainedCode_verified
+    residue := some ⟨Proof.Rc2.AArch64.CbcResidue.cbcEncryptChainedCode_noResidue⟩ },
   Spec.Rc2.cbcDecryptChainedApi.artifact AArch64.target {
-    code := Impl.StackScratch.AArch64.withStackScratchWiped 512 .x4 64 Impl.Rc2.AArch64.Cbc.decrypt
-    verified := Proof.Rc2.AArch64.Cbc.decryptChained_framed }]
+    code := Proof.Rc2.AArch64.CbcResidue.cbcDecryptChainedCode
+    verified := Proof.Rc2.AArch64.CbcResidue.cbcDecryptChainedCode_verified
+    residue := some ⟨Proof.Rc2.AArch64.CbcResidue.cbcDecryptChainedCode_noResidue⟩ }]
 
 end VG.Artifacts.Rc2.AArch64

@@ -59,40 +59,22 @@ theorem checkNF : checkBrainpoolP384r1.noFrames = true := checkBrainpoolP384r1_n
 
 /-- The curve's kit. -/
 def kit : Kit where
-  c := brainpoolp384r1
+  toTKit := tkit
   L := 48
   len := rfl
-  n9 := by decide
   Ln := by decide
-  unit := unit
   onG := onG
   load := loadNum 6
   store := storeNum 6
   load_ok := Kit.loadNum_kit (c := brainpoolp384r1) (by decide)
   store_ok := Kit.storeNum_kit (c := brainpoolp384r1) (by decide)
-  CC := CC
-  CCW := rfl
-  CCk := rfl
   checkN := "vg_brainpoolp384r1_check_point"
-  checkC := checkBrainpoolP384r1
   checkNF := checkNF
-  check_rv := check_rv
-  num_eq := fun m ws i hi => num_eq m ws i hi
-  flag_eq := flag_eq
-  checkKW := checkKW
-  check_unch := unch_of_checkKeeps
-  check_lo := by decide
-  check_keep := by decide
   mulN := "vg_brainpoolp384r1_mul"
   mulC := mulBrainpoolP384r1
-  tailW := tailW
-  tail_lo := by decide
-  tail_ok := fun hL _ _ hw h3 a1 a2 a3 a4 a5 a6 a7 a8 => tail_ok hL hw h3 ⟨a1, a2, a3, a4, a5, a6, a7, a8⟩
-  andFlag_ok := andFlag_ok
-  save_ok := save_ok
-  cs := 41
-  consts_ok := consts_ok
-  consts_slots := consts_slots
+  mulNF := mulNF
+  mul_rv := mul_meets
+  chainP_ok := chainP_ok
   consts_lt := consts_lt
 
 /-- What the contract gives, by register. -/

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Scrub
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
 public import VerifiedGarbage.Impl.Ecdsa.AArch64.VerifyHash
 public import VerifiedGarbage.Proof.P384.Comb7
@@ -10,6 +11,7 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P384.Verified
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.EcKey.AArch64.Scrub
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P384.Lit
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
@@ -74,11 +76,13 @@ open VG.Proof.HmacTable.AArch64 (tables names)
 
 def artifactsFor (vs : List Proof.Pbkdf2.Md.AArch64.MdHash) : List Artifact :=
   if hv : OK vs ∧ "VG_P384_COMB" ∉ names vs then [
-    Spec.Ecdsa.Rfc6979.Curves.p384SignApi.artifact AArch64.target {
+    Spec.Ecdsa.Rfc6979.Curves.p384SignApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
       suffix := ""
       tables := [("hmac", tables vs)]
       code := signCodeT (p384 hasLaw.law hasLaw.inv (Proof.P384.combOk7 hasLaw.law)) Spec.Ecdsa.Rfc6979.Curves.p384.tries vs
-      verified := p384T_verified hasLaw.law hasLaw.inv (Proof.P384.combOk7 hasLaw.law) vs hv }]
+      verified := p384T_verified hasLaw.law hasLaw.inv (Proof.P384.combOk7 hasLaw.law) vs hv }
+      (Proof.Ecdsa.Rfc6979.AArch64.Scrub.signOk
+        Spec.Ecdsa.Rfc6979.Curves.p384 Impl.Ecdsa.AArch64.p384.combConsts vs))]
   else []
 
 def artifacts : List Artifact :=
@@ -91,10 +95,10 @@ namespace VG.Artifacts.EcdsaP384.AArch64
 open VG.Proof.P384.AArch64 (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.Ecdsa.P384.verifyHashApi.artifact AArch64.target {
+  Spec.Ecdsa.P384.verifyHashApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
     code := Impl.Ecdsa.AArch64.VerifyHash.verifyHash Spec.Ecdsa.P384.inst.curve.len false
       Impl.Ecdsa.Verify.AArch64.verifyP384
-    verified := Proof.Ecdsa.Verify.AArch64.P384.verifyHash_verified hasLaw.law hasLaw.prime hasLaw.inv (Proof.P384.gtabOk9 hasLaw.law) }] ++
+    verified := Proof.Ecdsa.Verify.AArch64.P384.verifyHash_verified hasLaw.law hasLaw.prime hasLaw.inv (Proof.P384.gtabOk9 hasLaw.law) } (Proof.EcKey.AArch64.Scrub.verifyHashOk_consts _ _ _))] ++
   Rfc6979.artifacts
 
 end VG.Artifacts.EcdsaP384.AArch64

@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Camellia.PPC64LE.ModesVerified
 public import VerifiedGarbage.Proof.Camellia.PPC64LE.ModesFrame
 public import VerifiedGarbage.Proof.Camellia.PPC64LE.FbFinalVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Camellia.PPC64LE.Scrub
 public import VerifiedGarbage.TCB.PPC64LE.Print
 import VerifiedGarbage.Proof.Camellia.PPC64LE.ModesLit
 import VerifiedGarbage.Proof.Camellia.PPC64LE.Lit
@@ -16,17 +17,9 @@ import VerifiedGarbage.Proof.Camellia.PPC64LE.FbFinalLit
 namespace VG.Artifacts.CamelliaCfb.PPC64LE
 
 def artifacts : List Artifact := [
-  Spec.Camellia.cfbEncryptApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 3408 .r8 422 Impl.Camellia.PPC64LE.cfbEncrypt
-    verified := Proof.Camellia.PPC64LE.cfbEnc_framed Proof.Camellia.PPC64LE.Modes.cfbEncrypt_verified },
-  Spec.Camellia.cfbDecryptApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 3408 .r8 422 Impl.Camellia.PPC64LE.cfbDecrypt
-    verified := Proof.Camellia.PPC64LE.cfbDec_framed Proof.Camellia.PPC64LE.Modes.cfbDecrypt_verified },
-  Spec.Camellia.cfbEncryptFinalApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 3408 .r8 422 Impl.Camellia.PPC64LE.cfbEncryptFinal
-    verified := Proof.Camellia.PPC64LE.FbFinal.cfbEncryptFinal_framed },
-  Spec.Camellia.cfbDecryptFinalApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 3408 .r8 422 Impl.Camellia.PPC64LE.cfbDecryptFinal
-    verified := Proof.Camellia.PPC64LE.FbFinal.cfbDecryptFinal_framed }]
+  Spec.Camellia.cfbEncryptApi.artifact PPC64LE.target Proof.Camellia.PPC64LE.Scrub.cfbEncReg,
+  Spec.Camellia.cfbDecryptApi.artifact PPC64LE.target Proof.Camellia.PPC64LE.Scrub.cfbDecReg,
+  Spec.Camellia.cfbEncryptFinalApi.artifact PPC64LE.target Proof.Camellia.PPC64LE.Scrub.cfbEncFinalReg,
+  Spec.Camellia.cfbDecryptFinalApi.artifact PPC64LE.target Proof.Camellia.PPC64LE.Scrub.cfbDecFinalReg]
 
 end VG.Artifacts.CamelliaCfb.PPC64LE

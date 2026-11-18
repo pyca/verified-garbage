@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.EcKey.Instance.compressPublicKeyContract`. The input is public: timing may depend on the pointers and the contents of `public`.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 49 bytes.
@@ -98,7 +100,13 @@ bl {vg_brainpoolp384r1_check_point}
 .inst 0x8a030021,0xdac00c21,0x91004691,0xf9000221,0xf9434801,0x8a030021,0xdac00c21,0x91002691
 .inst 0xf9000221,0xf9434c01,0x8a030021,0xdac00c21,0x91000691,0xf9000221,0xf9400013,0xf9400414
 .inst 0xf9400815,0xf9400c16,0xf9401017,0xf9401418,0xf9401819,0xf9401c1e,0xd2800021,0x8a010060
-.inst 0xd65f03c0
+.inst 0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800008
+.inst 0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f,0xd2800010
+.inst 0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406
+.inst 0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416
+.inst 0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e
+.inst 0x6f00e41f,0xea01003f,0x4e181c28,0x4e181c29,0x4e181c2a,0x4e181c2b,0x4e181c2c,0x4e181c2d
+.inst 0x4e181c2e,0x4e181c2f,0x11000000,0xd65f03c0
 .p2align 6",
         vg_brainpoolp384r1_check_point = sym super::ec_brainpoolp384r1_compressed::vg_brainpoolp384r1_check_point::vg_brainpoolp384r1_check_point,
     )
@@ -107,6 +115,8 @@ bl {vg_brainpoolp384r1_check_point}
 /// Validate and decompress a brainpoolP384r1 public key (SEC 1 §2.3.4, SP 800-56A §5.6.2.3.3): reads `02` or `03` followed by `x` in 48 bytes, most significant first; checks `x` below the field prime and recovers a coordinate `y` satisfying the curve equation with even parity for `02`, odd for `03`. Writes `04` followed by `x` and `y` in 48 bytes each and returns 1. If no such finite point exists, writes 97 zero bytes and returns 0. Rejects infinity and hybrid encodings. The curve has cofactor one, so no subgroup multiplication is required.
 ///
 /// Contract: `VG.Spec.EcKey.Instance.decompressPublicKeyContract`. The input is public: timing may depend on the pointers and the contents of `public`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -881,7 +891,13 @@ bl {vg_brainpoolp384r1_mul_mod_p}
 .inst 0xf90028c1,0xf9438801,0x8a030021,0xdac00c21,0xf90024c1,0xf9438c01,0x8a030021,0xdac00c21
 .inst 0xf90020c1,0xf9439001,0x8a030021,0xdac00c21,0xf9001cc1,0xf9439401,0x8a030021,0xdac00c21
 .inst 0xf90018c1,0xf9400013,0xf9400414,0xf9400815,0xf9400c16,0xf9401017,0xf9401418,0xf9401819
-.inst 0xf9401c1e,0xd2800021,0x8a010060,0xd65f03c0
+.inst 0xf9401c1e,0xd2800021,0x8a010060,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005
+.inst 0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d
+.inst 0xd280000e,0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403
+.inst 0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413
+.inst 0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b
+.inst 0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0x4e181c28,0x4e181c29,0x4e181c2a
+.inst 0x4e181c2b,0x4e181c2c,0x4e181c2d,0x4e181c2e,0x4e181c2f,0x11000000,0xd65f03c0
 .p2align 6",
         vg_brainpoolp384r1_mul_mod_p = sym super::ec_brainpoolp384r1::vg_brainpoolp384r1_mul_mod_p::vg_brainpoolp384r1_mul_mod_p,
     )

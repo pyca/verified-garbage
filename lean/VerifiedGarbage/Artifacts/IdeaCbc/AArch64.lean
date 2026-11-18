@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Idea.AArch64.CbcVerified
+public import VerifiedGarbage.Proof.Idea.AArch64.ModesResidue
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.AArch64.Print
 
@@ -12,10 +13,12 @@ namespace VG.Artifacts.IdeaCbc.AArch64
 
 def artifacts : List Artifact := [
   Spec.Idea.cbcEncryptChainedApi.artifact AArch64.target {
-    code := Impl.StackScratch.AArch64.withStackScratchWiped 208 .x4 26 Impl.Idea.AArch64.cbcEncryptChained
-    verified := Proof.Idea.AArch64.cbcEncryptChained_framed },
+    code := Proof.Idea.AArch64.ModesResidue.cbcEncryptChainedCode
+    verified := Proof.Idea.AArch64.ModesResidue.cbcEncryptChainedCode_verified
+    residue := some ⟨Proof.Idea.AArch64.ModesResidue.cbcEncryptChainedCode_noResidue⟩ },
   Spec.Idea.cbcDecryptChainedApi.artifact AArch64.target {
-    code := Impl.StackScratch.AArch64.withStackScratchWiped 208 .x4 26 Impl.Idea.AArch64.cbcDecryptChained
-    verified := Proof.Idea.AArch64.cbcDecryptChained_framed }]
+    code := Proof.Idea.AArch64.ModesResidue.cbcDecryptChainedCode
+    verified := Proof.Idea.AArch64.ModesResidue.cbcDecryptChainedCode_verified
+    residue := some ⟨Proof.Idea.AArch64.ModesResidue.cbcDecryptChainedCode_noResidue⟩ }]
 
 end VG.Artifacts.IdeaCbc.AArch64

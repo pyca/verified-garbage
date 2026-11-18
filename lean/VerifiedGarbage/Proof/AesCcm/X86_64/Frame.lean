@@ -377,8 +377,10 @@ theorem tight_cov {p x : Addr} (hx : (⟨p - 2624, 2624⟩ : Region).Contains x 
     (hD : (⟨p - 2624, 2624⟩ : Region).Disjoint ⟨D, n⟩)
     (hT : (⟨p - 2624, 2624⟩ : Region).Disjoint ⟨T, tl⟩) :
     ∀ r ∈ mutR (p - 2560) (p - 2608) D n ++ [⟨T, tl⟩], ¬ r.Contains x 1 := by
-  have hchk : ∀ j < 2624, (j < 16 ∨ (64 ≤ j ∧ j < 176) ∨ (280 ≤ j ∧ j < 296) ∨ (304 ≤ j ∧ j < 336)) →
-      cov tightKs tightChunks j = true := by decide +kernel
+  -- Each of the four ranges on its own: the kernel then evaluates `cov` at their 176 bytes, not at all 2624.
+  have hchk : ∀ d k, (d = 0 ∧ k = 16 ∨ d = 64 ∧ k = 112 ∨ d = 280 ∧ k = 16 ∨ d = 304 ∧ k = 32) →
+      ∀ i < k, cov tightKs tightChunks (d + i) = true := by
+    rintro d k (⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩) <;> decide +kernel
   have hj : (x - (p - 2624)).toNat < 2624 := by have := hx; simp only [Region.Contains] at this; omega
   have hc {d k : Nat} (hfit : d + k ≤ 2624)
       (hc : d = 0 ∧ k = 16 ∨ d = 64 ∧ k = 112 ∨ d = 280 ∧ k = 16 ∨ d = 304 ∧ k = 32)
@@ -388,7 +390,9 @@ theorem tight_cov {p x : Addr} (hx : (⟨p - 2624, 2624⟩ : Region).Contains x 
     obtain ⟨hl, hu⟩ := (Offset.lt_iff x (p - 2624) (by omega_using [hfit])).mp hr'
     apply hn
     change (⟨p - 2624, 2624⟩ : Region).Contains x 1 ∧ cov tightKs tightChunks (x - (p - 2624)).toNat = true
-    exact ⟨hx, hchk _ hj (by rcases hc with ⟨rfl,rfl⟩ | ⟨rfl,rfl⟩ | ⟨rfl,rfl⟩ | ⟨rfl,rfl⟩ <;> omega)⟩
+    obtain h := hchk d k hc ((x - (p - 2624)).toNat - d) (by omega)
+    rw [Nat.add_sub_cancel' hl] at h
+    exact ⟨hx, h⟩
   intro r hr hx'
   simp only [mutR, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with (rfl | rfl | rfl | rfl | rfl) | rfl

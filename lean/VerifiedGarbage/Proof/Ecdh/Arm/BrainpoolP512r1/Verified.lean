@@ -27,7 +27,9 @@ meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Ecdsa.Arm.SavedAbi
 meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.SavedAbi
 meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
 
 /-!
@@ -54,12 +56,7 @@ theorem pre_of {u : Bool} {s : State} (h : ecdhArm.pre s) : EPre (brainpoolp512r
 
 theorem post_of {u : Bool} {s s' : State} (h : EPost (brainpoolp512r1With u) s s') : ecdhArm.post s s' := by
   unfold EPost at h
-  show match ex s.mem (State.addr (s.gpr .r1)) (State.addr (s.gpr .r2)) with
-    | some z => BitVec.setWidth 32 (s'.gpr .r1 ++ s'.gpr .r0) = 1 ∧
-        Spec.EcKey.bytesAt s'.mem (State.addr (s.gpr .r0)) 64 = z
-    | none => BitVec.setWidth 32 (s'.gpr .r1 ++ s'.gpr .r0) = 0 ∧
-        Spec.EcKey.bytesAt s'.mem (State.addr (s.gpr .r0)) 64 = List.replicate 64 0
-  rw [BitVec.setWidth_append_eq_right]
+  simp only [ecdhArm, BitVec.setWidth_append_eq_right]
   revert h
   generalize hq : ex s.mem (State.addr (s.gpr .r1)) (State.addr (s.gpr .r2)) = q
   rw [show Spec.Ecdh.exchange (brainpoolp512r1With u).C (dk (brainpoolp512r1With u) s)
@@ -71,18 +68,7 @@ theorem ecdh_arm (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) (u : Bool) (s
     ∃ t s', Exec isa (exchangeBrainpoolP512r1With u) s t s' ∧ abiPreserved s s' ∧ ecdhArm.post s s' := by
   have hp := pre_of (u := u) hs
   obtain ⟨t, s', he, K, hpost⟩ := exchange_ok (brainpoolp512r1With_ok u) hL hp
-  refine ⟨t, s', he, ⟨fun r hr => ?_, K.sp⟩, post_of hpost⟩
-  simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  · exact K.saved (.r4, 0) (by decide)
-  · exact K.saved (.r5, 4) (by decide)
-  · exact K.saved (.r6, 8) (by decide)
-  · exact K.saved (.r7, 12) (by decide)
-  · exact K.saved (.r8, 16) (by decide)
-  · exact K.saved (.r9, 20) (by decide)
-  · exact K.saved (.r10, 24) (by decide)
-  · exact K.saved (.r11, 28) (by decide)
-  · exact K.saved (.lr, 32) (by decide)
+  exact ⟨t, s', he, abi_of_saved K.saved K.sp, post_of hpost⟩
 
 /-- The taint analysis starts with the arguments' registers public. -/
 def τ₀ : VG.Arm.Taint.T := { regs := .ofList [.r0, .r1, .r2, .r3], flags := false }

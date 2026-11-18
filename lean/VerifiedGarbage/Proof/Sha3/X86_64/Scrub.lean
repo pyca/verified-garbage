@@ -19,6 +19,8 @@ meta import VerifiedGarbage.Proof.Sha3.X86_64.Instances
 meta import VerifiedGarbage.Proof.Sha3.Stream
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.CalleeLit
+import VerifiedGarbage.Proof.Sha3.PostOut
+meta import VerifiedGarbage.Proof.Sha3.PostOut
 
 /-!
 # SHA-3 and SHAKE's functions on x86-64, without secret residue
@@ -27,8 +29,8 @@ Each instance's `update`, and SHAKE's `finalize` and `squeeze`, followed by
 `Impl.Scrub.X86_64.scrubTail` (`X86_64.Scrub.withScrub`), which clears the
 registers and the granules of its stack that the residue analysis
 (`X86_64.RTaint`) finds may hold secrets. Their postconditions read the
-memory on return only within the buffers (`X86_64.Scrub.PostOut`): the state
-(`Proof.Sha3.stateAt_congr`) and the output (`bytesAt_congr`).
+memory on return only within the buffers (`X86_64.Scrub.PostOut`,
+`Proof/Sha3/PostOut.lean`).
 
 SHA-3's fixed digest copy avoids generic squeezing. Its finalizer clears
 the 680-byte stack with aligned stores after writing the digest.
@@ -40,98 +42,22 @@ namespace VG.Proof.Sha3.X86_64.Scrub
 
 open VG.Spec.Sha3 VG.X86_64 VG.X86_64.Scrub
 
-theorem agreeBuf {m₁ m₂ : Mem} {p : Addr} {n : Nat} (hn : n < 2 ^ 64)
-    (h : ∀ a, Region.Contains ⟨p, n⟩ a 1 → m₁ a = m₂ a) :
-    ∀ i < n, m₂ (p + BitVec.ofNat 64 i) = m₁ (p + BitVec.ofNat 64 i) := fun i hi =>
-  (h _ (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hn, hi]))).symm
-
-theorem bytesAt_congr {m₁ m₂ : Mem} {p : Addr} {n : Nat}
-    (h : ∀ i < n, m₂ (p + BitVec.ofNat 64 i) = m₁ (p + BitVec.ofNat 64 i)) :
-    bytesAt m₂ p n = bytesAt m₁ p n :=
-  List.map_congr_left fun i hi => h i (List.mem_range.mp hi)
-
-theorem stateAgree {m₁ m₂ : Mem} {p : Addr}
-    (h : ∀ a, Region.Contains ⟨p, 25 * Elem.size .u64⟩ a 1 → m₁ a = m₂ a) :
-    stateAt m₂ p = stateAt m₁ p :=
-  Proof.Sha3.stateAt_congr fun i hi =>
-    agreeBuf (n := 25 * Elem.size .u64) (by decide) h i (by simp only [Elem.size]; omega_using [hi])
-
 theorem updateOut (rate stack : Nat) :
     PostOut (updateContract X86_64.abi rate stack) (updateSig.retBits 64) :=
-  postOut_of_local (leak := none) ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
-    obtain ⟨st, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 4) hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨ps, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨dt, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨ln, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨sc, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    obtain rfl := List.eq_nil_of_length_eq_zero (Nat.succ.inj hlen)
-    simp only [updateSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
-      forall_eq] at hb
-    refine ⟨fun msg hr hc => ?_, h.2⟩
-    show stateAt m₂ st = _
-    rw [stateAgree hb.1]
-    exact h.1 msg hr hc
+  postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha3.PostOut.updatePost_out rate 64)
 
 /-- A fixed digest's postcondition reads only its output buffer. -/
 theorem finalizeOut (H : HashFn) (stack : Nat) (hlen : H.len < 2 ^ 64) :
     PostOut (finalizeContract X86_64.abi H stack) ((finalizeSig H.len).retBits 64) :=
-  postOut_of_local (leak := none) ScrubAbi.plain fun vs m m₁ m₂ r hvs hb h => by
-    obtain ⟨st, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 2) hvs
-    replace hvs := Nat.succ.inj hvs
-    obtain ⟨ps, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hvs
-    replace hvs := Nat.succ.inj hvs
-    obtain ⟨ot, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hvs
-    obtain rfl := List.eq_nil_of_length_eq_zero (Nat.succ.inj hvs)
-    simp only [finalizeSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
-      forall_eq_or_imp, forall_eq] at hb
-    intro msg hr hc
-    show bytesAt m₂ ot H.len = _
-    rw [bytesAt_congr fun i hi => agreeBuf (n := H.len * Elem.size .u8)
-      (by simpa only [Elem.size, Nat.mul_one] using hlen) hb.2 i
-      (by simpa only [Elem.size, Nat.mul_one] using hi)]
-    exact h msg hr hc
+  postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha3.PostOut.finalizePost_out H 64 hlen)
 
 theorem xofFinalizeOut (X : Xof) (stack : Nat) :
     PostOut (xofFinalizeContract X86_64.abi X stack) (xofFinalizeSig.retBits 64) :=
-  postOut_of_local (leak := none) ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
-    obtain ⟨st, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 1) hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨ps, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    obtain rfl := List.eq_nil_of_length_eq_zero (Nat.succ.inj hlen)
-    simp only [xofFinalizeSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq] at hb
-    intro msg hr hc d
-    show squeezeFrom X.rate (stateAt m₂ st) 0 d = _
-    rw [stateAgree hb]
-    exact h msg hr hc d
+  postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha3.PostOut.xofFinalizePost_out X 64)
 
 theorem xofSqueezeOut (X : Xof) (stack : Nat) :
     PostOut (xofSqueezeContract X86_64.abi X stack) (xofSqueezeSig.retBits 64) :=
-  postOut_of_local (leak := none) ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
-    obtain ⟨st, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 3) hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨ps, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨ot, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨ol, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    obtain rfl := List.eq_nil_of_length_eq_zero (Nat.succ.inj hlen)
-    simp only [xofSqueezeSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
-      forall_eq_or_imp, forall_eq] at hb
-    refine ⟨fun msg n hx => ?_, h.2⟩
-    obtain ⟨h1, h2⟩ := h.1 msg n hx
-    refine ⟨?_, fun d => ?_⟩
-    · show bytesAt m₂ ot ol.toNat = _
-      rw [bytesAt_congr fun i hi => agreeBuf (n := ol.toNat * Elem.size .u8)
-        (by simp only [Elem.size]; have := ol.isLt; omega_using []) hb.2 i
-        (by simp only [Elem.size]; omega_using [hi])]
-      exact h1
-    · show squeezeFrom X.rate (stateAt m₂ st) _ d = _
-      rw [stateAgree hb.1]
-      exact h2 d
+  postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha3.PostOut.xofSqueezePost_out X)
 
 /-! ## The registrations -/
 def updateSha3_224Ks : List Nat := keep_for% Spec.Sha3.updateSha3_224Api.sig 8 (Impl.Sha3.X86_64.Instances.update Spec.Sha3.hashSha3_224.rate) []

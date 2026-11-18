@@ -839,6 +839,16 @@ vg_idea_cbc_encrypt_chained:
 	std %r11, 48(%r12)
 	std %r11, 56(%r12)
 	addi %r1, %r1, 96
+	li %r0, 0
+	li %r4, 0
+	li %r5, 0
+	li %r6, 0
+	li %r7, 0
+	li %r8, 0
+	li %r9, 0
+	li %r10, 0
+	li %r11, 0
+	li %r12, 0
 	blr
 
 vg_idea_cbc_decrypt_chained:
@@ -1680,4 +1690,14 @@ vg_idea_cbc_decrypt_chained:
 	std %r11, 48(%r12)
 	std %r11, 56(%r12)
 	addi %r1, %r1, 96
+	li %r0, 0
+	li %r4, 0
+	li %r5, 0
+	li %r6, 0
+	li %r7, 0
+	li %r8, 0
+	li %r9, 0
+	li %r10, 0
+	li %r11, 0
+	li %r12, 0
 	blr

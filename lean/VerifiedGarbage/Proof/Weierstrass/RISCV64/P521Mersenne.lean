@@ -648,14 +648,14 @@ theorem dblStep_ok {b A B : Addr} {s0 : State} (h0 : PCtx b A B s0) {C : Nat →
     WP isa (.block (dblStep k)) s (DblInv b A s0 C (k + 1)) := by
   have hP := P_eq
   have hb := h0.nowrap
-  obtain e : dblStep k = [.shift .srl .d .a7 .a5 63] ++ (.load .d .a5 .a3 (P + 8 * k) ::
-      ([.shift .sll .d .a6 .a5 1, .logic .or .a6 .a6 .a7] ++
+  obtain e : dblStep k = ([.shift .srl .d .a7 .a5 63] : List Instr) ++ ((.load .d .a5 .a3 (P + 8 * k) ::
+      (([.shift .sll .d .a6 .a5 1, .logic .or .a6 .a6 .a7] : List Instr) ++
         ((if k % 2 = 0 then
           .load .d .t3 .t4 (8 * (k / 2)) :: [.mul .t0 .t3 .t3, .mulhu .t3 .t3 .t3,
             .add .a6 .a6 .t0, .sltu .a7 .a6 .t0]
-         else [.add .a6 .a6 .t3, .sltu .a7 .a6 .t3]) ++
-        ([.add .a6 .a6 .a4, .sltu .t0 .a6 .a4, .add .a4 .a7 .t0] ++
-          [.store .d .a6 .a3 (P + 8 * k)])))) := by
+         else [.add .a6 .a6 .t3, .sltu .a7 .a6 .t3] : List Instr) ++
+        (([.add .a6 .a6 .a4, .sltu .t0 .a6 .a4, .add .a4 .a7 .t0] : List Instr) ++
+          ([.store .d .a6 .a3 (P + 8 * k)] : List Instr))))) : List Instr) := by
     simp only [dblStep, List.cons_append, List.nil_append]
   rw [e]
   refine WP.block_append (WP.mono dbl1_ok fun s1 ⟨e1, k1⟩ => ?_)

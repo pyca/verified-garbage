@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdh.X86.Main
+public import VerifiedGarbage.Proof.Framework.X86.SseTaintMono
+meta import VerifiedGarbage.Proof.Framework.X86.SseTaintMono
 public import VerifiedGarbage.Proof.Ecdh.X86.BrainpoolP384r1.Contract
 public import VerifiedGarbage.Proof.Ecdh.X86.CallTaint
 public import VerifiedGarbage.Proof.Framework.X86.NativeHintData
@@ -12,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.X86.CallWith
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import VerifiedGarbage.Proof.Ecdh.X86.BrainpoolP384r1.Lit
 public import VerifiedGarbage.Impl.Ecdh.BrainpoolP384r1.X86
-import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP384r1.Lit
+import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.BrainpoolP384r1
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Ecdh.X86.Main
@@ -27,7 +29,7 @@ meta import VerifiedGarbage.Proof.Framework.X86.CallWith
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Ecdh.X86.BrainpoolP384r1.Lit
 meta import VerifiedGarbage.Impl.Ecdh.BrainpoolP384r1.X86
-meta import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP384r1.Lit
+meta import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.BrainpoolP384r1
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.Contract
@@ -80,7 +82,7 @@ theorem ecdh_sp : SpOk exchangeBrainpoolP384r1 brainpoolp384r1.stk := ⟨NoSp.of
 theorem ecdh_x86 (hL : Weierstrass.Law Spec.BrainpoolP384r1.curve) (s : State) (hs : ecdhX86.pre s) :
     ∃ t s', Exec isa exchangeBrainpoolP384r1 s t s' ∧ abiPreserved s s' ∧ ecdhX86.post s s' := by
   have hp := pre_of hs
-  obtain ⟨t, s', he, K, hpost⟩ := exchange_ok brainpoolp384r1_ok hL rfl ecdh_sp hp
+  obtain ⟨t, s', he, K, hpost⟩ := exchange_ok brainpoolp384r1_ok hL ecdh_sp hp
   refine ⟨t, s', he, ⟨fun r hr => ?_, K.ret hp⟩, post_of hpost⟩
   simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl
@@ -142,25 +144,21 @@ theorem agree₀ {s₁ s₂ : State} (h₁ : ecdhX86.pre s₁) (h₂ : ecdhX86.p
     · exact congrArg _ a3
 
 /-! The field functions, analysed once from what is public on entry to
-their calls (`CallTaint`), in place of each call. -/
+their calls (`CallTaint`), in place of each call. The windows select their
+table's entries with SSE2 instructions, so the analysis is the one that
+follows the `xmm` registers. -/
 
-taint_summary mulSum : taint (callτ 48)
+taint_summary mulSum : sseTaint (callτ 48)
   (Impl.Weierstrass.X86.Mont.mulFn Impl.Weierstrass.Mont.brainpoolp384r1p.k Impl.Weierstrass.Mont.brainpoolp384r1p.m)
-taint_summary addSum : taint (callτ 48)
+taint_summary addSum : sseTaint (callτ 48)
   (Impl.Weierstrass.X86.Mont.addFn Impl.Weierstrass.Mont.brainpoolp384r1p.k Impl.Weierstrass.Mont.brainpoolp384r1p.m)
-taint_summary subSum : taint (callτ 48)
-  (Impl.Weierstrass.X86.Mont.subFn Impl.Weierstrass.Mont.brainpoolp384r1p.k Impl.Weierstrass.Mont.brainpoolp384r1p.m)
-taint_summary mulNestedSum : taint (nestedCallτ 48)
-  (Impl.Weierstrass.X86.Mont.mulFn Impl.Weierstrass.Mont.brainpoolp384r1p.k Impl.Weierstrass.Mont.brainpoolp384r1p.m)
-taint_summary addNestedSum : taint (nestedCallτ 48)
-  (Impl.Weierstrass.X86.Mont.addFn Impl.Weierstrass.Mont.brainpoolp384r1p.k Impl.Weierstrass.Mont.brainpoolp384r1p.m)
-taint_summary subNestedSum : taint (nestedCallτ 48)
+taint_summary subSum : sseTaint (callτ 48)
   (Impl.Weierstrass.X86.Mont.subFn Impl.Weierstrass.Mont.brainpoolp384r1p.k Impl.Weierstrass.Mont.brainpoolp384r1p.m)
 
 theorem ecdh_ct : ConstantTime isa ecdhX86.pre ecdhX86.pub exchangeBrainpoolP384r1 := by
-  obtain ⟨_, hc⟩ : ∃ h, (taint.check τ₀ exchangeBrainpoolP384r1 h).isSome = true := by
-    native_taint_decide_sum [mulSum, addSum, subSum, mulNestedSum, addNestedSum, subNestedSum]
-  exact VG.Taint.constantTime (A := taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp) hc
+  obtain ⟨_, hc⟩ : ∃ h, (sseTaint.check τ₀ exchangeBrainpoolP384r1 h).isSome = true := by
+    taint_decide_sum [mulSum, addSum, subSum]
+  exact VG.Taint.constantTime (A := sseTaint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp) hc
 
 /-- The contract with the regions the shared one gives: the arguments'
 slots writable rather than readable. -/

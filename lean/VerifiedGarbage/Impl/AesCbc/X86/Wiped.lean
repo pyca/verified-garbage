@@ -15,6 +15,9 @@ changed; where `w = 0`, that code itself, and otherwise a call of it (the
 internal functions `vg_aes_cbc_encrypt_unwiped` and
 `vg_aes_cbc_decrypt_unwiped`, with the variant's suffix), then of
 `vg_zeroize` on the first `w` bytes of `scratch` (the sixth argument).
+Decryption with AES-NI is not around `b`: its CBC code is that of
+`Impl/AesCbc/X86/Decrypt.lean`, which writes only the first 240 bytes of
+`scratch`, wrapped the same way.
 -/
 
 @[expose] public section
@@ -34,9 +37,10 @@ zeroing the first `w` bytes of `scratch`. -/
 def encrypt (b : Blocks) (suffix : String) (w : Nat) : Prog isa :=
   wiped ("vg_aes_cbc_encrypt_unwiped" ++ suffix) (Impl.AesCbc.X86.encryptZ b) w
 
-/-- `vg_aes_cbc_decrypt` around `b`, whose variant's suffix is `suffix`,
-zeroing the first `w` bytes of `scratch`. -/
-def decrypt (b : Blocks) (suffix : String) (w : Nat) : Prog isa :=
-  wiped ("vg_aes_cbc_decrypt_unwiped" ++ suffix) (Impl.AesCbc.X86.decryptZ b) w
+/-- `vg_aes_cbc_decrypt` with the CBC code `body` (`decryptZ` around a blocks
+implementation, or the code of `Impl/AesCbc/X86/Decrypt.lean`), whose
+variant's suffix is `suffix`, zeroing the first `w` bytes of `scratch`. -/
+def decrypt (body : Prog isa) (suffix : String) (w : Nat) : Prog isa :=
+  wiped ("vg_aes_cbc_decrypt_unwiped" ++ suffix) body w
 
 end VG.Impl.AesCbc.X86.Wiped

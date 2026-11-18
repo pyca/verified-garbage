@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Blowfish.PPC64LE.ModesVerified
 public import VerifiedGarbage.Proof.Blowfish.PPC64LE.ModesFrame
 public import VerifiedGarbage.Proof.Blowfish.PPC64LE.FbFinalVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Blowfish.PPC64LE.Scrub
 public import VerifiedGarbage.TCB.PPC64LE.Print
 import VerifiedGarbage.Proof.Blowfish.PPC64LE.ModesLit
 import VerifiedGarbage.Proof.Blowfish.PPC64LE.FbFinalLit
@@ -15,17 +16,9 @@ import VerifiedGarbage.Proof.Blowfish.PPC64LE.FbFinalLit
 namespace VG.Artifacts.BlowfishCfb.PPC64LE
 
 def artifacts : List Artifact := [
-  Spec.Blowfish.cfbEncryptApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 128 .r7 12 Impl.Blowfish.PPC64LE.cfbEncrypt
-    verified := Proof.Blowfish.PPC64LE.cfbEnc_framed Proof.Blowfish.PPC64LE.Modes.cfbEncrypt_verified },
-  Spec.Blowfish.cfbDecryptApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 128 .r7 12 Impl.Blowfish.PPC64LE.cfbDecrypt
-    verified := Proof.Blowfish.PPC64LE.cfbDec_framed Proof.Blowfish.PPC64LE.Modes.cfbDecrypt_verified },
-  Spec.Blowfish.cfbEncryptFinalApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 128 .r7 12 Impl.Blowfish.PPC64LE.cfbEncryptFinal
-    verified := Proof.Blowfish.PPC64LE.FbFinal.cfbEncryptFinal_framed },
-  Spec.Blowfish.cfbDecryptFinalApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 128 .r7 12 Impl.Blowfish.PPC64LE.cfbDecryptFinal
-    verified := Proof.Blowfish.PPC64LE.FbFinal.cfbDecryptFinal_framed }]
+  Spec.Blowfish.cfbEncryptApi.artifact PPC64LE.target Proof.Blowfish.PPC64LE.Scrub.cfbEncryptReg,
+  Spec.Blowfish.cfbDecryptApi.artifact PPC64LE.target Proof.Blowfish.PPC64LE.Scrub.cfbDecryptReg,
+  Spec.Blowfish.cfbEncryptFinalApi.artifact PPC64LE.target Proof.Blowfish.PPC64LE.Scrub.cfbEncryptFinalReg,
+  Spec.Blowfish.cfbDecryptFinalApi.artifact PPC64LE.target Proof.Blowfish.PPC64LE.Scrub.cfbDecryptFinalReg]
 
 end VG.Artifacts.BlowfishCfb.PPC64LE

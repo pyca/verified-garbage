@@ -149,6 +149,29 @@ theorem pre_args {s : State} (hA : ArgsOk sig) (hl : Sig.noLists sig.params = tr
   rw [wf_args]
   exact Iff.rfl
 
+/-- What the precondition of a contract says of the stack, the buffers and
+the arguments, whatever lists or tables its parameters describe. -/
+theorem pre_args_imp {s : State} (hA : ArgsOk sig) (hs : (sig.contract abi pre post wa stack leak).pre s) :
+    ((stack = 0 ∨ stack ≤ s.sp.toNat) ∧ s.sp.toNat + 8 * nStack sig ≤ 2 ^ 64) ∧
+      (∀ r ∈ stackBelow s.sp stack, ∀ a ∈ Sig.bufs sig.params (allArgs sig s), r.Disjoint a.1) ∧
+      Curry.apply (sig.words abi.ptrBits) pre (allArgs sig s) s.mem := by
+  simp only [Sig.contract] at hs
+  rw [hA] at hs
+  simp only [argArea_eq] at hs
+  rw [wf_args] at hs
+  obtain ⟨hw, -, -, -, hres, -, hpre⟩ := hs
+  exact ⟨hw, fun r hr a ha => hres r hr a (List.mem_append_left _ (List.mem_append_left _ ha)), hpre⟩
+
+/-- Two runs that agree on a contract's public data have the same stack
+pointer, whatever lists or tables its parameters describe. -/
+theorem pub_args_sp {s₁ s₂ : State} (hA : ArgsOk sig) (hp : (sig.contract abi pre post wa stack leak).pub s₁ s₂) :
+    s₁.sp = s₂.sp := by
+  simp only [Sig.contract] at hp
+  rw [hA] at hp
+  cases leak with
+  | none => exact hp.1.1
+  | some f => exact hp.1.1.1
+
 /-- The postcondition of a contract. -/
 theorem post_args {s s' : State} (hA : ArgsOk sig) :
     (sig.contract abi pre post wa stack leak).post s s' ↔

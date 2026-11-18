@@ -127,10 +127,12 @@ theorem restore_ok {s t : State} {B : Addr}
   refine ⟨?_, ?_, rfl, rfl, rfl, rfl, rfl⟩
   · intro r hr
     simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp_all
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+      simp only [reduceCtorEq, ↓reduceIte]
   · intro r hr
     simp only [preservedV, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp_all
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+      simp only [reduceCtorEq, ↓reduceIte, Nat.mul_zero]
     all_goals exact extract_setLane64 _ _ (i := 0) (j := 0) (by decide) (by decide)
 
 theorem saved_gprs (s : State) : Spill.Saved (s.gpr .x0) s.gpr gprSlots (savedState s).mem := by

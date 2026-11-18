@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.AesEcb.AArch64
 import VerifiedGarbage.Proof.Framework.AArch64.Depth
 import VerifiedGarbage.Proof.Framework.AArch64.Clears
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubAll
 
 /-!
 # AES-CBC on AArch64, zeroing the scratch it writes
@@ -164,6 +165,50 @@ theorem decryptNeon_verified :
     (AesEcb.AArch64.depth_of_noFrames Proof.AesCbc.AArch64.Neon.decrypt_noFrames)
     (decPost_local 64) (decPost_out 64)
 
+/-! ## Without secret residue -/
+
+/-- A postcondition of a CBC function, `scrubbedPost` of `P`, reads the memory
+on return only within the buffers, if `P` does (`hP`). -/
+theorem scrubbedOut (P : Spec.Cbc.aesSig.Post 64)
+    (hP : ∀ a b c d e f m m₁ m₂ x,
+      (∀ i < 240, m₁ (a + BitVec.ofNat 64 i) = m₂ (a + BitVec.ofNat 64 i)) →
+      (∀ i < 16, m₂ (c + BitVec.ofNat 64 i) = m₁ (c + BitVec.ofNat 64 i)) →
+      (∀ i < e.toNat * 16, m₂ (d + BitVec.ofNat 64 i) = m₁ (d + BitVec.ofNat 64 i)) →
+      P a b c d e f m m₁ x → P a b c d e f m m₂ x) :
+    ∀ vs m m₁ m₂ x, vs.length = (Spec.Cbc.aesSig.words abi.ptrBits).length →
+      (∀ b ∈ Sig.bufs Spec.Cbc.aesSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (Spec.Cbc.aesSig.words abi.ptrBits) (scrubbedPost 64 P) vs m m₁ x →
+        Curry.apply (Spec.Cbc.aesSig.words abi.ptrBits) (scrubbedPost 64 P) vs m m₂ x := by
+  intro vs m m₁ m₂ x hlen hb h
+  obtain ⟨a, b, c, d, e, f, rfl⟩ := vs_eq hlen
+  rw [bufs_eq] at hb
+  simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hb
+  obtain ⟨h1, h2⟩ := h
+  refine ⟨hP a b c d e f m m₁ m₂ x (fun i hi => (AesEcb.agree_of hb.1 i hi).symm)
+    (AesEcb.agree_of hb.2.1) (AesEcb.agree_of hb.2.2.1) h1, fun z hz => ?_⟩
+  rw [← hb.2.2.2 z hz]
+  exact h2 z hz
+
+theorem encryptOk : ScrubAll.ScrubAllOk (Spec.Cbc.aesEncryptContract abi 32) 32
+    (Spec.Cbc.aesSig.retBits abi.ptrBits) := by
+  rw [encrypt_eq]
+  refine ScrubAll.scrubAllOk_regs (by decide) (by decide) (Nat.le_refl _) (scrubbedOut _ ?_)
+  intro a b c d e f m m₁ m₂ x _ hc hd h key hk
+  obtain ⟨h1, h2⟩ := h key hk
+  have hb' : Spec.Cbc.blocksAt m₂ d e.toNat = Spec.Cbc.blocksAt m₁ d e.toNat :=
+    blocksAt_congr hd
+  exact ⟨hb'.trans h1, (AesEcb.bytesAt_congr hc).trans h2⟩
+
+theorem decryptOk : ScrubAll.ScrubAllOk (Spec.Cbc.aesDecryptContract abi 32) 32
+    (Spec.Cbc.aesSig.retBits abi.ptrBits) := by
+  rw [decrypt_eq]
+  refine ScrubAll.scrubAllOk_regs (by decide) (by decide) (Nat.le_refl _) (scrubbedOut _ ?_)
+  intro a b c d e f m m₁ m₂ x _ hc hd h key hk
+  obtain ⟨h1, h2⟩ := h key hk
+  have hb' : Spec.Cbc.blocksAt m₂ d e.toNat = Spec.Cbc.blocksAt m₁ d e.toNat :=
+    blocksAt_congr hd
+  exact ⟨hb'.trans h1, (AesEcb.bytesAt_congr hc).trans h2⟩
+
 /-- The implementation of `vg_aes_cbc_encrypt` over `v` that is emitted (see
 the module's documentation). -/
 def encryptRegs (v : BlocksImpl) : List (Registration Spec.Cbc.aesEncryptApi target) :=
@@ -173,25 +218,25 @@ def encryptRegs (v : BlocksImpl) : List (Registration Spec.Cbc.aesEncryptApi tar
     verified := encrypt_free_scrubbed v h
     written := Caller.written v
     writtenOk := Caller.written_ok v }]
-  else [{
+  else [ScrubAll.withScrubAll {
     suffix := v.suffix
     code := encrypt v
     stack := 32
-    verified := encrypt_verified v }]
+    verified := encrypt_verified v } encryptOk]
 
 /-- The implementation of `vg_aes_cbc_decrypt` over `v` that is emitted, if
 any (see the module's documentation). -/
 def decryptRegs (v : BlocksImpl) : List (Registration Spec.Cbc.aesDecryptApi target) :=
   if v.free then []
-  else if v.dec.name = "vg_aes_decrypt_blocks_neon" then [{
+  else if v.dec.name = "vg_aes_decrypt_blocks_neon" then [ScrubAll.withScrubAll {
     suffix := v.suffix
     code := decryptNeon
     stack := 32
-    verified := decryptNeon_verified }]
-  else [{
+    verified := decryptNeon_verified } decryptOk]
+  else [ScrubAll.withScrubAll {
     suffix := v.suffix
     code := decrypt v
     stack := 32
-    verified := decrypt_verified v }]
+    verified := decrypt_verified v } decryptOk]
 
 end VG.Proof.AesCbc.AArch64.Wiped

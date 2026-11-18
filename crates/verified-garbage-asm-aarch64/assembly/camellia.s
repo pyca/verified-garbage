@@ -868,6 +868,18 @@ vg_camellia_expand_key:
 	stp x17, x17, [x16, #128]
 	stp x17, x17, [x16, #144]
 	add sp, sp, #160
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
+	movz x8, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x12, #0, lsl #0
+	movz x13, #0, lsl #0
+	movi v0.2d, #0
+	movi v1.2d, #0
+	movi v2.2d, #0
+	movi v3.2d, #0
 	ret
 	.p2align 6
 
@@ -3325,6 +3337,14 @@ vg_camellia_ecb_encrypt:
 	stp x17, x17, [x16, #144]
 	stp x17, x17, [x16, #160]
 	add sp, sp, #3248
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
+	movz x8, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x12, #0, lsl #0
+	movz x13, #0, lsl #0
 	ret
 	.p2align 6
 
@@ -6590,5 +6610,13 @@ vg_camellia_ecb_decrypt:
 	stp x17, x17, [x16, #144]
 	stp x17, x17, [x16, #160]
 	add sp, sp, #3248
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
+	movz x8, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x12, #0, lsl #0
+	movz x13, #0, lsl #0
 	ret
 	.p2align 6

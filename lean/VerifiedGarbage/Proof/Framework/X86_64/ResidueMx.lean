@@ -162,7 +162,7 @@ theorem resOk_regOps {api : Api} (r : Registration api target) {pubs : List (Nat
   have hv := r.verified
   have hp := hpub
   rw [e] at hv hp ⊢
-  exact resOk_of_opsCheck (ScrubAbi.of r.consts api.sig r.tables api.pubMode) hv (chunks_sum r.stack) hS hfit
+  exact resOk_of_opsCheck (ScrubAbi.of r.consts api.sig r.tables) hv (chunks_sum r.stack) hS hfit
     hp hc
 
 /-- The granules to wipe, from the analysis with the operations `ops` (none

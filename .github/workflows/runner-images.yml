@@ -38,7 +38,7 @@ jobs:
           # benchmarks, on one with AArch32.
           - {tag: "verified-garbage-runner:armv7-cross", platform: "linux/arm64", os: ubuntu-26.04-arm}
           # For PPC64LE's tests, on the ppc64le runner they run on.
-          - {tag: "verified-garbage-runner:ppc64le", platform: "linux/ppc64le", os: ubuntu-24.04-ppc64le}
+          - {tag: "verified-garbage-runner:ppc64le", platform: "linux/ppc64le", os: ubuntu-24.04-ppc64le-p10}
           # For the lints of every target (`rust-lint`).
           - {tag: "verified-garbage-runner:lint", platform: "linux/amd64", os: ubuntu-26.04}
     name: ${{ matrix.image.tag }}

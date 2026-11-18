@@ -993,6 +993,16 @@ vg_seed_expand_key:
 	stp x17, x17, [x16, #432]
 	stp x17, x17, [x16, #448]
 	add sp, sp, #976
+	movz x4, #0, lsl #0
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
+	movz x8, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x12, #0, lsl #0
+	movz x13, #0, lsl #0
+	movz x14, #0, lsl #0
 	ret
 	.p2align 6
 
@@ -2957,6 +2967,26 @@ vg_seed_ecb_encrypt:
 	stp x17, x17, [x16, #400]
 	stp x17, x17, [x16, #416]
 	add sp, sp, #1456
+	movz x1, #0, lsl #0
+	movz x2, #0, lsl #0
+	movz x3, #0, lsl #0
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
+	movz x8, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x12, #0, lsl #0
+	movz x13, #0, lsl #0
+	movz x14, #0, lsl #0
+	movi v0.2d, #0
+	movi v1.2d, #0
+	movi v3.2d, #0
+	movz x0, #0, lsl #0
+	sub sp, sp, #1472
+	movi v31.2d, #0
+	add x9, sp, #0
+	str q31, [x9, #0]
+	add sp, sp, #1472
 	ret
 	.p2align 6
 
@@ -4921,5 +4951,25 @@ vg_seed_ecb_decrypt:
 	stp x17, x17, [x16, #400]
 	stp x17, x17, [x16, #416]
 	add sp, sp, #1456
+	movz x1, #0, lsl #0
+	movz x2, #0, lsl #0
+	movz x3, #0, lsl #0
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
+	movz x8, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x12, #0, lsl #0
+	movz x13, #0, lsl #0
+	movz x14, #0, lsl #0
+	movi v0.2d, #0
+	movi v1.2d, #0
+	movi v3.2d, #0
+	movz x0, #0, lsl #0
+	sub sp, sp, #1472
+	movi v31.2d, #0
+	add x9, sp, #0
+	str q31, [x9, #0]
+	add sp, sp, #1472
 	ret
 	.p2align 6

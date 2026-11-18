@@ -8,6 +8,8 @@
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sm4_cfb128_encrypt_sm4` if the CPU supports its features (`VG_SM4_CFB128_ENCRYPT_SM4_FEATURES`); or else `vg_sm4_cfb128_encrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.
@@ -56,6 +58,8 @@ pub unsafe fn vg_sm4_cfb128_encrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, sc
 /// Contract: `VG.Spec.Sm4.cfbDecryptContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sm4_cfb128_decrypt_sm4` if the CPU supports its features (`VG_SM4_CFB128_DECRYPT_SM4_FEATURES`); or else `vg_sm4_cfb128_decrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -106,6 +110,8 @@ pub unsafe fn vg_sm4_cfb128_decrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, sc
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sm4_cfb128_encrypt_final_sm4` if the CPU supports its features (`VG_SM4_CFB128_ENCRYPT_FINAL_SM4_FEATURES`); or else `vg_sm4_cfb128_encrypt_final`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.
@@ -154,6 +160,8 @@ pub unsafe fn vg_sm4_cfb128_encrypt_final_auto(_dit: verified_garbage_cpu::Dit<'
 /// Contract: `VG.Spec.Sm4.cfbDecryptFinalContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the chaining value or the data.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sm4_cfb128_decrypt_final_sm4` if the CPU supports its features (`VG_SM4_CFB128_DECRYPT_FINAL_SM4_FEATURES`); or else `vg_sm4_cfb128_decrypt_final`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///

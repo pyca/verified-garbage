@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Idea.ofbContract`. Constant time: only the pointers and `n` may affect timing, not the subkeys, the chaining value or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 104 bytes.
@@ -25,13 +27,15 @@ bne %cr0, 22b
 b 21f
 20:
 21:
-.base64 "eOu/fygABYEAAB+RLAAFgQQAH5EIAKXrEADF6xgA5esgAAXopgMIfCAAgTkAAGA5AABs+QgAbPkQAGz5GABs+SAAbPkoAGz5MABs+TgAbPlgACE4IACATg==""#,
+.base64 "eOu/fygABYEAAB+RLAAFgQQAH5EIAKXrEADF6xgA5esgAAXopgMIfCAAgTkAAGA5AABs+QgAbPkQAGz5GABs+SAAbPkoAGz5MABs+TgAbPlgACE4AAAAOAAAgDgAAKA4AADAOAAA4DgAAAA5AAAgOQAAQDkAAGA5AACAOSAAgE4=""#,
     )
 }
 
 /// IDEA-OFB encryption or decryption (NIST SP 800-38A §6.4, Lai 1992 §3.3) of the last piece of a message, of any length, in place: XORs the `len` bytes at `data` with the output blocks `Oⱼ = CIPH_K(Oⱼ₋₁)`, where `O₀` is the block at `*iv`, a partial last block `Pₙ*` of `u` bytes with `MSB_u(Oₙ)`, and replaces `*iv` with the last output block used, `Oₙ` (leaving it unchanged if `len = 0`): so that a further call continues the message if `len` is a multiple of 8, and otherwise keystream, to be wiped, after which the message must end. `CIPH_K` is IDEA encryption under the encryption subkeys written by `vg_idea_expand_key`.
 ///
 /// Contract: `VG.Spec.Idea.ofbFinalContract`. Constant time: only the pointers and `len` may affect timing, not the subkeys, the chaining value or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -61,6 +65,6 @@ bne %cr0, 22b
 b 21f
 20:
 21:
-.base64 "eOu/fygABYEAAB+RLAAFgQQAH5EIAKXrEADF6xgA5esgAAXopgMIfCAAgTkAAGA5AABs+QgAbPkQAGz5GABs+SAAbPkoAGz5MABs+TgAbPlgACE4IACATg==""#,
+.base64 "eOu/fygABYEAAB+RLAAFgQQAH5EIAKXrEADF6xgA5esgAAXopgMIfCAAgTkAAGA5AABs+QgAbPkQAGz5GABs+SAAbPkoAGz5MABs+TgAbPlgACE4AAAAOAAAgDgAAKA4AADAOAAA4DgAAAA5AAAgOQAAQDkAAGA5AACAOSAAgE4=""#,
     )
 }

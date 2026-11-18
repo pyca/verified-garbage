@@ -39,7 +39,7 @@ theorem Keep.tbls {s₀ s : State} {base : Addr} (hs : Keep c s₀ base s) {T : 
 
 /-- `[k]G`, then `Z^(p-2)`. -/
 theorem stage₂Comb (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c)
-    (hCo : ∀ d, c.comb = some d → CombOk c d) (ham3 : AM3 c.C) {s₀ : State} {base : Addr} {s : State} (hS : St₁ c A s₀ base s)
+    (hCo : ∀ d, c.comb = some d → CombOk c d) {s₀ : State} {base : Addr} {s : State} (hS : St₁ c A s₀ base s)
     (hTb : ∀ d, c.comb = some d → TblMem s₀ ((s₀.gpr .eax).setWidth 64) (c.combWords d) ∧
       (∀ i < (c.combWords d).length, ∀ b < 8,
         size ≤ ofs base ((s₀.gpr .eax).setWidth 64 + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 b)) ∧
@@ -54,7 +54,7 @@ theorem stage₂Comb (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c)
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   have hp3 := hc.p_ge
   have F := hS.fixed
-  refine WP.seq (hS.withSp ⟨hsp₁.1, Nat.le_trans hsp₁.2 (Cfg.stk_ge c)⟩ (WP.mono (gMul_ok' hc hC hT hCo ham3
+  refine WP.seq (hS.withSp ⟨hsp₁.1, Nat.le_trans hsp₁.2 (Cfg.stk_ge c)⟩ (WP.mono (gMul_ok' hc hC hT hCo
     hS.scr F (hS.k ▸ wordsVal_lt _ _ _ _) hS.rx hS.ry hS.rz hS.t₀ (fun d hd => by
       obtain ⟨ht, ho, hap⟩ := hTb d hd
       obtain ⟨ht', hap'⟩ := hS.toKeep.tbls ht hap
@@ -101,7 +101,7 @@ theorem stage₂Comb (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c)
 
 /-- The signing body using the fixed-base comb, after the address prefix. -/
 theorem signCombBody_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c)
-    (hCo : ∀ d, c.comb = some d → CombOk c d) (ham3 : AM3 c.C)
+    (hCo : ∀ d, c.comb = some d → CombOk c d)
     {s₀ : State} {extra : List Region} (hp : Pre c s₀ extra)
     (hTb : ∀ d, c.comb = some d → TblMem s₀ ((s₀.gpr .eax).setWidth 64) (c.combWords d) ∧
       (∀ i < (c.combWords d).length, ∀ b < 8,
@@ -118,7 +118,7 @@ theorem signCombBody_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c)
     exact (SpOk.split _ _ _ h).1
   WP.seq (WP.mono (stage₁ hc hp.setup (rest := .block [])
     (Q := St₁ c .sign s₀ (ptr s₀ 4)) (fun _ h => WP.block_nil h))
-    fun _ S₁ => stage₂Comb hc hC hT hCo ham3 S₁ hTb hsp₁ hsp.left fun _ S₂ =>
+    fun _ S₁ => stage₂Comb hc hC hT hCo S₁ hTb hsp₁ hsp.left fun _ S₂ =>
       stage₃ hc S₂ h₂.left h₃.left fun _ S₃ => stage₄ hc hC hp rfl S₃ h₄)
 
 
