@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Seed.expandKeyContract`. Constant time: only pointers may affect timing, not key bytes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `key` must be valid for reads of 16 bytes.
@@ -27,7 +29,7 @@ j 22f
 .base64 "g+IHGCOgVxSD4kcYI6JXFIPihxgjpFcUg+LHGCOmVxSD4gcZI6hXFIPiRxkjqlcUg+KHGSOsVxSD4scZI65XFIPiBxojoFcWg+JHGiOiVxaD4ocaI6RXFoPixxojplcWg+IHGyOoVxaD4kcbI6pXFoPihxsjrFcWg+LHGyOuVxY="
 22:
 bnez a4, 20b
-.base64 "A7SHOoO0BzsDuYc7g7kHPAO6hzyDugc9A7uHPYO7Bz4DvIc+g7wHPwO9hz+DvQdACo+BTyMw/wEjNP8BIzj/ASM8/wEjMP8DIzT/AyM4/wMjPP8DIzD/BSM0/wUjOP8FIzz/BSMw/wcjNP8HIzj/ByM8/wcjMP8JIzT/CSM4/wkjPP8JIzD/CyM0/wsjOP8LIzz/CyMw/w0jNP8NIzj/DSM8/w0jMP8PIzT/DyM4/w8jPP8PIzD/ESM0/xEjOP8RIzz/ESMw/xMjNP8TIzj/EyM8/xMjMP8VIzT/FSM4/xUjPP8VIzD/FyM0/xcjOP8XIzz/FyMw/xkjNP8ZIzj/GSM8/xkjMP8bIzT/GyM4/xsjPP8bIzD/HSM0/x0jOP8dIzz/HSMw/x8jNP8fIzj/HyM8/x8jMP8hIzT/ISM4/yEjPP8hIzD/IyM0/yMjOP8jIzz/IyMw/yUjNP8lIzj/JSM8/yUjMP8nIzT/JyM4/ycjPP8nIzD/KSM0/ykjOP8pIzz/KSMw/ysjNP8rIzj/KyM8/ysjMP8tIzT/LSM4/y0jPP8tIzD/LyM0/y8jOP8vIzz/LyMw/zEjNP8xIzj/MSM8/zEjMP8zIzT/MyM4/zMjPP8zIzD/NSM0/zUjOP81Izz/NSMw/zcjNP83Izj/NyM8/zcjMP85IzT/OSM4/zkjPP85IzD/OyM0/zsjOP87Izz/OyMw/z0jNP89Izj/PSM8/z0jMP8/IzT/PyM4/z8jPP8/IzD/QRMBAUGCgA=="
+.base64 "A7SHOoO0BzsDuYc7g7kHPAO6hzyDugc9A7uHPYO7Bz4DvIc+g7wHPwO9hz+DvQdACo+BTyMw/wEjNP8BIzj/ASM8/wEjMP8DIzT/AyM4/wMjPP8DIzD/BSM0/wUjOP8FIzz/BSMw/wcjNP8HIzj/ByM8/wcjMP8JIzT/CSM4/wkjPP8JIzD/CyM0/wsjOP8LIzz/CyMw/w0jNP8NIzj/DSM8/w0jMP8PIzT/DyM4/w8jPP8PIzD/ESM0/xEjOP8RIzz/ESMw/xMjNP8TIzj/EyM8/xMjMP8VIzT/FSM4/xUjPP8VIzD/FyM0/xcjOP8XIzz/FyMw/xkjNP8ZIzj/GSM8/xkjMP8bIzT/GyM4/xsjPP8bIzD/HSM0/x0jOP8dIzz/HSMw/x8jNP8fIzj/HyM8/x8jMP8hIzT/ISM4/yEjPP8hIzD/IyM0/yMjOP8jIzz/IyMw/yUjNP8lIzj/JSM8/yUjMP8nIzT/JyM4/ycjPP8nIzD/KSM0/ykjOP8pIzz/KSMw/ysjNP8rIzj/KyM8/ysjMP8tIzT/LSM4/y0jPP8tIzD/LyM0/y8jOP8vIzz/LyMw/zEjNP8xIzj/MSM8/zEjMP8zIzT/MyM4/zMjPP8zIzD/NSM0/zUjOP81Izz/NSMw/zcjNP83Izj/NyM8/zcjMP85IzT/OSM4/zkjPP85IzD/OyM0/zsjOP87Izz/OyMw/z0jNP89Izj/PSM8/z0jMP8/IzT/PyM4/z8jPP8/IzD/QRMBAUGBQhMBAb8KgyMwUwAjNFMAIzhTACM8UwAjMFMCIzRTAiM4UwIjPFMCIzBTBCM0UwQjOFMEIzxTBCMwUwYjNFMGIzhTBiM8UwYjMFMIIzRTCCM4UwgjPFMIIzBTCiM0UwojOFMKIzxTCiMwUwwjNFMMIzhTDCM8UwwjMFMOIzRTDiM4Uw4jPFMOIzBTECM0UxAjOFMQIzxTECMwUxIjNFMSIzhTEiM8UxIjMFMUIzRTFCM4UxQjPFMUIzBTFiM0UxYjOFMWIzxTFiMwUxgjNFMYIzhTGCM8UxgjMFMaIzRTGiM4UxojPFMaIzBTHCM0UxwjOFMcIzxTHCMwUx4jNFMeIzhTHiM8Ux4jMFMgIzRTICM4UyAjPFMgIzBTIiM0UyIjOFMiIzxTIiMwUyQjNFMkIzhTJCM8UyQjMFMmIzRTJiM4UyYjPFMmIzBTKCM0UygjOFMoIzxTKCMwUyojNFMqIzhTKiM8UyojMFMsIzRTLCM4UywjPFMsIzBTLiM0Uy4jOFMuIzxTLiMwUzAjNFMwIzhTMCM8UzAjMFMyIzRTMiM4UzIjPFMyIzBTNCM0UzQjOFM0IzxTNCMwUzYjNFM2IzhTNiM8UzYjMFM4IzRTOCM4UzgjPFM4IzBTOiM0UzojOFM6IzxTOiMwUzwjNFM8IzhTPCM8UzwjMFM+IzRTPiM4Uz4jPFM+IzBTQCM0U0ATAQFBAUWBRQFGgUYBR4FHAUiBSIFCAUOBQwFOgU4BT4FPgoA="
 .option pop"#,
     )
 }
@@ -35,6 +37,8 @@ bnez a4, 20b
 /// SEED ECB encryption (RFC 4269 §2, SP 800-38A §6.1) of `n` complete 16-byte blocks at `data`, in place, under the schedule written by `vg_seed_expand_key`. No padding is added or removed. For `n = 0`, no data is transformed.
 ///
 /// Contract: `VG.Spec.Seed.ecbEncryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data, including S-box inputs.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -88,7 +92,7 @@ bnez a2, 22b
 j 21f
 20:
 21:
-.base64 "A7SHOoO0BzsDuYc7g7kHPAO6hzyDugc9A7uHPYO7Bz4DvIc+g7wHPwO9hz+DvQdACo+BTyMw/wEjNP8BIzj/ASM8/wEjMP8DIzT/AyM4/wMjPP8DIzD/BSM0/wUjOP8FIzz/BSMw/wcjNP8HIzj/ByM8/wcjMP8JIzT/CSM4/wkjPP8JIzD/CyM0/wsjOP8LIzz/CyMw/w0jNP8NIzj/DSM8/w0jMP8PIzT/DyM4/w8jPP8PIzD/ESM0/xEjOP8RIzz/ESMw/xMjNP8TIzj/EyM8/xMjMP8VIzT/FSM4/xUjPP8VIzD/FyM0/xcjOP8XIzz/FyMw/xkjNP8ZIzj/GSM8/xkjMP8bIzT/GyM4/xsjPP8bIzD/HSM0/x0jOP8dIzz/HSMw/x8jNP8fIzj/HyM8/x8jMP8hIzT/ISM4/yEjPP8hIzD/IyM0/yMjOP8jIzz/IyMw/yUjNP8lIzj/JSM8/yUjMP8nIzT/JyM4/ycjPP8nIzD/KSM0/ykjOP8pIzz/KSMw/ysjNP8rIzj/KyM8/ysjMP8tIzT/LSM4/y0jPP8tIzD/LyM0/y8jOP8vIzz/LyMw/zEjNP8xIzj/MSM8/zEjMP8zIzT/MyM4/zMjPP8zIzD/NSM0/zUjOP81Izz/NSMw/zcjNP83Izj/NyM8/zcjMP85IzT/OSM4/zkjPP85IzD/OyM0/zsjOP87Izz/OyMw/z0jNP89Izj/PSM8/z0jMP8/IzT/PyM4/z8jPP8/IzD/QRMBAUGCgA=="
+.base64 "A7SHOoO0BzsDuYc7g7kHPAO6hzyDugc9A7uHPYO7Bz4DvIc+g7wHPwO9hz+DvQdACo+BTyMw/wEjNP8BIzj/ASM8/wEjMP8DIzT/AyM4/wMjPP8DIzD/BSM0/wUjOP8FIzz/BSMw/wcjNP8HIzj/ByM8/wcjMP8JIzT/CSM4/wkjPP8JIzD/CyM0/wsjOP8LIzz/CyMw/w0jNP8NIzj/DSM8/w0jMP8PIzT/DyM4/w8jPP8PIzD/ESM0/xEjOP8RIzz/ESMw/xMjNP8TIzj/EyM8/xMjMP8VIzT/FSM4/xUjPP8VIzD/FyM0/xcjOP8XIzz/FyMw/xkjNP8ZIzj/GSM8/xkjMP8bIzT/GyM4/xsjPP8bIzD/HSM0/x0jOP8dIzz/HSMw/x8jNP8fIzj/HyM8/x8jMP8hIzT/ISM4/yEjPP8hIzD/IyM0/yMjOP8jIzz/IyMw/yUjNP8lIzj/JSM8/yUjMP8nIzT/JyM4/ycjPP8nIzD/KSM0/ykjOP8pIzz/KSMw/ysjNP8rIzj/KyM8/ysjMP8tIzT/LSM4/y0jPP8tIzD/LyM0/y8jOP8vIzz/LyMw/zEjNP8xIzj/MSM8/zEjMP8zIzT/MyM4/zMjPP8zIzD/NSM0/zUjOP81Izz/NSMw/zcjNP83Izj/NyM8/zcjMP85IzT/OSM4/zkjPP85IzD/OyM0/zsjOP87Izz/OyMw/z0jNP89Izj/PSM8/z0jMP8/IzT/PyM4/z8jPP8/IzD/QRMBAUGBQhMBAb8KgyMwUwAjNFMAIzhTACM8UwAjMFMCIzRTAiM4UwIjPFMCIzBTBCM0UwQjOFMEIzxTBCMwUwYjNFMGIzhTBiM8UwYjMFMIIzRTCCM4UwgjPFMIIzBTCiM0UwojOFMKIzxTCiMwUwwjNFMMIzhTDCM8UwwjMFMOIzRTDiM4Uw4jPFMOIzBTECM0UxAjOFMQIzxTECMwUxIjNFMSIzhTEiM8UxIjMFMUIzRTFCM4UxQjPFMUIzBTFiM0UxYjOFMWIzxTFiMwUxgjNFMYIzhTGCM8UxgjMFMaIzRTGiM4UxojPFMaIzBTHCM0UxwjOFMcIzxTHCMwUx4jNFMeIzhTHiM8Ux4jMFMgIzRTICM4UyAjPFMgIzBTIiM0UyIjOFMiIzxTIiMwUyQjNFMkIzhTJCM8UyQjMFMmIzRTJiM4UyYjPFMmIzBTKCM0UygjOFMoIzxTKCMwUyojNFMqIzhTKiM8UyojMFMsIzRTLCM4UywjPFMsIzBTLiM0Uy4jOFMuIzxTLiMwUzAjNFMwIzhTMCM8UzAjMFMyIzRTMiM4UzIjPFMyIzBTNCM0UzQjOFM0IzxTNCMwUzYjNFM2IzhTNiM8UzYjMFM4IzRTOCM4UzgjPFM4IzBTOiM0UzojOFM6IzxTOiMwUzwjNFM8IzhTPCM8UzwjMFM+IzRTPiM4Uz4jPFM+IzBTQCM0U0ATAQFBAUWBRQFGgUYBR4FHAUiBSIFCAUOBQwFOgU4BT4FPgoA="
 .option pop"#,
     )
 }
@@ -96,6 +100,8 @@ j 21f
 /// SEED ECB decryption (RFC 4269 §2.4, SP 800-38A §6.1) of `n` complete 16-byte blocks at `data`, in place, under the schedule written by `vg_seed_expand_key`: the encryption procedure with the round keys in reverse order. No padding is added or removed. For `n = 0`, no data is transformed.
 ///
 /// Contract: `VG.Spec.Seed.ecbDecryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data, including S-box inputs.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -149,7 +155,7 @@ bnez a2, 22b
 j 21f
 20:
 21:
-.base64 "A7SHOoO0BzsDuYc7g7kHPAO6hzyDugc9A7uHPYO7Bz4DvIc+g7wHPwO9hz+DvQdACo+BTyMw/wEjNP8BIzj/ASM8/wEjMP8DIzT/AyM4/wMjPP8DIzD/BSM0/wUjOP8FIzz/BSMw/wcjNP8HIzj/ByM8/wcjMP8JIzT/CSM4/wkjPP8JIzD/CyM0/wsjOP8LIzz/CyMw/w0jNP8NIzj/DSM8/w0jMP8PIzT/DyM4/w8jPP8PIzD/ESM0/xEjOP8RIzz/ESMw/xMjNP8TIzj/EyM8/xMjMP8VIzT/FSM4/xUjPP8VIzD/FyM0/xcjOP8XIzz/FyMw/xkjNP8ZIzj/GSM8/xkjMP8bIzT/GyM4/xsjPP8bIzD/HSM0/x0jOP8dIzz/HSMw/x8jNP8fIzj/HyM8/x8jMP8hIzT/ISM4/yEjPP8hIzD/IyM0/yMjOP8jIzz/IyMw/yUjNP8lIzj/JSM8/yUjMP8nIzT/JyM4/ycjPP8nIzD/KSM0/ykjOP8pIzz/KSMw/ysjNP8rIzj/KyM8/ysjMP8tIzT/LSM4/y0jPP8tIzD/LyM0/y8jOP8vIzz/LyMw/zEjNP8xIzj/MSM8/zEjMP8zIzT/MyM4/zMjPP8zIzD/NSM0/zUjOP81Izz/NSMw/zcjNP83Izj/NyM8/zcjMP85IzT/OSM4/zkjPP85IzD/OyM0/zsjOP87Izz/OyMw/z0jNP89Izj/PSM8/z0jMP8/IzT/PyM4/z8jPP8/IzD/QRMBAUGCgA=="
+.base64 "A7SHOoO0BzsDuYc7g7kHPAO6hzyDugc9A7uHPYO7Bz4DvIc+g7wHPwO9hz+DvQdACo+BTyMw/wEjNP8BIzj/ASM8/wEjMP8DIzT/AyM4/wMjPP8DIzD/BSM0/wUjOP8FIzz/BSMw/wcjNP8HIzj/ByM8/wcjMP8JIzT/CSM4/wkjPP8JIzD/CyM0/wsjOP8LIzz/CyMw/w0jNP8NIzj/DSM8/w0jMP8PIzT/DyM4/w8jPP8PIzD/ESM0/xEjOP8RIzz/ESMw/xMjNP8TIzj/EyM8/xMjMP8VIzT/FSM4/xUjPP8VIzD/FyM0/xcjOP8XIzz/FyMw/xkjNP8ZIzj/GSM8/xkjMP8bIzT/GyM4/xsjPP8bIzD/HSM0/x0jOP8dIzz/HSMw/x8jNP8fIzj/HyM8/x8jMP8hIzT/ISM4/yEjPP8hIzD/IyM0/yMjOP8jIzz/IyMw/yUjNP8lIzj/JSM8/yUjMP8nIzT/JyM4/ycjPP8nIzD/KSM0/ykjOP8pIzz/KSMw/ysjNP8rIzj/KyM8/ysjMP8tIzT/LSM4/y0jPP8tIzD/LyM0/y8jOP8vIzz/LyMw/zEjNP8xIzj/MSM8/zEjMP8zIzT/MyM4/zMjPP8zIzD/NSM0/zUjOP81Izz/NSMw/zcjNP83Izj/NyM8/zcjMP85IzT/OSM4/zkjPP85IzD/OyM0/zsjOP87Izz/OyMw/z0jNP89Izj/PSM8/z0jMP8/IzT/PyM4/z8jPP8/IzD/QRMBAUGBQhMBAb8KgyMwUwAjNFMAIzhTACM8UwAjMFMCIzRTAiM4UwIjPFMCIzBTBCM0UwQjOFMEIzxTBCMwUwYjNFMGIzhTBiM8UwYjMFMIIzRTCCM4UwgjPFMIIzBTCiM0UwojOFMKIzxTCiMwUwwjNFMMIzhTDCM8UwwjMFMOIzRTDiM4Uw4jPFMOIzBTECM0UxAjOFMQIzxTECMwUxIjNFMSIzhTEiM8UxIjMFMUIzRTFCM4UxQjPFMUIzBTFiM0UxYjOFMWIzxTFiMwUxgjNFMYIzhTGCM8UxgjMFMaIzRTGiM4UxojPFMaIzBTHCM0UxwjOFMcIzxTHCMwUx4jNFMeIzhTHiM8Ux4jMFMgIzRTICM4UyAjPFMgIzBTIiM0UyIjOFMiIzxTIiMwUyQjNFMkIzhTJCM8UyQjMFMmIzRTJiM4UyYjPFMmIzBTKCM0UygjOFMoIzxTKCMwUyojNFMqIzhTKiM8UyojMFMsIzRTLCM4UywjPFMsIzBTLiM0Uy4jOFMuIzxTLiMwUzAjNFMwIzhTMCM8UzAjMFMyIzRTMiM4UzIjPFMyIzBTNCM0UzQjOFM0IzxTNCMwUzYjNFM2IzhTNiM8UzYjMFM4IzRTOCM4UzgjPFM4IzBTOiM0UzojOFM6IzxTOiMwUzwjNFM8IzhTPCM8UzwjMFM+IzRTPiM4Uz4jPFM+IzBTQCM0U0ATAQFBAUWBRQFGgUYBR4FHAUiBSIFCAUOBQwFOgU4BT4FPgoA="
 .option pop"#,
     )
 }

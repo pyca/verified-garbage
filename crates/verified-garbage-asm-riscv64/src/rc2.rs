@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Rc2.cbcInitContract`. Constant time: only the pointers, `key_len`, `effective_bits` and `iv_len` may affect timing, not the key or the IV.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
@@ -45,7 +47,7 @@ call {vg_rc2_expand_key}
 j 27f
 26:
 27:
-.base64 "Co+BTyMw/wEjNP8BIzj/ASM8/wEjMP8DIzT/AyM4/wMjPP8DIzD/BSM0/wUjOP8FIzz/BSMw/wcjNP8HIzj/ByM8/wcjMP8JIzT/CSM4/wkjPP8JIzD/CyM0/wsjOP8LIzz/CyMw/w0jNP8NIzj/DSM8/w0jMP8PIzT/DyM4/w8jPP8PIzD/ESM0/xEjOP8RIzz/ESMw/xMjNP8TIzj/EyM8/xMjMP8VIzT/FSM4/xUjPP8VIzD/FyM0/xcjOP8XIzz/FyMw/xkjNP8ZIzj/GSM8/xkjMP8bIzT/GyM4/xsjPP8bIzD/HSM0/x0jOP8dIzz/HSMw/x8jNP8fIzj/HyM8/x8jMP8hIzT/ISM4/yEjPP8hIzD/IyM0/yMjOP8jIzz/IxMBASaCgA=="
+.base64 "Co+BTyMw/wEjNP8BIzj/ASM8/wEjMP8DIzT/AyM4/wMjPP8DIzD/BSM0/wUjOP8FIzz/BSMw/wcjNP8HIzj/ByM8/wcjMP8JIzT/CSM4/wkjPP8JIzD/CyM0/wsjOP8LIzz/CyMw/w0jNP8NIzj/DSM8/w0jMP8PIzT/DyM4/w8jPP8PIzD/ESM0/xEjOP8RIzz/ESMw/xMjNP8TIzj/EyM8/xMjMP8VIzT/FSM4/xUjPP8VIzD/FyM0/xcjOP8XIzz/FyMw/xkjNP8ZIzj/GSM8/xkjMP8bIzT/GyM4/xsjPP8bIzD/HSM0/x0jOP8dIzz/HSMw/x8jNP8fIzj/HyM8/x8jMP8hIzT/ISM4/yEjPP8hIzD/IyM0/yMjOP8jIzz/IxMBASaBQhMBAdoKgyMwUwAjNFMAIzhTACM8UwAjMFMCIzRTAiM4UwIjPFMCIzBTBCM0UwQjOFMEIzxTBCMwUwYjNFMGIzhTBiM8UwYjMFMIIzRTCCM4UwgjPFMIIzBTCiM0UwojOFMKIzxTCiMwUwwjNFMMIzhTDCM8UwwjMFMOIzRTDiM4Uw4jPFMOIzBTECM0UxAjOFMQIzxTECMwUxIjNFMSIzhTEiM8UxIjMFMUIzRTFCM4UxQjPFMUIzBTFiM0UxYjOFMWIzxTFiMwUxgjNFMYIzhTGCM8UxgjMFMaIzRTGiM4UxojPFMaIzBTHCM0UxwjOFMcIzxTHCMwUx4jNFMeIzhTHiM8Ux4jMFMgIzRTICM4UyAjPFMgIzBTIiM0UyIjOFMiIzxTIiMwUyQjNFMkIzhTJCM8UyQTAQEmAhUBkYFFAUaBRgFHgUcBSIFIgUIBQ4FDAU6BTgFPgU+CgA=="
 .option pop"#,
         vg_rc2_expand_key = sym super::rc2::vg_rc2_expand_key::vg_rc2_expand_key,
     )

@@ -20,12 +20,12 @@ pub(crate) unsafe extern "C" fn vg_cmac_triple_des_stream_init(state: *mut [u64;
         r#".option push
 .option arch, +m, +c
 .base64 "EwEB2IqGk4J2AJPygv8jsBIAI7SSACO4IgGqhDaJLoWyhSaG"
-call {vg_triple_des_expand_key}
+call {vg_triple_des_expand_key_core}
 .base64 "gUIjgFQYgUKjgFQYgUIjgVQYgUKjgVQYgUIjglQYgUKjglQYgUIjg1QYgUKjg1QYJoWThQQYBUY="
 call {vg_triple_des_ecb_encrypt_serial}
 .base64 "A8MEGJNTcwD9E5PzswGTw7MBA84UGAYDk15+ADNj0wEjgGQYcoMDziQYBgOTXn4AM2PTAaOAZBhygwPONBgGA5NefgAzY9MBI4FkGHKDA85EGAYDk15+ADNj0wGjgWQYcoMDzlQYBgOTXn4AM2PTASOCZBhygwPOZBgGA5NefgAzY9MBo4JkGHKDA850GAYDk15+ADNj0wEjg2QYcoMGAzNDcwCjg2QYA8MEGJNTcwD9E5PzswGTw7MBA84UGAYDk15+ADNj0wEjhGQYcoMDziQYBgOTXn4AM2PTAaOEZBhygwPONBgGA5NefgAzY9MBI4VkGHKDA85EGAYDk15+ADNj0wGjhWQYcoMDzlQYBgOTXn4AM2PTASOGZBhygwPOZBgGA5NefgAzY9MBo4ZkGHKDA850GAYDk15+ADNj0wEjh2QYcoMGAzNDcwCjh2QYgUIjiFQYgUKjiFQYgUIjiVQYgUKjiVQYgUIjilQYgUKjilQYgUIji1QYgUKji1QYkwJ5AJPygv+DsAIAg7SCAAO5AgETAQEogoA="
 .option pop"#,
-        vg_triple_des_expand_key = sym super::triple_des::vg_triple_des_expand_key,
+        vg_triple_des_expand_key_core = sym super::triple_des::vg_triple_des_expand_key_core::vg_triple_des_expand_key_core,
         vg_triple_des_ecb_encrypt_serial = sym super::triple_des::vg_triple_des_ecb_encrypt_serial::vg_triple_des_ecb_encrypt_serial,
     )
 }

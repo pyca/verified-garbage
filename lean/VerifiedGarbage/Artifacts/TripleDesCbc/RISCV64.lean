@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.RISCV64.ModesVerified
+public import VerifiedGarbage.Proof.TripleDes.RISCV64.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.TripleDes.RISCV64.ModesLit
@@ -12,9 +12,7 @@ import VerifiedGarbage.Proof.TripleDes.RISCV64.ModesLit
 namespace VG.Artifacts.TripleDesCbc.RISCV64
 
 def artifacts : List Artifact := [
-  Spec.TripleDes.cbcEncryptChainedApi.artifact RISCV64.target {
-    code := Impl.TripleDes.RISCV64.cbcEncryptChained
-    verified := Proof.TripleDes.RISCV64.Modes.cbcEncryptChained_verified },
+  Spec.TripleDes.cbcEncryptChainedApi.artifact RISCV64.target Proof.TripleDes.RISCV64.Scrub.cbcEncryptChainedReg,
   Spec.TripleDes.cbcDecryptChainedApi.artifact RISCV64.target {
     code := Impl.TripleDes.RISCV64.cbcDecryptChained
     verified := Proof.TripleDes.RISCV64.Modes.cbcDecryptChained_verified }]

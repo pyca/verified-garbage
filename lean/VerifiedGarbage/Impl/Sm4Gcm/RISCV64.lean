@@ -41,7 +41,7 @@ def ctrCall : Prog isa := .call "vg_sm4_ctr32" Impl.Sm4.RISCV64.ctr32
 
 /-- A call of `vg_sm4_expand_key`, in its frame. -/
 def keyCall : Prog isa :=
-  .call "vg_sm4_expand_key" (Impl.StackScratch.RISCV64.withStackScratchWiped 3168 .a2 396 Impl.Sm4.RISCV64.expandKey)
+  .call "vg_sm4_expand_key_core" (Impl.StackScratch.RISCV64.withStackScratchWiped 3168 .a2 396 Impl.Sm4.RISCV64.expandKey)
 
 /-! ## Counter mode -/
 

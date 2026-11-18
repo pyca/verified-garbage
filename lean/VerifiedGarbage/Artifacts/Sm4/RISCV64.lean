@@ -1,7 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Sm4.RISCV64.KeyVerified
-public import VerifiedGarbage.Proof.Sm4.RISCV64.Verified
+public import VerifiedGarbage.Proof.Sm4.RISCV64.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.Sm4.RISCV64.Lit
@@ -13,14 +12,8 @@ import VerifiedGarbage.Proof.Sm4.RISCV64.Lit
 namespace VG.Artifacts.Sm4.RISCV64
 
 def artifacts : List Artifact := [
-  Spec.Sm4.expandKeyApi.artifact RISCV64.target {
-    code := Impl.StackScratch.RISCV64.withStackScratchWiped 3168 .a2 396 Impl.Sm4.RISCV64.expandKey
-    verified := Proof.Sm4.RISCV64.expandKey_framed },
-  Spec.Sm4.ecbEncryptApi.artifact RISCV64.target {
-    code := Impl.StackScratch.RISCV64.withStackScratchWiped 3168 .a3 396 (Impl.Sm4.RISCV64.ecb .encrypt)
-    verified := Proof.Sm4.RISCV64.ecb_framed .encrypt },
-  Spec.Sm4.ecbDecryptApi.artifact RISCV64.target {
-    code := Impl.StackScratch.RISCV64.withStackScratchWiped 3168 .a3 396 (Impl.Sm4.RISCV64.ecb .decrypt)
-    verified := Proof.Sm4.RISCV64.ecb_framed .decrypt }]
+  Spec.Sm4.expandKeyApi.artifact RISCV64.target Proof.Sm4.RISCV64.Scrub.expandKeyReg,
+  Spec.Sm4.ecbEncryptApi.artifact RISCV64.target Proof.Sm4.RISCV64.Scrub.ecbEncryptReg,
+  Spec.Sm4.ecbDecryptApi.artifact RISCV64.target Proof.Sm4.RISCV64.Scrub.ecbDecryptReg]
 
 end VG.Artifacts.Sm4.RISCV64

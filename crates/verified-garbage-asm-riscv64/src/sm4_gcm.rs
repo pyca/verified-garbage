@@ -19,12 +19,12 @@ pub(crate) unsafe extern "C" fn vg_sm4_gcm_init(key: *const [u8; 16], ctx: *mut 
         r#".option push
 .option arch, +m, +c
 .base64 "EwEBgRMBAd8KhkDiROYjOCYJIzw2CSMwRgsjNFYLIzhmCyM8dgsjMIYNIzSWDSM4pg0jPLYNIzAWDjKELok="
-call {vg_sm4_expand_key}
+call {vg_sm4_expand_key_core}
 .base64 "gUIjOFkOIzxZDiMwVAYjNFQGSoWTBQQGEwYJD4VG"
 call {vg_sm4_ctr32}
 .base64 "IoMDNAMIgzSDCAM5AwmDOYMJAzoDCoM6gwoDOwMLgzuDCwM8AwyDPIMMAz0DDYM9gw2DMAMOEwEBIRMBAX+CgA=="
 .option pop"#,
-        vg_sm4_expand_key = sym super::sm4::vg_sm4_expand_key,
+        vg_sm4_expand_key_core = sym super::sm4::vg_sm4_expand_key_core::vg_sm4_expand_key_core,
         vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
     )
 }

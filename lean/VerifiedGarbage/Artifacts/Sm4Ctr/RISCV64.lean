@@ -1,7 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Sm4.RISCV64.ModesVerified
-public import VerifiedGarbage.Proof.Sm4.RISCV64.CtrFinal
+public import VerifiedGarbage.Proof.Sm4.RISCV64.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.Sm4.RISCV64.ModesLit
@@ -13,11 +12,7 @@ import VerifiedGarbage.Proof.Sm4.RISCV64.ModesLit
 namespace VG.Artifacts.Sm4Ctr.RISCV64
 
 def artifacts : List Artifact := [
-  Spec.Sm4.ctrApi.artifact RISCV64.target {
-    code := Impl.Sm4.RISCV64.ctr
-    verified := Proof.Sm4.RISCV64.Modes.ctr_verified },
-  Spec.Sm4.ctrFinalApi.artifact RISCV64.target {
-    code := Impl.StackScratch.RISCV64.withStackScratchWiped 80 .a4 10 Impl.Sm4.RISCV64.ctrFinal
-    verified := Proof.Sm4.RISCV64.CtrFinal.ctrFinal_framed }]
+  Spec.Sm4.ctrApi.artifact RISCV64.target Proof.Sm4.RISCV64.Scrub.ctrReg,
+  Spec.Sm4.ctrFinalApi.artifact RISCV64.target Proof.Sm4.RISCV64.Scrub.ctrFinalReg]
 
 end VG.Artifacts.Sm4Ctr.RISCV64
