@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Sha256.PPC64LE.Stream.Init
+public import VerifiedGarbage.Proof.Sha256.PPC64LE.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Sha256
 import VerifiedGarbage.Proof.Sha256.PPC64LE.Lit
@@ -21,24 +22,14 @@ def artifacts : List Artifact := [
     code := Impl.Sha256.PPC64LE.Stream.init224
     verified := Proof.Sha256.PPC64LE.Shared.init224
     residue := some ⟨Proof.Sha256.PPC64LE.Stream.init224_noResidue _ _⟩ },
-  Spec.Sha256.finalize224Api.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratch 640 .r6 Impl.Sha256.PPC64LE.Stream.finalize224
-    verified := Proof.Sha256.PPC64LE.Shared.finalize224 },
-  Spec.Sha256.digest224Api.artifact PPC64LE.target {
-    code := Impl.MdStream.PPC64LE.Digest.code Proof.Hmac.Stream.PPC64LE.Sha224.hash
-    verified := Proof.Hmac.Stream.PPC64LE.Sha224.digest },
+  Spec.Sha256.finalize224Api.artifact PPC64LE.target Proof.Sha256.PPC64LE.finalize224Reg,
+  Spec.Sha256.digest224Api.artifact PPC64LE.target Proof.Sha256.PPC64LE.digest224Reg,
   Spec.Sha256.initApi.artifact PPC64LE.target {
     code := Impl.Sha256.PPC64LE.Stream.init
     verified := Proof.Sha256.PPC64LE.Shared.init
     residue := some ⟨Proof.Sha256.PPC64LE.Stream.init_noResidue _ _⟩ },
-  Spec.Sha256.updateApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratch 640 .r7 Impl.Sha256.PPC64LE.Stream.update
-    verified := Proof.Sha256.PPC64LE.Shared.update },
-  Spec.Sha256.finalizeApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratch 640 .r6 Impl.Sha256.PPC64LE.Stream.finalize
-    verified := Proof.Sha256.PPC64LE.Shared.finalize },
-  Spec.Sha256.digest256Api.artifact PPC64LE.target {
-    code := Impl.MdStream.PPC64LE.Digest.code Proof.Hmac.Stream.PPC64LE.Sha256.hash
-    verified := Proof.Hmac.Stream.PPC64LE.Sha256.digest }]
+  Spec.Sha256.updateApi.artifact PPC64LE.target Proof.Sha256.PPC64LE.updateReg,
+  Spec.Sha256.finalizeApi.artifact PPC64LE.target Proof.Sha256.PPC64LE.finalizeReg,
+  Spec.Sha256.digest256Api.artifact PPC64LE.target Proof.Sha256.PPC64LE.digest256Reg]
 
 end VG.Artifacts.Sha256.PPC64LE

@@ -1305,11 +1305,6 @@ powerpc64le vg_seed_ofb_final
 powerpc64le vg_sha1_digest
 powerpc64le vg_sha1_finalize
 powerpc64le vg_sha1_update
-powerpc64le vg_sha224_digest
-powerpc64le vg_sha224_finalize
-powerpc64le vg_sha256_digest
-powerpc64le vg_sha256_finalize
-powerpc64le vg_sha256_update
 powerpc64le vg_sha384_digest
 powerpc64le vg_sha384_finalize
 powerpc64le vg_sha3_224_finalize
