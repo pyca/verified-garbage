@@ -4,15 +4,13 @@ import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.FillBlock
 public import VerifiedGarbage.Proof.Argon2.SegmentStart
 import VerifiedGarbage.Proof.Argon2.Slices
 public import VerifiedGarbage.Proof.Argon2.Iterations
-public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.FillState
+public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.FillDep
 public import VerifiedGarbage.Proof.Argon2.Lanes
-import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.FillPtr
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.MemoryInit
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Initial
-import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Scratch
-public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Locals
+public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Scratch
 public import VerifiedGarbage.Proof.Argon2.Contract
 
 /-!

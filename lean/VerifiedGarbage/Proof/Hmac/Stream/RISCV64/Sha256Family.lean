@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Hash
-public import VerifiedGarbage.Proof.Sha256.RISCV64.Stream.Init
 public import VerifiedGarbage.Proof.Sha256.RISCV64.Stream.Update
 public import VerifiedGarbage.Proof.Sha256.RISCV64.Stream.Finalize
 public import VerifiedGarbage.Proof.Sha256.Scratch

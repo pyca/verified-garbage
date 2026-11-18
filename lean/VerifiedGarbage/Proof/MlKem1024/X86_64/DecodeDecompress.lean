@@ -3,13 +3,11 @@ module
 public import VerifiedGarbage.Proof.MlKem.X86_64.FragPrim
 public import VerifiedGarbage.Proof.MlKem.X86_64.DecodeDecompress
 public import VerifiedGarbage.Impl.MlKem1024.X86_64.Compress
-public import VerifiedGarbage.Proof.MlKem1024.X86_64.Contracts
-import VerifiedGarbage.Proof.MlKem1024.X86_64.CompressEncode
+public import VerifiedGarbage.Proof.MlKem1024.X86_64.CompressEncode
 import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.MlKem.X86_64.FragPrim
 meta import VerifiedGarbage.Proof.MlKem.X86_64.DecodeDecompress
 meta import VerifiedGarbage.Impl.MlKem1024.X86_64.Compress
-meta import VerifiedGarbage.Proof.MlKem1024.X86_64.Contracts
 meta import VerifiedGarbage.Proof.MlKem1024.X86_64.CompressEncode
 meta import VerifiedGarbage.Proof.Framework.Offset
 

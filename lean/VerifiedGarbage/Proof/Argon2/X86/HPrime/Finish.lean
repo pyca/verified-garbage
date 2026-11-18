@@ -14,7 +14,7 @@ public import VerifiedGarbage.Proof.Argon2.X86.HPrime.CallsCT
 public import VerifiedGarbage.Proof.Argon2.HPrime
 import VerifiedGarbage.Proof.Argon2.Initial
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Blake2.X86.Stream.Finalize
+import VerifiedGarbage.Proof.Blake2.X86.Stream.Verified
 
 /-! ### `Argon2.X86.HPrime.Output`, which only this module used -/
 

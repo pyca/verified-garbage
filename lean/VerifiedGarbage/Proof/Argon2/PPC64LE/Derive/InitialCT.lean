@@ -2,24 +2,18 @@ module
 
 public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.CTCall
 public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Initial
-public import VerifiedGarbage.Proof.Argon2.PPC64LE.HPrime.FixedCT
-import VerifiedGarbage.Proof.Argon2.PPC64LE.HPrime.Calls
+public import VerifiedGarbage.Proof.Argon2.PPC64LE.HPrime.CT
 import VerifiedGarbage.Proof.Argon2.PPC64LE.HPrime.Absorb
-import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Scratch
-import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Locals
+public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Scratch
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 meta import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.CTCall
 meta import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Initial
-meta import VerifiedGarbage.Proof.Argon2.PPC64LE.HPrime.FixedCT
-meta import VerifiedGarbage.Proof.Argon2.PPC64LE.HPrime.Calls
+meta import VerifiedGarbage.Proof.Argon2.PPC64LE.HPrime.CT
 meta import VerifiedGarbage.Proof.Argon2.PPC64LE.HPrime.Absorb
 meta import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Scratch
-meta import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Locals
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
-meta import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Parameters
-public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Parameters
 
 /-!
 # Argon2 on PPC64LE: H₀, in two runs

@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.MemoryInit
 import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Initial
 import VerifiedGarbage.Proof.Argon2.Iterations
 import VerifiedGarbage.Proof.Argon2.FinalReduction
-public import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Locals
+public import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Scratch
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RISCV64.Spill
 import VerifiedGarbage.Proof.Framework.RISCV64.Alloc

@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Instance
 public import VerifiedGarbage.Proof.Sha512.PPC64LE.Stream.Init
-public import VerifiedGarbage.Proof.Sha512.PPC64LE.Stream.Update
 public import VerifiedGarbage.Proof.Sha512.PPC64LE.Stream.Finalize
 public import VerifiedGarbage.Spec.Sha512.Contract
 public import VerifiedGarbage.Proof.Hmac.Stream.Reloc

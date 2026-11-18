@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Sha256.Contract
 public import VerifiedGarbage.Proof.Sha256.X86.Variants.Interface
 meta import VerifiedGarbage.Proof.Sha256.X86.Variants.Interface
-import VerifiedGarbage.Proof.Sha256.X86.Stream.Digest
+public import VerifiedGarbage.Proof.Sha256.X86.Stream.Digest
 meta import VerifiedGarbage.Proof.Sha256.X86.Stream.Digest
 public import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Verified
 public import VerifiedGarbage.Proof.Sha256.X86.Stream.Variant
@@ -22,14 +22,12 @@ import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Framework.X86.Sse
 import VerifiedGarbage.Proof.Hmac.Common
 import VerifiedGarbage.Proof.Md5.X86.Compress
-import VerifiedGarbage.Proof.MdStream.Prefix
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86.HmacFin
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Instances
+public import VerifiedGarbage.Proof.MdStream.Prefix
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.HmacFin
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Instances
 import VerifiedGarbage.Proof.Pbkdf2.MdHmac
 import VerifiedGarbage.Proof.Pbkdf2.Memory
-import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Compress
-import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Load
-import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Whole
+public import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Compress
 import VerifiedGarbage.Proof.Sha512.Spec
 import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
 meta import VerifiedGarbage.Proof.Framework.AddrArith
@@ -50,20 +48,11 @@ meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Instances
 meta import VerifiedGarbage.Proof.Pbkdf2.MdHmac
 meta import VerifiedGarbage.Proof.Pbkdf2.Memory
 meta import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Compress
-meta import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Load
-meta import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Whole
 meta import VerifiedGarbage.Proof.Sha256.X86.Stream.Variant
 meta import VerifiedGarbage.Proof.Sha512.Spec
 meta import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
-public import VerifiedGarbage.Proof.Sha256.X86.Stream.Digest
 public import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
-public import VerifiedGarbage.Proof.MdStream.Prefix
-public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.HmacFin
-public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Instances
-public import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Compress
-public import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Load
-public import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Whole
 
 /-!
 # SHA-256 on x86 with the SHA extensions: the variant's code and proofs

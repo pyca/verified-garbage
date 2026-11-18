@@ -1,15 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Hashes.Md5
-public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Hashes.Sha1
-public import VerifiedGarbage.Proof.Sha1.AArch64.ScalarBackend
-public import VerifiedGarbage.Proof.Sha1.AArch64.Sha2Backend
-public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Hashes.Sha224
-public import VerifiedGarbage.Proof.Sha256.AArch64.ScalarBackend
+public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Hashes.Sha512
 public import VerifiedGarbage.Proof.Sha256.AArch64.Sha2Backend
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Hashes.Sha256
-public import VerifiedGarbage.Proof.Sha512.AArch64.ScalarBackend
-public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Hashes.Sha512
 public import VerifiedGarbage.Proof.Sha512.AArch64.Sha3Backend
 
 /-! # The implementations of `MdHash` on AArch64 -/

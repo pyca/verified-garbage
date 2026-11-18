@@ -1,11 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.RISCV64.PrivCall
-public import VerifiedGarbage.Proof.Rsa.RISCV64.PrivPreCopy
 public import VerifiedGarbage.Proof.Rsa.RISCV64.PrivPCT
+public import VerifiedGarbage.Proof.Rsa.RISCV64.PrivCT
 public import VerifiedGarbage.Proof.Framework.RISCV64.Alloc
 public import VerifiedGarbage.Proof.Framework.RISCV64.Call
-public import VerifiedGarbage.Proof.Rsa.RISCV64.PrivVerified
 public import VerifiedGarbage.Proof.Framework.RISCV64.CallAny
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Mem
@@ -24,7 +22,7 @@ public import VerifiedGarbage.Impl.RsaOaep.RISCV64.Decrypt
 Untrusted: everything here is checked by Lean. As on PPC64LE
 (`Proof/RsaOaep/PPC64LE/Dc/PrivCall.lean`, `Dc/PrivPre.lean`,
 `Dc/PrivCall.lean`), with the call as in RSASSA-PKCS1-v1_5 signing
-(`Proof/RsaPkcs1Sig/RISCV64/Sign/Call.lean`). In the frame of `privBytes`
+(`Proof/RsaPkcs1Sig/RISCV64/Sign/Verified.lean`). In the frame of `privBytes`
 bytes below ours (`pb`), `privArgs` writes `vg_rsa_private_checked`'s
 twelve stack arguments at its stack pointer (`psa`: `p`, our stack
 arguments 0 to 8, the rest of `scratch` and its length in words) and sets

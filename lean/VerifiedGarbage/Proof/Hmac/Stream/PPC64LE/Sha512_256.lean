@@ -2,14 +2,13 @@ module
 
 import VerifiedGarbage.Proof.Sha512.PPC64LE.Lit
 meta import VerifiedGarbage.Proof.Sha512.PPC64LE.Lit
-
 public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Sha512Family
 public import VerifiedGarbage.Proof.Hmac.Contract
 meta import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Sha512Family
 import VerifiedGarbage.Proof.Hmac.Scratch
 meta import VerifiedGarbage.Proof.Hmac.Scratch
-meta import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Shared
-public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Shared
+meta import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Instance
+public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Instance
 import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
 public import VerifiedGarbage.Proof.MdStream.PPC64LE.Digest

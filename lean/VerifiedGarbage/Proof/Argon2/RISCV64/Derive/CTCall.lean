@@ -5,7 +5,7 @@ import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.HCall
 import VerifiedGarbage.Proof.Argon2.RISCV64.HPrime.CT
 import VerifiedGarbage.Proof.Argon2.RISCV64.HPrime.Correct
 import VerifiedGarbage.Proof.Framework.RISCV64.RelCT
-public import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Locals
+public import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Scratch
 public import VerifiedGarbage.Proof.Framework.RISCV64.FrameTaint
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Framework.Mem

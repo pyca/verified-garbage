@@ -12,10 +12,8 @@ public import VerifiedGarbage.Proof.Argon2.X86_64.AddressHeaderLit
 meta import VerifiedGarbage.Proof.Argon2.X86_64.AddressHeaderLit
 import VerifiedGarbage.Proof.Argon2.X86_64.DependentWord
 meta import VerifiedGarbage.Proof.Argon2.X86_64.DependentWord
-import VerifiedGarbage.Proof.Argon2.X86_64.Relative
-meta import VerifiedGarbage.Proof.Argon2.X86_64.Relative
-import VerifiedGarbage.Proof.Argon2.X86_64.Wrap
-meta import VerifiedGarbage.Proof.Argon2.X86_64.Wrap
+import VerifiedGarbage.Proof.Argon2.X86_64.FillKernelArgs
+meta import VerifiedGarbage.Proof.Argon2.X86_64.FillKernelArgs
 import VerifiedGarbage.Proof.Argon2.X86_64.ReferenceStart
 meta import VerifiedGarbage.Proof.Argon2.X86_64.ReferenceStart
 import VerifiedGarbage.Proof.Argon2.X86_64.ReferenceCount

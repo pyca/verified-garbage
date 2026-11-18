@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Sm3.AArch64.Sm4Backend
 public import VerifiedGarbage.Proof.Sm3.AArch64.ScalarBackend
 
 /-! # The implementations of `Sm3Compress` on AArch64 -/

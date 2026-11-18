@@ -1,11 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.IterateCT
+public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Sha512
 public import VerifiedGarbage.Proof.Pbkdf2.Contract
 public import VerifiedGarbage.Proof.Hmac.Contract
-public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.HmacFinCT
 public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.HmacInitCT
-public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Sha512
 public import VerifiedGarbage.Proof.Pbkdf2.Stream.Arm.Hashes
 import VerifiedGarbage.Proof.Hmac.Generic.Implies
 public import VerifiedGarbage.Spec.Pbkdf2.Generic
@@ -15,10 +13,8 @@ import VerifiedGarbage.Proof.Sha1.Arm.Lit
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Sha512.Arm.Shared
-meta import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.IterateCT
-meta import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.HmacFinCT
-meta import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.HmacInitCT
 meta import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Sha512
+meta import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.HmacInitCT
 meta import VerifiedGarbage.Proof.Pbkdf2.Stream.Arm.Hashes
 meta import VerifiedGarbage.Proof.Hmac.Generic.Implies
 meta import VerifiedGarbage.Spec.Pbkdf2.Generic

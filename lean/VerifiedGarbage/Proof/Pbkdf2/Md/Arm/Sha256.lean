@@ -4,16 +4,14 @@ import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Instances
 public import VerifiedGarbage.Proof.Pbkdf2.Stream.Arm.Sha256
 public import VerifiedGarbage.Proof.Pbkdf2.Contract
 public import VerifiedGarbage.Proof.Hmac.Contract
-public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.HmacFinCT
 public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.HmacInitCT
-public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.IterateCT
+public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Sha512
 import VerifiedGarbage.Proof.Hmac.Generic.Implies
 import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Instances
 meta import VerifiedGarbage.Proof.Pbkdf2.Stream.Arm.Sha256
-meta import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.HmacFinCT
 meta import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.HmacInitCT
-meta import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.IterateCT
+meta import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Sha512
 meta import VerifiedGarbage.Proof.Hmac.Generic.Implies
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
 import VerifiedGarbage.Proof.Sha256.Arm.Compress

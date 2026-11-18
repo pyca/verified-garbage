@@ -12,8 +12,8 @@ public import VerifiedGarbage.Proof.Blake2.X86.Contract
 public import VerifiedGarbage.Proof.Framework.X86.Call
 import VerifiedGarbage.Proof.Blake2.X86.LitB
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Blake2.X86.Stream.Finalize
 public import VerifiedGarbage.Proof.Argon2.Contract
+
 @[expose] public section
 
 section

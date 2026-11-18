@@ -11,7 +11,7 @@ meta import VerifiedGarbage.Impl.RsaPss.RISCV64
 # RSASSA-PSS verification on RISC-V: the taint checks
 
 Untrusted: everything here is checked by Lean. As on PPC64LE
-(`Proof/RsaPss/PPC64LE/CTBlocks.lean`): the code between the calls, checked
+(`Proof/RsaPss/PPC64LE/CTTab.lean`): the code between the calls, checked
 by the taint analysis from the stack pointer and the registers that hold
 public values (`two_taint`); the blocks that use a hash function's lengths
 on their copy for one hash function (`Hd`), with the same code without its

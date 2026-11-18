@@ -2,10 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.RsaPss.RISCV64.Sg.Spec
 public import VerifiedGarbage.Proof.Rsa.RISCV64.PrivPre
-public import VerifiedGarbage.Proof.Rsa.RISCV64.PrivCall
-public import VerifiedGarbage.Proof.Rsa.RISCV64.PrivPreCopy
 public import VerifiedGarbage.Proof.Rsa.RISCV64.PrivPCT
-public import VerifiedGarbage.Proof.Rsa.RISCV64.PrivVerified
+public import VerifiedGarbage.Proof.Rsa.RISCV64.PrivCT
 public import VerifiedGarbage.Proof.Framework.RISCV64.Alloc
 public import VerifiedGarbage.Proof.Framework.RISCV64.Call
 public import VerifiedGarbage.Proof.Framework.RISCV64.CallAny

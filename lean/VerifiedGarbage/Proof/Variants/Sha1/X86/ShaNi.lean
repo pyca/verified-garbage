@@ -33,7 +33,6 @@ import VerifiedGarbage.Proof.Pbkdf2.MdHmac
 import VerifiedGarbage.Proof.Pbkdf2.Memory
 import VerifiedGarbage.Proof.Sha1.Scratch
 import VerifiedGarbage.Proof.Sha1.StateMem
-import VerifiedGarbage.Proof.Sha1.X86.ShaNi.Rounds
 import VerifiedGarbage.Proof.Sha256.StateMem
 import VerifiedGarbage.Proof.Sha256.X86.Compress
 import VerifiedGarbage.Proof.Sha512.Spec
@@ -60,7 +59,6 @@ meta import VerifiedGarbage.Proof.Pbkdf2.MdHmac
 meta import VerifiedGarbage.Proof.Pbkdf2.Memory
 meta import VerifiedGarbage.Proof.Sha1.Scratch
 meta import VerifiedGarbage.Proof.Sha1.StateMem
-meta import VerifiedGarbage.Proof.Sha1.X86.ShaNi.Rounds
 meta import VerifiedGarbage.Proof.Sha256.StateMem
 meta import VerifiedGarbage.Proof.Sha256.X86.Compress
 meta import VerifiedGarbage.Proof.Sha512.Spec

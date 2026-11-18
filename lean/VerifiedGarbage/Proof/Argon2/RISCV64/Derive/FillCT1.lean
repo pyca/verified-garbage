@@ -1,20 +1,16 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.CTCall
-public import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.FillState
+public import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.FillDep
 public import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.FillCache
-import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.FillInput
-import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.FillDep
-import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Locals
+import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Scratch
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.RISCV64.Steps
 meta import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.CTCall
-meta import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.FillState
+meta import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.FillDep
 meta import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.InitialCT
 meta import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.FillCache
-meta import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.FillInput
-meta import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.FillDep
-meta import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Locals
+meta import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Scratch
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Initial
 

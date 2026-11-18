@@ -9,9 +9,7 @@ import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.RISCV64.Steps
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-public import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Locals
-public import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Parameters
-import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Scratch
+public import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Scratch
 public import VerifiedGarbage.Proof.Argon2.Contract
 
 /-!

@@ -1,13 +1,469 @@
 module
 
-public import VerifiedGarbage.Proof.Argon2.X86_64.Parameters
-public import VerifiedGarbage.Proof.Argon2.X86_64.DeriveAbi
-public import VerifiedGarbage.Proof.Argon2.X86_64.DeriveFrame
-import VerifiedGarbage.Proof.Argon2.X86_64.DeriveSaved
-import VerifiedGarbage.Proof.Argon2.X86_64.DeriveNormalize
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Impl.Argon2.X86_64.Parameters
+public import VerifiedGarbage.Proof.Argon2.X86_64.Divide
+public import VerifiedGarbage.Proof.Argon2.X86_64.Memory
+import VerifiedGarbage.Proof.Argon2.Dimensions
+import VerifiedGarbage.Proof.Argon2.X86_64.DivideCT
+public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Spec.Argon2.Contract
+public import VerifiedGarbage.Impl.Argon2.X86_64.Derive
+public import VerifiedGarbage.Proof.Framework.X86_64.Frame
+public import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
+
+/-! ### `Argon2.X86_64.DeriveNormalize`, which this module and modules that import it used -/
+
+section
+
+/-! Normalize u32 stack arguments without assuming anything about their upper bits. -/
+
+@[expose] public section
+
+namespace VG.Proof.Argon2.X86_64.Derive
+
+open VG VG.X86_64
+open VG.Impl.Argon2.X86_64.Derive
+
+structure Normalized (s t : State) (d : Nat) : Prop where
+  mem : t.mem = s.mem.writeW (s.gpr .rbp + BitVec.ofNat 64 d)
+    (((s.mem.readW (s.gpr .rbp + BitVec.ofNat 64 d) 64).setWidth 32).setWidth 64)
+  regs : ∀ r, r ≠ .rax → t.gpr r = s.gpr r
+  rd : t.rd = s.rd
+  wr : t.wr = s.wr
+  mxcsr : t.mxcsr = s.mxcsr
+
+theorem normalize_ok (s : State) (d : Nat)
+    (read : InRegions (s.rd ++ s.wr) (s.gpr .rbp + BitVec.ofNat 64 d) 8)
+    (write : InRegions s.wr (s.gpr .rbp + BitVec.ofNat 64 d) 8) :
+    WP isa (.block (normalize d)) s (Normalized s · d) := by
+  apply WP.of_runBlock
+  simp only [normalize, runBlock_cons, runStep_some, runBlock_nil, reduceExec, readSrc,
+    readSrc32, State.load64, State.store64, State.setReg32, State.ea, Impl.Argon2.X86_64.at_, BitVec.ofInt_natCast,
+    RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg,
+    read, write, reduceCtorEq, ite_true, ite_false, Option.map_some, Option.some.injEq, exists_eq_left']
+  refine ⟨rfl, ?_, rfl, rfl, rfl⟩
+  intro r hr
+  simp only [RegUpd.gpr_setReg, hr, ite_false]
+
+theorem Normalized.word {s t : State} {d : Nat} (h : Normalized s t d) :
+    t.mem.readW (t.gpr .rbp + BitVec.ofNat 64 d) 64 =
+      (((s.mem.readW (s.gpr .rbp + BitVec.ofNat 64 d) 64).setWidth 32).setWidth 64) := by
+  rw [h.regs .rbp (by decide), h.mem, Mem.readW_writeW_self64]
+
+theorem Normalized.frame {s t : State} {d : Nat} (h : Normalized s t d) :
+    Frame [⟨s.gpr .rbp + BitVec.ofNat 64 d, 8⟩] s.mem t.mem := by
+  rw [h.mem]
+  exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
+
+theorem Normalized.other_word {s t : State} {d : Nat} (h : Normalized s t d)
+    (e : Nat) (separate : e + 8 ≤ d ∨ d + 8 ≤ e) (ed : e + 8 < 2 ^ 64) (dd : d + 8 < 2 ^ 64) :
+    t.mem.readW (t.gpr .rbp + BitVec.ofNat 64 e) 64 = s.mem.readW (s.gpr .rbp + BitVec.ofNat 64 e) 64 := by
+  rw [h.regs .rbp (by decide), h.mem]
+  exact Mem.readW_writeW_sep (Offset.sep _ separate (Nat.le_of_lt ed) (Nat.le_of_lt dd)) (by decide)
+
+end VG.Proof.Argon2.X86_64.Derive
+
+end
+
+end
+
+/-! ### `Argon2.X86_64.DeriveSaved`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Argon2.X86_64.DeriveFrame`, which this module and modules that import it used -/
+
+section
+
+/-! Compose the nested saved-register frames and the 272-byte local allocation. -/
+
+@[expose] public section
+
+namespace VG.Proof.Argon2.X86_64.Derive
+
+open VG VG.X86_64
+
+def frameStart (s : State) : List Reg → State
+  | [] => pushed (List.replicate 34 .rax) s
+  | r :: rs => frameStart (pushed [r] s) rs
+
+def frameEnd (s : State) : List Reg → State
+  | [] => popped .rax 34 s
+  | r :: rs => popped r 1 (frameEnd s rs)
+
+theorem frameEnd_metadata (s t : State) (rs : List Reg)
+    (sp : t.gpr .rsp = (frameStart s rs).gpr .rsp)
+    (wr : t.wr = (frameStart s rs).wr) :
+    (frameEnd t rs).gpr .rsp = s.gpr .rsp ∧ (frameEnd t rs).wr = s.wr := by
+  induction rs generalizing s with
+  | nil =>
+    constructor
+    · rw [frameEnd, popped_rsp, sp, frameStart, pushed_rsp]
+      simp only [List.length_replicate, Nat.reduceMul, BitVec.sub_add_cancel]
+    · rw [frameEnd, popped_wr, wr, frameStart, pushed_wr]; rfl
+  | cons r rs ih =>
+    obtain ⟨innerSp, innerWr⟩ := ih (pushed [r] s) sp wr
+    constructor
+    · rw [frameEnd, popped_rsp, innerSp, pushed_rsp]
+      simp only [List.length_singleton, Nat.mul_one, BitVec.sub_add_cancel]
+    · rw [frameEnd, popped_wr, innerWr, pushed_wr]; rfl
+
+theorem frameEnd_mem (s : State) (rs : List Reg) : (frameEnd s rs).mem = s.mem := by
+  induction rs with
+  | nil => exact popped_mem ..
+  | cons r rs ih => exact (popped_mem ..).trans ih
+
+/-- The nested frames, whose bytes, `272 + 8 * rs.length` below `rsp`, each hold
+whatever they hold once released. -/
+theorem frame_ok (s : State) (rs : List Reg) (body : Prog isa) (Q : State → Prop)
+    (notSp : .rsp ∉ rs) (space : 272 + 8 * rs.length ≤ (s.gpr .rsp).toNat)
+    (run : WP isa body (frameStart s rs) fun t =>
+      t.gpr .rsp = (frameStart s rs).gpr .rsp ∧ t.wr = (frameStart s rs).wr ∧ ∀ m u,
+        Frame [⟨s.gpr .rsp - BitVec.ofNat 64 (272 + 8 * rs.length), 272 + 8 * rs.length⟩] t.mem m →
+        Q { frameEnd t rs with mem := m, unknowns := u }) :
+    WP isa (Impl.Argon2.X86_64.Derive.frame body rs) s Q := by
+  induction rs generalizing s Q with
+  | nil =>
+    exact WP.frame (by decide) (by decide) (by decide) (by simpa using space) run
+  | cons r rs ih =>
+    simp only [List.mem_cons, not_or] at notSp
+    have pushedBound : ((pushed [r] s).gpr .rsp).toNat = (s.gpr .rsp).toNat - 8 := by
+      rw [pushed_rsp]
+      simp only [List.length_singleton, Nat.mul_one]
+      exact toNat_sub_ofNat (by simp only [List.length_cons] at space; omega_using [space])
+    have innerSpace : 272 + 8 * rs.length ≤ ((pushed [r] s).gpr .rsp).toNat := by
+      rw [pushedBound]; simp only [List.length_cons] at space; omega_using [space]
+    have hp : (pushed [r] s).gpr .rsp = s.gpr .rsp - BitVec.ofNat 64 8 := by
+      rw [pushed_rsp]; rfl
+    have hlt := (s.gpr .rsp).isLt
+    simp only [List.length_cons] at space
+    apply WP.frame (by simp) (by simpa using notSp.1) (Ne.symm notSp.1)
+      (by simp only [List.length_singleton, Nat.mul_one]; omega_using [space])
+    apply ih (pushed [r] s) (fun t => t.gpr .rsp = (pushed [r] s).gpr .rsp ∧
+      t.wr = (pushed [r] s).wr ∧ ∀ m u,
+        Frame [⟨s.gpr .rsp - BitVec.ofNat 64 (8 * [r].length), 8 * [r].length⟩] t.mem m →
+        Q { popped r [r].length t with mem := m, unknowns := u }) notSp.2 innerSpace
+    apply run.mono
+    rintro t ⟨sp, wr, result⟩
+    obtain ⟨endSp, endWr⟩ := frameEnd_metadata (pushed [r] s) t rs sp wr
+    refine ⟨sp, wr, fun m₁ u₁ fm₁ => ⟨endSp, endWr, fun m₂ u₂ fm₂ => ?_⟩⟩
+    replace fm₂ : Frame [⟨s.gpr .rsp - BitVec.ofNat 64 8, 8⟩] m₁ m₂ := fm₂
+    have slot : ∀ i < 1, m₁.readW ((frameEnd t rs).gpr .rsp + BitVec.ofNat 64 (8 * i)) 64 =
+        (frameEnd t rs).mem.readW ((frameEnd t rs).gpr .rsp + BitVec.ofNat 64 (8 * i)) 64 := by
+      intro i hi
+      simp only [Nat.lt_one_iff] at hi; subst hi
+      rw [frameEnd_mem, endSp, Nat.mul_zero, BitVec.add_zero]
+      refine fm₁.readW (r := ⟨(pushed [r] s).gpr .rsp, 8⟩) (Region.contains_self _ _) ?_ (by decide)
+      intro r' hr'
+      simp only [List.mem_singleton] at hr'; subst hr'
+      exact Offset.base_disjoint_below _ (by omega_using [space, hlt])
+    show Q { popped r 1 { frameEnd t rs with mem := m₁, unknowns := u₁ } with mem := m₂, unknowns := u₂ }
+    rw [popped_withMem slot]
+    refine result m₂ u₂ ((fm₁.sub ?_).trans (fm₂.sub ?_))
+    · intro r' hr'
+      simp only [List.mem_singleton] at hr'; subst hr'
+      refine ⟨_, List.mem_singleton_self _, ?_⟩
+      rw [hp, BitVec.sub_sub, ← BitVec.ofNat_add]
+      exact Offset.sub_below _ (by simp only [List.length_cons]; omega_using [])
+        (by simp only [List.length_cons]; omega_using [])
+    · intro r' hr'
+      simp only [List.mem_singleton] at hr'; subst hr'
+      exact ⟨_, List.mem_singleton_self _, Offset.sub_below _ (by simp only [List.length_cons]; omega_using [])
+        (by simp only [List.length_cons]; omega_using [])⟩
+
+end VG.Proof.Argon2.X86_64.Derive
+
+end
+
+end
+
+/-! Merged from `Proof.Argon2.X86_64.DeriveFrameState`. -/
+
+@[expose] public section
+
+section
+/-! Exact stack depth and memory modified by the entry-point prologue. -/
+
+namespace VG.Proof.Argon2.X86_64.Derive
+
+open VG VG.X86_64
+
+theorem frameStart_sp (s : State) (rs : List Reg) :
+    (frameStart s rs).gpr .rsp = s.gpr .rsp - BitVec.ofNat 64 (272 + 8 * rs.length) := by
+  induction rs generalizing s with
+  | nil => rw [frameStart, pushed_rsp]; rfl
+  | cons r rs ih =>
+    rw [frameStart, ih, pushed_rsp]
+    simp only [List.length_cons, List.length_nil, Nat.zero_add, Nat.mul_one]
+    rw [BitVec.sub_sub, ← BitVec.ofNat_add]
+    exact congrArg (fun n => s.gpr .rsp - BitVec.ofNat 64 n) (by omega_using [])
+
+theorem frameStart_reg (s : State) (rs : List Reg) (r : Reg) (notSp : r ≠ .rsp) :
+    (frameStart s rs).gpr r = s.gpr r := by
+  induction rs generalizing s with
+  | nil => exact pushed_gpr _ _ notSp
+  | cons x xs ih => exact (ih (pushed [x] s)).trans (pushed_gpr _ _ notSp)
+
+theorem frameStart_rd (s : State) (rs : List Reg) : (frameStart s rs).rd = s.rd := by
+  induction rs generalizing s with
+  | nil => exact pushed_rd ..
+  | cons r rs ih => exact (ih (pushed [r] s)).trans (pushed_rd ..)
+
+theorem frameStart_frame (s : State) (rs : List Reg) (notSp : .rsp ∉ rs)
+    (space : 272 + 8 * rs.length ≤ (s.gpr .rsp).toNat) :
+    Frame [below (s.gpr .rsp) (272 + 8 * rs.length)] s.mem (frameStart s rs).mem := by
+  induction rs generalizing s with
+  | nil =>
+    exact (pushRegs_mem s (List.replicate 34 .rax) (by decide) (by simpa using space)).1
+  | cons r rs ih =>
+    simp only [List.mem_cons, not_or] at notSp
+    have enough : 8 ≤ (s.gpr .rsp).toNat := by simp only [List.length_cons] at space; omega_using [space]
+    have innerSpace : 272 + 8 * rs.length ≤ ((pushed [r] s).gpr .rsp).toNat := by
+      rw [pushed_rsp]
+      simp only [List.length_singleton, Nat.mul_one]
+      rw [toNat_sub_ofNat enough]
+      simp only [List.length_cons] at space; omega_using [space]
+    have outer := (pushRegs_mem s [r] (by simpa using notSp.1)
+      (by simpa using enough)).1
+    have inner := ih (pushed [r] s) notSp.2 innerSpace
+    apply (outer.sub ?_).trans (inner.sub ?_)
+    · intro region hr
+      simp only [List.mem_singleton] at hr; subst region
+      refine ⟨_, List.mem_singleton_self _, ?_⟩
+      exact Offset.sub_below (s.gpr .rsp) (by simp only [List.length_cons, List.length_nil]; omega_using [])
+        (by simp only [List.length_singleton, Nat.mul_one]; omega_using [])
+    · intro region hr
+      simp only [List.mem_singleton] at hr; subst region
+      refine ⟨_, List.mem_singleton_self _, ?_⟩
+      rw [pushed_rsp]
+      simp only [List.length_cons, List.length_nil, Nat.zero_add, Nat.mul_one, below]
+      rw [BitVec.sub_sub, ← BitVec.ofNat_add,
+        show 8 + (272 + 8 * rs.length) = 272 + 8 * (rs.length + 1) by omega_using []]
+      exact Region.sub_prefix (by omega_using [])
+
+end VG.Proof.Argon2.X86_64.Derive
+end
+
+/-! The nested prologue stores every callee-saved register at its exact ABI slot. -/
+
+namespace VG.Proof.Argon2.X86_64.Derive
+
+open VG VG.X86_64
+
+theorem frameStart_word (s : State) (rs : List Reg) (notSp : .rsp ∉ rs)
+    (space : 272 + 8 * rs.length ≤ (s.gpr .rsp).toNat) (j : Nat) (bound : j < rs.length) :
+    (frameStart s rs).mem.readW (s.gpr .rsp - BitVec.ofNat 64 (8 * (j + 1))) 64 = s.gpr rs[j] := by
+  induction rs generalizing s j with
+  | nil => exact absurd bound (Nat.not_lt_zero _)
+  | cons r rs ih =>
+    simp only [List.mem_cons, not_or] at notSp
+    have enough : 8 ≤ (s.gpr .rsp).toNat := by simp only [List.length_cons] at space; omega_using [space]
+    have innerSpace : 272 + 8 * rs.length ≤ ((pushed [r] s).gpr .rsp).toNat := by
+      rw [pushed_rsp]
+      simp only [List.length_singleton, Nat.mul_one]
+      rw [toNat_sub_ofNat enough]
+      simp only [List.length_cons] at space; omega_using [space]
+    cases j with
+    | zero =>
+      have stored := (pushRegs_mem s [r] (by simpa using notSp.1)
+        (by simpa using enough)).2 0 (by simp)
+      have inner := frameStart_frame (pushed [r] s) rs notSp.2 innerSpace
+      have unchanged : (frameStart (pushed [r] s) rs).mem.readW ((pushed [r] s).gpr .rsp) 64 =
+          (pushed [r] s).mem.readW ((pushed [r] s).gpr .rsp) 64 := inner.readW
+        (r := ⟨(pushed [r] s).gpr .rsp, 8⟩) (Region.contains_self _ _) (by
+          intro region hr
+          simp only [List.mem_singleton] at hr; subst region
+          apply Offset.base_disjoint_below
+          have limit := (s.gpr .rsp).isLt
+          simp only [List.length_cons] at space; omega_using [space]) (by decide)
+      rw [pushed_rsp] at unchanged
+      simp only [List.length_singleton, Nat.mul_one] at unchanged
+      exact unchanged.trans stored
+    | succ j =>
+      have word := ih (pushed [r] s) notSp.2 innerSpace j (by simpa using bound)
+      rw [pushed_rsp, pushed_gpr _ _ (fun h => notSp.2 (h ▸ List.getElem_mem _))] at word
+      simp only [List.length_singleton, Nat.mul_one] at word
+      rw [BitVec.sub_sub, ← BitVec.ofNat_add,
+        show 8 + 8 * (j + 1) = 8 * (j + 1 + 1) by omega_using []] at word
+      exact word
+
+end VG.Proof.Argon2.X86_64.Derive
+
+end
+
+end
+
+/-! ### `Argon2.X86_64.DeriveAbi`, which this module and modules that import it used -/
+
+section
+
+/-! Decode the reviewed System V contract without requiring normalized upper bits. -/
+
+@[expose] public section
+
+namespace VG.Proof.Argon2.X86_64.Derive
+
+open VG VG.X86_64
+
+def abiWord (s : State) (d : Nat) : Addr := s.mem.readW (s.gpr .rsp + BitVec.ofNat 64 d) 64
+def abiParams (s : State) : Spec.Argon2.Params := Spec.Argon2.params
+  ((s.gpr .rdi).setWidth 32).toNat ((s.gpr .r9).setWidth 32).toNat
+  ((abiWord s 8).setWidth 32).toNat ((abiWord s 16).setWidth 32).toNat (abiWord s 96).toNat
+
+def abiInputs (s : State) : List Region :=
+  [⟨s.gpr .rsi, (s.gpr .rdx).toNat⟩, ⟨s.gpr .rcx, (s.gpr .r8).toNat⟩,
+    ⟨abiWord s 32, (abiWord s 40).toNat⟩, ⟨abiWord s 48, (abiWord s 56).toNat⟩]
+def abiMatrix (s : State) : Region := ⟨abiWord s 64, (abiWord s 72).toNat * 1024⟩
+def abiWork (s : State) : Region := ⟨abiWord s 80, 16384⟩
+def abiOutput (s : State) : Region := ⟨abiWord s 88, (abiWord s 96).toNat⟩
+def abiArguments (s : State) : Region := ⟨s.gpr .rsp + BitVec.ofNat 64 8, 96⟩
+def abiBuffers (s : State) : List (Region × Bool) :=
+  (abiInputs s).map (·, false) ++ [(abiMatrix s, true), (abiWork s, true), (abiOutput s, true)]
+
+structure AbiEnvironment (s : State) : Prop where
+  stack : 344 ≤ (s.gpr .rsp).toNat
+  wrap : (s.gpr .rsp).toNat + 104 ≤ 2 ^ 64
+  rd : s.rd = abiInputs s ++ [abiArguments s]
+  wr : s.wr = [abiMatrix s, abiWork s, abiOutput s]
+  pairs : (abiBuffers s ++ [(abiArguments s, false)]).Pairwise
+    (fun a b => (a.2 || b.2) → a.1.Disjoint b.1)
+  reserved : ∀ r ∈ [⟨s.gpr .rsp, 8⟩, below (s.gpr .rsp) 344],
+    ∀ b ∈ abiBuffers s ++ [(abiArguments s, false)], r.Disjoint b.1
+  bounds : ∀ b ∈ abiBuffers s, b.1.base.toNat + b.1.len ≤ 2 ^ 64
+  kind : ((s.gpr .rdi).setWidth 32).toNat ≤ 2
+  valid : Spec.Argon2.valid (abiParams s) (s.gpr .rdx).toNat (s.gpr .r8).toNat
+    (abiWord s 40).toNat (abiWord s 56).toNat
+  threads : 1 ≤ ((abiWord s 24).setWidth 32).toNat ∧ ((abiWord s 24).setWidth 32).toNat < 2 ^ 24
+  blocks : (abiWord s 72).toNat = (abiParams s).blocks
+
+theorem abi_environment (s : State) (h : (Spec.Argon2.deriveContract X86_64.abi 344).pre s) :
+    AbiEnvironment s := by
+  sig_pre [Spec.Argon2.deriveContract, Spec.Argon2.deriveSig, X86_64.abi,
+    X86_64.argRegs, X86_64.stackArg, X86_64.stackArgAddr, List.range, List.range.loop] at h
+  sig_split h
+  constructor
+  all_goals sig_eval [abiInputs, abiArguments, abiMatrix, abiWork, abiOutput, abiBuffers,
+    abiWord, abiParams, below]
+  all_goals sig_and_intros
+  all_goals sig_close
+  all_goals with_reducible assumption
+
+end VG.Proof.Argon2.X86_64.Derive
+
+end
+
+end
+
+/-! ### `Argon2.X86_64.Parameters`, which this module and modules that import it used -/
+
+section
+
+/-! Merged from `Proof.Argon2.X86_64.ParametersSteps`. -/
+
+@[expose] public section
+
+section
+/-! Public frame loads and fixed arithmetic for the RFC's rounded memory dimensions. -/
+
+namespace VG.Proof.Argon2.X86_64.Parameters
+
+open VG VG.X86_64
+
+theorem args_ok (s : State)
+    (memoryRead : InRegions (s.rd ++ s.wr) (off (s.gpr .rbp) 176) 8)
+    (lanesRead : InRegions (s.rd ++ s.wr) (off (s.gpr .rbp) 184) 8) :
+    WP isa (.block Impl.Argon2.X86_64.Parameters.args) s fun t =>
+      t.gpr .rdi = s.mem.readW (off (s.gpr .rbp) 176) 64 ∧
+      t.gpr .rsi = (s.mem.readW (off (s.gpr .rbp) 184) 64) * 4 ∧ Divide.Keeps [.rdi, .rsi] s t := by
+  apply WP.of_runBlock
+  simp only [Impl.Argon2.X86_64.Parameters.args, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
+    execAlu, State.load64, ea_at, RegUpd.gpr_setReg, RegUpd.gpr_arithFlags,
+    RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, memoryRead, lanesRead, reduceCtorEq, ite_true, ite_false, Option.map_some, Option.bind_some,
+    Option.some.injEq, exists_eq_left']
+  refine ⟨trivial, ?_, ?_⟩
+  · simp only [show (4 : Addr) = 2#64 + 2#64 from rfl, BitVec.mul_add, BitVec.mul_two]
+  · constructor
+    · intro r hr
+      simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+      simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr.1, hr.2, ite_false]
+    all_goals rfl
+
+theorem finish_ok (s : State) : WP isa (.block Impl.Argon2.X86_64.Parameters.finish) s fun t =>
+    t.gpr .r13 = s.gpr .r9 * 4 ∧ Divide.Keeps [.r13] s t := by
+  apply WP.of_runBlock
+  simp only [Impl.Argon2.X86_64.Parameters.finish, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu,
+    RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, ite_true, Option.map_some, Option.bind_some,
+    Option.some.injEq, exists_eq_left']
+  refine ⟨?_, ?_⟩
+  · simp only [show (4 : Addr) = 2#64 + 2#64 from rfl, BitVec.mul_add, BitVec.mul_two]
+  · constructor
+    · intro r hr
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr, ite_false]
+    all_goals rfl
+
+end VG.Proof.Argon2.X86_64.Parameters
+end
+
+/-! Exact rounded lane length using the verified fixed-time divider. -/
+
+namespace VG.Proof.Argon2.X86_64.Parameters
+
+open VG VG.X86_64 VG.Spec.Argon2
+
+structure Ready (p : Params) (s : State) : Prop where
+  memoryRead : InRegions (s.rd ++ s.wr) (off (s.gpr .rbp) 176) 8
+  lanesRead : InRegions (s.rd ++ s.wr) (off (s.gpr .rbp) 184) 8
+  memoryWord : s.mem.readW (off (s.gpr .rbp) 176) 64 = BitVec.ofNat 64 p.memory
+  lanesWord : s.mem.readW (off (s.gpr .rbp) 184) 64 = BitVec.ofNat 64 p.lanes
+  positive : 0 < p.lanes
+  memoryBound : p.memory < 2 ^ 32
+  lanesBound : p.lanes < 2 ^ 24
+
+def changed : List Reg := [.rdi, .rsi] ++ Divide.changed ++ [.r13]
+
+theorem code_ok (s : State) (p : Params) (h : Ready p s) :
+    WP isa Impl.Argon2.X86_64.Parameters.code s fun t =>
+      t.gpr .r13 = BitVec.ofNat 64 p.laneLen ∧ Divide.Keeps changed s t := by
+  unfold Impl.Argon2.X86_64.Parameters.code
+  refine WP.seq ((args_ok s h.memoryRead h.lanesRead).mono ?_)
+  rintro a ⟨memory, lanes, ka⟩
+  have divisor : a.gpr .rsi = BitVec.ofNat 64 (4 * p.lanes) := by
+    rw [lanes, h.lanesWord, show (4 : Addr) = BitVec.ofNat 64 4 from rfl, ← BitVec.ofNat_mul, Nat.mul_comm]
+  have n : (a.gpr .rdi).toNat = p.memory := by
+    rw [memory, h.memoryWord, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (Nat.lt_trans h.memoryBound (by decide))]
+  have bound : 4 * p.lanes < 2 ^ 32 := by have lanesBound := h.lanesBound; omega_using [lanesBound]
+  have d : (a.gpr .rsi).toNat = 4 * p.lanes := by
+    rw [divisor, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (Nat.lt_trans bound (by decide))]
+  refine WP.seq ((Divide.code_ok a (by rw [n]; exact h.memoryBound)
+    (by rw [d]; have positive := h.positive; omega_using [positive]) (by rw [d]; exact bound)).mono ?_)
+  rintro b ⟨quotient, _, kb⟩
+  rw [n, d] at quotient
+  have word : b.gpr .r9 = BitVec.ofNat 64 (p.memory / (4 * p.lanes)) := by
+    rw [← quotient]
+    simp only [BitVec.ofNat_toNat, BitVec.setWidth_eq]
+  refine (finish_ok b).mono ?_
+  rintro t ⟨value, kt⟩
+  refine ⟨?_, (ka.mono (by simp [changed])).trans
+    ((kb.mono (by
+      intro r hr
+      simp only [changed, List.mem_append, List.mem_cons, List.not_mem_nil, or_false]
+      exact Or.inl (Or.inr hr))).trans (kt.mono (by simp [changed])))⟩
+  rw [value, word, show (4 : Addr) = BitVec.ofNat 64 4 from rfl, ← BitVec.ofNat_mul,
+    Nat.mul_comm, ← Proof.Argon2.laneLen_eq p h.positive]
+
+end VG.Proof.Argon2.X86_64.Parameters
+
+end
+
+end
 
 /-! Merged from `Proof.Argon2.X86_64.DeriveStore`. -/
 

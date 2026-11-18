@@ -3,8 +3,782 @@ module
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Hash
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Common
 public import VerifiedGarbage.Proof.Pbkdf2.MdKeys
-import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Sha256.Stream
+public import VerifiedGarbage.Proof.Pbkdf2.AArch64.Iterate
+public import VerifiedGarbage.Proof.Pbkdf2.Contract
+public import VerifiedGarbage.Spec.Pbkdf2.Generic
+import VerifiedGarbage.Proof.Hmac.Generic.Implies
+import VerifiedGarbage.Proof.Pbkdf2.Memory
+public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.PbkLoop
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.PbkLoop
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.OmegaLit
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+
+/-! ### `Pbkdf2.Md.AArch64.Pbkdf2CT`, which the modules that import this one used -/
+
+section
+
+/-!
+# PBKDF2-HMAC over any Merkle–Damgård hash function on AArch64: `pbkdf2`, constant time
+
+As on x86-64 (`Proof/Pbkdf2/Md/X86_64/Pbkdf2CT.lean`): the pieces between the
+calls are checked by the taint analysis (`Checks`, `by taint_decide` for each
+hash function), each from registers that the correctness proof fixes to public
+values (`KE`, `Mid`, `KR`): they are the same in two runs that agree on the
+public arguments. The calls are constant time by their callees' proofs
+(`RelCT.call`, with arguments the correctness proof fixes to the same values),
+and the branches and the loop go the same way in both runs, by the facts the
+correctness proof gives about the registers they test.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Pbkdf2.Md.AArch64.Pbk
+
+open VG.AArch64
+open VG.Impl.Pbkdf2.Md.AArch64 (Hash)
+open VG.Proof.Pbkdf2.Md.AArch64 (HashOK pbkG)
+open VG.Proof.Pbkdf2.AArch64 (iterK)
+open VG.Proof.Pbkdf2.Md.AArch64.Calls (initG finG rel_taint rel_wp)
+open VG.Proof.MdStream.AArch64 (wp_lsr wp_subImm)
+open Spec.Sha256 (bytesAt)
+
+variable {H : Hash}
+
+/-- The public arguments `entry` reads (`c`, only half public, it only
+stores). -/
+abbrev entryRegs : List Reg := [.x0, .x1, .x2, .x3, .x5, .x6, .x7]
+
+/-- The taint checks of the pieces of `pbkdf2` between its calls, branches
+and loops. -/
+structure Checks (H : Hash) : Prop where
+  entry : ∃ hc, (Taint.check taint (Taint.ofRegs entryRegs) (.block H.entry) hc).isSome = true
+  hk1 : ∃ hc, (Taint.check taint (Taint.ofRegs epub) (.block H.hkInit) hc).isSome = true
+  hk3 : ∃ hc, (Taint.check taint (Taint.ofRegs epub) (.block H.hkUpd) hc).isSome = true
+  hk5 : ∃ hc, (Taint.check taint (Taint.ofRegs epub) (.block H.hkFin) hc).isSome = true
+  hk7 : ∃ hc, (Taint.check taint (Taint.ofRegs epub) (.block H.hkKey) hc).isSome = true
+  keyShr : ∃ hc, (Taint.check taint (Taint.ofRegs epub) (.block H.keyShr) hc).isSome = true
+  keySub : ∃ hc, (Taint.check taint (Taint.ofRegs epub) (.block H.keySub) hc).isSome = true
+  short : ∃ hc, (Taint.check taint (Taint.ofRegs epub) (.block Hash.short) hc).isSome = true
+  su1 : ∃ hc, (Taint.check taint (Taint.ofRegs epub) (.block H.initArgs) hc).isSome = true
+  su3 : ∃ hc, (Taint.check taint (Taint.ofRegs epub) (.block H.saltArgs) hc).isSome = true
+  loopRegs : ∃ hc, (Taint.check taint (Taint.ofRegs epub) (.block H.loopRegs) hc).isSome = true
+  pieceA : ∃ hc, (Taint.check taint (Taint.ofRegs epub) (.block H.intArgs) hc).isSome = true
+  finArgs : ∃ hc, (Taint.check taint (Taint.ofRegs epub) (.block H.finArgs) hc).isSome = true
+  pieceC : ∃ hc, (Taint.check taint (Taint.ofRegs epub) (.block H.iterArgs) hc).isSome = true
+  tail : ∃ hc, (Taint.check taint (Taint.ofRegs epub)
+    (.seq H.outLen (.seq H.outLoop (.block Hash.advance))) hc).isSome = true
+  exit : ∃ hc, (Taint.check taint (Taint.ofRegs [.x23]) (.block H.exit) hc).isSome = true
+
+/-- The public arguments are the same (`c` in its 32 bits). -/
+structure PubEq (s₀ s₀' : State) : Prop where
+  x0 : s₀.gpr .x0 = s₀'.gpr .x0
+  x1 : s₀.gpr .x1 = s₀'.gpr .x1
+  x2 : s₀.gpr .x2 = s₀'.gpr .x2
+  x3 : s₀.gpr .x3 = s₀'.gpr .x3
+  x4 : (s₀.gpr .x4).setWidth 32 = (s₀'.gpr .x4).setWidth 32
+  x5 : s₀.gpr .x5 = s₀'.gpr .x5
+  x6 : s₀.gpr .x6 = s₀'.gpr .x6
+  x7 : s₀.gpr .x7 = s₀'.gpr .x7
+  sp : s₀.sp = s₀'.sp
+
+/-! ## The key's branches, one run at a time -/
+
+section
+variable {s₀ : State} (hz : PSizes H)
+include hz
+
+theorem keyShr_ok {s : State} (h : KE (H := H) s₀ s) :
+    WP isa (.block H.keyShr) s fun t =>
+      KE (H := H) s₀ t ∧ isa.eval (.zero .x .x9) t = some (decide (pwl s₀ < H.P.B)) := by
+  unfold Hash.keyShr
+  exact wp_lsr (log2_B hz).2 fun s₁ u₁ => WP.block_nil ⟨h.upd u₁ (by decide), key_shr hz h u₁⟩
+
+theorem keySub_ok {s : State} (h : KE (H := H) s₀ s) :
+    WP isa (.block H.keySub) s fun t =>
+      KE (H := H) s₀ t ∧ isa.eval (.zero .x .x9) t = some (decide (pwl s₀ = H.P.B)) := by
+  have hB := hz.B_le
+  unfold Hash.keySub
+  exact wp_subImm (by omega_using [hB]) fun s₂ u₂ => WP.block_nil ⟨h.upd u₂ (by decide), key_sub h u₂ (by omega_using [hB])⟩
+
+end
+
+section
+variable {s₀ s₀' : State} (hq : PubEq s₀ s₀')
+include hq
+
+/-! ## What agrees in the two runs -/
+
+theorem scr_eq : scr s₀' = scr s₀ := hq.x7.symm
+theorem A_eq (o : Nat) : A s₀' o = A s₀ o := by show scr s₀' + _ = scr s₀ + _; rw [scr_eq hq]
+theorem pw_eq : pw s₀' = pw s₀ := hq.x0.symm
+theorem pwl_eq : pwl s₀' = pwl s₀ := by show (s₀'.gpr .x1).toNat = _; rw [← hq.x1]
+theorem salt_eq : salt s₀' = salt s₀ := hq.x2.symm
+theorem sl_eq : sl s₀' = sl s₀ := by show (s₀'.gpr .x3).toNat = _; rw [← hq.x3]
+theorem cc_eq : cc s₀' = cc s₀ := by show ((s₀'.gpr .x4).setWidth 32).toNat = _; rw [← hq.x4]
+theorem out_eq : out s₀' = out s₀ := hq.x5.symm
+theorem ol_eq : ol s₀' = ol s₀ := by show (s₀'.gpr .x6).toNat = _; rw [← hq.x6]
+theorem nb_eq : nb H s₀' = nb H s₀ := by show (ol s₀' + H.D - 1) / H.D = _; rw [ol_eq hq]
+theorem kp_eq : kp H s₀' = kp H s₀ := by
+  show (if pwl s₀' < H.P.B + 1 then pw s₀' else A s₀' H.hkO) = _; rw [pwl_eq hq, pw_eq hq, A_eq hq]
+theorem kl_eq : kl H s₀' = kl H s₀ := by
+  show (if pwl s₀' < H.P.B + 1 then pwl s₀' else H.D) = _; rw [pwl_eq hq]
+
+theorem kr_agree {s s' : State} (h : KR (H := H) s₀ s) (h' : KR (H := H) s₀' s') :
+    s.sp = s'.sp ∧ ∀ r ∈ [Reg.x23], s.gpr r = s'.gpr r := by
+  refine ⟨by rw [h.sp, h'.sp, hq.sp], fun r hr => ?_⟩
+  simp only [List.mem_singleton] at hr; subst hr; rw [h.x23, h'.x23, scr_eq hq]
+
+theorem ke_agree {s s' : State} (h : KE (H := H) s₀ s) (h' : KE (H := H) s₀' s') :
+    s.sp = s'.sp ∧ ∀ r ∈ epub, s.gpr r = s'.gpr r := by
+  refine ⟨(kr_agree hq h.kr h'.kr).1, fun r hr => ?_⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl
+  · rw [h.x19, h'.x19, pw_eq hq]
+  · rw [h.x20, h'.x20, hq.x1]
+  · rw [h.x21, h'.x21, salt_eq hq]
+  · rw [h.x22, h'.x22, hq.x3]
+  · exact (kr_agree hq h.kr h'.kr).2 _ (by simp)
+
+theorem mid_agree {hH : HashOK H} {k : Nat} {s s' : State} (h : Mid hH s₀ k s) (h' : Mid hH s₀' k s') :
+    s.sp = s'.sp ∧ ∀ r ∈ epub, s.gpr r = s'.gpr r := by
+  refine ⟨(kr_agree hq h.kr h'.kr).1, fun r hr => ?_⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl
+  · rw [h.x19, h'.x19]
+  · rw [h.x20, h'.x20, hq.x3]
+  · rw [h.x21, h'.x21, ol_eq hq]
+  · rw [h.x22, h'.x22, out_eq hq]
+  · exact (kr_agree hq h.kr h'.kr).2 _ (by simp)
+
+end
+
+/-! ## The pieces in two runs -/
+
+section
+variable (hH : HashOK H) {s₀ s₀' : State} (hp : Pre (H := H) s₀) (hp' : Pre (H := H) s₀') (hz : PSizes H)
+  (hq : PubEq s₀ s₀') (hc : Checks H)
+include hH hp hp' hz hq hc
+
+omit hH in
+theorem entry_rel : RelCT isa (fun s s' => s = s₀ ∧ s' = s₀') (.block H.entry)
+    fun s s' => KE (H := H) s₀ s ∧ KE (H := H) s₀' s' :=
+  rel_taint entryRegs (fun s s' e e' => by
+      rw [e, e']
+      refine ⟨hq.sp, fun r hr => ?_⟩
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
+      exacts [hq.x0, hq.x1, hq.x2, hq.x3, hq.x5, hq.x6, hq.x7]) hc.entry
+    (fun _ e => by rw [e]; exact entry_ok hp hz) (fun _ e => by rw [e]; exact entry_ok hp' hz)
+
+/-- Hashing a password longer than a block. -/
+theorem hashKey_rel : RelCT isa (fun s s' => KE (H := H) s₀ s ∧ KE (H := H) s₀' s') H.hashKey
+    fun _ _ => True := by
+  have hl := layout (H := H); have he := end_le hz
+  have hSS : H.stream.S = H.P.N + H.P.B := rfl
+  have ag := fun (s s' : State) (h : KE (H := H) s₀ s) (h' : KE (H := H) s₀' s') => ke_agree hq h h'
+  unfold Hash.hashKey
+  have r₁ := rel_taint (G := fun t => KE (H := H) s₀ t ∧ t.gpr .x0 = A s₀ H.stWO)
+    (G' := fun t => KE (H := H) s₀' t ∧ t.gpr .x0 = A s₀' H.stWO) epub ag hc.hk1
+    (fun _ h => hk1_ok hz h) (fun _ h => hk1_ok hz h)
+  have ini : ∀ {σ₀ s : State}, Pre (H := H) σ₀ → KE (H := H) σ₀ s →
+      Covers [⟨A σ₀ H.stWO, H.stream.S⟩] s.wr :=
+    fun hp h => Covers.of_sub fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact cov_part hp h.kr (by omega_using [hl, he, hSS])
+  have c₂ := rel_wp (VG.Proof.Pbkdf2.Md.AArch64.Calls.init_rel hH.stream (st := A s₀ H.stWO)
+      (P := fun s s' => (KE (H := H) s₀ s ∧ s.gpr .x0 = A s₀ H.stWO) ∧
+        (KE (H := H) s₀' s' ∧ s'.gpr .x0 = A s₀' H.stWO))
+      fun s s' h => by
+        have i := ini hp h.1.1; have i' := ini hp' h.2.1
+        rw [A_eq hq] at i' h
+        exact ⟨h.1.2, h.2.2, i, i', (ke_agree hq h.1.1 h.2.1).1⟩)
+    (fun _ h => hk2_ok hp hz hH h.1 h.2) (fun _ h => hk2_ok hp' hz hH h.1 h.2)
+  have r₃ := rel_taint (F := fun t => KE (H := H) s₀ t ∧ hH.SH.Repr t.mem (A s₀ H.stWO) [])
+    (F' := fun t => KE (H := H) s₀' t ∧ hH.SH.Repr t.mem (A s₀' H.stWO) []) epub
+    (fun s s' h h' => ag s s' h.1 h'.1) hc.hk3
+    (fun _ h => hk3_ok hp hz hH h.1 h.2) (fun _ h => hk3_ok hp' hz hH h.1 h.2)
+  have r₅ := rel_taint
+    (F := fun t => KE (H := H) s₀ t ∧ hH.SH.Repr t.mem (A s₀ H.stWO) (bytesAt s₀.mem (pw s₀) (pwl s₀)))
+    (F' := fun t => KE (H := H) s₀' t ∧ hH.SH.Repr t.mem (A s₀' H.stWO) (bytesAt s₀'.mem (pw s₀') (pwl s₀')))
+    epub (fun s s' h h' => ag s s' h.1 h'.1) hc.hk5
+    (fun _ h => hk5_ok hp hz hH h.1 h.2) (fun _ h => hk5_ok hp' hz hH h.1 h.2)
+  have r₇ := rel_taint (G := fun _ => True) (G' := fun _ => True)
+    (F := fun t => KE (H := H) s₀ t ∧
+      bytesAt t.mem (A s₀ H.hkO) H.D = hH.SH.H.hash (bytesAt s₀.mem (pw s₀) (pwl s₀)))
+    (F' := fun t => KE (H := H) s₀' t ∧
+      bytesAt t.mem (A s₀' H.hkO) H.D = hH.SH.H.hash (bytesAt s₀'.mem (pw s₀') (pwl s₀')))
+    epub (fun s s' h h' => ag s s' h.1 h'.1) hc.hk7
+    (fun _ h => WP.mono (hk7_ok hz h.1) fun _ _ => trivial) (fun _ h => WP.mono (hk7_ok hz h.1) fun _ _ => trivial)
+  refine (r₁.seq (c₂.seq (r₃.seq (RelCT.seq ?_ (r₅.seq (RelCT.seq ?_ r₇)))))).mono (fun _ _ h => h)
+    fun _ _ _ => trivial
+  · exact rel_wp (VG.Proof.Pbkdf2.Md.AArch64.Calls.upd_rel hH.stream fun s s' h => by
+          obtain ⟨⟨k, a, i, -⟩, ⟨k', a', i', -⟩⟩ := h
+          rw [A_eq hq, pw_eq hq, scr_eq hq, pwl_eq hq] at a'
+          exact ⟨a, a', by rw [i, i'], (ke_agree hq k k').1⟩)
+        (fun _ h => hk4_ok hp hz hH h.1 h.2.1 h.2.2.1 h.2.2.2)
+        (fun _ h => hk4_ok hp' hz hH h.1 h.2.1 h.2.2.1 h.2.2.2)
+  · exact rel_wp (VG.Proof.Pbkdf2.Md.AArch64.Calls.fin_rel hH.stream fun s s' h => by
+          obtain ⟨⟨k, a, i, -⟩, ⟨k', a', i', -⟩⟩ := h
+          rw [A_eq hq, A_eq hq, scr_eq hq] at a'
+          exact ⟨a, a', by rw [i, i', hq.x1], (ke_agree hq k k').1⟩)
+        (fun _ h => hk6_ok hp hz hH h.1 h.2.1 h.2.2.1 h.2.2.2)
+        (fun _ h => hk6_ok hp' hz hH h.1 h.2.1 h.2.2.1 h.2.2.2)
+
+/-- The key. -/
+theorem key_rel : RelCT isa (fun s s' => KE (H := H) s₀ s ∧ KE (H := H) s₀' s') H.key
+    fun s s' => (KE (H := H) s₀ s ∧ s.gpr .x2 = kp H s₀ ∧ (s.gpr .x3).toNat = kl H s₀ ∧
+        KeyAt hH s₀ s.mem (kp H s₀) (kl H s₀)) ∧
+      (KE (H := H) s₀' s' ∧ s'.gpr .x2 = kp H s₀' ∧ (s'.gpr .x3).toNat = kl H s₀' ∧
+        KeyAt hH s₀' s'.mem (kp H s₀') (kl H s₀')) := by
+  have ag := fun (s s' : State) (h : KE (H := H) s₀ s) (h' : KE (H := H) s₀' s') => ke_agree hq h h'
+  obtain ⟨_, hs⟩ := hc.short
+  have short : ∀ {P : State → State → Prop}, (∀ s s', P s s' → KE (H := H) s₀ s ∧ KE (H := H) s₀' s') →
+      RelCT isa P (.block Hash.short) fun _ _ => True := fun hP =>
+    RelCT.taint (A := taint) (Taint.ofRegs epub) (fun _ _ h => by
+      obtain ⟨sp, hr⟩ := ke_agree hq (hP _ _ h).1 (hP _ _ h).2
+      exact ⟨sp, fun r hm => hr r (Taint.mem_ofRegs.mp hm)⟩) hs
+  have ite : RelCT isa (fun s s' => KE (H := H) s₀ s ∧ KE (H := H) s₀' s') H.key fun _ _ => True := by
+    unfold Hash.key
+    have r₁ := rel_taint
+      (G := fun t => KE (H := H) s₀ t ∧ isa.eval (.zero .x .x9) t = some (decide (pwl s₀ < H.P.B)))
+      (G' := fun t => KE (H := H) s₀' t ∧ isa.eval (.zero .x .x9) t = some (decide (pwl s₀' < H.P.B)))
+      epub ag hc.keyShr (fun _ h => keyShr_ok hz h) (fun _ h => keyShr_ok hz h)
+    refine r₁.seq (RelCT.ite (fun s s' h => by rw [h.1.2, h.2.2, pwl_eq hq])
+      (short fun _ _ h => ⟨h.1.1.1, h.1.2.1⟩) ?_)
+    have r₂ := rel_taint
+      (F := fun t => KE (H := H) s₀ t) (F' := fun t => KE (H := H) s₀' t)
+      (G := fun t => KE (H := H) s₀ t ∧ isa.eval (.zero .x .x9) t = some (decide (pwl s₀ = H.P.B)))
+      (G' := fun t => KE (H := H) s₀' t ∧ isa.eval (.zero .x .x9) t = some (decide (pwl s₀' = H.P.B)))
+      epub ag hc.keySub (fun _ h => keySub_ok hz h) (fun _ h => keySub_ok hz h)
+    refine (r₂.seq (RelCT.ite (fun s s' h => by rw [h.1.2, h.2.2, pwl_eq hq])
+      (short fun _ _ h => ⟨h.1.1.1, h.1.2.1⟩) ?_)).mono (fun _ _ h => ⟨h.1.1.1, h.1.2.1⟩) fun _ _ h => h
+    exact (hashKey_rel hH hp hp' hz hq hc).mono (fun _ _ h => ⟨h.1.1.1, h.1.2.1⟩) fun _ _ h => h
+  exact (ite.wp fun s s' h => ⟨key_ok hp hz hH h.1, key_ok hp' hz hH h.2⟩).mono
+    (fun _ _ h => h) fun _ _ h => h.2
+
+/-- HMAC's states, and the inner one after the salt. -/
+theorem setup_rel (hIn : Verified AArch64.target H.hmacInit (initG hH.SH H.W))
+    (hInd : H.hmacInit.aarch64Depth ≤ 1) :
+    RelCT isa (fun s s' => (KE (H := H) s₀ s ∧ s.gpr .x2 = kp H s₀ ∧ (s.gpr .x3).toNat = kl H s₀ ∧
+        KeyAt hH s₀ s.mem (kp H s₀) (kl H s₀)) ∧
+      (KE (H := H) s₀' s' ∧ s'.gpr .x2 = kp H s₀' ∧ (s'.gpr .x3).toNat = kl H s₀' ∧
+        KeyAt hH s₀' s'.mem (kp H s₀') (kl H s₀'))) H.setup
+      fun s s' => (KE (H := H) s₀ s ∧ States hH s₀ s.mem) ∧ (KE (H := H) s₀' s' ∧ States hH s₀' s'.mem) := by
+  have ag := fun (s s' : State) (h : KE (H := H) s₀ s) (h' : KE (H := H) s₀' s') => ke_agree hq h h'
+  unfold Hash.setup
+  have r₁ := rel_taint
+    (F := fun s => KE (H := H) s₀ s ∧ s.gpr .x2 = kp H s₀ ∧ (s.gpr .x3).toNat = kl H s₀ ∧
+      KeyAt hH s₀ s.mem (kp H s₀) (kl H s₀))
+    (F' := fun s => KE (H := H) s₀' s ∧ s.gpr .x2 = kp H s₀' ∧ (s.gpr .x3).toNat = kl H s₀' ∧
+      KeyAt hH s₀' s.mem (kp H s₀') (kl H s₀'))
+    (G := fun t => KE (H := H) s₀ t ∧
+      InitArgs (H := H) t (A s₀ H.st0O) (A s₀ H.st1O) (kp H s₀) (scr s₀) (kl H s₀) ∧
+      KeyAt hH s₀ t.mem (kp H s₀) (kl H s₀))
+    (G' := fun t => KE (H := H) s₀' t ∧
+      InitArgs (H := H) t (A s₀' H.st0O) (A s₀' H.st1O) (kp H s₀') (scr s₀') (kl H s₀') ∧
+      KeyAt hH s₀' t.mem (kp H s₀') (kl H s₀'))
+    epub (fun s s' h h' => ag s s' h.1 h'.1) hc.su1
+    (fun _ h => su1_ok hp hz hH h.1 h.2.1 h.2.2.1 h.2.2.2) (fun _ h => su1_ok hp' hz hH h.1 h.2.1 h.2.2.1 h.2.2.2)
+  have r₃ := rel_taint (F := fun t => KE (H := H) s₀ t ∧
+      hH.SH.Repr t.mem (A s₀ H.st0O) (Spec.Hmac.xorPad (K0 hH s₀) Spec.Hmac.ipad) ∧
+      hH.SH.Repr t.mem (A s₀ H.st1O) (Spec.Hmac.xorPad (K0 hH s₀) Spec.Hmac.opad))
+    (F' := fun t => KE (H := H) s₀' t ∧
+      hH.SH.Repr t.mem (A s₀' H.st0O) (Spec.Hmac.xorPad (K0 hH s₀') Spec.Hmac.ipad) ∧
+      hH.SH.Repr t.mem (A s₀' H.st1O) (Spec.Hmac.xorPad (K0 hH s₀') Spec.Hmac.opad)) epub
+    (fun s s' h h' => ag s s' h.1 h'.1) hc.su3
+    (fun _ h => su3_ok hp hz hH h.1 h.2.1 h.2.2) (fun _ h => su3_ok hp' hz hH h.1 h.2.1 h.2.2)
+  refine r₁.seq (RelCT.seq ?_ (r₃.seq ?_))
+  · exact rel_wp (hinit_rel hH hIn fun s s' h => by
+        obtain ⟨⟨k, a, -⟩, ⟨k', a', -⟩⟩ := h
+        rw [A_eq hq, A_eq hq, kp_eq hq, scr_eq hq, kl_eq hq] at a'
+        exact ⟨a, a', (ke_agree hq k k').1⟩)
+      (fun _ h => su2_ok hp hz hH hIn hInd h.1 h.2.1 h.2.2)
+      (fun _ h => su2_ok hp' hz hH hIn hInd h.1 h.2.1 h.2.2)
+  · exact rel_wp (VG.Proof.Pbkdf2.Md.AArch64.Calls.upd_rel hH.stream fun s s' h => by
+        obtain ⟨⟨k, a, i, -⟩, ⟨k', a', i', -⟩⟩ := h
+        rw [A_eq hq, salt_eq hq, scr_eq hq, sl_eq hq] at a'
+        exact ⟨a, a', by rw [i, i'], (ke_agree hq k k').1⟩)
+      (fun _ h => su4_ok hp hz hH h.1 h.2.1 h.2.2.1 h.2.2.2.1 h.2.2.2.2.1 h.2.2.2.2.2)
+      (fun _ h => su4_ok hp' hz hH h.1 h.2.1 h.2.2.1 h.2.2.2.1 h.2.2.2.2.1 h.2.2.2.2.2)
+
+end
+
+/-! ## The blocks of the output -/
+
+theorem inv_mid {hH : HashOK H} {s₀ : State} (hz : PSizes H) {k : Nat} (hk : k < nb H s₀) {s : State}
+    (h : Inv hH s₀ k s) : Mid hH s₀ k s := by
+  have hkD : k * H.D < ol s₀ := (lt_nb hz.z.D0).1 hk
+  have hd : done H s₀ k = k * H.D := by show min _ _ = _; omega_using [hkD]
+  have hb := h.outB
+  rw [hd, List.take_of_length_le (Nat.le_of_eq h.glen)] at hb
+  exact ⟨h.kr, h.st, h.x19, h.x20, by rw [h.x21, hd], by rw [h.x22, hd], hb⟩
+
+/-- The loop's invariant in two runs, with `n` blocks left. -/
+abbrev LI (hH : HashOK H) (s₀ s₀' : State) (n : Nat) (s s' : State) : Prop :=
+  n ≤ nb H s₀ ∧ 0 < n ∧ Inv hH s₀ (nb H s₀ - n) s ∧ Inv hH s₀' (nb H s₀ - n) s'
+
+section
+variable (hH : HashOK H) {s₀ s₀' : State} (hp : Pre (H := H) s₀) (hp' : Pre (H := H) s₀') (hz : PSizes H)
+  (hq : PubEq s₀ s₀') (hc : Checks H)
+  (hF : Verified AArch64.target H.hmacFin (finG hH.SH H.W)) (hFd : H.hmacFin.aarch64Depth ≤ 1)
+  (hI : Verified AArch64.target H.iterate (iterK hH.SH H.W)) (hId : H.iterate.aarch64Depth ≤ 1)
+include hH hp hp' hz hq hc hF hFd hI hId
+
+theorem block_mid_rel {k : Nat} (hk : k < nb H s₀) (hg : (G hH s₀ k).length = k * H.D)
+    (hg' : (G hH s₀' k).length = k * H.D) :
+    RelCT isa (fun s s' => Mid hH s₀ k s ∧ Mid hH s₀' k s') H.block fun _ _ => True := by
+  have hk' : k < nb H s₀' := by rw [nb_eq hq]; exact hk
+  have ag := fun (s s' : State) (h : Mid hH s₀ k s) (h' : Mid hH s₀' k s') => mid_agree hq h h'
+  have msp : ∀ {s s' : State}, Mid hH s₀ k s → Mid hH s₀' k s' → s.sp = s'.sp :=
+    fun h h' => (mid_agree hq h h').1
+  unfold Hash.block
+  have pA := rel_taint epub ag hc.pieceA (fun _ h => pieceA_ok hp hz hH hk h)
+    (fun _ h => pieceA_ok hp' hz hH hk' h)
+  have fA := rel_taint
+    (F := fun t => Mid hH s₀ k t ∧ hH.SH.Repr t.mem (A s₀ H.stWO)
+      (Spec.Hmac.xorPad (K0 hH s₀) Spec.Hmac.ipad ++ saltB s₀ ++ Spec.Pbkdf2.int (k + 1)))
+    (F' := fun t => Mid hH s₀' k t ∧ hH.SH.Repr t.mem (A s₀' H.stWO)
+      (Spec.Hmac.xorPad (K0 hH s₀') Spec.Hmac.ipad ++ saltB s₀' ++ Spec.Pbkdf2.int (k + 1)))
+    epub (fun s s' h h' => ag s s' h.1 h'.1) hc.finArgs
+    (fun _ h => finArgs_ok hp hz hH h.1 h.2) (fun _ h => finArgs_ok hp' hz hH h.1 h.2)
+  have pC := rel_taint
+    (F := fun t => Mid hH s₀ k t ∧ bytesAt t.mem (A s₀ H.uO) H.D = U1 hH s₀ k)
+    (F' := fun t => Mid hH s₀' k t ∧ bytesAt t.mem (A s₀' H.uO) H.D = U1 hH s₀' k)
+    epub (fun s s' h h' => ag s s' h.1 h'.1) hc.pieceC
+    (fun _ h => pieceC_ok hp hz hH hk h.1 h.2) (fun _ h => pieceC_ok hp' hz hH hk' h.1 h.2)
+  have tl := rel_taint (G := fun _ => True) (G' := fun _ => True)
+    (F := fun t => Mid hH s₀ k t ∧ bytesAt t.mem (A s₀ H.tO) H.D = Tb hH s₀ (k + 1))
+    (F' := fun t => Mid hH s₀' k t ∧ bytesAt t.mem (A s₀' H.tO) H.D = Tb hH s₀' (k + 1))
+    epub (fun s s' h h' => ag s s' h.1 h'.1) hc.tail
+    (fun _ h => WP.mono (tail_ok hp hz hH hk hg h.1 h.2) fun _ _ => trivial)
+    (fun _ h => WP.mono (tail_ok hp' hz hH hk' hg' h.1 h.2) fun _ _ => trivial)
+  refine (pA.seq (RelCT.seq ?_ (fA.seq (RelCT.seq ?_ (pC.seq (RelCT.seq ?_ tl)))))).mono
+    (fun _ _ h => h) fun _ _ _ => trivial
+  · exact rel_wp (VG.Proof.Pbkdf2.Md.AArch64.Calls.upd_rel hH.stream fun s s' h => by
+        obtain ⟨a, a'⟩ := h
+        have x := a'.args
+        rw [A_eq hq, A_eq hq, scr_eq hq] at x
+        exact ⟨a.args, x, by rw [a.x1, a'.x1, sl_eq hq], msp a.mid a'.mid⟩)
+      (fun _ h => callA_ok hp hz hH hk h) (fun _ h => callA_ok hp' hz hH hk' h)
+  · exact rel_wp (hfin_rel hH hF fun s s' h => by
+        obtain ⟨a, a'⟩ := h
+        have x := a'.args
+        rw [A_eq hq, A_eq hq, A_eq hq, ← hq.x3, scr_eq hq] at x
+        exact ⟨a.args, x, msp a.mid a'.mid⟩)
+      (fun _ h => callB_ok hp hz hH hF hFd hk h) (fun _ h => callB_ok hp' hz hH hF hFd hk' h)
+  · exact rel_wp (iter_rel hH hI fun s s' h => by
+        obtain ⟨a, a'⟩ := h
+        have x := a'.args
+        rw [A_eq hq, A_eq hq, A_eq hq, cc_eq hq, scr_eq hq] at x
+        exact ⟨a.args, x, msp a.mid a'.mid⟩)
+      (fun _ h => callC_ok hp hz hH hI hId hk h) (fun _ h => callC_ok hp' hz hH hI hId hk' h)
+
+theorem block_rel {k : Nat} (hk : k < nb H s₀) :
+    RelCT isa (fun s s' => Inv hH s₀ k s ∧ Inv hH s₀' k s') H.block fun s s' =>
+      (Inv hH s₀ (k + 1) s ∧ isa.eval (.nonzero .x .x21) s = some (decide (k + 1 ≠ nb H s₀))) ∧
+      (Inv hH s₀' (k + 1) s' ∧ isa.eval (.nonzero .x .x21) s' = some (decide (k + 1 ≠ nb H s₀'))) := by
+  have hk' : k < nb H s₀' := by rw [nb_eq hq]; exact hk
+  intro s₁ s₂ t₁ t₂ s₁' s₂' h e₁ e₂
+  refine ((((block_mid_rel hH hp hp' hz hq hc hF hFd hI hId hk h.1.glen h.2.glen).mono
+    (P' := fun s s' => Inv hH s₀ k s ∧ Inv hH s₀' k s') (fun _ _ h => ⟨inv_mid hz hk h.1, inv_mid hz hk' h.2⟩)
+    fun _ _ h => h).wp fun s s' h => ⟨block_ok hp hz hH hF hFd hI hId hk h.1,
+      block_ok hp' hz hH hF hFd hI hId hk' h.2⟩).mono (fun _ _ h => h) fun _ _ h => h.2)
+    _ _ _ _ _ _ h e₁ e₂
+
+theorem step_rel (n : Nat) :
+    RelCT isa (LI hH s₀ s₀' n) H.block fun s s' =>
+      isa.eval (.nonzero .x .x21) s = isa.eval (.nonzero .x .x21) s' ∧
+      (isa.eval (.nonzero .x .x21) s = some false → Inv hH s₀ (nb H s₀) s ∧ Inv hH s₀' (nb H s₀') s') ∧
+      (isa.eval (.nonzero .x .x21) s = some true → ∃ m < n, LI hH s₀ s₀' m s s') := by
+  by_cases hn : n ≤ nb H s₀ ∧ 0 < n
+  · have hk : nb H s₀ - n < nb H s₀ := by omega_using [hn]
+    refine ((block_rel hH hp hp' hz hq hc hF hFd hI hId hk).mono (P' := LI hH s₀ s₀' n)
+      (fun _ _ h => ⟨h.2.2.1, h.2.2.2⟩) fun _ _ h => h).mono (fun _ _ h => h) fun t t' h => ?_
+    obtain ⟨⟨i, z⟩, ⟨i', z'⟩⟩ := h
+    have e := nb_eq (H := H) hq
+    rw [z, z', e]
+    refine ⟨rfl, fun hf => ?_, fun ht => ?_⟩
+    · have hl : nb H s₀ - n + 1 = nb H s₀ := by simpa using hf
+      rw [hl] at i i'
+      exact ⟨i, i'⟩
+    · have hl : nb H s₀ - n + 1 ≠ nb H s₀ := by simpa using ht
+      have e' : nb H s₀ - (n - 1) = nb H s₀ - n + 1 := by omega_using [hn]
+      exact ⟨n - 1, by omega_using [hn], by omega_using [hn], by omega_using [hn, hl], e' ▸ i, e' ▸ i'⟩
+  · intro _ _ _ _ _ _ h
+    exact absurd ⟨h.1, h.2.1⟩ hn
+
+theorem loop_rel :
+    RelCT isa (fun s s' => (Inv hH s₀ 0 s ∧ isa.eval (.zero .x .x21) s = some (decide (ol s₀ = 0))) ∧
+        (Inv hH s₀' 0 s' ∧ isa.eval (.zero .x .x21) s' = some (decide (ol s₀' = 0))))
+      (.ite (.zero .x .x21) (.block []) (.loop H.block (.nonzero .x .x21)))
+      fun s s' => Inv hH s₀ (nb H s₀) s ∧ Inv hH s₀' (nb H s₀') s' := by
+  have hD := hz.z.D0
+  have e := nb_eq (H := H) hq; have eo := ol_eq hq
+  refine RelCT.ite (fun s s' h => by rw [h.1.2, h.2.2, eo]) ?_ ?_
+  · refine RelCT.block_nil fun s s' h => ?_
+    have h0 : ol s₀ = 0 := by have := h.1.1.2.symm.trans h.2; simpa using this
+    rw [e, (nb_zero hD).2 h0]
+    exact ⟨h.1.1.1, h.1.2.1⟩
+  · refine (RelCT.loop (M := isa) (LI hH s₀ s₀') (step_rel hH hp hp' hz hq hc hF hFd hI hId)
+      (nb H s₀)).mono (fun s s' h => ?_) fun _ _ h => h
+    have h0 : ol s₀ ≠ 0 := by have := h.1.1.2.symm.trans h.2; simpa using this
+    have : nb H s₀ ≠ 0 := fun x => h0 ((nb_zero hD).1 x)
+    refine ⟨Nat.le_refl _, Nat.pos_of_ne_zero this, ?_, ?_⟩ <;> rw [Nat.sub_self]
+    exacts [h.1.1.1, h.1.2.1]
+
+theorem ct (hIn : Verified AArch64.target H.hmacInit (initG hH.SH H.W)) (hInd : H.hmacInit.aarch64Depth ≤ 1) :
+    RelCT isa (fun s s' => s = s₀ ∧ s' = s₀') H.pbkdf2 fun _ _ => True := by
+  unfold Hash.pbkdf2
+  have lr := rel_taint (F := fun s => KE (H := H) s₀ s ∧ States hH s₀ s.mem)
+    (F' := fun s => KE (H := H) s₀' s ∧ States hH s₀' s.mem)
+    (G := fun t => Inv hH s₀ 0 t ∧ isa.eval (.zero .x .x21) t = some (decide (ol s₀ = 0)))
+    (G' := fun t => Inv hH s₀' 0 t ∧ isa.eval (.zero .x .x21) t = some (decide (ol s₀' = 0)))
+    epub (fun s s' h h' => ke_agree hq h.1 h'.1) hc.loopRegs
+    (fun _ h => loopRegs_ok hp hz hH h.1 h.2) (fun _ h => loopRegs_ok hp' hz hH h.1 h.2)
+  obtain ⟨_, hx⟩ := hc.exit
+  have ex : RelCT isa (fun s s' => Inv hH s₀ (nb H s₀) s ∧ Inv hH s₀' (nb H s₀') s') (.block H.exit)
+      fun _ _ => True :=
+    RelCT.taint (A := taint) (Taint.ofRegs [.x23]) (fun _ _ h => by
+      obtain ⟨sp, hr⟩ := kr_agree hq h.1.kr h.2.kr
+      exact ⟨sp, fun r hm => hr r (Taint.mem_ofRegs.mp hm)⟩) hx
+  exact (entry_rel hp hp' hz hq hc).seq ((key_rel hH hp hp' hz hq hc).seq
+    ((setup_rel hH hp hp' hz hq hc hIn hInd).seq
+      (lr.seq ((loop_rel hH hp hp' hz hq hc hF hFd hI hId).seq ex))))
+
+end
+
+/-- `pbkdf2` is verified against `pbkG`, given the taint checks and the
+proofs of the functions it calls. -/
+theorem verified {H : Hash} (hH : HashOK H) (hc : Checks H)
+    (hIn : Verified AArch64.target H.hmacInit (initG hH.SH H.W)) (hInd : H.hmacInit.aarch64Depth ≤ 1)
+    (hF : Verified AArch64.target H.hmacFin (finG hH.SH H.W)) (hFd : H.hmacFin.aarch64Depth ≤ 1)
+    (hI : Verified AArch64.target H.iterate (iterK hH.SH H.W)) (hId : H.iterate.aarch64Depth ≤ 1)
+    (hsat : ∃ s, (pbkG hH.SH (H.W + H.S)).pre s) :
+    Verified AArch64.target H.pbkdf2 (pbkG hH.SH (H.W + H.S)) := by
+  refine ⟨fun s hs => correct (pre_of hH hs) hH.psizes hH hIn hInd hF hFd hI hId,
+    fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => ?_, hsat⟩
+  obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩ := hpub
+  exact (ct hH (pre_of hH h₁) (pre_of hH h₂) hH.psizes ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩ hc hF hFd hI hId
+    hIn hInd _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
+
+end VG.Proof.Pbkdf2.Md.AArch64.Pbk
+
+end
+
+end
+
+/-! ### `Pbkdf2.AArch64.IterateCT`, which the modules that import this one used -/
+
+section
+
+/-!
+# PBKDF2-HMAC's iteration over a Merkle–Damgård hash function on AArch64: constant time
+
+As on x86-64 (`Proof/Pbkdf2/X86_64/IterateCT.lean`): this holds for any
+compression function (`CompOk`), so it is proven once for every
+implementation. The taint analysis cannot prove it without looking into the
+compression function, so we relate two runs (`RelCT`): at every point,
+correctness determines our registers from the public arguments alone, so they
+agree; between the calls, the taint analysis proves each block constant time
+from that (`Checks`, evaluated for each hash function, since the code depends
+on its sizes); and the calls are constant time by the compression function's
+own proof (`compressAt_rel`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Pbkdf2.AArch64
+
+open VG VG.AArch64
+open VG.Impl.Pbkdf2.AArch64 (Params loadKey xorW compressBlock body prologue epilogue main iterate)
+open VG.Impl.MdStream.AArch64 (mov)
+open VG.Proof.MdStream (Md)
+open VG.Proof.MdStream.AArch64 (wp_mov eval_zero ofNat_beq_zero)
+open VG.Spec.Sha256 (bytesAt)
+open VG.Spec.Hmac (StreamingHash)
+
+/-- The registers the blocks between the calls use. -/
+abbrev regsS : List Reg := [.x19, .x20, .x21, .x22, .x23, .x24]
+
+/-- The taint checks of the pieces of `iterate` between its calls, which
+depend on the hash function's sizes, its length field and its digest. -/
+structure Checks (P : Params) (D : Nat) : Prop where
+  ext : ∃ hc, (taint.check (Taint.ofRegs []) (.block [.addImm .w .x2 .x2 0]) hc).isSome = true
+  pro : ∃ hc, (taint.check (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4]) (.block (prologue P D)) hc).isSome = true
+  load : ∃ hc, (taint.check (Taint.ofRegs regsS) (.block (loadKey P 0)) hc).isSome = true
+  arg : ∃ hc, (taint.check (Taint.ofRegs regsS) (.block [mov .x1 .x21]) hc).isSome = true
+  mid : ∃ hc, (taint.check (Taint.ofRegs regsS)
+    (.block (Impl.Pbkdf2.AArch64.digest P D ++ loadKey P (P.N + P.B))) hc).isSome = true
+  fin : ∃ hc, (taint.check (Taint.ofRegs regsS) (.block (Impl.Pbkdf2.AArch64.digest P D ++
+    (List.range (D / 4)).flatMap xorW ++ [.subImm .x .x24 .x24 1])) hc).isSome = true
+  epi : ∃ hc, (taint.check (Taint.ofRegs [.x20]) (.block (epilogue P)) hc).isSome = true
+  ite : ∃ hc, (taint.check (Taint.ofRegs []) (.block []) hc).isSome = true
+
+/-- The public arguments are the same. -/
+structure PubEq (s₀ s₀' : State) : Prop where
+  x0 : s₀.gpr .x0 = s₀'.gpr .x0
+  x1 : s₀.gpr .x1 = s₀'.gpr .x1
+  x2 : (s₀.gpr .x2).setWidth 32 = (s₀'.gpr .x2).setWidth 32
+  x3 : s₀.gpr .x3 = s₀'.gpr .x3
+  x4 : s₀.gpr .x4 = s₀'.gpr .x4
+  sp : s₀.sp = s₀'.sp
+
+theorem PubEq.nn {s₀ s₀' : State} (hq : PubEq s₀ s₀') : nn s₀ = nn s₀' :=
+  congrArg BitVec.toNat hq.x2
+
+/-- Agreement on `rs` and the stack pointer. -/
+theorem agree_of {rs : List Reg} {s s' : State} (hsp : s.sp = s'.sp) (h : ∀ r ∈ rs, s.gpr r = s'.gpr r) :
+    AArch64.Taint.Agree (AArch64.Taint.ofRegs rs) s s' :=
+  ⟨hsp, fun r hr => h r (AArch64.Taint.mem_ofRegs.mp hr)⟩
+
+/-- The state during a step, with `v` in `x24`. -/
+structure St (P : Params) (D W : Nat) (H : Md P.B P.N P.L) (s₀ : State) (v : Addr) (s : State) : Prop
+    extends Regs P D W s₀ s where
+  x24 : s.gpr .x24 = v
+  pad : bytesAt s.mem (blk P s₀ + BitVec.ofNat 64 D) (P.B - D) = H.tailPad D
+
+section
+variable {P : Params} {D W : Nat} {H : Md P.B P.N P.L}
+
+/-- The registers the blocks use agree in two runs. -/
+theorem St.agree {s₀ s₀' : State} (hq : PubEq s₀ s₀') {v : Addr} {s s' : State} (h : St P D W H s₀ v s)
+    (h' : St P D W H s₀' v s') : AArch64.Taint.Agree (AArch64.Taint.ofRegs regsS) s s' := by
+  refine agree_of (by rw [h.sp, h'.sp, hq.sp]) fun r hr => ?_
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
+  · rw [h.x19, h'.x19, hv, hv, scr, scr, hq.x4]
+  · rw [h.x20, h'.x20, scr, scr, hq.x4]
+  · rw [h.x21, h'.x21, blk, blk, scr, scr, hq.x4]
+  · rw [h.x22, h'.x22, key, key, hq.x0]
+  · rw [h.x23, h'.x23, tp, tp, hq.x3]
+  · rw [h.x24, h'.x24]
+
+theorem St.of_inv {s₀ : State} {r : Nat} {s : State} (h : Inv P D W H s₀ (r + 1) s) :
+    St P D W H s₀ (BitVec.ofNat 64 (r + 1)) s :=
+  ⟨h.toRegs, h.x24, h.pad⟩
+
+variable (hz : Sizes P D W) {s₀ : State} (hp : Pre P D W s₀) {v : Addr}
+include hz hp
+
+/-! ## What each piece of a step does, in one run -/
+
+theorem load_st (hR : H.Reloc) {o : Nat} (ho : o + P.N ≤ 2 * (P.N + P.B)) (ho4 : o % 4 = 0) {s : State}
+    (h : St P D W H s₀ v s) :
+    WP isa (.block (loadKey P o)) s (St P D W H s₀ v) := by
+  have := so_le hz; have := N_le hz; have := B_le hz; have := hz.fits; have := hz.DN; have := hz.pad
+  have := hz.NL
+  rw [← List.append_nil (loadKey P o)]
+  exact load_ok hz hp hR h.toRegs ho ho4 fun s' g rd wr sp f _ => WP.block_nil
+    ⟨h.toRegs.write (fun r hr => g r (ne9 r hr)) rd wr sp (frame_scr (a := P.so + 56) (by omega_arith) f),
+      (g _ (by decide)).trans h.x24,
+      (Memory.frame_bytesAt f (fun r hr => blk_disj hz (by omega_arith) r (by simp at hr; simp [hr])) (by omega_arith)).trans
+        h.pad⟩
+
+theorem cmp_st {name : String} {code : Prog isa} (hf : CompOk H P.so code) {s : State} (h : St P D W H s₀ v s) :
+    WP isa (compressBlock name code) s (St P D W H s₀ v) := by
+  have := so_le hz; have := N_le hz; have := B_le hz; have := hz.fits; have := hz.DN; have := hz.pad
+  have := hz.NL
+  exact cmp_ok hz hp hf h.toRegs fun s' h' x24 f _ =>
+    ⟨h', x24.trans h.x24, (Memory.frame_bytesAt f (blk_disj hz (by omega_arith)) (by omega_arith)).trans h.pad⟩
+
+theorem mid_st (hs : Shape H) (hR : H.Reloc) {s : State} (h : St P D W H s₀ v s) :
+    WP isa (.block (Impl.Pbkdf2.AArch64.digest P D ++ loadKey P (P.N + P.B))) s (St P D W H s₀ v) := by
+  have := so_le hz; have := N_le hz; have := B_le hz; have := hz.fits; have := hz.NL; have := hz.N4
+  refine digest_ok hz hp hs h.toRegs h.pad fun s' g rd wr sp f _ p => ?_
+  exact load_st hz hp hR (by omega_using []) (by rcases hz.B with h | h <;> omega_using [this, h])
+    ⟨h.toRegs.write (fun r hr => g r (ne9 r hr)) rd wr sp (frame_scr (a := P.so + 56 + P.N) (by omega_arith) f),
+      (g _ (by decide)).trans h.x24, p⟩
+
+/-! ## Two runs -/
+
+variable {s₀' : State} (hp' : Pre P D W s₀') (hq : PubEq s₀ s₀')
+include hp' hq
+
+theorem cmp_rel {name : String} {code : Prog isa} (hf : CompOk H P.so code) (hc : Checks P D) :
+    RelCT isa (fun s s' => St P D W H s₀ v s ∧ St P D W H s₀' v s') (compressBlock name code) fun s s' =>
+      St P D W H s₀ v s ∧ St P D W H s₀' v s' := by
+  obtain ⟨_, ha⟩ := hc.arg
+  have mv : ∀ {s₀ : State}, Pre P D W s₀ → ∀ {s : State}, St P D W H s₀ v s →
+      WP isa (.block [mov .x1 .x21]) s fun s => St P D W H s₀ v s ∧ s.gpr .x1 = blk P s₀ :=
+    by intro _ _ _ h; exact wp_mov fun s₁ u₁ => WP.block_nil ⟨⟨h.toRegs.write (fun r hr => u₁.other r (ne1 r hr)) u₁.rd u₁.wr
+      u₁.sp (by rw [u₁.mem]; exact Frame.refl _ _), (u₁.other _ (by decide)).trans h.x24,
+      by rw [u₁.mem]; exact h.pad⟩, by rw [u₁.gpr, h.x21]⟩
+  have su : RelCT isa (fun s s' => St P D W H s₀ v s ∧ St P D W H s₀' v s') (.block [mov .x1 .x21])
+      fun s s' => (St P D W H s₀ v s ∧ s.gpr .x1 = blk P s₀) ∧ (St P D W H s₀' v s' ∧ s'.gpr .x1 = blk P s₀') :=
+    ((RelCT.taint (A := taint) (Taint.ofRegs regsS) (fun _ _ h => St.agree hq h.1 h.2) ha).wp
+      fun _ _ h => ⟨mv hp h.1, mv hp' h.2⟩).mono (fun _ _ h => h) fun _ _ h => h.2
+  have call := compressAt_rel (H := H) hf (name := name) (st := hv P s₀) (scr := scr s₀) (src := blk P s₀)
+    (P' := fun s s' => (St P D W H s₀ v s ∧ s.gpr .x1 = blk P s₀) ∧ (St P D W H s₀' v s' ∧ s'.gpr .x1 = blk P s₀'))
+    fun s s' ⟨⟨h, hsi⟩, ⟨h', hsi'⟩⟩ => by
+      have e : hv P s₀' = hv P s₀ ∧ scr s₀' = scr s₀ ∧ blk P s₀' = blk P s₀ := by
+        refine ⟨?_, ?_, ?_⟩ <;> simp only [hv, blk, scr, hq.x4]
+      have c' := callOk_of hz hp' h'.toRegs hsi'
+      rw [e.1, e.2.1, e.2.2] at c'
+      exact ⟨callOk_of hz hp h.toRegs hsi, c', by rw [h.sp, h'.sp, hq.sp]⟩
+  exact ((su.seq call).wp fun _ _ h => ⟨cmp_st hz hp hf h.1, cmp_st hz hp' hf h.2⟩).mono
+    (fun _ _ h => h) fun _ _ h => h.2
+
+theorem body_rel (hs : Shape H) (hR : H.Reloc) {name : String} {code : Prog isa} (hf : CompOk H P.so code)
+    (hc : Checks P D) {r : Nat} :
+    RelCT isa (fun s s' => Inv P D W H s₀ (r + 1) s ∧ Inv P D W H s₀' (r + 1) s') (body P D name code)
+      fun s s' => (eval (.nonzero .x .x24) s = some (r != 0) ∧ Inv P D W H s₀ r s) ∧
+        (eval (.nonzero .x .x24) s' = some (r != 0) ∧ Inv P D W H s₀' r s') := by
+  have := so_le hz; have := N_le hz; have := B_le hz
+  obtain ⟨_, hl⟩ := hc.load
+  obtain ⟨_, hm⟩ := hc.mid
+  obtain ⟨_, hfi⟩ := hc.fin
+  have l0 : RelCT isa (fun s s' => Inv P D W H s₀ (r + 1) s ∧ Inv P D W H s₀' (r + 1) s') (.block (loadKey P 0))
+      fun s s' => St P D W H s₀ (BitVec.ofNat 64 (r + 1)) s ∧ St P D W H s₀' (BitVec.ofNat 64 (r + 1)) s' :=
+    ((RelCT.taint (A := taint) (Taint.ofRegs regsS) (fun _ _ h =>
+      St.agree hq (St.of_inv h.1) (St.of_inv h.2)) hl).wp
+      fun _ _ h => ⟨load_st hz hp hR (by omega_using []) rfl (St.of_inv h.1),
+        load_st hz hp' hR (by omega_using []) rfl (St.of_inv h.2)⟩).mono
+      (fun _ _ h => h) fun _ _ h => h.2
+  have dl : RelCT isa (fun s s' => St P D W H s₀ (BitVec.ofNat 64 (r + 1)) s ∧
+        St P D W H s₀' (BitVec.ofNat 64 (r + 1)) s')
+      (.block (Impl.Pbkdf2.AArch64.digest P D ++ loadKey P (P.N + P.B)))
+      fun s s' => St P D W H s₀ (BitVec.ofNat 64 (r + 1)) s ∧ St P D W H s₀' (BitVec.ofNat 64 (r + 1)) s' :=
+    ((RelCT.taint (A := taint) (Taint.ofRegs regsS) (fun _ _ h => St.agree hq h.1 h.2)
+      hm).wp fun _ _ h => ⟨mid_st hz hp hs hR h.1, mid_st hz hp' hs hR h.2⟩).mono
+      (fun _ _ h => h) fun _ _ h => h.2
+  have fin : RelCT isa (fun s s' => St P D W H s₀ (BitVec.ofNat 64 (r + 1)) s ∧
+        St P D W H s₀' (BitVec.ofNat 64 (r + 1)) s')
+      (.block (Impl.Pbkdf2.AArch64.digest P D ++ (List.range (D / 4)).flatMap xorW ++ [.subImm .x .x24 .x24 1]))
+      fun _ _ => True :=
+    RelCT.taint (A := taint) (Taint.ofRegs regsS) (fun _ _ h => St.agree hq h.1 h.2) hfi
+  have c := cmp_rel hz hp hp' hq (v := BitVec.ofNat 64 (r + 1)) hf hc (name := name)
+  exact ((l0.seq (c.seq (dl.seq (c.seq fin)))).wp fun _ _ h =>
+    ⟨body_ok hz hp hs hR hf h.1, body_ok hz hp' hs hR hf h.2⟩).mono (fun _ _ h => h) fun _ _ h => h.2
+
+theorem loop_rel (hs : Shape H) (hR : H.Reloc) {name : String} {code : Prog isa} (hf : CompOk H P.so code)
+    (hc : Checks P D) {n : Nat} :
+    RelCT isa (fun s s' => Inv P D W H s₀ (n + 1) s ∧ Inv P D W H s₀' (n + 1) s')
+      (.loop (body P D name code) (.nonzero .x .x24)) fun _ _ => True :=
+  RelCT.loop (M := isa) (body := body P D name code) (c := .nonzero .x .x24) (Q := fun _ _ => True)
+    (fun m s s' => Inv P D W H s₀ (m + 1) s ∧ Inv P D W H s₀' (m + 1) s') (fun m => by
+      intro s s' t t' u u' h e e'
+      obtain ⟨ht, ⟨z, i⟩, ⟨z', i'⟩⟩ := body_rel hz hp hp' hq hs hR hf hc _ _ _ _ _ _ h e e'
+      refine ⟨ht, z.trans z'.symm, fun _ => trivial, fun hc' => ?_⟩
+      have hc'' : some (m != 0) = some true := z.symm.trans hc'
+      cases m with
+      | zero => cases hc''
+      | succ m => exact ⟨m, by omega_using [], i, i'⟩) n
+
+theorem main_rel {S : StreamingHash} {iv : H.HV} (ho : HashOk P D W S H iv) {name : String}
+    {code : Prog isa} (hf : CompOk H P.so code) (hc : Checks P D) :
+    RelCT isa (fun s s' => s = zext s₀ ∧ s' = zext s₀') (main P D name code) fun _ _ => True := by
+  obtain ⟨_, hpr⟩ := hc.pro
+  obtain ⟨_, hep⟩ := hc.epi
+  obtain ⟨_, hit⟩ := hc.ite
+  have hlt : ∀ {s₀ : State}, nn s₀ < 2 ^ 64 := fun {s₀} => by
+    have := ((s₀.gpr .x2).setWidth 32).isLt; simp only [nn]; omega_using []
+  have pro : RelCT isa (fun s s' => s = zext s₀ ∧ s' = zext s₀') (.block (prologue P D)) fun s s' =>
+      Inv P D W H s₀ (nn s₀) s ∧ Inv P D W H s₀' (nn s₀') s' :=
+    ((RelCT.taint (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4])
+      (P := fun s s' => s = zext s₀ ∧ s' = zext s₀') (fun _ _ ⟨e, e'⟩ => by
+        subst e e'
+        refine agree_of (by rw [(zext_upd _).sp, (zext_upd _).sp, hq.sp]) fun r hr => ?_
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl | rfl | rfl
+        · rw [(zext_upd _).other _ (by decide), (zext_upd _).other _ (by decide), hq.x0]
+        · rw [(zext_upd _).other _ (by decide), (zext_upd _).other _ (by decide), hq.x1]
+        · rw [zext_x2, zext_x2, hq.nn]
+        · rw [(zext_upd _).other _ (by decide), (zext_upd _).other _ (by decide), hq.x3]
+        · rw [(zext_upd _).other _ (by decide), (zext_upd _).other _ (by decide), hq.x4]) hpr).wp
+      fun _ _ ⟨e, e'⟩ => by
+        rw [e, e']; exact ⟨prologue_ok hz hp ho.shape ho.lenOk, prologue_ok hz hp' ho.shape ho.lenOk⟩).mono
+      (fun _ _ h => h) fun _ _ h => h.2
+  have br : RelCT isa (fun s s' => Inv P D W H s₀ (nn s₀) s ∧ Inv P D W H s₀' (nn s₀') s')
+      (.ite (.zero .x .x24) (.block []) (.loop (body P D name code) (.nonzero .x .x24)))
+      fun s s' => Inv P D W H s₀ 0 s ∧ Inv P D W H s₀' 0 s' := by
+    refine (RelCT.ite (fun s s' h => ?_) (RelCT.taint (A := taint) (Taint.ofRegs [])
+      (fun _ _ h => agree_of (by rw [h.1.1.sp, h.1.2.sp, hq.sp]) (by simp)) hit) ?_).wp
+      (fun _ _ h => ⟨loop_ok hz hp ho.shape ho.reloc hf h.1, loop_ok hz hp' ho.shape ho.reloc hf h.2⟩)
+      |>.mono (fun _ _ h => h) fun _ _ h => h.2
+    · show eval (.zero .x .x24) s = eval (.zero .x .x24) s'
+      rw [eval_zero, eval_zero, h.1.x24, h.2.x24, hq.nn]
+    · intro s s' t t' u u' ⟨⟨i, i'⟩, hc'⟩ e e'
+      have z : eval (.zero .x .x24) s = some (decide (nn s₀ = 0)) := by
+        rw [eval_zero, i.x24, ofNat_beq_zero hlt]
+      have hc'' : some (decide (nn s₀ = 0)) = some false := z.symm.trans hc'
+      have hne : nn s₀ ≠ 0 := fun h0 => by rw [h0] at hc''; cases hc''
+      obtain ⟨m, hm⟩ : ∃ m, nn s₀ = m + 1 := ⟨_, (Nat.succ_pred_eq_of_ne_zero hne).symm⟩
+      rw [hm] at i
+      rw [← hq.nn, hm] at i'
+      exact loop_rel hz hp hp' hq ho.shape ho.reloc hf hc _ _ _ _ _ _ ⟨i, i'⟩ e e'
+  have epi : RelCT isa (fun s s' => Inv P D W H s₀ 0 s ∧ Inv P D W H s₀' 0 s') (.block (epilogue P))
+      fun _ _ => True :=
+    RelCT.taint (A := taint) (Taint.ofRegs [.x20]) (fun _ _ h => agree_of (by rw [h.1.sp, h.2.sp, hq.sp])
+      fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr
+        rw [h.1.x20, h.2.x20, scr, scr, hq.x4]) hep
+  exact pro.seq (br.seq epi)
+
+theorem iterate_rel {S : StreamingHash} {iv : H.HV} (ho : HashOk P D W S H iv) {name : String}
+    {code : Prog isa} (hf : CompOk H P.so code) (hc : Checks P D) :
+    RelCT isa (fun s s' => s = s₀ ∧ s' = s₀') (iterate P D name code) fun _ _ => True := by
+  obtain ⟨_, hex⟩ := hc.ext
+  have ext : RelCT isa (fun s s' => s = s₀ ∧ s' = s₀') (.block [.addImm .w .x2 .x2 0])
+      fun s s' => s = zext s₀ ∧ s' = zext s₀' :=
+    ((RelCT.taint (A := taint) (Taint.ofRegs []) (fun _ _ ⟨e, e'⟩ => agree_of (by rw [e, e', hq.sp])
+      (by simp)) hex).wp (F₁ := fun s => s = zext s₀) (F₂ := fun s => s = zext s₀')
+      fun _ _ ⟨e, e'⟩ => by
+        subst e e'
+        exact ⟨MdStream.AArch64.WP.cons (zext_exec _) (WP.block_nil rfl),
+          MdStream.AArch64.WP.cons (zext_exec _) (WP.block_nil rfl)⟩).mono
+      (fun _ _ h => h) fun _ _ h => h.2
+  exact ext.seq (main_rel hz hp hp' hq ho hf hc)
+
+end
+
+/-! ## Verified -/
+
+theorem pubEq_of {S : StreamingHash} {W : Nat} {s₁ s₂ : State} (h : (iterK S W).pub s₁ s₂) : PubEq s₁ s₂ :=
+  ⟨h.1, h.2.1, h.2.2.1, h.2.2.2.1, h.2.2.2.2.1, h.2.2.2.2.2⟩
+
+/-- `iterate` is verified against `iterK`, for any hash function the proof
+supports (`HashOk`), whose pieces of code the taint analysis accepts
+(`Checks`), and any compression function (`CompOk`). -/
+theorem verified {P : Params} {D W : Nat} {S : StreamingHash} {H : Md P.B P.N P.L} {iv : H.HV}
+    (ho : HashOk P D W S H iv) (hc : Checks P D) {name : String} {code : Prog isa} (hf : CompOk H P.so code)
+    (hsat : ∃ s, (iterK S W).pre s) :
+    Verified AArch64.target (iterate P D name code) (iterK S W) := by
+  refine ⟨iterate_ok ho hf, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => ?_, hsat⟩
+  exact (iterate_rel ho.sizes (pre_of ho.link.hS ho.link.hD h₁) (pre_of ho.link.hS ho.link.hD h₂)
+    (pubEq_of hpub) ho hf hc _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
+
+/-- `iterK` implies the shared contract, for any hash function and scratch
+space, given that the shared contract is satisfiable. -/
+theorem iterImp (S : StreamingHash) (W : Nat) (h : ∃ s, (Proof.Pbkdf2.iterateContract S W AArch64.abi).pre s) :
+    (iterK S W).Implies (Proof.Pbkdf2.iterateContract S W AArch64.abi) := by
+  generic_implies [
+    Proof.Pbkdf2.iterateContract, Proof.Pbkdf2.iterateSig, iterK, AArch64.abi, AArch64.argRegs] using h
+
+/-- A state satisfying `iterate`'s precondition, with states of `S` bytes, a
+digest of `D` bytes and `8 W` bytes of scratch space. -/
+def iterSat (S D W : Nat) : State where
+  gpr r := match r with
+    | .x0 => 0x10000 | .x1 => 0x20000 | .x3 => 0x30000 | .x4 => 0x40000
+    | _ => 0
+  sp := 0x90000
+  mem _ := 0
+  rd := [⟨0x10000, 2 * S⟩, ⟨0x20000, D⟩]
+  wr := [⟨0x30000, D⟩, ⟨0x40000, 8 * W⟩]
+
+end VG.Proof.Pbkdf2.AArch64
+
+end
+
+end
 
 /-!
 # HMAC over any Merkle–Damgård hash function on AArch64: `init`

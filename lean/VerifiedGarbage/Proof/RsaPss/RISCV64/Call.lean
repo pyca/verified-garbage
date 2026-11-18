@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.Mem
 # RSASSA-PSS verification on RISC-V: the public-key operation
 
 Untrusted: everything here is checked by Lean. As on PPC64LE
-(`Proof/RsaPss/PPC64LE/Call.lean`): `pubArgs_ok`, the arguments of
+(`Proof/RsaPss/PPC64LE/CTPub.lean`): `pubArgs_ok`, the arguments of
 `vg_rsa_public_precomputed_checked` (`AtCall`): `EM`'s place at `scratch`,
 `pre`, `e`, the signature and the rest of the working space; `call_ok`, the
 call writes RSAVP1 of the signature, or zeros, to `EM`'s place if `pre`

@@ -15,7 +15,6 @@ import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.PrivCorrect
-public import VerifiedGarbage.Proof.Rsa.PPC64LE.PrivVerified
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.PrivPCT
 public import VerifiedGarbage.Proof.Framework.PPC64LE.CallAny
 import VerifiedGarbage.Proof.Framework.Covers

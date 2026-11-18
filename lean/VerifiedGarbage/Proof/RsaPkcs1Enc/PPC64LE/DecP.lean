@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Rsa.PreKey
 meta import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.PPC64LE.DecCTBase
-import VerifiedGarbage.Proof.RsaPkcs1Enc.PPC64LE.DecCT4
 import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!

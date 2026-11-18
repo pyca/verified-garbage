@@ -1,13 +1,12 @@
 module
 
-import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Scratch
+public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Scratch
 public import VerifiedGarbage.Proof.Argon2.PPC64LE.Compress
 import VerifiedGarbage.Proof.Argon2.PPC64LE.CompressLit
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Argon2.PPC64LE.CompressLit
 meta import VerifiedGarbage.Proof.Framework.Lit
-public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Locals
 public import VerifiedGarbage.Proof.Argon2.Contract
 
 /-!

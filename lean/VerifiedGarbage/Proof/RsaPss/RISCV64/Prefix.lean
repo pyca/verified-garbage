@@ -14,7 +14,7 @@ public import VerifiedGarbage.Spec.Rsa.Contract
 # RSASSA-PSS verification on RISC-V: `M'`
 
 Untrusted: everything here is checked by Lean. As on PPC64LE
-(`Proof/RsaPss/PPC64LE/Prefix.lean`): `prefix_ok`, `mPrefix nset` clears the
+(`Proof/RsaPss/PPC64LE/Shift.lean`): `prefix_ok`, `mPrefix nset` clears the
 `n` bytes at `oY` that `nset` puts in `t5` and writes the digest `mHash`
 after 8 of them; `salt_ok`, `copySalt` writes the last `salt_len` bytes of
 `DB` after it; `copyDb_ok`, `copyDb` writes all of `DB` there. As views of

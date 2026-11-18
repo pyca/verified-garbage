@@ -2,19 +2,1475 @@ module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Hashes.Sha256
 public import VerifiedGarbage.Proof.Pbkdf2.Contract
-public import VerifiedGarbage.Proof.Scrypt.AArch64.Whole.Correct
 import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 import VerifiedGarbage.Proof.Scrypt.AArch64.RoMixCT
 import VerifiedGarbage.Proof.Scrypt.Whole
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Hashes.Sha256
-meta import VerifiedGarbage.Proof.Scrypt.AArch64.Whole.Correct
 meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 meta import VerifiedGarbage.Proof.Scrypt.AArch64.RoMixCT
 meta import VerifiedGarbage.Proof.Scrypt.Whole
 meta import VerifiedGarbage.Proof.Framework.KernelRfl
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
+public import VerifiedGarbage.Proof.Framework.AArch64.ModeSim
+import VerifiedGarbage.Proof.Scrypt.AArch64.Lit
+public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Contract
+public import VerifiedGarbage.Proof.Scrypt.AArch64.Resident.Verified
+import VerifiedGarbage.Proof.Scrypt.BlockMix
+import VerifiedGarbage.Proof.Scrypt.Memory
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Impl.Scrypt.AArch64.Scrypt
+public import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Spec.Scrypt.Contract
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+meta import VerifiedGarbage.Proof.Framework.AArch64.ModeSim
+meta import VerifiedGarbage.Proof.Pbkdf2.Contract
+meta import VerifiedGarbage.Proof.Scrypt.AArch64.Lit
+meta import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Contract
+meta import VerifiedGarbage.Proof.Scrypt.AArch64.Resident.Verified
+meta import VerifiedGarbage.Proof.Scrypt.BlockMix
+meta import VerifiedGarbage.Proof.Scrypt.Memory
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.OmegaLit
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Impl.Scrypt.AArch64.Scrypt
+meta import VerifiedGarbage.Proof.Framework.AArch64.Call
+meta import VerifiedGarbage.Spec.Scrypt.Contract
+meta import VerifiedGarbage.Proof.Framework.PlainSimp
+
+/-! ### `Scrypt.AArch64.Whole.Correct`, which only this module used -/
+
+section
+
+/-! ### `Scrypt.AArch64.Whole.Steps`, which only this module used -/
+
+section
+
+@[expose] public section
+
+section
+
+/-!
+# scrypt on AArch64: where everything is
+
+As on x86-64 (`Proof/Scrypt/X86_64/Whole/Layout.lean`): the contract the proof
+is written against (`scryptAArch64`), the function's buffers and the 96 bytes
+of stack below the stack pointer, from `B` up (`Lay`): the 16 bytes the calls
+use, the 64-byte frame (from `B + 16`: the next block, then the password, its
+length, `r`, `b`, `blen` and `v`), then the frame holding our return address
+(`B + 80`). Our stack arguments are at `B + 96`. `Ctx` is what holds between
+the frames' pushes and pops, and `call_ok` runs a call of verified code in
+such a state.
+-/
+
+namespace VG.Proof.Scrypt
+
+open VG.AArch64 in
+/-- The contract the proof is written against; the artifact's is the shared
+contract of `Spec/`, which implies it. AArch64 contract for
+`vg_scrypt(password = x0, password_len = x1, salt = x2, salt_len = x3, r = x4,
+b = x5, blen = x6, v = x7, vlen, scratch, slen, out, out_len)`, the last five
+on the stack, with 96 bytes of stack below the stack pointer. -/
+def scryptAArch64 : Contract AArch64.isa where
+  pre s :=
+    let vlen := stackArg s 0
+    let sc := stackArg s 1
+    let slen := stackArg s 2
+    let out := stackArg s 3
+    let ol := stackArg s 4
+    let r := (s.gpr .x4).toNat
+    let pwR : Region := ⟨s.gpr .x0, (s.gpr .x1).toNat⟩
+    let saltR : Region := ⟨s.gpr .x2, (s.gpr .x3).toNat⟩
+    let bR : Region := ⟨s.gpr .x5, (s.gpr .x6).toNat * 128⟩
+    let vR : Region := ⟨s.gpr .x7, vlen.toNat * 128⟩
+    let scR : Region := ⟨sc, slen.toNat * 128⟩
+    let outR : Region := ⟨out, ol.toNat⟩
+    let args : Region := ⟨stackArgAddr s 0, 40⟩
+    let stack : Region := ⟨s.sp - BitVec.ofNat 64 96, 96⟩
+    96 ≤ s.sp.toNat ∧ s.sp.toNat + 40 ≤ 2 ^ 64 ∧
+    s.rd = [pwR, saltR, args] ∧ s.wr = [bR, vR, scR, outR] ∧
+    pwR.Disjoint bR ∧ pwR.Disjoint vR ∧ pwR.Disjoint scR ∧ pwR.Disjoint outR ∧
+    saltR.Disjoint bR ∧ saltR.Disjoint vR ∧ saltR.Disjoint scR ∧ saltR.Disjoint outR ∧
+    bR.Disjoint vR ∧ bR.Disjoint scR ∧ bR.Disjoint outR ∧ bR.Disjoint args ∧
+    vR.Disjoint scR ∧ vR.Disjoint outR ∧ vR.Disjoint args ∧
+    scR.Disjoint outR ∧ scR.Disjoint args ∧ outR.Disjoint args ∧
+    stack.Disjoint pwR ∧ stack.Disjoint saltR ∧ stack.Disjoint bR ∧ stack.Disjoint vR ∧
+    stack.Disjoint scR ∧ stack.Disjoint outR ∧
+    (s.gpr .x0).toNat + (s.gpr .x1).toNat ≤ 2 ^ 64 ∧
+    (s.gpr .x2).toNat + (s.gpr .x3).toNat ≤ 2 ^ 64 ∧
+    (s.gpr .x5).toNat + (s.gpr .x6).toNat * 128 ≤ 2 ^ 64 ∧
+    (s.gpr .x7).toNat + vlen.toNat * 128 ≤ 2 ^ 64 ∧
+    sc.toNat + slen.toNat * 128 ≤ 2 ^ 64 ∧ out.toNat + ol.toNat ≤ 2 ^ 64 ∧
+    0 < r ∧ (s.gpr .x6).toNat % r = 0 ∧ vlen.toNat % r = 0 ∧
+    Spec.Scrypt.valid (vlen.toNat / r) r ((s.gpr .x6).toNat / r) ol.toNat ∧
+    ol.toNat ≤ (2 ^ 32 - 1) * 32 ∧ slen.toNat = r + 16
+  post s s' :=
+    let r := (s.gpr .x4).toNat
+    Spec.Scrypt.scrypt (Spec.Scrypt.bytesAt s.mem (s.gpr .x0) (s.gpr .x1).toNat)
+      (Spec.Scrypt.bytesAt s.mem (s.gpr .x2) (s.gpr .x3).toNat) ((stackArg s 0).toNat / r) r
+      ((s.gpr .x6).toNat / r) (stackArg s 4).toNat =
+      some (Spec.Scrypt.bytesAt s'.mem (stackArg s 3) (stackArg s 4).toNat)
+  pub s₁ s₂ :=
+    s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧ s₁.gpr .x2 = s₂.gpr .x2 ∧
+    s₁.gpr .x3 = s₂.gpr .x3 ∧ s₁.gpr .x4 = s₂.gpr .x4 ∧ s₁.gpr .x5 = s₂.gpr .x5 ∧
+    s₁.gpr .x6 = s₂.gpr .x6 ∧ s₁.gpr .x7 = s₂.gpr .x7 ∧
+    stackArg s₁ 0 = stackArg s₂ 0 ∧ stackArg s₁ 1 = stackArg s₂ 1 ∧
+    stackArg s₁ 2 = stackArg s₂ 2 ∧ stackArg s₁ 3 = stackArg s₂ 3 ∧
+    stackArg s₁ 4 = stackArg s₂ 4 ∧ s₁.sp = s₂.sp ∧
+    (Spec.Scrypt.blocks (Spec.Scrypt.bytesAt s₁.mem (s₁.gpr .x0) (s₁.gpr .x1).toNat)
+        (Spec.Scrypt.bytesAt s₁.mem (s₁.gpr .x2) (s₁.gpr .x3).toNat) (s₁.gpr .x4).toNat
+        ((s₁.gpr .x6).toNat / (s₁.gpr .x4).toNat)).flatMap
+      (Spec.Scrypt.roMixIndices (s₁.gpr .x4).toNat ((stackArg s₁ 0).toNat / (s₁.gpr .x4).toNat)) =
+    (Spec.Scrypt.blocks (Spec.Scrypt.bytesAt s₂.mem (s₂.gpr .x0) (s₂.gpr .x1).toNat)
+        (Spec.Scrypt.bytesAt s₂.mem (s₂.gpr .x2) (s₂.gpr .x3).toNat) (s₂.gpr .x4).toNat
+        ((s₂.gpr .x6).toNat / (s₂.gpr .x4).toNat)).flatMap
+      (Spec.Scrypt.roMixIndices (s₂.gpr .x4).toNat ((stackArg s₂ 0).toNat / (s₂.gpr .x4).toNat))
+
+end VG.Proof.Scrypt
+
+namespace VG.Proof.Scrypt.AArch64.Whole
+
+open VG VG.AArch64
+
+/-- The arguments, and the lowest byte of the stack used (`sp - 96` on
+entry). -/
+structure Lay where
+  pw : Addr
+  pwl : BitVec 64
+  salt : Addr
+  sl : BitVec 64
+  r : BitVec 64
+  b : Addr
+  blen : BitVec 64
+  v : Addr
+  vlen : BitVec 64
+  scr : Addr
+  slen : BitVec 64
+  out : Addr
+  ol : BitVec 64
+  B : Addr
+
+namespace Lay
+
+variable (L : Lay)
+
+abbrev PW : Region := ⟨L.pw, L.pwl.toNat⟩
+abbrev SALT : Region := ⟨L.salt, L.sl.toNat⟩
+abbrev BB : Region := ⟨L.b, L.blen.toNat * 128⟩
+abbrev VV : Region := ⟨L.v, L.vlen.toNat * 128⟩
+abbrev SC : Region := ⟨L.scr, L.slen.toNat * 128⟩
+abbrev OUT : Region := ⟨L.out, L.ol.toNat⟩
+/-- Our stack arguments. -/
+abbrev ARGS : Region := ⟨L.B + BitVec.ofNat 64 96, 40⟩
+/-- The stack used. -/
+abbrev STK : Region := ⟨L.B, 96⟩
+/-- The frames: our words, and our return address. -/
+abbrev FR : Region := ⟨L.B + BitVec.ofNat 64 16, 64⟩
+abbrev LR : Region := ⟨L.B + BitVec.ofNat 64 80, 16⟩
+
+/-- `p` and `N`. -/
+abbrev pp : Nat := L.blen.toNat / L.r.toNat
+abbrev NN : Nat := L.vlen.toNat / L.r.toNat
+
+/-- What the contract says of where the buffers and the stack are, and of
+the parameters. -/
+structure Ok : Prop where
+  pb : L.PW.Disjoint L.BB
+  pv : L.PW.Disjoint L.VV
+  pc : L.PW.Disjoint L.SC
+  po : L.PW.Disjoint L.OUT
+  sb : L.SALT.Disjoint L.BB
+  sv : L.SALT.Disjoint L.VV
+  sc : L.SALT.Disjoint L.SC
+  so : L.SALT.Disjoint L.OUT
+  bv : L.BB.Disjoint L.VV
+  bc : L.BB.Disjoint L.SC
+  bo : L.BB.Disjoint L.OUT
+  ba : L.BB.Disjoint L.ARGS
+  vc : L.VV.Disjoint L.SC
+  vo : L.VV.Disjoint L.OUT
+  va : L.VV.Disjoint L.ARGS
+  co : L.SC.Disjoint L.OUT
+  ca : L.SC.Disjoint L.ARGS
+  oa : L.OUT.Disjoint L.ARGS
+  kp : L.STK.Disjoint L.PW
+  ks : L.STK.Disjoint L.SALT
+  kb : L.STK.Disjoint L.BB
+  kv : L.STK.Disjoint L.VV
+  kc : L.STK.Disjoint L.SC
+  ko : L.STK.Disjoint L.OUT
+  np : L.pw.toNat + L.pwl.toNat ≤ 2 ^ 64
+  ns : L.salt.toNat + L.sl.toNat ≤ 2 ^ 64
+  nb : L.b.toNat + L.blen.toNat * 128 ≤ 2 ^ 64
+  nv : L.v.toNat + L.vlen.toNat * 128 ≤ 2 ^ 64
+  nc : L.scr.toNat + L.slen.toNat * 128 ≤ 2 ^ 64
+  no : L.out.toNat + L.ol.toNat ≤ 2 ^ 64
+  nB : L.B.toNat + 136 ≤ 2 ^ 64
+  rpos : 0 < L.r.toNat
+  bmod : L.blen.toNat % L.r.toNat = 0
+  vmod : L.vlen.toNat % L.r.toNat = 0
+  valid : Spec.Scrypt.valid L.NN L.r.toNat L.pp L.ol.toNat
+  olb : L.ol.toNat ≤ (2 ^ 32 - 1) * 32
+  slen : L.slen.toNat = L.r.toNat + 16
+
+end Lay
+
+/-! ## Regions within the buffers and the stack -/
+
+/-- `r` lies at an offset within `R`. -/
+def Within (r R : Region) : Prop := ∃ off, r.base = R.base + BitVec.ofNat 64 off ∧ off + r.len ≤ R.len
+
+theorem Within.sub {r R : Region} (h : Within r R) : Region.Sub r R := by
+  obtain ⟨off, hb, hl⟩ := h
+  obtain ⟨b, n⟩ := r
+  simp only at hb hl
+  subst hb
+  exact Offset.sub_base _ hl
+
+theorem within_off (p : Addr) {d n k : Nat} (h : d + n ≤ k) :
+    Within ⟨p + BitVec.ofNat 64 d, n⟩ ⟨p, k⟩ := ⟨d, rfl, h⟩
+
+theorem within_base (p : Addr) {n k : Nat} (h : n ≤ k) : Within ⟨p, n⟩ ⟨p, k⟩ :=
+  ⟨0, (BitVec.add_zero p).symm, by simpa using h⟩
+
+namespace Lay.Ok
+
+variable {L : Lay} (h : L.Ok)
+include h
+
+/-- A range in the stack is disjoint from one in a writable buffer. -/
+theorem stk_buf {d n : Nat} (h₁ : d + n ≤ 96) {R : Region}
+    (hR : R = L.BB ∨ R = L.VV ∨ R = L.SC ∨ R = L.OUT) {r : Region} (hr : Region.Sub r R) :
+    Region.Disjoint ⟨L.B + BitVec.ofNat 64 d, n⟩ r := by
+  have hs : Region.Sub ⟨L.B + BitVec.ofNat 64 d, n⟩ L.STK := Offset.sub_base _ h₁
+  rcases hR with rfl | rfl | rfl | rfl
+  · exact (h.kb.sub_left hs).sub_right hr
+  · exact (h.kv.sub_left hs).sub_right hr
+  · exact (h.kc.sub_left hs).sub_right hr
+  · exact (h.ko.sub_left hs).sub_right hr
+
+/-- A range in our stack arguments is disjoint from one in a writable buffer. -/
+theorem args_buf {d n : Nat} (h₁ : 96 ≤ d) (h₂ : d + n ≤ 136) {R : Region}
+    (hR : R = L.BB ∨ R = L.VV ∨ R = L.SC ∨ R = L.OUT) {r : Region} (hr : Region.Sub r R) :
+    Region.Disjoint ⟨L.B + BitVec.ofNat 64 d, n⟩ r := by
+  have hs : Region.Sub ⟨L.B + BitVec.ofNat 64 d, n⟩ L.ARGS := Offset.sub _ h₁ (by omega_arith)
+  rcases hR with rfl | rfl | rfl | rfl
+  · exact (h.ba.symm.sub_left hs).sub_right hr
+  · exact (h.va.symm.sub_left hs).sub_right hr
+  · exact (h.ca.symm.sub_left hs).sub_right hr
+  · exact (h.oa.symm.sub_left hs).sub_right hr
+
+end Lay.Ok
+
+/-! ## What the calls cannot change -/
+
+/-- The words in the frames and our stack arguments that stay as they are
+between the frames' pushes and pops, with our return address `lr`. -/
+structure Kept (L : Lay) (lr : BitVec 64) (m : Mem) : Prop where
+  pw : m.readW (L.B + BitVec.ofNat 64 24) 64 = L.pw
+  pwl : m.readW (L.B + BitVec.ofNat 64 32) 64 = L.pwl
+  r : m.readW (L.B + BitVec.ofNat 64 40) 64 = L.r
+  b : m.readW (L.B + BitVec.ofNat 64 48) 64 = L.b
+  blen : m.readW (L.B + BitVec.ofNat 64 56) 64 = L.blen
+  v : m.readW (L.B + BitVec.ofNat 64 64) 64 = L.v
+  lr : m.readW (L.B + BitVec.ofNat 64 80) 64 = lr
+  vlen : m.readW (L.B + BitVec.ofNat 64 96) 64 = L.vlen
+  scr : m.readW (L.B + BitVec.ofNat 64 104) 64 = L.scr
+  out : m.readW (L.B + BitVec.ofNat 64 120) 64 = L.out
+  ol : m.readW (L.B + BitVec.ofNat 64 128) 64 = L.ol
+
+/-- The kept words survive changes to memory that miss them. -/
+theorem Kept.frame {L : Lay} {lr : BitVec 64} {m m' : Mem} {rs : List Region} (hk : Kept L lr m)
+    (hf : Frame rs m m')
+    (hd : ∀ d, (24 ≤ d ∧ d + 8 ≤ 96) ∨ (96 ≤ d ∧ d + 8 ≤ 136) → ∀ R ∈ rs,
+      Region.Disjoint ⟨L.B + BitVec.ofNat 64 d, 8⟩ R) : Kept L lr m' := by
+  have k : ∀ d, (24 ≤ d ∧ d + 8 ≤ 96) ∨ (96 ≤ d ∧ d + 8 ≤ 136) →
+      m'.readW (L.B + BitVec.ofNat 64 d) 64 = m.readW (L.B + BitVec.ofNat 64 d) 64 :=
+    fun d hdd => hf.readW (Region.contains_self _ _) (hd d hdd) (by decide)
+  exact ⟨(k 24 (by omega_arith)).trans hk.pw, (k 32 (by omega_arith)).trans hk.pwl, (k 40 (by omega_arith)).trans hk.r,
+    (k 48 (by omega_arith)).trans hk.b, (k 56 (by omega_arith)).trans hk.blen, (k 64 (by omega_arith)).trans hk.v,
+    (k 80 (by omega_arith)).trans hk.lr, (k 96 (by omega_arith)).trans hk.vlen, (k 104 (by omega_arith)).trans hk.scr,
+    (k 120 (by omega_arith)).trans hk.out, (k 128 (by omega_arith)).trans hk.ol⟩
+
+/-! ## Between the frames' pushes and pops -/
+
+/-- The state between the frames' pushes and pops: `g` and `vv` are the
+registers on entry, `m₀` the memory. -/
+structure Ctx (L : Lay) (g : Reg → BitVec 64) (vv : VReg → BitVec 128) (m₀ : Mem) (t : State) :
+    Prop where
+  rd : t.rd = [L.PW, L.SALT, L.ARGS]
+  wr : t.wr = [L.FR, L.LR, L.BB, L.VV, L.SC, L.OUT]
+  sp : t.sp = L.B + BitVec.ofNat 64 16
+  cs : ∀ r ∈ preserved, r ≠ .x30 → t.gpr r = g r
+  vs : ∀ r ∈ preservedV, (t.v r).extractLsb' 0 64 = (vv r).extractLsb' 0 64
+  kept : Kept L (g .x30) t.mem
+  frame : Frame [L.BB, L.VV, L.SC, L.OUT, L.STK] m₀ t.mem
+
+/-- The regions a callee may be given. -/
+abbrev Lay.regions (L : Lay) : List Region := [L.PW, L.SALT, L.ARGS, L.FR, L.BB, L.VV, L.SC, L.OUT]
+
+/-- A writable region is within one of the writable buffers. -/
+def InBuf (L : Lay) (r : Region) : Prop :=
+  Within r L.BB ∨ Within r L.VV ∨ Within r L.SC ∨ Within r L.OUT
+
+theorem InBuf.sub {L : Lay} {r : Region} (h : InBuf L r) :
+    ∃ R, (R = L.BB ∨ R = L.VV ∨ R = L.SC ∨ R = L.OUT) ∧ Region.Sub r R := by
+  rcases h with h | h | h | h
+  · exact ⟨_, .inl rfl, h.sub⟩
+  · exact ⟨_, .inr (.inl rfl), h.sub⟩
+  · exact ⟨_, .inr (.inr (.inl rfl)), h.sub⟩
+  · exact ⟨_, .inr (.inr (.inr rfl)), h.sub⟩
+
+theorem covers {L : Lay} {g : Reg → BitVec 64} {vv : VReg → BitVec 128} {m₀ : Mem} {t : State}
+    (hc : Ctx L g vv m₀ t) {rd wr : List Region}
+    (hsub : ∀ r ∈ rd ++ wr, ∃ R ∈ L.regions, Within r R) (hwsub : ∀ r ∈ wr, InBuf L r) :
+    Covers (rd ++ wr) (t.rd ++ t.wr) ∧ Covers wr t.wr := by
+  refine ⟨Covers.of_sub fun r hr => ?_, Covers.of_sub fun r hr => ?_⟩
+  · obtain ⟨R, hR, hw⟩ := hsub r hr
+    refine ⟨R, ?_, hw⟩
+    rw [hc.rd, hc.wr]
+    simp only [Lay.regions, List.mem_cons, List.not_mem_nil, or_false] at hR
+    rcases hR with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp
+  · rw [hc.wr]
+    rcases hwsub r hr with h | h | h | h
+    · exact ⟨_, by simp, h⟩
+    · exact ⟨_, by simp, h⟩
+    · exact ⟨_, by simp, h⟩
+    · exact ⟨_, by simp, h⟩
+
+/-- The stack a call from `sp = B + 16` uses, if it pushes at most one frame. -/
+theorem below_call_sub (B : Addr) {m : Nat} (hm : m ≤ 16) :
+    Region.Sub (below (B + BitVec.ofNat 64 16) m) ⟨B, 16⟩ := by
+  have : B + BitVec.ofNat 64 16 - BitVec.ofNat 64 m = B + BitVec.ofNat 64 (16 - m) := by
+    rw [Offset.sub_ofNat_eq (B + BitVec.ofNat 64 16) (a := m) (b := 16) hm, BitVec.add_sub_cancel]
+  show Region.Sub ⟨B + BitVec.ofNat 64 16 - BitVec.ofNat 64 m, m⟩ _
+  rw [this]
+  exact Offset.sub_base _ (by omega_arith)
+
+/-- A call of verified code (see `WP.callFV`), which pushes at most one frame
+and is given regions within ours to read, and within the writable buffers to
+write: afterwards `Ctx` holds again, memory changed only within what it
+writes and the 16 bytes below `sp`, and the callee's postcondition holds. -/
+theorem call_ok {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {vv : VReg → BitVec 128} {m₀ : Mem}
+    {n : String} {c : Prog isa} {k : Contract isa}
+    (hv : ∀ s, k.pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ k.post s s')
+    (hd : c.aarch64Depth ≤ 1) {t : State} (hc : Ctx L g vv m₀ t)
+    {rd wr : List Region} (hpre : k.pre (t.callEntry.withRegions rd wr))
+    (hsub : ∀ r ∈ rd ++ wr, ∃ R ∈ L.regions, Within r R) (hwsub : ∀ r ∈ wr, InBuf L r)
+    {Q : State → Prop}
+    (hQ : ∀ s', Ctx L g vv m₀ s' → Frame (wr ++ [⟨L.B, 16⟩]) t.mem s'.mem →
+      k.post (t.callEntry.withRegions rd wr) (s'.withRegions rd wr) → Q s') :
+    WP isa (.call n c) t Q := by
+  obtain ⟨hcov, hcovw⟩ := covers hc hsub hwsub
+  refine WP.callFV hv hpre hcov hcovw (fun s' hrd hwr hsp hf hcs hvs hpost => ?_) (by omega_arith)
+  have hf' : Frame (wr ++ [⟨L.B, 16⟩]) t.mem s'.mem := by
+    refine Frame.sub hf fun r hr => ?_
+    rcases List.mem_append.mp hr with hr | hr
+    · exact ⟨r, List.mem_append_left _ hr, fun _ h => h⟩
+    · simp only [List.mem_singleton] at hr; subst hr
+      refine ⟨_, List.mem_append_right _ (List.mem_singleton_self _), ?_⟩
+      rw [hc.sp]
+      exact below_call_sub _ (by omega_arith)
+  have hnB := hL.nB
+  -- The regions the call may change miss the kept words.
+  have hdisj : ∀ d, (24 ≤ d ∧ d + 8 ≤ 96) ∨ (96 ≤ d ∧ d + 8 ≤ 136) → ∀ R ∈ wr ++ [⟨L.B, 16⟩],
+      Region.Disjoint ⟨L.B + BitVec.ofNat 64 d, 8⟩ R := by
+    intro d hdd R hR
+    rcases List.mem_append.mp hR with hR | hR
+    · obtain ⟨R', hR', hs⟩ := (hwsub R hR).sub
+      rcases hdd with hdd | hdd
+      · exact hL.stk_buf (by omega_arith) hR' hs
+      · exact hL.args_buf (by omega_arith) (by omega_arith) hR' hs
+    · simp only [List.mem_singleton] at hR; subst hR
+      exact Offset.disjoint_base _ (by omega_arith) (by omega_arith)
+  refine hQ s' ⟨hrd.trans hc.rd, hwr.trans hc.wr, hsp.trans hc.sp,
+    fun r hr hr' => (hcs r hr hr').trans (hc.cs r hr hr'), fun r hr => (hvs r hr).trans (hc.vs r hr),
+    hc.kept.frame hf' hdisj, hc.frame.trans (Frame.sub hf' fun r hr => ?_)⟩ hf' hpost
+  rcases List.mem_append.mp hr with hr | hr
+  · obtain ⟨R', hR', hs⟩ := (hwsub r hr).sub
+    rcases hR' with rfl | rfl | rfl | rfl
+    · exact ⟨_, by simp, hs⟩
+    · exact ⟨_, by simp, hs⟩
+    · exact ⟨_, by simp, hs⟩
+    · exact ⟨_, by simp, hs⟩
+  · simp only [List.mem_singleton] at hr; subst hr
+    exact ⟨L.STK, by simp, Region.sub_prefix (by omega_arith)⟩
+
+/-! ## The layout of a call -/
+
+/-- The layout of a call from `s`. -/
+def lay (s : State) : Lay :=
+  ⟨s.gpr .x0, s.gpr .x1, s.gpr .x2, s.gpr .x3, s.gpr .x4, s.gpr .x5, s.gpr .x6, s.gpr .x7,
+    stackArg s 0, stackArg s 1, stackArg s 2, stackArg s 3, stackArg s 4,
+    s.sp - BitVec.ofNat 64 96⟩
+
+theorem lay_top (s : State) : (lay s).B + BitVec.ofNat 64 96 = s.sp := BitVec.sub_add_cancel _ _
+
+theorem lay_args (s : State) : (lay s).B + BitVec.ofNat 64 96 = stackArgAddr s 0 := by
+  simp only [lay, stackArgAddr]; bv_omega
+
+theorem lay_ok {s : State} (h : Proof.Scrypt.scryptAArch64.pre s) : (lay s).Ok := by
+  obtain ⟨h96, h40, -, -, pb, pv, pc, po, sb, sv, sc, so, bv, bc, bo, ba, vc, vo, va, co, ca, oa,
+    kp, ks, kb, kv, kc, ko, np, ns, nb, nv, nc, no, rpos, bmod, vmod, hval, olb, slen⟩ := h
+  have ea : (lay s).ARGS = ⟨stackArgAddr s 0, 40⟩ := by simp only [Lay.ARGS, lay_args]
+  have nB : (lay s).B.toNat + 136 ≤ 2 ^ 64 := by
+    simp only [lay]
+    rw [Offset.toNat_sub_ofNat s.sp 96]
+    omega_arith
+  exact ⟨pb, pv, pc, po, sb, sv, sc, so, bv, bc, bo, ea ▸ ba, vc, vo, ea ▸ va, co, ea ▸ ca, ea ▸ oa,
+    kp, ks, kb, kv, kc, ko, np, ns, nb, nv, nc, no, nB, rpos, bmod, vmod, hval, olb, slen⟩
+
+end VG.Proof.Scrypt.AArch64.Whole
+
+end
+
+/-!
+# scrypt on AArch64: the blocks between the calls
+
+The parameters as numbers (`Lay.Ok`), the frames' entry (`entry_ok`), and what
+each block between the calls does: it keeps `Ctx`, and sets up the next call's
+arguments (`PbkArgs`, `RomixArgs`) or the next block.
+-/
+
+namespace VG.Proof.Scrypt.AArch64.Whole
+
+open VG VG.AArch64 VG.Impl.Scrypt.AArch64
+open VG.Proof.Scrypt.Memory (toNat_ofNat_lt toNat_add_ofNat)
+
+/-! ## Arithmetic -/
+
+theorem toNat_le_of_disjoint {R S : Region} (h : R.Disjoint S) (hS : 0 < S.len) : R.len < 2 ^ 64 := by
+  refine Nat.lt_of_not_le fun hR => h S.base ?_ ?_
+  · simp only [Region.Contains]; have := (S.base - R.base).isLt; omega_arith
+  · simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_arith
+
+theorem lsl7 (x : BitVec 64) : x <<< 7 = BitVec.ofNat 64 (x.toNat * 128) := by
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
+
+namespace Lay.Ok
+
+variable {L : Lay} (h : L.Ok)
+include h
+
+theorem blen_eq : L.blen.toNat = L.r.toNat * L.pp :=
+  (Nat.mul_div_cancel' (Nat.dvd_of_mod_eq_zero h.bmod)).symm
+theorem pp_pos : 0 < L.pp := h.valid.2.2.2.1
+
+/-- `b` is not the whole address space, since the stack is not in it. -/
+theorem blen_lt : L.blen.toNat * 128 < 2 ^ 64 :=
+  toNat_le_of_disjoint h.kb.symm (by show (0 : Nat) < 96; omega_arith)
+
+theorem r_le : L.r.toNat ≤ L.blen.toNat := by
+  rw [h.blen_eq]; exact Nat.le_mul_of_pos_right _ h.pp_pos
+
+theorem r_lt : L.r.toNat * 128 < 2 ^ 64 := by have := h.blen_lt; have := h.r_le; omega_arith
+
+/-- `128 r p`, the length of `b`. -/
+theorem len_b : 128 * L.r.toNat * L.pp = L.blen.toNat * 128 := by
+  rw [h.blen_eq, Nat.mul_comm 128, Nat.mul_assoc, Nat.mul_comm 128, Nat.mul_assoc]
+
+/-- The derived key of step 1 is not too long for PBKDF2. -/
+theorem ol1 : L.blen.toNat * 128 ≤ (2 ^ 32 - 1) * 32 := by
+  have h₁ := h.valid.2.2.2.2.1
+  have h₂ := Nat.div_mul_le_self ((2 ^ 32 - 1) * 32) (128 * L.r.toNat)
+  have h₃ : L.pp * (128 * L.r.toNat) ≤ (2 ^ 32 - 1) * 32 / (128 * L.r.toNat) * (128 * L.r.toNat) :=
+    Nat.mul_le_mul_right _ h₁
+  rw [← h.len_b, Nat.mul_comm (128 * L.r.toNat)]
+  omega_arith
+
+theorem slen17 : 17 ≤ L.slen.toNat := by have := h.slen; have := h.rpos; omega_arith
+
+end Lay.Ok
+
+/-! ## In the frames -/
+
+theorem add_add (p : Addr) (a b : Nat) :
+    p + BitVec.ofNat 64 a + BitVec.ofNat 64 b = p + BitVec.ofNat 64 (a + b) := by
+  rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat]
+
+theorem read8 (m : Mem) (a : Addr) : m.read a 8 = m.readW a 64 := by
+  simp only [Mem.readW, Nat.reduceDiv, BitVec.setWidth_eq]
+
+namespace Ctx
+
+variable {L : Lay} {g : Reg → BitVec 64} {vv : VReg → BitVec 128} {m₀ : Mem} {t t' : State}
+  (hc : Ctx L g vv m₀ t)
+include hc
+
+theorem inFr {d : Nat} (h₁ : 16 ≤ d) (h₂ : d + 8 ≤ 80) : InRegions (t.rd ++ t.wr) (L.B + BitVec.ofNat 64 d) 8 :=
+  ⟨L.FR, by rw [hc.rd, hc.wr]; simp, Offset.contains _ h₁ (by omega_arith) (by omega_arith)⟩
+
+theorem inFrW {d : Nat} (h₁ : 16 ≤ d) (h₂ : d + 8 ≤ 80) : InRegions t.wr (L.B + BitVec.ofNat 64 d) 8 :=
+  ⟨L.FR, by rw [hc.wr]; simp, Offset.contains _ h₁ (by omega_arith) (by omega_arith)⟩
+
+theorem inArgs (hL : L.Ok) {d : Nat} (h₁ : 96 ≤ d) (h₂ : d + 8 ≤ 136) :
+    InRegions (t.rd ++ t.wr) (L.B + BitVec.ofNat 64 d) 8 :=
+  ⟨L.ARGS, by rw [hc.rd, hc.wr]; simp, Offset.contains _ h₁ (by omega_arith) (by have := hL.nB; omega_arith)⟩
+
+/-- Code that writes only registers other than the callee-saved ones and
+the vector registers. -/
+theorem regs (hrd : t'.rd = t.rd) (hwr : t'.wr = t.wr) (hsp : t'.sp = t.sp) (hm : t'.mem = t.mem)
+    (hv : t'.v = t.v) (hg : ∀ r ∈ preserved, r ≠ .x30 → t'.gpr r = t.gpr r) : Ctx L g vv m₀ t' :=
+  ⟨hrd.trans hc.rd, hwr.trans hc.wr, hsp.trans hc.sp, fun r hr hr' => (hg r hr hr').trans (hc.cs r hr hr'),
+    fun r hr => by rw [hv]; exact hc.vs r hr, by rw [hm]; exact hc.kept, by rw [hm]; exact hc.frame⟩
+
+/-- Code that also writes the frame's first word. -/
+theorem store (hL : L.Ok) (hrd : t'.rd = t.rd) (hwr : t'.wr = t.wr) (hsp : t'.sp = t.sp)
+    (hv : t'.v = t.v) (hg : ∀ r ∈ preserved, r ≠ .x30 → t'.gpr r = t.gpr r)
+    (hf : Frame [⟨L.B + BitVec.ofNat 64 16, 8⟩] t.mem t'.mem) : Ctx L g vv m₀ t' := by
+  have hnB := hL.nB
+  refine ⟨hrd.trans hc.rd, hwr.trans hc.wr, hsp.trans hc.sp,
+    fun r hr hr' => (hg r hr hr').trans (hc.cs r hr hr'), fun r hr => by rw [hv]; exact hc.vs r hr,
+    hc.kept.frame hf fun d hd R hR => ?_, hc.frame.trans (Frame.sub hf fun r hr => ?_)⟩
+  · simp only [List.mem_singleton] at hR; subst hR
+    exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
+  · simp only [List.mem_singleton] at hr; subst hr
+    exact ⟨L.STK, by simp, Offset.sub_base _ (by omega_arith)⟩
+
+end Ctx
+
+/-- The registers a block writes, other than the callee-saved ones. -/
+tactic_template "scrypt_cs_tac" : tactic => `(tactic| (
+                   intro r hr _
+                   revert hr
+                   simp only [preserved, List.mem_cons, List.not_mem_nil, or_false]
+                   rintro (h | h | h | h | h | h | h | h | h | h | h) <;> subst h <;>
+                     simp only [RegUpd.gpr_write, reduceCtorEq, ite_false]))
+
+/-! ## The blocks -/
+
+section
+variable {L : Lay} {g : Reg → BitVec 64} {vv : VReg → BitVec 128} {m₀ : Mem}
+
+/-- The arguments of a call of PBKDF2 with the salt `salt` (`sl` bytes) and
+the output `out` (`ol` bytes): the password, `c = 1` and `scratch`. -/
+structure PbkArgs (L : Lay) (salt : Addr) (sl : BitVec 64) (out : Addr) (ol : BitVec 64) (t : State) :
+    Prop where
+  x0 : t.gpr .x0 = L.pw
+  x1 : t.gpr .x1 = L.pwl
+  x2 : t.gpr .x2 = salt
+  x3 : t.gpr .x3 = sl
+  x4 : t.gpr .x4 = 1
+  x5 : t.gpr .x5 = out
+  x6 : t.gpr .x6 = ol
+  x7 : t.gpr .x7 = L.scr
+
+/-- The registers on entry to the frame's body, once our arguments are saved. -/
+structure Entry (L : Lay) (t : State) : Prop where
+  x0 : t.gpr .x0 = L.pw
+  x1 : t.gpr .x1 = L.pwl
+  x2 : t.gpr .x2 = L.salt
+  x3 : t.gpr .x3 = L.sl
+  x5 : t.gpr .x5 = L.b
+  x6 : t.gpr .x6 = L.blen
+
+theorem pbk1Args_ok (hL : L.Ok) {t : State} (hc : Ctx L g vv m₀ t) (he : Entry L t) :
+    WP isa (.block pbk1Args) t fun t' => Ctx L g vv m₀ t' ∧ t'.mem = t.mem ∧
+      PbkArgs L L.salt L.sl L.b (BitVec.ofNat 64 (L.blen.toNat * 128)) t' := by
+  have l104 := hc.inArgs hL (d := 104) (by omega_arith) (by omega_arith)
+  apply WP.of_runBlock
+  simp only [pbk1Args, runBlock_cons, runStep_some, runBlock_nil, exec, State.load, State.read,
+    Size.bits, BitVec.setWidth_eq, RegUpd.gpr_write, RegUpd.rd_write, RegUpd.wr_write, RegUpd.sp_write,
+    RegUpd.mem_write, Option.map_some, reduceCtorEq, ite_false, ite_true, hc.sp, add_add,
+    Nat.reduceAdd, Nat.reduceMul, Nat.reduceMod, Nat.reduceLT, and_self, l104, read8, hc.kept.scr,
+    Option.some.injEq, exists_eq_left', BitVec.shiftLeft_zero]
+  refine ⟨hc.regs rfl rfl rfl rfl rfl (by scrypt_cs_tac), trivial, ?_⟩
+  refine ⟨?_, ?_, ?_, ?_, rfl, ?_, ?_, rfl⟩
+  all_goals simp only [RegUpd.gpr_write, reduceCtorEq, ite_false, ite_true, BitVec.setWidth_eq]
+  exacts [he.x0, he.x1, he.x2, he.x3, he.x5, by rw [he.x6, lsl7 _]]
+
+/-- A 64-bit `write` is a `writeW`. -/
+theorem write8 (m : Mem) (a : Addr) (v : BitVec 64) : m.write a 8 v = m.writeW a v := by
+  simp only [Mem.writeW, Nat.reduceDiv, Nat.reduceMul, BitVec.setWidth_eq]
+
+theorem cur0_ok (hL : L.Ok) {t : State} (hc : Ctx L g vv m₀ t) :
+    WP isa (.block cur0) t fun t' => Ctx L g vv m₀ t' ∧
+      t'.mem.readW (L.B + BitVec.ofNat 64 16) 64 = L.b ∧
+      Frame [⟨L.B + BitVec.ofNat 64 16, 8⟩] t.mem t'.mem := by
+  have l48 := hc.inFr (d := 48) (by omega_arith) (by omega_arith)
+  have w16 := hc.inFrW (d := 16) (by omega_arith) (by omega_arith)
+  apply WP.of_runBlock
+  simp only [cur0, runBlock_cons, runStep_some, runBlock_nil, exec, addr, State.load, State.store,
+    State.read, Size.bits, Size.bytes, BitVec.setWidth_eq, RegUpd.gpr_write, RegUpd.rd_write,
+    RegUpd.wr_write, RegUpd.sp_write, RegUpd.mem_write, Option.map_some, Option.bind_some, reduceCtorEq,
+    ite_false, ite_true, hc.sp, add_add, Nat.reduceAdd, Nat.reduceMul, Nat.reduceMod, Nat.reduceLT,
+    and_self, l48, w16, read8, hc.kept.b, write8, Option.some.injEq, exists_eq_left']
+  have f : Frame [⟨L.B + BitVec.ofNat 64 16, 8⟩] t.mem (t.mem.writeW (L.B + BitVec.ofNat 64 16) L.b) :=
+    (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
+  exact ⟨hc.store hL rfl rfl hc.sp.symm rfl (by scrypt_cs_tac) f, Mem.readW_writeW_self64 _ _ _, f⟩
+
+/-- The arguments of a call of ROMix on the block at `cur`. -/
+structure RomixArgs (L : Lay) (cur : Addr) (t : State) : Prop where
+  x0 : t.gpr .x0 = cur
+  x1 : t.gpr .x1 = L.r
+  x2 : t.gpr .x2 = L.v
+  x3 : t.gpr .x3 = L.vlen
+  x4 : t.gpr .x4 = L.scr
+  x5 : t.gpr .x5 = L.r + BitVec.ofNat 64 2
+
+theorem romixArgs_ok (hL : L.Ok) {t : State} (hc : Ctx L g vv m₀ t) {cur : Addr}
+    (hcur : t.mem.readW (L.B + BitVec.ofNat 64 16) 64 = cur) :
+    WP isa (.block romixArgs) t fun t' => Ctx L g vv m₀ t' ∧ t'.mem = t.mem ∧ RomixArgs L cur t' := by
+  have l16 := hc.inFr (d := 16) (by omega_arith) (by omega_arith)
+  have l40 := hc.inFr (d := 40) (by omega_arith) (by omega_arith)
+  have l64 := hc.inFr (d := 64) (by omega_arith) (by omega_arith)
+  have l96 := hc.inArgs hL (d := 96) (by omega_arith) (by omega_arith)
+  have l104 := hc.inArgs hL (d := 104) (by omega_arith) (by omega_arith)
+  apply WP.of_runBlock
+  simp only [romixArgs, runBlock_cons, runStep_some, runBlock_nil, exec, State.load, State.read,
+    Size.bits, BitVec.setWidth_eq, RegUpd.gpr_write, RegUpd.rd_write, RegUpd.wr_write, RegUpd.sp_write,
+    RegUpd.mem_write, Option.map_some, reduceCtorEq, ite_false, ite_true, hc.sp, add_add,
+    Nat.reduceAdd, Nat.reduceMul, Nat.reduceMod, Nat.reduceLT, and_self, l16, l40, l64, l96, l104,
+    read8, hcur, hc.kept.r, hc.kept.v, hc.kept.vlen, hc.kept.scr, Option.some.injEq, exists_eq_left']
+  exact ⟨hc.regs rfl rfl rfl rfl rfl (by scrypt_cs_tac), trivial, rfl, rfl, rfl, rfl, rfl, rfl⟩
+
+theorem nextBlock_ok (hL : L.Ok) {t : State} (hc : Ctx L g vv m₀ t) {cur : Addr}
+    (hcur : t.mem.readW (L.B + BitVec.ofNat 64 16) 64 = cur) :
+    WP isa (.block nextBlock) t fun t' => Ctx L g vv m₀ t' ∧
+      Frame [⟨L.B + BitVec.ofNat 64 16, 8⟩] t.mem t'.mem ∧
+      t'.mem.readW (L.B + BitVec.ofNat 64 16) 64 = cur + BitVec.ofNat 64 (L.r.toNat * 128) ∧
+      t'.gpr .x11 = L.b + BitVec.ofNat 64 (L.blen.toNat * 128) - (cur + BitVec.ofNat 64 (L.r.toNat * 128)) := by
+  have l16 := hc.inFr (d := 16) (by omega_arith) (by omega_arith)
+  have w16 := hc.inFrW (d := 16) (by omega_arith) (by omega_arith)
+  have l40 := hc.inFr (d := 40) (by omega_arith) (by omega_arith)
+  have l48 := hc.inFr (d := 48) (by omega_arith) (by omega_arith)
+  have l56 := hc.inFr (d := 56) (by omega_arith) (by omega_arith)
+  apply WP.of_runBlock
+  simp only [nextBlock, runBlock_cons, runStep_some, runBlock_nil, exec, addr, State.load, State.store,
+    State.read, Size.bits, Size.bytes, BitVec.setWidth_eq, RegUpd.gpr_write, RegUpd.rd_write,
+    RegUpd.wr_write, RegUpd.sp_write, RegUpd.mem_write, Option.map_some, Option.bind_some, reduceCtorEq,
+    ite_false, ite_true, hc.sp, add_add, Nat.reduceAdd, Nat.reduceMul, Nat.reduceMod, Nat.reduceLT,
+    and_self, l16, w16, l40, l48, l56, read8, hcur, hc.kept.r, hc.kept.b, hc.kept.blen, write8, lsl7,
+    Option.some.injEq, exists_eq_left']
+  have f : Frame [⟨L.B + BitVec.ofNat 64 16, 8⟩] t.mem
+      (t.mem.writeW (L.B + BitVec.ofNat 64 16) (cur + BitVec.ofNat 64 (L.r.toNat * 128))) :=
+    (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
+  exact ⟨hc.store hL rfl rfl hc.sp.symm rfl (by scrypt_cs_tac) f, f, Mem.readW_writeW_self64 _ _ _, trivial⟩
+
+theorem pbk2Args_ok (hL : L.Ok) {t : State} (hc : Ctx L g vv m₀ t) :
+    WP isa (.block pbk2Args) t fun t' => Ctx L g vv m₀ t' ∧ t'.mem = t.mem ∧
+      PbkArgs L L.b (BitVec.ofNat 64 (L.blen.toNat * 128)) L.out L.ol t' := by
+  have l24 := hc.inFr (d := 24) (by omega_arith) (by omega_arith)
+  have l32 := hc.inFr (d := 32) (by omega_arith) (by omega_arith)
+  have l48 := hc.inFr (d := 48) (by omega_arith) (by omega_arith)
+  have l56 := hc.inFr (d := 56) (by omega_arith) (by omega_arith)
+  have l104 := hc.inArgs hL (d := 104) (by omega_arith) (by omega_arith)
+  have l120 := hc.inArgs hL (d := 120) (by omega_arith) (by omega_arith)
+  have l128 := hc.inArgs hL (d := 128) (by omega_arith) (by omega_arith)
+  apply WP.of_runBlock
+  simp only [pbk2Args, runBlock_cons, runStep_some, runBlock_nil, exec, State.load, State.read,
+    Size.bits, BitVec.setWidth_eq, RegUpd.gpr_write, RegUpd.rd_write, RegUpd.wr_write, RegUpd.sp_write,
+    RegUpd.mem_write, Option.map_some, reduceCtorEq, ite_false, ite_true, hc.sp, add_add,
+    Nat.reduceAdd, Nat.reduceMul, Nat.reduceMod, Nat.reduceLT, and_self, l24, l32, l48, l56, l104, l120,
+    l128, read8, hc.kept.pw, hc.kept.pwl, hc.kept.b, hc.kept.blen, hc.kept.scr, hc.kept.out, hc.kept.ol,
+    lsl7, BitVec.shiftLeft_zero, Option.some.injEq, exists_eq_left']
+  exact ⟨hc.regs rfl rfl rfl rfl rfl (by scrypt_cs_tac), trivial, rfl, rfl, rfl, rfl, rfl, rfl, rfl,
+    rfl⟩
+
+/-! ## Entering the frames -/
+
+/-- Six words stored in the frame. -/
+theorem six_ok (B : Addr) (m : Mem) (a b c d e f : BitVec 64) :
+    let m' := (((((m.writeW (B + BitVec.ofNat 64 24) a).writeW (B + BitVec.ofNat 64 32) b).writeW
+      (B + BitVec.ofNat 64 40) c).writeW (B + BitVec.ofNat 64 48) d).writeW (B + BitVec.ofNat 64 56) e).writeW
+      (B + BitVec.ofNat 64 64) f
+    Frame [⟨B + BitVec.ofNat 64 24, 48⟩] m m' ∧ m'.readW (B + BitVec.ofNat 64 24) 64 = a ∧
+      m'.readW (B + BitVec.ofNat 64 32) 64 = b ∧ m'.readW (B + BitVec.ofNat 64 40) 64 = c ∧
+      m'.readW (B + BitVec.ofNat 64 48) 64 = d ∧ m'.readW (B + BitVec.ofNat 64 56) 64 = e ∧
+      m'.readW (B + BitVec.ofNat 64 64) 64 = f := by
+  have sep : ∀ x y, x + 8 ≤ y ∨ y + 8 ≤ x → x + 8 ≤ 136 → y + 8 ≤ 136 →
+      Mem.Sep (B + BitVec.ofNat 64 x) (64 / 8) (B + BitVec.ofNat 64 y) (64 / 8) :=
+    fun x y h h₁ h₂ => Offset.sep B h (by omega_arith) (by omega_arith)
+  have ct : ∀ x, 24 ≤ x → x + 8 ≤ 72 →
+      (⟨B + BitVec.ofNat 64 24, 48⟩ : Region).Contains (B + BitVec.ofNat 64 x) (64 / 8) :=
+    fun x h₁ h₂ => Offset.contains B h₁ (by omega_arith) (by omega_arith)
+  refine ⟨((((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (ct 24 (by omega_arith) (by omega_arith))).writeW
+    (List.mem_singleton_self _) _ (ct 32 (by omega_arith) (by omega_arith))).writeW (List.mem_singleton_self _) _
+    (ct 40 (by omega_arith) (by omega_arith))).writeW (List.mem_singleton_self _) _ (ct 48 (by omega_arith) (by omega_arith))).writeW
+    (List.mem_singleton_self _) _ (ct 56 (by omega_arith) (by omega_arith))).writeW (List.mem_singleton_self _) _
+    (ct 64 (by omega_arith) (by omega_arith)), ?_, ?_, ?_, ?_, ?_, Mem.readW_writeW_self64 _ _ _⟩
+  · rw [Mem.readW_writeW_sep (sep 24 64 (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
+      Mem.readW_writeW_sep (sep 24 56 (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
+      Mem.readW_writeW_sep (sep 24 48 (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
+      Mem.readW_writeW_sep (sep 24 40 (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
+      Mem.readW_writeW_sep (sep 24 32 (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
+      Mem.readW_writeW_self64]
+  · rw [Mem.readW_writeW_sep (sep 32 64 (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
+      Mem.readW_writeW_sep (sep 32 56 (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
+      Mem.readW_writeW_sep (sep 32 48 (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
+      Mem.readW_writeW_sep (sep 32 40 (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
+      Mem.readW_writeW_self64]
+  · rw [Mem.readW_writeW_sep (sep 40 64 (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
+      Mem.readW_writeW_sep (sep 40 56 (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
+      Mem.readW_writeW_sep (sep 40 48 (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
+      Mem.readW_writeW_self64]
+  · rw [Mem.readW_writeW_sep (sep 48 64 (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
+      Mem.readW_writeW_sep (sep 48 56 (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
+      Mem.readW_writeW_self64]
+  · rw [Mem.readW_writeW_sep (sep 56 64 (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
+      Mem.readW_writeW_self64]
+
+/-- The state in which the inner frame's body starts. -/
+def entered (s : State) : State := allocated 64 (pushed .x30 s)
+
+@[simp] theorem entered_rd (s : State) : (entered s).rd = s.rd := rfl
+@[simp] theorem entered_gpr (s : State) : (entered s).gpr = s.gpr := rfl
+@[simp] theorem entered_v (s : State) : (entered s).v = s.v := rfl
+
+theorem entered_sp (s : State) : (entered s).sp = (lay s).B + BitVec.ofNat 64 16 := by
+  show s.sp - 16 - BitVec.ofNat 64 64 = s.sp - BitVec.ofNat 64 96 + BitVec.ofNat 64 16
+  bv_omega
+
+theorem lr_slot (s : State) : s.sp - 16 = (lay s).B + BitVec.ofNat 64 80 := by
+  show s.sp - 16 = s.sp - BitVec.ofNat 64 96 + BitVec.ofNat 64 80
+  bv_omega
+
+theorem entered_wr (s : State) :
+    (entered s).wr = (lay s).FR :: (lay s).LR :: s.wr := by
+  show (⟨s.sp - 16 - BitVec.ofNat 64 64, 64⟩ : Region) :: ⟨s.sp - 16, 16⟩ :: s.wr = _
+  rw [show s.sp - 16 - BitVec.ofNat 64 64 = (lay s).B + BitVec.ofNat 64 16 from entered_sp s, lr_slot]
+
+theorem entered_mem (s : State) :
+    (entered s).mem = s.mem.writeW ((lay s).B + BitVec.ofNat 64 80) (s.gpr .x30) := by
+  show s.mem.write (s.sp - 16) 8 (s.gpr .x30) = _
+  rw [lr_slot, write8]
+
+theorem arg_slot (s : State) (i : Nat) (hi : i < 5) :
+    stackArgAddr s i = (lay s).B + BitVec.ofNat 64 (96 + 8 * i) := by
+  simp only [stackArgAddr, lay]
+  have : 8 * i < 2 ^ 64 := by omega_arith
+  bv_omega
+
+theorem entry_ok {s : State} (h : Proof.Scrypt.scryptAArch64.pre s) :
+    WP isa (.block saveArgs) (entered s) fun t => Ctx (lay s) s.gpr s.v s.mem t ∧ Entry (lay s) t := by
+  have hL := lay_ok h
+  have hnB := hL.nB
+  have hw : ∀ d, 16 ≤ d → d + 8 ≤ 80 → InRegions (entered s).wr ((lay s).B + BitVec.ofNat 64 d) 8 :=
+    fun d h₁ h₂ => ⟨(lay s).FR, by rw [entered_wr]; simp, Offset.contains _ h₁ (by omega_arith) (by omega_arith)⟩
+  have w24 := hw 24 (by omega_arith) (by omega_arith)
+  have w32 := hw 32 (by omega_arith) (by omega_arith)
+  have w40 := hw 40 (by omega_arith) (by omega_arith)
+  have w48 := hw 48 (by omega_arith) (by omega_arith)
+  have w56 := hw 56 (by omega_arith) (by omega_arith)
+  have w64 := hw 64 (by omega_arith) (by omega_arith)
+  apply WP.of_runBlock
+  simp only [saveArgs, runBlock_cons, runStep_some, runBlock_nil, exec, addr, State.store, State.read,
+    Size.bits, Size.bytes, BitVec.setWidth_eq, RegUpd.gpr_write, RegUpd.rd_write, RegUpd.wr_write,
+    RegUpd.sp_write, RegUpd.mem_write, Option.bind_some, reduceCtorEq, ite_false, ite_true, entered_sp,
+    add_add, Nat.reduceAdd, Nat.reduceMul, Nat.reduceMod, Nat.reduceLT, and_self, w24, w32, w40, w48, w56,
+    w64, write8, Option.some.injEq, exists_eq_left', BitVec.add_zero, entered_gpr]
+  obtain ⟨f, k24, k32, k40, k48, k56, k64⟩ := six_ok (lay s).B (entered s).mem (s.gpr .x0) (s.gpr .x1)
+    (s.gpr .x4) (s.gpr .x5) (s.gpr .x6) (s.gpr .x7)
+  rw [entered_mem] at f k24 k32 k40 k48 k56 k64
+  have keepF : ∀ d, ((lay s).B.toNat + d + 8 ≤ 2 ^ 64) → (72 ≤ d) →
+      Region.Disjoint ⟨(lay s).B + BitVec.ofNat 64 d, 8⟩ ⟨(lay s).B + BitVec.ofNat 64 24, 48⟩ :=
+    fun d h₁ h₂ => Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
+  have lr : ∀ m : Mem, Frame [⟨(lay s).B + BitVec.ofNat 64 24, 48⟩]
+      (s.mem.writeW ((lay s).B + BitVec.ofNat 64 80) (s.gpr .x30)) m →
+      m.readW ((lay s).B + BitVec.ofNat 64 80) 64 = s.gpr .x30 := fun m hf => by
+    rw [hf.readW (Region.contains_self _ _) (fun R hR => by
+      simp only [List.mem_singleton] at hR; subst hR; exact keepF 80 (by omega_arith) (by omega_arith)) (by decide)]
+    exact Mem.readW_writeW_self64 _ _ _
+  have arg : ∀ i, i < 5 → ∀ m : Mem, Frame [⟨(lay s).B + BitVec.ofNat 64 24, 48⟩]
+      (s.mem.writeW ((lay s).B + BitVec.ofNat 64 80) (s.gpr .x30)) m →
+      m.readW ((lay s).B + BitVec.ofNat 64 (96 + 8 * i)) 64 = stackArg s i := fun i hi m hf => by
+    rw [hf.readW (Region.contains_self _ _) (fun R hR => by
+      simp only [List.mem_singleton] at hR; subst hR; exact keepF _ (by omega_arith) (by omega_arith)) (by decide),
+      Mem.readW_writeW_sep (Offset.sep _ (by omega_arith) (by omega_arith) (by omega_arith)) (by decide), stackArg,
+      arg_slot s i hi]
+  rw [entered_mem]
+  refine ⟨⟨?_, ?_, rfl, ?_, fun _ _ => by simp only [RegUpd.v_write, entered_v], ⟨k24, k32, k40, k48, k56, k64, lr _ f, arg 0 (by omega_arith) _ f,
+    arg 1 (by omega_arith) _ f, arg 3 (by omega_arith) _ f, arg 4 (by omega_arith) _ f⟩, ?_⟩, ?_⟩
+  · simp only [entered_rd]
+    rw [h.2.2.1, ← lay_args]; rfl
+  · rw [entered_wr, h.2.2.2.1]; rfl
+  · intro r hr hr'
+    rw [RegUpd.gpr_write_of_ne _ _ _ (by
+      intro e; subst e; simp [preserved] at hr), entered_gpr]
+  · refine Frame.trans (Frame.writeW (Frame.refl _ _) (r := (lay s).STK) (by simp) _
+      (Offset.contains_base _ (by omega_arith) (by omega_arith))) (Frame.sub f fun r hr => ?_)
+    simp only [List.mem_singleton] at hr; subst hr
+    exact ⟨(lay s).STK, by simp, Offset.sub_base _ (by omega_arith)⟩
+  · refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
+      simp only [RegUpd.gpr_write, reduceCtorEq, ite_false, entered_gpr] <;> rfl
+
+end
+
+end VG.Proof.Scrypt.AArch64.Whole
+
+end
+
+end
+
+@[expose] public section
+
+section
+
+section
+
+/-!
+# scrypt on AArch64: PBKDF2-HMAC-SHA256 as a callee
+
+`vg_pbkdf2_hmac_sha256_scratch` (any implementation of it) is verified against the
+shared contract `(Proof.Pbkdf2.Instance.pbkdf2ScratchContract VG.Spec.Hmac.sha256I)`; its caller works with
+the same contract spelt out (`pbkG`, the contract its proof is written
+against): `pbk_correct` and `pbk_ct` are its correctness and constant time
+under `pbkG`, from its `Verified` proof.
+-/
+
+namespace VG.Proof.Scrypt.AArch64.Whole
+
+open VG.AArch64
+open VG.Proof.Pbkdf2.Md.AArch64 (pbkG)
+open VG.Proof.Pbkdf2.Md.AArch64.Calls (stk)
+
+/-- `pbkdf2`'s contract, spelt out. -/
+abbrev pbkK : Contract isa := pbkG Spec.Hmac.sha256S 200
+
+theorem pbk_pre {s : State} (h : pbkK.pre s) :
+    (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.sha256I AArch64.abi 16).pre s := by
+  simp only [Proof.Pbkdf2.Instance.pbkdf2ScratchContract, Spec.Hmac.Instance.pbkdf2Scratch]
+  sig_pre [Proof.Pbkdf2.pbkdf2ScratchContract, Proof.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha256I, Spec.Hmac.sha256S,
+    AArch64.abi, AArch64.argRegs]
+  simp only [pbkK, pbkG, Spec.Hmac.sha256S] at h
+  sig_split h
+  sig_and_intros
+  all_goals first
+    | with_reducible assumption
+    | with_reducible exact Region.Disjoint.symm ‹_›
+    | omega
+
+theorem pbk_post {s s' : State} (h : (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.sha256I AArch64.abi 16).post s s') :
+    pbkK.post s s' := by
+  simp only [Proof.Pbkdf2.Instance.pbkdf2ScratchContract, Spec.Hmac.Instance.pbkdf2Scratch] at h
+  sig_post [Proof.Pbkdf2.pbkdf2ScratchContract, Proof.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha256I, Spec.Hmac.sha256S,
+    AArch64.abi, AArch64.argRegs] at h
+  exact h
+
+theorem pbk_pub {s₁ s₂ : State} (h : pbkK.pub s₁ s₂) (hd : s₁.dit = s₂.dit) :
+    (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.sha256I AArch64.abi 16).pub s₁ s₂ := by
+  simp only [Proof.Pbkdf2.Instance.pbkdf2ScratchContract, Spec.Hmac.Instance.pbkdf2Scratch]
+  sig_pub [Proof.Pbkdf2.pbkdf2ScratchContract, Proof.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha256I, Spec.Hmac.sha256S,
+    AArch64.abi, AArch64.argRegs]
+  obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩ := h
+  exact ⟨h9, hd, h1, h2, h3, h4, h5, h6, h7, h8⟩
+
+variable {pbk : Prog isa} (hv : Verified AArch64.target pbk (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.sha256I AArch64.abi 16))
+include hv
+
+theorem pbk_correct (s : State) (h : pbkK.pre s) :
+    ∃ t s', Exec isa pbk s t s' ∧ abiPreserved s s' ∧ pbkK.post s s' := by
+  obtain ⟨t, s', he, ha, hp⟩ := hv.1 s (pbk_pre h)
+  exact ⟨t, s', he, ha, pbk_post hp⟩
+
+/-- Its constant time, from its code never touching the mode (`ConstantTime.dropDit`). -/
+theorem pbk_ct (hnd : pbk.all (fun i => !i.touchesDit) = true) : ConstantTime isa pbkK.pre pbkK.pub pbk :=
+  ConstantTime.dropDit hnd (fun _ _ _ _ _ _ h₁ h₂ hp e₁ e₂ =>
+    hv.2.1 _ _ _ _ _ _ (pbk_pre h₁) (pbk_pre h₂) (pbk_pub hp.1 hp.2) e₁ e₂) (fun _ _ h => h) fun _ _ h => h
+
+end VG.Proof.Scrypt.AArch64.Whole
+
+end
+
+/-!
+# scrypt on AArch64: the calls
+
+What a call of `vg_pbkdf2_hmac_sha256_scratch` (`pbk_call`) and of `vg_scrypt_romix`
+(`romix_call`) from the frames does, from their arguments (`PbkArgs`,
+`RomixArgs`): each keeps `Ctx`, and changes memory only in what it writes and
+the stack below the frames. `pbk_pre'` and `romix_pre` are their
+preconditions, which the proof of constant time uses too.
+-/
+
+namespace VG.Proof.Scrypt.AArch64.Whole
+
+open VG VG.AArch64 VG.Impl.Scrypt.AArch64
+open VG.Proof.Scrypt.Memory (toNat_ofNat_lt toNat_add_ofNat)
+open VG.Spec.Scrypt (bytesAt)
+open VG.Proof.Pbkdf2.Md.AArch64 (pbkG)
+open VG.Proof.Pbkdf2.Md.AArch64.Calls (stk)
+
+theorem gpr_ce (t : State) (rd wr : List Region) {r : Reg} (h : r ∉ linkRegs) :
+    (t.callEntry.withRegions rd wr).gpr r = t.gpr r := by
+  rw [State.withRegions_gpr, State.callEntry_gpr _ h]
+
+section
+variable {L : Lay} {g : Reg → BitVec 64} {vv : VReg → BitVec 128} {m₀ : Mem}
+
+theorem Ctx.ce_sp {t : State} (hc : Ctx L g vv m₀ t) (rd wr : List Region) :
+    (t.callEntry.withRegions rd wr).sp = L.B + BitVec.ofNat 64 16 := by
+  rw [State.withRegions_sp, State.callEntry_sp, hc.sp]
+
+theorem sub16 (B : Addr) : B + BitVec.ofNat 64 16 - 16 = B := BitVec.add_sub_cancel _ _
+
+namespace Lay.Ok
+
+variable (hL : L.Ok)
+include hL
+
+/-- The password misses every writable buffer. -/
+theorem pw_buf {r : Region} (h : InBuf L r) : L.PW.Disjoint r := by
+  obtain ⟨R, hR, hs⟩ := h.sub
+  rcases hR with rfl | rfl | rfl | rfl
+  exacts [hL.pb.sub_right hs, hL.pv.sub_right hs, hL.pc.sub_right hs, hL.po.sub_right hs]
+
+theorem stk_in {d n : Nat} (h₁ : d + n ≤ 96) {r : Region} (h : InBuf L r) :
+    Region.Disjoint ⟨L.B + BitVec.ofNat 64 d, n⟩ r := by
+  obtain ⟨R, hR, hs⟩ := h.sub
+  exact hL.stk_buf h₁ hR hs
+
+/-- The 16 bytes the calls use miss every writable buffer. -/
+theorem low_in {r : Region} (h : InBuf L r) : Region.Disjoint ⟨L.B, 16⟩ r := by
+  have := hL.stk_in (d := 0) (n := 16) (by omega_arith) h
+  simpa using this
+
+theorem scr_in : InBuf L ⟨L.scr, 200 * 8⟩ :=
+  .inr (.inr (.inl (within_base _ (by have := hL.slen17; omega_arith))))
+
+end Lay.Ok
+
+/-! ## PBKDF2 -/
+
+section
+variable {pbk : Prog isa}
+
+/-- The regions a call of PBKDF2 reads and writes. -/
+abbrev pbkRd (L : Lay) (salt : Addr) (sl : BitVec 64) : List Region := [L.PW, ⟨salt, sl.toNat⟩]
+abbrev pbkWr (L : Lay) (out : Addr) (ol : BitVec 64) : List Region :=
+  [⟨out, ol.toNat⟩, ⟨L.scr, 200 * 8⟩]
+
+/-- What a call of PBKDF2 needs of its salt and its output, beyond being in our buffers. -/
+structure PbkRegions (L : Lay) (salt : Addr) (sl : BitVec 64) (out : Addr) (ol : BitVec 64) : Prop where
+  sw : ∃ R ∈ L.regions, Within ⟨salt, sl.toNat⟩ R
+  ow : InBuf L ⟨out, ol.toNat⟩
+  so : Region.Disjoint ⟨salt, sl.toNat⟩ ⟨out, ol.toNat⟩
+  sc : Region.Disjoint ⟨salt, sl.toNat⟩ ⟨L.scr, 200 * 8⟩
+  oc : Region.Disjoint ⟨out, ol.toNat⟩ ⟨L.scr, 200 * 8⟩
+  ks : L.STK.Disjoint ⟨salt, sl.toNat⟩
+  ns : salt.toNat + sl.toNat ≤ 2 ^ 64
+  no : out.toNat + ol.toNat ≤ 2 ^ 64
+  ol : ol.toNat ≤ (2 ^ 32 - 1) * 32
+
+theorem pbk_pre' (hL : L.Ok) {t : State} (hc : Ctx L g vv m₀ t) {salt : Addr} {sl : BitVec 64} {out : Addr}
+    {ol : BitVec 64} (ha : PbkArgs L salt sl out ol t) (hr : PbkRegions L salt sl out ol) :
+    pbkK.pre (t.callEntry.withRegions (pbkRd L salt sl) (pbkWr L out ol)) := by
+  have hnB := hL.nB
+  have t16 : (L.B + BitVec.ofNat 64 16).toNat = L.B.toNat + 16 := toNat_add_ofNat _ (by omega_arith)
+  have sw : InBuf L ⟨L.scr, 200 * 8⟩ := hL.scr_in
+  simp only [pbkK, pbkG, stk, Spec.Hmac.sha256S, State.withRegions_rd, State.withRegions_wr,
+    hc.ce_sp, sub16, t16, gpr_ce _ _ _ (by decide : Reg.x0 ∉ linkRegs),
+    gpr_ce _ _ _ (by decide : Reg.x1 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.x2 ∉ linkRegs),
+    gpr_ce _ _ _ (by decide : Reg.x3 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.x4 ∉ linkRegs),
+    gpr_ce _ _ _ (by decide : Reg.x5 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.x6 ∉ linkRegs),
+    gpr_ce _ _ _ (by decide : Reg.x7 ∉ linkRegs), ha.x0, ha.x1, ha.x2, ha.x3, ha.x4, ha.x5, ha.x6, ha.x7]
+  exact ⟨by omega_arith, trivial, trivial, hL.pw_buf hr.ow, hL.pw_buf sw, hr.so, hr.sc, hr.oc,
+    by simpa using hL.kp.sub_left (Offset.sub_base L.B (d := 0) (n := 16) (k := 96) (by omega_arith)),
+    hr.ks.sub_left (by simpa using Offset.sub_base L.B (d := 0) (n := 16) (k := 96) (by omega_arith)),
+    hL.low_in hr.ow, hL.low_in sw, hL.np, hr.ns, hr.no,
+    by have := hL.nc; have := hL.slen17; omega_arith, by decide, hr.ol⟩
+
+theorem pbk_sub (hL : L.Ok) {salt : Addr} {sl : BitVec 64} {out : Addr} {ol : BitVec 64}
+    (hr : PbkRegions L salt sl out ol) :
+    ∀ r ∈ pbkRd L salt sl ++ pbkWr L out ol, ∃ R ∈ L.regions, Within r R := by
+  have hs := hr.sw
+  simp only [pbkRd, pbkWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
+    or_false]
+  rintro r (rfl | rfl | rfl | rfl)
+  · exact ⟨L.PW, by simp, within_base _ (by omega_arith)⟩
+  · obtain ⟨R, hR, hw⟩ := hs
+    exact ⟨R, by simpa only [Lay.regions, List.mem_cons, List.not_mem_nil, or_false] using hR, hw⟩
+  · rcases hr.ow with h | h | h | h
+    · exact ⟨_, by simp, h⟩
+    · exact ⟨_, by simp, h⟩
+    · exact ⟨_, by simp, h⟩
+    · exact ⟨_, by simp, h⟩
+  · exact ⟨L.SC, by simp, within_base _ (by have := hL.slen17; omega_arith)⟩
+
+theorem pbk_wsub (hL : L.Ok) {salt : Addr} {sl : BitVec 64} {out : Addr} {ol : BitVec 64}
+    (hr : PbkRegions L salt sl out ol) : ∀ r ∈ pbkWr L out ol, InBuf L r := by
+  simp only [pbkWr, List.mem_cons, List.not_mem_nil, or_false]
+  rintro r (rfl | rfl)
+  · exact hr.ow
+  · exact hL.scr_in
+
+theorem pbk_call (hv : Verified AArch64.target pbk (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.sha256I AArch64.abi 16))
+    (hd : pbk.aarch64Depth ≤ 1) (name : String) (hL : L.Ok) {t : State}
+    (hc : Ctx L g vv m₀ t) {salt : Addr} {sl : BitVec 64} {out : Addr} {ol : BitVec 64}
+    (ha : PbkArgs L salt sl out ol t) (hr : PbkRegions L salt sl out ol) :
+    WP isa (.call name pbk) t fun t' => Ctx L g vv m₀ t' ∧
+      Frame [⟨out, ol.toNat⟩, ⟨L.scr, 200 * 8⟩, ⟨L.B, 16⟩] t.mem t'.mem ∧
+      Spec.Pbkdf2.pbkdf2HmacSha256 (bytesAt t.mem L.pw L.pwl.toNat) (bytesAt t.mem salt sl.toNat) 1
+        ol.toNat = some (bytesAt t'.mem out ol.toNat) := by
+  refine call_ok hL (pbk_correct hv) hd hc (pbk_pre' hL hc ha hr) (pbk_sub hL hr) (pbk_wsub hL hr)
+    fun s' hc' hf hpost => ⟨hc', hf, ?_⟩
+  have h := hpost
+  simp only [pbkK, pbkG, Spec.Hmac.sha256S, State.withRegions_mem, State.callEntry_mem,
+    gpr_ce _ _ _ (by decide : Reg.x0 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.x1 ∉ linkRegs),
+    gpr_ce _ _ _ (by decide : Reg.x2 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.x3 ∉ linkRegs),
+    gpr_ce _ _ _ (by decide : Reg.x4 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.x5 ∉ linkRegs),
+    gpr_ce _ _ _ (by decide : Reg.x6 ∉ linkRegs), ha.x0, ha.x1, ha.x2, ha.x3,
+    ha.x4, ha.x5, ha.x6] at h
+  exact h
+
+end
+
+/-! ## ROMix -/
+
+/-- Block `i` of `b`. -/
+abbrev blkAt (L : Lay) (i : Nat) : Addr := L.b + BitVec.ofNat 64 (128 * L.r.toNat * i)
+
+/-- The regions a call of ROMix on block `i` writes. -/
+abbrev romixWr (L : Lay) (i : Nat) : List Region :=
+  [⟨blkAt L i, L.r.toNat * 128⟩, ⟨L.v, L.vlen.toNat * 128⟩, ⟨L.scr, (L.r.toNat + 2) * 128⟩]
+
+theorem blk_le (hL : L.Ok) {i : Nat} (hi : i < L.pp) :
+    128 * L.r.toNat * i + L.r.toNat * 128 ≤ L.blen.toNat * 128 := by
+  rw [← hL.len_b, Nat.mul_comm L.r.toNat 128, ← Nat.mul_succ]; exact Nat.mul_le_mul_left _ hi
+
+theorem blk_in (hL : L.Ok) {i : Nat} (hi : i < L.pp) : InBuf L ⟨blkAt L i, L.r.toNat * 128⟩ :=
+  .inl (within_off _ (blk_le hL hi))
+
+theorem r2 (hL : L.Ok) : (L.r + BitVec.ofNat 64 2).toNat = L.r.toNat + 2 := by
+  have := hL.r_lt
+  exact toNat_add_ofNat _ (by omega_arith)
+
+theorem romix_pre (hL : L.Ok) {t : State} (hc : Ctx L g vv m₀ t) {i : Nat} (hi : i < L.pp)
+    (ha : RomixArgs L (blkAt L i) t) :
+    Proof.Scrypt.roMixAArch64.pre (t.callEntry.withRegions [] (romixWr L i)) := by
+  have hnB := hL.nB
+  have hb := blk_in hL hi
+  have hv : InBuf L ⟨L.v, L.vlen.toNat * 128⟩ := .inr (.inl (within_base _ (Nat.le_refl _)))
+  have hs : InBuf L ⟨L.scr, (L.r.toNat + 2) * 128⟩ :=
+    .inr (.inr (.inl (within_base _ (by have := hL.slen; omega_arith))))
+  have tb : (blkAt L i).toNat = L.b.toNat + 128 * L.r.toNat * i := by
+    have := blk_le hL hi; have := hL.nb; have := hL.rpos
+    exact toNat_add_ofNat _ (by omega_arith)
+  have t16 : (L.B + BitVec.ofNat 64 16).toNat = L.B.toNat + 16 := toNat_add_ofNat _ (by omega_arith)
+  simp only [Proof.Scrypt.roMixAArch64, State.withRegions_rd, State.withRegions_wr, hc.ce_sp, sub16, t16,
+    gpr_ce _ _ _ (by decide : Reg.x0 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.x1 ∉ linkRegs),
+    gpr_ce _ _ _ (by decide : Reg.x2 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.x3 ∉ linkRegs),
+    gpr_ce _ _ _ (by decide : Reg.x4 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.x5 ∉ linkRegs),
+    ha.x0, ha.x1, ha.x2, ha.x3, ha.x4, ha.x5, r2 hL]
+  have kb := Within.sub (within_off L.b (blk_le hL hi))
+  have ks := Within.sub (within_base L.scr (n := (L.r.toNat + 2) * 128) (k := L.slen.toNat * 128)
+    (by have := hL.slen; omega_arith))
+  exact ⟨trivial, trivial, hL.bv.sub_left kb, (hL.bc.sub_left kb).sub_right ks, hL.vc.sub_right ks,
+    by omega_arith, hL.low_in hb, hL.low_in hv, hL.low_in hs,
+    by rw [tb]; have := blk_le hL hi; have := hL.nb; omega_arith, hL.nv,
+    by have := hL.nc; have := hL.slen; omega_arith, hL.rpos, hL.vmod, Whole.valid_pow hL.valid, trivial⟩
+
+theorem romix_sub (hL : L.Ok) {i : Nat} (hi : i < L.pp) :
+    ∀ r ∈ ([] : List Region) ++ romixWr L i, ∃ R ∈ L.regions, Within r R := by
+  simp only [romixWr, List.nil_append, List.mem_cons, List.not_mem_nil, or_false]
+  rintro r (rfl | rfl | rfl)
+  · exact ⟨L.BB, by simp, within_off _ (blk_le hL hi)⟩
+  · exact ⟨L.VV, by simp, within_base _ (Nat.le_refl _)⟩
+  · exact ⟨L.SC, by simp, within_base _ (by have := hL.slen; omega_arith)⟩
+
+theorem romix_wsub (hL : L.Ok) {i : Nat} (hi : i < L.pp) : ∀ r ∈ romixWr L i, InBuf L r := by
+  simp only [romixWr, List.mem_cons, List.not_mem_nil, or_false]
+  rintro r (rfl | rfl | rfl)
+  · exact blk_in hL hi
+  · exact .inr (.inl (within_base _ (Nat.le_refl _)))
+  · exact .inr (.inr (.inl (within_base _ (by have := hL.slen; omega_arith))))
+
+theorem roMix_depth : Impl.Scrypt.AArch64.roMix.aarch64Depth ≤ 1 := by lit_decide
+
+theorem romix_call (hL : L.Ok) {t : State} (hc : Ctx L g vv m₀ t) {i : Nat} (hi : i < L.pp)
+    (ha : RomixArgs L (blkAt L i) t) :
+    WP isa (.call "vg_scrypt_romix" Impl.Scrypt.AArch64.roMix) t fun t' => Ctx L g vv m₀ t' ∧
+      Frame (romixWr L i ++ [⟨L.B, 16⟩]) t.mem t'.mem ∧
+      bytesAt t'.mem (blkAt L i) (128 * L.r.toNat) =
+        Spec.Scrypt.roMix L.r.toNat L.NN (bytesAt t.mem (blkAt L i) (128 * L.r.toNat)) := by
+  refine call_ok hL RoMix.roMix_correct roMix_depth hc (romix_pre hL hc hi ha)
+    (romix_sub hL hi) (romix_wsub hL hi) fun s' hc' hf hpost => ⟨hc', hf, ?_⟩
+  have h := hpost
+  simp only [Proof.Scrypt.roMixAArch64, State.withRegions_mem, State.callEntry_mem,
+    gpr_ce _ _ _ (by decide : Reg.x0 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.x1 ∉ linkRegs),
+    gpr_ce _ _ _ (by decide : Reg.x3 ∉ linkRegs), ha.x0, ha.x1, ha.x3] at h
+  exact h
+
+end
+
+end VG.Proof.Scrypt.AArch64.Whole
+
+end
+
+/-!
+# scrypt on AArch64: correctness
+
+As on x86-64 (`Proof/Scrypt/X86_64/Whole/Correct.lean`): step 1 leaves the
+blocks `X k` of `PBKDF2-HMAC-SHA256 (P, S, 1, 128 blen)` in `b` (`step1_ok`);
+the loop replaces them by their scryptROMix one at a time (`Inv`, `loop_ok`);
+step 3 derives the key from them (`step3_ok`). `scrypt_ok` puts the frames
+around it, for any implementation `pbk` of PBKDF2 verified against its shared
+contract.
+-/
+
+namespace VG.Proof.Scrypt.AArch64.Whole
+
+open VG VG.AArch64 VG.Impl.Scrypt.AArch64
+open VG.Proof.Scrypt.Memory (toNat_ofNat_lt toNat_add_ofNat)
+open VG.Spec.Scrypt (bytesAt)
+
+variable {L : Lay} {g : Reg → BitVec 64} {vv : VReg → BitVec 128} {m₀ : Mem}
+
+/-! ## The password, the salt and the blocks -/
+
+namespace Ctx
+
+variable {t : State} (hc : Ctx L g vv m₀ t) (hL : L.Ok)
+include hc hL
+
+theorem pw_bytes : bytesAt t.mem L.pw L.pwl.toNat = bytesAt m₀ L.pw L.pwl.toNat :=
+  Memory.frame_bytesAt hc.frame (by
+    simp only [List.mem_cons, List.not_mem_nil, or_false]
+    rintro r (rfl | rfl | rfl | rfl | rfl)
+    exacts [hL.pb, hL.pv, hL.pc, hL.po, hL.kp.symm]) (by have := hL.np; omega_arith)
+
+theorem salt_bytes : bytesAt t.mem L.salt L.sl.toNat = bytesAt m₀ L.salt L.sl.toNat :=
+  Memory.frame_bytesAt hc.frame (by
+    simp only [List.mem_cons, List.not_mem_nil, or_false]
+    rintro r (rfl | rfl | rfl | rfl | rfl)
+    exacts [hL.sb, hL.sv, hL.sc, hL.so, hL.ks.symm]) (by have := hL.ns; omega_arith)
+
+end Ctx
+
+/-- Block `k` of step 1. -/
+def X (L : Lay) (m₀ : Mem) (k : Nat) : List Byte :=
+  (Spec.Scrypt.blocks (bytesAt m₀ L.pw L.pwl.toNat) (bytesAt m₀ L.salt L.sl.toNat) L.r.toNat L.pp).getD k []
+
+/-- The derived key of step 1, from the password and the salt on entry. -/
+abbrev Step1 (L : Lay) (m₀ : Mem) (B : List Byte) : Prop :=
+  Spec.Pbkdf2.pbkdf2HmacSha256 (bytesAt m₀ L.pw L.pwl.toNat) (bytesAt m₀ L.salt L.sl.toNat) 1
+    (L.blen.toNat * 128) = some B
+
+theorem X_of (hL : L.Ok) {m : Mem} (h : Step1 L m₀ (bytesAt m L.b (L.blen.toNat * 128))) {k : Nat}
+    (hk : k < L.pp) : X L m₀ k = bytesAt m (blkAt L k) (128 * L.r.toNat) := by
+  have e : L.pp * 128 * L.r.toNat = L.blen.toNat * 128 := by
+    rw [← hL.len_b]; simp only [Nat.mul_comm, Nat.mul_left_comm]
+  have h' : Spec.Pbkdf2.pbkdf2HmacSha256 (bytesAt m₀ L.pw L.pwl.toNat) (bytesAt m₀ L.salt L.sl.toNat) 1
+      (L.pp * 128 * L.r.toNat) = some (bytesAt m L.b (L.pp * 128 * L.r.toNat)) := by rw [e]; exact h
+  have hl : k < (Spec.Scrypt.blocks (bytesAt m₀ L.pw L.pwl.toNat) (bytesAt m₀ L.salt L.sl.toNat)
+      L.r.toNat L.pp).length := by rw [Whole.blocks_length]; exact hk
+  rw [X, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hl, Option.getD_some,
+    Whole.blocks_getElem h' hl]
+
+/-- Distinct blocks are disjoint. -/
+theorem blk_disj (hL : L.Ok) {k i : Nat} (hk : k < L.pp) (hi : i < L.pp) (hne : k ≠ i) :
+    Region.Disjoint ⟨blkAt L k, 128 * L.r.toNat⟩ ⟨blkAt L i, L.r.toNat * 128⟩ := by
+  have h₁ := blk_le hL hk
+  have h₂ := blk_le hL hi
+  have := hL.nb
+  have hr := hL.rpos
+  refine Offset.disjoint _ ?_ (by omega_arith) (by omega_arith)
+  rcases Nat.lt_or_gt_of_ne hne with h | h
+  · left
+    have : 128 * L.r.toNat * k + 128 * L.r.toNat ≤ 128 * L.r.toNat * i := by
+      rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ h
+    omega_arith
+  · right
+    have : 128 * L.r.toNat * i + 128 * L.r.toNat ≤ 128 * L.r.toNat * k := by
+      rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ h
+    omega_arith
+
+theorem blk_sub (hL : L.Ok) {k : Nat} (hk : k < L.pp) :
+    Region.Sub ⟨blkAt L k, 128 * L.r.toNat⟩ L.BB := by
+  have := blk_le hL hk
+  exact Offset.sub_base _ (by omega_arith)
+
+theorem scr_sub (hL : L.Ok) : Region.Sub ⟨L.scr, 200 * 8⟩ L.SC :=
+  Within.sub (within_base _ (by have := hL.slen17; omega_arith))
+
+/-! ## Step 1 -/
+
+section
+variable {pbk : Prog isa} (hv : Verified AArch64.target pbk (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.sha256I AArch64.abi 16))
+  (hd : pbk.aarch64Depth ≤ 1) (name : String)
+include hv hd
+
+omit hv hd in
+theorem pbk1_regions (hL : L.Ok) :
+    PbkRegions L L.salt L.sl L.b (BitVec.ofNat 64 (L.blen.toNat * 128)) := by
+  have hb := hL.blen_lt
+  refine ⟨⟨L.SALT, by simp, within_base _ (Nat.le_refl _)⟩, ?_, ?_, ?_, ?_, hL.ks, hL.ns, ?_, ?_⟩
+  · rw [toNat_ofNat_lt hb]; exact .inl (within_base _ (Nat.le_refl _))
+  · rw [toNat_ofNat_lt hb]; exact hL.sb
+  · exact hL.sc.sub_right (scr_sub hL)
+  · rw [toNat_ofNat_lt hb]
+    exact hL.bc.sub_right (scr_sub hL)
+  · rw [toNat_ofNat_lt hb]; exact hL.nb
+  · rw [toNat_ofNat_lt hb]; exact hL.ol1
+
+/-- The call of step 1. -/
+theorem pbk1_call_ok (hL : L.Ok) {t : State} (hc : Ctx L g vv m₀ t)
+    (ha : PbkArgs L L.salt L.sl L.b (BitVec.ofNat 64 (L.blen.toNat * 128)) t) :
+    WP isa (.call name pbk) t fun t' => Ctx L g vv m₀ t' ∧
+      Step1 L m₀ (bytesAt t'.mem L.b (L.blen.toNat * 128)) ∧
+      ∀ k < L.pp, bytesAt t'.mem (blkAt L k) (128 * L.r.toNat) = X L m₀ k := by
+  have hb := hL.blen_lt
+  refine WP.mono (pbk_call hv hd name hL hc ha (pbk1_regions hL)) fun t₂ ⟨hc₂, _, hp⟩ =>
+    ⟨hc₂, ?_, fun k hk => ?_⟩
+  · rw [toNat_ofNat_lt hb, hc.pw_bytes hL, hc.salt_bytes hL] at hp
+    exact hp
+  · rw [toNat_ofNat_lt hb, hc.pw_bytes hL, hc.salt_bytes hL] at hp
+    exact (X_of hL hp hk).symm
+
+theorem step1_ok (hL : L.Ok) {t : State} (hc : Ctx L g vv m₀ t) (he : Entry L t) :
+    WP isa (pbkCall name pbk pbk1Args) t fun t' => Ctx L g vv m₀ t' ∧
+      Step1 L m₀ (bytesAt t'.mem L.b (L.blen.toNat * 128)) ∧
+      ∀ k < L.pp, bytesAt t'.mem (blkAt L k) (128 * L.r.toNat) = X L m₀ k :=
+  WP.seq (WP.mono (pbk1Args_ok hL hc he) fun _ ⟨hc₁, _, ha₁⟩ => pbk1_call_ok hv hd name hL hc₁ ha₁)
+
+end
+
+/-! ## The loop -/
+
+/-- After `i` iterations of the loop: the next block is `i`, and blocks
+`0, …, i - 1` are scryptROMix of those of step 1. -/
+structure InvB (L : Lay) (m₀ : Mem) (i : Nat) (t : State) : Prop where
+  cur : t.mem.readW (L.B + BitVec.ofNat 64 16) 64 = blkAt L i
+  blks : ∀ k < L.pp, bytesAt t.mem (blkAt L k) (128 * L.r.toNat) =
+    if k < i then Spec.Scrypt.roMix L.r.toNat L.NN (X L m₀ k) else X L m₀ k
+
+abbrev Inv (L : Lay) (g : Reg → BitVec 64) (vv : VReg → BitVec 128) (m₀ : Mem) (i : Nat) (t : State) :
+    Prop :=
+  Ctx L g vv m₀ t ∧ InvB L m₀ i t
+
+/-- In iteration `i`, after the call of ROMix: blocks `0, …, i` are scryptROMix
+of those of step 1. -/
+structure Mid (L : Lay) (m₀ : Mem) (i : Nat) (t : State) : Prop where
+  cur : t.mem.readW (L.B + BitVec.ofNat 64 16) 64 = blkAt L i
+  blks : ∀ k < L.pp, bytesAt t.mem (blkAt L k) (128 * L.r.toNat) =
+    if k < i + 1 then Spec.Scrypt.roMix L.r.toNat L.NN (X L m₀ k) else X L m₀ k
+
+theorem blk_le' (hL : L.Ok) {i : Nat} (hi : i < L.pp) :
+    128 * L.r.toNat * i + 128 * L.r.toNat ≤ L.blen.toNat * 128 := by
+  have := blk_le hL hi; rw [Nat.mul_comm L.r.toNat 128] at this; exact this
+
+theorem blk0 (L : Lay) : blkAt L 0 = L.b := by
+  simp only [blkAt, Nat.mul_zero]; exact BitVec.add_zero _
+
+/-- A block of `b` misses the frame's first word. -/
+theorem blk_fr (hL : L.Ok) {k : Nat} (hk : k < L.pp) :
+    Region.Disjoint ⟨blkAt L k, 128 * L.r.toNat⟩ ⟨L.B + BitVec.ofNat 64 16, 8⟩ :=
+  (hL.kb.symm.sub_left (blk_sub hL hk)).sub_right (Offset.sub_base _ (by omega_arith))
+
+theorem start_ok (hL : L.Ok) {t : State} (hc : Ctx L g vv m₀ t)
+    (hx : ∀ k < L.pp, bytesAt t.mem (blkAt L k) (128 * L.r.toNat) = X L m₀ k) :
+    WP isa (.block cur0) t (Inv L g vv m₀ 0) :=
+  WP.mono (cur0_ok hL hc) fun t' ⟨hc', hb, hf⟩ => ⟨hc', hb.trans (blk0 L).symm, fun k hk => by
+    simp only [Nat.not_lt_zero, ite_false]
+    rw [← hx k hk]
+    exact Memory.frame_bytesAt hf (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact blk_fr hL hk)
+      (by have := hL.blen_lt; have := blk_le hL hk; omega_arith)⟩
+
+theorem next_eq (L : Lay) (i : Nat) :
+    blkAt L i + BitVec.ofNat 64 (L.r.toNat * 128) = blkAt L (i + 1) := by
+  simp only [blkAt]
+  rw [add_add, Nat.mul_succ (128 * L.r.toNat) i, Nat.mul_comm L.r.toNat 128]
+
+/-- The bytes of `b` left after block `i`, as the loop's condition reads them. -/
+theorem left_eq (hL : L.Ok) {i : Nat} (hi : i < L.pp) :
+    (L.b + BitVec.ofNat 64 (L.blen.toNat * 128) - blkAt L (i + 1) != 0) = decide (i + 1 ≠ L.pp) := by
+  have h₁ := blk_le hL hi
+  have hb := hL.blen_lt
+  have hr := hL.rpos
+  simp only [blkAt]
+  rw [Offset.add_sub_add_left, ← hL.len_b]
+  have e₁ : 128 * L.r.toNat * (i + 1) < 2 ^ 64 := by
+    rw [Nat.mul_succ]; rw [← hL.len_b] at h₁ hb; omega_arith
+  have e₂ : 128 * L.r.toNat * L.pp < 2 ^ 64 := by rw [hL.len_b]; exact hb
+  rw [bne, Offset.ofNat_sub_ofNat_beq e₂ e₁, decide_not]
+  refine congrArg (!·) (decide_eq_decide.mpr ⟨fun h => ?_, fun h => by rw [h]⟩)
+  exact (Nat.eq_of_mul_eq_mul_left (by omega_arith) h).symm
+
+theorem call_step (hL : L.Ok) {i : Nat} (hi : i < L.pp) {t : State} (hc : Ctx L g vv m₀ t)
+    (hb : InvB L m₀ i t) (ha : RomixArgs L (blkAt L i) t) :
+    WP isa (.call "vg_scrypt_romix" Impl.Scrypt.AArch64.roMix) t fun t' =>
+      Ctx L g vv m₀ t' ∧ Mid L m₀ i t' := by
+  have hnB := hL.nB
+  refine WP.mono (romix_call hL hc hi ha) fun t₂ ⟨hc₂, hf₂, hr₂⟩ => ⟨hc₂, ?_, fun k hk => ?_⟩
+  · rw [← hb.cur]
+    refine hf₂.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
+    simp only [romixWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
+      or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl
+    · exact hL.stk_in (by omega_arith) (blk_in hL hi)
+    · exact hL.stk_in (by omega_arith) (.inr (.inl (within_base _ (Nat.le_refl _))))
+    · exact hL.stk_in (by omega_arith) (.inr (.inr (.inl (within_base _ (by have := hL.slen; omega_arith)))))
+    · exact Offset.disjoint_base _ (by omega_arith) (by omega_arith)
+  · by_cases hki : k = i
+    · subst hki
+      rw [hr₂, hb.blks k hk]
+      simp only [Nat.lt_irrefl, ite_false, Nat.lt_succ_self, ite_true]
+    · have e₂ : bytesAt t₂.mem (blkAt L k) (128 * L.r.toNat) = bytesAt t.mem (blkAt L k) (128 * L.r.toNat) :=
+        Memory.frame_bytesAt hf₂ (fun r hr => by
+          simp only [romixWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
+            or_false] at hr
+          rcases hr with rfl | rfl | rfl | rfl
+          · exact blk_disj hL hk hi hki
+          · exact hL.bv.sub_left (blk_sub hL hk)
+          · exact (hL.bc.sub_left (blk_sub hL hk)).sub_right
+              (Within.sub (within_base _ (by have := hL.slen; omega_arith)))
+          · exact (hL.kb.symm.sub_left (blk_sub hL hk)).sub_right (Region.sub_prefix (by omega_arith)))
+          (by have := hL.blen_lt; have := blk_le hL hk; omega_arith)
+      rw [e₂, hb.blks k hk]
+      by_cases hlt : k < i
+      · have : k < i + 1 := by omega_arith
+        simp only [hlt, this, ite_true]
+      · have : ¬ k < i + 1 := by omega_arith
+        simp only [hlt, this, ite_false]
+
+theorem next_step (hL : L.Ok) {i : Nat} (hi : i < L.pp) {t : State} (hc : Ctx L g vv m₀ t)
+    (hm : Mid L m₀ i t) :
+    WP isa (.block nextBlock) t fun t' => Ctx L g vv m₀ t' ∧ InvB L m₀ (i + 1) t' ∧
+      (t'.gpr .x11 != 0) = decide (i + 1 ≠ L.pp) :=
+  WP.mono (nextBlock_ok hL hc hm.cur) fun t₃ ⟨hc₃, hf₃, hb₃, hx₃⟩ =>
+    ⟨hc₃, ⟨by rw [hb₃, next_eq], fun k hk => by
+      rw [← hm.blks k hk]
+      exact Memory.frame_bytesAt hf₃ (fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; exact blk_fr hL hk)
+        (by have := hL.blen_lt; have := blk_le hL hk; omega_arith)⟩,
+      by rw [hx₃, next_eq, left_eq hL hi]⟩
+
+theorem body_ok (hL : L.Ok) {i : Nat} (hi : i < L.pp) {t : State} (h : Inv L g vv m₀ i t) :
+    WP isa (.seq (.block romixArgs) (.seq (.call "vg_scrypt_romix" Impl.Scrypt.AArch64.roMix)
+      (.block nextBlock))) t fun t' =>
+        Inv L g vv m₀ (i + 1) t' ∧ (t'.gpr .x11 != 0) = decide (i + 1 ≠ L.pp) :=
+  WP.seq (WP.mono (romixArgs_ok hL h.1 h.2.cur) fun t₁ ⟨hc₁, hm₁, ha₁⟩ =>
+    WP.seq (WP.mono (call_step hL hi hc₁ ⟨by rw [hm₁]; exact h.2.cur, by rw [hm₁]; exact h.2.blks⟩ ha₁)
+      fun t₂ ⟨hc₂, hm₂⟩ => WP.mono (next_step hL hi hc₂ hm₂) fun _ ⟨hc₃, hb₃, hz₃⟩ => ⟨⟨hc₃, hb₃⟩, hz₃⟩))
+
+theorem loop_ok (hL : L.Ok) {t : State} (h : Inv L g vv m₀ 0 t) :
+    WP isa romixLoop t (Inv L g vv m₀ L.pp) :=
+  RoMix.count_loop hL.pp_pos (Inv L g vv m₀) (fun _ hi _ h => body_ok hL hi h) h
+
+/-! ## Step 3 -/
+
+section
+variable {pbk : Prog isa} (hv : Verified AArch64.target pbk (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.sha256I AArch64.abi 16))
+  (hd : pbk.aarch64Depth ≤ 1) (name : String)
+include hv hd
+
+omit hv hd in
+/-- The blocks after the loop, as one string. -/
+theorem final_bytes' (hL : L.Ok) {t : State} (h : Inv L g vv m₀ L.pp t) :
+    bytesAt t.mem L.b (L.blen.toNat * 128) =
+      (List.range L.pp).flatMap fun k => Spec.Scrypt.roMix L.r.toNat L.NN (X L m₀ k) := by
+  rw [← hL.len_b, Whole.bytesAt_chunks]
+  exact Proof.Scrypt.flatMap_congr fun k hk => by
+    have hk := List.mem_range.mp hk
+    rw [h.2.blks k hk]; simp only [hk, ite_true]
+
+omit hv hd in
+theorem pbk2_regions (hL : L.Ok) :
+    PbkRegions L L.b (BitVec.ofNat 64 (L.blen.toNat * 128)) L.out L.ol := by
+  have hb := hL.blen_lt
+  refine ⟨⟨L.BB, by simp, ?_⟩, .inr (.inr (.inr (within_base _ (Nat.le_refl _)))), ?_,
+    ?_, hL.co.symm.sub_right (scr_sub hL), ?_, ?_, hL.no, hL.olb⟩
+  · rw [toNat_ofNat_lt hb]; exact within_base _ (Nat.le_refl _)
+  · rw [toNat_ofNat_lt hb]; exact hL.bo
+  · rw [toNat_ofNat_lt hb]; exact hL.bc.sub_right (scr_sub hL)
+  · rw [toNat_ofNat_lt hb]; exact hL.kb
+  · rw [toNat_ofNat_lt hb]; exact hL.nb
+
+theorem step3_ok (hL : L.Ok) {t : State} (h : Inv L g vv m₀ L.pp t) :
+    WP isa (pbkCall name pbk pbk2Args) t fun t' => Ctx L g vv m₀ t' ∧
+      Spec.Pbkdf2.pbkdf2HmacSha256 (bytesAt m₀ L.pw L.pwl.toNat)
+        ((List.range L.pp).flatMap fun k => Spec.Scrypt.roMix L.r.toNat L.NN (X L m₀ k)) 1 L.ol.toNat =
+        some (bytesAt t'.mem L.out L.ol.toNat) := by
+  have hb := hL.blen_lt
+  refine WP.seq (WP.mono (pbk2Args_ok hL h.1) fun t₁ ⟨hc₁, hm₁, ha₁⟩ => ?_)
+  refine WP.mono (pbk_call hv hd name hL hc₁ ha₁ (pbk2_regions hL)) fun t₂ ⟨hc₂, _, hp⟩ => ⟨hc₂, ?_⟩
+  rw [toNat_ofNat_lt hb, hc₁.pw_bytes hL, hm₁, final_bytes' hL h] at hp
+  exact hp
+
+/-- The inner frame's body, once our arguments are saved. -/
+theorem rest_ok (hL : L.Ok) {t : State} (hc : Ctx L g vv m₀ t) (he : Entry L t) :
+    WP isa (.seq (pbkCall name pbk pbk1Args) (.seq (.block cur0) (.seq romixLoop (pbkCall name pbk pbk2Args))))
+      t fun t' => Ctx L g vv m₀ t' ∧
+      Spec.Scrypt.scrypt (bytesAt m₀ L.pw L.pwl.toNat) (bytesAt m₀ L.salt L.sl.toNat) L.NN L.r.toNat L.pp
+        L.ol.toNat = some (bytesAt t'.mem L.out L.ol.toNat) := by
+  refine WP.seq (WP.mono (step1_ok hv hd name hL hc he) fun t₁ ⟨hc₁, h1, hx⟩ => ?_)
+  refine WP.seq (WP.mono (start_ok hL hc₁ hx) fun t₂ h₂ => ?_)
+  refine WP.seq (WP.mono (loop_ok hL h₂) fun t₃ h₃ => ?_)
+  refine WP.mono (step3_ok hv hd name hL h₃) fun t₄ ⟨hc₄, hp⟩ => ⟨hc₄, ?_⟩
+  have e : L.pp * 128 * L.r.toNat = L.blen.toNat * 128 := by
+    rw [← hL.len_b]; simp only [Nat.mul_comm, Nat.mul_left_comm]
+  refine Whole.scrypt_eq hL.valid (B := bytesAt t₁.mem L.b (L.blen.toNat * 128)) (by rw [e]; exact h1) ?_
+  refine Eq.trans (congrArg (fun x => Spec.Pbkdf2.pbkdf2HmacSha256 _ x 1 _) ?_) hp
+  exact Proof.Scrypt.flatMap_congr fun k hk => by
+    have hk := List.mem_range.mp hk
+    rw [X_of hL h1 hk, Whole.chunk_bytesAt _ _ (blk_le' hL hk)]
+
+end
+
+/-! ## The whole function -/
+
+section
+variable {pbk : Prog isa} (hv : Verified AArch64.target pbk (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.sha256I AArch64.abi 16))
+  (hd : pbk.aarch64Depth ≤ 1) (name : String)
+include hv hd
+
+/-- `vg_scrypt` meets `scryptAArch64` and the calling convention. -/
+theorem scrypt_ok {s : State} (h : Proof.Scrypt.scryptAArch64.pre s) :
+    WP isa (scrypt name pbk) s fun s' => abiPreserved s s' ∧ Proof.Scrypt.scryptAArch64.post s s' := by
+  have hL := lay_ok h
+  have h96 := h.1
+  refine WP.frameAlloc (by omega_arith) (by decide) ?_ ?_
+  · show 64 ≤ (s.sp - 16).toNat
+    rw [BitVec.toNat_sub_of_le (by show 16 ≤ s.sp.toNat; omega_arith)]
+    show 64 ≤ s.sp.toNat - 16
+    omega_arith
+  · show WP isa (scryptBody name pbk) (entered s) _
+    refine WP.seq (WP.mono (entry_ok h) fun t ⟨hc, he⟩ => ?_)
+    refine WP.mono (rest_ok hv hd name hL hc he) fun u ⟨hu, ho⟩ mm uu fl => ?_
+    have lr : u.mem.read (u.sp + BitVec.ofNat 64 64) 8 = s.gpr .x30 := by
+      rw [hu.sp, add_add, read8]; exact hu.kept.lr
+    refine ⟨⟨fun r hr => ?_, ?_, fun r hr => ?_⟩, ?_⟩
+    · show ((freed 64 u).write .x .x30 (u.mem.read (u.sp + BitVec.ofNat 64 64) 8)).gpr r = _
+      rw [lr, RegUpd.gpr_write]
+      by_cases h30 : r = .x30
+      · subst r; simp only [ite_true, BitVec.setWidth_eq]
+      · simp only [h30, ite_false]
+        exact hu.cs r hr h30
+    · show u.sp + BitVec.ofNat 64 64 + BitVec.ofNat 64 16 = s.sp
+      rw [hu.sp, add_add, add_add]
+      exact lay_top s
+    · show (((freed 64 u).write .x .x30 (u.mem.read (u.sp + BitVec.ofNat 64 64) 8)).v r).extractLsb' 0 64 = _
+      rw [RegUpd.v_write]
+      exact hu.vs r hr
+    · -- The output lies apart from the stack, whose frames' bytes are lost.
+      have hS : Region.Sub (below s.sp (64 + 16)) (lay s).STK :=
+        Offset.sub_below s.sp (a := 80) (n := 80) (b := 96) (m := 96) (by decide) (by decide)
+      have hb : Spec.Scrypt.bytesAt mm (stackArg s 3) (stackArg s 4).toNat =
+          Spec.Scrypt.bytesAt u.mem (stackArg s 3) (stackArg s 4).toNat :=
+        List.map_congr_left fun i hi => lost_byte (R := (lay s).OUT) fl (hL.ko.symm.sub_right hS)
+          (List.mem_range.mp hi)
+      show _ = some (Spec.Scrypt.bytesAt mm (stackArg s 3) (stackArg s 4).toNat)
+      rw [hb]; exact ho
+
+end
+
+end VG.Proof.Scrypt.AArch64.Whole
+
+end
+
+end
 
 @[expose] public section
 

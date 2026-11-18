@@ -5,12 +5,9 @@ public import VerifiedGarbage.Proof.Argon2.SegmentStart
 import VerifiedGarbage.Proof.Argon2.Slices
 public import VerifiedGarbage.Proof.Argon2.Iterations
 public import VerifiedGarbage.Proof.Argon2.Arm.CompressLit
-public import VerifiedGarbage.Proof.Argon2.Arm.Derive.FillState
+public import VerifiedGarbage.Proof.Argon2.Arm.Derive.FillCall
 public import VerifiedGarbage.Proof.Argon2.Lanes
-import VerifiedGarbage.Proof.Argon2.Arm.Derive.FillRef
-import VerifiedGarbage.Proof.Argon2.Arm.Derive.MemoryInit
 import VerifiedGarbage.Proof.Argon2.Arm.Derive.Initial
-import VerifiedGarbage.Proof.Argon2.Arm.Derive.Locals
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Argon2.Contract
 

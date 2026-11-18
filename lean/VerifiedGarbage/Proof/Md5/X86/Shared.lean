@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Md5.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Md5.X86.Compress
-import VerifiedGarbage.Proof.Md5.X86.Stream.Init
 public import VerifiedGarbage.Proof.Md5.X86.Stream.Md
 public import VerifiedGarbage.Spec.Md5.Contract
 public import VerifiedGarbage.Proof.Md5.X86.Lit

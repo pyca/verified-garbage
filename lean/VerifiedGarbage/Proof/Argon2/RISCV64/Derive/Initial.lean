@@ -1,14 +1,11 @@
 module
 
-import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Scratch
+public import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Scratch
 public import VerifiedGarbage.Proof.Argon2.Initial
-import VerifiedGarbage.Proof.Argon2.RISCV64.HPrime.Calls
 import VerifiedGarbage.Proof.Argon2.RISCV64.HPrime.Absorb
 import VerifiedGarbage.Proof.Blake2.Stream
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Covers
-public import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Locals
-public import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Parameters
 public import VerifiedGarbage.Proof.Argon2.RISCV64.HPrime.Frame
 
 /-!

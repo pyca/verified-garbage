@@ -1,7 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Md
-import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Digest
+public import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Digest
 public import VerifiedGarbage.Proof.MdStream.AArch64.OneShot
 public import VerifiedGarbage.Proof.Framework.AArch64.Inline
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved

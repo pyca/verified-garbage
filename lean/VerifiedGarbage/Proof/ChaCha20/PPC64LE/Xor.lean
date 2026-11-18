@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Block
+public import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Block
 meta import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Block
 public import VerifiedGarbage.Proof.ChaCha20.Keystream
 meta import VerifiedGarbage.Proof.ChaCha20.Keystream
@@ -15,7 +15,6 @@ meta import VerifiedGarbage.Spec.ChaCha20.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import all Init.Data.Nat.Bitwise.Basic
 public import VerifiedGarbage.Impl.ChaCha20.PPC64LE
-public import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Contract
 public import VerifiedGarbage.Proof.ChaCha20.Spec
 public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Framework.Mem

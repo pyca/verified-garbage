@@ -1,13 +1,10 @@
 module
 
-import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Scratch
+public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Scratch
 public import VerifiedGarbage.Proof.Argon2.Initial
-import VerifiedGarbage.Proof.Argon2.PPC64LE.HPrime.Calls
 import VerifiedGarbage.Proof.Argon2.PPC64LE.HPrime.Absorb
 import VerifiedGarbage.Proof.Blake2.Stream
 import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Locals
-public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Parameters
 public import VerifiedGarbage.Proof.Argon2.PPC64LE.HPrime.Frame
 
 /-!

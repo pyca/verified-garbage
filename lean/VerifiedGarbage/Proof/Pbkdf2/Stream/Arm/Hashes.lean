@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Pbkdf2.Stream.Arm.Hash
 public import VerifiedGarbage.Proof.Hmac.Generic.Common
 public import VerifiedGarbage.Proof.Sha1.Arm.Stream.Init
-public import VerifiedGarbage.Proof.Md5.Arm.Stream.Init
 public import VerifiedGarbage.Proof.Md5.Arm.Stream.Md
 public import VerifiedGarbage.Proof.Sha1.Arm.Stream.Md
 public import VerifiedGarbage.Proof.Sha512.Arm.Compress
@@ -11,11 +10,9 @@ public import VerifiedGarbage.Impl.Sha512.Arm.Stream
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Sha512.Arm.Lit
-import VerifiedGarbage.Proof.Sha512.Arm.Shared
+public import VerifiedGarbage.Proof.Sha512.Arm.Shared
 public import VerifiedGarbage.Proof.Sha512.Arm.Stream.Finalize
 public import VerifiedGarbage.Proof.Sha512.Arm.Stream.Init
-public import VerifiedGarbage.Proof.Sha512.Arm.Stream.Update
-public import VerifiedGarbage.Proof.Sha512.Arm.Shared
 
 /-!
 # HMAC over any streaming hash function on 32-bit ARM: the hash functions

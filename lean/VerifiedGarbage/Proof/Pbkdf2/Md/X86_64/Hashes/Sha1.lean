@@ -3,15 +3,12 @@ module
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
 public import VerifiedGarbage.Proof.Pbkdf2.Contract
 public import VerifiedGarbage.Proof.Hmac.Contract
-public import VerifiedGarbage.Proof.Sha1.X86_64.Variant
 public import VerifiedGarbage.Proof.Sha1.X86_64.Stream.Init
 public import VerifiedGarbage.Spec.Sha1.Contract
 import VerifiedGarbage.Proof.Hmac.Generic.Implies
 import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
-meta import VerifiedGarbage.Proof.Sha1.X86_64.Variant
 meta import VerifiedGarbage.Proof.Sha1.X86_64.Shared
-meta import VerifiedGarbage.Proof.Sha1.X86_64.OneShot
 meta import VerifiedGarbage.Proof.Sha1.X86_64.Stream.Init
 meta import VerifiedGarbage.Spec.Sha1.Contract
 meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
@@ -19,13 +16,452 @@ meta import VerifiedGarbage.Proof.Hmac.Generic.Implies
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
 public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 public import VerifiedGarbage.Proof.Sha1.X86_64.Shared
-public import VerifiedGarbage.Proof.Sha1.X86_64.OneShot
+public import VerifiedGarbage.Proof.Sha1.X86_64.Stream.Md
+public import VerifiedGarbage.Proof.Framework.X86_64.Depth
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Sha1.X86_64.Stream.Md
+meta import VerifiedGarbage.Proof.Framework.X86_64.Depth
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.MdStream.X86_64.OneShotCT
+public import VerifiedGarbage.Proof.Sha1.Md
+public import VerifiedGarbage.Impl.Sha1.X86_64.Stream
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.MdStream.X86_64.OneShotCT
+meta import VerifiedGarbage.Proof.Sha1.Md
+meta import VerifiedGarbage.Impl.Sha1.X86_64.Stream
+meta import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.MdStream.DigestScratch
+meta import VerifiedGarbage.Proof.MdStream.DigestScratch
+
+/-! ### `Sha1.X86_64.OneShot`, which only this module used -/
+
+section
+
+/-!
+# The one-shot SHA-1 digest on x86-64
+
+`vg_sha1_digest` is the generic one-shot digest
+(`Impl/MdStream/X86_64/OneShot.lean`) for SHA-1's streaming parameters, its
+initial hash value's code `init` and an implementation `f` of the compression
+function, as SHA-256's is (`Proof/Sha256/X86_64/OneShot.lean`). Its body is
+verified by the generic proofs (`OneShot.verified`) against `OneShot.oneK`,
+which implies the contract of `digest` with a scratch buffer as its last
+argument (`digestScratchContract`); in a frame of its own, it is
+`Spec.Sha1.digestContract`.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Sha1.X86_64.OneShot
+
+open VG.X86_64 VG.Proof.MdStream.X86_64
+open VG.Impl.Sha1.X86_64.Stream (Callee params init)
+open Impl.MdStream.X86_64 (compressN compressAt compressWith)
+
+/-- The scratch buffer's 8-byte words, and the frame holding it. -/
+abbrev words : Nat := 32
+abbrev frame : Nat := 280
+
+theorem scratchBytes_eq : Impl.MdStream.X86_64.OneShot.scratchBytes params = 8 * words := by decide
+
+theorem frameBytes_eq : Impl.MdStream.X86_64.OneShot.frameBytes params = frame := by decide
+
+/-- The one-shot digest's body, given its scratch buffer. -/
+abbrev body (f : Callee) : Prog isa := Impl.MdStream.X86_64.OneShot.body params init f.name f.code
+
+/-- The one-shot digest. -/
+abbrev digest (f : Callee) : Prog isa := Impl.MdStream.X86_64.OneShot.digest params init f.name f.code
+
+theorem fits : OneShot.Fits params := ⟨by rw [scratchBytes_eq]; decide⟩
+
+/-! ## The initial hash value's code -/
+
+theorem init_mxcsr : init.allInstrs (fun i => !loadsMxcsr i) = true := by
+  rw [Code.allInstrs_eq]
+  simp only [init, instrs, List.all_eq_true, List.mem_flatMap, List.mem_range, List.mem_cons,
+    List.not_mem_nil, or_false]
+  rintro _ ⟨_, _, rfl | rfl⟩ <;> rfl
+
+theorem init_sp : init.all (fun i => !isa.writesSp i) = true := by
+  simp only [init, Code.all, List.all_eq_true, List.mem_flatMap, List.mem_range, List.mem_cons,
+    List.not_mem_nil, or_false]
+  rintro _ ⟨_, _, rfl | rfl⟩ <;> rfl
+
+theorem init_writes : ∀ r, r ≠ .rax → ∀ i ∈ instrs init, Taint.clobbers i r = false := by
+  intro r hr i hi
+  simp only [init, instrs, List.mem_flatMap, List.mem_range, List.mem_cons, List.not_mem_nil, or_false] at hi
+  obtain ⟨_, _, rfl | rfl⟩ := hi <;> simp [Taint.clobbers, Taint.dstOf, Ne.symm hr]
+
+theorem init_hi :
+    ∀ s, (OneShot.initK (P := params) md Spec.Sha1.H0).pre s → ∃ t s', Exec isa init s t s' ∧ abiPreserved s s' ∧
+      (OneShot.initK (P := params) md Spec.Sha1.H0).post s s' := fun s hs => by
+  obtain ⟨t, s', he, h⟩ := Stream.init_correct hs
+  exact ⟨t, s', he, abiPreserved_of_exec init_mxcsr he h.1, h.2⟩
+
+theorem init_check : ∃ hc, (taint.check (Taint.ofRegs [.rdi]) init hc).isSome = true :=
+  ⟨_, by taint_decide⟩
+
+/-! ## The precondition -/
+
+/-- A state satisfying the precondition. -/
+def sat : State where
+  gpr r := match r with
+    | .rdi => 0x1000 | .rdx => 0x2000 | .rcx => 0x3000 | .rsp => 0x8000 | _ => 0
+  cf := none
+  zf := none
+  sf := none
+  of := none
+  mem _ := 0
+  rd := [⟨0x1000, 0⟩]
+  wr := [⟨0x2000, 20⟩, ⟨0x3000, Impl.MdStream.X86_64.OneShot.scratchBytes params⟩]
+
+theorem sat_pre : OneShot.Pre params 20 sat := by
+  have e := scratchBytes_eq
+  have d : ∀ {a b : Addr} {n m : Nat}, a.toNat + n ≤ b.toNat → b.toNat + m ≤ 2 ^ 64 →
+      Region.Disjoint ⟨a, n⟩ ⟨b, m⟩ := fun h h' => Offset.disjoint_of_le h h'
+  refine ⟨rfl, rfl, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  all_goals simp only [OneShot.dR, OneShot.oR, OneShot.wR, OneShot.retR, OneShot.stkR, OneShot.dp, OneShot.len,
+    OneShot.out, OneShot.sb, sat, e, VG.X86_64.below]
+  · exact d (by decide) (by simp)
+  · exact d (by decide) (by decide)
+  · exact d (by simp) (by decide)
+  · exact (d (by simp) (by decide)).symm
+  · exact (d (by decide) (by decide)).symm
+  · exact (d (by decide) (by decide)).symm
+  · exact (d (by simp) (by decide)).symm
+  · exact (d (by decide) (by decide)).symm
+
+/-! ## The contracts -/
+
+/-- `vg_sha1_digest`'s signature with its scratch buffer as its last
+argument. -/
+def digestScratchSig : Sig where
+  params := [("data", .slice false .u8 "len"), ("out", .array true .u8 20), ("scratch", .array true .u64 words)]
+
+/-- `Spec.Sha1.digestPost`, whatever `scratch` is. -/
+def digestScratchContract (A : Abi isa) (stack : Nat) : Contract isa :=
+  digestScratchSig.contract A (post := fun data len out _scratch =>
+    Spec.Sha1.digestPost A.ptrBits data len out) (stack := stack)
+
+/-- SHA-1's digest is all of the final hash value. -/
+theorem hash_take (m : List Byte) : (md.hash Spec.Sha1.H0 m).take 20 = Spec.Sha1.hash m := by
+  rw [Proof.Sha1.hash_eq]
+  exact List.take_of_length_le (Nat.le_of_eq (Proof.Sha1.md.digest_length _))
+
+theorem implies : (OneShot.oneK (P := params) md Spec.Sha1.H0 20).Implies (digestScratchContract X86_64.abi 8) := by
+  refine
+    { pre := fun s h => ?_
+      post := fun s s' _ h => ?_
+      pub := by implies_pub [digestScratchContract, digestScratchSig, Spec.Sha1.digestPost,
+        OneShot.oneK, X86_64.abi, X86_64.argRegs]
+      sat := ⟨sat, ?_⟩ }
+  · sig_pre [digestScratchContract, digestScratchSig, Spec.Sha1.digestPost, X86_64.abi, X86_64.argRegs] at h
+    obtain ⟨-, hrd, hwr, hdo, hdw, how, -, hro, hrw, hsd, hso, hsw, -⟩ := h
+    have e : Impl.MdStream.X86_64.OneShot.scratchBytes params = words * 8 := by
+      rw [scratchBytes_eq, Nat.mul_comm]
+    refine ⟨hrd, ?_, hdo, ?_, ?_, hro, ?_, hsd, hso, ?_⟩ <;> simp only [OneShot.wR, OneShot.sb, e]
+    exacts [hwr, hdw, how, hrw, hsw]
+  · sig_post [digestScratchContract, digestScratchSig, Spec.Sha1.digestPost, X86_64.abi, X86_64.argRegs]
+    rw [← hash_take]
+    exact h trivial
+  · have hp := sat_pre
+    sig_pre [digestScratchContract, digestScratchSig, Spec.Sha1.digestPost, X86_64.abi, X86_64.argRegs]
+    have e : Impl.MdStream.X86_64.OneShot.scratchBytes params = words * 8 := by
+      rw [scratchBytes_eq, Nat.mul_comm]
+    have d₁ := hp.d_o; have d₂ := hp.d_w; have d₃ := hp.o_w; have d₄ := hp.ret_o; have d₅ := hp.ret_w
+    have d₆ := hp.stk_d; have d₇ := hp.stk_o; have d₈ := hp.stk_w
+    simp only [OneShot.dR, OneShot.oR, OneShot.wR, OneShot.retR, OneShot.stkR, OneShot.dp, OneShot.len,
+      OneShot.out, OneShot.sb, sat, e, VG.X86_64.below] at d₁ d₂ d₃ d₄ d₅ d₆ d₇ d₈
+    refine ⟨by decide, rfl, by rw [e], d₁, d₂, d₃, (Offset.disjoint_of_le (by decide) (by decide)).symm,
+      d₄, d₅, d₆, d₇, d₈, by decide, by simp, by decide⟩
+
+/-! ## The code -/
+
+theorem taints : OneShot.Taints params :=
+  ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
+    ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+
+theorem code_mxcsr (f : Callee) (hm : f.code.allInstrs (fun i => !loadsMxcsr i) = true) :
+    (Impl.MdStream.X86_64.OneShot.body params (.block []) f.name f.code).allInstrs (fun i => !loadsMxcsr i) = true := by
+  simp only [Impl.MdStream.X86_64.OneShot.body, Impl.MdStream.X86_64.OneShot.whole,
+    Impl.MdStream.X86_64.OneShot.tail, Impl.MdStream.X86_64.OneShot.copyTail, compressN, compressAt,
+    compressWith, Code.allInstrs, hm, Bool.true_and, Bool.and_true]
+  decide +kernel
+
+theorem code_sp (f : Callee) (h : f.code.all (fun i => !isa.writesSp i) = true) :
+    (Impl.MdStream.X86_64.OneShot.body params (.block []) f.name f.code).all (fun i => !isa.writesSp i) = true := by
+  simp only [Impl.MdStream.X86_64.OneShot.body, Impl.MdStream.X86_64.OneShot.whole,
+    Impl.MdStream.X86_64.OneShot.tail, Impl.MdStream.X86_64.OneShot.copyTail, compressN, compressAt,
+    compressWith, Code.all, h, Bool.true_and]
+  decide +kernel
+
+theorem code_depth (f : Callee) (h : f.code.x86_64Depth = 0) :
+    (Impl.MdStream.X86_64.OneShot.body params (.block []) f.name f.code).x86_64Depth ≤ 8 := by
+  simp only [Impl.MdStream.X86_64.OneShot.body, Impl.MdStream.X86_64.OneShot.whole,
+    Impl.MdStream.X86_64.OneShot.tail, Impl.MdStream.X86_64.OneShot.copyTail, compressN, compressAt,
+    compressWith, Code.x86_64Depth, h]
+  decide +kernel
+
+/-- The body, against its contract with the scratch buffer. -/
+theorem scratch_verified {f : Callee} (hf : CalleeOk (P := params) md f.code)
+    (hm : f.code.allInstrs (fun i => !loadsMxcsr i) = true) :
+    Verified X86_64.target (body f) (digestScratchContract X86_64.abi 8) :=
+  (OneShot.verified fits Stream.dims Stream.shape.toD taints init_hi init_writes rfl init_check
+    (hf.withOut _) (by rw [OneShot.body_allInstrs, code_mxcsr f hm, init_mxcsr]; rfl)
+    ⟨_, sat_pre⟩).of_implies implies
+
+/-- The one-shot digest, with its scratch buffer in a frame of its own. -/
+theorem verified {f : Callee} (hf : CalleeOk (P := params) md f.code)
+    (hm : f.code.allInstrs (fun i => !loadsMxcsr i) = true)
+    (hs : f.code.all (fun i => !isa.writesSp i) = true) (hd : f.code.x86_64Depth = 0) :
+    Verified X86_64.target (digest f) (Spec.Sha1.digestContract X86_64.abi (8 + frame)) := by
+  have h := scratch_verified hf hm
+  have hsp : (body f).all (fun i => !isa.writesSp i) = true := by
+    rw [OneShot.body_all, code_sp f hs, init_sp]; rfl
+  have hdp : (body f).x86_64Depth ≤ 8 := by
+    rw [OneShot.body_depth _ (rfl : init.x86_64Depth = 0)]; exact code_depth f hd
+  show Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratch
+    (Impl.MdStream.X86_64.OneShot.frameBytes params) .rcx (body f)) _
+  rw [frameBytes_eq]
+  exact X86_64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := words) (stack := 8) (bytes := frame)
+    h (by decide) (by decide) (by decide) hsp hdp
+    (fun vs m m₁ m₂ r hl hb h => Proof.MdStream.Digest.digestPostOut_local _ _ _ vs m m₁ m₂ r hl hb h)
+    (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
+
+theorem spSafe {f : Callee} (hs : f.code.all (fun i => !isa.writesSp i) = true) :
+    (digest f).all (fun i => !isa.writesSp i) = true :=
+  X86_64.withStackScratch_spSafe (by decide) (by rw [OneShot.body_all, code_sp f hs, init_sp]; rfl)
+
+/-! ## With no working space for the compression function
+
+The one-shot digest made with none (`Stream.params0`), for an
+implementation that uses none (`vg_sha1_compress_shani`): its buffer and
+frame shrink with it. -/
+
+open VG.Proof.Sha1.X86_64.Stream (params0)
+
+abbrev words0 : Nat := 18
+abbrev frame0 : Nat := 168
+
+theorem scratchBytes0_eq : Impl.MdStream.X86_64.OneShot.scratchBytes params0 = 8 * words0 := by decide
+
+theorem frameBytes0_eq : Impl.MdStream.X86_64.OneShot.frameBytes params0 = frame0 := by decide
+
+abbrev body0 (f : Callee) : Prog isa := Impl.MdStream.X86_64.OneShot.body params0 init f.name f.code
+
+abbrev digest0 (f : Callee) : Prog isa := Impl.MdStream.X86_64.OneShot.digest params0 init f.name f.code
+
+theorem fits0 : OneShot.Fits params0 := ⟨by rw [scratchBytes0_eq]; decide⟩
+
+theorem init_hi0 :
+    ∀ s, (OneShot.initK (P := params0) md Spec.Sha1.H0).pre s → ∃ t s', Exec isa init s t s' ∧ abiPreserved s s' ∧
+      (OneShot.initK (P := params0) md Spec.Sha1.H0).post s s' := fun s hs => by
+  obtain ⟨t, s', he, h⟩ := Stream.init_correct hs
+  exact ⟨t, s', he, abiPreserved_of_exec init_mxcsr he h.1, h.2⟩
+
+def sat0 : State where
+  gpr r := match r with
+    | .rdi => 0x1000 | .rdx => 0x2000 | .rcx => 0x3000 | .rsp => 0x8000 | _ => 0
+  cf := none
+  zf := none
+  sf := none
+  of := none
+  mem _ := 0
+  rd := [⟨0x1000, 0⟩]
+  wr := [⟨0x2000, 20⟩, ⟨0x3000, Impl.MdStream.X86_64.OneShot.scratchBytes params0⟩]
+
+theorem sat_pre0 : OneShot.Pre params0 20 sat0 := by
+  have e := scratchBytes0_eq
+  have d : ∀ {a b : Addr} {n m : Nat}, a.toNat + n ≤ b.toNat → b.toNat + m ≤ 2 ^ 64 →
+      Region.Disjoint ⟨a, n⟩ ⟨b, m⟩ := fun h h' => Offset.disjoint_of_le h h'
+  refine ⟨rfl, rfl, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  all_goals simp only [OneShot.dR, OneShot.oR, OneShot.wR, OneShot.retR, OneShot.stkR, OneShot.dp, OneShot.len,
+    OneShot.out, OneShot.sb, sat0, e, VG.X86_64.below]
+  · exact d (by decide) (by simp)
+  · exact d (by decide) (by decide)
+  · exact d (by simp) (by decide)
+  · exact (d (by simp) (by decide)).symm
+  · exact (d (by decide) (by decide)).symm
+  · exact (d (by decide) (by decide)).symm
+  · exact (d (by simp) (by decide)).symm
+  · exact (d (by decide) (by decide)).symm
+
+/-- `vg_sha1_digest`'s signature with its scratch buffer of `w` words as its
+last argument. -/
+def digestScratchSigW (w : Nat) : Sig where
+  params := [("data", .slice false .u8 "len"), ("out", .array true .u8 20), ("scratch", .array true .u64 w)]
+
+/-- `Spec.Sha1.digestPost`, whatever `scratch` is. -/
+def digestScratchContractW (w : Nat) (A : Abi isa) (stack : Nat) : Contract isa :=
+  (digestScratchSigW w).contract A (post := fun data len out _scratch =>
+    Spec.Sha1.digestPost A.ptrBits data len out) (stack := stack)
+
+theorem implies0 :
+    (OneShot.oneK (P := params0) md Spec.Sha1.H0 20).Implies (digestScratchContractW words0 X86_64.abi 8) := by
+  have e : Impl.MdStream.X86_64.OneShot.scratchBytes params0 = words0 * 8 := by
+    rw [scratchBytes0_eq, Nat.mul_comm]
+  refine
+    { pre := fun s h => ?_
+      post := fun s s' _ h => ?_
+      pub := by implies_pub [digestScratchContractW, digestScratchSigW, Spec.Sha1.digestPost,
+        OneShot.oneK, X86_64.abi, X86_64.argRegs]
+      sat := ⟨sat0, ?_⟩ }
+  · sig_pre [digestScratchContractW, digestScratchSigW, Spec.Sha1.digestPost, X86_64.abi, X86_64.argRegs] at h
+    obtain ⟨-, hrd, hwr, hdo, hdw, how, -, hro, hrw, hsd, hso, hsw, -⟩ := h
+    refine ⟨hrd, ?_, hdo, ?_, ?_, hro, ?_, hsd, hso, ?_⟩ <;> simp only [OneShot.wR, OneShot.sb, e]
+    exacts [hwr, hdw, how, hrw, hsw]
+  · sig_post [digestScratchContractW, digestScratchSigW, Spec.Sha1.digestPost, X86_64.abi, X86_64.argRegs]
+    rw [← hash_take]
+    exact h trivial
+  · have hp := sat_pre0
+    sig_pre [digestScratchContractW, digestScratchSigW, Spec.Sha1.digestPost, X86_64.abi, X86_64.argRegs]
+    have d₁ := hp.d_o; have d₂ := hp.d_w; have d₃ := hp.o_w; have d₄ := hp.ret_o; have d₅ := hp.ret_w
+    have d₆ := hp.stk_d; have d₇ := hp.stk_o; have d₈ := hp.stk_w
+    simp only [OneShot.dR, OneShot.oR, OneShot.wR, OneShot.retR, OneShot.stkR, OneShot.dp, OneShot.len,
+      OneShot.out, OneShot.sb, sat0, e, VG.X86_64.below] at d₁ d₂ d₃ d₄ d₅ d₆ d₇ d₈
+    refine ⟨by decide, rfl, by rw [e], d₁, d₂, d₃, (Offset.disjoint_of_le (by decide) (by decide)).symm,
+      d₄, d₅, d₆, d₇, d₈, by decide, by simp, by decide⟩
+
+theorem taints0 : OneShot.Taints params0 :=
+  ⟨⟨_, by taint_decide⟩, taints.wholeHead, taints.wholeEnd, taints.zeroBuf, taints.copyTail, taints.cmpLen,
+    taints.blkArg, taints.lenArg, ⟨_, by taint_decide⟩⟩
+
+theorem code0_mxcsr (f : Callee) (hm : f.code.allInstrs (fun i => !loadsMxcsr i) = true) :
+    (Impl.MdStream.X86_64.OneShot.body params0 (.block []) f.name f.code).allInstrs (fun i => !loadsMxcsr i) = true := by
+  simp only [Impl.MdStream.X86_64.OneShot.body, Impl.MdStream.X86_64.OneShot.whole,
+    Impl.MdStream.X86_64.OneShot.tail, Impl.MdStream.X86_64.OneShot.copyTail, compressN, compressAt,
+    compressWith, Code.allInstrs, hm, Bool.true_and, Bool.and_true]
+  decide +kernel
+
+theorem code0_sp (f : Callee) (h : f.code.all (fun i => !isa.writesSp i) = true) :
+    (Impl.MdStream.X86_64.OneShot.body params0 (.block []) f.name f.code).all (fun i => !isa.writesSp i) = true := by
+  simp only [Impl.MdStream.X86_64.OneShot.body, Impl.MdStream.X86_64.OneShot.whole,
+    Impl.MdStream.X86_64.OneShot.tail, Impl.MdStream.X86_64.OneShot.copyTail, compressN, compressAt,
+    compressWith, Code.all, h, Bool.true_and]
+  decide +kernel
+
+theorem code0_depth (f : Callee) (h : f.code.x86_64Depth = 0) :
+    (Impl.MdStream.X86_64.OneShot.body params0 (.block []) f.name f.code).x86_64Depth ≤ 8 := by
+  simp only [Impl.MdStream.X86_64.OneShot.body, Impl.MdStream.X86_64.OneShot.whole,
+    Impl.MdStream.X86_64.OneShot.tail, Impl.MdStream.X86_64.OneShot.copyTail, compressN, compressAt,
+    compressWith, Code.x86_64Depth, h]
+  decide +kernel
+
+/-- The one-shot digest made with no working space for the compression
+function, with its scratch buffer in a frame of its own. -/
+theorem verified0 {f : Callee} (hf : CalleeOk (P := params0) md f.code)
+    (hm : f.code.allInstrs (fun i => !loadsMxcsr i) = true)
+    (hs : f.code.all (fun i => !isa.writesSp i) = true) (hd : f.code.x86_64Depth = 0) :
+    Verified X86_64.target (digest0 f) (Spec.Sha1.digestContract X86_64.abi (8 + frame0)) := by
+  have h : Verified X86_64.target (body0 f) (digestScratchContractW words0 X86_64.abi 8) :=
+    (Proof.MdStream.X86_64.OneShot.verified fits0 Stream.dims0 Stream.shape0.toD taints0 init_hi0 init_writes rfl
+      init_check (hf.withOut _) (by rw [OneShot.body_allInstrs, code0_mxcsr f hm, init_mxcsr]; rfl)
+      ⟨_, sat_pre0⟩).of_implies implies0
+  have hsp : (body0 f).all (fun i => !isa.writesSp i) = true := by
+    rw [OneShot.body_all, code0_sp f hs, init_sp]; rfl
+  have hdp : (body0 f).x86_64Depth ≤ 8 := by
+    rw [OneShot.body_depth _ (rfl : init.x86_64Depth = 0)]; exact code0_depth f hd
+  show Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratch
+    (Impl.MdStream.X86_64.OneShot.frameBytes params0) .rcx (body0 f)) _
+  rw [frameBytes0_eq]
+  exact X86_64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := words0) (stack := 8) (bytes := frame0)
+    h (by decide) (by decide) (by decide) hsp hdp
+    (fun vs m m₁ m₂ r hl hb h => Proof.MdStream.Digest.digestPostOut_local _ _ _ vs m m₁ m₂ r hl hb h)
+    (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
+
+theorem spSafe0 {f : Callee} (hs : f.code.all (fun i => !isa.writesSp i) = true) :
+    (digest0 f).all (fun i => !isa.writesSp i) = true :=
+  X86_64.withStackScratch_spSafe (by decide) (by rw [OneShot.body_all, code0_sp f hs, init_sp]; rfl)
+
+end VG.Proof.Sha1.X86_64.OneShot
+
+end
+
+end
+
+/-! ### `Sha1.X86_64.Variant`, which only this module used -/
+
+section
+
+/-!
+# Implementations of the SHA-1 compression function on x86-64
+
+A `Compress` is what a function that calls the compression function needs
+of it, so that its proof holds for every implementation: each makes
+SHA-1 a variant of the interface `MdHash` on x86-64
+(`Variants/MdHash/X86_64/Sha1*.lean`, `Proof/Pbkdf2/Md/X86_64/Hashes/Sha1.lean`),
+and each function built on it (in `Generic/MdHash/X86_64/`) is emitted once
+for each of them (see `TCB/Emit.lean`). The streaming functions made with any of them are
+verified, and have
+what callers of those need (their call depth, that they keep `rsp` and never
+load MXCSR), so that a caller of them is proven once for every
+implementation.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Sha1.X86_64
+
+open VG.X86_64
+
+/-- An implementation of the SHA-1 compression function on x86-64. -/
+structure Compress where
+  /-- Its symbol and code. -/
+  callee : Impl.Sha1.X86_64.Stream.Callee
+  /-- It is correct and constant time, and keeps what callers need. -/
+  ok : MdStream.X86_64.CalleeOk (P := Stream.params) md callee.code
+  /-- The same with the scratch space it uses (`Callee.so`), which the
+  functions that call it by name give it. -/
+  okS : MdStream.X86_64.CalleeOk (P := { Stream.params with so := callee.so }) md callee.code
+  hso : callee.so = 0 ∨ callee.so = 112 := by decide
+  /-- It never loads MXCSR. -/
+  mxcsr : callee.code.allInstrs (fun i => !loadsMxcsr i) = true
+  /-- It never writes the stack pointer. -/
+  spSafe : callee.code.all (fun i => !isa.writesSp i) = true
+  /-- It uses no stack, so that the streaming functions calling it can keep
+  their working space in a frame of their own (`Verified.stackScratch`). -/
+  noStack : callee.code.x86_64Depth = 0 := by lit_decide
+  /-- What the names of its callers' instances end with (e.g. `_shani`;
+  nothing for the baseline implementation). -/
+  suffix : String
+  /-- The CPU features its code requires, which its callers require too. -/
+  features : List String
+
+namespace Compress
+
+/-- The scalar implementation, `vg_sha1_compress`, in the baseline ISA
+(`Variants/MdHash/X86_64/Sha1.lean`). -/
+def scalar : Compress where
+  callee := .scalar
+  ok := Stream.scalar_ok
+  okS := Stream.scalar_ok
+  mxcsr := by decide +kernel
+  spSafe := Code.all_of_spTest (by lit_decide)
+  suffix := ""
+  features := []
+
+open VG.Impl.Sha1.X86_64.Stream (update finalize)
+
+variable (v : Compress)
+
+theorem callee_nosp : (v.callee.code.allInstrs fun i => !Taint.clobbers i .rsp) = true := by
+  rw [Code.allInstrs_eq]; exact List.all_eq_true.mpr fun i hi => by simp [v.ok.nosp i hi]
+
+end Compress
+
+end VG.Proof.Sha1.X86_64
+
+end
+
+end
 
 /-!
 # SHA-1 on x86-64, as a Merkle–Damgård hash function
 
 SHA-1 with an implementation `v` of its compression function
-(`Proof/Sha1/X86_64/Variant.lean`), as a variant of `MdHash` (`variant v`), from
+(`Proof/Pbkdf2/Md/X86_64/Hashes/Sha1.lean`), as a variant of `MdHash` (`variant v`), from
 which HMAC and PBKDF2 are emitted (`Generic/MdHash/X86_64/`): its streaming code
 is the generic Merkle–Damgård code (`Stream.params`), its specification
 `Spec.Hmac.sha1S`. The facts about the code HMAC and PBKDF2 add, which depend on
@@ -34,7 +470,7 @@ is the generic Merkle–Damgård code (`Stream.params`), its specification
 
 `stream v` are the streaming `update` and `finalize` made with `v` (and
 their `_scratch` forms, which HMAC and PBKDF2 call) and the one-shot `digest`
-(`Proof/Sha1/X86_64/OneShot.lean`), which
+(`Proof/Pbkdf2/Md/X86_64/Hashes/Sha1.lean`), which
 `Generic/MdHash/X86_64/Stream.lean` emits from their `Api`s, named with
 its suffix.
 -/

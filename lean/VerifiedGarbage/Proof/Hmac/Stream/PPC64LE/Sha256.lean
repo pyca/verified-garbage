@@ -4,26 +4,21 @@ import VerifiedGarbage.Proof.Sha256.PPC64LE.Lit
 meta import VerifiedGarbage.Proof.Sha256.PPC64LE.Lit
 import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
-
 public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Instance
 public import VerifiedGarbage.Proof.Hmac.Contract
 public import VerifiedGarbage.Proof.Sha256.PPC64LE.Stream.Init
-public import VerifiedGarbage.Proof.Sha256.PPC64LE.Stream.Update
 public import VerifiedGarbage.Proof.Sha256.PPC64LE.Stream.Finalize
 public import VerifiedGarbage.Proof.Sha256.Scratch
 public import VerifiedGarbage.Spec.Sha256.Contract
 public import VerifiedGarbage.Proof.Hmac.Stream.Reloc
 meta import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Instance
 meta import VerifiedGarbage.Proof.Sha256.PPC64LE.Stream.Init
-meta import VerifiedGarbage.Proof.Sha256.PPC64LE.Stream.Update
 meta import VerifiedGarbage.Proof.Sha256.PPC64LE.Stream.Finalize
 meta import VerifiedGarbage.Proof.Sha256.Scratch
 meta import VerifiedGarbage.Spec.Sha256.Contract
 meta import VerifiedGarbage.Proof.Hmac.Stream.Reloc
 import VerifiedGarbage.Proof.Hmac.Scratch
 meta import VerifiedGarbage.Proof.Hmac.Scratch
-meta import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Shared
-public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Shared
 public import VerifiedGarbage.Proof.MdStream.PPC64LE.Digest
 meta import VerifiedGarbage.Proof.MdStream.PPC64LE.Digest
 

@@ -5,7 +5,7 @@ import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.HCall
 import VerifiedGarbage.Proof.Argon2.PPC64LE.HPrime.CT
 import VerifiedGarbage.Proof.Argon2.PPC64LE.HPrime.Correct
 import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
-public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Locals
+public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Scratch
 public import VerifiedGarbage.Proof.Framework.PPC64LE.FrameTaint
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Framework.Mem

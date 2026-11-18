@@ -8,7 +8,6 @@ public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Common
 import VerifiedGarbage.Proof.Sha256.X86_64.Shared
 public import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Md
-import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Digest
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -20,7 +19,6 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Common
 meta import VerifiedGarbage.Proof.Sha256.X86_64.Shared
 meta import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Md
-meta import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Digest
 meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub

@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
 public import VerifiedGarbage.Proof.Pbkdf2.Contract
 public import VerifiedGarbage.Proof.Hmac.Contract
-public import VerifiedGarbage.Proof.Sha256.AArch64.OneShot
+public import VerifiedGarbage.Proof.Sha256.AArch64.Shared
 public import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Init
 import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
 import VerifiedGarbage.Proof.Hmac.Generic.Implies
@@ -11,13 +11,11 @@ import VerifiedGarbage.Proof.Framework.TaintBatch
 import VerifiedGarbage.Proof.Framework.KernelRfl
 meta import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
 meta import VerifiedGarbage.Proof.Sha256.AArch64.Shared
-meta import VerifiedGarbage.Proof.Sha256.AArch64.OneShot
 meta import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Init
 meta import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
 meta import VerifiedGarbage.Proof.Hmac.Generic.Implies
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Framework.KernelRfl
-public import VerifiedGarbage.Proof.Sha256.AArch64.Shared
 
 /-!
 # SHA-256 on AArch64, as a Merkle–Damgård hash function

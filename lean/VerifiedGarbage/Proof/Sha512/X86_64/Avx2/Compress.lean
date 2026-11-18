@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Sha512.X86_64.Avx2.Schedule
-public import VerifiedGarbage.Proof.Sha512.X86_64.Avx2.Rounds
 public import VerifiedGarbage.Proof.Sha512.X86_64.Wide
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
 import VerifiedGarbage.Proof.Sha512.X86_64.Avx2.Lit
@@ -14,7 +13,6 @@ import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Sha512.X86_64.Avx2.Schedule
-meta import VerifiedGarbage.Proof.Sha512.X86_64.Avx2.Rounds
 meta import VerifiedGarbage.Proof.Sha512.X86_64.Wide
 meta import VerifiedGarbage.Proof.Framework.X86_64.Avx
 meta import VerifiedGarbage.Proof.Sha512.X86_64.Avx2.Lit

@@ -5,16 +5,13 @@ public import VerifiedGarbage.Proof.Argon2.AArch64.FillFinish
 import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.RelCT
 import VerifiedGarbage.Proof.Argon2.Dimensions
 import VerifiedGarbage.Proof.Argon2.AArch64.MemoryInitLit
-public import VerifiedGarbage.Proof.Argon2.AArch64.MemoryInitBlock
-import VerifiedGarbage.Proof.Argon2.AArch64.MemoryInitScale
-public import VerifiedGarbage.Proof.Argon2.AArch64.InitialLayout
-public import VerifiedGarbage.Proof.Argon2.AArch64.MemoryInitClearMemory
+import VerifiedGarbage.Proof.Argon2.AArch64.BlockAddress
+public import VerifiedGarbage.Proof.Argon2.AArch64.ClearBlock
 import VerifiedGarbage.Proof.Argon2.AArch64.Instructions
 public import VerifiedGarbage.Proof.Argon2.MemoryInit
-public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.FixedCT
+public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Verified
 import VerifiedGarbage.Proof.Argon2.AArch64.Carry
-import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Verified
-import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Correct
+public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Correct
 import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 meta import VerifiedGarbage.Impl.Argon2.AArch64.InitFill
@@ -22,15 +19,12 @@ meta import VerifiedGarbage.Proof.Argon2.AArch64.FillFinish
 meta import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.RelCT
 meta import VerifiedGarbage.Proof.Argon2.Dimensions
 meta import VerifiedGarbage.Proof.Argon2.AArch64.MemoryInitLit
-meta import VerifiedGarbage.Proof.Argon2.AArch64.MemoryInitBlock
-meta import VerifiedGarbage.Proof.Argon2.AArch64.MemoryInitScale
-meta import VerifiedGarbage.Proof.Argon2.AArch64.InitialLayout
-meta import VerifiedGarbage.Proof.Argon2.AArch64.MemoryInitClearMemory
+meta import VerifiedGarbage.Proof.Argon2.AArch64.BlockAddress
+meta import VerifiedGarbage.Proof.Argon2.AArch64.ClearBlock
 meta import VerifiedGarbage.Proof.Argon2.AArch64.Instructions
 meta import VerifiedGarbage.Proof.Argon2.MemoryInit
-meta import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.FixedCT
-meta import VerifiedGarbage.Proof.Argon2.AArch64.Carry
 meta import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Verified
+meta import VerifiedGarbage.Proof.Argon2.AArch64.Carry
 meta import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Correct
 meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
@@ -42,6 +36,442 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Argon2.Contract
+public import VerifiedGarbage.Proof.Argon2.AArch64.FillCompressCall
+public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Backend
+import VerifiedGarbage.Proof.Blake2.AArch64.Stream.Lit
+public import VerifiedGarbage.Impl.Argon2.AArch64.MemoryInit
+meta import VerifiedGarbage.Proof.Argon2.AArch64.FillCompressCall
+meta import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Backend
+meta import VerifiedGarbage.Proof.Blake2.AArch64.Stream.Lit
+meta import VerifiedGarbage.Impl.Argon2.AArch64.MemoryInit
+public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Frame
+import VerifiedGarbage.Proof.Blake2.Stream
+import VerifiedGarbage.Impl.Argon2.AArch64.Initial
+meta import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Frame
+meta import VerifiedGarbage.Proof.Blake2.Stream
+meta import VerifiedGarbage.Impl.Argon2.AArch64.Initial
+
+/-! ### `Argon2.AArch64.InitialLayout`, which this module and modules that import it used -/
+
+section
+
+/-! # The stack inputs and scratch allocation used by H₀ -/
+
+@[expose] public section
+
+namespace VG.Proof.Argon2.AArch64.Initial
+
+open VG VG.AArch64 VG.Impl.Argon2.AArch64.Initial
+open VG.Spec.Blake2 (bytesAt b Repr)
+
+def slots : List Nat := [72, 80, 88, 96, 104, 112, 176, 184, 200, 208, 216, 224, 264]
+
+def wordAt (s : State) (d : Nat) : Addr :=
+  s.mem.readW (s.gpr .x19 + BitVec.ofNat 64 d) 64
+
+def inputRegion (s : State) (pointerOffset lengthOffset : Nat) : Region :=
+  ⟨wordAt s pointerOffset, (wordAt s lengthOffset).toNat⟩
+
+/-- Hash calls and argument preparation preserve these registers and bytes.
+`x20` and `x22` are the running count and the current input length. -/
+structure Keeps (s t : State) : Prop where
+  regs : ∀ r ∈ FillCompress.loopRegs, r ≠ .x20 → r ≠ .x22 → t.gpr r = s.gpr r
+  sp : t.sp = s.sp
+  rd : t.rd = s.rd
+  wr : t.wr = s.wr
+  frame : Frame [⟨s.gpr .x24, 832⟩, below (s.sp) 16] s.mem t.mem
+
+theorem Keeps.x24 {s t : State} (h : Keeps s t) : t.gpr .x24 = s.gpr .x24 :=
+  h.regs _ (by decide) (by decide) (by decide)
+
+theorem Keeps.x19 {s t : State} (h : Keeps s t) : t.gpr .x19 = s.gpr .x19 :=
+  h.regs _ (by decide) (by decide) (by decide)
+
+theorem Keeps.trans {s t u : State} (h : Keeps s t) (k : Keeps t u) : Keeps s u :=
+  ⟨fun r hr h1 h2 => (k.regs r hr h1 h2).trans (h.regs r hr h1 h2),
+    k.sp.trans h.sp, k.rd.trans h.rd, k.wr.trans h.wr,
+    h.frame.trans (by simpa only [h.x24, h.sp] using k.frame)⟩
+
+theorem Keeps.of_hash {s t : State} (h : HPrime.Keeps s t) : Keeps s t := by
+  refine ⟨?_, h.sp, h.rd, h.wr, h.frame⟩
+  intro r hr _ _
+  have hp : r ∈ preserved ∧ r ≠ .x30 := by
+    simp only [FillCompress.loopRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+  exact h.regs r hp.1 hp.2
+
+structure Space (s : State) : Prop where
+  stackMinimum : 16 ≤ s.sp.toNat
+  work : (⟨s.gpr .x24, 16384⟩ : Region) ∈ s.wr
+  stackWork : (below (s.sp) 16).Disjoint ⟨s.gpr .x24, 16384⟩
+  frameWork : (⟨s.gpr .x19, 272⟩ : Region).Disjoint ⟨s.gpr .x24, 16384⟩
+  frameStack : (⟨s.gpr .x19, 272⟩ : Region).Disjoint (below (s.sp) 16)
+  readable : ∀ d ∈ slots, InRegions (s.rd ++ s.wr) (s.gpr .x19 + BitVec.ofNat 64 d) 8
+  output : InRegions s.wr (s.gpr .x19) 64
+
+theorem Space.keeps {s t : State} (h : Space s) (k : Keeps s t) : Space t := by
+  constructor
+  · rw [k.sp]; exact h.stackMinimum
+  · rw [k.x24, k.wr]; exact h.work
+  · rw [k.x24, k.sp]; exact h.stackWork
+  · rw [k.x19, k.x24]; exact h.frameWork
+  · rw [k.x19, k.sp]; exact h.frameStack
+  · intro d hd; rw [k.x19, k.rd, k.wr]; exact h.readable d hd
+  · rw [k.x19, k.wr]; exact h.output
+
+theorem Space.word_keeps {s t : State} (h : Space s) (k : Keeps s t)
+    (d : Nat) (hd : d + 8 ≤ 272) : wordAt t d = wordAt s d := by
+  unfold wordAt
+  rw [k.x19]
+  apply k.frame.readW (r := ⟨s.gpr .x19, 272⟩)
+    (Offset.contains_base _ hd (by omega_using [hd])) ?_ (by decide)
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl
+  · exact h.frameWork.sub_right (Region.sub_prefix (by decide))
+  · exact h.frameStack
+
+theorem Space.write {s : State} (h : Space s) (d n : Nat) (hd : d + n ≤ 16384) :
+    InRegions s.wr (s.gpr .x24 + BitVec.ofNat 64 d) n :=
+  ⟨_, h.work, Offset.contains_base _ hd (by omega_using [hd])⟩
+
+theorem Space.input_keeps {s t : State} (h : Space s) (k : Keeps s t)
+    (po lo : Nat) (hp : po + 8 ≤ 272) (hl : lo + 8 ≤ 272) :
+    inputRegion t po lo = inputRegion s po lo := by
+  simp only [inputRegion, h.word_keeps k po hp, h.word_keeps k lo hl]
+
+theorem Keeps.bytes {s t : State} (h : Keeps s t) (r : Region)
+    (work : r.Disjoint ⟨s.gpr .x24, 16384⟩)
+    (stack : r.Disjoint (below (s.sp) 16)) (bound : r.len ≤ 2 ^ 64) :
+    bytesAt t.mem r.base r.len = bytesAt s.mem r.base r.len := by
+  apply Proof.Blake2.bytesAt_congr
+  intro i hi
+  apply h.frame.bytes (R := r) _ bound hi
+  intro q hq
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
+  rcases hq with rfl | rfl
+  · exact work.sub_right (Region.sub_prefix (by decide))
+  · exact stack
+
+end VG.Proof.Argon2.AArch64.Initial
+
+end
+
+end
+
+/-! ### `Argon2.AArch64.MemoryInitBlock`, which only this module used -/
+
+section
+
+/-! ### `Argon2.AArch64.MemoryInitCall`, which only this module used -/
+
+section
+
+/-! A verified H′ call initializes one 1024-byte memory block. -/
+
+@[expose] public section
+
+namespace VG.Proof.Argon2.AArch64.MemoryInit
+
+open VG VG.AArch64
+open VG.Impl.Argon2.AArch64.HPrime (code)
+open VG.Spec.Blake2 (bytesAt)
+
+structure CallReady (s : State) : Prop where
+  stackMinimum : 16 ≤ s.sp.toNat
+  input : Covers [⟨s.gpr .x0, 72⟩] (s.rd ++ s.wr)
+  output : Covers [⟨s.gpr .x2, 1024⟩] s.wr
+  work : (⟨s.gpr .x4, 16384⟩ : Region) ∈ s.wr
+  inputWork : (⟨s.gpr .x0, 72⟩ : Region).Disjoint ⟨s.gpr .x4, 16384⟩
+  outputWork : (⟨s.gpr .x2, 1024⟩ : Region).Disjoint ⟨s.gpr .x4, 16384⟩
+  stackInput : (below s.sp 16).Disjoint ⟨s.gpr .x0, 72⟩
+  stackOutput : (below s.sp 16).Disjoint ⟨s.gpr .x2, 1024⟩
+  stackWork : (below s.sp 16).Disjoint ⟨s.gpr .x4, 16384⟩
+
+structure Called (s t : State) : Prop where
+  digest : bytesAt t.mem (s.gpr .x2) 1024 = Spec.Argon2.hPrime 1024 (bytesAt s.mem (s.gpr .x0) 72)
+  regs : ∀ r ∈ FillCompress.loopRegs, t.gpr r = s.gpr r
+  sp : t.sp = s.sp
+  rd : t.rd = s.rd
+  wr : t.wr = s.wr
+  frame : Frame [⟨s.gpr .x2, 1024⟩, ⟨s.gpr .x4, 16384⟩, below s.sp 16] s.mem t.mem
+
+theorem hPrime_call_hyps (s : State) (h : CallReady s)
+    (inputLength : s.gpr .x1 = 72) (outputLength : s.gpr .x3 = 1024) :
+    HPrime.localContract.pre (s.callEntry.withRegions [⟨s.gpr .x0, 72⟩]
+      [⟨s.gpr .x2, 1024⟩, ⟨s.gpr .x4, 16384⟩]) ∧
+    Covers [⟨s.gpr .x0, 72⟩, ⟨s.gpr .x2, 1024⟩, ⟨s.gpr .x4, 16384⟩] (s.rd ++ s.wr) ∧
+    Covers [⟨s.gpr .x2, 1024⟩, ⟨s.gpr .x4, 16384⟩] s.wr := by
+  have g : ∀ r, r ∉ linkRegs → s.callEntry.gpr r = s.gpr r := fun r hr => State.callEntry_gpr s hr
+  refine ⟨?_, ?_, ?_⟩
+  · simp only [HPrime.localContract, HPrime.inputR, HPrime.outputR, HPrime.workR,
+      HPrime.stackR, State.withRegions_gpr, State.withRegions_rd,
+      State.withRegions_wr, State.withRegions_sp,
+      g _ (by decide : Reg.x0 ∉ linkRegs), g _ (by decide : Reg.x1 ∉ linkRegs),
+      g _ (by decide : Reg.x2 ∉ linkRegs), g _ (by decide : Reg.x3 ∉ linkRegs),
+      g _ (by decide : Reg.x4 ∉ linkRegs), State.callEntry_sp,
+      inputLength, outputLength]
+    exact ⟨rfl, rfl, by decide, by decide, by decide, h.stackMinimum,
+      h.inputWork, h.outputWork, h.stackInput, h.stackOutput, h.stackWork⟩
+  · intro p n hp
+    rcases hp with ⟨r, hr, hc⟩
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact h.input p n ⟨_, List.mem_singleton_self _, hc⟩
+    · obtain ⟨r, hr, hc⟩ := h.output p n ⟨_, List.mem_singleton_self _, hc⟩
+      exact ⟨r, List.mem_append_right _ hr, hc⟩
+    · exact ⟨_, List.mem_append_right _ h.work, hc⟩
+  · intro p n ⟨r, hr, hc⟩
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact h.output p n ⟨_, List.mem_singleton_self _, hc⟩
+    · exact ⟨_, h.work, hc⟩
+
+theorem hPrime_depth (v : HPrime.Backend) : (code v.hash).aarch64Depth = 1 := by
+  simp only [code, Impl.Argon2.AArch64.HPrime.first,
+    Impl.Argon2.AArch64.HPrime.chooseLength, Impl.Argon2.AArch64.HPrime.init,
+    Impl.Argon2.AArch64.HPrime.absorbFixed, Impl.Argon2.AArch64.HPrime.update,
+    Impl.Argon2.AArch64.HPrime.absorbInput, Impl.Argon2.AArch64.HPrime.finishInput,
+    Impl.Argon2.AArch64.HPrime.finalize, Impl.Argon2.AArch64.HPrime.finishOutput,
+    Impl.Argon2.AArch64.HPrime.extendDigest, Impl.Argon2.AArch64.HPrime.emitPrefix,
+    Impl.Argon2.AArch64.HPrime.copy, Impl.Argon2.AArch64.HPrime.chain,
+    Impl.Argon2.AArch64.HPrime.next, Impl.Argon2.AArch64.HPrime.copyRemaining,
+    Code.aarch64Depth, v.ok.initDepth, v.ok.updateDepth, v.ok.finalizeDepth]
+  rfl
+
+theorem hPrime_call_ok (v : HPrime.Backend) (name : String)
+    (s : State) (h : CallReady s) (inputLength : s.gpr .x1 = 72)
+    (outputLength : s.gpr .x3 = 1024) :
+    WP isa (.call name (code v.hash)) s (Called s) := by
+  obtain ⟨pre, cover, writes⟩ := hPrime_call_hyps s h inputLength outputLength
+  refine WP.callF (k := HPrime.localContract) (HPrime.code_correct v) pre cover writes ?_
+    (by rw [hPrime_depth]; decide)
+  intro t rd wr sp frame regs digest
+  change bytesAt t.mem (s.callEntry.gpr .x2) (s.callEntry.gpr .x3).toNat =
+    Spec.Argon2.hPrime (s.callEntry.gpr .x3).toNat
+      (bytesAt s.mem (s.callEntry.gpr .x0) (s.callEntry.gpr .x1).toNat) at digest
+  rw [State.callEntry_gpr _ (by decide : Reg.x2 ∉ linkRegs),
+    State.callEntry_gpr _ (by decide : Reg.x3 ∉ linkRegs),
+    State.callEntry_gpr _ (by decide : Reg.x0 ∉ linkRegs),
+    State.callEntry_gpr _ (by decide : Reg.x1 ∉ linkRegs), inputLength, outputLength,
+    show (72 : Addr).toNat = 72 from rfl,
+    show (1024 : Addr).toNat = 1024 from rfl] at digest
+  refine ⟨digest, ?_, sp, rd, wr, ?_⟩
+  · intro r hr
+    have preserved : r ∈ VG.AArch64.preserved ∧ r ≠ .x30 := by
+      simp only [FillCompress.loopRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+    exact regs r preserved.1 preserved.2
+  · simpa only [hPrime_depth, Nat.mul_one, List.cons_append, List.nil_append] using frame
+
+end VG.Proof.Argon2.AArch64.MemoryInit
+
+end
+
+end
+
+
+/-! Merged from `Proof.Argon2.AArch64.MemoryInitArgs`. -/
+
+@[expose] public section
+
+section
+/-! # The 72-byte H₀, column and lane input to memory initialization -/
+
+namespace VG.Proof.Argon2.AArch64.MemoryInit
+
+open VG VG.AArch64 VG.Impl.Argon2.AArch64.MemoryInit
+open VG.Spec.Blake2 (bytesAt)
+
+def blockMem (m : Mem) (p : Addr) (column : Nat) (lane : Addr) : Mem :=
+  (m.writeW (p + 64) (BitVec.ofNat 32 column)).writeW (p + 68) (lane.setWidth 32)
+
+theorem blockMem_frame (m : Mem) (p : Addr) (column : Nat) (lane : Addr) :
+    Frame [⟨p + 64, 8⟩] m (blockMem m p column lane) := by
+  unfold blockMem
+  have first : Frame [⟨p + 64, 8⟩] m (m.writeW (p + 64) (BitVec.ofNat 32 column)) :=
+    (Frame.refl _ _).writeW (List.mem_singleton_self _) _
+      (by simpa only [BitVec.add_zero] using
+        Offset.contains_base (p + 64) (d := 0) (n := 4) (k := 8) (by decide) (by decide))
+  apply first.writeW (List.mem_singleton_self _)
+  have eq : p + 68 = (p + 64) + BitVec.ofNat 64 4 := by rw [BitVec.add_assoc]; rfl
+  rw [eq]
+  exact Offset.contains_base _ (by decide : 4 + 4 ≤ 8) (by decide)
+
+theorem blockMem_bytes (m : Mem) (p : Addr) (column : Nat) (lane : Addr) :
+    bytesAt (blockMem m p column lane) p 72 =
+      bytesAt m p 64 ++ Spec.Argon2.le32 column ++ Spec.Argon2.le32 lane.toNat := by
+  have first : bytesAt (blockMem m p column lane) p 64 = bytesAt m p 64 := by
+    apply Proof.Blake2.bytesAt_congr
+    intro i hi
+    apply (blockMem_frame m p column lane).bytes (R := ⟨p, 64⟩) _
+      (show (64 : Nat) ≤ 2 ^ 64 from by decide) hi
+    · intro r hr; simp only [List.mem_singleton] at hr; subst r
+      exact Offset.base_disjoint _ (by decide) (by decide)
+
+  have columnWord : (blockMem m p column lane).readW (p + 64) 32 = BitVec.ofNat 32 column := by
+    unfold blockMem
+    rw [Mem.readW_writeW_sep ?_ (by decide), Mem.readW_writeW_self32]
+    exact Offset.sep p (by decide) (by decide) (by decide)
+  have laneWord : (blockMem m p column lane).readW (p + 68) 32 = lane.setWidth 32 :=
+    Mem.readW_writeW_self32 _ _ _
+  have words := Proof.Blake2.bytesAt_add (blockMem m p column lane) (p + 64) 4 4
+  have pos : p + 64 + BitVec.ofNat 64 4 = p + 68 := by rw [BitVec.add_assoc]; rfl
+  rw [pos, ← Proof.Blake2.wordBytes_readW _ _ (Or.inl rfl),
+    ← Proof.Blake2.wordBytes_readW _ _ (Or.inl rfl), columnWord, laneWord] at words
+  have header := Proof.Blake2.bytesAt_add (blockMem m p column lane) p 64 8
+  change bytesAt (blockMem m p column lane) (p + 64) 8 = _ at words
+  rw [show BitVec.ofNat 64 64 = (64 : Addr) from rfl, first, words, ← BitVec.ofNat_toNat 32 lane, ← List.append_assoc] at header
+  exact header
+
+structure BlockArgs (s t : State) (column : Nat) : Prop where
+  input : t.gpr .x0 = s.gpr .x19
+  inputLength : t.gpr .x1 = 72
+  output : t.gpr .x2 = s.gpr .x22
+  outputLength : t.gpr .x3 = 1024
+  work : t.gpr .x4 = s.gpr .x24
+  other : ∀ r, r ≠ .x8 → r ≠ .x0 → r ≠ .x1 → r ≠ .x2 → r ≠ .x3 → r ≠ .x4 →
+    t.gpr r = s.gpr r
+  mem : t.mem = blockMem s.mem (s.gpr .x19) column (s.gpr .x20)
+  rd : t.rd = s.rd
+  wr : t.wr = s.wr
+  sp : t.sp = s.sp
+
+theorem blockArgs_ok (s : State) (column : Nat) (columnBound : column < 65536)
+    (colWrite : InRegions s.wr (s.gpr .x19 + 64) 4)
+    (laneWrite : InRegions s.wr (s.gpr .x19 + 68) 4) :
+    WP isa (.block (blockArgs column)) s (fun t => BlockArgs s t column) := by
+  have colLiteral : InRegions s.wr (s.gpr .x19 + 64#64) 4 := colWrite
+  have laneLiteral : InRegions s.wr (s.gpr .x19 + 68#64) 4 := laneWrite
+  have col : (BitVec.ofNat 16 column).setWidth 64 = BitVec.ofNat 64 column :=
+    BitVec.setWidth_ofNat_of_le_of_lt (by decide) columnBound
+  apply WP.of_runBlock
+  simp only [blockArgs, Impl.Argon2.AArch64.Instructions.imm,
+    Impl.Argon2.AArch64.Instructions.mov, Impl.Argon2.AArch64.Instructions.store32,
+    columnBound, show 72 < 65536 from by decide, show 1024 < 65536 from by decide,
+    List.flatten_cons, List.flatten_nil, List.cons_append, List.nil_append,
+    runBlock_cons, runStep_some, runBlock_nil, exec, State.read, State.store, addr,
+    Size.bytes, Size.bits, Nat.reduceMul, Nat.reduceLT, Nat.reduceMod,
+    show 0 < 4096 from by decide, BitVec.shiftLeft_zero, col,
+    show (72#16).setWidth 64 = 72#64 from rfl,
+    show (1024#16).setWidth 64 = 1024#64 from rfl,
+    RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write,
+    reduceCtorEq, ite_true, ite_false, colLiteral, laneLiteral, and_self,
+    Option.bind_some, Option.some.injEq, exists_eq_left', BitVec.add_zero,
+    BitVec.setWidth_eq]
+  constructor
+  · simp only [RegUpd.gpr_write, reduceCtorEq, ite_false]; rfl
+  · simp only [RegUpd.gpr_write, reduceCtorEq, ite_false]; rfl
+  · simp only [RegUpd.gpr_write, reduceCtorEq, ite_false]; rfl
+  · simp only [RegUpd.gpr_write, reduceCtorEq, ite_false]; rfl
+  · simp only [RegUpd.gpr_write, ite_true, BitVec.setWidth_eq]
+  · intro r h1 h2 h3 h4 h5 h6
+    simp only [RegUpd.gpr_write, h1, h2, h3, h4, h5, h6, ite_false]
+  · simp only [RegUpd.mem_write, blockMem, BitVec.setWidth_ofNat_of_le (by decide : 32 ≤ 64)]
+    rfl
+  · simp only [RegUpd.rd_write]
+  · simp only [RegUpd.wr_write]
+  · simp only [RegUpd.sp_write]
+
+end VG.Proof.Argon2.AArch64.MemoryInit
+end
+
+/-! # Initializing a block while preserving H₀ and the public lane counters -/
+
+namespace VG.Proof.Argon2.AArch64.MemoryInit
+
+open VG VG.AArch64 VG.Impl.Argon2.AArch64.MemoryInit
+open VG.Spec.Blake2 (bytesAt)
+
+structure BlockReady (s : State) : Prop where
+  stackMinimum : 16 ≤ s.sp.toNat
+  input : Covers [⟨s.gpr .x19, 72⟩] s.wr
+  output : Covers [⟨s.gpr .x22, 1024⟩] s.wr
+  work : (⟨s.gpr .x24, 16384⟩ : Region) ∈ s.wr
+  frameWork : (⟨s.gpr .x19, 72⟩ : Region).Disjoint ⟨s.gpr .x24, 16384⟩
+  frameOutput : (⟨s.gpr .x19, 72⟩ : Region).Disjoint ⟨s.gpr .x22, 1024⟩
+  outputWork : (⟨s.gpr .x22, 1024⟩ : Region).Disjoint ⟨s.gpr .x24, 16384⟩
+  stackFrame : (below (s.sp) 16).Disjoint ⟨s.gpr .x19, 72⟩
+  stackOutput : (below (s.sp) 16).Disjoint ⟨s.gpr .x22, 1024⟩
+  stackWork : (below (s.sp) 16).Disjoint ⟨s.gpr .x24, 16384⟩
+
+theorem BlockArgs.regs {s t : State} {column : Nat} (h : BlockArgs s t column)
+    (r : Reg) (hr : r ∈ FillCompress.loopRegs) : t.gpr r = s.gpr r := by
+  have hn : r ≠ .x8 ∧ r ≠ .x0 ∧ r ≠ .x1 ∧ r ≠ .x2 ∧ r ≠ .x3 ∧ r ≠ .x4 := by
+    simp only [FillCompress.loopRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+  exact h.other r hn.1 hn.2.1 hn.2.2.1 hn.2.2.2.1 hn.2.2.2.2.1 hn.2.2.2.2.2
+
+theorem BlockReady.prefix {s : State} (h : BlockReady s) (d : Nat)
+    (bound : d + 4 ≤ 72) : InRegions s.wr (s.gpr .x19 + BitVec.ofNat 64 d) 4 := by
+  exact h.input _ _ ⟨_, List.mem_singleton_self _, Offset.contains_base _ bound (by omega_using [bound])⟩
+
+theorem BlockArgs.ready {s t : State} {column : Nat} (a : BlockArgs s t column)
+    (h : BlockReady s) : CallReady t := by
+  have base := a.regs .x24 (by decide)
+  have sp := a.sp
+  refine ⟨by rw [sp]; exact h.stackMinimum, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · rw [a.input, a.rd, a.wr]
+    intro p n ⟨r, hr, hc⟩
+    simp only [List.mem_singleton] at hr; subst r
+    obtain ⟨r, hr, hc'⟩ := h.input p n ⟨_, List.mem_singleton_self _, hc⟩
+    exact ⟨r, List.mem_append_right _ hr, hc'⟩
+  · rw [a.output, a.wr]; exact h.output
+  · rw [a.work, a.wr]; exact h.work
+  · rw [a.input, a.work]; exact h.frameWork
+  · rw [a.output, a.work]; exact h.outputWork
+  · rw [sp, a.input]; exact h.stackFrame
+  · rw [sp, a.output]; exact h.stackOutput
+  · rw [sp, a.work]; exact h.stackWork
+
+structure BlockDone (s t : State) (column : Nat) : Prop where
+  digest : bytesAt t.mem (s.gpr .x22) 1024 = Spec.Argon2.hPrime 1024
+    (bytesAt s.mem (s.gpr .x19) 64 ++ Spec.Argon2.le32 column ++ Spec.Argon2.le32 (s.gpr .x20).toNat)
+  regs : ∀ r ∈ FillCompress.loopRegs, t.gpr r = s.gpr r
+  sp : t.sp = s.sp
+  rd : t.rd = s.rd
+  wr : t.wr = s.wr
+  frame : Frame [⟨s.gpr .x22, 1024⟩, ⟨s.gpr .x24, 16384⟩,
+    below (s.sp) 16, ⟨s.gpr .x19 + 64, 8⟩] s.mem t.mem
+
+theorem block_ok (v : HPrime.Backend) (name : String)
+    (s : State) (column : Nat) (columnBound : column < 65536) (h : BlockReady s) :
+    WP isa (block name v.hash column) s (fun t => BlockDone s t column) := by
+  unfold block
+  refine WP.seq ((blockArgs_ok s column columnBound
+    (by simpa only [show BitVec.ofNat 64 64 = (64 : Addr) from rfl] using h.prefix 64 (by decide))
+    (by simpa only [show BitVec.ofNat 64 68 = (68 : Addr) from rfl] using h.prefix 68 (by decide))).mono ?_)
+  intro a ha
+  refine (hPrime_call_ok v name a (ha.ready h) ha.inputLength ha.outputLength).mono ?_
+  intro t ht
+  refine ⟨?_, fun r hr => (ht.regs r hr).trans (ha.regs r hr),
+    ht.sp.trans ha.sp, ht.rd.trans ha.rd, ht.wr.trans ha.wr, ?_⟩
+  · have digest := ht.digest
+    rw [ha.output, ha.input, ha.mem, blockMem_bytes] at digest
+    exact digest
+  · have argsFrame : Frame [⟨s.gpr .x22, 1024⟩, ⟨s.gpr .x24, 16384⟩,
+        below (s.sp) 16, ⟨s.gpr .x19 + 64, 8⟩] s.mem a.mem := by
+      rw [ha.mem]
+      exact (blockMem_frame _ _ _ _).mono (by
+        intro r hr; simp only [List.mem_singleton] at hr; subst r
+        exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _
+          (List.mem_cons_of_mem _ (List.mem_singleton_self _))))
+    apply argsFrame.trans
+    have frame := ht.frame
+    rw [ha.output, ha.work, ha.sp] at frame
+    exact frame.mono (by
+      intro r hr
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
+      rcases hr with h | h | h
+      · exact Or.inl h
+      · exact Or.inr (Or.inl h)
+      · exact Or.inr (Or.inr (Or.inl h)))
+
+end VG.Proof.Argon2.AArch64.MemoryInit
+
+end
+
+end
 
 @[expose] public section
 

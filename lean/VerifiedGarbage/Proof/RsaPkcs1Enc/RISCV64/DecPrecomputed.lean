@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.Rsa.PrivCheck
 import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RISCV64.RelCT
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.RISCV64.Dec.CT3
 
 /-! # `vg_rsa_pkcs1_decrypt_precomputed` on RISC-V
 

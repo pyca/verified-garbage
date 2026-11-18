@@ -3,21 +3,15 @@ module
 import VerifiedGarbage.Impl.ChaCha20Poly1305.RISCV64
 public import VerifiedGarbage.Proof.ChaCha20.RISCV64.Xor
 public import VerifiedGarbage.Proof.Poly1305.RISCV64.Init
-public import VerifiedGarbage.Proof.Poly1305.RISCV64.Update
-public import VerifiedGarbage.Proof.Poly1305.RISCV64.Finalize
 public import VerifiedGarbage.Proof.Framework.RISCV64.Call
 import VerifiedGarbage.Proof.Poly1305.RISCV64.Lit
-import VerifiedGarbage.Proof.ChaCha20.RISCV64.Block
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.PowLit
 meta import VerifiedGarbage.Proof.Poly1305.RISCV64.Lit
-meta import VerifiedGarbage.Proof.ChaCha20.RISCV64.Block
+meta import VerifiedGarbage.Proof.ChaCha20.RISCV64.Xor
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Poly1305.RISCV64.Init
-meta import VerifiedGarbage.Proof.Poly1305.RISCV64.Update
-meta import VerifiedGarbage.Proof.Poly1305.RISCV64.Finalize
-meta import VerifiedGarbage.Proof.ChaCha20.RISCV64.Xor
 meta import VerifiedGarbage.Impl.ChaCha20Poly1305.RISCV64
 public import VerifiedGarbage.Impl.ChaCha20.RISCV64.Xor
 public import VerifiedGarbage.Impl.Poly1305.RISCV64

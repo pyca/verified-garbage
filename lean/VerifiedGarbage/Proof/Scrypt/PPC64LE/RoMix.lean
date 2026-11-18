@@ -1,9 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Scrypt.PPC64LE.Common
+public import VerifiedGarbage.Proof.Scrypt.PPC64LE.BlockMix
 public import VerifiedGarbage.Proof.Scrypt.RoMix
 public import VerifiedGarbage.Impl.Scrypt.PPC64LE.RoMix
-import VerifiedGarbage.Proof.Scrypt.PPC64LE.BlockMix
 import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Spill
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Call
@@ -20,10 +19,9 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 import VerifiedGarbage.Proof.Framework.Covers
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Scrypt.PPC64LE.Common
+meta import VerifiedGarbage.Proof.Scrypt.PPC64LE.BlockMix
 meta import VerifiedGarbage.Proof.Scrypt.RoMix
 meta import VerifiedGarbage.Impl.Scrypt.PPC64LE.RoMix
-meta import VerifiedGarbage.Proof.Scrypt.PPC64LE.BlockMix
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Spill
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Call

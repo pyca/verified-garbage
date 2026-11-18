@@ -4,9 +4,6 @@ public import VerifiedGarbage.Impl.Argon2.X86_64.FillKernel
 import VerifiedGarbage.Proof.Argon2.FillPositions
 import VerifiedGarbage.Proof.Argon2.X86_64.BlockAddress
 import VerifiedGarbage.Proof.Argon2.Dimensions
-import VerifiedGarbage.Proof.Argon2.X86_64.Wrap
-import VerifiedGarbage.Proof.Argon2.X86_64.Relative
-public import VerifiedGarbage.Proof.Argon2.X86_64.ReferenceMapLane
 public import VerifiedGarbage.Proof.Argon2.X86_64.FillCompressSetup
 import VerifiedGarbage.Proof.Argon2.X86_64.ReferenceStart
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
@@ -14,6 +11,675 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Impl.Argon2.X86_64.Wrap
+import VerifiedGarbage.Proof.Argon2.Reference
+public import VerifiedGarbage.Proof.Argon2.X86_64.DivideStep
+public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.Proof.Framework.Mem
+meta import VerifiedGarbage.Impl.Argon2.X86_64.Wrap
+meta import VerifiedGarbage.Proof.Argon2.Reference
+meta import VerifiedGarbage.Proof.Argon2.X86_64.DivideStep
+meta import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Framework.Mem
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Impl.Argon2.X86_64.Relative
+import VerifiedGarbage.Proof.Argon2.X86_64.Mix
+meta import VerifiedGarbage.Impl.Argon2.X86_64.Relative
+meta import VerifiedGarbage.Proof.Argon2.X86_64.Mix
+public import VerifiedGarbage.Proof.Argon2.X86_64.Divide
+import VerifiedGarbage.Proof.Argon2.X86_64.DivideCT
+meta import VerifiedGarbage.Proof.Argon2.X86_64.Divide
+meta import VerifiedGarbage.Proof.Argon2.X86_64.DivideCT
+meta import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Argon2.X86_64.ReferenceCount
+public import VerifiedGarbage.Impl.Argon2.X86_64.ReferenceMap
+import VerifiedGarbage.Proof.Framework.PlainSimp
+meta import VerifiedGarbage.Proof.Argon2.X86_64.ReferenceCount
+meta import VerifiedGarbage.Impl.Argon2.X86_64.ReferenceMap
+meta import VerifiedGarbage.Proof.Argon2.Dimensions
+meta import VerifiedGarbage.Proof.Framework.PlainSimp
+
+/-! ### `Argon2.X86_64.ReferenceMapLane`, which only this module used -/
+
+section
+
+/-! ### `Argon2.X86_64.ReferenceMapState`, which only this module used -/
+
+section
+
+/-! Merged from `Proof.Argon2.X86_64.ReferenceMapArgs`. -/
+
+@[expose] public section
+
+section
+/-! Register preparation for the reference-index stages. -/
+
+namespace VG.Proof.Argon2.X86_64.ReferenceMap
+
+open VG VG.X86_64 VG.Impl.Argon2.X86_64.ReferenceMap
+
+theorem pass_ea (s : State) : s.ea { base := .rbp } = s.gpr .rbp := by
+  change s.gpr .rbp + 0#64 = s.gpr .rbp
+  exact BitVec.add_zero _
+
+theorem loadPass_ok (s : State) (read : InRegions (s.rd ++ s.wr) (s.gpr .rbp) 8) :
+    WP isa (.block loadPass) s fun t =>
+      t.gpr .r9 = s.mem.readW (s.gpr .rbp) 64 ∧ Divide.Keeps [.r9] s t := by
+  apply WP.of_runBlock
+  simp only [loadPass, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
+    pass_ea, State.load64, read, ite_true, Option.map_some, RegUpd.gpr_setReg,
+    Option.some.injEq, exists_eq_left']
+  refine ⟨trivial, ?_⟩
+  constructor
+  · intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    simp only [RegUpd.gpr_setReg, hr, ite_false]
+  all_goals rfl
+
+theorem laneArgs_ok (s : State) : WP isa (.block laneArgs) s fun t =>
+    t.gpr .rdi = s.gpr .r8 ∧ t.gpr .rsi = s.gpr .rbx ∧
+    Divide.Keeps [.rdi, .rsi] s t := by
+  apply WP.of_runBlock
+  simp only [laneArgs, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
+    Option.map_some, RegUpd.gpr_setReg, reduceCtorEq, ite_true, ite_false,
+    Option.some.injEq, exists_eq_left']
+  refine ⟨trivial, trivial, ?_⟩
+  constructor
+  · intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    simp only [RegUpd.gpr_setReg, hr.1, hr.2, ite_false]
+  all_goals rfl
+
+theorem relativeArgs_ok (s : State) : WP isa (.block relativeArgs) s fun t =>
+    t.gpr .r9 = s.gpr .rdi ∧ t.gpr .rdi = s.gpr .r11 ∧ t.gpr .rsi = s.gpr .r8 ∧
+    Divide.Keeps [.r9, .rdi, .rsi] s t := by
+  apply WP.of_runBlock
+  simp only [relativeArgs, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
+    Option.map_some, RegUpd.gpr_setReg, reduceCtorEq, ite_true, ite_false,
+    Option.some.injEq, exists_eq_left']
+  refine ⟨trivial, trivial, trivial, ?_⟩
+  constructor
+  · intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    simp only [RegUpd.gpr_setReg, hr.1, hr.2.1, hr.2.2, ite_false]
+  all_goals rfl
+
+theorem wrapArgs_ok (s : State) : WP isa (.block wrapArgs) s fun t =>
+    t.gpr .rdi = s.gpr .rax + s.gpr .r10 ∧ t.gpr .rsi = s.gpr .r12 ∧
+    Divide.Keeps [.rdi, .rsi] s t := by
+  apply WP.of_runBlock
+  simp only [wrapArgs, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu,
+    Option.map_some, Option.bind_some, RegUpd.gpr_setReg, RegUpd.gpr_arithFlags,
+    reduceCtorEq, ite_true, ite_false, Option.some.injEq, exists_eq_left']
+  refine ⟨trivial, trivial, ?_⟩
+  constructor
+  · intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr.1, hr.2, ite_false]
+  all_goals rfl
+
+end VG.Proof.Argon2.X86_64.ReferenceMap
+end
+
+/-! Parameters and register invariants for the complete reference mapping. -/
+
+namespace VG.Proof.Argon2.X86_64.ReferenceMap
+
+open VG VG.X86_64
+
+/-- Every stage preserves the enclosing loop's callee-saved registers. -/
+def changed : List Reg := [.rax, .rdx, .rcx, .r8, .r9, .r10, .r11, .rdi, .rsi]
+
+structure Bounds (p : Spec.Argon2.Params) (pass lane slice index : Nat) : Prop where
+  lanesPositive : 0 < p.lanes
+  lanesBound : p.lanes < 2 ^ 32
+  memoryMinimum : 8 * p.lanes ≤ p.memory
+  memoryBound : p.memory < 2 ^ 32
+  passBound : pass < 2 ^ 32
+  laneBound : lane < p.lanes
+  sliceBound : slice < 4
+  indexBound : index < p.segmentLen
+  active : pass ≠ 0 ∨ slice ≠ 0 ∨ 2 ≤ index
+
+structure Position (p : Spec.Argon2.Params) (lane slice index : Nat) (s : State) : Prop where
+  current : s.gpr .rbx = BitVec.ofNat 64 lane
+  laneLength : s.gpr .r12 = BitVec.ofNat 64 p.laneLen
+  segmentLength : s.gpr .r13 = BitVec.ofNat 64 p.segmentLen
+  slice : s.gpr .r14 = BitVec.ofNat 64 slice
+  index : s.gpr .r15 = BitVec.ofNat 64 index
+
+theorem Position.of_keeps {s t : State} {p : Spec.Argon2.Params} {lane slice index : Nat}
+    (h : Position p lane slice index s) (k : Divide.Keeps changed s t) :
+    Position p lane slice index t :=
+  ⟨(k.regs .rbx (by decide)).trans h.current,
+    (k.regs .r12 (by decide)).trans h.laneLength,
+    (k.regs .r13 (by decide)).trans h.segmentLength,
+    (k.regs .r14 (by decide)).trans h.slice,
+    (k.regs .r15 (by decide)).trans h.index⟩
+
+structure Ready (p : Spec.Argon2.Params) (pass lane slice index : Nat) (s : State) : Prop where
+  bounds : Bounds p pass lane slice index
+  position : Position p lane slice index s
+  lanes : s.gpr .rsi = BitVec.ofNat 64 p.lanes
+  passRead : InRegions (s.rd ++ s.wr) (s.gpr .rbp) 8
+  passWord : s.mem.readW (s.gpr .rbp) 64 = BitVec.ofNat 64 pass
+
+theorem Ready.lanes_nat {p : Spec.Argon2.Params} {pass lane slice index : Nat} {s : State}
+    (h : Ready p pass lane slice index s) : (s.gpr .rsi).toNat = p.lanes := by
+  rw [h.lanes, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (Nat.lt_trans h.bounds.lanesBound (by decide))]
+
+theorem Ready.of_keeps {p : Spec.Argon2.Params} {pass lane slice index : Nat} {s t : State}
+    (h : Ready p pass lane slice index s) (k : Divide.Keeps changed s t)
+    (lanes : t.gpr .rsi = s.gpr .rsi) : Ready p pass lane slice index t := by
+  refine ⟨h.bounds, h.position.of_keeps k, lanes.trans h.lanes, ?_, ?_⟩
+  · rw [k.rd, k.wr, k.regs .rbp (by decide)]
+    exact h.passRead
+  · rw [k.mem, k.regs .rbp (by decide)]
+    exact h.passWord
+
+def chosenLane (p : Spec.Argon2.Params) (pass lane slice : Nat) (random : Addr) : Nat :=
+  if pass = 0 ∧ slice = 0 then lane else (random >>> 32).toNat % p.lanes
+
+theorem chosenLane_bound (p : Spec.Argon2.Params) (pass lane slice : Nat) (random : Addr)
+    (positive : 0 < p.lanes) (bound : lane < p.lanes) :
+    chosenLane p pass lane slice random < p.lanes := by
+  unfold chosenLane
+  split
+  · exact bound
+  · exact Nat.mod_lt _ positive
+
+theorem word_nat (n : Nat) (bound : n < 2 ^ 64) : (BitVec.ofNat 64 n).toNat = n := by
+  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt bound]
+
+theorem word_zero (n : Nat) (bound : n < 2 ^ 64) : BitVec.ofNat 64 n = (0 : Addr) ↔ n = 0 := by
+  constructor
+  · intro h
+    have hn := congrArg BitVec.toNat h
+    rw [word_nat n bound] at hn
+    exact hn
+  · intro h; rw [h]; rfl
+
+theorem word_eq (x y : Nat) (hx : x < 2 ^ 64) (hy : y < 2 ^ 64) :
+    BitVec.ofNat 64 x = BitVec.ofNat 64 y ↔ x = y := by
+  constructor
+  · intro h
+    have hn := congrArg BitVec.toNat h
+    rw [word_nat x hx, word_nat y hy] at hn
+    exact hn
+  · intro h; rw [h]
+
+theorem Bounds.laneLength_bound {p : Spec.Argon2.Params} {pass lane slice index : Nat}
+    (h : Bounds p pass lane slice index) : p.laneLen < 2 ^ 32 := by
+  have hb : p.laneLen ≤ p.blocks := by
+    rw [Proof.Argon2.blocks_lanes p h.lanesPositive]
+    exact Nat.le_mul_of_pos_left _ h.lanesPositive
+  exact Nat.lt_of_le_of_lt (Nat.le_trans hb (Proof.Argon2.blocks_le_memory p)) h.memoryBound
+
+theorem Bounds.window_positive {p : Spec.Argon2.Params} {pass lane slice index : Nat}
+    (h : Bounds p pass lane slice index) :
+    0 < ReferenceCount.windowBase p pass slice + index ∧
+      (index = 0 → 0 < ReferenceCount.windowBase p pass slice) := by
+  have hp := Proof.Argon2.reference_count_positive p h.lanesPositive h.memoryMinimum
+    pass slice index true h.active (by intro _ _; rfl)
+  rw [ReferenceCount.spec_count] at hp
+  change 0 < ReferenceCount.windowBase p pass slice + index - 1 at hp
+  constructor
+  · omega_using [hp]
+  · intro zero; rw [zero, Nat.add_zero] at hp; omega_using [hp]
+
+def windowSize (p : Spec.Argon2.Params) (pass lane slice index : Nat) (random : Addr) : Nat :=
+  Spec.Argon2.referenceCount p pass slice index (chosenLane p pass lane slice random == lane)
+
+def windowStart (p : Spec.Argon2.Params) (pass slice : Nat) : Nat :=
+  if pass = 0 then 0 else (slice + 1) * p.segmentLen % p.laneLen
+
+def relativeValue (p : Spec.Argon2.Params) (pass lane slice index : Nat) (random : Addr) : Nat :=
+  let count := windowSize p pass lane slice index random
+  let j := (random &&& 0xffffffff).toNat
+  count - 1 - count * (j * j / 2 ^ 32) / 2 ^ 32
+
+theorem Bounds.segment_le_lane {p : Spec.Argon2.Params} {pass lane slice index : Nat}
+    (h : Bounds p pass lane slice index) : p.segmentLen ≤ p.laneLen := by
+  have segments := Proof.Argon2.laneLen_segments p h.lanesPositive
+  omega_using [segments]
+
+theorem Bounds.index_bound64 {p : Spec.Argon2.Params} {pass lane slice index : Nat}
+    (h : Bounds p pass lane slice index) : index < 2 ^ 64 :=
+  Nat.lt_trans (Nat.lt_of_lt_of_le h.indexBound h.segment_le_lane)
+    (Nat.lt_trans h.laneLength_bound (by decide))
+
+theorem Bounds.chosenLane_bound64 {p : Spec.Argon2.Params} {pass lane slice index : Nat}
+    (h : Bounds p pass lane slice index) (random : Addr) :
+    chosenLane p pass lane slice random < 2 ^ 64 :=
+  Nat.lt_trans (chosenLane_bound p pass lane slice random h.lanesPositive h.laneBound)
+    (Nat.lt_trans h.lanesBound (by decide))
+
+theorem Bounds.lane_bound64 {p : Spec.Argon2.Params} {pass lane slice index : Nat}
+    (h : Bounds p pass lane slice index) : lane < 2 ^ 64 :=
+  Nat.lt_trans h.laneBound (Nat.lt_trans h.lanesBound (by decide))
+
+theorem Bounds.windowSize_positive {p : Spec.Argon2.Params} {pass lane slice index : Nat}
+    (h : Bounds p pass lane slice index) (random : Addr) :
+    0 < windowSize p pass lane slice index random := by
+  apply Proof.Argon2.reference_count_positive p h.lanesPositive h.memoryMinimum
+    pass slice index _ h.active
+  intro firstPass firstSlice
+  simp only [chosenLane, firstPass, firstSlice, and_self, ite_true]
+  exact beq_iff_eq.mpr rfl
+
+theorem Bounds.windowSize_bound32 {p : Spec.Argon2.Params} {pass lane slice index : Nat}
+    (h : Bounds p pass lane slice index) (random : Addr) :
+    windowSize p pass lane slice index random < 2 ^ 32 :=
+  Proof.Argon2.reference_count_32 p h.lanesPositive h.memoryMinimum h.memoryBound
+    pass slice index _ h.sliceBound h.indexBound
+
+theorem Bounds.windowSize_lt_lane {p : Spec.Argon2.Params} {pass lane slice index : Nat}
+    (h : Bounds p pass lane slice index) (random : Addr) :
+    windowSize p pass lane slice index random < p.laneLen :=
+  Proof.Argon2.reference_count_lt_lane p h.lanesPositive h.memoryMinimum
+    pass slice index _ h.sliceBound h.indexBound
+
+theorem Bounds.laneLength_positive {p : Spec.Argon2.Params} {pass lane slice index : Nat}
+    (h : Bounds p pass lane slice index) : 0 < p.laneLen := by
+  have seg := Proof.Argon2.segmentLen_ge_two p h.lanesPositive h.memoryMinimum
+  have len := Proof.Argon2.laneLen_segments p h.lanesPositive
+  omega_using [seg, len]
+
+theorem Bounds.windowStart_lt_lane {p : Spec.Argon2.Params} {pass lane slice index : Nat}
+    (h : Bounds p pass lane slice index) : windowStart p pass slice < p.laneLen := by
+  unfold windowStart
+  split
+  · exact h.laneLength_positive
+  · exact Nat.mod_lt _ h.laneLength_positive
+
+theorem Bounds.sum_bound {p : Spec.Argon2.Params} {pass lane slice index : Nat}
+    (h : Bounds p pass lane slice index) (random : Addr) :
+    windowStart p pass slice + relativeValue p pass lane slice index random < 2 * p.laneLen := by
+  have start := h.windowStart_lt_lane
+  have relative := Proof.Argon2.reference_relative_bound _ (random &&& 0xffffffff).toNat
+    (h.windowSize_positive random)
+  have count := h.windowSize_lt_lane random
+  change relativeValue p pass lane slice index random < windowSize p pass lane slice index random at relative
+  omega_using [start, count, relative]
+
+end VG.Proof.Argon2.X86_64.ReferenceMap
+
+end
+
+end
+
+/-! Merged from `Proof.Argon2.X86_64.ReferenceLane`. -/
+
+@[expose] public section
+
+section
+/-! # Secret J₂ does not affect the lane-selection trace -/
+
+namespace VG.Proof.Argon2.X86_64.ReferenceLane
+
+open VG VG.X86_64 VG.Impl.Argon2.X86_64.ReferenceLane
+
+structure Prefix (s t : State) : Prop where
+  high : t.gpr .rdi = s.gpr .rdi >>> 32
+  original : t.gpr .r11 = s.gpr .rdi
+  keeps : Divide.Keeps [.rdi, .r11] s t
+
+theorem highArgs_ok (s : State) : WP isa (.block highArgs) s (Prefix s) := by
+  apply WP.of_runBlock
+  simp only [highArgs, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
+    execShift, RegUpd.gpr_setReg,
+    show 1 ≤ (32 : Nat) ∧ (32 : Nat) ≤ 63 from by decide,
+    and_self, ite_true, ite_false, reduceCtorEq,
+    Option.map_some, Option.some.injEq, exists_eq_left']
+  refine ⟨rfl, rfl, ?_⟩
+  constructor
+  · intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, hr.1, hr.2, ite_false]
+  all_goals rfl
+
+def changed : List Reg := [.rdi, .r11] ++ Divide.changed
+
+theorem code_ok (s : State) (lo : 0 < (s.gpr .rsi).toNat)
+    (bound : (s.gpr .rsi).toNat < 2 ^ 32) :
+    WP isa code s fun t =>
+      (t.gpr .r8).toNat = (s.gpr .rdi >>> 32).toNat % (s.gpr .rsi).toNat ∧
+      t.gpr .r11 = s.gpr .rdi ∧ Divide.Keeps changed s t := by
+  unfold code
+  refine WP.seq ((highArgs_ok s).mono ?_)
+  intro a ha
+  have si := ha.keeps.regs .rsi (by decide)
+  refine (Divide.code_ok a ?_ (by rw [si]; exact lo) (by rw [si]; exact bound)).mono ?_
+  · rw [ha.high]
+    simpa only [show 64 - 32 = (32 : Nat) from rfl] using
+      BitVec.toNat_ushiftRight_lt (s.gpr .rdi) 32 (by decide)
+  · intro t ht
+    refine ⟨?_, ?_, (ha.keeps.mono ?_).trans (ht.2.2.mono ?_)⟩
+    · rw [ht.2.1, ha.high, si]
+    · exact (ht.2.2.regs .r11 (by decide)).trans ha.original
+    · intro r hr; exact List.mem_append_left _ hr
+    · intro r hr; exact List.mem_append_right _ hr
+
+theorem highArgs_secret_rel : RelCT isa (fun _ _ => True) (.block highArgs) (fun _ _ => True) :=
+  RelCT.taint (A := taint) (Taint.ofRegs [])
+    (fun _ _ _ => Taint.agree_ofRegs (by simp)) (by taint_decide)
+
+theorem code_secret_rel : RelCT isa (fun _ _ => True) code (fun _ _ => True) :=
+  highArgs_secret_rel.seq Divide.code_secret_rel
+
+end VG.Proof.Argon2.X86_64.ReferenceLane
+end
+
+/-! Merged from `Proof.Argon2.X86_64.FirstLane`. -/
+section
+/-! The first reference window stays in the current lane. -/
+
+namespace VG.Proof.Argon2.X86_64.FirstLane
+
+open VG VG.X86_64 VG.Impl.Argon2.X86_64.FirstLane
+
+theorem test_ok (s : State) : WP isa (.block test) s fun t =>
+    t.zf = decide (s.gpr .r9 = 0 ∧ s.gpr .r14 = 0) ∧ Divide.Keeps [.rax] s t := by
+  apply WP.of_runBlock
+  simp only [test, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu,
+    RegUpd.gpr_setReg, RegUpd.zf_setReg, RegUpd.zf_arithFlags,
+    reduceCtorEq, ite_true, Option.map_some, Option.bind_some, Option.some.injEq, exists_eq_left']
+  refine ⟨?_, ?_⟩
+  · apply Bool.eq_iff_iff.mpr
+    simp only [beq_iff_eq, decide_eq_true_eq]
+    change (s.gpr .r9 ||| s.gpr .r14) = 0#64 ↔ _
+    exact BitVec.or_eq_zero_iff
+  · constructor
+    · intro r hr
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr, ite_false]
+    all_goals rfl
+
+theorem current_ok (s : State) : WP isa (.block current) s fun t =>
+    t.gpr .r8 = s.gpr .rbx ∧ Divide.Keeps [.r8] s t := by
+  apply WP.of_runBlock
+  simp only [current, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
+    RegUpd.gpr_setReg, ite_true, Option.map_some, Option.some.injEq, exists_eq_left']
+  refine ⟨trivial, ?_⟩
+  constructor
+  · intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    simp only [RegUpd.gpr_setReg, hr, ite_false]
+  all_goals rfl
+
+theorem code_ok (s : State) : WP isa code s fun t =>
+    t.gpr .r8 = (if s.gpr .r9 = 0 ∧ s.gpr .r14 = 0 then s.gpr .rbx else s.gpr .r8) ∧
+    Divide.Keeps [.rax, .r8] s t := by
+  unfold code
+  refine WP.seq ((test_ok s).mono ?_)
+  rintro a ⟨flag, keeps⟩
+  refine WP.ite (decide (s.gpr .r9 = 0 ∧ s.gpr .r14 = 0))
+    (by simp only [eval, flag]) ?_ ?_
+  · intro h
+    have position := of_decide_eq_true h
+    refine (current_ok a).mono ?_
+    rintro t ⟨out, tail⟩
+    refine ⟨?_, (keeps.mono (by decide)).trans (tail.mono (by decide))⟩
+    simpa only [position, and_self, ite_true, keeps.regs .rbx (by decide)] using out
+  · intro h
+    have position := of_decide_eq_false h
+    apply WP.of_runBlock
+    simp only [runBlock_nil, Option.some.injEq, exists_eq_left']
+    refine ⟨?_, keeps.mono (by decide)⟩
+    simp only [position, ite_false]
+    exact keeps.regs .r8 (by decide)
+
+end VG.Proof.Argon2.X86_64.FirstLane
+end
+
+/-! Choose the reference lane, restore the pass and prepare the window inputs. -/
+
+namespace VG.Proof.Argon2.X86_64.ReferenceMap
+
+open VG VG.X86_64 VG.Impl.Argon2.X86_64.ReferenceMap
+
+structure Chosen (p : Spec.Argon2.Params) (pass lane slice index : Nat) (s t : State) : Prop where
+  selected : t.gpr .r8 = BitVec.ofNat 64 (chosenLane p pass lane slice (s.gpr .rdi))
+  pass : t.gpr .r9 = BitVec.ofNat 64 pass
+  original : t.gpr .r11 = s.gpr .rdi
+  position : Position p lane slice index t
+  keeps : Divide.Keeps changed s t
+
+theorem chooseLane_ok (s : State) (p : Spec.Argon2.Params) (pass lane slice index : Nat)
+    (ready : Ready p pass lane slice index s) :
+    WP isa chooseLane s (Chosen p pass lane slice index s) := by
+  have lanesNat : (s.gpr .rsi).toNat = p.lanes := by
+    rw [ready.lanes, word_nat _ (by have := ready.bounds.lanesBound; omega_using [this])]
+  unfold chooseLane
+  refine WP.seq ((ReferenceLane.code_ok s
+    (by rw [lanesNat]; exact ready.bounds.lanesPositive)
+    (by rw [lanesNat]; exact ready.bounds.lanesBound)).mono ?_)
+  rintro a ⟨laneNat, original, ka⟩
+  have ka' : Divide.Keeps changed s a := ka.mono (by decide)
+  have readA : InRegions (a.rd ++ a.wr) (a.gpr .rbp) 8 := by
+    rw [ka'.rd, ka'.wr, ka'.regs .rbp (by decide)]
+    exact ready.passRead
+  have laneWord : a.gpr .r8 = BitVec.ofNat 64 ((s.gpr .rdi >>> 32).toNat % p.lanes) := by
+    calc
+      a.gpr .r8 = BitVec.ofNat 64 (a.gpr .r8).toNat := by simp only [BitVec.ofNat_toNat, BitVec.setWidth_eq]
+      _ = _ := by rw [laneNat, lanesNat]
+  refine WP.seq ((loadPass_ok a readA).mono ?_)
+  rintro b ⟨loaded, kb⟩
+  have kb' : Divide.Keeps changed a b := kb.mono (by decide)
+  have kab := ka'.trans kb'
+  have pb := ready.position.of_keeps kab
+  have passWord : b.gpr .r9 = BitVec.ofNat 64 pass := by
+    rw [loaded, ka'.mem, ka'.regs .rbp (by decide)]
+    exact ready.passWord
+  have passZero : b.gpr .r9 = 0 ↔ pass = 0 := by
+    rw [passWord]
+    exact word_zero _ (by have := ready.bounds.passBound; omega_using [this])
+  have sliceZero : b.gpr .r14 = 0 ↔ slice = 0 := by
+    rw [pb.slice]
+    exact word_zero _ (by have := ready.bounds.sliceBound; omega_using [this])
+  refine (FirstLane.code_ok b).mono ?_
+  rintro t ⟨out, kt⟩
+  have kt' : Divide.Keeps changed b t := kt.mono (by decide)
+  refine ⟨?_, ?_, ?_, ready.position.of_keeps (kab.trans kt'), kab.trans kt'⟩
+  · rw [out]
+    by_cases position : pass = 0 ∧ slice = 0 <;>
+      simp only [passZero, sliceZero, pb.current, kb.regs .r8 (by decide), laneWord,
+        chosenLane, position, and_self, ite_true, ite_false]
+  · exact (kt.regs .r9 (by decide)).trans passWord
+  · exact (kt.regs .r11 (by decide)).trans ((kb.regs .r11 (by decide)).trans original)
+
+structure Prepared (p : Spec.Argon2.Params) (pass lane slice index : Nat) (s t : State) : Prop where
+  selected : t.gpr .rdi = BitVec.ofNat 64 (chosenLane p pass lane slice (s.gpr .rdi))
+  current : t.gpr .rsi = BitVec.ofNat 64 lane
+  pass : (t.gpr .r9).toNat = pass
+  original : t.gpr .r11 = s.gpr .rdi
+  position : Position p lane slice index t
+  keeps : Divide.Keeps changed s t
+
+theorem prepareLanes_ok (s : State) (p : Spec.Argon2.Params) (pass lane slice index : Nat)
+    (ready : Ready p pass lane slice index s) :
+    WP isa prepareLanes s (Prepared p pass lane slice index s) := by
+  unfold prepareLanes
+  refine WP.seq ((chooseLane_ok s p pass lane slice index ready).mono ?_)
+  intro a ha
+  refine (laneArgs_ok a).mono ?_
+  rintro t ⟨laneOut, currentOut, kt⟩
+  have kt' : Divide.Keeps changed a t := kt.mono (by decide)
+  refine ⟨laneOut.trans ha.selected, currentOut.trans ha.position.current, ?_,
+    (kt.regs .r11 (by decide)).trans ha.original,
+    ha.position.of_keeps kt', ha.keeps.trans kt'⟩
+  rw [kt.regs .r9 (by decide), ha.pass, word_nat _ (by have := ready.bounds.passBound; omega_using [this])]
+
+end VG.Proof.Argon2.X86_64.ReferenceMap
+
+end
+
+end
+
+/-! ### `Argon2.X86_64.Relative`, which this module and modules that import it used -/
+
+section
+
+/-! # The baseline reference-window mapping is fixed time and preserves memory -/
+
+@[expose] public section
+
+namespace VG.Proof.Argon2.X86_64.Relative
+
+open VG VG.X86_64 VG.Impl.Argon2.X86_64.Relative
+
+def value (random count : Addr) : Addr :=
+  let j := random &&& 0xffffffff
+  let x := (j * j) >>> 32
+  let y := (x * count) >>> 32
+  count - 1 - y
+
+theorem code_ok (s : State) : WP isa code s fun t =>
+    t.gpr .rax = value (s.gpr .rdi) (s.gpr .rsi) ∧
+    (∀ r, r ≠ .rax → r ≠ .rdx → r ≠ .rcx → t.gpr r = s.gpr r) ∧
+    t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr := by
+  unfold code
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec,
+    readSrc32, readSrc, State.setReg32, execMul, execAlu, execShift,
+    RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg,
+    RegUpd.gpr_setFlags, RegUpd.mem_setFlags, RegUpd.rd_setFlags, RegUpd.wr_setFlags,
+    RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags,
+    RegUpd.wr_arithFlags, reduceCtorEq, and_self, ite_true, ite_false,
+    show 1 ≤ (32 : Nat) ∧ (32 : Nat) ≤ 63 from by decide,
+    Option.map_some, Option.bind_some, Option.some.injEq, exists_eq_left',
+    BitVec.ofNat_mul, BitVec.ofNat_toNat, BitVec.setWidth_eq,
+    show BitVec.signExtend 64 (1 : BitVec 32) = (1 : Addr) from rfl]
+  refine ⟨?_, ?_, trivial⟩
+  · rw [VG.Proof.Argon2.X86_64.low32]; rfl
+  · intro r h1 h2 h3
+    simp only [h1, h2, h3, ite_false]
+
+theorem mul_shift_toNat (x y : Addr) (bound : x.toNat * y.toNat < 2 ^ 64) :
+    ((x * y) >>> 32).toNat = x.toNat * y.toNat / 2 ^ 32 := by
+  rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.toNat_mul,
+    Nat.mod_eq_of_lt bound]
+
+theorem value_nat (random count : Addr) (lo : 0 < count.toNat)
+    (bound : count.toNat < 2 ^ 32) :
+    value random count = BitVec.ofNat 64
+      (count.toNat - 1 - count.toNat * ((random &&& 0xffffffff).toNat *
+        (random &&& 0xffffffff).toNat / 2 ^ 32) / 2 ^ 32) := by
+  let j := random &&& 0xffffffff
+  have hj : j.toNat < 2 ^ 32 := by
+    have h32 := (random.setWidth 32).isLt
+    rw [show j = (random.setWidth 32).setWidth 64 from (low32 random).symm,
+      BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by omega_using [])]
+    exact h32
+  have hx := mul_shift_toNat j j (Proof.Argon2.reference_square_bound _ hj)
+  have product : ((j * j) >>> 32).toNat * count.toNat < 2 ^ 64 := by
+    rw [hx, Nat.mul_comm]
+    exact Proof.Argon2.reference_product_bound _ _ bound hj
+  have hy := mul_shift_toNat ((j * j) >>> 32) count product
+  rw [hx, Nat.mul_comm] at hy
+  have hyBound : count.toNat * (j.toNat * j.toNat / 2 ^ 32) / 2 ^ 32 < count.toNat :=
+    Proof.Argon2.reference_scale_lt_count _ _ lo hj
+  have hyWord : (((j * j) >>> 32) * count) >>> 32 = BitVec.ofNat 64
+      (count.toNat * (j.toNat * j.toNat / 2 ^ 32) / 2 ^ 32) := by
+    apply BitVec.eq_of_toNat_eq
+    rw [hy, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hy])]
+  unfold value
+  change count - 1 - ((((j * j) >>> 32) * count) >>> 32) = _
+  rw [hyWord]
+  change count - (1 : Addr) - BitVec.ofNat 64
+    (count.toNat * (j.toNat * j.toNat / 2 ^ 32) / 2 ^ 32) = _
+  have countWord : count = BitVec.ofNat 64 count.toNat := by
+    exact (BitVec.ofNat_toNat 64 count).symm
+  have countSub : count - 1 = BitVec.ofNat 64 (count.toNat - 1) := by
+    calc
+      count - 1 = BitVec.ofNat 64 count.toNat - BitVec.ofNat 64 1 :=
+        congrArg (fun x : Addr => x - 1) countWord
+      _ = _ := Offset.ofNat_sub_ofNat (by omega_using [lo])
+  rw [countSub, Offset.ofNat_sub_ofNat (by omega_using [hyBound])]
+
+theorem code_nat_ok (s : State) (lo : 0 < (s.gpr .rsi).toNat)
+    (bound : (s.gpr .rsi).toNat < 2 ^ 32) :
+    WP isa code s fun t =>
+      t.gpr .rax = BitVec.ofNat 64
+        ((s.gpr .rsi).toNat - 1 - (s.gpr .rsi).toNat *
+          ((s.gpr .rdi &&& 0xffffffff).toNat * (s.gpr .rdi &&& 0xffffffff).toNat / 2 ^ 32) /
+          2 ^ 32) ∧
+      (∀ r, r ≠ .rax → r ≠ .rdx → r ≠ .rcx → t.gpr r = s.gpr r) ∧
+      t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr :=
+  (code_ok s).mono (fun _ h => ⟨h.1.trans (value_nat _ _ lo bound), h.2⟩)
+
+theorem code_secret_rel : RelCT isa (fun _ _ => True) code (fun _ _ => True) :=
+  RelCT.taint (A := taint) (Taint.ofRegs [])
+    (fun _ _ _ => Taint.agree_ofRegs (by simp)) (by taint_decide)
+
+end VG.Proof.Argon2.X86_64.Relative
+
+end
+
+end
+
+/-! ### `Argon2.X86_64.Wrap`, which this module and modules that import it used -/
+
+section
+
+/-! # Masked subtraction agrees with wrapping the reference column -/
+
+@[expose] public section
+
+namespace VG.Proof.Argon2.X86_64.Wrap
+
+open VG VG.X86_64 VG.Impl.Argon2.X86_64.Wrap
+
+theorem code_ok (s : State) : WP isa code s fun t =>
+    t.gpr .rdi = (if (s.gpr .rdi).toNat < (s.gpr .rsi).toNat
+      then s.gpr .rdi else s.gpr .rdi - s.gpr .rsi) ∧
+    Divide.Keeps [.rdi, .r10, .rax] s t := by
+  unfold code
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu,
+    RegUpd.gpr_setReg,     RegUpd.gpr_arithFlags,     RegUpd.cf_setReg, RegUpd.cf_arithFlags,
+    reduceCtorEq, ite_true, ite_false, Option.map_some, Option.bind_some, Option.some.injEq,
+    exists_eq_left', Divide.sbb_mask, Divide.select_value, decide_eq_true_eq]
+  refine ⟨trivial, ?_⟩
+  constructor
+  · intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr.1, hr.2.1, hr.2.2,
+      ite_false]
+  all_goals rfl
+
+theorem wrap_nat (x q : Addr) (bound : x.toNat < 2 * q.toNat) :
+    (if x.toNat < q.toNat then x else x - q) = BitVec.ofNat 64 (x.toNat % q.toNat) := by
+  rw [Proof.Argon2.reference_wrap _ _ bound]
+  by_cases small : x.toNat < q.toNat
+  · rw [ite_eq_left small, ite_eq_left small]
+    exact (BitVec.ofNat_toNat 64 x).symm
+  · rw [ite_eq_right small, ite_eq_right small]
+    calc
+      x - q = BitVec.ofNat 64 x.toNat - BitVec.ofNat 64 q.toNat := by
+        simp only [BitVec.ofNat_toNat, BitVec.setWidth_eq]
+      _ = _ := Offset.ofNat_sub_ofNat (by omega_using [small])
+
+theorem code_nat_ok (s : State) (bound : (s.gpr .rdi).toNat < 2 * (s.gpr .rsi).toNat) :
+    WP isa code s fun t =>
+      t.gpr .rdi = BitVec.ofNat 64 ((s.gpr .rdi).toNat % (s.gpr .rsi).toNat) ∧
+      Divide.Keeps [.rdi, .r10, .rax] s t :=
+  (code_ok s).mono (fun _ h => ⟨h.1.trans (wrap_nat _ _ bound), h.2⟩)
+
+theorem code_secret_rel : RelCT isa (fun _ _ => True) code (fun _ _ => True) :=
+  RelCT.taint (A := taint) (Taint.ofRegs [])
+    (fun _ _ _ => Taint.agree_ofRegs (by simp)) (by taint_decide)
+
+end VG.Proof.Argon2.X86_64.Wrap
+
+end
+
+end
 
 /-! Merged from `Proof.Argon2.X86_64.ReferenceMapWindow`. -/
 

@@ -3,7 +3,7 @@ module
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.FillLoops
 public import VerifiedGarbage.Proof.Argon2.FinalReduction
 public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.FillBlock
-public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Parameters
+public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Scratch
 import VerifiedGarbage.Proof.Argon2.Serialization
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.HCall
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.MemoryInit
@@ -12,8 +12,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.FillDep
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Initial
-import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Scratch
-import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Locals
 public import VerifiedGarbage.Proof.Argon2.Contract
 
 /-!

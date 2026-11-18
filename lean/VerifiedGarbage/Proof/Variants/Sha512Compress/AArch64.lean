@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Sha512.AArch64.Sha3Backend
-public import VerifiedGarbage.Proof.Sha512.AArch64.ScalarBackend
 
 /-! # The implementations of `Sha512Compress` on AArch64 -/
 

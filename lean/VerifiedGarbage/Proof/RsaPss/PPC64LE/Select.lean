@@ -1,6 +1,5 @@
 module
 
-import VerifiedGarbage.Proof.RsaPss.PPC64LE.Prefix
 import VerifiedGarbage.Proof.RsaPss.PPC64LE.Shift
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Mgf1.Bytes

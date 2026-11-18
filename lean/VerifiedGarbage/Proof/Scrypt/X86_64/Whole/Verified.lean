@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Pbkdf2.Contract
 public import VerifiedGarbage.Proof.Scrypt.X86_64.Whole.Calls
 import VerifiedGarbage.Proof.Scrypt.X86_64.Lit
 import VerifiedGarbage.Proof.Scrypt.X86_64.DirectFill
-import VerifiedGarbage.Proof.Scrypt.X86_64.RoMixLoops
+import VerifiedGarbage.Proof.Scrypt.X86_64.RoMixCT
 import VerifiedGarbage.Proof.Scrypt.X86_64.Salsa
 import VerifiedGarbage.Proof.Scrypt.Whole
 import VerifiedGarbage.Proof.Scrypt.BlockMix
@@ -19,7 +19,7 @@ meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hashes.Sha256
 meta import VerifiedGarbage.Proof.Scrypt.X86_64.Whole.Calls
 meta import VerifiedGarbage.Proof.Scrypt.X86_64.Lit
 meta import VerifiedGarbage.Proof.Scrypt.X86_64.DirectFill
-meta import VerifiedGarbage.Proof.Scrypt.X86_64.RoMixLoops
+meta import VerifiedGarbage.Proof.Scrypt.X86_64.RoMixCT
 meta import VerifiedGarbage.Proof.Scrypt.X86_64.Salsa
 meta import VerifiedGarbage.Proof.Scrypt.Whole
 meta import VerifiedGarbage.Proof.Scrypt.BlockMix

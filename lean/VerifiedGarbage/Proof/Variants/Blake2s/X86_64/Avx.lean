@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Blake2.X86_64.Avx.Stream
-public import VerifiedGarbage.Proof.Blake2.X86_64.Avx.Compress
 public import VerifiedGarbage.Proof.Blake2.X86_64.BackendS
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Init
@@ -22,7 +21,6 @@ import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 import VerifiedGarbage.Proof.Sha256.Stream
 import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
 public meta import VerifiedGarbage.Proof.Blake2.X86_64.Avx.Stream
-public meta import VerifiedGarbage.Proof.Blake2.X86_64.Avx.Compress
 public meta import VerifiedGarbage.Proof.Blake2.X86_64.BackendS
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Init

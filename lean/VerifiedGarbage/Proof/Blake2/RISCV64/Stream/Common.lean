@@ -20,7 +20,7 @@ The contracts the proofs of `init`, `update` and `finalize` are written
 against, what they need of the compression function they call (`CalleeOk`),
 the call (`compressWith_ok`), the loops copying bytes into the buffer and
 zeroing it, and the saves and restores in the scratch space, as on PPC64LE
-(`Proof/Blake2/PPC64LE/Stream/Common.lean`).
+(`Proof/Blake2/PPC64LE/Stream/Verified.lean`).
 -/
 
 @[expose] public section

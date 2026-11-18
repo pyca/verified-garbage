@@ -6,8 +6,7 @@ public import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
 public import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratch
 public import VerifiedGarbage.Proof.Sha512.PPC64LE.Compress
 public import VerifiedGarbage.Proof.Sha512.PPC64LE.Stream.Finalize
-import VerifiedGarbage.Proof.Sha512.PPC64LE.Stream.Init
-public import VerifiedGarbage.Proof.Sha512.PPC64LE.Stream.Update
+public import VerifiedGarbage.Proof.Sha512.PPC64LE.Stream.Init
 import VerifiedGarbage.Proof.Sha512.Scratch
 public import VerifiedGarbage.Proof.Sha512.Digest
 public import VerifiedGarbage.Spec.Sha512.Contract

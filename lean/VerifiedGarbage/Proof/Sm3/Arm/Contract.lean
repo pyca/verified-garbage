@@ -12,7 +12,7 @@ shared contracts of `Spec/`, which imply these (`Contract.Implies`). The
 contracts of the 32-bit ARM implementations of the compression function and of
 the streaming functions (`init`, `update`, `finalize`; see
 `VG.Spec.Sm3.Repr`), in terms of `Spec/Sm3.lean`. The streaming contracts
-are those of x86-64 and AArch64 (`Proof/Sm3/X86_64/Contract.lean`,
+are those of x86-64 and AArch64 (`Proof/Sm3/X86_64/Compress.lean`,
 `Proof/Sm3/AArch64/Contract.lean`), with the arguments where AAPCS passes
 them.
 -/

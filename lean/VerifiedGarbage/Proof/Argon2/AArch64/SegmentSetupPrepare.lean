@@ -7,18 +7,15 @@ public import VerifiedGarbage.Impl.Argon2.AArch64.FillBlock
 public import VerifiedGarbage.Proof.Argon2.AArch64.DependentWord
 public import VerifiedGarbage.Impl.Argon2.AArch64.RandomSource
 public import VerifiedGarbage.Proof.Argon2.Matrix
-import VerifiedGarbage.Proof.Argon2.AArch64.FillKernelStable
 public import VerifiedGarbage.Proof.Argon2.AArch64.AddressCacheWord
-public import VerifiedGarbage.Proof.Argon2.AArch64.AddressCallsStage
 import VerifiedGarbage.Proof.Argon2.AArch64.ClearBlock
 public import VerifiedGarbage.Proof.Argon2.AddressInput
 public import VerifiedGarbage.Proof.Argon2.AArch64.Initialize
-import VerifiedGarbage.Proof.Argon2.AArch64.AddressHeaderWords
 import VerifiedGarbage.Proof.Argon2.AArch64.FillCompressSetup
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Impl.Argon2.AArch64.MemoryInit
 public import VerifiedGarbage.Proof.Argon2.Contract
-import VerifiedGarbage.Proof.Argon2.AArch64.ReferenceStart
+public import VerifiedGarbage.Proof.Argon2.AArch64.FillKernelArgs
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Argon2.AArch64.Carry
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
@@ -26,6 +23,31 @@ import VerifiedGarbage.Proof.Argon2.Dimensions
 public import VerifiedGarbage.Proof.Argon2.FillStep
 import VerifiedGarbage.Proof.Argon2.AArch64.Instructions
 public import VerifiedGarbage.Proof.Argon2.Segment
+
+/-! ### `Argon2.AArch64.FillKernelStable`, which this module and modules that import it used -/
+
+section
+
+/-! Register-only helpers retain the filling allocation and position invariants. -/
+
+@[expose] public section
+
+namespace VG.Proof.Argon2.AArch64.FillKernel
+
+open VG VG.AArch64
+
+theorem Ready.of_keeps {p : Spec.Argon2.Params} {pass lane slice index : Nat} {s t : State}
+    (h : Ready p pass lane slice index s) (k : Divide.Keeps ReferenceMap.changed s t) :
+    Ready p pass lane slice index t := by
+  refine ⟨h.layout.of_keeps k, h.bounds, h.position.of_keeps k, ?_, ?_⟩
+  · rw [k.mem, k.regs .x19 (by decide)]; exact h.passWord
+  · rw [k.mem, k.regs .x19 (by decide)]; exact h.lanesWord
+
+end VG.Proof.Argon2.AArch64.FillKernel
+
+end
+
+end
 
 /-! ### `Argon2.AArch64.SegmentSetupSteps`, which this module and modules that import it used -/
 

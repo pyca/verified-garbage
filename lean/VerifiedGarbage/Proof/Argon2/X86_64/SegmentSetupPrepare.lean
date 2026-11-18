@@ -6,10 +6,7 @@ public import VerifiedGarbage.Impl.Argon2.X86_64.FillBlock
 public import VerifiedGarbage.Proof.Argon2.X86_64.DependentWord
 public import VerifiedGarbage.Impl.Argon2.X86_64.RandomSource
 public import VerifiedGarbage.Proof.Argon2.Matrix
-import VerifiedGarbage.Proof.Argon2.X86_64.FillKernelStable
 public import VerifiedGarbage.Proof.Argon2.X86_64.AddressCacheWord
-public import VerifiedGarbage.Proof.Argon2.X86_64.AddressCallsStage
-import VerifiedGarbage.Proof.Argon2.X86_64.ClearBlock
 public import VerifiedGarbage.Proof.Argon2.AddressInput
 public import VerifiedGarbage.Proof.Argon2.X86_64.Initialize
 import VerifiedGarbage.Proof.Argon2.X86_64.AddressHeaderWords
@@ -22,6 +19,242 @@ import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Argon2.Dimensions
 public import VerifiedGarbage.Proof.Argon2.FillStep
 public import VerifiedGarbage.Proof.Argon2.Segment
+public import VerifiedGarbage.Impl.Argon2.X86_64.ClearBlock
+public import VerifiedGarbage.Proof.Framework.Covers
+import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Impl.Argon2.X86_64.MemoryInit
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Copy
+import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Argon2.X86_64.FillKernelArgs
+
+/-! ### `Argon2.X86_64.FillKernelStable`, which this module and modules that import it used -/
+
+section
+
+/-! Register-only helpers retain the filling allocation and position invariants. -/
+
+@[expose] public section
+
+namespace VG.Proof.Argon2.X86_64.FillKernel
+
+open VG VG.X86_64
+
+theorem Ready.of_keeps {p : Spec.Argon2.Params} {pass lane slice index : Nat} {s t : State}
+    (h : Ready p pass lane slice index s) (k : Divide.Keeps ReferenceMap.changed s t) :
+    Ready p pass lane slice index t := by
+  refine ⟨h.layout.of_keeps k, h.bounds, h.position.of_keeps k, ?_, ?_⟩
+  · rw [k.mem, k.regs .rbp (by decide)]; exact h.passWord
+  · rw [k.mem, k.regs .rbp (by decide)]; exact h.lanesWord
+
+end VG.Proof.Argon2.X86_64.FillKernel
+
+end
+
+end
+
+/-! ### `Argon2.X86_64.ClearBlock`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Argon2.X86_64.MemoryInitClear`, which this module and modules that import it used -/
+
+section
+
+/-! # Zeroing the Argon2 matrix, independently of its initial contents -/
+
+@[expose] public section
+
+namespace VG.Proof.Argon2.X86_64.MemoryInit
+
+open VG VG.X86_64 VG.Impl.Argon2.X86_64.MemoryInit
+
+def clearMem (m : Mem) (p : Addr) : Nat → Mem
+  | 0 => m
+  | n + 1 => (clearMem m p n).writeW (p + BitVec.ofNat 64 (8 * n)) (0 : BitVec 64)
+
+theorem clearMem_frame (m : Mem) (p : Addr) (n : Nat) (bound : 8 * n < 2 ^ 64) :
+    Frame [⟨p, 8 * n⟩] m (clearMem m p n) := by
+  induction n with
+  | zero => exact Frame.refl _ _
+  | succ n ih =>
+    have smaller : Frame [⟨p, 8 * (n + 1)⟩] m (clearMem m p n) :=
+      (ih (by omega_using [bound])).sub (by
+        intro r hr; simp only [List.mem_singleton] at hr; subst r
+        exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by omega_using [])⟩)
+    exact smaller.writeW (List.mem_singleton_self _) (0 : BitVec 64)
+      (Offset.contains_base _ (by omega_using []) (by omega_using [bound]))
+
+theorem clearMem_word (m : Mem) (p : Addr) (n j : Nat)
+    (bound : 8 * n < 2 ^ 64) (hj : j < n) :
+    (clearMem m p n).readW (p + BitVec.ofNat 64 (8 * j)) 64 = 0 := by
+  induction n with
+  | zero => omega
+  | succ n ih =>
+    rw [clearMem]
+    by_cases eq : j = n
+    · subst j; exact Mem.readW_writeW_self64 _ _ _
+    · rw [Mem.readW_writeW_sep ?_ (by decide)]
+      · exact ih (by omega_using [bound]) (by omega_using [hj, eq])
+      · exact Offset.sep p (by omega_using [eq]) (by omega_using [bound, hj]) (by omega_using [bound])
+
+theorem clearWord_ok (s : State) (hw : InRegions s.wr (s.gpr .r14) 8) :
+    WP isa (.block clearWord) s fun t =>
+      t.mem = s.mem.writeW (s.gpr .r14) (s.gpr .rcx) ∧
+      t.gpr .r14 = s.gpr .r14 + 8 ∧ t.gpr .rax = s.gpr .rax - 1 ∧
+      t.zf = some (s.gpr .rax - 1 == 0) ∧
+      (∀ r, r ≠ .rax → r ≠ .r14 → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr := by
+  apply WP.of_runBlock
+  simp only [clearWord, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
+    State.store64, execAlu, HPrime.ea_at, BitVec.add_zero,
+    RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg,
+    RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags,
+    RegUpd.wr_arithFlags, RegUpd.zf_arithFlags, RegUpd.zf_setReg,
+    show (BitVec.signExtend 64 (8 : BitVec 32)) = 8 from rfl,
+    show (BitVec.signExtend 64 (1 : BitVec 32)) = 1 from rfl,
+    hw, reduceCtorEq, ite_true, ite_false,
+    Option.bind_some, Option.some.injEq, exists_eq_left']
+  exact ⟨trivial, trivial, trivial, trivial,
+    fun r h1 h2 => by simp only [h1, h2, ite_false], trivial, trivial⟩
+
+structure ClearI (s₀ : State) (p : Addr) (n j : Nat) (s : State) : Prop where
+  bound : j ≤ n
+  destination : s.gpr .r14 = p + BitVec.ofNat 64 (8 * j)
+  count : s.gpr .rax = BitVec.ofNat 64 (n - j)
+  zero : s.gpr .rcx = 0
+  other : ∀ r, r ≠ .rax → r ≠ .r14 → s.gpr r = s₀.gpr r
+  rd : s.rd = s₀.rd
+  wr : s.wr = s₀.wr
+  mem : s.mem = clearMem s₀.mem p j
+
+theorem clearLoop_ok (s₀ : State) (p : Addr) (n : Nat) (lo : 1 ≤ n)
+    (bound : 8 * n < 2 ^ 64) (dst : s₀.gpr .r14 = p)
+    (count : s₀.gpr .rax = BitVec.ofNat 64 n) (zero : s₀.gpr .rcx = 0)
+    (write : ∀ j < n, InRegions s₀.wr (p + BitVec.ofNat 64 (8 * j)) 8) :
+    WP isa (.loop (.block clearWord) .ne) s₀ (ClearI s₀ p n n) := by
+  refine WP.loop (M := isa) (fun k s => ∃ j, k = n - j ∧ j < n ∧ ClearI s₀ p n j s)
+    ?_ n s₀ ⟨0, by omega_using [], lo, by omega_using [], by simpa using dst, by simpa only [Nat.sub_zero] using count,
+      zero, fun _ _ _ => rfl, rfl, rfl, rfl⟩
+  rintro k s ⟨j, rfl, hj, h⟩
+  have hw : InRegions s.wr (s.gpr .r14) 8 := by
+    rw [h.wr, h.destination]; exact write j hj
+  refine (clearWord_ok s hw).mono ?_
+  rintro t ⟨memT, dstT, countT, zfT, otherT, rdT, wrT⟩
+  have nextCount : BitVec.ofNat 64 (n - j) - 1 = BitVec.ofNat 64 (n - (j + 1)) := by
+    rw [show (1 : Addr) = BitVec.ofNat 64 1 from rfl, Offset.ofNat_sub_ofNat (by omega_using [hj])]
+    congr 1
+  have next : ClearI s₀ p n (j + 1) t := by
+    refine ⟨by omega_using [hj], ?_, ?_, (otherT _ (by decide) (by decide)).trans h.zero,
+      fun r h1 h2 => (otherT r h1 h2).trans (h.other r h1 h2),
+      rdT.trans h.rd, wrT.trans h.wr, ?_⟩
+    · rw [dstT, h.destination, BitVec.add_assoc, show (8 : Addr) = BitVec.ofNat 64 8 from rfl, ← BitVec.ofNat_add]
+      congr 2
+    · rw [countT, h.count, nextCount]
+    · rw [memT, h.mem, h.destination, h.zero]; rfl
+  have zf : t.zf = some (decide (n - (j + 1) = 0)) := by
+    rw [zfT, h.count, nextCount]
+    congr 1
+    rw [Bool.eq_iff_iff, beq_iff_eq, decide_eq_true_iff]
+    constructor
+    · intro eq
+      have num := congrArg BitVec.toNat eq
+      simpa only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [bound] : n - (j + 1) < 2 ^ 64),
+        show (0 : Addr).toNat = 0 from rfl] using num
+    · intro eq; rw [eq]; rfl
+  by_cases done : j + 1 = n
+  · refine .inl ⟨?_, done ▸ next⟩
+    simp only [eval, zf, show n - (j + 1) = 0 by omega_using [done], decide_true,
+      Option.map_some, Bool.not_true]
+  · refine .inr ⟨?_, n - (j + 1), by omega_using [hj], j + 1, rfl, by omega_using [hj, done], next⟩
+    simp only [eval, zf, show n - (j + 1) ≠ 0 by omega_using [hj, done], decide_false,
+      Option.map_some, Bool.not_false]
+
+end VG.Proof.Argon2.X86_64.MemoryInit
+
+end
+
+end
+
+/-! Zero every word, preserving the enclosing loop's registers and memory. -/
+
+@[expose] public section
+
+namespace VG.Proof.Argon2.X86_64.ClearBlock
+
+open VG VG.X86_64 VG.Spec.Argon2 VG.Impl.Argon2.X86_64.ClearBlock
+
+theorem word_ok (s : State) (i : Nat)
+    (hw : InRegions s.wr (off (s.gpr .rdi) (8 * i)) 8) :
+    WP isa (.block (Impl.Argon2.X86_64.ClearBlock.word i)) s fun t =>
+      t.mem = s.mem.writeW (off (s.gpr .rdi) (8 * i)) (s.gpr .rax) ∧
+      t.gpr = s.gpr ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.mxcsr = s.mxcsr := by
+  apply WP.of_runBlock
+  simp only [Impl.Argon2.X86_64.ClearBlock.word, runBlock_cons, runStep_some, runBlock_nil,
+    exec, State.store64, ea_at, hw, ite_true, Option.some.injEq, exists_eq_left']
+  exact ⟨trivial, trivial, trivial, trivial, trivial⟩
+
+theorem prefix_ok (n : Nat) (hn : n ≤ 128) (s : State) (zero : s.gpr .rax = 0)
+    (write : Covers [⟨s.gpr .rdi, 1024⟩] s.wr) :
+    WP isa (.block (words n)) s fun t =>
+      t.mem = MemoryInit.clearMem s.mem (s.gpr .rdi) n ∧
+      t.gpr = s.gpr ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.mxcsr = s.mxcsr := by
+  induction n with
+  | zero => exact WP.block_nil ⟨rfl, rfl, rfl, rfl, rfl⟩
+  | succ n ih =>
+    simp only [words, List.range_succ, List.flatMap_append, List.flatMap_cons,
+      List.flatMap_nil, List.append_nil]
+    apply WP.block_append
+    refine (ih (by omega_using [hn])).mono ?_
+    rintro a ⟨mem, regs, rd, wr, mx⟩
+    have hw : InRegions a.wr (off (a.gpr .rdi) (8 * n)) 8 := by
+      rw [regs, wr]
+      exact write _ _ ⟨⟨s.gpr .rdi, 1024⟩, by simp,
+        Offset.contains_base _ (d := 8 * n) (n := 8) (k := 1024) (by omega_using [hn]) (by omega_using [hn])⟩
+    refine (word_ok a n hw).mono ?_
+    rintro t ⟨mem', regs', rd', wr', mx'⟩
+    refine ⟨?_, regs'.trans regs, rd'.trans rd, wr'.trans wr, mx'.trans mx⟩
+    rw [mem', regs, zero, mem]
+    rfl
+
+theorem zero_ok (s : State) : WP isa (.block [.mov .rax (.imm 0)]) s fun t =>
+    t.gpr .rax = 0 ∧ (∀ r, r ≠ .rax → t.gpr r = s.gpr r) ∧
+    t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.mxcsr = s.mxcsr := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
+    Option.map_some, Option.some.injEq, exists_eq_left', RegUpd.gpr_setReg, ite_true]
+  refine ⟨rfl, ?_, rfl, rfl, rfl, rfl⟩
+  intro r hr
+  exact ite_eq_right hr
+
+theorem code_ok (s : State) (write : Covers [⟨s.gpr .rdi, 1024⟩] s.wr) :
+    WP isa code s fun t => blockAt t.mem (s.gpr .rdi) = zeroBlock ∧
+      Frame [⟨s.gpr .rdi, 1024⟩] s.mem t.mem ∧ CopyKeeps s t ∧ t.mxcsr = s.mxcsr := by
+  unfold code
+  refine WP.seq ((zero_ok s).mono ?_)
+  rintro a ⟨zero, regs, mem, rd, wr, mx⟩
+  have dest : a.gpr .rdi = s.gpr .rdi := regs .rdi (by decide)
+  have write' : Covers [⟨a.gpr .rdi, 1024⟩] a.wr := by rw [dest, wr]; exact write
+  refine (prefix_ok 128 (by decide) a zero write').mono ?_
+  rintro t ⟨mem', regs', rd', wr', mx'⟩
+  have cleared : t.mem = MemoryInit.clearMem s.mem (s.gpr .rdi) 128 := by
+    rw [mem', mem, dest]
+  refine ⟨?_, ?_, ⟨fun r hr => (congrFun regs' r).trans (regs r hr), rd'.trans rd, wr'.trans wr⟩,
+    mx'.trans mx⟩
+  · rw [cleared]
+    apply Vector.ext
+    intro i hi
+    change (blockAt _ _)[(⟨i, hi⟩ : Fin 128)] = zeroBlock[(⟨i, hi⟩ : Fin 128)]
+    rw [blockAt_get, MemoryInit.clearMem_word _ _ 128 i (by decide) hi]
+    simp only [zeroBlock, Fin.getElem_fin, Vector.getElem_replicate]
+  · rw [cleared]
+    exact MemoryInit.clearMem_frame _ _ 128 (by decide)
+
+end VG.Proof.Argon2.X86_64.ClearBlock
+
+end
+
+end
 
 /-! ### `Argon2.X86_64.FillSegment`, which only this module used -/
 

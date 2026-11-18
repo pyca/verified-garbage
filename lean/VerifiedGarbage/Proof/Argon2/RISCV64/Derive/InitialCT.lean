@@ -2,25 +2,19 @@ module
 
 public import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.CTCall
 public import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Initial
-public import VerifiedGarbage.Proof.Argon2.RISCV64.HPrime.FixedCT
-import VerifiedGarbage.Proof.Argon2.RISCV64.HPrime.Calls
+public import VerifiedGarbage.Proof.Argon2.RISCV64.HPrime.CT
 import VerifiedGarbage.Proof.Argon2.RISCV64.HPrime.Absorb
-import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Scratch
-import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Locals
+public import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Scratch
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.RISCV64.Steps
 meta import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.CTCall
 meta import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Initial
-meta import VerifiedGarbage.Proof.Argon2.RISCV64.HPrime.FixedCT
-meta import VerifiedGarbage.Proof.Argon2.RISCV64.HPrime.Calls
+meta import VerifiedGarbage.Proof.Argon2.RISCV64.HPrime.CT
 meta import VerifiedGarbage.Proof.Argon2.RISCV64.HPrime.Absorb
 meta import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Scratch
-meta import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Locals
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Exec
-meta import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Parameters
-public import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Parameters
 
 /-!
 # Argon2 on RISC-V: H₀, in two runs

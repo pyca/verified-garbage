@@ -11,6 +11,40 @@ import VerifiedGarbage.Proof.Rsa.PPC64LE.PrivTaint
 import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtCT
 import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtCorrect
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Impl.Rsa.PPC64LE.Priv
+public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.TCB.PPC64LE.Target
+public import VerifiedGarbage.Proof.Rsa.PPC64LE.PrivCorrect
+import VerifiedGarbage.Proof.Framework.GetElem
+
+/-! ### `Rsa.PPC64LE.PrivVerified`, which the modules that import this one used -/
+
+section
+
+/-!
+# `vg_rsa_private_checked` on PPC64LE: the shared contract on the registers
+
+`fnContract` states the shared contract's postcondition on the registers and
+the stack.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Rsa.PPC64LE.Priv
+
+open VG VG.PPC64LE VG.Impl.Rsa.PPC64LE.Priv
+
+/-- The shared contract, its postcondition on the registers and the stack. -/
+def fnContract : Contract isa where
+  pre := (Proof.Rsa.privateCheckedContract abi frameBytes).pre
+  post := fnPost
+  pub := (Proof.Rsa.privateCheckedContract abi frameBytes).pub
+
+end VG.Proof.Rsa.PPC64LE.Priv
+
+end
+
+end
 
 /-!
 # `vg_rsa_private_checked_precomputed` on PPC64LE: constant time, and the contract on the registers

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Locals
+public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Scratch
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.PPC64LE.Alloc

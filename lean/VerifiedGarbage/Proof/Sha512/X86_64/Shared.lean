@@ -9,8 +9,7 @@ public import VerifiedGarbage.Proof.Sha512.Digest
 public import VerifiedGarbage.Impl.StackScratch.X86_64
 public import VerifiedGarbage.Proof.Framework.X86_64.Depth
 import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Compress
-import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Verified
-import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Verified
+import VerifiedGarbage.Proof.Sha512.X86_64.Stream.Md
 import VerifiedGarbage.Proof.Framework.TaintSum
 import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
 import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit

@@ -4,7 +4,7 @@ import VerifiedGarbage.Proof.Framework.RISCV64.Spill
 import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.FillLoops
 public import VerifiedGarbage.Proof.Argon2.FinalReduction
 public import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.FillBlock
-public import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Parameters
+public import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Scratch
 import VerifiedGarbage.Proof.Argon2.Serialization
 import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.HCall
 import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.MemoryInit
@@ -14,8 +14,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.FillDep
 import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Initial
-import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Scratch
-import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Locals
 public import VerifiedGarbage.Proof.Argon2.Contract
 
 /-!

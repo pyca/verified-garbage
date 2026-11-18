@@ -5,7 +5,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 import all Init.Data.Nat.Bitwise.Basic
 import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Block
 public import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Xor
-import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Contract
 public import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Vmx4.Xor
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega

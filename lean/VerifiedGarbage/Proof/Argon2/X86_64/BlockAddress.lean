@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Impl.Argon2.X86_64.BlockAddress
 public import VerifiedGarbage.Proof.Argon2.X86_64.DivideStep
 public import VerifiedGarbage.Proof.Framework.RelCT
-import VerifiedGarbage.Proof.Argon2.X86_64.MemoryInitScale
 import VerifiedGarbage.Proof.Framework.X86_64.Abi
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
@@ -13,13 +12,78 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Impl.Argon2.X86_64.BlockAddress
 meta import VerifiedGarbage.Proof.Argon2.X86_64.DivideStep
 meta import VerifiedGarbage.Proof.Framework.RelCT
-meta import VerifiedGarbage.Proof.Argon2.X86_64.MemoryInitScale
 meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
 meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
 meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.TCB.X86_64.Isa
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
+meta import VerifiedGarbage.Proof.Framework.Semantics
+meta import VerifiedGarbage.TCB.X86_64.Isa
+meta import VerifiedGarbage.Proof.Framework.Mem
+meta import VerifiedGarbage.Proof.Framework.PlainSimp
+meta import VerifiedGarbage.Proof.Framework.X86_64.Reduce
+
+/-! ### `Argon2.X86_64.MemoryInitScale`, which this module and modules that import it used -/
+
+section
+
+/-! # Fixed public scaling by powers of two using baseline additions -/
+
+@[expose] public section
+
+namespace VG.Proof.Argon2.X86_64.MemoryInit
+
+open VG VG.X86_64
+
+structure Scaled (s t : State) (r : Reg) (n : Nat) : Prop where
+  value : t.gpr r = s.gpr r * BitVec.ofNat 64 (2 ^ n)
+  other : ∀ q, q ≠ r → t.gpr q = s.gpr q
+  mem : t.mem = s.mem
+  rd : t.rd = s.rd
+  wr : t.wr = s.wr
+
+theorem double_ok (s : State) (r : Reg) :
+    WP isa (.block [.alu .add r (.reg r)]) s fun t =>
+      t.gpr r = s.gpr r + s.gpr r ∧ (∀ q, q ≠ r → t.gpr q = s.gpr q) ∧
+      t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, reduceExec, readSrc, execAlu,
+    Option.bind_some, Option.some.injEq, exists_eq_left']
+  refine ⟨?_, fun q hr => ?_, rfl, rfl, rfl⟩
+  · simp only [RegUpd.gpr_arithFlags, RegUpd.gpr_setReg, ite_true]
+  · simp only [RegUpd.gpr_arithFlags, RegUpd.gpr_setReg, hr, ite_false]
+
+theorem scale_ok (s : State) (r : Reg) (n : Nat) :
+    WP isa (.block (List.replicate n (.alu .add r (.reg r)))) s fun t => Scaled s t r n := by
+  induction n generalizing s with
+  | zero =>
+    exact WP.block_nil ⟨by rw [Nat.pow_zero]; exact (BitVec.mul_one _).symm,
+      fun _ _ => rfl, rfl, rfl, rfl⟩
+  | succ n ih =>
+    change WP isa (.block (([.alu .add r (.reg r)] : List Instr) ++
+      List.replicate n (.alu .add r (.reg r)))) s _
+    rw [WP.block_append_iff]
+    refine (double_ok s r).mono ?_
+    rintro a ⟨value, other, mem, rd, wr⟩
+    refine (ih a).mono ?_
+    intro t ht
+    refine ⟨?_, fun q hq => (ht.other q hq).trans (other q hq),
+      ht.mem.trans mem, ht.rd.trans rd, ht.wr.trans wr⟩
+    rw [ht.value, value, ← BitVec.mul_two, Nat.pow_succ, BitVec.ofNat_mul,
+      BitVec.mul_assoc]
+    exact congrArg (fun v => s.gpr r * v) (BitVec.mul_comm _ _)
+
+end VG.Proof.Argon2.X86_64.MemoryInit
+
+end
+
+end
 
 /-! Fault-free matrix pointer calculation, with no memory accesses. -/
 

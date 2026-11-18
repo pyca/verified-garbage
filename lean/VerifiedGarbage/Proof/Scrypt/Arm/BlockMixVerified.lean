@@ -637,7 +637,7 @@ end VG.Proof.Scrypt.Arm
 /-!
 # scryptBlockMix on 32-bit ARM: the loop
 
-As on AArch64 (`Proof/Scrypt/AArch64/BlockMixVerified.lean`), the calls of
+As on AArch64 (`Proof/Scrypt/AArch64/Resident/Verified.lean`), the calls of
 `vg_salsa20_8` are used through `SalsaSpec`, what its proof says about a call;
 the proof of this file holds for any code meeting it. Registers hold 32-bit
 pointers, and memory is addressed by their zero extensions (`State.addr`), which

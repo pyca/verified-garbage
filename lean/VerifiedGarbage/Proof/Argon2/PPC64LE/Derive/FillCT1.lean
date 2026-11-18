@@ -1,19 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.CTCall
-public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.FillState
+public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.FillDep
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.FillCache
-import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.FillInput
-import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.FillDep
-import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Locals
+import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Scratch
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 meta import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.CTCall
-meta import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.FillState
+meta import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.FillDep
 meta import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.InitialCT
 meta import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.FillCache
-meta import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.FillInput
-meta import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.FillDep
-meta import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Locals
+meta import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Scratch
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Initial
 

@@ -22,7 +22,7 @@ public import VerifiedGarbage.Proof.RsaPss.RISCV64.Prefix
 # RSASSA-PSS verification on RISC-V: correctness
 
 Untrusted: everything here is checked by Lean. As on PPC64LE
-(`Proof/RsaPss/PPC64LE/Correct.lean`): the checks (`checks_done`), a
+(`Proof/RsaPss/PPC64LE/CTPub.lean`): the checks (`checks_done`), a
 modulus whose first byte is zero (`verify_zero₂`), and an encoding too short
 for the digest (`chkEm`) or the salt length expected (`expLen`, `chkSalt`:
 `verify_short₂`) return 0; otherwise RSAVP1 of the signature (`call_ok`) and
@@ -37,7 +37,7 @@ it (`res_iff`, `verify_bytes₂`), if `pre` holds the modulus' values.
 # RSASSA-PSS verification on RISC-V: the checks are EMSA-PSS-VERIFY's
 
 Untrusted: everything here is checked by Lean. As on PPC64LE
-(`Proof/RsaPss/PPC64LE/Logic.lean`): for `EM` of `emLen = E`
+(`Proof/RsaPss/PPC64LE/CTPub.lean`): for `EM` of `emLen = E`
 bytes after `lo` (`lN`) in the view `V`, `DB` unmasked as the code does
 (`wR`) is `Proof.RsaPss.vDb` (`wR_eq`), and `Res` (`Post.lean`) holds
 exactly when the leading byte is zero if `lo = 1` and the encoding is

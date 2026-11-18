@@ -4,9 +4,8 @@ public import VerifiedGarbage.Proof.Rsa.PPC64LE.PrivCorrect
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.PrivPreCopy
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-public import VerifiedGarbage.Proof.Rsa.PPC64LE.PrivVerified
-public import VerifiedGarbage.Proof.Framework.PPC64LE.CallAny
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.PrivPCT
+public import VerifiedGarbage.Proof.Framework.PPC64LE.CallAny
 import VerifiedGarbage.Proof.Framework.Covers
 import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Entry
 public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Base

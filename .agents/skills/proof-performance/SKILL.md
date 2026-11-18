@@ -461,7 +461,7 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   not `congr 1`, which first tries to unify both sides. A lemma proved
   `:= rfl` is one `simp` uses by definitional unfolding, which the kernel
   then repeats; where a profile shows that (e.g. `exec` of an instruction,
-  `Proof/Blake2/X86_64/Avx/Round.lean`), prove it `:= (rfl)`. Keep the
+  `Proof/Blake2/X86_64/Avx/Stream.lean`), prove it `:= (rfl)`. Keep the
   framework's `RegUpd` lemmas `rfl`: as propositional rewrites they measured
   slower. A lemma whose right side is one of its arguments
   (`XBinOp.eval .movdqa a b = b`) is the worst case: where `b` is another

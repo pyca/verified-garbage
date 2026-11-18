@@ -3,7 +3,7 @@ module
 import VerifiedGarbage.Proof.Argon2.AArch64.Finish
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.Argon2.Permutation
-public import VerifiedGarbage.Proof.Argon2.AArch64.Words
+public import VerifiedGarbage.Proof.Argon2.AArch64.Initialize
 import VerifiedGarbage.Proof.Argon2.AArch64.Schedule
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Argon2.Contract
@@ -25,7 +25,7 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
 meta import VerifiedGarbage.Proof.Argon2.AArch64.Finish
 meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 meta import VerifiedGarbage.Proof.Argon2.Permutation
-meta import VerifiedGarbage.Proof.Argon2.AArch64.Words
+meta import VerifiedGarbage.Proof.Argon2.AArch64.Initialize
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Spec.Argon2.Contract
 meta import VerifiedGarbage.TCB.AArch64.Target

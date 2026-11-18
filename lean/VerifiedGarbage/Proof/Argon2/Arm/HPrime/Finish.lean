@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Argon2.HPrime
 public import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Blake2.Arm.CompressB
 import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Proof.Blake2.Arm.Stream.Init
+import VerifiedGarbage.Proof.Blake2.Arm.Stream.Finalize
 import VerifiedGarbage.Proof.Framework.Bswap
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Rc2.PairMem
@@ -33,7 +33,6 @@ public import VerifiedGarbage.TCB.Mem
 public import Init.Core
 public import VerifiedGarbage.Spec.Argon2
 public import VerifiedGarbage.Proof.Argon2.Arm.HPrime.Hash
-public import VerifiedGarbage.Proof.Argon2.Arm.HPrime.Calls
 
 /-! ### `Argon2.Arm.HPrime.Body`, which this module and modules that import it used -/
 

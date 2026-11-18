@@ -7,18 +7,1196 @@ public import VerifiedGarbage.Impl.Argon2.AArch64.FillSlices
 public import VerifiedGarbage.Impl.Argon2.AArch64.FillSlice
 public import VerifiedGarbage.Impl.Argon2.AArch64.FillLanes
 public import VerifiedGarbage.Proof.Argon2.AArch64.SegmentSetupPrepare
-import VerifiedGarbage.Proof.Argon2.AArch64.FillLaneAdvance
 import VerifiedGarbage.Proof.Argon2.AArch64.SegmentSetup
 public import VerifiedGarbage.Proof.Argon2.Lanes
 import VerifiedGarbage.Proof.Argon2.AArch64.Instructions
 public import VerifiedGarbage.Proof.Argon2.Slices
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Argon2.Iterations
-public import VerifiedGarbage.Proof.Argon2.AArch64.FinishReady
 import VerifiedGarbage.Proof.Argon2.Serialization
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Argon2.AArch64.ReductionLoopState
 public import VerifiedGarbage.Proof.Argon2.Contract
+public import VerifiedGarbage.Impl.Argon2.AArch64.FinalReduction
+public import VerifiedGarbage.Proof.Argon2.AArch64.Initialize
+import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.RelCT
+import VerifiedGarbage.Proof.Argon2.AArch64.ReduceBlockLit
+import VerifiedGarbage.Proof.Argon2.Dimensions
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Impl.Argon2.AArch64.FinalReduction
+meta import VerifiedGarbage.Proof.Argon2.AArch64.Initialize
+meta import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.RelCT
+meta import VerifiedGarbage.Proof.Argon2.AArch64.ReduceBlockLit
+meta import VerifiedGarbage.Proof.Argon2.Dimensions
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+public import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Framework.Block
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Impl.Argon2.AArch64.MemoryInit
+meta import VerifiedGarbage.Impl.Argon2.AArch64.MemoryInit
+meta import VerifiedGarbage.Impl.Argon2.AArch64.FillLanes
+meta import VerifiedGarbage.Proof.Argon2.AArch64.SegmentSetupPrepare
+meta import VerifiedGarbage.Proof.Argon2.AArch64.Instructions
+public import VerifiedGarbage.Proof.Argon2.AArch64.FillCompressCall
+public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Backend
+public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Correct
+import VerifiedGarbage.Proof.Blake2.AArch64.Stream.Lit
+public import VerifiedGarbage.Impl.Argon2.AArch64.FinalOutput
+public import VerifiedGarbage.Proof.Argon2.AArch64.ReduceLane
+import VerifiedGarbage.Proof.Argon2.AArch64.ReferenceCount
+meta import VerifiedGarbage.Proof.Argon2.AArch64.FillCompressCall
+meta import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Backend
+meta import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Correct
+meta import VerifiedGarbage.Proof.Blake2.AArch64.Stream.Lit
+meta import VerifiedGarbage.Impl.Argon2.AArch64.FinalOutput
+meta import VerifiedGarbage.Proof.Argon2.AArch64.ReduceLane
+meta import VerifiedGarbage.Proof.Argon2.AArch64.ReferenceCount
+public import VerifiedGarbage.Impl.Argon2.AArch64.ReductionInit
+public import VerifiedGarbage.Proof.Argon2.AArch64.ClearBlock
+public import VerifiedGarbage.Proof.Framework.Covers
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Impl.Argon2.AArch64.ReductionInit
+meta import VerifiedGarbage.Proof.Argon2.AArch64.ClearBlock
+meta import VerifiedGarbage.Proof.Framework.Covers
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Argon2.Contract
+
+/-! ### `Argon2.AArch64.FinishReady`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Argon2.AArch64.ReductionClear`, which this module and modules that import it used -/
+
+section
+
+/-! # Clearing the reduction accumulator in a loop of sixteen-word passes
+
+Each pass stores the zero in `x8` to sixteen words at the advancing pointer
+`x0` and counts `x9` down from eight; `x0` is restored after the last pass. -/
+
+@[expose] public section
+
+namespace VG.Proof.Argon2.AArch64.ReductionClear
+
+open VG VG.AArch64 VG.Spec.Argon2
+
+/-- The stores of one pass: `n` words at the pointer of pass `j`. -/
+theorem words_ok (m₀ : Mem) (dest : Addr) (j : Nat) (hj : j < 8) (s : State)
+    (write : Covers [⟨dest, 1024⟩] s.wr) (zero : s.gpr .x8 = 0)
+    (pd : s.gpr .x0 = off dest (128 * j)) (mem : s.mem = MemoryInit.clearMem m₀ dest (16 * j))
+    (n : Nat) (hn : n ≤ 16) :
+    WP isa (.block (Impl.Argon2.AArch64.ClearBlock.words n)) s fun t =>
+      t.mem = MemoryInit.clearMem m₀ dest (16 * j + n) ∧
+      t.gpr = s.gpr ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp := by
+  induction n with
+  | zero => exact WP.block_nil ⟨mem, rfl, rfl, rfl, rfl⟩
+  | succ n ih =>
+    simp only [Impl.Argon2.AArch64.ClearBlock.words, List.range_succ, List.flatMap_append,
+      List.flatMap_cons, List.flatMap_nil, List.append_nil]
+    apply WP.block_append
+    refine (ih (by omega_using [hn])).mono ?_
+    rintro a ⟨memA, regs, rd, wr, mx⟩
+    have at_ : off (a.gpr .x0) (8 * n) = dest + BitVec.ofNat 64 (8 * (16 * j + n)) := by
+      rw [regs, pd]
+      exact Offset.add_add_eq dest (by omega_using [])
+    have hw : InRegions a.wr (off (a.gpr .x0) (8 * n)) 8 := by
+      rw [at_, wr]
+      exact write _ _ ⟨⟨dest, 1024⟩, by simp, Offset.contains_base _ (by omega_using [hj, hn]) (by omega_using [hj, hn])⟩
+    refine (ClearBlock.word_ok a n (by omega_using [hn]) hw).mono ?_
+    rintro t ⟨memT, regsT, rdT, wrT, mxT⟩
+    refine ⟨?_, regsT.trans regs, rdT.trans rd, wrT.trans wr, mxT.trans mx⟩
+    rw [memT, at_, memA, regs, zero]
+    rfl
+
+theorem setup_ok (s : State) :
+    WP isa (.block Impl.Argon2.AArch64.ReductionInit.clearSetup) s fun t =>
+      t.gpr .x8 = 0 ∧ t.gpr .x9 = 8 ∧ (∀ r, r ≠ .x8 → r ≠ .x9 → t.gpr r = s.gpr r) ∧
+      t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp := by
+  apply WP.of_runBlock
+  simp only [Impl.Argon2.AArch64.ReductionInit.clearSetup, runBlock_cons, runStep_some,
+    runBlock_nil, exec, Size.bits, Nat.reduceMul, Nat.reduceLT, BitVec.shiftLeft_zero,
+    RegUpd.gpr_write, ite_true, Option.some.injEq, exists_eq_left']
+  refine ⟨rfl, rfl, ?_, rfl, rfl, rfl, rfl⟩
+  intro r h8 h9
+  simp only [h8, h9, ite_false]
+
+theorem advance_ok (s : State) :
+    WP isa (.block Impl.Argon2.AArch64.ReductionInit.clearAdvance) s fun t =>
+      t.gpr .x0 = s.gpr .x0 + 128 ∧ t.gpr .x9 = s.gpr .x9 - 1 ∧
+      (∀ r, r ≠ .x0 → r ≠ .x9 → t.gpr r = s.gpr r) ∧
+      t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp := by
+  apply WP.of_runBlock
+  simp only [Impl.Argon2.AArch64.ReductionInit.clearAdvance, runBlock_cons, runStep_some,
+    runBlock_nil, exec, State.read, Size.bits,
+    show 128 < 4096 from by decide, show 1 < 4096 from by decide,
+    RegUpd.gpr_write, BitVec.setWidth_eq, reduceCtorEq, ite_true, ite_false,
+    Option.some.injEq, exists_eq_left']
+  refine ⟨rfl, rfl, ?_, rfl, rfl, rfl, rfl⟩
+  intro r h0 h9
+  simp only [h0, h9, ite_false]
+
+/-- After `j` passes. -/
+structure Inv (s₀ : State) (j : Nat) (s : State) : Prop where
+  bound : j ≤ 8
+  dest : s.gpr .x0 = off (s₀.gpr .x0) (128 * j)
+  count : s.gpr .x9 = BitVec.ofNat 64 (8 - j)
+  zero : s.gpr .x8 = 0
+  mem : s.mem = MemoryInit.clearMem s₀.mem (s₀.gpr .x0) (16 * j)
+  regs : ∀ r, r ≠ .x0 → r ≠ .x8 → r ≠ .x9 → s.gpr r = s₀.gpr r
+  rd : s.rd = s₀.rd
+  wr : s.wr = s₀.wr
+  sp : s.sp = s₀.sp
+
+theorem body_ok (s₀ : State) (j : Nat) (hj : j < 8) (s : State) (h : Inv s₀ j s)
+    (write : Covers [⟨s₀.gpr .x0, 1024⟩] s₀.wr) :
+    WP isa Impl.Argon2.AArch64.ReductionInit.clearBody s (Inv s₀ (j + 1)) := by
+  unfold Impl.Argon2.AArch64.ReductionInit.clearBody
+  refine WP.seq ((words_ok s₀.mem (s₀.gpr .x0) j hj s (by rw [h.wr]; exact write) h.zero h.dest
+    h.mem 16 (Nat.le_refl _)).mono ?_)
+  rintro a ⟨memA, regsA, rdA, wrA, spA⟩
+  refine (advance_ok a).mono ?_
+  rintro t ⟨dst, cnt, regsT, mem, rd, wr, sp⟩
+  refine ⟨by omega_using [hj], ?_, ?_, ?_, ?_, ?_, rd.trans (rdA.trans h.rd), wr.trans (wrA.trans h.wr),
+    sp.trans (spA.trans h.sp)⟩
+  · rw [dst, regsA, h.dest, show (128 : Addr) = BitVec.ofNat 64 128 from rfl]
+    exact Offset.add_add_eq _ (by omega_using [])
+  · rw [cnt, regsA, h.count, show (1 : Addr) = BitVec.ofNat 64 1 from rfl,
+      Offset.ofNat_sub_ofNat (by omega_using [hj])]
+    congr 1
+  · rw [regsT .x8 (by decide) (by decide), regsA]; exact h.zero
+  · rw [mem, memA, show 16 * (j + 1) = 16 * j + 16 by omega_using []]
+  · intro r h0 h8 h9
+    rw [regsT r h0 h9, regsA]
+    exact h.regs r h0 h8 h9
+
+theorem loop_ok (s₀ : State) (s : State) (h : Inv s₀ 0 s)
+    (write : Covers [⟨s₀.gpr .x0, 1024⟩] s₀.wr) :
+    WP isa (.loop Impl.Argon2.AArch64.ReductionInit.clearBody (.nonzero .x .x9)) s (Inv s₀ 8) := by
+  refine WP.loop (M := isa) (fun k s => ∃ j, k = 8 - j ∧ j < 8 ∧ Inv s₀ j s)
+    ?_ 8 s ⟨0, rfl, by decide, h⟩
+  rintro k s ⟨j, rfl, hj, h⟩
+  refine (body_ok s₀ j hj s h write).mono ?_
+  intro t next
+  have flag : eval (.nonzero .x .x9) t = some (decide (8 - (j + 1) ≠ 0)) := by
+    simp only [eval, State.read, Size.bits, BitVec.setWidth_eq, next.count]
+    congr 1
+    rw [Bool.eq_iff_iff, bne_iff_ne, decide_eq_true_iff, ne_eq, ne_eq]
+    refine not_congr ⟨fun eq => ?_, fun eq => by rw [eq]; rfl⟩
+    have num := congrArg BitVec.toNat eq
+    simpa only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [] : 8 - (j + 1) < 2 ^ 64),
+      show (0 : Addr).toNat = 0 from rfl] using num
+  by_cases done : j + 1 = 8
+  · refine .inl ⟨?_, done ▸ next⟩
+    simpa only [show 8 - (j + 1) = 0 by omega_using [done], ne_eq, not_true_eq_false, decide_false] using flag
+  · refine .inr ⟨?_, 8 - (j + 1), by omega_using [hj], j + 1, rfl, by omega_using [hj, done], next⟩
+    change eval (.nonzero .x .x9) t = some true
+    rw [flag]
+    exact congrArg some (decide_eq_true (by omega_using [hj, done] : 8 - (j + 1) ≠ 0))
+
+theorem restore_ok (s : State) :
+    WP isa (.block [.subImm .x .x0 .x0 1024]) s fun t =>
+      t.gpr .x0 = s.gpr .x0 - 1024 ∧ (∀ r, r ≠ .x0 → t.gpr r = s.gpr r) ∧
+      t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, State.read, Size.bits,
+    show 1024 < 4096 from by decide,
+    RegUpd.gpr_write, BitVec.setWidth_eq, ite_true,
+    Option.some.injEq, exists_eq_left']
+  refine ⟨rfl, ?_, rfl, rfl, rfl, rfl⟩
+  intro r h0
+  simp only [h0, ite_false]
+
+/-- The statement of `ClearBlock.code_ok`, for the loop. -/
+theorem code_ok (s : State) (write : Covers [⟨s.gpr .x0, 1024⟩] s.wr) :
+    WP isa Impl.Argon2.AArch64.ReductionInit.clear s fun t => blockAt t.mem (s.gpr .x0) = zeroBlock ∧
+      Frame [⟨s.gpr .x0, 1024⟩] s.mem t.mem ∧ CopyKeeps s t ∧ t.sp = s.sp := by
+  unfold Impl.Argon2.AArch64.ReductionInit.clear
+  refine WP.seq ((setup_ok s).mono ?_)
+  rintro a ⟨zero, count, regsA, memA, rdA, wrA, spA⟩
+  have dest : a.gpr .x0 = s.gpr .x0 := regsA .x0 (by decide) (by decide)
+  have ha : Inv a 0 a := ⟨by decide, (BitVec.add_zero _).symm, count, zero, rfl,
+    fun _ _ _ _ => rfl, rfl, rfl, rfl⟩
+  refine WP.seq ((loop_ok a a ha (by rw [dest, wrA]; exact write)).mono ?_)
+  intro b hb
+  refine (restore_ok b).mono ?_
+  rintro t ⟨dst, regs, mem, rd, wr, sp⟩
+  have cleared : t.mem = MemoryInit.clearMem s.mem (s.gpr .x0) 128 := by
+    rw [mem, hb.mem, memA, dest]
+  refine ⟨?_, ?_, ⟨?_, rd.trans (hb.rd.trans rdA), wr.trans (hb.wr.trans wrA)⟩,
+    sp.trans (hb.sp.trans spA)⟩
+  · rw [cleared]
+    apply Vector.ext
+    intro i hi
+    change (blockAt _ _)[(⟨i, hi⟩ : Fin 128)] = zeroBlock[(⟨i, hi⟩ : Fin 128)]
+    rw [blockAt_get, MemoryInit.clearMem_word _ _ 128 i (by decide) hi]
+    simp only [zeroBlock, Fin.getElem_fin, Vector.getElem_replicate]
+  · rw [cleared]
+    exact MemoryInit.clearMem_frame _ _ 128 (by decide)
+  · intro r h8 h9
+    by_cases h0 : r = .x0
+    · subst h0; rw [dst, hb.dest, dest]; exact BitVec.add_sub_cancel _ _
+    rw [regs r h0, hb.regs r h0 h8 h9, regsA r h8 h9]
+
+end VG.Proof.Argon2.AArch64.ReductionClear
+
+end
+
+end
+
+/-! ### `Argon2.AArch64.ReductionLoopState`, which this module and modules that import it used -/
+
+section
+
+/-! Public loop metadata survives accumulator writes and register-only advancement. -/
+
+@[expose] public section
+
+namespace VG.Proof.Argon2.AArch64.ReductionState
+
+open VG VG.AArch64 VG.Spec.Argon2
+
+theorem Ready.of_state {p : Params} {s t : State} (h : Ready p s)
+    (bp : t.gpr .x19 = s.gpr .x19) (length : t.gpr .x20 = s.gpr .x20)
+    (mem : t.mem = s.mem) (rd : t.rd = s.rd) (wr : t.wr = s.wr) : Ready p t := by
+  have base : matrix t = matrix s := by unfold matrix; rw [mem, bp]
+  refine ⟨h.positive, h.minimum, h.bound, ?_, ?_, ?_, length.trans h.length⟩
+  · rw [rd, wr, bp]; exact h.read
+  · rw [base, wr]; exact h.write
+  · rw [base, bp]; exact h.frame
+
+theorem Represents.of_state {p : Params} {s t : State} {memory : Array Block} {acc : Block}
+    (h : Represents p memory acc s) (bp : t.gpr .x19 = s.gpr .x19) (mem : t.mem = s.mem) :
+    Represents p memory acc t := by
+  have base : matrix t = matrix s := by unfold matrix; rw [mem, bp]
+  constructor
+  · rw [mem, base]; exact h.accumulator
+  · rw [mem, base]; exact h.last
+
+theorem frame_word {p : Params} {s t : State} {memory : Array Block} {acc : Block}
+    (h : Ready p s) (done : ReduceLane.Done s t p memory acc) (d : Nat) (bound : d + 8 ≤ 272) :
+    t.mem.readW (off (t.gpr .x19) d) 64 = s.mem.readW (off (s.gpr .x19) d) 64 := by
+  rw [done.regs .x19 (by simp [FillCompress.loopRegs])]
+  exact done.frame.readW (r := ⟨s.gpr .x19, 272⟩) (Offset.contains_base _ bound (by omega_using [bound]))
+    (by intro r hr; simp only [List.mem_singleton] at hr; subst r
+        exact h.frame.symm.sub_right (Region.sub_prefix (by
+          have nonempty := Proof.Argon2.lastIndex_bounds p h.positive h.minimum 0 h.positive
+          omega_using [nonempty]))) (by decide)
+
+end VG.Proof.Argon2.AArch64.ReductionState
+
+end
+
+end
+
+/-! ### `Argon2.AArch64.FinalOutputReady`, which only this module used -/
+
+section
+
+/-! ### `Argon2.AArch64.FinalCall`, which only this module used -/
+
+section
+
+/-! The final H′ call accepts a complete reduced block and a public tag length. -/
+
+@[expose] public section
+
+namespace VG.Proof.Argon2.AArch64.FinalCall
+
+open VG VG.AArch64
+open VG.Impl.Argon2.AArch64.HPrime (code)
+open VG.Spec.Blake2 (bytesAt)
+
+structure CallReady (len : Nat) (s : State) : Prop where
+  stackMinimum : 16 ≤ s.sp.toNat
+  positive : 1 ≤ len
+  bound : len < 2 ^ 32
+  input : Covers [⟨s.gpr .x0, 1024⟩] (s.rd ++ s.wr)
+  output : Covers [⟨s.gpr .x2, len⟩] s.wr
+  work : (⟨s.gpr .x4, 16384⟩ : Region) ∈ s.wr
+  inputWork : (⟨s.gpr .x0, 1024⟩ : Region).Disjoint ⟨s.gpr .x4, 16384⟩
+  outputWork : (⟨s.gpr .x2, len⟩ : Region).Disjoint ⟨s.gpr .x4, 16384⟩
+  stackInput : (below s.sp 16).Disjoint ⟨s.gpr .x0, 1024⟩
+  stackOutput : (below s.sp 16).Disjoint ⟨s.gpr .x2, len⟩
+  stackWork : (below s.sp 16).Disjoint ⟨s.gpr .x4, 16384⟩
+
+structure Called (len : Nat) (s t : State) : Prop where
+  digest : bytesAt t.mem (s.gpr .x2) len = Spec.Argon2.hPrime len (bytesAt s.mem (s.gpr .x0) 1024)
+  regs : ∀ r ∈ FillCompress.loopRegs, t.gpr r = s.gpr r
+  sp : t.sp = s.sp
+  rd : t.rd = s.rd
+  wr : t.wr = s.wr
+  frame : Frame [⟨s.gpr .x2, len⟩, ⟨s.gpr .x4, 16384⟩, below s.sp 16] s.mem t.mem
+
+theorem hPrime_call_hyps (len : Nat) (s : State) (h : CallReady len s)
+    (inputLength : s.gpr .x1 = 1024) (outputLength : s.gpr .x3 = BitVec.ofNat 64 len) :
+    HPrime.localContract.pre (s.callEntry.withRegions [⟨s.gpr .x0, 1024⟩]
+      [⟨s.gpr .x2, len⟩, ⟨s.gpr .x4, 16384⟩]) ∧
+    Covers [⟨s.gpr .x0, 1024⟩, ⟨s.gpr .x2, len⟩, ⟨s.gpr .x4, 16384⟩] (s.rd ++ s.wr) ∧
+    Covers [⟨s.gpr .x2, len⟩, ⟨s.gpr .x4, 16384⟩] s.wr := by
+  have length : (BitVec.ofNat 64 len).toNat = len := by
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (Nat.lt_trans h.bound (by decide))]
+  have g : ∀ r, r ∉ linkRegs → s.callEntry.gpr r = s.gpr r := fun r hr => State.callEntry_gpr s hr
+  refine ⟨?_, ?_, ?_⟩
+  · simp only [HPrime.localContract, HPrime.inputR, HPrime.outputR, HPrime.workR,
+      HPrime.stackR, State.withRegions_gpr, State.withRegions_rd,
+      State.withRegions_wr, State.withRegions_sp,
+      g _ (by decide : Reg.x0 ∉ linkRegs), g _ (by decide : Reg.x1 ∉ linkRegs),
+      g _ (by decide : Reg.x2 ∉ linkRegs), g _ (by decide : Reg.x3 ∉ linkRegs),
+      g _ (by decide : Reg.x4 ∉ linkRegs), State.callEntry_sp,
+      inputLength, outputLength, length]
+    exact ⟨rfl, trivial, by decide, h.positive, h.bound, h.stackMinimum,
+      h.inputWork, h.outputWork, h.stackInput, h.stackOutput, h.stackWork⟩
+  · intro p n hp
+    rcases hp with ⟨r, hr, hc⟩
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact h.input p n ⟨_, List.mem_singleton_self _, hc⟩
+    · obtain ⟨r, hr, hc⟩ := h.output p n ⟨_, List.mem_singleton_self _, hc⟩
+      exact ⟨r, List.mem_append_right _ hr, hc⟩
+    · exact ⟨_, List.mem_append_right _ h.work, hc⟩
+  · intro p n ⟨r, hr, hc⟩
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact h.output p n ⟨_, List.mem_singleton_self _, hc⟩
+    · exact ⟨_, h.work, hc⟩
+
+theorem hPrime_depth (v : HPrime.Backend) : (code v.hash).aarch64Depth = 1 := by
+  simp only [code, Impl.Argon2.AArch64.HPrime.first,
+    Impl.Argon2.AArch64.HPrime.chooseLength, Impl.Argon2.AArch64.HPrime.init,
+    Impl.Argon2.AArch64.HPrime.absorbFixed, Impl.Argon2.AArch64.HPrime.update,
+    Impl.Argon2.AArch64.HPrime.absorbInput, Impl.Argon2.AArch64.HPrime.finishInput,
+    Impl.Argon2.AArch64.HPrime.finalize, Impl.Argon2.AArch64.HPrime.finishOutput,
+    Impl.Argon2.AArch64.HPrime.extendDigest, Impl.Argon2.AArch64.HPrime.emitPrefix,
+    Impl.Argon2.AArch64.HPrime.copy, Impl.Argon2.AArch64.HPrime.chain,
+    Impl.Argon2.AArch64.HPrime.next, Impl.Argon2.AArch64.HPrime.copyRemaining,
+    Code.aarch64Depth, v.ok.initDepth, v.ok.updateDepth, v.ok.finalizeDepth]
+  rfl
+
+theorem hPrime_call_ok (v : HPrime.Backend) (name : String)
+    (len : Nat) (s : State) (h : CallReady len s) (inputLength : s.gpr .x1 = 1024)
+    (outputLength : s.gpr .x3 = BitVec.ofNat 64 len) :
+    WP isa (.call name (code v.hash)) s (Called len s) := by
+  obtain ⟨pre, cover, writes⟩ := hPrime_call_hyps len s h inputLength outputLength
+  refine WP.callF (k := HPrime.localContract) (HPrime.code_correct v) pre cover writes ?_
+    (by rw [hPrime_depth]; decide)
+  intro t rd wr sp frame regs digest
+  change bytesAt t.mem (s.callEntry.gpr .x2) (s.callEntry.gpr .x3).toNat =
+    Spec.Argon2.hPrime (s.callEntry.gpr .x3).toNat
+      (bytesAt s.mem (s.callEntry.gpr .x0) (s.callEntry.gpr .x1).toNat) at digest
+  rw [State.callEntry_gpr _ (by decide : Reg.x2 ∉ linkRegs),
+    State.callEntry_gpr _ (by decide : Reg.x3 ∉ linkRegs),
+    State.callEntry_gpr _ (by decide : Reg.x0 ∉ linkRegs),
+    State.callEntry_gpr _ (by decide : Reg.x1 ∉ linkRegs), inputLength, outputLength,
+    show (1024 : Addr).toNat = 1024 from rfl,
+    show (BitVec.ofNat 64 len).toNat = len from by
+      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (Nat.lt_trans h.bound (by decide))]] at digest
+  refine ⟨digest, ?_, sp, rd, wr, ?_⟩
+  · intro r hr
+    have preserved : r ∈ VG.AArch64.preserved ∧ r ≠ .x30 := by
+      simp only [FillCompress.loopRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+    exact regs r preserved.1 preserved.2
+  · simpa only [hPrime_depth, Nat.mul_one, List.cons_append, List.nil_append] using frame
+
+end VG.Proof.Argon2.AArch64.FinalCall
+
+end
+
+end
+
+
+/-! Merged from `Proof.Argon2.AArch64.FinalOutputArgs`. -/
+
+@[expose] public section
+
+section
+/-! Load the public final-call pointers and tag length from the enclosing frame. -/
+
+namespace VG.Proof.Argon2.AArch64.FinalOutput
+
+open VG VG.AArch64 VG.Spec.Argon2
+
+def output (s : State) : Addr := s.mem.readW (off (s.gpr .x19) 256) 64
+
+def work (s : State) : Addr := s.mem.readW (off (s.gpr .x19) 248) 64
+
+def changed : List Reg := [.x0, .x1, .x2, .x3, .x4]
+
+structure Arguments (s t : State) : Prop where
+  input : t.gpr .x0 = ReductionState.matrix s
+  inputLength : t.gpr .x1 = 1024
+  output : t.gpr .x2 = output s
+  outputLength : t.gpr .x3 = s.mem.readW (off (s.gpr .x19) 264) 64
+  work : t.gpr .x4 = work s
+  keeps : Divide.Keeps changed s t
+
+theorem args_ok (s : State) (read : ∀ d ∈ [232, 256, 264, 248], InRegions (s.rd ++ s.wr) (off (s.gpr .x19) d) 8) :
+    WP isa (.block Impl.Argon2.AArch64.FinalOutput.args) s (Arguments s) := by
+  have input := read 232 (by simp)
+  have out := read 256 (by simp)
+  have len := read 264 (by simp)
+  have scratch := read 248 (by simp)
+  apply WP.of_runBlock
+  simp only [Impl.Argon2.AArch64.FinalOutput.args,
+    Impl.Argon2.AArch64.Instructions.load, Impl.Argon2.AArch64.Instructions.imm,
+    show 1024 < 65536 from by decide, List.flatten_cons, List.flatten_nil,
+    List.cons_append, List.nil_append, runBlock_cons, runStep_some, runBlock_nil,
+    exec, State.load, addr, Size.bytes, Size.bits,
+    show 232 % 8 = 0 ∧ 232 < 4096 * 8 from by decide,
+    show 256 % 8 = 0 ∧ 256 < 4096 * 8 from by decide,
+    show 264 % 8 = 0 ∧ 264 < 4096 * 8 from by decide,
+    show 248 % 8 = 0 ∧ 248 < 4096 * 8 from by decide, and_self,
+    Nat.reduceMul, Nat.reduceLT, BitVec.shiftLeft_zero,
+    show (1024#16).setWidth 64 = 1024#64 from rfl,
+    RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write,
+    input, out, len, scratch, reduceCtorEq, ite_true, ite_false,
+    Option.map_some, Option.bind_some, Option.some.injEq, exists_eq_left']
+  constructor
+  · rfl
+  · rfl
+  · rfl
+  · rfl
+  · rfl
+  · constructor
+    · intro r hr
+      simp only [changed, List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+      simp only [RegUpd.gpr_write, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2, ite_false]
+    all_goals rfl
+
+theorem Arguments.regs {s t : State} (h : Arguments s t) (r : Reg) (hr : r ∈ FillCompress.loopRegs) : t.gpr r = s.gpr r := by
+  have unchanged : r ∉ changed := by
+    simp only [FillCompress.loopRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+  exact h.keeps.regs r unchanged
+
+end VG.Proof.Argon2.AArch64.FinalOutput
+end
+
+/-! Final output uses matrix block zero and the original disjoint hash scratch allocation. -/
+
+namespace VG.Proof.Argon2.AArch64.FinalOutput
+
+open VG VG.AArch64 VG.Spec.Argon2
+
+structure Ready (p : Params) (s : State) : Prop where
+  stackMinimum : 16 ≤ s.sp.toNat
+  positive : 1 ≤ p.tagLen
+  bound : p.tagLen < 2 ^ 32
+  reads : ∀ d ∈ [232, 256, 264, 248], InRegions (s.rd ++ s.wr) (off (s.gpr .x19) d) 8
+  tagWord : s.mem.readW (off (s.gpr .x19) 264) 64 = BitVec.ofNat 64 p.tagLen
+  input : Covers [⟨ReductionState.matrix s, 1024⟩] (s.rd ++ s.wr)
+  outputWrite : Covers [⟨output s, p.tagLen⟩] s.wr
+  workWrite : (⟨work s, 16384⟩ : Region) ∈ s.wr
+  inputWork : (⟨ReductionState.matrix s, 1024⟩ : Region).Disjoint ⟨work s, 16384⟩
+  outputWork : (⟨output s, p.tagLen⟩ : Region).Disjoint ⟨work s, 16384⟩
+  stackInput : (below s.sp 16).Disjoint ⟨ReductionState.matrix s, 1024⟩
+  stackOutput : (below s.sp 16).Disjoint ⟨output s, p.tagLen⟩
+  stackWork : (below s.sp 16).Disjoint ⟨work s, 16384⟩
+
+theorem Arguments.ready {p : Params} {s t : State} (h : Ready p s) (a : Arguments s t) :
+    FinalCall.CallReady p.tagLen t := by
+  have sp := a.keeps.sp
+  constructor
+  · rw [sp]; exact h.stackMinimum
+  · exact h.positive
+  · exact h.bound
+  · rw [a.input, a.keeps.rd, a.keeps.wr]; exact h.input
+  · rw [a.output, a.keeps.wr]; exact h.outputWrite
+  · rw [a.work, a.keeps.wr]; exact h.workWrite
+  · rw [a.input, a.work]; exact h.inputWork
+  · rw [a.output, a.work]; exact h.outputWork
+  · rw [a.input, sp]; exact h.stackInput
+  · rw [a.output, sp]; exact h.stackOutput
+  · rw [a.work, sp]; exact h.stackWork
+
+end VG.Proof.Argon2.AArch64.FinalOutput
+
+end
+
+end
+
+/-! ### `Argon2.AArch64.FillLaneAdvance`, which this module and modules that import it used -/
+
+section
+
+/-! Lane advancement retains the allocation and public segment parameters. -/
+
+@[expose] public section
+
+namespace VG.Proof.Argon2.AArch64.FillLanes
+
+open VG VG.AArch64 VG.Spec.Argon2 VG.Impl.Argon2.AArch64.FillLanes
+
+theorem advance_ok (s : State) (hr : InRegions (s.rd ++ s.wr) (off (s.gpr .x19) 184) 8)
+    (ha : (s.gpr .x24 + 1).toNat < 2 ^ 63)
+    (hb : (s.mem.readW (off (s.gpr .x19) 184) 64).toNat < 2 ^ 63) :
+    WP isa (.block advance) s fun t => t.gpr .x24 = s.gpr .x24 + 1 ∧
+      eval (.nonzero .x .x14) t = some (decide ((s.gpr .x24 + 1).toNat <
+        (s.mem.readW (off (s.gpr .x19) 184) 64).toNat)) ∧
+      Divide.Keeps [.x24, .x12, .x13, .x14, .x15] s t := by
+  simp only [advance, List.flatten_cons, List.flatten_nil, List.append_nil]
+  apply WP.block_append
+  refine (Instructions.addi_ok s .x24 1 (by decide) (by decide) (by decide)).mono ?_
+  rintro u ⟨value, keeps⟩
+  have bp := keeps.regs .x19 (by decide)
+  have read : InRegions (u.rd ++ u.wr) (off (u.gpr .x19) 184) 8 := by
+    rw [keeps.rd, keeps.wr, bp]; exact hr
+  have left : (u.gpr .x24).toNat < 2 ^ 63 := by rw [value]; exact ha
+  have right : (u.mem.readW (off (u.gpr .x19) 184) 64).toNat < 2 ^ 63 := by
+    rw [keeps.mem, bp]; exact hb
+  refine (Instructions.comparem_ok u .x24 .x19 184 (by decide) (by decide) (by decide)
+    read left right).mono ?_
+  rintro t ⟨flag, changed⟩
+  refine ⟨(changed.regs .x24 (by decide)).trans value, ?_,
+    (keeps.mono (by decide)).trans (changed.mono (by decide))⟩
+  rw [flag, value, keeps.mem, bp]
+  rfl
+
+theorem context_ready {p : Params} {pass lane slice index old : Nat} {s : State}
+    (h : FillContext.Ready p pass lane slice index old s) : SegmentSetup.Ready p pass lane slice s :=
+  ⟨h.parameters, h.layout, h.cache.layout, h.cache.reads, h.cache.write, ⟨old, h.cache.words⟩,
+    h.matrixWork, h.position.laneLength, h.position.segmentLength, h.lanesWord⟩
+
+theorem finished_ready {p : Params} {pass lane slice : Nat} {s t : State} {state : FillState}
+    (parameters : FillContext.Parameters p pass lane slice) (h : FillSegment.Finished s t p pass lane slice state) :
+    SegmentSetup.Ready p pass lane slice t := by
+  obtain ⟨old, context⟩ := FillContext.finished_context parameters h
+  exact context_ready context
+
+theorem change_lane_ready {p : Params} {pass lane slice newLane : Nat} {s t : State}
+    (h : SegmentSetup.Ready p pass lane slice s) (k : Divide.Keeps [.x24, .x12, .x13, .x14, .x15] s t)
+    (value : t.gpr .x24 = BitVec.ofNat 64 newLane) (active : newLane < p.lanes) :
+    SegmentSetup.Ready p pass newLane slice t := by
+  have bp := k.regs .x19 (by decide)
+  have sp := k.sp
+  have base : FillKernel.matrix t = FillKernel.matrix s := by unfold FillKernel.matrix; rw [k.mem, bp]
+  have work : AddressCalls.work t = AddressCalls.work s := by unfold AddressCalls.work; rw [k.mem, bp]
+  refine ⟨{ h.parameters with laneBound := active }, h.layout.of_preserved bp sp base work k.rd k.wr,
+    ?_, ?_, ?_, ?_, ?_, (k.regs .x20 (by decide)).trans h.laneLength,
+    (k.regs .x21 (by decide)).trans h.segmentLength, ?_⟩
+  · constructor
+    · rw [k.rd, k.wr, bp]; exact h.addressLayout.frameRead
+    · rw [k.wr, work]; exact h.addressLayout.workWrite
+    · rw [bp, work]; exact h.addressLayout.frameWork
+    · rw [bp, sp]; exact h.addressLayout.frameStack
+    · rw [sp, work]; exact h.addressLayout.stackWork
+  · rw [k.rd, k.wr, bp]; exact h.reads
+  · rw [k.wr, bp]; exact h.write
+  · obtain ⟨old, words⟩ := h.words
+    refine ⟨old, ?_, value, (k.regs .x22 (by decide)).trans words.sliceWord, ?_, ?_, ?_, ?_⟩
+    all_goals rw [k.mem, bp]
+    · exact words.passWord
+    · exact words.blocksWord
+    · exact words.passesWord
+    · exact words.variantWord
+    · exact words.counterWord
+  · rw [base, work]; exact h.matrixWork
+  · rw [k.mem, bp]; exact h.lanesWord
+
+end VG.Proof.Argon2.AArch64.FillLanes
+
+end
+
+end
+
+/-! Merged from `Proof.Argon2.AArch64.ReduceLanesBody`. -/
+
+@[expose] public section
+
+section
+/-! One reduction iteration advances a public lane and preserves the accumulator invariant. -/
+
+namespace VG.Proof.Argon2.AArch64.ReduceLanes
+
+open VG VG.AArch64 VG.Spec.Argon2 ReductionState
+
+structure Ready (p : Params) (lane : Nat) (s : State) : Prop where
+  allocation : ReductionState.Ready p s
+  active : lane < p.lanes
+  lanesBound : p.lanes < 2 ^ 32
+  laneWord : s.gpr .x24 = BitVec.ofNat 64 lane
+  lanesRead : InRegions (s.rd ++ s.wr) (off (s.gpr .x19) 184) 8
+  lanesWord : s.mem.readW (off (s.gpr .x19) 184) 64 = BitVec.ofNat 64 p.lanes
+
+structure Done (s t : State) (p : Params) (lane : Nat) (memory : Array Block) (acc : Block) : Prop where
+  represented : ReductionState.Represents p memory acc t
+  base : matrix t = matrix s
+  laneWord : t.gpr .x24 = BitVec.ofNat 64 (lane + 1)
+  regs : ∀ r ∈ FillCompress.loopRegs, r ≠ .x24 → t.gpr r = s.gpr r
+  rd : t.rd = s.rd
+  wr : t.wr = s.wr
+  frame : Frame [⟨matrix s, 1024⟩] s.mem t.mem
+  sp : t.sp = s.sp
+  cf : eval (.nonzero .x .x14) t = some (decide (lane + 1 < p.lanes))
+  next : lane + 1 < p.lanes → Ready p (lane + 1) t
+
+theorem body_ok (s : State) (p : Params) (lane : Nat) (h : Ready p lane s)
+    (memory : Array Block) (acc : Block) (represented : ReductionState.Represents p memory acc s) :
+    WP isa Impl.Argon2.AArch64.ReduceLanes.body s
+      (Done s · p lane memory (xorBlock acc (memory[Proof.Argon2.lastIndex p lane]?.getD zeroBlock))) := by
+  unfold Impl.Argon2.AArch64.ReduceLanes.body Impl.Argon2.AArch64.ReduceLanes.advance
+  refine WP.seq ((ReduceLane.code_ok s p lane h.allocation h.active h.laneWord memory acc represented).mono ?_)
+  intro a reduced
+  have read : InRegions (a.rd ++ a.wr) (off (a.gpr .x19) 184) 8 := by
+    rw [reduced.rd, reduced.wr, reduced.regs .x19 (by simp [FillCompress.loopRegs])]; exact h.lanesRead
+  have word := (ReductionState.frame_word h.allocation reduced 184 (by decide)).trans h.lanesWord
+  have added : a.gpr .x24 + 1 = BitVec.ofNat 64 (lane + 1) := by
+    rw [reduced.regs .x24 (by simp [FillCompress.loopRegs]), h.laneWord, BitVec.ofNat_add]; rfl
+  have laneBound := h.active
+  have lanesBound := h.lanesBound
+  have left : (a.gpr .x24 + 1).toNat < 2 ^ 63 := by
+    rw [added, ReferenceMap.word_nat (lane + 1) (by omega_using [laneBound, lanesBound])]; omega_using [laneBound, lanesBound]
+  have right : (a.mem.readW (off (a.gpr .x19) 184) 64).toNat < 2 ^ 63 := by
+    rw [word, ReferenceMap.word_nat p.lanes (by omega_using [lanesBound])]; omega_using [lanesBound]
+  refine (FillLanes.advance_ok a read left right).mono ?_
+  rintro t ⟨value, flag, keeps⟩
+  have bp := keeps.regs .x19 (by decide)
+  have base : matrix t = matrix a := by unfold matrix; rw [keeps.mem, bp]
+  have nextWord := value.trans added
+  refine ⟨reduced.represented.of_state bp keeps.mem, base.trans reduced.base, nextWord,
+    ?_, keeps.rd.trans reduced.rd, keeps.wr.trans reduced.wr, ?_, keeps.sp.trans reduced.sp, ?_, ?_⟩
+  · intro r hr bx
+    have outside : r ∉ [Reg.x24, .x12, .x13, .x14, .x15] := by
+      simp only [FillCompress.loopRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp_all
+    exact (keeps.regs r outside).trans (reduced.regs r hr)
+  · rw [keeps.mem]; exact reduced.frame
+  · rw [flag, added, word, ReferenceMap.word_nat (lane + 1) (by have bound := h.lanesBound; have active := h.active; omega_using [laneBound, lanesBound]),
+      ReferenceMap.word_nat p.lanes (Nat.lt_trans h.lanesBound (by decide))]
+  · intro active
+    refine ⟨reduced.ready.of_state bp (keeps.regs .x20 (by decide)) keeps.mem keeps.rd keeps.wr,
+      active, h.lanesBound, nextWord, ?_, ?_⟩
+    · rw [keeps.rd, keeps.wr, bp]; exact read
+    · rw [keeps.mem, bp]; exact word
+
+end VG.Proof.Argon2.AArch64.ReduceLanes
+end
+
+/-! Merged from `Proof.Argon2.AArch64.ReductionInit`. -/
+section
+/-! Merged from `Proof.Argon2.AArch64.ReductionClear`. -/
+section
+/-! Clear only block zero, preserving the original last blocks in the matrix. -/
+
+namespace VG.Proof.Argon2.AArch64.ReductionState
+
+open VG VG.AArch64 VG.Spec.Argon2
+
+structure Cleared (s t : State) (p : Params) (memory : Array Block) : Prop where
+  ready : Ready p t
+  represented : Represents p memory zeroBlock t
+  base : matrix t = matrix s
+  keeps : CopyKeeps s t
+  frame : Frame [⟨matrix s, 1024⟩] s.mem t.mem
+  sp : t.sp = s.sp
+
+theorem clear_ok (s : State) (p : Params) (h : Ready p s)
+    (dest : s.gpr .x0 = matrix s) (memory : Array Block)
+    (represented : Proof.Argon2.Represents s.mem (matrix s) p.blocks memory) :
+    WP isa Impl.Argon2.AArch64.ReductionInit.clear s (Cleared s · p memory) := by
+  have write : Covers [⟨s.gpr .x0, 1024⟩] s.wr := by rw [dest]; exact h.accumulator_cover
+  refine (ReductionClear.code_ok s write).mono ?_
+  rintro t ⟨zero, frame, keeps, mx⟩
+  rw [dest] at frame zero
+  have bp := keeps.1 .x19 (by decide) (by decide)
+  have nonempty := Proof.Argon2.lastIndex_bounds p h.positive h.minimum 0 h.positive
+  have metadata (d : Nat) (bound : d + 8 ≤ 272) :
+      t.mem.readW (off (t.gpr .x19) d) 64 = s.mem.readW (off (s.gpr .x19) d) 64 := by
+    rw [bp]
+    exact frame.readW (r := ⟨s.gpr .x19, 272⟩) (Offset.contains_base _ bound (by omega_using [bound]))
+      (by intro r hr; simp only [List.mem_singleton] at hr; subst r
+          exact h.frame.symm.sub_right (Region.sub_prefix (by omega_using [nonempty]))) (by decide)
+  have base : matrix t = matrix s := metadata 232 (by decide)
+  refine ⟨?_, ?_, base, keeps, frame, mx⟩
+  · refine ⟨h.positive, h.minimum, h.bound, ?_, ?_, ?_, (keeps.1 .x20 (by decide) (by decide)).trans h.length⟩
+    · rw [keeps.2.1, keeps.2.2, bp]; exact h.read
+    · rw [base, keeps.2.2]; exact h.write
+    · rw [base, bp]; exact h.frame
+  · constructor
+    · rw [base]; exact zero
+    · intro lane active
+      rw [base]
+      apply Eq.trans _ (represented.block _ (Proof.Argon2.lastIndex_bounds p h.positive h.minimum lane active).2)
+      apply FillCompress.block_frame frame
+      intro r hr
+      simp only [List.mem_singleton] at hr
+      subst r
+      have bounds := Proof.Argon2.lastIndex_bounds p h.positive h.minimum lane active
+      simpa only [Proof.Argon2.matrixCell, Nat.zero_mul, BitVec.add_zero] using
+        Proof.Argon2.matrixCell_disjoint (matrix s) p.blocks (Proof.Argon2.lastIndex p lane) 0 h.bound
+          bounds.2 (by omega_using [nonempty]) (by omega_using [bounds])
+
+theorem Cleared.frame_word {p : Params} {s t : State} {memory : Array Block}
+    (ready : Ready p s) (done : Cleared s t p memory) (d : Nat) (bound : d + 8 ≤ 272) :
+    t.mem.readW (off (t.gpr .x19) d) 64 = s.mem.readW (off (s.gpr .x19) d) 64 := by
+  rw [done.keeps.1 .x19 (by decide) (by decide)]
+  exact done.frame.readW (r := ⟨s.gpr .x19, 272⟩) (Offset.contains_base _ bound (by omega_using [bound]))
+    (by intro r hr; simp only [List.mem_singleton] at hr; subst r
+        exact ready.frame.symm.sub_right (Region.sub_prefix (by
+          have nonempty := Proof.Argon2.lastIndex_bounds p ready.positive ready.minimum 0 ready.positive
+          omega_using [nonempty]))) (by decide)
+
+end VG.Proof.Argon2.AArch64.ReductionState
+end
+
+/-! Merged from `Proof.Argon2.AArch64.ReduceLanes`. -/
+section
+/-! Termination and correctness of the final lane reduction. -/
+
+namespace VG.Proof.Argon2.AArch64.ReduceLanes
+
+open VG VG.AArch64 VG.Spec.Argon2 ReductionState
+
+structure Finished (s t : State) (p : Params) (memory : Array Block) (acc : Block) : Prop where
+  represented : ReductionState.Represents p memory acc t
+  base : matrix t = matrix s
+  laneWord : t.gpr .x24 = BitVec.ofNat 64 p.lanes
+  rd : t.rd = s.rd
+  wr : t.wr = s.wr
+  frame : Frame [⟨matrix s, 1024⟩] s.mem t.mem
+  sp : t.sp = s.sp
+  regs : ∀ r ∈ FillCompress.loopRegs, r ≠ .x24 → t.gpr r = s.gpr r
+
+theorem Done.finished {s t : State} {p : Params} {lane : Nat} {memory : Array Block} {acc : Block}
+    (h : Done s t p lane memory acc) (last : lane + 1 = p.lanes) : Finished s t p memory acc :=
+  ⟨h.represented, h.base, last ▸ h.laneWord, h.rd, h.wr, h.frame, h.sp, h.regs⟩
+
+theorem Finished.prepend {s a t : State} {p : Params} {lane : Nat} {memory : Array Block} {acc result : Block}
+    (first : Done s a p lane memory acc) (rest : Finished a t p memory result) : Finished s t p memory result := by
+  refine ⟨rest.represented, rest.base.trans first.base, rest.laneWord,
+    rest.rd.trans first.rd, rest.wr.trans first.wr, ?_, rest.sp.trans first.sp, ?_⟩
+  · have frame := rest.frame
+    rw [first.base] at frame
+    exact first.frame.trans frame
+  · intro r hr bx; exact (rest.regs r hr bx).trans (first.regs r hr bx)
+
+theorem loop_ok (count : Nat) (s : State) (p : Params) (lane : Nat) (h : Ready p lane s)
+    (memory : Array Block) (acc : Block) (represented : ReductionState.Represents p memory acc s)
+    (positive : 0 < count) (endLane : lane + count = p.lanes) :
+    WP isa Impl.Argon2.AArch64.ReduceLanes.loop s
+      (Finished s · p memory (Proof.Argon2.reduction p memory lane count acc)) := by
+  induction count generalizing s lane acc with
+  | zero => omega
+  | succ n ih =>
+    obtain ⟨trace, a, run, done⟩ := body_ok s p lane h memory acc represented
+    rw [Proof.Argon2.reduction_succ]
+    cases n with
+    | zero =>
+      have last : lane + 1 = p.lanes := endLane
+      refine ⟨_, a, .loopExit run ?_, done.finished last⟩
+      simp only [done.cf, last, Nat.lt_irrefl, decide_false]
+    | succ n =>
+      have active : lane + 1 < p.lanes := by omega_using [endLane]
+      obtain ⟨restTrace, t, restRun, finished⟩ := ih a (lane + 1) (done.next active) _
+        done.represented (by omega_using []) (by omega_using [endLane])
+      refine ⟨_, t, .loopNext run ?_ restRun, finished.prepend done⟩
+      simp only [done.cf, active, decide_true]
+
+end VG.Proof.Argon2.AArch64.ReduceLanes
+end
+
+/-! Establish the invariant for reducing all lanes, retaining the input matrix's last blocks. -/
+
+namespace VG.Proof.Argon2.AArch64.ReductionInit
+
+open VG VG.AArch64 VG.Spec.Argon2 ReductionState
+
+structure Ready (p : Params) (s : State) : Prop where
+  allocation : ReductionState.Ready p s
+  lanesBound : p.lanes < 2 ^ 32
+  lanesRead : InRegions (s.rd ++ s.wr) (off (s.gpr .x19) 184) 8
+  lanesWord : s.mem.readW (off (s.gpr .x19) 184) 64 = BitVec.ofNat 64 p.lanes
+
+theorem setup_ok (s : State) (read : InRegions (s.rd ++ s.wr) (off (s.gpr .x19) 232) 8) :
+    WP isa (.block Impl.Argon2.AArch64.ReductionInit.setup) s fun t =>
+      t.gpr .x0 = matrix s ∧ t.gpr .x24 = 0 ∧ Divide.Keeps [.x0, .x24] s t := by
+  apply WP.of_runBlock
+  simp only [Impl.Argon2.AArch64.ReductionInit.setup,
+    Impl.Argon2.AArch64.Instructions.load, Impl.Argon2.AArch64.Instructions.imm,
+    show 0 < 65536 from by decide, List.flatten_cons, List.flatten_nil,
+    List.cons_append, List.nil_append, runBlock_cons, runStep_some, runBlock_nil,
+    exec, State.load, addr, Size.bytes, Size.bits,
+    show 232 % 8 = 0 ∧ 232 < 4096 * 8 from by decide, and_self,
+    Nat.reduceMul, Nat.reduceLT, BitVec.shiftLeft_zero,
+    show (0#16).setWidth 64 = 0#64 from rfl, read, RegUpd.gpr_write,
+    reduceCtorEq, ite_false, ite_true, Option.map_some, Option.bind_some,
+    Option.some.injEq, exists_eq_left']
+  refine ⟨rfl, rfl, ?_⟩
+  constructor
+  · intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    simp only [RegUpd.gpr_write, hr.1, hr.2, ite_false]
+  all_goals rfl
+
+structure Prepared (s t : State) (p : Params) (memory : Array Block) : Prop where
+  ready : ReduceLanes.Ready p 0 t
+  represented : ReductionState.Represents p memory zeroBlock t
+  base : matrix t = matrix s
+  regs : ∀ r ∈ FillCompress.loopRegs, r ≠ .x24 → t.gpr r = s.gpr r
+  rd : t.rd = s.rd
+  wr : t.wr = s.wr
+  frame : Frame [⟨matrix s, 1024⟩] s.mem t.mem
+  sp : t.sp = s.sp
+
+theorem code_ok (s : State) (p : Params) (h : Ready p s) (memory : Array Block)
+    (represented : Proof.Argon2.Represents s.mem (matrix s) p.blocks memory) :
+    WP isa Impl.Argon2.AArch64.ReductionInit.code s (Prepared s · p memory) := by
+  unfold Impl.Argon2.AArch64.ReductionInit.code
+  refine WP.seq ((setup_ok s h.allocation.read).mono ?_)
+  rintro a ⟨dest, lane, keeps⟩
+  have bp := keeps.regs .x19 (by decide)
+  have base : matrix a = matrix s := by unfold matrix; rw [keeps.mem, bp]
+  have ha := h.allocation.of_state bp (keeps.regs .x20 (by decide)) keeps.mem keeps.rd keeps.wr
+  have rep : Proof.Argon2.Represents a.mem (matrix a) p.blocks memory := by rw [keeps.mem, base]; exact represented
+  refine (ReductionState.clear_ok a p ha (dest.trans base.symm) memory rep).mono ?_
+  intro t cleared
+  refine ⟨⟨cleared.ready, ha.positive, h.lanesBound,
+    (cleared.keeps.1 .x24 (by decide) (by decide)).trans lane, ?_, ?_⟩,
+    cleared.represented, cleared.base.trans base, ?_, cleared.keeps.2.1.trans keeps.rd,
+    cleared.keeps.2.2.trans keeps.wr, ?_, cleared.sp.trans keeps.sp⟩
+  · rw [cleared.keeps.2.1, cleared.keeps.2.2, cleared.keeps.1 .x19 (by decide) (by decide), keeps.rd, keeps.wr, bp]
+    exact h.lanesRead
+  · rw [cleared.frame_word ha 184 (by decide), keeps.mem, bp]; exact h.lanesWord
+  · intro r hr bx
+    have ne : r ≠ .x8 ∧ r ≠ .x9 := by
+      simp only [FillCompress.loopRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+    have notDest : r ≠ .x0 := by
+      simp only [FillCompress.loopRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+    exact (cleared.keeps.1 r ne.1 ne.2).trans (keeps.regs r (by
+      simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]; exact ⟨notDest, bx⟩))
+  · have frame := cleared.frame
+    rw [base, keeps.mem] at frame; exact frame
+
+end VG.Proof.Argon2.AArch64.ReductionInit
+end
+
+/-! Merged from `Proof.Argon2.AArch64.ReductionInitCT`. -/
+section
+/-! Merged from `Proof.Argon2.AArch64.ReducePointersCT`. -/
+section
+/-! Pointer preparation reads one public frame location and performs fixed arithmetic. -/
+
+namespace VG.Proof.Argon2.AArch64.ReducePointers
+
+open VG VG.AArch64
+
+theorem code_rel : RelCT isa (fun s t => s.gpr .x19 = t.gpr .x19 ∧ s.sp = t.sp)
+    Impl.Argon2.AArch64.ReducePointers.code (fun s t => s.sp = t.sp) :=
+  (RelCT.taintRegs (τ := Taint.ofRegs [.x19])
+    (fun _ _ h => ⟨h.2, by
+      intro r hr; simp only [Taint.mem_ofRegs, List.mem_singleton] at hr; subst r; exact h.1⟩)
+    [] (by taint_decide)).mono (fun _ _ h => h) (fun _ _ h => h.1)
+
+end VG.Proof.Argon2.AArch64.ReducePointers
+end
+
+/-! Merged from `Proof.Argon2.AArch64.ReduceLanesCT`. -/
+section
+/-! Merged from `Proof.Argon2.AArch64.ReduceLanesBodyCT`. -/
+section
+/-! Merged from `Proof.Argon2.AArch64.ReduceLaneCT`. -/
+section
+/-! Merged from `Proof.Argon2.AArch64.ReduceBlockCT`. -/
+section
+/-! Final block XOR has fixed accesses determined only by its public pointers. -/
+
+namespace VG.Proof.Argon2.AArch64.ReduceBlock
+
+open VG VG.AArch64 VG.Impl.Argon2.AArch64.ReduceBlock
+
+theorem code_rel : RelCT isa
+    (fun s t => s.sp = t.sp ∧ ∀ r ∈ [Reg.x0, .x1], s.gpr r = t.gpr r)
+    code (fun _ _ => True) :=
+  (RelCT.taintRegs (τ := Taint.ofRegs [.x0, .x1])
+    (fun _ _ h => ⟨h.1, fun r hr => h.2 r (by simpa only [Taint.mem_ofRegs] using hr)⟩)
+    [] (by taint_decide)).mono (fun _ _ h => h) (fun _ _ _ => trivial)
+
+end VG.Proof.Argon2.AArch64.ReduceBlock
+end
+
+/-! Final lane reduction depends only on public lane coordinates and matrix pointers. -/
+
+namespace VG.Proof.Argon2.AArch64.ReduceLane
+
+open VG VG.AArch64 VG.Spec.Argon2 ReductionState
+
+structure Related (p : Params) (lane : Nat) (s t : State) : Prop where
+  left : Ready p s
+  right : Ready p t
+  active : lane < p.lanes
+  leftLane : s.gpr .x24 = BitVec.ofNat 64 lane
+  rightLane : t.gpr .x24 = BitVec.ofNat 64 lane
+  bases : s.gpr .x19 = t.gpr .x19
+  stacks : s.sp = t.sp
+  matrices : matrix s = matrix t
+
+theorem pointers_rel (p : Params) (lane : Nat) :
+    RelCT isa (Related p lane) Impl.Argon2.AArch64.ReducePointers.code
+      (fun s t => s.sp = t.sp ∧ ∀ r ∈ [Reg.x0, .x1], s.gpr r = t.gpr r) := by
+  have trace := ReducePointers.code_rel.mono (P' := Related p lane) (fun _ _ h => ⟨h.bases, h.stacks⟩) (fun _ _ h => h)
+  have full := trace.wpDep (fun s t h => by
+    have q : 0 < p.laneLen := by
+      have eq := Proof.Argon2.laneLen_segments p h.left.positive
+      have minimum := h.left.minimum
+      omega_using [eq, minimum]
+    exact ⟨ReducePointers.code_ok s lane p.laneLen q h.left.read h.leftLane h.left.length,
+      ReducePointers.code_ok t lane p.laneLen q h.right.read h.rightLane h.right.length⟩)
+  refine full.mono (fun _ _ h => h) ?_
+  intro a b h
+  obtain ⟨sp, s, t, hp, ⟨destA, srcA, _⟩, ⟨destB, srcB, _⟩⟩ := h
+  refine ⟨sp, ?_⟩
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl
+  · exact destA.trans (hp.matrices.trans destB.symm)
+  · have bases : s.mem.readW (off (s.gpr .x19) 232) 64 = t.mem.readW (off (t.gpr .x19) 232) 64 := hp.matrices
+    rw [srcA, srcB, bases]
+
+theorem code_rel (p : Params) (lane : Nat) :
+    RelCT isa (Related p lane) Impl.Argon2.AArch64.ReduceLane.code (fun _ _ => True) :=
+  (pointers_rel p lane).seq ReduceBlock.code_rel
+
+end VG.Proof.Argon2.AArch64.ReduceLane
+end
+
+/-! Reduction visits the same last blocks even when their contents differ. -/
+
+namespace VG.Proof.Argon2.AArch64.ReduceLanes
+
+open VG VG.AArch64 VG.Spec.Argon2 ReductionState
+
+structure Related (p : Params) (lane : Nat) (leftMemory rightMemory : Array Block) (leftAcc rightAcc : Block)
+    (s t : State) : Prop where
+  left : Ready p lane s
+  right : Ready p lane t
+  bases : s.gpr .x19 = t.gpr .x19
+  stacks : s.sp = t.sp
+  matrices : matrix s = matrix t
+  leftRep : ReductionState.Represents p leftMemory leftAcc s
+  rightRep : ReductionState.Represents p rightMemory rightAcc t
+
+theorem advance_rel : RelCT isa (fun s t => s.gpr .x19 = t.gpr .x19 ∧ s.sp = t.sp)
+    (.block Impl.Argon2.AArch64.ReduceLanes.advance) (fun s t => s.sp = t.sp) :=
+  (RelCT.taintRegs (τ := Taint.ofRegs [.x19])
+    (fun _ _ h => ⟨h.2, by
+      intro r hr; simp only [Taint.mem_ofRegs, List.mem_singleton] at hr; subst r; exact h.1⟩)
+    [] (by taint_decide)).mono (fun _ _ h => h) (fun _ _ h => h.1)
+
+theorem body_rel (p : Params) (lane : Nat) (leftMemory rightMemory : Array Block) (leftAcc rightAcc : Block) :
+    RelCT isa (Related p lane leftMemory rightMemory leftAcc rightAcc) Impl.Argon2.AArch64.ReduceLanes.body
+      (fun s t => eval (.nonzero .x .x14) s = eval (.nonzero .x .x14) t ∧ (lane + 1 < p.lanes → Related p (lane + 1) leftMemory rightMemory
+        (xorBlock leftAcc (leftMemory[Proof.Argon2.lastIndex p lane]?.getD zeroBlock))
+        (xorBlock rightAcc (rightMemory[Proof.Argon2.lastIndex p lane]?.getD zeroBlock)) s t)) := by
+  intro s t ts tt a b hp ea eb
+  have related : ReduceLane.Related p lane s t :=
+    ⟨hp.left.allocation, hp.right.allocation, hp.left.active, hp.left.laneWord, hp.right.laneWord, hp.bases, hp.stacks, hp.matrices⟩
+  cases ea with
+  | seq reduceA advanceA =>
+    cases eb with
+    | seq reduceB advanceB =>
+      obtain ⟨reduceTrace, _⟩ := ReduceLane.code_rel p lane _ _ _ _ _ _ related reduceA reduceB
+      obtain ⟨_, sa, runA, reducedA⟩ := ReduceLane.code_ok s p lane hp.left.allocation hp.left.active
+        hp.left.laneWord leftMemory leftAcc hp.leftRep
+      obtain ⟨_, sb, runB, reducedB⟩ := ReduceLane.code_ok t p lane hp.right.allocation hp.right.active
+        hp.right.laneWord rightMemory rightAcc hp.rightRep
+      obtain ⟨_, rfl⟩ := Exec.det reduceA runA
+      obtain ⟨_, rfl⟩ := Exec.det reduceB runB
+      have bases := (reducedA.regs .x19 (by simp [FillCompress.loopRegs])).trans
+        (hp.bases.trans (reducedB.regs .x19 (by simp [FillCompress.loopRegs])).symm)
+      have stacks := reducedA.sp.trans (hp.stacks.trans reducedB.sp.symm)
+      obtain ⟨advanceTrace, _⟩ := advance_rel _ _ _ _ _ _ ⟨bases, stacks⟩ advanceA advanceB
+      obtain ⟨_, a', runA, doneA⟩ := body_ok s p lane hp.left leftMemory leftAcc hp.leftRep
+      obtain ⟨_, b', runB, doneB⟩ := body_ok t p lane hp.right rightMemory rightAcc hp.rightRep
+      obtain ⟨_, rfl⟩ := Exec.det (.seq reduceA advanceA) runA
+      obtain ⟨_, rfl⟩ := Exec.det (.seq reduceB advanceB) runB
+      refine ⟨by rw [reduceTrace, advanceTrace], doneA.cf.trans doneB.cf.symm, ?_⟩
+      intro active
+      refine ⟨doneA.next active, doneB.next active, ?_, doneA.sp.trans (hp.stacks.trans doneB.sp.symm),
+        doneA.base.trans (hp.matrices.trans doneB.base.symm), doneA.represented, doneB.represented⟩
+      exact (doneA.regs .x19 (by simp [FillCompress.loopRegs]) (by decide)).trans
+        (hp.bases.trans (doneB.regs .x19 (by simp [FillCompress.loopRegs]) (by decide)).symm)
+
+end VG.Proof.Argon2.AArch64.ReduceLanes
+end
+
+/-! The final reduction leaks only public matrix addresses and the public lane count. -/
+
+namespace VG.Proof.Argon2.AArch64.ReduceLanes
+
+open VG VG.AArch64 VG.Spec.Argon2
+
+theorem loop_rel (p : Params) (lane count : Nat) (leftMemory rightMemory : Array Block) (leftAcc rightAcc : Block)
+    (positive : 0 < count) (endLane : lane + count = p.lanes) :
+    RelCT isa (Related p lane leftMemory rightMemory leftAcc rightAcc) Impl.Argon2.AArch64.ReduceLanes.loop
+      (fun _ _ => True) := by
+  let I := fun n s t => ∃ (lane : Nat) (leftAcc rightAcc : Block), lane + n = p.lanes ∧ 0 < n ∧
+    Related p lane leftMemory rightMemory leftAcc rightAcc s t
+  have steps : ∀ n, RelCT isa (I n) Impl.Argon2.AArch64.ReduceLanes.body fun s t =>
+      isa.eval (.nonzero .x .x14) s = isa.eval (.nonzero .x .x14) t ∧ (isa.eval (.nonzero .x .x14) s = some false → True) ∧
+        (isa.eval (.nonzero .x .x14) s = some true → ∃ m < n, I m s t) := by
+    intro n s t ts tt a b hp ea eb
+    obtain ⟨j, la, ra, endLane, positive, hp⟩ := hp
+    cases n with
+    | zero => omega
+    | succ n =>
+      obtain ⟨trace, flags, next⟩ := body_rel p j leftMemory rightMemory la ra _ _ _ _ _ _ hp ea eb
+      obtain ⟨_, a', runA, done⟩ := body_ok s p j hp.left leftMemory la hp.leftRep
+      obtain ⟨_, rfl⟩ := Exec.det ea runA
+      refine ⟨trace, ?_, fun _ => trivial, ?_⟩
+      · exact flags
+      · intro taken
+        have active : j + 1 < p.lanes := by
+          simp only [done.cf, Option.some.injEq, decide_eq_true_eq] at taken
+          exact taken
+        exact ⟨n, by omega_using [], j + 1, _, _, by omega_using [endLane], by omega_using [endLane, active], next active⟩
+  exact (RelCT.loop I steps count).mono
+    (fun _ _ h => ⟨lane, leftAcc, rightAcc, endLane, positive, h⟩) (fun _ _ h => h)
+
+end VG.Proof.Argon2.AArch64.ReduceLanes
+end
+
+/-! Clearing the accumulator follows public pointers and visits a fixed block. -/
+
+namespace VG.Proof.Argon2.AArch64.ReductionInit
+
+open VG VG.AArch64 VG.Spec.Argon2 ReductionState
+
+structure Related (p : Params) (leftMemory rightMemory : Array Block) (s t : State) : Prop where
+  left : Ready p s
+  right : Ready p t
+  bases : s.gpr .x19 = t.gpr .x19
+  stacks : s.sp = t.sp
+  matrices : matrix s = matrix t
+  leftMatrix : Proof.Argon2.Represents s.mem (matrix s) p.blocks leftMemory
+  rightMatrix : Proof.Argon2.Represents t.mem (matrix t) p.blocks rightMemory
+
+theorem setup_rel : RelCT isa (fun s t => s.gpr .x19 = t.gpr .x19 ∧ s.sp = t.sp)
+    (.block Impl.Argon2.AArch64.ReductionInit.setup) (fun s t => s.sp = t.sp) :=
+  (RelCT.taintRegs (τ := Taint.ofRegs [.x19])
+    (fun _ _ h => ⟨h.2, by
+      intro r hr; simp only [Taint.mem_ofRegs, List.mem_singleton] at hr; subst r; exact h.1⟩)
+    [] (by taint_decide)).mono (fun _ _ h => h) (fun _ _ h => h.1)
+
+theorem clear_rel : RelCT isa (fun s t => s.gpr .x0 = t.gpr .x0 ∧ s.sp = t.sp)
+    Impl.Argon2.AArch64.ReductionInit.clear (fun s t => s.sp = t.sp) :=
+  (RelCT.taintRegs (τ := Taint.ofRegs [.x0])
+    (fun _ _ h => ⟨h.2, by
+      intro r hr; simp only [Taint.mem_ofRegs, List.mem_singleton] at hr; subst r; exact h.1⟩)
+    [] (by taint_decide)).mono (fun _ _ h => h) (fun _ _ h => h.1)
+
+theorem code_rel (p : Params) (leftMemory rightMemory : Array Block) :
+    RelCT isa (Related p leftMemory rightMemory) Impl.Argon2.AArch64.ReductionInit.code
+      (ReduceLanes.Related p 0 leftMemory rightMemory zeroBlock zeroBlock) := by
+  intro s t ts tt a b hp ea eb
+  cases ea with
+  | seq setupA clearA =>
+    cases eb with
+    | seq setupB clearB =>
+      obtain ⟨setupTrace, setupSp⟩ := setup_rel _ _ _ _ _ _ ⟨hp.bases, hp.stacks⟩ setupA setupB
+      obtain ⟨_, sa, runA, destA, _, _⟩ := setup_ok s hp.left.allocation.read
+      obtain ⟨_, sb, runB, destB, _, _⟩ := setup_ok t hp.right.allocation.read
+      obtain ⟨_, rfl⟩ := Exec.det setupA runA
+      obtain ⟨_, rfl⟩ := Exec.det setupB runB
+      obtain ⟨clearTrace, _⟩ := clear_rel _ _ _ _ _ _ ⟨destA.trans (hp.matrices.trans destB.symm), setupSp⟩ clearA clearB
+      obtain ⟨_, a', runA, doneA⟩ := code_ok s p hp.left leftMemory hp.leftMatrix
+      obtain ⟨_, b', runB, doneB⟩ := code_ok t p hp.right rightMemory hp.rightMatrix
+      obtain ⟨_, rfl⟩ := Exec.det (.seq setupA clearA) runA
+      obtain ⟨_, rfl⟩ := Exec.det (.seq setupB clearB) runB
+      refine ⟨by rw [setupTrace, clearTrace], doneA.ready, doneB.ready, ?_, doneA.sp.trans (hp.stacks.trans doneB.sp.symm),
+        doneA.base.trans (hp.matrices.trans doneB.base.symm), doneA.represented, doneB.represented⟩
+      exact (doneA.regs .x19 (by simp [FillCompress.loopRegs]) (by decide)).trans
+        (hp.bases.trans (doneB.regs .x19 (by simp [FillCompress.loopRegs]) (by decide)).symm)
+
+end VG.Proof.Argon2.AArch64.ReductionInit
+end
+
+/-! Merged from `Proof.Argon2.AArch64.FinalReduction`. -/
+section
+/-! Complete final block reduction, including setup, termination and a public trace. -/
+
+namespace VG.Proof.Argon2.AArch64.FinalReduction
+
+open VG VG.AArch64 VG.Spec.Argon2 ReductionState
+
+theorem code_ok (s : State) (p : Params) (h : ReductionInit.Ready p s) (memory : Array Block)
+    (represented : Proof.Argon2.Represents s.mem (matrix s) p.blocks memory) :
+    WP isa Impl.Argon2.AArch64.FinalReduction.code s
+      (ReduceLanes.Finished s · p memory (Proof.Argon2.reduction p memory 0 p.lanes zeroBlock)) := by
+  unfold Impl.Argon2.AArch64.FinalReduction.code
+  refine WP.seq ((ReductionInit.code_ok s p h memory represented).mono ?_)
+  intro a prepared
+  refine (ReduceLanes.loop_ok p.lanes a p 0 prepared.ready memory zeroBlock prepared.represented
+    h.allocation.positive (Nat.zero_add _)).mono ?_
+  intro t finished
+  refine ⟨finished.represented, finished.base.trans prepared.base, finished.laneWord,
+    finished.rd.trans prepared.rd, finished.wr.trans prepared.wr, ?_, finished.sp.trans prepared.sp, ?_⟩
+  · have frame := finished.frame
+    rw [prepared.base] at frame
+    exact prepared.frame.trans frame
+  · intro r hr bx; exact (finished.regs r hr bx).trans (prepared.regs r hr bx)
+
+theorem code_rel (p : Params) (positive : 0 < p.lanes) (leftMemory rightMemory : Array Block) :
+    RelCT isa (ReductionInit.Related p leftMemory rightMemory) Impl.Argon2.AArch64.FinalReduction.code
+      (fun _ _ => True) :=
+  (ReductionInit.code_rel p leftMemory rightMemory).seq
+    (ReduceLanes.loop_rel p 0 p.lanes leftMemory rightMemory zeroBlock zeroBlock positive (Nat.zero_add _))
+
+end VG.Proof.Argon2.AArch64.FinalReduction
+end
+
+/-! Preserve the final-call allocations and metadata through the matrix reduction. -/
+
+namespace VG.Proof.Argon2.AArch64.Finish
+
+open VG VG.AArch64 VG.Spec.Argon2 ReductionState
+
+structure Ready (p : Params) (s : State) : Prop where
+  reduction : ReductionInit.Ready p s
+  output : FinalOutput.Ready p s
+
+theorem frame_word {s t : State} {p : Params} {memory : Array Block} {acc : Block}
+    (ready : ReductionInit.Ready p s) (done : ReduceLanes.Finished s t p memory acc)
+    (d : Nat) (bound : d + 8 ≤ 272) :
+    t.mem.readW (off (t.gpr .x19) d) 64 = s.mem.readW (off (s.gpr .x19) d) 64 := by
+  rw [done.regs .x19 (by simp [FillCompress.loopRegs]) (by decide)]
+  exact done.frame.readW (r := ⟨s.gpr .x19, 272⟩) (Offset.contains_base _ bound (by omega_using [bound]))
+    (by intro r hr; simp only [List.mem_singleton] at hr; subst r
+        exact ready.allocation.frame.symm.sub_right (Region.sub_prefix (by
+          have nonempty := Proof.Argon2.lastIndex_bounds p ready.allocation.positive ready.allocation.minimum 0 ready.allocation.positive
+          omega_using [nonempty]))) (by decide)
+
+theorem output_ready {s t : State} {p : Params} {memory : Array Block} {acc : Block}
+    (ready : Ready p s) (done : ReduceLanes.Finished s t p memory acc) : FinalOutput.Ready p t := by
+  have bp := done.regs .x19 (by simp [FillCompress.loopRegs]) (by decide)
+  have sp := done.sp
+  have output : FinalOutput.output t = FinalOutput.output s := frame_word ready.reduction done 256 (by decide)
+  have work : FinalOutput.work t = FinalOutput.work s := frame_word ready.reduction done 248 (by decide)
+  refine ⟨?_, ready.output.positive, ready.output.bound, ?_,
+    (frame_word ready.reduction done 264 (by decide)).trans ready.output.tagWord, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · rw [sp]; exact ready.output.stackMinimum
+  · rw [done.rd, done.wr, bp]; exact ready.output.reads
+  · rw [done.base, done.rd, done.wr]; exact ready.output.input
+  · rw [output, done.wr]; exact ready.output.outputWrite
+  · rw [work, done.wr]; exact ready.output.workWrite
+  · rw [done.base, work]; exact ready.output.inputWork
+  · rw [output, work]; exact ready.output.outputWork
+  · rw [sp, done.base]; exact ready.output.stackInput
+  · rw [sp, output]; exact ready.output.stackOutput
+  · rw [sp, work]; exact ready.output.stackWork
+
+end VG.Proof.Argon2.AArch64.Finish
+
+end
+
+end
 
 /-! ### `Argon2.AArch64.FillIterations`, which only this module used -/
 

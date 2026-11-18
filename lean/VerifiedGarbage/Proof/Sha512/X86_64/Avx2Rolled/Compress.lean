@@ -1,8 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Rounds
+public import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Weave
 public import VerifiedGarbage.Proof.Framework.X86_64.Inline
-import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Weave
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import VerifiedGarbage.Proof.Framework.X86_64.Sse

@@ -2,15 +2,81 @@ module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.PPC64LE.Instance
 public import VerifiedGarbage.Proof.Pbkdf2.Contract
-public import VerifiedGarbage.Proof.Pbkdf2.PPC64LE.Sha512
 public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Sha512
 public import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Pbkdf2.Whole.PPC64LE.Instance
-meta import VerifiedGarbage.Proof.Pbkdf2.PPC64LE.Sha512
 meta import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Sha512
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Sha512.PPC64LE.Md
 public import VerifiedGarbage.Proof.Sha512.PPC64LE.Md
+public import VerifiedGarbage.Proof.Pbkdf2.PPC64LE.Correct
+import VerifiedGarbage.Proof.Hmac.Generic.Common
+public import VerifiedGarbage.Spec.Pbkdf2.Generic
+meta import VerifiedGarbage.Proof.Pbkdf2.PPC64LE.Correct
+meta import VerifiedGarbage.Spec.Pbkdf2.Generic
+public import VerifiedGarbage.Impl.Sha512.PPC64LE.Md
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Sha512.Md
+public import VerifiedGarbage.TCB.PPC64LE.Target
+meta import VerifiedGarbage.Proof.Pbkdf2.Contract
+meta import VerifiedGarbage.Proof.Hmac.Generic.Common
+meta import VerifiedGarbage.Impl.Sha512.PPC64LE.Md
+meta import VerifiedGarbage.Proof.Framework.Semantics
+meta import VerifiedGarbage.Proof.Sha512.Md
+meta import VerifiedGarbage.TCB.PPC64LE.Target
+
+/-! ### `Pbkdf2.PPC64LE.Sha512`, which only this module used -/
+
+section
+
+/-!
+# PBKDF2-HMAC-SHA-512 on PPC64LE: `iterate`
+
+The iteration over a Merkle–Damgård hash function (`Impl/Pbkdf2/PPC64LE.lean`)
+for SHA-512's parameters (`Impl/Sha512/PPC64LE/Md.lean`) and compression function: what its proof
+needs of SHA-512 (`hashOk`), its constant time, which the kernel checks.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Pbkdf2.PPC64LE.Sha512
+
+open VG.PPC64LE
+
+/-- `iterate`'s code. -/
+abbrev code : Prog isa :=
+  Impl.Pbkdf2.PPC64LE.iterate Impl.Sha512.PPC64LE.mdParams 64 "vg_sha512_compress" Impl.Sha512.PPC64LE.compress
+
+theorem hashOk : HashOk Impl.Sha512.PPC64LE.mdParams 64 (8 * Spec.Hmac.sha512I.scratch) Spec.Hmac.sha512S
+    Proof.Sha512.md Spec.Sha512.H0_512 where
+  sizes := ⟨⟨by decide, by decide, by decide, by decide⟩, by decide, by decide, by decide, by decide, by decide, by decide,
+    by decide, by decide, by decide⟩
+  shape := Proof.Sha512.PPC64LE.Md.shape
+  reloc m m' p q h := by
+    apply Vector.ext
+    intro j hj
+    simp only [Proof.Sha512.md, Spec.Sha512.stateAt, Vector.getElem_ofFn]
+    exact Hmac.Generic.Common.readW_reloc (n := 64) h (by omega_using [hj])
+  lenOk := show _ < 2 ^ 64 by decide
+  link := ⟨rfl, rfl, rfl, fun _ _ _ h => h, fun m => (List.take_of_length_le (Nat.le_of_eq (Hmac.Generic.Common.finalHash_length _ m))).symm,
+    by decide, by decide⟩
+
+theorem fdepth : code.fdepth ≤ 2 := by
+  rw [fdepth_of_noFrames (iterate_noFrames _ _ _ Proof.Sha512.PPC64LE.Md.callee.noFrames)]; decide
+
+theorem pushFrames : VG.PPC64LE.pushFrames code = true :=
+  pushFrames_of_noFrames (iterate_noFrames _ _ _ Proof.Sha512.PPC64LE.Md.callee.noFrames)
+
+/-- `iterate`'s constant time, which the kernel checks. -/
+theorem iterate_ct : ConstantTime isa (iterK Spec.Hmac.sha512S (8 * Spec.Hmac.sha512I.scratch)).pre
+    (iterK Spec.Hmac.sha512S (8 * Spec.Hmac.sha512I.scratch)).pub code :=
+  ct _ _ _ _ _ _ (by taint_decide)
+
+end VG.Proof.Pbkdf2.PPC64LE.Sha512
+
+end
+
+end
 
 /-!
 # PBKDF2-HMAC-SHA-512 on PPC64LE: the whole derivation

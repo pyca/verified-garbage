@@ -16,9 +16,7 @@ meta import VerifiedGarbage.Proof.Sha1.PPC64LE.Stream.Init
 meta import VerifiedGarbage.Spec.Sha1.Contract
 meta import VerifiedGarbage.Proof.Hmac.Stream.Reloc
 meta import VerifiedGarbage.Proof.Hmac.Scratch
-meta import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Shared
 public import VerifiedGarbage.Proof.Hmac.Scratch
-public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Shared
 public import VerifiedGarbage.Proof.MdStream.PPC64LE.Digest
 meta import VerifiedGarbage.Proof.MdStream.PPC64LE.Digest
 

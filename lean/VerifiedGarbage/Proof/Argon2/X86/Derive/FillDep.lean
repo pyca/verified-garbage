@@ -1,9 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.X86.Derive.FillCall
-public import VerifiedGarbage.Proof.Argon2.X86.Derive.FillState
-import VerifiedGarbage.Proof.Argon2.X86.Derive.HCall
-import VerifiedGarbage.Proof.Argon2.X86.Derive.Initial
+import VerifiedGarbage.Proof.Argon2.X86.Derive.MemoryInit
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Argon2.Contract
 

@@ -4,16 +4,14 @@ import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.FillBlock
 public import VerifiedGarbage.Proof.Argon2.SegmentStart
 import VerifiedGarbage.Proof.Argon2.Slices
 public import VerifiedGarbage.Proof.Argon2.Iterations
-public import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.FillState
+public import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.FillDep
 public import VerifiedGarbage.Proof.Argon2.Lanes
-import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.FillPtr
 import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.MemoryInit
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.RISCV64.Steps
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Initial
-import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Scratch
-public import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Locals
+public import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Scratch
 public import VerifiedGarbage.Proof.Argon2.Contract
 
 /-!

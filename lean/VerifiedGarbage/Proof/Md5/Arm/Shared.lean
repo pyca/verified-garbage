@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Md5.Contract
-import VerifiedGarbage.Proof.Md5.Arm.Stream.Init
 import VerifiedGarbage.Proof.Md5.Arm.Stream.Md
 public import VerifiedGarbage.Spec.Md5.Contract
 public import VerifiedGarbage.Proof.MdStream.Arm.Finalize

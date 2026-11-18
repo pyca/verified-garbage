@@ -1,6 +1,5 @@
 module
 
-import VerifiedGarbage.Proof.Blake2.Arm.Stream.Init
 public import VerifiedGarbage.Proof.Blake2.Arm.Stream.Finalize
 public import VerifiedGarbage.Spec.Blake2.Contract
 public import VerifiedGarbage.Proof.Blake2.Contract
@@ -11,7 +10,6 @@ import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.OmegaLit
 import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Blake2.Arm.Stream.Init
 meta import VerifiedGarbage.Proof.Blake2.Arm.Stream.Finalize
 meta import VerifiedGarbage.Spec.Blake2.Contract
 meta import VerifiedGarbage.Proof.Blake2.Arm.Stream.Update

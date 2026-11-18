@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.RsaPkcs1Sig.PPC64LE.SignVerified
 public import VerifiedGarbage.Proof.Rsa.PreKey
 meta import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.PPC64LE.SignCT
 import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
 

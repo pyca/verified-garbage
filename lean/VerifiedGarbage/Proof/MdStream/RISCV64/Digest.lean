@@ -24,7 +24,7 @@ streaming state, hashes the message with the streaming `init`, `update` and
 `finalize` (through their proofs, `HashOK.callInit_ok`, `callUpd_ok` and
 `callFin_ok`), which writes the digest to `out`, zeroes the streaming state
 and restores the registers (`digestMain_ok`), as HMAC's `init` hashes a long
-key (`Proof/Hmac/Stream/RISCV64/InitMain.lean`). `digestG` is the contract
+key (`Proof/Hmac/Stream/RISCV64/Finalize.lean`). `digestG` is the contract
 it is verified against, with the bytes of stack it and its callees use; with
 each hash function's constant time it is moved to
 `Spec.Sha256.digestContract` (`verified`).

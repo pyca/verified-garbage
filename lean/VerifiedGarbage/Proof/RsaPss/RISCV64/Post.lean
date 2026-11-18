@@ -15,7 +15,7 @@ public import VerifiedGarbage.Proof.RsaPss.RISCV64.Prefix
 # RSASSA-PSS verification on RISC-V: after the public operation
 
 Untrusted: everything here is checked by Lean. As on PPC64LE
-(`Proof/RsaPss/PPC64LE/Post.lean`): `post_ok`: from `EM` in its
+(`Proof/RsaPss/PPC64LE/CTPub.lean`): `post_ok`: from `EM` in its
 place (the view `V`), the code after the call returns 1 exactly when `Res`
 holds: the accumulator of the checks (`accR`: `0xbc`, the leading byte, the
 top bits, the delimiter and, for a given salt length, the salt's length) is
