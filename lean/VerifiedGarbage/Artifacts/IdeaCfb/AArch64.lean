@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Idea.AArch64.FbVerified
 public import VerifiedGarbage.Proof.Idea.AArch64.FbFinalVerified
+public import VerifiedGarbage.Proof.Idea.AArch64.ModesResidue
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.AArch64.Print
 import VerifiedGarbage.Proof.Idea.AArch64.ModesLit
@@ -15,16 +16,20 @@ namespace VG.Artifacts.IdeaCfb.AArch64
 
 def artifacts : List Artifact := [
   Spec.Idea.cfbEncryptApi.artifact AArch64.target {
-    code := Impl.StackScratch.AArch64.withStackScratchWiped 208 .x4 26 Impl.Idea.AArch64.cfbEncrypt
-    verified := Proof.Idea.AArch64.cfbEncrypt_framed },
+    code := Proof.Idea.AArch64.ModesResidue.cfbEncryptCode
+    verified := Proof.Idea.AArch64.ModesResidue.cfbEncryptCode_verified
+    residue := some ⟨Proof.Idea.AArch64.ModesResidue.cfbEncryptCode_noResidue⟩ },
   Spec.Idea.cfbDecryptApi.artifact AArch64.target {
-    code := Impl.StackScratch.AArch64.withStackScratchWiped 208 .x4 26 Impl.Idea.AArch64.cfbDecrypt
-    verified := Proof.Idea.AArch64.cfbDecrypt_framed },
+    code := Proof.Idea.AArch64.ModesResidue.cfbDecryptCode
+    verified := Proof.Idea.AArch64.ModesResidue.cfbDecryptCode_verified
+    residue := some ⟨Proof.Idea.AArch64.ModesResidue.cfbDecryptCode_noResidue⟩ },
   Spec.Idea.cfbEncryptFinalApi.artifact AArch64.target {
-    code := Impl.StackScratch.AArch64.withStackScratchWiped 208 .x4 26 Impl.Idea.AArch64.cfbEncryptFinal
-    verified := Proof.Idea.AArch64.cfbEncryptFinal_framed },
+    code := Proof.Idea.AArch64.ModesResidue.cfbEncryptFinalCode
+    verified := Proof.Idea.AArch64.ModesResidue.cfbEncryptFinalCode_verified
+    residue := some ⟨Proof.Idea.AArch64.ModesResidue.cfbEncryptFinalCode_noResidue⟩ },
   Spec.Idea.cfbDecryptFinalApi.artifact AArch64.target {
-    code := Impl.StackScratch.AArch64.withStackScratchWiped 208 .x4 26 Impl.Idea.AArch64.cfbDecryptFinal
-    verified := Proof.Idea.AArch64.cfbDecryptFinal_framed }]
+    code := Proof.Idea.AArch64.ModesResidue.cfbDecryptFinalCode
+    verified := Proof.Idea.AArch64.ModesResidue.cfbDecryptFinalCode_verified
+    residue := some ⟨Proof.Idea.AArch64.ModesResidue.cfbDecryptFinalCode_noResidue⟩ }]
 
 end VG.Artifacts.IdeaCfb.AArch64

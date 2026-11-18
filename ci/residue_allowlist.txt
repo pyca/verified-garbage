@@ -298,14 +298,6 @@ aarch64 vg_hmac_sha512_finalize
 aarch64 vg_hmac_sha512_finalize_sha512
 aarch64 vg_hmac_sha512_init
 aarch64 vg_hmac_sha512_init_sha512
-aarch64 vg_idea_cbc_decrypt_chained
-aarch64 vg_idea_cbc_encrypt_chained
-aarch64 vg_idea_cfb64_decrypt
-aarch64 vg_idea_cfb64_decrypt_final
-aarch64 vg_idea_cfb64_encrypt
-aarch64 vg_idea_cfb64_encrypt_final
-aarch64 vg_idea_ofb
-aarch64 vg_idea_ofb_final
 aarch64 vg_md5_finalize
 aarch64 vg_md5_update
 aarch64 vg_mldsa44_keygen
