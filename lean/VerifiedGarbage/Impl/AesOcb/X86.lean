@@ -39,7 +39,8 @@ x86's AES-GCM's (`Impl/AesGcm/X86.lean`):
 * `seal` computes the tag at `W` and copies its first `tag_len` bytes to
   `tag` (`tagOut`).
 * `open` copies the received tag from `tag` to `W` (`recv`), compares the
-  tags without a branch and masks the data with `0 − ok`.
+  tags without a branch and masks the data with `0 − ok`, 16 bytes at a time
+  (in `xmm0`) and then the last `len mod 16` one at a time.
 
 The model has no left shift: `x << a` is `ror x, 32 − a` with the `a` low
 bits masked off, and `x << 1` an addition.
@@ -433,13 +434,26 @@ def cmp : Prog isa :=
         .alu .or .edx (.reg .eax), .alu .add .edi (imm 1), .alu .sub .ecx (imm 1)]) .ne)
       (.block [.alu .sub .edx (imm 1), .shift .shr .edx 31, .store (at_ .ebp okO) .edx]))
 
-/-- The data (`len` bytes) masked with `0 − ok`. -/
+/-- The data's `⌊len / 16⌋` whole blocks (counted down in `eax`) ANDed with
+`0 − ok` (in every word of `xmm0`), 16 bytes at a time. -/
+def maskBlocks : Prog isa :=
+  .loop (.block [.movdquLoad .xmm1 (at_ .edi 0), .xop (.bin .pand .xmm1 .xmm0), .movdquStore (at_ .edi 0) .xmm1,
+    .alu .add .edi (imm 16), .alu .sub .eax (imm 1)]) .ne
+
+/-- The data's last `len mod 16` bytes (counted down in `ecx`) ANDed with
+`0 − ok` (in `edx`), one at a time. -/
+def maskBytes : Prog isa :=
+  .loop (.block [.movzx8 .eax (at_ .edi 0), .alu .and .eax (.reg .edx), .store8 (at_ .edi 0) .al,
+    .alu .add .edi (imm 1), .alu .sub .ecx (imm 1)]) .ne
+
+/-- The data (`len` bytes) masked with `0 − ok`: its whole blocks, then the
+rest. -/
 def mask : Prog isa :=
   .seq (.block [.mov .edi (slot dataO), .mov .ecx (slot lenO), .mov .edx (imm 0), .alu .sub .edx (slot okO),
-      .alu .test .ecx (.reg .ecx)])
-    (.ite .e (.block [])
-      (.loop (.block [.movzx8 .eax (at_ .edi 0), .alu .and .eax (.reg .edx), .store8 (at_ .edi 0) .al,
-        .alu .add .edi (imm 1), .alu .sub .ecx (imm 1)]) .ne))
+      .xop (.movd .xmm0 .edx), .xop (.pshufd .xmm0 .xmm0 0), .mov .eax (.reg .ecx), .shift .shr .eax 4,
+      .alu .and .ecx (imm 15), .alu .test .eax (.reg .eax)])
+    (.seq (.ite .e (.block []) maskBlocks)
+      (.seq (.block [.alu .test .ecx (.reg .ecx)]) (.ite .e (.block []) maskBytes)))
 
 def «open» : Prog isa :=
   .seq (front c false t2O) (.seq recv (.seq cmp (.seq mask (.block (([.mov .eax (slot okO)] : List Instr) ++ restore)))))
