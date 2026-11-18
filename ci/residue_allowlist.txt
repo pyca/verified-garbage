@@ -158,7 +158,6 @@ aarch64 vg_blowfish_cfb64_encrypt
 aarch64 vg_blowfish_cfb64_encrypt_final
 aarch64 vg_blowfish_ecb_decrypt
 aarch64 vg_blowfish_ecb_encrypt
-aarch64 vg_blowfish_expand_key
 aarch64 vg_blowfish_ofb
 aarch64 vg_blowfish_ofb_final
 aarch64 vg_camellia_cbc_decrypt_chained
