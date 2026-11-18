@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Framework.AArch64.ResidueFrame
 public import VerifiedGarbage.Proof.Framework.AArch64.Scrub
 import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
+public import VerifiedGarbage.Proof.Framework.AArch64.StackScratchConsts
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Mem
 
@@ -178,26 +179,26 @@ theorem scrub_disjoint (hk : (sig.words abi.ptrBits).length ≤ 8) {W : Nat} (hW
     b (List.mem_append_left _ hb)
   exact hr.symm.sub_right (Offset.sub_below _ hWs (by omega))
 
-theorem Verified.withScrub {c : Prog isa} {W : Nat}
-    (h : Verified target c (sig.contract abi pre post wa stack leak))
-    (hk : (sig.words abi.ptrBits).length ≤ 8) (hW : 0 < W ∧ W < 4096 ∧ W % 16 = 0)
-    (hWs : W ≤ stack)
-    (hpost : ∀ vs m m₁ m₂ r, vs.length = (sig.words abi.ptrBits).length →
-      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
-      Curry.apply (sig.words abi.ptrBits) post vs m m₁ r →
-        Curry.apply (sig.words abi.ptrBits) post vs m m₂ r) :
-    Verified target (withScrub W c) (sig.contract abi pre post wa stack leak) := by
+/-- What `Verified.withScrubK` needs of a contract: room for the `W` bytes
+below the stack pointer, a postcondition that reads neither them nor any
+register but `x0`, and a public stack pointer. -/
+structure ScrubOk (k : Contract isa) (W : Nat) : Prop where
+  sp : ∀ s, k.pre s → W ≤ s.sp.toNat
+  post : ∀ s u u', k.pre s → k.post s u →
+    (∀ a, ¬ (a - (s.sp - BitVec.ofNat 64 W)).toNat < W → u'.mem a = u.mem a) →
+    u'.gpr .x0 = u.gpr .x0 → k.post s u'
+  pub : ∀ s₁ s₂, k.pub s₁ s₂ → s₁.sp = s₂.sp
+
+theorem Verified.withScrubK {c : Prog isa} {k : Contract isa} {W : Nat} (h : Verified target c k)
+    (hW : 0 < W ∧ W < 4096 ∧ W % 16 = 0) (hk : ScrubOk k W) :
+    Verified target (withScrub W c) k := by
   obtain ⟨hcor, hct, hsat⟩ := h
-  have hsb : ∀ s, (sig.contract abi pre post wa stack leak).pre s → W ≤ s.sp.toNat := by
-    intro s hs
-    rw [pre_regs hk] at hs
-    rcases hs.1 with h0 | h0 <;> omega
-  have hrun : ∀ s, (sig.contract abi pre post wa stack leak).pre s → ∃ t s₃ u,
-      Exec isa c s t s₃ ∧ abiPreserved s s₃ ∧ (sig.contract abi pre post wa stack leak).post s s₃ ∧
+  have hrun : ∀ s, k.pre s → ∃ t s₃ u,
+      Exec isa c s t s₃ ∧ abiPreserved s s₃ ∧ k.post s s₃ ∧
       Exec isa (scrubTail W) s₃ (tailTrace s₃.sp W) u ∧ TailRun W s₃ u := by
     intro s hs
     obtain ⟨t, s₃, he, ha, hq⟩ := hcor s hs
-    obtain ⟨u, ex, tr⟩ := tail_run hW s₃ (by rw [ha.2.1]; exact hsb s hs)
+    obtain ⟨u, ex, tr⟩ := tail_run hW s₃ (by rw [ha.2.1]; exact hk.sp s hs)
     exact ⟨t, s₃, u, he, ha, hq, ex, tr⟩
   refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂ => ?_, hsat⟩
   · obtain ⟨t, s₃, u, he, ha, hq, ex, tr⟩ := hrun s hs
@@ -206,16 +207,9 @@ theorem Verified.withScrub {c : Prog isa} {W : Nat}
       rw [tr.gpr]; simp only [h9, ↓reduceIte]; exact ha.1 q hq'
     · have h31 : w ≠ .v31 := by rintro rfl; simp [preservedV] at hw
       rw [tr.v]; simp only [h31, ↓reduceIte]; exact ha.2.2 w hw
-    · rw [post_regs hk] at hq ⊢
-      have hx0 : u.gpr .x0 = s₃.gpr .x0 := by rw [tr.gpr]; simp
-      rw [hx0]
-      refine hpost _ _ _ _ _ (regArgs_length sig s hk) (fun b hb a ha' => ?_) hq
-      have hd := scrub_disjoint hk hW.1 hWs hs b hb a ha'
-      rw [tr.mem, ha.2.1]
-      have hnot : ¬ (a - (s.sp - BitVec.ofNat 64 W)).toNat < W := fun hlt =>
-        hd (show (a - (s.sp - BitVec.ofNat 64 W)).toNat + 1 ≤ W by omega)
-      rw [lose_out hnot]
-      simp only [zeroTo, hnot, ↓reduceIte]
+    · refine hk.post s s₃ u hs hq (fun a ha' => ?_) (by rw [tr.gpr]; simp)
+      rw [tr.mem, ha.2.1, lose_out ha']
+      simp only [zeroTo, ha', ↓reduceIte]
   · cases e₁ with
     | seq a₁ b₁ =>
     cases e₂ with
@@ -225,7 +219,60 @@ theorem Verified.withScrub {c : Prog isa} {W : Nat}
     obtain ⟨rfl, rfl⟩ := Exec.det a₁ f₁
     obtain ⟨rfl, rfl⟩ := Exec.det a₂ f₂
     rw [(Exec.det b₁ x₁).1, (Exec.det b₂ x₂).1, p₁.2.1, p₂.2.1,
-      hct _ _ _ _ _ _ h₁ h₂ hp a₁ a₂, ((pub_regs hk).mp hp).1.1.1]
+      hct _ _ _ _ _ _ h₁ h₂ hp a₁ a₂, hk.pub s₁ s₂ hp]
+
+/-- `ScrubOk` of a contract whose arguments are all in registers, whose
+stack holds the `W` bytes and whose postcondition reads the memory on return
+only within the buffers. -/
+theorem scrubOk_regs (hk : (sig.words abi.ptrBits).length ≤ 8) {W : Nat} (hW : 0 < W)
+    (hWs : W ≤ stack)
+    (hpost : ∀ vs m m₁ m₂ r, vs.length = (sig.words abi.ptrBits).length →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) post vs m m₁ r →
+        Curry.apply (sig.words abi.ptrBits) post vs m m₂ r) :
+    ScrubOk (sig.contract abi pre post wa stack leak) W where
+  sp s hs := by
+    rw [pre_regs hk] at hs
+    rcases hs.1 with h0 | h0 <;> omega
+  post s u u' hs hq hm hx := by
+    rw [post_regs hk] at hq ⊢
+    rw [hx]
+    refine hpost _ _ _ _ _ (regArgs_length sig s hk) (fun b hb a ha' => ?_) hq
+    have hd := scrub_disjoint hk hW hWs hs b hb a ha'
+    exact (hm a fun hlt => hd (show (a - (s.sp - BitVec.ofNat 64 W)).toNat + 1 ≤ W by omega)).symm
+  pub s₁ s₂ hp := ((pub_regs hk).mp hp).1.1.1
+
+/-- `ScrubOk` under the calling convention with tables of constants
+(`abi.withConsts`), from that without them. -/
+theorem scrubOk_consts {c₀ : String × List (BitVec 64)} {cs : List (String × List (BitVec 64))}
+    (hk : (sig.words abi.ptrBits).length ≤ 8) {W : Nat} (hW : 0 < W) (hWs : W ≤ stack)
+    (hpost : ∀ vs m m₁ m₂ r, vs.length = (sig.words abi.ptrBits).length →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) post vs m m₁ r →
+        Curry.apply (sig.words abi.ptrBits) post vs m m₂ r) :
+    ScrubOk (sig.contract (abi.withConsts (c₀ :: cs)) pre post wa stack leak) W where
+  sp s hs := (scrubOk_regs (pre := pre) (post := post) (wa := wa) (leak := leak) hk hW hWs hpost).sp
+    (stripConsts (c₀ :: cs) s) (pre_consts.mp hs).1
+  post s u u' hs hq hm hx := by
+    have e : ∀ v, (sig.contract abi pre post wa stack leak).post s v ↔
+        (sig.contract abi pre post wa stack leak).post (stripConsts (c₀ :: cs) s) v := fun v => by
+      rw [post_regs hk, post_regs hk]; rfl
+    exact post_consts.mpr ((e u').mpr
+      ((scrubOk_regs (pre := pre) (post := post) (wa := wa) (leak := leak) hk hW hWs hpost).post
+        _ u u' (pre_consts.mp hs).1 ((e u).mp (post_consts.mp hq)) hm hx))
+  pub s₁ s₂ hp := (scrubOk_regs (pre := pre) (post := post) (wa := wa) (leak := leak) hk hW hWs
+    hpost).pub s₁ s₂ (pub_consts.mp hp).1
+
+theorem Verified.withScrub {c : Prog isa} {W : Nat}
+    (h : Verified target c (sig.contract abi pre post wa stack leak))
+    (hk : (sig.words abi.ptrBits).length ≤ 8) (hW : 0 < W ∧ W < 4096 ∧ W % 16 = 0)
+    (hWs : W ≤ stack)
+    (hpost : ∀ vs m m₁ m₂ r, vs.length = (sig.words abi.ptrBits).length →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) post vs m m₁ r →
+        Curry.apply (sig.words abi.ptrBits) post vs m m₂ r) :
+    Verified target (withScrub W c) (sig.contract abi pre post wa stack leak) :=
+  Verified.withScrubK h hW (scrubOk_regs hk hW.1 hWs hpost)
 
 end
 

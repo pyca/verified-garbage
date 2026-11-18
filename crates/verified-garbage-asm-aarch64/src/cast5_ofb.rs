@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Cast5.ofbContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys, the chaining value or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.
@@ -99,7 +101,11 @@ b 21f
 21:
 .inst 0xf94000a6,0xf9000326,0xf94004b3,0xf94008b4,0xf9400cb5,0xf94010b6,0xf94014b7,0xf94018b8
 .inst 0xf9401cb9,0xf94020ba,0xf94024bb,0xf94028bc,0xd2800011,0x910003f0,0xa9004611,0xa9014611
-.inst 0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xf90033f1,0x9101c3ff,0xd65f03c0
+.inst 0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xf90033f1,0x9101c3ff,0xd2800004,0xd2800006
+.inst 0xd2800007,0xd280000a,0xd280000d,0xd280000e,0xd280000f,0x6f00e400,0x6f00e401,0x6f00e402
+.inst 0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0xea04009f
+.inst 0xd101c3ff,0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f
+.inst 0x3d80153f,0x3d80193f,0x9101c3ff,0xd65f03c0
 .p2align 6",
         VG_CAST5_S1234 = sym super::consts::VG_CAST5_S1234,
     )
@@ -108,6 +114,8 @@ b 21f
 /// CAST5-OFB encryption or decryption (NIST SP 800-38A §6.4, RFC 2144 §2) of the last piece of a message, of any length, in place: XORs the `len` bytes at `data` with the output blocks `Oⱼ = CIPH_K(Oⱼ₋₁)`, where `O₀` is the block at `*iv`, a partial last block `Pₙ*` of `u` bytes with `MSB_u(Oₙ)`, and replaces `*iv` with the last output block used, `Oₙ` (leaving it unchanged if `len = 0`): so that a further call continues the message if `len` is a multiple of 8, and otherwise keystream, to be wiped, after which the message must end. `CIPH_K` is CAST5 encryption with `rounds` rounds under the subkeys at `schedule`, as `vg_cast5_expand_key` writes them.
 ///
 /// Contract: `VG.Spec.Cast5.ofbFinalContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the subkeys, the chaining value or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -209,7 +217,11 @@ b 21f
 21:
 .inst 0xf94000a6,0xf9000326,0xf94004b3,0xf94008b4,0xf9400cb5,0xf94010b6,0xf94014b7,0xf94018b8
 .inst 0xf9401cb9,0xf94020ba,0xf94024bb,0xf94028bc,0xd2800011,0x910003f0,0xa9004611,0xa9014611
-.inst 0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xf90033f1,0x9101c3ff,0xd65f03c0
+.inst 0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xf90033f1,0x9101c3ff,0xd2800004,0xd2800006
+.inst 0xd2800007,0xd280000a,0xd280000d,0xd280000e,0xd280000f,0x6f00e400,0x6f00e401,0x6f00e402
+.inst 0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0xea04009f
+.inst 0xd101c3ff,0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f
+.inst 0x3d80153f,0x3d80193f,0x9101c3ff,0xd65f03c0
 .p2align 6",
         VG_CAST5_S1234 = sym super::consts::VG_CAST5_S1234,
     )
