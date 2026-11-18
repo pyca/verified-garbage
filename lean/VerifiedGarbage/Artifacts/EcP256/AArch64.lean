@@ -51,6 +51,7 @@ import VerifiedGarbage.Proof.Framework.Pratt
 public import VerifiedGarbage.Proof.P256.AArch64.Law
 public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.P256
 public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.P256Decompress
+public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.Residue
 
 /-! # P-256 public keys (FIPS 186-5 §A.2) on AArch64 -/
 
@@ -65,8 +66,10 @@ def artifacts : List Artifact := [
     code := Proof.EcKey.Compressed.AArch64.P256.code
     verified := Proof.EcKey.Compressed.AArch64.P256.verified hasLaw.inv },
   Spec.EcKey.P256.inst.decompressPublicKeyApi.artifact AArch64.target {
-    code := Proof.EcKey.Compressed.AArch64.P256Decompress.code
-    verified := Proof.EcKey.Compressed.AArch64.P256Decompress.verified hasLaw.law hasLaw.inv },
+    code := Proof.EcKey.Compressed.AArch64.Residue.cleared [.x14, .x15, .x16, .x17] []
+      Proof.EcKey.Compressed.AArch64.P256Decompress.code
+    verified := Proof.EcKey.Compressed.AArch64.Residue.P256.verified hasLaw.law hasLaw.inv
+    residue := some ⟨Proof.EcKey.Compressed.AArch64.Residue.P256.noResidue hasLaw.law hasLaw.inv⟩ },
   Spec.EcKey.P256.publicKeyApi.artifact AArch64.target {
     code := Impl.P256.Booth.publicKey
     verified := Proof.EcKey.AArch64.booth_pk_verified hasLaw.law hasLaw.inv (Proof.P256.combOk7 hasLaw.law) }]

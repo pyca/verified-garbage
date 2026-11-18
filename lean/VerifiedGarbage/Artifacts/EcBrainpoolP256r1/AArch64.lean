@@ -25,6 +25,7 @@ public import VerifiedGarbage.TCB.AArch64.Print
 public import VerifiedGarbage.Proof.BrainpoolP256r1.AArch64.Law
 public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.BrainpoolP256r1
 public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.BrainpoolP256r1Decompress
+public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.Residue
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
 
 /-! # brainpoolP256r1 public keys (FIPS 186-5 §A.2) on AArch64 -/
@@ -43,7 +44,9 @@ def artifacts : List Artifact := [
     code := Proof.EcKey.Compressed.AArch64.BrainpoolP256r1.code
     verified := Proof.EcKey.Compressed.AArch64.BrainpoolP256r1.verified hasLaw.inv },
   Spec.EcKey.BrainpoolP256r1.inst.decompressPublicKeyApi.artifact AArch64.target {
-    code := Proof.EcKey.Compressed.AArch64.BrainpoolP256r1Decompress.code
-    verified := Proof.EcKey.Compressed.AArch64.BrainpoolP256r1Decompress.verified hasLaw.law hasLaw.inv }]
+    code := Proof.EcKey.Compressed.AArch64.Residue.cleared [.x16, .x17] []
+      Proof.EcKey.Compressed.AArch64.BrainpoolP256r1Decompress.code
+    verified := Proof.EcKey.Compressed.AArch64.Residue.BrainpoolP256r1.verified hasLaw.law hasLaw.inv
+    residue := some ⟨Proof.EcKey.Compressed.AArch64.Residue.BrainpoolP256r1.noResidue hasLaw.law hasLaw.inv⟩ }]
 
 end VG.Artifacts.EcBrainpoolP256r1.AArch64

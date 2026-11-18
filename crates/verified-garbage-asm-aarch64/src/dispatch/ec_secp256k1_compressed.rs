@@ -29,6 +29,8 @@ pub unsafe fn vg_ec_secp256k1_compress_public_key_auto(_dit: verified_garbage_cp
 ///
 /// It runs `vg_ec_secp256k1_decompress_public_key`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 65 bytes.
