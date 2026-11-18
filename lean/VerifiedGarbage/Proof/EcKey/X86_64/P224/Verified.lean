@@ -62,11 +62,7 @@ theorem pre_of {s : State} (h : pkX86_64.pre s) : PkPre p224 s := by
 
 theorem post_of {s s' : State} (h : PkPost p224 s s') : pkX86_64.post s s' := by
   unfold PkPost at h
-  show match pk s.mem (s.gpr .rsi) with
-    | some (.affine x y) => (s'.gpr .rax).setWidth 32 = 1 ∧
-        Spec.EcKey.bytesAt s'.mem (s.gpr .rdi) 57 = Spec.EcKey.encodePoint (.affine x y)
-    | _ => (s'.gpr .rax).setWidth 32 = 0 ∧
-        Spec.EcKey.bytesAt s'.mem (s.gpr .rdi) 57 = List.replicate 57 0
+  dsimp only [pkX86_64]
   revert h
   generalize hq : pk s.mem (s.gpr .rsi) = q
   rw [show Spec.EcKey.publicKey p224.C (dk p224 s) = pk s.mem (s.gpr .rsi) from rfl, hq]

@@ -57,11 +57,7 @@ theorem pre_of {s : State} (h : ecdhX86.pre s) : EPre p192 s := by
 
 theorem post_of {s s' : State} (h : EPost p192 s s') : ecdhX86.post s s' := by
   unfold EPost at h
-  show match ex s.mem ((arg s 1).setWidth 64) ((arg s 2).setWidth 64) with
-    | some z => BitVec.setWidth 32 (s'.gpr .edx ++ s'.gpr .eax) = 1 ∧
-        Spec.EcKey.bytesAt s'.mem ((arg s 0).setWidth 64) 24 = z
-    | none => BitVec.setWidth 32 (s'.gpr .edx ++ s'.gpr .eax) = 0 ∧
-        Spec.EcKey.bytesAt s'.mem ((arg s 0).setWidth 64) 24 = List.replicate 24 0
+  dsimp only [ecdhX86]
   rw [BitVec.setWidth_append_eq_right]
   revert h
   generalize hq : ex s.mem ((arg s 1).setWidth 64) ((arg s 2).setWidth 64) = q
