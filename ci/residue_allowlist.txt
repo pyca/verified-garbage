@@ -300,17 +300,8 @@ aarch64 vg_rsa_pkcs1_decrypt_precomputed
 aarch64 vg_rsa_pkcs1_decrypt_precomputed_sha256_sha2
 aarch64 vg_rsa_pkcs1_sign_precomputed
 aarch64 vg_rsa_private_precompute
-aarch64 vg_seed_cbc_decrypt_chained
-aarch64 vg_seed_cbc_encrypt_chained
-aarch64 vg_seed_cfb128_decrypt
-aarch64 vg_seed_cfb128_decrypt_final
-aarch64 vg_seed_cfb128_encrypt
-aarch64 vg_seed_cfb128_encrypt_final
 aarch64 vg_seed_ecb_decrypt
 aarch64 vg_seed_ecb_encrypt
-aarch64 vg_seed_expand_key
-aarch64 vg_seed_ofb
-aarch64 vg_seed_ofb_final
 aarch64 vg_sha1_digest
 aarch64 vg_sha1_digest_sha2
 aarch64 vg_sha1_finalize

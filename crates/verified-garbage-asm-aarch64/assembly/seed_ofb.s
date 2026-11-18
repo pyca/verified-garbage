@@ -1933,6 +1933,21 @@ vg_seed_ofb:
 	stp x17, x17, [x16, #400]
 	stp x17, x17, [x16, #416]
 	add sp, sp, #1456
+	movz x1, #0, lsl #0
+	movz x2, #0, lsl #0
+	movz x3, #0, lsl #0
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
+	movz x8, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x12, #0, lsl #0
+	movz x13, #0, lsl #0
+	movi v0.2d, #0
+	movi v1.2d, #0
+	movi v3.2d, #0
+	movz x0, #0, lsl #0
 	ret
 	.p2align 6
 
@@ -3880,5 +3895,19 @@ vg_seed_ofb_final:
 	stp x17, x17, [x16, #400]
 	stp x17, x17, [x16, #416]
 	add sp, sp, #1456
+	movz x1, #0, lsl #0
+	movz x2, #0, lsl #0
+	movz x3, #0, lsl #0
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x12, #0, lsl #0
+	movz x13, #0, lsl #0
+	movi v0.2d, #0
+	movi v1.2d, #0
+	movi v3.2d, #0
+	movz x0, #0, lsl #0
 	ret
 	.p2align 6

@@ -993,6 +993,16 @@ vg_seed_expand_key:
 	stp x17, x17, [x16, #432]
 	stp x17, x17, [x16, #448]
 	add sp, sp, #976
+	movz x4, #0, lsl #0
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
+	movz x8, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x12, #0, lsl #0
+	movz x13, #0, lsl #0
+	movz x14, #0, lsl #0
 	ret
 	.p2align 6
 
