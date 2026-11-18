@@ -17,6 +17,7 @@ public import VerifiedGarbage.Proof.Sha512.AArch64.Variant
 public import VerifiedGarbage.Proof.Sha256.AArch64.Variant
 public import VerifiedGarbage.Impl.StackScratch.AArch64
 public import VerifiedGarbage.Proof.Hmac.Scratch
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubAll
 import VerifiedGarbage.Proof.Pbkdf2.Scratch
 
 /-! ### `Pbkdf2.Md.AArch64.AnyKeyCT`, which only this module used -/
@@ -1027,7 +1028,9 @@ open VG.Impl.Pbkdf2.Md.AArch64 (Hash)
 function's compression function, which `Generic/MdHash/AArch64/Stream.lean`
 emits, naming it with the variant's suffix: its `Api` (in `Spec/`), and its
 code, verified against the contract the `Api` gives it (`ofApi`, as
-`Artifact.ofApi`) with `stack` bytes of stack. -/
+`Artifact.ofApi`) with `stack` bytes of stack, whose postcondition reads the
+memory on return only within its buffers (`scrubOk`), so that it is
+registered scrubbed whole (`StreamFn.reg`). -/
 structure StreamFn where
   api : Api
   code : Prog AArch64.target.isa
@@ -1039,9 +1042,10 @@ structure StreamFn where
     exact ⟨_, _, _, rfl⟩
   ofApi : contract = api.contract AArch64.target.abi stack := by exact rfl
   spSafe : code.all (fun i => !AArch64.target.isa.writesSp i) = true
+  scrubOk : AArch64.ScrubAll.ScrubAllOk contract stack (api.sig.retBits AArch64.abi.ptrBits)
 
-/-- `f` as a registration of its `Api` (`Api.artifact`). -/
-def StreamFn.reg (f : StreamFn) : Registration f.api AArch64.target where
+/-- `f` as a registration of its `Api` (`Api.artifact`), as it is. -/
+def StreamFn.reg₀ (f : StreamFn) : Registration f.api AArch64.target where
   consts := []
   tables := []
   code := f.code
@@ -1051,6 +1055,12 @@ def StreamFn.reg (f : StreamFn) : Registration f.api AArch64.target where
   ofApi := f.ofApi
   ofSig := f.ofSig
   spSafe := f.spSafe
+
+/-- `f` as a registration of its `Api` (`Api.artifact`), returning with the
+registers it may write cleared and its stack zeroed
+(`AArch64.ScrubAll.withScrubAll`). -/
+def StreamFn.reg (f : StreamFn) : Registration f.api AArch64.target :=
+  AArch64.ScrubAll.withScrubAll f.reg₀ f.scrubOk
 
 /-- The bytes of the frame in which HMAC's `init` and `finalize` (of
 instance `I`) keep their working space, for their `_scratch` forms. -/

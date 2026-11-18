@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
+public import VerifiedGarbage.Proof.Sha256.PostOut
 public import VerifiedGarbage.Proof.Pbkdf2.Contract
 public import VerifiedGarbage.Proof.Hmac.Contract
 public import VerifiedGarbage.Proof.Sha256.AArch64.Shared
@@ -200,24 +201,30 @@ working space in a frame of their own, which
 `Generic/MdHash/AArch64/Stream.lean` emits. -/
 def stream : List StreamFn := [
   { api := Spec.Sha256.updateApi
-    code := Impl.StackScratch.AArch64.withStackScratch 608 .x4 v.update
-    contract := Spec.Sha256.updateContract AArch64.abi (16 + 608)
-    stack := 16 + 608
+    code := Impl.StackScratch.AArch64.withStackScratch 160 .x4 v.update
+    contract := Spec.Sha256.updateContract AArch64.abi (16 + 160)
+    stack := 16 + 160
     verified := Proof.Sha256.AArch64.Shared.update_of v.update_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
+    spSafe := Code.all_of_forall (fun _ => rfl) _
+    scrubOk := AArch64.ScrubAll.scrubAllOk_regs (sig := Spec.Sha256.updateSig) (by decide) (by decide) (Nat.le_refl _)
+      (Proof.Sha256.updatePost_out _) },
   { api := Spec.Sha256.finalizeApi
-    code := Impl.StackScratch.AArch64.withStackScratch 608 .x3 v.finalize
-    contract := Spec.Sha256.finalizeContract AArch64.abi (16 + 608)
-    stack := 16 + 608
+    code := Impl.StackScratch.AArch64.withStackScratch 160 .x3 v.finalize
+    contract := Spec.Sha256.finalizeContract AArch64.abi (16 + 160)
+    stack := 16 + 160
     verified := Proof.Sha256.AArch64.Shared.finalize_of v.finalize_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
+    spSafe := Code.all_of_forall (fun _ => rfl) _
+    scrubOk := AArch64.ScrubAll.scrubAllOk_regs (sig := Spec.Sha256.finalizeSig) (by decide) (by decide) (Nat.le_refl _)
+      (Proof.Sha256.finalizePost_out _) },
   { api := Spec.Sha256.digest256Api
     code := Proof.Sha256.AArch64.oneShotWith Impl.Sha256.AArch64.Stream.out256 Spec.Sha256.H0 v.name v.code
     contract := Spec.Sha256.digestContract AArch64.abi 32 Spec.Sha256.hash Proof.Sha256.AArch64.OneShot.stack
     stack := Proof.Sha256.AArch64.OneShot.stack
     verified := (v.oneShot_verified (by decide) Proof.Sha256.AArch64.Stream.shape.toD v.oneShot256).of_implies
         (Proof.Sha256.AArch64.OneShot.implies (by decide) Proof.Sha256.AArch64.OneShot.hash_take)
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    spSafe := Code.all_of_forall (fun _ => rfl) _
+    scrubOk := AArch64.ScrubAll.scrubAllOk_regs (sig := (Spec.Sha256.digestSig 32)) (by decide) (by decide) (Nat.le_refl _)
+      (Proof.Sha256.digestPost_out _ _ _ (by decide)) }]
 
 /-- Every construction follows the registered compression backend. -/
 def variant : MdHash :=

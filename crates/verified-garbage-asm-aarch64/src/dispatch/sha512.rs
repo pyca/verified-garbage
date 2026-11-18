@@ -84,6 +84,8 @@ pub unsafe fn vg_sha512_256_init_auto(_dit: verified_garbage_cpu::Dit<'_>, state
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sha384_finalize_sha512` if the CPU supports its features (`VG_SHA384_FINALIZE_SHA512_FEATURES`); or else `vg_sha384_finalize`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 192 bytes.
@@ -134,6 +136,8 @@ pub unsafe fn vg_sha384_finalize_auto(_dit: verified_garbage_cpu::Dit<'_>, state
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sha384_digest_sha512` if the CPU supports its features (`VG_SHA384_DIGEST_SHA512_FEATURES`); or else `vg_sha384_digest`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `data` must be valid for reads of `len` bytes.
@@ -182,6 +186,8 @@ pub unsafe fn vg_sha384_digest_auto(_dit: verified_garbage_cpu::Dit<'_>, data: *
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sha512_update_sha512` if the CPU supports its features (`VG_SHA512_UPDATE_SHA512_FEATURES`); or else `vg_sha512_update`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 192 bytes.
@@ -229,6 +235,8 @@ pub unsafe fn vg_sha512_update_auto(_dit: verified_garbage_cpu::Dit<'_>, state: 
 /// Contract: `VG.Spec.Sha512.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sha512_finalize_sha512` if the CPU supports its features (`VG_SHA512_FINALIZE_SHA512_FEATURES`); or else `vg_sha512_finalize`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -280,6 +288,8 @@ pub unsafe fn vg_sha512_finalize_auto(_dit: verified_garbage_cpu::Dit<'_>, state
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sha512_digest_sha512` if the CPU supports its features (`VG_SHA512_DIGEST_SHA512_FEATURES`); or else `vg_sha512_digest`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `data` must be valid for reads of `len` bytes.
@@ -327,6 +337,8 @@ pub unsafe fn vg_sha512_digest_auto(_dit: verified_garbage_cpu::Dit<'_>, data: *
 /// Contract: `VG.Spec.Sha512.finalizeDigestContract` for `VG.Spec.Sha512.H0_512_224` and `VG.Spec.Sha512.sha512_224`. Constant time: only the pointers and `count` may affect timing, not the state.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sha512_224_finalize_sha512` if the CPU supports its features (`VG_SHA512_224_FINALIZE_SHA512_FEATURES`); or else `vg_sha512_224_finalize`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -378,6 +390,8 @@ pub unsafe fn vg_sha512_224_finalize_auto(_dit: verified_garbage_cpu::Dit<'_>, s
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sha512_224_digest_sha512` if the CPU supports its features (`VG_SHA512_224_DIGEST_SHA512_FEATURES`); or else `vg_sha512_224_digest`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `data` must be valid for reads of `len` bytes.
@@ -425,6 +439,8 @@ pub unsafe fn vg_sha512_224_digest_auto(_dit: verified_garbage_cpu::Dit<'_>, dat
 /// Contract: `VG.Spec.Sha512.finalizeDigestContract` for `VG.Spec.Sha512.H0_512_256` and `VG.Spec.Sha512.sha512_256`. Constant time: only the pointers and `count` may affect timing, not the state.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sha512_256_finalize_sha512` if the CPU supports its features (`VG_SHA512_256_FINALIZE_SHA512_FEATURES`); or else `vg_sha512_256_finalize`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -475,6 +491,8 @@ pub unsafe fn vg_sha512_256_finalize_auto(_dit: verified_garbage_cpu::Dit<'_>, s
 /// Contract: `VG.Spec.Sha512.digestContract` for `VG.Spec.Sha512.sha512_256`. Constant time: only the pointers and `len` may affect timing, not the data.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sha512_256_digest_sha512` if the CPU supports its features (`VG_SHA512_256_DIGEST_SHA512_FEATURES`); or else `vg_sha512_256_digest`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///

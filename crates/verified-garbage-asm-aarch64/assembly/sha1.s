@@ -176,6 +176,48 @@ vg_sha1_update_sha2:
 	ldr x20, [x20, #120]
 	ldr x30, [sp], #16
 	add sp, sp, #160
+	movz x1, #0, lsl #0
+	movz x2, #0, lsl #0
+	movz x3, #0, lsl #0
+	movz x4, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x12, #0, lsl #0
+	movz x13, #0, lsl #0
+	movz x16, #0, lsl #0
+	movz x17, #0, lsl #0
+	movi v0.2d, #0
+	movi v1.2d, #0
+	movi v2.2d, #0
+	movi v3.2d, #0
+	movi v4.2d, #0
+	movi v5.2d, #0
+	movi v6.2d, #0
+	movi v7.2d, #0
+	movi v16.2d, #0
+	movi v17.2d, #0
+	movi v18.2d, #0
+	movi v19.2d, #0
+	movi v20.2d, #0
+	movi v21.2d, #0
+	tst x1, x1
+	movz x0, #0, lsl #0
+	sub sp, sp, #176
+	movi v31.2d, #0
+	add x9, sp, #0
+	str q31, [x9, #0]
+	str q31, [x9, #16]
+	str q31, [x9, #32]
+	str q31, [x9, #48]
+	str q31, [x9, #64]
+	str q31, [x9, #80]
+	str q31, [x9, #96]
+	str q31, [x9, #112]
+	str q31, [x9, #128]
+	str q31, [x9, #144]
+	str q31, [x9, #160]
+	add sp, sp, #176
 	ret
 	.p2align 6
 
@@ -274,6 +316,47 @@ vg_sha1_finalize_sha2:
 	ldr x20, [x20, #120]
 	ldr x30, [sp], #16
 	add sp, sp, #160
+	movz x1, #0, lsl #0
+	movz x2, #0, lsl #0
+	movz x3, #0, lsl #0
+	movz x4, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x12, #0, lsl #0
+	movz x13, #0, lsl #0
+	movz x16, #0, lsl #0
+	movz x17, #0, lsl #0
+	movi v0.2d, #0
+	movi v1.2d, #0
+	movi v2.2d, #0
+	movi v3.2d, #0
+	movi v4.2d, #0
+	movi v5.2d, #0
+	movi v6.2d, #0
+	movi v7.2d, #0
+	movi v16.2d, #0
+	movi v17.2d, #0
+	movi v18.2d, #0
+	movi v19.2d, #0
+	movi v20.2d, #0
+	movi v21.2d, #0
+	tst x1, x1
+	movz x0, #0, lsl #0
+	sub sp, sp, #176
+	movi v31.2d, #0
+	add x9, sp, #0
+	str q31, [x9, #0]
+	str q31, [x9, #16]
+	str q31, [x9, #32]
+	str q31, [x9, #48]
+	str q31, [x9, #64]
+	str q31, [x9, #80]
+	str q31, [x9, #96]
+	str q31, [x9, #112]
+	str q31, [x9, #128]
+	str q31, [x9, #144]
+	str q31, [x9, #160]
+	add sp, sp, #176
 	ret
 	.p2align 6
 
@@ -443,6 +526,56 @@ vg_sha1_digest_sha2:
 	ldp x26, x27, [x16, #32]
 	ldp x28, x30, [x16, #48]
 	add sp, sp, #272
+	movz x1, #0, lsl #0
+	movz x2, #0, lsl #0
+	movz x3, #0, lsl #0
+	movz x4, #0, lsl #0
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x12, #0, lsl #0
+	movz x13, #0, lsl #0
+	movz x16, #0, lsl #0
+	movz x17, #0, lsl #0
+	movi v0.2d, #0
+	movi v1.2d, #0
+	movi v2.2d, #0
+	movi v3.2d, #0
+	movi v4.2d, #0
+	movi v5.2d, #0
+	movi v6.2d, #0
+	movi v7.2d, #0
+	movi v16.2d, #0
+	movi v17.2d, #0
+	movi v18.2d, #0
+	movi v19.2d, #0
+	movi v20.2d, #0
+	movi v21.2d, #0
+	tst x1, x1
+	movz x0, #0, lsl #0
+	sub sp, sp, #272
+	movi v31.2d, #0
+	add x9, sp, #0
+	str q31, [x9, #0]
+	str q31, [x9, #16]
+	str q31, [x9, #32]
+	str q31, [x9, #48]
+	str q31, [x9, #64]
+	str q31, [x9, #80]
+	str q31, [x9, #96]
+	str q31, [x9, #112]
+	str q31, [x9, #128]
+	str q31, [x9, #144]
+	str q31, [x9, #160]
+	str q31, [x9, #176]
+	str q31, [x9, #192]
+	str q31, [x9, #208]
+	str q31, [x9, #224]
+	str q31, [x9, #240]
+	str q31, [x9, #256]
+	add sp, sp, #272
 	ret
 	.p2align 6
 
@@ -599,6 +732,45 @@ vg_sha1_update:
 	ldr x20, [x20, #120]
 	ldr x30, [sp], #16
 	add sp, sp, #160
+	movz x1, #0, lsl #0
+	movz x2, #0, lsl #0
+	movz x3, #0, lsl #0
+	movz x4, #0, lsl #0
+	movz x5, #0, lsl #0
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
+	movz x8, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x12, #0, lsl #0
+	movz x13, #0, lsl #0
+	movz x14, #0, lsl #0
+	movz x15, #0, lsl #0
+	movz x16, #0, lsl #0
+	movz x17, #0, lsl #0
+	movi v18.2d, #0
+	movi v19.2d, #0
+	movi v20.2d, #0
+	movi v21.2d, #0
+	movi v22.2d, #0
+	tst x1, x1
+	movz x0, #0, lsl #0
+	sub sp, sp, #176
+	movi v31.2d, #0
+	add x9, sp, #0
+	str q31, [x9, #0]
+	str q31, [x9, #16]
+	str q31, [x9, #32]
+	str q31, [x9, #48]
+	str q31, [x9, #64]
+	str q31, [x9, #80]
+	str q31, [x9, #96]
+	str q31, [x9, #112]
+	str q31, [x9, #128]
+	str q31, [x9, #144]
+	str q31, [x9, #160]
+	add sp, sp, #176
 	ret
 	.p2align 6
 
@@ -697,6 +869,45 @@ vg_sha1_finalize:
 	ldr x20, [x20, #120]
 	ldr x30, [sp], #16
 	add sp, sp, #160
+	movz x1, #0, lsl #0
+	movz x2, #0, lsl #0
+	movz x3, #0, lsl #0
+	movz x4, #0, lsl #0
+	movz x5, #0, lsl #0
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
+	movz x8, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x12, #0, lsl #0
+	movz x13, #0, lsl #0
+	movz x14, #0, lsl #0
+	movz x15, #0, lsl #0
+	movz x16, #0, lsl #0
+	movz x17, #0, lsl #0
+	movi v18.2d, #0
+	movi v19.2d, #0
+	movi v20.2d, #0
+	movi v21.2d, #0
+	movi v22.2d, #0
+	tst x1, x1
+	movz x0, #0, lsl #0
+	sub sp, sp, #176
+	movi v31.2d, #0
+	add x9, sp, #0
+	str q31, [x9, #0]
+	str q31, [x9, #16]
+	str q31, [x9, #32]
+	str q31, [x9, #48]
+	str q31, [x9, #64]
+	str q31, [x9, #80]
+	str q31, [x9, #96]
+	str q31, [x9, #112]
+	str q31, [x9, #128]
+	str q31, [x9, #144]
+	str q31, [x9, #160]
+	add sp, sp, #176
 	ret
 	.p2align 6
 
@@ -865,6 +1076,56 @@ vg_sha1_digest:
 	ldp x22, x25, [x16, #16]
 	ldp x26, x27, [x16, #32]
 	ldp x28, x30, [x16, #48]
+	add sp, sp, #272
+	movz x1, #0, lsl #0
+	movz x2, #0, lsl #0
+	movz x3, #0, lsl #0
+	movz x4, #0, lsl #0
+	movz x5, #0, lsl #0
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
+	movz x8, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x12, #0, lsl #0
+	movz x13, #0, lsl #0
+	movz x14, #0, lsl #0
+	movz x15, #0, lsl #0
+	movz x16, #0, lsl #0
+	movz x17, #0, lsl #0
+	movi v0.2d, #0
+	movi v1.2d, #0
+	movi v2.2d, #0
+	movi v3.2d, #0
+	movi v4.2d, #0
+	movi v18.2d, #0
+	movi v19.2d, #0
+	movi v20.2d, #0
+	movi v21.2d, #0
+	movi v22.2d, #0
+	tst x1, x1
+	movz x0, #0, lsl #0
+	sub sp, sp, #272
+	movi v31.2d, #0
+	add x9, sp, #0
+	str q31, [x9, #0]
+	str q31, [x9, #16]
+	str q31, [x9, #32]
+	str q31, [x9, #48]
+	str q31, [x9, #64]
+	str q31, [x9, #80]
+	str q31, [x9, #96]
+	str q31, [x9, #112]
+	str q31, [x9, #128]
+	str q31, [x9, #144]
+	str q31, [x9, #160]
+	str q31, [x9, #176]
+	str q31, [x9, #192]
+	str q31, [x9, #208]
+	str q31, [x9, #224]
+	str q31, [x9, #240]
+	str q31, [x9, #256]
 	add sp, sp, #272
 	ret
 	.p2align 6

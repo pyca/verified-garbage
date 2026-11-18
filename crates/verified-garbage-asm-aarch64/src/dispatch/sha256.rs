@@ -46,13 +46,15 @@ pub unsafe fn vg_sha256_init_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *m
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sha224_finalize_sha2` if the CPU supports its features (`VG_SHA224_FINALIZE_SHA2_FEATURES`); or else `vg_sha224_finalize`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 96 bytes.
 /// * `out` must be valid for reads and writes of 28 bytes.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the 624 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `out` may overlap the 176 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_sha224_finalize_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 96], count: u64, out: *mut [u8; 28]) {
@@ -94,6 +96,8 @@ pub unsafe fn vg_sha224_finalize_auto(_dit: verified_garbage_cpu::Dit<'_>, state
 /// Contract: `VG.Spec.Sha256.digestContract` for `VG.Spec.Sha256.sha224`. Constant time: only the pointers and `len` may affect timing, not the data.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sha224_digest_sha2` if the CPU supports its features (`VG_SHA224_DIGEST_SHA2_FEATURES`); or else `vg_sha224_digest`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -143,12 +147,14 @@ pub unsafe fn vg_sha224_digest_auto(_dit: verified_garbage_cpu::Dit<'_>, data: *
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sha256_update_sha2` if the CPU supports its features (`VG_SHA256_UPDATE_SHA2_FEATURES`); or else `vg_sha256_update`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 96 bytes.
 /// * `data` must be valid for reads of `len` bytes.
 /// * `state` must not overlap `data` (distinct Rust objects never do).
-/// * Neither `state` nor `data` may overlap the 624 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `data` may overlap the 176 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_sha256_update_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 96], count: u64, data: *const u8, len: usize) {
@@ -191,13 +197,15 @@ pub unsafe fn vg_sha256_update_auto(_dit: verified_garbage_cpu::Dit<'_>, state: 
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sha256_finalize_sha2` if the CPU supports its features (`VG_SHA256_FINALIZE_SHA2_FEATURES`); or else `vg_sha256_finalize`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 96 bytes.
 /// * `out` must be valid for reads and writes of 32 bytes.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the 624 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `out` may overlap the 176 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_sha256_finalize_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 96], count: u64, out: *mut [u8; 32]) {
@@ -239,6 +247,8 @@ pub unsafe fn vg_sha256_finalize_auto(_dit: verified_garbage_cpu::Dit<'_>, state
 /// Contract: `VG.Spec.Sha256.digestContract` for `VG.Spec.Sha256.hash`. Constant time: only the pointers and `len` may affect timing, not the data.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sha256_digest_sha2` if the CPU supports its features (`VG_SHA256_DIGEST_SHA2_FEATURES`); or else `vg_sha256_digest`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///

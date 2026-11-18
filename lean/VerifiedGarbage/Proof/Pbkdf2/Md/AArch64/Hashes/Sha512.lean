@@ -4,6 +4,9 @@ public import VerifiedGarbage.Proof.Sha512.AArch64.OneShot
 public import VerifiedGarbage.Proof.Pbkdf2.Contract
 public import VerifiedGarbage.Proof.Hmac.Contract
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
+public import VerifiedGarbage.Proof.Sha1.PostOut
+public import VerifiedGarbage.Proof.Sha256.PostOut
+public import VerifiedGarbage.Proof.Sha512.PostOut
 import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
 import VerifiedGarbage.Proof.Hmac.Generic.Implies
 import VerifiedGarbage.Proof.Framework.TaintBatch
@@ -471,19 +474,25 @@ def stream : List StreamFn := [
     contract := Spec.Sha1.updateContract AArch64.abi (16 + 160)
     stack := 16 + 160
     verified := Proof.Sha1.AArch64.Shared.update_of v.update_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
+    spSafe := Code.all_of_forall (fun _ => rfl) _
+    scrubOk := AArch64.ScrubAll.scrubAllOk_regs (sig := Spec.Sha1.updateSig) (by decide) (by decide) (Nat.le_refl _)
+      (Proof.Sha1.updatePost_out _) },
   { api := Spec.Sha1.finalizeApi
     code := Impl.StackScratch.AArch64.withStackScratch 160 .x3 v.finalize
     contract := Spec.Sha1.finalizeContract AArch64.abi (16 + 160)
     stack := 16 + 160
     verified := Proof.Sha1.AArch64.Shared.finalize_of v.finalize_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
+    spSafe := Code.all_of_forall (fun _ => rfl) _
+    scrubOk := AArch64.ScrubAll.scrubAllOk_regs (sig := Spec.Sha1.finalizeSig) (by decide) (by decide) (Nat.le_refl _)
+      (Proof.Sha1.finalizePost_out _) },
   { api := Spec.Sha1.digestApi
     code := Proof.Sha1.AArch64.oneShotWith v.name v.code
     contract := Spec.Sha1.digestContract AArch64.abi Proof.Sha1.AArch64.OneShot.stack
     stack := Proof.Sha1.AArch64.OneShot.stack
     verified := v.oneShot_verified.of_implies Proof.Sha1.AArch64.OneShot.implies
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    spSafe := Code.all_of_forall (fun _ => rfl) _
+    scrubOk := AArch64.ScrubAll.scrubAllOk_regs (sig := Spec.Sha1.digestSig) (by decide) (by decide) (Nat.le_refl _)
+      (Proof.Sha1.digestPost_out _) }]
 
 /-- Every construction follows the registered compression backend. -/
 def variant : MdHash :=
@@ -697,11 +706,13 @@ theorem satPF :
 (`Compress.finalize224`). -/
 def stream : List StreamFn := [
   { api := Spec.Sha256.finalize224Api
-    code := Impl.StackScratch.AArch64.withStackScratch 608 .x3 v.finalize224
-    contract := Spec.Sha256.finalize224Contract AArch64.abi (16 + 608)
-    stack := 16 + 608
+    code := Impl.StackScratch.AArch64.withStackScratch 160 .x3 v.finalize224
+    contract := Spec.Sha256.finalize224Contract AArch64.abi (16 + 160)
+    stack := 16 + 160
     verified := Proof.Sha256.AArch64.Shared.finalize224_of v.finalize224_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
+    spSafe := Code.all_of_forall (fun _ => rfl) _
+    scrubOk := AArch64.ScrubAll.scrubAllOk_regs (sig := Spec.Sha256.finalize224Sig) (by decide) (by decide) (Nat.le_refl _)
+      (Proof.Sha256.finalize224Post_out _) },
   { api := Spec.Sha256.digest224Api
     code := Proof.Sha256.AArch64.oneShotWith (out32 7 true) Spec.Sha256.H0_224 v.name
       v.code
@@ -709,7 +720,9 @@ def stream : List StreamFn := [
     stack := Proof.Sha256.AArch64.OneShot.stack
     verified := (v.oneShot_verified (by decide) Proof.Sha256.AArch64.Stream.shape224 v.oneShot224).of_implies
         (Proof.Sha256.AArch64.OneShot.implies (by decide) Proof.Sha256.AArch64.OneShot.sha224_take)
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    spSafe := Code.all_of_forall (fun _ => rfl) _
+    scrubOk := AArch64.ScrubAll.scrubAllOk_regs (sig := (Spec.Sha256.digestSig 28)) (by decide) (by decide) (Nat.le_refl _)
+      (Proof.Sha256.digestPost_out _ _ _ (by decide)) }]
 
 /-- SHA-224 with the implementation `v` of SHA-256's compression function.
 Its streaming `update` is SHA-256's, which SHA-256's variant with `v`
@@ -969,20 +982,26 @@ def stream (v : Compress) : List StreamFn := [
     contract := Spec.Sha512.updateContract AArch64.abi (16 + 688)
     stack := 16 + 688
     verified := Proof.Sha512.AArch64.Shared.update_of v.update_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
+    spSafe := Code.all_of_forall (fun _ => rfl) _
+    scrubOk := AArch64.ScrubAll.scrubAllOk_regs (sig := Spec.Sha512.updateSig) (by decide) (by decide) (Nat.le_refl _)
+      (Proof.Sha512.updatePost_out _) },
   { api := Spec.Sha512.finalizeApi
     code := Impl.StackScratch.AArch64.withStackScratch 688 .x3 v.finalize
     contract := Spec.Sha512.finalizeContract AArch64.abi (16 + 688)
     stack := 16 + 688
     verified := Proof.Sha512.AArch64.Shared.finalize_of v.finalize_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
+    spSafe := Code.all_of_forall (fun _ => rfl) _
+    scrubOk := AArch64.ScrubAll.scrubAllOk_regs (sig := Spec.Sha512.finalizeSig) (by decide) (by decide) (Nat.le_refl _)
+      (Proof.Sha512.finalizePost_out _) },
   { api := Spec.Sha512.digest512Api
     code := Proof.Sha512.AArch64.oneShotWith (out64 8) H0_512 v.suffix v.code
     contract := Spec.Sha512.digestContract AArch64.abi 64 Spec.Sha512.sha512 Proof.Sha512.AArch64.OneShot.stack
     stack := Proof.Sha512.AArch64.OneShot.stack
     verified := (v.oneShot_verified (by decide) Proof.Sha512.AArch64.Stream.shape.toD v.oneShot512).of_implies (Proof.Sha512.AArch64.OneShot.implies (by decide) fun m =>
         List.take_of_length_le (Nat.le_of_eq (Hmac.Generic.Common.finalHash_length _ m)))
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    spSafe := Code.all_of_forall (fun _ => rfl) _
+    scrubOk := AArch64.ScrubAll.scrubAllOk_regs (sig := (Spec.Sha512.digestSig 64)) (by decide) (by decide) (Nat.le_refl _)
+      (Proof.Sha512.digestPost_out _ _ _ (by decide)) }]
 
 /-- SHA-384's `finalize` made with `v`, which writes its digest (`finalizeDigestWith`). -/
 def stream384 (v : Compress) : List StreamFn := [
@@ -993,13 +1012,17 @@ def stream384 (v : Compress) : List StreamFn := [
     stack := 16 + 688
     verified := Proof.Sha512.AArch64.Shared.finalizeDigest_of (.inl rfl)
       (v.finalizeDigest_verified Proof.Sha512.AArch64.Stream.shape384 v.digest384) (fun _ => rfl)
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
+    spSafe := Code.all_of_forall (fun _ => rfl) _
+    scrubOk := AArch64.ScrubAll.scrubAllOk_regs (sig := (Spec.Sha512.finalizeDigestSig 48)) (by decide) (by decide) (Nat.le_refl _)
+      (Proof.Sha512.finalizeDigestPost_out _ _ _ _ (by decide)) },
   { api := Spec.Sha512.digest384Api
     code := Proof.Sha512.AArch64.oneShotWith (out64 6) H0_384 v.suffix v.code
     contract := Spec.Sha512.digestContract AArch64.abi 48 Spec.Sha512.sha384 Proof.Sha512.AArch64.OneShot.stack
     stack := Proof.Sha512.AArch64.OneShot.stack
     verified := (v.oneShot_verified (by decide) Proof.Sha512.AArch64.Stream.shape384 v.oneShot384).of_implies (Proof.Sha512.AArch64.OneShot.implies (by decide) fun _ => rfl)
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    spSafe := Code.all_of_forall (fun _ => rfl) _
+    scrubOk := AArch64.ScrubAll.scrubAllOk_regs (sig := (Spec.Sha512.digestSig 48)) (by decide) (by decide) (Nat.le_refl _)
+      (Proof.Sha512.digestPost_out _ _ _ (by decide)) }]
 
 /-- SHA-512/256's `finalize` made with `v`, which writes its digest (`finalizeDigestWith`). -/
 def stream512_256 (v : Compress) : List StreamFn := [
@@ -1010,14 +1033,18 @@ def stream512_256 (v : Compress) : List StreamFn := [
     stack := 16 + 688
     verified := Proof.Sha512.AArch64.Shared.finalizeDigest_of (.inr (.inl rfl))
       (v.finalizeDigest_verified Proof.Sha512.AArch64.Stream.shape512_256 v.digest512_256) (fun _ => rfl)
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
+    spSafe := Code.all_of_forall (fun _ => rfl) _
+    scrubOk := AArch64.ScrubAll.scrubAllOk_regs (sig := (Spec.Sha512.finalizeDigestSig 32)) (by decide) (by decide) (Nat.le_refl _)
+      (Proof.Sha512.finalizeDigestPost_out _ _ _ _ (by decide)) },
   { api := Spec.Sha512.digest512_256Api
     code := Proof.Sha512.AArch64.oneShotWith (out64 4) H0_512_256 v.suffix v.code
     contract := Spec.Sha512.digestContract AArch64.abi 32 Spec.Sha512.sha512_256
       Proof.Sha512.AArch64.OneShot.stack
     stack := Proof.Sha512.AArch64.OneShot.stack
     verified := (v.oneShot_verified (by decide) Proof.Sha512.AArch64.Stream.shape512_256 v.oneShot512_256).of_implies (Proof.Sha512.AArch64.OneShot.implies (by decide) fun _ => rfl)
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    spSafe := Code.all_of_forall (fun _ => rfl) _
+    scrubOk := AArch64.ScrubAll.scrubAllOk_regs (sig := (Spec.Sha512.digestSig 32)) (by decide) (by decide) (Nat.le_refl _)
+      (Proof.Sha512.digestPost_out _ _ _ (by decide)) }]
 
 /-- SHA-512/224's `finalize` made with `v`, which writes its digest (`finalizeDigestWith`). -/
 def stream512_224 (v : Compress) : List StreamFn := [
@@ -1028,7 +1055,9 @@ def stream512_224 (v : Compress) : List StreamFn := [
     stack := 16 + 688
     verified := Proof.Sha512.AArch64.Shared.finalizeDigest_of (.inr (.inr rfl))
       (v.finalizeDigest_verified Proof.Sha512.AArch64.Stream.shape512_224 v.digest512_224) (fun _ => rfl)
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
+    spSafe := Code.all_of_forall (fun _ => rfl) _
+    scrubOk := AArch64.ScrubAll.scrubAllOk_regs (sig := (Spec.Sha512.finalizeDigestSig 28)) (by decide) (by decide) (Nat.le_refl _)
+      (Proof.Sha512.finalizeDigestPost_out _ _ _ _ (by decide)) },
   { api := Spec.Sha512.digest512_224Api
     code := Proof.Sha512.AArch64.oneShotWith (out64 3 ++ Impl.Sha512.AArch64.Stream.outHi 3) H0_512_224
       v.suffix v.code
@@ -1036,7 +1065,9 @@ def stream512_224 (v : Compress) : List StreamFn := [
       Proof.Sha512.AArch64.OneShot.stack
     stack := Proof.Sha512.AArch64.OneShot.stack
     verified := (v.oneShot_verified (by decide) Proof.Sha512.AArch64.Stream.shape512_224 v.oneShot512_224).of_implies (Proof.Sha512.AArch64.OneShot.implies (by decide) fun _ => rfl)
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    spSafe := Code.all_of_forall (fun _ => rfl) _
+    scrubOk := AArch64.ScrubAll.scrubAllOk_regs (sig := (Spec.Sha512.digestSig 28)) (by decide) (by decide) (Nat.le_refl _)
+      (Proof.Sha512.digestPost_out _ _ _ (by decide)) }]
 
 /-! ## SHA-384 -/
 

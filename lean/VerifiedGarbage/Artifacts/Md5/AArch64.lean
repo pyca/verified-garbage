@@ -18,12 +18,8 @@ def artifacts : List Artifact := [
     code := Impl.Md5.AArch64.Stream.init
     verified := Proof.Md5.AArch64.Shared.init
     residue := some ⟨Proof.Md5.AArch64.Stream.init_noResidue _ _⟩ },
-  Spec.Md5.updateApi.artifact AArch64.target {
-    code := Impl.StackScratch.AArch64.withStackScratch 112 .x4 Impl.Md5.AArch64.Stream.update
-    verified := Proof.Md5.AArch64.Shared.update },
-  Spec.Md5.finalizeApi.artifact AArch64.target {
-    code := Impl.StackScratch.AArch64.withStackScratch 112 .x3 Impl.Md5.AArch64.Stream.finalize
-    verified := Proof.Md5.AArch64.Shared.finalize }] ++
+  Spec.Md5.updateApi.artifact AArch64.target Proof.Md5.AArch64.Shared.updateReg,
+  Spec.Md5.finalizeApi.artifact AArch64.target Proof.Md5.AArch64.Shared.finalizeReg] ++
   (VG.Proof.Variants.MdHash.AArch64.md5Variants.flatMap fun (v : Proof.Pbkdf2.Md.AArch64.MdHash) =>
     v.stream.map fun f =>
       f.api.artifact AArch64.target { f.reg with suffix := v.suffix})

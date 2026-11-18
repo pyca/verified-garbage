@@ -29,6 +29,8 @@ pub const VG_SHA1_UPDATE_SHA2_FEATURES: verified_garbage_cpu::Features = verifie
 ///
 /// Contract: `VG.Spec.Sha1.updateContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 84 bytes.
@@ -129,7 +131,12 @@ b 21f
 20:
 21:
 .inst 0xf9403a93,0xf9404295,0xf9404696,0xf9404a97,0xf9404e98,0xf9403e94,0xf84107fe,0x910283ff
-.inst 0xd65f03c0
+.inst 0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800009,0xd280000a,0xd280000b,0xd280000c
+.inst 0xd280000d,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404
+.inst 0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414
+.inst 0x6f00e415,0xea01003f,0xd2800000,0xd102c3ff,0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f
+.inst 0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f,0x3d80193f,0x3d801d3f,0x3d80213f,0x3d80253f
+.inst 0x3d80293f,0x9102c3ff,0xd65f03c0
 .p2align 6",
         vg_sha1_compress_sha2 = sym super::sha1::vg_sha1_compress_sha2::vg_sha1_compress_sha2,
     )
@@ -141,6 +148,8 @@ pub const VG_SHA1_FINALIZE_SHA2_FEATURES: verified_garbage_cpu::Features = verif
 /// Finishes a SHA-1 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), writes the SHA-1 digest of that message to `*out`.
 ///
 /// Contract: `VG.Spec.Sha1.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -189,7 +198,13 @@ bl {vg_sha1_compress_sha2}
 cbz x24, 20b
 .inst 0xb9400269,0x5ac00929,0xb90002a9,0xb9400669,0x5ac00929,0xb90006a9,0xb9400a69,0x5ac00929
 .inst 0xb9000aa9,0xb9400e69,0x5ac00929,0xb9000ea9,0xb9401269,0x5ac00929,0xb90012a9,0xf9403a93
-.inst 0xf9404295,0xf9404696,0xf9404a97,0xf9404e98,0xf9403e94,0xf84107fe,0x910283ff,0xd65f03c0
+.inst 0xf9404295,0xf9404696,0xf9404a97,0xf9404e98,0xf9403e94,0xf84107fe,0x910283ff,0xd2800001
+.inst 0xd2800002,0xd2800003,0xd2800004,0xd2800009,0xd280000b,0xd280000c,0xd280000d,0xd2800010
+.inst 0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406
+.inst 0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0xea01003f
+.inst 0xd2800000,0xd102c3ff,0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f
+.inst 0x3d80113f,0x3d80153f,0x3d80193f,0x3d801d3f,0x3d80213f,0x3d80253f,0x3d80293f,0x9102c3ff
+.inst 0xd65f03c0
 .p2align 6",
         vg_sha1_compress_sha2 = sym super::sha1::vg_sha1_compress_sha2::vg_sha1_compress_sha2,
     )
@@ -201,6 +216,8 @@ pub const VG_SHA1_DIGEST_SHA2_FEATURES: verified_garbage_cpu::Features = verifie
 /// Computes the SHA-1 digest of the `len` bytes at `data` (20 bytes, `VG.Spec.Sha1.hash`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-1 computation with that message.
 ///
 /// Contract: `VG.Spec.Sha1.digestContract`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -264,7 +281,14 @@ bl {vg_sha1_compress_sha2}
 .inst 0x910003f3,0x91000355,0xb9400269,0x5ac00929,0xb90002a9,0xb9400669,0x5ac00929,0xb90006a9
 .inst 0xb9400a69,0x5ac00929,0xb9000aa9,0xb9400e69,0x5ac00929,0xb9000ea9,0xb9401269,0x5ac00929
 .inst 0xb90012a9,0x910003f0,0xd2800011,0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611
-.inst 0xa9054611,0x910343f0,0xa9405613,0xa9416616,0xa9426e1a,0xa9437a1c,0x910443ff,0xd65f03c0
+.inst 0xa9054611,0x910343f0,0xa9405613,0xa9416616,0xa9426e1a,0xa9437a1c,0x910443ff,0xd2800001
+.inst 0xd2800002,0xd2800003,0xd2800004,0xd2800006,0xd2800007,0xd2800009,0xd280000a,0xd280000b
+.inst 0xd280000c,0xd280000d,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403
+.inst 0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413
+.inst 0x6f00e414,0x6f00e415,0xea01003f,0xd2800000,0xd10443ff,0x6f00e41f,0x910003e9,0x3d80013f
+.inst 0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f,0x3d80193f,0x3d801d3f,0x3d80213f
+.inst 0x3d80253f,0x3d80293f,0x3d802d3f,0x3d80313f,0x3d80353f,0x3d80393f,0x3d803d3f,0x3d80413f
+.inst 0x910443ff,0xd65f03c0
 .p2align 6",
         vg_sha1_compress_sha2 = sym super::sha1::vg_sha1_compress_sha2::vg_sha1_compress_sha2,
     )
@@ -273,6 +297,8 @@ bl {vg_sha1_compress_sha2}
 /// Absorbs data into a SHA-1 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), it then represents that message followed by the `len` bytes at `data`.
 ///
 /// Contract: `VG.Spec.Sha1.updateContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -373,7 +399,11 @@ b 21f
 20:
 21:
 .inst 0xf9403a93,0xf9404295,0xf9404696,0xf9404a97,0xf9404e98,0xf9403e94,0xf84107fe,0x910283ff
-.inst 0xd65f03c0
+.inst 0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800008
+.inst 0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f,0xd2800010
+.inst 0xd2800011,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0xea01003f,0xd2800000
+.inst 0xd102c3ff,0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f
+.inst 0x3d80153f,0x3d80193f,0x3d801d3f,0x3d80213f,0x3d80253f,0x3d80293f,0x9102c3ff,0xd65f03c0
 .p2align 6",
         vg_sha1_compress = sym super::sha1::vg_sha1_compress::vg_sha1_compress,
     )
@@ -382,6 +412,8 @@ b 21f
 /// Finishes a SHA-1 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), writes the SHA-1 digest of that message to `*out`.
 ///
 /// Contract: `VG.Spec.Sha1.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -429,7 +461,12 @@ bl {vg_sha1_compress}
 cbz x24, 20b
 .inst 0xb9400269,0x5ac00929,0xb90002a9,0xb9400669,0x5ac00929,0xb90006a9,0xb9400a69,0x5ac00929
 .inst 0xb9000aa9,0xb9400e69,0x5ac00929,0xb9000ea9,0xb9401269,0x5ac00929,0xb90012a9,0xf9403a93
-.inst 0xf9404295,0xf9404696,0xf9404a97,0xf9404e98,0xf9403e94,0xf84107fe,0x910283ff,0xd65f03c0
+.inst 0xf9404295,0xf9404696,0xf9404a97,0xf9404e98,0xf9403e94,0xf84107fe,0x910283ff,0xd2800001
+.inst 0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800008,0xd2800009
+.inst 0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f,0xd2800010,0xd2800011
+.inst 0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0xea01003f,0xd2800000,0xd102c3ff
+.inst 0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f
+.inst 0x3d80193f,0x3d801d3f,0x3d80213f,0x3d80253f,0x3d80293f,0x9102c3ff,0xd65f03c0
 .p2align 6",
         vg_sha1_compress = sym super::sha1::vg_sha1_compress::vg_sha1_compress,
     )
@@ -438,6 +475,8 @@ cbz x24, 20b
 /// Computes the SHA-1 digest of the `len` bytes at `data` (20 bytes, `VG.Spec.Sha1.hash`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-1 computation with that message.
 ///
 /// Contract: `VG.Spec.Sha1.digestContract`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -500,7 +539,14 @@ bl {vg_sha1_compress}
 .inst 0x910003f3,0x91000355,0xb9400269,0x5ac00929,0xb90002a9,0xb9400669,0x5ac00929,0xb90006a9
 .inst 0xb9400a69,0x5ac00929,0xb9000aa9,0xb9400e69,0x5ac00929,0xb9000ea9,0xb9401269,0x5ac00929
 .inst 0xb90012a9,0x910003f0,0xd2800011,0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611
-.inst 0xa9054611,0x910343f0,0xa9405613,0xa9416616,0xa9426e1a,0xa9437a1c,0x910443ff,0xd65f03c0
+.inst 0xa9054611,0x910343f0,0xa9405613,0xa9416616,0xa9426e1a,0xa9437a1c,0x910443ff,0xd2800001
+.inst 0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800008,0xd2800009
+.inst 0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f,0xd2800010,0xd2800011
+.inst 0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e412,0x6f00e413,0x6f00e414
+.inst 0x6f00e415,0x6f00e416,0xea01003f,0xd2800000,0xd10443ff,0x6f00e41f,0x910003e9,0x3d80013f
+.inst 0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f,0x3d80193f,0x3d801d3f,0x3d80213f
+.inst 0x3d80253f,0x3d80293f,0x3d802d3f,0x3d80313f,0x3d80353f,0x3d80393f,0x3d803d3f,0x3d80413f
+.inst 0x910443ff,0xd65f03c0
 .p2align 6",
         vg_sha1_compress = sym super::sha1::vg_sha1_compress::vg_sha1_compress,
     )
