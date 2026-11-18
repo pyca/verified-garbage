@@ -163,6 +163,12 @@ vg_aes_expand_key:
 	stp x17, x17, [x16, #480]
 	stp x17, x17, [x16, #496]
 	add sp, sp, #512
+	movz x6, #0, lsl #0
+	movz x8, #0, lsl #0
+	movi v0.2d, #0
+	movi v1.2d, #0
+	movi v2.2d, #0
+	movi v3.2d, #0
 	ret
 	.p2align 6
 
@@ -670,5 +676,15 @@ vg_aes_expand_key_aes:
 	stp x17, x17, [x16, #480]
 	stp x17, x17, [x16, #496]
 	add sp, sp, #512
+	movz x4, #0, lsl #0
+	movz x5, #0, lsl #0
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
+	movz x8, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x12, #0, lsl #0
+	movz x13, #0, lsl #0
+	movi v1.2d, #0
 	ret
 	.p2align 6

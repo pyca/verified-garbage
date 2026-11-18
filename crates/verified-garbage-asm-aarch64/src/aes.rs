@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Aes.expandKeyContract`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
@@ -58,7 +60,8 @@ cbnz x4, 21b
 .inst 0xa9044611,0xa9054611,0xa9064611,0xa9074611,0xa9084611,0xa9094611,0xa90a4611,0xa90b4611
 .inst 0xa90c4611,0xa90d4611,0xa90e4611,0xa90f4611,0xa9104611,0xa9114611,0xa9124611,0xa9134611
 .inst 0xa9144611,0xa9154611,0xa9164611,0xa9174611,0xa9184611,0xa9194611,0xa91a4611,0xa91b4611
-.inst 0xa91c4611,0xa91d4611,0xa91e4611,0xa91f4611,0x910803ff,0xd65f03c0
+.inst 0xa91c4611,0xa91d4611,0xa91e4611,0xa91f4611,0x910803ff,0xd2800006,0xd2800008,0x6f00e400
+.inst 0x6f00e401,0x6f00e402,0x6f00e403,0xd65f03c0
 .p2align 6",
         VG_AES_SBOX = sym super::consts::VG_AES_SBOX,
     )
@@ -70,6 +73,8 @@ pub const VG_AES_EXPAND_KEY_AES_FEATURES: verified_garbage_cpu::Features = verif
 /// The AES key expansion (FIPS 197 §5.2, `KEYEXPANSION`): writes the key schedule of the `key_len`-byte key at `key`, the words `w[0] … w[4 * Nr + 3]` for `Nr = key_len / 4 + 6` rounds, each as its 4 bytes (`16 * (Nr + 1)` bytes in all), to the start of `*schedule`.
 ///
 /// Contract: `VG.Spec.Aes.expandKeyContract`. Constant time: only the pointers and `key_len` may affect timing, not the key.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -154,7 +159,8 @@ b 21f
 .inst 0xa9064611,0xa9074611,0xa9084611,0xa9094611,0xa90a4611,0xa90b4611,0xa90c4611,0xa90d4611
 .inst 0xa90e4611,0xa90f4611,0xa9104611,0xa9114611,0xa9124611,0xa9134611,0xa9144611,0xa9154611
 .inst 0xa9164611,0xa9174611,0xa9184611,0xa9194611,0xa91a4611,0xa91b4611,0xa91c4611,0xa91d4611
-.inst 0xa91e4611,0xa91f4611,0x910803ff,0xd65f03c0
+.inst 0xa91e4611,0xa91f4611,0x910803ff,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800008
+.inst 0xd2800009,0xd280000b,0xd280000c,0xd280000d,0x6f00e401,0xd65f03c0
 .p2align 6",
     )
 }

@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Aes.AArch64.Aese.ExpandKey
 public import VerifiedGarbage.Proof.Aes.AArch64.Frame
 public import VerifiedGarbage.Proof.Aes.AArch64.ExpandKey
+public import VerifiedGarbage.Proof.Aes.AArch64.KeyResidue
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.AArch64.Print
 
@@ -14,12 +15,13 @@ namespace VG.Artifacts.Aes.AArch64
 
 def artifacts : List Artifact := [
   Spec.Aes.expandKeyApi.artifact AArch64.target {
-    code := Impl.StackScratch.AArch64.withStackScratchWiped 512 .x3 64 Impl.Aes.AArch64.expandKey
-    verified := Proof.Aes.AArch64.expandKey_framed Proof.Aes.AArch64.expandKey_verified },
+    code := Proof.Aes.AArch64.KeyResidue.expandKeyCode
+    verified := Proof.Aes.AArch64.KeyResidue.expandKeyCode_verified
+    residue := some ⟨Proof.Aes.AArch64.KeyResidue.expandKeyCode_noResidue⟩ },
   Spec.Aes.expandKeyApi.artifact AArch64.target {
     suffix := "_aes"
-    code := Impl.StackScratch.AArch64.withStackScratchWiped 512 .x3 64
-      Impl.Aes.AArch64.Aese.expandKey
-    verified := Proof.Aes.AArch64.expandKey_framed Proof.Aes.AArch64.Aese.Key.expandKey_verified }]
+    code := Proof.Aes.AArch64.KeyResidue.expandKeyAesCode
+    verified := Proof.Aes.AArch64.KeyResidue.expandKeyAesCode_verified
+    residue := some ⟨Proof.Aes.AArch64.KeyResidue.expandKeyAesCode_noResidue⟩ }]
 
 end VG.Artifacts.Aes.AArch64
