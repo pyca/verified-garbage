@@ -343,14 +343,14 @@ def entry (v : Proof.Sha3.AArch64.Permutation) (p : Params) (hp : Ok3 p)
       suffix := v.callee.suffix
       code := Impl.MlDsa.AArch64.Message.signMessage v.callee
         (preparedSignName module ++ v.callee.suffix)
-        (Impl.Residue.AArch64.scrubAll 64 32 (signCode v p (signWithCacheName module ++ v.callee.suffix) true)) p
+        (Impl.Residue.AArch64.scrubAll 64 32 (Impl.Residue.AArch64.Clear.of (signCode v p (signWithCacheName module ++ v.callee.suffix) true)) (signCode v p (signWithCacheName module ++ v.callee.suffix) true)) p
       verified := message_sign_verified v hp (Proof.MlDsa.AArch64.Scrub.message_sign_fn_scrub p v hp _ true) } (Proof.MlDsa.AArch64.Scrub.preparedSignMessagePairedOk p))
   else
     (signMessageApi p module label).artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
       suffix := v.callee.suffix
       code := Impl.MlDsa.AArch64.Message.signMessage v.callee
         ((signApi p module label).name ++ v.callee.suffix)
-        (Impl.Residue.AArch64.scrubAll 64 32 (signCode v p (signWithCacheName module ++ v.callee.suffix) false)) p
+        (Impl.Residue.AArch64.scrubAll 64 32 (Impl.Residue.AArch64.Clear.of (signCode v p (signWithCacheName module ++ v.callee.suffix) false)) (signCode v p (signWithCacheName module ++ v.callee.suffix) false)) p
       verified := message_sign_verified v hp (Proof.MlDsa.AArch64.Scrub.message_sign_fn_scrub p v hp _ false) } (Proof.MlDsa.AArch64.Scrub.signMessagePairedOk p))
 
 def entries (v : Proof.Sha3.AArch64.Permutation) (p : Params) (hp : Ok3 p)
@@ -412,14 +412,14 @@ def entry (v : Proof.Sha3.AArch64.Permutation) (p : Params) (hp : Ok3 p)
       suffix := v.callee.suffix
       code := Impl.MlDsa.AArch64.Optimized.verifyMessageCached v.callee
         (preparedVerifyName module ++ v.callee.suffix)
-        (Impl.Residue.AArch64.scrubAll 64 32 (verifyCode v p (verifyWithCacheName module ++ v.callee.suffix) true)) p
+        (Impl.Residue.AArch64.scrubAll 64 32 (Impl.Residue.AArch64.Clear.of (verifyCode v p (verifyWithCacheName module ++ v.callee.suffix) true)) (verifyCode v p (verifyWithCacheName module ++ v.callee.suffix) true)) p
       verified := message_verify_verified v hp (Proof.MlDsa.AArch64.Scrub.message_verify_fn_scrub p v hp _ true) } (Proof.MlDsa.AArch64.Scrub.preparedVerifyMessageSelectedOk p))
   else
     (verifyMessageCachedApi p module label).artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
       suffix := v.callee.suffix
       code := Impl.MlDsa.AArch64.Optimized.verifyMessageCached v.callee
         ((verifyApi p module label).name ++ v.callee.suffix)
-        (Impl.Residue.AArch64.scrubAll 64 32 (verifyCode v p (verifyWithCacheName module ++ v.callee.suffix) false)) p
+        (Impl.Residue.AArch64.scrubAll 64 32 (Impl.Residue.AArch64.Clear.of (verifyCode v p (verifyWithCacheName module ++ v.callee.suffix) false)) (verifyCode v p (verifyWithCacheName module ++ v.callee.suffix) false)) p
       verified := message_verify_verified v hp (Proof.MlDsa.AArch64.Scrub.message_verify_fn_scrub p v hp _ false) } (Proof.MlDsa.AArch64.Scrub.verifyMessageCachedSelectedOk p))
 
 def entries (v : Proof.Sha3.AArch64.Permutation) (p : Params) (hp : Ok3 p)

@@ -226,21 +226,28 @@ theorem preparedVerifySelectedOk : ScrubAllOk
 /-! ## The entries the message functions call -/
 
 /-- The message functions call the entries as emitted, scrubbed whole: that
-code keeps `Message.DLe 4`, its frame of 64 bytes being 4 units. -/
-theorem dle_scrubAll {c : Prog VG.AArch64.isa} (h : VG.Proof.MlDsa.AArch64.Message.DLe 4 c) :
-    VG.Proof.MlDsa.AArch64.Message.DLe 4 (VG.Impl.Residue.AArch64.scrubAll 64 32 c) := by
+code keeps `Message.DLe 4`, its frame of 64 bytes being 4 units, whatever
+registers it clears. -/
+theorem dle_scrubAll {c : Prog VG.AArch64.isa} (cl : VG.Impl.Residue.AArch64.Clear)
+    (h : VG.Proof.MlDsa.AArch64.Message.DLe 4 c) :
+    VG.Proof.MlDsa.AArch64.Message.DLe 4 (VG.Impl.Residue.AArch64.scrubAll 64 32 cl c) := by
   refine ⟨?_, ?_⟩
   · have hl := h.le
-    show Code.aarch64Depth (.seq (VG.Impl.Residue.AArch64.withRet 32 (.seq c (.block VG.Impl.Residue.AArch64.clearsAll)))
+    show Code.aarch64Depth (.seq (VG.Impl.Residue.AArch64.withRet 32
+      (.seq c (.block (VG.Impl.Residue.AArch64.clearsOf cl))))
       (VG.Impl.Residue.AArch64.scrubTailG 64 (List.range 4))) ≤ 4
     simp only [VG.Impl.Residue.AArch64.withRet, VG.Impl.Residue.AArch64.scrubTailG, Code.aarch64Depth,
       Instr.frameUnits, Nat.max_le, Nat.zero_le, Nat.reduceDiv, Nat.zero_add, Nat.le_refl, and_true]
     exact hl
   · have hn := h.nd
     show Code.all (fun i => !i.touchesDit) (.seq (VG.Impl.Residue.AArch64.withRet 32
-      (.seq c (.block VG.Impl.Residue.AArch64.clearsAll))) (VG.Impl.Residue.AArch64.scrubTailG 64 (List.range 4))) = true
-    simp only [VG.Impl.Residue.AArch64.withRet, VG.Impl.Residue.AArch64.scrubTailG, Code.all, hn, Bool.true_and]
-    decide
+      (.seq c (.block (VG.Impl.Residue.AArch64.clearsOf cl))))
+      (VG.Impl.Residue.AArch64.scrubTailG 64 (List.range 4))) = true
+    simp only [VG.Impl.Residue.AArch64.withRet, VG.Impl.Residue.AArch64.scrubTailG, Code.all, hn,
+      Bool.true_and, VG.Impl.Residue.AArch64.clearsOf, List.all_append, List.all_map,
+      Function.comp_def]
+    simp [Instr.touchesDit]
+    exact ⟨by decide, by decide⟩
 
 open VG.Proof.MlDsa.AArch64.PreparedKey (MessageSignFn MessageVerifyFn message_sign_fn message_verify_fn)
 
@@ -248,9 +255,11 @@ open VG.Proof.MlDsa.AArch64.PreparedKey (MessageSignFn MessageVerifyFn message_s
 theorem message_sign_fn_scrub (v : Proof.Sha3.AArch64.Permutation) (hp : Proof.MlDsa.AArch64.Sign.Ok3 p)
     (name : String) (prepared : Bool) :
     MessageSignFn p prepared
-      (VG.Impl.Residue.AArch64.scrubAll 64 32 (Proof.MlDsa.AArch64.PreparedKey.signCode v p name prepared)) := by
+      (VG.Impl.Residue.AArch64.scrubAll 64 32
+        (VG.Impl.Residue.AArch64.Clear.of (Proof.MlDsa.AArch64.PreparedKey.signCode v p name prepared))
+        (Proof.MlDsa.AArch64.PreparedKey.signCode v p name prepared)) := by
   obtain h := message_sign_fn v hp name prepared
-  refine ⟨Verified.scrubAll h.ver (by decide) (by decide) ?_, dle_scrubAll h.dle⟩
+  refine ⟨Verified.scrubAll (VG.Impl.Residue.AArch64.Clear.of_wf _) h.ver (by decide) (by decide) ?_, dle_scrubAll _ h.dle⟩
   cases prepared
   · exact signPairedOk p
   · exact preparedSignPairedOk p
@@ -259,9 +268,11 @@ theorem message_sign_fn_scrub (v : Proof.Sha3.AArch64.Permutation) (hp : Proof.M
 theorem message_verify_fn_scrub (v : Proof.Sha3.AArch64.Permutation) (hp : Proof.MlDsa.AArch64.Sign.Ok3 p)
     (name : String) (prepared : Bool) :
     MessageVerifyFn p prepared
-      (VG.Impl.Residue.AArch64.scrubAll 64 32 (Proof.MlDsa.AArch64.PreparedKey.verifyCode v p name prepared)) := by
+      (VG.Impl.Residue.AArch64.scrubAll 64 32
+        (VG.Impl.Residue.AArch64.Clear.of (Proof.MlDsa.AArch64.PreparedKey.verifyCode v p name prepared))
+        (Proof.MlDsa.AArch64.PreparedKey.verifyCode v p name prepared)) := by
   obtain h := message_verify_fn v hp name prepared
-  refine ⟨Verified.scrubAll h.ver (by decide) (by decide) ?_, dle_scrubAll h.dle⟩
+  refine ⟨Verified.scrubAll (VG.Impl.Residue.AArch64.Clear.of_wf _) h.ver (by decide) (by decide) ?_, dle_scrubAll _ h.dle⟩
   cases prepared
   · exact verifySelectedOk p
   · exact preparedVerifySelectedOk p
