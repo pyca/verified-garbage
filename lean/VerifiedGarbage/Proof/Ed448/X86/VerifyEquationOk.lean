@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ed448.X86.Callee
 import VerifiedGarbage.Proof.Ed448.X86.VerifyVerified
 import VerifiedGarbage.Proof.Ed448.Facts
+import VerifiedGarbage.Proof.Ed448.CombFacts
 import Mathlib.Algebra.Order.Field.Basic
 import Mathlib.Data.Nat.Totient
 import Mathlib.Data.Sym.Sym2.Init
@@ -28,7 +29,7 @@ import VerifiedGarbage.Proof.X448.X86.Step
 
 What `vg_ed448_verify`'s proof takes of `vg_ed448_verify_equation`: its
 correctness, from the reference computations' agreement with the specification
-(`Proof/Ed448/Facts.lean`), its constant time, and that it keeps the stack
+(`Proof/Ed448/Facts.lean`, `Proof/Ed448/CombFacts.lean`), its constant time, and that it keeps the stack
 pointer and uses no stack, for `Artifacts/Ed448Verify/X86.lean`. Like
 `Facts.lean`, only registration files import this module.
 -/
@@ -42,7 +43,7 @@ open VG.X86
 /-- `vg_ed448_verify_equation` meets what its caller takes of it. -/
 theorem verifyEquation_calleeOk :
     CalleeOk verifyEquationLocal Impl.Ed448.X86.verifyEquation :=
-  ⟨verifyEquation_ok Proof.Ed448.recover_ok Proof.Ed448.verifyEq_ok,
+  ⟨verifyEquation_ok Proof.Ed448.recover_ok Proof.Ed448.verifyEqComb_ok,
     verifyEquation_ct Proof.Ed448.recover_ok, NoSp.of_all (by lit_decide), by lit_decide⟩
 
 end VG.Proof.Ed448.X86

@@ -465,9 +465,10 @@ end
 `vg_ed448_verify_equation(pk = [esp + 4], signature = [esp + 8],
 challenge = [esp + 12], scratch = [esp + 16])` returns `verifyEquation` of
 its inputs (`verifyEquation_main`), given the reference computations'
-agreement with the specification (`RecoverOk`, `VerifyEqOk`): the entry (the
+agreement with the specification (`RecoverOk`, `VerifyEqCombOk`): the entry (the
 registers saved, the bits of `S` and `k`, the check of `S`, the slots), `R`
-and `A` decoded by one loop, `A` negated, `Q = [S]B + [k](-A)` by the loop,
+and `A` decoded by one loop, `A` negated, `k`'s digits and the table of `-A`'s
+odd multiples, `Q = [S]B + [k](-A)` by the loop,
 `R` copied back, and the comparison of `[4]Q` and `[4]R`. Every write is in the working space, so the
 arguments and the inputs are read unchanged; the callee-saved registers are
 restored from the working space, and the return address is kept.
@@ -478,7 +479,7 @@ restored from the working space, and the return address is kept.
 namespace VG.Proof.Ed448.X86
 
 open VG VG.X86 VG.Impl.Ed448 VG.Impl.Ed448.X86 VG.Proof.X448.X86 VG.Proof.X448.Radix16
-open VG.Proof.Ed448 (RecoverOk VerifyEqOk vladder negPoint double verifyEquation_none pt evalOps)
+open VG.Proof.Ed448 (RecoverOk VerifyEqCombOk vcomb negPoint double verifyEquation_none pt evalOps)
 open VG.Impl.X448.X86 (slot X2 BITS ACC TMP at_ ops)
 open VG.Spec.Ed448 (bytesAt decodeLE)
 
@@ -740,7 +741,7 @@ theorem ventry_loopPre {s₀ : State} (h : VerifyPre s₀) : WP isa ventry s₀ 
 theorem sub6_E (e : Env) : evalOps [.sub 6 0 6] e 6 = e 0 - e 6 ∧ ∀ i : Index, i ≠ 6 → evalOps [.sub 6 0 6] e i = e i :=
   ⟨rfl, fun _ hi => Function.update_of_ne hi _ _⟩
 
-theorem verifyEquation_main (hR : RecoverOk) (hE : VerifyEqOk) {s₀ : State} (h : VerifyPre s₀) :
+theorem verifyEquation_main (hR : RecoverOk) (hE : VerifyEqCombOk) {s₀ : State} (h : VerifyPre s₀) :
     WP isa verifyEquation s₀ fun t => abiPreserved s₀ t ∧
       t.gpr .eax = if Spec.Ed448.verifyEquation (bytesAt s₀.mem ((arg s₀ 0).setWidth 64) 57)
         (bytesAt s₀.mem ((arg s₀ 1).setWidth 64) 114) (bytesAt s₀.mem ((arg s₀ 2).setWidth 64) 57)
@@ -815,90 +816,92 @@ theorem verifyEquation_main (hR : RecoverOk) (hE : VerifyEqOk) {s₀ : State} (h
   obtain hc₃ := k₃.ctx hc₂
   obtain ⟨n₃, k₃e⟩ := sub6_E (E s₂.mem base)
   rw [← e₃] at n₃ k₃e
-  -- `Q`'s `Y` set to 1.
-  rw [show ops [Impl.X448.X86.Op.copy X2 (slot 10)] = ops (([.copy 1 10] : List FieldOp).map FieldOp.impl)
-    from rfl]
-  refine WP.seq (WP.mono (ops_ok hs₃ hc₃ b₃ [.copy 1 10]) fun s₄ ⟨k₄, b₄, e₄⟩ => ?_)
-  obtain hs₄ := k₄.scr hs₃
-  obtain hc₄ := k₄.ctx hc₃
-  obtain e₄1 : E s₄.mem base 1 = E s₃.mem base 10 := by
-    rw [e₄]; simp only [applyOps, FieldOp.apply, opCopy, Function.update_self]
-  obtain e₄k : ∀ i : Index, i ≠ 1 → E s₄.mem base i = E s₃.mem base i := fun i hi => by
-    rw [e₄]; exact Function.update_of_ne hi _ _
-  -- What is kept from the entry to the loop.
+  -- `k`'s digits.
+  obtain bits₃ : VBits base S K s₃.mem :=
+    VBits.kept (WsOut2.widen k₃.mem) (VBits.keptD D₂.frame bits₁)
+  refine WP.seq (WP.mono (vrecode_ok (K := K) hs₃ fun q hq => (bits₃ q hq).2) fun s₄ ⟨k₄, o₄, dig₄⟩ => ?_)
+  obtain hs₄ := hs₃.of_keeps k₄ (by decide)
+  obtain hc₄ : CallCtx s₄ base := hc₃.keep (k₄.1 _ (by decide))
+  obtain ⟨e₄, b₄⟩ := slots_out o₄ (by decide)
+  obtain dg₄ : VDig base S K s₄.mem := fun t ht =>
+    ⟨by rw [o₄ _ (Or.inl (by rw [ofs_off' base (by simp only [BITS]; omega_arith)]; simp only [BITS, KBITS]; omega_arith))]
+        exact (bits₃ t ht).1, dig₄ t ht⟩
+  -- What is kept from the entry to the table.
   obtain k41 : ∀ i : Index, i.val = 0 ∨ i.val = 2 ∨ (8 ≤ i.val ∧ i.val ≤ 11) →
       E s₄.mem base i = E s₁.mem base i := fun i hi => by
-    rw [e₄k i (fun h => by subst h; omega_arith), k₃e i (fun h => by subst h; omega_arith),
+    rw [e₄, k₃e i (fun h => by subst h; omega_arith),
       e₂ i (fun h => by subst h; omega_arith) (fun h => by subst h; omega_arith) (by omega_arith)]
-  obtain bits₄ : VBits base S K s₄.mem :=
-    VBits.kept (WsOut2.widen k₄.mem) (VBits.kept (WsOut2.widen k₃.mem) (VBits.keptD D₂.frame bits₁))
+  -- The table of `-A`'s odd multiples.
+  refine WP.seq (WP.mono (vtable_ok hs₄ hc₄ (b₄ b₃) (by rw [k41 10 (by decide)]; exact h10)
+    (by rw [k41 11 (by decide)]; exact ed)) fun s₅ T₅ => ?_)
+  obtain dg₅ : VDig base S K s₅.mem := dg₄.below T₅.mem (by decide) (by decide)
   -- The loop.
-  refine WP.seq (WP.mono (vloop_ok (s₀ := s₄) (A := pt (E s₄.mem base) 6 7 10) bits₄
-    (fun s' h1 h2 h3 h4 h5 => ?_)) fun s₅ I₅ => ?_)
-  · have k' : Keeps (.esi :: workRegs) s₄ s' :=
+  refine WP.seq (WP.mono (vloop_ok (s₀ := s₅) (A := pt (E s₄.mem base) 6 7 10) dg₅ T₅.tab
+    (fun s' h1 h2 h3 h4 h5 => ?_)) fun s₆ I₆ => ?_)
+  · have k' : Keeps (.esi :: workRegs) s₅ s' :=
       ⟨fun r hr => h2 r (fun e => hr (by subst r; exact List.mem_cons_self)), h4, h5⟩
-    refine ⟨hs₄.of_keeps k' (by decide), hc₄.keep (h2 _ (by decide)), h3 ▸ b₄, k', h1,
-      h3 ▸ WsOut2.refl _ _ _ _ _ _, ?_, ?_, ?_, ?_⟩
-    · rw [h3, Nat.sub_self]
-      show (⟨E s₄.mem base 0, E s₄.mem base 1, E s₄.mem base 2⟩ : Spec.Ed448.Point) = Spec.Ed448.identity
-      rw [k41 0 (Or.inl rfl), k41 2 (Or.inr (Or.inl rfl)), e₄1, k₃e 10 (by decide),
-        e₂ 10 (by decide) (by decide) (by decide), h10]
-      rw [show E s₁.mem base 0 = Spec.Ed448.identity.X from congrArg Spec.Ed448.Point.X er,
-        show E s₁.mem base 2 = Spec.Ed448.identity.Z from congrArg Spec.Ed448.Point.Z er]
-      rfl
-    · rw [h3, pt_congr' (k41 8 (by decide)) (k41 9 (by decide)) (k41 10 (by decide))]; exact eq
-    · rw [h3]
-    · rw [h3, k41 11 (by decide)]; exact ed
+    refine ⟨T₅.scr.of_keeps k' (by decide), T₅.ctx.keep (h2 _ (by decide)), h3 ▸ T₅.bounded, k', h1,
+      h3 ▸ WsOut2.refl _ _ _ _ _ _, ?_, ?_, ?_⟩
+    · rw [h3, Nat.sub_self]; exact T₅.q
+    · rw [h3]; exact T₅.one
+    · rw [h3]; exact T₅.d
   -- `Q`'s `Y` moved to slot 6.
-  have hs₅ := I₅.scr
+  have hs₆ := I₆.scr
   rw [show ops [Impl.X448.X86.Op.copy (slot 6) X2] = ops (([.copy 6 1] : List FieldOp).map FieldOp.impl)
     from rfl]
-  refine WP.seq (WP.mono (ops_ok hs₅ I₅.ctx I₅.bounded [.copy 6 1]) fun s₆ ⟨k₆, b₆, e₆⟩ => ?_)
-  obtain hs₆ := k₆.scr hs₅
-  obtain e₆6 : E s₆.mem base 6 = E s₅.mem base 1 := by
-    rw [e₆]; simp only [applyOps, FieldOp.apply, opCopy, Function.update_self]
-  obtain e₆k : ∀ i : Index, i ≠ 6 → E s₆.mem base i = E s₅.mem base i := fun i hi => by
-    rw [e₆]; exact Function.update_of_ne hi _ _
-  obtain k06 : Keeps (.esi :: workRegs) s₁ s₆ :=
-    ((D₂.keeps.trans (k₃.regs.mono (fun _ h => List.mem_cons_of_mem _ h))).trans
-      (k₄.regs.mono (fun _ h => List.mem_cons_of_mem _ h))).trans
-      (I₅.regs.trans (k₆.regs.mono (fun _ h => List.mem_cons_of_mem _ h)))
-  -- `R` copied back.
-  obtain h106 : E s₆.mem base 10 = 1 := by rw [e₆k 10 (by decide)]; exact congrArg Spec.Ed448.Point.Z I₅.q
-  obtain FR : ∀ o, o = RX ∨ o = RY →
-      F s₆.mem base o = F s₂.mem base o ∧ (Bounded s₂.mem base o → Bounded s₆.mem base o) := fun o ho => by
-    obtain ⟨f3, g3⟩ := F_high k₃.mem (by decide) ho
-    obtain ⟨f4, g4⟩ := F_high k₄.mem (by decide) ho
-    obtain ⟨f5, g5⟩ := F_high I₅.mem (by decide) ho
-    obtain ⟨f6, g6⟩ := F_high k₆.mem (by decide) ho
-    exact ⟨f6.trans (f5.trans (f4.trans f3)), fun h => g6 (g5 (g4 (g3 h)))⟩
-  obtain ⟨bRX, bRY⟩ := D₂.rBnd rfl
-  refine WP.seq (WP.mono (vR_ok hs₆ b₆ ((FR RX (Or.inl rfl)).2 bRX) ((FR RY (Or.inr rfl)).2 bRY))
-    fun s₇ ⟨k₇, b₇, x₇, y₇, e₇⟩ => ?_)
+  refine WP.seq (WP.mono (ops_ok hs₆ I₆.ctx I₆.bounded [.copy 6 1]) fun s₇ ⟨k₇, b₇, e₇⟩ => ?_)
   obtain hs₇ := k₇.scr hs₆
+  obtain e₇6 : E s₇.mem base 6 = E s₆.mem base 1 := by
+    rw [e₇]; simp only [applyOps, FieldOp.apply, opCopy, Function.update_self]
+  obtain e₇k : ∀ i : Index, i ≠ 6 → E s₇.mem base i = E s₆.mem base i := fun i hi => by
+    rw [e₇]; exact Function.update_of_ne hi _ _
+  obtain k07 : Keeps (.esi :: workRegs) s₁ s₇ :=
+    ((D₂.keeps.trans (k₃.regs.mono (fun _ h => List.mem_cons_of_mem _ h))).trans
+      ((k₄.mono (by decide)).trans T₅.regs)).trans
+      (I₆.regs.trans (k₇.regs.mono (fun _ h => List.mem_cons_of_mem _ h)))
+  -- `R` copied back.
+  obtain h107 : E s₇.mem base 10 = 1 := by rw [e₇k 10 (by decide)]; exact I₆.one
+  obtain FR : ∀ o, o = RX ∨ o = RY →
+      F s₇.mem base o = F s₂.mem base o ∧ (Bounded s₂.mem base o → Bounded s₇.mem base o) := fun o ho => by
+    obtain ⟨f3, g3⟩ := F_high k₃.mem (by decide) ho
+    obtain ⟨f4, g4⟩ := F_below (WsBelow.of_out o₄ (Nat.le_refl _)) (Nat.le_refl _) (by decide) ho
+    obtain ⟨f5, g5⟩ := F_below T₅.mem (by decide) (by decide) ho
+    obtain ⟨f6, g6⟩ := F_high I₆.mem (by decide) ho
+    obtain ⟨f7, g7⟩ := F_high k₇.mem (by decide) ho
+    exact ⟨f7.trans (f6.trans (f5.trans (f4.trans f3))), fun h => g7 (g6 (g5 (g4 (g3 h))))⟩
+  obtain ⟨bRX, bRY⟩ := D₂.rBnd rfl
+  refine WP.seq (WP.mono (vR_ok hs₇ b₇ ((FR RX (Or.inl rfl)).2 bRX) ((FR RY (Or.inr rfl)).2 bRY))
+    fun s₈ ⟨k₈, b₈, x₈, y₈, e₈⟩ => ?_)
+  obtain hs₈ := k₈.scr hs₇
   -- `BAD`.
-  obtain bad₄ : word s₄.mem base BAD = word s₂.mem base BAD := by rw [Keep.bad k₄, Keep.bad k₃]
-  obtain bad₆ : word s₆.mem base BAD = word s₄.mem base BAD := by
-    rw [Keep.bad k₆]; exact I₅.mem.word (Or.inl (by decide)) (Or.inl (by decide)) (by decide)
-  obtain bad₇ : word s₇.mem base BAD = word s₂.mem base BAD := by rw [Keep.bad k₇, bad₆, bad₄]
-  obtain z₇ := ((c₁.trans (c₂.of_eq bad₇)).congr decShape).zero
+  obtain bad₅ : word s₅.mem base BAD = word s₂.mem base BAD := by
+    rw [T₅.mem.word (by decide) (by decide) (Or.inl (by decide)) (Or.inl (by decide)),
+      o₄.word (Or.inl (by decide)) (by decide), Keep.bad k₃]
+  obtain bad₇ : word s₇.mem base BAD = word s₅.mem base BAD := by
+    rw [Keep.bad k₇]; exact I₆.mem.word (Or.inl (by decide)) (Or.inl (by decide)) (by decide)
+  obtain bad₈ : word s₈.mem base BAD = word s₂.mem base BAD := by rw [Keep.bad k₈, bad₇, bad₅]
+  obtain z₈ := ((c₁.trans (c₂.of_eq bad₈)).congr decShape).zero
   -- The comparison.
-  obtain sv₇ : Saved base s₀.gpr s₇.mem :=
-    (((((sv₁.wsout2 D₂.frame (by decide) (by decide)).wsout2 k₃.mem (by decide) (by decide)).wsout2
-      k₄.mem (by decide) (by decide)).wsout2 I₅.mem (by decide) (by decide)).wsout2 k₆.mem (by decide)
-      (by decide)).wsout2 k₇.mem (by decide) (by decide)
-  obtain hc₇ : CallCtx s₇ base := k₇.ctx (k₆.ctx I₅.ctx)
-  refine WP.mono (vfinish_ok hs₇ hc₇ b₇ sv₇ z₇.2) fun t ⟨rt, st, spt⟩ => ⟨fun r hr => ?_, ?_⟩
+  obtain sv₅ : Saved base s₀.gpr s₅.mem :=
+    (((sv₁.wsout2 D₂.frame (by decide) (by decide)).wsout2 k₃.mem (by decide) (by decide)).outside o₄
+      (by decide)).of_readW fun p hp => have := savedSlots_bound p hp
+        T₅.mem.word (by decide) (by simp only [VTAB]; omega_using [this]) (Or.inl (by omega_using [this]))
+          (Or.inl (by simp only [ACC]; omega_using [this]))
+  obtain sv₈ : Saved base s₀.gpr s₈.mem :=
+    ((sv₅.wsout2 I₆.mem (by decide) (by decide)).wsout2 k₇.mem (by decide)
+      (by decide)).wsout2 k₈.mem (by decide) (by decide)
+  obtain hc₈ : CallCtx s₈ base := k₈.ctx (k₇.ctx I₆.ctx)
+  refine WP.mono (vfinish_ok hs₈ hc₈ b₈ sv₈ z₈.2) fun t ⟨rt, st, spt⟩ => ⟨fun r hr => ?_, ?_⟩
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl
     · exact st (.ebx, 0) (by decide)
     · exact st (.esi, 4) (by decide)
     · exact st (.edi, 8) (by decide)
     · exact st (.ebp, 12) (by decide)
-    · rw [spt, k₇.regs.1 _ (by decide), k06.1 _ (by decide), k₁.1 _ (by decide)]
+    · rw [spt, k₈.regs.1 _ (by decide), k07.1 _ (by decide), k₁.1 _ (by decide)]
   · rw [rt]
     refine if_congr ?_ rfl rfl
-    rw [z₇.1]
+    rw [z₈.1]
     cases ha : Spec.Ed448.decodePoint (bytesAt s₀.mem ((arg s₀ 0).setWidth 64) 57) with
     | none =>
       rw [verifyEquation_none (Or.inl ha)]
@@ -917,16 +920,15 @@ theorem verifyEquation_main (hR : RecoverOk) (hE : VerifyEqOk) {s₀ : State} (h
           rw [e₂ 10 (by decide) (by decide) (by decide)]; exact h10
         obtain hA' : pt (E s₄.mem base) 6 7 10 = negPoint a := by
           show (⟨E s₄.mem base 6, E s₄.mem base 7, E s₄.mem base 10⟩ : Spec.Ed448.Point) = ⟨0 - a.X, a.Y, a.Z⟩
-          rw [e₄k 6 (by decide), e₄k 7 (by decide), e₄k 10 (by decide), n₃, k₃e 7 (by decide),
-            k₃e 10 (by decide), e20, ax, ay, e210, az]
-        obtain hQ : pt (E s₇.mem base) 0 6 2 = vladder S K (negPoint a) 456 := by
-          rw [pt_congr' (e₇ 0 (by decide) (by decide)) (e₇ 6 (by decide) (by decide)) (e₇ 2 (by decide) (by decide))]
-          show (⟨E s₆.mem base 0, E s₆.mem base 6, E s₆.mem base 2⟩ : Spec.Ed448.Point) = _
-          rw [e₆k 0 (by decide), e₆6, e₆k 2 (by decide), ← hA']
-          exact I₅.rep
-        obtain hRR : pt (E s₇.mem base) 8 9 10 = r := by
-          show (⟨E s₇.mem base 8, E s₇.mem base 9, E s₇.mem base 10⟩ : Spec.Ed448.Point) = r
-          rw [x₇, y₇, (FR RX (Or.inl rfl)).1, (FR RY (Or.inr rfl)).1, rx, ry, e₇ 10 (by decide) (by decide), h106,
+          rw [e₄, n₃, k₃e 7 (by decide), k₃e 10 (by decide), e20, ax, ay, e210, az]
+        obtain hQ : pt (E s₈.mem base) 0 6 2 = vcomb S K (negPoint a) 456 := by
+          rw [pt_congr' (e₈ 0 (by decide) (by decide)) (e₈ 6 (by decide) (by decide)) (e₈ 2 (by decide) (by decide))]
+          show (⟨E s₇.mem base 0, E s₇.mem base 6, E s₇.mem base 2⟩ : Spec.Ed448.Point) = _
+          rw [e₇k 0 (by decide), e₇6, e₇k 2 (by decide), ← hA']
+          exact I₆.rep
+        obtain hRR : pt (E s₈.mem base) 8 9 10 = r := by
+          show (⟨E s₈.mem base 8, E s₈.mem base 9, E s₈.mem base 10⟩ : Spec.Ed448.Point) = r
+          rw [x₈, y₈, (FR RX (Or.inl rfl)).1, (FR RY (Or.inr rfl)).1, rx, ry, e₈ 10 (by decide) (by decide), h107,
             ← rz]
         rw [hE _ _ _ _ _ (bytesAt57_len _ _) (bytesAt114_len _ _) (bytesAt57_len _ _) ha hr, hQ, hRR,
           bytesAt_drop57, hS, hK]
