@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.X25519.exchangeContract`. Constant time: only the pointers may affect timing, not the scalar or the u-coordinate; the return value depends on both.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 32 bytes.
@@ -30,7 +32,9 @@ bl {vg_x25519}
 .inst 0xaa0b014a,0x39405d2b,0xaa0b014a,0x3940612b,0xaa0b014a,0x3940652b,0xaa0b014a,0x3940692b
 .inst 0xaa0b014a,0x39406d2b,0xaa0b014a,0x3940712b,0xaa0b014a,0x3940752b,0xaa0b014a,0x3940792b
 .inst 0xaa0b014a,0x39407d2b,0xaa0b014a,0xd100054a,0xd37ffd40,0xd280002b,0xca0b0000,0xf84107fe
-.inst 0xd65f03c0
+.inst 0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800008,0xd280000a,0xd280000c
+.inst 0xd280000d,0xd280000e,0xd280000f,0xd2800010,0xd2800011,0xea03007f,0x11000000,0xd10043ff
+.inst 0x6f00e41f,0x910003e9,0x3d80013f,0x910043ff,0xd65f03c0
 .p2align 6",
         vg_x25519 = sym super::x25519::vg_x25519::vg_x25519,
     )

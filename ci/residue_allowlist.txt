@@ -384,9 +384,7 @@ aarch64 vg_sm4_gcm_stream_verify_ctr32_sm4
 aarch64 vg_sm4_gcm_stream_verify_ctr32_sm4_ghash_aes
 aarch64 vg_sm4_gcm_stream_verify_ghash_aes
 aarch64 vg_sm4_gcm_stream_verify_ghash_neon
-aarch64 vg_x25519_exchange
 aarch64 vg_x448_base
-aarch64 vg_x448_exchange
 arm vg_aes_cbc_decrypt
 arm vg_aes_cbc_encrypt
 arm vg_aes_ccm_open

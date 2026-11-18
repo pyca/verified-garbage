@@ -12,6 +12,7 @@ import Mathlib.Tactic.NormNum.GCD
 import Mathlib.Tactic.NormNum.Prime
 import Mathlib.Tactic.Positivity.Finset
 public import VerifiedGarbage.Proof.X25519.AArch64.Exchange
+public import VerifiedGarbage.Proof.X25519.AArch64.ExchangeResidue
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.AArch64.Print
 
@@ -23,8 +24,9 @@ namespace VG.Artifacts.X25519.AArch64
 
 def artifacts : List Artifact := [
   Spec.X25519.exchangeApi.artifact AArch64.target {
-    code := Impl.Xdh.AArch64.exchange "vg_x25519" Impl.X25519.AArch64.AltLadder.x25519 32
-    verified := Proof.X25519.AArch64.Exchange.exchange_verified },
+    code := Proof.X25519.AArch64.ExchangeResidue.exchangeCode
+    verified := Proof.X25519.AArch64.ExchangeResidue.exchangeCode_verified
+    residue := some ⟨Proof.X25519.AArch64.ExchangeResidue.exchangeCode_noResidue⟩ },
   Spec.X25519.x25519BaseApi.artifact AArch64.target {
     written := [("scratch", 1024)]
     code := Proof.X25519.AArch64.Base.x25519BaseCleared

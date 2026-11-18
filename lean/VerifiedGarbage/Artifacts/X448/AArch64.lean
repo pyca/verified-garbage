@@ -10,6 +10,7 @@ import Mathlib.Tactic.NormNum.GCD
 import Mathlib.Tactic.NormNum.Prime
 import Mathlib.Tactic.Positivity.Finset
 public import VerifiedGarbage.Proof.X448.AArch64.Exchange
+public import VerifiedGarbage.Proof.X448.AArch64.ExchangeResidue
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.AArch64.Print
 
@@ -21,8 +22,9 @@ namespace VG.Artifacts.X448.AArch64
 
 def artifacts : List Artifact := [
   Spec.X448.exchangeApi.artifact AArch64.target {
-    code := Impl.Xdh.AArch64.exchange "vg_x448" Impl.X448.AArch64.Fast.x448 56
-    verified := Proof.X448.AArch64.Exchange.exchange_verified },
+    code := Proof.X448.AArch64.ExchangeResidue.exchangeCode
+    verified := Proof.X448.AArch64.ExchangeResidue.exchangeCode_verified
+    residue := some ⟨Proof.X448.AArch64.ExchangeResidue.exchangeCode_noResidue⟩ },
   Spec.X448.x448BaseApi.artifact AArch64.target {
     code := Impl.X448.AArch64.Base.x448Base
     verified := Proof.X448.AArch64.Base.x448Base_verified }]

@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.X448.exchangeContract`. Constant time: only the pointers may affect timing, not the scalar or the u-coordinate; the return value depends on both.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 56 bytes.
@@ -36,7 +38,12 @@ bl {vg_x448}
 .inst 0xaa0b014a,0x3940bd2b,0xaa0b014a,0x3940c12b,0xaa0b014a,0x3940c52b,0xaa0b014a,0x3940c92b
 .inst 0xaa0b014a,0x3940cd2b,0xaa0b014a,0x3940d12b,0xaa0b014a,0x3940d52b,0xaa0b014a,0x3940d92b
 .inst 0xaa0b014a,0x3940dd2b,0xaa0b014a,0xd100054a,0xd37ffd40,0xd280002b,0xca0b0000,0xf84107fe
-.inst 0xd65f03c0
+.inst 0xd2800002,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800008,0xd280000a,0xd280000d
+.inst 0xd280000e,0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403
+.inst 0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e413,0x6f00e415
+.inst 0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d
+.inst 0xea02005f,0x4e181c48,0x4e181c49,0x4e181c4a,0x4e181c4b,0x4e181c4c,0x4e181c4d,0x4e181c4e
+.inst 0x4e181c4f,0x11000000,0xd10043ff,0x6f00e41f,0x910003e9,0x3d80013f,0x910043ff,0xd65f03c0
 .p2align 6",
         vg_x448 = sym super::x448::vg_x448::vg_x448,
     )
