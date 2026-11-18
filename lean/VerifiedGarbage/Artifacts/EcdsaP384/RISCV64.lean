@@ -6,6 +6,7 @@ public import VerifiedGarbage.Impl.Ecdsa.RISCV64.Sign
 public import VerifiedGarbage.Proof.Ecdsa.RISCV64.P384.SignVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.EcKey.RISCV64.Scrub
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.Scrub
 public import VerifiedGarbage.Spec.Ecdsa.P384
 public import VerifiedGarbage.Impl.Ecdsa.RISCV64.VerifyComb
 public import VerifiedGarbage.Proof.Ecdsa.RISCV64.P384.VerifyVerified
@@ -32,10 +33,12 @@ open VG.Proof.HmacTable.RISCV64 (tables names)
 
 def artifactsFor (vs : List Proof.HmacTable.RISCV64.HVar) : List Artifact :=
   if hv : OK vs ∧ Impl.Ecdsa.RISCV64.Comb.p384Sym ∉ names vs then [
-    Spec.Ecdsa.Rfc6979.Curves.p384SignApi.artifact RISCV64.target {
+    Spec.Ecdsa.Rfc6979.Curves.p384SignApi.artifact RISCV64.target (RISCV64.Scrub.withScrub {
       tables := [("hmac", tables vs)]
       code := signCodeT (curveT hasLaw.law) Spec.Ecdsa.Rfc6979.Curves.p384.tries vs
-      verified := verifiedT hasLaw.law vs hv }]
+      verified := verifiedT hasLaw.law vs hv }
+      (Proof.Ecdsa.Rfc6979.RISCV64.Scrub.signOut Spec.Ecdsa.Rfc6979.Curves.p384
+        (Proof.Ecdsa.Rfc6979.RISCV64.P384.kit hasLaw.law).K vs))]
   else []
 
 def artifacts : List Artifact :=

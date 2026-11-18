@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Impl.Ecdsa.RISCV64.P192
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.EcKey.RISCV64.Scrub
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.Scrub
 public import VerifiedGarbage.Proof.Ecdsa.RISCV64.P192.VerifyVerified
 public import VerifiedGarbage.Spec.Ecdsa.Verify.P192
 public import VerifiedGarbage.Impl.Ecdsa.RISCV64.VerifyHash
@@ -28,10 +29,12 @@ open VG.Proof.HmacTable.RISCV64 (tables names)
 
 def artifactsFor (vs : List Proof.HmacTable.RISCV64.HVar) : List Artifact :=
   if hv : OK vs then [
-    Spec.Ecdsa.Rfc6979.Curves.p192SignApi.artifact RISCV64.target {
+    Spec.Ecdsa.Rfc6979.Curves.p192SignApi.artifact RISCV64.target (RISCV64.Scrub.withScrub {
       tables := [("hmac", tables vs)]
       code := signCodeT (curveT hasLaw.law) Spec.Ecdsa.Rfc6979.Curves.p192.tries vs
-      verified := verifiedT hasLaw.law vs hv }]
+      verified := verifiedT hasLaw.law vs hv }
+      (Proof.Ecdsa.Rfc6979.RISCV64.Scrub.signOut Spec.Ecdsa.Rfc6979.Curves.p192
+        (Proof.Ecdsa.Rfc6979.RISCV64.P192.kit hasLaw.law).K vs))]
   else []
 
 def artifacts : List Artifact :=

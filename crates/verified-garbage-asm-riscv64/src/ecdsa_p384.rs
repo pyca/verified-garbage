@@ -1362,6 +1362,8 @@ call {vg_p384_sub_mod_n}
 ///
 /// Contract: `VG.Spec.Ecdsa.Rfc6979.TableInstance.signContract`. Constant time but for the number of candidates for `k` tried (almost always 1) and which table `hmac` is: timing may depend on the pointers, that number and the table, not otherwise on the key or the hash.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 96 bytes.
@@ -1406,7 +1408,7 @@ j 25f
 .base64 "s4J0AQFDI4BiCiKFkwUEDBOGBAbehgMzCwDnAAMAIoXihROGBAqThhsAAzOLAOcAAwAihZMFBAwzBnwBBQaThgQGAzMLAecAAwAihZMFBAwThgQG3oYDMwsA5wADACKF4oUThgQK3oYDM4sA5wADACKFkwUEDDMGfAEyhpOGBAoDMwsB5wADAIVP"
 25:
 bnez t6, 21b
-.base64 "gUIjsFQGI7RUBiO4VAYjvFQGI7BUCCO0VAgjuFQII7xUCCOwVAojtFQKI7hUCiO8VAojsFQMI7RUDCO4VAwjvFQMI7BUDiO0VA4juFQOI7xUDiOwVBAjtFQQI7hUECO8VBAjsFQSI7RUEiO4VBIjvFQSI7BUFCO0VBQjuFQUI7xUFCOwVBYjtFQWI7hUFiO8VBYjsFQYI7RUGCO4VBgjvFQYI7BUGiO0VBojuFQaI7xUGiOwVBwjtFQcI7hUHCO8VBwjsFQeI7RUHiO4VB6DsAQAgGQDuYQBg7kEAgO6hAKDugQDA7uEA4O7BAQDvIQEg7wEBYRoEwEBIIKA"
+.base64 "gUIjsFQGI7RUBiO4VAYjvFQGI7BUCCO0VAgjuFQII7xUCCOwVAojtFQKI7hUCiO8VAojsFQMI7RUDCO4VAwjvFQMI7BUDiO0VA4juFQOI7xUDiOwVBAjtFQQI7hUECO8VBAjsFQSI7RUEiO4VBIjvFQSI7BUFCO0VBQjuFQUI7xUFCOwVBYjtFQWI7hUFiO8VBYjsFQYI7RUGCO4VBgjvFQYI7BUGiO0VBojuFQaI7xUGiOwVBwjtFQcI7hUHCO8VBwjsFQeI7RUHiO4VB6DsAQAgGQDuYQBg7kEAgO6hAKDugQDA7uEA4O7BAQDvIQEg7wEBYRoEwEBIIFCEwEBwAqDIzBTACM0UwAjOFMAIzxTACMwUwIjNFMCIzhTAiM8UwIjMFMEIzRTBCM4UwQjPFMEIzBTBiM0UwYjOFMGIzxTBiMwUwgjNFMIIzhTCCM8UwgjMFMKIzRTCiM4UwojPFMKIzBTDCM0UwwjOFMMIzxTDCMwUw4jNFMOIzhTDiM8Uw4jMFMQIzRTECM4UxAjPFMQIzBTEiM0UxIjOFMSIzxTEiMwUxQjNFMUIzhTFCM8UxQjMFMWIzRTFiM4UxYjPFMWIzBTGCM0UxgjOFMYIzxTGCMwUxojNFMaIzhTGiM8UxojMFMcIzRTHCM4UxwjPFMcIzBTHiM0Ux4jOFMeIzxTHiMwUyAjNFMgIzhTICM8UyAjMFMiIzRTIiM4UyIjPFMiIzBTJCM0UyQjOFMkIzxTJCMwUyYjNFMmIzhTJiM8UyYjMFMoIzRTKCM4UygjPFMoIzBTKiM0UyojOFMqIzxTKiMwUywjNFMsIzhTLCM8UywjMFMuIzRTLiM4Uy4jPFMuIzBTMCM0UzAjOFMwIzxTMCMwUzIjNFMyIzhTMiM8UzIjMFM0IzRTNCM4UzQjPFM0IzBTNiM0UzYjOFM2IzxTNiMwUzgjNFM4IzhTOCM8UzgjMFM6IzRTOiM4UzojPFM6IzBTPCM0UzwjOFM8IzxTPCMwUz4jNFM+IzhTPiM8Uz4TAQFAAhUBkYFFAUaBRgFHgUcBSIFIgUIBQ4FDAU6BTgFPgU+CgA=="
 .option pop"#,
         vg_p384_add_mod_n = sym super::ecdsa_p384::vg_p384_add_mod_n::vg_p384_add_mod_n,
         vg_ecdsa_p384_sign_k = sym super::ecdsa_p384::vg_ecdsa_p384_sign_k::vg_ecdsa_p384_sign_k,

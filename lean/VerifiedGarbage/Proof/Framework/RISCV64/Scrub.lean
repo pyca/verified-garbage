@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Framework.RISCV64.Call
 public import VerifiedGarbage.TCB.RISCV64.Residue
 public import VerifiedGarbage.TCB.Registration
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
+import VerifiedGarbage.Proof.Framework.RISCV64.Syms
 import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
 import VerifiedGarbage.Proof.Framework.Mem
 
@@ -19,9 +20,10 @@ residue (`NoResidue`), as on x86-64 (`Proof/Framework/X86_64/Scrub.lean`).
 The proof of the code is used as it is: what `scrub` adds is checked once,
 here, for all code (`tail_run`): it zeroes the `stack` bytes below `sp` and
 the caller-saved registers, and its trace depends only on `sp`. The code
-itself must use no more stack than its contract reserves, make no indirect
-call, and its postcondition read the memory on return only within the
-buffers (`PostOut`).
+itself must use no more stack than its contract reserves, call indirectly
+only the functions of its tables of functions, whose addresses two runs agree
+on (`tablesCall`), and its postcondition read the memory on return only
+within the buffers (`PostOut`).
 
 Everything the code leaves is then a function of what the two runs agree on:
 the registers it does not clear are restored (`abiPreserved`), it changes no
@@ -668,19 +670,29 @@ theorem postOut_of_local {A : Abi isa} (hA : ScrubAbi A) {sig : Sig}
 
 A released frame's bytes are the unknowns' (`lose`), so the clearing leaves
 the same bytes in two runs only if it starts from the same unknowns. Two
-runs of code without indirect calls with the same trace do: each call, and
-each frame's release, uses a number of unknowns its instruction fixes, and
-the trace says which way each branch went (`Exec.unknowns_agree`). -/
+runs of code with the same trace, whose functions called indirectly have the
+same addresses in both, do: each call, and each frame's release, uses a
+number of unknowns its instruction fixes, and the trace says which way each
+branch went and which function each indirect call called
+(`Exec.unknowns_agree`), as on AArch64 (`AArch64.ScrubAll.Exec.unknowns_agreeS`). -/
 
-/-- Code without indirect calls (`Code.icall`). -/
-def icallFree : Prog isa → Bool
-  | .block _ => true
-  | .seq a b => icallFree a && icallFree b
-  | .ite _ t e => icallFree t && icallFree e
-  | .loop b _ => icallFree b
-  | .call _ b => icallFree b
-  | .frame _ b _ => icallFree b
-  | .icall .. => false
+/-- The functions `c` may call indirectly. -/
+def inames : Prog isa → List String
+  | .block _ => []
+  | .seq a b => inames a ++ inames b
+  | .ite _ t e => inames t ++ inames e
+  | .loop b _ => inames b
+  | .call _ b => inames b
+  | .frame _ b _ => inames b
+  | .icall _ n b nx => n :: inames b ++ inames nx
+
+/-- The functions the tables `ts` name. -/
+def tableFns (ts : List (String × List FnTable)) : List String := ts.flatMap fun t => t.2.flatMap (·.fns)
+
+/-- The code calls indirectly only the functions of the tables `ts`, whose
+addresses two runs agree on (`tables_pub_syms`). -/
+def tablesCall (c : Prog isa) (ts : List (String × List FnTable)) : Bool :=
+  (inames c).all fun f => decide (f ∈ tableFns ts)
 
 theorem addrs_length (i : Instr) (s s' : State) : (addrs i s).length = (addrs i s').length := by
   cases i <;> rfl
@@ -738,102 +750,155 @@ theorem call_unknowns {s s₁ : State} (h : isa.call s = some s₁) :
     s₁.unknowns = fun n => s.unknowns (n + 8) := by
   simp only [isa, call, Option.some.injEq] at h; subst h; rfl
 
+theorem call_syms {s s₁ : State} (h : isa.call s = some s₁) : s₁.syms = s.syms := by
+  simp only [isa, call, Option.some.injEq] at h; subst h; rfl
+
 theorem branch_ne {r₁ r₂ : List Leak} : Leak.branch true :: r₁ ≠ Leak.branch false :: r₂ := by
   intro h; cases h
 
-/-- Two runs of code without indirect calls from the same unknowns, one of
-whose traces is a prefix of the other's continued, have the same trace and
-end with the same unknowns. -/
+/-- The trace of an indirect call: the addresses its instruction reads, then
+the address it calls. -/
+theorem icall_trace {i : Instr} {n : String} {b nx : Prog isa} {s s' : State} {t : List Leak}
+    (e : Exec isa (.icall i n b nx) s t s') :
+    ∃ a rest, isa.icall i s = some a ∧ t = (isa.addrs i s).map .addr ++ .addr a :: rest := by
+  cases e with
+  | icall h₁ _ _ _ => exact ⟨_, _, h₁, rfl⟩
+  | icallNext _ _ e' => exact icall_trace e'
+
+/-- Two runs of code from the same unknowns, whose functions called
+indirectly have the same addresses (`inames`), one of whose traces is a
+prefix of the other's continued, have the same trace and end with the same
+unknowns: each call and each frame's release uses a number of unknowns its
+instruction fixes, and the trace says which way each branch went and which
+function each indirect call called. -/
 theorem Exec.unknowns_agree {c : Prog isa} {s₁ s₁' : State} {t₁ : List Leak} (e₁ : Exec isa c s₁ t₁ s₁') :
-    icallFree c = true → ∀ {s₂ s₂' : State} {t₂ : List Leak} (r₁ r₂ : List Leak), Exec isa c s₂ t₂ s₂' →
+    ∀ {s₂ s₂' : State} {t₂ : List Leak} (r₁ r₂ : List Leak), Exec isa c s₂ t₂ s₂' →
+      (∀ n ∈ inames c, s₁.syms n = s₂.syms n) →
       s₁.unknowns = s₂.unknowns → t₁ ++ r₁ = t₂ ++ r₂ → t₁ = t₂ ∧ s₁'.unknowns = s₂'.unknowns := by
   induction e₁ with
   | block h₁ =>
-    intro _ _ _ _ r₁ r₂ e₂ hu ht
+    intro _ _ _ r₁ r₂ e₂ _ hu ht
     cases e₂ with
     | block h₂ =>
       obtain ⟨hl, ha, hb⟩ := execBlock_unknowns h₁ h₂
       exact ⟨(List.append_inj ht hl).1, ha.trans (hu.trans hb.symm)⟩
-  | seq _ _ ih₁ ih₂ =>
-    intro hc _ _ _ r₁ r₂ e₂ hu ht
-    simp only [icallFree, Bool.and_eq_true] at hc
+  | seq x₁ _ ih₁ ih₂ =>
+    intro _ _ _ r₁ r₂ e₂ hf hu ht
+    simp only [inames, List.mem_append] at hf
     cases e₂ with
     | seq a₂ b₂ =>
       rw [List.append_assoc, List.append_assoc] at ht
-      obtain ⟨rfl, hu'⟩ := ih₁ hc.1 _ _ a₂ hu ht
-      obtain ⟨rfl, hu''⟩ := ih₂ hc.2 _ _ b₂ hu' (List.append_cancel_left ht)
+      obtain ⟨rfl, hu'⟩ := ih₁ _ _ a₂ (fun n hn => hf n (.inl hn)) hu ht
+      obtain ⟨rfl, hu''⟩ := ih₂ _ _ b₂
+        (fun n hn => by rw [Exec.syms x₁, Exec.syms a₂]; exact hf n (.inr hn)) hu' (List.append_cancel_left ht)
       exact ⟨rfl, hu''⟩
   | iteT _ _ ih =>
-    intro hc _ _ _ r₁ r₂ e₂ hu ht
-    simp only [icallFree, Bool.and_eq_true] at hc
+    intro _ _ _ r₁ r₂ e₂ hf hu ht
     cases e₂ with
     | iteT _ a₂ =>
       simp only [List.cons_append, List.cons.injEq, true_and] at ht
-      obtain ⟨rfl, hu'⟩ := ih hc.1 _ _ a₂ hu ht
+      obtain ⟨rfl, hu'⟩ := ih _ _ a₂ (fun n hn => hf n (List.mem_append_left _ hn)) hu ht
       exact ⟨rfl, hu'⟩
     | iteF _ _ => exact absurd ht branch_ne
   | iteF _ _ ih =>
-    intro hc _ _ _ r₁ r₂ e₂ hu ht
-    simp only [icallFree, Bool.and_eq_true] at hc
+    intro _ _ _ r₁ r₂ e₂ hf hu ht
     cases e₂ with
     | iteT _ _ => exact absurd ht.symm branch_ne
     | iteF _ a₂ =>
       simp only [List.cons_append, List.cons.injEq, true_and] at ht
-      obtain ⟨rfl, hu'⟩ := ih hc.2 _ _ a₂ hu ht
+      obtain ⟨rfl, hu'⟩ := ih _ _ a₂ (fun n hn => hf n (List.mem_append_right _ hn)) hu ht
       exact ⟨rfl, hu'⟩
   | loopExit _ _ ih =>
-    intro hc _ _ _ r₁ r₂ e₂ hu ht
-    simp only [icallFree] at hc
+    intro _ _ _ r₁ r₂ e₂ hf hu ht
     cases e₂ with
     | loopExit b₂ _ =>
       rw [List.append_assoc, List.append_assoc] at ht
-      obtain ⟨rfl, hu'⟩ := ih hc _ _ b₂ hu ht
+      obtain ⟨rfl, hu'⟩ := ih _ _ b₂ hf hu ht
       exact ⟨rfl, hu'⟩
     | loopNext b₂ _ _ =>
       rw [List.append_assoc, List.append_assoc] at ht
-      obtain ⟨rfl, -⟩ := ih hc _ _ b₂ hu ht
+      obtain ⟨rfl, -⟩ := ih _ _ b₂ hf hu ht
       exact absurd (List.append_cancel_left ht).symm branch_ne
-  | loopNext _ _ _ ih₁ ih₂ =>
-    intro hc _ _ _ r₁ r₂ e₂ hu ht
-    simp only [icallFree] at hc
+  | loopNext x₁ _ _ ih₁ ih₂ =>
+    intro _ _ _ r₁ r₂ e₂ hf hu ht
     cases e₂ with
     | loopExit b₂ _ =>
       rw [List.append_assoc, List.append_assoc] at ht
-      obtain ⟨rfl, -⟩ := ih₁ hc _ _ b₂ hu ht
+      obtain ⟨rfl, -⟩ := ih₁ _ _ b₂ hf hu ht
       exact absurd (List.append_cancel_left ht) branch_ne
     | loopNext b₂ _ n₂ =>
       rw [List.append_assoc, List.append_assoc] at ht
-      obtain ⟨rfl, hu'⟩ := ih₁ hc _ _ b₂ hu ht
+      obtain ⟨rfl, hu'⟩ := ih₁ _ _ b₂ hf hu ht
       have ht' := List.append_cancel_left ht
       simp only [List.cons_append, List.cons.injEq, true_and] at ht'
-      obtain ⟨rfl, hu''⟩ := ih₂ hc _ _ n₂ hu' ht'
+      obtain ⟨rfl, hu''⟩ := ih₂ _ _ n₂ (by rw [Exec.syms x₁, Exec.syms b₂]; exact hf) hu' ht'
       exact ⟨rfl, hu''⟩
   | call hc₁ _ hr ih =>
-    intro hc _ _ _ r₁ r₂ e₂ hu ht
-    simp only [icallFree] at hc
+    intro _ _ _ r₁ r₂ e₂ hf hu ht
     cases e₂ with
     | call hc₂ b₂ hr₂ =>
       simp only [List.map_nil, List.nil_append, List.append_nil] at ht
-      obtain ⟨rfl, hu'⟩ := ih hc _ _ b₂ (by rw [call_unknowns hc₁, call_unknowns hc₂, hu]) ht
+      obtain ⟨rfl, hu'⟩ := ih _ _ b₂ (by rw [call_syms hc₁, call_syms hc₂]; exact hf)
+        (by rw [call_unknowns hc₁, call_unknowns hc₂, hu]) ht
       rw [ret_eq hr, ret_eq hr₂]
       exact ⟨rfl, hu'⟩
   | @frame i j _ s₀ _ s₂ _ _ hp _ hq ih =>
-    intro hc s₀' _ _ r₁ r₂ e₂ hu ht
-    simp only [icallFree] at hc
+    intro s₀' _ _ r₁ r₂ e₂ hf hu ht
     cases e₂ with
     | @frame _ _ _ _ _ s₂' _ _ hp₂ b₂ hq₂ =>
       rw [List.append_assoc, List.append_assoc, List.append_assoc, List.append_assoc] at ht
       have hl : (List.map Leak.addr (isa.addrs i s₀)).length = (List.map Leak.addr (isa.addrs i s₀')).length := by
         simp only [List.length_map, addrs_length i s₀ s₀']
       obtain ⟨h₀, ht'⟩ := List.append_inj ht hl
-      obtain ⟨rfl, hu'⟩ := ih hc _ _ b₂ (by rw [push_unknowns hp, push_unknowns hp₂, hu]) ht'
+      obtain ⟨rfl, hu'⟩ := ih _ _ b₂ (by rw [push_syms hp, push_syms hp₂]; exact hf)
+        (by rw [push_unknowns hp, push_unknowns hp₂, hu]) ht'
       have hl' : (List.map Leak.addr (isa.addrs j s₂)).length = (List.map Leak.addr (isa.addrs j s₂')).length := by
         simp only [List.length_map, addrs_length j s₂ s₂']
       have h₃ := (List.append_inj (List.append_cancel_left ht') hl').1
       refine ⟨by rw [h₀, h₃], ?_⟩
       rw [pop_unknowns hq, pop_unknowns hq₂, hu']
-  | icall => intro hc; simp [icallFree] at hc
-  | icallNext => intro hc; simp [icallFree] at hc
+  | @icall i _ _ _ s₀ _ s₂ _ _ hi₁ hc₁ _ hr₁ ih =>
+    intro s₀' _ _ r₁ r₂ e₂ hf hu ht
+    have hn := hf _ (List.mem_cons_self ..)
+    cases e₂ with
+    | @icall _ _ _ _ _ _ s₂' _ _ hi₂ hc₂ x₂ hr₂ =>
+      simp only [List.append_assoc, List.cons_append] at ht
+      have hl : (List.map Leak.addr (isa.addrs i s₀)).length = (List.map Leak.addr (isa.addrs i s₀')).length := by
+        simp only [List.length_map, addrs_length i s₀ s₀']
+      obtain ⟨h₀, ht'⟩ := List.append_inj ht hl
+      simp only [List.cons.injEq] at ht'
+      obtain ⟨ha, ht'⟩ := ht'
+      simp only [List.map_nil, List.nil_append, List.append_nil] at ht' ⊢
+      obtain ⟨rfl, hu'⟩ := ih _ _ x₂ (fun m hm => by
+        rw [call_syms hc₁, call_syms hc₂]; exact hf m (by simp [inames, hm]))
+        (by rw [call_unknowns hc₁, call_unknowns hc₂, hu]) ht'
+      refine ⟨by rw [h₀, ha], ?_⟩
+      rw [ret_eq hr₁, ret_eq hr₂]; exact hu'
+    | icallNext hi₂ hne₂ x₂ =>
+      exfalso
+      obtain ⟨a₂, rest, hi₂', ht₂⟩ := icall_trace x₂
+      rw [hi₂] at hi₂'; cases hi₂'
+      rw [ht₂] at ht
+      simp only [List.append_assoc, List.cons_append] at ht
+      obtain ⟨-, ht⟩ := List.append_inj ht (by simp only [List.length_map]; exact addrs_length _ _ _)
+      simp only [List.cons.injEq, Leak.addr.injEq] at ht
+      apply hne₂
+      rw [← ht.1]; exact hn
+  | icallNext hi₁ hne₁ x₁ ih =>
+    intro _ _ _ r₁ r₂ e₂ hf hu ht
+    cases e₂ with
+    | icallNext hi₂ hne₂ x₂ =>
+      exact ih _ _ x₂ (fun m hm => hf m (List.mem_cons_of_mem _ (List.mem_append_right _ hm))) hu ht
+    | icall hi₂ hc₂ x₂ hr₂ =>
+      exfalso
+      obtain ⟨a₁, rest, hi₁', ht₁⟩ := icall_trace x₁
+      rw [hi₁] at hi₁'; cases hi₁'
+      rw [ht₁] at ht
+      simp only [List.append_assoc, List.cons_append] at ht
+      obtain ⟨-, ht⟩ := List.append_inj ht (by simp only [List.length_map]; exact addrs_length _ _ _)
+      simp only [List.cons.injEq, Leak.addr.injEq] at ht
+      apply hne₁
+      rw [ht.1]; exact (hf _ (List.mem_cons_self ..)).symm
 
 /-- The state after the clearing of `stack` bytes below `p`, from `u`. -/
 def finState (rb stack : Nat) (p : Addr) (u : State) : State :=
@@ -861,7 +926,8 @@ theorem Verified.scrub {A : Abi isa} {sig : Sig} {pre : Curry (sig.words A.ptrBi
     {leak : Option (Curry (sig.words A.ptrBits) (Mem → List Nat))} {c : Prog isa}
     (hA : ScrubAbi A) (h : Verified target c (sig.contract A pre post wa stack leak))
     (hd : c.riscv64Depth ≤ stack) (hst : stack < 2 ^ 64) (h16 : stack % 16 = 0)
-    (hic : icallFree c = true) (hrb : sig.retBits A.ptrBits ≤ 64)
+    (hsy : ∀ s₁ s₂, (sig.contract A pre post wa stack leak).pub s₁ s₂ →
+      ∀ n ∈ inames c, s₁.syms n = s₂.syms n) (hrb : sig.retBits A.ptrBits ≤ 64)
     (hpost : PostOut (sig.contract A pre post wa stack leak) (sig.retBits A.ptrBits)) :
     Verified target (Impl.Scrub.RISCV64.scrub (sig.retBits A.ptrBits) stack c)
         (sig.contract A pre post wa stack leak) ∧
@@ -934,7 +1000,7 @@ theorem Verified.scrub {A : Abi isa} {sig : Sig} {pre : Curry (sig.words A.ptrBi
     obtain ⟨rd₁, wr₁, -⟩ := Exec.rdwr a₁
     obtain ⟨rd₂, wr₂, -⟩ := Exec.rdwr a₂
     -- The two runs of `c` have the same trace, so they end with the same unknowns.
-    obtain ⟨-, hU⟩ := Exec.unknowns_agree a₁ hic [] [] a₂ hun
+    obtain ⟨-, hU⟩ := Exec.unknowns_agree a₁ [] [] a₂ (hsy _ _ hp) hun
       (by rw [List.append_nil, List.append_nil]; exact hct _ _ _ _ _ _ h₁ h₂ hp a₁ a₂)
     have keep : ∀ r, r ∉ scratchRegs → r ≠ .a0 → u₁.gpr r = u₂.gpr r := by
       intro r h1 h2
@@ -983,11 +1049,32 @@ theorem spSafe_all (c : Prog isa) : c.all (fun i => !isa.writesSp i) = true := b
 abbrev retBitsOf {api : Api} (r : Registration api target) : Nat :=
   api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits
 
+theorem contract_pub {A : Abi isa} {sig : Sig} {pre : Curry (sig.words A.ptrBits) (Mem → Prop)}
+    {post : sig.Post A.ptrBits} {wa : Bool} {stack : Nat}
+    {leak : Option (Curry (sig.words A.ptrBits) (Mem → List Nat))} {s₁ s₂ : State}
+    (h : (sig.contract A pre post wa stack leak).pub s₁ s₂) : A.pub s₁ s₂ := by
+  simp only [Sig.contract] at h
+  split at h
+  · exact h.elim
+  · cases leak with
+    | none => exact h.1
+    | some f => exact h.1.1
+
+/-- The functions of the tables have the same addresses in two runs that
+agree on what is public. -/
+theorem tables_pub_syms {A : Abi isa} {sig : Sig} {ts : List (String × List FnTable)}
+    {s₁ s₂ : State} (h : (A.withTables sig ts).pub s₁ s₂) :
+    ∀ f ∈ tableFns ts, s₁.syms f = s₂.syms f := by
+  intro f hf
+  cases ts with
+  | nil => simp [tableFns] at hf
+  | cons t ts => exact h.2.1 f hf
+
 /-- `r`'s code, scrubbed, is verified against `r`'s contract and returns
 without secret residue. -/
 theorem scrubCode_ok {api : Api} (r : Registration api target)
     (hd : r.code.riscv64Depth ≤ r.stack) (hst : r.stack < 2 ^ 64) (h16 : r.stack % 16 = 0)
-    (hic : icallFree r.code = true)
+    (htc : tablesCall r.code r.tables = true)
     (hrb : retBitsOf r ≤ 64) (hpost : PostOut r.contract (retBitsOf r)) :
     Verified target (scrub (retBitsOf r) r.stack r.code) r.contract ∧
       NoResidue (scrub (retBitsOf r) r.stack r.code) r.contract (retBitsOf r) := by
@@ -997,20 +1084,22 @@ theorem scrubCode_ok {api : Api} (r : Registration api target)
   unfold retBitsOf at hrb hp ⊢
   rw [e] at hv hp ⊢
   have hrb' := hrb
-  exact Verified.scrub (ScrubAbi.of r.consts api.sig r.tables) hv hd hst h16 hic hrb' hp
+  refine Verified.scrub (ScrubAbi.of r.consts api.sig r.tables) hv hd hst h16
+    (fun s₁ s₂ hp n hn => tables_pub_syms (contract_pub hp) n ?_) hrb' hp
+  simpa using List.all_eq_true.mp htc n hn
 
 /-- `r`, scrubbed: its code followed by the clearing (`scrub`) of its
 `r.stack` bytes of stack and its caller-saved registers. -/
 def scrubReg {api : Api} (r : Registration api target)
     (hd : r.code.riscv64Depth ≤ r.stack) (hst : r.stack < 2 ^ 64) (h16 : r.stack % 16 = 0)
-    (hic : icallFree r.code = true)
+    (htc : tablesCall r.code r.tables = true)
     (hrb : retBitsOf r ≤ 64) (hpost : PostOut r.contract (retBitsOf r)) (hw : r.written = []) :
     Registration api target where
   suffix := r.suffix
   tables := r.tables
   code := scrub (retBitsOf r) r.stack r.code
   contract := r.contract
-  verified := (scrubCode_ok r hd hst h16 hic hrb hpost).1
+  verified := (scrubCode_ok r hd hst h16 htc hrb hpost).1
   consts := r.consts
   stack := r.stack
   ofApi := r.ofApi
@@ -1021,12 +1110,12 @@ def scrubReg {api : Api} (r : Registration api target)
   extra := r.extra
   vendor := r.vendor
   notWith := r.notWith
-  residue := some ⟨(scrubCode_ok r hd hst h16 hic hrb hpost).2⟩
+  residue := some ⟨(scrubCode_ok r hd hst h16 htc hrb hpost).2⟩
 
 /-- `r`, returning without secret residue (`scrubReg`) if `scrub`'s side
 conditions hold: its frames use at most `r.stack` bytes, a multiple of 16
-(as every frame is), it makes no indirect call (`icallFree`), and it states
-no `written`; otherwise `r` itself,
+(as every frame is), it calls indirectly only the functions of its tables
+(`tablesCall`), and it states no `written`; otherwise `r` itself,
 which then has no proof (`Registration.residue`), as the emitter allows
 only of what `ci/residue_allowlist.txt` lists. -/
 def withScrub {api : Api} (r : Registration api target) (hpost : PostOut r.contract (retBitsOf r)) :
@@ -1034,9 +1123,9 @@ def withScrub {api : Api} (r : Registration api target) (hpost : PostOut r.contr
   if hd : r.code.riscv64Depth ≤ r.stack then
   if hst : r.stack < 2 ^ 64 then
   if h16 : r.stack % 16 = 0 then
-  if hic : icallFree r.code = true then
+  if htc : tablesCall r.code r.tables = true then
   if hrb : retBitsOf r ≤ 64 then
-  if hw : r.written = [] then scrubReg r hd hst h16 hic hrb hpost hw
+  if hw : r.written = [] then scrubReg r hd hst h16 htc hrb hpost hw
   else r else r else r else r else r else r
 
 end Scrub
