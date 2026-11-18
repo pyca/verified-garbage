@@ -23,6 +23,10 @@ first stack argument, its cipher `Spec.TripleDes.cipher` for encryption and
 `Spec.TripleDes.invCipher` for decryption, and the key ready when the copy of
 the schedule in the core's slots is the key. The block function's call
 (`cryptCall_ok`) is from its contract (`blockContract`).
+
+`wideCoreSpec d`: the same for the bitsliced core
+(`Impl.TripleDes.X86.wideCore d`), whose `crypt` is a call of the bitsliced
+function (`Ecb.batchFrame_ok`) on the buffer's 32 blocks.
 -/
 
 @[expose] public section
@@ -435,5 +439,168 @@ def dirCoreSpec (d : Direction) : CoreSpec (dirCore d) where
   ready_frame h hesp _ _ _ hf _ hd := ready_frame h hesp hf hd
   prepare_wp := prepare_wp d
   crypt_wp := crypt_wp d
+
+/-! ## The bitsliced core -/
+
+open VG.Proof.TripleDes.Bitslice (blockOut)
+
+theorem wideCore_total (d : Direction) : (wideCore d).total = 302 := rfl
+
+/-- The schedule's copy is `k`, the core's stack is apart from the scratch
+buffer, which does not wrap around. -/
+def ReadyW (s : State) (B : BitVec 32) (k : Spec.TripleDes.Schedule) : Prop :=
+  Spec.TripleDes.scheduleAt s.mem (slotA B wideSchedSlot) = k ∧
+    Region.Disjoint (stkRegion (s.gpr .esp) 16) ⟨B.setWidth 64, 4 * 302⟩ ∧ B.toNat + 4 * 302 ≤ 2 ^ 32
+
+theorem readyW_frame {d : Direction} {s s' : State} {B : BitVec 32} {k : Spec.TripleDes.Schedule}
+    {rs : List Region} (h : ReadyW s B k) (hesp : s'.gpr .esp = s.gpr .esp) (hf : Frame rs s.mem s'.mem)
+    (hd : ∀ r ∈ rs, Region.Disjoint (coreRegion (wideCore d) B) r ∨ Region.Sub r (blkRegion (wideCore d) B)) :
+    ReadyW s' B k := by
+  obtain ⟨hk, hs, hfit⟩ := h
+  refine ⟨?_, by rw [hesp]; exact hs, hfit⟩
+  rw [scheduleAt_eq_of_frame _ hf fun r hr => ?_]
+  · exact hk
+  rcases hd r hr with h' | h'
+  · exact h'.sub_left (VG.Offset.sub_base _ (by simp only [wideCore, wideSchedSlot]; decide))
+  · exact (VG.Offset.disjoint _ (.inr (by simp only [wideCore, wideSchedSlot, Bitslice.bufSlot]; decide))
+      (by simp only [wideSchedSlot]; decide) (by simp only [wideCore, Bitslice.bufSlot]; decide)).sub_right h'
+
+theorem prepareW_wp (d : Direction) {s : State} {B : BitVec 32} {rs : List Region} {k : Spec.TripleDes.Schedule}
+    (hB : s.gpr sb = B) (hs : ScrIn s B (wideCore d).total)
+    (hR : (⟨B.setWidth 64, 4 * (wideCore d).total⟩ : Region) ∈ rs) (hk : KeyArgs s rs k)
+    (_ : (wideCore d).stack ≤ (s.gpr .esp).toNat) :
+    WP isa (wideCore d).prepare s fun s' => ReadyW s' B k ∧ s'.gpr sb = B ∧ s'.gpr .esp = s.gpr .esp ∧
+      Frame [coreRegion (wideCore d) B, stkRegion (s.gpr .esp) (wideCore d).stack] s.mem s'.mem ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr := by
+  obtain ⟨p, hin, hp, rfl, hsch, hfit, hdis, -, hsdis⟩ := hk
+  have hfB := hs.fit
+  rw [wideCore_total] at hfB
+  obtain hsep : Region.Disjoint ⟨p.setWidth 64, 384⟩ ⟨B.setWidth 64, 4 * 302⟩ := hdis _ hR
+  have hcopy : copyScheduleWide = [.mov .ecx (.mem (argOp 0))] ++ copyCode wideSchedSlot 96 := rfl
+  show WP isa (.block copyScheduleWide) s _
+  rw [hcopy, ← List.append_nil (copyCode wideSchedSlot 96), List.singleton_append]
+  refine wp_ldm (B := s.gpr .esp) rfl hin fun s₁ u₁ => ?_
+  rw [show s.mem.readW (addr (s.gpr .esp) (4 + 4 * 0)) 32 = p from hp] at u₁
+  obtain hp64 : ∀ w < 96, addr p (4 * w) = p.setWidth 64 + BitVec.ofNat 64 (4 * w) := fun w hw => addr_eq (by omega_arith)
+  have hS : wideSchedSlot = 196 := rfl
+  refine copyCode_wp (P := p) (B := B) 96 u₁.gpr (by rw [u₁.other _ (by decide)]; exact hB) (by omega_arith)
+    (by rw [hS]; omega_arith) (fun w hw => ?_) (fun w hw => ?_) ?_ fun s₂ m₂ f₂ g₂ rd₂ wr₂ => WP.block_nil ?_
+  · rw [u₁.rd, u₁.wr, hp64 w hw]; exact ⟨_, hsch, VG.Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
+  · rw [u₁.wr, addr_eq (by rw [hS]; omega_arith)]
+    obtain hc : (⟨B.setWidth 64, 4 * 302⟩ : Region).Contains
+        (B.setWidth 64 + BitVec.ofNat 64 (4 * (wideSchedSlot + w))) 4 :=
+      VG.Offset.contains_base _ (by rw [hS]; omega_arith) (by rw [hS]; omega_arith)
+    have hw' := hs.wr
+    rw [wideCore_total] at hw'
+    exact ⟨_, hw', hc⟩
+  · exact hsep.sub_right (VG.Offset.sub_base _ (by rw [hS]; omega_arith))
+  obtain esp₂ : s₂.gpr .esp = s.gpr .esp := by rw [g₂ _ (by decide), u₁.other _ (by decide)]
+  refine ⟨⟨?_, ?_, hfB⟩, by rw [g₂ _ (by decide), u₁.other _ (by decide)]; exact hB, esp₂,
+    ?_, by rw [rd₂, u₁.rd], by rw [wr₂, u₁.wr]⟩
+  · rw [scheduleAt_copy (p := p.setWidth 64) fun i hi => ?_]
+    rw [m₂ i (by omega_arith), u₁.mem]
+  · rw [esp₂]; have := hsdis _ hR; rw [wideCore_total] at this; exact this
+  · rw [← u₁.mem]
+    exact f₂.sub fun r hr => ⟨_, List.mem_cons_self, by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact VG.Offset.sub_base _ (by simp only [wideCore, wideSchedSlot]; decide)⟩
+
+theorem wideCall_eq (d : Direction) : wideCall d =
+    .frame (.push [.eax, .edi])
+      (.call (match d with | .encrypt => "vg_triple_des_encrypt_batch" | .decrypt => "vg_triple_des_decrypt_batch")
+        (Ecb.batchCode d)) (.pop .eax 2) := by cases d <;> rfl
+
+/-- The bitsliced function's result on a block is the direction's. -/
+theorem blockOut_eq (d : Direction) (k : Spec.TripleDes.Schedule) (b : Spec.TripleDes.Block) :
+    blockOut k d b = VG.Proof.TripleDes.X86.blockResult k d b := by cases d <;> rfl
+
+theorem cryptW_wp (d : Direction) {s : State} {B : BitVec 32} {k : Spec.TripleDes.Schedule} (hB : s.gpr sb = B)
+    (hs : ScrIn s B (wideCore d).total) (hr : ReadyW s B k) (hst : (wideCore d).stack ≤ (s.gpr .esp).toNat) :
+    WP isa (wideCore d).crypt s fun s' => s'.gpr sb = B ∧ s'.gpr .esp = s.gpr .esp ∧ ReadyW s' B k ∧
+      Frame [coreRegion (wideCore d) B, stkRegion (s.gpr .esp) (wideCore d).stack] s.mem s'.mem ∧
+      (∀ j < (wideCore d).G, bytesAt s'.mem (blkAddr (wideCore d) B j) (4 * (wideCore d).bw) =
+        dirCipher d k (bytesAt s.mem (blkAddr (wideCore d) B j) (4 * (wideCore d).bw))) ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr := by
+  obtain ⟨hk, hstk, hfB⟩ := hr
+  have hw := hs.wr
+  rw [wideCore_total] at hw
+  have hst' : 16 ≤ (s.gpr .esp).toNat := hst
+  have hB' : s.gpr .edi = B := hB
+  show WP isa (.seq (.block wideSetup) (wideCall d)) s _
+  refine WP.seq ?_
+  show WP isa (.block [.mov .eax (.reg .edi), .alu .add .eax (.imm (BitVec.ofNat 32 784))]) s _
+  refine wp_mov fun s₁ u₁ => wp_addi fun s₂ u₂ => WP.block_nil ?_
+  obtain edi₂ : s₂.gpr .edi = B := by rw [u₂.other _ (by decide), u₁.other _ (by decide)]; exact hB'
+  obtain eax₂ : s₂.gpr .eax = B + BitVec.ofNat 32 784 := by rw [u₂.gpr, u₁.gpr, hB']
+  obtain esp₂ : s₂.gpr .esp = s.gpr .esp := by rw [u₂.other _ (by decide), u₁.other _ (by decide)]
+  obtain m₂ : s₂.mem = s.mem := by rw [u₂.mem, u₁.mem]
+  obtain rd₂ : s₂.rd = s.rd := by rw [u₂.rd, u₁.rd]
+  obtain wr₂ : s₂.wr = s.wr := by rw [u₂.wr, u₁.wr]
+  obtain aK : addr32 (s₂.gpr .eax) = B.setWidth 64 + BitVec.ofNat 64 784 := by
+    rw [eax₂]; exact addr32_add (by omega_arith)
+  obtain aW : addr32 (s₂.gpr .edi) = B.setWidth 64 := by rw [edi₂]; rfl
+  obtain scrSub : ∀ (off n : Nat), off + n ≤ 4 * 302 → ∃ r' ∈ s₂.wr, ∃ o,
+      (B.setWidth 64 + BitVec.ofNat 64 off) = r'.base + BitVec.ofNat 64 o ∧ o + n ≤ r'.len :=
+    fun off n h => ⟨_, by rw [wr₂]; exact hw, off, rfl, h⟩
+  obtain e0 : B.setWidth 64 = B.setWidth 64 + BitVec.ofNat 64 0 := by simp
+  obtain b12 : Region.Sub (below (s.gpr .esp) 12) (stkRegion (s.gpr .esp) 16) := below_sub (by decide) hst'
+  obtain hpre : Ecb.BatchCallPre .eax .edi s₂ := by
+    refine ⟨Covers.right (Covers.of_sub fun r hr => ?_), Covers.of_sub fun r hr => ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · rw [aK]; exact scrSub 784 384 (by omega_arith)
+      · rw [aW, e0]; exact scrSub 0 784 (by omega_arith)
+    · obtain rfl := List.mem_singleton.mp hr
+      rw [aW, e0]; exact scrSub 0 784 (by omega_arith)
+    · rw [aK, aW]; exact VG.Offset.disjoint_base _ (by omega_arith) (by omega_arith)
+    · rw [eax₂, toNat_add (by omega_arith)]; omega_arith
+    · rw [edi₂]; omega_arith
+    · rw [esp₂]; omega_arith
+    · rw [esp₂, aK]; exact (hstk.sub_left b12).sub_right (VG.Offset.sub_base _ (by omega_arith))
+    · rw [esp₂, aW]; exact (hstk.sub_left b12).sub_right (Region.sub_prefix (by omega_arith))
+  rw [wideCall_eq]
+  refine WP.mono (Ecb.batchFrame_ok d (by decide) (by decide) s₂ hpre) fun s' hc => ?_
+  have hfr := hc.mem
+  rw [aW, esp₂, m₂] at hfr
+  have hblk := hc.blocks
+  rw [edi₂, aK, m₂] at hblk
+  obtain copyOut : ∀ r ∈ [(⟨B.setWidth 64, 784⟩ : Region), below (s.gpr .esp) 12],
+      Region.Disjoint ⟨slotA B wideSchedSlot, 384⟩ r := fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact VG.Offset.disjoint_base _ (by simp only [wideSchedSlot]; decide) (by simp only [wideSchedSlot]; decide)
+    · exact ((hstk.sub_left b12).sub_right (VG.Offset.sub_base _ (by simp only [wideSchedSlot]; decide))).symm
+  refine ⟨(hc.callee .edi (by decide)).trans edi₂, (hc.callee .esp (by decide)).trans esp₂,
+    ⟨?_, by rw [(hc.callee .esp (by decide)).trans esp₂]; exact hstk, hfB⟩, ?_, fun j hj => ?_,
+    hc.rd.trans rd₂, hc.wr.trans wr₂⟩
+  · rw [scheduleAt_eq_of_frame _ hfr copyOut]; exact hk
+  · refine hfr.sub fun r hr => ?_
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact ⟨_, List.mem_cons_self, Region.sub_prefix (by simp only [wideCore, wideSchedSlot]; decide)⟩
+    · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, b12⟩
+  · have hj32 : j < 32 := hj
+    obtain eB : blkAddr (wideCore d) B j = VG.X86.Straight.wordAddr B (Bitslice.bufSlot + 2 * j) := by
+      rw [VG.X86.Straight.wordAddr, addr_eq (by unfold Bitslice.bufSlot; omega_arith)]
+      simp only [blkAddr, slotA, wideCore, VG.Offset.add_add]
+      exact congrArg (fun t => B.setWidth 64 + BitVec.ofNat 64 t) (by omega_arith)
+    rw [show 4 * (wideCore d).bw = 8 from rfl, eB, bytesAt_eq, hblk j hj32, dirCipher_bytes, blockOut_eq,
+      show B.setWidth 64 + BitVec.ofNat 64 784 = slotA B wideSchedSlot from rfl, hk]
+
+@[simp] theorem wideCore_bw (d : Direction) : (wideCore d).bw = 2 := rfl
+
+/-- Triple DES's bitsliced core for the direction `d` meets what the modes need. -/
+def wideCoreSpec (d : Direction) : CoreSpec (wideCore d) where
+  Key := Spec.TripleDes.Schedule
+  cipher := dirCipher d
+  KeyArgs := KeyArgs
+  Ready := ReadyW
+  cipher_len _ _ := by cases d <;> simp [dirCipher, Spec.TripleDes.cipher, Spec.TripleDes.invCipher]
+  layout := ⟨by simp only [wideCore]; decide, .inl rfl, by simp only [wideCore, wideSchedSlot, Bitslice.bufSlot]; decide,
+    by simp only [wideCore]; omega_arith⟩
+  keyArgs_congr h e r w _ f := keyArgs_congr h e r w f
+  ready_frame h hesp _ _ _ hf _ hd := readyW_frame h hesp hf hd
+  prepare_wp := prepareW_wp d
+  crypt_wp := cryptW_wp d
 
 end VG.Proof.TripleDes.X86.Mode

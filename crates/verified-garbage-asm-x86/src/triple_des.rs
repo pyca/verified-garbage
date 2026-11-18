@@ -228,10 +228,6 @@ jmp 21f
 pub(crate) mod vg_triple_des_decrypt_batch;
 
 #[rustfmt::skip]
-#[path = "internal/vg_triple_des_decrypt_block.rs"]
-pub(crate) mod vg_triple_des_decrypt_block;
-
-#[rustfmt::skip]
 #[path = "internal/vg_triple_des_encrypt_batch.rs"]
 pub(crate) mod vg_triple_des_encrypt_batch;
 
