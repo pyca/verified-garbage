@@ -149,7 +149,7 @@ def sat : State where
   wr := []
 
 /-- `vg_dit_enter`'s contract as it is proven: `contract`, with PSTATE.DIT
-public too, as `Spec.Dit.enterContract` makes it (`Abi.withMode`). -/
+public too, as the calling convention makes it. -/
 def enterK : Contract isa := { contract with pub s t := s.sp = t.sp ∧ s.dit = t.dit }
 
 /-- `vg_dit_enter`, or a variant with barriers `bars`, against its contract,
@@ -172,17 +172,15 @@ theorem enterWith_verified (bars : List Barrier)
   · exact ConstantTime.of_leakage (fun s => [.branch (!s.dit)]) (fun _ _ _ _ h => enter_leak h)
       fun _ _ _ _ h => by rw [h.2]
   · exact {
-      pre := by sig_implies_pre [Spec.Dit.enterContract, Spec.Dit.enterSig, Abi.withMode, enterK,
+      pre := by sig_implies_pre [Spec.Dit.enterContract, Spec.Dit.enterSig, enterK,
         contract, abi, argRegs]
       -- Both postconditions are `True`.
       post := fun _ _ _ _ => trivial
       pub := by
         intro s₁ s₂ _ _ h
-        sig_pub [Spec.Dit.enterContract, Spec.Dit.enterSig, Abi.withMode, abi, argRegs] at h
-        sig_split h
-        refine ⟨by with_reducible assumption, ?_⟩
-        cases h₁ : s₁.dit <;> cases h₂ : s₂.dit <;> simp_all
-      sat := by sig_implies_sat [Spec.Dit.enterContract, Spec.Dit.enterSig, Abi.withMode, enterK,
+        sig_pub_keep [Spec.Dit.enterContract, Spec.Dit.enterSig, abi, argRegs] at h
+        exact h
+      sat := by sig_implies_sat [Spec.Dit.enterContract, Spec.Dit.enterSig, enterK,
         contract, abi, argRegs] [sat] using sat }
 
 theorem enter_verified : Verified target enter (Spec.Dit.enterContract abi) :=
