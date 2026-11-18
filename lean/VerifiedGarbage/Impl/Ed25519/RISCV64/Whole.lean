@@ -52,9 +52,9 @@ open VG.RISCV64
 def mov (d n : Reg) : Instr := .addi d n 0
 
 def shaInit : Prog isa :=
-  .call Spec.Sha512.init512Api.name (Impl.Sha512.RISCV64.Stream.initWith Spec.Sha512.H0_512)
-def shaUpdate : Prog isa := .call Spec.Sha512.updateApi.name Impl.Sha512.RISCV64.Stream.update
-def shaFinalize : Prog isa := .call Spec.Sha512.finalizeApi.name Impl.Sha512.RISCV64.Stream.finalize
+  .call (Spec.Sha512.init512Api.name ++ "_core") (Impl.Sha512.RISCV64.Stream.initWith Spec.Sha512.H0_512)
+def shaUpdate : Prog isa := .call (Spec.Sha512.updateApi.name ++ "_core") Impl.Sha512.RISCV64.Stream.update
+def shaFinalize : Prog isa := .call (Spec.Sha512.finalizeApi.name ++ "_core") Impl.Sha512.RISCV64.Stream.finalize
 
 /-- The slots at `o(F)` of the registers of `rs` and, after them, of `ra`. -/
 def slots (o : Nat) (rs : List Reg) : List (Reg × Nat) :=

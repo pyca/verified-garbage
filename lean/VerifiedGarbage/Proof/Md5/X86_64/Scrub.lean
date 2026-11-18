@@ -18,6 +18,8 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 meta import VerifiedGarbage.Proof.Md5.Stream
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Md5.X86_64.Lit
+import VerifiedGarbage.Proof.Md5.PostOut
+meta import VerifiedGarbage.Proof.Md5.PostOut
 
 /-!
 # MD5's streaming functions on x86-64, without secret residue
@@ -37,50 +39,14 @@ namespace VG.Proof.Md5.X86_64
 
 open VG.Spec.Md5 VG.X86_64 VG.X86_64.Scrub
 
-theorem agreeBuf {m₁ m₂ : Mem} {p : Addr} {n : Nat} (hn : n < 2 ^ 64)
-    (h : ∀ a, Region.Contains ⟨p, n⟩ a 1 → m₁ a = m₂ a) :
-    ∀ i < n, m₂ (p + BitVec.ofNat 64 i) = m₁ (p + BitVec.ofNat 64 i) := fun i hi =>
-  (h _ (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hn, hi]))).symm
-
 theorem initOut : PostOut (initContract X86_64.abi) (initSig.retBits 64) :=
-  postOut_of_local (leak := none) ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
-    obtain ⟨st, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 0) hlen
-    obtain rfl := List.eq_nil_of_length_eq_zero (Nat.succ.inj hlen)
-    simp only [initSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq] at hb
-    exact Stream.repr_congr (fun i hi => agreeBuf (n := 80 * Elem.size .u8) (by decide) hb i
-      (by simp only [Elem.size]; omega_using [hi])) h
+  postOut_of_local (leak := none) ScrubAbi.plain (Proof.Md5.initPost_out 64)
 
 theorem updateOut (stack : Nat) : PostOut (updateContract X86_64.abi stack) (updateSig.retBits 64) :=
-  postOut_of_local (leak := none) ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
-    obtain ⟨st, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 3) hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨ct, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨dt, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨ln, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    obtain rfl := List.eq_nil_of_length_eq_zero (Nat.succ.inj hlen)
-    simp only [updateSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
-      forall_eq] at hb
-    intro msg hr hc
-    exact Stream.repr_congr (fun i hi => agreeBuf (n := 80 * Elem.size .u8) (by decide) hb.1 i
-      (by simp only [Elem.size]; omega_using [hi])) (h msg hr hc)
+  postOut_of_local (leak := none) ScrubAbi.plain (Proof.Md5.updatePost_out 64)
 
 theorem finalizeOut (stack : Nat) : PostOut (finalizeContract X86_64.abi stack) (finalizeSig.retBits 64) :=
-  postOut_of_local (leak := none) ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
-    obtain ⟨st, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 2) hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨ct, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨ot, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    obtain rfl := List.eq_nil_of_length_eq_zero (Nat.succ.inj hlen)
-    simp only [finalizeSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
-      forall_eq] at hb
-    intro msg hr hc
-    show bytesAt m₂ ot 16 = _
-    rw [Stream.bytesAt_congr fun i hi => agreeBuf (n := 16 * Elem.size .u8) (by decide) hb.2 i
-      (by simp only [Elem.size]; omega_using [hi])]
-    exact h msg hr hc
+  postOut_of_local (leak := none) ScrubAbi.plain (Proof.Md5.finalizePost_out 64)
 
 /-! ## The registrations -/
 

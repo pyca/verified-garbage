@@ -196,7 +196,7 @@ vg_pbkdf2_hmac_md5:
 	addi a1, zero, 64
 	addi a2, s6, 0
 	addi a3, s2, 0
-	call {vg_md5_update}
+	call {vg_md5_update_core}
 	srli t1, s7, 24
 	sb t1, 336(s1)
 	srli t1, s7, 16
@@ -208,7 +208,7 @@ vg_pbkdf2_hmac_md5:
 	addi a1, s2, 64
 	addi a2, s1, 336
 	addi a3, zero, 4
-	call {vg_md5_update}
+	call {vg_md5_update_core}
 	addi a0, s1, 224
 	addi a1, s1, 144
 	addi a2, s2, 68

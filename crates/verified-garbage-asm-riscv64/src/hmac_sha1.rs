@@ -22,19 +22,19 @@ pub(crate) unsafe extern "C" fn vg_hmac_sha1_init(inner: *mut [u8; 84], outer: *
 .base64 "NXGKgiO0EgYjuHIHI7yCByOwkgkjtKIJI7iyCaqLFoyujDKNto0T03YAk/P2B5OD8wOT03MAHpM="
 beqz t1, 20f
 .base64 "YoU="
-call {vg_sha1_init}
+call {vg_sha1_init_core}
 .base64 "YoWBRWqG7oY="
-call {vg_sha1_update}
+call {vg_sha1_update_core}
 .base64 "YoXuhRMGTAU="
-call {vg_sha1_finalize}
+call {vg_sha1_finalize_core}
 .base64 "Ew1MBdFN"
 j 21f
 20:
 21:
 .base64 "XoU="
-call {vg_sha1_init}
+call {vg_sha1_init_core}
 .base64 "ZoU="
-call {vg_sha1_init}
+call {vg_sha1_init_core}
 .base64 "Ew9gA4FP6oNujg=="
 beqz t3, 22f
 24:
@@ -52,7 +52,7 @@ j 26f
 25:
 26:
 .base64 "XoWBRROGTAGTBgAE"
-call {vg_sha1_update}
+call {vg_sha1_update_core}
 .base64 "Ew/ABYFP6oNujg=="
 beqz t3, 28f
 210:
@@ -70,12 +70,12 @@ j 212f
 211:
 212:
 .base64 "ZoWBRROGSwGTBgAE"
-call {vg_sha1_update}
+call {vg_sha1_update_core}
 .base64 "AUMjMGwAIzRsACM4bAAjPGwAIzBsAiM0bAIjOGwCIzxsAiMwbAQjNGwEIzhsBCM8bAQjMGwGgzCMBoM7DAeDPAwIAz2MCIM9DAkDPIwHDWGCgA=="
 .option pop"#,
-        vg_sha1_init = sym super::sha1::vg_sha1_init,
-        vg_sha1_update = sym super::sha1::vg_sha1_update,
-        vg_sha1_finalize = sym super::sha1::vg_sha1_finalize,
+        vg_sha1_init_core = sym super::sha1::vg_sha1_init_core::vg_sha1_init_core,
+        vg_sha1_update_core = sym super::sha1::vg_sha1_update_core::vg_sha1_update_core,
+        vg_sha1_finalize_core = sym super::sha1::vg_sha1_finalize_core::vg_sha1_finalize_core,
     )
 }
 
@@ -97,14 +97,14 @@ pub(crate) unsafe extern "C" fn vg_hmac_sha1_finalize(inner: *mut [u8; 84], oute
         r#".option push
 .option arch, +m, +c
 .base64 "XXGKgiO8EgAjsHIDI7SCAyO4kgMjvKIDI7CyBaqLFoyujDaNsoUWhg=="
-call {vg_sha1_finalize}
+call {vg_sha1_finalize_core}
 .base64 "A8MMACOAawADwxwAo4BrAAPDLAAjgWsAA8M8AKOBawADw0wAI4JrAAPDXACjgmsAA8NsACODawADw3wAo4NrAAPDjAAjhGsAA8OcAKOEawADw6wAI4VrAAPDvACjhWsAA8PMACOGawADw9wAo4ZrAAPD7AAjh2sAA8P8AKOHawADwwwBI4hrAAPDHAGjiGsAA8MsASOJawADwzwBo4lrAF6FkwUABGKG0UY="
-call {vg_sha1_update}
+call {vg_sha1_update_core}
 .base64 "XoWTBUAFaoY="
-call {vg_sha1_finalize}
+call {vg_sha1_finalize_core}
 .base64 "gzCMAYM7DAKDPAwDAz2MA4M9DAQDPIwCYWGCgA=="
 .option pop"#,
-        vg_sha1_finalize = sym super::sha1::vg_sha1_finalize,
-        vg_sha1_update = sym super::sha1::vg_sha1_update,
+        vg_sha1_finalize_core = sym super::sha1::vg_sha1_finalize_core::vg_sha1_finalize_core,
+        vg_sha1_update_core = sym super::sha1::vg_sha1_update_core::vg_sha1_update_core,
     )
 }

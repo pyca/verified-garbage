@@ -43,11 +43,11 @@ def hash : Hash where
   N := 20
   D := 20
   F := 144
-  initN := Spec.Sha1.initApi.name
+  initN := Spec.Sha1.initApi.name ++ "_core"
   initC := Impl.Sha1.RISCV64.Stream.init
-  updN := Spec.Sha1.updateApi.name
+  updN := Spec.Sha1.updateApi.name ++ "_core"
   updC := Impl.Sha1.RISCV64.Stream.update
-  finN := Spec.Sha1.finalizeApi.name
+  finN := Spec.Sha1.finalizeApi.name ++ "_core"
   finC := Impl.Sha1.RISCV64.Stream.finalize
 
 theorem initSd : sdepth Impl.Sha1.RISCV64.Stream.init ≤ 144 := by decide +kernel

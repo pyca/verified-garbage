@@ -420,7 +420,7 @@ vg_pbkdf2_hmac_sha384:
 	addi a1, zero, 128
 	addi a2, s6, 0
 	addi a3, s2, 0
-	call {vg_sha512_update}
+	call {vg_sha512_update_core}
 	srli t1, s7, 24
 	sb t1, 736(s1)
 	srli t1, s7, 16
@@ -432,7 +432,7 @@ vg_pbkdf2_hmac_sha384:
 	addi a1, s2, 128
 	addi a2, s1, 736
 	addi a3, zero, 4
-	call {vg_sha512_update}
+	call {vg_sha512_update_core}
 	addi a0, s1, 448
 	addi a1, s1, 256
 	addi a2, s2, 132

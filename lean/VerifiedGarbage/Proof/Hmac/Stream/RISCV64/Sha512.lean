@@ -33,7 +33,7 @@ open VG.Impl.Hmac.Stream.RISCV64 (Hash)
 
 /-- SHA-512's streaming functions. -/
 def hash : Hash :=
-  Sha512Family.hash Spec.Sha512.H0_512 64 Spec.Sha512.init512Api.name Spec.Sha512.finalizeApi.name
+  Sha512Family.hash Spec.Sha512.H0_512 64 (Spec.Sha512.init512Api.name ++ "_core") (Spec.Sha512.finalizeApi.name ++ "_core")
     Impl.Sha512.RISCV64.Stream.finalize
 
 theorem finSd : sdepth Impl.Sha512.RISCV64.Stream.finalize ≤ 208 := by decide +kernel

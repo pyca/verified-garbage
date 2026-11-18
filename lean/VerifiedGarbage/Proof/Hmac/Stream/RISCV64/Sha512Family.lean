@@ -41,7 +41,7 @@ def hash (iv : HashValue) (D : Nat) (initN finN : String) (finC : Prog isa) : Ha
   F := 208
   initN := initN
   initC := Impl.Sha512.RISCV64.Stream.initWith iv
-  updN := Spec.Sha512.updateApi.name
+  updN := Spec.Sha512.updateApi.name ++ "_core"
   updC := Impl.Sha512.RISCV64.Stream.update
   finN := finN
   finC := finC

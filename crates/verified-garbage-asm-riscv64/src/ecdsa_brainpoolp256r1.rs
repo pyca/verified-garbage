@@ -1001,3 +1001,11 @@ pub(crate) mod vg_sha224_finalize_core;
 #[rustfmt::skip]
 #[path = "internal/vg_sha224_init_core.rs"]
 pub(crate) mod vg_sha224_init_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha384_finalize_core.rs"]
+pub(crate) mod vg_sha384_finalize_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha384_init_core.rs"]
+pub(crate) mod vg_sha384_init_core;

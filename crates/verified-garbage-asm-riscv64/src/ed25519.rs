@@ -22,12 +22,12 @@ pub(crate) unsafe extern "C" fn vg_ed25519_key_pair(out: *mut [u8; 32], expanded
         r#".option push
 .option arch, +m, +c
 .base64 "ARGKgiOwEgAjtKIAI7iyACO80gAyhS6GkwUAAg=="
-call {vg_sha512_digest}
+call {vg_sha512_digest_core}
 .base64 "ioIDtYIAg7UCAQO2ggE="
 call {vg_ed25519_public_key_expanded}
 .base64 "ioKDsAIABWGCgA=="
 .option pop"#,
-        vg_sha512_digest = sym super::sha512::vg_sha512_digest,
+        vg_sha512_digest_core = sym super::sha512::vg_sha512_digest_core::vg_sha512_digest_core,
         vg_ed25519_public_key_expanded = sym super::ed25519::vg_ed25519_public_key_expanded::vg_ed25519_public_key_expanded,
     )
 }
@@ -52,36 +52,36 @@ pub(crate) unsafe extern "C" fn vg_ed25519_sign_expanded(out: *mut [u8; 64], exp
         r#".option push
 .option arch, +m, +c
 .base64 "LXEKiCMwmA4jNHgPIziIDyM8mA8jMKgRIzS4ESM4GBCqi66ENoy6jD6Nwo2DRwYAI4D9DINHFgCjgP0Mg0cmACOB/QyDRzYAo4H9DINHRgAjgv0Mg0dWAKOC/QyDR2YAI4P9DINHdgCjg/0Mg0eGACOE/QyDR5YAo4T9DINHpgAjhf0Mg0e2AKOF/QyDR8YAI4b9DINH1gCjhv0Mg0fmACOH/QyDR/YAo4f9DINHBgEjiP0Mg0cWAaOI/QyDRyYBI4n9DINHNgGjif0Mg0dGASOK/QyDR1YBo4r9DINHZgEji/0Mg0d2AaOL/QyDR4YBI4z9DINHlgGjjP0Mg0emASON/QyDR7YBo439DINHxgEjjv0Mg0fWAaOO/QyDR+YBI4/9DINH9gGjj/0Mg8cEACOA/QiDxxQAo4D9CIPHJAAjgf0Ig8c0AKOB/QiDx0QAI4L9CIPHVACjgv0Ig8dkACOD/QiDx3QAo4P9CIPHhAAjhP0Ig8eUAKOE/QiDx6QAI4X9CIPHtACjhf0Ig8fEACOG/QiDx9QAo4b9CIPH5AAjh/0Ig8f0AKOH/QiDxwQBI4j9CIPHFAGjiP0Ig8ckASOJ/QiDxzQBo4n9CIPHRAEjiv0Ig8dUAaOK/QiDx2QBI4v9CIPHdAGji/0Ig8eEASOM/QiDx5QBo4z9CIPHpAEjjf0Ig8e0AaON/QiDx8QBI479CIPH1AGjjv0Ig8fkASOP/QiDx/QBo4/9CIPHBAIjgP0Kg8cUAqOA/QqDxyQCI4H9CoPHNAKjgf0Kg8dEAiOC/QqDx1QCo4L9CoPHZAIjg/0Kg8d0AqOD/QqDx4QCI4T9CoPHlAKjhP0Kg8ekAiOF/QqDx7QCo4X9CoPHxAIjhv0Kg8fUAqOG/QqDx+QCI4f9CoPH9AKjh/0Kg8cEAyOI/QqDxxQDo4j9CoPHJAMjif0Kg8c0A6OJ/QqDx0QDI4r9CoPHVAOjiv0Kg8dkAyOL/QqDx3QDo4v9CoPHhAMjjP0Kg8eUA6OM/QqDx6QDI439CoPHtAOjjf0Kg8fEAyOO/QqDx9QDo479CoPH5AMjj/0Kg8f0A6OP/QqDtw0IjYOOByOw/QCDt40II7T9AIO3DQkjuP0Ag7eNCYoHiYMFSHoYs+cHASO8/QCDtw0KI7D9AoO3jQojtP0Cg7cNCyO4/QKDt40LI7z9AmqF"
-call {vg_sha512_init}
+call {vg_sha512_init_core}
 .base64 "aoWBRROGDQKTBgAC"
-call {vg_sha512_update}
+call {vg_sha512_update_core}
 .base64 "aoWTBQACYobmhg=="
-call {vg_sha512_update}
+call {vg_sha512_update_core}
 .base64 "aoWThQwCE4YNCA=="
-call {vg_sha512_finalize}
+call {vg_sha512_finalize_core}
 .base64 "E4UNBJOFDQhqhg=="
 call {vg_ed25519_scalar_reduce}
 .base64 "XoWThQ0EaoY="
 call {vg_ed25519_scalar_base}
 .base64 "aoU="
-call {vg_sha512_init}
+call {vg_sha512_init_core}
 .base64 "aoWBRV6GkwYAAg=="
-call {vg_sha512_update}
+call {vg_sha512_update_core}
 .base64 "aoWTBQACE4YNDJMGAAI="
-call {vg_sha512_update}
+call {vg_sha512_update_core}
 .base64 "aoWTBQAEYobmhg=="
-call {vg_sha512_update}
+call {vg_sha512_update_core}
 .base64 "aoWThQwEE4YNCA=="
-call {vg_sha512_finalize}
+call {vg_sha512_finalize_core}
 .base64 "E4UNBpOFDQhqhg=="
 call {vg_ed25519_scalar_reduce}
 .base64 "E4ULApOFDQQThg0G7oZqhw=="
 call {vg_ed25519_scalar_mul_add}
 .base64 "g7ANEYO0DQ6Du40OA7wND4O8jQ8DvQ0Qg72NEAqPgU8jMP8BIzT/ASM4/wEjPP8BIzD/AyM0/wMjOP8DIzz/AyMw/wUjNP8FIzj/BSM8/wUjMP8HIzT/ByM4/wcjPP8HIzD/CSM0/wkjOP8JIzz/CSMw/wsjNP8LIzj/CyM8/wsjMP8NIzT/DSM4/w0jPP8NFWGCgA=="
 .option pop"#,
-        vg_sha512_init = sym super::sha512::vg_sha512_init,
-        vg_sha512_update = sym super::sha512::vg_sha512_update,
-        vg_sha512_finalize = sym super::sha512::vg_sha512_finalize,
+        vg_sha512_init_core = sym super::sha512::vg_sha512_init_core::vg_sha512_init_core,
+        vg_sha512_update_core = sym super::sha512::vg_sha512_update_core::vg_sha512_update_core,
+        vg_sha512_finalize_core = sym super::sha512::vg_sha512_finalize_core::vg_sha512_finalize_core,
         vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
         vg_ed25519_scalar_base = sym super::ed25519::vg_ed25519_scalar_base::vg_ed25519_scalar_base,
         vg_ed25519_scalar_mul_add = sym super::ed25519::vg_ed25519_scalar_mul_add::vg_ed25519_scalar_mul_add,
@@ -105,24 +105,24 @@ pub(crate) unsafe extern "C" fn vg_ed25519_verify(pk: *const [u8; 32], message: 
         r#".option push
 .option arch, +m, +c
 .base64 "bXGKhyOwdw8jtIcPI7iXDyO8pw8jsBcQrosyjLqMPo2DxwYAIwD9CIPHFgCjAP0Ig8cmACMB/QiDxzYAowH9CIPHRgAjAv0Ig8dWAKMC/QiDx2YAIwP9CIPHdgCjA/0Ig8eGACME/QiDx5YAowT9CIPHpgAjBf0Ig8e2AKMF/QiDx8YAIwb9CIPH1gCjBv0Ig8fmACMH/QiDx/YAowf9CIPHBgEjCP0Ig8cWAaMI/QiDxyYBIwn9CIPHNgGjCf0Ig8dGASMK/QiDx1YBowr9CIPHZgEjC/0Ig8d2AaML/QiDx4YBIwz9CIPHlgGjDP0Ig8emASMN/QiDx7YBow39CIPHxgEjDv0Ig8fWAaMO/QiDx+YBIw/9CIPH9gGjD/0Ig8cGAiMA/QqDxxYCowD9CoPHJgIjAf0Kg8c2AqMB/QqDx0YCIwL9CoPHVgKjAv0Kg8dmAiMD/QqDx3YCowP9CoPHhgIjBP0Kg8eWAqME/QqDx6YCIwX9CoPHtgKjBf0Kg8fGAiMG/QqDx9YCowb9CoPH5gIjB/0Kg8f2AqMH/QqDxwYDIwj9CoPHFgOjCP0Kg8cmAyMJ/QqDxzYDown9CoPHRgMjCv0Kg8dWA6MK/QqDx2YDIwv9CoPHdgOjC/0Kg8eGAyMM/QqDx5YDowz9CoPHpgMjDf0Kg8e2A6MN/QqDx8YDIw79CoPH1gOjDv0Kg8fmAyMP/QqDx/YDow/9CoNHBQAjAP0Mg0cVAKMA/QyDRyUAIwH9DINHNQCjAf0Mg0dFACMC/QyDR1UAowL9DINHZQAjA/0Mg0d1AKMD/QyDR4UAIwT9DINHlQCjBP0Mg0elACMF/QyDR7UAowX9DINHxQAjBv0Mg0fVAKMG/QyDR+UAIwf9DINH9QCjB/0Mg0cFASMI/QyDRxUBowj9DINHJQEjCf0Mg0c1AaMJ/QyDR0UBIwr9DINHVQGjCv0Mg0dlASML/QyDR3UBowv9DINHhQEjDP0Mg0eVAaMM/QyDR6UBIw39DINHtQGjDf0Mg0fFASMO/QyDR9UBow79DINH5QEjD/0Mg0f1AaMP/QxmhQ=="
-call {vg_sha512_init}
+call {vg_sha512_init_core}
 .base64 "ZoWBRRMGDQiTBgAC"
-call {vg_sha512_update}
+call {vg_sha512_update_core}
 .base64 "ZoWTBQACEwYNDJMGAAI="
-call {vg_sha512_update}
+call {vg_sha512_update_core}
 .base64 "ZoWTBQAEXobihg=="
-call {vg_sha512_update}
+call {vg_sha512_update_core}
 .base64 "ZoWTBQwEEwYNBA=="
-call {vg_sha512_finalize}
+call {vg_sha512_finalize_core}
 .base64 "aoWTBQ0EZoY="
 call {vg_ed25519_scalar_reduce}
 .base64 "gUcjMP0CIzT9AiM4/QIjPP0CEwUNDJMFDQhqhuaG"
 call {vg_ed25519_verify_equation}
 .base64 "gzANEIM7DQ4DPI0OgzwNDwM9jQ9RYYKA"
 .option pop"#,
-        vg_sha512_init = sym super::sha512::vg_sha512_init,
-        vg_sha512_update = sym super::sha512::vg_sha512_update,
-        vg_sha512_finalize = sym super::sha512::vg_sha512_finalize,
+        vg_sha512_init_core = sym super::sha512::vg_sha512_init_core::vg_sha512_init_core,
+        vg_sha512_update_core = sym super::sha512::vg_sha512_update_core::vg_sha512_update_core,
+        vg_sha512_finalize_core = sym super::sha512::vg_sha512_finalize_core::vg_sha512_finalize_core,
         vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
         vg_ed25519_verify_equation = sym super::ed25519::vg_ed25519_verify_equation::vg_ed25519_verify_equation,
     )

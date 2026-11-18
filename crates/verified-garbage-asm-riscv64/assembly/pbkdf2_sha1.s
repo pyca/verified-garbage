@@ -204,7 +204,7 @@ vg_pbkdf2_hmac_sha1:
 	addi a1, zero, 64
 	addi a2, s6, 0
 	addi a3, s2, 0
-	call {vg_sha1_update}
+	call {vg_sha1_update_core}
 	srli t1, s7, 24
 	sb t1, 356(s1)
 	srli t1, s7, 16
@@ -216,7 +216,7 @@ vg_pbkdf2_hmac_sha1:
 	addi a1, s2, 64
 	addi a2, s1, 356
 	addi a3, zero, 4
-	call {vg_sha1_update}
+	call {vg_sha1_update_core}
 	addi a0, s1, 232
 	addi a1, s1, 148
 	addi a2, s2, 68

@@ -2,8 +2,8 @@
 //! The table of functions `VG_HMAC_SHA384` of the verified functions for `riscv64` (`Artifact.tables`).
 #![allow(dead_code)]
 
-/// The table of functions `VG_HMAC_SHA384` of the interface `Hmac`: `vg_hmac_sha384_init`, `vg_sha512_update`, `vg_hmac_sha384_finalize`, then the data 4, 48, 128.
+/// The table of functions `VG_HMAC_SHA384` of the interface `Hmac`: `vg_hmac_sha384_init`, `vg_sha512_update_core`, `vg_hmac_sha384_finalize`, then the data 4, 48, 128.
 pub static VG_HMAC_SHA384: super::Hmac = super::Hmac {
-    fns: [crate::hmac_sha384::vg_hmac_sha384_init as *const (), crate::sha512::vg_sha512_update as *const (), crate::hmac_sha384::vg_hmac_sha384_finalize as *const ()],
+    fns: [crate::hmac_sha384::vg_hmac_sha384_init as *const (), crate::sha512::vg_sha512_update_core::vg_sha512_update_core as *const (), crate::hmac_sha384::vg_hmac_sha384_finalize as *const ()],
     data: [4, 48, 128],
 };
