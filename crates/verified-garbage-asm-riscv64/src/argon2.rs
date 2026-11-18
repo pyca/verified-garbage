@@ -30,7 +30,7 @@ pub(crate) unsafe extern "C" fn vg_argon2(kind: u32, password: *const u8, passwo
         r#".option push
 .option arch, +m, +c
 .base64 "KXGKgiO0EgQjuIIEI7ySBCOwIgcjtDIHI7hCByO8ogYjsLIII7TCCCO40ggjvOIII7DyCiO0AgsjuBILlokDuokXEwQKQBMEBEAD5QkLExYlAIPliQqBRgFHBUib1/UBhgUGBz6XswfHQP2Tswf4QIYGvpazh8cCHY+b1/UBhgUGBz6XswfHQP2Tswf4QIYGvpazh8cCHY+b1/UBhgUGBz6XswfHQP2Tswf4QIYGvpazh8cCHY+b1/UBhgUGBz6XswfHQP2Tswf4QIYGvpazh8cCHY+b1/UBhgUGBz6XswfHQP2Tswf4QIYGvpazh8cCHY+b1/UBhgUGBz6XswfHQP2Tswf4QIYGvpazh8cCHY+b1/UBhgUGBz6XswfHQP2Tswf4QIYGvpazh8cCHY+b1/UBhgUGBz6XswfHQP2Tswf4QIYGvpazh8cCHY+b1/UBhgUGBz6XswfHQP2Tswf4QIYGvpazh8cCHY+b1/UBhgUGBz6XswfHQP2Tswf4QIYGvpazh8cCHY+b1/UBhgUGBz6XswfHQP2Tswf4QIYGvpazh8cCHY+b1/UBhgUGBz6XswfHQP2Tswf4QIYGvpazh8cCHY+b1/UBhgUGBz6XswfHQP2Tswf4QIYGvpazh8cCHY+b1/UBhgUGBz6XswfHQP2Tswf4QIYGvpazh8cCHY+b1/UBhgUGBz6XswfHQP2Tswf4QIYGvpazh8cCHY+b1/UBhgUGBz6XswfHQP2Tswf4QIYGvpazh8cCHY+b1/UBhgUGBz6XswfHQP2Tswf4QIYGvpazh8cCHY+b1/UBhgUGBz6XswfHQP2Tswf4QIYGvpazh8cCHY+b1/UBhgUGBz6XswfHQP2Tswf4QIYGvpazh8cCHY+b1/UBhgUGBz6XswfHQP2Tswf4QIYGvpazh8cCHY+b1/UBhgUGBz6XswfHQP2Tswf4QIYGvpazh8cCHY+b1/UBhgUGBz6XswfHQP2Tswf4QIYGvpazh8cCHY+b1/UBhgUGBz6XswfHQP2Tswf4QIYGvpazh8cCHY+b1/UBhgUGBz6XswfHQP2Tswf4QIYGvpazh8cCHY+b1/UBhgUGBz6XswfHQP2Tswf4QIYGvpazh8cCHY+b1/UBhgUGBz6XswfHQP2Tswf4QIYGvpazh8cCHY+b1/UBhgUGBz6XswfHQP2Tswf4QIYGvpazh8cCHY+b1/UBhgUGBz6XswfHQP2Tswf4QIYGvpazh8cCHY+b1/UBhgUGBz6XswfHQP2Tswf4QIYGvpazh8cCHY+b1/UBhgUGBz6XswfHQP2Tswf4QIYGvpazh8cCHY+b1/UBhgUGBz6XswfHQP2Tswf4QIYGvpazh8cCHY+b1/UBhgUGBz6XswfHQP2Tswf4QIYGvpazh8cCHY8juNkOigYjsNkOqgYjtNkOkwUABFKFEwYKNIFG"
-call {vg_blake2b_init}
+call {vg_blake2b_init_core}
 .base64 "A+UJCyMgqjgD5YkYIyKqOAPliQojJKo4A+UJCiMmqjhNRSMoqjgD5YkHIyqqOIFFEwYKOOFGUoUTBwoM"
 call {vg_blake2b_update_scratch}
 .base64 "YUUjvKkOA7WJCCMsqjiDtYkPEwaKOZFGUoUTBwoM"
@@ -159,7 +159,7 @@ bnez a1, 228b
 call {vg_argon2_hprime}
 .base64 "g7CJBAO0CQWDtIkFA7kJBgO6CQeDuYkGMWGCgA=="
 .option pop"#,
-        vg_blake2b_init = sym super::blake2b::vg_blake2b_init,
+        vg_blake2b_init_core = sym super::blake2b::vg_blake2b_init_core::vg_blake2b_init_core,
         vg_blake2b_update_scratch = sym super::blake2b::vg_blake2b_update_scratch::vg_blake2b_update_scratch,
         vg_blake2b_finalize_scratch = sym super::blake2b::vg_blake2b_finalize_scratch::vg_blake2b_finalize_scratch,
         vg_argon2_hprime = sym super::argon2::vg_argon2_hprime::vg_argon2_hprime,

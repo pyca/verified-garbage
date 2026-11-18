@@ -20,6 +20,8 @@ meta import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Verified
 meta import VerifiedGarbage.Proof.Blake2.Scratch
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Blake2.X86_64.Stream.CT
+import VerifiedGarbage.Proof.Blake2.PostOut
+meta import VerifiedGarbage.Proof.Blake2.PostOut
 
 /-!
 # BLAKE2b's and BLAKE2s's streaming functions on x86-64, without secret residue
@@ -57,38 +59,10 @@ theorem finalizeSOut (stack : Nat) :
   postOut_of_local (leak := none) ScrubAbi.plain (finalizeSPost_out 64)
 
 theorem initBOut : PostOut (Spec.Blake2.initBContract X86_64.abi) (Spec.Blake2.initBSig.retBits 64) :=
-  postOut_of_local (leak := none) ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
-    obtain ⟨st, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 3) hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨ol, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨kt, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨kl, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    obtain rfl := List.eq_nil_of_length_eq_zero (Nat.succ.inj hlen)
-    simp only [Spec.Blake2.initBSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
-      forall_eq_or_imp, forall_eq] at hb
-    have hs : ∀ i < 192, m₂ (st + BitVec.ofNat 64 i) = m₁ (st + BitVec.ofNat 64 i) := fun i hi =>
-      (hb.1 _ (Offset.contains_base _ (by simp only [Elem.size]; omega_arith) (by omega_arith))).symm
-    exact repr_congr' (by decide)
-      (fun i hi => hs i (by simp only [bufOff, Spec.Blake2.blockBytes] at hi; omega_arith)) h
+  postOut_of_local (leak := none) ScrubAbi.plain (Proof.Blake2.initBPost_out 64)
 
 theorem initSOut : PostOut (Spec.Blake2.initSContract X86_64.abi) (Spec.Blake2.initSSig.retBits 64) :=
-  postOut_of_local (leak := none) ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
-    obtain ⟨st, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 3) hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨ol, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨kt, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨kl, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    obtain rfl := List.eq_nil_of_length_eq_zero (Nat.succ.inj hlen)
-    simp only [Spec.Blake2.initSSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
-      forall_eq_or_imp, forall_eq] at hb
-    have hs : ∀ i < 96, m₂ (st + BitVec.ofNat 64 i) = m₁ (st + BitVec.ofNat 64 i) := fun i hi =>
-      (hb.1 _ (Offset.contains_base _ (by simp only [Elem.size]; omega_arith) (by omega_arith))).symm
-    exact repr_congr' (by decide)
-      (fun i hi => hs i (by simp only [bufOff, Spec.Blake2.blockBytes] at hi; omega_arith)) h
+  postOut_of_local (leak := none) ScrubAbi.plain (Proof.Blake2.initSPost_out 64)
 
 /-! ## The registrations -/
 

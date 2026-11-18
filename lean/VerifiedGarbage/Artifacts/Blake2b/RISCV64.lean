@@ -1,8 +1,7 @@
 module
 
 public import VerifiedGarbage.TCB.RISCV64.Target
-public import VerifiedGarbage.Proof.Blake2.RISCV64.Verified
-public import VerifiedGarbage.Proof.Blake2.RISCV64.Stream.Verified
+public import VerifiedGarbage.Proof.Blake2.RISCV64.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.Blake2.RISCV64.Lit
@@ -15,14 +14,8 @@ import VerifiedGarbage.Proof.Blake2.RISCV64.Stream.Lit
 namespace VG.Artifacts.Blake2b.RISCV64
 
 def artifacts : List Artifact := [
-  Spec.Blake2.initBApi.artifact RISCV64.target {
-    code := Impl.Blake2.RISCV64.Stream.init Spec.Blake2.b
-    verified := Proof.Blake2.RISCV64.Stream.initB_verified },
-  Spec.Blake2.updateBApi.artifact RISCV64.target {
-    code := Impl.Blake2.RISCV64.Stream.update Spec.Blake2.b
-    verified := Proof.Blake2.RISCV64.Stream.updateB_verified },
-  Spec.Blake2.finalizeBApi.artifact RISCV64.target {
-    code := Impl.Blake2.RISCV64.Stream.finalize Spec.Blake2.b
-    verified := Proof.Blake2.RISCV64.Stream.finalizeB_verified }]
+  Spec.Blake2.initBApi.artifact RISCV64.target Proof.Blake2.RISCV64.initBReg,
+  Spec.Blake2.updateBApi.artifact RISCV64.target Proof.Blake2.RISCV64.updateBReg,
+  Spec.Blake2.finalizeBApi.artifact RISCV64.target Proof.Blake2.RISCV64.finalizeBReg]
 
 end VG.Artifacts.Blake2b.RISCV64

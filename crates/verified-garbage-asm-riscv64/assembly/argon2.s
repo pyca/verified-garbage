@@ -394,7 +394,7 @@ vg_argon2:
 	addi a0, s4, 0
 	addi a2, s4, 832
 	addi a3, zero, 0
-	call {vg_blake2b_init}
+	call {vg_blake2b_init_core}
 	lwu a0, 176(s3)
 	sw a0, 896(s4)
 	lwu a0, 392(s3)
