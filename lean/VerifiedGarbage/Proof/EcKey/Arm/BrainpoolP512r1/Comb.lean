@@ -138,6 +138,7 @@ theorem combPkWith_verified (hC : Weierstrass.Law Spec.BrainpoolP512r1.curve) (u
     sig_post [combPkSpec,Spec.EcKey.BrainpoolP512r1.inst,Spec.EcKey.Instance.publicKeyContract,
       Spec.EcKey.Instance.publicKeySig,Spec.BrainpoolP512r1.curve,Spec.EcKey.scratchWords,abi,argRegs,reduceClassify,
       Loc.val,State.addr,Abi.withConsts]
+    dsimp only [combPkLocal] at post
     have pp := post_of (u := u) post
     simp only [pkArm,pk,Spec.BrainpoolP512r1.curve,State.addr] at pp
     revert pp
