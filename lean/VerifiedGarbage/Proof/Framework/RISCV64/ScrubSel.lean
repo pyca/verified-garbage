@@ -364,17 +364,89 @@ def scrubSelReg {api : Api} (r : Registration api target) (fs : List (Nat × Lis
     (scrubSel_pre r bp0 hbp) hres⟩
 
 /-- `scrubSelReg`, if its decidable side conditions hold; otherwise `r` itself, which then
-has no proof (`Registration.residue`). -/
+has no proof (`Registration.residue`). The analysis (`hres`) is stated of `code`, `W` and
+`rb`, which are `r`'s code, stack and result width: the kernel then evaluates it without the
+registration, whose proofs mention the code. -/
 def withScrubSel {api : Api} (r : Registration api target) (fs : List (Nat × List (Nat × Nat)))
     (bp0 : List (Reg × Nat)) (hpost : PostOut r.contract (retBitsOf r))
     (hbp : ∀ s, r.contract.pre s → ∀ e ∈ bp0, ∀ i < e.2, ∃ g ∈ s.rd ++ s.wr,
       g.Contains (s.gpr e.1 + BitVec.ofNat 64 i) 1)
-    (hres : ∃ hc, (rtaint.check (RTaint.init r.stack bp0) (scrubSel (retBitsOf r) fs r.code) hc).any
-      (RTaint.done (retBitsOf r)) = true) : Registration api target :=
+    (code : Prog isa) (W rb : Nat) (hc : r.code = code) (hW : r.stack = W) (hr : retBitsOf r = rb)
+    (hres : ∃ hc, (rtaint.check (RTaint.init W bp0) (scrubSel rb fs code) hc).any (RTaint.done rb) = true) :
+    Registration api target :=
   if hfs : framesOkB fs = true then
   if hsz : sizeOf fs ≤ r.stack then
   if hrb : retBitsOf r ≤ 64 then
-  if hw : r.written = [] then scrubSelReg r fs bp0 (framesOk_of hfs) hsz hrb hpost hbp hres hw
+  if hw : r.written = [] then
+    scrubSelReg r fs bp0 (framesOk_of hfs) hsz hrb hpost hbp (by subst hc hW hr; exact hres) hw
   else r else r else r else r
+
+/-! ## A buffer the first argument points to -/
+
+theorem args_of (cs : List (String × List (BitVec 64))) (sig : Sig) (ts : List (String × List FnTable))
+    (b : Bool) : (((abi.withConsts cs).withTables sig ts).withMode b).args = abi.args := by
+  cases b <;> simp only [Abi.withMode] <;> unfold Abi.withTables <;> split <;> unfold Abi.withConsts <;>
+    split <;> rfl
+
+theorem abi_args_head {ws : List Nat} {f : State → List (BitVec 64)} (h : abi.args ws = some f)
+    (hne : ws ≠ []) (s : State) : ∃ vs, f s = s.gpr .a0 :: vs := by
+  simp only [abi] at h
+  split at h
+  · cases h
+    obtain ⟨w, ws', rfl⟩ := List.exists_cons_of_ne_nil hne
+    exact ⟨((argRegs.take (w :: ws').length).map s.gpr).tail, by simp [argRegs, List.take_succ_cons]⟩
+  · split at h
+    · cases h
+      exact ⟨(argRegs.map s.gpr ++ (List.range (ws.length - argRegs.length)).map (stackArg s)).tail,
+        by simp [argRegs]⟩
+    · cases h
+
+/-- The array the first parameter of `sig` is, at `a0`, is among the regions of a state
+the contract starts from. -/
+theorem firstArray_mem {A : Abi isa} (hA : ScrubAbi A) (hargs : A.args = abi.args) {sig : Sig}
+    {pre : Curry (sig.words A.ptrBits) (Mem → Prop)} {post : sig.Post A.ptrBits} {wa : Bool} {stack : Nat}
+    {leak : Option (Curry (sig.words A.ptrBits) (Mem → List Nat))} {nm : String} {m : Bool} {e : Elem}
+    {n : Nat} {rest : List (String × Param)} (hp : sig.params = (nm, .array m e n) :: rest) {s : State}
+    (h : (sig.contract A pre post wa stack leak).pre s) :
+    ⟨s.gpr .a0, n * e.size⟩ ∈ s.rd ++ s.wr := by
+  simp only [Sig.contract] at h
+  split at h
+  · exact h.elim
+  rename_i vals hv
+  obtain ⟨-, hrd, hwr, -⟩ := h
+  rw [hargs] at hv
+  have hne : (sig.words A.ptrBits).map (·.bits A.ptrBits) ≠ [] := by
+    simp only [Sig.words, hp, List.flatMap_cons, Param.words, List.cons_append, List.map_cons, ne_eq,
+      reduceCtorEq, not_false_eq_true]
+  obtain ⟨vs, hvs⟩ := abi_args_head hv hne s
+  have hb : (⟨s.gpr .a0, n * e.size⟩, m) ∈ Sig.bufs sig.params (vals s) := by
+    rw [hp, hvs]; exact List.mem_cons_self
+  cases m with
+  | false =>
+    apply List.mem_append_left; apply hA.rdSub; rw [hrd]
+    exact List.mem_map.mpr ⟨_, List.mem_filter.mpr ⟨List.mem_append_left _ (List.mem_append_left _ hb),
+      by simp⟩, rfl⟩
+  | true =>
+    apply List.mem_append_right; rw [← hA.wr, hwr]
+    exact List.mem_map.mpr ⟨_, List.mem_filter.mpr ⟨List.mem_append_left _ (List.mem_append_left _ hb),
+      rfl⟩, rfl⟩
+
+/-- `scrubSelReg`'s `hbp` for `bp0 = [(a0, n * e.size)]`, of a function whose first
+parameter is an array of `n` elements of `e`. -/
+theorem hbp_firstArray {api : Api} (r : Registration api target) {nm : String} {m : Bool} {e : Elem}
+    {n : Nat} {rest : List (String × Param)} (hp : api.sig.params = (nm, .array m e n) :: rest) :
+    ∀ s, r.contract.pre s → ∀ q ∈ [(Reg.a0, n * e.size)], ∀ i < q.2, ∃ g ∈ s.rd ++ s.wr,
+      g.Contains (s.gpr q.1 + BitVec.ofNat 64 i) 1 := by
+  intro s hs q hq i hi
+  simp only [List.mem_singleton] at hq
+  subst hq
+  obtain ⟨pre, post, leak, eq⟩ := r.ofSig
+  rw [eq] at hs
+  refine ⟨_, firstArray_mem (ScrubAbi.of r.consts api.sig r.tables api.pubMode)
+    (args_of r.consts api.sig r.tables api.pubMode) hp hs, ?_⟩
+  have e' : s.gpr .a0 + BitVec.ofNat 64 i - s.gpr .a0 = BitVec.ofNat 64 i := by bv_omega
+  simp only [Region.Contains, e', BitVec.toNat_ofNat]
+  have := Nat.mod_le i (2 ^ 64)
+  omega_using [this, hi]
 
 end VG.RISCV64.Scrub
