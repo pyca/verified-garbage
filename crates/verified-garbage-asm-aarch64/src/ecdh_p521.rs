@@ -1393,22 +1393,14 @@ bl {vg_p521_normal_mul}
 .inst 0x3d83293f,0x3d832d3f,0x3d83313f,0x3d83353f,0x3d83393f,0x3d833d3f,0x3d83413f,0x3d83453f
 .inst 0x3d83493f,0x3d834d3f,0x3d83513f,0x3d83553f,0x3d83593f,0x3d835d3f,0x913603ff,0xd65f03c0
 .p2align 6",
-        vg_p521_check_point = sym super::ecdh_p521::vg_p521_check_point::vg_p521_check_point,
+        vg_p521_check_point = sym super::ec_p521_compressed::vg_p521_check_point::vg_p521_check_point,
         vg_p521_normal_sqr = sym super::ecdh_p521::vg_p521_normal_sqr::vg_p521_normal_sqr,
         vg_p521_normal_mul = sym super::ecdh_p521::vg_p521_normal_mul::vg_p521_normal_mul,
-        vg_p521_inv_mod_p = sym super::ecdh_p521::vg_p521_inv_mod_p::vg_p521_inv_mod_p,
+        vg_p521_inv_mod_p = sym super::ec_p521::vg_p521_inv_mod_p::vg_p521_inv_mod_p,
         vg_p521_normal_double = sym super::ecdh_p521::vg_p521_normal_double::vg_p521_normal_double,
         vg_p521_normal_madd = sym super::ecdh_p521::vg_p521_normal_madd::vg_p521_normal_madd,
     )
 }
-
-#[rustfmt::skip]
-#[path = "internal/vg_p521_check_point.rs"]
-pub(crate) mod vg_p521_check_point;
-
-#[rustfmt::skip]
-#[path = "internal/vg_p521_inv_mod_p.rs"]
-pub(crate) mod vg_p521_inv_mod_p;
 
 #[rustfmt::skip]
 #[path = "internal/vg_p521_normal_double.rs"]
