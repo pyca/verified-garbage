@@ -9,7 +9,7 @@ public import VerifiedGarbage.Proof.Framework.Scratch
 public import VerifiedGarbage.Proof.Framework.X86_64.Spill
 public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 import VerifiedGarbage.Proof.AesCtr.X86_64.Final
-import VerifiedGarbage.Proof.AesCtr.X86_64.Verified
+import VerifiedGarbage.Proof.AesCtr.X86_64.CT
 import VerifiedGarbage.Proof.Camellia.X86_64.ModesLit
 import VerifiedGarbage.Proof.Modes.CtrFinal
 import VerifiedGarbage.Proof.Modes.X86_64.FbFinal
@@ -32,7 +32,7 @@ meta import VerifiedGarbage.Proof.Framework.Scratch
 meta import VerifiedGarbage.Proof.Framework.X86_64.Spill
 meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 meta import VerifiedGarbage.Proof.AesCtr.X86_64.Final
-meta import VerifiedGarbage.Proof.AesCtr.X86_64.Verified
+meta import VerifiedGarbage.Proof.AesCtr.X86_64.CT
 meta import VerifiedGarbage.Proof.Camellia.X86_64.ModesLit
 meta import VerifiedGarbage.Proof.Modes.CtrFinal
 meta import VerifiedGarbage.Proof.Modes.X86_64.FbFinal

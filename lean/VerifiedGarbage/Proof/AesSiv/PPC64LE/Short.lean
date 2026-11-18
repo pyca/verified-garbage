@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesSiv.PPC64LE.S2v
-import VerifiedGarbage.Proof.CmacAes.PPC64LE.Verified
+import VerifiedGarbage.Proof.CmacAes.PPC64LE.Finalize
 import VerifiedGarbage.Proof.Siv.Spec
 import VerifiedGarbage.Proof.Cmac.Block
 import VerifiedGarbage.Proof.Cmac.Frame

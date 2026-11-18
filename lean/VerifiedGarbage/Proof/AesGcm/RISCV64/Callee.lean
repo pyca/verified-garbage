@@ -3,13 +3,15 @@ module
 import VerifiedGarbage.Proof.AesGcm.RISCV64.Env
 public import VerifiedGarbage.Proof.Gcm.RISCV64.Ghash
 public import VerifiedGarbage.Proof.Aes.RISCV64.Ctr32
-public import VerifiedGarbage.Proof.Aes.RISCV64.ExpandKeyVerified
+public import VerifiedGarbage.Proof.Aes.RISCV64.ExpandKey
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.RISCV64.Call
 import VerifiedGarbage.Proof.Framework.RISCV64.RelCT
 public import VerifiedGarbage.Proof.Framework.RISCV64.CallAny
 import VerifiedGarbage.Proof.AesCtr.RISCV64.Call
 import VerifiedGarbage.Proof.Aes.RISCV64.CodeLit
+import VerifiedGarbage.Proof.Aes.RISCV64.Ctr32Verified
+import VerifiedGarbage.Proof.Aes.RISCV64.ExpandKeyVerified
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.Aes.RISCV64.ExpandKey

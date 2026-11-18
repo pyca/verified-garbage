@@ -2,11 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.AesCbc.Rounds
 public import VerifiedGarbage.Impl.AesCbc.PPC64LE
-public import VerifiedGarbage.Proof.AesCbc.PPC64LE.Loop
+public import VerifiedGarbage.Proof.AesCbc.PPC64LE.Call
 public import VerifiedGarbage.Spec.Cbc.Contract
 import VerifiedGarbage.Proof.AesCbc.PPC64LE.CT
 import VerifiedGarbage.Proof.AesCbc.PPC64LE.Body
-public import VerifiedGarbage.Proof.AesCbc.PPC64LE.Vec
+public import VerifiedGarbage.Proof.AesCbc.PPC64LE.Group
+import VerifiedGarbage.Proof.AesCbc.PPC64LE.Vec
 meta import VerifiedGarbage.Proof.AesCbc.PPC64LE.Vec
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
@@ -15,10 +16,11 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 meta import VerifiedGarbage.Proof.AesCbc.Rounds
 meta import VerifiedGarbage.Impl.AesCbc.PPC64LE
-meta import VerifiedGarbage.Proof.AesCbc.PPC64LE.Loop
+meta import VerifiedGarbage.Proof.AesCbc.PPC64LE.Call
 meta import VerifiedGarbage.Spec.Cbc.Contract
 meta import VerifiedGarbage.Proof.AesCbc.PPC64LE.CT
 meta import VerifiedGarbage.Proof.AesCbc.PPC64LE.Body
+meta import VerifiedGarbage.Proof.AesCbc.PPC64LE.Group
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec

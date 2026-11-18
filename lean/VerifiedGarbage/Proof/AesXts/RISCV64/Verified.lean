@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.AesXts.RISCV64
-public import VerifiedGarbage.Proof.AesCbc.RISCV64.Loop
+public import VerifiedGarbage.Proof.AesCbc.RISCV64.Call
 public import VerifiedGarbage.Proof.AesXts.Spec
 public import VerifiedGarbage.Spec.Xts.Contract
 import VerifiedGarbage.Proof.Aes.RISCV64.WideXts

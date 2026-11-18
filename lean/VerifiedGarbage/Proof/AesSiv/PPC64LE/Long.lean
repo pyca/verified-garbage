@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesSiv.PPC64LE.Short
 public import VerifiedGarbage.Proof.AesSiv.Long
-public import VerifiedGarbage.Proof.CmacAes.PPC64LE.Verified
+public import VerifiedGarbage.Proof.CmacAes.PPC64LE.Finalize
 import VerifiedGarbage.Proof.AesCcm.BytesAt
 import VerifiedGarbage.Proof.AesSiv.CtrPart
 import VerifiedGarbage.Proof.Cmac.Block

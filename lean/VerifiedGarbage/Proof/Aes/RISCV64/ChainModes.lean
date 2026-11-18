@@ -1,8 +1,10 @@
 module
 
+public import VerifiedGarbage.Proof.Aes.RISCV64.Chain
+public import VerifiedGarbage.Proof.Aes.RISCV64.ChainFrame
 public import VerifiedGarbage.Proof.AesCbc.RISCV64.Chain
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
-public import VerifiedGarbage.Proof.AesCbc.RISCV64.Loop
+public import VerifiedGarbage.Proof.AesCbc.RISCV64.Call
 public import VerifiedGarbage.Proof.AesCfb.Spec
 public import VerifiedGarbage.Proof.AesOfb.Spec
 import VerifiedGarbage.Proof.Framework.Offset
@@ -14,9 +16,11 @@ import VerifiedGarbage.Proof.AesCbc.Spec
 import VerifiedGarbage.Proof.Aes.RISCV64.Blocks
 import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
 import VerifiedGarbage.Proof.Aes.RISCV64.CodeLit
+meta import VerifiedGarbage.Proof.Aes.RISCV64.Chain
+meta import VerifiedGarbage.Proof.Aes.RISCV64.ChainFrame
 meta import VerifiedGarbage.Proof.AesCbc.RISCV64.Chain
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
-meta import VerifiedGarbage.Proof.AesCbc.RISCV64.Loop
+meta import VerifiedGarbage.Proof.AesCbc.RISCV64.Call
 meta import VerifiedGarbage.Proof.AesCfb.Spec
 meta import VerifiedGarbage.Proof.AesOfb.Spec
 meta import VerifiedGarbage.Proof.Framework.Offset

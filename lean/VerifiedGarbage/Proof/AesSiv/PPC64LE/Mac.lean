@@ -21,7 +21,7 @@ public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Spec.Aes
 public import VerifiedGarbage.TCB.PPC64LE.Target
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
-public import VerifiedGarbage.Proof.CmacAes.PPC64LE.Verified
+public import VerifiedGarbage.Proof.CmacAes.PPC64LE.Finalize
 import VerifiedGarbage.Proof.CmacAes.PPC64LE.Subkeys
 import VerifiedGarbage.Proof.AesCbc.PPC64LE.Body
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
@@ -36,7 +36,7 @@ section
 Untrusted: everything here is checked by Lean. `vg_cmac_aes_finalize`'s
 contract states the MAC only when the subkeys after the key schedule are
 the schedule's own; S2V's PRF (`Spec.Siv.ctxMac`) uses whatever subkeys the
-key context holds. Its proof (`Proof/CmacAes/PPC64LE/Verified.lean`) shows
+key context holds. Its proof (`Proof/CmacAes/PPC64LE/Finalize.lean`) shows
 more: the state becomes `CIPH_K(C ⊕ Mₙ)` with `Mₙ` the last block formed
 from the subkeys in memory (`mn`). That is the contract here
 (`finRawPPC64LE`), proven the same way, and the call lemma `fin_call_raw`.

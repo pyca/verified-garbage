@@ -18,7 +18,7 @@ What the bodies of `whole`'s loop (`Loop.lean`), AES-CTR's and CMAC's,
 need beyond the invariant: that `vg_aes_encrypt_blocks` makes no frames
 (`encryptBlocks_noFrames`), and the regions the code reads and writes
 (`LInv.regs`, `LInv.wrs`). AES-CBC, AES-CFB128 and XTS run through the
-chaining and four-block functions instead (`Proof/AesCbc/RISCV64/Chain.lean`,
+chaining and four-block functions instead (`Proof/Aes/RISCV64/Chain.lean`,
 `Wide.lean`).
 -/
 
