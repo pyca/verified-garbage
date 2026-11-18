@@ -1,20 +1,562 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.Arm.HashTop
+public import VerifiedGarbage.Proof.MlKem.Arm.SampleCT
 public import VerifiedGarbage.Proof.MlKem.Arm.CallF
-public import VerifiedGarbage.Proof.MlKem.Arm.Cbd2
 public import VerifiedGarbage.Proof.MlKem.Arm.CompressEncode
-public import VerifiedGarbage.Proof.MlKem.Arm.Decode12
 public import VerifiedGarbage.Proof.MlKem.Arm.Decompress
-public import VerifiedGarbage.Proof.MlKem.Arm.Encode12
 public import VerifiedGarbage.Proof.MlKem.Arm.Ntt
 public import VerifiedGarbage.Impl.MlKem.Arm.Top
-public import VerifiedGarbage.Proof.MlKem.Arm.Prims
 public import VerifiedGarbage.Proof.MlKem.Arm.Sample
 import VerifiedGarbage.Proof.MlKem.Arm.NttInv
-import VerifiedGarbage.Proof.MlKem.Arm.SampleCT
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.MlKem.Arm.Add
+public import VerifiedGarbage.Proof.MlKem.Encode
+public import VerifiedGarbage.Impl.MlKem.Arm.Poly
+public import VerifiedGarbage.Proof.MlKem.Arm.Common
+import VerifiedGarbage.Proof.MlKem.Arith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MlKem.Arm.Add
+meta import VerifiedGarbage.Proof.MlKem.Encode
+meta import VerifiedGarbage.Impl.MlKem.Arm.Poly
+meta import VerifiedGarbage.Proof.MlKem.Arm.Common
+meta import VerifiedGarbage.Proof.MlKem.Arith
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.MlKem.Mem
+public import VerifiedGarbage.TCB.Arm.Target
+meta import VerifiedGarbage.Proof.Framework.Semantics
+meta import VerifiedGarbage.Proof.MlKem.Mem
+meta import VerifiedGarbage.TCB.Arm.Target
+
+/-! ### `MlKem.Arm.Encode12`, which only this module used -/
+
+section
+
+/-!
+# ML-KEM on 32-bit ARM: `vg_mlkem_encode12`
+
+One symbolic execution of the loop body for any pointers (`body_ok`); the
+invariant says which bytes of the output are written (`Inv`); the bytes are
+those of `encode12_byte0`–`encode12_byte2`.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.MlKem.Arm.Encode12
+
+open VG VG.Arm VG.Impl.MlKem.Arm
+open VG.Spec.MlKem
+open VG.Proof.MlKem.Arm.Add (ptr_succ reduced_zero)
+
+/-! ## The loop body -/
+
+/-- The three bytes of a pair `a`, `b` of coefficients. -/
+def b0 (a : BitVec 32) : Byte := a.setWidth 8
+def b1 (a b : BitVec 32) : Byte := ((a >>> 8) + (b <<< 4)).setWidth 8
+def b2 (b : BitVec 32) : Byte := (b >>> 4).setWidth 8
+
+theorem body_ok {s : State} {x y c : BitVec 32} (h0 : s.gpr .r0 = x) (h1 : s.gpr .r1 = y)
+    (h2 : s.gpr .r2 = c)
+    (ia : InRegions (s.rd ++ s.wr) (State.addr (x + BitVec.ofNat 32 0)) 4)
+    (ib : InRegions (s.rd ++ s.wr) (State.addr (x + BitVec.ofNat 32 4)) 4)
+    (o0 : InRegions s.wr (State.addr (y + BitVec.ofNat 32 0)) 1)
+    (o1 : InRegions s.wr (State.addr (y + BitVec.ofNat 32 1)) 1)
+    (o2 : InRegions s.wr (State.addr (y + BitVec.ofNat 32 2)) 1) :
+    WP isa (.block encode12Body) s fun s' =>
+      s'.gpr .r0 = x + 8 ∧ s'.gpr .r1 = y + 3 ∧ s'.gpr .r2 = c - 1 ∧ s'.z = (c - 1 == 0) ∧
+      s'.mem = ((s.mem.writeW (State.addr (y + BitVec.ofNat 32 0))
+          (b0 (s.mem.readW (State.addr (x + BitVec.ofNat 32 0)) 32))).writeW
+        (State.addr (y + BitVec.ofNat 32 1)) (b1 (s.mem.readW (State.addr (x + BitVec.ofNat 32 0)) 32)
+          (s.mem.readW (State.addr (x + BitVec.ofNat 32 4)) 32))).writeW
+        (State.addr (y + BitVec.ofNat 32 2)) (b2 (s.mem.readW (State.addr (x + BitVec.ofNat 32 4)) 32)) ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ ∀ r ∈ preserved, s'.gpr r = s.gpr r := by
+  run_block [encode12Body, b0, b1, b2, h0, h1, h2, ia, ib, o0, o1, o2, preserved,
+    List.forall_mem_cons, List.not_mem_nil, false_imp_iff, implies_true, and_self, and_true]
+
+/-! ## The loop -/
+
+section
+variable (s₀ : State)
+
+abbrev pf : BitVec 32 := s₀.gpr .r0
+abbrev po : BitVec 32 := s₀.gpr .r1
+abbrev F : Addr := State.addr (pf s₀)
+abbrev O : Addr := State.addr (po s₀)
+abbrev outR : Region := ⟨O s₀, 384⟩
+abbrev E : List Byte := encode12 (polyAt s₀.mem (F s₀))
+
+end
+
+structure Pre (s₀ : State) : Prop where
+  rd : s₀.rd = [polyRegion (F s₀)]
+  wr : s₀.wr = [outR s₀]
+  disj : (polyRegion (F s₀)).Disjoint (outR s₀)
+  fitF : (pf s₀).toNat + 1024 ≤ 2 ^ 32
+  fitO : (po s₀).toNat + 384 ≤ 2 ^ 32
+  red : Reduced s₀.mem (F s₀)
+
+structure Inv (s₀ : State) (i : Nat) (s : State) : Prop where
+  r0 : s.gpr .r0 = pf s₀ + BitVec.ofNat 32 (8 * i)
+  r1 : s.gpr .r1 = po s₀ + BitVec.ofNat 32 (3 * i)
+  r2 : s.gpr .r2 = BitVec.ofNat 32 (1 * (128 - i))
+  rd : s.rd = s₀.rd
+  wr : s.wr = s₀.wr
+  sp : s.sp = s₀.sp
+  pres : ∀ r ∈ preserved, s.gpr r = s₀.gpr r
+  frame : Frame [outR s₀] s₀.mem s.mem
+  bytes : ∀ k < 384, s.mem (O s₀ + BitVec.ofNat 64 k) =
+    if k < 3 * i then (E s₀)[k]! else s₀.mem (O s₀ + BitVec.ofNat 64 k)
+
+/-- The bytes of group `i`. -/
+theorem bytes_eq {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < 128) :
+    b0 (coeffAt s₀.mem (F s₀) (2 * i)) = (E s₀)[3 * i]! ∧
+    b1 (coeffAt s₀.mem (F s₀) (2 * i)) (coeffAt s₀.mem (F s₀) (2 * i + 1)) = (E s₀)[3 * i + 1]! ∧
+    b2 (coeffAt s₀.mem (F s₀) (2 * i + 1)) = (E s₀)[3 * i + 2]! := by
+  have ea := polyAt_val hp.red (i := 2 * i) (by rw [n_eq]; omega_arith)
+  have eb := polyAt_val hp.red (i := 2 * i + 1) (by rw [n_eq]; omega_arith)
+  have la := val_lt (polyAt s₀.mem (F s₀))[2 * i]!
+  have lb := val_lt (polyAt s₀.mem (F s₀))[2 * i + 1]!
+  rw [encode12_byte0 _ hi, encode12_byte1 _ hi, encode12_byte2 _ hi]
+  simp only [b0, b1, b2, setWidth8]
+  refine ⟨ofNat8_eq ?_, ofNat8_eq ?_, ofNat8_eq ?_⟩
+  · rw [← ea, Nat.mod_mod]
+  · rw [BitVec.toNat_add, BitVec.toNat_ushiftRight, BitVec.toNat_shiftLeft, ← ea, ← eb,
+      Nat.shiftRight_eq_div_pow, Nat.shiftLeft_eq]
+    omega_arith
+  · rw [BitVec.toNat_ushiftRight, ← eb, Nat.shiftRight_eq_div_pow]
+
+theorem step {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < 128) {s : State} (h : Inv s₀ i s) :
+    WP isa (.block encode12Body) s fun s' => Inv s₀ (i + 1) s' ∧ s'.z = decide (i + 1 = 128) := by
+  have fF := hp.fitF
+  have fO := hp.fitO
+  have eA : State.addr (pf s₀ + BitVec.ofNat 32 (8 * i) + BitVec.ofNat 32 0) = coeffAddr (F s₀) (2 * i) :=
+    addr_coeff fF (by omega_arith) (by omega_arith)
+  have eB : State.addr (pf s₀ + BitVec.ofNat 32 (8 * i) + BitVec.ofNat 32 4) =
+      coeffAddr (F s₀) (2 * i + 1) := addr_coeff fF (by omega_arith) (by omega_arith)
+  have e0 : State.addr (po s₀ + BitVec.ofNat 32 (3 * i) + BitVec.ofNat 32 0) = O s₀ + BitVec.ofNat 64 (3 * i) :=
+    addr_byte fO (by omega_arith) (by omega_arith)
+  have e1 : State.addr (po s₀ + BitVec.ofNat 32 (3 * i) + BitVec.ofNat 32 1) =
+      O s₀ + BitVec.ofNat 64 (3 * i + 1) := addr_byte fO rfl (by omega_arith)
+  have e2 : State.addr (po s₀ + BitVec.ofNat 32 (3 * i) + BitVec.ofNat 32 2) =
+      O s₀ + BitVec.ofNat 64 (3 * i + 2) := addr_byte fO rfl (by omega_arith)
+  have hrw : s.rd ++ s.wr = [polyRegion (F s₀), outR s₀] := by rw [h.rd, h.wr, hp.rd, hp.wr]; rfl
+  have hw : s.wr = [outR s₀] := by rw [h.wr, hp.wr]
+  have dF : ∀ r ∈ [outR s₀], (polyRegion (F s₀)).Disjoint r := fun r hr => by
+    rw [List.mem_singleton] at hr; subst hr; exact hp.disj
+  have ra : s.mem.readW (coeffAddr (F s₀) (2 * i)) 32 = coeffAt s₀.mem (F s₀) (2 * i) :=
+    frame_coeff h.frame dF (by rw [n_eq]; omega_arith)
+  have rb : s.mem.readW (coeffAddr (F s₀) (2 * i + 1)) 32 = coeffAt s₀.mem (F s₀) (2 * i + 1) :=
+    frame_coeff h.frame dF (by rw [n_eq]; omega_arith)
+  obtain ⟨v0, v1, v2⟩ := bytes_eq hp hi
+  refine WP.mono (body_ok h.r0 h.r1 h.r2 ?_ ?_ ?_ ?_ ?_) fun s' ⟨r0, r1, r2, z, m, rd, wr, sp, pres⟩ =>
+    ⟨⟨?_, ?_, ?_, rd.trans h.rd, wr.trans h.wr, sp.trans h.sp, fun r hr => (pres r hr).trans (h.pres r hr),
+      ?_, ?_⟩, ?_⟩
+  · rw [eA, hrw]; exact inRegions_of (by simp) (coeff_contains _ (by rw [n_eq]; omega_arith))
+  · rw [eB, hrw]; exact inRegions_of (by simp) (coeff_contains _ (by rw [n_eq]; omega_arith))
+  · rw [e0, hw]; exact inRegions_off (List.mem_singleton_self _) (by omega_arith) (by omega_arith)
+  · rw [e1, hw]; exact inRegions_off (List.mem_singleton_self _) (by omega_arith) (by omega_arith)
+  · rw [e2, hw]; exact inRegions_off (List.mem_singleton_self _) (by omega_arith) (by omega_arith)
+  · rw [r0]; exact ptr_succ _ 8 i
+  · rw [r1]; exact ptr_succ _ 3 i
+  · rw [r2]; exact count_sub (k := 1) hi
+  · rw [m, e0, e1, e2]
+    exact ((h.frame.writeW (List.mem_singleton_self _) _ (contains_off (by omega_arith) (by omega_arith))).writeW
+      (List.mem_singleton_self _) _ (contains_off (by omega_arith) (by omega_arith))).writeW
+      (List.mem_singleton_self _) _ (contains_off (by omega_arith) (by omega_arith))
+  · intro k hk
+    rw [m, e0, e1, e2, eA, eB, ra, rb, v0, v1, v2,
+      byte_writeW8 _ _ (by omega_arith) (by omega_arith), byte_writeW8 _ _ (by omega_arith) (by omega_arith),
+      byte_writeW8 _ _ (by omega_arith) (by omega_arith), h.bytes k hk]
+    rcases (by omega_arith : k < 3 * i ∨ k = 3 * i ∨ k = 3 * i + 1 ∨ k = 3 * i + 2 ∨ 3 * i + 3 ≤ k) with
+      hk' | rfl | rfl | rfl | hk'
+    · resolve_ifs
+    · resolve_ifs
+    · resolve_ifs
+    · resolve_ifs
+    · resolve_ifs
+  · rw [z]; exact count_z (k := 1) hi (by decide) (by decide)
+
+theorem loop_ok {s₀ : State} (hp : Pre s₀) : WP isa encode12 s₀ (Inv s₀ 128) := by
+  refine WP.seq (WP.of_runBlock ?_)
+  refine ⟨_, runBlock_cons.trans (by rfl), wp_loop_ne (Inv s₀) (N := 128) (by decide)
+    (fun i hi s h => step hp hi h) (fun _ h => h) ?_⟩
+  refine ⟨by simp [State.setReg], by simp [State.setReg], rfl, rfl, rfl, rfl,
+    fun r hr => ?_, Frame.refl _ _, fun k _ => rfl⟩
+  simp only [State.setReg]
+  rw [ite_eq_right]
+  intro e; subst e; simp [preserved] at hr
+
+end VG.Proof.MlKem.Arm.Encode12
+
+end
+
+end
+
+/-! ### `MlKem.Arm.Decode12`, which only this module used -/
+
+section
+
+/-!
+# ML-KEM on 32-bit ARM: `vg_mlkem_decode12`
+
+One symbolic execution of the loop body for any pointers (`body_ok`), which
+loads bytes after storing a coefficient: `hsep` says the store does not change
+them. The invariant says which coefficients are written (`Inv`); their values
+are `decode12_even` and `decode12_odd`, reduced by `fixq_subq`.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.MlKem.Arm.Decode12
+
+open VG VG.Arm VG.Impl.MlKem.Arm
+open VG.Spec.MlKem
+open VG.Spec.Sha3 (bytesAt)
+open VG.Proof.MlKem.Arm.Add (ptr_succ reduced_zero)
+
+/-! ## The loop body -/
+
+/-- The first field of the bytes `b₀`, `b₁`, reduced. -/
+def fieldLo (b₀ b₁ : Byte) : BitVec 32 :=
+  fixq (b₀.setWidth 32 + ((b₁.setWidth 32 <<< 28) >>> 20) - 3328 - 1)
+
+/-- The second field of the bytes `b₁`, `b₂`, reduced. -/
+def fieldHi (b₁ b₂ : Byte) : BitVec 32 :=
+  fixq ((b₁.setWidth 32 >>> 4) + (b₂.setWidth 32 <<< 4) - 3328 - 1)
+
+theorem body_ok {s : State} {x y c : BitVec 32} (h0 : s.gpr .r0 = x) (h1 : s.gpr .r1 = y)
+    (h2 : s.gpr .r2 = c)
+    (i0 : InRegions (s.rd ++ s.wr) (State.addr (x + BitVec.ofNat 32 0)) 1)
+    (i1 : InRegions (s.rd ++ s.wr) (State.addr (x + BitVec.ofNat 32 1)) 1)
+    (i2 : InRegions (s.rd ++ s.wr) (State.addr (x + BitVec.ofNat 32 2)) 1)
+    (o0 : InRegions s.wr (State.addr (y + BitVec.ofNat 32 0)) 4)
+    (o1 : InRegions s.wr (State.addr (y + BitVec.ofNat 32 4)) 4)
+    (hsep : ∀ (m : Mem) (v : BitVec 32) (k : Nat), k < 3 →
+      (m.writeW (State.addr (y + BitVec.ofNat 32 0)) v) (State.addr (x + BitVec.ofNat 32 k)) =
+        m (State.addr (x + BitVec.ofNat 32 k))) :
+    WP isa (.block decode12Body) s fun s' =>
+      s'.gpr .r0 = x + 3 ∧ s'.gpr .r1 = y + 8 ∧ s'.gpr .r2 = c - 1 ∧ s'.z = (c - 1 == 0) ∧
+      s'.mem = (s.mem.writeW (State.addr (y + BitVec.ofNat 32 0))
+          (fieldLo (s.mem (State.addr (x + BitVec.ofNat 32 0))) (s.mem (State.addr (x + BitVec.ofNat 32 1))))).writeW
+        (State.addr (y + BitVec.ofNat 32 4))
+          (fieldHi (s.mem (State.addr (x + BitVec.ofNat 32 1))) (s.mem (State.addr (x + BitVec.ofNat 32 2)))) ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ ∀ r ∈ preserved, s'.gpr r = s.gpr r := by
+  run_block [decode12Body, decode12Lo, decode12Hi, subQ, fixup, fieldLo, fieldHi, fixq, h0, h1, h2, i0, i1, i2,
+    o0, o1, hsep, preserved, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, implies_true,
+    and_self, and_true]
+
+/-! ## The values -/
+
+theorem lo_toNat (b₀ b₁ : Byte) : (fieldLo b₀ b₁).toNat = (b₀.toNat + 256 * (b₁.toNat % 16)) % q := by
+  have h₀ := b₀.isLt
+  have h₁ := b₁.isLt
+  have e : (b₀.setWidth 32 + ((b₁.setWidth 32 <<< 28) >>> 20)).toNat = b₀.toNat + 256 * (b₁.toNat % 16) := by
+    rw [BitVec.toNat_add, BitVec.toNat_ushiftRight, BitVec.toNat_shiftLeft, setWidth32_toNat,
+      setWidth32_toNat, Nat.shiftRight_eq_div_pow, Nat.shiftLeft_eq]
+    omega_arith
+  unfold fieldLo
+  rw [fixq_subq (by rw [e, q_eq]; omega_arith), e]
+
+theorem hi_toNat (b₁ b₂ : Byte) : (fieldHi b₁ b₂).toNat = (b₁.toNat / 16 + 16 * b₂.toNat) % q := by
+  have h₁ := b₁.isLt
+  have h₂ := b₂.isLt
+  have e : ((b₁.setWidth 32 >>> 4) + (b₂.setWidth 32 <<< 4)).toNat = b₁.toNat / 16 + 16 * b₂.toNat := by
+    rw [BitVec.toNat_add, BitVec.toNat_ushiftRight, BitVec.toNat_shiftLeft, setWidth32_toNat,
+      setWidth32_toNat, Nat.shiftRight_eq_div_pow, Nat.shiftLeft_eq]
+    omega_arith
+  unfold fieldHi
+  rw [fixq_subq (by rw [e, q_eq]; omega_arith), e]
+
+/-! ## The loop -/
+
+section
+variable (s₀ : State)
+
+abbrev pb : BitVec 32 := s₀.gpr .r0
+abbrev pf : BitVec 32 := s₀.gpr .r1
+abbrev B : Addr := State.addr (pb s₀)
+abbrev F : Addr := State.addr (pf s₀)
+abbrev inR : Region := ⟨B s₀, 384⟩
+abbrev D : Poly := decode12 (bytesAt s₀.mem (B s₀) 384)
+
+/-- The value stored in coefficient `j`. -/
+def out (j : Nat) : BitVec 32 := BitVec.ofNat 32 ((D s₀)[j]!).val
+
+end
+
+structure Pre (s₀ : State) : Prop where
+  rd : s₀.rd = [inR s₀]
+  wr : s₀.wr = [polyRegion (F s₀)]
+  disj : (inR s₀).Disjoint (polyRegion (F s₀))
+  fitB : (pb s₀).toNat + 384 ≤ 2 ^ 32
+  fitF : (pf s₀).toNat + 1024 ≤ 2 ^ 32
+
+structure Inv (s₀ : State) (i : Nat) (s : State) : Prop where
+  r0 : s.gpr .r0 = pb s₀ + BitVec.ofNat 32 (3 * i)
+  r1 : s.gpr .r1 = pf s₀ + BitVec.ofNat 32 (8 * i)
+  r2 : s.gpr .r2 = BitVec.ofNat 32 (1 * (128 - i))
+  rd : s.rd = s₀.rd
+  wr : s.wr = s₀.wr
+  sp : s.sp = s₀.sp
+  pres : ∀ r ∈ preserved, s.gpr r = s₀.gpr r
+  frame : Frame [polyRegion (F s₀)] s₀.mem s.mem
+  coeff : ∀ j < 256, coeffAt s.mem (F s₀) j = if j < 2 * i then out s₀ j else coeffAt s₀.mem (F s₀) j
+
+theorem step {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < 128) {s : State} (h : Inv s₀ i s) :
+    WP isa (.block decode12Body) s fun s' => Inv s₀ (i + 1) s' ∧ s'.z = decide (i + 1 = 128) := by
+  have fB := hp.fitB
+  have fF := hp.fitF
+  have eb : ∀ k < 3, State.addr (pb s₀ + BitVec.ofNat 32 (3 * i) + BitVec.ofNat 32 k) =
+      B s₀ + BitVec.ofNat 64 (3 * i + k) := fun k hk => addr_byte fB rfl (by omega_arith)
+  have e0 : State.addr (pf s₀ + BitVec.ofNat 32 (8 * i) + BitVec.ofNat 32 0) = coeffAddr (F s₀) (2 * i) :=
+    addr_coeff fF (by omega_arith) (by omega_arith)
+  have e1 : State.addr (pf s₀ + BitVec.ofNat 32 (8 * i) + BitVec.ofNat 32 4) =
+      coeffAddr (F s₀) (2 * i + 1) := addr_coeff fF (by omega_arith) (by omega_arith)
+  have hrw : s.rd ++ s.wr = [inR s₀, polyRegion (F s₀)] := by rw [h.rd, h.wr, hp.rd, hp.wr]; rfl
+  have hw : s.wr = [polyRegion (F s₀)] := by rw [h.wr, hp.wr]
+  have c0 := coeff_contains (F s₀) (i := 2 * i) (by rw [n_eq]; omega_arith)
+  have c1 := coeff_contains (F s₀) (i := 2 * i + 1) (by rw [n_eq]; omega_arith)
+  have cb : ∀ k < 3, (inR s₀).Contains (B s₀ + BitVec.ofNat 64 (3 * i + k)) 1 :=
+    fun k hk => contains_off (by omega_arith) (by omega_arith)
+  -- The bytes read are those on entry.
+  have rb : ∀ k < 3, s.mem (B s₀ + BitVec.ofNat 64 (3 * i + k)) = (bytesAt s₀.mem (B s₀) 384).getD (3 * i + k) 0 :=
+    fun k hk => by
+      rw [bytesAt_getD _ _ (by omega_arith)]
+      exact frame_byte h.frame (fun r hr => by rw [List.mem_singleton] at hr; subst hr; exact hp.disj)
+        (by decide) (by omega_arith)
+  have hB : (bytesAt s₀.mem (B s₀) 384).length = 384 := bytesAt_length _ _ _
+  refine WP.mono (body_ok h.r0 h.r1 h.r2 ?_ ?_ ?_ ?_ ?_ ?_) fun s' ⟨r0, r1, r2, z, m, rd, wr, sp, pres⟩ =>
+    ⟨⟨?_, ?_, ?_, rd.trans h.rd, wr.trans h.wr, sp.trans h.sp, fun r hr => (pres r hr).trans (h.pres r hr),
+      ?_, ?_⟩, ?_⟩
+  · rw [eb 0 (by omega_arith), hrw]; exact inRegions_of (by simp) (cb 0 (by omega_arith))
+  · rw [eb 1 (by omega_arith), hrw]; exact inRegions_of (by simp) (cb 1 (by omega_arith))
+  · rw [eb 2 (by omega_arith), hrw]; exact inRegions_of (by simp) (cb 2 (by omega_arith))
+  · rw [e0, hw]; exact inRegions_of (by simp) c0
+  · rw [e1, hw]; exact inRegions_of (by simp) c1
+  · intro m v k hk
+    rw [e0, eb k hk]
+    exact byte_writeW_disj hp.disj v c0 (cb k hk)
+  · rw [r0]; exact ptr_succ _ 3 i
+  · rw [r1]; exact ptr_succ _ 8 i
+  · rw [r2]; exact count_sub (k := 1) hi
+  · rw [m, e0, e1]
+    exact (h.frame.writeW (List.mem_singleton_self _) _ c0).writeW (List.mem_singleton_self _) _ c1
+  · intro j hj
+    rw [m, e0, e1, eb 0 (by omega_arith), eb 1 (by omega_arith), eb 2 (by omega_arith), rb 0 (by omega_arith), rb 1 (by omega_arith),
+      rb 2 (by omega_arith), coeffAt_writeW _ _ hj (by rw [n_eq]; omega_arith),
+      coeffAt_writeW _ _ hj (by rw [n_eq]; omega_arith), h.coeff j hj]
+    have v0 : fieldLo ((bytesAt s₀.mem (B s₀) 384).getD (3 * i + 0) 0)
+        ((bytesAt s₀.mem (B s₀) 384).getD (3 * i + 1) 0) = out s₀ (2 * i) := by
+      refine ofNat_val_eq ?_
+      rw [lo_toNat, decode12_even _ hB hi, val_ofNat, Nat.add_zero]
+    have v1 : fieldHi ((bytesAt s₀.mem (B s₀) 384).getD (3 * i + 1) 0)
+        ((bytesAt s₀.mem (B s₀) 384).getD (3 * i + 2) 0) = out s₀ (2 * i + 1) := by
+      refine ofNat_val_eq ?_
+      rw [hi_toNat, decode12_odd _ hB hi, val_ofNat]
+    rw [v0, v1]
+    rcases (by omega_arith : j < 2 * i ∨ j = 2 * i ∨ j = 2 * i + 1 ∨ 2 * i + 2 ≤ j) with hj' | rfl | rfl | hj'
+    · resolve_ifs
+    · resolve_ifs
+    · resolve_ifs
+    · resolve_ifs
+  · rw [z]; exact count_z (k := 1) hi (by decide) (by decide)
+
+theorem loop_ok {s₀ : State} (hp : Pre s₀) : WP isa decode12 s₀ (Inv s₀ 128) := by
+  refine WP.seq (WP.of_runBlock ?_)
+  refine ⟨_, runBlock_cons.trans (by rfl), wp_loop_ne (Inv s₀) (N := 128) (by decide)
+    (fun i hi s h => step hp hi h) (fun _ h => h) ?_⟩
+  refine ⟨by simp [State.setReg], by simp [State.setReg], rfl, rfl, rfl, rfl,
+    fun r hr => ?_, Frame.refl _ _, fun k _ => rfl⟩
+  simp only [State.setReg]
+  rw [ite_eq_right]
+  intro e; subst e; simp [preserved] at hr
+
+end VG.Proof.MlKem.Arm.Decode12
+
+end
+
+end
+
+/-! ### `MlKem.Arm.Cbd2`, which only this module used -/
+
+section
+
+/-!
+# ML-KEM on 32-bit ARM: `vg_mlkem_cbd2`
+
+One symbolic execution of the loop body for any pointers (`body_ok`); the
+invariant says which coefficients are written (`Inv`); their values are
+`samplePolyCBD2_val`: the number of bits set in a 2-bit field `v` is `v - ⌊v /
+2⌋`.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.MlKem.Arm.Cbd2
+
+open VG VG.Arm VG.Impl.MlKem.Arm
+open VG.Spec.MlKem
+open VG.Spec.Sha3 (bytesAt)
+open VG.Proof.MlKem.Arm.Add (ptr_succ reduced_zero)
+
+/-! ## The loop body -/
+
+/-- The number of bits set in the 2-bit field of `b` from bit `k`, as `pop2`
+computes it. -/
+def pc (b : Byte) (k : Nat) : BitVec 32 :=
+  ((b.setWidth 32 <<< (30 - k)) >>> 30) - (((b.setWidth 32 <<< (30 - k)) >>> 30) >>> 1)
+
+/-- The coefficient of the nibble of `b` from bit `k`. -/
+def coef (b : Byte) (k : Nat) : BitVec 32 := fixq (pc b k - pc b (k + 2))
+
+theorem body_ok {s : State} {x y c : BitVec 32} (h0 : s.gpr .r0 = x) (h1 : s.gpr .r1 = y)
+    (h2 : s.gpr .r2 = c)
+    (i0 : InRegions (s.rd ++ s.wr) (State.addr (x + BitVec.ofNat 32 0)) 1)
+    (o0 : InRegions s.wr (State.addr (y + BitVec.ofNat 32 0)) 4)
+    (o1 : InRegions s.wr (State.addr (y + BitVec.ofNat 32 4)) 4)
+    (hsep : ∀ (m : Mem) (v : BitVec 32),
+      (m.writeW (State.addr (y + BitVec.ofNat 32 0)) v) (State.addr (x + BitVec.ofNat 32 0)) =
+        m (State.addr (x + BitVec.ofNat 32 0))) :
+    WP isa (.block cbd2Body) s fun s' =>
+      s'.gpr .r0 = x + 1 ∧ s'.gpr .r1 = y + 8 ∧ s'.gpr .r2 = c - 1 ∧ s'.z = (c - 1 == 0) ∧
+      s'.mem = (s.mem.writeW (State.addr (y + BitVec.ofNat 32 0))
+          (coef (s.mem (State.addr (x + BitVec.ofNat 32 0))) 0)).writeW
+        (State.addr (y + BitVec.ofNat 32 4)) (coef (s.mem (State.addr (x + BitVec.ofNat 32 0))) 4) ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ ∀ r ∈ preserved, s'.gpr r = s.gpr r := by
+  run_block [cbd2Body, cbdCoeff, pop2, fixup, coef, pc, fixq, h0, h1, h2, i0, o0, o1, hsep, preserved,
+    List.forall_mem_cons, List.not_mem_nil, false_imp_iff, implies_true, and_self, and_true]
+
+/-! ## The values -/
+
+theorem pc_toNat (b : Byte) {k : Nat} (hk : k = 0 ∨ k = 2 ∨ k = 4 ∨ k = 6) :
+    (pc b k).toNat = b.toNat / 2 ^ k % 2 + b.toNat / 2 ^ k / 2 % 2 := by
+  have hb := b.isLt
+  have e : ((b.setWidth 32 <<< (30 - k)) >>> 30).toNat = b.toNat / 2 ^ k % 4 := by
+    rw [BitVec.toNat_ushiftRight, BitVec.toNat_shiftLeft, setWidth32_toNat, Nat.shiftRight_eq_div_pow,
+      Nat.shiftLeft_eq]
+    rcases hk with rfl | rfl | rfl | rfl <;> simp only [Nat.reduceSub, Nat.reducePow] <;> omega_arith
+  unfold pc
+  rw [BitVec.toNat_sub, BitVec.toNat_ushiftRight, e, Nat.shiftRight_eq_div_pow]
+  omega_arith
+
+theorem coef_toNat (b : Byte) {k : Nat} (hk : k = 0 ∨ k = 4) :
+    (coef b k).toNat = (cbdX (b.toNat / 2 ^ k) + q - cbdY (b.toNat / 2 ^ k)) % q := by
+  have ex := pc_toNat b (k := k) (by omega_arith)
+  have ey := pc_toNat b (k := k + 2) (by omega_arith)
+  have hb := b.isLt
+  unfold coef
+  rw [fixq_sub (by rw [ex, q_eq]; omega_arith) (by rw [ey, q_eq]; omega_arith), ex, ey, cbdX, cbdY, Nat.pow_add]
+  rw [← Nat.div_div_eq_div_mul, show (2 : Nat) ^ 2 = 4 from rfl]
+  congr 1
+  omega_arith
+
+/-! ## The loop -/
+
+section
+variable (s₀ : State)
+
+abbrev pb : BitVec 32 := s₀.gpr .r0
+abbrev pf : BitVec 32 := s₀.gpr .r1
+abbrev B : Addr := State.addr (pb s₀)
+abbrev F : Addr := State.addr (pf s₀)
+abbrev inR : Region := ⟨B s₀, 128⟩
+abbrev D : Poly := samplePolyCBD 2 (bytesAt s₀.mem (B s₀) 128)
+
+/-- The value stored in coefficient `j`. -/
+def out (j : Nat) : BitVec 32 := BitVec.ofNat 32 ((D s₀)[j]!).val
+
+end
+
+structure Pre (s₀ : State) : Prop where
+  rd : s₀.rd = [inR s₀]
+  wr : s₀.wr = [polyRegion (F s₀)]
+  disj : (inR s₀).Disjoint (polyRegion (F s₀))
+  fitB : (pb s₀).toNat + 128 ≤ 2 ^ 32
+  fitF : (pf s₀).toNat + 1024 ≤ 2 ^ 32
+
+structure Inv (s₀ : State) (i : Nat) (s : State) : Prop where
+  r0 : s.gpr .r0 = pb s₀ + BitVec.ofNat 32 (1 * i)
+  r1 : s.gpr .r1 = pf s₀ + BitVec.ofNat 32 (8 * i)
+  r2 : s.gpr .r2 = BitVec.ofNat 32 (1 * (128 - i))
+  rd : s.rd = s₀.rd
+  wr : s.wr = s₀.wr
+  sp : s.sp = s₀.sp
+  pres : ∀ r ∈ preserved, s.gpr r = s₀.gpr r
+  frame : Frame [polyRegion (F s₀)] s₀.mem s.mem
+  coeff : ∀ j < 256, coeffAt s.mem (F s₀) j = if j < 2 * i then out s₀ j else coeffAt s₀.mem (F s₀) j
+
+theorem step {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < 128) {s : State} (h : Inv s₀ i s) :
+    WP isa (.block cbd2Body) s fun s' => Inv s₀ (i + 1) s' ∧ s'.z = decide (i + 1 = 128) := by
+  have fB := hp.fitB
+  have fF := hp.fitF
+  have eb : State.addr (pb s₀ + BitVec.ofNat 32 (1 * i) + BitVec.ofNat 32 0) = B s₀ + BitVec.ofNat 64 i :=
+    addr_byte fB (by omega_arith) (by omega_arith)
+  have e0 : State.addr (pf s₀ + BitVec.ofNat 32 (8 * i) + BitVec.ofNat 32 0) = coeffAddr (F s₀) (2 * i) :=
+    addr_coeff fF (by omega_arith) (by omega_arith)
+  have e1 : State.addr (pf s₀ + BitVec.ofNat 32 (8 * i) + BitVec.ofNat 32 4) =
+      coeffAddr (F s₀) (2 * i + 1) := addr_coeff fF (by omega_arith) (by omega_arith)
+  have hrw : s.rd ++ s.wr = [inR s₀, polyRegion (F s₀)] := by rw [h.rd, h.wr, hp.rd, hp.wr]; rfl
+  have hw : s.wr = [polyRegion (F s₀)] := by rw [h.wr, hp.wr]
+  have c0 := coeff_contains (F s₀) (i := 2 * i) (by rw [n_eq]; omega_arith)
+  have c1 := coeff_contains (F s₀) (i := 2 * i + 1) (by rw [n_eq]; omega_arith)
+  have cb : (inR s₀).Contains (B s₀ + BitVec.ofNat 64 i) 1 := contains_off (by omega_arith) (by omega_arith)
+  have rb : s.mem (B s₀ + BitVec.ofNat 64 i) = (bytesAt s₀.mem (B s₀) 128).getD i 0 := by
+    rw [bytesAt_getD _ _ (by omega_arith)]
+    exact frame_byte h.frame (fun r hr => by rw [List.mem_singleton] at hr; subst hr; exact hp.disj)
+      (by decide) (by omega_arith)
+  refine WP.mono (body_ok h.r0 h.r1 h.r2 ?_ ?_ ?_ ?_) fun s' ⟨r0, r1, r2, z, m, rd, wr, sp, pres⟩ =>
+    ⟨⟨?_, ?_, ?_, rd.trans h.rd, wr.trans h.wr, sp.trans h.sp, fun r hr => (pres r hr).trans (h.pres r hr),
+      ?_, ?_⟩, ?_⟩
+  · rw [eb, hrw]; exact inRegions_of (by simp) cb
+  · rw [e0, hw]; exact inRegions_of (by simp) c0
+  · rw [e1, hw]; exact inRegions_of (by simp) c1
+  · intro m v
+    rw [e0, eb]
+    exact byte_writeW_disj hp.disj v c0 cb
+  · rw [r0]; exact ptr_succ _ 1 i
+  · rw [r1]; exact ptr_succ _ 8 i
+  · rw [r2]; exact count_sub (k := 1) hi
+  · rw [m, e0, e1]
+    exact (h.frame.writeW (List.mem_singleton_self _) _ c0).writeW (List.mem_singleton_self _) _ c1
+  · intro j hj
+    rw [m, e0, e1, eb, rb, coeffAt_writeW _ _ hj (by rw [n_eq]; omega_arith),
+      coeffAt_writeW _ _ hj (by rw [n_eq]; omega_arith), h.coeff j hj]
+    have v0 : coef ((bytesAt s₀.mem (B s₀) 128).getD i 0) 0 = out s₀ (2 * i) := by
+      refine ofNat_val_eq ?_
+      rw [coef_toNat _ (.inl rfl), samplePolyCBD2_val _ (by rw [n_eq]; omega_arith), nibble,
+        show 2 * i / 2 = i by omega_arith, show 2 * i % 2 = 0 by omega_arith]
+    have v1 : coef ((bytesAt s₀.mem (B s₀) 128).getD i 0) 4 = out s₀ (2 * i + 1) := by
+      refine ofNat_val_eq ?_
+      rw [coef_toNat _ (.inr rfl), samplePolyCBD2_val _ (by rw [n_eq]; omega_arith), nibble,
+        show (2 * i + 1) / 2 = i by omega_arith, show (2 * i + 1) % 2 = 1 by omega_arith]
+    rw [v0, v1]
+    rcases (by omega_arith : j < 2 * i ∨ j = 2 * i ∨ j = 2 * i + 1 ∨ 2 * i + 2 ≤ j) with hj' | rfl | rfl | hj'
+    · resolve_ifs
+    · resolve_ifs
+    · resolve_ifs
+    · resolve_ifs
+  · rw [z]; exact count_z (k := 1) hi (by decide) (by decide)
+
+theorem loop_ok {s₀ : State} (hp : Pre s₀) : WP isa cbd2 s₀ (Inv s₀ 128) := by
+  refine WP.seq (WP.of_runBlock ?_)
+  refine ⟨_, runBlock_cons.trans (by rfl), wp_loop_ne (Inv s₀) (N := 128) (by decide)
+    (fun i hi s h => step hp hi h) (fun _ h => h) ?_⟩
+  refine ⟨by simp [State.setReg], by simp [State.setReg], rfl, rfl, rfl, rfl,
+    fun r hr => ?_, Frame.refl _ _, fun k _ => rfl⟩
+  simp only [State.setReg]
+  rw [ite_eq_right]
+  intro e; subst e; simp [preserved] at hr
+
+end VG.Proof.MlKem.Arm.Cbd2
+
+end
+
+end
 
 /-!
 # ML-KEM-768 on 32-bit ARM: calling the primitives on buffers

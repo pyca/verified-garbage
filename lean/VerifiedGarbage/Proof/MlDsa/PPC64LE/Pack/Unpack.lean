@@ -1,13 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.PPC64LE.Pack.BitPack
-import VerifiedGarbage.Proof.MlDsa.PPC64LE.Pack.SimpleBitPack
 import VerifiedGarbage.Proof.MlDsa.Pack.Arith
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Sig
 meta import VerifiedGarbage.Proof.MlDsa.PPC64LE.Pack.BitPack
-meta import VerifiedGarbage.Proof.MlDsa.PPC64LE.Pack.SimpleBitPack
 meta import VerifiedGarbage.Proof.MlDsa.Pack.Arith
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 meta import VerifiedGarbage.Proof.Framework.Contract

@@ -1,10 +1,9 @@
 module
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemMatrixCall
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.FullPrefix
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.BeginTiming
 
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemMatrixCall
+public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.LastTiming
+public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.BeginTiming
 import VerifiedGarbage.Proof.MlKem.AArch64.Paired.PairTiming
-import VerifiedGarbage.Proof.MlKem.AArch64.Paired.LastTiming
 import VerifiedGarbage.Proof.MlKem.AArch64.Paired.RejectTiming
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 

@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.X25519.Arm.Invert
 public import VerifiedGarbage.Proof.X25519.Ladder
-import VerifiedGarbage.Proof.X25519.Arm.Cswap
 import VerifiedGarbage.Proof.X25519.Field
 import VerifiedGarbage.Proof.X25519.Invert
 import VerifiedGarbage.Proof.Framework.Range

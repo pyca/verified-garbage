@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
 import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 import VerifiedGarbage.Proof.MlKem.PPC64LE.SampleCT
-import VerifiedGarbage.Proof.Sha3.PPC64LE.Stream.CT
 import VerifiedGarbage.Proof.Sha3.PPC64LE.Stream.Verified
 import VerifiedGarbage.Proof.MlKem.PPC64LE.Sample
 meta import VerifiedGarbage.Proof.Sha3.PPC64LE.Pieces
@@ -13,7 +12,6 @@ meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 meta import VerifiedGarbage.Proof.MlKem.PPC64LE.SampleCT
-meta import VerifiedGarbage.Proof.Sha3.PPC64LE.Stream.CT
 meta import VerifiedGarbage.Proof.Sha3.PPC64LE.Stream.Verified
 meta import VerifiedGarbage.Proof.MlKem.PPC64LE.Sample
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec

@@ -24,8 +24,6 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Keep
 import VerifiedGarbage.Proof.MlKem.AArch64.Noise.InitMemory
-import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Zero
-import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Words
 import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Tail
 
 /-! ### `MlKem.AArch64.Noise.Offsets`, which this module and modules that import it used -/

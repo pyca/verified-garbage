@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.MlDsa.X86_64.PreparedKey
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.CallArith
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Control
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.CallPack
 public import VerifiedGarbage.Proof.MlKem.X86_64.Rel
 public import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
@@ -13,7 +13,6 @@ public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Top
 public import VerifiedGarbage.Proof.MlDsa.Verify.Spec
 import VerifiedGarbage.Proof.MlKem.X86_64.TopBase
 import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
-import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Control
 import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Same
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Blocks
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.BlockTr
@@ -22,7 +21,7 @@ public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.MlKem.Mem
 import VerifiedGarbage.Proof.Sha3.X86_64.Round
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.CallArith
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Control
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.CallPack
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Rel
 meta import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
@@ -34,7 +33,6 @@ meta import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Top
 meta import VerifiedGarbage.Proof.MlDsa.Verify.Spec
 meta import VerifiedGarbage.Proof.MlKem.X86_64.TopBase
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Control
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Same
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Blocks
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.BlockTr

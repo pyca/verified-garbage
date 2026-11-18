@@ -1,10 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.RISCV64.Reduce
-public import VerifiedGarbage.Proof.MlKem.RISCV64.Lazy
+public import VerifiedGarbage.Proof.MlKem.RISCV64.Ntt
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 import VerifiedGarbage.Proof.MlKem.RISCV64.Add
-import VerifiedGarbage.Proof.MlKem.RISCV64.Ntt
 import VerifiedGarbage.Proof.Framework.RISCV64.Run
 import VerifiedGarbage.Proof.Framework.RISCV64.Steps
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
@@ -12,10 +11,9 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import all Init.Data.Nat.Bitwise.Basic
 meta import VerifiedGarbage.Proof.MlKem.RISCV64.Reduce
-meta import VerifiedGarbage.Proof.MlKem.RISCV64.Lazy
+meta import VerifiedGarbage.Proof.MlKem.RISCV64.Ntt
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 meta import VerifiedGarbage.Proof.MlKem.RISCV64.Add
-meta import VerifiedGarbage.Proof.MlKem.RISCV64.Ntt
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Run
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset

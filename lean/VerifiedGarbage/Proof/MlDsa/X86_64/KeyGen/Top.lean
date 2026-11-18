@@ -1,11 +1,9 @@
 module
-public import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.RestPack
 
-import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.RestRow
+public import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.RestRow
 import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Samp4
 import VerifiedGarbage.Proof.MlDsa.DecideAt
 import VerifiedGarbage.Proof.MlKem.X86_64.Lit
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.RestPack
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.RestRow
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Samp4
 meta import VerifiedGarbage.Proof.MlDsa.DecideAt

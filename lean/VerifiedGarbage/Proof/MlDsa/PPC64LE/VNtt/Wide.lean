@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.PPC64LE.VNtt.Table
-public import VerifiedGarbage.Proof.MlDsa.PPC64LE.VNtt.Mem
 public import VerifiedGarbage.Proof.MlDsa.Arith.VectorNtt
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
 import VerifiedGarbage.Proof.Framework.Block

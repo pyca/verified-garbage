@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 /-!
 # ML-DSA key generation on PPC64LE: the seeds
 
-As on 32-bit ARM (`Proof/MlDsa/Arm/KeyGen/Seeds.lean`):
+As on 32-bit ARM (`Proof/MlDsa/Arm/KeyGen/Samp.lean`):
 `(ρ, ρ′, K) = H(ξ ‖ k ‖ ℓ, 128)` to `HX`, `ρ` to the seed of `RejNTTPoly`
 and `ρ′ ‖ 0` to that of `RejBoundedPoly` (`seeds_ok`, `K1`).
 -/

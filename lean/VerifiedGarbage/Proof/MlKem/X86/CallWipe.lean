@@ -4,7 +4,6 @@ public import VerifiedGarbage.Impl.MlKem.X86.Wipe
 public import VerifiedGarbage.Proof.Framework.X86.CallWipe
 public import VerifiedGarbage.Proof.Zeroize.X86
 public import VerifiedGarbage.Proof.MlKem.Scrubbed
-public import VerifiedGarbage.Proof.MlKem.X86.KeyGenFin
 public import VerifiedGarbage.Proof.MlKem.X86.KeyGenBody
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.MlKem.X86.Common
@@ -21,11 +20,8 @@ public import VerifiedGarbage.Proof.MlKem.X86.NttSetup
 public import VerifiedGarbage.Proof.MlKem.X86.Red
 public import VerifiedGarbage.Proof.MlKem.X86.Table
 public import VerifiedGarbage.Proof.MlKem.X86.TopCall
-public import VerifiedGarbage.Proof.MlKem.X86.TopHash
-public import VerifiedGarbage.Proof.MlKem.X86.TopKem
 public import VerifiedGarbage.Proof.MlKem.X86.TopLocal
-public import VerifiedGarbage.Proof.MlKem.X86.TopPrim
-public import VerifiedGarbage.Proof.MlKem.X86.TopPrim2
+public import VerifiedGarbage.Proof.MlKem.X86.TopKem
 public import VerifiedGarbage.Proof.MlKem.X86.TopSeq
 public import VerifiedGarbage.Proof.Sha512.Spec
 import VerifiedGarbage.Proof.Framework.Sig

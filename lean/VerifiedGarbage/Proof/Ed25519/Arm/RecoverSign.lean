@@ -1,9 +1,8 @@
 module
 
-import VerifiedGarbage.Proof.Ed25519.Arm.Freeze
+import VerifiedGarbage.Proof.Ed25519.Arm.PointEncode
 public import VerifiedGarbage.Impl.Ed25519.Arm.RecoverSign
 public import VerifiedGarbage.Proof.Ed25519.Arm.PointAffine
-import VerifiedGarbage.Proof.Ed25519.Arm.PointEncode
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Block

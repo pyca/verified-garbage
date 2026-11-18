@@ -1,7 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.MlKem.PPC64LE.HashTop
-public import VerifiedGarbage.Proof.MlKem.PPC64LE.Prims
+public import VerifiedGarbage.Proof.MlKem.PPC64LE.HashTop
 public import VerifiedGarbage.Proof.MlKem.PPC64LE.Ntt
 public import VerifiedGarbage.Proof.MlKem.PPC64LE.Cbd2
 public import VerifiedGarbage.Proof.MlKem.PPC64LE.Decode12

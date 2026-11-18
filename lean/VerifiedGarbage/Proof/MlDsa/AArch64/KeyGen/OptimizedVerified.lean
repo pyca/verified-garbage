@@ -16,7 +16,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Samp
 public import VerifiedGarbage.Proof.MlDsa.RejNTT2Contract
 public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.OptimizedMatrix
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedCallTwo
-public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedMatrixSeeds
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Call4
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Samp4
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.MatrixMask
@@ -27,30 +26,735 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.MlKem.Mem
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedSecrets
-import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedRest
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsExecution
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedEntry
-import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.OptimizedRow
+public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.OptimizedRow
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.CallRound
 import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
 import VerifiedGarbage.Proof.Sha3.AArch64.Sums
-import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedRow
-import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedFinish
-import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.RestRow
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
-public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedTimingBase
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotCallTiming
-import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedDotValue
-import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedDot
-import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedNtt
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.RestRow
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotCallTiming
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttCallTiming
-import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.OptimizedNtt
-import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.RestPack
-import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.OptimizedRest
-import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedPackSecret
+public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.OptimizedNtt
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.RestPack
+public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.OptimizedRest
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.PrimsOk
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Common
 public import VerifiedGarbage.Spec.MlDsa
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Seed4
+import all Init.Data.Nat.Bitwise.Basic
+import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Seed4
+meta import Init.Data.Nat.Bitwise.Basic
+meta import VerifiedGarbage.Proof.MlDsa.DecideAt
+meta import VerifiedGarbage.Proof.Framework.Range
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedRestState
+import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Main
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejOutcome
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejPublic
+import VerifiedGarbage.TCB.Axioms
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedRestState
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Main
+meta import VerifiedGarbage.Proof.MlKem.Mem
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejOutcome
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejPublic
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
+meta import VerifiedGarbage.TCB.Axioms
+import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCalls
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.LazyInv
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.OptimizedDot
+import VerifiedGarbage.Proof.MlKem.Arith
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Inv
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallResident
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Lit
+
+/-! ### `MlDsa.AArch64.KeyGen.OptimizedTimingBase`, which only this module used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.AArch64.KeyGen.Optimized
+open VG VG.AArch64
+open VG.Spec.MlDsa (Params)
+
+/-- Immutable table addresses are public, while every polynomial value keeps
+its original secrecy classification. -/
+def TableEq (x y : State) : Prop :=
+  x.syms "VG_MLDSA_NTT_EXPANDED"=y.syms "VG_MLDSA_NTT_EXPANDED" ∧
+  x.syms "VG_MLDSA_INV_FOLDED"=y.syms "VG_MLDSA_INV_FOLDED"
+
+def RootPair (p : Params) (S : Nat) (I : State → State → Prop) (x y : State) : Prop :=
+  R p S (fun σ s => I σ s ∧ Sign.StaticRoots S s) x y ∧ TableEq x y
+
+/-- Lift functional progress into the timing invariant without revealing any
+additional input value. Symbol maps are preserved by execution semantics. -/
+theorem rootPair_progress {p : Params} {S : Nat} {I J : State → State → Prop} {c : Prog isa}
+    (hw : ∀σ s,kgPre p S σ → I σ s → Sign.StaticRoots S s →
+      WP isa c s fun t => J σ t ∧ Sign.StaticRoots S t)
+    (ht : RelCT isa (RootPair p S I) c fun _ _ => True) :
+    RelCT isa (RootPair p S I) c (RootPair p S J) := by
+  intro x y tx ty u v hr ex ey
+  obtain ⟨he,_⟩ := ht _ _ _ _ _ _ hr ex ey
+  obtain ⟨⟨σ,τ,hσ,hτ,pub,ix,iy⟩,et⟩ := hr
+  obtain ⟨_,u',eu,ju⟩ := hw σ x hσ ix.1 ix.2
+  obtain ⟨_,v',ev,jv⟩ := hw τ y hτ iy.1 iy.2
+  obtain ⟨_,rfl⟩ := Exec.det ex eu
+  obtain ⟨_,rfl⟩ := Exec.det ey ev
+  refine ⟨he,⟨σ,τ,hσ,hτ,pub,ju,jv⟩,?_⟩
+  simpa only [TableEq,VG.AArch64.Exec.syms eu,VG.AArch64.Exec.syms ev] using et
+
+end VG.Proof.MlDsa.AArch64.KeyGen.Optimized
+
+end
+
+end
+
+/-! ### `MlDsa.AArch64.KeyGen.OptimizedRest`, which only this module used -/
+
+section
+
+/-! ### `MlDsa.AArch64.KeyGen.OptimizedRow`, which this module and modules that import it used -/
+
+section
+
+/-! ### `MlDsa.AArch64.KeyGen.OptimizedDotValue`, which this module and modules that import it used -/
+
+section
+
+/-! ### `MlDsa.AArch64.KeyGen.OptimizedDot`, which this module and modules that import it used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.AArch64.KeyGen.Optimized
+open VG VG.AArch64 VG.Spec.MlDsa
+open VG.Impl.MlDsa.AArch64.KeyGen
+open VG.Impl.MlDsa.AArch64.Call (Ptr sc)
+open VG.Proof.MlDsa.AArch64.Optimized
+open VG.Proof.MlDsa.AArch64.Optimized.Inverse
+
+abbrev dotWrites (p : Params) (_i : Nat) : List (Ptr × Nat) := [(tP p,1024),(sc oSS,1024)]
+
+def optimizedDotChk (p : Params) (i : Nat) : Bool :=
+  let o := tP p; let a := aP (p.ℓ*i); let b := sP p 0; let z := sc oSS
+  inB (kgR++kgW p) o 1024 && inB (kgR++kgW p) a (1024*p.ℓ) &&
+  inB (kgR++kgW p) b (1024*p.ℓ) && inB (kgR++kgW p) z 1024 &&
+  inB (kgW p) o 1024 && inB (kgW p) z 1024 &&
+  sepB (kgR) (kgW p) o 1024 a (1024*p.ℓ) &&
+  sepB (kgR) (kgW p) o 1024 b (1024*p.ℓ) &&
+  sepB (kgR) (kgW p) o 1024 z 1024 &&
+  sepB (kgR) (kgW p) a (1024*p.ℓ) z 1024 &&
+  sepB (kgR) (kgW p) b (1024*p.ℓ) z 1024 && kcChk p (dotWrites p i)
+
+theorem optimizedDotChk_ok {p : Params} (hp : PFacts p) : ∀i<p.k,optimizedDotChk p i=true := by
+  rcases hp.mem with rfl | rfl | rfl <;> decide
+
+theorem optimizedDotReady {p : Params} (hp : PFacts p) {S : Nat} {σ s : State} {i : Nat}
+    (hc : optimizedDotChk p i=true) (hpre : kgPre p S σ) (hs : KC p σ s) (roots : Sign.StaticRoots S s)
+    (ha : ∀j<p.ℓ,PositiveReduced s.mem (pa s (aP (p.ℓ*i))+BitVec.ofNat 64 (1024*j)))
+    (hb : ∀j<p.ℓ,PositiveReduced s.mem (pa s (sP p 0)+BitVec.ofNat 64 (1024*j))) :
+    DotCallReady p.ℓ (tP p) (aP (p.ℓ*i)) (sP p 0) (sc oSS) s := by
+  simp only [optimizedDotChk,Bool.and_eq_true] at hc
+  obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨ro,ra⟩,rb⟩,rz⟩,wo⟩,wz⟩,oa⟩,ob⟩,oz⟩,az⟩,bz⟩,_⟩ := hc
+  have L := hs.lay hp hpre
+  refine ⟨L.nwp ro,L.nwp ra,L.nwp rb,L.nwp rz,roots.inverse.held,roots.inverse.fit,?_,
+    L.disj oa,L.disj ob,L.disj oz,L.disj az,L.disj bz,ha,hb,?_,?_,roots.inverse.aligned⟩
+  · intro r hr
+    simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
+    rcases hr with rfl | rfl
+    · exact roots.inverse.apart_write (L.inW wo)
+    · exact roots.inverse.apart_write (L.inW wz)
+  · exact Covers.cons (L.cR ra) (Covers.cons (L.cR rb)
+      (Covers.cons roots.inverse.readable (Covers.cons (L.cR ro) (L.cR rz))))
+  · exact Covers.cons (L.cW wo) (L.cW wz)
+
+/-- Fused row arithmetic preserves all polynomial families outside its two
+write slots. The returned frame can be applied directly to Fam/PosFam. -/
+theorem optimizedDot_ok {p : Params} {S : Nat} {σ s : State} {i : Nat}
+    (hp : PFacts p) (hc : optimizedDotChk p i=true) (hpre : kgPre p S σ) (hs : KC p σ s) (roots : Sign.StaticRoots S s)
+    (ha : ∀j<p.ℓ,PositiveReduced s.mem (pa s (aP (p.ℓ*i))+BitVec.ofNat 64 (1024*j)))
+    (hb : ∀j<p.ℓ,PositiveReduced s.mem (pa s (sP p 0)+BitVec.ofNat 64 (1024*j))) :
+    WP isa (Impl.MlDsa.AArch64.KeyGen.Optimized.dotRow p i) s fun t =>
+      KC p σ t ∧ Sign.StaticRoots S t ∧ t.gpr .x24=s.gpr .x24 ∧ PPostB S s t (dotWrites p i) ∧
+      PolyIs t.mem (pa t (tP p)) (nttInv (dotNTT
+        (fun j => polyAt s.mem (pa s (aP (p.ℓ*i))+BitVec.ofNat 64 (1024*j)))
+        (fun j => polyAt s.mem (pa s (sP p 0)+BitVec.ofNat 64 (1024*j))) p.ℓ)) := by
+  have ready := optimizedDotReady hp hc hpre hs roots ha hb
+  simp only [optimizedDotChk,Bool.and_eq_true] at hc
+  obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨ro,ra⟩,rb⟩,rz⟩,wo⟩,wz⟩,_⟩,_⟩,_⟩,_⟩,_⟩,st⟩ := hc
+  have hn : p.ℓ=4 ∨ p.ℓ=5 ∨ p.ℓ=7 := by rcases hp.mem with rfl | rfl | rfl <;> decide
+  have L := hs.lay hp hpre
+  refine WP.mono_syms (dotAt_ok L.s64 hn (ptr_ok (L.ptrBs ro)) (ptr_ok (L.ptrBs ra))
+    (ptr_ok (L.ptrBs rb)) (ptr_ok (L.ptrBs rz)) ready) fun t ⟨hP,hv⟩ hy => ?_
+  have hpB : PPostB S s t (dotWrites p i) := hP.b
+  refine ⟨hs.step hp hpre hpB st,roots.step_layout L hpB hy ?_,hP.cs .x24 (by decide) (by decide),hpB,?_⟩
+  · intro w hw
+    simp only [dotWrites,List.mem_cons,List.not_mem_nil,or_false] at hw
+    rcases hw with rfl | rfl
+    · exact wo
+    · exact wz
+  · rw [hpB.pa (L.ptrBs ro)]; exact hv
+
+
+end VG.Proof.MlDsa.AArch64.KeyGen.Optimized
+
+end
+
+end
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.AArch64.KeyGen.Optimized
+open VG VG.AArch64 VG.Spec.MlDsa VG.Impl.MlDsa.AArch64.KeyGen
+open VG.Proof.MlDsa.AArch64.Optimized
+open VG.Proof.MlDsa.KeyGen (dotK)
+
+private theorem poly_addr (s : State) (b j : Nat) :
+    pa s (VG.Impl.MlDsa.AArch64.Call.sc (oP (b+j))) =
+      pa s (VG.Impl.MlDsa.AArch64.Call.sc (oP b))+BitVec.ofNat 64 (1024*j) := by
+  simp only [pa,oP,Nat.mul_add,BitVec.ofNat_add,BitVec.add_assoc]
+
+/-- The fused inverse consumes the lazy secret transforms directly. Its
+canonical row is the same field sum as the scalar reference key generator. -/
+theorem dotRow_value {p : Params} (hF : PFacts p) {S' : Nat} {σ s : State}
+    (hp : kgPre p S' σ) {A : Nat → Poly} {S : Nat → IPoly} {R : BitVec 64} {i : Nat}
+    (hi : i<p.k) (h : PositiveKR p σ A S R (p.ℓ+p.k) p.ℓ i s)
+    (roots : Sign.StaticRoots S' s) :
+    WP isa (Impl.MlDsa.AArch64.KeyGen.Optimized.dotRow p i) s fun t =>
+      PositiveKR p σ A S R (p.ℓ+p.k) p.ℓ i t ∧ Sign.StaticRoots S' t ∧
+      PolyIs t.mem (pa t (tP p)) (nttInv (dotK p A S i p.ℓ)) := by
+  have hA j (hj : j<p.ℓ) : PolyIs s.mem
+      (pa s (aP (p.ℓ*i))+BitVec.ofNat 64 (1024*j)) (A (p.ℓ*i+j)) := by
+    have hv := h.aS _ (idx_lt hi hj)
+    change PolyIs s.mem (pa s (VG.Impl.MlDsa.AArch64.Call.sc (oP (p.ℓ*i+j)))) _ at hv
+    rw [poly_addr] at hv
+    exact hv
+  have hB j (hj : j<p.ℓ) : PosPolyIs s.mem
+      (pa s (sP p 0)+BitVec.ofNat 64 (1024*j)) (ntt (toRq (S j))) := by
+    have hv := h.s1 j hj
+    simp only [ite_eq_left hj] at hv
+    change PosPolyIs s.mem (pa s (VG.Impl.MlDsa.AArch64.Call.sc (oP (p.k*p.ℓ+j)))) _ at hv
+    rw [poly_addr] at hv
+    simpa only [sP,Nat.add_zero] using hv
+  refine WP.mono (optimizedDot_ok hF (optimizedDotChk_ok hF i hi) hp h.kc roots
+    (fun j hj => (PosPolyIs.of_canonical (hA j hj)).bound)
+    (fun j hj => (hB j hj).bound)) fun t ⟨_,rt,h24,hP,hv⟩ => ?_
+  have hc : KRChk p (p.ℓ+p.k) p.ℓ i (dotWrites p i) := by
+    have hk := hF.k; have hl := hF.l; have hs := hF.scr
+    exact KRChk.append (ws₁ := [_])
+      (KRChk.x28 hF (Nat.le_refl _) (Nat.le_of_lt hi) (by simp only [SV, oP]; omega_using []) (.inr (Nat.le_refl _))
+        (by rw [hs]; simp only [oP]; omega_using []))
+      (KRChk.x28 hF (Nat.le_refl _) (Nat.le_of_lt hi) (by simp only [SV, oSS]; omega_using [])
+        (.inl (by simp only [oSS, oP]; omega_using [])) (by rw [hs]; simp only [oSS]; omega_using []))
+  refine ⟨h.keep hF hp hP h24 hc,rt,?_⟩
+  have he : dotNTT
+      (fun j => polyAt s.mem (pa s (aP (p.ℓ*i))+BitVec.ofNat 64 (1024*j)))
+      (fun j => polyAt s.mem (pa s (sP p 0)+BitVec.ofNat 64 (1024*j))) p.ℓ = dotK p A S i p.ℓ := by
+    unfold dotNTT dotK
+    apply congrArg (List.foldl add zero)
+    apply List.map_congr_left
+    intro j hj
+    rw [List.mem_range] at hj
+    dsimp only
+    rw [(hA j hj).2,(hB j hj).value]
+  simpa only [he] using hv
+
+end VG.Proof.MlDsa.AArch64.KeyGen.Optimized
+
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/MlDsa/AArch64/KeyGen/OptimizedRoundCall.lean`, which only this module imported.
+section
+
+section
+
+namespace VG.Proof.MlDsa.AArch64.KeyGen.Optimized
+open VG VG.AArch64 VG.Spec.MlDsa
+open VG.Impl.MlDsa.AArch64.KeyGen
+open VG.Impl.MlDsa.AArch64.KeyGen.Optimized (power2RoundAt)
+open VG.Impl.MlDsa.AArch64.Call (Ptr)
+
+theorem p2rAt_ok {S : Nat} (hS : S < 2 ^ 64) {P : Prims}
+    (C : CalleeOk S P.power2Round (power2RoundContract AArch64.abi S))
+    {rbs wbs : List (Reg × Nat)} {s : State} (L : Lay S rbs wbs s) {t t1 t0 : Ptr}
+    (hc : p2rChk rbs wbs t t1 t0 = true) (hr : Reduced s.mem (pa s t)) :
+    WP isa (Impl.MlDsa.AArch64.KeyGen.Optimized.power2RoundAt P t t1 t0) s fun s' => PPostB S s s' [(t1, 1024), (t0, 1024)] ∧
+      s'.gpr .x24 = s.gpr .x24 ∧
+      NatPolyIs s'.mem (pa s t1) ((polyAt s.mem (pa s t)).map fun c => (power2Round c).1.toNat) ∧
+      PolyIs s'.mem (pa s t0) ((polyAt s.mem (pa s t)).map fun c => ofInt (power2Round c).2) := by
+  have hc' := hc
+  simp only [p2rChk, Bool.and_eq_true, and_assoc] at hc'
+  obtain ⟨_, _, _, c4, c5, c6, _, _⟩ := hc'
+  refine WP.mono (callAt_ok hS C (p2r_args L.ok c4 c5 c6) (by simp only [List.map_cons, List.map_nil]; decide)
+    (fun s1 h1 => p2r_pre L hc hr h1) (p2r_cov L hc).1 (p2r_cov L hc).2)
+    fun s' ⟨hP, s1, h1, hq⟩ => ⟨hP.b, hP.cs .x24 (by decide) (by decide), ?_⟩
+  sig_post [power2RoundContract, power2RoundSig, AArch64.abi, VG.AArch64.argRegs] at hq
+  rw [Args.r0 h1, Args.r1 h1, Args.r2 h1, Args.mem h1] at hq
+  exact hq
+
+
+end VG.Proof.MlDsa.AArch64.KeyGen.Optimized
+end
+
+end
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.AArch64.KeyGen.Optimized
+open VG VG.AArch64 VG.Impl.MlDsa.AArch64.KeyGen
+open VG.Spec.MlDsa
+open VG.Spec.Sha3 (bytesAt)
+open VG.Proof.MlDsa.KeyGen (dotK tK t1K t0K)
+
+section
+variable {P : Prims} {S' : Nat} (hP : PrimsOk P S') {p : Params} (hF : PFacts p) {σ : State} (hp : kgPre p S' σ)
+  {i : Nat} (hi : i < p.k)
+include hP hF hp hi
+
+theorem addS2_ok {A : Nat → Poly} {S : Nat → IPoly} {R : BitVec 64} {s : State}
+    (h : PositiveKR p σ A S R (p.ℓ + p.k) p.ℓ i s) (ht : tIs p (fun A S => nttInv (dotK p A S i p.ℓ)) A S s) :
+    WP isa (Impl.MlDsa.AArch64.KeyGen.Optimized.addAt P (tP p) (sP p (p.ℓ + i))) s fun s' =>
+      PositiveKR p σ A S R (p.ℓ + p.k) p.ℓ i s' ∧ tIs p (fun A S => tK p A S i) A S s' := by
+  dsimp only [tIs] at ht
+  have L := h.kc.lay hF hp
+  have hS := h.s2 i hi
+  unfold Impl.MlDsa.AArch64.KeyGen.Optimized.addAt
+  refine WP.mono (accAt_ok (op := add) hP.s64 hP.add L (add_chk hF hi) ht.1 hS.1) fun s' ⟨hP', x', hb⟩ => ?_
+  refine ⟨h.keep hF hp hP' x' (chk_t hF hi), ?_⟩
+  rw [tIs, hP'.pa (show Reg.x28 ∈ keptRegs by decide), Proof.MlDsa.KeyGen.tK, ← hS.2, ← ht.2]
+  exact hb
+
+/-- `Power2Round` of `t`. -/
+theorem p2r_ok {A : Nat → Poly} {S : Nat → IPoly} {R : BitVec 64} {s : State}
+    (h : PositiveKR p σ A S R (p.ℓ + p.k) p.ℓ i s) (ht : tIs p (fun A S => tK p A S i) A S s) :
+    WP isa (Impl.MlDsa.AArch64.KeyGen.Optimized.power2RoundAt P (tP p) (t1P p) (t0P p)) s fun s' =>
+      PositiveKR p σ A S R (p.ℓ + p.k) p.ℓ i s' ∧ NatPolyIs s'.mem (pa s' (t1P p)) (t1K p A S i) ∧
+      PolyIs s'.mem (pa s' (t0P p)) ((tK p A S i).map fun c => ofInt (power2Round c).2) := by
+  dsimp only [tIs] at ht
+  have L := h.kc.lay hF hp
+  refine WP.mono (p2rAt_ok hP.s64 hP.power2Round L (p2r_chk hF hi) ht.1) fun s' ⟨hP', x', h1, h0⟩ => ?_
+  refine ⟨h.keep hF hp hP' x' (chk_p2r hF hi), ?_, ?_⟩
+  · rw [hP'.pa (p := t1P p) (show Reg.x28 ∈ keptRegs by decide), Proof.MlDsa.KeyGen.t1K, ← ht.2]; exact h1
+  · rw [hP'.pa (p := t0P p) (show Reg.x28 ∈ keptRegs by decide), ← ht.2]; exact h0
+
+/-- `t₁[i]` to `pk`. -/
+theorem sbp_ok {A : Nat → Poly} {S : Nat → IPoly} {R : BitVec 64} {s : State}
+    (h : PositiveKR p σ A S R (p.ℓ + p.k) p.ℓ i s) (h1 : NatPolyIs s.mem (pa s (t1P p)) (t1K p A S i))
+    (h0 : PolyIs s.mem (pa s (t0P p)) ((tK p A S i).map fun c => ofInt (power2Round c).2)) :
+    WP isa (Impl.MlDsa.AArch64.KeyGen.Optimized.simpleBitPackAt P (t1P p) 1023 (.x26, 32 + 320 * i) 320) s fun s' =>
+      PositiveKR p σ A S R (p.ℓ + p.k) p.ℓ i s' ∧
+      PolyIs s'.mem (pa s' (t0P p)) ((tK p A S i).map fun c => ofInt (power2Round c).2) ∧
+      bytesAt s'.mem (pa s' (.x26, 32 + 320 * i)) 320 = simpleBitPack (t1K p A S i) 1023 := by
+  have hkl := hF.kl; have hl := hF.l; have hk := hF.k; have hsc := scr_eq p
+  have L := h.kc.lay hF hp
+  refine WP.mono (sbpAt_ok hP.s64 hP.simpleBitPack L (sbp_chk hF hi) sbpOk_t1 (t1_bound h1))
+    fun s' ⟨hP', x', hb⟩ => ?_
+  refine ⟨h.keep hF hp hP' x' (chk_sbp hF hi), L.keepPoly hP' (by layd) h0, ?_⟩
+  rw [hP'.pa (show Reg.x26 ∈ keptRegs by decide), hb, h1]
+
+/-- `t₀[i]` to `sk`. -/
+theorem bp_ok {A : Nat → Poly} {S : Nat → IPoly} {R : BitVec 64} {s : State}
+    (h : PositiveKR p σ A S R (p.ℓ + p.k) p.ℓ i s)
+    (h0 : PolyIs s.mem (pa s (t0P p)) ((tK p A S i).map fun c => ofInt (power2Round c).2))
+    (h1 : bytesAt s.mem (pa s (.x26, 32 + 320 * i)) 320 = simpleBitPack (t1K p A S i) 1023) :
+    WP isa (Impl.MlDsa.AArch64.KeyGen.Optimized.bitPackAt P (t0P p) 4095 4096 (.x27, oT0 p + 416 * i) 416) s
+      (PositiveKR p σ A S R (p.ℓ + p.k) p.ℓ (i + 1)) := by
+  have hkl := hF.kl; have hl := hF.l; have hk := hF.k; have hsc := scr_eq p
+  have L := h.kc.lay hF hp
+  refine WP.mono (bpAt_ok hP.s64 hP.bitPack L (bp_chk hF hi) bpOk_t0 h0.1 (range_t0 h0))
+    fun s' ⟨hP', x', hb⟩ => ?_
+  have hk' := h.keep hF hp hP' x' (chk_bp hF hi)
+  refine ⟨hk'.kc, hk'.x24, hk'.good, hk'.small, hk'.aS, hk'.s2, hk'.s1, hk'.pk0, hk'.sk0, hk'.sk1, hk'.packs,
+    fun i' hi' => ?_⟩
+  rcases (by omega_using [hi'] : i' < i ∨ i' = i) with hi' | rfl
+  · exact hk'.rows i' hi'
+  · refine ⟨by
+      have hlen : lenS p = 96 ∨ lenS p = 128 := hF.eta.imp And.right And.right
+      rw [L.keepBytes hP' (by layd)]; exact h1, ?_⟩
+    rw [hP'.pa (show Reg.x27 ∈ keptRegs by decide), hb, h0.2, modPm_t0]
+    rfl
+
+end
+
+
+/-- One complete measured row, retaining lazy secret transforms and emitting
+exactly the reference public and private key encodings. -/
+theorem row_ok {P : Prims} {S' : Nat} (hP : PrimsOk P S') {p : Params}
+    (hF : PFacts p) {σ s : State} (hp : kgPre p S' σ) {i : Nat} (hi : i<p.k)
+    {A : Nat → Poly} {S : Nat → IPoly} {R : BitVec 64}
+    (h : PositiveKR p σ A S R (p.ℓ+p.k) p.ℓ i s)
+    (roots : Sign.StaticRoots S' s)
+    (hd : 16*(Impl.MlDsa.AArch64.KeyGen.Optimized.row P p i).aarch64Depth≤S') :
+    WP isa (Impl.MlDsa.AArch64.KeyGen.Optimized.row P p i) s fun t =>
+      PositiveKR p σ A S R (p.ℓ+p.k) p.ℓ (i+1) t ∧ Sign.StaticRoots S' t := by
+  apply roots.phase hd hP.s64
+  unfold Impl.MlDsa.AArch64.KeyGen.Optimized.row
+  apply WP.seq
+  refine WP.mono (dotRow_value hF hp hi h roots) fun a ⟨ha,_,hv⟩ => ?_
+  apply WP.seq
+  refine WP.mono (addS2_ok hP hF hp hi ha hv) fun b ⟨hb,hv⟩ => ?_
+  apply WP.seq
+  refine WP.mono (p2r_ok hP hF hp hi hb hv) fun c ⟨hc,h1,h0⟩ => ?_
+  apply WP.seq
+  refine WP.mono (sbp_ok hP hF hp hi hc h1 h0) fun d ⟨hd,h0,h1⟩ => ?_
+  exact bp_ok hP hF hp hi hd h0 h1
+
+end VG.Proof.MlDsa.AArch64.KeyGen.Optimized
+
+end
+
+end
+
+/-! ### `MlDsa.AArch64.KeyGen.OptimizedNtt`, which this module and modules that import it used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.AArch64.KeyGen.Optimized
+open VG VG.AArch64 VG.Impl.MlDsa.AArch64.KeyGen
+open VG.Impl.MlDsa.AArch64.KeyGen.Optimized
+open VG.Spec.MlDsa (Params Poly IPoly toRq ntt)
+open VG.Proof.MlDsa.KeyGen (ifp ifn)
+
+theorem nttSecret_ok {S' : Nat} {p : Params} (hF : PFacts p) {σ : State}
+    (hp : kgPre p S' σ) {j : Nat} (hj : j < p.ℓ) {A : Nat → Poly} {S : Nat → IPoly} {R : BitVec 64} {s : State}
+    (h : PositiveKR p σ A S R (p.ℓ + p.k) j 0 s) (roots : Sign.StaticRoots S' s) :
+    WP isa (nttSecret p j) s fun t => PositiveKR p σ A S R (p.ℓ+p.k) (j+1) 0 t ∧ Sign.StaticRoots S' t := by
+  have hkl := hF.kl; have hl := hF.l; have hk := hF.k; have hsc := scr_eq p
+  have L := h.kc.lay hF hp
+  have hS := h.s1 j hj
+  rw [ifn (Nat.lt_irrefl j)] at hS
+  have hr : inB (kgR++kgW p) (sP p j) 1024=true := by layd
+  have hw : inB (kgW p) (sP p j) 1024=true := by layd
+  refine WP.mono_syms (Sign.positiveNttAt_layout L hr hw
+    ⟨roots.nttTableAt (L.inW hw),roots.forward.readable⟩ hS.1)
+    fun s' ⟨hP',x',hb⟩ hy => ?_
+  refine ⟨?_,roots.step_layout L hP' hy (fun w hw' => by
+    obtain rfl := List.mem_singleton.mp hw'
+    exact hw)⟩
+  have hlen : lenS p = 96 ∨ lenS p = 128 := hF.eta.imp And.right And.right
+  exact ⟨h.kc.step hF hp hP' (by unfold kcChk; layd), x'.trans h.x24, h.good,
+    h.small, fun e he => L.keepPoly hP' (by layd) (h.aS e he),
+    fun i hi => L.keepPoly hP' (by layd) (h.s2 i hi),
+    fun j' hj' => if e : j' = j then by
+        subst e; rw [ifp (Nat.lt_succ_self j'), hP'.pa (p := sP p j') (show Reg.x28 ∈ keptRegs by decide), ← hS.2]
+        exact hb
+      else by
+        have hv := h.s1 j' hj'
+        by_cases hlt : j' < j
+        · simp only [ite_eq_left hlt] at hv
+          simp only [ite_eq_left (show j' < j+1 by omega_using [hlt])]
+          exact Sign.keepPosPoly L hP' (by layd) hv
+        · simp only [ite_eq_right hlt] at hv
+          simp only [ite_eq_right (show ¬ j' < j+1 by omega_using [e, hlt])]
+          exact L.keepPoly hP' (by layd) hv,
+    by rw [L.keepBytes hP' (by layd)]; exact h.pk0,
+    by rw [L.keepBytes hP' (by layd)]; exact h.sk0,
+    by rw [L.keepBytes hP' (by layd)]; exact h.sk1,
+    fun r hr => by
+      have : lenS p * r + lenS p ≤ lenS p * (p.ℓ + p.k) := by
+        rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ (by omega_using [hr])
+      rw [L.keepBytes hP' (by rcases hlen with hlen | hlen <;> lay [hF.pk, hF.sk, hlen])]; exact h.packs r hr,
+    fun _ h => absurd h (Nat.not_lt_zero _)⟩
+
+
+end VG.Proof.MlDsa.AArch64.KeyGen.Optimized
+
+end
+
+end
+
+/-! ### `MlDsa.AArch64.KeyGen.OptimizedPackSecret`, which this module and modules that import it used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.AArch64.KeyGen.Optimized
+open VG VG.AArch64 VG.Impl.MlDsa.AArch64.KeyGen
+open VG.Spec.MlDsa
+open VG.Proof.MlDsa.KeyGen
+
+theorem packSecret_ok {P : Prims} {S' : Nat} (hP : PrimsOk P S') {p : Params} (hF : PFacts p) {σ : State}
+    (hp : kgPre p S' σ) {r : Nat} (hr : r < p.ℓ + p.k) {A : Nat → Poly} {S : Nat → IPoly} {R : BitVec 64} {s : State}
+    (h : KR p σ A S R r 0 0 s) : WP isa (Impl.MlDsa.AArch64.KeyGen.Optimized.packSecret P p r) s (KR p σ A S R (r + 1) 0 0) := by
+  have L := h.kc.lay hF hp
+  have hS := h.sPoly hr
+  unfold Impl.MlDsa.AArch64.KeyGen.Optimized.packSecret Impl.MlDsa.AArch64.KeyGen.Optimized.bitPackAt
+  refine WP.mono (bpAt_ok hP.s64 hP.bitPack L (packS_chk hF hr) (bpOk_eta hF) hS.1
+    (range_of (eta_le hF) hS (h.small r hr))) fun s' ⟨hP', x', hb⟩ => ?_
+  have hle : 128 + lenS p * r + lenS p ≤ oT0 p := by
+    simp only [oT0]; rw [Nat.add_assoc, ← Nat.mul_succ]; exact Nat.add_le_add_left (Nat.mul_le_mul_left _ hr) _
+  have hk' := h.keep hF hp hP' x' (KRChk.x27 (o := 128 + lenS p * r) (n := lenS p) hF (Nat.le_of_lt hr)
+    (Nat.zero_le _) (by omega_using []) (.inr (Nat.le_refl _)) (.inl hle) (by rw [hF.sk]; omega_using [hle]))
+  refine ⟨hk'.kc, hk'.x24, hk'.good, hk'.small, hk'.aS, hk'.s2, hk'.s1, hk'.pk0, hk'.sk0, hk'.sk1,
+    fun r' hr' => ?_, hk'.rows⟩
+  rcases (by omega_using [hr'] : r' < r ∨ r' = r) with hr' | rfl
+  · exact hk'.packs r' hr'
+  · rw [hP'.pa (show Reg.x27 ∈ keptRegs by decide), hb, hS.2,
+      Proof.MlDsa.KeyGen.modPm_toRq (small_big (eta_le hF) (h.small r' hr))]
+
+theorem packSecret_tr {P : Prims} {S' : Nat} (hP : PrimsOk P S') {p : Params} (hF : PFacts p) {r : Nat}
+    (hr : r < p.ℓ + p.k) : RelCT isa (R p S' (KRx p r 0 0)) (Impl.MlDsa.AArch64.KeyGen.Optimized.packSecret P p r) fun _ _ => True := by
+  refine rel_of (Q := fun x y => Two p S' x y ∧ (Reduced x.mem (pa x (sP p r)) ∧ BpRange x.mem (pa x (sP p r)) p.η p.η) ∧
+    (Reduced y.mem (pa y (sP p r)) ∧ BpRange y.mem (pa y (sP p r)) p.η p.η)) ?_
+    fun _ _ _ _ p₁ p₂ pub ⟨_, _, _, h₁⟩ ⟨_, _, _, h₂⟩ =>
+      ⟨kc_two hF p₁ p₂ pub h₁.kc h₂.kc, ⟨(h₁.sPoly hr).1, range_of (eta_le hF) (h₁.sPoly hr) (h₁.small r hr)⟩,
+        ⟨(h₂.sPoly hr).1, range_of (eta_le hF) (h₂.sPoly hr) (h₂.small r hr)⟩⟩
+  unfold Impl.MlDsa.AArch64.KeyGen.Optimized.packSecret Impl.MlDsa.AArch64.KeyGen.Optimized.bitPackAt
+  exact bpAt_tr hP.bitPack (kgOk p) (packS_chk hF hr) (bpOk_eta hF) fun x y h =>
+    ⟨h.1.lx, h.1.ly, h.2.1, h.2.2, h.1.same⟩
+
+theorem packSecret_piece {P : Prims} {S' : Nat} (hP : PrimsOk P S') {p : Params} (hF : PFacts p) {r : Nat}
+    (hr : r < p.ℓ + p.k) : Piece p S' (KRx p r 0 0) (KRx p (r + 1) 0 0) (Impl.MlDsa.AArch64.KeyGen.Optimized.packSecret P p r) :=
+  ⟨fun _ _ hp ⟨A, S, R, h⟩ => WP.mono (packSecret_ok hP hF hp hr h) fun _ h => ⟨A, S, R, h⟩, packSecret_tr hP hF hr⟩
+
+
+end VG.Proof.MlDsa.AArch64.KeyGen.Optimized
+
+end
+
+end
+
+/-! ### `MlDsa.AArch64.KeyGen.OptimizedFinish`, which this module and modules that import it used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.AArch64.KeyGen.Optimized
+variable {keccak : VG.Proof.Sha3.AArch64.Permutation}
+open VG VG.AArch64 VG.Impl.MlDsa.AArch64.KeyGen
+open VG.Spec.MlDsa
+open VG.Proof.MlDsa.KeyGen (dotK tK t1K t0K pkK skK)
+open VG.Spec.Sha3 (bytesAt)
+
+abbrev KRx (p : Params) (np nj nr : Nat) (σ s : State) : Prop :=
+  ∃ A S R, PositiveKR p σ A S R np nj nr s
+
+theorem pk_bytes {p : Params} (hF : PFacts p) {σ : State} {A : Nat → Poly} {S : Nat → IPoly} {R : BitVec 64}
+    {np nj : Nat} {s : State} (h : PositiveKR p σ A S R np nj p.k s) :
+    bytesAt s.mem (pa s (.x26, 0)) p.pkLen = pkK p A S (rhoOf p σ) := by
+  have h0 : bytesAt s.mem (s.gpr .x26) 32 = rhoOf p σ := by rw [← pa_zero]; exact h.pk0
+  rw [hF.pk, pa_zero, Proof.MlKem.bytesAt_add, h0,
+    Proof.MlDsa.KeyGen.bytesAt_pieces s.mem (s.gpr .x26) 32 320 p.k, pkK, t1Max_eq]
+  exact congrArg _ (flatMap_congr_mem fun i hi => (h.rows i (List.mem_range.mp hi)).1)
+
+theorem sk_bytes {p : Params} (hF : PFacts p) {σ : State} {A : Nat → Poly} {S : Nat → IPoly} {R : BitVec 64}
+    {nj : Nat} {s : State} (h : PositiveKR p σ A S R (p.ℓ + p.k) nj p.k s)
+    (htr : bytesAt s.mem (pa s (.x27, 64)) 64 = Spec.MlDsa.H (pkK p A S (rhoOf p σ)) 64) :
+    bytesAt s.mem (pa s (.x27, 0)) p.skLen = skK p A S (rhoOf p σ) (kOf p σ) := by
+  have h0 : bytesAt s.mem (s.gpr .x27) 32 = rhoOf p σ := by rw [← pa_zero]; exact h.sk0
+  have h1 : bytesAt s.mem (s.gpr .x27 + BitVec.ofNat 64 32) 32 = kOf p σ := h.sk1
+  have h2 : bytesAt s.mem (s.gpr .x27 + BitVec.ofNat 64 (32 + 32)) 64 = Spec.MlDsa.H (pkK p A S (rhoOf p σ)) 64 :=
+    htr
+  rw [hF.sk, oT0, show 128 = 32 + 32 + 64 from rfl, pa_zero, Proof.MlKem.bytesAt_add, Proof.MlKem.bytesAt_add,
+    Proof.MlKem.bytesAt_add, Proof.MlKem.bytesAt_add, h0, h1, h2,
+    Proof.MlDsa.KeyGen.bytesAt_pieces s.mem (s.gpr .x27) (32 + 32 + 64) (lenS p) (p.ℓ + p.k),
+    ← oT0, Proof.MlDsa.KeyGen.bytesAt_pieces s.mem (s.gpr .x27) (oT0 p) 416 p.k, skK]
+  rw [flatMap_congr_mem (g := fun r => bitPack (S r) p.η p.η) fun r hr => h.packs r (List.mem_range.mp hr),
+    flatMap_congr_mem (g := fun i => bitPack (t0K p A S i) 4095 4096) fun i hi => (h.rows i (List.mem_range.mp hi)).2]
+  rfl
+
+/-! ## `tr = H(pk, 64)` -/
+
+/-- At the end: the keys, but for the return. -/
+abbrev KFin (p : Params) (σ s : State) : Prop :=
+  ∃ A S R, PositiveKR p σ A S R (p.ℓ + p.k) p.ℓ p.k s ∧
+    bytesAt s.mem (pa s (.x27, 64)) 64 = Spec.MlDsa.H (pkK p A S (rhoOf p σ)) 64
+
+theorem trHash_piece {p : Params} (hF : PFacts p) {S' : Nat} (h16 : 16 ≤ S') (hSl : S' < 2 ^ 64) :
+    Piece p S' (KRx p (p.ℓ + p.k) p.ℓ p.k) (KFin p) ((trHashWith keccak.callee) p) := by
+  refine ⟨fun σ s hp ⟨A, S, R, h⟩ => ?_, rel_of (Q := Two p S') (trHash_taint hF.mem fun x y h => h.bases)
+    fun _ _ _ _ p₁ p₂ pub ⟨_, _, _, h₁⟩ ⟨_, _, _, h₂⟩ => kc_two hF p₁ p₂ pub h₁.kc h₂.kc⟩
+  have L := h.kc.lay hF hp
+  unfold trHashWith
+  refine WP.mono (shake_ok h16 hSl L (by simp) (trHash_chk hF)) fun s' ⟨hP', x', ho⟩ => ⟨A, S, R, ?_, ?_⟩
+  · have hc : KRChk p (p.ℓ + p.k) p.ℓ p.k [((.x28, 0), 200), ((.x28, 200), 640), ((.x27, 64), 64)] :=
+      (KRChk.x28 hF (Nat.le_refl _) (Nat.le_refl _) (.inl (by decide)) (.inl (by decide))
+        (by rw [hF.scr]; omega_using [])).append (ws₁ := [_])
+      ((KRChk.x28 hF (Nat.le_refl _) (Nat.le_refl _) (.inl (by decide)) (.inl (by decide))
+        (by rw [hF.scr]; omega_using [])).append (ws₁ := [_])
+      (KRChk.x27 hF (Nat.le_refl _) (Nat.le_refl _) (by decide) (.inl (by decide))
+        (.inl (by simp only [oT0]; omega_using [])) (by rw [hF.sk, oT0]; omega_using [])))
+    exact h.keep hF hp hP' x' hc
+  · simp only [List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil, List.append_nil] at ho
+    rw [hP'.pa (show Reg.x27 ∈ keptRegs by decide), ho]
+    exact congrArg (Spec.MlDsa.H · 64) (pk_bytes hF h)
+
+theorem epi_piece {p : Params} (hF : PFacts p) {S' : Nat} :
+    Piece p S' (KFin p) (fun σ s => abiPreserved σ s ∧ (Spec.MlDsa.keyGenContract p AArch64.abi S').post σ s)
+      (.block epi) := by
+  refine ⟨fun σ s hp ⟨A, S, R, h, htr⟩ => ?_, rel_of (Q := Two p S') (taintRel [.x28] (fun x y h => h.x28)
+    (by taint_decide)) fun _ _ _ _ p₁ p₂ pub ⟨_, _, _, h₁, _⟩ ⟨_, _, _, h₂, _⟩ => kc_two hF p₁ p₂ pub h₁.kc h₂.kc⟩
+  have L := h.kc.lay hF hp
+  have hin : InRegions (s.rd ++ s.wr) (σ.gpr .x3 + BitVec.ofNat 64 SV) 48 := by
+    have := L.inR (p := svP) (l := 48) (by have := scr_ge hF; lay)
+    rwa [pa, h.kc.top.x28] at this
+  refine WP.mono (epi_ok h.kc.top hin) fun s' ⟨ha, hr, hm⟩ => ⟨ha, ?_⟩
+  sig_post [Spec.MlDsa.keyGenContract, Spec.MlDsa.keyGenSig, AArch64.abi, VG.AArch64.argRegs]
+  have e26 : pa s (.x26, 0) = σ.gpr .x1 := by rw [pa_zero, h.kc.top.x26]
+  have e27 : pa s (.x27, 0) = σ.gpr .x2 := by rw [pa_zero, h.kc.top.x27]
+  rw [hr, h.x24, hm, ← e26, ← e27, pk_bytes hF h, sk_bytes hF h htr]
+  exact outcome_of (by have := hF.l; omega_using [this]) h.good
+
+
+end VG.Proof.MlDsa.AArch64.KeyGen.Optimized
+
+end
+
+end
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.AArch64.KeyGen.Optimized
+open VG VG.AArch64 VG.Impl.MlDsa.AArch64.KeyGen
+open VG.Spec.MlDsa
+open VG.Impl.MlDsa.AArch64.Call (seqR)
+variable {keccak : VG.Proof.Sha3.AArch64.Permutation}
+
+/-- The complete optimized arithmetic suffix. Depth premises are syntactic
+bounds on the supplied primitive implementations, discharged at registration. -/
+theorem rest_ok {P : Prims} {S' : Nat} (hP : PrimsOk P S') {p : Params}
+    (hF : PFacts p) {σ s : State} (hp : kgPre p S' σ)
+    (h : KSamp p σ (p.k*p.ℓ) (p.ℓ+p.k) s) (roots : Sign.StaticRoots S' s)
+    (hdpack : ∀j<p.ℓ+p.k,16*(Impl.MlDsa.AArch64.KeyGen.Optimized.packSecret P p j).aarch64Depth≤S')
+    (hdrow : ∀i<p.k,16*(Impl.MlDsa.AArch64.KeyGen.Optimized.row P p i).aarch64Depth≤S') :
+    WP isa (Impl.MlDsa.AArch64.KeyGen.Optimized.restWith keccak.callee P p) s (KFin p σ) := by
+  unfold Impl.MlDsa.AArch64.KeyGen.Optimized.restWith
+  apply WP.seq
+  refine WP.mono (roots.phase (show 16*(Code.block copies).aarch64Depth≤S' from by
+    change 0≤S'; omega_using []) hP.s64 (copies_ok hF hp h)) fun a ⟨⟨A,T,R,ha⟩,ra⟩ => ?_
+  apply WP.seq
+  refine WP.mono (seqR_ok (I := fun j t => KR p σ A T R j 0 0 t ∧ Sign.StaticRoots S' t)
+    (p.ℓ+p.k) 0 (fun j _ hj t ⟨ht,rt⟩ =>
+      rt.phase (hdpack j (by omega_using [hj])) hP.s64 (packSecret_ok hP hF hp (by omega_using [hj]) ht)) a ⟨ha,ra⟩)
+    fun b ⟨hb,rb⟩ => ?_
+  simp only [Nat.zero_add] at hb
+  apply WP.seq
+  refine WP.mono (seqR_ok (I := fun j t => PositiveKR p σ A T R (p.ℓ+p.k) j 0 t ∧ Sign.StaticRoots S' t)
+    p.ℓ 0 (fun j _ hj t ⟨ht,rt⟩ => nttSecret_ok hF hp (by omega_using [hj]) ht rt)
+    b ⟨PositiveKR.of_canonical hb,rb⟩) fun c ⟨hc,rc⟩ => ?_
+  simp only [Nat.zero_add] at hc
+  apply WP.seq
+  refine WP.mono (seqR_ok (I := fun i t => PositiveKR p σ A T R (p.ℓ+p.k) p.ℓ i t ∧ Sign.StaticRoots S' t)
+    p.k 0 (fun i _ hi t ⟨ht,rt⟩ => row_ok hP hF hp (by omega_using [hi]) ht rt (hdrow i (by omega_using [hi])))
+    c ⟨hc,rc⟩) fun d ⟨hd,_⟩ => ?_
+  simp only [Nat.zero_add] at hd
+  exact (trHash_piece hF hP.s16 hP.s64).ok σ d hp ⟨A,T,R,hd⟩
+
+end VG.Proof.MlDsa.AArch64.KeyGen.Optimized
+
+end
+
+end
+
+/-! ### `MlDsa.AArch64.KeyGen.OptimizedMatrixSeeds`, which only this module used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.AArch64.KeyGen.Optimized
+open VG VG.AArch64 VG.Impl.MlDsa.AArch64.KeyGen
+open VG.Impl.MlDsa.AArch64.Call
+open VG.Spec.MlDsa (Params)
+open VG.Spec.Sha3 (bytesAt)
+
+/-- The four copies of the public matrix seed survive all row samplers. -/
+def MatrixPrefixes (p : Params) (σ : State) (n : Nat) (s : State) : Prop :=
+  ∀k<n,bytesAt s.mem (pa s (sc (oSA4+34*k))) 32=rhoOf p σ
+
+theorem MatrixPrefixes.keep {p : Params} {S : Nat} {σ s t : State} {n : Nat}
+    (L : Lay S kgR (kgW p) s) (h : MatrixPrefixes p σ n s)
+    {ws : List (Ptr × Nat)} (hp : PPostB S s t ws)
+    (hc : ∀k<n,keepB kgR (kgW p) ws (sc (oSA4+34*k)) 32=true) : MatrixPrefixes p σ n t := by
+  intro k hk
+  rw [L.keepBytes hp (hc k hk)]
+  exact h k hk
+
+theorem matrixCopy_ok {p : Params} (hF : PFacts p) {S : Nat} {σ s : State}
+    (hp : kgPre p S σ) {e j : Nat} (he : e≤p.k*p.ℓ) (hj : j<4)
+    (hs : KSamp p σ e 0 s) (hr : MatrixPrefixes p σ j s) :
+    WP isa (.block (copySeed4 j)) s fun t => KSamp p σ e 0 t ∧ MatrixPrefixes p σ (j+1) t := by
+  have hkl := hF.kl; have hl := hF.l; have hk := hF.k; have hsc := scr_eq p
+  have L := hs.k1.kc.lay hF hp
+  refine WP.mono (copySeed4_ok hF L hj) fun t ⟨ht,hkeep,hbytes⟩ => ?_
+  refine ⟨hs.keep hF hp ht (by unfold k1Chk kcChk; layd) (fun k hk => by layd)
+    (fun _ h => False.elim (Nat.not_lt_zero _ h)) (hkeep.get .x24),?_⟩
+  intro k hk
+  by_cases hkj : k=j
+  · subst k
+    rw [sc_pa ht,hbytes,hs.k1.sa]
+  · rw [L.keepBytes ht (by layd)]
+    exact hr k (by omega_using [hk, hkj])
+
+theorem matrixPrefixes_ok {p : Params} (hF : PFacts p) {S : Nat} {σ s : State}
+    (hp : kgPre p S σ) (hs : KSamp p σ 0 0 s) :
+    WP isa (.block ((List.range 4).flatMap copySeed4)) s fun t =>
+      KSamp p σ 0 0 t ∧ MatrixPrefixes p σ 4 t := by
+  exact wp_range_flatMap (M := isa) (N := 4)
+    (fun j t => KSamp p σ 0 0 t ∧ MatrixPrefixes p σ j t)
+    (fun j t hj ht => matrixCopy_ok hF hp (Nat.zero_le _) hj ht.1 ht.2)
+    4 (by omega_using []) s ⟨hs,fun _ h => False.elim (Nat.not_lt_zero _ h)⟩
+
+/-- Updating the two row/column bytes leaves the hoisted seed prefix intact. -/
+theorem matrixNonce_ok {p : Params} (hF : PFacts p) {S : Nat} {σ s : State}
+    (hp : kgPre p S σ) {e j : Nat} (he : e+j<p.k*p.ℓ) (hj : j<4)
+    (hs : GS p σ e j s) (hr : MatrixPrefixes p σ 4 s) :
+    WP isa (.block (setSR p e j)) s fun t => GS p σ e (j+1) t ∧ MatrixPrefixes p σ 4 t := by
+  have hkl := hF.kl; have hl := hF.l; have hk := hF.k; have hsc := scr_eq p
+  have L := hs.ks.k1.kc.lay hF hp
+  unfold setSR
+  refine WP.mono (setTwo_ok L (o := oSA4+34*j+32) (a := (e+j)%p.ℓ) (b := (e+j)/p.ℓ)
+    (by dsimp only [oSA4]; omega_using [hj]) (by layd) (by layd)) fun t ⟨ht,hkeep,hbytes⟩ => ?_
+  refine ⟨⟨hs.ks.keep hF hp ht (by unfold k1Chk kcChk; layd) (fun k hk => by lay)
+    (fun _ h => False.elim (Nat.not_lt_zero _ h)) (hkeep.get .x24),?_⟩,
+    hr.keep L ht (fun k hk => by layd)⟩
+  intro k hk
+  by_cases hkj : k=j
+  · subst k
+    rw [bytes34,L.keepBytes ht (by layd),hr j hj,sc_add,sc_pa ht,hbytes,
+      Proof.MlDsa.KeyGen.seedA_eq]
+  · rw [L.keepBytes ht (by layd)]
+    exact hs.done k (by omega_using [hk, hkj])
+
+theorem matrixPrefixes_tr {Q : State → State → Prop}
+    (hq : ∀x y,Q x y → x.sp=y.sp ∧ x.gpr .x28=y.gpr .x28) :
+    RelCT isa Q (.block ((List.range 4).flatMap copySeed4)) fun _ _ => True := by
+  apply taintRel [.x28] (fun x y h => ⟨(hq x y h).1,?_⟩)
+    (by taint_decide)
+  intro r hr
+  obtain rfl := List.mem_singleton.mp hr
+  exact (hq x y h).2
+
+theorem matrixNonce_tr (p : Params) (e j : Nat) {Q : State → State → Prop}
+    (hq : ∀x y,Q x y → x.sp=y.sp ∧ x.gpr .x28=y.gpr .x28) :
+    RelCT isa Q (.block (setSR p e j)) fun _ _ => True := by
+  apply taintRel [.x28] (fun x y h => ⟨(hq x y h).1,?_⟩)
+    (show (taint.check (Taint.ofRegs [.x28]) (.block (setSR p e j)) (.block [])).isSome=true from by
+      with_unfolding_all rfl)
+  intro r hr
+  obtain rfl := List.mem_singleton.mp hr
+  exact (hq x y h).2
+
+end VG.Proof.MlDsa.AArch64.KeyGen.Optimized
+
+end
+
+end
 
 /-! ### `MlDsa.AArch64.KeyGen.OptimizedCorrect`, which only this module used -/
 

@@ -1,9 +1,8 @@
 module
 
-import VerifiedGarbage.Proof.MlKem.X86_64.KgTop
+public import VerifiedGarbage.Proof.MlKem.X86_64.EncTop
 public import VerifiedGarbage.Proof.MlKem.X86_64.KgA
 public import VerifiedGarbage.Impl.MlKem.X86_64.Frag16
-import VerifiedGarbage.Proof.MlKem.X86_64.KgCT
 public import VerifiedGarbage.Proof.MlKem.X86_64.FragKpke
 import VerifiedGarbage.Proof.MlKem.X86_64.FragS
 public import VerifiedGarbage.Proof.MlKem.X86_64.FragPrim
@@ -14,7 +13,6 @@ import VerifiedGarbage.Proof.MlKem.X86_64.FragL
 import VerifiedGarbage.Proof.MlKem.X86_64.Rel
 public import VerifiedGarbage.Proof.MlKem.X86_64.FragS4_16
 public import VerifiedGarbage.Impl.MlKem.X86_64.Kem16
-public import VerifiedGarbage.Proof.MlKem.X86_64.KgB
 
 /-! ### `MlKem.X86_64.Kg16Tail`, which this module and modules that import it used -/
 

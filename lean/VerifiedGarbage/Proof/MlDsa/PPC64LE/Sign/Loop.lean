@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 /-!
 # ML-DSA signing on PPC64LE: the rejection sampling loop
 
-As on 32-bit ARM (`Proof/MlDsa/Arm/Sign/PhaseLCT.lean`). An iteration
+As on 32-bit ARM (`Proof/MlDsa/Arm/Sign/PhaseOCT.lean`). An iteration
 (`iter_ok`) either continues, with the next iteration's head (`IL`), or ends
 the loop (`XS`): with `r24 = 1` when it passed, as `signIteration` does
 within `maxBounds` after the iterations before were rejected; with

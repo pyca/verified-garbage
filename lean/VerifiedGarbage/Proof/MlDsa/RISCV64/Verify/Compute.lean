@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.MlDsa.RISCV64.KeyGen.Steps
 /-!
 # ML-DSA verification on RISC-V: after the samplers
 
-As on PPC64LE (`Proof/MlDsa/PPC64LE/Verify/Compute.lean`): once the samplers
+As on PPC64LE (`Proof/MlDsa/PPC64LE/Verify/Cmp.lean`): once the samplers
 are done, with `Â` and `c` in memory as `A'` and `cc` and `s4` as `R`, the
 rest of the function computes `w′₁` from them, whatever they are (`KC5`);
 which writes keep it (`K5Chk`, `k5chks`); and the NTTs of `z` and `c`.

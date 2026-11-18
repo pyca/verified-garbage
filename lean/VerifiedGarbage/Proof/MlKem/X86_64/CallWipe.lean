@@ -7,14 +7,11 @@ public import VerifiedGarbage.Proof.Framework.X86_64.CallWipe
 public import VerifiedGarbage.Proof.Zeroize.X86_64Impl
 public import VerifiedGarbage.Proof.Framework.X86_64.Depth
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
-import VerifiedGarbage.Proof.MlKem.X86_64.Top16Ctl
+public import VerifiedGarbage.Proof.MlKem.X86_64.Top16Ctl
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Top16Ctl
-import VerifiedGarbage.Proof.MlKem.X86_64.EkSel16
-meta import VerifiedGarbage.Proof.MlKem.X86_64.EkSel16
-import VerifiedGarbage.Proof.MlKem.X86_64.KgH16Sel
-meta import VerifiedGarbage.Proof.MlKem.X86_64.KgH16Sel
-import VerifiedGarbage.Proof.MlKem.X86_64.EcP16
-meta import VerifiedGarbage.Proof.MlKem.X86_64.EcP16
+import VerifiedGarbage.Proof.MlKem.X86_64.DjSel16
+meta import VerifiedGarbage.Proof.MlKem.X86_64.DjSel16
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Top768
 import VerifiedGarbage.Proof.MlKem.X86_64.Sample4Impl
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Sample4Impl
 import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
@@ -23,11 +20,115 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.SigEval
-import VerifiedGarbage.Proof.MlKem.X86_64.EkTop
-import VerifiedGarbage.Proof.MlKem1024.X86_64.Written
 public import VerifiedGarbage.Proof.MlKem.Scrubbed
 meta import VerifiedGarbage.Proof.Framework.SigEval
 meta import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.MlKem.X86_64.Sel16
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Sel16
+
+/-! ### `MlKem1024.X86_64.Written`, which only this module used -/
+
+section
+
+/-!
+# ML-KEM-1024 on x86-64: what the top-level functions write of `scratch`
+
+An implementation with 16-bit polynomials (`Callee4.s16`, and for
+encapsulation hashing the key and decapsulation `Callee4.batchH16` too) writes only the first
+`scr16` bytes of `scratch` (`Artifact.written`), whose callers wipe only
+those; the baseline writes all of it.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.MlKem1024.X86_64
+
+open VG VG.X86_64 VG.Impl.MlKem.X86_64 VG.Impl.MlKem1024.X86_64
+open VG.Proof.MlKem VG.Proof.MlKem.X86_64
+
+/-- What key generation and encapsulation with `H(ek)` given with the
+implementation `v` write of `scratch`. -/
+def written (v : Sample4Impl) : List (String × Nat) :=
+  if v.callee.s16.isSome then [("scratch", scr16)] else []
+
+/-- What encapsulation hashing the key and decapsulation (hashing `z ‖ c`)
+with the implementation `v` write of `scratch`. -/
+def writtenEnc (v : Sample4Impl) : List (String × Nat) :=
+  if v.callee.s16.isSome && v.callee.batchH16.isSome then [("scratch", scr16)] else []
+
+theorem keyGen1024_written (v : Sample4Impl) (s : State) (t : List Leak) (s' : State)
+    (hs : (Proof.MlKem.Scrubbed.keyGen1024BodyContract X86_64.abi 32).pre s) (he : Exec isa (keyGen1024 v.callee) s t s') :
+    Sig.writtenWithin (X86_64.abi.withConsts []) Spec.MlKem1024.keyGenSig (written v) s s' := by
+  unfold written
+  match hm : v.callee.s16 with
+  | none => simp [Sig.writtenWithin]
+  | some (m, c) =>
+    have hS := v.s16 m c hm
+    simp [Sig.writtenWithin, X86_64.abi, VG.X86_64.argRegs, Abi.withConsts, Spec.MlKem1024.keyGenSig, Sig.words,
+      Param.words, ArgWord.bits, Sig.arrays]
+    intro i h1 h2
+    exact keyGenSel_keep (K := kem1024w) (n := scr16) (by decide) kpke1024 v kg16Wf1024 hm
+      (keyGen16_1024_ctl v m hS) (SpSafe.of_all (keyGen16_1024_sp v m hS))
+      (xdLe_spec (by s16_xd v c hS kpke1024)) (keyGenImp1024.pre s hs) he h1
+      (by simp only [Elem.size] at h2; exact h2)
+
+theorem encapsH1024_written (v : Sample4Impl) (s : State) (t : List Leak) (s' : State)
+    (hs : (Proof.MlKem.Scrubbed.encapsH1024BodyContract X86_64.abi 32).pre s) (he : Exec isa (encapsH1024 v.callee) s t s') :
+    Sig.writtenWithin (X86_64.abi.withConsts []) Spec.MlKem1024.encapsHSig (written v) s s' := by
+  unfold written
+  match hm : v.callee.s16 with
+  | none => simp [Sig.writtenWithin]
+  | some (m, c) =>
+    have hS := v.s16 m c hm
+    simp [Sig.writtenWithin, X86_64.abi, VG.X86_64.argRegs, Abi.withConsts, Spec.MlKem1024.encapsHSig,
+      Spec.MlKem.encapsHSigOf, Sig.words, Param.words, ArgWord.bits, Sig.arrays]
+    intro i h1 h2
+    exact encapsHSel_keep (K := kem1024w) (n := scr16) (by decide) kpke1024 v ec16Wf1024 hm
+      (encapsH16_1024_ctl v m hS) (SpSafe.of_all (encapsH16_1024_sp v m hS))
+      (xdLe_spec (by s16_xd v c hS kpke1024)) (encapsHImp1024.pre s hs) he h1
+      (by simp only [Elem.size] at h2; exact h2)
+
+theorem encaps1024_written (v : Sample4Impl) (s : State) (t : List Leak) (s' : State)
+    (hs : (Proof.MlKem.Scrubbed.encaps1024BodyContract X86_64.abi 32).pre s) (he : Exec isa (encaps1024 v.callee) s t s') :
+    Sig.writtenWithin (X86_64.abi.withConsts []) Spec.MlKem1024.encapsSig (writtenEnc v) s s' := by
+  unfold writtenEnc
+  match hm : v.callee.s16, hb : v.callee.batchH16 with
+  | none, _ => simp [Sig.writtenWithin]
+  | some _, none => simp [Sig.writtenWithin]
+  | some (m, c), some b =>
+    have hS := v.s16 m c hm
+    have hB := v.batchH16 b hb
+    simp [Sig.writtenWithin, X86_64.abi, VG.X86_64.argRegs, Abi.withConsts, Spec.MlKem1024.encapsSig, Sig.words,
+      Param.words, ArgWord.bits, Sig.arrays]
+    intro i h1 h2
+    exact encapsSel_keep (K := kem1024w) (n := scr16) (by decide) kpke1024 v ek16HWf1024 ekt16Wf1024 hm hb
+      (encaps16_1024_ctl v m hS hB) (SpSafe.of_all (encaps16_1024_sp v m hS hB))
+      (xdLe_spec (by ek16_xd v c b hS hB kpke1024)) (encapsImp1024.pre s hs) he h1
+      (by simp only [Elem.size] at h2; exact h2)
+
+theorem decaps1024_written (v : Sample4Impl) (s : State) (t : List Leak) (s' : State)
+    (hs : (Proof.MlKem.Scrubbed.decaps1024BodyContract X86_64.abi 32).pre s) (he : Exec isa (decaps1024 v.callee) s t s') :
+    Sig.writtenWithin (X86_64.abi.withConsts []) Spec.MlKem1024.decapsSig (writtenEnc v) s s' := by
+  unfold writtenEnc
+  match hm : v.callee.s16, hb : v.callee.batchH16 with
+  | none, _ => simp [Sig.writtenWithin]
+  | some _, none => simp [Sig.writtenWithin]
+  | some (m, c), some b =>
+    have hS := v.s16 m c hm
+    have hB := v.batchH16 b hb
+    simp [Sig.writtenWithin, X86_64.abi, VG.X86_64.argRegs, Abi.withConsts, Spec.MlKem1024.decapsSig, Sig.words,
+      Param.words, ArgWord.bits, Sig.arrays]
+    intro i h1 h2
+    exact decapsSel_keep (K := kem1024w) (n := scr16) (by decide) kpke1024 v djHWf1024 djtWf1024 hm hb
+      (decaps16_1024_ctl v m hS hB) (SpSafe.of_all (decaps16_1024_sp v m hS hB))
+      (xdLe_spec (by ek16_xd v c b hS hB kpke1024)) (decapsImp1024.pre s hs) he h1
+      (by simp only [Elem.size] at h2; exact h2)
+
+end VG.Proof.MlKem1024.X86_64
+
+end
+
+end
 
 /-!
 # ML-KEM on x86-64: the functions that wipe their working space
@@ -272,7 +373,7 @@ theorem pw_disj {l : List (Region × Bool)} (h : l.Pairwise (fun a b => (a.2 || 
 /-! ## Wiping only what the code writes
 
 With 16-bit polynomials, ML-KEM-1024's code writes only the first `scr16`
-bytes of `scratch` (`Proof/MlKem1024/X86_64/Written.lean`), and `callWipe`
+bytes of `scratch` (`Proof/MlKem/X86_64/CallWipe.lean`), and `callWipe`
 zeroes only those (`wiped1024`, `wipedEnc1024`). Its postcondition with the
 other bytes unchanged (`tail4`, `tail5`, `tail6`: `scratch` is the last
 argument) is then the one `Verified.callWipeTail'` takes, which reads the

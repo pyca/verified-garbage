@@ -46,7 +46,7 @@ meta import VerifiedGarbage.Proof.Framework.RISCV64.RelCT
 /-!
 # ML-DSA on RISC-V: `vg_mldsa_sample_in_ball`
 
-As on PPC64LE (`Proof/MlDsa/PPC64LE/Sample/BallLoop.lean`, `Ball.lean`,
+As on PPC64LE (`Proof/MlDsa/PPC64LE/Round/NormLt.lean`, `Ball.lean`,
 `BallCT.lean`). A call is described by `spOf σ` (`c̃`, its length, `scratch`
 and `c`), `τ` is the low 32 bits of `a2`, and the XOF output is `X σ`,
 `H(c̃, 272)`. The function runs in pieces: the prologue (`J0`, with `s7` =

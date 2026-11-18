@@ -1,21 +1,17 @@
 module
 
-import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.Squeeze
+public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.Squeeze
 public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.StepTiming
 public import VerifiedGarbage.Proof.Framework.AArch64.TaintEraseOff
-import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.Prf
 import Std.Tactic.BVDecide.Normalize.Prop
 import VerifiedGarbage.TCB.Axioms
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.Squeeze
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.StepTiming
 meta import VerifiedGarbage.Proof.Framework.AArch64.TaintEraseOff
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.Prf
 meta import Std.Tactic.BVDecide.Normalize.Prop
 meta import VerifiedGarbage.TCB.Axioms
 public import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Framework.RelCT
-public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.Slot
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.Slot
 
 /-!
 # A PRF slot leaks only public pointers

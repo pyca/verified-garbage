@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Sha3.PPC64LE.Stream.Verified
-public import VerifiedGarbage.Proof.Sha3.PPC64LE.Stream.CT
 public import VerifiedGarbage.Proof.Sha3.Instances
 public import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratch
 public import VerifiedGarbage.Impl.Sha3.PPC64LE.Instances
@@ -16,9 +15,7 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 import VerifiedGarbage.Proof.Framework.PPC64LE.Call
 import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
-
 meta import VerifiedGarbage.Proof.Sha3.PPC64LE.Stream.Verified
-meta import VerifiedGarbage.Proof.Sha3.PPC64LE.Stream.CT
 meta import VerifiedGarbage.Proof.Sha3.Instances
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratch
 meta import VerifiedGarbage.Impl.Sha3.PPC64LE.Instances

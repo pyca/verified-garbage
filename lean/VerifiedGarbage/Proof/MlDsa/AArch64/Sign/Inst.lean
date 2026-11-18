@@ -3,15 +3,14 @@ module
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentMaskCall
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Depth
 import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Unpack
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttCT
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttCT
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.ExpandMask
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Ball
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallInitial
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentMask
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNtt
 public import VerifiedGarbage.Proof.MlDsa.Sample.Rej4
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Prims
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentRejSelected
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Top
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.CTLoop
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.AddSub
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.HighPack
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Neon.Ntt

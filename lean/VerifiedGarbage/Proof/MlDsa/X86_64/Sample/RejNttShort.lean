@@ -1,12 +1,11 @@
 module
+
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.RejNtt
 public import VerifiedGarbage.Proof.MlDsa.Sample.RejNtt
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNtt
-
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.SpongeStream
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttLoop
 import VerifiedGarbage.Proof.MlKem.Mem
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Pro
 import VerifiedGarbage.Proof.MlDsa.X86_64.CalleeLit
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
 meta import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.RejNtt

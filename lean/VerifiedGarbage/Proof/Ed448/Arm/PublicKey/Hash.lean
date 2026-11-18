@@ -4,7 +4,6 @@ public import VerifiedGarbage.Impl.Ed448.Arm.PublicKey
 public import VerifiedGarbage.Proof.Sha3.Arm.Permute
 import VerifiedGarbage.Proof.Sha3.Arm.Stream.Absorb
 import VerifiedGarbage.Proof.Sha3.Arm.Stream.Pad
-import VerifiedGarbage.Proof.Sha3.Arm.Stream.Squeeze
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset

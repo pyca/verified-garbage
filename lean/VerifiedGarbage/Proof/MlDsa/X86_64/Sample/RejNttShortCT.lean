@@ -4,11 +4,11 @@ public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttShort
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.SpongeStreamCT
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttCT
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Pro
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttLoop
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttShort
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttCT
 meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Pro
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttLoop
 
 -- separate module: the relational proofs cost more to check than their imports.
 

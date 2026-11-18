@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Framework.Covers
 /-!
 # ML-KEM on PPC64LE: the buffers of the top-level functions
 
-As on 32-bit ARM (`Proof/MlKem/Arm/HashTop.lean`). The top-level functions work
+As on 32-bit ARM (`Proof/MlKem/Arm/SampleCT.lean`). The top-level functions work
 on a few buffers (`Lay`): `scratch` (buffer 0), the 48 bytes below the stack
 pointer (buffer 1), and their arguments; the contracts make them pairwise
 disjoint (`Lay.Ok`). A region is `l` bytes at offset `o` of buffer `i`

@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.MlKem.AArch64.Kem16P
 public import VerifiedGarbage.Proof.MlKem.AArch64.KgH.Pair
 public import VerifiedGarbage.Proof.Sha3.AArch64.Variant
-import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Tail
+public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Correct
 import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Permute
 import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.KeyGenPrefix
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
@@ -29,7 +29,6 @@ import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.W.Call
 import VerifiedGarbage.Proof.MlKem.Mem
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.Pair
-public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Correct
 
 /-! ### `MlKem.AArch64.KgH.Prefix`, which this module and modules that import it used -/
 

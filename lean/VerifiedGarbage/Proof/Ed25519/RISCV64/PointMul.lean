@@ -5,12 +5,11 @@ import VerifiedGarbage.Proof.Ed25519.Bytes
 import VerifiedGarbage.Proof.X25519.RISCV64.Invert
 import VerifiedGarbage.Proof.X25519.RISCV64.Bits
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Ed25519.RISCV64.PointPowers
+public import VerifiedGarbage.Proof.Ed25519.RISCV64.PointPowers
 public import VerifiedGarbage.Proof.Ed25519.ScalarMul
 public import VerifiedGarbage.Spec.Ed25519.Contract
 public import VerifiedGarbage.Proof.Ed25519.RISCV64.Field
 public import VerifiedGarbage.Impl.Ed25519.RISCV64.PointMul
-public import VerifiedGarbage.Proof.Ed25519.RISCV64.PointTable
 public import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.X25519.RISCV64.Cswap
 

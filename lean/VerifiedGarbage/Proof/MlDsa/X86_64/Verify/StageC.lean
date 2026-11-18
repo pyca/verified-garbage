@@ -2,12 +2,11 @@ module
 
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Verify.Verify
 public import VerifiedGarbage.Proof.MlDsa.Verify.Spec
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.CallArith
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Control
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.CallPack
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Hash
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.HashCT
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.PrimsOk
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Top
-import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Control
 import VerifiedGarbage.Proof.MlDsa.Verify.Norm
 import VerifiedGarbage.Proof.MlDsa.Verify.Mem
 import VerifiedGarbage.Proof.MlKem.Mem
@@ -18,7 +17,7 @@ import VerifiedGarbage.Proof.MlDsa.PreparedKeyContract
 import VerifiedGarbage.Proof.MlDsa.PreparedKey.Values
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.WriteBytes
-import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Blocks
+import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Flag
 
 /-! ### `MlDsa.X86_64.Verify.StageA`, which this module and modules that import it used -/
 

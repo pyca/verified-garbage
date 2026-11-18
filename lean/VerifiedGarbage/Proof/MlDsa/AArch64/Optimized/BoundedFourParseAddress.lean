@@ -1,9 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourParseArgs
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourLoop
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourScalarLoop
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourInit
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourInit
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Sha3.AArch64.Sums

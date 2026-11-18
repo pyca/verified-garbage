@@ -12,8 +12,6 @@ import VerifiedGarbage.Proof.MlKem.X86.TopKem
 meta import VerifiedGarbage.Proof.MlKem.X86.TopKem
 import VerifiedGarbage.Proof.MlKem.X86.TopLocal
 meta import VerifiedGarbage.Proof.MlKem.X86.TopLocal
-import VerifiedGarbage.Proof.MlKem.X86.TopHash
-meta import VerifiedGarbage.Proof.MlKem.X86.TopHash
 import VerifiedGarbage.Proof.MlKem.X86.TopSeq
 meta import VerifiedGarbage.Proof.MlKem.X86.TopSeq
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -27,8 +25,6 @@ import VerifiedGarbage.Proof.MlKem.X86.NttSetup
 import VerifiedGarbage.Proof.MlKem.X86.Red
 import VerifiedGarbage.Proof.MlKem.X86.Table
 import VerifiedGarbage.Proof.MlKem.X86.TopCall
-import VerifiedGarbage.Proof.MlKem.X86.TopPrim
-import VerifiedGarbage.Proof.MlKem.X86.TopPrim2
 import VerifiedGarbage.Proof.Sha512.Spec
 meta import VerifiedGarbage.Impl.MlKem.X86.Decaps
 meta import VerifiedGarbage.Proof.Framework.AddrArith
@@ -42,8 +38,6 @@ meta import VerifiedGarbage.Proof.MlKem.X86.NttSetup
 meta import VerifiedGarbage.Proof.MlKem.X86.Red
 meta import VerifiedGarbage.Proof.MlKem.X86.Table
 meta import VerifiedGarbage.Proof.MlKem.X86.TopCall
-meta import VerifiedGarbage.Proof.MlKem.X86.TopPrim
-meta import VerifiedGarbage.Proof.MlKem.X86.TopPrim2
 meta import VerifiedGarbage.Proof.Sha512.Spec
 import Mathlib.Tactic.Set
 

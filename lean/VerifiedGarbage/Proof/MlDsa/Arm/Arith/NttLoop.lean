@@ -19,7 +19,7 @@ to `mulz`'s value (`bprod`, at most `redMax < 2q`), and store the sum and
 the difference as they are: the coefficients between layers are words
 (`Proof/MlDsa/Arith/Lazy.lean`'s `Word`) congruent to the specification's,
 and bounded by a multiple of `q` that grows with each layer, as on RISC-V
-(`Proof/MlDsa/RISCV64/Arith/Lazy.lean`).
+(`Proof/MlDsa/RISCV64/Arith/Ntt.lean`).
 
 * `opF` is what the forward butterfly stores, `(x + t, x + 2q - t)` for the
   reduced product `t` of `y` and the zeta, on 32 bits, so that the stores

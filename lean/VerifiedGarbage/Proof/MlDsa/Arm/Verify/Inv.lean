@@ -15,8 +15,8 @@ import VerifiedGarbage.Proof.Framework.Arm.RelCT
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Contracts
-import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.SeedsCT
+import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Call
+import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Samp
 import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Steps
 import VerifiedGarbage.Proof.MlDsa.Verify.Bounds
 import VerifiedGarbage.Proof.MlDsa.Verify.Norm
@@ -27,7 +27,6 @@ import VerifiedGarbage.Proof.Sha256.Stream
 import VerifiedGarbage.Proof.Sha3.Arith
 import VerifiedGarbage.Proof.Sha3.Arm.Stream.Absorb
 import VerifiedGarbage.Proof.Sha3.Arm.Stream.Pad
-import VerifiedGarbage.Proof.Sha3.Arm.Stream.Squeeze
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
 meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
@@ -35,8 +34,8 @@ meta import VerifiedGarbage.Proof.Framework.Arm.RelCT
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Range
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Contracts
-meta import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.SeedsCT
+meta import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Call
+meta import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Samp
 meta import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Steps
 meta import VerifiedGarbage.Proof.MlDsa.Verify.Bounds
 meta import VerifiedGarbage.Proof.MlDsa.Verify.Norm
@@ -47,7 +46,6 @@ meta import VerifiedGarbage.Proof.Sha256.Stream
 meta import VerifiedGarbage.Proof.Sha3.Arith
 meta import VerifiedGarbage.Proof.Sha3.Arm.Stream.Absorb
 meta import VerifiedGarbage.Proof.Sha3.Arm.Stream.Pad
-meta import VerifiedGarbage.Proof.Sha3.Arm.Stream.Squeeze
 
 /-!
 # ML-DSA verification on 32-bit ARM: what holds throughout, and the prologue

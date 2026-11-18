@@ -21,7 +21,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 `canon` reduces a word less than `15q` (`bcan_toNat`).
 
 The butterflies store words congruent to the specification's coefficients
-(`Rel`), as on RISC-V (`Proof/MlKem/RISCV64/Lazy.lean`): `opF` is what the
+(`Rel`), as on RISC-V (`Proof/MlKem/RISCV64/Ntt.lean`): `opF` is what the
 forward butterfly stores, and a layer takes words less than `b q` to words
 less than `(b + 2) q` (`layerF_rel`); `opI` is the inverse butterfly's, and
 a layer keeps words less than `2q` (`layerI_rel`). The last layer of

@@ -40,7 +40,7 @@ meta import VerifiedGarbage.Proof.Framework.SigEval
 /-!
 # ML-DSA on RISC-V: `vg_mldsa_rej_ntt_poly`
 
-As on PPC64LE (`Proof/MlDsa/PPC64LE/Sample/RejNtt.lean` and `RejNttCT.lean`).
+As on PPC64LE (`Proof/MlDsa/PPC64LE/Sample/RejNttCT.lean` and `RejNttCT.lean`).
 The function runs in pieces: the prologue (`J0`), then a try with `N = 280`
 (`try_ok`): the sponge, whose output is `G(ρ, 3 N)` (`J6`), the first `3 N`
 bytes of `G(ρ, 1008)` (`G_take`), and the loop, iteration `t` of which

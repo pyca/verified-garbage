@@ -2,22 +2,17 @@ module
 
 import VerifiedGarbage.Impl.MlDsa.X86.KeyGen.Call
 meta import VerifiedGarbage.Impl.MlDsa.X86.KeyGen.Call
-
 import VerifiedGarbage.Impl.MlKem.X86.Basic
 meta import VerifiedGarbage.Impl.MlKem.X86.Basic
-
 import VerifiedGarbage.Proof.Framework.Semantics
 meta import VerifiedGarbage.Proof.Framework.Semantics
-
 import VerifiedGarbage.Proof.Framework.X86.Taint
 meta import VerifiedGarbage.Proof.Framework.X86.Taint
 public import VerifiedGarbage.Proof.MlDsa.X86.Sign.Inst
 public import VerifiedGarbage.Impl.MlDsa.X86.Verify.Inst
 public import VerifiedGarbage.Impl.MlDsa.X86.Sign.Entry
-public import VerifiedGarbage.Proof.MlDsa.X86.Message.VerifyCall
-public import VerifiedGarbage.Proof.MlDsa.PreparedKeyContract
-
 public import VerifiedGarbage.Proof.MlDsa.X86.Message.Verify
+public import VerifiedGarbage.Proof.MlDsa.PreparedKeyContract
 import VerifiedGarbage.Proof.MlDsa.X86.Sign.Verified
 import VerifiedGarbage.Proof.MlDsa.X86.Sign.Entry
 import VerifiedGarbage.Proof.MlDsa.X86.Verify.Inst
@@ -34,9 +29,8 @@ import all Init.Data.Nat.Bitwise.Basic
 meta import VerifiedGarbage.Proof.MlDsa.X86.Sign.Inst
 meta import VerifiedGarbage.Impl.MlDsa.X86.Verify.Inst
 meta import VerifiedGarbage.Impl.MlDsa.X86.Sign.Entry
-meta import VerifiedGarbage.Proof.MlDsa.X86.Message.VerifyCall
-meta import VerifiedGarbage.Proof.MlDsa.PreparedKeyContract
 meta import VerifiedGarbage.Proof.MlDsa.X86.Message.Verify
+meta import VerifiedGarbage.Proof.MlDsa.PreparedKeyContract
 meta import VerifiedGarbage.Proof.MlDsa.X86.Sign.Verified
 meta import VerifiedGarbage.Proof.MlDsa.X86.Sign.Entry
 meta import VerifiedGarbage.Proof.MlDsa.X86.Verify.Inst

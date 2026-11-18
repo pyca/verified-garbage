@@ -1,10 +1,9 @@
 module
 
-import VerifiedGarbage.Proof.MlKem.X86_64.KgCT
+public import VerifiedGarbage.Proof.MlKem.X86_64.EncTop
 import VerifiedGarbage.Proof.MlKem.X86_64.FragC
 import VerifiedGarbage.Proof.MlKem.X86_64.FragL
-public import VerifiedGarbage.Proof.MlKem.X86_64.EncTop
-public import VerifiedGarbage.Proof.MlKem.X86_64.FragDM
+public import VerifiedGarbage.Proof.MlKem.X86_64.KgBase
 public import VerifiedGarbage.Impl.MlKem.X86_64.Decaps
 import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
 

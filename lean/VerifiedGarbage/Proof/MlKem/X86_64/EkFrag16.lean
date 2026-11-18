@@ -1,9 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.EkFrag
-meta import VerifiedGarbage.Proof.MlKem.X86_64.EkFrag
-public import VerifiedGarbage.Proof.MlKem.X86_64.EkInline16
-meta import VerifiedGarbage.Proof.MlKem.X86_64.EkInline16
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Enc16
 public import VerifiedGarbage.Impl.MlKem.X86_64.Encaps16
 public import VerifiedGarbage.Proof.MlKem.X86_64.EkBase
@@ -12,6 +8,459 @@ meta import VerifiedGarbage.Impl.MlKem.X86_64.Encaps16
 import all Init.Data.Nat.Bitwise.Basic
 meta import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.MlKem.X86_64.EkScalar
+public import VerifiedGarbage.Proof.MlKem.X86_64.KgA
+import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.MlKem.X86_64.Zero
+public import VerifiedGarbage.Proof.Sha3.Stream
+public import VerifiedGarbage.Spec.MlKem
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.PlainSimp
+meta import VerifiedGarbage.Proof.MlKem.X86_64.KgA
+meta import VerifiedGarbage.Proof.Framework.Range
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Zero
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.MlKem.X86_64.EkBase
+meta import VerifiedGarbage.Proof.Sha3.Stream
+meta import VerifiedGarbage.Spec.MlKem
+meta import VerifiedGarbage.Proof.Framework.GetElem
+meta import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.X86_64.InlineCalls
+public import VerifiedGarbage.Proof.MlKem.X86_64.FragS4_16
+public import VerifiedGarbage.Impl.MlKem.X86_64.Encaps
+public import VerifiedGarbage.Proof.MlKem.X86_64.KgBase
+meta import VerifiedGarbage.Proof.MlKem.X86_64.FragS4_16
+meta import VerifiedGarbage.Proof.Framework.X86_64.InlineCalls
+meta import VerifiedGarbage.Impl.MlKem.X86_64.Encaps
+meta import VerifiedGarbage.Proof.MlKem.X86_64.KgBase
+
+/-! ### `MlKem.X86_64.EkInline16`, which this module and modules that import it used -/
+
+section
+
+/-!
+# ML-KEM on x86-64: a fragment `Sample4.sampleH` with 16-bit coefficients, inlined
+
+As `EkInline.lean`, for a fragment meeting `sampleHKW true` (`BatchHOk16`):
+the polynomials from `sc oa` are of 16-bit coefficients, 512 bytes each
+(`SHH16`, `sampleHAt16_ok`, `sampleHAt16_tr`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.MlKem.X86_64
+
+open VG VG.X86_64 VG.Impl.MlKem.X86_64
+open VG.Spec.MlKem
+open VG.Spec.Sha3 (bytesAt stateAt)
+
+/-- What inlining the fragment needs: `S4H`, and the return address apart. -/
+structure SHH16 (oa oz : Nat) (s : State) : Prop extends S4H16 oa oz s where
+  rS : (retR s).Disjoint ⟨pa s (sc 0), 136⟩
+  rA : (retR s).Disjoint ⟨pa s (sc oa), 2048⟩
+  rZ : (retR s).Disjoint ⟨pa s (sc oz), 8192⟩
+
+theorem SHH16.of {rbs wbs : List (Reg × Nat)} {s : State} (L : Lay rbs wbs s) {oa oz : Nat}
+    (hc : s4_16Chk (rbs ++ wbs) wbs oa oz = true) : SHH16 oa oz s := by
+  have h := S4H16.of L hc
+  simp only [s4_16Chk, wrOk, rdOk, Bool.and_eq_true, decide_eq_true_eq] at hc
+  obtain ⟨⟨⟨⟨⟨⟨_, hrs⟩, ⟨_, hra⟩, _⟩, ⟨_, hrz⟩, _⟩, _⟩, _⟩, _⟩ := hc
+  have ret : ∀ {p : Ptr} {l : Nat}, inB (rbs ++ wbs) p l = true → (retR s).Disjoint ⟨pa s p, l⟩ := fun hp => by
+    obtain ⟨n, hn, hsub⟩ := L.sub hp
+    exact (L.ret _ hn).sub_right hsub
+  exact ⟨h, ret hrs, ret hra, ret hrz⟩
+
+/-- The fragment's precondition, on its permissions. -/
+theorem shPre16 {oa oz : Nat} {s s1 : State} (h : SHH16 oa oz s)
+    (hv : s1.gpr .rdi = pa s (sc 0) ∧ s1.gpr .rsi = pa s (sc oa) ∧ s1.gpr .rdx = pa s (sc oz))
+    (k : Keep argRegs s s1) :
+    (sampleHKW true).pre (s1.withRegions [⟨pa s (sc 0), 136⟩] [⟨pa s (sc oa), 2048⟩, ⟨pa s (sc oz), 8192⟩]) := by
+  have hsp : s1.gpr .rsp = s.gpr .rsp := k.gpr (by decide)
+  have rr : ∀ rd wr, retR (s1.withRegions rd wr) = retR s := fun _ _ => by
+    simp only [retR, State.withRegions_gpr, hsp]
+  have b24 : ∀ {R : Region}, (below (s.gpr .rsp) 32).Disjoint R → (below (s1.gpr .rsp) 24).Disjoint R :=
+    fun hd => by rw [hsp]; exact hd.sub_left (below_sub (by omega_using []) (by omega_using []))
+  simp only [sampleHKW, sample4KW, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr, hv.1, hv.2.1,
+    hv.2.2]
+  exact ⟨trivial, rfl, h.dSA, h.dSZ, h.dAZ, by rw [rr]; exact h.rS, by rw [rr]; exact h.rA,
+    by rw [rr]; exact h.rZ, b24 h.kS, b24 h.kA, b24 h.kZ, h.nwA, h.nwZ⟩
+
+/-- Whether `SampleNTT` of the first three seeds at `p` all succeed within 280 iterations. -/
+abbrev all3_16 (m : Mem) (p : Addr) : Bool :=
+  (List.range 3).all fun k => (sampleNTT minIterations (seed4 m p k)).isSome
+
+/-- What the fragment leaves. -/
+structure SHPost16 (oa oz : Nat) (s s' : State) : Prop where
+  rd : s'.rd = s.rd
+  wr : s'.wr = s.wr
+  cs : ∀ r ∈ calleeSaved, r ≠ .r15 → s'.gpr r = s.gpr r
+  frame : Frame ([⟨pa s (sc oa), 2048⟩, ⟨pa s (sc oz), 8192⟩] ++ [below (s.gpr .rsp) 32]) s.mem s'.mem
+  r15 : s'.gpr .r15 = BitVec.setWidth 64 ((s.gpr .r15).setWidth 32 &&& (if all3_16 s.mem (pa s (sc 0)) then 1 else 0))
+  res : ∀ k < 3, ∀ f, sampleNTT minIterations (seed4 s.mem (pa s (sc 0)) k) = some f →
+    PolyIsW 16 s'.mem (poly4W true (pa s (sc oa)) k) f
+  hs : stateAt s'.mem (pa s (sc oz) + BitVec.ofNat 64 Sample4.oHS) =
+    SH.habs (stateAt s.mem (pa s (sc oz) + BitVec.ofNat 64 Sample4.oHS))
+      (fun i => bytesAt s.mem (pa s (sc oz) + BitVec.ofNat 64 (Sample4.oHB + 136 * i)) 136) 3
+
+theorem SHPost16.b {oa oz : Nat} {s s' : State} (h : SHPost16 oa oz s s') :
+    PPostB s s' [(sc oa, 2048), (sc oz, 8192)] :=
+  ⟨h.rd, h.wr, fun r hr => h.cs r (by
+      simp only [bases, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide) (by
+      simp only [bases, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide),
+    h.cs .rsp (by decide) (by decide), h.frame⟩
+
+/-- The fragment inlined, on the seeds at `scratch`, to the polynomials from `sc oa`. -/
+theorem sampleHAt16_ok {b : Prog isa} (hb : BatchHOk16 b) {oa oz : Nat} {s : State} (h : SHH16 oa oz s) :
+    WP isa (Encaps.sampleHAt b (sc oa) (sc oz)) s (SHPost16 oa oz s) := by
+  refine WP.seq (WP.mono (s4Glue_ok oa oz h.offA h.offZ s) fun s1 ⟨⟨hv, hm⟩, k⟩ => ?_)
+  have hsp : s1.gpr .rsp = s.gpr .rsp := k.gpr (by decide)
+  have hc : Covers ([⟨pa s (sc 0), 136⟩] ++ [⟨pa s (sc oa), 2048⟩, ⟨pa s (sc oz), 8192⟩]) (s1.rd ++ s1.wr) := by
+    rw [k.2.1, k.2.2]; exact h.c
+  have hw : Covers [⟨pa s (sc oa), 2048⟩, ⟨pa s (sc oz), 8192⟩] s1.wr := by rw [k.2.2]; exact h.w
+  refine WP.seq (WP.mono (WP.inline hb.ok (shPre16 h hv k) hc hw (Q := fun s2 => s2.rd = s1.rd ∧ s2.wr = s1.wr ∧
+      abiPreserved s1 s2 ∧ Frame [⟨pa s (sc oa), 2048⟩, ⟨pa s (sc oz), 8192⟩] s1.mem s2.mem ∧
+      (sampleHKW true).post (s1.withRegions [⟨pa s (sc 0), 136⟩] [⟨pa s (sc oa), 2048⟩, ⟨pa s (sc oz), 8192⟩])
+        (s2.withRegions [⟨pa s (sc 0), 136⟩] [⟨pa s (sc oa), 2048⟩, ⟨pa s (sc oz), 8192⟩]))
+    (fun s2 hrd hwr habi hf _ hpost => ⟨hrd, hwr, habi, hf, hpost⟩) hb.noCalls) fun s2 ⟨hrd, hwr, habi, hf, hpost⟩ => ?_)
+  refine WP.mono (and15_ok s2) fun s3 ⟨⟨h15, hm3⟩, k3⟩ => ?_
+  simp only [sampleHKW, State.withRegions_gpr, State.withRegions_mem, hv.1, hv.2.1, hv.2.2, hm] at hpost
+  obtain ⟨hax, hres, hhs⟩ := hpost
+  have hcs : ∀ r ∈ calleeSaved, s2.gpr r = s1.gpr r := habi.1
+  refine ⟨k3.2.1.trans (hrd.trans k.2.1), k3.2.2.trans (hwr.trans k.2.2), fun r hr h15' => ?_, ?_, ?_,
+    fun j hj f hf => ?_, ?_⟩
+  · rw [k3.gpr (by simpa using h15'), hcs r hr, k.gpr (argRegs_cs r hr)]
+  · rw [hm3, ← hm]
+    exact hf.mono fun r hr => List.mem_append_left _ hr
+  · rw [h15, hcs .r15 (by decide), k.gpr (by decide), hax]
+  · rw [hm3]; exact hres j hj f hf
+  · rw [hm3]; exact hhs
+
+/-- Two runs of the fragment inlined, from the same seeds and pointers. -/
+theorem sampleHAt16_tr {b : Prog isa} (hb : BatchHOk16 b) {oa oz : Nat} :
+    RelCT isa (fun x y => SHH16 oa oz x ∧ SHH16 oa oz y ∧ x.gpr .rbx = y.gpr .rbx ∧ x.gpr .rsp = y.gpr .rsp ∧
+      bytesAt x.mem (pa x (sc 0)) 136 = bytesAt y.mem (pa y (sc 0)) 136)
+      (Encaps.sampleHAt b (sc oa) (sc oz)) fun _ _ => True := by
+  refine RelCT.seq (RelCT.postDep (Q := fun x1 y1 => ∃ x y, (SHH16 oa oz x ∧ SHH16 oa oz y ∧ x.gpr .rbx = y.gpr .rbx ∧
+      x.gpr .rsp = y.gpr .rsp ∧ bytesAt x.mem (pa x (sc 0)) 136 = bytesAt y.mem (pa y (sc 0)) 136) ∧
+      (((x1.gpr .rdi = pa x (sc 0) ∧ x1.gpr .rsi = pa x (sc oa) ∧ x1.gpr .rdx = pa x (sc oz)) ∧ x1.mem = x.mem) ∧
+        Keep argRegs x x1) ∧
+      (((y1.gpr .rdi = pa y (sc 0) ∧ y1.gpr .rsi = pa y (sc oa) ∧ y1.gpr .rdx = pa y (sc oz)) ∧ y1.mem = y.mem) ∧
+        Keep argRegs y y1))
+    (block_nomem_tr (nomem_append (nomem_append (lea_nomem _ _) (lea_nomem _ _)) (lea_nomem _ _)))
+    (fun x y ⟨hx, hy, _⟩ => ⟨s4Glue_ok oa oz hx.offA hx.offZ x, s4Glue_ok oa oz hy.offA hy.offZ y⟩)
+    fun x y _ _ hp h1 h2 => ⟨x, y, hp, h1, h2⟩) (RelCT.seq (regionModel.relCT_inline (Pre := (sampleHKW true).pre)
+      (Pub := (sampleHKW true).pub) (fun s hs => let ⟨t, s', e, _, p⟩ := hb.ok s hs; ⟨t, s', e, p⟩) hb.ct ?_)
+      (block_nomem_tr fun i hi s => by simp only [List.mem_singleton] at hi; subst hi; rfl))
+  rintro x1 y1 ⟨x, y, ⟨hx, hy, e1, e3, e4⟩, ⟨⟨hv1, hm1⟩, k1⟩, ⟨⟨hv2, hm2⟩, k2⟩⟩
+  have hs1 : x1.gpr .rsp = x.gpr .rsp := k1.gpr (by decide)
+  have hs2 : y1.gpr .rsp = y.gpr .rsp := k2.gpr (by decide)
+  refine ⟨_, _, _, _, shPre16 hx hv1 k1, shPre16 hy hv2 k2, ?_,
+    by show Covers _ (x1.rd ++ x1.wr); rw [k1.2.1, k1.2.2]; exact hx.c,
+    by show Covers _ x1.wr; rw [k1.2.2]; exact hx.w,
+    by show Covers _ (y1.rd ++ y1.wr); rw [k2.2.1, k2.2.2]; exact hy.c,
+    by show Covers _ y1.wr; rw [k2.2.2]; exact hy.w⟩
+  show sample4K.pub (x1.withRegions _ _) (y1.withRegions _ _)
+  simp only [sample4K, State.withRegions_gpr, State.withRegions_mem, hv1.1, hv1.2.1, hv1.2.2, hv2.1, hv2.2.1,
+    hv2.2.2, hm1, hm2, e4, hs1, hs2, e3]
+  simp only [pa, e1, and_self]
+
+end VG.Proof.MlKem.X86_64
+
+end
+
+end
+
+/-! ### `MlKem.X86_64.EkFrag`, which this module and modules that import it used -/
+
+section
+
+/-! ### `MlKem.HSponge`, which this module and modules that import it used -/
+
+section
+
+/-!
+# `H(ek)` absorbed one block at a time
+
+`hstate E b d`: the state of the sponge of rate 136 and suffix `d` (SHA3-256's
+`0x06` by default, SHAKE256's `0x1f`) before
+block `b` of `pad(E)` is absorbed: the sponge of the first `b` blocks of
+`E`, and, once every block is absorbed, `absorb 136 (pad 136 6 E)`, the state
+`H(E)` is squeezed from (`H_of_hstate`). A whole block of `E` takes
+`hstate E b` to `hstate E (b + 1)` (`hstate_full`), and so does the last,
+partial block, followed by the padding (`hstate_last`, `hstate_padBlock`:
+the padding as bytes of the block, `E`'s rest, `0x06`, zeros and `0x80`).
+
+(AArch64's encapsulation absorbs `ek` in the same way, in
+`Proof/MlKem/AArch64/Hybrid/Absorb.lean`.)
+-/
+
+@[expose] public section
+
+namespace VG.Proof.MlKem.HSponge
+
+open VG.Spec.Sha3 (State keccakF absorb pad stateAt bytesAt toBytes)
+open VG.Proof.Sha3 (Rep xorAt xorByte byteOf)
+
+/-- The state before block `b` of `pad(E)` is absorbed. -/
+def hstate (E : List Byte) (b : Nat) (d : Byte := BitVec.ofNat 8 6) : State :=
+  if 136 * b ≤ E.length then Rep 136 (E.take (136 * b)) else absorb 136 (pad 136 d E)
+
+theorem hstate_zero (E : List Byte) {d : Byte} : hstate E 0 d = Spec.Sha3.zero := by
+  simp only [hstate, Nat.mul_zero, Nat.zero_le, ite_true, List.take_zero, Proof.Sha3.rep_nil]
+
+theorem hstate_done {E : List Byte} {b : Nat} {d : Byte} (h : E.length < 136 * b) :
+    hstate E b d = absorb 136 (pad 136 d E) := by
+  simp only [hstate, ite_eq_right (show ¬136 * b ≤ E.length by omega_using [h])]
+
+theorem xorAt_nil (A : State) (j : Nat) : xorAt A j [] = A := rfl
+
+theorem xorAt_append (A : State) (j : Nat) (bs : List Byte) :
+    ∀ cs, xorAt A j (bs ++ cs) = xorAt (xorAt A j bs) (j + bs.length) cs := by
+  refine Proof.Sha3.snoc_induction ?_ ?_
+  · rw [List.append_nil]; exact (xorAt_nil _ _).symm
+  · intro cs c ih
+    rw [← List.append_assoc, Proof.Sha3.xorAt_snoc, ih, Proof.Sha3.xorAt_snoc, List.length_append,
+      Nat.add_assoc]
+
+theorem xorAt_zeros (A : State) (j : Nat) : ∀ n, xorAt A j (List.replicate n 0) = A
+  | 0 => rfl
+  | n + 1 => by
+    rw [List.replicate_succ', Proof.Sha3.xorAt_snoc, xorAt_zeros A j n]
+    refine Proof.Sha3.ext_bytes fun i hi => ?_
+    rw [Proof.Sha3.byteOf_xorByte _ _ _ hi]
+    split <;> simp
+
+/-- A whole block. -/
+theorem hstate_full {E : List Byte} {b : Nat} {d : Byte} (h : 136 * b + 136 ≤ E.length) :
+    keccakF (xorAt (hstate E b d) 0 ((E.drop (136 * b)).take 136)) = hstate E (b + 1) d := by
+  have hl : (E.take (136 * b)).length = 136 * b := List.length_take_of_le (by omega_using [h])
+  have hbs : ((E.drop (136 * b)).take 136).length = 136 := by
+    rw [List.length_take, List.length_drop]; omega_using [h]
+  have ra := Proof.Sha3.rep_append (rate := 136) (by decide) (by decide) (E.take (136 * b))
+    ((E.drop (136 * b)).take 136) (by omega_using [hbs]) (by rw [hl, hbs]; omega_using [])
+  rw [hl, hbs, show 136 * b % 136 = 0 by omega_using [], ite_eq_left (by decide)] at ra
+  have ht : E.take (136 * (b + 1)) = E.take (136 * b) ++ (E.drop (136 * b)).take 136 := by
+    rw [show 136 * (b + 1) = 136 * b + 136 by omega_using [], List.take_add]
+  simp only [hstate, ite_eq_left (show 136 * b ≤ E.length by omega_using [h]),
+    ite_eq_left (show 136 * (b + 1) ≤ E.length by omega_using [h]), ht, ra]
+
+/-- The last, partial block, and the padding. -/
+theorem hstate_last {E : List Byte} {b : Nat} {d : Byte} (hlo : 136 * b < E.length)
+    (hhi : E.length < 136 * b + 136) :
+    keccakF (xorByte (xorByte (xorAt (hstate E b d) 0 (E.drop (136 * b))) (E.length - 136 * b) d) 135 128) =
+      hstate E (b + 1) d := by
+  have hl : (E.take (136 * b)).length = 136 * b := List.length_take_of_le (by omega_using [hlo])
+  have hbs : (E.drop (136 * b)).length = E.length - 136 * b := List.length_drop
+  have ra := Proof.Sha3.rep_append (rate := 136) (by decide) (by decide) (E.take (136 * b))
+    (E.drop (136 * b)) (by omega_using [hlo, hbs]) (by rw [hl, hbs]; omega_using [hhi])
+  rw [hl, hbs, show 136 * b % 136 = 0 by omega_using [], ite_eq_right (show ¬0 + (E.length - 136 * b) = 136 by omega_using [hhi]),
+    List.take_append_drop] at ra
+  rw [hstate_done (show E.length < 136 * (b + 1) by omega_using [hhi]),
+    Proof.Sha3.absorb_pad (by decide) (by decide), show E.length % 136 = E.length - 136 * b by omega_using [hlo, hhi]]
+  simp only [hstate, ite_eq_left (show 136 * b ≤ E.length by omega_using [hlo]), ← ra]
+
+/-- The last block of `pad(E)`, of 136 bytes: `E`'s rest `X`, the suffix `d` (`0x06` by default), zeros,
+and `0x80`. -/
+def padBlock (X : List Byte) (d : Byte := BitVec.ofNat 8 6) : List Byte :=
+  X ++ [d] ++ List.replicate (134 - X.length) 0 ++ [BitVec.ofNat 8 0x80]
+
+theorem xorAt_padBlock (A : State) {X : List Byte} {d : Byte} (h : X.length ≤ 134) :
+    xorAt A 0 (padBlock X d) = xorByte (xorByte (xorAt A 0 X) X.length d) 135 128 := by
+  rw [padBlock, xorAt_append, xorAt_append, xorAt_append, xorAt_zeros, Proof.Sha3.xorAt_single,
+    Proof.Sha3.xorAt_single]
+  simp only [Nat.zero_add, List.length_append, List.length_singleton, List.length_replicate,
+    show X.length + 1 + (134 - X.length) = 135 by omega_using [h]]
+  rfl
+
+/-- The last, partial block, as bytes of the padded block. -/
+theorem hstate_padBlock {E : List Byte} {b : Nat} {d : Byte} (hlo : 136 * b < E.length)
+    (hhi : E.length < 136 * b + 135) :
+    keccakF (xorAt (hstate E b d) 0 (padBlock (E.drop (136 * b)) d)) = hstate E (b + 1) d := by
+  rw [xorAt_padBlock _ (by rw [List.length_drop]; omega_using [hhi]), List.length_drop]
+  exact hstate_last hlo (by omega_using [hhi])
+
+/-- `H(E)`, from the state after the last block. -/
+theorem H_of_hstate {E : List Byte} {b : Nat} (h : E.length < 136 * b) :
+    Spec.MlKem.H E = (toBytes (hstate E b)).take 32 := by
+  rw [hstate_done h]
+  show (List.take 32 ((toBytes _).take 136 ++ [])) = _
+  rw [List.append_nil, List.take_take]
+  rfl
+
+/-- `J(E)`, from the state (suffix `0x1f`) after the last block. -/
+theorem J_of_hstate {E : List Byte} {b : Nat} (h : E.length < 136 * b) :
+    Spec.MlKem.J E = (toBytes (hstate E b (BitVec.ofNat 8 0x1f))).take 32 := by
+  rw [hstate_done h]
+  show (List.take 32 ((toBytes _).take 136 ++ [])) = _
+  rw [List.append_nil, List.take_take]
+  rfl
+
+/-- The first 32 bytes of a state in memory. -/
+theorem bytesAt_stateAt (m : Mem) (p : Addr) : bytesAt m p 32 = (toBytes (stateAt m p)).take 32 := by
+  refine List.ext_getElem (by simp [bytesAt, Proof.Sha3.length_toBytes]) fun i h₁ h₂ => ?_
+  simp only [bytesAt, List.length_map, List.length_range] at h₁
+  rw [List.getElem_take, Proof.Sha3.toBytes_getElem _ (by omega_using [h₁]), Proof.Sha3.byteOf_stateAt _ _ (by omega_using [h₁])]
+  simp [bytesAt]
+
+end VG.Proof.MlKem.HSponge
+
+end
+
+end
+
+/-!
+# ML-KEM on x86-64: encapsulation hashing the key in the matrix's fragments, what does not depend on the layout
+
+The facts about `pad(ek)` and its blocks (`blk`, `hbE`), the sponge's state
+after them (`hstate_blk`, `habs_blk`), and the pieces of code
+(`zeros_ok`, `mov0_ok`) that `kemEncaps16`'s fragments use
+(`EkFrag16.lean`), whatever the layout.
+-/
+
+@[expose] public section
+namespace VG.Proof.MlKem.X86_64.EkF
+
+open VG VG.X86_64 VG.Impl.MlKem.X86_64
+open VG.Spec.MlKem
+open VG.Spec.Sha3 (bytesAt stateAt keccakF)
+open VG.Proof.Sha3 (xorAt)
+open VG.Proof.MlKem.X86_64.Ek (EK ekE ekMs)
+open VG.Proof.MlKem.HSponge (hstate padBlock)
+
+/-! ## The blocks of `pad(ek)` -/
+
+/-- Block `t` of `pad(E)` (suffix `d`, `0x06` by default), for `E` that does not end at a block boundary. -/
+def blk (E : List Byte) (t : Nat) (d : Byte := BitVec.ofNat 8 6) : List Byte :=
+  if 136 * t + 136 ≤ E.length then (E.drop (136 * t)).take 136 else padBlock (E.drop (136 * t)) d
+
+/-- `E`'s length leaves a partial last block, with room for the padding. -/
+def Partial (E : List Byte) : Prop := 0 < E.length % 136 ∧ E.length % 136 < 135
+
+theorem hstate_blk {E : List Byte} {d : Byte} (hE : Partial E) {t : Nat} (ht : t ≤ E.length / 136) :
+    keccakF (xorAt (hstate E t d) 0 (blk E t d)) = hstate E (t + 1) d := by
+  unfold blk
+  split
+  · exact HSponge.hstate_full (by omega_arith)
+  · have := Nat.div_add_mod E.length 136
+    exact HSponge.hstate_padBlock (by obtain ⟨h1, h2⟩ := hE; omega_using [ht, h1]) (by obtain ⟨h1, h2⟩ := hE; omega_arith)
+
+theorem habs_blk {E : List Byte} {d : Byte} (hE : Partial E) {i : Nat} (hi : 3 * i + 3 ≤ E.length / 136 + 1) :
+    SH.habs (hstate E (3 * i) d) (fun j => blk E (3 * i + j) d) 3 = hstate E (3 * i + 3) d := by
+  simp only [SH.habs, Nat.add_zero]
+  rw [hstate_blk hE (by omega_using [hi]), hstate_blk hE (by omega_using [hi]), hstate_blk hE (by omega_using [hi])]
+
+/-! ## The sponge's state -/
+
+theorem stateAt_keep {rbs wbs : List (Reg × Nat)} {s s' : State} (Lx : Lay rbs wbs s) {ws : List (Ptr × Nat)}
+    (hP : PPostB s s' ws) {p : Ptr} (hc : keepB (rbs ++ wbs) ws p 200 = true) :
+    stateAt s'.mem (pa s' p) = stateAt s.mem (pa s p) := by
+  have e := Lx.keepBytes hP hc
+  rw [hP.pa (keepB_cs hc)] at e ⊢
+  refine VG.Proof.Sha3.stateAt_congr fun i hi => ?_
+  have := congrArg (fun l => l[i]?) e
+  simpa [bytesAt, List.getElem?_map, List.getElem?_range hi] using this
+
+/-! ## Zeros and the padding -/
+
+
+theorem zeros_ok (b : Reg) (off n : Nat) (s : State) (h0 : s.gpr .rax = 0) (hn : 8 * n < 2 ^ 64)
+    (hw : ∀ j < n, InRegions s.wr (s.gpr b + BitVec.ofNat 64 off + BitVec.ofNat 64 (8 * j)) 8) :
+    WP isa (.block ((List.range n).flatMap fun j => [.store (at_ b (off + 8 * j)) .rax])) s fun s' =>
+      Keep [] s s' ∧ Frame [⟨s.gpr b + BitVec.ofNat 64 off, 8 * n⟩] s.mem s'.mem ∧
+        ∀ i < 8 * n, s'.mem (s.gpr b + BitVec.ofNat 64 off + BitVec.ofNat 64 i) = 0 := by
+  refine wp_range_flatMap (M := isa) (fun k s' => Keep [] s s' ∧
+      Frame [⟨s.gpr b + BitVec.ofNat 64 off, 8 * n⟩] s.mem s'.mem ∧
+      ∀ i < 8 * k, s'.mem (s.gpr b + BitVec.ofNat 64 off + BitVec.ofNat 64 i) = 0)
+    (fun k s' hk ⟨hk', hf, hz⟩ => ?_) n (Nat.le_refl _) s
+    ⟨Keep.refl _ _, Frame.refl _ _, fun _ h => absurd h (Nat.not_lt_zero _)⟩
+  have hb : s'.gpr b = s.gpr b := hk'.1 b (by simp)
+  have ha : s'.gpr .rax = 0 := by rw [hk'.1 .rax (by simp), h0]
+  have e : s.gpr b + BitVec.ofNat 64 (off + 8 * k) = s.gpr b + BitVec.ofNat 64 off + BitVec.ofNat 64 (8 * k) := by
+    rw [BitVec.add_assoc, BitVec.ofNat_add]
+  refine WP.mono (zeroStep_ok b (off + 8 * k) s' (by rw [hk'.2.2, hb, e]; exact hw k hk))
+    fun s'' ⟨hm, hk''⟩ => ⟨(hk'.trans hk'').mono (by simp), ?_, fun i hi => ?_⟩
+  · rw [hm, hb, e]
+    exact hf.writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega_using [hk]) (by omega_using [hn, hk]))
+  · rw [hm, hb, e, ha]
+    simp only [Mem.writeW, Mem.write]
+    split
+    · simp
+    · rename_i hc
+      refine hz i (Nat.lt_of_not_le fun hik => hc ?_)
+      rw [Offset.sub_toNat _ hik (by omega_using [hn, hk, hi])]
+      omega_using [hi]
+
+theorem mov0_ok (s : State) :
+    WP isa (.block [.mov32 .rax (.imm 0)]) s fun s' => s'.gpr .rax = 0 ∧ s'.mem = s.mem ∧ Keep [.rax] s s' := by
+  refine WP.mono (WP.keep [.rax] (Q := fun s' => s'.gpr .rax = 0 ∧ s'.mem = s.mem) ?_ (by rfl))
+    fun s' ⟨⟨h0, hm⟩, k⟩ => ⟨h0, hm, k⟩
+  xrun []
+
+theorem padList (n : Nat) (a b : Byte) :
+    ((List.replicate (n + 2) (0 : Byte)).set 0 a).set (n + 1) b = a :: (List.replicate n 0 ++ [b]) := by
+  rw [List.replicate_succ, List.set_cons_zero, List.set_cons_succ, List.replicate_succ', List.set_append_right _ _ (by simp),
+    List.length_replicate, Nat.sub_self, List.set_cons_zero]
+
+/-! ## The blocks of a fragment -/
+
+/-- The 408 bytes of `pad(E)` (suffix `d`) from `408 i`, for `E` whose last block ends in fragment `i` or later. -/
+
+def hbE (E : List Byte) (i : Nat) (d : Byte := BitVec.ofNat 8 6) : List Byte :=
+  if 408 * i + 408 ≤ E.length then (E.drop (408 * i)).take 408
+  else E.drop (408 * i) ++ d :: (List.replicate (406 - (E.length - 408 * i)) 0 ++ [BitVec.ofNat 8 0x80])
+
+theorem hbE_blk {E : List Byte} {d : Byte} {i j : Nat} (hj : j < 3)
+    (hp : 408 * i + 408 ≤ E.length ∨ (272 < E.length - 408 * i ∧ E.length - 408 * i < 406)) :
+    ((hbE E i d).drop (136 * j)).take 136 = blk E (3 * i + j) d := by
+  unfold hbE blk
+  split
+  · rw [ite_eq_left (show 136 * (3 * i + j) + 136 ≤ E.length by omega_arith), List.drop_take, List.take_take, List.drop_drop]
+    rw [show 408 * i + 136 * j = 136 * (3 * i + j) by omega_using [], Nat.min_eq_left (by omega_using [hj])]
+  · rename_i hn
+    have hA : (E.drop (408 * i)).length = E.length - 408 * i := List.length_drop
+    rcases (by omega_using [hj] : j < 2 ∨ j = 2) with hj2 | rfl
+    · rw [ite_eq_left (show 136 * (3 * i + j) + 136 ≤ E.length by omega_using [hp, hj2]), List.drop_append_of_le_length (by omega_using [hj, hp, hA]),
+        List.take_append_of_le_length (by rw [List.length_drop]; omega_using [hp, hA, hj2]), List.drop_drop,
+        show 408 * i + 136 * j = 136 * (3 * i + j) by omega_using []]
+    · rw [ite_eq_right (show ¬136 * (3 * i + 2) + 136 ≤ E.length by omega_using [hn]), List.drop_append_of_le_length (by omega_using [hp, hA]), List.drop_drop,
+        List.take_of_length_le (by simp only [List.length_append, List.length_drop, List.length_cons,
+          List.length_replicate, List.length_nil]; omega_using [hp, hn])]
+      simp only [padBlock, List.length_drop, List.append_assoc, List.cons_append, List.nil_append,
+        show 408 * i + 136 * 2 = 136 * (3 * i + 2) by omega_using [],
+        show 134 - (E.length - 136 * (3 * i + 2)) = 406 - (E.length - 408 * i) by omega_using [hp]]
+
+/-! ## The entries of a fragment -/
+
+theorem allOk_add3 {k : Nat} {ρ : List Byte} {e : Nat} :
+    allOk k ρ (e + 3) ↔ allOk k ρ e ∧ ((List.range 3).all fun t =>
+      (sampleNTT minIterations (matSeed ρ ((e + t) / k) ((e + t) % k))).isSome) = true := by
+  simp only [List.all_eq_true, List.mem_range]
+  constructor
+  · intro h; exact ⟨fun e' he => h e' (by omega_using [he]), fun t ht => h (e + t) (by omega_using [ht])⟩
+  · rintro ⟨h, h3⟩ e' he
+    rcases (by omega_using [] : e' < e ∨ e ≤ e') with he' | he'
+    · exact h e' he'
+    · have := h3 (e' - e) (by omega_using [he])
+      rwa [Nat.add_sub_cancel' he'] at this
+
+theorem habs_congr (H : Spec.Sha3.State) {f g : Nat → List Byte} :
+    ∀ n, (∀ j < n, f j = g j) → SH.habs H f n = SH.habs H g n
+  | 0, _ => rfl
+  | n + 1, h => by
+    simp only [SH.habs]
+    rw [habs_congr H n fun j hj => h j (by omega_using [hj]), h n (by omega_using [])]
+
+/-- Code whose runs are never related. -/
+theorem relFalse {P Q : State → State → Prop} {c : Prog isa} (h : ∀ x y, P x y → False) : RelCT isa P c Q :=
+  fun _ _ _ _ _ _ hp _ _ => (h _ _ hp).elim
+
+end VG.Proof.MlKem.X86_64.EkF
+
+end
+
+end
 
 /-!
 # ML-KEM on x86-64: encapsulation hashing the key with 16-bit polynomials, the fragments

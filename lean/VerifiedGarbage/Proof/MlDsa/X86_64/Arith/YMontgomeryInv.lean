@@ -1,31 +1,25 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YNtt
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyNtt
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Montgomery
 public import VerifiedGarbage.Proof.MlDsa.MontgomeryContract
 import VerifiedGarbage.Proof.MlKem.X86_64.YNttLay
 import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.NttInv
 import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Ntt
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyNtt
 import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyLay
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyLay21
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyButterfly
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyInvariant
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyBase
 public import VerifiedGarbage.Proof.MlDsa.Arith.LazyButterfly
 import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YLay21
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YNtt
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyNtt
 meta import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Montgomery
 meta import VerifiedGarbage.Proof.MlDsa.MontgomeryContract
 meta import VerifiedGarbage.Proof.MlKem.X86_64.YNttLay
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.NttInv
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Ntt
 meta import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyNtt
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyLay
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyLay21
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyButterfly
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyInvariant
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyBase
 meta import VerifiedGarbage.Proof.MlDsa.Arith.LazyButterfly

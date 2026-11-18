@@ -1,6 +1,5 @@
 module
 
-import VerifiedGarbage.Proof.MlDsa.PPC64LE.Round.Bits
 import VerifiedGarbage.Proof.MlDsa.PPC64LE.Round.HighLow
 import VerifiedGarbage.Proof.MlDsa.PPC64LE.Arith.Common
 import VerifiedGarbage.Proof.Framework.PPC64LE.Run
@@ -9,7 +8,6 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import all Init.Data.Nat.Bitwise.Basic
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.MlDsa.PPC64LE.Round.Bits
 meta import VerifiedGarbage.Proof.MlDsa.PPC64LE.Round.HighLow
 meta import VerifiedGarbage.Proof.MlDsa.Round.Ones
 meta import VerifiedGarbage.Proof.MlKem.PPC64LE.Add

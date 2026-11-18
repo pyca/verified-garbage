@@ -4,7 +4,7 @@ public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentRejSelected
 public import VerifiedGarbage.Proof.Framework.AArch64.Depth
 public import VerifiedGarbage.Proof.Framework.AArch64.ModeSim
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Lit
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Top
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.CTLoop
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejVerified
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Depth
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Verified

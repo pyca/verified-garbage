@@ -1,16 +1,15 @@
 module
+
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Pack.Hint
 public import VerifiedGarbage.Proof.MlDsa.Pack.Hint
 public import VerifiedGarbage.Proof.MlDsa.Pack.Mem
 public import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
-
 import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.HintPack
-import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.MemTaint
 import VerifiedGarbage.Proof.MlKem.Mem
 import VerifiedGarbage.Proof.MlKem.X86_64.Rel
-import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.Stream
+import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.SimpleBitPack
 import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncode
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -21,10 +20,9 @@ meta import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 meta import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.HintPack
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.MemTaint
 meta import VerifiedGarbage.Proof.MlKem.Mem
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Rel
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.Stream
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.SimpleBitPack
 meta import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncode
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub

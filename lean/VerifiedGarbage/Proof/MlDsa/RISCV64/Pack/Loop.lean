@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 /-!
 # ML-DSA on RISC-V: the loops over the groups
 
-As on 32-bit ARM (`Proof/MlDsa/Arm/Pack/Loop.lean`): `packLoop_ok`, the loop
+As on 32-bit ARM (`Proof/MlDsa/Arm/Pack/BitPack.lean`): `packLoop_ok`, the loop
 of `packBody` writes the packing of the values of the 256 coefficients at
 `f`; `unpackLoop_ok`, the loop of `unpackBody` writes, for each field of the
 bytes at `v`, `fin`'s coefficient of it. Both for any width and any `ld` or

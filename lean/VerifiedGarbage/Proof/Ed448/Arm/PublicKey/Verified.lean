@@ -6,16 +6,15 @@ import VerifiedGarbage.Proof.Ed25519.Arm.Whole.WrapCT
 import VerifiedGarbage.Proof.Ed25519.Arm.Whole.BlocksCT
 public import VerifiedGarbage.Proof.Ed448.Arm.PublicKey.Hash
 import VerifiedGarbage.Proof.Sha3.Arm.Stream.Absorb
-import VerifiedGarbage.Proof.Sha3.Arm.Stream.Squeeze
-import VerifiedGarbage.Proof.Ed25519.Arm.Whole.EntryCT
 import VerifiedGarbage.Proof.Sha3.Arm.Stream.Pad
+import VerifiedGarbage.Proof.Ed25519.Arm.Whole.EntryCT
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 public import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Ed448 public-key derivation on ARMv7: constant time, and `Verified`
 
-As Ed25519's on this target (`Proof/Ed25519/Arm/PublicKey/Verified.lean`):
+As Ed25519's on this target (`Proof/Ed25519/Arm/Scrub.lean`):
 two runs from the same pointers and `sp` set up the same arguments for every
 call (`setup_ct`), each callee is constant time under its own contract
 (`call_ct`), and the blocks between the calls address memory only through

@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.Pair
 import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.SlotTiming
 public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.PairTiming
 import VerifiedGarbage.Proof.MlKem.AArch64.Paired.PairTiming
-import VerifiedGarbage.Proof.MlKem.AArch64.Paired.FinishTiming
 import VerifiedGarbage.Proof.MlKem.AArch64.Paired.SqueezeTiming
 import VerifiedGarbage.Proof.MlKem.AArch64.Paired.RejectTiming
 import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Constants
@@ -19,7 +18,6 @@ meta import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.Pair
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.SlotTiming
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.PairTiming
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Paired.PairTiming
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Paired.FinishTiming
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Paired.SqueezeTiming
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Paired.RejectTiming
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Constants

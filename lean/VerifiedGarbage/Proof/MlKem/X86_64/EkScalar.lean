@@ -3,13 +3,13 @@ module
 public import VerifiedGarbage.Proof.MlKem.X86_64.EkBase
 import VerifiedGarbage.Proof.MlKem.X86_64.EcTop
 import all Init.Data.Nat.Bitwise.Basic
-import VerifiedGarbage.Proof.MlKem.X86_64.KgCT
+import VerifiedGarbage.Proof.MlKem.X86_64.EncTop
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.MlKem.X86_64.EkBase
 meta import VerifiedGarbage.Proof.MlKem.X86_64.EcTop
 meta import Init.Data.Nat.Bitwise.Basic
-meta import VerifiedGarbage.Proof.MlKem.X86_64.KgCT
+meta import VerifiedGarbage.Proof.MlKem.X86_64.EncTop
 meta import VerifiedGarbage.Proof.Framework.KernelRfl
 meta import VerifiedGarbage.Proof.Framework.Offset
 

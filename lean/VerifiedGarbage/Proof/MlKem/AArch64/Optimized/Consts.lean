@@ -1,9 +1,11 @@
 module
+
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Tables
 public import VerifiedGarbage.Proof.Framework.AArch64.StackScratchConsts
-import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Readonly.Words
+import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Table
 public import VerifiedGarbage.Impl.MlKem.AArch64.Ntt16.Fast
 public import VerifiedGarbage.Impl.MlKem.AArch64.Ntt16.FastInv
+
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Optimized
 open VG VG.AArch64 VG.Impl.MlKem.AArch64

@@ -10,8 +10,6 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
 public import VerifiedGarbage.Impl.MlKem.AArch64.Paired
-import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Zero
-import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Words
 import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Tail
 
 /-! ### `MlKem.AArch64.Paired.InitCore`, which this module and modules that import it used -/

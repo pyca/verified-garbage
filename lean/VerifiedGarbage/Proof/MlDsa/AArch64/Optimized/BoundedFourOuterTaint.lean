@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourInitialized
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourMaskFour
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
 import VerifiedGarbage.TCB.Axioms
@@ -9,7 +8,6 @@ public import VerifiedGarbage.Proof.Framework.AArch64.TaintMono
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
 import VerifiedGarbage.Proof.Framework.RegSet
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourInitialized
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourMaskFour
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
 meta import VerifiedGarbage.TCB.Axioms

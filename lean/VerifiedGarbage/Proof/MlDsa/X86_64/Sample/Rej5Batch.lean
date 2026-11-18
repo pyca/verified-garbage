@@ -13,7 +13,6 @@ import VerifiedGarbage.Proof.Framework.X86_64.Inline
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 public import VerifiedGarbage.Proof.MlKem.KPke
 import VerifiedGarbage.Proof.MlDsa.Sample.Hash
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Sq
 
 /-! ### `MlDsa.X86_64.Sample.Rej5Parse`, which only this module used -/
 

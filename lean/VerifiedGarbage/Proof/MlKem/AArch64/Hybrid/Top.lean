@@ -4,14 +4,48 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Correct
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TopTiming
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Consts
 public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Matrix
-
 import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.MatrixTiming
 import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Start
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.EncapsTiming
 import VerifiedGarbage.Proof.MlKem.AArch64.Paired.PairTiming
 import VerifiedGarbage.Proof.MlKem.AArch64.Paired.RejectTiming
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
-import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Entry
+public import VerifiedGarbage.Proof.MlKem.AArch64.KgCommon
+public import VerifiedGarbage.Proof.MlKem.AArch64.KemCommon
+
+/-! ### `MlKem.AArch64.Optimized.Entry`, which this module and modules that import it used -/
+
+section
+
+@[expose] public section
+namespace VG.Proof.MlKem.AArch64.Optimized
+open VG VG.AArch64 VG.Proof.MlKem VG.Proof.MlKem.AArch64
+open VG.Impl.MlKem.AArch64
+
+theorem keygen_unstrip {P : KemLay} {s : State}
+ (h : KeyGen.Pre P (stripConsts constants s)) : KeyGen.Pre P s := by
+ refine ⟨?_,h.wr,h.args,h.sp16,h.wf⟩
+ exact List.mem_of_mem_take h.rd
+
+theorem kem_unstrip {P : KemLay} {L : Kem.Layout} {s : State}
+ (h : Kem.Pre P L (stripConsts constants s)) : Kem.Pre P L s := by
+ refine ⟨?_,h.wr,h.args,h.sp16,h.slots,h.scw,h.scl,h.wf⟩
+ intro b hb
+ exact List.mem_of_mem_take (h.rd b hb)
+
+/-- Entry contracts keep the original mathematical postconditions and public
+input relation; the extra hypotheses describe emitted immutable tables. -/
+def entryContract (base : Contract isa) : Contract isa where
+ pre s := base.pre (stripConsts constants s) ∧ ConstsOk constants 16 s
+ post := base.post
+ pub s t := base.pub s t ∧ ∀c∈constants,s.syms c.1=t.syms c.1
+
+end VG.Proof.MlKem.AArch64.Optimized
+
+end
+
+end
+
 /-!
 # The hashing encapsulation's contract and constant time
 

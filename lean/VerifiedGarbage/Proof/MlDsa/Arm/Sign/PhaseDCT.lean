@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Rel
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseD
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.MlDsa.Arm.Sign.CopyTr
 
 /-!
 # ML-DSA signing on ARMv7: decoding leaks only the pointers

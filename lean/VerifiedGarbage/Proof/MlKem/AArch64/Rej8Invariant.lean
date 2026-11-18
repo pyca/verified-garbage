@@ -8,9 +8,8 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Probe
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Spec.MlKem
-public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Store
+public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Advance
 public import VerifiedGarbage.Proof.MlKem.CoeffW
-import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Advance
 import VerifiedGarbage.Proof.Framework.Block
 
 /-! ### `MlKem.AArch64.Rej8Batch`, which only this module used -/

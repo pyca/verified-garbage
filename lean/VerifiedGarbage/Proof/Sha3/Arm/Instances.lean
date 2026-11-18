@@ -8,7 +8,6 @@ public import VerifiedGarbage.Proof.Framework.Arm.Call
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Sha3.Arm.Stream.Absorb
 import VerifiedGarbage.Proof.Sha3.Arm.Stream.Pad
-import VerifiedGarbage.Proof.Sha3.Arm.Stream.Squeeze
 import VerifiedGarbage.Proof.Sha3.Arm.Shared
 public import VerifiedGarbage.Proof.Framework.Arm.CallF
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
@@ -18,7 +17,6 @@ import VerifiedGarbage.Proof.Framework.Arm.Inline
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Block
-
 meta import VerifiedGarbage.Proof.Sha3.Arm.Permute
 meta import VerifiedGarbage.Proof.Sha3.Instances
 meta import VerifiedGarbage.Impl.Sha3.Arm.Instances
@@ -27,7 +25,6 @@ meta import VerifiedGarbage.Proof.Framework.Arm.Call
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Sha3.Arm.Stream.Absorb
 meta import VerifiedGarbage.Proof.Sha3.Arm.Stream.Pad
-meta import VerifiedGarbage.Proof.Sha3.Arm.Stream.Squeeze
 meta import VerifiedGarbage.Proof.Sha3.Arm.Shared
 meta import VerifiedGarbage.Proof.Framework.Arm.CallF
 meta import VerifiedGarbage.Proof.Framework.Arm.RelCT

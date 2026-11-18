@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.MlDsa.PreparedKeyContract
 public import VerifiedGarbage.Impl.MlDsa.X86.Verify.Entry
 import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.NoSp
 import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Prim
-import VerifiedGarbage.Proof.MlDsa.X86.Verify.Prim
+import VerifiedGarbage.Proof.MlDsa.X86.Verify.Base
 import VerifiedGarbage.Proof.MlKem.X86.TopLocal
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Sig
@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.MlDsa.PreparedKey.Values
 import VerifiedGarbage.Proof.MlDsa.DecideAt
-import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Inv
+import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Seeds
 import VerifiedGarbage.Proof.MlDsa.X86.Sign.Params
 meta import VerifiedGarbage.Proof.MlDsa.X86.Verify.Verified
 meta import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Prim

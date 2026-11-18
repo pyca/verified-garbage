@@ -1,14 +1,125 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Last
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.LastSpecPost
 public import VerifiedGarbage.Proof.MlKem.AArch64.KemB
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.SpecPost
-import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Pair
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.FullSample
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Context
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Restore
+public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.LastStart
+public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Resume
+public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.FastFinish
+public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Finish
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Result
+public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Begin
+import VerifiedGarbage.Proof.Framework.Block
+
+/-! ### `MlKem.AArch64.Paired.Pair`, which this module and modules that import it used -/
+
+section
+
+/-! # The complete paired matrix sampler -/
+@[expose] public section
+namespace VG.Proof.MlKem.AArch64.Paired
+variable {sha3 : Bool}
+open VG VG.AArch64 VG.Impl.MlKem.AArch64
+
+theorem pair_iff {w16 : Bool} (L : KemLay) (kg : Bool) (a : Nat) (s : State) (Q : State→Prop) :
+    WP isa (Impl.MlKem.AArch64.Paired.pair sha3 L kg a w16) s Q ↔
+    WP isa (.seq (beginCode sha3 (if kg then KG.SB else KEM.SB) (if kg then KG.SS else KEM.SS)
+      a (a+1) L.k ((if kg then KG.AH else KEM.AH)+1024*a)
+      ((if kg then KG.AH else KEM.AH)+1024*(a+1)) w16) (finishCode sha3 w16)) s Q := by
+  simp only [Impl.MlKem.AArch64.Paired.pair,beginCode,initialCode,finishCode,seqs]
+  simp only [WP.seq_iff (M := isa)]
+
+theorem pairCode_ok {w16 : Bool} {s : State} {p seed outA outB table : Addr} {sb ss a b k oa ob : Nat}
+    (hss : ss<65536) (hsb : sb+32≤32768) (h8 : sb%8=0)
+    (hoa : oa<65536) (hob : ob<65536)
+    (hp : s.gpr .x28+BitVec.ofNat 64 ss=p) (hseed : s.gpr .x28+BitVec.ofNat 64 sb=seed)
+    (houtA : s.gpr .x28+BitVec.ofNat 64 oa=outA) (houtB : s.gpr .x28+BitVec.ofNat 64 ob=outB)
+    (hin : ∀j<4,InRegions (s.rd++s.wr) (seed+BitVec.ofNat 64 (8*j)) 8)
+    (hsep : (Region.mk seed 32).Disjoint ⟨p,2048⟩)
+    (ctx : Context p outA outB table s) (ht : s.syms "VG_MLKEM_REJ_SHUFFLE"=table)
+    (hb : s.gpr .x24=0 ∨ s.gpr .x24=1) :
+    WP isa (.seq (beginCode sha3 sb ss a b k oa ob w16) (finishCode sha3 w16)) s
+      (PairPostW w16 (seedState s.mem seed a k) (seedState s.mem seed b k) p outA outB s) := by
+  refine WP.seq (WP.mono_syms (begin_ok (sha3 := sha3) hss hsb h8 hoa hob hp hseed houtA houtB hin hsep ctx ht)
+    fun t h sy=>?_)
+  exact finish_ok (sha3 := sha3) (h.keep.mono (by decide)) h.frame h.saved h.progress (by rw [sy]; exact ht)
+    h.flag (h.keep.get .x24 (by decide)) hb
+
+end VG.Proof.MlKem.AArch64.Paired
+
+end
+
+end
+
+/-! ### `MlKem.AArch64.Paired.SpecPost`, which this module and modules that import it used -/
+
+section
+
+/-! # Paired sampler outcomes stated using the existing public specification -/
+@[expose] public section
+namespace VG.Proof.MlKem.AArch64.Paired
+open VG VG.AArch64 VG.Spec.MlKem VG.Proof.MlKem
+
+structure PairOutcomeW (w16 : Bool) (A B : List Byte) (p a b : Addr) (s t : State) : Prop where
+  keep : Keep pairRegs s t
+  frame : Frame (stepWrites p a b) s.mem t.mem
+  reducedLeft : ReducedW (cw w16) t.mem a
+  reducedRight : ReducedW (cw w16) t.mem b
+  left : sampleNTT 280 A=none ∨ sampleNTT 280 A=some (polyAtW (cw w16) t.mem a)
+  right : sampleNTT 280 B=none ∨ sampleNTT 280 B=some (polyAtW (cw w16) t.mem b)
+  status : t.gpr .x24=s.gpr .x24 &&& BitVec.ofNat 64
+    (if (sampleNTT 280 A).isSome ∧ (sampleNTT 280 B).isSome then 1 else 0)
+
+theorem PairPostW.outcome {w16 : Bool} {s t : State} {p seed a b : Addr} {i j k : Nat}
+    (hk : 0<k) (hk256 : k≤256)
+    (h : PairPostW w16 (seedState s.mem seed i k) (seedState s.mem seed j k) p a b s t) :
+    PairOutcomeW w16 (seedBytes s.mem seed i k) (seedBytes s.mem seed j k) p a b s t := by
+  have ra := accepted_result hk hk256 h.left
+  have rb := accepted_result hk hk256 h.right
+  refine ⟨h.keep,h.frame,h.reducedLeft,h.reducedRight,?_,?_,?_⟩
+  · rcases ra with ⟨_,ha⟩|⟨_,ha⟩
+    · exact Or.inr ha
+    · exact Or.inl ha
+  · rcases rb with ⟨_,hb⟩|⟨_,hb⟩
+    · exact Or.inr hb
+    · exact Or.inl hb
+  · rw [h.status]
+    rcases ra with ⟨la,ha⟩|⟨la,ha⟩ <;> rcases rb with ⟨lb,hb⟩|⟨lb,hb⟩ <;>
+      simp [ha,hb,la,lb]
+
+end VG.Proof.MlKem.AArch64.Paired
+
+end
+
+end
+
+/-! ### `MlKem.AArch64.Paired.LastSpecPost`, which this module and modules that import it used -/
+
+section
+
+@[expose] public section
+namespace VG.Proof.MlKem.AArch64.Paired
+open VG VG.AArch64 VG.Spec.MlKem
+
+structure LastOutcomeW (w16 : Bool) (B : List Byte) (p out : Addr) (s t : State) : Prop where
+ keep : Keep pairRegs s t
+ frame : Frame (fullWrites p out) s.mem t.mem
+ reduced : ReducedW (cw w16) t.mem out
+ result : sampleNTT 280 B=none ∨ sampleNTT 280 B=some (polyAtW (cw w16) t.mem out)
+ status : t.gpr .x24=s.gpr .x24 &&& BitVec.ofNat 64 (if (sampleNTT 280 B).isSome then 1 else 0)
+
+theorem LastPostW.outcome {w16 : Bool} {B : List Byte} {p out : Addr} {s t : State} (h : LastPostW w16 B p out s t) :
+    LastOutcomeW w16 B p out s t := by
+  refine ⟨h.keep,h.frame,h.reduced,?_,?_⟩
+  · rcases h.result with ⟨_,hr⟩ | ⟨_,hr⟩; exact Or.inr hr; exact Or.inl hr
+  · rw [h.status]
+    rcases h.result with ⟨hl,hr⟩ | ⟨hl,hr⟩ <;> simp [hl,hr]
+
+end VG.Proof.MlKem.AArch64.Paired
+
+end
+
+end
 
 /-! ### `MlKem.AArch64.Optimized.KemMatrixFrame`, which only this module used -/
 

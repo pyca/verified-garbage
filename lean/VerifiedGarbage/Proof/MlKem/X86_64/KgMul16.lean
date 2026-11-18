@@ -2,14 +2,13 @@ module
 
 import VerifiedGarbage.Proof.MlKem.X86_64.RowEY16
 public import VerifiedGarbage.Proof.MlKem.X86_64.KpkeBodiesY
-public import VerifiedGarbage.Proof.MlKem.X86_64.KgMul
 public import VerifiedGarbage.Proof.MlKem.X86_64.NttR.RunA16
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.MlKem.X86_64.EncMul
 public import VerifiedGarbage.Proof.MlKem.X86_64.DecMulY
 public import VerifiedGarbage.Proof.MlKem.X86_64.RowY
-import VerifiedGarbage.Proof.MlKem.X86_64.AccInvY
+import VerifiedGarbage.Proof.MlKem.X86_64.FinY
 import VerifiedGarbage.Proof.MlKem.X86_64.VMxcsr
 
 /-! ### `MlKem.X86_64.EncMulY`, which this module and modules that import it used -/

@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Sha3.Contract
 import VerifiedGarbage.Proof.Sha3.X86.Stream.Absorb
-import VerifiedGarbage.Proof.Sha3.X86.Stream.Pad
 import VerifiedGarbage.Proof.Sha3.X86.Stream.Squeeze
 public import VerifiedGarbage.Spec.Sha3.Contract
 public import VerifiedGarbage.Impl.Sha3.X86.Stream

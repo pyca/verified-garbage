@@ -22,7 +22,7 @@ meta import VerifiedGarbage.Proof.Framework.PPC64LE.RunR
 /-!
 # ML-KEM on PPC64LE: `vg_mlkem_multiply_ntts`
 
-As on 32-bit ARM (`Proof/MlKem/Arm/Mul.lean`): `r14` and `r15` saved and
+As on 32-bit ARM (`Proof/MlKem/Arm/SampleCT.lean`): `r14` and `r15` saved and
 the table of the `γᵢ` stored (`setup_ok`); then one pair of coefficients per
 iteration (`multiplyNTTs_even`, `multiplyNTTs_odd`), whose body is
 symbolically executed once for any pointers (`body_ok`); the invariant says

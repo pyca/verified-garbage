@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.MlKem.RISCV64.Encrypt
 public import VerifiedGarbage.Proof.MlKem.RISCV64.Lay
 import VerifiedGarbage.Proof.MlKem.RISCV64.HashCT
-import VerifiedGarbage.Proof.MlKem.RISCV64.PrfCT
 import VerifiedGarbage.Proof.MlKem.RISCV64.RowCT
 import VerifiedGarbage.Proof.MlKem.RISCV64.SampleCT
 import VerifiedGarbage.Proof.Framework.RISCV64.RelBlock

@@ -1,10 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLoop
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseFlags
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseZInit
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseAdd
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseZInit
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Mem
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseZ
 import VerifiedGarbage.Proof.Framework.AArch64.Simd

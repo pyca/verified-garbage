@@ -2,10 +2,9 @@ module
 
 public import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.VectorLower
 public import VerifiedGarbage.Proof.Framework.Block
-public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.CoreExec
+public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Lower
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Simd64
-import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Lower
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules

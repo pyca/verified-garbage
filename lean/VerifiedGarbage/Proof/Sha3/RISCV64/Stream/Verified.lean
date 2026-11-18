@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Sha3.RISCV64.Contract
+public import VerifiedGarbage.Proof.Sha3.RISCV64.Permute
 public import VerifiedGarbage.Impl.Sha3.RISCV64.Stream
 public import VerifiedGarbage.TCB.RISCV64.Target
 public import VerifiedGarbage.Proof.Sha3.RISCV64.Stream.AbsorbWs
@@ -19,7 +19,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Sha3.RISCV64.Stream.Lit
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 meta import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Sha3.RISCV64.Contract
+meta import VerifiedGarbage.Proof.Sha3.RISCV64.Permute
 meta import VerifiedGarbage.Impl.Sha3.RISCV64.Stream
 meta import VerifiedGarbage.TCB.RISCV64.Target
 public import VerifiedGarbage.Proof.Sha3.Contract

@@ -1,6 +1,5 @@
 module
 
-import VerifiedGarbage.Proof.MlKem.AArch64.NttR.ModelI
 public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Vec
 import VerifiedGarbage.Proof.MlKem.Arith
 import VerifiedGarbage.Proof.MlKem.Ntt
@@ -9,6 +8,360 @@ public import VerifiedGarbage.Proof.MlKem.NttLayer
 import VerifiedGarbage.Proof.MlKem.AArch64.NttR.Lit
 import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.MlKem.AArch64.Barrett
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Taint
+
+/-! ### `MlKem.AArch64.NttR.ModelI`, which this module and modules that import it used -/
+
+section
+
+/-! ### `MlKem.AArch64.NttR.Model`, which this module and modules that import it used -/
+
+section
+
+/-! ### `MlKem.AArch64.Ntt16.Idx`, which this module and modules that import it used -/
+
+section
+
+/-! ### `MlKem.AArch64.Ntt16.Rows`, which this module and modules that import it used -/
+
+section
+
+/-!
+# ML-KEM's 16-bit NTT on AArch64: its zetas
+
+The zetas of the 16-bit NTT's table are those of the standard
+(`ofNat_zeta`), each less than `q` (`zeta_lt`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.MlKem.AArch64.Ntt16
+
+open VG VG.AArch64 VG.Proof.MlKem.AArch64 VG.Proof.MlKem VG.Spec.MlKem
+open Impl.MlKem.AArch64.Ntt16
+
+/-! ## Zetas -/
+
+theorem ofNat_zeta {k : Nat} (hk : k < 128) : ofNat (Impl.MlKem.AArch64.Ntt16.zeta k) = VG.Proof.MlKem.zeta k := by
+  rw [VG.Proof.MlKem.zeta_eq hk, Impl.MlKem.AArch64.Ntt16.zeta, zetaTable_eq]
+
+theorem zeta_lt {k : Nat} (hk : k < 128) : Impl.MlKem.AArch64.Ntt16.zeta k < 3329 := by
+  have := zetaTable_lt k hk
+  exact this
+
+end VG.Proof.MlKem.AArch64.Ntt16
+
+end
+
+end
+
+/-!
+# ML-KEM's 16-bit NTT on AArch64: lanes reduced to `[0, q)`
+
+A lane less than `q` in absolute value made nonnegative (`nonneg_lane`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.MlKem.AArch64.Ntt16
+
+open VG VG.AArch64 VG.Proof.MlKem.AArch64 VG.Proof.MlKem VG.Spec.MlKem
+open Impl.MlKem.AArch64.Ntt16
+
+/-! ## Reduction to `[0, q)` -/
+
+/-- A lane less than `q` in absolute value made nonnegative: `r + (r >> 15 & q)`. -/
+theorem nonneg_lane {r : BitVec 16} (h1 : -3329 < r.toInt) (h2 : r.toInt < 3329) :
+    (r + (r.sshiftRight 15 &&& BitVec.ofNat 16 3329)).toInt =
+      if r.toInt < 0 then r.toInt + 3329 else r.toInt := by
+  rw [BitVec.sshiftRight_eq, Int.shiftRight_eq_div_pow]
+  by_cases h : r.toInt < 0
+  · rw [show r.toInt / ((2 ^ 15 : Nat) : Int) = -1 by omega_arith, ite_eq_left h,
+      show BitVec.ofInt 16 (-1) &&& BitVec.ofNat 16 3329 = BitVec.ofNat 16 3329 by decide,
+      BitVec.toInt_add]
+    simp only [Int.bmod_def, show (BitVec.ofNat 16 3329).toInt = 3329 by decide]
+    split <;> omega_arith
+  · rw [show r.toInt / ((2 ^ 15 : Nat) : Int) = 0 by omega_arith, ite_eq_right h,
+      show BitVec.ofInt 16 0 &&& BitVec.ofNat 16 3329 = 0#16 by decide, BitVec.add_zero]
+
+end VG.Proof.MlKem.AArch64.Ntt16
+
+end
+
+end
+
+/-!
+# ML-KEM on AArch64: the NTT halfword by halfword, its coefficients
+
+The coefficients after `st` layers (`Lf`), as the 16-bit NTT
+(`Impl/MlKem/AArch64/Ntt16.lean`) computes them from the input's `W`, obey the
+butterflies the machine collapses (`model`), represent those of `NTT`
+within `(st + 1) q` (`Lf_rep`), and their reductions (`Of`) are the
+coefficients of `NTT` (`Of_ntt`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.MlKem.AArch64.NttR
+
+open VG VG.AArch64 VG.Spec.MlKem VG.Proof.MlKem
+open VG.Proof.MlKem.AArch64.Ntt16 (LRep bf_lane mm_ok ofNat_zeta zeta_lt nonneg_lane)
+
+/-- The zeta of the block of `p` in the layer at distance `len`. -/
+def zk (len p : Nat) : Nat := Impl.MlKem.AArch64.Ntt16.zeta (128 / len + p / (2 * len))
+
+/-- The coefficients after `st` layers, from the input's `W`. -/
+def Lf (W : Nat → BitVec 16) : Nat → Nat → BitVec 16
+  | 0, p => W p
+  | st + 1, p =>
+    let len := 128 >>> st
+    if p % (2 * len) < len then Lf W st p + mmW (Lf W st (p + len)) (zk len p) (twN (zk len p))
+    else Lf W st (p - len) - mmW (Lf W st p) (zk len (p - len)) (twN (zk len (p - len)))
+
+/-- The reduced coefficients after the seven layers. -/
+def Of (W : Nat → BitVec 16) (p : Nat) : BitVec 16 := normW (Lf W 7 p)
+
+theorem Lf_succ (W : Nat → BitVec 16) (st p : Nat) : Lf W (st + 1) p =
+    if p % (2 * (128 >>> st)) < 128 >>> st then
+      Lf W st p + mmW (Lf W st (p + (128 >>> st))) (zk (128 >>> st) p) (twN (zk (128 >>> st) p))
+    else Lf W st (p - (128 >>> st)) - mmW (Lf W st p) (zk (128 >>> st) (p - (128 >>> st)))
+      (twN (zk (128 >>> st) (p - (128 >>> st)))) := rfl
+
+theorem div_sub_len {p len : Nat} (hpos : 0 < len) (hm : ¬ p % (2 * len) < len) :
+    (p - len) / (2 * len) = p / (2 * len) := by
+  have h1 := Nat.div_add_mod p (2 * len)
+  have h3 := Nat.mod_lt p (show 0 < 2 * len by omega_using [hpos])
+  apply Nat.div_eq_of_lt_le
+  · rw [Nat.mul_comm]
+    generalize 2 * len * (p / (2 * len)) = M at h1 ⊢
+    omega_using [hm, h1]
+  · rw [Nat.add_mul, Nat.one_mul, Nat.mul_comm]
+    generalize 2 * len * (p / (2 * len)) = M at h1 ⊢
+    omega_using [h3, h1]
+
+theorem model (W : Nat → BitVec 16) : Model (Lf W) (Of W) fwdRules := by
+  refine ⟨by decide, fun _ _ st p p' z t hb => ?_, nofun, nofun, nofun, nofun, fun p _ => rfl, nofun, nofun,
+    nofun, nofun, nofun⟩
+  unfold bflyOk fwdRules at hb
+  simp only [Bool.and_eq_true, Nat.blt_eq, Nat.beq_eq] at hb
+  obtain ⟨⟨⟨⟨⟨hst, rfl⟩, hm⟩, -⟩, rfl⟩, rfl⟩ := hb
+  have hpos : 0 < 128 >>> st := by
+    rcases (by omega_using [hst] : st = 0 ∨ st = 1 ∨ st = 2 ∨ st = 3 ∨ st = 4 ∨ st = 5 ∨ st = 6) with
+      rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+  refine ⟨?_, ?_⟩
+  · rw [Lf_succ, ite_eq_left hm]; rfl
+  · have h1 : (p + (128 >>> st)) % (2 * (128 >>> st)) = p % (2 * (128 >>> st)) + (128 >>> st) := by
+      rw [Nat.add_mod, Nat.mod_eq_of_lt (show 128 >>> st < 2 * (128 >>> st) by omega_using [hm])]
+      exact Nat.mod_eq_of_lt (by omega_using [hm])
+    rw [Lf_succ, ite_eq_right (by omega_using [h1]), Nat.add_sub_cancel]
+    rfl
+
+/-! ## The coefficients represent `NTT`'s -/
+
+theorem lens_get {st : Nat} (h : st < 7) :
+    0 < 128 >>> st ∧ 2 * (128 >>> st) * (128 / (128 >>> st)) = 256 ∧ 128 / (128 >>> st) + 255 / (2 * (128 >>> st)) < 128 := by
+  rcases (by omega_using [h] : st = 0 ∨ st = 1 ∨ st = 2 ∨ st = 3 ∨ st = 4 ∨ st = 5 ∨ st = 6) with
+    rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+
+theorem mmW_eq {b : BitVec 16} {z : Nat} {T : BitVec 16}
+    (h : sqdmulhHLane true b (BitVec.ofNat 16 (Impl.MlKem.AArch64.Ntt16.tw z)) = some T) :
+    mmW b z (twN z) = b * BitVec.ofNat 16 z - T * BitVec.ofNat 16 3329 := by
+  unfold mmW qdW; rw [h]; rfl
+
+theorem pair_lt {p len K : Nat} (hpos : 0 < len) (hp : p < 2 * len * K) (hm : p % (2 * len) < len) :
+    p + len < 2 * len * K := by
+  have h1 := Nat.div_add_mod p (2 * len)
+  have hq : p / (2 * len) < K := (Nat.div_lt_iff_lt_mul (by omega_using [hpos])).2 (by rw [Nat.mul_comm]; exact hp)
+  have h2 : 2 * len * (p / (2 * len) + 1) ≤ 2 * len * K := Nat.mul_le_mul_left _ hq
+  rw [Nat.mul_add, Nat.mul_one] at h2
+  generalize 2 * len * (p / (2 * len)) = M at h1 h2
+  omega_using [hm, h1, h2]
+
+/-- The coefficients after `st` layers represent those of `NTT` after `st` layers. -/
+theorem Lf_rep (W : Nat → BitVec 16) (F : Poly) (h : ∀ p < 256, LRep (W p) F[p]! 3329) :
+    ∀ st ≤ 7, ∀ p < 256, LRep (Lf W st p) (nttL st F)[p]! ((st + 1) * 3329)
+  | 0, _, p, hp => by simp only [Lf, nttL_zero]; exact (h p hp).mono (by omega_using [])
+  | st + 1, hs, p, hp => by
+    have ih := Lf_rep W F h st (by omega_using [hs])
+    obtain ⟨hpos, hl, hz⟩ := lens_get (st := st) (by omega_using [hs])
+    rw [nttL_succ F (by omega_using [hs]), nttLayer_get _ hpos hl hp, Lf_succ]
+    generalize 128 >>> st = len at hpos hl hz
+    have hdiv : p / (2 * len) ≤ 255 / (2 * len) := Nat.div_le_div_right (show p ≤ 255 by omega_using [hp])
+    have hk : 128 / len + p / (2 * len) < 128 := by omega_using [hz, hdiv]
+    rw [show (st + 1 + 1) * 3329 = (st + 1) * 3329 + 3329 by omega_using []]
+    by_cases hm : p % (2 * len) < len
+    · rw [ite_eq_left hm, ite_eq_left hm]
+      obtain ⟨T, hT, l1, -⟩ := bf_lane (ih p hp) (ih (p + len) (by have := pair_lt hpos (show p < 2 * len * (128 / len) by omega_using [hp, hl]) hm; omega_using [hl, this])) (zeta_lt hk) (by omega_using [hs]) (by omega_using [hs])
+      unfold zk
+      rw [mmW_eq hT, ← ofNat_zeta hk]
+      exact l1
+    · rw [ite_eq_right hm, ite_eq_right hm]
+      obtain ⟨T, hT, -, l2⟩ := bf_lane (ih (p - len) (by omega_using [hp])) (ih p hp) (zeta_lt hk) (by omega_using [hs]) (by omega_using [hs])
+      unfold zk
+      rw [div_sub_len hpos hm, mmW_eq hT, ← ofNat_zeta hk]
+      exact l2
+
+/-- A coefficient less than `2¹⁵` in absolute value, reduced to `[0, q)`. -/
+theorem normW_val {x : BitVec 16} {X : Zq} {B : Nat} (h : LRep x X B) (hB : B ≤ 32768) :
+    (normW x).toNat = X.val := by
+  obtain ⟨a1, a2, a3⟩ := h
+  obtain ⟨T, hT, b1, b2, b3⟩ := mm_ok x (z := 1) (by omega_using [hB, a1]) (by decide)
+  have e1 : n1W x = x - T * BitVec.ofNat 16 3329 := by
+    unfold n1W qdW
+    rw [show (BitVec.ofNat 16 10) = BitVec.ofNat 16 (Impl.MlKem.AArch64.Ntt16.tw 1) from rfl, hT]
+    rfl
+  rw [show x * BitVec.ofNat 16 1 = x from BitVec.mul_one _] at b1 b2 b3
+  have hn := nonneg_lane b1 b2
+  unfold normW
+  rw [e1, show BitVec.ofNat 16 qN = BitVec.ofNat 16 3329 from rfl]
+  generalize x - T * BitVec.ofNat 16 3329 = r at b1 b2 b3 hn ⊢
+  have hX : X.val < 3329 := X.isLt
+  have hv : (r + (r.sshiftRight 15 &&& BitVec.ofNat 16 3329)).toInt = (X.val : Int) := by
+    rw [hn]
+    split <;> omega_arith
+  generalize r + (r.sshiftRight 15 &&& BitVec.ofNat 16 3329) = y at hv ⊢
+  rw [BitVec.toInt_eq_toNat_cond] at hv
+  split at hv <;> omega_using [hv]
+
+/-- The reduced coefficients are those of `NTT`. -/
+theorem Of_ntt (W : Nat → BitVec 16) (F : Poly) (h : ∀ p < 256, LRep (W p) F[p]! 3329) {p : Nat} (hp : p < 256) :
+    (Of W p).toNat = ((ntt F)[p]!).val := by
+  rw [ntt_eq_nttL]
+  exact normW_val (Lf_rep W F h 7 (by decide) p hp) (by decide)
+
+end VG.Proof.MlKem.AArch64.NttR
+
+end
+
+end
+
+/-! ### `MlKem.AArch64.Ntt16.Gs`, which this module and modules that import it used -/
+
+section
+
+/-!
+# ML-KEM's 16-bit inverse NTT on AArch64: lanes
+
+The inverse butterfly on one lane: `x ← x + y`, `y ← (y - x) · z mod q`
+(`gs_lane`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.MlKem.AArch64.Ntt16
+
+open VG VG.AArch64 VG.Proof.MlKem.AArch64 VG.Proof.MlKem VG.Spec.MlKem
+open Impl.MlKem.AArch64.Ntt16
+
+private theorem toInt_add16' {a r : BitVec 16} (h1 : -32768 ≤ a.toInt + r.toInt)
+    (h2 : a.toInt + r.toInt < 32768) : (a + r).toInt = a.toInt + r.toInt := by
+  rw [BitVec.toInt_add]; simp only [Int.bmod_def]; split <;> omega_arith
+
+private theorem toInt_sub16' {a r : BitVec 16} (h1 : -32768 ≤ a.toInt - r.toInt)
+    (h2 : a.toInt - r.toInt < 32768) : (a - r).toInt = a.toInt - r.toInt := by
+  rw [BitVec.toInt_sub]; simp only [Int.bmod_def]; split <;> omega_arith
+
+/-- An inverse butterfly on one lane: `a + b`, and `r = d · z - t · q` for
+`d = b - a`, `t = sqrdmulh(d, tw z)`. -/
+theorem gs_lane {a b : BitVec 16} {X Y : Zq} {z Bx By : Nat} (ha : LRep a X Bx) (hb : LRep b Y By)
+    (hz : z < 3329) (hB : Bx + By ≤ 32768) :
+    ∃ t, sqdmulhHLane true (b - a) (BitVec.ofNat 16 (tw z)) = some t ∧
+      LRep (a + b) (X + Y) (Bx + By) ∧
+      LRep ((b - a) * BitVec.ofNat 16 z - t * BitVec.ofNat 16 3329) (ofNat z * (Y - X)) 3329 := by
+  obtain ⟨a1, a2, a3⟩ := ha
+  obtain ⟨b1, b2, b3⟩ := hb
+  have hd : (b - a).toInt = b.toInt - a.toInt := toInt_sub16' (by omega_arith) (by omega_arith)
+  obtain ⟨t, ht, h1, h2, h3⟩ := mm_ok (b - a) (z := z) (by omega_arith) hz
+  refine ⟨t, ht, ?_, ?_⟩
+  · have hX := val_lt X
+    have hY := val_lt Y
+    have e1 : (X + Y).val = (X.val + Y.val) % 3329 := val_add' X Y
+    refine ⟨?_, ?_, ?_⟩ <;> rw [toInt_add16' (by omega_arith) (by omega_arith)] <;> [omega_arith; omega_arith; skip]
+    rw [e1]; omega_arith
+  · refine ⟨h1, h2, ?_⟩
+    rw [hd] at h3
+    generalize (b - a) * BitVec.ofNat 16 z - t * BitVec.ofNat 16 3329 = r at h1 h2 h3 ⊢
+    obtain ⟨k1, hk1⟩ := Int.dvd_of_emod_eq_zero b3
+    obtain ⟨k2, hk2⟩ := Int.dvd_of_emod_eq_zero a3
+    have hX := val_lt X
+    have hY := val_lt Y
+    -- `(Y - X).val = Y - X + q·c`
+    have eD : ((Y - X).val : Int) = (Y.val : Int) - X.val + 3329 * (if X.val ≤ Y.val then 0 else 1) := by
+      rw [val_sub_eq]
+      have hq : q = 3329 := rfl
+      by_cases h : X.val ≤ Y.val <;> simp only [h, ite_true, ite_false] <;> omega_arith
+    have e2 : (ofNat z * (Y - X)).val = z * (Y - X).val % 3329 := by
+      rw [val_mul, val_ofNat, Nat.mod_eq_of_lt (show z < q from hz)]
+    rw [e2]
+    have hm : (b.toInt - a.toInt) * z =
+        (((Y - X).val : Int) * z) + 3329 * ((k1 - k2 - (if X.val ≤ Y.val then 0 else 1)) * z) := by
+      rw [eD, show b.toInt = Y.val + 3329 * k1 by omega_arith, show a.toInt = X.val + 3329 * k2 by omega_arith]
+      split <;> grind
+    have hW : ((z * (Y - X).val : Nat) : Int) = ((Y - X).val : Int) * z := by
+      rw [Int.natCast_mul, Int.mul_comm]
+    rw [hm] at h3
+    generalize z * (Y - X).val = W at hW ⊢
+    generalize ((Y - X).val : Int) * z = Wi at hW h3
+    generalize (k1 - k2 - (if X.val ≤ Y.val then 0 else 1)) * (z : Int) = K at h3
+    omega_arith
+
+end VG.Proof.MlKem.AArch64.Ntt16
+
+end
+
+end
+
+/-!
+# ML-KEM on AArch64: the lanes of the inverse NTT, reduced
+
+A lane of the 16-bit inverse NTT reduced to less than `q` in absolute value
+represents the same coefficient (`n1W_rep`), and made nonnegative is its
+value (`normL_val`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.MlKem.AArch64.NttR
+
+open VG VG.AArch64 VG.Spec.MlKem VG.Proof.MlKem
+open VG.Proof.MlKem.AArch64.Ntt16 (LRep gs_lane mm_ok ofNat_zeta zeta_lt nonneg_lane)
+
+/-! ## The coefficients represent `NTT⁻¹`'s -/
+
+/-- A lane reduced to less than `q` in absolute value. -/
+theorem n1W_rep {a : BitVec 16} {X : Zq} {B : Nat} (h : LRep a X B) (hB : B ≤ 32768) : LRep (n1W a) X 3329 := by
+  obtain ⟨a1, a2, a3⟩ := h
+  obtain ⟨T, hT, b1, b2, b3⟩ := mm_ok a (z := 1) (by omega_arith) (by decide)
+  have e1 : n1W a = a - T * BitVec.ofNat 16 3329 := by
+    unfold n1W qdW
+    rw [show (BitVec.ofNat 16 10) = BitVec.ofNat 16 (Impl.MlKem.AArch64.Ntt16.tw 1) from rfl, hT]
+    rfl
+  rw [show a * BitVec.ofNat 16 1 = a from BitVec.mul_one _] at b1 b2 b3
+  rw [e1]
+  refine ⟨b1, b2, ?_⟩
+  omega_arith
+
+/-- `a`, less than `q` in absolute value, made nonnegative, is its value. -/
+theorem normL_val {x : BitVec 16} {X : Zq} (h : LRep x X 3329) : (normL x).toNat = X.val := by
+  obtain ⟨b1, b2, b3⟩ := h
+  have hn := nonneg_lane b1 b2
+  unfold normL
+  rw [show BitVec.ofNat 16 qN = BitVec.ofNat 16 3329 from rfl]
+  have hX : X.val < 3329 := X.isLt
+  have hv : (x + (x.sshiftRight 15 &&& BitVec.ofNat 16 3329)).toInt = (X.val : Int) := by
+    rw [hn]
+    split <;> omega_arith
+  generalize x + (x.sshiftRight 15 &&& BitVec.ofNat 16 3329) = y at hv ⊢
+  rw [BitVec.toInt_eq_toNat_cond] at hv
+  split at hv <;> omega_arith
+
+end VG.Proof.MlKem.AArch64.NttR
+
+end
+
+end
 
 /-!
 # ML-KEM on AArch64: the scheduled inverse NTT halfword by halfword, its coefficients

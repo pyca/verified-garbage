@@ -2,16 +2,13 @@ module
 
 import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Lit
 meta import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Lit
-
 public import VerifiedGarbage.Proof.MlKem.X86_64.KpkeKg
 import VerifiedGarbage.Proof.MlKem.X86_64.KpkeEncV
-import VerifiedGarbage.Proof.MlKem.X86_64.Mul16V
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.MlKem.X86_64.KpkeKg
 meta import VerifiedGarbage.Proof.MlKem.X86_64.KpkeEncV
-meta import VerifiedGarbage.Proof.MlKem.X86_64.Mul16V
 meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 meta import VerifiedGarbage.Proof.Framework.KernelRfl
 meta import VerifiedGarbage.Proof.Framework.Offset

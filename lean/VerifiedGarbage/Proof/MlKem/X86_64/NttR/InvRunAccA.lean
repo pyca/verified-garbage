@@ -1,16 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.NttR.InvRunAcc1
-public import VerifiedGarbage.Proof.MlKem.X86_64.NttR.InvRun
+public import VerifiedGarbage.Proof.MlKem.X86_64.NttR.InvRunAcc0
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.MlKem.X86_64.NttR.InvRunAcc0
 import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 meta import VerifiedGarbage.Proof.MlKem.X86_64.NttR.InvRunAcc1
-meta import VerifiedGarbage.Proof.MlKem.X86_64.NttR.InvRun
+meta import VerifiedGarbage.Proof.MlKem.X86_64.NttR.InvRunAcc0
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.MlKem.X86_64.NttR.InvRunAcc0
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 import VerifiedGarbage.Proof.MlKem.X86_64.NttR.StLit
 meta import VerifiedGarbage.Proof.MlKem.X86_64.NttR.StLit

@@ -8,18 +8,15 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.KeyGen
 public import VerifiedGarbage.Proof.MlKem.AArch64.Encaps
 public import VerifiedGarbage.Proof.MlKem.AArch64.Decaps
 public import VerifiedGarbage.Proof.MlKem.Scrubbed
-public import VerifiedGarbage.Proof.MlKem1024.AArch64.Encaps
-public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.EncapsFinal
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.ContractSat
+public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.EncapsFinal
 import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Readonly
-import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Readonly.Words
+import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Table
 import VerifiedGarbage.Proof.MlKem.AArch64.NttR.FastTable
 public import VerifiedGarbage.Spec.MlKem.EncapsH
 public import VerifiedGarbage.Proof.MlKem.EncapsHSat
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-public import VerifiedGarbage.Proof.MlKem1024.AArch64.KeyGen
-public import VerifiedGarbage.Proof.MlKem1024.AArch64.Decaps
 public import VerifiedGarbage.Proof.MlKem.AArch64.KgH.Final
 public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.DecapsFinal
 public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Hole
@@ -32,7 +29,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.SigEval
-import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.ConstsSat
 meta import VerifiedGarbage.Proof.Framework.SigEval
 meta import VerifiedGarbage.Proof.Framework.Sig
 public meta import Lean.Elab.Tactic.ElabTerm

@@ -1,9 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.Kg16
-public import VerifiedGarbage.Proof.MlKem.X86_64.KgTop
-import VerifiedGarbage.Proof.MlKem.X86_64.KgCT
-meta import VerifiedGarbage.Proof.MlKem.X86_64.KgCT
+public import VerifiedGarbage.Proof.MlKem.X86_64.EncTop
+meta import VerifiedGarbage.Proof.MlKem.X86_64.EncTop
 meta import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 
 /-!

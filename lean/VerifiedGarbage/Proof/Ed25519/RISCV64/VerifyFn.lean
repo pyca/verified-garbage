@@ -3,8 +3,6 @@ module
 public import VerifiedGarbage.Proof.Ed25519.RISCV64.VerifyPoints
 import VerifiedGarbage.Proof.Ed25519.RISCV64.Packed
 import VerifiedGarbage.Proof.Ed25519.RISCV64.PointPowers
-import VerifiedGarbage.Proof.Ed25519.RISCV64.PointTable
-import VerifiedGarbage.Proof.Ed25519.RISCV64.PointScalar
 import VerifiedGarbage.Proof.Framework.RISCV64.ByteLoad
 import VerifiedGarbage.Proof.Ed25519.RISCV64.Base
 import VerifiedGarbage.Proof.Ed25519.RISCV64.ScalarReduce

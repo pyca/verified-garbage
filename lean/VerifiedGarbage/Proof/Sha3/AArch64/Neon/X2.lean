@@ -1,15 +1,9 @@
 module
 
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Pair
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Store
 import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.BoundaryCommon
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Load
-import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Lazy.Permute
-public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Wrap
-import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Load
-import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Store
-import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Save
-import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Restore
+public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Lazy.Permute
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
 public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.BoundaryCommon
@@ -27,16 +21,10 @@ public import VerifiedGarbage.Proof.Sha3.X2Contract
 import Std.Tactic.BVDecide.Normalize.Prop
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.TCB.Axioms
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Pair
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Store
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.BoundaryCommon
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Load
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Lazy.Permute
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Wrap
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Load
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Store
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Save
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Restore
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
 meta import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.BoundaryCommon
@@ -56,6 +44,38 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.TCB.Axioms
 import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Squeeze
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Constant
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.HwRound
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Squeeze
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Constant
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.HwRound
+
+/-! ### `Sha3.AArch64.Neon.Pair`, which this module and modules that import it used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.Sha3.AArch64.Neon
+open VG VG.AArch64
+open VG.Proof.Sha3.AArch64.Sha3.Vector (CoreKeep)
+
+theorem roundsProg_ok {n : Nat} (hn : n ≤ 24) {s : State} {A B : Spec.Sha3.State}
+    (hp : Pairs s A B) : WP isa (Impl.Sha3.AArch64.Neon.Pair.roundsProg n) s fun t =>
+      CoreKeep s t ∧ Pairs t ((List.range n).foldl Spec.Sha3.rnd A) ((List.range n).foldl Spec.Sha3.rnd B) := by
+  induction n generalizing s A B with
+  | zero => exact WP.block_nil_iff.mpr ⟨CoreKeep.refl _,hp⟩
+  | succ n ih =>
+    refine WP.seq (WP.mono (ih (by omega_using [hn]) hp) fun u ⟨hu,hpu⟩ => ?_)
+    refine WP.mono (Hw.round2_ok hpu (by omega_using [hn])) fun t ⟨ht,hpt⟩ => ⟨hu.trans ht,?_⟩
+    simpa only [List.range_succ,List.foldl_append,List.foldl_cons,List.foldl_nil] using hpt
+
+end VG.Proof.Sha3.AArch64.Neon
+
+end
+
+end
 
 /-!
 # `vg_keccak_f1600_x2` on AArch64

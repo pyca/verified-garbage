@@ -3,8 +3,6 @@ module
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.Rel
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.Hash
 public import VerifiedGarbage.Proof.MlKem.X86_64.KCall
-import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Absorb
-import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Squeeze
 import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Pad
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Contract
@@ -12,8 +10,6 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Message.Rel
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Message.Hash
 meta import VerifiedGarbage.Proof.MlKem.X86_64.KCall
-meta import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Absorb
-meta import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Squeeze
 meta import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Pad
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Contract

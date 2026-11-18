@@ -1,8 +1,63 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFixedTiming
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejPublic
 public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentRejTwo
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentRejFour
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentRejTwo
+meta import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentRejFour
+meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+
+/-! ### `MlDsa.AArch64.Optimized.ResidentRejFixedTiming`, which only this module used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.AArch64.Optimized.ResidentRej
+open VG VG.AArch64
+open VG.Impl.MlDsa.AArch64.Optimized.ResidentRej
+open VG.Impl.MlDsa.AArch64.Sample
+
+abbrev PointerCT (rs : List Reg) (c : Prog isa) :=
+  ConstantTime isa (fun _ => True) (VG.AArch64.Taint.Agree (Taint.ofRegs rs)) c
+
+theorem startFour_ct : PointerCT [.x0,.x1,.x2] (.block (Rej4.init++Four.initCounts)) :=
+  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0,.x1,.x2])
+    (fun _ _ _ _ h => h) (by taint_decide)
+
+theorem startTwo_ct : PointerCT [.x0,.x1,.x2]
+    (.block (Rej4.pro++Rej4.zeroStates++Rej4.absorbPair 0++Two.initCounts)) :=
+  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0,.x1,.x2])
+    (fun _ _ _ _ h => h) (by taint_decide)
+
+theorem flagsFour_ct : PointerCT [.x19] (.block Four.flags) :=
+  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x19])
+    (fun _ _ _ _ h => h) (by taint_decide)
+
+theorem flagsTwo_ct : PointerCT [.x19] (.block Two.flags) :=
+  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x19])
+    (fun _ _ _ _ h => h) (by taint_decide)
+
+theorem sixthFour_ct : PointerCT [.x19] (Four.squeezeN step 840 1) :=
+  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x19])
+    (fun _ _ _ _ h => h) (by taint_decide)
+
+theorem sixthTwo_ct : PointerCT [.x19] (Two.squeezeN Two.step 840 1) :=
+  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x19])
+    (fun _ _ _ _ h => h) (by taint_decide)
+
+theorem firstTwo_ct : PointerCT [.x19]
+    (.seq (.block (Two.squeezeSetup 0 5)) (five .x22 .x24 .x25)) :=
+  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x19])
+    (fun _ _ _ _ h => h) (by taint_decide)
+
+end VG.Proof.MlDsa.AArch64.Optimized.ResidentRej
+
+end
+
+end
 
 @[expose] public section
 

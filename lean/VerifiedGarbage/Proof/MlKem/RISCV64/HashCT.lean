@@ -4,13 +4,11 @@ public import VerifiedGarbage.Proof.MlKem.RISCV64.HashTop
 public import VerifiedGarbage.Proof.Framework.Covers
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.TCB.RISCV64.Target
-import VerifiedGarbage.Proof.MlKem.RISCV64.Prims
 import VerifiedGarbage.Proof.Sha3.RISCV64.Stream.CallsCT
 public import VerifiedGarbage.Proof.Framework.RISCV64.RelBlock
 import VerifiedGarbage.Proof.Framework.RISCV64.RelCT
 import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.MlKem.RISCV64.HashTop
-meta import VerifiedGarbage.Proof.MlKem.RISCV64.Prims
 meta import VerifiedGarbage.Proof.Sha3.RISCV64.Stream.CallsCT
 meta import VerifiedGarbage.Proof.Framework.RISCV64.RelBlock
 meta import VerifiedGarbage.Proof.Framework.RISCV64.RelCT

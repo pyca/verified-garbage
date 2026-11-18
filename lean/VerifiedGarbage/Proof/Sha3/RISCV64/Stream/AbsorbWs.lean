@@ -9,7 +9,7 @@ public import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.RISCV64.Wp
 public import VerifiedGarbage.Proof.Framework.RISCV64.Words64
-public import VerifiedGarbage.Proof.Sha3.RISCV64.Contract
+public import VerifiedGarbage.Proof.Sha3.RISCV64.Permute
 public import VerifiedGarbage.Proof.Sha3.Stream
 public import VerifiedGarbage.Proof.Framework.RISCV64.Alloc
 public import VerifiedGarbage.Spec.Sha3.Contract
@@ -22,7 +22,6 @@ public import VerifiedGarbage.Proof.Framework.RISCV64.Call
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.TCB.RISCV64.Isa
 public import VerifiedGarbage.Proof.Framework.RISCV64.CallAny
-import VerifiedGarbage.Proof.Sha3.RISCV64.Permute
 
 /-! ### `Sha3.RISCV64.Stream.Absorb`, which this module and modules that import it used -/
 

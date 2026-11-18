@@ -1,7 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.CTLoop
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Top
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.CTLoop
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rel
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Squeeze
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Setup
@@ -13,7 +12,6 @@ import VerifiedGarbage.Proof.Framework.TacticTemplate
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
 import VerifiedGarbage.TCB.Axioms
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.CTLoop
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Top
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rel
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Squeeze
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Setup

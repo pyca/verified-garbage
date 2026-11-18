@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.PPC64LE.PointTable
+public import VerifiedGarbage.Proof.Ed25519.PPC64LE.PointPowers
 public import VerifiedGarbage.Impl.Ed25519.PPC64LE.PointMul
 import VerifiedGarbage.Proof.X25519.PPC64LE.Bits
 import VerifiedGarbage.Proof.X25519.PPC64LE.Field
@@ -11,7 +11,6 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Ed25519.ScalarBytes
 import VerifiedGarbage.Proof.Ed25519.Bytes
-import VerifiedGarbage.Proof.Ed25519.PPC64LE.PointPowers
 public import VerifiedGarbage.Proof.Ed25519.ScalarMul
 public import VerifiedGarbage.Spec.Ed25519.Contract
 public import VerifiedGarbage.Proof.Ed25519.PPC64LE.Field

@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Sha3.AArch64.Variant
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Hash
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Top
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Lay
-import VerifiedGarbage.Proof.Sha3.AArch64.Callers.Sums
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
 import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
 import VerifiedGarbage.Proof.Framework.TaintSumGeneric
@@ -15,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.MlKem.Mem
 import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Impl.MlDsa.AArch64.PkTr
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Callers.Sums
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Variant
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.RegSet
 

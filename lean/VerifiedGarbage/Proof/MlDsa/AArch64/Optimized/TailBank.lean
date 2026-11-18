@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TraversalCorrect
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Traversal
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Packed
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Butterfly
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
 

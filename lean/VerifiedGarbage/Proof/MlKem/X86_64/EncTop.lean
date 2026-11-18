@@ -1,12 +1,725 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.EncBase
-public import VerifiedGarbage.Proof.MlKem.X86_64.FragEM
-import VerifiedGarbage.Proof.MlKem.X86_64.KgB
-import VerifiedGarbage.Proof.MlKem.X86_64.FragDM
+public import VerifiedGarbage.Proof.MlKem.X86_64.KgBase
 import VerifiedGarbage.Proof.MlKem.X86_64.FragC
 import VerifiedGarbage.Proof.MlKem.X86_64.FragL
-import VerifiedGarbage.Proof.MlKem.X86_64.KgTop
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.MlKem.X86_64.FragL
+public import VerifiedGarbage.Proof.MlKem.X86_64.KgA
+meta import VerifiedGarbage.Proof.MlKem.X86_64.KgA
+
+/-! ### `MlKem.X86_64.KgTop`, which this module and modules that import it used -/
+
+section
+
+/-! ### `MlKem.X86_64.KgCT`, which this module and modules that import it used -/
+
+section
+
+/-! ### `MlKem.X86_64.KgB`, which this module and modules that import it used -/
+
+section
+
+/-!
+# ML-KEM on x86-64: key generation, the keys
+
+When every entry of `Â` was sampled (`allOk`): `s` and `e` (`se_ok`; `KRest
+n`: the first `n` of `s ‖ e` are done), `ŝ` and `t̂` (`kgm_ok`, by
+`vg_mlkem*_keygen_mul`), `t̂` encoded to `ek` (`encT_ok`), `ŝ` encoded to `dk`
+(`encS_ok`), and `ρ`, `ek`, `H(ek)` and `z` to the keys (`fin_ok`). After
+`vg_mlkem*_keygen_mul`, `KRestT r e`: `r` rows of `ek` and `e` of `dk` are
+done.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.MlKem.X86_64
+
+open VG VG.X86_64 VG.Impl.MlKem.X86_64
+open VG.Spec.MlKem
+open VG.Spec.Sha3 (bytesAt)
+
+theorem bytesAt_split (m : Mem) (s : State) (r : Reg) (o a b : Nat) :
+    bytesAt m (pa s (r, o)) (a + b) = bytesAt m (pa s (r, o)) a ++ bytesAt m (pa s (r, o + a)) b := by
+  rw [bytesAt_add, pa, pa, off_add]
+
+/-- `k` consecutive pieces of `c` bytes. -/
+theorem bytesAt_catK (m : Mem) (s : State) (r : Reg) (o c : Nat) (f : Nat → List Byte) :
+    ∀ k, (∀ i < k, bytesAt m (pa s (r, o + c * i)) c = f i) → bytesAt m (pa s (r, o)) (c * k) = KPke.catK f k
+  | 0, _ => rfl
+  | k + 1, h => by
+    rw [KPke.catK, KPke.foldK_succ List.nil_append, ← KPke.catK, Nat.mul_succ, bytesAt_split,
+      bytesAt_catK m s r o c f k fun i hi => h i (by omega_using [hi]), h k (by omega_using [])]
+
+namespace KeyGen
+
+open VG.Impl.MlKem.X86_64.KeyGen
+
+/-- `ρ` of `σ`. -/
+abbrev rhoK (L : Kem) (σ : State) : List Byte := KPke.kgRho L.p (kgD σ)
+
+/-- After the matrix, when every `SampleNTT` succeeded. -/
+structure KRest0 (L : Kem) (σ s : State) : Prop where
+  kc : KC σ s
+  rho : bytesAt s.mem (pa s (sc oG)) 32 = rhoK L σ
+  sig : bytesAt s.mem (pa s sigP) 32 = KPke.kgSigma L.p (kgD σ)
+  r15 : s.gpr .r15 = 1
+  mat : ∀ e < L.k * L.k, PolyIs s.mem (pa s (pS (L.pA + e))) (aHat (rhoK L σ) (e / L.k) (e % L.k))
+
+/-- The steps done after the outputs of `PRF₂`. -/
+structure KRest (L : Kem) (n r e : Nat) (σ s : State) : Prop where
+  kc : KC σ s
+  rho : bytesAt s.mem (pa s (sc oG)) 32 = rhoK L σ
+  sig : bytesAt s.mem (pa s sigP) 32 = KPke.kgSigma L.p (kgD σ)
+  r15 : s.gpr .r15 = 1
+  mat : ∀ e < L.k * L.k, PolyIs s.mem (pa s (pS (L.pA + e))) (aHat (rhoK L σ) (e / L.k) (e % L.k))
+  prf : ∀ N < 2 * L.k, bytesAt s.mem (pa s (prfO L N)) 128 = prf 2 (KPke.kgSigma L.p (kgD σ)) (BitVec.ofNat 8 N)
+  se : ∀ k < n, PolyIs s.mem (pa s (pS k)) (cbd (KPke.kgSigma L.p (kgD σ)) k)
+  ek : ∀ i < r, bytesAt s.mem (pa s (.r12, 384 * i)) 384 = encode12 (KPke.kgT L.p (aHat (rhoK L σ)) (kgD σ) i)
+  dk : ∀ j < e, bytesAt s.mem (pa s (.r13, 384 * j)) 384 = encode12 (KPke.kgS L.p (kgD σ) j)
+
+theorem KRest.keep {L : Kem} (W : KgWf L) {σ : State} (hp : (keyGenK L).pre σ) {n r e : Nat} {s s' : State}
+    (h : KRest L n r e σ s) {ws : List (Ptr × Nat)} (hP : PPost s s' ws) (hc : restChk L n r e ws = true) :
+    KRest L n r e σ s' := by
+  simp only [restChk, Bool.and_eq_true, List.all_eq_true, List.mem_range] at hc
+  obtain ⟨⟨⟨⟨⟨⟨⟨hkc, kG⟩, kS⟩, kA⟩, kR⟩, kP⟩, kE⟩, kD⟩ := hc
+  have L₀ := h.kc.lay W hp
+  exact ⟨h.kc.step W hp hP.b hkc, by rw [L₀.keepBytes hP.b kG]; exact h.rho, by rw [L₀.keepBytes hP.b kS]; exact h.sig,
+    by rw [hP.cs .r15 (by decide)]; exact h.r15, fun e he => L₀.keepPoly hP.b (kA e he) (h.mat e he),
+    fun N hN => by rw [L₀.keepBytes hP.b (kR N hN)]; exact h.prf N hN, fun k hk => L₀.keepPoly hP.b (kP k hk) (h.se k hk),
+    fun i hi => by rw [L₀.keepBytes hP.b (kE i hi)]; exact h.ek i hi,
+    fun j hj => by rw [L₀.keepBytes hP.b (kD j hj)]; exact h.dk j hj⟩
+
+/-- After the matrix, when every `SampleNTT` succeeded. -/
+theorem KRest0.start {L : Kem} {σ : State} {s : State} (h : KB L (L.k * L.k) σ s) (ho : allOk L.k (rhoK L σ) (L.k * L.k)) :
+    KRest0 L σ s :=
+  ⟨h.a.kc, h.a.rho, h.a.sig, by rw [h.m.r15, ifp ho], fun e he =>
+    h.m.mat e he _ (aHat_eq ho (div_lt_k he) (mod_lt_k he))⟩
+
+/-- `Â[i, j]`, from the entries. -/
+theorem KRest.matIJ {L : Kem} {n r e : Nat} {σ s : State} (h : KRest L n r e σ s) {i j : Nat} (hi : i < L.k)
+    (hj : j < L.k) : PolyIs s.mem (pa s (L.aS i j)) (aHat (rhoK L σ) i j) := by
+  have := h.mat (L.k * i + j) (ij_lt hi hj)
+  rwa [(divmod_ij hj).1, (divmod_ij hj).2, ← aS_ij] at this
+
+/-! ## The outputs of `PRF₂` -/
+
+theorem prfs_okK (v : Sample4Impl) {L : Kem} (W : KgWf L) {σ : State} (hp : (keyGenK L).pre σ) {s : State}
+    (h : KRest0 L σ s) : WP isa (v.callee.prfs 0 (2 * L.k) L.oPR L.lPW) s (KRest L 0 0 0 σ) := by
+  have hc := W.prfs
+  simp only [prfsKChk, Bool.and_eq_true, List.all_eq_true, List.mem_range] at hc
+  obtain ⟨⟨⟨⟨hpc, hkc⟩, kG⟩, kS⟩, kA⟩ := hc
+  have L₀ := h.kc.lay W hp
+  refine WP.mono (v.prfs_ok L₀ (kgB_bases L) (by have := W.k; omega_using [this]) hpc) fun s' ⟨hP, hb⟩ => ?_
+  have hσ : bytesAt s'.mem (pa s' sigP) 32 = bytesAt s.mem (pa s sigP) 32 := L₀.keepBytes hP.b kS
+  refine ⟨h.kc.step W hp hP.b hkc, by rw [L₀.keepBytes hP.b kG]; exact h.rho, hσ.trans h.sig,
+    by rw [hP.cs .r15 (by decide)]; exact h.r15, fun e he => L₀.keepPoly hP.b (kA e he) (h.mat e he), fun N hN => ?_,
+    fun _ h => absurd h (Nat.not_lt_zero _), fun _ h => absurd h (Nat.not_lt_zero _),
+    fun _ h => absurd h (Nat.not_lt_zero _)⟩
+  rw [prfO, hP.pa rbx_cs, hb N hN, h.sig, Nat.zero_add]
+
+/-! ## `ŝ` and `ê` -/
+
+theorem se_ok {A : Arith} (hA : ArithOk A) {L : Kem} (W : KgWf L) {σ : State} (hp : (keyGenK L).pre σ) {N : Nat}
+    (hN : N < 2 * L.k) {s : State} (h : KRest L N 0 0 σ s) : WP isa (se L A N) s (KRest L (N + 1) 0 0 σ) := by
+  have hc := W.se N hN
+  simp only [seChk, Bool.and_eq_true] at hc
+  obtain ⟨htw, hrc⟩ := hc
+  have L₀ := h.kc.lay W hp
+  unfold se
+  refine WP.mono (cbd2At_okL hA L₀ rbx_na htw) fun s₁ ⟨hP₁, hp₁⟩ => ?_
+  rw [h.prf N hN, ← hP₁.pa rbx_cs] at hp₁
+  have hk := h.keep W hp hP₁ hrc
+  refine ⟨hk.kc, hk.rho, hk.sig, hk.r15, hk.mat, hk.prf, fun k hk' => ?_, fun _ h => absurd h (Nat.not_lt_zero _),
+    fun _ h => absurd h (Nat.not_lt_zero _)⟩
+  rcases (by omega_using [hk'] : k < N ∨ k = N) with hk' | rfl
+  · exact hk.se k hk'
+  · exact hp₁
+
+theorem r12_na : Reg.r12 ∉ argRegs := by decide
+theorem r13_na : Reg.r13 ∉ argRegs := by decide
+theorem r12_cs : Reg.r12 ∈ calleeSaved := by decide
+theorem r13_cs : Reg.r13 ∈ calleeSaved := by decide
+
+/-! ## `ŝ` and `t̂` -/
+
+/-- The steps done after `vg_mlkem*_keygen_mul`. -/
+structure KRestT (L : Kem) (r e : Nat) (σ s : State) : Prop where
+  kc : KC σ s
+  rho : bytesAt s.mem (pa s (sc oG)) 32 = rhoK L σ
+  r15 : s.gpr .r15 = 1
+  shat : ∀ j < L.k, PolyIs s.mem (pa s (pS j)) (KPke.kgS L.p (kgD σ) j)
+  that : ∀ i < L.k, PolyIs s.mem (pa s (pS (L.pU + i))) (KPke.kgT L.p (aHat (rhoK L σ)) (kgD σ) i)
+  ek : ∀ i < r, bytesAt s.mem (pa s (.r12, 384 * i)) 384 = encode12 (KPke.kgT L.p (aHat (rhoK L σ)) (kgD σ) i)
+  dk : ∀ j < e, bytesAt s.mem (pa s (.r13, 384 * j)) 384 = encode12 (KPke.kgS L.p (kgD σ) j)
+
+theorem KRestT.keep {L : Kem} (W : KgWf L) {σ : State} (hp : (keyGenK L).pre σ) {r e : Nat} {s s' : State}
+    (h : KRestT L r e σ s) {ws : List (Ptr × Nat)} (hP : PPost s s' ws) (hc : restTChk L r e ws = true) :
+    KRestT L r e σ s' := by
+  simp only [restTChk, Bool.and_eq_true, List.all_eq_true, List.mem_range] at hc
+  obtain ⟨⟨⟨⟨⟨hkc, kG⟩, kS⟩, kT⟩, kE⟩, kD⟩ := hc
+  have L₀ := h.kc.lay W hp
+  exact ⟨h.kc.step W hp hP.b hkc, by rw [L₀.keepBytes hP.b kG]; exact h.rho,
+    by rw [hP.cs .r15 (by decide)]; exact h.r15, fun j hj => L₀.keepPoly hP.b (kS j hj) (h.shat j hj),
+    fun i hi => L₀.keepPoly hP.b (kT i hi) (h.that i hi),
+    fun i hi => by rw [L₀.keepBytes hP.b (kE i hi)]; exact h.ek i hi,
+    fun j hj => by rw [L₀.keepBytes hP.b (kD j hj)]; exact h.dk j hj⟩
+
+theorem pS_add (s : State) (a j : Nat) : pa s (pS a) + BitVec.ofNat 64 (1024 * j) = pa s (pS (a + j)) := by
+  simp only [pa, oP]
+  rw [BitVec.add_assoc, ← BitVec.ofNat_add, show 4096 + 1024 * a + 1024 * j = 4096 + 1024 * (a + j) by omega_using []]
+
+/-- `t̂[i]`, from the polynomials in memory. -/
+theorem kgT_of {L : Kem} {σ : State} {m : Mem} {s : State} {i : Nat} (hi : i < L.k)
+    (hA : ∀ j < L.k, polyAt m (pa s (pS (L.pA + L.k * i + j))) = aHat (rhoK L σ) i j)
+    (hS : ∀ j < L.k, polyAt m (pa s (pS j)) = cbd (KPke.kgSigma L.p (kgD σ)) j)
+    (hE : polyAt m (pa s (pS (L.k + i))) = cbd (KPke.kgSigma L.p (kgD σ)) (L.k + i)) :
+    (addVec (mulMatVec (matAt m (pa s (pS L.pA)) L.k) ((vecAt m (pa s (pS 0)) L.k).map ntt))
+      ((vecAt m (pa s (pS L.k)) L.k).map ntt)).getD i zero = KPke.kgT L.p (aHat (rhoK L σ)) (kgD σ) i := by
+  rw [KgMul.tgt_eq _ _ hi _ _ (by rw [List.length_map, vecAt_length]), vecAt_map_get _ _ hi,
+    pS_add s L.k i, hE]
+  have e1 : vecAt m (pa s (pS L.pA) + BitVec.ofNat 64 (1024 * (L.k * i))) L.k =
+      (List.range L.k).map (aHat (rhoK L σ) i) := by
+    simp only [vecAt]
+    refine List.map_congr_left fun j hj => ?_
+    rw [BitVec.add_assoc, ← BitVec.ofNat_add, ← Nat.mul_add, pS_add, ← Nat.add_assoc]
+    exact hA j (List.mem_range.mp hj)
+  have e2 : (vecAt m (pa s (pS 0)) L.k).map ntt = (List.range L.k).map (KPke.kgS L.p (kgD σ)) := by
+    simp only [vecAt, List.map_map]
+    refine List.map_congr_left fun j hj => ?_
+    simp only [Function.comp, pS_add, Nat.zero_add, hS j (List.mem_range.mp hj)]
+    rfl
+  rw [e1, e2, KPke.dot_eq_dotK]
+  rfl
+
+theorem kgm_ok {A : Arith} (hA : ArithOk A) {L : Kem} (W : KgWf L) {σ : State} (hp : (keyGenK L).pre σ) {s : State}
+    (h : KRest L (2 * L.k) 0 0 σ s) :
+    WP isa (L.kgMulAt A (pS L.pU) (pS 0) (pS L.pA) (pS L.k) (pS L.pZ)) s (KRestT L 0 0 σ) := by
+  have L₀ := h.kc.lay W hp
+  have redS : VecReduced s.mem (pa s (pS 0)) L.k := fun j hj => by
+    rw [pS_add, Nat.zero_add]; exact (h.se j (by omega_using [hj])).1
+  have redA : VecReduced s.mem (pa s (pS L.pA)) (L.k * L.k) := fun e he => by rw [pS_add]; exact (h.mat e he).1
+  have redE : VecReduced s.mem (pa s (pS L.k)) L.k := fun i hi => by rw [pS_add]; exact (h.se (L.k + i) (by omega_using [hi])).1
+  refine WP.mono (kgMulAt_okL hA W.k34 L₀ rbx_na rbx_na rbx_na rbx_na W.km redS redA redE)
+    fun s' ⟨hP, hS, hT⟩ => ⟨h.kc.step W hp hP.b W.kmK, by rw [L₀.keepBytes hP.b W.kmG]; exact h.rho,
+      by rw [hP.cs .r15 (by decide)]; exact h.r15, fun j hj => ?_, fun i hi => ?_,
+      fun _ h => absurd h (Nat.not_lt_zero _), fun _ h => absurd h (Nat.not_lt_zero _)⟩
+  · have := hS.2 j hj
+    rw [pS_add, Nat.zero_add, KgMul.getD_get _ (by rw [List.length_map, vecAt_length]; exact hj),
+      vecAt_map_get _ _ hj, pS_add, Nat.zero_add, (h.se j (by omega_using [hj])).2] at this
+    rw [hP.pa rbx_cs]; exact this
+  · have := hT.2 i hi
+    rw [pS_add, kgT_of hi (fun j hj => (h.matIJ hi hj).2) (fun j hj => (h.se j (by omega_using [hj])).2)
+        (h.se (L.k + i) (by omega_using [hi])).2] at this
+    rw [hP.pa rbx_cs]; exact this
+
+/-! ## `t̂`, encoded to `ek` -/
+
+theorem encT_ok {A : Arith} (hA : ArithOk A) {L : Kem} (W : KgWf L) {σ : State} (hp : (keyGenK L).pre σ) {i : Nat}
+    (hi : i < L.k) {s : State} (h : KRestT L i 0 σ s) : WP isa (encT L A i) s (KRestT L (i + 1) 0 σ) := by
+  have hc := W.encT i hi
+  simp only [encTChk, Bool.and_eq_true] at hc
+  have L₀ := h.kc.lay W hp
+  have ht := h.that i hi
+  refine WP.mono (enc12At_okL hA L₀ r12_na hc.1 ht.1) fun s' ⟨hP, hb⟩ => ?_
+  have hk := h.keep W hp hP hc.2
+  refine ⟨hk.kc, hk.rho, hk.r15, hk.shat, hk.that, fun i' hi' => ?_, fun _ h => absurd h (Nat.not_lt_zero _)⟩
+  rcases (by omega_using [hi'] : i' < i ∨ i' = i) with hi' | rfl
+  · exact hk.ek i' hi'
+  · rw [hP.pa r12_cs, hb, ht.2]
+
+/-! ## `ŝ`, encoded to `dk` -/
+
+theorem encS_ok {A : Arith} (hA : ArithOk A) {L : Kem} (W : KgWf L) {σ : State} (hp : (keyGenK L).pre σ) {j : Nat}
+    (hj : j < L.k) {s : State}
+    (h : KRestT L L.k j σ s) : WP isa (encS A j) s (KRestT L L.k (j + 1) σ) := by
+  have hc := W.encS j hj
+  simp only [encSChk, Bool.and_eq_true] at hc
+  have L₀ := h.kc.lay W hp
+  have hs := h.shat j hj
+  refine WP.mono (enc12At_okL hA L₀ r13_na hc.1 hs.1) fun s' ⟨hP, hb⟩ => ?_
+  have hk := h.keep W hp hP hc.2
+  refine ⟨hk.kc, hk.rho, hk.r15, hk.shat, hk.that, hk.ek, fun j' hj' => ?_⟩
+  rcases (by omega_using [hj'] : j' < j ∨ j' = j) with hj' | rfl
+  · exact hk.dk j' hj'
+  · rw [hP.pa r13_cs, hb, hs.2]
+
+/-! ## The rest of the keys -/
+
+/-- `ek` and `dk_PKE`. -/
+abbrev ekK (L : Kem) (σ : State) : List Byte := KPke.ekPKE L.p (aHat (rhoK L σ)) (kgD σ)
+abbrev dkK (L : Kem) (σ : State) : List Byte := KPke.dkPKE L.p (kgD σ)
+
+/-- The keys. -/
+structure KFin (L : Kem) (σ s : State) : Prop where
+  kc : KC σ s
+  r15 : s.gpr .r15 = 1
+  ek : bytesAt s.mem (pa s (.r12, 0)) L.ekLen = ekK L σ
+  dk : bytesAt s.mem (pa s (.r13, 0)) L.dkLen = dkK L σ ++ ekK L σ ++ H (ekK L σ) ++ kgZ σ
+
+/-- Before the keys' last pieces: `t̂` encoded to `ek` and `ŝ` to `dk`. -/
+structure KFinPre (L : Kem) (σ s : State) : Prop where
+  kc : KC σ s
+  rho : bytesAt s.mem (pa s (sc oG)) 32 = rhoK L σ
+  r15 : s.gpr .r15 = 1
+  ek : bytesAt s.mem (pa s (.r12, 0)) (384 * L.k) =
+    KPke.catK (fun i => encode12 (KPke.kgT L.p (aHat (rhoK L σ)) (kgD σ) i)) L.k
+  dk : bytesAt s.mem (pa s (.r13, 0)) (384 * L.k) = KPke.catK (fun j => encode12 (KPke.kgS L.p (kgD σ) j)) L.k
+
+theorem KRestT.pre {L : Kem} {σ s : State} (h : KRestT L L.k L.k σ s) : KFinPre L σ s :=
+  ⟨h.kc, h.rho, h.r15, bytesAt_catK _ _ _ _ _ _ L.k fun i hi => by rw [Nat.zero_add]; exact h.ek i hi,
+    bytesAt_catK _ _ _ _ _ _ L.k fun j hj => by rw [Nat.zero_add]; exact h.dk j hj⟩
+
+theorem fin_ok {L : Kem} (W : KgWfB L) {σ : State} (hp : (keyGenK L).pre σ) {s : State} (h : KFinPre L σ s) :
+    WP isa (fin L) s (KFin L σ) := by
+  have L₀ := h.kc.lay W hp
+  unfold fin
+  -- `ρ` to `ek`.
+  refine WP.seq (WP.mono (copy_okL L₀ (dst := (.r12, 384 * L.k)) (src := sc oG) (n := 32) (by decide) W.f₁)
+    fun s₁ ⟨hP₁, hb₁⟩ => ?_)
+  have k₁ := h.kc.step W hp hP₁.b W.f₁K
+  have L₁ := k₁.lay W hp
+  have hek : bytesAt s₁.mem (pa s₁ (.r12, 0)) L.ekLen = ekK L σ := by
+    rw [Kem.ekLen, Params.ekLen, bytesAt_split, show 0 + 384 * L.p.k = 384 * L.k from Nat.zero_add _,
+      hP₁.pa (p := (.r12, 384 * L.k)) r12_cs, hb₁, h.rho, ekK, KPke.ekPKE, L₀.keepBytes hP₁.b W.f₁E]
+    exact congrArg (· ++ _) h.ek
+  -- `ek` to `dk`.
+  refine WP.seq (WP.mono (copy_okL L₁ (dst := (.r13, 384 * L.k)) (src := (.r12, 0)) (n := L.ekLen) (by decide) W.f₂)
+    fun s₂ ⟨hP₂, hb₂⟩ => ?_)
+  have k₂ := k₁.step W hp hP₂.b W.f₂K
+  have L₂ := k₂.lay W hp
+  rw [hek] at hb₂
+  have hek₂ : bytesAt s₂.mem (pa s₂ (.r12, 0)) L.ekLen = ekK L σ := by
+    rw [L₁.keepBytes hP₂.b W.f₂E]; exact hek
+  -- `H(ek)`.
+  refine WP.seq (WP.mono (hash_ok (kgB_bases L) (ps := [((.r12, 0), L.ekLen)]) (rate := 136)
+    (out := (.r13, 384 * L.k + L.ekLen)) (len := 32) W.f₃ (show 6 < 256 by decide) L₂) fun s₃ ⟨hP₃, hb₃⟩ => ?_)
+  have k₃ := k₂.step W hp hP₃.b W.f₃K
+  have L₃ := k₃.lay W hp
+  simp only [pieces, List.flatMap_cons, List.flatMap_nil, List.append_nil, hek₂, sha3Suffix6] at hb₃
+  rw [← H_eq] at hb₃
+  -- `z`.
+  refine WP.mono (copy_okL L₃ (dst := (.r13, 384 * L.k + L.ekLen + 32)) (src := (.rbp, 32)) (n := 32) (by decide) W.f₄)
+    fun s₄ ⟨hP₄, hb₄⟩ => ?_
+  have k₄ := k₃.step W hp hP₄.b W.f₄K
+  rw [k₃.z] at hb₄
+  refine ⟨k₄, ?_, ?_, ?_⟩
+  · rw [hP₄.cs .r15 (by decide), hP₃.cs .r15 (by decide), hP₂.cs .r15 (by decide), hP₁.cs .r15 (by decide), h.r15]
+  · rw [L₃.keepBytes hP₄.b W.f₄E, L₂.keepBytes hP₃.b W.f₃E]; exact hek₂
+  · have hP := PPost.app (PPost.app (PPost.app hP₁ hP₂ (by simp [calleeSaved])) hP₃ (by simp [calleeSaved])) hP₄
+      (by simp [calleeSaved])
+    have hP' := PPost.app hP₃ hP₄ (by simp [calleeSaved])
+    rw [show L.dkLen = 384 * L.k + L.ekLen + 32 + 32 by
+        simp only [Kem.k, Kem.dkLen, Kem.ekLen, Params.dkLen, Params.ekLen]; omega_using [],
+      bytesAt_split, bytesAt_split, bytesAt_split, Nat.zero_add, Nat.zero_add, Nat.zero_add]
+    rw [hP₄.pa (p := (.r13, 384 * L.k + L.ekLen + 32)) r13_cs, hb₄,
+      L₃.keepBytes hP₄.b W.dkH, hP₃.pa (p := (.r13, 384 * L.k + L.ekLen)) r13_cs, hb₃,
+      L₂.keepBytes hP'.b W.dkE, hP₂.pa (p := (.r13, 384 * L.k)) r13_cs, hb₂, dkK, KPke.dkPKE]
+    rw [L₀.keepBytes hP.b W.dkS]
+    exact congrArg (· ++ _ ++ _ ++ _) h.dk
+
+end KeyGen
+
+end VG.Proof.MlKem.X86_64
+
+end
+
+end
+
+/-!
+# ML-KEM on x86-64: key generation, constant time of the pieces
+
+Two runs from entry states that agree on the public data (`keyGenK.pub`: the
+pointers, the stack pointer and `ρ`), each at the same step with its invariant
+(`Rel2`), are in the same layout (`kc_lrel`), and each piece leaks the same in
+both (`gRho_tr`, `samples_tr`, `se_tr`, `kgm_tr`, `encT_tr`, `encS_tr`, `fin_tr`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.MlKem.X86_64
+
+open VG VG.X86_64 VG.Impl.MlKem.X86_64
+open VG.Spec.MlKem
+open VG.Spec.Sha3 (bytesAt)
+
+/-- A piece's constant time in a relation implied by the invariants of two runs. -/
+theorem rel2_of {Pre : State → Prop} {Pub : State → State → Prop} {I : State → State → Prop} {c : Prog isa}
+    {Q : State → State → Prop} (htr : RelCT isa Q c fun _ _ => True)
+    (h : ∀ σ₁ σ₂ x y, Pre σ₁ → Pre σ₂ → Pub σ₁ σ₂ → I σ₁ x → I σ₂ y → Q x y) :
+    RelCT isa (Rel2 Pre Pub I) c fun _ _ => True :=
+  RelCT.mono htr (fun _ _ ⟨_, _, p₁, p₂, hpub, i₁, i₂⟩ => h _ _ _ _ p₁ p₂ hpub i₁ i₂) fun _ _ h => h
+
+namespace KeyGen
+
+open VG.Impl.MlKem.X86_64.KeyGen
+
+section
+
+variable {L : Kem} (W : KgWfB L)
+include W
+
+theorem kc_lrel {σ₁ σ₂ x y : State} (p₁ : (keyGenK L).pre σ₁) (p₂ : (keyGenK L).pre σ₂) (pub : (keyGenK L).pub σ₁ σ₂)
+    (h₁ : KC σ₁ x) (h₂ : KC σ₂ y) : LRel kgR (kgW L) x y := by
+  obtain ⟨e1, e2, e3, e4, e5, _⟩ := pub
+  refine ⟨h₁.lay W p₁, h₂.lay W p₂, fa4 ?_ ?_ ?_ ?_, by rw [h₁.top.rsp, h₂.top.rsp, e5]⟩
+  · rw [h₁.top.regs (.rbp, .rdi) (by decide), h₂.top.regs (.rbp, .rdi) (by decide), e1]
+  · rw [h₁.top.regs (.rbx, .rcx) (by decide), h₂.top.regs (.rbx, .rcx) (by decide), e4]
+  · rw [h₁.top.regs (.r12, .rsi) (by decide), h₂.top.regs (.r12, .rsi) (by decide), e2]
+  · rw [h₁.top.regs (.r13, .rdx) (by decide), h₂.top.regs (.r13, .rdx) (by decide), e3]
+
+omit W in
+theorem rho_pub {σ₁ σ₂ : State} (pub : (keyGenK L).pub σ₁ σ₂) : rhoK L σ₁ = rhoK L σ₂ := pub.2.2.2.2.2
+
+/-! ## `G` -/
+
+theorem gRho_trL : RelCT isa (LRel kgR (kgW L)) (gRho L) fun _ _ => True := by
+  unfold gRho
+  refine RelCT.seq (LRel.step (kgB_bases L) (taintRel [.rbx] (fun x y h r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact h.eq (p := sc 0) (l := 1) W.inBs.1) W.nbT)
+    fun x Lx => WP.mono (setB_okL Lx (by decide) (by have := W.k; omega_using [this]) (p := sc oNB) (v := L.k) W.nb)
+      fun _ h => ⟨_, h.1⟩) (RelCT.seq (LRel.step (kgB_bases L) (hash_tr (kgB_bases L)
+        (ps := [((.rbp, 0), 32), (sc oNB, 1)]) (rate := 72) (out := sc oG) (len := 64) W.gH (show 6 < 256 by decide))
+    fun x Lx => WP.mono (hash_ok (kgB_bases L) (ps := [((.rbp, 0), 32), (sc oNB, 1)]) (rate := 72) (out := sc oG)
+      (len := 64) W.gH (show 6 < 256 by decide) Lx) fun _ h => ⟨_, h.1⟩)
+    (taintRel [.rbx] (fun x y h r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact h.eq (p := sc 0) (l := 1) W.inBs.1) (by taint_decide)))
+
+theorem gRho_tr : RelCT isa (Rel2 (keyGenK L).pre (keyGenK L).pub fun σ s => KC σ s ∧ s.gpr .r15 = 1) (gRho L)
+    fun _ _ => True :=
+  rel2_of (gRho_trL W) fun _ _ _ _ p₁ p₂ pub h₁ h₂ => kc_lrel W p₁ p₂ pub h₁.1 h₂.1
+
+/-! ## The matrix -/
+
+theorem fin_trL : RelCT isa (LRel kgR (kgW L)) (fin L) fun _ _ => True := by
+  unfold fin
+  have tr : ∀ {c : Prog isa} {h : VG.Taint.Hint X86_64.Taint.T},
+      (taint.check (X86_64.Taint.ofRegs [.rbx, .rbp, .r12, .r13]) c h).isSome = true →
+      RelCT isa (LRel kgR (kgW L)) c fun _ _ => True := fun ht => taintRel [.rbx, .rbp, .r12, .r13] (fun x y h =>
+    fa4 (h.eq (p := sc 0) (l := 1) W.inBs.1) (h.eq (p := (.rbp, 0)) (l := 1) rfl)
+      (h.eq (p := (.r12, 0)) (l := 1) W.inBs.2.1) (h.eq (p := (.r13, 0)) (l := 1) W.inBs.2.2)) ht
+  obtain ⟨_, t₁⟩ := W.finT₁
+  obtain ⟨_, t₂⟩ := W.finT₂
+  obtain ⟨_, t₄⟩ := W.finT₄
+  refine RelCT.seq (LRel.step (kgB_bases L) (tr t₁) fun x Lx =>
+      WP.mono (copy_okL Lx (dst := (.r12, 384 * L.k)) (src := sc oG) (n := 32) (by decide) W.f₁)
+        fun _ h => ⟨_, h.1⟩)
+    (RelCT.seq (LRel.step (kgB_bases L) (tr t₂) fun x Lx =>
+      WP.mono (copy_okL Lx (dst := (.r13, 384 * L.k)) (src := (.r12, 0)) (n := L.ekLen) (by decide) W.f₂)
+        fun _ h => ⟨_, h.1⟩)
+    (RelCT.seq (LRel.step (kgB_bases L) (hash_tr (kgB_bases L) (ps := [((.r12, 0), L.ekLen)]) (rate := 136)
+      (out := (.r13, 384 * L.k + L.ekLen)) (len := 32) W.f₃ (show 6 < 256 by decide)) fun x Lx =>
+      WP.mono (hash_ok (kgB_bases L) (ps := [((.r12, 0), L.ekLen)]) (rate := 136) (out := (.r13, 384 * L.k + L.ekLen))
+        (len := 32) W.f₃ (show 6 < 256 by decide) Lx) fun _ h => ⟨_, h.1⟩)
+    (tr t₄)))
+
+theorem fin_tr {I : State → State → Prop} (hI : ∀ {σ s}, I σ s → KC σ s) :
+    RelCT isa (Rel2 (keyGenK L).pre (keyGenK L).pub I) (fin L) fun _ _ => True :=
+  rel2_of (fin_trL W) fun _ _ _ _ p₁ p₂ pub h₁ h₂ => kc_lrel W p₁ p₂ pub (hI h₁) (hI h₂)
+
+end
+
+section
+
+variable {L : Kem} (W : KgWf L)
+include W
+
+theorem sample_tr {e : Nat} (he : e < L.k * L.k) (he' : 4 * (L.k * L.k / 4) ≤ e) :
+    RelCT isa (Rel2 (keyGenK L).pre (keyGenK L).pub (KB L e)) (sampleIJ (pS (L.pA + e)) (e / L.k) (e % L.k))
+      fun _ _ => True := by
+  have hc := W.kb e he he'
+  simp only [kbChk, Bool.and_eq_true] at hc
+  have hk := W.k
+  exact rel2_of (sampleIJ_tr (kgB_bases L) rbx_na (by have := div_lt_k he; omega_using [hk, this]) (by have := mod_lt_k he; omega_using [hk, this])
+      hc.1.1.1.1.1 (W.ijT e he))
+    fun _ _ _ _ p₁ p₂ pub h₁ h₂ => ⟨kc_lrel W p₁ p₂ pub h₁.a.kc h₂.a.kc, by rw [h₁.a.sb, h₂.a.sb]; exact rho_pub pub⟩
+
+theorem quad_trK (v : Sample4Impl) {q : Nat} (hq : q < L.k * L.k / 4) :
+    RelCT isa (Rel2 (keyGenK L).pre (keyGenK L).pub (KB L (4 * q)))
+      (quad v.callee L.k (4 * q) (pS (L.pA + 4 * q)) (pS L.pW)) fun _ _ => True := by
+  have hc := W.kq q hq
+  simp only [kqChk, Bool.and_eq_true] at hc
+  have hk := W.k
+  have h16 : L.k * L.k ≤ 16 := Nat.mul_le_mul hk.2 hk.2
+  exact rel2_of (RelCT.exists_ fun ρ => quad_tr (ρ := ρ) v (kgB_bases L) (by omega_using [hq, h16])
+      (fun t ht => ⟨by have := div_lt_k (show 4 * q + t < L.k * L.k by omega_using [hq, ht]); omega_using [hk, this],
+        by have := mod_lt_k (show 4 * q + t < L.k * L.k by omega_using [hq, ht]); omega_using [hk, this]⟩) hc.1.1.1.1.1)
+    fun σ₁ _ _ _ p₁ p₂ pub h₁ h₂ => ⟨KPke.kgRho L.p (kgD σ₁), kc_lrel W p₁ p₂ pub h₁.a.kc h₂.a.kc,
+      ⟨h₁.a.sb, fun _ h => absurd h (Nat.not_lt_zero _)⟩,
+      ⟨h₂.a.sb.trans (rho_pub pub).symm, fun _ h => absurd h (Nat.not_lt_zero _)⟩⟩
+
+theorem samples_tr (v : Sample4Impl) : RelCT isa (Rel2 (keyGenK L).pre (keyGenK L).pub (KB L 0)) (L.samples v.callee)
+    (Rel2 (keyGenK L).pre (keyGenK L).pub (KB L (L.k * L.k))) :=
+  samples_tr' L v.callee (R := fun e => Rel2 (keyGenK L).pre (keyGenK L).pub (KB L e))
+    (fun _ he he' => relInv (fun _ _ hp hs => sample_step W hp he he' hs) (sample_tr W he he'))
+    (fun _ hq => relInv (fun _ _ hp hs => quad_step v W hp hq hs) (quad_trK W v hq))
+
+/-! ## `ŝ` and `ê` -/
+
+theorem prfs_trK (v : Sample4Impl) :
+    RelCT isa (Rel2 (keyGenK L).pre (keyGenK L).pub (KRest0 L)) (v.callee.prfs 0 (2 * L.k) L.oPR L.lPW)
+      fun _ _ => True := by
+  have hc := W.prfs
+  simp only [prfsKChk, Bool.and_eq_true] at hc
+  exact rel2_of (v.prfs_tr (kgB_bases L) (by have := W.k; omega_using [this]) hc.1.1.1.1) fun _ _ _ _ p₁ p₂ pub h₁ h₂ =>
+    kc_lrel W p₁ p₂ pub h₁.kc h₂.kc
+
+theorem se_tr {A : Arith} (hA : ArithOk A) {N : Nat} (hN : N < 2 * L.k) :
+    RelCT isa (Rel2 (keyGenK L).pre (keyGenK L).pub (KRest L N 0 0)) (se L A N) fun _ _ => True := by
+  have hc := W.se N hN
+  simp only [seChk, Bool.and_eq_true] at hc
+  unfold se
+  exact rel2_of (cbd2At_trL hA rbx_na hc.1) fun _ _ _ _ p₁ p₂ pub h₁ h₂ => kc_lrel W p₁ p₂ pub h₁.kc h₂.kc
+
+/-! ## `ŝ` and `t̂` -/
+
+theorem kgm_tr {A : Arith} (hA : ArithOk A) :
+    RelCT isa (Rel2 (keyGenK L).pre (keyGenK L).pub (KRest L (2 * L.k) 0 0))
+      (L.kgMulAt A (pS L.pU) (pS 0) (pS L.pA) (pS L.k) (pS L.pZ)) fun _ _ => True := by
+  have red : ∀ {σ s : State}, KRest L (2 * L.k) 0 0 σ s → VecReduced s.mem (pa s (pS 0)) L.k ∧
+      VecReduced s.mem (pa s (pS L.pA)) (L.k * L.k) ∧ VecReduced s.mem (pa s (pS L.k)) L.k := fun h =>
+    ⟨fun j hj => by rw [pS_add, Nat.zero_add]; exact (h.se j (by omega_using [hj])).1,
+      fun e he => by rw [pS_add]; exact (h.mat e he).1,
+      fun i hi => by rw [pS_add]; exact (h.se (L.k + i) (by omega_using [hi])).1⟩
+  exact rel2_of (kgMulAt_trL hA W.k34 rbx_na rbx_na rbx_na rbx_na W.km) fun _ _ _ _ p₁ p₂ pub h₁ h₂ =>
+    ⟨kc_lrel W p₁ p₂ pub h₁.kc h₂.kc, red h₁, red h₂⟩
+
+/-! ## The rows of `ek` -/
+
+theorem encT_tr {A : Arith} (hA : ArithOk A) {i : Nat} (hi : i < L.k) :
+    RelCT isa (Rel2 (keyGenK L).pre (keyGenK L).pub (KRestT L i 0)) (encT L A i) fun _ _ => True := by
+  have hc := W.encT i hi
+  simp only [encTChk, Bool.and_eq_true] at hc
+  exact rel2_of (enc12At_trL hA r12_na hc.1) fun _ _ _ _ p₁ p₂ pub h₁ h₂ =>
+    ⟨kc_lrel W p₁ p₂ pub h₁.kc h₂.kc, (h₁.that i hi).1, (h₂.that i hi).1⟩
+
+/-! ## The rows of `dk` -/
+
+theorem encS_tr {A : Arith} (hA : ArithOk A) {j : Nat} (hj : j < L.k) :
+    RelCT isa (Rel2 (keyGenK L).pre (keyGenK L).pub (KRestT L L.k j)) (encS A j) fun _ _ => True := by
+  have hc := W.encS j hj
+  simp only [encSChk, Bool.and_eq_true] at hc
+  exact rel2_of (enc12At_trL hA r13_na hc.1) fun _ _ _ _ p₁ p₂ pub h₁ h₂ =>
+    ⟨kc_lrel W p₁ p₂ pub h₁.kc h₂.kc, (h₁.shat j hj).1, (h₂.shat j hj).1⟩
+
+/-! ## The rest of the keys -/
+
+end
+
+end KeyGen
+
+end VG.Proof.MlKem.X86_64
+
+end
+
+end
+
+/-!
+# ML-KEM on x86-64: key generation
+
+The function, piece by piece (`KeyGen.*_ok`): it returns 1 with
+`KeyGen_internal(d, z)` in `ek` and `dk` if every `SampleNTT` succeeded within
+280 iterations (`allOk`), and 0 otherwise (`keyGen_correct`); it leaks only
+the pointers and `ρ` (`keyGen_ct`). Each parameter set's file moves this to
+its shared contract.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.MlKem.X86_64
+
+open VG VG.X86_64 VG.Impl.MlKem.X86_64
+open VG.Spec.MlKem
+open VG.Spec.Sha3 (bytesAt)
+
+namespace KeyGen
+
+open VG.Impl.MlKem.X86_64.KeyGen
+
+/-- `KB` is kept by a piece that only sets flags. -/
+theorem KB.flag {L : Kem} (W : KgWf L) {σ : State} (hp : (keyGenK L).pre σ) {e : Nat} (he : e ≤ L.k * L.k)
+    {s s' : State} (h : KB L e σ s) (hP : PPost s s' []) : KB L e σ s' := by
+  have L₀ := h.a.kc.lay W hp
+  exact ⟨h.a.keep W hp hP.b W.flag W.flagG W.flagS W.flagB, by rw [hP.cs .r15 (by decide)]; exact h.m.r15,
+    fun e' he' f hf => L₀.keepPoly hP.b (W.flagA e' (by omega_using [he, he'])) (h.m.mat e' he' f hf)⟩
+
+/-- At the end: `r15` as `allOk`, and the keys if it is 1. -/
+structure KEnd (L : Kem) (σ s : State) : Prop where
+  kc : KC σ s
+  r15 : s.gpr .r15 = if allOk L.k (rhoK L σ) (L.k * L.k) then 1 else 0
+  keys : allOk L.k (rhoK L σ) (L.k * L.k) → KFin L σ s
+
+theorem r15_ne {k : Nat} {ρ : List Byte} {r : BitVec 64} (h : r = if allOk k ρ (k * k) then 1 else 0)
+    (hne : r.setWidth 32 ≠ 0) : allOk k ρ (k * k) := by
+  by_contra ho
+  rw [ifn ho] at h
+  exact hne (by rw [h]; rfl)
+
+theorem r15_eq {k : Nat} {ρ : List Byte} {r : BitVec 64} (h : r = if allOk k ρ (k * k) then 1 else 0)
+    (he : r.setWidth 32 = 0) : ¬ allOk k ρ (k * k) := by
+  intro ho
+  rw [ifp ho] at h
+  rw [h] at he
+  exact absurd he (by decide)
+
+theorem rest_ok (v : Sample4Impl) {L : Kem} (W : KgWf L) {σ : State} (hp : (keyGenK L).pre σ) {s : State}
+    (h : KRest0 L σ s) : WP isa (rest L v.callee) s (KFin L σ) := by
+  unfold rest
+  refine WP.seq (WP.mono (prfs_okK v W hp h) fun s₀ h₀ => ?_)
+  refine WP.seq (WP.mono (seqR_ok (I := fun k => KRest L k 0 0 σ) (2 * L.k) 0
+    (fun k _ hk s hs => se_ok v.arith W hp (by omega_using [hk]) hs) s₀ h₀) fun s₁ h₁ => ?_)
+  refine WP.seq (WP.mono (kgm_ok v.arith W hp (by rwa [Nat.zero_add] at h₁)) fun s₁' h₁' => ?_)
+  refine WP.seq (WP.mono (seqR_ok (I := fun k => KRestT L k 0 σ) L.k 0
+    (fun k _ hk s hs => encT_ok v.arith W hp (by omega_using [hk]) hs) s₁' h₁') fun s₂ h₂ => ?_)
+  refine WP.seq (WP.mono (seqR_ok (I := fun k => KRestT L L.k k σ) L.k 0
+    (fun k _ hk s hs => encS_ok v.arith W hp (by omega_using [hk]) hs) s₂ (by rwa [Nat.zero_add] at h₂)) fun s₃ h₃ => ?_)
+  exact fin_ok W hp (by rw [Nat.zero_add] at h₃; exact h₃.pre)
+
+theorem body_ok (v : Sample4Impl) {L : Kem} (W : KgWf L) {σ : State} (hp : (keyGenK L).pre σ) {s : State}
+    (h : KB L (L.k * L.k) σ s) : WP isa (ifOk (rest L v.callee)) s (KEnd L σ) := by
+  refine ifOk_ok (fun s₁ hP hne => ?_) fun s₁ hP he => ?_
+  · have ho := r15_ne h.m.r15 hne
+    exact WP.mono (rest_ok v W hp (KRest0.start (h.flag W hp (Nat.le_refl _) hP) ho)) fun s' hf =>
+      ⟨hf.kc, by rw [hf.r15, ifp ho], fun _ => hf⟩
+  · have ho := r15_eq h.m.r15 he
+    have h' := h.flag W hp (Nat.le_refl _) hP
+    exact ⟨h'.a.kc, h'.m.r15, fun h => absurd h ho⟩
+
+/-- The postcondition, from the keys. -/
+theorem post_of {L : Kem} (W : KgWfB L) {σ s : State} (h : KEnd L σ s) {s' : State}
+    (hr : (s'.gpr .rax).setWidth 32 = (s.gpr .r15).setWidth 32) (hm : s'.mem = s.mem) : (keyGenK L).post σ s' := by
+  have e12 : pa s (.r12, 0) = σ.gpr .rsi := by
+    rw [pa, h.kc.top.regs (.r12, .rsi) (by decide), add_ofNat_zero]
+  have e13 : pa s (.r13, 0) = σ.gpr .rdx := by
+    rw [pa, h.kc.top.regs (.r13, .rdx) (by decide), add_ofNat_zero]
+  show Outcome _ _ _
+  by_cases ho : allOk L.k (rhoK L σ) (L.k * L.k)
+  · have hf := h.keys ho
+    refine .inl ⟨by rw [hr, hf.r15]; rfl, minIterations, ?_⟩
+    show keyGenInternal L.p minIterations _ _ = _
+    rw [KPke.keyGenInternal_eq, KPke.kpkeKeyGen_some W.eta.1 (a := aHat (rhoK L σ))
+      fun i hi j hj => aHat_eq ho hi hj, Option.map_some, hm, ← e12, ← e13, hf.ek, hf.dk]
+  · refine .inr ⟨by rw [hr, h.r15, ifn ho]; rfl, ?_⟩
+    obtain ⟨i, hi, j, hj, hn⟩ := not_allOk ho
+    show keyGenInternal L.p minIterations _ _ = _
+    rw [KPke.keyGenInternal_eq, KPke.kpkeKeyGen_none hi hj hn]
+    rfl
+
+theorem KEnd.hin {L : Kem} (W : KgWfB L) {σ s : State} (hp : (keyGenK L).pre σ) (h : KEnd L σ s) :
+    ∀ k < 6, InRegions (s.rd ++ s.wr) (pa s (sc (oSV + 8 * k))) 8 := fun k hk =>
+  (h.kc.lay W hp).cR (W.sv k hk) _ _ ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩
+
+end KeyGen
+
+open KeyGen in
+theorem kemKeyGen_correct (v : Sample4Impl) {L : Kem} (W : KgWf L) (hctl : ctlOk (kemKeyGen L v.callee) = true)
+    (σ : State) (hp : (keyGenK L).pre σ) :
+    ∃ t s', Exec isa (kemKeyGen L v.callee) σ t s' ∧ abiPreserved σ s' ∧ (keyGenK L).post σ s' := by
+  obtain ⟨t, s', he, hF⟩ := WP.seq (WP.mono (pro_ok W hp) fun s₁ ⟨h₁, h15⟩ =>
+    WP.seq (WP.mono (gRho_ok W hp h₁ h15) fun s₂ ⟨h₂, h15'⟩ =>
+      WP.seq (WP.mono (samples_ok v W hp (KB.zero h₂ h15')) fun s₃ h₃ =>
+        WP.seq (WP.mono (body_ok v W hp h₃) fun s₄ h₄ =>
+          WP.mono (topEpi_ok h₄.kc.top (h₄.hin W hp)) fun s₅ ⟨hr, hg, hm⟩ =>
+            (⟨hg, post_of W h₄ hr hm⟩ : gprPreserved σ s₅ ∧ (keyGenK L).post σ s₅)))))
+  exact ⟨t, s', he, abiPreserved_of_ctl hctl he hF.1, hF.2⟩
+
+/-! ## Constant time -/
+
+/-- `relInv`, with a fact about the entry state carried along. -/
+theorem relInvC {Pre : State → Prop} {Pub : State → State → Prop} {I I' : State → State → Prop} {C : State → Prop}
+    {c : Prog isa} (hw : ∀ σ s, Pre σ → I σ s → WP isa c s (I' σ))
+    (ht : RelCT isa (Rel2 Pre Pub I) c fun _ _ => True) :
+    RelCT isa (Rel2 Pre Pub fun σ s => I σ s ∧ C σ) c (Rel2 Pre Pub fun σ s => I' σ s ∧ C σ) :=
+  relInv (fun σ s hp hs => WP.mono (hw σ s hp hs.1) fun _ h => ⟨h, hs.2⟩)
+    (RelCT.mono ht (fun _ _ ⟨σ₁, σ₂, p₁, p₂, pub, i₁, i₂⟩ => ⟨σ₁, σ₂, p₁, p₂, pub, i₁.1, i₂.1⟩) fun _ _ h => h)
+
+namespace KeyGen
+
+open VG.Impl.MlKem.X86_64.KeyGen
+
+variable {L : Kem} (W : KgWf L)
+include W
+
+abbrev R (L : Kem) (I : State → State → Prop) : State → State → Prop := Rel2 (keyGenK L).pre (keyGenK L).pub I
+
+theorem rest_tr (v : Sample4Impl) :
+    RelCT isa (R L fun σ s => KRest0 L σ s ∧ allOk L.k (rhoK L σ) (L.k * L.k)) (rest L v.callee)
+      (R L fun σ s => KFin L σ s ∧ allOk L.k (rhoK L σ) (L.k * L.k)) := by
+  unfold rest
+  refine RelCT.seq (relInvC (fun σ s hp hs => prfs_okK v W hp hs) (prfs_trK W v)) ?_
+  refine RelCT.seq (seqR_tr (R := fun k => R L fun σ s => KRest L k 0 0 σ s ∧ allOk L.k (rhoK L σ) (L.k * L.k))
+    (2 * L.k) 0 fun k _ hk => relInvC (fun σ s hp hs => se_ok v.arith W hp (by omega_using [hk]) hs)
+      (se_tr W v.arith (by omega_using [hk]))) ?_
+  rw [Nat.zero_add]
+  refine RelCT.seq (relInvC (fun σ s hp hs => kgm_ok v.arith W hp hs) (kgm_tr W v.arith)) ?_
+  refine RelCT.seq (seqR_tr (R := fun k => R L fun σ s => KRestT L k 0 σ s ∧ allOk L.k (rhoK L σ) (L.k * L.k))
+    L.k 0 fun k _ hk => relInvC (fun σ s hp hs => encT_ok v.arith W hp (by omega_using [hk]) hs) (encT_tr W v.arith (by omega_using [hk]))) ?_
+  rw [Nat.zero_add]
+  refine RelCT.seq (seqR_tr (R := fun k => R L fun σ s => KRestT L L.k k σ s ∧ allOk L.k (rhoK L σ) (L.k * L.k))
+    L.k 0 fun k _ hk => relInvC (fun σ s hp hs => encS_ok v.arith W hp (by omega_using [hk]) hs) (encS_tr W v.arith (by omega_using [hk]))) ?_
+  rw [Nat.zero_add]
+  exact relInvC (fun σ s hp hs => fin_ok W hp hs.pre) (fin_tr W fun h => h.kc)
+
+omit W in
+theorem r15_pub {σ₁ σ₂ x y : State} (pub : (keyGenK L).pub σ₁ σ₂) (h₁ : KB L (L.k * L.k) σ₁ x)
+    (h₂ : KB L (L.k * L.k) σ₂ y) : x.gpr .r15 = y.gpr .r15 := by
+  rw [h₁.m.r15, h₂.m.r15]; exact congrArg (fun ρ => if allOk L.k ρ (L.k * L.k) then (1 : BitVec 64) else 0) (rho_pub pub)
+
+theorem body_tr (v : Sample4Impl) : RelCT isa (R L (KB L (L.k * L.k))) (ifOk (rest L v.callee)) (R L (KEnd L)) := by
+  refine ifOk_tr (fun x y ⟨_, _, _, _, pub, h₁, h₂⟩ => by rw [r15_pub pub h₁ h₂]) ?_ ?_
+  · refine RelCT.mono (rest_tr W v) (fun x y ⟨x₀, y₀, ⟨σ₁, σ₂, p₁, p₂, pub, h₁, h₂⟩, hx, hy, hne⟩ => ?_)
+      fun x y ⟨σ₁, σ₂, p₁, p₂, pub, h₁, h₂⟩ =>
+        ⟨σ₁, σ₂, p₁, p₂, pub, ⟨h₁.1.kc, by rw [h₁.1.r15, ifp h₁.2], fun _ => h₁.1⟩,
+          ⟨h₂.1.kc, by rw [h₂.1.r15, ifp h₂.2], fun _ => h₂.1⟩⟩
+    have o₁ := r15_ne h₁.m.r15 hne
+    have o₂ : allOk L.k (rhoK L σ₂) (L.k * L.k) := by rw [← rho_pub pub]; exact o₁
+    exact ⟨σ₁, σ₂, p₁, p₂, pub, ⟨KRest0.start (h₁.flag W p₁ (Nat.le_refl _) hx) o₁, o₁⟩,
+      ⟨KRest0.start (h₂.flag W p₂ (Nat.le_refl _) hy) o₂, o₂⟩⟩
+  · rintro x y ⟨x₀, y₀, ⟨σ₁, σ₂, p₁, p₂, pub, h₁, h₂⟩, hx, hy, he⟩
+    have o₁ := r15_eq h₁.m.r15 he
+    have o₂ : ¬ allOk L.k (rhoK L σ₂) (L.k * L.k) := by rw [← rho_pub pub]; exact o₁
+    have k₁ := h₁.flag W p₁ (Nat.le_refl _) hx
+    have k₂ := h₂.flag W p₂ (Nat.le_refl _) hy
+    exact ⟨σ₁, σ₂, p₁, p₂, pub, ⟨k₁.a.kc, k₁.m.r15, fun h => absurd h o₁⟩, ⟨k₂.a.kc, k₂.m.r15, fun h => absurd h o₂⟩⟩
+
+omit W in
+theorem pro_tr : RelCT isa (R L fun σ s => s = σ) (.block pro) fun _ _ => True :=
+  taintRel [.rcx, .rdi, .rsi, .rdx] (fun x y ⟨σ₁, σ₂, _, _, pub, h₁, h₂⟩ => by
+    subst h₁ h₂
+    exact fa4 pub.2.2.2.1 pub.1 pub.2.1 pub.2.2.1) (by taint_decide)
+
+omit W in
+theorem epi_tr : RelCT isa (R L (KEnd L)) (.block topEpi) fun _ _ => True :=
+  taintRel [.rbx] (fun x y ⟨σ₁, σ₂, _, _, pub, h₁, h₂⟩ r hr => by
+    simp only [List.mem_singleton] at hr; subst hr
+    rw [h₁.kc.top.regs (.rbx, .rcx) (by decide), h₂.kc.top.regs (.rbx, .rcx) (by decide), pub.2.2.2.1])
+    (by taint_decide)
+
+end KeyGen
+
+open KeyGen in
+theorem kemKeyGen_ct (v : Sample4Impl) {L : Kem} (W : KgWf L) :
+    ConstantTime isa (keyGenK L).pre (keyGenK L).pub (kemKeyGen L v.callee) := by
+  refine relStart (Q := fun _ _ => True) ?_
+  unfold kemKeyGen
+  refine RelCT.seq (relInv (I' := fun σ s => KC σ s ∧ s.gpr .r15 = 1)
+    (fun σ s hp hs => by subst hs; exact pro_ok W hp) pro_tr) ?_
+  refine RelCT.seq (relInv (I' := fun σ s => KA L σ s ∧ s.gpr .r15 = 1)
+    (fun σ s hp hs => gRho_ok W hp hs.1 hs.2) (gRho_tr W)) ?_
+  refine RelCT.seq (RelCT.mono (samples_tr W v)
+    (fun x y ⟨σ₁, σ₂, p₁, p₂, pub, h₁, h₂⟩ => ⟨σ₁, σ₂, p₁, p₂, pub, KB.zero h₁.1 h₁.2, KB.zero h₂.1 h₂.2⟩)
+    fun _ _ h => h) ?_
+  exact RelCT.seq (body_tr W v) (RelCT.mono epi_tr (fun _ _ h => h) fun _ _ _ => trivial)
+
+end VG.Proof.MlKem.X86_64
+
+end
+
+end
 
 /-! ### `MlKem.X86_64.EncRest`, which only this module used -/
 

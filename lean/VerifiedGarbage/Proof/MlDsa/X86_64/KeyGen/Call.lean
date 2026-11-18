@@ -29,20 +29,18 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.FragC
 public import VerifiedGarbage.Proof.MlKem.X86_64.FragS
 public import VerifiedGarbage.Proof.MlKem.X86_64.KgMulV
 public import VerifiedGarbage.Proof.MlKem.X86_64.MulAvx2
-public import VerifiedGarbage.Proof.MlKem.X86_64.NttInv
+public import VerifiedGarbage.Proof.MlKem.X86_64.KpkeAcc
 public import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Top
 public import VerifiedGarbage.Proof.MlKem.X86_64.SampleCT
 public import VerifiedGarbage.Proof.MlKem.X86_64.VLay42
 public import VerifiedGarbage.Proof.MlKem.X86_64.VMxcsr
 public import VerifiedGarbage.Proof.MlKem.X86_64.VPack
 public import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
-public import VerifiedGarbage.Proof.MlKem.X86_64.YAddSub
+public import VerifiedGarbage.Proof.MlKem.X86_64.FinY
 public import VerifiedGarbage.Proof.MlKem.X86_64.YNttPack
 public import VerifiedGarbage.Proof.MlKem.X86_64.Zero
 public import VerifiedGarbage.Proof.Sha3.Arith
-public import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Absorb
 public import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Pad
-public import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Squeeze
 public import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Word
 
 /-!

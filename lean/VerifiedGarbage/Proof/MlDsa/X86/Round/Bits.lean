@@ -1,15 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.X86.Round.Common
-public import VerifiedGarbage.Proof.MlDsa.X86.Round.Arith
 import VerifiedGarbage.Proof.MlDsa.Arith.Mem
 import all Init.Data.Nat.Bitwise.Basic
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.MlDsa.X86.Round.Common
-meta import VerifiedGarbage.Proof.MlDsa.X86.Round.Arith
 meta import VerifiedGarbage.Proof.MlDsa.Arith.Mem
 meta import Init.Data.Nat.Bitwise.Basic
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
@@ -17,6 +13,295 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
+public import VerifiedGarbage.Proof.MlKem.X86.Leaf
+public import VerifiedGarbage.Proof.MlDsa.Round.Mem
+public import VerifiedGarbage.Impl.MlDsa.X86.Round.Round
+public import VerifiedGarbage.Proof.MlKem.X86.Common
+public import VerifiedGarbage.Proof.MlDsa.Round.Decompose
+meta import VerifiedGarbage.Proof.MlKem.X86.Leaf
+meta import VerifiedGarbage.Proof.MlDsa.Round.Mem
+meta import VerifiedGarbage.Impl.MlDsa.X86.Round.Round
+meta import VerifiedGarbage.Proof.MlKem.X86.Common
+meta import VerifiedGarbage.Proof.MlDsa.Round.Decompose
+import VerifiedGarbage.Proof.MlKem.X86.Red
+public import VerifiedGarbage.Proof.Framework.X86.Wp
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
+meta import VerifiedGarbage.Proof.MlKem.X86.Red
+meta import VerifiedGarbage.Proof.Framework.X86.Wp
+meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.PlainSimp
+
+/-! ### `MlDsa.X86.Round.Arith`, which this module and modules that import it used -/
+
+section
+
+/-!
+# ML-DSA on x86 (32-bit): what the rounding code computes
+
+Continuation-style rules for the pieces of `Impl/MlDsa/X86/Round/Round.lean`:
+`condAdd` leaves `condAddN r x k` (`condAdd_spec`), `hbRaw g` leaves `⌊(a + γ₂ -
+1)/(2γ₂)⌋` (`hbRaw_spec`, by `hbF_eq` of `Proof/MlDsa/Round/Decompose.lean`)
+and `hb g` its remainder modulo `m` (`hb_spec`), each changing only the
+registers it names (`Only`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.X86.Round
+
+open VG VG.X86 VG.X86.Wp VG.Impl.MlDsa.X86.Round
+open VG.Impl.MlKem.X86 (at_)
+open VG.Spec.MlDsa (q)
+open VG.Proof.MlDsa (gamma2s)
+open VG.Proof.MlDsa.Round (hbF hbM q_eq mem_gamma2s hbF_le hbF_eq)
+open VG.Proof.MlKem.X86 (Only wp_cons wp_mul execMul_eax execMul_other toNat_ofNat32 eq_ofNat_of_toNat)
+
+theorem updOnly {s s' : State} {d : Reg} {v : BitVec 32} (h : Upd s s' d v) : Only [d] s s' :=
+  ⟨fun r hr => h.other r (by simpa using hr), h.mem, h.rd, h.wr⟩
+
+/-- `sub d, [b + o]`, and the flags. -/
+theorem wp_subm {is : List Instr} {s : State} {Q : State → Prop} {d b : Reg} {B : BitVec 32} {o : Nat}
+    (hb : s.gpr b = B) (hin : InRegions (s.rd ++ s.wr) (addr B o) 4)
+    (k : ∀ s', Upd s s' d (s.gpr d - s.mem.readW (addr B o) 32) →
+      s'.cf = some (decide ((s.gpr d).toNat < (s.mem.readW (addr B o) 32).toNat)) → WP isa (.block is) s' Q) :
+    WP isa (.block (.alu .sub d (.mem ⟨b, o⟩) :: is)) s Q :=
+  cons (by simp [exec, execAlu, readSrc_mem hb hin]; rfl) (k _ (Upd.flags _ _ _ _ _ _) rfl)
+
+/-- `sub d, r`, and the carry. -/
+theorem wp_subr {is : List Instr} {s : State} {Q : State → Prop} {d r : Reg}
+    (k : ∀ s', Upd s s' d (s.gpr d - s.gpr r) → s'.cf = some (decide ((s.gpr d).toNat < (s.gpr r).toNat)) →
+      WP isa (.block is) s' Q) :
+    WP isa (.block (.alu .sub d (.reg r) :: is)) s Q :=
+  cons rfl (k _ (Upd.flags _ _ _ _ _ _) rfl)
+
+/-- `cmp d, [b + o]`: ZF is `d = [b + o]`. -/
+theorem wp_cmpm {is : List Instr} {s : State} {Q : State → Prop} {d b : Reg} {B : BitVec 32} {o : Nat}
+    (hb : s.gpr b = B) (hin : InRegions (s.rd ++ s.wr) (addr B o) 4)
+    (k : ∀ s', Fupd s s' → s'.zf = some (s.gpr d - s.mem.readW (addr B o) 32 == 0) → WP isa (.block is) s' Q) :
+    WP isa (.block (.alu .cmp d (.mem ⟨b, o⟩) :: is)) s Q :=
+  cons (s' := arithFlags s (s.gpr d - s.mem.readW (addr B o) 32)
+      ((s.gpr d).toNat < (s.mem.readW (addr B o) 32).toNat)
+      (subOverflow (s.gpr d) (s.mem.readW (addr B o) 32) (s.gpr d - s.mem.readW (addr B o) 32)))
+    (by simp [exec, execAlu, readSrc_mem hb hin]) (k _ ⟨rfl, rfl, rfl, rfl, rfl⟩ rfl)
+
+/-- `mul r` of values whose product is less than `2³²`: `eax` is the product. -/
+theorem wp_mulSmall {is : List Instr} {s : State} {Q : State → Prop} {r : Reg}
+    (hp : (s.gpr .eax).toNat * (s.gpr r).toNat < 2 ^ 32)
+    (k : ∀ s', Only [.eax, .edx] s s' → (s'.gpr .eax).toNat = (s.gpr .eax).toNat * (s.gpr r).toNat →
+      WP isa (.block is) s' Q) :
+    WP isa (.block (.mul r :: is)) s Q :=
+  wp_mul (k _ (VG.Proof.MlKem.X86.execMul_only r s) (by rw [execMul_eax, toNat_ofNat32 hp]))
+
+/-! ## Conditional addition -/
+
+/-- What `condAdd` computes: `r - x`, plus `k` if that borrows. -/
+def condAddN (r x k : Nat) : Nat := if r < x then r + k - x else r - x
+
+theorem condAdd_val (r x k : BitVec 32) (hx : x.toNat ≤ r.toNat + k.toNat) :
+    (r - x + ((if decide (r.toNat < x.toNat) = true then BitVec.allOnes 32 else 0) &&& k)).toNat =
+      condAddN r.toNat x.toNat k.toNat := by
+  unfold condAddN
+  have := r.isLt; have := x.isLt; have := k.isLt
+  by_cases h : r.toNat < x.toNat
+  · simp only [h, decide_true, ite_true, BitVec.allOnes_and, BitVec.toNat_add, BitVec.toNat_sub]
+    omega_using [hx, h]
+  · have e : r - x + ((if decide (r.toNat < x.toNat) = true then BitVec.allOnes 32 else 0) &&& k) = r - x := by
+      simp [h]
+    rw [e, BitVec.toNat_sub, ite_eq_right h]
+    omega_using [h]
+
+/-- `condAdd r x t k`, from `x` read as `X`: `r ← condAddN r X k`, changing only `r`, `t` and the
+flags. -/
+theorem condAdd_spec {r t : Reg} (hrt : r ≠ t) {x : Src} {k X : BitVec 32} {is : List Instr} {s : State}
+    {P : State → Prop} (hx : readSrc s x = some X) (hX : X.toNat ≤ (s.gpr r).toNat + k.toNat)
+    (c : ∀ s', Only [r, t] s s' → (s'.gpr r).toNat = condAddN (s.gpr r).toNat X.toNat k.toNat →
+      WP isa (.block is) s' P) :
+    WP isa (.block (condAdd r x t k ++ is)) s P := by
+  have htr : t ≠ r := fun e => hrt e.symm
+  rw [condAdd, List.cons_append]
+  refine cons (s' := (arithFlags s (s.gpr r - X) ((s.gpr r).toNat < X.toNat) (subOverflow (s.gpr r) X
+    (s.gpr r - X))).setReg r (s.gpr r - X)) (by simp only [exec, execAlu, hx, Option.bind_some]) ?_
+  have u₁ := Upd.flags s r (s.gpr r - X) ((s.gpr r).toNat < X.toNat) (subOverflow (s.gpr r) X (s.gpr r - X))
+    (s.gpr r - X)
+  have c₁ : ((arithFlags s (s.gpr r - X) ((s.gpr r).toNat < X.toNat) (subOverflow (s.gpr r) X
+      (s.gpr r - X))).setReg r (s.gpr r - X)).cf = some (decide ((s.gpr r).toNat < X.toNat)) := rfl
+  generalize (arithFlags s (s.gpr r - X) ((s.gpr r).toNat < X.toNat) (subOverflow (s.gpr r) X
+    (s.gpr r - X))).setReg r (s.gpr r - X) = s₁ at u₁ c₁ ⊢
+  refine wp_sbb_self c₁ fun s₂ u₂ => wp_andi fun s₃ u₃ => wp_add fun s₄ u₄ _ => c s₄ ?_ ?_
+  · refine ⟨fun y hy => ?_, u₄.mem.trans (u₃.mem.trans (u₂.mem.trans u₁.mem)),
+      u₄.rd.trans (u₃.rd.trans (u₂.rd.trans u₁.rd)), u₄.wr.trans (u₃.wr.trans (u₂.wr.trans u₁.wr))⟩
+    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hy
+    rw [u₄.other y hy.1, u₃.other y hy.2, u₂.other y hy.2, u₁.other y hy.1]
+  · rw [u₄.gpr, u₃.other r hrt, u₃.gpr, u₂.gpr, u₂.other r hrt, u₁.gpr]
+    exact condAdd_val _ _ _ hX
+
+/-! ## `Decompose` -/
+
+theorem dMul_eq (g : Nat) : dMul g = Proof.MlDsa.Round.hbMul g := rfl
+theorem dAdd_eq (g : Nat) : dAdd g = Proof.MlDsa.Round.hbAdd g := rfl
+theorem dShift_eq (g : Nat) : dShift g = Proof.MlDsa.Round.hbShift g := rfl
+
+theorem dMod_eq {g : Nat} (h : g ∈ gamma2s) : dMod g = hbM g := by
+  rcases mem_gamma2s h with rfl | rfl <;> rfl
+
+theorem dShift_range (g : Nat) : 1 ≤ dShift g ∧ dShift g ≤ 31 := by unfold dShift; split <;> decide
+
+theorem ofNat_small {k : Nat} (h : k < 2 ^ 32) : (BitVec.ofNat 32 k).toNat = k := toNat_ofNat32 h
+
+/-- `hbRaw g` leaves `hbF g a` in `eax` from `a < q` there, changing only `eax`, `edx` and the flags. -/
+theorem hbRaw_spec {g : Nat} (hg : g ∈ gamma2s) {is : List Instr} {s : State} {P : State → Prop} {a : Nat}
+    (ha : (s.gpr .eax).toNat = a) (haq : a < q)
+    (c : ∀ s', Only [.eax, .edx] s s' → (s'.gpr .eax).toNat = hbF g a → WP isa (.block is) s' P) :
+    WP isa (.block (hbRaw g ++ is)) s P := by
+  rw [q_eq] at haq
+  have hM : dMul g ≤ 11275 := by unfold dMul; split <;> decide
+  have hA : dAdd g ≤ 2 ^ 23 := by unfold dAdd; split <;> decide
+  simp only [hbRaw, List.cons_append, List.nil_append]
+  refine wp_addi fun s₁ u₁ => wp_shr (by decide) fun s₂ u₂ _ => wp_movi fun s₃ u₃ => ?_
+  have e₁ : (s₁.gpr .eax).toNat = a + 127 := by
+    rw [u₁.gpr, BitVec.toNat_add, ha]; simp; omega_using [haq]
+  have e₂ : (s₂.gpr .eax).toNat = (a + 127) / 128 := by
+    rw [u₂.gpr, BitVec.toNat_ushiftRight, e₁, Nat.shiftRight_eq_div_pow]
+  have e₃ : (s₃.gpr .eax).toNat = (a + 127) / 128 := by rw [u₃.other _ (by decide), e₂]
+  have m₃ : (s₃.gpr .edx).toNat = dMul g := by rw [u₃.gpr]; exact ofNat_small (by omega_using [hM])
+  have hp : (a + 127) / 128 * dMul g ≤ 65473 * 11275 := Nat.mul_le_mul (by omega_using [haq]) hM
+  refine wp_mulSmall (by rw [e₃, m₃]; omega_using [hp]) fun s₄ o₄ v₄ => wp_addi fun s₅ u₅ =>
+    wp_shr (dShift_range g) fun s₆ u₆ _ => c s₆ ?_ ?_
+  · refine ((((updOnly u₁ |>.trans (updOnly u₂)).trans (updOnly u₃)).trans o₄).trans
+      ((updOnly u₅).trans (updOnly u₆))).mono ?_
+    intro r hr; simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
+    rcases hr with (((h | h) | h) | h | h) | h | h <;> simp [h]
+  · rw [u₆.gpr, BitVec.toNat_ushiftRight, u₅.gpr, BitVec.toNat_add, v₄, e₃, m₃, ofNat_small (by omega_using [hA]),
+      Nat.mod_eq_of_lt (by omega_using [hA, hp]), Nat.shiftRight_eq_div_pow, hbF_eq hg (by rw [q_eq]; exact haq), dMul_eq,
+      dAdd_eq, dShift_eq]
+
+/-- `hb g` leaves `hbF g a % hbM g` (the `r₁` of `Decompose(a)`) in `eax` from `a < q` there,
+changing only `eax`, `edx` and the flags. -/
+theorem hb_spec {g : Nat} (hg : g ∈ gamma2s) {is : List Instr} {s : State} {P : State → Prop} {a : Nat}
+    (ha : (s.gpr .eax).toNat = a) (haq : a < q)
+    (c : ∀ s', Only [.eax, .edx] s s' → (s'.gpr .eax).toNat = hbF g a % hbM g → WP isa (.block is) s' P) :
+    WP isa (.block (hb g ++ is)) s P := by
+  rw [hb, List.append_assoc]
+  refine hbRaw_spec hg ha haq fun s₁ o₁ v₁ => ?_
+  have hf := hbF_le hg haq
+  have hm : 16 ≤ hbM g ∧ hbM g ≤ 44 := by rcases mem_gamma2s hg with rfl | rfl <;> decide
+  have hk : (BitVec.ofNat 32 (dMod g)).toNat = hbM g := by rw [dMod_eq hg]; exact ofNat_small (by omega_using [hm])
+  refine condAdd_spec (by decide) (X := BitVec.ofNat 32 (dMod g)) rfl (by rw [hk, v₁]; omega_using [])
+    fun s₂ o₂ v₂ => c s₂ ((o₁.trans o₂).mono fun r hr => ?_) ?_
+  · simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
+    rcases hr with (h | h) | (h | h) <;> simp [h]
+  · rw [v₂, v₁, hk]
+    unfold condAddN
+    split
+    · rw [Nat.mod_eq_of_lt (by omega_arith)]; omega_using []
+    · rw [Nat.mod_eq_sub_mod (by omega_arith), Nat.mod_eq_of_lt (by omega_using [hf, hm])]
+
+end VG.Proof.MlDsa.X86.Round
+
+end
+
+end
+
+/-! ### `MlDsa.X86.Round.Common`, which this module and modules that import it used -/
+
+section
+
+/-!
+# ML-DSA on x86 (32-bit): what the rounding functions share
+
+The arguments of a leaf (`Impl.MlKem.X86.leaf`) after its push (`arg_P0`), the
+coefficients of the polynomials at pointers advanced by 4 per iteration
+(`ea_cf`), and the coefficients of input polynomials, which the functions
+never write (`in_keep`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.X86.Round
+
+open VG VG.X86 VG.Impl.MlDsa.X86.Round
+open VG.Impl.MlKem.X86 (at_)
+open VG.Spec.MlDsa (q)
+open VG.Proof.MlDsa (gamma2s coeffAt Reduced)
+open VG.Proof.MlDsa.Round (coeffAddr pR coeff_contains coeffAt_frame n_eq mem_gamma2s)
+open VG.Proof.MlKem.X86 (E0 P0 P0_esp P0_wr frameR retR saveRegs_len ea_add toNat_ofNat32)
+
+/-- The stack below the return address, as the contracts state it. -/
+abbrev stkR (s₀ : State) : Region := ⟨(E0 s₀).setWidth 64 - 16#64, 16⟩
+
+/-- The pointer argument `i`, as an address. -/
+abbrev pA (s₀ : State) (i : Nat) : Addr := (arg s₀ i).setWidth 64
+
+/-- The `n` argument words. -/
+abbrev aR (s₀ : State) (n : Nat) : Region := ⟨argAddr s₀ 0, 4 * n⟩
+
+theorem stk_eq {s₀ : State} (h : 16 ≤ (E0 s₀).toNat) : stkR s₀ = frameR s₀ := by
+  simp only [stkR, frameR, below]; rw [Taint.sub_setWidth h]
+
+/-- The push changes nothing of a region apart from the frame. -/
+theorem P0_mem {s₀ : State} (h : 16 ≤ (E0 s₀).toNat) : Frame [frameR s₀] s₀.mem (P0 s₀).mem := by
+  have hf := pushed_frame (rs := Impl.MlKem.X86.saveRegs) (s := s₀) (by decide) (by rw [saveRegs_len]; exact h)
+  rw [saveRegs_len] at hf
+  exact hf
+
+theorem arg_contains {s₀ : State} {n i : Nat} (hi : i < n) (hfit : (E0 s₀).toNat + 4 + 4 * n ≤ 2 ^ 32) :
+    (aR s₀ n).Contains (argAddr s₀ i) 4 := by
+  simp only [argAddr, Region.Contains, E0] at hfit ⊢
+  bv_omega
+
+/-- Argument `i` of `n`, after the leaf's push: its address `[esp + 20 + 4i]`, and its value. -/
+theorem arg_P0 {s₀ : State} {n i : Nat} (hi : i < n) (hsp : 16 ≤ (E0 s₀).toNat)
+    (hfit : (E0 s₀).toNat + 4 + 4 * n ≤ 2 ^ 32) (hin : aR s₀ n ∈ s₀.rd ++ s₀.wr)
+    (hstk : (stkR s₀).Disjoint (aR s₀ n)) :
+    ((P0 s₀).gpr .esp + BitVec.ofNat 32 (20 + 4 * i)).setWidth 64 = argAddr s₀ i ∧
+      InRegions ((P0 s₀).rd ++ (P0 s₀).wr) (argAddr s₀ i) 4 ∧
+      (P0 s₀).mem.readW (argAddr s₀ i) 32 = arg s₀ i := by
+  have hc := arg_contains hi hfit
+  refine ⟨?_, ⟨aR s₀ n, ?_, hc⟩, ?_⟩
+  · rw [P0_esp]; simp only [argAddr, E0]; congr 1; bv_omega
+  · rw [pushed_rd, P0_wr]
+    rcases List.mem_append.mp hin with h | h
+    · exact List.mem_append_left _ h
+    · exact List.mem_append_right _ (List.mem_cons_of_mem _ h)
+  · exact (P0_mem hsp).readW hc (by simpa [← stk_eq hsp] using hstk.symm) (by decide)
+
+/-- Coefficient `k` at the pointer `x + 4k`. -/
+theorem ea_cf {x : BitVec 32} (hx : x.toNat + 1024 ≤ 2 ^ 32) {k : Nat} (hk : k < 256) :
+    (x + BitVec.ofNat 32 (4 * k) + BitVec.ofNat 32 0).setWidth 64 = coeffAddr (x.setWidth 64) k := by
+  rw [ea_add (by omega_using [hx, hk]), Nat.add_zero]
+
+/-- A polynomial apart from the frame and the regions written keeps its coefficients. -/
+theorem in_keep {s₀ : State} {W : List Region} {m : Mem} (hsp : 16 ≤ (E0 s₀).toNat)
+    (hf : Frame W (P0 s₀).mem m) {p : Addr} (hstk : (stkR s₀).Disjoint (pR p))
+    (hw : ∀ r ∈ W, (pR p).Disjoint r) {k : Nat} (hk : k < 256) :
+    coeffAt m p k = coeffAt s₀.mem p k := by
+  rw [coeffAt_frame hf hw (by rw [n_eq]; exact hk), coeffAt_frame (P0_mem hsp) (fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr; rw [← stk_eq hsp]; exact hstk.symm) (by rw [n_eq]; exact hk)]
+
+/-- `x - k` is zero exactly when `x = k`. -/
+theorem sub_beq_zero' (x k : BitVec 32) : (x - k == 0) = (x == k) := by
+  by_cases h : x = k
+  · subst h; simp
+  · have : x - k ≠ 0 := fun e => h (by bv_omega)
+    rw [beq_eq_false_iff_ne.mpr this, beq_eq_false_iff_ne.mpr h]
+
+theorem gamma_cases {g : BitVec 32} (hg : g.toNat ∈ gamma2s) :
+    (g == BitVec.ofNat 32 g32) = true ∧ g.toNat = g32 ∨ (g == BitVec.ofNat 32 g32) = false ∧ g.toNat = g88 := by
+  rcases mem_gamma2s hg with e | e
+  · refine .inr ⟨?_, e⟩
+    rw [beq_eq_false_iff_ne]; intro h; rw [h] at e; exact absurd e (by decide)
+  · refine .inl ⟨?_, e⟩
+    rw [beq_iff_eq]; exact BitVec.eq_of_toNat_eq (e.trans rfl)
+
+theorem g32_mem : g32 ∈ gamma2s := by decide
+theorem g88_mem : g88 ∈ gamma2s := by decide
+
+end VG.Proof.MlDsa.X86.Round
+
+end
+
+end
 
 /-!
 # ML-DSA on x86 (32-bit): `vg_mldsa_high_bits` and `vg_mldsa_low_bits`

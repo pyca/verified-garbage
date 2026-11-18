@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.RISCV64.Verify.Cmp
-public import VerifiedGarbage.Proof.MlDsa.RISCV64.Verify.SampC
 import VerifiedGarbage.Proof.MlDsa.RISCV64.Verify.Row
 import VerifiedGarbage.Proof.MlDsa.Verify.Final
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak

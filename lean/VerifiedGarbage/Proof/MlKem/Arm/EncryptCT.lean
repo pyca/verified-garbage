@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.MlKem.Arm.Encrypt
 public import VerifiedGarbage.Proof.MlKem.Arm.HashCT
 import VerifiedGarbage.Proof.MlKem.Arm.RowCT
-import VerifiedGarbage.Proof.MlKem.Arm.PrfCT
 import VerifiedGarbage.Proof.MlKem.Arm.SampleCT
 
 /-!

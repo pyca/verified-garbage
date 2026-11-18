@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Sha3.RISCV64.Contract
+public import VerifiedGarbage.Proof.Sha3.RISCV64.Permute
 public import VerifiedGarbage.Impl.Sha3.RISCV64.Stream
 public import VerifiedGarbage.Proof.Framework.RISCV64.CallAny
 public import VerifiedGarbage.Spec.Sha3.Contract

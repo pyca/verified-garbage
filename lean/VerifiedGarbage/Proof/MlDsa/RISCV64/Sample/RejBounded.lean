@@ -46,7 +46,7 @@ meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 /-!
 # ML-DSA on RISC-V: `vg_mldsa_rej_bounded_poly`
 
-As on PPC64LE (`Proof/MlDsa/PPC64LE/Sample/RejBoundedRun.lean`,
+As on PPC64LE (`Proof/MlDsa/PPC64LE/KeyGen/Inst.lean`,
 `RejBoundedCT.lean`, `RejBoundedRun.lean` and `RejBounded.lean`).
 
 An iteration. Each half-byte is tried the same way: its coefficient computed

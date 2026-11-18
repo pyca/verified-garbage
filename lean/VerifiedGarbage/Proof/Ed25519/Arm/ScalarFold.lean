@@ -4,8 +4,7 @@ public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarPass
 public import VerifiedGarbage.Proof.Ed25519.Arm.Field
 public import VerifiedGarbage.Proof.X25519.Arm.Mul
 public import VerifiedGarbage.Proof.X25519.Arm.Pass
-import VerifiedGarbage.Proof.X25519.Arm.AddSub
-import VerifiedGarbage.Proof.X25519.Arm.Cswap
+import VerifiedGarbage.Proof.X25519.Arm.Invert
 import VerifiedGarbage.Proof.Ed25519.Arm.UnpackField
 import VerifiedGarbage.Proof.Ed25519.Arm.InitFields
 import VerifiedGarbage.Proof.Ed25519.Arm.ScalarCodec

@@ -1,14 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.Arm.Reduce
-public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Lay
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Call
 public import VerifiedGarbage.Proof.MlDsa.Sign.Leak
 public import VerifiedGarbage.Proof.MlDsa.PreparedKeyContract
 public import VerifiedGarbage.Impl.MlDsa.Arm.Sign.Sign
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Call
 public import VerifiedGarbage.Proof.MlKem.Arm.Keccak
 import VerifiedGarbage.Proof.MlDsa.Arm.Sign.BlockTr
 import VerifiedGarbage.Proof.MlKem.Arm.Sample

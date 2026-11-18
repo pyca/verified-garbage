@@ -14,14 +14,14 @@ public import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
-import VerifiedGarbage.Proof.Ed25519.Arm.CombLoop
-meta import VerifiedGarbage.Proof.Ed25519.Arm.CombLoop
+import VerifiedGarbage.Proof.Ed25519.Arm.LrSlot
+meta import VerifiedGarbage.Proof.Ed25519.Arm.LrSlot
 import VerifiedGarbage.Proof.Ed25519.Arm.InitFields
 meta import VerifiedGarbage.Proof.Ed25519.Arm.InitFields
 import VerifiedGarbage.Proof.Ed25519.Arm.PointAffine
 meta import VerifiedGarbage.Proof.Ed25519.Arm.PointAffine
-import VerifiedGarbage.Proof.Ed25519.Arm.Freeze
-meta import VerifiedGarbage.Proof.Ed25519.Arm.Freeze
+import VerifiedGarbage.Proof.Ed25519.Arm.PointEncode
+meta import VerifiedGarbage.Proof.Ed25519.Arm.PointEncode
 import VerifiedGarbage.Proof.Ed25519.Arm.FieldProg
 meta import VerifiedGarbage.Proof.Ed25519.Arm.FieldProg
 import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTSupport

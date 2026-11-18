@@ -3,14 +3,14 @@ module
 public import VerifiedGarbage.Impl.MlKem.X86_64.Frag
 public import VerifiedGarbage.Proof.MlKem.KPke
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
-public import VerifiedGarbage.Proof.Sha3.X86_64.X4.Bytes
+public import VerifiedGarbage.Proof.MlKem.X86_64.S4Base
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.MlKem.X86_64.Lay
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Sha3.Arith
 import VerifiedGarbage.Proof.MlKem.X86_64.S4Loop
-import VerifiedGarbage.Proof.MlKem.X86_64.S4Absorb
+import VerifiedGarbage.Proof.MlKem.X86_64.S4Squeeze
 import VerifiedGarbage.Proof.Sha3.X86_64.X4R.Loop
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
@@ -20,14 +20,14 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Impl.MlKem.X86_64.Frag
 meta import VerifiedGarbage.Proof.MlKem.KPke
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Wp
-meta import VerifiedGarbage.Proof.Sha3.X86_64.X4.Bytes
+meta import VerifiedGarbage.Proof.MlKem.X86_64.S4Base
 meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Lay
 meta import VerifiedGarbage.Proof.Framework.KernelRfl
 meta import VerifiedGarbage.Proof.Framework.Range
 meta import VerifiedGarbage.Proof.Sha3.Arith
 meta import VerifiedGarbage.Proof.MlKem.X86_64.S4Loop
-meta import VerifiedGarbage.Proof.MlKem.X86_64.S4Absorb
+meta import VerifiedGarbage.Proof.MlKem.X86_64.S4Squeeze
 meta import VerifiedGarbage.Proof.Sha3.X86_64.X4R.Loop
 meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 meta import VerifiedGarbage.Proof.Framework.X86_64.Avx

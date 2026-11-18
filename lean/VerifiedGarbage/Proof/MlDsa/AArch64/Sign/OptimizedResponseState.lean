@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
 import VerifiedGarbage.Proof.MlKem.Arith
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductFullTiming
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseSpecPre
 public import VerifiedGarbage.Proof.MlDsa.RawInverseContract
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableWords
@@ -24,6 +23,31 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedResponse
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedMasks
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseK
+public import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
+meta import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.MultiplyInverse
+meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
+
+/-! ### `MlDsa.AArch64.Optimized.ProductFullTiming`, which only this module used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.AArch64.Optimized.Inverse
+open VG VG.AArch64
+
+theorem productStatic_ct (raw : Bool) : ConstantTime isa (fun _ => True)
+    (Taint.AgreeS ["VG_MLDSA_INV_FOLDED"] (Taint.ofRegs [.x0,.x1,.x2]))
+    (VG.Impl.MlDsa.AArch64.Optimized.MultiplyInverse.staticCode raw) := by
+  cases raw <;>
+    exact VG.Taint.constantTime (A := taintS ["VG_MLDSA_INV_FOLDED"]) (Taint.ofRegs [.x0,.x1,.x2])
+      (fun _ _ _ _ h => h) (by taint_decide)
+
+end VG.Proof.MlDsa.AArch64.Optimized.Inverse
+
+end
+
+end
 
 /-! ### `MlDsa.AArch64.Optimized.ProductCallTiming`, which only this module used -/
 

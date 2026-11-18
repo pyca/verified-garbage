@@ -11,8 +11,7 @@ import VerifiedGarbage.Proof.MlKem.Encode
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-public import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.DecLanes
-import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.DecInput
+public import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.DecLoop
 import VerifiedGarbage.Proof.Framework.AArch64.Simd64
 import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
@@ -26,8 +25,6 @@ meta import VerifiedGarbage.Proof.MlKem.Encode
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.DecLanes
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.DecInput
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.DecLoop
 meta import VerifiedGarbage.Proof.Framework.AArch64.Simd64
 meta import VerifiedGarbage.Proof.Rc4.AArch64.Vec

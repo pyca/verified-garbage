@@ -6,9 +6,8 @@ import VerifiedGarbage.Proof.Ed448.X86.Shake.Header
 import VerifiedGarbage.Proof.Ed448.X86.Shake.Prune
 import VerifiedGarbage.Proof.Ed25519.X86.Whole.BlocksCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Sha3.X86.Stream.Pad
-import VerifiedGarbage.Proof.Sha3.X86.Stream.Squeeze
 import VerifiedGarbage.Proof.Sha3.X86.Stream.Absorb
+import VerifiedGarbage.Proof.Sha3.X86.Stream.Squeeze
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Framework.Offset
@@ -20,9 +19,8 @@ meta import VerifiedGarbage.Proof.Ed448.X86.Shake.Header
 meta import VerifiedGarbage.Proof.Ed448.X86.Shake.Prune
 meta import VerifiedGarbage.Proof.Ed25519.X86.Whole.BlocksCT
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
-meta import VerifiedGarbage.Proof.Sha3.X86.Stream.Pad
-meta import VerifiedGarbage.Proof.Sha3.X86.Stream.Squeeze
 meta import VerifiedGarbage.Proof.Sha3.X86.Stream.Absorb
+meta import VerifiedGarbage.Proof.Sha3.X86.Stream.Squeeze
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.KernelRfl
 meta import VerifiedGarbage.Proof.Framework.Offset

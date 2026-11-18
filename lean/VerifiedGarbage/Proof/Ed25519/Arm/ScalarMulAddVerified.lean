@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.X25519.Arm.Mul
 public import VerifiedGarbage.Impl.Ed25519.Arm.ScalarMulAdd
-import VerifiedGarbage.Proof.X25519.Arm.AddSub
 import VerifiedGarbage.Proof.Ed25519.Arm.ScalarCodec
 import VerifiedGarbage.Proof.Ed25519.Arm.ScalarFold
 public import VerifiedGarbage.TCB.Arm.Target
@@ -20,7 +19,6 @@ import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.X25519.Arm.Mul
 meta import VerifiedGarbage.Impl.Ed25519.Arm.ScalarMulAdd
-meta import VerifiedGarbage.Proof.X25519.Arm.AddSub
 meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarCodec
 meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarFold
 meta import VerifiedGarbage.TCB.Arm.Target

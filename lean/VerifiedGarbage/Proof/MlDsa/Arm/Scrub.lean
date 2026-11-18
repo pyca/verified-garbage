@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Framework.Arm.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Inst
-public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Top
 public import VerifiedGarbage.Proof.MlDsa.Arm.PkTr
 public import VerifiedGarbage.Proof.MlDsa.Arm.PreparedKey.Verified
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Verified
@@ -15,7 +14,6 @@ import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.Arm.Scrub
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Inst
-meta import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Top
 meta import VerifiedGarbage.Proof.MlDsa.Arm.PkTr
 meta import VerifiedGarbage.Proof.MlDsa.Arm.PreparedKey.Verified
 meta import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Verified

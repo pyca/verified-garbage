@@ -2,14 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.EkFrag16
 meta import VerifiedGarbage.Proof.MlKem.X86_64.EkFrag16
-meta import VerifiedGarbage.Proof.MlKem.X86_64.EkFrag
 public import VerifiedGarbage.Proof.MlKem.X86_64.EkScalar
 public import VerifiedGarbage.Proof.MlKem.X86_64.Enc16
 meta import VerifiedGarbage.Proof.MlKem.X86_64.EkScalar
 import VerifiedGarbage.Proof.MlKem.X86_64.Zero
 import all Init.Data.Nat.Bitwise.Basic
 meta import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
-import VerifiedGarbage.Proof.MlKem.X86_64.KgTop
+import VerifiedGarbage.Proof.MlKem.X86_64.EncTop
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-!

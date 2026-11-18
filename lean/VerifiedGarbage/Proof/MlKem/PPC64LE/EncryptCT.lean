@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.MlKem.PPC64LE.Encrypt
 public import VerifiedGarbage.Proof.MlKem.PPC64LE.Lay
 import VerifiedGarbage.Proof.MlKem.PPC64LE.HashCT
-import VerifiedGarbage.Proof.MlKem.PPC64LE.PrfCT
 import VerifiedGarbage.Proof.MlKem.PPC64LE.RowCT
 import VerifiedGarbage.Proof.MlKem.PPC64LE.SampleCT
 

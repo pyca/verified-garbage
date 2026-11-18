@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.KpkeEnc
-import VerifiedGarbage.Proof.MlKem.X86_64.FragEM
+import VerifiedGarbage.Proof.MlKem.X86_64.KgBase
 import VerifiedGarbage.Proof.MlKem.PolyW
 import VerifiedGarbage.Proof.Framework.Offset
 

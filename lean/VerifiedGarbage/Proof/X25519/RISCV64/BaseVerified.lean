@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.X25519.RISCV64.Base
-public import VerifiedGarbage.Proof.Ed25519.RISCV64.BaseContract
+public import VerifiedGarbage.Proof.Ed25519.RISCV64.Comb
 public import VerifiedGarbage.Proof.Framework.ConstMem
 public import VerifiedGarbage.Proof.Framework.RISCV64.TaintSym
 public import VerifiedGarbage.Spec.X25519.Contract
@@ -9,7 +9,7 @@ public import VerifiedGarbage.TCB.RISCV64.Target
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.X25519.RISCV64.Base
-meta import VerifiedGarbage.Proof.Ed25519.RISCV64.BaseContract
+meta import VerifiedGarbage.Proof.Ed25519.RISCV64.Comb
 meta import VerifiedGarbage.Proof.Framework.ConstMem
 meta import VerifiedGarbage.Proof.Framework.RISCV64.TaintSym
 meta import VerifiedGarbage.Spec.X25519.Contract

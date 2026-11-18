@@ -1,15 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Contracts
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Stream
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Loop
 import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Lit
-import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Loop
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Contracts
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Stream
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Lit
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Loop
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Lit
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 

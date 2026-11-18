@@ -2,7 +2,6 @@ module
 
 import VerifiedGarbage.Proof.Sha3.Arm.Stream.Absorb
 import VerifiedGarbage.Proof.Sha3.Arm.Stream.Pad
-import VerifiedGarbage.Proof.Sha3.Arm.Stream.Squeeze
 public import VerifiedGarbage.Proof.Framework.Arm.Frame
 public import VerifiedGarbage.Impl.MlKem.Arm.Sample
 public import VerifiedGarbage.Proof.Framework.Arm.Call

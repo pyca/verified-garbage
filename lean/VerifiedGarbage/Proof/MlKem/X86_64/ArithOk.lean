@@ -1,7 +1,7 @@
 module
 
-import VerifiedGarbage.Proof.MlKem.X86_64.NttInv
-import VerifiedGarbage.Proof.MlKem.X86_64.YAddSub
+import VerifiedGarbage.Proof.MlKem.X86_64.KpkeAcc
+import VerifiedGarbage.Proof.MlKem.X86_64.FinY
 import VerifiedGarbage.Proof.MlKem.X86_64.DecMulV
 import VerifiedGarbage.Proof.MlKem.X86_64.EncMulV
 import VerifiedGarbage.Proof.MlKem.X86_64.KgMulV
@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.MlKem.X86_64.Decode12Avx2
 import VerifiedGarbage.Proof.MlKem.X86_64.Encode12Avx2
 public import VerifiedGarbage.Impl.MlKem.X86_64.Frag
 public import VerifiedGarbage.Proof.Framework.X86_64.Call
-public import VerifiedGarbage.Proof.MlKem.X86_64.KgMul
+public import VerifiedGarbage.Proof.MlKem.X86_64.KpkeBodiesY
 public import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
 public import VerifiedGarbage.Proof.Framework.X86_64.ModeSim
 public import VerifiedGarbage.Proof.MlKem.X86_64.Cbd16

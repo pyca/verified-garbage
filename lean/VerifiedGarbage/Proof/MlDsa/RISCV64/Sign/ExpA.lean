@@ -1,13 +1,760 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.RISCV64.Sign.Control
 public import VerifiedGarbage.Proof.MlDsa.Sign.Setup
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Masked
 import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
 import VerifiedGarbage.Proof.MlKem.Mem
 import VerifiedGarbage.Proof.Framework.RISCV64.Taint
-meta import VerifiedGarbage.Proof.MlDsa.RISCV64.Sign.Control
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
+public import VerifiedGarbage.Proof.MlDsa.RISCV64.KeyGen.StepsCT
+public import VerifiedGarbage.Proof.MlDsa.RISCV64.KeyGen.Samp
+public import VerifiedGarbage.Proof.MlDsa.RISCV64.KeyGen.CallS
+public import VerifiedGarbage.Proof.MlDsa.Sign.Leak
+import VerifiedGarbage.Proof.MlDsa.RISCV64.KeyGen.ContractsV
+import VerifiedGarbage.Proof.Framework.RISCV64.Steps
+import VerifiedGarbage.Proof.Framework.RISCV64.Inline
+import VerifiedGarbage.Proof.Framework.RISCV64.RelCT
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.TCB.RISCV64.Target
+public import VerifiedGarbage.Proof.MlDsa.RISCV64.Sign.Lay
+public import VerifiedGarbage.Proof.MlDsa.RISCV64.KeyGen.Piece
+public import VerifiedGarbage.Proof.MlKem.RISCV64.TopSave
+import VerifiedGarbage.Proof.MlDsa.RISCV64.CacheCopy
+import VerifiedGarbage.Proof.MlKem.RISCV64.SampleCT
+import VerifiedGarbage.Proof.MlKem.RISCV64.Sample
+import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
+import VerifiedGarbage.Proof.Framework.RISCV64.Exec
+import VerifiedGarbage.Proof.Framework.RISCV64.MRun
+meta import VerifiedGarbage.Proof.MlDsa.RISCV64.Sign.Lay
+meta import VerifiedGarbage.Proof.MlDsa.RISCV64.KeyGen.Piece
+meta import VerifiedGarbage.Proof.MlKem.RISCV64.TopSave
+meta import VerifiedGarbage.Proof.MlKem.RISCV64.SampleCT
+meta import VerifiedGarbage.Proof.MlKem.RISCV64.Sample
+meta import VerifiedGarbage.Proof.MlKem.Mem
+meta import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.RISCV64.Exec
+meta import VerifiedGarbage.Proof.MlDsa.RISCV64.KeyGen.StepsCT
+meta import VerifiedGarbage.Proof.MlDsa.RISCV64.KeyGen.Samp
+meta import VerifiedGarbage.Proof.MlDsa.RISCV64.KeyGen.CallS
+meta import VerifiedGarbage.Proof.MlDsa.Sign.Leak
+meta import VerifiedGarbage.Proof.MlDsa.Sign.Setup
+meta import VerifiedGarbage.Proof.MlDsa.RISCV64.KeyGen.ContractsV
+meta import VerifiedGarbage.Proof.Framework.RISCV64.Steps
+meta import VerifiedGarbage.Proof.Framework.RISCV64.Inline
+meta import VerifiedGarbage.Proof.Framework.RISCV64.RelCT
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.TCB.RISCV64.Target
+meta import VerifiedGarbage.Proof.MlDsa.RISCV64.CacheCopy
+meta import VerifiedGarbage.Proof.Framework.RISCV64.MRun
+
+/-! ### `MlDsa.RISCV64.Sign.Control`, which only this module used -/
+
+section
+
+/-! ### `MlDsa.RISCV64.Sign.Inv`, which only this module used -/
+
+section
+
+/-!
+# ML-DSA signing on RISC-V: what holds throughout, and the prologue
+
+As key generation's and verification's (`KeyGen/Inv.lean`, `Verify/Inv.lean`):
+what holds of the state throughout, from the entry state: the layout, the
+permissions and stack pointer of the entry state, our caller's registers
+saved in `scratch` (ML-KEM's `TopSaved`), the callee-saved registers we do
+not save as they were, and the inputs; until the hash of `ρ″` with `rnd` in
+buffer 4 and `sig` stored at `SIG` (`SC1`), and then with `sig` in buffer 4
+(`SC2`, from `SC1` by loading `sig` into `s8`, `toSC2`). Which writes keep
+them (`sc1Chk`, `sc2Chk`); the pieces of signing (`SPiece`); and the
+prologue (`spro_piece`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.RISCV64.Sign
+
+open VG VG.RISCV64 VG.Proof.MlKem.RISCV64
+open VG.Proof.MlDsa.RISCV64.KeyGen (Site OkW ix tri lpa scrLen PtrIn Piece disjW disjW' reg)
+open VG.Impl.MlDsa.RISCV64.Sign
+open VG.Spec.MlDsa (Params)
+open VG.Spec.Sha3 (bytesAt)
+open VG.Impl.Sha3.RISCV64.Stream (mov)
+
+/-! ## The inputs -/
+
+section
+variable (p : Params) (σ : State)
+
+abbrev skOf : List Byte := bytesAt σ.mem (sSk σ) p.skLen
+abbrev muOf : List Byte := bytesAt σ.mem (sMu σ) 64
+abbrev rndOf : List Byte := bytesAt σ.mem (sRnd σ) 32
+
+end
+
+/-- The public data of `signContract`. -/
+def sPub (p : Params) (σ₁ σ₂ : State) : Prop :=
+  σ₁.sp = σ₂.sp ∧ sSk σ₁ = sSk σ₂ ∧ sMu σ₁ = sMu σ₂ ∧ sRnd σ₁ = sRnd σ₂ ∧ sSig σ₁ = sSig σ₂ ∧
+    sScr σ₁ = sScr σ₂ ∧ Spec.MlDsa.signLeak p (skOf p σ₁) (muOf σ₁) (rndOf σ₁) =
+      Spec.MlDsa.signLeak p (skOf p σ₂) (muOf σ₂) (rndOf σ₂) ∧ sCache σ₁ = sCache σ₂ ∧
+    σ₁.gpr .a6 = σ₂.gpr .a6
+
+theorem cSel_pub {p : Params} {σ₁ σ₂ : State} (h : sPub p σ₁ σ₂) : cSel σ₁ = cSel σ₂ := by
+  obtain ⟨-, -, -, -, -, -, -, e5, e6⟩ := h
+  simp only [cSel, sCache] at *
+  rw [e5, e6]
+
+/-- The pieces of signing. -/
+abbrev SPiece (p : Params) (STK : Nat) := Piece (SPre p STK) (sPub p)
+
+theorem slay1_pub {p : Params} {STK : Nat} {σ₁ σ₂ : State} (h : sPub p σ₁ σ₂) : slay1 p STK σ₁ = slay1 p STK σ₂ := by
+  obtain ⟨e0, e1, e2, e3, -, e5, -⟩ := h
+  simp only [slay1, sSk, sMu, sRnd, sScr] at *
+  rw [e0, e1, e2, e3, e5]
+
+theorem slay2_pub {p : Params} {STK : Nat} {σ₁ σ₂ : State} (h : sPub p σ₁ σ₂) : slay2 p STK σ₁ = slay2 p STK σ₂ := by
+  obtain ⟨e0, e1, e2, -, e4, e5, -⟩ := h
+  simp only [slay2, sSk, sMu, sSig, sScr] at *
+  rw [e0, e1, e2, e4, e5]
+
+theorem saveR_slay1 (p : Params) (STK : Nat) (σ : State) : saveR (sScr σ) = (slay1 p STK σ).R 0 1288 80 := rfl
+theorem saveR_slay2 (p : Params) (STK : Nat) (σ : State) : saveR (sScr σ) = (slay2 p STK σ).R 0 1288 80 := rfl
+
+/-! ## What holds throughout -/
+
+/-- What holds until the hash of `ρ″`, from the entry state `σ`. -/
+structure SC1 (p : Params) (STK : Nat) (σ s : State) : Prop where
+  site : Site (slay1 p STK σ) sWb1 STK s
+  rd : s.rd = σ.rd
+  wr : s.wr = σ.wr
+  sp : s.sp = σ.sp
+  pres : ∀ r ∈ preserved, r ∉ savedTop → s.gpr r = σ.gpr r
+  sav : TopSaved s.mem (sScr σ) σ
+  sig : s.mem.readW (sScr σ + BitVec.ofNat 64 oSIG) 64 = sSig σ
+  sk : bytesAt s.mem ((slay1 p STK σ).A 2 0) p.skLen = skOf p σ
+  mu : bytesAt s.mem ((slay1 p STK σ).A 3 0) 64 = muOf σ
+  rnd : bytesAt s.mem ((slay1 p STK σ).A 4 0) 32 = rndOf σ
+  pre : SPre p STK σ
+  s3 : s.gpr .s3 = cSel σ
+  cache : bytesAt s.mem (sCache σ) (sCLen σ) = bytesAt σ.mem (sCache σ) (sCLen σ)
+
+/-- What holds from the hash of `ρ″` on, from the entry state `σ`. -/
+structure SC2 (p : Params) (STK : Nat) (σ s : State) : Prop where
+  site : Site (slay2 p STK σ) sWb2 STK s
+  rd : s.rd = σ.rd
+  wr : s.wr = σ.wr
+  sp : s.sp = σ.sp
+  pres : ∀ r ∈ preserved, r ∉ savedTop → s.gpr r = σ.gpr r
+  sav : TopSaved s.mem (sScr σ) σ
+  sk : bytesAt s.mem ((slay2 p STK σ).A 2 0) p.skLen = skOf p σ
+  mu : bytesAt s.mem ((slay2 p STK σ).A 3 0) 64 = muOf σ
+  pre : SPre p STK σ
+  s3 : s.gpr .s3 = cSel σ
+  cache : bytesAt s.mem (sCache σ) (sCLen σ) = bytesAt σ.mem (sCache σ) (sCLen σ)
+
+/-- A part that writes the regions `W` before the hash of `ρ″` keeps `SC1`. -/
+def sc1Chk (p : Params) (STK : Nat) (W : List (Nat × Nat × Nat)) : Bool :=
+  sepAll [scrLen p, STK, p.skLen, 64, 32] (0, 1288, 80) W && W.all (fun w => w.1 == 0 || w.1 == 1) &&
+    sepAll [scrLen p, STK, p.skLen, 64, 32] (0, 912, 8) W &&
+    sepAll [scrLen p, STK, p.skLen, 64, 32] (2, 0, p.skLen) W &&
+    sepAll [scrLen p, STK, p.skLen, 64, 32] (3, 0, 64) W &&
+    sepAll [scrLen p, STK, p.skLen, 64, 32] (4, 0, 32) W
+
+/-- A part that writes the regions `W` after the hash of `ρ″` keeps `SC2`. -/
+def sc2Chk (p : Params) (STK : Nat) (W : List (Nat × Nat × Nat)) : Bool :=
+  sepAll [scrLen p, STK, p.skLen, 64, p.sigLen] (0, 1288, 80) W &&
+    W.all (fun w => w.1 == 0 || w.1 == 1 || w.1 == 4) &&
+    sepAll [scrLen p, STK, p.skLen, 64, p.sigLen] (2, 0, p.skLen) W &&
+    sepAll [scrLen p, STK, p.skLen, 64, p.sigLen] (3, 0, 64) W
+
+/-- Bytes of a buffer only read, kept by a part that writes only buffers of `Wb`. -/
+theorem bytes_keepR {L : Lay} {Wb : List Nat} (hL : OkW L Wb) {W : List (Nat × Nat × Nat)} {m m' : Mem}
+    (hf : Frame (L.RL W) m m') {i o l : Nat} (h : sepAll L.sizes (i, o, l) W = true) (hw : ∀ w ∈ W, w.1 ∈ Wb)
+    (hl : l ≤ 2 ^ 64) : bytesAt m' (L.A i o) l = bytesAt m (L.A i o) l :=
+  Proof.MlKem.bytesAt_frame hf (fun r hr => by
+    obtain ⟨w, hw', rfl⟩ := List.mem_map.mp hr
+    exact disjW hL (List.all_eq_true.mp h w hw') (.inr (hw w hw'))) hl
+
+/-- The cache, apart from the buffers that a part writes, is kept by it. -/
+theorem cache_keep {L : Lay} {W : List (Nat × Nat × Nat)} {m m' : Mem} (hf : Frame (L.RL W) m m') {X : Region}
+    (hl : X.len ≤ 2 ^ 64)
+    (h : ∀ w ∈ W, w.2.1 + w.2.2 ≤ L.size w.1 ∧ (⟨L.ptr w.1, L.size w.1⟩ : Region).Disjoint X) :
+    bytesAt m' X.base X.len = bytesAt m X.base X.len :=
+  Proof.MlKem.bytesAt_frame hf (fun r hr => by
+    obtain ⟨w, hw, rfl⟩ := List.mem_map.mp hr
+    exact ((h w hw).2.sub_left (Lay.R_sub (h w hw).1)).symm) hl
+
+/-- The bounds of a region apart from another. -/
+theorem sepAll_bound {sz : List Nat} {a : Nat × Nat × Nat} {W : List (Nat × Nat × Nat)} (h : sepAll sz a W = true)
+    {w : Nat × Nat × Nat} (hw : w ∈ W) : w.2.1 + w.2.2 ≤ sz.getD w.1 0 := by
+  have := List.all_eq_true.mp h w hw
+  simp only [sepB, Bool.and_eq_true, decide_eq_true_eq] at this
+  exact this.1.2
+
+theorem sfit1 {p : Params} {STK : Nat} {σ : State} (hL : OkW (slay1 p STK σ) sWb1) (i : Nat) (hi : i < 5) :
+    (slay1 p STK σ).size i ≤ 2 ^ 64 := by
+  have := hL.fit i (by simp only [slay1, List.length_cons, List.length_nil]; omega_arith)
+  omega_arith
+
+theorem sfit2 {p : Params} {STK : Nat} {σ : State} (hL : OkW (slay2 p STK σ) sWb2) (i : Nat) (hi : i < 5) :
+    (slay2 p STK σ).size i ≤ 2 ^ 64 := by
+  have := hL.fit i (by simp only [slay2, List.length_cons, List.length_nil]; omega_arith)
+  omega_arith
+
+theorem SC1.keep {p : Params} {STK : Nat} {σ s s' : State} (h : SC1 p STK σ s) {W : List (Nat × Nat × Nat)}
+    (hk : Kept ((slay1 p STK σ).RL W) s s') (hc : sc1Chk p STK W = true) : SC1 p STK σ s' := by
+  simp only [sc1Chk, Bool.and_eq_true] at hc
+  obtain ⟨⟨⟨⟨⟨h0, hw⟩, h1⟩, h2⟩, h3⟩, h4⟩ := hc
+  have hL := h.site.ok
+  have hw' : ∀ w ∈ W, w.1 ∈ sWb1 := fun w hw'' => by
+    have := List.all_eq_true.mp hw w hw''
+    simp only [Bool.or_eq_true, beq_iff_eq] at this
+    simp only [sWb1, List.mem_cons, List.not_mem_nil, or_false]; exact this
+  have hd : ∀ r ∈ (slay1 p STK σ).RL W, ((slay1 p STK σ).R 0 1288 80).Disjoint r :=
+    fun r hr => by
+      obtain ⟨w, hw'', rfl⟩ := List.mem_map.mp hr
+      exact disjW hL (List.all_eq_true.mp h0 w hw'') (.inl (by decide))
+  have hd8 : ∀ r ∈ (slay1 p STK σ).RL W, ((slay1 p STK σ).R 0 912 8).Disjoint r :=
+    fun r hr => by
+      obtain ⟨w, hw'', rfl⟩ := List.mem_map.mp hr
+      exact disjW hL (List.all_eq_true.mp h1 w hw'') (.inl (by decide))
+  refine ⟨h.site.kept hk, hk.rd.trans h.rd, hk.wr.trans h.wr, hk.sp.trans h.sp,
+    fun r hr hs => (hk.cs r hr).trans (h.pres r hr hs), h.sav.keep hk.frame (by rw [saveR_slay1 p STK σ]; exact hd),
+    ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · rw [hk.frame.readW (r := (slay1 p STK σ).R 0 912 8) (Region.contains_self _ _) hd8 (by decide)]
+    exact h.sig
+  · rw [bytes_keepR hL hk.frame h2 hw' (sfit1 hL 2 (by decide))]; exact h.sk
+  · rw [bytes_keepR hL hk.frame h3 hw' (by decide)]; exact h.mu
+  · rw [bytes_keepR hL hk.frame h4 hw' (by decide)]; exact h.rnd
+  · exact h.pre
+  · rw [hk.cs .s3 (by decide)]; exact h.s3
+  · refine (cache_keep (X := reg (sCache σ) (sCLen σ)) hk.frame (by have := h.pre.f_x; show sCLen σ ≤ 2 ^ 64; omega_arith)
+      fun w hw => ⟨sepAll_bound h0 hw, ?_⟩).trans h.cache
+    have e := hw' w hw
+    simp only [sWb1, List.mem_cons, List.not_mem_nil, or_false] at e
+    rcases e with e | e <;> rw [e]
+    · exact h.pre.d_cx
+    · exact h.pre.b_x
+
+theorem SC2.keep {p : Params} {STK : Nat} {σ s s' : State} (h : SC2 p STK σ s) {W : List (Nat × Nat × Nat)}
+    (hk : Kept ((slay2 p STK σ).RL W) s s') (hc : sc2Chk p STK W = true) : SC2 p STK σ s' := by
+  simp only [sc2Chk, Bool.and_eq_true] at hc
+  obtain ⟨⟨⟨h0, hw⟩, h2⟩, h3⟩ := hc
+  have hL := h.site.ok
+  have hw' : ∀ w ∈ W, w.1 ∈ sWb2 := fun w hw'' => by
+    have := List.all_eq_true.mp hw w hw''
+    simp only [Bool.or_eq_true, beq_iff_eq] at this
+    simp only [sWb2, List.mem_cons, List.not_mem_nil, or_false]; omega_arith
+  have hd : ∀ r ∈ (slay2 p STK σ).RL W, ((slay2 p STK σ).R 0 1288 80).Disjoint r :=
+    fun r hr => by
+      obtain ⟨w, hw'', rfl⟩ := List.mem_map.mp hr
+      exact disjW hL (List.all_eq_true.mp h0 w hw'') (.inl (by decide))
+  refine ⟨h.site.kept hk, hk.rd.trans h.rd, hk.wr.trans h.wr, hk.sp.trans h.sp,
+    fun r hr hs => (hk.cs r hr).trans (h.pres r hr hs), h.sav.keep hk.frame (by rw [saveR_slay2 p STK σ]; exact hd),
+    ?_, ?_, ?_, ?_, ?_⟩
+  · rw [bytes_keepR hL hk.frame h2 hw' (sfit2 hL 2 (by decide))]; exact h.sk
+  · rw [bytes_keepR hL hk.frame h3 hw' (by decide)]; exact h.mu
+  · exact h.pre
+  · rw [hk.cs .s3 (by decide)]; exact h.s3
+  · refine (cache_keep (X := reg (sCache σ) (sCLen σ)) hk.frame (by have := h.pre.f_x; show sCLen σ ≤ 2 ^ 64; omega_arith)
+      fun w hw => ⟨sepAll_bound h0 hw, ?_⟩).trans h.cache
+    have e := hw' w hw
+    simp only [sWb2, List.mem_cons, List.not_mem_nil, or_false] at e
+    rcases e with e | e | e <;> rw [e]
+    · exact h.pre.d_cx
+    · exact h.pre.b_x
+    · exact h.pre.d_gx
+
+theorem inputs_eq (p : Params) (STK : Nat) (σ : State) :
+    bytesAt σ.mem ((slay1 p STK σ).A 2 0) p.skLen = skOf p σ ∧ bytesAt σ.mem ((slay1 p STK σ).A 3 0) 64 = muOf σ ∧
+      bytesAt σ.mem ((slay1 p STK σ).A 4 0) 32 = rndOf σ := by
+  simp only [Lay.A, BitVec.add_zero]; exact ⟨rfl, rfl, rfl⟩
+
+/-! ## The prologue -/
+
+theorem spro_ok {p : Params} (hF : SFacts p) {STK : Nat} (hSTK : 1168 ≤ STK) {σ : State} (hp : SPre p STK σ) :
+    WP isa (.block pro) σ fun s => SC1 p STK σ s ∧ s.gpr .s4 = 1 := by
+  have hL := slay1_ok hp
+  have fc := hp.f_c
+  obtain ⟨hs1, hs2, -⟩ := hF.scr
+  have w0 : (slay1 p STK σ).buf 0 ∈ σ.wr := by
+    rw [show (slay1 p STK σ).buf 0 = reg (sScr σ) (scrLen p) from rfl, hp.wr]
+    exact List.mem_cons_of_mem _ (List.mem_singleton_self _)
+  have wS : ∀ {o n : Nat}, o + n ≤ 32768 → InRegions σ.wr (sScr σ + BitVec.ofNat 64 o) n := fun {o n} h =>
+    Lay.covers (L := slay1 p STK σ) (o := o) (l := n) w0 (by rw [slay1_size0]; omega_arith) _ _
+      ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩
+  rw [pro, WP.block_append_iff]
+  refine WP.mono (topSave_ok rfl hp.al_c fun o _ h₂ => wS (by omega_arith))
+    fun s₁ ⟨sav, fr, g₁, rd₁, wr₁, sp₁⟩ => ?_
+  have g3 : s₁.gpr .a0 = sSk σ := by rw [g₁]
+  have g4 : s₁.gpr .a1 = sMu σ := by rw [g₁]
+  have g5 : s₁.gpr .a2 = sRnd σ := by rw [g₁]
+  have g6 : s₁.gpr .a3 = sSig σ := by rw [g₁]
+  have g7 : s₁.gpr .a4 = sScr σ := by rw [g₁]
+  have g8 : s₁.gpr .a5 = sCache σ := by rw [g₁]
+  have g9 : s₁.gpr .a6 = σ.gpr .a6 := by rw [g₁]
+  have a912 : (sScr σ + BitVec.ofNat 64 oSIG).toNat % 8 = 0 := by
+    have := hp.al_c
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat]; simp only [oSIG]; omega_using [this]
+  have i912 : InRegions s₁.wr (sScr σ + BitVec.ofNat 64 oSIG) 8 := by rw [wr₁]; exact wS (by decide)
+  have o912 : oSIG % 8 = 0 ∧ oSIG < 32768 := by decide
+  have hmv : WP isa (.block [mov .s10 .a0, mov .s9 .a1, mov .s8 .a2, mov .s11 .a4, .store .d .a3 .s11 oSIG,
+      .li .s4 1, .li .t2 0, .sltu .t0 .t2 .a6, .sub .t0 .t2 .t0, .logic .and .s3 .a5 .t0]) s₁ fun s =>
+      s.gpr .s10 = sSk σ ∧ s.gpr .s9 = sMu σ ∧ s.gpr .s8 = sRnd σ ∧ s.gpr .s11 = sScr σ ∧
+      s.gpr .s4 = 1 ∧ s.gpr .s3 = cSel σ ∧ (∀ r ∈ preserved, r ∉ savedTop → s.gpr r = s₁.gpr r) ∧
+      s.mem = s₁.mem.writeW (sScr σ + BitVec.ofNat 64 oSIG) (sSig σ) ∧ s.rd = s₁.rd ∧ s.wr = s₁.wr ∧
+      s.sp = s₁.sp := by
+    have hlt : oSIG < 2048 := by decide
+    mrun [mov, g3, g4, g5, g6, g7, g8, g9, i912, a912, hlt]
+    refine ⟨?_, ?_, fun r hr hs => ?_⟩
+    all_goals try exact rfl
+    all_goals try exact CacheCopy.sel_eq _ _
+    simp only [savedTop, List.mem_cons, List.not_mem_nil, or_false, not_or] at hs
+    obtain ⟨a3, a4, -, -, -, a8, a9, a10, a11⟩ := hs
+    have t0 : r ≠ .t0 := fun e => by subst e; revert hr; decide
+    have t2 : r ≠ .t2 := fun e => by subst e; revert hr; decide
+    simp only [a3, a4, a8, a9, a10, a11, t0, t2, ite_false]
+  refine WP.mono hmv fun s ⟨g30, g29, g28, g31, g24, g19, cs, m, rd, wr, sp⟩ => ?_
+  have fr8 : Frame [(slay1 p STK σ).R 0 912 8] s₁.mem s.mem := by
+    rw [m]
+    exact (show Frame [(slay1 p STK σ).R 0 912 8] s₁.mem s₁.mem from fun _ _ => rfl).writeW
+      (List.mem_singleton_self _) _ (Region.contains_self _ _)
+  have hin : ∀ {i l : Nat}, i = 2 ∨ i = 3 ∨ i = 4 → l = (slay1 p STK σ).size i →
+      bytesAt s.mem ((slay1 p STK σ).A i 0) l = bytesAt σ.mem ((slay1 p STK σ).A i 0) l := fun {i l} hi hl => by
+    have hl' : l ≤ 2 ^ 64 := by rw [hl]; exact sfit1 hL i (by omega_arith)
+    rw [Proof.MlKem.bytesAt_frame fr8 (fun r hr => ?_) hl', Proof.MlKem.bytesAt_frame fr (fun r hr => ?_) hl']
+    · rw [List.mem_singleton] at hr; subst hr
+      rw [saveR_slay1 p STK σ]
+      refine disjW' (i := i) (o := 0) (l := l) (j := 0) (o' := 1288) (l' := 80) hL ?_ (.inr (.inl (by decide)))
+      subst hl
+      rcases hi with rfl | rfl | rfl <;> ssep hF [slay1, Lay.size]
+    · rw [List.mem_singleton] at hr; subst hr
+      refine disjW' (i := i) (o := 0) (l := l) (j := 0) (o' := 912) (l' := 8) hL ?_ (.inr (.inl (by decide)))
+      subst hl
+      rcases hi with rfl | rfl | rfl <;> ssep hF [slay1, Lay.size]
+  obtain ⟨ek, em, er⟩ := inputs_eq p STK σ
+  refine ⟨⟨⟨hL, rfl, by decide, by decide, by rw [slay1_size0]; omega_arith, rfl, by rw [sp, sp₁]; rfl, hSTK,
+    by rw [sp, sp₁]; exact hp.stk, by rw [sp, sp₁]; exact hp.al, hp.al_c, g31, g30, g29, g28, fun i hi hi1 => ?_,
+    fun i hi hi1 => ?_⟩,
+    rd.trans rd₁, wr.trans wr₁, sp.trans sp₁,
+    fun r hr hs => (cs r hr hs).trans (by rw [g₁]),
+    sav.keep fr8 (fun r hr => by
+      rw [List.mem_singleton] at hr; subst hr
+      exact disjW' (i := 0) (o := 1288) (l := 80) (j := 0) (o' := 912) (l' := 8) hL (by ssep hF [slay1, Lay.size])
+        (.inl (by decide))), ?_, ?_, ?_, ?_, hp, g19, ?_⟩, g24⟩
+  · show _ ∈ s.wr
+    rw [wr, wr₁, hp.wr]
+    simp only [sWb1, List.mem_cons, List.not_mem_nil, or_false] at hi
+    rcases hi with rfl | rfl
+    · simp [Lay.buf, slay1]
+    · exact absurd rfl hi1
+  · show _ ∈ s.rd ++ s.wr
+    rw [rd, rd₁, wr, wr₁, hp.rd, hp.wr]
+    rcases (by omega_arith : i = 0 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl <;> simp [Lay.buf, slay1]
+  · rw [m]; exact Mem.readW_writeW_self64 _ _ _
+  · rw [hin (i := 2) (l := p.skLen) (.inl rfl) rfl]; exact ek
+  · rw [hin (i := 3) (l := 64) (.inr (.inl rfl)) rfl]; exact em
+  · rw [hin (i := 4) (l := 32) (.inr (.inr rfl)) rfl]; exact er
+  · have hx : (sCLen σ) ≤ 2 ^ 64 := by have := hp.f_x; omega_arith
+    have hsub : ∀ {o l : Nat}, o + l ≤ scrLen p →
+        (Region.Disjoint (reg (sCache σ) (sCLen σ)) ((slay1 p STK σ).R 0 o l)) := fun h =>
+      (hp.d_cx.sub_left (Lay.R_sub (L := slay1 p STK σ) (i := 0) h)).symm
+    rw [Proof.MlKem.bytesAt_frame fr8 (fun r hr => ?_) hx, Proof.MlKem.bytesAt_frame fr (fun r hr => ?_) hx]
+    · rw [List.mem_singleton] at hr; subst hr; rw [saveR_slay1 p STK σ]; exact hsub (by omega_arith)
+    · rw [List.mem_singleton] at hr; subst hr; exact hsub (by omega_arith)
+
+theorem spro_piece {p : Params} (hF : SFacts p) {STK : Nat} (hSTK : 1168 ≤ STK) :
+    SPiece p STK (fun σ s => s = σ) (fun σ s => SC1 p STK σ s ∧ s.gpr .s4 = 1) (.block pro) :=
+  ⟨fun σ s hp hs => by subst hs; exact spro_ok hF hSTK hp,
+    Sample.taint_block [.a0, .a1, .a2, .a3, .a4] (fun x y ⟨σ₁, σ₂, _, _, pub, h₁, h₂⟩ => by
+      subst h₁ h₂; exact pub.1)
+      (fun x y ⟨σ₁, σ₂, _, _, pub, h₁, h₂⟩ r hr => by
+      subst h₁ h₂
+      obtain ⟨-, e3, e4, e5, e6, e7, -⟩ := pub
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl
+      exacts [e3, e4, e5, e6, e7]) (by taint_decide)⟩
+
+end VG.Proof.MlDsa.RISCV64.Sign
+
+end
+
+end
+
+/-!
+# ML-DSA signing on RISC-V: the primitives, two runs, and the branches on the result
+
+What the proofs need of the implementations of the primitives (`SPrimsOk`):
+verified with at most `S` bytes of stack, and, as on 32-bit ARM
+(`Proof/MlDsa/Arm/Sign/PhaseA.lean`), for the two samplers whose results the
+function branches on, that the result is a function of their public data
+(`RetPub`) and that they succeed only if the sampling finishes within
+`maxBounds`. A call of such a sampler gives the same result in two runs
+(`callVRet_tr`). Then: `ρ` is public (`pub_rho`); two runs with the same
+layout (`STwo1`, `STwo2`) and the constant time of a piece without calls by
+the taint analysis from the pointers.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.RISCV64.Sign
+
+open VG VG.RISCV64 VG.Proof.MlKem.RISCV64
+open VG.Proof.MlDsa.RISCV64.KeyGen (Site OkW ix tri lpa scrLen PtrIn Piece Two Rel2 rel_of relInv taint31 taint4
+  Regs2 Callee CallRel glueOk glueSt glue_ok glueSt_rd glueSt_wr glue_noMem)
+open VG.Impl.MlDsa.RISCV64.KeyGen (callAt)
+open VG.Impl.MlDsa.RISCV64.Sign
+open VG.Spec.MlDsa
+open VG.Spec.Sha3 (bytesAt)
+
+/-! ## The primitives -/
+
+/-- The result of `c` (the low word of `a0`) is the same in two runs from
+states that satisfy `k.pre` and agree on `k.pub`. -/
+def RetPub (k : Contract isa) (c : Prog isa) : Prop :=
+  RelCT isa (fun s₁ s₂ => k.pre s₁ ∧ k.pre s₂ ∧ k.pub s₁ s₂) c
+    fun s₁ s₂ => (s₁.gpr .a0).setWidth 32 = (s₂.gpr .a0).setWidth 32
+
+/-- What the proofs need of the implementations `P` of the primitives: each
+verified against its contract with at most `S` bytes of stack, and the facts
+about the two samplers the function branches on. -/
+structure SPrimsOk (P : Prims) (S : Nat) : Prop where
+  ntt : Callee P.ntt (fun stk => nttContract RISCV64.abi stk) S
+  invNtt : Callee P.invNtt (fun stk => nttInvContract RISCV64.abi stk) S
+  mul : Callee P.mul (fun stk => mulContract RISCV64.abi stk) S
+  mulAdd : Callee P.mulAdd (fun stk => mulAddContract RISCV64.abi stk) S
+  add : Callee P.add (fun stk => addContract RISCV64.abi stk) S
+  sub : Callee P.sub (fun stk => subContract RISCV64.abi stk) S
+  rejNTT : Callee P.rejNTT (fun stk => rejNTTContract RISCV64.abi stk) S
+  expandMask : Callee P.expandMask (fun stk => expandMaskContract RISCV64.abi stk) S
+  ball : Callee P.ball (fun stk => sampleInBallContract RISCV64.abi stk) S
+  highBits : Callee P.highBits (fun stk => highBitsContract RISCV64.abi stk) S
+  lowBits : Callee P.lowBits (fun stk => lowBitsContract RISCV64.abi stk) S
+  normLt : Callee P.normLt (fun stk => normLtContract RISCV64.abi stk) S
+  makeHint : Callee P.makeHint (fun stk => makeHintContract RISCV64.abi stk) S
+  simpleBitPack : Callee P.simpleBitPack (fun stk => simpleBitPackContract RISCV64.abi stk) S
+  bitPack : Callee P.bitPack (fun stk => bitPackContract RISCV64.abi stk) S
+  bitUnpack : Callee P.bitUnpack (fun stk => bitUnpackContract RISCV64.abi stk) S
+  hintBitPack : Callee P.hintBitPack (fun stk => hintBitPackContract RISCV64.abi stk) S
+  /-- With some stack (at most `S`) it is verified with, `vg_mldsa_rej_ntt_poly`'s result depends
+  only on its public data (its seed), and it succeeds only if `RejNTTPoly` finishes within
+  `maxBounds`. -/
+  rejX : ∃ stk, stk ≤ S ∧ Verified RISCV64.target P.rejNTT (rejNTTContract RISCV64.abi stk) ∧
+    RetPub (rejNTTContract RISCV64.abi stk) P.rejNTT ∧
+    ∀ s t s', (rejNTTContract RISCV64.abi stk).pre s → Exec isa P.rejNTT s t s' →
+      (s'.gpr .a0).setWidth 32 = 1 → (rejNTTPoly maxBounds.rejNTT (bytesAt s.mem (s.gpr .a0) 34)).isSome
+  /-- Likewise, `vg_mldsa_sample_in_ball`'s result depends only on its public data (`c̃`), and it
+  succeeds only if `SampleInBall` finishes within `maxBounds`. -/
+  ballX : ∃ stk, stk ≤ S ∧ Verified RISCV64.target P.ball (sampleInBallContract RISCV64.abi stk) ∧
+    RetPub (sampleInBallContract RISCV64.abi stk) P.ball ∧
+    ∀ s t s', (sampleInBallContract RISCV64.abi stk).pre s → Exec isa P.ball s t s' →
+      (s'.gpr .a0).setWidth 32 = 1 →
+      (sampleInBall ((s.gpr .a2).setWidth 32).toNat maxBounds.ball
+        (bytesAt s.mem (s.gpr .a0) (s.gpr .a1).toNat)).isSome
+
+/-! ## Calls whose results are public -/
+
+/-- The run of a call narrowed to the regions its contract gives it: the
+same trace, and the same registers. -/
+theorem narrow_run {c : Prog isa} {k : Contract isa}
+    (hv : ∀ s, k.pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ k.post s s')
+    {s : State} {rd wr : List Region} {t : List Leak} {s' : State}
+    (hpre : k.pre (s.withRegions rd wr)) (hc : RISCV64.Covers (rd ++ wr) (s.rd ++ s.wr)) (hw : RISCV64.Covers wr s.wr)
+    (he : Exec isa c s t s') : ∃ s'', Exec isa c (s.withRegions rd wr) t s'' ∧ s''.gpr = s'.gpr := by
+  obtain ⟨t', s'', he', -⟩ := hv _ hpre
+  have hw' := Exec.widen he' (rd := s.rd) (wr := s.wr) (by simpa using hc) (by simpa using hw)
+  simp only [State.withRegions_withRegions, State.withRegions_self] at hw'
+  obtain ⟨rfl, rfl⟩ := Exec.det he hw'
+  exact ⟨_, he', rfl⟩
+
+/-- A call of verified code whose result is public in its own runs gives the
+same result in two runs whose narrowed entry states satisfy its precondition
+and agree on its public data. -/
+theorem RelCT.callRet {n : String} {c : Prog isa} {k : Contract isa}
+    (hv : ∀ s, k.pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ k.post s s')
+    (hr : RetPub k c) {P : State → State → Prop} (rd wr : List Region)
+    (hP : ∀ s₁ s₂, P s₁ s₂ →
+      k.pre (s₁.callEntry.withRegions rd wr) ∧ k.pre (s₂.callEntry.withRegions rd wr) ∧
+      k.pub (s₁.callEntry.withRegions rd wr) (s₂.callEntry.withRegions rd wr) ∧
+      RISCV64.Covers (rd ++ wr) (s₁.rd ++ s₁.wr) ∧ RISCV64.Covers wr s₁.wr ∧
+      RISCV64.Covers (rd ++ wr) (s₂.rd ++ s₂.wr) ∧ RISCV64.Covers wr s₂.wr) :
+    RelCT isa P (.call n c) fun s₁ s₂ => (s₁.gpr .a0).setWidth 32 = (s₂.gpr .a0).setWidth 32 := by
+  intro s₁ s₂ t₁ t₂ s₁' s₂' hp e₁ e₂
+  obtain ⟨p₁, p₂, hpub, c₁, w₁, c₂, w₂⟩ := hP _ _ hp
+  cases e₁ with
+  | call h₁ b₁ r₁ =>
+    cases e₂ with
+    | call h₂ b₂ r₂ =>
+      rw [call_callEntry, Option.some.injEq] at h₁ h₂
+      subst h₁ h₂
+      obtain ⟨n₁, x₁, g₁⟩ := narrow_run hv p₁ (by simpa using c₁) (by simpa using w₁) b₁
+      obtain ⟨n₂, x₂, g₂⟩ := narrow_run hv p₂ (by simpa using c₂) (by simpa using w₂) b₂
+      obtain ⟨ht, hrax⟩ := hr _ _ _ _ _ _ ⟨p₁, p₂, hpub⟩ x₁ x₂
+      rw [ret_eq r₁, ret_eq r₂]
+      exact ⟨by simp only [ht], show _ = _ by rw [← g₁, ← g₂]; exact hrax⟩
+
+/-- `callV_tr`, with the result of a callee that is public (`RetPub`). -/
+theorem callVRet_tr {name : String} {c : Prog isa} {k : Contract isa}
+    (hv : ∀ s, k.pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ k.post s s')
+    (hr : RetPub k c) {as : List (Reg × Impl.MlDsa.RISCV64.KeyGen.Arg)} (hg : glueOk as = true)
+    {P : State → State → Prop}
+    (hP : ∀ x y, P x y → ∃ rd wr, CallRel k rd wr x y (glueSt x as) (glueSt y as)) :
+    RelCT isa P (callAt name c as) fun x y => (x.gpr .a0).setWidth 32 = (y.gpr .a0).setWidth 32 := by
+  unfold callAt
+  refine RelCT.seq (RelCT.wpDep (F := fun x x1 => x1 = glueSt x as) (relct_noMem (glue_noMem as))
+    fun x y _ => ⟨glue_ok hg x, glue_ok hg y⟩) ?_
+  refine RelCT.mono (P := fun (a b : State) => ∃ rw : List Region × List Region, ∃ x y : State,
+      CallRel k rw.1 rw.2 x y a b ∧ x.rd = a.rd ∧ x.wr = a.wr ∧ y.rd = b.rd ∧ y.wr = b.wr)
+    (RelCT.exists_ fun (rw : List Region × List Region) => RelCT.callRet hv hr rw.1 rw.2
+      fun a b ⟨x, y, h, e1, e2, e3, e4⟩ => by
+        obtain ⟨h1, h2, h3, h4, h5, h6, h7⟩ := h
+        exact ⟨h1, h2, h3, by rwa [← e1, ← e2], by rwa [← e2], by rwa [← e3, ← e4], by rwa [← e4]⟩) ?_
+    fun _ _ h => h
+  rintro a b ⟨-, x, y, hp, rfl, rfl⟩
+  obtain ⟨rd, wr, h⟩ := hP x y hp
+  exact ⟨(rd, wr), x, y, h, (glueSt_rd x as).symm, (glueSt_wr x as).symm, (glueSt_rd y as).symm,
+    (glueSt_wr y as).symm⟩
+
+/-! ## The samplers' calls, with their bounds -/
+
+section
+variable {P : Prims} {S : Nat} (hP : SPrimsOk P S) {L : Lay} {Wb : List Nat} {STK : Nat}
+include hP
+
+/-- `rn_ok`, and the success of `RejNTTPoly` within `maxBounds` if the call succeeded. -/
+theorem rn_okX {s : State} (hs : Site L Wb STK s) (hS : S ≤ STK) {name : String} {sd a w : Impl.MlDsa.RISCV64.KeyGen.Ptr}
+    (m : KeyGen.RnOk L Wb sd a w) {Q : State → Prop}
+    (hQ : ∀ s', Kept (L.RL [tri a 1024, tri w 2048, (1, 0, STK)]) s s' →
+      ((s'.gpr .a0).setWidth 32 = 1 → Reduced s'.mem (lpa L a)) →
+      Outcome (fun b => rejNTTPoly b.rejNTT (bytesAt s.mem (lpa L sd) 34)) ((s'.gpr .a0).setWidth 32)
+        (polyAt s'.mem (lpa L a)) →
+      ((s'.gpr .a0).setWidth 32 = 1 → (rejNTTPoly maxBounds.rejNTT (bytesAt s.mem (lpa L sd) 34)).isSome) → Q s') :
+    WP isa (callAt name P.rejNTT (KeyGen.rnArgs sd a w)) s Q := by
+  obtain ⟨stk, hstk, hver, -, hmax⟩ := hP.rejX
+  obtain ⟨c1, c2⟩ := KeyGen.rn_cov hs m
+  have hv : ∀ s₀, (rejNTTContract RISCV64.abi stk).pre s₀ → ∃ t s', Exec isa P.rejNTT s₀ t s' ∧
+      abiPreserved s₀ s' ∧ ((rejNTTContract RISCV64.abi stk).post s₀ s' ∧
+        ((s'.gpr .a0).setWidth 32 = 1 →
+          (rejNTTPoly maxBounds.rejNTT (bytesAt s₀.mem (s₀.gpr .a0) 34)).isSome)) := fun s₀ h₀ => by
+    obtain ⟨t, s', e, ha, hp⟩ := hver.1 s₀ h₀
+    exact ⟨t, s', e, ha, hp, hmax s₀ t s' h₀ e⟩
+  refine KeyGen.callV (k := { rejNTTContract RISCV64.abi stk with
+      post := fun s₀ s' => (rejNTTContract RISCV64.abi stk).post s₀ s' ∧
+        ((s'.gpr .a0).setWidth 32 = 1 →
+          (rejNTTPoly maxBounds.rejNTT (bytesAt s₀.mem (s₀.gpr .a0) 34)).isSome) }) hv
+    (hs.depth hP.rejNTT.stack hS) m.hg (KeyGen.rn_preS hs (Nat.le_trans hstk hS) m) c1 c2
+    fun s' hk ⟨hp, hx⟩ => hQ s' (hs.keptW [tri a 1024, tri w 2048] (Nat.le_trans hP.rejNTT.stack hS) hk) ?_ ?_ ?_
+  all_goals
+    obtain ⟨g3, g4, -⟩ := KeyGen.rn_vg hs m (KeyGen.rnRd L sd) (KeyGen.rnWr L a w)
+    have := KeyGen.rejNtt_post hp
+    rw [State.withRegions_mem, State.withRegions_gpr, g3, g4, KeyGen.view_glue_mem] at this
+    rw [g3, KeyGen.view_glue_mem, State.withRegions_gpr] at hx
+  exacts [this.1, this.2, hx]
+
+/-- `ball_ok`, and the success of `SampleInBall` within `maxBounds` if the call succeeded. -/
+theorem ball_okX {s : State} (hs : Site L Wb STK s) (hS : S ≤ STK) {name : String}
+    {ct c w : Impl.MlDsa.RISCV64.KeyGen.Ptr} {len tau : Nat} (m : KeyGen.BallOk L Wb ct len tau c w)
+    {Q : State → Prop}
+    (hQ : ∀ s', Kept (L.RL [tri c 1024, tri w 2048, (1, 0, STK)]) s s' →
+      ((s'.gpr .a0).setWidth 32 = 1 → Reduced s'.mem (lpa L c)) →
+      Outcome (fun b => (sampleInBall tau b.ball (bytesAt s.mem (lpa L ct) len)).map toRq)
+        ((s'.gpr .a0).setWidth 32) (polyAt s'.mem (lpa L c)) →
+      ((s'.gpr .a0).setWidth 32 = 1 → (sampleInBall tau maxBounds.ball (bytesAt s.mem (lpa L ct) len)).isSome) →
+      Q s') :
+    WP isa (callAt name P.ball (KeyGen.ballArgs ct len tau c w)) s Q := by
+  obtain ⟨stk, hstk, hver, -, hmax⟩ := hP.ballX
+  obtain ⟨c1, c2⟩ := KeyGen.ball_cov hs m
+  obtain ⟨l0, ll, lt⟩ := m.lt
+  have hv : ∀ s₀, (sampleInBallContract RISCV64.abi stk).pre s₀ → ∃ t s', Exec isa P.ball s₀ t s' ∧
+      abiPreserved s₀ s' ∧ ((sampleInBallContract RISCV64.abi stk).post s₀ s' ∧
+        ((s'.gpr .a0).setWidth 32 = 1 → (sampleInBall ((s₀.gpr .a2).setWidth 32).toNat maxBounds.ball
+          (bytesAt s₀.mem (s₀.gpr .a0) (s₀.gpr .a1).toNat)).isSome)) := fun s₀ h₀ => by
+    obtain ⟨t, s', e, ha, hp⟩ := hver.1 s₀ h₀
+    exact ⟨t, s', e, ha, hp, hmax s₀ t s' h₀ e⟩
+  refine KeyGen.callV (k := { sampleInBallContract RISCV64.abi stk with
+      post := fun s₀ s' => (sampleInBallContract RISCV64.abi stk).post s₀ s' ∧
+        ((s'.gpr .a0).setWidth 32 = 1 → (sampleInBall ((s₀.gpr .a2).setWidth 32).toNat maxBounds.ball
+          (bytesAt s₀.mem (s₀.gpr .a0) (s₀.gpr .a1).toNat)).isSome) }) hv
+    (hs.depth hP.ball.stack hS) m.hg (KeyGen.ball_preS hs (Nat.le_trans hstk hS) m) c1 c2
+    fun s' hk ⟨hp, hx⟩ => hQ s' (hs.keptW [tri c 1024, tri w 2048] (Nat.le_trans hP.ball.stack hS) hk) ?_ ?_ ?_
+  all_goals
+    obtain ⟨g3, g4, g5, g6, -⟩ := KeyGen.ball_vg hs m (KeyGen.ballRd L ct len) (KeyGen.ballWr L c w)
+    have := KeyGen.ball_post hp
+    rw [State.withRegions_mem, State.withRegions_gpr, g3, g4, g5, g6, KeyGen.view_glue_mem,
+      KeyGen.imm32 (by omega_arith), KeyGen.imm32_toNat (by omega_arith), KeyGen.imm_toNat (by omega_arith)] at this
+    rw [g3, g4, g5, KeyGen.view_glue_mem, State.withRegions_gpr, KeyGen.imm32 (by omega_arith), KeyGen.imm32_toNat (by omega_arith),
+      KeyGen.imm_toNat (by omega_arith)] at hx
+  exacts [this.1, this.2, hx]
+
+theorem rn_trRet (hS : S ≤ STK) {name : String} {sd a w : Impl.MlDsa.RISCV64.KeyGen.Ptr}
+    (m : KeyGen.RnOk L Wb sd a w) {Q : State → State → Prop}
+    (hQ : ∀ x y, Q x y → Site L Wb STK x ∧ Site L Wb STK y ∧ x.sp = y.sp ∧
+      bytesAt x.mem (lpa L sd) 34 = bytesAt y.mem (lpa L sd) 34) :
+    RelCT isa Q (callAt name P.rejNTT (KeyGen.rnArgs sd a w))
+      fun x y => (x.gpr .a0).setWidth 32 = (y.gpr .a0).setWidth 32 := by
+  obtain ⟨stk, hstk, hver, hret, -⟩ := hP.rejX
+  refine callVRet_tr hver.1 hret m.hg fun x y hxy => ?_
+  obtain ⟨hx, hy, hsp, hl⟩ := hQ x y hxy
+  obtain ⟨gx3, gx4, gx5⟩ := KeyGen.rn_vg hx m (KeyGen.rnRd L sd) (KeyGen.rnWr L a w)
+  obtain ⟨gy3, gy4, gy5⟩ := KeyGen.rn_vg hy m (KeyGen.rnRd L sd) (KeyGen.rnWr L a w)
+  refine ⟨KeyGen.rnRd L sd, KeyGen.rnWr L a w, KeyGen.rn_preS hx (Nat.le_trans hstk hS) m,
+    KeyGen.rn_preS hy (Nat.le_trans hstk hS) m,
+    KeyGen.rejNtt_pub (by rw [KeyGen.view_glue_sp, KeyGen.view_glue_sp, hsp]) (by rw [gx3, gy3]) (by rw [gx4, gy4])
+      (by rw [gx5, gy5]) ?_, (KeyGen.rn_cov hx m).1, (KeyGen.rn_cov hx m).2, (KeyGen.rn_cov hy m).1,
+    (KeyGen.rn_cov hy m).2⟩
+  rw [gx3, gy3, KeyGen.view_glue_mem, KeyGen.view_glue_mem]
+  exact hl
+
+theorem ball_trRet (hS : S ≤ STK) {name : String} {ct c w : Impl.MlDsa.RISCV64.KeyGen.Ptr} {len tau : Nat}
+    (m : KeyGen.BallOk L Wb ct len tau c w) {Q : State → State → Prop}
+    (hQ : ∀ x y, Q x y → Site L Wb STK x ∧ Site L Wb STK y ∧ x.sp = y.sp ∧
+      bytesAt x.mem (lpa L ct) len = bytesAt y.mem (lpa L ct) len) :
+    RelCT isa Q (callAt name P.ball (KeyGen.ballArgs ct len tau c w))
+      fun x y => (x.gpr .a0).setWidth 32 = (y.gpr .a0).setWidth 32 := by
+  obtain ⟨stk, hstk, hver, hret, -⟩ := hP.ballX
+  obtain ⟨l0, ll, lt⟩ := m.lt
+  refine callVRet_tr hver.1 hret m.hg fun x y hxy => ?_
+  obtain ⟨hx, hy, hsp, hl⟩ := hQ x y hxy
+  obtain ⟨gx3, gx4, gx5, gx6, gx7⟩ := KeyGen.ball_vg hx m (KeyGen.ballRd L ct len) (KeyGen.ballWr L c w)
+  obtain ⟨gy3, gy4, gy5, gy6, gy7⟩ := KeyGen.ball_vg hy m (KeyGen.ballRd L ct len) (KeyGen.ballWr L c w)
+  refine ⟨KeyGen.ballRd L ct len, KeyGen.ballWr L c w, KeyGen.ball_preS hx (Nat.le_trans hstk hS) m,
+    KeyGen.ball_preS hy (Nat.le_trans hstk hS) m,
+    KeyGen.ball_pub (by rw [KeyGen.view_glue_sp, KeyGen.view_glue_sp, hsp]) (by rw [gx3, gy3]) (by rw [gx4, gy4])
+      (by rw [gx5, gy5]) (by rw [gx6, gy6]) (by rw [gx7, gy7]) ?_, (KeyGen.ball_cov hx m).1, (KeyGen.ball_cov hx m).2,
+    (KeyGen.ball_cov hy m).1, (KeyGen.ball_cov hy m).2⟩
+  rw [gx3, gy3, gx4, gy4, KeyGen.view_glue_mem, KeyGen.view_glue_mem, KeyGen.imm_toNat (by omega_arith)]
+  exact hl
+
+end
+
+/-! ## Two runs related by more than their entry states -/
+
+/-- Two runs, each satisfying `I` from its entry state, related by `E`. -/
+def RR (p : Params) (STK : Nat) (I E : State → State → Prop) (x y : State) : Prop :=
+  Rel2 (SPre p STK) (sPub p) I x y ∧ E x y
+
+theorem WP.conj {c : Prog isa} {s : State} {Q₁ Q₂ : State → Prop} (h₁ : WP isa c s Q₁) (h₂ : WP isa c s Q₂) :
+    WP isa c s fun s' => Q₁ s' ∧ Q₂ s' := by
+  obtain ⟨t, s', e, q₁⟩ := h₁
+  obtain ⟨_, _, e', q₂⟩ := h₂
+  obtain ⟨-, rfl⟩ := Exec.det e e'
+  exact ⟨t, _, e, q₁, q₂⟩
+
+/-- A piece that takes each run from `I` to `J` and from `s` to `s'` with
+`F s s'`, and leaks the same from runs related by `RR I E`, with `Q₀` of the
+final states. -/
+theorem stepRR {p : Params} {STK : Nat} {I J E E' Q₀ F : State → State → Prop} {c : Prog isa}
+    (hw : ∀ σ s, SPre p STK σ → I σ s → WP isa c s fun s' => J σ s' ∧ F s s')
+    (ht : RelCT isa (RR p STK I E) c Q₀)
+    (hE : ∀ x y x' y', RR p STK I E x y → F x x' → F y y' → Q₀ x' y' → E' x' y') :
+    RelCT isa (RR p STK I E) c (RR p STK J E') := by
+  intro s₁ s₂ t₁ t₂ s₁' s₂' hr e₁ e₂
+  obtain ⟨ht', hq⟩ := ht _ _ _ _ _ _ hr e₁ e₂
+  obtain ⟨⟨σ₁, σ₂, p₁, p₂, hpub, i₁, i₂⟩, he⟩ := hr
+  obtain ⟨_, u₁, f₁, g₁, k₁⟩ := hw σ₁ s₁ p₁ i₁
+  obtain ⟨_, u₂, f₂, g₂, k₂⟩ := hw σ₂ s₂ p₂ i₂
+  obtain ⟨-, rfl⟩ := Exec.det e₁ f₁
+  obtain ⟨-, rfl⟩ := Exec.det e₂ f₂
+  exact ⟨ht', ⟨σ₁, σ₂, p₁, p₂, hpub, g₁, g₂⟩, hE _ _ _ _ ⟨⟨σ₁, σ₂, p₁, p₂, hpub, i₁, i₂⟩, he⟩ k₁ k₂ hq⟩
+
+/-! ## `ρ` -/
+
+theorem signLeak_head (p : Params) (sk μ rnd : List Byte) :
+    ∃ X, signLeak p sk μ rnd = leakBytes (sk.take 32) ++ X := by
+  unfold signLeak
+  rcases e : skDecode p sk with ⟨ρ, K, tr, s₁, s₂, t₀⟩
+  have hρ : ρ = sk.take 32 := by rw [← Proof.MlDsa.Sign.skRho_eq p sk, e]
+  subst hρ
+  exact ⟨_, rfl⟩
+
+theorem leak_rho {p : Params} {sk₁ sk₂ μ₁ μ₂ r₁ r₂ : List Byte} (h1 : sk₁.length = p.skLen)
+    (h2 : sk₂.length = p.skLen) (h : signLeak p sk₁ μ₁ r₁ = signLeak p sk₂ μ₂ r₂) :
+    sk₁.take 32 = sk₂.take 32 := by
+  obtain ⟨X₁, e₁⟩ := signLeak_head p sk₁ μ₁ r₁
+  obtain ⟨X₂, e₂⟩ := signLeak_head p sk₂ μ₂ r₂
+  rw [e₁, e₂] at h
+  refine Proof.MlDsa.Sign.leakBytes_inj (List.append_inj h ?_).1
+  rw [Proof.MlDsa.Sign.leakBytes_length, Proof.MlDsa.Sign.leakBytes_length, List.length_take, List.length_take, h1, h2]
+
+theorem pub_rho {p : Params} {σ₁ σ₂ : State} (h : sPub p σ₁ σ₂) : (skOf p σ₁).take 32 = (skOf p σ₂).take 32 :=
+  leak_rho (Proof.MlKem.bytesAt_length _ _ _) (Proof.MlKem.bytesAt_length _ _ _) h.2.2.2.2.2.2.1
+
+/-! ## The state, but for `a0` and `s4` -/
+
+theorem SC1.regs2 {p : Params} {STK : Nat} {σ s s' : State} (h : SC1 p STK σ s) (hr : Regs2 s s') :
+    SC1 p STK σ s' :=
+  ⟨h.site.regs2 hr, hr.rd.trans h.rd, hr.wr.trans h.wr, hr.sp.trans h.sp,
+    fun r hp hs => by
+      have : r ≠ .a0 ∧ r ≠ .s4 := ⟨fun e => by subst e; simp [preserved] at hp,
+        fun e => by subst e; simp [savedTop] at hs⟩
+      rw [hr.gpr r this.1 this.2]; exact h.pres r hp hs,
+    by rw [hr.mem]; exact h.sav, by rw [hr.mem]; exact h.sig, by rw [hr.mem]; exact h.sk, by rw [hr.mem]; exact h.mu,
+    by rw [hr.mem]; exact h.rnd, h.pre, by rw [hr.gpr .s3 (by decide) (by decide)]; exact h.s3,
+    by rw [hr.mem]; exact h.cache⟩
+
+theorem SC2.regs2 {p : Params} {STK : Nat} {σ s s' : State} (h : SC2 p STK σ s) (hr : Regs2 s s') :
+    SC2 p STK σ s' :=
+  ⟨h.site.regs2 hr, hr.rd.trans h.rd, hr.wr.trans h.wr, hr.sp.trans h.sp,
+    fun r hp hs => by
+      have : r ≠ .a0 ∧ r ≠ .s4 := ⟨fun e => by subst e; simp [preserved] at hp,
+        fun e => by subst e; simp [savedTop] at hs⟩
+      rw [hr.gpr r this.1 this.2]; exact h.pres r hp hs,
+    by rw [hr.mem]; exact h.sav, by rw [hr.mem]; exact h.sk, by rw [hr.mem]; exact h.mu, h.pre,
+    by rw [hr.gpr .s3 (by decide) (by decide)]; exact h.s3, by rw [hr.mem]; exact h.cache⟩
+
+/-! ## Two runs -/
+
+section
+variable {p : Params} {STK : Nat}
+
+theorem sc1_twoL {σ₁ σ₂ x y : State} (pub : sPub p σ₁ σ₂) (h₁ : SC1 p STK σ₁ x) (h₂ : SC1 p STK σ₂ y) :
+    Two (slay1 p STK σ₁) sWb1 STK x y :=
+  ⟨h₁.site, slay1_pub pub ▸ h₂.site, by rw [h₁.sp, h₂.sp, pub.1]⟩
+
+theorem sc2_twoL {σ₁ σ₂ x y : State} (pub : sPub p σ₁ σ₂) (h₁ : SC2 p STK σ₁ x) (h₂ : SC2 p STK σ₂ y) :
+    Two (slay2 p STK σ₁) sWb2 STK x y :=
+  ⟨h₁.site, slay2_pub pub ▸ h₂.site, by rw [h₁.sp, h₂.sp, pub.1]⟩
+
+/-- A piece without calls before the hash of `ρ″`, checked by the taint
+analysis from `scratch`. -/
+theorem srel1 {I : State → State → Prop} (hI : ∀ σ s, I σ s → SC1 p STK σ s)
+    {c : Prog isa} {hc : VG.Taint.Hint VG.RISCV64.taint.T}
+    (h : (VG.RISCV64.taint.check (Taint.ofRegs [.s11]) c hc).isSome = true) :
+    RelCT isa (Rel2 (SPre p STK) (sPub p) I) c fun _ _ => True :=
+  rel_of (RelCT.exists_ fun _ => taint31 (fun _ _ h => h) h)
+    fun σ₁ _ _ _ _ _ pub h₁ h₂ => ⟨σ₁, sc1_twoL pub (hI _ _ h₁) (hI _ _ h₂)⟩
+
+/-- A piece without calls after the hash of `ρ″`, checked by the taint
+analysis from `scratch`. -/
+theorem srel2 {I : State → State → Prop} (hI : ∀ σ s, I σ s → SC2 p STK σ s)
+    {c : Prog isa} {hc : VG.Taint.Hint VG.RISCV64.taint.T}
+    (h : (VG.RISCV64.taint.check (Taint.ofRegs [.s11]) c hc).isSome = true) :
+    RelCT isa (Rel2 (SPre p STK) (sPub p) I) c fun _ _ => True :=
+  rel_of (RelCT.exists_ fun _ => taint31 (fun _ _ h => h) h)
+    fun σ₁ _ _ _ _ _ pub h₁ h₂ => ⟨σ₁, sc2_twoL pub (hI _ _ h₁) (hI _ _ h₂)⟩
+
+/-- `srel1`, from all the pointers. -/
+theorem srel1p {I : State → State → Prop} (hI : ∀ σ s, I σ s → SC1 p STK σ s)
+    {c : Prog isa} {hc : VG.Taint.Hint VG.RISCV64.taint.T}
+    (h : (VG.RISCV64.taint.check (Taint.ofRegs [.s8, .s9, .s10, .s11]) c hc).isSome = true) :
+    RelCT isa (Rel2 (SPre p STK) (sPub p) I) c fun _ _ => True :=
+  rel_of (RelCT.exists_ fun _ => taint4 (fun _ _ h => h) h)
+    fun σ₁ _ _ _ _ _ pub h₁ h₂ => ⟨σ₁, sc1_twoL pub (hI _ _ h₁) (hI _ _ h₂)⟩
+
+/-- `srel2`, from all the pointers. -/
+theorem srel2p {I : State → State → Prop} (hI : ∀ σ s, I σ s → SC2 p STK σ s)
+    {c : Prog isa} {hc : VG.Taint.Hint VG.RISCV64.taint.T}
+    (h : (VG.RISCV64.taint.check (Taint.ofRegs [.s8, .s9, .s10, .s11]) c hc).isSome = true) :
+    RelCT isa (Rel2 (SPre p STK) (sPub p) I) c fun _ _ => True :=
+  rel_of (RelCT.exists_ fun _ => taint4 (fun _ _ h => h) h)
+    fun σ₁ _ _ _ _ _ pub h₁ h₂ => ⟨σ₁, sc2_twoL pub (hI _ _ h₁) (hI _ _ h₂)⟩
+
+end
+
+end VG.Proof.MlDsa.RISCV64.Sign
+
+end
+
+end
 
 /-!
 # ML-DSA signing on RISC-V: `Â`

@@ -3,8 +3,6 @@ module
 public import VerifiedGarbage.Proof.MlKem.X86.EncRow
 public import VerifiedGarbage.Proof.MlKem.X86.TopKem
 import VerifiedGarbage.Proof.MlKem.X86.TopSeq
-import VerifiedGarbage.Proof.MlKem.X86.TopPrim2
-import VerifiedGarbage.Proof.MlKem.X86.TopPrim
 import VerifiedGarbage.Proof.Framework.Contract
 
 /-!

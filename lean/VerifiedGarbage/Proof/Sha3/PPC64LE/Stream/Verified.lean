@@ -14,15 +14,794 @@ public import VerifiedGarbage.Proof.Framework.PPC64LE.Spill
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.TCB.Mem
 public import VerifiedGarbage.TCB.PPC64LE.Target
-import VerifiedGarbage.Proof.Sha3.PPC64LE.Stream.CT
 import VerifiedGarbage.Proof.Sha3.PPC64LE.Stream.Lit
 import VerifiedGarbage.Proof.MdStream.PPC64LE.Common
 import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratch
 import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.TCB.PPC64LE.Isa
-import VerifiedGarbage.Proof.Sha3.PPC64LE.Permute
 public import VerifiedGarbage.Proof.MdStream.PPC64LE.Basic
 public import VerifiedGarbage.Proof.MdStream.Spec
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
+public import VerifiedGarbage.Proof.Framework.PPC64LE.SlotTaint
+public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
+public import VerifiedGarbage.Proof.Framework.Mem
+meta import VerifiedGarbage.Proof.Sha3.PPC64LE.Contract
+meta import VerifiedGarbage.Impl.Sha3.PPC64LE.Stream
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.SlotTaint
+meta import VerifiedGarbage.Proof.Sha3.PPC64LE.Stream.Lit
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Call
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Sha3.PPC64LE.Lit
+import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
+import VerifiedGarbage.Proof.Framework.Range
+meta import VerifiedGarbage.Proof.Sha3.Contract
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Spill
+meta import VerifiedGarbage.TCB.PPC64LE.Target
+meta import VerifiedGarbage.Proof.Sha3.PPC64LE.Lit
+meta import VerifiedGarbage.Proof.MdStream.PPC64LE.Basic
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
+meta import VerifiedGarbage.Proof.Framework.Range
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Straight
+public import VerifiedGarbage.Proof.Sha3.Compl
+public import VerifiedGarbage.Impl.Sha3.PPC64LE
+import VerifiedGarbage.Proof.Framework.PPC64LE.MovImm
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Sha3.ComplLit
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Straight
+meta import VerifiedGarbage.Proof.Sha3.Compl
+meta import VerifiedGarbage.Impl.Sha3.PPC64LE
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.MovImm
+meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Sha3.ComplLit
+
+/-! ### `Sha3.PPC64LE.Permute`, which only this module used -/
+
+section
+
+/-! ### `Sha3.PPC64LE.Round`, which only this module used -/
+
+section
+
+/-!
+# Keccak-f[1600] on PPC64LE: a round, by evaluation
+
+A round's θ, ρ, π and χ (`core`) are checked by evaluating their code over
+the ANF domain (`Bitslice.Anf`, with `Straight.eval`): the lanes of the
+state, as kept (complemented, `Compl.cmpl`), are atoms `0–24` in their
+registers (`lane`), and the scratch space is four slots, the three spilled
+lanes and all ones (the constant `one`). `check` compares the registers'
+values after it with the round computed from the specification
+(`Compl.specP`), lane 0 before ι, whose round constant is atom `25`; and
+`core_ok` turns that into a statement about the machine. ι (`iota`), the
+round constant built from immediates, is run symbolically (`round_ok`).
+
+The prologue's and the epilogue's loads and stores of the lanes, with the
+lanes `complLanes` complemented, are checked the same way (`load_ok`,
+`store_ok`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Sha3.PPC64LE.Round
+
+open VG VG.PPC64LE VG.PPC64LE.Straight VG.Bitslice.Anf VG.Impl.Sha3.PPC64LE
+open VG.Proof.Sha3.Compl (specP cmpl msk maskP eval_specP)
+
+abbrev KState := Spec.Sha3.State
+abbrev Lane := Spec.Sha3.Lane
+
+/-- The lane a register holds (`lane`, inverted). -/
+def laneOf : Reg → Option Nat
+  | .r2 => some 0 | .r7 => some 1 | .r8 => some 2 | .r9 => some 3 | .r10 => some 4
+  | .r11 => some 5 | .r12 => some 6 | .r14 => some 7 | .r15 => some 8 | .r16 => some 9
+  | .r17 => some 10 | .r18 => some 11 | .r19 => some 12 | .r20 => some 13 | .r21 => some 14
+  | .r22 => some 15 | .r23 => some 16 | .r24 => some 17 | .r25 => some 18 | .r26 => some 19
+  | .r27 => some 20 | .r28 => some 21 | .r29 => some 22 | .r30 => some 23 | .r31 => some 24
+  | _ => none
+
+theorem laneOf_lane : ∀ i < 25, laneOf (lane i) = some i := by decide
+
+theorem laneOf_some {r : Reg} {i : Nat} (h : laneOf r = some i) : r = lane i ∧ i < 25 := by
+  cases r <;> cases h <;> exact ⟨rfl, by decide⟩
+
+/-- The lanes are in distinct registers, none of them a pointer or a temporary. -/
+theorem lane_inj : ∀ i < 25, ∀ j < 25, lane i = lane j → i = j := by decide
+
+theorem lane_ne : ∀ i < 25, lane i ≠ .r0 ∧ lane i ≠ .r3 ∧ lane i ≠ .r4 ∧ lane i ≠ .r5 ∧ lane i ≠ .r6 := by
+  decide
+
+/-! ## θ, ρ, π and χ -/
+
+/-- The scratch space: slots 0–2 the spilled lanes, slot 3 all ones. -/
+def cfg : Cfg := { base := .r4, slots := 4, ext := .r3, exts := 0 }
+
+/-- The lanes, as kept, in their registers, and all ones in slot 3. -/
+def env₀ : Straight.Env Poly :=
+  { reg := fun r => (laneOf r).map atom
+    slot := fun k => if k = 3 then some one else none }
+
+/-- The round's output in the lanes' registers, lane 0 before ι, and slot 3
+unchanged. -/
+def post (e : Straight.Env Poly) : Bool :=
+  (match e.reg (lane 0) with
+    | some a => pxor a (atom 25) == specP 0
+    | none => false) &&
+  (List.range 24).all (fun j => e.reg (lane (j + 1)) == some (specP (j + 1))) &&
+  e.slot 3 == some one
+
+def check : Bool := Straight.check anf cfg (fun _ => none) core env₀ post
+
+theorem check_eq : check = true := by lit_decide
+
+theorem cmpl_get (A : KState) {i : Nat} (hi : i < 25) : (cmpl A)[i] = A[i] ^^^ msk i := by
+  simp [cmpl]
+
+/-- What `core` leaves in the registers and the scratch space. -/
+structure CoreOut (A : KState) (rc : Lane) (P : Addr) (s s' : State) : Prop where
+  lanes : ∀ i (hi : i < 25), i ≠ 0 → s'.gpr (lane i) = (cmpl (Proof.Sha3.outState A rc))[i]
+  lane0 : s'.gpr (lane 0) ^^^ rc = (cmpl (Proof.Sha3.outState A rc))[0]
+  ones : s'.mem.readW (P + BitVec.ofNat 64 24) 64 = BitVec.allOnes 64
+  frame : Frame [⟨P, 32⟩] s.mem s'.mem
+  rd : s'.rd = s.rd
+  wr : s'.wr = s.wr
+  sp : s'.sp = s.sp
+  lr : s'.lr = s.lr
+  r3 : s'.gpr .r3 = s.gpr .r3
+  r4 : s'.gpr .r4 = s.gpr .r4
+
+/-- θ, ρ, π and χ, on the lanes kept complemented (`cmpl`) in their registers,
+with the scratch space at `P` (all ones at `P + 24`). -/
+theorem core_ok {s : State} {A : KState} {P : Addr} (rc : Lane) (hP : s.gpr .r4 = P)
+    (hin : ∀ k < 4, InRegions s.wr (P + BitVec.ofNat 64 (8 * k)) 8)
+    (hones : s.mem.readW (P + BitVec.ofNat 64 24) 64 = BitVec.allOnes 64)
+    (hA : ∀ i (hi : i < 25), s.gpr (lane i) = (cmpl A)[i]) :
+    ∃ s', runBlock isa core s = some s' ∧ CoreOut A rc P s s' := by
+  obtain ⟨e', he', hpost⟩ := Straight.of_check _ _ _ check_eq
+  let V : Nat → Lane := fun i => if i = 25 then rc else s.gpr (lane i)
+  have hV : ∀ i (hi : i < 25), V i = A[i] ^^^ msk i := fun i hi => by
+    simp only [V, show i ≠ 25 by omega_using [hi], ite_false]
+    rw [← cmpl_get A hi]; exact hA i hi
+  have hV25 : V 25 = rc := by simp [V]
+  have hok : Ok cfg s :=
+    { slotIn := fun k hk => by simp only [cfg] at hk ⊢; rw [hP]; exact hin k hk
+      extIn := fun k hk => by simp [cfg] at hk
+      slots := by simp only [cfg]; decide
+      sep := fun _ _ j hj => by simp [cfg] at hj }
+  have hrel : Rel (AnfRel V) cfg (fun _ => none) env₀ s :=
+    { reg := fun r a h => by
+        simp only [env₀, Option.map_eq_some_iff] at h
+        obtain ⟨i, hi, rfl⟩ := h
+        obtain ⟨rfl, hi25⟩ := laneOf_some hi
+        simp only [AnfRel, eval_atom, V, show i ≠ 25 by omega_using [hi25], ite_false]
+      slot := fun k a _ h => by
+        simp only [env₀] at h
+        split at h
+        · rename_i hk; subst hk; cases h
+          simp only [AnfRel, eval_one, cfg, hP]; exact hones.symm
+        · cases h
+      ext := fun _ _ _ h => by cases h }
+  obtain ⟨s', hs', p⟩ := Straight.run (anf_sound V) hok hrel he'
+  simp only [post, Bool.and_eq_true, List.all_eq_true, List.mem_range, beq_iff_eq] at hpost
+  obtain ⟨⟨h0, hl⟩, h3⟩ := hpost
+  have hb : s'.gpr .r4 = P := by have := p.base; simp only [cfg] at this; rw [this, hP]
+  refine ⟨s', hs', ⟨fun i hi hi0 => ?_, ?_, ?_, ?_, p.rd, p.wr, p.sp, p.lr,
+    by have := p.ext; simpa [cfg] using this, by have := p.base; simpa [cfg] using this⟩⟩
+  · obtain ⟨j, rfl⟩ : ∃ j, i = j + 1 := ⟨i - 1, by omega_using [hi0]⟩
+    have h := p.rel.reg _ _ (hl j (by omega_using [hi]))
+    simp only [AnfRel, eval_specP hV hV25 hi] at h
+    exact h.symm
+  · split at h0
+    · rename_i a ha
+      have h := p.rel.reg _ _ ha
+      simp only [beq_iff_eq] at h0
+      have e := congrArg (eval V) h0
+      rw [eval_pxor, eval_atom, hV25, eval_specP hV hV25 (by decide), h] at e
+      exact e
+    · cases h0
+  · have h := p.rel.slot 3 _ (by decide) h3
+    simp only [AnfRel, eval_one, cfg, hb] at h
+    exact h.symm
+  · have f := p.frame
+    simp only [slotRegion, cfg, hP] at f
+    exact f
+
+/-! ## ι -/
+
+/-- ι of round `r`: lane 0 XORed with its round constant, `T1` overwritten. -/
+theorem iota_ok (r : Nat) {s : State} {Q : State → Prop}
+    (k : ∀ s', (∀ i, i < 25 → i ≠ 0 → s'.gpr (lane i) = s.gpr (lane i)) →
+      s'.gpr (lane 0) = s.gpr (lane 0) ^^^ Spec.Sha3.RC r → s'.mem = s.mem → s'.rd = s.rd →
+      s'.wr = s.wr → s'.sp = s.sp → s'.lr = s.lr → s'.gpr .r3 = s.gpr .r3 →
+      s'.gpr .r4 = s.gpr .r4 → Q s') :
+    WP isa (.block (iota r)) s Q := by
+  simp only [iota, movImm64, List.cons_append, List.nil_append]
+  refine MdStream.PPC64LE.WP.cons exec_lis (MdStream.PPC64LE.WP.cons exec_ori
+    (MdStream.PPC64LE.WP.cons (exec_lsl (by decide)) (MdStream.PPC64LE.WP.cons exec_oris
+    (MdStream.PPC64LE.WP.cons exec_ori (MdStream.PPC64LE.WP.cons exec_logic (WP.block_nil ?_))))))
+  have l0 : lane 0 ≠ T1 := (lane_ne 0 (by decide)).2.2.2.1
+  refine k _ (fun i hi hi0 => ?_) ?_ rfl rfl rfl rfl rfl ?_ ?_
+  · have hne : lane i ≠ lane 0 := fun h => hi0 (lane_inj i hi 0 (by decide) h)
+    have h5 : lane i ≠ T1 := (lane_ne i hi).2.2.2.1
+    simp only [RegUpd.gpr_write_of_ne _ _ hne, RegUpd.gpr_write_of_ne _ _ h5]
+  · simp only [RegUpd.gpr_write_self, RegUpd.gpr_write_of_ne _ _ l0]
+    rw [movImm64_eq]
+  · simp only [RegUpd.gpr_write_of_ne _ _ (show Reg.r3 ≠ lane 0 by decide),
+      RegUpd.gpr_write_of_ne _ _ (show Reg.r3 ≠ T1 by decide)]
+  · simp only [RegUpd.gpr_write_of_ne _ _ (show Reg.r4 ≠ lane 0 by decide),
+      RegUpd.gpr_write_of_ne _ _ (show Reg.r4 ≠ T1 by decide)]
+
+/-- Round `r`, on the lanes kept complemented (`cmpl`) in their registers. -/
+theorem round_ok (r : Nat) {s : State} {A : KState} {P : Addr} (hP : s.gpr .r4 = P)
+    (hin : ∀ k < 4, InRegions s.wr (P + BitVec.ofNat 64 (8 * k)) 8)
+    (hones : s.mem.readW (P + BitVec.ofNat 64 24) 64 = BitVec.allOnes 64)
+    (hA : ∀ i (hi : i < 25), s.gpr (lane i) = (cmpl A)[i]) :
+    WP isa (.block (round r)) s fun s' =>
+      (∀ i (hi : i < 25), s'.gpr (lane i) = (cmpl (Spec.Sha3.rnd A r))[i]) ∧
+      s'.mem.readW (P + BitVec.ofNat 64 24) 64 = BitVec.allOnes 64 ∧
+      Frame [⟨P, 32⟩] s.mem s'.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ s'.lr = s.lr ∧
+      s'.gpr .r3 = s.gpr .r3 ∧ s'.gpr .r4 = s.gpr .r4 := by
+  obtain ⟨s₁, hs₁, c⟩ := core_ok (Spec.Sha3.RC r) hP hin hones hA
+  rw [← Proof.Sha3.outState_eq]
+  unfold round
+  rw [WP.block_append_iff]
+  refine WP.of_runBlock ⟨s₁, hs₁, iota_ok r fun s' hl hl0 hm hrd hwr hsp hlr h3 h4 => ?_⟩
+  refine ⟨fun i hi => ?_, by rw [hm]; exact c.ones, by rw [hm]; exact c.frame,
+    by rw [hrd, c.rd], by rw [hwr, c.wr], by rw [hsp, c.sp], by rw [hlr, c.lr],
+    by rw [h3, c.r3], by rw [h4, c.r4]⟩
+  by_cases hi0 : i = 0
+  · subst hi0; rw [hl0]; exact c.lane0
+  · rw [hl i hi hi0]; exact c.lanes i hi hi0
+
+/-! ## Loading and storing the lanes -/
+
+open VG.Proof.Sha3 (Lanes laneAddr)
+
+/-- Loading the lanes from the state at `r3`, with all ones in `T0`. -/
+def lCfg : Cfg := { base := .r4, slots := 0, ext := .r3, exts := 25 }
+
+def lEnv : Straight.Env Poly := { reg := fun r => if r = T0 then some one else none, slot := fun _ => none }
+
+def lPost (e : Straight.Env Poly) : Bool :=
+  (List.range 25).all fun i => e.reg (lane i) == some (pxor (atom i) (maskP i))
+
+theorem load_check : Straight.check anf lCfg (fun k => some (atom k)) loadLanes lEnv lPost = true := by
+  lit_decide
+
+/-- Storing the lanes to the state at `r3`, with all ones at scratch offset
+24 (external word 3). -/
+def sCfg : Cfg := { base := .r3, slots := 25, ext := .r4, exts := 4 }
+
+def sEnv : Straight.Env Poly := { reg := fun r => (laneOf r).map atom, slot := fun _ => none }
+
+def sExt (k : Nat) : Option Poly := if k = 3 then some one else none
+
+def sPost (e : Straight.Env Poly) : Bool :=
+  (List.range 25).all fun i => e.slot i == some (pxor (atom i) (maskP i))
+
+theorem store_check : Straight.check anf sCfg sExt storeLanes sEnv sPost = true := by
+  lit_decide
+
+theorem eval_compl (V : Nat → Lane) (M : KState) (hV : ∀ i (hi : i < 25), V i = M[i]) {i : Nat} (hi : i < 25) :
+    Bitslice.Anf.eval V (pxor (atom i) (maskP i)) = (cmpl M)[i] := by
+  rw [eval_pxor, eval_atom, Compl.eval_maskP, cmpl_get M hi, hV i hi]
+
+theorem cmpl_cmpl (A : KState) : cmpl (cmpl A) = A := by
+  apply Vector.ext; intro i hi
+  rw [cmpl_get _ hi, cmpl_get _ hi, BitVec.xor_assoc, BitVec.xor_self, BitVec.xor_zero]
+
+/-- The prologue's loads: the lanes of the state at `r3` (`M`), complemented. -/
+theorem load_ok {s : State} {M : KState} (hones : s.gpr T0 = BitVec.allOnes 64)
+    (hin : ∀ i < 25, InRegions (s.rd ++ s.wr) (laneAddr (s.gpr .r3) i) 8)
+    (hM : Lanes s.mem (s.gpr .r3) M) :
+    ∃ s', runBlock isa loadLanes s = some s' ∧
+      (∀ i (hi : i < 25), s'.gpr (lane i) = (cmpl M)[i]) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧
+      s'.wr = s.wr ∧ s'.sp = s.sp ∧ s'.lr = s.lr ∧ s'.gpr .r3 = s.gpr .r3 ∧ s'.gpr .r4 = s.gpr .r4 := by
+  obtain ⟨e', he', hp⟩ := Straight.of_check _ _ _ load_check
+  let V : Nat → Lane := fun i => M[i]!
+  have hV : ∀ i (hi : i < 25), V i = M[i] := fun i hi => Proof.Sha3.getElem!_eq _ hi
+  have hok : Ok lCfg s :=
+    { slotIn := fun k hk => by simp [lCfg] at hk
+      extIn := fun k hk => by simp only [lCfg] at hk ⊢; exact hin k hk
+      slots := by decide
+      sep := fun k hk _ _ => by simp [lCfg] at hk }
+  have hrel : Rel (AnfRel V) lCfg (fun k => some (atom k)) lEnv s :=
+    { reg := fun r a h => by
+        simp only [lEnv] at h
+        split at h
+        · rename_i hr; subst hr; cases h
+          simp only [AnfRel, eval_one, hones]
+        · cases h
+      slot := fun _ _ _ h => by cases h
+      ext := fun k a hk h => by
+        simp only [Option.some.injEq] at h; subst h
+        simp only [lCfg] at hk ⊢
+        simp only [AnfRel, eval_atom, hV k hk]
+        exact (hM k hk).symm }
+  obtain ⟨s', hs', p⟩ := Straight.run (anf_sound V) hok hrel he'
+  simp only [lPost, List.all_eq_true, List.mem_range, beq_iff_eq] at hp
+  have hf := p.frame
+  simp only [slotRegion, lCfg, Nat.mul_zero] at hf
+  refine ⟨s', hs', fun i hi => ?_, ?_, p.rd, p.wr, p.sp, p.lr,
+    by have := p.ext; simpa [lCfg] using this, by have := p.base; simpa [lCfg] using this⟩
+  · have h := p.rel.reg _ _ (hp i hi)
+    simp only [AnfRel, eval_compl V M hV hi] at h
+    exact h.symm
+  · funext a
+    refine hf a fun r hr hc => ?_
+    simp only [List.mem_singleton] at hr; subst hr; simp [Region.Contains] at hc
+
+/-- The epilogue's stores: the lanes (`cmpl M` in their registers),
+complemented back, to the state at `r3`, with all ones at `r4 + 24`. -/
+theorem store_ok {s : State} {M : KState} {st : Addr} (h3 : s.gpr .r3 = st)
+    (hones : s.mem.readW (s.gpr .r4 + BitVec.ofNat 64 24) 64 = BitVec.allOnes 64)
+    (hst : (⟨st, 200⟩ : Region) ∈ s.wr)
+    (hin : ∀ k < 4, InRegions (s.rd ++ s.wr) (s.gpr .r4 + BitVec.ofNat 64 (8 * k)) 8)
+    (hsep : Region.Disjoint ⟨st, 200⟩ ⟨s.gpr .r4, 32⟩)
+    (hA : ∀ i (hi : i < 25), s.gpr (lane i) = (cmpl M)[i]) :
+    ∃ s', runBlock isa storeLanes s = some s' ∧ Lanes s'.mem st M ∧
+      Frame [⟨st, 200⟩] s.mem s'.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧
+      s'.lr = s.lr ∧ s'.gpr .r3 = s.gpr .r3 ∧ s'.gpr .r4 = s.gpr .r4 := by
+  obtain ⟨e', he', hp⟩ := Straight.of_check _ _ _ store_check
+  let V : Nat → Lane := fun i => s.gpr (lane i)
+  have hV : ∀ i (hi : i < 25), V i = (cmpl M)[i] := fun i hi => hA i hi
+  have hok : Ok sCfg s :=
+    { slotIn := fun k hk => ⟨_, hst, by
+        have := slot_contains st hk (n := 25) (by decide)
+        simp only [sCfg, h3] at this ⊢; exact this⟩
+      extIn := fun k hk => by simp only [sCfg] at hk ⊢; exact hin k hk
+      slots := by decide
+      sep := fun k hk j hj => by
+        simp only [sCfg, h3] at hk hj ⊢
+        exact Region.Disjoint.sep hsep (Proof.Sha3.lane_contains st hk)
+          (slot_contains (s.gpr .r4) hj (by decide)) }
+  have hrel : Rel (AnfRel V) sCfg sExt sEnv s :=
+    { reg := fun r a h => by
+        simp only [sEnv, Option.map_eq_some_iff] at h
+        obtain ⟨i, hi, rfl⟩ := h
+        obtain ⟨rfl, hi25⟩ := laneOf_some hi
+        simp only [AnfRel, eval_atom, V]
+      slot := fun _ _ _ h => by cases h
+      ext := fun k a _ h => by
+        simp only [sExt] at h
+        split at h
+        · rename_i hk; subst hk; cases h
+          simp only [AnfRel, eval_one, sCfg]; exact hones.symm
+        · cases h }
+  obtain ⟨s', hs', p⟩ := Straight.run (anf_sound V) hok hrel he'
+  simp only [sPost, List.all_eq_true, List.mem_range, beq_iff_eq] at hp
+  have hb : s'.gpr .r3 = st := by have := p.base; simp only [sCfg] at this; rw [this, h3]
+  refine ⟨s', hs', fun i hi => ?_, ?_, p.rd, p.wr, p.sp, p.lr,
+    by have := p.base; simpa [sCfg] using this, by have := p.ext; simpa [sCfg] using this⟩
+  · have h := p.rel.slot i _ (by simp only [sCfg]; exact hi) (hp i hi)
+    simp only [AnfRel, eval_compl V (cmpl M) hV hi, cmpl_cmpl, sCfg, hb] at h
+    exact h.symm
+  · have f := p.frame
+    simp only [slotRegion, sCfg, h3] at f
+    exact f
+
+end VG.Proof.Sha3.PPC64LE.Round
+
+end
+
+end
+
+/-!
+# Keccak-f[1600] on PPC64LE: the whole function
+
+The prologue saves the nonvolatile registers in the scratch space (`Spill`),
+stores all ones there, and loads the lanes into their registers, the lanes
+`complLanes` complemented (`Round.load_ok`); each of the 24 rounds is
+`Round.round_ok`; the epilogue stores the lanes back, complemented back
+(`Round.store_ok`), and restores the registers.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Sha3.PPC64LE
+
+open VG VG.PPC64LE VG.Impl.Sha3.PPC64LE
+open VG.Spec.Sha3 (stateAt keccakF rnd)
+open VG.Proof.Sha3 (Lanes laneAddr lane_contains)
+open VG.Proof.Sha3.Compl (cmpl)
+
+abbrev KState := Spec.Sha3.State
+
+/-! ## The precondition -/
+
+section
+variable (s₀ : State)
+
+abbrev st : Addr := s₀.gpr .r3
+abbrev scr : Addr := s₀.gpr .r4
+abbrev stR : Region := ⟨st s₀, 200⟩
+abbrev scrR : Region := ⟨scr s₀, 512⟩
+abbrev A₀ : KState := stateAt s₀.mem (st s₀)
+
+end
+
+structure Pre (s₀ : State) : Prop where
+  rd : s₀.rd = []
+  wr : s₀.wr = [stR s₀, scrR s₀]
+  st_scr : (stR s₀).Disjoint (scrR s₀)
+
+theorem pre_of (s₀ : State) (h : Proof.Sha3.permutePPC64LE.pre s₀) : Pre s₀ := by
+  obtain ⟨h1, h2, h3⟩ := h
+  exact ⟨h1, h2, h3⟩
+
+namespace Pre
+variable {s₀ : State} (h : Pre s₀)
+include h
+
+theorem stR_in : stR s₀ ∈ s₀.wr := by rw [h.wr]; simp
+
+theorem scr_in {d : Nat} (hd : d + 8 ≤ 512) :
+    InRegions s₀.wr (scr s₀ + BitVec.ofNat 64 d) 8 := by
+  rw [h.wr]; exact ⟨scrR s₀, by simp, Offset.contains_base _ hd (by omega_using [hd])⟩
+
+theorem slot_in : ∀ k < 4, InRegions s₀.wr (scr s₀ + BitVec.ofNat 64 (8 * k)) 8 :=
+  fun _ hk => h.scr_in (by omega_using [hk])
+
+theorem in_all {a : Addr} {n : Nat} (hw : InRegions s₀.wr a n) : InRegions (s₀.rd ++ s₀.wr) a n := by
+  rw [h.rd]; exact hw
+
+theorem lane_in : ∀ i < 25, InRegions (s₀.rd ++ s₀.wr) (laneAddr (st s₀) i) 8 := fun _ hi =>
+  h.in_all (by rw [h.wr]; exact ⟨stR s₀, by simp, lane_contains _ hi⟩)
+
+/-- The state is disjoint from every part of the scratch space. -/
+theorem st_off {d n : Nat} (hn : d + n ≤ 512) :
+    Region.Disjoint (stR s₀) ⟨scr s₀ + BitVec.ofNat 64 d, n⟩ :=
+  h.st_scr.sub_right (Offset.sub_base _ hn)
+
+end Pre
+
+/-! ## The scratch space -/
+
+theorem saved_bound : ∀ p ∈ saved, 32 ≤ p.2 ∧ p.2 + 8 ≤ 32 + 152 := by decide
+
+theorem saved_fits : ∀ p ∈ saved, p.2 % 8 = 0 ∧ p.2 < 32768 := by decide
+
+/-- The saved registers are kept by writes to the spill slots or the state. -/
+theorem saved_frame {s₀ : State} (hp : Pre s₀) {m m' : Mem}
+    (h : Spill.Saved (scr s₀) s₀.gpr saved m) {R : Region}
+    (hR : R = ⟨scr s₀, 32⟩ ∨ R = stR s₀) (hf : Frame [R] m m') :
+    Spill.Saved (scr s₀) s₀.gpr saved m' := by
+  refine h.frame_in saved_bound hf fun r hr => ?_
+  rw [List.mem_singleton.mp hr]
+  rcases hR with rfl | rfl
+  · exact Offset.disjoint_base _ (by omega_using []) (by omega_using [])
+  · exact (hp.st_off (by omega_using [])).symm
+
+/-! ## The rounds -/
+
+/-- Before round `r`: the state after `r` rounds in the lanes' registers, as
+kept (`cmpl`), and the scratch space holding all ones and the saved
+registers. -/
+structure RInv (s₀ : State) (r : Nat) (s : State) : Prop where
+  r3 : s.gpr .r3 = st s₀
+  r4 : s.gpr .r4 = scr s₀
+  lanes : ∀ i (hi : i < 25), s.gpr (lane i) = (cmpl ((List.range r).foldl rnd (A₀ s₀)))[i]
+  ones : s.mem.readW (scr s₀ + BitVec.ofNat 64 24) 64 = BitVec.allOnes 64
+  saved : Spill.Saved (scr s₀) s₀.gpr saved s.mem
+  rd : s.rd = s₀.rd
+  wr : s.wr = s₀.wr
+
+theorem rounds_ok {s₀ : State} (hp : Pre s₀) {s : State} (h : RInv s₀ 0 s) :
+    WP isa (.block rounds) s (RInv s₀ 24) := by
+  refine wp_range_flatMap (M := isa) (RInv s₀) (fun r s' _ hI => ?_) 24 (Nat.le_refl _) s h
+  refine WP.mono (Round.round_ok r hI.r4 (by rw [hI.wr]; exact hp.slot_in) hI.ones hI.lanes)
+    fun s'' ⟨hl, ho, hf, hrd, hwr, _, _, h3, h4⟩ => ⟨by rw [h3, hI.r3], by rw [h4, hI.r4],
+      fun i hi => by rw [hl i hi, Proof.Sha3.foldl_succ], ho, saved_frame hp hI.saved (.inl rfl) hf,
+      by rw [hrd, hI.rd], by rw [hwr, hI.wr]⟩
+
+/-! ## The prologue -/
+
+theorem setup_eq : setup = Spill.saveCode .r4 saved ++
+    ([.lis T0 0xffff, .ori T0 T0 0xffff, .store .d T0 .r4 24] : List Instr) := rfl
+
+theorem ones_eq : (((0xffff : BitVec 16) ++ (0 : BitVec 16)).signExtend 64 |||
+    (0xffff : BitVec 16).setWidth 64) = BitVec.allOnes 64 := by decide
+
+theorem lanes₀ (s₀ : State) : Lanes s₀.mem (st s₀) (A₀ s₀) := by
+  intro i hi; simp [Spec.Sha3.stateAt, laneAddr]
+
+theorem prologue_ok {s₀ : State} (hp : Pre s₀) :
+    WP isa (.block (setup ++ loadLanes)) s₀ (RInv s₀ 0) := by
+  rw [setup_eq, List.append_assoc, WP.block_append_iff]
+  refine WP.mono (Spill.save_wp (by decide) saved_fits fun p hp' => hp.scr_in (by
+    have := saved_bound p hp'; omega_using [this])) fun s₁ ⟨g₁, rd₁, wr₁, _, _, m₁⟩ => ?_
+  have v₁ := m₁ ▸ Spill.saveMem_saved (by decide) s₀.mem (scr s₀) s₀.gpr (l := saved)
+  have f₁ : Frame [⟨scr s₀ + BitVec.ofNat 64 32, 152⟩] s₀.mem s₁.mem :=
+    m₁ ▸ Spill.saveMem_frame saved_bound (by omega_using []) _ _ _
+  have h4 : s₁.gpr .r4 = scr s₀ := by rw [g₁]
+  suffices key : ∀ s₂ : State, (∀ r, r ≠ T0 → s₂.gpr r = s₁.gpr r) → s₂.gpr T0 = BitVec.allOnes 64 →
+      s₂.mem = s₁.mem.writeW (scr s₀ + BitVec.ofNat 64 24) (BitVec.allOnes 64) → s₂.rd = s₀.rd →
+      s₂.wr = s₀.wr → WP isa (.block loadLanes) s₂ (RInv s₀ 0) by
+    rw [List.cons_append, List.cons_append, List.cons_append, List.nil_append]
+    refine MdStream.PPC64LE.WP.cons exec_lis (MdStream.PPC64LE.WP.cons exec_ori
+      (MdStream.PPC64LE.WP.cons (exec_store_d (by decide) (by decide) ?_) (key _ ?_ ?_ ?_ rd₁ wr₁)))
+    · simp only [RegUpd.gpr_write_of_ne _ _ (show Reg.r4 ≠ T0 by decide), h4, RegUpd.wr_write, wr₁]
+      exact hp.scr_in (by omega_using [])
+    · intro r hr; simp only [RegUpd.gpr_write_of_ne _ _ hr]
+    · simp only [RegUpd.gpr_write_self]; exact ones_eq
+    · simp only [RegUpd.gpr_write_of_ne _ _ (show Reg.r4 ≠ T0 by decide), h4, RegUpd.gpr_write_self,
+        RegUpd.mem_write]
+      rw [ones_eq]
+  intro s₂ g₂ o₂ mem₂ rd₂ wr₂
+  have r3₂ : s₂.gpr .r3 = st s₀ := by rw [g₂ _ (by decide), g₁]
+  have r4₂ : s₂.gpr .r4 = scr s₀ := by rw [g₂ _ (by decide), h4]
+  -- the state and the saved registers are kept by the store of all ones
+  have f₂ : Frame [⟨scr s₀ + BitVec.ofNat 64 24, 8⟩] s₁.mem s₂.mem := by
+    rw [mem₂]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
+  have hA : Lanes s₂.mem (st s₀) (A₀ s₀) := fun i hi => by
+    rw [f₂.readW (lane_contains _ hi) (by simpa using hp.st_off (d := 24) (n := 8) (by omega_using []))
+      (by decide), f₁.readW (lane_contains _ hi) (by simpa using hp.st_off (d := 32) (n := 152) (by omega_using []))
+      (by decide)]
+    exact lanes₀ s₀ i hi
+  have hsv : Spill.Saved (scr s₀) s₀.gpr saved s₂.mem :=
+    v₁.frame_in saved_bound f₂ fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (by omega_using []) (by omega_using []) (by omega_using [])
+  have hones : s₂.mem.readW (scr s₀ + BitVec.ofNat 64 24) 64 = BitVec.allOnes 64 := by
+    rw [mem₂, Mem.readW_writeW_self64]
+  obtain ⟨s₃, hs₃, hl₃, m₃, rd₃, wr₃, _, _, r3₃, r4₃⟩ := Round.load_ok (M := A₀ s₀) o₂
+    (fun i hi => by rw [rd₂, wr₂, r3₂]; exact hp.lane_in i hi) (by rw [r3₂]; exact hA)
+  refine WP.of_runBlock ⟨s₃, hs₃, ⟨by rw [r3₃, r3₂], by rw [r4₃, r4₂],
+    fun i hi => by rw [hl₃ i hi]; rfl, by rw [m₃]; exact hones, by rw [m₃]; exact hsv,
+    by rw [rd₃, rd₂], by rw [wr₃, wr₂]⟩⟩
+
+/-! ## The epilogue -/
+
+theorem preserved_saved : ∀ r ∈ preserved, r ∈ saved.map Prod.fst := by decide
+
+theorem epilogue_ok {s₀ : State} (hp : Pre s₀) {s : State} (hI : RInv s₀ 24 s) :
+    WP isa (.block (storeLanes ++ restore)) s fun s' =>
+      (∀ r ∈ preserved, s'.gpr r = s₀.gpr r) ∧ Proof.Sha3.permutePPC64LE.post s₀ s' := by
+  rw [WP.block_append_iff]
+  obtain ⟨s₁, hs₁, hl₁, hf₁, rd₁, wr₁, _, _, r3₁, r4₁⟩ := Round.store_ok (M := keccakF (A₀ s₀)) hI.r3
+    (by rw [hI.r4]; exact hI.ones) (by rw [hI.wr]; exact hp.stR_in)
+    (fun k hk => by rw [hI.rd, hI.wr, hI.r4]; exact hp.in_all (hp.slot_in k hk))
+    (by rw [hI.r4]; simpa using hp.st_off (d := 0) (n := 32) (by omega_using [])) hI.lanes
+  refine WP.of_runBlock ⟨s₁, hs₁, ?_⟩
+  have hsv := saved_frame hp hI.saved (.inr rfl) hf₁
+  refine WP.mono (Spill.restore_wp (by decide) (b := .r4) (B := scr s₀) (by rw [r4₁, hI.r4])
+    saved_fits (by decide) (fun p hp' => ?_) hsv) fun s' h => ⟨fun r hr => ?_, ?_⟩
+  · rw [rd₁, wr₁, hI.rd, hI.wr]
+    exact hp.in_all (hp.scr_in (by have := saved_bound p hp'; omega_using [this]))
+  · exact h.gpr_of (.inl (preserved_saved r hr))
+  · refine ⟨?_, by rw [h.other _ (by decide), r3₁, hI.r3], by rw [h.other _ (by decide), r4₁, hI.r4]⟩
+    show stateAt s'.mem (st s₀) = keccakF (A₀ s₀)
+    apply Vector.ext
+    intro i hi
+    simp only [Spec.Sha3.stateAt, Vector.getElem_ofFn, h.mem]
+    exact hl₁ i hi
+
+/-! ## The whole function -/
+
+theorem correct {s₀ : State} (hp : Pre s₀) :
+    WP isa permute s₀ fun s' =>
+      (∀ r ∈ preserved, s'.gpr r = s₀.gpr r) ∧ Proof.Sha3.permutePPC64LE.post s₀ s' := by
+  unfold permute
+  rw [show setup ++ loadLanes ++ rounds ++ storeLanes ++ restore =
+    (setup ++ loadLanes) ++ (rounds ++ (storeLanes ++ restore)) by simp only [List.append_assoc],
+    WP.block_append_iff]
+  refine WP.mono (prologue_ok hp) fun s₁ h₁ => ?_
+  rw [WP.block_append_iff]
+  exact WP.mono (rounds_ok hp h₁) fun s₂ h₂ => epilogue_ok hp h₂
+
+theorem permute_correct (s : State) (hs : Proof.Sha3.permutePPC64LE.pre s) :
+    ∃ t s', Exec isa Impl.Sha3.PPC64LE.permute s t s' ∧ abiPreserved s s' ∧
+      Proof.Sha3.permutePPC64LE.post s s' := by
+  obtain ⟨t, s', he, h₁, h₂⟩ := correct (pre_of s hs)
+  exact ⟨t, s', he, ⟨h₁, Exec.sp he, Exec.lr he (by lit_decide)
+    (by rw [← Code.allInstrs_eq]; lit_decide)⟩, h₂⟩
+
+theorem permute_noFrames : Impl.Sha3.PPC64LE.permute.noFrames = true := by lit_decide
+
+end VG.Proof.Sha3.PPC64LE
+
+end
+
+end
+
+/-! ### `Sha3.PPC64LE.Stream.CT`, which this module and modules that import it used -/
+
+section
+
+/-!
+# The SHA-3 sponge on PPC64LE: constant time
+
+The taint analysis of `absorb`, `pad` and `squeeze` (the permutation they
+call included), from the public arguments: the pointers, `rate`, `pos` and
+the lengths, and the stack pointer.
+
+The permutation saves the nonvolatile registers in its scratch space and
+restores them from there, and `absorb` and `squeeze` keep their variables
+in `r26`–`r31` across its calls. So their bodies, inside the frame that
+saves the link register, are analysed with public slots in the writable
+regions (`slotTaint`), which keep a public value saved there public when it
+is loaded back; the frame's own region is disjoint from the others by the
+contract's stack. The frame (`RelCT.frame`) and the moves of the link
+register around it leak nothing.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Sha3.PPC64LE.Stream
+
+open VG VG.PPC64LE
+
+theorem absorb_agree {s₁ s₂ : State} (hpub : Proof.Sha3.absorbPPC64LE.pub s₁ s₂) :
+    PPC64LE.Taint.Agree (PPC64LE.Taint.ofRegs [.r3, .r4, .r5, .r6, .r7, .r8]) s₁ s₂ := by
+  obtain ⟨p1, p2, p3, p4, p5, p6, hsp⟩ := hpub
+  refine ⟨hsp, fun r hr => ?_⟩
+  simp only [PPC64LE.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
+
+theorem pad_agree {s₁ s₂ : State} (hpub : Proof.Sha3.padPPC64LE.pub s₁ s₂) :
+    PPC64LE.Taint.Agree (PPC64LE.Taint.ofRegs [.r3, .r4, .r5, .r7]) s₁ s₂ := by
+  obtain ⟨p1, p2, p3, p4, hsp⟩ := hpub
+  refine ⟨hsp, fun r hr => ?_⟩
+  simp only [PPC64LE.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
+
+theorem squeeze_agree {s₁ s₂ : State} (hpub : Proof.Sha3.squeezePPC64LE.pub s₁ s₂) :
+    PPC64LE.Taint.Agree (PPC64LE.Taint.ofRegs [.r3, .r4, .r5, .r6, .r7, .r8]) s₁ s₂ := by
+  obtain ⟨p1, p2, p3, p4, p5, p6, hsp⟩ := hpub
+  refine ⟨hsp, fun r hr => ?_⟩
+  simp only [PPC64LE.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
+
+theorem pad_ct : ConstantTime isa Proof.Sha3.padPPC64LE.pre Proof.Sha3.padPPC64LE.pub
+    Impl.Sha3.PPC64LE.Stream.pad :=
+  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r7])
+    (fun _ _ _ _ hp => pad_agree hp) (by taint_decide)
+
+/-! ## The link register's frame -/
+
+/-- Two runs from states related by `P`, after `mflr r0`. -/
+def AfterMflr (P : State → State → Prop) (a b : State) : Prop :=
+  ∃ s₁ s₂, P s₁ s₂ ∧ a = s₁.write .r0 s₁.lr ∧ b = s₂.write .r0 s₂.lr
+
+/-- `withLr main` leaks the same trace in two runs from states related by
+`P` (with the same stack pointer) if `main` does from the states its frame's
+push leaves. -/
+theorem withLr_rel {P : State → State → Prop} {main : Prog isa}
+    (hsp : ∀ s₁ s₂, P s₁ s₂ → s₁.sp = s₂.sp)
+    (hm : RelCT isa (fun a b => ∃ s₁ s₂, AfterMflr P s₁ s₂ ∧ a = pushed .r0 s₁ ∧ b = pushed .r0 s₂)
+      main fun _ _ => True) :
+    RelCT isa P (Impl.Sha3.PPC64LE.Stream.withLr main) fun _ _ => True := by
+  unfold Impl.Sha3.PPC64LE.Stream.withLr
+  have h₁ : RelCT isa P (.block [.mflr .r0]) (AfterMflr P) := by
+    have h := RelCT.wpDep (F := fun (s s' : State) => s' = s.write .r0 s.lr)
+      (RelCT.taint (A := taint) (P := P) (c := .block [.mflr .r0]) (Taint.ofRegs []) (fun s₁ s₂ h => ⟨hsp _ _ h, by simp⟩)
+        (by taint_decide))
+      fun s₁ s₂ _ => ⟨WP.block_cons_iff.mpr ⟨_, exec_mflr, WP.block_nil rfl⟩,
+        WP.block_cons_iff.mpr ⟨_, exec_mflr, WP.block_nil rfl⟩⟩
+    exact RelCT.mono h (fun _ _ h => h) fun _ _ ⟨_, σ₁, σ₂, hp, e₁, e₂⟩ => ⟨σ₁, σ₂, hp, e₁, e₂⟩
+  have h₂ := RelCT.frame (r := .r0) (r' := .r0) (body := main) (P := AfterMflr P)
+    (fun _ _ ⟨s₁, s₂, hp, e₁, e₂⟩ => by subst e₁ e₂; exact hsp s₁ s₂ hp) hm
+  have h₃ : RelCT isa (fun a b : State => a.sp = b.sp) (.block [.mtlr .r0]) fun _ _ => True :=
+    RelCT.taint (A := taint) (Taint.ofRegs []) (fun s₁ s₂ h => ⟨h, by simp⟩) (by taint_decide)
+  exact RelCT.seq h₁ (RelCT.seq h₂ h₃)
+
+/-- The frame's region is in the contract's stack, below the stack pointer. -/
+theorem frame_sub (s : State) :
+    Region.Sub ⟨s.sp - 48 + 32, 16⟩ ⟨s.sp - 48, 48⟩ := by
+  have := Offset.sub_base (s.sp - 48) (d := 32) (n := 16) (k := 48) (by omega_using [])
+  exact this
+
+/-! ## `absorb` -/
+
+/-- `absorbMain`'s taint: the arguments public, and the writable regions the
+frame's, the state and the scratch space, at `r3` and `r8`. -/
+def absorbTaint : SlotTaint.T :=
+  SlotTaint.mk' [.r3, .r4, .r5, .r6, .r7, .r8] [16, 200, 640] [(.r3, 1), (.r8, 2)]
+
+abbrev absorbRel (s₁ s₂ : State) : Prop :=
+  Proof.Sha3.absorbPPC64LE.pre s₁ ∧ Proof.Sha3.absorbPPC64LE.pre s₂ ∧ Proof.Sha3.absorbPPC64LE.pub s₁ s₂
+
+theorem absorb_main_agree {a b : State}
+    (h : ∃ s₁ s₂, AfterMflr absorbRel s₁ s₂ ∧ a = pushed .r0 s₁ ∧ b = pushed .r0 s₂) :
+    SlotTaint.Agree absorbTaint a b := by
+  obtain ⟨_, _, ⟨s₁, s₂, ⟨h₁, h₂, hp⟩, rfl, rfl⟩, rfl, rfl⟩ := h
+  obtain ⟨-, hw₁, dSS, -, -, -, kS, -, kC, -, -⟩ := h₁
+  obtain ⟨-, hw₂, -⟩ := h₂
+  obtain ⟨p3, p4, p5, p6, p7, p8, hsp⟩ := hp
+  refine SlotTaint.agree_mk' (by simp only [pushed, State.write, hsp])
+    (fun r hr => ?_) (by simp only [pushed, State.write, hw₁, hw₂, hsp, p3, p8]) ?_ ?_ ?_ ?_ ?_
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;>
+      simp only [pushed, State.write, reduceCtorEq, ite_false] <;> with_reducible assumption
+  · simp only [pushed, State.write, hw₁]
+    exact .cons (Nat.le_refl _) (.cons (Nat.le_refl _) (.cons (Nat.le_refl _) .nil))
+  · simp only [pushed, State.write, hw₁]
+    refine .cons (fun r hr => ?_) (.cons (fun r hr => ?_) (.cons (fun r hr => absurd hr List.not_mem_nil) .nil))
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact kS.sub_left (frame_sub s₁)
+      · exact kC.sub_left (frame_sub s₁)
+    · simp only [List.mem_singleton] at hr; subst hr; exact dSS
+  · simp only [pushed, State.write, hw₁]
+    intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl <;> dsimp only <;> omega_using []
+  · intro p hp
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
+    rcases hp with rfl | rfl <;> simp [SlotTaint.region, pushed, State.write, hw₁]
+  · intro p hp
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
+    rcases hp with rfl | rfl <;> simp [SlotTaint.region, pushed, State.write, hw₂]
+
+theorem absorb_ct : ConstantTime isa Proof.Sha3.absorbPPC64LE.pre Proof.Sha3.absorbPPC64LE.pub
+    Impl.Sha3.PPC64LE.Stream.absorb :=
+  RelCT.constantTime (withLr_rel (P := absorbRel) (fun _ _ h => h.2.2.2.2.2.2.2.2)
+    (RelCT.taint (A := slotTaint) absorbTaint (fun _ _ h => absorb_main_agree h) (by taint_decide)))
+
+/-! ## `squeeze` -/
+
+/-- `squeezeMain`'s taint: the arguments public, and the writable regions the
+frame's, the state, the output and the scratch space, at `r3` and `r8`. -/
+def squeezeTaint : SlotTaint.T :=
+  SlotTaint.mk' [.r3, .r4, .r5, .r6, .r7, .r8] [16, 200, 0, 640] [(.r3, 1), (.r8, 3)]
+
+abbrev squeezeRel (s₁ s₂ : State) : Prop :=
+  Proof.Sha3.squeezePPC64LE.pre s₁ ∧ Proof.Sha3.squeezePPC64LE.pre s₂ ∧
+    Proof.Sha3.squeezePPC64LE.pub s₁ s₂
+
+theorem squeeze_main_agree {a b : State}
+    (h : ∃ s₁ s₂, AfterMflr squeezeRel s₁ s₂ ∧ a = pushed .r0 s₁ ∧ b = pushed .r0 s₂) :
+    SlotTaint.Agree squeezeTaint a b := by
+  obtain ⟨_, _, ⟨s₁, s₂, ⟨h₁, h₂, hp⟩, rfl, rfl⟩, rfl, rfl⟩ := h
+  obtain ⟨-, hw₁, dSO, dSC, dOC, -, kS, kO, kC, -, -⟩ := h₁
+  obtain ⟨-, hw₂, -⟩ := h₂
+  obtain ⟨p3, p4, p5, p6, p7, p8, hsp⟩ := hp
+  refine SlotTaint.agree_mk' (by simp only [pushed, State.write, hsp])
+    (fun r hr => ?_) (by simp only [pushed, State.write, hw₁, hw₂, hsp, p3, p6, p7, p8]) ?_ ?_ ?_ ?_ ?_
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;>
+      simp only [pushed, State.write, reduceCtorEq, ite_false] <;> with_reducible assumption
+  · simp only [pushed, State.write, hw₁]
+    exact .cons (Nat.le_refl _) (.cons (Nat.le_refl _) (.cons (Nat.zero_le _) (.cons (Nat.le_refl _) .nil)))
+  · simp only [pushed, State.write, hw₁]
+    refine .cons (fun r hr => ?_) (.cons (fun r hr => ?_) (.cons (fun r hr => ?_)
+      (.cons (fun r hr => absurd hr List.not_mem_nil) .nil)))
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact kS.sub_left (frame_sub s₁)
+      · exact kO.sub_left (frame_sub s₁)
+      · exact kC.sub_left (frame_sub s₁)
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact dSO
+      · exact dSC
+    · simp only [List.mem_singleton] at hr; subst hr; exact dOC
+  · simp only [pushed, State.write, hw₁]
+    intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl <;> dsimp only <;> first | omega_using [] | exact Nat.le_of_lt (BitVec.isLt _)
+  · intro p hp
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
+    rcases hp with rfl | rfl <;> simp [SlotTaint.region, pushed, State.write, hw₁]
+  · intro p hp
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
+    rcases hp with rfl | rfl <;> simp [SlotTaint.region, pushed, State.write, hw₂]
+
+theorem squeeze_ct : ConstantTime isa Proof.Sha3.squeezePPC64LE.pre Proof.Sha3.squeezePPC64LE.pub
+    Impl.Sha3.PPC64LE.Stream.squeeze :=
+  RelCT.constantTime (withLr_rel (P := squeezeRel) (fun _ _ h => h.2.2.2.2.2.2.2.2)
+    (RelCT.taint (A := slotTaint) squeezeTaint (fun _ _ h => squeeze_main_agree h) (by taint_decide)))
+
+end VG.Proof.Sha3.PPC64LE.Stream
+
+end
+
+end
 
 /-! ### `Sha3.PPC64LE.Stream.Wp`, which only this module used -/
 

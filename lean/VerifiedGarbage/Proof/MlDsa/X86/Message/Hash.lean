@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.MlKem.X86.Keccak
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.MlKem.X86.SampleSetup
 import VerifiedGarbage.Proof.Sha3.X86.Stream.Absorb
-import VerifiedGarbage.Proof.Sha3.X86.Stream.Pad
 import VerifiedGarbage.Proof.Sha3.X86.Stream.Squeeze
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import VerifiedGarbage.Proof.Framework.Offset
@@ -17,7 +16,6 @@ meta import VerifiedGarbage.Proof.MlKem.X86.Keccak
 meta import VerifiedGarbage.Proof.Framework.Range
 meta import VerifiedGarbage.Proof.MlKem.X86.SampleSetup
 meta import VerifiedGarbage.Proof.Sha3.X86.Stream.Absorb
-meta import VerifiedGarbage.Proof.Sha3.X86.Stream.Pad
 meta import VerifiedGarbage.Proof.Sha3.X86.Stream.Squeeze
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Framework.Offset

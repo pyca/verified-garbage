@@ -1,11 +1,10 @@
 module
+
 public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Begin
 public import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Finish
-
 import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.StepTiming
 import VerifiedGarbage.Proof.MlKem.AArch64.Paired.PairTiming
-import VerifiedGarbage.Proof.MlKem.AArch64.Paired.FinishTiming
 import VerifiedGarbage.Proof.MlKem.AArch64.Paired.SqueezeTiming
 import VerifiedGarbage.Proof.MlKem.AArch64.Paired.RejectTiming
 import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Constants
@@ -20,7 +19,6 @@ meta import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Finish
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.StepTiming
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Paired.PairTiming
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Paired.FinishTiming
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Paired.SqueezeTiming
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Paired.RejectTiming
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Constants

@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Impl.Ed25519.Arm.PointAccumulate
 public import VerifiedGarbage.Proof.Ed25519.ScalarMul
-import VerifiedGarbage.Proof.X25519.Arm.Cswap
+import VerifiedGarbage.Proof.X25519.Arm.Invert
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
 

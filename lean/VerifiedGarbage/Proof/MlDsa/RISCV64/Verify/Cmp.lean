@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.RISCV64.Verify.Hash
 import VerifiedGarbage.Proof.MlKem.RISCV64.CmpSel
 import VerifiedGarbage.Proof.MlKem.RISCV64.Common
 import VerifiedGarbage.Proof.MlKem.RISCV64.Sample
@@ -9,9 +8,278 @@ import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
 import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 import VerifiedGarbage.Proof.Framework.RISCV64.MRun
-meta import VerifiedGarbage.Proof.MlDsa.RISCV64.Verify.Hash
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 meta import VerifiedGarbage.Proof.Framework.RISCV64.MRun
+public import VerifiedGarbage.Proof.MlDsa.RISCV64.Verify.SampA
+meta import VerifiedGarbage.Proof.MlDsa.RISCV64.Verify.SampA
+meta import VerifiedGarbage.Proof.MlDsa.KeyGen.Good
+public import VerifiedGarbage.Proof.MlDsa.RISCV64.Verify.Compute
+import VerifiedGarbage.Proof.MlDsa.RISCV64.KeyGen.Samp
+import VerifiedGarbage.Proof.MlDsa.KeyGen.Rest
+import VerifiedGarbage.Proof.MlKem.KPke
+public import VerifiedGarbage.Proof.MlDsa.RISCV64.KeyGen.Site
+meta import VerifiedGarbage.Proof.MlDsa.RISCV64.Verify.Compute
+meta import VerifiedGarbage.Proof.MlDsa.RISCV64.KeyGen.Samp
+meta import VerifiedGarbage.Proof.MlDsa.KeyGen.Rest
+meta import VerifiedGarbage.Proof.MlKem.KPke
+meta import VerifiedGarbage.Proof.MlKem.Mem
+meta import VerifiedGarbage.Proof.MlDsa.RISCV64.KeyGen.Site
+
+/-! ### `MlDsa.RISCV64.Verify.Hash`, which only this module used -/
+
+section
+
+/-!
+# ML-DSA verification on RISC-V: `c̃′`
+
+As on PPC64LE (`Proof/MlDsa/PPC64LE/Verify/Cmp.lean`):
+`c̃′ = H(μ ‖ w1Encode(w′₁), λ/4)` to `3072` (`vhash_piece`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.RISCV64.Verify
+
+open VG VG.RISCV64 VG.Proof.MlKem.RISCV64
+open VG.Proof.MlDsa.RISCV64.KeyGen (Site OkW ix tri lpa scrLen PtrIn Piece Two Rel2 rel_of relInv hashLay hashLay_ptr
+  hashS hashS_tr pieceS ix_ne1 shake31)
+open VG.Impl.MlDsa.RISCV64.Verify
+open VG.Impl.MlKem.RISCV64 (hash)
+open VG.Spec.MlDsa (Params toRq ntt simpleBitPack)
+open VG.Proof.MlDsa (HintIs PolyIs polyAt Reduced)
+open VG.Proof.MlDsa.Verify (vZ zHat w1Row)
+open VG.Spec.Sha3 (bytesAt)
+
+/-- The buffers of the sponge: `mu` and `scratch`. -/
+abbrev Kmu : Nat → Bool := fun i => i == 3
+
+theorem kmu : ∀ i < 5, ∀ j < 5, i ≠ j → 2 ≤ i → 2 ≤ j → Kmu i = true → Kmu j = true → i ∈ vWb ∨ j ∈ vWb :=
+  fun i _ j _ hij _ _ hi hj => by
+    simp only [Kmu, beq_iff_eq] at hi hj; omega
+
+/-- `w1Encode(w′₁)` of rows `A'`, `cc` and `h`. -/
+abbrev w1Enc (p : Params) (σ : State) (A' : Nat → Nat → Spec.MlDsa.Poly) (cc : Spec.MlDsa.Poly)
+    (h : List (Vector Bool Spec.MlDsa.n)) : List Byte :=
+  (List.range p.k).flatMap fun r => simpleBitPack (w1Row p (pkOf p σ) (sgOf p σ) A' (ntt cc) h r) (w1Max p)
+
+theorem flatMap_congr_mem' {α β : Type} {f g : α → List β} : ∀ {l : List α}, (∀ x ∈ l, f x = g x) →
+    l.flatMap f = l.flatMap g
+  | [], _ => rfl
+  | x :: l, h => by
+    rw [List.flatMap_cons, List.flatMap_cons, h x (List.mem_cons_self ..),
+      flatMap_congr_mem' fun y hy => h y (List.mem_cons_of_mem _ hy)]
+
+/-- After the hash. -/
+abbrev KF (p : Params) (STK : Nat) (σ s : State) : Prop :=
+  ∃ A' cc h R, KC5 p STK σ A' cc h R p.ℓ true p.k s ∧
+    bytesAt s.mem ((vlay p STK σ).A 0 oCT) p.ctildeLen = Spec.MlDsa.H (muOf σ ++ w1Enc p σ A' cc h) p.ctildeLen
+
+theorem vhPieces {p : Params} (hF : VFacts p) {STK : Nat} {σ s : State} (hs : Site (vlay p STK σ) vWb STK s) :
+    (∀ pc ∈ ([⟨.s9, 0, 64⟩, ⟨.s11, oB, p.k * w1Len p⟩] : List Impl.MlKem.RISCV64.Piece),
+      PieceOk (hashLay (vlay p STK σ) s Kmu) ix s false pc) ∧
+    PieceOk (hashLay (vlay p STK σ) s Kmu) ix s true (⟨.s11, oCT, p.ctildeLen⟩ : Impl.MlKem.RISCV64.Piece) := by
+  have hk := hF.k
+  obtain ⟨w1a, w1b⟩ := hF.w1
+  refine ⟨fun pc hpc => ?_, pieceS hs rfl (show oCT < 32768 by decide)
+    (show p.ctildeLen < 2048 by rcases hF.ct with e | e | e <;> omega_using [e])
+    (show 0 < p.ctildeLen by rcases hF.ct with e | e | e <;> omega_using [e])
+    (by rcases hF.ct with e | e | e <;> vsep hF [hashLay, Lay.size, e]) (.inl rfl)
+    fun _ => show ix Reg.s11 ∈ vWb by decide⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hpc
+  rcases hpc with rfl | rfl
+  · exact pieceS hs rfl (show (0 : Nat) < 32768 by decide) (show 64 < 2048 by decide) (by decide)
+      (by vsep hF [hashLay, Lay.size]) (.inr rfl) fun h => absurd h (by decide)
+  · exact pieceS hs rfl (show oB < 32768 by decide) (show p.k * w1Len p < 2048 by omega_using [w1a]) w1b
+      (by rcases hF.w1l with e | ⟨e, _⟩ <;> vsep hF [hashLay, Lay.size, e]) (.inl rfl) fun h => absurd h (by decide)
+
+theorem B_bytes {p : Params} {STK : Nat} {σ : State} {A' cc h R nz nc} {s : State}
+    (hk5 : KC5 p STK σ A' cc h R nz nc p.k s) :
+    bytesAt s.mem ((vlay p STK σ).A 0 oB) (p.k * w1Len p) = w1Enc p σ A' cc h := by
+  rw [Nat.mul_comm, Lay.A, Proof.MlDsa.KeyGen.bytesAt_pieces s.mem _ oB (w1Len p) p.k]
+  exact flatMap_congr_mem' fun r hr => hk5.rows r (List.mem_range.mp hr)
+
+theorem vhash_ok {p : Params} (hF : VFacts p) {STK : Nat} {σ : State} {A' cc h R} {s : State}
+    (hk5 : KC5 p STK σ A' cc h R p.ℓ true p.k s) :
+    WP isa (hash 136 0x1f [⟨.s9, 0, 64⟩, ⟨.s11, oB, p.k * w1Len p⟩] [⟨.s11, oCT, p.ctildeLen⟩]) s
+      (KF p STK σ) := by
+  have hk := hF.k
+  have hs := hk5.vc.site
+  obtain ⟨hin, hq⟩ := vhPieces hF hs
+  refine WP.mono (hashS hs kmu (rate := 136) (sfx := 0x1f) (by decide) (by decide) (by simp) hin hq)
+    fun s' ⟨k', o'⟩ => ⟨A', cc, h, R, hk5.keep hF k' ?_, ?_⟩
+  · have : p.ctildeLen ≤ 64 := by rcases hF.ct with e | e | e <;> omega_using [e]
+    k5chks hF (Nat.le_refl _)
+  · have o₃ : bytesAt s'.mem ((vlay p STK σ).A 0 oCT) p.ctildeLen = _ := o'
+    rw [o₃]
+    simp only [List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil, List.append_nil, Lay.pb,
+      hashLay_ptr _ _ _ (ix_ne1 _)]
+    have e1 : bytesAt s.mem ((vlay p STK σ).ptr (ix Reg.s9) + BitVec.ofNat 64 0) 64 = muOf σ :=
+      hk5.vc.mu
+    have e2 : bytesAt s.mem ((vlay p STK σ).ptr (ix Reg.s11) + BitVec.ofNat 64 oB) (p.k * w1Len p) =
+        w1Enc p σ A' cc h := B_bytes hk5
+    rw [e1, e2, shake31]
+    exact (Proof.MlKem.shake256_eq _ _).symm
+
+theorem vhash_piece {p : Params} (hF : VFacts p) {STK : Nat} :
+    VPiece p STK (KX p STK p.ℓ true p.k) (KF p STK)
+      (hash 136 0x1f [⟨.s9, 0, 64⟩, ⟨.s11, oB, p.k * w1Len p⟩] [⟨.s11, oCT, p.ctildeLen⟩]) :=
+  ⟨fun _ _ _ ⟨_, _, _, _, h⟩ => vhash_ok hF h,
+    rel_of (RelCT.exists_ fun σ => hashS_tr kmu (rate := 136) (sfx := 0x1f) (by decide) (by decide)
+      (by simp) (fun s hs => (vhPieces hF (σ := σ) hs).1) (fun s hs => (vhPieces hF hs).2) fun _ _ h => h)
+      fun σ₁ _ _ _ _ _ pub ⟨_, _, _, _, h₁⟩ ⟨_, _, _, _, h₂⟩ => ⟨σ₁, vc_twoL pub h₁.vc h₂.vc⟩⟩
+
+end VG.Proof.MlDsa.RISCV64.Verify
+
+end
+
+end
+
+/-! ### `MlDsa.RISCV64.Verify.SampC`, which the modules that import this one used -/
+
+section
+
+/-!
+# ML-DSA verification on RISC-V: `c`, and the samplers
+
+As on PPC64LE (`Proof/MlDsa/PPC64LE/Verify/Top.lean`): `c = SampleInBall(c̃)`
+to polynomial 15, its result ANDed into `s4` and `c` masked with it
+(`ball_piece`); and every sampler, after the checks of the signature
+(`samples_piece`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.RISCV64.Verify
+
+open VG VG.RISCV64 VG.Proof.MlKem.RISCV64
+open VG.Proof.MlDsa.RISCV64.KeyGen (Site OkW ix tri lpa scrLen PtrIn Piece Two Rel2 rel_of relInv Callee BallOk
+  ball_tr polyIs_keepW polyAt_keepW reduced_keepW bytes_keepW keepD andMask_ok masked_poly taint31)
+open VG.Impl.MlDsa.RISCV64.Verify
+open VG.Impl.MlDsa.RISCV64.KeyGen (and24 mask setB seqR sampled)
+open VG.Impl.MlKem.RISCV64 (copy)
+open VG.Spec.MlDsa (Params toRq normRq rejNTTPoly minBounds Outcome sampleInBall)
+open VG.Proof.MlDsa (HintIs PolyIs polyAt Reduced)
+open VG.Proof.MlDsa.Verify (vZ vRho aSeed vCt)
+open VG.Spec.Sha3 (bytesAt)
+
+/-- After the samplers. -/
+structure VS4 (p : Params) (STK : Nat) (σ s : State) : Prop where
+  vb : VB p STK σ s
+  red : ∀ r < p.k, ∀ s' < p.ℓ, Reduced s.mem (aA p STK σ r s')
+  redC : Reduced s.mem ((vlay p STK σ).A 0 (oP 15))
+  ok : ∃ q : Bool, s.gpr .s4 = flag q ∧
+    (q = true → (∀ r < p.k, ∀ s' < p.ℓ,
+      ∃ b : Nat, rejNTTPoly b (aSeed (pkOf p σ) r s') = some (polyAt s.mem (aA p STK σ r s'))) ∧
+      ∃ b : Nat, (sampleInBall p.τ b (vCt p (sgOf p σ))).map toRq = some (polyAt s.mem ((vlay p STK σ).A 0 (oP 15)))) ∧
+    (q = false → (∃ r < p.k, ∃ s' < p.ℓ, rejNTTPoly minBounds.rejNTT (aSeed (pkOf p σ) r s') = none) ∨
+      sampleInBall p.τ minBounds.ball (vCt p (sgOf p σ)) = none)
+
+section
+variable {P : Prims} {S : Nat} (hP : VPrimsOk P S) {p : Params} (hF : VFacts p) {STK : Nat} (hS : S ≤ STK)
+include hP hF hS
+
+omit hP hS in
+theorem ball_m {σ : State} :
+    BallOk (vlay p STK σ) vWb (.s8, 0) p.ctildeLen p.τ pC (sc oSS) := by
+  have hk := hF.k
+  exact ⟨⟨vptr_ok rfl (by decide), by vsep hF⟩, ⟨vptr_ok rfl (by decide), by vsep hF⟩,
+    ⟨vptr_ok rfl (by decide), by vsep hF⟩, show ix Reg.s11 ∈ vWb by decide,
+    show ix Reg.s11 ∈ vWb by decide, by vsep hF, by vsep hF, by vsep hF, hF.ball.1,
+    ⟨by rcases hF.ct with e | e | e <;> omega_using [e], by rcases hF.ct with e | e | e <;> omega_using [e], hF.ball.2⟩, by valsep, by valsep⟩
+
+theorem vball_ok {σ s : State} (h : VS p STK p.k 0 σ s) :
+    WP isa (sampled (ballAt P (.s8, 0) p.ctildeLen p.τ pC) pC) s (VS4 p STK σ) := by
+  have hk := hF.k; have hl := hF.l
+  have hs := h.vb.vc.site
+  have hL := hs.ok
+  unfold sampled ballAt
+  refine WP.seq (KeyGen.ball_ok hP.ball hs hS (ball_m hF) fun s₃ k₃ hred hout => ?_)
+  have eb : bytesAt s.mem (lpa (vlay p STK σ) (.s8, 0)) p.ctildeLen = vCt p (sgOf p σ) := by
+    have := sig_slice h.vb.vc (o := 0) (l := p.ctildeLen) (by have := hF.sig; have := hF.hint; omega_arith)
+    rw [List.drop_zero] at this
+    exact this
+  rw [eb] at hout
+  have hr01 := Proof.MlDsa.KeyGen.outcome_01 hout
+  have kv₃ := h.vb.keep hF k₃ (by vsep hF [vcChk]) (by vsep hF) (fun i hi => by vsep hF)
+  have kA3 : ∀ r < p.k, ∀ s' < p.ℓ, polyAt s₃.mem (aA p STK σ r s') = polyAt s.mem (aA p STK σ r s') ∧
+      (Reduced s.mem (aA p STK σ r s') → Reduced s₃.mem (aA p STK σ r s')) := fun r hr s' hs' =>
+    ⟨polyAt_keepW hL k₃.frame (by vsep hF) (by decide) rfl, reduced_keepW hL k₃.frame (by vsep hF) (by decide) rfl⟩
+  have h24₃ : s₃.gpr .s4 = s.gpr .s4 := k₃.cs .s4 (by decide)
+  refine WP.mono (andMask_ok kv₃.vc.site (a := pC) ⟨vptr_ok rfl (by decide), by vsep hF⟩
+    (by valsep) (show ix Reg.s11 ∈ vWb by decide) hr01) fun s₄ ⟨s₅, r₅, k₄, r₄, co⟩ => ?_
+  obtain ⟨pi, p1, _⟩ := masked_poly hred co
+  have kv₄ := (kv₃.regs2 r₅).keep hF k₄ (by vsep hF [vcChk]) (by vsep hF) (fun i hi => by vsep hF)
+  have kA4 : ∀ r < p.k, ∀ s' < p.ℓ, polyAt s₄.mem (aA p STK σ r s') = polyAt s₃.mem (aA p STK σ r s') ∧
+      (Reduced s₃.mem (aA p STK σ r s') → Reduced s₄.mem (aA p STK σ r s')) := fun r hr s' hs' => by
+    rw [← r₅.mem]
+    exact ⟨polyAt_keepW hL k₄.frame (by vsep hF) (by decide) rfl, reduced_keepW hL k₄.frame (by vsep hF) (by decide) rfl⟩
+  have dn : ∀ r s', s' < p.ℓ → (Dn p.k 0 r s' ↔ r < p.k) := fun r s' _ => by simp only [Dn]; omega_using []
+  obtain ⟨q, hq, hok, hbad⟩ := h.ok
+  refine ⟨kv₄, fun r hr s' hs' => (kA4 r hr s' hs').2 ((kA3 r hr s' hs').2 (h.red r s' hs' ((dn r s' hs').mpr hr))),
+    pi.1, ⟨q && decide ((s₃.gpr .a0).setWidth 32 = 1), ?_, fun hq' => ⟨fun r hr s' hs' => ?_, ?_⟩, fun hq' => ?_⟩⟩
+  · rw [r₄, h24₃, hq, flag_and01 q hr01]
+  · simp only [Bool.and_eq_true, decide_eq_true_eq] at hq'
+    obtain ⟨b, hb⟩ := hok hq'.1 r s' hs' ((dn r s' hs').mpr hr)
+    exact ⟨b, by rw [(kA4 r hr s' hs').1, (kA3 r hr s' hs').1]; exact hb⟩
+  · simp only [Bool.and_eq_true, decide_eq_true_eq] at hq'
+    show ∃ b, _ = some (polyAt s₄.mem (lpa (vlay p STK σ) pC))
+    rw [p1 hq'.2]
+    rcases hout with ⟨_, b, hb⟩ | ⟨h0, _⟩
+    · exact ⟨b.ball, hb⟩
+    · rw [h0] at hq'; exact absurd hq'.2 (by decide)
+  · simp only [Bool.and_eq_false_iff, decide_eq_false_iff_not] at hq'
+    rcases hq' with hq' | hq'
+    · obtain ⟨r, s', hs', hd, hn⟩ := hbad hq'
+      exact .inl ⟨r, (dn r s' hs').mp hd, s', hs', hn⟩
+    · rcases hout with ⟨h1, _⟩ | ⟨_, hn⟩
+      · exact absurd h1 hq'
+      · exact .inr (Option.map_eq_none_iff.mp hn)
+
+omit hP hF hS in
+theorem ballTail_taint : (VG.RISCV64.taint.check (Taint.ofRegs [.s11]) (.seq (.block and24) (mask (pS 15)))
+    (VG.Taint.hintOf VG.RISCV64.taint (Taint.ofRegs [.s11]) (.seq (.block and24) (mask (sc 0))))).isSome = true :=
+  vAndMask_taint 15 (by decide)
+
+theorem ball_piece :
+    VPiece p STK (VS p STK p.k 0) (VS4 p STK) (sampled (ballAt P (.s8, 0) p.ctildeLen p.τ pC) pC) := by
+  have hk := hF.k
+  refine ⟨fun _ _ _ h => vball_ok hP hF hS h, ?_⟩
+  unfold sampled ballAt
+  refine RelCT.seq (R := VTwo p STK) ?_ (vtaint31 ballTail_taint)
+  refine RelCT.mono (M := isa) (P := fun (x y : State) => ∃ σ, Two (vlay p STK σ) vWb STK x y ∧
+    bytesAt x.mem (lpa (vlay p STK σ) (.s8, 0)) p.ctildeLen = bytesAt y.mem (lpa (vlay p STK σ) (.s8, 0)) p.ctildeLen)
+    (RelCT.exists_ fun σ => ?_) (fun _ _ ⟨σ₁, _, _, _, pub, h₁, h₂⟩ => ?_) fun _ _ h => h
+  · have ok := fun x (hs : Site (vlay p STK σ) vWb STK x) => KeyGen.ball_ok hP.ball hs hS
+      (name := "vg_mldsa_sample_in_ball") (ball_m hF (σ := σ)) (Q := fun x' => ∃ rs, Kept rs x x') fun _ k _ _ => ⟨_, k⟩
+    exact (VG.Proof.MlDsa.RISCV64.KeyGen.RelCT.two (fun _ _ h => h.1)
+      (ball_tr hP.ball hS (ball_m hF) fun x y h => ⟨h.1.1, h.1.2.1, h.1.2.2, h.2⟩)
+      fun x hs => ok x hs).mono (fun _ _ h => h) fun x y h => ⟨σ, h⟩
+  · refine ⟨σ₁, vc_twoL pub h₁.vb.vc h₂.vb.vc, ?_⟩
+    show bytesAt _ ((vlay p STK σ₁).A 4 0) _ = bytesAt _ ((vlay p STK σ₁).A 4 0) _
+    rw [sig_slice h₁.vb.vc (by have := hF.sig; have := hF.hint; omega_arith), pub.2.2.2.2.2.2.2.1, vlay_pub pub,
+      sig_slice h₂.vb.vc (by have := hF.sig; have := hF.hint; omega_arith)]
+
+/-! ## The samplers -/
+
+omit hP hS in
+theorem rho_piece :
+    VPiece p STK (fun σ s => V2 p STK p.ℓ σ s ∧ flag (zOk p σ p.ℓ) ≠ 0) (VS p STK 0 0) (copy .s10 0 .s11 oSB 32) := by
+  refine ⟨fun σ s _ ⟨h, hn⟩ => ?_, rel_of (vtaint4 (by taint_decide)) fun σ₁ _ _ _ _ _ pub h₁ h₂ =>
+    ⟨σ₁, vc_twoL pub h₁.1.vc h₂.1.vc⟩⟩
+  have hz : zOk p σ p.ℓ = true := flag_ne.mp hn
+  exact rho_ok hF ⟨h.vc, h.hint, h.z, hz⟩ (by rw [h.s4, hz]; rfl)
+
+theorem samples_piece :
+    VPiece p STK (fun σ s => V2 p STK p.ℓ σ s ∧ flag (zOk p σ p.ℓ) ≠ 0) (VS4 p STK) (samples P p) :=
+  (rho_piece hF).seq ((rows_piece hP hF hS).seq (ball_piece hP hF hS))
+
+end
+
+end VG.Proof.MlDsa.RISCV64.Verify
+
+end
+
+end
 
 /-!
 # ML-DSA verification on RISC-V: `c̃′ = c̃`

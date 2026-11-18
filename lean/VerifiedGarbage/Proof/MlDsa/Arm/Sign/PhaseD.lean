@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Blocks
 import VerifiedGarbage.Proof.MlKem.Arm.Loops
 import VerifiedGarbage.Proof.MlDsa.PreparedKey.Values
 import VerifiedGarbage.Proof.MlKem.Mem
-public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Prims
 import VerifiedGarbage.Proof.MlKem.Arm.Common
 
 /-! ### `MlDsa.Arm.Sign.PrimsB`, which this module and modules that import it used -/

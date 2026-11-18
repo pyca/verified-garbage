@@ -6,8 +6,7 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Impl.Ed25519.Arm.Point16
 public import VerifiedGarbage.Proof.Ed25519.Arm.FieldProg
 import VerifiedGarbage.Proof.Ed25519.Arm.FieldMemory
-import VerifiedGarbage.Proof.Ed25519.Arm.MulU
-import VerifiedGarbage.Proof.X25519.Arm.AddSub
+import VerifiedGarbage.Proof.X25519.Arm.Mul
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Block
 

@@ -12,7 +12,7 @@ public import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
 /-!
 # `vg_ed25519_scalar_base` on PPC64LE: its contract
 
-As on RISC-V (`Proof/Ed25519/RISCV64/BaseContract.lean`): the precondition by register
+As on RISC-V (`Proof/Ed25519/RISCV64/Comb.lean`): the precondition by register
 (`BasePre`), with the comb's table, the static `combSym`, at `TBL`; the contract of the
 internal function (`baseRV`), and what its proof gives (`BaseOk`, proven by
 `ScalarBase.lean`'s `base_ok`), so that the functions that call it need not import the comb's

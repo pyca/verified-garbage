@@ -1,8 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.LastStart
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Restore
-import VerifiedGarbage.Proof.MlKem.AArch64.Paired.FastFinish
+public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.FastFinish
 import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Result
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.MlKem.AArch64.Shared
@@ -15,7 +14,7 @@ import VerifiedGarbage.Proof.MlKem.AArch64.NttVec
 import VerifiedGarbage.Proof.MlKem.Compress
 import VerifiedGarbage.Proof.MlKem.Encode
 import VerifiedGarbage.Proof.Rc4.AArch64.Vec
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Pair
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Store
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
 import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Common

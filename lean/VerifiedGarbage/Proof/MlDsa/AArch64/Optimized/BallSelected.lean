@@ -4,7 +4,7 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Depth
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallCorrect
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallResident
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.BallDispatch
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Ball
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallInitial
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub

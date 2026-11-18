@@ -4,7 +4,6 @@ import VerifiedGarbage.Proof.Ed25519.PPC64LE.Packed
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Spill
 public import VerifiedGarbage.Spec.Ed25519.Contract
 public import VerifiedGarbage.TCB.PPC64LE.Target
-import VerifiedGarbage.Proof.Ed25519.PPC64LE.SpecConv
 import VerifiedGarbage.Proof.Ed25519.Signing
 import VerifiedGarbage.Proof.Ed25519.Bytes
 import VerifiedGarbage.Proof.X25519.Bytes

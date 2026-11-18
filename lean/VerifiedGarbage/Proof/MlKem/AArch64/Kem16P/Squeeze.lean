@@ -1,9 +1,357 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.Slot
 public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Squeeze
 import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Cover
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Step
+public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Squeeze
+import VerifiedGarbage.Proof.Framework.Range
+public import VerifiedGarbage.Impl.MlKem.AArch64.Kem16P
+public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.State
+public import VerifiedGarbage.Proof.Sha3.AArch64.Hybrid.X3
+import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Load
+import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
+import VerifiedGarbage.Proof.Framework.AArch64.Simd64
+public import VerifiedGarbage.Proof.Framework.Covers
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Spec.Sha3
+public import VerifiedGarbage.TCB.AArch64.Isa
+
+/-! ### `MlKem.AArch64.Kem16P.Slot`, which this module and modules that import it used -/
+
+section
+
+/-! ### `MlKem.AArch64.Kem16P.Prf`, which this module and modules that import it used -/
+
+section
+
+/-! # The padded block of `PRF₂(r, N)`, written word by word
+
+`prfWords_ok`: `Kem16P.prfWords` writes word `k` of `Noise.seedState`
+(`r` from `sd`, then `N` and the suffix, then the final bit) to `D + o + st k`.
+`prfBlock_ok`: so the third state at `ST` is `PRF₂(r, N)`'s padded block;
+`reinitB_ok`: so is the second state of the pair at `x19`, its first kept. -/
+
+@[expose] public section
+
+namespace VG.Proof.MlKem.AArch64.Kem16P
+
+open VG VG.AArch64 VG.Proof.MlKem.AArch64
+open VG.Proof.Sha3.AArch64.Neon (PairAt wordAddr pairR)
+open VG.Spec.Sha3 (stateAt)
+
+/-- Word `k` of `PRF₂(r, N)`'s padded block, `r` at `R`. -/
+abbrev pw (m : Mem) (R : Addr) (N k : Nat) : BitVec 64 := (Noise.seedState m R N)[k]!
+
+theorem imm16_eq {v : Nat} (h : v < 65536) : (BitVec.ofNat 16 v).setWidth 64 = BitVec.ofNat 64 v := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
+  rw [Nat.mod_eq_of_lt (by omega_using [h] : v < 2 ^ 16), Nat.mod_eq_of_lt (by omega_using [h] : v < 2 ^ 64)]
+
+/-- What `prfWords` keeps after `k` words. -/
+def WInv (o st N : Nat) (s : State) (D R : Addr) (W : Region) (k : Nat) (t : State) : Prop :=
+  Keep [.x9] s t ∧ Frame [W] s.mem t.mem ∧
+    (∀ j < k, t.mem.readW (D + BitVec.ofNat 64 (o + st * j)) 64 = pw s.mem R N j) ∧
+    ∀ a : Addr, (∀ j < k, Mem.Sep a 8 (D + BitVec.ofNat 64 (o + st * j)) 8) →
+      t.mem.readW a 64 = s.mem.readW a 64
+
+/-- One word's store. -/
+theorem store_step {dst : Reg} {o st N k : Nat} {s t : State} {D R : Addr} {W : Region}
+    (hd9 : dst ≠ .x9) (hst : 8 ≤ st) (ho : o % 8 = 0) (hs8 : st % 8 = 0) (hlim : o + st * 24 + 8 ≤ 32768)
+    (hk : k < 25) (hD : s.gpr dst = D)
+    (hW : ∀ k < 25, W.Contains (D + BitVec.ofNat 64 (o + st * k)) 8) (hWin : Covers [W] s.wr)
+    (hI : WInv o st N s D R W k t) (hv : t.gpr .x9 = pw s.mem R N k) :
+    WP isa (.block [.str .x .x9 dst (o + st * k)]) t (WInv o st N s D R W (k + 1)) := by
+  obtain ⟨kt, ft, wt, ot⟩ := hI
+  have bnd : ∀ j < 25, o + st * j + 8 ≤ 32768 := fun j hj => by
+    have : st * j ≤ st * 24 := Nat.mul_le_mul_left _ (by omega_using [hj])
+    omega_using [hlim, this]
+  have hlt := bnd k hk
+  refine wp_strx (a := D + BitVec.ofNat 64 (o + st * k)) ⟨by
+      rw [Nat.add_mod, ho, Nat.mul_mod, hs8]; simp, by omega_using [hlt]⟩
+    (by rw [kt.get dst (by simpa using hd9), hD])
+    (by rw [kt.wr]; exact hWin _ _ ⟨W, List.mem_singleton_self _, hW k hk⟩) fun u hu => wp_nil ?_
+  have hm : u.mem = t.mem.writeW (D + BitVec.ofNat 64 (o + st * k)) (t.gpr .x9) := hu.mem
+  have sep : ∀ j < k, Mem.Sep (D + BitVec.ofNat 64 (o + st * j)) 8 (D + BitVec.ofNat 64 (o + st * k)) 8 :=
+    fun j hj => sep_off D (.inl (by
+      have : st * j + st ≤ st * k := by rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ hj
+      omega_using [hst, this])) (by have := bnd j (by omega_using [hk, hj]); omega_using [this]) (by omega_using [hlt])
+  refine ⟨kt.trans hu.keep |>.mono (by simp), ?_, fun j hj => ?_, fun a ha => ?_⟩
+  · rw [hm]; exact ft.writeW (List.mem_singleton_self _) _ (hW k hk)
+  · rw [hm]
+    rcases Nat.lt_succ_iff_lt_or_eq.mp hj with hj | rfl
+    · rw [Mem.readW_writeW_sep (sep j hj) (by decide)]; exact wt j hj
+    · rw [Mem.readW_writeW_self64, hv]
+  · rw [hm, Mem.readW_writeW_sep (ha k (Nat.lt_succ_self _)) (by decide)]
+    exact ot a fun j hj => ha j (Nat.lt_succ_of_lt hj)
+
+/-- **The 25 words of `PRF₂(r, N)`'s padded block**, `r` at `R`. -/
+theorem prfWords_ok {dst : Reg} {o st N : Nat} (hN : N < 256) (hd9 : dst ≠ .x9) (hst : 8 ≤ st)
+    (ho : o % 8 = 0) (hs8 : st % 8 = 0) (hlim : o + st * 24 + 8 ≤ 32768)
+    {s : State} {D R : Addr} {sd : Nat} (hsd : sd % 8 = 0) (hsd' : sd + 32 ≤ 32768) (hD : s.gpr dst = D)
+    (hR : s.gpr .x28 + BitVec.ofNat 64 sd = R)
+    {W : Region} (hW : ∀ k < 25, W.Contains (D + BitVec.ofNat 64 (o + st * k)) 8)
+    (hWin : Covers [W] s.wr) (hRW : W.Disjoint ⟨R, 32⟩) (hRin : Covers [⟨R, 32⟩] (s.rd ++ s.wr)) :
+    WP isa (.block (Impl.MlKem.AArch64.Kem16P.prfWords sd dst (fun k => o + st * k) N)) s
+      (WInv o st N s D R W 25) := by
+  refine wp_range_flatMap (M := isa) (WInv o st N s D R W) (fun k t hk hI => ?_) 25 (Nat.le_refl _) s
+    ⟨Keep.refl _ _, Frame.refl _ _, fun j hj => absurd hj (Nat.not_lt_zero _), fun _ _ => rfl⟩
+  have hget := Noise.seedState_get s.mem R N hk
+  unfold Impl.MlKem.AArch64.Kem16P.prfWord
+  by_cases h4 : k < 4
+  · rw [ite_eq_left h4]
+    have kt := hI.1
+    have ft := hI.2.1
+    have hc : (⟨R, 32⟩ : Region).Contains (R + BitVec.ofNat 64 (8 * k)) 8 :=
+      Offset.contains_base R (by omega_using [h4]) (by omega_using [hk])
+    refine wp_ldrx (a := R + BitVec.ofNat 64 (8 * k)) ⟨by omega_using [hsd], by omega_using [hsd', h4]⟩
+      (by rw [kt.get .x28 (by decide), ← hR, ptr_add])
+      (by rw [kt.rd, kt.wr]; exact hRin _ _ ⟨_, List.mem_singleton_self _, hc⟩) fun u hu e => ?_
+    refine store_step hd9 hst ho hs8 hlim hk hD hW hWin ?_ ?_
+    · obtain ⟨kt, ft, wt, ot⟩ := hI
+      exact ⟨(kt.trans hu.keep).mono (by simp), by rw [hu.mem]; exact ft,
+        fun j hj => by rw [hu.mem]; exact wt j hj, fun a ha => by rw [hu.mem]; exact ot a ha⟩
+    · rw [e, pw, hget, ite_eq_left h4]
+      exact ft.readW (r := ⟨R, 32⟩) hc (fun r hr => by
+        rw [List.mem_singleton.mp hr]; exact hRW.symm) (by decide)
+  · rw [ite_eq_right h4]
+    have step : ∀ (v : BitVec 64) (i : Instr), (∀ (Q : State → Prop) (is : List Instr) (u : State),
+        (∀ u', Only [.x9] u u' → u'.gpr .x9 = v → WP isa (.block is) u' Q) → WP isa (.block (i :: is)) u Q) →
+        v = pw s.mem R N k →
+        WP isa (.block [i, .str .x .x9 dst (o + st * k)]) t (WInv o st N s D R W (k + 1)) :=
+      fun v i hi hv => hi _ _ _ fun u hu e => by
+        obtain ⟨kt, ft, wt, ot⟩ := hI
+        refine store_step hd9 hst ho hs8 hlim hk hD hW hWin
+          ⟨(kt.trans hu.keep).mono (by simp), by rw [hu.mem]; exact ft,
+            fun j hj => by rw [hu.mem]; exact wt j hj, fun a ha => by rw [hu.mem]; exact ot a ha⟩ ?_
+        rw [e, hv]
+    by_cases h4' : k = 4
+    · rw [ite_eq_left h4']
+      refine step _ _ (fun Q is u k => wp_movz k) ?_
+      rw [imm16_eq (by omega_using [hN]), pw, hget, ite_eq_right h4, ite_eq_left h4']
+    · rw [ite_eq_right h4']
+      by_cases h16 : k = 16
+      · rw [ite_eq_left h16]
+        refine step 0x8000000000000000 _ (fun Q is u k => wp_x (d := .x9) (by rfl) k) ?_
+        rw [pw, hget, ite_eq_right h4, ite_eq_right h4', ite_eq_left h16]
+      · rw [ite_eq_right h16]
+        refine step _ _ (fun Q is u k => wp_movz k) ?_
+        rw [pw, hget, ite_eq_right h4, ite_eq_right h4', ite_eq_right h16]; rfl
+
+/-- **The third state at `ST` set to `PRF₂(r, N)`'s padded block.** -/
+theorem prfBlock_ok {N : Nat} (hN : N < 256) {s : State} {R : Addr} {sd : Nat}
+    (hR : s.gpr .x28 + BitVec.ofNat 64 sd = R) (hsd : sd % 8 = 0 := by decide)
+    (hsd' : sd + 32 ≤ 32768 := by decide)
+    (hWin : Covers [VG.Proof.Sha3.AArch64.Hybrid.X3.stR (s.gpr .x28)] s.wr)
+    (hRW : (VG.Proof.Sha3.AArch64.Hybrid.X3.stR (s.gpr .x28)).Disjoint ⟨R, 32⟩)
+    (hRin : Covers [⟨R, 32⟩] (s.rd ++ s.wr)) :
+    WP isa (.block (Impl.MlKem.AArch64.Kem16P.prfBlock sd N)) s fun t =>
+      Keep [.x9] s t ∧ Frame [VG.Proof.Sha3.AArch64.Hybrid.X3.stR (s.gpr .x28)] s.mem t.mem ∧
+      stateAt t.mem (s.gpr .x28) = Noise.seedState s.mem R N := by
+  have hc : ∀ k < 25, (VG.Proof.Sha3.AArch64.Hybrid.X3.stR (s.gpr .x28)).Contains
+      (s.gpr .x28 + BitVec.ofNat 64 (0 + 8 * k)) 8 := fun k hk =>
+    Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk])
+  refine WP.mono (prfWords_ok (o := 0) (st := 8) hN (by decide) (by decide) (by decide) (by decide)
+    (by decide) hsd hsd' rfl hR hc hWin hRW hRin) fun t ⟨kt, ft, wt, _⟩ => ⟨kt, ft, ?_⟩
+  refine Vector.ext fun i hi => ?_
+  have := wt i hi
+  rw [Nat.zero_add] at this
+  simp only [stateAt, Vector.getElem_ofFn]
+  rw [this, pw, getElem!_pos _ i hi]
+
+/-- **The second state of the pair at `p` set to `PRF₂(r, N)`'s padded block**, the first kept. -/
+theorem reinitB_ok {N : Nat} (hN : N < 256) {s : State} {p R : Addr} {A B : Spec.Sha3.State} {sd : Nat}
+    (hp : s.gpr .x19 = p) (hR : s.gpr .x28 + BitVec.ofNat 64 sd = R)
+    (pair : PairAt s.mem p A B)
+    (hWin : Covers [pairR p] s.wr) (hRW : (pairR p).Disjoint ⟨R, 32⟩)
+    (hRin : Covers [⟨R, 32⟩] (s.rd ++ s.wr)) (hsd : sd % 8 = 0 := by decide) (hsd' : sd + 32 ≤ 32768 := by decide) :
+    WP isa (.block (Impl.MlKem.AArch64.Kem16P.reinitB sd N)) s fun t =>
+      Keep [.x9] s t ∧ Frame [pairR p] s.mem t.mem ∧ PairAt t.mem p A (Noise.seedState s.mem R N) := by
+  have hc : ∀ k < 25, (pairR p).Contains (p + BitVec.ofNat 64 (8 + 16 * k)) 8 := fun k hk =>
+    Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk])
+  refine WP.mono (prfWords_ok (o := 8) (st := 16) hN (by decide) (by decide) (by decide) (by decide)
+    (by decide) hsd hsd' hp hR hc hWin hRW hRin) fun t ⟨kt, ft, wt, ot⟩ => ⟨kt, ft, fun i hi => ?_⟩
+  have hlo : t.mem.readW (wordAddr p i) 64 = s.mem.readW (wordAddr p i) 64 :=
+    ot _ fun j hj => sep_off p (by
+      rcases Nat.lt_or_ge j i with h | h
+      · exact .inr (by omega_using [h])
+      · exact .inl (by omega_using [h])) (by omega_using [hi]) (by omega_using [hj])
+  have hhi : wordAddr p i + BitVec.ofNat 64 8 = p + BitVec.ofNat 64 (8 + 16 * i) := by
+    rw [wordAddr, ptr_add, Nat.add_comm]
+  rw [read16_dwords, hlo, hhi, wt i hi, pw]
+  have h0 := pair i hi
+  rw [read16_dwords] at h0
+  have e0 := congrArg (fun v => vdword v 0) h0
+  simp only [vdword_ofVDwords_0] at e0
+  rw [e0, getElem!_pos _ i hi]
+
+end VG.Proof.MlKem.AArch64.Kem16P
+
+end
+
+end
+
+/-! # A main squeeze computing `PRF₂(r, N)` in the third state
+
+`prfOut_ok`: the first 16 words of the third state to buffer `N`.
+`slotPrf_ok`: `PRF₂(r, N)`'s padded block into the third state, the `x3` call,
+both SHAKE128 states' 21 words to their stream buffers, and the first 128
+bytes of the third state to buffer `N` (`Rate128`, which `Noise.output_prf`
+takes to `PRF₂`'s output). -/
+
+@[expose] public section
+
+namespace VG.Proof.MlKem.AArch64.Kem16P
+variable {sha3 : Bool}
+
+open VG VG.AArch64 VG.Proof.MlKem.AArch64
+open VG.Proof.Sha3.AArch64.Neon (PairAt pairR outAddr)
+open VG.Proof.Sha3.AArch64.Neon.X2 (callR)
+open VG.Proof.Sha3.AArch64.Hybrid.X3 (stR)
+open VG.Proof.MlKem.AArch64.Paired (rateR21 Rate21)
+open VG.Proof.MlKem.AArch64.Noise (rateR Rate128)
+open VG.Proof.MlKem.AArch64.Hybrid (clobbered stepRegs step3Writes frame)
+open VG.Spec.Sha3 (stateAt keccakF)
+
+theorem rate21_frame {m m' : Mem} {p : Addr} {A : Spec.Sha3.State} {rs : List Region}
+    (h : Rate21 m p A) (hf : Frame rs m m') (hd : ∀ r ∈ rs, (rateR21 p).Disjoint r) : Rate21 m' p A :=
+  fun i hi => by
+    show m'.readW (p + BitVec.ofNat 64 (8 * i)) 64 = _
+    rw [hf.readW (r := rateR21 p) (Offset.contains_base p (by omega_using [hi]) (by omega_using [hi])) hd (by decide)]
+    exact h i hi
+
+/-- **The first 16 words of the third state at `st` to buffer `N`.** -/
+theorem prfOut_ok (bt N : Nat) {s : State} {st Bf : Addr} {S : Spec.Sha3.State}
+    (hbo : Impl.MlKem.AArch64.Kem16P.bufOff bt N < 65536)
+    (h28 : s.gpr .x28 = st) (hB : st + BitVec.ofNat 64 (Impl.MlKem.AArch64.Kem16P.bufOff bt N) = Bf)
+    (hS : stateAt s.mem st = S) (hin : Covers [stR st] (s.rd ++ s.wr)) (hout : Covers [rateR Bf] s.wr)
+    (hd : (stR st).Disjoint (rateR Bf)) :
+    WP isa (.block (Impl.MlKem.AArch64.Kem16P.prfOut bt N)) s fun t =>
+      Keep [.x2, .x9] s t ∧ Frame [rateR Bf] s.mem t.mem ∧ Rate128 t.mem Bf S := by
+  unfold Impl.MlKem.AArch64.Kem16P.prfOut
+  refine wp_ptrTo (by decide) hbo fun s₁ h₁ e₁ => ?_
+  refine WP.mono (wp_range_flatMap (M := isa) (N := 16) (fun k (t : State) =>
+      Keep [.x2, .x9] s t ∧ t.gpr .x2 = Bf ∧ Frame [rateR Bf] s.mem t.mem ∧
+        ∀ j < k, t.mem.readW (outAddr Bf j) 64 = S[j]!)
+    (fun k t hk ⟨kt, xt, ft, wt⟩ => ?_) 16 (Nat.le_refl _) s₁
+    ⟨h₁.keep.mono (by simp), by rw [e₁, h28, hB], by rw [h₁.mem]; exact Frame.refl _ _,
+      fun j hj => absurd hj (Nat.not_lt_zero _)⟩) fun t ⟨kt, _, ft, wt⟩ => ⟨kt, ft, wt⟩
+  have hc : (stR st).Contains (st + BitVec.ofNat 64 (Impl.MlKem.AArch64.KEM.ST + 8 * k)) 8 :=
+    Offset.contains_base st (by simp only [Impl.MlKem.AArch64.KEM.ST]; omega_using [hk]) (by simp only [Impl.MlKem.AArch64.KEM.ST]; omega_using [hk])
+  have hbc : (rateR Bf).Contains (outAddr Bf k) 8 := Offset.contains_base Bf (by omega_using [hk]) (by omega_using [hk])
+  refine wp_ldrx (a := st + BitVec.ofNat 64 (Impl.MlKem.AArch64.KEM.ST + 8 * k))
+    ⟨by simp only [Impl.MlKem.AArch64.KEM.ST]; omega_using [], by simp only [Impl.MlKem.AArch64.KEM.ST]; omega_using [hk]⟩
+    (by rw [kt.get .x28 (by decide), h28])
+    (by rw [kt.rd, kt.wr]; exact hin _ _ ⟨_, List.mem_singleton_self _, hc⟩) fun u hu e => ?_
+  refine wp_strx (a := outAddr Bf k) ⟨by omega_using [], by omega_using [hk]⟩ (by rw [hu.get .x2 (by decide), xt]; rfl)
+    (by rw [hu.wr, kt.wr]; exact hout _ _ ⟨_, List.mem_singleton_self _, hbc⟩) fun v hv => wp_nil ?_
+  have hm : v.mem = u.mem.writeW (outAddr Bf k) (u.gpr .x9) := hv.mem
+  have hv9 : u.gpr .x9 = S[k]! := by
+    rw [e, ft.readW hc (fun r hr => by rw [List.mem_singleton.mp hr]; exact hd) (by decide), ← hS]
+    simp only [stateAt, Impl.MlKem.AArch64.KEM.ST, Nat.zero_add]
+    rw [getElem!_pos _ k (by omega_using [hk]), Vector.getElem_ofFn]
+  refine ⟨(kt.trans (hu.keep.trans hv.keep)).mono (by simp), by rw [hv.gpr, hu.get .x2 (by decide), xt], ?_,
+    fun j hj => ?_⟩
+  · rw [hm, hu.mem]; exact ft.writeW (List.mem_singleton_self _) _ hbc
+  · rw [hm]
+    rcases Nat.lt_succ_iff_lt_or_eq.mp hj with hj | rfl
+    · rw [show outAddr Bf j = Bf + BitVec.ofNat 64 (8 * j) from rfl,
+        show outAddr Bf k = Bf + BitVec.ofNat 64 (8 * k) from rfl,
+        Mem.readW_writeW_sep (sep_off Bf (.inl (by omega_using [hj])) (by omega_arith) (by omega_using [hk])) (by decide), hu.mem]
+      exact wt j hj
+    · rw [Mem.readW_writeW_self64, hv9]
+
+/-- What a PRF slot needs of its memory: a main squeeze's, `r` at `R`, and buffer `N` at `Bf`. -/
+structure SlotLay (p a b st R Bf : Addr) (s : State) : Prop where
+  cov : Covers [pairR p, stR st, callR (p + 1536)] s.wr
+  hin : ∀ i < 25, InRegions (s.rd ++ s.wr) (Proof.Sha3.AArch64.Neon.wordAddr p i) 16
+  hwa : ∀ i < 21, InRegions s.wr (outAddr a i) 8
+  hwb : ∀ i < 21, InRegions s.wr (outAddr b i) 8
+  sp : 128 ≤ s.sp.toNat
+  dAB : (rateR21 a).Disjoint (rateR21 b)
+  dPA : (pairR p).Disjoint (rateR21 a)
+  dPB : (pairR p).Disjoint (rateR21 b)
+  dPS : (pairR p).Disjoint (stR st)
+  dPC : (pairR p).Disjoint (callR (p + 1536))
+  dSC : (stR st).Disjoint (callR (p + 1536))
+  dSA : (stR st).Disjoint (rateR21 a)
+  dSB : (stR st).Disjoint (rateR21 b)
+  fP : (frame s.sp).Disjoint (pairR p)
+  fS : (frame s.sp).Disjoint (stR st)
+  fC : (frame s.sp).Disjoint (callR (p + 1536))
+  rin : Covers [⟨R, 32⟩] (s.rd ++ s.wr)
+  dSR : (stR st).Disjoint ⟨R, 32⟩
+  bout : Covers [rateR Bf] s.wr
+  dSF : (stR st).Disjoint (rateR Bf)
+  dAF : (rateR21 a).Disjoint (rateR Bf)
+  dBF : (rateR21 b).Disjoint (rateR Bf)
+  dPF : (pairR p).Disjoint (rateR Bf)
+
+/-- **A main squeeze computing `PRF₂(r, N)` in the third state.** -/
+theorem slotPrf_ok (sd bt : Nat) {N : Nat} (hN : N < 256)
+    (hbo : Impl.MlKem.AArch64.Kem16P.bufOff bt N < 65536) {s : State} {p a b st R Bf : Addr}
+    {A B : Spec.Sha3.State}
+    (h19 : s.gpr .x19 = p) (h20 : s.gpr .x20 = a) (h21 : s.gpr .x21 = b) (h28 : s.gpr .x28 = st)
+    (hR : st + BitVec.ofNat 64 sd = R) (hsd : sd % 8 = 0) (hsd' : sd + 32 ≤ 32768)
+    (hB : st + BitVec.ofNat 64 (Impl.MlKem.AArch64.Kem16P.bufOff bt N) = Bf)
+    (pair : PairAt s.mem p A B) (hl : SlotLay p a b st R Bf s) :
+    WP isa (Impl.MlKem.AArch64.Kem16P.slotPrf sha3 sd bt N) s fun t =>
+      Keep stepRegs s t ∧
+      Frame (step3Writes p a b st s.sp ++ [rateR Bf]) s.mem t.mem ∧
+      PairAt t.mem p (keccakF A) (keccakF B) ∧
+      Rate21 t.mem a (keccakF A) ∧ Rate21 t.mem b (keccakF B) ∧
+      t.gpr .x20 = a + 168 ∧ t.gpr .x21 = b + 168 ∧
+      Rate128 t.mem Bf (keccakF (Noise.seedState s.mem R N)) := by
+  unfold Impl.MlKem.AArch64.Kem16P.slotPrf
+  refine WP.seq (WP.mono (prfBlock_ok hN (by rw [h28]; exact hR) (hsd := hsd) (hsd' := hsd')
+    (by rw [h28]; exact Hybrid.covers_mono hl.cov (by simp)) (by rw [h28]; exact hl.dSR) hl.rin)
+    fun u ⟨ku, fu, su⟩ => ?_)
+  rw [h28] at fu su
+  have pu : PairAt u.mem p A B :=
+    VG.Proof.Sha3.AArch64.Hybrid.X3.pairAt_frame pair fu (fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact hl.dPS)
+  refine WP.seq (WP.mono (Hybrid.x3call_ok (sha3 := sha3) (q := p + 1536) (S := Noise.seedState s.mem R N)
+    (by rw [ku.get .x19, h19]) rfl (by rw [ku.get .x28, h28]) pu su hl.dPS hl.dPC hl.dSC
+    (by rw [ku.sp]; exact hl.sp) (by rw [ku.sp]; exact hl.fP) (by rw [ku.sp]; exact hl.fS)
+    (by rw [ku.sp]; exact hl.fC) (by rw [ku.wr]; exact hl.cov)) fun v ⟨kv, fv, pv, sv⟩ => ?_)
+  rw [ku.sp] at fv
+  have kuv := ku.trans kv
+  rw [WP.block_append_iff]
+  refine WP.mono (Hybrid.tail_ok (by rw [kuv.get .x19, h19]) (by rw [kuv.get .x20, h20])
+    (by rw [kuv.get .x21, h21]) pv
+    (fun i hi => by rw [kuv.rd, kuv.wr]; exact hl.hin i hi)
+    (fun i hi => by rw [kuv.wr]; exact hl.hwa i hi) (fun i hi => by rw [kuv.wr]; exact hl.hwb i hi)
+    hl.dAB hl.dPA hl.dPB) fun w ⟨kw, fw, aw, bw, w20, w21⟩ => ?_
+  have svt : ∀ r ∈ [rateR21 a, rateR21 b], (stR st).Disjoint r := by
+    intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl; exact hl.dSA; exact hl.dSB
+  have sw : stateAt w.mem st = keccakF (Noise.seedState s.mem R N) := by
+    rw [VG.Proof.Sha3.AArch64.Hybrid.X3.stateAt_frame fw svt, sv]
+  have kuw := kuv.trans kw
+  refine WP.mono (prfOut_ok bt N hbo (by rw [kuw.get .x28, h28]) hB sw
+    (by rw [kuw.rd, kuw.wr]; exact Covers.right (Hybrid.covers_mono hl.cov (by simp)))
+    (by rw [kuw.wr]; exact hl.bout) hl.dSF) fun t ⟨kt, ft, rt⟩ => ?_
+  have fpt : ∀ r ∈ [rateR Bf], (pairR p).Disjoint r := by
+    intro r hr; rw [List.mem_singleton.mp hr]; exact hl.dPF
+  refine ⟨(kuw.trans kt).mono (by simp [stepRegs, clobbered]), ?_, ?_,
+    rate21_frame aw ft (fun r hr => by rw [List.mem_singleton.mp hr]; exact hl.dAF),
+    rate21_frame bw ft (fun r hr => by rw [List.mem_singleton.mp hr]; exact hl.dBF),
+    by rw [kt.get .x20 (by decide), w20], by rw [kt.get .x21 (by decide), w21], rt⟩
+  · refine (((fu.mono (by simp [step3Writes])).trans (fv.mono (by simp [step3Writes]))).trans
+      (fw.mono (by simp [step3Writes]))).trans (ft.mono (by simp))
+  · exact VG.Proof.Sha3.AArch64.Hybrid.X3.pairAt_frame
+      (VG.Proof.Sha3.AArch64.Hybrid.X3.pairAt_frame pv fw (fun r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl; exact hl.dPA; exact hl.dPB)) ft fpt
+
+end VG.Proof.MlKem.AArch64.Kem16P
+
+end
+
+end
 
 /-!
 # The three main squeezes of a pair computing PRF outputs

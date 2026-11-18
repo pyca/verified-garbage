@@ -1,9 +1,8 @@
 module
-public import VerifiedGarbage.Proof.MlDsa.X86.Sign.Base
 
+public import VerifiedGarbage.Proof.MlDsa.X86.Sign.Base
 import VerifiedGarbage.Proof.MlKem.KPke
 import VerifiedGarbage.Proof.MlKem.X86.TopLocal
-import VerifiedGarbage.Proof.MlKem.X86.TopHash
 import VerifiedGarbage.Proof.MlKem.X86.TopSeq
 import VerifiedGarbage.Proof.MlKem.X86.TopCall
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
@@ -13,7 +12,6 @@ import VerifiedGarbage.Proof.Framework.TacticTemplate
 meta import VerifiedGarbage.Proof.MlDsa.X86.Sign.Base
 meta import VerifiedGarbage.Proof.MlKem.KPke
 meta import VerifiedGarbage.Proof.MlKem.X86.TopLocal
-meta import VerifiedGarbage.Proof.MlKem.X86.TopHash
 meta import VerifiedGarbage.Proof.MlKem.X86.TopSeq
 meta import VerifiedGarbage.Proof.MlKem.X86.TopCall
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore

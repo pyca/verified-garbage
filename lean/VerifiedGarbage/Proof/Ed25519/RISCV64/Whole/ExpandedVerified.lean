@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ed25519.RISCV64.Whole.Common
 public import VerifiedGarbage.Proof.Ed25519.RISCV64.Whole.Frame
 import VerifiedGarbage.Proof.Ed25519.RISCV64.Whole.Prune
-public import VerifiedGarbage.Proof.Ed25519.RISCV64.BaseContract
+public import VerifiedGarbage.Proof.Ed25519.RISCV64.Comb
 import VerifiedGarbage.Proof.Framework.RISCV64.Syms
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RISCV64.StackScratch
@@ -13,11 +13,10 @@ import VerifiedGarbage.Proof.Ed25519.Expanded
 import VerifiedGarbage.Proof.Ed25519.RISCV64.Whole.Sha512OK
 public import VerifiedGarbage.TCB.RISCV64.Target
 public import VerifiedGarbage.Impl.Ed25519.RISCV64.Whole
-public import VerifiedGarbage.Proof.Ed25519.RISCV64.PointTable
+public import VerifiedGarbage.Proof.Ed25519.RISCV64.PointPowers
 public import VerifiedGarbage.Proof.Framework.RISCV64.Call
 public import VerifiedGarbage.Proof.Framework.RISCV64.Spill
 public import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Ed25519.RISCV64.Whole.PublicKeyCT
 import VerifiedGarbage.Proof.Ed25519.RISCV64.Whole.SignCT
 public import VerifiedGarbage.Proof.Framework.Scratch
 public import VerifiedGarbage.Proof.Ed25519.WholeLocal
@@ -33,6 +32,48 @@ public import VerifiedGarbage.Spec.Ed25519.ExpandedSign
 public import VerifiedGarbage.TCB.Artifact
 public import VerifiedGarbage.Proof.Ed25519.RISCV64.ScalarVerified
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
+public import VerifiedGarbage.Proof.Framework.RISCV64.TaintSym
+meta import VerifiedGarbage.Impl.Ed25519.RISCV64.Whole
+meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
+meta import VerifiedGarbage.Proof.Framework.RISCV64.TaintSym
+meta import VerifiedGarbage.Impl.Ed25519.RISCV64.Comb
+
+/-! ### `Ed25519.RISCV64.Whole.PublicKeyCT`, which only this module used -/
+
+section
+
+/-!
+# `vg_ed25519_public_key_expanded` on RISC-V, with its frame as an argument: constant time
+
+Only the pointers are public: they stay in `s7`–`s10`, which no function
+called writes, so the taint analysis (`taint_decide`) sees them public
+throughout, callees included. So is the address of the comb's table
+(`taintSym`), which `vg_ed25519_scalar_base` reads.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ed25519.RISCV64.Whole
+
+open VG VG.RISCV64 VG.Impl.Ed25519.RISCV64.Whole
+
+theorem publicKeyExpanded_ct {Pre : State → Prop} {Pub : State → State → Prop}
+    (hpub : ∀ s₁ s₂, Pre s₁ → Pre s₂ → Pub s₁ s₂ →
+      s₁.sp = s₂.sp ∧ (∀ r ∈ [Reg.a0, .a1, .a2, .a3], s₁.gpr r = s₂.gpr r) ∧
+        s₁.syms Impl.Ed25519.RISCV64.combSym = s₂.syms Impl.Ed25519.RISCV64.combSym) :
+    ConstantTime isa Pre Pub publicKeyExpanded :=
+  VG.Taint.constantTime (A := taintSym [Impl.Ed25519.RISCV64.combSym]) (Taint.ofRegs [.a0, .a1, .a2, .a3])
+    (fun s₁ s₂ h₁ h₂ hp => by
+      obtain ⟨hsp, hr, hsy⟩ := hpub s₁ s₂ h₁ h₂ hp
+      exact ⟨⟨hsp, fun r h => hr r (by simpa using h)⟩, fun n hn => by
+        simp only [List.mem_singleton] at hn; subst hn; exact hsy⟩) (by taint_decide)
+
+end VG.Proof.Ed25519.RISCV64.Whole
+
+end
+
+end
 
 /-! ### `Ed25519.RISCV64.Whole.SignNonce`, which only this module used -/
 

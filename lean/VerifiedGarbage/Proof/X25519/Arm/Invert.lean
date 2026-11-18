@@ -2,11 +2,367 @@ module
 
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.X25519.Arm.Slots
 public import VerifiedGarbage.Proof.X25519.Ladder
 import VerifiedGarbage.Proof.X25519.Arm.Mul
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.X25519.Arm.Field
+
+/-! ### `X25519.Arm.Cswap`, which this module and modules that import it used -/
+
+section
+
+/-!
+# X25519 on 32-bit ARM: the conditional swap
+
+`cswap x y` swaps the elements at `x` and `y` if the mask in `r9` is `-1` and
+leaves them if it is `0` (`cswap_ok`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.X25519.Arm
+
+open VG VG.Arm VG.Impl.X25519.Arm
+
+theorem sel0 (a c : BitVec 32) : a ^^^ ((a ^^^ c) &&& (0 - BitVec.ofNat 32 0)) = a := by simp
+
+theorem sel0' (a c : BitVec 32) : c ^^^ ((a ^^^ c) &&& (0 - BitVec.ofNat 32 0)) = c := by simp
+
+theorem sel1 (a c : BitVec 32) : a ^^^ ((a ^^^ c) &&& (0 - BitVec.ofNat 32 1)) = c := by
+  have : (0 : BitVec 32) - BitVec.ofNat 32 1 = BitVec.allOnes 32 := by decide
+  rw [this, BitVec.and_allOnes, ← BitVec.xor_assoc, BitVec.xor_self, BitVec.zero_xor]
+
+theorem sel1' (a c : BitVec 32) : c ^^^ ((a ^^^ c) &&& (0 - BitVec.ofNat 32 1)) = a := by
+  have : (0 : BitVec 32) - BitVec.ofNat 32 1 = BitVec.allOnes 32 := by decide
+  rw [this, BitVec.and_allOnes, BitVec.xor_comm a, ← BitVec.xor_assoc, BitVec.xor_self, BitVec.zero_xor]
+
+section
+variable {e : Nat} {b : BitVec 32}
+
+/-- While swapping `x` and `y` from `s0`, after `n` limbs. -/
+structure SwapInv (b : BitVec 32) (x y sw : Nat) (s0 : State) (n : Nat) (s : State) : Prop where
+  rest : Rest [.r2, .r3, .r4] s0 s
+  frame : Frame [⟨State.addr b + BitVec.ofNat 64 x, 4 * n⟩, ⟨State.addr b + BitVec.ofNat 64 y, 4 * n⟩]
+    s0.mem s.mem
+  lx : ∀ j < n, limb s.mem (State.addr b) x j =
+    sel sw (limb s0.mem (State.addr b) x j) (limb s0.mem (State.addr b) y j)
+  ly : ∀ j < n, limb s.mem (State.addr b) y j =
+    sel sw (limb s0.mem (State.addr b) y j) (limb s0.mem (State.addr b) x j)
+
+/-- The swap of the first `n` limbs. -/
+theorem cswapN_ok {n x y : Nat} (hx : x + 4 * n ≤ 4096) (hy : y + 4 * n ≤ 4096)
+    (hxy : x + 4 * n ≤ y ∨ y + 4 * n ≤ x)
+    {s0 : State} (hc : CtxN e b s0) {sw : Nat} (hsw : sw ≤ 1) (h9 : s0.gpr .r9 = 0 - BitVec.ofNat 32 sw) :
+    WP isa (.block ((List.range n).flatMap (cswapStep x y))) s0 (SwapInv b x y sw s0 n) := by
+  refine wp_range_flatMap (M := isa) (SwapInv b x y sw s0) (fun k s hk h => ?_) n (Nat.le_refl _) s0
+    ⟨Rest.refl _ _, Frame.refl _ _, fun _ h => absurd h (Nat.not_lt_zero _),
+      fun _ h => absurd h (Nat.not_lt_zero _)⟩
+  have hcs : CtxN e b s := hc.of_rest h.rest (by decide)
+  have wx : wd s.mem (State.addr b) (x + 4 * k) = limb s0.mem (State.addr b) x k :=
+    wd_frame h.frame fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact Offset.disjoint _ (.inr (by omega_using [])) (by omega_using [hx, hk]) (by omega_using [hx, hk])
+      · exact Offset.disjoint _ (by omega_using [hxy, hk]) (by omega_using [hx, hk]) (by omega_using [hy, hk])
+  have wy : wd s.mem (State.addr b) (y + 4 * k) = limb s0.mem (State.addr b) y k :=
+    wd_frame h.frame fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact Offset.disjoint _ (by omega_using [hxy, hk]) (by omega_using [hy, hk]) (by omega_using [hx, hk])
+      · exact Offset.disjoint _ (.inr (by omega_using [])) (by omega_using [hy, hk]) (by omega_using [hy, hk])
+  unfold cswapStep
+  refine ldr0_ok hcs (d := x + 4 * k) (by omega_using [hx, hk]) fun t1 v1 => ?_
+  refine ldr0_ok (hcs.of_rest (v1.rest (ws := [.r2]) (by decide)) (by decide)) (d := y + 4 * k) (by omega_using [hy, hk])
+    fun t2 v2 => ?_
+  refine wp_dp (op2_reg _ _) fun t3 v3 => wp_dp (op2_reg _ _) fun t4 v4 => ?_
+  refine wp_dp (op2_reg _ _) fun t5 v5 => wp_dp (op2_reg _ _) fun t6 v6 => ?_
+  have hr6 : Rest [.r2, .r3, .r4] s t6 :=
+    (v1.rest (by decide)).trans ((v2.rest (by decide)).trans ((v3.rest (by decide)).trans
+      ((v4.rest (by decide)).trans ((v5.rest (by decide)).trans (v6.rest (by decide))))))
+  have hc6 : CtxN e b t6 := hcs.of_rest hr6 (by decide)
+  refine str0_ok hc6 (d := x + 4 * k) (by omega_using [hx, hk]) fun t7 v7 => ?_
+  refine str0_ok (hc6.of_rest (v7.rest []) (by decide)) (d := y + 4 * k) (by omega_using [hy, hk]) fun t8 v8 => ?_
+  refine WP.block_nil ?_
+  -- The values.
+  have eX : t2.gpr .r2 = s.mem.readW (State.addr b + BitVec.ofNat 64 (x + 4 * k)) 32 := by
+    rw [v2.other _ (by decide), v1.gpr]
+  have eY : t2.gpr .r3 = s.mem.readW (State.addr b + BitVec.ofNat 64 (y + 4 * k)) 32 := by
+    rw [v2.gpr, v1.mem]
+  have em : t3.gpr .r9 = 0 - BitVec.ofNat 32 sw := by
+    rw [v3.other _ (by decide), v2.other _ (by decide), v1.other _ (by decide), h.rest.gpr _ (by decide), h9]
+  have e6x : t6.gpr .r2 = t2.gpr .r2 ^^^ ((t2.gpr .r2 ^^^ t2.gpr .r3) &&& (0 - BitVec.ofNat 32 sw)) := by
+    rw [v6.other _ (by decide), v5.gpr, v4.other _ (by decide), v3.other _ (by decide), v4.gpr]
+    show _ ^^^ (t3.gpr .r4 &&& t3.gpr .r9) = _
+    rw [v3.gpr, em]; rfl
+  have e6y : t6.gpr .r3 = t2.gpr .r3 ^^^ ((t2.gpr .r2 ^^^ t2.gpr .r3) &&& (0 - BitVec.ofNat 32 sw)) := by
+    rw [v6.gpr, v5.other _ (by decide), v4.other _ (by decide), v3.other _ (by decide), v5.other _ (by decide),
+      v4.gpr]
+    show _ ^^^ (t3.gpr .r4 &&& t3.gpr .r9) = _
+    rw [v3.gpr, em]; rfl
+  have hm8 : t8.mem = (s.mem.writeW (State.addr b + BitVec.ofNat 64 (x + 4 * k)) (t6.gpr .r2)).writeW
+      (State.addr b + BitVec.ofNat 64 (y + 4 * k)) (t6.gpr .r3) := by
+    rw [v8.mem, v7.gpr, v7.mem, v6.mem, v5.mem, v4.mem, v3.mem, v2.mem, v1.mem]
+  have vx : (t6.gpr .r2).toNat = sel sw (limb s0.mem (State.addr b) x k) (limb s0.mem (State.addr b) y k) := by
+    rw [e6x, eX, eY, ← wx, ← wy]
+    rcases Nat.le_one_iff_eq_zero_or_eq_one.mp hsw with rfl | rfl
+    · rw [sel0]; rfl
+    · rw [sel1]; rfl
+  have vy : (t6.gpr .r3).toNat = sel sw (limb s0.mem (State.addr b) y k) (limb s0.mem (State.addr b) x k) := by
+    rw [e6y, eX, eY, ← wx, ← wy]
+    rcases Nat.le_one_iff_eq_zero_or_eq_one.mp hsw with rfl | rfl
+    · rw [sel0']; rfl
+    · rw [sel1']; rfl
+  refine ⟨h.rest.trans (hr6.trans ((v7.rest _).trans (v8.rest _))), ?_, fun j hj => ?_, fun j hj => ?_⟩
+  · rw [hm8]
+    refine ((h.frame.sub fun r hr => ?_).writeW (List.mem_cons_self ..) _
+      (Offset.contains _ (Nat.le_add_right _ _) (by omega_using []) (by omega_using [hx, hk]))).writeW
+      (List.mem_cons_of_mem _ (List.mem_singleton_self _)) _
+      (Offset.contains _ (Nat.le_add_right _ _) (by omega_using []) (by omega_using [hy, hk]))
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact ⟨_, List.mem_cons_self .., Region.sub_prefix (by omega_using [])⟩
+    · exact ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), Region.sub_prefix (by omega_using [])⟩
+  · rw [limb, hm8, wd_write_other _ _ _ (by omega_using [hxy, hk, hj]) (by omega_using [hx, hk, hj]) (by omega_using [hy, hk])]
+    rcases Nat.lt_succ_iff_lt_or_eq.mp hj with hj | rfl
+    · rw [wd_write_other _ _ _ (by omega_using [hj]) (by omega_arith) (by omega_using [hx, hk])]; exact h.lx j hj
+    · rw [wd_write_self, vx]
+  · rw [limb, hm8]
+    rcases Nat.lt_succ_iff_lt_or_eq.mp hj with hj | rfl
+    · rw [wd_write_other _ _ _ (by omega_using [hj]) (by omega_arith) (by omega_using [hy, hk]),
+        wd_write_other _ _ _ (by omega_arith) (by omega_arith) (by omega_using [hx, hk])]; exact h.ly j hj
+    · rw [wd_write_self, vy]
+
+theorem cswap_ok {x y : Nat} (hx : x + 64 ≤ 4096) (hy : y + 64 ≤ 4096) (hxy : x + 64 ≤ y ∨ y + 64 ≤ x)
+    {s0 : State} (hc : CtxN e b s0) {sw : Nat} (hsw : sw ≤ 1) (h9 : s0.gpr .r9 = 0 - BitVec.ofNat 32 sw) :
+    WP isa (.block (cswap x y)) s0 (SwapInv b x y sw s0 16) :=
+  cswapN_ok (n := 16) hx hy hxy hc hsw h9
+
+end
+
+end VG.Proof.X25519.Arm
+
+end
+
+end
+
+/-! ### `X25519.Arm.Slots`, which this module and modules that import it used -/
+
+section
+
+/-!
+# X25519 on 32-bit ARM: the field elements the working space holds
+
+`SlotsOk m B qs v`: each slot `q` of `qs` holds limbs below `2¹⁶` of the
+element `v q`. The field operations as updates of `v` (`mulS`, `addS`, `subS`,
+`cswapS`), for slots whose separation from the output is decided on their
+offsets (`Sep1`), and writing only the field area `[64, acc + 128)` of the
+working space (`FA`), for the product at any `acc` (X25519's `ACC` or
+Ed25519's).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.X25519.Arm
+
+open VG VG.Arm VG.Impl.X25519.Arm
+open VG.Spec.X25519 (P Fe)
+open VG.Proof.X25519 (toFe toFe_mul toFe_add toFe_sub)
+
+/-- Each slot `q` of `qs` holds limbs below `2¹⁶` of `v q`. -/
+def SlotsOk (m : Mem) (B : Addr) (qs : List Nat) (v : Nat → Fe) : Prop :=
+  ∀ q ∈ qs, Lim m B q ∧ FS m B q = v q
+
+theorem SlotsOk.mono {m : Mem} {B : Addr} {qs qs' : List Nat} {v : Nat → Fe} (h : SlotsOk m B qs v)
+    (hs : ∀ q ∈ qs', q ∈ qs) : SlotsOk m B qs' v := fun q hq => h q (hs q hq)
+
+theorem SlotsOk.congr {m : Mem} {B : Addr} {qs : List Nat} {v w : Nat → Fe} (h : SlotsOk m B qs v)
+    (hs : ∀ q ∈ qs, v q = w q) : SlotsOk m B qs w := fun q hq => ⟨(h q hq).1, (h q hq).2.trans (hs q hq)⟩
+
+/-- `v` with the element `x` at `o`. -/
+def upd (v : Nat → Fe) (o : Nat) (x : Fe) (q : Nat) : Fe := if q = o then x else v q
+
+theorem upd_self (v : Nat → Fe) (o : Nat) (x : Fe) : upd v o x o = x := by simp [upd]
+
+theorem upd_of_ne (v : Nat → Fe) {o q : Nat} (x : Fe) (h : q ≠ o) : upd v o x q = v q := by simp [upd, h]
+
+/-- Every slot of `qs` is `o` or separate from it, and in `[64, acc)`. -/
+def Sep1 (acc o : Nat) (qs : List Nat) : Bool :=
+  qs.all fun q => (q == o || q + 64 ≤ o || o + 64 ≤ q) && 64 ≤ q && q + 64 ≤ acc
+
+theorem sep1_get {acc o : Nat} {qs : List Nat} (h : Sep1 acc o qs = true) {q : Nat} (hq : q ∈ qs) :
+    (q = o ∨ q + 64 ≤ o ∨ o + 64 ≤ q) ∧ 64 ≤ q ∧ q + 64 ≤ acc := by
+  have := List.all_eq_true.mp h q hq
+  simp only [Bool.and_eq_true, Bool.or_eq_true, beq_iff_eq, decide_eq_true_eq] at this
+  exact ⟨this.1.1.elim (fun h => h.elim .inl (fun h => .inr (.inl h))) (fun h => .inr (.inr h)),
+    this.1.2, this.2⟩
+
+/-- The field area `[64, acc + 128)` of the working space: the elements and
+the product at `acc`. -/
+abbrev FA (acc : Nat) (b : BitVec 32) : Region := ⟨State.addr b + BitVec.ofNat 64 64, acc + 64⟩
+
+section
+variable {e acc : Nat} {b : BitVec 32}
+
+/-- The slots of `qs` other than `o` after a write of `o` (and `acc`). -/
+theorem slots_after (hA : acc + 128 ≤ 4096) {o : Nat} {qs : List Nat} (hq : Sep1 acc o qs = true)
+    (ho : o + 64 ≤ acc) {m m' : Mem}
+    (hf : Frame [⟨State.addr b + BitVec.ofNat 64 o, 64⟩, ⟨State.addr b + BitVec.ofNat 64 acc, 128⟩] m m')
+    {v : Nat → Fe} (hS : SlotsOk m (State.addr b) qs v) {q : Nat} (hq' : q ∈ qs) (hqo : q ≠ o) :
+    Lim m' (State.addr b) q ∧ FS m' (State.addr b) q = v q := by
+  obtain ⟨h1, h2, h3⟩ := sep1_get hq hq'
+  have e : ∀ k < 16, limb m' (State.addr b) q k = limb m (State.addr b) q k :=
+    limb_frame hf fun r hr k hk => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact Offset.disjoint _ (by omega_using [hqo, h1, hk]) (by omega_using [hA, h3, hk]) (by omega_using [hA, ho])
+      · exact Offset.disjoint _ (.inl (by omega_using [h3, hk])) (by omega_using [hA, h3, hk]) (by omega_using [hA])
+  refine ⟨fun k hk => by rw [e k hk]; exact (hS q hq').1 k hk, ?_⟩
+  rw [FS, V, val16_congr e]; exact (hS q hq').2
+
+theorem frame_FA (_hA : acc + 128 ≤ 4096) {o : Nat} (ho : 64 ≤ o ∧ o + 64 ≤ acc) {m m' : Mem}
+    (hf : Frame [⟨State.addr b + BitVec.ofNat 64 o, 64⟩, ⟨State.addr b + BitVec.ofNat 64 acc, 128⟩] m m') :
+    Frame [FA acc b] m m' := by
+  refine hf.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl <;> exact Offset.sub _ (by omega_using [ho]) (by omega_arith)
+
+/-- `mul o x y` is a multiplication with its product at `acc`: `mul_ok`'s
+statement, which `mulAt acc` meets (`mulAt_mulOk`). -/
+def MulOk (acc : Nat) (mul : Nat → Nat → Nat → Prog isa) : Prop :=
+  ∀ {e : Nat} {b : BitVec 32} {o x y : Nat}, o + 64 ≤ acc → x + 64 ≤ acc → y + 64 ≤ acc →
+    ∀ {s : State}, CtxN e b s → Lim s.mem (State.addr b) x → Lim s.mem (State.addr b) y →
+    WP isa (mul o x y) s fun s' =>
+      Rest clob s s' ∧
+      Frame [⟨State.addr b + BitVec.ofNat 64 o, 64⟩, ⟨State.addr b + BitVec.ofNat 64 acc, 128⟩] s.mem s'.mem ∧
+      Lim s'.mem (State.addr b) o ∧
+      V s'.mem (State.addr b) o % P = (V s.mem (State.addr b) x * V s.mem (State.addr b) y) % P
+
+theorem mulAt_mulOk (hA : acc + 128 ≤ 4096) : MulOk acc (mulAt acc) :=
+  fun ho hx hy _ hc hlx hly => mul_ok hA ho hx hy hc hlx hly
+
+theorem mulS (hA : acc + 128 ≤ 4096) {M : Nat → Nat → Nat → Prog isa} (hM : MulOk acc M) {o x y : Nat}
+    {qs : List Nat} {v : Nat → Fe} (hq : Sep1 acc o qs = true)
+    (ho : 64 ≤ o ∧ o + 64 ≤ acc) (hx : x ∈ qs) (hy : y ∈ qs) {s : State} (hc : CtxN e b s)
+    (hS : SlotsOk s.mem (State.addr b) qs v) :
+    WP isa (M o x y) s fun s' => Rest clob s s' ∧ Frame [FA acc b] s.mem s'.mem ∧
+      SlotsOk s'.mem (State.addr b) (o :: qs) (upd v o (v x * v y)) := by
+  refine WP.mono (hM ho.2 (sep1_get hq hx).2.2 (sep1_get hq hy).2.2 hc (hS x hx).1 (hS y hy).1)
+    fun s' ⟨hr, hf, hl, hv⟩ => ⟨hr, frame_FA hA ho hf, fun q hq' => ?_⟩
+  by_cases hqo : q = o
+  · subst hqo
+    refine ⟨hl, ?_⟩
+    rw [upd_self, ← (hS x hx).2, ← (hS y hy).2]
+    exact toFe_mul hv
+  · rw [upd_of_ne _ _ hqo]
+    exact slots_after hA hq ho.2 hf hS ((List.mem_cons.mp hq').resolve_left hqo) hqo
+
+theorem frame_o {o : Nat} {m m' : Mem} (hf : Frame [⟨State.addr b + BitVec.ofNat 64 o, 64⟩] m m') :
+    Frame [⟨State.addr b + BitVec.ofNat 64 o, 64⟩, ⟨State.addr b + BitVec.ofNat 64 acc, 128⟩] m m' :=
+  hf.mono fun r hr => by simp [List.mem_singleton.mp hr]
+
+theorem addS (hA : acc + 128 ≤ 4096) {o x y : Nat} {qs : List Nat} {v : Nat → Fe}
+    (hq : Sep1 acc o qs = true)
+    (ho : 64 ≤ o ∧ o + 64 ≤ acc) (hx : x ∈ qs) (hy : y ∈ qs) {s : State} (hc : CtxN e b s)
+    (hS : SlotsOk s.mem (State.addr b) qs v) :
+    WP isa (.block (add o x y)) s fun s' => Rest clob s s' ∧ Frame [FA acc b] s.mem s'.mem ∧
+      SlotsOk s'.mem (State.addr b) (o :: qs) (upd v o (v x + v y)) := by
+  have hx' := sep1_get hq hx
+  have hy' := sep1_get hq hy
+  refine WP.mono (add_ok (by omega_using [hA, ho]) (by omega_using [hA, hx']) (by omega_using [hA, hy'])
+    (hx'.1.elim (fun h => .inl h.symm) fun h => .inr h.symm) (hy'.1.elim (fun h => .inl h.symm) fun h => .inr h.symm)
+    hc (hS x hx).1 (hS y hy).1) fun s' ⟨hr, hf, hl, hv⟩ => ⟨hr, frame_FA hA ho (frame_o hf), fun q hq' => ?_⟩
+  by_cases hqo : q = o
+  · subst hqo
+    refine ⟨hl, ?_⟩
+    rw [upd_self, ← (hS x hx).2, ← (hS y hy).2]
+    exact toFe_add hv
+  · rw [upd_of_ne _ _ hqo]
+    exact slots_after hA hq ho.2 (frame_o hf) hS ((List.mem_cons.mp hq').resolve_left hqo) hqo
+
+theorem subS (hA : acc + 128 ≤ 4096) {o x y : Nat} {qs : List Nat} {v : Nat → Fe}
+    (hq : Sep1 acc o qs = true)
+    (ho : 64 ≤ o ∧ o + 64 ≤ acc) (hx : x ∈ qs) (hy : y ∈ qs) {s : State} (hc : CtxN e b s)
+    (hS : SlotsOk s.mem (State.addr b) qs v) :
+    WP isa (.block (sub o x y)) s fun s' => Rest clob s s' ∧ Frame [FA acc b] s.mem s'.mem ∧
+      SlotsOk s'.mem (State.addr b) (o :: qs) (upd v o (v x - v y)) := by
+  have hx' := sep1_get hq hx
+  have hy' := sep1_get hq hy
+  refine WP.mono (sub_ok (by omega_using [hA, ho]) (by omega_using [hA, hx']) (by omega_using [hA, hy'])
+    (hx'.1.elim (fun h => .inl h.symm) fun h => .inr h.symm) (hy'.1.elim (fun h => .inl h.symm) fun h => .inr h.symm)
+    hc (hS x hx).1 (hS y hy).1) fun s' ⟨hr, hf, hl, hv⟩ => ⟨hr, frame_FA hA ho (frame_o hf), fun q hq' => ?_⟩
+  by_cases hqo : q = o
+  · subst hqo
+    refine ⟨hl, ?_⟩
+    rw [upd_self, ← (hS x hx).2, ← (hS y hy).2]
+    exact toFe_sub hv
+  · rw [upd_of_ne _ _ hqo]
+    exact slots_after hA hq ho.2 (frame_o hf) hS ((List.mem_cons.mp hq').resolve_left hqo) hqo
+
+/-- The elements after swapping `x` and `y` if `sw = 1`. -/
+def swapV (x y sw : Nat) (v : Nat → Fe) (q : Nat) : Fe :=
+  if q = x then sel sw (v x) (v y) else if q = y then sel sw (v y) (v x) else v q
+
+theorem cswapS (hA : acc + 128 ≤ 4096) {x y : Nat} {qs : List Nat} {v : Nat → Fe}
+    (hq : Sep1 acc x qs = true) (hq' : Sep1 acc y qs = true)
+    (hx : x ∈ qs) (hy : y ∈ qs) (hxy : x + 64 ≤ y ∨ y + 64 ≤ x) {s : State} (hc : CtxN e b s) {sw : Nat}
+    (hsw : sw ≤ 1) (h9 : s.gpr .r9 = 0 - BitVec.ofNat 32 sw) (hS : SlotsOk s.mem (State.addr b) qs v) :
+    WP isa (.block (cswap x y)) s fun s' => Rest [.r2, .r3, .r4] s s' ∧ Frame [FA acc b] s.mem s'.mem ∧
+      SlotsOk s'.mem (State.addr b) qs (swapV x y sw v) := by
+  have hx' := sep1_get hq hx
+  have hy' := sep1_get hq hy
+  refine WP.mono (cswap_ok (b := b) (by omega_using [hA, hx']) (by omega_using [hA, hy']) hxy hc hsw h9) fun s' h => ⟨h.rest, ?_, ?_⟩
+  · refine h.frame.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl <;> exact Offset.sub _ (by omega_arith) (by omega_arith)
+  · intro q hq''
+    have hlx : ∀ k < 16, limb s'.mem (State.addr b) x k =
+        sel sw (limb s.mem (State.addr b) x k) (limb s.mem (State.addr b) y k) := h.lx
+    have hly : ∀ k < 16, limb s'.mem (State.addr b) y k =
+        sel sw (limb s.mem (State.addr b) y k) (limb s.mem (State.addr b) x k) := h.ly
+    by_cases hqx : q = x
+    · subst hqx
+      simp only [swapV, ite_true]
+      rcases Nat.le_one_iff_eq_zero_or_eq_one.mp hsw with rfl | rfl
+      · have e : ∀ k < 16, limb s'.mem (State.addr b) q k = limb s.mem (State.addr b) q k :=
+          fun k hk => by rw [hlx k hk]; rfl
+        refine ⟨fun k hk => by rw [e k hk]; exact (hS q hx).1 k hk, ?_⟩
+        rw [FS, V, val16_congr e]; exact (hS q hx).2
+      · have e : ∀ k < 16, limb s'.mem (State.addr b) q k = limb s.mem (State.addr b) y k :=
+          fun k hk => by rw [hlx k hk]; rfl
+        refine ⟨fun k hk => by rw [e k hk]; exact (hS y hy).1 k hk, ?_⟩
+        rw [FS, V, val16_congr e]; exact (hS y hy).2
+    by_cases hqy : q = y
+    · subst hqy
+      simp only [swapV, hqx, ite_false, ite_true]
+      rcases Nat.le_one_iff_eq_zero_or_eq_one.mp hsw with rfl | rfl
+      · have e : ∀ k < 16, limb s'.mem (State.addr b) q k = limb s.mem (State.addr b) q k :=
+          fun k hk => by rw [hly k hk]; rfl
+        refine ⟨fun k hk => by rw [e k hk]; exact (hS q hy).1 k hk, ?_⟩
+        rw [FS, V, val16_congr e]; exact (hS q hy).2
+      · have e : ∀ k < 16, limb s'.mem (State.addr b) q k = limb s.mem (State.addr b) x k :=
+          fun k hk => by rw [hly k hk]; rfl
+        refine ⟨fun k hk => by rw [e k hk]; exact (hS x hx).1 k hk, ?_⟩
+        rw [FS, V, val16_congr e]; exact (hS x hx).2
+    · simp only [swapV, hqx, hqy, ite_false]
+      obtain ⟨h1, h2, h3⟩ := sep1_get hq hq''
+      obtain ⟨h1', -, -⟩ := sep1_get hq' hq''
+      have e : ∀ k < 16, limb s'.mem (State.addr b) q k = limb s.mem (State.addr b) q k :=
+        limb_frame h.frame fun r hr k hk => by
+          simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+          rcases hr with rfl | rfl
+          · exact Offset.disjoint _ (by omega_using [hqx, h1, hk]) (by omega_using [hA, h3, hk]) (by omega_using [hA, hx'])
+          · exact Offset.disjoint _ (by omega_using [hqy, h1', hk]) (by omega_using [hA, h3, hk]) (by omega_using [hA, hy'])
+      refine ⟨fun k hk => by rw [e k hk]; exact (hS q hq'').1 k hk, ?_⟩
+      rw [FS, V, val16_congr e]; exact (hS q hq'').2
+
+end
+
+end VG.Proof.X25519.Arm
+
+end
+
+end
 
 /-! ### `X25519.Arm.Ladder`, which this module and modules that import it used -/
 

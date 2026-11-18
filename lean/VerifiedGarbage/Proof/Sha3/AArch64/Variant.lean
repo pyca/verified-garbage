@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Sha3.AArch64.Permute
-public import VerifiedGarbage.Proof.Sha3.AArch64.Callers.MlDsa
 public import VerifiedGarbage.Proof.Framework.AArch64.Depth
 public import VerifiedGarbage.Proof.Framework.AArch64.ModeSim
 import VerifiedGarbage.Proof.Framework.Contract
@@ -14,7 +13,199 @@ public meta import VerifiedGarbage.Proof.Framework.AArch64.TaintMono
 public meta import VerifiedGarbage.Impl.Sha3.AArch64.Callee
 public meta import VerifiedGarbage.Impl.Sha3.AArch64.Stream
 public meta import VerifiedGarbage.Proof.Sha3.AArch64.Sums
-public import VerifiedGarbage.Proof.Sha3.AArch64.Callers.Sums
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.Sign
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Verify.Verify
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.ExpandMask
+meta import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.Sign
+meta import VerifiedGarbage.Impl.MlDsa.AArch64.Verify.Verify
+meta import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.ExpandMask
+meta import VerifiedGarbage.Proof.Framework.RegSet
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sums
+public import VerifiedGarbage.Proof.Framework.TaintSumGeneric
+meta import VerifiedGarbage.Proof.Framework.TaintSumGeneric
+
+/-! ### `Sha3.AArch64.Callers.MlDsa`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Sha3.AArch64.Callers.Sums`, which this module and modules that import it used -/
+
+section
+
+/-!
+# The summaries of the sponge's callers, for any Keccak backend
+
+The constant-time checks of the sponge's callers (ML-KEM, ML-DSA) use the
+summaries of the sponge's functions over a backend's permutation
+(`sponge_taint_summaries`) and of ML-KEM's functions. `checkSum` looks
+neither at the code of a summarized call nor at the names of calls, so each
+caller is checked once for any backend `c` (`taint_decide_generic`,
+`Callers/MlDsa.lean`) from the summaries `sums c`, whose
+`pre`, `post` and frame are the same for every backend: each function of the
+sponge from each set of callee-saved registers public at some call, as
+`sponge_taint_summaries ns c saving` states them, ending with the registers
+the callers need public. Each backend gives them from its own summaries: those
+of a permutation that saves and restores the callee-saved registers with less
+public at the end (`Taint.SumOk.weaken`), those of one that keeps them from
+their frames (`Taint.SumOk.restrict`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Sha3.AArch64.Callers
+
+open VG VG.AArch64
+
+/-- The calls of the sponge's functions of the backend `c`, as its summaries
+state them (`sponge_taint_summaries`). -/
+abbrev absorbCall (c : Impl.Sha3.AArch64.Callee) : Prog isa :=
+  .call ("vg_keccak_absorb_scratch" ++ c.suffix) (Impl.Sha3.AArch64.Stream.absorbWith c)
+abbrev padCall (c : Impl.Sha3.AArch64.Callee) : Prog isa :=
+  .call ("vg_keccak_pad_scratch" ++ c.suffix) (Impl.Sha3.AArch64.Stream.padWith c)
+abbrev squeezeCall (c : Impl.Sha3.AArch64.Callee) : Prog isa :=
+  .call ("vg_keccak_squeeze_scratch" ++ c.suffix) (Impl.Sha3.AArch64.Stream.squeezeWith c)
+
+/-- ML-KEM's functions' summaries (`MlKemSums`), the same for every backend. -/
+abbrev mlkem : List (Taint.Summary isa VectorTaint.taint.T) :=
+  [Taint.sumOf MlKemSums.add, Taint.sumOf MlKemSums.sub, Taint.sumOf MlKemSums.ce,
+    Taint.sumOf MlKemSums.dd, Taint.sumOf MlKemSums.ce1024, Taint.sumOf MlKemSums.dd1024]
+
+theorem mlkem_ok : Taint.AllOk VectorTaint.taint mlkem :=
+  ⟨MlKemSums.add, MlKemSums.sub, MlKemSums.ce, MlKemSums.dd, MlKemSums.ce1024, MlKemSums.dd1024,
+    trivial⟩
+
+/-- The summaries of the sponge's callers' checks, for the backend `c`, in
+`sponge_taint_decide`'s order: each function of the sponge from each set of
+callee-saved registers public at some call, with the registers public at its
+end, then ML-KEM's functions'. -/
+def sums (c : Impl.Sha3.AArch64.Callee) : List (Taint.Summary isa VectorTaint.taint.T) :=
+  let sum (f : Prog isa) (pre post : List Reg) : Taint.Summary isa VectorTaint.taint.T :=
+    (f, VectorTaint.ofRegs pre, VectorTaint.ofRegs post, Taint.Frame.bot (A := VectorTaint.taint))
+  let perm : Prog isa := .call c.name c.code
+  [sum (absorbCall c) [.x0, .x1, .x2, .x3, .x4, .x5, .x23, .x25, .x26, .x27, .x28]
+      [.x0, .x25, .x26, .x27, .x28],
+    sum (absorbCall c) [.x0, .x1, .x2, .x3, .x4, .x5, .x24, .x25, .x26, .x27, .x28]
+      [.x0, .x25, .x26, .x27, .x28],
+    sum (absorbCall c) [.x0, .x1, .x2, .x3, .x4, .x5, .x25, .x26, .x27, .x28]
+      [.x0, .x25, .x26, .x27, .x28],
+    sum (absorbCall c) [.x0, .x1, .x2, .x3, .x4, .x5, .x25, .x26, .x27]
+      [.x0, .x25, .x26, .x27],
+    sum (absorbCall c) [.x0, .x1, .x2, .x3, .x4, .x5, .x24, .x25, .x26]
+      [.x0, .x25, .x26],
+    sum (padCall c) [.x0, .x1, .x2, .x4, .x25, .x26, .x27, .x28]
+      [.x25, .x26, .x27, .x28],
+    sum (padCall c) [.x0, .x1, .x2, .x4, .x25, .x26, .x27]
+      [.x25, .x26, .x27],
+    sum (padCall c) [.x0, .x1, .x2, .x4, .x25, .x26]
+      [.x25, .x26],
+    sum (squeezeCall c) [.x0, .x1, .x2, .x3, .x4, .x5, .x25, .x26, .x27, .x28]
+      [.x0, .x25, .x26, .x27, .x28],
+    sum (squeezeCall c) [.x0, .x1, .x2, .x3, .x4, .x5, .x25, .x26, .x27]
+      [.x0, .x25, .x26, .x27],
+    sum (squeezeCall c) [.x0, .x1, .x2, .x3, .x4, .x5, .x25, .x26]
+      [.x0, .x25, .x26],
+    sum perm [.x0, .x1, .x19, .x20, .x21, .x22, .x23, .x24, .x25, .x26, .x27, .x28]
+      [.x19, .x20, .x21, .x22, .x23, .x24, .x25, .x26, .x27, .x28],
+    sum perm [.x0, .x1, .x19, .x20, .x21, .x22, .x23, .x24, .x25, .x26, .x27]
+      [.x19, .x20, .x21, .x22, .x23, .x24, .x25, .x26, .x27],
+    sum perm [.x0, .x1, .x19, .x20, .x21, .x22, .x23, .x24, .x25, .x26]
+      [.x19, .x20, .x21, .x22, .x23, .x24, .x25, .x26],
+    sum perm [.x0, .x1, .x19, .x20, .x21, .x22, .x23, .x24]
+      [.x19, .x20, .x21, .x22, .x23, .x24],
+    sum perm [.x0, .x1, .x25, .x26, .x27, .x28]
+      [.x25, .x26, .x27, .x28],
+    sum perm [.x0, .x1, .x25, .x26, .x27]
+      [.x25, .x26, .x27],
+    sum perm [.x0, .x1, .x25, .x26]
+      [.x25, .x26],
+    sum perm [.x0, .x1]
+      []] ++ mlkem
+
+/-- `sums c` holds, from the backend's summaries, in `sums`'s order. -/
+theorem sums_ok {c : Impl.Sha3.AArch64.Callee}
+    (h : Taint.AllOk VectorTaint.taint (sums c |>.take 19)) : Taint.AllOk VectorTaint.taint (sums c) := by
+  have e : sums c = (sums c).take 19 ++ mlkem := rfl
+  rw [e]
+  exact .append h mlkem_ok
+
+end VG.Proof.Sha3.AArch64.Callers
+
+end
+
+end
+
+/-!
+# Constant time of ML-DSA's calls of the sponge, for any Keccak backend
+
+Each check, once for any backend `c` with the summaries `sums c`
+(`Callers/Sums.lean`, `taint_decide_generic`), for each backend's
+`Permutation` (`Proof/Sha3/AArch64/Variant.lean`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Sha3.AArch64.Callers
+
+open VG VG.AArch64
+
+theorem mldsaNttTaint (c : Impl.Sha3.AArch64.Callee) (hS : Taint.AllOk VectorTaint.taint (sums c)) :
+    ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x25, .x26, .x27, .x3, .x4])
+      (Impl.MlDsa.AArch64.Sample.spongeWith c 168 1008) h).isSome = true := by
+  taint_decide_generic c := Impl.Sha3.AArch64.Callee.scalar using hS
+
+theorem mldsaBallTaint (c : Impl.Sha3.AArch64.Callee) (hS : Taint.AllOk VectorTaint.taint (sums c)) :
+    ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x25, .x26, .x27, .x3, .x4])
+      (Impl.MlDsa.AArch64.Sample.spongeWith c 136 272) h).isSome = true := by
+  taint_decide_generic c := Impl.Sha3.AArch64.Callee.scalar using hS
+
+theorem mldsaMaskTaint (c : Impl.Sha3.AArch64.Callee) (hS : Taint.AllOk VectorTaint.taint (sums c)) :
+    ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x25, .x26, .x27, .x3, .x4])
+      (Impl.MlDsa.AArch64.Sample.expandMaskTailWith c) h).isSome = true := by
+  taint_decide_generic c := Impl.Sha3.AArch64.Callee.scalar using hS
+
+theorem mldsaSeedsTaint (c : Impl.Sha3.AArch64.Callee) (hS : Taint.AllOk VectorTaint.taint (sums c)) :
+    ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x25, .x26, .x27, .x28])
+      (Impl.MlDsa.AArch64.KeyGen.shake256With c [⟨.x25, 0, 32⟩, ⟨.x28, 896, 2⟩] [⟨.x28, 1024, 128⟩]) h).isSome = true := by
+  taint_decide_generic c := Impl.Sha3.AArch64.Callee.scalar using hS
+
+theorem mldsaTrHashTaint (c : Impl.Sha3.AArch64.Callee) (hS : Taint.AllOk VectorTaint.taint (sums c)) :
+    ∀ p : Spec.MlDsa.Params,
+      (p = Spec.MlDsa.mlDsa44 ∨ p = Spec.MlDsa.mlDsa65 ∨ p = Spec.MlDsa.mlDsa87) → ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x25, .x26, .x27, .x28])
+      (Impl.MlDsa.AArch64.KeyGen.trHashWith c p) h).isSome = true := by
+  intro p hp
+  rcases hp with rfl | rfl | rfl <;>
+    taint_decide_generic c := Impl.Sha3.AArch64.Callee.scalar using hS
+
+theorem mldsaVerifyHashTaint (c : Impl.Sha3.AArch64.Callee) (hS : Taint.AllOk VectorTaint.taint (sums c)) :
+    ∀ p : Spec.MlDsa.Params,
+      (p = Spec.MlDsa.mlDsa44 ∨ p = Spec.MlDsa.mlDsa65 ∨ p = Spec.MlDsa.mlDsa87) → ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x25, .x26, .x27, .x28])
+      (Impl.MlDsa.AArch64.KeyGen.shake256With c [⟨.x26, 0, 64⟩,
+        ⟨.x28, (Impl.MlDsa.AArch64.Verify.bP p).2, p.k * Impl.MlDsa.AArch64.Verify.w1Len p⟩]
+        [⟨.x28, 1024, p.ctildeLen⟩]) h).isSome = true := by
+  intro p hp
+  rcases hp with rfl | rfl | rfl <;>
+    taint_decide_generic c := Impl.Sha3.AArch64.Callee.scalar using hS
+
+theorem mldsaSignDecodeTaint (c : Impl.Sha3.AArch64.Callee) (hS : Taint.AllOk VectorTaint.taint (sums c)) :
+    ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x23, .x25, .x26, .x27, .x28])
+      (Impl.MlDsa.AArch64.Sign.shakeAtWith c [⟨.x25, 32, 32⟩, ⟨.x27, 0, 32⟩, ⟨.x26, 0, 64⟩] ⟨.x28, 960, 64⟩) h).isSome = true := by
+  taint_decide_generic c := Impl.Sha3.AArch64.Callee.scalar using hS
+
+theorem mldsaSignCommitTaint (c : Impl.Sha3.AArch64.Callee) (hS : Taint.AllOk VectorTaint.taint (sums c)) :
+    ∀ p : Spec.MlDsa.Params,
+      (p = Spec.MlDsa.mlDsa44 ∨ p = Spec.MlDsa.mlDsa65 ∨ p = Spec.MlDsa.mlDsa87) → ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x23, .x25, .x26, .x27, .x28])
+      (Impl.MlDsa.AArch64.Sign.shakeAtWith c [⟨.x26, 0, 64⟩,
+        ⟨.x28, 2048, p.k * Impl.MlDsa.AArch64.Sign.w1Len p⟩]
+        ⟨.x28, 1040, Impl.MlDsa.AArch64.Sign.cLen p⟩) h).isSome = true := by
+  intro p hp
+  rcases hp with rfl | rfl | rfl <;>
+    taint_decide_generic c := Impl.Sha3.AArch64.Callee.scalar using hS
+
+end VG.Proof.Sha3.AArch64.Callers
+
+end
+
+end
 
 @[expose] public section
 

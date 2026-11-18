@@ -12,15 +12,13 @@ import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Table
 public import VerifiedGarbage.Proof.Framework.Covers
 public import VerifiedGarbage.Impl.MlKem.AArch64.Ntt16.Fast
-public import VerifiedGarbage.Proof.MlKem.AArch64.NttR.RunF
-public import VerifiedGarbage.Proof.MlKem.AArch64.NttR.ModelI
+public import VerifiedGarbage.Proof.MlKem.AArch64.NttR.RunFI
+public import VerifiedGarbage.Proof.MlKem.AArch64.NttR.ModelFI
 import VerifiedGarbage.Proof.MlKem.AArch64.Coeff16
 import VerifiedGarbage.Proof.MlKem.Mem16
 import VerifiedGarbage.Proof.MlKem.AArch64.PrimCall
 import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Impl.MlKem.AArch64.Ntt16.FastInv
-public import VerifiedGarbage.Proof.MlKem.AArch64.NttR.RunFI
-public import VerifiedGarbage.Proof.MlKem.AArch64.NttR.ModelFI
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.MlKem.AArch64.NttR.Sym
 public import VerifiedGarbage.Proof.Framework.AArch64.LaneSave

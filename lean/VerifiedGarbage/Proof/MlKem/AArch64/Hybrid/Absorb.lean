@@ -1,6 +1,5 @@
 module
 
-import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.WordSemantic
 public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Pad
 public import VerifiedGarbage.Proof.Sha3.AArch64.Hybrid.X3
 public import VerifiedGarbage.Impl.MlKem.AArch64.Hybrid

@@ -5,10 +5,8 @@ meta import VerifiedGarbage.Proof.MlKem.X86_64.EkFused16
 import all Init.Data.Nat.Bitwise.Basic
 import VerifiedGarbage.Proof.MlKem.X86_64.EcTop
 meta import VerifiedGarbage.Proof.MlKem.X86_64.EcTop
-import VerifiedGarbage.Proof.MlKem.X86_64.KgTop
-meta import VerifiedGarbage.Proof.MlKem.X86_64.KgTop
-import VerifiedGarbage.Proof.MlKem.X86_64.KgCT
-meta import VerifiedGarbage.Proof.MlKem.X86_64.KgCT
+import VerifiedGarbage.Proof.MlKem.X86_64.EncTop
+meta import VerifiedGarbage.Proof.MlKem.X86_64.EncTop
 
 /-!
 # ML-KEM on x86-64: encapsulation hashing the key in the matrix's fragments, with 16-bit polynomials, constant time

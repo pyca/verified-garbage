@@ -3,7 +3,7 @@ module
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.MlKem.Arm.Calls
 public import VerifiedGarbage.Proof.MlKem.Arm.KemLay
-import VerifiedGarbage.Proof.MlKem.Arm.HashTop
+import VerifiedGarbage.Proof.MlKem.Arm.SampleCT
 
 /-!
 # ML-KEM on 32-bit ARM: sampling with `PRF` and `SamplePolyCBD`

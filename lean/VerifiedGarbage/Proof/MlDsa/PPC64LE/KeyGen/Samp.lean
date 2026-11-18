@@ -1,8 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.KeyGen.Good
-public import VerifiedGarbage.Proof.MlDsa.PPC64LE.KeyGen.SeedsCT
-public import VerifiedGarbage.Proof.MlDsa.PPC64LE.KeyGen.Mask
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Masked
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
 import VerifiedGarbage.Proof.MlKem.Mem
@@ -10,9 +8,267 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Run
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 meta import VerifiedGarbage.Proof.MlDsa.KeyGen.Good
-meta import VerifiedGarbage.Proof.MlDsa.PPC64LE.KeyGen.SeedsCT
-meta import VerifiedGarbage.Proof.MlDsa.PPC64LE.KeyGen.Mask
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
+public import VerifiedGarbage.Proof.MlDsa.PPC64LE.KeyGen.Seeds
+public import VerifiedGarbage.Proof.MlDsa.PPC64LE.KeyGen.StepsCT
+meta import VerifiedGarbage.Proof.MlDsa.PPC64LE.KeyGen.Seeds
+meta import VerifiedGarbage.Proof.MlDsa.PPC64LE.KeyGen.StepsCT
+public import VerifiedGarbage.Proof.MlDsa.PPC64LE.KeyGen.Lay
+import VerifiedGarbage.Proof.MlDsa.KeyGen.Mono
+import VerifiedGarbage.Proof.MlKem.PPC64LE.Common
+import VerifiedGarbage.Proof.MlKem.PPC64LE.SampleCT
+import VerifiedGarbage.Proof.MlDsa.PPC64LE.Arith.Common
+import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
+import VerifiedGarbage.Proof.Framework.PPC64LE.Step
+import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Nat.Bitwise.Basic
+meta import VerifiedGarbage.Proof.MlDsa.PPC64LE.KeyGen.Lay
+meta import VerifiedGarbage.Proof.MlDsa.KeyGen.Mono
+meta import VerifiedGarbage.Proof.MlKem.PPC64LE.Common
+meta import VerifiedGarbage.Proof.MlKem.PPC64LE.SampleCT
+meta import VerifiedGarbage.Proof.MlDsa.PPC64LE.Arith.Common
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Run
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Step
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
+meta import VerifiedGarbage.Proof.Framework.Offset
+
+/-! ### `MlDsa.PPC64LE.KeyGen.Mask`, which only this module used -/
+
+section
+
+/-!
+# ML-DSA key generation on PPC64LE: masking a sampled polynomial
+
+As on 32-bit ARM (`Proof/MlDsa/Arm/KeyGen/Samp.lean`): after each sampler,
+its result (0 or 1, the low word of `r3`, which `and24` zero-extends) is
+ANDed into `r24`, and each coefficient of the polynomial it wrote with
+`-r3`: the polynomial is kept if the sampler succeeded, and zeroed if it
+failed (`mask_ok`), without a branch.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.PPC64LE.KeyGen
+
+open VG VG.PPC64LE VG.Proof.MlKem.PPC64LE
+open VG.Impl.MlDsa.PPC64LE.KeyGen
+open VG.Proof.MlDsa (coeffAt)
+open VG.Proof.MlDsa.KeyGen (ifp ifn)
+
+/-! ## Coefficients in memory -/
+
+theorem coeffAt_writeW32 (m : Mem) (q : Addr) {i j : Nat} (hi : i < 256) (hj : j < 256) (v : BitVec 32) :
+    coeffAt (m.writeW (q + BitVec.ofNat 64 (4 * j)) v) q i = if j = i then v else coeffAt m q i := by
+  unfold coeffAt
+  split
+  · subst j; exact Mem.readW_writeW_self32 m _ v
+  · exact Mem.readW_writeW_sep (Offset.sep q (by omega_arith) (by omega_using [hi]) (by omega_using [hj])) (by decide)
+
+/-- A coefficient masked with `-r`, for `r` 0 or 1. -/
+theorem and_mask {r : BitVec 64} (hr : r = 0 ∨ r = 1) (x : BitVec 32) :
+    (x.setWidth 64 &&& (0 - r)).setWidth 32 = if r = 1 then x else 0 := by
+  rcases hr with rfl | rfl
+  · simp
+  · rw [ifp rfl, show (0 : BitVec 64) - 1 = BitVec.allOnes 64 by decide, BitVec.and_allOnes]
+    apply BitVec.eq_of_toNat_eq
+    have := x.isLt
+    simp only [BitVec.toNat_setWidth]; omega_using []
+
+/-! ## One coefficient -/
+
+section
+variable {s : State} {x c M : BitVec 64}
+
+theorem maskBody_ok (h4 : s.gpr .r4 = x) (h5 : s.gpr .r5 = c) (h12 : s.gpr .r12 = M)
+    (ir : InRegions (s.rd ++ s.wr) x 4) (ow : InRegions s.wr x 4) :
+    WP isa (.block maskBody) s fun s' =>
+      s'.gpr .r4 = x + 4 ∧ s'.gpr .r5 = c - 1 ∧ s'.gpr .r12 = M ∧
+      s'.mem = s.mem.writeW x (((s.mem.readW x 32).setWidth 64 &&& M).setWidth 32) ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ ∀ r ∈ preserved, s'.gpr r = s.gpr r := by
+  crun [maskBody, h4, h5, h12, ir, ow, preserved, List.forall_mem_cons, List.not_mem_nil, false_imp_iff]
+  simp [Mem.writeW, Mem.readW, Mem.read]
+
+end
+
+/-- After masking `k` coefficients of the polynomial at `P` with `M`. -/
+structure MaskInv (P M : Addr) (s₀ : State) (k : Nat) (s : State) : Prop where
+  r4 : s.gpr .r4 = P + BitVec.ofNat 64 (4 * k)
+  r5 : s.gpr .r5 = BitVec.ofNat 64 (256 - k)
+  r12 : s.gpr .r12 = M
+  cs : ∀ r ∈ preserved, s.gpr r = s₀.gpr r
+  rd : s.rd = s₀.rd
+  wr : s.wr = s₀.wr
+  sp : s.sp = s₀.sp
+  frame : Frame [reg P 1024] s₀.mem s.mem
+  co : ∀ t < 256, coeffAt s.mem P t =
+    if t < k then ((coeffAt s₀.mem P t).setWidth 64 &&& M).setWidth 32 else coeffAt s₀.mem P t
+
+theorem mask_step {P M : Addr} {s₀ : State} (cw : Covers [reg P 1024] s₀.wr)
+    {k : Nat} (hk : k < 256) {s : State} (h : MaskInv P M s₀ k s) :
+    WP isa (.block maskBody) s fun s' => MaskInv P M s₀ (k + 1) s' ∧ (s'.gpr .r5 != 0) = decide (k + 1 ≠ 256) := by
+  have cP : (reg P 1024).Contains (P + BitVec.ofNat 64 (4 * k)) 4 := Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk])
+  have ow : InRegions s.wr (P + BitVec.ofNat 64 (4 * k)) 4 := by
+    rw [h.wr]; exact cw _ _ ⟨_, List.mem_singleton_self _, cP⟩
+  have ir : InRegions (s.rd ++ s.wr) (P + BitVec.ofNat 64 (4 * k)) 4 :=
+    let ⟨r, hr, hc⟩ := ow; ⟨r, List.mem_append_right _ hr, hc⟩
+  refine WP.mono (maskBody_ok h.r4 h.r5 h.r12 ir ow)
+    fun s' ⟨r4, r5, r12, m, rd, wr, sp, cs⟩ => ⟨⟨?_, ?_, r12, fun r hr => (cs r hr).trans (h.cs r hr),
+      rd.trans h.rd, wr.trans h.wr, sp.trans h.sp, ?_, fun t ht => ?_⟩, ?_⟩
+  · rw [r4]; exact ptr_succ _ 4 k
+  · rw [r5]; exact count_sub hk
+  · rw [m]; exact h.frame.writeW (List.mem_singleton_self _) _ cP
+  · rw [m, coeffAt_writeW32 _ _ ht hk]
+    by_cases e : k = t
+    · subst e
+      have := h.co k hk
+      rw [ifn (Nat.lt_irrefl _)] at this
+      rw [ifp rfl, ifp (Nat.lt_succ_self _), ← this]; rfl
+    · rw [ifn e, h.co t ht]
+      by_cases htk : t < k
+      · rw [ifp htk, ifp (by omega_using [htk])]
+      · rw [ifn htk, ifn (by omega_using [e, htk])]
+  · rw [r5, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, count_sub hk]; exact count_nz hk (by decide)
+
+theorem mask_loop {P M : Addr} {s₀ : State} (cw : Covers [reg P 1024] s₀.wr)
+    (h4 : s₀.gpr .r4 = P) (h5 : s₀.gpr .r5 = BitVec.ofNat 64 256) (h12 : s₀.gpr .r12 = M) :
+    WP isa (.loop (.block maskBody) (.nonzero .d .r5)) s₀ fun s =>
+      Kept [reg P 1024] s₀ s ∧ ∀ t < 256, coeffAt s.mem P t = ((coeffAt s₀.mem P t).setWidth 64 &&& M).setWidth 32 :=
+  wp_loop_nz (MaskInv P M s₀) (N := 256) (by decide) (fun k hk s h => mask_step cw hk h)
+    (fun s h => ⟨⟨h.cs, h.sp, h.rd, h.wr, h.frame⟩, fun t ht => by rw [h.co t ht, ifp ht]⟩)
+    ⟨by rw [h4]; simp, by rw [h5], h12, fun _ _ => rfl, rfl, rfl, rfl, Frame.refl _ _,
+      fun t _ => by rw [ifn (Nat.not_lt_zero t)]⟩
+
+/-! ## The polynomial -/
+
+abbrev maskPre (a : Ptr) : List Instr :=
+  ([.li .r12 0, .sub .r12 .r12 .r3] : List Instr) ++ Arg.instrs .r4 (.ptr a) ++ ([.li .r5 256] : List Instr)
+
+theorem maskPre_ok {a : Ptr} (ha : argOk (.ptr a) = true) (s : State) :
+    WP isa (.block (maskPre a)) s fun s' =>
+      Only s s' ∧ s'.gpr .r12 = 0 - s.gpr .r3 ∧ s'.gpr .r4 = s.gpr a.1 + BitVec.ofNat 64 a.2 ∧
+        s'.gpr .r5 = BitVec.ofNat 64 256 := by
+  have hb := baseReg_of ha
+  have ha2 : a.2 < 2 ^ 31 := by simp only [argOk, Bool.and_eq_true, decide_eq_true_eq] at ha; exact ha.2
+  have hn : a.1 ≠ .r4 ∧ a.1 ≠ .r5 ∧ a.1 ≠ .r12 := by
+    simp only [baseReg, Bool.or_eq_true, beq_iff_eq] at hb
+    rcases hb with ((h | h) | h) | h <;> rw [h] <;> decide
+  rw [maskPre, WP.block_append_iff, WP.block_append_iff]
+  refine WP.cons (exec_li (by decide)) (WP.cons exec_sub (wp_nil ?_))
+  refine WP.mono (arg_ok .r4 ha (argOk_ne (by decide) ha) _) fun s1 e1 => ?_
+  subst e1
+  refine WP.cons (exec_li (by decide)) (wp_nil ⟨⟨fun r hr => ?_, rfl, rfl, rfl, rfl⟩, ?_, ?_, ?_⟩)
+  · have : r ≠ .r12 ∧ r ≠ .r4 ∧ r ≠ .r5 := by revert r; decide
+    simp only [RegUpd.gpr_write, this.1, this.2.1, this.2.2, ite_false]
+  · simp only [RegUpd.gpr_write, reduceCtorEq, ite_false, ite_true, BitVec.ofNat_eq_ofNat]
+  · simp only [RegUpd.gpr_write, reduceCtorEq, ite_false, ite_true, argVal, hn.2.2]
+  · simp only [RegUpd.gpr_write, ite_true]
+
+theorem mask_ok {L : Lay} {Wb : List Nat} {STK : Nat} {s : State} (hs : Site L Wb STK s) {a : Ptr}
+    (pa : PtrIn L a 1024) (hw : ix a.1 ∈ Wb) (hr : s.gpr .r3 = 0 ∨ s.gpr .r3 = 1) :
+    WP isa (mask a) s fun s' => Kept (L.RL [tri a 1024]) s s' ∧
+      ∀ t < 256, coeffAt s'.mem (lpa L a) t = if s.gpr .r3 = 1 then coeffAt s.mem (lpa L a) t else 0 := by
+  have gb := hs.val pa.1
+  simp only [argVal] at gb
+  have cw := hs.cwE pa hw
+  unfold mask
+  refine WP.seq (WP.mono (maskPre_ok pa.1 s) fun s₁ ⟨o₁, g12, g4, g5⟩ => ?_)
+  rw [gb] at g4
+  refine WP.mono (mask_loop (by rw [o₁.wr]; exact cw) g4 g5 g12) fun s' ⟨k, co⟩ => ⟨?_, fun t ht => ?_⟩
+  · exact (o₁.kept _).trans k
+  · rw [co t ht, o₁.mem, and_mask hr]
+
+end VG.Proof.MlDsa.PPC64LE.KeyGen
+
+end
+
+end
+
+/-! ### `MlDsa.PPC64LE.KeyGen.SeedsCT`, which this module and modules that import it used -/
+
+section
+
+/-!
+# ML-DSA key generation on PPC64LE: the seeds leak nothing
+
+As on 32-bit ARM (`Proof/MlDsa/Arm/KeyGen/Samp.lean`): two runs of the
+seeds in the same layout leak the same (`seeds_two`): the bytes `k` and `ℓ`
+are public, and every access is through the pointers of the layout; which
+gives the piece of the seeds (`seeds_piece`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.PPC64LE.KeyGen
+
+open VG VG.PPC64LE VG.Proof.MlKem.PPC64LE
+open VG.Impl.MlDsa.PPC64LE.KeyGen
+open VG.Spec.MlDsa (Params)
+
+/-- Two runs whose entry states have the same layout. -/
+def KTwo (p : Params) (STK : Nat) (x y : State) : Prop := ∃ σ, Two (lay p STK σ) kWb STK x y
+
+theorem kc_twoL {p : Params} {STK : Nat} {σ₁ σ₂ x y : State} (pub : kgPub p σ₁ σ₂) (h₁ : KC p STK σ₁ x)
+    (h₂ : KC p STK σ₂ y) : Two (lay p STK σ₁) kWb STK x y :=
+  ⟨h₁.site, lay_pub pub ▸ h₂.site, by rw [h₁.sp, h₂.sp, pub.1]⟩
+
+theorem kc_two {p : Params} {STK : Nat} {σ₁ σ₂ x y : State} (pub : kgPub p σ₁ σ₂) (h₁ : KC p STK σ₁ x)
+    (h₂ : KC p STK σ₂ y) : KTwo p STK x y :=
+  ⟨σ₁, kc_twoL pub h₁ h₂⟩
+
+/-- A part that leaks the same in two runs in every layout of key generation. -/
+theorem ktwo {p : Params} {STK : Nat} {c : Prog isa}
+    (h : ∀ σ, RelCT isa (Two (lay p STK σ) kWb STK) c fun _ _ => True) : RelCT isa (KTwo p STK) c fun _ _ => True :=
+  RelCT.exists_ h
+
+theorem setKL_taint : ∀ v < 16, ∀ w < 16, (VG.PPC64LE.taint.check (Taint.ofRegs [.r31])
+    (.block (setB (sc oKL) v ++ setB (sc (oKL + 1)) w)) (.block [])).isSome = true := by decide +kernel
+
+theorem seeds_two {p : Params} (hF : PFacts p) {STK : Nat} (σ : State) :
+    RelCT isa (Two (lay p STK σ) kWb STK) (seeds p) fun _ _ => True := by
+  have hk := hF.k; have hl := hF.l
+  have hP : ∀ x y, Two (lay p STK σ) kWb STK x y → Two (lay p STK σ) kWb STK x y := fun _ _ h => h
+  unfold seeds
+  refine RelCT.seq (RelCT.two hP (taint31 hP (setKL_taint p.k (by omega_using [hk]) p.ℓ (by omega_using [hl]))) fun x hs => ?_) ?_
+  · refine WP.block_append (WP.mono (setB_ok hs (q := sc oKL) ⟨sc_ok (by decide), by lsep hF⟩ (by decide) (by decide)
+      (v := p.k) (by omega_using [hk])) fun s₁ ⟨k₁, _⟩ => WP.mono (setB_ok (hs.kept k₁) (q := sc (oKL + 1))
+        ⟨sc_ok (by decide), by lsep hF⟩ (by decide) (by decide) (v := p.ℓ) (by omega_using [hl])) fun s₂ ⟨k₂, _⟩ =>
+          ⟨_, (k₁.monoL (W' := [tri (sc oKL) 1, tri (sc (oKL + 1)) 1]) (by simp)).trans (k₂.monoL (by simp))⟩)
+  have hin : ∀ s, Site (lay p STK σ) kWb STK s → ∀ pc ∈ ([⟨.r30, 0, 32⟩, ⟨.r31, oKL, 2⟩] : List Impl.MlKem.PPC64LE.Piece),
+      PieceOk (hashLay (lay p STK σ) s fun _ => true) ix s false pc := fun s hs pc hpc => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hpc
+    rcases hpc with rfl | rfl
+    · exact pieceS hs rfl (by decide) (by decide) (by decide) (by lsep hF [hashLay, Lay.size])
+        (.inr rfl) fun h => absurd h (by decide)
+    · exact pieceS hs rfl (by decide) (by decide) (by decide) (by lsep hF [hashLay, Lay.size])
+        (.inl rfl) fun h => absurd h (by decide)
+  have hq : ∀ s, Site (lay p STK σ) kWb STK s →
+      PieceOk (hashLay (lay p STK σ) s fun _ => true) ix s true (⟨.r31, oHX, 128⟩ : Impl.MlKem.PPC64LE.Piece) :=
+    fun s hs => pieceS hs rfl (by decide) (by decide) (by decide) (by lsep hF [hashLay, Lay.size]) (.inl rfl)
+      fun _ => by decide
+  refine RelCT.seq (RelCT.two hP (hashS_tr ktrue (rate := 136) (sfx := 0x1f) (by decide) (by decide)
+    (by simp) hin hq hP) fun x hs => WP.mono (hashS hs ktrue (rate := 136) (sfx := 0x1f) (by decide) (by decide)
+      (by simp) (hin x hs) (hq x hs)) fun _ h => ⟨_, h.1⟩) ?_
+  refine RelCT.seq (RelCT.two hP (taint31 hP (by taint_decide)) fun x hs =>
+    WP.mono (copyS hs (sb := .r31) (so := oHX) (db := .r31) (dO := oSA) (len := 32) ⟨by decide, by lsep hF⟩
+      ⟨by decide, by lsep hF⟩ (by decide) (by decide) (by decide) (by decide) (by decide) (by lsep hF))
+      fun _ h => ⟨_, h.1⟩) ?_
+  refine RelCT.seq (RelCT.two hP (taint31 hP (by taint_decide)) fun x hs =>
+    WP.mono (copyS hs (sb := .r31) (so := oHX + 32) (db := .r31) (dO := oSB) (len := 64) ⟨by decide, by lsep hF⟩
+      ⟨by decide, by lsep hF⟩ (by decide) (by decide) (by decide) (by decide) (by decide) (by lsep hF))
+      fun _ h => ⟨_, h.1⟩) ?_
+  exact taint31 hP (by taint_decide)
+
+theorem seeds_piece {p : Params} (hF : PFacts p) {STK : Nat} :
+    KPiece p STK (fun σ s => KC p STK σ s ∧ s.gpr .r24 = 1) (fun σ s => K1 p STK σ s ∧ s.gpr .r24 = 1) (seeds p) :=
+  ⟨fun _ _ _ h => seeds_ok hF h.1 h.2,
+    rel_of (ktwo fun σ => seeds_two hF σ) fun _ _ _ _ _ _ pub h₁ h₂ => kc_two pub h₁.1 h₂.1⟩
+
+end VG.Proof.MlDsa.PPC64LE.KeyGen
+
+end
+
+end
 
 /-!
 # ML-DSA key generation on PPC64LE: the samplers

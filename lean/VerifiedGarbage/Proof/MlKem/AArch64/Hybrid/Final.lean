@@ -1,12 +1,11 @@
 module
+
 public import VerifiedGarbage.Proof.MlKem.Scrubbed
 public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Top
-public import VerifiedGarbage.Proof.MlKem1024.AArch64.Encaps
-
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.ContractSat
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Encaps
-meta import VerifiedGarbage.Proof.MlKem1024.AArch64.Encaps
-import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.ContractSat
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.ContractSat
 import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Hole
 
 /-!

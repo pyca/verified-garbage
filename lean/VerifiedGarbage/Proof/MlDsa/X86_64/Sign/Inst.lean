@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.SimpleBitPack
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.Unpack
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.HintPack
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttShortCT
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.ExpandMask
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.M4Squeeze
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.BallCT
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Backend
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Prims

@@ -4,8 +4,8 @@ public import VerifiedGarbage.Impl.Ed25519.Arm.ScalarBase
 import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 meta import VerifiedGarbage.Impl.Ed25519.Arm.ScalarBase
 meta import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
-public import VerifiedGarbage.Proof.Ed25519.Arm.CombLoop
-meta import VerifiedGarbage.Proof.Ed25519.Arm.CombLoop
+public import VerifiedGarbage.Proof.Ed25519.Arm.LrSlot
+meta import VerifiedGarbage.Proof.Ed25519.Arm.LrSlot
 import VerifiedGarbage.Proof.Framework.Arm.TaintSym
 meta import VerifiedGarbage.Proof.Framework.Arm.TaintSym
 public import VerifiedGarbage.Proof.Framework.Arm.StackScratchConsts
@@ -19,8 +19,6 @@ import VerifiedGarbage.Proof.Ed25519.Arm.PointEncode
 meta import VerifiedGarbage.Proof.Ed25519.Arm.PointEncode
 import VerifiedGarbage.Proof.Ed25519.Arm.InitFields
 meta import VerifiedGarbage.Proof.Ed25519.Arm.InitFields
-public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTFrom
-meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTFrom
 public import VerifiedGarbage.TCB.Arm.Target
 meta import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarFinish
@@ -30,10 +28,7 @@ meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarCodec
 public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTLit
 meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTLit
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
-public import VerifiedGarbage.Proof.Ed25519.Arm.PointKeep
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Proof.Ed25519.Arm.LrSlot
-meta import VerifiedGarbage.Proof.Ed25519.Arm.LrSlot
 import VerifiedGarbage.Proof.Framework.TaintSum
 meta import VerifiedGarbage.Proof.Framework.TaintSum
 import VerifiedGarbage.Proof.Ed25519.Arm.Points
@@ -48,7 +43,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Ed25519.Arm.FieldMemory
 import VerifiedGarbage.Proof.Ed25519.Arm.FnCall
-import VerifiedGarbage.Proof.Ed25519.Arm.MulFnFinal
+import VerifiedGarbage.Proof.Ed25519.Arm.FieldProg
 import VerifiedGarbage.Proof.Ed25519.Arm.PointAffine
 import VerifiedGarbage.Proof.Ed25519.Bytes
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -57,11 +52,11 @@ import VerifiedGarbage.Proof.Framework.Arm.Lit
 import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.X25519.Arm.AddSub
-import VerifiedGarbage.Proof.X25519.Arm.Cswap
+import VerifiedGarbage.Proof.X25519.Arm.Mul
+import VerifiedGarbage.Proof.X25519.Arm.Invert
 meta import VerifiedGarbage.Proof.Ed25519.Arm.FieldMemory
 meta import VerifiedGarbage.Proof.Ed25519.Arm.FnCall
-meta import VerifiedGarbage.Proof.Ed25519.Arm.MulFnFinal
+meta import VerifiedGarbage.Proof.Ed25519.Arm.FieldProg
 meta import VerifiedGarbage.Proof.Ed25519.Arm.PointAffine
 meta import VerifiedGarbage.Proof.Ed25519.Bytes
 meta import VerifiedGarbage.Proof.Framework.AddrArith
@@ -71,12 +66,34 @@ meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
 meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 meta import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.X25519.Arm.AddSub
-meta import VerifiedGarbage.Proof.X25519.Arm.Cswap
+meta import VerifiedGarbage.Proof.X25519.Arm.Mul
+meta import VerifiedGarbage.Proof.X25519.Arm.Invert
 public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Ed25519.Arm.PointKeep
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Ed25519.Contract
+public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTMul
+meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTMul
+meta import VerifiedGarbage.Spec.Ed25519.Contract
+
+/-! ### `Ed25519.Arm.ScalarBaseCTFrom`, which this module and modules that import it used -/
+
+section
+
+/-! Public scalar pointers remain public across point preparation. -/
+
+@[expose] public section
+
+namespace VG.Proof.Ed25519.Arm
+open VG VG.Arm VG.Impl.Ed25519.Arm VG.Proof.X25519.Arm
+
+def pointFromPrepareCT : Prog isa :=
+  .seq (.block [.str .r12 .r0 52]) (fieldCode false [.const 16 Spec.Ed25519.d])
+
+end VG.Proof.Ed25519.Arm
+
+end
+
+end
 
 /-! Merged from `Proof.Ed25519.Arm.ScalarBaseEngine`. -/
 
