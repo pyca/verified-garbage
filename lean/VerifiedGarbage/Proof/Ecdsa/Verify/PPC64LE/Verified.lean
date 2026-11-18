@@ -8,6 +8,9 @@ import VerifiedGarbage.Proof.Ecdsa.Verify.Curves
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.Hash
 meta import VerifiedGarbage.Impl.Ecdsa.PPC64LE.VerifyHash
 public import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.Main
+import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.VerifiedAll
+public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.CombAll
+meta import VerifiedGarbage.Proof.Ecdsa.PPC64LE.CombAll
 import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.P256Comb
 import VerifiedGarbage.Proof.P256.PPC64LE.Comb
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Consts
@@ -88,29 +91,14 @@ theorem verifyPPC_implies : verifyPPC.Implies (Proof.Ecdsa.verifyContract Spec.E
         [satState] using satState }
 
 /-- The verification's contract with the comb's table, as the proof states it. -/
-def vPC : Contract isa where
-  pre s := verifyPPC.pre (stripConsts p256CombConsts s) ∧ ConstsOk p256CombConsts 0 s
-  post := verifyPPC.post
-  pub s₁ s₂ := verifyPPC.pub s₁ s₂ ∧ s₁.syms p256Comb.tsym = s₂.syms p256Comb.tsym
+def vPC : Contract isa := Tab.withTable verifyPPC p256CombConsts p256Comb.tsym
 
 theorem verify_ppc (hL : Weierstrass.Law Spec.P256.curve) (s : State) (hs : vPC.pre s) :
     ∃ t s', Exec isa verifyP256 s t s' ∧ abiPreserved s s' ∧ vPC.post s s' := by
   obtain ⟨hp, hk⟩ := hs
-  have p := pre_of hp
-  have hpre : VPre p256 s (constRegs p256CombConsts s) := by
-    refine ⟨?_, p.wr, p.pk_sc, p.dg_sc, p.sig_sc, p.pk_fit, p.dg_fit, p.sig_fit, p.sc_fit⟩
-    rw [← List.take_append_drop (s.rd.length - p256CombConsts.length) s.rd, hk.1]
-    have e := p.rd
-    simp only [List.append_nil] at e
-    exact congrArg (fun rs => rs ++ constRegs p256CombConsts s) e
-  have member : (p256Comb.tsym, p256CombWords) ∈ p256CombConsts := List.mem_singleton_self _
-  have ht : VG.Proof.Weierstrass.PPC64LE.TComb.TableMem s (s.syms p256Comb.tsym) p256CombWords :=
-    ⟨hk.fit member, ⟨_, List.mem_append_left _ (hk.mem_rd member), Region.contains_self _ _⟩,
-      fun i hi => hk.readW member hi⟩
-  have hd : Region.Disjoint ⟨s.syms p256Comb.tsym, 8 * p256CombWords.length⟩ ⟨s.gpr .r6, 8192⟩ :=
-    hk.disjoint_wr member (by rw [hpre.wr]; simp)
-  obtain ⟨t, s', he, K, hpost⟩ := verifyWith_ok p256_ok hL hpre (P256.combPts_ok hL ht rfl hd)
-  exact ⟨t, s', he, ⟨K.saved, K.sp, K.lr⟩, hpost⟩
+  obtain ⟨t, s', he, K, hpost⟩ :=
+    CombWin.verify_ok p256_ok hL (fun ht sym hd => P256.combPts_ok hL ht sym hd) (pre_of hp) hk
+  exact ⟨t, s', he, K, Tab.post_intro hpost⟩
 
 theorem verify_ct : ConstantTime isa vPC.pre vPC.pub verifyP256 :=
   VG.Taint.constantTime (A := vectorTaintSym [p256Comb.tsym]) (Taint.ofRegs [.r3, .r4, .r5, .r6])
@@ -159,13 +147,7 @@ theorem vSat : (Proof.Ecdsa.verifyContract Spec.Ecdsa.P256.inst (abi.withConsts 
 
 theorem vPC_implies :
     vPC.Implies (Proof.Ecdsa.verifyContract Spec.Ecdsa.P256.inst (abi.withConsts p256CombConsts)) :=
-  { pre := fun _ hs => ⟨verifyPPC_implies.pre _ (pre_consts.mp hs).1, (pre_consts.mp hs).2⟩
-    post := fun s s' hs hp => post_consts.mpr (verifyPPC_implies.post (stripConsts p256CombConsts s) s'
-      (pre_consts.mp hs).1 hp)
-    pub := fun s₁ s₂ h₁ h₂ hp => ⟨verifyPPC_implies.pub (stripConsts p256CombConsts s₁)
-        (stripConsts p256CombConsts s₂) (pre_consts.mp h₁).1 (pre_consts.mp h₂).1 (pub_consts.mp hp).1,
-      (pub_consts.mp hp).2 _ List.mem_cons_self⟩
-    sat := ⟨vSatC, vSat⟩ }
+  Tab.implies verifyPPC_implies ⟨vSatC, vSat⟩
 
 theorem verify_verified (hL : Weierstrass.Law Spec.P256.curve) :
     Verified PPC64LE.target verifyP256

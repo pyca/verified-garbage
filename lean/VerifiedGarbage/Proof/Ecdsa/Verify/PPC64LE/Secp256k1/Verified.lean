@@ -8,6 +8,9 @@ import VerifiedGarbage.Proof.Ecdsa.Verify.Curves
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.Hash
 meta import VerifiedGarbage.Impl.Ecdsa.PPC64LE.VerifyHash
 public import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.Main
+import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.VerifiedAll
+public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.CombAll
+meta import VerifiedGarbage.Proof.Ecdsa.PPC64LE.CombAll
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.Main
 public import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.Secp256k1.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.Secp256k1.Contract
@@ -33,11 +36,7 @@ public import VerifiedGarbage.Proof.Framework.ConstMem
 meta import VerifiedGarbage.Proof.Framework.ConstMem
 import VerifiedGarbage.Proof.Secp256k1.PPC64LE.Comb
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Secp256k1.Window
-import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Stages
-import VerifiedGarbage.Proof.Ecdsa.PPC64LE.LadPow
-import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Keep
-import VerifiedGarbage.Proof.Ecdh.PPC64LE.Main
 
 /-!
 # ECDSA verification over secp256k1 on PPC64LE: `Verified`
@@ -74,140 +73,22 @@ theorem combPts_ok (hC : Law Spec.Secp256k1.curve) {s₀ : State} {T : Addr}
     (ht : TableMem s₀ T secp256k1CombWords) (sym : s₀.syms secp256k1Comb.tsym = T)
     (hd : Region.Disjoint ⟨T, 8 * secp256k1CombWords.length⟩ ⟨s₀.gpr .r6, 8192⟩) :
     PtsOk secp256k1 s₀ pointsSecp256k1 := by
-  intro s hM syms P hP hQ rest Q h
-  have hc := secp256k1_ok
-  have hn := hM.ws.nowrap
-  have hsz : size = 8192 := rfl
-  obtain hpR := unitMod_pow_two hc.p_odd (64 * secp256k1.n)
-  obtain hmont : ∀ x, secp256k1.mont x < secp256k1.C.p := fun x => Nat.mod_lt _ (by decide)
   rw [pointsSecp256k1_eq]
-  refine WP.seq ?_
-  -- `u`'s bits.
-  refine WP.seq (VG.PPC64LE.WP.mono_syms (WP.mono (tbl_bits_ok hc hM.ws (i := U) (j := 0) (by decide)
-    (by decide)) fun s₁ h => h) fun s₁ ⟨b₁, k₁, O₁⟩ sy₁ => ?_)
-  obtain K₁ := hM.toKeep.step (by decide) (k₁.rk (rs' := bitsClob)) (hU := O₁.unch)
-    (hW := fixedOk_tbl (by decide) 0) (hWs := by decide)
-  -- `b R mod p` at `EM`.
-  refine WP.seq (VG.PPC64LE.WP.mono_syms (WP.mono (setSl_ok hc K₁.ws (o := EM) (x := secp256k1.mont secp256k1.C.b)
-    (by decide) (Nat.lt_trans (hmont _) hc.p_lt)) fun s₂ h => h) fun s₂ ⟨_, k₂, O₂⟩ sy₂ => ?_)
-  obtain K₂ := K₁.step (by decide) (k₂.rk (rs' := [.r11])) (hU := O₂.unch)
-    (hW := fixedOk_slW (l := [EM]) (by decide)) (hWs := by decide)
-  -- `[u]G` by the comb.
-  obtain ht₂ : TableMem s₂ T secp256k1CombWords :=
-    ht.unch (by rw [K₂.rk.rd, K₂.rk.wr]) K₂.whole (by decide) hd
-  obtain ht' : TableMem s₂ T (TComb.tableWords secp256k1Comb Spec.Secp256k1.curve VG.Impl.Secp256k1.secp256k1Comb7) := by
+  refine CombWin.kit_pts_ok Window.Secp256k1.kit (by decide) (Or.inr ⟨rfl, rfl⟩) (by decide) hC
+    fun {s k} K sy hk bits => ?_
+  obtain ht₂ : TableMem s T secp256k1CombWords :=
+    ht.unch (by rw [K.rk.rd, K.rk.wr]) K.whole (by decide) hd
+  obtain ht' : TableMem s T (TComb.tableWords secp256k1Comb Spec.Secp256k1.curve VG.Impl.Secp256k1.secp256k1Comb7) := by
     rw [Proof.Secp256k1.PPC64LE.comb_words_eq]; exact ht₂
   obtain hd' : Region.Disjoint ⟨T, 8 * (TComb.tableWords secp256k1Comb Spec.Secp256k1.curve VG.Impl.Secp256k1.secp256k1Comb7).length⟩
       ⟨s₀.gpr .r6, 8192⟩ := by
     rw [Proof.Secp256k1.PPC64LE.comb_words_eq]; exact hd
-  obtain bu : ∀ i < 64 * secp256k1.n, s₂.mem (off (s₀.gpr .r6) (bitsAt secp256k1.n 0 + i)) =
-      if (sv secp256k1 (s₀.gpr .r6) s U).testBit i then 1 else 0 := fun i hi => by
-    rw [tbl_unch O₂.unch (by decide) (j := 0) (by decide) hi (tbl_apart_slW (c := secp256k1) (l := [EM]) (by decide) (by decide) 0 i)]
-    exact b₁ i hi
-  refine WP.seq (VG.PPC64LE.WP.mono_syms (WP.mono (TComb.comb_ok secp256k1Comb (Proof.Secp256k1.PPC64LE.comb_config hC) hC
-    hc.onG K₂.ws ht' (by rw [sy₂, sy₁, syms, sym]) hd' (k := sv secp256k1 (s₀.gpr .r6) s U)
-    (Nat.lt_trans hM.u_lt hc.n_enc) K₂.fixed.zero (fun i hi => bu i (by
+  exact WP.mono (TComb.comb_ok secp256k1Comb (Proof.Secp256k1.PPC64LE.comb_config hC) hC
+    secp256k1_ok.onG K.ws ht' (by rw [sy, sym]) hd'
+    hk K.fixed.zero (fun i hi => bits i (by
       have : i < 8 * Spec.Secp256k1.curve.len := hi
-      exact Nat.lt_of_lt_of_le this (by decide))) K₂.fixed.ap K₂.fixed.b3p) fun s₃ h => h)
-    fun s₃ ⟨k₃, U₃, L₃, R₃⟩ sy₃ => ?_)
-  obtain K₃ := K₂.step (by decide) k₃ (hU := U₃.cover Proof.Secp256k1.PPC64LE.comb_writes_cover)
-    (hW := (fixedOk_ladWp (by decide) (by decide) GX GY).append (fixedOk_genX (by decide)))
-    (hWs := VG.Proof.Ecdh.PPC64LE.le_append (ladWp_le (by decide) (by decide) GX GY) (genX_le (by decide)))
-  -- A slot apart from what a step writes keeps its number.
-  obtain sl : ∀ {W : List (Nat × Nat)} {m m' : Mem}, Unch (s₀.gpr .r6) W m m' → ∀ {i : Nat}, i < 45 →
-      (∀ w ∈ W, secp256k1.sl i + 8 * secp256k1.n ≤ w.1 ∨ w.1 + w.2 ≤ secp256k1.sl i) →
-      wordsVal m' (s₀.gpr .r6) (secp256k1.sl i) secp256k1.n = wordsVal m (s₀.gpr .r6) (secp256k1.sl i) secp256k1.n :=
-    fun {_ _ _} U {_} hi hW => sv_unch (c := secp256k1) U (by decide) hn hi hW
-  -- `U = [u]G`, `R = O`.
-  refine WP.seq (VG.PPC64LE.WP.mono_syms (WP.mono (save_ok hc K₃.ws) fun s₄ h => h)
-    fun s₄ ⟨k₄, U₄, ux₄, uy₄, uz₄, rx₄, ry₄, rz₄⟩ sy₄ => ?_)
-  obtain K₄ := K₃.step (by decide) (k₄.rk (rs' := [.r4, .r11])) (hU := U₄) (hW := fixedOk_slW (by decide))
-    (hWs := by decide)
-  -- `v`'s bits.
-  refine WP.seq (VG.PPC64LE.WP.mono_syms (WP.mono (tbl_bits_ok hc K₄.ws (i := V) (j := 0) (by decide)
-    (by decide)) fun s₅ h => h) fun s₅ ⟨b₅, k₅, O₅⟩ sy₅ => ?_)
-  obtain K₅ := K₄.step (by decide) (k₅.rk (rs' := bitsClob)) (hU := O₅.unch)
-    (hW := fixedOk_tbl (by decide) 0) (hWs := by decide)
-  -- What the windows read.
-  obtain v₄ : sv secp256k1 (s₀.gpr .r6) s₄ V = sv secp256k1 (s₀.gpr .r6) s V :=
-    (sl U₄ (by decide) (by decide)).trans ((sl U₃ (by decide) (by decide)).trans
-      ((sl O₂.unch (by decide) (by decide)).trans (sl O₁.unch (by decide) (by decide))))
-  obtain keep5 : ∀ {i : Nat}, i < 45 → i ∈ [PX, PY] →
-      sv secp256k1 (s₀.gpr .r6) s₅ i = sv secp256k1 (s₀.gpr .r6) s i := fun {i} hi hl => by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hl
-    rcases hl with rfl | rfl <;>
-      exact (sl O₅.unch hi (by decide)).trans ((sl U₄ hi (by decide)).trans ((sl U₃ hi (by decide)).trans
-        ((sl O₂.unch hi (by decide)).trans (sl O₁.unch hi (by decide)))))
-  have F₅ := K₅.fixed
-  obtain gQ : Window.Secp256k1.PtOk (s₀.gpr .r6) s₅ Window.Secp256k1.gPt P :=
-    Window.Secp256k1.PtOk.of_eq ⟨hQ, hM.px_lt, hM.py_lt, lt_of_eq_of_lt hM.fixed.onep (Nat.mod_lt _ (by decide))⟩
-      (keep5 (by decide) (by simp)) (keep5 (by decide) (by simp))
-      (F₅.onep.trans hM.fixed.onep.symm)
-  obtain bv : Window.Bits (s₀.gpr .r6) s₅ (sv secp256k1 (s₀.gpr .r6) s V) := fun t ht => by
-    rw [← v₄]; exact b₅ t ht
-  -- `[v]Q` by the windows.
-  refine WP.seq (WP.mono (Window.Secp256k1.mul_ok hC ⟨K₅.ws, ⟨F₅.ap, F₅.b3p, F₅.zero, F₅.onep⟩, gQ, hP, bv,
-    Nat.lt_trans hM.v_lt (by decide)⟩) fun s₆ ⟨k₆, U₆, R₆⟩ => ?_)
-  obtain K₆ := K₅.step (by decide) k₆ (hU := U₆) (hW := fun w hw => by
-      simp only [Window.Secp256k1.mulW, List.mem_cons, List.not_mem_nil, or_false] at hw
-      rcases hw with rfl | rfl | rfl <;> exact Or.inr (by decide)) (hWs := by decide)
-  -- `U`, `[u]G`, through the save and the windows.
-  obtain uS : ∀ {i j : Nat}, i ∈ [UX, UY, UZ] → sv secp256k1 (s₀.gpr .r6) s₄ i = sv secp256k1 (s₀.gpr .r6) s₃ j →
-      sv secp256k1 (s₀.gpr .r6) s₆ i = sv secp256k1 (s₀.gpr .r6) s₃ j := fun {i _} hi e => by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
-    rcases hi with rfl | rfl | rfl <;>
-      exact (sl U₆ (by decide) (by decide)).trans ((sl O₅.unch (by decide) (by decide)).trans e)
-  obtain ux := uS (by simp) ux₄
-  obtain uy := uS (by simp) uy₄
-  obtain uz := uS (by simp) uz₄
-  have F₆ := K₆.fixed
-  -- The sum.
-  refine WP.mono (sum_ok hc K₆ (fun i hi => ?_)) fun s₇ ⟨K₇, U₇, _, _, rz₇, t₇⟩ => h s₇ ?_
-  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
-    rcases hi with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-    · exact lt_of_eq_of_lt F₆.ap (hmont _)
-    · exact lt_of_eq_of_lt F₆.b3p (hmont _)
-    · rw [ux]; exact L₃ _ (List.mem_cons_self ..)
-    · rw [uy]; exact L₃ _ (List.mem_cons_of_mem _ (List.mem_cons_self ..))
-    · rw [uz]; exact L₃ _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)))
-    · exact R₆.x
-    · exact R₆.y
-    · exact R₆.z
-  -- What `Pts` keeps from `s`.
-  obtain tb : ∀ {W : List (Nat × Nat)} {m m' : Mem}, Unch (s₀.gpr .r6) W m m' →
-      (∀ w ∈ W, w.1 + w.2 ≤ 4352 ∨ 4608 ≤ w.1) → ∀ t < 64 * secp256k1.n,
-      m' (off (s₀.gpr .r6) (bitsAt secp256k1.n 1 + t)) = m (off (s₀.gpr .r6) (bitsAt secp256k1.n 1 + t)) :=
-    fun {_ _ _} U hW t ht => tbl_unch U (by decide) (j := 1) (by decide) ht (fun w hw => by
-      have := hW w hw; have : t < 256 := ht; show 4352 + t + 1 ≤ w.1 ∨ w.1 + w.2 ≤ 4352 + t; omega_arith)
-  obtain fl : ∀ {W : List (Nat × Nat)} {m m' : Mem}, Unch (s₀.gpr .r6) W m m' →
-      (∀ w ∈ W, secp256k1.sl FLAG + 8 ≤ w.1 ∨ w.1 + w.2 ≤ secp256k1.sl FLAG) →
-      word m' (s₀.gpr .r6) (secp256k1.sl FLAG) = word m (s₀.gpr .r6) (secp256k1.sl FLAG) :=
-    fun {_ _ _} U hW => U.word hW (by decide)
-  obtain ha : tmv secp256k1.C secp256k1.n (s₀.gpr .r6) s₆ (secp256k1.sl AP) = Fin.ofNat secp256k1.C.p secp256k1.C.a := by
-    show toM _ _ (wordsVal _ _ (secp256k1.sl AP) secp256k1.n) = _; rw [F₆.ap]; exact toM_cmont hc _
-  obtain hb : tmv secp256k1.C secp256k1.n (s₀.gpr .r6) s₆ (secp256k1.sl B3P) = Fin.ofNat secp256k1.C.p (3 * secp256k1.C.b) := by
-    show toM _ _ (wordsVal _ _ (secp256k1.sl B3P) secp256k1.n) = _; rw [F₆.b3p]; exact toM_cmont hc _
-  obtain tU : ∀ {i j : Nat}, sv secp256k1 (s₀.gpr .r6) s₆ i = sv secp256k1 (s₀.gpr .r6) s₃ j →
-      tmv secp256k1.C secp256k1.n (s₀.gpr .r6) s₆ (secp256k1.sl i) = tmv secp256k1.C secp256k1.n (s₀.gpr .r6) s₃ (secp256k1.sl j) :=
-    fun e => by show toM _ _ (sv secp256k1 _ _ _) = toM _ _ (sv secp256k1 _ _ _); rw [e]
-  obtain hU1 : Rep secp256k1.C (tmv secp256k1.C secp256k1.n (s₀.gpr .r6) s₆ (secp256k1.sl UX))
-      (tmv secp256k1.C secp256k1.n (s₀.gpr .r6) s₆ (secp256k1.sl UY)) (tmv secp256k1.C secp256k1.n (s₀.gpr .r6) s₆ (secp256k1.sl UZ))
-      (mul (sv secp256k1 (s₀.gpr .r6) s U) (G secp256k1.C)) := by
-    rw [tU ux, tU uy, tU uz]; exact R₃
-  obtain rm₇ : sv secp256k1 (s₀.gpr .r6) s₇ RM' = sv secp256k1 (s₀.gpr .r6) s RM' :=
-    (sl U₇ (by decide) (by decide)).trans ((sl U₆ (by decide) (by decide)).trans
-      ((sl O₅.unch (by decide) (by decide)).trans ((sl U₄ (by decide) (by decide)).trans
-      ((sl U₃ (by decide) (by decide)).trans ((sl O₂.unch (by decide) (by decide)).trans
-      (sl O₁.unch (by decide) (by decide)))))))
-  refine ⟨K₇, fun t ht => ?_, ?_, by rw [rm₇]; exact hM.rm_lt, by rw [rm₇]; exact hM.rm, rz₇,
-    Rep.add hC (hC.onCurve_mul hc.onG _) (hC.onCurve_mul hP _) hU1 R₆.rep (by have e := t₇; rw [ha, hb] at e; exact e.symm)⟩
-  · rw [tb U₇ (by decide) t ht, tb U₆ (by decide) t ht, tb O₅.unch (by decide) t ht, tb U₄ (by decide) t ht,
-      tb U₃ (by decide) t ht, tb O₂.unch (by decide) t ht, tb O₁.unch (by decide) t ht]
-    exact hM.t₁ t ht
-  · simp only [flagW]
-    rw [fl U₇ (by decide), fl U₆ (by decide), fl O₅.unch (by decide), fl U₄ (by decide), fl U₃ (by decide),
-      fl O₂.unch (by decide), fl O₁.unch (by decide)]
-    exact hM.flag
+      exact Nat.lt_of_lt_of_le this (by decide))) K.fixed.ap K.fixed.b3p)
+    fun s₃ ⟨k₃, U₃, L₃, R₃⟩ => ⟨k₃, U₃.cover Proof.Secp256k1.PPC64LE.comb_writes_cover, L₃, R₃⟩
 
 
 theorem pre_of {s : State} (h : verifyPPC.pre s) : VPre secp256k1 s := by
@@ -250,29 +131,14 @@ theorem verifyPPC_implies : verifyPPC.Implies (Proof.Ecdsa.verifyContract Spec.E
         [satState] using satState }
 
 /-- The verification's contract with the comb's table, as the proof states it. -/
-def vPC : Contract isa where
-  pre s := verifyPPC.pre (stripConsts secp256k1CombConsts s) ∧ ConstsOk secp256k1CombConsts 0 s
-  post := verifyPPC.post
-  pub s₁ s₂ := verifyPPC.pub s₁ s₂ ∧ s₁.syms secp256k1Comb.tsym = s₂.syms secp256k1Comb.tsym
+def vPC : Contract isa := Tab.withTable verifyPPC secp256k1CombConsts secp256k1Comb.tsym
 
 theorem verify_ppc (hL : Weierstrass.Law Spec.Secp256k1.curve) (s : State) (hs : vPC.pre s) :
     ∃ t s', Exec isa verifySecp256k1 s t s' ∧ abiPreserved s s' ∧ vPC.post s s' := by
   obtain ⟨hp, hk⟩ := hs
-  obtain p := pre_of hp
-  obtain hpre : VPre secp256k1 s (constRegs secp256k1CombConsts s) := by
-    refine ⟨?_, p.wr, p.pk_sc, p.dg_sc, p.sig_sc, p.pk_fit, p.dg_fit, p.sig_fit, p.sc_fit⟩
-    rw [← List.take_append_drop (s.rd.length - secp256k1CombConsts.length) s.rd, hk.1]
-    have e := p.rd
-    simp only [List.append_nil] at e
-    exact congrArg (fun rs => rs ++ constRegs secp256k1CombConsts s) e
-  obtain member : (secp256k1Comb.tsym, secp256k1CombWords) ∈ secp256k1CombConsts := List.mem_singleton_self _
-  obtain ht : VG.Proof.Weierstrass.PPC64LE.TComb.TableMem s (s.syms secp256k1Comb.tsym) secp256k1CombWords :=
-    ⟨hk.fit member, ⟨_, List.mem_append_left _ (hk.mem_rd member), Region.contains_self _ _⟩,
-      fun i hi => hk.readW member hi⟩
-  obtain hd : Region.Disjoint ⟨s.syms secp256k1Comb.tsym, 8 * secp256k1CombWords.length⟩ ⟨s.gpr .r6, 8192⟩ :=
-    hk.disjoint_wr member (by rw [hpre.wr]; simp)
-  obtain ⟨t, s', he, K, hpost⟩ := verifyWith_ok secp256k1_ok hL hpre (combPts_ok hL ht rfl hd)
-  exact ⟨t, s', he, ⟨K.saved, K.sp, K.lr⟩, hpost⟩
+  obtain ⟨t, s', he, K, hpost⟩ :=
+    CombWin.verify_ok secp256k1_ok hL (fun ht sym hd => combPts_ok hL ht sym hd) (pre_of hp) hk
+  exact ⟨t, s', he, K, Tab.post_intro hpost⟩
 
 theorem verify_ct : ConstantTime isa vPC.pre vPC.pub verifySecp256k1 :=
   VG.Taint.constantTime (A := vectorTaintSym [secp256k1Comb.tsym]) (Taint.ofRegs [.r3, .r4, .r5, .r6])
@@ -321,13 +187,7 @@ theorem vSat : (Proof.Ecdsa.verifyContract Spec.Ecdsa.Secp256k1.inst (abi.withCo
 
 theorem vPC_implies :
     vPC.Implies (Proof.Ecdsa.verifyContract Spec.Ecdsa.Secp256k1.inst (abi.withConsts secp256k1CombConsts)) :=
-  { pre := fun _ hs => ⟨verifyPPC_implies.pre _ (pre_consts.mp hs).1, (pre_consts.mp hs).2⟩
-    post := fun s s' hs hp => post_consts.mpr (verifyPPC_implies.post (stripConsts secp256k1CombConsts s) s'
-      (pre_consts.mp hs).1 hp)
-    pub := fun s₁ s₂ h₁ h₂ hp => ⟨verifyPPC_implies.pub (stripConsts secp256k1CombConsts s₁)
-        (stripConsts secp256k1CombConsts s₂) (pre_consts.mp h₁).1 (pre_consts.mp h₂).1 (pub_consts.mp hp).1,
-      (pub_consts.mp hp).2 _ List.mem_cons_self⟩
-    sat := ⟨vSatC, vSat⟩ }
+  Tab.implies verifyPPC_implies ⟨vSatC, vSat⟩
 
 theorem verify_verified (hL : Weierstrass.Law Spec.Secp256k1.curve) :
     Verified PPC64LE.target verifySecp256k1
