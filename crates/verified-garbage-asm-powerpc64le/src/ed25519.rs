@@ -20,11 +20,11 @@
 pub(crate) unsafe extern "C" fn vg_ed25519_key_pair(out: *mut [u8; 32], expanded: *mut [u8; 64], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r#".base64 "wf8h+KYCCHwgAIE5AAAM+AgAbPgQAIz4GADM+AAAZTgAAKQ4IACAOA=="
-bl {vg_sha512_digest}
+bl {vg_sha512_digest_core}
 .base64 "IACBOQgAbOgQAIzoGACs6A=="
 bl {vg_ed25519_public_key_expanded}
 .base64 "IACBOQAADOimAwh8QAAhOCAAgE4=""#,
-        vg_sha512_digest = sym super::sha512::vg_sha512_digest,
+        vg_sha512_digest_core = sym super::sha512::vg_sha512_digest_core::vg_sha512_digest_core,
         vg_ed25519_public_key_expanded = sym super::ed25519::vg_ed25519_public_key_expanded::vg_ed25519_public_key_expanded,
     )
 }

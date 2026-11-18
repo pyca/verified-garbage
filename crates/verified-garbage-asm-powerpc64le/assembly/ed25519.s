@@ -15,7 +15,7 @@ vg_ed25519_key_pair:
 	addi %r3, %r5, 0
 	addi %r5, %r4, 0
 	li %r4, 32
-	bl {vg_sha512_digest}
+	bl {vg_sha512_digest_core}
 	addi %r12, %r1, 32
 	ld %r3, 8(%r12)
 	ld %r4, 16(%r12)

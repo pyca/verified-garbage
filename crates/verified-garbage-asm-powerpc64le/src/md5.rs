@@ -24,6 +24,8 @@ pub(crate) unsafe extern "C" fn vg_md5_init(state: *mut [u8; 80]) {
 ///
 /// Contract: `VG.Spec.Md5.updateContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 80 bytes.
@@ -125,7 +127,7 @@ bne %cr0, 22b
 b 21f
 20:
 21:
-.base64 "QABb61AAm+tYALvrYADb62gA++tIAHvrIAAB6DAAITimAwh8kAAhOCAAgE4=""#,
+.base64 "QABb61AAm+tYALvrYADb62gA++tIAHvrIAAB6DAAITimAwh8kAAhOAAAADhB/yH4IACBOQAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAAz4iAAM+JAADPiYAAz4wAAhOAAAYDgAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDkUAAB8xAQAEMQMIRDEFEIQxBxjEMQkhBDELKUQxDTGEMQ85xDERAgRxEwpEcRUShHEXGsRxGSMEcRsrRHEdM4RxHzvEcSEEBLEjDESxJRSEsSccxIgAIBO""#,
         vg_md5_compress = sym super::md5::vg_md5_compress::vg_md5_compress,
     )
 }
@@ -133,6 +135,8 @@ b 21f
 /// Finishes an MD5 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), writes the MD5 digest of that message to `*out`.
 ///
 /// Contract: `VG.Spec.Md5.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -178,7 +182,7 @@ b 210f
 bl {vg_md5_compress}
 .base64 "AADAO////zsAAD8o"
 beq %cr0, 20b
-.base64 "AAAagQAAHJEEABqBBAAckQgAGoEIAByRDAAagQwAHJFAAFvrUACb61gAu+tgANvraAD760gAe+sgAAHoMAAhOKYDCHyQACE4IACATg==""#,
+.base64 "AAAagQAAHJEEABqBBAAckQgAGoEIAByRDAAagQwAHJFAAFvrUACb61gAu+tgANvraAD760gAe+sgAAHoMAAhOKYDCHyQACE4AAAAOEH/IfggAIE5AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAADPiIAAz4kAAM+JgADPjAACE4AABgOAAAgDgAAKA4AADAOAAA4DgAAAA5AAAgOQAAQDkAAGA5AACAORQAAHzEBAAQxAwhEMQUQhDEHGMQxCSEEMQspRDENMYQxDznEMRECBHETCkRxFRKEcRcaxHEZIwRxGytEcR0zhHEfO8RxIQQEsSMMRLElFISxJxzEiAAgE4=""#,
         vg_md5_compress = sym super::md5::vg_md5_compress::vg_md5_compress,
     )
 }
