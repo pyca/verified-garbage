@@ -22,8 +22,7 @@ import VerifiedGarbage.Proof.TripleDes.X86.FunctionsLit
 first stack argument, its cipher `Spec.TripleDes.cipher` for encryption and
 `Spec.TripleDes.invCipher` for decryption, and the key ready when the copy of
 the schedule in the core's slots is the key. The block function's call
-(`cryptCall_ok`) is ECB's (`Ecb.call_ok`) with its arguments in other
-registers.
+(`cryptCall_ok`) is from its contract (`blockContract`).
 -/
 
 @[expose] public section
@@ -213,8 +212,7 @@ theorem cryptCall_eq (d : Direction) : cryptCall d =
         (Ecb.blockCode d)) (.pop .eax 3) := by cases d <;> rfl
 
 /-- The block function's arguments: the schedule at `edx`, the block at
-`ecx` and the working space at `eax` (`Ecb.CallPre`, through other
-registers). -/
+`ecx` and the working space at `eax`. -/
 structure CallPre (s : State) : Prop where
   reads : Covers [⟨addr32 (s.gpr .edx), 384⟩, ⟨addr32 (s.gpr .ecx), 8⟩, ⟨addr32 (s.gpr .eax), 512⟩] (s.rd ++ s.wr)
   writes : Covers [⟨addr32 (s.gpr .ecx), 8⟩, ⟨addr32 (s.gpr .eax), 512⟩] s.wr

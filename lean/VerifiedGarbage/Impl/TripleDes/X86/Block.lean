@@ -15,7 +15,10 @@ arguments), is CMAC's (`Impl/CmacTripleDes/X86/Round.lean`, `block`: the
 S-boxes as multiplexer trees on two halves of 24 bits, a third of the
 instructions), on the block as two big-endian words, with its slots the
 first words of the working space and the caller's registers saved after
-them. -/
+them.
+
+The modes call these, a block at a time (`Modes.lean`); ECB calls the
+bitsliced functions (`Bitsliced.lean`), 32 blocks at a time. -/
 
 @[expose] public section
 
