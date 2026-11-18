@@ -989,10 +989,6 @@ riscv64 vg_ed25519_verify
 riscv64 vg_ed448_public_key
 riscv64 vg_ed448_sign_cached
 riscv64 vg_ed448_verify
-riscv64 vg_mldsa44_keygen
-riscv64 vg_mldsa44_pk_tr
-riscv64 vg_mldsa44_prepare_signing_key
-riscv64 vg_mldsa44_prepare_verifying_key
 riscv64 vg_mldsa44_sign
 riscv64 vg_mldsa44_sign_message
 riscv64 vg_mldsa44_sign_message_prepared
@@ -1001,10 +997,6 @@ riscv64 vg_mldsa44_verify
 riscv64 vg_mldsa44_verify_message_cached
 riscv64 vg_mldsa44_verify_message_prepared
 riscv64 vg_mldsa44_verify_prepared
-riscv64 vg_mldsa65_keygen
-riscv64 vg_mldsa65_pk_tr
-riscv64 vg_mldsa65_prepare_signing_key
-riscv64 vg_mldsa65_prepare_verifying_key
 riscv64 vg_mldsa65_sign
 riscv64 vg_mldsa65_sign_message
 riscv64 vg_mldsa65_sign_message_prepared
@@ -1013,10 +1005,6 @@ riscv64 vg_mldsa65_verify
 riscv64 vg_mldsa65_verify_message_cached
 riscv64 vg_mldsa65_verify_message_prepared
 riscv64 vg_mldsa65_verify_prepared
-riscv64 vg_mldsa87_keygen
-riscv64 vg_mldsa87_pk_tr
-riscv64 vg_mldsa87_prepare_signing_key
-riscv64 vg_mldsa87_prepare_verifying_key
 riscv64 vg_mldsa87_sign
 riscv64 vg_mldsa87_sign_message
 riscv64 vg_mldsa87_sign_message_prepared

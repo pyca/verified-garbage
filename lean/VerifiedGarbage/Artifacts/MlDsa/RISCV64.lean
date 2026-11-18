@@ -1,9 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.RISCV64.KeyGen.Inst
+public import VerifiedGarbage.Proof.MlDsa.RISCV64.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.RISCV64.Print
-public import VerifiedGarbage.Proof.MlDsa.RISCV64.PkTr
 public import VerifiedGarbage.Proof.MlDsa.RISCV64.PreparedKey.Inst
 public import VerifiedGarbage.Proof.MlDsa.RISCV64.Message.Inst
 
@@ -14,42 +13,18 @@ public import VerifiedGarbage.Proof.MlDsa.RISCV64.Message.Inst
 namespace VG.Artifacts.MlDsa.RISCV64
 
 def artifacts : List Artifact := [
-  Spec.MlDsa.keyGen44Api.artifact RISCV64.target {
-    code := Impl.MlDsa.RISCV64.KeyGen.keyGen44
-    verified := Proof.MlDsa.RISCV64.KeyGen.keyGen44_verified },
-  Spec.MlDsa.keyGen65Api.artifact RISCV64.target {
-    code := Impl.MlDsa.RISCV64.KeyGen.keyGen65
-    verified := Proof.MlDsa.RISCV64.KeyGen.keyGen65_verified },
-  Spec.MlDsa.keyGen87Api.artifact RISCV64.target {
-    code := Impl.MlDsa.RISCV64.KeyGen.keyGen87
-    verified := Proof.MlDsa.RISCV64.KeyGen.keyGen87_verified },
-  Spec.MlDsa.pkTr44Api.artifact RISCV64.target {
-    code := Impl.MlDsa.RISCV64.PkTr.pkTr Spec.MlDsa.mlDsa44
-    verified := Proof.MlDsa.RISCV64.PkTr.pkTr44_verified },
-  Spec.MlDsa.pkTr65Api.artifact RISCV64.target {
-    code := Impl.MlDsa.RISCV64.PkTr.pkTr Spec.MlDsa.mlDsa65
-    verified := Proof.MlDsa.RISCV64.PkTr.pkTr65_verified },
-  Spec.MlDsa.pkTr87Api.artifact RISCV64.target {
-    code := Impl.MlDsa.RISCV64.PkTr.pkTr Spec.MlDsa.mlDsa87
-    verified := Proof.MlDsa.RISCV64.PkTr.pkTr87_verified },
-  (Spec.MlDsa.preparePublicKeyApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact RISCV64.target {
-    code := Impl.MlDsa.RISCV64.PreparedKey.preparePublic Spec.MlDsa.mlDsa44
-    verified := Proof.MlDsa.RISCV64.PreparedKey.preparePublic44_verified },
-  (Spec.MlDsa.prepareSecretKeyApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact RISCV64.target {
-    code := Impl.MlDsa.RISCV64.PreparedKey.prepareSecret Spec.MlDsa.mlDsa44
-    verified := Proof.MlDsa.RISCV64.PreparedKey.prepareSecret44_verified },
-  (Spec.MlDsa.preparePublicKeyApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").artifact RISCV64.target {
-    code := Impl.MlDsa.RISCV64.PreparedKey.preparePublic Spec.MlDsa.mlDsa65
-    verified := Proof.MlDsa.RISCV64.PreparedKey.preparePublic65_verified },
-  (Spec.MlDsa.prepareSecretKeyApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").artifact RISCV64.target {
-    code := Impl.MlDsa.RISCV64.PreparedKey.prepareSecret Spec.MlDsa.mlDsa65
-    verified := Proof.MlDsa.RISCV64.PreparedKey.prepareSecret65_verified },
-  (Spec.MlDsa.preparePublicKeyApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").artifact RISCV64.target {
-    code := Impl.MlDsa.RISCV64.PreparedKey.preparePublic Spec.MlDsa.mlDsa87
-    verified := Proof.MlDsa.RISCV64.PreparedKey.preparePublic87_verified },
-  (Spec.MlDsa.prepareSecretKeyApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").artifact RISCV64.target {
-    code := Impl.MlDsa.RISCV64.PreparedKey.prepareSecret Spec.MlDsa.mlDsa87
-    verified := Proof.MlDsa.RISCV64.PreparedKey.prepareSecret87_verified },
+  Spec.MlDsa.keyGen44Api.artifact RISCV64.target Proof.MlDsa.RISCV64.Scrub.keyGen44Reg,
+  Spec.MlDsa.keyGen65Api.artifact RISCV64.target Proof.MlDsa.RISCV64.Scrub.keyGen65Reg,
+  Spec.MlDsa.keyGen87Api.artifact RISCV64.target Proof.MlDsa.RISCV64.Scrub.keyGen87Reg,
+  Spec.MlDsa.pkTr44Api.artifact RISCV64.target Proof.MlDsa.RISCV64.Scrub.pkTr44Reg,
+  Spec.MlDsa.pkTr65Api.artifact RISCV64.target Proof.MlDsa.RISCV64.Scrub.pkTr65Reg,
+  Spec.MlDsa.pkTr87Api.artifact RISCV64.target Proof.MlDsa.RISCV64.Scrub.pkTr87Reg,
+  (Spec.MlDsa.preparePublicKeyApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact RISCV64.target Proof.MlDsa.RISCV64.Scrub.preparePublic44Reg,
+  (Spec.MlDsa.prepareSecretKeyApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact RISCV64.target Proof.MlDsa.RISCV64.Scrub.prepareSecret44Reg,
+  (Spec.MlDsa.preparePublicKeyApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").artifact RISCV64.target Proof.MlDsa.RISCV64.Scrub.preparePublic65Reg,
+  (Spec.MlDsa.prepareSecretKeyApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").artifact RISCV64.target Proof.MlDsa.RISCV64.Scrub.prepareSecret65Reg,
+  (Spec.MlDsa.preparePublicKeyApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").artifact RISCV64.target Proof.MlDsa.RISCV64.Scrub.preparePublic87Reg,
+  (Spec.MlDsa.prepareSecretKeyApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").artifact RISCV64.target Proof.MlDsa.RISCV64.Scrub.prepareSecret87Reg,
   Spec.MlDsa.sign44Api.artifact RISCV64.target {
     code := Impl.MlDsa.RISCV64.Sign.sign44
     verified := Proof.MlDsa.RISCV64.PreparedKey.sign44_verified },
