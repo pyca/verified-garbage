@@ -989,3 +989,19 @@ b 24f
 .p2align 6",
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_camellia_crypt_prepared.rs"]
+pub(crate) mod vg_camellia_crypt_prepared;
+
+#[rustfmt::skip]
+#[path = "internal/vg_camellia_encrypt_prepared.rs"]
+pub(crate) mod vg_camellia_encrypt_prepared;
+
+#[rustfmt::skip]
+#[path = "internal/vg_camellia_prepare_encrypt_keys.rs"]
+pub(crate) mod vg_camellia_prepare_encrypt_keys;
+
+#[rustfmt::skip]
+#[path = "internal/vg_camellia_prepare_keys.rs"]
+pub(crate) mod vg_camellia_prepare_keys;

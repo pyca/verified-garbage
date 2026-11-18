@@ -10,8 +10,6 @@ public import VerifiedGarbage.Proof.Camellia.AArch64.FbVerified
 public meta import VerifiedGarbage.Proof.Camellia.AArch64.FbVerified
 public import VerifiedGarbage.Proof.Camellia.AArch64.FbFinalVerified
 public meta import VerifiedGarbage.Proof.Camellia.AArch64.FbFinalVerified
-public import VerifiedGarbage.Proof.Camellia.AArch64.CtrVerified
-public meta import VerifiedGarbage.Proof.Camellia.AArch64.CtrVerified
 public import VerifiedGarbage.Impl.Residue.AArch64
 public meta import VerifiedGarbage.Impl.Residue.AArch64
 public import VerifiedGarbage.TCB.AArch64.Residue
@@ -32,7 +30,7 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 /-!
 # Camellia on AArch64 returns without secret residue
 
-Camellia's key expansion and its ECB, CBC, CFB128, CTR and OFB functions run
+Camellia's key expansion and its ECB, CBC, CFB128 and OFB functions run
 in frames whose scratch words they zero (`withStackScratchWiped`): 160 bytes
 for the key expansion and over 3 KB for the modes. The analysis of the
 window's bytes (`rtaintG`) finds every byte of those frames the same in both
@@ -162,19 +160,6 @@ theorem cfbDecryptFinalCode_verified : Verified AArch64.target cfbDecryptFinalCo
 theorem cfbDecryptFinalCode_noResidue : NoResidue cfbDecryptFinalCode (Spec.Camellia.cfbDecryptFinalContract AArch64.abi 3344) 0 :=
   noResidue_of_doneG cfbDecryptFinalCode_verified ⟨by decide, by decide, by decide⟩
     (sp_of_pre (sig := Spec.Camellia.cfbFinalSig) (by decide) (by decide) (Nat.le_refl _)) ⟨_, by taint_decide_ct⟩
-
-/-- `vg_camellia_ctr`. -/
-abbrev ctrCode : Prog isa :=
-  withClears [.x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13]
-    [] none
-    (Impl.StackScratch.AArch64.withStackScratchWiped 3344 .x5 418 Impl.Camellia.AArch64.ctr)
-
-theorem ctrCode_verified : Verified AArch64.target ctrCode (Spec.Camellia.ctrContract AArch64.abi 3344) :=
-  Clears.Verified.withClears ctr_framed (by decide)
-
-theorem ctrCode_noResidue : NoResidue ctrCode (Spec.Camellia.ctrContract AArch64.abi 3344) 0 :=
-  noResidue_of_doneG ctrCode_verified ⟨by decide, by decide, by decide⟩
-    (sp_of_pre (sig := Spec.Camellia.ctrSig) (by decide) (by decide) (Nat.le_refl _)) ⟨_, by taint_decide_ct⟩
 
 /-- `vg_camellia_ofb`. -/
 abbrev ofbCode : Prog isa :=

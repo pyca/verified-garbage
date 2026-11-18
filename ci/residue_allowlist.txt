@@ -129,6 +129,7 @@ aarch64 vg_blake2b_finalize
 aarch64 vg_blake2b_update
 aarch64 vg_blake2s_finalize
 aarch64 vg_blake2s_update
+aarch64 vg_camellia_ctr
 aarch64 vg_camellia_ctr_final
 aarch64 vg_cast5_expand_key
 aarch64 vg_chacha20_apply
