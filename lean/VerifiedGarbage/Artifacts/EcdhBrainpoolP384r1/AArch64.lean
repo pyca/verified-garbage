@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Ecdh.AArch64.BrainpoolP384r1.Verified
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.EcKey.AArch64.Scrub
 public import VerifiedGarbage.Proof.Ecdh.AArch64.BrainpoolP384r1.Lit
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
@@ -68,8 +69,8 @@ namespace VG.Artifacts.EcdhBrainpoolP384r1.AArch64
 open VG.Proof.BrainpoolP384r1.AArch64 (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.Ecdh.BrainpoolP384r1.exchangeApi.artifact AArch64.target {
+  Spec.Ecdh.BrainpoolP384r1.exchangeApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
     code := Impl.Ecdh.AArch64.BrainpoolP384r1.exchange
-    verified := Proof.Ecdh.AArch64.BrainpoolP384r1.ecdh_verified hasLaw.law hasLaw.inv }]
+    verified := Proof.Ecdh.AArch64.BrainpoolP384r1.ecdh_verified hasLaw.law hasLaw.inv } (Proof.EcKey.AArch64.Scrub.exchangeOk _))]
 
 end VG.Artifacts.EcdhBrainpoolP384r1.AArch64

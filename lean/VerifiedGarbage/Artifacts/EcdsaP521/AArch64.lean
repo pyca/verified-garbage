@@ -8,6 +8,7 @@ public import VerifiedGarbage.Impl.Ecdsa.Verify.P521.AArch64
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.EcKey.AArch64.Scrub
 public import VerifiedGarbage.Impl.AArch64Instrs
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.Lit
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
@@ -139,10 +140,10 @@ namespace VG.Artifacts.EcdsaP521.AArch64
 open VG.Proof.P521.AArch64 (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.Ecdsa.P521.verifyHashApi.artifact AArch64.target {
+  Spec.Ecdsa.P521.verifyHashApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
     code := Impl.Ecdsa.AArch64.VerifyHash.verifyHash Spec.Ecdsa.P521.inst.curve.len true
       Impl.Ecdsa.Verify.AArch64.verifyP521
-    verified := Proof.Ecdsa.Verify.AArch64.P521.verifyHash_verified hasLaw.law hasLaw.prime hasLaw.inv (Proof.P521.combOk7 hasLaw.law) }] ++
+    verified := Proof.Ecdsa.Verify.AArch64.P521.verifyHash_verified hasLaw.law hasLaw.prime hasLaw.inv (Proof.P521.combOk7 hasLaw.law) } (Proof.EcKey.AArch64.Scrub.verifyHashOk_consts _ _ _))] ++
   Rfc6979.artifacts
 
 end VG.Artifacts.EcdsaP521.AArch64

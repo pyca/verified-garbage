@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Ecdsa.Instance.verifyHashContract`. Every input is public: timing may depend on the pointers, `digest_len` and the contents of `public`, `digest` and `sig`.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `public` must be valid for reads of 49 bytes.
@@ -2126,7 +2128,14 @@ cbnz x19, 215b
 .inst 0xf9412001,0xf9412402,0xaa020021,0xf9412802,0xaa020021,0xf9412c02,0xaa020021,0xeb0100f0
 .inst 0xda0700e2,0xf942e001,0x8a020021,0xf902e001,0xf942e003,0xf9400013,0xf9400414,0xf9400815
 .inst 0xf9400c16,0xf9401017,0xf9401418,0xf9401819,0xf9401c1e,0xd2800021,0x8a010060,0x910143ff
-.inst 0xd65f03c0
+.inst 0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800008
+.inst 0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f,0xd2800010
+.inst 0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406
+.inst 0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416
+.inst 0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e
+.inst 0x6f00e41f,0xea01003f,0x4e181c28,0x4e181c29,0x4e181c2a,0x4e181c2b,0x4e181c2c,0x4e181c2d
+.inst 0x4e181c2e,0x4e181c2f,0x11000000,0xd10143ff,0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f
+.inst 0x3d80093f,0x3d800d3f,0x3d80113f,0x910143ff,0xd65f03c0
 .p2align 6",
         vg_p192_check_point = sym super::ec_p192_compressed::vg_p192_check_point::vg_p192_check_point,
         vg_p192_inv_mod_n = sym super::ecdsa_p192::vg_p192_inv_mod_n::vg_p192_inv_mod_n,

@@ -9,6 +9,7 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P224.Verified
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.EcKey.AArch64.Scrub
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P224.Lit
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
 public import VerifiedGarbage.Spec.Ecdsa.Verify.P224
@@ -77,10 +78,10 @@ namespace VG.Artifacts.EcdsaP224.AArch64
 open VG.Proof.P224.AArch64 (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.Ecdsa.P224.verifyHashApi.artifact AArch64.target {
+  Spec.Ecdsa.P224.verifyHashApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
     code := Impl.Ecdsa.AArch64.VerifyHash.verifyHash Spec.Ecdsa.P224.inst.curve.len false
       Impl.Ecdsa.Verify.AArch64.verifyP224
-    verified := Proof.Ecdsa.Verify.AArch64.P224.verifyHash_verified hasLaw.law hasLaw.inv (Proof.P224.combOk7 hasLaw.law) }] ++
+    verified := Proof.Ecdsa.Verify.AArch64.P224.verifyHash_verified hasLaw.law hasLaw.inv (Proof.P224.combOk7 hasLaw.law) } (Proof.EcKey.AArch64.Scrub.verifyHashOk_consts _ _ _))] ++
   Rfc6979.artifacts
 
 end VG.Artifacts.EcdsaP224.AArch64

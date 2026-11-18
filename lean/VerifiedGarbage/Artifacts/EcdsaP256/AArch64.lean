@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.Ecdsa.AArch64.BoothVerified
 public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Allocated
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.EcKey.AArch64.Scrub
 public import Mathlib.Data.BitVec
 public import Mathlib.Data.Int.ModEq
 public import Mathlib.Tactic.FieldSimp
@@ -165,10 +166,10 @@ namespace VG.Artifacts.EcdsaP256.AArch64
 open VG.Proof.P256.AArch64 (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.Ecdsa.P256.verifyHashApi.artifact AArch64.target {
+  Spec.Ecdsa.P256.verifyHashApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
     code := Impl.Ecdsa.AArch64.VerifyHash.verifyHash Spec.Ecdsa.P256.inst.curve.len false
       Impl.Ecdsa.Verify.AArch64.P256Allocated.verify
-    verified := Proof.Ecdsa.Verify.AArch64.allocatedVerifyHash_verified hasLaw.law hasLaw.prime hasLaw.inv hasLaw.invToM (Proof.P256.gtabOk9 hasLaw.law) }] ++
+    verified := Proof.Ecdsa.Verify.AArch64.allocatedVerifyHash_verified hasLaw.law hasLaw.prime hasLaw.inv hasLaw.invToM (Proof.P256.gtabOk9 hasLaw.law) } (Proof.EcKey.AArch64.Scrub.verifyHashOk_consts _ _ _))] ++
   Rfc6979.artifacts
 
 end VG.Artifacts.EcdsaP256.AArch64

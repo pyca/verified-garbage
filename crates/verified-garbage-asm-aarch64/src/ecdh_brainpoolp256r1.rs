@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Ecdh.Instance.exchangeContract`. Constant time but for the peer's public key: timing may depend on the pointers and the contents of `peer`, not on the private key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 32 bytes.
@@ -150,7 +152,13 @@ bl {vg_brainpoolp256r1_inv_mod_p}
 .inst 0xf902e001,0xf942e003,0xf9425001,0x8a030021,0xdac00c21,0xf9000e81,0xf9425401,0x8a030021
 .inst 0xdac00c21,0xf9000a81,0xf9425801,0x8a030021,0xdac00c21,0xf9000681,0xf9425c01,0x8a030021
 .inst 0xdac00c21,0xf9000281,0xf9400013,0xf9400414,0xf9400815,0xf9400c16,0xf9401017,0xf9401418
-.inst 0xf9401819,0xf9401c1e,0xd2800021,0x8a010060,0xd65f03c0
+.inst 0xf9401819,0xf9401c1e,0xd2800021,0x8a010060,0xd2800001,0xd2800002,0xd2800003,0xd2800004
+.inst 0xd2800005,0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c
+.inst 0xd280000d,0xd280000e,0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402
+.inst 0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412
+.inst 0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a
+.inst 0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0x4e181c28,0x4e181c29
+.inst 0x4e181c2a,0x4e181c2b,0x4e181c2c,0x4e181c2d,0x4e181c2e,0x4e181c2f,0x11000000,0xd65f03c0
 .p2align 6",
         vg_brainpoolp256r1_check_point = sym super::ec_brainpoolp256r1_compressed::vg_brainpoolp256r1_check_point::vg_brainpoolp256r1_check_point,
         vg_brainpoolp256r1_mul = sym super::ec_brainpoolp256r1::vg_brainpoolp256r1_mul::vg_brainpoolp256r1_mul,

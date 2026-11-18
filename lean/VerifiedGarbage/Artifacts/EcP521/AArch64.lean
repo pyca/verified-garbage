@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.EcKey.AArch64.P521.Verified
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.EcKey.AArch64.Scrub
 public import Mathlib.Tactic.ClearExcept
 public import VerifiedGarbage.Proof.EcKey.AArch64.P521.Lit
 public import VerifiedGarbage.Proof.Framework.Contract
@@ -41,14 +42,14 @@ namespace VG.Artifacts.EcP521.AArch64
 open VG.Proof.P521.AArch64 (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.EcKey.P521.inst.compressPublicKeyApi.artifact AArch64.target {
+  Spec.EcKey.P521.inst.compressPublicKeyApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
     code := Proof.EcKey.Compressed.AArch64.P521.code
-    verified := Proof.EcKey.Compressed.AArch64.P521.verified hasLaw.inv },
-  Spec.EcKey.P521.inst.decompressPublicKeyApi.artifact AArch64.target {
+    verified := Proof.EcKey.Compressed.AArch64.P521.verified hasLaw.inv } (Proof.EcKey.AArch64.Scrub.compressOk _)),
+  Spec.EcKey.P521.inst.decompressPublicKeyApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
     code := Proof.EcKey.Compressed.AArch64.P521Decompress.code
-    verified := Proof.EcKey.Compressed.AArch64.P521Decompress.verified hasLaw.law hasLaw.inv },
-  Spec.EcKey.P521.publicKeyApi.artifact AArch64.target {
+    verified := Proof.EcKey.Compressed.AArch64.P521Decompress.verified hasLaw.law hasLaw.inv } (Proof.EcKey.AArch64.Scrub.decompressOk _)),
+  Spec.EcKey.P521.publicKeyApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
     code := Impl.EcKey.AArch64.publicKeyP521
-    verified := Proof.EcKey.AArch64.P521.pk_verified hasLaw.law hasLaw.inv (Proof.P521.combOk7 hasLaw.law) }]
+    verified := Proof.EcKey.AArch64.P521.pk_verified hasLaw.law hasLaw.inv (Proof.P521.combOk7 hasLaw.law) } (Proof.EcKey.AArch64.Scrub.publicKeyOk_consts _ _ _))]
 
 end VG.Artifacts.EcP521.AArch64

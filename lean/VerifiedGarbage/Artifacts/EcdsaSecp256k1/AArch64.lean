@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Secp256k1.Verified
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.EcKey.AArch64.Scrub
 public import Mathlib.Tactic.ClearExcept
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Secp256k1.Lit
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
@@ -72,10 +73,10 @@ namespace VG.Artifacts.EcdsaSecp256k1.AArch64
 open VG.Proof.Secp256k1.AArch64 (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.Ecdsa.Secp256k1.verifyHashApi.artifact AArch64.target {
+  Spec.Ecdsa.Secp256k1.verifyHashApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
     code := Impl.Ecdsa.AArch64.VerifyHash.verifyHash Spec.Ecdsa.Secp256k1.inst.curve.len false
       Impl.Ecdsa.Verify.AArch64.Secp256k1.Joint.verify
-    verified := Proof.Ecdsa.Verify.AArch64.Secp256k1.Joint.verifyHash_verified hasLaw.law hasLaw.inv }] ++
+    verified := Proof.Ecdsa.Verify.AArch64.Secp256k1.Joint.verifyHash_verified hasLaw.law hasLaw.inv } (Proof.EcKey.AArch64.Scrub.verifyHashOk _))] ++
   Rfc6979.artifacts
 
 end VG.Artifacts.EcdsaSecp256k1.AArch64

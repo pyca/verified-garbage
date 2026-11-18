@@ -9,6 +9,7 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP512r1.Verifie
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.EcKey.AArch64.Scrub
 public import Mathlib.Tactic.ClearExcept
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP512r1.Lit
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
@@ -73,10 +74,10 @@ namespace VG.Artifacts.EcdsaBrainpoolP512r1.AArch64
 open VG.Proof.BrainpoolP512r1.AArch64 (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.Ecdsa.BrainpoolP512r1.verifyHashApi.artifact AArch64.target {
+  Spec.Ecdsa.BrainpoolP512r1.verifyHashApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
     code := Impl.Ecdsa.AArch64.VerifyHash.verifyHash Spec.Ecdsa.BrainpoolP512r1.inst.curve.len false
       Impl.Ecdsa.Verify.AArch64.BrainpoolP512r1.Joint.verify
-    verified := Proof.Ecdsa.Verify.AArch64.BrainpoolP512r1.Joint.verifyHash_verified hasLaw.law hasLaw.inv }] ++
+    verified := Proof.Ecdsa.Verify.AArch64.BrainpoolP512r1.Joint.verifyHash_verified hasLaw.law hasLaw.inv } (Proof.EcKey.AArch64.Scrub.verifyHashOk _))] ++
   Rfc6979.artifacts
 
 end VG.Artifacts.EcdsaBrainpoolP512r1.AArch64

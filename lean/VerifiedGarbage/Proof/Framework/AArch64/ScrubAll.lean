@@ -758,6 +758,28 @@ theorem scrubAllOk_consts {c₀ : String × List (BitVec 64)} {cs : List (String
   pub s₁ s₂ hp := (scrubAllOk_regs (pre := pre) (post := post) (wa := wa) (leak := leak) hk hW hWs
     hpost).pub s₁ s₂ (pub_consts.mp hp).1
 
+
+/-- `scrubAllOk_consts` with no stack zeroed, for code without frames. -/
+theorem scrubAllOk_consts0 {c₀ : String × List (BitVec 64)} {cs : List (String × List (BitVec 64))}
+    (hk : (sig.words abi.ptrBits).length ≤ 8)
+    (hpost : ∀ vs m m₁ m₂ r, vs.length = (sig.words abi.ptrBits).length →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) post vs m m₁ r →
+        Curry.apply (sig.words abi.ptrBits) post vs m m₂ r) :
+    ScrubAllOk (sig.contract (abi.withConsts (c₀ :: cs)) pre post wa stack leak) 0
+      (sig.retBits abi.ptrBits) where
+  sp s hs := (scrubAllOk_regs0 (pre := pre) (post := post) (wa := wa) (leak := leak) hk hpost).sp
+    (stripConsts (c₀ :: cs) s) (pre_consts.mp hs).1
+  post s u u' hs hq hm hx := by
+    have e : ∀ v, (sig.contract abi pre post wa stack leak).post s v ↔
+        (sig.contract abi pre post wa stack leak).post (stripConsts (c₀ :: cs) s) v := fun v => by
+      rw [post_regs hk, post_regs hk]; rfl
+    exact post_consts.mpr ((e u').mpr
+      ((scrubAllOk_regs0 (pre := pre) (post := post) (wa := wa) (leak := leak) hk hpost).post
+        _ u u' (pre_consts.mp hs).1 ((e u).mp (post_consts.mp hq)) hm hx))
+  pub s₁ s₂ hp := (scrubAllOk_regs0 (pre := pre) (post := post) (wa := wa) (leak := leak) hk
+    hpost).pub s₁ s₂ (pub_consts.mp hp).1
+
 end
 
 /-! ## Registering scrubbed code -/
