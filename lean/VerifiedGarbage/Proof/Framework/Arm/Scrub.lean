@@ -384,6 +384,12 @@ theorem exec_scrub {rb : Nat} (hrb : rb = 0 ∨ rb = 32 ∨ rb = 64) {c : Prog i
       obtain ⟨rfl, rfl⟩ := hb
       exact ⟨u, by simpa using a, hw⟩
 
+/-- The registers the tail zeroes: all but the result's and those the calling
+convention preserves. -/
+private theorem tail_zeroed (r : Reg) (h0 : r ≠ .r0) (h1 : r ≠ .r1) (hr : r ∉ preserved) :
+    r = .r2 ∨ r = .r3 ∨ r = .r12 := by
+  revert h0 h1 hr; cases r <;> decide
+
 /-- `scrub rb c` meets the contract of `c`, code without frames, and returns
 without secret residue. -/
 theorem Verified.scrub {A : Abi isa} (hA : ScrubAbi A) {sig : Sig}
@@ -429,7 +435,10 @@ theorem Verified.scrub {A : Abi isa} (hA : ScrubAbi A) {sig : Sig}
       c₁.trans c₂.symm, v₁.trans v₂.symm, fun x hx => ?_⟩
     · by_cases hr : r ∈ preserved
       · rw [pr₁ r hr, pr₂ r hr]; exact oreg r h0 h1
-      · cases r <;> simp_all [preserved]
+      · obtain rfl | rfl | rfl := tail_zeroed r h0 h1 hr
+        · exact x2.trans y2.symm
+        · exact x3.trans y3.symm
+        · exact x12.trans y12.symm
     · rw [rd₁, wr₁] at hx
       rw [f₁ x fun r hr => hx r (List.mem_append_right _ hr),
         f₂ x fun r hr => hx r (List.mem_append_right _ (owr ▸ hr))]
@@ -801,7 +810,10 @@ theorem Verified.scrubF {A : Abi isa} (hA : ScrubAbi A) {sig : Sig}
       c₁.trans c₂.symm, v₁.trans v₂.symm, fun x hx => ?_⟩
     · by_cases hr : r ∈ preserved
       · rw [pr₁ r hr, pr₂ r hr, abi₁ r hr, abi₂ r hr]; exact oreg r h0 h1
-      · cases r <;> simp_all [preserved]
+      · obtain rfl | rfl | rfl := tail_zeroed r h0 h1 hr
+        · exact x2.trans y2.symm
+        · exact x3.trans y3.symm
+        · exact x12.trans y12.symm
     · rw [rd₁, wr₁] at hx
       by_cases hb : (belowA s₁.sp stack).Contains x 1
       · obtain ⟨v₁, _, u₁', vsp₁, vu₁, vz₁, vp₁, vm₁⟩ := zero₁

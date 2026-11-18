@@ -496,7 +496,7 @@ theorem setup_zero {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → Pro
     rw [narrowS_zero]; exact ep'
   obtain ⟨e', -, hm', -⟩ := withStackArgScratch_runMem (c := entryRestore) hk ⟨hb', by decide, by decide⟩
     (by decide) (SpSafe.of_all (by decide +kernel : entryRestore.all (fun i => !isa.writesSp i) = true))
-    (by decide : entryRestore.x86_64Depth ≤ 16) hs' ep' (by rw [narrowS_zero]; exact ap)
+    (by decide : entryRestore.x86_64Depth ≤ 16) hs' ep' (by rw [narrowS_zero]; unfold abiPreserved; dsimp only; exact ap)
   rw [hns] at e'
   refine ⟨_, _, e', ?_⟩
   rw [hm']
