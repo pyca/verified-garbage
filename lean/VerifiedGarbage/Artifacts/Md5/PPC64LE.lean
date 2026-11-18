@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Md5.PPC64LE.Scrub
 public import VerifiedGarbage.Proof.Md5.PPC64LE.Stream.Init
 public import VerifiedGarbage.Proof.Md5.PPC64LE.Shared
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -16,11 +17,7 @@ def artifacts : List Artifact := [
     code := Impl.Md5.PPC64LE.Stream.init
     verified := Proof.Md5.PPC64LE.Shared.init
     residue := some ⟨Proof.Md5.PPC64LE.Stream.init_noResidue _ _⟩ },
-  Spec.Md5.updateApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratch 144 .r7 Impl.Md5.PPC64LE.Stream.update
-    verified := Proof.Md5.PPC64LE.Shared.update },
-  Spec.Md5.finalizeApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratch 144 .r6 Impl.Md5.PPC64LE.Stream.finalize
-    verified := Proof.Md5.PPC64LE.Shared.finalize }]
+  Spec.Md5.updateApi.artifact PPC64LE.target Proof.Md5.PPC64LE.updateReg,
+  Spec.Md5.finalizeApi.artifact PPC64LE.target Proof.Md5.PPC64LE.finalizeReg]
 
 end VG.Artifacts.Md5.PPC64LE

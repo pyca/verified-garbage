@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Sha512.PPC64LE.Scrub
 public import VerifiedGarbage.Proof.Sha512.PPC64LE.Stream.Init
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Sha384
@@ -33,32 +34,14 @@ def artifacts : List Artifact := [
     code := Impl.Sha512.PPC64LE.Stream.init Spec.Sha512.H0_512_256
     verified := Proof.Sha512.PPC64LE.Shared.init Spec.Sha512.H0_512_256
     residue := some ⟨Proof.Sha512.PPC64LE.Stream.init_noResidue _ _ _⟩ },
-  Spec.Sha512.updateApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratch 1408 .r7 Impl.Sha512.PPC64LE.Stream.update
-    verified := Proof.Sha512.PPC64LE.Shared.update },
-  Spec.Sha512.finalizeApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratch 1408 .r6 Impl.Sha512.PPC64LE.Stream.finalize
-    verified := Proof.Sha512.PPC64LE.Shared.finalize },
-  Spec.Sha512.finalize384Api.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratch 1408 .r6 Impl.Sha512.PPC64LE.Stream.finalize384
-    verified := Proof.Sha512.PPC64LE.Shared.finalize384 },
-  Spec.Sha512.finalize512_256Api.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratch 1408 .r6 Impl.Sha512.PPC64LE.Stream.finalize512_256
-    verified := Proof.Sha512.PPC64LE.Shared.finalize512_256 },
-  Spec.Sha512.finalize512_224Api.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratch 1408 .r6 Impl.Sha512.PPC64LE.Stream.finalize512_224
-    verified := Proof.Sha512.PPC64LE.Shared.finalize512_224 },
-  Spec.Sha512.digest384Api.artifact PPC64LE.target {
-    code := Impl.MdStream.PPC64LE.Digest.code Proof.Hmac.Stream.PPC64LE.Sha384.hash
-    verified := Proof.Hmac.Stream.PPC64LE.Sha384.digest },
-  Spec.Sha512.digest512Api.artifact PPC64LE.target {
-    code := Impl.MdStream.PPC64LE.Digest.code Proof.Hmac.Stream.PPC64LE.Sha512.hash
-    verified := Proof.Hmac.Stream.PPC64LE.Sha512.digest },
-  Spec.Sha512.digest512_224Api.artifact PPC64LE.target {
-    code := Impl.MdStream.PPC64LE.Digest.code Proof.Hmac.Stream.PPC64LE.Sha512_224.hash
-    verified := Proof.Hmac.Stream.PPC64LE.Sha512_224.digest },
-  Spec.Sha512.digest512_256Api.artifact PPC64LE.target {
-    code := Impl.MdStream.PPC64LE.Digest.code Proof.Hmac.Stream.PPC64LE.Sha512_256.hash
-    verified := Proof.Hmac.Stream.PPC64LE.Sha512_256.digest }]
+  Spec.Sha512.updateApi.artifact PPC64LE.target Proof.Sha512.PPC64LE.updateReg,
+  Spec.Sha512.finalizeApi.artifact PPC64LE.target Proof.Sha512.PPC64LE.finalizeReg,
+  Spec.Sha512.finalize384Api.artifact PPC64LE.target Proof.Sha512.PPC64LE.finalize384Reg,
+  Spec.Sha512.finalize512_256Api.artifact PPC64LE.target Proof.Sha512.PPC64LE.finalize512_256Reg,
+  Spec.Sha512.finalize512_224Api.artifact PPC64LE.target Proof.Sha512.PPC64LE.finalize512_224Reg,
+  Spec.Sha512.digest384Api.artifact PPC64LE.target Proof.Sha512.PPC64LE.digest384Reg,
+  Spec.Sha512.digest512Api.artifact PPC64LE.target Proof.Sha512.PPC64LE.digest512Reg,
+  Spec.Sha512.digest512_224Api.artifact PPC64LE.target Proof.Sha512.PPC64LE.digest512_224Reg,
+  Spec.Sha512.digest512_256Api.artifact PPC64LE.target Proof.Sha512.PPC64LE.digest512_256Reg]
 
 end VG.Artifacts.Sha512.PPC64LE
