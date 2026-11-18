@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Ed448.Comb
 public import VerifiedGarbage.Impl.Ed448.Formulas
 public import VerifiedGarbage.Impl.Ed448.X86.Scalar
 public import VerifiedGarbage.Spec.Ed448
@@ -24,16 +25,24 @@ registers are saved in the working space's first 16 bytes
 (`Impl/Ed448/X86/Scalar.lean`'s `save`).
 
 Every slot is initialized: `R` (slots 0–2) to the neutral point
-`(0 : 1 : 1)`, `B` (slots 8–10) to the base point, slot 11 to `d`, and the
-others to zero. The scalar's bits are expanded into bytes at `BITS` (byte
-`t` is bit `t`), as X448 expands its scalar. Then, from the top bit down,
-`R` is doubled and `T = R + B` computed into slots 3–5 with RFC 8032
-§5.2.4's formulas (`Impl/Ed448/Formulas.lean`'s `doubleOps` and `addOps`),
-and `T` swapped into `R` with the mask of the bit: the same operations for
-every bit, whatever its value. Finally `R` is encoded (§5.2.2): `Z` inverted
-with X448's addition chain, `x = X/Z` (into slot 1) fully reduced and its low
-bit written as the top bit of the output's 57th byte, and `y = Y/Z` fully
-reduced and written as its first 56 bytes.
+`(0 : 1 : 1)`, `Q` (slots 8–10) to the base point (of which only `Z = 1`, in
+slot 10, is used here), slot 11 to `d`, and the others to zero. The scalar's
+bits are expanded into bytes at `BITS` (byte `t` is bit `t`), as X448 expands
+its scalar.
+
+The multiplication is the four-column comb of `Impl/Ed448/Comb.lean`, whose
+table holds the sixteen affine points `[i₀ + 2¹¹⁴ i₁ + 2²²⁸ i₂ + 2³⁴² i₃] B`:
+114 rows from the top (`combLoop`), each a doubling of `R` (RFC 8032 §5.2.4's
+doubling formulas, `Impl/Ed448/Formulas.lean`'s `doubleOps`), the table entry
+of the row's four bits of the scalar, 114 apart, selected into `Q`'s `x` and
+`y` (slots 8 and 9), and `T = R + Q` (§5.2.4's addition, `addOps`, into slots
+3–5) copied into `R`. The selection scans every entry (`combSelect`): the
+slots are zeroed, and each entry's limbs, which are immediates of the code,
+are ORed in under the mask of the entry's index being the row's (`selEntry`),
+so the same instructions run whatever the bits. Finally `R` is encoded
+(§5.2.2): `Z` inverted with X448's addition chain, `x = X/Z` (into slot 1)
+fully reduced and its low bit written as the top bit of the output's 57th
+byte, and `y = Y/Z` fully reduced and written as its first 56 bytes.
 
 The only branches are on the loop counters, and every address is a pointer
 plus a constant or a counter, so only the pointers can affect timing.
@@ -44,7 +53,7 @@ plus a constant or a counter, so only the pointers can affect timing.
 namespace VG.Impl.Ed448.X86
 
 open VG.X86
-open VG.Impl.X448.X86 (at_ ld st slot BITS X2 Op ops cswap freeze invert bitsLoop copy)
+open VG.Impl.X448.X86 (at_ sc ld st slot BITS X2 Op ops freeze invert bitsLoop copy)
 
 /-! ## Field programs on the slots -/
 
@@ -59,7 +68,7 @@ def field (l : List FOp) : Prog isa := ops (l.map toOp)
 
 /-! ## Initial slots -/
 
-/-- The initial value of slot `i`: `R = (0 : 1 : 1)`, `B` the base point and
+/-- The initial value of slot `i`: `R = (0 : 1 : 1)`, `Q` the base point and
 `d`, and zero elsewhere. -/
 def initVal (i : Nat) : Nat :=
   if i = 0 then Spec.Ed448.identity.X.val
@@ -103,27 +112,57 @@ def baseBits : Prog isa := .seq (.block [.mov .esi (.mem (at_ .esp 8))]) (bitsLo
 /-- The callee-saved registers saved, the slots initialized and the scalar's bits. -/
 def baseEntry : Prog isa := .seq (.block (save 12)) (.seq initSlots baseBits)
 
-/-! ## The loop over the bits -/
+/-! ## The four-column comb -/
 
-/-- `ebx = -BITS[esi]`: the mask of bit `esi`. -/
-def baseMask : List Instr :=
-  [.mov .ebp (.reg .edi), .alu .add .ebp (.reg .esi), .movzx8 .eax (at_ .ebp BITS),
-    .mov .ebx (.imm 0), .alu .sub .ebx (.reg .eax)]
+/-- Limb `j` of coordinate `c` (0 is `x`, 1 is `y`) of the table's entry `i`. -/
+def combLimb (i c j : Nat) : Nat :=
+  (if c = 0 then (Comb.entry i).1.val else (Comb.entry i).2.val) / 2 ^ (16 * j) % 65536
 
-/-- `T` swapped into `R` under the mask of bit `esi`, and the counter
-compared with zero. -/
-def baseSwap : List Instr :=
-  baseMask ++ cswap (slot 0) (slot 3) ++ cswap (slot 1) (slot 4) ++ cswap (slot 2) (slot 5) ++
-    [.alu .cmp .esi (.imm 0)]
+/-- The row's index into `ecx`: bits `t`, `t + 114`, `t + 228` and `t + 342` of the scalar
+(`t = esi`), as `b₀ + 2 b₁ + 4 b₂ + 8 b₃`, each bit a byte at `ebp + o`, for `ebp = edi + t`. -/
+def combDigit (o : Nat) : List Instr :=
+  [.mov .ebp (.reg .edi), .alu .add .ebp (.reg .esi), .movzx8 .ecx (at_ .ebp (o + 342)),
+    .movzx8 .eax (at_ .ebp (o + 228)), .alu .add .ecx (.reg .ecx), .alu .add .ecx (.reg .eax),
+    .movzx8 .eax (at_ .ebp (o + 114)), .alu .add .ecx (.reg .ecx), .alu .add .ecx (.reg .eax),
+    .movzx8 .eax (at_ .ebp o), .alu .add .ecx (.reg .ecx), .alu .add .ecx (.reg .eax)]
 
-/-- One bit `t = esi - 1`, from the top: `R = 2R`, `T = R + B`, and `T`
-swapped into `R` if bit `t` is set. -/
-def baseStep : Prog isa :=
-  .seq (.block [.alu .sub .esi (.imm 1)]) <| .seq (field doubleOps) <| .seq (field addOps)
-    (.block baseSwap)
+/-- `ebx = -(ecx = i)`: the mask of entry `i`, for the index `ecx < 16`. -/
+def selMask (i : Nat) : List Instr :=
+  [.mov .eax (.reg .ecx), .alu .xor .eax (.imm (BitVec.ofNat 32 i)), .alu .sub .eax (.imm 1),
+    .shift .shr .eax 31, .mov .ebx (.imm 0), .alu .sub .ebx (.reg .eax)]
 
-/-- The 456 bits, from 455 down to 0. -/
-def baseLoop : Prog isa := .seq (.block [.mov .esi (.imm 456)]) (.loop baseStep .ne)
+/-- The limb `v j`, under the mask `ebx`, ORed into limb `j` of the slot at `o`. -/
+def selLimb (o : Nat) (v : Nat → Nat) (j : Nat) : List Instr :=
+  [.mov .eax (.imm (BitVec.ofNat 32 (v j))), .alu .and .eax (.reg .ebx),
+    .alu .or .eax (.mem (sc (o + 4 * j))), st .eax (o + 4 * j)]
+
+/-- The twenty-eight limbs `v`, under the mask `ebx`, ORed into the slot at `o`. -/
+def selCoord (o : Nat) (v : Nat → Nat) : List Instr := (List.range 28).flatMap (selLimb o v)
+
+/-- Entry `i` ORed into slots 8 (`x`) and 9 (`y`) if it is the row's. -/
+def selEntry (i : Nat) : List Instr :=
+  selMask i ++ selCoord (slot 8) (combLimb i 0) ++ selCoord (slot 9) (combLimb i 1)
+
+/-- The slot at `o` zeroed (`eax` is zero). -/
+def zeroSlot (o : Nat) : List Instr := (List.range 28).flatMap fun j => [st .eax (o + 4 * j)]
+
+/-- Slots 8 and 9 zeroed, then every entry scanned: the row's entry, of index `ecx`, in slots 8
+and 9. -/
+def combSelect : List Instr :=
+  .mov .eax (.imm 0) :: zeroSlot (slot 8) ++ zeroSlot (slot 9) ++ (List.range 16).flatMap selEntry
+
+/-- `T` (slots 3–5) into `R` (slots 0–2). -/
+def takeOps : List Op := [.copy (slot 0) (slot 3), .copy (slot 1) (slot 4), .copy (slot 2) (slot 5)]
+
+/-- One row `t = esi - 1`, from the top: `R = 2R`, the table entry of the row's bits selected
+into `Q`, `R = R + Q`, and the counter compared with zero. -/
+def combStep : Prog isa :=
+  .seq (.block [.alu .sub .esi (.imm 1)]) <| .seq (field doubleOps) <|
+  .seq (.block (combDigit BITS ++ combSelect)) <|
+  .seq (ops (addOps.map toOp ++ takeOps)) (.block [.alu .cmp .esi (.imm 0)])
+
+/-- The 114 rows, from 113 down to 0. -/
+def combLoop : Prog isa := .seq (.block [.mov .esi (.imm 114)]) (.loop combStep .ne)
 
 /-! ## The encoding -/
 
@@ -143,6 +182,6 @@ def baseEncode : Prog isa :=
       (List.range 28).flatMap Impl.X448.X86.packLimb ++ Impl.X448.X86.restore)
 
 /-- `vg_ed448_scalar_base(out = [esp + 4], scalar = [esp + 8], scratch = [esp + 12])`. -/
-def scalarBase : Prog isa := .seq baseEntry (.seq baseLoop baseEncode)
+def scalarBase : Prog isa := .seq baseEntry (.seq combLoop baseEncode)
 
 end VG.Impl.Ed448.X86
