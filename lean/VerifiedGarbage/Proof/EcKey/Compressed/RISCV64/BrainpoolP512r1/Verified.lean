@@ -72,9 +72,8 @@ theorem compress_verified :
         sig_post [Spec.EcKey.BrainpoolP512r1.inst, Spec.EcKey.Instance.compressPublicKeyContract,
           Spec.EcKey.Instance.compressPublicKeySig, Spec.BrainpoolP512r1.curve, Spec.EcKey.scratchWords, compRV,
           RISCV64.abi, RISCV64.argRegs]
-        have h' : match Spec.EcKey.compressPublicKey Spec.BrainpoolP512r1.curve (Spec.Ecdsa.bytesAt s.mem (s.gpr .a1) 129) with
-            | some bs => s'.gpr .a0 = 1 ∧ Spec.Ecdsa.bytesAt s'.mem (s.gpr .a0) 65 = bs
-            | none => s'.gpr .a0 = 0 ∧ Spec.Ecdsa.bytesAt s'.mem (s.gpr .a0) 65 = List.replicate 65 0 := h
+        have h' := h
+        dsimp only [compRV] at h'
         generalize hq : Spec.EcKey.compressPublicKey _ _ = q
         have hq' : Spec.EcKey.compressPublicKey Spec.BrainpoolP512r1.curve (Spec.Ecdsa.bytesAt s.mem (s.gpr .a1) 129) = q := hq
         rw [hq'] at h'
