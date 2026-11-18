@@ -135,7 +135,7 @@ theorem mask_ct {p : Prm} (L : Lay p) : CT (Env p) mask := by
   refine load_ct L (r := .ecx) (o := lenO) (by decide)
     (fun t h => ⟨Ld.env (by decide) (by decide) (fun _ h => h) t h, (Ld.env (by decide) (by decide) (fun _ h => h) t h).slots.len⟩)
     (CT.taint [.ebp] (pin_ebp fun _ h => h) (by taint_decide)) ?_
-  exact CT.taint [.ebp, .edi, .ecx] (pin3 fun t h => ⟨Ld.reg (by decide) (fun s h =>
+  exact CT.taintS [.ebp, .edi, .ecx] (pin3 fun t h => ⟨Ld.reg (by decide) (fun s h =>
       Ld.reg (by decide) (fun s (h : Env p s) => h.ebp) s h) t h,
     Ld.reg (by decide) (fun s h => by obtain ⟨_, _, hv, _⟩ := h; exact hv) t h,
     by obtain ⟨_, _, hv, _⟩ := h; exact hv⟩) (by taint_decide)

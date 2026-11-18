@@ -2634,18 +2634,35 @@ vg_aes_ocb_open_aesni:
 	mov ecx, DWORD PTR [ebp+204]
 	mov edx, 0
 	sub edx, DWORD PTR [ebp+284]
-	test ecx, ecx
+	movd xmm0, edx
+	pshufd xmm0, xmm0, 0
+	mov eax, ecx
+	shr eax, 4
+	and ecx, 15
+	test eax, eax
 	je 230f
 232:
+	movdqu xmm1, XMMWORD PTR [edi]
+	pand xmm1, xmm0
+	movdqu XMMWORD PTR [edi], xmm1
+	add edi, 16
+	sub eax, 1
+	jne 232b
+	jmp 231f
+230:
+231:
+	test ecx, ecx
+	je 233f
+235:
 	movzx eax, BYTE PTR [edi]
 	and eax, edx
 	mov BYTE PTR [edi], al
 	add edi, 1
 	sub ecx, 1
-	jne 232b
-	jmp 231f
-230:
-231:
+	jne 235b
+	jmp 234f
+233:
+234:
 	mov eax, DWORD PTR [ebp+284]
 	mov ebx, DWORD PTR [ebp+128]
 	mov esi, DWORD PTR [ebp+132]
@@ -5285,18 +5302,35 @@ vg_aes_ocb_open:
 	mov ecx, DWORD PTR [ebp+204]
 	mov edx, 0
 	sub edx, DWORD PTR [ebp+284]
-	test ecx, ecx
+	movd xmm0, edx
+	pshufd xmm0, xmm0, 0
+	mov eax, ecx
+	shr eax, 4
+	and ecx, 15
+	test eax, eax
 	je 230f
 232:
+	movdqu xmm1, XMMWORD PTR [edi]
+	pand xmm1, xmm0
+	movdqu XMMWORD PTR [edi], xmm1
+	add edi, 16
+	sub eax, 1
+	jne 232b
+	jmp 231f
+230:
+231:
+	test ecx, ecx
+	je 233f
+235:
 	movzx eax, BYTE PTR [edi]
 	and eax, edx
 	mov BYTE PTR [edi], al
 	add edi, 1
 	sub ecx, 1
-	jne 232b
-	jmp 231f
-230:
-231:
+	jne 235b
+	jmp 234f
+233:
+234:
 	mov eax, DWORD PTR [ebp+284]
 	mov ebx, DWORD PTR [ebp+128]
 	mov esi, DWORD PTR [ebp+132]

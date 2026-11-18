@@ -297,14 +297,22 @@ jne 228b
 229:
 .base64 "D7YHD7afkAAAADHYCcKDxwGD6QE="
 jne 229b
-.base64 "g+oBweofiZUcAQAAi73IAAAAi43MAAAAugAAAAArlRwBAACFyQ=="
+.base64 "g+oBweofiZUcAQAAi73IAAAAi43MAAAAugAAAAArlRwBAABmD27CZg9wwACJyMHoBIPhD4XA"
 je 230f
 232:
-.base64 "D7YHIdCIB4PHAYPpAQ=="
+.base64 "8w9vD2YP28jzD38Pg8cQg+gB"
 jne 232b
 jmp 231f
 230:
 231:
+.base64 "hck="
+je 233f
+235:
+.base64 "D7YHIdCIB4PHAYPpAQ=="
+jne 235b
+jmp 234f
+233:
+234:
 .base64 "i4UcAQAAi52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkMAoAAMM="
 .p2align 6"#,
         vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni::vg_aes_encrypt_blocks_aesni,
@@ -594,14 +602,22 @@ jne 228b
 229:
 .base64 "D7YHD7afkAAAADHYCcKDxwGD6QE="
 jne 229b
-.base64 "g+oBweofiZUcAQAAi73IAAAAi43MAAAAugAAAAArlRwBAACFyQ=="
+.base64 "g+oBweofiZUcAQAAi73IAAAAi43MAAAAugAAAAArlRwBAABmD27CZg9wwACJyMHoBIPhD4XA"
 je 230f
 232:
-.base64 "D7YHIdCIB4PHAYPpAQ=="
+.base64 "8w9vD2YP28jzD38Pg8cQg+gB"
 jne 232b
 jmp 231f
 230:
 231:
+.base64 "hck="
+je 233f
+235:
+.base64 "D7YHIdCIB4PHAYPpAQ=="
+jne 235b
+jmp 234f
+233:
+234:
 .base64 "i4UcAQAAi52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkMAoAAMM="
 .p2align 6"#,
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
