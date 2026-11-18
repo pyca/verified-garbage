@@ -766,13 +766,13 @@ theorem unstash_ok {s : State} (h : Room s) :
       s'.rd = s.rd ∧ s'.wr = s.wr := by
   have e₁ := exec_ldrFw h (t := .r0) (off := schedOff) 76 rfl (by decide)
   let s₁ := s.setReg .r0 (fw s 76)
-  have h₁ : Room s₁ := h.congr rfl rfl
+  have h₁ : Room s₁ := h.congr (RegUpd.gpr_setReg_of_ne _ _ (by decide)) (RegUpd.wr_setReg _ _ _)
   have e₂ := exec_ldrFw h₁ (t := .r1) (off := dataOff) 77 rfl (by decide)
   let s₂ := s₁.setReg .r1 (fw s₁ 77)
-  have h₂ : Room s₂ := h₁.congr rfl rfl
+  have h₂ : Room s₂ := h₁.congr (RegUpd.gpr_setReg_of_ne _ _ (by decide)) (RegUpd.wr_setReg _ _ _)
   have e₃ := exec_ldrFw h₂ (t := .r2) (off := nOff) 78 rfl (by decide)
   let s₃ := s₂.setReg .r2 (fw s₂ 78)
-  have h₃ : Room s₃ := h₂.congr rfl rfl
+  have h₃ : Room s₃ := h₂.congr (RegUpd.gpr_setReg_of_ne _ _ (by decide)) (RegUpd.wr_setReg _ _ _)
   have e₄ := exec_ldrFw h₃ (t := .r12) (off := kOff) 79 rfl (by decide)
   refine ⟨s₃.setReg .r12 (fw s₃ 79), ?_, ?_, ?_, ?_, ?_, ?_, rfl, rfl, rfl⟩
   · rw [unstash, runBlock_cons, show base = .r3 from rfl, e₁, runStep_some, runBlock_cons, e₂,
