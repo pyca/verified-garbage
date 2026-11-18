@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.sealContract`. Constant time: only the pointers and the lengths may affect timing, not the key, the nonce or the data. The block counter wraps around beyond 2³²-1 blocks of data (RFC 8439's `P_MAX`), which the caller must not exceed for the construction to be secure.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `key` must be valid for reads of 32 bytes.
@@ -24,34 +26,36 @@ pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_seal(key: *const [u8; 32], 
 .base64 "EwEB2YqIuo+TgngAk/KC/yO4ciMjvIIjI7CSJSO0oiUjuLIlI7wSJCOwYieyizaMuow+jcKNfosTA1AGI4BiABMDgAejgGIAEwMAByOBYgATAxAGo4FiABMD4AYjgmIAEwNABqOCYgATAwACI4NiABMDMAOjg2IAEwMgAyOEYgATA9ACo4RiABMDIAYjhWIAEwOQB6OFYgATA0AHI4ZiABMDUAajhmIAEwMAAiOHYgATA7AGo4diAANDBQAjiGIAA0MVAKOIYgADQyUAI4liAANDNQCjiWIAA0NFACOKYgADQ1UAo4piAANDZQAji2IAA0N1AKOLYgADQ4UAI4xiAANDlQCjjGIAA0OlACONYgADQ7UAo41iAANDxQAjjmIAA0PVAKOOYgADQ+UAI49iAAND9QCjj2IAA0MFASOAYgIDQxUBo4BiAgNDJQEjgWICA0M1AaOBYgIDQ0UBI4JiAgNDVQGjgmICA0NlASODYgIDQ3UBo4NiAgNDhQEjhGICA0OVAaOEYgIDQ6UBI4ViAgNDtQGjhWICA0PFASOGYgIDQ9UBo4ZiAgND5QEjh2ICA0P1AaOHYgIBQyOIYgIBQ6OIYgIBQyOJYgIBQ6OJYgIDwwUAI4piAgPDFQCjimICA8MlACOLYgIDwzUAo4tiAgPDRQAjjGICA8NVAKOMYgIDw2UAI41iAgPDdQCjjWICA8OFACOOYgIDw5UAo45iAgPDpQAjj2ICA8O1AKOPYgIBQyOwYiAjtGIgI7iCISO8oiEWhZMFBQQ="
 call {vg_chacha20_block}
 .base64 "kwUFBBMFBRg="
-call {vg_poly1305_init}
+call {vg_poly1305_init_core}
 .base64 "gUVehuKG"
-call {vg_poly1305_update}
+call {vg_poly1305_update_core}
 .base64 "4oWBRrOGhkG9ihMGBQg="
-call {vg_poly1305_update}
+call {vg_poly1305_update_core}
 .base64 "EwUF6IVCIwhVAuaFaoaTBgUEWoc="
 call {vg_chacha20_xor}
 .base64 "EwUFGJMF/ADBmWaG6oY="
-call {vg_poly1305_update}
+call {vg_poly1305_update_core}
 .base64 "kwX8AMGZ6pWBRrOGpkG9ihMGBQg="
-call {vg_poly1305_update}
+call {vg_poly1305_update_core}
 .base64 "kwX8AMGZkwL9AJPyAv+WlRMGBQnBRg=="
-call {vg_poly1305_update}
+call {vg_poly1305_update_core}
 .base64 "kwX8AMGZkwL9AJPyAv+WlcEFboY="
-call {vg_poly1305_finalize}
-.base64 "kwIF6IO7AiMDvIIjg7wCJAO9giSDvQIlg7CCJQO7AiYKj4FPIzD/ASM0/wEjOP8BIzz/ASMw/wMjNP8DIzj/AyM8/wMjMP8FIzT/BSM4/wUjPP8FIzD/ByM0/wcjOP8HIzz/ByMw/wkjNP8JIzj/CSM8/wkjMP8LIzT/CyM4/wsjPP8LIzD/DSM0/w0jOP8NIzz/DSMw/w8jNP8PIzj/DyM8/w8jMP8RIzT/ESM4/xEjPP8RIzD/EyM0/xMjOP8TIzz/EyMw/xUjNP8VIzj/FSM8/xUjMP8XIzT/FyM4/xcjPP8XIzD/GSM0/xkjOP8ZIzz/GSMw/xsjNP8bIzj/GyM8/xsjMP8dIzT/HSM4/x0jPP8dIzD/HyM0/x8jOP8fIzz/HyMw/yEjNP8hIzj/ISM8/yEjMP8jIzT/IyM4/yMjPP8jIzD/JSM0/yUjOP8lIzz/JSMw/ycjNP8nEwEBJ4KA"
+call {vg_poly1305_finalize_core}
+.base64 "kwIF6IO7AiMDvIIjg7wCJAO9giSDvQIlg7CCJQO7AiYKj4FPIzD/ASM0/wEjOP8BIzz/ASMw/wMjNP8DIzj/AyM8/wMjMP8FIzT/BSM4/wUjPP8FIzD/ByM0/wcjOP8HIzz/ByMw/wkjNP8JIzj/CSM8/wkjMP8LIzT/CyM4/wsjPP8LIzD/DSM0/w0jOP8NIzz/DSMw/w8jNP8PIzj/DyM8/w8jMP8RIzT/ESM4/xEjPP8RIzD/EyM0/xMjOP8TIzz/EyMw/xUjNP8VIzj/FSM8/xUjMP8XIzT/FyM4/xcjPP8XIzD/GSM0/xkjOP8ZIzz/GSMw/xsjNP8bIzj/GyM8/xsjMP8dIzT/HSM4/x0jPP8dIzD/HyM0/x8jOP8fIzz/HyMw/yEjNP8hIzj/ISM8/yEjMP8jIzT/IyM4/yMjPP8jIzD/JSM0/yUjOP8lIzz/JSMw/ycjNP8nEwEBJ4FCAUWBRQFGgUYBR4FHAUiBSIFCAUOBQwFOgU4BT4FPgoA="
 .option pop"#,
         vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,
-        vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
-        vg_poly1305_update = sym super::poly1305::vg_poly1305_update,
+        vg_poly1305_init_core = sym super::poly1305::vg_poly1305_init_core::vg_poly1305_init_core,
+        vg_poly1305_update_core = sym super::poly1305::vg_poly1305_update_core::vg_poly1305_update_core,
         vg_chacha20_xor = sym super::chacha20::vg_chacha20_xor::vg_chacha20_xor,
-        vg_poly1305_finalize = sym super::poly1305::vg_poly1305_finalize,
+        vg_poly1305_finalize_core = sym super::poly1305::vg_poly1305_finalize_core::vg_poly1305_finalize_core,
     )
 }
 
 /// ChaCha20-Poly1305 decryption (RFC 8439 §2.8): with the key `*key`, the nonce `*nonce` and the received tag `*tag`, returns 1 if the tag is that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, having decrypted the ciphertext in place; otherwise returns 0, and the `len` bytes at `data` are zeros. The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.openZeroContract`. Constant time but for the result: only the pointers, the lengths and whether the function returns 1 or 0 may affect timing, not the key, the nonce, the additional data, the tag or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -70,19 +74,19 @@ pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_open(key: *const [u8; 32], 
 .base64 "EwEB2YqIuo+TgngAk/KC/yO4ciMjvIIjI7CSJSO0oiUjuLIlI7wSJCOwYieyizaMuow+jcKNfosTA1AGI4BiABMDgAejgGIAEwMAByOBYgATAxAGo4FiABMD4AYjgmIAEwNABqOCYgATAwACI4NiABMDMAOjg2IAEwMgAyOEYgATA9ACo4RiABMDIAYjhWIAEwOQB6OFYgATA0AHI4ZiABMDUAajhmIAEwMAAiOHYgATA7AGo4diAANDBQAjiGIAA0MVAKOIYgADQyUAI4liAANDNQCjiWIAA0NFACOKYgADQ1UAo4piAANDZQAji2IAA0N1AKOLYgADQ4UAI4xiAANDlQCjjGIAA0OlACONYgADQ7UAo41iAANDxQAjjmIAA0PVAKOOYgADQ+UAI49iAAND9QCjj2IAA0MFASOAYgIDQxUBo4BiAgNDJQEjgWICA0M1AaOBYgIDQ0UBI4JiAgNDVQGjgmICA0NlASODYgIDQ3UBo4NiAgNDhQEjhGICA0OVAaOEYgIDQ6UBI4ViAgNDtQGjhWICA0PFASOGYgIDQ9UBo4ZiAgND5QEjh2ICA0P1AaOHYgIBQyOIYgIBQ6OIYgIBQyOJYgIBQ6OJYgIDwwUAI4piAgPDFQCjimICA8MlACOLYgIDwzUAo4tiAgPDRQAjjGICA8NVAKOMYgIDw2UAI41iAgPDdQCjjWICA8OFACOOYgIDw5UAo45iAgPDpQAjj2ICA8O1AKOPYgIBQyOwYiAjtGIgI7iCISO8oiEWhZMFBQQ="
 call {vg_chacha20_block}
 .base64 "kwUFBBMFBRg="
-call {vg_poly1305_init}
+call {vg_poly1305_init_core}
 .base64 "gUVehuKG"
-call {vg_poly1305_update}
+call {vg_poly1305_update_core}
 .base64 "4oWBRrOGhkG9ihMGBQg="
-call {vg_poly1305_update}
+call {vg_poly1305_update_core}
 .base64 "kwX8AMGZZobqhg=="
-call {vg_poly1305_update}
+call {vg_poly1305_update_core}
 .base64 "kwX8AMGZ6pWBRrOGpkG9ihMGBQg="
-call {vg_poly1305_update}
+call {vg_poly1305_update_core}
 .base64 "kwX8AMGZkwL9AJPyAv+WlRMGBQnBRg=="
-call {vg_poly1305_update}
+call {vg_poly1305_update_core}
 .base64 "kwX8AMGZkwL9AJPyAv+WlcEFEwYFCg=="
-call {vg_poly1305_finalize}
+call {vg_poly1305_finalize_core}
 .base64 "EwUF6IVCIwhVAuaFaoaTBgUEWoc="
 call {vg_chacha20_xor}
 .base64 "EwUFGJMCBegBQ4PDAiIDzg0As8PDATNjcwCDwxIiA84dALPDwwEzY3MAg8MiIgPOLQCzw8MBM2NzAIPDMiIDzj0As8PDATNjcwCDw0IiA85NALPDwwEzY3MAg8NSIgPOXQCzw8MBM2NzAIPDYiIDzm0As8PDATNjcwCDw3IiA859ALPDwwEzY3MAg8OCIgPOjQCzw8MBM2NzAIPDkiIDzp0As8PDATNjcwCDw6IiA86tALPDwwEzY3MAg8OyIgPOvQCzw8MBM2NzAIPDwiIDzs0As8PDATNjcwCDw9IiA87dALPDwwEzY3MAg8PiIgPO7QCzw8MBM2NzAIPD8iIDzv0As8PDATNjcwCFQzMzcwA="
@@ -98,12 +102,12 @@ j 23f
 22:
 23:
 21:
-.base64 "g7sCIwO8giODvAIkA72CJIO9AiWDsIIlA7sCJhqFCo+BTyMw/wEjNP8BIzj/ASM8/wEjMP8DIzT/AyM4/wMjPP8DIzD/BSM0/wUjOP8FIzz/BSMw/wcjNP8HIzj/ByM8/wcjMP8JIzT/CSM4/wkjPP8JIzD/CyM0/wsjOP8LIzz/CyMw/w0jNP8NIzj/DSM8/w0jMP8PIzT/DyM4/w8jPP8PIzD/ESM0/xEjOP8RIzz/ESMw/xMjNP8TIzj/EyM8/xMjMP8VIzT/FSM4/xUjPP8VIzD/FyM0/xcjOP8XIzz/FyMw/xkjNP8ZIzj/GSM8/xkjMP8bIzT/GyM4/xsjPP8bIzD/HSM0/x0jOP8dIzz/HSMw/x8jNP8fIzj/HyM8/x8jMP8hIzT/ISM4/yEjPP8hIzD/IyM0/yMjOP8jIzz/IyMw/yUjNP8lIzj/JSM8/yUjMP8nIzT/JxMBASeCgA=="
+.base64 "g7sCIwO8giODvAIkA72CJIO9AiWDsIIlA7sCJhqFCo+BTyMw/wEjNP8BIzj/ASM8/wEjMP8DIzT/AyM4/wMjPP8DIzD/BSM0/wUjOP8FIzz/BSMw/wcjNP8HIzj/ByM8/wcjMP8JIzT/CSM4/wkjPP8JIzD/CyM0/wsjOP8LIzz/CyMw/w0jNP8NIzj/DSM8/w0jMP8PIzT/DyM4/w8jPP8PIzD/ESM0/xEjOP8RIzz/ESMw/xMjNP8TIzj/EyM8/xMjMP8VIzT/FSM4/xUjPP8VIzD/FyM0/xcjOP8XIzz/FyMw/xkjNP8ZIzj/GSM8/xkjMP8bIzT/GyM4/xsjPP8bIzD/HSM0/x0jOP8dIzz/HSMw/x8jNP8fIzj/HyM8/x8jMP8hIzT/ISM4/yEjPP8hIzD/IyM0/yMjOP8jIzz/IyMw/yUjNP8lIzj/JSM8/yUjMP8nIzT/JxMBASeBQgIVAZGBRQFGgUYBR4FHAUiBSIFCAUOBQwFOgU4BT4FPgoA="
 .option pop"#,
         vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,
-        vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
-        vg_poly1305_update = sym super::poly1305::vg_poly1305_update,
-        vg_poly1305_finalize = sym super::poly1305::vg_poly1305_finalize,
+        vg_poly1305_init_core = sym super::poly1305::vg_poly1305_init_core::vg_poly1305_init_core,
+        vg_poly1305_update_core = sym super::poly1305::vg_poly1305_update_core::vg_poly1305_update_core,
+        vg_poly1305_finalize_core = sym super::poly1305::vg_poly1305_finalize_core::vg_poly1305_finalize_core,
         vg_chacha20_xor = sym super::chacha20::vg_chacha20_xor::vg_chacha20_xor,
     )
 }
@@ -111,6 +115,8 @@ j 23f
 /// ChaCha20-Poly1305 decryption (RFC 8439 §2.8), out of place: with the key `*key`, the nonce `*nonce` and the received tag `*tag`, returns 1 if the tag is that of the `len` bytes of ciphertext at `src` and the `aad_len` bytes of additional data at `aad`, having then written the plaintext to the `dst_len = len` bytes at `dst`; otherwise returns 0, having written zeros to them: `vg_chacha20_poly1305_open` with the ciphertext read from `src` and the plaintext written to `dst`. `src` is not written, and `dst` is a buffer of its own: it overlaps no other buffer, `src` included. The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.openToContract`. Constant time but for the result: only the pointers, the lengths and whether the function returns 1 or 0 may affect timing, not the key, the nonce, the additional data, the tag or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -132,19 +138,19 @@ pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_open_to(key: *const [u8; 32
 .base64 "EwEB2IqCE4MCKAMzAwAjsGIAE4MCASO0YgDCj4qCA7gCAIO4ggCTgngAk/KC/yO4ciMjvIIjI7CSJSO0oiUjuLIlI7wSJCOwYieyizaMuow+jcKNfosTA1AGI4BiABMDgAejgGIAEwMAByOBYgATAxAGo4FiABMD4AYjgmIAEwNABqOCYgATAwACI4NiABMDMAOjg2IAEwMgAyOEYgATA9ACo4RiABMDIAYjhWIAEwOQB6OFYgATA0AHI4ZiABMDUAajhmIAEwMAAiOHYgATA7AGo4diAANDBQAjiGIAA0MVAKOIYgADQyUAI4liAANDNQCjiWIAA0NFACOKYgADQ1UAo4piAANDZQAji2IAA0N1AKOLYgADQ4UAI4xiAANDlQCjjGIAA0OlACONYgADQ7UAo41iAANDxQAjjmIAA0PVAKOOYgADQ+UAI49iAAND9QCjj2IAA0MFASOAYgIDQxUBo4BiAgNDJQEjgWICA0M1AaOBYgIDQ0UBI4JiAgNDVQGjgmICA0NlASODYgIDQ3UBo4NiAgNDhQEjhGICA0OVAaOEYgIDQ6UBI4ViAgNDtQGjhWICA0PFASOGYgIDQ9UBo4ZiAgND5QEjh2ICA0P1AaOHYgIBQyOIYgIBQ6OIYgIBQyOJYgIBQ6OJYgIDwwUAI4piAgPDFQCjimICA8MlACOLYgIDwzUAo4tiAgPDRQAjjGICA8NVAKOMYgIDw2UAI41iAgPDdQCjjWICA8OFACOOYgIDw5UAo45iAgPDpQAjj2ICA8O1AKOPYgIBQyOwYiAjtGIgI7iCISO8oiEWhZMFBQQ="
 call {vg_chacha20_block}
 .base64 "kwUFBBMFBRg="
-call {vg_poly1305_init}
+call {vg_poly1305_init_core}
 .base64 "gUVehuKG"
-call {vg_poly1305_update}
+call {vg_poly1305_update_core}
 .base64 "4oWBRrOGhkG9ihMGBQg="
-call {vg_poly1305_update}
+call {vg_poly1305_update_core}
 .base64 "kwX8AMGZZobqhg=="
-call {vg_poly1305_update}
+call {vg_poly1305_update_core}
 .base64 "kwX8AMGZ6pWBRrOGpkG9ihMGBQg="
-call {vg_poly1305_update}
+call {vg_poly1305_update_core}
 .base64 "kwX8AMGZkwL9AJPyAv+WlRMGBQnBRg=="
-call {vg_poly1305_update}
+call {vg_poly1305_update_core}
 .base64 "kwX8AMGZkwL9AJPyAv+WlcEFEwYFCg=="
-call {vg_poly1305_finalize}
+call {vg_poly1305_finalize_core}
 .base64 "EwUF6IVCIwhVAuaFaoaTBgUEWoc="
 call {vg_chacha20_xor}
 .base64 "EwUFGJMCBegBQ4PDAiIDzg0As8PDATNjcwCDwxIiA84dALPDwwEzY3MAg8MiIgPOLQCzw8MBM2NzAIPDMiIDzj0As8PDATNjcwCDw0IiA85NALPDwwEzY3MAg8NSIgPOXQCzw8MBM2NzAIPDYiIDzm0As8PDATNjcwCDw3IiA859ALPDwwEzY3MAg8OCIgPOjQCzw8MBM2NzAIPDkiIDzp0As8PDATNjcwCDw6IiA86tALPDwwEzY3MAg8OyIgPOvQCzw8MBM2NzAIPDwiIDzs0As8PDATNjcwCDw9IiA87dALPDwwEzY3MAg8PiIgPO7QCzw8MBM2NzAIPD8iIDzv0As8PDATNjcwCFQzMzcwA="
@@ -160,12 +166,12 @@ j 23f
 22:
 23:
 21:
-.base64 "g7sCIwO8giODvAIkA72CJIO9AiWDsIIlA7sCJhqFEw8BAYFPIzD/ASM0/wEjOP8BIzz/ASMw/wMjNP8DIzj/AyM8/wMjMP8FIzT/BSM4/wUjPP8FIzD/ByM0/wcjOP8HIzz/ByMw/wkjNP8JIzj/CSM8/wkjMP8LIzT/CyM4/wsjPP8LIzD/DSM0/w0jOP8NIzz/DSMw/w8jNP8PIzj/DyM8/w8jMP8RIzT/ESM4/xEjPP8RIzD/EyM0/xMjOP8TIzz/EyMw/xUjNP8VIzj/FSM8/xUjMP8XIzT/FyM4/xcjPP8XIzD/GSM0/xkjOP8ZIzz/GSMw/xsjNP8bIzj/GyM8/xsjMP8dIzT/HSM4/x0jPP8dIzD/HyM0/x8jOP8fIzz/HyMw/yEjNP8hIzj/ISM8/yEjMP8jIzT/IyM4/yMjPP8jIzD/JSM0/yUjOP8lIzz/JSMw/ycjNP8nEwEBKIKA"
+.base64 "g7sCIwO8giODvAIkA72CJIO9AiWDsIIlA7sCJhqFEw8BAYFPIzD/ASM0/wEjOP8BIzz/ASMw/wMjNP8DIzj/AyM8/wMjMP8FIzT/BSM4/wUjPP8FIzD/ByM0/wcjOP8HIzz/ByMw/wkjNP8JIzj/CSM8/wkjMP8LIzT/CyM4/wsjPP8LIzD/DSM0/w0jOP8NIzz/DSMw/w8jNP8PIzj/DyM8/w8jMP8RIzT/ESM4/xEjPP8RIzD/EyM0/xMjOP8TIzz/EyMw/xUjNP8VIzj/FSM8/xUjMP8XIzT/FyM4/xcjPP8XIzD/GSM0/xkjOP8ZIzz/GSMw/xsjNP8bIzj/GyM8/xsjMP8dIzT/HSM4/x0jPP8dIzD/HyM0/x8jOP8fIzz/HyMw/yEjNP8hIzj/ISM8/yEjMP8jIzT/IyM4/yMjPP8jIzD/JSM0/yUjOP8lIzz/JSMw/ycjNP8nEwEBKIFCEwEB2AqDIzBTACM0UwATAQEoAhUBkYFFAUaBRgFHgUcBSIFIgUIBQ4FDAU6BTgFPgU+CgA=="
 .option pop"#,
         vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,
-        vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
-        vg_poly1305_update = sym super::poly1305::vg_poly1305_update,
-        vg_poly1305_finalize = sym super::poly1305::vg_poly1305_finalize,
+        vg_poly1305_init_core = sym super::poly1305::vg_poly1305_init_core::vg_poly1305_init_core,
+        vg_poly1305_update_core = sym super::poly1305::vg_poly1305_update_core::vg_poly1305_update_core,
+        vg_poly1305_finalize_core = sym super::poly1305::vg_poly1305_finalize_core::vg_poly1305_finalize_core,
         vg_chacha20_xor = sym super::chacha20::vg_chacha20_xor::vg_chacha20_xor,
     )
 }
@@ -173,6 +179,8 @@ j 23f
 /// ChaCha20-Poly1305 encryption (RFC 8439 §2.8), out of place, of a plaintext in pieces: with the key `*key` and the nonce `*nonce`, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_chacha20_poly1305_seal` with the plaintext gathered from `src`.
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.sealGatherContract`. Constant time: only the pointers, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key, the nonce, the additional data or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -208,9 +216,9 @@ j 21f
 20:
 21:
 .base64 "fofGh3qI"
-call {vg_chacha20_poly1305_seal}
-.base64 "omBBAYKA"
+call {vg_chacha20_poly1305_seal_core}
+.base64 "omBBAYFCEwEB2AqDIzBTACM0UwAjOFMAIzxTACMwUwIjNFMCIzhTAiM8UwIjMFMEIzRTBCM4UwQjPFMEIzBTBiM0UwYjOFMGIzxTBiMwUwgjNFMIIzhTCCM8UwgjMFMKIzRTCiM4UwojPFMKIzBTDCM0UwwjOFMMIzxTDCMwUw4jNFMOIzhTDiM8Uw4jMFMQIzRTECM4UxAjPFMQIzBTEiM0UxIjOFMSIzxTEiMwUxQjNFMUIzhTFCM8UxQjMFMWIzRTFiM4UxYjPFMWIzBTGCM0UxgjOFMYIzxTGCMwUxojNFMaIzhTGiM8UxojMFMcIzRTHCM4UxwjPFMcIzBTHiM0Ux4jOFMeIzxTHiMwUyAjNFMgIzhTICM8UyAjMFMiIzRTIiM4UyIjPFMiIzBTJCM0UyQjOFMkIzxTJCMwUyYjNFMmIzhTJiM8UyYTAQEoAUWBRQFGgUYBR4FHAUiBSIFCAUOBQwFOgU4BT4FPgoA="
 .option pop"#,
-        vg_chacha20_poly1305_seal = sym super::chacha20poly1305::vg_chacha20_poly1305_seal,
+        vg_chacha20_poly1305_seal_core = sym super::chacha20::vg_chacha20_poly1305_seal_core::vg_chacha20_poly1305_seal_core,
     )
 }

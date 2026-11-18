@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.X448.exchangeContract`. Constant time: only the pointers may affect timing, not the scalar or the u-coordinate; the return value depends on both.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 56 bytes.
@@ -23,7 +25,7 @@ pub(crate) unsafe extern "C" fn vg_x448_exchange(out: *mut [u8; 56], scalar: *co
 .option arch, +m, +c
 .base64 "QREG5IqCI7CiAA=="
 call {vg_x448}
-.base64 "ioKDsgIAAUODwwIAM2NzAIPDEgAzY3MAg8MiADNjcwCDwzIAM2NzAIPDQgAzY3MAg8NSADNjcwCDw2IAM2NzAIPDcgAzY3MAg8OCADNjcwCDw5IAM2NzAIPDogAzY3MAg8OyADNjcwCDw8IAM2NzAIPD0gAzY3MAg8PiADNjcwCDw/IAM2NzAIPDAgEzY3MAg8MSATNjcwCDwyIBM2NzAIPDMgEzY3MAg8NCATNjcwCDw1IBM2NzAIPDYgEzY3MAg8NyATNjcwCDw4IBM2NzAIPDkgEzY3MAg8OiATNjcwCDw7IBM2NzAIPDwgEzY3MAg8PSATNjcwCDw+IBM2NzAIPD8gEzY3MAg8MCAjNjcwCDwxICM2NzAIPDIgIzY3MAg8MyAjNjcwCDw0ICM2NzAIPDUgIzY3MAg8NiAjNjcwCDw3ICM2NzAIPDggIzY3MAg8OSAjNjcwCDw6ICM2NzAIPDsgIzY3MAg8PCAjNjcwCDw9ICM2NzAIPD4gIzY3MAg8PyAjNjcwCDwwIDM2NzAIPDEgMzY3MAg8MiAzNjcwCDwzIDM2NzAIPDQgMzY3MAg8NSAzNjcwCDw2IDM2NzAIPDcgMzY3MAgUMztWMAomBBAYKA"
+.base64 "ioKDsgIAAUODwwIAM2NzAIPDEgAzY3MAg8MiADNjcwCDwzIAM2NzAIPDQgAzY3MAg8NSADNjcwCDw2IAM2NzAIPDcgAzY3MAg8OCADNjcwCDw5IAM2NzAIPDogAzY3MAg8OyADNjcwCDw8IAM2NzAIPD0gAzY3MAg8PiADNjcwCDw/IAM2NzAIPDAgEzY3MAg8MSATNjcwCDwyIBM2NzAIPDMgEzY3MAg8NCATNjcwCDw1IBM2NzAIPDYgEzY3MAg8NyATNjcwCDw4IBM2NzAIPDkgEzY3MAg8OiATNjcwCDw7IBM2NzAIPDwgEzY3MAg8PSATNjcwCDw+IBM2NzAIPD8gEzY3MAg8MCAjNjcwCDwxICM2NzAIPDIgIzY3MAg8MyAjNjcwCDw0ICM2NzAIPDUgIzY3MAg8NiAjNjcwCDw3ICM2NzAIPDggIzY3MAg8OSAjNjcwCDw6ICM2NzAIPDsgIzY3MAg8PCAjNjcwCDw9ICM2NzAIPD4gIzY3MAg8PyAjNjcwCDwwIDM2NzAIPDEgMzY3MAg8MiAzNjcwCDwzIDM2NzAIPDQgMzY3MAg8NSAzNjcwCDw2IDM2NzAIPDcgMzY3MAgUMztWMAomBBAYFCQREKgyMwUwAjNFMAQQECFQGRgUUBRoFGAUeBRwFIgUiBQgFDgUMBToFOAU+BT4KA"
 .option pop"#,
         vg_x448 = sym super::x448::vg_x448::vg_x448,
     )
@@ -32,6 +34,8 @@ call {vg_x448}
 /// Computes an X448 public key (RFC 7748 §6.2): writes `X448(k, 5)`, the X448 function of the 56-byte scalar `k` at `scalar` and the base point's u-coordinate 5, to `*out`. The scalar is decoded (clamped).
 ///
 /// Contract: `VG.Spec.X448.x448BaseContract`. Constant time: only the pointers may affect timing, not the scalar.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -48,7 +52,7 @@ pub(crate) unsafe extern "C" fn vg_x448_base(out: *mut [u8; 56], scalar: *const 
 .option arch, +m, +c
 .base64 "soadBuGaFUeBR5jCI6TmCtzCnMbcxpzK3MqcztzOnNLc0pzW3Nac2tzaI6b2CiOo9gojqvYKI6z2CiOu9gojoPYMI6L2DCOk9gwjpvYMI6j2DCOq9gwjrPYMI672DAVHgUcpZhsGloqY3rzaI6DmDiOoxjDc3rzC/MK8xvzGvMr8yrzO/M680vzSvNb81vzavN783iOg9ggjovYII6T2CCOm9ggjqPYII6r2CCOs9ggjrvYII6D2CiOi9gojovYOI6T2DiOm9g4jqPYOI6r2DiOs9g4jrvYOI6D2ECOi9hAjpPYQI6b2ECOo9hAjqvYQI6r2MCOs9jAjrvYwI6D2MiOi9jIjpPYyI6b2MiOo9jIjqvYyI6z2MiOu9jIjoPY0I6L2NCO8Fn4="
 call {vg_x448_tail}
-.base64 "g7CGf4KA"
+.base64 "g7CGf4FCAUWBRQFGgUYBR4FHAUiBSIFCAUOBQwFOgU4BT4FPgoA="
 .option pop"#,
         vg_x448_tail = sym super::x448::vg_x448_tail::vg_x448_tail,
     )

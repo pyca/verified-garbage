@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.X25519.exchangeContract`. Constant time: only the pointers may affect timing, not the scalar or the u-coordinate; the return value depends on both.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 32 bytes.
@@ -23,7 +25,7 @@ pub(crate) unsafe extern "C" fn vg_x25519_exchange(out: *mut [u8; 32], scalar: *
 .option arch, +m, +c
 .base64 "QREG5IqCI7CiAA=="
 call {vg_x25519}
-.base64 "ioKDsgIAAUODwwIAM2NzAIPDEgAzY3MAg8MiADNjcwCDwzIAM2NzAIPDQgAzY3MAg8NSADNjcwCDw2IAM2NzAIPDcgAzY3MAg8OCADNjcwCDw5IAM2NzAIPDogAzY3MAg8OyADNjcwCDw8IAM2NzAIPD0gAzY3MAg8PiADNjcwCDw/IAM2NzAIPDAgEzY3MAg8MSATNjcwCDwyIBM2NzAIPDMgEzY3MAg8NCATNjcwCDw1IBM2NzAIPDYgEzY3MAg8NyATNjcwCDw4IBM2NzAIPDkgEzY3MAg8OiATNjcwCDw7IBM2NzAIPDwgEzY3MAg8PSATNjcwCDw+IBM2NzAIPD8gEzY3MAgUMztWMAomBBAYKA"
+.base64 "ioKDsgIAAUODwwIAM2NzAIPDEgAzY3MAg8MiADNjcwCDwzIAM2NzAIPDQgAzY3MAg8NSADNjcwCDw2IAM2NzAIPDcgAzY3MAg8OCADNjcwCDw5IAM2NzAIPDogAzY3MAg8OyADNjcwCDw8IAM2NzAIPD0gAzY3MAg8PiADNjcwCDw/IAM2NzAIPDAgEzY3MAg8MSATNjcwCDwyIBM2NzAIPDMgEzY3MAg8NCATNjcwCDw1IBM2NzAIPDYgEzY3MAg8NyATNjcwCDw4IBM2NzAIPDkgEzY3MAg8OiATNjcwCDw7IBM2NzAIPDwgEzY3MAg8PSATNjcwCDw+IBM2NzAIPD8gEzY3MAgUMztWMAomBBAYFCQREKgyMwUwAjNFMAQQECFQGRgUUBRoFGAUeBRwFIgUiBQgFDgUMBToFOAU+BT4KA"
 .option pop"#,
         vg_x25519 = sym super::x25519::vg_x25519::vg_x25519,
     )
@@ -32,6 +34,8 @@ call {vg_x25519}
 /// Computes an X25519 public key (RFC 7748 §6.1): writes `X25519(k, 9)`, the X25519 function of the 32-byte scalar `k` at `scalar` and the base point's u-coordinate 9, to `*out`. The scalar is decoded (clamped).
 ///
 /// Contract: `VG.Spec.X25519.x25519BaseContract`. Constant time: only the pointers may affect timing, not the scalar.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -63,7 +67,7 @@ call {vg_gf25519_r32_mul}
 call {vg_gf25519_r32_mul}
 .base64 "qoY2hZMFAAYTBgAGkwYAIg=="
 call {vg_gf25519_r32_mul}
-.base64 "qoYD5wYEI6DmNgPnRgQjouY2A+eGBCOk5jYD58YEI6bmNgPnBgUjqOY2A+dGBSOq5jYD54YFI6zmNgPnxgUjruY2A+fGN5NX9wEGFwWTI67mNk1Gs4fHAgPnBjY+lyOg5jaTVwcCA+dGNj6XI6LmNpNXBwID54Y2PpcjpOY2k1cHAgPnxjY+lyOm5jaTVwcCA+cGNz6XI6jmNpNXBwID50Y3PpcjquY2k1cHAgPnhjc+lyOs5jaTVwcCA+fGNz6XI67mNpNXBwLNRwPnBjY+lyOg5jiTVwcCA+dGNj6XI6LmOJNXBwID54Y2PpcjpOY4k1cHAgPnxjY+lyOm5jiTVwcCA+cGNz6XI6jmOJNXBwID50Y3PpcjquY4k1cHAgPnhjc+lyOs5jiTVwcCA+fGNz6XI67mOJNXBwID58Y5k1L3AYFFs4JVQAYXBZMjruY4A+cGNgPmBjg5jjN2VgAxjyOg5jYD50Y2A+ZGODmOM3ZWADGPI6LmNgPnhjYD5oY4OY4zdlYAMY8jpOY2A+fGNgPmxjg5jjN2VgAxjyOm5jYD5wY3A+YGOTmOM3ZWADGPI6jmNgPnRjcD5kY5OY4zdlYAMY8jquY2A+eGNwPmhjk5jjN2VgAxjyOs5jYD58Y3A+bGOTmOM3ZWADGPI67mNk6EA+cGNiMA5ACTV4cAowD0AJNXBwEjAfQAk1eHAaMB9AAD50Y2IwLkAJNXhwCjAvQAk1cHASMD9ACTV4cBowP0AAPnhjYjBOQAk1eHAKME9ACTVwcBIwX0AJNXhwGjBfQAA+fGNiMG5ACTV4cAowb0AJNXBwEjB/QAk1eHAaMH9AAD5wY3IwjkAJNXhwCjCPQAk1cHASMJ9ACTV4cBown0AAPnRjcjCuQAk1eHAKMK9ACTVwcBIwv0AJNXhwGjC/QAA+eGNyMM5ACTV4cAowz0AJNXBwEjDfQAk1eHAaMN9AAD58Y3Iw7kAJNXhwCjDvQAk1cHASMP9ACTV4cBow/0AAO0BkCDtIZAA7kGQYO5hkGDugZCA7uGQoOwBkOCgA=="
+.base64 "qoYD5wYEI6DmNgPnRgQjouY2A+eGBCOk5jYD58YEI6bmNgPnBgUjqOY2A+dGBSOq5jYD54YFI6zmNgPnxgUjruY2A+fGN5NX9wEGFwWTI67mNk1Gs4fHAgPnBjY+lyOg5jaTVwcCA+dGNj6XI6LmNpNXBwID54Y2PpcjpOY2k1cHAgPnxjY+lyOm5jaTVwcCA+cGNz6XI6jmNpNXBwID50Y3PpcjquY2k1cHAgPnhjc+lyOs5jaTVwcCA+fGNz6XI67mNpNXBwLNRwPnBjY+lyOg5jiTVwcCA+dGNj6XI6LmOJNXBwID54Y2PpcjpOY4k1cHAgPnxjY+lyOm5jiTVwcCA+cGNz6XI6jmOJNXBwID50Y3PpcjquY4k1cHAgPnhjc+lyOs5jiTVwcCA+fGNz6XI67mOJNXBwID58Y5k1L3AYFFs4JVQAYXBZMjruY4A+cGNgPmBjg5jjN2VgAxjyOg5jYD50Y2A+ZGODmOM3ZWADGPI6LmNgPnhjYD5oY4OY4zdlYAMY8jpOY2A+fGNgPmxjg5jjN2VgAxjyOm5jYD5wY3A+YGOTmOM3ZWADGPI6jmNgPnRjcD5kY5OY4zdlYAMY8jquY2A+eGNwPmhjk5jjN2VgAxjyOs5jYD58Y3A+bGOTmOM3ZWADGPI67mNk6EA+cGNiMA5ACTV4cAowD0AJNXBwEjAfQAk1eHAaMB9AAD50Y2IwLkAJNXhwCjAvQAk1cHASMD9ACTV4cBowP0AAPnhjYjBOQAk1eHAKME9ACTVwcBIwX0AJNXhwGjBfQAA+fGNiMG5ACTV4cAowb0AJNXBwEjB/QAk1eHAaMH9AAD5wY3IwjkAJNXhwCjCPQAk1cHASMJ9ACTV4cBown0AAPnRjcjCuQAk1eHAKMK9ACTVwcBIwv0AJNXhwGjC/QAA+eGNyMM5ACTV4cAowz0AJNXBwEjDfQAk1eHAaMN9AAD58Y3Iw7kAJNXhwCjDvQAk1cHASMP9ACTV4cBow/0AAO0BkCDtIZAA7kGQYO5hkGDugZCA7uGQoOwBkOBQgFFgUUBRoFGAUeBRwFIgUiBQgFDgUMBToFOAU+BT4KA"
 .option pop"#,
         vg_gf25519_r32_pow250 = sym super::ed25519::vg_gf25519_r32_pow250::vg_gf25519_r32_pow250,
         vg_gf25519_r32_mul = sym super::ed25519::vg_gf25519_r32_mul::vg_gf25519_r32_mul,

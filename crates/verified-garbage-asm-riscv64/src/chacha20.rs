@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.ChaCha20.initContract`. The streaming state is opaque (`VG.Spec.ChaCha20.keyAt`, `VG.Spec.ChaCha20.restAt`). Constant time: only the pointers may affect timing, not the key or the nonce.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 768 bytes, and aligned for `u64`.
@@ -19,7 +21,7 @@ pub(crate) unsafe extern "C" fn vg_chacha20_init(state: *mut [u64; 96], key: *co
     core::arch::naked_asm!(
         r#".option push
 .option arch, +m, +c
-.base64 "A8MFACMIZQADwxUAowhlAAPDJQAjCWUAA8M1AKMJZQADw0UAIwplAAPDVQCjCmUAA8NlACMLZQADw3UAowtlAAPDhQAjDGUAA8OVAKMMZQADw6UAIw1lAAPDtQCjDWUAA8PFACMOZQADw9UAow5lAAPD5QAjD2UAA8P1AKMPZQADwwUBIwBlAgPDFQGjAGUCA8MlASMBZQIDwzUBowFlAgPDRQEjAmUCA8NVAaMCZQIDw2UBIwNlAgPDdQGjA2UCA8OFASMEZQIDw5UBowRlAgPDpQEjBWUCA8O1AaMFZQIDw8UBIwZlAgPD1QGjBmUCA8PlASMHZQIDw/UBowdlArKFA8MFACMIZQIDwxUAowhlAgPDJQAjCWUCA8M1AKMJZQIDw0UAIwplAgPDVQCjCmUCA8NlACMLZQIDw3UAowtlAgPDhQAjDGUCA8OVAKMMZQIDw6UAIw1lAgPDtQCjDWUCA8PFACMOZQIDw9UAow5lAgPD5QAjD2UCA8P1AKMPZQITA1AGIwBlABMDgAejAGUAEwMAByMBZQATAxAGowFlABMD4AYjAmUAEwNABqMCZQATAwACIwNlABMDMAOjA2UAEwMgAyMEZQATA9ACowRlABMDIAYjBWUAEwOQB6MFZQATA0AHIwZlABMDUAajBmUAEwMAAiMHZQATA7AGowdlAAPDBQCDwxUAogMzY3MAg8MlAMIDM2NzAIPDNQDiAzNjcwCFQ4ITs4NjQJoDIwB1CBPTgwCjAGUIE9MDASMBZQgT04MBowFlCBPeAwIjAsUJE1OOAKMCZQgTUw4BIwNlCBNTjgGjA2UIgoA="
+.base64 "A8MFACMIZQADwxUAowhlAAPDJQAjCWUAA8M1AKMJZQADw0UAIwplAAPDVQCjCmUAA8NlACMLZQADw3UAowtlAAPDhQAjDGUAA8OVAKMMZQADw6UAIw1lAAPDtQCjDWUAA8PFACMOZQADw9UAow5lAAPD5QAjD2UAA8P1AKMPZQADwwUBIwBlAgPDFQGjAGUCA8MlASMBZQIDwzUBowFlAgPDRQEjAmUCA8NVAaMCZQIDw2UBIwNlAgPDdQGjA2UCA8OFASMEZQIDw5UBowRlAgPDpQEjBWUCA8O1AaMFZQIDw8UBIwZlAgPD1QGjBmUCA8PlASMHZQIDw/UBowdlArKFA8MFACMIZQIDwxUAowhlAgPDJQAjCWUCA8M1AKMJZQIDw0UAIwplAgPDVQCjCmUCA8NlACMLZQIDw3UAowtlAgPDhQAjDGUCA8OVAKMMZQIDw6UAIw1lAgPDtQCjDWUCA8PFACMOZQIDw9UAow5lAgPD5QAjD2UCA8P1AKMPZQITA1AGIwBlABMDgAejAGUAEwMAByMBZQATAxAGowFlABMD4AYjAmUAEwNABqMCZQATAwACIwNlABMDMAOjA2UAEwMgAyMEZQATA9ACowRlABMDIAYjBWUAEwOQB6MFZQATA0AHIwZlABMDUAajBmUAEwMAAiMHZQATA7AGowdlAAPDBQCDwxUAogMzY3MAg8MlAMIDM2NzAIPDNQDiAzNjcwCFQ4ITs4NjQJoDIwB1CBPTgwCjAGUIE9MDASMBZQgT04MBowFlCBPeAwIjAsUJE1OOAKMCZQgTUw4BIwNlCBNTjgGjA2UIgUIBRYFFAUaBRgFHgUcBSIFIgUIBQ4FDAU6BTgFPgU+CgA=="
 .option pop"#,
     )
 }
@@ -27,6 +29,8 @@ pub(crate) unsafe extern "C" fn vg_chacha20_init(state: *mut [u64; 96], key: *co
 /// Restarts a ChaCha20 keystream with the same key: makes the streaming state `*state` represent the whole keystream of its key for the 16-byte nonce `*nonce` (as `vg_chacha20_init` does), discarding what was left of the previous one.
 ///
 /// Contract: `VG.Spec.ChaCha20.setNonceContract`. Constant time: only the pointers may affect timing, not the key or the nonce.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -39,7 +43,7 @@ pub(crate) unsafe extern "C" fn vg_chacha20_set_nonce(state: *mut [u64; 96], non
     core::arch::naked_asm!(
         r#".option push
 .option arch, +m, +c
-.base64 "A8MFACMIZQIDwxUAowhlAgPDJQAjCWUCA8M1AKMJZQIDw0UAIwplAgPDVQCjCmUCA8NlACMLZQIDw3UAowtlAgPDhQAjDGUCA8OVAKMMZQIDw6UAIw1lAgPDtQCjDWUCA8PFACMOZQIDw9UAow5lAgPD5QAjD2UCA8P1AKMPZQITA1AGIwBlABMDgAejAGUAEwMAByMBZQATAxAGowFlABMD4AYjAmUAEwNABqMCZQATAwACIwNlABMDMAOjA2UAEwMgAyMEZQATA9ACowRlABMDIAYjBWUAEwOQB6MFZQATA0AHIwZlABMDUAajBmUAEwMAAiMHZQATA7AGowdlAAPDBQCDwxUAogMzY3MAg8MlAMIDM2NzAIPDNQDiAzNjcwCFQ4ITs4NjQJoDIwB1CBPTgwCjAGUIE9MDASMBZQgT04MBowFlCBPeAwIjAsUJE1OOAKMCZQgTUw4BIwNlCBNTjgGjA2UIgoA="
+.base64 "A8MFACMIZQIDwxUAowhlAgPDJQAjCWUCA8M1AKMJZQIDw0UAIwplAgPDVQCjCmUCA8NlACMLZQIDw3UAowtlAgPDhQAjDGUCA8OVAKMMZQIDw6UAIw1lAgPDtQCjDWUCA8PFACMOZQIDw9UAow5lAgPD5QAjD2UCA8P1AKMPZQITA1AGIwBlABMDgAejAGUAEwMAByMBZQATAxAGowFlABMD4AYjAmUAEwNABqMCZQATAwACIwNlABMDMAOjA2UAEwMgAyMEZQATA9ACowRlABMDIAYjBWUAEwOQB6MFZQATA0AHIwZlABMDUAajBmUAEwMAAiMHZQATA7AGowdlAAPDBQCDwxUAogMzY3MAg8MlAMIDM2NzAIPDNQDiAzNjcwCFQ4ITs4NjQJoDIwB1CBPTgwCjAGUIE9MDASMBZQgT04MBowFlCBPeAwIjAsUJE1OOAKMCZQgTUw4BIwNlCBNTjgGjA2UIgUIBRYFFAUaBRgFHgUcBSIFIgUIBQ4FDAU6BTgFPgU+CgA=="
 .option pop"#,
     )
 }
@@ -47,6 +51,8 @@ pub(crate) unsafe extern "C" fn vg_chacha20_set_nonce(state: *mut [u64; 96], non
 /// Applies a ChaCha20 keystream (RFC 8439 §2.4), encrypting or decrypting: if at least `len` bytes are left of the keystream that the streaming state `*state` represents, XORs the next `len` of them into the `len` bytes at `data`, keeps the rest in `*state`, and returns 1. Otherwise (the block counter would pass 2³² − 1) returns 0, and leaves the bytes at `data` and the keystream unchanged.
 ///
 /// Contract: `VG.Spec.ChaCha20.applyContract`. Constant time: only the pointers, `len` and the number of bytes of keystream left in `*state` (`VG.Spec.ChaCha20.leftAt`: 64 × (2³² − `c`) for the initial block counter `c`, less the bytes applied since) may affect timing, not the key, the nonce, the keystream or the data. The function may leak that number.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -101,7 +107,7 @@ j 21f
 20:
 .base64 "AUU="
 21:
-.base64 "goA="
+.base64 "gUICFQGRgUUBRoFGAUeBRwFIgUiBQgFDgUMBToFOAU+BT4KA"
 .option pop"#,
         vg_chacha20_xor = sym super::chacha20::vg_chacha20_xor::vg_chacha20_xor,
         vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,
@@ -111,6 +117,10 @@ j 21f
 #[rustfmt::skip]
 #[path = "internal/vg_chacha20_block.rs"]
 pub(crate) mod vg_chacha20_block;
+
+#[rustfmt::skip]
+#[path = "internal/vg_chacha20_poly1305_seal_core.rs"]
+pub(crate) mod vg_chacha20_poly1305_seal_core;
 
 #[rustfmt::skip]
 #[path = "internal/vg_chacha20_xor.rs"]
