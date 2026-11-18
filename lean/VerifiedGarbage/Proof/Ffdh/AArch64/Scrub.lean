@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Ffdh.Contract
+public import VerifiedGarbage.Spec.Ffdh.SievedContract
 public import VerifiedGarbage.Spec.Ffdh.DerivePublicContract
 public import VerifiedGarbage.Spec.Ffdh.CachedKeyGenerationContract
 public import VerifiedGarbage.Proof.Framework.AArch64.ScrubAll
@@ -127,6 +128,58 @@ theorem derivePublicOk (stack : Nat) :
         fun X hX => hX ▸ bytesAt_of hb.1
       rw [e _ (by rw [← hp.2.2.1]; exact toNat_sw yLen)]
       exact h
+
+
+theorem sievedParameterSearchOk (stack : Nat) :
+    ScrubAllOk (Spec.Ffdh.sievedParameterSearchContract abi stack) stack (Spec.Ffdh.parameterSearchSig.retBits abi.ptrBits) :=
+  scrubAllOk_args_any (sig := Spec.Ffdh.parameterSearchSig) (by decide) fun
+    | [out, outLen, _, _, _, _, _, _, _, _], m, m₁, m₂, r, _, hb, h => by
+      simp only [Spec.Ffdh.parameterSearchSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+        forall_eq_or_imp, forall_eq, Elem.size] at hb
+      change @Curry.apply (Mem → Mem → BitVec (Spec.Ffdh.parameterSearchSig.retBits abi.ptrBits) → Prop) [_, _, _, _, _, _, _, _, _, _] _ _ _ m₁ r at h
+      change @Curry.apply (Mem → Mem → BitVec (Spec.Ffdh.parameterSearchSig.retBits abi.ptrBits) → Prop) [_, _, _, _, _, _, _, _, _, _] _ _ _ m₂ r
+      dsimp only [Curry.apply, ArgWord.ofRaw] at h ⊢
+      have e : ∀ X, X = outLen.toNat → Spec.Rsa.bytesAt m₂ out X = Spec.Rsa.bytesAt m₁ out X :=
+        fun X hX => hX ▸ bytesAt_of hb.1
+      rw [e _ ?hX, wordsAt_of hb.2.1, wordsAt_of hb.2.2.2.2]
+      · exact h
+      · exact toNat_sw outLen
+
+theorem cachedKeySearchOk (stack : Nat) :
+    ScrubAllOk (Spec.Ffdh.cachedKeySearchContract abi stack) stack (Spec.Ffdh.cachedKeySearchSig.retBits abi.ptrBits) :=
+  scrubAllOk_args_pre_any (sig := Spec.Ffdh.cachedKeySearchSig) (by decide) fun vs m m₁ m₂ r hlen hp hb h => by
+    obtain ⟨x, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 14) hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨xLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨y, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨yLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨used, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    iterate 7
+      obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+      replace hlen := Nat.succ.inj hlen
+    obtain ⟨state, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    iterate 2
+      obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+      replace hlen := Nat.succ.inj hlen
+    obtain rfl := List.eq_nil_of_length_eq_zero hlen
+    simp only [Spec.Ffdh.cachedKeySearchSig, Spec.Ffdh.keySearchSig, List.cons_append, List.nil_append,
+      Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, Elem.size] at hb
+    change @Curry.apply (Mem → Prop) [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _] _ _ m at hp
+    change @Curry.apply (Mem → Mem → BitVec (Spec.Ffdh.cachedKeySearchSig.retBits abi.ptrBits) → Prop) [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _] _ _ _ m₁ r at h
+    change @Curry.apply (Mem → Mem → BitVec (Spec.Ffdh.cachedKeySearchSig.retBits abi.ptrBits) → Prop) [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _] _ _ _ m₂ r
+    dsimp only [Curry.apply, ArgWord.ofRaw] at hp h ⊢
+    have ex : ∀ X, X = xLen.toNat → Spec.Rsa.bytesAt m₂ x X = Spec.Rsa.bytesAt m₁ x X :=
+      fun X hX => hX ▸ bytesAt_of hb.1
+    have ey : ∀ X, X = yLen.toNat → Spec.Rsa.bytesAt m₂ y X = Spec.Rsa.bytesAt m₁ y X :=
+      fun X hX => hX ▸ bytesAt_of hb.2.1
+    rw [ex _ (by rw [← hp.2.2.1]; exact toNat_sw xLen), ey _ (by rw [← hp.2.2.2.1]; exact toNat_sw yLen),
+      wordsAt_of hb.2.2.2.2.2.2.1, wordsAt_of hb.2.2.1]
+    exact h
 
 
 /-! ## The registrations with tables of constants -/

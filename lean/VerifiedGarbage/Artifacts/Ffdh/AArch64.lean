@@ -28,9 +28,9 @@ open VG.AArch64
 
 def direct : List Artifact := [
   Spec.Ffdh.generationPrecomputeApi.artifact target Proof.Ffdh.AArch64.Scrub.precomputeReg,
-  Spec.Ffdh.cachedKeySearchApi.artifact target {
+  Spec.Ffdh.cachedKeySearchApi.artifact target (VG.AArch64.ScrubAll.withScrubAll {
     code := Proof.Ffdh.AArch64.Cached.cachedSearch
-    verified := Proof.Ffdh.AArch64.Cached.cachedSearch_verified },
+    verified := Proof.Ffdh.AArch64.Cached.cachedSearch_verified } (Proof.Ffdh.AArch64.Scrub.cachedKeySearchOk _)),
   Spec.Ffdh.checkPublicApi.artifact target (VG.AArch64.ScrubAll.withScrubAll {
     code := Impl.Ffdh.AArch64.Domain.CheckPublic.code Proof.Bignum.AArch64.WindowFive.called.code
       Proof.Bignum.AArch64.WindowVector.selector.code Proof.Bignum.AArch64.Mont.base.mm
@@ -60,9 +60,9 @@ def direct : List Artifact := [
 def artifacts : List Artifact :=
   direct ++
   (VG.Proof.Variants.MillerRabin.AArch64.variants.flatMap fun (v : Proof.MillerRabin.AArch64.RoundImpl) => [
-    Spec.Ffdh.sievedParameterSearchApi.artifact AArch64.target {
+    Spec.Ffdh.sievedParameterSearchApi.artifact AArch64.target (VG.AArch64.ScrubAll.withScrubAll {
       suffix := v.suffix
       code := Proof.Ffdh.AArch64.Generation.searchCode v
-      verified := Proof.Ffdh.AArch64.Generation.search_verified v }])
+      verified := Proof.Ffdh.AArch64.Generation.search_verified v } (Proof.Ffdh.AArch64.Scrub.sievedParameterSearchOk _))])
 
 end VG.Artifacts.Ffdh.AArch64
