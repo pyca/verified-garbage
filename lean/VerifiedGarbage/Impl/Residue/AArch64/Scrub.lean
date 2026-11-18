@@ -56,4 +56,30 @@ def withScrubG (W : Nat) (ks : List Nat) (c : Prog isa) : Prog isa :=
   | [] => c
   | _ => .seq c (scrubTailG W ks)
 
+/-- The general-purpose registers the calling convention does not preserve, but `x0`. -/
+def allGprs : List Reg :=
+  [.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17]
+
+/-- The vector registers the calling convention does not preserve at all. -/
+def allVecs : List VReg :=
+  [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23,
+   .v24, .v25, .v26, .v27, .v28, .v29, .v30, .v31]
+
+/-- The vector registers whose low halves the calling convention preserves. -/
+def hiVecs : List VReg := [.v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15]
+
+/-- `movz` of each of `allGprs`, `movi` of each of `allVecs`, the flags from
+`x1` (zero by then, `tst x1, x1`), and the high halves of `hiVecs` from `x1`
+(`mov v.d[1], x1`). -/
+def clearsAll : List Instr :=
+  allGprs.map (fun r => .movz .x r 0 0) ++ allVecs.map (fun v => .vop (.movi0 v)) ++
+    [.tst .x .x1 .x1] ++ hiVecs.map (fun v => .vop (.ins .d2 v 1 .x1))
+
+/-- `c`, then every register the calling convention does not preserve
+cleared but the result's `rb` bits of `x0`, and the `W` bytes below the stack
+pointer zeroed: what returns without secret residue whatever `c` leaves, for
+code whose frames stay within those `W` bytes (`ScrubAll.noResidue_scrubAll`). -/
+def scrubAll (W rb : Nat) (c : Prog isa) : Prog isa :=
+  withScrubG W (List.range (W / 16)) (withRet rb (.seq c (.block clearsAll)))
+
 end VG.Impl.Residue.AArch64
