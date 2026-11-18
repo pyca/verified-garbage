@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Camellia.AArch64.FbVerified
 public import VerifiedGarbage.Proof.Camellia.AArch64.FbFinalVerified
+public import VerifiedGarbage.Proof.Camellia.AArch64.Residue
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.AArch64.Print
 import VerifiedGarbage.Proof.Camellia.AArch64.FbLit
@@ -15,10 +16,12 @@ namespace VG.Artifacts.CamelliaOfb.AArch64
 
 def artifacts : List Artifact := [
   Spec.Camellia.ofbApi.artifact AArch64.target {
-    code := Impl.StackScratch.AArch64.withStackScratchWiped 3344 .x5 418 Impl.Camellia.AArch64.ofb
-    verified := Proof.Camellia.AArch64.ofb_framed },
+    code := Proof.Camellia.AArch64.Residue.ofbCode
+    verified := Proof.Camellia.AArch64.Residue.ofbCode_verified
+    residue := some ⟨Proof.Camellia.AArch64.Residue.ofbCode_noResidue⟩ },
   Spec.Camellia.ofbFinalApi.artifact AArch64.target {
-    code := Impl.StackScratch.AArch64.withStackScratchWiped 3344 .x5 418 Impl.Camellia.AArch64.ofbFinal
-    verified := Proof.Camellia.AArch64.ofbFinal_framed }]
+    code := Proof.Camellia.AArch64.Residue.ofbFinalCode
+    verified := Proof.Camellia.AArch64.Residue.ofbFinalCode_verified
+    residue := some ⟨Proof.Camellia.AArch64.Residue.ofbFinalCode_noResidue⟩ }]
 
 end VG.Artifacts.CamelliaOfb.AArch64

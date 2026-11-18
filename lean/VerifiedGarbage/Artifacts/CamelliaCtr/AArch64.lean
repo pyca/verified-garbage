@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Camellia.AArch64.CtrVerified
 public import VerifiedGarbage.Proof.Camellia.AArch64.CtrFinal
+public import VerifiedGarbage.Proof.Camellia.AArch64.Residue
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.AArch64.Print
 import VerifiedGarbage.Proof.Camellia.AArch64.Lit
@@ -14,8 +15,9 @@ namespace VG.Artifacts.CamelliaCtr.AArch64
 
 def artifacts : List Artifact := [
   Spec.Camellia.ctrApi.artifact AArch64.target {
-    code := Impl.StackScratch.AArch64.withStackScratchWiped 3344 .x5 418 Impl.Camellia.AArch64.ctr
-    verified := Proof.Camellia.AArch64.ctr_framed },
+    code := Proof.Camellia.AArch64.Residue.ctrCode
+    verified := Proof.Camellia.AArch64.Residue.ctrCode_verified
+    residue := some ⟨Proof.Camellia.AArch64.Residue.ctrCode_noResidue⟩ },
   Spec.Camellia.ctrFinalApi.artifact AArch64.target {
     code := Impl.StackScratch.AArch64.withStackScratchWiped 80 .x5 10 Impl.Camellia.AArch64.ctrFinal
     verified := Proof.Camellia.AArch64.CtrFinal.ctrFinal_framed }]

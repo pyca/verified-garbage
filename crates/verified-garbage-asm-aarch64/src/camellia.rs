@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Camellia.expandKeyContract`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
@@ -140,7 +142,9 @@ b 25f
 25:
 .inst 0xf94000b3,0xf94004b4,0xf94008b5,0xf9400cb6,0xf94010b7,0xf94014b8,0xf94018b9,0xf9401cba
 .inst 0xf94020bb,0xf94024bc,0xd2800011,0x910003f0,0xa9004611,0xa9014611,0xa9024611,0xa9034611
-.inst 0xa9044611,0xa9054611,0xa9064611,0xa9074611,0xa9084611,0xa9094611,0x910283ff,0xd65f03c0
+.inst 0xa9044611,0xa9054611,0xa9064611,0xa9074611,0xa9084611,0xa9094611,0x910283ff,0xd2800006
+.inst 0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0x6f00e400
+.inst 0x6f00e401,0x6f00e402,0x6f00e403,0xd65f03c0
 .p2align 6",
     )
 }
@@ -148,6 +152,8 @@ b 25f
 /// Camellia ECB encryption (RFC 3713 §2.3, SP 800-38A §6.1): replaces each of the `n` 16-byte blocks at `data` with its encryption by Camellia with `rounds` rounds under the subkeys at `schedule`, as `vg_camellia_expand_key` writes them. No padding is added or removed. For `n = 0`, no data is transformed.
 ///
 /// Contract: `VG.Spec.Camellia.ecbEncryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -507,7 +513,8 @@ b 24f
 .inst 0xa90f4611,0xa9104611,0xa9114611,0xa9124611,0xa9134611,0xa9144611,0xa9154611,0xa9164611
 .inst 0xa9174611,0xa9184611,0xa9194611,0xa91a4611,0xa91b4611,0xa91c4611,0xa91d4611,0xa91e4611
 .inst 0xa91f4611,0x913003f0,0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611
-.inst 0xa9064611,0xa9074611,0xa9084611,0xa9094611,0xa90a4611,0x9132c3ff,0xd65f03c0
+.inst 0xa9064611,0xa9074611,0xa9084611,0xa9094611,0xa90a4611,0x9132c3ff,0xd2800006,0xd2800007
+.inst 0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd65f03c0
 .p2align 6",
     )
 }
@@ -515,6 +522,8 @@ b 24f
 /// Camellia ECB decryption (RFC 3713 §2.3.3, SP 800-38A §6.1): replaces each of the `n` 16-byte blocks at `data` with its decryption by Camellia with `rounds` rounds under the subkeys at `schedule`, as `vg_camellia_expand_key` writes them (in the order encryption uses them, which decryption reverses). No padding is added or removed. For `n = 0`, no data is transformed.
 ///
 /// Contract: `VG.Spec.Camellia.ecbDecryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -975,23 +984,8 @@ b 24f
 .inst 0xa90f4611,0xa9104611,0xa9114611,0xa9124611,0xa9134611,0xa9144611,0xa9154611,0xa9164611
 .inst 0xa9174611,0xa9184611,0xa9194611,0xa91a4611,0xa91b4611,0xa91c4611,0xa91d4611,0xa91e4611
 .inst 0xa91f4611,0x913003f0,0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611
-.inst 0xa9064611,0xa9074611,0xa9084611,0xa9094611,0xa90a4611,0x9132c3ff,0xd65f03c0
+.inst 0xa9064611,0xa9074611,0xa9084611,0xa9094611,0xa90a4611,0x9132c3ff,0xd2800006,0xd2800007
+.inst 0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd65f03c0
 .p2align 6",
     )
 }
-
-#[rustfmt::skip]
-#[path = "internal/vg_camellia_crypt_prepared.rs"]
-pub(crate) mod vg_camellia_crypt_prepared;
-
-#[rustfmt::skip]
-#[path = "internal/vg_camellia_encrypt_prepared.rs"]
-pub(crate) mod vg_camellia_encrypt_prepared;
-
-#[rustfmt::skip]
-#[path = "internal/vg_camellia_prepare_encrypt_keys.rs"]
-pub(crate) mod vg_camellia_prepare_encrypt_keys;
-
-#[rustfmt::skip]
-#[path = "internal/vg_camellia_prepare_keys.rs"]
-pub(crate) mod vg_camellia_prepare_keys;
