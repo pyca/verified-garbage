@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Seed.cbcEncryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.
@@ -31,7 +33,7 @@ bne %cr0, 22b
 b 21f
 20:
 21:
-.base64 "eOu/f3AEBYEAAB+RdAQFgQQAH5F4BAWBCAAfkXwEBYEMAB+RUASl61gExetgBOXraAQF6KYDCHwgAIE5AABgOQAAbPkIAGz5EABs+RgAbPkgAGz5KABs+TAAbPk4AGz5QABs+UgAbPlQAGz5WABs+WAAbPloAGz5cABs+XgAbPmAAGz5iABs+ZAAbPmYAGz5oABs+agAbPmwAGz5uABs+cAAbPnIAGz50ABs+dgAbPngAGz56ABs+fAAbPn4AGz5AAFs+QgBbPkQAWz5GAFs+SABbPkoAWz5MAFs+TgBbPlAAWz5SAFs+VABbPlYAWz5YAFs+WgBbPlwAWz5eAFs+YABbPmIAWz5kAFs+ZgBbPmgAWz5qAFs+bABbPm4AWz5wAFs+cgBbPnQAWz52AFs+eABbPnoAWz58AFs+fgBbPkAAmz5CAJs+RACbPkYAmz5IAJs+SgCbPkwAmz5OAJs+UACbPlIAmz5UAJs+VgCbPlgAmz5aAJs+XACbPl4Amz5gAJs+YgCbPmQAmz5mAJs+aACbPmoAmz5sAJs+bgCbPnAAmz5yAJs+dACbPnYAmz54AJs+egCbPnwAmz5+AJs+QADbPkIA2z5EANs+RgDbPkgA2z5KANs+TADbPk4A2z5QANs+UgDbPlQA2z5WANs+WADbPloA2z5cANs+XgDbPmAA2z5iANs+ZADbPmYA2z5oANs+agDbPmwA2z5uANs+cADbPnIA2z50ANs+dgDbPngA2z56ANs+fADbPn4A2z5AARs+QgEbPkQBGz5GARs+SAEbPkoBGz5MARs+TgEbPlABGz5SARs+VAEbPlYBGz5YARs+WgEbPlwBGz5eARs+aAEITggAIBO""#,
+.base64 "eOu/f3AEBYEAAB+RdAQFgQQAH5F4BAWBCAAfkXwEBYEMAB+RUASl61gExetgBOXraAQF6KYDCHwgAIE5AABgOQAAbPkIAGz5EABs+RgAbPkgAGz5KABs+TAAbPk4AGz5QABs+UgAbPlQAGz5WABs+WAAbPloAGz5cABs+XgAbPmAAGz5iABs+ZAAbPmYAGz5oABs+agAbPmwAGz5uABs+cAAbPnIAGz50ABs+dgAbPngAGz56ABs+fAAbPn4AGz5AAFs+QgBbPkQAWz5GAFs+SABbPkoAWz5MAFs+TgBbPlAAWz5SAFs+VABbPlYAWz5YAFs+WgBbPlwAWz5eAFs+YABbPmIAWz5kAFs+ZgBbPmgAWz5qAFs+bABbPm4AWz5wAFs+cgBbPnQAWz52AFs+eABbPnoAWz58AFs+fgBbPkAAmz5CAJs+RACbPkYAmz5IAJs+SgCbPkwAmz5OAJs+UACbPlIAmz5UAJs+VgCbPlgAmz5aAJs+XACbPl4Amz5gAJs+YgCbPmQAmz5mAJs+aACbPmoAmz5sAJs+bgCbPnAAmz5yAJs+dACbPnYAmz54AJs+egCbPnwAmz5+AJs+QADbPkIA2z5EANs+RgDbPkgA2z5KANs+TADbPk4A2z5QANs+UgDbPlQA2z5WANs+WADbPloA2z5cANs+XgDbPmAA2z5iANs+ZADbPmYA2z5oANs+agDbPmwA2z5uANs+cADbPnIA2z50ANs+dgDbPngA2z56ANs+fADbPn4A2z5AARs+QgEbPkQBGz5GARs+SAEbPkoBGz5MARs+TgEbPlABGz5SARs+VAEbPlYBGz5YARs+WgEbPlwBGz5eARs+aAEITgAAAA4AACAOAAAoDgAAMA4AADgOAAAADkAACA5AABAOQAAYDkAAIA5xAQAEMQMIRDERAgRxEwpEcRUShHEXGsRxGSMEcRsrRHEdM4RxHzvEcSEEBIgAIBO""#,
         VG_SEED_PPC64LE_AFFINE = sym super::consts::VG_SEED_PPC64LE_AFFINE,
     )
 }
@@ -39,6 +41,8 @@ b 21f
 /// SEED-CBC decryption (NIST SP 800-38A §6.2, RFC 4269 §2) of whole blocks, in place: replaces the `n` 16-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH⁻¹_K` is SEED decryption under the schedule written by `vg_seed_expand_key`. No padding is removed.
 ///
 /// Contract: `VG.Spec.Seed.cbcDecryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -74,8 +78,12 @@ bne %cr0, 25b
 b 24f
 23:
 24:
-.base64 "eOu/f2AFBYEAAB+RZAUFgQQAH5FoBQWBCAAfkWwFBYEMAB+RQAWl60gFxetQBeXrWAUF6KYDCHwgAIE5AABgOQAAbPkIAGz5EABs+RgAbPkgAGz5KABs+TAAbPk4AGz5QABs+UgAbPlQAGz5WABs+WAAbPloAGz5cABs+XgAbPmAAGz5iABs+ZAAbPmYAGz5oABs+agAbPmwAGz5uABs+cAAbPnIAGz50ABs+dgAbPngAGz56ABs+fAAbPn4AGz5AAFs+QgBbPkQAWz5GAFs+SABbPkoAWz5MAFs+TgBbPlAAWz5SAFs+VABbPlYAWz5YAFs+WgBbPlwAWz5eAFs+YABbPmIAWz5kAFs+ZgBbPmgAWz5qAFs+bABbPm4AWz5wAFs+cgBbPnQAWz52AFs+eABbPnoAWz58AFs+fgBbPkAAmz5CAJs+RACbPkYAmz5IAJs+SgCbPkwAmz5OAJs+UACbPlIAmz5UAJs+VgCbPlgAmz5aAJs+XACbPl4Amz5gAJs+YgCbPmQAmz5mAJs+aACbPmoAmz5sAJs+bgCbPnAAmz5yAJs+dACbPnYAmz54AJs+egCbPnwAmz5+AJs+QADbPkIA2z5EANs+RgDbPkgA2z5KANs+TADbPk4A2z5QANs+UgDbPlQA2z5WANs+WADbPloA2z5cANs+XgDbPmAA2z5iANs+ZADbPmYA2z5oANs+agDbPmwA2z5uANs+cADbPnIA2z50ANs+dgDbPngA2z56ANs+fADbPn4A2z5AARs+QgEbPkQBGz5GARs+SAEbPkoBGz5MARs+TgEbPlABGz5SARs+VAEbPlYBGz5YARs+WgEbPlwBGz5eARs+YAEbPmIBGz5kARs+ZgEbPmgBGz5qARs+bAEbPm4BGz5wARs+cgEbPnQBGz52ARs+eAEbPnoBGz58ARs+fgEbPkABWz5CAVs+RAFbPkYBWz5IAVs+SgFbPkwBWz5OAVs+UAFbPlIBWz5UAVs+VgFbPlgBWz5aAVs+ZAFITggAIBO""#,
-        vg_seed_decrypt_blocks = sym super::seed::vg_seed_decrypt_blocks::vg_seed_decrypt_blocks,
+.base64 "eOu/f2AFBYEAAB+RZAUFgQQAH5FoBQWBCAAfkWwFBYEMAB+RQAWl60gFxetQBeXrWAUF6KYDCHwgAIE5AABgOQAAbPkIAGz5EABs+RgAbPkgAGz5KABs+TAAbPk4AGz5QABs+UgAbPlQAGz5WABs+WAAbPloAGz5cABs+XgAbPmAAGz5iABs+ZAAbPmYAGz5oABs+agAbPmwAGz5uABs+cAAbPnIAGz50ABs+dgAbPngAGz56ABs+fAAbPn4AGz5AAFs+QgBbPkQAWz5GAFs+SABbPkoAWz5MAFs+TgBbPlAAWz5SAFs+VABbPlYAWz5YAFs+WgBbPlwAWz5eAFs+YABbPmIAWz5kAFs+ZgBbPmgAWz5qAFs+bABbPm4AWz5wAFs+cgBbPnQAWz52AFs+eABbPnoAWz58AFs+fgBbPkAAmz5CAJs+RACbPkYAmz5IAJs+SgCbPkwAmz5OAJs+UACbPlIAmz5UAJs+VgCbPlgAmz5aAJs+XACbPl4Amz5gAJs+YgCbPmQAmz5mAJs+aACbPmoAmz5sAJs+bgCbPnAAmz5yAJs+dACbPnYAmz54AJs+egCbPnwAmz5+AJs+QADbPkIA2z5EANs+RgDbPkgA2z5KANs+TADbPk4A2z5QANs+UgDbPlQA2z5WANs+WADbPloA2z5cANs+XgDbPmAA2z5iANs+ZADbPmYA2z5oANs+agDbPmwA2z5uANs+cADbPnIA2z50ANs+dgDbPngA2z56ANs+fADbPn4A2z5AARs+QgEbPkQBGz5GARs+SAEbPkoBGz5MARs+TgEbPlABGz5SARs+VAEbPlYBGz5YARs+WgEbPlwBGz5eARs+YAEbPmIBGz5kARs+ZgEbPmgBGz5qARs+bAEbPm4BGz5wARs+cgEbPnQBGz52ARs+eAEbPnoBGz58ARs+fgEbPkABWz5CAVs+RAFbPkYBWz5IAVs+SgFbPkwBWz5OAVs+UAFbPlIBWz5UAVs+VgFbPlgBWz5aAVs+ZAFITgAAAA4AABgOAAAgDgAAKA4AADAOAAA4DgAAAA5AAAgOQAAQDkAAGA5AACAOcQEABDEDCEQxEQIEcRMKRHEVEoRxFxrEcRkjBHEbK0RxHTOEcR87xHEhBASIACATg==""#,
+        vg_seed_decrypt_blocks = sym super::seed_cbc::vg_seed_decrypt_blocks::vg_seed_decrypt_blocks,
         VG_SEED_PPC64LE_AFFINE = sym super::consts::VG_SEED_PPC64LE_AFFINE,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_seed_decrypt_blocks.rs"]
+pub(crate) mod vg_seed_decrypt_blocks;

@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Seed.PPC64LE.ModesVerified
 public import VerifiedGarbage.Proof.Seed.PPC64LE.ModesFrame
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Seed.PPC64LE.Scrub
 public import VerifiedGarbage.TCB.PPC64LE.Print
 import VerifiedGarbage.Proof.Seed.PPC64LE.ModesLit
 
@@ -13,11 +14,7 @@ import VerifiedGarbage.Proof.Seed.PPC64LE.ModesLit
 namespace VG.Artifacts.SeedCbc.PPC64LE
 
 def artifacts : List Artifact := [
-  Spec.Seed.cbcEncryptChainedApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 1184 .r7 144 Impl.Seed.PPC64LE.cbcEncryptChained
-    verified := Proof.Seed.PPC64LE.cbcEnc_framed Proof.Seed.PPC64LE.Modes.cbcEncryptChained_verified },
-  Spec.Seed.cbcDecryptChainedApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 1424 .r7 174 Impl.Seed.PPC64LE.cbcDecryptChained
-    verified := Proof.Seed.PPC64LE.cbcDec_framed Proof.Seed.PPC64LE.Modes.cbcDecryptChained_verified }]
+  Spec.Seed.cbcEncryptChainedApi.artifact PPC64LE.target Proof.Seed.PPC64LE.Scrub.cbcEncryptChainedReg,
+  Spec.Seed.cbcDecryptChainedApi.artifact PPC64LE.target Proof.Seed.PPC64LE.Scrub.cbcDecryptChainedReg]
 
 end VG.Artifacts.SeedCbc.PPC64LE

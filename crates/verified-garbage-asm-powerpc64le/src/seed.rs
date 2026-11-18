@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Seed.expandKeyContract`. Constant time: only pointers may affect timing, not key bytes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `key` must be valid for reads of 16 bytes.
@@ -26,13 +28,15 @@ b 22f
 22:
 .base64 "AAAmKA=="
 bne %cr0, 20b
-.base64 "gAPI6YgD6OmQAwjqmAMo6qADSOqoA2jqsAOI6rgDqOrAA8jqyAPo6tADCOvYAyjr4ANI6+gDaOvwA4jr+AOo6wAEyOsIBOjrIACBOQAAYDkAAGz5CABs+RAAbPkYAGz5IABs+SgAbPkwAGz5OABs+UAAbPlIAGz5UABs+VgAbPlgAGz5aABs+XAAbPl4AGz5gABs+YgAbPmQAGz5mABs+aAAbPmoAGz5sABs+bgAbPnAAGz5yABs+dAAbPnYAGz54ABs+egAbPnwAGz5+ABs+QABbPkIAWz5EAFs+RgBbPkgAWz5KAFs+TABbPk4AWz5QAFs+UgBbPlQAWz5WAFs+WABbPloAWz5cAFs+XgBbPmAAWz5iAFs+ZABbPmYAWz5oAFs+agBbPmwAWz5uAFs+cABbPnIAWz50AFs+dgBbPngAWz56AFs+fABbPn4AWz5AAJs+QgCbPkQAmz5GAJs+SACbPkoAmz5MAJs+TgCbPlAAmz5SAJs+VACbPlYAmz5YAJs+WgCbPlwAmz5eAJs+YACbPmIAmz5kAJs+ZgCbPmgAmz5qAJs+bACbPm4Amz5wAJs+cgCbPnQAmz52AJs+eACbPnoAmz58AJs+fgCbPkAA2z5CANs+RADbPkYA2z5IANs+SgDbPkwA2z5OANs+UADbPlIA2z5UANs+VgDbPlgA2z5aANs+XADbPl4A2z5gANs+YgDbPmQA2z5mANs+aADbPmoA2z5sANs+bgDbPnAA2z5yANs+dADbPnYA2z54ANs+egDbPnwA2z5+ANs+QAEbPkIBGz5MAQhOCAAgE4=""#,
+.base64 "gAPI6YgD6OmQAwjqmAMo6qADSOqoA2jqsAOI6rgDqOrAA8jqyAPo6tADCOvYAyjr4ANI6+gDaOvwA4jr+AOo6wAEyOsIBOjrIACBOQAAYDkAAGz5CABs+RAAbPkYAGz5IABs+SgAbPkwAGz5OABs+UAAbPlIAGz5UABs+VgAbPlgAGz5aABs+XAAbPl4AGz5gABs+YgAbPmQAGz5mABs+aAAbPmoAGz5sABs+bgAbPnAAGz5yABs+dAAbPnYAGz54ABs+egAbPnwAGz5+ABs+QABbPkIAWz5EAFs+RgBbPkgAWz5KAFs+TABbPk4AWz5QAFs+UgBbPlQAWz5WAFs+WABbPloAWz5cAFs+XgBbPmAAWz5iAFs+ZABbPmYAWz5oAFs+agBbPmwAWz5uAFs+cABbPnIAWz50AFs+dgBbPngAWz56AFs+fABbPn4AWz5AAJs+QgCbPkQAmz5GAJs+SACbPkoAmz5MAJs+TgCbPlAAmz5SAJs+VACbPlYAmz5YAJs+WgCbPlwAmz5eAJs+YACbPmIAmz5kAJs+ZgCbPmgAmz5qAJs+bACbPm4Amz5wAJs+cgCbPnQAmz52AJs+eACbPnoAmz58AJs+fgCbPkAA2z5CANs+RADbPkYA2z5IANs+SgDbPkwA2z5OANs+UADbPlIA2z5UANs+VgDbPlgA2z5aANs+XADbPl4A2z5gANs+YgDbPmQA2z5mANs+aADbPmoA2z5sANs+bgDbPnAA2z5yANs+dADbPnYA2z54ANs+egDbPnwA2z5+ANs+QAEbPkIBGz5MAQhOAAAADgAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDkgAIBO""#,
     )
 }
 
 /// SEED ECB encryption (RFC 4269 §2, SP 800-38A §6.1) of `n` complete 16-byte blocks at `data`, in place, under the schedule written by `vg_seed_expand_key`. No padding is added or removed. For `n = 0`, no data is transformed.
 ///
 /// Contract: `VG.Spec.Seed.ecbEncryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data, including S-box inputs.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -45,7 +49,7 @@ pub(crate) unsafe extern "C" fn vg_seed_ecb_encrypt(schedule: *const [u8; 128], 
     core::arch::naked_asm!(
         r#".base64 "ofsh+CAAwTimAgh80f8h+CAAAfg="
 bl {vg_seed_encrypt_blocks}
-.base64 "IAAB6DAAITimAwh8IACBOQAAYDkAAGz5CABs+RAAbPkYAGz5IABs+SgAbPkwAGz5OABs+UAAbPlIAGz5UABs+VgAbPlgAGz5aABs+XAAbPl4AGz5gABs+YgAbPmQAGz5mABs+aAAbPmoAGz5sABs+bgAbPnAAGz5yABs+dAAbPnYAGz54ABs+egAbPnwAGz5+ABs+QABbPkIAWz5EAFs+RgBbPkgAWz5KAFs+TABbPk4AWz5QAFs+UgBbPlQAWz5WAFs+WABbPloAWz5cAFs+XgBbPmAAWz5iAFs+ZABbPmYAWz5oAFs+agBbPmwAWz5uAFs+cABbPnIAWz50AFs+dgBbPngAWz56AFs+fABbPn4AWz5AAJs+QgCbPkQAmz5GAJs+SACbPkoAmz5MAJs+TgCbPlAAmz5SAJs+VACbPlYAmz5YAJs+WgCbPlwAmz5eAJs+YACbPmIAmz5kAJs+ZgCbPmgAmz5qAJs+bACbPm4Amz5wAJs+cgCbPnQAmz52AJs+eACbPnoAmz58AJs+fgCbPkAA2z5CANs+RADbPkYA2z5IANs+SgDbPkwA2z5OANs+UADbPlIA2z5UANs+VgDbPlgA2z5aANs+XADbPl4A2z5gANs+YgDbPmQA2z5mANs+aADbPmoA2z5sANs+bgDbPnAA2z5yANs+dADbPnYA2z54ANs+egDbPnwA2z5+ANs+QAEbPkIBGz5EARs+RgEbPkgBGz5KARs+TAEbPk4BGz5YAQhOCAAgE4=""#,
+.base64 "IAAB6DAAITimAwh8IACBOQAAYDkAAGz5CABs+RAAbPkYAGz5IABs+SgAbPkwAGz5OABs+UAAbPlIAGz5UABs+VgAbPlgAGz5aABs+XAAbPl4AGz5gABs+YgAbPmQAGz5mABs+aAAbPmoAGz5sABs+bgAbPnAAGz5yABs+dAAbPnYAGz54ABs+egAbPnwAGz5+ABs+QABbPkIAWz5EAFs+RgBbPkgAWz5KAFs+TABbPk4AWz5QAFs+UgBbPlQAWz5WAFs+WABbPloAWz5cAFs+XgBbPmAAWz5iAFs+ZABbPmYAWz5oAFs+agBbPmwAWz5uAFs+cABbPnIAWz50AFs+dgBbPngAWz56AFs+fABbPn4AWz5AAJs+QgCbPkQAmz5GAJs+SACbPkoAmz5MAJs+TgCbPlAAmz5SAJs+VACbPlYAmz5YAJs+WgCbPlwAmz5eAJs+YACbPmIAmz5kAJs+ZgCbPmgAmz5qAJs+bACbPm4Amz5wAJs+cgCbPnQAmz52AJs+eACbPnoAmz58AJs+fgCbPkAA2z5CANs+RADbPkYA2z5IANs+SgDbPkwA2z5OANs+UADbPlIA2z5UANs+VgDbPlgA2z5aANs+XADbPl4A2z5gANs+YgDbPmQA2z5mANs+aADbPmoA2z5sANs+bgDbPnAA2z5yANs+dADbPnYA2z54ANs+egDbPnwA2z5+ANs+QAEbPkIBGz5EARs+RgEbPkgBGz5KARs+TAEbPk4BGz5YAQhOAAAADhx+yH4IACBOQAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAAz4iAAM+JAADPiYAAz4oAAM+KgADPiwAAz4uAAM+MAADPjIAAz40AAM+NgADPjgAAz46AAM+PAADPj4AAz4AAEM+AgBDPgQAQz4GAEM+CABDPgoAQz4MAEM+DgBDPhAAQz4SAEM+FABDPhYAQz4YAEM+GgBDPhwAQz4eAEM+IABDPiIAQz4kAEM+JgBDPigAQz4qAEM+LABDPi4AQz4wAEM+MgBDPjQAQz42AEM+OABDPjoAQz48AEM+PgBDPgAAgz4CAIM+BACDPgYAgz4IAIM+CgCDPgwAgz4OAIM+EACDPhIAgz4UAIM+FgCDPhgAgz4aAIM+HACDPh4Agz4gAIM+IgCDPiQAgz4mAIM+KACDPioAgz4sAIM+LgCDPjAAgz4yAIM+NACDPjYAgz44AIM+OgCDPjwAgz4+AIM+AADDPgIAwz4EAMM+BgDDPggAwz4KAMM+DADDPg4Awz4QAMM+EgDDPhQAwz4WAMM+GADDPhoAwz4cAMM+HgDDPiAAwz4iAMM+JADDPiYAwz4oAMM+KgDDPiwAwz4uAMM+MADDPjIAwz40AMM+NgDDPjgAwz46AMM+PADDPj4Awz4AAQM+AgEDPgQBAz4GAQM+CAEDPgoBAz4MAQM+DgEDPhABAz4SAQM+FAEDPhYBAz4YAQM+GgEDPiQBCE4AABgOAAAgDgAAKA4AADAOAAA4DgAAAA5AAAgOQAAQDkAAGA5AACAOSAAgE4=""#,
         vg_seed_encrypt_blocks = sym super::seed::vg_seed_encrypt_blocks::vg_seed_encrypt_blocks,
     )
 }
@@ -53,6 +57,8 @@ bl {vg_seed_encrypt_blocks}
 /// SEED ECB decryption (RFC 4269 §2.4, SP 800-38A §6.1) of `n` complete 16-byte blocks at `data`, in place, under the schedule written by `vg_seed_expand_key`: the encryption procedure with the round keys in reverse order. No padding is added or removed. For `n = 0`, no data is transformed.
 ///
 /// Contract: `VG.Spec.Seed.ecbDecryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data, including S-box inputs.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -65,7 +71,7 @@ pub(crate) unsafe extern "C" fn vg_seed_ecb_decrypt(schedule: *const [u8; 128], 
     core::arch::naked_asm!(
         r#".base64 "ofsh+CAAwTimAgh80f8h+CAAAfg="
 bl {vg_seed_decrypt_blocks}
-.base64 "IAAB6DAAITimAwh8IACBOQAAYDkAAGz5CABs+RAAbPkYAGz5IABs+SgAbPkwAGz5OABs+UAAbPlIAGz5UABs+VgAbPlgAGz5aABs+XAAbPl4AGz5gABs+YgAbPmQAGz5mABs+aAAbPmoAGz5sABs+bgAbPnAAGz5yABs+dAAbPnYAGz54ABs+egAbPnwAGz5+ABs+QABbPkIAWz5EAFs+RgBbPkgAWz5KAFs+TABbPk4AWz5QAFs+UgBbPlQAWz5WAFs+WABbPloAWz5cAFs+XgBbPmAAWz5iAFs+ZABbPmYAWz5oAFs+agBbPmwAWz5uAFs+cABbPnIAWz50AFs+dgBbPngAWz56AFs+fABbPn4AWz5AAJs+QgCbPkQAmz5GAJs+SACbPkoAmz5MAJs+TgCbPlAAmz5SAJs+VACbPlYAmz5YAJs+WgCbPlwAmz5eAJs+YACbPmIAmz5kAJs+ZgCbPmgAmz5qAJs+bACbPm4Amz5wAJs+cgCbPnQAmz52AJs+eACbPnoAmz58AJs+fgCbPkAA2z5CANs+RADbPkYA2z5IANs+SgDbPkwA2z5OANs+UADbPlIA2z5UANs+VgDbPlgA2z5aANs+XADbPl4A2z5gANs+YgDbPmQA2z5mANs+aADbPmoA2z5sANs+bgDbPnAA2z5yANs+dADbPnYA2z54ANs+egDbPnwA2z5+ANs+QAEbPkIBGz5EARs+RgEbPkgBGz5KARs+TAEbPk4BGz5YAQhOCAAgE4=""#,
+.base64 "IAAB6DAAITimAwh8IACBOQAAYDkAAGz5CABs+RAAbPkYAGz5IABs+SgAbPkwAGz5OABs+UAAbPlIAGz5UABs+VgAbPlgAGz5aABs+XAAbPl4AGz5gABs+YgAbPmQAGz5mABs+aAAbPmoAGz5sABs+bgAbPnAAGz5yABs+dAAbPnYAGz54ABs+egAbPnwAGz5+ABs+QABbPkIAWz5EAFs+RgBbPkgAWz5KAFs+TABbPk4AWz5QAFs+UgBbPlQAWz5WAFs+WABbPloAWz5cAFs+XgBbPmAAWz5iAFs+ZABbPmYAWz5oAFs+agBbPmwAWz5uAFs+cABbPnIAWz50AFs+dgBbPngAWz56AFs+fABbPn4AWz5AAJs+QgCbPkQAmz5GAJs+SACbPkoAmz5MAJs+TgCbPlAAmz5SAJs+VACbPlYAmz5YAJs+WgCbPlwAmz5eAJs+YACbPmIAmz5kAJs+ZgCbPmgAmz5qAJs+bACbPm4Amz5wAJs+cgCbPnQAmz52AJs+eACbPnoAmz58AJs+fgCbPkAA2z5CANs+RADbPkYA2z5IANs+SgDbPkwA2z5OANs+UADbPlIA2z5UANs+VgDbPlgA2z5aANs+XADbPl4A2z5gANs+YgDbPmQA2z5mANs+aADbPmoA2z5sANs+bgDbPnAA2z5yANs+dADbPnYA2z54ANs+egDbPnwA2z5+ANs+QAEbPkIBGz5EARs+RgEbPkgBGz5KARs+TAEbPk4BGz5YAQhOAAAADhx+yH4IACBOQAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAAz4iAAM+JAADPiYAAz4oAAM+KgADPiwAAz4uAAM+MAADPjIAAz40AAM+NgADPjgAAz46AAM+PAADPj4AAz4AAEM+AgBDPgQAQz4GAEM+CABDPgoAQz4MAEM+DgBDPhAAQz4SAEM+FABDPhYAQz4YAEM+GgBDPhwAQz4eAEM+IABDPiIAQz4kAEM+JgBDPigAQz4qAEM+LABDPi4AQz4wAEM+MgBDPjQAQz42AEM+OABDPjoAQz48AEM+PgBDPgAAgz4CAIM+BACDPgYAgz4IAIM+CgCDPgwAgz4OAIM+EACDPhIAgz4UAIM+FgCDPhgAgz4aAIM+HACDPh4Agz4gAIM+IgCDPiQAgz4mAIM+KACDPioAgz4sAIM+LgCDPjAAgz4yAIM+NACDPjYAgz44AIM+OgCDPjwAgz4+AIM+AADDPgIAwz4EAMM+BgDDPggAwz4KAMM+DADDPg4Awz4QAMM+EgDDPhQAwz4WAMM+GADDPhoAwz4cAMM+HgDDPiAAwz4iAMM+JADDPiYAwz4oAMM+KgDDPiwAwz4uAMM+MADDPjIAwz40AMM+NgDDPjgAwz46AMM+PADDPj4Awz4AAQM+AgEDPgQBAz4GAQM+CAEDPgoBAz4MAQM+DgEDPhABAz4SAQM+FAEDPhYBAz4YAQM+GgEDPiQBCE4AABgOAAAgDgAAKA4AADAOAAA4DgAAAA5AAAgOQAAQDkAAGA5AACAOSAAgE4=""#,
         vg_seed_decrypt_blocks = sym super::seed::vg_seed_decrypt_blocks::vg_seed_decrypt_blocks,
     )
 }

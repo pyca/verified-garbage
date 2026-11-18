@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Seed.PPC64LE.ModesVerified
 public import VerifiedGarbage.Proof.Seed.PPC64LE.ModesFrame
 public import VerifiedGarbage.Proof.Seed.PPC64LE.FbFinalVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Seed.PPC64LE.Scrub
 public import VerifiedGarbage.TCB.PPC64LE.Print
 import VerifiedGarbage.Proof.Seed.PPC64LE.ModesLit
 import VerifiedGarbage.Proof.Seed.PPC64LE.FbFinalLit
@@ -15,17 +16,9 @@ import VerifiedGarbage.Proof.Seed.PPC64LE.FbFinalLit
 namespace VG.Artifacts.SeedCfb.PPC64LE
 
 def artifacts : List Artifact := [
-  Spec.Seed.cfbEncryptApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 1184 .r7 144 Impl.Seed.PPC64LE.cfbEncrypt
-    verified := Proof.Seed.PPC64LE.cfbEnc_framed Proof.Seed.PPC64LE.Modes.cfbEncrypt_verified },
-  Spec.Seed.cfbDecryptApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 1424 .r7 174 Impl.Seed.PPC64LE.cfbDecrypt
-    verified := Proof.Seed.PPC64LE.cfbDec_framed Proof.Seed.PPC64LE.Modes.cfbDecrypt_verified },
-  Spec.Seed.cfbEncryptFinalApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 1184 .r7 144 Impl.Seed.PPC64LE.cfbEncryptFinal
-    verified := Proof.Seed.PPC64LE.FbFinal.cfbEncryptFinal_framed },
-  Spec.Seed.cfbDecryptFinalApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 1184 .r7 144 Impl.Seed.PPC64LE.cfbDecryptFinal
-    verified := Proof.Seed.PPC64LE.FbFinal.cfbDecryptFinal_framed }]
+  Spec.Seed.cfbEncryptApi.artifact PPC64LE.target Proof.Seed.PPC64LE.Scrub.cfbEncryptReg,
+  Spec.Seed.cfbDecryptApi.artifact PPC64LE.target Proof.Seed.PPC64LE.Scrub.cfbDecryptReg,
+  Spec.Seed.cfbEncryptFinalApi.artifact PPC64LE.target Proof.Seed.PPC64LE.Scrub.cfbEncryptFinalReg,
+  Spec.Seed.cfbDecryptFinalApi.artifact PPC64LE.target Proof.Seed.PPC64LE.Scrub.cfbDecryptFinalReg]
 
 end VG.Artifacts.SeedCfb.PPC64LE
