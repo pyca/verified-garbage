@@ -145,7 +145,6 @@ aarch64 vg_cmac_aes_finish_neon
 aarch64 vg_cmac_aes_init
 aarch64 vg_cmac_aes_init_aes
 aarch64 vg_cmac_aes_init_neon
-aarch64 vg_ecdh_p521
 aarch64 vg_hmac_md5_finalize
 aarch64 vg_hmac_md5_init
 aarch64 vg_hmac_sha1_finalize

@@ -135,6 +135,29 @@ theorem exchangeOk :
     rw [e]
     exact h
 
+/-- `exchangeOk` for code with frames, in its stack of `W` bytes, which it zeroes. -/
+theorem exchangeOkW (W : Nat) (hW : 0 < W := by decide) :
+    ScrubAllOk (Spec.Ecdh.Instance.exchangeContract I abi W) W
+      ((Spec.Ecdh.Instance.exchangeSig I).retBits abi.ptrBits) :=
+  scrubAllOk_regs (sig := Spec.Ecdh.Instance.exchangeSig I) (Nat.le_of_ble_eq_true rfl) hW (Nat.le_refl _) fun vs m m₁ m₂ r hlen hb h => by
+    obtain ⟨out, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 3) hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨d, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨peer, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨sc, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    obtain rfl := List.eq_nil_of_length_eq_zero (Nat.succ.inj hlen)
+    simp only [Spec.Ecdh.Instance.exchangeSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+      forall_eq_or_imp, forall_eq] at hb
+    have e := bytesAt_congr (n := I.curve.len) (by simp only [Elem.size]; omega_using []) hb.1
+    change match Spec.Ecdh.exchange I.curve (Spec.Weierstrass.ofBytes (bytesAt m d I.curve.len))
+          (bytesAt m peer (2 * I.curve.len + 1)) with
+      | some z => r = 1 ∧ bytesAt m₂ out I.curve.len = z
+      | none => r = 0 ∧ bytesAt m₂ out I.curve.len = List.replicate I.curve.len 0
+    rw [e]
+    exact h
+
 /-- `vg_ecdsa_<name>_verify`, in its frame of 80 bytes. -/
 theorem verifyHashOk (J : Spec.Ecdsa.Instance) :
     ScrubAllOk (J.verifyHashContract abi 80) 80 (J.verifyHashSig.retBits abi.ptrBits) :=
