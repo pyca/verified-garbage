@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.X86.Isa
 public import VerifiedGarbage.Spec.X448
+public import VerifiedGarbage.Impl.X25519.X86
 
 /-!
 # X448: x86 (32-bit) implementation
@@ -9,9 +10,10 @@ public import VerifiedGarbage.Spec.X448
 Field elements are twenty-eight 16-bit limbs in 32-bit words. The field
 arithmetic is the functions `vg_gf448_r16_mul`, `vg_gf448_r16_add`,
 `vg_gf448_r16_sub` and `vg_gf448_r16_mul_a24` (`Proof/X448/X86/FnContract.lean`),
-which X448 and Ed448 call rather than inlining it: a row of products
-propagates its carry before the next row, keeping each sum below 2^32, and
-reduction uses `2^448 = 2^224 + 1` modulo the field prime.
+which X448 and Ed448 call rather than inlining it; reduction uses
+`2^448 = 2^224 + 1` modulo the field prime. The product packs the limbs of
+its operands in pairs, fourteen 32-bit words each, and multiplies those by
+product scanning (X25519's columns, `Impl/X25519/X86.lean`).
 
 Arguments use cdecl: output, scalar, point, and working space are at
 `[esp + 4]` through `[esp + 16]`. The stack pointer moves only for the calls
@@ -95,12 +97,6 @@ def rowWith (ldA : List Instr) (mb : Nat → MemOp) : List Instr :=
 
 def row (a b : Nat) : List Instr := rowWith [.mov .ecx (.mem (at_ .ebp a))] (fun j => sc (b + 4 * j))
 
-def reduceCol (k : Nat) : List Instr :=
-  [ld .eax (ACC + 4 * k), .alu .add .eax (.mem (sc (ACC + 4 * (k + 28))))] ++
-  (if k < 14 then [.alu .add .eax (.mem (sc (ACC + 4 * (k + 42))))]
-   else [.alu .add .eax (.mem (sc (ACC + 4 * (k + 14)))),
-     .alu .add .eax (.mem (sc (ACC + 4 * (k + 28))))]) ++ [st .eax (TMP + 4 * k)]
-
 def zeroAcc : List Instr :=
   [.mov .eax (.imm 0)] ++ (List.range 28).flatMap fun i => [st .eax (ACC + 4 * i)]
 
@@ -116,10 +112,9 @@ cdecl: the arguments at `[esp + 4]` to `[esp + 16]`. Each loads `ws` into
 `edi` and saves the callee-saved registers in the last 16 bytes of its own
 working space (`SAVE`), points `esi` (and `ebp`) at its operands, writes the
 coefficients of the result into `TMP` and normalizes them into the element
-at `o` (`normalize`), and restores the registers. The product's rows are as
-X448's (`rowWith`): `a_i` at `ws + a + 4 i`, with the row pointer
-`ebp = ws + 4 i`, and `b_j` at `esi = ws + b`. They use no stack, and every
-address is `ws` plus a constant, an offset or the row pointer. -/
+at `o` (`normalize`), and restores the registers; the product works on
+32-bit words instead (below). They use no stack, and every address is `ws`
+plus a constant or an offset. -/
 
 /-- Where the field functions save the callee-saved registers. -/
 def SAVE : Nat := 4080
@@ -146,21 +141,67 @@ def outPass : List Instr := [.mov .ebx (.imm 0)] ++ carryPass .ebp 0 (fun i => [
 /-- The coefficients at `TMP` normalized into the element at `o`. -/
 def normalize : List Instr := pass TMP TMP ++ fold ++ pass TMP TMP ++ fold ++ argPtr .ebp 1 ++ outPass
 
-/-- `a_i b_j`, `b_j` at `esi + 4 j`, added to word `i + j` of the product. -/
-def rowSrcU (i j : Nat) : List Instr :=
-  [.mov .eax (.mem (at_ .esi (4 * j))), .mul .ecx, .alu .add .eax (.mem (sc (ACC + 4 * (i + j))))]
+/-! ### The product, in 32-bit words
 
-/-- Row `i` of `vg_gf448_r16_mul`'s product, `a_i` at `ebp + 4 i`: the rows are
-unrolled, so the product's words are at constant offsets of `edi`. -/
-def mulRowU (i : Nat) : List Instr :=
-  [.mov .ecx (.mem (at_ .ebp (4 * i))), .mov .ebx (.imm 0)] ++ carryPass .edi (ACC + 4 * i) (rowSrcU i) ++
-    [st .ebx (ACC + 4 * (i + 28))]
+The limbs of an operand are below `2^16`, so two of them are a 32-bit word:
+`vg_gf448_r16_mul` packs its operands into fourteen words each (`PA`, `PB`),
+multiplies them by product scanning into 28 words (`PROD`), folds those by
+the prime into fourteen (`RED`) and a carry, folds the carry twice (the
+second cannot carry), and unpacks the words into the limbs of the result.
+All of these are in the functions' own working space, at constant offsets of
+`edi`. -/
 
-/-- `vg_gf448_r16_mul`: `esi = ws + b`, `ebp = ws + a`, the 28 rows, then the
-product folded and normalized. -/
+/-- The operands' words, the product's and the folded words, and the carry. -/
+def PA : Nat := ACC
+def PB : Nat := ACC + 56
+def PROD : Nat := ACC + 112
+def RED : Nat := TMP
+def CW : Nat := TMP + 56
+
+/-- Word `k` of the element at `esi`, its limbs `2k` and `2k + 1`, to `[edi + o + 4k]`. -/
+def packWord (o k : Nat) : List Instr :=
+  [.mov .eax (.mem (at_ .esi (8 * k))), .mov .edx (.mem (at_ .esi (8 * k + 4))), .shift .ror .edx 16,
+    .alu .add .eax (.reg .edx), st .eax (o + 4 * k)]
+
+/-- The element at `esi` packed into fourteen words at `[edi + o]`. -/
+def pack (o : Nat) : List Instr := (List.range 14).flatMap (packWord o)
+
+/-- The products `a_i b_j` of column `k`: `i + j = k`. -/
+def prodTerms (k : Nat) : List Impl.X25519.X86.Term :=
+  ((List.range 14).filter fun i => i ≤ k && k - i < 14).map fun i => .mulM (PA + 4 * i) (PB + 4 * (k - i))
+
+/-- The product's words folded into column `k`, by `2^448 = 2^224 + 1`. -/
+def foldTerms (k : Nat) : List Impl.X25519.X86.Term :=
+  [.addM (PROD + 4 * k), .addM (PROD + 4 * (k + 14))] ++
+    if k < 7 then [.addM (PROD + 4 * (k + 21))]
+    else [.addM (PROD + 4 * (k + 7)), .addM (PROD + 4 * (k + 14))]
+
+/-- The carry at `CW` added to words 0 and 7. -/
+def carryTerms (k : Nat) : List Impl.X25519.X86.Term :=
+  .addM (RED + 4 * k) :: if k = 0 ∨ k = 7 then [.addM CW] else []
+
+/-- The carry in the accumulator folded into the words at `RED`. -/
+def foldCarry : List Instr :=
+  [st .ebx CW] ++ Impl.X25519.X86.zeroAcc ++ Impl.X25519.X86.cols RED 14 carryTerms
+
+/-- The words at `PA` and `PB` multiplied and reduced into the fourteen words at `RED`. -/
+def mulWords : List Instr :=
+  Impl.X25519.X86.zeroAcc ++ Impl.X25519.X86.cols PROD 28 prodTerms ++ Impl.X25519.X86.cols RED 14 foldTerms ++
+    foldCarry ++ foldCarry
+
+/-- Word `k` at `RED` to limbs `2k` and `2k + 1` of the element at `ebp`. -/
+def unpackWord (k : Nat) : List Instr :=
+  [ld .eax (RED + 4 * k), .mov .edx (.reg .eax), .alu .and .eax (.imm 65535), .shift .shr .edx 16,
+    .store (at_ .ebp (8 * k)) .eax, .store (at_ .ebp (8 * k + 4)) .edx]
+
+/-- The words at `RED` unpacked into the element at `ebp`. -/
+def unpack : List Instr := (List.range 14).flatMap unpackWord
+
+/-- `vg_gf448_r16_mul`: the operands packed through `esi`, the product of
+their words reduced, and its words unpacked into the element at `o`. -/
 def mulFn : Prog isa :=
-  .block (fnEntry ++ argPtr .esi 3 ++ argPtr .ebp 2 ++ zeroAcc ++ (List.range 28).flatMap mulRowU ++
-    (List.range 28).flatMap reduceCol ++ normalize ++ fnExit)
+  .block (fnEntry ++ argPtr .esi 2 ++ pack PA ++ argPtr .esi 3 ++ pack PB ++ mulWords ++ argPtr .ebp 1 ++
+    unpack ++ fnExit)
 
 def addCols : List Instr :=
   (List.range 28).flatMap fun i =>
