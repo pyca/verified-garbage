@@ -1,12 +1,16 @@
 module
 
+meta import VerifiedGarbage.Impl.Ecdsa.BrainpoolP512r1.X86Comb
+public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP512r1.X86Comb
+import VerifiedGarbage.Proof.Framework.ConstMem
+meta import VerifiedGarbage.Proof.Framework.ConstMem
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Curve
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.TableSat
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
 public import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP512r1.Config
-public import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP512r1.Contract
+public import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP512r1.Comb
 public import VerifiedGarbage.Spec.Ecdsa.BrainpoolP512r1
-import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP512r1.Lit
+import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP512r1.CombLit
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -15,15 +19,15 @@ meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Curve
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.TableSat
 meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
 meta import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP512r1.Config
-meta import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP512r1.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP512r1.Comb
 meta import VerifiedGarbage.Spec.Ecdsa.BrainpoolP512r1
-meta import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP512r1.Verified
-meta import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP512r1.Lit
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.CombCore
+meta import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP512r1.CombLit
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Weierstrass.X86.LadderP
-public import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP512r1.Verified
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.CombCore
 
 /-!
 # Deterministic ECDSA on x86 (32-bit): brainpoolP512r1
@@ -46,38 +50,36 @@ theorem brainpoolp512r1_nBits : Spec.Ecdsa.nBits Spec.BrainpoolP512r1.curve = 51
   have h₂ : Spec.BrainpoolP512r1.curve.n.log2 < 512 := (Nat.log2_lt (by decide +kernel)).mpr (by decide +kernel)
   omega_using [h₁, h₂]
 
-theorem core_pre_brainpoolp512r1 {s : State} (h : (coreK Impl.Ecdsa.X86.brainpoolp512r1).pre s) :
-    Proof.Ecdsa.X86.BrainpoolP512r1.signX86.pre s := by
-  obtain ⟨rd, wr, oc, od, og, ok, dc, gc, kc, ao, ac, ro, rc, no, nd, ng, nk, nc, sp, lo, so, ss, _⟩ := h
-  exact ⟨rd, wr, oc, od, og, ok, dc, gc, kc, ao, ac, ro, rc, no, nd, ng, nk, nc, sp, lo, so, ss⟩
-
 /-- brainpoolP512r1, with the group law `hL`. -/
 def brainpoolp512r1 (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) : RfcCurve where
-  E := Impl.Ecdsa.X86.brainpoolp512r1
+  E := Impl.Ecdsa.X86.brainpoolp512r1Comb
   inst := Spec.Ecdsa.BrainpoolP512r1.inst
   curve := rfl
   big := false
   sizes := ⟨.inr (.inr (.inr rfl)), .inl rfl, brainpoolp512r1_nBits, by decide +kernel⟩
   n_lt := by decide +kernel
   sh := 0
-  sh_eq := Proof.Ecdsa.X86.BrainpoolP512r1.brainpoolp512r1_sh
+  sh_eq := (Proof.Ecdsa.X86.Cfg.sh_withComb Impl.Ecdsa.X86.brainpoolp512r1 Impl.Ecdsa.X86.brainpoolp512r1d).trans
+    Proof.Ecdsa.X86.BrainpoolP512r1.brainpoolp512r1_sh
   coreN := "vg_ecdsa_brainpoolp512r1_sign_k"
-  coreC := Impl.Ecdsa.X86.signBrainpoolP512r1
-  coreX := fun s h => Proof.Ecdsa.X86.BrainpoolP512r1.sign_x86 hL s (core_pre_brainpoolp512r1 h)
-  coreCT := by
-    intro s t tr₁ tr₂ s' t' hs ht hp
-    obtain ⟨he, a0, a1, a2, a3, a4, _⟩ := hp
-    exact Proof.Ecdsa.X86.BrainpoolP512r1.sign_ct s t tr₁ tr₂ s' t' (core_pre_brainpoolp512r1 hs) (core_pre_brainpoolp512r1 ht)
-      ⟨he, a0, a1, a2, a3, a4⟩
+  coreC := Impl.Ecdsa.X86.signBrainpoolP512r1Comb
+  coreX := coreX_comb (Proof.Ecdsa.X86.BrainpoolP512r1.brainpoolp512r1Comb_ok) hL (Proof.Ecdsa.X86.BrainpoolP512r1.brainpoolp512r1Comb_tables hL) rfl Proof.Ecdsa.X86.BrainpoolP512r1.brainpoolp512r1Comb_shape
+    Proof.Ecdsa.X86.BrainpoolP512r1.signComb_sp
+  coreCT := coreCT_comb (Proof.Ecdsa.X86.BrainpoolP512r1.brainpoolp512r1Comb_ok) hL (Proof.Ecdsa.X86.BrainpoolP512r1.brainpoolp512r1Comb_tables hL) rfl Proof.Ecdsa.X86.BrainpoolP512r1.brainpoolp512r1Comb_shape
+    (Proof.Ecdsa.X86.BrainpoolP512r1.brainpoolp512r1Comb_gMul hL) Proof.Ecdsa.X86.BrainpoolP512r1.signCT Proof.Ecdsa.X86.BrainpoolP512r1.signComb_sp
   coreNs := NoSp.of_all (by lit_decide)
   coreStack := by lit_decide
   blk := by rfcT_decide
 
 /-- `vg_ecdsa_brainpoolp512r1_sign`, with the tables of `vs`. -/
-theorem brainpoolp512r1T_verified (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) (vs : List Proof.HmacTable.X86.HVar) (h : OK vs) :
+theorem brainpoolp512r1T_verified (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) (vs : List Proof.HmacTable.X86.HVar) (h : OK vs ∧ "VG_BRAINPOOLP512R1_COMB" ∉ Proof.HmacTable.X86.names vs) :
     Verified X86.target (signCodeT (brainpoolp512r1 hL) Spec.Ecdsa.Rfc6979.Curves.brainpoolp512r1.tries vs)
-      (specK Spec.Ecdsa.Rfc6979.Curves.brainpoolp512r1 Impl.Ecdsa.X86.brainpoolp512r1.combConsts vs) := by
-  have hsat := sat_nil (T := Spec.Ecdsa.Rfc6979.Curves.brainpoolp512r1) h (by decide) rfl
-  exact signT_verified ⟨rfl, by decide, by decide⟩ rfl h hsat
+      (specK Spec.Ecdsa.Rfc6979.Curves.brainpoolp512r1 Impl.Ecdsa.X86.brainpoolp512r1Comb.combConsts vs) := by
+  have hsat := sat_one (T := Spec.Ecdsa.Rfc6979.Curves.brainpoolp512r1) h.1 (constMem 0x100000 Proof.Ecdsa.X86.BrainpoolP512r1.brainpoolp512r1W) h.2
+    (by rw [Proof.Ecdsa.X86.BrainpoolP512r1.brainpoolp512r1W_length]; decide)
+    (constMem_held 0x100000 Proof.Ecdsa.X86.BrainpoolP512r1.brainpoolp512r1W (by rw [Proof.Ecdsa.X86.BrainpoolP512r1.brainpoolp512r1W_length]; decide)) (by decide) rfl
+  rw [show Impl.Ecdsa.X86.brainpoolp512r1Comb.combConsts = [("VG_BRAINPOOLP512R1_COMB", Proof.Ecdsa.X86.BrainpoolP512r1.brainpoolp512r1W)] from Proof.Ecdsa.X86.BrainpoolP512r1.brainpoolp512r1Comb_consts]
+  exact signT_verified (R := brainpoolp512r1 hL) ⟨rfl, by decide, by decide⟩ rfl h.1
+    (by rw [show (brainpoolp512r1 hL).E.combConsts = [("VG_BRAINPOOLP512R1_COMB", Proof.Ecdsa.X86.BrainpoolP512r1.brainpoolp512r1W)] from Proof.Ecdsa.X86.BrainpoolP512r1.brainpoolp512r1Comb_consts]; exact hsat)
 
 end VG.Proof.Ecdsa.Rfc6979.X86
