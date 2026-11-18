@@ -13,7 +13,8 @@ where its Rust caller cannot clear it (`RISCV64.NoResidue`), as
   `c`'s frames use), in nested frames of the sizes `cs` (each at most 2048
   bytes, so that every offset in it is an encodable displacement of `sd`):
   every doubleword of each, from `sp` up, with `sd t0, off(t1)`, where `t0`
-  is zero and `t1` the frame's `sp` (`sd` takes no base `sp` in the model);
+  is zero and `t1` the frame's `sp` (`sd` takes no base `sp` in the model), or
+  only some of them (`scrubSel`);
 * the caller-saved integer registers `a1`–`a7` and `t0`–`t6`, with
   `li r, 0`, and the bits of `a0`, the result, above its `retBits` low ones.
 
@@ -71,5 +72,29 @@ def scrubTail (retBits : Nat) (cs : List Nat) : Prog isa :=
 /-- `c`, then the clearing of `stack` bytes of stack. -/
 def scrub (retBits stack : Nat) (c : Prog isa) : Prog isa :=
   .seq c (scrubTail retBits (chunks stack))
+
+/-! ## Clearing only some of the stack
+
+`scrubSel retBits fs c` is `scrub`, but its frames, of the sizes `fs.map (·.1)`, zero only
+the doublewords of their runs `(k, n)` (`8k` to `8(k + n) - 1` from the frame's base): the
+bytes the residue analysis (`RISCV64.RTaint`) finds may differ between two runs. -/
+
+/-- The doublewords of the runs `rs`, from `t1`, zeroed with `t0`. -/
+def storesRuns : List (Nat × Nat) → List Instr
+  | [] => []
+  | (k, n) :: rs => stores k n ++ storesRuns rs
+
+/-- Zero the runs of each frame of `fs`, nested below `sp`. -/
+def wipeSel : List (Nat × List (Nat × Nat)) → Prog isa
+  | [] => .block []
+  | (b, rs) :: bs => .frame (.alloc b) (.seq (.block (.addSp .t1 0 :: storesRuns rs)) (wipeSel bs)) (.free b)
+
+/-- The clearing of `scrubSel`. -/
+def scrubTailSel (retBits : Nat) (fs : List (Nat × List (Nat × Nat))) : Prog isa :=
+  .seq (.block [zeroR .t0]) (.seq (wipeSel fs) (.block (retFix retBits ++ scratchRegs.map zeroR)))
+
+/-- `c`, then the clearing of the runs of `fs`. -/
+def scrubSel (retBits : Nat) (fs : List (Nat × List (Nat × Nat))) (c : Prog isa) : Prog isa :=
+  .seq c (scrubTailSel retBits fs)
 
 end VG.Impl.Scrub.RISCV64
