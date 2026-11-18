@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.Seed.FbScratch
 public import VerifiedGarbage.Proof.Seed.X86.ModeCore
 import VerifiedGarbage.Proof.Modes.X86.Modes
+import VerifiedGarbage.Proof.Modes.X86.Wide
 public import VerifiedGarbage.Proof.Framework.X86.TaintMono
 import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
 public import VerifiedGarbage.Impl.StackScratch.X86
@@ -17,6 +18,7 @@ meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 meta import VerifiedGarbage.Proof.Seed.FbScratch
 meta import VerifiedGarbage.Proof.Seed.X86.ModeCore
 meta import VerifiedGarbage.Proof.Modes.X86.Modes
+meta import VerifiedGarbage.Proof.Modes.X86.Wide
 meta import VerifiedGarbage.Proof.Framework.X86.TaintMono
 meta import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
 meta import VerifiedGarbage.Impl.StackScratch.X86
@@ -37,7 +39,8 @@ public import VerifiedGarbage.Proof.Framework.Contract
 # SEED-OFB and SEED-CFB128 on x86 (32-bit) meet their contracts
 
 `ofb_wp`, `cfbEncrypt_wp`, `cfbDecrypt_wp`: the modes' OFB and CFB
-(`Proof.Modes.X86.ofb_wp`, `cfbEnc_wp`, `cfbDec_wp`) over SEED's core in the
+(`Proof.Modes.X86.ofb_wp`, `cfbEnc_wp`, and `cfbDecLevels_wp`, which deciphers
+the blocks in groups) over SEED's core in the
 encryption direction (`dirCoreSpec .encrypt`), with the working space as a
 fifth argument (`fbX86`). The chaining value is written back, so it is
 writable, and the taint analysis knows the argument words holding the
@@ -57,7 +60,7 @@ theorem disjoint_empty (r : Region) (a : Addr) : Region.Disjoint ⟨a, 0⟩ r :=
 
 theorem scr_eq (s : State) (d : Spec.Seed.Direction) :
     Modes.X86.scrR s (dirCore d) = ⟨(arg s 4).setWidth 64, 8 * 143⟩ := by
-  simp [Modes.X86.scrR, dirCore, coreSlots, bufSlot, wsSlots]
+  simp [Modes.X86.scrR, dirCore, coreSlots, bufSlot, modeWs]
 
 /-- The core's 20 bytes of stack, as the contracts write them. -/
 theorem stk20_eq {s : State} (h : 20 ≤ (s.gpr .esp).toNat) :
@@ -73,7 +76,7 @@ theorem stk_ret (s : State) :
 /-- The modes' slots are in the scratch buffer. -/
 theorem modeSlots_sub (S : BitVec 32) (d : Spec.Seed.Direction) :
     Region.Sub ⟨Proof.Modes.X86.slotA S (dirCore d).slots, 40⟩ ⟨S.setWidth 64, 8 * 143⟩ :=
-  VG.Offset.sub_base _ (by simp only [dirCore, coreSlots, bufSlot, wsSlots]; omega_using [])
+  VG.Offset.sub_base _ (by simp only [dirCore, coreSlots, bufSlot, modeWs]; omega_using [])
 
 /-- The words of the first `n` stack arguments, readable, in `rd`. -/
 theorem args_in {s : State} {n : Nat} {rd : List Region} (hfit : (s.gpr .esp).toNat + 4 * (n + 1) ≤ 2 ^ 32)
@@ -89,7 +92,7 @@ end VG.Proof.Seed.X86
 namespace VG.Proof.Seed.X86.Fb
 
 open VG VG.X86 VG.Impl.Seed.X86 VG.Impl.Modes
-open VG.Proof.Modes.X86 (SeqPre ofb_wp cfbEnc_wp cfbDec_wp)
+open VG.Proof.Modes.X86 (SeqPre ofb_wp cfbEnc_wp cfbDecLevels_wp)
 open VG.Proof.Seed.X86 (scr_eq disjoint_empty KeyArgs dirCoreSpec)
 
 /-- SEED under the schedule at the first argument. -/
@@ -139,8 +142,8 @@ theorem seqPre_of {post : State → State → Prop} {M : Mode} (d : Spec.Seed.Di
   obtain ⟨hrd, hwr, dKS, dVD, dVS, dDS, dAD, dAV, dAS, dRD, dRV, dRS, fK, fV, fD, fS, fE, dKD, dKV, sK, sD, sV, sS,
     sA, sE⟩ := h
   have hL := (dirCoreSpec d).layout
-  refine ⟨(by rw [hrd]; simp [dirCore]), fE, ⟨(by rw [hwr]; simp [dirCore, coreSlots, bufSlot, wsSlots]),
-      (by simp only [dirCore, coreSlots, bufSlot, wsSlots]; omega)⟩, (by rw [hwr]; simp [dirCore]),
+  refine ⟨(by rw [hrd]; simp [dirCore]), fE, ⟨(by rw [hwr]; simp [dirCore, coreSlots, bufSlot, modeWs]),
+      (by simp only [dirCore, coreSlots, bufSlot, modeWs]; omega)⟩, (by rw [hwr]; simp [dirCore]),
     (fun _ => by rw [hwr]; simp [dirCore]), (by simp only [dirCore]; omega), (by rw [hwr, hstep]; simp [dirCore]),
     (by rw [hstep]; exact fD), ?_, ?_, (fun _ => ?_), ?_, ?_, ?_, ?_,
     (fun _ => ?_), ?_, ?_, ?_, ?_, sE, (by rw [hstep]; simp [dirCore]), hL⟩
@@ -212,7 +215,7 @@ theorem cfbEncrypt_wp {s₀ : State} (hp : (fbX86 cfbEncPost).pre s₀) :
 
 theorem cfbDecrypt_wp {s₀ : State} (hp : (fbX86 cfbDecPost).pre s₀) :
     WP isa cfbDecrypt s₀ fun s' => abiPreserved s₀ s' ∧ (fbX86 cfbDecPost).post s₀ s' :=
-  WP.mono (cfbDec_wp (dirCoreSpec .encrypt) (seqPre_of .encrypt rfl hp) (keyArgs_of .encrypt hp))
+  WP.mono (cfbDecLevels_wp (dirCoreSpec .encrypt) (by decide) (seqPre_of .encrypt rfl hp) (keyArgs_of .encrypt hp))
     fun _ ⟨h1, h2, h3⟩ => by
       simp only [Proof.Modes.X86.blocks0, Proof.Modes.X86.iv0, Proof.Modes.X86.Dp, Proof.Modes.X86.P,
         Proof.Modes.X86.N, dirCore_ka, Nat.reduceAdd, data_eq, iv_eq, cipher_eq] at h2 h3

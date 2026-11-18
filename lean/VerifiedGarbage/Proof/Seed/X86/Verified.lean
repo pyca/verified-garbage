@@ -63,7 +63,7 @@ summary. `wideContract` is `ecbX86` with the argument slots writable, which
 namespace VG.Proof.Seed.X86
 
 open VG VG.X86 VG.Impl.Seed.X86
-open VG.Proof.Seed (ecbX86)
+open VG.Proof.Seed (ecbX86 ecbX86W)
 
 /-- What is public at the loop of rounds: the stack pointer, the round keys'
 and the scratch buffer's pointers, the flags, and the slots of the caller's
@@ -81,6 +81,13 @@ taint_summary roundsSum : VG.X86.taint roundsTaint (.block Impl.Seed.X86.roundPa
 theorem ecb_correct (dir : Spec.Seed.Direction) (s : State) (hs : (ecbX86 dir).pre s) :
     ∃ t s', Exec isa (ecb dir) s t s' ∧ abiPreserved s s' ∧ (ecbX86 dir).post s s' :=
   ecb_wp dir hs
+
+/-- `ecb_correct`, with a working space of any `w` slots that hold the
+code's. -/
+theorem ecb_correctW (dir : Spec.Seed.Direction) {w : Nat} (hw : Impl.Seed.X86.slots ≤ w) (s : State)
+    (hs : (ecbX86W w dir).pre s) :
+    ∃ t s', Exec isa (ecb dir) s t s' ∧ abiPreserved s s' ∧ (ecbX86W w dir).post s s' :=
+  ecb_wpW dir hw hs
 
 /-- `ecbX86` with the argument slots writable, as the signature's contract has
 them; the code reads them only (`narrowRd`, `narrowWr` narrow it to `ecbX86`). -/
@@ -102,11 +109,11 @@ def narrowRd (s : State) : List Region := [⟨(arg s 0).setWidth 64, 128⟩, ⟨
 def narrowWr (s : State) : List Region :=
   [⟨(arg s 1).setWidth 64, 16 * (arg s 2).toNat⟩, ⟨(arg s 3).setWidth 64, 4 * Impl.Seed.X86.wsSlots⟩]
 
-tactic_template "narrow_seed_x86_verified" : tactic => `(tactic| simp only [VG.Proof.Seed.ecbX86, VG.Proof.Seed.X86.wideContract,
+tactic_template "narrow_seed_x86_verified" : tactic => `(tactic| simp only [VG.Proof.Seed.ecbX86, VG.Proof.Seed.ecbX86W, VG.Proof.Seed.X86.wideContract,
                      VG.Proof.Seed.X86.narrowRd, VG.Proof.Seed.X86.narrowWr, VG.X86.arg_withRegions,
                      VG.X86.argAddr_withRegions, VG.X86.State.withRegions_gpr, VG.X86.State.withRegions_mem,
                      VG.X86.State.withRegions_rd, VG.X86.State.withRegions_wr])
-tactic_template "narrow_seed_x86_verified" loc:Lean.Parser.Tactic.location : tactic => `(tactic| simp only [VG.Proof.Seed.ecbX86, VG.Proof.Seed.X86.wideContract,
+tactic_template "narrow_seed_x86_verified" loc:Lean.Parser.Tactic.location : tactic => `(tactic| simp only [VG.Proof.Seed.ecbX86, VG.Proof.Seed.ecbX86W, VG.Proof.Seed.X86.wideContract,
                      VG.Proof.Seed.X86.narrowRd, VG.Proof.Seed.X86.narrowWr, VG.X86.arg_withRegions,
                      VG.X86.argAddr_withRegions, VG.X86.State.withRegions_gpr, VG.X86.State.withRegions_mem,
                      VG.X86.State.withRegions_rd, VG.X86.State.withRegions_wr] $loc)

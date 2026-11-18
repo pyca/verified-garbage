@@ -90,8 +90,8 @@ theorem seqPre_of {post : State → State → Prop} {s : State} (h : (finalX86 p
     sA, sE⟩ := h
   have hL := (dirCoreSpec .encrypt).layout
   have e1 : ∀ n : Nat, byteMode.step * n = n := fun n => Nat.one_mul n
-  refine ⟨(by rw [hrd]; simp [dirCore]), fE, ⟨(by rw [hwr]; simp [dirCore, coreSlots, bufSlot, wsSlots]),
-      (by simp only [dirCore, coreSlots, bufSlot, wsSlots]; omega)⟩, (by rw [hwr]; simp [dirCore]),
+  refine ⟨(by rw [hrd]; simp [dirCore]), fE, ⟨(by rw [hwr]; simp [dirCore, coreSlots, bufSlot, modeWs]),
+      (by simp only [dirCore, coreSlots, bufSlot, modeWs]; omega)⟩, (by rw [hwr]; simp [dirCore]),
     (fun _ => by rw [hwr]; simp [dirCore]), (by simp only [dirCore]; omega),
     (by rw [hwr]; simp [dirCore, Proof.Modes.X86.dataRegion, e1]),
     (by rw [e1]; exact fD), ?_, ?_, (fun _ => ?_), ?_, ?_, ?_, ?_,

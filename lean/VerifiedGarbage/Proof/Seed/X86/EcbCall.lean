@@ -45,7 +45,7 @@ namespace VG.Proof.Seed.X86
 
 open VG VG.X86 VG.X86.Straight VG.Impl.Seed.X86
 open VG.Impl.Aes.X86 (argOp)
-open VG.Proof.Seed (ecbX86)
+open VG.Proof.Seed (ecbX86 ecbX86W)
 
 /-- The ECB functions' code with the working space as the fourth argument
 and 24 bytes of stack, the argument slots read only. -/
@@ -234,7 +234,7 @@ theorem inner_wp (d : Spec.Seed.Direction) {s₀ s₂ : State} {E : BitVec 32} (
       (rd := [⟨(arg s₀ 0).setWidth 64, 128⟩, ⟨argAddr (pushed [Reg.ebx, .edx, .ecx, .eax] s₂).callEntry 0, 16⟩])
       (wr := [⟨(arg s₀ 1).setWidth 64, 16 * (arg s₀ 2).toNat⟩, ⟨(arg s₀ 3).setWidth 64, 4 * wsSlots⟩])
       ⟨?_, ?_, ?_⟩ fun s' rd' wr' cs f ⟨s₃, m₃, post⟩ => ?_
-    · simp only [ecbX86, State.withRegions_rd, State.withRegions_wr, State.withRegions_gpr, arg_withRegions,
+    · simp only [ecbX86, ecbX86W, State.withRegions_rd, State.withRegions_wr, State.withRegions_gpr, arg_withRegions,
         argAddr_withRegions, a0, a1, a2, a3]
       exact ⟨trivial, trivial, dKD, dKS, dDS, sD.sub_left argsSub, sS.sub_left argsSub,
         sD.sub_left retSub, sS.sub_left retSub, fitK, fitD, fitB, by rw [espE]; omega_using []⟩
@@ -252,7 +252,7 @@ theorem inner_wp (d : Spec.Seed.Direction) {s₀ s₂ : State} {E : BitVec 32} (
         exact List.mem_cons_of_mem _ (by rw [hl.wr]; exact List.mem_cons_of_mem _ (by rw [hwr]; simp))
     · simp only [ecb_stackUse, List.length_cons, List.length_nil, Nat.reduceMul, Nat.reduceAdd, Nat.add_zero] at f
       refine ⟨rd', wr', cs, f, ?_⟩
-      simp only [ecbX86, State.withRegions_mem, arg_withRegions, a0, a1, a2] at post
+      simp only [ecbX86, ecbX86W, State.withRegions_mem, arg_withRegions, a0, a1, a2] at post
       -- The pop loses the arguments' frame, below `esp`, apart from the data.
       have fL : Frame [below E 24] s₃.mem s'.mem := m₃.sub fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
@@ -452,12 +452,12 @@ theorem wideCall_implies (d : Spec.Seed.Direction) :
   refine { pre := ?_, post := ?_, pub := ?_, sat := ?_ }
   · intro s h
     sig_pre [Proof.Seed.ecbScratchContract, Proof.Seed.ecbScratchSig, Spec.Seed.ecbPost, X86.abi, X86.argSlots,
-      X86.argVal, X86.argBytes, wideCall, callX86, ecbX86, Impl.Seed.X86.wsSlots] at h
+      X86.argVal, X86.argBytes, wideCall, callX86, ecbX86, ecbX86W, Impl.Seed.X86.wsSlots] at h
     sig_split h
     sig_reduce [Proof.Seed.ecbScratchContract, Proof.Seed.ecbScratchSig, Spec.Seed.ecbPost, X86.abi, X86.argSlots,
-      X86.argVal, X86.argBytes, wideCall, callX86, ecbX86, Impl.Seed.X86.wsSlots]
+      X86.argVal, X86.argBytes, wideCall, callX86, ecbX86, ecbX86W, Impl.Seed.X86.wsSlots]
     sig_simp [Proof.Seed.ecbScratchContract, Proof.Seed.ecbScratchSig, Spec.Seed.ecbPost, X86.abi, X86.argSlots,
-      X86.argVal, X86.argBytes, wideCall, callX86, ecbX86, Impl.Seed.X86.wsSlots] []
+      X86.argVal, X86.argBytes, wideCall, callX86, ecbX86, ecbX86W, Impl.Seed.X86.wsSlots] []
     sig_and_intros
     sig_close
     all_goals first
@@ -466,11 +466,11 @@ theorem wideCall_implies (d : Spec.Seed.Direction) :
       | omega
       | (simp only [Nat.mul_comm] at *; first | with_reducible assumption | with_reducible exact Region.Disjoint.symm ‹_›)
   · sig_implies_post [Proof.Seed.ecbScratchContract, Proof.Seed.ecbScratchSig, Spec.Seed.ecbPost, X86.abi,
-      X86.argSlots, X86.argVal, X86.argBytes, wideCall, callX86, ecbX86, Impl.Seed.X86.wsSlots]
+      X86.argSlots, X86.argVal, X86.argBytes, wideCall, callX86, ecbX86, ecbX86W, Impl.Seed.X86.wsSlots]
   · sig_implies_pub [Proof.Seed.ecbScratchContract, Proof.Seed.ecbScratchSig, Spec.Seed.ecbPost, X86.abi,
-      X86.argSlots, X86.argVal, X86.argBytes, wideCall, callX86, ecbX86, Impl.Seed.X86.wsSlots]
+      X86.argSlots, X86.argVal, X86.argBytes, wideCall, callX86, ecbX86, ecbX86W, Impl.Seed.X86.wsSlots]
   · sig_implies_sat [Proof.Seed.ecbScratchContract, Proof.Seed.ecbScratchSig, Spec.Seed.ecbPost, X86.abi,
-      X86.argSlots, X86.argVal, X86.argBytes, wideCall, callX86, ecbX86, Impl.Seed.X86.wsSlots]
+      X86.argSlots, X86.argVal, X86.argBytes, wideCall, callX86, ecbX86, ecbX86W, Impl.Seed.X86.wsSlots]
       [callSat, arg, argAddr, Mem.readW, Mem.read] using callSat
 
 theorem call_verified (d : Spec.Seed.Direction) :
@@ -499,10 +499,10 @@ theorem call_verified (d : Spec.Seed.Direction) :
     simp only [narrowWr, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
     rcases hr with h | h <;> simp_all only [or_true, true_or]
   · intro s s' _ h
-    simp only [callX86, wideCall, ecbX86, narrowRd, narrowWr, arg_withRegions, State.withRegions_mem] at h ⊢
+    simp only [callX86, wideCall, ecbX86, ecbX86W, narrowRd, narrowWr, arg_withRegions, State.withRegions_mem] at h ⊢
     exact h
   · intro s₁ s₂ _ _ h
-    simp only [callX86, ecbX86, narrowRd, narrowWr, arg_withRegions, State.withRegions_gpr]
+    simp only [callX86, ecbX86, ecbX86W, narrowRd, narrowWr, arg_withRegions, State.withRegions_gpr]
     exact h
 
 /-- A state satisfying the ECB functions' precondition: the schedule at
