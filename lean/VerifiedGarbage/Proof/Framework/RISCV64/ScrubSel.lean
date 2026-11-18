@@ -335,15 +335,27 @@ theorem scrubSel_pre {api : Api} (r : Registration api target) (bp0 : List (Reg 
   obtain ⟨g, hg, hc⟩ := hbp s hs e he i hi
   exact hout g hg _ hc
 
-/-- `r`, its code followed by the clearing of only the runs of `fs` (`scrubSel`), which
-the residue analysis of the whole (`hres`) shows leaves no secret residue. -/
-def scrubSelReg {api : Api} (r : Registration api target) (fs : List (Nat × List (Nat × Nat)))
+/-- `r`'s code followed by the clearing of only the runs of `fs` returns without secret
+residue if the residue analysis of the whole, stated of `code`, `W` and `rb`, which are
+`r`'s code, stack and result width (so that the kernel evaluates it without the
+registration, whose proofs mention the code), ends in `done`. -/
+theorem scrubSel_noResidue {api : Api} (r : Registration api target) (fs : List (Nat × List (Nat × Nat)))
     (bp0 : List (Reg × Nat)) (hfs : FramesOk fs) (hsz : sizeOf fs ≤ r.stack) (hrb : retBitsOf r ≤ 64)
     (hpost : PostOut r.contract (retBitsOf r))
     (hbp : ∀ s, r.contract.pre s → ∀ e ∈ bp0, ∀ i < e.2, ∃ g ∈ s.rd ++ s.wr,
       g.Contains (s.gpr e.1 + BitVec.ofNat 64 i) 1)
-    (hres : ∃ hc, (rtaint.check (RTaint.init r.stack bp0) (scrubSel (retBitsOf r) fs r.code) hc).any
-      (RTaint.done (retBitsOf r)) = true)
+    (code : Prog isa) (W rb : Nat) (hc : r.code = code) (hW : r.stack = W) (hr : retBitsOf r = rb)
+    (hres : ∃ hc, (rtaint.check (RTaint.init W bp0) (scrubSel rb fs code) hc).any (RTaint.done rb) = true) :
+    NoResidue (scrubSel (retBitsOf r) fs r.code) r.contract (retBitsOf r) :=
+  RTaint.noResidue_of_verified (scrubSelCode_verified r fs hfs hsz hrb hpost) (scrubSel_pre r bp0 hbp)
+    (by subst hc hW hr; exact hres)
+
+/-- `r`, its code followed by the clearing of only the runs of `fs` (`scrubSel`), with
+`hnr` (from `scrubSel_noResidue`). -/
+def scrubSelReg {api : Api} (r : Registration api target) (fs : List (Nat × List (Nat × Nat)))
+    (hfs : FramesOk fs) (hsz : sizeOf fs ≤ r.stack) (hrb : retBitsOf r ≤ 64)
+    (hpost : PostOut r.contract (retBitsOf r))
+    (hnr : NoResidue (scrubSel (retBitsOf r) fs r.code) r.contract (retBitsOf r))
     (hw : r.written = []) : Registration api target where
   suffix := r.suffix
   tables := r.tables
@@ -360,25 +372,20 @@ def scrubSelReg {api : Api} (r : Registration api target) (fs : List (Nat × Lis
   extra := r.extra
   vendor := r.vendor
   notWith := r.notWith
-  residue := some ⟨RTaint.noResidue_of_verified (scrubSelCode_verified r fs hfs hsz hrb hpost)
-    (scrubSel_pre r bp0 hbp) hres⟩
+  residue := some ⟨hnr⟩
 
 /-- `scrubSelReg`, if its decidable side conditions hold; otherwise `r` itself, which then
-has no proof (`Registration.residue`). The analysis (`hres`) is stated of `code`, `W` and
-`rb`, which are `r`'s code, stack and result width: the kernel then evaluates it without the
-registration, whose proofs mention the code. -/
+has no proof (`Registration.residue`). `hnr` is `scrubSel_noResidue`'s, given them. -/
 def withScrubSel {api : Api} (r : Registration api target) (fs : List (Nat × List (Nat × Nat)))
-    (bp0 : List (Reg × Nat)) (hpost : PostOut r.contract (retBitsOf r))
-    (hbp : ∀ s, r.contract.pre s → ∀ e ∈ bp0, ∀ i < e.2, ∃ g ∈ s.rd ++ s.wr,
-      g.Contains (s.gpr e.1 + BitVec.ofNat 64 i) 1)
-    (code : Prog isa) (W rb : Nat) (hc : r.code = code) (hW : r.stack = W) (hr : retBitsOf r = rb)
-    (hres : ∃ hc, (rtaint.check (RTaint.init W bp0) (scrubSel rb fs code) hc).any (RTaint.done rb) = true) :
+    (hpost : PostOut r.contract (retBitsOf r))
+    (hnr : FramesOk fs → sizeOf fs ≤ r.stack → retBitsOf r ≤ 64 →
+      NoResidue (scrubSel (retBitsOf r) fs r.code) r.contract (retBitsOf r)) :
     Registration api target :=
   if hfs : framesOkB fs = true then
   if hsz : sizeOf fs ≤ r.stack then
   if hrb : retBitsOf r ≤ 64 then
   if hw : r.written = [] then
-    scrubSelReg r fs bp0 (framesOk_of hfs) hsz hrb hpost hbp (by subst hc hW hr; exact hres) hw
+    scrubSelReg r fs (framesOk_of hfs) hsz hrb hpost (hnr (framesOk_of hfs) hsz hrb) hw
   else r else r else r else r
 
 /-! ## A buffer the first argument points to -/
