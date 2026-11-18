@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ecdsa.X86.CombLays
 import VerifiedGarbage.Proof.Weierstrass.X86.Rep
 import VerifiedGarbage.Proof.Weierstrass.X86.TCombJ
+import VerifiedGarbage.Proof.Weierstrass.X86.TCombRcb
 import VerifiedGarbage.Proof.Ecdsa.X86.Stages
 import VerifiedGarbage.Proof.Ecdsa.X86.Lays
 import VerifiedGarbage.Proof.Weierstrass.X86.Copy
@@ -10,7 +11,8 @@ import VerifiedGarbage.Proof.Weierstrass.X86.Copy
 /-!
 # ECDSA on x86 (32-bit): `[k]G`
 
-`Cfg.gMul` is the comb for a curve with one, else the ladder; either leaves
+`Cfg.gMul` is the comb for a curve with one (with Booth's digits and
+Jacobian additions, or by complete additions), else the ladder; each leaves
 `R = [k]G`, from the table of `k`'s bits, changing only the slots and word of
 `gW` (`gMul_ok`).
 -/
@@ -71,8 +73,9 @@ theorem flag_unch_gW {base : Addr} {m m' : Mem} (hu : Unch base (gW c) m m')
   · exact Or.inl (by omega_using [h0, h])
   · exact Or.inr h
 
-/-- Prepare the comb's Montgomery constant and retain its public table pointer. -/
-theorem combPrepare_ok (hc : CfgOk c) {d : CombData} (hcd : c.comb = some d)
+/-- Prepare the comb's Montgomery constant (`b`, or `3b`: `x`) and retain its public table
+pointer. -/
+theorem combPrepare_ok (hc : CfgOk c) {d : CombData} (hcd : c.comb = some d) (x : Nat)
     {base : Addr} {g : Reg → BitVec 32} {s : State} {k : Nat}
     (hs : Scr s base size) (F : Fixed c base g s.mem) (hkl : k < 2 ^ (64 * c.n))
     (ht₀ : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 0 + t)) = if k.testBit t then 1 else 0)
@@ -82,15 +85,16 @@ theorem combPrepare_ok (hc : CfgOk c) {d : CombData} (hcd : c.comb = some d)
     (hap : ∀ r ∈ s.wr ++ [below (s.gpr .esp) 20],
       Region.Disjoint ⟨(g .eax).setWidth 64, 8 * (c.combWords d).length⟩ r)
     (hsp : 20 ≤ (s.gpr .esp).toNat) :
-    WP isa (.block (setConst c.n (c.sl EM) (c.mont c.C.b))) s fun s₁ =>
+    WP isa (.block (setConst c.n (c.sl EM) (c.mont x))) s fun s₁ =>
       Keeps [.eax] s s₁ ∧ Scr s₁ base size ∧ ModOkW c.MP' size c.C.p s₁.mem base ∧
-      TCombFixed (c.combCfg d) c.C base size s₁ k ((g .eax).setWidth 64) (c.combWords d) := by
+      TCombFixed (c.combCfg d) c.C base size s₁ k ((g .eax).setWidth 64) (c.combWords d) ∧
+      Unch base (slW c [EM]) s.mem s₁.mem ∧ sv c base s₁ EM = c.mont x := by
   have h7 := hc.n10
   have hn := hs.nowrap
   have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by have := hc.p_ge; omega_using [this])
   have hp3 := hc.p_ge
-  refine WP.mono (setConst_ok hs (n := c.n) (o := c.sl EM) (x := c.mont c.C.b)
-    (sl_le c h7 (by decide)) (by have := hc.p_lt; have := hmont c.C.b; omega_arith))
+  refine WP.mono (setConst_ok hs (n := c.n) (o := c.sl EM) (x := c.mont x)
+    (sl_le c h7 (by decide)) (by have := hc.p_lt; have := hmont x; omega_arith))
     fun s₁ ⟨e₁, k₁, O₁⟩ => ?_
   have hs₁ := hs.of_keeps k₁ (by decide)
   have F₁ := F.unch h7 hn (fixedOk_slW (l := [EM]) (by decide)) O₁.unch
@@ -103,27 +107,25 @@ theorem combPrepare_ok (hc : CfgOk c) {d : CombData} (hcd : c.comb = some d)
       rw [List.mem_singleton.mp hw]; exact sl_le c h7 (by decide)) hout
   have hF : TCombFixed (c.combCfg d) c.C base size s₁ k ((g .eax).setWidth 64)
       (tcombWords (c.combCfg d).M.n (2 ^ (64 * (c.combCfg d).M.n)) c.C.p d.tbl) := by
-    refine ⟨?_, ?_, fun x hx => ?_, F₁.zero, ht₁, hkl, ?_, hTM₁, hout,
+    refine ⟨?_, fun y hy => ?_, F₁.zero, ht₁, hkl, ?_, hTM₁, hout,
       by rw [k₁.2.2, k₁.1 _ (by decide)]; exact hap, by rw [k₁.1 _ (by decide)]; exact hsp⟩
     · show toM c.C.p (2 ^ (64 * c.n)) (wordsVal s₁.mem _ (c.sl AP) c.n) = _
       rw [F₁.ap]; exact toM_cmont hc _
-    · show toM c.C.p (2 ^ (64 * c.n)) (wordsVal s₁.mem _ (c.sl EM) c.n) = _
-      rw [e₁]; exact toM_cmont hc _
     · simp only [combRo, TCombCfg.toComb, Cfg.combCfg, Cfg.rcbSlots, List.mem_cons, List.not_mem_nil,
-        or_false] at hx
-      rcases hx with rfl | rfl | rfl
+        or_false] at hy
+      rcases hy with rfl | rfl | rfl
       · exact lt_of_eq_of_lt F₁.ap (hmont _)
       · exact lt_of_eq_of_lt e₁ (hmont _)
       · exact lt_of_eq_of_lt F₁.zero (by omega_using [hp3])
     · change (s₁.mem.readW (off base Cfg.combPtr) 32).setWidth 64 = _
       rw [F₁.table (by simp [hcd])]
-  exact ⟨k₁, hs₁, modP_of hc F₁.mp, hF⟩
+  exact ⟨k₁, hs₁, modP_of hc F₁.mp, hF, O₁.unch, e₁⟩
 
 /-- `R = [k]G`, by the comb or the ladder, from the table of `k`'s bits, with
 `R = O` (for the ladder) and the comb's tables (`hTb`) where the comb reads
 them. -/
 theorem gMul_ok' (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c)
-    (hCo : ∀ d, c.comb = some d → CombOk c d) (ham3 : AM3 c.C) {base : Addr} {g : Reg → BitVec 32}
+    (hCo : ∀ d, c.comb = some d → CombOk c d) {base : Addr} {g : Reg → BitVec 32}
     {s : State} (hs : Scr s base size) (F : Fixed c base g s.mem) {k : Nat} (hkl : k < 2 ^ (64 * c.n))
     (hrx : sv c base s RX = 0) (hry : sv c base s RY = c.mont 1) (hrz : sv c base s RZ = 0)
     (ht₀ : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 0 + t)) = if k.testBit t then 1 else 0)
@@ -193,57 +195,58 @@ theorem gMul_ok' (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c)
     obtain ⟨hTM, hout, hap⟩ := hTb d hcd
     unfold Cfg.gMul at hsp
     rw [hcd] at hsp
+    dsimp only at hsp ⊢
     have hn := hs.nowrap
-    -- `b R mod p` in `EM`.
-    refine WP.seq (WP.mono (setConst_ok hs (n := c.n) (o := c.sl EM) (x := c.mont c.C.b)
-      (sl_le c h7 (by decide)) (by have := hc.p_lt; have := hmont c.C.b; omega_arith))
-      fun s₁ ⟨e₁, k₁, O₁⟩ => ?_)
-    have hs₁ := hs.of_keeps k₁ (by decide)
-    have F₁ := F.unch h7 hn (fixedOk_slW (l := [EM]) (by decide)) O₁.unch
-    have ht₁ : ∀ t < 64 * c.n, s₁.mem (off base (bitsAt c.n 0 + t)) = if k.testBit t then 1 else 0 :=
-      fun t ht => by
-        rw [tbl_unch (W := slW c [EM]) O₁.unch h7 (j := 0) (by decide) ht (tbl_apart_slW (by decide) 0 t)]
-        exact ht₀ t ht
-    have hTM₁ : TblMem s₁ ((g .eax).setWidth 64) (c.combWords d) :=
-      hTM.of_unch (by rw [k₁.2.1, k₁.2.2]) O₁.unch (fun w hw => by
-        rw [List.mem_singleton.mp hw]; exact sl_le c h7 (by decide)) hout
-    have hF : TCombFixed (c.combCfg d) c.C base size s₁ k ((g .eax).setWidth 64)
-        (tcombWords (c.combCfg d).M.n (2 ^ (64 * (c.combCfg d).M.n)) c.C.p d.tbl) := by
-      refine ⟨?_, ?_, fun x hx => ?_, F₁.zero, ht₁, hkl, ?_, hTM₁, hout,
-        by rw [k₁.2.2, k₁.1 _ (by decide)]; exact hap, by rw [k₁.1 _ (by decide)]; exact hsp20⟩
-      · show toM c.C.p (2 ^ (64 * c.n)) (wordsVal s₁.mem _ (c.sl AP) c.n) = _
-        rw [F₁.ap]; exact toM_cmont hc _
-      · show toM c.C.p (2 ^ (64 * c.n)) (wordsVal s₁.mem _ (c.sl EM) c.n) = _
-        rw [e₁]; exact toM_cmont hc _
-      · simp only [combRo, TCombCfg.toComb, Cfg.combCfg, Cfg.rcbSlots, List.mem_cons, List.not_mem_nil,
-          or_false] at hx
-        rcases hx with rfl | rfl | rfl
-        · exact lt_of_eq_of_lt F₁.ap (hmont _)
-        · exact lt_of_eq_of_lt e₁ (hmont _)
-        · exact lt_of_eq_of_lt F₁.zero (by omega_using [hp3])
-      · change (s₁.mem.readW (off base Cfg.combPtr) 32).setWidth 64 = _
-        rw [F₁.table (by simp [hcd])]
-    refine WP.mono (tcombJ_ok (tcombLay hc hd) hC ham3 hc.onG (tcombVals hc hC (hT d hcd).1) hc.p_lt
-      (by show 1 ≤ bitsAt c.n 0; rw [bitsAt_eq]; omega_using []) (hT d hcd).2 hkl hs₁
-      (modP_of hc F₁.mp) hF hsp.right) fun s' ⟨K', U', M', L', R'⟩ =>
-        ⟨(k₁.mono fun r hr => by rw [List.mem_singleton.mp hr]; simp [powClob, clob]).trans K', ?_, M', L', R'⟩
-    change Unch base ((slW c [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP] ++
-      wkW c) ++ [(bitsAt c.n 0 + 64 * c.n, 4 * (c.combCfg d).zw)]) s₁.mem s'.mem at U'
-    have hz := zw_le hd
-    refine Unch.cover (O₁.unch.trans U') fun w hw => ?_
-    rcases List.mem_append.mp hw with hw | hw
-    · rw [List.mem_singleton.mp hw]
-      exact ⟨_, List.mem_append_left _ (List.mem_map_of_mem (f := fun i => (c.sl i, 8 * c.n))
-        (show EM ∈ [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP, EM] by decide)),
-        Nat.le_refl _, Nat.le_refl _⟩
-    rcases List.mem_append.mp hw with hw | hw
-    · rcases List.mem_append.mp hw with hw | hw
-      · have sub : ∀ i ∈ [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP],
-            i ∈ [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP, EM] := by decide
-        exact ⟨w, List.mem_append_left _ (List.map_subset _ sub hw), Nat.le_refl _, Nat.le_refl _⟩
-      · exact ⟨w, List.mem_append_right _ (List.mem_append_left _ hw), Nat.le_refl _, Nat.le_refl _⟩
-    · rw [List.mem_singleton.mp hw]
-      exact ⟨_, List.mem_append_right _ (List.mem_append_right _ (List.mem_singleton_self _)), Nat.le_refl _,
-        by dsimp only; omega_using [hz]⟩
+    -- What the comb and the constant in `EM` write is `[k]G`'s to write.
+    have cover : ∀ {m₁ m' : Mem}, Unch base (slW c [EM]) s.mem m₁ →
+        Unch base (slW c [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP] ++
+          wkW c ++ [(bitsAt c.n 0 + 64 * c.n, 4)]) m₁ m' → Unch base (gW c) s.mem m' := by
+      intro m₁ m' U₁ U'
+      refine Unch.cover (U₁.trans U') fun w hw => ?_
+      rcases List.mem_append.mp hw with hw | hw
+      · rw [List.mem_singleton.mp hw]
+        exact ⟨_, List.mem_append_left _ (List.mem_map_of_mem (f := fun i => (c.sl i, 8 * c.n))
+          (show EM ∈ [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP, EM] by decide)),
+          Nat.le_refl _, Nat.le_refl _⟩
+      rcases List.mem_append.mp hw with hw | hw
+      · rcases List.mem_append.mp hw with hw | hw
+        · have sub : ∀ i ∈ [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP],
+              i ∈ [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP, EM] := by decide
+          exact ⟨w, List.mem_append_left _ (List.map_subset _ sub hw), Nat.le_refl _, Nat.le_refl _⟩
+        · exact ⟨w, List.mem_append_right _ (List.mem_append_left _ hw), Nat.le_refl _, Nat.le_refl _⟩
+      · exact ⟨w, List.mem_append_right _ (List.mem_append_right _ hw), Nat.le_refl _, Nat.le_refl _⟩
+    have hkeep : ∀ {s₁ : State}, Keeps [.eax] s s₁ → Keeps powClob s s₁ := fun k₁ =>
+      k₁.mono fun r hr => by rw [List.mem_singleton.mp hr]; simp [powClob, clob]
+    by_cases hjac : d.jac = true
+    · -- Booth's digits and Jacobian additions, with `b R mod p` in `EM`.
+      rw [ite_eq_left hjac] at hsp ⊢
+      refine WP.seq (WP.mono (combPrepare_ok hc hcd c.C.b hs F hkl ht₀ hTM hout hap hsp20)
+        fun s₁ ⟨k₁, hs₁, M₁, hF, U₁, _⟩ => ?_)
+      refine WP.mono (tcombJ_ok (tcombLay hc hd) hC ((hT d hcd).2 hjac).2 hc.onG
+        (tcombVals hc hC (hT d hcd).1) hc.p_lt
+        (by show 1 ≤ bitsAt c.n 0; rw [bitsAt_eq]; omega_using []) ((hT d hcd).2 hjac).1 hkl hs₁
+        M₁ hF hsp.right) fun s' ⟨K', U', M', L', R'⟩ => ⟨(hkeep k₁).trans K', ?_, M', L', R'⟩
+      change Unch base ((slW c [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP] ++
+        wkW c) ++ [(bitsAt c.n 0 + 64 * c.n, 4 * (c.combCfg d).zw)]) s₁.mem s'.mem at U'
+      have hz := zw_le hd hjac
+      refine cover U₁ (Unch.cover U' fun w hw => ?_)
+      rcases List.mem_append.mp hw with hw | hw
+      · exact ⟨w, List.mem_append_left _ hw, Nat.le_refl _, Nat.le_refl _⟩
+      · rw [List.mem_singleton.mp hw]
+        exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), Nat.le_refl _,
+          by dsimp only; omega_using [hz]⟩
+    · -- Complete additions, with `3b R mod p` in `EM`.
+      have htop := hd.top (Bool.not_eq_true _ ▸ hjac)
+      rw [ite_eq_right hjac] at hsp ⊢
+      refine WP.seq (WP.mono (combPrepare_ok hc hcd (3 * c.C.b) hs F hkl ht₀ hTM hout hap hsp20)
+        fun s₁ ⟨k₁, hs₁, M₁, hF, U₁, e₁⟩ => ?_)
+      refine WP.mono (comb_ok (tcombLay hc hd) ⟨htop.1, htop.2⟩ hC hc.onG
+        (tcombVals hc hC (hT d hcd).1) hc.p_lt hs₁ M₁ hF (by
+          show toM c.C.p (2 ^ (64 * c.n)) (sv c base s₁ EM) = _
+          rw [e₁]; exact toM_cmont hc _) hsp.right)
+        fun s' ⟨K', U', M', L', R'⟩ => ⟨(hkeep k₁).trans K', ?_, M', L', R'⟩
+      change Unch base (slW c [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP] ++
+        wkW c) s₁.mem s'.mem at U'
+      exact cover U₁ (U'.mono fun w hw => List.mem_append_left _ hw)
 
 end VG.Proof.Ecdsa.X86

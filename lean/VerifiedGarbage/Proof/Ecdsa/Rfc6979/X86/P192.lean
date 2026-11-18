@@ -1,12 +1,14 @@
 module
 
+import VerifiedGarbage.Proof.Framework.ConstMem
+meta import VerifiedGarbage.Proof.Framework.ConstMem
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Curve
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.TableSat
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
-public import VerifiedGarbage.Proof.Ecdsa.X86.P192.Contract
+public import VerifiedGarbage.Proof.Ecdsa.X86.P192.Comb
 public import VerifiedGarbage.Spec.Ecdsa.P192
-import VerifiedGarbage.Proof.Ecdsa.X86.P192.Lit
-public import VerifiedGarbage.Impl.Ecdsa.P192.X86
+import VerifiedGarbage.Proof.Ecdsa.X86.P192.CombLit
+public import VerifiedGarbage.Impl.Ecdsa.P192.X86Comb
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -14,16 +16,16 @@ import VerifiedGarbage.Proof.Weierstrass.X86.LadderP
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Curve
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.TableSat
 meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
-meta import VerifiedGarbage.Proof.Ecdsa.X86.P192.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.X86.P192.Comb
 meta import VerifiedGarbage.Spec.Ecdsa.P192
-meta import VerifiedGarbage.Proof.Ecdsa.X86.P192.Verified
-meta import VerifiedGarbage.Proof.Ecdsa.X86.P192.Lit
-meta import VerifiedGarbage.Impl.Ecdsa.P192.X86
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.CombCore
+meta import VerifiedGarbage.Proof.Ecdsa.X86.P192.CombLit
+meta import VerifiedGarbage.Impl.Ecdsa.P192.X86Comb
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Weierstrass.X86.LadderP
-public import VerifiedGarbage.Proof.Ecdsa.X86.P192.Verified
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.CombCore
 
 /-!
 # Deterministic ECDSA on x86 (32-bit): P-192
@@ -46,14 +48,9 @@ theorem p192_nBits : Spec.Ecdsa.nBits Spec.P192.curve = 192 := by
   have h₂ : Spec.P192.curve.n.log2 < 192 := (Nat.log2_lt (by decide +kernel)).mpr (by decide +kernel)
   omega_using [h₁, h₂]
 
-theorem core_pre_192 {s : State} (h : (coreK Impl.Ecdsa.X86.p192).pre s) :
-    Proof.Ecdsa.X86.P192.signX86.pre s := by
-  obtain ⟨rd, wr, oc, od, og, ok, dc, gc, kc, ao, ac, ro, rc, no, nd, ng, nk, nc, sp, lo, so, ss, _⟩ := h
-  exact ⟨rd, wr, oc, od, og, ok, dc, gc, kc, ao, ac, ro, rc, no, nd, ng, nk, nc, sp, lo, so, ss⟩
-
 /-- P-192, with the group law `hL`. -/
 def p192 (hL : Weierstrass.Law Spec.P192.curve) : RfcCurve where
-  E := Impl.Ecdsa.X86.p192
+  E := Impl.Ecdsa.X86.p192Comb
   inst := Spec.Ecdsa.P192.inst
   curve := rfl
   big := false
@@ -62,22 +59,24 @@ def p192 (hL : Weierstrass.Law Spec.P192.curve) : RfcCurve where
   sh := 0
   sh_eq := by show 8 * 24 - Spec.Ecdsa.nBits Spec.P192.curve = 0; rw [p192_nBits]
   coreN := "vg_ecdsa_p192_sign_k"
-  coreC := Impl.Ecdsa.X86.signP192
-  coreX := fun s h => Proof.Ecdsa.X86.P192.sign_x86 hL s (core_pre_192 h)
-  coreCT := by
-    intro s t tr₁ tr₂ s' t' hs ht hp
-    obtain ⟨he, a0, a1, a2, a3, a4, _⟩ := hp
-    exact Proof.Ecdsa.X86.P192.sign_ct s t tr₁ tr₂ s' t' (core_pre_192 hs) (core_pre_192 ht)
-      ⟨he, a0, a1, a2, a3, a4⟩
+  coreC := Impl.Ecdsa.X86.signP192Comb
+  coreX := coreX_comb (Proof.Ecdsa.X86.P192.p192Comb_ok) hL (Proof.Ecdsa.X86.P192.p192Comb_tables hL) rfl Proof.Ecdsa.X86.P192.p192Comb_shape
+    Proof.Ecdsa.X86.P192.signComb_sp
+  coreCT := coreCT_comb (Proof.Ecdsa.X86.P192.p192Comb_ok) hL (Proof.Ecdsa.X86.P192.p192Comb_tables hL) rfl Proof.Ecdsa.X86.P192.p192Comb_shape
+    (Proof.Ecdsa.X86.P192.p192Comb_gMul hL) Proof.Ecdsa.X86.P192.signCT Proof.Ecdsa.X86.P192.signComb_sp
   coreNs := NoSp.of_all (by lit_decide)
   coreStack := by lit_decide
   blk := by rfcT_decide
 
 /-- `vg_ecdsa_p192_sign`, with the tables of `vs`. -/
-theorem p192T_verified (hL : Weierstrass.Law Spec.P192.curve) (vs : List Proof.HmacTable.X86.HVar) (h : OK vs) :
+theorem p192T_verified (hL : Weierstrass.Law Spec.P192.curve) (vs : List Proof.HmacTable.X86.HVar) (h : OK vs ∧ "VG_P192_COMB" ∉ Proof.HmacTable.X86.names vs) :
     Verified X86.target (signCodeT (p192 hL) Spec.Ecdsa.Rfc6979.Curves.p192.tries vs)
-      (specK Spec.Ecdsa.Rfc6979.Curves.p192 Impl.Ecdsa.X86.p192.combConsts vs) := by
-  have hsat := sat_nil (T := Spec.Ecdsa.Rfc6979.Curves.p192) h (by decide) rfl
-  exact signT_verified ⟨rfl, by decide, by decide⟩ rfl h hsat
+      (specK Spec.Ecdsa.Rfc6979.Curves.p192 Impl.Ecdsa.X86.p192Comb.combConsts vs) := by
+  have hsat := sat_one (T := Spec.Ecdsa.Rfc6979.Curves.p192) h.1 (constMem 0x100000 Proof.Ecdsa.X86.P192.p192W) h.2
+    (by rw [Proof.Ecdsa.X86.P192.p192W_length]; decide)
+    (constMem_held 0x100000 Proof.Ecdsa.X86.P192.p192W (by rw [Proof.Ecdsa.X86.P192.p192W_length]; decide)) (by decide) rfl
+  rw [show Impl.Ecdsa.X86.p192Comb.combConsts = [("VG_P192_COMB", Proof.Ecdsa.X86.P192.p192W)] from Proof.Ecdsa.X86.P192.p192Comb_consts]
+  exact signT_verified (R := p192 hL) ⟨rfl, by decide, by decide⟩ rfl h.1
+    (by rw [show (p192 hL).E.combConsts = [("VG_P192_COMB", Proof.Ecdsa.X86.P192.p192W)] from Proof.Ecdsa.X86.P192.p192Comb_consts]; exact hsat)
 
 end VG.Proof.Ecdsa.Rfc6979.X86

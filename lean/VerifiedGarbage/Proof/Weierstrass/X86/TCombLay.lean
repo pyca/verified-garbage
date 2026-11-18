@@ -82,7 +82,7 @@ structure TCombLay (K : TCombCfg) (size : Nat) : Prop where
   bits_w : ∀ w ∈ combW K.toComb, K.bits + K.kbytes + 4 * K.zw ≤ w.1 ∨ w.1 + w.2 ≤ K.bits
   bits_sl : ∀ x ∈ K.M.mo :: combSlots K.toComb,
     K.bits + K.kbytes + 4 * K.zw ≤ x ∨ x + 8 * K.M.n ≤ K.bits + K.kbytes
-  n : 1 ≤ K.M.n ∧ K.M.n ≤ 6
+  n : 1 ≤ K.M.n ∧ K.M.n ≤ 12
   exy : K.E.y = K.E.x + 8 * K.M.n
   tbl : K.tblBytes < 2 ^ 31
 
@@ -144,5 +144,18 @@ theorem tbl_entry {s : State} {T : Addr} {n R p H J : Nat} {tbl : List (List (Na
     wordsVal s.mem (T + BitVec.ofNat 64 (j * (16 * n * H))) (16 * n * m + 8 * n) n =
       (combAt tbl j m).2 * R % p :=
   tcombWords_entry hT.val hJ hH hj hm hx hy
+
+/-- A table past the working space: so is each of its bytes, by its table `i` (of `tb` bytes) and
+its offset there. -/
+theorem tbl_out_at {base T : Addr} {size L tb i J : Nat}
+    (hout : ∀ q < L, ∀ b < 8, size ≤ ofs base (T + BitVec.ofNat 64 (8 * q) + BitVec.ofNat 64 b))
+    (hL : 8 * L = J * tb) (hi : i < J) :
+    ∀ d < tb, size ≤ ofs base (T + BitVec.ofNat 64 (i * tb) + BitVec.ofNat 64 d) := by
+  intro d hd
+  have h2 := Nat.mul_le_mul_right tb (show i + 1 ≤ J from hi)
+  rw [Nat.succ_mul] at h2
+  have := hout ((i * tb + d) / 8) (by omega_using [h2, hL, hd]) ((i * tb + d) % 8) (Nat.mod_lt _ (by decide))
+  rw [Offset.add_add, Nat.div_add_mod] at this
+  rwa [Offset.add_add]
 
 end VG.Proof.Weierstrass.X86

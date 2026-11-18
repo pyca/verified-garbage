@@ -78,7 +78,7 @@ theorem stepJ_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : Ad
     rw [hI.unch.wordsVal (tcombW_ro hL (x := K.zero) (by simp [combRo, TCombCfg.toComb]))
       (by have := hle K.zero (by tcomb_mem); omega_using [hn, this]), hF.zero]
   refine WP.mono (tentryJ_ok hL hC hV hpn hI.scr hI.mod hjn hI.esi hb1 (c := true) (Or.inl ⟨rfl, hj⟩)
-    hI.bits hz hI.tsym hI.tbl) fun s₂ h₂ => WP.seq (WP.mono h₂ fun s₃ E₃ => ?_)
+    hI.bits hz hI.tsym hI.tbl hF.out) fun s₂ h₂ => WP.seq (WP.mono h₂ fun s₃ E₃ => ?_)
   obtain hEW : ∀ w ∈ [(K.E.x, 8 * K.M.n), (K.E.y, 8 * K.M.n), (K.E.z, 8 * K.M.n), (K.neg, 8 * K.M.n),
       (K.M.tmp, 8 * K.M.n), (K.wk, 64 * K.M.n), Mont.outW], w ∈ combWx K := fun w hw =>
     (List.mem_append.mp (show w ∈ combEntryW K.toComb ++ [(K.wk, 64 * K.M.n), Mont.outW] from hw)).elim

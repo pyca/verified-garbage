@@ -27,8 +27,24 @@ mod vg_ffdh_vetted_groups_x86;
 pub use vg_ffdh_vetted_groups_x86::VG_FFDH_VETTED_GROUPS_X86;
 
 #[rustfmt::skip]
+mod vg_p192_comb;
+pub use vg_p192_comb::VG_P192_COMB;
+
+#[rustfmt::skip]
+mod vg_p224_comb;
+pub use vg_p224_comb::VG_P224_COMB;
+
+#[rustfmt::skip]
 mod vg_p256_comb;
 pub use vg_p256_comb::VG_P256_COMB;
+
+#[rustfmt::skip]
+mod vg_p384_comb;
+pub use vg_p384_comb::VG_P384_COMB;
+
+#[rustfmt::skip]
+mod vg_p521_comb;
+pub use vg_p521_comb::VG_P521_COMB;
 
 #[rustfmt::skip]
 mod vg_rsa_keygen_trial32;

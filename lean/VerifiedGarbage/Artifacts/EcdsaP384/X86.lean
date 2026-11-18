@@ -4,7 +4,7 @@ import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P384.Lit
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Proof.Ecdsa.X86.P384.Verified
-import VerifiedGarbage.Proof.Ecdsa.X86.P384.Lit
+import VerifiedGarbage.Proof.Ecdsa.X86.P384.CombLit
 public import VerifiedGarbage.Impl.Ecdsa.Verify.P384.X86
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P384.Verified
 import VerifiedGarbage.Proof.Framework.TaintSum
@@ -78,7 +78,7 @@ open VG.Proof.HmacTable.X86 (tables names vars)
 
 def artifactsFor (vs1 : List Proof.Sha1.X86.Variants.Backend)
     (vs256 : List Proof.Sha256.X86.Variants.Backend) : List Artifact :=
-  if hv : OK (vars vs1 vs256) then [
+  if hv : OK (vars vs1 vs256) ∧ "VG_P384_COMB" ∉ names (vars vs1 vs256) then [
     Spec.Ecdsa.Rfc6979.Curves.p384SignApi.artifact X86.target {
       tables := [("hmac", tables (vars vs1 vs256))]
       code := signCodeT (p384 hasLaw.law) Spec.Ecdsa.Rfc6979.Curves.p384.tries (vars vs1 vs256)
