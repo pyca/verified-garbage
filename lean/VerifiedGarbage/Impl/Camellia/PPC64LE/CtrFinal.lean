@@ -44,11 +44,14 @@ open VG.Impl.AesCfb.PPC64LE (finalSaved finalRestore)
 open VG.Impl.AesCtr.PPC64LE (zeroSlots tailKey)
 open VG.Impl.Modes.PPC64LE (tailByte)
 
-/-- `vg_camellia_ctr`, with its working space on the stack. -/
+/-- `vg_camellia_ctr`'s code, with its working space on the stack: called as an
+internal function of its own, `vg_camellia_ctr_core`, rather than as
+`vg_camellia_ctr`, which also clears the registers it leaves
+(`Proof.Camellia.PPC64LE.Scrub.ctrReg`). -/
 def ctrFramed : Prog isa := Impl.StackScratch.PPC64LE.withStackScratchWiped 3408 .r8 422 ctr
 
-/-- A call of `vg_camellia_ctr`. -/
-def ctrCall : Prog isa := .call "vg_camellia_ctr" ctrFramed
+/-- A call of `vg_camellia_ctr`'s code, as `vg_camellia_ctr_core`. -/
+def ctrCall : Prog isa := .call "vg_camellia_ctr_core" ctrFramed
 
 /-- The return address and the registers saved in `save`, at `r8`. -/
 def ctrFinalSave : List Instr := .mflr .r0 :: finalSaved.map fun (r, d) => .store .d r .r8 d
