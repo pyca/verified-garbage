@@ -856,6 +856,9 @@ theorem narrowS_unknowns (hk : 6 ≤ (sig.words abi.ptrBits).length) (hb : 16 + 
   obtain ⟨hr, -⟩ := argsState_run hs hk hb hb1
   have k := execBlock_keep (M := isa) (fun s : State => s.unknowns) (ok := fun _ => True)
     (fun _ he => RTaint.exec_unknowns he) (fun _ _ => trivial) hr
+  -- `exact k` as it stands compares the two states before it unfolds `narrowS`
+  obtain w : ∀ (t : State) (rd wr : List Region), (t.withRegions rd wr).unknowns = t.unknowns := fun _ _ _ => rfl
+  rw [narrowS, w]
   exact k
 
 /-- Two runs of `withStackArgScratch bytes` of code that keeps `Same` of the

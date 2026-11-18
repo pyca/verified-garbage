@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Rounds
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 import VerifiedGarbage.Proof.Framework.PlainSimp
 
 @[expose] public section
@@ -88,7 +89,7 @@ theorem transposePrep_ok (s : State) (r : Fin 4) :
   have hn3 := fun k => (vreg_scratch k).2.2.2
   apply WP.of_runBlock
   simp only [↓reduceIte, transposePrep, runBlock_cons, runBlock_nil,
-    exec, VOp.eval, isa, runStep_some, Option.map_some, Option.some.injEq,
+    reduceExec, reduceVOpEval, isa, runStep_some, Option.map_some, Option.some.injEq,
     exists_eq_left', RegUpd.v_setV, hn0, hn1, hn2]
   refine ⟨?_, ?_, ?_, ?_, ?_, ⟨?_, ?_, ?_, ?_, ?_⟩⟩
   · simp only [RegUpd.v_setV]; rfl
@@ -109,7 +110,7 @@ theorem transposeEnd_ok {s₀ s : State} {r : Fin 4} (h : TPrep s₀ r s) :
   have hn2 := fun k => Ne.symm (vreg_scratch k).2.2.1
   have hn3 := fun k => Ne.symm (vreg_scratch k).2.2.2
   apply WP.of_runBlock
-  simp only [transposeEnd, runBlock_cons, runBlock_nil, exec, VOp.eval, isa, runStep_some,
+  simp only [transposeEnd, runBlock_cons, runBlock_nil, reduceExec, reduceVOpEval, isa, runStep_some,
     Option.map_some, Option.some.injEq, exists_eq_left', RegUpd.v_setV,
     hn0, hn1, hn2, hn3, ite_false, h.t24, h.t25, h.t26, h.t27]
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩

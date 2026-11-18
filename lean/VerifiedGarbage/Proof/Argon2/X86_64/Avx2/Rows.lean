@@ -90,10 +90,18 @@ theorem columns_eq (v : Vector Word 16) :
   apply Vector.ext
   intro j hj
   simp only [mixColumns_get]
+  obtain g0 := fun (w : Vector Word 16) => GB_get' w (a := 0) (b := 4) (c := 8) (d := 12) (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by decide)
+  obtain g1 := fun (w : Vector Word 16) => GB_get' w (a := 1) (b := 5) (c := 9) (d := 13) (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by decide)
+  obtain g2 := fun (w : Vector Word 16) => GB_get' w (a := 2) (b := 6) (c := 10) (d := 14) (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by decide)
+  obtain g3 := fun (w : Vector Word 16) => GB_get' w (a := 3) (b := 7) (c := 11) (d := 15) (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by decide)
   obtain rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
     rfl := cases16 hj
   all_goals
-    simp (disch := decide) only [GB_get', val_lit, Nat.reduceMod, Nat.reduceDiv, Nat.reduceAdd,
+    simp only [g0, g1, g2, g3, val_lit, Nat.reduceMod, Nat.reduceDiv, Nat.reduceAdd,
       Nat.reduceEqDiff, ↓reduceIte, mixAt]
 
 /-- The four diagonal GBs of P. -/
@@ -103,10 +111,18 @@ theorem diagonals_eq (v : Vector Word 16) :
   apply Vector.ext
   intro j hj
   simp only [rotRows_get, mixColumns_get]
+  obtain g0 := fun (w : Vector Word 16) => GB_get' w (a := 0) (b := 5) (c := 10) (d := 15) (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by decide)
+  obtain g1 := fun (w : Vector Word 16) => GB_get' w (a := 1) (b := 6) (c := 11) (d := 12) (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by decide)
+  obtain g2 := fun (w : Vector Word 16) => GB_get' w (a := 2) (b := 7) (c := 8) (d := 13) (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by decide)
+  obtain g3 := fun (w : Vector Word 16) => GB_get' w (a := 3) (b := 4) (c := 9) (d := 14) (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by decide)
   obtain rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
     rfl := cases16 hj
   all_goals
-    simp (disch := decide) only [GB_get', val_lit, Nat.reduceMod, Nat.reduceDiv, Nat.reduceAdd,
+    simp only [g0, g1, g2, g3, val_lit, Nat.reduceMod, Nat.reduceDiv, Nat.reduceAdd,
       Nat.reduceMul, Nat.reduceEqDiff, ↓reduceIte, mixAt]
 
 /-- P is two rounds of GB on the columns of the rows. -/
@@ -706,7 +722,7 @@ theorem storeRow_ok {i : Nat} (hi : i < 8) {s : State} {p : Addr} (hs : Scratch 
   simp only [o]
   refine ⟨fun x => ?_, ?_, ?_, ?_, fun h => ((((h.setMem _).setMem _).setMem _).setMem _)⟩
   · have hx := x.isLt
-    simp only [working_write256 _ p (show 4 * i + 3 < 32 by omega_arith),
+    rw [working_write256 _ p (show 4 * i + 3 < 32 by omega_arith),
       working_write256 _ p (show 4 * i + 2 < 32 by omega_arith),
       working_write256 _ p (show 4 * i + 1 < 32 by omega_arith),
       working_write256 _ p (show 4 * i + 0 < 32 by omega_arith)]

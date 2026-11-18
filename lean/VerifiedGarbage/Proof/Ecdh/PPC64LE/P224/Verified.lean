@@ -121,10 +121,8 @@ theorem win_mulPowOk (hL : Weierstrass.Law Spec.P224.curve) (s₀ : State) :
     by rw [e₆ (by decide) (by decide) (by decide)]; exact lx₅,
     by rw [e₆ (by decide) (by decide) (by decide)]; exact ly₅,
     by rw [e₆ (by decide) (by decide) (by decide)]; exact lz₅, lt₆, ?_⟩
-  · rw [e₆ hi (by intro h; subst h; simp at hl) (by
-      simp only [List.mem_cons, Proof.Ecdsa.PPC64LE.ladIx, not_or] at hl
-      simp only [DX, T2, DY, DZ, TX, TY, TZ, T0, T1] at hl ⊢
-      omega), e₅ hi hl]
+  · rw [e₆ hi (by intro h; subst h; simp at hl)
+      ((by decide : ∀ i < 45, i ∉ ACC :: PT :: Proof.Ecdsa.PPC64LE.ladIx → i < DX ∨ T2 < i) _ hi hl), e₅ hi hl]
   · rw [flagW, (U₅.trans U₆).word apF (by decide), ← flagW]
   · intro t ht
     rw [tbl_unch U₆ h7 (j := 2) (by decide) ht (tbl_apart_chainW h7 2 t),

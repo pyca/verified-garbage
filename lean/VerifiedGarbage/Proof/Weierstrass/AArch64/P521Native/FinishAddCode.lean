@@ -95,7 +95,7 @@ theorem finish_add_machine_wp {s : State} {Q : State → Prop} :
     finishAddOps,finishPointOp,rcb3,finishAddSlotMap,finishAddP,finishAddQ,finishAddOut,List.map_cons,List.map_nil,
     fieldProgram,fieldCode,id,Nat.reduceEqDiff,ite_false,normalizeMulStep,
     finish_add_source152,finish_add_source153,finish_add_source154,finish_add_source155,finish_add_source156,finish_add_source157,finish_add_source158,finish_add_source159,finish_add_source160,finish_add_source161,finish_add_source162,finish_add_source163,finish_add_source164,finish_add_source165,finish_add_source166]
-  repeat' first | rfl | rw [VG.WP.seq_iff] | rw [VG.WP.block_append_iff] | rw [VG.WP.block_nil_iff] | (apply finish_wp_post_iff; intro t)
+  repeat' first | with_reducible rfl | rw [VG.WP.seq_iff] | rw [VG.WP.block_append_iff] | rw [VG.WP.block_nil_iff] | (apply finish_wp_post_iff; intro t) | rfl
 
 /-- Full canonical-field contract for the exact final complete-addition block
 sequence, with the generic field interpreter's public and memory frame. -/

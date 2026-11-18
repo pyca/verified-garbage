@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Proof.Rc2.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 public import VerifiedGarbage.Impl.Rc2.X86_64.Cbc
 public import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
@@ -269,7 +270,7 @@ theorem copy64_ok (s : State) (src dst : Reg) (a b : Nat) (hne : dst ≠ .rax)
       Keep [.rax] {s with
         mem := s.mem.writeW (s.gpr dst + BitVec.ofNat 64 b) (s.mem.readW (s.gpr src + BitVec.ofNat 64 a) 64)} s' := by
   refine ⟨_, by
-    simp only [runBlock_cons, runStep_some, runBlock_nil, memOp, exec, readSrc,
+    simp only [runBlock_cons, runStep_some, runBlock_nil, memOp, reduceExec, readSrc,
       State.load64, State.store64, State.ea, offset_nat, readable, ite_true,
       Option.map_some, gpr_setReg, hne, ite_false,
       wr_setReg, writable]
@@ -290,7 +291,7 @@ theorem xor64_ok (s : State) (dst iv : Reg) (hd : dst ≠ .rax) (hi : iv ≠ .ra
       .store (memOp dst 0) .rax] s = some s' ∧
       Keep [.rax] {s with mem := s.mem.writeW (s.gpr dst) (s.mem.readW (s.gpr dst) 64 ^^^ s.mem.readW (s.gpr iv) 64)} s' := by
   refine ⟨_, by
-    simp only [runBlock_cons, runStep_some, runBlock_nil, memOp, exec, execAlu, readSrc,
+    simp only [runBlock_cons, runStep_some, runBlock_nil, memOp, reduceExec, execAlu, readSrc,
       State.load64, State.store64, State.ea, offset_nat,
       BitVec.add_zero, readDst, readIv, ite_true, Option.map_some, Option.bind_some,
       gpr_setReg, gpr_arithFlags, mem_setReg, rd_setReg, wr_setReg, wr_arithFlags,
@@ -310,7 +311,7 @@ theorem advance_ok (s : State) :
       s'.zf = some ((s.gpr .rbp - 1) == 0) ∧ Keep [.rsi, .rbp] s s' := by
   refine ⟨_, by
     simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, BitVec.reduceSignExtend, Impl.Rc2.X86_64.Cbc.advance,
-      runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc,
+      runBlock_cons, runStep_some, runBlock_nil, reduceExec, execAlu, readSrc,
       Option.bind_some, gpr_setReg, gpr_arithFlags]
     rfl, ?_⟩
   refine ⟨?_, ?_, ?_, ?_⟩

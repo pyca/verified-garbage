@@ -210,7 +210,7 @@ theorem flushCopy_ok {H : Block} {o : Nat} {s : State} (h : FlIn c st w sp k7 k8
   · rw [blockAt_frame f₃ fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact L.ctx_w (by decide) (by decide), h.hH]
   · rw [hm₃, bytesAt_writeBytes_prefix _ _ _ (by rw [hlen]; omega_arith) (by decide), hlen, hB₂]
-    congr 1
+    refine congrArg (HAppend.hAppend _) ?_
     have := store4_zero_bytes s.mem (State.addr w + BitVec.ofNat 64 96)
     rw [← hm₂, show (16 : Nat) = o + (16 - o) by omega_arith, bytesAt_add] at this
     have e := congrArg (List.drop o) this

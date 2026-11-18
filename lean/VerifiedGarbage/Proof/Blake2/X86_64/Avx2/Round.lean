@@ -79,10 +79,18 @@ theorem columns_eq (x y : Nat → BitVec 64) (v : Work 64) :
   apply Vector.ext
   intro j hj
   simp only [mixCols_get]
+  obtain g0 := fun (w : Work 64) (x y : BitVec 64) => G_get' w (a := 0) (c := 4) (d := 8) (e := 12)
+    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) x y
+  obtain g1 := fun (w : Work 64) (x y : BitVec 64) => G_get' w (a := 1) (c := 5) (d := 9) (e := 13)
+    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) x y
+  obtain g2 := fun (w : Work 64) (x y : BitVec 64) => G_get' w (a := 2) (c := 6) (d := 10) (e := 14)
+    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) x y
+  obtain g3 := fun (w : Work 64) (x y : BitVec 64) => G_get' w (a := 3) (c := 7) (d := 11) (e := 15)
+    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) x y
   obtain rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
     rfl := cases16 hj
   all_goals
-    simp (disch := decide) only [G_get', val_lit, Nat.reduceMod, Nat.reduceDiv, Nat.reduceAdd,
+    simp only [g0, g1, g2, g3, val_lit, Nat.reduceMod, Nat.reduceDiv, Nat.reduceAdd,
       Nat.reduceEqDiff, ↓reduceIte, mixAt]
 
 /-- The four diagonal `G`s of a round, with the message words `x i` and `y i`
@@ -94,10 +102,18 @@ theorem diagonals_eq (x y : Nat → BitVec 64) (v : Work 64) :
   apply Vector.ext
   intro j hj
   simp only [rotOut_get, rotIn_get, mixCols_get]
+  obtain g0 := fun (w : Work 64) (x y : BitVec 64) => G_get' w (a := 0) (c := 5) (d := 10) (e := 15)
+    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) x y
+  obtain g1 := fun (w : Work 64) (x y : BitVec 64) => G_get' w (a := 1) (c := 6) (d := 11) (e := 12)
+    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) x y
+  obtain g2 := fun (w : Work 64) (x y : BitVec 64) => G_get' w (a := 2) (c := 7) (d := 8) (e := 13)
+    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) x y
+  obtain g3 := fun (w : Work 64) (x y : BitVec 64) => G_get' w (a := 3) (c := 4) (d := 9) (e := 14)
+    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) x y
   obtain rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
     rfl := cases16 hj
   all_goals
-    simp (disch := decide) only [G_get', val_lit, Nat.reduceMod, Nat.reduceDiv, Nat.reduceAdd,
+    simp only [g0, g1, g2, g3, val_lit, Nat.reduceMod, Nat.reduceDiv, Nat.reduceAdd,
       Nat.reduceMul, Nat.reduceEqDiff, ↓reduceIte, mixAt]
 
 /-- Round `r` of BLAKE2b on four columns: the column `G`s, then the diagonal

@@ -390,9 +390,7 @@ theorem random_signer_retry (S : Signer) {s t : State} {attempts : Nat} (h : Ran
   intro r hr
   by_cases hl : r = .x30
   · subst r; exact hwl.trans hul
-  · exact (hkw.gpr r (by
-      simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp_all)).trans (huc r hr hl)
+  · exact (hkw.gpr r (by revert hr hl; cases r <;> decide)).trans (huc r hr hl)
 
 end VG.Proof.Dsa.AArch64
 

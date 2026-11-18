@@ -738,11 +738,16 @@ theorem step {i : Nat} (hi : i < 8) {s : State} (hI : Inv s₀ i s) :
     by_cases h2 : w < 32 * i + 16
     · rw [wordAt_write256 _ _ (by omega_arith) _ (by omega_arith), ite_eq_right_of_eq_false _ _ (eq_false (by omega_arith)),
         wordAt_ystore s6 _ _ _ (by omega_arith) (by omega_arith) (by omega_arith) h2,
-        show accIdx w = 2 * pairY i ((w - 32 * i) / 8) ((w - 32 * i) % 8) by unfold accIdx pairY; omega_arith]
+        show accIdx w = 2 * pairY i ((w - 32 * i) / 8) ((w - 32 * i) % 8) from
+          (congrArg accIdx (by omega_using [h1] :
+            w = 32 * i + 16 * 0 + 8 * ((w - 32 * i) / 8) + (w - 32 * i) % 8)).trans
+            ((accIdx_eq (by decide) (by omega_using [h1, h2]) (Nat.mod_lt _ (by decide))).trans (Nat.add_zero _))]
       exact (V6 _ (by omega_arith)).1 _ (Nat.mod_lt _ (by omega_arith))
     · rw [wordAt_ystore s7 _ _ _ (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith), l7,
-        show accIdx w = 2 * pairY i ((w - (32 * i + 16)) / 8) ((w - (32 * i + 16)) % 8) + 1 by
-          unfold accIdx pairY; omega_arith]
+        show accIdx w = 2 * pairY i ((w - (32 * i + 16)) / 8) ((w - (32 * i + 16)) % 8) + 1 from
+          (congrArg accIdx (by omega_using [h2] :
+            w = 32 * i + 16 * 1 + 8 * ((w - (32 * i + 16)) / 8) + (w - (32 * i + 16)) % 8)).trans
+            (accIdx_eq (by decide) (by omega_using [hw, h2]) (Nat.mod_lt _ (by decide)))]
       exact (V6 _ (by omega_arith)).2 _ (Nat.mod_lt _ (by omega_arith))
 
 end
