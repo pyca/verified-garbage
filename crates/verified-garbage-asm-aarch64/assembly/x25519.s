@@ -3048,5 +3048,20 @@ vg_x25519_base:
 	str x5, [x0, #8]
 	str x6, [x0, #16]
 	str x7, [x0, #24]
+	movz x1, #0, lsl #0
+	movz x3, #0, lsl #0
+	movz x4, #0, lsl #0
+	movz x5, #0, lsl #0
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
+	movz x8, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x12, #0, lsl #0
+	movz x13, #0, lsl #0
+	movz x14, #0, lsl #0
+	movz x15, #0, lsl #0
+	movz x16, #0, lsl #0
+	movz x17, #0, lsl #0
+	tst x1, x1
 	ret
 	.p2align 6

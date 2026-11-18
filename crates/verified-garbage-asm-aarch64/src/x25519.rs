@@ -43,6 +43,8 @@ pub const VG_X25519_BASE_SCRATCH_WRITTEN: usize = 1024;
 ///
 /// Contract: `VG.Spec.X25519.x25519BaseContract`. Constant time: only the pointers may affect timing, not the scalar.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// It writes at most the first 1024 bytes of `scratch` (`VG_X25519_BASE_SCRATCH_WRITTEN`): no byte of `scratch` beyond them changes.
 ///
 /// # Safety
@@ -437,7 +439,9 @@ cbnz x20, 22b
 .inst 0xd37fff08,0x8a020318,0xcb080143,0xca0402b5,0x8a0302b5,0xca150084,0xca0502d6,0x8a0302d6
 .inst 0xca1600a5,0xca0602f7,0x8a0302f7,0xca1700c6,0xca070318,0x8a030318,0xca1800e7,0x91000002
 .inst 0xf9401800,0xf9400053,0xf9400454,0xf9400855,0xf9400c56,0xf9401057,0xf9401458,0xf9000004
-.inst 0xf9000405,0xf9000806,0xf9000c07,0xd65f03c0
+.inst 0xf9000405,0xf9000806,0xf9000c07,0xd2800001,0xd2800003,0xd2800004,0xd2800005,0xd2800006
+.inst 0xd2800007,0xd2800008,0xd2800009,0xd280000c,0xd280000d,0xd280000e,0xd280000f,0xd2800010
+.inst 0xd2800011,0xea01003f,0xd65f03c0
 .p2align 6",
         VG_ED25519_COMB = sym super::consts::VG_ED25519_COMB,
     )

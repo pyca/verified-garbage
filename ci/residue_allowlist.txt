@@ -610,7 +610,6 @@ aarch64 vg_triple_des_ecb_decrypt
 aarch64 vg_triple_des_ecb_encrypt
 aarch64 vg_triple_des_ofb
 aarch64 vg_triple_des_ofb_final
-aarch64 vg_x25519_base
 aarch64 vg_x25519_exchange
 aarch64 vg_x448_base
 aarch64 vg_x448_exchange
