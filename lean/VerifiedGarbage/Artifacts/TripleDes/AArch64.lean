@@ -35,8 +35,9 @@ namespace VG.Artifacts.TripleDes.AArch64
 
 def artifacts : List Artifact := [
   Spec.TripleDes.expandKeyApi.artifact AArch64.target {
-    code := Impl.TripleDes.AArch64.Key.expandKey
-    verified := Proof.TripleDes.AArch64.Key.verified },
+    code := Proof.TripleDes.AArch64.expandKeyCleared
+    verified := Proof.TripleDes.AArch64.Key.verifiedCleared
+    residue := some ⟨Proof.TripleDes.AArch64.expandKeyCleared_noResidue _⟩ },
   Spec.TripleDes.ecbEncryptApi.artifact AArch64.target {
     code := Impl.StackScratch.AArch64.withStackScratchWiped 1024 .x3 128
       Impl.TripleDes.AArch64.Short.ecbEncrypt

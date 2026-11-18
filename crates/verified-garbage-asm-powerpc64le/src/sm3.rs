@@ -24,6 +24,8 @@ pub(crate) unsafe extern "C" fn vg_sm3_init(state: *mut [u8; 96]) {
 ///
 /// Contract: `VG.Spec.Sm3.updateContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 96 bytes.
@@ -125,7 +127,7 @@ bne %cr0, 22b
 b 21f
 20:
 21:
-.base64 "cABb64AAm+uIALvrkADb65gA++t4AHvrIAAB6DAAITimAwh8wAAhOCAAgE4=""#,
+.base64 "cABb64AAm+uIALvrkADb65gA++t4AHvrIAAB6DAAITimAwh8wAAhOAAAADgR/yH4IACBOQAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAAz4iAAM+JAADPiYAAz4oAAM+KgADPiwAAz4uAAM+MAADPjIAAz48AAhOAAAYDgAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDkUAAB8xAQAEMQMIRDEFEIQxBxjEMQkhBDELKUQxDTGEMQ85xDERAgRxEwpEcRUShHEXGsRxGSMEcRsrRHEdM4RxHzvEcSEEBLEjDESxJRSEsSccxIgAIBO""#,
         vg_sm3_compress = sym super::sm3::vg_sm3_compress::vg_sm3_compress,
     )
 }
@@ -133,6 +135,8 @@ b 21f
 /// Finishes an SM3 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), writes the SM3 hash value of that message (32 bytes) to `*out`.
 ///
 /// Contract: `VG.Spec.Sm3.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -178,7 +182,7 @@ b 210f
 bl {vg_sm3_compress}
 .base64 "AADAO////zsAAD8o"
 beq %cr0, 20b
-.base64 "AAAagQAAYDksXRx9BAAagQQAYDksXRx9CAAagQgAYDksXRx9DAAagQwAYDksXRx9EAAagRAAYDksXRx9FAAagRQAYDksXRx9GAAagRgAYDksXRx9HAAagRwAYDksXRx9cABb64AAm+uIALvrkADb65gA++t4AHvrIAAB6DAAITimAwh8wAAhOCAAgE4=""#,
+.base64 "AAAagQAAYDksXRx9BAAagQQAYDksXRx9CAAagQgAYDksXRx9DAAagQwAYDksXRx9EAAagRAAYDksXRx9FAAagRQAYDksXRx9GAAagRgAYDksXRx9HAAagRwAYDksXRx9cABb64AAm+uIALvrkADb65gA++t4AHvrIAAB6DAAITimAwh8wAAhOAAAADgR/yH4IACBOQAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAAz4iAAM+JAADPiYAAz4oAAM+KgADPiwAAz4uAAM+MAADPjIAAz48AAhOAAAYDgAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDkUAAB8xAQAEMQMIRDEFEIQxBxjEMQkhBDELKUQxDTGEMQ85xDERAgRxEwpEcRUShHEXGsRxGSMEcRsrRHEdM4RxHzvEcSEEBLEjDESxJRSEsSccxIgAIBO""#,
         vg_sm3_compress = sym super::sm3::vg_sm3_compress::vg_sm3_compress,
     )
 }

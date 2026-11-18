@@ -90,6 +90,7 @@ theorem p192_ok : CfgOk p192 where
   fp := ⟨rfl, rfl, Mont.p192p_ok, rfl⟩
   fn := ⟨rfl, rfl, Mont.p192n_ok, rfl⟩
   mulNf := fun _ _ => Impl.Ecdsa.Arm.mulP192_noFrames
+  pubNf := fun _ _ => Impl.Ecdsa.Arm.mulPubP192_noFrames
 
 
 /-- p192 with its field multiplications by `vg_p192_mul_mod_<p|n>_umaal`:
@@ -115,6 +116,7 @@ theorem p192u_ok : CfgOk (p192With true) where
   fp := p192_ok.fp
   fn := p192_ok.fn
   mulNf := fun _ _ => Impl.Ecdsa.Arm.mulP192U_noFrames
+  pubNf := fun _ _ => Impl.Ecdsa.Arm.mulPubP192U_noFrames
 
 /-- Either configuration. -/
 theorem p192With_ok (u : Bool) : CfgOk (p192With u) := by

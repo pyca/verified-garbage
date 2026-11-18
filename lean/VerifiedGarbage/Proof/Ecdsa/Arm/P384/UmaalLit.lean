@@ -26,9 +26,14 @@ As `MulLit.lean` for `vg_p384_mul`: the literal of the code
 namespace VG
 
 materialize_code Impl.Ecdsa.Arm.mulP384U
+materialize_code Impl.Ecdsa.Arm.mulPubP384U
 
 /-- `vg_p384_mul_umaal`'s code has no frame, which its calls need. -/
 theorem Impl.Ecdsa.Arm.mulP384U_noFrames : (Impl.Ecdsa.Arm.p384With true).mulFn.noFrames = true := by
   show Impl.Ecdsa.Arm.mulP384U.noFrames = true; lit_decide
+
+/-- `vg_p384_mul_public_umaal`'s, likewise. -/
+theorem Impl.Ecdsa.Arm.mulPubP384U_noFrames : (Impl.Ecdsa.Arm.p384With true).pubFn.noFrames = true := by
+  show Impl.Ecdsa.Arm.mulPubP384U.noFrames = true; lit_decide
 
 end VG

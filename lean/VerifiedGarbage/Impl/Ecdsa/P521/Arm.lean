@@ -30,4 +30,13 @@ def mulP521 : Prog isa := mulP521With false
 /-- `vg_p521_mul_umaal`. -/
 def mulP521U : Prog isa := mulP521With true
 
+/-- `vg_p521_mul_public`, or with `u` `vg_p521_mul_public_umaal`. -/
+def mulPubP521With (u : Bool) : Prog isa := (p521With u).pubFn
+
+/-- `vg_p521_mul_public`. -/
+def mulPubP521 : Prog isa := mulPubP521With false
+
+/-- `vg_p521_mul_public_umaal`. -/
+def mulPubP521U : Prog isa := mulPubP521With true
+
 end VG.Impl.Ecdsa.Arm

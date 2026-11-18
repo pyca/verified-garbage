@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Syms
 `taintU` and `taintSymU L` are them with `umaal lo hi n m` making `lo` and
 `hi` secret (`secret2`), whatever its operands: code whose `umaal` results
 are only data, never in an address or a branch (the multiplications of
-`Impl/Mont/ArmPacked.lean`'s `rowU`), is constant time by them.
+`Impl/Weierstrass/Arm/Mont.lean`'s `rowU`), is constant time by them.
 -/
 
 @[expose] public section

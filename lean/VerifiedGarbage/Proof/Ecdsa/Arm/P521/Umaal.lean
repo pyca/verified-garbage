@@ -64,6 +64,7 @@ theorem p521u_ok : CfgOk (p521With true) where
   fp := ⟨rfl, rfl, Mont.p521p_ok, rfl⟩
   fn := ⟨rfl, rfl, Mont.p521n_ok, rfl⟩
   mulNf := fun _ _ => Impl.Ecdsa.Arm.mulP521U_noFrames
+  pubNf := fun _ _ => Impl.Ecdsa.Arm.mulPubP521U_noFrames
 
 /-- Either configuration. -/
 theorem p521With_ok (u : Bool) : CfgOk (p521With u) := by

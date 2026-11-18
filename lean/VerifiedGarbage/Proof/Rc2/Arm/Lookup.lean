@@ -11,12 +11,15 @@ import VerifiedGarbage.Proof.Rc2.Select32
 
 /-! # Correctness of the baseline Arm RC2 key lookup
 
-`keyLookup` visits the 32 words of the key schedule at `r0`, eight entries
-(four words) per iteration from the last, and leaves the entry at the index
-in `r12` (`keyLookup_ok`). With `z` the index plus 8 XOR the counter, each
-pair of words is multiplied by a bit that is 1 exactly when the index is one
-of its four entries (`pairBits`); the index's word of the pair kept, and its
-half of that word, are then selected (`keySelect_ok`). -/
+`keyLookup` visits the 32 words of the key schedule at `r0` as eight rows of
+four words, and leaves the entry at the index in `r12` (`keyLookup_ok`).
+Each row's words are multiplied by a bit that is 1 exactly when the index is
+one of the row's eight entries (`rowBit`) and added to their columns'
+registers, which then hold the words of the index's row (`keyRows_ok`); the
+index's word of the four, and its half of that word, are then chosen by
+bits of the index (`keySelect_ok`). The facts about a row's bit and a choice
+by a bit are also those of key expansion's lookups in PITABLE
+(`PiScan.lean`). -/
 
 @[expose] public section
 
@@ -70,34 +73,38 @@ theorem key_in {rs : List Region} {a : Addr} (h : InRegions rs a 128) {d n : Nat
 /-- The registers a key lookup writes. -/
 def lookupRegs : List Reg := [.r12, .r3, .r8, .r9, .r10, .r11, .lr]
 
-/-- The registers the loop of a key lookup writes. -/
+/-- The registers the rows of a key lookup write. -/
 def scanRegs : List Reg := [.r3, .r8, .r9, .r10, .r11, .lr]
 
 /-- Word `q` of the key schedule at `K` in `m`: entries `2 q` and `2 q + 1`. -/
 def kw (m : Mem) (K : BitVec 32) (q : Nat) : BitVec 32 :=
   m.readW (State.addr K + BitVec.ofNat 64 (4 * q)) 32
 
-/-- Accumulator `k` once the entries from `8 lim` on are visited: word
-`2 (x / 4) + k`, of the four entries of the index `x`, if they are among
-them. -/
-def kAcc (m : Mem) (K : BitVec 32) (x lim k : Nat) : BitVec 32 :=
-  if lim ≤ x / 8 then kw m K (2 * (x / 4) + k) else 0
+/-! ## A row's bit, and a choice by a bit -/
 
-/-- The bits of a pair of words: with `z` the index plus 8 XOR the counter
-`8 (p + 1)`, `z < 4` exactly when the index is one of entries `8 p … 8 p +
-3`, and `z ^ 4 < 4` exactly when it is one of `8 p + 4 … 8 p + 7`. -/
-theorem pairBits : ∀ x < 64, ∀ p < 8,
-    ((BitVec.ofNat 32 (x + 8) ^^^ BitVec.ofNat 32 (8 * (p + 1))) - 4) >>> 31 =
-      (if x / 4 = 2 * p then 1 else 0 : BitVec 32) ∧
-    (((BitVec.ofNat 32 (x + 8) ^^^ BitVec.ofNat 32 (8 * (p + 1))) ^^^ 4) - 4) >>> 31 =
-      (if x / 4 = 2 * p + 1 then 1 else 0 : BitVec 32) := by
-  decide +kernel
+/-- The bit of row `r`, for an index `32 a + b`: 1 exactly when the index is
+one of the row's eight entries. -/
+theorem rowBit_split : ∀ r < 32, ∀ a < 8, ∀ b < 32,
+    ((BitVec.ofNat 32 (32 * a + b) ^^^ BitVec.ofNat 32 (8 * r)) - 8) >>> 31 =
+      (if (32 * a + b) / 8 = r then 1 else 0 : BitVec 32) := by decide
 
-/-- The bits of the index that select its word and its half. -/
-theorem indexBits : ∀ x < 64,
-    (BitVec.ofNat 32 (x + 8) >>> 1 &&& 1) = (if x / 2 % 2 = 1 then 1 else 0 : BitVec 32) ∧
-    (BitVec.ofNat 32 (x + 8) &&& 1) = (if x % 2 = 1 then 1 else 0 : BitVec 32) := by
-  decide +kernel
+theorem rowBit {n r : Nat} (hn : n < 256) (hr : r < 32) :
+    ((BitVec.ofNat 32 n ^^^ BitVec.ofNat 32 (8 * r)) - 8) >>> 31 = (if n / 8 = r then 1 else 0 : BitVec 32) := by
+  have := rowBit_split r hr (n / 32) (by omega_arith) (n % 32) (Nat.mod_lt _ (by decide))
+  rwa [Nat.div_add_mod] at this
+
+/-- The low three bits of an index `32 a + b`, as the code takes them. -/
+theorem idxBits_split : ∀ a < 8, ∀ b < 32,
+    (BitVec.ofNat 32 (32 * a + b) <<< 29) >>> 31 = (if (32 * a + b) / 4 % 2 = 1 then 1 else 0 : BitVec 32) ∧
+    (BitVec.ofNat 32 (32 * a + b) <<< 30) >>> 31 = (if (32 * a + b) / 2 % 2 = 1 then 1 else 0 : BitVec 32) ∧
+    (BitVec.ofNat 32 (32 * a + b) &&& 1) = (if (32 * a + b) % 2 = 1 then 1 else 0 : BitVec 32) := by decide
+
+theorem idxBits {n : Nat} (hn : n < 256) :
+    (BitVec.ofNat 32 n <<< 29) >>> 31 = (if n / 4 % 2 = 1 then 1 else 0 : BitVec 32) ∧
+    (BitVec.ofNat 32 n <<< 30) >>> 31 = (if n / 2 % 2 = 1 then 1 else 0 : BitVec 32) ∧
+    (BitVec.ofNat 32 n &&& 1) = (if n % 2 = 1 then 1 else 0 : BitVec 32) := by
+  have := idxBits_split (n / 32) (by omega_arith) (n % 32) (Nat.mod_lt _ (by decide))
+  rwa [Nat.div_add_mod] at this
 
 theorem mul_bit (w : BitVec 32) (c : Prop) [Decidable c] :
     w * (if c then 1 else 0 : BitVec 32) = if c then w else 0 := by
@@ -105,19 +112,40 @@ theorem mul_bit (w : BitVec 32) (c : Prop) [Decidable c] :
   · exact BitVec.mul_one w
   · exact BitVec.mul_zero
 
-theorem xor_select (a b : BitVec 32) (c : Prop) [Decidable c] :
-    a ^^^ (b ^^^ a) * (if c then 1 else 0 : BitVec 32) = if c then b else a := by
+/-- A choice between `a` and `b` by a bit. -/
+theorem sub_select (a b : BitVec 32) (c : Prop) [Decidable c] :
+    (b - a) * (if c then 1 else 0 : BitVec 32) + a = if c then b else a := by
   rw [mul_bit]
   split
-  · rw [BitVec.xor_comm b a, ← BitVec.xor_assoc, BitVec.xor_self, BitVec.zero_xor]
-  · exact BitVec.xor_zero
+  · exact BitVec.sub_add_cancel b a
+  · exact BitVec.zero_add a
 
-theorem xor_select' (a b : BitVec 32) (c : Prop) [Decidable c] :
-    a ^^^ (a ^^^ b) * (if c then 1 else 0 : BitVec 32) = if c then b else a := by
+/-- A column's register after a row: the word `f q` of the index's row `q`,
+once that row is passed. -/
+theorem acc_step (f : Nat → BitVec 32) (q k : Nat) :
+    f k * (if q = k then 1 else 0 : BitVec 32) + (if q < k then f q else 0) = if q < k + 1 then f q else 0 := by
   rw [mul_bit]
-  split
-  · rw [← BitVec.xor_assoc, BitVec.xor_self, BitVec.zero_xor]
-  · exact BitVec.xor_zero
+  rcases Nat.lt_trichotomy q k with h | h | h
+  · rw [ite_eq_right (Nat.ne_of_lt h), ite_eq_left h, ite_eq_left (Nat.lt_succ_of_lt h)]
+    exact BitVec.zero_add _
+  · subst h
+    rw [ite_eq_left rfl, ite_eq_right (Nat.lt_irrefl _), ite_eq_left (Nat.lt_succ_self _)]
+    exact BitVec.add_zero _
+  · rw [ite_eq_right (Nat.ne_of_gt h), ite_eq_right (by omega_arith), ite_eq_right (by omega_arith)]
+    exact BitVec.add_zero _
+
+/-- An immediate below 256 is encodable (rotation 0). -/
+theorem encodable_small {v : BitVec 32} (h : v.toNat < 256) : encodable v = true :=
+  List.any_eq_true.2 ⟨0, by simp, by
+    have h0 : v.rotateLeft (2 * 0) = v := by ext i; simp
+    simpa only [h0, decide_eq_true_eq] using h⟩
+
+theorem encodable_row {r : Nat} (hr : r < 32) : encodable (BitVec.ofNat 32 (8 * r)) = true :=
+  encodable_small (by rw [BitVec.toNat_ofNat]; omega_arith)
+
+theorem flatMap_succ {α : Type} (f : Nat → List α) (n : Nat) :
+    (List.range (n + 1)).flatMap f = (List.range n).flatMap f ++ f n := by
+  rw [List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil, List.append_nil]
 
 theorem extractHalf (x : BitVec 32) (i : Nat) :
     ((x.extractLsb' (8 * (2 * i)) 8).setWidth 16 |||
@@ -140,251 +168,140 @@ theorem extractHalf (x : BitVec 32) (i : Nat) :
 theorem maskBits16 (x : BitVec 32) : x <<< 16 >>> 16 = (x.setWidth 16).setWidth 32 :=
   maskBits x 16 (by decide)
 
-theorem encodable_imm : encodable (1 : BitVec 32) = true ∧ encodable (4 : BitVec 32) = true ∧
-    encodable (8 : BitVec 32) = true ∧ encodable (16 : BitVec 32) = true ∧
-    encodable (63 : BitVec 32) = true ∧ encodable (112 : BitVec 32) = true := by decide
+theorem encodable_imm : encodable (1 : BitVec 32) = true ∧ encodable (8 : BitVec 32) = true ∧
+    encodable (63 : BitVec 32) = true := by decide
 
-theorem gpr_subFlags_lookup (s : State) (x y : BitVec 32) (r : Reg) :
-    (subFlags s x y).gpr r = s.gpr r := rfl
+theorem key_addr {K : BitVec 32} (fit : K.toNat + 128 ≤ 2 ^ 32) {d : Nat} (hd : d < 128) :
+    State.addr (K + BitVec.ofNat 32 d) = State.addr K + BitVec.ofNat 64 d :=
+  addr_add (by omega_arith)
 
-/-- The pair of words at `lr + off`, `lr + off + 4`, under the bit from `z`
-in `r10`. -/
-theorem keyPair_ok (s : State) (off : Nat) (hoff : off + 4 < 4096)
-    (hin : InRegions (s.rd ++ s.wr) (State.addr (s.gpr .lr + BitVec.ofNat 32 (off + 4))) 4) :
-    ∃ s', runBlock isa (keyPair off) s = some s' ∧
-      s'.gpr .r3 = s.gpr .r3 ||| s.gpr .r8 * ((s.gpr .r10 - 4) >>> 31) ∧
-      s'.gpr .r11 = s.gpr .r11 |||
-        s.mem.readW (State.addr (s.gpr .lr + BitVec.ofNat 32 (off + 4))) 32 * ((s.gpr .r10 - 4) >>> 31) ∧
-      Keep [.r3, .r8, .r10, .r11] s s' := by
+/-! ## The rows -/
+
+/-- A row: each column's register gains the row's word of the column times
+the row's bit. -/
+theorem keyRow_ok (s : State) {x r : Nat} (hx : x < 64) (hr : r < 8)
+    (h12 : s.gpr .r12 = BitVec.ofNat 32 x)
+    (hin : ∀ d < 4, InRegions (s.rd ++ s.wr) (State.addr (s.gpr .r0 + BitVec.ofNat 32 (16 * r + 4 * d))) 4) :
+    ∃ s', runBlock isa (keyRow r) s = some s' ∧
+      s'.gpr .r9 = s.mem.readW (State.addr (s.gpr .r0 + BitVec.ofNat 32 (16 * r))) 32 *
+        (if x / 8 = r then 1 else 0 : BitVec 32) + s.gpr .r9 ∧
+      s'.gpr .r10 = s.mem.readW (State.addr (s.gpr .r0 + BitVec.ofNat 32 (16 * r + 4))) 32 *
+        (if x / 8 = r then 1 else 0 : BitVec 32) + s.gpr .r10 ∧
+      s'.gpr .r11 = s.mem.readW (State.addr (s.gpr .r0 + BitVec.ofNat 32 (16 * r + 8))) 32 *
+        (if x / 8 = r then 1 else 0 : BitVec 32) + s.gpr .r11 ∧
+      s'.gpr .lr = s.mem.readW (State.addr (s.gpr .r0 + BitVec.ofNat 32 (16 * r + 12))) 32 *
+        (if x / 8 = r then 1 else 0 : BitVec 32) + s.gpr .lr ∧
+      Keep scanRegs s s' := by
+  have er := encodable_row (r := r) (by omega_arith)
+  have ho0 : 16 * r < 4096 := by omega_arith
+  have ho1 : 16 * r + 4 < 4096 := by omega_arith
+  have ho2 : 16 * r + 8 < 4096 := by omega_arith
+  have ho3 : 16 * r + 12 < 4096 := by omega_arith
+  have hin0 := hin 0 (by decide)
+  have hin1 := hin 1 (by decide)
+  have hin2 := hin 2 (by decide)
+  have hin3 := hin 3 (by decide)
+  rw [Nat.mul_zero, Nat.add_zero] at hin0
+  have bit := rowBit (n := x) (r := r) (by omega_arith) (by omega_arith)
   refine ⟨_, by
-    simp only [keyPair, runBlock_cons, runStep_some, runBlock_nil, exec, Op2.eval, Option.map_some,
-      State.load32, encodable_imm, gpr_setReg, mem_setReg, rd_setReg, wr_setReg, reduceCtorEq,
-      hoff, hin, Nat.reduceLeDiff, and_self, ite_true, ite_false]
+    simp only [keyRow, runBlock_cons, runStep_some, runBlock_nil, exec, Op2.eval, Option.map_some, State.load32,
+      gpr_setReg, mem_setReg, rd_setReg, wr_setReg, reduceCtorEq, hin0, hin1, hin2, hin3, er, encodable_imm,
+      ho0, ho1, ho2, ho3, Nat.reduceLeDiff, and_self, ite_true, ite_false]
     rfl, ?_⟩
-  refine ⟨?_, ?_, ?_⟩
+  refine ⟨?_, ?_, ?_, ?_, ?_⟩
   · simp only [gpr_setReg, reduceCtorEq, ite_true, ite_false]
+    rw [h12, bit]
   · simp only [gpr_setReg, reduceCtorEq, ite_true, ite_false]
+    rw [h12, bit]
+  · simp only [gpr_setReg, reduceCtorEq, ite_true, ite_false]
+    rw [h12, bit]
+  · simp only [gpr_setReg, reduceCtorEq, ite_true, ite_false]
+    rw [h12, bit]
   · constructor
-    · intro r hr
-      simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-      obtain ⟨h3, h8, h10, h11⟩ := hr
-      simp only [gpr_setReg, h3, h8, h10, h11, ite_false]
+    · intro q hq
+      simp only [scanRegs, List.mem_cons, List.not_mem_nil, or_false, not_or] at hq
+      obtain ⟨h3, h8, h9, h10, h11, hl⟩ := hq
+      simp only [gpr_setReg, h3, h8, h9, h10, h11, hl, ite_false]
     · rfl
     · rfl
     · rfl
 
-/-- The state of the scan from `s₀` before the eight entries from `8 p`,
-the entries after them visited. -/
-structure KeyScanAt (s₀ : State) (x p : Nat) (s : State) : Prop where
-  r12 : s.gpr .r12 = BitVec.ofNat 32 (x + 8)
-  r9 : s.gpr .r9 = BitVec.ofNat 32 (8 * (p + 1))
-  lr : s.gpr .lr = s₀.gpr .r0 + BitVec.ofNat 32 (16 * p)
-  r3 : s.gpr .r3 = kAcc s₀.mem (s₀.gpr .r0) x (p + 1) 0
-  r11 : s.gpr .r11 = kAcc s₀.mem (s₀.gpr .r0) x (p + 1) 1
+/-- Column `c` once the rows before `k` are visited: word `4 (x / 8) + c`,
+of the index's row, if that row is among them. -/
+def kAcc (m : Mem) (K : BitVec 32) (x k c : Nat) : BitVec 32 :=
+  if x / 8 < k then kw m K (4 * (x / 8) + c) else 0
+
+/-- The state of the lookup from `s₀` with the rows before `k` visited. -/
+structure KeyScanAt (s₀ : State) (x k : Nat) (s : State) : Prop where
+  r12 : s.gpr .r12 = BitVec.ofNat 32 x
+  r9 : s.gpr .r9 = kAcc s₀.mem (s₀.gpr .r0) x k 0
+  r10 : s.gpr .r10 = kAcc s₀.mem (s₀.gpr .r0) x k 1
+  r11 : s.gpr .r11 = kAcc s₀.mem (s₀.gpr .r0) x k 2
+  lr : s.gpr .lr = kAcc s₀.mem (s₀.gpr .r0) x k 3
   keep : Keep scanRegs s₀ s
 
-theorem lk_or_zero (v : BitVec 32) : v ||| 0 = v := BitVec.eq_of_getLsbD_eq (by simp)
+theorem kAcc_succ (m : Mem) (K : BitVec 32) (x k c : Nat) {a : Addr}
+    (ha : a = State.addr K + BitVec.ofNat 64 (4 * (4 * k + c))) :
+    m.readW a 32 * (if x / 8 = k then 1 else 0 : BitVec 32) + kAcc m K x k c = kAcc m K x (k + 1) c := by
+  rw [ha]
+  exact acc_step (fun r => kw m K (4 * r + c)) (x / 8) k
 
-theorem lk_zero_or (v : BitVec 32) : 0 ||| v = v := BitVec.eq_of_getLsbD_eq (by simp)
+theorem keyRows_ok {s₀ : State} {x : Nat} (hx : x < 64) (fit : (s₀.gpr .r0).toNat + 128 ≤ 2 ^ 32)
+    (readable : InRegions (s₀.rd ++ s₀.wr) (State.addr (s₀.gpr .r0)) 128) :
+    ∀ k ≤ 8, ∀ s, KeyScanAt s₀ x 0 s →
+      WP isa (.block ((List.range k).flatMap keyRow)) s (KeyScanAt s₀ x k) := by
+  intro k hk
+  induction k with
+  | zero => intro s hs; exact WP.block_nil hs
+  | succ k ih =>
+    intro s hs
+    rw [flatMap_succ, WP.block_append_iff]
+    refine WP.mono (ih (by omega_arith) s hs) fun t ht => ?_
+    have t0 : t.gpr .r0 = s₀.gpr .r0 := ht.keep.reg .r0 (by decide)
+    have ea : ∀ d < 4, State.addr (t.gpr .r0 + BitVec.ofNat 32 (16 * k + 4 * d)) =
+        State.addr (s₀.gpr .r0) + BitVec.ofNat 64 (4 * (4 * k + d)) := fun d hd => by
+      rw [t0, key_addr fit (d := 16 * k + 4 * d) (by omega_arith),
+        show 16 * k + 4 * d = 4 * (4 * k + d) by omega_arith]
+    obtain ⟨u, run, u9, u10, u11, ul, uk⟩ := keyRow_ok t (r := k) hx (by omega_arith) ht.r12 fun d hd => by
+      rw [ea d hd, ht.keep.rd, ht.keep.wr]
+      exact key_in readable (by omega_arith)
+    refine WP.of_runBlock ⟨u, run, ?_, ?_, ?_, ?_, ?_, ht.keep.trans uk⟩
+    · rw [uk.reg .r12 (by decide), ht.r12]
+    · rw [u9, ht.r9, ht.keep.mem]
+      exact kAcc_succ _ _ x k 0 (ea 0 (by decide))
+    · rw [u10, ht.r10, ht.keep.mem]
+      exact kAcc_succ _ _ x k 1 (ea 1 (by decide))
+    · rw [u11, ht.r11, ht.keep.mem]
+      exact kAcc_succ _ _ x k 2 (ea 2 (by decide))
+    · rw [ul, ht.lr, ht.keep.mem]
+      exact kAcc_succ _ _ x k 3 (ea 3 (by decide))
 
-theorem kAcc_step (m : Mem) (K : BitVec 32) {x p : Nat} (k : Nat) {q₀ q₁ : Nat}
-    (h₀ : q₀ = 4 * p + k) (h₁ : q₁ = 4 * p + 2 + k) :
-    ((kAcc m K x (p + 1) k ||| if x / 4 = 2 * p then kw m K q₀ else 0) |||
-      if x / 4 = 2 * p + 1 then kw m K q₁ else 0) = kAcc m K x p k := by
-  unfold kAcc
-  by_cases h : x / 8 = p
-  · rw [ite_eq_right (show ¬p + 1 ≤ x / 8 by omega_arith), ite_eq_left (show p ≤ x / 8 by omega_arith), lk_zero_or]
-    by_cases h' : x / 4 = 2 * p
-    · rw [ite_eq_left h', ite_eq_right (show ¬x / 4 = 2 * p + 1 by omega_arith), lk_or_zero]
-      exact congrArg (kw m K) (by omega_arith)
-    · rw [ite_eq_right h', ite_eq_left (show x / 4 = 2 * p + 1 by omega_arith), lk_zero_or]
-      exact congrArg (kw m K) (by omega_arith)
-  · rw [ite_eq_right (show ¬x / 4 = 2 * p by omega_arith), ite_eq_right (show ¬x / 4 = 2 * p + 1 by omega_arith),
-      lk_or_zero, lk_or_zero]
-    by_cases h' : p + 1 ≤ x / 8
-    · rw [ite_eq_left h', ite_eq_left (show p ≤ x / 8 by omega_arith)]
-    · rw [ite_eq_right h', ite_eq_right (show ¬p ≤ x / 8 by omega_arith)]
+/-! ## The choice -/
 
-theorem key_addr {K : BitVec 32} (fit : K.toNat + 128 ≤ 2 ^ 32) {p d : Nat} (hd : 16 * p + d < 128) :
-    State.addr (K + BitVec.ofNat 32 (16 * p) + BitVec.ofNat 32 d) =
-      State.addr K + BitVec.ofNat 64 (16 * p + d) := by
-  rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat, addr_add (by omega_arith)]
-
-theorem keyHead_ok (s : State) (hin : InRegions (s.rd ++ s.wr) (State.addr (s.gpr .lr + BitVec.ofNat 32 0)) 4) :
-    ∃ s', runBlock isa [.ldr .r8 .lr 0, .dp .eor .r10 .r12 (.reg .r9)] s = some s' ∧
-      s'.gpr .r8 = s.mem.readW (State.addr (s.gpr .lr + BitVec.ofNat 32 0)) 32 ∧
-      s'.gpr .r10 = s.gpr .r12 ^^^ s.gpr .r9 ∧ Keep [.r8, .r10] s s' := by
-  refine ⟨_, by
-    simp only [runBlock_cons, runStep_some, runBlock_nil, exec, Op2.eval, Option.map_some,
-      State.load32, hin, Nat.reduceLT, ite_true]
-    rfl, ?_⟩
-  refine ⟨?_, ?_, ?_⟩
-  · simp only [gpr_setReg, reduceCtorEq, ite_true, ite_false]
-  · simp only [gpr_setReg, reduceCtorEq, ite_true, ite_false]
-  · constructor
-    · intro r hr
-      simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-      simp only [gpr_setReg, hr.1, hr.2, ite_false]
-    · rfl
-    · rfl
-    · rfl
-
-theorem keyHead4_ok (s : State) (hin : InRegions (s.rd ++ s.wr) (State.addr (s.gpr .lr + BitVec.ofNat 32 8)) 4) :
-    ∃ s', runBlock isa [.ldr .r8 .lr 8, .dp .eor .r10 .r12 (.reg .r9), .dp .eor .r10 .r10 (.imm 4)] s = some s' ∧
-      s'.gpr .r8 = s.mem.readW (State.addr (s.gpr .lr + BitVec.ofNat 32 8)) 32 ∧
-      s'.gpr .r10 = (s.gpr .r12 ^^^ s.gpr .r9) ^^^ 4 ∧ Keep [.r8, .r10] s s' := by
-  refine ⟨_, by
-    simp only [runBlock_cons, runStep_some, runBlock_nil, exec, Op2.eval, Option.map_some,
-      State.load32, hin, encodable_imm, Nat.reduceLT, ite_true]
-    rfl, ?_⟩
-  refine ⟨?_, ?_, ?_⟩
-  · simp only [gpr_setReg, reduceCtorEq, ite_true, ite_false]
-  · simp only [gpr_setReg, reduceCtorEq, ite_true, ite_false]
-  · constructor
-    · intro r hr
-      simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-      simp only [gpr_setReg, hr.1, hr.2, ite_false]
-    · rfl
-    · rfl
-    · rfl
-
-theorem keyNext_ok (s : State) :
-    ∃ s', runBlock isa [.dp .sub .lr .lr (.imm 16), .subs .r9 .r9 (.imm 8)] s = some s' ∧
-      s'.gpr .lr = s.gpr .lr - 16 ∧ s'.gpr .r9 = s.gpr .r9 - 8 ∧ s'.z = (s.gpr .r9 - 8 == 0) ∧
-      Keep [.r9, .lr] s s' := by
-  refine ⟨_, by
-    simp only [runBlock_cons, runStep_some, runBlock_nil, exec, Op2.eval, Option.map_some,
-      encodable_imm, ite_true]
-    rfl, ?_⟩
-  refine ⟨?_, ?_, ?_, ?_⟩
-  · simp only [gpr_setReg, gpr_subFlags_lookup, reduceCtorEq, ite_true, ite_false]
-  · simp only [gpr_setReg, gpr_subFlags_lookup, reduceCtorEq, ite_true, ite_false]
-  · simp only [z_setReg, gpr_setReg, reduceCtorEq, ite_false]; rfl
-  · constructor
-    · intro r hr
-      simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-      simp only [gpr_setReg, gpr_subFlags_lookup, hr.1, hr.2, ite_false]
-    · rfl
-    · rfl
-    · rfl
-
-theorem keep_scan {rs : List Reg} {s s' : State} (h : Keep rs s s') (hrs : ∀ r ∈ rs, r ∈ scanRegs) :
-    Keep scanRegs s s' := h.weaken hrs
-
-/-- Eight entries: each accumulator gains its word of the index's four
-entries if they are among them; on to the eight before. -/
-theorem keyScan_step {s₀ s : State} {x p : Nat} (hx : x < 64) (hp : p < 8)
-    (fit : (s₀.gpr .r0).toNat + 128 ≤ 2 ^ 32)
-    (readable : InRegions (s₀.rd ++ s₀.wr) (State.addr (s₀.gpr .r0)) 128)
-    (h : KeyScanAt s₀ x p s) :
-    WP isa (.block keyBody) s fun t =>
-      (p = 0 → kAcc s₀.mem (s₀.gpr .r0) x 0 0 = t.gpr .r3 ∧ kAcc s₀.mem (s₀.gpr .r0) x 0 1 = t.gpr .r11 ∧
-        t.gpr .r12 = BitVec.ofNat 32 (x + 8) ∧ Keep scanRegs s₀ t) ∧
-      (0 < p → KeyScanAt s₀ x (p - 1) t) ∧ t.z = decide (p = 0) := by
-  have bits := pairBits x hx p hp
-  -- Every state of the body has `s`'s memory, regions, `lr`, `r9` and `r12`
-  -- until the last two instructions.
-  have kin {t : State} (k : Keep scanRegs s t) (hl : t.gpr .lr = s.gpr .lr) (d : Nat)
-      (hd : 16 * p + d + 4 ≤ 128) :
-      InRegions (t.rd ++ t.wr) (State.addr (t.gpr .lr + BitVec.ofNat 32 d)) 4 := by
-    rw [k.rd, k.wr, hl, h.keep.rd, h.keep.wr, h.lr, key_addr fit (by omega_arith)]
-    exact key_in readable hd
-  have kword {t : State} (k : Keep scanRegs s t) (hl : t.gpr .lr = s.gpr .lr) (d : Nat)
-      (q : Nat) (hq : d = 4 * q) (hd : 16 * p + d < 128) :
-      t.mem.readW (State.addr (t.gpr .lr + BitVec.ofNat 32 d)) 32 =
-        kw s₀.mem (s₀.gpr .r0) (4 * p + q) := by
-    rw [k.mem, hl, h.lr, key_addr fit hd, h.keep.mem, kw]
-    congr 3; omega_arith
-  have k₀ : Keep scanRegs s s := ⟨fun _ _ => rfl, rfl, rfl, rfl⟩
-  simp only [keyBody, List.append_assoc]
-  rw [WP.block_append_iff]
-  obtain ⟨s₁, run₁, r8₁, r10₁, keep₁⟩ := keyHead_ok s (kin k₀ rfl 0 (by omega_arith))
-  refine WP.of_runBlock ⟨s₁, run₁, ?_⟩
-  have ks₁ := keep_scan keep₁ (by decide)
-  have lr₁ : s₁.gpr .lr = s.gpr .lr := keep₁.reg .lr (by decide)
-  rw [WP.block_append_iff]
-  obtain ⟨s₂, run₂, r3₂, r11₂, keep₂⟩ := keyPair_ok s₁ 0 (by decide) (kin ks₁ lr₁ 4 (by omega_arith))
-  refine WP.of_runBlock ⟨s₂, run₂, ?_⟩
-  have ks₂ := ks₁.trans (keep_scan keep₂ (by decide))
-  have lr₂ : s₂.gpr .lr = s.gpr .lr := (keep₂.reg .lr (by decide)).trans lr₁
-  rw [r8₁, r10₁, keep₁.reg .r3 (by decide),
-    h.r12, h.r9, bits.1, mul_bit, kword k₀ rfl 0 0 rfl (by omega_arith)] at r3₂
-  rw [r10₁, keep₁.reg .r11 (by decide),
-    h.r12, h.r9, bits.1, mul_bit, kword ks₁ lr₁ (0 + 4) 1 rfl (by omega_arith)] at r11₂
-  rw [WP.block_append_iff]
-  obtain ⟨s₃, run₃, r8₃, r10₃, keep₃⟩ := keyHead4_ok s₂ (kin ks₂ lr₂ 8 (by omega_arith))
-  refine WP.of_runBlock ⟨s₃, run₃, ?_⟩
-  have ks₃ := ks₂.trans (keep_scan keep₃ (by decide))
-  have lr₃ : s₃.gpr .lr = s.gpr .lr := (keep₃.reg .lr (by decide)).trans lr₂
-  have r12₂ : s₂.gpr .r12 = s.gpr .r12 := ks₂.reg .r12 (by decide)
-  have r9₂ : s₂.gpr .r9 = s.gpr .r9 := (keep₂.reg .r9 (by decide)).trans (keep₁.reg .r9 (by decide))
-  rw [WP.block_append_iff]
-  obtain ⟨s₄, run₄, r3₄, r11₄, keep₄⟩ := keyPair_ok s₃ 8 (by decide) (kin ks₃ lr₃ 12 (by omega_arith))
-  refine WP.of_runBlock ⟨s₄, run₄, ?_⟩
-  have ks₄ := ks₃.trans (keep_scan keep₄ (by decide))
-  have lr₄ : s₄.gpr .lr = s.gpr .lr := (keep₄.reg .lr (by decide)).trans lr₃
-  rw [r8₃, r10₃, keep₃.reg .r3 (by decide), r12₂, r9₂, h.r12, h.r9, bits.2, mul_bit,
-    kword ks₂ lr₂ 8 2 rfl (by omega_arith), r3₂] at r3₄
-  rw [r10₃, keep₃.reg .r11 (by decide), r12₂, r9₂, h.r12, h.r9, bits.2, mul_bit,
-    kword ks₃ lr₃ (8 + 4) 3 rfl (by omega_arith), r11₂] at r11₄
-  obtain ⟨s₅, run₅, lr₅, r9₅, z₅, keep₅⟩ := keyNext_ok s₄
-  refine WP.of_runBlock ⟨s₅, run₅, ?_⟩
-  have ks₅ := h.keep.trans (ks₄.trans (keep_scan keep₅ (by decide)))
-  have r9₄ : s₄.gpr .r9 = BitVec.ofNat 32 (8 * (p + 1)) :=
-    (keep₄.reg .r9 (by decide)).trans ((keep₃.reg .r9 (by decide)).trans (r9₂.trans h.r9))
-  have r3₅ : s₅.gpr .r3 = kAcc s₀.mem (s₀.gpr .r0) x p 0 := by
-    rw [keep₅.reg .r3 (by decide), r3₄, h.r3]
-    exact kAcc_step _ _ 0 (by omega_arith) (by omega_arith)
-  have r11₅ : s₅.gpr .r11 = kAcc s₀.mem (s₀.gpr .r0) x p 1 := by
-    rw [keep₅.reg .r11 (by decide), r11₄, h.r11]
-    exact kAcc_step _ _ 1 (by omega_arith) (by omega_arith)
-  have r12₅ : s₅.gpr .r12 = BitVec.ofNat 32 (x + 8) :=
-    (keep₅.reg .r12 (by decide)).trans ((ks₄.reg .r12 (by decide)).trans h.r12)
-  refine ⟨fun hp0 => ⟨?_, ?_, r12₅, ks₅⟩, fun hp0 => ⟨r12₅, ?_, ?_, ?_, ?_, ks₅⟩, ?_⟩
-  · rw [r3₅, hp0]
-  · rw [r11₅, hp0]
-  · rw [r9₅, r9₄, show (8 : BitVec 32) = BitVec.ofNat 32 8 from rfl,
-      BitVec.ofNat_sub_ofNat_of_le (8 * (p + 1)) 8 (by decide) (by omega_arith)]
-    congr 1; omega_arith
-  · rw [lr₅, lr₄, h.lr, show 16 * p = 16 * (p - 1) + 16 by omega_arith, ← BitVec.ofNat_add_ofNat,
-      ← BitVec.add_assoc]
-    exact BitVec.add_sub_cancel _ _
-  · rw [r3₅, Nat.sub_add_cancel hp0]
-  · rw [r11₅, Nat.sub_add_cancel hp0]
-  · rw [z₅, r9₄]
-    by_cases hp0 : p = 0
-    · subst hp0; rfl
-    · rw [decide_eq_false hp0]
-      have : BitVec.ofNat 32 (8 * (p + 1)) - 8 ≠ 0 := fun e => by
-        have := congrArg BitVec.toNat e
-        rw [BitVec.toNat_sub, BitVec.toNat_ofNat] at this
-        simp at this; omega_arith
-      simpa using this
-
-/-- The selection: the word `2 (x / 4) + (x / 2) % 2` of the pair in `r3`
-and `r11`, then its half `x % 2`, zero-extended, in `r12`. -/
-theorem keySelect_ok (s : State) {x : Nat} (hx : x < 64) (h12 : s.gpr .r12 = BitVec.ofNat 32 (x + 8)) :
+/-- The choice: the word `(x / 2) % 4` of the four in `r9`, `r10`, `r11` and
+`lr`, then its half `x % 2`, zero-extended, in `r12`. -/
+theorem keySelect_ok (s : State) {x : Nat} (hx : x < 64) (h12 : s.gpr .r12 = BitVec.ofNat 32 x) :
     ∃ s', runBlock isa keySelect s = some s' ∧
-      s'.gpr .r12 = (((if x / 2 % 2 = 1 then s.gpr .r11 else s.gpr .r3) >>> (16 * (x % 2))).setWidth 16).setWidth 32 ∧
+      s'.gpr .r12 = (((if x / 2 % 2 = 1 then (if x / 4 % 2 = 1 then s.gpr .lr else s.gpr .r10)
+        else (if x / 4 % 2 = 1 then s.gpr .r11 else s.gpr .r9)) >>> (16 * (x % 2))).setWidth 16).setWidth 32 ∧
       Keep lookupRegs s s' := by
+  obtain ⟨b2, b1, b0⟩ := idxBits (n := x) (by omega_arith)
   refine ⟨_, by
     simp only [keySelect, runBlock_cons, runStep_some, runBlock_nil, exec, Op2.eval, Option.map_some,
       encodable_imm, Nat.reduceLeDiff, and_self, ite_true]
     rfl, ?_⟩
-  have bits := indexBits x hx
   refine ⟨?_, ?_⟩
   · simp only [gpr_setReg, reduceCtorEq, ite_true, ite_false]
-    rw [h12, bits.1, bits.2, xor_select, maskBits16]
+    rw [h12, b2, b1, b0, sub_select, sub_select, sub_select, sub_select, maskBits16]
     refine congrArg (fun w : BitVec 32 => (w.setWidth 16).setWidth 32) ?_
-    rw [xor_select']
     by_cases hb : x % 2 = 1
     · rw [ite_eq_left hb, hb, Nat.mul_one]
     · rw [ite_eq_right hb, show x % 2 = 0 by omega_arith, Nat.mul_zero, BitVec.ushiftRight_zero]
   · constructor
     · intro r hr
       simp only [lookupRegs, List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-      obtain ⟨h12', h3, _, _, h10, h11, _⟩ := hr
-      simp only [gpr_setReg, h12', h3, h10, h11, ite_false]
+      obtain ⟨h12', h3, _, h9, h10, h11, hl⟩ := hr
+      simp only [gpr_setReg, h12', h3, h9, h10, h11, hl, ite_false]
     · rfl
     · rfl
     · rfl
@@ -409,30 +326,31 @@ theorem keyLookup_ok (s : State) (fit : (s.gpr .r0).toNat + 128 ≤ 2 ^ 32)
   have hx64 : x < 64 := hx ▸ ((s.gpr .r12).setWidth 6).isLt
   rw [hx]
   unfold keyLookup
-  refine WP.seq (WP.mono (Q := fun s₁ => KeyScanAt s₁ x 7 s₁ ∧ Keep lookupRegs s s₁) ?_ fun s₁ ⟨h₁, k₁⟩ => ?_)
-  · refine WP.of_runBlock ⟨_, by
+  rw [List.append_assoc, WP.block_append_iff]
+  refine WP.mono (Q := fun s₁ => KeyScanAt s₁ x 0 s₁ ∧ Keep lookupRegs s s₁) (WP.of_runBlock ⟨_, by
       simp only [keyStart, imm, runBlock_cons, runStep_some, runBlock_nil, exec, Op2.eval,
         Option.map_some, encodable_imm, ite_true]
-      rfl, ?_⟩
+      rfl, ?_⟩) fun s₁ ⟨h₁, k₁⟩ => ?_
+  · have z : ∀ c, (BitVec.ofNat 16 0).setWidth 32 = kAcc s.mem (s.gpr .r0) x 0 c := fun c => by
+      unfold kAcc; rw [ite_eq_right (Nat.not_lt_zero _)]; rfl
     refine ⟨⟨?_, ?_, ?_, ?_, ?_, ⟨fun _ _ => rfl, rfl, rfl, rfl⟩⟩, ?_⟩
     · simp only [gpr_setReg, reduceCtorEq, ite_false, ite_true]
       rw [← hx]
       apply BitVec.eq_of_toNat_eq
       have h63 : (s.gpr .r12).toNat &&& 63 = (s.gpr .r12).toNat % 2 ^ 6 :=
         Nat.and_two_pow_sub_one_eq_mod _ 6
-      simp only [BitVec.toNat_add, BitVec.toNat_and, BitVec.toNat_ofNat, BitVec.toNat_setWidth,
-        show (63 : BitVec 32).toNat = 63 from rfl, show (8 : BitVec 32).toNat = 8 from rfl, h63]
-    · simp only [gpr_setReg, reduceCtorEq, ite_false, ite_true]; rfl
-    · simp only [gpr_setReg, reduceCtorEq, ite_false, ite_true]; rfl
-    · simp only [gpr_setReg, reduceCtorEq, ite_false, ite_true]
-      simp [kAcc, show ¬8 ≤ x / 8 by omega_arith]
-    · simp only [gpr_setReg, reduceCtorEq, ite_false, ite_true]
-      simp [kAcc, show ¬8 ≤ x / 8 by omega_arith]
+      simp only [BitVec.toNat_and, BitVec.toNat_ofNat, BitVec.toNat_setWidth,
+        show (63 : BitVec 32).toNat = 63 from rfl, h63]
+      omega_arith
+    · simp only [gpr_setReg, mem_setReg, reduceCtorEq, ite_false, ite_true]; exact z 0
+    · simp only [gpr_setReg, mem_setReg, reduceCtorEq, ite_false, ite_true]; exact z 1
+    · simp only [gpr_setReg, mem_setReg, reduceCtorEq, ite_false, ite_true]; exact z 2
+    · simp only [gpr_setReg, mem_setReg, reduceCtorEq, ite_false, ite_true]; exact z 3
     · constructor
       · intro r hr
         simp only [lookupRegs, List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-        obtain ⟨h12, h3, _, h9, _, h11, hl⟩ := hr
-        simp only [gpr_setReg, h12, h3, h9, h11, hl, ite_false]
+        obtain ⟨h12, _, _, h9, h10, h11, hl⟩ := hr
+        simp only [gpr_setReg, h12, h9, h10, h11, hl, ite_false]
       · rfl
       · rfl
       · rfl
@@ -440,26 +358,20 @@ theorem keyLookup_ok (s : State) (fit : (s.gpr .r0).toNat + 128 ≤ 2 ^ 32)
   have fit₁ : (s₁.gpr .r0).toNat + 128 ≤ 2 ^ 32 := by rw [ptr₁]; exact fit
   have read₁ : InRegions (s₁.rd ++ s₁.wr) (State.addr (s₁.gpr .r0)) 128 := by
     rw [k₁.rd, k₁.wr, ptr₁]; exact readable
-  have loop : WP isa (.loop (.block keyBody) .ne) s₁ (fun v =>
-      kAcc s₁.mem (s₁.gpr .r0) x 0 0 = v.gpr .r3 ∧ kAcc s₁.mem (s₁.gpr .r0) x 0 1 = v.gpr .r11 ∧
-        v.gpr .r12 = BitVec.ofNat 32 (x + 8) ∧ Keep scanRegs s₁ v) := by
-    refine WP.loop (M := isa) (fun n (v : State) => n < 8 ∧ KeyScanAt s₁ x n v) ?_ 7 s₁ ⟨by decide, h₁⟩
-    rintro n v ⟨hn, hv⟩
-    refine WP.mono (keyScan_step hx64 hn fit₁ read₁ hv) fun w ⟨hfin, hnext, wz⟩ => ?_
-    by_cases he : n = 0
-    · exact .inl ⟨by show some (!w.z) = _; rw [wz, decide_eq_true he]; rfl, hfin he⟩
-    · exact .inr ⟨by show some (!w.z) = _; rw [wz, decide_eq_false he]; rfl, n - 1, by omega_arith,
-        by omega_arith, hnext (by omega_arith)⟩
-  refine WP.seq (WP.mono loop fun v ⟨a0, a1, v12, kv⟩ => ?_)
-  obtain ⟨s₃, run₃, out₃, keep₃⟩ := keySelect_ok v hx64 v12
+  rw [WP.block_append_iff]
+  refine WP.mono (keyRows_ok hx64 fit₁ read₁ 8 (Nat.le_refl _) s₁ h₁) fun v hv => ?_
+  obtain ⟨s₃, run₃, out₃, keep₃⟩ := keySelect_ok v hx64 hv.r12
   refine WP.of_runBlock ⟨s₃, run₃, ?_, ?_⟩
-  · rw [out₃, ← a0, ← a1, k₁.mem, ptr₁, scheduleAt_getD _ _ _ hx64, ← kw_entry _ _ x]
+  · rw [out₃, hv.r9, hv.r10, hv.r11, hv.lr, k₁.mem, ptr₁, scheduleAt_getD _ _ _ hx64, ← kw_entry _ _ x]
     refine congrArg (fun w : BitVec 32 => ((w >>> (16 * (x % 2))).setWidth 16).setWidth 32) ?_
-    simp only [kAcc, Nat.zero_le, ite_true]
-    by_cases hb : x / 2 % 2 = 1
-    · rw [ite_eq_left hb]; exact congrArg _ (by omega_arith)
-    · rw [ite_eq_right hb]; exact congrArg _ (by omega_arith)
-  · exact (k₁.trans (kv.weaken (by
+    have hq : x / 8 < 8 := by omega_arith
+    simp only [kAcc, hq, ite_true]
+    by_cases hb : x / 2 % 2 = 1 <;> by_cases hc : x / 4 % 2 = 1
+    · rw [ite_eq_left hb, ite_eq_left hc]; exact congrArg _ (by omega_arith)
+    · rw [ite_eq_left hb, ite_eq_right hc]; exact congrArg _ (by omega_arith)
+    · rw [ite_eq_right hb, ite_eq_left hc]; exact congrArg _ (by omega_arith)
+    · rw [ite_eq_right hb, ite_eq_right hc]; exact congrArg _ (by omega_arith)
+  · exact (k₁.trans (hv.keep.weaken (by
       intro r hr; simp only [scanRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with h | h | h | h | h | h <;> subst h <;> decide))).trans keep₃
 

@@ -31,4 +31,13 @@ def mulSecp256k1 : Prog isa := mulSecp256k1With false
 /-- `vg_secp256k1_mul_umaal`. -/
 def mulSecp256k1U : Prog isa := mulSecp256k1With true
 
+/-- `vg_secp256k1_mul_public`, or with `u` `vg_secp256k1_mul_public_umaal`. -/
+def mulPubSecp256k1With (u : Bool) : Prog isa := (secp256k1With u).pubFn
+
+/-- `vg_secp256k1_mul_public`. -/
+def mulPubSecp256k1 : Prog isa := mulPubSecp256k1With false
+
+/-- `vg_secp256k1_mul_public_umaal`. -/
+def mulPubSecp256k1U : Prog isa := mulPubSecp256k1With true
+
 end VG.Impl.Ecdsa.Arm

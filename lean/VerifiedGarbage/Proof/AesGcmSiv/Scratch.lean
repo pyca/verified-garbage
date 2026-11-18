@@ -402,6 +402,8 @@ theorem openPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (openSig.words pb)
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr]
     (openRoundsPost pb) _ m m₂ r
   dsimp only [Curry.apply, openRoundsPost, ArgWord.ofRaw, IntTy.bits] at h ⊢
+  -- The outcome is of `m` in both: named, so that nothing unfolds `decryptWith` to reduce the `match` on it.
+  generalize decryptWith _ _ _ _ _ _ = dec at h ⊢
   intro hr
   obtain ⟨-, -, -, e₄, -⟩ := inputs_local (pb := pb) (le14 hr)
     (agree_of hb.1) (agree_of hb.2.1) (agree_of hb.2.2.1) (agree_of hb.2.2.2.1)

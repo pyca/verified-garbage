@@ -97,7 +97,6 @@ aarch64 vg_aes_gcm_siv_seal_aes
 aarch64 vg_aes_gcm_siv_seal_aes_sha3
 aarch64 vg_aes_gcm_siv_seal_neon
 aarch64 vg_aes_gcm_store_powers
-aarch64 vg_aes_gcm_store_powers_aes
 aarch64 vg_aes_gcm_stream_aad
 aarch64 vg_aes_gcm_stream_aad_aes
 aarch64 vg_aes_gcm_stream_aad_neon
@@ -181,8 +180,6 @@ aarch64 vg_cast5_cfb64_decrypt
 aarch64 vg_cast5_cfb64_decrypt_final
 aarch64 vg_cast5_cfb64_encrypt
 aarch64 vg_cast5_cfb64_encrypt_final
-aarch64 vg_cast5_ecb_decrypt
-aarch64 vg_cast5_ecb_encrypt
 aarch64 vg_cast5_expand_key
 aarch64 vg_cast5_ofb
 aarch64 vg_cast5_ofb_final
@@ -446,7 +443,6 @@ aarch64 vg_poly1305_update_neon
 aarch64 vg_rc2_cbc_decrypt_chained
 aarch64 vg_rc2_cbc_encrypt_chained
 aarch64 vg_rc2_cbc_init
-aarch64 vg_rc4_apply
 aarch64 vg_rsa_check_key
 aarch64 vg_rsa_crt_values
 aarch64 vg_rsa_generate
@@ -558,9 +554,7 @@ aarch64 vg_sm4_ctr_final
 aarch64 vg_sm4_ctr_final_sm4
 aarch64 vg_sm4_ctr_sm4
 aarch64 vg_sm4_ecb_decrypt
-aarch64 vg_sm4_ecb_decrypt_sm4
 aarch64 vg_sm4_ecb_encrypt
-aarch64 vg_sm4_ecb_encrypt_sm4
 aarch64 vg_sm4_expand_key
 aarch64 vg_sm4_gcm_init
 aarch64 vg_sm4_gcm_init_ctr32_sm4
@@ -614,7 +608,6 @@ aarch64 vg_triple_des_cfb8_decrypt
 aarch64 vg_triple_des_cfb8_encrypt
 aarch64 vg_triple_des_ecb_decrypt
 aarch64 vg_triple_des_ecb_encrypt
-aarch64 vg_triple_des_expand_key
 aarch64 vg_triple_des_ofb
 aarch64 vg_triple_des_ofb_final
 aarch64 vg_x25519_base
@@ -1210,8 +1203,6 @@ powerpc64le vg_idea_expand_key
 powerpc64le vg_idea_invert_key
 powerpc64le vg_idea_ofb
 powerpc64le vg_idea_ofb_final
-powerpc64le vg_md5_finalize
-powerpc64le vg_md5_update
 powerpc64le vg_mldsa44_keygen
 powerpc64le vg_mldsa44_pk_tr
 powerpc64le vg_mldsa44_prepare_signing_key
@@ -1302,11 +1293,6 @@ powerpc64le vg_seed_ecb_encrypt
 powerpc64le vg_seed_expand_key
 powerpc64le vg_seed_ofb
 powerpc64le vg_seed_ofb_final
-powerpc64le vg_sha1_digest
-powerpc64le vg_sha1_finalize
-powerpc64le vg_sha1_update
-powerpc64le vg_sha384_digest
-powerpc64le vg_sha384_finalize
 powerpc64le vg_sha3_224_finalize
 powerpc64le vg_sha3_224_update
 powerpc64le vg_sha3_256_finalize
@@ -1315,20 +1301,11 @@ powerpc64le vg_sha3_384_finalize
 powerpc64le vg_sha3_384_update
 powerpc64le vg_sha3_512_finalize
 powerpc64le vg_sha3_512_update
-powerpc64le vg_sha512_224_digest
-powerpc64le vg_sha512_224_finalize
-powerpc64le vg_sha512_256_digest
-powerpc64le vg_sha512_256_finalize
-powerpc64le vg_sha512_digest
-powerpc64le vg_sha512_finalize
-powerpc64le vg_sha512_update
 powerpc64le vg_shake128_finalize
 powerpc64le vg_shake128_squeeze
 powerpc64le vg_shake128_update
 powerpc64le vg_shake256_finalize
 powerpc64le vg_shake256_squeeze
-powerpc64le vg_sm3_finalize
-powerpc64le vg_sm3_update
 powerpc64le vg_sm4_cbc_decrypt_chained
 powerpc64le vg_sm4_cbc_encrypt_chained
 powerpc64le vg_sm4_cfb128_decrypt

@@ -45,13 +45,21 @@ registers they change beyond `r0`–`r3`, and never write `r9`–`r11` or `lr`:
 `[o]` is written only after `[a]` and `[b]` are read, so the result may
 overlap either operand.
 
-`vg_<curve>_mul_mod_<p|n>_umaal` (`mulFnU`) is the product's entry and rows
-on packed 32-bit words, with one `umaal` a word (`Packed.rowU`), whose
-accumulator (`2 n` words and a top word, below `2 m`) it then reduces into
-`[o]` as the sum is (`redU`), on words and with no 16-bit digits: the carry
-of the accumulator's words plus `2^(64 n) - m`, or the top word, says
-whether it is at least `m`, and `[o]` is those words plus `2^(64 n) - m`
-times that bit.
+`vg_<curve>_mul_mod_<p|n>_umaal` (`mulFnU`) is Montgomery's product on
+32-bit words, by rows that add the product and the reduction in one pass
+over the accumulator (`rowU`): for a word `u` of `[a]`, the accumulator
+becomes `([acc] + u [b] + q m) / 2³²`, each of its words by two `umaal`,
+with a carry each (`umaal t, c, u, b_j` then `umaal t, c', q, m_j`, for the
+word `t` of the accumulator), one load and one store; `q`, which makes the
+low word zero, is that word (plus `u b_0`) times `-m⁻¹ mod 2³²`, or the word
+itself where that is 1. It stores no modulus: the words of `m` are
+immediates in a register of their own, loaded where a word differs from
+the one before. The accumulator (`2 n` words and a top word, below `2 m`,
+at the start of the own working space) is then reduced into `[o]` as the
+sum is (`redU`): the carry of its words plus `2^(64 n) - m`, or the top
+word, says whether it is at least `m`, and `[o]` is those words plus
+`2^(64 n) - m` times that bit. It saves and restores `r4`–`r9` and `lr`
+where the baseline does, never writes `r10` or `r11`, and leaves `r12 = ws`.
 
 The own working space is the `64 n` bytes from `own n = 4096 - 64 n`: the
 accumulator (`32 n + 8` bytes), the temporary area and the modulus (`8 n`
@@ -209,12 +217,48 @@ def redU (acc x w : Nat) : List Instr :=
   ([.mov .r6 (.imm 1), .mov .r5 (.imm 0)] : List Instr) ++ (List.range w).flatMap (cmpStepU acc x) ++
     ([.ldr .r4 wb (acc + 4 * w), .dp .add .r6 .r5 (.reg .r4)] : List Instr) ++ mulAddU acc x w
 
-/-- `vg_<curve>_mul_mod_<p|n>_umaal`: the packed words' rows with one `umaal`
-a word (`Packed.rowU`; the CPU feature `umaal`), then `redU` with `r1 = o`. -/
-def mulFnU (n m : Nat) : Prog isa := fn n m .r4 <|
-  .seq (.block (zeros (own n) (2 * n + 2) ++ [.mov .r9 (.imm (BitVec.ofNat 32 (2 * n)))])) <|
-  .seq (.loop (.block (Packed.round (mod n m) (own n) true)) .ne) <|
-  .block (.dp .sub .r1 .lr (.reg wb) :: redU (own n) (2 ^ (64 * n) - m) (2 * n))
+/-- `r0 = r5 · (-m⁻¹ mod 2³²)`, a row's quotient digit: `r5` itself where
+the factor is 1. -/
+def quotU (m : Nat) : List Instr :=
+  if minv m % 2 ^ 32 = 1 then [.mov .r0 (.reg .r5)]
+  else loadImm .r0 (minv m) ++ ([.mul .r0 .r0 .r5] : List Instr)
+
+/-- Word 0 of a row, for the word `u` of `[a]` at `[lr]`: `r3` is the carry
+of `[acc]`'s word plus `u` times `[b]`'s (`[r4]`), `r0` the quotient digit
+`q` that makes that sum plus `q m` a multiple of `2³²`, and `r6` the carry
+of that. -/
+def rowHeadU (acc m : Nat) : List Instr :=
+  ([.ldr .r2 .lr 0, .ldr .r7 .r4 0, .ldr .r5 wb acc, .mov .r3 (.imm 0), .umaal .r5 .r3 .r2 .r7] : List Instr) ++
+    quotU m ++ ([.mov .r6 (.imm 0)] : List Instr) ++ loadWord .r8 m 0 ++
+    ([.umaal .r5 .r6 .r0 .r8] : List Instr)
+
+/-- Word `j + 1` of a row: `[acc]`'s word plus `u` times `[b]`'s and the
+carry `r3`, plus `q` times `m`'s and the carry `r6`, to word `j` of `[acc]`. -/
+def rowStepU (acc m j : Nat) : List Instr :=
+  ([.ldr .r7 .r4 (4 * (j + 1)), .ldr .r5 wb (acc + 4 * (j + 1)), .umaal .r5 .r3 .r2 .r7] : List Instr) ++
+    loadWord .r8 m (j + 1) ++ ([.umaal .r5 .r6 .r0 .r8, .str .r5 wb (acc + 4 * j)] : List Instr)
+
+/-- The end of a row of `v + 1` words: the two carries and `[acc]`'s top
+word to its words `v` and `v + 1`; the next word of `[a]`, and the count. -/
+def rowTopU (acc v : Nat) : List Instr :=
+  [.ldr .r5 wb (acc + 4 * (v + 1)), .mov .r7 (.imm 1), .umaal .r3 .r5 .r6 .r7, .str .r3 wb (acc + 4 * v),
+    .str .r5 wb (acc + 4 * (v + 1)), .dp .add .lr .lr (.imm 4), .subs .r9 .r9 (.imm 1)]
+
+/-- A row of Montgomery's product, on numbers of `v + 1` words:
+`[acc] = ([acc] + u [b] + q m) / 2³²`, in one pass over `[acc]`. -/
+def rowU (acc m v : Nat) : List Instr :=
+  rowHeadU acc m ++ (List.range v).flatMap (rowStepU acc m) ++ rowTopU acc v
+
+/-- `vg_<curve>_mul_mod_<p|n>_umaal` (the CPU feature `umaal`): `r12 = ws`,
+the registers saved, `lr = ws + a` and `r4 = ws + b` (`r1 = o`), the
+accumulator cleared and the count of rows; the rows (`rowU`); `redU`, and
+the registers restored. -/
+def mulFnU (n m : Nat) : Prog isa :=
+  .seq (.block (.mov wb (.reg .r0) :: saveCode n ++
+      ([.dp .add .lr wb (.reg .r2), .dp .add .r4 wb (.reg .r3)] : List Instr) ++ zeros (own n) (2 * n + 1) ++
+      ([.mov .r9 (.imm (BitVec.ofNat 32 (2 * n)))] : List Instr))) <|
+    .seq (.loop (.block (rowU (own n) m (2 * n - 1))) .ne) <|
+    .block (redU (own n) (2 ^ (64 * n) - m) (2 * n) ++ restoreCode n)
 
 /-- `mulFn`, or with `u` `mulFnU`. -/
 def mulFnWith (u : Bool) (n m : Nat) : Prog isa := if u then mulFnU n m else mulFn n m

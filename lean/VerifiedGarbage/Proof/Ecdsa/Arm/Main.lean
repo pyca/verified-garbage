@@ -15,6 +15,7 @@ import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Weierstrass.MulContract
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Window
+public import VerifiedGarbage.Proof.Ecdsa.Arm.Public
 import VerifiedGarbage.Proof.Ecdsa.Arm.SlotOps
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Fixed
@@ -275,7 +276,7 @@ end
 `mulBody` (`Impl/Ecdsa/Arm.lean`) leaves in `R` a representative of `[k]Q`,
 for the affine point `Q` in `R`'s first two slots and the number `k` at
 `K`'s slot, by windows (`mulBody_ok`, in `Window.lean`). `mulFn` keeps the
-callee-saved registers around it (`mulFn_ok`), `mulAt` calls it on the point
+callee-saved registers around it (`mulFnOf_ok`), `mulAt` calls it on the point
 of two slots (`mulAt_ok`), and `qMul` is that call or, for a curve without
 the function, the ladder of `ladderP` from the point (`pLadder`), whose
 invariant is that `R` represents `[k >>> j]Q` (`qMul_ok`).
@@ -442,13 +443,32 @@ theorem mulSaved_regs (c : Cfg) : (c.mulSaved.map Prod.fst).Nodup ∧ ∀ p ∈ 
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
   rcases hp with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp
 
+/-- What `Cfg.mulFnOf` asks of its body: `mulBody_ok`'s statement, of `body`. -/
+def MulBodyOk (c : Cfg) (body : Prog isa) : Prop :=
+  ∀ {base : Addr} {s : State}, Scr s base size → Far s base 8192 → sv c base s MP = c.C.p →
+    sv c base s AP = c.mont c.C.a → sv c base s B3P = c.mont (3 * c.C.b) → sv c base s ZERO = 0 →
+    sv c base s ONEP = 2 ^ (64 * c.n) % c.C.p → sv c base s RX < c.C.p → sv c base s RY < c.C.p →
+    ∀ {P : Point c.C}, onCurve c.C P = true → Rep c.C (fv c base s RX) (fv c base s RY) 1 P →
+    sv c base s K < 2 ^ (8 * c.C.len) →
+    WP isa body s fun s' => Rest powClob s s' ∧ Unch base (mulBW c) s.mem s'.mem ∧
+      sv c base s' MP = c.C.p ∧ (∀ i ∈ [RX, RY, RZ], sv c base s' i < c.C.p) ∧
+      Rep c.C (fv c base s' RX) (fv c base s' RY) (fv c base s' RZ) (mul (sv c base s K) P)
+
+theorem mulBody_bodyOk (hc : CfgOk c) (hC : Law c.C) : MulBodyOk c c.mulBody :=
+  fun hs hf hmp hap hb3 hzero hone hqx hqy _ hP hG hk =>
+    mulBody_ok hc hC hs hf hmp hap hb3 hzero hone hqx hqy hP hG hk
+
+theorem pubBody_bodyOk (hc : CfgOk c) (hC : Law c.C) : MulBodyOk c c.pubBody :=
+  fun hs hf hmp hap hb3 hzero hone hqx hqy _ hP hG hk =>
+    pubBody_ok hc hC hs hf hmp hap hb3 hzero hone hqx hqy hP hG hk
+
 /-- `vg_<curve>_mul`, from the working space at `r0` (`base`), its `8192`
 bytes the only memory it may access, with the prime, zero, one, `a` and `3b`
 in their slots, the affine point `P` of the curve in `R`'s first two slots
 and a number `k < 2^(8 len)` at `K`'s: it returns with the callee-saved
 registers and `sp` kept and `r12 = ws`, having changed only `mulFW`, with a
 representative of `[k]P` in `R`, below `p`. -/
-theorem mulFn_ok (hc : CfgOk c) (hC : Law c.C) {s : State} {base : Addr}
+theorem mulFnOf_ok (hc : CfgOk c) {body : Prog isa} (hB : MulBodyOk c body) {s : State} {base : Addr}
     (hb : State.addr (s.gpr .r0) = base) (hwr : s.wr = [⟨base, 8192⟩]) (hfit : base.toNat + 8192 ≤ 2 ^ 32)
     (hmp : sv c base s MP = c.C.p) (hap : sv c base s AP = c.mont c.C.a)
     (hb3 : sv c base s B3P = c.mont (3 * c.C.b)) (hone : sv c base s ONEP = 2 ^ (64 * c.n) % c.C.p)
@@ -456,7 +476,7 @@ theorem mulFn_ok (hc : CfgOk c) (hC : Law c.C) {s : State} {base : Addr}
     {P : Point c.C} (hP : onCurve c.C P = true)
     (hG : Rep c.C (tmv c.C c.n base s (c.sl RX)) (tmv c.C c.n base s (c.sl RY)) 1 P)
     (hk : sv c base s K < 2 ^ (8 * c.C.len)) :
-    WP isa c.mulFn s fun s' => abiPreserved s s' ∧ s'.gpr .r12 = s.gpr .r0 ∧ s'.rd = s.rd ∧
+    WP isa (c.mulFnOf body) s fun s' => abiPreserved s s' ∧ s'.gpr .r12 = s.gpr .r0 ∧ s'.rd = s.rd ∧
       s'.wr = s.wr ∧ Unch base (mulFW c) s.mem s'.mem ∧
       (∀ x ∈ [c.sl RX, c.sl RY, c.sl RZ], wordsVal s'.mem base x c.n < c.C.p) ∧
       Rep c.C (tmv c.C c.n base s' (c.sl RX)) (tmv c.C c.n base s' (c.sl RY))
@@ -464,7 +484,7 @@ theorem mulFn_ok (hc : CfgOk c) (hC : Law c.C) {s : State} {base : Addr}
   have h7 := hc.n10
   obtain hsv := save_le_wk (c := c) h7
   have hsz : size = 4096 := rfl
-  rw [Cfg.mulFn]
+  rw [Cfg.mulFnOf]
   refine WP.seq (wp_mov (op2_reg _ _) fun s₁ u₁ => ?_)
   obtain hs₁ : Scr s₁ base size := ⟨by rw [u₁.gpr]; exact hb, ⟨8192, by decide, by decide,
     by rw [u₁.wr, hwr]; simp⟩, by omega_using [hfit, hsz], by decide⟩
@@ -487,7 +507,7 @@ theorem mulFn_ok (hc : CfgOk c) (hC : Law c.C) {s : State} {base : Addr}
       simp only [List.map_cons, List.map_nil, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> left <;> dsimp only <;> omega_arith
     · rw [u₁.mem]
-  refine WP.seq (WP.mono (mulBody_ok hc hC hs₂ hf₂ (by rw [e₂ (by decide)]; exact hmp)
+  refine WP.seq (WP.mono (hB hs₂ hf₂ (by rw [e₂ (by decide)]; exact hmp)
     (by rw [e₂ (by decide)]; exact hap) (by rw [e₂ (by decide)]; exact hb3)
     (by rw [e₂ (by decide)]; exact hzero) (by rw [e₂ (by decide)]; exact hone)
     (by rw [e₂ (by decide)]; exact hqx) (by rw [e₂ (by decide)]; exact hqy) hP (by
@@ -551,33 +571,97 @@ theorem mulFn_ok (hc : CfgOk c) (hC : Law c.C) {s : State} {base : Addr}
   · show Rep _ (toM _ _ (wordsVal s₄.mem _ _ _)) (toM _ _ (wordsVal s₄.mem _ _ _)) (toM _ _ (wordsVal s₄.mem _ _ _)) _
     rw [M₄]; exact R₃
 
+/-- What `vg_<curve>_mul_public` is called with: the working space at `r0 = w`,
+writable, with the constants in their slots, the affine point `P` of the
+curve in `R`'s first two slots, below `p`, and `k < 2^(8 len)` at `K`'s. A
+call instruction keeps it. -/
+structure PubEntry (c : Cfg) (w : BitVec 32) (P : Point c.C) (k : Nat) (s : State) : Prop where
+  r0 : s.gpr .r0 = w
+  wr : ∃ len, size ≤ len ∧ len ≤ 2 ^ 32 ∧ (⟨State.addr w, len⟩ : Region) ∈ s.wr
+  far : Far s (State.addr w) 8192
+  mp : sv c (State.addr w) s MP = c.C.p
+  ap : sv c (State.addr w) s AP = c.mont c.C.a
+  b3p : sv c (State.addr w) s B3P = c.mont (3 * c.C.b)
+  zero : sv c (State.addr w) s ZERO = 0
+  onep : sv c (State.addr w) s ONEP = 2 ^ (64 * c.n) % c.C.p
+  ltx : sv c (State.addr w) s RX < c.C.p
+  lty : sv c (State.addr w) s RY < c.C.p
+  rep : Rep c.C (fv c (State.addr w) s RX) (fv c (State.addr w) s RY) 1 P
+  kv : sv c (State.addr w) s K = k
+  kb : k < 2 ^ (8 * c.C.len)
+
+/-- `mulFnOf`'s first block, for `vg_<curve>_mul_public`: the body's start. -/
+theorem pubPrologue_ok (hc : CfgOk c) {w : BitVec 32} {P : Point c.C} {k : Nat} {s : State}
+    (h : PubEntry c w P k s) :
+    WP isa (.block (.mov wb (.reg .r0) :: c.mulSaved.map fun (r, d) => .str r wb d)) s
+      (PubPre c (State.addr w) P k) := by
+  have h7 := hc.n10
+  obtain hsv := save_le_wk (c := c) h7
+  have hsz : size = 4096 := rfl
+  have hfit := h.far.nowrap
+  refine wp_mov (op2_reg _ _) fun s₁ u₁ => ?_
+  obtain hs₁ : Scr s₁ (State.addr w) size := ⟨by rw [u₁.gpr]; exact congrArg State.addr h.r0,
+    by rw [u₁.wr]; exact h.wr, by omega_using [hfit, hsz], by decide⟩
+  obtain hf₁ : Far s₁ (State.addr w) 8192 := ⟨by rw [u₁.wr]; exact h.far.wr, hfit⟩
+  refine WP.mono (strs_ok hs₁ c.mulSaved (mulSaved_bounds h7) (mulSaved_pairwise c))
+    fun s₂ ⟨K₂, O₂, _⟩ => ?_
+  obtain e₂ : ∀ {i}, i < 45 → sv c (State.addr w) s₂ i = sv c (State.addr w) s i := fun hi => by
+    have := sl_lt c (j := 45) hi
+    have := sl_le c h7 hi
+    refine (VG.Proof.Weierstrass.Arm.Outs.wordsVal O₂ (fun r hr => ?_) (by omega_arith)).trans ?_
+    · rw [mulSaved_eq] at hr
+      simp only [List.map_cons, List.map_nil, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> left <;> dsimp only <;> omega_arith
+    · rw [u₁.mem]
+  exact ⟨⟨hs₁.of_rest K₂ (fun h => nomatch h), hf₁.of_rest K₂, by rw [e₂ (by decide)]; exact h.mp,
+      by rw [e₂ (by decide)]; exact h.ap, by rw [e₂ (by decide)]; exact h.b3p,
+      by rw [e₂ (by decide)]; exact h.zero, by rw [e₂ (by decide)]; exact h.onep⟩,
+    by rw [e₂ (by decide)]; exact h.ltx, by rw [e₂ (by decide)]; exact h.lty, by
+      show Rep _ (toM _ _ (sv c _ s₂ RX)) (toM _ _ (sv c _ s₂ RY)) _ _
+      rw [e₂ (by decide), e₂ (by decide)]; exact h.rep,
+    by rw [e₂ (by decide)]; exact h.kv, h.kb⟩
+
 /-! ## The call -/
 
-/-- A call of `vg_<curve>_mul` on the affine point `P` of the curve at `px`,
-`py`, from the working space at `r12`, for the number `k < 2^(8 len)` at
-`K`'s slot: `R` holds a representative of `[k]P`, below `p`; only `r0`–`r4`,
-`r10`, `R`'s first two slots and `mulFW` change. -/
-theorem mulAt_ok (hc : CfgOk c) (hC : Law c.C) (C : Impl.Weierstrass.Mul.Curve)
-    (hnf : c.mulFn.noFrames = true)
-    {s : State} {base : Addr} (hs : Scr s base size) (hf : Far s base 8192)
-    {px py : Nat} (hpx : px < 45) (hpy : py < 45) (hpxr : px ∉ [RX, RY]) (hpyr : py ∉ [RX, RY])
-    (hmp : sv c base s MP = c.C.p) (hap : sv c base s AP = c.mont c.C.a)
-    (hb3 : sv c base s B3P = c.mont (3 * c.C.b)) (hone : sv c base s ONEP = 2 ^ (64 * c.n) % c.C.p)
-    (hzero : sv c base s ZERO = 0) (hqx : sv c base s px < c.C.p) (hqy : sv c base s py < c.C.p)
-    {P : Point c.C} (hP : onCurve c.C P = true)
-    (hG : Rep c.C (tmv c.C c.n base s (c.sl px)) (tmv c.C c.n base s (c.sl py)) 1 P)
-    (hk : sv c base s K < 2 ^ (8 * c.C.len)) :
-    WP isa (c.mulAt C px py) s fun s' => Rest [.r10, .r0, .r1, .r2, .r3, .r4] s s' ∧
+/-- A call `prog` of a function of `vg_<curve>_mul`'s on the affine point `P`
+of the curve at `px`, `py`, from the working space at `r12`, for the number
+`k < 2^(8 len)` at `K`'s slot: `R` holds a representative of `[k]P`, below
+`p`; only `r0`–`r4`, `r10`, `R`'s first two slots and `mulFW` change. -/
+def CallOk (c : Cfg) (prog : Nat → Nat → Prog isa) : Prop :=
+  ∀ {s : State} {base : Addr}, Scr s base size → Far s base 8192 →
+    ∀ {px py : Nat}, px < 45 → py < 45 → px ∉ [RX, RY] → py ∉ [RX, RY] →
+    sv c base s MP = c.C.p → sv c base s AP = c.mont c.C.a →
+    sv c base s B3P = c.mont (3 * c.C.b) → sv c base s ONEP = 2 ^ (64 * c.n) % c.C.p →
+    sv c base s ZERO = 0 → sv c base s px < c.C.p → sv c base s py < c.C.p →
+    ∀ {P : Point c.C}, onCurve c.C P = true →
+    Rep c.C (tmv c.C c.n base s (c.sl px)) (tmv c.C c.n base s (c.sl py)) 1 P →
+    sv c base s K < 2 ^ (8 * c.C.len) →
+    WP isa (prog px py) s fun s' => Rest [.r10, .r0, .r1, .r2, .r3, .r4] s s' ∧
       Unch base (slW c [RX, RY] ++ mulFW c) s.mem s'.mem ∧
       (∀ x ∈ [c.sl RX, c.sl RY, c.sl RZ], wordsVal s'.mem base x c.n < c.C.p) ∧
       Rep c.C (tmv c.C c.n base s' (c.sl RX)) (tmv c.C c.n base s' (c.sl RY))
-        (tmv c.C c.n base s' (c.sl RZ)) (mul (sv c base s K) P) := by
+        (tmv c.C c.n base s' (c.sl RZ)) (mul (sv c base s K) P)
+
+/-- Before the call of a function of `vg_<curve>_mul`'s arguments, after
+`callMulArgs` from `s`: the point of `px`, `py` in `R`'s first two slots,
+`lr` in `r10` and the working space in `r0`. -/
+structure CallMid (c : Cfg) (base : Addr) (px py : Nat) (s s₄ : State) : Prop where
+  keep : Rest [.r10, .r0, .r4] s s₄
+  r10 : s₄.gpr .r10 = s.gpr .lr
+  r0 : s₄.gpr .r0 = s.gpr .r12
+  same : ∀ {i}, i < 45 → i ≠ RX → i ≠ RY → sv c base s₄ i = sv c base s i
+  rx : sv c base s₄ RX = sv c base s px
+  ry : sv c base s₄ RY = sv c base s py
+  unch : Unch base (slW c [RX, RY]) s.mem s₄.mem
+
+/-- `callMulArgs`. -/
+theorem callMulArgs_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size) {px py : Nat}
+    (hpx : px < 45) (hpy : py < 45) (hpxr : px ∉ [RX, RY]) (hpyr : py ∉ [RX, RY]) :
+    WP isa (.block (c.callMulArgs px py)) s (CallMid c base px py s) := by
   have h7 := hc.n10
   have hn := hs.nowrap
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hpxr hpyr
-  rw [Cfg.mulAt]
-  -- The copies and the moves before the call.
-  refine WP.seq ?_
+  rw [Cfg.callMulArgs]
   simp only [List.append_assoc]
   refine WP.block_append (WP.mono (copySl_ok hc hs (o := RX) (a := px) (by decide) hpx
     (Ne.symm hpxr.1)) fun s₁ ⟨x₁, k₁, O₁⟩ => ?_)
@@ -589,7 +673,6 @@ theorem mulAt_ok (hc : CfgOk c) (hC : Law c.C) (C : Impl.Weierstrass.Mul.Curve)
     (k₁.mono (by simp)).trans ((k₂.mono (by simp)).trans ((u₃.rest (by simp)).trans (u₄.rest (by simp))))
   obtain m₄ : s₄.mem = s₂.mem := by rw [u₄.mem, u₃.mem]
   obtain hs₄ := hs.of_rest k₄ (by decide)
-  obtain hf₄ := hf.of_rest k₄
   obtain g10 : s₄.gpr .r10 = s.gpr .lr := by
     rw [u₄.other _ (by decide), u₃.gpr, k₂.gpr _ (by decide), k₁.gpr _ (by decide)]
   obtain g0 : s₄.gpr .r0 = s.gpr .r12 := by
@@ -603,13 +686,36 @@ theorem mulAt_ok (hc : CfgOk c) (hC : Law c.C) (C : Impl.Weierstrass.Mul.Curve)
     show wordsVal s₄.mem _ _ _ = _; rw [m₄]; exact (o O₂ (by decide) (by decide)).trans x₁
   obtain ry₄ : sv c base s₄ RY = sv c base s py := by
     show wordsVal s₄.mem _ _ _ = _; rw [m₄]; exact x₂.trans (o O₁ hpy hpyr.1)
+  exact ⟨k₄, g10, g0, e₄, rx₄, ry₄, by
+    rw [m₄]; exact (O₁.unch.trans O₂.unch).mono fun w hw => by simpa using hw⟩
+
+/-- The call of `mulFnOf body` after `callMulArgs`: `R` holds a representative
+of `[k]P`, below `p`; `r12` is the working space again. -/
+theorem callMulCall_ok (hc : CfgOk c) {body : Prog isa} (hB : MulBodyOk c body) (name : String)
+    (hnf : (c.mulFnOf body).noFrames = true) {s s₄ : State} {base : Addr} (hs : Scr s base size)
+    (hf : Far s base 8192) {px py : Nat} (M : CallMid c base px py s s₄)
+    (hmp : sv c base s MP = c.C.p) (hap : sv c base s AP = c.mont c.C.a)
+    (hb3 : sv c base s B3P = c.mont (3 * c.C.b)) (hone : sv c base s ONEP = 2 ^ (64 * c.n) % c.C.p)
+    (hzero : sv c base s ZERO = 0) (hqx : sv c base s px < c.C.p) (hqy : sv c base s py < c.C.p)
+    {P : Point c.C} (hP : onCurve c.C P = true)
+    (hG : Rep c.C (tmv c.C c.n base s (c.sl px)) (tmv c.C c.n base s (c.sl py)) 1 P)
+    (hk : sv c base s K < 2 ^ (8 * c.C.len)) :
+    WP isa (.call name (c.mulFnOf body)) s₄ fun s₇ => s₇.rd = s₄.rd ∧ s₇.wr = s₄.wr ∧ s₇.sp = s₄.sp ∧
+      (∀ r ∈ preserved, r ≠ .lr → s₇.gpr r = s₄.gpr r) ∧ s₇.gpr .r12 = s.gpr .r12 ∧
+      Unch base (mulFW c) s₄.mem s₇.mem ∧
+      (∀ x ∈ [c.sl RX, c.sl RY, c.sl RZ], wordsVal s₇.mem base x c.n < c.C.p) ∧
+      Rep c.C (tmv c.C c.n base s₇ (c.sl RX)) (tmv c.C c.n base s₇ (c.sl RY))
+        (tmv c.C c.n base s₇ (c.sl RZ)) (mul (sv c base s K) P) := by
+  obtain ⟨k₄, g10, g0, e₄, rx₄, ry₄, -⟩ := M
+  obtain hs₄ := hs.of_rest k₄ (by decide)
+  obtain hf₄ := hf.of_rest k₄
   obtain hcov : Covers [⟨base, 8192⟩] s₄.wr := by
     obtain h := hf₄.write (d := 0) (n := 8192) (by omega_using [])
     simp only [off, BitVec.add_zero] at h
     exact Covers.one h
   obtain e0 : ∀ t : State, t.gpr .r0 = s.gpr .r12 → State.addr (t.gpr .r0) = base := fun t h => by
     rw [h]; exact hs.wb
-  refine WP.seq (WP.callCalls (k := ⟨fun t => t.wr = [⟨base, 8192⟩] ∧ t.gpr .r0 = s.gpr .r12 ∧
+  refine WP.callCalls (k := ⟨fun t => t.wr = [⟨base, 8192⟩] ∧ t.gpr .r0 = s.gpr .r12 ∧
         t.mem = s₄.mem,
       fun t t' => t'.gpr .r12 = t.gpr .r0 ∧ Unch base (mulFW c) t.mem t'.mem ∧
         (∀ x ∈ [c.sl RX, c.sl RY, c.sl RZ], wordsVal t'.mem base x c.n < c.C.p) ∧
@@ -620,7 +726,7 @@ theorem mulAt_ok (hc : CfgOk c) (hC : Law c.C) (C : Impl.Weierstrass.Mul.Curve)
       obtain hb := e0 t h0
       obtain sv_t : ∀ i, sv c base t i = sv c base s₄ i := fun i => by
         show wordsVal t.mem _ _ _ = wordsVal s₄.mem _ _ _; rw [hm]
-      obtain ⟨tr, t', he, A, R12, -, -, U, L, R⟩ := mulFn_ok hc hC hb hw hf.nowrap
+      obtain ⟨tr, t', he, A, R12, -, -, U, L, R⟩ := mulFnOf_ok hc hB hb hw hf.nowrap
         (by rw [sv_t, e₄ (by decide) (by decide) (by decide)]; exact hmp)
         (by rw [sv_t, e₄ (by decide) (by decide) (by decide)]; exact hap)
         (by rw [sv_t, e₄ (by decide) (by decide) (by decide)]; exact hb3)
@@ -636,10 +742,21 @@ theorem mulAt_ok (hc : CfgOk c) (hC : Law c.C) (C : Impl.Weierstrass.Mul.Curve)
     ⟨by rw [State.withRegions_wr],
       by rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide), g0],
       by rw [State.withRegions_mem, State.callEntry_mem]⟩
-    (Covers.right hcov) hcov ?_ hnf)
+    (Covers.right hcov) hcov ?_ hnf
   intro s₇ r₇ w₇ p₇ _ hp₇ _ ⟨R, U, L, E⟩
   simp only [State.withRegions_mem, State.callEntry_mem, State.withRegions_gpr] at R U L E
   rw [State.callEntry_gpr _ (by decide), g0] at R
+  exact ⟨r₇, w₇, p₇, hp₇, R, U, L, E⟩
+
+/-- A call of `mulFnOf body`. -/
+theorem callMul_ok (hc : CfgOk c) {body : Prog isa} (hB : MulBodyOk c body) (name : String)
+    (hnf : (c.mulFnOf body).noFrames = true) : CallOk c (c.callMul name (c.mulFnOf body)) := by
+  intro s base hs hf px py hpx hpy hpxr hpyr hmp hap hb3 hone hzero hqx hqy P hP hG hk
+  rw [Cfg.callMul]
+  refine WP.seq (WP.mono (callMulArgs_ok hc hs hpx hpy hpxr hpyr) fun s₄ M => ?_)
+  refine WP.seq (WP.mono (callMulCall_ok hc hB name hnf hs hf M hmp hap hb3 hone hzero hqx hqy hP hG hk)
+    fun s₇ ⟨r₇, w₇, p₇, hp₇, R, U, L, E⟩ => ?_)
+  obtain ⟨k₄, g10, -, -, -, -, U₂⟩ := M
   refine wp_mov (op2_reg _ _) fun s₈ u₈ => WP.block_nil ?_
   have hm : s₈.mem = s₇.mem := u₈.mem
   refine ⟨⟨fun r hr => ?_, by rw [u₈.rd, r₇, k₄.rd], by rw [u₈.wr, w₇, k₄.wr],
@@ -655,13 +772,19 @@ theorem mulAt_ok (hc : CfgOk c) (hC : Law c.C) (C : Impl.Weierstrass.Mul.Curve)
     obtain hpres : r ∈ preserved := by revert h10 h0 h1 h2 h3 h4 h12 hlr; cases r <;> decide
     rw [u₈.other _ hlr, hp₇ r hpres hlr, k₄.gpr r (by simp [h10, h0, h4])]
   · rw [hm]
-    obtain U₂ : Unch base (slW c [RX, RY]) s.mem s₂.mem := by
-      have := O₁.unch.trans O₂.unch
-      exact this.mono fun w hw => by simpa using hw
-    rw [m₄] at U
     simpa only [List.append_assoc] using U₂.trans U
   · show Rep _ (toM _ _ (wordsVal s₈.mem _ _ _)) (toM _ _ (wordsVal s₈.mem _ _ _)) (toM _ _ (wordsVal s₈.mem _ _ _)) _
     rw [hm]; exact E
+
+/-- A call of `vg_<curve>_mul`. -/
+theorem mulAt_ok (hc : CfgOk c) (hC : Law c.C) (C : Impl.Weierstrass.Mul.Curve)
+    (hnf : c.mulFn.noFrames = true) : CallOk c (c.mulAt C) :=
+  callMul_ok hc (mulBody_bodyOk hc hC) _ hnf
+
+/-- A call of `vg_<curve>_mul_public`. -/
+theorem pubAt_ok (hc : CfgOk c) (hC : Law c.C) (C : Impl.Weierstrass.Mul.Curve)
+    (hnf : c.pubFn.noFrames = true) : CallOk c (c.pubAt C) :=
+  callMul_ok hc (pubBody_bodyOk hc hC) _ hnf
 
 /-! ## What `vg_<curve>_mul` writes besides the ladder's slots -/
 
@@ -741,7 +864,8 @@ theorem mulFW_ge (h7 : c.n < 10) : ∀ w ∈ mulFW c, c.sl TMP ≤ w.1 := by
 point `P` of the curve at `px`, `py` and `k < 2^(8 len)`, the number at
 `K`'s slot (for the call) or whose bits are the table (for the ladder), from
 `R = O`; only `powClob`, the ladder's slots and `genX` change. -/
-theorem qMul_ok (hc : CfgOk c) (hC : Law c.C) {s : State} {base : Addr} (hs : Scr s base size)
+theorem qMulWith_ok (hc : CfgOk c) (hC : Law c.C) {call : Impl.Weierstrass.Mul.Curve → Nat → Nat → Prog isa}
+    (hcall : ∀ C, c.mul = some C → CallOk c (call C)) {s : State} {base : Addr} (hs : Scr s base size)
     (hf : Far s base 8192)
     {g : Reg → BitVec 32} (F : Fixed c base g s.mem) {px py : Nat} (hp : PtSlots px py)
     (hpx : sv c base s px < c.C.p) (hpy : sv c base s py < c.C.p)
@@ -751,7 +875,7 @@ theorem qMul_ok (hc : CfgOk c) (hC : Law c.C) {s : State} {base : Addr} (hs : Sc
     (hkl : k < 2 ^ (8 * c.C.len))
     (hk : c.mul.isSome → sv c base s K = k)
     (ht : c.mul = none → ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 0 + t)) = if k.testBit t then 1 else 0) :
-    WP isa (c.qMul px py) s fun t => Rest powClob s t ∧
+    WP isa (c.qMulWith call px py) s fun t => Rest powClob s t ∧
       Unch base (VG.Proof.Weierstrass.Arm.Point.ladWp c.ladderCfg c.wk ++ genX c) s.mem t.mem ∧
       ModOkW c.MP' size c.C.p t.mem base ∧
       (∀ x ∈ [c.sl RX, c.sl RY, c.sl RZ], wordsVal t.mem base x c.n < c.C.p) ∧
@@ -765,7 +889,7 @@ theorem qMul_ok (hc : CfgOk c) (hC : Law c.C) {s : State} {base : Addr} (hs : Sc
   obtain tone : tmv c.C c.n base s (c.sl ONEP) = 1 := by
     show toM _ _ (sv c base s ONEP) = 1
     rw [show sv c base s ONEP = _ from F.onep]; exact toM_one hpR
-  unfold Cfg.qMul
+  unfold Cfg.qMulWith
   cases hm : c.mul with
   | none =>
     simp only
@@ -821,7 +945,7 @@ theorem qMul_ok (hc : CfgOk c) (hC : Law c.C) {s : State} {base : Addr} (hs : Sc
       · exact List.mem_cons_self
       · rw [List.mem_singleton.mp h]; exact List.mem_cons_of_mem _ List.mem_cons_self)
     obtain hk' : sv c base s K = k := hk (by rw [hm]; rfl)
-    refine WP.mono (mulAt_ok (px := px) (py := py) hc hC C (hc.mulNf C hm) hs hf hpx'.1 hpy'.1
+    refine WP.mono (hcall C hm (px := px) (py := py) hs hf hpx'.1 hpy'.1
       hpxr hpyr F.mp F.ap F.b3p F.onep F.zero hpx hpy hP hG (by rw [hk']; exact hkl))
       fun t ⟨K, U, L, R⟩ => ⟨K.mono (by simp [powClob, clob]), ?_, ?_, L, by rw [hk'] at R; exact R⟩
     · refine U.mono fun w hw => ?_
@@ -863,6 +987,44 @@ theorem qMul_ok (hc : CfgOk c) (hC : Law c.C) {s : State} {base : Addr} (hs : Sc
           · exact Nat.le_trans h12 (mulFW_ge h7 w hw)
         · have := sl_le c h7 (i := MP) (by decide); dsimp only [size] at this; omega_using [this]
       exact modP_of hc (hmp.trans F.mp)
+
+/-- `qMul`: `qMulWith_ok`, by the call of `vg_<curve>_mul`. -/
+theorem qMul_ok (hc : CfgOk c) (hC : Law c.C) {s : State} {base : Addr} (hs : Scr s base size)
+    (hf : Far s base 8192)
+    {g : Reg → BitVec 32} (F : Fixed c base g s.mem) {px py : Nat} (hp : PtSlots px py)
+    (hpx : sv c base s px < c.C.p) (hpy : sv c base s py < c.C.p)
+    (hrx : sv c base s RX = 0) (hry : sv c base s RY = c.mont 1) (hrz : sv c base s RZ = 0)
+    {k : Nat} {P : Point c.C} (hP : onCurve c.C P = true)
+    (hG : Rep c.C (tmv c.C c.n base s (c.sl px)) (tmv c.C c.n base s (c.sl py)) 1 P)
+    (hkl : k < 2 ^ (8 * c.C.len))
+    (hk : c.mul.isSome → sv c base s K = k)
+    (ht : c.mul = none → ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 0 + t)) = if k.testBit t then 1 else 0) :
+    WP isa (c.qMul px py) s fun t => Rest powClob s t ∧
+      Unch base (VG.Proof.Weierstrass.Arm.Point.ladWp c.ladderCfg c.wk ++ genX c) s.mem t.mem ∧
+      ModOkW c.MP' size c.C.p t.mem base ∧
+      (∀ x ∈ [c.sl RX, c.sl RY, c.sl RZ], wordsVal t.mem base x c.n < c.C.p) ∧
+      Rep c.C (tmv c.C c.n base t (c.sl RX)) (tmv c.C c.n base t (c.sl RY))
+        (tmv c.C c.n base t (c.sl RZ)) (mul k P) :=
+  qMulWith_ok hc hC (fun C hm => mulAt_ok hc hC C (hc.mulNf C hm)) hs hf F hp hpx hpy hrx hry hrz hP hG hkl hk ht
+
+/-- `qMulPub`: `qMulWith_ok`, by the call of `vg_<curve>_mul_public`. -/
+theorem qMulPub_ok (hc : CfgOk c) (hC : Law c.C) {s : State} {base : Addr} (hs : Scr s base size)
+    (hf : Far s base 8192)
+    {g : Reg → BitVec 32} (F : Fixed c base g s.mem) {px py : Nat} (hp : PtSlots px py)
+    (hpx : sv c base s px < c.C.p) (hpy : sv c base s py < c.C.p)
+    (hrx : sv c base s RX = 0) (hry : sv c base s RY = c.mont 1) (hrz : sv c base s RZ = 0)
+    {k : Nat} {P : Point c.C} (hP : onCurve c.C P = true)
+    (hG : Rep c.C (tmv c.C c.n base s (c.sl px)) (tmv c.C c.n base s (c.sl py)) 1 P)
+    (hkl : k < 2 ^ (8 * c.C.len))
+    (hk : c.mul.isSome → sv c base s K = k)
+    (ht : c.mul = none → ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 0 + t)) = if k.testBit t then 1 else 0) :
+    WP isa (c.qMulPub px py) s fun t => Rest powClob s t ∧
+      Unch base (VG.Proof.Weierstrass.Arm.Point.ladWp c.ladderCfg c.wk ++ genX c) s.mem t.mem ∧
+      ModOkW c.MP' size c.C.p t.mem base ∧
+      (∀ x ∈ [c.sl RX, c.sl RY, c.sl RZ], wordsVal t.mem base x c.n < c.C.p) ∧
+      Rep c.C (tmv c.C c.n base t (c.sl RX)) (tmv c.C c.n base t (c.sl RY))
+        (tmv c.C c.n base t (c.sl RZ)) (mul k P) :=
+  qMulWith_ok hc hC (fun C hm => pubAt_ok hc hC C (hc.pubNf C hm)) hs hf F hp hpx hpy hrx hry hrz hP hG hkl hk ht
 
 end VG.Proof.Ecdsa.Arm
 

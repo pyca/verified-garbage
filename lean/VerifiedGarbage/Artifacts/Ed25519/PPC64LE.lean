@@ -14,7 +14,7 @@ namespace VG.Artifacts.Ed25519.PPC64LE
 
 def artifacts : List Artifact := [
   Spec.Ed25519.keyPairApi.artifact PPC64LE.target {
-    code := Impl.Ed25519.PPC64LE.KeyPair.keyPair Spec.Sha512.digest512Api.name
+    code := Impl.Ed25519.PPC64LE.KeyPair.keyPair (Spec.Sha512.digest512Api.name ++ "_core")
       Proof.Ed25519.PPC64LE.KeyPair.dgCode "vg_ed25519_public_key_expanded"
       Impl.Ed25519.PPC64LE.Whole.publicKeyExpandedCode
     verified := Proof.Ed25519.PPC64LE.KeyPair.verified },

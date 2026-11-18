@@ -87,6 +87,7 @@ theorem brainpoolp384r1_ok : CfgOk brainpoolp384r1 where
   fp := ⟨rfl, rfl, Mont.brainpoolp384r1p_ok, rfl⟩
   fn := ⟨rfl, rfl, Mont.brainpoolp384r1n_ok, rfl⟩
   mulNf := fun _ _ => Impl.Ecdsa.Arm.mulBrainpoolP384r1_noFrames
+  pubNf := fun _ _ => Impl.Ecdsa.Arm.mulPubBrainpoolP384r1_noFrames
 
 
 set_option exponentiation.threshold 512 in
@@ -113,6 +114,7 @@ theorem brainpoolp384r1u_ok : CfgOk (brainpoolp384r1With true) where
   fp := brainpoolp384r1_ok.fp
   fn := brainpoolp384r1_ok.fn
   mulNf := fun _ _ => Impl.Ecdsa.Arm.mulBrainpoolP384r1U_noFrames
+  pubNf := fun _ _ => Impl.Ecdsa.Arm.mulPubBrainpoolP384r1U_noFrames
 
 /-- Either configuration. -/
 theorem brainpoolp384r1With_ok (u : Bool) : CfgOk (brainpoolp384r1With u) := by

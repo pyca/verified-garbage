@@ -2344,7 +2344,7 @@ theorem streamEncryptF16W_resOk (v : GcmImpl) (B16 : BlkFn CtxMode.prepared16) (
   have y₂ : s₀₂.syms = s₂.syms := by
     rw [← hA₂]; exact (afterFlag_facts (Or.inl rfl) (flag_inRegions (N := 129) (by decide) h₂')).2.2
   rcases hb₁ with ⟨c₁, x₁⟩ | ⟨c₁, x₁⟩ <;> rcases hb₂ with ⟨c₂, x₂⟩ | ⟨c₂, x₂⟩
-  · exact streamEnc16_agree .avx v B16 gf cf hB16 hct hgh hn16 q₁ q₂ (hf₁ ▸ c₁) (hf₂ ▸ c₂) qp qg qbm qu
+  · exact streamEnc16_agree .avx v B16 gf cf hB16 hct hgh hn16 q₁ q₂ (Nat.le_trans c₁ (Nat.le_of_eq hf₁.symm)) (Nat.le_trans c₂ (Nat.le_of_eq hf₂.symm)) qp qg qbm qu
       (fun n h => by rw [y₁, y₂]; exact hsy n (List.mem_append_right _ (List.mem_append_left _ h))) x₁ x₂ x hx'
   · exact absurd (hflag.mp c₁) c₂
   · exact absurd (hflag.mpr c₂) c₁
@@ -2406,7 +2406,7 @@ theorem streamDecryptF16W_resOk (v : GcmImpl) (B16 : BlkFn CtxMode.prepared16) (
   have y₂ : s₀₂.syms = s₂.syms := by
     rw [← hA₂]; exact (afterFlag_facts (Or.inl rfl) (flag_inRegions (N := 129) (by decide) h₂')).2.2
   rcases hb₁ with ⟨c₁, x₁⟩ | ⟨c₁, x₁⟩ <;> rcases hb₂ with ⟨c₂, x₂⟩ | ⟨c₂, x₂⟩
-  · exact streamDec16_agree .avx v B16 gf cf hB16 hct hgh hn16 q₁ q₂ (hf₁ ▸ c₁) (hf₂ ▸ c₂) qp qg qbm qu
+  · exact streamDec16_agree .avx v B16 gf cf hB16 hct hgh hn16 q₁ q₂ (Nat.le_trans c₁ (Nat.le_of_eq hf₁.symm)) (Nat.le_trans c₂ (Nat.le_of_eq hf₂.symm)) qp qg qbm qu
       (fun n h => by rw [y₁, y₂]; exact hsy n (List.mem_append_right _ (List.mem_append_left _ h))) x₁ x₂ x hx'
   · exact absurd (hflag.mp c₁) c₂
   · exact absurd (hflag.mpr c₂) c₁
@@ -2872,7 +2872,7 @@ theorem streamEncryptF48W_resOk (v : GcmImpl) (B48 : BlkFn CtxMode.prepared) (B 
   have y₂ : s₀₂.syms = s₂.syms := by
     rw [← hA₂]; exact (afterFlag_facts (Or.inr rfl) (flag_inRegions (N := 129) (by decide) h₂')).2.2
   rcases hb₁ with ⟨c₁, x₁⟩ | ⟨c₁, x₁⟩ <;> rcases hb₂ with ⟨c₂, x₂⟩ | ⟨c₂, x₂⟩
-  · exact streamEnc48_agree .avx v B48 gf cf hB48 hct hgh hn48 q₁ q₂ (hf₁ ▸ c₁) (hf₂ ▸ c₂) qp qg qbm qu
+  · exact streamEnc48_agree .avx v B48 gf cf hB48 hct hgh hn48 q₁ q₂ (Nat.le_trans c₁ (Nat.le_of_eq hf₁.symm)) (Nat.le_trans c₂ (Nat.le_of_eq hf₂.symm)) qp qg qbm qu
       (fun n h => by rw [y₁, y₂]; exact hsy n (List.mem_append_right _ (List.mem_append_left _ h))) x₁ x₂ x hx'
   · exact absurd (hflag.mp c₁) c₂
   · exact absurd (hflag.mpr c₂) c₁
@@ -2916,7 +2916,7 @@ theorem streamDecryptF48W_resOk (v : GcmImpl) (B48 : BlkFn CtxMode.prepared) (B 
   have y₂ : s₀₂.syms = s₂.syms := by
     rw [← hA₂]; exact (afterFlag_facts (Or.inr rfl) (flag_inRegions (N := 129) (by decide) h₂')).2.2
   rcases hb₁ with ⟨c₁, x₁⟩ | ⟨c₁, x₁⟩ <;> rcases hb₂ with ⟨c₂, x₂⟩ | ⟨c₂, x₂⟩
-  · exact streamDec48_agree .avx v B48 gf cf hB48 hct hgh hn48 q₁ q₂ (hf₁ ▸ c₁) (hf₂ ▸ c₂) qp qg qbm qu
+  · exact streamDec48_agree .avx v B48 gf cf hB48 hct hgh hn48 q₁ q₂ (Nat.le_trans c₁ (Nat.le_of_eq hf₁.symm)) (Nat.le_trans c₂ (Nat.le_of_eq hf₂.symm)) qp qg qbm qu
       (fun n h => by rw [y₁, y₂]; exact hsy n (List.mem_append_right _ (List.mem_append_left _ h))) x₁ x₂ x hx'
   · exact absurd (hflag.mp c₁) c₂
   · exact absurd (hflag.mpr c₂) c₁

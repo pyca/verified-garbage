@@ -30,6 +30,15 @@ meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.Gcm.Contract
+public import VerifiedGarbage.Impl.Residue.AArch64
+meta import VerifiedGarbage.Impl.Residue.AArch64
+public import VerifiedGarbage.TCB.AArch64.Residue
+meta import VerifiedGarbage.TCB.AArch64.Residue
+import VerifiedGarbage.Proof.Framework.AArch64.Clears
+import VerifiedGarbage.Proof.Framework.AArch64.ResidueTaint
+meta import VerifiedGarbage.Proof.Framework.AArch64.ResidueTaint
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 public import VerifiedGarbage.Spec.Gcm.Powers8
 
 
@@ -1435,5 +1444,19 @@ theorem keyPowers_verified :
     sig_implies [Spec.Gcm.storePowersContract, Spec.Gcm.storePowersSig, Spec.Gcm.storePowersParam,
       Spec.Gcm.storePowersPost, keyPowersAArch64, AArch64.abi, AArch64.argRegs]
       [satStateK, Proof.Gcm.AArch64.satState] using satStateK)
+
+/-- `keyPowers`, then the powers of the hash key it leaves in `v3`–`v7` and
+`v16`–`v31` cleared. -/
+abbrev keyPowersCleared : Prog isa :=
+  Impl.Residue.AArch64.withClears []
+    [.v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25, .v26,
+     .v27, .v28, .v29, .v30, .v31] none Impl.Gcm.AArch64.Pmull.keyPowers
+
+theorem keyPowersCleared_verified :
+    Verified AArch64.target keyPowersCleared (Spec.Gcm.storePowersContract AArch64.abi) :=
+  Clears.Verified.withClears keyPowers_verified (by decide)
+
+theorem keyPowersCleared_noResidue (k : Contract isa) : NoResidue keyPowersCleared k 0 :=
+  RTaint.noResidue_of_check ⟨_, by taint_decide⟩ k
 
 end VG.Proof.Gcm.AArch64.Pmull

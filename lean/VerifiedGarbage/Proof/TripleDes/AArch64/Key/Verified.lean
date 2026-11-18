@@ -10,6 +10,8 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.TripleDes.AArch64.FunctionsLit
 import VerifiedGarbage.Proof.TripleDes.AArch64.Lit
+public import VerifiedGarbage.Proof.TripleDes.AArch64.ConstantTime
+import VerifiedGarbage.Proof.Framework.AArch64.Clears
 
 @[expose] public section
 
@@ -40,5 +42,10 @@ theorem verified : Verified target Impl.TripleDes.AArch64.Key.expandKey
   sig_implies [Spec.TripleDes.expandKeyContract, Spec.TripleDes.expandKeySig,
     Spec.TripleDes.expandKeyPre, Spec.TripleDes.expandKeyPost, abi, argRegs,
     contract, publicRegs_three] [satState] using satState
+
+/-- The key expansion, with what it leaves cleared, meets the same contract. -/
+theorem verifiedCleared : Verified target Proof.TripleDes.AArch64.expandKeyCleared
+    (Spec.TripleDes.expandKeyContract abi) :=
+  Clears.Verified.withClears verified (by decide)
 
 end VG.Proof.TripleDes.AArch64.Key

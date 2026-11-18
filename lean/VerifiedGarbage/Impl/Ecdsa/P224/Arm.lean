@@ -30,4 +30,13 @@ def mulP224 : Prog isa := mulP224With false
 /-- `vg_p224_mul_umaal`. -/
 def mulP224U : Prog isa := mulP224With true
 
+/-- `vg_p224_mul_public`, or with `u` `vg_p224_mul_public_umaal`. -/
+def mulPubP224With (u : Bool) : Prog isa := (p224With u).pubFn
+
+/-- `vg_p224_mul_public`. -/
+def mulPubP224 : Prog isa := mulPubP224With false
+
+/-- `vg_p224_mul_public_umaal`. -/
+def mulPubP224U : Prog isa := mulPubP224With true
+
 end VG.Impl.Ecdsa.Arm

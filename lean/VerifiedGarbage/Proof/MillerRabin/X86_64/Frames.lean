@@ -57,7 +57,7 @@ theorem round_frames {s : State} {body : Prog isa} {Q : State → Prop}
       rw [hn] at hi'
       rw [popped_mem, hP, show (entered s).gpr .rsp + 8 + BitVec.ofNat 64 (8 * i) =
         (entered s).gpr .rsp + BitVec.ofNat 64 (8 + 8 * i) by
-          rw [BitVec.add_assoc]; congr 1; bv_omega_arith]
+          rw [BitVec.add_assoc]; refine congrArg (HAdd.hAdd ((entered s).gpr .rsp)) ?_; bv_omega_arith]
       exact f₁.readW (Region.contains_self _ _) (fun r hr => by
         rw [List.mem_singleton.mp hr]; exact Offset.disjoint_base _ (by simp only [List.length_singleton]; omega_arith)
           (by omega_arith)) (by decide)

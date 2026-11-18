@@ -2599,7 +2599,7 @@ vg_ecdsa_p256_verify:
 	str r4, [r12, #572]
 	mov r10, lr
 	mov r0, r12
-	bl {vg_p256_mul}
+	bl {vg_p256_mul_public}
 	mov lr, r10
 	mov r10, lr
 	mov r0, r12
@@ -5705,7 +5705,7 @@ vg_ecdsa_p256_verify_umaal:
 	str r4, [r12, #572]
 	mov r10, lr
 	mov r0, r12
-	bl {vg_p256_mul_umaal}
+	bl {vg_p256_mul_public_umaal}
 	mov lr, r10
 	mov r10, lr
 	mov r0, r12

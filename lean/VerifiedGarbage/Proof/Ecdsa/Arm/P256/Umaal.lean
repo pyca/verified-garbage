@@ -56,6 +56,7 @@ theorem p256u_ok : CfgOk (p256With true) where
   fp := p256_ok.fp
   fn := p256_ok.fn
   mulNf := fun _ _ => Impl.Ecdsa.Arm.mulP256U_noFrames
+  pubNf := fun _ _ => Impl.Ecdsa.Arm.mulPubP256U_noFrames
 
 /-- Either configuration. -/
 theorem p256With_ok (u : Bool) : CfgOk (p256With u) := by

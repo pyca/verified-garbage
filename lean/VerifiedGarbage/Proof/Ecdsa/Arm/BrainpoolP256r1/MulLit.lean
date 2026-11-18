@@ -28,15 +28,25 @@ time, properties of every instruction): the literal of the code
 namespace VG
 
 materialize_code Impl.Ecdsa.Arm.mulBrainpoolP256r1
+materialize_code Impl.Ecdsa.Arm.mulPubBrainpoolP256r1
 
 materialize_code Impl.Ecdsa.Arm.mulBrainpoolP256r1U
+materialize_code Impl.Ecdsa.Arm.mulPubBrainpoolP256r1U
 
 /-- `vg_brainpoolp256r1_mul`'s code has no frame, which its calls need. -/
 theorem Impl.Ecdsa.Arm.mulBrainpoolP256r1_noFrames : Impl.Ecdsa.Arm.brainpoolp256r1.mulFn.noFrames = true := by
   show Impl.Ecdsa.Arm.mulBrainpoolP256r1.noFrames = true; lit_decide
 
+/-- `vg_brainpoolp256r1_mul_public`'s, likewise. -/
+theorem Impl.Ecdsa.Arm.mulPubBrainpoolP256r1_noFrames : Impl.Ecdsa.Arm.brainpoolp256r1.pubFn.noFrames = true := by
+  show Impl.Ecdsa.Arm.mulPubBrainpoolP256r1.noFrames = true; lit_decide
+
 /-- `vg_brainpoolp256r1_mul_umaal`'s code has no frame, which its calls need. -/
 theorem Impl.Ecdsa.Arm.mulBrainpoolP256r1U_noFrames : (Impl.Ecdsa.Arm.brainpoolp256r1With true).mulFn.noFrames = true := by
   show Impl.Ecdsa.Arm.mulBrainpoolP256r1U.noFrames = true; lit_decide
+
+/-- `vg_brainpoolp256r1_mul_public_umaal`'s, likewise. -/
+theorem Impl.Ecdsa.Arm.mulPubBrainpoolP256r1U_noFrames : (Impl.Ecdsa.Arm.brainpoolp256r1With true).pubFn.noFrames = true := by
+  show Impl.Ecdsa.Arm.mulPubBrainpoolP256r1U.noFrames = true; lit_decide
 
 end VG

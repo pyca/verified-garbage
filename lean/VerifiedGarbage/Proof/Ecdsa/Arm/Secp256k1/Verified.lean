@@ -90,6 +90,7 @@ theorem secp256k1_ok : CfgOk secp256k1 where
   fp := ⟨rfl, rfl, Mont.secp256k1p_ok, rfl⟩
   fn := ⟨rfl, rfl, Mont.secp256k1n_ok, rfl⟩
   mulNf := fun _ _ => Impl.Ecdsa.Arm.mulSecp256k1_noFrames
+  pubNf := fun _ _ => Impl.Ecdsa.Arm.mulPubSecp256k1_noFrames
 
 /-- secp256k1 with its field multiplications by `vg_secp256k1_mul_mod_<p|n>_umaal`:
 what `secp256k1_ok` states. -/
@@ -114,6 +115,7 @@ theorem secp256k1u_ok : CfgOk (secp256k1With true) where
   fp := secp256k1_ok.fp
   fn := secp256k1_ok.fn
   mulNf := fun _ _ => Impl.Ecdsa.Arm.mulSecp256k1U_noFrames
+  pubNf := fun _ _ => Impl.Ecdsa.Arm.mulPubSecp256k1U_noFrames
 
 /-- Either configuration. -/
 theorem secp256k1With_ok (u : Bool) : CfgOk (secp256k1With u) := by

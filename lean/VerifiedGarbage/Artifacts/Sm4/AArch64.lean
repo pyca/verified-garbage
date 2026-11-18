@@ -26,12 +26,14 @@ def artifacts : List Artifact := [
     verified := Proof.Sm4.AArch64.Serial.expandKey_verified },
   Spec.Sm4.ecbEncryptApi.artifact AArch64.target {
     suffix := "_sm4"
-    code := Impl.Sm4.AArch64.Sm4e.ecb .encrypt
-    verified := Proof.Sm4.AArch64.Sm4e.ecb_verified .encrypt },
+    code := Proof.Sm4.AArch64.Sm4e.ecbCleared .encrypt
+    verified := Proof.Sm4.AArch64.Sm4e.ecbCleared_verified .encrypt
+    residue := some ⟨Proof.Sm4.AArch64.Sm4e.ecbCleared_noResidue _ .encrypt⟩ },
   Spec.Sm4.ecbDecryptApi.artifact AArch64.target {
     suffix := "_sm4"
-    code := Impl.Sm4.AArch64.Sm4e.ecb .decrypt
-    verified := Proof.Sm4.AArch64.Sm4e.ecb_verified .decrypt },
+    code := Proof.Sm4.AArch64.Sm4e.ecbCleared .decrypt
+    verified := Proof.Sm4.AArch64.Sm4e.ecbCleared_verified .decrypt
+    residue := some ⟨Proof.Sm4.AArch64.Sm4e.ecbCleared_noResidue _ .decrypt⟩ },
   Spec.Sm4.ecbEncryptApi.artifact AArch64.target {
     code := Impl.Sm4.AArch64.ecbFew .encrypt Proof.Sm4.AArch64.ecbAnyFramed
     verified := Proof.Sm4.AArch64.ecbFew_verified .encrypt },

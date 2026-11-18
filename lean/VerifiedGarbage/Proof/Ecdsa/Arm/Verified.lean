@@ -87,6 +87,7 @@ theorem p256_ok : CfgOk p256 where
   fp := ⟨rfl, rfl, Mont.p256p_ok, rfl⟩
   fn := ⟨rfl, rfl, Mont.p256n_ok, rfl⟩
   mulNf := fun _ _ => Impl.Ecdsa.Arm.mulP256_noFrames
+  pubNf := fun _ _ => Impl.Ecdsa.Arm.mulPubP256_noFrames
 
 theorem pre_of {s : State} (h : signArm.pre s) : Pre p256 s := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14⟩ := h

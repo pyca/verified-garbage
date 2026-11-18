@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Rc4.AArch64.VerifiedInit
 public import VerifiedGarbage.Proof.Rc4.AArch64.VerifiedApply
+public import VerifiedGarbage.Proof.Rc4.AArch64.Residue
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.AArch64.Print
 
@@ -17,7 +18,8 @@ def artifacts : List Artifact := [
     verified := Proof.Rc4.AArch64.initCleared_verified
     residue := some ⟨Proof.Rc4.AArch64.initCleared_noResidue _⟩ },
   Spec.Rc4.applyApi.artifact AArch64.target {
-    code := Impl.Rc4.AArch64.apply
-    verified := Proof.Rc4.AArch64.apply_verified }]
+    code := Proof.Rc4.AArch64.applyCleared
+    verified := Proof.Rc4.AArch64.applyCleared_verified
+    residue := some ⟨Proof.Rc4.AArch64.applyCleared_noResidue⟩ }]
 
 end VG.Artifacts.Rc4.AArch64

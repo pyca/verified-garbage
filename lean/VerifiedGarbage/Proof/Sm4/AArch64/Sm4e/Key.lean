@@ -245,4 +245,25 @@ theorem expandKey_verified : Verified AArch64.target expandKey (Spec.Sm4.expandK
 theorem expandKey_noResidue (k : Contract isa) : NoResidue expandKey k 0 :=
   RTaint.noResidue_of_check ⟨_, by taint_decide⟩ k
 
+/-! ## ECB, returning without secret residue
+
+`vg_sm4_ecb_encrypt_sm4` and `vg_sm4_ecb_decrypt_sm4` leave the blocks in
+`v0`–`v7` and the round keys in `v16`–`v23`, and clear them before they
+return. -/
+
+/-- The vector registers `ecb` leaves secrets in. -/
+def ecbLeft : List VReg :=
+  [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23]
+
+/-- `ecb dir`, then `ecbLeft` cleared. -/
+abbrev ecbCleared (dir : VG.Impl.Sm4.AArch64.Dir) : Prog isa := Impl.Residue.AArch64.withClears [] ecbLeft none (ecb dir)
+
+theorem ecbCleared_verified (dir : VG.Impl.Sm4.AArch64.Dir) :
+    Verified AArch64.target (ecbCleared dir) (Spec.Sm4.ecbContract AArch64.abi (dirOf dir)) :=
+  Clears.Verified.withClears (ecb_verified dir) (by decide)
+
+theorem ecbCleared_noResidue (k : Contract isa) : ∀ dir, NoResidue (ecbCleared dir) k 0
+  | .encrypt => RTaint.noResidue_of_check ⟨_, by taint_decide⟩ k
+  | .decrypt => RTaint.noResidue_of_check ⟨_, by taint_decide⟩ k
+
 end VG.Proof.Sm4.AArch64.Sm4e

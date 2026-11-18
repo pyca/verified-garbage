@@ -13,44 +13,7 @@ vg_p384_mul_mod_n_umaal:
 	str r8, [r12, #4024]
 	str r9, [r12, #4028]
 	str lr, [r12, #4032]
-	movw r4, #10611
-	movt r4, #52421
-	str r4, [r12, #3960]
-	movw r4, #6506
-	movt r4, #60652
-	str r4, [r12, #3964]
-	movw r4, #42874
-	movt r4, #18608
-	str r4, [r12, #3968]
-	movw r4, #3506
-	movt r4, #22554
-	str r4, [r12, #3972]
-	movw r4, #11743
-	movt r4, #62519
-	str r4, [r12, #3976]
-	movw r4, #19841
-	movt r4, #51043
-	str r4, [r12, #3980]
-	movw r4, #65535
-	movt r4, #65535
-	str r4, [r12, #3984]
-	movw r4, #65535
-	movt r4, #65535
-	str r4, [r12, #3988]
-	movw r4, #65535
-	movt r4, #65535
-	str r4, [r12, #3992]
-	movw r4, #65535
-	movt r4, #65535
-	str r4, [r12, #3996]
-	movw r4, #65535
-	movt r4, #65535
-	str r4, [r12, #4000]
-	movw r4, #65535
-	movt r4, #65535
-	str r4, [r12, #4004]
-	add lr, r12, r1
-	add r1, r12, r2
+	add lr, r12, r2
 	add r4, r12, r3
 	mov r7, #0
 	str r7, [r12, #3712]
@@ -66,156 +29,94 @@ vg_p384_mul_mod_n_umaal:
 	str r7, [r12, #3752]
 	str r7, [r12, #3756]
 	str r7, [r12, #3760]
-	str r7, [r12, #3764]
 	mov r9, #12
 20:
-	ldr r2, [r1, #0]
-	mov r3, #0
+	ldr r2, [lr, #0]
 	ldr r7, [r4, #0]
 	ldr r5, [r12, #3712]
+	mov r3, #0
 	umaal r5, r3, r2, r7
-	str r5, [r12, #3712]
+	movw r0, #56389
+	movt r0, #59535
+	mul r0, r0, r5
+	mov r6, #0
+	movw r8, #10611
+	movt r8, #52421
+	umaal r5, r6, r0, r8
 	ldr r7, [r4, #4]
 	ldr r5, [r12, #3716]
 	umaal r5, r3, r2, r7
-	str r5, [r12, #3716]
+	movw r8, #6506
+	movt r8, #60652
+	umaal r5, r6, r0, r8
+	str r5, [r12, #3712]
 	ldr r7, [r4, #8]
 	ldr r5, [r12, #3720]
 	umaal r5, r3, r2, r7
-	str r5, [r12, #3720]
+	movw r8, #42874
+	movt r8, #18608
+	umaal r5, r6, r0, r8
+	str r5, [r12, #3716]
 	ldr r7, [r4, #12]
 	ldr r5, [r12, #3724]
 	umaal r5, r3, r2, r7
-	str r5, [r12, #3724]
+	movw r8, #3506
+	movt r8, #22554
+	umaal r5, r6, r0, r8
+	str r5, [r12, #3720]
 	ldr r7, [r4, #16]
 	ldr r5, [r12, #3728]
 	umaal r5, r3, r2, r7
-	str r5, [r12, #3728]
+	movw r8, #11743
+	movt r8, #62519
+	umaal r5, r6, r0, r8
+	str r5, [r12, #3724]
 	ldr r7, [r4, #20]
 	ldr r5, [r12, #3732]
 	umaal r5, r3, r2, r7
-	str r5, [r12, #3732]
+	movw r8, #19841
+	movt r8, #51043
+	umaal r5, r6, r0, r8
+	str r5, [r12, #3728]
 	ldr r7, [r4, #24]
 	ldr r5, [r12, #3736]
 	umaal r5, r3, r2, r7
-	str r5, [r12, #3736]
+	mvn r8, #0
+	umaal r5, r6, r0, r8
+	str r5, [r12, #3732]
 	ldr r7, [r4, #28]
 	ldr r5, [r12, #3740]
 	umaal r5, r3, r2, r7
-	str r5, [r12, #3740]
+	umaal r5, r6, r0, r8
+	str r5, [r12, #3736]
 	ldr r7, [r4, #32]
 	ldr r5, [r12, #3744]
 	umaal r5, r3, r2, r7
-	str r5, [r12, #3744]
+	umaal r5, r6, r0, r8
+	str r5, [r12, #3740]
 	ldr r7, [r4, #36]
 	ldr r5, [r12, #3748]
 	umaal r5, r3, r2, r7
-	str r5, [r12, #3748]
+	umaal r5, r6, r0, r8
+	str r5, [r12, #3744]
 	ldr r7, [r4, #40]
 	ldr r5, [r12, #3752]
 	umaal r5, r3, r2, r7
-	str r5, [r12, #3752]
+	umaal r5, r6, r0, r8
+	str r5, [r12, #3748]
 	ldr r7, [r4, #44]
 	ldr r5, [r12, #3756]
 	umaal r5, r3, r2, r7
-	str r5, [r12, #3756]
-	ldr r5, [r12, #3760]
-	ldr r6, [r12, #3764]
-	adds r5, r5, r3
-	adc r6, r6, #0
-	str r5, [r12, #3760]
-	str r6, [r12, #3764]
-	ldr r2, [r12, #3712]
-	movw r7, #56389
-	movt r7, #59535
-	mul r2, r2, r7
-	mov r3, #0
-	ldr r7, [r12, #3960]
-	ldr r5, [r12, #3712]
-	umaal r5, r3, r2, r7
-	str r5, [r12, #3712]
-	ldr r7, [r12, #3964]
-	ldr r5, [r12, #3716]
-	umaal r5, r3, r2, r7
-	str r5, [r12, #3716]
-	ldr r7, [r12, #3968]
-	ldr r5, [r12, #3720]
-	umaal r5, r3, r2, r7
-	str r5, [r12, #3720]
-	ldr r7, [r12, #3972]
-	ldr r5, [r12, #3724]
-	umaal r5, r3, r2, r7
-	str r5, [r12, #3724]
-	ldr r7, [r12, #3976]
-	ldr r5, [r12, #3728]
-	umaal r5, r3, r2, r7
-	str r5, [r12, #3728]
-	ldr r7, [r12, #3980]
-	ldr r5, [r12, #3732]
-	umaal r5, r3, r2, r7
-	str r5, [r12, #3732]
-	ldr r7, [r12, #3984]
-	ldr r5, [r12, #3736]
-	umaal r5, r3, r2, r7
-	str r5, [r12, #3736]
-	ldr r7, [r12, #3988]
-	ldr r5, [r12, #3740]
-	umaal r5, r3, r2, r7
-	str r5, [r12, #3740]
-	ldr r7, [r12, #3992]
-	ldr r5, [r12, #3744]
-	umaal r5, r3, r2, r7
-	str r5, [r12, #3744]
-	ldr r7, [r12, #3996]
-	ldr r5, [r12, #3748]
-	umaal r5, r3, r2, r7
-	str r5, [r12, #3748]
-	ldr r7, [r12, #4000]
-	ldr r5, [r12, #3752]
-	umaal r5, r3, r2, r7
-	str r5, [r12, #3752]
-	ldr r7, [r12, #4004]
-	ldr r5, [r12, #3756]
-	umaal r5, r3, r2, r7
-	str r5, [r12, #3756]
-	ldr r5, [r12, #3760]
-	ldr r6, [r12, #3764]
-	adds r5, r5, r3
-	adc r6, r6, #0
-	str r5, [r12, #3760]
-	str r6, [r12, #3764]
-	ldr r5, [r12, #3716]
-	str r5, [r12, #3712]
-	ldr r5, [r12, #3720]
-	str r5, [r12, #3716]
-	ldr r5, [r12, #3724]
-	str r5, [r12, #3720]
-	ldr r5, [r12, #3728]
-	str r5, [r12, #3724]
-	ldr r5, [r12, #3732]
-	str r5, [r12, #3728]
-	ldr r5, [r12, #3736]
-	str r5, [r12, #3732]
-	ldr r5, [r12, #3740]
-	str r5, [r12, #3736]
-	ldr r5, [r12, #3744]
-	str r5, [r12, #3740]
-	ldr r5, [r12, #3748]
-	str r5, [r12, #3744]
-	ldr r5, [r12, #3752]
-	str r5, [r12, #3748]
-	ldr r5, [r12, #3756]
+	umaal r5, r6, r0, r8
 	str r5, [r12, #3752]
 	ldr r5, [r12, #3760]
-	str r5, [r12, #3756]
-	ldr r5, [r12, #3764]
+	mov r7, #1
+	umaal r3, r5, r6, r7
+	str r3, [r12, #3756]
 	str r5, [r12, #3760]
-	mov r5, #0
-	str r5, [r12, #3764]
-	add r1, r1, #4
+	add lr, lr, #4
 	subs r9, r9, #1
 	bne 20b
-	sub r1, lr, r12
 	mov r6, #1
 	mov r5, #0
 	ldr r4, [r12, #3712]

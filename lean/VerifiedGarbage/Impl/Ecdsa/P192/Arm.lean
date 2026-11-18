@@ -31,4 +31,13 @@ def mulP192 : Prog isa := mulP192With false
 /-- `vg_p192_mul_umaal`. -/
 def mulP192U : Prog isa := mulP192With true
 
+/-- `vg_p192_mul_public`, or with `u` `vg_p192_mul_public_umaal`. -/
+def mulPubP192With (u : Bool) : Prog isa := (p192With u).pubFn
+
+/-- `vg_p192_mul_public`. -/
+def mulPubP192 : Prog isa := mulPubP192With false
+
+/-- `vg_p192_mul_public_umaal`. -/
+def mulPubP192U : Prog isa := mulPubP192With true
+
 end VG.Impl.Ecdsa.Arm

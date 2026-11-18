@@ -114,6 +114,8 @@ cbnz x1, 21b
 ///
 /// Contract: `VG.Spec.Cast5.ecbEncryptContract`. Constant time: only pointers, `rounds` and `n` may affect timing, not the subkeys or data, including S-box indices and rotation amounts.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.
@@ -633,6 +635,10 @@ b 27f
 26:
 27:
 .inst 0x3dc02068,0x3dc02469,0x3dc0286a,0x3dc02c6b,0x3dc0306c,0x3dc0346d,0x3dc0386e,0x3dc03c6f
+.inst 0xd2800006,0xd2800009,0xd280000a,0xd280000d,0xd280000f,0x6f00e400,0x6f00e401,0x6f00e404
+.inst 0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414
+.inst 0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0xea0600df
+.inst 0x4e181cc8,0x4e181cc9,0x4e181cca,0x4e181ccb,0x4e181ccc,0x4e181ccd,0x4e181cce,0x4e181ccf
 .inst 0xd65f03c0
 .p2align 6",
         VG_CAST5_PLANES = sym super::consts::VG_CAST5_PLANES,
@@ -642,6 +648,8 @@ b 27f
 /// CAST-128 (CAST5) ECB decryption (RFC 2144 §2, SP 800-38A §6.1) of `n` complete 8-byte blocks at `data`, in place, with `rounds` rounds under the subkeys written by `vg_cast5_expand_key`: 12 for a key of up to 10 bytes, 16 for a longer one (§2.5). Only the least significant 5 bits of each rotate subkey are used. No padding is removed. For `n = 0`, no data is transformed.
 ///
 /// Contract: `VG.Spec.Cast5.ecbDecryptContract`. Constant time: only pointers, `rounds` and `n` may affect timing, not the subkeys or data, including S-box indices and rotation amounts.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1162,6 +1170,10 @@ b 27f
 26:
 27:
 .inst 0x3dc02068,0x3dc02469,0x3dc0286a,0x3dc02c6b,0x3dc0306c,0x3dc0346d,0x3dc0386e,0x3dc03c6f
+.inst 0xd2800006,0xd2800009,0xd280000a,0xd280000d,0xd280000f,0x6f00e400,0x6f00e401,0x6f00e404
+.inst 0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414
+.inst 0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0xea0600df
+.inst 0x4e181cc8,0x4e181cc9,0x4e181cca,0x4e181ccb,0x4e181ccc,0x4e181ccd,0x4e181cce,0x4e181ccf
 .inst 0xd65f03c0
 .p2align 6",
         VG_CAST5_PLANES = sym super::consts::VG_CAST5_PLANES,

@@ -59,6 +59,7 @@ theorem p384u_ok : CfgOk (p384With true) where
   fp := p384_ok.fp
   fn := p384_ok.fn
   mulNf := fun _ _ => Impl.Ecdsa.Arm.mulP384U_noFrames
+  pubNf := fun _ _ => Impl.Ecdsa.Arm.mulPubP384U_noFrames
 
 /-- Either configuration. -/
 theorem p384With_ok (u : Bool) : CfgOk (p384With u) := by

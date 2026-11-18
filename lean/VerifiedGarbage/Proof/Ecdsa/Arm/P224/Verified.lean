@@ -90,6 +90,7 @@ theorem p224_ok : CfgOk p224 where
   fp := ⟨rfl, rfl, Mont.p224p_ok, rfl⟩
   fn := ⟨rfl, rfl, Mont.p224n_ok, rfl⟩
   mulNf := fun _ _ => Impl.Ecdsa.Arm.mulP224_noFrames
+  pubNf := fun _ _ => Impl.Ecdsa.Arm.mulPubP224_noFrames
 
 theorem pre_of {s : State} (h : signArm.pre s) : Pre p224 s := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14⟩ := h
