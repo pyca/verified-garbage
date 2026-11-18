@@ -462,6 +462,81 @@ theorem noResidue_scrubAll {c : Prog isa} {k : Contract isa} {W rb : Nat}
         hout s₂ u₂ hsp₂ hwr₂ (hsp s₂ h₂) (Exec.frameSp f₂ hd64) hx₂ (by rw [← hspu]; exact hin)]
       exact hm x hx
 
+/-! ## Code without frames -/
+
+open VG.AArch64.Scrub VG.AArch64.RTaintG VG.AArch64.RTaintF in
+/-- `noResidue_scrubAll` for code without frames, which `scrubAll 0` runs
+with no stack zeroed. -/
+theorem noResidue_scrubAll0 {c : Prog isa} {k : Contract isa} {rb : Nat}
+    (hv : Verified target c k) (hd : c.aarch64Depth = 0)
+    (hdit : c.all (fun i => !i.writesDit) = true) (hrb : rb = 0 ∨ rb = 32 ∨ rb = 64) :
+    NoResidue (scrubAll 0 rb c) k rb := by
+  intro s₁ s₂ t₁ t₂ s₁'' s₂'' h₁ h₂ hp ho hu e₁ e₂
+  have run : ∀ s t s'', k.pre s → Exec isa (withRet rb (.seq c (.block clearsAll))) s t s'' →
+      ∃ (t' : List Leak) (u : State) (g : Reg → BitVec 64), Exec isa c s t' u ∧ abiPreserved s u ∧
+        (∀ q, q ≠ .x0 → g q = (cleared u).gpr q) ∧ g .x0 >>> rb = (0 : BitVec 64) ∧
+        s'' = { cleared u with gpr := g } := by
+    intro s t s'' hs e
+    obtain ⟨t', u, f, ha, -⟩ := hv.1 s hs
+    cases e with
+    | seq ea eb' =>
+    cases ea with
+    | seq ec ecl =>
+    obtain ⟨-, rfl⟩ := Exec.det f ec
+    cases ecl with
+    | block hb =>
+    rw [clearsAll_run] at hb
+    obtain ⟨rfl, -⟩ := Prod.mk.inj (Option.some.inj hb)
+    cases eb' with
+    | block hb' =>
+    obtain ⟨g, hg, hgq, hg0, -⟩ := retFix_hi hrb (cleared u)
+    rw [hg] at hb'
+    obtain ⟨rfl, -⟩ := Prod.mk.inj (Option.some.inj hb')
+    exact ⟨t', u, g, f, ha, hgq, hg0, rfl⟩
+  obtain ⟨t₁', u₁, g₁, f₁, ha₁, hgq₁, hg0₁, rfl⟩ := run s₁ t₁ s₁'' h₁ e₁
+  obtain ⟨t₂', u₂, g₂, f₂, ha₂, hgq₂, hg0₂, rfl⟩ := run s₂ t₂ s₂'' h₂ e₂
+  obtain ⟨hrd, hwr, hg, -, hsp0, hc, hn, hz, hvf, hdi, hvv, hm⟩ := ho
+  obtain ⟨hrd₁, hwr₁, hsp₁⟩ := Exec.rdwr f₁
+  obtain ⟨hrd₂, hwr₂, hsp₂⟩ := Exec.rdwr f₂
+  have hspu : u₁.sp = u₂.sp := by rw [hsp₁, hsp₂, hsp0]
+  refine ⟨hrd₁.trans (hrd.trans hrd₂.symm), hwr₁.trans (hwr.trans hwr₂.symm), fun q hq0 => ?_,
+    by simp only [hg0₁, hg0₂], hspu, rfl, rfl, rfl, rfl,
+    (Exec.dit hdit f₁).trans (hdi.trans (Exec.dit hdit f₂).symm), ?_, ?_⟩
+  · show g₁ q = g₂ q
+    rw [hgq₁ q hq0, hgq₂ q hq0]
+    simp only [cleared]
+    by_cases hq : q ∈ allGprs
+    · simp [hq]
+    · simp only [hq, ↓reduceIte]
+      have := preserved_of hq0 hq
+      rw [ha₁.1 q this, ha₂.1 q this]; exact hg q hq0
+  · show (cleared u₁).v = (cleared u₂).v
+    funext w
+    simp only [cleared]
+    by_cases hh : w ∈ hiVecs
+    · simp only [hh, ↓reduceIte]
+      apply setLane_hi0
+      rw [ha₁.2.2 w (preservedV_of hh), ha₂.2.2 w (preservedV_of hh), hvv]
+    · simp [hh, vreg_cover w hh]
+  · intro x hx
+    change ∀ r ∈ u₁.rd ++ u₁.wr, ¬ r.Contains x 1 at hx
+    show u₁.mem x = u₂.mem x
+    have hd64 : 16 * c.aarch64Depth < 2 ^ 64 := by omega
+    have hout : ∀ (s u : State), Frame (s.wr ++ [below s.sp (16 * c.aarch64Depth)]) s.mem u.mem →
+        (∀ r ∈ s.wr, ¬ r.Contains x 1) → u.mem x = s.mem x := by
+      intro s u hf hw
+      refine hf x fun r hr => ?_
+      rcases List.mem_append.mp hr with hr | hr
+      · exact hw r hr
+      · simp only [List.mem_singleton] at hr; subst hr
+        rw [hd]
+        exact not_below (W := 0) (Nat.le_refl _) (Nat.zero_le _) (by omega)
+    rw [hrd₁, hwr₁] at hx
+    have hx₂ : ∀ r ∈ s₂.wr, ¬ r.Contains x 1 := fun r hr => hx r (List.mem_append_right _ (hwr ▸ hr))
+    rw [hout s₁ u₁ (Exec.frameSp f₁ hd64) (fun r hr => hx r (List.mem_append_right _ hr)),
+      hout s₂ u₂ (Exec.frameSp f₂ hd64) hx₂]
+    exact hm x hx
+
 /-! ## Keeping the code verified -/
 
 theorem setLane_lo (x : BitVec 128) : (setLane x 64 1 0).extractLsb' 0 64 = x.extractLsb' 0 64 := by
@@ -563,6 +638,66 @@ theorem Verified.scrubAll {c : Prog isa} {k : Contract isa} {W rb : Nat} (h : Ve
     rw [(Exec.det b₁ x₁).1, (Exec.det b₂ x₂).1, p₁.2.1, p₂.2.1,
       hct _ _ _ _ _ _ h₁ h₂ hp c₁ c₂, hk.pub s₁ s₂ hp]
 
+open VG.AArch64.Scrub VG.AArch64.RTaintG VG.AArch64.RTaintF in
+/-- `Verified.scrubAll` for code without frames, under `scrubAll 0`. -/
+theorem Verified.scrubAll0 {c : Prog isa} {k : Contract isa} {rb : Nat} (h : Verified target c k)
+    (hrb : rb = 0 ∨ rb = 32 ∨ rb = 64) (hk : ScrubAllOk k 0 rb) :
+    Verified target (VG.Impl.Residue.AArch64.scrubAll 0 rb c) k := by
+  obtain ⟨hcor, hct, hsat⟩ := h
+  have hrun : ∀ s, k.pre s → ∃ t u g,
+      Exec isa c s t u ∧ abiPreserved s u ∧ k.post s u ∧
+      execBlock isa (retFix rb) (cleared u) = some ({ cleared u with gpr := g }, []) ∧
+      (∀ q, q ≠ .x0 → g q = (cleared u).gpr q) ∧ (g .x0).setWidth rb = ((cleared u).gpr .x0).setWidth rb := by
+    intro s hs
+    obtain ⟨t, u, he, ha, hq⟩ := hcor s hs
+    obtain ⟨g, hg, hgq, -, hgx⟩ := retFix_hi hrb (cleared u)
+    exact ⟨t, u, g, he, ha, hq, hg, hgq, hgx⟩
+  have hx0 : Reg.x0 ∉ allGprs := by decide
+  refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂ => ?_, hsat⟩
+  · obtain ⟨t, u, g, he, ha, hq, hg, hgq, hgx⟩ := hrun s hs
+    refine ⟨(t ++ []) ++ [], { cleared u with gpr := g }, ?_,
+      ⟨fun q hq' => ?_, ha.2.1, fun w hw => ?_⟩, ?_⟩
+    · exact Exec.seq (Exec.seq he (Exec.block (clearsAll_run u))) (Exec.block hg)
+    · have h0 : q ≠ .x0 := by rintro rfl; simp [preserved] at hq'
+      have hng : q ∉ allGprs := by cases q <;> simp_all [preserved, allGprs]
+      show g q = _
+      simp only [hgq q h0, cleared, hng, ↓reduceIte]; exact ha.1 q hq'
+    · have hh : w ∈ hiVecs := by cases w <;> simp_all [preservedV, hiVecs]
+      show BitVec.extractLsb' 0 64 ((cleared u).v w) = _
+      simp only [cleared, hh, ↓reduceIte, setLane_lo]; exact ha.2.2 w hw
+    · refine hk.post s u _ hs hq (fun a _ => rfl) ?_
+      show (g .x0).setWidth rb = _
+      rw [hgx]
+      simp [cleared, hx0]
+  · cases e₁ with
+    | seq a₁ r₁ =>
+    cases e₂ with
+    | seq a₂ r₂ =>
+    cases a₁ with
+    | seq c₁ l₁ =>
+    cases a₂ with
+    | seq c₂ l₂ =>
+    obtain ⟨_, u₁, g₁, f₁, p₁, -, hg₁, -⟩ := hrun s₁ h₁
+    obtain ⟨_, u₂, g₂, f₂, p₂, -, hg₂, -⟩ := hrun s₂ h₂
+    obtain ⟨rfl, rfl⟩ := Exec.det c₁ f₁
+    obtain ⟨rfl, rfl⟩ := Exec.det c₂ f₂
+    cases l₁ with
+    | block hl₁ =>
+    cases l₂ with
+    | block hl₂ =>
+    rw [clearsAll_run] at hl₁ hl₂
+    obtain ⟨rfl, rfl⟩ := Prod.mk.inj (Option.some.inj hl₁)
+    obtain ⟨rfl, rfl⟩ := Prod.mk.inj (Option.some.inj hl₂)
+    cases r₁ with
+    | block hr₁ =>
+    cases r₂ with
+    | block hr₂ =>
+    rw [hg₁] at hr₁
+    rw [hg₂] at hr₂
+    obtain ⟨rfl, rfl⟩ := Prod.mk.inj (Option.some.inj hr₁)
+    obtain ⟨rfl, rfl⟩ := Prod.mk.inj (Option.some.inj hr₂)
+    rw [hct _ _ _ _ _ _ h₁ h₂ hp c₁ c₂]
+
 /-! ## Contracts that `Sig.contract` derives -/
 
 section
@@ -586,6 +721,20 @@ theorem scrubAllOk_regs (hk : (sig.words abi.ptrBits).length ≤ 8) {W : Nat} (h
     refine hpost _ _ _ _ _ (regArgs_length sig s hk) (fun b hb a ha' => ?_) hq
     have hd := RTaintF.scrub_disjoint hk hW hWs hs b hb a ha'
     exact (hm a fun hlt => hd (show (a - (s.sp - BitVec.ofNat 64 W)).toNat + 1 ≤ W by omega)).symm
+  pub s₁ s₂ hp := ((pub_regs hk).mp hp).1.1.1
+
+/-- `scrubAllOk_regs` with no stack zeroed, for code without frames. -/
+theorem scrubAllOk_regs0 (hk : (sig.words abi.ptrBits).length ≤ 8)
+    (hpost : ∀ vs m m₁ m₂ r, vs.length = (sig.words abi.ptrBits).length →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) post vs m m₁ r →
+        Curry.apply (sig.words abi.ptrBits) post vs m m₂ r) :
+    ScrubAllOk (sig.contract abi pre post wa stack leak) 0 (sig.retBits abi.ptrBits) where
+  sp _ _ := Nat.zero_le _
+  post s u u' _ hq hm hx := by
+    rw [post_regs hk] at hq ⊢
+    rw [hx]
+    exact hpost _ _ _ _ _ (regArgs_length sig s hk) (fun _ _ a _ => (hm a (Nat.not_lt_zero _)).symm) hq
   pub s₁ s₂ hp := ((pub_regs hk).mp hp).1.1.1
 
 /-- `ScrubAllOk` under the calling convention with tables of constants. -/
@@ -657,6 +806,24 @@ def withScrubAll {api : Api} (r : Registration api target) (hok : ScrubAllOk r.c
       vendor := r.vendor
       notWith := r.notWith
       residue := some ⟨noResidue_scrubAll r.verified h.1 hok.sp h.2.1 h.2.2.1 h.2.2.2.1 h.2.2.2.2.1⟩ }
+  else if h : r.stack = 0 ∧ r.code.aarch64Depth = 0 ∧ r.code.all (fun i => !i.writesDit) = true ∧
+      (retBitsOf r = 0 ∨ retBitsOf r = 32 ∨ retBitsOf r = 64) ∧ r.written = [] then
+    { suffix := r.suffix
+      tables := r.tables
+      code := scrubAll 0 (retBitsOf r) r.code
+      contract := r.contract
+      verified := Verified.scrubAll0 r.verified h.2.2.2.1 (h.1 ▸ hok)
+      consts := r.consts
+      stack := r.stack
+      ofApi := r.ofApi
+      ofSig := r.ofSig
+      spSafe := all_spSafe _
+      written := r.written
+      writtenOk := by rw [h.2.2.2.2]; exact fun _ _ _ _ _ => True.intro
+      extra := r.extra
+      vendor := r.vendor
+      notWith := r.notWith
+      residue := some ⟨noResidue_scrubAll0 r.verified h.2.1 h.2.2.1 h.2.2.2.1⟩ }
   else r
 
 end VG.AArch64.ScrubAll
