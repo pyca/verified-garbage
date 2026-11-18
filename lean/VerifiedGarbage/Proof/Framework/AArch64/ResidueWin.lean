@@ -762,4 +762,248 @@ def rtaintG (W : Nat) : VG.TaintCT isa where
 
 namespace RTaintG
 
+open VG.AArch64 VG.AArch64.Residue VG.AArch64.MemEffect VG.AArch64.RTaintF VG.AArch64.Scrub
+  VG.Impl.Residue.AArch64
+
+/-! ## Clearing only the granules that may differ -/
+
+/-- Every 16-byte granule of the `W` bytes but those of `ks` is in `P`. -/
+def granOk (W P : Nat) (ks : List Nat) : Bool :=
+  (List.range (W / 16)).all fun k => ks.contains k || (List.range 16).all fun j => P.testBit (16 * k + j)
+
+/-- `doneF r` at depth 0, with the granules of the window not in `ks` agreeing,
+each of `ks` in the window, and, if `ks` is empty (no clearing), `x9` and
+`v31` public. -/
+def doneG (W r : Nat) (ks : List Nat) (τ : T) : Bool :=
+  match τ.2 with
+  | some (d, P, _) =>
+    d == 0 && doneF r (τ.1, some 0) && granOk W P ks && ks.all (fun k => decide (16 * k + 16 ≤ W)) &&
+      (!ks.isEmpty || (τ.1.1.1.1.1.mem .x9 && RTaintL.vpub τ.1.1 .v31))
+  | none => false
+
+theorem wbase0 (sp : Addr) (W : Nat) : wbase sp 0 W = sp - BitVec.ofNat 64 W := by
+  simp [wbase]
+
+theorem off_self (b : Addr) {o : Nat} (ho : o < 2 ^ 64) : (b + BitVec.ofNat 64 o - b).toNat = o := by
+  rw [BitVec.add_comm, BitVec.add_sub_cancel, BitVec.toNat_ofNat, Nat.mod_eq_of_lt ho]
+
+theorem gran_bit {W P : Nat} {ks : List Nat} {b : Addr} (hW : W < 2 ^ 64) (hW16 : W % 16 = 0)
+    (h : granOk W P ks = true) {o : Nat} (ho : o < W) (hn : inG b ks (b + BitVec.ofNat 64 o) = false) :
+    P.testBit o = true := by
+  simp only [inG, off_self b (show o < 2 ^ 64 by omega), List.any_eq_false, decide_eq_true_eq] at hn
+  simp only [granOk, List.all_eq_true, List.mem_range, Bool.or_eq_true, List.contains_iff_mem] at h
+  rcases h (o / 16) (by omega) with hk | hk
+  · exact absurd ⟨by omega, by omega⟩ (hn _ hk)
+  · have := hk (o % 16) (by omega)
+    rwa [show 16 * (o / 16) + o % 16 = o by omega] at this
+
+theorem zeroG_out {W : Nat} {ks : List Nat} (hks : ∀ k ∈ ks, 16 * k + 16 ≤ W) {b x : Addr} (m : Mem)
+    (h : ¬ (x - b).toNat < W) : zeroG b ks m x = m x := by
+  simp only [zeroG]
+  split
+  · next hin =>
+    simp only [inG, List.any_eq_true, decide_eq_true_eq] at hin
+    obtain ⟨k, hk, -, h₂⟩ := hin
+    have := hks k hk
+    omega
+  · rfl
+
+/-- What `doneF` gives of the registers and flags after the code. -/
+theorem done_regs {τF : RTaintF.T} {r : Nat} {s₁ s₂ s₁' s₂' : State}
+    (hd : doneF r τF = true) (hb : RTaintB.Agree τF.1 s₁' (ghost s₁' s₂'))
+    (hp₁ : abiPreserved s₁ s₁') (hp₂ : abiPreserved s₂ s₂') (ho : Outside 0 s₁ s₂) :
+    (∀ q, q ≠ .x0 → q ≠ .x9 → s₁'.gpr q = s₂'.gpr q) ∧
+    s₁'.gpr .x0 >>> r = s₂'.gpr .x0 >>> r ∧
+    s₁'.c = s₂'.c ∧ s₁'.nf = s₂'.nf ∧ s₁'.zf = s₂'.zf ∧ s₁'.vf = s₂'.vf ∧
+    ∀ w, w ≠ .v31 → s₁'.v w = s₂'.v w := by
+  simp only [doneF, Bool.and_eq_true, beq_iff_eq, List.all_eq_true, Bool.or_eq_true] at hd
+  obtain ⟨⟨⟨⟨-, hg⟩, hvv⟩, hfl⟩, hx⟩ := hd
+  obtain ⟨⟨⟨⟨⟨-, hgr⟩, hvr⟩, hflags, hx0, -⟩, hq⟩, hb₁, hb₂⟩ := hb
+  refine ⟨fun q hq0 h9 => ?_, ?_, (hflags hfl).1, (hflags hfl).2.1, (hflags hfl).2.2.1,
+    (hflags hfl).2.2.2, fun w h31 => ?_⟩
+  · by_cases hpq : q ∈ preserved
+    · rw [hp₁.1 q hpq, hp₂.1 q hpq]; exact ho.2.2.1 q hq0
+    · exact hgr q (Taint.pub_iff.mp (hg q (mem_scratchNo9 hq0 h9 hpq)))
+  · rcases hx with hx | hx
+    · exact RTaint.shr_mono hx0 (Nat.le_of_ble_eq_true hx)
+    · rw [RTaintB.shr_eq_zero (RTaintB.wget_bound hb₁ .x0) (Nat.le_of_ble_eq_true hx),
+        RTaintB.shr_eq_zero (x := s₂'.gpr .x0) (RTaintB.wget_bound hb₂ .x0)
+          (Nat.le_of_ble_eq_true hx)]
+  · have hw := (hvv w (RTaintL.mem_vregs w)).resolve_left (by simpa using h31)
+    by_cases hpv : w ∈ preservedV
+    · simp only [List.contains_iff_mem.mpr hpv, ↓reduceIte, Bool.or_eq_true] at hw
+      rcases hw with hw | hw
+      · exact hvr w hw
+      · refine RTaintL.eq_of_halves ?_ (hq true w hw)
+        rw [hp₁.2.2 w hpv, hp₂.2.2 w hpv, ho.2.2.2.2.2.2.2.2.2.2.1]
+    · have : preservedV.contains w = false := by simpa using hpv
+      simp only [this, Bool.false_eq_true, ↓reduceIte, RTaintL.vpub, Bool.or_eq_true,
+        Bool.and_eq_true] at hw
+      rcases hw with hw | ⟨h₀, h₁'⟩
+      · exact hvr w hw
+      · exact RTaintL.eq_of_halves (hq false w h₀) (hq true w h₁')
+
+/-- Code verified against its contract, whose analysis (`rtaintG W`, from the
+mask `P₀` of the window's bytes the two runs agree on at entry) ends in
+`doneG W r ks`, followed by the zeroing of the granules `ks` of the `W` bytes
+below the stack pointer, returns without secret residue, with an `r`-bit
+result. -/
+theorem noResidue_withScrubG {c : Prog isa} {k : Contract isa} {r W : Nat} {ks : List Nat} {P₀ : Nat}
+    (hv : Verified target c k) (hW : 0 < W ∧ W < 4096 ∧ W % 16 = 0)
+    (hsp : ∀ s, k.pre s → W ≤ s.sp.toNat)
+    (hP₀ : ∀ s₁ s₂, Outside 0 s₁ s₂ → PAgree W (wbase s₂.sp 0 W) P₀ s₁.mem s₂.mem)
+    (h : ∃ hc, ((rtaintG W).check (RTaintB.init, some (0, P₀, [])) c hc).any (doneG W r ks) = true) :
+    NoResidue (withScrubG W ks c) k r := by
+  intro s₁ s₂ t₁ t₂ s₁'' s₂'' h₁ h₂ hp ho hu e₁ e₂
+  obtain ⟨hc, h⟩ := h
+  cases hτ : (rtaintG W).check (RTaintB.init, some (0, P₀, [])) c hc with
+  | none => rw [hτ] at h; cases h
+  | some τ' =>
+  rw [hτ] at h
+  have hd : doneG W r ks τ' = true := h
+  obtain ⟨τ, o⟩ := τ'
+  cases o with
+  | none => simp [doneG] at hd
+  | some o =>
+  obtain ⟨d, P, ptrs⟩ := o
+  simp only [doneG, Bool.and_eq_true, beq_iff_eq] at hd
+  obtain ⟨⟨⟨⟨rfl, hdF⟩, hgran⟩, hks⟩, hnil⟩ := hd
+  have hks' : ∀ k ∈ ks, 16 * k + 16 ≤ W := by simpa using hks
+  have hinit : AgreeG W (RTaintB.init, some (0, P₀, [])) s₁ s₂ := by
+    obtain ⟨d, hdd, hA⟩ := agree_init (W := W) (by omega) ho hu
+    obtain rfl : d = 0 := by
+      rcases hdd with h | h
+      · exact (Option.some.inj h).symm
+      · cases h
+    exact ⟨hA, hP₀ s₁ s₂ ho, fun _ h => nomatch h⟩
+  have run : ∀ {t₁ t₂ s₁' s₂'}, Exec isa c s₁ t₁ s₁' → Exec isa c s₂ t₂ s₂' →
+      AgreeG W (τ, some (0, P, ptrs)) s₁' s₂' ∧ abiPreserved s₁ s₁' ∧ abiPreserved s₂ s₂' := by
+    intro _ _ _ _ ea₁ ea₂
+    obtain ⟨_, u₁, f₁, hp₁, -⟩ := hv.1 s₁ h₁
+    obtain ⟨_, u₂, f₂, hp₂, -⟩ := hv.1 s₂ h₂
+    obtain ⟨-, rfl⟩ := Exec.det ea₁ f₁
+    obtain ⟨-, rfl⟩ := Exec.det ea₂ f₂
+    exact ⟨TaintCT.agree_of_check hv.2.1 hτ h₁ h₂ hp hinit ea₁ ea₂, hp₁, hp₂⟩
+  cases ks with
+  | nil =>
+    change Exec isa c _ _ _ at e₁ e₂
+    obtain ⟨⟨hA, hPA, -⟩, hp₁, hp₂⟩ := run e₁ e₂
+    obtain ⟨hsp', hrd', hwr', hdi', -⟩ := AgreeD.rest hA
+    obtain ⟨hgr, hx0, hc', hn', hz', hv', hvr⟩ := done_regs hdF hA.1 hp₁ hp₂ ho
+    simp only [List.isEmpty_nil, Bool.not_true, Bool.false_or, Bool.and_eq_true] at hnil
+    obtain ⟨⟨⟨⟨⟨-, hg⟩, hvp⟩, -⟩, hq⟩, -, -⟩ := hA.1
+    refine ⟨hrd', hwr', fun q hq0 => ?_, hx0, hsp', hc', hn', hz', hv', hdi', ?_, ?_⟩
+    · by_cases h9 : q = .x9
+      · subst h9; exact hg .x9 (Taint.pub_iff.mp hnil.1)
+      · exact hgr q hq0 h9
+    · funext w
+      by_cases h31 : w = .v31
+      · subst h31
+        simp only [RTaintL.vpub, Bool.or_eq_true, Bool.and_eq_true] at hnil
+        rcases hnil.2 with hw | ⟨h₀, h₁'⟩
+        · exact hvp _ hw
+        · exact RTaintL.eq_of_halves (hq false _ h₀) (hq true _ h₁')
+      · exact hvr w h31
+    · intro x hx
+      by_cases hin : (x - wbase s₂''.sp 0 W).toNat < W
+      · have hxo : x = wbase s₂''.sp 0 W + BitVec.ofNat 64 (x - wbase s₂''.sp 0 W).toNat := by
+          rw [BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel]
+        rw [hxo]
+        exact hPA _ hin (gran_bit (b := wbase s₂''.sp 0 W) (by omega) hW.2.2 hgran hin (by simp [inG]))
+      · refine hA.2.2.2 x (by rw [← hrd', ← hwr']; exact hx) fun hc => hin ?_
+        unfold window Region.Contains at hc
+        simp only [BitVec.add_zero] at hc
+        rw [wbase0]
+        omega
+  | cons k ks =>
+    change Exec isa (.seq c (scrubTailG W (k :: ks))) _ _ _ at e₁ e₂
+    cases e₁ with
+    | seq ea₁ eb₁ =>
+    cases e₂ with
+    | seq ea₂ eb₂ =>
+    rename_i s₁' _ _ s₂' _ _
+    obtain ⟨⟨hA, hPA, -⟩, hp₁, hp₂⟩ := run ea₁ ea₂
+    obtain ⟨hsp', hrd', hwr', hdi', hu'⟩ := AgreeD.rest hA
+    obtain ⟨hgr, hx0, hc', hn', hz', hv', hvr⟩ := done_regs hdF hA.1 hp₁ hp₂ ho
+    obtain ⟨v₁, x₁, tr₁⟩ := tailG_run hW hks' s₁' (by rw [hp₁.2.1]; exact hsp s₁ h₁)
+    obtain ⟨v₂, x₂, tr₂⟩ := tailG_run hW hks' s₂' (by rw [hp₂.2.1]; exact hsp s₂ h₂)
+    obtain ⟨-, rfl⟩ := Exec.det eb₁ x₁
+    obtain ⟨-, rfl⟩ := Exec.det eb₂ x₂
+    refine ⟨by rw [tr₁.rd, tr₂.rd, hrd'], by rw [tr₁.wr, tr₂.wr, hwr'], fun q hq0 => ?_, ?_,
+      by rw [tr₁.sp, tr₂.sp, hsp'], by rw [tr₁.c, tr₂.c, hc'], by rw [tr₁.nf, tr₂.nf, hn'],
+      by rw [tr₁.zf, tr₂.zf, hz'], by rw [tr₁.vf, tr₂.vf, hv'], by rw [tr₁.dit, tr₂.dit, hdi'], ?_, ?_⟩
+    · rw [tr₁.gpr, tr₂.gpr]
+      by_cases h9 : q = .x9
+      · simp only [h9, ↓reduceIte, hsp']
+      · simp only [h9, ↓reduceIte]; exact hgr q hq0 h9
+    · rw [tr₁.gpr, tr₂.gpr]
+      simp only [reduceCtorEq, ↓reduceIte]
+      exact hx0
+    · rw [tr₁.v, tr₂.v]
+      funext w
+      by_cases h31 : w = .v31
+      · simp only [h31, ↓reduceIte]
+      · simp only [h31, ↓reduceIte]; exact hvr w h31
+    · intro x hx
+      rw [tr₁.rd, tr₁.wr] at hx
+      rw [tr₁.mem, tr₂.mem, hsp']
+      have hb : s₂'.sp - BitVec.ofNat 64 W = wbase s₂'.sp 0 W := (wbase0 _ _).symm
+      by_cases hin : (x - (s₂'.sp - BitVec.ofNat 64 W)).toNat < W
+      · rw [hu']
+        refine lose_agree ?_
+        simp only [zeroG]
+        split
+        · rfl
+        · next hn =>
+          have hxo : x = (s₂'.sp - BitVec.ofNat 64 W) +
+              BitVec.ofNat 64 (x - (s₂'.sp - BitVec.ofNat 64 W)).toNat := by
+            rw [BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel]
+          rw [← hb] at hPA
+          rw [hxo] at hn ⊢
+          exact hPA _ hin (gran_bit (by omega) hW.2.2 hgran hin (by simpa using hn))
+      · rw [lose_out hin, lose_out hin, zeroG_out hks' _ hin, zeroG_out hks' _ hin]
+        refine hA.2.2.2 x (by rw [← hrd', ← hwr']; exact hx) fun hc => hin ?_
+        unfold window Region.Contains at hc
+        simp only [BitVec.add_zero] at hc
+        omega
+
+/-- The zeroing of the granules `ks` keeps code verified (see `RTaintF.Verified.withScrubK`). -/
+theorem Verified.withScrubG {c : Prog isa} {k : Contract isa} {W : Nat} {ks : List Nat}
+    (h : Verified target c k) (hW : 0 < W ∧ W < 4096 ∧ W % 16 = 0)
+    (hks : ks.all (fun k => decide (16 * k + 16 ≤ W)) = true) (hk : ScrubOk k W) :
+    Verified target (withScrubG W ks c) k := by
+  have hks' : ∀ k ∈ ks, 16 * k + 16 ≤ W := by simpa using hks
+  cases ks with
+  | nil => exact h
+  | cons k₀ ks =>
+  obtain ⟨hcor, hct, hsat⟩ := h
+  have hrun : ∀ s, k.pre s → ∃ t s₃ u,
+      Exec isa c s t s₃ ∧ abiPreserved s s₃ ∧ k.post s s₃ ∧
+      Exec isa (scrubTailG W (k₀ :: ks)) s₃ (tailTraceG s₃.sp W (k₀ :: ks)) u ∧
+        TailRunG W (k₀ :: ks) s₃ u := by
+    intro s hs
+    obtain ⟨t, s₃, he, ha, hq⟩ := hcor s hs
+    obtain ⟨u, ex, tr⟩ := tailG_run hW hks' s₃ (by rw [ha.2.1]; exact hk.sp s hs)
+    exact ⟨t, s₃, u, he, ha, hq, ex, tr⟩
+  refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂ => ?_, hsat⟩
+  · obtain ⟨t, s₃, u, he, ha, hq, ex, tr⟩ := hrun s hs
+    refine ⟨_, u, Exec.seq he ex, ⟨fun q hq' => ?_, by rw [tr.sp]; exact ha.2.1, fun w hw => ?_⟩, ?_⟩
+    · have h9 : q ≠ .x9 := by rintro rfl; simp [preserved] at hq'
+      rw [tr.gpr]; simp only [h9, ↓reduceIte]; exact ha.1 q hq'
+    · have h31 : w ≠ .v31 := by rintro rfl; simp [preservedV] at hw
+      rw [tr.v]; simp only [h31, ↓reduceIte]; exact ha.2.2 w hw
+    · refine hk.post s s₃ u hs hq (fun a ha' => ?_) (by rw [tr.gpr]; simp)
+      rw [tr.mem, ha.2.1, lose_out ha', zeroG_out hks' _ ha']
+  · change Exec isa (.seq c (scrubTailG W (k₀ :: ks))) _ _ _ at e₁ e₂
+    cases e₁ with
+    | seq a₁ b₁ =>
+    cases e₂ with
+    | seq a₂ b₂ =>
+    obtain ⟨_, _, _, f₁, p₁, -, x₁, -⟩ := hrun s₁ h₁
+    obtain ⟨_, _, _, f₂, p₂, -, x₂, -⟩ := hrun s₂ h₂
+    obtain ⟨rfl, rfl⟩ := Exec.det a₁ f₁
+    obtain ⟨rfl, rfl⟩ := Exec.det a₂ f₂
+    rw [(Exec.det b₁ x₁).1, (Exec.det b₂ x₂).1, p₁.2.1, p₂.2.1,
+      hct _ _ _ _ _ _ h₁ h₂ hp a₁ a₂, hk.pub s₁ s₂ hp]
+
 end VG.AArch64.RTaintG
