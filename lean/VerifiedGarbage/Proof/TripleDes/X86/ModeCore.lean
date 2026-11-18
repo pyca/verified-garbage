@@ -16,11 +16,10 @@ import VerifiedGarbage.Proof.TripleDes.X86.FunctionsLit
 /-!
 # Triple DES's core for the modes on x86 (32-bit)
 
-`dirCoreSpec d`: Triple DES's core for the direction `d`
-(`Impl.TripleDes.X86.dirCore d`) meets what the modes need of a core
+`dirCoreSpec`: Triple DES's core, a block at a time
+(`Impl.TripleDes.X86.dirCore`), meets what the modes need of a core
 (`Proof.Modes.X86.CoreSpec`), with the key a schedule, read through the
-first stack argument, its cipher `Spec.TripleDes.cipher` for encryption and
-`Spec.TripleDes.invCipher` for decryption, and the key ready when the copy of
+first stack argument, its cipher `Spec.TripleDes.cipher`, and the key ready when the copy of
 the schedule in the core's slots is the key. The block function's call
 (`cryptCall_ok`) is from its contract (`blockContract`).
 
@@ -117,7 +116,7 @@ def KeyArgs (s : State) (rs : List Region) (k : Spec.TripleDes.Schedule) : Prop 
     p.toNat + 384 ≤ 2 ^ 32 ∧ (∀ r ∈ rs, Region.Disjoint ⟨p.setWidth 64, 384⟩ r) ∧
     (∀ r ∈ rs, Region.Disjoint ⟨s.ea (argOp 0), 4⟩ r) ∧ ∀ r ∈ rs, Region.Disjoint (stkRegion (s.gpr .esp) 16) r
 
-theorem dirCore_total (d : Direction) : (dirCore d).total = 236 := rfl
+theorem dirCore_total : dirCore.total = 236 := rfl
 
 /-- The schedule's copy is `k`, the core's stack is apart from the scratch
 buffer, which does not wrap around. -/
@@ -135,9 +134,9 @@ theorem keyArgs_congr {s s' : State} {rs : List Region} {k : Spec.TripleDes.Sche
     by rw [hrd, hwr]; exact hsch, hfit, hdis, by rw [hea]; exact hadis, by rw [hesp]; exact hsdis⟩
   rw [hea, hf.readW (Region.contains_self _ _) hadis (by decide), hp]
 
-theorem ready_frame {d : Direction} {s s' : State} {B : BitVec 32} {k : Spec.TripleDes.Schedule}
+theorem ready_frame {s s' : State} {B : BitVec 32} {k : Spec.TripleDes.Schedule}
     {rs : List Region} (h : Ready s B k) (hesp : s'.gpr .esp = s.gpr .esp) (hf : Frame rs s.mem s'.mem)
-    (hd : ∀ r ∈ rs, Region.Disjoint (coreRegion (dirCore d) B) r ∨ Region.Sub r (blkRegion (dirCore d) B)) :
+    (hd : ∀ r ∈ rs, Region.Disjoint (coreRegion dirCore B) r ∨ Region.Sub r (blkRegion dirCore B)) :
     Ready s' B k := by
   obtain ⟨hk, hs, hfit⟩ := h
   refine ⟨?_, by rw [hesp]; exact hs, hfit⟩
@@ -148,12 +147,12 @@ theorem ready_frame {d : Direction} {s s' : State} {B : BitVec 32} {k : Spec.Tri
   · exact (VG.Offset.disjoint _ (.inr (by simp only [dirCore, schedSlot, bufSlot]; omega_arith)) (by simp only [schedSlot]; omega_arith)
       (by simp only [dirCore, bufSlot]; omega_arith)).sub_right h'
 
-theorem prepare_wp (d : Direction) {s : State} {B : BitVec 32} {rs : List Region} {k : Spec.TripleDes.Schedule}
-    (hB : s.gpr sb = B) (hs : ScrIn s B (dirCore d).total)
-    (hR : (⟨B.setWidth 64, 4 * (dirCore d).total⟩ : Region) ∈ rs) (hk : KeyArgs s rs k)
-    (_ : (dirCore d).stack ≤ (s.gpr .esp).toNat) :
-    WP isa (dirCore d).prepare s fun s' => Ready s' B k ∧ s'.gpr sb = B ∧ s'.gpr .esp = s.gpr .esp ∧
-      Frame [coreRegion (dirCore d) B, stkRegion (s.gpr .esp) (dirCore d).stack] s.mem s'.mem ∧
+theorem prepare_wp {s : State} {B : BitVec 32} {rs : List Region} {k : Spec.TripleDes.Schedule}
+    (hB : s.gpr sb = B) (hs : ScrIn s B dirCore.total)
+    (hR : (⟨B.setWidth 64, 4 * dirCore.total⟩ : Region) ∈ rs) (hk : KeyArgs s rs k)
+    (_ : dirCore.stack ≤ (s.gpr .esp).toNat) :
+    WP isa dirCore.prepare s fun s' => Ready s' B k ∧ s'.gpr sb = B ∧ s'.gpr .esp = s.gpr .esp ∧
+      Frame [coreRegion dirCore B, stkRegion (s.gpr .esp) dirCore.stack] s.mem s'.mem ∧
       s'.rd = s.rd ∧ s'.wr = s.wr := by
   obtain ⟨p, hin, hp, rfl, hsch, hfit, hdis, -, hsdis⟩ := hk
   have hfB := hs.fit
@@ -210,10 +209,8 @@ theorem writeW_readW (m : Mem) (a : Addr) : m.writeW a (m.readW a 32) = m := by
     rw [← Mem.readW_byte m a h, BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel]
   · rfl
 
-theorem cryptCall_eq (d : Direction) : cryptCall d =
-    .frame (.push [.eax, .ecx, .edx])
-      (.call (match d with | .encrypt => "vg_triple_des_encrypt_block" | .decrypt => "vg_triple_des_decrypt_block")
-        (Ecb.blockCode d)) (.pop .eax 3) := by cases d <;> rfl
+theorem cryptCall_eq : cryptCall =
+    .frame (.push [.eax, .ecx, .edx]) (.call "vg_triple_des_encrypt_block" encryptBlock) (.pop .eax 3) := rfl
 
 /-- The block function's arguments: the schedule at `edx`, the block at
 `ecx` and the working space at `eax`. -/
@@ -230,15 +227,16 @@ structure CallPre (s : State) : Prop where
   stackData : (below (s.gpr .esp) 16).Disjoint ⟨addr32 (s.gpr .ecx), 8⟩
   stackBuf : (below (s.gpr .esp) 16).Disjoint ⟨addr32 (s.gpr .eax), 512⟩
 
-structure CallPost (d : Direction) (s s' : State) : Prop where
+structure CallPost (s s' : State) : Prop where
   callee : ∀ r ∈ calleeSaved, s'.gpr r = s.gpr r
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
   mem : Frame [⟨addr32 (s.gpr .ecx), 8⟩, ⟨addr32 (s.gpr .eax), 512⟩, below (s.gpr .esp) 16] s.mem s'.mem
   output : Spec.TripleDes.blockAt s'.mem (addr32 (s.gpr .ecx)) =
-    blockResult (Spec.TripleDes.scheduleAt s.mem (addr32 (s.gpr .edx))) d (Spec.TripleDes.blockAt s.mem (addr32 (s.gpr .ecx)))
+    blockResult (Spec.TripleDes.scheduleAt s.mem (addr32 (s.gpr .edx))) .encrypt
+      (Spec.TripleDes.blockAt s.mem (addr32 (s.gpr .ecx)))
 
-theorem cryptCall_ok (d : Direction) (s : State) (hp : CallPre s) : WP isa (cryptCall d) s (CallPost d s) := by
+theorem cryptCall_ok (s : State) (hp : CallPre s) : WP isa cryptCall s (CallPost s) := by
   rw [cryptCall_eq]
   let rs : List Reg := [.eax, .ecx, .edx]
   obtain hrs : .esp ∉ rs := by decide
@@ -252,11 +250,11 @@ theorem cryptCall_ok (d : Direction) (s : State) (hp : CallPre s) : WP isa (cryp
   obtain b12 : Region.Sub (below (s.gpr .esp) 12) (below (s.gpr .esp) 16) := below_sub (by decide) hp.stackLo
   obtain r4 : Region.Sub ⟨((s.gpr .esp) - BitVec.ofNat 32 16).setWidth 64, 4⟩ (below (s.gpr .esp) 16) :=
     Region.sub_prefix (by decide)
-  refine VG.Proof.Rc2.X86.Cbc.callWithGpr (c := Ecb.blockCode d) (k := blockContract d)
-    (Ecb.blockCode_correct d) (Ecb.block_nosp d) (by decide) hrs
+  refine VG.Proof.Rc2.X86.Cbc.callWithGpr (c := encryptBlock) (k := blockContract)
+    encBlock_correct Ecb.block_nosp (by decide) hrs
     (by rw [Ecb.block_stack]; exact hp.stackLo) (rd := [⟨addr32 (s.gpr .edx), 384⟩, ⟨argAddr sE 0, 12⟩])
     (wr := [⟨addr32 (s.gpr .ecx), 8⟩, ⟨addr32 (s.gpr .eax), 512⟩]) ⟨?_, ?_, ?_⟩ ?_
-  · change (blockContract d).pre (sE.withRegions _ _)
+  · change blockContract.pre (sE.withRegions _ _)
     simp only [blockContract, State.withRegions_rd, State.withRegions_wr, State.withRegions_gpr,
       arg_withRegions, argAddr_withRegions, a0, a1, a2, eA, eSp]
     refine ⟨trivial, trivial, hp.keyScratch, hp.dataScratch, hp.stackData.sub_left b12,
@@ -280,7 +278,7 @@ theorem cryptCall_ok (d : Direction) (s : State) (hp : CallPre s) : WP isa (cryp
     exact ⟨r, List.mem_cons_of_mem _ hr, hc⟩
   · intro s' rd wr cs frame ⟨s₂, mem₂, gpr₂, post⟩
     rw [Ecb.block_stack] at frame
-    change (blockContract d).post (sE.withRegions _ _) s₂ at post
+    change blockContract.post (sE.withRegions _ _) s₂ at post
     simp only [blockContract, State.withRegions_mem, arg_withRegions, a0, a1] at post
     obtain stackFrame := callEntry_frame fit hrs
     change Frame [below (s.gpr .esp) 16] s.mem sE.mem at stackFrame
@@ -294,12 +292,12 @@ theorem cryptCall_ok (d : Direction) (s : State) (hp : CallPre s) : WP isa (cryp
       VG.Proof.TripleDes.blockAt_eq_of_frame (p := addr32 (s.gpr .ecx)) stackFrame
         (by intro r hr; obtain rfl := List.mem_singleton.mp hr; exact hp.stackData.symm)]
 
-theorem crypt_wp (d : Direction) {s : State} {B : BitVec 32} {k : Spec.TripleDes.Schedule} (hB : s.gpr sb = B)
-    (hs : ScrIn s B (dirCore d).total) (hr : Ready s B k) (hst : (dirCore d).stack ≤ (s.gpr .esp).toNat) :
-    WP isa (dirCore d).crypt s fun s' => s'.gpr sb = B ∧ s'.gpr .esp = s.gpr .esp ∧ Ready s' B k ∧
-      Frame [coreRegion (dirCore d) B, stkRegion (s.gpr .esp) (dirCore d).stack] s.mem s'.mem ∧
-      (∀ j < (dirCore d).G, bytesAt s'.mem (blkAddr (dirCore d) B j) (4 * (dirCore d).bw) =
-        dirCipher d k (bytesAt s.mem (blkAddr (dirCore d) B j) (4 * (dirCore d).bw))) ∧
+theorem crypt_wp {s : State} {B : BitVec 32} {k : Spec.TripleDes.Schedule} (hB : s.gpr sb = B)
+    (hs : ScrIn s B dirCore.total) (hr : Ready s B k) (hst : dirCore.stack ≤ (s.gpr .esp).toNat) :
+    WP isa dirCore.crypt s fun s' => s'.gpr sb = B ∧ s'.gpr .esp = s.gpr .esp ∧ Ready s' B k ∧
+      Frame [coreRegion dirCore B, stkRegion (s.gpr .esp) dirCore.stack] s.mem s'.mem ∧
+      (∀ j < dirCore.G, bytesAt s'.mem (blkAddr dirCore B j) (4 * dirCore.bw) =
+        dirCipher .encrypt k (bytesAt s.mem (blkAddr dirCore B j) (4 * dirCore.bw))) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr := by
   obtain ⟨hk, hstk, hfB⟩ := hr
   have hw := hs.wr
@@ -308,7 +306,7 @@ theorem crypt_wp (d : Direction) {s : State} {B : BitVec 32} {k : Spec.TripleDes
   have hB' : s.gpr .edi = B := hB
   obtain slotIn : ∀ o, o + 4 ≤ 4 * 236 → (⟨B.setWidth 64, 4 * 236⟩ : Region).Contains (addr B o) 4 := fun o h => by
     rw [addr_eq (by omega_arith)]; exact VG.Offset.contains_base _ (by omega_arith) (by omega_arith)
-  show WP isa (.seq (.block cryptSetup) (.seq (cryptCall d) (.block cryptDone))) s _
+  show WP isa (.seq (.block cryptSetup) (.seq cryptCall (.block cryptDone))) s _
   refine WP.seq ?_
   refine wp_ldm (b := .edi) (o := 4 * dSlot) hB' ⟨_, List.mem_append_right _ hw, slotIn _ (by simp only [dSlot, schedSlot]; omega_arith)⟩
     fun s₁ u₁ => wp_ldm (b := .edi) (o := 4 * nSlot) ((u₁.other _ (by decide)).trans hB')
@@ -367,7 +365,7 @@ theorem crypt_wp (d : Direction) {s : State} {B : BitVec 32} {k : Spec.TripleDes
     · rw [esp₇, aK]; exact hstk.sub_right (VG.Offset.sub_base _ (by omega_arith))
     · rw [esp₇, aD]; exact hstk.sub_right (VG.Offset.sub_base _ (by omega_arith))
     · rw [esp₇, aW]; exact hstk.sub_right (Region.sub_prefix (by omega_arith))
-  refine WP.seq (WP.mono (cryptCall_ok d s₇ hpre) fun s' hc => ?_)
+  refine WP.seq (WP.mono (cryptCall_ok s₇ hpre) fun s' hc => ?_)
   have hfr := hc.mem
   rw [aD, aW, esp₇, m₇] at hfr
   obtain sb' : s'.gpr .edi = B := (hc.callee .edi (by decide)).trans edi₇
@@ -416,29 +414,29 @@ theorem crypt_wp (d : Direction) {s : State} {B : BitVec 32} {k : Spec.TripleDes
     · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, fun _ h => h⟩
   · have hj0 : j = 0 := by simp only [dirCore] at hj; omega_arith
     subst hj0
-    obtain eB : blkAddr (dirCore d) B 0 = B.setWidth 64 + BitVec.ofNat 64 512 := by
+    obtain eB : blkAddr dirCore B 0 = B.setWidth 64 + BitVec.ofNat 64 512 := by
       simp [blkAddr, slotA, dirCore, bufSlot]
     have ho := hc.output
     rw [aD, aK, m₇] at ho
-    rw [m₉, show 4 * (dirCore d).bw = 8 from rfl, eB, bytesAt_eq, ho, dirCipher_bytes,
+    rw [m₉, show 4 * dirCore.bw = 8 from rfl, eB, bytesAt_eq, ho, dirCipher_bytes,
       show B.setWidth 64 + BitVec.ofNat 64 520 = slotA B schedSlot from rfl, hk]
 
 /-- The core's blocks are two words. -/
-@[simp] theorem dirCore_bw (d : Direction) : (dirCore d).bw = 2 := rfl
+@[simp] theorem dirCore_bw : dirCore.bw = 2 := rfl
 
-/-- Triple DES's core for the direction `d` meets what the modes need. -/
-def dirCoreSpec (d : Direction) : CoreSpec (dirCore d) where
+/-- Triple DES's core, a block at a time, meets what the modes need. -/
+def dirCoreSpec : CoreSpec dirCore where
   Key := Spec.TripleDes.Schedule
-  cipher := dirCipher d
+  cipher := dirCipher .encrypt
   KeyArgs := KeyArgs
   Ready := Ready
-  cipher_len _ _ := by cases d <;> simp [dirCipher, Spec.TripleDes.cipher, Spec.TripleDes.invCipher]
+  cipher_len _ _ := by simp [dirCipher, Spec.TripleDes.cipher]
   layout := ⟨by simp only [dirCore]; decide, .inl rfl, by simp only [dirCore, schedSlot, bufSlot]; omega_arith,
     by simp only [dirCore]; omega_arith⟩
   keyArgs_congr h e r w _ f := keyArgs_congr h e r w f
   ready_frame h hesp _ _ _ hf _ hd := ready_frame h hesp hf hd
-  prepare_wp := prepare_wp d
-  crypt_wp := crypt_wp d
+  prepare_wp := prepare_wp
+  crypt_wp := crypt_wp
 
 /-! ## The bitsliced core -/
 

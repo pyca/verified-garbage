@@ -13,7 +13,7 @@ need the one before (CBC encryption, OFB, CFB64 encryption, CFB8), and
 `wideCore` (below), the bitsliced function on 32 blocks, for CBC and CFB64
 decryption.
 
-`dirCore d`: the verified block function of the direction `d`, called one
+`dirCore`: the verified encryption block function, called one
 block at a time, as a core for the modes (`Impl/Modes/X86/Seq.lean`). Its
 slots: the block function's 512-byte working space (slots 0 to 127), the
 buffer's one block (slots 128 and 129), and a copy of the 384-byte schedule
@@ -63,20 +63,16 @@ def cryptSetup : List Instr :=
 
 /-- The block function, with the working space, the block and the schedule
 pushed as its arguments. -/
-def cryptCall (d : Direction) : Prog isa :=
-  .frame (.push [.eax, .ecx, .edx])
-    (match d with
-    | .encrypt => .call "vg_triple_des_encrypt_block" encryptBlock
-    | .decrypt => .call "vg_triple_des_decrypt_block" decryptBlock)
-    (.pop .eax 3)
+def cryptCall : Prog isa :=
+  .frame (.push [.eax, .ecx, .edx]) (.call "vg_triple_des_encrypt_block" encryptBlock) (.pop .eax 3)
 
 /-- The modes' state back to its slots. -/
 def cryptDone : List Instr := [.store (slotAt dSlot) .esi, .store (slotAt nSlot) .ebp]
 
-/-- Triple DES's core for the modes, in the direction `d`. -/
-def dirCore (d : Direction) : Modes.X86.Core where
+/-- Triple DES's core for the modes, a block at a time: encryption. -/
+def dirCore : Modes.X86.Core where
   prepare := .block copySchedule
-  crypt := .seq (.block cryptSetup) (.seq (cryptCall d) (.block cryptDone))
+  crypt := .seq (.block cryptSetup) (.seq cryptCall (.block cryptDone))
   slots := schedSlot + 96
   total := schedSlot + 106
   buf := bufSlot
@@ -139,7 +135,7 @@ take, in turn, before single blocks. -/
 def levels : List Nat := [32, 16, 8, 4, 2]
 
 /-- `vg_triple_des_cbc_encrypt_chained`, with its scratch buffer as the fifth argument. -/
-def cbcEncryptChained : Prog isa := (dirCore .encrypt).seq (Modes.Mode.cbcEncChained 2)
+def cbcEncryptChained : Prog isa := dirCore.seq (Modes.Mode.cbcEncChained 2)
 
 /-- `vg_triple_des_cbc_decrypt_chained`, with its scratch buffer as the fifth argument. -/
 def cbcDecryptChained : Prog isa :=
