@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.CmacTripleDes.X86.Update
+public import VerifiedGarbage.Proof.CmacTripleDes.X86.Block
 import VerifiedGarbage.Proof.CmacTripleDes.KeySchedule
 import VerifiedGarbage.Proof.CmacTripleDes.X86.KeysLit
 import VerifiedGarbage.Proof.CmacTripleDes.IndexLit
