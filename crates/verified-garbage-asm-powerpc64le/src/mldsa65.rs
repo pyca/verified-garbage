@@ -454,7 +454,7 @@ bl {vg_keccak_absorb_scratch}
 bl {vg_keccak_pad_scratch}
 .base64 "AACgOAAAfziIAIA4QADcOEAA4DjIAB85"
 bl {vg_keccak_squeeze_scratch}
-.base64 "AAB4OIgDH+imAwh8SAMf61ADP+tYA1/rYAN/62gDn+twA7/reAPf64AD/+sAAAA40f8h+CAAgTkAAAz4CAAM+DAAITjGB2N4IgBjeAAAgDgAAKA4AADAOAAA4DgAAAA5AAAgOQAAQDkAAGA5AACAORQAAHzEBAAQxAwhEMQUQhDEHGMQxCSEEMQspRDENMYQxDznEMRECBHETCkRxFRKEcRcaxHEZIwRxGytEcR0zhHEfO8RxIQQEsSMMRLElFISxJxzEiAAgE4=""#,
+.base64 "AAB4OIgDH+imAwh8SAMf61ADP+tYA1/rYAN/62gDn+twA7/reAPf64AD/+sAAAA40f8h+CAAgTkAAAz4CAAM+DAAITjGB2N4IgBjeAAAgDgAAKA4AADAOAAA4DgAAAA5AAAgOQAAQDkAAGA5AACAOcQEABDEDCEQxBRCEMQcYxDEJIQQxCylEMQ0xhDEPOcQxEQIEcRMKRHEVEoRxFxrEcRkjBHEbK0RxHTOEcR87xHEhBASxIwxEsSUUhLEnHMSIACATg==""#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
@@ -494,7 +494,7 @@ bl {vg_keccak_absorb_scratch}
 bl {vg_keccak_pad_scratch}
 .base64 "AACgOAAAfziIAIA4AADcOEAA4DjIAB85"
 bl {vg_keccak_squeeze_scratch}
-.base64 "AAB4OIgDH+imAwh8SAMf61ADP+tYA1/rYAN/62gDn+twA7/reAPf64AD/+sAAAA40f8h+CAAgTkAAAz4CAAM+DAAITgAAGA4AACAOAAAoDgAAMA4AADgOAAAADkAACA5AABAOQAAYDkAAIA5FAAAfMQEABDEDCEQxBRCEMQcYxDEJIQQxCylEMQ0xhDEPOcQxEQIEcRMKRHEVEoRxFxrEcRkjBHEbK0RxHTOEcR87xHEhBASxIwxEsSUUhLEnHMSIACATg==""#,
+.base64 "AAB4OIgDH+imAwh8SAMf61ADP+tYA1/rYAN/62gDn+twA7/reAPf64AD/+sAAAA40f8h+CAAgTkAAAz4CAAM+DAAITgAAGA4AACAOAAAoDgAAMA4AADgOAAAADkAACA5AABAOQAAYDkAAIA5IACATg==""#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
@@ -546,7 +546,7 @@ bl {vg_mldsa_ntt}
 bl {vg_mldsa_unpack_t1}
 .base64 "AABgPKAbY2AUGn58AACAPAAAhGAUIp98"
 bl {vg_mldsa_ntt}
-.base64 "IADh6zAAITggAMHrMAAhOCAAAegwACE4pgMIfAAAADhx/yH4IACBOQAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4kAAhOAAAYDgAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDkUAAB8xAQAEMQMIRDEFEIQxBxjEMQkhBDELKUQxDTGEMQ85xDERAgRxEwpEcRUShHEXGsRxGSMEcRsrRHEdM4RxHzvEcSEEBLEjDESxJRSEsSccxIgAIBO""#,
+.base64 "IADh6zAAITggAMHrMAAhOCAAAegwACE4pgMIfAAAADhx/yH4IACBOQAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4kAAhOAAAYDgAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDnEBAAQxAwhEMQUQhDEHGMQxCSEEMQspRDENMYQxDznEMRECBHETCkRxFRKEcRcaxHEZIwRxGytEcR0zhHEfO8RxIQQEsSMMRLElFISxJxzEiAAgE4=""#,
         vg_mldsa_unpack_t1 = sym super::mldsa44::vg_mldsa_unpack_t1::vg_mldsa_unpack_t1,
         vg_mldsa_ntt = sym super::mldsa44::vg_mldsa_ntt::vg_mldsa_ntt,
     )
@@ -642,7 +642,7 @@ bl {vg_mldsa_ntt}
 bl {vg_mldsa_bit_unpack}
 .base64 "AABgPMBPY2AUGn58AACAPAAAhGAUIp98"
 bl {vg_mldsa_ntt}
-.base64 "IADh6zAAITggAMHrMAAhOCAAAegwACE4pgMIfAAAADhx/yH4IACBOQAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4kAAhOAAAYDgAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDkUAAB8xAQAEMQMIRDEFEIQxBxjEMQkhBDELKUQxDTGEMQ85xDERAgRxEwpEcRUShHEXGsRxGSMEcRsrRHEdM4RxHzvEcSEEBLEjDESxJRSEsSccxIgAIBO""#,
+.base64 "IADh6zAAITggAMHrMAAhOCAAAegwACE4pgMIfAAAADhx/yH4IACBOQAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4kAAhOAAAYDgAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDnEBAAQxAwhEMQUQhDEHGMQxCSEEMQspRDENMYQxDznEMRECBHETCkRxFRKEcRcaxHEZIwRxGytEcR0zhHEfO8RxIQQEsSMMRLElFISxJxzEiAAgE4=""#,
         vg_mldsa_bit_unpack = sym super::mldsa44::vg_mldsa_bit_unpack::vg_mldsa_bit_unpack,
         vg_mldsa_ntt = sym super::mldsa44::vg_mldsa_ntt::vg_mldsa_ntt,
     )
@@ -671,7 +671,7 @@ pub(crate) unsafe extern "C" fn vg_mldsa65_sign(sk: *const [u8; 4032], mu: *cons
     core::arch::naked_asm!(
         r#".base64 "pgIIfNH/IfggAAH4AAADOQAAIDk="
 bl {vg_mldsa65_sign_with_cache}
-.base64 "IAAB6DAAITimAwh8AAAAOEH/IfggAIE5AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAADPiIAAz4kAAM+JgADPjAACE4xgdjeCIAY3gAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDkUAAB8xAQAEMQMIRDEFEIQxBxjEMQkhBDELKUQxDTGEMQ85xDERAgRxEwpEcRUShHEXGsRxGSMEcRsrRHEdM4RxHzvEcSEEBLEjDESxJRSEsSccxIgAIBO""#,
+.base64 "IAAB6DAAITimAwh8AAAAOEH/IfggAIE5AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAADPiIAAz4kAAM+JgADPjAACE4xgdjeCIAY3gAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDnEBAAQxAwhEMQUQhDEHGMQxCSEEMQspRDENMYQxDznEMRECBHETCkRxFRKEcRcaxHEZIwRxGytEcR0zhHEfO8RxIQQEsSMMRLElFISxJxzEiAAgE4=""#,
         vg_mldsa65_sign_with_cache = sym super::mldsa65::vg_mldsa65_sign_with_cache::vg_mldsa65_sign_with_cache,
     )
 }
@@ -700,7 +700,7 @@ pub(crate) unsafe extern "C" fn vg_mldsa65_sign_prepared(sk: *const [u8; 21440],
     core::arch::naked_asm!(
         r#".base64 "pgIIfNH/IfggAAH4wA8DOQBEIDk="
 bl {vg_mldsa65_sign_with_cache}
-.base64 "IAAB6DAAITimAwh8AAAAOEH/IfggAIE5AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAADPiIAAz4kAAM+JgADPjAACE4xgdjeCIAY3gAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDkUAAB8xAQAEMQMIRDEFEIQxBxjEMQkhBDELKUQxDTGEMQ85xDERAgRxEwpEcRUShHEXGsRxGSMEcRsrRHEdM4RxHzvEcSEEBLEjDESxJRSEsSccxIgAIBO""#,
+.base64 "IAAB6DAAITimAwh8AAAAOEH/IfggAIE5AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAADPiIAAz4kAAM+JgADPjAACE4xgdjeCIAY3gAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDnEBAAQxAwhEMQUQhDEHGMQxCSEEMQspRDENMYQxDznEMRECBHETCkRxFRKEcRcaxHEZIwRxGytEcR0zhHEfO8RxIQQEsSMMRLElFISxJxzEiAAgE4=""#,
         vg_mldsa65_sign_with_cache = sym super::mldsa65::vg_mldsa65_sign_with_cache::vg_mldsa65_sign_with_cache,
     )
 }
@@ -748,7 +748,7 @@ bl {vg_keccak_squeeze_scratch}
 bl {vg_mldsa65_sign_core}
 .base64 "0AMe6IgD3uqQA/7qmAMe66ADPuuoA17rsAN+67gDnuvAA77ryAPe66YDCHw="
 21:
-.base64 "AAAAOEH/IfggAIE5AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAADPiIAAz4kAAM+JgADPjAACE4xgdjeCIAY3gAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDkUAAB8xAQAEMQMIRDEFEIQxBxjEMQkhBDELKUQxDTGEMQ85xDERAgRxEwpEcRUShHEXGsRxGSMEcRsrRHEdM4RxHzvEcSEEBLEjDESxJRSEsSccxIgAIBO""#,
+.base64 "AAAAOEH/IfggAIE5AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAADPiIAAz4kAAM+JgADPjAACE4xgdjeCIAY3gAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDnEBAAQxAwhEMQUQhDEHGMQxCSEEMQspRDENMYQxDznEMRECBHETCkRxFRKEcRcaxHEZIwRxGytEcR0zhHEfO8RxIQQEsSMMRLElFISxJxzEiAAgE4=""#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
@@ -800,7 +800,7 @@ bl {vg_keccak_squeeze_scratch}
 bl {vg_mldsa65_sign_prepared_core}
 .base64 "0AMe6IgD3uqQA/7qmAMe66ADPuuoA17rsAN+67gDnuvAA77ryAPe66YDCHw="
 21:
-.base64 "AAAAOEH/IfggAIE5AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAADPiIAAz4kAAM+JgADPjAACE4xgdjeCIAY3gAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDkUAAB8xAQAEMQMIRDEFEIQxBxjEMQkhBDELKUQxDTGEMQ85xDERAgRxEwpEcRUShHEXGsRxGSMEcRsrRHEdM4RxHzvEcSEEBLEjDESxJRSEsSccxIgAIBO""#,
+.base64 "AAAAOEH/IfggAIE5AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAADPiIAAz4kAAM+JgADPjAACE4xgdjeCIAY3gAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDnEBAAQxAwhEMQUQhDEHGMQxCSEEMQspRDENMYQxDznEMRECBHETCkRxFRKEcRcaxHEZIwRxGytEcR0zhHEfO8RxIQQEsSMMRLElFISxJxzEiAAgE4=""#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
@@ -828,7 +828,7 @@ pub(crate) unsafe extern "C" fn vg_mldsa65_verify(pk: *const [u8; 1952], mu: *co
     core::arch::naked_asm!(
         r#".base64 "pgIIfNH/IfggAAH4AADjOAAAADk="
 bl {vg_mldsa65_verify_with_cache}
-.base64 "IAAB6DAAITimAwh8AAAAOEH/IfggAIE5AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAADPiIAAz4kAAM+JgADPjAACE4xgdjeCIAY3gAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDkUAAB8xAQAEMQMIRDEFEIQxBxjEMQkhBDELKUQxDTGEMQ85xDERAgRxEwpEcRUShHEXGsRxGSMEcRsrRHEdM4RxHzvEcSEEBLEjDESxJRSEsSccxIgAIBO""#,
+.base64 "IAAB6DAAITimAwh8AAAAOEH/IfggAIE5AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAADPiIAAz4kAAM+JgADPjAACE4xgdjeCIAY3gAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDnEBAAQxAwhEMQUQhDEHGMQxCSEEMQspRDENMYQxDznEMRECBHETCkRxFRKEcRcaxHEZIwRxGytEcR0zhHEfO8RxIQQEsSMMRLElFISxJxzEiAAgE4=""#,
         vg_mldsa65_verify_with_cache = sym super::mldsa65::vg_mldsa65_verify_with_cache::vg_mldsa65_verify_with_cache,
     )
 }
@@ -854,7 +854,7 @@ pub(crate) unsafe extern "C" fn vg_mldsa65_verify_prepared(pk: *const [u8; 8096]
     core::arch::naked_asm!(
         r#".base64 "pgIIfNH/IfggAAH4oAfjOAAYADk="
 bl {vg_mldsa65_verify_with_cache}
-.base64 "IAAB6DAAITimAwh8AAAAOEH/IfggAIE5AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAADPiIAAz4kAAM+JgADPjAACE4xgdjeCIAY3gAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDkUAAB8xAQAEMQMIRDEFEIQxBxjEMQkhBDELKUQxDTGEMQ85xDERAgRxEwpEcRUShHEXGsRxGSMEcRsrRHEdM4RxHzvEcSEEBLEjDESxJRSEsSccxIgAIBO""#,
+.base64 "IAAB6DAAITimAwh8AAAAOEH/IfggAIE5AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAADPiIAAz4kAAM+JgADPjAACE4xgdjeCIAY3gAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDnEBAAQxAwhEMQUQhDEHGMQxCSEEMQspRDENMYQxDznEMRECBHETCkRxFRKEcRcaxHEZIwRxGytEcR0zhHEfO8RxIQQEsSMMRLElFISxJxzEiAAgE4=""#,
         vg_mldsa65_verify_with_cache = sym super::mldsa65::vg_mldsa65_verify_with_cache::vg_mldsa65_verify_with_cache,
     )
 }
@@ -901,7 +901,7 @@ bl {vg_keccak_squeeze_scratch}
 bl {vg_mldsa65_verify_core}
 .base64 "0AMe6IgD3uqQA/7qmAMe66ADPuuoA17rsAN+67gDnuvAA77ryAPe66YDCHw="
 21:
-.base64 "AAAAOEH/IfggAIE5AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAADPiIAAz4kAAM+JgADPjAACE4xgdjeCIAY3gAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDkUAAB8xAQAEMQMIRDEFEIQxBxjEMQkhBDELKUQxDTGEMQ85xDERAgRxEwpEcRUShHEXGsRxGSMEcRsrRHEdM4RxHzvEcSEEBLEjDESxJRSEsSccxIgAIBO""#,
+.base64 "AAAAOEH/IfggAIE5AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAADPiIAAz4kAAM+JgADPjAACE4xgdjeCIAY3gAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDnEBAAQxAwhEMQUQhDEHGMQxCSEEMQspRDENMYQxDznEMRECBHETCkRxFRKEcRcaxHEZIwRxGytEcR0zhHEfO8RxIQQEsSMMRLElFISxJxzEiAAgE4=""#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
@@ -952,7 +952,7 @@ bl {vg_keccak_squeeze_scratch}
 bl {vg_mldsa65_verify_prepared_core}
 .base64 "0AMe6IgD3uqQA/7qmAMe66ADPuuoA17rsAN+67gDnuvAA77ryAPe66YDCHw="
 21:
-.base64 "AAAAOEH/IfggAIE5AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAADPiIAAz4kAAM+JgADPjAACE4xgdjeCIAY3gAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDkUAAB8xAQAEMQMIRDEFEIQxBxjEMQkhBDELKUQxDTGEMQ85xDERAgRxEwpEcRUShHEXGsRxGSMEcRsrRHEdM4RxHzvEcSEEBLEjDESxJRSEsSccxIgAIBO""#,
+.base64 "AAAAOEH/IfggAIE5AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAADPiIAAz4kAAM+JgADPjAACE4xgdjeCIAY3gAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDnEBAAQxAwhEMQUQhDEHGMQxCSEEMQspRDENMYQxDznEMRECBHETCkRxFRKEcRcaxHEZIwRxGytEcR0zhHEfO8RxIQQEsSMMRLElFISxJxzEiAAgE4=""#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,

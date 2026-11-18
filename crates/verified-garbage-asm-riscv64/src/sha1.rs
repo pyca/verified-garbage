@@ -184,7 +184,7 @@ call {vg_sha1_init_core}
 call {vg_sha1_update_core}
 .base64 "YoXuhWaG"
 call {vg_sha1_finalize_core}
-.base64 "AUMjMGwAIzRsACM4bAAjPGwAIzBsAiM0bAIjOGwCIzxsAiMwbAQjNGwEIzhsBIMwjAWDOwwGgzwMBwM9jAeDPQwIAzyMBklhgUItcQqDIzBTACM0UwAjOFMAIzxTACMwUwIjNFMCIzhTAiM8UwIjMFMEIzRTBCM4UwQjPFMEIzBTBiM0UwYjOFMGIzxTBiMwUwgjNFMIIzhTCCM8UwgjMFMKIzRTCiM4UwojPFMKIzBTDCM0UwwjOFMMIzxTDCMwUw4jNFMOIzhTDiM8Uw4jMFMQIzRTECM4UxAjPFMQFWEBRYFFAUaBRgFHgUcBSIFIgUIBQ4FDAU6BTgFPgU+CgA=="
+.base64 "AUMjMGwAIzRsACM4bAAjPGwAIzBsAiM0bAIjOGwCIzxsAiMwbAQjNGwEIzhsBIMwjAWDOwwGgzwMBwM9jAeDPQwIAzyMBklhgUItcQqDIzBTACM0UwAjOFMAIzxTACMwUwIjNFMCIzhTAiM8UwIjMFMEIzRTBCM4UwQjPFMEIzBTBiM0UwYjOFMGIzxTBiMwUwgjNFMIIzRTDiM4Uw4jPFMOIzBTECM0UxAjOFMQIzxTEBVhAUWBRQFGgUYBR4FHAUiBSIFCAUOBQwFOgU4BT4FPgoA="
 .option pop"#,
         vg_sha1_init_core = sym super::sha1::vg_sha1_init_core::vg_sha1_init_core,
         vg_sha1_update_core = sym super::sha1::vg_sha1_update_core::vg_sha1_update_core,

@@ -136,17 +136,6 @@ vg_aes_cfb128_encrypt_final:
 	sd t6, 56(t5)
 	addi sp, sp, 64
 	addi t0, zero, 0
-	addi sp, sp, -64
-	addi t1, sp, 0
-	sd t0, 0(t1)
-	sd t0, 8(t1)
-	sd t0, 16(t1)
-	sd t0, 24(t1)
-	sd t0, 32(t1)
-	sd t0, 40(t1)
-	sd t0, 48(t1)
-	sd t0, 56(t1)
-	addi sp, sp, 64
 	addi a0, zero, 0
 	addi a1, zero, 0
 	addi a2, zero, 0
@@ -229,17 +218,6 @@ vg_aes_cfb128_decrypt_final:
 	sd t6, 56(t5)
 	addi sp, sp, 64
 	addi t0, zero, 0
-	addi sp, sp, -64
-	addi t1, sp, 0
-	sd t0, 0(t1)
-	sd t0, 8(t1)
-	sd t0, 16(t1)
-	sd t0, 24(t1)
-	sd t0, 32(t1)
-	sd t0, 40(t1)
-	sd t0, 48(t1)
-	sd t0, 56(t1)
-	addi sp, sp, 64
 	addi a0, zero, 0
 	addi a1, zero, 0
 	addi a2, zero, 0

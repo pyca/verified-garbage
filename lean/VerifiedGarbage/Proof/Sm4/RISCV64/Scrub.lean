@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
+public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubSel
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.Sm4.Contract
 public import VerifiedGarbage.Spec.Sm4.Cbc
@@ -24,6 +25,29 @@ import VerifiedGarbage.Proof.Sm4.RISCV64.FbFinalLit
 import VerifiedGarbage.Proof.Sm4.RISCV64.Lit
 import VerifiedGarbage.Proof.Sm4.RISCV64.ModesLit
 
+meta import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
+meta import VerifiedGarbage.Proof.Framework.RISCV64.ScrubSel
+meta import VerifiedGarbage.Proof.Framework.Registration
+meta import VerifiedGarbage.Spec.Sm4.Contract
+meta import VerifiedGarbage.Spec.Sm4.Cbc
+meta import VerifiedGarbage.Spec.Sm4.Cfb
+meta import VerifiedGarbage.Spec.Sm4.CfbFinal
+meta import VerifiedGarbage.Spec.Sm4.Ofb
+meta import VerifiedGarbage.Spec.Sm4.OfbFinal
+meta import VerifiedGarbage.Spec.Sm4.Ctr
+meta import VerifiedGarbage.Spec.Sm4.CtrFinal
+meta import VerifiedGarbage.Proof.Sm4.RISCV64.CtrFinal
+meta import VerifiedGarbage.Proof.Sm4.RISCV64.FbFinalVerified
+meta import VerifiedGarbage.Proof.Sm4.RISCV64.KeyVerified
+meta import VerifiedGarbage.Proof.Sm4.RISCV64.ModesVerified
+meta import VerifiedGarbage.Proof.Sm4.RISCV64.Verified
+meta import VerifiedGarbage.Proof.Sm4.Scratch
+meta import VerifiedGarbage.Proof.Sm4.CbcScratch
+meta import VerifiedGarbage.Proof.Sm4.FbScratch
+meta import VerifiedGarbage.Proof.Modes.CfbFinalScratch
+meta import VerifiedGarbage.Proof.Sm4.RISCV64.FbFinalLit
+meta import VerifiedGarbage.Proof.Sm4.RISCV64.Lit
+meta import VerifiedGarbage.Proof.Sm4.RISCV64.ModesLit
 /-!
 # Sm4 on RISC-V, without secret residue
 
@@ -32,6 +56,11 @@ Each function, followed by `Impl.Scrub.RISCV64.scrubTail`
 stack its frames used. Their postconditions read the memory on return only
 within their buffers (`RISCV64.Scrub.PostOut`), as on x86-64
 (`Proof/Sm4/X86_64/Scrub.lean`).
+
+The key expansion and ECB instead clear only the runs of doublewords that the residue
+analysis (`RISCV64.rtaint`) finds may differ between two runs
+(`RISCV64.Scrub.withScrubSel`, `scrubSel_noResidue`). Their code wipes most of
+its own scratch space, which leaves few such doublewords, or none.
 -/
 
 @[expose] public section
@@ -85,18 +114,27 @@ theorem ctrFinalOut (stack : Nat) : PostOut (Spec.Sm4.ctrFinalContract RISCV64.a
 
 /-- `Spec.Sm4.expandKeyApi`. -/
 def expandKeyReg : Registration Spec.Sm4.expandKeyApi RISCV64.target :=
-  withScrub { code := Impl.StackScratch.RISCV64.withStackScratchWiped 3168 .a2 396 Impl.Sm4.RISCV64.expandKey, verified := Proof.Sm4.RISCV64.expandKey_framed }
+  withScrubSel { code := Impl.StackScratch.RISCV64.withStackScratchWiped 3168 .a2 396 Impl.Sm4.RISCV64.expandKey, verified := Proof.Sm4.RISCV64.expandKey_framed } []
     (expandKeyOut _)
+    (fun hfs hsz hrb => scrubSel_noResidue _ _ [] hfs hsz hrb (expandKeyOut _) (hbp_nil _)
+      (Impl.StackScratch.RISCV64.withStackScratchWiped 3168 .a2 396 Impl.Sm4.RISCV64.expandKey) 3168 0
+      rfl rfl rfl (by exact ⟨_, by taint_decide_ct⟩))
 
 /-- `Spec.Sm4.ecbEncryptApi`. -/
 def ecbEncryptReg : Registration Spec.Sm4.ecbEncryptApi RISCV64.target :=
-  withScrub { code := Impl.StackScratch.RISCV64.withStackScratchWiped 3168 .a3 396 (Impl.Sm4.RISCV64.ecb .encrypt), verified := Proof.Sm4.RISCV64.ecb_framed .encrypt }
+  withScrubSel { code := Impl.StackScratch.RISCV64.withStackScratchWiped 3168 .a3 396 (Impl.Sm4.RISCV64.ecb .encrypt), verified := Proof.Sm4.RISCV64.ecb_framed .encrypt } []
     (ecbEncryptOut _)
+    (fun hfs hsz hrb => scrubSel_noResidue _ _ [] hfs hsz hrb (ecbEncryptOut _) (hbp_nil _)
+      (Impl.StackScratch.RISCV64.withStackScratchWiped 3168 .a3 396 (Impl.Sm4.RISCV64.ecb .encrypt)) 3168 0
+      rfl rfl rfl (by exact ⟨_, by taint_decide_ct⟩))
 
 /-- `Spec.Sm4.ecbDecryptApi`. -/
 def ecbDecryptReg : Registration Spec.Sm4.ecbDecryptApi RISCV64.target :=
-  withScrub { code := Impl.StackScratch.RISCV64.withStackScratchWiped 3168 .a3 396 (Impl.Sm4.RISCV64.ecb .decrypt), verified := Proof.Sm4.RISCV64.ecb_framed .decrypt }
+  withScrubSel { code := Impl.StackScratch.RISCV64.withStackScratchWiped 3168 .a3 396 (Impl.Sm4.RISCV64.ecb .decrypt), verified := Proof.Sm4.RISCV64.ecb_framed .decrypt } []
     (ecbDecryptOut _)
+    (fun hfs hsz hrb => scrubSel_noResidue _ _ [] hfs hsz hrb (ecbDecryptOut _) (hbp_nil _)
+      (Impl.StackScratch.RISCV64.withStackScratchWiped 3168 .a3 396 (Impl.Sm4.RISCV64.ecb .decrypt)) 3168 0
+      rfl rfl rfl (by exact ⟨_, by taint_decide_ct⟩))
 
 /-- `Spec.Sm4.cbcEncryptChainedApi`. -/
 def cbcEncryptChainedReg : Registration Spec.Sm4.cbcEncryptChainedApi RISCV64.target :=

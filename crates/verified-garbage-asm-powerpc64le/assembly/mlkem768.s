@@ -48,7 +48,6 @@ vg_mlkem768_keygen:
 	li %r10, 0
 	li %r11, 0
 	li %r12, 0
-	addc %r0, %r0, %r0
 	vxor %v0, %v0, %v0
 	vxor %v1, %v1, %v1
 	vxor %v2, %v2, %v2
@@ -65,10 +64,6 @@ vg_mlkem768_keygen:
 	vxor %v13, %v13, %v13
 	vxor %v14, %v14, %v14
 	vxor %v15, %v15, %v15
-	vxor %v16, %v16, %v16
-	vxor %v17, %v17, %v17
-	vxor %v18, %v18, %v18
-	vxor %v19, %v19, %v19
 	blr
 
 vg_mlkem768_encaps:
@@ -115,7 +110,6 @@ vg_mlkem768_encaps:
 	li %r10, 0
 	li %r11, 0
 	li %r12, 0
-	addc %r0, %r0, %r0
 	vxor %v0, %v0, %v0
 	vxor %v1, %v1, %v1
 	vxor %v2, %v2, %v2
@@ -132,10 +126,6 @@ vg_mlkem768_encaps:
 	vxor %v13, %v13, %v13
 	vxor %v14, %v14, %v14
 	vxor %v15, %v15, %v15
-	vxor %v16, %v16, %v16
-	vxor %v17, %v17, %v17
-	vxor %v18, %v18, %v18
-	vxor %v19, %v19, %v19
 	blr
 
 vg_mlkem768_encaps_h:
@@ -182,7 +172,6 @@ vg_mlkem768_encaps_h:
 	li %r10, 0
 	li %r11, 0
 	li %r12, 0
-	addc %r0, %r0, %r0
 	vxor %v0, %v0, %v0
 	vxor %v1, %v1, %v1
 	vxor %v2, %v2, %v2
@@ -199,10 +188,6 @@ vg_mlkem768_encaps_h:
 	vxor %v13, %v13, %v13
 	vxor %v14, %v14, %v14
 	vxor %v15, %v15, %v15
-	vxor %v16, %v16, %v16
-	vxor %v17, %v17, %v17
-	vxor %v18, %v18, %v18
-	vxor %v19, %v19, %v19
 	blr
 
 vg_mlkem768_decaps:
@@ -249,7 +234,6 @@ vg_mlkem768_decaps:
 	li %r10, 0
 	li %r11, 0
 	li %r12, 0
-	addc %r0, %r0, %r0
 	vxor %v0, %v0, %v0
 	vxor %v1, %v1, %v1
 	vxor %v2, %v2, %v2
@@ -266,10 +250,6 @@ vg_mlkem768_decaps:
 	vxor %v13, %v13, %v13
 	vxor %v14, %v14, %v14
 	vxor %v15, %v15, %v15
-	vxor %v16, %v16, %v16
-	vxor %v17, %v17, %v17
-	vxor %v18, %v18, %v18
-	vxor %v19, %v19, %v19
 	blr
 
 vg_mlkem768_check_ek:
@@ -303,37 +283,10 @@ vg_mlkem768_check_ek:
 	rldicl %r6, %r6, 1, 63
 	li %r3, 1
 	subf %r3, %r6, %r3
-	li %r0, 0
 	rldicr %r3, %r3, 32, 31
 	rldicl %r3, %r3, 32, 32
 	li %r4, 0
 	li %r5, 0
 	li %r6, 0
 	li %r7, 0
-	li %r8, 0
-	li %r9, 0
-	li %r10, 0
-	li %r11, 0
-	li %r12, 0
-	addc %r0, %r0, %r0
-	vxor %v0, %v0, %v0
-	vxor %v1, %v1, %v1
-	vxor %v2, %v2, %v2
-	vxor %v3, %v3, %v3
-	vxor %v4, %v4, %v4
-	vxor %v5, %v5, %v5
-	vxor %v6, %v6, %v6
-	vxor %v7, %v7, %v7
-	vxor %v8, %v8, %v8
-	vxor %v9, %v9, %v9
-	vxor %v10, %v10, %v10
-	vxor %v11, %v11, %v11
-	vxor %v12, %v12, %v12
-	vxor %v13, %v13, %v13
-	vxor %v14, %v14, %v14
-	vxor %v15, %v15, %v15
-	vxor %v16, %v16, %v16
-	vxor %v17, %v17, %v17
-	vxor %v18, %v18, %v18
-	vxor %v19, %v19, %v19
 	blr

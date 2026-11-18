@@ -364,7 +364,6 @@ vg_blowfish_cfb64_encrypt:
 	std %r11, 88(%r12)
 	addi %r1, %r1, 128
 	li %r0, 0
-	li %r3, 0
 	li %r4, 0
 	li %r5, 0
 	li %r6, 0
@@ -374,7 +373,6 @@ vg_blowfish_cfb64_encrypt:
 	li %r10, 0
 	li %r11, 0
 	li %r12, 0
-	addc %r0, %r0, %r0
 	vxor %v0, %v0, %v0
 	vxor %v1, %v1, %v1
 	vxor %v2, %v2, %v2
@@ -393,8 +391,6 @@ vg_blowfish_cfb64_encrypt:
 	vxor %v15, %v15, %v15
 	vxor %v16, %v16, %v16
 	vxor %v17, %v17, %v17
-	vxor %v18, %v18, %v18
-	vxor %v19, %v19, %v19
 	blr
 
 vg_blowfish_cfb64_decrypt:
@@ -757,7 +753,6 @@ vg_blowfish_cfb64_decrypt:
 	std %r11, 88(%r12)
 	addi %r1, %r1, 128
 	li %r0, 0
-	li %r3, 0
 	li %r4, 0
 	li %r5, 0
 	li %r6, 0
@@ -767,7 +762,6 @@ vg_blowfish_cfb64_decrypt:
 	li %r10, 0
 	li %r11, 0
 	li %r12, 0
-	addc %r0, %r0, %r0
 	vxor %v0, %v0, %v0
 	vxor %v1, %v1, %v1
 	vxor %v2, %v2, %v2
@@ -786,8 +780,6 @@ vg_blowfish_cfb64_decrypt:
 	vxor %v15, %v15, %v15
 	vxor %v16, %v16, %v16
 	vxor %v17, %v17, %v17
-	vxor %v18, %v18, %v18
-	vxor %v19, %v19, %v19
 	blr
 
 vg_blowfish_cfb64_encrypt_final:
@@ -1171,7 +1163,6 @@ vg_blowfish_cfb64_encrypt_final:
 	std %r11, 88(%r12)
 	addi %r1, %r1, 128
 	li %r0, 0
-	li %r3, 0
 	li %r4, 0
 	li %r5, 0
 	li %r6, 0
@@ -1181,7 +1172,6 @@ vg_blowfish_cfb64_encrypt_final:
 	li %r10, 0
 	li %r11, 0
 	li %r12, 0
-	addc %r0, %r0, %r0
 	vxor %v0, %v0, %v0
 	vxor %v1, %v1, %v1
 	vxor %v2, %v2, %v2
@@ -1200,8 +1190,6 @@ vg_blowfish_cfb64_encrypt_final:
 	vxor %v15, %v15, %v15
 	vxor %v16, %v16, %v16
 	vxor %v17, %v17, %v17
-	vxor %v18, %v18, %v18
-	vxor %v19, %v19, %v19
 	blr
 
 vg_blowfish_cfb64_decrypt_final:
@@ -1585,7 +1573,6 @@ vg_blowfish_cfb64_decrypt_final:
 	std %r11, 88(%r12)
 	addi %r1, %r1, 128
 	li %r0, 0
-	li %r3, 0
 	li %r4, 0
 	li %r5, 0
 	li %r6, 0
@@ -1595,7 +1582,6 @@ vg_blowfish_cfb64_decrypt_final:
 	li %r10, 0
 	li %r11, 0
 	li %r12, 0
-	addc %r0, %r0, %r0
 	vxor %v0, %v0, %v0
 	vxor %v1, %v1, %v1
 	vxor %v2, %v2, %v2
@@ -1614,6 +1600,4 @@ vg_blowfish_cfb64_decrypt_final:
 	vxor %v15, %v15, %v15
 	vxor %v16, %v16, %v16
 	vxor %v17, %v17, %v17
-	vxor %v18, %v18, %v18
-	vxor %v19, %v19, %v19
 	blr

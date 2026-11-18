@@ -365,20 +365,19 @@ theorem enter_ct : ConstantTime isa contract.pre contract.pub enter := by
 theorem verified : Verified target enter (Spec.Mcdt.enterContract abi 8) := by
   apply Verified.of_correct (k := contract) enter_correct enter_ct
   · exact {
-      pre := by sig_implies_pre [Spec.Mcdt.enterContract, Spec.Mcdt.enterSig, Abi.withMode, contract, abi,
+      pre := by sig_implies_pre [Spec.Mcdt.enterContract, Spec.Mcdt.enterSig, contract, abi,
         argRegs]
       -- Both postconditions are `True`.
       post := fun _ _ _ _ => trivial
       pub := by
         intro s₁ s₂ _ _ h
-        sig_pub [Spec.Mcdt.enterContract, Spec.Mcdt.enterSig, Abi.withMode, abi, argRegs] at h
-        sig_split h
-        exact ⟨by with_reducible assumption, BitVec.eq_of_toNat_eq (by with_reducible assumption)⟩
-      sat := by sig_implies_sat [Spec.Mcdt.enterContract, Spec.Mcdt.enterSig, Abi.withMode, contract, abi,
+        sig_pub_keep [Spec.Mcdt.enterContract, Spec.Mcdt.enterSig, abi, argRegs] at h
+        exact h
+      sat := by sig_implies_sat [Spec.Mcdt.enterContract, Spec.Mcdt.enterSig, contract, abi,
         argRegs] [sat] using sat }
 
 theorem enterOut : Scrub.PostOut (Spec.Mcdt.enterContract abi 8) (Spec.Mcdt.enterSig.retBits 64) :=
-  Scrub.postOut_of_local (leak := none) (Scrub.ScrubAbi.plain.mode true) fun vs _ _ _ _ hlen _ h => by
+  Scrub.postOut_of_local (leak := none) Scrub.ScrubAbi.plain fun vs _ _ _ _ hlen _ h => by
     obtain rfl := List.eq_nil_of_length_eq_zero hlen
     exact h
 

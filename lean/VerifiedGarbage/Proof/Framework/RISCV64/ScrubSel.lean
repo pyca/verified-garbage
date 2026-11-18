@@ -438,6 +438,12 @@ theorem firstArray_mem {A : Abi isa} (hA : ScrubAbi A) (hargs : A.args = abi.arg
     exact List.mem_map.mpr ⟨_, List.mem_filter.mpr ⟨List.mem_append_left _ (List.mem_append_left _ hb),
       rfl⟩, rfl⟩
 
+/-- `scrubSelReg`'s `hbp` for no buffer (`bp0 = []`). -/
+theorem hbp_nil {api : Api} (r : Registration api target) :
+    ∀ s, r.contract.pre s → ∀ q ∈ ([] : List (Reg × Nat)), ∀ i < q.2, ∃ g ∈ s.rd ++ s.wr,
+      g.Contains (s.gpr q.1 + BitVec.ofNat 64 i) 1 :=
+  fun _ _ _ hq => nomatch hq
+
 /-- `scrubSelReg`'s `hbp` for `bp0 = [(a0, n * e.size)]`, of a function whose first
 parameter is an array of `n` elements of `e`. -/
 theorem hbp_firstArray {api : Api} (r : Registration api target) {nm : String} {m : Bool} {e : Elem}

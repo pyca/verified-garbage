@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Scrub.PPC64LE
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Call
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Writes
 public import VerifiedGarbage.TCB.PPC64LE.Residue
 public import VerifiedGarbage.TCB.Registration
 import VerifiedGarbage.Proof.Framework.Mem
@@ -17,7 +18,10 @@ derives, whose frames use at most the contract's `stack` bytes
 (`scrub`), is verified against the same contract and returns without secret
 residue (`NoResidue`), as on RISC-V (`Proof/Framework/RISCV64/Scrub.lean`).
 The proof of the code is used as it is: what `scrub` adds is checked once,
-here, for all code. The code must use no more stack than its contract
+here, for all code. The clearing clears only the volatile registers the code
+may write (`Clear.of`, `Proof/Framework/PPC64LE/Writes.lean`): one it never
+writes holds on return what it held on entry, on which the two runs of
+`NoResidue` agree (`Clear.Keeps`). The code must use no more stack than its contract
 reserves, make no indirect call, and its postcondition read the memory on
 return only within the buffers (`PostOut`).
 
@@ -613,9 +617,9 @@ def wipeM : List Nat → Addr → (Nat → BitVec 64) → Mem → Mem
       (p - BitVec.ofNat 64 c) c (fun n => U (n + (c + 32) / 4 + wipeK (c' :: cs)))
 
 /-- `wipe cs` leaves `wipeM` in memory, uses `wipeK cs` unknowns, and
-changes no register but `r12`. -/
-theorem wipe_run : ∀ (cs : List Nat) (u : State), ChunksOk cs → cs.sum ≤ u.sp.toNat → u.gpr .r0 = 0 →
-    ∃ g : Reg → BitVec 64, (∀ r, r ≠ .r12 → g r = u.gpr r) ∧
+changes no register but `r12`, and none without levels. -/
+theorem wipe_run : ∀ (cs : List Nat) (u : State), ChunksOk cs → cs.sum ≤ u.sp.toNat → cs = [] ∨ u.gpr .r0 = 0 →
+    ∃ g : Reg → BitVec 64, (∀ r, r ≠ .r12 ∨ cs = [] → g r = u.gpr r) ∧
       Exec isa (wipe cs) u (wipeTr cs u.sp)
         { u with
           gpr := g, mem := wipeM cs u.sp u.unknowns u.mem,
@@ -630,8 +634,10 @@ theorem wipe_run : ∀ (cs : List Nat) (u : State), ChunksOk cs → cs.sum ≤ u
     rw [this]; exact .block rfl
   | [c], u, hv, hs, h0 => by
     simp only [List.sum_cons, List.sum_nil, Nat.add_zero] at hs
-    exact ⟨_, fun r hr => RegUpd.gpr_write_of_ne _ _ hr, wipeFrame_run hv.frame u hs h0⟩
+    exact ⟨_, fun r hr => RegUpd.gpr_write_of_ne _ _ (hr.resolve_right (by simp)),
+      wipeFrame_run hv.frame u hs (h0.resolve_left (by simp))⟩
   | c :: c' :: cs, u, hv, hs, h0 => by
+    replace h0 := h0.resolve_left (by simp)
     have hp := u.sp.isLt
     have hfc := hv.frame
     have hf32 := hv.frame32
@@ -652,7 +658,7 @@ theorem wipe_run : ∀ (cs : List Nat) (u : State), ChunksOk cs → cs.sum ≤ u
     have hs₁sp : s₁.sp = u.sp - BitVec.ofNat 64 c := by rw [← hs₁, hu₁sp]
     have hq : (u.sp - BitVec.ofNat 64 c).toNat = u.sp.toNat - c := toNat_sub_ofNat _ _ (by omega_using [hs, hc'])
     obtain ⟨g, hg, e₂⟩ := wipe_run (c' :: cs) s₁ hv.tail
-      (by rw [hs₁sp, hq, List.sum_cons]; omega_using [hs, hc']) (by rw [← hs₁]; exact hu₁r0)
+      (by rw [hs₁sp, hq, List.sum_cons]; omega_using [hs, hc']) (.inr (by rw [← hs₁]; exact hu₁r0))
     generalize hs₃ : ({ s₁ with
         gpr := g, mem := wipeM (c' :: cs) s₁.sp s₁.unknowns s₁.mem,
         unknowns := fun n => s₁.unknowns (n + wipeK (c' :: cs)) } : State) = s₃ at e₂
@@ -660,7 +666,8 @@ theorem wipe_run : ∀ (cs : List Nat) (u : State), ChunksOk cs → cs.sum ≤ u
       (by rw [← hs₁]; rfl)
     have ef := Exec.seq e₁ (Exec.frame (M := isa) (i := Instr.alloc c) (j := Instr.free c) hpush e₂ hpop)
     refine ⟨g, fun r hr => ?_, ?_⟩
-    · rw [hg r hr, ← hs₁, ← hu₁]; exact RegUpd.gpr_write_of_ne _ _ hr
+    · replace hr := hr.resolve_right (by simp)
+      rw [hg r (.inl hr), ← hs₁, ← hu₁]; exact RegUpd.gpr_write_of_ne _ _ hr
     · have et : frameTr (c + 32) u.sp ++ (List.map Leak.addr (isa.addrs (.alloc c) u₁) ++
           wipeTr (c' :: cs) s₁.sp ++ List.map Leak.addr (isa.addrs (.free c) s₃)) =
           wipeTr (c :: c' :: cs) u.sp := by
@@ -822,9 +829,9 @@ theorem fixA_hi {rb : Nat} (hrb : rb ≤ 64) (x : BitVec 64) : fixA rb x >>> rb 
       obtain rfl : rb = 64 := by omega
       ext i hi; simp
 
-/-- The general-purpose registers after the clearing, from `g`. -/
-def finG (rb : Nat) (g : Reg → BitVec 64) : Reg → BitVec 64 :=
-  fun r => if r = .r0 ∨ r ∈ scratchRegs then 0 else if r = .r3 then fixA rb (g .r3) else g r
+/-- The general-purpose registers after the clearing `cl`, from `g`. -/
+def finG (rb : Nat) (cl : Clear) (g : Reg → BitVec 64) : Reg → BitVec 64 :=
+  fun r => if cl.Zeroes r then 0 else if r = .r3 ∧ cl.r3 = true then fixA rb (g .r3) else g r
 
 theorem zeroRs_run : ∀ (rs : List Reg) (u : State),
     execBlock isa (rs.map zeroR) u = some ({ u with gpr := fun r => if r ∈ rs then 0 else u.gpr r }, [])
@@ -886,72 +893,119 @@ theorem retFix_run {rb : Nat} (u : State) :
       · simp [h]
 
 /-- The last block: CA cleared (by `addc` of `r0`, zero), then the vector
-registers. -/
-theorem last_run (u : State) (h0 : u.gpr .r0 = 0) :
-    execBlock isa (.addc .r0 .r0 .r0 :: vregs.map zeroV) u =
-      some ({ u with vpr := fun _ => 0, ca := false }, []) := by
-  simp only [execBlock, isa, exec_addc, h0]
-  rw [zeroVs_run]
-  simp only [Option.map_some, addrs, List.map_nil, List.nil_append, Option.some.injEq, Prod.mk.injEq,
-    and_true]
-  cases u
-  simp only [State.writeCarry, State.write, State.mk.injEq, true_and]
-  refine ⟨?_, ?_, by decide⟩
-  · funext r; split
+registers `vs`. -/
+theorem last_run (u : State) (ca : Bool) (vs : List VReg) (h0 : ca = true → u.gpr .r0 = 0) :
+    execBlock isa ((if ca then [.addc .r0 .r0 .r0] else []) ++ vs.map zeroV) u =
+      some ({ u with vpr := fun v => if v ∈ vs then 0 else u.vpr v, ca := if ca then false else u.ca },
+        []) := by
+  cases ca with
+  | false =>
+    simp only [Bool.false_eq_true, ite_false, List.nil_append]
+    rw [zeroVs_run]
+  | true =>
+    have h0 := h0 rfl
+    simp only [ite_true, List.cons_append, List.nil_append, execBlock, isa, exec_addc, h0]
+    rw [zeroVs_run]
+    simp only [Option.map_some, addrs, List.map_nil, List.nil_append, Option.some.injEq, Prod.mk.injEq,
+      and_true]
+    cases u
+    simp only [State.writeCarry, State.write, State.mk.injEq, true_and]
+    refine ⟨?_, by decide⟩
+    funext r; split
     · next h => subst h; simpa using h0.symm
     · rfl
-  · funext v; simp only [ite_eq_left_iff]; intro h; exact absurd (by cases v <;> decide) h
 
-/-- The state after the clearing of the levels `cs` below `p`, from `u`. -/
-def finState (rb : Nat) (cs : List Nat) (p : Addr) (u : State) : State :=
+/-- The state after the clearing `cl` of the levels `cs` below `p`, from
+`u`. -/
+def finState (rb : Nat) (cs : List Nat) (cl : Clear) (p : Addr) (u : State) : State :=
   { u with
-    gpr := finG rb u.gpr, vpr := fun _ => 0, ca := false, mem := wipeM cs p u.unknowns u.mem,
+    gpr := finG rb cl u.gpr, vpr := fun v => if v ∈ cl.vs then 0 else u.vpr v,
+    ca := if cl.ca then false else u.ca, mem := wipeM cs p u.unknowns u.mem,
     unknowns := fun n => u.unknowns (n + wipeK cs) }
 
-/-- The trace of `scrubTail rb cs` from `r1 = p`: a function of `p`. -/
+/-- The trace of `scrubTail rb cs cl` from `r1 = p`: a function of `p`. -/
 def tailTr (cs : List Nat) (p : Addr) : List Leak := [] ++ (wipeTr cs p ++ ([] ++ ([] ++ [])))
 
+theorem zeroR0_run (u : State) (b : Bool) :
+    execBlock isa (if b then [zeroR .r0] else []) u =
+      some ({ u with gpr := fun r => if r = .r0 ∧ b = true then 0 else u.gpr r }, []) := by
+  cases b with
+  | false => cases u; simp only [Bool.false_eq_true, ite_false, and_false, execBlock]
+  | true =>
+    simp only [ite_true, and_true]
+    rw [show [zeroR .r0] = [Reg.r0].map zeroR from rfl, zeroRs_run]
+    simp only [List.mem_singleton]
+
+theorem retFixIf_run {rb : Nat} (u : State) (b : Bool) :
+    execBlock isa (if b then retFix rb else []) u =
+      some ({ u with gpr := fun r => if r = .r3 ∧ b = true then fixA rb (u.gpr .r3) else u.gpr r }, []) := by
+  cases b with
+  | false => cases u; simp only [Bool.false_eq_true, ite_false, and_false, execBlock]
+  | true => simp only [ite_true, and_true]; exact retFix_run u
+
 /-- The clearing's run, from a state with `cs.sum` bytes below `r1`. -/
-theorem tail_run {rb : Nat} {cs : List Nat} (hv : ChunksOk cs) (u : State) (hs : cs.sum ≤ u.sp.toNat) :
-    Exec isa (scrubTail rb cs) u (tailTr cs u.sp) (finState rb cs u.sp u) := by
-  have h₀ : execBlock isa [zeroR .r0] u =
-      some ({ u with gpr := fun r => if r ∈ [Reg.r0] then 0 else u.gpr r }, []) := zeroRs_run [.r0] u
-  generalize hu₁ : ({ u with gpr := fun r => if r ∈ [Reg.r0] then 0 else u.gpr r } : State) = u₁ at h₀
+theorem tail_run {rb : Nat} {cs : List Nat} {cl : Clear} (hv : ChunksOk cs) (hwf : cl.WF cs) (u : State)
+    (hs : cs.sum ≤ u.sp.toNat) :
+    Exec isa (scrubTail rb cs cl) u (tailTr cs u.sp) (finState rb cs cl u.sp u) := by
+  have h₀ := zeroR0_run u cl.r0
+  generalize hu₁ : ({ u with gpr := fun r => if r = .r0 ∧ cl.r0 = true then 0 else u.gpr r } : State) = u₁
+    at h₀
   have hsp : u₁.sp = u.sp := by rw [← hu₁]
-  have hmem : u₁.mem = u.mem := by rw [← hu₁]
-  have hunk : u₁.unknowns = u.unknowns := by rw [← hu₁]
   have hg₁ : ∀ r, r ≠ .r0 → u₁.gpr r = u.gpr r := fun r hr => by rw [← hu₁]; simp [hr]
-  obtain ⟨g, hg, hw⟩ := wipe_run cs u₁ hv (hsp ▸ hs) (by rw [← hu₁]; simp)
+  have h0₁ : cl.r0 = true → u₁.gpr .r0 = 0 := fun h => by rw [← hu₁]; simp [h]
+  have hcs : cs = [] ∨ u₁.gpr .r0 = 0 := by
+    by_cases hc : cs = []
+    · exact .inl hc
+    · exact .inr (h0₁ (hwf.r0 (.inl hc)))
+  obtain ⟨g, hg, hw⟩ := wipe_run cs u₁ hv (hsp ▸ hs) hcs
   generalize hu₂ : ({ u₁ with
       gpr := g, mem := wipeM cs u₁.sp u₁.unknowns u₁.mem,
       unknowns := fun n => u₁.unknowns (n + wipeK cs) } : State) = u₂ at hw
   obtain ⟨u₃, hu₃⟩ : ∃ u₃ : State, u₃ = { u₂ with
-      gpr := fun (r : Reg) => if r = Reg.r3 then fixA rb (u₂.gpr .r3) else u₂.gpr r } := ⟨_, rfl⟩
-  have h₃ : execBlock isa (retFix rb) u₂ = some (u₃, []) := by rw [hu₃]; exact retFix_run u₂
+      gpr := fun (r : Reg) => if r = Reg.r3 ∧ cl.r3 = true then fixA rb (u₂.gpr .r3) else u₂.gpr r } :=
+    ⟨_, rfl⟩
+  have h₃ : execBlock isa (if cl.r3 then retFix rb else []) u₂ = some (u₃, []) := by
+    rw [hu₃]; exact retFixIf_run u₂ cl.r3
   obtain ⟨u₄, hu₄⟩ : ∃ u₄ : State, u₄ = { u₃ with
-      gpr := fun (r : Reg) => if r ∈ scratchRegs then 0 else u₃.gpr r } := ⟨_, rfl⟩
-  have h₄ : execBlock isa (scratchRegs.map zeroR) u₃ = some (u₄, []) := by rw [hu₄]; exact zeroRs_run _ u₃
-  have h40 : u₄.gpr .r0 = 0 := by
+      gpr := fun (r : Reg) => if r ∈ cl.gs then 0 else u₃.gpr r } := ⟨_, rfl⟩
+  have h₄ : execBlock isa (cl.gs.map zeroR) u₃ = some (u₄, []) := by rw [hu₄]; exact zeroRs_run _ u₃
+  have hr0gs : Reg.r0 ∉ cl.gs := fun h => absurd (hwf.gs _ h) (by decide)
+  have hr3gs : Reg.r3 ∉ cl.gs := fun h => absurd (hwf.gs _ h) (by decide)
+  have h40 : cl.ca = true → u₄.gpr .r0 = 0 := by
+    intro hc
     rw [hu₄, hu₃, ← hu₂]
-    simp only [show Reg.r0 ∉ scratchRegs by decide, ite_false, show Reg.r0 ≠ .r3 by decide]
-    exact (hg .r0 (by decide)).trans (by rw [← hu₁]; simp)
-  have h₅ := last_run u₄ h40
+    simp only [hr0gs, ite_false, show Reg.r0 ≠ .r3 by decide, false_and]
+    exact (hg .r0 (.inl (by decide))).trans (h0₁ (hwf.r0 (.inr hc)))
+  have h₅ := last_run u₄ cl.ca cl.vs h40
   have e := Exec.seq (.block h₀) (.seq hw (.seq (.block h₃) (.seq (.block h₄) (.block h₅))))
   have et : ([] ++ (wipeTr cs u₁.sp ++ ([] ++ ([] ++ [])))) = tailTr cs u.sp := by
     simp only [hsp, tailTr]
   rw [et] at e
-  have es : ({ u₄ with vpr := fun _ => 0, ca := false } : State) = finState rb cs u.sp u := by
+  have es : ({ u₄ with
+      vpr := fun v => if v ∈ cl.vs then 0 else u₄.vpr v
+      ca := if cl.ca then false else u₄.ca } : State) = finState rb cs cl u.sp u := by
     subst hu₄ hu₃ hu₂ hu₁
     simp only [finState]
     congr 1
     funext r
-    simp only [finG]
-    by_cases h : r ∈ scratchRegs
+    simp only [finG, Clear.Zeroes]
+    by_cases h : r ∈ cl.gs
     · simp [h]
     · by_cases h0 : r = .r0
-      · subst h0; simp [hg .r0 (by decide)]
-      · have h12 : r ≠ .r12 := fun e => h (e ▸ by decide)
-        simp [h, h0, hg r h12, hg .r3 (by decide)]
+      · subst h0
+        by_cases hb : cl.r0 = true
+        · simp [hb, hg .r0 (.inl (by decide))]
+        · simp [hb, hg .r0 (.inl (by decide))]
+      · have hgr : g r = u.gpr r ∧ g .r3 = u.gpr .r3 := by
+          refine ⟨?_, ?_⟩
+          · by_cases h12 : r = .r12
+            · subst h12
+              have hc : cs = [] := by
+                by_contra hc; exact h (hwf.r12 hc)
+              rw [hg _ (.inr hc)]; simp [h0]
+            · rw [hg r (.inl h12)]; simp [h0]
+          · rw [hg .r3 (.inl (by decide))]; simp
+        simp [h, h0, hgr.1, hgr.2]
   rw [es] at e
   exact e
 
@@ -1166,6 +1220,18 @@ theorem postOut_of_local {A : Abi isa} (hA : ScrubAbi A) {sig : Sig}
 
 theorem not_scratch_preserved : ∀ r ∈ preserved, ¬ (r = .r0 ∨ r ∈ scratchRegs) ∧ r ≠ .r3 := by decide
 
+/-- A clearing zeroes no register the contract preserves, nor `r3`. -/
+theorem Clear.not_zeroes {cl : Clear} {cs : List Nat} (hwf : cl.WF cs) {r : Reg}
+    (h : r ∈ preserved ∨ r = .r3) : ¬ cl.Zeroes r := by
+  rintro (⟨rfl, -⟩ | hg)
+  · rcases h with h | h
+    · exact (not_scratch_preserved _ h).1 (.inl rfl)
+    · exact absurd h (by decide)
+  · have hs := hwf.gs r hg
+    rcases h with h | rfl
+    · exact (not_scratch_preserved _ h).1 (.inr hs)
+    · exact absurd hs (by decide)
+
 /-- The registers the clearing leaves as they were are the ones the
 contract preserves. -/
 theorem kept_preserved (r : Reg) (h₁ : ¬ (r = .r0 ∨ r ∈ scratchRegs)) (h₂ : r ≠ .r3) : r ∈ preserved := by
@@ -1198,16 +1264,18 @@ needs none wiped (`cs = []`). -/
 theorem Verified.scrubOf {A : Abi isa} {sig : Sig} {pre : Curry (sig.words A.ptrBits) (Mem → Prop)}
     {post : sig.Post A.ptrBits} {wa : Bool} {stack : Nat}
     {leak : Option (Curry (sig.words A.ptrBits) (Mem → List Nat))} {c : Prog isa} {cs : List Nat}
+    {cl : Clear}
     (hA : ScrubAbi A) (h : Verified target c (sig.contract A pre post wa stack leak))
-    (hv : ChunksOk cs) (hcs : cs.sum ≤ stack) (hrb : sig.retBits A.ptrBits ≤ 64)
+    (hv : ChunksOk cs) (hcs : cs.sum ≤ stack) (hwf : cl.WF cs) (hk : cl.Keeps c)
+    (hrb : sig.retBits A.ptrBits ≤ 64)
     (hpost : PostOut (sig.contract A pre post wa stack leak) (sig.retBits A.ptrBits))
     (hag : ∀ s₁ s₂ t₁ t₂ u₁ u₂, (sig.contract A pre post wa stack leak).pre s₁ →
       (sig.contract A pre post wa stack leak).pre s₂ → (sig.contract A pre post wa stack leak).pub s₁ s₂ →
       Outside 0 s₁ s₂ → s₁.unknowns = s₂.unknowns → Exec isa c s₁ t₁ u₁ → Exec isa c s₂ t₂ u₂ →
       u₁.unknowns = u₂.unknowns ∧
         ∀ x, (∀ r ∈ s₁.rd ++ s₁.wr, ¬ r.Contains x 1) → ¬ Cover cs s₁.sp x → u₁.mem x = u₂.mem x) :
-    Verified target (.seq c (scrubTail (sig.retBits A.ptrBits) cs)) (sig.contract A pre post wa stack leak) ∧
-      NoResidue (.seq c (scrubTail (sig.retBits A.ptrBits) cs))
+    Verified target (.seq c (scrubTail (sig.retBits A.ptrBits) cs cl)) (sig.contract A pre post wa stack leak) ∧
+      NoResidue (.seq c (scrubTail (sig.retBits A.ptrBits) cs cl))
         (sig.contract A pre post wa stack leak) (sig.retBits A.ptrBits) := by
   obtain ⟨hcor, hct, hsat⟩ := h
   -- The stack the clearing wipes does not wrap around.
@@ -1225,11 +1293,11 @@ theorem Verified.scrubOf {A : Abi isa} {sig : Sig} {pre : Curry (sig.words A.ptr
     exact ⟨ha, hp, ha.2.1⟩
   -- The clearing's run after it.
   have tail : ∀ s t u, (sig.contract A pre post wa stack leak).pre s → Exec isa c s t u →
-      Exec isa (scrubTail (sig.retBits A.ptrBits) cs) u (tailTr cs s.sp)
-        (finState (sig.retBits A.ptrBits) cs s.sp u) := by
+      Exec isa (scrubTail (sig.retBits A.ptrBits) cs cl) u (tailTr cs s.sp)
+        (finState (sig.retBits A.ptrBits) cs cl s.sp u) := by
     intro s t u hs he
     obtain ⟨-, -, hsp⟩ := run s t u hs he
-    have e := tail_run (rb := sig.retBits A.ptrBits) hv u (by rw [hsp]; exact hD s hs)
+    have e := tail_run (rb := sig.retBits A.ptrBits) hv hwf u (by rw [hsp]; exact hD s hs)
     rw [hsp] at e
     exact e
   -- The buffers are apart from the stack the clearing wipes.
@@ -1247,15 +1315,17 @@ theorem Verified.scrubOf {A : Abi isa} {sig : Sig} {pre : Curry (sig.words A.ptr
     obtain ⟨t, u, he, -⟩ := hcor s hs
     obtain ⟨ha, hq, hsp⟩ := run s t u hs he
     refine ⟨_, _, .seq he (tail s t u hs he), ⟨fun r hr => ?_, hsp, ha.2.2⟩, ?_⟩
-    · obtain ⟨h1, h2⟩ := not_scratch_preserved r hr
-      simp only [finState, finG, h1, h2, ite_false]
+    · simp only [finState, finG, Clear.not_zeroes hwf (.inl hr), ite_false,
+        (not_scratch_preserved r hr).2, false_and]
       exact ha.1 r hr
     · refine hpost s u _ hs hq (fun x hx => ?_) ?_
       · show wipeM cs s.sp u.unknowns u.mem x = u.mem x
         exact wipeM_out _ _ _ _ _ hv (hD s hs) (outB s hs x hx)
-      · show (finG (sig.retBits A.ptrBits) u.gpr .r3).setWidth _ = _
-        simp only [finG, show ¬ (Reg.r3 = .r0 ∨ Reg.r3 ∈ scratchRegs) by decide, ite_false, ite_true]
-        exact fixA_low hrb _
+      · show (finG (sig.retBits A.ptrBits) cl u.gpr .r3).setWidth _ = _
+        simp only [finG, Clear.not_zeroes hwf (.inr rfl), ite_false, true_and]
+        split
+        · exact fixA_low hrb _
+        · rfl
   · -- Constant time.
     cases e₁ with | seq a₁ b₁ =>
     cases e₂ with | seq a₂ b₂ =>
@@ -1271,22 +1341,42 @@ theorem Verified.scrubOf {A : Abi isa} {sig : Sig} {pre : Curry (sig.words A.ptr
     obtain ⟨ha₁, -, hsp₁⟩ := run s₁ _ _ h₁ a₁
     obtain ⟨ha₂, -, hsp₂⟩ := run s₂ _ _ h₂ a₂
     obtain ⟨hU, hA'⟩ := hag s₁ s₂ _ _ _ _ h₁ h₂ hp ho hun a₁ a₂
-    obtain ⟨hrd, hwr, hg, -, -, hlr, hsp, -, -⟩ := ho
+    obtain ⟨hg₁, -, hv₁, hc₁⟩ := hk s₁ _ _ a₁
+    obtain ⟨hg₂, -, hv₂, hc₂⟩ := hk s₂ _ _ a₂
+    have hk3 := fun h => And.intro ((hk s₁ _ _ a₁).2.1 h) ((hk s₂ _ _ a₂).2.1 h)
+    obtain ⟨hrd, hwr, hg, hr3, hvp, hlr, hsp, hca, -⟩ := ho
     obtain ⟨rd₁, wr₁, -⟩ := Exec.rdwr a₁
     obtain ⟨rd₂, wr₂, -⟩ := Exec.rdwr a₂
     refine ⟨show u₁.rd = u₂.rd by simp only [rd₁, rd₂, hrd], show u₁.wr = u₂.wr by simp only [wr₁, wr₂, hwr],
-      fun r hr => ?_, ?_, rfl, show u₁.lr = u₂.lr by rw [ha₁.2.2, ha₂.2.2, hlr],
-      show u₁.sp = u₂.sp by rw [hsp₁, hsp₂, hsp], rfl, fun x hx => ?_⟩
-    · show finG _ u₁.gpr r = finG _ u₂.gpr r
-      simp only [finG, hr, ite_false]
+      fun r hr => ?_, ?_, ?_, show u₁.lr = u₂.lr by rw [ha₁.2.2, ha₂.2.2, hlr],
+      show u₁.sp = u₂.sp by rw [hsp₁, hsp₂, hsp], ?_, fun x hx => ?_⟩
+    · show finG _ cl u₁.gpr r = finG _ cl u₂.gpr r
+      simp only [finG, hr, false_and, ite_false]
       split
       · rfl
-      · next h =>
-        have hk := kept_preserved r h hr
-        rw [ha₁.1 r hk, ha₂.1 r hk]; exact hg r hr
-    · show finG _ u₁.gpr .r3 >>> _ = finG _ u₂.gpr .r3 >>> _
-      simp only [finG, show ¬ (Reg.r3 = .r0 ∨ Reg.r3 ∈ scratchRegs) by decide, ite_false, ite_true]
-      rw [fixA_hi hrb, fixA_hi hrb]
+      · next hz =>
+        by_cases hv : r = .r0 ∨ r ∈ scratchRegs
+        · rw [hg₁ r hr hv hz, hg₂ r hr hv hz]; exact hg r hr
+        · have hk := kept_preserved r hv hr
+          rw [ha₁.1 r hk, ha₂.1 r hk]; exact hg r hr
+    · show finG _ cl u₁.gpr .r3 >>> _ = finG _ cl u₂.gpr .r3 >>> _
+      simp only [finG, Clear.not_zeroes hwf (.inr rfl), ite_false, true_and]
+      split
+      · rw [fixA_hi hrb, fixA_hi hrb]
+      · next h3 =>
+        obtain ⟨e₁, e₂⟩ := hk3 (by simpa using h3)
+        rw [e₁, e₂]
+        simp only [BitVec.ushiftRight_zero] at hr3
+        rw [hr3]
+    · show (fun v => if v ∈ cl.vs then 0 else u₁.vpr v) = fun v => if v ∈ cl.vs then 0 else u₂.vpr v
+      funext v
+      split
+      · rfl
+      · next hv => rw [hv₁ v hv, hv₂ v hv, hvp]
+    · show (if cl.ca then false else u₁.ca) = if cl.ca then false else u₂.ca
+      split
+      · rfl
+      · next hc => rw [hc₁ (by simpa using hc), hc₂ (by simpa using hc), hca]
     · show wipeM cs s₁.sp u₁.unknowns u₁.mem x = wipeM cs s₂.sp u₂.unknowns u₂.mem x
       rw [← hsp, hU]
       have hx' : ∀ r ∈ s₁.rd ++ s₁.wr, ¬ r.Contains x 1 := by
@@ -1309,12 +1399,15 @@ theorem Verified.scrub {A : Abi isa} {sig : Sig} {pre : Curry (sig.words A.ptrBi
     (h48 : c.ppc64leDepth = 0 ∨ 48 ≤ c.ppc64leDepth)
     (hic : icallFree c = true) (hrb : sig.retBits A.ptrBits ≤ 64)
     (hpost : PostOut (sig.contract A pre post wa stack leak) (sig.retBits A.ptrBits)) :
-    Verified target (Impl.Scrub.PPC64LE.scrub (sig.retBits A.ptrBits) c.ppc64leDepth c)
+    Verified target (Impl.Scrub.PPC64LE.scrub (sig.retBits A.ptrBits) c.ppc64leDepth
+          (Clear.of c (chunks c.ppc64leDepth)) c)
         (sig.contract A pre post wa stack leak) ∧
-      NoResidue (Impl.Scrub.PPC64LE.scrub (sig.retBits A.ptrBits) c.ppc64leDepth c)
+      NoResidue (Impl.Scrub.PPC64LE.scrub (sig.retBits A.ptrBits) c.ppc64leDepth
+          (Clear.of c (chunks c.ppc64leDepth)) c)
         (sig.contract A pre post wa stack leak) (sig.retBits A.ptrBits) := by
   have hsum := chunks_sum h16
-  refine Verified.scrubOf hA h (chunks_ok h16 h48) (by rw [hsum]; exact hd) hrb hpost ?_
+  refine Verified.scrubOf hA h (chunks_ok h16 h48) (by rw [hsum]; exact hd) (Clear.of_wf _ _)
+    (Clear.of_keep _ _) hrb hpost ?_
   -- The two runs of `c` have the same trace, end with the same unknowns, and
   -- leave memories that agree but in the stack their frames may write.
   intro s₁ s₂ t₁ t₂ u₁ u₂ h₁ h₂ hp ho hun a₁ a₂
@@ -1348,8 +1441,10 @@ theorem scrubCode_ok {api : Api} (r : Registration api target)
     (hd : r.code.ppc64leDepth ≤ r.stack) (h16 : r.code.ppc64leDepth % 16 = 0)
     (h48 : r.code.ppc64leDepth = 0 ∨ 48 ≤ r.code.ppc64leDepth) (hic : icallFree r.code = true)
     (hrb : retBitsOf r ≤ 64) (hpost : PostOut r.contract (retBitsOf r)) :
-    Verified target (scrub (retBitsOf r) r.code.ppc64leDepth r.code) r.contract ∧
-      NoResidue (scrub (retBitsOf r) r.code.ppc64leDepth r.code) r.contract (retBitsOf r) := by
+    Verified target (scrub (retBitsOf r) r.code.ppc64leDepth
+        (Clear.of r.code (chunks r.code.ppc64leDepth)) r.code) r.contract ∧
+      NoResidue (scrub (retBitsOf r) r.code.ppc64leDepth
+        (Clear.of r.code (chunks r.code.ppc64leDepth)) r.code) r.contract (retBitsOf r) := by
   obtain ⟨pre, post, leak, e⟩ := r.ofSig
   have hv := r.verified
   have hp := hpost
@@ -1368,7 +1463,7 @@ def scrubReg {api : Api} (r : Registration api target)
     Registration api target where
   suffix := r.suffix
   tables := r.tables
-  code := scrub (retBitsOf r) r.code.ppc64leDepth r.code
+  code := scrub (retBitsOf r) r.code.ppc64leDepth (Clear.of r.code (chunks r.code.ppc64leDepth)) r.code
   contract := r.contract
   verified := (scrubCode_ok r hd h16 h48 hic hrb hpost).1
   consts := r.consts

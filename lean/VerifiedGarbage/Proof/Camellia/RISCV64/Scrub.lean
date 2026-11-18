@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
+public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubSel
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.Camellia.Contract
 public import VerifiedGarbage.Spec.Camellia.Cbc
@@ -26,6 +27,32 @@ import VerifiedGarbage.Proof.Camellia.RISCV64.FbFinalLit
 import VerifiedGarbage.Proof.Camellia.RISCV64.Lit
 import VerifiedGarbage.Proof.Camellia.RISCV64.ModesLit
 
+meta import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
+meta import VerifiedGarbage.Proof.Framework.RISCV64.ScrubSel
+meta import VerifiedGarbage.Proof.Framework.Registration
+meta import VerifiedGarbage.Spec.Camellia.Contract
+meta import VerifiedGarbage.Spec.Camellia.Cbc
+meta import VerifiedGarbage.Spec.Camellia.Cfb
+meta import VerifiedGarbage.Spec.Camellia.CfbFinal
+meta import VerifiedGarbage.Spec.Camellia.Ofb
+meta import VerifiedGarbage.Spec.Camellia.OfbFinal
+meta import VerifiedGarbage.Spec.Camellia.Ctr
+meta import VerifiedGarbage.Spec.Camellia.CtrFinal
+meta import VerifiedGarbage.Proof.Camellia.RISCV64.CtrFinal
+meta import VerifiedGarbage.Proof.Camellia.RISCV64.FbFinalVerified
+meta import VerifiedGarbage.Proof.Camellia.RISCV64.KeyVerified
+meta import VerifiedGarbage.Proof.Camellia.RISCV64.ModesVerified
+meta import VerifiedGarbage.Proof.Camellia.RISCV64.Verified
+meta import VerifiedGarbage.Proof.Camellia.ScrubLocal
+meta import VerifiedGarbage.Proof.Camellia.Scratch
+meta import VerifiedGarbage.Proof.Camellia.CbcScratch
+meta import VerifiedGarbage.Proof.Camellia.FbScratch
+meta import VerifiedGarbage.Proof.Camellia.CfbFinalScratch
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Camellia.RISCV64.FbFinalLit
+meta import VerifiedGarbage.Proof.Camellia.RISCV64.Lit
+meta import VerifiedGarbage.Proof.Camellia.RISCV64.ModesLit
 /-!
 # Camellia on RISC-V, without secret residue
 
@@ -34,6 +61,11 @@ Each function, followed by `Impl.Scrub.RISCV64.scrubTail`
 stack its frames used. Their postconditions read the memory on return only
 within their buffers (`RISCV64.Scrub.PostOut`), as on x86-64
 (`Proof/Camellia/X86_64/Scrub.lean`).
+
+ECB's functions instead clear only the runs of doublewords that the residue
+analysis (`RISCV64.rtaint`) finds may differ between two runs
+(`RISCV64.Scrub.withScrubSel`, `scrubSel_noResidue`). Their code wipes most of
+its own scratch space, which leaves few such doublewords, or none.
 -/
 
 @[expose] public section
@@ -182,13 +214,19 @@ theorem ctrFinalOut (stack : Nat) :
 
 /-- `Spec.Camellia.ecbEncryptApi`. -/
 def ecbEncryptReg : Registration Spec.Camellia.ecbEncryptApi RISCV64.target :=
-  withScrub { code := Impl.StackScratch.RISCV64.withStackScratchWiped 3200 .a4 400 (Impl.Camellia.RISCV64.ecb .encrypt), verified := Proof.Camellia.RISCV64.ecb_framed .encrypt }
+  withScrubSel { code := Impl.StackScratch.RISCV64.withStackScratchWiped 3200 .a4 400 (Impl.Camellia.RISCV64.ecb .encrypt), verified := Proof.Camellia.RISCV64.ecb_framed .encrypt } []
     (ecbOut .encrypt _)
+    (fun hfs hsz hrb => scrubSel_noResidue _ _ [] hfs hsz hrb (ecbOut .encrypt _) (hbp_nil _)
+      (Impl.StackScratch.RISCV64.withStackScratchWiped 3200 .a4 400 (Impl.Camellia.RISCV64.ecb .encrypt)) 3200 0
+      rfl rfl rfl (by exact ⟨_, by taint_decide_ct⟩))
 
 /-- `Spec.Camellia.ecbDecryptApi`. -/
 def ecbDecryptReg : Registration Spec.Camellia.ecbDecryptApi RISCV64.target :=
-  withScrub { code := Impl.StackScratch.RISCV64.withStackScratchWiped 3200 .a4 400 (Impl.Camellia.RISCV64.ecb .decrypt), verified := Proof.Camellia.RISCV64.ecb_framed .decrypt }
+  withScrubSel { code := Impl.StackScratch.RISCV64.withStackScratchWiped 3200 .a4 400 (Impl.Camellia.RISCV64.ecb .decrypt), verified := Proof.Camellia.RISCV64.ecb_framed .decrypt } []
     (ecbOut .decrypt _)
+    (fun hfs hsz hrb => scrubSel_noResidue _ _ [] hfs hsz hrb (ecbOut .decrypt _) (hbp_nil _)
+      (Impl.StackScratch.RISCV64.withStackScratchWiped 3200 .a4 400 (Impl.Camellia.RISCV64.ecb .decrypt)) 3200 0
+      rfl rfl rfl (by exact ⟨_, by taint_decide_ct⟩))
 
 /-- `Spec.Camellia.cbcEncryptChainedApi`. -/
 def cbcEncryptChainedReg : Registration Spec.Camellia.cbcEncryptChainedApi RISCV64.target :=

@@ -3801,7 +3801,6 @@ vg_blowfish_expand_key:
 	li %r10, 0
 	li %r11, 0
 	li %r12, 0
-	addc %r0, %r0, %r0
 	vxor %v0, %v0, %v0
 	vxor %v1, %v1, %v1
 	vxor %v2, %v2, %v2
@@ -3820,8 +3819,6 @@ vg_blowfish_expand_key:
 	vxor %v15, %v15, %v15
 	vxor %v16, %v16, %v16
 	vxor %v17, %v17, %v17
-	vxor %v18, %v18, %v18
-	vxor %v19, %v19, %v19
 	blr
 
 vg_blowfish_ecb_encrypt:
@@ -4167,7 +4164,6 @@ vg_blowfish_ecb_encrypt:
 	std %r0, 240(%r12)
 	std %r0, 248(%r12)
 	addi %r1, %r1, 288
-	li %r3, 0
 	li %r4, 0
 	li %r5, 0
 	li %r6, 0
@@ -4177,7 +4173,6 @@ vg_blowfish_ecb_encrypt:
 	li %r10, 0
 	li %r11, 0
 	li %r12, 0
-	addc %r0, %r0, %r0
 	vxor %v0, %v0, %v0
 	vxor %v1, %v1, %v1
 	vxor %v2, %v2, %v2
@@ -4196,8 +4191,6 @@ vg_blowfish_ecb_encrypt:
 	vxor %v15, %v15, %v15
 	vxor %v16, %v16, %v16
 	vxor %v17, %v17, %v17
-	vxor %v18, %v18, %v18
-	vxor %v19, %v19, %v19
 	blr
 
 vg_blowfish_ecb_decrypt:
@@ -4543,7 +4536,6 @@ vg_blowfish_ecb_decrypt:
 	std %r0, 240(%r12)
 	std %r0, 248(%r12)
 	addi %r1, %r1, 288
-	li %r3, 0
 	li %r4, 0
 	li %r5, 0
 	li %r6, 0
@@ -4553,7 +4545,6 @@ vg_blowfish_ecb_decrypt:
 	li %r10, 0
 	li %r11, 0
 	li %r12, 0
-	addc %r0, %r0, %r0
 	vxor %v0, %v0, %v0
 	vxor %v1, %v1, %v1
 	vxor %v2, %v2, %v2
@@ -4572,6 +4563,4 @@ vg_blowfish_ecb_decrypt:
 	vxor %v15, %v15, %v15
 	vxor %v16, %v16, %v16
 	vxor %v17, %v17, %v17
-	vxor %v18, %v18, %v18
-	vxor %v19, %v19, %v19
 	blr
