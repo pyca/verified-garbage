@@ -5,6 +5,7 @@ public import VerifiedGarbage.Spec.Ecdh
 import VerifiedGarbage.Proof.Ecdh.Exchange
 import VerifiedGarbage.Proof.Ecdsa.X86.Finish
 import VerifiedGarbage.Proof.Weierstrass.X86.BytesLen
+import VerifiedGarbage.Proof.Weierstrass.BytesLen
 import VerifiedGarbage.Proof.Weierstrass.X86.Rep
 import VerifiedGarbage.Proof.Ecdh.X86.Peer
 import VerifiedGarbage.Proof.Ecdsa.X86.Scalar
@@ -365,14 +366,14 @@ theorem exchange_eq' (c : Cfg) : Impl.Ecdh.X86.Cfg.exchange c =
       (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n))
       (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) (.block [])))))
     (.seq (.block (Impl.Ecdh.X86.Cfg.peer c)) (.seq (Impl.Ecdh.X86.Cfg.validate c)
-    (.seq (c.qMul PX PY Args.ecdh.ao) (.seq c.pPow
+    (.seq (c.winMul PX PY) (.seq c.pPow
       (Impl.Ecdh.X86.Cfg.middle c))))) :=
   rfl
 
 /-- The stack the parts of `exchange` use. -/
 structure ESp (c : Cfg) : Prop where
   validate : SpOk (Impl.Ecdh.X86.Cfg.validate c) c.stk
-  ladder : SpOk (c.qMul PX PY Args.ecdh.ao) c.stk
+  ladder : SpOk (c.winMul PX PY) c.stk
   pPow : SpOk c.pPow c.stk
   ops : SpOk (ecOps c) c.stk
 
@@ -385,7 +386,7 @@ theorem ESp.of (h : SpOk (Impl.Ecdh.X86.Cfg.exchange c) c.stk) : ESp c := by
 
 /-- `vg_ecdh_<curve>` computes the specification's shared secret and restores
 the callee-saved registers. -/
-theorem exchange_ok (hc : CfgOk c) (hC : Law c.C) (hcomb : c.comb = none)
+theorem exchange_ok (hc : CfgOk c) (hC : Law c.C)
     (hsp : SpOk (Impl.Ecdh.X86.Cfg.exchange c) c.stk)
     {s₀ : State} (hp : EPre c s₀) :
     WP isa (Impl.Ecdh.X86.Cfg.exchange c) s₀ fun s' => EKeep c s₀ s' ∧ EPost c s₀ s' := by
@@ -439,54 +440,28 @@ theorem exchange_ok (hc : CfgOk c) (hC : Law c.C) (hcomb : c.comb = none)
     fun hj t ht => by
       rw [tbl_unch U₄ h7 hj ht (apart_append (tbl_apart_slWk (by decide) hj ht) (tbl_apart_flag h0 _ t)),
         tbl_unch U₃ h7 hj ht (apart_append (tbl_apart_slW (by decide) _ t) (tbl_apart_flag h0 _ t))]
-  obtain hpk : sv c (ptr s₀ 3) s₂ K < 2 ^ (64 * c.n) := wordsVal_lt _ _ _ _
+  obtain hk : sv c (ptr s₀ 3) s₂ K = dk c s₀ := by rw [S₂.k, kv_eq (A := Args.ecdh) rfl]
+  obtain hpk : sv c (ptr s₀ 3) s₂ K < 2 ^ (8 * c.C.len) := by
+    rw [hk]
+    have := VG.Proof.Weierstrass.ofBytes_lt (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ 1) c.C.len)
+    rwa [length_bytesAt, show 256 = 2 ^ 8 from rfl, ← Nat.pow_mul] at this
   -- `[d]P`, then `Z^(p-2)`.
-  obtain hstep := step_rep' (L := Impl.Ecdh.X86.Cfg.ladderQ c) (k := sv c (ptr s₀ 3) s₂ K) (a0 := c.qA0) hC
-    (peerPt_onCurve hc _ _ _)
-    (by
-      show toM c.C.p (2 ^ (64 * c.n)) (wordsVal s₄.mem _ (c.sl AP) c.n) = _
-      rw [F₄.ap]; exact toM_cmont hc _)
-    (by
-      show toM c.C.p (2 ^ (64 * c.n)) (wordsVal s₄.mem _ (c.sl B3P) c.n) = _
-      rw [F₄.b3p]; exact toM_cmont hc _)
-    (peerPt_rep hC _ _ _ px py |> fun h => by
-      show Rep c.C (toM c.C.p (2 ^ (64 * c.n)) (sv c (ptr s₀ 3) s₄ PX))
-        (toM c.C.p (2 ^ (64 * c.n)) (sv c (ptr s₀ 3) s₄ PY))
-        (toM c.C.p (2 ^ (64 * c.n)) (wordsVal s₄.mem (ptr s₀ 3) (c.sl ONEP) c.n)) _
-      rw [F₄.onep, toM_one hpR]; exact h)
-    (fun h => ⟨by
-      simp only [Impl.Ecdsa.X86.Cfg.qA0, Bool.and_eq_true, beq_iff_eq] at h
-      rw [h.2.1]; rfl, by
-      show toM c.C.p (2 ^ (64 * c.n)) (wordsVal s₄.mem (ptr s₀ 3) (c.sl ONEP) c.n) = 1
-      rw [F₄.onep]; exact toM_one hpR⟩)
   obtain K₄ : Keep c s₀ (ptr s₀ 3) s₄ := ⟨hs₄, by rw [g₄ _ (by decide), K₃.esp], by rw [rd₄, K₃.rd],
     by rw [wr₄, K₃.wr], F₄, w₄, S₂.sp_lo⟩
-  obtain hA : c.mul.isSome ∨ 3 ≤ c.n ∧ c.n ≤ 6 → Point.LadArg s₄ (ptr s₀ 3) Args.ecdh.ao := fun h =>
-    K₄.ladArg (A := Args.ecdh) hp.setup (eArgs_disjI hp (i := 3) (by decide)) (Cfg.stk_28q hcomb h)
-  refine ladPow_ok hc K₄ hA H.ladder H.pPow hstep
-    (by rw [shiftRight_eq_zero hpk, mul_zero_pt]; exact rep_infinity' hC)
-    (by rw [e₄ (by decide) (by decide) (by decide), e₃ (by decide) (by decide) (by decide)])
-    px_lt py_lt
-    (by rw [e₄ (by decide) (by decide) (by decide), e₃ (by decide) (by decide) (by decide)]; exact S₂.rx)
-    (by rw [e₄ (by decide) (by decide) (by decide), e₃ (by decide) (by decide) (by decide)]; exact S₂.ry)
-    (by rw [e₄ (by decide) (by decide) (by decide), e₃ (by decide) (by decide) (by decide)]; exact S₂.rz)
+  refine ladPow_ok hc hC K₄ H.ladder H.pPow (peerPt_onCurve hc _ _ _) hpk px_lt py_lt
+    (peerPt_rep hC _ _ _ px py)
     (fun t ht => by rw [t₄ (j := 0) (by decide) t ht, S₂.t₀ t ht, S₂.k])
     (fun t ht => by rw [t₄ (j := 1) (by decide) t ht, S₂.t₁ t ht]) fun s₅ L w₅ => ?_
   have hs₅ := L.scr
-  obtain F₅ := F₄.unch h7 hn ((fixedOk_slWkG (l := [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, T0, T1, T2,
-    T3, T4, T5, TX, TY, TZ, TMP]) (by decide)).append fixedOk_pwW) L.unch
-  obtain e₅ : ∀ {i}, i < 45 → i ∉ [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, T0, T1, T2, T3, T4, T5,
-      TX, TY, TZ, TMP] → i ∉ [ACC, PT, TMP] → sv c (ptr s₀ 3) s₅ i = sv c (ptr s₀ 3) s₄ i :=
-    fun hi h₁ h₂ => sv_unch L.unch h7 hn hi (apart_append (apart_slWkG hi h₁ (by
-      simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at h₂ ⊢; exact ⟨h₂.1, h₂.2.1⟩))
-      (apart_pwW hi h₂))
+  obtain F₅ := F₄.unch h7 hn (((winW_winTW h7).fixedOk h7).append fixedOk_pwW) L.unch
+  obtain e₅ : ∀ {i}, i < 45 → i ∉ winWr → i ∉ [ACC, PT, TMP] → sv c (ptr s₀ 3) s₅ i = sv c (ptr s₀ 3) s₄ i :=
+    fun hi h₁ h₂ => sv_unch L.unch h7 hn hi (apart_append (apart_winTW h7 hi h₁) (apart_pwW hi h₂))
   obtain hflag₅ : flagW c (ptr s₀ 3) s₅ = mask32 (PeerOk c (ptr s₀ 3) s₃ ((s₀.mem (ptr s₀ 2) = 4 ∧
       sv c (ptr s₀ 3) s₃ E < c.C.p) ∧ sv c (ptr s₀ 3) s₃ QY < c.C.p)) := by
     obtain hFl := sl_le c h7 (i := FLAG) (by decide)
-    obtain ap : ∀ w ∈ slWkG c [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, T0, T1, T2, T3, T4, T5,
-        TX, TY, TZ, TMP] ++ pwW c, c.sl FLAG + 4 ≤ w.1 ∨ w.1 + w.2 ≤ c.sl FLAG := by
+    obtain ap : ∀ w ∈ winTW c ++ pwW c, c.sl FLAG + 4 ≤ w.1 ∨ w.1 + w.2 ≤ c.sl FLAG := by
       intro w hw
-      rcases apart_append (apart_slWkG (c := c) (i := FLAG) (by decide) (by decide) (by decide))
+      rcases apart_append (apart_winTW (c := c) h7 (i := FLAG) (by decide) (by decide))
         (apart_pwW (c := c) (i := FLAG) (by decide) (by decide)) w hw with h | h
       · exact Or.inl (by omega_arith)
       · exact Or.inr h
@@ -514,9 +489,8 @@ theorem exchange_ok (hc : CfgOk c) (hC : Law c.C) (hcomb : c.comb = none)
       peerPt c (s₀.mem (ptr s₀ 2) = 4) (sv c (ptr s₀ 3) s₃ E) (sv c (ptr s₀ 3) s₃ QY) =
         .affine ⟨_, h.2.1⟩ ⟨_, h.2.2.1⟩ := fun h => by
     unfold peerPt; rw [dite_eq_left ⟨⟨⟨h.1, h.2.1⟩, h.2.2.1⟩, h.2.2.2⟩]
-  obtain hk : sv c (ptr s₀ 3) s₂ K = dk c s₀ := by rw [S₂.k, kv_eq (A := Args.ecdh) rfl]
   have hR := L.q
-  rw [Nat.shiftRight_zero, hk] at hR
+  rw [hk] at hR
   obtain hxoX : Fin.ofNat c.C.p xv = tmv c.C c.n (ptr s₀ 3) s₅ (c.sl RX) *
       tmv c.C c.n (ptr s₀ 3) s₅ (c.sl RZ) ^ (c.C.p - 2) := by rw [hxv, L.acc]
   obtain hspec := exchange_eq hC hlen hb0 hxs hys hP' hR hxl hxoX
