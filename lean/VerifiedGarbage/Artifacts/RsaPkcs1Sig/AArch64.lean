@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.SignPrecomputed
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callees
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Rsa.AArch64.Scrub
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.SignPre
 public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.SignCT
@@ -42,13 +43,13 @@ def artifacts : List Artifact :=
       code := Impl.RsaPkcs1Sig.AArch64.Sign.codeP (privPOf v).name (privPOf v).code
       verified := Sgn.signPrecomputed_verified (privPOf v) }]) ++
   (VG.Proof.Variants.RsaPublicPrecomputed.AArch64.variants.flatMap fun (v : PublicImpl) => [
-    Spec.RsaPkcs1Sig.verifyPrecomputedApi.artifact AArch64.target {
+    Spec.RsaPkcs1Sig.verifyPrecomputedApi.artifact AArch64.target (VG.AArch64.ScrubAll.withScrubAll {
       suffix := v.suffix
       code := Impl.RsaPkcs1Sig.AArch64.Precomputed.code (pdOf v).name (pdOf v).code
-      verified := Pc.code_verified (pdOf v) },
-    Spec.RsaPkcs1Sig.recoverPrecomputedApi.artifact AArch64.target {
+      verified := Pc.code_verified (pdOf v) } (Proof.Rsa.AArch64.Scrub.pkcs1VerifyOk _)),
+    Spec.RsaPkcs1Sig.recoverPrecomputedApi.artifact AArch64.target (VG.AArch64.ScrubAll.withScrubAll {
       suffix := v.suffix
       code := Impl.RsaPkcs1Sig.AArch64.RecoverPrecomputed.code (pdOf v).name (pdOf v).code
-      verified := RecPc.code_verified (pdOf v) }])
+      verified := RecPc.code_verified (pdOf v) } (Proof.Rsa.AArch64.Scrub.pkcs1RecoverOk _))])
 
 end VG.Artifacts.RsaPkcs1Sig.AArch64
