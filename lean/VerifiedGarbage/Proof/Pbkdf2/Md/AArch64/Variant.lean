@@ -1279,4 +1279,39 @@ def MdHash.of {H : Hash} {I : Spec.Hmac.Instance} (hH : HashOK H) (C : CoreOK (c
   features := features
   stream := stream
 
+namespace MdHash
+
+/-- `vg_pbkdf2_hmac_<hash>`'s postcondition reads the memory on return only
+within `out` (`Proof.Pbkdf2.pbkdf2PostOut_local`). -/
+theorem pbkdf2Ok (I : Spec.Hmac.Instance) :
+    AArch64.ScrubAll.ScrubAllOk (I.pbkdf2Contract AArch64.abi (16 + pbkdf2Frame I)) (16 + pbkdf2Frame I)
+      (Spec.Pbkdf2.pbkdf2Sig.retBits AArch64.abi.ptrBits) := by
+  unfold Spec.Hmac.Instance.pbkdf2Contract Spec.Pbkdf2.pbkdf2Contract
+  exact AArch64.ScrubAll.scrubAllOk_regs (sig := Spec.Pbkdf2.pbkdf2Sig) (W := 16 + pbkdf2Frame I) (by decide)
+    (by omega) (Nat.le_refl _) (Proof.Pbkdf2.pbkdf2PostOut_local I.S _)
+
+/-- `vg_pbkdf2_hmac_<hash>` with `v`, its working space in a frame of its own
+(`pbkdf2F`), as it is. -/
+def pbkdf2Reg₀ (v : MdHash) : Registration v.I.pbkdf2Api AArch64.target where
+  suffix := v.suffix
+  consts := []
+  tables := []
+  code := Impl.StackScratch.AArch64.withStackScratch (pbkdf2Frame v.I) .x7 v.H.pbkdf2
+  contract := v.I.pbkdf2Contract AArch64.abi (16 + pbkdf2Frame v.I)
+  stack := 16 + pbkdf2Frame v.I
+  verified := v.pbkdf2F
+  ofApi := rfl
+  ofSig := by
+    unfold Spec.Hmac.Instance.pbkdf2Contract Spec.Pbkdf2.pbkdf2Contract
+    exact ⟨_, _, _, rfl⟩
+  spSafe := Code.all_of_forall (fun _ => rfl) _
+
+/-- `pbkdf2Reg₀`, returning with the registers it may write cleared and its
+stack zeroed (`AArch64.ScrubAll.withScrubAll`): its many compressions dwarf
+the zeroing of its frame. -/
+def pbkdf2Reg (v : MdHash) : Registration v.I.pbkdf2Api AArch64.target :=
+  AArch64.ScrubAll.withScrubAll v.pbkdf2Reg₀ (pbkdf2Ok v.I)
+
+end MdHash
+
 end VG.Proof.Pbkdf2.Md.AArch64

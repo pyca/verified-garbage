@@ -234,6 +234,151 @@ vg_pbkdf2_hmac_sha256_sha2:
 	ldr x30, [x23, #872]
 	ldr x23, [x23, #880]
 	add sp, sp, #1600
+	movz x1, #0, lsl #0
+	movz x2, #0, lsl #0
+	movz x3, #0, lsl #0
+	movz x4, #0, lsl #0
+	movz x7, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x12, #0, lsl #0
+	movz x13, #0, lsl #0
+	movz x14, #0, lsl #0
+	movz x15, #0, lsl #0
+	movz x16, #0, lsl #0
+	movz x17, #0, lsl #0
+	movi v0.2d, #0
+	movi v1.2d, #0
+	movi v2.2d, #0
+	movi v3.2d, #0
+	movi v4.2d, #0
+	movi v5.2d, #0
+	movi v6.2d, #0
+	movi v7.2d, #0
+	movi v16.2d, #0
+	movi v17.2d, #0
+	movi v18.2d, #0
+	movi v19.2d, #0
+	movi v20.2d, #0
+	movi v21.2d, #0
+	movi v22.2d, #0
+	movi v23.2d, #0
+	movi v24.2d, #0
+	movi v25.2d, #0
+	movi v26.2d, #0
+	movi v27.2d, #0
+	movi v28.2d, #0
+	movi v29.2d, #0
+	movi v30.2d, #0
+	movi v31.2d, #0
+	tst x1, x1
+	movz x0, #0, lsl #0
+	sub sp, sp, #1616
+	movi v31.2d, #0
+	add x9, sp, #0
+	str q31, [x9, #0]
+	str q31, [x9, #16]
+	str q31, [x9, #32]
+	str q31, [x9, #48]
+	str q31, [x9, #64]
+	str q31, [x9, #80]
+	str q31, [x9, #96]
+	str q31, [x9, #112]
+	str q31, [x9, #128]
+	str q31, [x9, #144]
+	str q31, [x9, #160]
+	str q31, [x9, #176]
+	str q31, [x9, #192]
+	str q31, [x9, #208]
+	str q31, [x9, #224]
+	str q31, [x9, #240]
+	str q31, [x9, #256]
+	str q31, [x9, #272]
+	str q31, [x9, #288]
+	str q31, [x9, #304]
+	str q31, [x9, #320]
+	str q31, [x9, #336]
+	str q31, [x9, #352]
+	str q31, [x9, #368]
+	str q31, [x9, #384]
+	str q31, [x9, #400]
+	str q31, [x9, #416]
+	str q31, [x9, #432]
+	str q31, [x9, #448]
+	str q31, [x9, #464]
+	str q31, [x9, #480]
+	str q31, [x9, #496]
+	str q31, [x9, #512]
+	str q31, [x9, #528]
+	str q31, [x9, #544]
+	str q31, [x9, #560]
+	str q31, [x9, #576]
+	str q31, [x9, #592]
+	str q31, [x9, #608]
+	str q31, [x9, #624]
+	str q31, [x9, #640]
+	str q31, [x9, #656]
+	str q31, [x9, #672]
+	str q31, [x9, #688]
+	str q31, [x9, #704]
+	str q31, [x9, #720]
+	str q31, [x9, #736]
+	str q31, [x9, #752]
+	str q31, [x9, #768]
+	str q31, [x9, #784]
+	str q31, [x9, #800]
+	str q31, [x9, #816]
+	str q31, [x9, #832]
+	str q31, [x9, #848]
+	str q31, [x9, #864]
+	str q31, [x9, #880]
+	str q31, [x9, #896]
+	str q31, [x9, #912]
+	str q31, [x9, #928]
+	str q31, [x9, #944]
+	str q31, [x9, #960]
+	str q31, [x9, #976]
+	str q31, [x9, #992]
+	str q31, [x9, #1008]
+	str q31, [x9, #1024]
+	str q31, [x9, #1040]
+	str q31, [x9, #1056]
+	str q31, [x9, #1072]
+	str q31, [x9, #1088]
+	str q31, [x9, #1104]
+	str q31, [x9, #1120]
+	str q31, [x9, #1136]
+	str q31, [x9, #1152]
+	str q31, [x9, #1168]
+	str q31, [x9, #1184]
+	str q31, [x9, #1200]
+	str q31, [x9, #1216]
+	str q31, [x9, #1232]
+	str q31, [x9, #1248]
+	str q31, [x9, #1264]
+	str q31, [x9, #1280]
+	str q31, [x9, #1296]
+	str q31, [x9, #1312]
+	str q31, [x9, #1328]
+	str q31, [x9, #1344]
+	str q31, [x9, #1360]
+	str q31, [x9, #1376]
+	str q31, [x9, #1392]
+	str q31, [x9, #1408]
+	str q31, [x9, #1424]
+	str q31, [x9, #1440]
+	str q31, [x9, #1456]
+	str q31, [x9, #1472]
+	str q31, [x9, #1488]
+	str q31, [x9, #1504]
+	str q31, [x9, #1520]
+	str q31, [x9, #1536]
+	str q31, [x9, #1552]
+	str q31, [x9, #1568]
+	str q31, [x9, #1584]
+	str q31, [x9, #1600]
+	add sp, sp, #1616
 	ret
 	.p2align 6
 
@@ -467,5 +612,138 @@ vg_pbkdf2_hmac_sha256:
 	ldr x30, [x23, #872]
 	ldr x23, [x23, #880]
 	add sp, sp, #1600
+	movz x1, #0, lsl #0
+	movz x2, #0, lsl #0
+	movz x3, #0, lsl #0
+	movz x4, #0, lsl #0
+	movz x5, #0, lsl #0
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
+	movz x8, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x12, #0, lsl #0
+	movz x13, #0, lsl #0
+	movz x14, #0, lsl #0
+	movz x15, #0, lsl #0
+	movz x16, #0, lsl #0
+	movz x17, #0, lsl #0
+	movi v0.2d, #0
+	movi v1.2d, #0
+	movi v16.2d, #0
+	movi v17.2d, #0
+	movi v18.2d, #0
+	movi v19.2d, #0
+	movi v20.2d, #0
+	movi v21.2d, #0
+	movi v22.2d, #0
+	tst x1, x1
+	movz x0, #0, lsl #0
+	sub sp, sp, #1616
+	movi v31.2d, #0
+	add x9, sp, #0
+	str q31, [x9, #0]
+	str q31, [x9, #16]
+	str q31, [x9, #32]
+	str q31, [x9, #48]
+	str q31, [x9, #64]
+	str q31, [x9, #80]
+	str q31, [x9, #96]
+	str q31, [x9, #112]
+	str q31, [x9, #128]
+	str q31, [x9, #144]
+	str q31, [x9, #160]
+	str q31, [x9, #176]
+	str q31, [x9, #192]
+	str q31, [x9, #208]
+	str q31, [x9, #224]
+	str q31, [x9, #240]
+	str q31, [x9, #256]
+	str q31, [x9, #272]
+	str q31, [x9, #288]
+	str q31, [x9, #304]
+	str q31, [x9, #320]
+	str q31, [x9, #336]
+	str q31, [x9, #352]
+	str q31, [x9, #368]
+	str q31, [x9, #384]
+	str q31, [x9, #400]
+	str q31, [x9, #416]
+	str q31, [x9, #432]
+	str q31, [x9, #448]
+	str q31, [x9, #464]
+	str q31, [x9, #480]
+	str q31, [x9, #496]
+	str q31, [x9, #512]
+	str q31, [x9, #528]
+	str q31, [x9, #544]
+	str q31, [x9, #560]
+	str q31, [x9, #576]
+	str q31, [x9, #592]
+	str q31, [x9, #608]
+	str q31, [x9, #624]
+	str q31, [x9, #640]
+	str q31, [x9, #656]
+	str q31, [x9, #672]
+	str q31, [x9, #688]
+	str q31, [x9, #704]
+	str q31, [x9, #720]
+	str q31, [x9, #736]
+	str q31, [x9, #752]
+	str q31, [x9, #768]
+	str q31, [x9, #784]
+	str q31, [x9, #800]
+	str q31, [x9, #816]
+	str q31, [x9, #832]
+	str q31, [x9, #848]
+	str q31, [x9, #864]
+	str q31, [x9, #880]
+	str q31, [x9, #896]
+	str q31, [x9, #912]
+	str q31, [x9, #928]
+	str q31, [x9, #944]
+	str q31, [x9, #960]
+	str q31, [x9, #976]
+	str q31, [x9, #992]
+	str q31, [x9, #1008]
+	str q31, [x9, #1024]
+	str q31, [x9, #1040]
+	str q31, [x9, #1056]
+	str q31, [x9, #1072]
+	str q31, [x9, #1088]
+	str q31, [x9, #1104]
+	str q31, [x9, #1120]
+	str q31, [x9, #1136]
+	str q31, [x9, #1152]
+	str q31, [x9, #1168]
+	str q31, [x9, #1184]
+	str q31, [x9, #1200]
+	str q31, [x9, #1216]
+	str q31, [x9, #1232]
+	str q31, [x9, #1248]
+	str q31, [x9, #1264]
+	str q31, [x9, #1280]
+	str q31, [x9, #1296]
+	str q31, [x9, #1312]
+	str q31, [x9, #1328]
+	str q31, [x9, #1344]
+	str q31, [x9, #1360]
+	str q31, [x9, #1376]
+	str q31, [x9, #1392]
+	str q31, [x9, #1408]
+	str q31, [x9, #1424]
+	str q31, [x9, #1440]
+	str q31, [x9, #1456]
+	str q31, [x9, #1472]
+	str q31, [x9, #1488]
+	str q31, [x9, #1504]
+	str q31, [x9, #1520]
+	str q31, [x9, #1536]
+	str q31, [x9, #1552]
+	str q31, [x9, #1568]
+	str q31, [x9, #1584]
+	str q31, [x9, #1600]
+	add sp, sp, #1616
 	ret
 	.p2align 6
