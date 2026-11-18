@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.ExpControlsCT
 import VerifiedGarbage.Proof.Bignum.Arm.ImportOperandCT
 import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
 public import VerifiedGarbage.Proof.Bignum.Arm.TwoExpMontgomery
-import VerifiedGarbage.Proof.Bignum.Arm.ExpByteHeadCT
+public import VerifiedGarbage.Proof.Bignum.Arm.WindowPhase
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConstCT
 import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
@@ -32,7 +32,6 @@ import VerifiedGarbage.Proof.Bignum.Arm.ExpByteLoad
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.CallLay
 public import VerifiedGarbage.Spec.Rsa
-public import VerifiedGarbage.Proof.Bignum.Arm.WindowPhase
 import VerifiedGarbage.Proof.Bignum.FoldedPublic
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Ffdh.Arm.Branch

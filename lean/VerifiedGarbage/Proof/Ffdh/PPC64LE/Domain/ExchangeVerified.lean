@@ -1,7 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.ExchangeFn
-import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.ExchangeCorrect
+public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.ExchangeCorrect
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.ExchangeCT
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract

@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
-import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Bounds
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Geometry
 public import VerifiedGarbage.Proof.Framework.Arm.CallF
 import VerifiedGarbage.Proof.Framework.Offset

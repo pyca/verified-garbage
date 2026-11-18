@@ -42,7 +42,6 @@ import VerifiedGarbage.Proof.Rsa.FixedBaseCombMont
 import VerifiedGarbage.Proof.Rsa.FixedBaseCombTable
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Loops
-import VerifiedGarbage.Proof.Ffdh.X86.Cached.Digit
 public import VerifiedGarbage.Proof.Ffdh.X86.Cached.Select
 import VerifiedGarbage.Proof.Bignum.X86.ArgumentFrame
 

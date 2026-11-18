@@ -1,7 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.Ffdh.X86.VettedValidation.Table
-import VerifiedGarbage.Proof.Ffdh.X86.CheckDomainTop
+import VerifiedGarbage.Proof.Ffdh.X86.CheckDomainCT
 public import VerifiedGarbage.Proof.Framework.X86.StackScratchConsts
 import VerifiedGarbage.Proof.Ffdh.VettedTableFacts
 import VerifiedGarbage.Proof.Framework.Contract
@@ -17,7 +17,6 @@ public import VerifiedGarbage.Proof.Framework.X86.Spill
 public import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.Proof.Weierstrass.PointContract
 public import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.Ffdh.X86.CheckDomainCT
 public import VerifiedGarbage.TCB.Artifact
 import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Impl.Ffdh.X86.Domain

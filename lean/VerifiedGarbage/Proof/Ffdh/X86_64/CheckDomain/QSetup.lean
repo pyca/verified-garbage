@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Ffdh.X86_64.Scan
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Ffdh.X86_64.Setup
+import VerifiedGarbage.Proof.Ffdh.X86_64.Front
 
 /-! ### `Ffdh.X86_64.CheckDomain.Scan`, which only this module used -/
 

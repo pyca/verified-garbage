@@ -34,12 +34,12 @@ import VerifiedGarbage.Proof.Rsa.Octets
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTCandidateResult
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTShape
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateShape
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTLimitedResult
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateResidue
-public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTCandidateTest
+public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTResult
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTFinish
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateCount
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTPolicy
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTKeyRegisters
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTStackBlocks
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateMemory
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.Room
@@ -48,7 +48,7 @@ import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTLocal
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateStart
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.EntryContext
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateEntry
-import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTBase
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTBase
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateParams
 import VerifiedGarbage.Proof.Ffdh.Arm.FrameCT
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateSat
@@ -59,7 +59,6 @@ import Mathlib.Data.Nat.Basic
 import Mathlib.Order.Basic
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.TablePointer
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTPieces
-public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTPairTrials
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.PairState
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.PairTrials
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.SieveControl
@@ -69,10 +68,8 @@ import VerifiedGarbage.Proof.Framework.Arm.Inline
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.SievePolicy
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.PairInit
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.Table
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidatePair
+public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.Table
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateTable
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidatePairMath
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTScreenedTests
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateQOdd
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTQOdd
@@ -81,14 +78,513 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateScreenM
 import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Shape
 import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.ScreenedStream
 import Mathlib.Data.Option.Basic
-public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateReturn
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.LimitedTest
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidatePhaseFrame
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.Status
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.LimitedParams
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.WitnessProgress
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateTest
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateHalve
+public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.SieveContext
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.PairEntry
+meta import VerifiedGarbage.Impl.Ffdh.Arm.ParameterCandidate
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTTrialSmall
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.TrialStart
+public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTTrialLoop
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.TrialValue
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateSieveMath
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateFrame
+import VerifiedGarbage.Spec.Ffdh
+
+/-! ### `Ffdh.Arm.ParameterCandidate.CandidatePairMath`, which only this module used -/
+
+section
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm.ParameterCandidate
+open VG
+
+def candidateShapes (p : CandidateParams) : Bool :=
+  (Spec.Ffdh.primeShape p.candidate && !Spec.RsaKeyGen.obviouslyComposite p.bits p.candidate) &&
+    (Spec.Ffdh.primeShape ((p.candidate-1)/2) && !Spec.RsaKeyGen.obviouslyComposite p.bits ((p.candidate-1)/2))
+
+theorem candidateScreenP_shapes (p : CandidateParams) :
+    candidateScreenP p = if candidateShapes p then candidateTests p p.length else candidateRejected p := by
+  unfold candidateScreenP candidateScreenQ candidateShapes
+  cases (Spec.Ffdh.primeShape p.candidate && !Spec.RsaKeyGen.obviouslyComposite p.bits p.candidate) <;>
+    cases (Spec.Ffdh.primeShape ((p.candidate-1)/2) && !Spec.RsaKeyGen.obviouslyComposite p.bits ((p.candidate-1)/2)) <;> rfl
+
+theorem candidateScreenP_even (p : CandidateParams) (even : ((p.candidate-1)/2)%2=0) :
+    candidateScreenP p=candidateRejected p := by
+  rw [candidateScreenP_shapes]
+  simp only [candidateShapes,even_primeShape even,Bool.false_and,Bool.and_false,Bool.false_eq_true,ite_false]
+
+end VG.Proof.Ffdh.Arm.ParameterCandidate
+
+end
+
+end
+
+/-! ### `Ffdh.Arm.ParameterCandidate.CandidatePair`, which only this module used -/
+
+section
+
+-- Formerly `VerifiedGarbage/Proof/Ffdh/Arm/ParameterCandidate/PairSieve.lean`, which only this module imported.
+section
+
+/-! The paired RSA sieve implements both requested-width p/q screening policies. -/
+
+section
+namespace VG.Proof.Ffdh.Arm.ParameterCandidate
+open VG.Impl.Ffdh.Arm.ParameterCandidate (trialCount)
+open VG VG.Arm VG.Proof.Mont VG.Proof.X25519.Arm
+
+theorem pairLoop_ok {s0 s : State} {dst base : BitVec 32} {n value : Nat}
+    (start : PairInv s0 dst base n value 0 s) :
+    WP isa (.loop VG.Impl.Ffdh.Arm.ParameterCandidate.pairStep .ne) s (PairInv s0 dst base n value (trialCount n)) := by
+  let inv := fun k t => ∃ i, i + k = (trialCount n) ∧ 0 < k ∧ PairInv s0 dst base n value i t
+  refine WP.loop (M := isa) inv ?_ (trialCount n) s ⟨0, by omega, trialCount_positive n, start⟩
+  intro k t h
+  obtain ⟨i, hik, positive, state⟩ := h
+  have progress := pairNext_progress (value:=value) (by omega : i < trialCount n)
+  refine WP.mono (pairStep_ok state (by omega)) ?_
+  rintro u ⟨next, flag⟩
+  by_cases last : pairNext n value i = trialCount n
+  · left
+    refine ⟨?_, last ▸ next⟩
+    change some (!u.z) = some false
+    simp only [flag, last, decide_true, Bool.not_true]
+  · right
+    refine ⟨?_, trialCount n-pairNext n value i, by omega,
+      pairNext n value i, by omega, by omega, next⟩
+    change some (!u.z) = some true
+    simp only [flag, last, decide_false, Bool.not_false]
+
+theorem pairSieve_ok {s : State} {dst base : BitVec 32} {n : Nat} (h : SieveContext dst base n s) :
+    WP isa VG.Impl.Ffdh.Arm.ParameterCandidate.pairSieve s fun t =>
+      SieveContext dst base n t ∧
+      t.z = !(pairAny (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr dst) n)) (trialCount n)) ∧
+      Frame [sieveLocal s.sp] s.mem t.mem ∧ Rest sieveRegs s t := by
+  unfold VG.Impl.Ffdh.Arm.ParameterCandidate.pairSieve VG.Impl.Ffdh.Arm.ParameterCandidate.seqs
+  refine WP.seq (WP.mono (pairInit_ok h) ?_)
+  intro u start
+  refine WP.seq (WP.mono (pairLoop_ok start) ?_)
+  intro v state
+  refine WP.seq (WP.mono (sieveFinish_ok state.context.read.frame.space state.bad) ?_)
+  rintro t ⟨⟨flag, memory⟩, rest⟩
+  refine WP.block_nil ⟨state.context.after_memory memory rest, flag, ?_,
+    state.rest.trans (rest.mono (by simp [sieveRegs]))⟩
+  rw [memory]
+  exact state.changed
+
+theorem pair_shape_ok {s : State} {dst base : BitVec 32} {n : Nat} (h : SieveContext dst base n s)
+    {bits : Nat} (width : n=(bits+7)/8)
+    (largeP : 8161<Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr dst) n))
+    (largeQ : 8161<(Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr dst) n)-1)/2)
+    (oddP : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr dst) n)%2=1)
+    (oddQ : ((Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr dst) n)-1)/2)%2=1) :
+    WP isa VG.Impl.Ffdh.Arm.ParameterCandidate.pairSieve s fun t =>
+      SieveContext dst base n t ∧
+      t.z=((Spec.Ffdh.primeShape (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr dst) n)) &&
+        !Spec.RsaKeyGen.obviouslyComposite bits (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr dst) n))) &&
+        (Spec.Ffdh.primeShape ((Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr dst) n)-1)/2) &&
+          !Spec.RsaKeyGen.obviouslyComposite bits ((Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr dst) n)-1)/2))) ∧
+      Frame [sieveLocal s.sp] s.mem t.mem ∧ Rest sieveRegs s t := by
+  refine WP.mono (pairSieve_ok h) ?_
+  rintro t ⟨ctx,flag,changed,rest⟩
+  have shape := pair_shape (bits:=bits) largeP largeQ oddP oddQ
+  rw [width] at flag shape
+  rw [shape] at flag
+  simpa only [width] using And.intro ctx (And.intro flag (And.intro changed rest))
+
+end VG.Proof.Ffdh.Arm.ParameterCandidate
+end
+
+end
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm.ParameterCandidate
+open VG VG.Arm VG.Proof.Mont VG.Proof.Bignum.Arm VG.Proof.X25519.Arm
+
+theorem candidatePair_ok {s : State} {p : CandidateParams} {consumed : Nat}
+    (h : CandidateContext p consumed s) (table : TableData p.base p.length s.mem)
+    (number : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr p.out) p.length)=p.candidate)
+    (oddQ : ((p.candidate-1)/2)%2=1) :
+    WP isa VG.Impl.Ffdh.Arm.ParameterCandidate.pairSieve s fun t =>
+      CandidateContext p consumed t ∧ TableData p.base p.length t.mem ∧
+      t.z=((Spec.Ffdh.primeShape p.candidate && !Spec.RsaKeyGen.obviouslyComposite p.bits p.candidate) &&
+        (Spec.Ffdh.primeShape ((p.candidate-1)/2) && !Spec.RsaKeyGen.obviouslyComposite p.bits ((p.candidate-1)/2))) ∧
+      Spec.Rsa.bytesAt t.mem (State.addr p.out) p.length = Spec.Rsa.bytesAt s.mem (State.addr p.out) p.length ∧
+      Frame [⟨State.addr (s.sp + 64#32), 4⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
+  refine WP.mono (pair_shape_ok (h.sieve_context table) (bits:=p.bits) rfl
+    (by rw [number]; exact p.sieve_large.1) (by rw [number]; exact p.sieve_large.2)
+    (by rw [number]; exact p.candidate_odd) (by rw [number]; exact oddQ)) ?_
+  rintro t ⟨ctx, flag, changed, rest⟩
+  rw [number] at flag
+  have frame : Frame [⟨State.addr (s.sp + 64#32), 4⟩] s.mem t.mem := changed
+  refine ⟨h.after_aux (by decide : 44 ≤ 64) (by decide : 64 + 4 ≤ 68) frame rest,
+    ctx.table, flag, ?_, frame, rest.mono (by simp [sieveRegs, roundClobbers])⟩
+  refine rsa_bytes_frame frame (by have := p.length_bounds; omega_using [this]) ?_
+  intro r hr
+  rw [List.mem_singleton] at hr
+  subst r
+  rw [VG.Arm.addr_add (by have := h.saved.space.nowrap; omega_using [this])]
+  exact h.stackOutput.symm.sub_right (Offset.sub_base _ (by decide : 64 + 4 ≤ 72))
+
+end VG.Proof.Ffdh.Arm.ParameterCandidate
+
+end
+
+end
+
+/-! ### `Ffdh.Arm.ParameterCandidate.CTPairTrials`, which only this module used -/
+
+section
+
+/-! ### `Ffdh.Arm.ParameterCandidate.CTTrialPair`, which only this module used -/
+
+section
+
+/-! ### `Ffdh.Arm.ParameterCandidate.CTTrialPairLoop`, which only this module used -/
+
+section
+
+/-! ### `Ffdh.Arm.ParameterCandidate.PairTrialLoopWord`, which only this module used -/
+
+section
+
+/-! ### `Ffdh.Arm.ParameterCandidate.PairTrialWord`, which only this module used -/
+
+section
+
+/-! Simultaneous p and p-1 trial division through the shared RSA reducer. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm.ParameterCandidate
+open VG VG.Arm VG.Proof.X25519.Arm
+open VG.Proof.Bignum.Arm.TrialDivision16
+open VG.Impl.Ffdh.Arm.ParameterCandidate
+
+private theorem trialPairRedcWord_ok (s : State) :
+    WP isa (.block trialPairRedc) s fun t =>
+      (t.gpr .r8 = redcWord (s.gpr .r7) (s.gpr .r8) (s.gpr .r4) (s.gpr .r3) ∧ t.mem = s.mem) ∧
+      Rest [.r8, .r7, .r6] s t := by
+  unfold trialPairRedc VG.Impl.Bignum.Arm.TrialDivision16.redcAt
+  refine wp_dp (op2_reg _ _) fun u1 v1 => wp_mul fun u2 v2 => wp_mov (op2_lsl (by decide)) fun u3 v3 =>
+    wp_mov (op2_lsr (by decide)) fun u4 v4 => wp_mul fun u5 v5 => wp_dp (op2_reg _ _) fun u6 v6 =>
+      wp_mov (op2_lsr (by decide)) fun t v7 => WP.block_nil ?_
+  refine ⟨⟨?_, by rw [v7.mem, v6.mem, v5.mem, v4.mem, v3.mem, v2.mem, v1.mem]⟩,
+    (v1.rest (by simp)).trans ((v2.rest (by simp)).trans ((v3.rest (by simp)).trans
+      ((v4.rest (by simp)).trans ((v5.rest (by simp)).trans ((v6.rest (by simp)).trans (v7.rest (by simp)))))))⟩
+  rw [v7.gpr, v6.gpr, dpVal, v5.gpr, v4.gpr, v3.gpr, v2.gpr, v1.gpr, dpVal,
+    v5.other .r7 (by decide), v4.other .r7 (by decide),
+    v3.other .r7 (by decide), v2.other .r7 (by decide), v1.gpr, dpVal,
+    v4.other .r3 (by decide), v3.other .r3 (by decide), v2.other .r3 (by decide), v1.other .r3 (by decide),
+    v1.other .r4 (by decide)]
+  rfl
+
+
+theorem trialPairStepWord_ok (s : State) {n : Nat} (positive : 0<n) (fits : n<2^32)
+    (count : s.gpr .r1=BitVec.ofNat 32 n)
+    (readLow : InRegions (s.rd++s.wr) (State.addr (s.gpr .r0-1)) 1)
+    (readHigh : 1<n → InRegions (s.rd++s.wr) (State.addr (s.gpr .r0-2)) 1) :
+    WP isa trialPairStep s fun t =>
+      t.gpr .r2=redcWord (trialDigitWord s.mem (s.gpr .r0) n) (s.gpr .r2) (s.gpr .r4) (s.gpr .r3) ∧
+      t.gpr .r8=redcWord (trialDigitWord s.mem (s.gpr .r0) n) (s.gpr .r8) (s.gpr .r4) (s.gpr .r3) ∧
+      t.gpr .r0=s.gpr .r0-BitVec.ofNat 32 (min 2 n) ∧
+      t.gpr .r1=BitVec.ofNat 32 (n-min 2 n) ∧ t.z=decide (n≤2) ∧ t.mem=s.mem ∧
+      Rest [.r0,.r1,.r2,.r5,.r6,.r7,.r8] s t := by
+  unfold trialPairStep
+  refine WP.seq (WP.mono (trialDigit_ok s positive fits count readLow readHigh) ?_)
+  rintro u ⟨⟨ptr,cnt,word,mem⟩,rest⟩
+  simp only [List.cons_append,List.nil_append]
+  refine wp_mov (op2_reg _ _) fun v save => ?_
+  rw [List.append_assoc, WP.block_append_iff]
+  refine WP.mono (redcWord_ok v) ?_
+  rintro x ⟨⟨a,memX⟩,keepX⟩
+  rw [WP.block_append_iff]
+  refine WP.mono (trialPairRedcWord_ok x) ?_
+  rintro y ⟨⟨b,memY⟩,keepY⟩
+  refine wp_cmp (op2_imm (by decide)) fun t flags zero => WP.block_nil ?_
+  refine ⟨?_,?_,?_,?_,?_,?_,?_⟩
+  · rw [flags.gpr,keepY.gpr .r2 (by simp),a,save.other .r5 (by decide),word,
+      save.other .r2 (by decide),rest.gpr .r2 (by simp),
+      save.other .r4 (by decide),rest.gpr .r4 (by simp),save.other .r3 (by decide),rest.gpr .r3 (by simp)]
+    rfl
+  · rw [flags.gpr,b,keepX.gpr .r7 (by simp),save.gpr,word,
+      keepX.gpr .r8 (by simp),save.other .r8 (by decide),rest.gpr .r8 (by simp),
+      keepX.gpr .r4 (by simp),save.other .r4 (by decide),rest.gpr .r4 (by simp),
+      keepX.gpr .r3 (by simp),save.other .r3 (by decide),rest.gpr .r3 (by simp)]
+    rfl
+  · rw [flags.gpr,keepY.gpr .r0 (by simp),keepX.gpr .r0 (by simp),save.other .r0 (by decide),ptr]
+  · rw [flags.gpr,keepY.gpr .r1 (by simp),keepX.gpr .r1 (by simp),save.other .r1 (by decide),cnt]
+  · rw [zero,keepY.gpr .r1 (by simp),keepX.gpr .r1 (by simp),save.other .r1 (by decide),cnt]
+    change (BitVec.ofNat 32 (n-min 2 n)-0#32==0#32)=_
+    rw [BitVec.sub_zero]
+    change (BitVec.ofNat 32 (n-min 2 n)==(0 : BitVec 32))=_
+    rw [ofNat_beq_zero (by omega_using [fits] : n-min 2 n<2^32)]
+    exact decide_eq_decide.mpr (by omega_using [])
+  · rw [flags.mem,memY,memX,save.mem,mem]
+  · exact (rest.mono (by simp)).trans ((save.rest (by simp)).trans ((keepX.mono (by simp)).trans
+      ((keepY.mono (by simp)).trans (flags.rest _))))
+
+
+end VG.Proof.Ffdh.Arm.ParameterCandidate
+
+end
+
+end
+
+
+/-! Simultaneous p and p-1 trial division through the shared RSA reducer. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm.ParameterCandidate
+open VG VG.Arm VG.Proof.X25519.Arm
+open VG.Impl.Ffdh.Arm.ParameterCandidate
+
+theorem trialPairLoopWord_ok (s : State) {n : Nat} (positive : 0<n) (fits : n<2^32)
+    (count : s.gpr .r1=BitVec.ofNat 32 n) (readable : TrialReadable s (s.gpr .r0) n) :
+    WP isa (.loop trialPairStep .ne) s fun t =>
+      t.gpr .r2=trialWordResult s.mem (s.gpr .r0) (s.gpr .r3) (s.gpr .r4) n (s.gpr .r2) ∧
+      t.gpr .r8=trialWordResult s.mem (s.gpr .r0) (s.gpr .r3) (s.gpr .r4) n (s.gpr .r8) ∧
+      t.mem=s.mem ∧ Rest [.r0,.r1,.r2,.r5,.r6,.r7,.r8] s t := by
+  induction n using Nat.strongRecOn generalizing s with
+  | ind n ih =>
+    obtain ⟨tr,u,run,valA,valB,ptr,cnt,flag,memory,rest⟩ :=
+      trialPairStepWord_ok s positive fits count (readable.low positive) (fun h => readable.high h)
+    have recurrenceA : trialWordResult s.mem (s.gpr .r0) (s.gpr .r3) (s.gpr .r4) n (s.gpr .r2)=
+        trialWordResult u.mem (u.gpr .r0) (u.gpr .r3) (u.gpr .r4) (n-min 2 n) (u.gpr .r2) := by
+      rw [trialWordResult,dite_eq_right (by omega_using [positive])]
+      rw [memory,ptr,valA,rest.gpr .r3 (by simp),rest.gpr .r4 (by simp)]
+    have recurrenceB : trialWordResult s.mem (s.gpr .r0) (s.gpr .r3) (s.gpr .r4) n (s.gpr .r8)=
+        trialWordResult u.mem (u.gpr .r0) (u.gpr .r3) (u.gpr .r4) (n-min 2 n) (u.gpr .r8) := by
+      rw [trialWordResult,dite_eq_right (by omega_using [positive])]
+      rw [memory,ptr,valB,rest.gpr .r3 (by simp),rest.gpr .r4 (by simp)]
+    by_cases last : n≤2
+    · have zero : n-min 2 n=0 := by omega_using [last]
+      have resultA : u.gpr .r2=trialWordResult s.mem (s.gpr .r0) (s.gpr .r3) (s.gpr .r4) n (s.gpr .r2) := by
+        rw [recurrenceA,zero,trialWordResult,dite_eq_left rfl]
+      have resultB : u.gpr .r8=trialWordResult s.mem (s.gpr .r0) (s.gpr .r3) (s.gpr .r4) n (s.gpr .r8) := by
+        rw [recurrenceB,zero,trialWordResult,dite_eq_left rfl]
+      exact ⟨_,u,.loopExit run (by change some (!u.z)=some false;rw [flag,decide_eq_true last];rfl),
+        resultA,resultB,memory,rest⟩
+    · have smaller : n-min 2 n<n := by omega_using [positive]
+      have readU : TrialReadable u (u.gpr .r0) (n-min 2 n) := by
+        rw [ptr]
+        exact readable.advance rest (Nat.min_le_right 2 n)
+      obtain ⟨trT,t,runT,resultA,resultB,memoryT,restT⟩ := ih _ smaller u (by omega_using [last]) (by omega_using [fits]) cnt readU
+      exact ⟨_,t,.loopNext run (by change some (!u.z)=some true;rw [flag,decide_eq_false last];rfl) runT,
+        resultA.trans recurrenceA.symm,resultB.trans recurrenceB.symm,memoryT.trans memory,rest.trans restT⟩
+
+
+end VG.Proof.Ffdh.Arm.ParameterCandidate
+
+end
+
+end
+
+
+/-! One public byte-count trace computes both exact sieve accumulators. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm.ParameterCandidate
+open VG VG.Arm
+
+structure TrialPairLoopPair (s t : State) : Prop extends TrialLoopPair s t where
+  offset : s.gpr .r8=t.gpr .r8
+
+private theorem trialPairLoop_taint : ∃ hint, (VG.Taint.check taint (Taint.ofRegs [.r0,.r1])
+    (.loop VG.Impl.Ffdh.Arm.ParameterCandidate.trialPairStep .ne) hint).isSome=true := ⟨_,by taint_decide⟩
+
+theorem trialPairLoop_ct : RelCT isa TrialPairLoopPair
+    (.loop VG.Impl.Ffdh.Arm.ParameterCandidate.trialPairStep .ne)
+    (fun s t => s.gpr .r2=t.gpr .r2 ∧ s.gpr .r3=t.gpr .r3 ∧ s.gpr .r8=t.gpr .r8) := by
+  obtain ⟨hint,checked⟩ := trialPairLoop_taint
+  have trace : RelCT isa TrialPairLoopPair
+      (.loop VG.Impl.Ffdh.Arm.ParameterCandidate.trialPairStep .ne) (fun _ _ => True) := by
+    refine RelCT.taint (A:=taint) (Taint.ofRegs [.r0,.r1]) ?_ checked
+    intro s t h
+    refine Taint.agree_ofRegs ?_
+    intro reg hr
+    simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
+    rcases hr with rfl|rfl
+    · exact h.pointer
+    · exact h.count
+  intro s t trS trT u v h runS runT
+  have countS : s.gpr .r1=BitVec.ofNat 32 (s.gpr .r1).toNat := by rw [BitVec.ofNat_toNat,BitVec.setWidth_eq]
+  have countT : t.gpr .r1=BitVec.ofNat 32 (s.gpr .r1).toNat := h.count.symm.trans countS
+  obtain ⟨_,u',execS,valueAS,valueBS,_,restS⟩ :=
+    trialPairLoopWord_ok s h.positive (s.gpr .r1).isLt countS h.readLeft
+  obtain ⟨_,v',execT,valueAT,valueBT,_,restT⟩ :=
+    trialPairLoopWord_ok t h.positive (s.gpr .r1).isLt countT h.readRight
+  obtain ⟨_,rfl⟩ := Exec.det runS execS
+  obtain ⟨_,rfl⟩ := Exec.det runT execT
+  refine ⟨(trace _ _ _ _ _ _ h runS runT).1,?_,?_,?_⟩
+  · rw [valueAS,valueAT,←h.pointer,←h.acc,←h.divisor,←h.inverse]
+    exact trialWordResult_congr _ h.bytes
+  · exact (restS.gpr .r3 (by simp)).trans (h.divisor.trans (restT.gpr .r3 (by simp)).symm)
+  · rw [valueBS,valueBT,←h.pointer,←h.offset,←h.divisor,←h.inverse]
+    exact trialWordResult_congr _ h.bytes
+
+end VG.Proof.Ffdh.Arm.ParameterCandidate
+
+end
+
+end
+
+/-! Both divisibility decisions depend only on the public candidate bytes. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm.ParameterCandidate
+open VG VG.Arm
+open VG.Proof.Ffdh.Arm.KeySearch (Two two_post)
+
+private structure PairOriginalReady (p : TrialData) (s : State) : Prop where
+  input : TrialState p s
+  pointer : s.gpr .r0=p.dst+BitVec.ofNat 32 p.n
+  count : s.gpr .r1=BitVec.ofNat 32 p.n
+  acc : s.gpr .r2=0
+  divisor : s.gpr .r3=p.prime
+  inverse : s.gpr .r4=VG.Proof.RsaKeyGen.ninv p.prime
+
+private structure PairReady (p : TrialData) (s : State) : Prop extends PairOriginalReady p s where
+  offset : s.gpr .r8=p.prime-1
+
+private theorem start_ready (p : TrialData) (s : State) (h : TrialState p s) :
+    WP isa (.block VG.Impl.Ffdh.Arm.ParameterCandidate.trialStart) s (PairOriginalReady p) := by
+  refine WP.mono (trialStart_ok s p.dst p.n (h.1.frame.read (by decide)) (h.1.frame.read (by decide))
+    (h.1.frame.saved 4 (by decide)) (h.1.frame.saved 12 (by decide))) ?_
+  rintro t ⟨⟨ptr,count,acc,prime,inverse,memory⟩,rest⟩
+  rw [h.2.1] at prime inverse
+  exact ⟨⟨h.1.after_memory memory rest,(rest.gpr .r7 (by simp)).trans h.2.1,
+    by rw [memory];exact h.2.2⟩,ptr,count,acc,prime,inverse⟩
+
+private theorem init_ready (p : TrialData) (s : State) (h : PairOriginalReady p s) :
+    WP isa (.block VG.Impl.Ffdh.Arm.ParameterCandidate.trialPairInit) s (PairReady p) := by
+  unfold VG.Impl.Ffdh.Arm.ParameterCandidate.trialPairInit
+  refine VG.Proof.X25519.Arm.wp_dp (VG.Proof.X25519.Arm.op2_imm (by decide)) fun t upd => WP.block_nil ?_
+  have rest := upd.rest (by simp : Reg.r8∈[.r8])
+  refine ⟨⟨⟨h.input.1.after_memory upd.mem rest,(rest.gpr .r7 (by simp)).trans h.input.2.1,
+    by rw [upd.mem];exact h.input.2.2⟩,
+    (rest.gpr .r0 (by simp)).trans h.pointer,(rest.gpr .r1 (by simp)).trans h.count,
+    (rest.gpr .r2 (by simp)).trans h.acc,(rest.gpr .r3 (by simp)).trans h.divisor,
+    (rest.gpr .r4 (by simp)).trans h.inverse⟩,?_⟩
+  rw [upd.gpr,VG.Proof.X25519.Arm.dpVal,h.divisor]
+
+private theorem ready_pair {s t : State} (h : Two PairReady s t) : TrialPairLoopPair s t := by
+  obtain ⟨p,a,b,_⟩ := h
+  have countNat : (s.gpr .r1).toNat=p.n := by
+    rw [a.count,BitVec.toNat_ofNat,Nat.mod_eq_of_lt a.input.1.countFits]
+  refine ⟨⟨a.pointer.trans b.pointer.symm,a.count.trans b.count.symm,a.acc.trans b.acc.symm,
+    a.divisor.trans b.divisor.symm,a.inverse.trans b.inverse.symm,?_,?_,?_,?_⟩,
+    a.offset.trans b.offset.symm⟩
+  · rw [countNat];exact a.input.1.positive
+  · rw [countNat,a.pointer];exact a.input.1.readable
+  · rw [countNat,b.pointer];exact b.input.1.readable
+  · rw [countNat,a.pointer]
+    intro i hi
+    exact (a.input.2.2 i hi).trans (b.input.2.2 i hi).symm
+
+private theorem pairFlag_taint : ∃ hint, (VG.Taint.check taint (Taint.ofRegs [.r2,.r3,.r8])
+    VG.Impl.Ffdh.Arm.ParameterCandidate.trialPairFlag hint).isSome=true := ⟨_,by taint_decide⟩
+
+theorem trialPair_ct : RelCT isa (Two TrialState)
+    VG.Impl.Ffdh.Arm.ParameterCandidate.trialPair (fun _ _ => True) := by
+  have start : RelCT isa (Two TrialState) (.block VG.Impl.Ffdh.Arm.ParameterCandidate.trialStart)
+      (Two PairOriginalReady) :=
+    two_post (trialStart_ct.mono (fun _ _ ⟨_,_,_,sp⟩ => sp) (fun _ _ _ => trivial)) start_ready
+  have initial : RelCT isa (Two PairOriginalReady) (.block VG.Impl.Ffdh.Arm.ParameterCandidate.trialPairInit)
+      (Two PairReady) :=
+    two_post ((VG.Proof.Bignum.Arm.stackOnly_ct _ (by decide)).mono
+      (fun _ _ ⟨_,_,_,sp⟩ => sp) (fun _ _ _ => trivial)) init_ready
+  have loop := trialPairLoop_ct.mono (fun _ _ h => ready_pair h) (fun _ _ h => h)
+  obtain ⟨hint,checked⟩ := pairFlag_taint
+  have flag : RelCT isa (fun s t => s.gpr .r2=t.gpr .r2 ∧ s.gpr .r3=t.gpr .r3 ∧ s.gpr .r8=t.gpr .r8)
+      VG.Impl.Ffdh.Arm.ParameterCandidate.trialPairFlag (fun _ _ => True) := by
+    refine RelCT.taint (A:=taint) (Taint.ofRegs [.r2,.r3,.r8]) ?_ checked
+    intro s t h
+    refine Taint.agree_ofRegs ?_
+    intro reg hr
+    simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
+    rcases hr with rfl|rfl|rfl
+    · exact h.1
+    · exact h.2.1
+    · exact h.2.2
+  exact start.seq (initial.seq (loop.seq flag))
+
+end VG.Proof.Ffdh.Arm.ParameterCandidate
+
+end
+
+end
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm.ParameterCandidate
+open VG VG.Arm VG.Proof.Bignum.Arm
+open VG.Proof.Ffdh.Arm.KeySearch (Two two_post two_taint two_map two_ite)
+open VG.Impl.Ffdh.Arm.ParameterCandidate (trialCount)
+
+structure PairData where
+  dst : BitVec 32
+  base : BitVec 32
+  bytes : List Byte
+
+structure PairTrialsStart (p : PairData × Nat) (s : State) : Prop where
+  context : SieveContext p.1.dst p.1.base p.1.bytes.length s
+  index : p.2<trialCount p.1.bytes.length
+  cursor : s.gpr .r10=p.1.base+BitVec.ofNat 32 (Proof.Rsa.Mont.arrAt ((p.1.bytes.length+7)/8) 34+4*p.2)
+  bytes : Spec.Rsa.bytesAt s.mem (State.addr p.1.dst) p.1.bytes.length=p.1.bytes
+
+private structure PrimeReady (p : PairData × Nat) (s : State) : Prop where
+  start : PairTrialsStart p s
+  prime : s.gpr .r7=BitVec.ofNat 32 (VG.Impl.RsaKeyGen.tabEntry p.2)
+
+private def trialData (p : PairData × Nat) : TrialData :=
+  ⟨p.1.dst,p.1.bytes.length,BitVec.ofNat 32 (VG.Impl.RsaKeyGen.tabEntry p.2),p.1.bytes.reverse⟩
+
+private theorem prime_trialState (p : PairData × Nat) (s : State) (h : PrimeReady p s) :
+    TrialState (trialData p) s := by
+  have buffers := trialBuffers_of_octets (prime:=BitVec.ofNat 32 (VG.Impl.RsaKeyGen.tabEntry p.2))
+    h.start.context.read rfl h.start.bytes
+  exact ⟨buffers.1,h.prime,buffers.2⟩
+
+private theorem entry_ready (p : PairData × Nat) (s : State) (h : PairTrialsStart p s) :
+    WP isa (.block VG.Impl.Ffdh.Arm.ParameterCandidate.pairEntry) s (PrimeReady p) := by
+  refine WP.mono (pairEntry_ok h.context h.index h.cursor) ?_
+  rintro t ⟨⟨prime,memory⟩,rest⟩
+  exact ⟨⟨h.context.after_memory memory rest,h.index,(rest.gpr .r10 (by simp)).trans h.cursor,
+    by rw [memory]; exact h.bytes⟩,prime⟩
+
+private theorem pairEntry_taint : ∃ hint, (VG.Taint.check taint (Taint.ofRegs [.r10])
+    (.block VG.Impl.Ffdh.Arm.ParameterCandidate.pairEntry) hint).isSome=true := ⟨_,by taint_decide⟩
+
+theorem pairTrials_ct : RelCT isa (Two PairTrialsStart)
+    VG.Impl.Ffdh.Arm.ParameterCandidate.pairTrials (fun _ _ => True) := by
+  obtain ⟨hint,checked⟩ := pairEntry_taint
+  have entryTrace : RelCT isa (Two PairTrialsStart)
+      (.block VG.Impl.Ffdh.Arm.ParameterCandidate.pairEntry) (fun _ _ => True) := by
+    refine two_taint [.r10] ?_ checked
+    intro p s t a b r hr
+    simp only [List.mem_singleton] at hr
+    subst r
+    exact a.cursor.trans b.cursor.symm
+  have entry : RelCT isa (Two PairTrialsStart)
+      (.block VG.Impl.Ffdh.Arm.ParameterCandidate.pairEntry) (Two PrimeReady) :=
+    two_post entryTrace entry_ready
+  have trials : RelCT isa (Two PrimeReady) VG.Impl.Ffdh.Arm.ParameterCandidate.trialPair
+      (fun _ _ => True) :=
+    (two_map trialData prime_trialState trialPair_ct).mono (fun _ _ h => h) (fun _ _ _ => trivial)
+  exact entry.seq trials
+
+end VG.Proof.Ffdh.Arm.ParameterCandidate
+
+end
+
+end
 
 /-! ### `Ffdh.Arm.ParameterCandidate.CandidateEntered`, which only this module used -/
 

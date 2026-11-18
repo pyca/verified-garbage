@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchArguments
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchData
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchLayout
 import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.ControlMemory
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Depth

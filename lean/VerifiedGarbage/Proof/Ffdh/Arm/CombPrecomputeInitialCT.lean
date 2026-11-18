@@ -1,6 +1,5 @@
 module
 
-import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeInitialStore
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeStoreCT
 import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeStoreMemory
@@ -21,8 +20,208 @@ public import VerifiedGarbage.Proof.Bignum.Arm.MontBackend
 meta import VerifiedGarbage.Proof.Bignum.Arm.MontBackend
 public import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeState
 meta import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeState
-import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeInitial
-meta import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeInitial
+import VerifiedGarbage.Proof.Rsa.FixedBaseCombTable
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeTableState
+public import VerifiedGarbage.Proof.Bignum.Arm.ExpState
+import VerifiedGarbage.Proof.Bignum.Arm.SharedWindowArithmetic
+import VerifiedGarbage.Proof.Bignum.Arm.TwoExpShared
+public import VerifiedGarbage.Impl.Bignum.Arm.SharedWindow
+public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
+meta import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeStoreMemory
+meta import VerifiedGarbage.Proof.Rsa.FixedBaseCombTable
+meta import VerifiedGarbage.Proof.Bignum.Math
+meta import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
+meta import VerifiedGarbage.Proof.Framework.Block
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeTableState
+meta import VerifiedGarbage.Proof.Bignum.Arm.ExpState
+meta import VerifiedGarbage.Proof.Ffdh.Arm.ImportAt
+meta import VerifiedGarbage.Proof.Bignum.Arm.SharedWindowArithmetic
+meta import VerifiedGarbage.Proof.Bignum.Arm.TwoExpShared
+meta import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
+meta import VerifiedGarbage.Impl.Bignum.Arm.SharedWindow
+meta import VerifiedGarbage.Impl.Ffdh.Arm.Domain
+
+/-! ### `Ffdh.Arm.CombPrecomputeInitialStore`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Ffdh.Arm.CombPrecomputeInitial`, which this module and modules that import it used -/
+
+section
+
+/-! Import the generator and reuse shared Montgomery initialization for the first two entries. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm.CombBuilder
+open VG VG.Arm VG.Proof.Mont VG.Proof.Bignum.Arm
+open VG.Proof.Rsa.Mont (numAt Operand arrAt)
+open VG.Proof.X25519.Arm (Rest)
+
+private theorem operand (a : Nat) (ha : a=0 ∨ a=4) : Operand a := by
+  rcases ha with rfl|rfl <;> simp [Operand,Proof.Rsa.Mont.aAcc,Proof.Rsa.Mont.aTmp]
+
+theorem initialValues_ok (backend : MontBackend) (s : State) {p : Inputs} {sp : BitVec 32}
+    (h : Memory p sp s) (modulus : numAt s.mem (State.addr p.base) p.w 0=p.P)
+    (r2 : numAt s.mem (State.addr p.base) p.w 4=2^(128*p.w)%p.P) (odd : p.P%2=1) :
+    WP isa (.seq (VG.Impl.Ffdh.Arm.Domain.importAt 1 56 32)
+      (VG.Impl.Bignum.Arm.SharedWindow.init (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul))) s
+      fun t => Memory p sp t ∧ ExpState p.base p.len p.w p.P p.G 0 t ∧
+        Frame [⟨State.addr p.base,8*p.len⟩,FrameStack.belowA s.sp 48] s.mem t.mem ∧ Rest roundClobbers s t := by
+  rw [WP.seq_iff]
+  refine WP.mono (importAt_ok s 1 56 32 h.context (by decide) (by decide) (by decide) h.ready
+    (by decide) (by decide) h.context.gBytes (by rw [p.gLength]; have := p.minLength; omega_using [this])
+    (by rw [p.gLength]; exact p.width.2.2.2.1) (by change BitVec.ofNat 32 p.k=_; rw [p.gLength])) ?_
+  rintro u ⟨_contextU,readyU,generator,keeps,frameU,restU⟩
+  have frameU' : Frame [⟨State.addr p.base,8*p.len⟩,FrameStack.belowA s.sp 48] s.mem u.mem :=
+    frameU.mono (by simp)
+  have memU := h.after_arithmetic readyU frameU' restU
+  have fits : arrAt p.w 8≤8*p.len := h.ready.width ▸ h.ready.layout.2.2.1
+  have modulusU := (keeps_array_num keeps fits (operand 0 (by simp)) (by decide)).trans modulus
+  have r2U := (keeps_array_num keeps fits (operand 4 (by simp)) (by decide)).trans r2
+  let K := TwoExp.sharedMontgomery p.base sp p.len p.w backend.name backend.mul
+    (fun _ _ _ ho ha hb v input => backend.correct v input ho ha hb) backend.stackOk
+  have callU : TwoExp.CallReady p.base sp p.len u := ⟨memU.calls.stack,memU.fixed⟩
+  have r2bound : numAt u.mem (State.addr p.base) p.w 4<p.P := by
+    rw [r2U]
+    exact Nat.mod_lt _ (by rw [← modulusU]; have := readyU.modulus; omega_using [this])
+  have r2value : numAt u.mem (State.addr p.base) p.w 4%p.P=2^(64*p.w)*2^(64*p.w)%p.P := by
+    rw [r2U,Nat.mod_mod,← Nat.pow_add,show 64*p.w+64*p.w=128*p.w by omega_using []]
+  refine WP.mono (sharedWindowInit_ok K u readyU callU modulusU odd generator r2bound r2value) ?_
+  rintro t ⟨exp,_headers,_call,frameT,restT⟩
+  have localFrame : Frame [⟨State.addr p.base,8*p.len⟩,FrameStack.belowA u.sp 48] u.mem t.mem := by
+    simpa only [K,← memU.fixed] using frameT
+  have memT := memU.after_arithmetic exp.ready localFrame restT
+  refine ⟨memT,exp,frameU'.trans ?_,restU.trans restT⟩
+  simpa only [restU.sp] using localFrame
+
+end VG.Proof.Ffdh.Arm.CombBuilder
+
+end
+
+end
+
+/-! Store Montgomery one and the generator as the first two canonical entries. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm.CombBuilder
+open VG VG.Arm VG.Proof.Mont VG.Proof.Bignum.Arm
+open VG.Proof.Rsa.Mont (numAt arrAt)
+open VG.Proof.X25519.Arm (Rest wp_mov op2_imm)
+
+private theorem memoryOfMem {p : Inputs} {sp : BitVec 32} {s t : State}
+    (h : Memory p sp s) (mem : t.mem=s.mem) (rest : Rest roundClobbers s t)
+    (ptr : t.gpr .r0=p.base) : Memory p sp t := by
+  exact h.after_arithmetic (h.ready.of_mem mem rest ptr) (by rw [mem]; exact Frame.refl _ _) rest
+
+private theorem eqTrans {B : Addr} {size : Nat} {m1 m2 m3 : Mem}
+    (a : WorkspaceEq B size m1 m2) (b : WorkspaceEq B size m2 m3) : WorkspaceEq B size m1 m3 :=
+  ⟨fun d n fit => (b.read d n fit).trans (a.read d n fit)⟩
+
+private theorem storeWhole {p : Inputs} {digit : Nat} {m m' : Mem} (hd : digit<32)
+    (frame : Frame [⟨off (State.addr p.output) (entryOffset p digit),8*p.w⟩] m m') :
+    Frame [⟨State.addr p.output,bytes p⟩] m m' := by
+  apply frame.sub
+  intro r hr
+  rw [List.mem_singleton] at hr
+  subst r
+  exact ⟨_,List.mem_singleton_self _,entry_sub p hd⟩
+
+theorem initial_ok (backend : MontBackend) (s : State) {p : Inputs} {sp : BitVec 32}
+    (h : Memory p sp s) (modulus : numAt s.mem (State.addr p.base) p.w 0=p.P)
+    (r2 : numAt s.mem (State.addr p.base) p.w 4=2^(128*p.w)%p.P) (odd : p.P%2=1) :
+    WP isa (VG.Impl.Ffdh.Arm.CombPrecompute.initial
+      (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul)) s fun t =>
+      Memory p sp t ∧ TablePrefix p 2 t.mem ∧
+      numAt t.mem (State.addr p.base) p.w 5=entryValue p 1 ∧
+      numAt t.mem (State.addr p.base) p.w 7=1 ∧
+      numAt t.mem (State.addr p.base) p.w 0=p.P ∧
+      numAt t.mem (State.addr p.base) p.w 4=2^(128*p.w)%p.P ∧
+      WorkspaceEq (State.addr p.output) (24+16*p.w) s.mem t.mem ∧
+      Frame [⟨State.addr p.base,8*p.len⟩,⟨State.addr p.output,bytes p⟩,FrameStack.belowA sp 48] s.mem t.mem ∧
+      Rest roundClobbers s t := by
+  have values := initialValues_ok backend s h modulus r2 odd
+  rw [WP.seq_iff] at values
+  rw [VG.Impl.Ffdh.Arm.CombPrecompute.initial,WP.seq_iff]
+  refine WP.mono values fun u initWP => ?_
+  rw [WP.seq_iff]
+  refine WP.mono initWP ?_
+  rintro v ⟨memoryV,exp,frameV,restV⟩
+  have fit : arrAt p.w 8≤8*p.len := exp.ready.width ▸ exp.ready.layout.2.2.1
+  have six : numAt v.mem (State.addr p.base) p.w 6=entryValue p 0 := by
+    have value := exp.powerValue
+    rw [Nat.mod_eq_of_lt exp.powerBound] at value
+    simpa only [entryValue,VG.Proof.Rsa.FixedBaseComb.exponent_zero,VG.Proof.Bignum.powMod_eq,
+      Nat.pow_zero,Nat.one_mul,Nat.mod_mul_mod] using value
+  have exponentOne : Spec.Rsa.FixedBaseComb.exponent (bits p) 1=1 := by
+    simpa only [Nat.pow_zero,Nat.zero_mul] using VG.Proof.Rsa.FixedBaseComb.exponent_tooth (bits p) 0 (by decide)
+  have five : numAt v.mem (State.addr p.base) p.w 5=entryValue p 1 := by
+    have value := exp.inputValue
+    rw [Nat.mod_eq_of_lt exp.inputBound] at value
+    simpa only [entryValue,exponentOne,VG.Proof.Bignum.powMod_eq,Nat.pow_one,Nat.mod_mul_mod] using value
+  have headV := headEq_arithmetic h frameV
+  have frameV' : Frame [⟨State.addr p.base,8*p.len⟩,⟨State.addr p.output,bytes p⟩,FrameStack.belowA sp 48] s.mem v.mem := by
+    rw [h.fixed] at frameV
+    exact frameV.mono (by simp)
+  rw [WP.seq_iff]
+  refine wp_mov (op2_imm (by decide)) fun a move0 => WP.block_nil ?_
+  have restA : Rest roundClobbers v a := move0.rest (by simp [roundClobbers])
+  have memoryA := memoryOfMem memoryV move0.mem restA ((move0.other .r0 (by decide)).trans exp.ready.ptr)
+  rw [WP.seq_iff]
+  refine WP.mono (combStoreMemory_ok a memoryA (by decide : 0<32) (by decide : 6<8) move0.gpr) ?_
+  rintro b ⟨memoryB,workspaceB,valueB,frameB,restB⟩
+  have empty : TablePrefix p 0 a.mem := by intro i hi; omega
+  have valueB' : (b.mem.read (off (State.addr p.output) (entryOffset p 0)) (8*p.w)).toNat=entryValue p 0 := by
+    rw [valueB,move0.mem,six]
+  have tableB := TablePrefix.extend memoryA empty (by decide : 0<32) frameB valueB'
+  have fiveB : numAt b.mem (State.addr p.base) p.w 5=entryValue p 1 := by
+    rw [workspaceB.number fit (by decide : 5<8),move0.mem,five]
+  have oneB : numAt b.mem (State.addr p.base) p.w 7=1 := by
+    rw [workspaceB.number fit (by decide : 7<8),move0.mem,exp.one]
+  have modB : numAt b.mem (State.addr p.base) p.w 0=p.P := by
+    rw [workspaceB.number fit (by decide : 0<8),move0.mem,exp.modulus]
+  have r2B : numAt b.mem (State.addr p.base) p.w 4=2^(128*p.w)%p.P := by
+    rw [workspaceB.number fit (by decide : 4<8),move0.mem,exp.r2]
+  have headB : WorkspaceEq (State.addr p.output) (24+16*p.w) s.mem b.mem := by
+    have headA : WorkspaceEq (State.addr p.output) (24+16*p.w) s.mem a.mem := by rw [move0.mem]; exact headV
+    exact eqTrans headA (headEq_store memoryA (by decide : 0<32) frameB)
+  have wholeB := storeWhole (by decide : 0<32) frameB
+  have fB : Frame [⟨State.addr p.base,8*p.len⟩,⟨State.addr p.output,bytes p⟩,FrameStack.belowA sp 48] s.mem b.mem := by
+    refine Frame.trans ?_ (wholeB.mono (by simp))
+    rw [move0.mem]
+    exact frameV'
+  have rB := restV.trans (restA.trans restB)
+  rw [WP.seq_iff]
+  refine wp_mov (op2_imm (by decide)) fun c move1 => WP.block_nil ?_
+  have restC : Rest roundClobbers b c := move1.rest (by simp [roundClobbers])
+  have memoryC := memoryOfMem memoryB move1.mem restC ((move1.other .r0 (by decide)).trans memoryB.ready.ptr)
+  refine WP.mono (combStoreMemory_ok c memoryC (by decide : 1<32) (by decide : 5<8) move1.gpr) ?_
+  rintro t ⟨memoryT,workspaceT,valueT,frameT,restT⟩
+  have tableC : TablePrefix p 1 c.mem := by rw [move1.mem]; exact tableB
+  have valueT' : (t.mem.read (off (State.addr p.output) (entryOffset p 1)) (8*p.w)).toNat=entryValue p 1 := by
+    rw [valueT,move1.mem,fiveB]
+  have tableT := TablePrefix.extend memoryC tableC (by decide : 1<32) frameT valueT'
+  have headT : WorkspaceEq (State.addr p.output) (24+16*p.w) s.mem t.mem := by
+    have headC : WorkspaceEq (State.addr p.output) (24+16*p.w) s.mem c.mem := by rw [move1.mem]; exact headB
+    exact eqTrans headC (headEq_store memoryC (by decide : 1<32) frameT)
+  have wholeT := storeWhole (by decide : 1<32) frameT
+  refine ⟨memoryT,tableT,?_,?_,?_,?_,headT,?_,rB.trans (restC.trans restT)⟩
+  · rw [workspaceT.number fit (by decide : 5<8),move1.mem]; exact fiveB
+  · rw [workspaceT.number fit (by decide : 7<8),move1.mem]; exact oneB
+  · rw [workspaceT.number fit (by decide : 0<8),move1.mem]; exact modB
+  · rw [workspaceT.number fit (by decide : 4<8),move1.mem]; exact r2B
+  · refine Frame.trans ?_ (wholeT.mono (by simp))
+    rw [move1.mem]
+    exact fB
+
+end VG.Proof.Ffdh.Arm.CombBuilder
+
+end
+
+end
 
 /-! Public generator initialization and the first two table exports have fixed traces. -/
 

@@ -1,9 +1,8 @@
 module
+
 public import VerifiedGarbage.Proof.Bignum.X86_64.R2Impl
 public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.StagesCT
-
 import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.OptionalCT
-import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.FrontCT
 import VerifiedGarbage.Proof.Ffdh.X86_64.FrontCT
 import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Body
 import VerifiedGarbage.Proof.Ffdh.X86_64.Moves
@@ -14,7 +13,6 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Bignum.X86_64.R2Impl
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.StagesCT
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.OptionalCT
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.FrontCT
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.FrontCT
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Body
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.Moves

@@ -3,15 +3,10 @@ module
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.StageCTData
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Prepared
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.Kernel
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.RoundBodyCT
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.RoundRun
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PrepareCT
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PhaseWitness
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.RoundBody
 public import Mathlib.Algebra.Group.Nat.Defs
-import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Rounds
-import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PrepareCT
-import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PrepareState
-import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PhaseWitness
 import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! ### `Ffdh.X86_64.ParameterCandidate.RoundsCT`, which only this module used -/

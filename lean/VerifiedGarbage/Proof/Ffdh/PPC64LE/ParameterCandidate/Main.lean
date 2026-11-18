@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.TestsFn
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.Residue
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.Product
-import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.Shape
+import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.Tests
 import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Shape
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.PPC64LE.Syms

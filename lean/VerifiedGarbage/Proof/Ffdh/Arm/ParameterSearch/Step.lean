@@ -5,8 +5,7 @@ public import VerifiedGarbage.Impl.Ffdh.Arm.ParameterSearch
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.State
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CallPost
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Call
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.LiveGuards
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CandidateFacts
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CompareResult
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Bounds
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Arm.Exec
@@ -16,11 +15,9 @@ import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.FieldMemory
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Memory
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Live
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CompareResult
 public import VerifiedGarbage.Proof.Ffdh.Contract
 public import VerifiedGarbage.Proof.EntropyRequest
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.LivePolicy
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Outputs
 import VerifiedGarbage.Proof.Bignum.Arm.PcDimensions
 
 /-! ### `Ffdh.Arm.ParameterSearch.Exit`, which this module and modules that import it used -/

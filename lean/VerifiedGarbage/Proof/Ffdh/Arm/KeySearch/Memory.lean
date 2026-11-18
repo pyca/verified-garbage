@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.Framework.Arm.CallF
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Regions
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Controller
-import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Bounds
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Geometry
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeyBackend
 public import VerifiedGarbage.Proof.Framework.Mem

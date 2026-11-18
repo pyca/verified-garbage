@@ -16,14 +16,7 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.Locals
 meta import VerifiedGarbage.Proof.Ffdh.Arm.Locals
 public import VerifiedGarbage.Proof.Ffdh.ScalarWidth
 meta import VerifiedGarbage.Proof.Ffdh.ScalarWidth
-import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeBitsSave
-meta import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeBitsSave
-import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeMetadata
-meta import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeMetadata
-import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeRows
-meta import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeRows
-import VerifiedGarbage.Proof.Ffdh.ScalarWidth
-meta import VerifiedGarbage.Proof.Ffdh.ScalarWidth
+meta import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeMetadataAll
 
 /-! Metadata loops branch only on the public scalar width and mask. -/
 @[expose] public section

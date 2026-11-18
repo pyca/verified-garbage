@@ -16,7 +16,6 @@ import VerifiedGarbage.Proof.Ffdh.Arm.ImportAtCT
 import VerifiedGarbage.Proof.Ffdh.Arm.BranchCT
 import VerifiedGarbage.Proof.Ffdh.Arm.RangeCT
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
-import VerifiedGarbage.Proof.Ffdh.Arm.ChecksCT
 
 /-! The full scalar range check is constant time in the imported scalar. -/
 

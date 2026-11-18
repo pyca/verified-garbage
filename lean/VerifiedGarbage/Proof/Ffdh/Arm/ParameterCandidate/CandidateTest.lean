@@ -7,8 +7,6 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.PhaseFrame
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.WitnessEnd
 public import VerifiedGarbage.Proof.MillerRabin.Arm.Backend
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidatePhaseHead
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidatePhaseInput
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidatePhaseFrame
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.PhaseRun
 import VerifiedGarbage.Proof.Framework.Arm.Exec

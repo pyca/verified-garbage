@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.WindowBuild
-import VerifiedGarbage.Proof.Bignum.Arm.WindowState
 import VerifiedGarbage.Proof.Bignum.Arm.WindowSelect
 import VerifiedGarbage.Proof.Bignum.Arm.WindowCtl
 import VerifiedGarbage.Proof.Bignum.Arm.MontOp

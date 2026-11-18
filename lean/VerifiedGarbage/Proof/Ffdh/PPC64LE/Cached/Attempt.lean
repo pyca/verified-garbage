@@ -1,9 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Cached.Comb
-public import VerifiedGarbage.Proof.Ffdh.PPC64LE.GenerateKey.Scalar
-public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Derive.Body
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.GenerateKey.Body
+public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Derive.Body
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.ExchangeCorrect
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckDomainFn
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubOut

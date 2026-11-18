@@ -2,22 +2,13 @@ module
 
 public import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Exit
-import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTClassify
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTClassify
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTAttemptState
-meta import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTAttemptState
+meta import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTClassify
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeyBackend
 meta import VerifiedGarbage.Proof.Ffdh.Arm.KeyBackend
-import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTAttempt
-meta import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTAttempt
-import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTLeaf
-meta import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTLeaf
-import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Call
-meta import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Call
-import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Classify
-meta import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Classify
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Live
 meta import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Live
 

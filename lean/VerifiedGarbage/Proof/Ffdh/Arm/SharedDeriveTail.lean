@@ -1,10 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.Arm.ExchangeMain
-public import VerifiedGarbage.Proof.Ffdh.Arm.SharedExchangeMemory
+public import VerifiedGarbage.Proof.Ffdh.Arm.SharedCheckPublicPower
 public import VerifiedGarbage.Impl.Ffdh.Arm.SharedDerive
 public import VerifiedGarbage.Proof.Bignum.Arm.MontBackend
-import VerifiedGarbage.Proof.Ffdh.Arm.SharedCheckPublicPower
 import VerifiedGarbage.Proof.Ffdh.Arm.Range
 import VerifiedGarbage.Proof.Ffdh.Arm.Branch
 import VerifiedGarbage.Proof.Ffdh.Arm.Block

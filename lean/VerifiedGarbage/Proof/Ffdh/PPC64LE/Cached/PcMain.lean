@@ -1,11 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Cached.PcTable
-public import VerifiedGarbage.Proof.Ffdh.PPC64LE.GenerateKey.Scalar
+public import VerifiedGarbage.Proof.Ffdh.PPC64LE.GenerateKey.Body
 public import VerifiedGarbage.Proof.Ffdh.GenerationPrecompute
 public import VerifiedGarbage.Spec.Ffdh.VettedKeyGeneration
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.GenerateKey.ScalarEq
-import VerifiedGarbage.Proof.Ffdh.PPC64LE.GenerateKey.Scan
+import VerifiedGarbage.Proof.Ffdh.PPC64LE.GenerateKey.Cut
 import VerifiedGarbage.Proof.Ffdh.KeyScalar
 import VerifiedGarbage.Proof.Ffdh.Lead
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckPublicFn
@@ -18,6 +18,7 @@ import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMinv
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreCore
 import VerifiedGarbage.Proof.Bignum.Words
 import VerifiedGarbage.Proof.Rsa.FixedBaseCombTable
+
 -- separate module: the precompute's correctness proof is split in a chain of modules, so that a change rebuilds only the modules after it
 
 /-! # FFDH's context on PPC64LE: the width

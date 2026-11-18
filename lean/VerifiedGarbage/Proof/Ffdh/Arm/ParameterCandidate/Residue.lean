@@ -7,9 +7,8 @@ import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.ResidueLow
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.ResidueBytes
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.TrialValue
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.TrialStart
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.TrialMath
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.TrialOctets
+import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.TrialFlag
 import VerifiedGarbage.Proof.RsaKeyGen.Table
 import VerifiedGarbage.Proof.Framework.PowLit

@@ -4,13 +4,41 @@ import VerifiedGarbage.Proof.Ffdh.Arm.KeyGeometry
 import VerifiedGarbage.Proof.Ffdh.Arm.DomainSpec
 public import VerifiedGarbage.Proof.Ffdh.Arm.Context
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
-import VerifiedGarbage.Proof.Ffdh.Arm.KeyBound
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyBoundCT
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.Ffdh.Arm.GenerateKey
 public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
 public import VerifiedGarbage.Proof.Ffdh.Arm.Output
 public import VerifiedGarbage.TCB.Arm.Isa
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeyByteCT
+import VerifiedGarbage.Proof.Ffdh.Arm.StackCT
+import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+
+/-! ### `Ffdh.Arm.KeyScalarCT`, which the modules that import this one used -/
+
+section
+
+/-! The complete scalar sampler leaks only the public domain bound and buffer layout. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm
+open VG VG.Arm VG.Proof.Bignum.Arm
+
+structure KeyScalarInput (p : Inputs) (slots : List Nat) (rb : List Byte) (s : State) : Prop where
+  context : Context p slots s
+  entropy : Octets p.base p.entropy p.len rb s
+  outputs : KeyOutputs p s
+  entropyStack : Region.Disjoint ⟨State.addr p.entropy, p.k⟩ ⟨State.addr s.sp, 72⟩
+
+end VG.Proof.Ffdh.Arm
+
+end
+
+end
 
 /-! ### `Ffdh.Arm.KeyScalar`, which this module and modules that import it used -/
 

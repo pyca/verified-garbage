@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Regions
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Memory
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Live
-import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Bounds
 
 /-! A nested key-generation attempt changes its outputs, workspace and its
 own stack, preserving the retry sampling and saved controller frame. -/

@@ -5,11 +5,10 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.PhaseInput
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.PhaseFrame
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.WitnessEnd
 public import VerifiedGarbage.Proof.MillerRabin.Arm.Backend
-
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.PreparedWitness
-import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.WitnessStep
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Omega
+
 /-! One complete native probable-prime phase: prepare, sample, and run shared rounds. -/
 
 -- Formerly `VerifiedGarbage/Proof/Ffdh/Arm/ParameterCandidate/WitnessLoop.lean`, which only this module imported.

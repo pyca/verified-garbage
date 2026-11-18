@@ -1,9 +1,8 @@
 module
-public import VerifiedGarbage.Proof.Bignum.Arm.WindowPhase
 
+public import VerifiedGarbage.Proof.Bignum.Arm.WindowPhase
 import VerifiedGarbage.Proof.Bignum.Arm.WindowBitCT
 import VerifiedGarbage.Proof.Bignum.Arm.ExpInitCT
-import VerifiedGarbage.Proof.Bignum.Arm.ExpByteHeadCT
 import VerifiedGarbage.Proof.Bignum.Arm.WindowScanCT
 import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
 import VerifiedGarbage.Proof.Bignum.Arm.MontOpCT

@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.R2Impl
 public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.QSetup
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Parent
-import VerifiedGarbage.Proof.Ffdh.X86_64.Setup
+import VerifiedGarbage.Proof.Ffdh.X86_64.Front
 import VerifiedGarbage.Proof.Bignum.Octets
 import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.Push

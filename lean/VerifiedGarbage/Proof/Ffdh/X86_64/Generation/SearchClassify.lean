@@ -5,9 +5,8 @@ import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchGuards
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchDone
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchShort
 import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchTerminate
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchData
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchLayout
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchLayout
 public import VerifiedGarbage.Impl.Ffdh.X86_64.Generation.Search
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.ControlMemory
 import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchRestore

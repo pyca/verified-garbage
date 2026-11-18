@@ -2,9 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CTState
 public import VerifiedGarbage.Impl.Ffdh.Arm.ParameterSearch
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Outputs
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Live
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.LivePolicy
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Live
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Impl.Ffdh.Arm.ParameterSearch
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint

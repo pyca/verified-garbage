@@ -11,7 +11,6 @@ import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchRestore
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Depth
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.AbiCorrect
 import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchCallLayout
-import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.Inline
 import Mathlib.Algebra.Group.Nat.Defs
 import VerifiedGarbage.Proof.Framework.Offset
 

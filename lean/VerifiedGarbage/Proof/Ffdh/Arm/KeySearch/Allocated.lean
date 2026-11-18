@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Controller
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Regions
-import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Bounds
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Geometry
 
 /-! Geometry of the nested call's allocated argument frame. -/

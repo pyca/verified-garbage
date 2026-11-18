@@ -1,8 +1,7 @@
 module
-public import VerifiedGarbage.Impl.Ffdh.PPC64LE.Cached
-public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Cached.SearchProof.Data
 
-import VerifiedGarbage.Proof.Ffdh.PPC64LE.Cached.SearchProof.Live
+public import VerifiedGarbage.Impl.Ffdh.PPC64LE.Cached
+public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Cached.SearchProof.Live
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.Generation.Search.Writes
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step

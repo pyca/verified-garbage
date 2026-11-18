@@ -1,12 +1,9 @@
 module
+
 public import VerifiedGarbage.Impl.Ffdh.X86_64.KeyGeneration.Search
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.SearchProof.Attempt
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.SearchProof.Data
-
-import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.SearchProof.LoopCT
 import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.SearchProof.Correct
-import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.SearchProof.Loop
-import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.SearchProof.Start
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -14,10 +11,7 @@ import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 meta import VerifiedGarbage.Impl.Ffdh.X86_64.KeyGeneration.Search
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.SearchProof.Attempt
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.SearchProof.Data
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.SearchProof.LoopCT
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.SearchProof.Correct
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.SearchProof.Loop
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.SearchProof.Start
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub

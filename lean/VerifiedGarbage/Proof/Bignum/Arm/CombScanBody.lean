@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
 import VerifiedGarbage.Proof.Bignum.Arm.CombScanControl
-import VerifiedGarbage.Proof.Bignum.Arm.CombScanSelect
 
 /-! Every scanned row advances the public cursor and preserves the selected value. -/
 
