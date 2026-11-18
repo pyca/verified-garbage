@@ -18,7 +18,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Avx
 public import VerifiedGarbage.Proof.TripleDes.SboxTables
 import VerifiedGarbage.Proof.TripleDes.Bitslice.OutIdx
 import VerifiedGarbage.Proof.Framework.X86_64.Straight
-import VerifiedGarbage.Proof.TripleDes.Bitslice.Round
+import VerifiedGarbage.Proof.TripleDes.Bitslice.Layout
 import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! ### `TripleDes.X86_64.BitslicedAvx2.Step`, which this module and modules that import it used -/

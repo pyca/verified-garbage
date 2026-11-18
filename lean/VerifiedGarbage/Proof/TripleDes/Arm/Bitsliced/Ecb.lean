@@ -7,7 +7,7 @@ public import VerifiedGarbage.Proof.TripleDes.Arm.Bitsliced.Pass
 public import VerifiedGarbage.Proof.TripleDes.Arm.Bitsliced.Transpose
 public import VerifiedGarbage.Proof.TripleDes.Bitslice.Tdea
 import VerifiedGarbage.Proof.TripleDes.Bitslice.Io
-import VerifiedGarbage.Proof.TripleDes.Bitslice.Round
+import VerifiedGarbage.Proof.TripleDes.Bitslice.Layout
 import VerifiedGarbage.Proof.TripleDes.Permutation
 import VerifiedGarbage.Proof.TripleDes.Schedule
 import VerifiedGarbage.Proof.Framework.Arm.Exec

@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Bytes
+import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Passes
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Pass
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
@@ -11,10 +11,11 @@ public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Impl.TripleDes.X86_64.Bitsliced
 import VerifiedGarbage.Proof.TripleDes.Bitslice.LayoutLit
 import VerifiedGarbage.Proof.TripleDes.X86_64.Lit
+import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Bytes
 public import VerifiedGarbage.Proof.TripleDes.Bitslice.Io
 public import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
 import VerifiedGarbage.Proof.TripleDes.Schedule
-import VerifiedGarbage.Proof.TripleDes.Bitslice.Round
+import VerifiedGarbage.Proof.TripleDes.Bitslice.Layout
 
 /-! ### `TripleDes.X86_64.Bitsliced.BatchIO`, which only this module used -/
 
