@@ -59,12 +59,12 @@ theorem parameterSearchOk (stack : Nat) :
 
 theorem verifyPrevalidatedOk (stack : Nat) :
     ScrubAllOk (Spec.Dsa.verifyPrevalidatedContract abi stack) stack (Spec.Dsa.verifySig.retBits abi.ptrBits) :=
-  scrubAllOk_args_any (sig := Spec.Dsa.verifySig) (by decide) fun
+  scrubAllOk_args_any (sig := Spec.Dsa.verifySig) fun
     | [_, _, _, _, _, _, _, _, _, _], _, _, _, _, _, _, h => h
 
 theorem deriveKeyOk (stack : Nat) :
     ScrubAllOk (Spec.Dsa.deriveKeyContract abi stack) stack (Spec.Dsa.deriveKeySig.retBits abi.ptrBits) :=
-  scrubAllOk_args_any (sig := Spec.Dsa.deriveKeySig) (by decide) fun
+  scrubAllOk_args_any (sig := Spec.Dsa.deriveKeySig) fun
     | [out, outLen, _, _, _, _, _, _, _], m, m₁, m₂, r, _, hb, h => by
       simp only [Spec.Dsa.deriveKeySig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
         forall_eq_or_imp, forall_eq, Elem.size] at hb
@@ -79,7 +79,7 @@ theorem deriveKeyOk (stack : Nat) :
 
 theorem generateKeyOk (stack : Nat) :
     ScrubAllOk (Spec.Dsa.generateKeyContract abi stack) stack (Spec.Dsa.generateKeySig.retBits abi.ptrBits) :=
-  scrubAllOk_args_any (sig := Spec.Dsa.generateKeySig) (by decide) fun
+  scrubAllOk_args_any (sig := Spec.Dsa.generateKeySig) fun
     | [out, outLen, _, _, _, _, _, _, _, _, _], m, m₁, m₂, r, _, hb, h => by
       simp only [Spec.Dsa.generateKeySig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
         forall_eq_or_imp, forall_eq, Elem.size] at hb
@@ -94,7 +94,7 @@ theorem generateKeyOk (stack : Nat) :
 
 theorem randomSignPrevalidatedOk (stack : Nat) :
     ScrubAllOk (Spec.Dsa.randomSignPrevalidatedContract abi stack) stack (Spec.Dsa.randomSignSig.retBits abi.ptrBits) :=
-  scrubAllOk_args_any (sig := Spec.Dsa.randomSignSig) (by decide) fun
+  scrubAllOk_args_any (sig := Spec.Dsa.randomSignSig) fun
     | [out, outLen, _, _, _, _, _, _, _, _, _, _, _], m, m₁, m₂, r, _, hb, h => by
       simp only [Spec.Dsa.randomSignSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
         forall_eq_or_imp, forall_eq, Elem.size] at hb

@@ -312,8 +312,6 @@ aarch64 vg_poly1305_update_neon
 aarch64 vg_rc2_cbc_decrypt_chained
 aarch64 vg_rc2_cbc_encrypt_chained
 aarch64 vg_rc2_cbc_init
-aarch64 vg_rsa_oaep_decrypt_precomputed
-aarch64 vg_rsa_oaep_encrypt_precomputed
 aarch64 vg_rsa_pkcs1_decrypt_precomputed
 aarch64 vg_rsa_pkcs1_decrypt_precomputed_sha256_sha2
 aarch64 vg_rsa_pkcs1_sign_precomputed

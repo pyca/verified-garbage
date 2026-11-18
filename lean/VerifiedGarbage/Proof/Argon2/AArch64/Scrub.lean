@@ -22,7 +22,7 @@ open VG.AArch64 VG.AArch64.ScrubAll
 
 theorem deriveOk (stack : Nat) :
     ScrubAllOk (Spec.Argon2.deriveContract abi stack) stack (Spec.Argon2.deriveSig.retBits abi.ptrBits) :=
-  scrubAllOk_args_any (sig := Spec.Argon2.deriveSig) (by decide) fun
+  scrubAllOk_args_any (sig := Spec.Argon2.deriveSig) fun
     | [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, out, outLen], m, m₁, m₂, r, _, hb, h => by
       simp only [Spec.Argon2.deriveSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
         forall_eq_or_imp, forall_eq] at hb

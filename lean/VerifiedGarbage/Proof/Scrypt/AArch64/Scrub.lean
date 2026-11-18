@@ -24,7 +24,7 @@ open VG.AArch64 VG.AArch64.ScrubAll
 
 theorem scryptOk (stack : Nat) :
     ScrubAllOk (Spec.Scrypt.scryptContract abi stack) stack (Spec.Scrypt.scryptSig.retBits abi.ptrBits) :=
-  scrubAllOk_args_any (sig := Spec.Scrypt.scryptSig) (by decide)
+  scrubAllOk_args_any (sig := Spec.Scrypt.scryptSig)
     fun vs m m₁ m₂ ret hlen hb h => by
     obtain ⟨pw, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 12) hlen
     replace hlen := Nat.succ.inj hlen

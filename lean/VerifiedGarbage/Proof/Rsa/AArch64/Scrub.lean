@@ -111,7 +111,7 @@ theorem keySearchOk (stack : Nat) (hW : 0 < stack := by decide) :
 
 theorem crtValuesOk (stack : Nat) :
     ScrubAllOk (Spec.Rsa.crtValuesContract abi stack) stack (Spec.Rsa.crtValuesSig.retBits abi.ptrBits) :=
-  scrubAllOk_args_pre_any (sig := Spec.Rsa.crtValuesSig) (by decide) fun
+  scrubAllOk_args_pre_any (sig := Spec.Rsa.crtValuesSig) fun
     | [dp, dpLen, dq, dqLen, qinv, qinvLen, _, _, _, pLen, _, qLen, _, _, _, _], m, m₁, m₂, r, _, hp, hb, h => by
       simp only [Spec.Rsa.crtValuesSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
         forall_eq_or_imp, forall_eq, Elem.size] at hb
@@ -137,12 +137,12 @@ theorem crtValuesOk (stack : Nat) :
 
 theorem checkKeyOk (stack : Nat) :
     ScrubAllOk (Spec.Rsa.checkKeyContract abi stack) stack (Spec.Rsa.checkKeySig.retBits abi.ptrBits) :=
-  scrubAllOk_args_any (sig := Spec.Rsa.checkKeySig) (by decide) fun
+  scrubAllOk_args_any (sig := Spec.Rsa.checkKeySig) fun
     | [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _], _, _, _, _, _, _, h => h
 
 theorem recoverPrimesDetOk (stack : Nat) :
     ScrubAllOk (Spec.Rsa.recoverPrimesDetContract abi stack) stack (Spec.Rsa.recoverPrimesDetSig.retBits abi.ptrBits) :=
-  scrubAllOk_args_pre_any (sig := Spec.Rsa.recoverPrimesDetSig) (by decide) fun
+  scrubAllOk_args_pre_any (sig := Spec.Rsa.recoverPrimesDetSig) fun
     | [p, pLen, q, qLen, _, _, _, _, _, _, _, _], m, m₁, m₂, r, _, hp, hb, h => by
       simp only [Spec.Rsa.recoverPrimesDetSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
         forall_eq_or_imp, forall_eq, Elem.size] at hb
@@ -171,7 +171,7 @@ theorem writtenRandom_of {m₁ m₂ : Mem} {o : Addr} {n : Nat} {r : BitVec 32} 
 
 theorem pkcs1EncryptRandomOk (stack : Nat) :
     ScrubAllOk (Spec.RsaPkcs1Enc.encryptRandomContract abi stack) stack (Spec.RsaPkcs1Enc.encryptRandomSig.retBits abi.ptrBits) :=
-  scrubAllOk_args_pre_any (sig := Spec.RsaPkcs1Enc.encryptRandomSig) (by decide) fun
+  scrubAllOk_args_pre_any (sig := Spec.RsaPkcs1Enc.encryptRandomSig) fun
     | [out, outLen, tape, _, _, _, _, _, _, _, _, _, _, _, _], m, m₁, m₂, r, _, hp, hb, h => by
       simp only [Spec.RsaPkcs1Enc.encryptRandomSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
         forall_eq_or_imp, forall_eq, Elem.size] at hb
@@ -196,12 +196,12 @@ theorem pkcs1EncryptRandomOk (stack : Nat) :
 
 theorem pkcs1VerifyOk (stack : Nat) :
     ScrubAllOk (Spec.RsaPkcs1Sig.verifyPrecomputedContract abi stack) stack (Spec.RsaPkcs1Sig.verifyPrecomputedSig.retBits abi.ptrBits) :=
-  scrubAllOk_args_any (sig := Spec.RsaPkcs1Sig.verifyPrecomputedSig) (by decide) fun
+  scrubAllOk_args_any (sig := Spec.RsaPkcs1Sig.verifyPrecomputedSig) fun
     | [_, _, _, _, _, _, _, _, _, _, _, _, _], _, _, _, _, _, _, h => h
 
 theorem pkcs1RecoverOk (stack : Nat) :
     ScrubAllOk (Spec.RsaPkcs1Sig.recoverPrecomputedContract abi stack) stack (Spec.RsaPkcs1Sig.recoverPrecomputedSig.retBits abi.ptrBits) :=
-  scrubAllOk_args_any (sig := Spec.RsaPkcs1Sig.recoverPrecomputedSig) (by decide) fun
+  scrubAllOk_args_any (sig := Spec.RsaPkcs1Sig.recoverPrecomputedSig) fun
     | [out, outLen, _, _, _, _, _, _, _, _, _, _, _], m, m₁, m₂, r, _, hb, h => by
       simp only [Spec.RsaPkcs1Sig.recoverPrecomputedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
         forall_eq_or_imp, forall_eq, Elem.size] at hb

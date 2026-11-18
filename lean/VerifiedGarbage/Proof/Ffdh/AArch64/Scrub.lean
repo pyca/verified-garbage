@@ -99,12 +99,12 @@ theorem written_of {m₁ m₂ : Mem} {o : Addr} {n : Nat} {r : BitVec 32} {v : O
 
 theorem checkPrivateOk (stack : Nat) :
     ScrubAllOk (Spec.Ffdh.checkPrivateContract abi stack) stack (Spec.Ffdh.checkPrivateSig.retBits abi.ptrBits) :=
-  scrubAllOk_args_any (sig := Spec.Ffdh.checkPrivateSig) (by decide) fun
+  scrubAllOk_args_any (sig := Spec.Ffdh.checkPrivateSig) fun
     | [_, _, _, _, _, _, _, _, _], _, _, _, _, _, _, h => h
 
 theorem exchangeOk (stack : Nat) :
     ScrubAllOk (Spec.Ffdh.exchangeContract abi stack) stack (Spec.Ffdh.exchangeSig.retBits abi.ptrBits) :=
-  scrubAllOk_args_any (sig := Spec.Ffdh.exchangeSig) (by decide) fun
+  scrubAllOk_args_any (sig := Spec.Ffdh.exchangeSig) fun
     | [out, outLen, _, _, _, _, _, _, _, _, _], m, m₁, m₂, r, _, hb, h => by
       simp only [Spec.Ffdh.exchangeSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
         forall_eq_or_imp, forall_eq, Elem.size] at hb
@@ -116,7 +116,7 @@ theorem exchangeOk (stack : Nat) :
 
 theorem derivePublicOk (stack : Nat) :
     ScrubAllOk (Spec.Ffdh.derivePublicContract abi stack) stack (Spec.Ffdh.derivePublicSig.retBits abi.ptrBits) :=
-  scrubAllOk_args_pre_any (sig := Spec.Ffdh.derivePublicSig) (by decide) fun
+  scrubAllOk_args_pre_any (sig := Spec.Ffdh.derivePublicSig) fun
     | [y, yLen, _, _, pLen, _, _, _, _], m, m₁, m₂, r, _, hp, hb, h => by
       simp only [Spec.Ffdh.derivePublicSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
         forall_eq_or_imp, forall_eq, Elem.size] at hb
@@ -132,7 +132,7 @@ theorem derivePublicOk (stack : Nat) :
 
 theorem sievedParameterSearchOk (stack : Nat) :
     ScrubAllOk (Spec.Ffdh.sievedParameterSearchContract abi stack) stack (Spec.Ffdh.parameterSearchSig.retBits abi.ptrBits) :=
-  scrubAllOk_args_any (sig := Spec.Ffdh.parameterSearchSig) (by decide) fun
+  scrubAllOk_args_any (sig := Spec.Ffdh.parameterSearchSig) fun
     | [out, outLen, _, _, _, _, _, _, _, _], m, m₁, m₂, r, _, hb, h => by
       simp only [Spec.Ffdh.parameterSearchSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
         forall_eq_or_imp, forall_eq, Elem.size] at hb
@@ -147,7 +147,7 @@ theorem sievedParameterSearchOk (stack : Nat) :
 
 theorem cachedKeySearchOk (stack : Nat) :
     ScrubAllOk (Spec.Ffdh.cachedKeySearchContract abi stack) stack (Spec.Ffdh.cachedKeySearchSig.retBits abi.ptrBits) :=
-  scrubAllOk_args_pre_any (sig := Spec.Ffdh.cachedKeySearchSig) (by decide) fun vs m m₁ m₂ r hlen hp hb h => by
+  scrubAllOk_args_pre_any (sig := Spec.Ffdh.cachedKeySearchSig) fun vs m m₁ m₂ r hlen hp hb h => by
     obtain ⟨x, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 14) hlen
     replace hlen := Nat.succ.inj hlen
     obtain ⟨xLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
