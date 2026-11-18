@@ -929,17 +929,6 @@ riscv64 vg_aes_siv_init
 riscv64 vg_argon2
 riscv64 vg_camellia_ctr_final
 riscv64 vg_camellia_expand_key
-riscv64 vg_cast5_cbc_decrypt_chained
-riscv64 vg_cast5_cbc_encrypt_chained
-riscv64 vg_cast5_cfb64_decrypt
-riscv64 vg_cast5_cfb64_decrypt_final
-riscv64 vg_cast5_cfb64_encrypt
-riscv64 vg_cast5_cfb64_encrypt_final
-riscv64 vg_cast5_ecb_decrypt
-riscv64 vg_cast5_ecb_encrypt
-riscv64 vg_cast5_expand_key
-riscv64 vg_cast5_ofb
-riscv64 vg_cast5_ofb_final
 riscv64 vg_cmac_triple_des_absorb
 riscv64 vg_cmac_triple_des_finish
 riscv64 vg_cmac_triple_des_stream_init
