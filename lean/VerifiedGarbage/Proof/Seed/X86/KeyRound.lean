@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.Seed.KeyRot
 public import VerifiedGarbage.Impl.Seed.X86.ExpandKey
 public import VerifiedGarbage.Proof.Seed.KeySchedule
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Seed.X86.Lanes
+public import VerifiedGarbage.Proof.Seed.X86.Crypt8
 import VerifiedGarbage.Proof.Seed.X86.Prologue
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 

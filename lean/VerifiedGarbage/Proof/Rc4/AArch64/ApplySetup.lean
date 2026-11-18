@@ -1,12 +1,288 @@
 module
 
-public import VerifiedGarbage.Proof.Rc4.AArch64.Lanes
 import VerifiedGarbage.Proof.Rc4.AArch64.Rows
 import VerifiedGarbage.Proof.Rc4.Memory
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
 public import VerifiedGarbage.Proof.Rc4.AArch64.Prga
 import VerifiedGarbage.Proof.Framework.AArch64.Simd64
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Spec.Rc4
+import VerifiedGarbage.Proof.Rc4.Stream
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.PlainSimp
+
+/-! ### `Rc4.AArch64.Lanes`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Rc4.Iterate`, which this module and modules that import it used -/
+
+section
+
+/-!
+# The stream, byte by byte
+
+`stepN c n` is the context after `n` steps from `c`, and `ks c n` the `n`-th
+keystream byte. `update` XORs the input with these bytes and ends in
+`stepN` of its length (`update_bytes`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Rc4
+open VG VG.Spec.Rc4
+
+/-- The context after `n` steps. -/
+def stepN (c : Context) : Nat → Context
+  | 0 => c
+  | n + 1 => (step (stepN c n)).1
+
+/-- Keystream byte `n`. -/
+def ks (c : Context) (n : Nat) : Byte := (step (stepN c n)).2
+
+theorem stepN_succ' (c : Context) (n : Nat) : stepN c (n + 1) = stepN (step c).1 n := by
+  induction n with
+  | zero => rfl
+  | succ n ih => simp only [stepN] at ih ⊢; rw [ih]
+
+theorem ks_succ (c : Context) (n : Nat) : ks c (n + 1) = ks (step c).1 n := by
+  simp only [ks, stepN_succ']
+
+theorem update_fst (c : Context) (bs : List Byte) : (update c bs).1 = stepN c bs.length := by
+  induction bs generalizing c with
+  | nil => rfl
+  | cons b bs ih => simp only [update, List.length_cons, stepN_succ', ih]
+
+/-- Bytes that are the input XORed with the keystream are `update`'s output. -/
+theorem update_bytes (c : Context) (m m' : Mem) (d : Addr) (n : Nat)
+    (h : ∀ k < n, m' (d + BitVec.ofNat 64 k) = m (d + BitVec.ofNat 64 k) ^^^ ks c k) :
+    bytesAt m' d n = (update c (bytesAt m d n)).2 := by
+  induction n generalizing c d with
+  | zero => rfl
+  | succ n ih =>
+    rw [bytes_cons, bytes_cons]
+    simp only [update]
+    have h0 := h 0 (by omega_using [])
+    simp only [BitVec.add_zero] at h0
+    rw [h0, ih (step c).1 (d + 1#64) fun k hk => by
+      have := h (k + 1) (by omega_using [hk])
+      rw [ks_succ] at this
+      rw [show d + 1#64 + BitVec.ofNat 64 k = d + BitVec.ofNat 64 (k + 1) by
+        rw [BitVec.add_assoc]; congr 1; apply BitVec.eq_of_toNat_eq
+        simp only [BitVec.toNat_add, BitVec.toNat_ofNat]; omega_using []]
+      exact this]
+    rfl
+
+end VG.Proof.Rc4
+
+end
+
+end
+
+/-!
+# A group of sixteen bytes
+
+In a group whose base is `B`, lane `n` is skipped while `x5` counts lanes to
+skip (the first group starts at lane `sk = (i + 1) mod 16`), does nothing
+once the data has ended, and otherwise produces the next byte of the stream
+(`lane_ok`). `p` bytes of the `N` at `D` are done after lane `n`:
+`p = min N (p₀ + (n - sk))` (`LaneInv`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Rc4.AArch64
+open VG VG.AArch64 VG.AArch64.RegUpd VG.Impl.Rc4.AArch64 VG.Spec.Rc4 VG.Proof.Rc4
+
+/-- The stream's fixed parameters: the context it starts from, the data and
+its original bytes, and the state the loop starts in. -/
+structure Glob where
+  c₀ : Context
+  D : Addr
+  N : Nat
+  M₀ : Mem
+  s₀ : State
+
+/-- `p` bytes of the data done. -/
+structure DataAt (g : Glob) (p : Nat) (s : State) : Prop where
+  le : p ≤ g.N
+  x1 : s.gpr .x1 = g.D + BitVec.ofNat 64 p
+  x2 : s.gpr .x2 = BitVec.ofNat 64 (g.N - p)
+  bytes : ∀ k < g.N, s.mem (g.D + BitVec.ofNat 64 k) =
+    if k < p then g.M₀ (g.D + BitVec.ofNat 64 k) ^^^ ks g.c₀ k else g.M₀ (g.D + BitVec.ofNat 64 k)
+  frame : Frame [⟨g.D, g.N⟩] g.M₀ s.mem
+
+/-- What the loop keeps: the registers it does not use, the regions and the
+stack pointer. -/
+structure Kept (g : Glob) (s : State) : Prop where
+  gpr : ∀ r, r ≠ .x1 → r ≠ .x2 → r ≠ .x5 → r ≠ .x6 → r ≠ .x7 → r ≠ .x8 → s.gpr r = g.s₀.gpr r
+  rd : s.rd = g.s₀.rd
+  wr : s.wr = g.s₀.wr
+  sp : s.sp = g.s₀.sp
+
+/-- The bytes done after lane `n` of the group with base `B` that starts
+after `p₀` bytes, skipping its first `sk` lanes. -/
+def doneAt (g : Glob) (p₀ sk n : Nat) : Nat := min g.N (p₀ + (n - sk))
+
+structure LaneInv (g : Glob) (B p₀ sk n : Nat) (s : State) : Prop where
+  prga : PrgaRegs s B (stepN g.c₀ (doneAt g p₀ sk n))
+  data : DataAt g (doneAt g p₀ sk n) s
+  x5 : s.gpr .x5 = BitVec.ofNat 64 (sk - n)
+  x8 : s.gpr .x8 = BitVec.ofNat 64 B
+  next : doneAt g p₀ sk n < g.N →
+    (stepN g.c₀ (doneAt g p₀ sk n)).i + 1 = BitVec.ofNat 8 (B + max n sk) ∧
+      s.v si = bc (tbyte s.v (max n sk))
+  kept : Kept g s
+  vkept : ∀ r, r ∉ stepRegs → r ≠ negBase → s.v r = g.s₀.v r
+
+theorem eval_nonzero' (s : State) (r : Reg) {m : Nat} (h : s.gpr r = BitVec.ofNat 64 m)
+    (hm : m < 2 ^ 64) : isa.eval (.nonzero .x r) s = some (m != 0) := by
+  show some (s.read .x r != 0) = _
+  simp only [State.read, BitVec.setWidth_eq, h]
+  congr 1
+  by_cases h0 : m = 0
+  · subst h0; rfl
+  · have hne : BitVec.ofNat 64 m ≠ 0 := by
+      intro e; have := congrArg BitVec.toNat e
+      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hm] at this; simp at this; omega_using [h0, this]
+    change (BitVec.ofNat 64 m != (0 : BitVec 64)) = (m != 0)
+    simp only [bne, beq_eq_false_iff_ne.mpr hne, beq_eq_false_iff_ne.mpr h0]
+
+theorem eval_zero' (s : State) (r : Reg) {m : Nat} (h : s.gpr r = BitVec.ofNat 64 m)
+    (hm : m < 2 ^ 64) : isa.eval (.zero .x r) s = some (m == 0) := by
+  show some (s.read .x r == 0) = _
+  simp only [State.read, BitVec.setWidth_eq, h]
+  congr 1
+  by_cases h0 : m = 0
+  · subst h0; rfl
+  · have hne : BitVec.ofNat 64 m ≠ 0 := by
+      intro e; have := congrArg BitVec.toNat e
+      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hm] at this; simp at this; omega_using [h0, this]
+    change (BitVec.ofNat 64 m == (0 : BitVec 64)) = (m == 0)
+    simp only [beq_eq_false_iff_ne.mpr hne, beq_eq_false_iff_ne.mpr h0]
+
+theorem write_byte_apply (m : Mem) (p x : Addr) (v : BitVec 8) :
+    m.write p 1 v x = if x = p then v else m x := VG.Proof.Rc4.write_byte m p x v
+
+/-- The data region is writable, and fits in the address space. -/
+structure DataOk (g : Glob) : Prop where
+  wr : (⟨g.D, g.N⟩ : Region) ∈ g.s₀.wr
+  fit : g.N < 2 ^ 64
+
+theorem DataOk.byte {g : Glob} (h : DataOk g) {s : State} (hk : Kept g s) {p : Nat} (hp : p < g.N) :
+    InRegions s.wr (g.D + BitVec.ofNat 64 p) 1 :=
+  ⟨_, hk.wr ▸ h.wr, Offset.contains_base _ (by omega_using [hp]) (by have := h.fit; omega_using [hp, this])⟩
+
+theorem lane_ok (g : Glob) (hg : DataOk g) {B p₀ sk n : Nat} (hsk : sk ≤ 15) (hn : n < 16) {s : State}
+    (h : LaneInv g B p₀ sk n s) : WP isa (lane n) s (LaneInv g B p₀ sk (n + 1)) := by
+  have hfit := hg.fit
+  unfold lane
+  apply WP.ite _ (eval_nonzero' s .x5 h.x5 (by omega_using [hsk]))
+  · intro hz
+    have hlt : n < sk := by simp at hz; omega_using [hz]
+    let t := s.write .x .x5 (s.read .x .x5 - BitVec.ofNat _ 1)
+    refine WP.of_runBlock ⟨t, by rw [runBlock_cons, exec_subImm_x (by decide), runStep_some,
+      runBlock_nil], ?_⟩
+    have hd : doneAt g p₀ sk (n + 1) = doneAt g p₀ sk n := by simp only [doneAt]; omega_using [hlt]
+    have hm : max (n + 1) sk = max n sk := by omega_using [hlt]
+    have g5 : ∀ r, r ≠ .x5 → t.gpr r = s.gpr r := fun r hr => by simp [t, State.write, hr]
+    have x5 : t.gpr .x5 = BitVec.ofNat 64 (sk - (n + 1)) := by
+      simp only [t, State.write, State.read, BitVec.setWidth_eq, ite_true, h.x5]
+      rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by omega_using []) (by omega_using [hlt])]
+      congr 1
+    exact {
+      prga := by
+        rw [hd]
+        exact ⟨h.prga.table, h.prga.j, h.prga.nb,
+          ⟨h.prga.consts.lns, h.prga.consts.c64, h.prga.consts.c128⟩⟩
+      data := by
+        rw [hd]
+        exact ⟨h.data.le, by rw [g5 _ (by decide), h.data.x1], by rw [g5 _ (by decide), h.data.x2],
+          h.data.bytes, h.data.frame⟩
+      x5 := x5
+      x8 := by rw [g5 _ (by decide), h.x8]
+      next := by rw [hd, hm]; exact h.next
+      kept := ⟨fun r a b c d e f => by rw [g5 r c, h.kept.gpr r a b c d e f], h.kept.rd, h.kept.wr,
+        h.kept.sp⟩
+      vkept := h.vkept }
+  · intro hnz
+    have hge : sk ≤ n := by simp at hnz; omega_using [hnz]
+    let p := doneAt g p₀ sk n
+    have hp := h.data.le
+    apply WP.ite _ (eval_zero' s .x2 h.data.x2 (by omega_using [hfit]))
+    · intro hz
+      have hpN : p = g.N := by simp at hz; omega_using [hp, hz]
+      apply WP.block_nil
+      have hd : doneAt g p₀ sk (n + 1) = p := by simp only [doneAt, p] at hpN ⊢; omega_using [hpN]
+      exact {
+        prga := by rw [hd]; exact h.prga
+        data := by rw [hd]; exact h.data
+        x5 := by rw [h.x5]; congr 1; omega_using [hge]
+        x8 := h.x8
+        next := fun hlt => absurd hlt (by omega_using [hpN, hd])
+        kept := h.kept
+        vkept := h.vkept }
+    · intro hnz2
+      have hpN : p < g.N := by simp at hnz2; omega_using [hnz2]
+      obtain ⟨hi, hsi⟩ := h.next hpN
+      rw [show max n sk = n by omega_using [hge]] at hi hsi
+      have hd : InRegions s.wr (s.gpr .x1) 1 := by rw [h.data.x1]; exact hg.byte h.kept hpN
+      refine WP.mono (byte_ok hn h.prga hi hsi hd) fun t ⟨pr, tsi, m, x1, x2, gg, vv, rd, wr, sp⟩ => ?_
+      have hd1 : doneAt g p₀ sk (n + 1) = p + 1 := by simp only [doneAt, p] at hpN ⊢; omega_using [hge, hpN]
+      have bytes : ∀ k < g.N, t.mem (g.D + BitVec.ofNat 64 k) =
+          if k < p + 1 then g.M₀ (g.D + BitVec.ofNat 64 k) ^^^ ks g.c₀ k
+          else g.M₀ (g.D + BitVec.ofNat 64 k) := by
+        intro k hk
+        rw [m, h.data.x1, write_byte_apply]
+        have hne : (g.D + BitVec.ofNat 64 k = g.D + BitVec.ofNat 64 p) ↔ k = p := by
+          constructor
+          · intro e; have := congrArg (fun x => (x - g.D).toNat) e
+            simp only [Offset.add_sub_cancel_left, BitVec.toNat_ofNat] at this
+            rw [Nat.mod_eq_of_lt (by omega_using [hfit, hk]), Nat.mod_eq_of_lt (by omega_using [hfit, hp])] at this; exact this
+          · intro e; rw [e]
+        by_cases hkp : k = p
+        · subst hkp
+          rw [ite_eq_left rfl, h.data.bytes _ hk, ite_eq_right (by omega_using []), ite_eq_left (by omega_using [])]
+          rfl
+        · rw [ite_eq_right (fun e => hkp (hne.mp e)), h.data.bytes k hk]
+          exact ite_iff ⟨fun h' => by omega_using [h'], fun h' => by omega_using [hkp, h']⟩ _ _
+      have nexti : (stepN g.c₀ (p + 1)).i + 1 = BitVec.ofNat 8 (B + max (n + 1) sk) := by
+        rw [show stepN g.c₀ (p + 1) = (step (stepN g.c₀ p)).1 from rfl, show max (n + 1) sk = n + 1 by omega_using [hge]]
+        simp only [step]
+        rw [hi]
+        apply BitVec.eq_of_toNat_eq
+        simp only [BitVec.toNat_add, BitVec.toNat_ofNat, show (1 : BitVec 8).toNat = 1 from rfl]
+        omega_using []
+      exact {
+        prga := by rw [hd1]; exact pr
+        data := by
+          rw [hd1]
+          refine ⟨by omega_using [hpN], ?_, ?_, bytes, ?_⟩
+          · rw [x1, h.data.x1, BitVec.add_assoc, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl,
+              BitVec.ofNat_add_ofNat]
+          · rw [x2, h.data.x2, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl,
+              BitVec.ofNat_sub_ofNat_of_le _ _ (by omega_using []) (by omega_using [hpN])]
+            congr 1
+          · rw [m, h.data.x1]
+            exact h.data.frame.write List.mem_cons_self _ (Offset.contains_base _ (by omega_using [hpN]) (by omega_using [hfit, hp]))
+        x5 := by
+          rw [gg _ (by decide) (by decide) (by decide) (by decide), h.x5]; congr 1; omega_using [hge]
+        x8 := by rw [gg _ (by decide) (by decide) (by decide) (by decide), h.x8]
+        next := by
+          rw [hd1]
+          exact fun _ => ⟨nexti, by rw [tsi, show max (n + 1) sk = n + 1 by omega_using [hge]]⟩
+        kept := ⟨fun r a b c d e f => by rw [gg r a b d e, h.kept.gpr r a b c d e f],
+          rd.trans h.kept.rd, wr.trans h.kept.wr, sp.trans h.kept.sp⟩
+        vkept := fun r hr hn => by rw [vv r hr, h.vkept r hr hn] }
+
+end VG.Proof.Rc4.AArch64
+
+end
+
+end
 
 /-! ### `Rc4.AArch64.Consts`, which this module and modules that import it used -/
 

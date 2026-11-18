@@ -2,8 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Aes.Rounds
 public import VerifiedGarbage.Proof.Aes.AArch64.Aese.Ctr32
-public import VerifiedGarbage.Proof.Aes.AArch64.Aese.Dec
-public import VerifiedGarbage.Proof.Aes.AArch64.Blocks
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -15,8 +13,6 @@ import VerifiedGarbage.Proof.Framework.AArch64.ResidueTaint
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Aes.AArch64.Aese.Ctr32
-meta import VerifiedGarbage.Proof.Aes.AArch64.Aese.Dec
-meta import VerifiedGarbage.Proof.Aes.AArch64.Blocks
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.AddrArith
@@ -27,6 +23,410 @@ meta import VerifiedGarbage.TCB.AArch64.Residue
 meta import VerifiedGarbage.Proof.Framework.AArch64.ResidueTaint
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Aes.AArch64.Aese.Rounds
+public import VerifiedGarbage.Impl.Aes.AArch64.AeseBlocks
+public import VerifiedGarbage.Proof.Aes.InvRounds
+public import VerifiedGarbage.Proof.Aes.Vector -- shake: keep (exports the existing inverse-round value interface)
+meta import VerifiedGarbage.Proof.Aes.AArch64.Aese.Rounds
+meta import VerifiedGarbage.Impl.Aes.AArch64.AeseBlocks
+meta import VerifiedGarbage.Proof.Aes.InvRounds
+meta import VerifiedGarbage.Proof.Aes.Vector
+public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+public import VerifiedGarbage.Proof.Aes.AArch64.Ctr32
+meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+meta import VerifiedGarbage.Proof.Aes.AArch64.Ctr32
+public import VerifiedGarbage.Spec.Aes.Contract
+public import VerifiedGarbage.Impl.Aes.AArch64.Blocks
+public import VerifiedGarbage.Proof.Aes.AArch64.Encrypt
+import VerifiedGarbage.Proof.Aes.InvSboxSpec
+import VerifiedGarbage.Proof.Aes.InvBitsliced
+meta import VerifiedGarbage.Spec.Aes.Contract
+meta import VerifiedGarbage.Impl.Aes.AArch64.Blocks
+meta import VerifiedGarbage.Proof.Aes.AArch64.Encrypt
+meta import VerifiedGarbage.Proof.Aes.InvSboxSpec
+meta import VerifiedGarbage.Proof.Aes.InvBitsliced
+meta import VerifiedGarbage.Proof.Aes.Rounds
+
+/-! ### `Aes.AArch64.Blocks`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Aes.AArch64.Ecb`, which this module and modules that import it used -/
+
+section
+
+/-!
+# AES on whole blocks on AArch64: the data's invariant
+
+The data's invariant (`EcbInv`) says that the first `k` blocks hold the
+transformation of the original ones (`ecbOut`), and the others are still
+the original ones (`ecbInv_orig`); a write apart from the data keeps it
+(`ecbInv_frame`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Aes.AArch64
+
+open VG VG.AArch64 VG.AArch64.Straight VG.Bitslice VG.Impl.Aes.AArch64 VG.Proof.Aes
+
+/-! ## Storing -/
+
+/-- The data after `k` blocks: the first `k` of the `n` blocks at `D` are
+`F`'s, the others are still `m₀`'s. -/
+def EcbInv (m₀ m : Mem) (D : Addr) (n k : Nat) (F : Nat → Spec.Aes.State) : Prop :=
+  ∀ i < 16 * n, m (D + BitVec.ofNat 64 i) =
+    if i < 16 * k then (F (i / 16)).getD (i % 16) 0 else m₀ (D + BitVec.ofNat 64 i)
+
+theorem ecbInv_frame {m₀ m m' : Mem} {D : Addr} {n k : Nat} {F : Nat → Spec.Aes.State} {rs : List Region}
+    (hf : Frame rs m m') (hd : ∀ r ∈ rs, Region.Disjoint ⟨D, 16 * n⟩ r) (hn : 16 * n < 2 ^ 64)
+    (h : EcbInv m₀ m D n k F) : EcbInv m₀ m' D n k F := fun i hi => by
+  rw [← h i hi]
+  exact hf.bytes (R := ⟨D, 16 * n⟩) hd (by simp only; omega_using [hn]) hi
+
+/-- Before `k` blocks are stored, a block not yet stored is still `m₀`'s. -/
+theorem ecbInv_orig {m₀ m : Mem} {D : Addr} {n k : Nat} {F : Nat → Spec.Aes.State}
+    (h : EcbInv m₀ m D n k F) {j : Nat} (hj : k ≤ j) (hjn : j < n) :
+    Spec.Aes.stateAt m (D + BitVec.ofNat 64 (16 * j)) = Spec.Aes.stateAt m₀ (D + BitVec.ofNat 64 (16 * j)) := by
+  apply Vector.ext
+  intro i hi
+  simp only [Spec.Aes.stateAt, Vector.getElem_ofFn]
+  rw [Offset.add_add, h _ (by omega_using [hjn, hi]), ite_eq_right (show ¬ 16 * j + i < 16 * k by omega_using [hj])]
+
+/-! ## A group -/
+
+/-- The results: `f R w` of each block of `m₀`'s data. -/
+def ecbOut (f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State) (m₀ : Mem) (D : Addr) (R : Nat)
+    (w : List Byte) (j : Nat) : Spec.Aes.State :=
+  f R w (Spec.Aes.stateAt m₀ (D + BitVec.ofNat 64 (16 * j)))
+
+end VG.Proof.Aes.AArch64
+
+end
+
+end
+
+/-!
+# AES on whole blocks on AArch64: the contract
+
+The AArch64 contract of `vg_aes_encrypt_blocks` and `vg_aes_decrypt_blocks`
+(`blocksAArch64`), a state satisfying it (`blocksSat`), the moves of the
+arguments (`blocksSetup_ok`), and the data after the last group, as states
+(`statesAt_of_ecbInv`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Aes
+
+open VG.AArch64 in
+/-- AArch64 contract for `vg_aes_encrypt_blocks(schedule: *const [u8; 240],
+rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256])` (and
+`vg_aes_decrypt_blocks`, with `f` the inverse cipher): replaces each of the
+`n` blocks at `data` with `f rounds w` of it, for the key schedule `w`.
+
+The code may read `schedule` (240 bytes) and read and write `data` (`16 n`
+bytes) and `scratch` (2048 bytes, whose contents on exit are unspecified).
+These may not overlap each other, and `data` may not wrap around the end of
+the address space. `rounds` is 10, 12 or 14. The pointers, `rounds` and `n`
+are public; the key schedule and the data are secret. -/
+def blocksAArch64 (f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State) : Contract AArch64.isa where
+  pre s :=
+    let sched : Region := ⟨s.gpr .x0, 240⟩
+    let data : Region := ⟨s.gpr .x2, 16 * (s.gpr .x3).toNat⟩
+    let scratch : Region := ⟨s.gpr .x4, 2048⟩
+    s.rd = [sched] ∧ s.wr = [data, scratch] ∧
+    sched.Disjoint data ∧ sched.Disjoint scratch ∧ data.Disjoint scratch ∧
+    (s.gpr .x2).toNat + 16 * (s.gpr .x3).toNat ≤ 2 ^ 64 ∧
+    ((s.gpr .x1).toNat = 10 ∨ (s.gpr .x1).toNat = 12 ∨ (s.gpr .x1).toNat = 14)
+  post s s' :=
+    Spec.Aes.statesAt s'.mem (s.gpr .x2) (s.gpr .x3).toNat =
+      (Spec.Aes.statesAt s.mem (s.gpr .x2) (s.gpr .x3).toNat).map
+        (f (s.gpr .x1).toNat (Spec.Aes.bytesAt s.mem (s.gpr .x0) (16 * ((s.gpr .x1).toNat + 1))))
+  pub s₁ s₂ :=
+    s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧ s₁.gpr .x2 = s₂.gpr .x2 ∧
+    s₁.gpr .x3 = s₂.gpr .x3 ∧ s₁.gpr .x4 = s₂.gpr .x4 ∧ s₁.sp = s₂.sp
+
+end VG.Proof.Aes
+
+namespace VG.Proof.Aes.AArch64
+
+open VG VG.AArch64 VG.AArch64.Straight VG.Bitslice VG.Impl.Aes.AArch64 VG.Proof.Aes
+
+theorem blocksSetup_ok (s : State) :
+    ∃ s', runBlock isa blocksSetup s = some s' ∧ s'.gpr .x5 = s.gpr .x4 ∧ s'.gpr .x4 = s.gpr .x3 ∧
+      s'.gpr .x3 = s.gpr .x2 ∧ (∀ r, r ≠ .x3 → r ≠ .x4 → r ≠ .x5 → s'.gpr r = s.gpr r) ∧
+      s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by
+  refine ⟨_, by rw [blocksSetup, movR, movR, movR, runBlock_cons, exec_addImm_x (by decide),
+    runStep_some, runBlock_cons, exec_addImm_x (by decide), runStep_some, runBlock_cons,
+    exec_addImm_x (by decide), runStep_some, runBlock_nil], ?_⟩
+  exact ⟨by simp [State.write, State.read], by simp [State.write, State.read],
+    by simp [State.write, State.read], fun r h1 h2 h3 => by simp [State.write, h1, h2, h3],
+    rfl, rfl, rfl, rfl⟩
+
+/-- The data after the last group, as states. -/
+theorem statesAt_of_ecbInv {m₀ m : Mem} {D : Addr} {n : Nat} {F : Nat → Spec.Aes.State}
+    (h : EcbInv m₀ m D n n F) : Spec.Aes.statesAt m D n = (List.range n).map F := by
+  simp only [Spec.Aes.statesAt]
+  refine List.map_congr_left fun j hj => ?_
+  have hj := List.mem_range.mp hj
+  apply Vector.ext
+  intro t ht
+  simp only [Spec.Aes.stateAt, Vector.getElem_ofFn]
+  rw [Offset.add_add, h _ (by omega_arith), ite_eq_left (show 16 * j + t < 16 * n by omega_arith),
+    show (16 * j + t) / 16 = j by omega_arith, show (16 * j + t) % 16 = t by omega_arith, getD_eq _ ht]
+
+/-! ## The two functions -/
+
+/-- A state satisfying the precondition (one block). -/
+def blocksSat : State where
+  gpr r := match r with
+    | .x0 => 0x1000 | .x1 => 10 | .x2 => 0x3000 | .x3 => 1 | .x4 => 0x4000
+    | _ => 0
+  sp := 0x8000
+  mem _ := 0
+  rd := [⟨0x1000, 240⟩]
+  wr := [⟨0x3000, 16⟩, ⟨0x4000, 2048⟩]
+
+end VG.Proof.Aes.AArch64
+
+end
+
+end
+
+/-! ### `Aes.AArch64.Aese.Dec`, which this module and modules that import it used -/
+
+section
+
+/-!
+# The Armv8 AES instructions: decryption
+
+On registers holding states (`st`), `aesd` is `AddRoundKey`, `InvShiftRows`
+and `InvSubBytes` (`st_invSub`), and `aesimc` is `InvMixColumns`
+(`st_aesimc`). Since `InvMixColumns` is linear, `aesd` with `InvMixColumns` of
+a round key then `aesimc` is a middle round of FIPS 197's inverse cipher,
+whose `AddRoundKey` is moved through the `InvMixColumns` (the equivalent
+inverse cipher, §5.3.5): `dround_st`.
+
+The register of a block holds, after `m` middle rounds, a state that the
+round key to be used next (`dkey`: the last round key at first, then the
+middle ones through `InvMixColumns`) turns into the specification's state
+after those rounds (`DInv`). `aesDec_ok` proves that
+`Impl.Aes.AArch64.Aese.aesDec` decrypts each register of a list, from the
+round keys as `decSetup` leaves them (`DKeys`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Aes.AArch64.Aese
+
+open VG.AArch64
+open VG.Impl.Aes.AArch64.Aese (kreg dreg drnd dlast aesDec)
+open VG.Spec.Aes (invSubBytes invShiftRows invMixColumns addRoundKey invSbox roundKey invCipher)
+open VG.Proof.Aes (rkState irnd invMid invMid_succ invCipher_eq invMixColumns_addRoundKey)
+
+export VG.Proof.Aes.Vector (
+  invSbox_eq getD_invSubBytes getD_invShiftRows getD_invMixColumns vbyte_invShiftRows vbyte_invMixColumns st_aesimc st_invSub imcKey getD_imcKey keyIs_aesimc dround_st dlast_st)
+
+/-! ## The rounds -/
+
+/-- The round key the registers need after `m` middle rounds: the last at
+first, then those of the middle rounds through `InvMixColumns`. -/
+def dkey (nr : Nat) (w : List Byte) (m : Nat) : List Byte :=
+  if m = 0 then roundKey w nr else imcKey (roundKey w (nr - m))
+
+/-- Each register `b` of `regs` holds the state after `m` middle rounds of
+the inverse cipher, from the state `x b`, but for `AddRoundKey` with
+`dkey m`. -/
+def DInv (regs : List VReg) (nr : Nat) (w : List Byte) (x : VReg → Spec.Aes.State) (m : Nat)
+    (s : State) : Prop :=
+  ∀ b ∈ regs, addRoundKey (st (s.v b)) (dkey nr w m) = invMid nr w m (addRoundKey (x b) (roundKey w nr))
+
+/-- What decryption needs of the state: the round keys as `decSetup` leaves
+them, and `x6`, `x7` for the number of rounds. -/
+structure DKeys (nr : Nat) (w : List Byte) (s : State) : Prop where
+  rounds : nr = 10 ∨ nr = 12 ∨ nr = 14
+  last : KeyIs (s.v .v30) (roundKey w nr)
+  mid : ∀ j, 1 ≤ j → j < nr → KeyIs (s.v (dreg j)) (imcKey (roundKey w j))
+  k0 : KeyIs (s.v .v16) (roundKey w 0)
+  x6 : s.gpr .x6 = BitVec.ofNat 64 nr - 10
+  x7 : s.gpr .x7 = BitVec.ofNat 64 nr - 12
+
+theorem BlockRegs.dreg {regs : List VReg} (h : BlockRegs regs) (j : Nat) : dreg j ∉ regs := by
+  unfold Impl.Aes.AArch64.Aese.dreg
+  split
+  · exact fun h' => (h.2 _ h').2.2.2.2.2.2.2.2.2.2.2.2.2.1 rfl
+  · exact h.kreg j
+
+theorem BlockRegs.v30 {regs : List VReg} (h : BlockRegs regs) : VReg.v30 ∉ regs :=
+  fun h' => (h.2 _ h').2.2.2.2.2.2.2.2.2.2.2.2.2.2 rfl
+
+theorem BlockRegs.v16 {regs : List VReg} (h : BlockRegs regs) : VReg.v16 ∉ regs :=
+  fun h' => (h.2 _ h').1 rfl
+
+theorem DKeys.of_frame {nr : Nat} {w : List Byte} {rs : List VReg} {s s' : State} (h : DKeys nr w s)
+    (hf : VFrame rs s s') (hrs : BlockRegs rs) : DKeys nr w s' :=
+  ⟨h.rounds, by rw [hf.v _ hrs.v30]; exact h.last,
+    fun j h1 h2 => by rw [hf.v _ (hrs.dreg j)]; exact h.mid j h1 h2,
+    by rw [hf.v _ hrs.v16]; exact h.k0, by rw [hf.gpr]; exact h.x6, by rw [hf.gpr]; exact h.x7⟩
+
+theorem drnd_run (k b : VReg) (s : State) :
+    runBlock isa [.vop (.aesd b k), .vop (.aesimc b b)] s =
+      some (s.setV b (aesInvMixColumns (aesMapBytes aesInvSbox (aesInvShiftRows (s.v b ^^^ s.v k))))) := by
+  simp only [runBlock_cons, runStep_some, runBlock_nil, isa, exec, VOp.eval, Option.map_some]
+  rw [setV_v_self, setV_setV]
+
+/-- A middle round, with the key register holding `dkey m`. -/
+theorem dround_ok {regs : List VReg} (hr : BlockRegs regs) {nr : Nat} {w : List Byte}
+    {x : VReg → Spec.Aes.State} {m : Nat} (hm : m + 1 < nr) {k : VReg} (hkr : k ∉ regs) {s : State}
+    (hk : KeyIs (s.v k) (dkey nr w m)) (hI : DInv regs nr w x m s) :
+    WP isa (.block (drnd regs k)) s fun s' => DInv regs nr w x (m + 1) s' ∧ VFrame regs s s' := by
+  refine WP.mono (each_ok _
+    (fun v k => aesInvMixColumns (aesMapBytes aesInvSbox (aesInvShiftRows (v ^^^ k))))
+    k (fun b s _ => drnd_run _ b s) regs s hr.1 hkr)
+    fun s' ⟨hv, hf⟩ => ⟨fun b hb => ?_, hf⟩
+  rw [hv b hb, dkey, ite_eq_right (by omega), show nr - (m + 1) = nr - 1 - m by omega, dround_st hk (hI b hb),
+    invMid_succ]
+  rfl
+
+/-- A middle round with round key `j = nr − m` (`m ≥ 1`). -/
+theorem dround_ok' {regs : List VReg} (hr : BlockRegs regs) {nr : Nat} {w : List Byte}
+    {x : VReg → Spec.Aes.State} {m : Nat} (j : Nat) {k : VReg} (e : k = dreg j) (hj : j + m = nr)
+    (hj1 : 1 < j) (hm : 1 ≤ m) {s : State} (hK : DKeys nr w s) (hI : DInv regs nr w x m s) :
+    WP isa (.block (drnd regs k)) s fun s' => DInv regs nr w x (m + 1) s' ∧ VFrame regs s s' := by
+  subst e
+  refine dround_ok hr (by omega_using [hj, hj1]) (hr.dreg j) ?_ hI
+  rw [dkey, ite_eq_right (by omega_using [hm]), show nr - m = j by omega_using [hj]]
+  exact hK.mid j (by omega_using [hj1]) (by omega_using [hj, hm])
+
+/-- Two middle rounds, with round keys `j` and `j − 1`. -/
+theorem dtwo_ok {regs : List VReg} (hr : BlockRegs regs) {nr : Nat} {w : List Byte}
+    {x : VReg → Spec.Aes.State} {m : Nat} (j : Nat) {k₁ k₂ : VReg} (e₁ : k₁ = dreg j)
+    (e₂ : k₂ = dreg (j - 1)) (hj : j + m = nr) (hj1 : 2 < j) (hm : 1 ≤ m) {s : State}
+    (hK : DKeys nr w s) (hI : DInv regs nr w x m s) :
+    WP isa (.block (drnd regs k₁ ++ drnd regs k₂)) s fun s' =>
+      DInv regs nr w x (m + 2) s' ∧ VFrame regs s s' := by
+  rw [WP.block_append_iff]
+  refine WP.mono (dround_ok' hr j e₁ hj (by omega_using [hj1]) hm hK hI) fun s₁ ⟨hI₁, hf₁⟩ => ?_
+  exact WP.mono (dround_ok' hr (j - 1) e₂ (by omega_using [hj, hj1]) (by omega_using [hj1]) (by omega_using []) (hK.of_frame hf₁ hr) hI₁)
+    fun s₂ ⟨hI₂, hf₂⟩ => ⟨hI₂, hf₁.trans hf₂⟩
+
+/-- The middle rounds with round keys `9 … 2`. -/
+theorem drounds_ok {regs : List VReg} (hr : BlockRegs regs) {nr : Nat} {w : List Byte}
+    {x : VReg → Spec.Aes.State} (hnr : 10 ≤ nr) (k : Nat) (hk : k ≤ 8) {s : State} (hK : DKeys nr w s)
+    (hI : DInv regs nr w x (nr - 9) s) :
+    WP isa (.block ((List.range k).flatMap fun j => drnd regs (kreg (9 - j)))) s fun s' =>
+      DInv regs nr w x (nr - 9 + k) s' ∧ VFrame regs s s' := by
+  induction k with
+  | zero => rw [List.range_zero, List.flatMap_nil]; exact WP.block_nil ⟨hI, VFrame.refl _ _⟩
+  | succ k ih =>
+    rw [List.range_succ, List.flatMap_append, WP.block_append_iff]
+    refine WP.mono (ih (by omega_using [hk])) fun s₁ ⟨hI₁, hf₁⟩ => ?_
+    simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil]
+    refine WP.mono (dround_ok' hr (9 - k) (by simp [Impl.Aes.AArch64.Aese.dreg, show 9 - k ≠ 13 by omega_using []])
+      (by omega_using [hnr, hk]) (by omega_using [hk]) (by omega_using [hnr]) (hK.of_frame hf₁ hr) hI₁) fun s' ⟨hI', hf'⟩ => ⟨?_, hf₁.trans hf'⟩
+    rw [show nr - 9 + (k + 1) = nr - 9 + k + 1 by omega_using []]; exact hI'
+
+/-- The middle rounds with round keys `Nr − 1 … 10`. -/
+theorem dmid_ok {regs : List VReg} (hr : BlockRegs regs) {nr : Nat} {w : List Byte}
+    {x : VReg → Spec.Aes.State} {s : State} (hK : DKeys nr w s) (hI : DInv regs nr w x 1 s) :
+    WP isa (.ite (.zero .x .x6) (.block [])
+        (.seq (.ite (.zero .x .x7) (.block []) (.block (drnd regs .v29 ++ drnd regs .v28)))
+          (.block (drnd regs .v27 ++ drnd regs .v26)))) s
+      fun s' => DInv regs nr w x (nr - 9) s' ∧ VFrame regs s s' := by
+  have hx6 := hK.x6
+  obtain rfl | rfl | rfl := hK.rounds
+  · exact WP.ite true (by simp only [AArch64.eval, State.read, hx6]; decide)
+      (fun _ => WP.block_nil ⟨hI, VFrame.refl _ _⟩) (fun h => absurd h (by decide))
+  · refine WP.ite false (by simp only [AArch64.eval, State.read, hx6]; decide)
+      (fun h => absurd h (by decide)) fun _ => ?_
+    have hx7 := hK.x7
+    have h₁ : WP isa (.ite (.zero .x .x7) (.block [])
+        (.block (drnd regs .v29 ++ drnd regs .v28))) s
+        (fun s' => DInv regs 12 w x 1 s' ∧ VFrame regs s s') :=
+      WP.ite true (by simp only [AArch64.eval, State.read, hx7]; decide)
+        (fun _ => WP.block_nil ⟨hI, VFrame.refl _ _⟩) (fun h => absurd h (by decide))
+    refine WP.seq (WP.mono h₁ fun s₁ ⟨hI₁, hf₁⟩ => ?_)
+    exact WP.mono (dtwo_ok hr 11 rfl rfl (by omega_using []) (by omega_using []) (by omega_using []) (hK.of_frame hf₁ hr) hI₁)
+      fun s' ⟨hI', hf'⟩ => ⟨hI', hf₁.trans hf'⟩
+  · refine WP.ite false (by simp only [AArch64.eval, State.read, hx6]; decide)
+      (fun h => absurd h (by decide)) fun _ => ?_
+    have hx7 := hK.x7
+    have h₁ : WP isa (.ite (.zero .x .x7) (.block [])
+        (.block (drnd regs .v29 ++ drnd regs .v28))) s
+        (fun s' => DInv regs 14 w x 3 s' ∧ VFrame regs s s') :=
+      WP.ite false (by simp only [AArch64.eval, State.read, hx7]; decide)
+        (fun h => absurd h (by decide))
+        (fun _ => dtwo_ok hr 13 rfl rfl (by omega_using []) (by omega_using []) (by omega_using []) hK hI)
+    refine WP.seq (WP.mono h₁ fun s₁ ⟨hI₁, hf₁⟩ => ?_)
+    exact WP.mono (dtwo_ok hr 11 rfl rfl (by omega_using []) (by omega_using []) (by omega_using []) (hK.of_frame hf₁ hr) hI₁)
+      fun s' ⟨hI', hf'⟩ => ⟨hI', hf₁.trans hf'⟩
+
+theorem dlast_run (b : VReg) (s : State) (hb16 : b ≠ .v16) :
+    runBlock isa [.vop (.aesd b .v17), .vop (.logic .eor b b .v16)] s =
+      some (s.setV b (aesMapBytes aesInvSbox (aesInvShiftRows (s.v b ^^^ s.v .v17)) ^^^ s.v .v16)) := by
+  simp only [runBlock_cons, runStep_some, runBlock_nil, isa, exec, VOp.eval, Option.map_some]
+  rw [setV_v_self, setV_v_of_ne _ _ (Ne.symm hb16), setV_setV]
+
+theorem dlast_ok {regs : List VReg} (hr : BlockRegs regs) {nr : Nat} {w : List Byte}
+    {x : VReg → Spec.Aes.State} {s : State} (hK : DKeys nr w s) (hI : DInv regs nr w x (nr - 1) s) :
+    WP isa (.block (dlast regs)) s fun s' =>
+      (∀ b ∈ regs, st (s'.v b) = invCipher nr w (x b)) ∧ VFrame regs s s' := by
+  have hnr : 2 ≤ nr := by rcases hK.rounds with h | h | h <;> omega_using [h]
+  have h17 : .v17 ∉ regs := fun h' => (hr.2 _ h').2.1 rfl
+  have h16 : ∀ b ∈ regs, b ≠ .v16 := fun b h' => (hr.2 _ h').1
+  have e : ∀ (rs : List VReg) (s : State), rs.Nodup → .v17 ∉ rs → (∀ b ∈ rs, b ≠ .v16) →
+      WP isa (.block (dlast rs)) s fun s' =>
+        (∀ b ∈ rs, s'.v b = aesMapBytes aesInvSbox (aesInvShiftRows (s.v b ^^^ s.v .v17)) ^^^ s.v .v16) ∧
+        VFrame rs s s' := by
+    intro rs
+    induction rs with
+    | nil => intro s _ _ _; exact WP.block_nil ⟨fun _ h => absurd h List.not_mem_nil, VFrame.refl _ _⟩
+    | cons b bs ih =>
+      intro s hnd hk h16'
+      have hb17 : b ≠ .v17 := fun h => hk (h ▸ List.mem_cons_self ..)
+      have hb16 : b ≠ .v16 := h16' b List.mem_cons_self
+      have hbs : b ∉ bs := (List.nodup_cons.mp hnd).1
+      rw [Impl.Aes.AArch64.Aese.dlast, List.flatMap_cons, WP.block_append_iff]
+      refine WP.of_runBlock ⟨_, dlast_run b s hb16, ?_⟩
+      refine WP.mono (ih _ (List.nodup_cons.mp hnd).2 (fun h => hk (List.mem_cons_of_mem _ h))
+        (fun c hc => h16' c (List.mem_cons_of_mem _ hc))) fun s' ⟨hv, hfr⟩ => ⟨?_, ?_⟩
+      · intro c hc
+        rcases List.mem_cons.mp hc with rfl | hc
+        · rw [hfr.v _ hbs]; simp [State.setV]
+        · have hcb : c ≠ b := fun h => hbs (h ▸ hc)
+          rw [hv c hc]; simp [State.setV, hcb, Ne.symm hb17, Ne.symm hb16]
+      · refine ⟨hfr.gpr, hfr.sp, hfr.mem, hfr.rd, hfr.wr, fun r hr => ?_⟩
+        simp only [List.mem_cons, not_or] at hr
+        rw [hfr.v r hr.2]; simp [State.setV, hr.1]
+  refine WP.mono (e regs s hr.1 h17 h16) fun s' ⟨hv, hf⟩ => ⟨fun b hb => ?_, hf⟩
+  have hk1 : KeyIs (s.v .v17) (dkey nr w (nr - 1)) := by
+    rw [dkey, ite_eq_right (by omega_using [hnr]), show nr - (nr - 1) = 1 by omega_using [hnr]]
+    exact hK.mid 1 (by omega_using []) (by omega_using [hnr])
+  rw [hv b hb, dlast_st hk1 hK.k0 (hI b hb), invCipher_eq]
+
+theorem aesDec_ok {regs : List VReg} (hr : BlockRegs regs) {nr : Nat} {w : List Byte} {s : State}
+    (hK : DKeys nr w s) :
+    WP isa (aesDec regs) s fun s' =>
+      (∀ b ∈ regs, st (s'.v b) = invCipher nr w (st (s.v b))) ∧ VFrame regs s s' := by
+  have hnr : 10 ≤ nr := by rcases hK.rounds with h | h | h <;> omega_using [h]
+  let x : VReg → Spec.Aes.State := fun b => st (s.v b)
+  have hI₀ : DInv regs nr w x 0 s := fun b _ => by simp [dkey, invMid, x]
+  refine WP.seq (WP.mono (dround_ok hr (m := 0) (by omega_using [hnr]) hr.v30 (by simpa [dkey] using hK.last) hI₀)
+    fun s₁ ⟨hI₁, hf₁⟩ => ?_)
+  refine WP.seq (WP.mono (dmid_ok hr (hK.of_frame hf₁ hr) hI₁) fun s₂ ⟨hI₂, hf₂⟩ => ?_)
+  rw [WP.block_append_iff]
+  refine WP.mono (drounds_ok hr hnr 8 (by omega_using []) (hK.of_frame (hf₁.trans hf₂) hr) hI₂)
+    fun s₃ ⟨hI₃, hf₃⟩ => ?_
+  rw [show nr - 9 + 8 = nr - 1 by omega_using [hnr]] at hI₃
+  exact WP.mono (dlast_ok hr (hK.of_frame (hf₁.trans (hf₂.trans hf₃)) hr) hI₃)
+    fun s' ⟨hv, hf'⟩ => ⟨hv, hf₁.trans (hf₂.trans (hf₃.trans hf'))⟩
+
+end VG.Proof.Aes.AArch64.Aese
+
+end
+
+end
 
 /-!
 # AES on whole blocks with the Armv8 Cryptographic Extension

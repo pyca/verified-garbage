@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Camellia.PPC64LE.ModesVerified
-public import VerifiedGarbage.Proof.Camellia.PPC64LE.SerialCore
 public import VerifiedGarbage.Proof.Camellia.PPC64LE.ModesFrame
 public import VerifiedGarbage.Proof.Camellia.CfbFinalScratch
 public import VerifiedGarbage.Proof.Modes.PPC64LE.SeqFinal

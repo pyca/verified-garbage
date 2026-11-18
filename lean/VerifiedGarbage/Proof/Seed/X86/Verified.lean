@@ -19,8 +19,8 @@ public import VerifiedGarbage.Proof.Framework.X86.Inline
 public import VerifiedGarbage.Impl.StackScratch.X86
 public import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 meta import VerifiedGarbage.Proof.Framework.X86.Inline
-import VerifiedGarbage.Proof.Seed.X86.Lanes
-meta import VerifiedGarbage.Proof.Seed.X86.Lanes
+import VerifiedGarbage.Proof.Seed.X86.Crypt8
+meta import VerifiedGarbage.Proof.Seed.X86.Crypt8
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import VerifiedGarbage.Proof.Aes.X86.Sbox
@@ -33,7 +33,6 @@ import VerifiedGarbage.Proof.Framework.X86.Mmx
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Seed.G16
 import VerifiedGarbage.Proof.Seed.Memory
-import VerifiedGarbage.Proof.Seed.X86.Crypt8
 meta import VerifiedGarbage.Proof.Aes.X86.Sbox
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.NativeTaint
@@ -46,7 +45,6 @@ meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
 meta import VerifiedGarbage.Proof.Seed.G16
 meta import VerifiedGarbage.Proof.Seed.Memory
-meta import VerifiedGarbage.Proof.Seed.X86.Crypt8
 
 /-!
 # SEED ECB on x86 (32-bit): correctness, and the rounds' taint summary

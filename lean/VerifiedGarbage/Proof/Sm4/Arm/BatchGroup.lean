@@ -6,14 +6,13 @@ public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Sm4.Common
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Sm4.Ctr
-public import VerifiedGarbage.Proof.Sm4.Arm.PreparedBody
+public import VerifiedGarbage.Proof.Sm4.Arm.PreparedVerified
 import VerifiedGarbage.Proof.Sm4.CtrCipher
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Sm4.Prepared
-public import VerifiedGarbage.Proof.Sm4.Arm.PreparedVerified
 import VerifiedGarbage.Proof.Framework.Arm.Call
 import VerifiedGarbage.Proof.MdStream.Arm.Common
 import VerifiedGarbage.Proof.Modes.Arm.Ops
@@ -23,7 +22,6 @@ public import VerifiedGarbage.Spec.Aes
 public import VerifiedGarbage.Spec.Ctr
 public import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.AesCtr.Spec
-import VerifiedGarbage.Proof.Modes.Arm.Counter
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 
 /-! ### `Sm4.Arm.BatchFill`, which this module and modules that import it used -/

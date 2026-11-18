@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.TripleDes.PPC64LE.ConstantTime
 public import VerifiedGarbage.Spec.TripleDes.Contract
 public import VerifiedGarbage.TCB.PPC64LE.Target
-public import VerifiedGarbage.Proof.TripleDes.PPC64LE.Write
+public import VerifiedGarbage.Proof.TripleDes.PPC64LE.Permutation
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -15,7 +15,6 @@ public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Spec.TripleDes
 public import VerifiedGarbage.TCB.PPC64LE.Isa
 public import VerifiedGarbage.Proof.TripleDes.KeyMemory
-import VerifiedGarbage.Proof.TripleDes.PPC64LE.Word
 public import VerifiedGarbage.Proof.TripleDes.KeySchedule
 import VerifiedGarbage.Proof.TripleDes.Schedule
 import VerifiedGarbage.Proof.Framework.Lit
@@ -26,9 +25,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.TripleDes.PPC64LE.FunctionsLit
 public import VerifiedGarbage.Impl.TripleDes.PPC64LE.ExpandKey
 import VerifiedGarbage.Proof.TripleDes.Word
-import VerifiedGarbage.Proof.TripleDes.PPC64LE.Bytes
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
-import VerifiedGarbage.Proof.TripleDes.PPC64LE.Permutation
 
 /-! ### `TripleDes.PPC64LE.Key.Rotation`, which only this module used -/
 

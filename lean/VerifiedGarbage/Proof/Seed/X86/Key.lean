@@ -1,12 +1,11 @@
 module
+
 public import VerifiedGarbage.Impl.Seed.X86.ExpandKey
 public import VerifiedGarbage.Proof.Framework.Bswap
-public import VerifiedGarbage.Proof.Seed.X86.Lanes
+public import VerifiedGarbage.Proof.Seed.X86.Crypt8
 public import VerifiedGarbage.TCB.X86.Target
-
 import VerifiedGarbage.Proof.Seed.X86.KeyRound
 import VerifiedGarbage.Proof.Seed.X86.Ecb
-import VerifiedGarbage.Proof.Seed.X86.Crypt8
 import VerifiedGarbage.Proof.Seed.Memory
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset

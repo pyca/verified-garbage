@@ -2,7 +2,7 @@ module
 
 import VerifiedGarbage.Proof.Sm4.Arm.BatchChain
 public import VerifiedGarbage.Proof.Sm4.Arm.BatchGroup
-public import VerifiedGarbage.Proof.Sm4.Arm.PreparedBody
+public import VerifiedGarbage.Proof.Sm4.Arm.PreparedVerified
 import VerifiedGarbage.Proof.Sm4.CtrCipher
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset

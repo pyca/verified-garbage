@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Seed.AArch64.Link
+public import VerifiedGarbage.Proof.Seed.AArch64.Link
 import VerifiedGarbage.Proof.Modes.AArch64.Fb
 import VerifiedGarbage.Proof.Modes.AArch64.CfbDec.Whole
 import VerifiedGarbage.Proof.Modes.AArch64.Steps
@@ -8,7 +8,6 @@ public import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
 public import VerifiedGarbage.Proof.Seed.FbScratch
 import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
 import VerifiedGarbage.Proof.Seed.AArch64.ModesLit
-public import VerifiedGarbage.Proof.Seed.AArch64.ModeCore
 public import VerifiedGarbage.Spec.Seed.Cfb
 public import VerifiedGarbage.Impl.StackScratch.AArch64
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
@@ -22,7 +21,6 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
 meta import VerifiedGarbage.Proof.Seed.FbScratch
 meta import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
 meta import VerifiedGarbage.Proof.Seed.AArch64.ModesLit
-meta import VerifiedGarbage.Proof.Seed.AArch64.ModeCore
 meta import VerifiedGarbage.Spec.Seed.Cfb
 meta import VerifiedGarbage.Impl.StackScratch.AArch64
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec

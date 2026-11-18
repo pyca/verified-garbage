@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Camellia.AArch64.ModeCore
+public import VerifiedGarbage.Proof.Camellia.AArch64.Serial.Verified
 import VerifiedGarbage.Proof.Camellia.AArch64.Link
 import VerifiedGarbage.Proof.Modes.AArch64.Ctr
 public import VerifiedGarbage.Proof.Camellia.CtrScratch
@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Camellia.AArch64.Lit
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Camellia.AArch64.ModeCore
+meta import VerifiedGarbage.Proof.Camellia.AArch64.Serial.Verified
 meta import VerifiedGarbage.Proof.Camellia.AArch64.Link
 meta import VerifiedGarbage.Proof.Modes.AArch64.Ctr
 meta import VerifiedGarbage.Proof.Camellia.CtrScratch

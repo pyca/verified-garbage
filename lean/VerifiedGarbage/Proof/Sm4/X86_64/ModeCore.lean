@@ -12,7 +12,6 @@ import VerifiedGarbage.Proof.Sm4.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TaintSum
 import VerifiedGarbage.Proof.Sm4.X86_64.LayersLit
-public import VerifiedGarbage.Proof.Sm4.X86_64.PreparedBody
 public import VerifiedGarbage.Proof.Sm4.Prepared
 
 /-!

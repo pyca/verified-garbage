@@ -4,8 +4,6 @@ public import VerifiedGarbage.Proof.Cast5.AArch64.FbVerified
 public import VerifiedGarbage.Proof.Cast5.CfbFinal
 import VerifiedGarbage.Proof.Cast5.Rounds
 public import VerifiedGarbage.Proof.Cast5.ModeScratch
-import VerifiedGarbage.Proof.Cast5.AArch64.ModeCore
-public import VerifiedGarbage.Proof.Cast5.AArch64.TableSat
 public import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
 public import VerifiedGarbage.Proof.Framework.ConstMem
 public import VerifiedGarbage.Spec.Cast5.Contract
@@ -22,8 +20,6 @@ meta import VerifiedGarbage.Proof.Cast5.AArch64.FbVerified
 meta import VerifiedGarbage.Proof.Cast5.CfbFinal
 meta import VerifiedGarbage.Proof.Cast5.Rounds
 meta import VerifiedGarbage.Proof.Cast5.ModeScratch
-meta import VerifiedGarbage.Proof.Cast5.AArch64.ModeCore
-meta import VerifiedGarbage.Proof.Cast5.AArch64.TableSat
 meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
 meta import VerifiedGarbage.Proof.Framework.ConstMem
 meta import VerifiedGarbage.Spec.Cast5.Contract

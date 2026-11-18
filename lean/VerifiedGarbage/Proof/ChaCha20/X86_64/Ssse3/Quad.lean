@@ -26,7 +26,7 @@ the four blocks. During the rounds a word is in its slot or in a register
 loads, registers and stores are checked against where the words are by
 evaluation (`stepOk`). The output XORs each 16 bytes of keystream into the
 data if they lie within it, and stores the 16 bytes that run past its end in
-`buf[0, 16)` (`chunk_ok`). As `Proof/ChaCha20/X86/Quad.lean` for x86.
+`buf[0, 16)` (`chunk_ok`). As `Proof/ChaCha20/X86/Kernels.lean` for x86.
 -/
 
 @[expose] public section

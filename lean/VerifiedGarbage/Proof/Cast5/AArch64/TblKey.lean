@@ -4,7 +4,7 @@ public import VerifiedGarbage.Impl.Cast5.AArch64.TblKey
 public import VerifiedGarbage.Proof.Cast5.AArch64.TblBatch
 public import VerifiedGarbage.Proof.Cast5.KeyMem
 import VerifiedGarbage.Proof.Blowfish.AArch64.Lanes
-import VerifiedGarbage.Proof.Blowfish.AArch64.Exec
+import VerifiedGarbage.Proof.Blowfish.AArch64.Batch
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.Simd

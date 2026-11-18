@@ -9,9 +9,6 @@ import VerifiedGarbage.Proof.Framework.X86.Lit
 import VerifiedGarbage.Proof.Rc4.Dword
 import VerifiedGarbage.Proof.Rc4.Stream
 import VerifiedGarbage.Proof.Rc4.Table
-import VerifiedGarbage.Proof.Rc4.X86.Apply
-import VerifiedGarbage.Proof.Rc4.X86.ApplyLoop
-import VerifiedGarbage.Proof.Rc4.X86.Lookup
 public import VerifiedGarbage.Impl.Rc4.X86
 public import VerifiedGarbage.Proof.MlDsa.X86.Pack.Run
 public import VerifiedGarbage.Proof.Rc4.Memory

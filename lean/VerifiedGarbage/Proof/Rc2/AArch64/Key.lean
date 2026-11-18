@@ -21,7 +21,7 @@ public import VerifiedGarbage.Proof.Rc2.AArch64.KeyLoop
 public import VerifiedGarbage.Proof.Rc2.Expansion
 import VerifiedGarbage.Proof.Rc2.AArch64.KeySetup
 import VerifiedGarbage.Proof.Rc2.AArch64.Mask
-import VerifiedGarbage.Proof.Rc2.AArch64.KeyCompose
+import VerifiedGarbage.Proof.Rc2.AArch64.DescendKey
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! ### `Rc2.AArch64.KeyBody`, which only this module used -/

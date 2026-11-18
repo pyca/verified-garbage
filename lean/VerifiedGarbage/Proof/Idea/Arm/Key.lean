@@ -1,7 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Idea.Arm.ConstantTime
-import VerifiedGarbage.Proof.Idea.Arm.Mul
+public import VerifiedGarbage.Proof.Idea.Arm.Mul
 import VerifiedGarbage.Proof.Idea.KeyBits32
 public import VerifiedGarbage.Proof.Framework.Arm.Linear
 public import VerifiedGarbage.Spec.Idea.Contract

@@ -2,18 +2,16 @@ module
 
 public import VerifiedGarbage.Proof.Blowfish.Arm.ModeCore
 public import VerifiedGarbage.Proof.Blowfish.FbScratch
-public import VerifiedGarbage.Proof.Modes.Arm.SeqCT
+public import VerifiedGarbage.Proof.Modes.Arm.Cbc
 public import VerifiedGarbage.Spec.Blowfish.Cfb
 import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
-import VerifiedGarbage.Proof.Modes.Arm.Cbc
-import VerifiedGarbage.Proof.Blowfish.Arm.Run
+import VerifiedGarbage.Proof.Blowfish.Arm.Ecb
 meta import VerifiedGarbage.Proof.Blowfish.Arm.ModeCore
 meta import VerifiedGarbage.Proof.Blowfish.FbScratch
-meta import VerifiedGarbage.Proof.Modes.Arm.SeqCT
+meta import VerifiedGarbage.Proof.Modes.Arm.Cbc
 meta import VerifiedGarbage.Spec.Blowfish.Cfb
 meta import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
-meta import VerifiedGarbage.Proof.Modes.Arm.Cbc
-meta import VerifiedGarbage.Proof.Blowfish.Arm.Run
+meta import VerifiedGarbage.Proof.Blowfish.Arm.Ecb
 import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
 meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
 

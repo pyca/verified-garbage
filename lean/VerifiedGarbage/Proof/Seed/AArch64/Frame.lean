@@ -4,7 +4,7 @@ public import VerifiedGarbage.Spec.Seed.Contract
 public import VerifiedGarbage.Impl.StackScratch.AArch64
 public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Framework.Semantics
-public import VerifiedGarbage.Proof.Seed.AArch64.ConstantTime
+public import VerifiedGarbage.Proof.Seed.AArch64.Verified
 public import VerifiedGarbage.Proof.Seed.Scratch
 public import VerifiedGarbage.Impl.Seed.AArch64.ExpandKey
 public import VerifiedGarbage.Proof.Seed.AArch64.Round
@@ -13,7 +13,6 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Seed.KeySchedule
 import VerifiedGarbage.Proof.Framework.PlainSimp
-import VerifiedGarbage.Proof.Seed.AArch64.Verified
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Seed.Memory
 public import VerifiedGarbage.Proof.Framework.Block

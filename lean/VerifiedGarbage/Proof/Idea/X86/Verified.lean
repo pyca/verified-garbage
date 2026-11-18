@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Idea.X86.Ecb
 import VerifiedGarbage.Proof.Idea.Local
 import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
 public import VerifiedGarbage.Impl.StackScratch.X86
-public import VerifiedGarbage.Proof.Idea.X86.Invert
 import VerifiedGarbage.Proof.Idea.X86.Lit
 import Mathlib.Data.Finset.Attr
 import Mathlib.Tactic.SetLike
@@ -18,7 +17,6 @@ meta import VerifiedGarbage.Proof.Idea.X86.Ecb
 meta import VerifiedGarbage.Proof.Idea.Local
 meta import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
 meta import VerifiedGarbage.Impl.StackScratch.X86
-meta import VerifiedGarbage.Proof.Idea.X86.Invert
 meta import VerifiedGarbage.Proof.Idea.X86.Lit
 meta import Mathlib.Data.Finset.Attr
 meta import Mathlib.Tactic.SetLike

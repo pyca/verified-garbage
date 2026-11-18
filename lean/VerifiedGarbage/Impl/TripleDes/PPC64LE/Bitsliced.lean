@@ -89,7 +89,7 @@ def inRegs : List Reg := [.r12, .r14, .r15, .r16, .r17, .r18]
 def inReg (i : Nat) : Reg := inRegs.getD i .r12
 
 /-! The code of the S-boxes' circuits, written out with their registers. The proofs
-check it against the S-boxes (`Proof/TripleDes/PPC64LE/Bitsliced/Sbox.lean`). -/
+check it against the S-boxes (`Proof/TripleDes/PPC64LE/Bitsliced/Pass.lean`). -/
 
 /-- The code of S-box 1. -/
 def sboxCode0 : List Instr := [

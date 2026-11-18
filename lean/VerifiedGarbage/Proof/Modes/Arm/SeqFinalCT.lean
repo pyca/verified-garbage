@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Modes.Arm.SeqFinal
-public import VerifiedGarbage.Proof.Modes.Arm.SeqCT
+public import VerifiedGarbage.Proof.Modes.Arm.Cbc
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Arm.Syms
 import VerifiedGarbage.Proof.MdStream.Arm.Common
@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Modes.Arm.SeqFinal
-meta import VerifiedGarbage.Proof.Modes.Arm.SeqCT
+meta import VerifiedGarbage.Proof.Modes.Arm.Cbc
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Arm.Syms
 meta import VerifiedGarbage.Proof.MdStream.Arm.Common

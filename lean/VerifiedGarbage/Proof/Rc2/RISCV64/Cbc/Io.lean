@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
 The CBC code reads and writes the IV and the data a byte at a time, as
 little-endian doublewords (`Bytes.loadLE64_ok`, `Bytes.storeLE64_ok`):
 `before_run` and `after_run` state each of its blocks as the PPC64LE proofs'
-single loads and stores (`Proof/Rc2/PPC64LE/Cbc/Body.lean`).
+single loads and stores (`Proof/Rc2/PPC64LE/Cbc/Verified.lean`).
 -/
 
 @[expose] public section

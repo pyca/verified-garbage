@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.ChaCha20.Arm.Stream.Calls
 public import VerifiedGarbage.Impl.ChaCha20.Arm.Stream
-import VerifiedGarbage.Proof.ChaCha20.Arm.Stream.Bytes
 import VerifiedGarbage.Proof.ChaCha20.Arm.Stream.Init
 import VerifiedGarbage.Proof.ChaCha20.StreamBytes
 import VerifiedGarbage.Proof.Framework.Arm.Exec

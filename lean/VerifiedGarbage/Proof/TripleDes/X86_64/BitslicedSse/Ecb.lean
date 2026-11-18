@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.Pass
-public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Passes
+public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Bytes
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.TripleDes.Bitslice.LayoutLit
 import VerifiedGarbage.Proof.TripleDes.X86_64.Lit
@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Batch
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
 import VerifiedGarbage.Proof.TripleDes.Schedule
-import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Bytes
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Ecb

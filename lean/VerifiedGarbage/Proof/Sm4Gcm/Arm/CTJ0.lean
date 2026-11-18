@@ -12,12 +12,10 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Sha256.Stream
 meta import VerifiedGarbage.Proof.Sm4Gcm.Arm.CTCrypt
-meta import VerifiedGarbage.Proof.Sm4Gcm.Arm.CryptOk
+meta import VerifiedGarbage.Proof.Sm4Gcm.Arm.StreamFinish
 meta import VerifiedGarbage.Proof.Sm4Gcm.Arm.Entry
-meta import VerifiedGarbage.Proof.Sm4Gcm.Arm.Ghash1
-meta import VerifiedGarbage.Proof.Sm4Gcm.Arm.Loops
+meta import VerifiedGarbage.Proof.Sm4Gcm.Arm.Flush
 meta import VerifiedGarbage.Proof.Sm4Gcm.Arm.Open
-meta import VerifiedGarbage.Proof.Sm4Gcm.Arm.Seal
 meta import VerifiedGarbage.Proof.Cmac.Frame
 meta import VerifiedGarbage.Proof.Cmac.Mem
 meta import VerifiedGarbage.Proof.Cmac.Spec

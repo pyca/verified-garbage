@@ -12,7 +12,6 @@ public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Sm4.X86_64.Verified
 public import VerifiedGarbage.Proof.Sm4.X86_64.CbcVerified
-public import VerifiedGarbage.Proof.Sm4.X86_64.FbVerified
 public import VerifiedGarbage.Proof.Sm4.X86_64.FbFinalVerified
 public import VerifiedGarbage.Proof.Sm4.X86_64.CtrVerified
 public import VerifiedGarbage.Proof.Sm4.X86_64.CtrFinal
@@ -37,7 +36,6 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Proof.Sm4.X86_64.Verified
 meta import VerifiedGarbage.Proof.Sm4.X86_64.CbcVerified
-meta import VerifiedGarbage.Proof.Sm4.X86_64.FbVerified
 meta import VerifiedGarbage.Proof.Sm4.X86_64.FbFinalVerified
 meta import VerifiedGarbage.Proof.Sm4.X86_64.CtrVerified
 meta import VerifiedGarbage.Proof.Sm4.X86_64.CtrFinal

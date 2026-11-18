@@ -1,9 +1,8 @@
 module
-public import VerifiedGarbage.Proof.Sm4Gcm.Arm.Env
+
 public import VerifiedGarbage.Proof.Sm4Gcm.Arm.Run
 import VerifiedGarbage.Proof.Sm4.Scratch
 public import VerifiedGarbage.Proof.Gcm.Ctr
-
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract

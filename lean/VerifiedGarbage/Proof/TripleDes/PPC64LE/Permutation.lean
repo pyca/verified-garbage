@@ -4,6 +4,143 @@ public import VerifiedGarbage.Proof.TripleDes.PPC64LE.Lit
 import VerifiedGarbage.Proof.TripleDes.Permutation
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Linear
 import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.TCB.PPC64LE.Isa
+public import VerifiedGarbage.Spec.TripleDes
+import VerifiedGarbage.Proof.TripleDes.Bytes
+import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
+import VerifiedGarbage.Proof.Framework.Bswap
+
+/-! ### `TripleDes.PPC64LE.Word`, which the modules that import this one used -/
+
+section
+
+/-! ### `TripleDes.PPC64LE.Write`, which the modules that import this one used -/
+
+section
+
+/-! ### `TripleDes.PPC64LE.Bytes`, which the modules that import this one used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.TripleDes.PPC64LE
+
+open VG VG.PPC64LE VG.Spec.TripleDes
+
+theorem decodeBlock_readW (m : Mem) (p : Addr) :
+    decodeBlock (blockAt m p) = rev64 (m.readW p 64) := by
+  rw [VG.Proof.TripleDes.decodeBlock_cat, rev64_readW]
+  simp only [VG.Proof.TripleDes.catBlock, blockAt, Vector.getElem_ofFn,
+    BitVec.add_assoc, BitVec.add_zero]
+  rfl
+
+
+theorem rev64_byte (x : BitVec 64) (i : Nat) (hi : i < 8) :
+    (rev64 x).extractLsb' (8 * i) 8 = (x >>> (8 * (7 - i))).setWidth 8 := by
+  have hcases : ∀ k < 8, k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨
+      k = 4 ∨ k = 5 ∨ k = 6 ∨ k = 7 := by decide
+  rcases hcases i hi with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  all_goals
+    simp (disch := decide) only [rev64, extractLsb'_append_byte_hi,
+      extractLsb'_append_byte_lo, Nat.reduceMul, Nat.reduceSub,
+      BitVec.setWidth_ushiftRight_eq_extractLsb, BitVec.extractLsb'_eq_self]
+
+
+theorem blockAt_writeW (m : Mem) (p : Addr) (x : BitVec 64) :
+    blockAt (m.writeW p (rev64 x)) p = encodeBlock x := by
+  apply Vector.ext
+  intro i hi
+  simp only [blockAt, encodeBlock, Vector.getElem_ofFn, Mem.writeW, Mem.write,
+    Mem.sub_ofNat_toNat p (by omega_using [hi] : i < 2 ^ 64), BitVec.setWidth_eq,
+    hi, ite_true]
+  exact rev64_byte x i hi
+
+end VG.Proof.TripleDes.PPC64LE
+
+end
+
+end
+
+/-! # Reading a PPC64LE state through register writes -/
+
+@[expose] public section
+
+namespace VG.Proof.TripleDes.PPC64LE
+
+open VG VG.PPC64LE
+
+theorem gpr_write (s : State) (d : Reg) (v : BitVec 64) (r : Reg) :
+    (s.write d v).gpr r = if r = d then v else s.gpr r := rfl
+
+theorem gpr_write_self (s : State) (d : Reg) (v : BitVec 64) : (s.write d v).gpr d = v := by
+  simp [State.write]
+
+theorem gpr_write_of_ne (s : State) {d r : Reg} (v : BitVec 64) (h : r ≠ d) :
+    (s.write d v).gpr r = s.gpr r := by
+  simp [State.write, h]
+
+/-- `s'` is `s` but for the registers `written`. -/
+structure Kept (written : List Reg) (s s' : State) : Prop where
+  reg : ∀ r, r ∉ written → s'.gpr r = s.gpr r
+  mem : s'.mem = s.mem
+  rd : s'.rd = s.rd
+  wr : s'.wr = s.wr
+
+end VG.Proof.TripleDes.PPC64LE
+
+end
+
+end
+
+@[expose] public section
+
+namespace VG.Proof.TripleDes.PPC64LE
+
+theorem mask_word (x : BitVec 64) (n : Nat) (hn : 0 < n) (hn64 : n ≤ 64) :
+    (x <<< (64 - n)) >>> (64 - n) = (x.setWidth n).setWidth 64 := by
+  apply BitVec.eq_of_getLsbD_eq
+  intro j hj
+  simp only [BitVec.getLsbD_ushiftRight, BitVec.getLsbD_shiftLeft, BitVec.getLsbD_setWidth]
+  by_cases h : j < n
+  · have hi : 64 - n + j < 64 := by omega
+    have hlo : ¬64 - n + j < 64 - n := by omega_using []
+    simp only [hi, hlo, h, hj, decide_true, decide_false, Bool.not_false,
+      Bool.true_and, show 64 - n + j - (64 - n) = j by omega_using []]
+  · have ho : ¬64 - n + j < 64 := by omega_using [h]
+    simp only [ho, h, hj, decide_true, decide_false, Bool.false_and, Bool.true_and]
+
+theorem packHalves_shift (l r : BitVec 32) :
+    l.setWidth 64 <<< 32 ^^^ r.setWidth 64 = l ++ r := by
+  apply BitVec.eq_of_getLsbD_eq
+  intro j hj
+  simp only [BitVec.getLsbD_xor, BitVec.getLsbD_shiftLeft, BitVec.getLsbD_setWidth,
+    BitVec.getLsbD_append]
+  by_cases h : j < 32
+  · simp [h, hj]
+  · have hb : j - 32 < 32 := by omega_using [hj]
+    simp [h, hj, hb, show j - 32 < 64 by omega_using [hj],
+      BitVec.getLsbD_of_ge r j (by omega_using [h])]
+
+theorem pack28_shift (c d : BitVec 28) :
+    ((c.setWidth 64 <<< 28) ^^^ d.setWidth 64).setWidth 56 = c ++ d := by
+  apply BitVec.eq_of_getLsbD_eq
+  intro j hj
+  simp only [BitVec.getLsbD_setWidth, BitVec.getLsbD_xor,
+    BitVec.getLsbD_shiftLeft, BitVec.getLsbD_append, hj, decide_true, Bool.true_and]
+  by_cases h : j < 28
+  · simp [h, show j < 64 by omega_using [hj]]
+  · simp [h, show j < 64 by omega_using [hj], show j - 28 < 28 by omega_using [hj],
+      show j - 28 < 64 by omega_using [hj], BitVec.getLsbD_of_ge d j (by omega_using [h])]
+
+
+end VG.Proof.TripleDes.PPC64LE
+
+end
+
+end
 
 @[expose] public section
 

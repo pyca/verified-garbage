@@ -14,14 +14,13 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Proof.Blowfish.AArch64.EcbMain
-import VerifiedGarbage.Proof.Blowfish.AArch64.Exec
 public import VerifiedGarbage.Proof.Blowfish.AArch64.ConstantTime
 import VerifiedGarbage.Proof.Framework.AArch64.Inline
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.ConstMem
 public import VerifiedGarbage.Spec.Blowfish.Contract
 import VerifiedGarbage.Proof.Blowfish.AArch64.Lit
-import VerifiedGarbage.Proof.Blowfish.Feistel
+import VerifiedGarbage.Proof.Blowfish.F
 
 /-! ### `Blowfish.AArch64.KeyMain`, which only this module used -/
 

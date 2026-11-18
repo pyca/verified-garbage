@@ -1,9 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Idea.Arm.ConstantTime
+public import VerifiedGarbage.Proof.Idea.Arm.Mul
 import VerifiedGarbage.Proof.Framework.Arm.Spill
 public import VerifiedGarbage.Proof.Idea.Scratch32
-public import VerifiedGarbage.Proof.Idea.Arm.Mul
 public import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.Idea.Memory
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd

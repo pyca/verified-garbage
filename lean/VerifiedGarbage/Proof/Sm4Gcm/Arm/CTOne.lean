@@ -3,15 +3,13 @@ module
 public import VerifiedGarbage.Proof.Sm4Gcm.Arm.CTJ0
 public import VerifiedGarbage.Proof.Sm4Gcm.Arm.CTAbsorb
 public import VerifiedGarbage.Proof.Sm4Gcm.Arm.CTCrypt
-public import VerifiedGarbage.Proof.Sm4Gcm.Arm.CTFin
-public import VerifiedGarbage.Proof.Sm4Gcm.Arm.Seal
+public import VerifiedGarbage.Proof.Sm4Gcm.Arm.CTVerify
+public import VerifiedGarbage.Proof.Sm4Gcm.Arm.Open
 meta import VerifiedGarbage.Proof.Sm4Gcm.Arm.CTJ0
 import VerifiedGarbage.Proof.Sm4Gcm.Arm.CTFn
-import VerifiedGarbage.Proof.Sm4Gcm.Arm.FinTag
+import VerifiedGarbage.Proof.Sm4Gcm.Arm.StreamFinish
 meta import VerifiedGarbage.Proof.Sm4Gcm.Arm.CTFn
-meta import VerifiedGarbage.Proof.Sm4Gcm.Arm.FinTag
-import VerifiedGarbage.Proof.Sm4Gcm.Arm.CryptOk
-meta import VerifiedGarbage.Proof.Sm4Gcm.Arm.CryptOk
+meta import VerifiedGarbage.Proof.Sm4Gcm.Arm.StreamFinish
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 meta import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
@@ -23,11 +21,8 @@ meta import VerifiedGarbage.Proof.Sm4Gcm.Arm.CTAbsorb
 meta import VerifiedGarbage.Proof.Sm4Gcm.Arm.CTCryptFn
 meta import VerifiedGarbage.Proof.Sm4Gcm.Arm.CTVerify
 meta import VerifiedGarbage.Proof.Sm4Gcm.Arm.Entry
-meta import VerifiedGarbage.Proof.Sm4Gcm.Arm.Ghash1
-meta import VerifiedGarbage.Proof.Sm4Gcm.Arm.Loops
+meta import VerifiedGarbage.Proof.Sm4Gcm.Arm.Flush
 meta import VerifiedGarbage.Proof.Sm4Gcm.Arm.Open
-meta import VerifiedGarbage.Proof.Sm4Gcm.Arm.Seal
-meta import VerifiedGarbage.Proof.Sm4Gcm.Arm.StreamCrypt
 meta import VerifiedGarbage.Proof.Cmac.Frame
 meta import VerifiedGarbage.Proof.Cmac.Mem
 meta import VerifiedGarbage.Proof.Cmac.Spec

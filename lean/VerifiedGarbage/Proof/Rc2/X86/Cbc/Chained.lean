@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
 import VerifiedGarbage.Proof.Rc2.X86.Cbc.Lit
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Rc2.X86.Cbc.Correct
-import VerifiedGarbage.Proof.Rc2.X86.Cbc.ConstantTime
 
 /-! # RC2-CBC in place on X86, with wiped stack working space -/
 -- separate module: exporting CBC does not rebuild its existing streaming callers.

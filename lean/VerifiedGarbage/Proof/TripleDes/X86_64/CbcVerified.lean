@@ -7,7 +7,6 @@ public import VerifiedGarbage.Proof.TripleDes.CbcScratch
 import VerifiedGarbage.Proof.TripleDes.X86_64.CbcLit
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
 public import VerifiedGarbage.Proof.TripleDes.X86_64.ModeCore
-import VerifiedGarbage.Proof.TripleDes.X86_64.CallPatch
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
@@ -21,7 +20,6 @@ meta import VerifiedGarbage.Proof.TripleDes.CbcScratch
 meta import VerifiedGarbage.Proof.TripleDes.X86_64.CbcLit
 meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
 meta import VerifiedGarbage.Proof.TripleDes.X86_64.ModeCore
-meta import VerifiedGarbage.Proof.TripleDes.X86_64.CallPatch
 meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 meta import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig

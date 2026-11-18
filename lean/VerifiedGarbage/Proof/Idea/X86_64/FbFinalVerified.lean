@@ -1,8 +1,7 @@
 module
 
-import VerifiedGarbage.Proof.Idea.X86_64.ModeCore
-import VerifiedGarbage.Proof.Modes.X86_64.FbFinal
 public import VerifiedGarbage.Proof.Idea.X86_64.FbVerified
+import VerifiedGarbage.Proof.Modes.X86_64.FbFinal
 import VerifiedGarbage.Proof.Idea.X86_64.FbFinalLit
 import VerifiedGarbage.Proof.Idea.X86_64.ModesLit
 public import VerifiedGarbage.Impl.Idea.X86_64.FbFinal
@@ -17,9 +16,8 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Taint
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
-meta import VerifiedGarbage.Proof.Idea.X86_64.ModeCore
-meta import VerifiedGarbage.Proof.Modes.X86_64.FbFinal
 meta import VerifiedGarbage.Proof.Idea.X86_64.FbVerified
+meta import VerifiedGarbage.Proof.Modes.X86_64.FbFinal
 meta import VerifiedGarbage.Proof.Idea.X86_64.FbFinalLit
 meta import VerifiedGarbage.Proof.Idea.X86_64.ModesLit
 meta import VerifiedGarbage.Impl.Idea.X86_64.FbFinal

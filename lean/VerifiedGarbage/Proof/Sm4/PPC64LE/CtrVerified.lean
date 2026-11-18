@@ -21,7 +21,7 @@ meta import VerifiedGarbage.Proof.Framework.PPC64LE.Lit
 meta import VerifiedGarbage.Proof.Framework.Taint
 meta import VerifiedGarbage.Proof.Sm4.PPC64LE.CallSum
 meta import VerifiedGarbage.Proof.Framework.RegSet
-meta import VerifiedGarbage.Proof.Sm4.PPC64LE.ModesConstantTime
+meta import VerifiedGarbage.Proof.Sm4.PPC64LE.ModesVerified
 public import VerifiedGarbage.Impl.StackScratch.PPC64LE
 public import VerifiedGarbage.Spec.Ctr
 public import VerifiedGarbage.TCB.PPC64LE.Target

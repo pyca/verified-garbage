@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Modes.AArch64.Group
+public import VerifiedGarbage.Proof.Modes.AArch64.Setup
 public import VerifiedGarbage.Impl.Modes.AArch64.Cbc
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Semantics
@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.Modes.AArch64.Words
 import VerifiedGarbage.Proof.Modes.AArch64.Steps
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Modes.Cbc
-public import VerifiedGarbage.Proof.Modes.AArch64.Setup
 import VerifiedGarbage.Proof.Modes.AArch64.Xor
 import VerifiedGarbage.Proof.Modes.Addr
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
@@ -23,7 +22,7 @@ section
 /-!
 # Loops over blocks on AArch64
 
-As on x86-64 (`Proof/Modes/X86_64/Copy.lean`). `blockLoop_wp`: a loop whose
+As on x86-64 (`Proof/Modes/X86_64/CbcGroup.lean`). `blockLoop_wp`: a loop whose
 body works on the block at `x14` and `x15` and then steps both by a block
 (`nextBlock`) and counts `x17` down, from an invariant `J` of everything
 but those three registers. `copyBlocks_wp`: `copyBlocks` copies `n ≥ 1`
