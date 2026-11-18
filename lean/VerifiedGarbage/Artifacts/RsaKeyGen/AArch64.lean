@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.KeyInit
 public import VerifiedGarbage.Spec.RsaKeyGen.KeySearchContract
 import Mathlib.Tactic.Finiteness.Attr
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Rsa.AArch64.Scrub
 public import VerifiedGarbage.TCB.AArch64.Print
 public import VerifiedGarbage.Proof.MillerRabin.AArch64.Backend
 public import VerifiedGarbage.Impl.RsaKeyGen.AArch64.Candidate
@@ -193,16 +194,16 @@ public import VerifiedGarbage.Proof.Variants.MillerRabin.AArch64
 namespace VG.Artifacts.RsaKeyGen.AArch64
 
 def direct : List Artifact := [
-  Spec.RsaKeyGen.keyInitApi.artifact AArch64.target {
+  Spec.RsaKeyGen.keyInitApi.artifact AArch64.target (VG.AArch64.ScrubAll.withScrubAll {
     code := Impl.RsaKeyGen.AArch64.KeyInit.init
-    verified := Proof.RsaKeyGen.AArch64.KeyInit.init_verified }]
+    verified := Proof.RsaKeyGen.AArch64.KeyInit.init_verified } (Proof.Rsa.AArch64.Scrub.keyInitOk))]
 
 def artifacts : List Artifact :=
   direct ++
   (VG.Proof.Variants.MillerRabin.AArch64.variants.flatMap fun (v : Proof.MillerRabin.AArch64.RoundImpl) => [
-    Spec.RsaKeyGen.keySearchApi.artifact AArch64.target {
+    Spec.RsaKeyGen.keySearchApi.artifact AArch64.target (VG.AArch64.ScrubAll.withScrubAll {
       suffix := v.suffix
       code := Proof.RsaKeyGen.AArch64.Generate.genCode v
-      verified := Proof.RsaKeyGen.AArch64.Generate.gen_verified v }])
+      verified := Proof.RsaKeyGen.AArch64.Generate.gen_verified v } (Proof.Rsa.AArch64.Scrub.keySearchOk Proof.RsaKeyGen.AArch64.Generate.stackUse))])
 
 end VG.Artifacts.RsaKeyGen.AArch64

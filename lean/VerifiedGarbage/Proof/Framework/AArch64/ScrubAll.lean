@@ -723,6 +723,26 @@ theorem scrubAllOk_regs (hk : (sig.words abi.ptrBits).length ≤ 8) {W : Nat} (h
     exact (hm a fun hlt => hd (show (a - (s.sp - BitVec.ofNat 64 W)).toNat + 1 ≤ W by omega)).symm
   pub s₁ s₂ hp := ((pub_regs hk).mp hp).1.1.1
 
+/-- `scrubAllOk_regs` for a postcondition that reads the memory on return
+only within the buffers given the precondition. -/
+theorem scrubAllOk_regs_pre (hk : (sig.words abi.ptrBits).length ≤ 8) {W : Nat} (hW : 0 < W)
+    (hWs : W ≤ stack)
+    (hpost : ∀ vs m m₁ m₂ r, vs.length = (sig.words abi.ptrBits).length →
+      Curry.apply (sig.words abi.ptrBits) pre vs m →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) post vs m m₁ r →
+        Curry.apply (sig.words abi.ptrBits) post vs m m₂ r) :
+    ScrubAllOk (sig.contract abi pre post wa stack leak) W (sig.retBits abi.ptrBits) where
+  sp := RTaintG.sp_of_pre hk hW hWs
+  post s u u' hs hq hm hx := by
+    have hp := ((pre_regs hk).mp hs).2.2.2.2.2.2
+    rw [post_regs hk] at hq ⊢
+    rw [hx]
+    refine hpost _ _ _ _ _ (regArgs_length sig s hk) hp (fun b hb a ha' => ?_) hq
+    have hd := RTaintF.scrub_disjoint hk hW hWs hs b hb a ha'
+    exact (hm a fun hlt => hd (show (a - (s.sp - BitVec.ofNat 64 W)).toNat + 1 ≤ W by omega)).symm
+  pub s₁ s₂ hp := ((pub_regs hk).mp hp).1.1.1
+
 /-- `scrubAllOk_regs` with no stack zeroed, for code without frames. -/
 theorem scrubAllOk_regs0 (hk : (sig.words abi.ptrBits).length ≤ 8)
     (hpost : ∀ vs m m₁ m₂ r, vs.length = (sig.words abi.ptrBits).length →
@@ -780,6 +800,31 @@ theorem scrubAllOk_consts0 {c₀ : String × List (BitVec 64)} {cs : List (Strin
   pub s₁ s₂ hp := (scrubAllOk_regs0 (pre := pre) (post := post) (wa := wa) (leak := leak) hk
     hpost).pub s₁ s₂ (pub_consts.mp hp).1
 
+
+/-- `ScrubAllOk` over the whole stack, whatever its size: `scrubAllOk_regs0`
+if it is 0, `scrubAllOk_regs` otherwise. -/
+theorem scrubAllOk_any (hk : (sig.words abi.ptrBits).length ≤ 8)
+    (hpost : ∀ vs m m₁ m₂ r, vs.length = (sig.words abi.ptrBits).length →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) post vs m m₁ r →
+        Curry.apply (sig.words abi.ptrBits) post vs m m₂ r) :
+    ScrubAllOk (sig.contract abi pre post wa stack leak) stack (sig.retBits abi.ptrBits) := by
+  cases stack with
+  | zero => exact scrubAllOk_regs0 hk hpost
+  | succ n => exact scrubAllOk_regs hk (Nat.succ_pos n) (Nat.le_refl _) hpost
+
+/-- `scrubAllOk_any` under the calling convention with tables of constants. -/
+theorem scrubAllOk_consts_any {c₀ : String × List (BitVec 64)} {cs : List (String × List (BitVec 64))}
+    (hk : (sig.words abi.ptrBits).length ≤ 8)
+    (hpost : ∀ vs m m₁ m₂ r, vs.length = (sig.words abi.ptrBits).length →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) post vs m m₁ r →
+        Curry.apply (sig.words abi.ptrBits) post vs m m₂ r) :
+    ScrubAllOk (sig.contract (abi.withConsts (c₀ :: cs)) pre post wa stack leak) stack
+      (sig.retBits abi.ptrBits) := by
+  cases stack with
+  | zero => exact scrubAllOk_consts0 hk hpost
+  | succ n => exact scrubAllOk_consts hk (Nat.succ_pos n) (Nat.le_refl _) hpost
 end
 
 /-! ## Registering scrubbed code -/
