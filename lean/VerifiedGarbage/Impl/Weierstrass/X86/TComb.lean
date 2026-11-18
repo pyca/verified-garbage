@@ -17,23 +17,26 @@ bits of `k` and the digits `d_j = k_j - H ∈ [-H, H)`,
 `k = c + Σ d_j 2^(wj)` for `c = H Σ_{j<J} 2^(wj)`: the accumulator `A`
 starts at `[c]G` (a constant), and iteration `j` adds the entry of table `j`
 for `|d_j|` (or the point at infinity for `d_j = 0`), negated if `d_j < 0`,
-by the complete addition for `a = -3` (`rcb3`, with `b` in `S.b3`), for
-`j = J - 1` down to `0`: `J` additions, and no doublings. This is the comb of `Impl/Weierstrass/AArch64/TComb.lean`, with
-the same tables.
+by the complete addition (`rcb`, with `a` and `3b` in `S`), for
+`j = J - 1` down to `0`: `J` additions, and no doublings (`comb`). This is
+the comb of `Impl/Weierstrass/AArch64/TComb.lean`, with the same tables;
+`TCombJ.lean` has the comb with Booth's digits and Jacobian additions, on
+the same tables and selection.
 
 The digits are secret, so their entries are selected in constant time: every
 entry of the table is loaded, 16 bytes at a time, at an address that depends
 only on `j` (public), into `xmm6`, and kept (`pand`, `por`) under a mask in
 all four dwords of `xmm7` that is all ones exactly when its index is the
-magnitude (`selEntry`); the entry accumulates in `xmm0`, `xmm1`, …, and is
-stored to `E`'s `x` and `y`, which are adjacent. The entry's `Z` is `1`
-(Montgomery's, `R mod p`) unless the magnitude is zero, when the entry is
-`(0 : 1 : 0)`. The negation computes `0 - y` and selects it by the mask of the
-digit's sign.
+magnitude (`selEntryAt`); the entry accumulates in `xmm0`, …, `xmm5`, six
+pieces to a scan of the table (`selPassAt`: coordinates of more than three
+words take two), and is stored to `E`'s `x` and `y`, which are adjacent. The
+entry's `Z` is `1` (Montgomery's, `R mod p`) unless the magnitude is zero,
+when the entry is `(0 : 1 : 0)`. The negation computes `0 - y` and selects it
+by the mask of the digit's sign.
 
-The static address is obtained in a four-byte stack frame with `symPush`;
-`pop eax` releases that frame after the comb. The counter is `esi`, and products of it with constants are by `mul`: the
-model has no left shift.
+The static's address is obtained in a four-byte stack frame with `symPush`
+before the comb, and kept in the working space (`ptr`). The counter is `esi`,
+and products of it with constants are by `mul`: the model has no left shift.
 -/
 
 @[expose] public section
@@ -115,12 +118,12 @@ def tblBytes : Nat := 16 * K.M.n * K.H
 /-- `[edx + d]`: byte `d` of the table at `edx`. -/
 def tblAt (d : Nat) : MemOp := { base := .edx, disp := d }
 
-/-- Entry `m` (from 1) of the table at `edx`, its `n` pairs of words kept in
-the accumulators under the mask of `ebx = m`. -/
-def selEntry (m : Nat) : List Instr :=
+/-- Pieces `c₀ …` (`cnt` of them, 16 bytes each, `cnt ≤ 6`) of entry `m` (from 1) of the table at
+`edx`, kept in the accumulators under the mask of `ebx = m`. -/
+def selEntryAt (c₀ cnt m : Nat) : List Instr :=
   eqMask m ++ [.xop (.movd .xmm7 .ecx), .xop (.pshufd .xmm7 .xmm7 0)] ++
-  (List.range K.M.n).flatMap fun c =>
-    [.movdquLoad .xmm6 (tblAt (16 * K.M.n * (m - 1) + 16 * c)), .xop (.bin .pand .xmm6 .xmm7),
+  (List.range cnt).flatMap fun c =>
+    [.movdquLoad .xmm6 (tblAt (16 * K.M.n * (m - 1) + 16 * c₀ + 16 * c)), .xop (.bin .pand .xmm6 .xmm7),
       .xop (.bin .por (selAcc c) .xmm6)]
 
 /-- `edx` = table `esi`'s address, from the retained pointer at `ptr`,
@@ -129,12 +132,18 @@ def selSetup : List Instr :=
   [.mov .eax (.reg .esi), .mov .ecx (.imm (BitVec.ofNat 32 K.tblBytes)), .mul .ecx,
     .mov .edx (.mem (sc K.ptr)), .alu .add .edx (.reg .eax)]
 
+/-- Pieces `c₀ …` (`cnt` of them) of the entry of the table at `edx` for the magnitude in `ebx`
+into `E`'s `x` and `y`: the accumulators cleared, every entry kept under its mask, and stored. -/
+def selPassAt (c₀ cnt : Nat) : List Instr :=
+  (List.range cnt).map (fun c => .xop (.bin .pxor (selAcc c) (selAcc c))) ++
+  (List.range K.H).flatMap (fun m => K.selEntryAt c₀ cnt (m + 1)) ++
+  (List.range cnt).map fun c => .movdquStore (sc (K.E.x + 16 * c₀ + 16 * c)) (selAcc c)
+
 /-- The entry of table `esi` for the magnitude in `ebx` into `E`'s `x` and
-`y`: the accumulators cleared, every entry kept under its mask, and stored. -/
+`y`: its `n` pieces of 16 bytes in one scan of the table, or, for more than the six
+accumulators, the first six in one and the others in a second. -/
 def selPass : List Instr :=
-  (List.range K.M.n).map (fun c => .xop (.bin .pxor (selAcc c) (selAcc c))) ++
-  (List.range K.H).flatMap (fun m => K.selEntry (m + 1)) ++
-  (List.range K.M.n).map fun c => .movdquStore (sc (K.E.x + 16 * c)) (selAcc c)
+  if K.M.n ≤ 6 then K.selPassAt 0 K.M.n else K.selPassAt 0 6 ++ K.selPassAt 6 (K.M.n - 6)
 
 /-- `y = R` if the magnitude in `ebx` is zero (when the selected `y` is zero),
 and `Z = R` unless it is, through `eax`, `ecx` and `edx`. -/
@@ -162,6 +171,55 @@ def negY : Prog isa := .seq (Mont.subCall K.F K.neg K.zero K.E.y) (.block (K.sig
 /-- The words of the table of bits the comb clears, past the scalar's
 `kbytes`, up to `w J`. -/
 def zw : Nat := (K.w * K.J - K.kbytes + 3) / 4
+
+/-! ## The comb by complete additions
+
+`comb`, as the header has it: the accumulator `A` starts at `[c]G`, and the
+iterations `j = J - 1` down to `0` (`esi`, counting down from `J`) add the
+entry of table `j` for `|d_j|`, negated if `d_j < 0`, by the complete addition
+for any `a` (`rcb`, with `a` and `3b` in `S`), into `D`, which is then copied
+to `A`. The table of bits holds only the scalar's `kbytes` bits, so the top
+window, whose bits past them are zero, reads only its `topBits`
+(`kbytes - w (J - 1) < w`; the test of the counter is public), and its digit
+is always negative. -/
+
+/-- The bits of the top window that are the scalar's. -/
+def topBits : Nat := K.kbytes - K.w * (K.J - 1)
+
+/-- `ZF` for the top window: `esi = J - 1`. -/
+def topTest : List Instr := [.alu .cmp .esi (.imm (BitVec.ofNat 32 (K.J - 1)))]
+
+/-- The magnitude of digit `esi` into `eax` and `ebx`: its window (of
+`topBits` bits for the top one) and `|k - H|`. -/
+def digitT : Prog isa :=
+  .seq (.block K.topTest) <|
+  .ite .e (.block (winIndex K.w ++ hornerBits K.bits K.topBits ++ magnitudeH K.H)) (.block K.digit)
+
+/-- `ecx` all ones if digit `esi` is negative: for the top window, whose top
+bit is past the scalar's, always; else if its window's top bit is clear. -/
+def signMaskT : Prog isa :=
+  .seq (.block K.topTest) <|
+  .ite .e (.block [.mov .ecx (.imm (BitVec.allOnes 32))]) (.block K.signMask)
+
+/-- The signed entry of digit `esi` into `E`: selected for its magnitude,
+and `y` negated (through `[neg]`, with zero at `zero`) for a negative digit. -/
+def entry : Prog isa :=
+  .seq K.digitT <| .seq (.block K.select) <|
+  .seq (Mont.subCall K.F K.neg K.zero K.E.y) <|
+  .seq K.signMaskT (.block (sel (2 * K.M.n) K.E.y K.E.y K.neg))
+
+/-- An iteration: `esi -= 1`, the entry of digit `esi`, `D = A + E`, `A = D`,
+and `ZF` for `esi = 0`. -/
+def step : Prog isa :=
+  .seq (.block [decCounter]) <| .seq K.entry <|
+  .seq (fprog K.F (rcb K.S K.A K.E K.D)) (.block (copyPt K.M.n K.A K.D ++ [testCounter]))
+
+/-- `[k]G` into `A`, in projective coordinates: `A = [c]G`, then the `J`
+iterations. -/
+def comb : Prog isa :=
+  .seq (.block (setConst K.M.n K.A.x K.start.1 ++ setConst K.M.n K.A.y K.start.2 ++
+    setConst K.M.n K.A.z K.one ++ [.mov .esi (.imm (BitVec.ofNat 32 K.J))]))
+    (.loop K.step .ne)
 
 end TCombCfg
 

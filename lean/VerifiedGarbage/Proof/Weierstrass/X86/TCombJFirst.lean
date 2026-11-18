@@ -87,7 +87,7 @@ theorem firstJ_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : A
     TblMem.of_unch hF.tbl (by rw [k₃.2.2.1, k₃.2.2.2, k₂.rd, k₂.wr, k₁.2.2.1, k₁.2.2.2]) U₃
       (fun w hw => by simp only [List.mem_singleton] at hw; subst hw; exact hL.bits) hF.out
   refine WP.mono (tentryJ_ok hL hC hV hpn hs₃ hM₃ (i := 0) (by omega_arith) b₃ hb1 (c := false)
-    (Or.inr ⟨rfl, rfl⟩) hbits₃ hz₃ hT₃ hTM₃) fun s₄ h₄ => WP.seq (WP.mono h₄ fun s₅ E₅ => ?_)
+    (Or.inr ⟨rfl, rfl⟩) hbits₃ hz₃ hT₃ hTM₃ hF.out) fun s₄ h₄ => WP.seq (WP.mono h₄ fun s₅ E₅ => ?_)
   rw [WP.block_append_iff]
   obtain hAE : ∀ x ∈ [K.A.x, K.A.y, K.A.z, K.E.x, K.E.y, K.E.z], x ∈ combWs K.toComb := by
     intro x hx

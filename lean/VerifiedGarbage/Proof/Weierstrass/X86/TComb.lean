@@ -133,7 +133,7 @@ theorem selSetup_ok (K : TCombCfg) {s : State} {base : Addr} {size j : Nat} {T :
 /-- The retained table pointer addresses every entry; the scalar magnitude
 only controls masks. The selected point is neutral when its magnitude is zero. -/
 theorem select_ok (K : TCombCfg) {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
-    (hn : 1 ≤ K.M.n ∧ K.M.n ≤ 6) (hH : K.H < 2 ^ 31) (htb : K.tblBytes < 2 ^ 32)
+    (hn : 1 ≤ K.M.n ∧ K.M.n ≤ 12) (hH : K.H < 2 ^ 31) (htb : K.tblBytes < 2 ^ 32)
     (hptr : K.ptr + 4 ≤ size) (hexy : K.E.y = K.E.x + 8 * K.M.n)
     (hy : K.E.y + 8 * K.M.n ≤ size) (hz : K.E.z + 8 * K.M.n ≤ size)
     (hxz : K.E.x + 16 * K.M.n ≤ K.E.z ∨ K.E.z + 8 * K.M.n ≤ K.E.x)
@@ -145,7 +145,8 @@ theorem select_ok (K : TCombCfg) {s : State} {base : Addr} {size : Nat} (hs : Sc
     (h8 : s.gpr .ebx = BitVec.ofNat 32 a) (ha : a ≤ K.H)
     (hT : s.mem.readW (off base K.ptr) 32 = T)
     (hreg : InRegions (s.rd ++ s.wr) ((T + BitVec.ofNat 32 (j * K.tblBytes)).setWidth 64) K.tblBytes)
-    (hX : ((T + BitVec.ofNat 32 (j * K.tblBytes)).setWidth 64).toNat + K.tblBytes ≤ 2 ^ 32) :
+    (hX : ((T + BitVec.ofNat 32 (j * K.tblBytes)).setWidth 64).toNat + K.tblBytes ≤ 2 ^ 32)
+    (hout : ∀ d < K.tblBytes, size ≤ ofs base ((T + BitVec.ofNat 32 (j * K.tblBytes)).setWidth 64 + BitVec.ofNat 64 d)) :
     WP isa (.block K.select) s
       (SelPost K base s a ((T + BitVec.ofNat 32 (j * K.tblBytes)).setWidth 64)) := by
   have hnw := hs.nowrap
@@ -163,7 +164,7 @@ theorem select_ok (K : TCombCfg) {s : State} {base : Addr} {size : Nat} (hs : Sc
     have := Nat.mul_le_mul_left (16 * K.M.n) (show e + 1 ≤ K.H by omega_using [he])
     rw [Nat.mul_add, Nat.mul_one] at this; omega_using [hn, htb, hy, hz, hxz, hzero, h0xy, h0z, hX, htbe, he, hc, this]
   refine WP.mono (selPass_ok K hs₁ hn.2 hH (by omega_using [hH, ha]) h8₁ (congrArg (BitVec.setWidth 64) x₁)
-    hr hX (by omega_using [hexy, hy])) fun s₂ ⟨a₂, O₂, k₂⟩ => ?_
+    hr hX (by omega_using [hexy, hy]) hout) fun s₂ ⟨a₂, O₂, k₂⟩ => ?_
   have hs₂ := hs₁.of_keeps k₂ (by decide)
   have h8₂ : s₂.gpr .ebx = BitVec.ofNat 32 a := by rw [k₂.1 _ (by decide), h8₁]
   have h0₂ : wordsVal s₂.mem base K.zero K.M.n = 0 := by
@@ -280,7 +281,6 @@ open Spec.Weierstrass
 structure TCombFixed (K : TCombCfg) (C : Curve) (base : Addr) (size : Nat) (s₀ : State) (k : Nat)
     (T : Addr) (ws : List (BitVec 64)) : Prop where
   a : tmv C K.M.n base s₀ K.S.a = Fin.ofNat C.p C.a
-  b : tmv C K.M.n base s₀ K.S.b3 = Fin.ofNat C.p C.b
   ro_lt : ∀ x ∈ combRo K.toComb, wordsVal s₀.mem base x K.M.n < C.p
   zero : wordsVal s₀.mem base K.zero K.M.n = 0
   bits : ∀ t < K.kbytes, s₀.mem (off base (K.bits + t)) = if k.testBit t then 1 else 0
