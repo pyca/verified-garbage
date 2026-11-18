@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaPss.AArch64.Scrub
 public import VerifiedGarbage.TCB.Emit
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.RsaPss.AArch64.Sat
@@ -21,12 +22,12 @@ open VG.Proof.RsaPss.AArch64 (signP_ok OK)
 
 def artifacts (c : Proof.Rsa.AArch64.CrtImpl) (vs : List Proof.Pbkdf2.Md.AArch64.MdHash) : List Artifact :=
   if h : OK vs then [
-    Spec.RsaPss.signPrecomputedMdTableApi.artifact AArch64.target {
+    Spec.RsaPss.signPrecomputedMdTableApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
       suffix := qualifiedName "" [("crt", c.suffix)]
       tables := [("hash", Proof.MdHashTable.AArch64.tables vs), ("mgf1", Proof.MdHashTable.AArch64.tables vs)]
       code := Impl.RsaPss.AArch64.signCP (Proof.MdHashTable.AArch64.fnsOf vs) (Proof.HashTable.AArch64.fnsOf vs)
         (privPOf c).name (privPOf c).code
-      verified := signP_ok h c }]
+      verified := signP_ok h c } (Proof.RsaPss.AArch64.Scrub.signOk _ _ _))]
   else []
 
 end VG.Artifacts.RsaPss.AArch64.RsaPrivateCrtAllMdHash
@@ -39,12 +40,12 @@ open VG.Proof.RsaPss.AArch64 (verify_ok OK)
 
 def artifacts (c : Proof.Rsa.AArch64.PublicImpl) (vs : List Proof.Pbkdf2.Md.AArch64.MdHash) : List Artifact :=
   if h : OK vs then [
-    Spec.RsaPss.verifyPrecomputedMdTableApi.artifact AArch64.target {
+    Spec.RsaPss.verifyPrecomputedMdTableApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
       suffix := qualifiedName "" [("rsa", c.suffix)]
       tables := [("hash", Proof.MdHashTable.AArch64.tables vs), ("mgf1", Proof.MdHashTable.AArch64.tables vs)]
       code := Impl.RsaPss.AArch64.verifyC (Proof.MdHashTable.AArch64.fnsOf vs) (Proof.HashTable.AArch64.fnsOf vs)
         (pdOf c).name (pdOf c).code
-      verified := verify_ok h c }]
+      verified := verify_ok h c } (Proof.RsaPss.AArch64.Scrub.verifyOk _ _ _))]
   else []
 
 end VG.Artifacts.RsaPss.AArch64.RsaPublicPrecomputedAllMdHash
