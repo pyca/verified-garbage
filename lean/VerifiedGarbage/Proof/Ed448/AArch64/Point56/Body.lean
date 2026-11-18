@@ -1,7 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Ed448.AArch64.Point56.AsFn
-public import VerifiedGarbage.Proof.Ed448.AArch64.Window.Dbl
+public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.AsFn
 public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.MulSlots
 public import VerifiedGarbage.Proof.Ed448.Root
 public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Lit

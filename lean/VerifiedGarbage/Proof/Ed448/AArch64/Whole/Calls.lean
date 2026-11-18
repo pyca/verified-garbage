@@ -1,10 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Ctx
-import VerifiedGarbage.Proof.Ed448.AArch64.ScalarVerified
+public import VerifiedGarbage.Proof.Ed448.AArch64.ScalarVerified
 public import VerifiedGarbage.Proof.Ed448.AArch64.BaseContract
-public import VerifiedGarbage.Proof.Ed448.AArch64.ScalarMain
-public import VerifiedGarbage.Proof.Ed448.AArch64.ScalarMulAddMain
 import VerifiedGarbage.Proof.Ed448.AArch64.ScalarLit
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub

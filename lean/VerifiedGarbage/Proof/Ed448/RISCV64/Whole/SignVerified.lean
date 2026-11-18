@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.SignCT
-import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.SignCached
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 public import VerifiedGarbage.Proof.Framework.Scratch
 public import VerifiedGarbage.Proof.Ed448.WholeLocal

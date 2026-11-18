@@ -2,11 +2,10 @@ module
 
 public import VerifiedGarbage.Impl.Ed448.PPC64LE.ScalarBase
 public import VerifiedGarbage.Proof.X448.PPC64LE.Invert
-public import VerifiedGarbage.Proof.Ed448.PPC64LE.BaseBits
+public import VerifiedGarbage.Proof.Ed448.PPC64LE.BaseSel
 public import VerifiedGarbage.Proof.Ed448.Comb
 public import VerifiedGarbage.Proof.Ed448.Group.Projective
 import VerifiedGarbage.Proof.Ed448.PPC64LE.BaseInit
-import VerifiedGarbage.Proof.Ed448.PPC64LE.BaseSel
 import VerifiedGarbage.Proof.Framework.PPC64LE.Call
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Range

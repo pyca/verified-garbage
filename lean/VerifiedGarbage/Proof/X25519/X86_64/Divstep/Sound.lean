@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.Divstep.Tc
 import VerifiedGarbage.Proof.Divstep.Packed
 public import VerifiedGarbage.Proof.Ed25519.Group.Extended
 public import VerifiedGarbage.Proof.Divstep.BatchBasic
-public import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Spec
+public import VerifiedGarbage.Proof.X25519.X86_64.Divstep.FRow
 import Mathlib.Data.BitVec
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import Mathlib.Tactic.Linarith.Frontend

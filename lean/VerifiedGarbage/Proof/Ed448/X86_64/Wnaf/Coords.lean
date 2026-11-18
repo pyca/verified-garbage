@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.X86_64.Window.SelectBase
 public import VerifiedGarbage.Proof.Ed448.X86_64.Window.SelectKey
 import VerifiedGarbage.Proof.Ed448.X86_64.Window.DirectKey
 import VerifiedGarbage.Proof.Framework.Block

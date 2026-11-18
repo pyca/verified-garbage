@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.X25519.RISCV64.Instr
 public import VerifiedGarbage.Proof.X25519.Limbs
 public import VerifiedGarbage.Proof.X448.Limbs32 -- shake: keep (re-exported below for the RISC-V proofs' `open`s)
-public import VerifiedGarbage.Proof.X25519.RISCV64.Pass
 import VerifiedGarbage.Proof.Framework.Range
 
 /-! ### `X448.RISCV64.Pass`, which this module and modules that import it used -/

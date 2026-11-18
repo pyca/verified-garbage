@@ -1,10 +1,9 @@
 module
 
 import VerifiedGarbage.Proof.Ed25519.X86.RecoverCTBlocks
-import VerifiedGarbage.Proof.Ed25519.X86.PointDecode
+public import VerifiedGarbage.Proof.Ed25519.X86.PointDecode
 public import VerifiedGarbage.Proof.Ed25519.X86.VerifyContract
 public import VerifiedGarbage.Proof.Ed25519.X86.PointCTSupport
-public import VerifiedGarbage.Proof.Ed25519.X86.RecoverPoint
 import VerifiedGarbage.Proof.Ed25519.X86.FreezeField
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTLit
@@ -14,7 +13,6 @@ meta import VerifiedGarbage.Proof.Ed25519.X86.RecoverCTBlocks
 meta import VerifiedGarbage.Proof.Ed25519.X86.PointDecode
 meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyContract
 meta import VerifiedGarbage.Proof.Ed25519.X86.PointCTSupport
-meta import VerifiedGarbage.Proof.Ed25519.X86.RecoverPoint
 meta import VerifiedGarbage.Proof.Ed25519.X86.FreezeField
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTLit

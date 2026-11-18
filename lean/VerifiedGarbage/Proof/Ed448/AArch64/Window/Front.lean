@@ -6,22 +6,19 @@ public import VerifiedGarbage.Proof.Ed448.Ref
 import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Call
 import VerifiedGarbage.Proof.Ed448.Recover
 import VerifiedGarbage.Proof.Ed448.AArch64.Window.Checks
-import VerifiedGarbage.Proof.Ed448.AArch64.DecodeOps
 import VerifiedGarbage.Proof.Ed448.AArch64.VerifySign
 public import VerifiedGarbage.Proof.Ed448.Formulas
 import VerifiedGarbage.Proof.Ed448.AArch64.Point56.MulSlots
 import VerifiedGarbage.Proof.X448.AArch64.Base.Const
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Ed448.AArch64.Window.CopyK
+public import VerifiedGarbage.Proof.Ed448.AArch64.Window.CopyK
 public import VerifiedGarbage.Proof.Ed448.AArch64.Window.TableInit
 public import VerifiedGarbage.Proof.X448.AArch64.Base.Digit
-public import VerifiedGarbage.Proof.X448.AArch64.Fast.SaveX
 public import VerifiedGarbage.Proof.X448.AArch64.Fast.VSave
 import VerifiedGarbage.Proof.Ed448.AArch64.VerifyBits
 public import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Ed448.AArch64.VerifyBytes
-public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyEntry
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub

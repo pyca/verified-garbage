@@ -2,9 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.Ed25519.X86.PointAccumulate
 public import VerifiedGarbage.Proof.Ed25519.ScalarMul
-public import VerifiedGarbage.Proof.Ed25519.X86.PointTable
+public import VerifiedGarbage.Proof.Ed25519.X86.PrepareAdd
 public import VerifiedGarbage.Proof.Ed25519.X86.PowerEnv
-import VerifiedGarbage.Proof.Ed25519.X86.PrepareAdd
 import VerifiedGarbage.Proof.Ed25519.X86.ScalarBody
 import VerifiedGarbage.Proof.Ed25519.X86.Points
 import VerifiedGarbage.Proof.X25519.X86.Fold

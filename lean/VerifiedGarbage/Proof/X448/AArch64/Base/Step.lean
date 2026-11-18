@@ -24,7 +24,7 @@ public import VerifiedGarbage.Proof.X448.AArch64.Fast.Env
 public import VerifiedGarbage.Proof.X448.AArch64.Base.Digit
 import VerifiedGarbage.Proof.X448.AArch64.Fast.Chain
 import VerifiedGarbage.Proof.X448.AArch64.Fast.Weave
-import VerifiedGarbage.Proof.X448.AArch64.Init
+import VerifiedGarbage.Proof.X448.AArch64.Mul
 public import VerifiedGarbage.Proof.X448.AArch64.Base.Comb
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset

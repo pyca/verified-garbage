@@ -14,13 +14,11 @@ import Mathlib.Tactic.NormNum.Abs
 import Mathlib.Data.Rat.Cast.Order
 import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Macs
-public import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Exec
 import Mathlib.Algebra.BigOperators.Group.List.Basic
 public import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Math
 public import VerifiedGarbage.Impl.Curve448.AArch64.Neon
 import Mathlib.Tactic.Ring.RingNF
 import Mathlib.Tactic.Ring
-import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Arith
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 

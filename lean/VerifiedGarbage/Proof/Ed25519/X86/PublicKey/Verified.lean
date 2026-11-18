@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.X86.PublicKey.CTReady
 public import VerifiedGarbage.Proof.Framework.X86.RelCT
 import VerifiedGarbage.Proof.Framework.X86.Syms
 import VerifiedGarbage.Proof.Ed25519.X86.Whole.Wipe
@@ -11,7 +10,6 @@ import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseVerified
 import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import VerifiedGarbage.Proof.Framework.KernelRfl
-meta import VerifiedGarbage.Proof.Ed25519.X86.PublicKey.CTReady
 meta import VerifiedGarbage.Proof.Framework.X86.RelCT
 meta import VerifiedGarbage.Proof.Framework.X86.Syms
 meta import VerifiedGarbage.Proof.Ed25519.X86.Whole.Wipe
@@ -35,6 +33,583 @@ meta import VerifiedGarbage.Proof.Ed25519.Contract
 meta import VerifiedGarbage.Proof.Ed25519.Expanded
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
+public import VerifiedGarbage.Proof.Ed25519.X86.Whole.Layout
+public import VerifiedGarbage.Spec.Ed25519.Contract
+public import VerifiedGarbage.Proof.Ed25519.X86.CombTbl
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.AddrArith -- shake: keep
+public import VerifiedGarbage.Proof.Ed25519.X86.Whole.Setup
+public import VerifiedGarbage.Impl.Ed25519.X86.PublicKey
+import VerifiedGarbage.Proof.Ed25519.X86.PublicKey.Prune
+public import VerifiedGarbage.Proof.Ed25519.X86.Whole.HashPre
+public import VerifiedGarbage.Proof.Ed25519.X86.Whole.CallCT
+public import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseMain
+import VerifiedGarbage.Proof.Framework.OffsetBelow
+import VerifiedGarbage.Proof.Sha512.Stream
+import VerifiedGarbage.Proof.Framework.X86.CallWith
+import Mathlib.Tactic.NormNum.Prime
+import Mathlib.Data.Nat.Totient
+import Mathlib.Tactic.Positivity.Finset
+import Mathlib.Algebra.Order.Field.Basic
+import Mathlib.Tactic.NormNum.GCD
+import Mathlib.Data.Sym.Sym2.Init
+import Mathlib.Tactic.ContinuousFunctionalCalculus
+public import Mathlib.Algebra.Group.Nat.Defs
+public import Mathlib.Tactic.Push
+import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+import VerifiedGarbage.Proof.Ed25519.X86.CombLit
+import VerifiedGarbage.Proof.Ed25519.X86.PointCTLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Sha512.X86.Lit
+-- Proofs inside exposed definitions (structure values) use these: Lean needs them public.
+public import Mathlib.Data.Nat.Basic
+public import Mathlib.Order.RelClasses
+meta import VerifiedGarbage.Proof.Ed25519.X86.Whole.Layout
+meta import VerifiedGarbage.Spec.Ed25519.Contract
+meta import VerifiedGarbage.Proof.Ed25519.X86.CombTbl
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Ed25519.X86.Whole.Setup
+meta import VerifiedGarbage.Impl.Ed25519.X86.PublicKey
+meta import VerifiedGarbage.Proof.Ed25519.X86.PublicKey.Prune
+meta import VerifiedGarbage.Proof.Ed25519.X86.Whole.HashPre
+meta import VerifiedGarbage.Proof.Ed25519.X86.Whole.CallCT
+meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseMain
+meta import VerifiedGarbage.Proof.Framework.OffsetBelow
+meta import VerifiedGarbage.Proof.Sha512.Stream
+meta import VerifiedGarbage.Proof.Framework.X86.CallWith
+meta import Mathlib.Tactic.NormNum.Prime
+meta import Mathlib.Data.Nat.Totient
+meta import Mathlib.Tactic.Positivity.Finset
+meta import Mathlib.Algebra.Order.Field.Basic
+meta import Mathlib.Tactic.NormNum.GCD
+meta import Mathlib.Data.Sym.Sym2.Init
+meta import Mathlib.Tactic.ContinuousFunctionalCalculus
+meta import Mathlib.Algebra.Group.Nat.Defs
+meta import Mathlib.Tactic.Push
+meta import Mathlib.Tactic.Attr.Core
+meta import Aesop.BuiltinRules
+meta import VerifiedGarbage.Proof.Ed25519.X86.CombLit
+meta import VerifiedGarbage.Proof.Ed25519.X86.PointCTLit
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Sha512.X86.Lit
+meta import Mathlib.Data.Nat.Basic
+meta import Mathlib.Order.RelClasses
+
+/-! ### `Ed25519.X86.PublicKey.CTReady`, which only this module used -/
+
+section
+
+/-! ### `Ed25519.X86.PublicKey.Layout`, which only this module used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.Ed25519.X86.PublicKey
+open VG VG.X86
+open VG.Impl.Ed25519.X86 (combSym)
+
+/-- The seed, the arguments and the comb's tables (the static `combSym`, which
+`vg_ed25519_scalar_base` reads). -/
+def pkRd (n : Nat) (s : State) : List Region :=
+  [⟨(arg s 1).setWidth 64, n⟩, ⟨argAddr s 0, 12⟩, TBL ((s.syms combSym).setWidth 64)]
+def pkWr (s : State) : List Region := [⟨(arg s 0).setWidth 64, 32⟩, ⟨(arg s 2).setWidth 64, 8192⟩]
+
+/-- What the two runs of a derivation share: the stack pointer, the arguments and the
+comb's tables. -/
+def pkPub (s t : State) : Prop :=
+  s.gpr .esp = t.gpr .esp ∧ arg s 0 = arg t 0 ∧ arg s 1 = arg t 1 ∧ arg s 2 = arg t 2 ∧
+    s.syms combSym = t.syms combSym
+
+/-- Public-key derivation from the `n` bytes at the second argument (the seed's SHA-512
+digest, 64), with the postcondition `post`. -/
+def pkLocalWith (n : Nat) (post : State → State → Prop) : Contract isa where
+  pre s :=
+    let out : Region := ⟨(arg s 0).setWidth 64, 32⟩
+    let seed : Region := ⟨(arg s 1).setWidth 64, n⟩
+    let scratch : Region := ⟨(arg s 2).setWidth 64, 8192⟩
+    let args : Region := ⟨argAddr s 0, 12⟩
+    let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
+    let stack : Region := below (s.gpr .esp) 280
+    s.rd = pkRd n s ∧ s.wr = pkWr s ∧ out.Disjoint seed ∧ out.Disjoint scratch ∧
+      seed.Disjoint scratch ∧ args.Disjoint out ∧ args.Disjoint scratch ∧
+      ret.Disjoint out ∧ ret.Disjoint scratch ∧ stack.Disjoint out ∧
+      stack.Disjoint seed ∧ stack.Disjoint scratch ∧
+      (arg s 0).toNat + 32 ≤ 2 ^ 32 ∧ (arg s 1).toNat + n ≤ 2 ^ 32 ∧
+      (arg s 2).toNat + 8192 ≤ 2 ^ 32 ∧ 280 ≤ (s.gpr .esp).toNat ∧
+      (s.gpr .esp).toNat + 16 ≤ 2 ^ 32 ∧ CombHeld s [out, scratch, stack]
+  post := post
+  pub := pkPub
+
+variable {n : Nat}
+
+abbrev esp (s : State) : BitVec 32 := s.gpr .esp - BitVec.ofNat 32 256
+abbrev Ctx (n : Nat) (s t : State) : Prop := Whole.Ctx (esp s) s.gpr s.mem (pkRd n s) (pkWr s) t
+
+structure Bounds (n : Nat) (s : State) : Prop where
+  out : (arg s 0).toNat + 32 ≤ 2 ^ 32
+  seed : (arg s 1).toNat + n ≤ 2 ^ 32
+  scratch : (arg s 2).toNat + 8192 ≤ 2 ^ 32
+  below : 280 ≤ (s.gpr .esp).toNat
+  above : (s.gpr .esp).toNat + 16 ≤ 2 ^ 32
+
+theorem bounds {post : State → State → Prop} {s : State} (h : (pkLocalWith n post).pre s) : Bounds n s := by
+  obtain ⟨_, _, _, _, _, _, _, _, _, _, _, _, a, b, c, d, e, _⟩ := h
+  exact ⟨a, b, c, d, e⟩
+
+theorem Bounds.frame {s : State} (h : Bounds n s) : (esp s).toNat + 272 ≤ 2 ^ 32 := by
+  rw [sub_toNat (by have := h.below; omega_using [this])]
+  have := h.above
+  omega_using [this]
+
+theorem Bounds.call {s : State} (h : Bounds n s) : 24 ≤ (esp s).toNat := by
+  rw [sub_toNat (by have := h.below; omega_using [this])]
+  have := h.below
+  omega_using [this]
+
+theorem stack_eq {s : State} (h : Bounds n s) : Whole.STK (esp s) = below (s.gpr .esp) 280 := by
+  simp only [Whole.STK, below, esp]
+  rw [Taint.sub_setWidth (by have := h.below; omega_using [this] : 256 ≤ (s.gpr .esp).toNat),
+    Taint.sub_setWidth h.below, BitVec.sub_sub]
+  rfl
+
+/-- Pushing the caller-saved EAX allocates locals without changing callee-saved registers. -/
+theorem push_ctx {post : State → State → Prop} {s : State} (h : (pkLocalWith n post).pre s) :
+    Ctx n s (pushed (List.replicate 64 .eax) s) := by
+  have hb := bounds h
+  have hf := pushed_frame (s := s) (rs := List.replicate 64 .eax) (by simp)
+    (by simp only [List.length_replicate]; have := hb.below; omega_using [this])
+  refine ⟨(pushed_rd _ _).trans h.1, ?_, ?_, fun r _ hn => pushed_gpr _ _ hn, ?_⟩
+  · rw [pushed_wr, h.2.1]
+    simp only [List.length_replicate]
+  · rw [pushed_esp, List.length_replicate]
+  · refine Frame.sub hf fun r hr => ?_
+    simp only [List.mem_singleton] at hr; subst hr
+    refine ⟨Whole.STK (esp s), List.mem_append_right _ (List.mem_singleton_self _), ?_⟩
+    rw [stack_eq hb]
+    exact below_sub (by simp) hb.below
+
+abbrev OUT (s : State) : Region := ⟨(arg s 0).setWidth 64, 32⟩
+abbrev SEED (n : Nat) (s : State) : Region := ⟨(arg s 1).setWidth 64, n⟩
+abbrev SCR (s : State) : Region := ⟨(arg s 2).setWidth 64, 8192⟩
+abbrev ARGS (s : State) : Region := ⟨argAddr s 0, 12⟩
+abbrev RET (s : State) : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
+
+structure Facts (n : Nat) (s : State) : Prop extends Bounds n s where
+  os : (OUT s).Disjoint (SEED n s)
+  oc : (OUT s).Disjoint (SCR s)
+  sc : (SEED n s).Disjoint (SCR s)
+  ao : (ARGS s).Disjoint (OUT s)
+  ac : (ARGS s).Disjoint (SCR s)
+  ro : (RET s).Disjoint (OUT s)
+  rc : (RET s).Disjoint (SCR s)
+  ko : (Whole.STK (esp s)).Disjoint (OUT s)
+  ks : (Whole.STK (esp s)).Disjoint (SEED n s)
+  kc : (Whole.STK (esp s)).Disjoint (SCR s)
+  held : CombHeld s [OUT s, SCR s, Whole.STK (esp s)]
+
+theorem facts {post : State → State → Prop} {s : State} (h : (pkLocalWith n post).pre s) : Facts n s := by
+  have hb := bounds h
+  obtain ⟨_, _, os, oc, sc, ao, ac, ro, rc, ko, ks, kc, _, _, _, _, _, held⟩ := h
+  exact ⟨hb, os, oc, sc, ao, ac, ro, rc, stack_eq hb ▸ ko, stack_eq hb ▸ ks, stack_eq hb ▸ kc,
+    stack_eq hb ▸ held⟩
+
+theorem arg_address (s : State) (j : Nat) : addr (esp s) (260 + 4 * j) = argAddr s j := by
+  simp only [addr, esp, argAddr]
+  rw [show 260 + 4 * j = 256 + (4 + 4 * j) by omega_using [], BitVec.ofNat_add,
+    ← BitVec.add_assoc, BitVec.sub_add_cancel]
+
+theorem arg_address64 {s : State} (h : Bounds n s) {j : Nat} (hj : j < 3) :
+    argAddr s j = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 (4 + 4 * j) :=
+  addr_eq (by have := h.above; omega_using [hj, this])
+
+theorem args_stack {s : State} (h : Bounds n s) : (ARGS s).Disjoint (Whole.STK (esp s)) := by
+  rw [stack_eq h]
+  change Region.Disjoint ⟨argAddr s 0, 12⟩ ⟨((s.gpr .esp) - BitVec.ofNat 32 280).setWidth 64, 280⟩
+  rw [arg_address64 h (by decide), Taint.sub_setWidth h.below]
+  exact (Offset.disjoint_below_above _ (m := 280) (a := 4) (l := 12) (by decide)).symm
+
+theorem args_contains {s : State} (h : Bounds n s) {j : Nat} (hj : j < 3) :
+    (ARGS s).Contains (argAddr s j) 4 := by
+  change (⟨argAddr s 0, 12⟩ : Region).Contains _ _
+  rw [arg_address64 h (by decide), arg_address64 h hj]
+  exact Offset.contains _ (by omega_using []) (by omega_using [hj]) (by decide)
+
+theorem original_arg {s t : State} (h : Facts n s) (hc : Ctx n s t) {j : Nat} (hj : j < 3) :
+    t.mem.readW (addr (esp s) (260 + 4 * j)) 32 = arg s j := by
+  rw [arg_address]
+  exact hc.frame.readW (args_contains h.toBounds hj) (by
+    simp only [pkWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false]
+    rintro r (rfl | rfl | rfl)
+    · exact h.ao
+    · exact h.ac
+    · exact args_stack h.toBounds) (by decide)
+
+theorem original_arg_readable {s t : State} (h : Facts n s) (hc : Ctx n s t) {j : Nat} (hj : j < 3) :
+    InRegions (t.rd ++ t.wr) (addr (esp s) (260 + 4 * j)) 4 := by
+  rw [arg_address, hc.rd]
+  exact ⟨ARGS s, List.mem_append_left _ (by simp [pkRd]), args_contains h.toBounds hj⟩
+
+end VG.Proof.Ed25519.X86.PublicKey
+
+end
+
+end
+
+
+/-! Merged from `Proof.Ed25519.X86.PublicKey.Setup`. -/
+
+@[expose] public section
+
+section
+namespace VG.Proof.Ed25519.X86.PublicKey
+open VG VG.X86
+open VG.Impl.Ed25519.X86.Whole (Value setup)
+variable {n : Nat}
+
+def argValue (s : State) : Value → BitVec 32
+  | .const n => BitVec.ofNat 32 n
+  | .frame d => esp s + BitVec.ofNat 32 d
+  | .caller i d => arg s i + BitVec.ofNat 32 d
+
+theorem setup_ok {s t : State} (h : Facts n s) (hc : Ctx n s t) {vs : List Value}
+    (hn : vs.length ≤ 6) (hv : ∀ v ∈ vs, Whole.valid 3 v) :
+    WP isa (.block (setup 0 vs)) t fun u => Ctx n s u ∧
+      Frame [⟨(esp s).setWidth 64, 24⟩] t.mem u.mem ∧
+      ∀ j (hj : j < vs.length), Whole.slots (esp s) u j = argValue s (vs[j]'hj) := by
+  refine WP.mono (Whole.Ctx.setup hc (n := 3) (by have := h.toBounds.frame; omega_using [this])
+    (fun j hj => original_arg_readable h hc hj) (by omega_using [hn]) hv) fun u ⟨hu, hf, hs⟩ => ⟨hu, hf, ?_⟩
+  intro j hj
+  have e := hs j hj
+  simp only [Nat.zero_add] at e
+  rw [addr_eq (by have := h.toBounds.frame; omega_using [hn, hj, this])] at e
+  rw [Whole.slots, e]
+  generalize he : vs[j]'hj = v
+  have vv := hv (vs[j]'hj) (List.getElem_mem hj)
+  rw [he] at vv
+  cases v with
+  | const n => rfl
+  | frame d => rfl
+  | caller i d =>
+    exact congrArg (· + BitVec.ofNat 32 d) (original_arg h hc vv)
+
+end VG.Proof.Ed25519.X86.PublicKey
+end
+
+/-! Merged from `Proof.Ed25519.X86.PublicKey.Base`. -/
+section
+namespace VG.Proof.Ed25519.X86.PublicKey
+open VG VG.X86
+open VG.Impl.Ed25519.X86 (scalarBase)
+variable {n : Nat}
+
+def scalarPtr (s : State) : BitVec 32 := esp s + BitVec.ofNat 32 32
+
+theorem scalarPtr_addr {s : State} (h : Bounds n s) :
+    (scalarPtr s).setWidth 64 = (esp s).setWidth 64 + BitVec.ofNat 64 32 :=
+  addr_eq (by have := h.frame; omega_using [this])
+
+theorem base_nosp : NoSp scalarBase := NoSp.of_all (by lit_decide)
+theorem base_stack : stackUse scalarBase = 8 := by lit_decide
+
+def BaseArgs (s t : State) : Prop :=
+  Whole.slots (esp s) t 0 = arg s 0 ∧ Whole.slots (esp s) t 1 = scalarPtr s ∧
+    Whole.slots (esp s) t 2 = arg s 2
+
+def baseRd (s : State) : List Region :=
+  [⟨(scalarPtr s).setWidth 64, 32⟩, ⟨(esp s).setWidth 64, 12⟩,
+    TBL ((s.syms Impl.Ed25519.X86.combSym).setWidth 64)]
+
+/-- The three cdecl argument slots of the base-point multiplication. -/
+theorem base_args {s t : State} (h : Facts n s) (hc : Ctx n s t) (ha : BaseArgs s t) :
+    arg t.callEntry 0 = arg s 0 ∧ arg t.callEntry 1 = scalarPtr s ∧ arg t.callEntry 2 = arg s 2 := by
+  have e : ∀ j < 64, arg t.callEntry j = Whole.slots (esp s) t j :=
+    fun j hj => Whole.call_arg hc.esp h.toBounds.call (by have := h.toBounds.frame; omega_using [this]) hj
+  exact ⟨(e 0 (by decide)).trans ha.1, (e 1 (by decide)).trans ha.2.1,
+    (e 2 (by decide)).trans ha.2.2⟩
+
+theorem base_pre {s t : State} (h : Facts n s) (hc : Ctx n s t) (ha : BaseArgs s t)
+    (hy : t.syms = s.syms) :
+    scalarBaseLocal.pre (t.callEntry.withRegions (baseRd s) (pkWr s)) := by
+  obtain ⟨a0, a1, a2⟩ := base_args h hc ha
+  have ae : argAddr t.callEntry 0 = (esp s).setWidth 64 := by
+    rw [argAddr_callEntry, hc.esp]
+    simp
+  have fe := h.toBounds.frame
+  have be := h.toBounds.call
+  have ret : Region.Sub ⟨(esp s - 4).setWidth 64, 4⟩ (Whole.STK (esp s)) :=
+    Whole.below_sub_stack be (by decide)
+  have args : Region.Sub ⟨(esp s).setWidth 64, 12⟩ (Whole.STK (esp s)) :=
+    fun p hp => Whole.frame_sub (esp s) p (Region.sub_prefix (by decide) p hp)
+  have scalar : Region.Sub ⟨(scalarPtr s).setWidth 64, 32⟩ (Whole.STK (esp s)) := by
+    rw [scalarPtr_addr h.toBounds]
+    exact fun p hp => Whole.frame_sub (esp s) p (Offset.sub_base _ (by decide : 32 + 32 ≤ 256) p hp)
+  have stk : Region.Sub (below (esp s - BitVec.ofNat 32 4) 8) (Whole.STK (esp s)) :=
+    Whole.inner_sub_stack be
+  have hf : (esp s).toNat + 256 ≤ 2 ^ 32 := by omega_using [fe]
+  have tw : TblWords ((s.syms Impl.Ed25519.X86.combSym).setWidth 64) t.callEntry.mem := by
+    refine (h.held.1.frame hc.frame fun r hr => ?_).frame (Whole.callEntry_frame t) fun r hr => ?_
+    · simp only [pkWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
+        or_false] at hr
+      rcases hr with rfl | rfl | rfl <;> exact h.held.2.2 _ (by simp)
+    · rw [List.mem_singleton.mp hr, hc.esp]
+      exact (h.held.2.2 _ (by simp)).sub_right (Whole.below_sub_stack be (by decide))
+  have cy : (t.callEntry.withRegions (baseRd s) (pkWr s)).syms = s.syms := hy
+  have cs : callStk (t.callEntry.withRegions (baseRd s) (pkWr s)) = below (esp s - BitVec.ofNat 32 4) 8 := by
+    simp only [callStk, State.withRegions_gpr, State.callEntry_esp, hc.esp]; rfl
+  simp only [scalarBaseLocal, BaseRegions, CombHeld, cy, cs, State.withRegions_rd, State.withRegions_wr,
+    arg_withRegions, argAddr_withRegions, State.withRegions_gpr, State.withRegions_mem,
+    State.callEntry_esp, hc.esp, a0, a1, a2, ae]
+  refine ⟨⟨rfl, rfl, h.oc, h.kc.sub_left scalar, h.ko.sub_left args, h.kc.sub_left args,
+    h.ko.sub_left ret, h.kc.sub_left ret, h.out, ?_, h.scratch, ?_, ?_,
+    Whole.inner_frame be hf (d := 32) (n := 32) (by decide) (by decide), h.kc.sub_left stk,
+    h.ko.sub_left stk⟩,
+    h.ko.sub_left stk, tw, h.held.2.1, ?_⟩
+  · change (esp s + BitVec.ofNat 32 32).toNat + 32 ≤ 2 ^ 32
+    rw [BitVec.toNat_add, show (BitVec.ofNat 32 32).toNat = 32 from rfl, Nat.mod_eq_of_lt (by omega_using [fe])]
+    omega_using [fe]
+  · change (esp s - BitVec.ofNat 32 4).toNat + 16 ≤ 2 ^ 32
+    rw [sub_toNat (by omega_using [be] : 4 ≤ (esp s).toNat)]
+    omega_using [fe]
+  · change 8 ≤ (esp s - BitVec.ofNat 32 4).toNat
+    rw [sub_toNat (by omega_using [be] : 4 ≤ (esp s).toNat)]
+    omega_using [be]
+  · simp only [List.mem_cons, List.not_mem_nil, or_false]
+    rintro r (rfl | rfl | rfl)
+    · exact h.held.2.2 _ (by simp)
+    · exact h.held.2.2 _ (by simp)
+    · exact (h.held.2.2 _ (by simp)).sub_right stk
+
+theorem base_call {s t : State} (h : Facts n s) (hc : Ctx n s t) (ha : BaseArgs s t)
+    (hy : t.syms = s.syms) :
+    WP isa (.call "vg_ed25519_scalar_base" scalarBase) t fun u => Ctx n s u ∧
+      Spec.Ed25519.bytesAt u.mem ((arg s 0).setWidth 64) 32 =
+        Spec.Ed25519.scalarBase (Spec.Ed25519.bytesAt t.mem ((scalarPtr s).setWidth 64) 32) := by
+  have scalarWithin : Whole.Within ⟨(scalarPtr s).setWidth 64, 32⟩ (Whole.FR (esp s)) :=
+    ⟨32, scalarPtr_addr h.toBounds, by change 32 + 32 ≤ 256; decide⟩
+  have cov : Covers (baseRd s ++ pkWr s) (pkRd n s ++ Whole.FR (esp s) :: pkWr s) := by
+    refine Covers.of_sub ?_
+    simp only [baseRd, pkWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false]
+    rintro r (rfl | rfl | rfl | rfl | rfl)
+    · exact ⟨Whole.FR (esp s), by simp, scalarWithin⟩
+    · exact ⟨Whole.FR (esp s), by simp, 0, by simp, by change 0 + 12 ≤ 256; decide⟩
+    · exact ⟨TBL ((s.syms Impl.Ed25519.X86.combSym).setWidth 64), by simp [pkRd], 0, by simp, by simp⟩
+    · exact ⟨OUT s, by simp, 0, by simp, by change 0 + 32 ≤ 32; decide⟩
+    · exact ⟨SCR s, by simp, 0, by simp, by change 0 + 8192 ≤ 8192; decide⟩
+  have ws : ∀ r ∈ pkWr s, Whole.Within r (Whole.FR (esp s)) ∨ ∃ R ∈ pkWr s, Whole.Within r R :=
+    fun r hr => .inr ⟨r, hr, 0, by simp, by simp⟩
+  with_reducible
+    refine Whole.call_ok hc h.toBounds.call scalarBase_ok base_nosp (by rw [base_stack]; decide)
+      (base_pre h hc ha hy) cov ws fun u hu _ _ post => ⟨hu, ?_⟩
+  obtain ⟨s₂, hm, hg, hp⟩ := post
+  obtain ⟨a0, a1, _⟩ := base_args h hc ha
+  change Spec.Ed25519.bytesAt s₂.mem ((arg t.callEntry 0).setWidth 64) 32 =
+    Spec.Ed25519.scalarBase (Spec.Ed25519.bytesAt t.callEntry.mem ((arg t.callEntry 1).setWidth 64) 32) at hp
+  rw [hm, a0, a1] at hp
+  rw [hp]
+  refine congrArg Spec.Ed25519.scalarBase ?_
+  refine Whole.callEntry_bytes (r := ⟨(scalarPtr s).setWidth 64, 32⟩) ?_ (by change 32 ≤ 2 ^ 64; decide)
+  rw [hc.esp, scalarPtr_addr h.toBounds]
+  change Region.Disjoint ⟨(esp s).setWidth 64 + BitVec.ofNat 64 32, 32⟩
+    ⟨(esp s - BitVec.ofNat 32 4).setWidth 64, 4⟩
+  have e : (esp s - BitVec.ofNat 32 4).setWidth 64 = (esp s).setWidth 64 - BitVec.ofNat 64 4 :=
+    Taint.sub_setWidth (m := 4) (by have := h.toBounds.call; omega_using [this])
+  rw [e]
+  exact (Offset.disjoint_below_above _ (m := 4) (a := 32) (l := 32) (by decide)).symm
+
+end VG.Proof.Ed25519.X86.PublicKey
+end
+
+/-! Merged from `Proof.Ed25519.X86.PublicKey.Hash`. -/
+section
+namespace VG.Proof.Ed25519.X86.PublicKey
+open VG VG.X86 VG.Impl.Ed25519.X86.PublicKey
+variable {n : Nat}
+
+theorem seed_same {s t : State} (h : Facts n s) (hc : Ctx n s t) :
+    Spec.Ed25519.bytesAt t.mem ((arg s 1).setWidth 64) n =
+      Spec.Ed25519.bytesAt s.mem ((arg s 1).setWidth 64) n := by
+  apply List.map_congr_left
+  intro i hi
+  exact hc.frame.bytes (R := SEED n s) (by
+    simp only [pkWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false]
+    rintro r (rfl | rfl | rfl)
+    · exact h.os.symm
+    · exact h.sc
+    · exact h.ks.symm) (by have := h.seed; change n ≤ 2 ^ 64; omega_using [this]) (List.mem_range.mp hi)
+
+end VG.Proof.Ed25519.X86.PublicKey
+end
+
+/-! Merged from `Proof.Ed25519.X86.PublicKey.Correct`. -/
+section
+namespace VG.Proof.Ed25519.X86.PublicKey
+open VG VG.X86 VG.Impl.Ed25519.X86.PublicKey
+variable {n : Nat}
+
+theorem prune_step {s t : State} (h : Facts n s) (hc : Ctx n s t) {digest : List Byte}
+    (hh : Spec.Sha512.bytesAt t.mem ((esp s).setWidth 64 + 192) 64 = digest) :
+    WP isa (.block prune) t fun u => Ctx n s u ∧
+      Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt u.mem ((scalarPtr s).setWidth 64) 32) =
+        Spec.Ed25519.prune digest := by
+  refine WP.mono (prune_ok hc.esp (by have := h.toBounds.frame; omega_using [this])
+    (by rw [hc.wr]; exact List.mem_cons_self) hh) fun u ⟨ku, hf, hs⟩ => ⟨?_, ?_⟩
+  · refine hc.of_frame ku.rd ku.wr ku.esp ?_ hf ?_
+    · intro r hr _
+      apply ku.regs
+      rintro rfl
+      simp [calleeSaved] at hr
+    · rintro r hr
+      rw [List.mem_singleton.mp hr]
+      exact .inl (Offset.sub_base _ (by decide))
+  · rw [scalarPtr_addr h.toBounds]
+    exact hs
+
+theorem base_step {s t : State} (h : Facts n s) (hc : Ctx n s t) (hy : t.syms = s.syms) {k : Nat}
+    (hn : Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt t.mem ((scalarPtr s).setWidth 64) 32) = k) :
+    WP isa (callWith baseArgs "vg_ed25519_scalar_base" Impl.Ed25519.X86.scalarBase) t
+      fun u => Ctx n s u ∧ Spec.Ed25519.bytesAt u.mem ((arg s 0).setWidth 64) 32 =
+        Spec.Ed25519.encodePoint (Spec.Ed25519.pointMul k Spec.Ed25519.basePoint) := by
+  refine WP.seq (WP.mono_syms (setup_ok h hc (vs := [.caller 0 0, .frame 32, .caller 2 0])
+    (by decide) (Whole.valid_all (by decide))) fun u ⟨hu, hf, hs⟩ yu => ?_)
+  have a0 := hs 0 (by decide)
+  have a1 := hs 1 (by decide)
+  have a2 := hs 2 (by decide)
+  simp only [argValue, List.getElem_cons_zero, List.getElem_cons_succ, BitVec.add_zero] at a0 a1 a2
+  have he : Spec.Ed25519.bytesAt u.mem ((scalarPtr s).setWidth 64) 32 =
+      Spec.Ed25519.bytesAt t.mem ((scalarPtr s).setWidth 64) 32 := by
+    apply List.map_congr_left
+    intro i hi
+    exact hf.bytes (R := ⟨(scalarPtr s).setWidth 64, 32⟩) (by
+      rintro r hr; rw [List.mem_singleton.mp hr, scalarPtr_addr h.toBounds]
+      exact Offset.disjoint_base _ (by decide) (by decide)) (by change 32 ≤ 2 ^ 64; decide) (List.mem_range.mp hi)
+  refine WP.mono (base_call h hu ⟨a0, a1, a2⟩ (yu.trans hy)) fun v ⟨hv, ho⟩ => ⟨hv, ?_⟩
+  rw [ho, he, Spec.Ed25519.scalarBase, hn]
+
+/-- The public key of the digest that `first` leaves at frame offset 192, in `out`. -/
+theorem bodyFrom_ok {s t : State} (h : Facts n s) (hy : t.syms = s.syms)
+    {first : Prog isa} {digest : List Byte}
+    (hh : WP isa first t fun u => Ctx n s u ∧
+      Spec.Sha512.bytesAt u.mem ((esp s).setWidth 64 + 192) 64 = digest) :
+    WP isa (bodyFrom first) t fun u => Ctx n s u ∧ Spec.Ed25519.bytesAt u.mem ((arg s 0).setWidth 64) 32 =
+      Spec.Ed25519.encodePoint (Spec.Ed25519.pointMul (Spec.Ed25519.prune digest) Spec.Ed25519.basePoint) := by
+  refine WP.seq (WP.mono_syms hh fun t₁ ⟨hc₁, hh⟩ y₁ => ?_)
+  refine WP.seq (WP.mono_syms (prune_step h hc₁ hh) fun t₂ ⟨hc₂, hn⟩ y₂ => ?_)
+  refine WP.seq (WP.mono (base_step h hc₂ (y₂.trans (y₁.trans hy)) hn) fun t₃ ⟨hc₃, ho⟩ => ?_)
+  refine WP.mono (Whole.Ctx.zeroWords hc₃ (start := 8) (count := 56)
+    (by have := h.toBounds.frame; omega_using [this]) (by decide)) fun u ⟨hu, hf, _⟩ => ⟨hu, ?_⟩
+  have he : Spec.Ed25519.bytesAt u.mem ((arg s 0).setWidth 64) 32 =
+      Spec.Ed25519.bytesAt t₃.mem ((arg s 0).setWidth 64) 32 := by
+    apply List.map_congr_left
+    intro i hi
+    exact hf.bytes (R := OUT s) (by
+      rintro r hr; rw [List.mem_singleton.mp hr]
+      exact (h.ko.sub_left (fun p hp => Whole.frame_sub (esp s) p
+        (Offset.sub_base _ (by decide : 4 * 8 + 4 * 56 ≤ 256) p hp))).symm)
+      (by change 32 ≤ 2 ^ 64; decide) (List.mem_range.mp hi)
+  rw [he, ho]
+
+private theorem noSp_seq {a b : Prog isa} (ha : NoSp a) (hb : NoSp b) : NoSp (.seq a b) := by
+  intro i hi
+  rcases List.mem_append.mp hi with hi | hi
+  · exact ha i hi
+  · exact hb i hi
+
+theorem bodyFrom_nosp {first : Prog isa} (hf : NoSp first) : NoSp (bodyFrom first) := by
+  have nb : NoSp (.block baseArgs) := NoSp.of_all (by decide +kernel)
+  have np : NoSp (.block prune) := NoSp.of_all (by decide +kernel)
+  have nw : NoSp (.block wipe) := NoSp.of_all (by decide +kernel)
+  exact noSp_seq hf (noSp_seq np (noSp_seq (noSp_seq nb base_nosp) nw))
+
+/-- The frame around `bodyFrom first`, from the public key it leaves in `out`. -/
+theorem frame_ok {post : State → State → Prop} {first : Prog isa} {s : State}
+    (h : (pkLocalWith n post).pre s) (hn : NoSp first) {key : List Byte}
+    (hb : WP isa (bodyFrom first) (pushed (List.replicate 64 .eax) s) fun u => Ctx n s u ∧
+      Spec.Ed25519.bytesAt u.mem ((arg s 0).setWidth 64) 32 = key)
+    (hp : ∀ t, Spec.Ed25519.bytesAt t.mem ((arg s 0).setWidth 64) 32 = key → post s t) :
+    WP isa (.frame (.push (List.replicate 64 .eax)) (bodyFrom first) (.pop .eax 64)) s
+      fun t => abiPreserved s t ∧ post s t := by
+  have hf := facts h
+  refine WP.frame (rs := List.replicate 64 .eax) (by simp) (by simp) (by decide)
+    (by simp only [List.length_replicate]; have := hf.below; omega_using [this]) (bodyFrom_nosp hn)
+    (WP.mono hb fun u ⟨hu, ho⟩ m v fl => ?_)
+  simp only [List.length_replicate] at fl
+  obtain hb256 : 256 ≤ (s.gpr .esp).toNat := by have := hf.below; omega_using [this]
+  refine ⟨⟨fun r hr => ?_, ?_⟩, hp _ ?_⟩
+  · show (popped .eax (List.replicate 64 Reg.eax).length u).gpr r = s.gpr r
+    by_cases he : r = .esp
+    · subst r
+      rw [popped_esp, hu.esp, List.length_replicate]
+      exact BitVec.sub_add_cancel _ _
+    · rw [popped_gpr _ _ _ he (by intro e; subst r; simp [calleeSaved] at hr), hu.cs r hr he]
+  · show m.readW _ 32 = _
+    rw [fl.readW (r := RET s) (Region.contains_self _ _) (fun r hr => by
+      rw [List.mem_singleton.mp hr]
+      change Region.Disjoint ⟨(s.gpr .esp).setWidth 64, 4⟩
+        ⟨(s.gpr .esp - BitVec.ofNat 32 256).setWidth 64, 256⟩
+      rw [Taint.sub_setWidth hb256]
+      exact (Offset.below_disjoint _ (by decide)).symm) (by decide)]
+    refine hu.frame.readW (r := RET s) (Region.contains_self _ _) ?_ (by decide)
+    simp only [pkWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false]
+    rintro r (rfl | rfl | rfl)
+    · exact hf.ro
+    · exact hf.rc
+    · rw [stack_eq hf.toBounds]
+      change Region.Disjoint ⟨(s.gpr .esp).setWidth 64, 4⟩
+        ⟨(s.gpr .esp - BitVec.ofNat 32 280).setWidth 64, 280⟩
+      rw [Taint.sub_setWidth hf.below]
+      exact (Offset.below_disjoint _ (by decide)).symm
+  · show Spec.Ed25519.bytesAt m _ 32 = key
+    refine Eq.trans (List.map_congr_left fun _ hi => fl.bytes (R := OUT s) (fun r hr => by
+      rw [List.mem_singleton.mp hr]
+      exact ((stack_eq hf.toBounds ▸ hf.ko).sub_left (below_sub (by decide) hf.below)).symm)
+      (by show 32 ≤ 2 ^ 64; decide) (List.mem_range.mp hi)) ?_
+    exact ho
+
+end VG.Proof.Ed25519.X86.PublicKey
+end
+
+namespace VG.Proof.Ed25519.X86.PublicKey
+open VG VG.X86 VG.Impl.Ed25519.X86.PublicKey
+open VG.Impl.Ed25519.X86.Whole (Value)
+variable {n : Nat}
+
+def Slots (vs : List Value) (s t : State) : Prop :=
+  ∀ j (hj : j < vs.length), Whole.slots (esp s) t j = argValue s (vs[j]'hj)
+
+def baseValues : List Value := [.caller 0 0, .frame 32, .caller 2 0]
+
+def base_ready {s t : State} (h : Facts n s) (hc : Ctx n s t) (hy : t.syms = s.syms)
+    (hs : Slots baseValues s t) :
+    Whole.CallReady scalarBaseLocal (esp s) (pkRd n s) (pkWr s) t := by
+  unfold Slots baseValues at hs
+  have a0 := hs 0 (by decide)
+  have a1 := hs 1 (by decide)
+  have a2 := hs 2 (by decide)
+  simp only [argValue, List.getElem_cons_zero, List.getElem_cons_succ, BitVec.add_zero] at a0 a1 a2
+  have ha : BaseArgs s t := ⟨a0, a1, a2⟩
+  have scalarWithin : Whole.Within ⟨(scalarPtr s).setWidth 64, 32⟩ (Whole.FR (esp s)) :=
+    ⟨32, scalarPtr_addr h.toBounds, by change 32 + 32 ≤ 256; decide⟩
+  have cov : Covers (baseRd s ++ pkWr s) (pkRd n s ++ Whole.FR (esp s) :: pkWr s) := by
+    refine Covers.of_sub ?_
+    simp only [baseRd, pkWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false]
+    rintro r (rfl | rfl | rfl | rfl | rfl)
+    · exact ⟨Whole.FR (esp s), by simp, scalarWithin⟩
+    · exact ⟨Whole.FR (esp s), by simp, 0, by simp, by change 0 + 12 ≤ 256; decide⟩
+    · exact ⟨TBL ((s.syms Impl.Ed25519.X86.combSym).setWidth 64), by simp [pkRd], 0, by simp, by simp⟩
+    · exact ⟨OUT s, by simp, 0, by simp, by change 0 + 32 ≤ 32; decide⟩
+    · exact ⟨SCR s, by simp, 0, by simp, by change 0 + 8192 ≤ 8192; decide⟩
+  have ws : ∀ r ∈ pkWr s, Whole.Within r (Whole.FR (esp s)) ∨ ∃ R ∈ pkWr s, Whole.Within r R :=
+    fun r hr => .inr ⟨r, hr, 0, by simp, by simp⟩
+  exact ⟨baseRd s, pkWr s, base_pre h hc ha hy, cov, ws⟩
+
+end VG.Proof.Ed25519.X86.PublicKey
+
+end
+
+end
 
 /-! Merged from `Proof.Ed25519.X86.PublicKey.CT`. -/
 

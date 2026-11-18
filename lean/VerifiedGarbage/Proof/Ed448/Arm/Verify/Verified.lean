@@ -13,13 +13,12 @@ import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Proof.Ed448.Arm.Shake.CT
 import Mathlib.Logic.Function.Basic
 public import VerifiedGarbage.Proof.Ed448.Arm.Verify.Hash
-import VerifiedGarbage.Proof.Ed448.Arm.ScalarVerified
+public import VerifiedGarbage.Proof.Ed448.Arm.ScalarVerified
 import VerifiedGarbage.Proof.Ed25519.Arm.Whole.WrapCT
 import VerifiedGarbage.Proof.Ed25519.Arm.Whole.BlocksCT
 import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.Ed448.Arm.VerifyLocal
 public import VerifiedGarbage.Impl.Ed448.Arm.Verify
-public import VerifiedGarbage.Proof.Ed448.Arm.ScalarMain
 import VerifiedGarbage.Proof.Ed448.Arm.VerifyLit
 import VerifiedGarbage.Proof.Ed448.Arm.PublicKey.Hash
 import VerifiedGarbage.Proof.Framework.NativeTaintCore

@@ -19,7 +19,6 @@ import VerifiedGarbage.Proof.X25519.PPC64LE.Pass
 import VerifiedGarbage.Proof.Framework.PPC64LE.Spill
 public import VerifiedGarbage.Proof.Ed448.PPC64LE.VChecks
 import VerifiedGarbage.Proof.Ed448.PPC64LE.BaseInit
-import VerifiedGarbage.Proof.Ed448.PPC64LE.BaseBits
 import VerifiedGarbage.Proof.Ed448.PPC64LE.BaseSel
 import VerifiedGarbage.Proof.X448.Field
 import VerifiedGarbage.Proof.X448.PPC64LE.Invert

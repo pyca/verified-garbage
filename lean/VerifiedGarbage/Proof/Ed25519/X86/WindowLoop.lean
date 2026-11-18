@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ed25519.X86.VerifyContract
 public import VerifiedGarbage.Proof.Ed25519.WindowNibble
 public import VerifiedGarbage.Proof.Ed25519.DblPoint
-public import VerifiedGarbage.Proof.Ed25519.X86.PointTable
+public import VerifiedGarbage.Proof.Ed25519.X86.PrepareAdd
 public import VerifiedGarbage.Proof.Ed25519.X86.PowerEnv
 import VerifiedGarbage.Proof.Ed25519.X86.Point32.Call
 import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseMain
@@ -18,7 +18,6 @@ import VerifiedGarbage.Proof.Ed25519.ScalarBytes
 import VerifiedGarbage.Proof.Framework.Taint
 public import VerifiedGarbage.Proof.Ed25519.X86.CommonContract
 public import VerifiedGarbage.Impl.Ed25519.X86.VerifyWindow
-import VerifiedGarbage.Proof.Ed25519.X86.PrepareAdd
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Ed25519.WindowConstants
 public import VerifiedGarbage.Proof.Ed25519.Group.Extended

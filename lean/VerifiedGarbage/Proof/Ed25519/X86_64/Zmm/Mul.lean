@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.X86_64.CombLoop
 public import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Select
-import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombLoop
+public import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombLoop
 import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Lit
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
@@ -21,7 +21,6 @@ import VerifiedGarbage.Proof.Ed25519.X86_64.Points
 import VerifiedGarbage.Impl.Ed25519.X86_64.CombIfma
 import VerifiedGarbage.Proof.Ed25519.X86_64.CombSelect
 public import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.Double4
-public import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombAdd
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Lit

@@ -21,7 +21,6 @@ public import VerifiedGarbage.Proof.Ed448.Ref
 import VerifiedGarbage.Proof.Ed448.Recover
 import VerifiedGarbage.Proof.Ed448.Root
 import VerifiedGarbage.Proof.Ed448.Scalar
-import VerifiedGarbage.Proof.Ed448.PPC64LE.BaseBits
 import VerifiedGarbage.Proof.X448.PPC64LE.Freeze
 import VerifiedGarbage.Proof.X448.Field
 import VerifiedGarbage.Proof.X448.Invert

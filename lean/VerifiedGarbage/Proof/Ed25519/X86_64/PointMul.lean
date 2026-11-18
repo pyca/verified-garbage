@@ -1,8 +1,7 @@
 module
 
-import VerifiedGarbage.Proof.Ed25519.X86_64.PointAccumulateLoop
-import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulBatch
 import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCounter
+import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulBatch
 import VerifiedGarbage.Proof.Ed25519.X86_64.PointPowersLoop
 import VerifiedGarbage.Proof.Ed25519.X86_64.Points
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd

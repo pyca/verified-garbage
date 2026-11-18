@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.SignNonce
 public import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.HashCT
 public import VerifiedGarbage.Proof.Ed448.Ref
-import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.SignChallenge
 import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.Common
 import VerifiedGarbage.Proof.Framework.RISCV64.RelBlock
 import VerifiedGarbage.Proof.Sha3.RISCV64.Stream.Lit
@@ -11,12 +10,281 @@ import VerifiedGarbage.Proof.X448.RISCV64.R64.Lit
 meta import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.SignNonce
 meta import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.HashCT
 meta import VerifiedGarbage.Proof.Ed448.Ref
-meta import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.SignCached
-meta import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.SignChallenge
 meta import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.Common
 meta import VerifiedGarbage.Proof.Framework.RISCV64.RelBlock
 meta import VerifiedGarbage.Proof.Sha3.RISCV64.Stream.Lit
 meta import VerifiedGarbage.Proof.X448.RISCV64.R64.Lit
+import VerifiedGarbage.Proof.Ed448.Signing
+import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.Hash
+import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.X448.RISCV64.Ladder
+public import VerifiedGarbage.Spec.Ed448
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.RISCV64.Spill
+import VerifiedGarbage.Proof.Ed25519.RISCV64.Whole.Frame
+import VerifiedGarbage.Proof.Ed25519.RISCV64.Whole.Common
+import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.Calls
+meta import VerifiedGarbage.Proof.Ed448.Signing
+meta import VerifiedGarbage.Proof.Framework.Range
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.Hash
+meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.X448.RISCV64.Ladder
+meta import VerifiedGarbage.Spec.Ed448
+meta import VerifiedGarbage.Proof.Framework.Block
+meta import VerifiedGarbage.Proof.Framework.RISCV64.Spill
+meta import VerifiedGarbage.Proof.Ed25519.RISCV64.Whole.Frame
+meta import VerifiedGarbage.Proof.Ed25519.RISCV64.Whole.Common
+meta import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.Calls
+
+/-! ### `Ed448.RISCV64.Whole.SignCached`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Ed448.RISCV64.Whole.SignChallenge`, which this module and modules that import it used -/
+
+section
+
+/-!
+# `vg_ed448_sign_cached` on RISCV64: the challenge and `S`
+
+From `S3`: `H(dom4(0, C) ‖ R ‖ A ‖ M)` into `16(F)`, reduced modulo `L`
+into `320(F)` (`k`), and `S = (r + k s) mod L` into the second half of `out`
+(`challenge_ok`, `S4`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ed448.RISCV64.Whole
+
+open VG VG.RISCV64 VG.RISCV64.Steps VG.Impl.Ed448.RISCV64.Whole VG.Proof.X25519.RISCV64
+open VG.Impl.Ed25519.RISCV64.Whole (mov)
+open VG.Proof.Ed25519.RISCV64.Whole (Inv slotArea ArgsKeep args5_ok)
+open VG.Spec.Ed448 (bytesAt)
+
+/-- `k`. -/
+abbrev kB (s : State) : List Byte :=
+  Spec.Ed448.scalarReduce (Spec.Ed448.hash (ctxB s) (RB s ++ pkB s ++ msgB s))
+
+/-- After `S`. -/
+structure S4 (s t : State) : Prop where
+  inv : SInv s t
+  R : bytesAt t.mem (s.gpr .a0) 57 = RB s
+  S : ∃ σ, Spec.Ed448.decodeLE σ = Spec.Ed448.prune (hS s) ∧
+    bytesAt t.mem (s.gpr .a0 + BitVec.ofNat 64 57) 57 = Spec.Ed448.scalarMulAdd (rB s) (kB s) σ
+
+theorem challenge_ok {s t : State} (hp : SignPre s) (h : S3 s t) : WP isa signChallenge t (S4 s) := by
+  obtain ⟨cP, cB⟩ := ctxPiece hp h.inv
+  obtain ⟨mP, mB⟩ := msgPiece hp h.inv
+  obtain ⟨hP, hB⟩ := fPiece0 hp h.inv
+  obtain g20 : t.gpr .s0 = s.gpr .a0 := h.inv.regs _ (by decide)
+  obtain g29 : t.gpr .s1 = s.gpr .a7 := h.inv.regs _ (by decide)
+  obtain g30 : t.gpr .s11 = sF s := h.inv.regs _ (by decide)
+  obtain hO57 : Region.Sub ⟨s.gpr .a0, 57⟩ (oR s) := Region.sub_prefix (by decide)
+  obtain oP : PieceOk (s.gpr .a7) t ⟨.s0, 0, .imm 57⟩ :=
+    pieceOk_of (R := ⟨s.gpr .a0, 57⟩) (by simp only [Piece.R, Piece.addr, Len.val, g20, BitVec.add_zero])
+      (by decide) (by decide) (show 57 < 2048 by decide) (cov_right (cov_in0 (fO hp h.inv) (by decide)))
+      (hp.oC.sub_left hO57) (by rw [h.inv.sp]; exact hp.bO.sub_right hO57)
+  obtain oB : Piece.bytes t.mem t.gpr ⟨.s0, 0, .imm 57⟩ = RB s := by
+    simp only [Piece.bytes, Piece.addr, Len.val, g20, BitVec.add_zero]; exact h.R
+  obtain ⟨pP, pB⟩ := fPiece hp h.inv (d := 384) (n := 57) (by decide) (by decide) (by decide)
+  rw [h.pk] at pB
+  unfold signChallenge
+  simp only [dom4Pieces, List.cons_append, List.nil_append]
+  refine WP.seq (WP.mono (hash_ok (sc := .s1) (f := .s11) (o := 16) (out := sF s + BitVec.ofNat 64 16)
+    (by decide) (by decide) (by decide) g29 (by rw [g30]) (kenv hp h.inv) (by simp) (fun p hp' => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hp'
+      rcases hp' with rfl | rfl | rfl | rfl | rfl
+      · exact hP
+      · exact cP
+      · exact oP
+      · exact pP
+      · exact mP) (cov_in (fF hp h.inv) (by decide))
+    (fsc hp (by decide)) (by rw [h.inv.sp]; exact fbelow hp (by decide))) fun t₂ ⟨k₂, d₂⟩ => ?_)
+  obtain h₂ := h.inv.hash hp (by decide) k₂
+  obtain hh : bytesAt t₂.mem (sF s + BitVec.ofNat 64 16) 114 =
+      Spec.Ed448.hash (ctxB s) (RB s ++ pkB s ++ msgB s) := by
+    simp only [List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil, List.append_nil, hB, cB, oB, pB,
+      mB, h.hdr, bytesAt_sha3] at d₂
+    rw [d₂, show (s.gpr .a4).toNat = (ctxB s).length by simp [bytesAt], ← List.append_assoc, List.append_assoc (RB s)]
+    exact dom4_hash _ _
+  -- `k`.
+  refine reduceF_ok hp h₂ (o := 320) (by decide) (by decide) fun t₃ h₃ f₃ r₃ => ?_
+  rw [hh] at r₃
+  -- `S`.
+  obtain g20' : t₃.gpr .s0 = s.gpr .a0 := h₃.regs _ (by decide)
+  obtain g29' : t₃.gpr .s1 = s.gpr .a7 := h₃.regs _ (by decide)
+  obtain g30' : t₃.gpr .s11 = sF s := h₃.regs _ (by decide)
+  unfold mov
+  refine WP.seq (args5_ok (i := 57) (j := 256) (k := 320) (l := 136) (n := 0) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by decide) fun u hu a3 a4 a5 a6 a7 => ?_)
+  rw [g20'] at a3
+  rw [g30'] at a4 a5 a6
+  rw [g29', BitVec.add_zero] at a7
+  obtain hOs : Region.Sub ⟨s.gpr .a0 + BitVec.ofNat 64 57, 57⟩ (oR s) := osub (by decide)
+  obtain hW : Covers [⟨s.gpr .a0 + BitVec.ofNat 64 57, 57⟩, scR s] u.wr := by
+    rw [hu.wr]
+    intro a n ⟨r, hr, hc⟩
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact cov_in (fO hp h₃) (by decide) a n ⟨_, List.mem_singleton_self _, hc⟩
+    · exact ⟨_, fC hp h₃, hc⟩
+  obtain hR : Covers [⟨sF s + BitVec.ofNat 64 256, 57⟩, ⟨sF s + BitVec.ofNat 64 320, 57⟩,
+      ⟨sF s + BitVec.ofNat 64 136, 57⟩] (u.rd ++ u.wr) := by
+    rw [hu.rd, hu.wr]
+    intro a n ⟨r, hr, hc⟩
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact cov_right (cov_in (fF hp h₃) (by decide)) a n ⟨_, List.mem_singleton_self _, hc⟩
+    · exact cov_right (cov_in (fF hp h₃) (by decide)) a n ⟨_, List.mem_singleton_self _, hc⟩
+    · exact cov_right (cov_in (fF hp h₃) (by decide)) a n ⟨_, List.mem_singleton_self _, hc⟩
+  refine mulAdd_call a3 a4 a5 a6 a7 (hp.oC.sub_left hOs) (fsc hp (by decide)) (fsc hp (by decide))
+    (fsc hp (by decide)) (cov_app hR (cov_right hW)) hW fun t₄ rd₄ wr₄ sp₄ f₄ cs₄ b₄ => ?_
+  rw [hu.mem] at f₄ b₄
+  obtain h₄ : SInv s t₄ := h₃.step signRegs_pres (rd₄.trans hu.rd) (wr₄.trans hu.wr) (sp₄.trans hu.sp)
+    (fun r hr => (cs₄ r hr).trans (hu.pres r hr)) f₄ (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact ⟨oR s, by simp, hOs⟩
+      · exact ⟨scR s, by simp, fun _ h => h⟩) fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact oslot hp (by decide)
+      · exact cslot hp
+  -- What the steps keep.
+  obtain kr : ∀ {d n : Nat}, d + n ≤ 520 → (d + n ≤ 320 ∨ 377 ≤ d) →
+      bytesAt t₃.mem (sF s + BitVec.ofNat 64 d) n = bytesAt t₂.mem (sF s + BitVec.ofNat 64 d) n :=
+    fun hdn hd => bytes_keep f₃ (by omega_using [hdn]) fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact Offset.disjoint _ (by omega_using [hd]) (by omega_using [hdn]) (by omega_using [])
+      · exact fsc hp hdn
+  obtain e256 : bytesAt t₃.mem (sF s + BitVec.ofNat 64 256) 57 = rB s := by
+    rw [kr (by decide) (by decide), keep_hash hp h.inv (o := 16) (d := 256) (n := 57) (by decide) (by decide)
+      (by decide) k₂, h.r]
+  obtain e136 : Spec.Ed448.decodeLE (bytesAt t₃.mem (sF s + BitVec.ofNat 64 136) 57) = Spec.Ed448.prune (hS s) := by
+    rw [kr (by decide) (by decide), keep_hash hp h.inv (o := 16) (d := 136) (n := 57) (by decide) (by decide)
+      (by decide) k₂, h.sc]
+  obtain hO0 : ∀ {m m' : Mem} {W : List Region}, Frame W m m' →
+      (∀ r ∈ W, Region.Disjoint ⟨s.gpr .a0, 57⟩ r) → bytesAt m' (s.gpr .a0) 57 = bytesAt m (s.gpr .a0) 57 :=
+    fun hf hd => bytes_keep hf (by decide) hd
+  refine ⟨h₄, ?_, ⟨_, e136, by rw [b₄, e256, r₃]⟩⟩
+  rw [hO0 f₄ fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · simpa using Offset.disjoint (s.gpr .a0) (d := 0) (n := 57) (e := 57) (k := 57) (.inl (by decide))
+          (by decide) (by decide)
+      · exact hp.oC.sub_left hO57,
+    hO0 f₃ fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact (hp.oF.sub_left hO57).sub_right (fsub (by decide))
+      · exact hp.oC.sub_left hO57,
+    hO0 k₂.frame fun r hr => by
+      simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact (hp.oF.sub_left hO57).sub_right (fsub (by decide))
+      · exact hp.oC.sub_left hO57
+      · rw [h.inv.sp]; exact (hp.bO.sub_right hO57).symm, h.R]
+
+end VG.Proof.Ed448.RISCV64.Whole
+
+end
+
+end
+
+/-!
+# `vg_ed448_sign_cached` on RISC-V, with its frame as an argument
+
+The setup (`frame_ok`, `signSetup_ok`), the steps (`expand_ok`, `nonce_ok`,
+`challenge_ok`), then `F` from 16 to 448 zeroed (`wipe_ok`) and the
+registers restored: `out` holds `R ‖ S`, the signature (`signCached_wp`, by
+`Proof.Ed448.sign_pipeline`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ed448.RISCV64.Whole
+
+open VG VG.RISCV64 VG.RISCV64.Steps VG.Impl.Ed448.RISCV64.Whole VG.Proof.X25519.RISCV64
+open VG.Proof.Ed25519.RISCV64.Whole (Inv slotArea restore_ok restoreList)
+open VG.Spec.Ed448 (bytesAt)
+
+/-- After the stores of `wipe` from the first `k`. -/
+structure WInv (t₀ : State) (F : Addr) (o n : Nat) (k : Nat) (u : State) : Prop where
+  gpr : u.gpr = t₀.gpr
+  rd : u.rd = t₀.rd
+  wr : u.wr = t₀.wr
+  sp : u.sp = t₀.sp
+  frame : Frame [⟨F + BitVec.ofNat 64 o, 8 * n⟩] t₀.mem u.mem
+
+/-- `wipe f o n`: the `n` doublewords from `o(F)` zeroed, only `a5` written. -/
+theorem wipe_ok {t : State} {f : Reg} {F : Addr} {o n : Nat} (hf8 : f ≠ .a5) (hF : t.gpr f = F)
+    (hal : F.toNat % 8 = 0) (hon : o + 8 * n < 2048) (ho : o % 8 = 0)
+    (hw : ∀ k < n, InRegions t.wr (F + BitVec.ofNat 64 (o + 8 * k)) 8) {rest : List Instr} {Q : State → Prop}
+    (K : ∀ u, Frame [⟨F + BitVec.ofNat 64 o, 8 * n⟩] t.mem u.mem → u.rd = t.rd → u.wr = t.wr → u.sp = t.sp →
+      (∀ r, r ≠ .a5 → u.gpr r = t.gpr r) → WP isa (.block rest) u Q) :
+    WP isa (.block (wipe f o n ++ rest)) t Q := by
+  unfold wipe
+  rw [List.cons_append]
+  refine wp_li (by decide) fun u₁ h₁ => ?_
+  rw [List.map_eq_flatMap, WP.block_append_iff]
+  refine WP.mono (wp_range_flatMap (M := isa) (WInv u₁ F o n) (fun k u hk h => ?_) n (Nat.le_refl _) u₁
+    ⟨rfl, rfl, rfl, rfl, Frame.refl _ _⟩) fun u h => ?_
+  · have hf : u.gpr f = F := by rw [h.gpr, h₁.other _ hf8, hF]
+    refine wp_sd (a := F + BitVec.ofNat 64 (o + 8 * k)) (by omega_using [hon, hk]) (by rw [hf])
+      (Spill.al8 hal (by omega_using [ho])) (by rw [h.wr, h₁.wr]; exact hw k hk) fun u' h' => WP.block_nil
+        ⟨by rw [h'.gpr, h.gpr], by rw [h'.rd, h.rd], by rw [h'.wr, h.wr], by rw [h'.sp, h.sp], ?_⟩
+    rw [h'.mem]
+    refine h.frame.writeW List.mem_cons_self _ ?_
+    rw [← Offset.add_add]
+    exact Offset.contains_base _ (by omega_using [hk]) (by omega_using [hon, hk])
+  · refine K u (by rw [← h₁.mem]; exact h.frame) (by rw [h.rd, h₁.rd]) (by rw [h.wr, h₁.wr])
+      (by rw [h.sp, h₁.sp]) fun r hr => by rw [h.gpr, h₁.other r hr]
+
+theorem bytesAt_split114 (m : Mem) (p : Addr) :
+    bytesAt m p 114 = bytesAt m p 57 ++ bytesAt m (p + BitVec.ofNat 64 57) 57 := by
+  rw [← bytesAt_take57, ← bytesAt_drop57, List.take_append_drop]
+
+theorem signCached_wp (hl : Proof.Ed448.BaseLadder2Ok) {s : State} (hp : SignPre s) :
+    WP isa signCached s fun t => (∀ r ∈ preserved, t.gpr r = s.gpr r) ∧ t.sp = s.sp ∧ t.gpr .ra = s.gpr .ra ∧
+      bytesAt t.mem (s.gpr .a0) 114 = Spec.Ed448.sign (seedB s) (ctxB s) (msgB s) := by
+  unfold signCached
+  refine WP.seq (frame_ok hp fun u hu => WP.block_nil ?_)
+  refine WP.seq (WP.mono (signSetup_ok hp hu) fun t₁ h₁ => ?_)
+  refine WP.seq (WP.mono (expand_ok hp h₁) fun t₂ h₂ => ?_)
+  refine WP.seq (WP.mono (nonce_ok hl hp h₂) fun t₃ h₃ => ?_)
+  refine WP.seq (WP.mono (challenge_ok hp h₃) fun t₄ h₄ => ?_)
+  obtain ⟨σ, hσ, hS⟩ := h₄.S
+  have g30 : t₄.gpr .s11 = sF s := h₄.inv.regs _ (by decide)
+  have hFw : (fR s) ∈ t₄.wr := fF hp h₄.inv
+  refine wipe_ok (f := .s11) (o := 16) (n := 46) (by decide) g30 hp.alF (by decide) (by decide)
+    (fun k hk => in_base hFw (by omega_using [hk]) (by omega_using [hk])) fun u uf urd uwr usp ug => ?_
+  have h₅ : SInv s u := h₄.inv.step signRegs_pres urd uwr usp (fun r hr => ug r fun e => by revert hr; rw [e]; decide)
+    uf (fun r hr => by rw [List.mem_singleton.mp hr]; exact ⟨fR s, by simp, fsub (by decide)⟩)
+    fun r hr => by rw [List.mem_singleton.mp hr]; exact fslot (by decide)
+  have hrl : ∀ p ∈ restoreList 448 signRegs, p.2 + 8 ≤ 520 := by decide
+  refine restore_ok h₅ hp.alF (h₅.regs _ (by decide)) (by decide) (by decide) (by decide) (by decide)
+    (fun p (hp' : p ∈ restoreList 448 signRegs) => show InRegions (u.rd ++ u.wr) (sF s + BitVec.ofNat 64 p.2) 8 by
+      rw [h₅.rd, h₅.wr, hp.rd, hp.wr]
+      exact ⟨fR s, by simp, Offset.contains_base _ (hrl p hp') (by have := hrl p hp'; omega_using [this])⟩)
+    fun t₆ g₆ sp₆ ra₆ m₆ _ => ⟨g₆, sp₆, ra₆, ?_⟩
+  have kO : bytesAt t₆.mem (s.gpr .a0) 114 = bytesAt t₄.mem (s.gpr .a0) 114 := by
+    rw [m₆]
+    exact bytes_keep uf (by decide) fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact hp.oF.sub_right (fsub (by decide))
+  rw [kO, bytesAt_split114, h₄.R, hS]
+  exact Proof.Ed448.sign_pipeline _ _ _ _ σ hp.pk hσ
+
+end VG.Proof.Ed448.RISCV64.Whole
+
+end
+
+end
 
 /-!
 # `vg_ed448_sign_cached` on RISC-V in constant time

@@ -1,15 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.Arm.SignCached.Hash
-import VerifiedGarbage.Proof.Ed448.Arm.ScalarVerified
+public import VerifiedGarbage.Proof.Ed448.Arm.ScalarVerified
 public import VerifiedGarbage.Proof.Ed448.Arm.ScalarLit
 import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Wipe
-public import VerifiedGarbage.Proof.Ed448.Arm.BaseVerified
-public import VerifiedGarbage.Proof.Ed448.Arm.ScalarMain
-public import VerifiedGarbage.Proof.Ed448.Arm.ScalarMulAddMain
+public import VerifiedGarbage.Proof.Ed448.Arm.PublicKey.Base
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Wrap
-import VerifiedGarbage.Proof.Ed448.Arm.PublicKey.Base
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Ed448.Arm.BaseEncode
 import VerifiedGarbage.Proof.Ed448.Arm.PublicKey.Hash

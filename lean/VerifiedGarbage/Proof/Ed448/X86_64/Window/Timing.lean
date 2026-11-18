@@ -34,13 +34,11 @@ meta import VerifiedGarbage.Proof.Ed448.X86_64.FieldVariant
 meta import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Lit
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.X448.X86_64.Lit
-import VerifiedGarbage.Proof.Ed448.X86_64.Window.SelectBase
 import VerifiedGarbage.Proof.Ed448.X86_64.Window.SelectKey
 import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Fn
 import VerifiedGarbage.Proof.Ed448.X86_64.Window.Memory
 import VerifiedGarbage.Proof.Ed448.X86_64.Window.Ops
 import VerifiedGarbage.Impl.Ed448.X86_64.WindowRegister
-meta import VerifiedGarbage.Proof.Ed448.X86_64.Window.SelectBase
 meta import VerifiedGarbage.Proof.Ed448.X86_64.Window.SelectKey
 meta import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Fn
 meta import VerifiedGarbage.Proof.Ed448.X86_64.Window.Memory

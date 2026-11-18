@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.X448.AArch64.Base
-import VerifiedGarbage.Proof.X448.AArch64.Init
+import VerifiedGarbage.Proof.X448.AArch64.Mul
 public import VerifiedGarbage.Proof.X448.AArch64.Weak.Env
 import VerifiedGarbage.Proof.Framework.AArch64.Tbl
 import VerifiedGarbage.Proof.Framework.Range
