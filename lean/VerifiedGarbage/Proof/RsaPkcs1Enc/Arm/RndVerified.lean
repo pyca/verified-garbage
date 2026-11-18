@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.RndInvoke
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.RndTail
 public import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.RndTaint
+import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.RndScan
 import VerifiedGarbage.Proof.Bignum.Arm.MaskBytesCT
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Vp
 import VerifiedGarbage.Proof.Framework.Omega

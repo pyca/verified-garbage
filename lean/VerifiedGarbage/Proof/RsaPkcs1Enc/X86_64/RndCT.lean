@@ -2,14 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.RndCTScan
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.RndHeads
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.PcContract
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.PcCT
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.Alloc
 meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.RndCTScan
 meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.RndHeads
-meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.PcContract
 meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.PcCT
 meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 meta import VerifiedGarbage.Proof.Framework.Offset

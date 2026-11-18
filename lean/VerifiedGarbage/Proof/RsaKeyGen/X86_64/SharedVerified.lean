@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedSafety
 public import VerifiedGarbage.Spec.RsaKeyGen.Contract
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedCode
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedCTCode
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedContract
 public import VerifiedGarbage.Proof.Framework.Contract

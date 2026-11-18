@@ -1,8 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Mid5
-public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Result
-import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Taint3
+public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Taint3
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.Stores
 import VerifiedGarbage.Proof.Rsa.Arm.RdTwos
 import VerifiedGarbage.Proof.Rsa.TwosMath

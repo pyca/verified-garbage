@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Rsa.AArch64.CvStore
 import VerifiedGarbage.Proof.Rsa.KeyMath
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Bignum.Octets
-public import VerifiedGarbage.Proof.Rsa.AArch64.WDiv
+public import VerifiedGarbage.Proof.Rsa.AArch64.CvTail
 import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec

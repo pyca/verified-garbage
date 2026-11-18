@@ -14,7 +14,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Cand.WUni
-public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Cand.Gcd
 import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Cand.Slot
 import VerifiedGarbage.Proof.RsaKeyGen.CandSpec
 import VerifiedGarbage.Proof.RsaKeyGen.Generate

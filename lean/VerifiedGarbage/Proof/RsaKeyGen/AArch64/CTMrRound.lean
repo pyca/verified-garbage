@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTMrWit
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTMrTab
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrRound
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTMrExp
 import VerifiedGarbage.Proof.RsaKeyGen.Slots
 import VerifiedGarbage.Proof.Rsa.Ranges
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
@@ -15,7 +14,6 @@ import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTMrWit
 meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTMrTab
 meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrRound
-meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTMrExp
 meta import VerifiedGarbage.Proof.RsaKeyGen.Slots
 meta import VerifiedGarbage.Proof.Rsa.Ranges
 meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd

@@ -1,14 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.RsaOaep.Arm.Mgf
-public import VerifiedGarbage.Proof.RsaPss.Arm.Hashes.Md5
-public import VerifiedGarbage.Proof.RsaPss.Arm.Hashes.Sha1
-public import VerifiedGarbage.Proof.RsaPss.Arm.Hashes.Sha224
-public import VerifiedGarbage.Proof.RsaPss.Arm.Hashes.Sha256
-public import VerifiedGarbage.Proof.RsaPss.Arm.Hashes.Sha384
-public import VerifiedGarbage.Proof.RsaPss.Arm.Hashes.Sha512
-public import VerifiedGarbage.Proof.RsaPss.Arm.Hashes.Sha512_224
-public import VerifiedGarbage.Proof.RsaPss.Arm.Hashes.Sha512_256
 public import VerifiedGarbage.Proof.HashTable.Basic
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Entry
 import VerifiedGarbage.Proof.Framework.Arm.Exec
@@ -16,6 +8,276 @@ import VerifiedGarbage.Proof.Framework.Arm.Syms
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.RsaPss.Arm.TabCall
 public import VerifiedGarbage.Spec.MdHashTable
+public import VerifiedGarbage.Proof.RsaPss.Arm.Hash
+public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Instances
+import all Init.Data.Nat.Bitwise.Basic
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Framework.TaintBatch
+import VerifiedGarbage.Proof.Sha1.Arm.Lit
+import VerifiedGarbage.Proof.Sha512.Arm.Lit
+meta import VerifiedGarbage.Proof.RsaPss.Arm.Hash
+meta import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Instances
+meta import Init.Data.Nat.Bitwise.Basic
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Sha1.Arm.Lit
+meta import VerifiedGarbage.Proof.Sha512.Arm.Lit
+public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Sha224
+import VerifiedGarbage.Proof.Sha256.Arm.Lit
+meta import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Sha224
+meta import VerifiedGarbage.Proof.Sha256.Arm.Lit
+public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Sha256
+meta import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Sha256
+
+/-! ### `RsaPss.Arm.Hashes.Sha512_256`, which only this module used -/
+
+section
+
+/-! # RSASSA-PSS on ARMv7: SHA-512/256 -/
+
+@[expose] public section
+
+namespace VG.Proof.RsaPss.Arm
+
+open VG VG.Arm
+
+/-- SHA-512/256, as RSASSA-PSS on ARMv7 uses it. -/
+def sha512_256 : PssHash where
+  H := ⟨Proof.Pbkdf2.Md.Arm.sha512_256Md, Impl.Sha512.Arm.Stream.params.len⟩
+  ok := Proof.Pbkdf2.Md.Arm.sha512_256MdOK
+  len := Proof.Sha512.Arm.Stream.Finalize.shape.len
+  lenAll _ hn := show _ < 2 ^ 64 by omega_using [hn]
+  G := Spec.Mgf1.sha512_256
+  hash _ := rfl
+  glen := rfl
+  outCk := by exact ⟨_, by taint_decide⟩
+  lenCk := by exact ⟨_, by taint_decide⟩
+  one := by decide
+
+end VG.Proof.RsaPss.Arm
+
+end
+
+end
+
+/-! ### `RsaPss.Arm.Hashes.Sha512_224`, which only this module used -/
+
+section
+
+/-! # RSASSA-PSS on ARMv7: SHA-512/224 -/
+
+@[expose] public section
+
+namespace VG.Proof.RsaPss.Arm
+
+open VG VG.Arm
+
+/-- SHA-512/224, as RSASSA-PSS on ARMv7 uses it. -/
+def sha512_224 : PssHash where
+  H := ⟨Proof.Pbkdf2.Md.Arm.sha512_224Md, Impl.Sha512.Arm.Stream.params.len⟩
+  ok := Proof.Pbkdf2.Md.Arm.sha512_224MdOK
+  len := Proof.Sha512.Arm.Stream.Finalize.shape.len
+  lenAll _ hn := show _ < 2 ^ 64 by omega_using [hn]
+  G := Spec.Mgf1.sha512_224
+  hash _ := rfl
+  glen := rfl
+  outCk := by exact ⟨_, by taint_decide⟩
+  lenCk := by exact ⟨_, by taint_decide⟩
+  one := by decide
+
+end VG.Proof.RsaPss.Arm
+
+end
+
+end
+
+/-! ### `RsaPss.Arm.Hashes.Sha512`, which only this module used -/
+
+section
+
+/-! # RSASSA-PSS on ARMv7: SHA-512 -/
+
+@[expose] public section
+
+namespace VG.Proof.RsaPss.Arm
+
+open VG VG.Arm
+
+/-- SHA-512, as RSASSA-PSS on ARMv7 uses it. -/
+def sha512 : PssHash where
+  H := ⟨Proof.Pbkdf2.Md.Arm.sha512Md', Impl.Sha512.Arm.Stream.params.len⟩
+  ok := Proof.Pbkdf2.Md.Arm.sha512MdOK'
+  len := Proof.Sha512.Arm.Stream.Finalize.shape.len
+  lenAll _ hn := show _ < 2 ^ 64 by omega_using [hn]
+  G := Spec.Mgf1.sha512
+  hash _ := rfl
+  glen := rfl
+  outCk := by exact ⟨_, by taint_decide⟩
+  lenCk := by exact ⟨_, by taint_decide⟩
+  one := by decide
+
+end VG.Proof.RsaPss.Arm
+
+end
+
+end
+
+/-! ### `RsaPss.Arm.Hashes.Sha384`, which only this module used -/
+
+section
+
+/-! # RSASSA-PSS on ARMv7: SHA-384 -/
+
+@[expose] public section
+
+namespace VG.Proof.RsaPss.Arm
+
+open VG VG.Arm
+
+/-- SHA-384, as RSASSA-PSS on ARMv7 uses it. -/
+def sha384 : PssHash where
+  H := ⟨Proof.Pbkdf2.Md.Arm.sha384Md, Impl.Sha512.Arm.Stream.params.len⟩
+  ok := Proof.Pbkdf2.Md.Arm.sha384MdOK
+  len := Proof.Sha512.Arm.Stream.Finalize.shape.len
+  lenAll _ hn := show _ < 2 ^ 64 by omega_using [hn]
+  G := Spec.Mgf1.sha384
+  hash _ := rfl
+  glen := rfl
+  outCk := by exact ⟨_, by taint_decide⟩
+  lenCk := by exact ⟨_, by taint_decide⟩
+  one := by decide
+
+end VG.Proof.RsaPss.Arm
+
+end
+
+end
+
+/-! ### `RsaPss.Arm.Hashes.Sha256`, which only this module used -/
+
+section
+
+/-! # RSASSA-PSS on ARMv7: SHA-256 -/
+
+@[expose] public section
+
+namespace VG.Proof.RsaPss.Arm
+
+open VG VG.Arm
+
+/-- SHA-256, as RSASSA-PSS on ARMv7 uses it. -/
+def sha256 : PssHash where
+  H := ⟨Proof.Pbkdf2.Md.Arm.sha256Md, Impl.Sha256.Arm.Stream.params.len⟩
+  ok := Proof.Pbkdf2.Md.Arm.sha256MdOK
+  len := Proof.Sha256.Arm.Stream.shape.len
+  lenAll _ _ := trivial
+  G := Spec.Mgf1.sha256
+  hash _ := rfl
+  glen := rfl
+  outCk := by exact ⟨_, by taint_decide⟩
+  lenCk := by exact ⟨_, by taint_decide⟩
+  one := by decide
+
+end VG.Proof.RsaPss.Arm
+
+end
+
+end
+
+/-! ### `RsaPss.Arm.Hashes.Sha224`, which only this module used -/
+
+section
+
+/-! # RSASSA-PSS on ARMv7: SHA-224 -/
+
+@[expose] public section
+
+namespace VG.Proof.RsaPss.Arm
+
+open VG VG.Arm
+
+/-- SHA-224, as RSASSA-PSS on ARMv7 uses it. -/
+def sha224 : PssHash where
+  H := ⟨Proof.Pbkdf2.Md.Arm.sha224Md, Impl.Sha256.Arm.Stream.params.len⟩
+  ok := Proof.Pbkdf2.Md.Arm.sha224MdOK
+  len := Proof.Sha256.Arm.Stream.shape.len
+  lenAll _ _ := trivial
+  G := Spec.Mgf1.sha224
+  hash _ := rfl
+  glen := rfl
+  outCk := by exact ⟨_, by taint_decide⟩
+  lenCk := by exact ⟨_, by taint_decide⟩
+  one := by decide
+
+end VG.Proof.RsaPss.Arm
+
+end
+
+end
+
+/-! ### `RsaPss.Arm.Hashes.Sha1`, which only this module used -/
+
+section
+
+/-! # RSASSA-PSS on ARMv7: SHA-1 -/
+
+@[expose] public section
+
+namespace VG.Proof.RsaPss.Arm
+
+open VG VG.Arm
+
+/-- SHA-1, as RSASSA-PSS on ARMv7 uses it. -/
+def sha1 : PssHash where
+  H := ⟨Proof.Pbkdf2.Md.Arm.sha1Md, Impl.Sha1.Arm.Stream.params.len⟩
+  ok := Proof.Pbkdf2.Md.Arm.sha1MdOK
+  len := Proof.Sha1.Arm.Stream.shape.len
+  lenAll _ _ := trivial
+  G := Spec.Mgf1.sha1
+  hash _ := rfl
+  glen := rfl
+  outCk := by exact ⟨_, by taint_decide⟩
+  lenCk := by exact ⟨_, by taint_decide⟩
+  one := by decide
+
+end VG.Proof.RsaPss.Arm
+
+end
+
+end
+
+/-! ### `RsaPss.Arm.Hashes.Md5`, which only this module used -/
+
+section
+
+/-! # RSASSA-PSS on ARMv7: MD5 -/
+
+@[expose] public section
+
+namespace VG.Proof.RsaPss.Arm
+
+open VG VG.Arm
+
+/-- MD5, as RSASSA-PSS on ARMv7 uses it. -/
+def md5 : PssHash where
+  H := ⟨Proof.Pbkdf2.Md.Arm.md5Md, Impl.Md5.Arm.Stream.params.len⟩
+  ok := Proof.Pbkdf2.Md.Arm.md5MdOK
+  len := Proof.Md5.Arm.Stream.shape.len
+  lenAll _ _ := trivial
+  G := Spec.Mgf1.md5
+  hash _ := rfl
+  glen := rfl
+  outCk := by exact ⟨_, by taint_decide⟩
+  lenCk := by exact ⟨_, by taint_decide⟩
+  one := by decide
+
+end VG.Proof.RsaPss.Arm
+
+end
+
+end
 
 /-! ### `MdHashTable.Arm.Tables`, which this module and modules that import it used -/
 

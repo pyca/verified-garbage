@@ -7,7 +7,6 @@ public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedCall
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.KMain
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrShift
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedRanges
 import VerifiedGarbage.Proof.RsaKeyGen.Table
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.TrialLoop
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.GcdE

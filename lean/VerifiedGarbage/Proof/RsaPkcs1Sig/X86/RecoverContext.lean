@@ -1,9 +1,7 @@
 module
 
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverRegions
-public import VerifiedGarbage.Proof.Rsa.X86.PrivBytes
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverRegions
 public import VerifiedGarbage.Proof.Rsa.X86.PrivWorkspace
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverGeometry
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Contract

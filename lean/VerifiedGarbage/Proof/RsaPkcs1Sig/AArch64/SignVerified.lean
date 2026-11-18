@@ -1,7 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.SignCT
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.SignCorrect
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.SignCT
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset

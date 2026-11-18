@@ -1,11 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.Arm.PrivPdPre
+public import VerifiedGarbage.Proof.Rsa.Arm.PrivPcPre
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivCrtCall
 import VerifiedGarbage.Proof.Rsa.Arm.PrivRegions
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Rsa.Contract
-public import VerifiedGarbage.Proof.Rsa.Arm.PrivPcPre
 
 /-! ### `Rsa.Arm.PrivPcCall`, which this module and modules that import it used -/
 

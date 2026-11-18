@@ -1,11 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86.Rd.TimeBaseW
+public import VerifiedGarbage.Proof.Rsa.X86.Rd.TimeW2
 public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Time.FBatchRel
-import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Time.Kinds2
 import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Arrays
 import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Slots
-import VerifiedGarbage.Proof.Rsa.X86.Rd.TimeW2
 import VerifiedGarbage.Proof.Rsa.X86.Rd.GcdW
 import VerifiedGarbage.Proof.Rsa.X86.Rd.Ops
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Zero
@@ -20,10 +18,9 @@ import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Ops
 import VerifiedGarbage.Proof.Divstep.Alg32
 import Mathlib.Algebra.Order.Ring.Abs
 meta import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Time.FBatchRel
-meta import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Time.Kinds2
 meta import VerifiedGarbage.Impl.Rsa.X86.RecoverDetRt
 meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
-meta import VerifiedGarbage.Proof.Rsa.X86.Rd.TimeBaseW
+meta import VerifiedGarbage.Proof.Rsa.X86.Rd.TimeW2
 
 /-! # The fused GCD's timing on i686 by words
 

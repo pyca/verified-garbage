@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverCorrect
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverCall
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCT
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCorrect
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.Compare
@@ -10,7 +9,6 @@ import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverCorrect
-meta import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverCall
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCT
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCorrect
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.Compare

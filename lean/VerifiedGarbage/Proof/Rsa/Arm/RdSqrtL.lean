@@ -1,11 +1,11 @@
 module
+
 -- separate module: the proof of Appendix C.2's body is split in a chain of modules, so that a change rebuilds only the modules after it
 public import VerifiedGarbage.Proof.Rsa.Arm.RdSqrtD
-
 import VerifiedGarbage.Proof.Rsa.RecoverDet
 import VerifiedGarbage.Proof.Rsa.Arm.KdDiv
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.Ops
-import VerifiedGarbage.Proof.Rsa.Arm.RdTaint
+import VerifiedGarbage.Proof.Rsa.Arm.RdTwos
 import VerifiedGarbage.Proof.Rsa.Arm.KeyWs
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.Slots
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.Ops2

@@ -1,14 +1,13 @@
 module
+
 public import VerifiedGarbage.Proof.Bignum.X86_64.PcCode
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 public import VerifiedGarbage.Proof.Rsa.PrivCheck
 public import VerifiedGarbage.Proof.Rsa.X86_64.PrivFrame
 public import VerifiedGarbage.Proof.Rsa.X86_64.PublicImpl
-
 import VerifiedGarbage.Proof.Rsa.X86_64.PrivTail
 import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
-import VerifiedGarbage.Proof.Rsa.X86_64.PrivPd
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-!

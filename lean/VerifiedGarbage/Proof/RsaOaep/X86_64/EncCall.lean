@@ -10,7 +10,42 @@ import Mathlib.Data.Nat.Basic
 import Mathlib.Tactic.Push
 import Mathlib.Tactic.Attr.Core
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.Pub
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCall
+public import VerifiedGarbage.Proof.Rsa.X86_64.PublicImpl
+import VerifiedGarbage.Proof.Framework.Omega
+
+/-! ### `RsaPkcs1Sig.X86_64.Pub`, which this module and modules that import it used -/
+
+section
+
+/-!
+# `vg_rsa_public_checked` for its callers on x86-64
+
+The implementation of `vg_rsa_public_checked` that `vg_rsa_pkcs1_verify` and
+`vg_rsa_pkcs1_recover` call (`PubImpl`), with what they need of it.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.RsaPkcs1Sig.X86_64
+
+open VG VG.X86_64
+
+/-- `vg_rsa_public_checked`. -/
+def pubChecked : PubImpl where
+  name := "vg_rsa_public_checked"
+  code := Impl.Rsa.X86_64.Checked.publicChecked
+  ok := Proof.Rsa.X86_64.publicChecked_correct
+  ct := Proof.Rsa.X86_64.publicChecked_constantTime
+  nosp := Proof.Rsa.X86_64.noSp_of (by decide +kernel)
+  depth := by decide +kernel
+  spSafe := Code.all_of_spTest (by decide +kernel)
+
+end VG.Proof.RsaPkcs1Sig.X86_64
+
+end
+
+end
 
 /-! ### `RsaOaep.X86_64.EncFrame`, which only this module used -/
 

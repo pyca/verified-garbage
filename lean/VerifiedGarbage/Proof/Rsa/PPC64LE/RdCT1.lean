@@ -1,8 +1,8 @@
 module
--- separate module: builds in parallel with the correctness proofs (`RdCorrect.lean`)
 
-public import VerifiedGarbage.Proof.Rsa.PPC64LE.RdContract
-meta import VerifiedGarbage.Proof.Rsa.PPC64LE.RdContract
+-- separate module: builds in parallel with the correctness proofs (`RdCorrect.lean`)
+public import VerifiedGarbage.Proof.Rsa.PPC64LE.RdEntry
+meta import VerifiedGarbage.Proof.Rsa.PPC64LE.RdEntry
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.MontCT
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
@@ -13,11 +13,8 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
-import VerifiedGarbage.Proof.Rsa.PPC64LE.RdEntry
 import VerifiedGarbage.Proof.Rsa.PPC64LE.KcFrame
-meta import VerifiedGarbage.Proof.Rsa.PPC64LE.RdEntry
 meta import VerifiedGarbage.Proof.Rsa.PPC64LE.KcFrame
-public import VerifiedGarbage.Proof.Rsa.PPC64LE.RdEntry
 public import Aesop.BuiltinRules
 import Mathlib.Logic.Function.Iterate
 import Mathlib.Tactic.Attr.Core

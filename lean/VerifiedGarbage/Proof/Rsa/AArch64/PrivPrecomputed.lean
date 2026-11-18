@@ -1,24 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.AArch64.PrivCorrect
-public import VerifiedGarbage.Proof.Rsa.AArch64.PrivCT
 public import VerifiedGarbage.Proof.Rsa.AArch64.PrivVerified
 public import VerifiedGarbage.Proof.Rsa.Contract
 public import VerifiedGarbage.Proof.Bignum.Words
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Rsa.AArch64.PrivCheckOk
 import VerifiedGarbage.Proof.Bignum.AArch64.Copy
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Rsa.AArch64.PrivCorrect
-meta import VerifiedGarbage.Proof.Rsa.AArch64.PrivCT
+meta import VerifiedGarbage.Proof.Rsa.AArch64.PrivVerified
 meta import VerifiedGarbage.Proof.Rsa.Contract
 meta import VerifiedGarbage.Proof.Bignum.Words
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Rsa.PreKey
-meta import VerifiedGarbage.Proof.Rsa.AArch64.PrivCheckOk
 meta import VerifiedGarbage.Proof.Bignum.AArch64.Copy
 meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec

@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.RsaOaep.X86_64.DecMain
 import VerifiedGarbage.Proof.RsaOaep.X86_64.LabelT
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Good
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.Pub
+import VerifiedGarbage.Proof.RsaOaep.X86_64.EncCall
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-!

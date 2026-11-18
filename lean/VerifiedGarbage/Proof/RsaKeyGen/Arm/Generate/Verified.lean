@@ -4,10 +4,8 @@ public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Generate.Correct
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Generate.Implies
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Search.Verified
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Verified
-public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Search.CT
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTFrames
 public import VerifiedGarbage.Proof.Framework.Arm.RelCT
-import VerifiedGarbage.Proof.RsaKeyGen.Arm.Search.CTLeaf
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
@@ -17,12 +15,11 @@ import VerifiedGarbage.Proof.Framework.Arm.Frame
 import VerifiedGarbage.Proof.Framework.TaintBatch
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Search.Loop
-import VerifiedGarbage.Proof.RsaKeyGen.Arm.Search.CTStep
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.EntropyRequest
 import VerifiedGarbage.Spec.RsaKeyGen.GenerationAgrees
-meta import VerifiedGarbage.Proof.RsaKeyGen.Arm.Search.CTLeaf
+meta import VerifiedGarbage.Proof.RsaKeyGen.Arm.Search.Verified
 meta import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Ffdh.Arm.Block
@@ -32,13 +29,11 @@ meta import VerifiedGarbage.Proof.Framework.Arm.Frame
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.RsaKeyGen.Arm.Search.Loop
-meta import VerifiedGarbage.Proof.RsaKeyGen.Arm.Search.CTStep
 meta import VerifiedGarbage.Proof.Framework.Sig
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Spec.RsaKeyGen.Contract
 meta import VerifiedGarbage.Proof.RsaKeyGen.Contract
 meta import VerifiedGarbage.TCB.Arm.Target
-meta import VerifiedGarbage.Proof.RsaKeyGen.Arm.Search.CT
 meta import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTFrames
 meta import VerifiedGarbage.Proof.Framework.Arm.RelCT
 meta import VerifiedGarbage.Proof.EntropyRequest
@@ -55,7 +50,7 @@ whole controller's, and `Verified`.
 
 /-! ## Where two runs of the loop are (ARMv7)
 
-As on AArch64 (`Proof/RsaKeyGen/AArch64/Generate/CTPoint.lean`): two runs at
+As on AArch64 (`Proof/RsaKeyGen/AArch64/Generate/Verified.lean`): two runs at
 the same point (`GenCTL`) agree on the public data, the octets consumed, the
 progress' public words (the generations left, the phase's word and the
 counted candidates left), the state's request word and the trace still to

@@ -27,7 +27,7 @@ section
 # RSAES-OAEP decryption on RISC-V: `Verified`
 
 Untrusted: everything here is checked by Lean. As on PPC64LE
-(`Proof/RsaOaep/PPC64LE/Dc/Verified.lean`, `Dc/Verified.lean`): constant time
+(`Proof/RsaOaep/PPC64LE/Dc/VerifiedP.lean`, `Dc/Verified.lean`): constant time
 (`code_constantTime`, from `code_ct`, for the tables of the first run,
 which the public data makes the second's); a state meeting the
 precondition, with both tables that of any `w` of `vs`, at `0x300000`

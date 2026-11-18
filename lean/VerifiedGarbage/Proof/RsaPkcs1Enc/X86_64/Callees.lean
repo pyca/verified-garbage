@@ -12,7 +12,6 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
 public import VerifiedGarbage.Proof.Rsa.X86_64.PrivCT
 public import VerifiedGarbage.Proof.Rsa.X86_64.PrivCorrect
-public import VerifiedGarbage.Proof.Rsa.X86_64.PrivPCorrect
 public import VerifiedGarbage.Proof.Rsa.X86_64.PrivPCT
 
 /-!

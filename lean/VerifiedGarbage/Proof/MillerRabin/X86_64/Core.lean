@@ -2,9 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.MillerRabin.Contract
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrTab
-public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrLoop
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrExp
 import VerifiedGarbage.Proof.Ffdh.MillerRabin
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrExp
 import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.RsaKeyGen.Table

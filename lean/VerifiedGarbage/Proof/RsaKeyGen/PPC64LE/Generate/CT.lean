@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Generate.Classify
-public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Generate.Loop
 public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Generate.Correct
 public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Search.CT
 public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Key.CT
@@ -17,7 +16,6 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Spec.RsaKeyGen.GenerationAgrees
 meta import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Generate.Classify
-meta import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Generate.Loop
 meta import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Generate.Correct
 meta import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Search.CT
 meta import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Key.CT

@@ -11,12 +11,55 @@ public import VerifiedGarbage.Proof.Rsa.Arm.Stage.VP
 import VerifiedGarbage.Proof.Bignum.Arm.MaskBuffer
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Vp
 public import VerifiedGarbage.Proof.Rsa.Contract
-import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.PcTaint
 import VerifiedGarbage.Proof.Bignum.Arm.MaskBytesCT
 import VerifiedGarbage.Proof.Bignum.Arm.CopyBytesCT
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.PcBase
 import VerifiedGarbage.Proof.Framework.WriteBytes
+public import VerifiedGarbage.Impl.RsaPkcs1Enc.Arm.Precomputed
+public import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Impl.RsaPkcs1Enc.Arm.Precomputed
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Mem
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+
+/-! ### `RsaPkcs1Enc.Arm.PcTaint`, which only this module used -/
+
+section
+
+/-! # RSAES-PKCS1-v1_5 encryption with a precomputed public key on ARMv7: the pieces the taint analysis checks -/
+
+@[expose] public section
+
+namespace VG.Proof.RsaPkcs1Enc.Arm.Pc
+
+open VG VG.Arm VG.Impl.RsaPkcs1Enc.Arm.Precomputed
+
+theorem head_taint : ∃ hc, (VG.Taint.check VG.Arm.taint (Taint.ofRegs [.r0]) (.block head) hc).isSome = true :=
+  ⟨_, by taint_decide⟩
+
+theorem psBody_taint :
+    ∃ hc, (VG.Taint.check VG.Arm.taint (Taint.ofRegs [.r0, .r1, .lr]) (.block psBody) hc).isSome = true :=
+  ⟨_, by taint_decide⟩
+
+theorem sep_taint : ∃ hc, (VG.Taint.check VG.Arm.taint (Taint.ofRegs [.r0]) (.block sep) hc).isSome = true :=
+  ⟨_, by taint_decide⟩
+
+theorem cmp_taint :
+    ∃ hc, (VG.Taint.check VG.Arm.taint (Taint.ofRegs [.lr]) (.block [.cmp .lr (.imm 0)]) hc).isSome = true :=
+  ⟨_, by taint_decide⟩
+
+theorem fin_taint :
+    ∃ hc, (VG.Taint.check VG.Arm.taint (Taint.ofRegs []) (.block [.mov .r0 (.reg .r3)]) hc).isSome = true :=
+  ⟨_, by taint_decide⟩
+
+end VG.Proof.RsaPkcs1Enc.Arm.Pc
+
+end
+
+end
 
 /-! ### `RsaPkcs1Enc.Arm.PcBuild`, which only this module used -/
 

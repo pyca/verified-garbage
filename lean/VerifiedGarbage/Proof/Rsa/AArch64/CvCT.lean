@@ -1,12 +1,11 @@
 module
+
 public import VerifiedGarbage.Proof.Rsa.AArch64.CvCheck
 public import VerifiedGarbage.Proof.Rsa.AArch64.CvStore
-
 import VerifiedGarbage.Proof.Rsa.AArch64.CTBase
 import VerifiedGarbage.Proof.Rsa.AArch64.Inv
 public import VerifiedGarbage.Proof.Rsa.AArch64.InvLaw
 import VerifiedGarbage.Proof.Rsa.AArch64.KeyLoops
-import VerifiedGarbage.Proof.Rsa.AArch64.NCalc
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
@@ -19,7 +18,6 @@ meta import VerifiedGarbage.Proof.Rsa.AArch64.CvStore
 meta import VerifiedGarbage.Proof.Rsa.AArch64.CTBase
 meta import VerifiedGarbage.Proof.Rsa.AArch64.Inv
 meta import VerifiedGarbage.Proof.Rsa.AArch64.KeyLoops
-meta import VerifiedGarbage.Proof.Rsa.AArch64.NCalc
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec

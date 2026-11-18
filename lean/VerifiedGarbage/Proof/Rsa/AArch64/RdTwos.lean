@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.AArch64.RdHead
-import VerifiedGarbage.Proof.Rsa.AArch64.RdPieces
+import VerifiedGarbage.Proof.Rsa.AArch64.RdOps
 public import VerifiedGarbage.Proof.Rsa.AArch64.RdStages
 public import VerifiedGarbage.Proof.Bignum.ShiftStages
 import VerifiedGarbage.Proof.Rsa.RecoverDetWords

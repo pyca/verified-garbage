@@ -1,13 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Fin4
+public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Front
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Top3
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Fin5
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.MillerRabin.Arm.Run
-import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Trial
+import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Taint4
 import VerifiedGarbage.Proof.Framework.Arm.Frame
 import VerifiedGarbage.Proof.Rsa.BytesFrame
 

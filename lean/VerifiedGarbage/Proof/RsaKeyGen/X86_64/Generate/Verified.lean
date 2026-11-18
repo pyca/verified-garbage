@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Generate.Correct
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Generate.CT
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Generate.Implies
 

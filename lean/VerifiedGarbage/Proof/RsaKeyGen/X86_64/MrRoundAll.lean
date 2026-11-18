@@ -1,7 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrLoop
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrExp
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrExp
 import VerifiedGarbage.Proof.RsaKeyGen.Slots
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MontAll
 import VerifiedGarbage.Proof.Bignum.CrtExp

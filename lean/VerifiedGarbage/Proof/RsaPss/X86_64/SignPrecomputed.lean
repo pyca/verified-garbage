@@ -1,11 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPss.X86_64.SignPCall
-public import VerifiedGarbage.Proof.RsaPss.X86_64.SignCCt
+public import VerifiedGarbage.Proof.RsaPss.X86_64.ChkSaltBackCT
 public import VerifiedGarbage.Proof.RsaPss.X86_64.Sat
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.Callees
 public import VerifiedGarbage.Proof.Rsa.PreKey
-import VerifiedGarbage.Proof.RsaPss.X86_64.SignCFixed
 import VerifiedGarbage.Proof.RsaPss.X86_64.Instances
 import VerifiedGarbage.Proof.Rsa.PreWords
 import VerifiedGarbage.Proof.Bignum.X86_64.PubVerified

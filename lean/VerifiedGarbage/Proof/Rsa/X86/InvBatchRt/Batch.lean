@@ -1,13 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Start
+public import VerifiedGarbage.Proof.Rsa.X86.GcdBatch.Count
 public import VerifiedGarbage.Proof.Weierstrass.X86.InvLoop
 import VerifiedGarbage.Proof.Weierstrass.X86.InvHalf
 import VerifiedGarbage.Proof.Weierstrass.X86.InvRead
 import VerifiedGarbage.Proof.Divstep.Word32
 import VerifiedGarbage.Proof.Framework.Omega
 import Mathlib.Algebra.Group.Monoid
-import VerifiedGarbage.Proof.Rsa.X86.GcdBatch.Count
 import VerifiedGarbage.Proof.Divstep.Batch
 import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Arrays
 public import VerifiedGarbage.Proof.Weierstrass.X86.InvClob

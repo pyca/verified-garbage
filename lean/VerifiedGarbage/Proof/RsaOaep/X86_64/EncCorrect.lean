@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.FrameAlloc
 import VerifiedGarbage.Proof.Rsa.BytesFrame
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.Pub
+import VerifiedGarbage.Proof.RsaOaep.X86_64.EncCall
 
 /-!
 # RSAES-OAEP encryption on x86-64: correctness

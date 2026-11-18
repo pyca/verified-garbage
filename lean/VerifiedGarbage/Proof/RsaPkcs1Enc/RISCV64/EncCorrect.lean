@@ -21,7 +21,7 @@ public import VerifiedGarbage.Proof.RsaPkcs1Sig.RISCV64.RecoverCorrect
 After the call (`AfterCall`), the result and `out` are masked to zero if
 `PS` has a zero byte, and `EM` is zeroed (`tail_ok`): if `pre` holds the
 modulus' values, RFC 8017 §7.2.1's encryption (`encrypt_eq`). As on PPC64LE
-(`Proof/RsaPkcs1Enc/PPC64LE/EncCorrect.lean`).
+(`Proof/RsaPkcs1Enc/PPC64LE/EncVerified.lean`).
 -/
 
 @[expose] public section

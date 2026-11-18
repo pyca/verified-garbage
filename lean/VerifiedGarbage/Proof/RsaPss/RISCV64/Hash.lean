@@ -1,7 +1,6 @@
 module
 
 -- separate module: it builds in parallel with `Select`, `Shift` and `Cmp`, which `Finish` also needs.
-
 public import VerifiedGarbage.Proof.RsaOaep.RISCV64.Base
 public import VerifiedGarbage.Impl.RsaPss.RISCV64
 public import VerifiedGarbage.Proof.RsaPss.RISCV64.Pre
@@ -9,7 +8,7 @@ public import VerifiedGarbage.Proof.RsaPss.RISCV64.TabCall
 import VerifiedGarbage.Proof.RsaPss.RISCV64.Prefix
 public import VerifiedGarbage.Proof.RsaPss.CtPad
 import VerifiedGarbage.Proof.Mgf1.Bytes
-import VerifiedGarbage.Proof.MdHashTable.RISCV64
+import VerifiedGarbage.Proof.RsaPss.RISCV64.MdL
 import VerifiedGarbage.Proof.MdStream.RISCV64.Words
 import VerifiedGarbage.Proof.RsaPkcs1Sig.RISCV64.Encode
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem

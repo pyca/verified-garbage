@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Framework.RISCV64.CallAny
 public import VerifiedGarbage.Proof.Framework.RISCV64.Consts
 public import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Cand.CTTop
 public import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Cand.Fin
-public import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Cand.Main
+public import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Cand.CTBase
 public import VerifiedGarbage.Proof.Bignum.RISCV64.PreCT
 public import VerifiedGarbage.Impl.RsaKeyGen.TrialTable32
 public import VerifiedGarbage.Spec.RsaKeyGen.Generation

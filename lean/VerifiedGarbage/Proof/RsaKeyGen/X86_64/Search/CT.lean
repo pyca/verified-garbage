@@ -8,7 +8,7 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
 public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedCode
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedSafety
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedCTCode
 meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Search.Step
 meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Search.Entry

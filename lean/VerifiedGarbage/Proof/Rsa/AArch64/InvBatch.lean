@@ -23,7 +23,7 @@ public import VerifiedGarbage.Proof.Rsa.AArch64.Div
 public import VerifiedGarbage.Proof.Rsa.AArch64.InvLaw
 public import VerifiedGarbage.Impl.Rsa.AArch64.RecoverDet
 import VerifiedGarbage.Proof.Rsa.AArch64.CvLoad
-import VerifiedGarbage.Proof.Rsa.AArch64.RdPieces
+import VerifiedGarbage.Proof.Rsa.AArch64.RdOps
 public import VerifiedGarbage.Proof.Rsa.AArch64.RdHead
 import VerifiedGarbage.Proof.Divstep.Tc
 import VerifiedGarbage.Proof.Divstep.Batch

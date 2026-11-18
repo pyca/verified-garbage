@@ -28,7 +28,7 @@ fails, `out` is zeroed and the result is 0; if not, those bytes are copied
 to `out`, and `out` and the result are masked with whether the encoding is
 `EM₁` and the call succeeded (`afterPub_ok`): if `pre` holds the modulus'
 values, recovery by encoding (`Proof.RsaPkcs1Sig.recover_eq_recoverEnc`).
-As on PPC64LE (`Proof/RsaPkcs1Sig/PPC64LE/RecoverCorrect.lean`).
+As on PPC64LE (`Proof/RsaPkcs1Sig/PPC64LE/RecoverVerified.lean`).
 -/
 
 @[expose] public section

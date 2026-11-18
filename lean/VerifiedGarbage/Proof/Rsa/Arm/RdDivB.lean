@@ -1,13 +1,13 @@
 module
+
 -- separate module: the proof of Appendix C.2's body is split in a chain of modules, so that a change rebuilds only the modules after it
 public import VerifiedGarbage.Proof.Rsa.Arm.RdDiv
-
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.Ops
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.Ops2
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.Slots
 import VerifiedGarbage.Proof.Rsa.Arm.KdNorm
 import VerifiedGarbage.Proof.Framework.PlainSimp
-import VerifiedGarbage.Proof.Rsa.Arm.RdTaint
+import VerifiedGarbage.Proof.Rsa.Arm.RdTwos
 import VerifiedGarbage.Proof.Rsa.Arm.KeyWs
 
 /-! # `vg_rsa_recover_primes_det` on ARMv7: `b - 1` by words

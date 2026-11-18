@@ -1,10 +1,10 @@
 module
+
 public import VerifiedGarbage.Proof.Rsa.X86_64.PrivFrame
 public import VerifiedGarbage.Proof.Rsa.X86_64.PrivImpl
-
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Rsa.X86_64.PrivCheck
-import VerifiedGarbage.Proof.Rsa.X86_64.PrivCrt
+import VerifiedGarbage.Proof.Rsa.X86_64.PrivTail
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.FrameAlloc
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp

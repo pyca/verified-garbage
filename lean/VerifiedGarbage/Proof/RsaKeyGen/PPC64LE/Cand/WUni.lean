@@ -4,13 +4,11 @@ public import VerifiedGarbage.Impl.RsaKeyGen.PPC64LE.Witness
 public import VerifiedGarbage.Impl.RsaKeyGen.PPC64LE.Candidate
 public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Sel
 public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Cand.Slot
-import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Cand.Bits
 import VerifiedGarbage.Proof.RsaKeyGen.CandMath
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMont
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreCore
 import VerifiedGarbage.Proof.Bignum.PPC64LE.MontFinish
 import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Search.Copy
-import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Cand.Gcd
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
@@ -21,6 +19,712 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreLoad
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Bignum.Octets
+public import VerifiedGarbage.Proof.Bignum.Words
+import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.Bignum.PPC64LE.PubE
+import VerifiedGarbage.Proof.Bignum.PPC64LE.PreCheck
+import VerifiedGarbage.Proof.Rsa.Octets
+public import VerifiedGarbage.Proof.Bignum.PPC64LE.Run
+public import VerifiedGarbage.Proof.RsaKeyGen.Gcd
+
+/-! ### `RsaKeyGen.PPC64LE.Cand.Gcd`, which this module and modules that import it used -/
+
+section
+
+/-! ### `RsaKeyGen.PPC64LE.Cand.Bits`, which this module and modules that import it used -/
+
+section
+
+/-!
+# A candidate on PPC64LE: comparisons and selections on words
+
+Without the carry bit, `ltU d a b` compares two 64-bit numbers by their
+top bits and the borrow of their low 63 bits (`ltU_val`); a mask `0 − f` of
+a flag `f ∈ {0, 1}` selects between two words by `y ^ ((x ^ y) & mask)`
+(`sel_mask`). `gcdStep_ok`: one step of the binary gcd, as
+`Proof.RsaKeyGen.gcdStep`.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.RsaKeyGen.PPC64LE.Cand
+
+open VG VG.PPC64LE VG.Proof.Bignum.PPC64LE VG.Impl.RsaKeyGen.PPC64LE.Candidate
+
+/-! ## Values -/
+
+theorem shr63_val (a : BitVec 64) : a >>> 63 = BitVec.ofNat 64 (a.toNat / 2 ^ 63) := by
+  have := a.isLt
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow, Nat.mod_eq_of_lt (by omega_using [])]
+
+theorem low63_val (a : BitVec 64) : a <<< 1 >>> 1 = BitVec.ofNat 64 (a.toNat % 2 ^ 63) := by
+  have := a.isLt
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_ushiftRight, BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow,
+    Nat.shiftLeft_eq, Nat.mod_eq_of_lt (show a.toNat % 2 ^ 63 < 2 ^ 64 by omega_using [])]
+  omega_using []
+
+theorem borrow63_val {x y : Nat} (hx : x < 2 ^ 63) (hy : y < 2 ^ 63) :
+    (BitVec.ofNat 64 x - BitVec.ofNat 64 y) >>> 63 = BitVec.ofNat 64 (if x < y then 1 else 0) := by
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_ushiftRight, BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
+    Nat.shiftRight_eq_div_pow]
+  split <;> omega_arith
+
+/-- `ltU`'s value: 1 if `a < b`, else 0. -/
+theorem ltU_val (a b : BitVec 64) :
+    (a >>> 63 ^^^ b >>> 63 ^^^ BitVec.ofNat 64 1) &&& (a <<< 1 >>> 1 - b <<< 1 >>> 1) >>> 63 |||
+        b >>> 63 &&& (a >>> 63 ^^^ b >>> 63) = BitVec.ofNat 64 (if a.toNat < b.toNat then 1 else 0) := by
+  have ha := a.isLt
+  have hb := b.isLt
+  rw [shr63_val a, shr63_val b, low63_val a, low63_val b, borrow63_val (by omega_using []) (by omega_using [])]
+  have hA : a.toNat / 2 ^ 63 = 0 ∨ a.toNat / 2 ^ 63 = 1 := by omega_using []
+  have hB : b.toNat / 2 ^ 63 = 0 ∨ b.toNat / 2 ^ 63 = 1 := by omega_using []
+  by_cases hl : a.toNat % 2 ^ 63 < b.toNat % 2 ^ 63
+  · rw [ite_eq_left hl]
+    rcases hA with hA | hA <;> rcases hB with hB | hB <;> rw [hA, hB]
+    · rw [ite_eq_left (by omega_using [hl, hA])]; decide
+    · rw [ite_eq_left (by omega_using [hl, hA])]; decide
+    · rw [ite_eq_right (by omega_using [hA, hB])]; decide
+    · rw [ite_eq_left (by omega_using [hl, hB])]; decide
+  · rw [ite_eq_right hl]
+    rcases hA with hA | hA <;> rcases hB with hB | hB <;> rw [hA, hB]
+    · rw [ite_eq_right (by omega_using [hl, hB])]; decide
+    · rw [ite_eq_left (by omega_using [hA, hB])]; decide
+    · rw [ite_eq_right (by omega_using [hl, hA])]; decide
+    · rw [ite_eq_right (by omega_using [hl, hA])]; decide
+
+/-- A selection under the mask of a flag. -/
+theorem sel_mask (c : Prop) [Decidable c] (x y : BitVec 64) :
+    y ^^^ ((x ^^^ y) &&& (BitVec.ofNat 64 0 - BitVec.ofNat 64 (if c then 1 else 0))) = if c then x else y := by
+  by_cases h : c
+  · rw [ite_eq_left h, ite_eq_left h, show BitVec.ofNat 64 0 - BitVec.ofNat 64 1 = BitVec.allOnes 64 by decide,
+      BitVec.and_allOnes, ← BitVec.xor_assoc, BitVec.xor_comm y x, BitVec.xor_assoc, BitVec.xor_self,
+      BitVec.xor_zero]
+  · rw [ite_eq_right h, ite_eq_right h, show BitVec.ofNat 64 0 - BitVec.ofNat 64 0 = 0#64 by decide, BitVec.and_zero,
+      BitVec.xor_zero]
+
+/-- The same, the other way round. -/
+theorem sel_mask' (c : Prop) [Decidable c] (x y : BitVec 64) :
+    (x ^^^ y) &&& (BitVec.ofNat 64 0 - BitVec.ofNat 64 (if c then 1 else 0)) ^^^ y = if c then x else y := by
+  rw [BitVec.xor_comm, sel_mask]
+
+/-- The low bit of a word as a flag. -/
+theorem and1_val (a : BitVec 64) : a &&& BitVec.ofNat 64 1 = BitVec.ofNat 64 (if a.toNat % 2 = 1 then 1 else 0) := by
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_and, BitVec.toNat_ofNat, Nat.and_comm, Nat.one_and_eq_mod_two]
+  split <;> simp_all
+
+end VG.Proof.RsaKeyGen.PPC64LE.Cand
+
+namespace VG.Proof.RsaKeyGen.PPC64LE.Cand
+
+open VG VG.PPC64LE VG.Proof.Bignum.PPC64LE VG.Impl.RsaKeyGen.PPC64LE.Candidate
+
+theorem gcdStep_ok {s : State} {u v : Nat} (h3 : s.gpr .r3 = BitVec.ofNat 64 u) (h21 : s.gpr .r21 = BitVec.ofNat 64 v)
+    (hu : u < 2 ^ 64) (hv : v < 2 ^ 64) (hodd : v % 2 = 1) :
+    WP isa (.block VG.Impl.RsaKeyGen.PPC64LE.Candidate.gcdStep) s fun t =>
+      (t.gpr .r3 = BitVec.ofNat 64 (VG.Proof.RsaKeyGen.gcdStep u v).1 ∧
+        t.gpr .r21 = BitVec.ofNat 64 (VG.Proof.RsaKeyGen.gcdStep u v).2 ∧ t.mem = s.mem) ∧
+        Keep [.r0, .r3, .r4, .r5, .r6, .r7, .r15, .r16, .r21] s t := by
+  refine WP.keep _ ?_ (by decide)
+  simp only [VG.Impl.RsaKeyGen.PPC64LE.Candidate.gcdStep, ltU]
+  prun [h3, h21, ltU_val, sel_mask, sel_mask', and1_val]
+  rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hu, Nat.mod_eq_of_lt hv]
+  unfold VG.Proof.RsaKeyGen.gcdStep
+  by_cases ho : u % 2 = 1
+  · rw [ite_eq_left ho, ite_eq_left ho, ite_eq_left ho]
+    by_cases hl : u < v
+    · rw [ite_eq_left hl, ite_eq_left hl, ite_eq_left hl]
+      refine ⟨BitVec.eq_of_toNat_eq ?_, rfl⟩
+      rw [BitVec.toNat_ushiftRight, BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
+        Nat.shiftRight_eq_div_pow]
+      omega
+    · rw [ite_eq_right hl, ite_eq_right hl, ite_eq_right hl]
+      refine ⟨BitVec.eq_of_toNat_eq ?_, rfl⟩
+      rw [BitVec.toNat_ushiftRight, BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
+        Nat.shiftRight_eq_div_pow]
+      omega_using [hu, hl]
+  · rw [ite_eq_right ho, ite_eq_right ho, ite_eq_right ho]
+    refine ⟨BitVec.eq_of_toNat_eq ?_, rfl⟩
+    rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
+    omega_using [hu]
+
+
+/-- The condition of `modBit`'s subtraction. -/
+theorem flag_val (p : Prop) [Decidable p] (a : BitVec 64) :
+    BitVec.ofNat 64 (if p then 1 else 0) ^^^ BitVec.ofNat 64 1 ||| a >>> 63 =
+      BitVec.ofNat 64 (if ¬p ∨ 2 ^ 63 ≤ a.toNat then 1 else 0) := by
+  rw [shr63_val]
+  have := a.isLt
+  by_cases hp : p
+  · by_cases ha : 2 ^ 63 ≤ a.toNat
+    · rw [ite_eq_left hp, ite_eq_left (Or.inr ha), show a.toNat / 2 ^ 63 = 1 by omega_using [ha]]; decide
+    · rw [ite_eq_left hp, ite_eq_right (fun h => h.elim (· hp) ha), show a.toNat / 2 ^ 63 = 0 by omega_using [ha]]; decide
+  · rw [ite_eq_right hp, ite_eq_left (Or.inl hp)]
+    have : a.toNat / 2 ^ 63 = 0 ∨ a.toNat / 2 ^ 63 = 1 := by omega_using []
+    rcases this with h | h <;> rw [h] <;> decide
+
+/-- `modBit`: `r3 := (2 r3 + x₆₃) mod e` for `r3 < e`, and `r7 := 2 x`. -/
+theorem modBit_ok {s : State} {acc x e : Nat} (h3 : s.gpr .r3 = BitVec.ofNat 64 acc)
+    (h7 : s.gpr .r7 = BitVec.ofNat 64 x) (h21 : s.gpr .r21 = BitVec.ofNat 64 e) (hacc : acc < e)
+    (he : e < 2 ^ 64) (hx : x < 2 ^ 64) :
+    WP isa (.block modBit) s fun t =>
+      (t.gpr .r3 = BitVec.ofNat 64 ((2 * acc + x / 2 ^ 63) % e) ∧ t.gpr .r7 = BitVec.ofNat 64 (2 * x % 2 ^ 64) ∧
+        t.gpr .r21 = s.gpr .r21 ∧ t.mem = s.mem) ∧
+        Keep [.r0, .r3, .r4, .r7, .r8, .r9, .r15, .r16] s t := by
+  refine WP.keep _ ?_ (by decide)
+  simp only [modBit, ltU]
+  prun [h3, h7, h21, ltU_val, flag_val, sel_mask]
+  simp only [show (9223372036854775808 : Nat) = 2 ^ 63 by decide, show (18446744073709551616 : Nat) = 2 ^ 64 by decide]
+  have hb : x / 2 ^ 63 ≤ 1 := by omega_using [hx]
+  have hy : BitVec.ofNat 64 acc <<< 1 + BitVec.ofNat 64 x >>> 63 =
+      BitVec.ofNat 64 (2 * acc % 2 ^ 64 + x / 2 ^ 63) := by
+    apply BitVec.eq_of_toNat_eq
+    rw [BitVec.toNat_add, BitVec.toNat_shiftLeft, BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
+      BitVec.toNat_ofNat, Nat.shiftLeft_eq, Nat.shiftRight_eq_div_pow, Nat.mod_eq_of_lt (show acc < 2 ^ 64 by omega_using [hacc, he]),
+      Nat.mod_eq_of_lt hx]
+    omega_using []
+  refine ⟨?_, ?_⟩
+  · rw [hy, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt he,
+      Nat.mod_eq_of_lt (show acc < 2 ^ 64 by omega_using [hacc, he])]
+    by_cases hA : 2 ^ 63 ≤ acc
+    · rw [ite_eq_left (Or.inr hA)]
+      have hm : (2 * acc + x / 2 ^ 63) % e = 2 * acc + x / 2 ^ 63 - e := by
+        rw [Nat.mod_eq_sub_mod (by omega_using [he, hA]), Nat.mod_eq_of_lt (by omega_using [hacc, hx])]
+      rw [hm]
+      apply BitVec.eq_of_toNat_eq
+      rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
+      omega_using [he, hA]
+    · have hyl : (2 * acc % 2 ^ 64 + x / 2 ^ 63) % 2 ^ 64 = 2 * acc + x / 2 ^ 63 := by omega_using [hx, hA]
+      rw [hyl]
+      by_cases hl : 2 * acc + x / 2 ^ 63 < e
+      · rw [ite_eq_right (by omega_using [he, hl]), Nat.mod_eq_of_lt hl]
+        exact congrArg _ (by omega_using [hA])
+      · rw [ite_eq_left (Or.inl hl)]
+        have hm : (2 * acc + x / 2 ^ 63) % e = 2 * acc + x / 2 ^ 63 - e := by
+          rw [Nat.mod_eq_sub_mod (by omega_using [hl]), Nat.mod_eq_of_lt (by omega_using [hacc, hx])]
+        rw [hm]
+        apply BitVec.eq_of_toNat_eq
+        rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
+        omega_using [hl]
+  · apply BitVec.eq_of_toNat_eq
+    rw [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftLeft_eq, Nat.mod_eq_of_lt hx]
+    omega_using []
+
+end VG.Proof.RsaKeyGen.PPC64LE.Cand
+
+end
+
+end
+
+/-! ### `RsaKeyGen.PPC64LE.Cand.ModE`, which only this module used -/
+
+section
+
+/-!
+# A candidate on PPC64LE: `(c − 1) mod e`
+
+The 64 bits of a word, from the top, into `r = r3 < e = r21`: `modBits_ok`,
+`r := (r 2^64 + x) mod e` (by `modBit_ok` and `shift_step`); the words of a
+number from the top, `r14` walking down and `r17` counting
+(`modWords_ok`): the number mod `e`. As AArch64's
+(`Proof/RsaKeyGen/AArch64/ModE.lean`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.RsaKeyGen.PPC64LE.Cand
+
+open VG VG.PPC64LE VG.Proof.Bignum VG.Proof.Bignum.PPC64LE VG.Impl.RsaKeyGen.PPC64LE.Candidate
+
+theorem self_ofNat (x : BitVec 64) : x = BitVec.ofNat 64 x.toNat := by simp
+
+/-- A word shifted left `i` bits, `y = (x mod 2^(k + 1)) 2^i` for `k + i = 63`:
+its top bit, and itself doubled modulo `2^64`. -/
+theorem shift1 (x k i : Nat) (hki : k + i = 63) :
+    (x % 2 ^ (k + 1)) * 2 ^ i / 2 ^ 63 = x / 2 ^ k % 2 ∧
+    2 * ((x % 2 ^ (k + 1)) * 2 ^ i) % 2 ^ 64 = (x % 2 ^ k) * 2 ^ (i + 1) := by
+  obtain ⟨hy, hb, hsh, -⟩ := VG.Proof.RsaKeyGen.shift_step x k i hki
+  generalize (x % 2 ^ (k + 1)) * 2 ^ i = y at hy hb hsh ⊢
+  refine ⟨?_, by rw [Nat.two_mul]; exact hsh⟩
+  rw [← hb]
+  by_cases h : 2 ^ 64 ≤ y + y
+  · rw [decide_eq_true h]; show _ = 1; omega_using [hy, h]
+  · rw [decide_eq_false h]; show _ = 0; omega_using [h]
+
+/-- The registers `modBits` writes. -/
+def mbRegs : List Reg := [.r0, .r3, .r4, .r6, .r7, .r8, .r9, .r15, .r16]
+
+/-- The 64 bits of the word `x` in `r7` into `r = r3 < e` (`r21`):
+`(r 2^64 + x) mod e`. -/
+theorem modBits_ok {s : State} (h6 : s.gpr .r6 = BitVec.ofNat 64 64)
+    (hre : (s.gpr .r3).toNat < (s.gpr .r21).toNat) :
+    WP isa (Impl.Bignum.PPC64LE.Precompute.countLoop .r6 modBit) s fun t =>
+      (t.gpr .r3).toNat = ((s.gpr .r3).toNat * 2 ^ 64 + (s.gpr .r7).toNat) % (s.gpr .r21).toNat ∧
+      t.mem = s.mem ∧ Keep mbRegs s t := by
+  obtain he0 : 0 < (s.gpr .r21).toNat := by omega_using [hre]
+  obtain hX := (s.gpr .r7).isLt
+  obtain hE := (s.gpr .r21).isLt
+  refine WP.mono (wp_countdown (cnt := .r6) (N := 64) (by decide) (by decide)
+    (fun i t => (t.gpr .r3).toNat = ((s.gpr .r3).toNat * 2 ^ i + (s.gpr .r7).toNat / 2 ^ (64 - i)) %
+        (s.gpr .r21).toNat ∧
+      (t.gpr .r7).toNat = ((s.gpr .r7).toNat % 2 ^ (64 - i)) * 2 ^ i ∧ t.mem = s.mem ∧
+      Keep mbRegs s t) ?_ ⟨?_, ?_, rfl, Keep.refl _ _⟩ h6) fun t ⟨hr, _, hm, k⟩ => ?_
+  · intro i hi t ⟨hr, hd, hm, k⟩ _
+    obtain h21 : t.gpr .r21 = s.gpr .r21 := k.gpr .r21 (by decide)
+    obtain hacc : (t.gpr .r3).toNat < (t.gpr .r21).toNat := by rw [h21, hr]; exact Nat.mod_lt _ he0
+    refine WP.block_append_iff.mpr (WP.mono (modBit_ok (acc := (t.gpr .r3).toNat) (x := (t.gpr .r7).toNat)
+      (e := (t.gpr .r21).toNat) (self_ofNat _) (self_ofNat _) (self_ofNat _) hacc (t.gpr .r21).isLt (t.gpr .r7).isLt)
+      fun t₁ ⟨⟨h1, h2, h21₁, m₁⟩, k₁⟩ => ?_)
+    obtain hsub : WP isa (.block [.subi .r6 .r6 1]) t₁ fun t' =>
+        (t'.gpr .r6 = t₁.gpr .r6 - BitVec.ofNat 64 1 ∧ t'.mem = t₁.mem) ∧ Keep [.r6] t₁ t' := by
+      refine WP.keep _ ?_ (by decide)
+      prun
+    refine WP.mono hsub fun t' ⟨⟨h6', m'⟩, k'⟩ => ⟨⟨?_, ?_, by rw [m', m₁, hm], ?_⟩, ?_⟩
+    · obtain ⟨_, _, _, hdiv⟩ := shift_step (s.gpr .r7).toNat (63 - i) i (by omega_using [hi])
+      obtain ⟨hbit, _⟩ := shift1 (s.gpr .r7).toNat (63 - i) i (by omega_using [hi])
+      rw [show 63 - i + 1 = 64 - i by omega_using [hi]] at hbit hdiv
+      rw [k'.gpr .r3 (by decide), h1, h21, BitVec.toNat_ofNat, hd, hbit, hr,
+        show 64 - (i + 1) = 63 - i by omega_using [], Nat.pow_succ,
+        Nat.mod_eq_of_lt (Nat.lt_trans (Nat.mod_lt _ he0) hE)]
+      conv_rhs => rw [← hdiv]
+      obtain hm2 : ∀ V b E : Nat, (2 * (V % E) + b) % E = (2 * V + b) % E := fun V b E => by
+        rw [Nat.add_mod, Nat.mul_mod, Nat.mod_mod, ← Nat.mul_mod, ← Nat.add_mod]
+      rw [hm2]
+      congr 1
+      obtain hb2 : (s.gpr .r7).toNat / 2 ^ (63 - i) % 2 < 2 := Nat.mod_lt _ (by decide)
+      generalize (s.gpr .r3).toNat = R
+      generalize (s.gpr .r7).toNat / 2 ^ (64 - i) = Q
+      generalize (s.gpr .r7).toNat / 2 ^ (63 - i) % 2 = b at hb2 ⊢
+      rw [Nat.pow_succ, Nat.mul_add, Nat.mul_comm 2 (R * 2 ^ i), Nat.mul_assoc, Nat.mul_comm 2 Q]
+      omega_using [hb2]
+    · obtain ⟨_, hsh⟩ := shift1 (s.gpr .r7).toNat (63 - i) i (by omega_using [hi])
+      rw [show 63 - i + 1 = 64 - i by omega_using [hi]] at hsh
+      rw [k'.gpr .r7 (by decide), h2, BitVec.toNat_ofNat, hd, show 64 - (i + 1) = 63 - i by omega_using [], hsh]
+      exact Nat.mod_eq_of_lt (by rw [← hsh]; exact Nat.mod_lt _ (by decide))
+    · exact ((k.trans k₁).trans k').mono (by decide)
+    · rw [h6', k₁.gpr .r6 (by decide)]
+  · rw [Nat.pow_zero, Nat.mul_one, Nat.div_eq_of_lt hX, Nat.add_zero, Nat.mod_eq_of_lt hre]
+  · rw [Nat.pow_zero, Nat.mul_one, Nat.mod_eq_of_lt hX]
+  · refine ⟨?_, hm, k⟩
+    rw [hr, Nat.sub_self, Nat.pow_zero, Nat.div_one]
+
+
+/-- The words `m` to `w − 1` of the number at `d`. -/
+abbrev hiw (mem : Mem) (B : Addr) (d w m : Nat) : Nat := wv mem B (d + 8 * m) (w - m)
+
+theorem hiw_step (mem : Mem) (B : Addr) (d w m : Nat) (hm : m < w) :
+    hiw mem B d w m = (word mem B (d + 8 * m)).toNat + 2 ^ 64 * hiw mem B d w (m + 1) := by
+  unfold hiw
+  rw [show w - m = 1 + (w - (m + 1)) by omega_using [hm], wv_add,
+    show d + 8 * m + 8 * 1 = d + 8 * (m + 1) by omega_using []]
+  simp [wv]
+
+/-- One word: `r14` down a word, the word into `r7`, `r6 := 64`. -/
+theorem modWordHead_ok {s : State} {B : Addr} {Z d k : Nat} (hs : Scr s B Z)
+    (h14 : s.gpr .r14 = off B (d + 8 * (k + 1))) (hd : d + 8 * (k + 1) ≤ Z) :
+    WP isa (.block [.subi .r14 .r14 8, .load .d .r7 .r14 0, .li .r6 64]) s fun t =>
+      (t.gpr .r14 = off B (d + 8 * k) ∧ t.gpr .r7 = word s.mem B (d + 8 * k) ∧
+        t.gpr .r6 = BitVec.ofNat 64 64 ∧ t.mem = s.mem) ∧ Keep [.r14, .r7, .r6] s t := by
+  have hn := hs.nowrap
+  obtain ha : off B (d + 8 * (k + 1)) - BitVec.ofNat 64 8 = off B (d + 8 * k) := by
+    rw [show d + 8 * (k + 1) = d + 8 * k + 8 by omega_using []]
+    show B + BitVec.ofNat 64 (d + 8 * k + 8) - BitVec.ofNat 64 8 = B + BitVec.ofNat 64 (d + 8 * k)
+    rw [BitVec.ofNat_add, ← BitVec.add_assoc, BitVec.add_sub_cancel]
+  refine WP.keep _ ?_ (by decide)
+  prun [h14, ha, hs.ld (d := d + 8 * k) (n := 8) (by omega_using [hd])]
+
+/-- The registers `modWords` writes. -/
+def mwRegs : List Reg := [.r0, .r3, .r4, .r6, .r7, .r8, .r9, .r14, .r15, .r16, .r17]
+
+/-- After `j` words of the loop from the top. -/
+structure ModInv (s₀ : State) (B : Addr) (d w : Nat) (j : Nat) (t : State) : Prop where
+  val : (t.gpr .r3).toNat = hiw s₀.mem B d w (w - j) % (s₀.gpr .r21).toNat
+  r14 : t.gpr .r14 = off B (d + 8 * (w - j))
+  mem : t.mem = s₀.mem
+  keep : Keep mwRegs s₀ t
+
+/-- The words of the number at `d`, from the top, into `r = r3 = 0` modulo
+the `e > 1` in `r21`. -/
+theorem modWords_ok {s : State} {B : Addr} {Z d w : Nat} (hs : Scr s B Z) (h14 : s.gpr .r14 = off B (d + 8 * w))
+    (h17 : s.gpr .r17 = BitVec.ofNat 64 w) (hw : 1 ≤ w) (hw' : w < 2 ^ 31) (hd : d + 8 * w ≤ Z)
+    (h3 : s.gpr .r3 = 0) (he : 1 < (s.gpr .r21).toNat) :
+    WP isa (.loop (.seq (.block [.subi .r14 .r14 8, .load .d .r7 .r14 0, .li .r6 64])
+      (.seq (Impl.Bignum.PPC64LE.Precompute.countLoop .r6 modBit) (.block [.subi .r17 .r17 1])))
+      (.nonzero .d .r17)) s fun t =>
+      (t.gpr .r3).toNat = wv s.mem B d w % (s.gpr .r21).toNat ∧ t.mem = s.mem ∧ Keep mwRegs s t := by
+  refine WP.mono (wp_countdown (cnt := .r17) (N := w) (by omega_using [hw']) (by omega_using [hw]) (ModInv s B d w) ?_
+    ⟨by rw [h3, Nat.sub_zero]; unfold hiw; rw [Nat.sub_self]; simp [wv], by rw [h14, Nat.sub_zero], rfl,
+      Keep.refl _ _⟩ h17) fun t hI => ⟨?_, hI.mem, hI.keep⟩
+  · intro j hj t hI _
+    obtain t21 : t.gpr .r21 = s.gpr .r21 := hI.keep.gpr .r21 (by decide)
+    refine WP.seq (WP.mono (modWordHead_ok (B := B) (Z := Z) (d := d) (k := w - (j + 1)) (hs.congr hI.keep.wr)
+      (by rw [hI.r14, show w - (j + 1) + 1 = w - j by omega_using [hj]]) (by omega_using [hd, hj]))
+      fun t₁ ⟨⟨h14₁, h7₁, h6₁, m₁⟩, k₁⟩ => ?_)
+    obtain k01 := hI.keep.trans k₁
+    obtain r21 : t₁.gpr .r21 = s.gpr .r21 := k01.gpr .r21 (by decide)
+    obtain r3 : t₁.gpr .r3 = t.gpr .r3 := k₁.gpr .r3 (by decide)
+    refine WP.seq (WP.mono (modBits_ok h6₁ (by rw [r21, r3, hI.val]; exact Nat.mod_lt _ (by omega_using [he])))
+      fun t₂ ⟨h3₂, m₂, k₂⟩ => ?_)
+    obtain hsub : WP isa (.block [.subi .r17 .r17 1]) t₂ fun t' =>
+        (t'.gpr .r17 = t₂.gpr .r17 - BitVec.ofNat 64 1 ∧ t'.mem = t₂.mem) ∧ Keep [.r17] t₂ t' := by
+      refine WP.keep _ ?_ (by decide)
+      prun
+    refine WP.mono hsub fun t' ⟨⟨h17', m'⟩, k'⟩ => ⟨⟨?_, ?_, by rw [m', m₂, m₁, hI.mem], ?_⟩, ?_⟩
+    · rw [k'.gpr .r3 (by decide), h3₂, r21, r3, h7₁, hI.val, hI.mem,
+        hiw_step s.mem B d w (w - (j + 1)) (by omega_using [hj]), show w - (j + 1) + 1 = w - j by omega_using [hj]]
+      obtain hm2 : ∀ V x E : Nat, ((V % E) * 2 ^ 64 + x) % E = (x + 2 ^ 64 * V) % E := fun V x E => by
+        rw [Nat.add_mod, Nat.mul_mod, Nat.mod_mod, ← Nat.mul_mod, ← Nat.add_mod, Nat.add_comm, Nat.mul_comm]
+      exact hm2 _ _ _
+    · rw [k'.gpr .r14 (by decide), k₂.gpr .r14 (by decide), h14₁]
+    · exact ((k01.trans k₂).trans k').mono (by decide)
+    · rw [h17', k₂.gpr .r17 (by decide), k₁.gpr .r17 (by decide)]
+  · rw [hI.val, Nat.sub_self]; unfold hiw; simp only [Nat.mul_zero, Nat.add_zero, Nat.sub_zero]
+
+end VG.Proof.RsaKeyGen.PPC64LE.Cand
+
+end
+
+end
+
+
+/-!
+# A candidate on PPC64LE: `gcd(c − 1, e)`
+
+`modE_ok`: `c` (array 0) copied to `aCm1`, its low word less 1 (`c` is odd),
+then its words from the top modulo the `e > 1` in `r21` (`modWords_ok`):
+`r3 = (c − 1) mod e`.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.RsaKeyGen.PPC64LE.Cand
+
+open VG VG.PPC64LE VG.Proof.Bignum VG.Proof.Bignum.PPC64LE VG.Impl.RsaKeyGen.PPC64LE.Candidate
+open VG.Proof.MillerRabin.PPC64LE (Env)
+
+/-- The registers `modE` writes. -/
+def meRegs : List Reg := [.r5, .r14, .r15, .r17, .r0, .r3, .r4, .r6, .r7, .r8, .r9, .r16]
+
+theorem slot_lt' {w j k : Nat} (h : j < k) : slot w j + 8 * (w + 2) ≤ slot w k :=
+  VG.Proof.MillerRabin.PPC64LE.slot_lt h
+
+/-- A number of `w ≥ 1` words: its low word and the others. -/
+theorem wv_low (m : Mem) (B : Addr) (d w : Nat) (hw : 1 ≤ w) :
+    wv m B d w = (word m B d).toNat + 2 ^ 64 * wv m B (d + 8) (w - 1) := by
+  rw [show w = 1 + (w - 1) by omega_using [hw], wv_add, Nat.add_sub_cancel_left]
+  simp [wv]
+
+/-- Numbers of equal words at different offsets are equal. -/
+theorem wv_shift' {m m' : Mem} {B : Addr} {d d' w : Nat}
+    (h : ∀ i < w, word m' B (d' + 8 * i) = word m B (d + 8 * i)) : wv m' B d' w = wv m B d w := by
+  induction w with
+  | zero => rfl
+  | succ k ih => rw [wv, wv, ih fun i hi => h i (by omega_using [hi]), h k (by omega_using [])]
+
+theorem modE_ok {s : State} {B : Addr} {Z w c : Nat} (h : Env s B Z w) (h35 : slot w nArr ≤ Z)
+    (hc : wv s.mem B (slot w 0) w = c) (hodd : c % 2 = 1) (he : 1 < (s.gpr .r21).toNat) :
+    WP isa modE s fun t =>
+      ((t.gpr .r3).toNat = (c - 1) % (s.gpr .r21).toNat ∧ Outside B (slot w aCm1) (8 * w) s.mem t.mem) ∧
+        Keep meRegs s t := by
+  have hs := h.hs
+  have hn := hs.nowrap
+  have hw4 := h.hw
+  have hw128 := h.hw'
+  obtain s34 : slot w aCm1 + 8 * (w + 2) ≤ Z := Nat.le_trans (slot_lt' (show aCm1 < nArr by decide)) h35
+  obtain s0 : slot w 0 + 8 * (w + 2) ≤ slot w aCm1 := slot_lt' (show 0 < aCm1 by decide)
+  unfold modE
+  -- `r14 :=` `aCm1`, `r15 :=` array 0.
+  refine WP.seq ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (h.base (rd := .r14) (by decide) (by decide) aCm1) fun t₁ ⟨⟨a14, m₁⟩, k₁⟩ => ?_
+  obtain hp : WP isa (.block [.addi .r15 .r10 0]) t₁ fun t =>
+      (t.gpr .r15 = off B (slot w 0) ∧ t.mem = t₁.mem) ∧ Keep [.r15] t₁ t := by
+    refine WP.keep _ ?_ (by decide)
+    prun [(k₁.gpr .r10 (by decide)).trans h.h10]
+  refine WP.mono hp fun t₂ ⟨⟨a15, m₂⟩, k₂⟩ => ?_
+  obtain e2 := (h.keep k₁ (by decide)).keep k₂ (by decide)
+  -- The copy.
+  refine WP.seq (WP.mono (VG.Proof.MillerRabin.PPC64LE.Search.copyWithin_ok (dS := slot w 0) (dD := slot w aCm1) e2.hs a15
+    (by rw [k₂.gpr .r14 (by decide), a14]) e2.h11 (by omega_using [hw4]) (by omega_using [hw128]) (by omega_using [s34, s0]) (by omega_using [s34]) (.inl (by omega_using [s0])))
+    fun t₃ ⟨⟨_, hcp, out₃⟩, k₃⟩ => ?_)
+  obtain e3 := e2.keep k₃ (by decide)
+  -- Its low word less 1, and the loop's registers.
+  obtain hm23 : t₂.mem = s.mem := by rw [m₂, m₁]
+  obtain hw0 : word t₃.mem B (slot w aCm1) = word s.mem B (slot w 0) := by
+    have := hcp 0 (by omega_using [hw4]); simp only [Nat.mul_zero, Nat.add_zero] at this; rw [this, hm23]
+  obtain hodd0 : (word s.mem B (slot w 0)).toNat % 2 = 1 := by
+    have := wv_low s.mem B (slot w 0) w (by omega_using [hw4]); rw [hc] at this; omega
+  refine WP.seq ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (e3.base (rd := .r14) (by decide) (by decide) aCm1) fun t₄ ⟨⟨b14, m₄⟩, k₄⟩ => ?_
+  obtain hblk : WP isa (.block [.load .d .r3 .r14 0, .subi .r3 .r3 1, .store .d .r3 .r14 0, .lsl .r5 .r11 2,
+      .add .r14 .r14 .r5, .lsr .d .r17 .r11 1, .li .r3 0]) t₄ fun t =>
+      (t.mem = t₄.mem.writeW (off B (slot w aCm1)) (word t₄.mem B (slot w aCm1) - BitVec.ofNat 64 1) ∧
+        t.gpr .r14 = off B (slot w aCm1 + 8 * w) ∧ t.gpr .r17 = BitVec.ofNat 64 w ∧ t.gpr .r3 = 0) ∧
+        Keep [.r3, .r5, .r14, .r17] t₄ t := by
+    refine WP.keep _ ?_ (by decide)
+    obtain h11 : t₄.gpr .r11 = BitVec.ofNat 64 (2 * w) := (k₄.gpr .r11 (by decide)).trans e3.h11
+    prun [b14, h11, (hs.congr (k₁.trans (k₂.trans (k₃.trans k₄))).wr).ld (d := slot w aCm1) (n := 8) (by omega_using [s34]),
+      (hs.congr (k₁.trans (k₂.trans (k₃.trans k₄))).wr).st (d := slot w aCm1) (n := 8) (by omega_using [s34])]
+    refine ⟨?_, ?_, rfl⟩
+    · have e8 : BitVec.ofNat 64 (2 * w) <<< 2 = BitVec.ofNat 64 (8 * w) := by
+        apply BitVec.eq_of_toNat_eq
+        rw [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
+        omega_using []
+      rw [e8]; exact off_add _ _ _
+    · apply BitVec.eq_of_toNat_eq
+      rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
+      omega_using [hw128]
+  refine WP.mono hblk fun t₅ ⟨⟨m₅, b14', b17, b3⟩, k₅⟩ => ?_
+  obtain k15 := (((k₁.trans k₂).trans k₃).trans k₄).trans k₅
+  obtain e5 : (t₅.gpr .r21).toNat = (s.gpr .r21).toNat := by rw [k15.gpr .r21 (by decide)]
+  refine WP.mono (modWords_ok (hs.congr k15.wr) b14' b17 (by omega_using [hw4]) (by omega_using [hw128]) (by omega_using [s34]) b3 (by rw [e5]; exact he))
+    fun t ⟨tv, tm, kt⟩ => ⟨⟨?_, ?_⟩, (k15.trans kt).mono (by decide)⟩
+  · rw [tv, e5, m₅, m₄]
+    -- The number in `aCm1` is `c − 1`.
+    obtain hv : wv (t₃.mem.writeW (off B (slot w aCm1)) (word t₃.mem B (slot w aCm1) - BitVec.ofNat 64 1)) B
+        (slot w aCm1) w = c - 1 := by
+      obtain hout := writeW_outside t₃.mem B (d := slot w aCm1) (word t₃.mem B (slot w aCm1) - BitVec.ofNat 64 1)
+        (by omega_using [hn, s34])
+      rw [wv_low _ _ _ _ (by omega_using [hw4]), word_writeW_self,
+        hout.wv (d := slot w aCm1 + 8) (k := w - 1) (Or.inr (Nat.le_refl _)) (by omega_using [hn, s34])]
+      obtain hrest : wv t₃.mem B (slot w aCm1 + 8) (w - 1) = wv s.mem B (slot w 0 + 8) (w - 1) := by
+        rw [← hm23]
+        apply wv_shift'; intro i hi
+        have := hcp (i + 1) (by omega_using [hi])
+        rw [show slot w aCm1 + 8 + 8 * i = slot w aCm1 + 8 * (i + 1) by omega_using [],
+          show slot w 0 + 8 + 8 * i = slot w 0 + 8 * (i + 1) by omega_using []]
+        exact this
+      rw [hrest, BitVec.toNat_sub, hw0, BitVec.toNat_ofNat]
+      obtain hcw := wv_low s.mem B (slot w 0) w (by omega_using [hw4])
+      rw [hc] at hcw
+      have := (word s.mem B (slot w 0)).isLt
+      omega_using [hodd, hcw]
+    rw [hv]
+  · have o4 : Outside B (slot w aCm1) (8 * w) s.mem t₄.mem := by
+      rw [m₄, ← hm23]; exact out₃
+    rw [tm, m₅]
+    exact o4.trans ((writeW_outside t₄.mem B (d := slot w aCm1) _ (by omega_using [hn, s34])).mono (by omega_using []) (by omega_using [hw4]))
+
+
+theorem gcdStep_lt {u v : Nat} (hu : u < 2 ^ 64) (hv : v < 2 ^ 64) :
+    (VG.Proof.RsaKeyGen.gcdStep u v).1 < 2 ^ 64 ∧ (VG.Proof.RsaKeyGen.gcdStep u v).2 < 2 ^ 64 := by
+  unfold VG.Proof.RsaKeyGen.gcdStep
+  split
+  · split <;> exact ⟨by omega, by omega⟩
+  · exact ⟨by omega, hv⟩
+
+theorem gcdIter_lt : ∀ n {u v : Nat}, u < 2 ^ 64 → v < 2 ^ 64 → v % 2 = 1 →
+    (VG.Proof.RsaKeyGen.gcdIter n u v).1 < 2 ^ 64 ∧ (VG.Proof.RsaKeyGen.gcdIter n u v).2 < 2 ^ 64 ∧
+      (VG.Proof.RsaKeyGen.gcdIter n u v).2 % 2 = 1
+  | 0, _, _, hu, hv, ho => ⟨hu, hv, ho⟩
+  | n + 1, u, v, hu, hv, ho => by
+    rw [VG.Proof.RsaKeyGen.gcdIter]
+    exact gcdIter_lt n (gcdStep_lt hu hv).1 (gcdStep_lt hu hv).2 (VG.Proof.RsaKeyGen.gcdStep_odd ho)
+
+/-- The registers the gcd's steps write. -/
+def gsRegs : List Reg := [.r0, .r3, .r4, .r5, .r6, .r7, .r9, .r15, .r16, .r21]
+
+/-- 128 steps of the binary gcd from `u = r3` and the odd `v = r21`. -/
+theorem gcdLoop_ok {s : State} {u v : Nat} (h3 : s.gpr .r3 = BitVec.ofNat 64 u)
+    (h21 : s.gpr .r21 = BitVec.ofNat 64 v) (h9 : s.gpr .r9 = BitVec.ofNat 64 128) (hu : u < 2 ^ 64)
+    (hv : v < 2 ^ 64) (ho : v % 2 = 1) :
+    WP isa (Impl.Bignum.PPC64LE.Precompute.countLoop .r9 VG.Impl.RsaKeyGen.PPC64LE.Candidate.gcdStep) s fun t =>
+      t.gpr .r21 = BitVec.ofNat 64 (Nat.gcd u v) ∧ t.mem = s.mem ∧ Keep gsRegs s t := by
+  refine WP.mono (wp_countdown (cnt := .r9) (N := 128) (by decide) (by decide)
+    (fun i t => t.gpr .r3 = BitVec.ofNat 64 (VG.Proof.RsaKeyGen.gcdIter i u v).1 ∧
+      t.gpr .r21 = BitVec.ofNat 64 (VG.Proof.RsaKeyGen.gcdIter i u v).2 ∧ t.mem = s.mem ∧ Keep gsRegs s t)
+    ?_ ⟨h3, h21, rfl, Keep.refl _ _⟩ h9) fun t ⟨_, t21, tm, tk⟩ => ⟨?_, tm, tk⟩
+  · intro i _ t ⟨t3, t21, tm, tk⟩ _
+    obtain ⟨b1, b2, bo⟩ := gcdIter_lt i hu hv ho
+    refine WP.block_append_iff.mpr (WP.mono (gcdStep_ok t3 t21 b1 b2 bo) fun t₁ ⟨⟨a3, a21, m₁⟩, k₁⟩ => ?_)
+    obtain hsub : WP isa (.block [.subi .r9 .r9 1]) t₁ fun t' =>
+        (t'.gpr .r9 = t₁.gpr .r9 - BitVec.ofNat 64 1 ∧ t'.mem = t₁.mem) ∧ Keep [.r9] t₁ t' := by
+      refine WP.keep _ ?_ (by decide)
+      prun
+    refine WP.mono hsub fun t' ⟨⟨h9', m'⟩, k'⟩ => ⟨⟨?_, ?_, by rw [m', m₁, tm], ?_⟩, ?_⟩
+    · rw [k'.gpr .r3 (by decide), a3, VG.Proof.RsaKeyGen.gcdIter_succ']
+    · rw [k'.gpr .r21 (by decide), a21, VG.Proof.RsaKeyGen.gcdIter_succ']
+    · exact ((tk.trans k₁).trans k').mono (by decide)
+    · rw [h9', k₁.gpr .r9 (by decide)]
+  · rw [t21, VG.Proof.RsaKeyGen.gcdIter_eq 128 u v ho (by
+      have : u * v < 2 ^ 64 * 2 ^ 64 := Nat.mul_lt_mul_of_lt_of_lt hu hv
+      rw [← Nat.pow_add] at this; exact this)]
+
+
+/-- `gcdE`: `r22 := gcd(c − 1, e) − 1` for the odd `e > 1` in `r21`. -/
+theorem gcdE_ok {s : State} {B : Addr} {Z w c : Nat} (h : Env s B Z w) (h35 : slot w nArr ≤ Z)
+    (hc : wv s.mem B (slot w 0) w = c) (hodd : c % 2 = 1) (he : 1 < (s.gpr .r21).toNat)
+    (heo : (s.gpr .r21).toNat % 2 = 1) :
+    WP isa gcdE s fun t =>
+      (t.gpr .r22 = BitVec.ofNat 64 (Nat.gcd (c - 1) (s.gpr .r21).toNat) - BitVec.ofNat 64 1 ∧
+        Outside B (slot w aCm1) (8 * w) s.mem t.mem) ∧ Keep (meRegs ++ gsRegs ++ ([.r22] : List Reg)) s t := by
+  unfold gcdE
+  refine WP.seq (WP.mono (modE_ok h h35 hc hodd he) fun t₁ ⟨⟨v₁, o₁⟩, k₁⟩ => ?_)
+  obtain e₁ : t₁.gpr .r21 = s.gpr .r21 := k₁.gpr .r21 (by decide)
+  obtain h9 : WP isa (.block [.li .r9 128]) t₁ fun t =>
+      (t.gpr .r9 = BitVec.ofNat 64 128 ∧ t.mem = t₁.mem) ∧ Keep [.r9] t₁ t := by
+    refine WP.keep _ ?_ (by decide)
+    prun
+  refine WP.seq (WP.mono h9 fun t₂ ⟨⟨a9, m₂⟩, k₂⟩ => ?_)
+  obtain hE := (s.gpr .r21).isLt
+  refine WP.seq (WP.mono (gcdLoop_ok (u := (c - 1) % (s.gpr .r21).toNat) (v := (s.gpr .r21).toNat)
+    (by rw [k₂.gpr .r3 (by decide), ← v₁]; exact self_ofNat _)
+    (by rw [k₂.gpr .r21 (by decide), e₁]; exact self_ofNat _) a9
+    (Nat.lt_trans (Nat.mod_lt _ (by omega_using [he])) hE) hE heo) fun t₃ ⟨g₃, m₃, k₃⟩ => ?_)
+  obtain hsub : WP isa (.block [.subi .r22 .r21 1]) t₃ fun t =>
+      (t.gpr .r22 = t₃.gpr .r21 - BitVec.ofNat 64 1 ∧ t.mem = t₃.mem) ∧ Keep [.r22] t₃ t := by
+    refine WP.keep _ ?_ (by decide)
+    prun
+  refine WP.mono hsub fun t ⟨⟨a22, m⟩, k⟩ => ⟨⟨?_, ?_⟩, ((k₁.trans k₂).trans (k₃.trans k)).mono (by decide)⟩
+  · rw [a22, g₃, show Nat.gcd ((c - 1) % (s.gpr .r21).toNat) (s.gpr .r21).toNat = Nat.gcd (c - 1) (s.gpr .r21).toNat
+      from by rw [← Nat.gcd_rec, Nat.gcd_comm]]
+  · rw [m, m₃, m₂]; exact o₁
+
+
+theorem os2ip_bytes_lt (m : Mem) (E : Addr) : ∀ i, Spec.Rsa.os2ip (Spec.Rsa.bytesAt m E i) < 256 ^ i
+  | 0 => by simp [Spec.Rsa.bytesAt, Spec.Rsa.os2ip]
+  | i + 1 => by
+    rw [VG.Proof.Bignum.PPC64LE.Pub.bytesAt_succ, VG.Proof.Rsa.os2ip_snoc, Nat.pow_succ]
+    have := os2ip_bytes_lt m E i
+    have := (m (off E i)).isLt
+    omega_arith
+
+/-- `loadE`: `e`'s `L` octets (`1 ≤ L ≤ 8`) at `E` (`r21`, `r30`) into `r21`. -/
+theorem loadE_ok {s : State} {E : Addr} {L : Nat} (h21 : s.gpr .r21 = off E 0)
+    (h30 : s.gpr .r30 = BitVec.ofNat 64 L) (hL : 1 ≤ L) (hL' : L ≤ 8)
+    (hrd : ∀ i < L, InRegions (s.rd ++ s.wr) (off E i) 1) :
+    WP isa loadE s fun t =>
+      (t.gpr .r21 = BitVec.ofNat 64 (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem E L)) ∧ t.mem = s.mem) ∧
+        Keep [.r0, .r3, .r14, .r17, .r21] s t := by
+  unfold loadE
+  refine WP.seq ?_
+  obtain hpre : WP isa (.block [.li .r3 0, .addi .r14 .r21 0, .addi .r17 .r30 0]) s fun s₁ =>
+      (s₁.gpr .r3 = 0 ∧ s₁.gpr .r14 = off E 0 ∧ s₁.gpr .r17 = BitVec.ofNat 64 L ∧ s₁.mem = s.mem) ∧
+        Keep [.r3, .r14, .r17] s s₁ := by
+    refine WP.keep _ ?_ (by decide)
+    prun [h21, h30]
+    exact ⟨rfl, BitVec.add_zero _⟩
+  refine WP.mono hpre fun s₁ ⟨⟨i3, i14, i17, im⟩, k₁⟩ => ?_
+  let Inv : Nat → State → Prop := fun i t =>
+    t.gpr .r3 = BitVec.ofNat 64 (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem E i)) ∧
+      t.gpr .r14 = off E i ∧ t.mem = s.mem ∧ Keep [.r0, .r3, .r14, .r17] s t
+  refine WP.seq (WP.mono (wp_countdown (cnt := .r17) (N := L) (by omega_using [hL']) (by omega_using [hL]) Inv
+    (fun i hi t ⟨t3, t14, tm, tk⟩ hc => ?_)
+    ⟨by rw [i3]; rfl, i14, im, k₁.mono⟩ i17) fun t ⟨t3, _, tm, tk⟩ => ?_)
+  · have hb : InRegions (t.rd ++ t.wr) (off E i) 1 := by rw [tk.rd, tk.wr]; exact hrd i hi
+    refine WP.mono (WP.keep [.r0, .r3, .r14, .r17] (Q := fun t' =>
+      t'.gpr .r3 = BitVec.ofNat 64 (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem E (i + 1))) ∧
+        t'.gpr .r14 = off E (i + 1) ∧ t'.mem = t.mem ∧ t'.gpr .r17 = t.gpr .r17 - BitVec.ofNat 64 1) ?_ (by decide))
+      fun t' ⟨⟨a, b, c, d⟩, k⟩ => ⟨⟨a, b, c.trans tm, tk.trans' k⟩, d⟩
+    prun [t14, t3, exec_lbz' (show Reg.r14 ≠ .r0 by decide) (show 0 < 2 ^ 15 by decide), hb, read_byte64]
+    apply BitVec.eq_of_toNat_eq
+    rw [VG.Proof.Bignum.PPC64LE.Pub.bytesAt_succ, VG.Proof.Rsa.os2ip_snoc, tm, BitVec.toNat_add,
+      BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
+    obtain hbt := (s.mem (VG.Proof.Mont.off E i)).isLt
+    obtain hlt := os2ip_bytes_lt s.mem E i
+    obtain h256 : 256 ^ i ≤ 256 ^ 7 := Nat.pow_le_pow_right (by decide) (by omega_using [hL', hi])
+    have : (256 : Nat) ^ 7 = 2 ^ 56 := by decide
+    rw [Nat.mod_eq_of_lt (show Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem E i) < 2 ^ 64 by omega_using [hlt, h256])]
+    omega_using []
+  · have hfin : WP isa (.block [.addi .r21 .r3 0]) t fun t' =>
+        (t'.gpr .r21 = t.gpr .r3 ∧ t'.mem = t.mem) ∧ Keep [.r21] t t' := by
+      refine WP.keep _ ?_ (by decide)
+      prun
+      exact BitVec.add_zero _
+    exact WP.mono hfin fun t' ⟨⟨a, b⟩, k⟩ => ⟨⟨a.trans t3, b.trans tm⟩, (tk.trans k).mono (by decide)⟩
+
+
+/-- The registers `gcdCheck` writes. -/
+def gcRegs : List Reg := [.r0, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r14, .r15, .r16, .r17, .r21, .r22]
+
+/-- `gcdCheck`: `r22 = 0` iff `gcd(c − 1, e) = 1`, for `e` the `L` octets at
+`E` (`r21`, `r30`). -/
+theorem gcdCheck_ok {s : State} {B E : Addr} {Z w c L : Nat} (h : Env s B Z w) (h35 : slot w nArr ≤ Z)
+    (hc : wv s.mem B (slot w 0) w = c) (hodd : c % 2 = 1) (h21 : s.gpr .r21 = off E 0)
+    (h30 : s.gpr .r30 = BitVec.ofNat 64 L) (hL : 1 ≤ L) (hL' : L ≤ 8)
+    (hrd : ∀ i < L, InRegions (s.rd ++ s.wr) (off E i) 1) :
+    WP isa gcdCheck s fun t =>
+      ((t.gpr .r22 = 0 ↔ Nat.gcd (c - 1) (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem E L)) = 1) ∧
+        Outside B (slot w aCm1) (8 * w) s.mem t.mem) ∧ Keep gcRegs s t := by
+  obtain hEl : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem E L) < 2 ^ 64 := by
+    have := os2ip_bytes_lt s.mem E L
+    have : 256 ^ L ≤ 256 ^ 8 := Nat.pow_le_pow_right (by decide) hL'
+    have : (256 : Nat) ^ 8 = 2 ^ 64 := by decide
+    omega_arith
+  generalize hEv : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem E L) = e at hEl ⊢
+  unfold gcdCheck
+  refine WP.seq (WP.mono (loadE_ok h21 h30 hL hL' hrd) fun t₁ ⟨⟨e₁, m₁⟩, k₁⟩ => ?_)
+  rw [hEv] at e₁
+  obtain hb : WP isa (.block [.li .r0 1, .logic .and .r5 .r21 .r0]) t₁ fun t =>
+      (t.gpr .r5 = BitVec.ofNat 64 (e % 2) ∧ t.gpr .r21 = t₁.gpr .r21 ∧ t.mem = t₁.mem) ∧ Keep [.r0, .r5] t₁ t := by
+    refine WP.keep _ ?_ (by decide)
+    prun [e₁, and1_val]
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hEl]
+    split <;> (congr 1; omega_arith)
+  refine WP.seq (WP.mono hb fun t₂ ⟨⟨a5, a21, m₂⟩, k₂⟩ => ?_)
+  obtain k12 := k₁.trans k₂
+  obtain hm2 : t₂.mem = s.mem := by rw [m₂, m₁]
+  refine WP.ite _ (eval_zero_ofNat _ _ (Nat.lt_of_lt_of_le (Nat.mod_lt _ (by decide)) (by decide)) a5)
+    (fun hz => ?_) (fun hz => ?_)
+  · -- `e` even.
+    obtain he2 : e % 2 = 0 := by simpa using hz
+    obtain hblk : WP isa (.block [.li .r22 1]) t₂ fun t =>
+        (t.gpr .r22 = BitVec.ofNat 64 1 ∧ t.mem = t₂.mem) ∧ Keep [.r22] t₂ t := by
+      refine WP.keep _ ?_ (by decide)
+      prun
+    refine WP.mono hblk fun t ⟨⟨a22, m⟩, k⟩ => ⟨⟨?_, by rw [m, hm2]; exact Outside.refl _ _ _ _⟩, (k12.trans k).mono (by decide)⟩
+    rw [a22]
+    refine ⟨fun h => absurd h (by decide), fun hg => ?_⟩
+    have : 2 ∣ Nat.gcd (c - 1) e := Nat.dvd_gcd (by omega_using [hodd]) (by omega_using [he2])
+    rw [hg] at this; exact absurd this (by decide)
+  · have he1 : e % 2 = 1 := by simp at hz; omega_using [hz]
+    obtain hsub : WP isa (.block [.subi .r5 .r21 1]) t₂ fun t =>
+        (t.gpr .r5 = BitVec.ofNat 64 (e - 1) ∧ t.mem = t₂.mem) ∧ Keep [.r5] t₂ t := by
+      refine WP.keep _ ?_ (by decide)
+      prun [a21, e₁]
+      apply BitVec.eq_of_toNat_eq
+      rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
+      omega_using [he1]
+    refine WP.seq (WP.mono hsub fun t₃ ⟨⟨a5', m₃⟩, k₃⟩ => ?_)
+    obtain k13 := k12.trans k₃
+    refine WP.ite _ (eval_zero_ofNat _ _ (by omega_using [hEl]) a5') (fun hz' => ?_) (fun hz' => ?_)
+    · have he' : e = 1 := by simp at hz'; omega_using [he1, hz']
+      obtain hblk : WP isa (.block [.li .r22 0]) t₃ fun t =>
+          (t.gpr .r22 = 0 ∧ t.mem = t₃.mem) ∧ Keep [.r22] t₃ t := by
+        refine WP.keep _ ?_ (by decide)
+        prun
+        rfl
+      refine WP.mono hblk fun t ⟨⟨a22, m⟩, k⟩ =>
+        ⟨⟨?_, by rw [m, m₃, hm2]; exact Outside.refl _ _ _ _⟩, (k13.trans k).mono (by decide)⟩
+      rw [a22, he', Nat.gcd_one_right]; exact ⟨fun _ => rfl, fun _ => rfl⟩
+    · have he' : 1 < e := by simp at hz'; omega_using [hz']
+      obtain env3 : Env t₃ B Z w := h.keep k13 (by decide)
+      obtain hc3 : wv t₃.mem B (slot w 0) w = c := by rw [m₃, hm2]; exact hc
+      obtain r21 : t₃.gpr .r21 = BitVec.ofNat 64 e := (k₃.gpr .r21 (by decide)).trans (a21.trans e₁)
+      obtain hev : (t₃.gpr .r21).toNat = e := by rw [r21, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hEl]
+      refine WP.mono (gcdE_ok env3 h35 hc3 hodd (by rw [hev]; exact he') (by rw [hev]; exact he1))
+        fun t ⟨⟨a22, o⟩, k⟩ => ⟨⟨?_, by rw [m₃, hm2] at o; exact o⟩, (k13.trans k).mono (by decide)⟩
+      rw [a22, hev]
+      obtain hg1 : 1 ≤ Nat.gcd (c - 1) e := Nat.gcd_pos_of_pos_right _ (by omega_using [he1])
+      obtain hg2 : Nat.gcd (c - 1) e ≤ e := Nat.gcd_le_right _ (by omega_using [he1])
+      constructor
+      · intro hz0
+        obtain hn : (BitVec.ofNat 64 (Nat.gcd (c - 1) e) - BitVec.ofNat 64 1).toNat = Nat.gcd (c - 1) e - 1 := by
+          rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat]; omega_using [hEl, hg1, hg2]
+        rw [hz0] at hn
+        have : (0 : BitVec 64).toNat = 0 := rfl
+        omega
+      · intro hg; rw [hg]; rfl
+
+end VG.Proof.RsaKeyGen.PPC64LE.Cand
+
+end
+
+end
 
 /-! ### `RsaKeyGen.PPC64LE.Cand.Close`, which this module and modules that import it used -/
 

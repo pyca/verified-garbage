@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Cand.Fin
 public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Cand.Hyp
 public import VerifiedGarbage.Proof.RsaKeyGen.CandSpec
 import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Cand.Slot
-import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Cand.Bits
+import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Cand.WUni
 import VerifiedGarbage.Proof.Bignum.PPC64LE.Run
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Offset
@@ -17,8 +17,6 @@ public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Sel
 public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Ctx
 public import VerifiedGarbage.Impl.RsaKeyGen.PPC64LE.Candidate
 public import VerifiedGarbage.Spec.RsaKeyGen
-import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Cand.WUni
-import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Cand.Gcd
 import VerifiedGarbage.Proof.RsaKeyGen.Bits
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMont
 import VerifiedGarbage.Proof.Framework.AddrArith

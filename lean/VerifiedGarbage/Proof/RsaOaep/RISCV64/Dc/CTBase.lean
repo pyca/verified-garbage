@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
 # RSAES-OAEP decryption on RISC-V: two runs
 
 Untrusted: everything here is checked by Lean. As on PPC64LE
-(`Proof/RsaOaep/PPC64LE/Dc/Verified.lean`). Two runs are compared through an
+(`Proof/RsaOaep/PPC64LE/Dc/VerifiedP.lean`). Two runs are compared through an
 anchor `a`, the first run's entry state: `PubD pc a s` says the entry state `s`
 has `a`'s public data (`pubD_of`, from the contract's). After the
 private operation, `DX pc a t` says `t` has `Base` for the decoding from such an

@@ -1,23 +1,160 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.KcBodyW
-public import VerifiedGarbage.Proof.Rsa.Arm.KcFnCT
+public import VerifiedGarbage.Proof.Rsa.Arm.CckVerified
 public import VerifiedGarbage.Proof.Rsa.Arm.KdDivCT
-public import VerifiedGarbage.Proof.Rsa.Arm.KcTaintW
 import VerifiedGarbage.Proof.Rsa.Arm.InvParts
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Rsa.Arm.CvFail
 import VerifiedGarbage.Proof.Rsa.Octets
-public import VerifiedGarbage.Proof.Rsa.Arm.KcShape
 public import VerifiedGarbage.Impl.Rsa.Arm.CheckKey
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Bignum.Arm.UmaalArithmetic
-import VerifiedGarbage.Proof.Rsa.Arm.CkTaint
-import VerifiedGarbage.Proof.Rsa.Arm.CckVerified
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Spec.Rsa.Contract
 meta import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Impl.Rsa.Arm.KeyCheck
+public import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+meta import VerifiedGarbage.Impl.Rsa.Arm.KeyCheck
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Rsa.Arm.KdDivCT
+meta import VerifiedGarbage.Proof.Framework.Mem
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+
+/-! ### `Rsa.Arm.CkTaint`, which only this module used -/
+
+section
+
+/-! # `vg_rsa_check_key` on ARMv7: the pieces that read the stack arguments
+
+The entry (from the arguments in `r0`–`r3` and on the stack) and the
+restore of the registers, checked by the taint analysis.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Rsa.Arm.CheckKey
+open VG VG.Arm VG.Impl.Rsa.Arm.KeyCheck
+
+theorem entry_taint : ∃ hc, (VG.Taint.check taint (argTaint [.r0, .r1, .r2, .r3] (4 * 14))
+    (entry (4 * 12) ([(0, aD), (2, aP), (4, aQ), (6, aDP), (8, aDQ), (10, aQI)].map
+      fun p => (4 * p.1, p.2))) hc).isSome = true :=
+  ⟨_, by taint_decide⟩
+
+theorem restore_taint : ∃ hc, (VG.Taint.check taint (argTaint [] (4 * 14)) (.block (restore (4 * 12))) hc).isSome =
+    true :=
+  ⟨_, by taint_decide⟩
+
+end VG.Proof.Rsa.Arm.CheckKey
+
+end
+
+end
+
+/-! ### `Rsa.Arm.KcTaintW`, which only this module used -/
+
+section
+
+/-! # The checks of a balanced RSA key on ARMv7: the pieces the taint analysis checks
+
+`keyBodyW` between its products and divisions by words (`KeyDiv.mulLo_ct`,
+`KeyDiv.divW_ct`), and those functions' own pieces for the arrays they are
+called on: each from `r8` and `n_len` in `r11` at the start, and `r7`–`r9`
+otherwise.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Rsa.Arm.KeyCheck
+open VG VG.Arm VG.Impl.Rsa.Arm.Keys VG.Impl.Rsa.Arm.KeyCheck
+open VG.Proof.Rsa.Arm.KeyDiv
+
+/-- The checks between the first product and the next: `p q = n`, `p - 1`, `q - 1`, `dP < p - 1`. -/
+abbrev chunkA : List (Prog isa) := eqA aVQ aN ++
+  [copy aM1 aP, .block (clrLow aM1), copy aM2 aQ, .block (clrLow aM2)] ++ ltA aDP aM1
+/-- `e dP mod (p - 1) = 1`, `dQ < q - 1`. -/
+abbrev chunkB : List (Prog isa) := eqA aVR aOne ++ ltA aDQ aM2
+/-- `e dQ mod (q - 1) = 1`, `qInv < p`. -/
+abbrev chunkC : List (Prog isa) := eqA aVR aOne ++ ltA aQI aP
+
+/-- `shape`, from `n_len` in `r11` and the stack arguments. -/
+theorem shape_taint : ∃ hc, (VG.Taint.check taint (argTaint [.r11] (4 * 14))
+    (.block (VG.Impl.Rsa.Arm.KeyDiv.shape4 12 20 28 36)) hc).isSome = true :=
+  ⟨_, by taint_decide⟩
+
+theorem startW_taint : ∃ hc, (VG.Taint.check taint (Taint.ofRegs [.r8, .r11]) startW hc).isSome = true :=
+  ⟨_, by taint_decide⟩
+
+theorem chunkA_taint :
+    ∃ hc, (VG.Taint.check taint (Taint.ofRegs [.r7, .r8, .r9]) (seqs chunkA) hc).isSome = true :=
+  ⟨_, by taint_decide⟩
+
+theorem chunkB_taint :
+    ∃ hc, (VG.Taint.check taint (Taint.ofRegs [.r7, .r8, .r9]) (seqs chunkB) hc).isSome = true :=
+  ⟨_, by taint_decide⟩
+
+theorem chunkC_taint :
+    ∃ hc, (VG.Taint.check taint (Taint.ofRegs [.r7, .r8, .r9]) (seqs chunkC) hc).isSome = true :=
+  ⟨_, by taint_decide⟩
+
+theorem divSetP_taint : ∃ hc, (VG.Taint.check taint (Taint.ofRegs [.r7, .r8, .r9])
+    (seqs [copy aVD aP, .block (VG.Impl.Rsa.Arm.KeyDiv.fixTop aVD)]) hc).isSome = true :=
+  ⟨_, by taint_decide⟩
+
+theorem divSetM1_taint : ∃ hc, (VG.Taint.check taint (Taint.ofRegs [.r7, .r8, .r9])
+    (seqs [copy aVD aM1, .block (VG.Impl.Rsa.Arm.KeyDiv.fixTop aVD)]) hc).isSome = true :=
+  ⟨_, by taint_decide⟩
+
+theorem divSetM2_taint : ∃ hc, (VG.Taint.check taint (Taint.ofRegs [.r7, .r8, .r9])
+    (seqs [copy aVD aM2, .block (VG.Impl.Rsa.Arm.KeyDiv.fixTop aVD)]) hc).isSome = true :=
+  ⟨_, by taint_decide⟩
+
+theorem chunk2_taint :
+    ∃ hc, (VG.Taint.check taint (Taint.ofRegs [.r7, .r8, .r9]) (seqs (eqA aVR aOne ++ ltA aD aN)) hc).isSome = true :=
+  ⟨_, by taint_decide⟩
+
+theorem chunk3_taint :
+    ∃ hc, (VG.Taint.check taint (Taint.ofRegs [.r7, .r8, .r9]) (seqs (eqA aVR aDP)) hc).isSome = true :=
+  ⟨_, by taint_decide⟩
+
+theorem chunk4_taint :
+    ∃ hc, (VG.Taint.check taint (Taint.ofRegs [.r7, .r8, .r9]) (seqs (eqA aVR aDQ)) hc).isSome = true :=
+  ⟨_, by taint_decide⟩
+
+theorem mulVQ_taint : MulTaint aVQ aP aQ :=
+  ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+
+theorem mulT_taint : MulTaint aT aQI aQ :=
+  ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+
+theorem mulDP_taint : MulTaint aA aE aDP (some 2) :=
+  ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+
+theorem mulDQ_taint : MulTaint aA aE aDQ (some 2) :=
+  ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+
+theorem divA_taint : DivTaint aA aVR aVD aVT aY aX (some 2) :=
+  ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
+    ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+
+theorem divT_taint : DivTaint aT aVR aVD aVT aY aX :=
+  ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
+    ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+
+theorem divD_taint : DivTaint aD aVR aVD aVT aY aX :=
+  ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
+    ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+
+end VG.Proof.Rsa.Arm.KeyCheck
+
+end
+
+end
 
 /-! ### `Rsa.Arm.CkCorrect`, which only this module used -/
 

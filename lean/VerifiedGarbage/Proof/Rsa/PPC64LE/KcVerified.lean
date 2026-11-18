@@ -1,22 +1,718 @@
 module
 
-import VerifiedGarbage.Proof.Rsa.PPC64LE.KcImplies
 public import VerifiedGarbage.Impl.Rsa.PPC64LE.CheckKey
 public import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Rsa.PPC64LE.KcCkMain
-import VerifiedGarbage.Proof.Rsa.PPC64LE.KcCkCT
 public import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.TCB.PPC64LE.Target
 public import VerifiedGarbage.Proof.Rsa.Contract
 public import VerifiedGarbage.Impl.Rsa.PPC64LE.KeyCheck
-import VerifiedGarbage.Proof.Bignum.PPC64LE.PubE
-import VerifiedGarbage.Proof.Rsa.PPC64LE.KcCk
-import VerifiedGarbage.Proof.Rsa.PPC64LE.KcFrame
+public import VerifiedGarbage.Proof.Bignum.PPC64LE.PubE
+public import VerifiedGarbage.Proof.Rsa.PPC64LE.KcCk
+public import VerifiedGarbage.Proof.Rsa.PPC64LE.KcFrame
 import VerifiedGarbage.Spec.Rsa
-import VerifiedGarbage.Proof.Bignum.PPC64LE.MontCT
-import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
-import VerifiedGarbage.Proof.Framework.RelCT
-import VerifiedGarbage.Proof.Rsa.PPC64LE.KcEntry
+public import VerifiedGarbage.Proof.Bignum.PPC64LE.MontCT
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Rsa.PPC64LE.KcContract
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Rsa.Contract
+meta import VerifiedGarbage.Proof.Bignum.PPC64LE.MontCT
+meta import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.PPC64LE.Step
+import VerifiedGarbage.Proof.Rsa.PPC64LE.CvCheck
+import VerifiedGarbage.Proof.Rsa.PPC64LE.CvLoads
+import VerifiedGarbage.Proof.Rsa.PPC64LE.Seqs
+import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMid
+import VerifiedGarbage.Proof.Rsa.PPC64LE.CvBase
+import VerifiedGarbage.Proof.Framework.Mem
+meta import VerifiedGarbage.Proof.Rsa.PPC64LE.KcCk
+meta import VerifiedGarbage.Proof.Rsa.PPC64LE.CvCheck
+meta import VerifiedGarbage.Proof.Rsa.PPC64LE.CvLoads
+meta import VerifiedGarbage.Proof.Rsa.PPC64LE.Seqs
+meta import VerifiedGarbage.Proof.Framework.Block
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Step
+meta import VerifiedGarbage.Proof.Rsa.PPC64LE.KcFrame
+meta import VerifiedGarbage.Spec.Rsa.Contract
+meta import VerifiedGarbage.Proof.Bignum.PPC64LE.PubE
+meta import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMid
+meta import VerifiedGarbage.Proof.Rsa.PPC64LE.CvBase
+meta import VerifiedGarbage.Proof.Framework.Mem
+
+/-! ### `Rsa.PPC64LE.KcCkCT`, which only this module used -/
+
+section
+
+/-! ### `Rsa.PPC64LE.KcCkMain`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Rsa.PPC64LE.KcEntry`, which this module and modules that import it used -/
+
+section
+
+/-!
+# The checks of an RSA key on PPC64LE: the entry
+
+`entry_ok`: `save`, the register arguments kept (`moves`, whatever they
+establish, `M`), and `e`'s `Le` bytes at `Ep` (in `r5` and `r6`) read
+saturated at `2^33` into `r24` and checked into `r26`; `r24` then holds the
+saturated `e` times `2^31`.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Rsa.PPC64LE.KeyCheck
+
+open VG VG.PPC64LE VG.Proof.Mont VG.Proof.Bignum.PPC64LE
+open VG.Impl.Rsa.PPC64LE.KeyCheck (entry save)
+open VG.Proof.Bignum.PPC64LE.Pub (sat)
+
+/-- The registers `save` and the reading of `e` change. -/
+abbrev entryRegs (mv : List Reg) : List Reg := [.r11, .r31] ++ (mv ++ [.r0, .r3, .r4, .r7, .r8, .r24, .r26])
+
+theorem entry_ok {s0 : State} {B : Addr} {Z K oS na : Nat} (hp : KPre s0 B Z K oS na)
+    (hoS : 96 + 8 * oS < 2 ^ 15) {moves : List Instr} {mv : List Reg} {M : State → State → Prop}
+    (hm : ∀ u : State, WP isa (.block (moves ++ ([.addi .r7 .r5 0, .addi .r8 .r6 0] : List Instr))) u fun v =>
+      (M u v ∧ v.mem = u.mem ∧ v.gpr .r7 = u.gpr .r5 ∧ v.gpr .r8 = u.gpr .r6) ∧ Keep mv u v)
+    (hmv : .r31 ∉ mv) {Ep : Addr} {Le : Nat} (h5 : s0.gpr .r5 = Ep) (h6 : s0.gpr .r6 = BitVec.ofNat 64 Le)
+    (hL : 1 ≤ Le) (hL' : Le ≤ 1024) (hrd : (⟨Ep, Le⟩ : Region) ∈ s0.rd)
+    (hd : (⟨Ep, Le⟩ : Region).Disjoint ⟨B, Z⟩) :
+    WP isa (entry oS moves) s0 fun t => ∃ u v, Keep [.r11, .r31] s0 u ∧ M u v ∧
+      Keep [.r0, .r3, .r4, .r7, .r8, .r24, .r0, .r3, .r4, .r24, .r26] v t ∧ KBase B Z s0 t ∧
+      t.gpr .r24 = BitVec.ofNat 64 (sat (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s0.mem Ep Le))) <<< 31 ∧
+      t.gpr .r26 = BitVec.ofNat 64 0 - BitVec.ofNat 64
+        (if Spec.Rsa.exponentValid (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s0.mem Ep Le)) then 1 else 0) ∧
+      Keep (entryRegs mv) s0 t := by
+  unfold entry
+  rw [WP.seq_iff, List.append_assoc]
+  refine save_ok hp hoS fun u bu ku => ?_
+  refine WP.mono (hm u) fun v ⟨⟨mv', vm, v7, v8⟩, kv⟩ => ?_
+  have bv := bu.of_regs kv vm hmv
+  have hc : ∀ i < Le, (⟨Ep, Le⟩ : Region).Contains (off Ep i) 1 := fun i hi =>
+    Offset.contains_base _ (by omega_arith) (by omega_arith)
+  have e7 : v.gpr .r7 = off Ep 0 := by
+    rw [v7, ku.gpr _ (by decide), h5]; simp [off]
+  have e8 : v.gpr .r8 = BitVec.ofNat 64 Le := by rw [v8, ku.gpr _ (by decide), h6]
+  refine WP.seq (WP.mono (Pub.readE_ok e7 e8 hL (by omega_arith)
+    (fun i hi => ⟨_, List.mem_append_left _ (by rw [bv.rd]; exact hrd), hc i hi⟩)) fun w ⟨⟨w24, wm⟩, kw⟩ => ?_)
+  have hb : Spec.Rsa.bytesAt v.mem Ep Le = Spec.Rsa.bytesAt s0.mem Ep Le := by
+    simp only [Spec.Rsa.bytesAt]
+    exact List.map_congr_left fun i hi =>
+      bv.frame _ (CrtValues.past_of_disjoint hd (hc i (List.mem_range.mp hi)))
+  rw [hb] at w24
+  have hsat : sat (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s0.mem Ep Le)) ≤ 2 ^ 33 := by
+    unfold sat; omega_arith
+  refine WP.mono (Pub.checkE_ok w24 hsat) fun t ⟨⟨t26, t24, tm⟩, kt⟩ => ?_
+  refine ⟨u, v, ku, mv', kw.trans kt, (bv.of_regs kw wm).of_regs kt tm, t24, ?_, ?_⟩
+  · rw [t26, Pub.exponentValid_sat]
+  · have tail : ∀ r ∈ ([.r0, .r3, .r4, .r7, .r8, .r24] ++ [.r0, .r3, .r4, .r24, .r26] : List Reg),
+        r ∈ ([.r0, .r3, .r4, .r7, .r8, .r24, .r26] : List Reg) := by decide
+    refine (((ku.trans kv).trans kw).trans kt).mono fun r h => ?_
+    rw [List.append_assoc] at h
+    rcases List.mem_append.mp h with h | h
+    · rcases List.mem_append.mp h with h | h
+      · exact List.mem_append_left _ h
+      · exact List.mem_append_right _ (List.mem_append_left _ h)
+    · exact List.mem_append_right _ (List.mem_append_right _ (tail r h))
+
+end VG.Proof.Rsa.PPC64LE.KeyCheck
+
+end
+
+end
+
+/-!
+# `vg_rsa_check_key` on PPC64LE: correctness
+
+`ck_correct`: the entry, the check of `e` (0 returned if it is not valid),
+the stack arguments read, the check of `n` (0 returned if it is not valid),
+the checks (`ck_valid`), and the saved registers restored.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Rsa.PPC64LE.KeyCheck
+
+open VG VG.PPC64LE VG.Proof.Mont VG.Proof.Bignum.PPC64LE VG.Proof.Rsa.PPC64LE.Keys
+open VG.Impl.Rsa.PPC64LE.KeyCheck
+open VG.Impl.Rsa.PPC64LE.Keys (seqs)
+
+/-- What the moves of `vg_rsa_check_key` establish. -/
+def CkM (u v : State) : Prop :=
+  v.gpr .r14 = u.gpr .r3 ∧ v.gpr .r15 = u.gpr .r4 ∧ v.gpr .r16 = u.gpr .r7 ∧ v.gpr .r17 = u.gpr .r8 ∧
+    v.gpr .r18 = u.gpr .r9 ∧ v.gpr .r19 = u.gpr .r10
+
+theorem ck_moves (u : State) :
+    WP isa (.block (VG.Impl.Rsa.PPC64LE.CheckKey.moves ++ ([.addi .r7 .r5 0, .addi .r8 .r6 0] : List Instr))) u fun v =>
+      (CkM u v ∧ v.mem = u.mem ∧ v.gpr .r7 = u.gpr .r5 ∧ v.gpr .r8 = u.gpr .r6) ∧
+        Keep [.r14, .r15, .r16, .r17, .r18, .r19, .r7, .r8] u v := by
+  refine WP.keep _ ?_ (by decide)
+  prun [VG.Impl.Rsa.PPC64LE.CheckKey.moves, CkM]
+  simp only [BitVec.add_zero, and_self]
+
+/-- 0, returned. -/
+theorem ret0_ok (u : State) :
+    WP isa (.block ret0) u fun v => (v.gpr .r3 = BitVec.ofNat 64 0 ∧ v.mem = u.mem) ∧ Keep [.r3] u v := by
+  refine WP.keep _ ?_ (by decide)
+  prun [ret0]
+
+/-- Every register the function changes before the restore. -/
+abbrev ckAll : List Reg :=
+  [.r0, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12, .r14, .r15, .r16, .r17, .r18, .r19, .r20, .r21,
+    .r22, .r23, .r24, .r26, .r29, .r30, .r31]
+
+/-- What holds before the restore. -/
+def CkDone (s0 t : State) : Prop :=
+  KBase (ckB s0) (ckZ s0) s0 t ∧ t.gpr .r3 = BitVec.ofNat 64 (if ckOk s0 then 1 else 0) ∧ Keep ckAll s0 t
+
+theorem ckOk_of_e {s0 : State}
+    (h : Spec.Rsa.exponentValid (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s0.mem (s0.gpr .r5) (s0.gpr .r6).toNat)) = false) :
+    ckOk s0 = false := by
+  simp [ckOk, Spec.Rsa.checkKey, Spec.Rsa.keyValid, h]
+
+theorem ckOk_of_n {s0 : State}
+    (h : Spec.Rsa.modulusValid (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s0.mem (s0.gpr .r3) (kK s0))) (kK s0) = false) :
+    ckOk s0 = false := by
+  simp only [ckOk, Spec.Rsa.checkKey, Spec.Rsa.keyValid, len_bytes]
+  simp [kK] at h
+  simp [h]
+
+/-- `vg_rsa_check_key`'s stack arguments into `r20`–`r26`. -/
+theorem ck_stk {s0 t : State} (hp : KPre s0 (ckB s0) (ckZ s0) (kK s0) 8 10) (b : KBase (ckB s0) (ckZ s0) s0 t) :
+    WP isa (.block VG.Impl.Rsa.PPC64LE.CheckKey.stk) t fun u => (u.mem = t.mem ∧
+      u.gpr .r20 = PPC64LE.stackArg s0 0 ∧ u.gpr .r21 = PPC64LE.stackArg s0 1 ∧
+      u.gpr .r22 = PPC64LE.stackArg s0 2 ∧ u.gpr .r23 = PPC64LE.stackArg s0 4 ∧
+      u.gpr .r26 = PPC64LE.stackArg s0 6) ∧ Keep [.r20, .r21, .r22, .r23, .r26] t u := by
+  have sa : ∀ i < 10, PPC64LE.stackArg t i = PPC64LE.stackArg s0 i := fun i hi => b.stackArg hp hi
+  simp only [VG.Impl.Rsa.PPC64LE.CheckKey.stk, List.append_assoc]
+  rw [← List.append_nil (VG.Impl.Rsa.PPC64LE.CrtValues.stackArg .r26 6)]
+  refine hp.stackArg_ok b.rd b.sp (r := .r20) (by decide) (by decide) (by decide) ?_
+  refine hp.stackArg_ok (s := t.write .r20 _) b.rd b.sp (r := .r21) (by decide) (by decide) (by decide) ?_
+  refine hp.stackArg_ok (s := (t.write .r20 _).write .r21 _) b.rd b.sp (r := .r22) (by decide) (by decide)
+    (by decide) ?_
+  refine hp.stackArg_ok (s := ((t.write .r20 _).write .r21 _).write .r22 _) b.rd b.sp (r := .r23) (by decide)
+    (by decide) (by decide) ?_
+  refine hp.stackArg_ok (s := (((t.write .r20 _).write .r21 _).write .r22 _).write .r23 _) b.rd b.sp (r := .r26)
+    (by decide) (by decide) (by decide) (WP.block_nil ?_)
+  refine ⟨⟨rfl, ?_, ?_, ?_, ?_, ?_⟩, ?_⟩
+  · simp only [State.write, ↓reduceIte]; exact sa 0 (by decide)
+  · simp only [State.write, ↓reduceIte]; exact sa 1 (by decide)
+  · simp only [State.write, ↓reduceIte]; exact sa 2 (by decide)
+  · simp only [State.write, ↓reduceIte]; exact sa 4 (by decide)
+  · simp only [State.write, ↓reduceIte]; exact sa 6 (by decide)
+  · exact (((((Keep.write _ _ _).trans (Keep.write _ _ _)).trans (Keep.write _ _ _)).trans
+      (Keep.write _ _ _)).trans (Keep.write _ _ _)).mono
+
+theorem ck_correct (s0 : State) (h : ckP.pre s0) :
+    ∃ tr t, Exec isa VG.Impl.Rsa.PPC64LE.CheckKey.code s0 tr t ∧ abiPreserved s0 t ∧ ckP.post s0 t := by
+  show WP isa VG.Impl.Rsa.PPC64LE.CheckKey.code s0 fun t => abiPreserved s0 t ∧ ckP.post s0 t
+  have hp := ck_kpre h
+  obtain ⟨-, hrd, -, dn, de, -, -, -, -, -, -, -, wn, -, -, -, -, -, -, -, -, ⟨hk, hk'⟩, e1, e2, -⟩ := id h
+  have hk1 : (s0.gpr .r6).toNat ≤ 1024 := by omega_using [hk', e2]
+  unfold VG.Impl.Rsa.PPC64LE.CheckKey.code fn
+  refine WP.seq (WP.mono (entry_ok hp (by decide) ck_moves (by decide) rfl (CrtValues.ofNat_toNat64 _) e1
+    hk1 (by rw [hrd]; simp) de) fun t1 ⟨u, v, ku, ⟨m14, m15, m16, m17, m18, m19⟩, kv, b1, h24, h26, k1⟩ => ?_)
+  refine WP.seq (WP.mono (Q := CkDone s0) ?_ fun t ⟨bt, t3, kt⟩ => ?_)
+  · refine WP.ite (t1.gpr .r26 == 0) (eval_zero _ _) (fun hz => ?_) (fun hz => ?_)
+    · -- `e` is not valid.
+      have hev : Spec.Rsa.exponentValid (Spec.Rsa.os2ip
+          (Spec.Rsa.bytesAt s0.mem (s0.gpr .r5) (s0.gpr .r6).toNat)) = false := by
+        rw [h26] at hz
+        cases e : Spec.Rsa.exponentValid (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s0.mem (s0.gpr .r5) (s0.gpr .r6).toNat))
+        · rfl
+        · rw [e] at hz; simp at hz
+      refine WP.mono (ret0_ok t1) fun t ⟨⟨t3, tm⟩, kt⟩ => ⟨b1.of_regs kt tm, by rw [t3, ckOk_of_e hev]; rfl,
+        (k1.trans kt).mono⟩
+    · -- `e` is valid.
+      have hev : Spec.Rsa.exponentValid (Spec.Rsa.os2ip
+          (Spec.Rsa.bytesAt s0.mem (s0.gpr .r5) (s0.gpr .r6).toNat)) = true := by
+        rw [h26] at hz
+        cases e : Spec.Rsa.exponentValid (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s0.mem (s0.gpr .r5) (s0.gpr .r6).toNat))
+        · rw [e] at hz; simp at hz
+        · rfl
+      refine WP.seq (WP.mono (ck_stk hp b1) fun t2 ⟨⟨m2, a20, a21, a22, a23, a26⟩, k2⟩ => ?_)
+      have b2 := b1.of_regs k2 m2
+      have R : CkRegs s0 t2 := ⟨by rw [k2.gpr _ (by decide), kv.gpr _ (by decide), m14, ku.gpr _ (by decide)],
+        by rw [k2.gpr _ (by decide), kv.gpr _ (by decide), m15, ku.gpr _ (by decide)],
+        by rw [k2.gpr _ (by decide), kv.gpr _ (by decide), m16, ku.gpr _ (by decide)],
+        by rw [k2.gpr _ (by decide), kv.gpr _ (by decide), m17, ku.gpr _ (by decide)],
+        by rw [k2.gpr _ (by decide), kv.gpr _ (by decide), m18, ku.gpr _ (by decide)],
+        by rw [k2.gpr _ (by decide), kv.gpr _ (by decide), m19, ku.gpr _ (by decide)], a20, a21, a22, a23, a26⟩
+      -- `n`.
+      refine WP.seq ?_
+      unfold nCheck
+      refine WP.seq (WP.mono (CrtValues.mv2_ok (s := t2) (d₁ := .r9) (d₂ := .r10) (a := .r14) (b := .r15) (by decide)
+        (by decide) (by decide) (by decide)) fun t3 ⟨⟨u9, u10, m3⟩, k3⟩ => ?_)
+      have b3 := b2.of_regs k3 m3
+      have wn' : (s0.gpr .r3).toNat + kK s0 ≤ 2 ^ 64 := wn
+      have hc : ∀ i < kK s0, (⟨s0.gpr .r3, kK s0⟩ : Region).Contains (off (s0.gpr .r3) i) 1 := fun i hi =>
+        Offset.contains_base _ (by omega_using [hi]) (by omega_using [wn', hi])
+      refine WP.mono (CrtValues.check_ok (N := s0.gpr .r3) (k := kK s0)
+        (nb := Spec.Rsa.bytesAt s0.mem (s0.gpr .r3) (kK s0))
+        (by rw [u9, R.r14]; simp [off]) (by rw [u10, R.r15]; exact CrtValues.ofNat_toNat64 _) hk hk'
+        (len_bytes _ _ _)
+        (fun i hi => ⟨_, List.mem_append_left _ (by rw [b3.rd, hrd]; simp), hc i hi⟩)
+        (fun i hi => by
+          rw [b3.frame _ (CrtValues.past_of_disjoint dn (hc i hi))]; simp [Spec.Rsa.bytesAt, off]))
+        fun t4 ⟨hv, m4, k4⟩ => ?_
+      have b4 := b3.of_regs k4 m4
+      refine WP.ite (t4.gpr .r0 == 0) (eval_zero _ _) (fun hz0 => ?_) (fun hz0 => ?_)
+      · have hmv := hv.mp (by simpa using hz0)
+        have R4 := (R.of_keep k3).of_keep k4
+        have h24' : t4.gpr .r24 = t1.gpr .r24 := by
+          rw [k4.gpr _ (by decide), k3.gpr _ (by decide), k2.gpr _ (by decide)]
+        rw [h24] at h24'
+        refine WP.mono (ck_valid h b4 R4 h24' hmv hev) fun t ⟨bt, t3', kt⟩ => ⟨bt, t3', ?_⟩
+        exact ((((k1.trans k2).trans k3).trans k4).trans kt).mono
+      · have hmv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s0.mem (s0.gpr .r3) (kK s0)))
+            (kK s0) = false := by
+          cases e : Spec.Rsa.modulusValid (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s0.mem (s0.gpr .r3) (kK s0))) (kK s0)
+          · rfl
+          · have := hv.mpr e; simp [this] at hz0
+        refine WP.mono (ret0_ok t4) fun t ⟨⟨t3', tm⟩, kt⟩ => ⟨b4.of_regs kt tm, by rw [t3', ckOk_of_n hmv]; rfl,
+          ((((k1.trans k2).trans k3).trans k4).trans kt).mono⟩
+  · -- The restore.
+    refine WP.mono (restore_ok bt hp.wr hp.nowrap (by have := hp.zk; omega_using [this])) fun u' ⟨⟨u14, u15, u16, u17, u18,
+      u19, u20, u21, u22, u23, u24, u26, u29, u30, u31, um⟩, ku'⟩ => ⟨⟨fun r hr => ?_, ?_, ?_⟩, ?_⟩
+    · have K := kt.trans ku'
+      simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
+        rfl | rfl | rfl | rfl <;>
+        first | exact K.gpr _ (by decide) | with_reducible assumption
+    · rw [ku'.sp, kt.sp]
+    · rw [ku'.lr, kt.lr]
+    · show (u'.gpr .r3).setWidth 32 = _
+      rw [ku'.gpr _ (by decide), t3]
+      change (BitVec.ofNat 64 (if ckOk s0 then 1 else 0)).setWidth 32 = if ckOk s0 then 1 else 0
+      cases ckOk s0 <;> rfl
+
+end VG.Proof.Rsa.PPC64LE.KeyCheck
+
+end
+
+end
+
+/-!
+# `vg_rsa_check_key` on PPC64LE: constant time
+
+As `CvCT.lean`. The taint analysis treats memory as secret, so the stack
+arguments and the bytes of `n` and `e` are secret to it, although they are
+public. Two runs are related by `Two` (`MontCT.lean`) at each step, both
+satisfying the same predicate for the same public data (`ckPub`: the
+argument registers, the stack arguments and the bytes of `n` and `e`): after
+the entry's first load the working space's address, after the moves the
+pointer and length of `e`, after the entry whether `e` is valid, which the
+branch tests, after the stack arguments are read the pointers and lengths
+the function keeps, after `check1` the first byte of `n`, after `check2`
+whether `n` is valid, and before the restore the working space's address.
+Everything else is checked by the taint analysis from those registers.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Rsa.PPC64LE.KeyCheck
+
+open VG VG.PPC64LE VG.PPC64LE.Taint VG.Proof.Mont VG.Proof.Bignum.PPC64LE VG.Proof.Rsa.PPC64LE.Keys
+open VG.Impl.Rsa.PPC64LE.KeyCheck
+open VG.Impl.Rsa.PPC64LE.Keys (seqs)
+open VG.Proof.Bignum.PPC64LE.Pub (sat)
+
+/-- The public data: the argument registers, the stack arguments and the
+bytes of `n` and `e`. -/
+structure KD where
+  regs : List (BitVec 64)
+  stk : List (BitVec 64)
+  ne : List Nat
+
+/-- The bytes of `n`. -/
+abbrev nB (s : State) : List Byte := Spec.Rsa.bytesAt s.mem (s.gpr .r3) (kK s)
+
+/-- The bytes of `e`. -/
+abbrev eB (s : State) : List Byte := Spec.Rsa.bytesAt s.mem (s.gpr .r5) (s.gpr .r6).toNat
+
+theorem bytes_of_map {a b a' b' : List Byte} (h : (a ++ b).map (·.toNat) = (a' ++ b').map (·.toNat))
+    (hl : a.length = a'.length) : a = a' ∧ b = b' :=
+  List.append_inj ((List.map_inj_right fun _ _ e => BitVec.eq_of_toNat_eq e).mp h) hl
+
+theorem getD_of_lt {l : List Byte} {i : Nat} (h : i < l.length) : l.getD i 0 = l[i] := by
+  rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem h, Option.getD_some]
+
+/-! ## `vg_rsa_check_key` -/
+
+def ckPub (s : State) : KD :=
+  ⟨argRegs.map s.gpr, (List.range 10).map (PPC64LE.stackArg s), (nB s ++ eB s).map (·.toNat)⟩
+
+/-- A state the contract allows, with the public data `d`. -/
+def K0 (d : KD) (s : State) : Prop := ckP.pre s ∧ ckPub s = d
+
+theorem K0.reg {d : KD} {s₁ s₂ : State} (h₁ : K0 d s₁) (h₂ : K0 d s₂) {r : Reg} (hr : r ∈ argRegs) :
+    s₁.gpr r = s₂.gpr r :=
+  List.map_inj_left.mp ((congrArg KD.regs h₁.2).trans (congrArg KD.regs h₂.2).symm) r hr
+
+theorem K0.arg {d : KD} {s₁ s₂ : State} (h₁ : K0 d s₁) (h₂ : K0 d s₂) {i : Nat} (hi : i < 10) :
+    PPC64LE.stackArg s₁ i = PPC64LE.stackArg s₂ i :=
+  List.map_inj_left.mp ((congrArg KD.stk h₁.2).trans (congrArg KD.stk h₂.2).symm) i (List.mem_range.mpr hi)
+
+theorem K0.bytes {d : KD} {s₁ s₂ : State} (h₁ : K0 d s₁) (h₂ : K0 d s₂) : nB s₁ = nB s₂ ∧ eB s₁ = eB s₂ :=
+  bytes_of_map ((congrArg KD.ne h₁.2).trans (congrArg KD.ne h₂.2).symm)
+    (by rw [len_bytes, len_bytes, kK, kK, h₁.reg h₂ (r := .r4) (by decide)])
+
+theorem K0.k {d : KD} {s₁ s₂ : State} (h₁ : K0 d s₁) (h₂ : K0 d s₂) : kK s₁ = kK s₂ := by
+  rw [kK, kK, h₁.reg h₂ (r := .r4) (by decide)]
+
+/-! ### The entry -/
+
+/-- What the entry establishes. -/
+def ckE (s0 t : State) : Prop :=
+  ∃ u v, Keep [.r11, .r31] s0 u ∧ CkM u v ∧
+    Keep [.r0, .r3, .r4, .r7, .r8, .r24, .r0, .r3, .r4, .r24, .r26] v t ∧ KBase (ckB s0) (ckZ s0) s0 t ∧
+    t.gpr .r24 = BitVec.ofNat 64 (sat (Spec.Rsa.os2ip (eB s0))) <<< 31 ∧
+    t.gpr .r26 = BitVec.ofNat 64 0 - BitVec.ofNat 64 (if Spec.Rsa.exponentValid (Spec.Rsa.os2ip (eB s0)) then 1 else 0) ∧
+    Keep (entryRegs [.r14, .r15, .r16, .r17, .r18, .r19, .r7, .r8]) s0 t
+
+/-- The entry after its first load. -/
+abbrev ckR1 : List Instr :=
+  (save 8).drop 2 ++ VG.Impl.Rsa.PPC64LE.CheckKey.moves ++ ([.addi .r7 .r5 0, .addi .r8 .r6 0] : List Instr)
+
+/-- The reading and the check of `e`. -/
+abbrev ckY : Prog isa :=
+  .seq VG.Impl.Bignum.PPC64LE.PublicChecked.readE (.block VG.Impl.Bignum.PPC64LE.PublicChecked.checkE)
+
+theorem ck_entry_split : entry 8 VG.Impl.Rsa.PPC64LE.CheckKey.moves =
+    .seq (.block (VG.Impl.Rsa.PPC64LE.CrtValues.stackArg .r11 8 ++ ckR1)) ckY := rfl
+
+/-- After the entry's first load. -/
+def K1 (d : KD) (t : State) : Prop :=
+  ∃ s0, K0 d s0 ∧ t.gpr .r11 = PPC64LE.stackArg s0 8 ∧ t.gpr .r5 = s0.gpr .r5 ∧ t.gpr .r6 = s0.gpr .r6 ∧
+    WP isa (.block ckR1) t fun v => (v.gpr .r7 = s0.gpr .r5 ∧ v.gpr .r8 = s0.gpr .r6) ∧ WP isa ckY v (ckE s0)
+
+/-- After the moves. -/
+def K1' (d : KD) (v : State) : Prop :=
+  ∃ s0, K0 d s0 ∧ v.gpr .r7 = s0.gpr .r5 ∧ v.gpr .r8 = s0.gpr .r6 ∧ WP isa ckY v (ckE s0)
+
+/-- After the entry. -/
+def K2 (d : KD) (t : State) : Prop := ∃ s0, K0 d s0 ∧ ckE s0 t
+
+theorem pins_nil {α : Type} {Φ : α → State → Prop} : Pins Φ [] := by
+  intro _ _ _ _ _ r hr; simp at hr
+
+theorem pins_K1 : Pins K1 [.r11, .r5, .r6] := by
+  rintro d s₁ s₂ ⟨a, ha, a11, a5, a6, -⟩ ⟨b, hb, b11, b5, b6, -⟩ r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl
+  · rw [a11, b11, ha.arg hb (by decide)]
+  · rw [a5, b5, ha.reg hb (by decide)]
+  · rw [a6, b6, ha.reg hb (by decide)]
+
+theorem pins_K1' : Pins K1' [.r7, .r8] := by
+  rintro d s₁ s₂ ⟨a, ha, a7, a8, -⟩ ⟨b, hb, b7, b8, -⟩ r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl
+  · rw [a7, b7, ha.reg hb (by decide)]
+  · rw [a8, b8, ha.reg hb (by decide)]
+
+theorem ck_entry {s0 : State} (h : ckP.pre s0) : WP isa (entry 8 VG.Impl.Rsa.PPC64LE.CheckKey.moves) s0 (ckE s0) := by
+  have hp := ck_kpre h
+  obtain ⟨-, hrd, -, -, de, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, ⟨hk, hk'⟩, e1, e2, -⟩ := id h
+  exact entry_ok hp (by decide) ck_moves (by decide) rfl (CrtValues.ofNat_toNat64 _) e1 (by omega_using [hk', e2])
+    (by rw [hrd]; simp) de
+
+theorem K1_of {d : KD} {s : State} (hs : K0 d s) :
+    WP isa (.block (VG.Impl.Rsa.PPC64LE.CrtValues.stackArg .r11 8)) s (K1 d) := by
+  have hp := ck_kpre hs.1
+  have hw1 := ck_entry hs.1
+  rw [ck_entry_split, WP.seq_iff] at hw1
+  have hw2 : WP isa (.block (VG.Impl.Rsa.PPC64LE.CrtValues.stackArg .r11 8 ++ ckR1)) s fun v =>
+      v.gpr .r7 = s.gpr .r5 ∧ v.gpr .r8 = s.gpr .r6 := by
+    rw [show VG.Impl.Rsa.PPC64LE.CrtValues.stackArg .r11 8 ++ ckR1 =
+      save 8 ++ (VG.Impl.Rsa.PPC64LE.CheckKey.moves ++ ([.addi .r7 .r5 0, .addi .r8 .r6 0] : List Instr)) from rfl]
+    exact save_ok hp (by decide) fun u _ ku => WP.mono (ck_moves u) fun v ⟨⟨_, _, v7, v8⟩, _⟩ =>
+      ⟨by rw [v7, ku.gpr _ (by decide)], by rw [v8, ku.gpr _ (by decide)]⟩
+  have hw := WP.and hw2 hw1
+  rw [WP.block_append_iff] at hw
+  have h11 : WP isa (.block (VG.Impl.Rsa.PPC64LE.CrtValues.stackArg .r11 8)) s fun t =>
+      t.gpr .r11 = PPC64LE.stackArg s 8 ∧ t.gpr .r5 = s.gpr .r5 ∧ t.gpr .r6 = s.gpr .r6 := by
+    rw [← List.append_nil (VG.Impl.Rsa.PPC64LE.CrtValues.stackArg .r11 8)]
+    refine hp.stackArg_ok rfl rfl (r := .r11) (by decide) (by decide) (by decide) (WP.block_nil ?_)
+    simp only [State.write, ↓reduceIte, reduceCtorEq, and_self]
+  exact WP.mono (WP.and hw h11) fun t ⟨w, e11, e5, e6⟩ => ⟨s, hs, e11, e5, e6, w⟩
+
+theorem ck_entry_ct : RelCT isa (Two K0) (entry 8 VG.Impl.Rsa.PPC64LE.CheckKey.moves) (Two K2) := by
+  rw [ck_entry_split]
+  refine RelCT.seq (RelCT.block_append (RelCT.seq
+    (two_post (two_taint _ pins_nil (by taint_decide)) fun _ _ h => K1_of h)
+    (two_post (Ψ := K1') (two_taint _ pins_K1 (by taint_decide)) fun _ _ ⟨s0, hs, _, _, _, w⟩ =>
+      WP.mono w fun _ ⟨⟨e7, e8⟩, y⟩ => ⟨s0, hs, e7, e8, y⟩)))
+    (two_post (two_taint _ pins_K1' (by taint_decide)) fun _ _ ⟨s0, hs, _, _, y⟩ =>
+      WP.mono y fun _ e => ⟨s0, hs, e⟩)
+
+/-! ### After the entry -/
+
+/-- With `e` valid and the stack arguments read. -/
+def CkS (s0 t : State) : Prop :=
+  KBase (ckB s0) (ckZ s0) s0 t ∧ CkRegs s0 t ∧
+    t.gpr .r24 = BitVec.ofNat 64 (sat (Spec.Rsa.os2ip (eB s0))) <<< 31 ∧
+    Spec.Rsa.exponentValid (Spec.Rsa.os2ip (eB s0)) = true
+
+theorem CkS.of_keep {s0 t u : State} (h : CkS s0 t) {rs : List Reg} (k : Keep rs t u) (hm : u.mem = t.mem)
+    (hr : ∀ r ∈ [Reg.r14, .r15, .r16, .r17, .r18, .r19, .r20, .r21, .r22, .r23, .r24, .r26, .r31], r ∉ rs :=
+      by decide) : CkS s0 u :=
+  ⟨h.1.of_regs k hm (hr _ (by decide)), h.2.1.of_keep k fun r h' => hr r (by revert h'; revert r; decide),
+    (k.gpr _ (hr _ (by decide))).trans h.2.2.1, h.2.2.2⟩
+
+/-- Before the restore. -/
+def KF (d : KD) (t : State) : Prop := ∃ s0, K0 d s0 ∧ KBase (ckB s0) (ckZ s0) s0 t
+
+theorem pins_KF : Pins KF [.r31] := by
+  rintro d s₁ s₂ ⟨a, ha, b₁⟩ ⟨b, hb, b₂⟩ r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  subst hr
+  rw [b₁.r31, b₂.r31]; exact ha.arg hb (by decide)
+
+theorem ev_iff {d : KD} {s₁ s₂ t₁ t₂ : State} (h₁ : K0 d s₁) (h₂ : K0 d s₂) (e₁ : ckE s₁ t₁) (e₂ : ckE s₂ t₂) :
+    isa.eval (.zero .d .r26) t₁ = isa.eval (.zero .d .r26) t₂ := by
+  obtain ⟨-, -, -, -, -, -, -, a, -⟩ := e₁
+  obtain ⟨-, -, -, -, -, -, -, b, -⟩ := e₂
+  rw [eval_zero, eval_zero, a, b, (h₁.bytes h₂).2]
+
+theorem ck_ev {s0 t : State} (e : ckE s0 t) (hz : (t.gpr .r26 == 0) = false) :
+    Spec.Rsa.exponentValid (Spec.Rsa.os2ip (eB s0)) = true := by
+  obtain ⟨-, -, -, -, -, -, -, h26, -⟩ := e
+  rw [h26] at hz
+  cases e : Spec.Rsa.exponentValid (Spec.Rsa.os2ip (eB s0))
+  · rw [e] at hz; simp at hz
+  · rfl
+
+theorem ck_stkS {s0 t1 : State} (h : ckP.pre s0) (he : ckE s0 t1) (hz : (t1.gpr .r26 == 0) = false) :
+    WP isa (.block VG.Impl.Rsa.PPC64LE.CheckKey.stk) t1 (CkS s0) := by
+  have hev := ck_ev he hz
+  obtain ⟨u, v, ku, ⟨m14, m15, m16, m17, m18, m19⟩, kv, b1, h24, -, -⟩ := he
+  refine WP.mono (ck_stk (ck_kpre h) b1) fun t2 ⟨⟨m2, a20, a21, a22, a23, a26⟩, k2⟩ =>
+    ⟨b1.of_regs k2 m2, ?_, by rw [k2.gpr _ (by decide), h24], hev⟩
+  exact ⟨by rw [k2.gpr _ (by decide), kv.gpr _ (by decide), m14, ku.gpr _ (by decide)],
+    by rw [k2.gpr _ (by decide), kv.gpr _ (by decide), m15, ku.gpr _ (by decide)],
+    by rw [k2.gpr _ (by decide), kv.gpr _ (by decide), m16, ku.gpr _ (by decide)],
+    by rw [k2.gpr _ (by decide), kv.gpr _ (by decide), m17, ku.gpr _ (by decide)],
+    by rw [k2.gpr _ (by decide), kv.gpr _ (by decide), m18, ku.gpr _ (by decide)],
+    by rw [k2.gpr _ (by decide), kv.gpr _ (by decide), m19, ku.gpr _ (by decide)], a20, a21, a22, a23, a26⟩
+
+/-- After the stack arguments are read. -/
+def KS (d : KD) (t : State) : Prop := ∃ s0, K0 d s0 ∧ CkS s0 t
+
+/-- After `check1`. -/
+def KC1 (d : KD) (t : State) : Prop :=
+  ∃ s0, K0 d s0 ∧ CkS s0 t ∧ t.gpr .r10 = BitVec.ofNat 64 (kK s0) ∧
+    (t.gpr .r0 = 0 ↔ ((nB s0).getD (kK s0 - 1) 0).toNat % 2 = 1) ∧
+    t.gpr .r11 = BitVec.ofNat 64 ((nB s0).getD 0 0).toNat
+
+/-- After `check2`. -/
+def KC2 (d : KD) (t : State) : Prop :=
+  ∃ s0, K0 d s0 ∧ CkS s0 t ∧ (t.gpr .r0 = 0 ↔ Spec.Rsa.modulusValid (Spec.Rsa.os2ip (nB s0)) (kK s0) = true)
+
+theorem pins_KS : Pins KS [.r14, .r15] := by
+  rintro d s₁ s₂ ⟨a, ha, -, R₁, -⟩ ⟨b, hb, -, R₂, -⟩ r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl
+  · rw [R₁.r14, R₂.r14, ha.reg hb (by decide)]
+  · rw [R₁.r15, R₂.r15, ha.reg hb (by decide)]
+
+theorem pins_KC1 : Pins KC1 [.r10, .r11] := by
+  rintro d s₁ s₂ ⟨a, ha, -, a10, -, a11⟩ ⟨b, hb, -, b10, -, b11⟩ r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl
+  · rw [a10, b10, ha.k hb]
+  · rw [a11, b11, (ha.bytes hb).1]
+
+/-- The registers the checks start from. -/
+abbrev ckBody : List Reg := [.r14, .r15, .r16, .r17, .r18, .r19, .r20, .r21, .r22, .r23, .r26, .r31]
+
+theorem pins_body {Φ : KD → State → Prop} (hΦ : ∀ d s, Φ d s → KC2 d s) : Pins Φ ckBody := by
+  intro d s₁ s₂ h₁ h₂ r hr
+  obtain ⟨a, ha, ⟨b₁, R₁, -⟩, -⟩ := hΦ _ _ h₁
+  obtain ⟨b, hb, ⟨b₂, R₂, -⟩, -⟩ := hΦ _ _ h₂
+  simp only [ckBody, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  · rw [R₁.r14, R₂.r14, ha.reg hb (by decide)]
+  · rw [R₁.r15, R₂.r15, ha.reg hb (by decide)]
+  · rw [R₁.r16, R₂.r16, ha.reg hb (by decide)]
+  · rw [R₁.r17, R₂.r17, ha.reg hb (by decide)]
+  · rw [R₁.r18, R₂.r18, ha.reg hb (by decide)]
+  · rw [R₁.r19, R₂.r19, ha.reg hb (by decide)]
+  · rw [R₁.r20, R₂.r20, ha.arg hb (by decide)]
+  · rw [R₁.r21, R₂.r21, ha.arg hb (by decide)]
+  · rw [R₁.r22, R₂.r22, ha.arg hb (by decide)]
+  · rw [R₁.r23, R₂.r23, ha.arg hb (by decide)]
+  · rw [R₁.r26, R₂.r26, ha.arg hb (by decide)]
+  · rw [b₁.r31, b₂.r31]; exact ha.arg hb (by decide)
+
+theorem KC1_of {d : KD} {s : State} (h : KS d s) :
+    WP isa (.seq (.block [.addi .r9 .r14 0, .addi .r10 .r15 0])
+      (.block VG.Impl.Rsa.PPC64LE.CrtValues.check1)) s (KC1 d) := by
+  obtain ⟨s0, hs, S⟩ := h
+  obtain ⟨-, hrd, -, dn, -, -, -, -, -, -, -, -, wn, -, -, -, -, -, -, -, -, ⟨hk, -⟩, -⟩ := id hs.1
+  refine WP.seq (WP.mono (CrtValues.mv2_ok (s := s) (d₁ := .r9) (d₂ := .r10) (a := .r14) (b := .r15)
+    (by decide) (by decide) (by decide) (by decide)) fun t3 ⟨⟨u9, u10, m3⟩, k3⟩ => ?_)
+  have S3 := S.of_keep k3 m3
+  have wn' : (s0.gpr .r3).toNat + kK s0 ≤ 2 ^ 64 := wn
+  have hc : ∀ i < kK s0, (⟨s0.gpr .r3, kK s0⟩ : Region).Contains (off (s0.gpr .r3) i) 1 := fun i hi =>
+    Offset.contains_base _ (by omega_using [hi]) (by omega_using [wn', hi])
+  have h10 : t3.gpr .r10 = BitVec.ofNat 64 (kK s0) := by rw [u10, S.2.1.r15]; exact CrtValues.ofNat_toNat64 _
+  refine WP.mono (CrtValues.check1_ok (N := s0.gpr .r3) (k := kK s0) (nb := nB s0)
+    (by rw [u9, S.2.1.r14]; simp [off]) h10 hk (len_bytes _ _ _)
+    (fun i hi => ⟨_, List.mem_append_left _ (by rw [S3.1.rd, hrd]; simp), hc i hi⟩)
+    (fun i hi => by
+      rw [S3.1.frame _ (CrtValues.past_of_disjoint dn (hc i hi))]; simp [Spec.Rsa.bytesAt, off]))
+    fun t4 ⟨⟨i0, i11, im⟩, k4⟩ => ⟨s0, hs, S3.of_keep k4 im, by rw [k4.gpr _ (by decide), h10],
+      by rw [i0, getD_of_lt (l := nB s0) (i := kK s0 - 1) (by simp only [len_bytes, kK]; omega_using [hk])], by rw [i11,
+          getD_of_lt (l := nB s0) (i := 0) (by simp only [len_bytes, kK]; omega_using [hk])]⟩
+
+theorem KC2_of {d : KD} {s : State} (h : KC1 d s) : WP isa VG.Impl.Rsa.PPC64LE.CrtValues.check2 s (KC2 d) := by
+  obtain ⟨s0, hs, S, h10, i0, i11⟩ := h
+  obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, ⟨hk, hk'⟩, -⟩ := id hs.1
+  refine WP.mono (CrtValues.check2_ok h10 hk hk' (len_bytes _ _ _)
+    (by rw [i0, getD_of_lt (l := nB s0) (i := kK s0 - 1) (by simp only [len_bytes, kK]; omega_using [hk])]) (by rw [i11,
+        getD_of_lt (l := nB s0) (i := 0) (by simp only [len_bytes, kK]; omega_using [hk])]))
+    fun t ⟨hv, tm, kt⟩ => ⟨s0, hs, S.of_keep kt tm, hv⟩
+
+theorem nv_iff {d : KD} {s₁ s₂ : State} (h₁ : KC2 d s₁) (h₂ : KC2 d s₂) :
+    (s₁.gpr .r0 = 0 ↔ s₂.gpr .r0 = 0) := by
+  obtain ⟨a, ha, -, i₁⟩ := h₁
+  obtain ⟨b, hb, -, i₂⟩ := h₂
+  rw [i₁, i₂, (ha.bytes hb).1, ha.k hb]
+
+theorem ret0_KF {Φ : KD → State → Prop} (hΦ : ∀ d s, Φ d s → KF d s) :
+    RelCT isa (Two Φ) (.block ret0) (Two KF) :=
+  two_post (two_taint _ pins_nil (by taint_decide)) fun _ _ h => by
+    obtain ⟨s0, hs, b⟩ := hΦ _ _ h
+    exact WP.mono (ret0_ok _) fun _ ⟨⟨_, tm⟩, kt⟩ => ⟨s0, hs, b.of_regs kt tm⟩
+
+theorem ite_rel {P : KD → State → Prop} {r : Reg} {th el : Prog isa} {Q : State → State → Prop}
+    (hc : ∀ d s₁ s₂, P d s₁ → P d s₂ → (s₁.gpr r = 0 ↔ s₂.gpr r = 0))
+    (ht : RelCT isa (Two fun d s => P d s ∧ s.gpr r = 0) th Q)
+    (he : RelCT isa (Two fun d s => P d s ∧ s.gpr r ≠ 0) el Q) :
+    RelCT isa (Two P) (.ite (.zero .d r) th el) Q := by
+  refine RelCT.ite (fun s₁ s₂ ⟨d, h₁, h₂, _⟩ => ?_) (RelCT.mono ht (fun s₁ s₂ ⟨⟨d, h₁, h₂, hsp⟩, hc'⟩ => ?_)
+    fun _ _ h => h) (RelCT.mono he (fun s₁ s₂ ⟨⟨d, h₁, h₂, hsp⟩, hc'⟩ => ?_) fun _ _ h => h)
+  · rw [eval_zero, eval_zero]
+    congr 1
+    rw [Bool.eq_iff_iff, beq_iff_eq, beq_iff_eq]
+    exact hc d _ _ h₁ h₂
+  · rw [eval_zero] at hc'
+    have h0 : s₁.gpr r = 0 := by simpa using hc'
+    exact ⟨d, ⟨h₁, h0⟩, ⟨h₂, (hc d _ _ h₁ h₂).mp h0⟩, hsp⟩
+  · rw [eval_zero] at hc'
+    have h0 : s₁.gpr r ≠ 0 := by simpa using hc'
+    exact ⟨d, ⟨h₁, h0⟩, ⟨h₂, fun e => h0 ((hc d _ _ h₁ h₂).mpr e)⟩, hsp⟩
+
+theorem ck_checks_ct :
+    RelCT isa (Two KC2) (.ite (.zero .d .r0)
+      (seqs (([setup, .block eArr] : List (Prog isa)) ++ VG.Impl.Rsa.PPC64LE.CheckKey.loads ++
+        (start ++ crtChecks ++ dChecks) ++
+        ([.block ret] : List (Prog isa)))) (.block ret0)) (Two KF) := by
+  refine ite_rel (fun _ _ _ h₁ h₂ => nv_iff h₁ h₂)
+    (two_post (two_taint _ (pins_body fun _ _ h => h.1) (by taint_decide)) fun _ _ ⟨⟨s0, hs, S, hv⟩, h0⟩ => ?_)
+    (ret0_KF fun _ _ ⟨⟨s0, hs, S, _⟩, _⟩ => ⟨s0, hs, S.1⟩)
+  refine WP.mono (ck_valid hs.1 S.1 S.2.1 S.2.2.1 (hv.mp h0) S.2.2.2) fun _ ⟨b, _⟩ => ⟨s0, hs, b⟩
+
+theorem ck_rel : RelCT isa (Two K0) VG.Impl.Rsa.PPC64LE.CheckKey.code fun _ _ => True := by
+  unfold VG.Impl.Rsa.PPC64LE.CheckKey.code fn
+  refine RelCT.seq ck_entry_ct (RelCT.seq ?_ (two_taint _ pins_KF (by taint_decide)))
+  refine ite_rel (fun _ _ _ ⟨a, ha, ea⟩ ⟨b, hb, eb⟩ => ?_) (ret0_KF fun _ _ ⟨⟨s0, hs, ⟨_, _, _, _, _, b, _⟩⟩,
+      _⟩ => ⟨s0, hs, b⟩) ?_
+  · have := ev_iff ha hb ea eb
+    rw [eval_zero, eval_zero, Option.some.injEq] at this
+    simpa only [beq_iff_eq] using Bool.eq_iff_iff.mp this
+  refine RelCT.seq (two_post (Ψ := KS) (two_taint _ pins_nil (by taint_decide))
+    fun _ _ ⟨⟨s0, hs, e⟩, hz⟩ => WP.mono (ck_stkS hs.1 e (by simpa using hz)) fun _ h => ⟨s0, hs, h⟩) ?_
+  unfold nCheck VG.Impl.Rsa.PPC64LE.CrtValues.check
+  exact RelCT.seq (RelCT.assoc (RelCT.seq (two_post (two_taint _ pins_KS (by taint_decide)) fun _ _ h => KC1_of h)
+    (two_post (two_taint _ pins_KC1 (by taint_decide)) fun _ _ h => KC2_of h))) ck_checks_ct
+
+theorem ck_ct : ConstantTime isa ckP.pre ckP.pub VG.Impl.Rsa.PPC64LE.CheckKey.code :=
+  RelCT.constantTime (ck_rel.mono (fun s t ⟨hs, ht, hr, hsp, hst, hb⟩ =>
+    ⟨ckPub s, ⟨hs, rfl⟩, ⟨ht, by
+      simp only [ckPub, KD.mk.injEq]
+      exact ⟨(List.map_inj_left.mpr hr).symm, hst.symm, hb.symm⟩⟩, hsp⟩) fun _ _ h => h)
+
+end VG.Proof.Rsa.PPC64LE.KeyCheck
+
+end
+
+end
+
+/-! ### `Rsa.PPC64LE.KcImplies`, which only this module used -/
+
+section
+
+/-!
+# `vg_rsa_check_key` on PPC64LE: the shared contract implies `ckP`
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Rsa.PPC64LE.KeyCheck
+
+open VG VG.PPC64LE
+
+theorem stackArgs_ten (s : State) :
+    List.map (stackArg s) (List.range 10) = [stackArg s 0, stackArg s 1, stackArg s 2, stackArg s 3,
+      stackArg s 4, stackArg s 5, stackArg s 6, stackArg s 7, stackArg s 8, stackArg s 9] := rfl
+
+/-- A state meeting `ckP.pre`: a 512-bit modulus, one-byte other numbers,
+and the stack arguments at `sp + 96 = 0x6060`. -/
+def ckSatState : State where
+  gpr r := match r with
+    | .r3 => 0x2000 | .r4 => 64 | .r5 => 0x3000 | .r6 => 1 | .r7 => 0x3100 | .r8 => 1 | .r9 => 0x3200
+    | .r10 => 1 | _ => 0
+  lr := 0
+  sp := 0x6000
+  mem a := if a = 0x6061 then 0x33 else if a = 0x6068 then 1 else if a = 0x6071 then 0x34
+    else if a = 0x6078 then 1 else if a = 0x6081 then 0x35 else if a = 0x6088 then 1
+    else if a = 0x6091 then 0x36 else if a = 0x6098 then 1 else if a = 0x60a1 then 0x80
+    else if a = 0x60a8 then 0x20 else if a = 0x60a9 then 0x04 else 0
+  rd := [⟨0x2000, 64⟩, ⟨0x3000, 1⟩, ⟨0x3100, 1⟩, ⟨0x3200, 1⟩, ⟨0x3300, 1⟩, ⟨0x3400, 1⟩, ⟨0x3500, 1⟩,
+    ⟨0x3600, 1⟩, ⟨0x6060, 80⟩]
+  wr := [⟨0x8000, 8448⟩]
+
+theorem ck_implies : ckP.Implies (Spec.Rsa.checkKeyContract abi) where
+  pre := by
+    intro s h
+    sig_pre [Spec.Rsa.checkKeyContract, Spec.Rsa.checkKeySig, abi, argRegs, ckP, stackArgs_ten,
+      List.append_eq] at h
+    sig_pre [Spec.Rsa.checkKeyContract, Spec.Rsa.checkKeySig, abi, argRegs, ckP, stackArgs_ten,
+      List.append_eq] at h
+    sig_split h
+    sig_reduce [Spec.Rsa.checkKeyContract, Spec.Rsa.checkKeySig, abi, argRegs, ckP, stackArgs_ten,
+      List.append_eq]
+    sig_and_intros
+    sig_close
+    all_goals first | with_reducible assumption | omega
+  post := by
+    sig_implies_post [Spec.Rsa.checkKeyContract, Spec.Rsa.checkKeySig, abi, argRegs, ckP, stackArgs_ten,
+      List.append_eq]
+  pub := by
+    rintro s₁ s₂ - - h
+    sig_pub [Spec.Rsa.checkKeyContract, Spec.Rsa.checkKeySig, abi, argRegs, ckP, stackArgs_ten,
+      List.append_eq] at h
+    simp only [List.getD_cons_succ, List.getD_cons_zero] at h
+    obtain ⟨hsp, hl, r0, r1, r2, r3, r4, r5, r6, r7, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9⟩ := h
+    refine ⟨?_, hsp, by rw [stackArgs_ten, stackArgs_ten, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9], hl⟩
+    simp only [argRegs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
+    exact ⟨r0, r1, r2, r3, r4, r5, r6, r7⟩
+  sat := by
+    sig_implies_sat [Spec.Rsa.checkKeyContract, Spec.Rsa.checkKeySig, abi, argRegs, ckP, stackArgs_ten,
+      List.append_eq] [ckSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using ckSatState
+
+end VG.Proof.Rsa.PPC64LE.KeyCheck
+
+end
+
+end
 
 /-! # `vg_rsa_check_key` and `vg_rsa_check_crt_key` on PPC64LE: verified against the shared contracts -/
 

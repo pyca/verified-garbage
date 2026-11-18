@@ -1,8 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.PointContract
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverReleaseArgs
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverEncoding
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverZero
 import VerifiedGarbage.Proof.Rsa.X86.PrivReleaseBuffer
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverRegions
 import VerifiedGarbage.Proof.Mont.X86.Instr
@@ -12,8 +11,6 @@ public import VerifiedGarbage.Spec.Weierstrass
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Recover
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
 import Mathlib.Logic.Function.Basic
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverCmpArgs
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverZero
 import VerifiedGarbage.Proof.Rsa.BytesFrame
 import VerifiedGarbage.Proof.Framework.Offset
 

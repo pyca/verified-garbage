@@ -8,9 +8,6 @@ public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Search.CT
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Search.Implies
 public import VerifiedGarbage.Proof.RsaKeyGen.SearchContract
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.SharedCode
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.SharedCTCode
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.SharedCTFront
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.SharedCTTail
 
 /-! # The verified prime search (AArch64)
 

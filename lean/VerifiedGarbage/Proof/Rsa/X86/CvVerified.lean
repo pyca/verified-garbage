@@ -9,7 +9,6 @@ public import VerifiedGarbage.Proof.Weierstrass.PointContract
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Rsa.X86.CvABI
 public import VerifiedGarbage.Proof.Rsa.X86.CvFrames
-import VerifiedGarbage.Proof.Rsa.X86.CvBody
 public import VerifiedGarbage.Proof.Rsa.X86.CvPair
 public import VerifiedGarbage.Proof.Rsa.X86.CvRt.Load
 import VerifiedGarbage.Proof.Bignum.X86.ModulusCheck
@@ -34,7 +33,6 @@ public import VerifiedGarbage.Proof.Rsa.X86.InvTimeBase
 public import VerifiedGarbage.Proof.Rsa.X86.InvDispatch
 public import VerifiedGarbage.TCB.X86.Isa
 import VerifiedGarbage.Proof.Rsa.X86.InvChoose
-import VerifiedGarbage.Proof.Rsa.X86.InvTimeChoose
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Scalar
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Word
 import VerifiedGarbage.Proof.Mont.X86.Instr
@@ -51,7 +49,7 @@ import VerifiedGarbage.Proof.Rsa.X86.InvParts
 import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
 import Init.Data.List.Basic
 import Init.Data.Nat.Bitwise.Basic
-import VerifiedGarbage.Impl.Rsa.X86.KeyRt
+public import VerifiedGarbage.Impl.Rsa.X86.KeyRt
 public import VerifiedGarbage.Impl.Rsa.X86.CrtValues
 public import VerifiedGarbage.Proof.Bignum.X86.PublicArgumentTiming
 import VerifiedGarbage.Proof.Framework.KernelRfl
@@ -62,7 +60,7 @@ import VerifiedGarbage.Proof.Bignum.X86.PublicEntryTiming
 import VerifiedGarbage.Proof.Rsa.X86.CvInstalled
 import VerifiedGarbage.Proof.Rsa.X86.CvResources
 import VerifiedGarbage.Proof.Bignum.MemoryFrame
-import VerifiedGarbage.Proof.Rsa.X86.CvResult
+public import VerifiedGarbage.Proof.Rsa.X86.CvResult
 import VerifiedGarbage.Proof.Framework.X86.Spill
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Bignum.Words
@@ -70,6 +68,393 @@ import VerifiedGarbage.Impl.Bignum.X86.PublicFn
 import VerifiedGarbage.Proof.Mont.Words
 import VerifiedGarbage.Proof.Bignum.X86.PublicReturn
 import VerifiedGarbage.Proof.Bignum.X86.PublicSave
+import VerifiedGarbage.Proof.Bignum.Octets
+meta import VerifiedGarbage.Proof.Framework.X86.Taint
+meta import VerifiedGarbage.Proof.Rsa.X86.InvTimeBase
+meta import VerifiedGarbage.Impl.Rsa.X86.InvBatchRt
+meta import VerifiedGarbage.Impl.Rsa.X86.CrtValuesRt
+meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
+import VerifiedGarbage.Proof.Rsa.X86.InvChoice
+public import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Base
+public import VerifiedGarbage.Proof.Rsa.X86.InvGuard
+public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Time.FBatchRel
+import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Arrays
+meta import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Time.FBatchRel
+
+/-! ### `Rsa.X86.InvTimeChoose`, which only this module used -/
+
+section
+
+/-! ### `Rsa.X86.InvBatchRt.Time.FBodyRel`, which only this module used -/
+
+section
+
+/-! # The fused batched inverse in both runs, in `crt_values`' layout
+
+`relBody`: its trace depends only on what `Pre0` makes public, as the batches' count, kept in
+the header, is the same in both runs.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Rsa.X86.InvBatchRt.Time
+
+open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Rsa.X86.KeyRt VG.Impl.Rsa.X86.InvBatchRt
+open VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Rsa.X86.KeyRt VG.Proof.Rsa.X86.InvBatchRt
+open VG.Impl.Rsa.X86.CrtValuesRt (lay)
+open VG.Impl.Weierstrass.X86 (decCounter testCounter)
+open VG.Impl.Rsa.X86.Keys (seqs)
+
+variable {B : Addr} {Z len N : Nat} {args : Nat → BitVec 32} {sp : BitVec 32} {C : Nat → Prop}
+
+local notation "T2" => fun _ : Reg → BitVec 32 => True ∧ True
+
+theorem checks₀ : BatchChecks lay 0 8 :=
+  ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
+    ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩,
+    ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩,
+    ⟨_, by taint_decide⟩,
+    ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩,
+    ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩⟩
+
+theorem checks₈ : BatchChecks lay 8 0 :=
+  ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
+    ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩,
+    ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩,
+    ⟨_, by taint_decide⟩,
+    ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩,
+    ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩⟩
+
+theorem relBatchF (F : Fits Z len) (h : Bool) :
+    RelCT isa (Both lay B Z len N (nw len) args sp C T2) (batchF lay h)
+      (Both lay B Z len N (nw len) args sp C T2) := by
+  rw [VG.Proof.Rsa.X86.InvBatchRt.F.batchF_eq]
+  cases h
+  · exact relBatchCodeF F (.inr ⟨rfl, rfl⟩) checks₈
+  · exact relBatchCodeF F (.inl ⟨rfl, rfl⟩) checks₀
+
+/-- Two batches, then their count down by one. -/
+theorem relDouble {k : Nat} (F : Fits Z len) (hk : 1 ≤ k) (hk32 : k < 2 ^ 32) :
+    RelCT isa (Both lay B Z len N (nw len) args sp (· = k) T2)
+      (seqs [batchF lay true, batchF lay false,
+        .block [.mov .esi (.mem (sc 100)), decCounter, .store (sc 100) .esi, testCounter]])
+      (fun s t => Both lay B Z len N (nw len) args sp (· = k - 1) T2 s t ∧
+        s.zf = some (decide (k - 1 = 0)) ∧ t.zf = some (decide (k - 1 = 0))) := by
+  simp only [seqs]
+  exact RelCT.seq (relBatchF F true) (RelCT.seq (relBatchF F false) (relCountDown hk hk32 (by taint_decide)))
+
+/-- The double batches, from the count `K`. -/
+theorem relLoopF (F : Fits Z len) (K : Nat) :
+    RelCT isa (fun s t => Both lay B Z len N (nw len) args sp (· = K) T2 s t ∧ 1 ≤ K ∧ K < 2 ^ 32)
+      (.loop (seqs [batchF lay true, batchF lay false,
+        .block [.mov .esi (.mem (sc 100)), decCounter, .store (sc 100) .esi, testCounter]]) .ne)
+      (Both lay B Z len N (nw len) args sp (· = 0) T2) := by
+  refine RelCT.loop (M := isa) (fun k s t => Both lay B Z len N (nw len) args sp (· = k) T2 s t ∧
+    1 ≤ k ∧ k < 2 ^ 32) (fun k => ?_) K
+  by_cases hk : 1 ≤ k ∧ k < 2 ^ 32
+  swap
+  · exact RelCT.of_false fun _ _ h => hk h.2
+  refine (relDouble F hk.1 hk.2).mono (fun _ _ h => h.1) fun s t ⟨hb, zs, zt⟩ => ?_
+  have es : isa.eval .ne s = s.zf.map (!·) := rfl
+  have et : isa.eval .ne t = t.zf.map (!·) := rfl
+  refine ⟨by rw [es, et, zs, zt], fun hf => ?_, fun ht => ⟨k - 1, by omega_using [hk], hb, ?_, by omega_using [hk]⟩⟩
+  · rw [es, zs] at hf
+    obtain h0 : k - 1 = 0 := by by_contra h0; simp_all
+    rw [h0] at hb
+    exact hb
+  · rw [es, zs] at ht
+    by_contra h0
+    simp_all
+
+theorem relInitF (F : Fits Z len) :
+    RelCT isa (fun s t => Pre0 lay B Z len N args sp s ∧ Pre0 lay B Z len N args sp t) (initF lay)
+      (Both lay B Z len N (nw len) args sp (· = (3 * nw len + 2) / 2) T2) := by
+  have F1 := F.fit
+  have F2 := F.two
+  obtain r0 := rv_a len 0 (nw len); have r2 := rv_a len 2 (nw len); have r3 := rv_a len 3 (nw len)
+  obtain r7 := rv_a len 7 (nw len)
+  obtain r8 := rv_a len 8 (nw len); have r12 := rv_a len 12 (nw len)
+  obtain r4 : rv (kw len) { arr := fgArr } (nw len) = 160 + 4 * (8 * nw len + 8) := rv_a len 4 (nw len)
+  obtain r11 : rv (kw len) { arr := deArr } (nw len) = 160 + 11 * (8 * nw len + 8) := rv_a len 11 (nw len)
+  obtain h21 : rv (kw len) { arr := 2, half := 1 } (nw len) = rv (kw len) (a 2) (nw len) + 4 * nw len := rv_half1' len 2
+  obtain h71 : rv (kw len) { arr := 7, half := 1 } (nw len) = rv (kw len) (a 7) (nw len) + 4 * nw len := rv_half1' len 7
+  have f1 : fgSz * (nw len + 1) = 16 * (nw len + 1) := rfl
+  have f2 : fgSz * (nw len + 2) = 16 * (nw len + 2) := rfl
+  have d1 : deSz * (nw len + 1) = 20 * (nw len + 1) := rfl
+  have d2 : deSz * (nw len + 2) = 20 * (nw len + 2) := rfl
+  obtain efs : fgSz = 16 := rfl; have eds : deSz = 20 := rfl; have eP : sP = 176 := rfl
+  unfold initF
+  simp only [seqs]
+  refine RelCT.seq (relSlots (by taint_decide)) ?_
+  refine RelCT.seq (relCopy (stable_true _) (by decide) (by omega_using [F1, r2]) (by omega_using [F1, r8]) (by omega_using [r2, r8]) (by taint_decide)) ?_
+  refine RelCT.seq (relVirtualize (stable_true _) F2 F1 (by taint_decide)) ?_
+  refine RelCT.seq (relZeroWord (stable_true _) (by omega_using [F1, r2, h21]) (by taint_decide)) ?_
+  refine RelCT.seq (relCopy (stable_true _) (by decide) (by omega_using [F1, r7]) (by omega_using [F1, r0]) (by omega_using [r0, r7]) (by taint_decide)) ?_
+  refine RelCT.seq (relZeroWord (stable_true _) (by omega_using [F1, r7, h71]) (by taint_decide)) ?_
+  refine RelCT.seq (relZeros (stable_true _) (fun _ hb => countN hb) (by omega_using []) (by omega_using [F1, r12]) (by taint_decide)) ?_
+  refine RelCT.seq (relEvenMask (stable_true _) (by taint_decide)) ?_
+  refine RelCT.seq (relSelIn (stable_true _) (by decide) (by omega_using [F1, r12]) (by omega_using [F1, r2]) (by omega_using [r2, r12]) (by taint_decide)) ?_
+  refine RelCT.seq (relChainAdd (X := fun _ => True) (stable_true _) (fun _ _ => trivial) (by decide) rfl
+    (by omega_using [F1, r7]) (by omega_using [F1, r7]) (by omega_using [F1, r12]) (.inl (Nat.le_refl _)) (by omega_using [r7, r12]) (by taint_decide)) ?_
+  refine RelCT.seq (relScatter (by decide) (by omega_using [F1, r4, f2]) (by omega_using [r4, eP]) (by omega_using [F1, r2]) (by omega_using [r2, r4]) ⟨_, by taint_decide⟩) ?_
+  refine RelCT.seq (relScatter (by decide) (by omega_using [F1, r4, f2]) (by omega_using [r4, eP]) (by omega_using [F1, r7]) (by omega_using [F2, r7, r4, f1, efs]) ⟨_, by taint_decide⟩) ?_
+  refine RelCT.seq (relZeros (stable_true _) (fun _ hb => countN hb) (by omega_using []) (by omega_using [F1, r3]) (by taint_decide)) ?_
+  refine RelCT.seq (relScatter (by decide) (by omega_using [F1, F2, r11, d2]) (by omega_using [r11, eP]) (by omega_using [F1, r3]) (by omega_using [r3, r11]) ⟨_, by taint_decide⟩) ?_
+  refine RelCT.seq (relScatter (by decide) (by omega_using [F1, F2, r11, d2]) (by omega_using [r11, eP]) (by omega_using [F1, r3]) (by omega_using [r3, r11]) ⟨_, by taint_decide⟩) ?_
+  refine RelCT.seq (relScatter (by decide) (by omega_using [F1, F2, r11, d2]) (by omega_using [r11, eP]) (by omega_using [F1, r2]) (by omega_using [r2, r11]) ⟨_, by taint_decide⟩) ?_
+  refine RelCT.seq (relEOne F1 ⟨_, by taint_decide⟩) ?_
+  refine RelCT.seq (relWinOne (stable_true _) F1 (by taint_decide)) ?_
+  refine RelCT.seq (relInverse (stable_true _) F1 (by taint_decide)) ?_
+  exact relCountF F ⟨_, by taint_decide⟩
+
+theorem relFinishF (F : Fits Z len) :
+    RelCT isa (Both lay B Z len N (nw len) args sp C T2) (finishF lay)
+      (Both lay B Z len N (nw len) args sp C T2) := by
+  have F1 := F.fit
+  have F2 := F.two
+  have ke := kw_eq len
+  have r1 := rv_a len 1 (nw len); have r2 := rv_a len 2 (nw len); have r3 := rv_a len 3 (nw len)
+  have r7 := rv_a len 7 (nw len)
+  have r12 := rv_a len 12 (nw len); have r14 := rv_a len 14 (nw len)
+  have r4 : rv (kw len) { arr := fgArr } (nw len) = 160 + 4 * (8 * nw len + 8) := rv_a len 4 (nw len)
+  have r11 : rv (kw len) { arr := deArr } (nw len) = 160 + 11 * (8 * nw len + 8) := rv_a len 11 (nw len)
+  have h71 : rv (kw len) { arr := 7, half := 1 } (nw len) = rv (kw len) (a 7) (nw len) + 4 * nw len := rv_half1' len 7
+  have h141 : rv (kw len) { arr := 14, half := 1 } (nw len) = rv (kw len) (a 14) (nw len) + 4 * nw len :=
+    rv_half1' len 14
+  have h71' : rv (kw len) { arr := (a 7).arr, half := 1, byte := (a 7).byte } (nw len) =
+      rv (kw len) (a 7) (nw len) + 4 * nw len := h71
+  have rt : rv (kw len) tmp (nw len) = rv (kw len) (a 12) (nw len) := rfl
+  have rmo : rv (kw len) mo (nw len) = rv (kw len) (a 2) (nw len) := rfl
+  -- `csub`'s places, at the default width it is stated at.
+  have r7' := rv_a len 7; have r12' := rv_a len 12
+  have rt' : rv (kw len) tmp = rv (kw len) (a 12) := rfl
+  have f1 : fgSz * (nw len + 1) = 16 * (nw len + 1) := rfl
+  have f2 : fgSz * (nw len + 2) = 16 * (nw len + 2) := rfl
+  have d1 : deSz * (nw len + 1) = 20 * (nw len + 1) := rfl
+  have d2 : deSz * (nw len + 2) = 20 * (nw len + 2) := rfl
+  have efs : fgSz = 16 := rfl; have eds : deSz = 20 := rfl
+  unfold finishF addIfNegF
+  simp only [seqs]
+  refine RelCT.seq (relGather (by decide) (by omega_using [F1, r4, f2]) (by omega_using [F1, r14]) (by omega_using [r14, r4, f1, efs]) ⟨_, by taint_decide⟩) ?_
+  refine RelCT.seq (relGather (by decide) (by omega_using [F1, F2, r11, d2]) (by omega_using [F1, r7]) (by omega_using [r7, r11]) ⟨_, by taint_decide⟩) ?_
+  refine RelCT.seq (relZeros (stable_true _) (fun _ hb => countN hb) (by omega_using []) (by omega_using [F1, r12, rt]) (by taint_decide)) ?_
+  refine RelCT.seq (relChainSub (X := fun _ => True) (stable_true _) (fun _ _ => trivial) (by decide) rfl
+    (by omega_using [F1, r12, rt]) (by omega_using [F1, r12, rt]) (by omega_using [F1, r7]) (.inl (Nat.le_refl _)) (.inr (by omega_using [r7, r12, rt])) (by taint_decide)) ?_
+  refine RelCT.seq (relMaskAt (stable_true _) (by omega_using [F1, r14, h141]) (by taint_decide)) ?_
+  refine RelCT.seq (relSelIn (stable_true _) (by decide) (by omega_using [F1, r7]) (by omega_using [F1, r12, rt]) (by omega_using [r7, r12, rt]) (by taint_decide)) ?_
+  refine RelCT.seq (RelCT.seq (relChainAdd (X := fun _ => True) (stable_true _) (fun _ _ => trivial) (by decide) rfl
+      (by omega_using [F1, r12, rt]) (by omega_using [F1, r7]) (by omega_using [F1, r2, rmo]) (.inr (by omega_using [r7, r12, rt])) (.inr (by omega_using [r2, r12, rt, rmo])) (by taint_decide))
+    (RelCT.seq (relMaskAt (stable_true _) (by omega_using [F1, r7, h71']) (by taint_decide))
+      (relSelIn (stable_true _) (by decide) (by omega_using [F1, r7]) (by omega_using [F1, r12, rt]) (by omega_using [r7, r12, rt]) (by taint_decide)))) ?_
+  refine RelCT.seq (RelCT.seq (relChainAdd (X := fun _ => True) (stable_true _) (fun _ _ => trivial) (by decide) rfl
+      (by omega_using [F1, r12, rt]) (by omega_using [F1, r7]) (by omega_using [F1, r2, rmo]) (.inr (by omega_using [r7, r12, rt])) (.inr (by omega_using [r2, r12, rt, rmo])) (by taint_decide))
+    (RelCT.seq (relMaskAt (stable_true _) (by omega_using [F1, r7, h71']) (by taint_decide))
+      (relSelIn (stable_true _) (by decide) (by omega_using [F1, r7]) (by omega_using [F1, r12, rt]) (by omega_using [r7, r12, rt]) (by taint_decide)))) ?_
+  refine RelCT.seq (relCsub (src := a 7) (o := a 7) (stable_true _) F.toRoom rfl rfl (by omega_using [F1, r7']) (by omega_using [F1, r7']) (.inr (by omega_using [r7', r12', rt']))
+    (fun h => absurd rfl h) (.inl (by omega_using [r7', r12', rt'])) ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩) ?_
+  refine RelCT.seq (relZeros (stable_true _) (fun _ hb => countW hb) (by omega_using [F2, ke]) (by omega_using [F1, ke, r1]) (by taint_decide)) ?_
+  refine RelCT.seq (relChainSub (X := fun _ => True) (stable_true _) (fun _ _ => trivial) (by decide) rfl
+    (by omega_using [F1, r1]) (by omega_using [F1, r1]) (by omega_using [F1, r14]) (.inl (Nat.le_refl _)) (.inl (by omega_using [r1, r14])) (by taint_decide)) ?_
+  refine RelCT.seq (relMaskAtNot (stable_true _) (by omega_using [F1, r14, h141]) (by taint_decide)) ?_
+  refine RelCT.seq (relSelIn (stable_true _) (by decide) (by omega_using [F1, r1]) (by omega_using [F1, r14]) (by omega_using [r1, r14]) (by taint_decide)) ?_
+  refine RelCT.seq (relZeros (stable_true _) (fun _ hb => countW hb) (by omega_using [F2, ke]) (by omega_using [F1, ke, r3]) (by taint_decide)) ?_
+  exact relCopy (stable_true _) (by decide) (by omega_using [F1, r3]) (by omega_using [F1, r7]) (by omega_using [r3, r7]) (by taint_decide)
+
+theorem relBody (F : Fits Z len) :
+    RelCT isa (fun s t => Pre0 lay B Z len N args sp s ∧ Pre0 lay B Z len N args sp t) (body lay)
+      (Both lay B Z len N (nw len) args sp (· = 0) T2) := by
+  have F2 := F.two
+  have F4 := F.small
+  unfold body
+  simp only [seqs]
+  refine RelCT.seq (relInitF F) ?_
+  refine RelCT.seq ((relLoopF F ((3 * nw len + 2) / 2)).mono (fun _ _ h => ⟨h, by omega_using [], by omega_using [F4]⟩)
+    fun _ _ h => h) ?_
+  exact RelCT.seq (relBatchF F true) (relFinishF F)
+
+end VG.Proof.Rsa.X86.InvBatchRt.Time
+
+end
+
+end
+
+/-! ### `Rsa.X86.InvTimeCompare`, which only this module used -/
+
+section
+
+/-! # Relating public length comparisons in the inverse dispatcher -/
+
+@[expose] public section
+namespace VG.Proof.Rsa.X86.InvTiming
+open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Rsa.X86.CrtValuesRt VG.Proof.Rsa.X86.KeyRt
+
+ def Pair (args : Nat → BitVec 32) (base : Addr) (size len P Q P' Q' : Nat) (sp : BitVec 32) (s t : State) : Prop :=
+  (InvInput args base size len P Q s ∧ Public args base size sp s) ∧
+  (InvInput args base size len P' Q' t ∧ Public args base size sp t)
+end VG.Proof.Rsa.X86.InvTiming
+
+end
+
+end
+
+
+/-! # The inverse's trace: a public guard, then the batches or the general inverse
+
+The guard reads only public lengths, so both runs take the same branch; the batches' trace depends
+only on the call's public data (`Time.relBody`), and so does the general inverse's.
+-/
+
+@[expose] public section
+namespace VG.Proof.Rsa.X86.InvTiming
+open VG VG.X86 VG.Proof.Mont VG.Proof.Rsa.X86.CrtValuesRt VG.Proof.Rsa.X86.KeyRt
+
+theorem guard_check :
+    (VG.Taint.check taint τ VG.Impl.Rsa.X86.InvBatchRt.guard
+      (VG.Taint.hintOf taint τ VG.Impl.Rsa.X86.InvBatchRt.guard)).isSome = true := by taint_decide
+
+/-- What the batches need of the lengths, where the guard allows them. -/
+theorem fits {args : Nat → BitVec 32} {base : Addr} {size len P Q : Nat} {s : State}
+    (h : InvInput args base size len P Q s) (good : Eligible args) :
+    VG.Proof.Rsa.X86.InvBatchRt.Time.Fits size len := by
+  obtain ⟨m16, big, _, _⟩ := good
+  obtain ⟨a, al, aw, arg⟩ := h.ws.lenArg
+  change kw a = kw len at aw
+  have eq : BitVec.ofNat 32 a = args 7 := Option.some.inj (arg.readSrc.symm.trans h.gate.nArg.readSrc)
+  have ae := congrArg BitVec.toNat eq
+  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [al])] at ae
+  have nwl : VG.Proof.Rsa.X86.InvBatchRt.nw len = a / 8 := by
+    have aw' := aw
+    simp only [kw, Spec.Rsa.modulusWords] at aw'
+    simp only [VG.Proof.Rsa.X86.InvBatchRt.nw, kw, Spec.Rsa.modulusWords]; omega_using [m16, ae, aw']
+  have hf : VG.Impl.Rsa.X86.Keys.hdr + VG.Impl.Rsa.X86.CrtValues.nArr * VG.Proof.Rsa.X86.Keys.S (kw len) ≤ size :=
+    h.ws.ws.fits
+  have ke := VG.Proof.Rsa.X86.InvBatchRt.kw_eq len
+  simp only [VG.Impl.Rsa.X86.Keys.hdr, VG.Impl.Rsa.X86.CrtValues.nArr, VG.Proof.Rsa.X86.Keys.S] at hf
+  exact ⟨⟨by omega_using [hf, ke], by omega_using [big, ae, nwl]⟩, by omega_using [m16, ae, nwl], by omega_using [al, nwl]⟩
+
+theorem setup_check :
+    ∃ hint, (VG.Taint.check sseTaint τ VG.Impl.Rsa.X86.CrtValuesRt.callSetup hint).isSome = true :=
+  ⟨_, by taint_decide⟩
+
+/-- The general inverse: its setup by the taint analysis, the call by the callee's contract, from
+the same length argument in both runs. -/
+theorem fallback_relCT {args : Nat → BitVec 32} {base : Addr} {size len P Q P' Q' : Nat} {sp : BitVec 32} :
+    RelCT isa (fun s t => (InvInput args base size len P Q s ∧ Public args base size sp s) ∧
+      InvInput args base size len P' Q' t ∧ Public args base size sp t)
+      VG.Impl.Rsa.X86.CrtValuesRt.fallback (fun _ _ => True) := by
+  let F (v : State) : Prop := CallAt base size len (args 7).toNat v ∧ v.gpr .esp = sp
+  have setup : RelCT isa (fun s t => (InvInput args base size len P Q s ∧ Public args base size sp s) ∧
+      InvInput args base size len P' Q' t ∧ Public args base size sp t)
+      VG.Impl.Rsa.X86.CrtValuesRt.callSetup (fun _ _ => True) :=
+    RelCT.taint (A := sseTaint) τ (fun _ _ h => agree h.1.1.ws.ws.workspace h.2.1.ws.ws.workspace h.1.2 h.2.2)
+      setup_check.choose_spec
+  have ready {p q : Nat} {s : State} (h : InvInput args base size len p q s) (pub : Public args base size sp s) :
+      WP isa VG.Impl.Rsa.X86.CrtValuesRt.callSetup s F :=
+    WP.mono (callSetup_ok h) fun v ⟨C, e, _⟩ => ⟨C, e.trans pub.stack⟩
+  unfold VG.Impl.Rsa.X86.CrtValuesRt.fallback
+  refine RelCT.seq ((setup.wp (F₁ := F) (F₂ := F) (fun _ _ h => ⟨ready h.1.1 h.1.2, ready h.2.1 h.2.2⟩)).mono
+    (fun _ _ h => h) (fun _ _ h => h.2)) (call_trace base size len (args 7).toNat sp)
+
+theorem dispatch_relCT {args : Nat → BitVec 32} {base : Addr} {size len P Q P' Q' : Nat} {sp : BitVec 32} :
+    RelCT isa (Pair args base size len P Q P' Q' sp) VG.Impl.Rsa.X86.CrtValuesRt.inverseChoice (fun _ _ => True) := by
+  let F (p q : Nat) (u : State) := InvInput args base size len p q u ∧ Public args base size sp u ∧
+    u.cf = some (decide (Eligible args))
+  have ready {p q : Nat} {s : State} (h : InvInput args base size len p q s) (pub : Public args base size sp s) :
+      WP isa VG.Impl.Rsa.X86.InvBatchRt.guard s (F p q) :=
+    WP.mono (guard_ok h) fun u g => ⟨g.input, pub.keep g.keeps (by decide) (by rw [g.mem]; exact Outside.refl _ _ _ _),
+      g.cf⟩
+  have trace : RelCT isa (Pair args base size len P Q P' Q' sp) VG.Impl.Rsa.X86.InvBatchRt.guard (fun _ _ => True) :=
+    (RelCT.taint (A := taint) τ (fun _ _ h => agree h.1.1.ws.ws.workspace h.2.1.ws.ws.workspace h.1.2 h.2.2)
+      guard_check).mono (fun _ _ h => h) (fun _ _ _ => trivial)
+  unfold VG.Impl.Rsa.X86.CrtValuesRt.inverseChoice VG.Impl.Rsa.X86.InvBatchRt.dispatch
+  refine RelCT.seq ((trace.wp (F₁ := F P Q) (F₂ := F P' Q')
+    (fun _ _ h => ⟨ready h.1.1 h.1.2, ready h.2.1 h.2.2⟩)).mono (fun _ _ h => h) (fun _ _ h => h.2)) ?_
+  refine RelCT.ite (fun s t h => by change s.cf = t.cf; rw [h.1.2.2, h.2.2.2]) ?_ ?_
+  · intro s t tr ur sf tf ⟨⟨hs, ht⟩, yes⟩ es et
+    have good : Eligible args := by
+      change s.cf = some true at yes
+      rw [hs.2.2] at yes
+      exact of_decide_eq_true (Option.some.inj yes)
+    refine ⟨(VG.Proof.Rsa.X86.InvBatchRt.Time.relBody (fits hs.1 good) _ _ _ _ _ _
+      ⟨⟨hs.1.ws, by decide, ⟨hs.2.1.argsOk, hs.2.1.stack, hs.2.1.arguments⟩⟩,
+        ⟨ht.1.ws, by decide, ⟨ht.2.1.argsOk, ht.2.1.stack, ht.2.1.arguments⟩⟩⟩ es et).1, trivial⟩
+  · exact (fallback_relCT (args := args) (base := base) (size := size) (len := len) (sp := sp)).mono
+      (fun _ _ h => ⟨⟨h.1.1.1, h.1.1.2.1⟩, h.1.2.1, h.1.2.2.1⟩) (fun _ _ h => h)
+
+end VG.Proof.Rsa.X86.InvTiming
+
+end
+
+end
+
+/-! ### `Rsa.X86.CvBody`, which only this module used -/
+
+section
+
+/-! # Both CRT modulus-validation branches satisfy the shared result definition -/
+
+@[expose] public section
+namespace VG.Proof.Rsa.X86.CrtValues
+open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86
+open VG.Proof.Bignum VG.Proof.Bignum.X86
+open VG.Impl.Rsa.X86.CrtValues (inputArgs)
+open VG.Impl.Rsa.X86.CrtValuesRt (body)
+open VG.Proof.Rsa.X86.CrtValuesRt (Lengths sized_ok)
+
+theorem body_ok [VG.Proof.Rsa.X86.BatchLaw] {g : CallGeometry} {s : State} (h : Inputs g s) (len : Lengths g) :
+    WP isa body s fun t => Inputs g t ∧ Written g s.mem t ∧
+      Frame (bodyWrites g ++ [below (s.gpr .esp) 52]) s.mem t.mem ∧
+      Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := by
+  unfold body inputArgs
+  refine WP.seq (WP.mono (argumentPair_ok (d := .esi) (by decide) (by decide)
+    (h.arguments 6 (by decide)).readSrc (h.arguments 7 (by decide)).readSrc)
+    fun u ⟨p, c, m, k⟩ => ?_)
+  refine WP.seq (WP.mono (modulusCheck_ok u len.lower len.upper
+    (by rw [p]; exact h.inputFit 0)
+    (by rw [p, k.2.1, k.2.2]; exact h.inputRead 0)
+    (by simpa only [BitVec.ofNat_toNat, BitVec.setWidth_eq] using c)) fun v ⟨z, mv, kv⟩ => ?_)
+  rw [p, m] at z
+  have mem : v.mem = s.mem := mv.trans m
+  have keeps : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s v :=
+    (k.mono (by decide)).trans (kv.mono (by decide))
+  have hv := h.after keeps (by decide) (by decide) (by rw [mem]; exact Frame.refl _ _)
+  refine WP.ite (Spec.Rsa.modulusValid (Spec.Rsa.os2ip (inputBytes g s.mem 0)) (g.args 7).toNat) z ?_ ?_
+  · intro accepted
+    refine WP.mono (sized_ok hv len) fun t ⟨ht, result, frame, rest⟩ => ?_
+    rw [mem, keeps.1 .esp (by decide)] at frame
+    rw [mem] at result
+    refine ⟨ht, written_arithmetic result ?_ ?_ ?_ ?_ ?_ ?_, frame, keeps.trans rest⟩
+    · simp only [inputBytes, bytesAt_length, CallGeometry.buffer]
+      exact accepted
+    · simp only [inputBytes, bytesAt_length, CallGeometry.buffer]
+      exact len.pSmall
+    · simp only [inputBytes, bytesAt_length, CallGeometry.buffer]
+      exact len.qSmall
+    · simp only [inputBytes, bytesAt_length, CallGeometry.buffer]
+      exact congrArg BitVec.toNat len.dpLen
+    · simp only [inputBytes, bytesAt_length, CallGeometry.buffer]
+      exact congrArg BitVec.toNat len.dqLen
+    · simp only [inputBytes, bytesAt_length, CallGeometry.buffer]
+      exact congrArg BitVec.toNat len.qiLen
+  · intro rejected
+    have failed : calculated g s.mem = none := by
+      unfold calculated Spec.Rsa.crtKey
+      have ln : (inputBytes g s.mem 0).length = (g.args 7).toNat := bytesAt_length _ _ _
+      rw [ln]
+      simp only [rejected, Bool.false_eq_true, false_and, ite_false]
+    refine WP.mono (failure_ok hv) fun t ⟨ht, dp, dq, qi, status, frame, rest⟩ => ?_
+    refine ⟨ht, ?_, (mem ▸ frame).mono fun r hr => List.mem_append_left _ hr, keeps.trans (rest.mono (by decide))⟩
+    unfold Written
+    rw [failed]
+    refine ⟨status, ?_⟩
+    simp only [outputBuffers, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
+    exact ⟨dp, dq, qi⟩
+
+end VG.Proof.Rsa.X86.CrtValues
+
+end
+
+end
 
 /-! ### `Rsa.X86.CvOperationTiming`, which only this module used -/
 

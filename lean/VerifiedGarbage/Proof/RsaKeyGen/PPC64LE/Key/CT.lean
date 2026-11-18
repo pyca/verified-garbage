@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.InvLaw
-import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Key.Correct
+public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Key.Correct
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.MontCT
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
@@ -14,13 +14,12 @@ import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.Seqs
-public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Key.Body
 public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Key.Stores
 
 /-!
 # `vg_rsa_keygen_key` on PPC64LE: constant time
 
-As `vg_rsa_crt_values`'s (`Proof/Rsa/PPC64LE/CvCT.lean`): the taint analysis
+As `vg_rsa_crt_values`'s (`Proof/Rsa/PPC64LE/CvVerified.lean`): the taint analysis
 treats memory as secret, so the working space's address (a stack argument)
 is secret to it, although it is public. Two runs are related by `Two`
 (`MontCT.lean`) at each step, both satisfying the same predicate for the

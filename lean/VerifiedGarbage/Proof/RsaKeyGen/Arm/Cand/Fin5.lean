@@ -1,8 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Fin4
+public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Front
 public import VerifiedGarbage.Proof.RsaKeyGen.Table
-import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Front
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Trial2
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Fin2

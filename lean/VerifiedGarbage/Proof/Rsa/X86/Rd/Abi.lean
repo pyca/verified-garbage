@@ -47,13 +47,37 @@ import VerifiedGarbage.Proof.Bignum.X86.PublicArgs
 public import VerifiedGarbage.Impl.Bignum.X86.ModulusCheck
 import VerifiedGarbage.Proof.Mont.X86.ArgWs
 import VerifiedGarbage.Proof.Mont.X86.Sse2.AtVerified
-public import VerifiedGarbage.Proof.Rsa.X86.Rd.Taint
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.TimeMul
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Framework.X86.Taint
 public import VerifiedGarbage.Proof.Framework.X86.SseTaint
 public import Mathlib.Algebra.Group.Nat.Defs
+
+/-! ### `Rsa.X86.Rd.Taint`, which this module and modules that import it used -/
+
+section
+
+/-!
+# `vg_rsa_recover_primes_det` on i686: the taint analysis' registers
+
+The registers the taint analysis takes as public once the working space's
+context is set.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Rsa.X86.Recover
+open VG VG.X86
+
+/-- The arguments, `edi` and `esp`. -/
+def τA : VG.X86.Taint.T := { regs := .ofList [.edi, .esp], flags := false, argLen := 52 }
+
+end VG.Proof.Rsa.X86.Recover
+
+end
+
+end
 
 /-!
 # `vg_rsa_recover_primes_det` on i686: the calling convention, the failure path and the timing base

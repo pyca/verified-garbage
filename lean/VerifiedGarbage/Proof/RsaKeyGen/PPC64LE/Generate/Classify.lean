@@ -12,7 +12,6 @@ public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Search.Step
 public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Backend
 public import VerifiedGarbage.Impl.RsaKeyGen.PPC64LE.Search
 public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Search.Contract
-public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Cand.Body
 public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Cand.CTTop
 public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Cand.TrialOk
 public import VerifiedGarbage.Proof.RsaKeyGen.SearchContract

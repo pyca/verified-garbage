@@ -1,10 +1,8 @@
 module
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.SignCall
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.SignEntry
+
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.SignCorrect
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 import VerifiedGarbage.Proof.Rsa.X86_64.PrivImpl
-
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.SignCorrect
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverCT
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCT
 import VerifiedGarbage.Proof.Rsa.X86_64.PrivCT
@@ -15,8 +13,6 @@ import Mathlib.Tactic.Finiteness.Attr
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.SignCall
-meta import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.SignEntry
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.SignCorrect
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverCT
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCT

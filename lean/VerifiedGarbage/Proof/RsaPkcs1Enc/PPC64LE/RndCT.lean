@@ -1,8 +1,6 @@
 module
 
 -- separate module: its proofs build in parallel with `RndCorrect`'s, which `RndVerified` also imports
-
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.PPC64LE.RndCall
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.PPC64LE.RndReject
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.PPC64LE.RndTaint
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.RandomCT

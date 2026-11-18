@@ -28,7 +28,6 @@ import VerifiedGarbage.Spec.RsaKeyGen.GenerationAgrees
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Search.Call
-import VerifiedGarbage.Proof.RsaKeyGen.Arm.Search.Correct
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Search.Entry
 import VerifiedGarbage.Proof.Ffdh.Arm.ZeroBuffer
 import VerifiedGarbage.Proof.RsaKeyGen.InitWords

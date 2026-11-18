@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 `Lcm.lean`, `DPart.lean`, `KTail.lean`, `Stores.lean`): the status
 `2 small + mask` in `a0` and the seven outputs under the mask, with the
 arrays they come from holding `n = p q`, `d`, `p`, `q`, `dP`, `dQ` and
-`qInv` (`BodyPost`), as PPC64LE's (`Proof/RsaKeyGen/PPC64LE/Key/Body.lean`).
+`qInv` (`BodyPost`), as PPC64LE's (`Proof/RsaKeyGen/PPC64LE/Key/Correct.lean`).
 -/
 
 -- separate module: the body's chaining is not re-checked with every change to the correctness proof

@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.RsaPkcs1Sig.BytesAt
 import VerifiedGarbage.Proof.Rsa.BytesFrame
 import VerifiedGarbage.Proof.Rsa.X86.PrivStackSafety
 import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Wrap
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Entry
 
 /-!
 # RSAES-PKCS1-v1_5 encryption from a random tape on x86: verified

@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Rsa.Arm.KdTop
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.Ops
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.Ops2
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.Slots
-import VerifiedGarbage.Proof.Rsa.Arm.RdTaint
+import VerifiedGarbage.Proof.Rsa.Arm.RdTwos
 import VerifiedGarbage.Proof.Rsa.Arm.KeyWs
 import VerifiedGarbage.Proof.Rsa.Arm.KeyOps
 public import VerifiedGarbage.Proof.Bignum.SqrtRem
@@ -20,7 +20,7 @@ import VerifiedGarbage.Proof.Rsa.Arm.KeyBits
 import VerifiedGarbage.Proof.Rsa.Arm.KeyWord
 import VerifiedGarbage.Proof.Framework.Arm.Keep
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Bignum.Arm.ShiftK
+import VerifiedGarbage.Proof.Rsa.Arm.RdOps
 import VerifiedGarbage.Proof.Bignum.Arm.SubState
 
 /-! # `vg_rsa_recover_primes_det` on ARMv7: the square root by words

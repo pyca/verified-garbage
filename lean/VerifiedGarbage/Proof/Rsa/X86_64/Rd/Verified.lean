@@ -1,10 +1,9 @@
 module
--- separate module: it builds in parallel with the batched inverse's proofs (`InvInstance`, which imports the divstep algebra), which only `Instances` brings in
 
-import VerifiedGarbage.Proof.Rsa.X86_64.Rd.CTMain
+-- separate module: it builds in parallel with the batched inverse's proofs (`InvInstance`, which imports the divstep algebra), which only `Instances` brings in
+public import VerifiedGarbage.Proof.Rsa.X86_64.Rd.CTMain
 public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Rsa.X86_64.Rd.Code
 public import VerifiedGarbage.Proof.Rsa.X86_64.InvLaw
 public import VerifiedGarbage.Spec.Rsa.RecoverDet
 import VerifiedGarbage.Proof.Framework.Omega

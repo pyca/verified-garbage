@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Rsa.AArch64.Div
 public import VerifiedGarbage.Proof.Rsa.AArch64.InvLaw
 public import VerifiedGarbage.Impl.Rsa.AArch64.RecoverDet
 import VerifiedGarbage.Proof.Rsa.AArch64.CvLoad
-import VerifiedGarbage.Proof.Rsa.AArch64.RdPieces
+import VerifiedGarbage.Proof.Rsa.AArch64.RdOps
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Omega

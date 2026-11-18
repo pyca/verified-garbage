@@ -19,12 +19,12 @@ import VerifiedGarbage.Proof.Bignum.X86.PublicReturn
 import VerifiedGarbage.Proof.Bignum.X86.PublicSave
 import VerifiedGarbage.Proof.Bignum.Words
 import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Rsa.X86.Rd.TimeBaseW
+public import VerifiedGarbage.Proof.Rsa.X86.Rd.TimeW2
 public import VerifiedGarbage.Proof.Rsa.X86.Rd.SizedW
 public import VerifiedGarbage.Proof.Rsa.X86.Rd.DetTimeW
 import VerifiedGarbage.Proof.Framework.PlainSimp
 meta import VerifiedGarbage.Impl.Rsa.X86.RecoverDetRt
-meta import VerifiedGarbage.Proof.Rsa.X86.Rd.TimeBaseW
+meta import VerifiedGarbage.Proof.Rsa.X86.Rd.TimeW2
 meta import VerifiedGarbage.Proof.Framework.X86.Taint
 meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
 public import VerifiedGarbage.Proof.Framework.X86.Taint

@@ -307,7 +307,7 @@ section
 # RSAES-OAEP decryption on RISC-V: the scan
 
 Untrusted: everything here is checked by Lean. As on PPC64LE
-(`Proof/RsaOaep/PPC64LE/Dc/Scan.lean`), register for register: `scan_ok`,
+(`Proof/RsaOaep/PPC64LE/Dc/VerifiedP.lean`), register for register: `scan_ok`,
 the scan of `T` (`scanS`, its masks from the top bits of `b - 1` and
 `(b ⊕ 1) - 1`), then the accumulator ORed with `looking`. It reads our part
 of the working space only, and keeps `Base`.
@@ -1116,7 +1116,7 @@ end
 # RSAES-OAEP decryption on RISC-V: correctness
 
 Untrusted: everything here is checked by Lean. As on PPC64LE
-(`Proof/RsaOaep/PPC64LE/Dc/Verified.lean`): the entry, the private
+(`Proof/RsaOaep/PPC64LE/Dc/VerifiedP.lean`): the entry, the private
 operation (`priv_ok`), the check of `k ≥ 2 hLen + 2` (public), then either
 zeros and the result `r = 2 ? 2 : 0` (`decFail_ok`, which is what `decOut`
 says for a too short `k`) or the decoding (`decMain_ok`), and the restores:

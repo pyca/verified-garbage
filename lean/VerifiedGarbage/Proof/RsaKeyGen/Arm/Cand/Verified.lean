@@ -11,7 +11,7 @@ meta import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Top4
 import VerifiedGarbage.Proof.Rsa.Arm.CvFail
 import VerifiedGarbage.Proof.MillerRabin.Arm.Run
-import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Trial
+import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Taint4
 public import VerifiedGarbage.Proof.RsaKeyGen.CandidateContract
 meta import VerifiedGarbage.Proof.RsaKeyGen.CandidateContract
 

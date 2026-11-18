@@ -27,7 +27,7 @@ meta import VerifiedGarbage.Proof.Framework.Omega
 /-!
 # The checks of an RSA key on RISC-V: constant time
 
-As on PPC64LE (`Proof/Rsa/PPC64LE/KcCkCT.lean`): two runs with the same
+As on PPC64LE (`Proof/Rsa/PPC64LE/KcVerified.lean`): two runs with the same
 public data (`D`: the arguments, the stack arguments, `n` and `e`) are
 related by `Two` (`Proof/Bignum/RISCV64/PreCT.lean`) at each step, both
 satisfying the same predicate for the same data, which fixes the registers

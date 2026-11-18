@@ -2,7 +2,6 @@ module
 
 -- separate module: its proofs build in parallel with `RndAccept`'s, which `RndVerified` also imports
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86.RndScan
-import VerifiedGarbage.Proof.RsaPkcs1Enc.X86.RndTaint
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Loops
 import VerifiedGarbage.Proof.RsaPkcs1Sig.BytesAt
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem

@@ -4,7 +4,6 @@ module
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86.RndScan
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86.RndEnc
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86.PcVerified
-import VerifiedGarbage.Proof.RsaPkcs1Enc.X86.RndTaint
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Loops
 import VerifiedGarbage.Proof.RsaPkcs1Sig.BytesAt
 import VerifiedGarbage.Proof.Framework.Offset

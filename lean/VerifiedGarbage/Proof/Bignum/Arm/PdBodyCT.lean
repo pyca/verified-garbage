@@ -1,10 +1,9 @@
 module
+
 public import VerifiedGarbage.Impl.Bignum.Arm.PdFn
 public import VerifiedGarbage.Proof.Bignum.Arm.PdBodyInput
-public import VerifiedGarbage.Proof.Bignum.Arm.ExponentScanCT
-
+public import VerifiedGarbage.Proof.Bignum.Arm.ExponentCheckCT
 import VerifiedGarbage.Proof.Bignum.Arm.PdImportedCT
-import VerifiedGarbage.Proof.Bignum.Arm.ExponentCheckCT
 import VerifiedGarbage.Proof.Bignum.Arm.PdFailCT
 import VerifiedGarbage.Proof.Bignum.Arm.PublicArgsCT
 import VerifiedGarbage.Proof.Bignum.Arm.ExponentFlag
@@ -16,9 +15,8 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Impl.Bignum.Arm.PdFn
 meta import VerifiedGarbage.Proof.Bignum.Arm.PdBodyInput
-meta import VerifiedGarbage.Proof.Bignum.Arm.ExponentScanCT
-meta import VerifiedGarbage.Proof.Bignum.Arm.PdImportedCT
 meta import VerifiedGarbage.Proof.Bignum.Arm.ExponentCheckCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.PdImportedCT
 meta import VerifiedGarbage.Proof.Bignum.Arm.PdFailCT
 meta import VerifiedGarbage.Proof.Bignum.Arm.PublicArgsCT
 meta import VerifiedGarbage.Proof.Bignum.Arm.ExponentFlag

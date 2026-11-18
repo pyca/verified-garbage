@@ -1,14 +1,275 @@
 module
 
-import VerifiedGarbage.Proof.Rsa.X86_64.PrivPd
 public import VerifiedGarbage.Proof.Rsa.PrivCheck
 public import VerifiedGarbage.Proof.Rsa.X86_64.PrivFrame
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Framework.WriteBytes
-import VerifiedGarbage.Proof.Rsa.X86_64.PrivCrt
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
+public import VerifiedGarbage.Proof.Bignum.X86_64.PcCode
+public import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
+import Mathlib.Data.Int.ModEq
+import VerifiedGarbage.Proof.Rsa.Scratch
+import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
+public import VerifiedGarbage.Proof.Rsa.X86_64.PublicImpl
+public import VerifiedGarbage.Proof.Rsa.X86_64.PrivImpl
+
+/-! ### `Rsa.X86_64.PrivPd`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Rsa.X86_64.PrivCrt`, which this module and modules that import it used -/
+
+section
+
+/-!
+# `vg_rsa_private_checked` on x86-64: the call of the CRT
+
+The CRT runs with the stack arguments the frame holds at `rsp`, writing
+`M` at `oM` (`crt_pre`), and returns with `M` written and the frame's
+slots kept (`crt_call`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Rsa.X86_64
+
+variable {X : List Region}
+
+open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64.PrivChecked
+open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
+
+/-- The return address of a call from the frame. -/
+abbrev kb (s : State) : Addr := s.gpr .rsp - BitVec.ofNat 64 (frameBytes + 8)
+
+theorem fb_sub8 (s : State) : fb s - 8 = kb s := by
+  simp only [fb, kb, BitVec.sub_sub]; rfl
+
+theorem fb_kb (s : State) : fb s = kb s + BitVec.ofNat 64 8 := by
+  rw [← fb_sub8]; exact (BitVec.sub_add_cancel _ _).symm
+
+theorem fb_off (s : State) (d : Nat) : off (fb s) d = kb s + BitVec.ofNat 64 (8 + d) := by
+  rw [fb_kb, off, BitVec.add_assoc, ← BitVec.ofNat_add]
+
+theorem kb_toNat {s : State} (hp : PreF X s) : (kb s).toNat + (frameBytes + 8) + 8 + 112 ≤ 2 ^ 64 ∧
+    (kb s).toNat + (frameBytes + 8) = (s.gpr .rsp).toNat ∧ 8 ≤ (kb s).toNat := by
+  have := hp.sp1; have := hp.sp2
+  simp only [kb, BitVec.toNat_sub, BitVec.toNat_ofNat]; unfold stackBytes frameBytes at *; omega_arith
+
+theorem toNat_off {p : Addr} {d : Nat} (h : p.toNat + d < 2 ^ 64) : (off p d).toNat = p.toNat + d := by
+  simp only [off, BitVec.toNat_add, BitVec.toNat_ofNat]; omega_arith
+
+/-- The stack argument `i` of a function called from the frame is the
+frame's word `8 i`. -/
+theorem stackArg_entry {s t : State} (hsp : t.gpr .rsp = fb s) (rd wr : List Region) {i : Nat} (hi : i < 400) :
+    stackArg (t.callEntry.withRegions rd wr) i = word t.mem (fb s) (8 * i) := by
+  have hsep := Offset.sep (kb s) (d := 8 * (i + 1)) (n := 8) (e := 0) (k := 8) (by omega_arith) (by omega_arith) (by omega_arith)
+  rw [show kb s + BitVec.ofNat 64 0 = kb s from BitVec.add_zero _] at hsep
+  simp only [stackArg, stackArgAddr, State.withRegions_mem, State.withRegions_gpr, State.callEntry_rsp,
+    State.callEntry_mem, hsp, fb_sub8]
+  rw [Mem.readW_writeW_sep hsep (by decide)]
+  show _ = t.mem.readW (off (fb s) (8 * i)) 64
+  rw [fb_kb, ← off, off_off, show 8 + 8 * i = 8 * (i + 1) by omega_arith]
+
+theorem stackArgAddr_entry {s t : State} (hsp : t.gpr .rsp = fb s) (rd wr : List Region) :
+    stackArgAddr (t.callEntry.withRegions rd wr) 0 = fb s := by
+  simp only [stackArgAddr, State.withRegions_gpr, State.callEntry_rsp, hsp, fb_sub8]
+  rw [fb_kb]
+
+/-- What the CRT writes: `M` and the working space. -/
+def crtWr (s : State) : List Region :=
+  [⟨off (fb s) oM, (s.gpr .rcx).toNat⟩, ⟨stackArg s 12, (stackArg s 13).toNat * 8⟩]
+
+/-- The return address of the CRT's calls is in the stack the function
+uses, below its own. -/
+theorem hole_sub (s : State) : Region.Sub (hole (kb s)) (stkR s) := by
+  rw [show hole (kb s) = ⟨s.gpr .rsp - BitVec.ofNat 64 stackBytes, 8⟩ by
+    simp only [hole, kb, BitVec.sub_sub]; rfl]
+  exact Region.sub_prefix (by decide)
+
+/-- Frame bytes at `d` are apart from the return address of the CRT's calls. -/
+theorem frame_hole {s : State} (hp : PreF X s) {d n : Nat} (h : d + n ≤ frameBytes) :
+    Region.Disjoint ⟨kb s + BitVec.ofNat 64 (8 + d), n⟩ (hole (kb s)) := by
+  have ⟨hK1, _, _⟩ := kb_toNat hp
+  exact Offset.disjoint_below (kb s) (n := 8) (by unfold frameBytes at h hK1; omega_arith)
+
+/-! ## Memory across a call from the frame -/
+
+/-- The return address a call from the frame stores. -/
+theorem callEntry_frame {s t : State} (hsp : t.gpr .rsp = fb s) : Frame [below (fb s) 8] t.mem t.callEntry.mem := by
+  rw [State.callEntry_mem, hsp]
+  exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (below_call _ (by decide) (by decide))
+
+/-- A buffer of the caller that the function does not write, from memory
+changed only where it may write. -/
+theorem bytes_of_frame {s : State} {m : Mem} (hf : Frame [stkR s, outR s, scrR s] s.mem m) {p : Addr} {len : Nat}
+    (hk : (stkR s).Disjoint ⟨p, len⟩) (ho : (outR s).Disjoint ⟨p, len⟩) (hs : (scrR s).Disjoint ⟨p, len⟩)
+    (hl : len ≤ 2 ^ 64) : Spec.Rsa.bytesAt m p len = Spec.Rsa.bytesAt s.mem p len := by
+  simp only [Spec.Rsa.bytesAt]
+  refine List.map_congr_left fun i hi => hf.bytes (R := ⟨p, len⟩) (fun r hr => ?_) hl (List.mem_range.mp hi)
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl
+  · exact hk.symm
+  · exact ho.symm
+  · exact hs.symm
+
+/-- The return address's bytes are in the stack the function uses. -/
+theorem below_sub (s : State) : Region.Sub (below (fb s) 8) (stkR s) := ret_sub s
+
+/-- Memory changed by a call from the frame, within regions in the stack
+the function uses, `out` or the working space. -/
+theorem frame_call {s : State} {m₁ m₂ m₃ : Mem} (h₁ : Frame [stkR s, outR s, scrR s] m₁ m₂) {rs : List Region}
+    (h₂ : Frame rs m₂ m₃) (hs : ∀ r ∈ rs, Region.Sub r (stkR s) ∨ Region.Sub r (outR s) ∨ Region.Sub r (scrR s)) :
+    Frame [stkR s, outR s, scrR s] m₁ m₃ :=
+  h₁.trans (h₂.sub fun r hr => by
+    rcases hs r hr with h | h | h
+    · exact ⟨_, List.mem_cons_self .., h⟩
+    · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), h⟩
+    · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)), h⟩)
+
+theorem sub_refl (r : Region) : Region.Sub r r := fun _ h => h
+
+/-- A slot kept by a call that writes regions apart from it. -/
+theorem slot_keep {s : State} {m m' : Mem} {rs : List Region} (hf : Frame rs m m') {d : Nat}
+    (hd : ∀ r ∈ rs, (⟨off (fb s) d, 8⟩ : Region).Disjoint r) : word m' (fb s) d = word m (fb s) d :=
+  hf.readW (Region.contains_self _ _) hd (by decide)
+
+/-! ## The call -/
+
+/-- The slots are apart from `M`, the working space and the return address. -/
+theorem slot_apart {s : State} (hp : PreF X s) {d : Nat} (hd' : d + 8 ≤ oM) :
+    ∀ r ∈ crtWr s ++ [below (fb s) 16], (⟨off (fb s) d, 8⟩ : Region).Disjoint r := by
+  have e2 : oM = 168 := rfl
+  have hk2 := hp.k2
+  intro r hr
+  simp only [crtWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl
+  · exact Offset.disjoint _ (.inl (by omega_arith)) (by omega_arith) (by omega_arith)
+  · exact (hp.dKs.sub_left (frame_sub s (by unfold frameBytes; omega_arith)))
+  · exact Offset.disjoint_below (fb s) (n := 16) (by omega_arith)
+
+end VG.Proof.Rsa.X86_64
+
+end
+
+end
+
+/-! ### `Rsa.X86_64.PrivPc`, which only this module used -/
+
+section
+
+/-!
+# `vg_rsa_private_checked` on x86-64: the call of `vg_rsa_public_precompute`
+
+`r₁` kept in its slot, and `n`'s values written to the frame at `oPre`
+(`pc_stage`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Rsa.X86_64
+
+variable {X : List Region}
+
+open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64 VG.Impl.Rsa.X86_64.PrivChecked
+open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
+
+/-- A stack argument past a store to the frame. -/
+theorem arg_wo {s : State} (m : Mem) {d : Nat} (v : BitVec 64) (hd : d + 8 ≤ frameBytes) {j : Nat} (hj : j < 14) :
+    (m.writeW (off (fb s) d) v).readW (stackArgAddr s j) 64 = m.readW (stackArgAddr s j) 64 := by
+  rw [stackArgAddr_fb]
+  exact word_wo m (fb s) v (by unfold frameBytes at *; omega_using [hd]) (by unfold frameBytes at *; omega_using [hd])
+    (by unfold frameBytes; omega_using [hj])
+
+/-- `2 ⌈k / 8⌉` from `k`. -/
+theorem preWords_val {x : BitVec 64} (hx : x.toNat ≤ 1024) :
+    (x + BitVec.signExtend 64 (7 : BitVec 32)) >>> 3 + (x + BitVec.signExtend 64 (7 : BitVec 32)) >>> 3 =
+      BitVec.ofNat 64 (Spec.Rsa.precomputedWords x.toNat) := by
+  rw [sx7]
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_add, BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow,
+    Spec.Rsa.precomputedWords, Spec.Rsa.modulusWords, show (7 : BitVec 64).toNat = 7 from rfl]
+  omega_using [hx]
+
+/-! ## The call -/
+
+theorem preWords_le {s : State} (hp : PreF X s) : Spec.Rsa.precomputedWords (s.gpr .rcx).toNat ≤ 256 := by
+  have := hp.k2; unfold Spec.Rsa.precomputedWords Spec.Rsa.modulusWords; omega_using [this]
+
+/-- A region of the frame at `d`, apart from the return address of a call. -/
+theorem ret_disjoint (s : State) {d n : Nat} (h : d + n ≤ frameBytes) :
+    (below (fb s) 8).Disjoint ⟨off (fb s) d, n⟩ := by
+  rw [show below (fb s) 8 = ⟨kb s, 8⟩ by simp only [below]; rw [← fb_sub8]; rfl, fb_off]
+  exact Offset.base_disjoint _ (by omega_using []) (by unfold frameBytes at h; omega_using [h])
+
+end VG.Proof.Rsa.X86_64
+
+end
+
+end
+
+
+/-!
+# `vg_rsa_private_checked` on x86-64: the call of `vg_rsa_public_precomputed_checked`
+
+`r₃` kept in its slot, and `M^e mod n` written to `out` (`pd_stage`), for
+whatever `M` holds.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Rsa.X86_64
+
+variable {X : List Region}
+
+open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64 VG.Impl.Rsa.X86_64.PrivChecked
+open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
+
+theorem arg_in {s t : State} (hp : PreF X s) (he : Env s t) {j : Nat} (hj : j < 14) :
+    InRegions (t.rd ++ t.wr) (stackArgAddr s j) 8 :=
+  ⟨⟨stackArgAddr s 0, 112⟩, List.mem_append_left _ (by
+    rw [he.rd, hp.hrd]; simp),
+    by rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
+
+theorem word_wo0 (m : Mem) (base : Addr) (v : BitVec 64) {d' : Nat} (h : 8 ≤ d') (hd' : d' + 8 ≤ 4096) :
+    (m.writeW base v).readW (off base d') 64 = m.readW (off base d') 64 := by
+  have := word_wo m base v (d := 0) (d' := d') (.inl (by omega_arith)) (by decide) hd'
+  simpa only [Bignum.word, off, BitVec.add_zero] using this
+
+theorem arg_wo0 {s : State} (m : Mem) (v : BitVec 64) {j : Nat} (hj : j < 14) :
+    (m.writeW (fb s) v).readW (stackArgAddr s j) 64 = m.readW (stackArgAddr s j) 64 := by
+  have := arg_wo (s := s) m v (d := 0) (by decide) hj
+  simpa only [off, BitVec.add_zero] using this
+
+/-! ## The call -/
+
+/-- `M` in the frame, `k` bytes. -/
+def mR (s : State) : Region := ⟨off (fb s) oM, (s.gpr .rcx).toNat⟩
+
+theorem mR_sub {s : State} (hp : PreF X s) : Region.Sub (mR s) (stkR s) :=
+  frame_sub s (by have := hp.k2; unfold oM frameBytes; omega_arith)
+
+/-- What it writes: `out` and the working space. -/
+def pdWr (s : State) : List Region := [⟨s.gpr .rdi, (s.gpr .rcx).toNat⟩, scrR s]
+
+theorem word_self0 (m : Mem) (base : Addr) (v : BitVec 64) : word (m.writeW base v) base 0 = v := by
+  have := word_writeW_self m base 0 v
+  simpa only [off, BitVec.add_zero] using this
+
+/-- Bytes of the frame at `d`, kept by a call's return address. -/
+theorem entry_bytes {s t : State} (hsp : t.gpr .rsp = fb s) {d n : Nat} (h : d + n ≤ frameBytes) :
+    Spec.Rsa.bytesAt t.callEntry.mem (off (fb s) d) n = Spec.Rsa.bytesAt t.mem (off (fb s) d) n := by
+  simp only [Spec.Rsa.bytesAt]
+  exact List.map_congr_left fun i hi => (callEntry_frame hsp).bytes (R := ⟨off (fb s) d, n⟩)
+    (fun r hr => by rw [List.mem_singleton.mp hr]; exact (ret_disjoint s h).symm)
+    (by dsimp only; unfold frameBytes at h; omega_arith) (List.mem_range.mp hi)
+
+end VG.Proof.Rsa.X86_64
+
+end
+
+end
 
 /-!
 # `vg_rsa_private_checked` on x86-64: the check and the release

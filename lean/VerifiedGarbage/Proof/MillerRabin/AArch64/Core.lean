@@ -2,12 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.MillerRabin.Contract
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrTab
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrLoop
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrExp
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTMrTab
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTMrExp
 import VerifiedGarbage.Proof.Ffdh.MillerRabin
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrExp
 
 /-! # Shared Miller–Rabin core: correctness and constant time on AArch64 -/
 

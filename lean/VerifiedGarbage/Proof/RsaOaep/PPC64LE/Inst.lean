@@ -19,7 +19,6 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.MdHashTable.PPC64LE.Tables
 public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.ByLen
 import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Dc.Verified
 public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Dc.VerifiedP
 
 /-! ### `RsaOaep.PPC64LE.Verified`, which only this module used -/

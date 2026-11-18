@@ -1,9 +1,8 @@
 module
-public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Mr1
 
+public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Taint7
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Mr2
-import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Taint7
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Instr
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.Loads
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.St

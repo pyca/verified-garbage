@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.MdHashTable.X86_64.Tables
 public import VerifiedGarbage.Proof.HashTable.X86_64
-public import VerifiedGarbage.Proof.RsaPss.X86_64.SignCCt
-public import VerifiedGarbage.Proof.RsaPss.X86_64.ChkCtBack
+public import VerifiedGarbage.Proof.RsaPss.X86_64.ChkSaltBackCT
+public import VerifiedGarbage.Proof.RsaPss.X86_64.ChkFixedSaltCT
 public import VerifiedGarbage.Impl.RsaPss.X86_64.Encoding
 public import VerifiedGarbage.Proof.RsaPss.X86_64.PcCCorrect
 public import VerifiedGarbage.Proof.RsaPss.X86_64.ChkCtx
@@ -12,30 +12,22 @@ public import VerifiedGarbage.Proof.RsaPss.X86_64.SignCCorrect
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
 public import VerifiedGarbage.Proof.Rsa.X86_64.PublicImpl
-import VerifiedGarbage.Proof.RsaPss.X86_64.SignCFixed
-import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyFixed
 import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyBody
-import VerifiedGarbage.Proof.RsaPss.X86_64.SignCall
+import VerifiedGarbage.Proof.RsaPss.X86_64.SignCorrect
 import VerifiedGarbage.Proof.RsaPss.Params
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
 public import VerifiedGarbage.Proof.RsaPss.X86_64.TabCall
 public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyFrame
 import VerifiedGarbage.Proof.RsaPss.X86_64.EncCtx
-public import VerifiedGarbage.Proof.RsaPss.X86_64.EncCorrect
 public import VerifiedGarbage.Proof.RsaPss.X86_64.CtBase
-public import VerifiedGarbage.Proof.RsaPss.X86_64.CtHashCT
 import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
-import VerifiedGarbage.Proof.RsaPss.X86_64.SignFixed
 import VerifiedGarbage.Proof.RsaPss.MgfBytes
 import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.RsaPss.X86_64.Safe
 import VerifiedGarbage.Proof.RsaPss.X86_64.SignEnc
 import VerifiedGarbage.Proof.RsaPss.X86_64.Params
-import VerifiedGarbage.Proof.RsaPss.X86_64.EncFixed
-public import VerifiedGarbage.Proof.RsaPss.X86_64.ChkCorrect
-public import VerifiedGarbage.Proof.RsaPss.X86_64.ChkSaltBackCT
 public import VerifiedGarbage.Proof.RsaPss.X86_64.Shapes
 public import VerifiedGarbage.Proof.Mgf1.Basic
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Stack

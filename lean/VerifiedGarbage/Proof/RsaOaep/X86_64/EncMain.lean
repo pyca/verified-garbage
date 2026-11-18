@@ -11,7 +11,6 @@ import VerifiedGarbage.Proof.RsaOaep.X86_64.LabelT
 import VerifiedGarbage.Proof.RsaOaep.Decode
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.Pub
 
 /-!
 # RSAES-OAEP encryption on x86-64: after the checks

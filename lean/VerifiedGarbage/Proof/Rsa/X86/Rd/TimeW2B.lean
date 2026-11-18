@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.Rsa.X86.Rd.TwosW
 import VerifiedGarbage.Proof.Rsa.X86.Rd.DivQ
 import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Impl.Rsa.X86.RecoverDetRt
-meta import VerifiedGarbage.Proof.Rsa.X86.Rd.Taint
+meta import VerifiedGarbage.Proof.Rsa.X86.Rd.Abi
 meta import VerifiedGarbage.Proof.Framework.X86.Taint
 meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
 meta import VerifiedGarbage.Proof.Rsa.X86.Rd.TimeW2Q

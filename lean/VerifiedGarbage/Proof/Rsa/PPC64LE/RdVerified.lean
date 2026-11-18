@@ -12,9 +12,7 @@ meta import VerifiedGarbage.Proof.Rsa.PPC64LE.RdCorrect
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
-import VerifiedGarbage.Proof.Rsa.PPC64LE.RdFinish
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.Seqs
-meta import VerifiedGarbage.Proof.Rsa.PPC64LE.RdFinish
 
 /-!
 # `vg_rsa_recover_primes_det` on PPC64LE: constant time, and verified

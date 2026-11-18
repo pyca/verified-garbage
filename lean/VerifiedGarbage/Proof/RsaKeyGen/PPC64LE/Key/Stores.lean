@@ -1,8 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Key.Base
+public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Key.Init
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.KeyWs
-import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Key.Init
 import VerifiedGarbage.Proof.Rsa.PPC64LE.CvBytes
 import VerifiedGarbage.Proof.Rsa.PPC64LE.CvLoads
 import VerifiedGarbage.Proof.Rsa.PPC64LE.CvStores

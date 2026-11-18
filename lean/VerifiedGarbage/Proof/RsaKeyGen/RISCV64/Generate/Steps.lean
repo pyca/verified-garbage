@@ -17,7 +17,7 @@ public import VerifiedGarbage.Proof.Framework.RISCV64.CallAny
 public import VerifiedGarbage.Proof.MillerRabin.RISCV64.Backend
 public import VerifiedGarbage.Impl.RsaKeyGen.RISCV64.Search
 public import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Search.Contract
-public import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Cand.Main
+public import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Cand.CTBase
 public import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Cand.CTTop
 public import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Cand.CTTest
 public import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Cand.TrialOk
