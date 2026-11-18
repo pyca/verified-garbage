@@ -250,9 +250,8 @@ theorem cryptCall_ok (d : Direction) (s : State) (hp : CallPre s) : WP isa (cryp
   obtain b12 : Region.Sub (below (s.gpr .esp) 12) (below (s.gpr .esp) 16) := below_sub (by decide) hp.stackLo
   obtain r4 : Region.Sub ⟨((s.gpr .esp) - BitVec.ofNat 32 16).setWidth 64, 4⟩ (below (s.gpr .esp) 16) :=
     Region.sub_prefix (by decide)
-  obtain hcode : Ecb.blockCode d = block d := by cases d <;> rfl
   refine VG.Proof.Rc2.X86.Cbc.callWithGpr (c := Ecb.blockCode d) (k := blockContract d)
-    (by rw [hcode]; exact block_correct d) (Ecb.block_nosp d) (by decide) hrs
+    (Ecb.blockCode_correct d) (Ecb.block_nosp d) (by decide) hrs
     (by rw [Ecb.block_stack]; exact hp.stackLo) (rd := [⟨addr32 (s.gpr .edx), 384⟩, ⟨argAddr sE 0, 12⟩])
     (wr := [⟨addr32 (s.gpr .ecx), 8⟩, ⟨addr32 (s.gpr .eax), 512⟩]) ⟨?_, ?_, ?_⟩ ?_
   · change (blockContract d).pre (sE.withRegions _ _)

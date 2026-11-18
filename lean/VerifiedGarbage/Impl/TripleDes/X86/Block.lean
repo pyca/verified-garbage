@@ -2,11 +2,20 @@ module
 
 public import VerifiedGarbage.Impl.TripleDes.X86.Common
 public import VerifiedGarbage.Impl.TripleDes.X86.Sbox
+public import VerifiedGarbage.Impl.CmacTripleDes.X86.Round
 public import VerifiedGarbage.Spec.TripleDes
 
 /-! Baseline IA-32 Triple DES. ESI/EDI hold L/R, EBP holds scratch.
 Slots 0–3 save callee-saved registers, slot 4 holds the round-key pointer,
-slot 5 holds the public round count. All three passes share IP and FP. -/
+slot 5 holds the public round count. All three passes share IP and FP.
+
+That is the decryption block, `vg_triple_des_decrypt_block`. The encryption
+block, `vg_triple_des_encrypt_block` (`encryptBlock`, with the same
+arguments), is CMAC's (`Impl/CmacTripleDes/X86/Round.lean`, `block`: the
+S-boxes as multiplexer trees on two halves of 24 bits, a third of the
+instructions), on the block as two big-endian words, with its slots the
+first words of the working space and the caller's registers saved after
+them. -/
 
 @[expose] public section
 
@@ -77,6 +86,32 @@ def restoredOutput : List Instr :=
 def block (direction : Direction) : Prog isa :=
   .seq (.block (blockSave ++ blockLoad))
     (.seq (blockBody direction) (.block (finalSave ++ blockRestore ++ restoredOutput)))
-def encryptBlock : Prog isa := block .encrypt
+/-- Where the encryption block saves the caller's registers: the words
+after its 21 slots. -/
+def encSaveAt : Nat := 128
+
+/-- The working space into `ebp`, with the caller's registers saved in it. -/
+def encSave : List Instr :=
+  ([.mov .eax (.mem (memOp .esp 12))] : List Instr) ++
+    savedRegs.zipIdx.map (fun (r, i) => .store (memOp .eax (encSaveAt + 4 * i)) r) ++
+    [rr .ebp .eax]
+
+/-- The block into `eax:edx`, its high and low words as big-endian integers,
+and the schedule's address into `esi`. -/
+def encLoad : List Instr :=
+  [.mov .ecx (.mem (memOp .esp 8)), .mov .eax (.mem (memOp .ecx 0)), .mov .edx (.mem (memOp .ecx 4)),
+    .bswap .eax, .bswap .edx, .mov .esi (.mem (memOp .esp 4))]
+
+/-- The caller's registers back, `ebp` last, and then `eax:edx` to the
+block: the store is through a pointer, after every load from the working
+space. -/
+def encStore : List Instr :=
+  [.bswap .eax, .bswap .edx, rr .ecx .ebp, .mov .ebx (.mem (memOp .ecx (encSaveAt + 4))),
+    .mov .esi (.mem (memOp .ecx (encSaveAt + 8))), .mov .edi (.mem (memOp .ecx (encSaveAt + 12))),
+    .mov .ebp (.mem (memOp .ecx encSaveAt)), .mov .ecx (.mem (memOp .esp 8)),
+    .store (memOp .ecx 0) .eax, .store (memOp .ecx 4) .edx]
+
+def encryptBlock : Prog isa :=
+  .seq (.block (encSave ++ encLoad)) (.seq Impl.CmacTripleDes.X86.block (.block encStore))
 def decryptBlock : Prog isa := block .decrypt
 end VG.Impl.TripleDes.X86

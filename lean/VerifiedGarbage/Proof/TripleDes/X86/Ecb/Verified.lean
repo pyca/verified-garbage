@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 import VerifiedGarbage.Proof.Rc2.X86.Cbc.CallFrame
+import VerifiedGarbage.Proof.CmacTripleDes.X86.Block
+import VerifiedGarbage.Proof.Framework.X86.Wp
 import VerifiedGarbage.Proof.TripleDes.EcbMemory
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.TripleDes.X86.ConstantTime
@@ -1105,6 +1107,242 @@ end
 
 end
 
+/-! ## `EncryptBlock` -/
+
+section
+
+/-! # The encryption block: CMAC's block on the block's two words
+
+`vg_triple_des_encrypt_block` saves the caller's registers in the working
+space, runs CMAC's block (`Proof.CmacTripleDes.X86.block_ok`) on the block's
+words as big-endian integers, restores the registers and stores the result:
+the block function's contract, as the decryption block's. -/
+
+namespace VG.Proof.TripleDes.X86
+open VG VG.X86 VG.X86.Wp VG.Impl.TripleDes.X86
+open VG.Proof.Rc2.X86 (addr32 argContainsCount)
+open VG.Spec.TripleDes (Direction)
+
+/-- The encryption block's instructions before CMAC's block. -/
+theorem encHead_eq : encSave ++ encLoad =
+    ([.mov .eax (.mem ⟨.esp, 12⟩), .store ⟨.eax, 128⟩ .ebp, .store ⟨.eax, 132⟩ .ebx,
+      .store ⟨.eax, 136⟩ .esi, .store ⟨.eax, 140⟩ .edi, .mov .ebp (.reg .eax),
+      .mov .ecx (.mem ⟨.esp, 8⟩), .mov .eax (.mem ⟨.ecx, 0⟩), .mov .edx (.mem ⟨.ecx, 4⟩),
+      .bswap .eax, .bswap .edx, .mov .esi (.mem ⟨.esp, 4⟩)] : List Instr) := rfl
+
+/-- The encryption block's instructions after it. -/
+theorem encStore_eq : encStore =
+    ([.bswap .eax, .bswap .edx, .mov .ecx (.reg .ebp), .mov .ebx (.mem ⟨.ecx, 132⟩),
+      .mov .esi (.mem ⟨.ecx, 136⟩), .mov .edi (.mem ⟨.ecx, 140⟩), .mov .ebp (.mem ⟨.ecx, 128⟩),
+      .mov .ecx (.mem ⟨.esp, 8⟩), .store ⟨.ecx, 0⟩ .eax, .store ⟨.ecx, 4⟩ .edx] : List Instr) := rfl
+
+/-- `vg_triple_des_encrypt_block`: CMAC's block on the block's two words. -/
+theorem encBlock_correct (s : State) (hs : (blockContract .encrypt).pre s) :
+    WP isa encryptBlock s (fun s' => abiPreserved s s' ∧ (blockContract .encrypt).post s s') := by
+  obtain ⟨hrd, hwr, keySep, dataSep, argsData, argsScratch, retData, retScratch, keyFit, dataFit,
+    scratchFit, spFit⟩ := hs
+  -- The arguments' words, the scratch buffer's and the block's.
+  obtain argC : ∀ i < 3, (⟨argAddr s 0, 12⟩ : Region).Contains (addr (s.gpr .esp) (4 + 4 * i)) 4 := fun i hi => by
+    rw [addr_eq (by omega_using [spFit, hi])]
+    exact argContainsCount s 3 (by omega_using [spFit]) i hi
+  obtain argIn : ∀ i < 3, InRegions (s.rd ++ s.wr) (addr (s.gpr .esp) (4 + 4 * i)) 4 := fun i hi => by
+    rw [hrd]; exact ⟨_, by simp, argC i hi⟩
+  obtain scrC : ∀ k, k + 4 ≤ 512 → (⟨addr32 (arg s 2), 512⟩ : Region).Contains (addr (arg s 2) k) 4 := fun k hk => by
+    rw [addr_eq (by omega_using [scratchFit, hk])]
+    exact Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk])
+  obtain scrW : ∀ k, k + 4 ≤ 512 → InRegions s.wr (addr (arg s 2) k) 4 := fun k hk => by
+    rw [hwr]; exact ⟨_, by simp, scrC k hk⟩
+  obtain datC : ∀ k, k + 4 ≤ 8 → (⟨addr32 (arg s 1), 8⟩ : Region).Contains (addr (arg s 1) k) 4 := fun k hk => by
+    rw [addr_eq (by omega_using [dataFit, hk])]
+    exact Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk])
+  obtain datW : ∀ k, k + 4 ≤ 8 → InRegions s.wr (addr (arg s 1) k) 4 := fun k hk => by
+    rw [hwr]; exact ⟨_, by simp, datC k hk⟩
+  -- Reading an argument, the block or the schedule after writes to the scratch buffer.
+  obtain argRd : ∀ {m : Mem}, Frame [⟨addr32 (arg s 2), 512⟩] s.mem m → ∀ i < 3,
+      m.readW (addr (s.gpr .esp) (4 + 4 * i)) 32 = arg s i := fun fr i hi =>
+    fr.readW (argC i hi) (fun r hr => by rw [List.mem_singleton.mp hr]; exact argsScratch) (by decide)
+  obtain datRd : ∀ {m : Mem}, Frame [⟨addr32 (arg s 2), 512⟩] s.mem m → ∀ k, k + 4 ≤ 8 →
+      m.readW (addr (arg s 1) k) 32 = s.mem.readW (addr (arg s 1) k) 32 := fun fr k hk =>
+    fr.readW (datC k hk) (fun r hr => by rw [List.mem_singleton.mp hr]; exact dataSep) (by decide)
+  unfold encryptBlock
+  refine WP.seq ?_
+  rw [encHead_eq]
+  -- The working space's address, and the registers saved in it.
+  refine wp_ldm (B := s.gpr .esp) rfl (argIn 2 (by decide)) fun s₁ u₁ => ?_
+  obtain a₁ : s₁.gpr .eax = arg s 2 := u₁.gpr
+  refine wp_stm (B := arg s 2) a₁ (by rw [u₁.wr]; exact scrW 128 (by decide)) fun s₂ u₂ => ?_
+  refine wp_stm (B := arg s 2) (by rw [u₂.gpr]; exact a₁) (by rw [u₂.wr, u₁.wr]; exact scrW 132 (by decide))
+    fun s₃ u₃ => ?_
+  refine wp_stm (B := arg s 2) (by rw [u₃.gpr, u₂.gpr]; exact a₁)
+    (by rw [u₃.wr, u₂.wr, u₁.wr]; exact scrW 136 (by decide)) fun s₄ u₄ => ?_
+  refine wp_stm (B := arg s 2) (by rw [u₄.gpr, u₃.gpr, u₂.gpr]; exact a₁)
+    (by rw [u₄.wr, u₃.wr, u₂.wr, u₁.wr]; exact scrW 140 (by decide)) fun s₅ u₅ => ?_
+  obtain g₅ : ∀ r, r ≠ .eax → s₅.gpr r = s.gpr r := fun r hr => by
+    rw [u₅.gpr, u₄.gpr, u₃.gpr, u₂.gpr, u₁.other r hr]
+  obtain m₅ : s₅.mem = (((s.mem.writeW (addr (arg s 2) 128) (s.gpr .ebp)).writeW (addr (arg s 2) 132)
+      (s.gpr .ebx)).writeW (addr (arg s 2) 136) (s.gpr .esi)).writeW (addr (arg s 2) 140) (s.gpr .edi) := by
+    rw [u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem, u₄.gpr, u₃.gpr, u₂.gpr, u₁.other .ebp (by decide),
+      u₁.other .ebx (by decide), u₁.other .esi (by decide), u₁.other .edi (by decide)]
+  obtain f₅ : Frame [⟨addr32 (arg s 2), 512⟩] s.mem s₅.mem := by
+    rw [m₅]
+    exact ((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (scrC 128 (by decide))).writeW
+      (List.mem_singleton_self _) _ (scrC 132 (by decide))).writeW (List.mem_singleton_self _) _
+      (scrC 136 (by decide))).writeW (List.mem_singleton_self _) _ (scrC 140 (by decide))
+  obtain rd₅ : s₅.rd = s.rd := by rw [u₅.rd, u₄.rd, u₃.rd, u₂.rd, u₁.rd]
+  obtain wr₅ : s₅.wr = s.wr := by rw [u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr]
+  refine wp_mov fun s₆ u₆ => ?_
+  -- The block's words and the schedule's address.
+  refine wp_ldm (B := s.gpr .esp) (by rw [u₆.other _ (by decide), g₅ _ (by decide)])
+    (by rw [u₆.rd, u₆.wr, rd₅, wr₅]; exact argIn 1 (by decide)) fun s₇ u₇ => ?_
+  obtain c₇ : s₇.gpr .ecx = arg s 1 := by rw [u₇.gpr, u₆.mem]; exact argRd f₅ 1 (by decide)
+  obtain datIn : ∀ k, k + 4 ≤ 8 → InRegions (s.rd ++ s.wr) (addr (arg s 1) k) 4 := fun k hk => by
+    obtain ⟨r, hr, hc⟩ := datW k hk
+    exact ⟨r, List.mem_append_right _ hr, hc⟩
+  refine wp_ldm (B := arg s 1) c₇ (by rw [u₇.rd, u₇.wr, u₆.rd, u₆.wr, rd₅, wr₅]; exact datIn 0 (by decide))
+    fun s₈ u₈ => ?_
+  refine wp_ldm (B := arg s 1) (by rw [u₈.other _ (by decide)]; exact c₇)
+    (by rw [u₈.rd, u₈.wr, u₇.rd, u₇.wr, u₆.rd, u₆.wr, rd₅, wr₅]; exact datIn 4 (by decide)) fun s₉ u₉ => ?_
+  refine wp_bswap fun s₁₀ u₁₀ => wp_bswap fun s₁₁ u₁₁ => ?_
+  obtain m₁₁ : s₁₁.mem = s₅.mem := by rw [u₁₁.mem, u₁₀.mem, u₉.mem, u₈.mem, u₇.mem, u₆.mem]
+  obtain rd₁₁ : s₁₁.rd = s.rd := by rw [u₁₁.rd, u₁₀.rd, u₉.rd, u₈.rd, u₇.rd, u₆.rd, rd₅]
+  obtain wr₁₁ : s₁₁.wr = s.wr := by rw [u₁₁.wr, u₁₀.wr, u₉.wr, u₈.wr, u₇.wr, u₆.wr, wr₅]
+  obtain sp₁₁ : s₁₁.gpr .esp = s.gpr .esp := by
+    rw [u₁₁.other _ (by decide), u₁₀.other _ (by decide), u₉.other _ (by decide), u₈.other _ (by decide),
+      u₇.other _ (by decide), u₆.other _ (by decide), g₅ _ (by decide)]
+  refine wp_ldm (B := s.gpr .esp) sp₁₁ (by rw [rd₁₁, wr₁₁]; exact argIn 0 (by decide)) fun t ut => WP.block_nil ?_
+  -- The state CMAC's block starts from.
+  obtain tm : t.mem = s₅.mem := by rw [ut.mem, m₁₁]
+  obtain trd : t.rd = s.rd := by rw [ut.rd, rd₁₁]
+  obtain twr : t.wr = s.wr := by rw [ut.wr, wr₁₁]
+  obtain tsp : t.gpr .esp = s.gpr .esp := by rw [ut.other _ (by decide), sp₁₁]
+  obtain tsi : t.gpr .esi = arg s 0 := by rw [ut.gpr, m₁₁]; exact argRd f₅ 0 (by decide)
+  obtain tbp : t.gpr .ebp = arg s 2 := by
+    rw [ut.other _ (by decide), u₁₁.other _ (by decide), u₁₀.other _ (by decide), u₉.other _ (by decide),
+      u₈.other _ (by decide), u₇.other _ (by decide), u₆.gpr, u₅.gpr, u₄.gpr, u₃.gpr, u₂.gpr, a₁]
+  obtain tax : t.gpr .eax = bswap (s.mem.readW (addr (arg s 1) 0) 32) := by
+    rw [ut.other _ (by decide), u₁₁.other _ (by decide), u₁₀.gpr, u₉.other _ (by decide), u₈.gpr, u₇.mem,
+      u₆.mem]
+    exact congrArg bswap (datRd f₅ 0 (by decide))
+  obtain tdx : t.gpr .edx = bswap (s.mem.readW (addr (arg s 1) 4) 32) := by
+    rw [ut.other _ (by decide), u₁₁.gpr, u₁₀.other _ (by decide), u₉.gpr, u₈.mem, u₇.mem, u₆.mem]
+    exact congrArg bswap (datRd f₅ 4 (by decide))
+  obtain hp : Proof.CmacTripleDes.X86.BlockPre t :=
+    ⟨⟨384, by rw [trd, twr, hrd, tsi]; exact List.mem_append_left _ List.mem_cons_self, Nat.le_refl _,
+        by rw [tsi]; exact keyFit⟩,
+      ⟨512, by rw [twr, hwr, tbp]; exact List.mem_cons_of_mem _ List.mem_cons_self, by decide,
+        by rw [tbp]; exact scratchFit⟩,
+      by rw [tbp, tsi]; exact (keySep.sub_right (Region.sub_prefix (by decide))).symm⟩
+  refine WP.seq (WP.mono (Proof.CmacTripleDes.X86.block_ok hp) fun u ⟨same, usi, uval⟩ => ?_)
+  -- The schedule and the block it was run on.
+  obtain ksch : Proof.CmacTripleDes.X86.sch t = Spec.TripleDes.scheduleAt s.mem (addr32 (arg s 0)) := by
+    rw [Proof.CmacTripleDes.X86.sch, tsi, tm]
+    exact VG.Proof.TripleDes.scheduleAt_eq_of_frame _ f₅
+      (fun r hr => by rw [List.mem_singleton.mp hr]; exact keySep)
+  obtain a0 : addr (arg s 1) 0 = addr32 (arg s 1) := by
+    rw [addr_eq (by omega_using [dataFit])]; exact BitVec.add_zero _
+  obtain a4 : addr (arg s 1) 4 = addr32 (arg s 1) + 4 := addr_eq (by omega_using [dataFit])
+  obtain xin : t.gpr .eax ++ t.gpr .edx =
+      Spec.TripleDes.decodeBlock (Spec.TripleDes.blockAt s.mem (addr32 (arg s 1))) := by
+    rw [tax, tdx, a0, a4, decodeBlock_readW]
+  -- The frame so far: the scratch buffer.
+  obtain fu : Frame [⟨addr32 (arg s 2), 512⟩] s.mem u.mem := by
+    refine f₅.trans (by
+      rw [← tm]
+      exact same.frame.sub fun r hr => ⟨_, List.mem_singleton_self _, by
+        rw [List.mem_singleton.mp hr, Proof.CmacTripleDes.X86.xR, tbp]; exact Region.sub_prefix (by decide)⟩)
+  obtain ubp : u.gpr .ebp = arg s 2 := same.ebp.trans tbp
+  obtain usp : u.gpr .esp = s.gpr .esp := same.esp.trans tsp
+  obtain urd : u.rd = s.rd := same.rd.trans trd
+  obtain uwr : u.wr = s.wr := same.wr.trans twr
+  -- The saved registers' words, which CMAC's block does not write.
+  obtain svd : ∀ k v, (k = 128 ∨ k = 132 ∨ k = 136 ∨ k = 140) → s₅.mem.readW (addr (arg s 2) k) 32 = v →
+      u.mem.readW (addr (arg s 2) k) 32 = v := fun k v hk hv => by
+    rw [← hv, ← tm]
+    refine same.frame.readW (r := ⟨addr (arg s 2) k, 4⟩) (Region.contains_self _ _) (fun r hr => ?_) (by decide)
+    rw [List.mem_singleton.mp hr, Proof.CmacTripleDes.X86.xR, tbp, addr_eq (by omega_using [scratchFit, hk])]
+    exact Offset.disjoint_base _ (by omega_using [hk]) (by omega_using [hk])
+  -- Reading a word of the scratch buffer after a write of another.
+  obtain rdw : ∀ (m : Mem) (j k : Nat) (v : BitVec 32), j + 4 ≤ k ∨ k + 4 ≤ j → j + 4 ≤ 512 → k + 4 ≤ 512 →
+      (m.writeW (addr (arg s 2) k) v).readW (addr (arg s 2) j) 32 = m.readW (addr (arg s 2) j) 32 :=
+    fun m j k v h hj hk => by
+      rw [addr_eq (k := j) (by omega_using [scratchFit, hj]), addr_eq (k := k) (by omega_using [scratchFit, hk])]
+      exact Mem.readW_writeW_sep (Offset.sep _ h (by omega_using [hj]) (by omega_using [hk])) (by decide)
+  obtain sv0 : u.mem.readW (addr (arg s 2) 128) 32 = s.gpr .ebp := svd 128 _ (by decide) (by
+    rw [m₅, rdw _ _ _ _ (by decide) (by decide) (by decide), rdw _ _ _ _ (by decide) (by decide) (by decide),
+      rdw _ _ _ _ (by decide) (by decide) (by decide), Mem.readW_writeW_self32])
+  obtain sv1 : u.mem.readW (addr (arg s 2) 132) 32 = s.gpr .ebx := svd 132 _ (by decide) (by
+    rw [m₅, rdw _ _ _ _ (by decide) (by decide) (by decide), rdw _ _ _ _ (by decide) (by decide) (by decide),
+      Mem.readW_writeW_self32])
+  obtain sv2 : u.mem.readW (addr (arg s 2) 136) 32 = s.gpr .esi := svd 136 _ (by decide) (by
+    rw [m₅, rdw _ _ _ _ (by decide) (by decide) (by decide), Mem.readW_writeW_self32])
+  obtain sv3 : u.mem.readW (addr (arg s 2) 140) 32 = s.gpr .edi := svd 140 _ (by decide) (by
+    rw [m₅, Mem.readW_writeW_self32])
+  obtain scrIn : ∀ k, k + 4 ≤ 512 → InRegions (s.rd ++ s.wr) (addr (arg s 2) k) 4 := fun k hk => by
+    obtain ⟨r, hr, hc⟩ := scrW k hk
+    exact ⟨r, List.mem_append_right _ hr, hc⟩
+  rw [encStore_eq]
+  refine wp_bswap fun v₁ w₁ => wp_bswap fun v₂ w₂ => wp_mov fun v₃ w₃ => ?_
+  obtain c₃ : v₃.gpr .ecx = arg s 2 := by
+    rw [w₃.gpr, w₂.other _ (by decide), w₁.other _ (by decide), ubp]
+  obtain m₃ : v₃.mem = u.mem := by rw [w₃.mem, w₂.mem, w₁.mem]
+  obtain rd₃ : v₃.rd = s.rd := by rw [w₃.rd, w₂.rd, w₁.rd, urd]
+  obtain wr₃ : v₃.wr = s.wr := by rw [w₃.wr, w₂.wr, w₁.wr, uwr]
+  refine wp_ldm (B := arg s 2) c₃ (by rw [rd₃, wr₃]; exact scrIn 132 (by decide)) fun v₄ w₄ => ?_
+  refine wp_ldm (B := arg s 2) (by rw [w₄.other _ (by decide)]; exact c₃)
+    (by rw [w₄.rd, w₄.wr, rd₃, wr₃]; exact scrIn 136 (by decide)) fun v₅ w₅ => ?_
+  refine wp_ldm (B := arg s 2) (by rw [w₅.other _ (by decide), w₄.other _ (by decide)]; exact c₃)
+    (by rw [w₅.rd, w₅.wr, w₄.rd, w₄.wr, rd₃, wr₃]; exact scrIn 140 (by decide)) fun v₆ w₆ => ?_
+  refine wp_ldm (B := arg s 2)
+    (by rw [w₆.other _ (by decide), w₅.other _ (by decide), w₄.other _ (by decide)]; exact c₃)
+    (by rw [w₆.rd, w₆.wr, w₅.rd, w₅.wr, w₄.rd, w₄.wr, rd₃, wr₃]; exact scrIn 128 (by decide)) fun v₇ w₇ => ?_
+  obtain m₇ : v₇.mem = u.mem := by rw [w₇.mem, w₆.mem, w₅.mem, w₄.mem, m₃]
+  obtain rd₇ : v₇.rd = s.rd := by rw [w₇.rd, w₆.rd, w₅.rd, w₄.rd, rd₃]
+  obtain wr₇ : v₇.wr = s.wr := by rw [w₇.wr, w₆.wr, w₅.wr, w₄.wr, wr₃]
+  obtain sp₇ : v₇.gpr .esp = s.gpr .esp := by
+    rw [w₇.other _ (by decide), w₆.other _ (by decide), w₅.other _ (by decide), w₄.other _ (by decide),
+      w₃.other _ (by decide), w₂.other _ (by decide), w₁.other _ (by decide), usp]
+  refine wp_ldm (B := s.gpr .esp) sp₇ (by rw [rd₇, wr₇]; exact argIn 1 (by decide)) fun v₈ w₈ => ?_
+  obtain c₈ : v₈.gpr .ecx = arg s 1 := by rw [w₈.gpr, m₇]; exact argRd fu 1 (by decide)
+  refine wp_stm (B := arg s 1) c₈ (by rw [w₈.wr, wr₇]; exact datW 0 (by decide)) fun v₉ w₉ => ?_
+  refine wp_stm (B := arg s 1) (by rw [w₉.gpr]; exact c₈) (by rw [w₉.wr, w₈.wr, wr₇]; exact datW 4 (by decide))
+    fun v₁₀ w₁₀ => WP.block_nil ?_
+  -- The registers on return.
+  obtain g : ∀ r, v₁₀.gpr r = v₈.gpr r := fun r => by rw [w₁₀.gpr, w₉.gpr]
+  obtain ebx : v₁₀.gpr .ebx = s.gpr .ebx := by
+    rw [g, w₈.other _ (by decide), w₇.other _ (by decide), w₆.other _ (by decide), w₅.other _ (by decide),
+      w₄.gpr, m₃, sv1]
+  obtain esi : v₁₀.gpr .esi = s.gpr .esi := by
+    rw [g, w₈.other _ (by decide), w₇.other _ (by decide), w₆.other _ (by decide), w₅.gpr, w₄.mem, m₃, sv2]
+  obtain edi : v₁₀.gpr .edi = s.gpr .edi := by
+    rw [g, w₈.other _ (by decide), w₇.other _ (by decide), w₆.gpr, w₅.mem, w₄.mem, m₃, sv3]
+  obtain ebp : v₁₀.gpr .ebp = s.gpr .ebp := by
+    rw [g, w₈.other _ (by decide), w₇.gpr, w₆.mem, w₅.mem, w₄.mem, m₃, sv0]
+  obtain esp : v₁₀.gpr .esp = s.gpr .esp := by rw [g, w₈.other _ (by decide), sp₇]
+  -- The memory on return: the result over the block.
+  obtain eax₈ : v₈.gpr .eax = bswap (u.gpr .eax) := by
+    rw [w₈.other _ (by decide), w₇.other _ (by decide), w₆.other _ (by decide), w₅.other _ (by decide),
+      w₄.other _ (by decide), w₃.other _ (by decide), w₂.other _ (by decide), w₁.gpr]
+  obtain edx₈ : v₈.gpr .edx = bswap (u.gpr .edx) := by
+    rw [w₈.other _ (by decide), w₇.other _ (by decide), w₆.other _ (by decide), w₅.other _ (by decide),
+      w₄.other _ (by decide), w₃.other _ (by decide), w₂.gpr, w₁.other _ (by decide)]
+  obtain mem : v₁₀.mem = u.mem.writeW (addr32 (arg s 1)) (byteRev64 (u.gpr .eax ++ u.gpr .edx)) := by
+    rw [w₁₀.mem, w₉.mem, w₉.gpr, w₈.mem, m₇, eax₈, edx₈, a0, a4, writeW_pair, bswapPair]
+  refine ⟨⟨fun r hr => ?_, ?_⟩, ?_⟩
+  · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl
+    exacts [ebx, esi, edi, ebp, esp]
+  · rw [mem]
+    refine (Mem.readW_writeW_sep ?_ (by decide)).trans (fu.readW (r := ⟨addr32 (s.gpr .esp), 4⟩)
+      (Region.contains_self _ _) (fun r hr => by rw [List.mem_singleton.mp hr]; exact retScratch) (by decide))
+    exact retData.sep (Region.contains_self _ _) (Region.contains_self _ _)
+  · change Spec.TripleDes.blockAt v₁₀.mem (addr32 (arg s 1)) = Spec.TripleDes.encryptBlock _ _
+    rw [mem, blockAt_writeW, uval, ksch, xin]
+    rfl
+
+end VG.Proof.TripleDes.X86
+
+end
+
 /-! ## `Call` -/
 
 @[expose] public section
@@ -1131,8 +1369,18 @@ theorem block_nosp (d : Spec.TripleDes.Direction) : NoSp (blockCode d) := by
     lit_decide
 
 theorem block_stack (d : Spec.TripleDes.Direction) : stackUse (blockCode d) = 0 := by
-  cases d <;> simp only [blockCode, encryptBlock, decryptBlock, block, blockBody, pass, stackUse,
-    Nat.max_self]
+  cases d
+  · change stackUse encryptBlock = 0
+    lit_decide
+  · simp only [blockCode, decryptBlock, block, blockBody, pass, stackUse, Nat.max_self]
+
+/-- The block functions meet their contract: the encryption block is CMAC's,
+the decryption block the bit-per-word one. -/
+theorem blockCode_correct (d : Spec.TripleDes.Direction) (s : State) (hs : (blockContract d).pre s) :
+    WP isa (blockCode d) s (fun s' => abiPreserved s s' ∧ (blockContract d).post s s') := by
+  cases d
+  · exact encBlock_correct s hs
+  · exact block_correct .decrypt s hs
 
 theorem blockCall_eq (d : Spec.TripleDes.Direction) : Impl.TripleDes.X86.Ecb.blockCall d =
     .frame (.push [.ebp, .esi, .ebx])
@@ -1176,9 +1424,8 @@ theorem call_ok (d : Spec.TripleDes.Direction) (s : State) (hp : CallPre s) :
   obtain b12 : Region.Sub (below (s.gpr .esp) 12) (below (s.gpr .esp) 16) := below_sub (by decide) hp.stackLo
   obtain r4 : Region.Sub ⟨((s.gpr .esp) - BitVec.ofNat 32 16).setWidth 64, 4⟩ (below (s.gpr .esp) 16) :=
     Region.sub_prefix (by decide)
-  obtain hcode : blockCode d = block d := by cases d <;> rfl
   refine callWithGpr (c := blockCode d) (k := blockContract d)
-    (by rw [hcode]; exact block_correct d) (block_nosp d) (by decide) hrs
+    (blockCode_correct d) (block_nosp d) (by decide) hrs
     (by rw [block_stack]; exact hp.stackLo) (rd := [⟨addr32 (s.gpr .ebx), 384⟩, ⟨argAddr sE 0, 12⟩])
     (wr := [⟨addr32 (s.gpr .esi), 8⟩, ⟨addr32 (s.gpr .ebp), 512⟩]) ⟨?_, ?_, ?_⟩ ?_
   · change (blockContract d).pre (sE.withRegions _ _)
