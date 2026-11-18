@@ -174,7 +174,8 @@ def artifacts : List Artifact :=
       verified := Proof.Gcm.AArch64.KeyPowers.keyPowers_framed },
     Spec.Gcm.storePowersApi.artifact AArch64.target {
       suffix := "_aes"
-      code := Impl.Gcm.AArch64.Pmull.keyPowers
-      verified := Proof.Gcm.AArch64.Pmull.keyPowers_verified }]
+      code := Proof.Gcm.AArch64.Pmull.keyPowersCleared
+      verified := Proof.Gcm.AArch64.Pmull.keyPowersCleared_verified
+      residue := some ⟨Proof.Gcm.AArch64.Pmull.keyPowersCleared_noResidue _⟩ }]
 
 end VG.Artifacts.AesGcm.AArch64

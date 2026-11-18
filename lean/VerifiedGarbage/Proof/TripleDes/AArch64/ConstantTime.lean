@@ -11,6 +11,12 @@ meta import VerifiedGarbage.Impl.TripleDes.AArch64.ExpandKey
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.RegSet
+public import VerifiedGarbage.Impl.Residue.AArch64
+meta import VerifiedGarbage.Impl.Residue.AArch64
+public import VerifiedGarbage.TCB.AArch64.Residue
+meta import VerifiedGarbage.TCB.AArch64.Residue
+import VerifiedGarbage.Proof.Framework.AArch64.ResidueTaint
+meta import VerifiedGarbage.Proof.Framework.AArch64.ResidueTaint
 
 /-! # Constant-time Triple DES block and key-expansion programs -/
 
@@ -32,5 +38,14 @@ theorem expandKey_constantTime (pre : State → Prop) :
   refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2]) ?_ (by taint_decide)
   intro s₁ s₂ _ _ hp
   exact ⟨hp.1, fun r hr => hp.2 r (Taint.mem_ofRegs.mp hr)⟩
+
+/-- The key expansion, then what it leaves cleared: words of the key in
+`x4`–`x6`, and the key and the subkeys in `v0`–`v7` and `v16`–`v19`. -/
+abbrev expandKeyCleared : Prog isa :=
+  Impl.Residue.AArch64.withClears [.x4, .x5, .x6]
+    [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19] none Key.expandKey
+
+theorem expandKeyCleared_noResidue (k : Contract isa) : NoResidue expandKeyCleared k 0 :=
+  RTaint.noResidue_of_check ⟨_, by taint_decide⟩ k
 
 end VG.Proof.TripleDes.AArch64
