@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.AesOfb.AArch64.Verified
 public import VerifiedGarbage.Proof.AesOfb.AArch64.Final
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Aes.AArch64.ModesScrub
 public import VerifiedGarbage.TCB.AArch64.Print
 public import VerifiedGarbage.Proof.Variants.AesBlocks.AArch64
 
@@ -20,9 +21,9 @@ def artifacts : List Artifact :=
       suffix := v.suffix
       code := Impl.AesOfb.AArch64.crypt v.enc
       verified := Proof.AesOfb.keyed (crypt_verified v) },
-    Spec.Ofb.aesFinalApi.artifact AArch64.target {
+    Spec.Ofb.aesFinalApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
       suffix := v.suffix
       code := Impl.StackScratch.AArch64.withStackScratchWiped 64 .x6 8 (Impl.AesOfb.AArch64.cryptFinal v.enc v.suffix)
-      verified := Proof.AesOfb.final_keyed (cryptFinal_framed v) }]
+      verified := Proof.AesOfb.final_keyed (cryptFinal_framed v) } Proof.Aes.AArch64.ModesScrub.ofbFinalOk)]
 
 end VG.Artifacts.AesOfb.AArch64
