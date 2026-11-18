@@ -74,10 +74,10 @@ def final (name : String) (whole : Prog isa) : Prog isa :=
   .seq (.block finalSetup) (.seq (.call name whole)
     (.seq (.ite (.zero .d .r30) (.block []) finalTail) (.block finalRestore)))
 
-/-- `vg_aes_cfb128_encrypt_final`, calling `vg_aes_cfb128_encrypt`. -/
-def encryptFinal : Prog isa := final "vg_aes_cfb128_encrypt" encrypt
+/-- `vg_aes_cfb128_encrypt_final`, calling `vg_aes_cfb128_encrypt`'s code as `vg_aes_cfb128_encrypt_core`. -/
+def encryptFinal : Prog isa := final "vg_aes_cfb128_encrypt_core" encrypt
 
-/-- `vg_aes_cfb128_decrypt_final`, calling `vg_aes_cfb128_decrypt`. -/
-def decryptFinal : Prog isa := final "vg_aes_cfb128_decrypt" decrypt
+/-- `vg_aes_cfb128_decrypt_final`, calling `vg_aes_cfb128_decrypt`'s code as `vg_aes_cfb128_decrypt_core`. -/
+def decryptFinal : Prog isa := final "vg_aes_cfb128_decrypt_core" decrypt
 
 end VG.Impl.AesCfb.PPC64LE
