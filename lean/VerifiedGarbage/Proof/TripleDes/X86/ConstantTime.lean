@@ -23,12 +23,13 @@ def ecbTaint : VG.X86.Taint.T :=
   { regs := .ofList [.esp], flags := false, lens := [0, 1024],
     argLen := 20, argBases := [(8, 0), (16, 1)], room := 16 }
 
-/-! The body of the loop of rounds, which each block function runs three
-times (two of them in each direction), and so each ECB function, through the
-block function it calls, analysed once for each direction as summaries:
-from what is public at the loop (the pointers and counters, two of them in
-public slots of the scratch buffer), in the block functions and in the calls
-from the ECB functions. -/
+/-! The body of the loop of rounds, which the decryption block function runs
+three times (two of them in the decryption direction), and so ECB
+decryption, through the block function it calls, analysed once for each
+direction as summaries: from what is public at the loop (the pointers and
+counters, two of them in public slots of the scratch buffer), in the block
+function and in the calls from ECB decryption. The encryption block
+function is CMAC's block, whose rounds the analysis runs as they are. -/
 
 /-- What is public at the loop of rounds of a block function. -/
 def roundTaint : VG.X86.Taint.T :=
@@ -58,8 +59,7 @@ theorem expandKey_constantTime (pre : State → Prop) (pub : State → State →
 theorem ecbEncrypt_constantTime (pre : State → Prop) (pub : State → State → Prop)
     (h : ∀ s₁ s₂, pre s₁ → pre s₂ → pub s₁ s₂ → VG.X86.Taint.Agree ecbTaint s₁ s₂) :
     ConstantTime isa pre pub Ecb.encrypt :=
-  let ⟨_, hc⟩ := (by taint_decide_sum [ecbRoundEnc, ecbRoundDec] : ∃ h, (taint.check ecbTaint Ecb.encrypt h).isSome = true)
-  VG.Taint.constantTime (A := taint) ecbTaint h hc
+  VG.Taint.constantTime (A := taint) ecbTaint h (by taint_decide)
 
 theorem ecbDecrypt_constantTime (pre : State → Prop) (pub : State → State → Prop)
     (h : ∀ s₁ s₂, pre s₁ → pre s₂ → pub s₁ s₂ → VG.X86.Taint.Agree ecbTaint s₁ s₂) :
