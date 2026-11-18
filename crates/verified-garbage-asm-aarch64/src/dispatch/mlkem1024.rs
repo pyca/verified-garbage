@@ -8,6 +8,8 @@
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_mlkem1024_keygen_x2_sha3_keccak_sha3` if the target's vendor is `apple` (or `VG_CPU_FEATURES` names every feature it needs) and the CPU supports its features (`VG_MLKEM1024_KEYGEN_X2_SHA3_KECCAK_SHA3_FEATURES`); `vg_mlkem1024_keygen_x2_sha3` if the CPU supports its features (`VG_MLKEM1024_KEYGEN_X2_SHA3_FEATURES`); or else `vg_mlkem1024_keygen`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `seed` must be valid for reads of 64 bytes.
@@ -65,6 +67,8 @@ pub unsafe fn vg_mlkem1024_keygen_auto(_dit: verified_garbage_cpu::Dit<'_>, seed
 /// Contract: `VG.Spec.MlKem1024.encapsContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of `*ek`), but not on anything else of the key, on the randomness or on the outputs.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_mlkem1024_encaps_x2_sha3_keccak_sha3` if the target's vendor is `apple` (or `VG_CPU_FEATURES` names every feature it needs) and the CPU supports its features (`VG_MLKEM1024_ENCAPS_X2_SHA3_KECCAK_SHA3_FEATURES`); `vg_mlkem1024_encaps_x2_sha3` if the CPU supports its features (`VG_MLKEM1024_ENCAPS_X2_SHA3_FEATURES`); or else `vg_mlkem1024_encaps`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -125,6 +129,8 @@ pub unsafe fn vg_mlkem1024_encaps_auto(_dit: verified_garbage_cpu::Dit<'_>, ek: 
 /// Contract: `VG.Spec.MlKem1024.encapsHContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of `*ek`), but not on anything else of the key, on its hash, on the randomness or on the outputs.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_mlkem1024_encaps_h_x2_sha3_keccak_sha3` if the target's vendor is `apple` (or `VG_CPU_FEATURES` names every feature it needs) and the CPU supports its features (`VG_MLKEM1024_ENCAPS_H_X2_SHA3_KECCAK_SHA3_FEATURES`); `vg_mlkem1024_encaps_h_x2_sha3` if the CPU supports its features (`VG_MLKEM1024_ENCAPS_H_X2_SHA3_FEATURES`); or else `vg_mlkem1024_encaps_h`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -187,6 +193,8 @@ pub unsafe fn vg_mlkem1024_encaps_h_auto(_dit: verified_garbage_cpu::Dit<'_>, ek
 /// Contract: `VG.Spec.MlKem1024.decapsContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (bytes 3072–3103 of `*dk`), but not on anything else of the key, on the ciphertext, or on whether it was rejected.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_mlkem1024_decaps_x2_sha3_keccak_sha3` if the target's vendor is `apple` (or `VG_CPU_FEATURES` names every feature it needs) and the CPU supports its features (`VG_MLKEM1024_DECAPS_X2_SHA3_KECCAK_SHA3_FEATURES`); `vg_mlkem1024_decaps_x2_sha3` if the CPU supports its features (`VG_MLKEM1024_DECAPS_X2_SHA3_FEATURES`); or else `vg_mlkem1024_decaps`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///

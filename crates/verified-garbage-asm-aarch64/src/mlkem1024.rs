@@ -10,6 +10,8 @@ pub const VG_MLKEM1024_KEYGEN_X2_SHA3_KECCAK_SHA3_FEATURES: verified_garbage_cpu
 ///
 /// Contract: `VG.Spec.MlKem1024.keyGenContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of the encapsulation key), but not on anything else of the seed or the keys.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `seed` must be valid for reads of 64 bytes.
@@ -28,7 +30,15 @@ pub(crate) unsafe extern "C" fn vg_mlkem1024_keygen_x2_sha3_keccak_sha3(seed: *c
 bl {vg_mlkem1024_keygen_body_x2_sha3_keccak_sha3}
 .inst 0xf9000be0,0xf94007e0,0xd2980001
 bl {vg_zeroize}
-.inst 0xf9400be0,0xf94003fe,0x910083ff,0xd65f03c0
+.inst 0xf9400be0,0xf94003fe,0x910083ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005
+.inst 0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d
+.inst 0xd280000e,0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403
+.inst 0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413
+.inst 0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b
+.inst 0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0x4e181c28,0x4e181c29,0x4e181c2a
+.inst 0x4e181c2b,0x4e181c2c,0x4e181c2d,0x4e181c2e,0x4e181c2f,0x11000000,0xd10283ff,0x6f00e41f
+.inst 0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f,0x3d80193f
+.inst 0x3d801d3f,0x3d80213f,0x3d80253f,0x910283ff,0xd65f03c0
 .p2align 6",
         vg_mlkem1024_keygen_body_x2_sha3_keccak_sha3 = sym super::mlkem1024::vg_mlkem1024_keygen_body_x2_sha3_keccak_sha3::vg_mlkem1024_keygen_body_x2_sha3_keccak_sha3,
         vg_zeroize = sym super::zeroize::vg_zeroize,
@@ -41,6 +51,8 @@ pub const VG_MLKEM1024_ENCAPS_X2_SHA3_KECCAK_SHA3_FEATURES: verified_garbage_cpu
 /// ML-KEM-1024 encapsulation with given randomness, `ML-KEM.Encaps_internal(ek, m)` (FIPS 203 Algorithm 17): with the encapsulation key `*ek` and the randomness `*m`, writes the shared secret key to `*key` and the ciphertext to `*ct`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlKem1024.encapsContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of `*ek`), but not on anything else of the key, on the randomness or on the outputs.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -62,7 +74,15 @@ pub(crate) unsafe extern "C" fn vg_mlkem1024_encaps_x2_sha3_keccak_sha3(ek: *con
 bl {vg_mlkem1024_encaps_body_x2_sha3_keccak_sha3}
 .inst 0xf9000be0,0xf94007e0,0xd2980001
 bl {vg_zeroize}
-.inst 0xf9400be0,0xf94003fe,0x910083ff,0xd65f03c0
+.inst 0xf9400be0,0xf94003fe,0x910083ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005
+.inst 0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d
+.inst 0xd280000e,0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403
+.inst 0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413
+.inst 0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b
+.inst 0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0x4e181c28,0x4e181c29,0x4e181c2a
+.inst 0x4e181c2b,0x4e181c2c,0x4e181c2d,0x4e181c2e,0x4e181c2f,0x11000000,0xd10283ff,0x6f00e41f
+.inst 0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f,0x3d80193f
+.inst 0x3d801d3f,0x3d80213f,0x3d80253f,0x910283ff,0xd65f03c0
 .p2align 6",
         vg_mlkem1024_encaps_body_x2_sha3_keccak_sha3 = sym super::mlkem1024::vg_mlkem1024_encaps_body_x2_sha3_keccak_sha3::vg_mlkem1024_encaps_body_x2_sha3_keccak_sha3,
         vg_zeroize = sym super::zeroize::vg_zeroize,
@@ -75,6 +95,8 @@ pub const VG_MLKEM1024_ENCAPS_H_X2_SHA3_KECCAK_SHA3_FEATURES: verified_garbage_c
 /// ML-KEM-1024 encapsulation with given randomness and the hash of the key, `ML-KEM.Encaps_internal(ek, m)` (FIPS 203 Algorithm 17): with the encapsulation key `*ek`, its hash `H(ek)` in `*h` and the randomness `*m`, writes the shared secret key to `*key` and the ciphertext to `*ct`, as `vg_mlkem1024_encaps` does, using `*h` instead of hashing `*ek`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlKem1024.encapsHContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of `*ek`), but not on anything else of the key, on its hash, on the randomness or on the outputs.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -98,7 +120,15 @@ pub(crate) unsafe extern "C" fn vg_mlkem1024_encaps_h_x2_sha3_keccak_sha3(ek: *c
 bl {vg_mlkem1024_encaps_h_body_x2_sha3_keccak_sha3}
 .inst 0xf9000be0,0xf94007e0,0xd2980001
 bl {vg_zeroize}
-.inst 0xf9400be0,0xf94003fe,0x910083ff,0xd65f03c0
+.inst 0xf9400be0,0xf94003fe,0x910083ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005
+.inst 0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d
+.inst 0xd280000e,0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403
+.inst 0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413
+.inst 0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b
+.inst 0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0x4e181c28,0x4e181c29,0x4e181c2a
+.inst 0x4e181c2b,0x4e181c2c,0x4e181c2d,0x4e181c2e,0x4e181c2f,0x11000000,0xd10283ff,0x6f00e41f
+.inst 0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f,0x3d80193f
+.inst 0x3d801d3f,0x3d80213f,0x3d80253f,0x910283ff,0xd65f03c0
 .p2align 6",
         vg_mlkem1024_encaps_h_body_x2_sha3_keccak_sha3 = sym super::mlkem1024::vg_mlkem1024_encaps_h_body_x2_sha3_keccak_sha3::vg_mlkem1024_encaps_h_body_x2_sha3_keccak_sha3,
         vg_zeroize = sym super::zeroize::vg_zeroize,
@@ -111,6 +141,8 @@ pub const VG_MLKEM1024_DECAPS_X2_SHA3_KECCAK_SHA3_FEATURES: verified_garbage_cpu
 /// ML-KEM-1024 decapsulation, `ML-KEM.Decaps_internal(dk, c)` (FIPS 203 Algorithm 18): with the decapsulation key `*dk` and the ciphertext `*ct`, writes the shared secret key to `*key`, which is the implicit rejection key `J(z ‖ c)` if the ciphertext does not re-encrypt to itself. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlKem1024.decapsContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (bytes 3072–3103 of `*dk`), but not on anything else of the key, on the ciphertext, or on whether it was rejected.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -130,7 +162,15 @@ pub(crate) unsafe extern "C" fn vg_mlkem1024_decaps_x2_sha3_keccak_sha3(dk: *con
 bl {vg_mlkem1024_decaps_body_x2_sha3_keccak_sha3}
 .inst 0xf9000be0,0xf94007e0,0xd2980001
 bl {vg_zeroize}
-.inst 0xf9400be0,0xf94003fe,0x910083ff,0xd65f03c0
+.inst 0xf9400be0,0xf94003fe,0x910083ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005
+.inst 0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d
+.inst 0xd280000e,0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403
+.inst 0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413
+.inst 0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b
+.inst 0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0x4e181c28,0x4e181c29,0x4e181c2a
+.inst 0x4e181c2b,0x4e181c2c,0x4e181c2d,0x4e181c2e,0x4e181c2f,0x11000000,0xd10283ff,0x6f00e41f
+.inst 0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f,0x3d80193f
+.inst 0x3d801d3f,0x3d80213f,0x3d80253f,0x910283ff,0xd65f03c0
 .p2align 6",
         vg_mlkem1024_decaps_body_x2_sha3_keccak_sha3 = sym super::mlkem1024::vg_mlkem1024_decaps_body_x2_sha3_keccak_sha3::vg_mlkem1024_decaps_body_x2_sha3_keccak_sha3,
         vg_zeroize = sym super::zeroize::vg_zeroize,
@@ -143,6 +183,8 @@ pub const VG_MLKEM1024_KEYGEN_X2_SHA3_FEATURES: verified_garbage_cpu::Features =
 /// ML-KEM-1024 key generation from a seed, `ML-KEM.KeyGen_internal(d, z)` (FIPS 203 Algorithm 16): with `d` in bytes 0–31 of `*seed` and `z` in bytes 32–63, writes the encapsulation key to `*ek` and the decapsulation key to `*dk`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlKem1024.keyGenContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of the encapsulation key), but not on anything else of the seed or the keys.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -162,7 +204,15 @@ pub(crate) unsafe extern "C" fn vg_mlkem1024_keygen_x2_sha3(seed: *const [u8; 64
 bl {vg_mlkem1024_keygen_body_x2_sha3}
 .inst 0xf9000be0,0xf94007e0,0xd2980001
 bl {vg_zeroize}
-.inst 0xf9400be0,0xf94003fe,0x910083ff,0xd65f03c0
+.inst 0xf9400be0,0xf94003fe,0x910083ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005
+.inst 0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d
+.inst 0xd280000e,0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403
+.inst 0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413
+.inst 0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b
+.inst 0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0x4e181c28,0x4e181c29,0x4e181c2a
+.inst 0x4e181c2b,0x4e181c2c,0x4e181c2d,0x4e181c2e,0x4e181c2f,0x11000000,0xd10283ff,0x6f00e41f
+.inst 0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f,0x3d80193f
+.inst 0x3d801d3f,0x3d80213f,0x3d80253f,0x910283ff,0xd65f03c0
 .p2align 6",
         vg_mlkem1024_keygen_body_x2_sha3 = sym super::mlkem1024::vg_mlkem1024_keygen_body_x2_sha3::vg_mlkem1024_keygen_body_x2_sha3,
         vg_zeroize = sym super::zeroize::vg_zeroize,
@@ -175,6 +225,8 @@ pub const VG_MLKEM1024_ENCAPS_X2_SHA3_FEATURES: verified_garbage_cpu::Features =
 /// ML-KEM-1024 encapsulation with given randomness, `ML-KEM.Encaps_internal(ek, m)` (FIPS 203 Algorithm 17): with the encapsulation key `*ek` and the randomness `*m`, writes the shared secret key to `*key` and the ciphertext to `*ct`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlKem1024.encapsContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of `*ek`), but not on anything else of the key, on the randomness or on the outputs.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -196,7 +248,15 @@ pub(crate) unsafe extern "C" fn vg_mlkem1024_encaps_x2_sha3(ek: *const [u8; 1568
 bl {vg_mlkem1024_encaps_body_x2_sha3}
 .inst 0xf9000be0,0xf94007e0,0xd2980001
 bl {vg_zeroize}
-.inst 0xf9400be0,0xf94003fe,0x910083ff,0xd65f03c0
+.inst 0xf9400be0,0xf94003fe,0x910083ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005
+.inst 0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d
+.inst 0xd280000e,0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403
+.inst 0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413
+.inst 0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b
+.inst 0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0x4e181c28,0x4e181c29,0x4e181c2a
+.inst 0x4e181c2b,0x4e181c2c,0x4e181c2d,0x4e181c2e,0x4e181c2f,0x11000000,0xd10283ff,0x6f00e41f
+.inst 0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f,0x3d80193f
+.inst 0x3d801d3f,0x3d80213f,0x3d80253f,0x910283ff,0xd65f03c0
 .p2align 6",
         vg_mlkem1024_encaps_body_x2_sha3 = sym super::mlkem1024::vg_mlkem1024_encaps_body_x2_sha3::vg_mlkem1024_encaps_body_x2_sha3,
         vg_zeroize = sym super::zeroize::vg_zeroize,
@@ -209,6 +269,8 @@ pub const VG_MLKEM1024_ENCAPS_H_X2_SHA3_FEATURES: verified_garbage_cpu::Features
 /// ML-KEM-1024 encapsulation with given randomness and the hash of the key, `ML-KEM.Encaps_internal(ek, m)` (FIPS 203 Algorithm 17): with the encapsulation key `*ek`, its hash `H(ek)` in `*h` and the randomness `*m`, writes the shared secret key to `*key` and the ciphertext to `*ct`, as `vg_mlkem1024_encaps` does, using `*h` instead of hashing `*ek`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlKem1024.encapsHContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of `*ek`), but not on anything else of the key, on its hash, on the randomness or on the outputs.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -232,7 +294,15 @@ pub(crate) unsafe extern "C" fn vg_mlkem1024_encaps_h_x2_sha3(ek: *const [u8; 15
 bl {vg_mlkem1024_encaps_h_body_x2_sha3}
 .inst 0xf9000be0,0xf94007e0,0xd2980001
 bl {vg_zeroize}
-.inst 0xf9400be0,0xf94003fe,0x910083ff,0xd65f03c0
+.inst 0xf9400be0,0xf94003fe,0x910083ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005
+.inst 0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d
+.inst 0xd280000e,0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403
+.inst 0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413
+.inst 0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b
+.inst 0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0x4e181c28,0x4e181c29,0x4e181c2a
+.inst 0x4e181c2b,0x4e181c2c,0x4e181c2d,0x4e181c2e,0x4e181c2f,0x11000000,0xd10283ff,0x6f00e41f
+.inst 0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f,0x3d80193f
+.inst 0x3d801d3f,0x3d80213f,0x3d80253f,0x910283ff,0xd65f03c0
 .p2align 6",
         vg_mlkem1024_encaps_h_body_x2_sha3 = sym super::mlkem1024::vg_mlkem1024_encaps_h_body_x2_sha3::vg_mlkem1024_encaps_h_body_x2_sha3,
         vg_zeroize = sym super::zeroize::vg_zeroize,
@@ -245,6 +315,8 @@ pub const VG_MLKEM1024_DECAPS_X2_SHA3_FEATURES: verified_garbage_cpu::Features =
 /// ML-KEM-1024 decapsulation, `ML-KEM.Decaps_internal(dk, c)` (FIPS 203 Algorithm 18): with the decapsulation key `*dk` and the ciphertext `*ct`, writes the shared secret key to `*key`, which is the implicit rejection key `J(z ‖ c)` if the ciphertext does not re-encrypt to itself. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlKem1024.decapsContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (bytes 3072–3103 of `*dk`), but not on anything else of the key, on the ciphertext, or on whether it was rejected.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -264,7 +336,15 @@ pub(crate) unsafe extern "C" fn vg_mlkem1024_decaps_x2_sha3(dk: *const [u8; 3168
 bl {vg_mlkem1024_decaps_body_x2_sha3}
 .inst 0xf9000be0,0xf94007e0,0xd2980001
 bl {vg_zeroize}
-.inst 0xf9400be0,0xf94003fe,0x910083ff,0xd65f03c0
+.inst 0xf9400be0,0xf94003fe,0x910083ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005
+.inst 0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d
+.inst 0xd280000e,0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403
+.inst 0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413
+.inst 0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b
+.inst 0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0x4e181c28,0x4e181c29,0x4e181c2a
+.inst 0x4e181c2b,0x4e181c2c,0x4e181c2d,0x4e181c2e,0x4e181c2f,0x11000000,0xd10283ff,0x6f00e41f
+.inst 0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f,0x3d80193f
+.inst 0x3d801d3f,0x3d80213f,0x3d80253f,0x910283ff,0xd65f03c0
 .p2align 6",
         vg_mlkem1024_decaps_body_x2_sha3 = sym super::mlkem1024::vg_mlkem1024_decaps_body_x2_sha3::vg_mlkem1024_decaps_body_x2_sha3,
         vg_zeroize = sym super::zeroize::vg_zeroize,
@@ -274,6 +354,8 @@ bl {vg_zeroize}
 /// ML-KEM-1024 key generation from a seed, `ML-KEM.KeyGen_internal(d, z)` (FIPS 203 Algorithm 16): with `d` in bytes 0–31 of `*seed` and `z` in bytes 32–63, writes the encapsulation key to `*ek` and the decapsulation key to `*dk`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlKem1024.keyGenContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of the encapsulation key), but not on anything else of the seed or the keys.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -292,7 +374,15 @@ pub(crate) unsafe extern "C" fn vg_mlkem1024_keygen(seed: *const [u8; 64], ek: *
 bl {vg_mlkem1024_keygen_body}
 .inst 0xf9000be0,0xf94007e0,0xd2980001
 bl {vg_zeroize}
-.inst 0xf9400be0,0xf94003fe,0x910083ff,0xd65f03c0
+.inst 0xf9400be0,0xf94003fe,0x910083ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005
+.inst 0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d
+.inst 0xd280000e,0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403
+.inst 0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413
+.inst 0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b
+.inst 0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0x4e181c28,0x4e181c29,0x4e181c2a
+.inst 0x4e181c2b,0x4e181c2c,0x4e181c2d,0x4e181c2e,0x4e181c2f,0x11000000,0xd10283ff,0x6f00e41f
+.inst 0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f,0x3d80193f
+.inst 0x3d801d3f,0x3d80213f,0x3d80253f,0x910283ff,0xd65f03c0
 .p2align 6",
         vg_mlkem1024_keygen_body = sym super::mlkem1024::vg_mlkem1024_keygen_body::vg_mlkem1024_keygen_body,
         vg_zeroize = sym super::zeroize::vg_zeroize,
@@ -302,6 +392,8 @@ bl {vg_zeroize}
 /// ML-KEM-1024 encapsulation with given randomness, `ML-KEM.Encaps_internal(ek, m)` (FIPS 203 Algorithm 17): with the encapsulation key `*ek` and the randomness `*m`, writes the shared secret key to `*key` and the ciphertext to `*ct`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlKem1024.encapsContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of `*ek`), but not on anything else of the key, on the randomness or on the outputs.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -322,7 +414,15 @@ pub(crate) unsafe extern "C" fn vg_mlkem1024_encaps(ek: *const [u8; 1568], m: *c
 bl {vg_mlkem1024_encaps_body}
 .inst 0xf9000be0,0xf94007e0,0xd2980001
 bl {vg_zeroize}
-.inst 0xf9400be0,0xf94003fe,0x910083ff,0xd65f03c0
+.inst 0xf9400be0,0xf94003fe,0x910083ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005
+.inst 0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d
+.inst 0xd280000e,0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403
+.inst 0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413
+.inst 0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b
+.inst 0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0x4e181c28,0x4e181c29,0x4e181c2a
+.inst 0x4e181c2b,0x4e181c2c,0x4e181c2d,0x4e181c2e,0x4e181c2f,0x11000000,0xd10283ff,0x6f00e41f
+.inst 0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f,0x3d80193f
+.inst 0x3d801d3f,0x3d80213f,0x3d80253f,0x910283ff,0xd65f03c0
 .p2align 6",
         vg_mlkem1024_encaps_body = sym super::mlkem1024::vg_mlkem1024_encaps_body::vg_mlkem1024_encaps_body,
         vg_zeroize = sym super::zeroize::vg_zeroize,
@@ -332,6 +432,8 @@ bl {vg_zeroize}
 /// ML-KEM-1024 encapsulation with given randomness and the hash of the key, `ML-KEM.Encaps_internal(ek, m)` (FIPS 203 Algorithm 17): with the encapsulation key `*ek`, its hash `H(ek)` in `*h` and the randomness `*m`, writes the shared secret key to `*key` and the ciphertext to `*ct`, as `vg_mlkem1024_encaps` does, using `*h` instead of hashing `*ek`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlKem1024.encapsHContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of `*ek`), but not on anything else of the key, on its hash, on the randomness or on the outputs.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -354,7 +456,15 @@ pub(crate) unsafe extern "C" fn vg_mlkem1024_encaps_h(ek: *const [u8; 1568], h: 
 bl {vg_mlkem1024_encaps_h_body}
 .inst 0xf9000be0,0xf94007e0,0xd2980001
 bl {vg_zeroize}
-.inst 0xf9400be0,0xf94003fe,0x910083ff,0xd65f03c0
+.inst 0xf9400be0,0xf94003fe,0x910083ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005
+.inst 0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d
+.inst 0xd280000e,0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403
+.inst 0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413
+.inst 0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b
+.inst 0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0x4e181c28,0x4e181c29,0x4e181c2a
+.inst 0x4e181c2b,0x4e181c2c,0x4e181c2d,0x4e181c2e,0x4e181c2f,0x11000000,0xd10283ff,0x6f00e41f
+.inst 0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f,0x3d80193f
+.inst 0x3d801d3f,0x3d80213f,0x3d80253f,0x910283ff,0xd65f03c0
 .p2align 6",
         vg_mlkem1024_encaps_h_body = sym super::mlkem1024::vg_mlkem1024_encaps_h_body::vg_mlkem1024_encaps_h_body,
         vg_zeroize = sym super::zeroize::vg_zeroize,
@@ -364,6 +474,8 @@ bl {vg_zeroize}
 /// ML-KEM-1024 decapsulation, `ML-KEM.Decaps_internal(dk, c)` (FIPS 203 Algorithm 18): with the decapsulation key `*dk` and the ciphertext `*ct`, writes the shared secret key to `*key`, which is the implicit rejection key `J(z ‖ c)` if the ciphertext does not re-encrypt to itself. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlKem1024.decapsContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (bytes 3072–3103 of `*dk`), but not on anything else of the key, on the ciphertext, or on whether it was rejected.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -382,7 +494,15 @@ pub(crate) unsafe extern "C" fn vg_mlkem1024_decaps(dk: *const [u8; 3168], ct: *
 bl {vg_mlkem1024_decaps_body}
 .inst 0xf9000be0,0xf94007e0,0xd2980001
 bl {vg_zeroize}
-.inst 0xf9400be0,0xf94003fe,0x910083ff,0xd65f03c0
+.inst 0xf9400be0,0xf94003fe,0x910083ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005
+.inst 0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d
+.inst 0xd280000e,0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403
+.inst 0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413
+.inst 0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b
+.inst 0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0x4e181c28,0x4e181c29,0x4e181c2a
+.inst 0x4e181c2b,0x4e181c2c,0x4e181c2d,0x4e181c2e,0x4e181c2f,0x11000000,0xd10283ff,0x6f00e41f
+.inst 0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f,0x3d80193f
+.inst 0x3d801d3f,0x3d80213f,0x3d80253f,0x910283ff,0xd65f03c0
 .p2align 6",
         vg_mlkem1024_decaps_body = sym super::mlkem1024::vg_mlkem1024_decaps_body::vg_mlkem1024_decaps_body,
         vg_zeroize = sym super::zeroize::vg_zeroize,
