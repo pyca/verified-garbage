@@ -12,9 +12,9 @@ nor the address of a static (`syms`, which `Outside` does not relate), returns
 without secret residue (`PPC64LE.NoResidue`), whatever its contract.
 
 Two such runs from states that agree outside the buffers (`Outside 0`, and the
-same `unknowns`) stay in states that differ in their memory and `syms` only,
+same `unknowns` and `undef`) stay in states that differ in their memory and `syms` only,
 and in their memory only inside the regions (`Off`): every register an
-instruction writes is computed from registers and `unknowns` (`mtvsrd`), which
+instruction writes is computed from registers, `unknowns` and `undef` (`mtvsrd`), which
 agree, and every store writes the same bytes at the same address in both, so
 that the bytes outside the regions, which agree, stay so. Their conditions read
 registers only, and so agree, and their instructions access the same addresses
@@ -41,7 +41,8 @@ addresses of their statics. -/
 def Off (s₁ s₂ : State) : Prop :=
   s₂ = s₁.withMS s₂.mem s₂.syms ∧ MemOff (s₁.rd ++ s₁.wr) s₁.mem s₂.mem
 
-theorem off_of_outside {s₁ s₂ : State} (h : Outside 0 s₁ s₂) (hu : s₁.unknowns = s₂.unknowns) :
+theorem off_of_outside {s₁ s₂ : State} (h : Outside 0 s₁ s₂) (hu : s₁.unknowns = s₂.unknowns)
+    (hf : s₁.undef = s₂.undef) :
     Off s₁ s₂ := by
   obtain ⟨hrd, hwr, hg, hr3, hv, hl, hsp, hc, hm⟩ := h
   refine ⟨?_, hm⟩
@@ -51,8 +52,8 @@ theorem off_of_outside {s₁ s₂ : State} (h : Outside 0 s₁ s₂) (hu : s₁.
     · subst hr; simpa using hr3.symm
     · exact (hg r hr).symm
   cases s₁; cases s₂
-  simp only at hrd hwr hv hl hsp hc hu hg' ⊢
-  subst hrd hwr hv hl hsp hc hu hg'
+  simp only at hrd hwr hv hl hsp hc hu hf hg' ⊢
+  subst hrd hwr hv hl hsp hc hu hf hg'
   rfl
 
 theorem outside_of_off {s₁ s₂ : State} (h : Off s₁ s₂) (r : Nat) : Outside r s₁ s₂ := by
@@ -175,14 +176,14 @@ theorem off_step {i : Instr} (hi : blind i = true) {s₁ s₂ a b : State} (h : 
 secret residue, whatever its contract. -/
 theorem noResidue_of_blind {c : Prog isa} (hc : c.plainAll blind = true) (k : Contract isa)
     (r : Nat) : NoResidue c k r := by
-  intro s₁ s₂ t₁ t₂ s₁' s₂' _ _ _ ho hu e₁ e₂
+  intro s₁ s₂ t₁ t₂ s₁' s₂' _ _ _ ho hu hf e₁ e₂
   have hrel : RelCT isa Off c Off :=
     RelCT.of_steps (p := blind) (fun _ hi _ _ _ _ h h₁ h₂ => off_step hi h h₁ h₂)
       (fun c s₁ s₂ h => by
         obtain ⟨he, -⟩ := h
         rw [he]
         exact (eval_withMS c s₁ _ _).symm) hc
-  exact outside_of_off (hrel _ _ _ _ _ _ (off_of_outside ho hu) e₁ e₂).2 r
+  exact outside_of_off (hrel _ _ _ _ _ _ (off_of_outside ho hu hf) e₁ e₂).2 r
 
 end Residue
 
