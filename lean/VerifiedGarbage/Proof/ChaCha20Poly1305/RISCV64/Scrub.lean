@@ -29,10 +29,11 @@ Poly1305's code, and `vg_chacha20_poly1305_seal_gather` that of
 `vg_chacha20_poly1305_seal`, as internal functions of their own
 (`vg_poly1305_init_core`, …), since the exported ones now clear their stack.
 
-`seal`, `open` and `open_to` instead clear only the runs of doublewords that
-the residue analysis (`RISCV64.rtaint`) finds may differ between two runs
-(`RISCV64.Scrub.withScrubSel`, `scrubSel_noResidue`). Their code wipes its
-working space, which leaves none, or two (`open_to`'s).
+`seal`, `open`, `open_to` and `seal_gather` instead clear only the runs of
+doublewords that the residue analysis (`RISCV64.rtaint`) finds may differ
+between two runs (`RISCV64.Scrub.withScrubSel`, `scrubSel_noResidue`). Their
+code wipes its working space, which leaves none, or two (`open_to`'s and
+`seal_gather`'s).
 
 `postOut_of_local_pre` is `postOut_of_local` for a postcondition that reads
 the memory on return only within the buffers when the precondition holds, as
@@ -169,9 +170,12 @@ def openToReg : Registration Spec.ChaCha20Poly1305.openToApi RISCV64.target :=
 
 /-- `Spec.ChaCha20Poly1305.sealGatherApi`. -/
 def sealGatherReg : Registration Spec.ChaCha20Poly1305.sealGatherApi RISCV64.target :=
-  withScrub {
+  withScrubSel {
       code := Impl.ChaCha20Poly1305.RISCV64.SealGather.sealGather
-      verified := Proof.ChaCha20Poly1305.RISCV64.Gather.sealGather_verified }
+      verified := Proof.ChaCha20Poly1305.RISCV64.Gather.sealGather_verified } [(640, [(78, 2)])]
     (gatherOut _)
+    (fun hfs hsz hrb => scrubSel_noResidue _ _ [] hfs hsz hrb (gatherOut _) (hbp_nil _)
+      (Impl.ChaCha20Poly1305.RISCV64.SealGather.sealGather) 640 0
+      rfl rfl rfl (by exact ⟨_, by taint_decide_ct⟩))
 
 end VG.Proof.ChaCha20Poly1305.RISCV64.Scrub

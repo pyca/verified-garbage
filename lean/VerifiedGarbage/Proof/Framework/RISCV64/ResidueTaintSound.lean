@@ -763,25 +763,13 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
 theorem addrs_length (i : Instr) (s₁ s₂ : State) : (addrs i s₁).length = (addrs i s₂).length := by
   cases i <;> rfl
 
-theorem push_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha : Agree τ s₁ s₂)
-    (hs : push τ i = some τ') (e₁ : isa.push i s₁ = some s₁') (e₂ : isa.push i s₂ = some s₂')
-    (_hadr : isa.addrs i s₁ = isa.addrs i s₂) : Agree τ' s₁' s₂' := by
-  intro _
-  obtain ⟨b, rfl⟩ : ∃ b, i = .alloc b := by
-    cases i <;> simp only [push, reduceCtorEq] at hs
-    exact ⟨_, rfl⟩
-  simp only [push] at hs
-  split at hs <;> [skip; cases hs]
-  rename_i hc
-  cases hs
-  simp only [Bool.and_eq_true, Nat.ble_eq] at hc
-  obtain ⟨hok, hb⟩ := hc
-  obtain ⟨hsp, hspN, hwbW, hpub, hlo, hwp, hbp, hrd, hwr, hunk, F, B, hw, hl, hf, hout, hmem⟩ := ha hok
-  simp only [isa, RISCV64.push] at e₁ e₂
-  split at e₁ <;> [skip; cases e₁]
-  rename_i hc₁
-  split at e₂ <;> [skip; cases e₂]
-  cases e₁; cases e₂
+/-- A frame of `b` bytes allocated below the others. -/
+theorem alloc_ok {τ : T} {s₁ s₂ : State} (h : AgreeOk τ s₁ s₂) {b : Nat} (hb : b ≤ τ.sp)
+    (hb0 : 0 < b) (hbs : b ≤ s₁.sp.toNat) :
+    AgreeOk { τ with sp := τ.sp - b, nf := τ.nf + 1 }
+      { s₁ with sp := s₁.sp - BitVec.ofNat 64 b, wr := ⟨s₁.sp - BitVec.ofNat 64 b, b⟩ :: s₁.wr }
+      { s₂ with sp := s₂.sp - BitVec.ofNat 64 b, wr := ⟨s₂.sp - BitVec.ofNat 64 b, b⟩ :: s₂.wr } := by
+  obtain ⟨hsp, hspN, hwbW, hpub, hlo, hwp, hbp, hrd, hwr, hunk, F, B, hw, hl, hf, hout, hmem⟩ := h
   have ewb : wb { τ with sp := τ.sp - b, nf := τ.nf + 1 }
       { s₁ with sp := s₁.sp - BitVec.ofNat 64 b, wr := ⟨s₁.sp - BitVec.ofNat 64 b, b⟩ :: s₁.wr } =
       wb τ s₁ := by
@@ -793,13 +781,13 @@ theorem push_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     by rw [hwr, hsp], hunk, ⟨s₁.sp - BitVec.ofNat 64 b, b⟩ :: F, B, by rw [hw]; rfl,
     by simp only [List.length_cons, hl], ?_, ?_, ?_⟩
   · show τ.sp - b ≤ (s₁.sp - BitVec.ofNat 64 b).toNat
-    rw [toNat_sub_ofNat' s₁.sp (by omega_using [hc₁.2.2.2, hb])]
+    rw [toNat_sub_ofNat' s₁.sp (by omega_using [hbs, hb])]
     omega_using [hspN]
   · rw [ewb]; exact hwp e he
   · obtain ⟨h1, h2⟩ := hbp e he
     exact ⟨h1, fun i hi => by unfold InWin off; rw [ewb]; exact h2 i hi⟩
   · rw [ewb]
-    refine ⟨?_, hc₁.1, ?_⟩
+    refine ⟨?_, hb0, ?_⟩
     · show s₁.sp - BitVec.ofNat 64 b = wb τ s₁ + BitVec.ofNat 64 (τ.sp - b)
       simp only [wb]
       rw [← BitVec.ofNat_sub_ofNat_of_le _ _ (Nat.lt_of_le_of_lt (Nat.le_trans hb hspN) s₁.sp.isLt) hb]
@@ -812,38 +800,99 @@ theorem push_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
       have := hs (by unfold InWin off; rw [ewb]; exact hw')
       simpa only [off, ewb] using this
 
-theorem pop_sound {τ τ' : T} {j : Instr} {a₁ a₂ b₁ b₂ c₁ c₂ : State} (ha : Agree τ b₁ b₂)
-    (hs : pop τ j = some τ') (e₁ : isa.pop j a₁ b₁ = some c₁) (e₂ : isa.pop j a₂ b₂ = some c₂)
-    (_hadr : isa.addrs j b₁ = isa.addrs j b₂) : Agree τ' c₁ c₂ := by
+/-- The stack pointer is at byte `τ.sp` of the window. -/
+theorem sp_eq {τ : T} {s : State} : s.sp = wb τ s + BitVec.ofNat 64 τ.sp := by
+  simp only [wb]; bv_omega
+
+/-- `push r`: a frame of 16 bytes, and `r` stored in its high doubleword. -/
+theorem pushReg_ok {τ : T} {s₁ s₂ : State} (h : AgreeOk τ s₁ s₂) (r : Reg) (hb : 16 ≤ τ.sp)
+    (hbs : 16 ≤ s₁.sp.toNat) :
+    AgreeOk { τ with sp := τ.sp - 16, nf := τ.nf + 1, sec := if pubR τ r then bclr τ.sec (τ.sp - 16 + 8) 8 else bset τ.sec (τ.sp - 16 + 8) 8 }
+      { s₁ with sp := s₁.sp - 16, mem := s₁.mem.write (s₁.sp - 16 + 8) 8 (s₁.gpr r), wr := ⟨s₁.sp - 16, 16⟩ :: s₁.wr }
+      { s₂ with sp := s₂.sp - 16, mem := s₂.mem.write (s₂.sp - 16 + 8) 8 (s₂.gpr r), wr := ⟨s₂.sp - 16, 16⟩ :: s₂.wr } := by
+  have ha := alloc_ok h hb (by decide) hbs
+  have hsp := h.sp
+  have hle : τ.sp ≤ τ.W := by obtain ⟨F, B, -, -, hf, -⟩ := h.regions; exact Frames.le hf
+  have hW := ha.wbW
+  simp only at hW
+  have haddr : s₁.sp - 16 + 8 = wb { τ with sp := τ.sp - 16, nf := τ.nf + 1 }
+      { s₁ with sp := s₁.sp - BitVec.ofNat 64 16, wr := ⟨s₁.sp - BitVec.ofNat 64 16, 16⟩ :: s₁.wr } +
+      BitVec.ofNat 64 (τ.sp - 16 + 8) := by
+    rw [BitVec.ofNat_add, ← BitVec.add_assoc,
+      ← sp_eq (τ := { τ with sp := τ.sp - 16, nf := τ.nf + 1 })]
+    rfl
+  have hrange := fun x => in_range (n := 8) { τ with sp := τ.sp - 16, nf := τ.nf + 1 }
+    { s₁ with sp := s₁.sp - BitVec.ofNat 64 16, wr := ⟨s₁.sp - BitVec.ofNat 64 16, 16⟩ :: s₁.wr } x
+    (o := τ.sp - 16 + 8) (by omega_using [hW, hle, hb])
+  rw [← hsp] at ha ⊢
+  by_cases ht : pubR τ r = true
+  · simp only [ht, ite_true]
+    refine ha.store (τ' := { τ with sp := τ.sp - 16, nf := τ.nf + 1, sec := bclr τ.sec (τ.sp - 16 + 8) 8 })
+      (a := s₁.sp - 16 + 8) (n := 8) (v₁ := s₁.gpr r) (v₂ := s₂.gpr r) ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
+      (fun _ _ _ x _ _ _ => by rw [h.reg ht]) (fun x hx hw h' => ?_)
+    rw [haddr, hrange x] at hx
+    simp only [testBit_bclr, Bool.and_eq_false_iff, Bool.not_eq_false', Bool.and_eq_true,
+      decide_eq_true_eq] at h'
+    rcases h' with h' | h'
+    · exact h'
+    · exact absurd h' hx
+  · simp only [ht, Bool.false_eq_true, ite_false]
+    refine ha.store (τ' := { τ with sp := τ.sp - 16, nf := τ.nf + 1, sec := bset τ.sec (τ.sp - 16 + 8) 8 })
+      (a := s₁.sp - 16 + 8) (n := 8) (v₁ := s₁.gpr r) (v₂ := s₂.gpr r) ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
+      (fun B hout hF x hx hxo hsx => ?_)
+      (fun x _ _ h' => by simp only [testBit_bset, Bool.or_eq_false_iff] at h'; exact h'.1)
+    exfalso
+    rw [haddr, hrange x] at hx
+    have := hsx (by unfold InWin; simp only; omega_using [hx, hle, hb])
+    simp only [testBit_bset, Bool.or_eq_false_iff, Bool.and_eq_false_iff, decide_eq_false_iff_not] at this
+    omega_using [this.2, hx]
+
+theorem push_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha : Agree τ s₁ s₂)
+    (hs : push τ i = some τ') (e₁ : isa.push i s₁ = some s₁') (e₂ : isa.push i s₂ = some s₂')
+    (_hadr : isa.addrs i s₁ = isa.addrs i s₂) : Agree τ' s₁' s₂' := by
   intro _
-  obtain ⟨b, rfl⟩ : ∃ b, j = .free b := by
-    cases j <;> simp only [pop, reduceCtorEq] at hs
-    exact ⟨_, rfl⟩
-  simp only [pop] at hs
-  split at hs <;> [skip; cases hs]
-  rename_i hc
-  cases hs
-  simp only [Bool.and_eq_true, Nat.ble_eq, Nat.blt_eq] at hc
-  obtain ⟨⟨hok, hnf⟩, hle⟩ := hc
-  obtain ⟨hsp, hspN, hwbW, hpub, hlo, hwp, hbp, hrd, hwr, hunk, F, B, hw, hl, hf, hout, hmem⟩ := ha hok
-  simp only [isa, RISCV64.pop] at e₁ e₂
-  split at e₁ <;> [skip; cases e₁]
-  rename_i hc₁
-  split at e₂ <;> [skip; cases e₂]
-  cases e₁; cases e₂
-  obtain ⟨-, -, -, hsp₁, hwr₁, hhd⟩ := hc₁
+  cases i <;> simp only [push, reduceCtorEq] at hs
+  · rename_i r
+    split at hs <;> [skip; cases hs]
+    rename_i hc
+    cases hs
+    simp only [Bool.and_eq_true, Nat.ble_eq] at hc
+    simp only [isa, RISCV64.push] at e₁ e₂
+    split at e₁ <;> [skip; cases e₁]
+    rename_i hc₁
+    split at e₂ <;> [skip; cases e₂]
+    cases e₁; cases e₂
+    exact pushReg_ok (ha hc.1) r hc.2 hc₁
+  · rename_i b
+    split at hs <;> [skip; cases hs]
+    rename_i hc
+    cases hs
+    simp only [Bool.and_eq_true, Nat.ble_eq] at hc
+    simp only [isa, RISCV64.push] at e₁ e₂
+    split at e₁ <;> [skip; cases e₁]
+    rename_i hc₁
+    split at e₂ <;> [skip; cases e₂]
+    cases e₁; cases e₂
+    exact alloc_ok (ha hc.1) hc.2 hc₁.1 hc₁.2.2.2
+
+/-- The innermost frame, of `b` bytes, released. -/
+theorem free_ok {τ : T} {b₁ b₂ : State} (h : AgreeOk τ b₁ b₂) {b : Nat} (hnf : 0 < τ.nf)
+    (hle : τ.sp + b ≤ τ.W) (hhd : b₁.wr.head? = some ⟨b₁.sp, b⟩) :
+    AgreeOk { τ with sp := τ.sp + b, nf := τ.nf - 1 }
+      { b₁ with sp := b₁.sp + BitVec.ofNat 64 b, wr := b₁.wr.tail, mem := lose b₁.mem b₁.sp b b₁.unknowns, unknowns := fun n => b₁.unknowns (n + b / 4) }
+      { b₂ with sp := b₂.sp + BitVec.ofNat 64 b, wr := b₂.wr.tail, mem := lose b₂.mem b₂.sp b b₂.unknowns, unknowns := fun n => b₂.unknowns (n + b / 4) } := by
+  obtain ⟨hsp, hspN, hwbW, hpub, hlo, hwp, hbp, hrd, hwr, hunk, F, B, hw, hl, hf, hout, hmem⟩ := h
   obtain ⟨f, F', rfl⟩ : ∃ f F', F = f :: F' := by
     cases F with
     | nil => simp only [List.length_nil] at hl; omega_using [hl, hnf]
     | cons f F' => exact ⟨f, F', rfl⟩
   obtain ⟨hfb, hfl, hf'⟩ := hf
   have hfe : f = ⟨b₁.sp, b⟩ := by
-    rw [← hsp₁, ← hwr₁, hw] at hhd
+    rw [hw] at hhd
     simpa using hhd
   have hlen : f.len = b := by rw [hfe]
   rw [hlen] at hf'
   have hwb := hwbW
-  have hspb : b₁.sp = wb τ b₁ + BitVec.ofNat 64 τ.sp := by simp only [wb]; bv_omega
   have htn : (wb τ b₁).toNat + τ.sp = b₁.sp.toNat := by
     simp only [wb]; rw [toNat_sub_ofNat' _ hspN]; omega_using [hspN]
   have ewb : wb { τ with sp := τ.sp + b, nf := τ.nf - 1 } { b₁ with sp := b₁.sp + BitVec.ofNat 64 b, wr := b₁.wr.tail, mem := lose b₁.mem b₁.sp b b₁.unknowns, unknowns := fun n => b₁.unknowns (n + b / 4) } = wb τ b₁ := by
@@ -870,6 +919,59 @@ theorem pop_sound {τ τ' : T} {j : Instr} {a₁ a₂ b₁ b₂ c₁ c₂ : Stat
     · exact hmem x hx fun hw' => by
         have := hs (by unfold InWin off; rw [ewb]; exact hw')
         simpa only [off, ewb] using this
+
+/-- The high doubleword of the innermost frame, of 16 bytes, read in both
+runs: the same if its bytes are not secret. -/
+theorem popRead_eq {τ : T} {s₁ s₂ : State} (h : AgreeOk τ s₁ s₂) (hle : τ.sp + 16 ≤ τ.W)
+    (hno : bnone τ.sec (τ.sp + 8) 8 = true) :
+    s₁.mem.read (s₁.sp + 8) 8 = s₂.mem.read (s₂.sp + 8) 8 := by
+  obtain ⟨F, B, -, -, -, hout, hmem⟩ := h.regions
+  have hW := h.wbW
+  rw [← h.sp]
+  refine Mem.read_congr fun j hj => ?_
+  rw [sp_eq (τ := τ) (s := s₁), BitVec.add_assoc, show (8 : Addr) = BitVec.ofNat 64 8 from rfl,
+    BitVec.add_assoc, BitVec.ofNat_add_ofNat, BitVec.ofNat_add_ofNat]
+  have hx : off τ s₁ (wb τ s₁ + BitVec.ofNat 64 (τ.sp + (8 + j))) = τ.sp + (8 + j) :=
+    off_base τ s₁ (by omega_using [hle, hj, hW])
+  refine hmem _ (fun g hg hc => hout g hg _ hc ?_) (fun _ => ?_)
+  · unfold InWin; rw [hx]; omega_using [hle, hj]
+  · rw [hx]; exact bnone_bit hno (by omega_using []) (by omega_using [hj])
+
+theorem pop_sound {τ τ' : T} {j : Instr} {a₁ a₂ b₁ b₂ c₁ c₂ : State} (ha : Agree τ b₁ b₂)
+    (hs : pop τ j = some τ') (e₁ : isa.pop j a₁ b₁ = some c₁) (e₂ : isa.pop j a₂ b₂ = some c₂)
+    (_hadr : isa.addrs j b₁ = isa.addrs j b₂) : Agree τ' c₁ c₂ := by
+  intro _
+  cases j <;> simp only [pop, reduceCtorEq] at hs
+  · rename_i r
+    split at hs <;> [skip; cases hs]
+    rename_i hc
+    cases hs
+    simp only [Bool.and_eq_true, Nat.ble_eq, Nat.blt_eq] at hc
+    obtain ⟨⟨hok, hnf⟩, hle⟩ := hc
+    have h := ha hok
+    simp only [isa, RISCV64.pop] at e₁ e₂
+    split at e₁ <;> [skip; cases e₁]
+    rename_i hc₁
+    split at e₂ <;> [skip; cases e₂]
+    cases e₁; cases e₂
+    obtain ⟨hsp₁, hwr₁, hhd⟩ := hc₁
+    have hr := h.setR r (p := bnone τ.sec (τ.sp + 8) 8) (k := none) (b := none)
+      (v₁ := b₁.mem.read (b₁.sp + 8) 8) (v₂ := b₂.mem.read (b₂.sp + 8) 8)
+      (fun hp => popRead_eq h hle hp) (fun _ h => nomatch h) (fun _ h => nomatch h)
+    exact free_ok (b := 16) hr hnf hle (by rw [← hsp₁, ← hwr₁] at hhd; exact hhd)
+  · rename_i b
+    split at hs <;> [skip; cases hs]
+    rename_i hc
+    cases hs
+    simp only [Bool.and_eq_true, Nat.ble_eq, Nat.blt_eq] at hc
+    obtain ⟨⟨hok, hnf⟩, hle⟩ := hc
+    simp only [isa, RISCV64.pop] at e₁ e₂
+    split at e₁ <;> [skip; cases e₁]
+    rename_i hc₁
+    split at e₂ <;> [skip; cases e₂]
+    cases e₁; cases e₂
+    obtain ⟨-, -, -, hsp₁, hwr₁, hhd⟩ := hc₁
+    exact free_ok (ha hok) hnf hle (by rw [← hsp₁, ← hwr₁] at hhd; exact hhd)
 
 /-- The state after a call. -/
 def callS (s : State) : State :=

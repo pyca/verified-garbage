@@ -11,7 +11,8 @@ import VerifiedGarbage.Proof.Framework.Omega
 
 `rtaint W` is a taint analysis for two runs that leak the same (`TaintCT`) of
 code whose stack is the `W` bytes below the stack pointer on entry (its
-*window*). It follows the frames the code allocates (`alloc`, `free`), which
+*window*). It follows the frames the code allocates (`alloc`, `free`, and
+`push`, `pop` of a register, whose frame holds it), which
 are nested in the window from its top down, and keeps, as a bit mask, the
 bytes of the window that may differ between the two runs (`sec`). What it
 knows of a register:
@@ -160,16 +161,27 @@ def step (τ : T) (i : Instr) : Option T :=
     | none => stepB τ i
   else none
 
-/-- A frame of `b` bytes, below the others. -/
+/-- A frame of `b` bytes, below the others; or of 16, holding `r` in its high
+doubleword (`push r`). -/
 def push (τ : T) : Instr → Option T
   | .alloc b => if τ.ok && Nat.ble b τ.sp then some { τ with sp := τ.sp - b, nf := τ.nf + 1 } else none
+  | .push r =>
+    if τ.ok && Nat.ble 16 τ.sp then
+      let sec := if pubR τ r then bclr τ.sec (τ.sp - 16 + 8) 8 else bset τ.sec (τ.sp - 16 + 8) 8
+      some { τ with sp := τ.sp - 16, nf := τ.nf + 1, sec := sec }
+    else none
   | _ => none
 
-/-- The innermost frame, of `b` bytes, released. -/
+/-- The innermost frame, of `b` bytes, released; or of 16, its high
+doubleword loaded into `r` (`pop r`), public if its bytes are. -/
 def pop (τ : T) : Instr → Option T
   | .free b =>
     if τ.ok && Nat.blt 0 τ.nf && Nat.ble (τ.sp + b) τ.W then
       some { τ with sp := τ.sp + b, nf := τ.nf - 1 }
+    else none
+  | .pop r =>
+    if τ.ok && Nat.blt 0 τ.nf && Nat.ble (τ.sp + 16) τ.W then
+      some { (setR τ r (bnone τ.sec (τ.sp + 8) 8) none none) with sp := τ.sp + 16, nf := τ.nf - 1 }
     else none
   | _ => none
 
