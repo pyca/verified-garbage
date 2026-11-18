@@ -3,6 +3,9 @@ module
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.Aes.X86.VariantProof
 public import VerifiedGarbage.Proof.AesGcm.X86.Callee
+public import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
+public import VerifiedGarbage.Proof.Framework.X86.SseTaint
+public import VerifiedGarbage.Proof.AesGcm.X86.Env
 meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Impl.AesOcb.X86
@@ -17,7 +20,9 @@ symbolically (`runBlock_cons`, `runStep_some`, the semantics of the
 instructions the code uses, and reads through the writes with `RegUpd`,
 keeping the registers folded), as AES-GCM's `xrun` does, with the offsets
 of the AES-OCB code; `gregs` and `gmems` read registers, memory, flags
-and permissions through the writes of a block.
+and permissions through the writes of a block. `srun`, `sregs` and `smems`
+are these for blocks with SSE instructions (16-byte loads and stores, and
+the register operations by `XOp.exec_bin`, `exec_movd` and `exec_pshufd`).
 -/
 
 @[expose] public section
@@ -69,6 +74,55 @@ tactic_template "gmems" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(
                      gpr_setReg_of_ne, gpr_arithFlags, gpr_setFlags, Mem.readW_writeW_self32, readW_writeW_off, readW_writeB_off,
                      tagO, ofsO, ckO, sumO, ldO, l0O, lO, tmpO, t2O, ohO, ctxO, rndO, nO, nlO,
                      aadO, alenO, dataO, lenO, tgO, tlO, botO, kO, o0O, stO, hlO, fpO, cntO, restO, nbO, okO, bufO, scrO, Nat.reduceAdd, Reg8.reg, eq_self_iff_true, and_self, $ts,*]))
+
+/-! ## Blocks with SSE instructions -/
+
+theorem store128_eq (s : State) (a : Addr) (v : BitVec 128) :
+    s.store128 a v = if InRegions s.wr a 16 then some (Proof.AesGcm.X86.setMem s (s.mem.writeW a v)) else none := rfl
+
+theorem xmm_setMem (s : State) (m : Mem) : (Proof.AesGcm.X86.setMem s m).xmm = s.xmm := rfl
+
+theorem exec_bin (op : XBinOp) (d r : XReg) (s : State) :
+    XOp.exec (.bin op d r) s = s.setXmm d (op.eval (s.xmm d) (s.xmm r)) := rfl
+
+theorem exec_movd (d : XReg) (r : Reg) (s : State) :
+    XOp.exec (.movd d r) s = s.setXmm d ((0 : BitVec 96) ++ s.gpr r) := rfl
+
+theorem exec_pshufd (d r : XReg) (o : BitVec 8) (s : State) :
+    XOp.exec (.pshufd d r o) s = s.setXmm d (shufDwords (s.xmm r) o) := rfl
+
+theorem eval_pxor (a b : BitVec 128) : XBinOp.eval .pxor a b = a ^^^ b := rfl
+
+theorem eval_pand (a b : BitVec 128) : XBinOp.eval .pand a b = a &&& b := rfl
+
+/-- A 16-byte block at `p + a`, after a word written at `p + b` elsewhere. -/
+theorem readW128_writeW_off (m : Mem) (p : Addr) (v : BitVec 32) {a b : Nat} (h : a + 16 ≤ b ∨ b + 4 ≤ a)
+    (ha : a < 2 ^ 32) (hb : b < 2 ^ 32) :
+    (m.writeW (p + BitVec.ofNat 64 b) v).readW (p + BitVec.ofNat 64 a) 128 = m.readW (p + BitVec.ofNat 64 a) 128 :=
+  Mem.readW_writeW_sep (Offset.sep _ h (by omega_using [ha]) (by omega_using [hb])) (by decide)
+
+/-- `grun`, for a block with SSE instructions. -/
+tactic_template "srun" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic|
+  grun [State.load128, store128_eq, exec_bin, exec_movd, exec_pshufd, gpr_setXmm, mem_setXmm, rd_setXmm,
+    wr_setXmm, zf_setXmm, cf_setXmm, $ts,*])
+
+/-- `gregs`, through the writes of SSE registers too. -/
+tactic_template "sregs" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic|
+  gregs [gpr_setXmm, $ts,*])
+
+/-- `gmems`, through the writes of SSE registers too, and reading them. -/
+tactic_template "smems" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic|
+  gmems [gpr_setXmm, mem_setXmm, rd_setXmm, wr_setXmm, zf_setXmm, cf_setXmm, xmm_setMem, xmm_setReg,
+    xmm_arithFlags, xmm_setFlags, xmm_setXmm_self, xmm_setXmm_of_ne, reduceCtorEq, not_false_eq_true, $ts,*])
+
+/-- `CT.taint`, for code with SSE instructions: constant time by the taint
+analysis that follows them (`sseTaint`), from the registers `rs`, on which
+any two states satisfying `I` agree. -/
+theorem CT.taintS {I : State → Prop} {c : Prog isa} (rs : List Reg)
+    (hr : ∀ s₁ s₂, I s₁ → I s₂ → ∀ r ∈ rs, s₁.gpr r = s₂.gpr r) {hc : Taint.Hint VG.X86.sseTaint.T}
+    (h : (VG.X86.sseTaint.check (τr rs) c hc).isSome = true) : CT I c :=
+  RelCT.taint (A := VG.X86.sseTaint) (τr rs)
+    (fun _ _ hp => agree_regs (hr _ _ hp.1 hp.2)) h
 
 theorem eval_e {s : State} {b : Bool} (h : s.zf = some b) : isa.eval .e s = some b := h
 
