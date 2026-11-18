@@ -637,6 +637,12 @@ theorem cbcEncryptOut (stack : Nat) : PostOut (Spec.TripleDes.cbcEncryptChainedC
 theorem cfbEncryptOut (stack : Nat) : PostOut (Spec.TripleDes.cfbEncryptContract RISCV64.abi stack) (Spec.TripleDes.cfbSig.retBits 64) :=
   postOut_of_local (leak := none) ScrubAbi.plain (Proof.TripleDes.cfbEncPostOut_local _)
 
+theorem cbcDecryptOut (stack : Nat) : PostOut (Spec.TripleDes.cbcDecryptChainedContract RISCV64.abi stack) (Spec.TripleDes.cbcChainedSig.retBits 64) :=
+  postOut_of_local (leak := none) ScrubAbi.plain (Proof.TripleDes.cbcDecChainedPostOut_local _)
+
+theorem cfbDecryptOut (stack : Nat) : PostOut (Spec.TripleDes.cfbDecryptContract RISCV64.abi stack) (Spec.TripleDes.cfbSig.retBits 64) :=
+  postOut_of_local (leak := none) ScrubAbi.plain (Proof.TripleDes.cfbDecPostOut_local _)
+
 theorem cfbEncryptFinalOut (stack : Nat) : PostOut (Spec.TripleDes.cfbEncryptFinalContract RISCV64.abi stack) (Spec.TripleDes.cfbFinalSig.retBits 64) :=
   postOut_of_local (leak := none) ScrubAbi.plain (Proof.Modes.encFinalPost_local _)
 
@@ -680,10 +686,20 @@ def cbcEncryptChainedReg : Registration Spec.TripleDes.cbcEncryptChainedApi RISC
   withScrub { code := Impl.TripleDes.RISCV64.cbcEncryptChained, verified := Proof.TripleDes.RISCV64.Modes.cbcEncryptChained_verified }
     (cbcEncryptOut _)
 
+/-- `Spec.TripleDes.cbcDecryptChainedApi`. -/
+def cbcDecryptChainedReg : Registration Spec.TripleDes.cbcDecryptChainedApi RISCV64.target :=
+  withScrub { code := Impl.TripleDes.RISCV64.cbcDecryptChained, verified := Proof.TripleDes.RISCV64.Modes.cbcDecryptChained_verified }
+    (cbcDecryptOut _)
+
 /-- `Spec.TripleDes.cfbEncryptApi`. -/
 def cfbEncryptReg : Registration Spec.TripleDes.cfbEncryptApi RISCV64.target :=
   withScrub { code := Impl.TripleDes.RISCV64.cfbEncrypt, verified := Proof.TripleDes.RISCV64.Modes.cfbEncrypt_verified }
     (cfbEncryptOut _)
+
+/-- `Spec.TripleDes.cfbDecryptApi`. -/
+def cfbDecryptReg : Registration Spec.TripleDes.cfbDecryptApi RISCV64.target :=
+  withScrub { code := Impl.TripleDes.RISCV64.cfbDecrypt, verified := Proof.TripleDes.RISCV64.Modes.cfbDecrypt_verified }
+    (cfbDecryptOut _)
 
 /-- `Spec.TripleDes.cfbEncryptFinalApi`. -/
 def cfbEncryptFinalReg : Registration Spec.TripleDes.cfbEncryptFinalApi RISCV64.target :=

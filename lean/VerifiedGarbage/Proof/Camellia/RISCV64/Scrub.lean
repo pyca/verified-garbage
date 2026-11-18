@@ -1310,7 +1310,7 @@ theorem len_le (x : BitVec 64) (k : Nat) : ((ArgWord.int abi.ptrBits).ofRaw x).t
 theorem len_le1 (x : BitVec 64) : ((ArgWord.int abi.ptrBits).ofRaw x).toNat ≤ x.toNat * Elem.u8.size :=
   Nat.le_of_eq (Nat.mul_one _).symm
 
-theorem expandKeyOut : PostOut (expandKeyContract RISCV64.abi 3216) (expandKeySig.retBits 64) :=
+theorem expandKeyOut (stack : Nat) : PostOut (expandKeyContract RISCV64.abi stack) (expandKeySig.retBits 64) :=
   postOut_of_local (leak := none) ScrubAbi.plain (Proof.Camellia.expandKeyPostOut_local _)
 
 theorem ecbOut (d : Direction) (stack : Nat) : PostOut (ecbContract RISCV64.abi d stack) (ecbSig.retBits 64) :=
@@ -1441,6 +1441,14 @@ theorem ctrFinalOut (stack : Nat) :
 
 /-! ## The registrations -/
 
+/-- `Spec.Camellia.expandKeyApi`. -/
+def expandKeyReg : Registration Spec.Camellia.expandKeyApi RISCV64.target :=
+  withScrubSel { code := Impl.StackScratch.RISCV64.withStackScratchWiped 3200 .a3 400 Impl.Camellia.RISCV64.expandKey, verified := Proof.Camellia.RISCV64.expandKey_framed } []
+    (expandKeyOut _)
+    (fun hfs hsz hrb => scrubSel_noResidue _ _ [] hfs hsz hrb (expandKeyOut _) (hbp_nil _)
+      (Impl.StackScratch.RISCV64.withStackScratchWiped 3200 .a3 400 Impl.Camellia.RISCV64.expandKey) 3200 0
+      rfl rfl rfl (by exact ⟨_, by taint_decide_ct⟩))
+
 /-- `Spec.Camellia.ecbEncryptApi`. -/
 def ecbEncryptReg : Registration Spec.Camellia.ecbEncryptApi RISCV64.target :=
   withScrubSel { code := Impl.StackScratch.RISCV64.withStackScratchWiped 3200 .a4 400 (Impl.Camellia.RISCV64.ecb .encrypt), verified := Proof.Camellia.RISCV64.ecb_framed .encrypt } []
@@ -1501,5 +1509,10 @@ def ofbReg : Registration Spec.Camellia.ofbApi RISCV64.target :=
 def ofbFinalReg : Registration Spec.Camellia.ofbFinalApi RISCV64.target :=
   withScrub { code := Impl.Camellia.RISCV64.ofbFinal, verified := Proof.Camellia.RISCV64.Modes.ofbFinal_verified }
     (ofbFinalOut _)
+
+/-- `Spec.Camellia.ctrFinalApi`. -/
+def ctrFinalReg : Registration Spec.Camellia.ctrFinalApi RISCV64.target :=
+  withScrub { code := Impl.StackScratch.RISCV64.withStackScratchWiped 80 .a5 10 Impl.Camellia.RISCV64.ctrFinal, verified := Proof.Camellia.RISCV64.CtrFinal.ctrFinal_framed }
+    (ctrFinalOut _)
 
 end VG.Proof.Camellia.RISCV64.Scrub

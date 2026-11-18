@@ -14,9 +14,7 @@ namespace VG.Artifacts.TripleDesCfb.RISCV64
 
 def artifacts : List Artifact := [
   Spec.TripleDes.cfbEncryptApi.artifact RISCV64.target Proof.TripleDes.RISCV64.Scrub.cfbEncryptReg,
-  Spec.TripleDes.cfbDecryptApi.artifact RISCV64.target {
-    code := Impl.TripleDes.RISCV64.cfbDecrypt
-    verified := Proof.TripleDes.RISCV64.Modes.cfbDecrypt_verified },
+  Spec.TripleDes.cfbDecryptApi.artifact RISCV64.target Proof.TripleDes.RISCV64.Scrub.cfbDecryptReg,
   Spec.TripleDes.cfbEncryptFinalApi.artifact RISCV64.target Proof.TripleDes.RISCV64.Scrub.cfbEncryptFinalReg,
   Spec.TripleDes.cfbDecryptFinalApi.artifact RISCV64.target Proof.TripleDes.RISCV64.Scrub.cfbDecryptFinalReg]
 

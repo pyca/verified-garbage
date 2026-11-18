@@ -927,8 +927,6 @@ riscv64 vg_aes_siv_decrypt
 riscv64 vg_aes_siv_encrypt
 riscv64 vg_aes_siv_init
 riscv64 vg_argon2
-riscv64 vg_camellia_ctr_final
-riscv64 vg_camellia_expand_key
 riscv64 vg_cast5_cbc_decrypt_chained
 riscv64 vg_cast5_cbc_encrypt_chained
 riscv64 vg_cast5_cfb64_decrypt
@@ -1083,9 +1081,6 @@ riscv64 vg_sm4_gcm_stream_encrypt
 riscv64 vg_sm4_gcm_stream_finish
 riscv64 vg_sm4_gcm_stream_init
 riscv64 vg_sm4_gcm_stream_verify
-riscv64 vg_triple_des_cbc_decrypt_chained
-riscv64 vg_triple_des_cfb64_decrypt
-riscv64 vg_zeroize
 x86 vg_aes_cbc_decrypt
 x86 vg_aes_cbc_decrypt_aesni
 x86 vg_aes_cbc_encrypt

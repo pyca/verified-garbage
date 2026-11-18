@@ -13,8 +13,6 @@ namespace VG.Artifacts.CamelliaCtr.RISCV64
 
 def artifacts : List Artifact := [
   Spec.Camellia.ctrApi.artifact RISCV64.target Proof.Camellia.RISCV64.Scrub.ctrReg,
-  Spec.Camellia.ctrFinalApi.artifact RISCV64.target {
-    code := Impl.StackScratch.RISCV64.withStackScratchWiped 80 .a5 10 Impl.Camellia.RISCV64.ctrFinal
-    verified := Proof.Camellia.RISCV64.CtrFinal.ctrFinal_framed }]
+  Spec.Camellia.ctrFinalApi.artifact RISCV64.target Proof.Camellia.RISCV64.Scrub.ctrFinalReg]
 
 end VG.Artifacts.CamelliaCtr.RISCV64
