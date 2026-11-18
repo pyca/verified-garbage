@@ -1,8 +1,9 @@
 module
 
-public import VerifiedGarbage.Impl.Modes.X86.Seq
+public import VerifiedGarbage.Impl.Modes.X86.Wide
 public import VerifiedGarbage.Impl.Modes.CbcChained
 public import VerifiedGarbage.Impl.TripleDes.X86.Block
+public import VerifiedGarbage.Impl.TripleDes.X86.Bitsliced
 
 /-!
 # Triple DES's core for the modes on x86 (32-bit)
@@ -78,10 +79,65 @@ def dirCore (d : Direction) : Modes.X86.Core where
   bw := 2
   stack := 16
 
+/-! ## The bitsliced core
+
+`wideCore d`: the bitsliced function of the direction `d`
+(`Bitsliced.lean`) as a core of 32 blocks, for the modes whose blocks can
+be enciphered independently (`Impl/Modes/X86/Wide.lean`): CBC and CFB64
+decryption. Its slots: the function's working space (slots 0 to 195, with
+the buffer's 32 blocks from slot 132 on) and the copy of the schedule
+(slots 196 to 291). `crypt` passes the working space, `sb` itself, and the
+copy to the function, pushed as its arguments, with 12 bytes of stack; the
+function stores only through the working space's address, at fixed
+offsets, so the analysis of constant time keeps what the modes' slots
+hold. 302 slots in all, with the modes' (`[u64; 151]`).
+
+The modes take the blocks in groups of 32, the buffer, while 32 are left,
+then of 16, 8, 4 and 2 (`levels`), then one: each group is one call of the
+function, which costs the same for any number of the buffer's blocks. -/
+
+/-- The schedule's copy, after the bitsliced function's working space. -/
+def wideSchedSlot : Nat := Bitslice.wsWords
+
+/-- The schedule (argument 0, at `ecx`) to its copy, a word at a time
+through `eax`. -/
+def copyScheduleWide : List Instr :=
+  ([.mov .ecx (.mem (argOp 0))] : List Instr) ++
+    (List.range 96).flatMap fun w => [.mov .eax (.mem (at_ .ecx (4 * w))), .store (slotAt (wideSchedSlot + w)) .eax]
+
+/-- The address of the schedule's copy to `eax`. -/
+def wideSetup : List Instr :=
+  [.mov .eax (.reg sb), .alu .add .eax (.imm (BitVec.ofNat 32 (4 * wideSchedSlot)))]
+
+/-- The bitsliced function, with the working space and the schedule's copy
+pushed as its arguments. -/
+def wideCall (d : Direction) : Prog isa :=
+  .frame (.push [.eax, sb])
+    (match d with
+    | .encrypt => .call "vg_triple_des_encrypt_batch" Bitslice.encryptBatch
+    | .decrypt => .call "vg_triple_des_decrypt_batch" Bitslice.decryptBatch)
+    (.pop .eax 2)
+
+/-- Triple DES's bitsliced core for the modes, in the direction `d`. -/
+def wideCore (d : Direction) : Modes.X86.Core where
+  prepare := .block copyScheduleWide
+  crypt := .seq (.block wideSetup) (wideCall d)
+  slots := wideSchedSlot + 96
+  total := wideSchedSlot + 106
+  buf := Bitslice.bufSlot
+  G := 32
+  bw := 2
+  stack := 16
+
+/-- The sizes of the groups of blocks the modes whose blocks are independent
+take, in turn, before single blocks. -/
+def levels : List Nat := [32, 16, 8, 4, 2]
+
 /-- `vg_triple_des_cbc_encrypt_chained`, with its scratch buffer as the fifth argument. -/
 def cbcEncryptChained : Prog isa := (dirCore .encrypt).seq (Modes.Mode.cbcEncChained 2)
 
 /-- `vg_triple_des_cbc_decrypt_chained`, with its scratch buffer as the fifth argument. -/
-def cbcDecryptChained : Prog isa := (dirCore .decrypt).seq (Modes.Mode.cbcDecChained 2)
+def cbcDecryptChained : Prog isa :=
+  (wideCore .decrypt).seqLevels (Modes.Mode.cbcDecWide 2) levels (Modes.Mode.cbcDecChained 2)
 
 end VG.Impl.TripleDes.X86

@@ -38,6 +38,9 @@ its stack arguments, replaces each of the 32 blocks in the working space
 working space between its own and the blocks.
 -/
 
+-- separate module: `Ecb/Verified` uses only `batch_wp` of it, and a change to the ECB loop or to the
+-- functions' calls does not check this proof again
+
 @[expose] public section
 
 namespace VG.Proof.TripleDes.X86.Bitsliced
@@ -231,7 +234,8 @@ def loadN (n : Nat) : List Instr :=
   (List.range n).flatMap fun j => [.mov .eax (.mem (ws (bufWord j))), .store (ws (stSlot j)) .eax]
 
 theorem loadN_succ (n : Nat) :
-    loadN (n + 1) = loadN n ++ [.mov .eax (.mem (ws (bufWord n))), .store (ws (stSlot n)) .eax] := by
+    loadN (n + 1) = loadN n ++
+      ([.mov .eax (.mem (ws (bufWord n))), .store (ws (stSlot n)) .eax] : List Instr) := by
   simp only [loadN, List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil,
     List.append_nil]
 
@@ -273,7 +277,8 @@ def storeN (n : Nat) : List Instr :=
   (List.range n).flatMap fun j => [.mov .eax (.mem (ws (stSlot j))), .store (ws (bufWord j)) .eax]
 
 theorem storeN_succ (n : Nat) :
-    storeN (n + 1) = storeN n ++ [.mov .eax (.mem (ws (stSlot n))), .store (ws (bufWord n)) .eax] := by
+    storeN (n + 1) = storeN n ++
+      ([.mov .eax (.mem (ws (stSlot n))), .store (ws (bufWord n)) .eax] : List Instr) := by
   simp only [storeN, List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil,
     List.append_nil]
 

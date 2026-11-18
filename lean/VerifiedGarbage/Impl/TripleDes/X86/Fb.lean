@@ -23,7 +23,8 @@ def ofb : Prog isa := (dirCore .encrypt).seq (Modes.Mode.ofb 2)
 def cfbEncrypt : Prog isa := (dirCore .encrypt).seq (Modes.Mode.cfbEnc 2)
 
 /-- `vg_triple_des_cfb64_decrypt`. -/
-def cfbDecrypt : Prog isa := (dirCore .encrypt).seq (Modes.Mode.cfbDec 2)
+def cfbDecrypt : Prog isa :=
+  (wideCore .encrypt).seqLevels (Modes.Mode.cfbDecWide 2) levels (Modes.Mode.cfbDecEarly 2)
 
 /-- `vg_triple_des_cfb8_encrypt`. -/
 def cfb8Encrypt : Prog isa := (dirCore .encrypt).seq (Modes.Mode.cfb8Enc 2)

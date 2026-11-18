@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
 
-/-! # The bitsliced S-box circuits' code on x86 (32-bit), as literals -/
+/-! # The bitsliced Triple DES code on x86 (32-bit), as literals -/
 
 @[expose] public section
 
@@ -54,5 +54,10 @@ materialize_code sbox7
 def transposeProg : Prog isa := .block transpose
 
 materialize_code transposeProg
+
+/-! The functions. -/
+
+materialize_code encryptBatch
+materialize_code decryptBatch
 
 end VG.Impl.TripleDes.X86.Bitslice
