@@ -42,4 +42,18 @@ def withRet (rb : Nat) (c : Prog isa) : Prog isa := .seq c (.block (retFix rb))
 /-- `c`, then the `W` bytes below the stack pointer zeroed. -/
 def withScrub (W : Nat) (c : Prog isa) : Prog isa := .seq c (scrubTail W)
 
+/-- `str q31, [x9, #16k]` for each `k` of `ks`. -/
+def scrubStoresL (ks : List Nat) : List Instr := ks.map fun k => .strq .v31 .x9 (16 * k)
+
+/-- The frame of `W` bytes, with its 16-byte granules `ks` zeroed. -/
+def scrubTailG (W : Nat) (ks : List Nat) : Prog isa :=
+  .frame (.alloc W) (.block (.vop (.movi0 .v31) :: .addSp .x9 0 :: scrubStoresL ks)) (.free W)
+
+/-- `c`, then the granules `ks` of the `W` bytes below the stack pointer
+zeroed; nothing if there are none. -/
+def withScrubG (W : Nat) (ks : List Nat) (c : Prog isa) : Prog isa :=
+  match ks with
+  | [] => c
+  | _ => .seq c (scrubTailG W ks)
+
 end VG.Impl.Residue.AArch64
