@@ -176,7 +176,7 @@ PLATFORMS = {
         "image": "ghcr.io/pyca/verified-garbage-runner:armv7-cross",
     },
     "powerpc64": {
-        "os": "ubuntu-24.04-ppc64le",
+        "os": "ubuntu-24.04-ppc64le-p10",
         "image": "ghcr.io/pyca/verified-garbage-runner:ppc64le",
     },
     "riscv64": {"os": "ubuntu-24.04-riscv", "rust": "host"},
