@@ -1006,4 +1006,26 @@ theorem Verified.withScrubG {c : Prog isa} {k : Contract isa} {W : Nat} {ks : Li
     rw [(Exec.det b₁ x₁).1, (Exec.det b₂ x₂).1, p₁.2.1, p₂.2.1,
       hct _ _ _ _ _ _ h₁ h₂ hp a₁ a₂, hk.pub s₁ s₂ hp]
 
+/-- `noResidue_withScrubG` with no granule left to zero: the code alone,
+from no byte of the window known to agree. -/
+theorem noResidue_of_doneG {c : Prog isa} {k : Contract isa} {r W : Nat}
+    (hv : Verified target c k) (hW : 0 < W ∧ W < 4096 ∧ W % 16 = 0)
+    (hsp : ∀ s, k.pre s → W ≤ s.sp.toNat)
+    (h : ∃ hc, ((rtaintG W).check (RTaintB.init, some (0, 0, [])) c hc).any (doneG W r []) = true) :
+    NoResidue c k r :=
+  noResidue_withScrubG (ks := []) (P₀ := 0) hv hW hsp (fun _ _ _ _ _ hb => by simp at hb) h
+
+section
+variable {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)} {post : sig.Post abi.ptrBits}
+  {wa : Bool} {stack : Nat} {leak : Option (Curry (sig.words abi.ptrBits) (Mem → List Nat))}
+
+/-- A contract whose arguments are all in registers has room for `W ≤ stack` bytes. -/
+theorem sp_of_pre (hk : (sig.words abi.ptrBits).length ≤ 8) {W : Nat} (hW : 0 < W) (hWs : W ≤ stack) :
+    ∀ s, (sig.contract abi pre post wa stack leak).pre s → W ≤ s.sp.toNat := fun s hs => by
+  rw [pre_regs hk] at hs
+  have := hW
+  rcases hs.1 with h0 | h0 <;> omega
+
+end
+
 end VG.AArch64.RTaintG
