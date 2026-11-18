@@ -16,10 +16,11 @@ in `sfx`, e.g. `_aesni`):
 
 1. our caller's `ebx`, `esi`, `edi` and `ebp` saved in `save`, as AES-CFB's
    final functions do (`Impl/AesCfb/X86/Final.lean`);
-2. a call of the whole-block function of the same implementation
-   (`vg_aes_ctr` and its variants, `Impl/AesCtr/X86.lean`) on the
-   `len / 16` whole blocks, its six arguments pushed in a frame of their
-   own, which leaves `Tₙ₊₁` in `ctr`;
+2. a call of the whole-block function over the same implementation, one
+   block at a time (`crypt`, `Impl/AesCtr/X86.lean`, as the internal
+   function `vg_aes_ctr_single` and its variants), on the `len / 16` whole
+   blocks, its six arguments pushed in a frame of their own, which leaves
+   `Tₙ₊₁` in `ctr`;
 3. if `u = len mod 16 ≠ 0`, the block after the registers in `save` zeroed,
    a call of the same function on that one block, which leaves
    `CIPH_K(Tₙ₊₁)` there and `Tₙ₊₂` in `ctr`, and the first `u` bytes of the
@@ -77,8 +78,10 @@ def final (name : String) (whole : Prog isa) : Prog isa :=
   .seq (.block (finalSave ++ wholeArgs)) (.seq (wholeCall name whole)
     (.seq (.block tailTest) (.seq (.ite .e (.block []) (finalTail name whole)) (.block finalRestore))))
 
-/-- `vg_aes_ctr_final`, calling `vg_aes_ctr` with the block function `b`,
-whose callers' names end in `sfx`. -/
-def cryptFinal (b : Blocks) (sfx : String) : Prog isa := final ("vg_aes_ctr" ++ sfx) (crypt b)
+/-- `vg_aes_ctr_final`, calling `crypt` with the block function `b`, whose
+callers' names end in `sfx`, as an internal function of its own,
+`vg_aes_ctr_single<sfx>`: `vg_aes_ctr` is `crypt32`, over
+`vg_aes_ctr32_to`. -/
+def cryptFinal (b : Blocks) (sfx : String) : Prog isa := final ("vg_aes_ctr_single" ++ sfx) (crypt b)
 
 end VG.Impl.AesCtr.X86
