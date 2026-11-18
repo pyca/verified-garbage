@@ -166,7 +166,7 @@ theorem correct_blocks {crypt4 : Prog isa} {f : Nat → List Byte → Spec.Aes.S
     { scr := hscr₃
       base := hb₃
       masks := by rw [m₃]; exact mk₃
-      sch := List.mem_append_left _ (by rw [rd₃, rd₃', rd₂', rd₂, rd₁]; exact hrS)
+      sch := ⟨240, Nat.le_refl _, List.mem_append_left _ (by rw [rd₃, rd₃', rd₂', rd₂, rd₁]; exact hrS)⟩
       sep := dSS
       rounds := hR14
       w := fun i hi => by

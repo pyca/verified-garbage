@@ -247,7 +247,7 @@ theorem frame_wp {body : Prog isa} {pre post : List Instr} {wd : Bool} {len : Na
     { scr := hscr₄
       base := hb₄
       masks := mk₄
-      sch := List.mem_append_left _ (by rw [rd₄, rd₃, rd₂, rd₁', rd₁]; exact hrS)
+      sch := ⟨240, Nat.le_refl _, List.mem_append_left _ (by rw [rd₄, rd₃, rd₂, rd₁', rd₁]; exact hrS)⟩
       sep := dSS
       rounds := hR14
       w := fun i hi => by

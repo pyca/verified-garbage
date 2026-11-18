@@ -7,6 +7,7 @@ public import VerifiedGarbage.TCB.VectorCrypto
 public import VerifiedGarbage.Proof.Gcm.Clmul.Arith
 import Mathlib.Tactic.LinearCombination
 public import VerifiedGarbage.Proof.Gcm.RISCV64.Ghash
+public import VerifiedGarbage.Proof.Gcm.RISCV64.PrepLaw
 public import VerifiedGarbage.Proof.Gcm.Holes
 public import VerifiedGarbage.Impl.Gcm.RISCV64
 public import VerifiedGarbage.Proof.Framework.RISCV64.MRun
@@ -1381,5 +1382,47 @@ theorem law_correct (s : State) (hs : ghashX.pre s) :
   · exact hkeep.gpr (by revert hr h; revert r; decide)
 
 instance : GhashLaw := ⟨law_correct⟩
+
+/-! ## `prep` in the terms of `Spec/Gcm/Bitsliced.lean` -/
+
+theorem ghashHi_append (h0 h1 : BitVec 64) : Spec.Gcm.ghashHi (h0 ++ h1) = h0 := by
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
+  simp only [Spec.Gcm.ghashHi, BitVec.getLsbD_setWidth, BitVec.getLsbD_ushiftRight, BitVec.getLsbD_append, hi,
+    decide_true, Bool.true_and]
+  simp
+
+theorem ghashLo_append (h0 h1 : BitVec 64) : Spec.Gcm.ghashLo (h0 ++ h1) = h1 := by
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
+  simp only [Spec.Gcm.ghashLo, BitVec.getLsbD_setWidth, BitVec.getLsbD_append, hi, decide_true, Bool.true_and,
+    ite_true]
+
+theorem ghashKey0_append (h0 h1 : BitVec 64) : Spec.Gcm.ghashKey0 (h0 ++ h1) = Holes.key0 h0 h1 := by
+  rw [Spec.Gcm.ghashKey0, ghashHi_append, ghashLo_append, Holes.key0, VG.Impl.Gcm.Clmul.poly]
+
+theorem ghashKey1_append (h0 h1 : BitVec 64) : Spec.Gcm.ghashKey1 (h0 ++ h1) = Holes.key1 h0 h1 := by
+  rw [Spec.Gcm.ghashKey1, ghashHi_append, ghashLo_append, Holes.key1]
+
+theorem ghashOperand_eq (h : Spec.Gcm.Block) (i : Nat) :
+    Spec.Gcm.ghashOperand h i = opK (Spec.Gcm.ghashKey0 h) (Spec.Gcm.ghashKey1 h) i := by
+  simp only [Spec.Gcm.ghashOperand, opK, Holes.lo32, Holes.hi32]
+
+theorem prep_law (s : State) (hH : InRegions (s.rd ++ s.wr) (s.gpr HP) 16)
+    (hW : ∀ k < 36, (s.gpr FP + BitVec.ofNat 64 (8 * k)).toNat % 8 = 0 ∧
+      InRegions s.wr (s.gpr FP + BitVec.ofNat 64 (8 * k)) 8) :
+    WP isa (.block prep) s fun t =>
+      (∀ i < 9, ∀ j < 4, t.mem.readW (s.gpr FP + BitVec.ofNat 64 (8 * (4 * i + j))) 64 =
+        Spec.Gcm.ghashOperand (Spec.Gcm.blockAt s.mem (s.gpr HP)) i &&& Spec.Gcm.ghashClass j) ∧
+      (∀ r, r ∉ prepWrites → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp ∧
+      Frame [⟨s.gpr FP, 288⟩] s.mem t.mem := by
+  refine WP.mono (prep_ok s hH fun k hk => ⟨by omega_using [hk], (hW k hk).1, (hW k hk).2⟩)
+    fun t ⟨_, T, k, sp, F⟩ => ⟨fun i hi j hj => ?_, fun r hr => k.1 r hr, k.2.1, k.2.2, sp, F⟩
+  obtain e := T i hi j hj
+  rw [fw, Keep.gpr k (by decide)] at e
+  rw [e, ghashOperand_eq, blockAt_hOf, hOf, w2, ghashKey0_append, ghashKey1_append]
+  rfl
+
+instance : PrepLaw := ⟨prep_law⟩
 
 end VG.Proof.Gcm.RISCV64

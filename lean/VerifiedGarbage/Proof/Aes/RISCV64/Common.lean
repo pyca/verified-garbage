@@ -465,7 +465,8 @@ open VG.Spec.Aes (roundKey)
 
 /-! ## Loading a round key -/
 
-theorem keyLoad_ok {s : State} {sc : Addr} {off : Nat} (hr : (⟨sc, 240⟩ : Region) ∈ s.rd ++ s.wr)
+theorem keyLoad_ok {s : State} {sc : Addr} {off : Nat}
+    (hr : ∃ k, 240 ≤ k ∧ (⟨sc, k⟩ : Region) ∈ s.rd ++ s.wr)
     (hb : s.gpr .a0 = sc + BitVec.ofNat 64 off) (hoff : off + 16 ≤ 240) :
     WP isa (.block keyLoad) s fun s' =>
       (∀ b < 4, s'.gpr (q b) = s.mem.readW (wordAddr (s.gpr .a0) 0) 64 ∧
@@ -473,7 +474,11 @@ theorem keyLoad_ok {s : State} {sc : Addr} {off : Nat} (hr : (⟨sc, 240⟩ : Re
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ s'.mem = s.mem ∧
       (∀ r, r ∉ sboxWrites → s'.gpr r = s.gpr r) := by
   obtain hin : ∀ d, d + 4 ≤ 16 → InRegions (s.rd ++ s.wr) (s.gpr .a0 + BitVec.ofNat 64 d) 4 :=
-    fun d hd => ⟨_, hr, by rw [hb, Offset.add_add]; exact Offset.contains_base sc (by omega_using [hoff, hd]) (by omega_using [hoff, hd])⟩
+    fun d hd => by
+      obtain ⟨k, hk, hr⟩ := hr
+      refine ⟨_, hr, ?_⟩
+      rw [hb, Offset.add_add]
+      exact Offset.contains_base sc (by omega_using [hoff, hd, hk]) (by omega_using [hoff, hd])
   simp only [keyLoad]
   rw [WP.block_append_iff, WP.block_append_iff]
   refine WP.mono (Bytes.loadLE64_ok (by decide) (by decide) (by decide) (by decide) (by decide)
@@ -617,7 +622,7 @@ structure KSetup (s₀ : State) (X b sc : Addr) (R : Nat) (w : List Byte) : Prop
   scr : Scr s₀ X 2048
   base : s₀.gpr sb = b
   masks : MasksAt s₀.mem b allKs
-  sch : (⟨sc, 240⟩ : Region) ∈ s₀.rd ++ s₀.wr
+  sch : ∃ k, 240 ≤ k ∧ (⟨sc, k⟩ : Region) ∈ s₀.rd ++ s₀.wr
   sep : Region.Disjoint ⟨sc, 240⟩ ⟨X, 2048⟩
   rounds : R ≤ 14
   w : ∀ i < 16 * (R + 1), w.getD i 0 = s₀.mem (sc + BitVec.ofNat 64 i)

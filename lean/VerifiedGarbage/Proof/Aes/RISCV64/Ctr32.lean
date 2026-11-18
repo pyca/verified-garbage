@@ -1527,7 +1527,7 @@ theorem correctWith {o : Bool} {s₀ : State} {S : Addr} (hp : CPre o s₀ S) :
     { scr := hscr₄
       base := hb₄
       masks := mk₄
-      sch := List.mem_append_left _ (by rw [rd₄, rd₃, rd₂, rd₁', rd₁]; exact hrS)
+      sch := ⟨240, Nat.le_refl _, List.mem_append_left _ (by rw [rd₄, rd₃, rd₂, rd₁', rd₁]; exact hrS)⟩
       sep := dSS
       rounds := hR14
       w := fun i hi => by
