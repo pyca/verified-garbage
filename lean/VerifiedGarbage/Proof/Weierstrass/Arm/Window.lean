@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Weierstrass.Arm.Window
 public import VerifiedGarbage.Proof.Mont.Arm.Words
 public import VerifiedGarbage.Proof.Mont.Words
+public import VerifiedGarbage.Proof.Ed25519.SlidingDigits
 import VerifiedGarbage.Proof.Mont.Arm.Csub
 import VerifiedGarbage.Proof.Weierstrass.Arm.TCombCorrect
 import VerifiedGarbage.Proof.Weierstrass.Arm.TCombScan
@@ -38,8 +39,9 @@ namespace VG.Proof.Weierstrass.Arm
 
 open VG VG.Arm VG.Impl.Mont.Arm VG.Impl.Weierstrass VG.Impl.Weierstrass.Arm
 open VG.Proof.Mont VG.Proof.Mont.Arm
-open VG.Proof.X25519.Arm (Rest Upd Mupd Fupd wp_mov wp_dp wp_mul wp_movw wp_cmp wp_ldr wp_str op2_imm op2_reg
-  dpVal)
+open VG.Proof.X25519.Arm (Rest Upd Mupd Fupd wp_mov wp_dp wp_mul wp_movw wp_cmp wp_ldr wp_str wp_ldrb wp_strb
+  op2_imm op2_reg op2_lsl dpVal)
+open VG.Proof.Ed25519
 
 /-! ## Loops counting up -/
 
@@ -360,5 +362,419 @@ theorem scan_ok {s : State} {base : Addr} {size len o k cnt tbl a : Nat} (hs : S
       Rest.refl _ _, VG.Proof.Mont.Outside.refl _ _ _ _, fun h => absurd h (Nat.not_lt_zero _)⟩
   · rw [I.val ha i hi, m₂]
   · rw [← m₂]; exact I.unch
+
+/-! ## A table read at a public address -/
+
+/-- The `k` words at `a` in the working space are those at `K + d`, for
+`r5 = r12 + K`, past it. -/
+theorem loadFar_ok {size len : Nat} : ∀ (k : Nat) {s : State} {base : Addr} {K d a : Nat},
+    Scr s base size → Far s base len → s.gpr .r5 = s.gpr .r12 + BitVec.ofNat 32 K →
+    a + 4 * k ≤ size → size ≤ K + d → K + d + 4 * k ≤ len → d + 4 * k ≤ 4096 →
+    WP isa (.block (loadFar k d a)) s fun s' =>
+      val32 s'.mem base a k = val32 s.mem base (K + d) k ∧ Rest [.r4] s s' ∧
+      Outside base a (4 * k) s.mem s'.mem
+  | 0, _, _, _, _, _, _, _, _, _, _, _, _ =>
+    WP.block_nil ⟨rfl, Rest.refl _ _, VG.Proof.Mont.Outside.refl _ _ _ _⟩
+  | k + 1, s, base, K, d, a, hs, hf, hp, ha, hsep, hl, hd => by
+    have hn := hf.nowrap
+    have hsn := hs.nowrap
+    rw [loadFar, List.cons_append, List.cons_append, List.nil_append]
+    refine wp_ldr (by omega_using [hd]) (hf.ea_reg hs hp (by omega_using [hl]))
+      (hf.read (d := K + d) (n := 4) (by omega_using [hl])) fun s₁ u₁ => ?_
+    have k₁ : Rest [.r4] s s₁ := u₁.rest (by simp)
+    have hs₁ := hs.of_rest k₁ (by decide)
+    refine wp_str (hs.off_lt (by omega_using [ha])) (hs₁.ea (by omega_using [ha]))
+      (hs₁.write (d := a) (n := 4) (by omega_using [ha])) fun s₂ m₂ => ?_
+    have k₂ : Rest [.r4] s s₂ := k₁.trans (m₂.rest _)
+    have O₂ : Outside base a 4 s.mem s₂.mem := by
+      rw [m₂.mem, u₁.mem]; exact writeW32_outside _ _ _ (by omega_using [ha, hsn])
+    refine WP.mono (loadFar_ok k (hs.of_rest k₂ (by decide)) (hf.of_rest k₂) (K := K) (d := d + 4)
+      (a := a + 4) (by rw [k₂.gpr _ (by decide), k₂.gpr _ (by decide), hp]) (by omega_using [ha])
+      (by omega_using [hsep]) (by omega_using [hl]) (by omega_using [hd]))
+      fun s₃ ⟨e₃, k₃, O₃⟩ => ⟨?_, k₂.trans k₃, (O₂.mono (Nat.le_refl _) (by omega_using [])).trans
+        (O₃.mono (by omega_using []) (by omega_using []))⟩
+    rw [← Nat.add_assoc] at e₃
+    rw [val32, val32, O₃.w32 (by omega_using []) (by omega_using [ha, hsn]), e₃,
+      O₂.val32 (by omega_using [ha, hsep]) (by omega_using [ha, hn, hsep, hl]), m₂.mem, w32_write_self, u₁.gpr]
+
+/-- The point `p` of the working space holds the point at `K + d`, for
+`r5 = r12 + K`, past it. -/
+theorem loadPt_ok {s : State} {base : Addr} {size len : Nat} (hs : Scr s base size) (hf : Far s base len)
+    {n K d : Nat} {p : Pt} (hp : s.gpr .r5 = s.gpr .r12 + BitVec.ofNat 32 K)
+    (hin : ∀ x ∈ [p.x, p.y, p.z], x + 8 * n ≤ size)
+    (hpp : (p.x + 8 * n ≤ p.y ∨ p.y + 8 * n ≤ p.x) ∧ (p.x + 8 * n ≤ p.z ∨ p.z + 8 * n ≤ p.x) ∧
+      (p.y + 8 * n ≤ p.z ∨ p.z + 8 * n ≤ p.y))
+    (hsep : size ≤ K + d) (hl : K + d + 24 * n ≤ len) (hd : d + 24 * n ≤ 4096) :
+    WP isa (.block (loadPt n d p)) s fun s' =>
+      wordsVal s'.mem base p.x n = wordsVal s.mem base (K + d) n ∧
+      wordsVal s'.mem base p.y n = wordsVal s.mem base (K + d + 8 * n) n ∧
+      wordsVal s'.mem base p.z n = wordsVal s.mem base (K + d + 16 * n) n ∧
+      Rest [.r4] s s' ∧ Outs base [(p.x, 8 * n), (p.y, 8 * n), (p.z, 8 * n)] s.mem s'.mem := by
+  have hn := hf.nowrap
+  have hsn := hs.nowrap
+  simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hin
+  obtain ⟨ix, iy, iz⟩ := hin
+  obtain ⟨xy, xz, yz⟩ := hpp
+  simp only [wordsVal_eq_val32]
+  rw [loadPt, List.append_assoc, WP.block_append_iff]
+  refine WP.mono (loadFar_ok (2 * n) hs hf hp (by omega_using [ix]) hsep (by omega_using [hl])
+    (by omega_using [hd])) fun s₁ ⟨e₁, k₁, O₁⟩ => ?_
+  have hs₁ := hs.of_rest k₁ (by decide)
+  have hf₁ := hf.of_rest k₁
+  have hp₁ : s₁.gpr .r5 = s₁.gpr .r12 + BitVec.ofNat 32 K := by
+    rw [k₁.gpr _ (by decide), k₁.gpr _ (by decide), hp]
+  rw [WP.block_append_iff]
+  refine WP.mono (loadFar_ok (2 * n) hs₁ hf₁ hp₁ (d := d + 8 * n) (by omega_using [iy])
+    (by omega_using [hsep]) (by omega_using [hl]) (by omega_using [hd])) fun s₂ ⟨e₂, k₂, O₂⟩ => ?_
+  have k₁₂ := k₁.trans k₂
+  have hp₂ : s₂.gpr .r5 = s₂.gpr .r12 + BitVec.ofNat 32 K := by
+    rw [k₁₂.gpr _ (by decide), k₁₂.gpr _ (by decide), hp]
+  refine WP.mono (loadFar_ok (2 * n) (hs.of_rest k₁₂ (by decide)) (hf.of_rest k₁₂) hp₂ (d := d + 16 * n)
+    (by omega_using [iz]) (by omega_using [hsep]) (by omega_using [hl]) (by omega_using [hd]))
+    fun s₃ ⟨e₃, k₃, O₃⟩ => ?_
+  rw [← Nat.add_assoc] at e₂ e₃
+  refine ⟨?_, ?_, ?_, k₁₂.trans k₃, ?_⟩
+  · rw [O₃.val32 (d := p.x) (by omega_using [xz]) (by omega_using [ix, hsn]),
+      O₂.val32 (d := p.x) (by omega_using [xy]) (by omega_using [ix, hsn]), e₁]
+  · rw [O₃.val32 (d := p.y) (by omega_using [yz]) (by omega_using [iy, hsn]), e₂,
+      O₁.val32 (by omega_using [ix, hsep]) (by omega_using [hl, hn])]
+  · rw [e₃, O₂.val32 (by omega_using [iy, hsep]) (by omega_using [hl, hn]),
+      O₁.val32 (by omega_using [ix, hsep]) (by omega_using [hl, hn])]
+  · rw [show 4 * (2 * n) = 8 * n by omega_using []] at O₁ O₂ O₃
+    exact ((Outs.of_outside O₁ (by simp)).trans (Outs.of_outside O₂ (by simp))).trans
+      (Outs.of_outside O₃ (by simp))
+
+/-! ## A number's sliding digits -/
+
+/-- A bit's byte, as the table of bits has it, is the bit. -/
+theorem bitByte_eq (k t : Nat) : (if k.testBit t then 1 else 0 : BitVec 8) = BitVec.ofNat 8 (Slide.bit k t) := by
+  have h := Slide.bit_lt k t
+  rw [Nat.testBit_eq_decide_div_mod_eq]
+  unfold Slide.bit at h ⊢
+  generalize k / 2 ^ t % 2 = b at h
+  rcases (by omega_using [h] : b = 0 ∨ b = 1) with rfl | rfl <;> rfl
+
+/-- The recoding after `i` bits (`Slide.run`): the registers hold its state,
+the bytes below `i` the digits so far, and the others their bits. -/
+structure RecInv (base : Addr) (tb nb k : Nat) (s₀ : State) (i : Nat) (s : State) : Prop where
+  r6 : s.gpr .r6 = s.gpr .r12 + BitVec.ofNat 32 tb
+  r9 : s.gpr .r9 = BitVec.ofNat 32 i
+  r8 : s.gpr .r8 = BitVec.ofNat 32 (Slide.run k i).m
+  r7 : s.gpr .r7 = BitVec.ofNat 32 (Slide.run k i).w
+  r3 : s.gpr .r3 = s.gpr .r12 + BitVec.ofNat 32 (tb + (Slide.run k i).p)
+  keep : Rest [.r1, .r2, .r3, .r4, .r6, .r7, .r8, .r9] s₀ s
+  unch : Outside base tb nb s₀.mem s.mem
+  lo : ∀ t < i, s.mem (off base (tb + t)) = BitVec.ofNat 8 ((Slide.run k i).u t)
+  hi : ∀ t, i ≤ t → t < nb → s.mem (off base (tb + t)) = BitVec.ofNat 8 (Slide.bit k t)
+
+/-- After `recHead` at bit `i`, from `s`: the bit in `r1`, its address in
+`r2`, and `Z` set with no window in hand. -/
+structure RecMid (tb k i : Nat) (s s₃ : State) : Prop where
+  bit : s₃.gpr .r1 = BitVec.ofNat 32 (Slide.bit k i)
+  regs : ∀ r, r ≠ .r1 → r ≠ .r2 → s₃.gpr r = s.gpr r
+  r2 : s₃.gpr .r2 = s₃.gpr .r12 + BitVec.ofNat 32 (tb + i)
+  mem : s₃.mem = s.mem
+  keep : Rest [.r1, .r2] s s₃
+  z : s₃.z = decide ((Slide.run k i).m = 0)
+
+/-- The bit, and whether a window is in hand. -/
+theorem recHead_ok {s₀ s : State} {base : Addr} {size len tb nb k i : Nat} (hs₀ : Scr s₀ base size)
+    (hf₀ : Far s₀ base len) (hl : tb + nb ≤ len) (hi : i < nb) (I : RecInv base tb nb k s₀ i s) :
+    WP isa (.block recHead) s (RecMid tb k i s) := by
+  have hs := hs₀.of_rest I.keep (by decide)
+  have hf := hf₀.of_rest I.keep
+  have hb := Slide.bit_lt k i
+  have hm := (Slide.run_good k i).m_cases
+  have hbyte := I.hi i (Nat.le_refl _) hi
+  -- The bit, and whether a window is in hand.
+  unfold recHead
+  refine wp_dp (op2_reg _ _) fun s₁ u₁ => ?_
+  have a₁ : s₁.gpr .r2 = s₁.gpr .r12 + BitVec.ofNat 32 (tb + i) := by
+    rw [u₁.gpr, dpVal, u₁.other .r12 (by decide), I.r6, I.r9, BitVec.add_assoc, ← BitVec.ofNat_add]
+  have k₁ : Rest [.r2] s s₁ := u₁.rest (by simp)
+  have hs₁ := hs.of_rest k₁ (by decide)
+  have hf₁ := hf.of_rest k₁
+  refine wp_ldrb (by decide) (hf₁.ea_reg hs₁ a₁ (by omega_using [hl, hi]))
+    (hf₁.read (d := tb + i + 0) (n := 1) (by omega_using [hl, hi])) fun s₂ u₂ => ?_
+  refine wp_cmp (op2_imm (by decide)) fun s₃ f₃ z₃ => WP.block_nil ?_
+  have b₃ : s₃.gpr .r1 = BitVec.ofNat 32 (Slide.bit k i) := by
+    rw [f₃.gpr, u₂.gpr, u₁.mem, Nat.add_zero, hbyte]
+    exact (by decide : ∀ b < 2, (BitVec.ofNat 8 b).setWidth 32 = BitVec.ofNat 32 b) _ hb
+  have g₃ : ∀ r, r ≠ .r1 → r ≠ .r2 → s₃.gpr r = s.gpr r := fun r h1 h2 => by
+    rw [f₃.gpr, u₂.other r h1, u₁.other r h2]
+  have a₃ : s₃.gpr .r2 = s₃.gpr .r12 + BitVec.ofNat 32 (tb + i) := by
+    rw [f₃.gpr, u₂.other _ (by decide), u₂.other _ (by decide), a₁]
+  have m₃ : s₃.mem = s.mem := by rw [f₃.mem, u₂.mem, u₁.mem]
+  have k₃ : Rest [.r1, .r2] s s₃ := (k₁.mono (by simp)).trans ((u₂.rest (by simp)).trans (f₃.rest _))
+  have hz₃ : s₃.z = decide ((Slide.run k i).m = 0) := by
+    rw [z₃, u₂.other _ (by decide), u₁.other _ (by decide), I.r8]
+    exact (by decide : ∀ m < 16, (BitVec.ofNat 32 m - 0#32 == 0#32) = decide (m = 0)) _
+      (by rcases hm with h | h | h | h <;> rw [h] <;> decide)
+  exact ⟨b₃, g₃, a₃, m₃, k₃, hz₃⟩
+
+/-- The window's step and the next bit, after `recHead`. -/
+theorem recTail_ok {s₀ s s₃ : State} {base : Addr} {size len tb nb k i : Nat} (hs₀ : Scr s₀ base size)
+    (hf₀ : Far s₀ base len) (hl : tb + nb ≤ len) (hnb : nb < 2 ^ 16) (hi : i < nb)
+    (I : RecInv base tb nb k s₀ i s) (M : RecMid tb k i s s₃) :
+    WP isa (.seq (.ite .eq (.block recOpen) (.block recGrow)) (.block (recNext nb))) s₃
+      fun t => RecInv base tb nb k s₀ (i + 1) t ∧ t.z = decide (i + 1 = nb) := by
+  have hn := hf₀.nowrap
+  have hs := hs₀.of_rest I.keep (by decide)
+  have hf := hf₀.of_rest I.keep
+  have G := Slide.run_good k i
+  have hb := Slide.bit_lt k i
+  have hm := G.m_cases
+  have hw := G.w
+  have hp := G.p
+  rw [Slide.run_i] at hp
+  have hbyte := I.hi i (Nat.le_refl _) hi
+  obtain ⟨b₃, g₃, a₃, m₃, k₃, hz₃⟩ := M
+  have hs₃ := hs.of_rest k₃ (by decide)
+  have hf₃ := hf.of_rest k₃
+  -- What is left after the window's step: the next bit.
+  have next : ∀ t : State, t.gpr .r6 = t.gpr .r12 + BitVec.ofNat 32 tb → t.gpr .r9 = BitVec.ofNat 32 i →
+      t.gpr .r8 = BitVec.ofNat 32 (Slide.run k (i + 1)).m → t.gpr .r7 = BitVec.ofNat 32 (Slide.run k (i + 1)).w →
+      t.gpr .r3 = t.gpr .r12 + BitVec.ofNat 32 (tb + (Slide.run k (i + 1)).p) →
+      Rest [.r1, .r2, .r3, .r4, .r6, .r7, .r8, .r9] s₀ t → Outside base tb nb s₀.mem t.mem →
+      (∀ q < i + 1, t.mem (off base (tb + q)) = BitVec.ofNat 8 ((Slide.run k (i + 1)).u q)) →
+      (∀ q, i + 1 ≤ q → q < nb → t.mem (off base (tb + q)) = BitVec.ofNat 8 (Slide.bit k q)) →
+      WP isa (.block (recNext nb)) t fun t' => RecInv base tb nb k s₀ (i + 1) t' ∧ t'.z = decide (i + 1 = nb) := by
+    intro t t6 t9 t8 t7 t3 tk tu tlo thi
+    unfold recNext
+    refine wp_dp (op2_imm (by decide)) fun t₁ v₁ => wp_movw fun t₂ v₂ =>
+      wp_cmp (op2_reg _ _) fun t₃ f z => WP.block_nil ?_
+    have g : ∀ r, r ≠ .r9 → r ≠ .r4 → t₃.gpr r = t.gpr r := fun r h1 h2 => by
+      rw [f.gpr, v₂.other r h2, v₁.other r h1]
+    have e9 : t₃.gpr .r9 = BitVec.ofNat 32 (i + 1) := by
+      rw [f.gpr, v₂.other _ (by decide), v₁.gpr, dpVal, t9]; exact (BitVec.ofNat_add _ _).symm
+    have m : t₃.mem = t.mem := by rw [f.mem, v₂.mem, v₁.mem]
+    refine ⟨⟨by rw [g _ (by decide) (by decide), g _ (by decide) (by decide), t6], e9,
+      by rw [g _ (by decide) (by decide), t8], by rw [g _ (by decide) (by decide), t7],
+      by rw [g _ (by decide) (by decide), g _ (by decide) (by decide), t3],
+      tk.trans (((v₁.rest (by simp)).trans (v₂.rest (by simp))).trans (f.rest _)), by rw [m]; exact tu,
+      fun q hq => by rw [m]; exact tlo q hq, fun q h1 h2 => by rw [m]; exact thi q h1 h2⟩, ?_⟩
+    have e1 : BitVec.ofNat 32 i + 1#32 = BitVec.ofNat 32 (i + 1) := (BitVec.ofNat_add _ _).symm
+    have e2 : (BitVec.ofNat 16 nb).setWidth 32 = BitVec.ofNat 32 nb :=
+      BitVec.eq_of_toNat_eq (by simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega_using [hnb])
+    rw [z, v₂.gpr, v₂.other _ (by decide), v₁.gpr, dpVal, t9]
+    apply Bool.eq_iff_iff.mpr
+    simp only [beq_iff_eq, decide_eq_true_eq]
+    change BitVec.ofNat 32 i + 1#32 - (BitVec.ofNat 16 nb).setWidth 32 = 0#32 ↔ i + 1 = nb
+    rw [e1, e2, TComb.sub_zero_iff, TComb.ofNat32_eq (by omega_using [hi, hnb]) (by omega_using [hnb])]
+  by_cases h0 : (Slide.run k i).m = 0
+  · -- No window in hand.
+    obtain ⟨em, ew, ep, eu⟩ := Slide.step_idle (K := k) h0
+    rw [Slide.run_i] at em ew ep eu
+    refine WP.seq (WP.ite true (by change some s₃.z = some true; rw [hz₃]; exact congrArg some (decide_eq_true h0))
+      (fun _ => ?_) (fun impossible => nomatch impossible))
+    unfold recOpen
+    refine wp_mov (op2_reg _ _) fun s₄ u₄ => wp_mov (op2_lsl (by decide)) fun s₅ u₅ =>
+      wp_mov (op2_reg _ _) fun s₆ u₆ => WP.block_nil ?_
+    have g : ∀ r, r ≠ .r7 → r ≠ .r8 → r ≠ .r3 → s₆.gpr r = s₃.gpr r := fun r h1 h2 h3 => by
+      rw [u₆.other r h3, u₅.other r h2, u₄.other r h1]
+    have m₆ : s₆.mem = s.mem := by rw [u₆.mem, u₅.mem, u₄.mem, m₃]
+    refine next s₆ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_
+    · rw [g _ (by decide) (by decide) (by decide), g _ (by decide) (by decide) (by decide),
+        g₃ _ (by decide) (by decide), g₃ _ (by decide) (by decide), I.r6]
+    · rw [g _ (by decide) (by decide) (by decide), g₃ _ (by decide) (by decide), I.r9]
+    · rw [Slide.run_succ, em, u₆.other _ (by decide), u₅.gpr, u₄.other _ (by decide), b₃]
+      exact (by decide : ∀ b < 2, BitVec.ofNat 32 b <<< 1 = BitVec.ofNat 32 (2 * b)) _ hb
+    · rw [Slide.run_succ, ew, u₆.other _ (by decide), u₅.other _ (by decide), u₄.gpr, b₃]
+    · rw [Slide.run_succ, ep, u₆.gpr, u₅.other _ (by decide), u₄.other _ (by decide), a₃,
+        g _ (by decide) (by decide) (by decide)]
+    · exact I.keep.trans ((k₃.mono (by simp)).trans (((u₄.rest (by simp)).trans (u₅.rest (by simp))).trans
+        (u₆.rest (by simp))))
+    · rw [m₆]; exact I.unch
+    · intro q hq
+      rw [m₆, Slide.run_succ, eu]
+      rcases Nat.lt_succ_iff_lt_or_eq.mp hq with h | rfl
+      · rw [Slide.upd_ne _ _ (by omega_using [h]), I.lo q h]
+      · rw [Slide.upd_self, hbyte]
+    · intro q h1 h2
+      rw [m₆]; exact I.hi q (by omega_using [h1]) h2
+  · -- A window in hand.
+    obtain ⟨em, ew, ep, eu⟩ := Slide.step_grow (K := k) h0
+    rw [Slide.run_i] at ew eu
+    obtain ⟨hpi, -, -, -, -, -⟩ := G.m.resolve_left h0
+    rw [Slide.run_i] at hpi
+    have hm16 : (Slide.run k i).m < 16 := by rcases hm with h | h | h | h <;> rw [h] <;> decide
+    refine WP.seq (WP.ite false (by change some s₃.z = some false; rw [hz₃]; exact congrArg some (decide_eq_false h0))
+      (fun impossible => nomatch impossible) (fun _ => ?_))
+    unfold recGrow
+    refine wp_mov (op2_imm (by decide)) fun s₄ u₄ => ?_
+    have k₄ : Rest [.r1, .r2, .r4] s s₄ := (k₃.mono (by simp)).trans (u₄.rest (by simp))
+    have hs₄ := hs.of_rest k₄ (by decide)
+    have hf₄ := hf.of_rest k₄
+    have a₄ : s₄.gpr .r2 = s₄.gpr .r12 + BitVec.ofNat 32 (tb + i) := by
+      rw [u₄.other _ (by decide), u₄.other _ (by decide), a₃]
+    refine wp_strb (by decide) (hf₄.ea_reg hs₄ a₄ (by omega_using [hl, hi]))
+      (hf₄.write (d := tb + i + 0) (n := 1) (by omega_using [hl, hi])) fun s₅ m₅ => ?_
+    refine wp_dp (op2_reg _ _) fun s₆ u₆ => wp_dp (op2_reg _ _) fun s₇ u₇ =>
+      wp_dp (op2_reg _ _) fun s₈ u₈ => ?_
+    have k₈ : Rest [.r1, .r2, .r4, .r7] s s₈ := (k₄.mono (by simp)).trans ((m₅.rest _).trans
+      (((u₆.rest (by simp)).trans (u₇.rest (by simp))).trans (u₈.rest (by simp))))
+    have hs₈ := hs.of_rest k₈ (by decide)
+    have hf₈ := hf.of_rest k₈
+    have a₈ : s₈.gpr .r3 = s₈.gpr .r12 + BitVec.ofNat 32 (tb + (Slide.run k i).p) := by
+      rw [k₈.gpr _ (by decide), k₈.gpr _ (by decide), I.r3]
+    have r4₅ : s₅.gpr .r4 = 0#32 := by rw [m₅.gpr, u₄.gpr]; rfl
+    have r1₅ : s₅.gpr .r1 = BitVec.ofNat 32 (Slide.bit k i) := by rw [m₅.gpr, u₄.other .r1 (by decide), b₃]
+    have r8₅ : s₅.gpr .r8 = BitVec.ofNat 32 (Slide.run k i).m := by
+      rw [m₅.gpr, u₄.other .r8 (by decide), g₃ .r8 (by decide) (by decide), I.r8]
+    have r7₅ : s₅.gpr .r7 = BitVec.ofNat 32 (Slide.run k i).w := by
+      rw [m₅.gpr, u₄.other .r7 (by decide), g₃ .r7 (by decide) (by decide), I.r7]
+    have v₈ : s₈.gpr .r7 = BitVec.ofNat 32 ((Slide.run k i).w + (Slide.run k i).m * Slide.bit k i) := by
+      rw [u₈.gpr, dpVal, u₇.gpr, dpVal, u₆.gpr, dpVal, u₇.other .r7 (by decide), u₆.other .r7 (by decide),
+        u₆.other .r8 (by decide), r4₅, r1₅, r8₅, r7₅,
+        (by decide : ∀ b < 2, ∀ m < 16, (0#32 - BitVec.ofNat 32 b) &&& BitVec.ofNat 32 m = BitVec.ofNat 32 (m * b))
+          _ hb _ hm16, ← BitVec.ofNat_add]
+    refine wp_strb (by decide) (hf₈.ea_reg hs₈ a₈ (by omega_using [hl, hi, hpi]))
+      (hf₈.write (d := tb + (Slide.run k i).p + 0) (n := 1) (by omega_using [hl, hi, hpi])) fun s₉ m₉ => ?_
+    refine wp_mov (op2_lsl (by decide)) fun s₁₀ u₁₀ => wp_dp (op2_imm (by decide)) fun s₁₁ u₁₁ => WP.block_nil ?_
+    have k₁₁ : Rest [.r1, .r2, .r4, .r7, .r8] s s₁₁ := (k₈.mono (by simp)).trans ((m₉.rest _).trans
+      ((u₁₀.rest (by simp)).trans (u₁₁.rest (by simp))))
+    have mem₁₁ : s₁₁.mem = (s.mem.writeW (off base (tb + i)) (0 : BitVec 8)).writeW
+        (off base (tb + (Slide.run k i).p))
+        (BitVec.ofNat 8 ((Slide.run k i).w + (Slide.run k i).m * Slide.bit k i)) := by
+      rw [u₁₁.mem, u₁₀.mem, m₉.mem, u₈.mem, u₇.mem, u₆.mem, m₅.mem, u₄.mem, m₃, v₈, u₄.gpr, Nat.add_zero,
+        Nat.add_zero]
+      congr 1
+      exact (by decide : ∀ x < 32, (BitVec.ofNat 32 x).setWidth 8 = BitVec.ofNat 8 x) _
+        (by have := Nat.mul_le_mul (Nat.le_of_lt_succ hm16) (Nat.le_of_lt_succ hb); omega_using [hw, this])
+    have O₁ : Outside base (tb + i) 1 s.mem (s.mem.writeW (off base (tb + i)) (0 : BitVec 8)) :=
+      writeW8_outside _ _ _ (by omega_using [hl, hi, hn])
+    have O₂ : Outside base (tb + (Slide.run k i).p) 1 (s.mem.writeW (off base (tb + i)) (0 : BitVec 8))
+        s₁₁.mem := by
+      rw [mem₁₁]; exact writeW8_outside _ _ _ (by omega_using [hl, hi, hn, hpi])
+    have rd : ∀ q, q < nb → q ≠ i → q ≠ (Slide.run k i).p →
+        s₁₁.mem (off base (tb + q)) = s.mem (off base (tb + q)) := fun q hq h1 h2 => by
+      rw [O₂ _ (by rw [ofs_off0 base (d := tb + q) (by omega_using [hl, hq, hn])]; omega_using [h2]),
+        O₁ _ (by rw [ofs_off0 base (d := tb + q) (by omega_using [hl, hq, hn])]; omega_using [h1])]
+    refine next s₁₁ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_
+    · rw [k₁₁.gpr _ (by decide), k₁₁.gpr _ (by decide), I.r6]
+    · rw [k₁₁.gpr _ (by decide), I.r9]
+    · rw [Slide.run_succ, em, u₁₁.gpr, dpVal, u₁₀.gpr, m₉.gpr, k₈.gpr _ (by decide), I.r8]
+      exact (by decide : ∀ m < 16, (BitVec.ofNat 32 m <<< 1) &&& 15#32 = BitVec.ofNat 32 (2 * m % 16)) _ hm16
+    · rw [Slide.run_succ, ew, u₁₁.other _ (by decide), u₁₀.other _ (by decide), m₉.gpr, v₈]
+    · rw [Slide.run_succ, ep, k₁₁.gpr _ (by decide), k₁₁.gpr _ (by decide), I.r3]
+    · exact I.keep.trans (k₁₁.mono (by simp))
+    · refine I.unch.trans ((O₁.mono (by omega_using []) (by omega_using [hi])).trans
+        (O₂.mono (by omega_using []) (by omega_using [hi, hpi])))
+    · intro q hq
+      rw [Slide.run_succ, eu]
+      by_cases hqp : q = (Slide.run k i).p
+      · subst hqp
+        rw [Slide.upd_self, mem₁₁, writeW8_self]
+      · rw [Slide.upd_ne _ _ hqp]
+        rcases Nat.lt_succ_iff_lt_or_eq.mp hq with h | rfl
+        · rw [Slide.upd_ne _ _ (by omega_using [h]), rd q (by omega_using [h, hi]) (by omega_using [h]) hqp, I.lo q h]
+        · rw [Slide.upd_self, O₂ _ (by rw [ofs_off0 base (d := tb + q) (by omega_using [hl, hi, hn])]; omega_using [hqp]),
+            writeW8_self]
+          rfl
+    · intro q h1 h2
+      rw [rd q h2 (by omega_using [h1]) (by omega_using [h1, hpi])]
+      exact I.hi q (by omega_using [h1]) h2
+
+/-- One bit of the recoding. -/
+theorem recStep_ok {s₀ s : State} {base : Addr} {size len tb nb k i : Nat} (hs₀ : Scr s₀ base size)
+    (hf₀ : Far s₀ base len) (hl : tb + nb ≤ len) (hnb : nb < 2 ^ 16) (hi : i < nb)
+    (I : RecInv base tb nb k s₀ i s) :
+    WP isa (.seq (.block recHead) (.seq (.ite .eq (.block recOpen) (.block recGrow)) (.block (recNext nb)))) s
+      fun t => RecInv base tb nb k s₀ (i + 1) t ∧ t.z = decide (i + 1 = nb) :=
+  WP.seq (WP.mono (recHead_ok hs₀ hf₀ hl hi I) fun _ M => recTail_ok hs₀ hf₀ hl hnb hi I M)
+
+/-- The recoding's start. -/
+theorem recInit_ok {s : State} {base : Addr} {tb nb k : Nat} (ht16 : tb < 2 ^ 16)
+    (hbits : ∀ t < nb, s.mem (off base (tb + t)) = if k.testBit t then 1 else 0) :
+    WP isa (.block (recInit tb)) s (RecInv base tb nb k s 0) := by
+  rw [recInit]
+  refine wp_farPtr ht16 (by decide) fun s₁ k₁ m₁ p₁ => wp_mov (op2_imm (by decide)) fun s₂ u₂ =>
+    wp_mov (op2_imm (by decide)) fun s₃ u₃ => wp_mov (op2_imm (by decide)) fun s₄ u₄ =>
+    wp_mov (op2_reg _ _) fun s₅ u₅ => WP.block_nil ?_
+  have g : ∀ r, r ≠ .r9 → r ≠ .r8 → r ≠ .r7 → r ≠ .r3 → s₅.gpr r = s₁.gpr r := fun r h1 h2 h3 h4 => by
+    rw [u₅.other r h4, u₄.other r h3, u₃.other r h2, u₂.other r h1]
+  have m₅ : s₅.mem = s.mem := by rw [u₅.mem, u₄.mem, u₃.mem, u₂.mem, m₁]
+  have k₅ : Rest [.r1, .r2, .r3, .r4, .r6, .r7, .r8, .r9] s s₅ := (k₁.mono (by simp)).trans
+    ((((u₂.rest (by simp)).trans (u₃.rest (by simp))).trans (u₄.rest (by simp))).trans (u₅.rest (by simp)))
+  have e6 : s₅.gpr .r6 = s₅.gpr .r12 + BitVec.ofNat 32 tb := by
+    rw [g _ (by decide) (by decide) (by decide) (by decide), g _ (by decide) (by decide) (by decide) (by decide), p₁]
+  exact ⟨e6, by rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr]; rfl,
+    by rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.gpr]; rfl,
+    by rw [u₅.other _ (by decide), u₄.gpr]; rfl,
+    by rw [u₅.gpr, u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), p₁,
+      g _ (by decide) (by decide) (by decide) (by decide)]; rfl,
+    k₅, by rw [m₅]; exact VG.Proof.Mont.Outside.refl _ _ _ _, fun _ h => absurd h (Nat.not_lt_zero _),
+    fun q _ hq => by rw [m₅, hbits q hq, bitByte_eq]⟩
+
+/-- The bytes at `tb`, each a bit of `k` from its lowest, hold `k`'s sliding
+digits. -/
+theorem recode_ok {s : State} {base : Addr} {size len tb nb k : Nat} (hs : Scr s base size) (hf : Far s base len)
+    (hl : tb + nb ≤ len) (ht16 : tb < 2 ^ 16) (hnb0 : 0 < nb) (hnb : nb < 2 ^ 16)
+    (hbits : ∀ t < nb, s.mem (off base (tb + t)) = if k.testBit t then 1 else 0) :
+    WP isa (recode tb nb) s fun s' =>
+      (∀ t < nb, s'.mem (off base (tb + t)) = BitVec.ofNat 8 (Slide.digits nb k t)) ∧
+      Rest [.r1, .r2, .r3, .r4, .r6, .r7, .r8, .r9] s s' ∧ Outside base tb nb s.mem s'.mem := by
+  rw [recode]
+  refine WP.seq (WP.mono (recInit_ok ht16 hbits) fun s₅ I => ?_)
+  exact upLoop_ok (Inv := fun i t => RecInv base tb nb k s i t) (n := nb) (i := 0)
+    (fun i t _ hi I => recStep_ok hs hf hl hnb hi I)
+    (fun t I => ⟨fun q hq => I.lo q hq, I.keep, I.unch⟩) hnb0 I
+
+section
+variable {is : List Instr} {s : State} {Q : State → Prop}
+
+/-- `digitLoad tb`, for `r11 = j`: `r9` is the digit in byte `j` of the
+table, and `Z` whether it is zero. -/
+theorem wp_digitLoad {base : Addr} {size len tb nb j v : Nat} (hs : Scr s base size) (hf : Far s base len)
+    (hl : tb + nb ≤ len) (ht16 : tb < 2 ^ 16) (hj : j < nb) (gj : s.gpr .r11 = BitVec.ofNat 32 j)
+    (hv : s.mem (off base (tb + j)) = BitVec.ofNat 8 v) (hv16 : v < 16)
+    (k : ∀ t, Rest [.r4, .r9] s t → t.mem = s.mem → t.gpr .r9 = BitVec.ofNat 32 v → t.z = decide (v = 0) →
+      WP isa (.block is) t Q) :
+    WP isa (.block (digitLoad tb ++ is)) s Q := by
+  rw [digitLoad, List.append_assoc]
+  refine wp_farPtr ht16 (by decide) fun s₁ k₁ m₁ p₁ => ?_
+  simp only [List.cons_append, List.nil_append]
+  refine wp_dp (op2_reg _ _) fun s₂ u₂ => ?_
+  have k₂ : Rest [.r4] s s₂ := k₁.trans (u₂.rest (by simp))
+  have a₂ : s₂.gpr .r4 = s₂.gpr .r12 + BitVec.ofNat 32 (tb + j) := by
+    rw [u₂.gpr, dpVal, p₁, k₁.gpr .r11 (by decide), gj, u₂.other .r12 (by decide), BitVec.add_assoc,
+      ← BitVec.ofNat_add]
+  have hs₂ := hs.of_rest k₂ (by decide)
+  have hf₂ := hf.of_rest k₂
+  refine wp_ldrb (by decide) (hf₂.ea_reg hs₂ a₂ (by omega_using [hl, hj]))
+    (hf₂.read (d := tb + j + 0) (n := 1) (by omega_using [hl, hj])) fun s₃ u₃ => ?_
+  have g₃ : s₃.gpr .r9 = BitVec.ofNat 32 v := by
+    rw [u₃.gpr, u₂.mem, m₁, Nat.add_zero, hv]
+    exact (by decide : ∀ x < 16, (BitVec.ofNat 8 x).setWidth 32 = BitVec.ofNat 32 x) _ hv16
+  refine wp_cmp (op2_imm (by decide)) fun s₄ f₄ z₄ =>
+    k s₄ ((k₂.mono (by simp)).trans ((u₃.rest (by simp)).trans (f₄.rest _)))
+      (by rw [f₄.mem, u₃.mem, u₂.mem, m₁]) (by rw [f₄.gpr, g₃]) ?_
+  rw [z₄, g₃]
+  exact (by decide : ∀ x < 16, (BitVec.ofNat 32 x - 0#32 == 0#32) = decide (x = 0)) _ hv16
+
+/-- `digitEntry tbl half`, for the odd digit `r9 = v`: `r5` is at entry
+`(v - 1) / 2` of the table, `half · (v - 1)` bytes from its start. -/
+theorem wp_digitEntry {tbl half v : Nat} (hh : encodable (BitVec.ofNat 32 half) = true) (ht : tbl < 2 ^ 16)
+    (gv : s.gpr .r9 = BitVec.ofNat 32 v) (hv : 1 ≤ v)
+    (k : ∀ t, Rest [.r4, .r5] s t → t.mem = s.mem →
+      t.gpr .r5 = t.gpr .r12 + BitVec.ofNat 32 (tbl + half * (v - 1)) → WP isa (.block is) t Q) :
+    WP isa (.block (digitEntry tbl half ++ is)) s Q := by
+  simp only [digitEntry, List.cons_append, List.nil_append, List.append_assoc]
+  refine wp_dp (op2_imm (by decide)) fun s₁ u₁ => wp_mov (op2_imm hh) fun s₂ u₂ => wp_mul fun s₃ u₃ => ?_
+  have k₃ : Rest [.r4, .r5] s s₃ := ((u₁.rest (by simp)).trans (u₂.rest (by simp))).trans (u₃.rest (by simp))
+  have m₃ : s₃.mem = s.mem := by rw [u₃.mem, u₂.mem, u₁.mem]
+  have g₃ : s₃.gpr .r4 = BitVec.ofNat 32 (half * (v - 1)) := by
+    rw [u₃.gpr, u₂.gpr, u₂.other .r4 (by decide), u₁.gpr, dpVal, gv, Nat.mul_comm, BitVec.ofNat_mul]
+    congr 1
+    obtain ⟨w, rfl⟩ : ∃ w, v = w + 1 := ⟨v - 1, by omega_using [hv]⟩
+    rw [Nat.add_sub_cancel, BitVec.ofNat_add]
+    exact BitVec.add_sub_cancel _ _
+  refine wp_farPtr ht (by decide) fun s₄ k₄ m₄ p₄ => ?_
+  refine wp_dp (op2_reg _ _) fun s₅ u₅ => k s₅ ((k₃.trans (k₄.mono (by simp))).trans (u₅.rest (by simp)))
+    (by rw [u₅.mem, m₄, m₃]) ?_
+  rw [u₅.gpr, dpVal, p₄, k₄.gpr .r4 (by decide), g₃, u₅.other .r12 (by decide), BitVec.add_assoc,
+    ← BitVec.ofNat_add]
+
+end
 
 end VG.Proof.Weierstrass.Arm

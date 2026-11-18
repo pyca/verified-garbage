@@ -257,9 +257,9 @@ theorem WinW.apart_bits {W : List (Nat × Nat)} (hW : WinW c W) (h7 : c.n < 10) 
   · rw [Cfg.winTbl, bitsAt_eq] at h
     exact Or.inl (by omega_using [h, ht])
 
-/-- What the windows' code keeps throughout: the working space, the prime,
-the constants of the formulas, and the table of the bits of `k`. -/
-structure WinCtx (c : Cfg) (base : Addr) (k : Nat) (s : State) : Prop where
+/-- What the code of a point's multiplication keeps throughout: the working
+space, the prime and the constants of the formulas. -/
+structure CoreCtx (c : Cfg) (base : Addr) (s : State) : Prop where
   scr : Scr s base size
   far : Far s base 8192
   mp : sv c base s MP = c.C.p
@@ -267,29 +267,39 @@ structure WinCtx (c : Cfg) (base : Addr) (k : Nat) (s : State) : Prop where
   b3p : sv c base s B3P = c.mont (3 * c.C.b)
   zero : sv c base s ZERO = 0
   onep : sv c base s ONEP = 2 ^ (64 * c.n) % c.C.p
+
+/-- What the windows' code keeps throughout: the working space, the prime,
+the constants of the formulas, and the table of the bits of `k`. -/
+structure WinCtx (c : Cfg) (base : Addr) (k : Nat) (s : State) : Prop extends CoreCtx c base s where
   bits : ∀ t < 8 * c.C.len, s.mem (off base (bitsAt c.n 0 + t)) = if k.testBit t then 1 else 0
+
+/-- Code that keeps `r12` and writes only what the windows write keeps the
+working space and the constants. -/
+theorem CoreCtx.next {base : Addr} {s s' : State} (h : CoreCtx c base s) (hc : CfgOk c)
+    {rs : List Reg} (hr : Rest rs s s') (h12 : .r12 ∉ rs) {W : List (Nat × Nat)}
+    (hu : Unch base W s.mem s'.mem) (hW : WinW c W) : CoreCtx c base s' := by
+  have h7 := hc.n10
+  have hn := h.scr.nowrap
+  have e : ∀ i, i < 12 → i ≠ TMP → sv c base s' i = sv c base s i := fun i hi hit =>
+    sv_unch hu h7 hn (by omega_using [hi]) (hW.apart_const h7 hi hit)
+  exact ⟨h.scr.of_rest hr h12, h.far.of_rest hr, (e MP (by decide) (by decide)).trans h.mp,
+    (e AP (by decide) (by decide)).trans h.ap, (e B3P (by decide) (by decide)).trans h.b3p,
+    (e ZERO (by decide) (by decide)).trans h.zero, (e ONEP (by decide) (by decide)).trans h.onep⟩
 
 /-- Code that keeps `r12` and writes only what the windows write keeps
 it. -/
 theorem WinCtx.next {base : Addr} {k : Nat} {s s' : State} (h : WinCtx c base k s) (hc : CfgOk c)
     {rs : List Reg} (hr : Rest rs s s') (h12 : .r12 ∉ rs) {W : List (Nat × Nat)}
     (hu : Unch base W s.mem s'.mem) (hW : WinW c W) : WinCtx c base k s' := by
-  have h7 := hc.n10
-  have hn := h.scr.nowrap
-  have e : ∀ i, i < 12 → i ≠ TMP → sv c base s' i = sv c base s i := fun i hi hit =>
-    sv_unch hu h7 hn (by omega_using [hi]) (hW.apart_const h7 hi hit)
-  refine ⟨h.scr.of_rest hr h12, h.far.of_rest hr, (e MP (by decide) (by decide)).trans h.mp,
-    (e AP (by decide) (by decide)).trans h.ap, (e B3P (by decide) (by decide)).trans h.b3p,
-    (e ZERO (by decide) (by decide)).trans h.zero, (e ONEP (by decide) (by decide)).trans h.onep,
-    fun t ht => ?_⟩
+  refine ⟨h.toCoreCtx.next hc hr h12 hu hW, fun t ht => ?_⟩
   have ht' : t < 64 * c.n := Nat.lt_of_lt_of_le ht (scalarBits_le hc)
-  rw [tbl_unch hu h7 (j := 0) (by decide) ht' (hW.apart_bits h7 ht'), h.bits t ht]
+  rw [tbl_unch hu hc.n10 (j := 0) (by decide) ht' (hW.apart_bits hc.n10 ht'), h.bits t ht]
 
-theorem WinCtx.p_pos {base : Addr} {k : Nat} {s : State} (_ : WinCtx c base k s) (hc : CfgOk c) : 0 < c.C.p := by
+theorem CoreCtx.p_pos {base : Addr} {s : State} (_ : CoreCtx c base s) (hc : CfgOk c) : 0 < c.C.p := by
   have := hc.p_ge; omega_using [this]
 
 /-- The constants are below `p`. -/
-theorem WinCtx.lt {base : Addr} {k : Nat} {s : State} (h : WinCtx c base k s) (hc : CfgOk c) :
+theorem CoreCtx.lt {base : Addr} {s : State} (h : CoreCtx c base s) (hc : CfgOk c) :
     ∀ i ∈ [AP, B3P, ZERO, ONEP], sv c base s i < c.C.p := by
   have hp := h.p_pos hc
   intro i hi
@@ -300,18 +310,18 @@ theorem WinCtx.lt {base : Addr} {k : Nat} {s : State} (h : WinCtx c base k s) (h
   · rw [h.zero]; exact hp
   · rw [h.onep]; exact Nat.mod_lt _ hp
 
-theorem WinCtx.fv_ap {base : Addr} {k : Nat} {s : State} (h : WinCtx c base k s) (hc : CfgOk c) :
+theorem CoreCtx.fv_ap {base : Addr} {s : State} (h : CoreCtx c base s) (hc : CfgOk c) :
     fv c base s AP = Fin.ofNat c.C.p c.C.a := by
   show toM _ _ (sv c base s AP) = _; rw [h.ap]; exact toM_cmont hc _
 
-theorem WinCtx.fv_b3p {base : Addr} {k : Nat} {s : State} (h : WinCtx c base k s) (hc : CfgOk c) :
+theorem CoreCtx.fv_b3p {base : Addr} {s : State} (h : CoreCtx c base s) (hc : CfgOk c) :
     fv c base s B3P = Fin.ofNat c.C.p (3 * c.C.b) := by
   show toM _ _ (sv c base s B3P) = _; rw [h.b3p]; exact toM_cmont hc _
 
-theorem WinCtx.fv_zero {base : Addr} {k : Nat} {s : State} (h : WinCtx c base k s) : fv c base s ZERO = 0 := by
+theorem CoreCtx.fv_zero {base : Addr} {s : State} (h : CoreCtx c base s) : fv c base s ZERO = 0 := by
   show toM _ _ (sv c base s ZERO) = _; rw [h.zero]; exact toM_zero _ _
 
-theorem WinCtx.fv_onep {base : Addr} {k : Nat} {s : State} (h : WinCtx c base k s) (hc : CfgOk c) :
+theorem CoreCtx.fv_onep {base : Addr} {s : State} (h : CoreCtx c base s) (hc : CfgOk c) :
     fv c base s ONEP = 1 := by
   show toM _ _ (sv c base s ONEP) = _; rw [h.onep]; exact toM_one (unitMod_pow_two hc.p_odd _)
 
@@ -418,7 +428,7 @@ def wpt : Bool → Nat × Nat × Nat
   | false => (TX, TY, TZ)
 
 /-- The numbers a field program reads are below `p`. -/
-theorem WinCtx.lt8 {base : Addr} {k : Nat} {s : State} (h : WinCtx c base k s) (hc : CfgOk c)
+theorem CoreCtx.lt8 {base : Addr} {s : State} (h : CoreCtx c base s) (hc : CfgOk c)
     {p₁ p₂ p₃ q₁ q₂ q₃ : Nat} (hp : ∀ i ∈ [p₁, p₂, p₃], sv c base s i < c.C.p)
     (hq : ∀ i ∈ [q₁, q₂, q₃], sv c base s i < c.C.p) :
     ∀ i ∈ [AP, B3P, p₁, p₂, p₃, q₁, q₂, q₃], sv c base s i < c.C.p := by
@@ -434,7 +444,7 @@ theorem WinCtx.lt8 {base : Addr} {k : Nat} {s : State} (h : WinCtx c base k s) (
   · exact hq _ (List.mem_cons_of_mem _ List.mem_cons_self)
   · exact hq _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self))
 
-theorem WinCtx.lt_zero {base : Addr} {k : Nat} {s : State} (h : WinCtx c base k s) (hc : CfgOk c) :
+theorem CoreCtx.lt_zero {base : Addr} {s : State} (h : CoreCtx c base s) (hc : CfgOk c) :
     ∀ i ∈ [ZERO, ZERO, ZERO], sv c base s i < c.C.p := fun i hi => by
   simp only [List.mem_cons, List.not_mem_nil, or_false, or_self] at hi
   rw [hi]; exact h.lt hc _ (by decide)
@@ -1272,8 +1282,8 @@ theorem mulBody_ok (hc : CfgOk c) (hC : Law c.C) {base : Addr} {s : State} (hs :
   obtain e₁ : ∀ {i}, i < 45 → sv c base s₁ i = sv c base s i := fun hi =>
     O₁.wordsVal (Or.inl (sl_below_bits c h7 hi 0 0)) (by have := sl_le c h7 hi; omega_using [this, hsz, hn])
   obtain ctx₁ : WinCtx c base (sv c base s K) s₁ :=
-    ⟨hs.of_rest K₁ (by decide), hf.of_rest K₁, (e₁ (by decide)).trans hmp, (e₁ (by decide)).trans hap,
-      (e₁ (by decide)).trans hb3, (e₁ (by decide)).trans hzero, (e₁ (by decide)).trans hone,
+    ⟨⟨hs.of_rest K₁ (by decide), hf.of_rest K₁, (e₁ (by decide)).trans hmp, (e₁ (by decide)).trans hap,
+      (e₁ (by decide)).trans hb3, (e₁ (by decide)).trans hzero, (e₁ (by decide)).trans hone⟩,
       fun t ht => T₁ t (Nat.lt_of_lt_of_le ht (scalarBits_le hc))⟩
   -- The table of the point's multiples.
   refine WP.seq (WP.mono (winBuild_ok hc hC hP ctx₁ (by rw [e₁ (by decide)]; exact hqx)

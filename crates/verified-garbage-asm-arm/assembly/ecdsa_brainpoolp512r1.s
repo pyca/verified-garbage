@@ -4650,7 +4650,7 @@ vg_ecdsa_brainpoolp512r1_verify:
 	str r4, [r12, #1084]
 	mov r10, lr
 	mov r0, r12
-	bl {vg_brainpoolp512r1_mul}
+	bl {vg_brainpoolp512r1_mul_public}
 	mov lr, r10
 	mov r10, lr
 	mov r0, r12
@@ -9951,7 +9951,7 @@ vg_ecdsa_brainpoolp512r1_verify_umaal:
 	str r4, [r12, #1084]
 	mov r10, lr
 	mov r0, r12
-	bl {vg_brainpoolp512r1_mul_umaal}
+	bl {vg_brainpoolp512r1_mul_public_umaal}
 	mov lr, r10
 	mov r10, lr
 	mov r0, r12

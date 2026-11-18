@@ -3639,7 +3639,7 @@ ldr r4, [r12, #2172]
 str r4, [r12, #828]
 mov r10, lr
 mov r0, r12
-bl {vg_p384_mul}
+bl {vg_p384_mul_public}
 mov lr, r10
 mov r10, lr
 mov r0, r12
@@ -4226,7 +4226,7 @@ bx lr",
         vg_p384_sub_mod_p = sym super::ec_p384::vg_p384_sub_mod_p::vg_p384_sub_mod_p,
         vg_p384_mul_mod_n = sym super::ecdsa_p384::vg_p384_mul_mod_n::vg_p384_mul_mod_n,
         vg_p384_point_add = sym super::ec_p384::vg_p384_point_add::vg_p384_point_add,
-        vg_p384_mul = sym super::ecdh_p384::vg_p384_mul::vg_p384_mul,
+        vg_p384_mul_public = sym super::ecdsa_p384::vg_p384_mul_public::vg_p384_mul_public,
         vg_p384_sub_mod_n = sym super::ecdsa_p384::vg_p384_sub_mod_n::vg_p384_sub_mod_n,
         VG_P384_COMB = sym super::consts::VG_P384_COMB,
     )
@@ -7874,7 +7874,7 @@ ldr r4, [r12, #2172]
 str r4, [r12, #828]
 mov r10, lr
 mov r0, r12
-bl {vg_p384_mul_umaal}
+bl {vg_p384_mul_public_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
@@ -8461,7 +8461,7 @@ bx lr",
         vg_p384_sub_mod_p_umaal = sym super::ec_p384::vg_p384_sub_mod_p_umaal::vg_p384_sub_mod_p_umaal,
         vg_p384_mul_mod_n_umaal = sym super::ecdsa_p384::vg_p384_mul_mod_n_umaal::vg_p384_mul_mod_n_umaal,
         vg_p384_point_add_umaal = sym super::ec_p384::vg_p384_point_add_umaal::vg_p384_point_add_umaal,
-        vg_p384_mul_umaal = sym super::ecdh_p384::vg_p384_mul_umaal::vg_p384_mul_umaal,
+        vg_p384_mul_public_umaal = sym super::ecdsa_p384::vg_p384_mul_public_umaal::vg_p384_mul_public_umaal,
         vg_p384_sub_mod_n_umaal = sym super::ecdsa_p384::vg_p384_sub_mod_n_umaal::vg_p384_sub_mod_n_umaal,
         VG_P384_COMB = sym super::consts::VG_P384_COMB,
     )
@@ -10398,6 +10398,14 @@ pub(crate) mod vg_p384_mul_mod_n;
 #[rustfmt::skip]
 #[path = "internal/vg_p384_mul_mod_n_umaal.rs"]
 pub(crate) mod vg_p384_mul_mod_n_umaal;
+
+#[rustfmt::skip]
+#[path = "internal/vg_p384_mul_public.rs"]
+pub(crate) mod vg_p384_mul_public;
+
+#[rustfmt::skip]
+#[path = "internal/vg_p384_mul_public_umaal.rs"]
+pub(crate) mod vg_p384_mul_public_umaal;
 
 #[rustfmt::skip]
 #[path = "internal/vg_p384_sub_mod_n.rs"]

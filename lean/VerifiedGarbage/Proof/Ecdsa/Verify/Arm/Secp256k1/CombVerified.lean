@@ -54,10 +54,10 @@ theorem combVerify_sat : combVerifySpec.pre combVerifySat := by
 def combVerifyLocal (um : Bool) : Contract isa where
   pre := combVerifyPre um
   post := VPost (secp256k1With um)
-  pub := combVerifyPub
+  pub := combVerifyPub um
 
 theorem combVerifyWith_verified (hC : Weierstrass.Law Spec.Secp256k1.curve) (um : Bool)
-    (hct : ConstantTime isa (combVerifyPre um) combVerifyPub (verifySecp256k1CombWith um)) :
+    (hct : ConstantTime isa (combVerifyPre um) (combVerifyPub um) (verifySecp256k1CombWith um)) :
     Verified Arm.target (verifySecp256k1CombWith um) combVerifySpec := by
   refine Verified.of_correct (k := combVerifyLocal um) (fun s hs => ?_) hct
     ⟨fun _ h => combVerify_pre h,?_,?_,⟨combVerifySat,combVerify_sat⟩⟩
@@ -73,16 +73,16 @@ theorem combVerifyWith_verified (hC : Weierstrass.Law Spec.Secp256k1.curve) (um 
     sig_pub [combVerifySpec,Spec.Ecdsa.Secp256k1.inst,Proof.Ecdsa.verifyContract,
       Proof.Ecdsa.verifySig,Spec.Secp256k1.curve,Spec.Ecdsa.scratchWords,abi,argRegs,reduceClassify,
       Loc.val,State.addr,secp256k1CombConsts,Abi.withConsts] at pub
-    obtain ⟨sp,sy,_inputs,h0,h1,h2,h3⟩ := pub
-    exact ⟨⟨sp,h0,h1,h2,h3⟩,sy⟩
+    obtain ⟨sp,sy,inputs,h0,h1,h2,h3⟩ := pub
+    exact ⟨⟨⟨sp,h0,h1,h2,h3⟩,sy⟩,VPub.of_leak h3 rfl rfl inputs⟩
 
 theorem combVerify_verified (hC : Weierstrass.Law Spec.Secp256k1.curve) :
     Verified Arm.target verifySecp256k1Comb combVerifySpec :=
-  combVerifyWith_verified hC false combVerify_ct
+  combVerifyWith_verified hC false (combVerify_ct hC)
 
 theorem combVerifyU_verified (hC : Weierstrass.Law Spec.Secp256k1.curve) :
     Verified Arm.target verifySecp256k1CombU combVerifySpec :=
-  combVerifyWith_verified hC true combVerifyU_ct
+  combVerifyWith_verified hC true (combVerifyU_ct hC)
 
 /-- `combVerifySat`'s 100 bytes below `sp + 4` are free. -/
 theorem hash_sat : ∃ s, (Spec.Ecdsa.Secp256k1.inst.verifyHashContract (Arm.abi.withConsts secp256k1CombConsts) 96).pre s :=

@@ -30,4 +30,13 @@ def mulP384 : Prog isa := mulP384With false
 /-- `vg_p384_mul_umaal`. -/
 def mulP384U : Prog isa := mulP384With true
 
+/-- `vg_p384_mul_public`, or with `u` `vg_p384_mul_public_umaal`. -/
+def mulPubP384With (u : Bool) : Prog isa := (p384With u).pubFn
+
+/-- `vg_p384_mul_public`. -/
+def mulPubP384 : Prog isa := mulPubP384With false
+
+/-- `vg_p384_mul_public_umaal`. -/
+def mulPubP384U : Prog isa := mulPubP384With true
+
 end VG.Impl.Ecdsa.Arm

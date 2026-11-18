@@ -2613,7 +2613,7 @@ ldr r4, [r12, #1468]
 str r4, [r12, #572]
 mov r10, lr
 mov r0, r12
-bl {vg_secp256k1_mul}
+bl {vg_secp256k1_mul_public}
 mov lr, r10
 mov r10, lr
 mov r0, r12
@@ -3128,7 +3128,7 @@ bx lr",
         vg_secp256k1_sub_mod_p = sym super::ec_secp256k1::vg_secp256k1_sub_mod_p::vg_secp256k1_sub_mod_p,
         vg_secp256k1_mul_mod_n = sym super::ecdsa_secp256k1::vg_secp256k1_mul_mod_n::vg_secp256k1_mul_mod_n,
         vg_secp256k1_point_add = sym super::ec_secp256k1::vg_secp256k1_point_add::vg_secp256k1_point_add,
-        vg_secp256k1_mul = sym super::ecdh_secp256k1::vg_secp256k1_mul::vg_secp256k1_mul,
+        vg_secp256k1_mul_public = sym super::ecdsa_secp256k1::vg_secp256k1_mul_public::vg_secp256k1_mul_public,
         vg_secp256k1_sub_mod_n = sym super::ecdsa_secp256k1::vg_secp256k1_sub_mod_n::vg_secp256k1_sub_mod_n,
         VG_SECP256K1_COMB = sym super::consts::VG_SECP256K1_COMB,
     )
@@ -5750,7 +5750,7 @@ ldr r4, [r12, #1468]
 str r4, [r12, #572]
 mov r10, lr
 mov r0, r12
-bl {vg_secp256k1_mul_umaal}
+bl {vg_secp256k1_mul_public_umaal}
 mov lr, r10
 mov r10, lr
 mov r0, r12
@@ -6265,7 +6265,7 @@ bx lr",
         vg_secp256k1_sub_mod_p_umaal = sym super::ec_secp256k1::vg_secp256k1_sub_mod_p_umaal::vg_secp256k1_sub_mod_p_umaal,
         vg_secp256k1_mul_mod_n_umaal = sym super::ecdsa_secp256k1::vg_secp256k1_mul_mod_n_umaal::vg_secp256k1_mul_mod_n_umaal,
         vg_secp256k1_point_add_umaal = sym super::ec_secp256k1::vg_secp256k1_point_add_umaal::vg_secp256k1_point_add_umaal,
-        vg_secp256k1_mul_umaal = sym super::ecdh_secp256k1::vg_secp256k1_mul_umaal::vg_secp256k1_mul_umaal,
+        vg_secp256k1_mul_public_umaal = sym super::ecdsa_secp256k1::vg_secp256k1_mul_public_umaal::vg_secp256k1_mul_public_umaal,
         vg_secp256k1_sub_mod_n_umaal = sym super::ecdsa_secp256k1::vg_secp256k1_sub_mod_n_umaal::vg_secp256k1_sub_mod_n_umaal,
         VG_SECP256K1_COMB = sym super::consts::VG_SECP256K1_COMB,
     )
@@ -7914,6 +7914,14 @@ pub(crate) mod vg_secp256k1_mul_mod_n;
 #[rustfmt::skip]
 #[path = "internal/vg_secp256k1_mul_mod_n_umaal.rs"]
 pub(crate) mod vg_secp256k1_mul_mod_n_umaal;
+
+#[rustfmt::skip]
+#[path = "internal/vg_secp256k1_mul_public.rs"]
+pub(crate) mod vg_secp256k1_mul_public;
+
+#[rustfmt::skip]
+#[path = "internal/vg_secp256k1_mul_public_umaal.rs"]
+pub(crate) mod vg_secp256k1_mul_public_umaal;
 
 #[rustfmt::skip]
 #[path = "internal/vg_secp256k1_sub_mod_n.rs"]

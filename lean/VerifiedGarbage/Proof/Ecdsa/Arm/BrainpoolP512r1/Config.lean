@@ -51,6 +51,7 @@ theorem brainpoolp512r1_ok : CfgOk brainpoolp512r1 where
   fp := ⟨rfl, rfl, Mont.brainpoolp512r1p_ok, rfl⟩
   fn := ⟨rfl, rfl, Mont.brainpoolp512r1n_ok, rfl⟩
   mulNf := fun _ _ => Impl.Ecdsa.Arm.mulBrainpoolP512r1_noFrames
+  pubNf := fun _ _ => Impl.Ecdsa.Arm.mulPubBrainpoolP512r1_noFrames
 
 
 /-- brainpoolp512r1 with its field multiplications by `vg_brainpoolp512r1_mul_mod_<p|n>_umaal`:
@@ -78,6 +79,7 @@ theorem brainpoolp512r1u_ok : CfgOk (brainpoolp512r1With true) where
   fp := ⟨rfl, rfl, Mont.brainpoolp512r1p_ok, rfl⟩
   fn := ⟨rfl, rfl, Mont.brainpoolp512r1n_ok, rfl⟩
   mulNf := fun _ _ => Impl.Ecdsa.Arm.mulBrainpoolP512r1U_noFrames
+  pubNf := fun _ _ => Impl.Ecdsa.Arm.mulPubBrainpoolP512r1U_noFrames
 
 /-- Either configuration. -/
 theorem brainpoolp512r1With_ok (u : Bool) : CfgOk (brainpoolp512r1With u) := by

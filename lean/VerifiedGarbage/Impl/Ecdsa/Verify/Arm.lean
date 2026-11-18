@@ -25,18 +25,20 @@ x86 (`Impl/Ecdsa/Verify/X86.lean`):
    `w = s^(n-2)`, in Montgomery form modulo `n`;
 4. `u = e w` and `v = r w` modulo `n`, out of Montgomery's form;
 5. `[u]G` by the generator's multiplication (the signature's, or a curve's
-   comb), saved to `U`, and `R` reset to `O`; then `[v]Q` by ECDH's
-   multiplication (`Cfg.qMul`: a call of `vg_<curve>_mul`, by windows, for a
-   curve that has the function) and `[u]G + [v]Q` by the complete addition,
-   into `R`;
+   comb), saved to `U`, and `R` reset to `O`; then `[v]Q` by the
+   multiplication for a public number and point (`Cfg.qMulPub`: a call of
+   `vg_<curve>_mul_public`, by `v`'s sliding digits, for a curve that has
+   `vg_<curve>_mul`; else ECDH's ladder) and `[u]G + [v]Q` by the complete
+   addition, into `R`;
 6. `Z^(p-2)` by the signature's power, `x = X Z^(p-2)` out of Montgomery's
    form, and the masks of `Z ≠ 0` and `x R ≡ r R` modulo `n` into the
    flag, which is returned as 0 or 1.
 
 The setup and the tables leave `r0`–`r3`, so `sig` and `public` are read
-through `r2` and `r0` after them. Everything is computed whatever the flag,
-and only the pointers affect timing, although the contract would let every
-input affect it.
+through `r2` and `r0` after them. Everything is computed whatever the flag.
+The pointers affect timing, and so do `v` and `Q`, which the signature and
+the public key determine, in `vg_<curve>_mul_public`: the contract lets
+every input affect it.
 -/
 
 @[expose] public section
@@ -140,7 +142,7 @@ def scalarAt (i : Nat) : Prog isa :=
 def pointsWith (generator : Prog isa) : Prog isa :=
   .seq (scalarAt c U) <| .seq generator <|
   .seq (.block (save c)) <| .seq (scalarAt c V) <|
-  .seq (c.qMul Impl.Ecdh.Arm.PX Impl.Ecdh.Arm.PY) (sum c)
+  .seq (c.qMulPub Impl.Ecdh.Arm.PX Impl.Ecdh.Arm.PY) (sum c)
 
 /-- Everything after the checks of the key. -/
 def backWith (generator : Prog isa) : Prog isa :=

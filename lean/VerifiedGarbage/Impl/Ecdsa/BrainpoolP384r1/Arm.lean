@@ -31,4 +31,13 @@ def mulBrainpoolP384r1 : Prog isa := mulBrainpoolP384r1With false
 /-- `vg_brainpoolp384r1_mul_umaal`. -/
 def mulBrainpoolP384r1U : Prog isa := mulBrainpoolP384r1With true
 
+/-- `vg_brainpoolp384r1_mul_public`, or with `u` `vg_brainpoolp384r1_mul_public_umaal`. -/
+def mulPubBrainpoolP384r1With (u : Bool) : Prog isa := (brainpoolp384r1With u).pubFn
+
+/-- `vg_brainpoolp384r1_mul_public`. -/
+def mulPubBrainpoolP384r1 : Prog isa := mulPubBrainpoolP384r1With false
+
+/-- `vg_brainpoolp384r1_mul_public_umaal`. -/
+def mulPubBrainpoolP384r1U : Prog isa := mulPubBrainpoolP384r1With true
+
 end VG.Impl.Ecdsa.Arm

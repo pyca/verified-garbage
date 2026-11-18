@@ -5,6 +5,7 @@ public import VerifiedGarbage.Impl.Weierstrass.Arm.Window
 public import VerifiedGarbage.Impl.Weierstrass.JacMul
 public import VerifiedGarbage.Impl.Weierstrass.JacDblA
 public import VerifiedGarbage.Impl.Weierstrass.Rcb0
+public import VerifiedGarbage.Impl.Weierstrass.JacAdd
 public import VerifiedGarbage.Spec.Weierstrass
 public import VerifiedGarbage.Spec.Ecdsa
 public import VerifiedGarbage.Impl.Weierstrass.Layout.Mul
@@ -144,8 +145,10 @@ structure Cfg where
   SP : Impl.Weierstrass.Mont.Modulus
   SN : Impl.Weierstrass.Mont.Modulus
   /-- The curve whose `vg_<curve>_mul` (`Proof/Weierstrass/MulContract.lean`) computes
-  `[k]Q` (`mulFn`), which the signature, the public key, ECDH and
-  verification call (`gen`, `qMul`), if any; else they run the ladder inline. -/
+  `[k]Q` (`mulFn`), which the signature, the public key and ECDH call
+  (`gen`, `qMul`), if any; else they run the ladder inline. Verification's
+  `[v]Q`, of a public number and point, is then a call of
+  `vg_<curve>_mul_public` (`pubFn`, `qMulPub`). -/
   mul : Option Impl.Weierstrass.Mul.Curve
   /-- Whether the field operations are calls of the `_umaal` variants
   of `vg_<curve>_{mul,add,sub}_mod_<p|n>` (`Impl/Weierstrass/Arm/Mont.lean`),
@@ -432,21 +435,181 @@ def mulBody : Prog isa :=
     ([.mov .r11 (.imm (BitVec.ofNat 32 c.winJ))] : List Instr)))
     (.loop c.winStep .ne)
 
-/-- `vg_<curve>_mul`: the working space from `r0` to `r12`, the callee-saved
-registers kept around the body (`mulSaved`, and `r10` in `lr`). -/
-def mulFn : Prog isa :=
+/-- A function of `vg_<curve>_mul`'s arguments around `body`: the working
+space from `r0` to `r12`, the callee-saved registers kept around the body
+(`mulSaved`, and `r10` in `lr`). -/
+def mulFnOf (body : Prog isa) : Prog isa :=
   .seq (.block (.mov wb (.reg .r0) :: c.mulSaved.map fun (r, d) => .str r wb d)) <|
   .seq (.block [.mov .lr (.reg .r10)]) <|
-  .seq c.mulBody <|
+  .seq body <|
   .seq (.block [.mov .r10 (.reg .lr)]) (.block (c.mulSaved.map fun (r, d) => .ldr r wb d))
 
-/-- A call of `vg_<curve>_mul` (`C`'s) on the point at `px`, `py`: the point
-copied to `R`'s first two slots, `lr` kept in `r10` across the call, as the
-calls of the point and Montgomery functions do. -/
+/-- `vg_<curve>_mul`: `mulBody` in `mulFnOf`. -/
+def mulFn : Prog isa := c.mulFnOf c.mulBody
+
+/-! ## `vg_<curve>_mul_public`
+
+`[k]Q` for a public `k` and `Q`, as verification's are: `vg_<curve>_mul`'s
+arguments and result, with branches and addresses that depend on `k` and
+`Q`.
+
+1. the table of the odd multiples `[1]Q, [3]Q, …, [15]Q` in Jacobian
+   coordinates, `24 n` bytes each, where `vg_<curve>_mul` has its table
+   (`pubTable`), each `[2]Q` more than the one before, with `[2]Q` kept
+   where the table of bits is not yet;
+2. the table of `k`'s bits (table 0), recoded in place into `k`'s sliding
+   digits (`recode`): each zero or odd and below 16, a nonzero one followed
+   by three zeros;
+3. the sum `R`, in Jacobian coordinates, from the entry of the highest digit
+   that is not zero (`pubTop`, `pubStart`), then for each digit below it
+   (`pubStep`) `D = 2R` by the curve's Jacobian doubling and, where the digit
+   is not zero, `R = D + T` for the digit's entry `T` (`pubAdd`), else
+   `R = D`;
+4. `R` in projective coordinates, with `Y = 1` where `Z = 0`.
+
+`pubAdd` is the Jacobian addition (`jacHead`, `jacTail`: 16 products) where
+neither point is the point at infinity and they have distinct `x` (both `Z`
+and `H = X₂Z₁² - X₁Z₂²` are not zero), and else the complete addition, on
+the points in projective coordinates (`pubSlow`).
+
+The code between two branches on `k` or `Q` is one definition
+(`pubAddHead`, `pubTableLoad`, `pubStepHead`, …), a piece with no such
+branch: `Proof/Ecdsa/Arm/PublicCT.lean` proves that two runs on the same
+`k` and `Q` leak the same from the taint analysis of each piece. -/
+
+/-- The bits of an encoded scalar: the digits. -/
+def pubBits : Nat := 8 * c.C.len
+
+/-- `Y = 1` where `Z = 0`, for the point `p`: the point at infinity as
+`(0 : 1 : 0)`. -/
+def pubFixY (p : Pt) : List Instr :=
+  c.nonzero p.z ++ ([.mov .r10 (.reg .r5)] : List Instr) ++ sel (2 * c.n) p.y (c.sl ONEP) p.y
+
+/-- `o = p + q` for any Jacobian `p` and `q` by the complete addition: `p`
+in projective coordinates in `o`, `q` in `p`, their sum in `q`, and it in
+Jacobian coordinates in `o`. -/
+def pubSlow (p q o : Pt) : Prog isa :=
+  .seq (fprog c.SP (fromJ c.rcbSlots p c.zeroPt o) c.umaal) <|
+  .seq (.block (c.pubFixY o)) <|
+  .seq (fprog c.SP (fromJ c.rcbSlots q c.zeroPt p) c.umaal) <|
+  .seq (.block (c.pubFixY p)) <|
+  .seq (fprog c.SP (c.winAdd c.rcbSlots o p q) c.umaal)
+    (fprog c.SP (toJ c.rcbSlots q c.zeroPt o) c.umaal)
+
+/-- `pubAdd`'s first half: `U₁`, `H`, `S₁` and `r` of the Jacobian addition,
+and `Z` clear if `H` and the two `Z` are all nonzero. -/
+def pubAddHead (p q : Pt) : Prog isa :=
+  .seq (fprog c.SP (jacHead c.rcbSlots p q) c.umaal)
+    (.block (c.nonzero c.rcbSlots.t3 ++ ([.mov .r7 (.reg .r5)] : List Instr) ++ c.nonzero p.z ++
+      ([.dp .and .r7 .r7 (.reg .r5)] : List Instr) ++ c.nonzero q.z ++
+      ([.dp .and .r7 .r7 (.reg .r5), .cmp .r7 (.imm 0)] : List Instr)))
+
+/-- `o = p + q` in Jacobian coordinates, `o` apart from `p` and `q`, which
+it may change. -/
+def pubAdd (p q o : Pt) : Prog isa :=
+  .seq (c.pubAddHead p q) (.ite .ne (fprog c.SP (jacTail c.rcbSlots p q o) c.umaal) (c.pubSlow p q o))
+
+/-- `T = [2]Q`, from the table of bits' place, and `D = R`. -/
+def pubTableLoad : List Instr :=
+  farPtr .r5 (bitsAt c.n 0) ++ loadPt c.n 0 (c.pt TX TY TZ) ++ Point.copyPt c.n (c.pt DX DY DZ) (c.pt RX RY RZ)
+
+/-- `R` stored as entry `r11` of the table; `r11 += 1`, and `Z` set once the
+eight entries are there. -/
+def pubTableStore : List Instr :=
+  entryPtr c.winTbl (24 * c.n) ++ storePt c.n 0 (c.pt RX RY RZ) ++
+    ([.dp .add .r11 .r11 (.imm 1), .cmp .r11 (.imm 8)] : List Instr)
+
+/-- Entry `r11` of the table: `R = R + [2]Q`, through `D`, stored. -/
+def pubTableStep : Prog isa :=
+  .seq (.block c.pubTableLoad) <|
+  .seq (c.pubAdd (c.pt DX DY DZ) (c.pt TX TY TZ) (c.pt RX RY RZ)) (.block c.pubTableStore)
+
+/-- The table's start: `Q = (x : y : 1)` stored as entry 0, `[2]Q` in the
+table of bits' place, and `r11 = 1`. -/
+def pubTableInit : Prog isa :=
+  .seq (.block (copy (2 * c.n) (c.sl RZ) (c.sl ONEP) ++ farPtr .r5 c.winTbl ++
+    storePt c.n 0 (c.pt RX RY RZ))) <|
+  .seq (fprog c.SP (c.winDbl c.rcbSlots (c.pt RX RY RZ) (c.pt DX DY DZ)) c.umaal)
+    (.block (farPtr .r5 (bitsAt c.n 0) ++ storePt c.n 0 (c.pt DX DY DZ) ++
+      ([.mov .r11 (.imm 1)] : List Instr)))
+
+/-- The table: `[2e + 1]Q` for `e` from 1, after `pubTableInit`. -/
+def pubTable : Prog isa := .seq c.pubTableInit (.loop c.pubTableStep .ne)
+
+/-- The entry of the odd digit `r9` into `p`. -/
+def pubEntry (p : Pt) : List Instr := digitEntry c.winTbl (12 * c.n) ++ loadPt c.n 0 p
+
+/-- One position of the search for the top digit: the position `r11` moved
+down and its digit loaded. `Z` is clear while the digit is zero and a
+position is left. -/
+def pubTopStep : Prog isa :=
+  .seq (.block (decCounter :: digitLoad (bitsAt c.n 0)))
+    (.ite .eq (.block [testCounter]) (.block [.cmp .r9 (.reg .r9)]))
+
+/-- `r11` = the highest position whose digit is not zero (0 if every digit
+is zero), and `r9` = its digit. -/
+def pubTop : Prog isa :=
+  .seq (.block [.movw .r11 (BitVec.ofNat 16 c.pubBits)]) (.loop c.pubTopStep .ne)
+
+/-- The sum's start: the entry of the top digit `r9`, or the point at
+infinity if it is zero. -/
+def pubStart : Prog isa :=
+  .seq (.block [.cmp .r9 (.imm 0)]) <|
+  .ite .ne (.block (c.pubEntry (c.pt RX RY RZ)))
+    (.block (Point.copyPt c.n (c.pt RX RY RZ) (c.pt ZERO ONEP ZERO)))
+
+/-- A digit's start: `r11 -= 1`, `D = 2R`, and the digit into `r9`, `Z` set if
+it is zero. -/
+def pubStepHead : Prog isa :=
+  .seq (.block [decCounter]) <|
+  .seq (fprog c.SP (c.winDbl c.rcbSlots (c.pt RX RY RZ) (c.pt DX DY DZ)) c.umaal)
+    (.block (digitLoad (bitsAt c.n 0)))
+
+/-- One digit: `r11 -= 1`, `D = 2R`, and `R = D + T` for the digit's entry
+`T`, or `R = D` if the digit is zero. `Z` is set after digit 0. -/
+def pubStep : Prog isa :=
+  .seq c.pubStepHead <|
+  .seq (.ite .ne
+    (.seq (.block (c.pubEntry (c.pt TX TY TZ))) (c.pubAdd (c.pt DX DY DZ) (c.pt TX TY TZ) (c.pt RX RY RZ)))
+    (.block (Point.copyPt c.n (c.pt RX RY RZ) (c.pt DX DY DZ))))
+    (.block [testCounter])
+
+/-- `R` in projective coordinates, with `Y = 1` where `Z = 0`. -/
+def pubFinal : Prog isa :=
+  .seq (fprog c.SP (fromJ c.rcbSlots (c.pt RX RY RZ) c.zeroPt (c.pt DX DY DZ)) c.umaal)
+    (.block (Point.copyPt c.n (c.pt RX RY RZ) (c.pt DX DY DZ) ++ c.pubFixY (c.pt RX RY RZ)))
+
+/-- `vg_<curve>_mul_public`'s body. -/
+def pubBody : Prog isa :=
+  .seq c.pubTable <|
+  .seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) <|
+  .seq (recode (bitsAt c.n 0) c.pubBits) <|
+  .seq c.pubTop <| .seq c.pubStart <|
+  .seq (.block [testCounter]) <|
+  .seq (.ite .ne (.loop c.pubStep .ne) (.block [])) c.pubFinal
+
+/-- `vg_<curve>_mul_public`: as `mulFn`, around `pubBody`. -/
+def pubFn : Prog isa := c.mulFnOf c.pubBody
+
+/-- The point at `px`, `py` copied to `R`'s first two slots, `lr` kept in
+`r10` across the call to come, as the calls of the point and Montgomery
+functions do, and the working space in `r0`. -/
+def callMulArgs (px py : Nat) : List Instr :=
+  copy (2 * c.n) (c.sl RX) (c.sl px) ++ copy (2 * c.n) (c.sl RY) (c.sl py) ++
+    [.mov .r10 (.reg .lr), .mov .r0 (.reg wb)]
+
+/-- A call of the function `fn`, of `vg_<curve>_mul`'s arguments, named
+`name`, on the point at `px`, `py`. -/
+def callMul (name : String) (fn : Prog isa) (px py : Nat) : Prog isa :=
+  .seq (.block (c.callMulArgs px py)) <| .seq (.call name fn) (.block [.mov .lr (.reg .r10)])
+
+/-- A call of `vg_<curve>_mul` (`C`'s) on the point at `px`, `py`. -/
 def mulAt (C : Impl.Weierstrass.Mul.Curve) (px py : Nat) : Prog isa :=
-  .seq (.block (copy (2 * c.n) (c.sl RX) (c.sl px) ++ copy (2 * c.n) (c.sl RY) (c.sl py) ++
-    [.mov .r10 (.reg .lr), .mov .r0 (.reg wb)])) <|
-  .seq (.call (s!"vg_{C.curve}_mul" ++ if c.umaal then "_umaal" else "") c.mulFn) (.block [.mov .lr (.reg .r10)])
+  c.callMul (s!"vg_{C.curve}_mul" ++ if c.umaal then "_umaal" else "") c.mulFn px py
+
+/-- A call of `vg_<curve>_mul_public` (`C`'s) on the point at `px`, `py`. -/
+def pubAt (C : Impl.Weierstrass.Mul.Curve) (px py : Nat) : Prog isa :=
+  c.callMul (s!"vg_{C.curve}_mul_public" ++ if c.umaal then "_umaal" else "") c.pubFn px py
 
 /-- Whether `qMul`'s inline ladder doubles and adds by the point functions
 for `a = 0` (`vg_<curve>_point_a0_double`, `vg_<curve>_point_a0_add_affine`):
@@ -455,13 +618,19 @@ coordinates fit the point functions' slots. -/
 def qA0 : Bool := c.mul.isNone && (c.C.a == 0 && decide (c.n ≤ 6))
 
 /-- `R = [k]P` for the point `P` at `px`, `py`, `ONEP` and the number `k` at
-`K`'s slot: a call of `vg_<curve>_mul` if the curve has it (`Cfg.mul`), else
-the ladder inline, from the table of `k`'s bits (by the point functions for
-`a = 0` if `qA0`: `P` is affine). -/
-def qMul (px py : Nat) : Prog isa :=
+`K`'s slot: `call`, a call of the curve's function for it if the curve has
+`vg_<curve>_mul` (`Cfg.mul`), else the ladder inline, from the table of
+`k`'s bits (by the point functions for `a = 0` if `qA0`: `P` is affine). -/
+def qMulWith (call : Impl.Weierstrass.Mul.Curve → Nat → Nat → Prog isa) (px py : Nat) : Prog isa :=
   match c.mul with
-  | some C => c.mulAt C px py
+  | some C => call C px py
   | none => Point.ladderP { c.ladderCfg with G := c.pt px py ONEP } c.SP c.qA0 c.umaal
+
+/-- `qMulWith` by a call of `vg_<curve>_mul`. -/
+def qMul (px py : Nat) : Prog isa := c.qMulWith c.mulAt px py
+
+/-- `qMul` for a public `k` and `P`: by a call of `vg_<curve>_mul_public`. -/
+def qMulPub (px py : Nat) : Prog isa := c.qMulWith c.pubAt px py
 
 /-- `R = [k]G`: `qMul` from `G`. -/
 def gen : Prog isa := c.qMul GX GY

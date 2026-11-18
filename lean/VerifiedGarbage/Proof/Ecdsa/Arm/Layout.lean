@@ -73,6 +73,8 @@ structure CfgOk (c : Cfg) : Prop where
   /-- `vg_<curve>_mul`'s code, if the curve has the function, has no frame
   (which its calls need). -/
   mulNf : ∀ C, c.mul = some C → c.mulFn.noFrames = true
+  /-- `vg_<curve>_mul_public`'s, likewise. -/
+  pubNf : ∀ C, c.mul = some C → c.pubFn.noFrames = true
 
 section
 variable (c : Cfg) (s : State)

@@ -16,6 +16,12 @@ public import VerifiedGarbage.Spec.Ecdsa.P384
 public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Front
 public import VerifiedGarbage.Impl.Ecdsa.P384.ArmComb
 public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Main
+public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.CT
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.CT
+import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Arm.Lit
+meta import VerifiedGarbage.Proof.Framework.Arm.Lit
 public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.P384.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.StackScratchConsts
 public import VerifiedGarbage.Proof.Weierstrass.Law
@@ -98,13 +104,18 @@ theorem combVerify_pre {um : Bool} {s : State} (h : combVerifySpec.pre s) : comb
   rw [← List.take_append_drop (s.rd.length-p384CombConsts.length) s.rd,hp.2.1]
   exact congrArg (fun rs => rs++constRegs p384CombConsts s) p.rd
 
-theorem combVerify_ok (hC : Law Spec.P384.curve) {um : Bool} {s₀ : State} (hp : combVerifyPre um s₀) :
-    WP isa (verifyP384CombWith um) s₀ fun t => VKeep s₀ t ∧ VPost (p384With um) s₀ t := by
+/-- Verification's `[u]G` by the comb, as `verifyWith_ok` and `verifyHead_ok` ask. -/
+theorem comb_generatorWP (hC : Law Spec.P384.curve) {um : Bool} {s₀ : State} (hp : combVerifyPre um s₀) :
+    ∀ s, Mid (p384With um) s₀ (ptr s₀ .r3) s → s.syms = s₀.syms →
+      GeneratorWP (p384With um) (verifyGeneratorP384With um) s₀ (ptr s₀ .r3)
+        (sv (p384With um) (ptr s₀ .r3) s U)
+        (fun j X Y Z => Rep (p384With um).C X Y Z
+          (Spec.Weierstrass.mul (sv (p384With um) (ptr s₀ .r3) s U >>> j) (Spec.Weierstrass.G (p384With um).C)))
+        s.syms false := by
   have member : (p384Comb.tsym,p384CombWords)∈p384CombConsts := List.mem_singleton_self _
   have ht := tableMem_of_consts hp.2 member
   have hd := table_disjoint_of_consts hp.2 member
     (show (⟨ptr s₀ .r3,8192⟩ : Region)∈s₀.wr by rw [hp.1.wr]; simp)
-  apply verifyWith_ok (p384With_ok um) hC hp.1 (a0₁ := false) nofun
   intro s M syms
   intro u hs hf F _ _ _ _ _ _ _ kv keep unch syu
   have frame : Frame [⟨ptr s₀ .r3,8192⟩] s₀.mem u.mem := outside_frame
@@ -136,29 +147,76 @@ theorem combVerify_ok (hC : Law Spec.P384.curve) {um : Bool} {s₀ : State} (hp 
     exact List.mem_append_right _ (by simp [genX])
   · exact h
 
-def combVerifyPub (s t : State) : Prop := verifyArm.pub s t ∧ s.syms p384Comb.tsym=t.syms p384Comb.tsym
+theorem combVerify_ok (hC : Law Spec.P384.curve) {um : Bool} {s₀ : State} (hp : combVerifyPre um s₀) :
+    WP isa (verifyP384CombWith um) s₀ fun t => VKeep s₀ t ∧ VPost (p384With um) s₀ t :=
+  verifyWith_ok (p384With_ok um) hC hp.1 (a0₁ := false) nofun (comb_generatorWP hC hp)
 
-theorem combVerify_ct : ConstantTime isa (combVerifyPre false) combVerifyPub verifyP384Comb := by
-  refine VG.Taint.constantTime (A := taintSym [p384Comb.tsym]) (Taint.ofRegs [.r0,.r1,.r2,.r3]) ?_
-    (by native_taint_decide)
-  intro s t _ _ ⟨⟨_,h0,h1,h2,h3⟩,sy⟩
-  refine ⟨Taint.agree_ofRegs (fun r hr => ?_),fun n hn => ?_⟩
-  · simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
-    rcases hr with rfl|rfl|rfl|rfl
-    exacts [h0,h1,h2,h3]
-  · obtain rfl := List.mem_singleton.mp hn
-    exact sy
+/-- What timing may depend on: the pointers and the table's address, and
+the key and the signature (`VPub`), which the contract lets it depend on. -/
+def combVerifyPub (um : Bool) (s t : State) : Prop :=
+  (verifyArm.pub s t ∧ s.syms p384Comb.tsym = t.syms p384Comb.tsym) ∧ VPub (p384With um) s t
 
-theorem combVerifyU_ct : ConstantTime isa (combVerifyPre true) combVerifyPub verifyP384CombU := by
-  refine VG.Taint.constantTime (A := taintSymU [p384Comb.tsym]) (Taint.ofRegs [.r0,.r1,.r2,.r3]) ?_
-    (by taint_decide)
-  intro s t _ _ ⟨⟨_,h0,h1,h2,h3⟩,sy⟩
-  refine ⟨Taint.agree_ofRegs (fun r hr => ?_),fun n hn => ?_⟩
-  · simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
-    rcases hr with rfl|rfl|rfl|rfl
-    exacts [h0,h1,h2,h3]
-  · obtain rfl := List.mem_singleton.mp hn
-    exact sy
+/-- `vg_p384_mul_public`'s pieces and the two parts of verification around
+its call, in sequence: what the taint analysis checks. -/
+def ctPiecesWith (um : Bool) : Prog isa :=
+  pieces (pubPieces (p384With um) ++
+    [verifyHead (p384With um) (verifyGeneratorP384With um), verifyTail (p384With um)])
+
+def ctPieces : Prog isa := ctPiecesWith false
+
+def ctPiecesU : Prog isa := ctPiecesWith true
+
+materialize_code ctPieces
+materialize_code ctPiecesU
+
+theorem pubLeaves : PubLeaves (p384With false) := by
+  apply PubLeaves.of_checks (A := VG.Arm.taint) (τ := VG.Arm.Taint.ofRegs)
+    (fun _ _ _ h => VG.Arm.Taint.agree_ofRegs h) (L := ctPieces) (extra := [_, _]) rfl <;>
+    native_taint_decide
+
+theorem pubLeavesU : PubLeaves (p384With true) := by
+  apply PubLeaves.of_checks (A := VG.Arm.taintU) (τ := VG.Arm.Taint.ofRegs)
+    (fun _ _ _ h => VG.Arm.Taint.agree_ofRegs h) (L := ctPiecesU) (extra := [_, _]) rfl <;>
+    taint_decide
+
+/-- Verification is constant time but in the key and the signature, given the
+taint analysis's checks of its parts. -/
+theorem combVerifyWith_ct (hC : Law Spec.P384.curve) (um : Bool) (L : PubLeaves (p384With um))
+    (hhead : RelCT isa (fun x y => combVerifyPre um x ∧ combVerifyPre um y ∧ combVerifyPub um x y)
+      (verifyHead (p384With um) (verifyGeneratorP384With um)) fun _ _ => True)
+    (htail : LeafCT [.r12] (verifyTail (p384With um))) :
+    ConstantTime isa (combVerifyPre um) (combVerifyPub um) (verifyP384CombWith um) :=
+  verifyWith_ct (p384With_ok um) hC rfl (fun _ _ _ _ h => h.2)
+    (fun _ hp => verifyHead_ok (p384With_ok um) hC hp.1 (a0₁ := false) nofun (comb_generatorWP hC hp))
+    hhead htail L
+
+theorem combVerify_ct (hC : Law Spec.P384.curve) :
+    ConstantTime isa (combVerifyPre false) (combVerifyPub false) verifyP384Comb :=
+  combVerifyWith_ct hC false pubLeaves
+    (RelCT.taint (A := taintSym [p384Comb.tsym]) (c := piece ctPieces 26) (Taint.ofRegs [.r0, .r1, .r2, .r3])
+      (fun _ _ h => ⟨Taint.agree_ofRegs (by
+        obtain ⟨⟨⟨_, h0, h1, h2, h3⟩, _⟩, _⟩ := h.2.2
+        intro r hr
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl | rfl
+        exacts [h0, h1, h2, h3]), fun n hn => by
+        obtain rfl := List.mem_singleton.mp hn
+        exact h.2.2.1.2⟩) (by native_taint_decide))
+    (LeafCT.check (p := piece ctPieces 27) (by native_taint_decide))
+
+theorem combVerifyU_ct (hC : Law Spec.P384.curve) :
+    ConstantTime isa (combVerifyPre true) (combVerifyPub true) verifyP384CombU :=
+  combVerifyWith_ct hC true pubLeavesU
+    (RelCT.taint (A := taintSymU [p384Comb.tsym]) (c := piece ctPiecesU 26) (Taint.ofRegs [.r0, .r1, .r2, .r3])
+      (fun _ _ h => ⟨Taint.agree_ofRegs (by
+        obtain ⟨⟨⟨_, h0, h1, h2, h3⟩, _⟩, _⟩ := h.2.2
+        intro r hr
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl | rfl
+        exacts [h0, h1, h2, h3]), fun n hn => by
+        obtain rfl := List.mem_singleton.mp hn
+        exact h.2.2.1.2⟩) (by taint_decide))
+    (LeafCT.checkU (p := piece ctPiecesU 27) (by taint_decide))
 
 open VG.Proof.P384.Arm in
 def combVerifySat : State := {combSatState with
@@ -188,10 +246,10 @@ theorem combVerify_sat : combVerifySpec.pre combVerifySat := by
 def combVerifyLocal (um : Bool) : Contract isa where
   pre := combVerifyPre um
   post := VPost (p384With um)
-  pub := combVerifyPub
+  pub := combVerifyPub um
 
 theorem combVerifyWith_verified (hC : Weierstrass.Law Spec.P384.curve) (um : Bool)
-    (hct : ConstantTime isa (combVerifyPre um) combVerifyPub (verifyP384CombWith um)) :
+    (hct : ConstantTime isa (combVerifyPre um) (combVerifyPub um) (verifyP384CombWith um)) :
     Verified Arm.target (verifyP384CombWith um) combVerifySpec := by
   refine Verified.of_correct (k := combVerifyLocal um) (fun s hs => ?_) hct
     ⟨fun _ h => combVerify_pre h,?_,?_,⟨combVerifySat,combVerify_sat⟩⟩
@@ -207,16 +265,16 @@ theorem combVerifyWith_verified (hC : Weierstrass.Law Spec.P384.curve) (um : Boo
     sig_pub [combVerifySpec,Spec.Ecdsa.P384.inst,Proof.Ecdsa.verifyContract,
       Proof.Ecdsa.verifySig,Spec.P384.curve,Spec.Ecdsa.scratchWords,abi,argRegs,reduceClassify,
       Loc.val,State.addr,p384CombConsts,Abi.withConsts] at pub
-    obtain ⟨sp,sy,_inputs,h0,h1,h2,h3⟩ := pub
-    exact ⟨⟨sp,h0,h1,h2,h3⟩,sy⟩
+    obtain ⟨sp,sy,inputs,h0,h1,h2,h3⟩ := pub
+    exact ⟨⟨⟨sp,h0,h1,h2,h3⟩,sy⟩,VPub.of_leak h3 rfl rfl inputs⟩
 
 theorem combVerify_verified (hC : Weierstrass.Law Spec.P384.curve) :
     Verified Arm.target verifyP384Comb combVerifySpec :=
-  combVerifyWith_verified hC false combVerify_ct
+  combVerifyWith_verified hC false (combVerify_ct hC)
 
 theorem combVerifyU_verified (hC : Weierstrass.Law Spec.P384.curve) :
     Verified Arm.target verifyP384CombU combVerifySpec :=
-  combVerifyWith_verified hC true combVerifyU_ct
+  combVerifyWith_verified hC true (combVerifyU_ct hC)
 
 /-- `combVerifySat`'s 100 bytes below `sp + 4` are free. -/
 theorem hash_sat : ∃ s, (Spec.Ecdsa.P384.inst.verifyHashContract (Arm.abi.withConsts p384CombConsts) 96).pre s :=

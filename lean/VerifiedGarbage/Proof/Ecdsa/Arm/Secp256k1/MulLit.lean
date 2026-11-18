@@ -28,15 +28,25 @@ time, properties of every instruction): the literal of the code
 namespace VG
 
 materialize_code Impl.Ecdsa.Arm.mulSecp256k1
+materialize_code Impl.Ecdsa.Arm.mulPubSecp256k1
 
 materialize_code Impl.Ecdsa.Arm.mulSecp256k1U
+materialize_code Impl.Ecdsa.Arm.mulPubSecp256k1U
 
 /-- `vg_secp256k1_mul`'s code has no frame, which its calls need. -/
 theorem Impl.Ecdsa.Arm.mulSecp256k1_noFrames : Impl.Ecdsa.Arm.secp256k1.mulFn.noFrames = true := by
   show Impl.Ecdsa.Arm.mulSecp256k1.noFrames = true; lit_decide
 
+/-- `vg_secp256k1_mul_public`'s, likewise. -/
+theorem Impl.Ecdsa.Arm.mulPubSecp256k1_noFrames : Impl.Ecdsa.Arm.secp256k1.pubFn.noFrames = true := by
+  show Impl.Ecdsa.Arm.mulPubSecp256k1.noFrames = true; lit_decide
+
 /-- `vg_secp256k1_mul_umaal`'s code has no frame, which its calls need. -/
 theorem Impl.Ecdsa.Arm.mulSecp256k1U_noFrames : (Impl.Ecdsa.Arm.secp256k1With true).mulFn.noFrames = true := by
   show Impl.Ecdsa.Arm.mulSecp256k1U.noFrames = true; lit_decide
+
+/-- `vg_secp256k1_mul_public_umaal`'s, likewise. -/
+theorem Impl.Ecdsa.Arm.mulPubSecp256k1U_noFrames : (Impl.Ecdsa.Arm.secp256k1With true).pubFn.noFrames = true := by
+  show Impl.Ecdsa.Arm.mulPubSecp256k1U.noFrames = true; lit_decide
 
 end VG
